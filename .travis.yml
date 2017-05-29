@@ -6,10 +6,12 @@ matrix:
     compiler: clang
     env:
     - CONF_OPTIONS="--enable-cplusplus"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: linux
     compiler: gcc
     env:
     - CONF_OPTIONS="--enable-cplusplus"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: osx
     env:
     - CONF_OPTIONS="--enable-cplusplus"
@@ -17,10 +19,12 @@ matrix:
     compiler: clang
     env:
     - CONF_OPTIONS="--enable-gc-assertions"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: linux
     compiler: gcc
     env:
     - CONF_OPTIONS="--enable-gc-assertions"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: osx
     env:
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
@@ -28,14 +32,17 @@ matrix:
     compiler: gcc
     env:
     - CONF_OPTIONS="--enable-gc-debug --enable-cplusplus"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: linux
     compiler: gcc
     env:
     - CONF_OPTIONS="--disable-gc-debug --enable-cplusplus"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: linux
     compiler: clang
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: osx
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus"
@@ -43,14 +50,17 @@ matrix:
     compiler: gcc
     env:
     - CONF_OPTIONS="--enable-large-config"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: linux
     compiler: gcc
     env:
     - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: linux
     compiler: clang
     env:
     - CONF_OPTIONS="--enable-redirect-malloc --disable-threads"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: osx
     env:
     - CONF_OPTIONS="--enable-redirect-malloc --enable-cplusplus --disable-threads"
@@ -58,21 +68,26 @@ matrix:
     compiler: gcc
     env:
     - CONF_OPTIONS="--enable-redirect-malloc --enable-gc-debug --enable-cplusplus --enable-gc-assertions"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: linux
     compiler: clang
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: linux
     compiler: gcc
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
+    - WORKAROUND_ACLOCAL_MISSING=true
   - os: osx
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
 
 install:
 - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git -b release-7_2
-- autoreconf -vif
+- if [[ "$WORKAROUND_ACLOCAL_MISSING" == true ]]; then
+    autoreconf --force --install;
+  fi
 
 script:
 - ./configure $CONF_OPTIONS
