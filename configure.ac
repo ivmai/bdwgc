@@ -983,7 +983,10 @@ missing_libatomic_ops=false
 AS_IF([test x"$with_libatomic_ops" != xno -a x"$THREADS" != xnone],
   [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops], [],
                       [ missing_libatomic_ops=true ]) ])
-AS_IF([test x$missing_libatomic_ops = xtrue ],
+# Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
+AS_IF([test x$missing_libatomic_ops = xtrue],
+      [ AC_CHECK_HEADER([atomic_ops.h], [missing_libatomic_ops=false]) ])
+AS_IF([test x$missing_libatomic_ops = xtrue],
       [ AS_IF([test x"$with_libatomic_ops" != xcheck],
               [ AC_MSG_ERROR([An external libatomic_ops was not found]) ])
         with_libatomic_ops=no ])
