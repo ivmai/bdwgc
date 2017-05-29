@@ -26,6 +26,10 @@ matrix:
         build_command_prepend: "./configure --enable-cplusplus --disable-shared --enable-single-obj-compilation"
         build_command: make -j check CFLAGS_EXTRA=-DLINT2
   - os: linux
+    addons:
+      apt:
+        packages:
+        - libatomic-ops-dev
     dist: trusty
     env:
     - MAKEFILE_TARGETS="distcheck"
@@ -379,7 +383,7 @@ before_install:
   fi
 - if [[ "$AUTOMAKE_VER" != "" || "$LIBTOOL_VER" != ""
         || "$M4_VER" != "" || "$PKG_CONFIG_VER" != "" ]]; then
-    GNUTOOLS_ROOT=`pwd`/gnu-tools;
+    GNUTOOLS_ROOT=`pwd`/../gnu-tools;
     export PATH=$GNUTOOLS_ROOT/bin:$PATH;
   fi
 - if [[ "$M4_VER" != "" ]]; then
@@ -400,7 +404,7 @@ before_install:
 - if [[ "$PKG_CONFIG_VER" != "" ]]; then
     PKG_CONFIG_GZ_URL=https://pkgconfig.freedesktop.org/releases/pkg-config-$PKG_CONFIG_VER.tar.gz;
     wget -O - $PKG_CONFIG_GZ_URL | tar xf - --gz --directory ~;
-    (cd ~/pkg-config-$PKG_CONFIG_VER && ./configure --with-internal-glib --prefix=$GNUTOOLS_ROOT && make -j && make install);
+    (cd ~/pkg-config-$PKG_CONFIG_VER && ./configure --with-internal-glib --prefix=$GNUTOOLS_ROOT && make -j check && make install);
   fi
 - if [[ "$MAKEFILE_TARGETS" == *"dist"* ]]; then
     autoconf --version;
@@ -415,6 +419,7 @@ before_install:
 install:
 - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
 - "./autogen.sh"
+- if [[ "$GNUTOOLS_ROOT" != "" ]]; then mv $GNUTOOLS_ROOT $GNUTOOLS_ROOT-x; fi
 - if [[ "$REPORT_COVERAGE" == true ]]; then gem install coveralls-lcov; fi
 
 script:
