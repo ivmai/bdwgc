@@ -980,7 +980,7 @@ AC_ARG_WITH([libatomic-ops],
 # Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
 # means Autotools pkg.m4 file was not found during aclocal.m4 generation.
 missing_libatomic_ops=false
-AS_IF([test x"$with_libatomic_ops" != xno],
+AS_IF([test x"$with_libatomic_ops" != xno -a x"$THREADS" != xnone],
   [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops], [],
                       [ missing_libatomic_ops=true ]) ])
 AS_IF([test x$missing_libatomic_ops = xtrue ],
@@ -999,7 +999,8 @@ AS_IF([test x"$with_libatomic_ops" = xno \
 # Finally, emit the definitions for bundled or external AO.
 AC_MSG_CHECKING([which libatomic_ops to use])
 AS_IF([test x"$with_libatomic_ops" != xno],
-  [ AC_MSG_RESULT([external]) ],
+  [ AS_IF([test x"$THREADS" != xnone],
+          [ AC_MSG_RESULT([external]) ], [ AC_MSG_RESULT([none]) ]) ],
   [ AC_MSG_RESULT([internal])
     ATOMIC_OPS_CFLAGS='-I$(top_builddir)/libatomic_ops/src -I$(top_srcdir)/libatomic_ops/src'
     ATOMIC_OPS_LIBS=""
