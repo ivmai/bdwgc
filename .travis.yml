@@ -111,12 +111,20 @@ matrix:
   - os: linux
     compiler: clang
     env:
-    - CFLAGS_EXTRA="-D GC_BUILTIN_ATOMIC -march=native -D _FORTIFY_SOURCE=2"
-    - CONF_OPTIONS="--enable-cplusplus"
+    - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2"
+    - CONF_OPTIONS="--with-libatomic-ops=none --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
+    compiler: gcc
+    dist: trusty
+    env:
+    - CONF_OPTIONS="--with-libatomic-ops=none --enable-gc-assertions --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
-    - CFLAGS_EXTRA="-D GC_BUILTIN_ATOMIC -march=native -D _FORTIFY_SOURCE=2"
-    - CONF_OPTIONS="--enable-cplusplus"
+    - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2"
+    - CONF_OPTIONS="--with-libatomic-ops=none --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
