@@ -16,6 +16,26 @@ matrix:
     env:
     - CONF_OPTIONS="--enable-cplusplus"
   - os: linux
+    addons:
+      apt:
+        packages:
+        - libatomic-ops-dev
+    compiler: clang
+    dist: trusty
+    env:
+    - CONF_OPTIONS="--enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - libatomic-ops-dev
+    compiler: gcc
+    dist: trusty
+    env:
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
     compiler: clang
     env:
     - CONF_OPTIONS="--enable-gc-assertions"
@@ -84,7 +104,10 @@ matrix:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
 
 install:
-- git clone --depth=50 https://github.com/ivmai/libatomic_ops.git -b release-7_2
+- if [[ "$NO_CLONE_LIBATOMIC_OPS" != true ]]; then
+    git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
+              -b release-7_2;
+  fi
 - if [[ "$WORKAROUND_ACLOCAL_MISSING" == true ]]; then
     autoreconf --force --install;
   fi
