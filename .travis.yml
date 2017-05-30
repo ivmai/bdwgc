@@ -17,6 +17,26 @@ matrix:
     addons:
       apt:
         packages:
+        - libatomic-ops-dev
+    compiler: clang
+    dist: trusty
+    env:
+    - CONF_OPTIONS="--enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - libatomic-ops-dev
+    compiler: gcc
+    dist: trusty
+    env:
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
+    addons:
+      apt:
+        packages:
         - gcc-multilib
     compiler: clang
     env:
@@ -40,6 +60,7 @@ matrix:
     env:
     - CFLAGS_EXTRA="-D CHECKSUMS"
     - CONF_OPTIONS="--disable-threads --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: clang
     env:
@@ -121,10 +142,12 @@ matrix:
     env:
     - CONF_OPTIONS="--enable-redirect-malloc --disable-threads"
     - CFLAGS_EXTRA="-m32"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
     - CONF_OPTIONS="--enable-redirect-malloc --enable-cplusplus --disable-threads"
     - CFLAGS_EXTRA="-m32"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: gcc
     env:
@@ -134,15 +157,18 @@ matrix:
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
     - CFLAGS_EXTRA="-O3 -march=native"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: gcc
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
     - CFLAGS_EXTRA="-O3 -march=native"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
     - CFLAGS_EXTRA="-O3 -march=native"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
@@ -227,7 +253,10 @@ matrix:
     - CONF_OPTIONS="--enable-munmap --enable-large-config --enable-gc-assertions"
 
 install:
-- git clone --depth=50 https://github.com/ivmai/libatomic_ops.git -b release-7_4
+- if [[ "$NO_CLONE_LIBATOMIC_OPS" != true ]]; then
+    git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
+              -b release-7_4;
+  fi
 - "./autogen.sh"
 
 script:
