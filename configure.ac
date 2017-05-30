@@ -968,16 +968,18 @@ fi
 # Do we want to use an external libatomic_ops?  By default use it if it's
 # found.
 AC_ARG_WITH([libatomic-ops],
-    [AS_HELP_STRING([--with-libatomic-ops[=yes|no|check]],
-                    [Use an external libatomic_ops? (default: check)])],
-    [], [with_libatomic_ops=check])
+    [AS_HELP_STRING([--with-libatomic-ops[=yes|no|check|none]],
+                    [Use an external libatomic_ops? (default: check;
+                     none: use compiler intrinsics or no thread support)])],
+    [], [ AS_IF([test x"$THREADS" != xnone],
+                [with_libatomic_ops=check], [with_libatomic_ops=none]) ])
 
-# Check for an external libatomic_ops if the answer was yes or check.  If not
-# found, fail on yes, and convert check to no.
+# Check for an external libatomic_ops if the above answer is "yes" or "check".
+# If not found, fail on "yes", and convert "check" to "no".
 # Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
 # means Autotools pkg.m4 file was not found during aclocal.m4 generation.
 missing_libatomic_ops=false
-AS_IF([test x"$with_libatomic_ops" != xno -a x"$THREADS" != xnone],
+AS_IF([test x"$with_libatomic_ops" != xno -a x"$with_libatomic_ops" != xnone],
   [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops], [],
                       [ missing_libatomic_ops=true ]) ])
 # Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
@@ -999,8 +1001,13 @@ AS_IF([test x"$with_libatomic_ops" = xno \
 # Finally, emit the definitions for bundled or external AO.
 AC_MSG_CHECKING([which libatomic_ops to use])
 AS_IF([test x"$with_libatomic_ops" != xno],
-  [ AS_IF([test x"$THREADS" != xnone],
-          [ AC_MSG_RESULT([external]) ], [ AC_MSG_RESULT([none]) ]) ],
+  [ AS_IF([test x"$with_libatomic_ops" != xnone -a x"$THREADS" != xnone],
+          [ AC_MSG_RESULT([external]) ],
+          [ AC_MSG_RESULT([none])
+            AS_IF([test x"$THREADS" != xnone],
+                  [ AC_DEFINE([GC_BUILTIN_ATOMIC], [1],
+                              [Use C11 (GCC) atomic intrinsics instead of
+                               libatomic_ops primitives]) ]) ]) ],
   [ AC_MSG_RESULT([internal])
     ATOMIC_OPS_CFLAGS='-I$(top_builddir)/libatomic_ops/src -I$(top_srcdir)/libatomic_ops/src'
     ATOMIC_OPS_LIBS=""
