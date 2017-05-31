@@ -243,12 +243,17 @@ Also, includes 7.4.4 changes
 * Adjust GC_memalign comment
 * Allow HAVE_DL_ITERATE_PHDR to be defined by client (musl)
 * Do not define amiga_get_mem, MacTemporaryNewPtr unless really used (extra)
+* Do not require libatomic_ops for single-threaded builds (configure)
 * Do not warn of missing PT_GNU_RELRO segment when custom DSO filter used
 * Eliminate 'cast to void* from int' compiler warnings (Darwin/x64)
+* Eliminate 'conditional expression is always true' code defect in GC_init
 * Eliminate 'FP divide-by-zero' static analyzer warning
+* Eliminate 'incompatible function pointer' warning in mark_some (MinGW/x86)
 * Eliminate 'ISO C forbids an empty translation unit' GCC pedantic warning
 * Eliminate 'ISO C forbids object to function pointer conversion' warning
+* Eliminate 'locally defined symbol imported' MS linker warnings (cord)
 * Eliminate 'null dereference' code defect warning in register_finalizer
+* Eliminate 'possible loss of data' compiler warnings (MS VC)
 * Eliminate 'printf format specifier mismatch' compiler warning (tools)
 * Eliminate 'type defaults to int in declaration' warning (REDIRECT_MALLOC)
 * Eliminate 'value stored is never read' warning of Clang static analyzer
@@ -261,6 +266,7 @@ Also, includes 7.4.4 changes
 * Fix 'incompatible ptr-to-int conversion' compiler warning in push_all_stack
 * Fix 'ISO C90 does not support %lf, %lg gnu_printf formats' GCC warnings
 * Fix 'ISO C90 forbids mixed declarations and code' compiler warning
+* Fix 'missing libc-version.h' build error (uClibc/x86[_64])
 * Fix 'replacement operator delete cannot be inline' GCC warning (Cygwin)
 * Fix 'variable unused' compiler warning in FirstDLOpenedLinkMap
 * Fix 'zero-size array is extension' Clang warning in os_dep (Linux/x86)
@@ -289,13 +295,18 @@ Also, includes 7.4.4 changes
 * Fix typo in CHECK_GCLIB_VERSION name (test)
 * Fix typo in push_roots comment
 * Fix unchecked fork() result in gctest (Unix, Cygwin)
+* Improve detection of internal libatomic_ops (configure)
 * Move libraries version info to the beginning of Makefile.am
 * Process all PT_LOAD segments before PT_GNU_RELRO segments (Glibc)
+* Refine Makefile.direct comment about multi-threaded GC build
 * Refine README about library source downloading
+* Remove all generated files by NT_X64_THREADS_MAKEFILE 'clean' target
+* Remove non-existent configure option in simple_example.html
 * Replace C++ style comments to C ones, remove commented out code (extra)
 * Support CFLAGS_EXTRA to pass extra user-defined compiler flags (configure)
 * Support CFLAGS_EXTRA when checking for inline and dladdr (configure)
 * Suppress 'tainted string passed to vulnerable operation' false defects
+* Suppress MS VC warnings about unused param, const condition (NT_MAKEFILE)
 * Update shared libraries version info to differentiate against v7.2
 * Use AC_DEFINE for defining NO_GETCONTEXT in configure
 * Workaround 'index out of bounds' UBSan false warning in push_marked
@@ -644,7 +655,9 @@ Also, includes 7.2 changes
 * Ensure oom_fn callback executed on out-of-memory in calloc
 * Fix '~' operator application to unsigned values shorter than word
 * Fix 'context local variable might be clobbered by setjmp' compiler warning
+* Fix 'doc' files installation folder
 * Fix 'shift count >= width of type' compiler warning in GC_SQRT_SIZE_MAX
+* Fix AO_SRC_DIR target name in NT_*_MAKEFILE
 * Fix assertion in GC_mark_from for non-heap regions
 * Fix assertion in GC_steal_mark_stack for non-heap regions
 * Fix assertion violation in GC_repeat_read if --enable-redirect-malloc
@@ -652,10 +665,13 @@ Also, includes 7.2 changes
 * Fix assertion violation in mark_local checking GC_mark_stack_top
 * Fix bm_huge initialization for 64-bit targets (gctest)
 * Fix calloc_explicitly_typed in case of lb*n overflow
+* Fix CMake warning about CMP0054 by unquoting instances of HOST
 * Fix conditional expression in pos_fetch, next non-macro definitions (cord)
 * Fix CORD_substr_closure for the case when CORD_from_fn returns C string
+* Fix crash in FirstDLOpenedLinkMap if app linked statically (Alpine Linux)
 * Fix double multiplication of lb by n in calloc_explicitly_typed
 * Fix enable_parallel_mark condition in CMake script
+* Fix external libatomic_ops pkg-config-based detection
 * Fix gc_allocator.h file name in new_gc_alloc.h comment
 * Fix gc_backptr.h, gc_mark.h, GC_DS_TAGS names in documentation
 * Fix gc_cleanup destructor for non-heap objects (gc_cpp)
@@ -668,8 +684,10 @@ Also, includes 7.2 changes
 * Fix integer shift undefined behavior in GC_init_explicit_typing
 * Fix Makefile.direct recursive invocation
 * Fix malloc routines to prevent size value wrap-around (fix CVE-2016-9427)
+* Fix missing win32_threads.c compilation for Cygwin (CMake)
 * Fix MS VC warning about compiling unused checksums and thread_local_alloc
 * Fix name typos in GC_FAST_MALLOC_GRANS comment
+* Fix OSF1 host pattern in CMakeLists.txt
 * Fix potential data race in GC_SysVGetDataStart (SPARC)
 * Fix potential integer overflow in GC_find_limit_* functions
 * Fix Solaris/sparc detection in case of strict C compliance is enforced
@@ -678,6 +696,7 @@ Also, includes 7.2 changes
 * Fix tools/setjmp_t hang (OS X)
 * Fix various typos in comments, documentation and printed messages
 * Handle load_segs overflow in register_dynlib_callback gracefully
+* Prevent misleading AC_MSG_ERROR/AS_IF errors reported in configure.ac
 * Replace (fix) 'objs' acronym in comments with 'objects' word
 * Revert "Skip GC_DS_PER_OBJECT objs with negative descriptor in GC_mark_from"
 * Update shared libraries version info (v7.2)
