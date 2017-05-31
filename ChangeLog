@@ -1,3 +1,24 @@
+2017-05-31  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure: Regenerate (by autoreconf -vif using autoconf-2.69,
+	automake-1.14.1, m4-1.4.17, libtool-2.4.2, pkg-config-0.26).
+
+2017-05-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac [missing_libatomic_ops=true]: Call
+	AC_CHECK_HEADER(atomic_ops.h) and set missing_libatomic_ops=false if
+	atomic_ops.h is found; add comment.
+
+2013-09-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (PKG_CHECK_MODULES): Move AS_IF and AC_MSG_ERROR out of
+	ACTION-IF-NOT-FOUND argument (setting "missing_libatomic_ops" variable
+	instead) to prevent misleading
+	"possibly undefined macro: AC_MSG_ERROR, AS_IF" error reported by
+	Autoconf (pointing to code lines where these macros first occur) in
+	case of PKG_CHECK_MODULES is not defined in aclocal.m4; add comment
+	about missing Autotools pkg.m4 file.
+
 2017-05-26  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile.in: Regenerate (by autoreconf -vif using autoconf-2.69,

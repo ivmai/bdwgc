@@ -16671,6 +16671,9 @@ fi
 
 # Check for an external libatomic_ops if the answer was yes or check.  If not
 # found, fail on yes, and convert check to no.
+# Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
+# means Autotools pkg.m4 file was not found during aclocal.m4 generation.
+missing_libatomic_ops=false
 
 
 
@@ -16851,17 +16854,11 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$ATOMIC_OPS_PKG_ERRORS" >&5
 
-	 if test x"$with_libatomic_ops" != xcheck; then :
-  as_fn_error $? "An external libatomic_ops was not found." "$LINENO" 5
-fi
-        with_libatomic_ops=no
+	 missing_libatomic_ops=true
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-	 if test x"$with_libatomic_ops" != xcheck; then :
-  as_fn_error $? "An external libatomic_ops was not found." "$LINENO" 5
-fi
-        with_libatomic_ops=no
+	 missing_libatomic_ops=true
 else
 	ATOMIC_OPS_CFLAGS=$pkg_cv_ATOMIC_OPS_CFLAGS
 	ATOMIC_OPS_LIBS=$pkg_cv_ATOMIC_OPS_LIBS
@@ -16869,6 +16866,21 @@ else
 $as_echo "yes" >&6; }
 
 fi
+fi
+# Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
+if test x$missing_libatomic_ops = xtrue; then :
+   ac_fn_c_check_header_mongrel "$LINENO" "atomic_ops.h" "ac_cv_header_atomic_ops_h" "$ac_includes_default"
+if test "x$ac_cv_header_atomic_ops_h" = xyes; then :
+  missing_libatomic_ops=false
+fi
+
+
+fi
+if test x$missing_libatomic_ops = xtrue; then :
+   if test x"$with_libatomic_ops" != xcheck; then :
+   as_fn_error $? "An external libatomic_ops was not found" "$LINENO" 5
+fi
+        with_libatomic_ops=no
 fi
 
 # If we have neither an external or an internal version, offer a useful hint
