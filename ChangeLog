@@ -43,6 +43,7 @@ Also, includes 7.6.2 changes
 * Code refactoring of divide-by-HBLKSIZE occurrences
 * Code refactoring of huge_test
 * Code refactoring of tests/subthread_create regarding AO add primitive
+* Compile thread_local_alloc only if multi-threaded build (Makefile.am)
 * Delete preprocessor output on make clean (Makefile.direct)
 * Disable implicit multi-threaded mode for Win32 to avoid LOCK crash
 * Document configure 'syntax error' issue in README
@@ -72,6 +73,7 @@ Also, includes 7.6.2 changes
 * Eliminate 'suspicious pointer subtraction' cppcheck warning (gc_cpp)
 * Eliminate 'unnecessary comparison of static strings' cppcheck warning
 * Eliminate 'unsafe vsprintf is deprecated' compiler warning
+* Eliminate 'unused formal parameter' compiler warnings in C++ code (MS VC)
 * Eliminate 'use of vulnerable sprintf' code defect in de_win test (cord)
 * Eliminate 'value of CLOCK_TYPE unknown' cppcheck info message
 * Eliminate 'value of DATASTART2 unknown' cppcheck info messages
@@ -84,6 +86,7 @@ Also, includes 7.6.2 changes
 * Eliminate unreachable PROC/DEFAULT_VDB GC_printf calls in gctest main()
 * Enable GC_is_tmp_root for all platforms
 * Execute more single-threaded GC tests by CMake
+* Expand tabs to spaces in de_win.rc (tests)
 * Export GC_dump_finalization/regions()
 * Export GC_is_tmp_root() and GC_print_trace[_inner]()
 * Export GC_print_free_list()
@@ -107,10 +110,13 @@ Also, includes 7.6.2 changes
 * Fix test_cpp and c++ parallel build in Makefile.direct
 * Fix typo in comment of GC_mark_some
 * Match uclinux pattern in configure
+* Move README.QUICK from DOC_FILES to OTHER_FILES in Makefile.direct
 * New target (check-cpp) in Makefile.direct
+* Prevent multiple 'Caught ACCESS_VIOLATION in marker' per collection
 * Put invariant name in quotes to make mark_state comments clearer
 * Refine configure messages when checking for compiler option support
 * Remove page_was_dirty and remove_protection duplicate definitions
+* Remove unused ALIGN_DOUBLE, USE_GENERIC_PUSH_REGS macros (TILE-Gx/Pro)
 * Rename 'test' to 'check' target in Makefile.direct
 * Report gcc/clang pedantic warnings (configure)
 * Skip thread suspend/resume API testing for Tru64 (OSF1)
@@ -121,17 +127,21 @@ Also, includes 7.6.2 changes
 * Update README regarding make cords with Makefile.direct
 * Update README to use autogen.sh on build from the source repository
 * Update shared libraries version info to differentiate against v7.4
+* Use same style of include gc.h in documentation
 * Workaround '!GC_page_size is always false' cppcheck style warning
 * Workaround '#error' cppcheck error messages
 * Workaround '32-bit value shift by >31 bits is undefined' cppcheck warnings
+* Workaround 'array compared to 0', 'untrusted loop bound' false defects
 * Workaround 'bad address arithmetic' static analysis tool false positive
 * Workaround 'checking if unsigned value is negative' cppcheck warning
 * Workaround 'checking unsigned value is negative' code defect in mark_from
+* Workaround 'comparison of identical expressions' false code defects
 * Workaround 'Condition 0!=GETENV() is always false' cppcheck style warnings
 * Workaround 'condition is always false' cppcheck warning in get_next_stack
 * Workaround 'condition is always true' cppcheck style warnings in GC_init
 * Workaround 'function is never used' cppcheck style warnings
 * Workaround 'insecure libc pseudo-random number generator used' code defect
+* Workaround 'int shift by negative amount' false code defect in finalize
 * Workaround 'local variable size too big' static analyzer warning
 * Workaround 'memory leak: result' cppcheck false error (POSIX)
 * Workaround 'null pointer dereference' false positive in push_next_marked
@@ -157,6 +167,7 @@ Also, includes 7.6.2 changes
 * Workaround 'value of WINAPI unknown' cppcheck info messages
 * Workaround 'variable hides enumerator with same name' cppcheck warnings
 * Workaround 'variable reassigned before old value used' cppcheck warnings
+* Workaround 'waiting while holding lock' code defect in stop_world (Unix)
 Also, includes 7.4.6 changes
 
 
