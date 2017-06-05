@@ -41,6 +41,7 @@
 
 #else /* !GC_OPENBSD_UTHREADS && !NACL */
 
+#include <sys/time.h>
 #include <signal.h>
 #include <semaphore.h>
 #include <errno.h>
