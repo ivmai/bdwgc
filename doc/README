@@ -40,6 +40,10 @@ This is version 7.2g of a conservative garbage collector for C and C++.
 
 You might find a more recent version of this at
 
+https://github.com/ivmai/bdwgc/wiki/Download
+
+or
+
 http://www.hboehm.info/gc/
 
 OVERVIEW
@@ -100,9 +104,7 @@ collector.  (See doc/README.cords and H.-J. Boehm, R. Atkinson, and M. Plass,
 (December 1995), pp. 1315-1330.  This is very similar to the "rope" package
 in Xerox Cedar, or the "rope" package in the SGI STL or the g++ distribution.)
 
-Further collector documentation can be found at
-
-http://www.hboehm.info/gc/
+Further collector documentation can be found in overview.html
 
 
 GENERAL DESCRIPTION
@@ -538,7 +540,7 @@ reclaimed.  Exclusive-or'ing forward and backward links in a list
 doesn't cut it.
   Some C optimizers may lose the last undisguised pointer to a memory
 object as a consequence of clever optimizations.  This has almost
-never been observed in practice.  Send mail to bdwgc@lists.opendylan.org
+never been observed in practice.  Use https://github.com/ivmai/bdwgc/issues
 for suggestions on how to fix your compiler.
   This is not a real-time collector.  In the standard configuration,
 percentage of time required for collection should be constant across
@@ -549,6 +551,7 @@ is enabled.
 per MB of accessible memory that needs to be scanned and processor.
 Your mileage may vary.)  The incremental/generational collection facility
 may help in some cases.
-  Please address bug reports to bdwgc@lists.opendylan.org.  If you are
+  Please address bug reports to https://github.com/ivmai/bdwgc/issues.
+If you are
 contemplating a major addition, you might also send mail to ask whether
 it's already been done (or whether we tried and discarded it).
