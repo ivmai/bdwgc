@@ -191,7 +191,7 @@ case "$THREADS" in
           AC_DEFINE(PARALLEL_MARK)
         fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
-        AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
+        AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
         ;;
      *-*-*linux* | *-*-nacl*)
         AC_DEFINE(GC_LINUX_THREADS)
@@ -209,7 +209,7 @@ case "$THREADS" in
           AC_DEFINE(PARALLEL_MARK)
         fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
-        AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
+        AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
         THREADDLLIBS="-lpthread -lrt"
         # HPUX needs REENTRANT for the _r calls.
         AC_DEFINE(_REENTRANT, 1, [Required define if using POSIX threads.])
@@ -292,7 +292,7 @@ case "$THREADS" in
         ;;
      *-*-darwin*)
         AC_DEFINE(GC_DARWIN_THREADS)
-        AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
+        AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
         # Parallel-mark is not well-tested on Darwin
         if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
@@ -352,7 +352,7 @@ case "$THREADS" in
         AC_DEFINE(PARALLEL_MARK)
     fi
     AC_DEFINE(THREAD_LOCAL_ALLOC)
-    AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
+    AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
     AC_DEFINE([GC_DGUX386_THREADS], 1,
               [Define to enable support for DB/UX threads on i386.])
     AC_DEFINE([DGUX_THREADS], 1,
