@@ -168,104 +168,66 @@ case "$THREADS" in
     ;;
  posix | pthreads)
     THREADS=posix
+    # Common defines for most POSIX platforms.
+    case "$host" in
+      *-*-aix* | *-*-cygwin* | *-*-darwin* | *-*-freebsd* | *-*-hpux11* | \
+      *-*-irix* | *-*-kfreebsd*-gnu | *-*-gnu* | *-*-*linux* | *-*-nacl* | \
+      *-*-netbsd* | *-*-openbsd* | *-*-osf* | *-*-solaris*)
+        AC_DEFINE(GC_THREADS)
+        AC_DEFINE([_REENTRANT], [1],
+                  [Required define if using POSIX threads.])
+        if test "${enable_parallel_mark}" != no; then
+          AC_DEFINE(PARALLEL_MARK)
+        fi
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
+        AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
+        ;;
+    esac
     AC_CHECK_LIB(pthread, pthread_self, THREADDLLIBS="-lpthread",,)
     case "$host" in
-     *-*-aix* | *-*-irix* | *-*-*linux* | *-*-nacl*)
-        AC_DEFINE(GC_THREADS)
-        AC_DEFINE(_REENTRANT)
-        if test "${enable_parallel_mark}" != no; then
-          AC_DEFINE(PARALLEL_MARK)
-        fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
-        AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
+      *-*-aix* | *-*-irix* | *-*-*linux* | *-*-nacl*)
+        # The default THREADDLLIBS.
         ;;
-     *-*-hpux11*)
+      *-*-hpux11*)
         AC_MSG_WARN("Only HP/UX 11 POSIX threads are supported.")
-        AC_DEFINE(GC_THREADS)
         AC_DEFINE(_POSIX_C_SOURCE,199506L)
-        if test "${enable_parallel_mark}" != no; then
-          AC_DEFINE(PARALLEL_MARK)
-        fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
-        AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
         THREADDLLIBS="-lpthread -lrt"
         # HPUX needs REENTRANT for the _r calls.
-        AC_DEFINE(_REENTRANT, 1, [Required define if using POSIX threads.])
         ;;
-     *-*-hpux10*)
-        AC_MSG_WARN("Only HP-UX 11 POSIX threads are supported.")
-        ;;
-     *-*-openbsd*)
-        AC_DEFINE(GC_THREADS)
-        if test "${enable_parallel_mark}" != no; then
-          AC_DEFINE(PARALLEL_MARK)
-        fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
-        THREADDLLIBS=-pthread
-        AM_CFLAGS="$AM_CFLAGS -pthread"
-        ;;
-     *-*-freebsd*)
-        AC_DEFINE(GC_THREADS)
-        AM_CFLAGS="$AM_CFLAGS -pthread"
-        if test "${enable_parallel_mark}" != no; then
-          AC_DEFINE(PARALLEL_MARK)
-        fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
-        ;;
-     *-*-kfreebsd*-gnu)
-        AC_DEFINE(GC_THREADS)
+      *-*-openbsd*)
         AM_CFLAGS="$AM_CFLAGS -pthread"
         THREADDLLIBS=-pthread
-        AC_DEFINE(_REENTRANT)
-        if test "${enable_parallel_mark}" != no; then
-          AC_DEFINE(PARALLEL_MARK)
-        fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
+        ;;
+      *-*-freebsd*)
+        AM_CFLAGS="$AM_CFLAGS -pthread"
+        ;;
+      *-*-kfreebsd*-gnu)
+        AM_CFLAGS="$AM_CFLAGS -pthread"
         AC_DEFINE(USE_COMPILER_TLS)
+        THREADDLLIBS=-pthread
         ;;
-     *-*-gnu*) # Excluding kfreebsd.
-        AC_DEFINE(GC_THREADS)
-        AC_DEFINE(_REENTRANT)
-        if test "${enable_parallel_mark}" != no; then
-          AC_DEFINE(PARALLEL_MARK)
-        fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
+      *-*-gnu*) # Excluding kfreebsd.
+        # The default THREADDLLIBS.
         ;;
-     *-*-netbsd*)
+      *-*-netbsd*)
         AC_MSG_WARN("Only on NetBSD 2.0 or later.")
-        AC_DEFINE(GC_THREADS)
-        AC_DEFINE(_REENTRANT)
         AC_DEFINE(_PTHREADS)
-        if test "${enable_parallel_mark}" != no; then
-          AC_DEFINE(PARALLEL_MARK)
-        fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
         THREADDLLIBS="-lpthread -lrt"
         ;;
-     *-*-solaris*)
-        AC_DEFINE(GC_THREADS)
-        if test "${enable_parallel_mark}" != no; then
-          AC_DEFINE(PARALLEL_MARK)
-        fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
+      *-*-solaris*)
         # Need to use alternate thread library, otherwise gctest hangs
         # on Solaris 8.
         multi_os_directory=`$CC -print-multi-os-directory`
         THREADDLLIBS="-L/usr/lib/lwp/$multi_os_directory \
                       -R/usr/lib/lwp/$multi_os_directory -lpthread -lrt"
         ;;
-     *-*-cygwin*)
-        AC_DEFINE(GC_THREADS)
-        if test "${enable_parallel_mark}" != no; then
-          AC_DEFINE(PARALLEL_MARK)
-        fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
+      *-*-cygwin*)
         # Cygwin doesn't have a real libpthread, so Libtool can't link
         # against it.
         THREADDLLIBS=""
         win32_threads=true
         ;;
-     *-*-mingw*)
+      *-*-mingw*)
         AC_DEFINE(GC_WIN32_PTHREADS)
         # Using pthreads-win32 (or other non-Cygwin pthreads) library.
         if test "${enable_parallel_mark}" != no; then
@@ -275,23 +237,10 @@ case "$THREADS" in
         THREADDLLIBS="-lpthread"
         win32_threads=true
         ;;
-     *-*-darwin*)
-        AC_DEFINE(GC_THREADS)
-        AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
-        # Parallel-mark is not well-tested on Darwin
-        if test "${enable_parallel_mark}" != no; then
-          AC_DEFINE(PARALLEL_MARK)
-        fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
+      *-*-darwin*)
         darwin_threads=true
         ;;
-     *-*-osf*)
-        AC_DEFINE(GC_THREADS)
-        if test "${enable_parallel_mark}" != no; then
-          AC_DEFINE(PARALLEL_MARK)
-        fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
-        AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
+      *-*-osf*)
         AM_CFLAGS="$AM_CFLAGS -pthread"
         THREADDLLIBS="-lpthread -lrt"
         ;;
