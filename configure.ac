@@ -123,6 +123,18 @@ AC_ARG_ENABLE(parallel-mark,
     esac ]
 )
 
+AC_ARG_ENABLE(thread-local-alloc,
+   [AC_HELP_STRING([--disable-thread-local-alloc],
+        [turn off thread-local allocation optimization])],
+   [case "$THREADS" in
+      no | none | single)
+        if test "${enable_thread_local_alloc}" = yes; then
+          AC_MSG_ERROR(
+                [Thread-local allocation requires --enable-threads=x spec])
+        fi
+        ;;
+    esac])
+
 AC_ARG_ENABLE(cplusplus,
     [AC_HELP_STRING([--enable-cplusplus], [install C++ support])])
 
@@ -179,7 +191,9 @@ case "$THREADS" in
         if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
+        if test "${enable_thread_local_alloc}" != no; then
+          AC_DEFINE(THREAD_LOCAL_ALLOC)
+        fi
         AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
         ;;
     esac
@@ -233,7 +247,9 @@ case "$THREADS" in
         if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
+        if test "${enable_thread_local_alloc}" != no; then
+          AC_DEFINE(THREAD_LOCAL_ALLOC)
+        fi
         THREADDLLIBS="-lpthread"
         win32_threads=true
         ;;
@@ -260,9 +276,10 @@ case "$THREADS" in
     AC_DEFINE(GC_THREADS)
     if test "${enable_parallel_mark}" != no; then
       AC_DEFINE(PARALLEL_MARK)
-      AC_DEFINE(THREAD_LOCAL_ALLOC)
-    else
-      if test "${enable_shared}" != yes || test "${enable_static}" != no; then
+    fi
+    if test "${enable_thread_local_alloc}" != no; then
+      if test "${enable_parallel_mark}" != no \
+              -o "${enable_shared}" != yes -o "${enable_static}" != no; then
         # Imply THREAD_LOCAL_ALLOC unless GC_DLL.
         AC_DEFINE(THREAD_LOCAL_ALLOC)
       fi
@@ -284,7 +301,9 @@ case "$THREADS" in
     if test "${enable_parallel_mark}" != no; then
         AC_DEFINE(PARALLEL_MARK)
     fi
-    AC_DEFINE(THREAD_LOCAL_ALLOC)
+    if test "${enable_thread_local_alloc}" != no; then
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
+    fi
     AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
     AM_CFLAGS="-pthread $AM_CFLAGS"
     ;;
@@ -296,7 +315,9 @@ case "$THREADS" in
     if test "${enable_parallel_mark}" != no; then
       AC_DEFINE(PARALLEL_MARK)
     fi
-    AC_DEFINE(THREAD_LOCAL_ALLOC)
+    if test "${enable_thread_local_alloc}" != no; then
+      AC_DEFINE(THREAD_LOCAL_ALLOC)
+    fi
     ;;
  rtems)
     THREADS=posix
@@ -304,7 +325,9 @@ case "$THREADS" in
     if test "${enable_parallel_mark}" != no; then
       AC_DEFINE(PARALLEL_MARK)
     fi
-    AC_DEFINE(THREAD_LOCAL_ALLOC)
+    if test "${enable_thread_local_alloc}" != no; then
+      AC_DEFINE(THREAD_LOCAL_ALLOC)
+    fi
     ;;
  decosf1 | irix | mach | os2 | solaris | dce | vxworks)
     AC_MSG_ERROR(thread package $THREADS not yet supported)
@@ -318,6 +341,8 @@ AM_CONDITIONAL(THREADS, test x$THREADS != xnone)
 AM_CONDITIONAL(PTHREADS, test x$THREADS = xposix)
 AM_CONDITIONAL(DARWIN_THREADS, test x$darwin_threads = xtrue)
 AM_CONDITIONAL(WIN32_THREADS, test x$win32_threads = xtrue)
+AM_CONDITIONAL(THREAD_LOCAL_ALLOC,
+            test x$enable_thread_local_alloc != xno -a x$THREADS != xnone)
 
 compiler_suncc=no
 case "$host" in
