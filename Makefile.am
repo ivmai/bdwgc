@@ -63,8 +63,7 @@ libgc_la_SOURCES = \
     allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
     dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c \
     mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
-    obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c \
-    specific.c stubborn.c typd_mlc.c
+    obj_map.c os_dep.c ptr_chck.c reclaim.c specific.c stubborn.c typd_mlc.c
 
 # C Library: Architecture Dependent
 # ---------------------------------
@@ -194,6 +193,7 @@ EXTRA_DIST += tools/if_mach.c tools/if_not_there.c tools/setjmp_t.c \
     tools/threadlibs.c gc.mak extra/MacOS.c extra/AmigaOS.c \
     extra/symbian/global_end.cpp extra/symbian/global_start.cpp \
     extra/symbian/init_global_static_roots.cpp extra/symbian.cpp \
+    pcr_interface.c real_malloc.c \
     build/s60v3/bld.inf build/s60v3/libgc.mmp \
     extra/Mac_files/datastart.c extra/Mac_files/dataend.c \
     extra/Mac_files/MacOS_config.h \
