@@ -349,42 +349,6 @@
                 </FileConfiguration>
             </File>
             <File
-                RelativePath="..\..\gc_dlopen.c"
-                >
-                <FileConfiguration
-                    Name="Debug|Win32"
-                    ExcludedFromBuild="true"
-                    >
-                    <Tool
-                        Name="VCCLCompilerTool"
-                    />
-                </FileConfiguration>
-                <FileConfiguration
-                    Name="Debug|x64"
-                    ExcludedFromBuild="true"
-                    >
-                    <Tool
-                        Name="VCCLCompilerTool"
-                    />
-                </FileConfiguration>
-                <FileConfiguration
-                    Name="Release|Win32"
-                    ExcludedFromBuild="true"
-                    >
-                    <Tool
-                        Name="VCCLCompilerTool"
-                    />
-                </FileConfiguration>
-                <FileConfiguration
-                    Name="Release|x64"
-                    ExcludedFromBuild="true"
-                    >
-                    <Tool
-                        Name="VCCLCompilerTool"
-                    />
-                </FileConfiguration>
-            </File>
-            <File
                 RelativePath="..\..\headers.c"
                 >
             </File>
@@ -425,23 +389,11 @@
                 >
             </File>
             <File
-                RelativePath="..\..\pcr_interface.c"
-                >
-            </File>
-            <File
                 RelativePath="..\..\ptr_chck.c"
                 >
             </File>
             <File
-                RelativePath="..\..\real_malloc.c"
-                >
-            </File>
-            <File
                 RelativePath="..\..\reclaim.c"
-                >
-            </File>
-            <File
-                RelativePath="..\..\specific.c"
                 >
             </File>
             <File
