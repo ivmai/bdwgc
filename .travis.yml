@@ -155,6 +155,16 @@ matrix:
     - CFLAGS_EXTRA="-std=c11 -D GC_NO_SIGSETJMP"
     - CONF_OPTIONS="--disable-threads --enable-gc-assertions --enable-cplusplus"
   - os: linux
+    compiler: clang
+    dist: trusty
+    env:
+    - CONF_OPTIONS="--disable-thread-local-alloc --enable-cplusplus"
+  - os: linux
+    compiler: gcc
+    dist: trusty
+    env:
+    - CONF_OPTIONS="--disable-parallel-mark --disable-thread-local-alloc --enable-gc-assertions --enable-cplusplus"
+  - os: linux
     addons:
       apt:
         packages:
