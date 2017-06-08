@@ -55,9 +55,18 @@ pkgconfig_DATA = bdw-gc.pc
 # ---------
 
 lib_LTLIBRARIES += libgc.la
+
 if SINGLE_GC_OBJ
+
 libgc_la_SOURCES = extra/gc.c
+
+if PTHREAD_START_STANDALONE
+AM_CPPFLAGS += -DGC_PTHREAD_START_STANDALONE
+libgc_la_SOURCES += pthread_start.c
+endif
+
 else
+
 EXTRA_DIST += extra/gc.c
 libgc_la_SOURCES = \
     allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
@@ -72,6 +81,7 @@ if WIN32_THREADS
 libgc_la_SOURCES += win32_threads.c
 else
 if PTHREADS
+# Not Cygwin or MinGW.
 libgc_la_SOURCES += pthread_start.c pthread_support.c
 if DARWIN_THREADS
 libgc_la_SOURCES += darwin_stop_world.c
@@ -93,6 +103,7 @@ if ENABLE_DISCLAIM
 libgc_la_SOURCES += fnlz_mlc.c
 endif
 
+# End of !SINGLE_GC_OBJ
 endif
 
 if USE_INTERNAL_LIBATOMIC_OPS

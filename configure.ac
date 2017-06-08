@@ -346,17 +346,20 @@ AM_CONDITIONAL(THREAD_LOCAL_ALLOC,
 
 compiler_suncc=no
 case "$host" in
-   powerpc-*-darwin*)
+  *-*-*linux*)
+      AM_CONDITIONAL(PTHREAD_START_STANDALONE, test x$THREADS = xposix)
+      ;;
+  powerpc-*-darwin*)
       powerpc_darwin=true
       ;;
-   *-*-solaris*)
+  *-*-solaris*)
       if test "$GCC" != yes; then
         # Solaris SunCC
         compiler_suncc=yes
         CFLAGS="-O $CFLAGS"
       fi
       ;;
-   *-*-wince*)
+  *-*-wince*)
       if test "$enable_gc_debug" != "no"; then
         AC_DEFINE([GC_READ_ENV_FILE], 1,
                   [Read environment variables from the GC 'env' file.])
