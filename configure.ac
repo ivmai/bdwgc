@@ -385,24 +385,31 @@ AM_CONDITIONAL(DARWIN_THREADS, test x$darwin_threads = xtrue)
 AM_CONDITIONAL(WIN32_THREADS, test x$win32_threads = xtrue)
 
 compiler_suncc=no
+pthread_start_standalone=no
 case "$host" in
-   powerpc-*-darwin*)
+  *-*-*linux*)
+      # Turn on the workaround described in pthread_start.c.
+      AS_IF([test "$THREADS" = posix], [pthread_start_standalone=yes])
+      ;;
+  powerpc-*-darwin*)
       powerpc_darwin=true
       ;;
-   *-*-solaris*)
+  *-*-solaris*)
       if test "$GCC" != yes; then
         # Solaris SunCC
         compiler_suncc=yes
         CFLAGS="-O $CFLAGS"
       fi
       ;;
-   *-*-wince*)
+  *-*-wince*)
       if test "$enable_gc_debug" != "no"; then
         AC_DEFINE([GC_READ_ENV_FILE], 1,
                   [Read environment variables from the GC 'env' file.])
       fi
       ;;
 esac
+AM_CONDITIONAL(PTHREAD_START_STANDALONE,
+               test x$pthread_start_standalone = xyes)
 
 if test "$GCC" = yes; then
   # Output all warnings.
