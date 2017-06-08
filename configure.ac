@@ -345,9 +345,11 @@ AM_CONDITIONAL(THREAD_LOCAL_ALLOC,
             test x$enable_thread_local_alloc != xno -a x$THREADS != xnone)
 
 compiler_suncc=no
+pthread_start_standalone=no
 case "$host" in
   *-*-*linux*)
-      AM_CONDITIONAL(PTHREAD_START_STANDALONE, test x$THREADS = xposix)
+      # Turn on the workaround described in pthread_start.c.
+      AS_IF([test "$THREADS" = posix], [pthread_start_standalone=yes])
       ;;
   powerpc-*-darwin*)
       powerpc_darwin=true
@@ -366,6 +368,8 @@ case "$host" in
       fi
       ;;
 esac
+AM_CONDITIONAL(PTHREAD_START_STANDALONE,
+               test x$pthread_start_standalone = xyes)
 
 if test "$GCC" = yes; then
   # Output all warnings.
