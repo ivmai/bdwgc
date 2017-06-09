@@ -86,8 +86,7 @@ matrix:
   - os: linux
     compiler: gcc
     env:
-    - CFLAGS_EXTRA="-D CHECKSUMS"
-    - CONF_OPTIONS="--disable-threads --enable-cplusplus"
+    - CONF_OPTIONS="--disable-threads --with-checksums --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: clang
