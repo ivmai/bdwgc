@@ -137,6 +137,14 @@ IF(enable_gcj_support)
         SET(SRC ${SRC} gcj_mlc.c)
 ENDIF(enable_gcj_support)
 
+OPTION(with_checksums "Report erroneously cleared dirty bits" NO)
+IF(with_checksums)
+    IF(enable_threads)
+        MESSAGE("CHECKSUMS not compatible with USE_MUNMAP or threads")
+    ENDIF(enable_threads)
+    ADD_DEFINITIONS("-DCHECKSUMS")
+    SET(SRC ${SRC} checksums.c)
+ENDIF(with_checksums)
 
 ADD_LIBRARY(          gc-lib   STATIC      ${SRC})
 SET_TARGET_PROPERTIES(gc-lib   PROPERTIES
