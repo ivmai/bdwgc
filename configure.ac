@@ -908,6 +908,22 @@ else
     fi
 fi
 
+AC_ARG_WITH([checksums],
+    [AS_HELP_STRING([--with-checksums],
+                    [Report on erroneously cleared dirty bits and
+                     unexpectedly altered stubborn objects, at
+                     substantial performance cost; use only for debugging
+                     of the incremental collector])])
+if test x$with_checksums = xyes; then
+    if test x$enable_munmap != x -o x$THREADS != xnone; then
+        AC_MSG_ERROR([CHECKSUMS not compatible with USE_MUNMAP or threads])
+    fi
+    AC_DEFINE([CHECKSUMS], 1,
+              [Erroneously cleared dirty bits checking.  Use only for
+               debugging of the incremental collector.])
+fi
+AM_CONDITIONAL([CHECKSUMS], test x$with_checksums = xyes)
+
 AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
 
 AC_ARG_ENABLE(werror, [--enable-werror Pass -Werror to the C compiler],
