@@ -19,7 +19,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
 AC_PREREQ(2.61)
 GC_SET_VERSION
-AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc subdir-objects])
+AM_INIT_AUTOMAKE([foreign nostdinc subdir-objects])
 AC_CONFIG_HEADERS([include/config.h])
 AM_MAINTAINER_MODE
 
