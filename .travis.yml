@@ -483,13 +483,14 @@ script:
     ${CC} --analyze -Xanalyzer -analyzer-output=text -Werror
         -I include -I libatomic_ops/src $CFLAGS_EXTRA
         *.c *.cc cord/*.c cord/tests/cordtest.c cord/tests/de.c extra/gc.c
-        extra/msvc_dbg.c tests/*.c tests/*.cc tools/*.c;
+        extra/msvc_dbg.c extra/pcr_interface.c extra/real_malloc.c
+        tests/*.c tests/*.cc tools/*.c;
   fi
 - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
     ~/cppcheck/cppcheck -q -f --error-exitcode=2 -U GC_API -U long -D CPPCHECK
         -I include -I libatomic_ops/src $CPPCHECK_ENABLE
         *.cc cord/*.c cord/tests/*.c tests/*.c tests/*.cc tools/*.c
-        extra/gc.c;
+        extra/gc.c extra/pcr_interface.c extra/real_malloc.c;
   fi
 - if [[ "$MSAN_OR_UBSAN" == true ]]; then
     UBSAN_OPTIONS="halt_on_error=1" make check-without-test-driver;
