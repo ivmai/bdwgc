@@ -65,7 +65,6 @@
 #include "../dyn_load.c"
 #include "../gc_dlopen.c"
 #include "../mach_dep.c"
-#include "../pcr_interface.c"
 #include "../pthread_stop_world.c"
 #include "../pthread_support.c"
 #include "../specific.c"
@@ -84,4 +83,4 @@
 # include "gc_pthread_redirects.h"
 #endif
 
-/* real_malloc.c, extra/MacOS.c, extra/msvc_dbg.c are not included. */
+/* The files from "extra" folder are not included. */

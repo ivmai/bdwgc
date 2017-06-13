@@ -126,8 +126,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* for the GC-scope function definitions and prototypes.  Must not be */
   /* used in gcconfig.h.  Shouldn't be used for the debugging-only      */
   /* functions.  Currently, not used for the functions declared in or   */
-  /* called from the "dated" source files (pcr_interface.c and files    */
-  /* located in the "extra" folder).                                    */
+  /* called from the "dated" source files (located in "extra" folder).  */
 # if defined(GC_DLL) && defined(__GNUC__) && !defined(MSWIN32) \
         && !defined(MSWINCE) && !defined(CYGWIN32)
 #   if GC_GNUC_PREREQ(4, 0) && !defined(GC_NO_VISIBILITY)
@@ -147,7 +146,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* variables.  Must not be used in gcconfig.h.  Shouldn't be used for */
   /* the debugging-only or profiling-only variables.  Currently, not    */
   /* used for the variables accessed from the "dated" source files      */
-  /* (pcr_interface.c, specific.c/h, and in the "extra" folder).        */
+  /* (specific.c/h, and in the "extra" folder).                         */
   /* The corresponding variable definition must start with GC_INNER.    */
 #endif /* !GC_INNER */
 

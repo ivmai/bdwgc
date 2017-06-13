@@ -208,7 +208,7 @@ EXTRA_DIST += tools/if_mach.c tools/if_not_there.c tools/setjmp_t.c \
     tools/threadlibs.c gc.mak extra/MacOS.c extra/AmigaOS.c \
     extra/symbian/global_end.cpp extra/symbian/global_start.cpp \
     extra/symbian/init_global_static_roots.cpp extra/symbian.cpp \
-    pcr_interface.c real_malloc.c \
+    extra/pcr_interface.c extra/real_malloc.c \
     build/s60v3/bld.inf build/s60v3/libgc.mmp \
     extra/Mac_files/datastart.c extra/Mac_files/dataend.c \
     extra/Mac_files/MacOS_config.h \
