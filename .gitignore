@@ -69,6 +69,7 @@
 /test_cpp.cpp
 /test_cpp.log
 /test_cpp.trs
+/test_atomic_ops
 /threadkey_test
 /threadleaktest
 /threadlibs
