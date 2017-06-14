@@ -70,6 +70,12 @@ endif
 
 if THREADS
 
+TESTS += test_atomic_ops$(EXEEXT)
+check_PROGRAMS += test_atomic_ops
+test_atomic_ops_SOURCES = tests/test_atomic_ops.c
+# Really should need only $(ATOMIC_OPS_LIBS)
+test_atomic_ops_LDADD = $(test_ldadd) $(THREADDLLIBS)
+
 TESTS += threadleaktest$(EXEEXT)
 check_PROGRAMS += threadleaktest
 threadleaktest_SOURCES = tests/thread_leak_test.c
@@ -134,6 +140,7 @@ check-without-test-driver: $(TESTS)
 	test ! -f disclaim_test$(EXEEXT) || ./disclaim_test$(EXEEXT)
 	test ! -f initsecondarythread_test$(EXEEXT) \
 	  || ./initsecondarythread_test$(EXEEXT)
+	test ! -f test_atomic_ops$(EXEEXT) || ./test_atomic_ops$(EXEEXT)
 	test ! -f threadkey_test$(EXEEXT) || ./threadkey_test$(EXEEXT)
 	test ! -f threadleaktest$(EXEEXT) || ./threadleaktest$(EXEEXT)
 	test ! -f subthreadcreate_test$(EXEEXT) || ./subthreadcreate_test$(EXEEXT)
