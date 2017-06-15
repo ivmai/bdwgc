@@ -971,6 +971,18 @@ AC_ARG_WITH([libatomic-ops],
     [], [ AS_IF([test x"$THREADS" != xnone],
                 [with_libatomic_ops=check], [with_libatomic_ops=none]) ])
 
+# Check whether compiler atomic intrinsics can be used.
+if test x"$with_libatomic_ops" = xcheck; then
+  AC_MSG_CHECKING(for compiler intrinsics support)
+  old_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS $CFLAGS_EXTRA -Iinclude -DGC_BUILTIN_ATOMIC"
+  AC_TRY_RUN([#include "tests/test_atomic_ops.c"],
+    [AC_MSG_RESULT(yes)
+     with_libatomic_ops=none],
+    [AC_MSG_RESULT(no)], [AC_MSG_RESULT(skipped because cross-compiling)])
+  CFLAGS="$old_CFLAGS"
+fi
+
 # Check for an external libatomic_ops if the above answer is "yes" or "check".
 # If not found, fail on "yes", and convert "check" to "no".
 # Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure

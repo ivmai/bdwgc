@@ -179,8 +179,7 @@ simplest case), or with a classic makefile by itself (type
 
 Please note that the collector source repository does not contain configure
 and similar auto-generated files, thus the full procedure of autoconf-based
-build of `master` branch of the collector (using `master` branch of
-libatomic_ops source repository as well) could look like:
+build of `master` branch of the collector could look like:
 
     git clone git://github.com/ivmai/bdwgc.git
     cd bdwgc
@@ -189,6 +188,9 @@ libatomic_ops source repository as well) could look like:
     ./configure
     make -j
     make check
+
+Cloning of `libatomic_ops` is now optional provided the compiler supports
+atomic intrinsics.
 
 If you are getting "syntax error near unexpected token ATOMIC_OPS" during
 configure execution, this means pkg.m4 cannot be found, most probably
