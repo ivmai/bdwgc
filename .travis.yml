@@ -6,6 +6,7 @@ matrix:
     compiler: clang
     env:
     - CONF_OPTIONS="--enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: gcc
     env:
@@ -13,6 +14,7 @@ matrix:
   - os: osx
     env:
     - CONF_OPTIONS="--enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     env:
     - COVERITY_SCAN_BRANCH=1
@@ -26,10 +28,6 @@ matrix:
         build_command_prepend: "./configure --enable-cplusplus --disable-shared --enable-single-obj-compilation"
         build_command: make -j check CFLAGS_EXTRA=-DLINT2
   - os: linux
-    addons:
-      apt:
-        packages:
-        - libatomic-ops-dev
     dist: trusty
     env:
     - MAKEFILE_TARGETS="distcheck"
@@ -42,20 +40,12 @@ matrix:
     env:
     - MAKEFILE_TARGETS="dist"
   - os: linux
-    addons:
-      apt:
-        packages:
-        - libatomic-ops-dev
     compiler: clang
     dist: trusty
     env:
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
-    addons:
-      apt:
-        packages:
-        - libatomic-ops-dev
     compiler: gcc
     dist: trusty
     env:
@@ -70,6 +60,7 @@ matrix:
     env:
     - CFLAGS_EXTRA="-m32"
     - CONF_OPTIONS="--enable-gc-assertions"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
@@ -83,6 +74,7 @@ matrix:
     env:
     - CFLAGS_EXTRA="-m32"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: gcc
     env:
@@ -93,10 +85,12 @@ matrix:
     env:
     - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
     - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS -D LINT2"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: gcc
     env:
@@ -111,19 +105,21 @@ matrix:
     compiler: clang
     env:
     - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2"
-    - CONF_OPTIONS="--with-libatomic-ops=none --enable-cplusplus"
-    - NO_CLONE_LIBATOMIC_OPS=true
+    - CONF_OPTIONS="--with-libatomic-ops=no --enable-cplusplus"
   - os: linux
+    addons:
+      apt:
+        packages:
+        - libatomic-ops-dev
     compiler: gcc
     dist: trusty
     env:
-    - CONF_OPTIONS="--with-libatomic-ops=none --enable-gc-assertions --enable-cplusplus"
+    - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
-    - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2"
-    - CONF_OPTIONS="--with-libatomic-ops=none --enable-cplusplus"
-    - NO_CLONE_LIBATOMIC_OPS=true
+    - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2 -D AO_DISABLE_GCC_ATOMICS"
+    - CONF_OPTIONS="--with-libatomic-ops=no --enable-cplusplus"
   - os: linux
     addons:
       apt:
@@ -153,11 +149,13 @@ matrix:
     env:
     - CFLAGS_EXTRA="-std=c11 -D GC_NO_SIGSETJMP"
     - CONF_OPTIONS="--disable-threads --enable-gc-assertions --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: clang
     dist: trusty
     env:
     - CONF_OPTIONS="--disable-thread-local-alloc --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: gcc
     dist: trusty
@@ -184,9 +182,11 @@ matrix:
     compiler: clang
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
@@ -300,6 +300,7 @@ matrix:
     - CXX=clang++-4.0
     - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
@@ -314,6 +315,7 @@ matrix:
     - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-munmap"
     - MSAN_OR_UBSAN=true
+    - NO_CLONE_LIBATOMIC_OPS=true
     sudo: required
   - os: linux
     compiler: clang
@@ -321,6 +323,7 @@ matrix:
     - CFLAGS_EXTRA="-fsanitize=undefined -fno-common -fno-omit-frame-pointer"
     - MSAN_OR_UBSAN=true
     - CONF_OPTIONS="--enable-cplusplus --enable-munmap"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
@@ -335,6 +338,7 @@ matrix:
     - CXX=clang++-4.0
     - CFLAGS_EXTRA="-O3 -march=native"
     - CONF_OPTIONS="--enable-cplusplus --enable-single-obj-compilation"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
@@ -349,6 +353,7 @@ matrix:
     env:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2"
     - CONF_OPTIONS="--enable-munmap --enable-gc-assertions"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
@@ -363,6 +368,7 @@ matrix:
     env:
     - CXX=g++-5
     - CONF_OPTIONS="--enable-munmap --enable-cplusplus --enable-gc-assertions"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
@@ -378,6 +384,7 @@ matrix:
     env:
     - CFLAGS_EXTRA="-m32 -O3"
     - CONF_OPTIONS="--disable-shared --enable-single-obj-compilation"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
@@ -393,6 +400,7 @@ matrix:
     env:
     - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2"
     - CONF_OPTIONS="--enable-munmap --enable-large-config --enable-gc-assertions"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
