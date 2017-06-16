@@ -185,7 +185,7 @@ freed; free lists are used (e.g. alloc_hdr).  HBLK's below are collected.
  HBLKSIZE |                      |---------------          |   (words)
  (bytes)  |                      |                         v   MAX_OFFSET
   |       + - - - - - - - - - - -+                        ---  (bytes)
-  |       |                      | !All_INTERIOR_PTRS      ^     |
+  |       |                      | !ALL_INTERIOR_POINTERS  ^     |
   |       |                      | sets j only for       hb_sz   |
   |       |      Object N        | valid object offsets.   |     |
   v       |                      | All objects WORDSZ      v     v

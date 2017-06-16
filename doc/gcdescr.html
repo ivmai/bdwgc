@@ -230,7 +230,7 @@ At the beginning of the mark phase, all root segments
 (as described above) are pushed on the
 stack by <TT>GC_push_roots</tt>.  (Registers and eagerly processed
 stack sections are processed by pushing the referenced objects instead
-of the stack section itself.)  If <TT>ALL_INTERIOR_PTRS</tt> is not
+of the stack section itself.)  If <TT>ALL_INTERIOR_POINTERS</tt> is not
 defined, then stack roots require special treatment.  In this case, the
 normal marking code ignores interior pointers, but <TT>GC_push_all_stack</tt>
 explicitly checks for interior pointers and pushes descriptors for target
