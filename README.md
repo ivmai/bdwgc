@@ -531,8 +531,10 @@ a [pull request](https://github.com/ivmai/bdwgc/pulls) to GitHub.
 
 If you need help, use
 [Stack Overflow](https://stackoverflow.com/questions/tagged/boehm-gc).
-Older technical discussions are also available in
-[bdwgc mailing list archive](https://github.com/ivmai/bdwgc/files/1038163/bdwgc-mailing-list-archive-2017_04.tar.gz).
+Older technical discussions are available in `bdwgc` mailing list archive - it
+can be downloaded as a
+[compressed file](https://github.com/ivmai/bdwgc/files/1038163/bdwgc-mailing-list-archive-2017_04.tar.gz)
+or browsed at [Narkive](http://bdwgc.opendylan.narkive.com).
 
 To get new release announcements, subscribe to
 [RSS feed](https://github.com/ivmai/bdwgc/releases.atom).
