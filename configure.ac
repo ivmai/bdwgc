@@ -975,8 +975,9 @@ AC_ARG_WITH([libatomic-ops],
 if test x"$with_libatomic_ops" = xcheck; then
   AC_MSG_CHECKING(for compiler intrinsics support)
   old_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS $CFLAGS_EXTRA -Iinclude -DGC_BUILTIN_ATOMIC"
-  AC_TRY_RUN([#include "tests/test_atomic_ops.c"],
+  CFLAGS="$CFLAGS $CFLAGS_EXTRA -DGC_BUILTIN_ATOMIC"
+  CFLAGS="$CFLAGS -I${srcdir}/include -I${srcdir}/tests"
+  AC_TRY_RUN([#include "test_atomic_ops.c"],
     [AC_MSG_RESULT(yes)
      with_libatomic_ops=none],
     [AC_MSG_RESULT(no)], [AC_MSG_RESULT(skipped because cross-compiling)])
