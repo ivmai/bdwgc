@@ -1988,7 +1988,7 @@ yield:
 #       define SLEEP_THRESHOLD 12
                 /* Under Linux very short sleeps tend to wait until     */
                 /* the current time quantum expires.  On old Linux      */
-                /* kernels nanosleep(<= 2ms) just spins under Linux.    */
+                /* kernels nanosleep (<= 2 msecs) just spins.           */
                 /* (Under 2.4, this happens only for real-time          */
                 /* processes.)  We want to minimize both behaviors      */
                 /* here.                                                */
@@ -1998,8 +1998,8 @@ yield:
             struct timespec ts;
 
             if (i > 24) i = 24;
-                        /* Don't wait for more than about 15msecs, even */
-                        /* under extreme contention.                    */
+                        /* Don't wait for more than about 15 msecs,     */
+                        /* even under extreme contention.               */
             ts.tv_sec = 0;
             ts.tv_nsec = 1 << i;
             nanosleep(&ts, 0);
