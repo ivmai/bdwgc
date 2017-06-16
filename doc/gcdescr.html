@@ -92,8 +92,8 @@ One (<TT>STUBBORN</tt>) is immutable without special precautions.
 In spite of that, it is very likely that most C clients of the
 collector currently
 use at most two kinds: <TT>NORMAL</tt> and <TT>PTRFREE</tt> objects.
-The <A HREF="http://gcc.gnu.org/java">gcj</a> runtime also makes
-heavy use of a kind (allocated with GC_gcj_malloc) that stores
+The <A HREF="https://gcc.gnu.org/onlinedocs/gcc-4.8.5/gcj/">GCJ</a> runtime
+also makes heavy use of a kind (allocated with GC_gcj_malloc) that stores
 type information at a known offset in method tables.
 <P>
 The collector uses a two level allocator.  A large block is defined to
