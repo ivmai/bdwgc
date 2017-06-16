@@ -39,8 +39,8 @@ dist_doc_DATA = \
         doc/debugging.md \
         doc/finalization.md \
         doc/gc.man \
-        doc/gcdescr.html \
-        doc/gcinterface.html \
+        doc/gcdescr.md \
+        doc/gcinterface.md \
         doc/leak.md \
         doc/overview.html \
         doc/porting.md \

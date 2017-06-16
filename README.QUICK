@@ -66,7 +66,7 @@ instead of GC_MALLOC.
 Define GC_DEBUG before including gc.h for additional checking.
 
 More documentation on the collector interface can be found in README.md,
-doc/gcinterface.html, include/gc.h, and other files in the doc directory.
+doc/gcinterface.md, include/gc.h, and other files in the doc directory.
 
 WARNINGS:
 

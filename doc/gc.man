@@ -31,7 +31,7 @@ versions of the routines to be substituted by defining GC_DEBUG before
 including gc.h.
 .LP
 See the documentation in the include files gc_cpp.h and gc_allocator.h,
-as well as the gcinterface.html file in the distribution,
+as well as the gcinterface.md file in the distribution,
 for an alternate, C++ specific interface to the garbage collector.
 Note that C++ programs generally
 need to be careful to ensure that all allocated memory (whether via new,
