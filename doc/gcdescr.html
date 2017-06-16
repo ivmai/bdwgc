@@ -470,6 +470,9 @@ catching write faults.  This is
 implemented for many Unix-like systems and for win32.  It is not possible
 in a few environments.
 <LI>
+(<TT>GWW_VDB</tt>) By using the Win32 GetWriteWatch function to read dirty
+bits.
+<LI>
 (<TT>PROC_VDB</tt>) By retrieving dirty bit information from /proc.
 (Currently only Sun's
 Solaris supports this.  Though this is considerably cleaner, performance
