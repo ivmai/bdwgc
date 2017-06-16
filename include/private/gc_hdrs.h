@@ -98,9 +98,8 @@ typedef struct hce {
 #endif
 
 /* Set hhdr to the header for p.  Analogous to GET_HDR below,           */
-/* except that in the case of large objects, it                         */
-/* gets the header for the object beginning, if GC_all_interior_ptrs    */
-/* is set.                                                              */
+/* except that in the case of large objects, it gets the header for     */
+/* the object beginning if GC_all_interior_pointers is set.             */
 /* Returns zero if p points to somewhere other than the first page      */
 /* of an object, and it is not a valid pointer to the object.           */
 #define HC_GET_HDR(p, hhdr, source, exit_label) \
