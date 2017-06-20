@@ -1252,7 +1252,7 @@ GC_INNER size_t GC_page_size = 0;
 #           endif
 #         endif
         }
-#     elif defined(CPPCHECK)
+#     elif defined(STACK_NOT_SCANNED) || defined(CPPCHECK)
         result = NULL;
 #     else
 #       error None of HEURISTIC* and *STACKBOTTOM defined!
