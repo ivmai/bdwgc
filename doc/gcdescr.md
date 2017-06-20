@@ -251,7 +251,7 @@ block. This is done in the following steps:
   actually consist of multiple such pages. HBLKSIZE is usually the page size
   divided by a small power of two.)
   * The page address part of the candidate pointer is looked up in
-  a [table](tree.html). Each table entry contains either 0, indicating that
+  a [table](tree.md). Each table entry contains either 0, indicating that
   the page is not part of the garbage collected heap, a small integer _n_,
   indicating that the page is part of large object, starting at least _n_
   pages back, or a pointer to a descriptor for the page. In the first case,

@@ -73,8 +73,8 @@ collector.  (See doc/README.cords and H.-J. Boehm, R. Atkinson, and M. Plass,
 (December 1995), pp. 1315-1330.  This is very similar to the "rope" package
 in Xerox Cedar, or the "rope" package in the SGI STL or the g++ distribution.)
 
-Further collector documentation can be found
-in [overview.html](doc/overview.html).
+Further collector documentation can be found in the
+[overview](doc/overview.md).
 
 
 ## General Description
