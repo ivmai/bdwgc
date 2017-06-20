@@ -749,8 +749,8 @@
 #   define OS_TYPE "SYMBIAN"
 #   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
-#   define DATASTART NULL
-#   define DATAEND NULL
+#   define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
+#   define DATAEND (ptr_t)ALIGNMENT
 # endif
 
 # define STACK_GRAN 0x1000000
