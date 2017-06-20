@@ -65,8 +65,8 @@ object is uncollectible, and the old object (if different) is deallocated.
 **void `GC_FREE`(void * _dead_)** - Explicitly deallocate an object. Typically
 not useful for small collectible objects.
 
-**void * `GC_MALLOC_IGNORE_OFF_PAGE`(size_t _nbytes_)** and **void
-* `GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE`(size_t _nbytes_)** - Analogous
+**void * `GC_MALLOC_IGNORE_OFF_PAGE`(size_t _nbytes_)** and
+**void * `GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE`(size_t _nbytes_)** - Analogous
 to `GC_MALLOC` and `GC_MALLOC_ATOMIC`, respectively, except that the client
 guarantees that as long as the resulting object is of use, a pointer
 is maintained to someplace inside the first 512 bytes of the object. This
@@ -129,7 +129,7 @@ collector using the interfaces in either `gc_typed.h` or `gc_gcj.h`.
 The collector distribution also includes a **string package** that takes
 advantage of the collector. For details see `cord.h` file.
 
-# C++ Interface
+## C++ Interface
 
 The C++ interface is implemented as a thin layer on the C interface.
 Unfortunately, this thin layer appears to be very sensitive to variations
@@ -173,7 +173,7 @@ go through one of the following interfaces, each one of which replaces
 a standard C++ allocation mechanism. Note that this requires that all STL
 containers be explicitly instantiated with `gc_allocator`.
 
-**STL allocators**
+### STL allocators
 
 Recent versions of the collector include a hopefully standard-conforming
 allocator implementation in `gc_allocator.h`. It defines `traceable_allocator`
@@ -201,7 +201,7 @@ concurrent access by multiple threads, but are faster.
 
 See sample code [here](http://www.hboehm.info/gc/gc_alloc_exC.txt).
 
-**Class inheritance based interface for new-based allocation**
+### Class inheritance based interface for new-based allocation
 
 Users may include `gc_cpp.h` and then cause members of classes to be allocated
 in garbage collectible memory by having those classes inherit from class `gc`.
@@ -211,7 +211,7 @@ Linking against `libgccpp` in addition to the `gc` library overrides `::new`
 (and friends) to allocate traceable memory but uncollectible memory, making
 it safe to refer to collectible objects from the resulting memory.
 
-**C interface**
+## C interface
 
 It is also possible to use the C interface from `gc.h` directly. On platforms
 which use `malloc` to implement `::new`, it should usually be possible to use
