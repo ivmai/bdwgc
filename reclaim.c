@@ -438,10 +438,13 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
           }
         } else if (GC_find_leak || !GC_block_nearly_full(hhdr)) {
           /* group of smaller objects, enqueue the real work */
-          struct hblk **rlh = ok -> ok_reclaim_list + BYTES_TO_GRANULES(sz);
+          struct hblk **rlh = ok -> ok_reclaim_list;
 
-          hhdr -> hb_next = *rlh;
-          *rlh = hbp;
+          if (rlh != NULL) {
+            rlh += BYTES_TO_GRANULES(sz);
+            hhdr -> hb_next = *rlh;
+            *rlh = hbp;
+          }
         } /* else not worth salvaging. */
         /* We used to do the nearly_full check later, but we    */
         /* already have the right cache context here.  Also     */
