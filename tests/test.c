@@ -1112,7 +1112,8 @@ void typed_test(void)
     GC_descr d2 = GC_make_descriptor(bm2, 2);
     GC_descr d3 = GC_make_descriptor(bm_large, 32);
     GC_descr d4 = GC_make_descriptor(bm_huge, 320);
-    GC_word * x = (GC_word *)GC_malloc_explicitly_typed(2000, d4);
+    GC_word * x = (GC_word *)GC_malloc_explicitly_typed(
+                                320 * sizeof(GC_word) + 123, d4);
     int i;
 
 #   ifndef LINT
