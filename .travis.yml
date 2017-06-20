@@ -121,6 +121,11 @@ matrix:
     - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2 -D AO_DISABLE_GCC_ATOMICS"
     - CONF_OPTIONS="--with-libatomic-ops=no --enable-cplusplus"
   - os: linux
+    compiler: gcc
+    env:
+    - CFLAGS_EXTRA="-D DONT_ADD_BYTE_AT_END"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+  - os: linux
     addons:
       apt:
         packages:
