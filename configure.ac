@@ -232,11 +232,7 @@ case "$THREADS" in
         THREADDLLIBS="-lpthread -lrt"
         ;;
       *-*-solaris*)
-        # Need to use alternate thread library, otherwise gctest hangs
-        # on Solaris 8.
-        multi_os_directory=`$CC -print-multi-os-directory`
-        THREADDLLIBS="-L/usr/lib/lwp/$multi_os_directory \
-                      -R/usr/lib/lwp/$multi_os_directory -lpthread -lrt"
+        THREADDLLIBS="-lpthread -lrt"
         ;;
       *-*-cygwin*)
         # Cygwin doesn't have a real libpthread, so Libtool can't link
