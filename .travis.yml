@@ -97,6 +97,11 @@ matrix:
     - CFLAGS_EXTRA="-D ENABLE_TRACE -D EMPTY_GETENV_RESULTS"
     - CONF_OPTIONS="--enable-cplusplus"
   - os: linux
+    compiler: gcc
+    env:
+    - CFLAGS_EXTRA="-D DONT_ADD_BYTE_AT_END"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+  - os: linux
     addons:
       apt:
         packages:
