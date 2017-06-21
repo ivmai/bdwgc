@@ -819,6 +819,13 @@
 #   define ALIGNMENT 4
 #   define DATASTART (ptr_t)ALIGNMENT
 #   define DATAEND (ptr_t)ALIGNMENT
+    /* Since JavaScript/asm.js/WebAssembly is not able to access the    */
+    /* function call stack or the local data stack, it is not possible  */
+    /* for GC to perform its stack walking operation to find roots on   */
+    /* the stack.  To work around that, the clients generally only do   */
+    /* BDWGC steps when the stack is empty so it is known that there    */
+    /* are no objects that would be found on the stack, and BDWGC is    */
+    /* compiled with stack walking disabled.                            */
 #   define STACK_NOT_SCANNED
 # endif
 
