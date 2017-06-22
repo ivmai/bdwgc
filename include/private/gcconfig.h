@@ -2755,6 +2755,19 @@
 # error "invalid config - PARALLEL_MARK requires GC_THREADS"
 #endif
 
+#if defined(PARALLEL_MARK) && !defined(DEFAULT_STACK_MAYBE_SMALL) \
+    && (defined(HPUX) || defined(GC_DGUX386_THREADS) \
+        || defined(NO_GETCONTEXT) /* e.g. musl */)
+    /* TODO: Test default stack size in configure. */
+# define DEFAULT_STACK_MAYBE_SMALL
+#endif
+
+#ifdef PARALLEL_MARK
+# define MIN_STACK_SIZE (8 * HBLKSIZE * sizeof(word))
+#elif defined(THREADS)
+# define MIN_STACK_SIZE 65536
+#endif
+
 #if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE) \
     && !defined(PLATFORM_ANDROID)
   /* Make the code cancellation-safe.  This basically means that we     */
