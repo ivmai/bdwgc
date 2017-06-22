@@ -410,22 +410,21 @@ GC_INNER void GC_start_mark_threads_inner(void)
     if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
         ABORT("pthread_attr_setdetachstate failed");
 
-#   if defined(HPUX) || defined(GC_DGUX386_THREADS)
-      /* Default stack size is usually too small: fix it. */
-      /* Otherwise marker threads or GC may run out of    */
-      /* space.                                           */
-#     define MIN_STACK_SIZE (8*HBLKSIZE*sizeof(word))
+#   ifdef DEFAULT_STACK_MAYBE_SMALL
+      /* Default stack size is usually too small: increase it.  */
+      /* Otherwise marker threads or GC may run out of space.   */
       {
         size_t old_size;
 
         if (pthread_attr_getstacksize(&attr, &old_size) != 0)
           ABORT("pthread_attr_getstacksize failed");
-        if (old_size < MIN_STACK_SIZE) {
+        if (old_size < MIN_STACK_SIZE
+            && old_size != 0 /* stack size is known */) {
           if (pthread_attr_setstacksize(&attr, MIN_STACK_SIZE) != 0)
             ABORT("pthread_attr_setstacksize failed");
         }
       }
-#   endif /* HPUX || GC_DGUX386_THREADS */
+#   endif /* DEFAULT_STACK_MAYBE_SMALL */
 
 #   ifndef NO_MARKER_SPECIAL_SIGMASK
       /* Apply special signal mask to GC marker threads, and don't drop */
@@ -1789,13 +1788,7 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 #           endif
             stack_size = 1000000;
         }
-#       ifdef PARALLEL_MARK
-          GC_ASSERT(stack_size >= (8*HBLKSIZE*sizeof(word)));
-#       else
-          /* FreeBSD-5.3/Alpha: default pthread stack is 64K,   */
-          /* HBLKSIZE=8192, sizeof(word)=8                      */
-          GC_ASSERT(stack_size >= 65536);
-#       endif
+        GC_ASSERT(stack_size >= MIN_STACK_SIZE);
         /* Our threads may need to do some work for the GC.     */
         /* Ridiculously small threads won't work, and they      */
         /* probably wouldn't work anyway.                       */
