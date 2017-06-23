@@ -170,6 +170,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int knd)
       tsd = GC_getspecific(k);
     }
 #   else
+      if (!EXPECT(keys_initialized, TRUE))
+        return GC_malloc_kind_global(bytes, knd);
       tsd = GC_getspecific(GC_thread_key);
 #   endif
 #   if !defined(USE_COMPILER_TLS) && !defined(USE_WIN32_COMPILER_TLS)
