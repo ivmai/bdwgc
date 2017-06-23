@@ -1110,6 +1110,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   /* Routines for fork handling by client (no-op if pthread_atfork works). */
   GC_API void GC_CALL GC_atfork_prepare(void)
   {
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     if (GC_handle_fork <= 0)
       fork_prepare_proc();
   }
