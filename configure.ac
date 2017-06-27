@@ -941,9 +941,12 @@ AC_SUBST([WERROR_CFLAGS])
 
 AC_ARG_ENABLE(single-obj-compilation,
    [AC_HELP_STRING([--enable-single-obj-compilation],
-                   [Compile all library .c files into single .o])],
-   [single_obj_compilation=yes])
-AM_CONDITIONAL([SINGLE_GC_OBJ], [test "$single_obj_compilation" = "yes"])
+                   [Compile all libgc source files into single .o
+                    (default: yes if static libraries are disabled)])],
+   [], [ AS_IF([test x"$enable_static" = xno],
+               [enable_single_obj_compilation=yes]) ])
+AM_CONDITIONAL([SINGLE_GC_OBJ],
+               [test x"$enable_single_obj_compilation" = xyes])
 
 AC_ARG_ENABLE(gcov, AC_HELP_STRING([--enable-gcov],
                                    [Turn on code coverage analysis]))
