@@ -587,8 +587,7 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
 /* lock may be required for fault handling.                             */
 #if defined(MPROTECT_VDB)
 # define UNPROTECT_THREAD(t) \
-    if (!GC_win32_dll_threads && GC_dirty_maintained \
-        && t != &first_thread) { \
+    if (!GC_win32_dll_threads && GC_incremental && t != &first_thread) { \
       GC_ASSERT(SMALL_OBJ(GC_size(t))); \
       GC_remove_protection(HBLKPTR(t), 1, FALSE); \
     }

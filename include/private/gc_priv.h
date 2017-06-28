@@ -1348,7 +1348,8 @@ GC_EXTERN word GC_black_list_spacing;
 # define TRUE_INCREMENTAL FALSE
 #else
   GC_EXTERN GC_bool GC_incremental;
-                        /* Using incremental/generational collection. */
+                        /* Using incremental/generational collection.   */
+                        /* Assumes dirty bits are being maintained.     */
 # define TRUE_INCREMENTAL \
         (GC_incremental && GC_time_limit != GC_TIME_UNLIMITED)
         /* True incremental, not just generational, mode */
@@ -1951,11 +1952,6 @@ GC_EXTERN GC_bool GC_print_back_height;
 #endif
 
 #ifndef GC_DISABLE_INCREMENTAL
-  GC_EXTERN GC_bool GC_dirty_maintained;
-                                /* Dirty bits are being maintained,     */
-                                /* either for incremental collection,   */
-                                /* or to limit the root set.            */
-
   /* Virtual dirty bit implementation:            */
   /* Each implementation exports the following:   */
   GC_INNER void GC_read_dirty(void);
@@ -1968,7 +1964,10 @@ GC_EXTERN GC_bool GC_print_back_height;
                         /* that it's not write protected by the virtual     */
                         /* dirty bit implementation.                        */
 
-  GC_INNER void GC_dirty_init(void);
+  GC_INNER GC_bool GC_dirty_init(void);
+                /* Returns true if dirty bits are maintained (otherwise */
+                /* it is OK to be called again if the client invokes    */
+                /* GC_enable_incremental once more).                    */
 #endif /* !GC_DISABLE_INCREMENTAL */
 
 /* Slow/general mark bit manipulation: */
