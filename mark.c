@@ -258,13 +258,15 @@ GC_INNER void GC_clear_marks(void)
 GC_INNER void GC_initiate_gc(void)
 {
 #   ifndef GC_DISABLE_INCREMENTAL
-        if (GC_dirty_maintained) GC_read_dirty();
+        if (GC_incremental) {
+            GC_read_dirty();
+        }
 #   endif
 #   ifdef STUBBORN_ALLOC
         GC_read_changed();
 #   endif
 #   ifdef CHECKSUMS
-        if (GC_dirty_maintained) GC_check_dirty();
+        if (GC_incremental) GC_check_dirty();
 #   endif
     GC_n_rescuing_pages = 0;
     if (GC_mark_state == MS_NONE) {
@@ -1368,7 +1370,7 @@ GC_API void GC_CALL GC_push_all(char *bottom, char *top)
       GC_push_selected((ptr_t)bottom, (ptr_t)top, GC_page_was_dirty);
     } else {
 #     ifdef PROC_VDB
-        if (GC_dirty_maintained) {
+        if (GC_incremental) {
           /* Pages that were never dirtied cannot contain pointers.     */
           GC_push_selected((ptr_t)bottom, (ptr_t)top, GC_page_was_ever_dirty);
         } else
@@ -1893,7 +1895,7 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
   {
     hdr * hhdr = HDR(h);
 
-    if (!GC_dirty_maintained) ABORT("Dirty bits not set up");
+    if (!GC_incremental) ABORT("Dirty bits not set up");
     for (;;) {
         if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr)
                    || HBLK_IS_FREE(hhdr), FALSE)) {

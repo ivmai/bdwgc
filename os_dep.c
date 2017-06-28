@@ -2676,9 +2676,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
  *              are running on Windows 95, Windows 2000 or earlier),
  *              MPROTECT_VDB may be defined as a fallback strategy.
  */
-#ifndef GC_DISABLE_INCREMENTAL
-  GC_INNER GC_bool GC_dirty_maintained = FALSE;
-#endif
 
 #if defined(PROC_VDB) || defined(GWW_VDB)
   /* Add all pages in pht2 to pht1 */
@@ -2733,19 +2730,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   /* and everything is dirty.                                            */
   static PVOID gww_buf[GC_GWW_BUF_LEN];
 
-# ifdef MPROTECT_VDB
+#   ifndef MPROTECT_VDB
+#     define GC_gww_dirty_init GC_dirty_init
+#   endif
+
     GC_INNER GC_bool GC_gww_dirty_init(void)
     {
       detect_GetWriteWatch();
       return GC_GWW_AVAILABLE();
     }
-# else
-    GC_INNER void GC_dirty_init(void)
-    {
-      detect_GetWriteWatch();
-      GC_dirty_maintained = GC_GWW_AVAILABLE();
-    }
-# endif /* !MPROTECT_VDB */
 
 # ifdef MPROTECT_VDB
     STATIC void GC_gww_read_dirty(void)
@@ -2830,10 +2823,10 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   /* written.                                                           */
 
   /* Initialize virtual dirty bit implementation.       */
-  GC_INNER void GC_dirty_init(void)
+  GC_INNER GC_bool GC_dirty_init(void)
   {
     GC_VERBOSE_LOG_PRINTF("Initializing DEFAULT_VDB...\n");
-    GC_dirty_maintained = TRUE;
+    return TRUE;
   }
 
   /* Retrieve system dirty bits for heap to a local buffer.     */
@@ -2875,11 +2868,11 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
 #ifdef MANUAL_VDB
   /* Initialize virtual dirty bit implementation.       */
-  GC_INNER void GC_dirty_init(void)
+  GC_INNER GC_bool GC_dirty_init(void)
   {
     GC_VERBOSE_LOG_PRINTF("Initializing MANUAL_VDB...\n");
     /* GC_dirty_pages and GC_grungy_pages are already cleared.  */
-    GC_dirty_maintained = TRUE;
+    return TRUE;
   }
 
   /* Retrieve system dirty bits for heap to a local buffer.     */
@@ -3286,7 +3279,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #   if defined(GWW_VDB)
       if (GC_GWW_AVAILABLE()) return;
 #   endif
-    if (!GC_dirty_maintained) return;
+    if (!GC_incremental) return;
     h_trunc = (struct hblk *)((word)h & ~(GC_page_size-1));
     h_end = (struct hblk *)(((word)(h + nblocks) + GC_page_size-1)
                             & ~(GC_page_size-1));
@@ -3306,7 +3299,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 }
 
 #if !defined(DARWIN)
-  GC_INNER void GC_dirty_init(void)
+  GC_INNER GC_bool GC_dirty_init(void)
   {
 #   if !defined(MSWIN32) && !defined(MSWINCE)
       struct sigaction act, oldact;
@@ -3323,7 +3316,6 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #   endif /* !MSWIN32 */
     GC_VERBOSE_LOG_PRINTF(
                 "Initializing mprotect virtual dirty bit implementation\n");
-    GC_dirty_maintained = TRUE;
     if (GC_page_size % HBLKSIZE != 0) {
         ABORT("Page size not multiple of HBLKSIZE");
     }
@@ -3380,7 +3372,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #   endif /* ! MS windows */
 #   if defined(GWW_VDB)
       if (GC_gww_dirty_init())
-        return;
+        return TRUE;
 #   endif
 #   if defined(MSWIN32)
       GC_old_segv_handler = SetUnhandledExceptionFilter(GC_write_fault_handler);
@@ -3393,6 +3385,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
       /* MPROTECT_VDB is unsupported for WinCE at present.      */
       /* FIXME: implement it (if possible). */
 #   endif
+    return TRUE;
   }
 #endif /* !DARWIN */
 
@@ -3662,7 +3655,7 @@ ssize_t read(int fd, void *buf, size_t nbyte)
   STATIC char *GC_proc_buf = NULL;
   STATIC int GC_proc_fd = 0;
 
-GC_INNER void GC_dirty_init(void)
+GC_INNER GC_bool GC_dirty_init(void)
 {
     char buf[40];
 
@@ -3677,15 +3670,16 @@ GC_INNER void GC_dirty_init(void)
     buf[sizeof(buf) - 1] = '\0';
     GC_proc_fd = open(buf, O_RDONLY);
     if (GC_proc_fd < 0) {
-      ABORT("/proc open failed");
+      WARN("/proc open failed; cannot enable GC incremental mode\n", 0);
+      return FALSE;
     }
     if (syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC) == -1)
       WARN("Could not set FD_CLOEXEC for /proc\n", 0);
 
-    GC_dirty_maintained = TRUE;
     GC_proc_buf = GC_scratch_alloc(GC_proc_buf_size);
     if (GC_proc_buf == NULL)
       ABORT("Insufficient space for /proc read");
+    return TRUE;
 }
 
 # define READ read
@@ -3783,9 +3777,8 @@ STATIC ptr_t GC_vd_base = NULL;
                         /* Address corresponding to GC_grungy_bits[0]   */
                         /* HBLKSIZE aligned.                            */
 
-GC_INNER void GC_dirty_init(void)
+GC_INNER GC_bool GC_dirty_init(void)
 {
-    GC_dirty_maintained = TRUE;
     /* For the time being, we assume the heap generally grows up */
     GC_vd_base = GC_heap_sects[0].hs_start;
     if (GC_vd_base == 0) {
@@ -3795,6 +3788,7 @@ GC_INNER void GC_dirty_init(void)
         != PCR_ERes_okay) {
         ABORT("Dirty bit initialization failed");
     }
+    return TRUE;
 }
 
 GC_INNER void GC_read_dirty(void)
@@ -4132,7 +4126,7 @@ STATIC void *GC_mprotect_thread(void *arg)
   }
 #endif /* BROKEN_EXCEPTION_HANDLING */
 
-GC_INNER void GC_dirty_init(void)
+GC_INNER GC_bool GC_dirty_init(void)
 {
   kern_return_t r;
   mach_port_t me;
@@ -4144,13 +4138,13 @@ GC_INNER void GC_dirty_init(void)
     if (GC_handle_fork) {
       /* To both support GC incremental mode and GC functions usage in  */
       /* the forked child, pthread_atfork should be used to install     */
-      /* handlers that switch off GC_dirty_maintained in the child      */
+      /* handlers that switch off GC_incremental in the child           */
       /* gracefully (unprotecting all pages and clearing                */
       /* GC_mach_handler_thread).  For now, we just disable incremental */
       /* mode if fork() handling is requested by the client.            */
-      GC_COND_LOG_PRINTF("GC incremental mode disabled since fork()"
-                         " handling requested\n");
-      return;
+      WARN("Can't turn on GC incremental mode as fork()"
+           " handling requested\n", 0);
+      return FALSE;
     }
 # endif
 
@@ -4160,7 +4154,6 @@ GC_INNER void GC_dirty_init(void)
     WARN("Enabling workarounds for various darwin "
          "exception handling bugs\n", 0);
 # endif
-  GC_dirty_maintained = TRUE;
   if (GC_page_size % HBLKSIZE != 0) {
     ABORT("Page size not multiple of HBLKSIZE");
   }
@@ -4168,6 +4161,7 @@ GC_INNER void GC_dirty_init(void)
   GC_task_self = me = mach_task_self();
 
   r = mach_port_allocate(me, MACH_PORT_RIGHT_RECEIVE, &GC_ports.exception);
+  /* TODO: WARN and return FALSE in case of a failure. */
   if (r != KERN_SUCCESS)
     ABORT("mach_port_allocate failed (exception port)");
 
@@ -4222,6 +4216,7 @@ GC_INNER void GC_dirty_init(void)
       }
     }
 # endif /* BROKEN_EXCEPTION_HANDLING  */
+  return TRUE;
 }
 
 /* The source code for Apple's GDB was used as a reference for the      */
