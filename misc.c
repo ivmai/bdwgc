@@ -1204,9 +1204,8 @@ GC_API void GC_CALL GC_init(void)
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
         /* For GWW_VDB on Win32, this needs to happen before any        */
         /* heap memory is allocated.                                    */
-        GC_dirty_init();
+        GC_incremental = GC_dirty_init();
         GC_ASSERT(GC_bytes_allocd == 0);
-        GC_incremental = TRUE;
       }
 #   endif
 
@@ -1331,15 +1330,15 @@ GC_API void GC_CALL GC_enable_incremental(void)
         GC_setpagesize();
         /* if (GC_no_win32_dlls) goto out; Should be win32S test? */
         maybe_install_looping_handler(); /* Before write fault handler! */
-        GC_incremental = TRUE;
         if (!GC_is_initialized) {
           UNLOCK();
+          GC_incremental = TRUE; /* indicate intention to turn it on */
           GC_init();
           LOCK();
         } else {
-          GC_dirty_init();
+          GC_incremental = GC_dirty_init();
         }
-        if (GC_dirty_maintained && !GC_dont_gc) {
+        if (GC_incremental && !GC_dont_gc) {
                                 /* Can't easily do it if GC_dont_gc.    */
           if (GC_bytes_allocd > 0) {
             /* There may be unmarked reachable objects. */
