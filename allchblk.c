@@ -417,6 +417,24 @@ GC_INNER void GC_unmap_old(void)
     }
 }
 
+# ifdef MPROTECT_VDB
+    GC_INNER GC_bool GC_has_unmapped_memory(void)
+    {
+      int i;
+
+      for (i = 0; i <= N_HBLK_FLS; ++i) {
+        struct hblk * h;
+        hdr * hhdr;
+
+        for (h = GC_hblkfreelist[i]; h != NULL; h = hhdr -> hb_next) {
+          hhdr = HDR(h);
+          if (!IS_MAPPED(hhdr)) return TRUE;
+        }
+      }
+      return FALSE;
+    }
+# endif /* MPROTECT_VDB */
+
 /* Merge all unmapped blocks that are adjacent to other free            */
 /* blocks.  This may involve remapping, since all blocks are either     */
 /* fully mapped or fully unmapped.                                      */

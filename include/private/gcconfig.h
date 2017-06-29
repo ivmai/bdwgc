@@ -2872,9 +2872,11 @@
 # undef GWW_VDB
 #endif
 
-#ifdef USE_MUNMAP
-  /* FIXME: Remove this undef if possible.      */
-# undef MPROTECT_VDB  /* Can't deal with address space holes.   */
+#if defined(USE_MUNMAP) && defined(GWW_VDB)
+# undef MPROTECT_VDB  /* TODO: Cannot deal with address space holes. */
+  /* Else if MPROTECT_VDB is available but not GWW_VDB then decide      */
+  /* whether to disable memory unmapping or mprotect-based virtual      */
+  /* dirty bits at runtime when GC_enable_incremental is called.        */
 #endif
 
 /* PARALLEL_MARK does not cause undef MPROTECT_VDB any longer.  */

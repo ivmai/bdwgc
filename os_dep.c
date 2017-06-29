@@ -3324,8 +3324,36 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
     UNPROTECT(h_trunc, (ptr_t)h_end - (ptr_t)h_trunc);
 }
 
-#if !defined(DARWIN)
+#ifdef USE_MUNMAP
+  GC_INNER GC_bool GC_has_unmapped_memory(void); /* from allchblk.c */
+  GC_INNER GC_bool GC_mprotect_dirty_init(void);
+
+  /* MPROTECT_VDB cannot deal with address space holes (for now),   */
+  /* so if the collector is configured with both MPROTECT_VDB and   */
+  /* USE_MUNMAP then, as a work around, select only one of them     */
+  /* during GC_init or GC_enable_incremental.                       */
   GC_INNER GC_bool GC_dirty_init(void)
+  {
+    if (GC_unmap_threshold != 0) {
+      if (GETENV("GC_UNMAP_THRESHOLD") != NULL
+          || GETENV("GC_FORCE_UNMAP_ON_GCOLLECT") != NULL
+          || GC_has_unmapped_memory()) {
+        WARN("Can't maintain mprotect-based dirty bits"
+             " in case of unmapping\n", 0);
+        return FALSE;
+      }
+      GC_unmap_threshold = 0; /* in favor of incremental collection */
+      WARN("Memory unmapping is disabled as incompatible"
+           " with MPROTECT_VDB\n", 0);
+    }
+    return GC_mprotect_dirty_init();
+  }
+#else
+# define GC_mprotect_dirty_init GC_dirty_init
+#endif /* !USE_MUNMAP */
+
+#if !defined(DARWIN)
+  GC_INNER GC_bool GC_mprotect_dirty_init(void)
   {
 #   if !defined(MSWIN32) && !defined(MSWINCE)
       struct sigaction act, oldact;
@@ -4054,7 +4082,7 @@ STATIC void *GC_mprotect_thread(void *arg)
   }
 #endif /* BROKEN_EXCEPTION_HANDLING */
 
-GC_INNER GC_bool GC_dirty_init(void)
+GC_INNER GC_bool GC_mprotect_dirty_init(void)
 {
   kern_return_t r;
   mach_port_t me;
