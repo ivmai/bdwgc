@@ -73,7 +73,7 @@ matrix:
   - os: osx
     env:
     - CFLAGS_EXTRA="-m32"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-handle-fork --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: gcc
@@ -173,7 +173,7 @@ matrix:
         - lcov
     compiler: gcc
     env:
-    - CONF_OPTIONS="--enable-gcov --enable-munmap --enable-single-obj-compilation --enable-cplusplus --disable-shared --enable-gc-assertions"
+    - CONF_OPTIONS="--enable-gcov --enable-handle-fork --enable-munmap --enable-single-obj-compilation --enable-cplusplus --disable-shared --enable-gc-assertions"
     - REPORT_COVERAGE=true
   - os: linux
     compiler: gcc
@@ -318,7 +318,7 @@ matrix:
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer"
-    - CONF_OPTIONS="--enable-munmap"
+    - CONF_OPTIONS="--enable-handle-fork --enable-munmap"
     - MSAN_OR_UBSAN=true
     - NO_CLONE_LIBATOMIC_OPS=true
     sudo: required
@@ -327,7 +327,7 @@ matrix:
     env:
     - CFLAGS_EXTRA="-fsanitize=undefined -fno-common -fno-omit-frame-pointer"
     - MSAN_OR_UBSAN=true
-    - CONF_OPTIONS="--enable-cplusplus --enable-munmap"
+    - CONF_OPTIONS="--enable-cplusplus --enable-handle-fork --enable-munmap"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
