@@ -4098,8 +4098,8 @@ GC_INNER GC_bool GC_mprotect_dirty_init(void)
       /* gracefully (unprotecting all pages and clearing                */
       /* GC_mach_handler_thread).  For now, we just disable incremental */
       /* mode if fork() handling is requested by the client.            */
-      GC_COND_LOG_PRINTF("GC incremental mode disabled since fork()"
-                         " handling requested\n");
+      WARN("Can't turn on GC incremental mode as fork()"
+           " handling requested\n", 0);
       return FALSE;
     }
 # endif
