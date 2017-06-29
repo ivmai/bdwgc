@@ -882,7 +882,7 @@ AC_ARG_ENABLE(munmap,
     [AC_HELP_STRING([--enable-munmap=N],
         [return page to the os if empty for N collections])],
     MUNMAP_THRESHOLD=$enableval)
-if test "${enable_munmap}" != ""; then
+if test x$enable_munmap != x -a x$enable_munmap != xno; then
     AC_DEFINE([USE_MMAP], 1,
               [Define to use mmap instead of sbrk to expand the heap.])
     case "$host" in
@@ -915,7 +915,8 @@ AC_ARG_WITH([checksums],
                      substantial performance cost; use only for debugging
                      of the incremental collector])])
 if test x$with_checksums = xyes; then
-    if test x$enable_munmap != x -o x$THREADS != xnone; then
+    if test x$enable_munmap != x -a x$enable_munmap != xno \
+            -o x$THREADS != xnone; then
         AC_MSG_ERROR([CHECKSUMS not compatible with USE_MUNMAP or threads])
     fi
     AC_DEFINE([CHECKSUMS], 1,
