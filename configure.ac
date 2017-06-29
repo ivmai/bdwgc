@@ -748,7 +748,7 @@ AC_ARG_ENABLE(munmap,
         ;;
     esac]
    )
-if test "${enable_munmap}" != ""; then
+if test x$enable_munmap != x -a x$enable_munmap != xno; then
     AC_DEFINE([USE_MMAP], 1,
               [Define to use mmap instead of sbrk to expand the heap.])
     AC_DEFINE([USE_MUNMAP], 1,
