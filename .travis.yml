@@ -90,7 +90,7 @@ matrix:
   - os: linux
     compiler: gcc
     env:
-    - CONF_OPTIONS="--enable-large-config"
+    - CONF_OPTIONS="--enable-large-config --disable-munmap"
     - WORKAROUND_ACLOCAL_MISSING=true
   - os: linux
     compiler: gcc
