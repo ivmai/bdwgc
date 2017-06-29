@@ -119,7 +119,7 @@ matrix:
   - os: osx
     env:
     - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2 -D AO_DISABLE_GCC_ATOMICS"
-    - CONF_OPTIONS="--with-libatomic-ops=no --enable-cplusplus"
+    - CONF_OPTIONS="--with-libatomic-ops=no --enable-munmap --enable-cplusplus"
   - os: linux
     compiler: gcc
     env:
