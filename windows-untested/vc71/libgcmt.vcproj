@@ -216,28 +216,6 @@
                 </FileConfiguration>
             </File>
             <File
-                RelativePath="..\..\checksums.c">
-                <FileConfiguration
-                    Name="Debug|Win32">
-                    <Tool
-                        Name="VCCLCompilerTool"
-                        Optimization="0"
-                        AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions=""
-                        BasicRuntimeChecks="3"
-                        ForcedIncludeFiles=""/>
-                </FileConfiguration>
-                <FileConfiguration
-                    Name="Release|Win32">
-                    <Tool
-                        Name="VCCLCompilerTool"
-                        Optimization="2"
-                        AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions=""
-                        ForcedIncludeFiles=""/>
-                </FileConfiguration>
-            </File>
-            <File
                 RelativePath="..\..\dbg_mlc.c">
                 <FileConfiguration
                     Name="Debug|Win32">

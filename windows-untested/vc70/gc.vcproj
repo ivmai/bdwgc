@@ -159,9 +159,6 @@
                 RelativePath="..\..\blacklst.c">
             </File>
             <File
-                RelativePath="..\..\checksums.c">
-            </File>
-            <File
                 RelativePath="..\..\dbg_mlc.c">
             </File>
             <File
