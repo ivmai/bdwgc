@@ -75,7 +75,7 @@ matrix:
     compiler: gcc
     env:
     - CFLAGS_EXTRA="-D CHECKSUMS"
-    - CONF_OPTIONS="--disable-threads --enable-cplusplus"
+    - CONF_OPTIONS="--disable-threads --disable-munmap --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: clang
@@ -155,7 +155,7 @@ matrix:
         - gcc-multilib
     compiler: gcc
     env:
-    - CONF_OPTIONS="--enable-large-config"
+    - CONF_OPTIONS="--enable-large-config --disable-munmap"
     - CFLAGS_EXTRA="-m32"
   - os: linux
     compiler: gcc
