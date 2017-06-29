@@ -889,7 +889,7 @@ AC_ARG_ENABLE(munmap,
     [AC_HELP_STRING([--enable-munmap=N],
         [return page to the os if empty for N collections])],
     MUNMAP_THRESHOLD=$enableval)
-if test "${enable_munmap}" != ""; then
+if test x$enable_munmap != x -a x$enable_munmap != xno; then
     AC_DEFINE([USE_MMAP], 1,
               [Define to use mmap instead of sbrk to expand the heap.])
     case "$host" in
