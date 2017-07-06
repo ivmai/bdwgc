@@ -78,7 +78,7 @@ matrix:
   - os: linux
     compiler: gcc
     env:
-    - CONF_OPTIONS="--disable-threads --with-checksums --disable-munmap --enable-cplusplus"
+    - CONF_OPTIONS="--disable-threads --enable-checksums --disable-munmap --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: clang
