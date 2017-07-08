@@ -1,3 +1,112 @@
+2017-07-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure: Regenerate (by autoreconf -vif using autoconf-2.69,
+	automake-1.14.1, m4-1.4.17, libtool-2.4.2, pkg-config-0.26).
+
+2017-06-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h [!GC_DISABLE_INCREMENTAL] (GC_incremental):
+	Refine comment.
+	* include/private/gc_priv.h [!GC_DISABLE_INCREMENTAL]
+	(GC_dirty_maintained): Remove variable declaration.
+	* include/private/gc_priv.h [!GC_DISABLE_INCREMENTAL] (GC_dirty_init):
+	Change return type from void to GC_bool; update comment.
+	* mark.c [!GC_DISABLE_INCREMENTAL || CHECKSUMS] (GC_initiate_gc):
+	Replace GC_dirty_maintained with GC_incremental.
+	* mark.c [!GC_DISABLE_INCREMENTAL && PROC_VDB] (GC_push_conditional):
+	Likewise.
+	* mark.c [!GC_DISABLE_INCREMENTAL] (GC_push_next_marked_dirty):
+	Likewise.
+	* misc.c [!GC_DISABLE_INCREMENTAL && !KEEP_BACK_PTRS]
+	(GC_enable_incremental): Likewise.
+	* os_dep.c [MPROTECT_VDB] (GC_remove_protection): Likewise.
+	* win32_threads.c [MPROTECT_VDB] (UNPROTECT_THREAD): Likewise.
+	* misc.c [!GC_DISABLE_INCREMENTAL] (GC_init): Set GC_incremental value
+	to the result of GC_dirty_init().
+	* misc.c [!GC_DISABLE_INCREMENTAL && !KEEP_BACK_PTRS]
+	(GC_enable_incremental): Likewise.
+	* misc.c [!GC_DISABLE_INCREMENTAL && !KEEP_BACK_PTRS]
+	(GC_enable_incremental): Set GC_incremental to true just before GC_init
+	call (to indicate the intention to turn on GC incremental mode).
+	* os_dep.c [!GC_DISABLE_INCREMENTAL] (GC_dirty_maintained): Remove
+	global variable.
+	* os_dep.c [GWW_VDB && !MPROTECT_VDB] (GC_gww_dirty_init): Define macro
+	to GC_dirty_init.
+	* os_dep.c [GWW_VDB && !MPROTECT_VDB] (GC_dirty_init): Remove function.
+	* os_dep.c [DEFAULT_VDB || MANUAL_VDB || MPROTECT_VDB || PCR_VDB]
+	(GC_dirty_init): Change return type to GC_bool; return true; remove
+	assignment of GC_dirty_maintained.
+	* os_dep.c [PROC_VDB] (GC_dirty_init): Replace ABORT with WARN and
+	return false if "pagedata" file open failed.
+	* os_dep.c [MPROTECT_VDB && DARWIN && CAN_HANDLE_FORK]
+	(GC_dirty_init): Replace GC_COND_LOG_PRINTF() with WARN()
+	which is called before return; refine WARN message.
+	* os_dep.c [MPROTECT_VDB && DARWIN] (GC_dirty_init): Return false if
+	GC_handle_fork; add TODO item to replace ABORT with WARN (and return
+	false).
+
+2017-06-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/overview.html: Change Download page link to that on GitHub; add
+	BDWGC acronym; remove link to gc.tar.gz; recommend to download
+	"recent stable" version; remove link to ancient boehm-gc in gcc;
+	provide link to the list of changes (for each version).
+
+2017-06-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README (Download): Add link to BDWGC Download page on GitHub.
+	* doc/README (Overview): Change link (for the further information) from
+	hboehm.info/gc to doc/overview.html.
+	* configure.ac (AC_INIT): Change URI for reporting bugs.
+	* doc/README: Likewise.
+	* doc/gc.man (SEE ALSO): Add link to the BDWGC main page on GitHub.
+	* doc/gcdescr.html: Remove information how to provide feedback.
+	* doc/overview.html (Contacts and Mailing List): Update information
+	(recommend use of GitHub and Stack Overflow, provide links to the
+	archives of the former mailing lists).
+
+2017-06-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/gcdescr.html: Replace http://gcc.gnu.org/java link (which now
+	points to GCC itself) with
+	https://gcc.gnu.org/onlinedocs/gcc-4.8.5/gcj/ one.
+	* doc/overview.html: Likewise.
+
+2017-06-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/gcdescr.html: Replace broken URLs to external document with
+	working ones.
+	* doc/overview.html: Likewise.
+
+2017-06-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/gcdescr.html (Mark phase): Replace ALL_INTERIOR_PTRS with
+	ALL_INTERIOR_POINTERS.
+	* doc/tree.html: Likewise.
+	* include/private/gc_hdrs.h (HC_GET_HDR): Replace GC_all_interior_ptrs
+	with GC_all_interior_pointers in comment.
+
+2017-06-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (USE_MUNMAP, MUNMAP_THRESHOLD): Do not define if
+	enable_munmap is "no" (or a blank value).
+
+2017-06-21  Hamayama <hamay1010@gmail.com>
+
+	* tests/test.c (typed_test): Pass 320*sizeof(word)+some_number instead
+	of 2000 to GC_malloc_explicitly_typed, so that to satisfy the size
+	argument requirement of the latter regardless of word size).
+
+2017-06-20  Hamayama <hamay1010@gmail.com>
+
+	* reclaim.c (GC_reclaim_block): If ok->ok_reclaim_list is null then
+	do not update hhdr->hb_next (and *rlh).
+
+2017-06-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* PCR-Makefile (COBJ): Remove solaris_threads.o entry.
+	* PCR-Makefile (CSRC): Remove solaris_threads.c entry.
+
 2017-05-31  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure: Regenerate (by autoreconf -vif using autoconf-2.69,
