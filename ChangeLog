@@ -4,26 +4,35 @@
 * Add AO primitives implementation to GC based on C11 atomic intrinsic
 * Add assertion to allocobj that live unmarked object cannot be reclaimed
 * Add Makefile target to run all tests without test-driver
+* Add test_atomic_ops to perform minimal testing of used atomic primitives
 * Align IRIX/OSF1_THREADS definition in gc_config_macros.h with gcconfig.h
 * Allow compilation of PROC_VDB code on Linux host (GC_NO_SYS_FAULT_H)
 * Allow configure --with-libatomic-ops=none to use GCC atomic intrinsics
 * Check that GC_WIN32_PTHREADS is not specified for Cygwin
+* Check thread_local is initialized before accessing thread_key
 * Collapse multiple NT_*_MAKEFILE scripts into a single NT_MAKEFILE
-* Convert some (small) .html files to Markdown format
+* Compile checksums.c only if --enable-checksums is given (configure)
+* Convert .html files to Markdown format
+* Decide between memory unmapping and mprotect-based dirty bits at runtime
 * Define CLANG/GNUC_PREREQ macros to check gcc/clang minimum version
 * Define GC_ASSERT(x) as C assert(x) for external clients of gc_inline.h
 * Define GC_PREFETCH_FOR_WRITE to __builtin_prefetch in gc_inline.h (GCC)
 * Define GC_THREADS instead of GC_x_THREADS in Makefiles
 * Detect sigsetjmp() availability by configure
+* Do not compile pcr_interface.c and real_malloc.c except by PCR-Makefile
 * Do not print n_rescuing_pages value if incremental collections disabled
 * Do not specify version info for test libraries (Automake)
 * Do not x86 asm in PUSH_CONTENTS_HDR for NaCl
 * Document GC_BUILTIN_ATOMIC macro (and gc_atomic_ops private header file)
+* Document STACK_NOT_SCANNED macro in gcconfig.h (Emscripten)
 * Enable alternative finalization interface (DISCLAIM) in all makefiles
 * Enable mprotect-based incremental GC for Win64 (GCC)
 * Fix 'doc' files installation folder
+* Group common defines for POSIX platforms in configure and CMake scripts
+* Imply configure --single-obj-compilation if --disable-static
 * Increase MAX_HEAP_SECTS (10 times) for large-config
 * Move de_win compiled resource files to cord/tests
+* Move pcr_interface.c, real_malloc.c to 'extra' folder
 * New API function (GC_dump_named) to produce named dumps
 * Remove 'dist' target from Makefile.direct
 * Remove DGUX_THREADS macro which duplicates GC_DGUX386_THREADS (configure)
@@ -38,12 +47,15 @@
 * Remove unused USE_GENERIC macro definition and description
 * Remove version info in 'de' cord test application
 * Skip grungy_pages update when mark state invalid to speedup read_dirty
+* Support configure --disable-thread-local-alloc option (similar for CMake)
+* Support enable_checksums option in CMake script
 * Turn on parallel marker by default for all multi-threaded builds
 * Update GC compilation and usage notes for Win32
 * Update shared libraries version info to differentiate against v7.6
 * Use __int64 instead of 'long long' in LONG_MULT if appropriate
 * Use __thread keyword for Android NDK r12b+ Clang (arm)
 * Use C11 static_assert if available
+* Use compiler atomic intrinsics by default if available (configure)
 * Use EXPECT FALSE for mark_from code documented as executed rarely
 * Use longjmp in fault_handler_openbsd if siglongjmp unavailable (OpenBSD)
 * Use sigsetjmp() in setjmp_t tool if available
