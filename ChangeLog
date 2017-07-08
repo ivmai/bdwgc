@@ -54,6 +54,7 @@ Also, includes 7.6.2 changes
 == [7.6.2] (unset) ==
 
 * Add minimal testing of GC_MALLOC_[ATOMIC_]WORDS and GC_CONS (gctest)
+* Add minimal testing of GC_set_bit (gctest)
 * Add more cases to huge_test to cover sizes close to word-type maximum
 * Add testing of new[]/delete[] (test_cpp)
 * Adjust code indentation of calloc_explicitly_typed
@@ -117,6 +118,7 @@ Also, includes 7.6.2 changes
 * Fix 'variable assigned a value that is never used' cppcheck style warnings
 * Fix 'void pointers in calculations: behavior undefined' cppcheck warning
 * Fix Clang static analyzer warning about not found gc_priv.h in extra files
+* Fix compilation error in get_main_stack_base (Emscripten)
 * Fix compilation for winpthreads if HANDLE_FORK
 * Fix compilation if configured with --enable-werror on OS X
 * Fix cord/de build in Makefile.direct (Linux)
@@ -127,12 +129,15 @@ Also, includes 7.6.2 changes
 * Fix parallel build in Makefile.direct
 * Fix test_cpp and c++ parallel build in Makefile.direct
 * Fix typo in comment of GC_mark_some
+* Make GC_INIT optional for clients even if thread-local allocations enabled
 * Match uclinux pattern in configure
 * Move README.QUICK from DOC_FILES to OTHER_FILES in Makefile.direct
 * New target (check-cpp) in Makefile.direct
+* Prevent abort in register_data_segments for Symbian and Emscripten
 * Prevent multiple 'Caught ACCESS_VIOLATION in marker' per collection
 * Put invariant name in quotes to make mark_state comments clearer
 * Refine configure messages when checking for compiler option support
+* Remove extraneous semicolons after AC_MSG_WARN (configure)
 * Remove page_was_dirty and remove_protection duplicate definitions
 * Remove unused ALIGN_DOUBLE, USE_GENERIC_PUSH_REGS macros (TILE-Gx/Pro)
 * Rename 'test' to 'check' target in Makefile.direct
