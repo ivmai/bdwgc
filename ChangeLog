@@ -305,9 +305,13 @@ Also, includes 7.4.4 changes
 * Add configure check whether to define NO_GETCONTEXT
 * Adjust GC_memalign comment
 * Allow HAVE_DL_ITERATE_PHDR to be defined by client (musl)
+* Better document minimum value of size argument for typed allocations
+* Consistently use 'msec' instead of 'ms' in comments in pthread_support
 * Do not define amiga_get_mem, MacTemporaryNewPtr unless really used (extra)
+* Do not produce .tar.bz2 distribution file (configure)
 * Do not require libatomic_ops for single-threaded builds (configure)
 * Do not warn of missing PT_GNU_RELRO segment when custom DSO filter used
+* Document GWW_VDB in gcdescr.html
 * Eliminate 'cast to void* from int' compiler warnings (Darwin/x64)
 * Eliminate 'conditional expression is always true' code defect in GC_init
 * Eliminate 'FP divide-by-zero' static analyzer warning
@@ -319,8 +323,10 @@ Also, includes 7.4.4 changes
 * Eliminate 'possible loss of data' compiler warnings (MS VC)
 * Eliminate 'printf format specifier mismatch' compiler warning (tools)
 * Eliminate 'type defaults to int in declaration' warning (REDIRECT_MALLOC)
+* Eliminate 'unused variable' compiler warning in remove_all_threads_but_me
 * Eliminate 'value stored is never read' warning of Clang static analyzer
 * Eliminate duplicate log messages in GC_mark_from
+* Ensure GC initialized when atfork_prepare is called by client
 * Fix 'arg parameter might be clobbered by setjmp' compiler warning
 * Fix 'bogus LR' detection in FindTopOfStack (Darwin)
 * Fix 'execvp argument incompatible pointer type' compiler warning (tools)
@@ -340,6 +346,7 @@ Also, includes 7.4.4 changes
 * Fix GC_bytes_allocd incrementation in case of allocation failure
 * Fix GC_jmp_buf multiple definition
 * Fix GC_noop6 definition to avoid its calls to be optimized away
+* Fix gctest failure if PARALLEL_MARK (musl)
 * Fix gctest thread stack overflow (musl-gcc)
 * Fix initsecondarythread_test runtime failure if GC compiled w/o threads
 * Fix lack of 2 trailing zeros in _MSC_VER numbers
@@ -350,6 +357,7 @@ Also, includes 7.4.4 changes
 * Fix mixed include of GC public header and gc_priv.h in disclaim bench/test
 * Fix potential overflow in decrement when computing GC_markers_m1
 * Fix printf format specifiers in extra files (cppcheck warnings)
+* Fix pthread_start compilation if single-obj-compilation (Linux)
 * Fix register_finalizer call in disclaim_bench for GC_DEBUG
 * Fix static assertion violation in LONG_MULT for 64-bit targets
 * Fix tag collision between ENABLE_DISCLAIM and KEEP_BACK_PTRS
@@ -360,6 +368,7 @@ Also, includes 7.4.4 changes
 * Fix unchecked fork() result in gctest (Unix, Cygwin)
 * Improve detection of internal libatomic_ops (configure)
 * Move libraries version info to the beginning of Makefile.am
+* Prevent abort in register_data_segments for Symbian
 * Process all PT_LOAD segments before PT_GNU_RELRO segments (Glibc)
 * Refine Makefile.direct comment about multi-threaded GC build
 * Refine README about library source downloading
@@ -370,6 +379,7 @@ Also, includes 7.4.4 changes
 * Support CFLAGS_EXTRA when checking for inline and dladdr (configure)
 * Suppress 'tainted string passed to vulnerable operation' false defects
 * Suppress MS VC warnings about unused param, const condition (NT_MAKEFILE)
+* Update bdwgc mailing list online archive link in documentation
 * Update shared libraries version info to differentiate against v7.2
 * Use AC_DEFINE for defining NO_GETCONTEXT in configure
 * Workaround 'index out of bounds' UBSan false warning in push_marked
@@ -720,6 +730,7 @@ Also, includes 7.2 changes
 * Fix 'context local variable might be clobbered by setjmp' compiler warning
 * Fix 'doc' files installation folder
 * Fix 'shift count >= width of type' compiler warning in GC_SQRT_SIZE_MAX
+* Fix ALL_INTERIOR_POINTERS name in comments and documentation
 * Fix AO_SRC_DIR target name in NT_*_MAKEFILE
 * Fix assertion in GC_mark_from for non-heap regions
 * Fix assertion in GC_steal_mark_stack for non-heap regions
@@ -727,9 +738,11 @@ Also, includes 7.2 changes
 * Fix assertion violation in GC_wait_builder called from start_mark_threads
 * Fix assertion violation in mark_local checking GC_mark_stack_top
 * Fix bm_huge initialization for 64-bit targets (gctest)
+* Fix broken external links in documentation
 * Fix calloc_explicitly_typed in case of lb*n overflow
 * Fix CMake warning about CMP0054 by unquoting instances of HOST
 * Fix conditional expression in pos_fetch, next non-macro definitions (cord)
+* Fix configure --disable-munmap handling
 * Fix CORD_substr_closure for the case when CORD_from_fn returns C string
 * Fix crash in FirstDLOpenedLinkMap if app linked statically (Alpine Linux)
 * Fix double multiplication of lb by n in calloc_explicitly_typed
@@ -743,6 +756,7 @@ Also, includes 7.2 changes
 * Fix GC_requested_heapsize increment in GC_init
 * Fix GC_SIZE_MAX definition (Linux/musl-gcc)
 * Fix GCJ support in CMake build script
+* Fix gctest crash if configure --enable-handle-fork on Darwin
 * Fix header filename in gcconfig.h comment
 * Fix integer shift undefined behavior in GC_init_explicit_typing
 * Fix Makefile.direct recursive invocation
@@ -750,18 +764,23 @@ Also, includes 7.2 changes
 * Fix missing win32_threads.c compilation for Cygwin (CMake)
 * Fix MS VC warning about compiling unused checksums and thread_local_alloc
 * Fix name typos in GC_FAST_MALLOC_GRANS comment
+* Fix null dereference in reclaim_block if DONT_ADD_BYTE_AT_END
 * Fix OSF1 host pattern in CMakeLists.txt
+* Fix PCR-Makefile by removing compilation of a missing file
 * Fix potential data race in GC_SysVGetDataStart (SPARC)
 * Fix potential integer overflow in GC_find_limit_* functions
 * Fix Solaris/sparc detection in case of strict C compliance is enforced
 * Fix STACKBOTTOM for Solaris 11/x86
 * Fix storage class of local variable in register_dynamic_libraries (Irix)
 * Fix tools/setjmp_t hang (OS X)
+* Fix typed_test to prevent fails in malloc_explicitly_typed (64-bit)
 * Fix various typos in comments, documentation and printed messages
 * Handle load_segs overflow in register_dynlib_callback gracefully
 * Prevent misleading AC_MSG_ERROR/AS_IF errors reported in configure.ac
 * Replace (fix) 'objs' acronym in comments with 'objects' word
 * Revert "Skip GC_DS_PER_OBJECT objs with negative descriptor in GC_mark_from"
+* Update documentation about bugs reporting and new releases notification
+* Update Download information in GC overview document
 * Update shared libraries version info (v7.2)
 * Workaround a bug in winpthreads causing parallel marks deadlock (MinGW)
 * Workaround missing getcontext() in Docker osrf/ubuntu_32bit
