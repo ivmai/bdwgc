@@ -34,7 +34,7 @@
   typedef unsigned char AO_TS_t;
 # define AO_TS_CLEAR 0
 # define AO_TS_INITIALIZER (AO_TS_t)AO_TS_CLEAR
-# ifdef __GCC_ATOMIC_TEST_AND_SET_TRUEVAL
+# if defined(__GCC_ATOMIC_TEST_AND_SET_TRUEVAL) && !defined(CPPCHECK)
 #   define AO_TS_SET __GCC_ATOMIC_TEST_AND_SET_TRUEVAL
 # else
 #   define AO_TS_SET (AO_TS_t)0xff
