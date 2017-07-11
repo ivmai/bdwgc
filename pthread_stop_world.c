@@ -434,15 +434,15 @@ STATIC void GC_restart_handler(int sig)
         (void)GC_do_blocking(suspend_self_inner, t);
         return;
       }
+      if ((t -> flags & FINISHED) != 0) {
+        /* Terminated but not joined yet. */
+        UNLOCK();
+        return;
+      }
 
       /* TODO: Support GC_retry_signals */
       switch (RAISE_SIGNAL(t, GC_sig_suspend)) {
-      case ESRCH:
-        /* Not really there anymore (terminated but not joined yet).    */
-        /* No need to wait but leave the suspension flag on.            */
-        GC_ASSERT((t -> flags & FINISHED) != 0);
-        UNLOCK();
-        return;
+      /* ESRCH cannot happen as terminated threads are handled above.   */
       case 0:
         break;
       default:
