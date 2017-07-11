@@ -65,11 +65,13 @@
 /subthreadcreate_test
 /sunos5gc.so
 /test-suite.log
+/test_atomic_ops
+/test_atomic_ops.log
+/test_atomic_ops.trs
 /test_cpp
 /test_cpp.cpp
 /test_cpp.log
 /test_cpp.trs
-/test_atomic_ops
 /threadkey_test
 /threadleaktest
 /threadlibs
