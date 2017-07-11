@@ -503,7 +503,13 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
         /* and request a mark stack expansion.                          */
         /* This cannot cause a mark stack overflow, since it replaces   */
         /* the original array entry.                                    */
-        GC_mark_stack_too_small = TRUE;
+#       ifdef PARALLEL_MARK
+            /* We are using a local_mark_stack in parallel mode.        */
+            if (!GC_parallel)
+#       endif
+        {
+            GC_mark_stack_too_small = TRUE;
+        }
         new_mark_stack_ptr = orig_mark_stack_ptr + 1;
         new_mark_stack_ptr -> mse_start = (ptr_t)addr;
         new_mark_stack_ptr -> mse_descr.w = sz | GC_DS_LENGTH;
