@@ -254,8 +254,8 @@ extern "C" {
 #endif
 
 inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
-                          GC_NS_QUALIFY(GCCleanUpFunc) cleanup = 0,
-                          void* clientData = 0);
+                          GC_NS_QUALIFY(GCCleanUpFunc) /* cleanup */ = 0,
+                          void* /* clientData */ = 0);
     // Allocates a collectible or uncollectible object, according to the
     // value of "gcp".
     //
@@ -334,8 +334,8 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 #ifdef GC_OPERATOR_NEW_ARRAY
   // The operator new for arrays, identical to the above.
   inline void* operator new[](size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
-                              GC_NS_QUALIFY(GCCleanUpFunc) cleanup = 0,
-                              void* clientData = 0);
+                              GC_NS_QUALIFY(GCCleanUpFunc) /* cleanup */ = 0,
+                              void* /* clientData */ = 0);
 #endif // GC_OPERATOR_NEW_ARRAY
 
 /* Inline implementation */
