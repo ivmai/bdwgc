@@ -972,9 +972,6 @@
       /* These aren't used when dyld support is enabled (it is by default). */
 #     define DATASTART ((ptr_t)get_etext())
 #     define DATAEND   ((ptr_t)get_end())
-#     ifndef USE_MMAP
-#       define USE_MMAP
-#     endif
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
@@ -1064,9 +1061,6 @@
 #       define CPP_WORDSZ 32
 #       define STACKBOTTOM ((ptr_t)((ulong)&errno))
 #     endif
-#     ifndef USE_MMAP
-#       define USE_MMAP
-#     endif
 #     define USE_MMAP_ANON
         /* From AIX linker man page:
         _text Specifies the first location of the program.
@@ -1107,10 +1101,8 @@
 #   undef STACK_GRAN
 #   define STACK_GRAN 0x10000
 #   define HEURISTIC1
-#   define USE_MMAP
 #   define USE_MUNMAP
 #   define USE_MMAP_ANON
-#   undef USE_MMAP_FIXED
 #   define GETPAGESIZE() 65536
 #   define MAX_NACL_GC_THREADS 1024
 # endif
@@ -1358,11 +1350,7 @@
 #         define USE_MMAP
 #       endif
 #       define MAP_FAILED (void *) ((word)-1)
-#       ifdef USE_MMAP
-#         define HEAP_START (ptr_t)0x40000000
-#       else
-#         define HEAP_START DATAEND
-#       endif
+#       define HEAP_START (ptr_t)0x40000000
 #   endif /* DGUX */
 
 #   ifdef NACL
@@ -1595,9 +1583,6 @@
 #     define DATAEND ((ptr_t)(_end))
 /* #     define MPROTECT_VDB  Not quite working yet? */
 #     define DYNAMIC_LOADING
-#     ifndef USE_MMAP
-#       define USE_MMAP
-#     endif
 #     define USE_MMAP_ANON
 #   endif
 #   ifdef DARWIN
@@ -1611,9 +1596,6 @@
 #     define DATASTART ((ptr_t)get_etext())
 #     define DATAEND   ((ptr_t)get_end())
 #     define STACKBOTTOM ((ptr_t)0xc0000000)
-#     ifndef USE_MMAP
-#       define USE_MMAP
-#     endif
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
@@ -2170,9 +2152,6 @@
 #     define DATASTART ((ptr_t)get_etext())
 #     define DATAEND   ((ptr_t)get_end())
 #     define STACKBOTTOM ((ptr_t)0x16fdfffff)
-#     ifndef USE_MMAP
-#       define USE_MMAP
-#     endif
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
@@ -2286,9 +2265,6 @@
 #     define DATASTART ((ptr_t)get_etext())
 #     define DATAEND   ((ptr_t)get_end())
 #     define STACKBOTTOM ((ptr_t)0x30000000)
-#     ifndef USE_MMAP
-#       define USE_MMAP
-#     endif
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
@@ -2479,9 +2455,6 @@
 #     define DATASTART ((ptr_t)get_etext())
 #     define DATAEND   ((ptr_t)get_end())
 #     define STACKBOTTOM ((ptr_t)0x7fff5fc00000)
-#     ifndef USE_MMAP
-#       define USE_MMAP
-#     endif
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
@@ -2662,7 +2635,9 @@
     /* We tried ...                                             */
 #endif
 
-#if defined(LINUX) && defined(USE_MMAP)
+#if defined(USE_MMAP_ANON) && !defined(USE_MMAP)
+#   define USE_MMAP
+#elif defined(LINUX) && defined(USE_MMAP)
     /* The kernel may do a somewhat better job merging mappings etc.    */
     /* with anonymous mappings.                                         */
 #   define USE_MMAP_ANON
