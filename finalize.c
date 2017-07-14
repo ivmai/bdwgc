@@ -152,6 +152,7 @@ STATIC int GC_register_disappearing_link_inner(
     struct disappearing_link * new_dl;
     DCL_LOCK_STATE;
 
+    if (EXPECT(GC_find_leak, FALSE)) return GC_UNIMPLEMENTED;
     LOCK();
     GC_ASSERT(obj != NULL && GC_base_C(obj) == obj);
     if (dl_hashtbl -> log_size == -1
@@ -647,6 +648,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
     hdr *hhdr = NULL; /* initialized to prevent warning. */
     DCL_LOCK_STATE;
 
+    if (EXPECT(GC_find_leak, FALSE)) return;
     LOCK();
     if (log_fo_table_size == -1
         || GC_fo_entries > ((word)1 << log_fo_table_size)) {
