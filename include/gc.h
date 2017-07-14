@@ -115,9 +115,10 @@ GC_API void GC_CALL GC_set_oom_fn(GC_oom_func);
 GC_API GC_oom_func GC_CALL GC_get_oom_fn(void);
 
 GC_API int GC_find_leak;
-                        /* Do not actually garbage collect, but simply  */
+                        /* Set to true to turn on the leak-finding mode */
+                        /* (do not actually garbage collect, but simply */
                         /* report inaccessible memory that was not      */
-                        /* deallocated with GC_free.  Initial value     */
+                        /* deallocated with GC_FREE).  Initial value    */
                         /* is determined by FIND_LEAK macro.            */
                         /* The value should not typically be modified   */
                         /* after GC initialization (and, thus, it does  */
@@ -821,6 +822,7 @@ GC_API void GC_CALL GC_debug_register_finalizer(void * /* obj */,
         /* be avoided, or broken by disappearing links.         */
         /* All but the last finalizer registered for an object  */
         /* is ignored.                                          */
+        /* No-op in the leak-finding mode.                      */
         /* Finalization may be removed by passing 0 as fn.      */
         /* Finalizers are implicitly unregistered when they are */
         /* enqueued for finalization (i.e. become ready to be   */
@@ -947,6 +949,7 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
         /* explicitly deallocate the object containing link.    */
         /* Explicit deallocation of obj may or may not cause    */
         /* link to eventually be cleared.                       */
+        /* No-op in the leak-finding mode.                      */
         /* This function can be used to implement certain types */
         /* of weak pointers.  Note, however, this generally     */
         /* requires that the allocation lock is held (see       */
@@ -958,7 +961,8 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
         /* succeeded (a new link is registered), GC_DUPLICATE   */
         /* if link was already registered (with some object),   */
         /* GC_NO_MEMORY if registration failed for lack of      */
-        /* memory (and GC_oom_fn did not handle the problem).   */
+        /* memory (and GC_oom_fn did not handle the problem),   */
+        /* GC_UNIMPLEMENTED if GC_find_leak is true.            */
 
 GC_API int GC_CALL GC_unregister_disappearing_link(void ** /* link */);
         /* Undoes a registration by either of the above two     */
