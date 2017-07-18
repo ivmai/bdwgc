@@ -30,7 +30,9 @@ AM_PROG_CC_C_O
 AC_PROG_CXX
 AM_PROG_AS
 AC_PROG_INSTALL
-LT_INIT
+LT_INIT([disable-static])
+# Only the shared libraries are produced by default, use "--enable-static"
+# option to override it.
 # Note: If Autoconf reports that LIBTOOL (or AC_ENABLE_SHARED, or
 # AC_PROG_LIBTOOL) is undefined, Libtool installation should be checked.
 
