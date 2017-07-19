@@ -1373,6 +1373,18 @@ GC_API void GC_CALL GC_enable_incremental(void)
   }
 #endif
 
+  GC_API void GC_CALL GC_deinit(void)
+  {
+    if (GC_is_initialized) {
+      /* Prevent duplicate resource close.  */
+      GC_is_initialized = FALSE;
+#     if defined(THREADS) && (defined(MSWIN32) || defined(MSWINCE))
+        DeleteCriticalSection(&GC_write_cs);
+        DeleteCriticalSection(&GC_allocate_ml);
+#     endif
+    }
+  }
+
 #if defined(MSWIN32) || defined(MSWINCE)
 
 # if defined(_MSC_VER) && defined(_DEBUG) && !defined(MSWINCE)
@@ -1380,15 +1392,6 @@ GC_API void GC_CALL GC_enable_incremental(void)
 # endif
 
   STATIC HANDLE GC_log = 0;
-
-  void GC_deinit(void)
-  {
-#   ifdef THREADS
-      if (GC_is_initialized) {
-        DeleteCriticalSection(&GC_write_cs);
-      }
-#   endif
-  }
 
 # ifdef THREADS
 #   if defined(PARALLEL_MARK) && !defined(GC_ALWAYS_MULTITHREADED)

@@ -1905,12 +1905,6 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func f);
 
 GC_EXTERN GC_bool GC_is_initialized; /* GC_init() has been run. */
 
-#if defined(MSWIN32) || defined(MSWINCE)
-  void GC_deinit(void);
-                                /* Free any resources allocated by      */
-                                /* GC_init                              */
-#endif
-
 GC_INNER void GC_collect_a_little_inner(int n);
                                 /* Do n units worth of garbage          */
                                 /* collection work, if appropriate.     */

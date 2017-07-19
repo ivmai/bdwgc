@@ -440,6 +440,11 @@ GC_API void GC_CALL GC_atfork_child(void);
 /* from the main program instead.                                       */
 GC_API void GC_CALL GC_init(void);
 
+/* Perform the collector shutdown.  (E.g. dispose critical sections on  */
+/* Win32 target.)  A duplicate invocation is a no-op.  GC_INIT should   */
+/* not be called after the shutdown.  See also GC_win32_free_heap().    */
+GC_API void GC_CALL GC_deinit(void);
+
 /* General purpose allocation routines, with roughly malloc calling     */
 /* conv.  The atomic versions promise that no relevant pointers are     */
 /* contained in the object.  The non-atomic versions guarantee that the */

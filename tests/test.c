@@ -1868,6 +1868,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
        UNTESTED(GC_malloc_explicitly_typed_ignore_off_page);
        UNTESTED(GC_debug_change_stubborn);
        UNTESTED(GC_debug_strndup);
+       UNTESTED(GC_deinit);
        UNTESTED(GC_strndup);
        UNTESTED(GC_posix_memalign);
        UNTESTED(GC_new_free_list);

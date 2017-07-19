@@ -2377,7 +2377,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
 #   ifdef MSWINCE
       GC_deinit();
-      DeleteCriticalSection(&GC_allocate_ml);
 #   endif
     return (int) exit_code;
   }
@@ -2786,7 +2785,6 @@ GC_INNER void GC_thr_init(void)
              GC_delete_gc_thread_no_free(&dll_thread_table[i]);
           }
           GC_deinit();
-          DeleteCriticalSection(&GC_allocate_ml);
         }
         break;
       }
