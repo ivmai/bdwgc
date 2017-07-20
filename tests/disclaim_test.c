@@ -91,7 +91,7 @@ struct pair_s {
     pair_t cdr;
 };
 
-static const char *pair_magic = "PAIR_MAGIC_BYTES";
+static const char * const pair_magic = "PAIR_MAGIC_BYTES";
 
 int is_pair(pair_t p)
 {
