@@ -2718,9 +2718,11 @@
 # define GETPAGESIZE() (unsigned)getpagesize()
 #endif
 
-#if defined(PLATFORM_ANDROID) && ((defined(MIPS) && (CPP_WORDSZ == 32)) \
-                        || defined(ARM32) || defined(I386) /* but not x32 */)
+#if defined(PLATFORM_ANDROID) && !(__ANDROID_API__ >= 23) \
+    && ((defined(MIPS) && (CPP_WORDSZ == 32)) \
+        || defined(ARM32) || defined(I386) /* but not x32 */)
   /* tkill() exists only on arm32/mips(32)/x86. */
+  /* NDK r11+ deprecates tkill() but keeps it for Mono clients. */
 # define USE_TKILL_ON_ANDROID
 #endif
 
