@@ -592,11 +592,10 @@ CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
         /* world is multi-threaded.                     */
         char buf[1];
 
-        if (fread(buf, 1, 1, f) > 1) {
-            /* Just to suppress "unused result" compiler warning.   */
-            ABORT("fread unexpected result");
+        if (fread(buf, 1, 1, f) > 1
+            || fseek(f, 0l, SEEK_SET) != 0) {
+            ABORT("Bad f argument or I/O failure");
         }
-        rewind(f);
     }
     state -> lf_file = f;
     for (i = 0; i < CACHE_SZ/LINE_SZ; i++) {
@@ -611,13 +610,11 @@ CORD CORD_from_file_lazy(FILE * f)
 {
     register long len;
 
-    if (fseek(f, 0l, SEEK_END) != 0) {
-        ABORT("Bad fd argument - fseek failed");
+    if (fseek(f, 0l, SEEK_END) != 0
+        || (len = ftell(f)) < 0
+        || fseek(f, 0l, SEEK_SET) != 0) {
+        ABORT("Bad f argument or I/O failure");
     }
-    if ((len = ftell(f)) < 0) {
-        ABORT("Bad fd argument - ftell failed");
-    }
-    rewind(f);
     return(CORD_from_file_lazy_inner(f, (size_t)len));
 }
 
@@ -627,13 +624,11 @@ CORD CORD_from_file(FILE * f)
 {
     register long len;
 
-    if (fseek(f, 0l, SEEK_END) != 0) {
-        ABORT("Bad fd argument - fseek failed");
+    if (fseek(f, 0l, SEEK_END) != 0
+        || (len = ftell(f)) < 0
+        || fseek(f, 0l, SEEK_SET) != 0) {
+        ABORT("Bad f argument or I/O failure");
     }
-    if ((len = ftell(f)) < 0) {
-        ABORT("Bad fd argument - ftell failed");
-    }
-    rewind(f);
     if (len < LAZY_THRESHOLD) {
         return(CORD_from_file_eager(f));
     } else {
