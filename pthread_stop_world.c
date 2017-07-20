@@ -401,7 +401,7 @@ STATIC void GC_restart_handler(int sig)
 #     else
         tv.tv_usec = 1000 * 50 / 2;
 #     endif
-      select(0, 0, 0, 0, &tv);
+      (void)select(0, 0, 0, 0, &tv);
     }
 
     static void *GC_CALLBACK suspend_self_inner(void *client_data) {
