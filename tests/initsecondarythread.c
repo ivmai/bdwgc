@@ -60,6 +60,10 @@ int main(void)
 # ifdef GC_PTHREADS
     int code;
     pthread_t t;
+
+#   ifdef LINT2
+      t = pthread_self(); /* explicitly initialize to some value */
+#   endif
 # else
     HANDLE t;
     DWORD thread_id;
