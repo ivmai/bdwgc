@@ -140,7 +140,7 @@ class D: public GC_NS_QUALIFY(gc) { public:
     static void CleanUp( void* obj, void* data ) {
         D* self = static_cast<D*>(obj);
         nFreed++;
-        my_assert( self->i == (int) (GC_word) data );}
+        my_assert( (GC_word)self->i == (GC_word)data );}
     static void Test() {
         my_assert( nFreed >= .8 * nAllocated );}
 
