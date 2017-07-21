@@ -64,7 +64,7 @@ word GC_non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
 word GC_gc_no = 0;
 
 #ifndef GC_DISABLE_INCREMENTAL
-  GC_INNER int GC_incremental = 0;      /* By default, stop the world.  */
+  GC_INNER GC_bool GC_incremental = FALSE; /* By default, stop the world. */
 #endif
 
 #ifdef THREADS
