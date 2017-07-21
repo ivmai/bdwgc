@@ -91,7 +91,7 @@ class B: public GC_NS_QUALIFY(gc), public A { public:
     /* A collectible class. */
 
     GC_ATTR_EXPLICIT B( int j ): A( j ) {}
-    ~B() {
+    virtual ~B() {
         my_assert( deleting );}
     static void Deleting( int on ) {
         deleting = on;}
