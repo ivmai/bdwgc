@@ -538,7 +538,7 @@ STATIC void GC_print_block_descr(struct hblk *h,
     size_t bytes = hhdr -> hb_sz;
     struct Print_stats *ps;
     unsigned n_marks = GC_n_set_marks(hhdr);
-    unsigned n_objs = HBLK_OBJS((unsigned)bytes);
+    unsigned n_objs = (unsigned)HBLK_OBJS(bytes);
 
     if (0 == n_objs) n_objs = 1;
     if (hhdr -> hb_n_marks != n_marks) {
