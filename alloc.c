@@ -67,6 +67,11 @@ word GC_gc_no = 0;
   GC_INNER GC_bool GC_incremental = FALSE; /* By default, stop the world. */
 #endif
 
+GC_API int GC_CALL GC_is_incremental_mode(void)
+{
+  return (int)GC_incremental;
+}
+
 #ifdef THREADS
   int GC_parallel = FALSE;      /* By default, parallel GC is off.      */
 #endif

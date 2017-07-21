@@ -272,7 +272,7 @@ GC_API GC_ATTR_DEPRECATED int GC_use_entire_heap;
 GC_API GC_ATTR_DEPRECATED int GC_full_freq;
                             /* Number of partial collections between    */
                             /* full collections.  Matters only if       */
-                            /* GC_incremental is set.                   */
+                            /* GC_is_incremental_mode().                */
                             /* Full collections are also triggered if   */
                             /* the collector detects a substantial      */
                             /* increase in the number of in-use heap    */
@@ -772,6 +772,10 @@ GC_API void GC_CALL GC_enable(void);
 /* adverse effects.                                                     */
 /* Safe to call before GC_INIT().  Includes a  GC_init() call.          */
 GC_API void GC_CALL GC_enable_incremental(void);
+
+/* Return non-zero (TRUE) if and only if the incremental mode is on.    */
+/* Does not acquire the lock.                                           */
+GC_API int GC_CALL GC_is_incremental_mode(void);
 
 /* Does incremental mode write-protect pages?  Returns zero or  */
 /* more of the following, or'ed together:                       */
