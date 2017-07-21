@@ -440,6 +440,20 @@ STATIC void GC_restart_handler(int sig)
         return;
       }
 
+      DISABLE_CANCEL(cancel_state);
+                /* GC_suspend_thread is not a cancellation point.   */
+#     ifdef PARALLEL_MARK
+        /* Ensure we do not suspend a thread while it is rebuilding */
+        /* a free list, otherwise such a dead-lock is possible:     */
+        /* thread 1 is blocked in GC_wait_for_reclaim holding       */
+        /* the allocation lock, thread 2 is suspended in            */
+        /* GC_reclaim_generic invoked from GC_generic_malloc_many   */
+        /* (with GC_fl_builder_count > 0), and thread 3 is blocked  */
+        /* acquiring the allocation lock in GC_resume_thread.       */
+        if (GC_parallel)
+          GC_wait_for_reclaim();
+#     endif
+
       /* TODO: Support GC_retry_signals */
       switch (RAISE_SIGNAL(t, GC_sig_suspend)) {
       /* ESRCH cannot happen as terminated threads are handled above.   */
@@ -452,8 +466,6 @@ STATIC void GC_restart_handler(int sig)
       /* Wait for the thread to complete threads table lookup and   */
       /* stack_ptr assignment.                                      */
       GC_ASSERT(GC_thr_initialized);
-      DISABLE_CANCEL(cancel_state);
-                /* GC_suspend_thread is not a cancellation point.   */
       while (sem_wait(&GC_suspend_ack_sem) != 0) {
         if (errno != EINTR)
           ABORT("sem_wait for handler failed (suspend_self)");
