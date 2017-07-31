@@ -1842,20 +1842,14 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 #if defined(USE_SPIN_LOCK) || !defined(NO_PTHREAD_TRYLOCK)
 /* Spend a few cycles in a way that can't introduce contention with     */
 /* other threads.                                                       */
+#define GC_PAUSE_SPIN_CYCLES 10
 STATIC void GC_pause(void)
 {
     int i;
-#   if !defined(__GNUC__) || defined(__INTEL_COMPILER)
-      volatile word dummy = 0;
-#   endif
 
-    for (i = 0; i < 10; ++i) {
-#     if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-        __asm__ __volatile__ (" " : : : "memory");
-#     else
+    for (i = 0; i < GC_PAUSE_SPIN_CYCLES; ++i) {
         /* Something that's unlikely to be optimized away. */
-        GC_noop1(++dummy);
-#     endif
+        AO_compiler_barrier();
     }
 }
 #endif
