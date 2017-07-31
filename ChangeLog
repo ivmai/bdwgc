@@ -22,7 +22,7 @@
 * Do not compile pcr_interface.c and real_malloc.c except by PCR-Makefile
 * Do not print n_rescuing_pages value if incremental collections disabled
 * Do not specify version info for test libraries (Automake)
-* Do not x86 asm in PUSH_CONTENTS_HDR for NaCl
+* Do not use x86 asm in PUSH_CONTENTS_HDR for NaCl
 * Document GC_BUILTIN_ATOMIC macro (and gc_atomic_ops private header file)
 * Document STACK_NOT_SCANNED macro in gcconfig.h (Emscripten)
 * Enable alternative finalization interface (DISCLAIM) in all makefiles
