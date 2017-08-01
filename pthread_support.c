@@ -1789,7 +1789,7 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 #           endif
             stack_size = 1000000;
         }
-        GC_ASSERT(stack_size >= MIN_STACK_SIZE);
+        GC_ASSERT(stack_size >= 65536);
         /* Our threads may need to do some work for the GC.     */
         /* Ridiculously small threads won't work, and they      */
         /* probably wouldn't work anyway.                       */

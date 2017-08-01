@@ -3005,9 +3005,8 @@
 #endif
 
 #ifdef PARALLEL_MARK
+  /* The minimum stack size for a marker thread. */
 # define MIN_STACK_SIZE (8 * HBLKSIZE * sizeof(word))
-#elif defined(THREADS)
-# define MIN_STACK_SIZE 65536
 #endif
 
 #if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE) \

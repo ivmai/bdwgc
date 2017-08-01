@@ -929,6 +929,8 @@ STATIC unsigned GC_active_count = 0;    /* Number of active helpers.    */
 
 GC_INNER word GC_mark_no = 0;
 
+static mse *main_local_mark_stack;
+
 #ifdef LINT2
 # define LOCAL_MARK_STACK_SIZE (HBLKSIZE / 8)
 #else
@@ -946,6 +948,21 @@ GC_INNER void GC_wait_for_markers_init(void)
 
   if (GC_markers_m1 == 0)
     return;
+
+  /* Allocate the local mark stack for the thread that holds GC lock.   */
+# ifndef CAN_HANDLE_FORK
+    GC_ASSERT(NULL == main_local_mark_stack);
+# else
+    if (NULL == main_local_mark_stack)
+# endif
+  {
+    size_t bytes_to_get =
+                ROUNDUP_PAGESIZE_IF_MMAP(LOCAL_MARK_STACK_SIZE * sizeof(mse));
+    main_local_mark_stack = (mse *)GET_MEM(bytes_to_get);
+    if (NULL == main_local_mark_stack)
+      ABORT("Insufficient memory for main local_mark_stack");
+    GC_add_to_our_memory((ptr_t)main_local_mark_stack, bytes_to_get);
+  }
 
   /* Reuse marker lock and builders count to synchronize        */
   /* marker threads startup.                                    */
@@ -1188,9 +1205,6 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
 /* empty.                                       */
 STATIC void GC_do_parallel_mark(void)
 {
-    mse local_mark_stack[LOCAL_MARK_STACK_SIZE];
-                /* Note: local_mark_stack is quite big (up to 128 KiB). */
-
     GC_acquire_mark_lock();
     GC_ASSERT(I_HOLD_LOCK());
     /* This could be a GC_ASSERT, but it seems safer to keep it on      */
@@ -1206,7 +1220,7 @@ STATIC void GC_do_parallel_mark(void)
     GC_release_mark_lock();
     GC_notify_all_marker();
         /* Wake up potential helpers.   */
-    GC_mark_local(local_mark_stack, 0);
+    GC_mark_local(main_local_mark_stack, 0);
     GC_acquire_mark_lock();
     GC_help_wanted = FALSE;
     /* Done; clean up.  */

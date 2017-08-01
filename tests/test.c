@@ -537,25 +537,8 @@ void check_marks_int_list(sexpr x)
     {
       pthread_t t;
       int code;
-#     ifdef DEFAULT_STACK_MAYBE_SMALL
-        pthread_attr_t attr;
 
-        code = pthread_attr_init(&attr);
-        if (code != 0) {
-          GC_printf("pthread_attr_init failed, error=%d\n", code);
-          FAIL;
-        }
-        code = pthread_attr_setstacksize(&attr, MIN_STACK_SIZE);
-        if (code != 0) {
-          GC_printf("pthread_attr_setstacksize(MIN_STACK_SIZE) failed,"
-                    " error=%d\n", code);
-          FAIL;
-        }
-        code = pthread_create(&t, &attr, tiny_reverse_test, 0);
-        (void)pthread_attr_destroy(&attr);
-#     else
-        code = pthread_create(&t, NULL, tiny_reverse_test, 0);
-#     endif
+      code = pthread_create(&t, NULL, tiny_reverse_test, 0);
       if (code != 0) {
         GC_printf("Small thread creation failed %d\n", code);
         FAIL;
@@ -2201,7 +2184,7 @@ int main(void)
     }
 #   if defined(GC_IRIX_THREADS) || defined(GC_FREEBSD_THREADS) \
         || defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS) \
-        || defined(GC_OPENBSD_THREADS) || defined(DEFAULT_STACK_MAYBE_SMALL)
+        || defined(GC_OPENBSD_THREADS)
         if ((code = pthread_attr_setstacksize(&attr, 1000 * 1024)) != 0) {
           GC_printf("pthread_attr_setstacksize failed, error=%d\n", code);
           FAIL;
