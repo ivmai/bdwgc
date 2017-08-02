@@ -86,13 +86,13 @@ static back_edges *avail_back_edges = 0;
 static back_edges * new_back_edges(void)
 {
   if (0 == back_edge_space) {
-    back_edge_space = (back_edges *)GET_MEM(
-                        ROUNDUP_PAGESIZE_IF_MMAP(MAX_BACK_EDGE_STRUCTS
-                                                  * sizeof(back_edges)));
+    size_t bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(MAX_BACK_EDGE_STRUCTS
+                                                   * sizeof(back_edges));
+
+    back_edge_space = (back_edges *)GET_MEM(bytes_to_get);
     if (NULL == back_edge_space)
       ABORT("Insufficient memory for back edges");
-    GC_add_to_our_memory((ptr_t)back_edge_space,
-                         MAX_BACK_EDGE_STRUCTS*sizeof(back_edges));
+    GC_add_to_our_memory((ptr_t)back_edge_space, bytes_to_get);
   }
   if (0 != avail_back_edges) {
     back_edges * result = avail_back_edges;
