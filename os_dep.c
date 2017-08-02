@@ -2043,10 +2043,6 @@ void GC_register_data_segments(void)
 # define OPT_MAP_ANON 0
 #endif
 
-#ifndef HEAP_START
-#   define HEAP_START ((ptr_t)0)
-#endif
-
 STATIC ptr_t GC_unix_mmap_get_mem(size_t bytes)
 {
     void *result;
