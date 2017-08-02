@@ -2949,6 +2949,10 @@
 # define DATASTART GC_data_start
 #endif
 
+#ifndef HEAP_START
+# define HEAP_START ((ptr_t)0)
+#endif
+
 #ifndef CLEAR_DOUBLE
 # define CLEAR_DOUBLE(x) (((word*)(x))[0] = 0, ((word*)(x))[1] = 0)
 #endif

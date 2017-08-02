@@ -2070,10 +2070,6 @@ void GC_register_data_segments(void)
 # define OPT_MAP_ANON 0
 #endif
 
-#ifndef HEAP_START
-#   define HEAP_START ((ptr_t)0)
-#endif
-
 #ifdef SYMBIAN
   extern char* GC_get_private_path_and_zero_file(void);
 #endif
