@@ -789,7 +789,8 @@ GC_API int GC_CALL GC_is_incremental_mode(void);
 GC_API int GC_CALL GC_incremental_protection_needs(void);
 
 /* Perform some garbage collection work, if appropriate.        */
-/* Return 0 if there is no more work to be done.                */
+/* Return 0 if there is no more work to be done (including the  */
+/* case when garbage collection is not appropriate).            */
 /* Typically performs an amount of work corresponding roughly   */
 /* to marking from one page.  May do more work if further       */
 /* progress requires it, e.g. if incremental collection is      */
