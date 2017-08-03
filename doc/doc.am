@@ -11,7 +11,7 @@
 ## Process this file with automake to produce Makefile.in.
 
 # installed documentation
-#
+if ENABLE_DOCS
 dist_doc_DATA = \
         AUTHORS \
         README.md \
@@ -47,3 +47,4 @@ dist_doc_DATA = \
         doc/scale.md \
         doc/simple_example.md \
         doc/tree.md
+endif
