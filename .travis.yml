@@ -137,7 +137,7 @@ matrix:
     compiler: gcc
     env:
     - CFLAGS_EXTRA="-D SMALL_CONFIG -D NO_GETENV"
-    - CONF_OPTIONS="--enable-cplusplus"
+    - CONF_OPTIONS="--enable-cplusplus --disable-docs"
   - os: linux
     compiler: gcc
     dist: trusty
