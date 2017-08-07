@@ -785,6 +785,17 @@ GC_API void GC_CALL GC_debug_free(void * p)
 
     base = GC_base(p);
     if (base == 0) {
+#     if defined(REDIRECT_MALLOC) \
+         && ((defined(NEED_CALLINFO) && defined(GC_HAVE_BUILTIN_BACKTRACE)) \
+             || defined(GC_LINUX_THREADS) || defined(GC_SOLARIS_THREADS) \
+             || defined(MSWIN32))
+        /* In some cases, we should ignore objects that do not belong   */
+        /* to the GC heap.  See the comment in GC_free.                 */
+        bottom_index *bi;
+
+        GET_BI(p, bi);
+        if (HDR_FROM_BI(bi, p) == 0) return;
+#     endif
       GC_err_printf("Attempt to free invalid pointer %p\n", p);
       ABORT("Invalid pointer passed to free()");
     }
