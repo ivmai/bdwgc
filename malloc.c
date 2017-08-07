@@ -492,8 +492,11 @@ GC_API void GC_CALL GC_free(void * p)
     h = HBLKPTR(p);
     hhdr = HDR(h);
 #   if defined(REDIRECT_MALLOC) && \
-        (defined(GC_SOLARIS_THREADS) || defined(GC_LINUX_THREADS) \
+        ((defined(NEED_CALLINFO) && defined(GC_HAVE_BUILTIN_BACKTRACE)) \
+         || defined(GC_SOLARIS_THREADS) || defined(GC_LINUX_THREADS) \
          || defined(MSWIN32))
+        /* This might be called indirectly by GC_print_callers to free  */
+        /* the result of backtrace_symbols.                             */
         /* For Solaris, we have to redirect malloc calls during         */
         /* initialization.  For the others, this seems to happen        */
         /* implicitly.                                                  */

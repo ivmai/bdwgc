@@ -4762,7 +4762,7 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
           GC_err_printf("\t\t%s\n", name);
 #         if defined(GC_HAVE_BUILTIN_BACKTRACE) \
              && !defined(GC_BACKTRACE_SYMBOLS_BROKEN)
-            free(sym_name);  /* May call GC_free; that's OK */
+            free(sym_name);  /* May call GC_[debug_]free; that's OK */
 #         endif
         }
     }
