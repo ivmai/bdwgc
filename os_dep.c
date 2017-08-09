@@ -4517,7 +4517,9 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
 # endif
   GC_STATIC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
   npcs = backtrace((void **)tmp_info, NFRAMES + IGNORE_FRAMES);
-  BCOPY(tmp_info+IGNORE_FRAMES, info, (npcs - IGNORE_FRAMES) * sizeof(void *));
+  if (npcs > IGNORE_FRAMES)
+    BCOPY(&tmp_info[IGNORE_FRAMES], info,
+          (npcs - IGNORE_FRAMES) * sizeof(void *));
   for (i = npcs - IGNORE_FRAMES; i < NFRAMES; ++i) info[i].ci_pc = 0;
 # ifdef REDIRECT_MALLOC
     GC_in_save_callers = FALSE;

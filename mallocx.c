@@ -542,7 +542,8 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
 #   endif
     return NULL;
   }
-  BCOPY(str, copy, len);
+  if (EXPECT(len > 0, TRUE))
+    BCOPY(str, copy, len);
   copy[len] = '\0';
   return copy;
 }

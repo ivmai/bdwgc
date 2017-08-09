@@ -584,7 +584,8 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
       memset((char *)pstats + sizeof(stats), 0xff, stats_sz - sizeof(stats));
       return sizeof(stats);
     } else {
-      BCOPY(&stats, pstats, stats_sz);
+      if (EXPECT(stats_sz > 0, TRUE))
+        BCOPY(&stats, pstats, stats_sz);
       return stats_sz;
     }
   }
@@ -604,8 +605,10 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
                  stats_sz - sizeof(stats));
         return sizeof(stats);
       } else {
-        fill_prof_stats(&stats);
-        BCOPY(&stats, pstats, stats_sz);
+        if (EXPECT(stats_sz > 0, TRUE)) {
+          fill_prof_stats(&stats);
+          BCOPY(&stats, pstats, stats_sz);
+        }
         return stats_sz;
       }
     }

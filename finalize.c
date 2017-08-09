@@ -413,8 +413,9 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
                         NORMAL);
       if (NULL == new_array)
         return FALSE;
-      BCOPY(GC_toggleref_arr, new_array,
-            GC_toggleref_array_size * sizeof(GCToggleRef));
+      if (EXPECT(GC_toggleref_array_size > 0, TRUE))
+        BCOPY(GC_toggleref_arr, new_array,
+              GC_toggleref_array_size * sizeof(GCToggleRef));
       GC_INTERNAL_FREE(GC_toggleref_arr);
       GC_toggleref_arr = new_array;
     }

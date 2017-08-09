@@ -82,10 +82,12 @@ GC_INNER void GC_print_all_errors(void)
     have_errors = GC_have_errors;
     printing_errors = TRUE;
     n_leaked = GC_n_leaked;
-    GC_ASSERT(n_leaked <= MAX_LEAKED);
-    BCOPY(GC_leaked, leaked, n_leaked * sizeof(ptr_t));
-    GC_n_leaked = 0;
-    BZERO(GC_leaked, n_leaked * sizeof(ptr_t));
+    if (n_leaked > 0) {
+      GC_ASSERT(n_leaked <= MAX_LEAKED);
+      BCOPY(GC_leaked, leaked, n_leaked * sizeof(ptr_t));
+      GC_n_leaked = 0;
+      BZERO(GC_leaked, n_leaked * sizeof(ptr_t));
+    }
     UNLOCK();
 
     if (GC_debugging_started) {

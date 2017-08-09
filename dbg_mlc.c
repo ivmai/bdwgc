@@ -760,7 +760,8 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_debug_strndup(const char *str,
 #   endif
     return NULL;
   }
-  BCOPY(str, copy, len);
+  if (len > 0)
+    BCOPY(str, copy, len);
   copy[len] = '\0';
   return copy;
 }
@@ -973,7 +974,8 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 #     else
         old_sz = ((oh *)base) -> oh_sz;
 #     endif
-      BCOPY(p, result, old_sz < lb ? old_sz : lb);
+      if (old_sz > 0)
+        BCOPY(p, result, old_sz < lb ? old_sz : lb);
       GC_debug_free(p);
     }
     return(result);

@@ -490,7 +490,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
         errno = ENOMEM;
         return NULL;
       }
-      BCOPY(str, copy, len);
+      if (EXPECT(len > 0, TRUE))
+        BCOPY(str, copy, len);
       copy[len] = '\0';
       return copy;
     }
@@ -545,7 +546,7 @@ GC_API void GC_CALL GC_free(void * p)
                 /* Its unnecessary to clear the mark bit.  If the       */
                 /* object is reallocated, it doesn't matter.  O.w. the  */
                 /* collector will do it, since it's on a free list.     */
-        if (ok -> ok_init) {
+        if (ok -> ok_init && EXPECT(sz > sizeof(word), TRUE)) {
             BZERO((word *)p + 1, sz-sizeof(word));
         }
         flh = &(ok -> ok_freelist[ngranules]);
@@ -590,7 +591,7 @@ GC_API void GC_CALL GC_free(void * p)
 
         GC_bytes_freed += sz;
         if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
-        if (ok -> ok_init) {
+        if (ok -> ok_init && EXPECT(sz > sizeof(word), TRUE)) {
             BZERO((word *)p + 1, sz-sizeof(word));
         }
         flh = &(ok -> ok_freelist[ngranules]);
