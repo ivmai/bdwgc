@@ -728,7 +728,8 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     check_ints(b,1,50);
     check_ints(a,1,49);
     for (i = 0; i < 60; i++) {
-#       if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
+#       if (defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)) \
+           && (NTHREADS > 0)
             if (i % 10 == 0) fork_a_thread();
 #       endif
         /* This maintains the invariant that a always points to a list of */
@@ -820,12 +821,12 @@ void GC_CALLBACK finalizer(void * obj, void * client_data)
 
 size_t counter = 0;
 
-# define MAX_FINALIZED (NTHREADS*4000)
+# define MAX_FINALIZED ((NTHREADS+1)*4000)
 
 # if !defined(MACOS)
   GC_FAR GC_word live_indicators[MAX_FINALIZED] = {0};
 # ifndef GC_LONG_REFS_NOT_NEEDED
-    GC_FAR void *live_long_refs[MAX_FINALIZED] = {  NULL };
+    GC_FAR void *live_long_refs[MAX_FINALIZED] = { NULL };
 # endif
 #else
   /* Too big for THINK_C. have to allocate it dynamically. */
@@ -2169,10 +2170,12 @@ void * thr_run_one_test(void * arg GC_ATTR_UNUSED)
 
 int main(void)
 {
-    pthread_t th[NTHREADS];
+#   if NTHREADS > 0
+      pthread_t th[NTHREADS];
+      int i;
+#   endif
     pthread_attr_t attr;
     int code;
-    int i;
 #   ifdef GC_IRIX_THREADS
         /* Force a larger stack to be preallocated      */
         /* Since the initial can't always grow later.   */
@@ -2222,19 +2225,23 @@ int main(void)
         GC_printf("Key creation failed %d\n", code);
         FAIL;
     }
-    for (i = 0; i < NTHREADS; ++i) {
-      if ((code = pthread_create(th+i, &attr, thr_run_one_test, 0)) != 0) {
-        GC_printf("Thread %d creation failed %d\n", i, code);
-        FAIL;
+#   if NTHREADS > 0
+      for (i = 0; i < NTHREADS; ++i) {
+        if ((code = pthread_create(th+i, &attr, thr_run_one_test, 0)) != 0) {
+          GC_printf("Thread %d creation failed %d\n", i, code);
+          FAIL;
+        }
       }
-    }
+#   endif
     run_one_test();
-    for (i = 0; i < NTHREADS; ++i) {
-      if ((code = pthread_join(th[i], 0)) != 0) {
-        GC_printf("Thread %d failed %d\n", i, code);
-        FAIL;
+#   if NTHREADS > 0
+      for (i = 0; i < NTHREADS; ++i) {
+        if ((code = pthread_join(th[i], 0)) != 0) {
+          GC_printf("Thread %d failed %d\n", i, code);
+          FAIL;
+        }
       }
-    }
+#   endif
     check_heap_stats();
     (void)fflush(stdout);
     (void)pthread_attr_destroy(&attr);
