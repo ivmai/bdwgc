@@ -40,9 +40,12 @@
 #   endif
 }
 
-#define NTHREADS 5
+#ifndef NTHREADS
+# define NTHREADS 5
+#endif
 
 int main(void) {
+# if NTHREADS > 0
     int i;
 #   ifdef GC_PTHREADS
       pthread_t t[NTHREADS];
@@ -51,11 +54,13 @@ int main(void) {
       DWORD thread_id;
 #   endif
     int code;
+# endif
 
     GC_set_find_leak(1); /* for new collect versions not compiled       */
                          /* with -DFIND_LEAK.                           */
     GC_INIT();
 
+# if NTHREADS > 0
     for (i = 0; i < NTHREADS; ++i) {
 #       ifdef GC_PTHREADS
           code = pthread_create(t + i, 0, test, 0);
@@ -81,6 +86,7 @@ int main(void) {
             exit(2);
         }
     }
+# endif
 
     CHECK_LEAKS();
     CHECK_LEAKS();
