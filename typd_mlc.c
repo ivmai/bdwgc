@@ -521,8 +521,8 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
         /* This cannot cause a mark stack overflow, since it replaces   */
         /* the original array entry.                                    */
 #       ifdef PARALLEL_MARK
-            /* We are using a local_mark_stack in parallel mode.        */
-            if (!GC_parallel)
+            /* We might be using a local_mark_stack in parallel mode.   */
+            if (GC_mark_stack + GC_mark_stack_size == mark_stack_limit)
 #       endif
         {
             GC_mark_stack_too_small = TRUE;
