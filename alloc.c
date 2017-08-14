@@ -846,7 +846,6 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
 /* Decrement GC_bytes_found by number of bytes on free list.    */
 STATIC void GC_clear_fl_marks(ptr_t q)
 {
-    if (q != NULL) {
       struct hblk *h = HBLKPTR(q);
       struct hblk *last_h = h;
       hdr *hhdr = HDR(h);
@@ -880,7 +879,6 @@ STATIC void GC_clear_fl_marks(ptr_t q)
           sz = hhdr->hb_sz;
         }
       }
-    }
 }
 
 #if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
