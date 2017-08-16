@@ -507,9 +507,11 @@ GC_INNER char * GC_get_maps(void)
 #endif /* NETBSD */
 
 #if defined(ADDRESS_SANITIZER) && (defined(UNIX_LIKE) \
-                    || defined(NEED_FIND_LIMIT) || defined(MPROTECT_VDB))
+                    || defined(NEED_FIND_LIMIT) || defined(MPROTECT_VDB)) \
+    && !defined(CUSTOM_ASAN_DEF_OPTIONS)
   /* To tell ASan to allow GC to use its own SIGBUS/SEGV handlers.      */
-  const char *__asan_default_options(void)
+  /* The function is exported just to be visible to ASan library.       */
+  GC_API const char *__asan_default_options(void)
   {
     return "allow_user_segv_handler=1";
   }
