@@ -534,7 +534,7 @@ static void alloc_mark_stack(size_t);
          || (__clang_major__ == 3 && __clang_minor__ >= 3)
 #       pragma GCC diagnostic push
         /* Suppress "taking the address of label is non-standard" warning. */
-#       if defined(__clang__)
+#       if defined(__clang__) || __GNUC__ >= 7
 #         pragma GCC diagnostic ignored "-Wpedantic"
 #       else
           /* GCC before ~4.8 does not accept "-Wpedantic" quietly.  */
