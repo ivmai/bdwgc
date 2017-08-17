@@ -1,3 +1,52 @@
+2017-08-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* dbg_mlc.c [REDIRECT_MALLOC && (GC_LINUX_THREADS || GC_SOLARIS_THREADS
+	|| MSWIN32 || NEED_CALLINFO && GC_HAVE_BUILTIN_BACKTRACE)]
+	(GC_debug_free): If the object is not in the GC heap then just return
+	(instead of ABORT).
+	* malloc.c [REDIRECT_MALLOC && NEED_CALLINFO
+	&& GC_HAVE_BUILTIN_BACKTRACE] (GC_free): If hhdr is null (i.e. the
+	object is not in the GC heap) then return without the object
+	deallocation; add comment.
+	* os_dep.c [NEED_CALLINFO && GC_HAVE_BUILTIN_BACKTRACE
+	&& !GC_BACKTRACE_SYMBOLS_BROKEN] (GC_print_callers): Adjust comment
+	for free().
+
+2017-08-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h [!HEAP_START] (HEAP_START): Define to 0 by
+	default (if not previously defined in the file).
+	* os_dep.c (HEAP_START): Remove.
+
+2017-08-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* backgraph.c [MAKE_BACK_GRAPH] (new_back_edges): Pass bytes_to_get to
+	GC_add_to_our_memory() (i.e. pass the same number of bytes as passed
+	to GET_MEM() even in case of MMAP_SUPPORTED).
+
+2017-07-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c [!GC_DISABLE_INCREMENTAL] (GC_incremental): Change variable
+	type from int to GC_bool (to match that of the declaration in
+	gc_priv.h).
+
+2017-07-14  Ivan Maidanski <ivmai@mail.ru>
+
+	*  finalize.c (GC_register_disappearing_link): Do nothing (return
+	GC_UNIMPLEMENTED) if GC_find_leak.
+	* finalize.c (GC_register_finalizer_inner): Do nothing if GC_find_leak.
+	* include/gc.h (GC_find_leak): More verbose comment.
+	* include/gc.h (GC_debug_register_finalizer,
+	GC_general_register_disappearing_link): Document the case of
+	GC_find_leak.
+
+2017-07-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c [PARALLEL_MARK] (GC_array_mark_proc): Do not set
+	GC_mark_stack_too_small if GC_parallel (and new_mark_stack_ptr is
+	null) unless mark_stack_limit belongs to the global mark stack; add
+	comment.
+
 2017-07-08  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure: Regenerate (by autoreconf -vif using autoconf-2.69,
