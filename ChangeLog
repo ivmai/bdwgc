@@ -8,6 +8,7 @@
 * Align IRIX/OSF1_THREADS definition in gc_config_macros.h with gcconfig.h
 * Allow compilation of PROC_VDB code on Linux host (GC_NO_SYS_FAULT_H)
 * Allow configure --with-libatomic-ops=none to use GCC atomic intrinsics
+* Build only shared libraries by default (configure)
 * Check that GC_WIN32_PTHREADS is not specified for Cygwin
 * Check thread_local is initialized before accessing thread_key
 * Collapse multiple NT_*_MAKEFILE scripts into a single NT_MAKEFILE
@@ -19,9 +20,11 @@
 * Define GC_PREFETCH_FOR_WRITE to __builtin_prefetch in gc_inline.h (GCC)
 * Define GC_THREADS instead of GC_x_THREADS in Makefiles
 * Detect sigsetjmp() availability by configure
+* Do not call BCOPY and BZERO if size is zero
 * Do not compile pcr_interface.c and real_malloc.c except by PCR-Makefile
 * Do not print n_rescuing_pages value if incremental collections disabled
 * Do not specify version info for test libraries (Automake)
+* Do not use asm in GC_pause
 * Do not use x86 asm in PUSH_CONTENTS_HDR for NaCl
 * Document GC_BUILTIN_ATOMIC macro (and gc_atomic_ops private header file)
 * Document STACK_NOT_SCANNED macro in gcconfig.h (Emscripten)
@@ -34,6 +37,9 @@
 * Move de_win compiled resource files to cord/tests
 * Move pcr_interface.c, real_malloc.c to 'extra' folder
 * New API function (GC_dump_named) to produce named dumps
+* New API function (GC_is_incremental_mode)
+* Public API (GC_deinit) to allow Win32 critical sections deletion
+* Refactoring of USE_MMAP/USE_MMAP_ANON pairs definition in gcconfig.h
 * Remove 'dist' target from Makefile.direct
 * Remove DGUX_THREADS macro which duplicates GC_DGUX386_THREADS (configure)
 * Remove duplicated sample code in leak.md
@@ -43,7 +49,9 @@
 * Remove HIGH_BIT macro duplicating SIGNB
 * Remove lint-specific code
 * Remove Makefile KandRtest target (that supported K&R C compiler)
+* Remove name of optional arguments of operator new and new[] in gc_cpp.h
 * Remove notes that K&R C compiler is unsupported
+* Remove redundant check that clear_fl_marks argument is non-null
 * Remove unused USE_GENERIC macro definition and description
 * Remove version info in 'de' cord test application
 * Skip grungy_pages update when mark state invalid to speedup read_dirty
@@ -57,6 +65,7 @@
 * Use C11 static_assert if available
 * Use compiler atomic intrinsics by default if available (configure)
 * Use EXPECT FALSE for mark_from code documented as executed rarely
+* Use heap-allocated memory for local mark stack of non-marker thread
 * Use longjmp in fault_handler_openbsd if siglongjmp unavailable (OpenBSD)
 * Use sigsetjmp() in setjmp_t tool if available
 * Use thread-local allocations for all multi-threaded builds
