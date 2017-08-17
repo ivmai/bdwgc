@@ -756,6 +756,7 @@ Also, includes 7.2 changes
 * Fix assertion violation in mark_local checking GC_mark_stack_top
 * Fix bm_huge initialization for 64-bit targets (gctest)
 * Fix broken external links in documentation
+* Fix bytes count passed to add_to_our_memory in backgraph new_back_edges
 * Fix calloc_explicitly_typed in case of lb*n overflow
 * Fix CMake warning about CMP0054 by unquoting instances of HOST
 * Fix conditional expression in pos_fetch, next non-macro definitions (cord)
@@ -769,6 +770,7 @@ Also, includes 7.2 changes
 * Fix gc_backptr.h, gc_mark.h, GC_DS_TAGS names in documentation
 * Fix gc_cleanup destructor for non-heap objects (gc_cpp)
 * Fix GC_collect_or_expand to prevent allocation size value wrap-around
+* Fix GC_incremental declaration/definition type mismatch
 * Fix GC_mark_stack_top assertion violation properly in mark_local
 * Fix GC_requested_heapsize increment in GC_init
 * Fix GC_SIZE_MAX definition (Linux/musl-gcc)
@@ -776,6 +778,7 @@ Also, includes 7.2 changes
 * Fix gctest crash if configure --enable-handle-fork on Darwin
 * Fix header filename in gcconfig.h comment
 * Fix integer shift undefined behavior in GC_init_explicit_typing
+* Fix leak_test crash in print_callers if free() is redirected
 * Fix Makefile.direct recursive invocation
 * Fix malloc routines to prevent size value wrap-around (fix CVE-2016-9427)
 * Fix missing win32_threads.c compilation for Cygwin (CMake)
@@ -786,11 +789,14 @@ Also, includes 7.2 changes
 * Fix PCR-Makefile by removing compilation of a missing file
 * Fix potential data race in GC_SysVGetDataStart (SPARC)
 * Fix potential integer overflow in GC_find_limit_* functions
+* Fix push_complex_descriptor to avoid unlimited global mark stack growth
+* Fix SIGSEGV in GC_is_marked when gc_cleanup is used in leak-finding mode
 * Fix Solaris/sparc detection in case of strict C compliance is enforced
 * Fix STACKBOTTOM for Solaris 11/x86
 * Fix storage class of local variable in register_dynamic_libraries (Irix)
 * Fix tools/setjmp_t hang (OS X)
 * Fix typed_test to prevent fails in malloc_explicitly_typed (64-bit)
+* Fix undefined HEAP_START in register_dynamic_libraries
 * Fix various typos in comments, documentation and printed messages
 * Handle load_segs overflow in register_dynlib_callback gracefully
 * Prevent misleading AC_MSG_ERROR/AS_IF errors reported in configure.ac
