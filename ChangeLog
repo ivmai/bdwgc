@@ -7,12 +7,15 @@
 * Add testing of new[]/delete[] (test_cpp)
 * Adjust code indentation of calloc_explicitly_typed
 * Allow custom TRACE_ENTRIES value
+* Allow gctest and thread_leak_test with zero NTHREADS
 * Code refactoring of divide-by-HBLKSIZE occurrences
 * Code refactoring of huge_test
 * Code refactoring of tests/subthread_create regarding AO add primitive
 * Compile thread_local_alloc only if multi-threaded build (Makefile.am)
 * Delete preprocessor output on make clean (Makefile.direct)
 * Disable implicit multi-threaded mode for Win32 to avoid LOCK crash
+* Do not install documentation if configure --disable-docs (new option)
+* Do not use tkill (Android)
 * Document configure 'syntax error' issue in README
 * Eliminate 'address of local variable returned' static analyzer warning
 * Eliminate 'array vs singleton' code defect in typed_test (gctest)
@@ -41,6 +44,7 @@
 * Eliminate 'unnecessary comparison of static strings' cppcheck warning
 * Eliminate 'unsafe vsprintf is deprecated' compiler warning
 * Eliminate 'unused formal parameter' compiler warnings in C++ code (MS VC)
+* Eliminate 'unused variable' compiler warning in remove_all_threads_but_me
 * Eliminate 'use of vulnerable sprintf' code defect in de_win test (cord)
 * Eliminate 'value of CLOCK_TYPE unknown' cppcheck info message
 * Eliminate 'value of DATASTART2 unknown' cppcheck info messages
@@ -49,6 +53,11 @@
 * Eliminate 'value of NEED_FIXUP_POINTER unknown' cppcheck info messages
 * Eliminate 'write to memory that was const-qualified' code analyzer warning
 * Eliminate all 'scope of variable can be reduced' cppcheck style warnings
+* Eliminate CSA warning about incorrect cast applied to HBLK_OBJS
+* Eliminate CSA warning about narrowing cast in CleanUp of test_cpp
+* Eliminate CSA warning of non-virtual destructor in test_cpp base class
+* Eliminate CSA warning of staticroot that can be a local variable (tests)
+* Eliminate CSA warning of unmodified non-const static var (disclaim_test)
 * Eliminate redundant local variable in register_finalizer
 * Eliminate unreachable PROC/DEFAULT_VDB GC_printf calls in gctest main()
 * Enable GC_is_tmp_root for all platforms
@@ -65,11 +74,13 @@
 * Fix 'unknown type name GC_INNER' compilation error (FreeBSD)
 * Fix 'variable assigned a value that is never used' cppcheck style warnings
 * Fix 'void pointers in calculations: behavior undefined' cppcheck warning
+* Fix atomic_ops build in Makefile.direct for Solaris
 * Fix Clang static analyzer warning about not found gc_priv.h in extra files
 * Fix compilation error in get_main_stack_base (Emscripten)
 * Fix compilation for winpthreads if HANDLE_FORK
 * Fix compilation if configured with --enable-werror on OS X
 * Fix cord/de build in Makefile.direct (Linux)
+* Fix deadlock in GC_suspend_thread
 * Fix gctest failure for Darwin if CPPCHECK is defined
 * Fix message of VDB implementation used if MPROTECT_VDB+GWW_VDB (gctest)
 * Fix null dereference in GC_stack_range_for if not DARWIN_DONT_PARSE_STACK
@@ -89,6 +100,7 @@
 * Remove page_was_dirty and remove_protection duplicate definitions
 * Remove unused ALIGN_DOUBLE, USE_GENERIC_PUSH_REGS macros (TILE-Gx/Pro)
 * Rename 'test' to 'check' target in Makefile.direct
+* Replace deprecated rewind to fseek in cordxtra
 * Report gcc/clang pedantic warnings (configure)
 * Skip thread suspend/resume API testing for Tru64 (OSF1)
 * Support AddressSanitizer and MemorySanitizer (clang)
@@ -139,6 +151,7 @@
 * Workaround 'variable hides enumerator with same name' cppcheck warnings
 * Workaround 'variable reassigned before old value used' cppcheck warnings
 * Workaround 'waiting while holding lock' code defect in stop_world (Unix)
+* Workaround false 'uninitialized var use' code defect (initsecondarythread)
 Also, includes 7.4.6 changes
 
 
@@ -276,7 +289,6 @@ Also, includes 7.4.4 changes
 * Eliminate 'possible loss of data' compiler warnings (MS VC)
 * Eliminate 'printf format specifier mismatch' compiler warning (tools)
 * Eliminate 'type defaults to int in declaration' warning (REDIRECT_MALLOC)
-* Eliminate 'unused variable' compiler warning in remove_all_threads_but_me
 * Eliminate 'value stored is never read' warning of Clang static analyzer
 * Eliminate duplicate log messages in GC_mark_from
 * Ensure GC initialized when atfork_prepare is called by client
