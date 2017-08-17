@@ -23,7 +23,6 @@
 * Eliminate 'possible loss of data' compiler warnings (MS VC)
 * Eliminate 'printf format specifier mismatch' compiler warning (tools)
 * Eliminate 'type defaults to int in declaration' warning (REDIRECT_MALLOC)
-* Eliminate 'unused variable' compiler warning in remove_all_threads_but_me
 * Eliminate 'value stored is never read' warning of Clang static analyzer
 * Eliminate duplicate log messages in GC_mark_from
 * Ensure GC initialized when atfork_prepare is called by client

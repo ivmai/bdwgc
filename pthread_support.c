@@ -673,16 +673,12 @@ STATIC void GC_remove_all_threads_but_me(void)
             me -> kernel_id = gettid();
 #         endif
 #         if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
-          {
-            int res;
-
             /* Some TLS implementations might be not fork-friendly, so  */
             /* we re-assign thread-local pointer to 'tlfs' for safety   */
             /* instead of the assertion check (again, it is OK to call  */
             /* GC_destroy_thread_local and GC_free_internal before).    */
             if (GC_setspecific(GC_thread_key, &me->tlfs) != 0)
               ABORT("GC_setspecific failed (in child)");
-          }
 #         endif
         } else {
 #         ifdef THREAD_LOCAL_ALLOC
