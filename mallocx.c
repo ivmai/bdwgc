@@ -115,7 +115,8 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
           hhdr -> hb_descr = descr;
 #         ifdef MARK_BIT_PER_OBJ
             GC_ASSERT(hhdr -> hb_inv_sz == LARGE_INV_SZ);
-#         else
+#         endif
+#         ifdef MARK_BIT_PER_GRANULE
             GC_ASSERT((hhdr -> hb_flags & LARGE_BLOCK) != 0
                         && hhdr -> hb_map[ANY_INDEX] == 1);
 #         endif
