@@ -388,7 +388,7 @@ STATIC void GC_maybe_gc(void)
         }
         /* We try to mark with the world stopped.       */
         /* If we run out of time, this turns into       */
-        /* incremental marking.                 */
+        /* incremental marking.                         */
 #       ifndef NO_CLOCK
           if (GC_time_limit != GC_TIME_UNLIMITED) { GET_TIME(GC_start_time); }
 #       endif
@@ -851,8 +851,11 @@ STATIC void GC_clear_fl_marks(ptr_t q)
         unsigned bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
 
         if (mark_bit_from_hdr(hhdr, bit_no)) {
-          size_t n_marks = hhdr -> hb_n_marks - 1;
+          size_t n_marks = hhdr -> hb_n_marks;
+
+          GC_ASSERT(n_marks != 0);
           clear_mark_bit_from_hdr(hhdr, bit_no);
+          n_marks--;
 #         ifdef PARALLEL_MARK
             /* Appr. count, don't decrement to zero! */
             if (0 != n_marks || !GC_parallel) {
