@@ -163,7 +163,7 @@ GC_INNER void GC_set_hdr_marks(hdr *hhdr)
       }
 #   endif
 #   ifdef MARK_BIT_PER_OBJ
-      hhdr -> hb_n_marks = n_marks - 1;
+      hhdr -> hb_n_marks = n_marks;
 #   else
       hhdr -> hb_n_marks = HBLK_OBJS(sz);
 #   endif
