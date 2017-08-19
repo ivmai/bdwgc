@@ -206,9 +206,11 @@ GC_API void GC_CALL GC_clear_mark_bit(const void *p)
     word bit_no = MARK_BIT_NO((ptr_t)p - (ptr_t)h, hhdr -> hb_sz);
 
     if (mark_bit_from_hdr(hhdr, bit_no)) {
-      size_t n_marks;
+      size_t n_marks = hhdr -> hb_n_marks;
+
+      GC_ASSERT(n_marks != 0);
       clear_mark_bit_from_hdr(hhdr, bit_no);
-      n_marks = hhdr -> hb_n_marks - 1;
+      n_marks--;
 #     ifdef PARALLEL_MARK
         if (n_marks != 0 || !GC_parallel)
           hhdr -> hb_n_marks = n_marks;
