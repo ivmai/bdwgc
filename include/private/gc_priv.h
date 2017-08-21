@@ -2484,7 +2484,7 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
   GC_INNER void GC_notify_all_builder(void);
   GC_INNER void GC_wait_for_reclaim(void);
 
-  GC_EXTERN word GC_fl_builder_count;   /* Protected by mark lock.      */
+  GC_EXTERN signed_word GC_fl_builder_count; /* Protected by mark lock. */
 
   GC_INNER void GC_notify_all_marker(void);
   GC_INNER void GC_wait_marker(void);
