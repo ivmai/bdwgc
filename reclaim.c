@@ -28,10 +28,11 @@ GC_INNER signed_word GC_bytes_found = 0;
                         /* on free lists which we had to drop.     */
 
 #if defined(PARALLEL_MARK)
-  GC_INNER word GC_fl_builder_count = 0;
+  GC_INNER signed_word GC_fl_builder_count = 0;
         /* Number of threads currently building free lists without      */
         /* holding GC lock.  It is not safe to collect if this is       */
-        /* nonzero.                                                     */
+        /* nonzero.  Also, together with the mark lock, it is used as   */
+        /* a semaphore during marker threads startup.                   */
 #endif /* PARALLEL_MARK */
 
 /* We defer printing of leaked objects until we're done with the GC     */

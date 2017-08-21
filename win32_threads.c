@@ -1741,7 +1741,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     /* Inform GC_start_mark_threads about completion of marker data init. */
     GC_acquire_mark_lock();
-    if (0 == --GC_fl_builder_count)
+    if (0 == --GC_fl_builder_count) /* count may have a negative value */
       GC_notify_all_builder();
     GC_release_mark_lock();
 
