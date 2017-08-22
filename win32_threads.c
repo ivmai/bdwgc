@@ -1780,6 +1780,13 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       /* Id not guaranteed to be unique. */
 #   endif
 
+#   ifdef CAN_HANDLE_FORK
+      static pthread_cond_t mark_cv;
+                        /* initialized by GC_start_mark_threads_inner   */
+#   else
+      static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
+#   endif
+
     /* GC_start_mark_threads is the same as in pthread_support.c except */
     /* for thread stack that is assumed to be large enough.             */
 
@@ -1797,6 +1804,12 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                 /* Skip if parallel markers disabled or already started. */
 #     ifdef CAN_HANDLE_FORK
         if (GC_parallel) return;
+
+        /* Reset mark_cv state after forking (as in pthread_support.c). */
+        {
+          pthread_cond_t mark_cv_local = PTHREAD_COND_INITIALIZER;
+          BCOPY(&mark_cv_local, &mark_cv, sizeof(mark_cv));
+        }
 #     endif
 
       GC_ASSERT(GC_fl_builder_count == 0);
@@ -1925,10 +1938,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       }
     }
 
-    static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
-
     GC_INNER void GC_wait_marker(void)
     {
+      GC_ASSERT(GC_parallel);
       UNSET_MARK_LOCK_HOLDER;
       if (pthread_cond_wait(&mark_cv, &mark_mutex) != 0) {
         ABORT("pthread_cond_wait failed");
@@ -1939,6 +1951,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     GC_INNER void GC_notify_all_marker(void)
     {
+      GC_ASSERT(GC_parallel);
       if (pthread_cond_broadcast(&mark_cv) != 0) {
         ABORT("pthread_cond_broadcast failed");
       }
