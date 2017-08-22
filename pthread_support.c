@@ -384,9 +384,12 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 #ifdef CAN_HANDLE_FORK
   static int available_markers_m1 = 0;
 # define start_mark_threads GC_start_mark_threads
+  static pthread_cond_t mark_cv;
+                        /* initialized by start_mark_threads */
   GC_API void GC_CALL
 #else
 # define available_markers_m1 GC_markers_m1
+  static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
   static void
 #endif
 start_mark_threads(void)
@@ -399,6 +402,18 @@ start_mark_threads(void)
 #   ifdef CAN_HANDLE_FORK
       if (available_markers_m1 <= 0 || GC_parallel) return;
                 /* Skip if parallel markers disabled or already started. */
+
+      /* Initialize mark_cv (for the first time), or cleanup its value  */
+      /* after forking in the child process.  All the marker threads in */
+      /* the parent process were blocked on this variable at fork, so   */
+      /* pthread_cond_wait() malfunction (hang) is possible in the      */
+      /* child process without such a cleanup.                          */
+      /* TODO: This is not portable, it is better to shortly unblock    */
+      /* all marker threads in the parent process at fork.              */
+      {
+        pthread_cond_t mark_cv_local = PTHREAD_COND_INITIALIZER;
+        BCOPY(&mark_cv_local, &mark_cv, sizeof(mark_cv));
+      }
 #   endif
 
     INIT_REAL_SYMS(); /* for pthread_create */
@@ -2078,11 +2093,10 @@ GC_INNER void GC_notify_all_builder(void)
     }
 }
 
-static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
-
 GC_INNER void GC_wait_marker(void)
 {
     ASSERT_CANCEL_DISABLED();
+    GC_ASSERT(GC_parallel);
     UNSET_MARK_LOCK_HOLDER;
     if (pthread_cond_wait(&mark_cv, &mark_mutex) != 0) {
         ABORT("pthread_cond_wait failed");
@@ -2093,6 +2107,7 @@ GC_INNER void GC_wait_marker(void)
 
 GC_INNER void GC_notify_all_marker(void)
 {
+    GC_ASSERT(GC_parallel);
     if (pthread_cond_broadcast(&mark_cv) != 0) {
         ABORT("pthread_cond_broadcast failed");
     }
