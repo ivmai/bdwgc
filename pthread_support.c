@@ -422,16 +422,21 @@ start_mark_threads(void)
         }
       }
 #   endif /* DEFAULT_STACK_MAYBE_SMALL */
+
+#   ifdef CAN_HANDLE_FORK
+      /* To have proper GC_parallel value in GC_help_marker.    */
+      GC_markers_m1 = available_markers_m1;
+#   endif
     for (i = 0; i < available_markers_m1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
         WARN("Marker thread creation failed, errno = %" WARN_PRIdPTR "\n",
              errno);
         /* Don't try to create other marker threads.    */
+        GC_markers_m1 = i;
         break;
       }
     }
-    GC_markers_m1 = i;
     (void)pthread_attr_destroy(&attr);
     GC_wait_for_markers_init();
     GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);

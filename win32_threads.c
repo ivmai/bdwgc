@@ -1768,16 +1768,20 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
         ABORT("pthread_attr_setdetachstate failed");
 
+#     ifdef CAN_HANDLE_FORK
+        /* To have proper GC_parallel value in GC_help_marker.  */
+        GC_markers_m1 = available_markers_m1;
+#     endif
       for (i = 0; i < available_markers_m1; ++i) {
         marker_last_stack_min[i] = ADDR_LIMIT;
         if (0 != pthread_create(&new_thread, &attr,
                                 GC_mark_thread, (void *)(word)i)) {
           WARN("Marker thread creation failed\n", 0);
           /* Don't try to create other marker threads.    */
+          GC_markers_m1 = i;
           break;
         }
       }
-      GC_markers_m1 = i;
       (void)pthread_attr_destroy(&attr);
       GC_wait_for_markers_init();
       GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);

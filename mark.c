@@ -1204,8 +1204,7 @@ GC_INNER void GC_help_marker(word my_mark_no)
     mse local_mark_stack[LOCAL_MARK_STACK_SIZE];
                 /* Note: local_mark_stack is quite big (up to 128 KiB). */
 
-    if (!GC_parallel) return;
-
+    GC_ASSERT(GC_parallel);
     GC_acquire_mark_lock();
     while (GC_mark_no < my_mark_no
            || (!GC_help_wanted && GC_mark_no == my_mark_no)) {
