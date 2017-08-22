@@ -98,7 +98,7 @@ matrix:
     - CONF_OPTIONS="--enable-cplusplus"
   - os: osx
     env:
-    - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2"
+    - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2 -D NO_INCREMENTAL"
     - CONF_OPTIONS="--enable-munmap --enable-cplusplus"
   - os: linux
     compiler: gcc
@@ -133,6 +133,7 @@ matrix:
     compiler: gcc
     env:
     - CONF_OPTIONS="--enable-handle-fork --enable-munmap --enable-single-obj-compilation --enable-cplusplus --disable-shared --enable-gc-assertions"
+    - CFLAGS_EXTRA="-D NO_INCREMENTAL"
   - os: linux
     compiler: gcc
     env:
@@ -234,7 +235,7 @@ matrix:
     dist: trusty
     language: c
     env:
-    - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2"
+    - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D GC_DISABLE_INCREMENTAL"
     - CONF_OPTIONS="--enable-munmap --enable-gc-assertions"
   - os: linux
     addons:
@@ -278,7 +279,7 @@ matrix:
     dist: trusty
     language: c
     env:
-    - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2"
+    - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2 -D NO_INCREMENTAL"
     - CONF_OPTIONS="--enable-munmap --enable-large-config --enable-gc-assertions"
   - os: linux
     addons:
