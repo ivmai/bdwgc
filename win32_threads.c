@@ -1818,16 +1818,20 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         }
 #     endif /* !NO_MARKER_SPECIAL_SIGMASK */
 
+#     ifdef CAN_HANDLE_FORK
+        /* To have proper GC_parallel value in GC_help_marker.  */
+        GC_markers_m1 = available_markers_m1;
+#     endif
       for (i = 0; i < available_markers_m1; ++i) {
         marker_last_stack_min[i] = ADDR_LIMIT;
         if (0 != pthread_create(&new_thread, &attr,
                                 GC_mark_thread, (void *)(word)i)) {
           WARN("Marker thread creation failed\n", 0);
           /* Don't try to create other marker threads.    */
+          GC_markers_m1 = i;
           break;
         }
       }
-      GC_markers_m1 = i;
 
 #     ifndef NO_MARKER_SPECIAL_SIGMASK
         /* Restore previous signal mask.        */
