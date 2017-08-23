@@ -316,7 +316,8 @@ STATIC volatile LONG GC_max_thread_index = 0;
 #ifndef THREAD_TABLE_SZ
 # define THREAD_TABLE_SZ 256    /* Power of 2 (for speed). */
 #endif
-#define THREAD_TABLE_INDEX(id) (((word)(id) >> 2) % THREAD_TABLE_SZ)
+#define THREAD_TABLE_INDEX(id) /* id is of DWORD type */ \
+                (int)(((id) >> 2) % THREAD_TABLE_SZ)
 STATIC GC_thread GC_threads[THREAD_TABLE_SZ];
 
 /* It may not be safe to allocate when we register the first thread.    */
@@ -330,7 +331,7 @@ static GC_bool first_thread_used = FALSE;
 /* Unlike the pthreads version, the id field is set by the caller.      */
 STATIC GC_thread GC_new_thread(DWORD id)
 {
-  word hv = THREAD_TABLE_INDEX(id);
+  int hv = THREAD_TABLE_INDEX(id);
   GC_thread result;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -522,8 +523,7 @@ STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
     } else
 # endif
   /* else */ {
-    word hv = THREAD_TABLE_INDEX(thread_id);
-    register GC_thread p = GC_threads[hv];
+    GC_thread p = GC_threads[THREAD_TABLE_INDEX(thread_id)];
 
     GC_ASSERT(I_HOLD_LOCK());
     while (p != 0 && p -> id != thread_id) p = p -> tm.next;
@@ -648,7 +648,7 @@ STATIC void GC_delete_gc_thread_no_free(GC_vthread t)
   /* else */ {
     DWORD id = ((GC_thread)t) -> id;
                 /* Cast away volatile qualifier, since we have lock.    */
-    word hv = THREAD_TABLE_INDEX(id);
+    int hv = THREAD_TABLE_INDEX(id);
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
 
@@ -682,7 +682,7 @@ STATIC void GC_delete_thread(DWORD id)
       GC_delete_gc_thread_no_free(t);
     }
   } else {
-    word hv = THREAD_TABLE_INDEX(id);
+    int hv = THREAD_TABLE_INDEX(id);
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
 
@@ -963,7 +963,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     /* else */ {
       /* We first try the cache.  If that fails, we use a very slow     */
       /* approach.                                                      */
-      word hv_guess = THREAD_TABLE_INDEX(GET_PTHREAD_MAP_CACHE(id));
+      int hv_guess = THREAD_TABLE_INDEX(GET_PTHREAD_MAP_CACHE(id));
       int hv;
       GC_thread p;
       DCL_LOCK_STATE;
