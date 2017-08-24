@@ -321,7 +321,7 @@ STATIC volatile LONG GC_max_thread_index = 0;
 # define THREAD_TABLE_SZ 256    /* Power of 2 (for speed). */
 #endif
 #define THREAD_TABLE_INDEX(id) /* id is of DWORD type */ \
-                (int)(((id) >> 2) % THREAD_TABLE_SZ)
+                (int)((((id) >> 8) ^ (id)) % THREAD_TABLE_SZ)
 STATIC GC_thread GC_threads[THREAD_TABLE_SZ];
 
 /* It may not be safe to allocate when we register the first thread.    */
@@ -987,7 +987,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     /* else */ {
       /* We first try the cache.  If that fails, we use a very slow     */
       /* approach.                                                      */
-      int hv_guess = THREAD_TABLE_INDEX(GET_PTHREAD_MAP_CACHE(id));
+      DWORD win32_id = GET_PTHREAD_MAP_CACHE(id);
+      int hv_guess = THREAD_TABLE_INDEX(win32_id);
       int hv;
       GC_thread p;
       DCL_LOCK_STATE;
