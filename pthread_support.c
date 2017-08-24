@@ -494,17 +494,22 @@ void GC_push_thread_structures(void)
 /* It may not be safe to allocate when we register the first thread.    */
 static struct GC_Thread_Rep first_thread;
 
+#define THREAD_TABLE_INDEX(id) \
+                (int)(((NUMERIC_THREAD_ID(id) >> 16) \
+                       ^ (NUMERIC_THREAD_ID(id) >> 8) \
+                       ^ NUMERIC_THREAD_ID(id)) % THREAD_TABLE_SZ)
+
 /* Add a thread to GC_threads.  We assume it wasn't already there.      */
 /* Caller holds allocation lock.                                        */
 STATIC GC_thread GC_new_thread(pthread_t id)
 {
-    int hv = NUMERIC_THREAD_ID(id) % THREAD_TABLE_SZ;
+    int hv = THREAD_TABLE_INDEX(id);
     GC_thread result;
     static GC_bool first_thread_used = FALSE;
+
 #   ifdef DEBUG_THREADS
         GC_log_printf("Creating thread %p\n", (void *)id);
 #   endif
-
     GC_ASSERT(I_HOLD_LOCK());
     if (!EXPECT(first_thread_used, TRUE)) {
         result = &first_thread;
@@ -533,7 +538,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
 /* It is safe to delete the main thread.                        */
 STATIC void GC_delete_thread(pthread_t id)
 {
-    int hv = NUMERIC_THREAD_ID(id) % THREAD_TABLE_SZ;
+    int hv = THREAD_TABLE_INDEX(id);
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
 
@@ -572,7 +577,7 @@ STATIC void GC_delete_thread(pthread_t id)
 STATIC void GC_delete_gc_thread(GC_thread t)
 {
     pthread_t id = t -> id;
-    int hv = NUMERIC_THREAD_ID(id) % THREAD_TABLE_SZ;
+    int hv = THREAD_TABLE_INDEX(id);
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
 
@@ -605,8 +610,7 @@ STATIC void GC_delete_gc_thread(GC_thread t)
 /* return the most recent one.                                  */
 GC_INNER GC_thread GC_lookup_thread(pthread_t id)
 {
-    int hv = NUMERIC_THREAD_ID(id) % THREAD_TABLE_SZ;
-    register GC_thread p = GC_threads[hv];
+    GC_thread p = GC_threads[THREAD_TABLE_INDEX(id)];
 
     while (p != 0 && !THREAD_EQUAL(p -> id, id)) p = p -> next;
     return(p);
