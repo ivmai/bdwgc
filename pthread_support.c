@@ -543,6 +543,11 @@ STATIC GC_thread GC_new_thread(pthread_t id)
 
 #   ifdef DEBUG_THREADS
         GC_log_printf("Creating thread %p\n", (void *)id);
+        for (result = GC_threads[hv]; result != NULL; result = result->next)
+          if (!THREAD_EQUAL(result->id, id)) {
+            GC_log_printf("Hash collision at GC_threads[%d]\n", hv);
+            break;
+          }
 #   endif
     GC_ASSERT(I_HOLD_LOCK());
     if (!EXPECT(first_thread_used, TRUE)) {

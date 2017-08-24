@@ -338,6 +338,11 @@ STATIC GC_thread GC_new_thread(DWORD id)
   int hv = THREAD_TABLE_INDEX(id);
   GC_thread result;
 
+# ifdef DEBUG_THREADS
+    GC_log_printf("Creating thread 0x%lx\n", (long)id);
+    if (GC_threads[hv] != NULL)
+      GC_log_printf("Hash collision at GC_threads[%d]\n", hv);
+# endif
   GC_ASSERT(I_HOLD_LOCK());
   if (!EXPECT(first_thread_used, TRUE)) {
     result = &first_thread;
@@ -346,7 +351,6 @@ STATIC GC_thread GC_new_thread(DWORD id)
     GC_ASSERT(!GC_win32_dll_threads);
     result = (struct GC_Thread_Rep *)
                 GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
-    /* result can be NULL */
     if (result == 0) return(0);
   }
   /* result -> id = id; Done by caller.       */
