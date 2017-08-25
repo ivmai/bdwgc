@@ -321,7 +321,7 @@ STATIC volatile LONG GC_max_thread_index = 0;
 # define THREAD_TABLE_SZ 256    /* Power of 2 (for speed). */
 #endif
 #define THREAD_TABLE_INDEX(id) /* id is of DWORD type */ \
-                (int)((((id) >> 16) ^ ((id) >> 8) ^ (id)) % THREAD_TABLE_SZ)
+                (int)((((id) >> 8) ^ (id)) % THREAD_TABLE_SZ)
 STATIC GC_thread GC_threads[THREAD_TABLE_SZ];
 
 /* It may not be safe to allocate when we register the first thread.    */
