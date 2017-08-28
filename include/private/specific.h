@@ -69,7 +69,9 @@ typedef tsd * PREFIXED(key_t);
 
 int PREFIXED(key_create) (tsd ** key_ptr, void (* destructor)(void *));
 int PREFIXED(setspecific) (tsd * key, void * value);
-void PREFIXED(remove_specific) (tsd * key);
+#define GC_remove_specific(key) \
+                        GC_remove_specific_after_fork(key, pthread_self())
+void PREFIXED(remove_specific_after_fork) (tsd * key, pthread_t t);
 
 /* An internal version of getspecific that assumes a cache miss.        */
 void * PREFIXED(slow_getspecific) (tsd * key, unsigned long qtid,
