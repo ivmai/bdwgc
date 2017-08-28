@@ -119,12 +119,15 @@ typedef struct thread_local_freelists {
 # define GC_remove_specific(key) pthread_setspecific(key, NULL)
                         /* Explicitly delete the value to stop the TLS  */
                         /* destructor from being called repeatedly.     */
+# define GC_remove_specific_after_fork(key, t) (void)0
+                                        /* Should not need any action.  */
   typedef pthread_key_t GC_key_t;
 #elif defined(USE_COMPILER_TLS) || defined(USE_WIN32_COMPILER_TLS)
 # define GC_getspecific(x) (x)
 # define GC_setspecific(key, v) ((key) = (v), 0)
 # define GC_key_create(key, d) 0
 # define GC_remove_specific(key)  /* No need for cleanup on exit. */
+# define GC_remove_specific_after_fork(key, t) (void)0
   typedef void * GC_key_t;
 #elif defined(USE_WIN32_SPECIFIC)
 # ifndef WIN32_LEAN_AND_MEAN
@@ -143,6 +146,7 @@ typedef struct thread_local_freelists {
         ((d) != 0 || (*(key) = TlsAlloc()) == TLS_OUT_OF_INDEXES ? -1 : 0)
 # define GC_remove_specific(key)  /* No need for cleanup on exit. */
         /* Need TlsFree on process exit/detach?   */
+# define GC_remove_specific_after_fork(key, t) (void)0
   typedef DWORD GC_key_t;
 #elif defined(USE_CUSTOM_SPECIFIC)
 # include "private/specific.h"
