@@ -783,7 +783,7 @@ STATIC void GC_remove_all_threads_but_me(void)
 #         ifdef THREAD_LOCAL_ALLOC
             if (!(p -> flags & FINISHED)) {
               GC_destroy_thread_local(&(p->tlfs));
-              GC_remove_specific(GC_thread_key);
+              GC_remove_specific_after_fork(GC_thread_key, p -> id);
             }
 #         endif
           if (p != &first_thread) GC_INTERNAL_FREE(p);

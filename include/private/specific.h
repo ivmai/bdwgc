@@ -77,7 +77,9 @@ typedef tsd * GC_key_t;
 #define GC_key_create(key, d) GC_key_create_inner(key)
 GC_INNER int GC_key_create_inner(tsd ** key_ptr);
 GC_INNER int GC_setspecific(tsd * key, void * value);
-GC_INNER void GC_remove_specific(tsd * key);
+#define GC_remove_specific(key) \
+                        GC_remove_specific_after_fork(key, pthread_self())
+GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t);
 
 /* An internal version of getspecific that assumes a cache miss.        */
 GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,

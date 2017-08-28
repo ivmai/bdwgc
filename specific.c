@@ -46,13 +46,13 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
     return 0;
 }
 
-/* Called with the lock held.   */
 GC_INNER int GC_setspecific(tsd * key, void * value)
 {
     pthread_t self = pthread_self();
     int hash_val = HASH(self);
     volatile tse * entry;
 
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(self != INVALID_THREADID);
     GC_dont_gc++; /* disable GC */
     entry = (volatile tse *)MALLOC_CLEAR(sizeof(tse));
@@ -72,18 +72,24 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
     return 0;
 }
 
-/* Remove thread-specific data for this thread.  Should be called on    */
-/* thread exit.                                                         */
-GC_INNER void GC_remove_specific(tsd * key)
+/* Remove thread-specific data for a given thread.  This function is    */
+/* called at fork from the child process for all threads except for the */
+/* survived one.  GC_remove_specific() should be called on thread exit. */
+GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
 {
-    pthread_t self = pthread_self();
-    unsigned hash_val = HASH(self);
+    unsigned hash_val = HASH(t);
     tse *entry;
     tse **link = &key->hash[hash_val].p;
 
+#   ifdef CAN_HANDLE_FORK
+      /* Both GC_setspecific and GC_remove_specific should be called    */
+      /* with the allocation lock held to ensure the consistency of     */
+      /* the hash table in the forked child.                            */
+      GC_ASSERT(I_HOLD_LOCK());
+#   endif
     pthread_mutex_lock(&(key -> lock));
     entry = *link;
-    while (entry != NULL && entry -> thread != self) {
+    while (entry != NULL && entry -> thread != t) {
       link = &(entry -> next);
       entry = *link;
     }
