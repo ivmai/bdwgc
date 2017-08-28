@@ -1033,7 +1033,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
           } else {
 #           ifdef THREAD_LOCAL_ALLOC
               if ((p -> flags & FINISHED) == 0) {
-                GC_destroy_thread_local(&p->tlfs);
+                /* Cannot call GC_destroy_thread_local here (see the    */
+                /* corresponding comment in pthread_support.c).         */
                 GC_remove_specific_after_fork(GC_thread_key, p -> pthread_id);
               }
 #           endif
