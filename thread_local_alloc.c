@@ -113,11 +113,7 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
 /* We hold the allocator lock.  */
 GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 {
-    /* We currently only do this from the thread itself or from */
-    /* the fork handler for a child process.                    */
-#   ifndef HANDLE_FORK
-      GC_ASSERT(GC_getspecific(GC_thread_key) == (void *)p);
-#   endif
+    /* We currently only do this from the thread itself.        */
     return_freelists(p -> ptrfree_freelists, GC_aobjfreelist);
     return_freelists(p -> normal_freelists, GC_objfreelist);
 #   ifdef GC_GCJ_SUPPORT

@@ -656,7 +656,12 @@ STATIC void GC_remove_all_threads_but_me(void)
         } else {
 #         ifdef THREAD_LOCAL_ALLOC
             if (!(p -> flags & FINISHED)) {
-              GC_destroy_thread_local(&(p->tlfs));
+              /* Cannot call GC_destroy_thread_local here.  The free    */
+              /* lists may be in an inconsistent state (as thread p may */
+              /* be updating one of the lists by GC_generic_malloc_many */
+              /* or GC_FAST_MALLOC_GRANS when fork is invoked).         */
+              /* This should not be a problem because the lost elements */
+              /* of the free lists will be collected during GC.         */
               GC_remove_specific_after_fork(GC_thread_key, p -> id);
             }
 #         endif
