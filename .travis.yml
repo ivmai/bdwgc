@@ -133,7 +133,7 @@ matrix:
     compiler: gcc
     env:
     - CONF_OPTIONS="--enable-handle-fork --enable-munmap --enable-single-obj-compilation --enable-cplusplus --disable-shared --enable-gc-assertions"
-    - CFLAGS_EXTRA="-D NO_INCREMENTAL"
+    - CFLAGS_EXTRA="-D NO_INCREMENTAL -D USE_CUSTOM_SPECIFIC"
   - os: linux
     compiler: gcc
     env:
