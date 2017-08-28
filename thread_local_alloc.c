@@ -129,8 +129,7 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 {
     int k;
 
-    /* We currently only do this from the thread itself or from */
-    /* the fork handler for a child process.                    */
+    /* We currently only do this from the thread itself.        */
     GC_STATIC_ASSERT(THREAD_FREELISTS_KINDS <= MAXOBJKINDS);
     for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
         if (k == (int)GC_n_kinds)
