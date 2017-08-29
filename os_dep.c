@@ -4558,7 +4558,8 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
         if (reentry_count > 1) {
             /* We were called during an allocation during       */
             /* a previous GC_print_callers call; punt.          */
-            GC_err_printf("\t\t##PC##= 0x%lx\n", info[i].ci_pc);
+            GC_err_printf("\t\t##PC##= 0x%lx\n",
+                          (unsigned long)info[i].ci_pc);
             continue;
         }
         {
@@ -4570,7 +4571,8 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
 #         else
             char buf[40];
             char *name = buf;
-            (void)snprintf(buf, sizeof(buf), "##PC##= 0x%lx", info[i].ci_pc);
+            (void)snprintf(buf, sizeof(buf), "##PC##= 0x%lx",
+                           (unsigned long)info[i].ci_pc);
             buf[sizeof(buf) - 1] = '\0';
 #         endif
 #         if defined(LINUX) && !defined(SMALL_CONFIG)
