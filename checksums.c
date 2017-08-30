@@ -93,8 +93,8 @@ STATIC word GC_checksum(struct hblk *h)
 int GC_n_dirty_errors = 0;
 int GC_n_faulted_dirty_errors = 0;
 int GC_n_changed_errors = 0;
-int GC_n_clean = 0;
-int GC_n_dirty = 0;
+unsigned long GC_n_clean = 0;
+unsigned long GC_n_dirty = 0;
 
 STATIC void GC_update_check_page(struct hblk *h, int index)
 {
@@ -199,14 +199,13 @@ void GC_check_dirty(void)
     }
 out:
     GC_COND_LOG_PRINTF("Checked %lu clean and %lu dirty pages\n",
-                       (unsigned long)GC_n_clean, (unsigned long)GC_n_dirty);
+                       GC_n_clean, GC_n_dirty);
     if (GC_n_dirty_errors > 0) {
         GC_err_printf("Found %d dirty bit errors (%d were faulted)\n",
                       GC_n_dirty_errors, GC_n_faulted_dirty_errors);
     }
     if (GC_n_changed_errors > 0) {
-        GC_err_printf("Found %lu changed bit errors\n",
-                      (unsigned long)GC_n_changed_errors);
+        GC_err_printf("Found %d changed bit errors\n", GC_n_changed_errors);
         GC_err_printf(
                 "These may be benign (provoked by nonpointer changes)\n");
 #       ifdef THREADS
