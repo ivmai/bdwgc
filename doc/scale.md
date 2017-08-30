@@ -54,7 +54,7 @@ kind, and allocate from that. This greatly reduces locking. The thread-local
 free lists are refilled using `GC_malloc_many`.
 
 An important side effect of this flag is to replace the default
-spin-then-sleep lock to be replace by a spin-then-queue based implementation.
+spin-then-sleep lock to be replaced by a spin-then-queue based implementation.
 This _reduces performance_ for the standard allocation functions, though
 it usually improves performance when thread-local allocation is used heavily,
 and thus the number of short-duration lock acquisitions is greatly reduced.
