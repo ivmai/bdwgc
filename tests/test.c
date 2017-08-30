@@ -1182,7 +1182,7 @@ void typed_test(void)
     }
     for (i = 0; i < 20000; i++) {
         if (new[0] != 17) {
-            GC_printf("typed alloc failed at %lu\n", (unsigned long)i);
+            GC_printf("Typed alloc failed at %d\n", i);
             FAIL;
         }
         new[0] = 0;

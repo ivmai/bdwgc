@@ -1114,7 +1114,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
     GC_ASSERT((word)GC_mark_stack <= (word)my_first_nonempty);
     GC_ASSERT((word)my_first_nonempty
         <= (word)AO_load((volatile AO_t *)&GC_mark_stack_top) + sizeof(mse));
-    GC_VERBOSE_LOG_PRINTF("Starting mark helper %lu\n", (unsigned long)id);
+    GC_VERBOSE_LOG_PRINTF("Starting mark helper %d\n", id);
     GC_release_mark_lock();
     for (;;) {
         size_t n_on_stack;
@@ -1172,8 +1172,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
                     /* both conditions actually held simultaneously.    */
                     GC_helper_count--;
                     if (0 == GC_helper_count) need_to_notify = TRUE;
-                    GC_VERBOSE_LOG_PRINTF("Finished mark helper %lu\n",
-                                          (unsigned long)id);
+                    GC_VERBOSE_LOG_PRINTF("Finished mark helper %d\n", id);
                     GC_release_mark_lock();
                     if (need_to_notify) GC_notify_all_marker();
                     return;
