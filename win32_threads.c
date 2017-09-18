@@ -274,7 +274,7 @@ typedef volatile struct GC_Thread_Rep * GC_vthread;
   STATIC volatile AO_t GC_attached_thread = FALSE;
 #endif
 
-#if !defined(__GNUC__)
+#if defined(WRAP_MARK_SOME) && !defined(GC_PTHREADS)
   /* Return TRUE if an thread was attached since we last asked or */
   /* since GC_attached_thread was explicitly reset.               */
   GC_INNER GC_bool GC_started_thread_while_stopped(void)
@@ -296,7 +296,7 @@ typedef volatile struct GC_Thread_Rep * GC_vthread;
 #   endif
     return FALSE;
   }
-#endif /* !__GNUC__ */
+#endif /* WRAP_MARK_SOME */
 
 /* Thread table used if GC_win32_dll_threads is set.    */
 /* This is a fixed size array.                          */
