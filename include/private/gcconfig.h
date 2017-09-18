@@ -2463,7 +2463,6 @@
     /* even with USE_PROC_FOR_LIBRARIES, we don't scan parts of stack   */
     /* segments that appear to be out of bounds.  Thus we actually      */
     /* do both, which seems to yield the best results.                  */
-
 #   define USE_PROC_FOR_LIBRARIES
 #endif
 
@@ -2749,6 +2748,26 @@
 
 #if defined(PARALLEL_MARK) && !defined(THREADS)
 # error "invalid config - PARALLEL_MARK requires GC_THREADS"
+#endif
+
+#if (((defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__)) \
+        || (defined(MSWIN32) && defined(I386)) /* for Win98 */ \
+        || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))) \
+     && !defined(NO_WRAP_MARK_SOME)
+  /* Under rare conditions, we may end up marking from nonexistent      */
+  /* memory.  Hence we need to be prepared to recover by running        */
+  /* GC_mark_some with a suitable handler in place.                     */
+  /* TODO: Probably replace __GNUC__ above with ndef GC_PTHREADS.       */
+  /* FIXME: Should we really need it for WinCE?  If yes then            */
+  /* WRAP_MARK_SOME should be also defined for CeGCC which requires     */
+  /* CPU/OS-specific code in mark_ex_handler and GC_mark_some (for      */
+  /* manual stack unwinding and exception handler installation).        */
+# define WRAP_MARK_SOME
+#endif
+
+#if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
+  /* TODO: GC_mark_local does not handle memory protection faults yet.  */
+# undef PARALLEL_MARK
 #endif
 
 #if defined(PARALLEL_MARK) && !defined(DEFAULT_STACK_MAYBE_SMALL) \
