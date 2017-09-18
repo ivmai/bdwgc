@@ -474,9 +474,9 @@ static void alloc_mark_stack(size_t);
             return ExceptionContinueSearch;
         }
     }
-# endif /* __GNUC__  && MSWIN32 */
+# endif /* __GNUC__ && MSWIN32 */
 
-#if defined(GC_WIN32_THREADS) && !defined(__GNUC__)
+#if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
   GC_INNER GC_bool GC_started_thread_while_stopped(void);
   /* In win32_threads.c.  Did we invalidate mark phase with an  */
   /* unexpected thread start?                                   */
@@ -510,7 +510,7 @@ static void alloc_mark_stack(size_t);
                 EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
           goto handle_ex;
       }
-#     ifdef GC_WIN32_THREADS
+#     if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
         /* With DllMain-based thread tracking, a thread may have        */
         /* started while we were marking.  This is logically equivalent */
         /* to the exception case; our results are invalid and we have   */
@@ -551,6 +551,10 @@ static void alloc_mark_stack(size_t);
       /* and thus eliminating it.                                    */
         if (er.alt_path == 0)
           goto handle_ex;
+#     if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
+        if (GC_started_thread_while_stopped())
+          goto handle_ex;
+#     endif
     rm_handler:
       /* Uninstall the exception handler */
       __asm__ __volatile__ ("mov %0, %%fs:0" : : "r" (er.ex_reg.prev));
