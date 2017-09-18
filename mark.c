@@ -1040,6 +1040,10 @@ STATIC void GC_return_mark_stack(mse * low, mse * high)
     GC_notify_all_marker();
 }
 
+#ifndef N_LOCAL_ITERS
+# define N_LOCAL_ITERS 1
+#endif
+
 /* Mark from the local mark stack.              */
 /* On return, the local mark stack is empty.    */
 /* But this may be achieved by copying the      */
@@ -1047,7 +1051,6 @@ STATIC void GC_return_mark_stack(mse * low, mse * high)
 STATIC void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
 {
     unsigned n;
-#   define N_LOCAL_ITERS 1
 
 #   ifdef GC_ASSERTIONS
       /* Make sure we don't hold mark lock. */
@@ -1086,7 +1089,9 @@ STATIC void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
     }
 }
 
-#define ENTRIES_TO_GET 5
+#ifndef ENTRIES_TO_GET
+# define ENTRIES_TO_GET 5
+#endif
 
 /* Mark using the local mark stack until the global mark stack is empty */
 /* and there are no active workers. Update GC_first_nonempty to reflect */
