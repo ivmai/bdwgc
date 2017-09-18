@@ -279,19 +279,6 @@ STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h);
 
 static void alloc_mark_stack(size_t);
 
-# if (defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__) \
-        || defined(MSWIN32) && defined(I386) /* for Win98 */ \
-        || defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)
-    /* Under rare conditions, we may end up marking from nonexistent memory. */
-    /* Hence we need to be prepared to recover by running GC_mark_some       */
-    /* with a suitable handler in place.                                     */
-    /* FIXME: Should we really need it for WinCE?  If yes then          */
-    /* WRAP_MARK_SOME should be also defined for CeGCC which requires   */
-    /* CPU/OS-specific code in mark_ex_handler() and GC_mark_some()     */
-    /* (for manual stack unwinding and exception handler installation). */
-#   define WRAP_MARK_SOME
-# endif
-
 /* Perform a small amount of marking.                   */
 /* We try to touch roughly a page of memory.            */
 /* Return TRUE if we just finished a mark phase.        */
