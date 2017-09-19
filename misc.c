@@ -2025,7 +2025,7 @@ STATIC void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 #   ifdef SPARC
         GC_ASSERT(GC_blocked_sp != NULL);
 #   else
-        GC_ASSERT(GC_blocked_sp == (ptr_t) &d);
+        GC_ASSERT(GC_blocked_sp == (ptr_t)(&d));
 #   endif
 #   if defined(CPPCHECK)
       GC_noop1((word)GC_blocked_sp);
