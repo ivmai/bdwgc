@@ -565,6 +565,11 @@ handle_ex:
 
       /* We have bad roots on the stack.  Discard mark stack.   */
       /* Rescan from marked objects.  Redetermine roots.        */
+#     ifdef REGISTER_LIBRARIES_EARLY
+        START_WORLD();
+        GC_cond_register_dynamic_libraries();
+        STOP_WORLD();
+#     endif
       GC_invalidate_mark_state();
       scan_ptr = 0;
 
