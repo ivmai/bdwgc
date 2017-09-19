@@ -55,8 +55,15 @@ void * GC_CALLBACK on_thread_exit_inner (struct GC_stack_base * sb, void * arg)
   pthread_t t;
   int creation_res;     /* Used to suppress a warning about     */
                         /* unchecked pthread_create() result.   */
+  pthread_attr_t attr;
 
-  creation_res = GC_pthread_create (&t, NULL, entry, NULL);
+  if (pthread_attr_init(&attr) != 0
+      || pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
+    fprintf(stderr, "Thread attribute init or setdetachstate failed\n");
+    exit(2);
+  }
+  creation_res = GC_pthread_create(&t, &attr, entry, NULL);
+  (void)pthread_attr_destroy(&attr);
   if (res == GC_SUCCESS)
     GC_unregister_my_thread ();
 
@@ -89,12 +96,15 @@ int main (void)
 # endif
   for (i = 0; i < LIMIT; i++) {
     pthread_t t;
-    void *res;
-    if (GC_pthread_create (&t, NULL, entry, NULL) == 0
-        && (i & 1) != 0) {
-      int code = GC_pthread_join(t, &res);
+
+    if (GC_pthread_create(&t, NULL, entry, NULL) == 0) {
+      void *res;
+      int code = (i & 1) != 0 ? GC_pthread_join(t, &res)
+                                : GC_pthread_detach(t);
+
       if (code != 0) {
-        fprintf(stderr, "Thread join failed %d\n", code);
+        fprintf(stderr, "Thread %s failed %d\n",
+                (i & 1) != 0 ? "join" : "detach", code);
         exit(2);
       }
     }
