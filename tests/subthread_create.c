@@ -61,7 +61,7 @@ volatile AO_t thread_ended_cnt = 0;
         pthread_t th;
         err = pthread_create(&th, NULL, entry, (void *)my_depth);
         if (err) {
-            fprintf(stderr, "Thread #%d creation failed: %s", thread_num,
+            fprintf(stderr, "Thread #%d creation failed: %s\n", thread_num,
                     strerror(err));
             exit(2);
         }
@@ -97,7 +97,7 @@ int main(void)
 #     ifdef GC_PTHREADS
         err = pthread_create(&th[i], NULL, entry, 0);
         if (err) {
-            fprintf(stderr, "Thread creation failed: %s", strerror(err));
+            fprintf(stderr, "Thread creation failed: %s\n", strerror(err));
             exit(1);
         }
 #     else
@@ -116,7 +116,7 @@ int main(void)
         void *res;
         err = pthread_join(th[i], &res);
         if (err) {
-            fprintf(stderr, "Failed to join thread: %s", strerror(err));
+            fprintf(stderr, "Failed to join thread: %s\n", strerror(err));
             exit(1);
         }
 #     else
