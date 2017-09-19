@@ -106,8 +106,9 @@ ptr_t GC_get_main_stack_base(void)
 
         for (data = (ULONG *)BADDR(myseglist); data != NULL;
              data = (ULONG *)BADDR(data[0])) {
-          if (((ULONG) GC_register_data_segments < (ULONG) &data[1]) ||
-              ((ULONG) GC_register_data_segments > (ULONG) &data[1] + data[-1])) {
+          if ((ULONG)GC_register_data_segments < (ULONG)(&data[1])
+              || (ULONG)GC_register_data_segments > (ULONG)(&data[1])
+                                                    + data[-1]) {
 #             ifdef __GNUC__
                 if (dataSegSize == data[-1]) {
                   found_segment = TRUE;
