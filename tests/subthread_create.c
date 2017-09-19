@@ -59,15 +59,23 @@ volatile AO_t thread_ended_cnt = 0;
 # ifdef GC_PTHREADS
         int err;
         pthread_t th;
+
         err = pthread_create(&th, NULL, entry, (void *)my_depth);
-        if (err) {
+        if (err != 0) {
             fprintf(stderr, "Thread #%d creation failed: %s\n", thread_num,
+                    strerror(err));
+            exit(2);
+        }
+        err = pthread_detach(th);
+        if (err != 0) {
+            fprintf(stderr, "Thread #%d detach failed: %s\n", thread_num,
                     strerror(err));
             exit(2);
         }
 # else
         HANDLE th;
         DWORD thread_id;
+
         th = CreateThread(NULL, 0, entry, (LPVOID)my_depth, 0, &thread_id);
         if (th == NULL) {
             fprintf(stderr, "Thread #%d creation failed: %d\n", thread_num,
