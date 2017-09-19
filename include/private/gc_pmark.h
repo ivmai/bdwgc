@@ -22,7 +22,7 @@
 #ifndef GC_PMARK_H
 #define GC_PMARK_H
 
-#ifdef HAVE_CONFIG_H
+#if defined(HAVE_CONFIG_H) && !defined(GC_PRIVATE_H)
 # include "config.h"
 #endif
 
