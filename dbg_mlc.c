@@ -849,6 +849,10 @@ GC_API void GC_CALL GC_debug_free(void * p)
       ABORT_ARG1("Invalid pointer passed to free()", ": %p", p);
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
+#     if defined(REDIRECT_FREE) && defined(USE_PROC_FOR_LIBRARIES)
+        /* TODO: Suppress the warning if free() caller is in libpthread */
+        /* or libdl.                                                    */
+#     endif
       GC_err_printf(
                "GC_debug_free called on pointer %p w/o debugging info\n", p);
     } else {
