@@ -1243,7 +1243,8 @@ STATIC void GC_do_parallel_mark(void)
 /* We do not hold the GC lock, but the requestor does.  */
 GC_INNER void GC_help_marker(word my_mark_no)
 {
-    unsigned my_id;
+#   define my_id my_id_mse.mse_descr.w
+    mse my_id_mse;  /* align local_mark_stack explicitly */
     mse local_mark_stack[LOCAL_MARK_STACK_SIZE];
                 /* Note: local_mark_stack is quite big (up to 128 KiB). */
 
@@ -1260,10 +1261,11 @@ GC_INNER void GC_help_marker(word my_mark_no)
       GC_release_mark_lock();
       return;
     }
-    GC_helper_count = my_id + 1;
+    GC_helper_count = (unsigned)my_id + 1;
     GC_release_mark_lock();
-    GC_mark_local(local_mark_stack, my_id);
+    GC_mark_local(local_mark_stack, (int)my_id);
     /* GC_mark_local decrements GC_helper_count. */
+#   undef my_id
 }
 
 #endif /* PARALLEL_MARK */
