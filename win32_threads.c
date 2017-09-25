@@ -2654,9 +2654,7 @@ GC_INNER void GC_thr_init(void)
     DCL_LOCK_STATE;
 
     GC_ASSERT(!GC_win32_dll_threads);
-    LOCK();
     t = GC_lookup_pthread(thread);
-    UNLOCK();
     result = pthread_detach(thread);
     if (result == 0) {
       if (NULL == t) ABORT("Thread not registered");
