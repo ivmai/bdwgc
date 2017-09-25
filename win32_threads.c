@@ -2572,9 +2572,7 @@ GC_INNER void GC_thr_init(void)
     DCL_LOCK_STATE;
 
     if (!parallel_initialized) GC_init_parallel();
-    LOCK();
     t = GC_lookup_pthread(thread);
-    UNLOCK();
     result = pthread_detach(thread);
     if (result == 0) {
       LOCK();
