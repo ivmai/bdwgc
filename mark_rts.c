@@ -497,6 +497,24 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
     UNLOCK();
 }
 
+#if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
+  /* GC_mark_local does not handle memory protection faults yet.  So,   */
+  /* the static data regions are scanned immediately by GC_push_roots.  */
+  GC_INNER void GC_push_conditional_eager(ptr_t bottom, ptr_t top,
+                                          GC_bool all);
+# define GC_PUSH_CONDITIONAL(b, t, all) \
+                (GC_parallel \
+                    ? GC_push_conditional_eager(b, t, all) \
+                    : GC_push_conditional((ptr_t)(b), (ptr_t)(t), all))
+#elif defined(GC_DISABLE_INCREMENTAL)
+# define GC_PUSH_CONDITIONAL(b, t, all) GC_push_all((ptr_t)(b), (ptr_t)(t))
+#else
+# define GC_PUSH_CONDITIONAL(b, t, all) \
+                GC_push_conditional((ptr_t)(b), (ptr_t)(t), all)
+                        /* Do either of GC_push_all or GC_push_selected */
+                        /* depending on the third arg.                  */
+#endif
+
 /* Invoke push_conditional on ranges that are not excluded. */
 STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
                                                 GC_bool all GC_ATTR_UNUSED)

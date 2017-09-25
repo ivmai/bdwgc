@@ -1657,15 +1657,6 @@ GC_INNER void GC_initiate_gc(void);
 GC_INNER GC_bool GC_collection_in_progress(void);
                         /* Collection is in progress, or was abandoned. */
 
-#ifndef GC_DISABLE_INCREMENTAL
-# define GC_PUSH_CONDITIONAL(b, t, all) \
-                GC_push_conditional((ptr_t)(b), (ptr_t)(t), all)
-                        /* Do either of GC_push_all or GC_push_selected */
-                        /* depending on the third arg.                  */
-#else
-# define GC_PUSH_CONDITIONAL(b, t, all) GC_push_all((ptr_t)(b), (ptr_t)(t))
-#endif
-
 #define GC_PUSH_ALL_SYM(sym) \
                 GC_push_all((ptr_t)&(sym), (ptr_t)&(sym) + sizeof(sym))
 

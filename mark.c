@@ -1628,6 +1628,35 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 # endif
 }
 
+#if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
+  /* Similar to GC_push_conditional but scans the whole region immediately. */
+  GC_INNER void GC_push_conditional_eager(ptr_t bottom, ptr_t top,
+                                          GC_bool all)
+                        GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY
+  {
+    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
+    word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
+    register word *p;
+    register word *lim;
+    register ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
+    register ptr_t least_ha = GC_least_plausible_heap_addr;
+#   define GC_greatest_plausible_heap_addr greatest_ha
+#   define GC_least_plausible_heap_addr least_ha
+
+    if (top == NULL)
+      return;
+    (void)all; /* TODO: If !all then scan only dirty pages. */
+
+    lim = t - 1;
+    for (p = b; (word)p <= (word)lim; p = (word *)((ptr_t)p + ALIGNMENT)) {
+      register word q = *p;
+      GC_PUSH_ONE_HEAP(q, p, GC_mark_stack_top);
+    }
+#   undef GC_greatest_plausible_heap_addr
+#   undef GC_least_plausible_heap_addr
+  }
+#endif /* WRAP_MARK_SOME && PARALLEL_MARK */
+
 #if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES) && \
     defined(MARK_BIT_PER_GRANULE)
 # if GC_GRANULE_WORDS == 1
