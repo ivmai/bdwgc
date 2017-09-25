@@ -3012,11 +3012,6 @@
 # define WRAP_MARK_SOME
 #endif
 
-#if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
-  /* TODO: GC_mark_local does not handle memory protection faults yet.  */
-# undef PARALLEL_MARK
-#endif
-
 #if defined(PARALLEL_MARK) && !defined(DEFAULT_STACK_MAYBE_SMALL) \
     && (defined(HPUX) || defined(GC_DGUX386_THREADS) \
         || defined(NO_GETCONTEXT) /* e.g. musl */)
