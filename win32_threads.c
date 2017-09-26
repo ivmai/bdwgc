@@ -2545,24 +2545,27 @@ GC_INNER void GC_thr_init(void)
 #   ifndef GC_WIN32_PTHREADS
       while ((t = GC_lookup_pthread(pthread_id)) == 0)
         Sleep(10);
-      result = pthread_join(pthread_id, retval);
-#   else
-      result = pthread_join(pthread_id, retval);
-      /* pthreads-win32 and winpthreads id are unique (not recycled). */
-      t = GC_lookup_pthread(pthread_id);
-      if (NULL == t) ABORT("Thread not registered");
 #   endif
+    result = pthread_join(pthread_id, retval);
+    if (0 == result) {
+#     ifdef GC_WIN32_PTHREADS
+        /* pthreads-win32 and winpthreads id are unique (not recycled). */
+        t = GC_lookup_pthread(pthread_id);
+        if (NULL == t) ABORT("Thread not registered");
+#     endif
 
-    LOCK();
-    GC_delete_gc_thread_no_free(t);
-    GC_INTERNAL_FREE(t);
-    UNLOCK();
+      LOCK();
+        GC_delete_gc_thread_no_free(t);
+        GC_INTERNAL_FREE(t);
+      UNLOCK();
+    }
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("thread %p(0x%lx) completed join with thread %p\n",
+      GC_log_printf("thread %p(0x%lx) join with thread %p %s\n",
                     (void *)GC_PTHREAD_PTRVAL(pthread_self()),
                     (long)GetCurrentThreadId(),
-                    (void *)GC_PTHREAD_PTRVAL(pthread_id));
+                    (void *)GC_PTHREAD_PTRVAL(pthread_id),
+                    result != 0 ? "failed" : "succeeded");
 #   endif
     return result;
   }
