@@ -2409,26 +2409,27 @@ GC_INNER void GC_thr_init(void)
       while ((t = GC_lookup_pthread(pthread_id)) == 0)
         Sleep(10);
 #   endif
-
     result = pthread_join(pthread_id, retval);
+    if (0 == result) {
+#     ifdef GC_WIN32_PTHREADS
+        /* pthreads-win32 id are unique (not recycled) */
+        t = GC_lookup_pthread(pthread_id);
+#     endif
 
-#   ifdef GC_WIN32_PTHREADS
-      /* win32_pthreads id are unique */
-      t = GC_lookup_pthread(pthread_id);
-#   endif
+      if (!GC_win32_dll_threads) {
+        DCL_LOCK_STATE;
 
-    if (!GC_win32_dll_threads) {
-      DCL_LOCK_STATE;
-
-      LOCK();
-      GC_delete_gc_thread(t);
-      UNLOCK();
-    } /* otherwise DllMain handles it.  */
+        LOCK();
+        GC_delete_gc_thread(t);
+        UNLOCK();
+      }
+    }
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("thread %p(0x%lx) completed join with thread %p\n",
+      GC_log_printf("thread %p(0x%lx) join with thread %p %s\n",
                     GC_PTHREAD_PTRVAL(pthread_self()),
-                    (long)GetCurrentThreadId(), GC_PTHREAD_PTRVAL(pthread_id));
+                    (long)GetCurrentThreadId(), GC_PTHREAD_PTRVAL(pthread_id),
+                    result != 0 ? "failed" : "succeeded");
 #   endif
     return result;
   }
