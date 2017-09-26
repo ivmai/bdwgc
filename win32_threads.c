@@ -2420,7 +2420,8 @@ GC_INNER void GC_thr_init(void)
         DCL_LOCK_STATE;
 
         LOCK();
-        GC_delete_gc_thread(t);
+        if ((t -> flags & FINISHED) != 0)
+          GC_delete_gc_thread(t);
         UNLOCK();
       }
     }

@@ -1316,9 +1316,11 @@ GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
 # endif
     if (result == 0) {
         LOCK();
-        /* Here the pthread thread id may have been recycled. */
-        GC_ASSERT((t -> flags & FINISHED) != 0);
-        GC_delete_gc_thread(t);
+        /* Here the pthread thread id may have been recycled.           */
+        /* Delete the thread from GC_threads (unless it has been        */
+        /* registered again from the client thread key destructor).     */
+        if ((t -> flags & FINISHED) != 0)
+          GC_delete_gc_thread(t);
         UNLOCK();
     }
     return result;
