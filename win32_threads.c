@@ -2559,8 +2559,10 @@ GC_INNER void GC_thr_init(void)
 #     endif
 
       LOCK();
+      if ((t -> flags & FINISHED) != 0) {
         GC_delete_gc_thread_no_free(t);
         GC_INTERNAL_FREE(t);
+      }
       UNLOCK();
     }
 
