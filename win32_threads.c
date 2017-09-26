@@ -986,8 +986,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
         for (p = GC_threads[hv]; 0 != p; p = next) {
           next = p -> tm.next;
-          if (THREAD_EQUAL(p -> pthread_id, pthread_id)) {
-            GC_ASSERT(me == NULL);
+          if (THREAD_EQUAL(p -> pthread_id, pthread_id)
+              && me == NULL) { /* ignore dead threads with the same id */
             me = p;
             p -> tm.next = 0;
           } else {
