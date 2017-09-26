@@ -745,7 +745,8 @@ STATIC void GC_remove_all_threads_but_me(void)
       me = 0;
       for (p = GC_threads[hv]; 0 != p; p = next) {
         next = p -> next;
-        if (THREAD_EQUAL(p -> id, self)) {
+        if (THREAD_EQUAL(p -> id, self)
+            && me == NULL) { /* ignore dead threads with the same id */
           me = p;
           p -> next = 0;
 #         ifdef GC_DARWIN_THREADS
