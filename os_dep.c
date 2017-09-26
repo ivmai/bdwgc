@@ -177,9 +177,8 @@ GC_INNER char * GC_get_maps(void)
     /* stacks.  And there is no easy way to read the entire     */
     /* file atomically.  This is arguably a misfeature of the   */
     /* /proc/.../maps interface.                                */
-
-    /* Since we don't believe the file can grow                 */
-    /* asynchronously, it should suffice to first determine     */
+    /* Since we expect the file can grow asynchronously in rare */
+    /* cases, it should suffice to first determine              */
     /* the size (using lseek or read), and then to reread the   */
     /* file.  If the size is inconsistent we have to retry.     */
     /* This only matters with threads enabled, and if we use    */
@@ -232,10 +231,9 @@ GC_INNER char * GC_get_maps(void)
               return 0;
 #           ifdef THREADS
               if (maps_size > old_maps_size) {
-                ABORT_ARG2("Unexpected asynchronous /proc/self/maps growth "
-                           "(unregistered thread?)", " from %lu to %lu",
-                           (unsigned long)old_maps_size,
-                           (unsigned long)maps_size);
+                /* This might be caused by e.g. thread creation. */
+                WARN("Unexpected asynchronous /proc/self/maps growth"
+                     " (to %" WARN_PRIdPTR " bytes)\n", maps_size);
               }
 #           endif
         } while (maps_size >= maps_buf_sz || maps_size < old_maps_size);
