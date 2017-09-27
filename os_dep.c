@@ -1182,8 +1182,12 @@ GC_INNER size_t GC_page_size = 0;
       && !defined(GC_OPENBSD_THREADS) \
       && (!defined(GC_SOLARIS_THREADS) || defined(_STRICT_STDC))
 
-# if defined(LINUX) && defined(USE_GET_STACKBASE_FOR_MAIN)
+# if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
+     && (defined(THREADS) || defined(USE_GET_STACKBASE_FOR_MAIN))
 #   include <pthread.h>
+#   ifdef HAVE_PTHREAD_NP_H
+#     include <pthread_np.h> /* for pthread_attr_get_np() */
+#   endif
 # elif defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP)
     /* We could use pthread_get_stackaddr_np even in case of a  */
     /* single-threaded gclib (there is no -lpthread on Darwin). */
@@ -1195,14 +1199,22 @@ GC_INNER size_t GC_page_size = 0;
   ptr_t GC_get_main_stack_base(void)
   {
     ptr_t result;
-#   if defined(LINUX) && !defined(NO_PTHREAD_GETATTR_NP) \
+#   if (defined(HAVE_PTHREAD_ATTR_GET_NP) \
+        || defined(HAVE_PTHREAD_GETATTR_NP)) \
        && (defined(USE_GET_STACKBASE_FOR_MAIN) \
            || (defined(THREADS) && !defined(REDIRECT_MALLOC)))
       pthread_attr_t attr;
       void *stackaddr;
       size_t size;
 
-      if (pthread_getattr_np(pthread_self(), &attr) == 0) {
+#     ifdef HAVE_PTHREAD_ATTR_GET_NP
+        if (pthread_attr_init(&attr) == 0
+            && (pthread_attr_get_np(pthread_self(), &attr) == 0
+                ? TRUE : (pthread_attr_destroy(&attr), FALSE)))
+#     else /* HAVE_PTHREAD_GETATTR_NP */
+        if (pthread_getattr_np(pthread_self(), &attr) == 0)
+#     endif
+      {
         if (pthread_attr_getstack(&attr, &stackaddr, &size) == 0
             && stackaddr != NULL) {
           (void)pthread_attr_destroy(&attr);
@@ -1268,11 +1280,12 @@ GC_INNER size_t GC_page_size = 0;
 # define GET_MAIN_STACKBASE_SPECIAL
 #endif /* !AMIGA, !BEOS, !OPENBSD, !OS2, !Windows */
 
-#if (defined(GC_LINUX_THREADS) || defined(PLATFORM_ANDROID)) \
-    && !defined(NO_PTHREAD_GETATTR_NP)
-
+#if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
+    && defined(THREADS) && !defined(HAVE_GET_STACK_BASE)
 # include <pthread.h>
-  /* extern int pthread_getattr_np(pthread_t, pthread_attr_t *); */
+# ifdef HAVE_PTHREAD_NP_H
+#   include <pthread_np.h>
+# endif
 
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
   {
@@ -1282,10 +1295,20 @@ GC_INNER size_t GC_page_size = 0;
       DCL_LOCK_STATE;
 #   endif
 
-    if (pthread_getattr_np(pthread_self(), &attr) != 0) {
+#   ifdef HAVE_PTHREAD_ATTR_GET_NP
+      if (pthread_attr_init(&attr) != 0)
+        ABORT("pthread_attr_init failed");
+      if (pthread_attr_get_np(pthread_self(), &attr) != 0) {
+        WARN("pthread_attr_get_np failed\n", 0);
+        (void)pthread_attr_destroy(&attr);
+        return GC_UNIMPLEMENTED;
+      }
+#   else /* HAVE_PTHREAD_GETATTR_NP */
+      if (pthread_getattr_np(pthread_self(), &attr) != 0) {
         WARN("pthread_getattr_np failed\n", 0);
         return GC_UNIMPLEMENTED;
-    }
+      }
+#   endif
     if (pthread_attr_getstack(&attr, &(b -> mem_base), &size) != 0) {
         ABORT("pthread_attr_getstack failed");
     }
@@ -1321,7 +1344,7 @@ GC_INNER size_t GC_page_size = 0;
     return GC_SUCCESS;
   }
 # define HAVE_GET_STACK_BASE
-#endif /* GC_LINUX_THREADS */
+#endif /* THREADS && (HAVE_PTHREAD_ATTR_GET_NP || HAVE_PTHREAD_GETATTR_NP) */
 
 #if defined(GC_DARWIN_THREADS) && !defined(NO_PTHREAD_GET_STACKADDR_NP)
 # include <pthread.h>

@@ -3033,6 +3033,17 @@
 # define USE_GET_STACKBASE_FOR_MAIN
 #endif
 
+/* Outline pthread primitives to use in GC_get_[main_]stack_base.       */
+#if ((defined(FREEBSD) && defined(__GLIBC__)) /* kFreeBSD */ \
+     || defined(LINUX) || defined(PLATFORM_ANDROID)) \
+    && !defined(NO_PTHREAD_GETATTR_NP)
+# define HAVE_PTHREAD_GETATTR_NP 1
+#elif defined(FREEBSD) && !defined(__GLIBC__) \
+      && !defined(NO_PTHREAD_ATTR_GET_NP)
+# define HAVE_PTHREAD_NP_H 1 /* requires include pthread_np.h */
+# define HAVE_PTHREAD_ATTR_GET_NP 1
+#endif
+
 #if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE) \
     && !defined(PLATFORM_ANDROID)
   /* Make the code cancellation-safe.  This basically means that we     */
