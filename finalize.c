@@ -426,7 +426,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     int res = GC_SUCCESS;
     DCL_LOCK_STATE;
 
-    GC_ASSERT(obj != NULL);
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(obj));
     LOCK();
     if (GC_toggleref_callback != 0) {
       if (!ensure_toggleref_capacity(1)) {
