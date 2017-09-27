@@ -1273,7 +1273,7 @@ void run_one_test(void)
                       (unsigned long)GC_size(GC_malloc(0)));
         FAIL;
       }
-      collectable_count += 1;
+      uncollectable_count++;
       if (GC_size(GC_malloc_uncollectable(0)) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_malloc_uncollectable(0) failed\n");
         FAIL;
@@ -1321,6 +1321,7 @@ void run_one_test(void)
       }
       z = GC_malloc(8);
       CHECK_OUT_OF_MEMORY(z);
+      collectable_count++;
       GC_PTR_STORE(z, x);
       if (*z != x) {
         GC_printf("GC_PTR_STORE failed: %p != %p\n", (void *)(*z), (void *)x);
@@ -1346,6 +1347,7 @@ void run_one_test(void)
           size_t i;
 
           (void)GC_malloc(17);
+          collectable_count++;
           for (i = sizeof(GC_word); i < 512; i *= 2) {
             GC_word result = (GC_word) GC_memalign(i, 17);
             if (result % i != 0 || result == 0 || *(int *)result != 0) FAIL;
@@ -1379,6 +1381,7 @@ void run_one_test(void)
            size_t i;
            for (i = 0; i < 10000; ++i) {
              (void)GC_MALLOC(0);
+             collectable_count++;
              GC_FREE(GC_MALLOC(0));
              (void)GC_MALLOC_ATOMIC(0);
              GC_FREE(GC_MALLOC_ATOMIC(0));
