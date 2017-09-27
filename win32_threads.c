@@ -2716,10 +2716,12 @@ GC_INNER void GC_thr_init(void)
     DCL_LOCK_STATE;
 
     GC_ASSERT(!GC_win32_dll_threads);
-    t = GC_lookup_pthread(thread);
+    /* The thread might not have registered itself yet. */
+    /* TODO: Wait for registration of the created thread in pthread_create. */
+    while ((t = GC_lookup_pthread(thread)) == NULL)
+      Sleep(10);
     result = pthread_detach(thread);
     if (result == 0) {
-      if (NULL == t) ABORT("Thread not registered");
       LOCK();
       t -> flags |= DETACHED;
       /* Here the pthread thread id may have been recycled. */
