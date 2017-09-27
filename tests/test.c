@@ -152,13 +152,24 @@
               exit(1); \
             }
 
+#if defined(THREADS) && (defined(PARALLEL_MARK) \
+                         || !defined(GC_WIN32_THREADS))
+# include "atomic_ops.h" /* for counters */
+#endif
+
 /* Allocation Statistics.  Incremented without synchronization. */
 /* FIXME: We should be using synchronization.                   */
 int stubborn_count = 0;
 int uncollectable_count = 0;
-int collectable_count = 0;
 int atomic_count = 0;
 int realloc_count = 0;
+
+#ifdef AO_HAVE_fetch_and_add1
+  static volatile AO_t collectable_count;
+#else
+  int collectable_count = 0;
+# define AO_fetch_and_add1(p) ((*(p))++)
+#endif
 
 #if defined(GC_AMIGA_FASTALLOC) && defined(AMIGA)
 
@@ -314,11 +325,10 @@ struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
 
 sexpr small_cons (sexpr x, sexpr y)
 {
-    sexpr r;
+    sexpr r = (sexpr)GC_MALLOC(sizeof(struct SEXPR));
 
-    collectable_count++;
-    r = (sexpr) GC_MALLOC(sizeof(struct SEXPR));
     CHECK_OUT_OF_MEMORY(r);
+    AO_fetch_and_add1(&collectable_count);
     r -> sexpr_car = x;
     r -> sexpr_cdr = y;
     return(r);
@@ -683,20 +693,20 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     test_generic_malloc_or_special(d);
     e = uncollectable_ints(1, 1);
     /* Check that realloc updates object descriptors correctly */
-    collectable_count++;
+    AO_fetch_and_add1(&collectable_count);
     f = (sexpr *)GC_MALLOC(4 * sizeof(sexpr));
     realloc_count++;
     f = (sexpr *)GC_REALLOC((void *)f, 6 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(f);
     f[5] = ints(1,17);
-    collectable_count++;
+    AO_fetch_and_add1(&collectable_count);
     g = (sexpr *)GC_MALLOC(513 * sizeof(sexpr));
     test_generic_malloc_or_special(g);
     realloc_count++;
     g = (sexpr *)GC_REALLOC((void *)g, 800 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(g);
     g[799] = ints(1,18);
-    collectable_count++;
+    AO_fetch_and_add1(&collectable_count);
     h = (sexpr *)GC_MALLOC(1025 * sizeof(sexpr));
     realloc_count++;
     h = (sexpr *)GC_REALLOC((void *)h, 2000 * sizeof(sexpr));
@@ -842,7 +852,7 @@ tn * mktree(int n)
 {
     tn * result = (tn *)GC_MALLOC(sizeof(tn));
 
-    collectable_count++;
+    AO_fetch_and_add1(&collectable_count);
 #   if defined(MACOS)
         /* get around static data limitations. */
         if (!live_indicators) {
@@ -983,13 +993,13 @@ void chktree(tn *t, int n)
         FAIL;
     }
     if (counter++ % 373 == 0) {
-        collectable_count++;
         (void) GC_MALLOC(counter%5001);
+        AO_fetch_and_add1(&collectable_count);
     }
     chktree(t -> lchild, n-1);
     if (counter++ % 73 == 0) {
-        collectable_count++;
         (void) GC_MALLOC(counter%373);
+        AO_fetch_and_add1(&collectable_count);
     }
     chktree(t -> rchild, n-1);
 }
@@ -1001,7 +1011,7 @@ pthread_key_t fl_key;
 void * alloc8bytes(void)
 {
 # if defined(SMALL_CONFIG) || defined(GC_DEBUG)
-    collectable_count++;
+    AO_fetch_and_add1(&collectable_count);
     return(GC_MALLOC(8));
 # else
     void ** my_free_list_ptr;
@@ -1024,7 +1034,7 @@ void * alloc8bytes(void)
     }
     *my_free_list_ptr = GC_NEXT(my_free_list);
     GC_NEXT(my_free_list) = 0;
-    collectable_count++;
+    AO_fetch_and_add1(&collectable_count);
     return(my_free_list);
 # endif
 }
@@ -1136,10 +1146,10 @@ void typed_test(void)
                                 320 * sizeof(GC_word) + 123, d4);
     int i;
 
+    AO_fetch_and_add1(&collectable_count);
 #   ifndef LINT
       (void)GC_make_descriptor(bm_large, 32);
 #   endif
-    collectable_count++;
     if (GC_get_bit(bm_huge, 32) == 0 || GC_get_bit(bm_huge, 311) == 0
         || GC_get_bit(bm_huge, 319) != 0) {
       GC_printf("Bad GC_get_bit() or bm_huge initialization\n");
@@ -1152,9 +1162,9 @@ void typed_test(void)
     d2 = GC_make_descriptor(bm2, 2);
     old = 0;
     for (i = 0; i < 4000; i++) {
-        collectable_count++;
         new = (GC_word *) GC_malloc_explicitly_typed(4 * sizeof(GC_word), d1);
         CHECK_OUT_OF_MEMORY(new);
+        AO_fetch_and_add1(&collectable_count);
         if (0 != new[0] || 0 != new[1]) {
             GC_printf("Bad initialization by GC_malloc_explicitly_typed\n");
             FAIL;
@@ -1162,26 +1172,26 @@ void typed_test(void)
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
-        collectable_count++;
+        AO_fetch_and_add1(&collectable_count);
         new = (GC_word *) GC_malloc_explicitly_typed(4 * sizeof(GC_word), d2);
         CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
-        collectable_count++;
+        AO_fetch_and_add1(&collectable_count);
         new = (GC_word *) GC_malloc_explicitly_typed(33 * sizeof(GC_word), d3);
         CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
-        collectable_count++;
+        AO_fetch_and_add1(&collectable_count);
         new = (GC_word *) GC_calloc_explicitly_typed(4, 2 * sizeof(GC_word),
                                                      d1);
         CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
-        collectable_count++;
+        AO_fetch_and_add1(&collectable_count);
         if (i & 0xff) {
           new = (GC_word *) GC_calloc_explicitly_typed(7, 3 * sizeof(GC_word),
                                                      d2);
@@ -1283,14 +1293,16 @@ void run_one_test(void)
 #   endif
     test_tinyfl();
 #   ifndef DBG_HDRS_ALL
-      collectable_count += 3;
+      AO_fetch_and_add1(&collectable_count); /* 1 */
+      AO_fetch_and_add1(&collectable_count); /* 2 */
+      AO_fetch_and_add1(&collectable_count); /* 3 */
       if ((GC_size(GC_malloc(7)) != 8 &&
            GC_size(GC_malloc(7)) != MIN_WORDS * sizeof(GC_word))
            || GC_size(GC_malloc(15)) != 16) {
         GC_printf("GC_size produced unexpected results\n");
         FAIL;
       }
-      collectable_count += 1;
+      AO_fetch_and_add1(&collectable_count);
       if (GC_size(GC_malloc(0)) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_malloc(0) failed: GC_size returns %lu\n",
                       (unsigned long)GC_size(GC_malloc(0)));
@@ -1303,7 +1315,7 @@ void run_one_test(void)
       }
       GC_is_valid_displacement_print_proc = fail_proc1;
       GC_is_visible_print_proc = fail_proc1;
-      collectable_count += 1;
+      AO_fetch_and_add1(&collectable_count);
       x = GC_malloc(16);
       if (GC_base(GC_PTR_ADD(x, 13)) != x) {
         GC_printf("GC_base(heap ptr) produced incorrect result\n");
@@ -1344,7 +1356,7 @@ void run_one_test(void)
       }
       z = GC_malloc(8);
       CHECK_OUT_OF_MEMORY(z);
-      collectable_count++;
+      AO_fetch_and_add1(&collectable_count);
       GC_PTR_STORE(z, x);
       if (*z != x) {
         GC_printf("GC_PTR_STORE failed: %p != %p\n", (void *)(*z), (void *)x);
@@ -1370,7 +1382,7 @@ void run_one_test(void)
           size_t i;
 
           (void)GC_malloc(17);
-          collectable_count++;
+          AO_fetch_and_add1(&collectable_count);
           for (i = sizeof(GC_word); i < 512; i *= 2) {
             GC_word result = (GC_word) GC_memalign(i, 17);
             if (result % i != 0 || result == 0 || *(int *)result != 0) FAIL;
@@ -1390,13 +1402,14 @@ void run_one_test(void)
 #     endif
 #   endif /* DBG_HDRS_ALL */
     /* Test floating point alignment */
-        collectable_count += 2;
         {
           double *dp = GC_MALLOC(sizeof(double));
           CHECK_OUT_OF_MEMORY(dp);
+          AO_fetch_and_add1(&collectable_count);
           *dp = 1.0;
           dp = GC_MALLOC(sizeof(double));
           CHECK_OUT_OF_MEMORY(dp);
+          AO_fetch_and_add1(&collectable_count);
           *dp = 1.0;
         }
     /* Test size 0 allocation a bit more */
@@ -1404,7 +1417,7 @@ void run_one_test(void)
            size_t i;
            for (i = 0; i < 10000; ++i) {
              (void)GC_MALLOC(0);
-             collectable_count++;
+             AO_fetch_and_add1(&collectable_count);
              GC_FREE(GC_MALLOC(0));
              (void)GC_MALLOC_ATOMIC(0);
              GC_FREE(GC_MALLOC_ATOMIC(0));
@@ -1622,7 +1635,7 @@ void check_heap_stats(void)
     (void)GC_call_with_alloc_lock(reachable_objs_count_enumerator,
                                   &obj_count);
     GC_printf("Completed %u tests\n", n_tests);
-    GC_printf("Allocated %d collectable objects\n", collectable_count);
+    GC_printf("Allocated %d collectable objects\n", (int)collectable_count);
     GC_printf("Allocated %d uncollectable objects\n",
                   uncollectable_count);
     GC_printf("Allocated %d atomic objects\n", atomic_count);
