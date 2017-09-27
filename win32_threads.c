@@ -2574,7 +2574,10 @@ GC_INNER void GC_thr_init(void)
     DCL_LOCK_STATE;
 
     if (!parallel_initialized) GC_init_parallel();
-    t = GC_lookup_pthread(thread);
+    /* The thread might not have registered itself yet. */
+    /* TODO: Wait for registration of the created thread in pthread_create. */
+    while ((t = GC_lookup_pthread(thread)) == NULL)
+      Sleep(10);
     result = pthread_detach(thread);
     if (result == 0) {
       LOCK();
