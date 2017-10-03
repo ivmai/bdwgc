@@ -1,3 +1,120 @@
+2017-09-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [NEED_PROC_MAPS] (GC_get_maps): Refine comment.
+	* os_dep.c [NEED_PROC_MAPS && THREADS] (GC_get_maps): Replace ABORT
+	with WARN call; refine printed message; add comment.
+
+2017-09-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c [WRAP_MARK_SOME && REGISTER_LIBRARIES_EARLY] (GC_mark_some):
+	Call GC_cond_register_dynamic_libraries (with the world running)
+	before GC_invalidate_mark_state().
+
+2017-09-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_pmark.h [HAVE_CONFIG_H]: Do not include config.h
+	if already included from gc_priv.h (to avoid PARALLEL_MARK macro
+	redefinition in config.h after it was undefined in gcconfig.h).
+	* mark.c [MSWIN32 || USE_PROC_FOR_LIBRARIES] (WRAP_MARK_SOME): Move
+	definition to gcconfig.h.
+	* include/private/gcconfig.h [WRAP_MARK_SOME && PARALLEL_MARK]
+	(PARALLEL_MARK): Undefine (as not implemented).
+
+2017-09-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [GC_PTHREADS] (GC_pthread_detach): Repeat
+	GC_lookup_pthread() (with a 10 msec delay) while t is null; add
+	comment and TODO; remove ABORT if t is null (as t is never null after
+	pthread_detach call).
+
+2017-09-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (WRAP_FUNC(pthread_join)): Remove assertion that
+	thread is finished; call GC_delete_gc_thread only if thread is
+	finished; add comment.
+	* win32_threads.c [GC_PTHREADS] (GC_pthread_join): Call
+	GC_delete_gc_thread only if thread is finished.
+
+2017-09-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c [CAN_HANDLE_FORK] (GC_remove_all_threads_but_me):
+	Do not assign me if it is already non-null; add comment.
+	* win32_threads.c [CAN_HANDLE_FORK] (GC_remove_all_threads_but_me):
+	Likewise.
+	* win32_threads.c [CAN_HANDLE_FORK] (GC_remove_all_threads_but_me):
+	Remove GC_ASSERT(me==NULL).
+
+2017-09-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [GC_WIN32_PTHREADS] (GC_pthread_join): Do not call
+	GC_lookup_pthread if pthread_join failed.
+	* win32_threads.c [GC_PTHREADS] (GC_pthread_join): Do not call
+	GC_delete_gc_thread_no_free, GC_INTERNAL_FREE if pthread_join failed.
+	* win32_threads.c [GC_PTHREADS && DEBUG_THREADS] (GC_pthread_join):
+	Log whether pthread_join succeeded or failed.
+
+2017-09-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [GC_PTHREADS] (GC_pthread_detach): Do not hold the
+	allocation lock when GC_lookup_pthread is invoked.
+
+2017-08-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c [CAN_HANDLE_FORK && THREAD_LOCAL_ALLOC]
+	(GC_remove_all_threads_but_me): Do not call GC_destroy_thread_local;
+	add comment.
+	* win32_threads.c [CAN_HANDLE_FORK && THREAD_LOCAL_ALLOC]
+	(GC_remove_all_threads_but_me): Likewise.
+	* thread_local_alloc.c [THREAD_LOCAL_ALLOC] (GC_destroy_thread_local):
+	Update comment.
+	* thread_local_alloc.c [CAN_HANDLE_FORK && THREAD_LOCAL_ALLOC]
+	(GC_destroy_thread_local): Remove assertion.
+
+2017-08-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/specific.h (GC_remove_specific): Define as macro
+	(calls GC_remove_specific_after_fork).
+	* include/private/specific.h (PREFIXED(remove_specific_after_fork)):
+	New function declaration.
+	* include/private/thread_local_alloc.h [USE_PTHREAD_SPECIFIC
+	|| USE_COMPILER_TLS || USE_WIN32_COMPILER_TLS || USE_WIN32_SPECIFIC]
+	(GC_remove_specific_after_fork): New macro (defined to no-op).
+	* pthread_support.c [CAN_HANDLE_FORK && THREAD_LOCAL_ALLOC]
+	(GC_remove_all_threads_but_me): Call GC_remove_specific_after_fork
+	instead of GC_remove_specific (i.e. delete thread-specific control
+	data for the given thread instead of the current one).
+	* win32_threads.c [CAN_HANDLE_FORK && THREAD_LOCAL_ALLOC] Call
+	GC_remove_specific_after_fork.
+	* specific.c [USE_CUSTOM_SPECIFIC] (GC_setspecific): Add assertion
+	that the allocation lock is held; remove the corresponding comment.
+	* specific.c [USE_CUSTOM_SPECIFIC] (GC_remove_specific): Replace to
+	GC_remove_specific_after_fork (add t argument); replace self local
+	variable with t argument; update comment;
+	* specific.c [USE_CUSTOM_SPECIFIC && CAN_HANDLE_FORK]
+	(GC_remove_specific_after_fork): Add assertion that the allocation
+	lock is held; add comment.
+
+2017-09-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h [PLATFORM_ANDROID && !THREADS]
+	(USE_GET_STACKBASE_FOR_MAIN): Move definition down to be after THREADS
+	definition.
+
+2017-08-31  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/scale.html (Options for enhanced scalability): Fix a typo
+	("be replaced").
+
+2017-08-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [NEED_CALLINFO] (GC_print_callers): Cast info[i].ci_pc to
+	unsigned long in GC_err_printf call to match the format specifier.
+
+2017-08-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c [MARK_BIT_PER_OBJ] (GC_set_hdr_marks): Set hhdr->hb_n_marks
+	exactly to n_marks value (without a decrement by one).
+
 2017-08-07  Ivan Maidanski <ivmai@mail.ru>
 
 	* dbg_mlc.c [REDIRECT_MALLOC && (GC_LINUX_THREADS || GC_SOLARIS_THREADS
