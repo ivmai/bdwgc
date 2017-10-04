@@ -1,3 +1,14 @@
+2012-04-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [THREAD_LOCAL_ALLOC] (GC_unregister_my_thread,
+	GC_thread_exit_proc): Invoke GC_remove_specific after destroying
+	thread-local list (same as in pthread_support.c).
+
+2012-04-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* specific.c (GC_setspecific): Call MALLOC_CLEAR with GC temporarily
+	disabled.
+
 2017-09-27  Ivan Maidanski <ivmai@mail.ru>
 
 	* os_dep.c [NEED_PROC_MAPS] (GC_get_maps): Refine comment.
