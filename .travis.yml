@@ -308,6 +308,11 @@ matrix:
     - CONF_OPTIONS="--enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
     - TESTS_CUSTOM_RUN=true
+  - os: osx
+    env:
+    - CFLAGS_EXTRA="-fsanitize=address -m32 -fno-omit-frame-pointer"
+    - CONF_OPTIONS="--enable-cplusplus --enable-munmap --enable-static"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
