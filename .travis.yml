@@ -284,6 +284,11 @@ matrix:
     - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-cplusplus"
     - TESTS_CUSTOM_RUN=true
+  - os: osx
+    env:
+    - CFLAGS_EXTRA="-fsanitize=address -m32 -fno-omit-frame-pointer"
+    - CONF_OPTIONS="--disable-shared --enable-cplusplus --enable-munmap"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
