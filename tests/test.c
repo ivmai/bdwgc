@@ -1223,12 +1223,28 @@ void typed_test(void)
     GC_noop1((word)x);
 }
 
-int fail_count = 0;
+#ifdef DBG_HDRS_ALL
+# define set_print_procs() (void)0
+#else
+  int fail_count = 0;
 
-void GC_CALLBACK fail_proc1(void *x GC_ATTR_UNUSED)
-{
+  void GC_CALLBACK fail_proc1(void *x GC_ATTR_UNUSED)
+  {
     fail_count++;
-}
+  }
+
+  void set_print_procs(void)
+  {
+    GC_is_valid_displacement_print_proc = fail_proc1;
+    GC_is_visible_print_proc = fail_proc1;
+  }
+
+# ifdef THREADS
+#   define TEST_FAIL_COUNT(n) 1
+# else
+#   define TEST_FAIL_COUNT(n) (fail_count >= (n))
+# endif
+#endif /* !DBG_HDRS_ALL */
 
 static void uniq(void *p, ...) {
   va_list a;
@@ -1248,12 +1264,6 @@ static void uniq(void *p, ...) {
         FAIL;
       }
 }
-
-#ifdef THREADS
-#   define TEST_FAIL_COUNT(n) 1
-#else
-#   define TEST_FAIL_COUNT(n) (fail_count >= (n))
-#endif
 
 void * GC_CALLBACK inc_int_counter(void *pcounter)
 {
@@ -1314,8 +1324,6 @@ void run_one_test(void)
         GC_printf("GC_malloc_uncollectable(0) failed\n");
         FAIL;
       }
-      GC_is_valid_displacement_print_proc = fail_proc1;
-      GC_is_visible_print_proc = fail_proc1;
       AO_fetch_and_add1(&collectable_count);
       x = GC_malloc(16);
       if (GC_base(GC_PTR_ADD(x, 13)) != x) {
@@ -1819,6 +1827,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
         GC_printf("Emulating dirty bits with mprotect/signals\n");
 #     endif
 #   endif
+    set_print_procs();
     run_one_test();
     check_heap_stats();
 #   ifndef MSWINCE
@@ -2109,6 +2118,7 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
       FAIL;
     CloseHandle(win_created_h);
 # endif
+  set_print_procs();
 # if NTHREADS > 0
    for (i = 0; i < NTHREADS; i++) {
     h[i] = GC_CreateThread(NULL, 0, thr_run_one_test, 0, 0, &thread_id);
@@ -2161,6 +2171,7 @@ int test(void)
     n_tests = 0;
     /* GC_enable_incremental(); */
     GC_set_warn_proc(warn_proc);
+    set_print_procs();
     th1 = PCR_Th_Fork(run_one_test, 0);
     th2 = PCR_Th_Fork(run_one_test, 0);
     run_one_test();
@@ -2245,6 +2256,7 @@ int main(void)
         GC_printf("Key creation failed %d\n", code);
         FAIL;
     }
+    set_print_procs();
 #   if NTHREADS > 0
       for (i = 0; i < NTHREADS; ++i) {
         if ((code = pthread_create(th+i, &attr, thr_run_one_test, 0)) != 0) {
