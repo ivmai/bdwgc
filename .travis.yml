@@ -307,6 +307,7 @@ matrix:
     - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
+    - TESTS_CUSTOM_RUN=true
   - os: linux
     addons:
       apt:
@@ -320,14 +321,14 @@ matrix:
     env:
     - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer -D NO_INCREMENTAL"
     - CONF_OPTIONS="--enable-handle-fork --enable-munmap --enable-static"
-    - MSAN_OR_UBSAN=true
+    - TESTS_CUSTOM_RUN=true
     - NO_CLONE_LIBATOMIC_OPS=true
     sudo: required
   - os: linux
     compiler: clang
     env:
     - CFLAGS_EXTRA="-fsanitize=undefined -fno-common -fno-omit-frame-pointer"
-    - MSAN_OR_UBSAN=true
+    - TESTS_CUSTOM_RUN=true
     - CONF_OPTIONS="--enable-cplusplus --enable-handle-fork --enable-munmap --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
@@ -506,8 +507,9 @@ script:
         *.cc cord/*.c cord/tests/*.c tests/*.c tests/*.cc tools/*.c
         extra/gc.c extra/pcr_interface.c;
   fi
-- if [[ "$MSAN_OR_UBSAN" == true ]]; then
-    UBSAN_OPTIONS="halt_on_error=1" make check-without-test-driver;
+- if [[ "$TESTS_CUSTOM_RUN" == true ]]; then
+    ASAN_OPTIONS="detect_leaks=1" UBSAN_OPTIONS="halt_on_error=1"
+        make check-without-test-driver;
   fi
 
 after_success:
