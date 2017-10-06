@@ -137,8 +137,7 @@
                 AO_CLEAR(&GC_allocate_lock); }
 #     else
 #        define UNCOND_LOCK() \
-              { GC_ASSERT(I_DONT_HOLD_LOCK()); \
-                if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
+              { if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
                   GC_lock(); }
 #        define UNCOND_UNLOCK() AO_CLEAR(&GC_allocate_lock)
 #     endif /* !GC_ASSERTIONS */
@@ -197,12 +196,15 @@
 #  if defined(GC_ALWAYS_MULTITHREADED) \
       && (defined(USE_PTHREAD_LOCKS) || defined(USE_SPIN_LOCK))
 #    define GC_need_to_lock TRUE
+#    define set_need_to_lock() (void)0
 #  else
 #    if defined(GC_ALWAYS_MULTITHREADED) && !defined(CPPCHECK)
 #      error Runtime initialization of GC lock is needed!
 #    endif
 #    undef GC_ALWAYS_MULTITHREADED
      GC_EXTERN GC_bool GC_need_to_lock;
+#       define set_need_to_lock() (void)(GC_need_to_lock = TRUE)
+                                        /* We are multi-threaded now.   */
 #  endif
 
 # else /* !THREADS */

@@ -1648,10 +1648,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
 {
     /* Check GC is initialized and the current thread is registered. */
     GC_ASSERT(GC_lookup_thread(pthread_self()) != 0);
-
-#   ifndef GC_ALWAYS_MULTITHREADED
-      GC_need_to_lock = TRUE;   /* We are multi-threaded now. */
-#   endif
+    set_need_to_lock();
 }
 
 GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
@@ -1843,10 +1840,7 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
       GC_log_printf("About to start new thread from thread %p\n",
                     (void *)pthread_self());
 #   endif
-#   ifndef GC_ALWAYS_MULTITHREADED
-      GC_need_to_lock = TRUE;
-#   endif
-
+    set_need_to_lock();
     result = REAL_FUNC(pthread_create)(new_thread, attr, GC_start_routine, si);
 
     /* Wait until child has been added to the thread table.             */

@@ -730,13 +730,12 @@ GC_API void GC_CALL GC_allow_register_threads(void)
 {
   /* Check GC is initialized and the current thread is registered. */
   GC_ASSERT(GC_lookup_thread_inner(GetCurrentThreadId()) != 0);
-# ifndef GC_ALWAYS_MULTITHREADED
-#   if !defined(GC_NO_THREADS_DISCOVERY) && !defined(PARALLEL_MARK)
+# if !defined(GC_ALWAYS_MULTITHREADED) && !defined(PARALLEL_MARK) \
+     && !defined(GC_NO_THREADS_DISCOVERY)
       /* GC_init() does not call GC_init_parallel() in this case.   */
-      parallel_initialized = TRUE;
-#   endif
-    GC_need_to_lock = TRUE; /* We are multi-threaded now. */
+    parallel_initialized = TRUE;
 # endif
+  set_need_to_lock();
 }
 
 GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
@@ -2257,9 +2256,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       args -> start = lpStartAddress;
       args -> param = lpParameter;
 
-#     ifndef GC_ALWAYS_MULTITHREADED
-        GC_need_to_lock = TRUE;
-#     endif
+      set_need_to_lock();
       thread_h = CreateThread(lpThreadAttributes, dwStackSize, GC_win32_start,
                               args, dwCreationFlags, lpThreadId);
       if (thread_h == 0) GC_free(args);
@@ -2311,9 +2308,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         args -> start = (LPTHREAD_START_ROUTINE)start_address;
         args -> param = arglist;
 
-#       ifndef GC_ALWAYS_MULTITHREADED
-          GC_need_to_lock = TRUE;
-#       endif
+        set_need_to_lock();
         thread_h = _beginthreadex(security, stack_size,
                         (unsigned (__stdcall *)(void *))GC_win32_start,
                         args, initflag, thrdaddr);
@@ -2608,9 +2603,7 @@ GC_INNER void GC_thr_init(void)
                       (void *)GC_PTHREAD_PTRVAL(pthread_self()),
                       (long)GetCurrentThreadId());
 #     endif
-#     ifndef GC_ALWAYS_MULTITHREADED
-        GC_need_to_lock = TRUE;
-#     endif
+      set_need_to_lock();
       result = pthread_create(new_thread, attr, GC_pthread_start, si);
 
       if (result) { /* failure */
@@ -2839,15 +2832,13 @@ GC_INNER void GC_init_parallel(void)
 # if defined(CPPCHECK) && !defined(GC_NO_THREADS_DISCOVERY)
     GC_noop1((word)&GC_DllMain);
 # endif
-# ifndef GC_ALWAYS_MULTITHREADED
-    if (GC_win32_dll_threads) {
-      GC_need_to_lock = TRUE;
+  if (GC_win32_dll_threads) {
+    set_need_to_lock();
         /* Cannot intercept thread creation.  Hence we don't know if    */
         /* other threads exist.  However, client is not allowed to      */
         /* create other threads before collector initialization.        */
         /* Thus it's OK not to lock before this.                        */
-    }
-# endif
+  }
   /* Initialize thread local free lists if used.        */
 # if defined(THREAD_LOCAL_ALLOC)
     LOCK();
