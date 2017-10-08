@@ -1629,6 +1629,7 @@ void check_heap_stats(void)
                   uncollectable_count);
     GC_printf("Allocated %d atomic objects\n", atomic_count);
     GC_printf("Allocated %d stubborn objects\n", stubborn_count);
+    GC_printf("Reallocated %d objects\n", realloc_count);
     GC_printf("Finalized %d/%d objects - ",
                   finalized_count, finalizable_count);
 #   ifndef GC_NO_FINALIZATION
