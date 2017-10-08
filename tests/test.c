@@ -753,6 +753,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
           } else {
             a = (sexpr)GC_REALLOC((void *)a, 8200);
           }
+          realloc_count++;
 #       endif
     }
     check_ints(a,1,49);
@@ -1420,8 +1421,10 @@ void run_one_test(void)
              AO_fetch_and_add1(&collectable_count);
              GC_FREE(GC_MALLOC(0));
              (void)GC_MALLOC_ATOMIC(0);
+             atomic_count++;
              GC_FREE(GC_MALLOC_ATOMIC(0));
              test_generic_malloc_or_special(GC_malloc_atomic(1));
+             atomic_count++;
            }
          }
 #   ifdef GC_GCJ_SUPPORT
