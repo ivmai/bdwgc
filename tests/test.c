@@ -157,19 +157,31 @@
 # include "atomic_ops.h" /* for counters */
 #endif
 
-/* Allocation Statistics.  Incremented without synchronization. */
-/* FIXME: We should be using synchronization.                   */
-int stubborn_count = 0;
-int uncollectable_count = 0;
-int atomic_count = 0;
-int realloc_count = 0;
-
-#ifdef AO_HAVE_fetch_and_add1
-  static volatile AO_t collectable_count;
-#else
-  int collectable_count = 0;
+/* Define AO primitives for a single-threaded mode. */
+#ifndef AO_CLEAR
+  /* AO_t not defined. */
+# define AO_t GC_word
+#endif
+#ifndef AO_HAVE_load
+# define AO_load(p) (*(p))
+#endif
+#ifndef AO_HAVE_store
+# define AO_store(p, v) (void)(*(p) = (v))
+#endif
+#ifndef AO_HAVE_fetch_and_add1
 # define AO_fetch_and_add1(p) ((*(p))++)
 #endif
+
+/* Allocation Statistics.  Synchronization is not strictly necessary.   */
+volatile AO_t stubborn_count = 0;
+volatile AO_t uncollectable_count = 0;
+volatile AO_t collectable_count = 0;
+volatile AO_t atomic_count = 0;
+volatile AO_t realloc_count = 0;
+
+volatile AO_t extra_count = 0;  /* Amount of space wasted in cons node; */
+                                /* also used in gcj_cons, mktree and    */
+                                /* chktree (for other purposes).        */
 
 #if defined(GC_AMIGA_FASTALLOC) && defined(AMIGA)
 
@@ -238,9 +250,6 @@ typedef struct SEXPR * sexpr;
 # define cdr(x) ((x) -> sexpr_cdr)
 # define is_nil(x) ((x) == nil)
 
-
-int extra_count = 0;        /* Amount of space wasted in cons node */
-
 /* Silly implementation of Lisp cons. Intentionally wastes lots of space */
 /* to test collector.                                                    */
 # ifdef VERY_SMALL_CONFIG
@@ -250,11 +259,11 @@ sexpr cons (sexpr x, sexpr y)
 {
     sexpr r;
     int *p;
-    int my_extra = extra_count;
+    unsigned my_extra = (unsigned)AO_fetch_and_add1(&extra_count) % 5000;
 
-    stubborn_count++;
     r = (sexpr) GC_MALLOC_STUBBORN(sizeof(struct SEXPR) + my_extra);
     CHECK_OUT_OF_MEMORY(r);
+    AO_fetch_and_add1(&stubborn_count);
     for (p = (int *)r;
          (word)p < (word)r + my_extra + sizeof(struct SEXPR); p++) {
         if (*p) {
@@ -269,12 +278,6 @@ sexpr cons (sexpr x, sexpr y)
 #   endif
     r -> sexpr_car = x;
     r -> sexpr_cdr = y;
-    my_extra++;
-    if ( my_extra >= 5000 ) {
-        extra_count = 0;
-    } else {
-        extra_count = my_extra;
-    }
     GC_END_STUBBORN_CHANGE(r);
     return(r);
 }
@@ -336,36 +339,32 @@ sexpr small_cons (sexpr x, sexpr y)
 
 sexpr small_cons_uncollectable (sexpr x, sexpr y)
 {
-    sexpr r;
+    sexpr r = (sexpr)GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR));
 
-    uncollectable_count++;
-    r = (sexpr) GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR));
     CHECK_OUT_OF_MEMORY(r);
+    AO_fetch_and_add1(&uncollectable_count);
     r -> sexpr_car = x;
     r -> sexpr_cdr = (sexpr)(~(GC_word)y);
     return(r);
 }
 
 #ifdef GC_GCJ_SUPPORT
-
-
-sexpr gcj_cons(sexpr x, sexpr y)
-{
-    GC_word * r;
+  sexpr gcj_cons(sexpr x, sexpr y)
+  {
     sexpr result;
-    static int obj_cnt = 0;
+    GC_word * r = (GC_word *)GC_GCJ_MALLOC(
+                        sizeof(struct SEXPR) + sizeof(struct fake_vtable*),
+                        (AO_fetch_and_add1(&extra_count) & 1) != 0
+                                                ? &gcj_class_struct1
+                                                : &gcj_class_struct2);
 
-    r = (GC_word *) GC_GCJ_MALLOC(sizeof(struct SEXPR)
-                                  + sizeof(struct fake_vtable*),
-                                  (++obj_cnt & 1) != 0 ? &gcj_class_struct1
-                                                       : &gcj_class_struct2);
     CHECK_OUT_OF_MEMORY(r);
     result = (sexpr)(r + 1);
     result -> sexpr_car = x;
     result -> sexpr_cdr = y;
     return(result);
-}
-#endif
+  }
+#endif /* GC_GCJ_SUPPORT */
 
 /* Return reverse(x) concatenated with y */
 sexpr reverse1(sexpr x, sexpr y)
@@ -642,11 +641,12 @@ void test_generic_malloc_or_special(void *p) {
 }
 
 /* Try to force a to be strangely aligned */
-struct {
+volatile struct {
   char dummy;
-  sexpr aa;
+  AO_t aa;
 } A;
-#define a A.aa
+#define a_set(p) AO_store(&A.aa, (AO_t)(p))
+#define a_get() (sexpr)AO_load(&A.aa)
 
 /*
  * Repeatedly reverse lists built out of very different sized cons cells.
@@ -686,7 +686,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   endif
 
     A.dummy = 17;
-    a = ints(1, 49);
+    a_set(ints(1, 49));
     b = ints(1, 50);
     c = ints(1, BIG);
     d = uncollectable_ints(1, 100);
@@ -695,22 +695,22 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     /* Check that realloc updates object descriptors correctly */
     AO_fetch_and_add1(&collectable_count);
     f = (sexpr *)GC_MALLOC(4 * sizeof(sexpr));
-    realloc_count++;
     f = (sexpr *)GC_REALLOC((void *)f, 6 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(f);
+    AO_fetch_and_add1(&realloc_count);
     f[5] = ints(1,17);
     AO_fetch_and_add1(&collectable_count);
     g = (sexpr *)GC_MALLOC(513 * sizeof(sexpr));
     test_generic_malloc_or_special(g);
-    realloc_count++;
     g = (sexpr *)GC_REALLOC((void *)g, 800 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(g);
+    AO_fetch_and_add1(&realloc_count);
     g[799] = ints(1,18);
     AO_fetch_and_add1(&collectable_count);
     h = (sexpr *)GC_MALLOC(1025 * sizeof(sexpr));
-    realloc_count++;
     h = (sexpr *)GC_REALLOC((void *)h, 2000 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(h);
+    AO_fetch_and_add1(&realloc_count);
 #   ifdef GC_GCJ_SUPPORT
       h[1999] = gcj_ints(1,200);
       for (i = 0; i < 51; ++i)
@@ -730,13 +730,13 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     GC_FREE((void *)e);
 
     check_ints(b,1,50);
-    check_ints(a,1,49);
+    check_ints(a_get(),1,49);
     for (i = 0; i < 50; i++) {
         check_ints(b,1,50);
         b = reverse(reverse(b));
     }
     check_ints(b,1,50);
-    check_ints(a,1,49);
+    check_ints(a_get(),1,49);
     for (i = 0; i < 60; i++) {
 #       if (defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)) \
            && (NTHREADS > 0)
@@ -745,18 +745,14 @@ void *GC_CALLBACK reverse_test_inner(void *data)
         /* This maintains the invariant that a always points to a list of */
         /* 49 integers.  Thus this is thread safe without locks,          */
         /* assuming atomic pointer assignments.                           */
-        a = reverse(reverse(a));
+        a_set(reverse(reverse(a_get())));
 #       if !defined(AT_END) && !defined(THREADS)
           /* This is not thread safe, since realloc explicitly deallocates */
-          if (i & 1) {
-            a = (sexpr)GC_REALLOC((void *)a, 500);
-          } else {
-            a = (sexpr)GC_REALLOC((void *)a, 8200);
-          }
-          realloc_count++;
+          a_set(GC_REALLOC(a_get(), (i & 1) != 0 ? 500 : 8200));
+          AO_fetch_and_add1(&realloc_count);
 #       endif
     }
-    check_ints(a,1,49);
+    check_ints(a_get(),1,49);
     check_ints(b,1,50);
 
     /* Restore c and d values. */
@@ -772,7 +768,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   endif
     check_ints(h[1999], 1,200);
 #   ifndef THREADS
-        a = 0;
+      a_set(NULL);
 #   endif
     *(sexpr volatile *)&b = 0;
     *(sexpr volatile *)&c = 0;
@@ -784,8 +780,6 @@ void reverse_test(void)
     /* Test GC_do_blocking/GC_call_with_gc_active. */
     (void)GC_do_blocking(reverse_test_inner, 0);
 }
-
-#undef a
 
 /*
  * The rest of this builds balanced binary trees, checks that they don't
@@ -799,7 +793,7 @@ typedef struct treenode {
 
 int finalizable_count = 0;
 int finalized_count = 0;
-volatile int dropped_something = 0;
+volatile AO_t dropped_something = 0;
 
 void GC_CALLBACK finalizer(void * obj, void * client_data)
 {
@@ -829,8 +823,6 @@ void GC_CALLBACK finalizer(void * obj, void * client_data)
     LeaveCriticalSection(&incr_cs);
 # endif
 }
-
-size_t counter = 0;
 
 # define MAX_FINALIZED ((NTHREADS+1)*4000)
 
@@ -867,7 +859,7 @@ tn * mktree(int n)
     result -> level = n;
     result -> lchild = mktree(n-1);
     result -> rchild = mktree(n-1);
-    if (counter++ % 17 == 0 && n >= 2) {
+    if (AO_fetch_and_add1(&extra_count) % 17 == 0 && n >= 2) {
         tn * tmp;
 
         CHECK_OUT_OF_MEMORY(result->lchild);
@@ -876,7 +868,7 @@ tn * mktree(int n)
         result -> lchild -> rchild = result -> rchild -> lchild;
         result -> rchild -> lchild = tmp;
     }
-    if (counter++ % 119 == 0) {
+    if (AO_fetch_and_add1(&extra_count) % 119 == 0) {
 #       ifndef GC_NO_FINALIZATION
           int my_index;
           void *new_link;
@@ -993,13 +985,13 @@ void chktree(tn *t, int n)
         GC_printf("Lost a node at level %d - collector is broken\n", n);
         FAIL;
     }
-    if (counter++ % 373 == 0) {
-        (void) GC_MALLOC(counter%5001);
+    if (AO_fetch_and_add1(&extra_count) % 373 == 0) {
+        (void)GC_MALLOC((unsigned)AO_fetch_and_add1(&extra_count) % 5001);
         AO_fetch_and_add1(&collectable_count);
     }
     chktree(t -> lchild, n-1);
-    if (counter++ % 73 == 0) {
-        (void) GC_MALLOC(counter%373);
+    if (AO_fetch_and_add1(&extra_count) % 73 == 0) {
+        (void)GC_MALLOC((unsigned)AO_fetch_and_add1(&extra_count) % 373);
         AO_fetch_and_add1(&collectable_count);
     }
     chktree(t -> rchild, n-1);
@@ -1020,9 +1012,9 @@ void * alloc8bytes(void)
 
     my_free_list_ptr = (void **)pthread_getspecific(fl_key);
     if (my_free_list_ptr == 0) {
-        uncollectable_count++;
         my_free_list_ptr = GC_NEW_UNCOLLECTABLE(void *);
         CHECK_OUT_OF_MEMORY(my_free_list_ptr);
+        AO_fetch_and_add1(&uncollectable_count);
         if (pthread_setspecific(fl_key, my_free_list_ptr) != 0) {
             GC_printf("pthread_setspecific failed\n");
             FAIL;
@@ -1066,11 +1058,11 @@ void alloc_small(int n)
     int i;
 
     for (i = 0; i < n; i += 8) {
-        atomic_count++;
         if (alloc8bytes() == 0) {
             GC_printf("Out of memory\n");
             FAIL;
         }
+        AO_fetch_and_add1(&atomic_count);
     }
 }
 
@@ -1097,11 +1089,11 @@ void tree_test(void)
       alloc_small(5000000);
 #   endif
     chktree(root, TREE_HEIGHT);
-    if (finalized_count && ! dropped_something) {
+    if (finalized_count && !AO_load(&dropped_something)) {
         GC_printf("Premature finalization - collector is broken\n");
         FAIL;
     }
-    dropped_something = 1;
+    AO_store(&dropped_something, (AO_t)TRUE);
     GC_noop1((word)root);       /* Root needs to remain live until      */
                                 /* dropped_something is set.            */
     root = mktree(TREE_HEIGHT);
@@ -1319,7 +1311,7 @@ void run_one_test(void)
                       (unsigned long)GC_size(GC_malloc(0)));
         FAIL;
       }
-      uncollectable_count++;
+      AO_fetch_and_add1(&uncollectable_count);
       if (GC_size(GC_malloc_uncollectable(0)) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_malloc_uncollectable(0) failed\n");
         FAIL;
@@ -1429,10 +1421,10 @@ void run_one_test(void)
              AO_fetch_and_add1(&collectable_count);
              GC_FREE(GC_MALLOC(0));
              (void)GC_MALLOC_ATOMIC(0);
-             atomic_count++;
+             AO_fetch_and_add1(&atomic_count);
              GC_FREE(GC_MALLOC_ATOMIC(0));
              test_generic_malloc_or_special(GC_malloc_atomic(1));
-             atomic_count++;
+             AO_fetch_and_add1(&atomic_count);
            }
          }
 #   ifdef GC_GCJ_SUPPORT
@@ -1648,10 +1640,10 @@ void check_heap_stats(void)
     GC_printf("Completed %u tests\n", n_tests);
     GC_printf("Allocated %d collectable objects\n", (int)collectable_count);
     GC_printf("Allocated %d uncollectable objects\n",
-                  uncollectable_count);
-    GC_printf("Allocated %d atomic objects\n", atomic_count);
-    GC_printf("Allocated %d stubborn objects\n", stubborn_count);
-    GC_printf("Reallocated %d objects\n", realloc_count);
+                  (int)uncollectable_count);
+    GC_printf("Allocated %d atomic objects\n", (int)atomic_count);
+    GC_printf("Allocated %d stubborn objects\n", (int)stubborn_count);
+    GC_printf("Reallocated %d objects\n", (int)realloc_count);
     GC_printf("Finalized %d/%d objects - ",
                   finalized_count, finalizable_count);
 #   ifndef GC_NO_FINALIZATION
