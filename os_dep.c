@@ -713,7 +713,11 @@ GC_INNER size_t GC_page_size = 0;
   GC_INNER void GC_setpagesize(void)
   {
     GetSystemInfo(&GC_sysinfo);
-    GC_page_size = (size_t)GC_sysinfo.dwPageSize;
+#   if defined(CYGWIN32) && defined(USE_MUNMAP)
+      GC_page_size = (size_t)GC_sysinfo.dwAllocationGranularity;
+#   else
+      GC_page_size = (size_t)GC_sysinfo.dwPageSize;
+#   endif
 #   if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
       {
         OSVERSIONINFO verInfo;
@@ -2481,16 +2485,22 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
       /* We immediately remap it to prevent an intervening mmap from    */
       /* accidentally grabbing the same address space.                  */
       {
-        void * result;
+#       ifdef CYGWIN32
+          if (mprotect(start_addr, len, PROT_NONE))
+            ABORT("mprotect(PROT_NONE) failed");
+#       else
+          void * result;
 
-        result = mmap(start_addr, len, PROT_NONE,
-                      MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
-                      zero_fd, 0/* offset */);
-        if (result != (void *)start_addr)
-          ABORT("mmap(PROT_NONE) failed");
-#       if defined(CPPCHECK) || defined(LINT2)
-          /* Explicitly store the resource handle to a global variable. */
-          GC_noop1((word)result);
+          result = mmap(start_addr, len, PROT_NONE,
+                        MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
+                        zero_fd, 0/* offset */);
+          if (result != (void *)start_addr)
+            ABORT("mmap(PROT_NONE) failed");
+
+#         if defined(CPPCHECK) || defined(LINT2)
+            /* Explicitly store the resource handle to a global variable. */
+            GC_noop1((word)result);
+#         endif
 #       endif
       }
       GC_unmapped_bytes += len;
@@ -2597,16 +2607,23 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
       }
 #   else
       if (len != 0) {
+#       ifdef CYGWIN32
+          if (mprotect(start_addr, len, PROT_NONE))
+            ABORT("mprotect(PROT_NONE) failed");
+#       else
         /* Immediately remap as above. */
-        void * result;
-        result = mmap(start_addr, len, PROT_NONE,
-                      MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
-                      zero_fd, 0/* offset */);
-        if (result != (void *)start_addr)
-          ABORT("mmap(PROT_NONE) failed");
-#       if defined(CPPCHECK) || defined(LINT2)
-          GC_noop1((word)result);
+          void * result;
+          result = mmap(start_addr, len, PROT_NONE,
+                        MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
+                        zero_fd, 0/* offset */);
+          if (result != (void *)start_addr)
+            ABORT("mmap(PROT_NONE) failed");
+
+  #       if defined(CPPCHECK) || defined(LINT2)
+            GC_noop1((word)result);
+  #       endif
 #       endif
+
         GC_unmapped_bytes += len;
       }
 #   endif
