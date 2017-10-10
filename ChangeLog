@@ -5,7 +5,9 @@
 * Add configure check whether to define NO_GETCONTEXT
 * Adjust GC_memalign comment
 * Allow HAVE_DL_ITERATE_PHDR to be defined by client (musl)
+* Avoid busy waiting in mark_thread while GC_parallel is false
 * Better document minimum value of size argument for typed allocations
+* Change type of THREAD_TABLE_INDEX result to int in win32_threads.c
 * Consistently use 'msec' instead of 'ms' in comments in pthread_support
 * Do not define amiga_get_mem, MacTemporaryNewPtr unless really used (extra)
 * Do not produce .tar.bz2 distribution file (configure)
@@ -25,6 +27,7 @@
 * Eliminate 'type defaults to int in declaration' warning (REDIRECT_MALLOC)
 * Eliminate 'value stored is never read' warning of Clang static analyzer
 * Eliminate duplicate log messages in GC_mark_from
+* Eliminate most of collisions in GC_threads on Linux/x64
 * Ensure GC initialized when atfork_prepare is called by client
 * Fix 'arg parameter might be clobbered by setjmp' compiler warning
 * Fix 'bogus LR' detection in FindTopOfStack (Darwin)
@@ -39,6 +42,7 @@
 * Fix 'variable unused' compiler warning in FirstDLOpenedLinkMap
 * Fix 'zero-size array is extension' Clang warning in os_dep (Linux/x86)
 * Fix (adjust) GC_scratch_alloc actual argument type
+* Fix deadlock in GC_help_marker caused by use of mark_cv of parent process
 * Fix finalize.c compilation in 'strict ANSI' mode
 * Fix GC shared library tests failure related to dl_iterate_phdr (musl)
 * Fix gc.h compliance to strict ANSI (pthreads)
@@ -52,7 +56,9 @@
 * Fix local variable declarations in disclaim_bench
 * Fix missing #error pragma
 * Fix missing .exe for disclaim test filenames in Makefile (MinGW)
+* Fix missing atomic/[un]collectable/realloc_count increments in gctest
 * Fix missing new-line and redundant trailing dot in WARN messages
+* Fix missing new-line at format strings end in subthread_create test
 * Fix mixed include of GC public header and gc_priv.h in disclaim bench/test
 * Fix potential overflow in decrement when computing GC_markers_m1
 * Fix printf format specifiers in extra files (cppcheck warnings)
@@ -60,6 +66,7 @@
 * Fix register_finalizer call in disclaim_bench for GC_DEBUG
 * Fix static assertion violation in LONG_MULT for 64-bit targets
 * Fix tag collision between ENABLE_DISCLAIM and KEEP_BACK_PTRS
+* Fix thread id leaks in subthread_create and threadkey_test
 * Fix threaded tests runtime crash if GC_NO_THREAD_REDIRECTS supplied
 * Fix tools/setjmp_t to prevent nested_sp inlining
 * Fix typo in CHECK_GCLIB_VERSION name (test)
@@ -436,6 +443,7 @@ Also, includes 7.2 changes
 * Fix assertion violation in GC_repeat_read if --enable-redirect-malloc
 * Fix assertion violation in GC_wait_builder called from start_mark_threads
 * Fix assertion violation in mark_local checking GC_mark_stack_top
+* Fix assertion violation in return_single_freelist in child process
 * Fix bm_huge initialization for 64-bit targets (gctest)
 * Fix broken external links in documentation
 * Fix bytes count passed to add_to_our_memory in backgraph new_back_edges
@@ -445,6 +453,7 @@ Also, includes 7.2 changes
 * Fix configure --disable-munmap handling
 * Fix CORD_substr_closure for the case when CORD_from_fn returns C string
 * Fix crash in FirstDLOpenedLinkMap if app linked statically (Alpine Linux)
+* Fix double lock in pthread_detach (Cygwin, winpthreads)
 * Fix double multiplication of lb by n in calloc_explicitly_typed
 * Fix enable_parallel_mark condition in CMake script
 * Fix external libatomic_ops pkg-config-based detection
@@ -454,11 +463,16 @@ Also, includes 7.2 changes
 * Fix GC_collect_or_expand to prevent allocation size value wrap-around
 * Fix GC_incremental declaration/definition type mismatch
 * Fix GC_mark_stack_top assertion violation properly in mark_local
+* Fix GC_remove_specific invocation from remove_all_threads_but_me
 * Fix GC_requested_heapsize increment in GC_init
+* Fix GC_setspecific to prevent garbage collection inside
 * Fix GC_SIZE_MAX definition (Linux/musl-gcc)
 * Fix GCJ support in CMake build script
 * Fix gctest crash if configure --enable-handle-fork on Darwin
+* Fix get_maps on proc maps file asynchronous growth
+* Fix hb_n_marks underflow in clear_fl_marks if MARK_BIT_PER_OBJ
 * Fix header filename in gcconfig.h comment
+* Fix infinite mark_some calls after memory mapping disappeared (Glibc)
 * Fix integer shift undefined behavior in GC_init_explicit_typing
 * Fix leak_test crash in print_callers if free() is redirected
 * Fix Makefile.direct recursive invocation
@@ -471,14 +485,22 @@ Also, includes 7.2 changes
 * Fix PCR-Makefile by removing compilation of a missing file
 * Fix potential data race in GC_SysVGetDataStart (SPARC)
 * Fix potential integer overflow in GC_find_limit_* functions
+* Fix printf arguments type in print_callers
+* Fix pthread_detach for threads not yet registered (Cygwin, winpthreads)
+* Fix pthread_join to avoid thread removal on failure (Cygwin, winpthreads)
+* Fix pthread_join when thread is registered in thread key destructor
 * Fix push_complex_descriptor to avoid unlimited global mark stack growth
+* Fix removal of dead threads in a child process
 * Fix SIGSEGV in GC_is_marked when gc_cleanup is used in leak-finding mode
+* Fix SIGSEGV in mark_from called from do_local_mark if WRAP_MARK_SOME
 * Fix Solaris/sparc detection in case of strict C compliance is enforced
 * Fix STACKBOTTOM for Solaris 11/x86
 * Fix storage class of local variable in register_dynamic_libraries (Irix)
 * Fix tools/setjmp_t hang (OS X)
 * Fix typed_test to prevent fails in malloc_explicitly_typed (64-bit)
 * Fix undefined HEAP_START in register_dynamic_libraries
+* Fix USE_CUSTOM_SPECIFIC mode (if manually enabled) for Win32
+* Fix USE_GET_STACKBASE_FOR_MAIN definition in gcconfig.h
 * Fix various typos in comments, documentation and printed messages
 * Handle load_segs overflow in register_dynlib_callback gracefully
 * Prevent misleading AC_MSG_ERROR/AS_IF errors reported in configure.ac
