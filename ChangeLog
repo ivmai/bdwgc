@@ -74,11 +74,13 @@ Also, includes 7.6.2 changes
 
 == [7.6.2] (unset) ==
 
+* Add assertion that no hb_n_marks underflow occurs
 * Add minimal testing of GC_MALLOC_[ATOMIC_]WORDS and GC_CONS (gctest)
 * Add minimal testing of GC_set_bit (gctest)
 * Add more cases to huge_test to cover sizes close to word-type maximum
 * Add testing of new[]/delete[] (test_cpp)
 * Adjust code indentation of calloc_explicitly_typed
+* Align local_mark_stack in help_marker explicitly
 * Allow custom TRACE_ENTRIES value
 * Allow gctest and thread_leak_test with zero NTHREADS
 * Code refactoring of divide-by-HBLKSIZE occurrences
@@ -87,12 +89,14 @@ Also, includes 7.6.2 changes
 * Compile thread_local_alloc only if multi-threaded build (Makefile.am)
 * Delete preprocessor output on make clean (Makefile.direct)
 * Disable implicit multi-threaded mode for Win32 to avoid LOCK crash
+* Do not disable parallel mark for WRAP_MARK_SOME
 * Do not install documentation if configure --disable-docs (new option)
 * Do not use tkill (Android)
 * Document configure 'syntax error' issue in README
 * Eliminate 'address of local variable returned' static analyzer warning
 * Eliminate 'array vs singleton' code defect in typed_test (gctest)
 * Eliminate 'assigned value never used' CSA warning in min_bytes_allocd
+* Eliminate 'boolean result used in bitwise op' cppcheck false warning
 * Eliminate 'C-style pointer casting' cppcheck style warnings in test
 * Eliminate 'checking if unsigned variable is <0' cppcheck style warning
 * Eliminate 'class member var with name also defined in parent' warning
@@ -108,6 +112,8 @@ Also, includes 7.6.2 changes
 * Eliminate 'integer shift by a negative amount' code defect in finalize
 * Eliminate 'label not used' cppcheck false warnings in GC_mark_X
 * Eliminate 'memory leak' code defect for scratch-allocated memory
+* Eliminate 'memory leak' code defect in remove_specific
+* Eliminate 'non-null arg compared to null' warning in toggleref_add (GCC)
 * Eliminate 'non-reentrant function strtok called' cppcheck warning (POSIX)
 * Eliminate 'possible integer underflow' code defect (cord-de)
 * Eliminate 'potential overflow' static analyzer warning in test
@@ -132,7 +138,9 @@ Also, includes 7.6.2 changes
 * Eliminate CSA warning of staticroot that can be a local variable (tests)
 * Eliminate CSA warning of unmodified non-const static var (disclaim_test)
 * Eliminate redundant local variable in register_finalizer
+* Eliminate TSan (Thread Sanitizer) warnings in gctest
 * Eliminate unreachable PROC/DEFAULT_VDB GC_printf calls in gctest main()
+* Eliminate unsigned fl_builder_count underflow in mark_thread
 * Enable GC_is_tmp_root for all platforms
 * Execute more single-threaded GC tests by CMake
 * Expand tabs to spaces in de_win.rc (tests)
@@ -153,9 +161,11 @@ Also, includes 7.6.2 changes
 * Fix compilation for winpthreads if HANDLE_FORK
 * Fix compilation if configured with --enable-werror on OS X
 * Fix cord/de build in Makefile.direct (Linux)
+* Fix data race in collectable_count (gctest)
 * Fix deadlock in GC_suspend_thread
 * Fix gctest failure for Darwin if CPPCHECK is defined
 * Fix message of VDB implementation used if MPROTECT_VDB+GWW_VDB (gctest)
+* Fix missing started_thread_while_stopped call from mark_some if GCC/Clang
 * Fix null dereference in GC_stack_range_for if not DARWIN_DONT_PARSE_STACK
 * Fix page calculation in checksums
 * Fix parallel build in Makefile.direct
@@ -163,20 +173,24 @@ Also, includes 7.6.2 changes
 * Fix typo in comment of GC_mark_some
 * Make GC_INIT optional for clients even if thread-local allocations enabled
 * Match uclinux pattern in configure
+* Move conditional GC_need_to_lock setting to gc_locks.h (refactoring)
 * Move README.QUICK from DOC_FILES to OTHER_FILES in Makefile.direct
 * New target (check-cpp) in Makefile.direct
 * Prevent abort in register_data_segments for Symbian and Emscripten
 * Prevent multiple 'Caught ACCESS_VIOLATION in marker' per collection
+* Print realloc_count value in gctest
 * Put invariant name in quotes to make mark_state comments clearer
 * Refine configure messages when checking for compiler option support
 * Remove extraneous semicolons after AC_MSG_WARN (configure)
 * Remove page_was_dirty and remove_protection duplicate definitions
+* Remove unnecessary type casts of printf arguments to unsigned long
 * Remove unused ALIGN_DOUBLE, USE_GENERIC_PUSH_REGS macros (TILE-Gx/Pro)
 * Rename 'test' to 'check' target in Makefile.direct
 * Replace deprecated rewind to fseek in cordxtra
 * Report gcc/clang pedantic warnings (configure)
 * Skip thread suspend/resume API testing for Tru64 (OSF1)
 * Support AddressSanitizer and MemorySanitizer (clang)
+* Support GC_init (and get_stack_base) from non-main thread on FreeBSD/NetBSD
 * Suppress 'tainted string passed to vulnerable operation' false defects
 * Suppress 'taking address of label non-standard' GCC/Clang pedantic warning
 * Test GCJ object creation with length-based descriptor (gctest)
