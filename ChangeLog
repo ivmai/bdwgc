@@ -3,11 +3,13 @@
 
 * Add AO primitives implementation to GC based on C11 atomic intrinsic
 * Add assertion to allocobj that live unmarked object cannot be reclaimed
+* Add debug logging to new_thread about GC_threads hash table collisions
 * Add Makefile target to run all tests without test-driver
 * Add test_atomic_ops to perform minimal testing of used atomic primitives
 * Align IRIX/OSF1_THREADS definition in gc_config_macros.h with gcconfig.h
 * Allow compilation of PROC_VDB code on Linux host (GC_NO_SYS_FAULT_H)
 * Allow configure --with-libatomic-ops=none to use GCC atomic intrinsics
+* Allow custom N_LOCAL_ITERS and ENTRIES_TO_GET values
 * Build only shared libraries by default (configure)
 * Check that GC_WIN32_PTHREADS is not specified for Cygwin
 * Check thread_local is initialized before accessing thread_key
@@ -67,6 +69,7 @@
 * Use EXPECT FALSE for mark_from code documented as executed rarely
 * Use heap-allocated memory for local mark stack of non-marker thread
 * Use longjmp in fault_handler_openbsd if siglongjmp unavailable (OpenBSD)
+* Use MARK_BIT_PER_GRANULE instead of MARK_BIT_PER_OBJ where appropriate
 * Use sigsetjmp() in setjmp_t tool if available
 * Use thread-local allocations for all multi-threaded builds
 Also, includes 7.6.2 changes
