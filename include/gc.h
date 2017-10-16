@@ -440,6 +440,10 @@ GC_API void GC_CALL GC_atfork_child(void);
 /* from the main program instead.                                       */
 GC_API void GC_CALL GC_init(void);
 
+/* Returns non-zero (TRUE) if and only if the collector is initialized  */
+/* (or, at least, the initialization is in progress).                   */
+GC_API int GC_CALL GC_is_init_called(void);
+
 /* General purpose allocation routines, with roughly malloc calling     */
 /* conv.  The atomic versions promise that no relevant pointers are     */
 /* contained in the object.  The non-atomic versions guarantee that the */

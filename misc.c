@@ -745,6 +745,11 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
 
 GC_INNER GC_bool GC_is_initialized = FALSE;
 
+GC_API int GC_CALL GC_is_init_called(void)
+{
+  return GC_is_initialized;
+}
+
 #if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
     GC_INNER CRITICAL_SECTION GC_write_cs;
 #endif
