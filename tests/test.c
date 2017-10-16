@@ -1456,6 +1456,10 @@ void check_heap_stats(void)
 #     endif
 #   endif
 
+    if (!GC_is_init_called()) {
+      GC_printf("GC should be initialized!\n");
+      FAIL;
+    }
 #   ifdef VERY_SMALL_CONFIG
     /* The upper bounds are a guess, which has been empirically */
     /* adjusted.  On low end uniprocessors with incremental GC  */
