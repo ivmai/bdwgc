@@ -440,6 +440,10 @@ GC_API void GC_CALL GC_atfork_child(void);
 /* from the main program instead.                                       */
 GC_API void GC_CALL GC_init(void);
 
+/* Returns non-zero (TRUE) if and only if the collector is initialized  */
+/* (or, at least, the initialization is in progress).                   */
+GC_API int GC_CALL GC_is_init_called(void);
+
 /* Perform the collector shutdown.  (E.g. dispose critical sections on  */
 /* Win32 target.)  A duplicate invocation is a no-op.  GC_INIT should   */
 /* not be called after the shutdown.  See also GC_win32_free_heap().    */
