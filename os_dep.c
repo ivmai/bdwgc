@@ -713,7 +713,20 @@ GC_INNER size_t GC_page_size = 0;
   GC_INNER void GC_setpagesize(void)
   {
     GetSystemInfo(&GC_sysinfo);
-    GC_page_size = (size_t)GC_sysinfo.dwPageSize;
+#   if defined(CYGWIN32) && defined(USE_MUNMAP)
+      /* Allocations made with mmap() are aligned to the allocation     */
+      /* granularity, which (at least on 64-bit Windows OS) is not the  */
+      /* same as the page size.  Probably a separate variable could     */
+      /* be added to distinguish the allocation granularity from the    */
+      /* actual page size, but in practice there is no good reason to   */
+      /* make allocations smaller than dwAllocationGranularity, so we   */
+      /* just use it instead of the actual page size here (as Cygwin    */
+      /* itself does in many cases).                                    */
+      GC_page_size = (size_t)GC_sysinfo.dwAllocationGranularity;
+      GC_ASSERT(GC_page_size >= (size_t)GC_sysinfo.dwPageSize);
+#   else
+      GC_page_size = (size_t)GC_sysinfo.dwPageSize;
+#   endif
 #   if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
       {
         OSVERSIONINFO verInfo;
@@ -2481,17 +2494,25 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
       /* We immediately remap it to prevent an intervening mmap from    */
       /* accidentally grabbing the same address space.                  */
       {
-        void * result;
+#       ifdef CYGWIN32
+          /* Calling mmap() with the new protection flags on an         */
+          /* existing memory map with MAP_FIXED is broken on Cygwin.    */
+          /* However, calling mprotect() on the given address range     */
+          /* with PROT_NONE seems to work fine.                         */
+          if (mprotect(start_addr, len, PROT_NONE))
+            ABORT("mprotect(PROT_NONE) failed");
+#       else
+          void * result = mmap(start_addr, len, PROT_NONE,
+                               MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
+                               zero_fd, 0/* offset */);
 
-        result = mmap(start_addr, len, PROT_NONE,
-                      MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
-                      zero_fd, 0/* offset */);
-        if (result != (void *)start_addr)
-          ABORT("mmap(PROT_NONE) failed");
-#       if defined(CPPCHECK) || defined(LINT2)
-          /* Explicitly store the resource handle to a global variable. */
-          GC_noop1((word)result);
-#       endif
+          if (result != (void *)start_addr)
+            ABORT("mmap(PROT_NONE) failed");
+#         if defined(CPPCHECK) || defined(LINT2)
+            /* Explicitly store the resource handle to a global variable. */
+            GC_noop1((word)result);
+#         endif
+#       endif /* !CYGWIN32 */
       }
       GC_unmapped_bytes += len;
 #   endif
@@ -2598,15 +2619,20 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 #   else
       if (len != 0) {
         /* Immediately remap as above. */
-        void * result;
-        result = mmap(start_addr, len, PROT_NONE,
-                      MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
-                      zero_fd, 0/* offset */);
-        if (result != (void *)start_addr)
-          ABORT("mmap(PROT_NONE) failed");
-#       if defined(CPPCHECK) || defined(LINT2)
-          GC_noop1((word)result);
-#       endif
+#       ifdef CYGWIN32
+          if (mprotect(start_addr, len, PROT_NONE))
+            ABORT("mprotect(PROT_NONE) failed");
+#       else
+          void * result = mmap(start_addr, len, PROT_NONE,
+                               MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
+                               zero_fd, 0/* offset */);
+
+          if (result != (void *)start_addr)
+            ABORT("mmap(PROT_NONE) failed");
+#         if defined(CPPCHECK) || defined(LINT2)
+            GC_noop1((word)result);
+#         endif
+#       endif /* !CYGWIN32 */
         GC_unmapped_bytes += len;
       }
 #   endif
