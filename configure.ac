@@ -887,14 +887,9 @@ AC_ARG_ENABLE(munmap,
 if test x$enable_munmap != x -a x$enable_munmap != xno; then
     AC_DEFINE([USE_MMAP], 1,
               [Define to use mmap instead of sbrk to expand the heap.])
-    case "$host" in
-      *-*-cygwin*)
-        # Workaround for Cygwin: use VirtualAlloc since mmap(PROT_NONE) fails
-        AC_DEFINE([USE_WINALLOC], 1,
+    AH_TEMPLATE([USE_WINALLOC],
                   [Define to use Win32 VirtualAlloc (instead of sbrk or
                    mmap) to expand the heap.])
-        ;;
-    esac
     AC_DEFINE([USE_MUNMAP], 1,
               [Define to return memory to OS with munmap calls
                (see doc/README.macros).])
