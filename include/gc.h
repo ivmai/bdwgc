@@ -1250,6 +1250,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void);
                         /* and getter acquire the lock too.     */
 
 /* Returns !=0 if GC_invoke_finalizers has something to do.     */
+/* Does not use any synchronization.                            */
 GC_API int GC_CALL GC_should_invoke_finalizers(void);
 
 GC_API int GC_CALL GC_invoke_finalizers(void);
