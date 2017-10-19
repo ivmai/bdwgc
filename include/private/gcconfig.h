@@ -3127,6 +3127,9 @@
 # if __has_feature(memory_sanitizer) && !defined(MEMORY_SANITIZER)
 #   define MEMORY_SANITIZER
 # endif
+# if __has_feature(thread_sanitizer) && !defined(THREAD_SANITIZER)
+#   define THREAD_SANITIZER
+# endif
 #endif
 
 #if defined(SPARC)

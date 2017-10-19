@@ -1183,6 +1183,7 @@ GC_INNER void GC_finalize(void)
 /* finalizers can only be called from some kind of "safe state" and     */
 /* getting into that safe state is expensive.)                          */
 GC_API int GC_CALL GC_should_invoke_finalizers(void)
+                                                GC_ATTR_NO_SANITIZE_THREAD
 {
   return GC_fnlz_roots.finalize_now != NULL;
 }
@@ -1195,7 +1196,7 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
     word bytes_freed_before = 0; /* initialized to prevent warning. */
     DCL_LOCK_STATE;
 
-    while (GC_fnlz_roots.finalize_now != NULL) {
+    while (GC_should_invoke_finalizers()) {
         struct finalizable_object * curr_fo;
 
 #       ifdef THREADS
@@ -1244,7 +1245,8 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
 #   if defined(THREADS) && !defined(KEEP_BACK_PTRS) \
        && !defined(MAKE_BACK_GRAPH)
       /* Quick check (while unlocked) for an empty finalization queue.  */
-      if (NULL == GC_fnlz_roots.finalize_now) return;
+      if (!GC_should_invoke_finalizers())
+        return;
 #   endif
     LOCK();
 

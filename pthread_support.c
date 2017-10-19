@@ -1884,10 +1884,12 @@ STATIC void GC_pause(void)
 }
 #endif
 
-#define SPIN_MAX 128    /* Maximum number of calls to GC_pause before   */
+#ifndef SPIN_MAX
+# define SPIN_MAX 128   /* Maximum number of calls to GC_pause before   */
                         /* give up.                                     */
+#endif
 
-GC_INNER volatile GC_bool GC_collecting = 0;
+GC_INNER volatile GC_bool GC_collecting = FALSE;
                         /* A hint that we're in the collector and       */
                         /* holding the allocation lock for an           */
                         /* extended period.                             */
@@ -1955,6 +1957,18 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
 
 #endif /* !USE_SPIN_LOCK || ... */
 
+#if defined(THREAD_SANITIZER) \
+    && (defined(USE_SPIN_LOCK) || !defined(NO_PTHREAD_TRYLOCK))
+  /* GC_collecting is a hint, a potential data race between     */
+  /* GC_lock() and ENTER/EXIT_GC() is OK to ignore.             */
+  static GC_bool is_collecting(void) GC_ATTR_NO_SANITIZE_THREAD
+  {
+    return GC_collecting;
+  }
+#else
+# define is_collecting() GC_collecting
+#endif
+
 #if defined(USE_SPIN_LOCK)
 
 /* Reasonably fast spin locks.  Basically the same implementation */
@@ -1963,13 +1977,30 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
 
 GC_INNER volatile AO_TS_t GC_allocate_lock = AO_TS_INITIALIZER;
 
+# define low_spin_max 30 /* spin cycles if we suspect uniprocessor  */
+# define high_spin_max SPIN_MAX /* spin cycles for multiprocessor   */
+  static unsigned spin_max = low_spin_max;
+  static unsigned last_spins = 0;
+
+  /* A potential data race between threads invoking GC_lock which reads */
+  /* and updates spin_max and last_spins could be ignored because these */
+  /* variables are hints only.  (Atomic getters and setters are avoided */
+  /* here for performance reasons.)                                     */
+  static void set_last_spins_and_high_spin_max(unsigned new_last_spins)
+                                                GC_ATTR_NO_SANITIZE_THREAD
+  {
+    last_spins = new_last_spins;
+    spin_max = high_spin_max;
+  }
+
+  static void reset_spin_max(void) GC_ATTR_NO_SANITIZE_THREAD
+  {
+    spin_max = low_spin_max;
+  }
+
 GC_INNER void GC_lock(void)
 {
-#   define low_spin_max 30  /* spin cycles if we suspect uniprocessor */
-#   define high_spin_max SPIN_MAX /* spin cycles for multiprocessor */
-    static unsigned spin_max = low_spin_max;
     unsigned my_spin_max;
-    static unsigned last_spins = 0;
     unsigned my_last_spins;
     unsigned i;
 
@@ -1979,7 +2010,8 @@ GC_INNER void GC_lock(void)
     my_spin_max = spin_max;
     my_last_spins = last_spins;
     for (i = 0; i < my_spin_max; i++) {
-        if (GC_collecting || GC_nprocs == 1) goto yield;
+        if (is_collecting() || GC_nprocs == 1)
+          goto yield;
         if (i < my_last_spins/2) {
             GC_pause();
             continue;
@@ -1991,13 +2023,12 @@ GC_INNER void GC_lock(void)
              * against the other process with which we were contending.
              * Thus it makes sense to spin longer the next time.
              */
-            last_spins = i;
-            spin_max = high_spin_max;
+            set_last_spins_and_high_spin_max(i);
             return;
         }
     }
     /* We are probably being scheduled against the other process.  Sleep. */
-    spin_max = low_spin_max;
+    reset_spin_max();
 yield:
     for (i = 0;; ++i) {
         if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {
@@ -2026,10 +2057,11 @@ yield:
 }
 
 #else  /* !USE_SPIN_LOCK */
+
 GC_INNER void GC_lock(void)
 {
 #ifndef NO_PTHREAD_TRYLOCK
-    if (1 == GC_nprocs || GC_collecting) {
+    if (1 == GC_nprocs || is_collecting()) {
         pthread_mutex_lock(&GC_allocate_ml);
     } else {
         GC_generic_lock(&GC_allocate_ml);

@@ -170,6 +170,14 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # endif
 #endif /* !GC_ATTR_NO_SANITIZE_MEMORY */
 
+#ifndef GC_ATTR_NO_SANITIZE_THREAD
+# ifdef THREAD_SANITIZER
+#   define GC_ATTR_NO_SANITIZE_THREAD __attribute__((no_sanitize("thread")))
+# else
+#   define GC_ATTR_NO_SANITIZE_THREAD /* empty */
+# endif
+#endif /* !GC_ATTR_NO_SANITIZE_THREAD */
+
 #ifndef GC_ATTR_UNUSED
 # if GC_GNUC_PREREQ(3, 4)
 #   define GC_ATTR_UNUSED __attribute__((__unused__))

@@ -344,6 +344,16 @@ GC_INNER void GC_extend_size_map(size_t i)
   }
 #endif
 
+#ifdef THREADS
+  /* Used to occasionally clear a bigger chunk. */
+  /* TODO: Should be more random than it is ... */
+  static unsigned next_random_no(void) GC_ATTR_NO_SANITIZE_THREAD
+  {
+    static unsigned random_no = 0;
+    return ++random_no % 13;
+  }
+#endif /* THREADS */
+
 /* Clear some of the inaccessible part of the stack.  Returns its       */
 /* argument, so it can be used in a tail call position, hence clearing  */
 /* another frame.                                                       */
@@ -353,10 +363,6 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
     ptr_t sp = GC_approx_sp();  /* Hotter than actual sp */
 #   ifdef THREADS
         word volatile dummy[SMALL_CLEAR_SIZE];
-        static unsigned random_no = 0;
-                                /* Should be more random than it is ... */
-                                /* Used to occasionally clear a bigger  */
-                                /* chunk.                               */
 #   endif
 
 #   define SLOP 400
@@ -375,7 +381,7 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
         /* thus more junk remains accessible, thus the heap gets        */
         /* larger ...                                                   */
 #   ifdef THREADS
-      if (++random_no % 13 == 0) {
+      if (next_random_no() == 0) {
         ptr_t limit = sp;
 
         MAKE_HOTTER(limit, BIG_CLEAR_SIZE*sizeof(word));

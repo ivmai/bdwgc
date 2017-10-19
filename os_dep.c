@@ -3109,6 +3109,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   GC_INNER volatile AO_TS_t GC_fault_handler_lock = AO_TS_INITIALIZER;
   static void async_set_pht_entry_from_index(volatile page_hash_table db,
                                              size_t index)
+                                                GC_ATTR_NO_SANITIZE_THREAD
   {
     while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {
       /* empty */

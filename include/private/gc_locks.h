@@ -66,8 +66,12 @@
 #      define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
 #      define I_HOLD_LOCK() (!GC_need_to_lock \
                            || GC_lock_holder == GetCurrentThreadId())
-#      define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
+#      ifdef THREAD_SANITIZER
+#        define I_DONT_HOLD_LOCK() TRUE /* Conservatively say yes */
+#      else
+#        define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
                            || GC_lock_holder != GetCurrentThreadId())
+#      endif
 #      define UNCOND_LOCK() \
                 { GC_ASSERT(I_DONT_HOLD_LOCK()); \
                   EnterCriticalSection(&GC_allocate_ml); \
@@ -178,8 +182,8 @@
 #      define I_HOLD_LOCK() \
                 (!GC_need_to_lock \
                  || GC_lock_holder == NUMERIC_THREAD_ID(pthread_self()))
-#      ifndef NUMERIC_THREAD_ID_UNIQUE
-#        define I_DONT_HOLD_LOCK() 1  /* Conservatively say yes */
+#      if !defined(NUMERIC_THREAD_ID_UNIQUE) || defined(THREAD_SANITIZER)
+#        define I_DONT_HOLD_LOCK() TRUE /* Conservatively say yes */
 #      else
 #        define I_DONT_HOLD_LOCK() \
                 (!GC_need_to_lock \
@@ -203,8 +207,18 @@
 #    endif
 #    undef GC_ALWAYS_MULTITHREADED
      GC_EXTERN GC_bool GC_need_to_lock;
+#    ifdef THREAD_SANITIZER
+        /* To workaround TSan false positive (e.g., when                */
+        /* GC_pthread_create is called from multiple threads in         */
+        /* parallel), do not set GC_need_to_lock if it is already set.  */
+#       define set_need_to_lock() \
+                (void)(*(GC_bool volatile *)&GC_need_to_lock \
+                        ? FALSE \
+                        : (GC_need_to_lock = TRUE))
+#    else
 #       define set_need_to_lock() (void)(GC_need_to_lock = TRUE)
                                         /* We are multi-threaded now.   */
+#    endif
 #  endif
 
 # else /* !THREADS */
