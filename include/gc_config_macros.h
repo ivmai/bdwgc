@@ -232,6 +232,9 @@
 #   define GC_ATTR_MALLOC /* empty */
 # elif GC_GNUC_PREREQ(3, 1)
 #   define GC_ATTR_MALLOC __attribute__((__malloc__))
+# elif defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(__EDG__)
+#   define GC_ATTR_MALLOC \
+                __declspec(allocator) __declspec(noalias) __declspec(restrict)
 # elif defined(_MSC_VER) && _MSC_VER >= 1400
 #   define GC_ATTR_MALLOC __declspec(noalias) __declspec(restrict)
 # else
