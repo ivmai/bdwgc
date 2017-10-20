@@ -244,18 +244,24 @@
 
 #ifndef GC_ATTR_ALLOC_SIZE
   /* 'alloc_size' attribute improves __builtin_object_size correctness. */
-  /* Only single-argument form of 'alloc_size' attribute is used.       */
+# undef GC_ATTR_CALLOC_SIZE
 # ifdef __clang__
 #   if __has_attribute(__alloc_size__)
 #     define GC_ATTR_ALLOC_SIZE(argnum) __attribute__((__alloc_size__(argnum)))
+#     define GC_ATTR_CALLOC_SIZE(n, s) __attribute__((__alloc_size__(n, s)))
 #   else
 #     define GC_ATTR_ALLOC_SIZE(argnum) /* empty */
 #   endif
 # elif GC_GNUC_PREREQ(4, 3) && !defined(__ICC)
 #   define GC_ATTR_ALLOC_SIZE(argnum) __attribute__((__alloc_size__(argnum)))
+#   define GC_ATTR_CALLOC_SIZE(n, s) __attribute__((__alloc_size__(n, s)))
 # else
 #   define GC_ATTR_ALLOC_SIZE(argnum) /* empty */
 # endif
+#endif
+
+#ifndef GC_ATTR_CALLOC_SIZE
+# define GC_ATTR_CALLOC_SIZE(n, s) /* empty */
 #endif
 
 #ifndef GC_ATTR_NONNULL

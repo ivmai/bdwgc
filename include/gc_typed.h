@@ -90,7 +90,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_malloc_explicitly_typed_ignore_off_page(size_t /* size_in_bytes */,
                                                    GC_descr /* d */);
 
-GC_API GC_ATTR_MALLOC void * GC_CALL
+GC_API GC_ATTR_MALLOC GC_ATTR_CALLOC_SIZE(1, 2) void * GC_CALL
         GC_calloc_explicitly_typed(size_t /* nelements */,
                                    size_t /* element_size_in_bytes */,
                                    GC_descr /* d */);
