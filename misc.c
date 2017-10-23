@@ -270,7 +270,7 @@ GC_INNER void GC_extend_size_map(size_t i)
         if (granule_sz < orig_granule_sz) granule_sz = orig_granule_sz;
     }
     /* For these larger sizes, we use an even number of granules.       */
-    /* This makes it easier to, for example, construct a 16byte-aligned */
+    /* This makes it easier to, e.g., construct a 16-byte-aligned       */
     /* allocator even if GRANULE_BYTES is 8.                            */
         granule_sz += 1;
         granule_sz &= ~1;
