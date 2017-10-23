@@ -2,7 +2,8 @@ GC on EWS4800
 -------------
 
 1. About EWS4800
-   EWS4800 is 32bit/64bit workstation.
+
+ EWS4800 is a 32/64-bit workstation.
 
      Vendor: NEC Corporation
      OS: UX/4800 R9.* - R13.* (SystemV R4.2)
@@ -10,19 +11,19 @@ GC on EWS4800
 
 2. Compiler
 
- 32bit:
+ 32-bit:
    Use ANSI C compiler.
      CC = /usr/abiccs/bin/cc
 
- 64bit:
-   Use 64bit ANSI C compiler.
+ 64-bit:
+   Use the 64-bit ANSI C compiler.
      CC = /usr/ccs64/bin/cc
      AR = /usr/ccs64/bin/ar
 
 3. ELF file format
    *** Caution: The following information is empirical. ***
 
- 32bit:
+ 32-bit:
    ELF file has an unique format. (See a.out(4) and end(3C).)
 
      &_start
@@ -57,7 +58,7 @@ GC on EWS4800
    &edata and DATASTART2. The global symbol &_DYNAMIC_LINKING is used
    for the detection.
 
- 64bit:
+ 64-bit:
    ELF file has a simple format. (See end(3C).)
 
      _ftext
