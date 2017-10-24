@@ -245,59 +245,6 @@ STATIC void GC_init_size_map(void)
     /* We leave the rest of the array to be filled in on demand. */
 }
 
-/* Fill in additional entries in GC_size_map, including the ith one     */
-/* We assume the ith entry is currently 0.                              */
-/* Note that a filled in section of the array ending at n always        */
-/* has length at least n/4.                                             */
-GC_INNER void GC_extend_size_map(size_t i)
-{
-    size_t orig_granule_sz = ROUNDED_UP_GRANULES(i);
-    size_t granule_sz = orig_granule_sz;
-    size_t byte_sz = GRANULES_TO_BYTES(granule_sz);
-                        /* The size we try to preserve.         */
-                        /* Close to i, unless this would        */
-                        /* introduce too many distinct sizes.   */
-    size_t smaller_than_i = byte_sz - (byte_sz >> 3);
-    size_t much_smaller_than_i = byte_sz - (byte_sz >> 2);
-    size_t low_limit;   /* The lowest indexed entry we  */
-                        /* initialize.                  */
-    size_t j;
-
-    if (GC_size_map[smaller_than_i] == 0) {
-        low_limit = much_smaller_than_i;
-        while (GC_size_map[low_limit] != 0) low_limit++;
-    } else {
-        low_limit = smaller_than_i + 1;
-        while (GC_size_map[low_limit] != 0) low_limit++;
-        granule_sz = ROUNDED_UP_GRANULES(low_limit);
-        granule_sz += granule_sz >> 3;
-        if (granule_sz < orig_granule_sz) granule_sz = orig_granule_sz;
-    }
-    /* For these larger sizes, we use an even number of granules.       */
-    /* This makes it easier to, e.g., construct a 16-byte-aligned       */
-    /* allocator even if GRANULE_BYTES is 8.                            */
-        granule_sz += 1;
-        granule_sz &= ~1;
-    if (granule_sz > MAXOBJGRANULES) {
-        granule_sz = MAXOBJGRANULES;
-    }
-    /* If we can fit the same number of larger objects in a block,      */
-    /* do so.                                                           */
-    {
-        size_t number_of_objs = HBLK_GRANULES/granule_sz;
-        GC_ASSERT(number_of_objs != 0);
-        granule_sz = HBLK_GRANULES/number_of_objs;
-        granule_sz &= ~1;
-    }
-    byte_sz = GRANULES_TO_BYTES(granule_sz);
-    /* We may need one extra byte;                      */
-    /* don't always fill in GC_size_map[byte_sz]        */
-    byte_sz -= EXTRA_BYTES;
-
-    for (j = low_limit; j <= byte_sz; j++) GC_size_map[j] = granule_sz;
-}
-
-
 /*
  * The following is a gross hack to deal with a problem that can occur
  * on machines that are sloppy about stack frame sizes, notably SPARC.

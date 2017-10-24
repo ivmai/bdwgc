@@ -2313,8 +2313,6 @@ GC_EXTERN signed_word GC_bytes_found;
 
 GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
 
-GC_INNER void GC_extend_size_map(size_t); /* in misc.c */
-
 GC_INNER void GC_setpagesize(void);
 
 GC_INNER void GC_initialize_offsets(void);      /* defined in obj_map.c */
