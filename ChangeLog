@@ -361,6 +361,7 @@ Also, includes 7.4.4 changes
 * Add configure check whether to define NO_GETCONTEXT
 * Adjust GC_memalign comment
 * Allow HAVE_DL_ITERATE_PHDR to be defined by client (musl)
+* Allow PKG_CHECK_MODULES in configure.ac to be commented out easily
 * Avoid busy waiting in mark_thread while GC_parallel is false
 * Better document minimum value of size argument for typed allocations
 * Change type of THREAD_TABLE_INDEX result to int in win32_threads.c
@@ -426,7 +427,7 @@ Also, includes 7.4.4 changes
 * Fix threaded tests runtime crash if GC_NO_THREAD_REDIRECTS supplied
 * Fix tools/setjmp_t to prevent nested_sp inlining
 * Fix typo in CHECK_GCLIB_VERSION name (test)
-* Fix typo in push_roots comment
+* Fix typos in comments/documentation (ews4800, extend_size_map, push_roots)
 * Fix unchecked fork() result in gctest (Unix, Cygwin)
 * Improve detection of internal libatomic_ops (configure)
 * Move libraries version info to the beginning of Makefile.am
@@ -434,6 +435,7 @@ Also, includes 7.4.4 changes
 * Process all PT_LOAD segments before PT_GNU_RELRO segments (Glibc)
 * Refine Makefile.direct comment about multi-threaded GC build
 * Refine README about library source downloading
+* Refine should_invoke_finalizers documentation
 * Remove all generated files by NT_X64_THREADS_MAKEFILE 'clean' target
 * Remove non-existent configure option in simple_example.html
 * Replace C++ style comments to C ones, remove commented out code (extra)
@@ -782,7 +784,7 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 Also, includes 7.2 changes
 
 
-== [7.2h] (unset) ==
+== [7.2h] 2017-10-12 ==
 
 * Add gctest as a test (CMake)
 * Change no-argument functions declaration style to ANSI C (extra files)
