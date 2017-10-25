@@ -1252,9 +1252,11 @@ void run_one_test(void)
         char **z;
         char *y = (char *)(GC_word)fail_proc1;
 #   endif
-    CLOCK_TYPE start_time;
-    CLOCK_TYPE reverse_time;
-    unsigned long time_diff;
+#   ifndef NO_CLOCK
+      CLOCK_TYPE start_time;
+      CLOCK_TYPE reverse_time;
+      unsigned long time_diff;
+#   endif
 #   ifndef NO_TEST_HANDLE_FORK
       pid_t pid;
       int wstatus;
@@ -1467,36 +1469,45 @@ void run_one_test(void)
         }
 #   endif
     /* Repeated list reversal test. */
+#   ifndef NO_CLOCK
         GET_TIME(start_time);
+#   endif
         reverse_test();
+#   ifndef NO_CLOCK
         if (print_stats) {
           GET_TIME(reverse_time);
           time_diff = MS_TIME_DIFF(reverse_time, start_time);
           GC_log_printf("-------------Finished reverse_test at time %u (%p)\n",
                         (unsigned) time_diff, (void *)&start_time);
         }
+#   endif
 #   ifndef DBG_HDRS_ALL
       typed_test();
-      if (print_stats) {
-        CLOCK_TYPE typed_time;
+#     ifndef NO_CLOCK
+        if (print_stats) {
+          CLOCK_TYPE typed_time;
 
-        GET_TIME(typed_time);
-        time_diff = MS_TIME_DIFF(typed_time, start_time);
-        GC_log_printf("-------------Finished typed_test at time %u (%p)\n",
-                      (unsigned) time_diff, (void *)&start_time);
-      }
+          GET_TIME(typed_time);
+          time_diff = MS_TIME_DIFF(typed_time, start_time);
+          GC_log_printf("-------------Finished typed_test at time %u (%p)\n",
+                        (unsigned) time_diff, (void *)&start_time);
+        }
+#     endif
 #   endif /* DBG_HDRS_ALL */
     tree_test();
-    if (print_stats) {
-      CLOCK_TYPE tree_time;
+#   ifndef NO_CLOCK
+      if (print_stats) {
+        CLOCK_TYPE tree_time;
 
-      GET_TIME(tree_time);
-      time_diff = MS_TIME_DIFF(tree_time, start_time);
-      GC_log_printf("-------------Finished tree_test at time %u (%p)\n",
-                    (unsigned) time_diff, (void *)&start_time);
-    }
+        GET_TIME(tree_time);
+        time_diff = MS_TIME_DIFF(tree_time, start_time);
+        GC_log_printf("-------------Finished tree_test at time %u (%p)\n",
+                      (unsigned) time_diff, (void *)&start_time);
+      }
+#   endif
     /* Run reverse_test a second time, so we hopefully notice corruption. */
-      reverse_test();
+    reverse_test();
+#   ifndef NO_CLOCK
       if (print_stats) {
         GET_TIME(reverse_time);
         time_diff = MS_TIME_DIFF(reverse_time, start_time);
@@ -1504,11 +1515,14 @@ void run_one_test(void)
                 "-------------Finished second reverse_test at time %u (%p)\n",
                 (unsigned)time_diff, (void *)&start_time);
       }
+#   endif
     /* GC_allocate_ml and GC_need_to_lock are no longer exported, and   */
     /* AO_fetch_and_add1() may be unavailable to update a counter.      */
     (void)GC_call_with_alloc_lock(inc_int_counter, &n_tests);
-    if (print_stats)
-      GC_log_printf("Finished %p\n", (void *)&start_time);
+#   ifndef NO_CLOCK
+      if (print_stats)
+        GC_log_printf("Finished %p\n", (void *)&start_time);
+#   endif
 }
 
 void GC_CALLBACK reachable_objs_counter(void *obj, size_t size,

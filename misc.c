@@ -91,7 +91,7 @@ int GC_dont_precollect = FALSE;
 
 GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 
-#ifndef SMALL_CONFIG
+#if !defined(NO_CLOCK) || !defined(SMALL_CONFIG)
   int GC_print_stats = 0;
 #endif
 
@@ -916,7 +916,7 @@ GC_API void GC_CALL GC_init(void)
 #   ifdef GC_READ_ENV_FILE
       GC_envfile_init();
 #   endif
-#   ifndef SMALL_CONFIG
+#   if !defined(NO_CLOCK) || !defined(SMALL_CONFIG)
 #     ifdef GC_PRINT_VERBOSE_STATS
         /* This is useful for debugging and profiling on platforms with */
         /* missing getenv() (like WinCE).                               */
@@ -928,8 +928,9 @@ GC_API void GC_CALL GC_init(void)
           GC_print_stats = 1;
         }
 #     endif
-#     if (defined(UNIX_LIKE) && !defined(GC_ANDROID_LOG)) \
-         || defined(CYGWIN32) || defined(SYMBIAN)
+#   endif
+#   if ((defined(UNIX_LIKE) && !defined(GC_ANDROID_LOG)) \
+        || defined(CYGWIN32) || defined(SYMBIAN)) && !defined(SMALL_CONFIG)
         {
           char * file_name = TRUSTED_STRING(GETENV("GC_LOG_FILE"));
 #         ifdef GC_LOG_TO_FILE_ALWAYS
@@ -963,8 +964,7 @@ GC_API void GC_CALL GC_init(void)
             }
           }
         }
-#     endif
-#   endif /* !SMALL_CONFIG */
+#   endif
 #   if !defined(NO_DEBUGGING) && !defined(GC_DUMP_REGULARLY)
       if (0 != GETENV("GC_DUMP_REGULARLY")) {
         GC_dump_regularly = TRUE;

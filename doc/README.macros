@@ -179,6 +179,8 @@ SMALL_CONFIG    Tries to tune the collector for small heap sizes,
   statistic-printing code.  Turns off some optimization algorithms (like data
   prefetching in the mark routine).
 
+NO_CLOCK        Do not use system clock.  Disables some statistic printing.
+
 GC_DISABLE_INCREMENTAL  Turn off the incremental collection support.
 
 NO_INCREMENTAL  Causes the gctest program to not invoke the incremental

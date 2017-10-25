@@ -404,6 +404,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 /*                               */
 /*********************************/
 
+#ifndef NO_CLOCK
 #ifdef BSD_TIME
 # undef CLOCK_TYPE
 # undef GET_TIME
@@ -453,6 +454,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* Avoid using double type since some targets (like ARM) might        */
   /* require -lm option for double-to-long conversion.                  */
 #endif /* !BSD_TIME && !MSWIN32 */
+#endif /* !NO_CLOCK */
 
 /* We use bzero and bcopy internally.  They may not be available.       */
 # if defined(SPARC) && defined(SUNOS4)
@@ -2024,7 +2026,7 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
                                   /* without acquiring the lock.        */
 
 #define VERBOSE 2
-#ifndef SMALL_CONFIG
+#if !defined(NO_CLOCK) || !defined(SMALL_CONFIG)
   /* GC_print_stats should be visible to extra/MacOS.c. */
   extern int GC_print_stats;    /* Nonzero generates basic GC log.      */
                                 /* VERBOSE generates add'l messages.    */

@@ -711,7 +711,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
     struct obj_kind * ok;
     struct hblk ** rlp;
     struct hblk ** rlh;
-#   ifndef SMALL_CONFIG
+#   ifndef NO_CLOCK
       CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
 
       if (GC_print_stats == VERBOSE)
@@ -739,7 +739,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
             }
         }
     }
-#   ifndef SMALL_CONFIG
+#   ifndef NO_CLOCK
       if (GC_print_stats == VERBOSE) {
         CLOCK_TYPE done_time;
 
