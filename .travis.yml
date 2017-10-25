@@ -136,7 +136,7 @@ matrix:
   - os: linux
     compiler: gcc
     env:
-    - CFLAGS_EXTRA="-D POINTER_MASK=~0xf"
+    - CFLAGS_EXTRA="-D NO_CLOCK -D POINTER_MASK=~0xf"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
   - os: linux
     compiler: gcc
