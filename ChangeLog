@@ -102,6 +102,7 @@
 * Match uclinux pattern in configure
 * Move conditional GC_need_to_lock setting to gc_locks.h (refactoring)
 * Move README.QUICK from DOC_FILES to OTHER_FILES in Makefile.direct
+* New API function (GC_is_init_called) to check if BDWGC is initialized
 * New target (check-cpp) in Makefile.direct
 * Prevent abort in register_data_segments for Symbian and Emscripten
 * Prevent multiple 'Caught ACCESS_VIOLATION in marker' per collection
@@ -120,10 +121,12 @@
 * Support GC_init (and get_stack_base) from non-main thread on FreeBSD/NetBSD
 * Suppress 'tainted string passed to vulnerable operation' false defects
 * Suppress 'taking address of label non-standard' GCC/Clang pedantic warning
+* Test GC initialization from non-main thread on FreeBSD and NetBSD
 * Test GCJ object creation with length-based descriptor (gctest)
 * Update README regarding make cords with Makefile.direct
 * Update README to use autogen.sh on build from the source repository
 * Update shared libraries version info to differentiate against v7.4
+* Use mprotect instead of mmap in GC_unmap() on Cygwin
 * Use same style of include gc.h in documentation
 * Workaround '!GC_page_size is always false' cppcheck style warning
 * Workaround '#error' cppcheck error messages
@@ -279,7 +282,7 @@ Also, includes 7.4.6 changes
 Also, includes 7.4.4 changes
 
 
-== [7.4.6] (unset) ==
+== [7.4.6] 2017-10-26 ==
 
 * Add configure --enable-gcov option (enable code coverage analysis)
 * Add configure check whether to define NO_GETCONTEXT
