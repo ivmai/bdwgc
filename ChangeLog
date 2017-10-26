@@ -1,5 +1,5 @@
 
-== [7.4.6] (unset) ==
+== [7.4.6] 2017-10-26 ==
 
 * Add configure --enable-gcov option (enable code coverage analysis)
 * Add configure check whether to define NO_GETCONTEXT
