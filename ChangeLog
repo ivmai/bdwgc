@@ -6,6 +6,7 @@
 * Add debug logging to new_thread about GC_threads hash table collisions
 * Add Makefile target to run all tests without test-driver
 * Add test_atomic_ops to perform minimal testing of used atomic primitives
+* Add two-argument alloc_size attribute to calloc_explicitly_typed (GCC)
 * Align IRIX/OSF1_THREADS definition in gc_config_macros.h with gcconfig.h
 * Allow compilation of PROC_VDB code on Linux host (GC_NO_SYS_FAULT_H)
 * Allow configure --with-libatomic-ops=none to use GCC atomic intrinsics
@@ -27,6 +28,7 @@
 * Do not print n_rescuing_pages value if incremental collections disabled
 * Do not specify version info for test libraries (Automake)
 * Do not use asm in GC_pause
+* Do not use system clock consistently if NO_CLOCK
 * Do not use x86 asm in PUSH_CONTENTS_HDR for NaCl
 * Document GC_BUILTIN_ATOMIC macro (and gc_atomic_ops private header file)
 * Document STACK_NOT_SCANNED macro in gcconfig.h (Emscripten)
@@ -36,6 +38,7 @@
 * Group common defines for POSIX platforms in configure and CMake scripts
 * Imply configure --single-obj-compilation if --disable-static
 * Increase MAX_HEAP_SECTS (10 times) for large-config
+* Make extend_size_map() static (code refactoring)
 * Move de_win compiled resource files to cord/tests
 * Move pcr_interface.c, real_malloc.c to 'extra' folder
 * New API function (GC_dump_named) to produce named dumps
@@ -62,6 +65,7 @@
 * Turn on parallel marker by default for all multi-threaded builds
 * Update GC compilation and usage notes for Win32
 * Update shared libraries version info to differentiate against v7.6
+* Use __declspec(allocator) for malloc-like prototypes (MS VS 2015+)
 * Use __int64 instead of 'long long' in LONG_MULT if appropriate
 * Use __thread keyword for Android NDK r12b+ Clang (arm)
 * Use C11 static_assert if available
@@ -72,6 +76,7 @@
 * Use MARK_BIT_PER_GRANULE instead of MARK_BIT_PER_OBJ where appropriate
 * Use sigsetjmp() in setjmp_t tool if available
 * Use thread-local allocations for all multi-threaded builds
+* Workaround Thread Sanitizer (TSan) false positive warnings (partially)
 Also, includes 7.6.2 changes
 
 
