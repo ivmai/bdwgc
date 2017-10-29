@@ -108,7 +108,11 @@ GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 # else
     GC_INNER GC_bool GC_dump_regularly = FALSE;
 # endif
-#endif
+# ifndef NO_CLOCK
+    STATIC CLOCK_TYPE GC_init_time;
+                /* The time that the GC was initialized at.     */
+# endif
+#endif /* !NO_DEBUGGING */
 
 #ifdef KEEP_BACK_PTRS
   GC_INNER long GC_backtraces = 0;
@@ -1103,6 +1107,9 @@ GC_API void GC_CALL GC_init(void)
         }
       }
 #   endif
+#   if !defined(NO_DEBUGGING) && !defined(NO_CLOCK)
+      GET_TIME(GC_init_time);
+#   endif
     maybe_install_looping_handler();
 #   if ALIGNMENT > GC_DS_TAGS
       /* Adjust normal object descriptor for extra allocation.  */
@@ -2025,11 +2032,22 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 
   GC_API void GC_CALL GC_dump_named(const char *name)
   {
+#   ifndef NO_CLOCK
+      CLOCK_TYPE current_time;
+
+      GET_TIME(current_time);
+#   endif
     if (name != NULL) {
       GC_printf("***GC Dump %s\n", name);
     } else {
       GC_printf("***GC Dump collection #%lu\n", (unsigned long)GC_gc_no);
     }
+#   ifndef NO_CLOCK
+      /* Note that the time is wrapped in ~49 days if sizeof(long)==4.  */
+      GC_printf("Time since GC init: %lu msecs\n",
+                MS_TIME_DIFF(current_time, GC_init_time));
+#   endif
+
     GC_printf("\n***Static roots:\n");
     GC_print_static_roots();
     GC_printf("\n***Heap sections:\n");
