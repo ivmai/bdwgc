@@ -1224,7 +1224,15 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
         /* finalizable.  Otherwise it should not matter.        */
     }
     /* bytes_freed_before is initialized whenever count != 0 */
-    if (count != 0 && bytes_freed_before != GC_bytes_freed) {
+    if (count != 0
+#         if defined(THREADS) && !defined(THREAD_SANITIZER)
+            /* A quick check whether some memory was freed.     */
+            /* The race with GC_free() is safe to be ignored    */
+            /* because we only need to know if the current      */
+            /* thread has deallocated something.                */
+            && bytes_freed_before != GC_bytes_freed
+#         endif
+       ) {
         LOCK();
         GC_finalizer_bytes_freed += (GC_bytes_freed - bytes_freed_before);
         UNLOCK();

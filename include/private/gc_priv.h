@@ -1224,7 +1224,7 @@ struct _GC_arrays {
         /* since last collection.                               */
   word _finalizer_bytes_freed;
         /* Bytes of memory explicitly deallocated while         */
-        /* finalizers were running.  Used to approximate mem.   */
+        /* finalizers were running.  Used to approximate memory */
         /* explicitly deallocated by finalizers.                */
   ptr_t _scratch_end_ptr;
   ptr_t _scratch_last_end_ptr;
