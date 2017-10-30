@@ -76,6 +76,10 @@ OPTION(enable_cplusplus "install C++ support" NO)
 SET(_HOST ${CMAKE_HOST_SYSTEM_PROCESSOR}--${CMAKE_SYSTEM}) #FIXME missing the vendor field.Use lowercase
 
 STRING(TOLOWER ${_HOST} HOST)
+
+# Accept Android hosts as Linux.
+STRING(REPLACE "android" "linux" HOST "${HOST}")
+
 MESSAGE("HOST = ${HOST}")
 
 #Thread Detection. Relying on cmake for lib an includes.
