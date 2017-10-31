@@ -647,6 +647,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp)
 GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                             mse *mark_stack_limit)
                         GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY
+                        GC_ATTR_NO_SANITIZE_THREAD
 {
   signed_word credit = HBLKSIZE;  /* Remaining credit for marking work  */
   ptr_t current_p;      /* Pointer to current candidate ptr.            */
@@ -1589,6 +1590,7 @@ GC_API void GC_CALL GC_print_trace(word gc_no)
  */
 GC_API void GC_CALL GC_push_all_eager(char *bottom, char *top)
                         GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY
+                        GC_ATTR_NO_SANITIZE_THREAD
 {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
@@ -1633,6 +1635,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
   GC_INNER void GC_push_conditional_eager(ptr_t bottom, ptr_t top,
                                           GC_bool all)
                         GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY
+                        GC_ATTR_NO_SANITIZE_THREAD
   {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
