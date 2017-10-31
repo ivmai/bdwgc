@@ -947,7 +947,7 @@ typedef word page_hash_table[PHT_SIZE];
 # define counter_t volatile AO_t
 #else
   typedef size_t counter_t;
-# if defined(THREADS) && (defined(MPROTECT_VDB) \
+# if defined(THREADS) && (defined(MPROTECT_VDB) || defined(THREAD_SANITIZER) \
                 || (defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)))
 #   include "gc_atomic_ops.h"
 # endif
@@ -1597,8 +1597,11 @@ struct GC_traced_stack_sect_s {
 #else
 /* Set mark bit correctly, even if mark bits may be concurrently        */
 /* accessed.                                                            */
-# ifdef PARALLEL_MARK
-    /* This is used only if we explicitly set USE_MARK_BITS.    */
+# if defined(PARALLEL_MARK) || (defined(THREAD_SANITIZER) && defined(THREADS))
+    /* Workaround TSan false positive: there is no race between         */
+    /* mark_bit_from_hdr and set_mark_bit_from_hdr when n is different  */
+    /* (alternatively, USE_MARK_BYTES could be used).  If TSan is off,  */
+    /* AO_or() is used only if we set USE_MARK_BITS explicitly.         */
 #   define OR_WORD(addr, bits) AO_or((volatile AO_t *)(addr), (AO_t)(bits))
 # else
 #   define OR_WORD(addr, bits) (void)(*(addr) |= (bits))
