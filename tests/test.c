@@ -234,34 +234,22 @@ volatile AO_t extra_count = 0;  /* Amount of space wasted in cons node; */
 /* configuration.  In the FIND_LEAK configuration, it should    */
 /* find lots of leaks, since we free almost nothing.            */
 
-struct SEXPR;
-typedef struct SEXPR * sexpr;
-
-union sexpr_or_aot_u {
-    sexpr p;
-    volatile AO_t a;
-};
-
 struct SEXPR {
-    union sexpr_or_aot_u sexpr_car;
-    union sexpr_or_aot_u sexpr_cdr;
+    struct SEXPR * sexpr_car;
+    struct SEXPR * sexpr_cdr;
 };
+
+
+typedef struct SEXPR * sexpr;
 
 # define INT_TO_SEXPR(x) ((sexpr)(GC_word)(x))
 # define SEXPR_TO_INT(x) ((int)(GC_word)(x))
 
 # undef nil
 # define nil (INT_TO_SEXPR(0))
-# define car(x) ((x)->sexpr_car.p)
-# define cdr(x) ((x)->sexpr_cdr.p)
+# define car(x) ((x) -> sexpr_car)
+# define cdr(x) ((x) -> sexpr_cdr)
 # define is_nil(x) ((x) == nil)
-
-/* As mentioned in reverse_test_inner, car/cdr should be accessed       */
-/* atomically to be thread-safe during AA.a global list reversal.       */
-/* Otherwise TSan reports data race issues between [small_]cons(),      */
-/* reverse1() and check_ints().                                         */
-# define atomic_car(x) (sexpr)AO_load(&(x)->sexpr_car.a)
-# define atomic_cdr(x) (sexpr)AO_load(&(x)->sexpr_cdr.a)
 
 /* Silly implementation of Lisp cons. Intentionally wastes lots of space */
 /* to test collector.                                                    */
@@ -284,23 +272,13 @@ sexpr cons (sexpr x, sexpr y)
                       (void *)p);
             FAIL;
         }
-#       ifdef AT_END
-          if ((word)p + sizeof(struct SEXPR) <= (word)r + (my_extra & ~7)
-              || (word)p >= (word)r + (my_extra & ~7) + sizeof(struct SEXPR))
-#       else
-          /* The first 2 elements are written atomically below. */
-          if ((word)p >= (word)r + sizeof(struct SEXPR))
-#       endif
-        {
-          *p = (int)((13 << 12) + ((p - (int *)r) & 0xfff));
-        }
+        *p = (int)((13 << 12) + ((p - (int *)r) & 0xfff));
     }
 #   ifdef AT_END
         r = (sexpr)((char *)r + (my_extra & ~7));
 #   endif
-    /* See the comment for atomic_car/cdr.      */
-    AO_store(&r->sexpr_car.a, (AO_t)x);
-    AO_store(&r->sexpr_cdr.a, (AO_t)y);
+    r -> sexpr_car = x;
+    r -> sexpr_cdr = y;
     GC_END_STUBBORN_CHANGE(r);
     return(r);
 }
@@ -337,10 +315,12 @@ struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
         addr = (word *)GC_USR_PTR_FROM_BASE(addr);
     }
     x = (sexpr)(addr + 1); /* Skip the vtable pointer. */
-    mark_stack_ptr = GC_MARK_AND_PUSH((void *)x->sexpr_cdr.p, mark_stack_ptr,
-                              mark_stack_limit, (void **)(&x->sexpr_cdr.p));
-    mark_stack_ptr = GC_MARK_AND_PUSH((void *)x->sexpr_car.p, mark_stack_ptr,
-                              mark_stack_limit, (void **)(&x->sexpr_car.p));
+    mark_stack_ptr = GC_MARK_AND_PUSH(
+                              (void *)(x -> sexpr_cdr), mark_stack_ptr,
+                              mark_stack_limit, (void * *)&(x -> sexpr_cdr));
+    mark_stack_ptr = GC_MARK_AND_PUSH(
+                              (void *)(x -> sexpr_car), mark_stack_ptr,
+                              mark_stack_limit, (void * *)&(x -> sexpr_car));
     return(mark_stack_ptr);
 }
 
@@ -353,13 +333,8 @@ sexpr small_cons (sexpr x, sexpr y)
 
     CHECK_OUT_OF_MEMORY(r);
     AO_fetch_and_add1(&collectable_count);
-#   ifdef VERY_SMALL_CONFIG
-      AO_store(&r->sexpr_car.a, (AO_t)x);
-      AO_store(&r->sexpr_cdr.a, (AO_t)y);
-#   else
-      r->sexpr_car.p = x;
-      r->sexpr_cdr.p = y;
-#   endif
+    r -> sexpr_car = x;
+    r -> sexpr_cdr = y;
     return(r);
 }
 
@@ -369,8 +344,8 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
 
     CHECK_OUT_OF_MEMORY(r);
     AO_fetch_and_add1(&uncollectable_count);
-    r->sexpr_car.p = x;
-    r->sexpr_cdr.p = (sexpr)(~(GC_word)y);
+    r -> sexpr_car = x;
+    r -> sexpr_cdr = (sexpr)(~(GC_word)y);
     return(r);
 }
 
@@ -386,8 +361,8 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
 
     CHECK_OUT_OF_MEMORY(r);
     result = (sexpr)(r + 1);
-    result->sexpr_car.p = x;
-    result->sexpr_cdr.p = y;
+    result -> sexpr_car = x;
+    result -> sexpr_cdr = y;
     return(result);
   }
 #endif /* GC_GCJ_SUPPORT */
@@ -398,7 +373,7 @@ sexpr reverse1(sexpr x, sexpr y)
     if (is_nil(x)) {
         return(y);
     } else {
-        return reverse1(atomic_cdr(x), cons(atomic_car(x), y));
+        return( reverse1(cdr(x), cons(car(x), y)) );
     }
 }
 
@@ -463,18 +438,18 @@ void check_ints(sexpr list, int low, int up)
         GC_printf("list is nil\n");
         FAIL;
     }
-    if (SEXPR_TO_INT(atomic_car(atomic_car(list))) != low) {
+    if (SEXPR_TO_INT(car(car(list))) != low) {
         GC_printf(
            "List reversal produced incorrect list - collector is broken\n");
         FAIL;
     }
     if (low == up) {
-        if (atomic_cdr(list) != nil) {
+        if (cdr(list) != nil) {
            GC_printf("List too long - collector is broken\n");
            FAIL;
         }
     } else {
-        check_ints(atomic_cdr(list), low + 1, up);
+        check_ints(cdr(list), low+1, up);
     }
 }
 
@@ -694,6 +669,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #     define BIG 4500
 #   endif
 
+    A.dummy = 17;
     a_set(ints(1, 49));
     b = ints(1, 50);
     c = ints(1, BIG);
@@ -1233,8 +1209,6 @@ void typed_test(void)
 
   void set_print_procs(void)
   {
-    /* Set these global variables just once to avoid TSan false positives. */
-    A.dummy = 17;
     GC_is_valid_displacement_print_proc = fail_proc1;
     GC_is_visible_print_proc = fail_proc1;
   }
