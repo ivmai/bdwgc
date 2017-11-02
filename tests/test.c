@@ -712,7 +712,6 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #     define BIG 4500
 #   endif
 
-    A.dummy = 17;
     a_set(ints(1, 49));
     b = ints(1, 50);
     c = ints(1, BIG);
@@ -1217,7 +1216,7 @@ void typed_test(void)
 }
 
 #ifdef DBG_HDRS_ALL
-# define set_print_procs() (void)0
+# define set_print_procs() (void)(A.dummy = 17)
 #else
   int fail_count = 0;
 
@@ -1228,6 +1227,8 @@ void typed_test(void)
 
   void set_print_procs(void)
   {
+    /* Set these global variables just once to avoid TSan false positives. */
+    A.dummy = 17;
     GC_is_valid_displacement_print_proc = fail_proc1;
     GC_is_visible_print_proc = fail_proc1;
   }
