@@ -174,14 +174,29 @@
   /* AO_t not defined. */
 # define AO_t GC_word
 #endif
-#ifndef AO_HAVE_load
-# define AO_load(p) (*(p))
+#ifndef AO_HAVE_load_acquire
+  static AO_t AO_load_acquire(const volatile AO_t *addr)
+  {
+    AO_t result;
+
+    FINALIZER_LOCK();
+    result = *addr;
+    FINALIZER_UNLOCK();
+    return result;
+  }
 #endif
-#ifndef AO_HAVE_store
-# define AO_store(p, v) (void)(*(p) = (v))
+#ifndef AO_HAVE_store_release
+  /* Not a macro as new_val argument should be evaluated before the lock. */
+  static void AO_store_release(volatile AO_t *addr, AO_t new_val)
+  {
+    FINALIZER_LOCK();
+    *addr = new_val;
+    FINALIZER_UNLOCK();
+  }
 #endif
 #ifndef AO_HAVE_fetch_and_add1
 # define AO_fetch_and_add1(p) ((*(p))++)
+                /* This is used only to update counters.        */
 #endif
 
 /* Allocation Statistics.  Synchronization is not strictly necessary.   */
@@ -657,8 +672,8 @@ volatile struct {
   char dummy;
   AO_t aa;
 } A;
-#define a_set(p) AO_store(&A.aa, (AO_t)(p))
-#define a_get() (sexpr)AO_load(&A.aa)
+#define a_set(p) AO_store_release(&A.aa, (AO_t)(p))
+#define a_get() (sexpr)AO_load_acquire(&A.aa)
 
 /*
  * Repeatedly reverse lists built out of very different sized cons cells.
@@ -754,9 +769,11 @@ void *GC_CALLBACK reverse_test_inner(void *data)
            && (NTHREADS > 0)
             if (i % 10 == 0) fork_a_thread();
 #       endif
-        /* This maintains the invariant that a always points to a list of */
-        /* 49 integers.  Thus this is thread safe without locks,          */
-        /* assuming atomic pointer assignments.                           */
+        /* This maintains the invariant that a always points to a list  */
+        /* of 49 integers.  Thus, this is thread safe without locks,    */
+        /* assuming acquire/release barriers in a_get/set() and atomic  */
+        /* pointer assignments (otherwise, e.g., check_ints() may see   */
+        /* an uninitialized object returned by GC_MALLOC_STUBBORN).     */
         a_set(reverse(reverse(a_get())));
 #       if !defined(AT_END) && !defined(THREADS)
           /* This is not thread safe, since realloc explicitly deallocates */
