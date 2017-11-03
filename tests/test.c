@@ -187,8 +187,13 @@
   }
 #endif
 #ifndef AO_HAVE_store_release
-# define AO_store_release(p, v) \
-                (void)(FINALIZER_LOCK(), *(p) = (v), FINALIZER_UNLOCK(), 0)
+  /* Not a macro as new_val argument should be evaluated before the lock. */
+  static void AO_store_release(volatile AO_t *addr, AO_t new_val)
+  {
+    FINALIZER_LOCK();
+    *addr = new_val;
+    FINALIZER_UNLOCK();
+  }
 #endif
 #ifndef AO_HAVE_fetch_and_add1
 # define AO_fetch_and_add1(p) ((*(p))++)
