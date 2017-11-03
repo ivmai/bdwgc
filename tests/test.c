@@ -161,6 +161,32 @@
               exit(1); \
             }
 
+/* Define AO primitives for a single-threaded mode. */
+#ifndef AO_CLEAR
+  /* AO_t not defined. */
+# define AO_t GC_word
+#endif
+#ifndef AO_HAVE_load_acquire
+  static AO_t AO_load_acquire(const volatile AO_t *addr)
+  {
+    AO_t result;
+
+    FINALIZER_LOCK();
+    result = *addr;
+    FINALIZER_UNLOCK();
+    return result;
+  }
+#endif
+#ifndef AO_HAVE_store_release
+  /* Not a macro as new_val argument should be evaluated before the lock. */
+  static void AO_store_release(volatile AO_t *addr, AO_t new_val)
+  {
+    FINALIZER_LOCK();
+    *addr = new_val;
+    FINALIZER_UNLOCK();
+  }
+#endif
+
 /* Allocation Statistics.  Incremented without synchronization. */
 /* FIXME: We should be using synchronization.                   */
 int stubborn_count = 0;
@@ -590,11 +616,12 @@ void check_marks_int_list(sexpr x)
 #endif
 
 /* Try to force a to be strangely aligned */
-struct {
+volatile struct {
   char dummy;
-  sexpr aa;
+  AO_t aa;
 } A;
-#define a A.aa
+#define a_set(p) AO_store_release(&A.aa, (AO_t)(p))
+#define a_get() (sexpr)AO_load_acquire(&A.aa)
 
 /*
  * Repeatedly reverse lists built out of very different sized cons cells.
@@ -634,7 +661,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   endif
 
     A.dummy = 17;
-    a = ints(1, 49);
+    a_set(ints(1, 49));
     b = ints(1, 50);
     c = ints(1, BIG);
     d = uncollectable_ints(1, 100);
@@ -676,32 +703,30 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     GC_FREE((void *)e);
 
     check_ints(b,1,50);
-    check_ints(a,1,49);
+    check_ints(a_get(),1,49);
     for (i = 0; i < 50; i++) {
         check_ints(b,1,50);
         b = reverse(reverse(b));
     }
     check_ints(b,1,50);
-    check_ints(a,1,49);
+    check_ints(a_get(),1,49);
     for (i = 0; i < 60; i++) {
 #       if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
             if (i % 10 == 0) fork_a_thread();
 #       endif
-        /* This maintains the invariant that a always points to a list of */
-        /* 49 integers.  Thus this is thread safe without locks,          */
-        /* assuming atomic pointer assignments.                           */
-        a = reverse(reverse(a));
+        /* This maintains the invariant that a always points to a list  */
+        /* of 49 integers.  Thus, this is thread safe without locks,    */
+        /* assuming acquire/release barriers in a_get/set() and atomic  */
+        /* pointer assignments (otherwise, e.g., check_ints() may see   */
+        /* an uninitialized object returned by GC_MALLOC_STUBBORN).     */
+        a_set(reverse(reverse(a_get())));
 #       if !defined(AT_END) && !defined(THREADS)
           /* This is not thread safe, since realloc explicitly deallocates */
-          if (i & 1) {
-            a = (sexpr)GC_REALLOC((void *)a, 500);
-          } else {
-            a = (sexpr)GC_REALLOC((void *)a, 8200);
-          }
+          a_set(GC_REALLOC(a_get(), (i & 1) != 0 ? 500 : 8200));
           realloc_count++;
 #       endif
     }
-    check_ints(a,1,49);
+    check_ints(a_get(),1,49);
     check_ints(b,1,50);
 
     /* Restore c and d values. */
@@ -717,7 +742,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   endif
     check_ints(h[1999], 1,200);
 #   ifndef THREADS
-        a = 0;
+        a_set(NULL);
 #   endif
     *(sexpr volatile *)&b = 0;
     *(sexpr volatile *)&c = 0;
@@ -729,8 +754,6 @@ void reverse_test(void)
     /* Test GC_do_blocking/GC_call_with_gc_active. */
     (void)GC_do_blocking(reverse_test_inner, 0);
 }
-
-#undef a
 
 /*
  * The rest of this builds balanced binary trees, checks that they don't
