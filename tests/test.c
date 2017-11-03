@@ -116,11 +116,23 @@
 #   define INIT_FORK_SUPPORT /* empty */
 # endif
 
-# if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-    static CRITICAL_SECTION incr_cs;
-# endif
+#ifdef PCR
+# define FINALIZER_LOCK() PCR_ThCrSec_EnterSys()
+# define FINALIZER_UNLOCK() PCR_ThCrSec_ExitSys()
+#elif defined(GC_PTHREADS)
+  static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
+# define FINALIZER_LOCK() pthread_mutex_lock(&incr_lock)
+# define FINALIZER_UNLOCK() pthread_mutex_unlock(&incr_lock)
+#elif defined(GC_WIN32_THREADS)
+  static CRITICAL_SECTION incr_cs;
+# define FINALIZER_LOCK() EnterCriticalSection(&incr_cs)
+# define FINALIZER_UNLOCK() LeaveCriticalSection(&incr_cs)
+#else
+# define FINALIZER_LOCK() (void)0
+# define FINALIZER_UNLOCK() (void)0
+#endif /* !THREADS */
 
-# include <stdarg.h>
+#include <stdarg.h>
 
 #define CHECK_GCLIB_VERSION \
             if (GC_get_version() != ((GC_VERSION_MAJOR<<16) \
@@ -732,35 +744,20 @@ typedef struct treenode {
 
 int finalizable_count = 0;
 int finalized_count = 0;
-volatile int dropped_something = 0;
+int dropped_something = 0;
 
 void GC_CALLBACK finalizer(void * obj, void * client_data)
 {
   tn * t = (tn *)obj;
 
-# ifdef PCR
-     PCR_ThCrSec_EnterSys();
-# endif
-# if defined(GC_PTHREADS)
-    static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
-    pthread_mutex_lock(&incr_lock);
-# elif defined(GC_WIN32_THREADS)
-    EnterCriticalSection(&incr_cs);
-# endif
+  FINALIZER_LOCK();
   if ((int)(GC_word)client_data != t -> level) {
      GC_printf("Wrong finalization data - collector is broken\n");
      FAIL;
   }
   finalized_count++;
   t -> level = -1;      /* detect duplicate finalization immediately */
-# ifdef PCR
-    PCR_ThCrSec_ExitSys();
-# endif
-# if defined(GC_PTHREADS)
-    pthread_mutex_unlock(&incr_lock);
-# elif defined(GC_WIN32_THREADS)
-    LeaveCriticalSection(&incr_cs);
-# endif
+  FINALIZER_UNLOCK();
 }
 
 size_t counter = 0;
@@ -816,28 +813,13 @@ tn * mktree(int n)
 #       endif
 
         {
-#         ifdef PCR
-            PCR_ThCrSec_EnterSys();
-#         endif
-#         if defined(GC_PTHREADS)
-            static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
-            pthread_mutex_lock(&incr_lock);
-#         elif defined(GC_WIN32_THREADS)
-            EnterCriticalSection(&incr_cs);
-#         endif
+          FINALIZER_LOCK();
                 /* Losing a count here causes erroneous report of failure. */
           finalizable_count++;
 #         ifndef GC_NO_FINALIZATION
             my_index = live_indicators_count++;
 #         endif
-#         ifdef PCR
-            PCR_ThCrSec_ExitSys();
-#         endif
-#         if defined(GC_PTHREADS)
-            pthread_mutex_unlock(&incr_lock);
-#         elif defined(GC_WIN32_THREADS)
-            LeaveCriticalSection(&incr_cs);
-#         endif
+          FINALIZER_UNLOCK();
         }
 
 #     ifndef GC_NO_FINALIZATION
@@ -1012,11 +994,13 @@ void tree_test(void)
       alloc_small(5000000);
 #   endif
     chktree(root, TREE_HEIGHT);
-    if (finalized_count && ! dropped_something) {
+    FINALIZER_LOCK();
+    if (finalized_count && !dropped_something) {
         GC_printf("Premature finalization - collector is broken\n");
         FAIL;
     }
     dropped_something = 1;
+    FINALIZER_UNLOCK();
     GC_noop1((word)root);       /* Root needs to remain live until      */
                                 /* dropped_something is set.            */
     root = mktree(TREE_HEIGHT);
