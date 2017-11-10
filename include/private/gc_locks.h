@@ -157,11 +157,7 @@
                   pthread_mutex_unlock(&GC_allocate_ml); }
 #      else /* !GC_ASSERTIONS */
 #        if defined(NO_PTHREAD_TRYLOCK)
-#          ifdef USE_SPIN_LOCK
-#            define UNCOND_LOCK() GC_lock()
-#          else
-#            define UNCOND_LOCK() pthread_mutex_lock(&GC_allocate_ml)
-#          endif
+#          define UNCOND_LOCK() pthread_mutex_lock(&GC_allocate_ml)
 #        else
 #          define UNCOND_LOCK() \
               { if (0 != pthread_mutex_trylock(&GC_allocate_ml)) \
