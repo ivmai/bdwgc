@@ -395,6 +395,20 @@ GC_API unsigned long GC_CALL GC_get_time_limit(void);
 
 /* Public procedures */
 
+/* Tell the collector to start various performance measurements.        */
+/* Only the total time taken by full collections is calculated, as      */
+/* of now.  And, currently, there is no way to stop the measurements.   */
+/* The function does not use any synchronization.  Defined only if the  */
+/* library has been compiled without NO_CLOCK.                          */
+GC_API void GC_CALL GC_start_performance_measurement(void);
+
+/* Get the total time of all full collections since the start of the    */
+/* performance measurements.  The measurement unit is one millisecond.  */
+/* Note that the returned value wraps around on overflow.               */
+/* The function does not use any synchronization.  Defined only if the  */
+/* library has been compiled without NO_CLOCK.                          */
+GC_API unsigned long GC_CALL GC_get_full_gc_total_time(void);
+
 /* Set whether the GC will allocate executable memory pages or not.     */
 /* A non-zero argument instructs the collector to allocate memory with  */
 /* the executable flag on.  Must be called before the collector is      */

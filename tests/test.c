@@ -155,8 +155,15 @@
 #  define GC_OPT_INIT /* empty */
 #endif
 
+#ifdef NO_CLOCK
+# define INIT_PERF_MEASUREMENT (void)0
+#else
+# define INIT_PERF_MEASUREMENT GC_start_performance_measurement()
+#endif
+
 #define GC_COND_INIT() \
-    INIT_FORK_SUPPORT; GC_OPT_INIT; CHECK_GCLIB_VERSION; INIT_PRINT_STATS
+    INIT_FORK_SUPPORT; GC_OPT_INIT; CHECK_GCLIB_VERSION; \
+    INIT_PRINT_STATS; INIT_PERF_MEASUREMENT
 
 #define CHECK_OUT_OF_MEMORY(p) \
             if ((p) == NULL) { \
@@ -1726,6 +1733,9 @@ void check_heap_stats(void)
       GC_unregister_my_thread(); /* just to check it works (for main) */
 #   endif
     GC_printf("Completed %u collections", (unsigned)GC_get_gc_no());
+#   ifndef NO_CLOCK
+      GC_printf(" in %lu msecs", GC_get_full_gc_total_time());
+#   endif
 #   ifdef PARALLEL_MARK
       GC_printf(" (using %d marker threads)", GC_get_parallel() + 1);
 #   endif

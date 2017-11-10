@@ -63,6 +63,23 @@ word GC_non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
 
 word GC_gc_no = 0;
 
+#ifndef NO_CLOCK
+  static unsigned long full_gc_total_time = 0; /* in msecs, may wrap */
+  static GC_bool measure_performance = FALSE;
+                /* Do performance measurements if set to true (e.g.,    */
+                /* accumulation of the total time of full collections). */
+
+  GC_API void GC_CALL GC_start_performance_measurement(void)
+  {
+    measure_performance = TRUE;
+  }
+
+  GC_API unsigned long GC_CALL GC_get_full_gc_total_time(void)
+  {
+    return full_gc_total_time;
+  }
+#endif /* !NO_CLOCK */
+
 #ifndef GC_DISABLE_INCREMENTAL
   GC_INNER GC_bool GC_incremental = FALSE; /* By default, stop the world. */
 #endif
@@ -442,6 +459,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 {
 #   ifndef NO_CLOCK
       CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
+      GC_bool start_time_valid;
 #   endif
 
     ASSERT_CANCEL_DISABLED();
@@ -463,9 +481,12 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
     }
     GC_notify_full_gc();
 #   ifndef NO_CLOCK
-      if (GC_print_stats) {
+      start_time_valid = FALSE;
+      if ((GC_print_stats | (int)measure_performance) != 0) {
+        if (GC_print_stats)
+          GC_log_printf("Initiating full world-stop collection!\n");
+        start_time_valid = TRUE;
         GET_TIME(start_time);
-        GC_log_printf("Initiating full world-stop collection!\n");
       }
 #   endif
     GC_promote_black_lists();
@@ -504,12 +525,16 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
     }
     GC_finish_collection();
 #   ifndef NO_CLOCK
-      if (GC_print_stats) {
+      if (start_time_valid) {
         CLOCK_TYPE current_time;
+        unsigned long time_diff;
 
         GET_TIME(current_time);
-        GC_log_printf("Complete collection took %lu msecs\n",
-                      MS_TIME_DIFF(current_time,start_time));
+        time_diff = MS_TIME_DIFF(current_time, start_time);
+        if (measure_performance)
+          full_gc_total_time += time_diff; /* may wrap */
+        if (GC_print_stats)
+          GC_log_printf("Complete collection took %lu msecs\n", time_diff);
       }
 #   endif
     if (GC_on_collection_event)
