@@ -199,7 +199,7 @@ GC_make_sequence_descriptor(complex_descriptor *first,
 /* each of which can be described by a simple descriptor.       */
 /* We try to optimize some common cases.                        */
 /* If the result is COMPLEX, then a complex_descr* is returned  */
-/* in *complex_d.                                                       */
+/* in *complex_d.                                               */
 /* If the result is LEAF, then we built a LeafDescriptor in     */
 /* the structure pointed to by leaf.                            */
 /* The tag in the leaf structure is not set.                    */
@@ -597,7 +597,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     op = GC_malloc_kind(lb, GC_explicit_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
-    lg = SMALL_OBJ(lb) ? GC_size_map[lb] : BYTES_TO_GRANULES(GC_size(op));
+    /* It is not safe to use GC_size_map[lb] to compute lg here as the  */
+    /* the former might be updated asynchronously.                      */
+    lg = BYTES_TO_GRANULES(GC_size(op));
     op[GRANULES_TO_WORDS(lg) - 1] = d;
     return op;
 }
@@ -620,7 +622,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
             UNLOCK();
             op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
             if (0 == op) return 0;
-            lg = GC_size_map[lb];       /* May have been uninitialized. */
+            /* See the comment in GC_malloc_explicitly_typed.   */
+            lg = BYTES_TO_GRANULES(GC_size(op));
         } else {
             GC_eobjfreelist[lg] = obj_link(op);
             obj_link(op) = 0;
@@ -670,7 +673,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     op = GC_malloc_kind(lb, GC_array_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
-    lg = SMALL_OBJ(lb) ? GC_size_map[lb] : BYTES_TO_GRANULES(GC_size(op));
+    lg = BYTES_TO_GRANULES(GC_size(op));
     if (descr_type == LEAF) {
         /* Set up the descriptor inside the object itself.      */
         volatile struct LeafDescriptor * lp =
