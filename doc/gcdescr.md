@@ -100,7 +100,7 @@ free list.
 
 In order to avoid allocating blocks for too many distinct object sizes, the
 collector normally does not directly allocate objects of every possible
-request size. Instead request are rounded up to one of a smaller number
+request size. Instead, the request is rounded up to one of a smaller number
 of allocated sizes, for which free lists are maintained. The exact allocated
 sizes are computed on demand, but subject to the constraint that they increase
 roughly in geometric progression. Thus objects requested early in the
