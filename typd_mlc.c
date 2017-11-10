@@ -196,7 +196,7 @@ GC_make_sequence_descriptor(complex_descriptor *first,
 /* each of which can be described by a simple descriptor.       */
 /* We try to optimize some common cases.                        */
 /* If the result is COMPLEX, then a complex_descr* is returned  */
-/* in *complex_d.                                                       */
+/* in *complex_d.                                               */
 /* If the result is LEAF, then we built a LeafDescriptor in     */
 /* the structure pointed to by leaf.                            */
 /* The tag in the leaf structure is not set.                    */
@@ -622,7 +622,9 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t lb, GC_descr d)
             UNLOCK();
             op = (ptr_t)GENERAL_MALLOC((word)lb, GC_explicit_kind);
             if (0 == op) return 0;
-            lg = GC_size_map[lb];       /* May have been uninitialized. */
+            /* It is not safe to use GC_size_map[lb] to compute lg here */
+            /* as the the former might be updated asynchronously.       */
+            lg = BYTES_TO_GRANULES(GC_size(op));
         } else {
             *opp = obj_link(op);
             obj_link(op) = 0;
@@ -658,7 +660,8 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(size_t lb,
             UNLOCK();
             op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
             if (0 == op) return 0;
-            lg = GC_size_map[lb];       /* May have been uninitialized. */
+            /* See the comment in GC_malloc_explicitly_typed.   */
+            lg = BYTES_TO_GRANULES(GC_size(op));
         } else {
             *opp = obj_link(op);
             obj_link(op) = 0;
@@ -715,7 +718,7 @@ GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
             UNLOCK();
             op = (ptr_t)GENERAL_MALLOC((word)lb, GC_array_kind);
             if (0 == op) return(0);
-            lg = GC_size_map[lb];       /* May have been uninitialized. */
+            lg = BYTES_TO_GRANULES(GC_size(op));
         } else {
             *opp = obj_link(op);
             obj_link(op) = 0;
