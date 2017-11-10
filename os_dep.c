@@ -3149,9 +3149,26 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     }
   }
 #endif /* !AO_HAVE_test_and_set_acquire */
+
+  /* This function is used only by the fault handler.  Potential data   */
+  /* race between this function and GC_install_header, GC_remove_header */
+  /* should not be harmful because the added or removed header should   */
+  /* be already unprotected.                                            */
+  static GC_bool is_header_found_async(void *addr) GC_ATTR_NO_SANITIZE_THREAD
+  {
+#   ifdef HASH_TL
+      hdr *result;
+      GET_HDR((ptr_t)addr, result);
+      return result != NULL;
+#   else
+      return HDR_INNER(addr) != NULL;
+#   endif
+  }
+
 #else /* !THREADS */
 # define async_set_pht_entry_from_index(db, index) \
                         set_pht_entry_from_index(db, index)
+# define is_header_found_async(addr) (HDR(addr) != NULL)
 #endif /* !THREADS */
 
 #ifndef DARWIN
@@ -3236,13 +3253,13 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
             /* Address is only within the correct physical page.        */
             in_allocd_block = FALSE;
             for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
-              if (HDR(h+i) != 0) {
+              if (is_header_found_async(&h[i])) {
                 in_allocd_block = TRUE;
                 break;
               }
             }
 #       else
-            in_allocd_block = (HDR(addr) != 0);
+            in_allocd_block = is_header_found_async(addr);
 #       endif
         if (!in_allocd_block) {
             /* FIXME - We should make sure that we invoke the   */
@@ -4366,7 +4383,7 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
 
   /* This is the address that caused the fault */
   addr = (char*) exc_state.DARWIN_EXC_STATE_DAR;
-  if (HDR(addr) == 0) {
+  if (!is_header_found_async(addr)) {
     /* Ugh... just like the SIGBUS problem above, it seems we get       */
     /* a bogus KERN_PROTECTION_FAILURE every once and a while.  We wait */
     /* till we get a bunch in a row before doing anything about it.     */
