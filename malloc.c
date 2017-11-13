@@ -325,7 +325,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
         }
         UNLOCK();
     }
-    return GENERAL_MALLOC(lb, k);
+
+    /* We make the GC_clear_stack() call a tail one, hoping to get more */
+    /* of the stack.                                                    */
+    return GC_clear_stack(GC_generic_malloc(lb, k));
 }
 
 #if defined(THREADS) && !defined(THREAD_LOCAL_ALLOC)

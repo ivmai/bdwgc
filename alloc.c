@@ -32,14 +32,17 @@
  * kind k objects of size i points to a non-empty
  * free list. It returns a pointer to the first entry on the free list.
  * In a single-threaded world, GC_allocobj may be called to allocate
- * an object of (small) size lb as follows:
+ * an object of small size lb (and NORMAL kind) as follows
+ * (GC_generic_malloc_inner is a wrapper over GC_allocobj which also
+ * fills in GC_size_map if needed):
  *
  *   lg = GC_size_map[lb];
  *   op = GC_objfreelist[lg];
  *   if (NULL == op) {
- *     op = GENERAL_MALLOC(lb, NORMAL);
+ *     op = GC_generic_malloc_inner(lb, NORMAL);
  *   } else {
  *     GC_objfreelist[lg] = obj_link(op);
+ *     GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
  *   }
  *
  * Note that this is very fast if the free list is non-empty; it should

@@ -1946,13 +1946,6 @@ GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
 # define GC_DBG_EXTRAS "unknown", 0
 #endif
 
-/* We make the GC_clear_stack() call a tail one, hoping to get more of  */
-/* the stack.                                                           */
-#define GENERAL_MALLOC(lb,k) \
-    GC_clear_stack(GC_generic_malloc(lb, k))
-#define GENERAL_MALLOC_IOP(lb,k) \
-    GC_clear_stack(GC_generic_malloc_ignore_off_page(lb, k))
-
 #ifdef GC_COLLECT_AT_MALLOC
   extern size_t GC_dbg_collect_at_malloc_min_lb;
                             /* variable visible outside for debugging   */

@@ -604,6 +604,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     return op;
 }
 
+/* We make the GC_clear_stack() call a tail one, hoping to get more of  */
+/* the stack.                                                           */
+#define GENERAL_MALLOC_IOP(lb, k) \
+                GC_clear_stack(GC_generic_malloc_ignore_off_page(lb, k))
+
 GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_malloc_explicitly_typed_ignore_off_page(size_t lb, GC_descr d)
 {
