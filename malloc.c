@@ -102,6 +102,18 @@ STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
     return result;
 }
 
+/* This function should be called with the allocation lock held.        */
+/* At the same time, it is safe to get a value from GC_size_map not     */
+/* acquiring the allocation lock provided the obtained value is used    */
+/* according to the pattern given in alloc.c file (see the comment      */
+/* about GC_allocobj usage and, e.g., GC_malloc_kind_global code).      */
+static void fill_size_map(size_t low_limit, size_t byte_sz, size_t granule_sz)
+                                                GC_ATTR_NO_SANITIZE_THREAD
+{
+  for (; low_limit <= byte_sz; low_limit++)
+    GC_size_map[low_limit] = granule_sz;
+}
+
 /* Fill in additional entries in GC_size_map, including the i-th one.   */
 /* Note that a filled in section of the array ending at n always        */
 /* has the length of at least n/4.                                      */
@@ -151,8 +163,7 @@ STATIC void GC_extend_size_map(size_t i)
                         /* We may need one extra byte; do not always    */
                         /* fill in GC_size_map[byte_sz].                */
 
-  for (; low_limit <= byte_sz; low_limit++)
-    GC_size_map[low_limit] = granule_sz;
+  fill_size_map(low_limit, byte_sz, granule_sz);
 }
 
 /* Allocate lb bytes for an object of kind k.   */

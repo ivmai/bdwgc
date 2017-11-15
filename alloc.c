@@ -31,12 +31,13 @@
  * The call GC_allocobj(i,k) ensures that the freelist for
  * kind k objects of size i points to a non-empty
  * free list. It returns a pointer to the first entry on the free list.
- * In a single-threaded world, GC_allocobj may be called to allocate
- * an object of small size lb (and NORMAL kind) as follows
+ * If not using thread-local allocation, GC_allocobj may be called to
+ * allocate an object of small size lb (and NORMAL kind) as follows
  * (GC_generic_malloc_inner is a wrapper over GC_allocobj which also
  * fills in GC_size_map if needed):
  *
  *   lg = GC_size_map[lb];
+ *   LOCK();
  *   op = GC_objfreelist[lg];
  *   if (NULL == op) {
  *     op = GC_generic_malloc_inner(lb, NORMAL);
@@ -44,6 +45,7 @@
  *     GC_objfreelist[lg] = obj_link(op);
  *     GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
  *   }
+ *   UNLOCK();
  *
  * Note that this is very fast if the free list is non-empty; it should
  * only involve the execution of 4 or 5 simple instructions.
