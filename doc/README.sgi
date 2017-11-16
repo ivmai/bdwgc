@@ -26,7 +26,7 @@ will run on other pthreads platforms.  But please tell me if it does.)
 include gc.h.  Gc.h redefines some of the pthread primitives as macros which
 also provide the collector with information it requires.
 
-4) pthread_cond_wait and pthread_cond_timed_wait should be prepared for
+4) pthread_cond_wait and pthread_cond_timedwait should be prepared for
 premature wakeups.  (I believe the pthreads and related standards require this
 anyway.  Irix pthreads often terminate a wait if a signal arrives.
 The garbage collector uses signals to stop threads.)
