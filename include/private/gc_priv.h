@@ -2324,7 +2324,8 @@ GC_INNER void GC_initialize_offsets(void);      /* defined in obj_map.c */
 GC_INNER void GC_bl_init(void);
 GC_INNER void GC_bl_init_no_interiors(void);    /* defined in blacklst.c */
 
-GC_INNER void GC_start_debugging(void); /* defined in dbg_mlc.c */
+GC_INNER void GC_start_debugging_inner(void);   /* defined in dbg_mlc.c. */
+                        /* Should not be called if GC_debugging_started. */
 
 /* Store debugging info into p.  Return displaced pointer.      */
 /* Assumes we don't hold allocation lock.                       */

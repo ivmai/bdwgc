@@ -219,10 +219,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
         return((*oom_fn)(lb));
     }
     *((void **)((ptr_t)result + sizeof(oh))) = ptr_to_struct_containing_descr;
-    UNLOCK();
     if (!GC_debugging_started) {
-        GC_start_debugging();
+        GC_start_debugging_inner();
     }
+    UNLOCK();
     ADD_CALL_CHAIN(result, ra);
     return (GC_store_debug_info(result, (word)lb, s, i));
 }
