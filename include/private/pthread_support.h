@@ -49,7 +49,19 @@ typedef struct GC_Thread_Rep {
 #   ifdef USE_TKILL_ON_ANDROID
       pid_t kernel_id;
 #   endif
-    /* Extra bookkeeping information the stopping code uses */
+
+    void * status;              /* The value returned from the thread.  */
+                                /* Used only to avoid premature         */
+                                /* reclamation of any data it might     */
+                                /* reference.                           */
+                                /* This is unfortunately also the       */
+                                /* reason we need to intercept join     */
+                                /* and detach.                          */
+
+    /* Extra bookkeeping information the stopping code uses.            */
+    /* Should have the offset of 3 (in words) at least, to avoid TSan   */
+    /* false positive about the race between GC_has_other_debug_info    */
+    /* and GC_suspend_handler_inner (which sets store_stop.stack_ptr).  */
     struct thread_stop_info stop_info;
 
     unsigned char flags;
@@ -104,14 +116,6 @@ typedef struct GC_Thread_Rep {
                         /* Points to the "frame" data held in stack by  */
                         /* the innermost GC_call_with_gc_active() of    */
                         /* this thread.  May be NULL.                   */
-
-    void * status;              /* The value returned from the thread.  */
-                                /* Used only to avoid premature         */
-                                /* reclamation of any data it might     */
-                                /* reference.                           */
-                                /* This is unfortunately also the       */
-                                /* reason we need to intercept join     */
-                                /* and detach.                          */
 
 #   ifdef THREAD_LOCAL_ALLOC
         struct thread_local_freelists tlfs;
