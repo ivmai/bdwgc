@@ -120,11 +120,13 @@
 #    define NO_THREAD ((unsigned long)(-1l))
                 /* != NUMERIC_THREAD_ID(pthread_self()) for any thread */
 
-#    if !defined(THREAD_LOCAL_ALLOC) && !defined(USE_PTHREAD_LOCKS)
+#    if (!defined(THREAD_LOCAL_ALLOC) || defined(USE_SPIN_LOCK)) \
+        && !defined(USE_PTHREAD_LOCKS)
       /* In the THREAD_LOCAL_ALLOC case, the allocation lock tends to   */
       /* be held for long periods, if it is held at all.  Thus spinning */
       /* and sleeping for fixed periods are likely to result in         */
       /* significant wasted time.  We thus rely mostly on queued locks. */
+#     undef USE_SPIN_LOCK
 #     define USE_SPIN_LOCK
       GC_EXTERN volatile AO_TS_t GC_allocate_lock;
       GC_INNER void GC_lock(void);
