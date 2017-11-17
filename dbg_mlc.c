@@ -465,7 +465,7 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
   STATIC void GC_do_nothing(void) {}
 #endif
 
-STATIC void GC_start_debugging_inner(void)
+GC_INNER void GC_start_debugging_inner(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
 # ifndef SHORT_DBG_HDRS
@@ -480,14 +480,19 @@ STATIC void GC_start_debugging_inner(void)
   GC_register_displacement_inner((word)sizeof(oh));
 }
 
-GC_INNER void GC_start_debugging(void)
-{
-  DCL_LOCK_STATE;
+#ifdef THREADS
+  STATIC void GC_start_debugging(void)
+  {
+    DCL_LOCK_STATE;
 
-  LOCK();
-  GC_start_debugging_inner();
-  UNLOCK();
-}
+    LOCK();
+    if (!GC_debugging_started)
+      GC_start_debugging_inner();
+    UNLOCK();
+  }
+#else
+# define GC_start_debugging GC_start_debugging_inner
+#endif /* !THREADS */
 
 size_t GC_debug_header_size = sizeof(oh);
 
