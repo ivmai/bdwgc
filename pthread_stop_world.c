@@ -327,16 +327,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
   /* really safe to proceed.  Under normal circumstances,       */
   /* this code should not be executed.                          */
   do {
-#   ifdef THREAD_SANITIZER
-      /* TODO: A temporal workaround.  Generally, signal handlers are   */
-      /* delayed until the next call to TSan ProcessPendingSignals, the */
-      /* latter is called on interceptors, system calls, and atomic     */
-      /* operations only.  Thus, the collector hangs sometimes (as of   */
-      /* now) if the signal occurs while waiting in sigsuspend().       */
-      sched_yield();
-#   else
       sigsuspend (&suspend_handler_mask);
-#   endif
   } while (AO_load_acquire(&GC_world_is_stopped)
            && AO_load(&GC_stop_count) == my_stop_count);
   /* If the RESTART signal gets lost, we can still lose.  That should   */
