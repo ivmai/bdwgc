@@ -310,6 +310,16 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
       me -> backing_store_ptr = GC_save_regs_in_stack();
 # endif
 
+# ifdef THREAD_SANITIZER
+    /* TSan disables signals around signal handlers.    */
+    {
+      sigset_t set;
+      sigemptyset(&set);
+      if (pthread_sigmask(SIG_SETMASK, &set, NULL) != 0)
+        ABORT("pthread_sigmask(SIG_SETMASK) failed");
+    }
+# endif
+
   /* Tell the thread that wants to stop the world that this     */
   /* thread has been stopped.  Note that sem_post() is          */
   /* the only async-signal-safe primitive in LinuxThreads.      */
@@ -827,7 +837,14 @@ GC_INNER void GC_stop_world(void)
 
     for (i = 0; i < n_live_threads; i++) {
       retry:
-        code = sem_wait(&GC_suspend_ack_sem);
+#       ifdef THREAD_SANITIZER
+          /* sem_wait() hangs sometimes. */
+          while ((code = sem_trywait(&GC_suspend_ack_sem)) != 0
+                 && errno == EAGAIN)
+            usleep(100);
+#       else
+          code = sem_wait(&GC_suspend_ack_sem);
+#       endif
         if (0 != code) {
           /* On Linux, sem_wait is documented to always return zero.    */
           /* But the documentation appears to be incorrect.             */
