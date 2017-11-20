@@ -156,18 +156,22 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #endif
 
 #ifndef GC_ATTR_NO_SANITIZE_ADDR
-# ifdef ADDRESS_SANITIZER
+# ifndef ADDRESS_SANITIZER
+#   define GC_ATTR_NO_SANITIZE_ADDR /* empty */
+# elif __clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8)
 #   define GC_ATTR_NO_SANITIZE_ADDR __attribute__((no_sanitize("address")))
 # else
-#   define GC_ATTR_NO_SANITIZE_ADDR /* empty */
+#   define GC_ATTR_NO_SANITIZE_ADDR __attribute__((no_sanitize_address))
 # endif
 #endif /* !GC_ATTR_NO_SANITIZE_ADDR */
 
 #ifndef GC_ATTR_NO_SANITIZE_MEMORY
-# ifdef MEMORY_SANITIZER
+# ifndef MEMORY_SANITIZER
+#   define GC_ATTR_NO_SANITIZE_MEMORY /* empty */
+# elif __clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8)
 #   define GC_ATTR_NO_SANITIZE_MEMORY __attribute__((no_sanitize("memory")))
 # else
-#   define GC_ATTR_NO_SANITIZE_MEMORY /* empty */
+#   define GC_ATTR_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
 # endif
 #endif /* !GC_ATTR_NO_SANITIZE_MEMORY */
 
