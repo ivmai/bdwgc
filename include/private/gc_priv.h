@@ -155,26 +155,32 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #endif
 
 #ifndef GC_ATTR_NO_SANITIZE_ADDR
-# ifdef ADDRESS_SANITIZER
+# ifndef ADDRESS_SANITIZER
+#   define GC_ATTR_NO_SANITIZE_ADDR /* empty */
+# elif GC_CLANG_PREREQ(3, 8)
 #   define GC_ATTR_NO_SANITIZE_ADDR __attribute__((no_sanitize("address")))
 # else
-#   define GC_ATTR_NO_SANITIZE_ADDR /* empty */
+#   define GC_ATTR_NO_SANITIZE_ADDR __attribute__((no_sanitize_address))
 # endif
 #endif /* !GC_ATTR_NO_SANITIZE_ADDR */
 
 #ifndef GC_ATTR_NO_SANITIZE_MEMORY
-# ifdef MEMORY_SANITIZER
+# ifndef MEMORY_SANITIZER
+#   define GC_ATTR_NO_SANITIZE_MEMORY /* empty */
+# elif GC_CLANG_PREREQ(3, 8)
 #   define GC_ATTR_NO_SANITIZE_MEMORY __attribute__((no_sanitize("memory")))
 # else
-#   define GC_ATTR_NO_SANITIZE_MEMORY /* empty */
+#   define GC_ATTR_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
 # endif
 #endif /* !GC_ATTR_NO_SANITIZE_MEMORY */
 
 #ifndef GC_ATTR_NO_SANITIZE_THREAD
-# ifdef THREAD_SANITIZER
+# ifndef THREAD_SANITIZER
+#   define GC_ATTR_NO_SANITIZE_THREAD /* empty */
+# elif GC_CLANG_PREREQ(3, 8)
 #   define GC_ATTR_NO_SANITIZE_THREAD __attribute__((no_sanitize("thread")))
 # else
-#   define GC_ATTR_NO_SANITIZE_THREAD /* empty */
+#   define GC_ATTR_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 # endif
 #endif /* !GC_ATTR_NO_SANITIZE_THREAD */
 
