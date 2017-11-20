@@ -298,7 +298,8 @@ STATIC void GC_init_size_map(void)
 #ifdef THREADS
   /* Used to occasionally clear a bigger chunk. */
   /* TODO: Should be more random than it is ... */
-  static unsigned next_random_no(void) GC_ATTR_NO_SANITIZE_THREAD
+  GC_ATTR_NO_SANITIZE_THREAD
+  static unsigned next_random_no(void)
   {
     static unsigned random_no = 0;
     return ++random_no % 13;

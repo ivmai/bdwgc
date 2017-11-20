@@ -3107,9 +3107,10 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 /* correctly.                                                           */
 #ifdef AO_HAVE_test_and_set_acquire
   GC_INNER volatile AO_TS_t GC_fault_handler_lock = AO_TS_INITIALIZER;
+
+  GC_ATTR_NO_SANITIZE_THREAD
   static void async_set_pht_entry_from_index(volatile page_hash_table db,
                                              size_t index)
-                                                GC_ATTR_NO_SANITIZE_THREAD
   {
     while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {
       /* empty */
@@ -3154,7 +3155,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   /* race between this function and GC_install_header, GC_remove_header */
   /* should not be harmful because the added or removed header should   */
   /* be already unprotected.                                            */
-  static GC_bool is_header_found_async(void *addr) GC_ATTR_NO_SANITIZE_THREAD
+  GC_ATTR_NO_SANITIZE_THREAD
+  static GC_bool is_header_found_async(void *addr)
   {
 #   ifdef HASH_TL
       hdr *result;

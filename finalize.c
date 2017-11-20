@@ -1182,8 +1182,8 @@ GC_INNER void GC_finalize(void)
 /* Returns true if it is worth calling GC_invoke_finalizers. (Useful if */
 /* finalizers can only be called from some kind of "safe state" and     */
 /* getting into that safe state is expensive.)                          */
+GC_ATTR_NO_SANITIZE_THREAD
 GC_API int GC_CALL GC_should_invoke_finalizers(void)
-                                                GC_ATTR_NO_SANITIZE_THREAD
 {
   return GC_fnlz_roots.finalize_now != NULL;
 }

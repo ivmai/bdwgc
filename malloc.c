@@ -107,8 +107,8 @@ STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
 /* acquiring the allocation lock provided the obtained value is used    */
 /* according to the pattern given in alloc.c file (see the comment      */
 /* about GC_allocobj usage and, e.g., GC_malloc_kind_global code).      */
+GC_ATTR_NO_SANITIZE_THREAD
 static void fill_size_map(size_t low_limit, size_t byte_sz, size_t granule_sz)
-                                                GC_ATTR_NO_SANITIZE_THREAD
 {
   for (; low_limit <= byte_sz; low_limit++)
     GC_size_map[low_limit] = granule_sz;

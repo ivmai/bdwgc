@@ -240,8 +240,8 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
   errno = old_errno;
 }
 
+GC_ATTR_NO_SANITIZE_THREAD
 static void update_last_stop_count(GC_thread me, AO_t my_stop_count)
-                                                GC_ATTR_NO_SANITIZE_THREAD
 {
   me -> stop_info.last_stop_count = my_stop_count;
 }
@@ -435,7 +435,8 @@ STATIC void GC_restart_handler(int sig)
     /* suspend_self_inner.  The first one seems to be a false positive  */
     /* as the handler is invoked after RAISE_SIGNAL, and the 2nd one is */
     /* safe to be ignored as the flag is checked in a loop.             */
-    static void set_suspended_ext_flag(GC_thread t) GC_ATTR_NO_SANITIZE_THREAD
+    GC_ATTR_NO_SANITIZE_THREAD
+    static void set_suspended_ext_flag(GC_thread t)
     {
       t -> flags |= SUSPENDED_EXT;
     }
@@ -503,9 +504,8 @@ STATIC void GC_restart_handler(int sig)
     /* Same as for GC_suspend_thread(), TSan reports data races between */
     /* this function and GC_suspend_handler_inner, suspend_self_inner;  */
     /* it is safe to ignore them both.                                  */
-    GC_API void GC_CALL GC_resume_thread(GC_SUSPEND_THREAD_ID thread)
-                                                GC_ATTR_NO_SANITIZE_THREAD
-    {
+    GC_ATTR_NO_SANITIZE_THREAD
+    GC_API void GC_CALL GC_resume_thread(GC_SUSPEND_THREAD_ID thread) {
       GC_thread t;
       DCL_LOCK_STATE;
 

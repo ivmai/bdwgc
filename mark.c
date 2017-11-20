@@ -48,9 +48,11 @@ void GC_noop6(word arg1 GC_ATTR_UNUSED, word arg2 GC_ATTR_UNUSED,
 # endif
 }
 
-/* Single argument version, robust against whole program analysis. */
 volatile word GC_noop_sink;
-GC_API void GC_CALL GC_noop1(word x) GC_ATTR_NO_SANITIZE_THREAD
+
+/* Single argument version, robust against whole program analysis. */
+GC_ATTR_NO_SANITIZE_THREAD
+GC_API void GC_CALL GC_noop1(word x)
 {
     GC_noop_sink = x;
 }
@@ -644,10 +646,9 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp)
  * encoding, we optionally maintain a cache for the block address to
  * header mapping, we prefetch when an object is "grayed", etc.
  */
+GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY GC_ATTR_NO_SANITIZE_THREAD
 GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                             mse *mark_stack_limit)
-                        GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY
-                        GC_ATTR_NO_SANITIZE_THREAD
 {
   signed_word credit = HBLKSIZE;  /* Remaining credit for marking work  */
   ptr_t current_p;      /* Pointer to current candidate ptr.            */
@@ -1588,9 +1589,8 @@ GC_API void GC_CALL GC_print_trace(word gc_no)
  * and scans the entire region immediately, in case the contents
  * change.
  */
+GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY GC_ATTR_NO_SANITIZE_THREAD
 GC_API void GC_CALL GC_push_all_eager(char *bottom, char *top)
-                        GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY
-                        GC_ATTR_NO_SANITIZE_THREAD
 {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
@@ -1632,10 +1632,10 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 
 #if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
   /* Similar to GC_push_conditional but scans the whole region immediately. */
+  GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY
+  GC_ATTR_NO_SANITIZE_THREAD
   GC_INNER void GC_push_conditional_eager(ptr_t bottom, ptr_t top,
                                           GC_bool all)
-                        GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY
-                        GC_ATTR_NO_SANITIZE_THREAD
   {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
