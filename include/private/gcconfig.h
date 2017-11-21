@@ -3130,7 +3130,12 @@
 # if __has_feature(thread_sanitizer) && !defined(THREAD_SANITIZER)
 #   define THREAD_SANITIZER
 # endif
-#endif
+#else
+# ifdef __SANITIZE_ADDRESS__
+    /* GCC v4.8+ */
+#   define ADDRESS_SANITIZER
+# endif
+#endif /* !__has_feature */
 
 #if defined(SPARC)
 # define ASM_CLEAR_CODE /* Stack clearing is crucial, and we    */
