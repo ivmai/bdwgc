@@ -716,9 +716,19 @@ GC_API int GC_CALL GC_is_init_called(void)
 #endif
 
 #ifndef DONT_USE_ATEXIT
+# if !defined(PCR) && !defined(SMALL_CONFIG)
+    /* A dedicated variable to avoid a garbage collection on abort.     */
+    /* GC_find_leak cannot be used for this purpose as otherwise        */
+    /* TSan finds a data race (between GC_default_on_abort and, e.g.,   */
+    /* GC_finish_collection).                                           */
+    static GC_bool skip_gc_atexit = FALSE;
+# else
+#   define skip_gc_atexit FALSE
+# endif
+
   STATIC void GC_exit_check(void)
   {
-    if (GC_find_leak) {
+    if (GC_find_leak && !skip_gc_atexit) {
       GC_gcollect();
     }
   }
@@ -1720,7 +1730,9 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
   /* and from EXIT() macro (msg is NULL in that case).                  */
   STATIC void GC_CALLBACK GC_default_on_abort(const char *msg)
   {
-    GC_find_leak = FALSE; /* disable at-exit GC_gcollect()  */
+#   ifndef DONT_USE_ATEXIT
+      skip_gc_atexit = TRUE; /* disable at-exit GC_gcollect() */
+#   endif
 
     if (msg != NULL) {
 #     if defined(MSWIN32)
