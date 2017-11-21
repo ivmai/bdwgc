@@ -3133,7 +3133,12 @@
 # if __has_feature(memory_sanitizer) && !defined(MEMORY_SANITIZER)
 #   define MEMORY_SANITIZER
 # endif
-#endif
+#else
+# ifdef __SANITIZE_ADDRESS__
+    /* GCC v4.8+ */
+#   define ADDRESS_SANITIZER
+# endif
+#endif /* !__has_feature */
 
 #if defined(SPARC)
 # define ASM_CLEAR_CODE /* Stack clearing is crucial, and we    */
