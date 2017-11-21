@@ -78,6 +78,18 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_or_special_malloc(size_t lb,
     }
 }
 
+/* There could be a data race between this function (called from        */
+/* GC_realloc without any synchronization) and e.g. GC_clear_hdr_marks  */
+/* (invoked indirectly from GC_try_to_collect_inner) but it should be   */
+/* safe as long as the new size is not smaller than the old one.        */
+GC_ATTR_NO_SANITIZE_THREAD
+static void hb_sz_async_grow_within_hblk(hdr * hhdr, size_t sz)
+{
+    GC_ASSERT(hhdr->hb_sz <= sz
+              && sz <= ((hhdr->hb_sz + HBLKSIZE - 1) & ~HBLKMASK));
+    hhdr->hb_sz = sz;
+}
+
 /* Change the size of the block pointed to by p to contain at least   */
 /* lb bytes.  The object may be (and quite likely will be) moved.     */
 /* The kind (e.g. atomic) is the same as that of the old.             */
@@ -109,7 +121,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
           word descr;
 
           sz = (sz+HBLKSIZE-1) & (~HBLKMASK);
-          hhdr -> hb_sz = sz;
+          hb_sz_async_grow_within_hblk(hhdr, sz);
           descr = GC_obj_kinds[obj_kind].ok_descriptor;
           if (GC_obj_kinds[obj_kind].ok_relocate_descr) descr += sz;
           hhdr -> hb_descr = descr;
