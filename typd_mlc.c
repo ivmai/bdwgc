@@ -542,7 +542,12 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 #     endif
       {
         GC_init_explicit_typing();
-        GC_explicit_typing_initialized = TRUE;
+#       if defined(THREADS) && defined(AO_HAVE_load_acquire) \
+           && defined(AO_HAVE_store)
+          AO_store(&GC_explicit_typing_initialized, (AO_t)TRUE);
+#       else
+          GC_explicit_typing_initialized = TRUE;
+#       endif
       }
       UNLOCK();
     }
