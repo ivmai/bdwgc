@@ -1001,7 +1001,11 @@ STATIC void GC_remove_all_threads_but_me(void)
 STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
     DCL_LOCK_STATE;
-    GC_ASSERT(I_HOLD_LOCK());
+#   if !defined(THREAD_SANITIZER) || !defined(CAN_HANDLE_FORK)
+      /* GC_lock_holder is accessed with the lock held, so there is no  */
+      /* data race actually (unlike what is reported by TSan).          */
+      GC_ASSERT(I_HOLD_LOCK());
+#   endif
     ASSERT_CANCEL_DISABLED();
     if (GC_incremental && GC_collection_in_progress()) {
         word old_gc_no = GC_gc_no;
@@ -1035,6 +1039,10 @@ IF_CANCEL(static int fork_cancel_state;)
                                 /* protected by allocation lock.        */
 
 /* Called before a fork()               */
+#ifdef GC_ASSERTIONS
+  /* GC_lock_holder is updated safely (no data race actually).  */
+  GC_ATTR_NO_SANITIZE_THREAD
+#endif
 static void fork_prepare_proc(void)
 {
     /* Acquire all relevant locks, so that after releasing the locks    */
@@ -1059,6 +1067,9 @@ static void fork_prepare_proc(void)
 }
 
 /* Called in parent after a fork() (even if the latter failed). */
+#ifdef GC_ASSERTIONS
+  GC_ATTR_NO_SANITIZE_THREAD
+#endif
 static void fork_parent_proc(void)
 {
 #   if defined(PARALLEL_MARK)
@@ -1070,6 +1081,9 @@ static void fork_parent_proc(void)
 }
 
 /* Called in child after a fork()       */
+#ifdef GC_ASSERTIONS
+  GC_ATTR_NO_SANITIZE_THREAD
+#endif
 static void fork_child_proc(void)
 {
     /* Clean up the thread table, so that just our thread is left. */
