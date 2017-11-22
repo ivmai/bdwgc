@@ -528,11 +528,6 @@ void GC_push_thread_structures(void)
 /* It may not be safe to allocate when we register the first thread.    */
 static struct GC_Thread_Rep first_thread;
 
-#define THREAD_TABLE_INDEX(id) \
-                (int)(((NUMERIC_THREAD_ID(id) >> 16) \
-                       ^ (NUMERIC_THREAD_ID(id) >> 8) \
-                       ^ NUMERIC_THREAD_ID(id)) % THREAD_TABLE_SZ)
-
 /* Add a thread to GC_threads.  We assume it wasn't already there.      */
 /* Caller holds allocation lock.                                        */
 STATIC GC_thread GC_new_thread(pthread_t id)

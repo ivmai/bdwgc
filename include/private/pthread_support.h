@@ -125,6 +125,12 @@ typedef struct GC_Thread_Rep {
 #ifndef THREAD_TABLE_SZ
 # define THREAD_TABLE_SZ 256    /* Power of 2 (for speed). */
 #endif
+
+#define THREAD_TABLE_INDEX(id) \
+                (int)(((NUMERIC_THREAD_ID(id) >> 16) \
+                       ^ (NUMERIC_THREAD_ID(id) >> 8) \
+                       ^ NUMERIC_THREAD_ID(id)) % THREAD_TABLE_SZ)
+
 GC_EXTERN volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 
 GC_EXTERN GC_bool GC_thr_initialized;

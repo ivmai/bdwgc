@@ -240,6 +240,27 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
   errno = old_errno;
 }
 
+/* The lookup here is safe, since this is done on behalf        */
+/* of a thread which holds the allocation lock in order         */
+/* to stop the world.  Thus concurrent modification of the      */
+/* data structure is impossible.  Unfortunately, we have to     */
+/* instruct TSan that the lookup is safe.                       */
+#ifdef THREAD_SANITIZER
+  /* The implementation of the function is the same as that of  */
+  /* GC_lookup_thread except for the attribute added here.      */
+  GC_ATTR_NO_SANITIZE_THREAD
+  static GC_thread GC_lookup_thread_async(pthread_t id)
+  {
+    GC_thread p = GC_threads[THREAD_TABLE_INDEX(id)];
+
+    while (p != NULL && !THREAD_EQUAL(p->id, id))
+      p = p->next;
+    return p;
+  }
+#else
+# define GC_lookup_thread_async GC_lookup_thread
+#endif
+
 GC_ATTR_NO_SANITIZE_THREAD
 static void update_last_stop_count(GC_thread me, AO_t my_stop_count)
 {
@@ -267,11 +288,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
     GC_log_printf("Suspending %p\n", (void *)self);
 # endif
 
-  me = GC_lookup_thread(self);
-  /* The lookup here is safe, since I'm doing this on behalf    */
-  /* of a thread which holds the allocation lock in order       */
-  /* to stop the world.  Thus concurrent modification of the    */
-  /* data structure is impossible.                              */
+  me = GC_lookup_thread_async(self);
 
 # ifdef GC_ENABLE_SUSPEND_THREAD
     if ((me -> flags & SUSPENDED_EXT) != 0) {
