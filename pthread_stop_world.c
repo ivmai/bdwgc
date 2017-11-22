@@ -447,17 +447,6 @@ STATIC void GC_restart_handler(int sig)
       return NULL;
     }
 
-    /* TSan reports data races between the suspension flag setter       */
-    /* (called from GC_suspend_thread) and GC_suspend_handler_inner,    */
-    /* suspend_self_inner.  The first one seems to be a false positive  */
-    /* as the handler is invoked after RAISE_SIGNAL, and the 2nd one is */
-    /* safe to be ignored as the flag is checked in a loop.             */
-    GC_ATTR_NO_SANITIZE_THREAD
-    static void set_suspended_ext_flag(GC_thread t)
-    {
-      t -> flags |= SUSPENDED_EXT;
-    }
-
     GC_API void GC_CALL GC_suspend_thread(GC_SUSPEND_THREAD_ID thread) {
       GC_thread t;
       IF_CANCEL(int cancel_state;)
@@ -470,7 +459,7 @@ STATIC void GC_restart_handler(int sig)
         return;
       }
 
-      set_suspended_ext_flag(t);
+      t -> flags |= SUSPENDED_EXT;
       if ((pthread_t)thread == pthread_self()) {
         UNLOCK();
         /* It is safe as "t" cannot become invalid here (no race with   */
@@ -518,10 +507,6 @@ STATIC void GC_restart_handler(int sig)
       UNLOCK();
     }
 
-    /* Same as for GC_suspend_thread(), TSan reports data races between */
-    /* this function and GC_suspend_handler_inner, suspend_self_inner;  */
-    /* it is safe to ignore them both.                                  */
-    GC_ATTR_NO_SANITIZE_THREAD
     GC_API void GC_CALL GC_resume_thread(GC_SUSPEND_THREAD_ID thread) {
       GC_thread t;
       DCL_LOCK_STATE;
