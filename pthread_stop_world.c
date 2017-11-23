@@ -261,12 +261,6 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 # define GC_lookup_thread_async GC_lookup_thread
 #endif
 
-GC_ATTR_NO_SANITIZE_THREAD
-static void update_last_stop_count(GC_thread me, AO_t my_stop_count)
-{
-  me -> stop_info.last_stop_count = my_stop_count;
-}
-
 STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
                                      void * context GC_ATTR_UNUSED)
 {
@@ -341,7 +335,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
   /* thread has been stopped.  Note that sem_post() is          */
   /* the only async-signal-safe primitive in LinuxThreads.      */
   sem_post(&GC_suspend_ack_sem);
-  update_last_stop_count(me, my_stop_count);
+  AO_store_release(&me->stop_info.last_stop_count, my_stop_count);
 
   /* Wait until that thread tells us to restart by sending      */
   /* this thread a GC_sig_thr_restart signal (should be masked  */
@@ -671,7 +665,8 @@ STATIC int GC_suspend_all(void)
 #             ifdef GC_ENABLE_SUSPEND_THREAD
                 if (p -> suspended_ext) continue;
 #             endif
-              if (p -> stop_info.last_stop_count == GC_stop_count) continue;
+              if (AO_load(&p->stop_info.last_stop_count) == GC_stop_count)
+                continue;
               n_live_threads++;
 #           endif
 #           ifdef DEBUG_THREADS
