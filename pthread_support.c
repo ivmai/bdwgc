@@ -1670,7 +1670,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     } else if ((me -> flags & FINISHED) != 0) {
         /* This code is executed when a thread is registered from the   */
         /* client thread key destructor.                                */
-        GC_ASSERT((me -> flags & SUSPENDED_EXT) == 0);
         GC_record_stack_base(me, sb);
         me -> flags &= ~FINISHED; /* but not DETACHED */
 #       ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
