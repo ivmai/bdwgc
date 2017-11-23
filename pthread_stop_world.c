@@ -244,7 +244,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
   /* thread has been stopped.  Note that sem_post() is          */
   /* the only async-signal-safe primitive in LinuxThreads.      */
   sem_post(&GC_suspend_ack_sem);
-  me -> stop_info.last_stop_count = my_stop_count;
+  AO_store_release(&me->stop_info.last_stop_count, my_stop_count);
 
   /* Wait until that thread tells us to restart by sending      */
   /* this thread a SIG_THR_RESTART signal.                      */

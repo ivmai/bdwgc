@@ -20,9 +20,9 @@
 
 struct thread_stop_info {
 #   ifndef GC_OPENBSD_THREADS
-      word last_stop_count;     /* GC_last_stop_count value when thread */
-                                /* last successfully handled a suspend  */
-                                /* signal.                              */
+      volatile AO_t last_stop_count;
+                        /* The value of GC_stop_count when the thread   */
+                        /* last successfully handled a suspend signal.  */
 #   endif
 
     ptr_t stack_ptr;            /* Valid only when stopped.             */
