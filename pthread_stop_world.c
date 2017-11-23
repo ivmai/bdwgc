@@ -107,10 +107,10 @@ STATIC volatile AO_t GC_stop_count = 0;
                         /* Incremented at the beginning of GC_stop_world. */
 
 STATIC volatile AO_t GC_world_is_stopped = FALSE;
-                        /* FALSE ==> it is safe for threads to restart, i.e. */
-                        /* they will see another suspend signal before they  */
-                        /* are expected to stop (unless they have voluntarily */
-                        /* stopped).                                         */
+                        /* FALSE ==> it is safe for threads to restart, */
+                        /* i.e. they will see another suspend signal    */
+                        /* before they are expected to stop (unless     */
+                        /* they have stopped voluntarily).              */
 
 #ifdef GC_OSF1_THREADS
   STATIC GC_bool GC_retry_signals = TRUE;
@@ -230,7 +230,9 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg,
   pthread_t self = pthread_self();
   GC_thread me;
   IF_CANCEL(int cancel_state;)
-  AO_t my_stop_count = AO_load(&GC_stop_count);
+  AO_t my_stop_count = AO_load_acquire(&GC_stop_count);
+                        /* After the barrier, this thread should see    */
+                        /* the actual content of GC_threads.            */
 
   if ((signed_word)sig_arg != GC_sig_suspend) {
 #   if defined(GC_FREEBSD_THREADS)
@@ -807,7 +809,10 @@ GC_INNER void GC_start_world(void)
 #   endif
 
 #   ifndef GC_OPENBSD_UTHREADS
-      AO_store(&GC_world_is_stopped, FALSE);
+      AO_store_release(&GC_world_is_stopped, FALSE);
+                    /* The updated value should now be visible to the   */
+                    /* signal handler (note that pthread_kill is not on */
+                    /* the list of functions which synchronize memory). */
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
