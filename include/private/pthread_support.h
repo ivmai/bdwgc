@@ -64,6 +64,11 @@ typedef struct GC_Thread_Rep {
     /* and GC_suspend_handler_inner (which sets store_stop.stack_ptr).  */
     struct thread_stop_info stop_info;
 
+#   if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
+        && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
+      volatile AO_t suspended_ext;  /* Thread was suspended externally. */
+#   endif
+
     unsigned char flags;
 #       define FINISHED 1       /* Thread has exited.                   */
 #       define DETACHED 2       /* Thread is treated as detached.       */
@@ -74,7 +79,6 @@ typedef struct GC_Thread_Rep {
                                 /* it unregisters itself, since it      */
                                 /* may not return a GC pointer.         */
 #       define MAIN_THREAD 4    /* True for the original thread only.   */
-#       define SUSPENDED_EXT 8  /* Thread was suspended externally.     */
 #       define DISABLED_GC 0x10 /* Collections are disabled while the   */
                                 /* thread is exiting.                   */
 

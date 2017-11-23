@@ -291,7 +291,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
   me = GC_lookup_thread_async(self);
 
 # ifdef GC_ENABLE_SUSPEND_THREAD
-    if ((me -> flags & SUSPENDED_EXT) != 0) {
+    if (AO_load(&me->suspended_ext)) {
 #     ifdef SPARC
         me -> stop_info.stack_ptr = GC_save_regs_in_stack();
 #     else
@@ -440,7 +440,7 @@ STATIC void GC_restart_handler(int sig)
     static void *GC_CALLBACK suspend_self_inner(void *client_data) {
       GC_thread me = (GC_thread)client_data;
 
-      while ((me -> flags & SUSPENDED_EXT) != 0) {
+      while (AO_load_acquire(&me->suspended_ext)) {
         /* TODO: Use sigsuspend() instead. */
         GC_brief_async_signal_safe_sleep();
       }
@@ -454,12 +454,14 @@ STATIC void GC_restart_handler(int sig)
 
       LOCK();
       t = GC_lookup_thread((pthread_t)thread);
-      if (t == NULL || (t -> flags & SUSPENDED_EXT) != 0) {
+      if (t == NULL || t -> suspended_ext) {
         UNLOCK();
         return;
       }
 
-      t -> flags |= SUSPENDED_EXT;
+      /* Set the flag making the change visible to the signal handler.  */
+      AO_store_release(&t->suspended_ext, (AO_t)TRUE);
+
       if ((pthread_t)thread == pthread_self()) {
         UNLOCK();
         /* It is safe as "t" cannot become invalid here (no race with   */
@@ -514,21 +516,21 @@ STATIC void GC_restart_handler(int sig)
       LOCK();
       t = GC_lookup_thread((pthread_t)thread);
       if (t != NULL)
-        t -> flags &= ~SUSPENDED_EXT;
+        AO_store(&t->suspended_ext, (AO_t)FALSE);
       UNLOCK();
     }
 
     GC_API int GC_CALL GC_is_thread_suspended(GC_SUSPEND_THREAD_ID thread) {
       GC_thread t;
-      int flags = 0;
+      int is_suspended = 0;
       DCL_LOCK_STATE;
 
       LOCK();
       t = GC_lookup_thread((pthread_t)thread);
-      if (t != NULL)
-        flags = t -> flags;
+      if (t != NULL && t -> suspended_ext)
+        is_suspended = (int)TRUE;
       UNLOCK();
-      return (flags & SUSPENDED_EXT) != 0;
+      return is_suspended;
     }
 # endif /* GC_ENABLE_SUSPEND_THREAD */
 
@@ -663,9 +665,12 @@ STATIC int GC_suspend_all(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (!THREAD_EQUAL(p -> id, self)) {
-            if ((p -> flags & (FINISHED | SUSPENDED_EXT)) != 0) continue;
+            if ((p -> flags & FINISHED) != 0) continue;
             if (p -> thread_blocked) /* Will wait */ continue;
 #           ifndef GC_OPENBSD_UTHREADS
+#             ifdef GC_ENABLE_SUSPEND_THREAD
+                if (p -> suspended_ext) continue;
+#             endif
               if (p -> stop_info.last_stop_count == GC_stop_count) continue;
               n_live_threads++;
 #           endif
@@ -1044,9 +1049,12 @@ GC_INNER void GC_start_world(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (!THREAD_EQUAL(p -> id, self)) {
-            if ((p -> flags & (FINISHED | SUSPENDED_EXT)) != 0) continue;
+            if ((p -> flags & FINISHED) != 0) continue;
             if (p -> thread_blocked) continue;
 #           ifndef GC_OPENBSD_UTHREADS
+#             ifdef GC_ENABLE_SUSPEND_THREAD
+                if (p -> suspended_ext) continue;
+#             endif
               n_live_threads++;
 #           endif
 #           ifdef DEBUG_THREADS
