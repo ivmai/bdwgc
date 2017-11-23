@@ -261,6 +261,26 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 # define GC_lookup_thread_async GC_lookup_thread
 #endif
 
+GC_INLINE void GC_store_stack_ptr(GC_thread me)
+{
+  /* There is no data race between the suspend handler (storing         */
+  /* stack_ptr) and GC_push_all_stacks (fetching stack_ptr) because     */
+  /* GC_push_all_stacks is executed after GC_stop_world exits and the   */
+  /* latter runs sem_[try]wait repeatedly waiting for all the suspended */
+  /* threads to call sem_post.  At the same time, stack_ptr is stored   */
+  /* (here) and fetched (by GC_push_all_stacks) atomically to avoid the */
+  /* related TSan warning.                                              */
+# ifdef SPARC
+    AO_store((volatile AO_t *)&me->stop_info.stack_ptr,
+             (AO_t)GC_save_regs_in_stack());
+# else
+#   ifdef IA64
+      me -> backing_store_ptr = GC_save_regs_in_stack();
+#   endif
+    AO_store((volatile AO_t *)&me->stop_info.stack_ptr, (AO_t)GC_approx_sp());
+# endif
+}
+
 STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
                                      void * context GC_ATTR_UNUSED)
 {
@@ -286,14 +306,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
 
 # ifdef GC_ENABLE_SUSPEND_THREAD
     if (AO_load(&me->suspended_ext)) {
-#     ifdef SPARC
-        me -> stop_info.stack_ptr = GC_save_regs_in_stack();
-#     else
-        me -> stop_info.stack_ptr = GC_approx_sp();
-#       ifdef IA64
-          me -> backing_store_ptr = GC_save_regs_in_stack();
-#       endif
-#     endif
+      GC_store_stack_ptr(me);
       sem_post(&GC_suspend_ack_sem);
       suspend_self_inner(me);
 #     ifdef DEBUG_THREADS
@@ -312,14 +325,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
       RESTORE_CANCEL(cancel_state);
       return;
   }
-# ifdef SPARC
-      me -> stop_info.stack_ptr = GC_save_regs_in_stack();
-# else
-      me -> stop_info.stack_ptr = GC_approx_sp();
-# endif
-# ifdef IA64
-      me -> backing_store_ptr = GC_save_regs_in_stack();
-# endif
+  GC_store_stack_ptr(me);
 
 # ifdef THREAD_SANITIZER
     /* TSan disables signals around signal handlers.    */
@@ -570,7 +576,7 @@ GC_INNER void GC_push_all_stacks(void)
             found_me = TRUE;
             IF_IA64(bs_hi = (ptr_t)GC_save_regs_in_stack();)
         } else {
-            lo = p -> stop_info.stack_ptr;
+            lo = (ptr_t)AO_load((volatile AO_t *)&p->stop_info.stack_ptr);
             IF_IA64(bs_hi = p -> backing_store_ptr;)
             if (traced_stack_sect != NULL
                     && traced_stack_sect->saved_stack_ptr == lo) {
