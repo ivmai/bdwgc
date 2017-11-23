@@ -1608,6 +1608,9 @@ void check_heap_stats(void)
 #           endif
 #       endif
 #   endif
+#   if defined(ADDRESS_SANITIZER) && !defined(__clang__)
+        max_heap_sz = max_heap_sz * 2 - max_heap_sz / 3;
+#   endif
 #   ifdef MEMORY_SANITIZER
         max_heap_sz += max_heap_sz / 4;
 #   endif
