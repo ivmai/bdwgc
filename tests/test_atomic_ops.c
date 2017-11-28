@@ -48,7 +48,9 @@
         AO_CLEAR(&z);
 #   endif
     AO_compiler_barrier();
-    AO_nop_full();
+#   ifdef AO_HAVE_nop_full
+      AO_nop_full();
+#   endif
 #   ifdef AO_HAVE_load_acquire
       TA_assert(AO_load_acquire(&x) == 13);
 #   endif
