@@ -830,7 +830,7 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
     }
 }
 
-#if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
+#if defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)
   /* Check that all mark bits for the free list whose first entry is    */
   /* (*pfreelist) are set.  Check skipped if points to a special value. */
   void GC_check_fl_marks(void **pfreelist)
@@ -914,7 +914,7 @@ STATIC void GC_clear_fl_marks(ptr_t q)
       }
 }
 
-#if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
+#if defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)
   void GC_check_tls(void);
 #endif
 
@@ -938,7 +938,7 @@ STATIC void GC_finish_collection(void)
       CLOCK_TYPE finalize_time = 0;
 #   endif
 
-#   if defined(GC_ASSERTIONS) && defined(THREADS) \
+#   if defined(GC_ASSERTIONS) \
        && defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
         /* Check that we marked some of our own data.           */
         /* FIXME: Add more checks.                              */
