@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 
-#ifdef AO_HAVE_fetch_and_add
+#ifdef AO_HAVE_fetch_and_add1
 
 #ifdef GC_PTHREADS
 # include <pthread.h>
@@ -150,4 +150,4 @@ int main(void)
   return 0;
 }
 
-#endif /* !AO_HAVE_fetch_and_add */
+#endif /* !AO_HAVE_fetch_and_add1 */
