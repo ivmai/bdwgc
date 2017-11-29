@@ -103,13 +103,11 @@ STATIC int GC_array_mark_proc_index = 0; /* procedures.                 */
 # include "private/gc_atomic_ops.h"
 #endif
 
-STATIC
-# ifdef AO_HAVE_load_acquire
-    AO_t
-# else
-    GC_bool
-# endif
-  GC_explicit_typing_initialized = FALSE;
+#ifdef AO_HAVE_load_acquire
+  STATIC volatile AO_t GC_explicit_typing_initialized = FALSE;
+#else
+  STATIC GC_bool GC_explicit_typing_initialized = FALSE;
+#endif
 
 STATIC void GC_push_typed_structures_proc(void)
 {
@@ -527,28 +525,28 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
     GC_descr result;
     DCL_LOCK_STATE;
 
-#   if defined(THREADS) && defined(AO_HAVE_load_acquire)
-      if (!EXPECT(AO_load_acquire(
-                        (volatile AO_t *)&GC_explicit_typing_initialized),
-                  TRUE))
-#   endif
-    {
+#   if defined(AO_HAVE_load_acquire) && defined(AO_HAVE_store_release)
+      if (!EXPECT(AO_load_acquire(&GC_explicit_typing_initialized), TRUE)) {
+        LOCK();
+        if (!GC_explicit_typing_initialized) {
+          GC_init_explicit_typing();
+          AO_store_release(&GC_explicit_typing_initialized, TRUE);
+        }
+        UNLOCK();
+      }
+#   else
       LOCK();
-#     if defined(THREADS) && defined(AO_HAVE_load_acquire)
-        if (!GC_explicit_typing_initialized)
-#     else
-        if (!EXPECT(GC_explicit_typing_initialized, TRUE))
-#     endif
-      {
+      if (!EXPECT(GC_explicit_typing_initialized, TRUE)) {
         GC_init_explicit_typing();
         GC_explicit_typing_initialized = TRUE;
       }
       UNLOCK();
-    }
+#   endif
 
     while (last_set_bit >= 0 && !GC_get_bit(bm, last_set_bit))
       last_set_bit--;
     if (last_set_bit < 0) return(0 /* no pointers */);
+
 #   if ALIGNMENT == CPP_WORDSZ/8
     {
       signed_word i;
