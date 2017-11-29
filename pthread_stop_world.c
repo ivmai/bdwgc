@@ -462,7 +462,7 @@ STATIC void GC_restart_handler(int sig)
       }
 
       /* Set the flag making the change visible to the signal handler.  */
-      AO_store_release(&t->suspended_ext, (AO_t)TRUE);
+      AO_store_release(&t->suspended_ext, TRUE);
 
       if ((pthread_t)thread == pthread_self()) {
         UNLOCK();
@@ -518,7 +518,7 @@ STATIC void GC_restart_handler(int sig)
       LOCK();
       t = GC_lookup_thread((pthread_t)thread);
       if (t != NULL)
-        AO_store(&t->suspended_ext, (AO_t)FALSE);
+        AO_store(&t->suspended_ext, FALSE);
       UNLOCK();
     }
 
