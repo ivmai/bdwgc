@@ -362,6 +362,33 @@ matrix:
     dist: trusty
     language: c
     env:
+    - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D USE_SPIN_LOCK -fno-omit-frame-pointer"
+    - CONF_OPTIONS="--disable-parallel-mark --enable-handle-fork --enable-munmap"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - clang-4.0
+        sources:
+        - llvm-toolchain-trusty-4.0
+    compiler: clang-4.0
+    dist: trusty
+    language: c
+    env:
+    - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D NO_INCREMENTAL -fno-omit-frame-pointer"
+    - CONF_OPTIONS="--disable-parallel-mark --disable-thread-local-alloc --disable-shared --enable-handle-fork --enable-gc-assertions --with-libatomic-ops=no"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - clang-4.0
+        sources:
+        - llvm-toolchain-trusty-4.0
+    compiler: clang-4.0
+    dist: trusty
+    language: c
+    env:
     - CXX=clang++-4.0
     - CFLAGS_EXTRA="-O3 -march=native"
     - CONF_OPTIONS="--enable-cplusplus --enable-static --enable-single-obj-compilation"
