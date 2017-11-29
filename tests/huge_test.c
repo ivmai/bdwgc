@@ -18,6 +18,13 @@
     /* it fails predictably.                                            */
 #endif
 
+#ifndef GC_ATTR_ALLOC_SIZE
+  /* Omit alloc_size attribute to avoid compiler warnings about         */
+  /* exceeding maximum object size when values close to GC_SWORD_MAX    */
+  /* are passed to GC_MALLOC.                                           */
+# define GC_ATTR_ALLOC_SIZE(argnum) /* empty */
+#endif
+
 #include "gc.h"
 
 /*
