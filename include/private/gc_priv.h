@@ -963,7 +963,7 @@ union word_ptr_ao_u {
   word w;
   signed_word sw;
   void *vp;
-# ifdef AO_HAVE_load
+# ifdef PARALLEL_MARK
     volatile AO_t ao;
 # endif
 };

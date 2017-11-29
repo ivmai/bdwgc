@@ -59,8 +59,7 @@
       TA_assert(AO_fetch_and_add(&x, (AO_t)(-43)) == 55);
       TA_assert(AO_fetch_and_add1(&x) == 12);
 #   endif
-#   if defined(AO_REQUIRE_CAS) && defined(AO_HAVE_compare_and_swap) \
-       && defined(AO_HAVE_compare_and_swap_release)
+#   ifdef AO_HAVE_compare_and_swap_release
       TA_assert(!AO_compare_and_swap(&x, 14, 42));
       TA_assert(x == 13);
       TA_assert(AO_compare_and_swap_release(&x, 13, 42));

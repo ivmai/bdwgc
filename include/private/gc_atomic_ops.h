@@ -56,18 +56,15 @@
 # define AO_HAVE_or
 
 # define AO_load(p) __atomic_load_n(p, __ATOMIC_RELAXED)
-# define AO_HAVE_load
 # define AO_load_acquire(p) __atomic_load_n(p, __ATOMIC_ACQUIRE)
 # define AO_HAVE_load_acquire
 # define AO_load_acquire_read(p) AO_load_acquire(p)
 # define AO_HAVE_load_acquire_read
 
 # define AO_store(p, v) __atomic_store_n(p, v, __ATOMIC_RELAXED)
-# define AO_HAVE_store
 # define AO_store_release(p, v) __atomic_store_n(p, v, __ATOMIC_RELEASE)
 # define AO_HAVE_store_release
 # define AO_store_release_write(p, v) AO_store_release(p, v)
-# define AO_HAVE_store_release_write
 
 # ifdef AO_REQUIRE_CAS
     AO_INLINE int
@@ -76,7 +73,6 @@
       return (int)__atomic_compare_exchange_n(p, &ov, nv, 0,
                                         __ATOMIC_RELAXED, __ATOMIC_RELAXED);
     }
-#   define AO_HAVE_compare_and_swap
 
     AO_INLINE int
     AO_compare_and_swap_release(volatile AO_t *p, AO_t ov, AO_t nv)
@@ -90,6 +86,12 @@
 #else
   /* Fallback to libatomic_ops. */
 # include "atomic_ops.h"
+
+  /* AO_compiler_barrier, AO_load and AO_store should be defined for    */
+  /* all targets; the rest of the primitives are guaranteed to exist    */
+  /* only if AO_REQUIRE_CAS is defined (or if the corresponding         */
+  /* AO_HAVE_x macro is defined).  x86/x64 targets have AO_nop_full,    */
+  /* AO_load_acquire, AO_store_release, at least.                       */
 #endif /* !GC_BUILTIN_ATOMIC */
 
 #endif /* GC_ATOMIC_OPS_H */
