@@ -548,6 +548,9 @@ STATIC GC_thread GC_new_thread(pthread_t id)
     if (!EXPECT(first_thread_used, TRUE)) {
         result = &first_thread;
         first_thread_used = TRUE;
+#       if defined(THREAD_SANITIZER) && defined(CPPCHECK)
+          GC_noop1(result->dummy[0]);
+#       endif
     } else {
         result = (struct GC_Thread_Rep *)
                  GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);

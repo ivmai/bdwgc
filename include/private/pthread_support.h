@@ -32,6 +32,10 @@
 # include "thread_local_alloc.h"
 #endif
 
+#ifdef THREAD_SANITIZER
+# include "dbg_mlc.h" /* for oh type */
+#endif
+
 /* We use the allocation lock to protect thread-related data structures. */
 
 /* The set of all known threads.  We intercept thread creation and      */
@@ -40,6 +44,14 @@
 /* Some of this should be declared volatile, but that's inconsistent    */
 /* with some library routine declarations.                              */
 typedef struct GC_Thread_Rep {
+#   ifdef THREAD_SANITIZER
+      char dummy[sizeof(oh)];     /* A dummy field to avoid TSan false  */
+                                  /* positive about the race between    */
+                                  /* GC_has_other_debug_info and        */
+                                  /* GC_suspend_handler_inner (which    */
+                                  /* sets store_stop.stack_ptr).        */
+#   endif
+
     struct GC_Thread_Rep * next;  /* More recently allocated threads    */
                                   /* with a given pthread id come       */
                                   /* first.  (All but the first are     */
