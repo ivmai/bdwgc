@@ -1816,7 +1816,8 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
     GC_COND_INIT();
     GC_set_warn_proc(warn_proc);
 #   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(GWW_VDB)
-#     if !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL)
+#     if !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL) \
+         && !(defined(MPROTECT_VDB) && defined(USE_MUNMAP))
         GC_enable_incremental();
 #     endif
       if (GC_is_incremental_mode()) {
@@ -2253,7 +2254,8 @@ int main(void)
     n_tests = 0;
 #   if defined(MPROTECT_VDB)
 #     if !defined(REDIRECT_MALLOC) && !defined(MAKE_BACK_GRAPH) \
-         && !defined(USE_PROC_FOR_LIBRARIES) && !defined(NO_INCREMENTAL)
+         && !defined(USE_PROC_FOR_LIBRARIES) && !defined(NO_INCREMENTAL) \
+         && !(defined(MPROTECT_VDB) && defined(USE_MUNMAP))
         GC_enable_incremental();
 #     endif
       if (GC_is_incremental_mode()) {
