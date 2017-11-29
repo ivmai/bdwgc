@@ -1319,6 +1319,9 @@ GC_API void GC_CALL GC_enable_incremental(void)
         }
         if (GC_incremental && !GC_dont_gc) {
                                 /* Can't easily do it if GC_dont_gc.    */
+          IF_CANCEL(int cancel_state;)
+
+          DISABLE_CANCEL(cancel_state);
           if (GC_bytes_allocd > 0) {
             /* There may be unmarked reachable objects. */
             GC_gcollect_inner();
@@ -1327,6 +1330,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
             /* clean since nothing can point to an      */
             /* unmarked object.                         */
           GC_read_dirty(FALSE);
+          RESTORE_CANCEL(cancel_state);
         }
       }
       UNLOCK();
