@@ -50,6 +50,7 @@
        || defined(SN_TARGET_PS3) || defined(GC_WIN32_THREADS) \
        || defined(LINT2)) && defined(GC_PTHREADS)
 #    define USE_PTHREAD_LOCKS
+#    undef USE_SPIN_LOCK
 #  endif
 
 #  if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS)
