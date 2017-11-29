@@ -92,7 +92,9 @@ static int extract_conv_spec(CORD_pos source, char *buf,
             if (!saw_number) {
                 /* Zero fill flag; ignore */
                 break;
-            } /* otherwise fall through: */
+            }
+            current_number *= 10;
+            break;
           case '1':
           case '2':
           case '3':

@@ -492,7 +492,7 @@ void do_command(int c)
                 break;
             }
             col--; file_pos--;
-            /* fall through: */
+            /* FALLTHRU */
           case DEL:
             if (file_pos == current_len-1) break;
                 /* Can't delete trailing newline */
