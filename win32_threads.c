@@ -2768,7 +2768,8 @@ GC_INNER void GC_thr_init(void)
           }
 #       endif
         GC_ASSERT(entry_count == 0 || parallel_initialized);
-        ++entry_count; /* and fall through: */
+        ++entry_count;
+        /* FALLTHRU */
        case DLL_PROCESS_ATTACH:
         /* This may run with the collector uninitialized. */
         thread_id = GetCurrentThreadId();
