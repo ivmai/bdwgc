@@ -2174,7 +2174,7 @@ static void setup_mark_lock(void)
 
 GC_INNER void GC_acquire_mark_lock(void)
 {
-#   ifdef NUMERIC_THREAD_ID_UNIQUE
+#   if defined(NUMERIC_THREAD_ID_UNIQUE) && !defined(THREAD_SANITIZER)
       GC_ASSERT(GC_mark_lock_holder != NUMERIC_THREAD_ID(pthread_self()));
 #   endif
     GC_generic_lock(&mark_mutex);
