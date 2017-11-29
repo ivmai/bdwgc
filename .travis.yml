@@ -308,6 +308,21 @@ matrix:
     - CONF_OPTIONS="--enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
     - TESTS_CUSTOM_RUN=true
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - gcc-5
+        sources:
+        - ubuntu-toolchain-r-test
+    compiler: gcc-5
+    dist: trusty
+    language: c
+    env:
+    - CFLAGS_EXTRA="-fsanitize=address -O0"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-handle-fork"
+    - LDFLAGS="-fuse-ld=gold"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
     - CFLAGS_EXTRA="-fsanitize=address -m32 -fno-omit-frame-pointer"
@@ -496,7 +511,8 @@ script:
   fi
 - if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == ""
         && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
-    make -j -f $MAKEFILE_NAME $MAKEFILE_TARGETS CFLAGS_EXTRA="$CFLAGS_EXTRA";
+    make -j -f $MAKEFILE_NAME $MAKEFILE_TARGETS CFLAGS_EXTRA="$CFLAGS_EXTRA"
+            LDFLAGS="$LDFLAGS";
   fi
 - if [ -f gctest.log ]; then cat gctest.log; fi
 - if [[ "$CSA_CHECK" == true ]]; then
