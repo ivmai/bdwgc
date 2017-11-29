@@ -49,6 +49,12 @@
 
 #include "private/gc_atomic_ops.h"
 
+#if (!defined(AO_HAVE_load_acquire) || !defined(AO_HAVE_store_release)) \
+    && !defined(CPPCHECK)
+# error AO_load_acquire and/or AO_store_release are missing;
+# error please define AO_REQUIRE_CAS manually
+#endif
+
 /* It's safe to call original pthread_sigmask() here.   */
 #undef pthread_sigmask
 
