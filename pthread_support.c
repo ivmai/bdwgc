@@ -359,7 +359,6 @@ STATIC void * GC_mark_thread(void * id)
   GC_acquire_mark_lock();
   if (0 == --GC_fl_builder_count) /* count may have a negative value */
     GC_notify_all_builder();
-  GC_release_mark_lock();
 
   for (;; ++my_mark_no) {
     /* GC_mark_no is passed only to allow GC_help_marker to terminate   */
