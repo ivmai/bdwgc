@@ -1042,15 +1042,13 @@ GC_INNER long GC_markers = 2;   /* Normally changed by thread-library-  */
 
 /* Mark using the local mark stack until the global mark stack is empty */
 /* and there are no active workers. Update GC_first_nonempty to reflect */
-/* progress.                                                            */
-/* Caller does not hold mark lock.                                      */
+/* progress.  Caller holds the mark lock.                               */
 /* Caller has already incremented GC_helper_count.  We decrement it,    */
 /* and maintain GC_active_count.                                        */
 STATIC void GC_mark_local(mse *local_mark_stack, int id)
 {
     mse * my_first_nonempty;
 
-    GC_acquire_mark_lock();
     GC_active_count++;
     my_first_nonempty = (mse *)AO_load(&GC_first_nonempty);
     GC_ASSERT((mse *)AO_load(&GC_first_nonempty) >= GC_mark_stack &&
@@ -1116,7 +1114,6 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
                     if (GC_print_stats == VERBOSE)
                       GC_log_printf("Finished mark helper %lu\n",
                                     (unsigned long)id);
-                    GC_release_mark_lock();
                     if (need_to_notify) GC_notify_all_marker();
                     return;
                 }
@@ -1165,11 +1162,9 @@ STATIC void GC_do_parallel_mark(void)
     GC_active_count = 0;
     GC_helper_count = 1;
     GC_help_wanted = TRUE;
-    GC_release_mark_lock();
     GC_notify_all_marker();
         /* Wake up potential helpers.   */
     GC_mark_local(local_mark_stack, 0);
-    GC_acquire_mark_lock();
     GC_help_wanted = FALSE;
     /* Done; clean up.  */
     while (GC_helper_count > 0) GC_wait_marker();
@@ -1185,13 +1180,13 @@ STATIC void GC_do_parallel_mark(void)
 
 /* Try to help out the marker, if it's running.         */
 /* We do not hold the GC lock, but the requestor does.  */
+/* And we hold the mark lock.                           */
 GC_INNER void GC_help_marker(word my_mark_no)
 {
     mse local_mark_stack[LOCAL_MARK_STACK_SIZE];
     unsigned my_id;
 
     if (!GC_parallel) return;
-    GC_acquire_mark_lock();
     while (GC_mark_no < my_mark_no
            || (!GC_help_wanted && GC_mark_no == my_mark_no)) {
       GC_wait_marker();
@@ -1200,11 +1195,9 @@ GC_INNER void GC_help_marker(word my_mark_no)
     if (GC_mark_no != my_mark_no || my_id >= (unsigned)GC_markers) {
       /* Second test is useful only if original threads can also        */
       /* act as helpers.  Under Linux they can't.                       */
-      GC_release_mark_lock();
       return;
     }
     GC_helper_count = my_id + 1;
-    GC_release_mark_lock();
     GC_mark_local(local_mark_stack, my_id);
     /* GC_mark_local decrements GC_helper_count. */
 }

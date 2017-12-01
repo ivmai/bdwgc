@@ -1682,7 +1682,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     GC_acquire_mark_lock();
     if (0 == --GC_fl_builder_count)
       GC_notify_all_builder();
-    GC_release_mark_lock();
 
     for (;; ++my_mark_no) {
       if (my_mark_no - GC_mark_no > (word)2) {
