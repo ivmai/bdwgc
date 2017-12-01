@@ -357,11 +357,6 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
             op = GC_reclaim_generic(hbp, hhdr, lb,
                                     ok -> ok_init, 0, &my_bytes_allocd);
             if (op != 0) {
-              /* We also reclaimed memory, so we need to adjust         */
-              /* that count.                                            */
-              /* This should be atomic, so the results may be           */
-              /* inaccurate.                                            */
-              GC_bytes_found += my_bytes_allocd;
 #             ifdef PARALLEL_MARK
                 if (GC_parallel) {
                   *result = op;
@@ -370,11 +365,23 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
                   GC_acquire_mark_lock();
                   -- GC_fl_builder_count;
                   if (GC_fl_builder_count == 0) GC_notify_all_builder();
-                  GC_release_mark_lock();
+#                 ifdef THREAD_SANITIZER
+                    GC_release_mark_lock();
+                    LOCK();
+                    GC_bytes_found += my_bytes_allocd;
+                    UNLOCK();
+#                 else
+                    GC_bytes_found += my_bytes_allocd;
+                                        /* The result may be inaccurate. */
+                    GC_release_mark_lock();
+#                 endif
                   (void) GC_clear_stack(0);
                   return;
                 }
 #             endif
+              /* We also reclaimed memory, so we need to adjust       */
+              /* that count.                                          */
+              GC_bytes_found += my_bytes_allocd;
               GC_bytes_allocd += my_bytes_allocd;
               goto out;
             }
