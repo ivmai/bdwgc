@@ -928,6 +928,20 @@ typedef word page_hash_table[PHT_SIZE];
 # define set_pht_entry_from_index_safe(bl, index) \
                 (bl)[divWORDSZ(index)] = ONES
 
+/* And, one more version for GC_add_to_black_list_normal/stack.         */
+/* The latter ones are invoked (indirectly) by GC_do_local_mark.        */
+#if defined(PARALLEL_MARK) && defined(THREAD_SANITIZER)
+# define set_pht_entry_from_index_concurrent(bl, index) \
+                AO_or((volatile AO_t *)&(bl)[divWORDSZ(index)], \
+                      (AO_t)((word)1 << modWORDSZ(index)))
+#else
+  /* It is safe to set a bit in a blacklist even without        */
+  /* synchronization, the only drawback is that we might have   */
+  /* to redo blacklisting sometimes.                            */
+# define set_pht_entry_from_index_concurrent(bl, index) \
+                set_pht_entry_from_index(bl, index)
+#endif
+
 
 /********************************************/
 /*                                          */

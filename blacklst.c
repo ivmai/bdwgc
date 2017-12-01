@@ -193,7 +193,7 @@ GC_INNER void GC_unpromote_black_lists(void)
           GC_print_blacklisted_ptr(p, source, "normal");
         }
 #     endif
-      set_pht_entry_from_index(GC_incomplete_normal_bl, index);
+      set_pht_entry_from_index_concurrent(GC_incomplete_normal_bl, index);
     } /* else this is probably just an interior pointer to an allocated */
       /* object, and isn't worth black listing.                         */
   }
@@ -214,7 +214,7 @@ GC_INNER void GC_unpromote_black_lists(void)
         GC_print_blacklisted_ptr(p, source, "stack");
       }
 #   endif
-    set_pht_entry_from_index(GC_incomplete_stack_bl, index);
+    set_pht_entry_from_index_concurrent(GC_incomplete_stack_bl, index);
   }
 }
 
