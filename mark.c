@@ -1020,20 +1020,28 @@ STATIC void GC_return_mark_stack(mse * low, mse * high)
     GC_notify_all_marker();
 }
 
+/* This function is only called when the local  */
+/* and the main mark stacks are both empty.     */
+static GC_bool has_inactive_helpers(void)
+{
+  GC_bool res;
+
+  GC_acquire_mark_lock();
+  res = GC_active_count < GC_helper_count;
+  GC_release_mark_lock();
+  return res;
+}
+
 /* Mark from the local mark stack.              */
 /* On return, the local mark stack is empty.    */
 /* But this may be achieved by copying the      */
 /* local mark stack back into the global one.   */
+/* We do not hold the mark lock.                */
 STATIC void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
 {
     unsigned n;
 #   define N_LOCAL_ITERS 1
 
-#   ifdef GC_ASSERTIONS
-      /* Make sure we don't hold mark lock. */
-        GC_acquire_mark_lock();
-        GC_release_mark_lock();
-#   endif
     for (;;) {
         for (n = 0; n < N_LOCAL_ITERS; ++n) {
             local_top = GC_mark_from(local_top, local_mark_stack,
@@ -1047,8 +1055,8 @@ STATIC void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
         }
         if ((word)AO_load((volatile AO_t *)&GC_mark_stack_top)
             < (word)AO_load(&GC_first_nonempty)
-            && GC_active_count < GC_helper_count
-            && (word)local_top > (word)(local_mark_stack + 1)) {
+            && (word)local_top > (word)(local_mark_stack + 1)
+            && has_inactive_helpers()) {
             /* Try to share the load, since the main stack is empty,    */
             /* and helper threads are waiting for a refill.             */
             /* The entries near the bottom of the stack are likely      */
