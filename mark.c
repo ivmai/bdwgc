@@ -2015,7 +2015,21 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
         h += OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
         hhdr = HDR(h);
     }
-    GC_push_marked(h, hhdr);
+#   ifdef ENABLE_DISCLAIM
+      if ((hhdr -> hb_flags & MARK_UNCONDITIONALLY) != 0) {
+        GC_push_unconditionally(h, hhdr);
+
+        /* Then we may ask, why not also add the MARK_UNCONDITIONALLY   */
+        /* case to GC_push_next_marked, which is also applied to        */
+        /* uncollectible blocks?  But it seems to me that the function  */
+        /* does not need to scan uncollectible (and unconditionally     */
+        /* marked) blocks since those are already handled in the        */
+        /* MS_PUSH_UNCOLLECTABLE phase.                                 */
+      } else
+#   endif
+    /* else */ {
+      GC_push_marked(h, hhdr);
+    }
     return(h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz));
   }
 #endif /* !GC_DISABLE_INCREMENTAL */
