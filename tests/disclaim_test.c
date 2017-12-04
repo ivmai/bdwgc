@@ -215,6 +215,9 @@ int main(void)
     GC_set_all_interior_pointers(0); /* for a stricter test */
     GC_INIT();
     GC_init_finalized_malloc();
+#   ifndef NO_INCREMENTAL
+        GC_enable_incremental();
+#   endif
 
     test_misc_sizes();
 
