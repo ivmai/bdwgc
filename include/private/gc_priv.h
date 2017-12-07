@@ -106,10 +106,17 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define GC_SIZE_MAX (~(size_t)0)
 #endif
 
+#if GC_GNUC_PREREQ(3, 0) && !defined(LINT2)
+# define EXPECT(expr, outcome) __builtin_expect(expr,outcome)
+  /* Equivalent to (expr), but predict that usually (expr)==outcome. */
+#else
+# define EXPECT(expr, outcome) (expr)
+#endif /* __GNUC__ */
+
 /* Saturated addition of size_t values.  Used to avoid value wrap       */
 /* around on overflow.  The arguments should have no side effects.      */
 #define SIZET_SAT_ADD(a, b) \
-                ((a) < GC_SIZE_MAX - (b) ? (a) + (b) : GC_SIZE_MAX)
+            (EXPECT((a) < GC_SIZE_MAX - (b), TRUE) ? (a) + (b) : GC_SIZE_MAX)
 
 #ifndef GCCONFIG_H
 # include "gcconfig.h"
@@ -191,13 +198,6 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #   define GC_ATTR_UNUSED /* empty */
 # endif
 #endif /* !GC_ATTR_UNUSED */
-
-#if GC_GNUC_PREREQ(3, 0) && !defined(LINT2)
-# define EXPECT(expr, outcome) __builtin_expect(expr,outcome)
-  /* Equivalent to (expr), but predict that usually (expr)==outcome. */
-#else
-# define EXPECT(expr, outcome) (expr)
-#endif /* __GNUC__ */
 
 #ifdef HAVE_CONFIG_H
   /* The "inline" keyword is determined by Autoconf AC_C_INLINE.    */
