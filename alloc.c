@@ -835,7 +835,10 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
   /* (*pfreelist) are set.  Check skipped if points to a special value. */
   void GC_check_fl_marks(void **pfreelist)
   {
-#   ifdef AO_HAVE_load_acquire_read
+    /* TODO: There is a data race with GC_FAST_MALLOC_GRANS (which does */
+    /* not do atomic updates to the free-list).  The race seems to be   */
+    /* harmless, and for now we just skip this check in case of TSan.   */
+#   if defined(AO_HAVE_load_acquire_read) && !defined(THREAD_SANITIZER)
       AO_t *list = (AO_t *)AO_load_acquire_read((AO_t *)pfreelist);
                 /* Atomic operations are used because the world is running. */
       AO_t *prev;
