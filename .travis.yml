@@ -376,7 +376,7 @@ matrix:
     dist: trusty
     language: c
     env:
-    - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D USE_SPIN_LOCK -fno-omit-frame-pointer"
+    - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D NO_INCREMENTAL -D USE_SPIN_LOCK -fno-omit-frame-pointer"
     - CONF_OPTIONS="--disable-parallel-mark --enable-handle-fork --enable-munmap"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
