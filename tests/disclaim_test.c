@@ -164,17 +164,20 @@ pair_check_rec(pair_t p)
 }
 
 #ifdef GC_PTHREADS
-#  define THREAD_CNT 6
-#  include <pthread.h>
+# ifndef NTHREADS
+#   define NTHREADS 6
+# endif
+# include <pthread.h>
 #else
-#  define THREAD_CNT 1
+# undef NTHREADS
+# define NTHREADS 1
 #endif
 
 #define POP_SIZE 1000
-#if THREAD_CNT > 1
-#  define MUTATE_CNT 2000000/THREAD_CNT
+#if NTHREADS > 1
+# define MUTATE_CNT (2000000/NTHREADS)
 #else
-#  define MUTATE_CNT 10000000
+# define MUTATE_CNT 10000000
 #endif
 #define GROW_LIMIT (MUTATE_CNT/10)
 
@@ -207,10 +210,10 @@ void *test(void *data)
 
 int main(void)
 {
-#if THREAD_CNT > 1
-    pthread_t th[THREAD_CNT];
+# if NTHREADS > 1
+    pthread_t th[NTHREADS];
     int i;
-#endif
+# endif
 
     GC_set_all_interior_pointers(0); /* for a stricter test */
     GC_INIT();
@@ -221,9 +224,9 @@ int main(void)
 
     test_misc_sizes();
 
-#if THREAD_CNT > 1
+# if NTHREADS > 1
     printf("Threaded disclaim test.\n");
-    for (i = 0; i < THREAD_CNT; ++i) {
+    for (i = 0; i < NTHREADS; ++i) {
         int err = pthread_create(&th[i], NULL, test, NULL);
         if (err) {
             fprintf(stderr, "Failed to create thread # %d: %s\n", i,
@@ -231,7 +234,7 @@ int main(void)
             exit(1);
         }
     }
-    for (i = 0; i < THREAD_CNT; ++i) {
+    for (i = 0; i < NTHREADS; ++i) {
         int err = pthread_join(th[i], NULL);
         if (err) {
             fprintf(stderr, "Failed to join thread # %d: %s\n", i,
@@ -239,9 +242,9 @@ int main(void)
             exit(69);
         }
     }
-#else
+# else
     printf("Unthreaded disclaim test.\n");
     test(NULL);
-#endif
+# endif
     return 0;
 }

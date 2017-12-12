@@ -80,8 +80,8 @@ void make_key (void)
   pthread_key_create (&key, on_thread_exit);
 }
 
-#ifndef LIMIT
-# define LIMIT 30
+#ifndef NTHREADS
+# define NTHREADS 30 /* number of initial threads */
 #endif
 
 int main (void)
@@ -94,7 +94,7 @@ int main (void)
 # else
     pthread_once (&key_once, make_key);
 # endif
-  for (i = 0; i < LIMIT; i++) {
+  for (i = 0; i < NTHREADS; i++) {
     pthread_t t;
 
     if (GC_pthread_create(&t, NULL, entry, NULL) == 0) {
