@@ -124,7 +124,7 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
                         /* before they are expected to stop (unless     */
                         /* they have stopped voluntarily).              */
 
-#ifdef GC_OSF1_THREADS
+#if defined(GC_OSF1_THREADS) || defined(THREAD_SANITIZER)
   STATIC GC_bool GC_retry_signals = TRUE;
 #else
   STATIC GC_bool GC_retry_signals = FALSE;
@@ -272,7 +272,7 @@ GC_INLINE void GC_store_stack_ptr(GC_thread me)
   /* There is no data race between the suspend handler (storing         */
   /* stack_ptr) and GC_push_all_stacks (fetching stack_ptr) because     */
   /* GC_push_all_stacks is executed after GC_stop_world exits and the   */
-  /* latter runs sem_[try]wait repeatedly waiting for all the suspended */
+  /* latter runs sem_wait repeatedly waiting for all the suspended      */
   /* threads to call sem_post.  Nonetheless, stack_ptr is stored (here) */
   /* and fetched (by GC_push_all_stacks) using the atomic primitives to */
   /* avoid the related TSan warning.                                    */
@@ -497,7 +497,7 @@ STATIC void GC_restart_handler(int sig)
           GC_wait_for_reclaim();
 #     endif
 
-      /* TODO: Support GC_retry_signals */
+      /* TODO: Support GC_retry_signals (not needed for TSan) */
       switch (RAISE_SIGNAL(t, GC_sig_suspend)) {
       /* ESRCH cannot happen as terminated threads are handled above.   */
       case 0:
@@ -853,14 +853,7 @@ GC_INNER void GC_stop_world(void)
 
     for (i = 0; i < n_live_threads; i++) {
       retry:
-#       ifdef THREAD_SANITIZER
-          /* sem_wait() hangs sometimes. */
-          while ((code = sem_trywait(&GC_suspend_ack_sem)) != 0
-                 && errno == EAGAIN)
-            usleep(100);
-#       else
-          code = sem_wait(&GC_suspend_ack_sem);
-#       endif
+        code = sem_wait(&GC_suspend_ack_sem);
         if (0 != code) {
           /* On Linux, sem_wait is documented to always return zero.    */
           /* But the documentation appears to be incorrect.             */
