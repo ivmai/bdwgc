@@ -793,8 +793,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                 continue;
             }
             descr = *(word *)(type_descr
-                              - (descr + (GC_INDIR_PER_OBJ_BIAS
-                                          - GC_DS_PER_OBJECT)));
+                              - ((signed_word)descr + (GC_INDIR_PER_OBJ_BIAS
+                                                       - GC_DS_PER_OBJECT)));
           }
           if (0 == descr) {
               /* Can happen either because we generated a 0 descriptor  */
