@@ -1003,7 +1003,7 @@ STATIC void GC_remove_all_threads_but_me(void)
 STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
     DCL_LOCK_STATE;
-#   if !defined(THREAD_SANITIZER) || !defined(CAN_HANDLE_FORK)
+#   if !defined(THREAD_SANITIZER) || !defined(CAN_CALL_ATFORK)
       /* GC_lock_holder is accessed with the lock held, so there is no  */
       /* data race actually (unlike what is reported by TSan).          */
       GC_ASSERT(I_HOLD_LOCK());
@@ -1041,7 +1041,7 @@ IF_CANCEL(static int fork_cancel_state;)
                                 /* protected by allocation lock.        */
 
 /* Called before a fork()               */
-#ifdef GC_ASSERTIONS
+#if defined(GC_ASSERTIONS) && defined(CAN_CALL_ATFORK)
   /* GC_lock_holder is updated safely (no data race actually).  */
   GC_ATTR_NO_SANITIZE_THREAD
 #endif
@@ -1069,7 +1069,7 @@ static void fork_prepare_proc(void)
 }
 
 /* Called in parent after a fork() (even if the latter failed). */
-#ifdef GC_ASSERTIONS
+#if defined(GC_ASSERTIONS) && defined(CAN_CALL_ATFORK)
   GC_ATTR_NO_SANITIZE_THREAD
 #endif
 static void fork_parent_proc(void)
@@ -1083,7 +1083,7 @@ static void fork_parent_proc(void)
 }
 
 /* Called in child after a fork()       */
-#ifdef GC_ASSERTIONS
+#if defined(GC_ASSERTIONS) && defined(CAN_CALL_ATFORK)
   GC_ATTR_NO_SANITIZE_THREAD
 #endif
 static void fork_child_proc(void)
