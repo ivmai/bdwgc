@@ -737,6 +737,18 @@ GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
 }
 
 #ifdef CAN_HANDLE_FORK
+
+  /* Prevent TSan false positive about the race during items removal    */
+  /* from GC_threads.  (The race cannot happen since only one thread    */
+  /* survives in the child.)                                            */
+# ifdef CAN_CALL_ATFORK
+    GC_ATTR_NO_SANITIZE_THREAD
+# endif
+  static void store_to_threads_table(int hv, GC_thread me)
+  {
+    GC_threads[hv] = me;
+  }
+
 /* Remove all entries from the GC_threads table, except the     */
 /* one for the current thread.  We need to do this in the child */
 /* process after a fork(), since only the current thread        */
@@ -792,7 +804,7 @@ STATIC void GC_remove_all_threads_but_me(void)
           if (p != &first_thread) GC_INTERNAL_FREE(p);
         }
       }
-      GC_threads[hv] = me;
+      store_to_threads_table(hv, me);
     }
 }
 #endif /* CAN_HANDLE_FORK */
