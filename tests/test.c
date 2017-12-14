@@ -105,7 +105,7 @@
 #   include <unistd.h>
 #   include <sys/types.h>
 #   include <sys/wait.h>
-#   ifdef HANDLE_FORK
+#   if defined(HANDLE_FORK) && defined(CAN_CALL_ATFORK)
 #     define INIT_FORK_SUPPORT GC_set_handle_fork(1)
                 /* Causes abort in GC_init on pthread_atfork failure.   */
 #   elif !defined(TEST_FORK_WITHOUT_ATFORK)
