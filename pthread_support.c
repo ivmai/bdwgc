@@ -801,7 +801,11 @@ STATIC void GC_remove_all_threads_but_me(void)
               GC_remove_specific_after_fork(GC_thread_key, p -> id);
             }
 #         endif
-          if (p != &first_thread) GC_INTERNAL_FREE(p);
+          /* TODO: To avoid TSan hang (when updating GC_bytes_freed),   */
+          /* we just skip explicit freeing of GC_threads entries.       */
+#         if !defined(THREAD_SANITIZER) || !defined(CAN_CALL_ATFORK)
+            if (p != &first_thread) GC_INTERNAL_FREE(p);
+#         endif
         }
       }
       store_to_threads_table(hv, me);
