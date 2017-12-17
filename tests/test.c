@@ -2255,7 +2255,7 @@ int main(void)
 #   if defined(MPROTECT_VDB)
 #     if !defined(REDIRECT_MALLOC) && !defined(MAKE_BACK_GRAPH) \
          && !defined(USE_PROC_FOR_LIBRARIES) && !defined(NO_INCREMENTAL) \
-         && !(defined(MPROTECT_VDB) && defined(USE_MUNMAP))
+         && !defined(USE_MUNMAP)
         GC_enable_incremental();
 #     endif
       if (GC_is_incremental_mode()) {
