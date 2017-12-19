@@ -1,4 +1,14 @@
 
+== [7.4.8] (not released yet) ==
+
+* Eliminate 'this statement may fall through' GCC warnings
+* Eliminate 'value exceeds maximum object size' GCC warning in huge_test
+* Fix data race in make_descriptor when setting explicit_typing_initialized
+* Fix marking of disclaim-reachable objects in the incremental mode
+* Update comment in finalized_disclaim to match FINALIZER_CLOSURE_FLAG
+Also, includes 7.2i changes
+
+
 == [7.4.6] 2017-10-26 ==
 
 * Add configure --enable-gcov option (enable code coverage analysis)
@@ -426,6 +436,21 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 * Use pthread_key for thread-local storage on FreeBSD
 * Use union of AO_t and word to favor strict-aliasing compiler optimization
 Also, includes 7.2 changes
+
+
+== [7.2i] (not released yet) ==
+
+* Avoid data race in finalized_count (gctest)
+* Fix assertion violation about disabled cancel in try_to_collect_inner
+* Fix data race in a list referenced by A.aa (gctest)
+* Fix data race in do_local_mark when comparing active_count to helper_count
+* Fix data race in GC_init_explicit_typing
+* Fix data race in last_stop_count access (suspend_handler_inner)
+* Fix data race in mark_thread when updating mark_no
+* Fix data race when getting object size in explicitly-typed allocators
+* Fix lack of barriers to synchronize memory for suspend_handler
+* Fix typos in cdescr.html, extend_size_map and ews4800 doc, README.sgi
+* Prevent 'Unexpected heap growth' in single-threaded gctest (Linux/x64)
 
 
 == [7.2h] 2017-10-12 ==
