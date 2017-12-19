@@ -1,3 +1,131 @@
+2017-12-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c [!VERY_SMALL_CONFIG && CPP_WORDSZ==64]
+	(check_heap_stats): Increase max_heap_sz by ~5% (to 24M).
+
+2017-12-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c [PARALLEL_MARK] (has_inactive_helpers): New static function
+	(which compares GC_active_count to GC_helper_count with the mark lock
+	held).
+	* mark.c [PARALLEL_MARK && GC_ASSERTIONS] (GC_do_local_mark): Remove
+	GC_acquire_mark_lock() with immediate GC_acquire_mark_unlock(); add
+	the appropriate comment to the function description instead.
+	* mark.c [PARALLEL_MARK] (GC_do_local_mark): Call has_inactive_helpers()
+	instead of GC_active_count<GC_helper_count; do not call
+	has_inactive_helpers() unless local_top>local_mark_stack+1.
+
+2017-12-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c [PARALLEL_MARK] (GC_mark_local, GC_help_marker): Update
+	description comment; remove GC_acquire_mark_lock() call at the function
+	beginning; remove GC_release_mark_lock() call on return.
+	* mark.c [PARALLEL_MARK] (GC_do_parallel_mark): Remove
+	GC_acquire/release_mark_lock() calls around GC_mark_local() call.
+	* pthread_support.c [PARALLEL_MARK] (GC_mark_thread): Remove
+	GC_release_mark_lock() call.
+	* win32_threads.c [PARALLEL_MARK] (GC_mark_thread): Likewise.
+
+2017-11-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_stop_world.c [!GC_OPENBSD_THREADS && !NACL]
+	(GC_world_is_stopped): Reformat comment.
+	* pthread_stop_world.c [!GC_OPENBSD_THREADS && !NACL]
+	(GC_suspend_handler_inner): Use AO_load_acquire instead of AO_load
+	to fetch the value of GC_stop_count; add comment.
+	* pthread_stop_world.c [!GC_OPENBSD_THREADS && !NACL]
+	(GC_start_world): Use AO_store_release instead of AO_store to reset
+	GC_world_is_stopped; add comment.
+
+2017-11-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/pthread_stop_world.h [!GC_OPENBSD_THREADS]
+	(thread_stop_info.last_stop_count): Change the
+	type from word to AO_t; add volatile qualifier; fix a typo in comment
+	("GC_stop_count").
+	* pthread_stop_world.c [!GC_OPENBSD_THREADS && !NACL]
+	(GC_suspend_handler_inner): Replace
+	me->stop_info.last_stop_count=my_stop_count with
+	AO_store_release(&me->stop_info.last_stop_count,my_stop_count).
+
+2017-11-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c (COMPLEX): Reformat comment.
+	* typd_mlc.c (GC_malloc_explicitly_typed,
+	GC_malloc_explicitly_typed_ignore_off_page, GC_calloc_explicitly_typed):
+	Always use BYTES_TO_GRANULES(GC_size(op)) instead of GC_size_map[lb] to
+	determine size of the allocated object in granules (because the value
+	of GC_size_map[lb] might be updated by another thread since the value
+	use in GC_malloc_kind); add comment.
+
+2017-11-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c [!AO_CLEAR] (AO_t): Define.
+	* tests/test.c [!AO_HAVE_load_acquire] (AO_load_acquire): New static
+	function (which uses FINALIZER_LOCK/FINALIZER_UNLOCK).
+	* tests/test.c [!AO_HAVE_store_release] (AO_store_release): Likewise.
+	* tests/test.c (A): Add volatile qualifier; change the type of aa
+	field from sexpr to AO_t.
+	* tests/test.c (a): Do not define (and undefine).
+	* tests/test.c (a_set, a_get): New macro (based on AO_store_release
+	and AO_load_acquire, respectively).
+	* tests/test.c (reverse_test_inner): Use a_set() and a_get() to store
+	and fetch the value of a, respectively.
+
+2017-11-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c [!GC_DISABLE_INCREMENTAL && !KEEP_BACK_PTRS]
+	(GC_enable_incremental): Wrap GC_gcollect_inner and GC_read_dirty calls
+	into DISABLE/RESTORE_CANCEL.
+
+2015-09-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c: Force include atomic_ops.h if
+	GC_FORCE_INCLUDE_ATOMIC_OPS (by default it is included if
+	PARALLEL_MARK or pthreads are used).
+	* typd_mlc.c (GC_explicit_typing_initialized): Use volatile AO_t if
+	AO_load_acquire() and AO_store_release() are both available.
+	* typd_mlc.c (GC_init_explicit_typing): Move locking (and
+	GC_explicit_typing_initialized access) outside to the caller
+	(GC_make_descriptor); remove comment; remove "register" keyword for
+	local variable.
+	* typd_mlc.c (GC_make_descriptor): Use AO_load_acquire (if available)
+	to fetch GC_explicit_typing_initialized value and AO_store_release to
+	set GC_explicit_typing_initialized (to avoid data race and avoid lock
+	acquiring on each call); otherwise use locked checking of
+	GC_explicit_typing_initialized.
+	* typd_mlc.c (GC_explicit_typing_initialized,
+	GC_malloc_explicitly_typed_ignore_off_page,
+	GC_calloc_explicitly_typed): Add assertion on
+	GC_explicit_typing_initialized is true.
+
+2017-11-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c (FINALIZER_LOCK, FINALIZER_UNLOCK): New macro.
+	* tests/test.c [GC_PTHREADS] (incr_lock): Move static variable out
+	of finalizer() and mktree() (use a single lock variable to access
+	finalized_count in finalizer, mktree and tree_test).
+	* tests/test.c (dropped_something): Change type back to int; remove
+	volatile.
+	* tests/test.c (finalizer, mktree): Use FINALIZER_[UN]LOCK() instead
+	of PCR_ThCrSec_Enter/ExitSys(), pthread_mutex_[un]lock(),
+	Enter/LeaveCriticalSection().
+	* tests/test.c (tree_test): Use FINALIZER_[UN]LOCK() to avoid data
+	race when accessing finalized_count and dropped_something.
+
+2017-11-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.sgi (4): Fix a typo ("pthread_cond_timedwait").
+
+2017-11-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/gcdescr.html (Allocation): Fix a typo ("the request is rounded").
+
+2017-10-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.ews4800: Fix typos ("32-bit", "64-bit").
+	* misc.c (GC_extend_size_map): Fix typo ("16-byte") in a comment.
+
 [7.2h]
 
 2017-10-12  Ivan Maidanski <ivmai@mail.ru>
