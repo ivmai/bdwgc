@@ -1471,7 +1471,7 @@ void check_heap_stats(void)
 #     endif
 #   else
 #     if CPP_WORDSZ == 64
-        max_heap_sz = 23000000;
+        max_heap_sz = 24000000;
 #     else
         max_heap_sz = 16000000;
 #     endif
