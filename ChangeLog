@@ -87,10 +87,12 @@ Also, includes 7.6.2 changes
 * Add minimal testing of GC_set_bit (gctest)
 * Add more cases to huge_test to cover sizes close to word-type maximum
 * Add testing of new[]/delete[] (test_cpp)
+* Adjust AO_HAVE_x check to match AO_fetch_and_add primitive variant used
 * Adjust code indentation of calloc_explicitly_typed
 * Align local_mark_stack in help_marker explicitly
 * Allow custom TRACE_ENTRIES value
 * Allow gctest and thread_leak_test with zero NTHREADS
+* Avoid data race in finalized_count (gctest)
 * Code refactoring of divide-by-HBLKSIZE occurrences
 * Code refactoring of huge_test
 * Code refactoring of tests/subthread_create regarding AO add primitive
@@ -98,8 +100,10 @@ Also, includes 7.6.2 changes
 * Delete preprocessor output on make clean (Makefile.direct)
 * Disable implicit multi-threaded mode for Win32 to avoid LOCK crash
 * Do not disable parallel mark for WRAP_MARK_SOME
+* Do not enable mprotect-based incremental mode if unmapping is on (gctest)
 * Do not install documentation if configure --disable-docs (new option)
 * Do not use tkill (Android)
+* Document base and size of objects allocated by finalized_malloc
 * Document configure 'syntax error' issue in README
 * Eliminate 'address of local variable returned' static analyzer warning
 * Eliminate 'array vs singleton' code defect in typed_test (gctest)
@@ -128,11 +132,13 @@ Also, includes 7.6.2 changes
 * Eliminate 'printf format specifies type void*' GCC pedantic warnings
 * Eliminate 'scope of variable can be reduced' cppcheck warnings
 * Eliminate 'suspicious pointer subtraction' cppcheck warning (gc_cpp)
+* Eliminate 'this statement may fall through' GCC warnings
 * Eliminate 'unnecessary comparison of static strings' cppcheck warning
 * Eliminate 'unsafe vsprintf is deprecated' compiler warning
 * Eliminate 'unused formal parameter' compiler warnings in C++ code (MS VC)
 * Eliminate 'unused variable' compiler warning in remove_all_threads_but_me
 * Eliminate 'use of vulnerable sprintf' code defect in de_win test (cord)
+* Eliminate 'value exceeds maximum object size' GCC warning in huge_test
 * Eliminate 'value of CLOCK_TYPE unknown' cppcheck info message
 * Eliminate 'value of DATASTART2 unknown' cppcheck info messages
 * Eliminate 'value of GC_PTHREAD_EXIT_ATTRIBUTE unknown' cppcheck messages
@@ -147,6 +153,7 @@ Also, includes 7.6.2 changes
 * Eliminate CSA warning of unmodified non-const static var (disclaim_test)
 * Eliminate redundant local variable in register_finalizer
 * Eliminate TSan (Thread Sanitizer) warnings in gctest
+* Eliminate UBSan warning of overflow during descr subtraction in mark_from
 * Eliminate unreachable PROC/DEFAULT_VDB GC_printf calls in gctest main()
 * Eliminate unsigned fl_builder_count underflow in mark_thread
 * Enable GC_is_tmp_root for all platforms
@@ -163,15 +170,25 @@ Also, includes 7.6.2 changes
 * Fix 'unknown type name GC_INNER' compilation error (FreeBSD)
 * Fix 'variable assigned a value that is never used' cppcheck style warnings
 * Fix 'void pointers in calculations: behavior undefined' cppcheck warning
+* Fix assertion violation about disabled cancel in try_to_collect_inner
 * Fix atomic_ops build in Makefile.direct for Solaris
 * Fix Clang static analyzer warning about not found gc_priv.h in extra files
 * Fix compilation error in get_main_stack_base (Emscripten)
 * Fix compilation for winpthreads if HANDLE_FORK
 * Fix compilation if configured with --enable-werror on OS X
 * Fix cord/de build in Makefile.direct (Linux)
+* Fix data race in a list referenced by A.aa (gctest)
 * Fix data race in collectable_count (gctest)
+* Fix data race in do_local_mark when comparing active_count to helper_count
+* Fix data race in GC_suspend/resume_thread
+* Fix data race in last_stop_count access (suspend_handler_inner)
+* Fix data race in make_descriptor when setting explicit_typing_initialized
+* Fix data race in mark_thread when updating mark_no
+* Fix data race when getting object size in explicitly-typed allocators
 * Fix deadlock in GC_suspend_thread
 * Fix gctest failure for Darwin if CPPCHECK is defined
+* Fix lack of barriers to synchronize memory for suspend_handler
+* Fix marking of disclaim-reachable objects in the incremental mode
 * Fix message of VDB implementation used if MPROTECT_VDB+GWW_VDB (gctest)
 * Fix missing started_thread_while_stopped call from mark_some if GCC/Clang
 * Fix null dereference in GC_stack_range_for if not DARWIN_DONT_PARSE_STACK
@@ -179,6 +196,7 @@ Also, includes 7.6.2 changes
 * Fix parallel build in Makefile.direct
 * Fix test_cpp and c++ parallel build in Makefile.direct
 * Fix typo in comment of GC_mark_some
+* Fix typos in cdescr.html and README.sgi
 * Make GC_INIT optional for clients even if thread-local allocations enabled
 * Match uclinux pattern in configure
 * Move conditional GC_need_to_lock setting to gc_locks.h (refactoring)
@@ -198,12 +216,13 @@ Also, includes 7.6.2 changes
 * Replace deprecated rewind to fseek in cordxtra
 * Report gcc/clang pedantic warnings (configure)
 * Skip thread suspend/resume API testing for Tru64 (OSF1)
-* Support AddressSanitizer and MemorySanitizer (clang)
+* Support AddressSanitizer (Clang/GCC) and MemorySanitizer (Clang)
 * Support GC_init (and get_stack_base) from non-main thread on FreeBSD/NetBSD
 * Suppress 'tainted string passed to vulnerable operation' false defects
 * Suppress 'taking address of label non-standard' GCC/Clang pedantic warning
 * Test GC initialization from non-main thread on FreeBSD and NetBSD
 * Test GCJ object creation with length-based descriptor (gctest)
+* Update comment in finalized_disclaim to match FINALIZER_CLOSURE_FLAG
 * Update README regarding make cords with Makefile.direct
 * Update README to use autogen.sh on build from the source repository
 * Update shared libraries version info to differentiate against v7.4
