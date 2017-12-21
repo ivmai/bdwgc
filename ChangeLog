@@ -438,7 +438,7 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 Also, includes 7.2 changes
 
 
-== [7.2i] (not released yet) ==
+== [7.2i] 2017-12-21 ==
 
 * Avoid data race in finalized_count (gctest)
 * Fix assertion violation about disabled cancel in try_to_collect_inner
