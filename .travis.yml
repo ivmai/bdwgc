@@ -23,7 +23,7 @@ matrix:
     dist: trusty
     env:
     - MAKEFILE_TARGETS="distcheck"
-    - GC_REAL_VERSION=7.2h
+    - GC_REAL_VERSION=7.2i
   - os: linux
     env:
     - MAKEFILE_TARGETS="dist"
