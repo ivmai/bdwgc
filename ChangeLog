@@ -1,5 +1,5 @@
 
-== [7.4.8] (not released yet) ==
+== [7.4.8] 2017-12-22 ==
 
 * Eliminate 'this statement may fall through' GCC warnings
 * Eliminate 'value exceeds maximum object size' GCC warning in huge_test
