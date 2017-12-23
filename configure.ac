@@ -12,7 +12,7 @@
 dnl Process this file with autoconf to produce configure.
 
 # Initialization
-AC_INIT(gc,7.6.0,https://github.com/ivmai/bdwgc/issues)
+AC_INIT(gc,7.6.2,https://github.com/ivmai/bdwgc/issues)
     ## version must conform to [0-9]+[.][0-9]+[.][0-9]+
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])

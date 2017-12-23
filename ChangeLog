@@ -1,5 +1,5 @@
 
-== [7.6.2] (unset) ==
+== [7.6.2] 2017-12-23 ==
 
 * Add assertion that no hb_n_marks underflow occurs
 * Add minimal testing of GC_MALLOC_[ATOMIC_]WORDS and GC_CONS (gctest)
