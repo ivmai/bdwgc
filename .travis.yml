@@ -18,7 +18,6 @@ matrix:
       apt:
         packages:
         - libatomic-ops-dev
-    dist: trusty
     env:
     - MAKEFILE_TARGETS="distcheck"
     - AUTOMAKE_VER=1.15
@@ -35,7 +34,6 @@ matrix:
         packages:
         - libatomic-ops-dev
     compiler: clang
-    dist: trusty
     env:
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -45,7 +43,6 @@ matrix:
         packages:
         - libatomic-ops-dev
     compiler: gcc
-    dist: trusty
     env:
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -125,7 +122,6 @@ matrix:
     - CONF_OPTIONS="--enable-cplusplus"
   - os: linux
     compiler: gcc
-    dist: trusty
     env:
     - CFLAGS_EXTRA="-std=c11 -D GC_NO_SIGSETJMP"
     - CONF_OPTIONS="--disable-threads --enable-gc-assertions --enable-cplusplus"
@@ -205,7 +201,6 @@ matrix:
         packages:
         - musl-tools
     compiler: musl-gcc
-    dist: trusty
     language: c
     env:
     - CONF_OPTIONS="--disable-parallel-mark --enable-gc-assertions"
@@ -217,7 +212,6 @@ matrix:
         sources:
         - llvm-toolchain-trusty-4.0
     compiler: clang-4.0
-    dist: trusty
     language: c
     env:
     - CXX=clang++-4.0
@@ -232,7 +226,6 @@ matrix:
         sources:
         - llvm-toolchain-trusty-4.0
     compiler: clang-4.0
-    dist: trusty
     language: c
     env:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D GC_DISABLE_INCREMENTAL"
@@ -246,7 +239,6 @@ matrix:
         sources:
         - ubuntu-toolchain-r-test
     compiler: gcc-5
-    dist: trusty
     language: c
     env:
     - CXX=g++-5
@@ -261,7 +253,6 @@ matrix:
         sources:
         - ubuntu-toolchain-r-test
     compiler: gcc-5
-    dist: trusty
     language: c
     env:
     - CFLAGS_EXTRA="-m32 -O3"
@@ -276,7 +267,6 @@ matrix:
         sources:
         - ubuntu-toolchain-r-test
     compiler: gcc-5
-    dist: trusty
     language: c
     env:
     - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2 -D NO_INCREMENTAL"
@@ -288,7 +278,6 @@ matrix:
         - g++-mingw-w64
         - gcc-mingw-w64
     compiler: x86_64-w64-mingw32-gcc
-    dist: trusty
     language: c
     env:
     - CXX=x86_64-w64-mingw32-g++
@@ -300,7 +289,6 @@ matrix:
         packages:
         - gcc-mingw-w64
     compiler: i686-w64-mingw32-gcc
-    dist: trusty
     language: c
     env:
     - CONF_OPTIONS="--host=i686-w64-mingw32 --enable-munmap"
