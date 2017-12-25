@@ -20,7 +20,6 @@ matrix:
       apt:
         packages:
         - libatomic-ops-dev
-    dist: trusty
     env:
     - MAKEFILE_TARGETS="distcheck"
     - GC_REAL_VERSION=7.2i
@@ -34,7 +33,6 @@ matrix:
         packages:
         - libatomic-ops-dev
     compiler: clang
-    dist: trusty
     env:
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -44,7 +42,6 @@ matrix:
         packages:
         - libatomic-ops-dev
     compiler: gcc
-    dist: trusty
     env:
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
