@@ -1,8 +1,10 @@
 
 == [7.7.0] (development) ==
 
+* Add a sanity check that load_acquire and store_release are available
 * Add AO primitives implementation to GC based on C11 atomic intrinsic
 * Add assertion to allocobj that live unmarked object cannot be reclaimed
+* Add basic calculation of the total full-collection time
 * Add debug logging to new_thread about GC_threads hash table collisions
 * Add Makefile target to run all tests without test-driver
 * Add test_atomic_ops to perform minimal testing of used atomic primitives
@@ -11,6 +13,7 @@
 * Allow compilation of PROC_VDB code on Linux host (GC_NO_SYS_FAULT_H)
 * Allow configure --with-libatomic-ops=none to use GCC atomic intrinsics
 * Allow custom N_LOCAL_ITERS and ENTRIES_TO_GET values
+* Allow to turn on spin locking even if thread-local allocations are used
 * Build only shared libraries by default (configure)
 * Check that GC_WIN32_PTHREADS is not specified for Cygwin
 * Check thread_local is initialized before accessing thread_key
@@ -24,6 +27,7 @@
 * Define GC_THREADS instead of GC_x_THREADS in Makefiles
 * Detect sigsetjmp() availability by configure
 * Do not call BCOPY and BZERO if size is zero
+* Do not call set_handle_fork(1) in gctest if pthread_atfork not supported
 * Do not compile pcr_interface.c and real_malloc.c except by PCR-Makefile
 * Do not print n_rescuing_pages value if incremental collections disabled
 * Do not specify version info for test libraries (Automake)
@@ -34,8 +38,10 @@
 * Document STACK_NOT_SCANNED macro in gcconfig.h (Emscripten)
 * Enable alternative finalization interface (DISCLAIM) in all makefiles
 * Enable mprotect-based incremental GC for Win64 (GCC)
+* Fix 'comparison of 255 with expr of type bool' error in gc_atomic_ops.h
 * Fix 'doc' files installation folder
 * Group common defines for POSIX platforms in configure and CMake scripts
+* Guard against USE_PTHREAD_LOCKS and USE_SPIN_LOCK are both defined
 * Imply configure --single-obj-compilation if --disable-static
 * Increase MAX_HEAP_SECTS (10 times) for large-config
 * Make extend_size_map() static (code refactoring)
@@ -43,28 +49,34 @@
 * Move pcr_interface.c, real_malloc.c to 'extra' folder
 * New API function (GC_dump_named) to produce named dumps
 * New API function (GC_is_incremental_mode)
+* Print time passed since GC initialization in GC_dump
 * Public API (GC_deinit) to allow Win32 critical sections deletion
 * Refactoring of USE_MMAP/USE_MMAP_ANON pairs definition in gcconfig.h
 * Remove 'dist' target from Makefile.direct
 * Remove DGUX_THREADS macro which duplicates GC_DGUX386_THREADS (configure)
+* Remove done_init static variable from fnlz_mlc.c
 * Remove duplicated sample code in leak.md
 * Remove EMX_MAKEFILE (add EMX support to Makefile.direct)
 * Remove GC code fragment (which already merged) from README.Mac
 * Remove GC_GNU_THREADS macro (HURD)
+* Remove GENERAL_MALLOC internal macro
 * Remove HIGH_BIT macro duplicating SIGNB
 * Remove lint-specific code
 * Remove Makefile KandRtest target (that supported K&R C compiler)
 * Remove name of optional arguments of operator new and new[] in gc_cpp.h
 * Remove notes that K&R C compiler is unsupported
 * Remove redundant check that clear_fl_marks argument is non-null
+* Remove redundant THREADS macro checks in alloc.c and gc_priv.h
 * Remove unused USE_GENERIC macro definition and description
 * Remove version info in 'de' cord test application
 * Skip grungy_pages update when mark state invalid to speedup read_dirty
 * Support configure --disable-thread-local-alloc option (similar for CMake)
 * Support enable_checksums option in CMake script
+* Turn on incremental mode (if available) in disclaim_test
 * Turn on parallel marker by default for all multi-threaded builds
 * Update GC compilation and usage notes for Win32
 * Update shared libraries version info to differentiate against v7.6
+* Use __builtin_expect in SIZET_SAT_ADD macro
 * Use __declspec(allocator) for malloc-like prototypes (MS VS 2015+)
 * Use __int64 instead of 'long long' in LONG_MULT if appropriate
 * Use __thread keyword for Android NDK r12b+ Clang (arm)
@@ -74,13 +86,14 @@
 * Use heap-allocated memory for local mark stack of non-marker thread
 * Use longjmp in fault_handler_openbsd if siglongjmp unavailable (OpenBSD)
 * Use MARK_BIT_PER_GRANULE instead of MARK_BIT_PER_OBJ where appropriate
+* Use same macro (NTHREADS) across all tests to specify number of threads
 * Use sigsetjmp() in setjmp_t tool if available
 * Use thread-local allocations for all multi-threaded builds
-* Workaround Thread Sanitizer (TSan) false positive warnings (partially)
+* Workaround Thread Sanitizer (TSan) false positive warnings
 Also, includes 7.6.2 changes
 
 
-== [7.6.2] (unset) ==
+== [7.6.2] 2017-12-23 ==
 
 * Add assertion that no hb_n_marks underflow occurs
 * Add minimal testing of GC_MALLOC_[ATOMIC_]WORDS and GC_CONS (gctest)
