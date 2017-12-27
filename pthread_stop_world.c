@@ -1093,12 +1093,10 @@ GC_INNER void GC_start_world(void)
     }
 #   ifdef GC_NETBSD_THREADS_WORKAROUND
       for (i = 0; i < n_live_threads; i++) {
-        int code;
-
-        while (0 != (code = sem_wait(&GC_restart_ack_sem))) {
+        while (0 != sem_wait(&GC_restart_ack_sem)) {
           if (errno != EINTR) {
             ABORT_ARG1("sem_wait() for restart handler failed",
-                       ": errcode= %d", code);
+                       ": errcode= %d", errno);
           }
         }
       }
