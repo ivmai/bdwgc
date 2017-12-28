@@ -808,7 +808,7 @@ GC_INNER void GC_stop_world(void)
     AO_store_release(&GC_world_is_stopped, TRUE);
     n_live_threads = GC_suspend_all();
 
-    if (GC_retry_signals) {
+    if (GC_retry_signals && n_live_threads > 0) {
       unsigned long wait_usecs = 0;  /* Total wait since retry. */
 #     define WAIT_UNIT 3000
 #     define RETRY_INTERVAL 100000
