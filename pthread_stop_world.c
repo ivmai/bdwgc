@@ -1099,6 +1099,13 @@ GC_INNER void GC_start_world(void)
         }
       }
 #   endif
+#   if defined(GC_ASSERTIONS) && !defined(GC_OPENBSD_UTHREADS)
+      {
+        int ack_count;
+        sem_getvalue(&GC_suspend_ack_sem, &ack_count);
+        GC_ASSERT(0 == ack_count);
+      }
+#   endif
 #   ifdef DEBUG_THREADS
       GC_log_printf("World started\n");
 #   endif
