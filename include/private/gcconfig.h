@@ -2755,6 +2755,9 @@
 #ifdef GC_NETBSD_THREADS
 # define SIGRTMIN 33
 # define SIGRTMAX 63
+  /* It seems to be necessary to wait until threads have restarted.     */
+  /* But it is unclear why that is the case.                            */
+# define GC_NETBSD_THREADS_WORKAROUND
 #endif
 
 #ifdef GC_OPENBSD_THREADS

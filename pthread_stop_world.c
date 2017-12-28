@@ -205,10 +205,8 @@ GC_API int GC_CALL GC_get_thr_restart_signal(void)
 
 STATIC sem_t GC_suspend_ack_sem;
 
-#ifdef GC_NETBSD_THREADS
-# define GC_NETBSD_THREADS_WORKAROUND
-  /* It seems to be necessary to wait until threads have restarted.     */
-  /* But it is unclear why that is the case.                            */
+#ifdef GC_NETBSD_THREADS_WORKAROUND
+  /* In case of it is necessary to wait until threads have restarted.   */
   STATIC sem_t GC_restart_ack_sem;
 #endif
 
