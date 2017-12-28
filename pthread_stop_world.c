@@ -333,8 +333,15 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
   }
   GC_store_stack_ptr(me);
 
+  /* Tell the thread that wants to stop the world that this     */
+  /* thread has been stopped.  Note that sem_post() is          */
+  /* the only async-signal-safe primitive in LinuxThreads.      */
+  sem_post(&GC_suspend_ack_sem);
+  AO_store_release(&me->stop_info.last_stop_count, my_stop_count);
+
 # ifdef THREAD_SANITIZER
-    /* TSan disables signals around signal handlers.    */
+    /* TSan disables signals around signal handlers.  Without   */
+    /* a pthread_sigmask call, sigsuspend may block forever.    */
     {
       sigset_t set;
       sigemptyset(&set);
@@ -342,12 +349,6 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
         ABORT("pthread_sigmask(SIG_SETMASK) failed");
     }
 # endif
-
-  /* Tell the thread that wants to stop the world that this     */
-  /* thread has been stopped.  Note that sem_post() is          */
-  /* the only async-signal-safe primitive in LinuxThreads.      */
-  sem_post(&GC_suspend_ack_sem);
-  AO_store_release(&me->stop_info.last_stop_count, my_stop_count);
 
   /* Wait until that thread tells us to restart by sending      */
   /* this thread a GC_sig_thr_restart signal (should be masked  */
