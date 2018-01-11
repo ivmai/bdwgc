@@ -199,6 +199,14 @@ GC_word Disguise( void* p ) {
 void* Undisguise( GC_word i ) {
     return (void*) ~ i;}
 
+#define GC_CHECKED_DELETE(p) \
+    do { \
+      size_t freed_before = GC_get_expl_freed_bytes_since_gc(); \
+      delete p; /* the operator should invoke GC_FREE() */ \
+      size_t freed_after = GC_get_expl_freed_bytes_since_gc(); \
+      my_assert(freed_before != freed_after); \
+    } while (0)
+
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
   int APIENTRY WinMain( HINSTANCE /* instance */, HINSTANCE /* prev */,
@@ -306,7 +314,9 @@ void* Undisguise( GC_word i ) {
             fa[0] = f;
             (void)fa;
             delete[] fa;
-            if (0 == i % 10) delete c;}
+            if (0 == i % 10)
+                GC_CHECKED_DELETE(c);
+        }
 
             /* Allocate a very large number of collectible As and Bs and
             drop the references to them immediately, forcing many
@@ -321,7 +331,7 @@ void* Undisguise( GC_word i ) {
             b = new (USE_GC) B( i );
             if (0 == i % 10) {
                 B::Deleting( 1 );
-                delete b;
+                GC_CHECKED_DELETE(b);
                 B::Deleting( 0 );}
 #           ifdef FINALIZE_ON_DEMAND
               GC_invoke_finalizers();
@@ -339,11 +349,11 @@ void* Undisguise( GC_word i ) {
               // causing incompatible alloc/free).
               GC_FREE(a);
 #           else
-              delete a;
+              GC_CHECKED_DELETE(a);
 #           endif
             b->Test( i );
             B::Deleting( 1 );
-            delete b;
+            GC_CHECKED_DELETE(b);
             B::Deleting( 0 );
 #           ifdef FINALIZE_ON_DEMAND
                  GC_invoke_finalizers();
