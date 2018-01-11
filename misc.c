@@ -521,6 +521,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
     pstats->bytes_reclaimed_since_gc = GC_bytes_found > 0 ?
                                         (word)GC_bytes_found : 0;
     pstats->reclaimed_bytes_before_gc = GC_reclaimed_bytes_before_gc;
+    pstats->expl_freed_bytes_since_gc = GC_bytes_freed; /* since gc-7.7 */
   }
 
 # include <string.h> /* for memset() */

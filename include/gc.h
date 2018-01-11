@@ -744,6 +744,9 @@ struct GC_prof_stats_s {
   GC_word reclaimed_bytes_before_gc;
             /* Approximate number of bytes reclaimed before the recent  */
             /* garbage collection.  The value may wrap.                 */
+  GC_word expl_freed_bytes_since_gc;
+            /* Number of bytes freed explicitly since the recent GC.    */
+            /* Same as returned by GC_get_expl_freed_bytes_since_gc().  */
 };
 
 /* Atomically get GC statistics (various global counters).  Clients     */
