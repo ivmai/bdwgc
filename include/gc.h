@@ -686,6 +686,10 @@ GC_API size_t GC_CALL GC_get_unmapped_bytes(void);
 /* regarding thread-safety).                                            */
 GC_API size_t GC_CALL GC_get_bytes_since_gc(void);
 
+/* Return the number of explicitly deallocated bytes of memory since    */
+/* the recent collection.  This is an unsynchronized getter.            */
+GC_API size_t GC_CALL GC_get_expl_freed_bytes_since_gc(void);
+
 /* Return the total number of bytes allocated in this process.          */
 /* Never decreases, except due to wrapping.  This is an unsynchronized  */
 /* getter (see GC_get_heap_size comment regarding thread-safety).       */

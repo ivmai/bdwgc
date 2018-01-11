@@ -259,6 +259,11 @@ GC_API void GC_CALL GC_incr_bytes_freed(size_t n)
     GC_bytes_freed += n;
 }
 
+GC_API size_t GC_CALL GC_get_expl_freed_bytes_since_gc(void)
+{
+    return (size_t)GC_bytes_freed;
+}
+
 # ifdef PARALLEL_MARK
     STATIC volatile AO_t GC_bytes_allocd_tmp = 0;
                         /* Number of bytes of memory allocated since    */
