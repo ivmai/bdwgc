@@ -8,8 +8,7 @@ See below for M68K specific notes.
 
 Incremental GC is generally supported.
 
-Dynamic libraries are supported on an ELF system.  A static executable
-should be linked with the gcc option "-Wl,-defsym,_DYNAMIC=0".
+Dynamic libraries are supported on an ELF system.
 
 The collector appears to work reliably with Linux threads, but beware
 of older versions of glibc and gdb.
