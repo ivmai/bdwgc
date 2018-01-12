@@ -2827,6 +2827,15 @@
 # define MMAP_SUPPORTED
 #endif
 
+/* Sony PS/3 may not need to be this aggressive, but the default is     */
+/* likely too lax under heavy allocation pressure.  The platform does   */
+/* not have a virtual paging system, so it does not have a large        */
+/* virtual address space that a standard x64 platform has.              */
+#if defined(USE_MUNMAP) && !defined(MUNMAP_THRESHOLD) \
+    && defined(SN_TARGET_PS3)
+# define MUNMAP_THRESHOLD 2
+#endif
+
 #if defined(GC_DISABLE_INCREMENTAL) || defined(MANUAL_VDB)
 # undef GWW_VDB
 # undef MPROTECT_VDB
