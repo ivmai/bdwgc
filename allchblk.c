@@ -408,7 +408,9 @@ GC_INNER void GC_unmap_old(void)
         hhdr = HDR(h);
         if (!IS_MAPPED(hhdr)) continue;
 
-        if ((unsigned short)GC_gc_no - hhdr -> hb_last_reclaimed >
+        /* Check that the interval is larger than the threshold (the    */
+        /* truncated counter value wrapping is handled correctly).      */
+        if ((unsigned short)(GC_gc_no - hhdr->hb_last_reclaimed) >
                 (unsigned short)GC_unmap_threshold) {
           GC_unmap((ptr_t)h, hhdr -> hb_sz);
           hhdr -> hb_flags |= WAS_UNMAPPED;
