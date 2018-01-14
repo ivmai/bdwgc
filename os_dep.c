@@ -2433,7 +2433,11 @@ void * os2_alloc(size_t bytes)
 
 #if !defined(MSWIN32) && !defined(MSWINCE)
 # include <unistd.h>
-# include <sys/mman.h>
+# ifdef SN_TARGET_PS3
+#   include <sys/memory.h>
+# else
+#   include <sys/mman.h>
+# endif
 # include <sys/stat.h>
 # include <sys/types.h>
 #endif
@@ -2490,6 +2494,8 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
           start_addr += free_len;
           len -= free_len;
       }
+#   elif defined(SN_TARGET_PS3)
+      ps3_free_mem(start_addr, len);
 #   else
       /* We immediately remap it to prevent an intervening mmap from    */
       /* accidentally grabbing the same address space.                  */
