@@ -63,4 +63,18 @@ built-in "new" and "delete".
     }
 # endif // GC_OPERATOR_NEW_ARRAY
 
+# if __cplusplus > 201103L // C++14
+    void operator delete(void* obj, size_t size) GC_DECL_DELETE_THROW {
+      (void)size; // size is ignored
+      GC_FREE(obj);
+    }
+
+#   if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
+      void operator delete[](void* obj, size_t size) GC_DECL_DELETE_THROW {
+        (void)size;
+        GC_FREE(obj);
+      }
+#   endif
+# endif // C++14
+
 #endif // !_MSC_VER
