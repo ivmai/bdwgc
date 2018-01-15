@@ -298,6 +298,7 @@ matrix:
     - CONF_OPTIONS="--enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
     - TESTS_CUSTOM_RUN=true
+    sudo: required
   - os: linux
     addons:
       apt:
