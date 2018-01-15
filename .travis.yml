@@ -276,6 +276,7 @@ matrix:
     - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-cplusplus"
     - TESTS_CUSTOM_RUN=true
+    sudo: required
   - os: linux
     addons:
       apt:
