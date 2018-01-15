@@ -1088,6 +1088,7 @@
 #   undef STACK_GRAN
 #   define STACK_GRAN 0x10000
 #   define HEURISTIC1
+#   define NO_PTHREAD_GETATTR_NP
 #   define USE_MMAP
 #   define USE_MUNMAP
 #   define USE_MMAP_ANON
@@ -1345,24 +1346,6 @@
 #         define HEAP_START DATAEND
 #       endif
 #   endif /* DGUX */
-
-#   ifdef NACL
-#      define OS_TYPE "NACL"
-       extern int etext[];
-/* #define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff)) */
-#      define DATASTART ((ptr_t)0x10000000)
-       extern int _end[];
-#      define DATAEND ((ptr_t)_end)
-#      undef STACK_GRAN
-#      define STACK_GRAN 0x10000
-#      define HEURISTIC1
-#      define NO_PTHREAD_GETATTR_NP
-#      define GETPAGESIZE() 65536
-#      ifndef MAX_NACL_GC_THREADS
-#        define MAX_NACL_GC_THREADS 1024
-#      endif
-#   endif /* NACL */
-
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
