@@ -227,7 +227,7 @@ case "$THREADS" in
         THREADDLLIBS=-pthread
         AM_CFLAGS="$AM_CFLAGS -pthread"
         ;;
-     *-*-freebsd*)
+     *-*-dragonfly* | *-*-freebsd*)
         AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
         AC_DEFINE(GC_FREEBSD_THREADS)
         AM_CFLAGS="$AM_CFLAGS -pthread"
