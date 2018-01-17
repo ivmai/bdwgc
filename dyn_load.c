@@ -422,7 +422,7 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 # endif
 #endif /* __GLIBC__ >= 2 || PLATFORM_ANDROID */
 
-#if (defined(FREEBSD) && __FreeBSD__ >= 7)
+#if (defined(FREEBSD) && __FreeBSD__ >= 7) || defined(__DragonFly__)
   /* On the FreeBSD system, any target system at major version 7 shall   */
   /* have dl_iterate_phdr; therefore, we need not make it weak as below. */
 # ifndef HAVE_DL_ITERATE_PHDR
