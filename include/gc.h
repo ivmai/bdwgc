@@ -328,6 +328,8 @@ GC_API GC_ATTR_DEPRECATED GC_word GC_free_space_divisor;
                         /* GC_call_with_alloc_lock() is required to     */
                         /* avoid data races (if the value is modified   */
                         /* after the GC is put to multi-threaded mode). */
+                        /* In version 7.1 (and before), the setter      */
+                        /* returned the old value.                      */
 GC_API void GC_CALL GC_set_free_space_divisor(GC_word);
 GC_API GC_word GC_CALL GC_get_free_space_divisor(void);
 
@@ -1302,7 +1304,8 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 /* GC_set_warn_proc can be used to redirect or filter warning messages. */
 /* p may not be a NULL pointer.  msg is printf format string (arg must  */
 /* match the format).  Both the setter and the getter acquire the GC    */
-/* lock (to avoid data races).                                          */
+/* lock (to avoid data races).  In version 7.1 (and before), the setter */
+/* returned the old warn_proc value.                                    */
 typedef void (GC_CALLBACK * GC_warn_proc)(char * /* msg */,
                                           GC_word /* arg */);
 GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc /* p */) GC_ATTR_NONNULL(1);
