@@ -11,7 +11,7 @@ void GC_free(void *ptr);
 void * GC_realloc(void *ptr, size_t size);
 .br
 .sp
-cc ... gc.a
+cc ... -lgc
 .LP
 .SH DESCRIPTION
 .I GC_malloc
