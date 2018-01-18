@@ -44,9 +44,10 @@ VPATH= $(srcdir)
 AO_SRC_DIR=$(srcdir)/libatomic_ops
 
 CFLAGS_EXTRA=
+# We need CFLAGS_FOR_PIC because we might be building a shared library.
 CFLAGS= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
   -DGC_ATOMIC_UNCOLLECTABLE -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS \
-  -DENABLE_DISCLAIM $(CFLAGS_EXTRA)
+  -DENABLE_DISCLAIM $(CFLAGS_FOR_PIC) $(CFLAGS_EXTRA)
 
 # To build the collector with threads support, add to the above:
 # -DGC_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
@@ -133,7 +134,7 @@ CURSES= -lcurses
 # the SHELL environment variable.
 SHELL= /bin/sh
 
-SPECIALCFLAGS= -I$(srcdir)/include -I$(AO_SRC_DIR)/src
+SPECIALCFLAGS= -I$(srcdir)/include -I$(AO_SRC_DIR)/src $(CFLAGS_FOR_PIC)
 # Alternative flags to the C compiler for mach_dep.c.
 # Mach_dep.c often doesn't like optimization, and it's
 # not time-critical anyway.
