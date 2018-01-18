@@ -1014,6 +1014,26 @@ static void fork_child_proc(void)
 #   endif /* PARALLEL_MARK */
     RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
+    /* Even though after a fork the child only inherits the single      */
+    /* thread that called the fork(), if another thread in the parent   */
+    /* was attempting to lock the mutex while being held in             */
+    /* fork_child_prepare(), the mutex will be left in an inconsistent  */
+    /* state in the child after the UNLOCK.  This is the case, at       */
+    /* least, in Mac OS X and leads to an unusable GC in the child      */
+    /* which will block when attempting to perform any GC operation     */
+    /* that acquires the allocation mutex.                              */
+#   ifdef USE_PTHREAD_LOCKS
+      GC_ASSERT(I_DONT_HOLD_LOCK());
+      /* Reinitialize the mutex.  It should be safe since we are        */
+      /* running this in the child which only inherits a single thread. */
+      /* mutex_destroy() may return EBUSY, which makes no sense, but    */
+      /* that is the reason for the need of the reinitialization.       */
+      (void)pthread_mutex_destroy(&GC_allocate_ml);
+      /* TODO: Probably some targets might need the default mutex       */
+      /* attribute to be passed instead of NULL.                        */
+      if (0 != pthread_mutex_init(&GC_allocate_ml, NULL))
+        ABORT("pthread_mutex_init failed (in child)");
+#   endif
 }
 
   /* Routines for fork handling by client (no-op if pthread_atfork works). */
