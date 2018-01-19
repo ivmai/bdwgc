@@ -1,3 +1,4 @@
+
 # Copyright (c) 1999-2001 by Red Hat, Inc. All rights reserved.
 #
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
@@ -89,7 +90,7 @@ endif
 # linuxthread semaphore functions get linked:
 libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS) $(ATOMIC_OPS_LIBS)
 libgc_la_DEPENDENCIES = @addobjs@
-libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info 2:1:0 -no-undefined
+libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info 2:1:1 -no-undefined
 
 EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
     mips_sgi_mach_dep.s mips_ultrix_mach_dep.s \
