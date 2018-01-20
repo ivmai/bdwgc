@@ -1,3 +1,26 @@
+2018-01-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.am (libgc_la_LDFLAGS): Change -version-info from 2:1:0
+	to 2:1:1 (to bring the SONAME back to libgc.so.1).
+
+2018-01-19  Gustavo Giraldez <ggiraldez@manas.com.ar>
+
+	* pthread_support.c [CAN_HANDLE_FORK && USE_PTHREAD_LOCKS]
+	(fork_child_proc): Add assertion (after UNLOCK) that the lock is not
+	held actually, and, then, re-initialize GC_allocate_ml; add comments.
+
+2018-01-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* tools/threadlibs.c [GC_OSF1_THREADS] (main): Print "\n" after "-lrt".
+
+2018-01-14  Ivan Maidanski <ivmai@mail.ru>
+
+	* allchblk.c [USE_MUNMAP] (GC_unmap_old): Replace
+	(unsigned short)GC_gc_no-hb_last_reclaimed to
+	(unsigned short)(GC_gc_no-hb_last_reclaimed) to handle
+	value wrapping in hb_last_reclaimed (and the truncated GC_gc_no)
+	correctly.
+
 [7.2i]
 
 2017-12-21  Ivan Maidanski <ivmai@mail.ru>
