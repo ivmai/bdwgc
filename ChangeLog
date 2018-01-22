@@ -301,6 +301,12 @@ Also, includes 7.4.6 changes
 Also, includes 7.4.4 changes
 
 
+== [7.4.10] 2018-01-22 ==
+
+* Fix error code in abort message if sem_wait failed in start_world (NetBSD)
+Also, includes 7.2j changes
+
+
 == [7.4.8] 2017-12-22 ==
 
 * Eliminate 'this statement may fall through' GCC warnings
@@ -738,6 +744,14 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 * Use pthread_key for thread-local storage on FreeBSD
 * Use union of AO_t and word to favor strict-aliasing compiler optimization
 Also, includes 7.2 changes
+
+
+== [7.2j] 2018-01-21 ==
+
+* Fix GC allocation mutex in child after a fork
+* Fix last_reclaimed..gc_no interval comparison to threshold in unmap_old
+* Fix libgc version which was changed in linkage breaking way
+* Fix missing EOLn output in threadlibs tool
 
 
 == [7.2i] 2017-12-21 ==
