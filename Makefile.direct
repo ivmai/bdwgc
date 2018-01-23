@@ -216,6 +216,7 @@ cords: $(CORD_OBJS) cord/cordtest$(EXEEXT) $(UTILS) base_lib
 	./if_mach M68K AMIGA $(AR) -vrus gc.a $(CORD_OBJS)
 	./if_not_there dont_ar_3 $(AR) ru gc.a $(CORD_OBJS)
 	./if_not_there dont_ar_3 $(RANLIB) gc.a || cat /dev/null
+	echo > cords
 
 gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
@@ -365,7 +366,7 @@ if_not_there$(EXEEXT): $(srcdir)/tools/if_not_there.c
 clean:
 	rm -f gc.a *.i *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
 	      setjmp_test mon.out gmon.out a.out core if_not_there if_mach \
-	      base_lib c++ $(CORD_OBJS) cord/cordtest cord/de \
+	      base_lib c++ $(CORD_OBJS) cord/cordtest cord/de cords \
 	      dont_ar_* threadlibs
 	-rm -f *~
 
