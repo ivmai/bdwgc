@@ -288,9 +288,14 @@
 #   endif
 #   define mach_type_known
 # endif
-# if defined(__BEOS__) && defined(_X86_)
+# if (defined(__BEOS__) || defined(__HAIKU__)) && defined(_X86_)
 #    define I386
-#    define BEOS
+#    define HAIKU
+#    define mach_type_known
+# endif
+# if defined(__HAIKU__) && (defined(__amd64__) || defined(__x86_64__))
+#    define X86_64
+#    define HAIKU
 #    define mach_type_known
 # endif
 # if defined(OPENBSD) && defined(__amd64__)
@@ -1269,12 +1274,14 @@
 #       define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       define STACKBOTTOM ((ptr_t)0x3ffff000)
 #   endif
-#   ifdef BEOS
-#     define OS_TYPE "BEOS"
+#   ifdef HAIKU
+#     define OS_TYPE "HAIKU"
 #     include <OS.h>
 #     define GETPAGESIZE() (unsigned)B_PAGE_SIZE
       extern int etext[];
 #     define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
+#     define DYNAMIC_LOADING
+#     define MPROTECT_VDB
 #   endif
 #   ifdef SOLARIS
 #       define OS_TYPE "SOLARIS"
@@ -2533,6 +2540,15 @@
 #           define SEARCH_FOR_DATA_START
 #       endif
 #   endif
+#   ifdef HAIKU
+#     define OS_TYPE "HAIKU"
+#     include <OS.h>
+#     define GETPAGESIZE() (unsigned)B_PAGE_SIZE
+#     define HEURISTIC2
+#     define SEARCH_FOR_DATA_START
+#     define DYNAMIC_LOADING
+#     define MPROTECT_VDB
+#   endif
 #   ifdef SOLARIS
 #       define OS_TYPE "SOLARIS"
 #       define ELF_CLASS ELFCLASS64
@@ -2801,7 +2817,7 @@
 
 #if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
     || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
-    || defined(DGUX) || defined(BSD) || defined(HURD) \
+    || defined(DGUX) || defined(BSD) || defined(HAIKU) || defined(HURD) \
     || defined(AIX) || defined(DARWIN) || defined(OSF1)
 # define UNIX_LIKE      /* Basic Unix-like system calls work.   */
 #endif
@@ -2911,10 +2927,11 @@
 # define DEFAULT_VDB
 #endif
 
-#if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HURD) \
-                             || defined(OPENBSD) || defined(ARM32) \
-                             || defined(MIPS) || defined(AVR32) \
-                             || defined(OR1K) || defined(NIOS2))) \
+#if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HAIKU) \
+                             || defined(HURD) || defined(OPENBSD) \
+                             || defined(ARM32) \
+                             || defined(AVR32) || defined(MIPS) \
+                             || defined(NIOS2) || defined(OR1K))) \
      || (defined(LINUX) && !defined(__gnu_linux__)) \
      || (defined(RTEMS) && defined(I386)) || defined(PLATFORM_ANDROID)) \
     && !defined(NO_GETCONTEXT)
@@ -3335,6 +3352,9 @@
 # elif defined(SN_TARGET_PS3)
     void *ps3_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)ps3_get_mem(bytes)
+# elif defined(HAIKU)
+    ptr_t GC_haiku_get_mem(size_t bytes);
+#   define GET_MEM(bytes) (struct hblk*)GC_haiku_get_mem(bytes)
 # else
     ptr_t GC_unix_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)

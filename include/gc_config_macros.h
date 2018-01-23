@@ -64,7 +64,8 @@
 
 #if defined(GC_AIX_THREADS) || defined(GC_DARWIN_THREADS) \
     || defined(GC_DGUX386_THREADS) || defined(GC_FREEBSD_THREADS) \
-    || defined(GC_GNU_THREADS) || defined(GC_HPUX_THREADS) \
+    || defined(GC_GNU_THREADS) \
+    || defined(GC_HAIKU_THREADS) || defined(GC_HPUX_THREADS) \
     || defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) \
     || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS) \
     || defined(GC_OSF1_THREADS) || defined(GC_SOLARIS_THREADS) \
@@ -94,6 +95,8 @@
 #   define GC_SOLARIS_THREADS
 # elif defined(__APPLE__) && defined(__MACH__)
 #   define GC_DARWIN_THREADS
+# elif defined(__HAIKU__)
+#   define GC_HAIKU_THREADS
 # elif defined(__OpenBSD__)
 #   define GC_OPENBSD_THREADS
 # elif !defined(GC_LINUX_THREADS) && !defined(GC_HPUX_THREADS) \
@@ -322,7 +325,7 @@
 /* This may also be desirable if it is possible but expensive to        */
 /* retrieve the call chain.                                             */
 #if (defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) \
-     || defined(__FreeBSD__) || defined(__DragonFly__) \
+     || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__HAIKU__) \
      || defined(__FreeBSD_kernel__) \
      || defined(PLATFORM_ANDROID) || defined(__ANDROID__)) \
     && !defined(GC_CAN_SAVE_CALL_STACKS)

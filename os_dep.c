@@ -829,7 +829,7 @@ GC_INNER size_t GC_page_size = 0;
   }
 #endif /* !MSWIN32 */
 
-#ifdef BEOS
+#ifdef HAIKU
 # include <kernel/OS.h>
 
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
@@ -840,7 +840,7 @@ GC_INNER size_t GC_page_size = 0;
     return GC_SUCCESS;
   }
 # define HAVE_GET_STACK_BASE
-#endif /* BEOS */
+#endif /* HAIKU */
 
 #ifdef OS2
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
@@ -869,7 +869,8 @@ GC_INNER size_t GC_page_size = 0;
     typedef void (*GC_fault_handler_t)(int);
 
 #   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
-       || defined(HURD) || defined(FREEBSD) || defined(NETBSD)
+       || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
+       || defined(NETBSD)
         static struct sigaction old_segv_act;
 #       if defined(_sigargs) /* !Irix6.x */ \
            || defined(HURD) || defined(NETBSD) || defined(FREEBSD)
@@ -885,7 +886,8 @@ GC_INNER size_t GC_page_size = 0;
     GC_INNER void GC_set_and_save_fault_handler(GC_fault_handler_t h)
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
-            || defined(HURD) || defined(FREEBSD) || defined(NETBSD)
+           || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
+           || defined(NETBSD)
           struct sigaction act;
 
           act.sa_handler = h;
@@ -949,7 +951,8 @@ GC_INNER size_t GC_page_size = 0;
     GC_INNER void GC_reset_fault_handler(void)
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
-           || defined(HURD) || defined(FREEBSD) || defined(NETBSD)
+           || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
+           || defined(NETBSD)
           (void) sigaction(SIGSEGV, &old_segv_act, 0);
 #         if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
              || defined(HURD) || defined(NETBSD)
@@ -1190,7 +1193,7 @@ GC_INNER size_t GC_page_size = 0;
     return (ptr_t)GC_get_main_symbian_stack_base();
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#elif !defined(BEOS) && !defined(AMIGA) && !defined(OS2) \
+#elif !defined(AMIGA) && !defined(HAIKU) && !defined(OS2) \
       && !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
       && !defined(GC_OPENBSD_THREADS) \
       && (!defined(GC_SOLARIS_THREADS) || defined(_STRICT_STDC))
@@ -1291,7 +1294,7 @@ GC_INNER size_t GC_page_size = 0;
     return(result);
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#endif /* !AMIGA, !BEOS, !OPENBSD, !OS2, !Windows */
+#endif /* !AMIGA, !HAIKU, !OPENBSD, !OS2, !Windows */
 
 #if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
     && defined(THREADS) && !defined(HAVE_GET_STACK_BASE)
@@ -2427,6 +2430,19 @@ void * os2_alloc(size_t bytes)
 # undef GC_AMIGA_AM
 #endif
 
+#if defined(HAIKU)
+# include <stdlib.h>
+  ptr_t GC_haiku_get_mem(size_t bytes)
+  {
+    void* mem;
+
+    GC_ASSERT(GC_page_size != 0);
+    if (posix_memalign(&mem, GC_page_size, bytes) == 0)
+      return mem;
+    return NULL;
+  }
+#endif /* HAIKU */
+
 #ifdef USE_MUNMAP
 
 /* For now, this only works on Win32/WinCE and some Unix-like   */
@@ -3023,7 +3039,9 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # elif !defined(USE_WINALLOC)
 #   include <sys/mman.h>
 #   include <signal.h>
-#   include <sys/syscall.h>
+#   if !defined(HAIKU)
+#     include <sys/syscall.h>
+#   endif
 
 #   define PROTECT(addr, len) \
         if (mprotect((caddr_t)(addr), (size_t)(len), \
@@ -3183,7 +3201,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     define CODE_OK (si -> si_code == 2 /* experimentally determined */)
 #   elif defined(IRIX5)
 #     define CODE_OK (si -> si_code == EACCES)
-#   elif defined(HURD)
+#   elif defined(HAIKU) || defined(HURD)
 #     define CODE_OK TRUE
 #   elif defined(LINUX)
 #     define CODE_OK TRUE

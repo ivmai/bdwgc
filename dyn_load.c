@@ -58,7 +58,8 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
     && !(defined(ALPHA) && defined(OSF1)) \
     && !(defined(FREEBSD) && defined(__ELF__)) \
     && !((defined(LINUX) || defined(NACL)) && defined(__ELF__)) \
-    && !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD) \
+    && !(defined(NETBSD) && defined(__ELF__)) \
+    && !defined(HAIKU) && !defined(HURD) \
     && !(defined(OPENBSD) && (defined(__ELF__) || defined(M68K))) \
     && !defined(CPPCHECK)
 # error We only know how to find data segments of dynamic libraries for above.
@@ -1489,6 +1490,21 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 }
 
 #endif /* DARWIN */
+
+#if defined(HAIKU)
+# include <kernel/image.h>
+
+  GC_INNER void GC_register_dynamic_libraries(void)
+  {
+    image_info info;
+    int32 cookie = 0;
+
+    while (get_next_image_info(0, &cookie, &info) == B_OK) {
+      ptr_t data = (ptr_t)info.data;
+      GC_add_roots_inner(data, data + info.data_size, TRUE);
+    }
+  }
+#endif /* HAIKU */
 
 #elif defined(PCR)
 
