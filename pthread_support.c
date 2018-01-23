@@ -892,8 +892,8 @@ STATIC void GC_remove_all_threads_but_me(void)
 # define GC_get_nprocs() pthread_num_processors_np()
 
 #elif defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
-      || defined(GC_SOLARIS_THREADS) || defined(HURD) \
-      || defined(HOST_ANDROID) || defined(NACL)
+      || defined(GC_HAIKU_THREADS) || defined(GC_SOLARIS_THREADS) \
+      || defined(HURD) || defined(HOST_ANDROID) || defined(NACL)
   GC_INLINE int GC_get_nprocs(void)
   {
     int nprocs = (int)sysconf(_SC_NPROCESSORS_ONLN);

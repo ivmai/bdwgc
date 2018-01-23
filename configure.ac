@@ -185,9 +185,9 @@ case "$THREADS" in
     # Common defines for most POSIX platforms.
     case "$host" in
       *-*-aix* | *-*-cygwin* | *-*-darwin* | *-*-dragonfly* | \
-      *-*-freebsd* | *-*-hpux11* | *-*-irix* | *-*-kfreebsd*-gnu | \
-      *-*-gnu* | *-*-*linux* | *-*-nacl* | *-*-netbsd* | *-*-openbsd* | \
-      *-*-osf* | *-*-solaris*)
+      *-*-freebsd* | *-*-haiku* | *-*-hpux11* | *-*-irix* | \
+      *-*-kfreebsd*-gnu | *-*-gnu* | *-*-*linux* | *-*-nacl* | \
+      *-*-netbsd* | *-*-openbsd* | *-*-osf* | *-*-solaris*)
         AC_DEFINE(GC_THREADS)
         AC_DEFINE([_REENTRANT], [1],
                   [Required define if using POSIX threads.])
