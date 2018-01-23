@@ -67,8 +67,8 @@
 # define PLATFORM_ANDROID 1
 #endif
 
-#if defined(TIZEN) && !defined(PLATFORM_TIZEN)
-# define PLATFORM_TIZEN 1
+#if defined(TIZEN) && !defined(HOST_TIZEN)
+# define HOST_TIZEN 1
 #endif
 
 #if defined(__SYMBIAN32__) && !defined(SYMBIAN)
@@ -1371,7 +1371,7 @@
 #            define DYNAMIC_LOADING
 #            include <features.h>
 #            if defined(__GLIBC__) && __GLIBC__ >= 2 \
-                || defined(PLATFORM_ANDROID) || defined(PLATFORM_TIZEN)
+                || defined(PLATFORM_ANDROID) || defined(HOST_TIZEN)
 #                define SEARCH_FOR_DATA_START
 #            else
                  extern char **__environ;
@@ -1387,7 +1387,7 @@
 #            endif
              extern int _end[];
 #            define DATAEND ((ptr_t)(_end))
-#            if !defined(GC_NO_SIGSETJMP) && (defined(PLATFORM_TIZEN) \
+#            if !defined(GC_NO_SIGSETJMP) && (defined(HOST_TIZEN) \
                     || (defined(PLATFORM_ANDROID) \
                         && !(GC_GNUC_PREREQ(4, 8) || GC_CLANG_PREREQ(3, 2) \
                              || __ANDROID_API__ >= 18)))
@@ -2199,7 +2199,7 @@
 #            define DYNAMIC_LOADING
 #            include <features.h>
 #            if defined(__GLIBC__) && __GLIBC__ >= 2 \
-                || defined(PLATFORM_ANDROID) || defined(PLATFORM_TIZEN)
+                || defined(PLATFORM_ANDROID) || defined(HOST_TIZEN)
 #                define SEARCH_FOR_DATA_START
 #            else
                  extern char **__environ;
@@ -2681,7 +2681,7 @@
 # define DATAEND (__end__ != 0 ? (ptr_t)__end__ : (ptr_t)_end)
 #endif
 
-#if (defined(SVR4) || defined(PLATFORM_ANDROID) || defined(PLATFORM_TIZEN)) \
+#if (defined(SVR4) || defined(PLATFORM_ANDROID) || defined(HOST_TIZEN)) \
     && !defined(GETPAGESIZE)
 # include <unistd.h>
 # define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
@@ -3070,7 +3070,7 @@
 #endif
 
 #if defined(CAN_HANDLE_FORK) && !defined(CAN_CALL_ATFORK) \
-    && !defined(HURD) && !defined(PLATFORM_TIZEN) \
+    && !defined(HURD) && !defined(HOST_TIZEN) \
     && (!defined(PLATFORM_ANDROID) || __ANDROID_API__ >= 21)
   /* Have working pthread_atfork().     */
 # define CAN_CALL_ATFORK
