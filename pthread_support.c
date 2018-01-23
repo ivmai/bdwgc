@@ -893,7 +893,7 @@ STATIC void GC_remove_all_threads_but_me(void)
 
 #elif defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
       || defined(GC_SOLARIS_THREADS) || defined(HURD) \
-      || defined(PLATFORM_ANDROID) || defined(NACL)
+      || defined(HOST_ANDROID) || defined(NACL)
   GC_INLINE int GC_get_nprocs(void)
   {
     int nprocs = (int)sysconf(_SC_NPROCESSORS_ONLN);
@@ -907,7 +907,7 @@ STATIC void GC_remove_all_threads_but_me(void)
     return nprocs > 0 ? nprocs : 1; /* ignore error silently */
   }
 
-#elif defined(GC_LINUX_THREADS) /* && !PLATFORM_ANDROID && !NACL */
+#elif defined(GC_LINUX_THREADS) /* && !HOST_ANDROID && !NACL */
   /* Return the number of processors. */
   STATIC int GC_get_nprocs(void)
   {

@@ -91,12 +91,12 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
                              || defined(NACL) || defined(NETBSD) \
                              || defined(OPENBSD)))
 # include <stddef.h>
-# if !defined(OPENBSD) && !defined(PLATFORM_ANDROID)
+# if !defined(OPENBSD) && !defined(HOST_ANDROID)
     /* OpenBSD does not have elf.h file; link.h below is sufficient.    */
     /* Exclude Android because linker.h below includes its own version. */
 #   include <elf.h>
 # endif
-# ifdef PLATFORM_ANDROID
+# ifdef HOST_ANDROID
     /* If you don't need the "dynamic loading" feature, you may build   */
     /* the collector with -D IGNORE_DYNAMIC_LOADING.                    */
 #   ifdef BIONIC_ELFDATA_REDEF_BUG
@@ -411,16 +411,16 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 
 #if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
     || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)) \
-    || defined(PLATFORM_ANDROID) /* Are others OK here, too? */
+    || defined(HOST_ANDROID) /* Are others OK here, too? */
 # ifndef HAVE_DL_ITERATE_PHDR
 #   define HAVE_DL_ITERATE_PHDR
 # endif
-# ifdef PLATFORM_ANDROID
+# ifdef HOST_ANDROID
     /* Android headers might have no such definition for some targets.  */
     int dl_iterate_phdr(int (*cb)(struct dl_phdr_info *, size_t, void *),
                         void *data);
 # endif
-#endif /* __GLIBC__ >= 2 || PLATFORM_ANDROID */
+#endif /* __GLIBC__ >= 2 || HOST_ANDROID */
 
 #if (defined(FREEBSD) && __FreeBSD__ >= 7) || defined(__DragonFly__)
   /* On the FreeBSD system, any target system at major version 7 shall   */
@@ -670,11 +670,11 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 #   ifndef PF_W
 #     define PF_W       2
 #   endif
-# elif !defined(PLATFORM_ANDROID)
+# elif !defined(HOST_ANDROID)
 #  include <elf.h>
 # endif
 
-# ifndef PLATFORM_ANDROID
+# ifndef HOST_ANDROID
 #   include <link.h>
 # endif
 
@@ -750,7 +750,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
         int i;
 
         e = (ElfW(Ehdr) *) lm->l_addr;
-#       ifdef PLATFORM_ANDROID
+#       ifdef HOST_ANDROID
           if (e == NULL)
             continue;
 #       endif

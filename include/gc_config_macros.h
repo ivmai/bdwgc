@@ -329,7 +329,7 @@
 /* retrieve the call chain.                                             */
 #if (defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) \
      || defined(__FreeBSD__) || defined(__DragonFly__) \
-     || defined(PLATFORM_ANDROID) || defined(__ANDROID__)) \
+     || defined(HOST_ANDROID) || defined(__ANDROID__)) \
     && !defined(GC_CAN_SAVE_CALL_STACKS)
 # define GC_ADD_CALLER
 # if GC_GNUC_PREREQ(2, 95)
@@ -378,7 +378,7 @@
 # endif
 
 # if !defined(GC_HAVE_PTHREAD_EXIT) \
-     && !defined(PLATFORM_ANDROID) && !defined(__ANDROID__) \
+     && !defined(HOST_ANDROID) && !defined(__ANDROID__) \
      && (defined(GC_LINUX_THREADS) || defined(GC_SOLARIS_THREADS))
 #   define GC_HAVE_PTHREAD_EXIT
     /* Intercept pthread_exit on Linux and Solaris.     */

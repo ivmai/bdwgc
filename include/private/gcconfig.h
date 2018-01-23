@@ -62,9 +62,9 @@
 
 /* Machine specific parts contributed by various people.  See README file. */
 
-#if defined(__ANDROID__) && !defined(PLATFORM_ANDROID)
+#if defined(__ANDROID__) && !defined(HOST_ANDROID)
   /* __ANDROID__ macro is defined by Android NDK gcc.   */
-# define PLATFORM_ANDROID 1
+# define HOST_ANDROID 1
 #endif
 
 #if defined(TIZEN) && !defined(HOST_TIZEN)
@@ -79,7 +79,7 @@
 #endif
 
 /* First a unified test for Linux: */
-# if (defined(linux) || defined(__linux__) || defined(PLATFORM_ANDROID)) \
+# if (defined(linux) || defined(__linux__) || defined(HOST_ANDROID)) \
      && !defined(LINUX) && !defined(__native_client__)
 #   define LINUX
 # endif
@@ -1371,7 +1371,7 @@
 #            define DYNAMIC_LOADING
 #            include <features.h>
 #            if defined(__GLIBC__) && __GLIBC__ >= 2 \
-                || defined(PLATFORM_ANDROID) || defined(HOST_TIZEN)
+                || defined(HOST_ANDROID) || defined(HOST_TIZEN)
 #                define SEARCH_FOR_DATA_START
 #            else
                  extern char **__environ;
@@ -1388,7 +1388,7 @@
              extern int _end[];
 #            define DATAEND ((ptr_t)(_end))
 #            if !defined(GC_NO_SIGSETJMP) && (defined(HOST_TIZEN) \
-                    || (defined(PLATFORM_ANDROID) \
+                    || (defined(HOST_ANDROID) \
                         && !(GC_GNUC_PREREQ(4, 8) || GC_CLANG_PREREQ(3, 2) \
                              || __ANDROID_API__ >= 18)))
                /* Older Android NDK releases lack sigsetjmp in x86 libc */
@@ -2199,7 +2199,7 @@
 #            define DYNAMIC_LOADING
 #            include <features.h>
 #            if defined(__GLIBC__) && __GLIBC__ >= 2 \
-                || defined(PLATFORM_ANDROID) || defined(HOST_TIZEN)
+                || defined(HOST_ANDROID) || defined(HOST_TIZEN)
 #                define SEARCH_FOR_DATA_START
 #            else
                  extern char **__environ;
@@ -2674,14 +2674,14 @@
 /* Workaround for Android NDK clang 3.5+ (as of NDK r10e) which does    */
 /* not provide correct _end symbol.  Unfortunately, alternate __end__   */
 /* symbol is provided only by NDK "bfd" linker.                         */
-#if defined(PLATFORM_ANDROID) && defined(__clang__)
+#if defined(HOST_ANDROID) && defined(__clang__)
 # undef DATAEND
 # pragma weak __end__
   extern int __end__[];
 # define DATAEND (__end__ != 0 ? (ptr_t)__end__ : (ptr_t)_end)
 #endif
 
-#if (defined(SVR4) || defined(PLATFORM_ANDROID) || defined(HOST_TIZEN)) \
+#if (defined(SVR4) || defined(HOST_ANDROID) || defined(HOST_TIZEN)) \
     && !defined(GETPAGESIZE)
 # include <unistd.h>
 # define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
@@ -2695,7 +2695,7 @@
 # define GETPAGESIZE() (unsigned)getpagesize()
 #endif
 
-#if defined(PLATFORM_ANDROID) && !(__ANDROID_API__ >= 23) \
+#if defined(HOST_ANDROID) && !(__ANDROID_API__ >= 23) \
     && ((defined(MIPS) && (CPP_WORDSZ == 32)) \
         || defined(ARM32) || defined(I386) /* but not x32 */)
   /* tkill() exists only on arm32/mips(32)/x86. */
@@ -2883,7 +2883,7 @@
                              || defined(MIPS) || defined(AVR32) \
                              || defined(OR1K) || defined(NIOS2))) \
      || (defined(LINUX) && !defined(__gnu_linux__)) \
-     || (defined(RTEMS) && defined(I386)) || defined(PLATFORM_ANDROID)) \
+     || (defined(RTEMS) && defined(I386)) || defined(HOST_ANDROID)) \
     && !defined(NO_GETCONTEXT)
 # define NO_GETCONTEXT
 #endif
@@ -3017,7 +3017,7 @@
 # define MIN_STACK_SIZE (8 * HBLKSIZE * sizeof(word))
 #endif
 
-#if defined(PLATFORM_ANDROID) && !defined(THREADS) \
+#if defined(HOST_ANDROID) && !defined(THREADS) \
     && !defined(USE_GET_STACKBASE_FOR_MAIN)
   /* Always use pthread_attr_getstack on Android ("-lpthread" option is  */
   /* not needed to be specified manually) since GC_linux_main_stack_base */
@@ -3027,7 +3027,7 @@
 
 /* Outline pthread primitives to use in GC_get_[main_]stack_base.       */
 #if ((defined(FREEBSD) && defined(__GLIBC__)) /* kFreeBSD */ \
-     || defined(LINUX) || defined(NETBSD) || defined(PLATFORM_ANDROID)) \
+     || defined(LINUX) || defined(NETBSD) || defined(HOST_ANDROID)) \
     && !defined(NO_PTHREAD_GETATTR_NP)
 # define HAVE_PTHREAD_GETATTR_NP 1
 #elif defined(FREEBSD) && !defined(__GLIBC__) \
@@ -3037,7 +3037,7 @@
 #endif
 
 #if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE) \
-    && !defined(PLATFORM_ANDROID)
+    && !defined(HOST_ANDROID)
   /* Make the code cancellation-safe.  This basically means that we     */
   /* ensure that cancellation requests are ignored while we are in      */
   /* the collector.  This applies only to Posix deferred cancellation;  */
@@ -3071,7 +3071,7 @@
 
 #if defined(CAN_HANDLE_FORK) && !defined(CAN_CALL_ATFORK) \
     && !defined(HURD) && !defined(HOST_TIZEN) \
-    && (!defined(PLATFORM_ANDROID) || __ANDROID_API__ >= 21)
+    && (!defined(HOST_ANDROID) || __ANDROID_API__ >= 21)
   /* Have working pthread_atfork().     */
 # define CAN_CALL_ATFORK
 #endif

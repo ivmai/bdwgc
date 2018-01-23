@@ -72,7 +72,7 @@ int main(void)
        || defined(CYGWIN32) || defined(GC_OPENBSD_UTHREADS) \
        || (defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP)) \
        || ((defined(FREEBSD) || defined(LINUX) || defined(NETBSD) \
-            || defined(PLATFORM_ANDROID)) && !defined(NO_PTHREAD_GETATTR_NP) \
+            || defined(HOST_ANDROID)) && !defined(NO_PTHREAD_GETATTR_NP) \
            && !defined(NO_PTHREAD_ATTR_GET_NP)) \
        || (defined(GC_SOLARIS_THREADS) && !defined(_STRICT_STDC)) \
        || (!defined(STACKBOTTOM) && (defined(HEURISTIC1) \

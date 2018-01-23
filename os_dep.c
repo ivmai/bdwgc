@@ -409,7 +409,7 @@ GC_INNER char * GC_get_maps(void)
 #   pragma weak __data_start
 #   pragma weak data_start
     extern int __data_start[], data_start[];
-#   ifdef PLATFORM_ANDROID
+#   ifdef HOST_ANDROID
 #     pragma weak _etext
 #     pragma weak __dso_handle
       extern int _etext[], __dso_handle[];
@@ -426,7 +426,7 @@ GC_INNER char * GC_get_maps(void)
 
 #   if (defined(LINUX) || defined(HURD)) && !defined(IGNORE_PROG_DATA_START)
       /* Try the easy approaches first: */
-#     ifdef PLATFORM_ANDROID
+#     ifdef HOST_ANDROID
         /* Workaround for "gold" (default) linker (as of Android NDK r10e). */
         if ((word)__data_start < (word)_etext
             && (word)_etext < (word)__dso_handle) {
