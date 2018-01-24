@@ -3,8 +3,10 @@
 
 * Add a sanity check that load_acquire and store_release are available
 * Add AO primitives implementation to GC based on C11 atomic intrinsic
+* Add assertion for suspend_ack_sem in start_world
 * Add assertion to allocobj that live unmarked object cannot be reclaimed
 * Add basic calculation of the total full-collection time
+* Add check that gc_cpp operator delete is called (test_cpp)
 * Add debug logging to new_thread about GC_threads hash table collisions
 * Add Makefile target to run all tests without test-driver
 * Add test_atomic_ops to perform minimal testing of used atomic primitives
@@ -13,6 +15,7 @@
 * Allow compilation of PROC_VDB code on Linux host (GC_NO_SYS_FAULT_H)
 * Allow configure --with-libatomic-ops=none to use GCC atomic intrinsics
 * Allow custom N_LOCAL_ITERS and ENTRIES_TO_GET values
+* Allow GC_NETBSD_THREADS_WORKAROUND macro manual definition
 * Allow to turn on spin locking even if thread-local allocations are used
 * Build only shared libraries by default (configure)
 * Check that GC_WIN32_PTHREADS is not specified for Cygwin
@@ -27,6 +30,7 @@
 * Define GC_THREADS instead of GC_x_THREADS in Makefiles
 * Detect sigsetjmp() availability by configure
 * Do not call BCOPY and BZERO if size is zero
+* Do not call sem_getvalue in stop_world if one thread exists
 * Do not call set_handle_fork(1) in gctest if pthread_atfork not supported
 * Do not compile pcr_interface.c and real_malloc.c except by PCR-Makefile
 * Do not print n_rescuing_pages value if incremental collections disabled
@@ -42,17 +46,25 @@
 * Fix 'doc' files installation folder
 * Group common defines for POSIX platforms in configure and CMake scripts
 * Guard against USE_PTHREAD_LOCKS and USE_SPIN_LOCK are both defined
+* Implement memory unmapping for Sony PS/3
 * Imply configure --single-obj-compilation if --disable-static
 * Increase MAX_HEAP_SECTS (10 times) for large-config
+* Initial support of Haiku/amd64
+* Initial support of TIZEN platform
 * Make extend_size_map() static (code refactoring)
 * Move de_win compiled resource files to cord/tests
 * Move pcr_interface.c, real_malloc.c to 'extra' folder
 * New API function (GC_dump_named) to produce named dumps
 * New API function (GC_is_incremental_mode)
+* New API function (get_expl_freed_bytes_since_gc)
+* New field (expl_freed_bytes_since_gc) in public prof_stats_s
+* Pass CFLAGS_FOR_PIC value to CFLAGS in Makefile.direct
 * Print time passed since GC initialization in GC_dump
 * Public API (GC_deinit) to allow Win32 critical sections deletion
+* Reduce the default MUNMAP_THRESHOLD value to 2 for Sony PS/3
 * Refactoring of USE_MMAP/USE_MMAP_ANON pairs definition in gcconfig.h
 * Remove 'dist' target from Makefile.direct
+* Remove Android-specific code in gcconfig.h for M68K
 * Remove DGUX_THREADS macro which duplicates GC_DGUX386_THREADS (configure)
 * Remove done_init static variable from fnlz_mlc.c
 * Remove duplicated sample code in leak.md
@@ -72,6 +84,8 @@
 * Skip grungy_pages update when mark state invalid to speedup read_dirty
 * Support configure --disable-thread-local-alloc option (similar for CMake)
 * Support enable_checksums option in CMake script
+* Support threads for DragonFly in configure
+* Treat Android platform as Linux (CMake)
 * Turn on incremental mode (if available) in disclaim_test
 * Turn on parallel marker by default for all multi-threaded builds
 * Update GC compilation and usage notes for Win32
@@ -84,13 +98,15 @@
 * Use compiler atomic intrinsics by default if available (configure)
 * Use EXPECT FALSE for mark_from code documented as executed rarely
 * Use heap-allocated memory for local mark stack of non-marker thread
+* Use HOST_ANDROID define instead of PLATFORM_ANDROID
 * Use longjmp in fault_handler_openbsd if siglongjmp unavailable (OpenBSD)
 * Use MARK_BIT_PER_GRANULE instead of MARK_BIT_PER_OBJ where appropriate
 * Use same macro (NTHREADS) across all tests to specify number of threads
 * Use sigsetjmp() in setjmp_t tool if available
 * Use thread-local allocations for all multi-threaded builds
 * Workaround Thread Sanitizer (TSan) false positive warnings
-Also, includes 7.6.2 changes
+
+Also, includes 7.6.4 changes.
 
 
 == [7.6.4] (not released yet) ==
