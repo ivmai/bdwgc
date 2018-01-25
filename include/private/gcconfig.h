@@ -1003,6 +1003,8 @@
         /* protected by _KERNEL in <uvm/uvm_param.h> file.              */
 #       ifdef USRSTACK
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
+#       else
+#         define HEURISTIC2
 #       endif
 #     endif
       extern int __data_start[];
@@ -1222,6 +1224,8 @@
 #       include <uvm/uvm_extern.h>
 #       ifdef USRSTACK
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
+#       else
+#         define HEURISTIC2
 #       endif
 #     endif
       extern int __data_start[];
@@ -1489,6 +1493,8 @@
 #         include <uvm/uvm_extern.h>
 #         ifdef USRSTACK
 #           define STACKBOTTOM ((ptr_t)USRSTACK)
+#         else
+#           define HEURISTIC2
 #         endif
 #       endif
         extern int __data_start[];
@@ -1730,6 +1736,8 @@
 #       include <uvm/uvm_extern.h>
 #       ifdef USRSTACK
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
+#       else
+#         define HEURISTIC2
 #       endif
 #     endif
       extern int _fdata[];
@@ -1860,6 +1868,8 @@
 #       include <uvm/uvm_extern.h>
 #       ifdef USRSTACK
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
+#       else
+#         define HEURISTIC2
 #       endif
 #     endif
       extern int __data_start[];
@@ -1892,6 +1902,8 @@
 #         include <uvm/uvm_extern.h>
 #         ifdef USRSTACK
 #           define STACKBOTTOM ((ptr_t)USRSTACK)
+#         else
+#           define HEURISTIC2
 #         endif
 #       endif
         extern int __data_start[];
@@ -2290,6 +2302,8 @@
 #       include <uvm/uvm_extern.h>
 #       ifdef USRSTACK
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
+#       else
+#         define HEURISTIC2
 #       endif
 #     endif
       extern int __data_start[];
@@ -2343,19 +2357,21 @@
 #      define DYNAMIC_LOADING
 #   endif
 #   ifdef OPENBSD
-#      define OS_TYPE "OPENBSD"
-#      ifndef GC_OPENBSD_THREADS
-#        include <sys/param.h>
-#        include <uvm/uvm_extern.h>
-#        ifdef USRSTACK
-#          define STACKBOTTOM ((ptr_t)USRSTACK)
-#        endif
-#      endif
-       extern int __data_start[];
-#      define DATASTART ((ptr_t)__data_start)
-       extern int _end[];
-#      define DATAEND ((ptr_t)(&_end))
-#      define DYNAMIC_LOADING
+#     define OS_TYPE "OPENBSD"
+#     ifndef GC_OPENBSD_THREADS
+#       include <sys/param.h>
+#       include <uvm/uvm_extern.h>
+#       ifdef USRSTACK
+#         define STACKBOTTOM ((ptr_t)USRSTACK)
+#       else
+#         define HEURISTIC2
+#       endif
+#     endif
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)__data_start)
+      extern int _end[];
+#     define DATAEND ((ptr_t)(&_end))
+#     define DYNAMIC_LOADING
 #   endif
 # endif
 
@@ -2415,6 +2431,8 @@
 #         include <uvm/uvm_extern.h>
 #         ifdef USRSTACK
 #           define STACKBOTTOM ((ptr_t)USRSTACK)
+#         else
+#           define HEURISTIC2
 #         endif
 #       endif
         extern int __data_start[];
