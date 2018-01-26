@@ -109,13 +109,14 @@
 Also, includes 7.6.4 changes.
 
 
-== [7.6.4] (not released yet) ==
+== [7.6.4] 2018-01-26 ==
 
 * Add note of set_free_space_divisor, set_warn_proc ABI change after gc-7.1
 * Change compiler invocation example in gc.man to use dynamic libgc
 * Delete dont_ar_* build intermediate files on make clean (Makefile.direct)
 * Do not declare dl_iterate_phdr as weak for DragonFly
 * Fix 'cords' parallel build in Makefile.direct
+* Fix 'undeclared identifier USRSTACK' compiler error on OpenBSD-6.2
 * Fix error code in abort message if sem_wait failed in start_world (NetBSD)
 * Fix GC allocation mutex in child after a fork
 * Fix global operator delete definition for C++14 in gc_cpp
