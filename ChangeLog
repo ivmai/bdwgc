@@ -81,6 +81,7 @@
 * Remove redundant THREADS macro checks in alloc.c and gc_priv.h
 * Remove unused USE_GENERIC macro definition and description
 * Remove version info in 'de' cord test application
+* Run command passed to if_not_there directly from Makefile.direct
 * Skip grungy_pages update when mark state invalid to speedup read_dirty
 * Support configure --disable-thread-local-alloc option (similar for CMake)
 * Support enable_checksums option in CMake script
