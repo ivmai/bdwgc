@@ -764,6 +764,7 @@ GC_API int GC_CALL GC_is_init_called(void)
 #define GC_DEFAULT_STDERR_FD 2
 
 #if !defined(OS2) && !defined(MACOS) && !defined(GC_ANDROID_LOG) \
+    && !defined(NN_PLATFORM_CTR) && !defined(NINTENDO_SWITCH) \
     && !defined(MSWIN32) && !defined(MSWINCE)
   STATIC int GC_stdout = GC_DEFAULT_STDOUT_FD;
   STATIC int GC_stderr = GC_DEFAULT_STDERR_FD;
@@ -1147,6 +1148,7 @@ GC_API void GC_CALL GC_init(void)
         GC_init_netbsd_elf();
 #   endif
 #   if !defined(THREADS) || defined(GC_PTHREADS) \
+        || defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
         || defined(GC_WIN32_THREADS) || defined(GC_SOLARIS_THREADS)
       if (GC_stackbottom == 0) {
         GC_stackbottom = GC_get_main_stack_base();
@@ -1538,6 +1540,13 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
 # define WRITE(level, buf, unused_len) \
                 __android_log_write(level, GC_ANDROID_LOG_TAG, buf)
+
+# elif defined(NN_PLATFORM_CTR)
+    int n3ds_log_write(const char* text, int length);
+#   define WRITE(level, buf, len) n3ds_log_write(buf, len)
+# elif defined(NINTENDO_SWITCH)
+    int switch_log_write(const char* text, int length);
+#   define WRITE(level, buf, len) switch_log_write(buf, len)
 
 #else
 # if !defined(AMIGA) && !defined(__CC_ARM)

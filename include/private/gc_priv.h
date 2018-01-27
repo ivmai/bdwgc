@@ -434,7 +434,13 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define CLOCK_TYPE DWORD
 # define GET_TIME(x) (void)(x = GetTickCount())
 # define MS_TIME_DIFF(a,b) ((long)((a)-(b)))
-#else /* !MSWIN32, !MSWINCE, !BSD_TIME */
+#elif defined(NN_PLATFORM_CTR)
+# define CLOCK_TYPE long long
+  CLOCK_TYPE n3ds_get_system_tick(void);
+  CLOCK_TYPE n3ds_convert_tick_to_ms(CLOCK_TYPE tick);
+# define GET_TIME(x) (void)(x = n3ds_get_system_tick())
+# define MS_TIME_DIFF(a,b) ((long)n3ds_convert_tick_to_ms((a)-(b)))
+#else /* !BSD_TIME && !NN_PLATFORM_CTR && !MSWIN32 && !MSWINCE */
 # include <time.h>
 # if defined(FREEBSD) && !defined(CLOCKS_PER_SEC)
 #   include <machine/limits.h>
@@ -513,7 +519,8 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                                    PCR_allSigsBlocked, \
                                    PCR_waitForever)
 # else
-#   if defined(GC_WIN32_THREADS) || defined(GC_PTHREADS)
+#   if defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
+       || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS)
       GC_INNER void GC_stop_world(void);
       GC_INNER void GC_start_world(void);
 #     define STOP_WORLD() GC_stop_world()

@@ -131,7 +131,8 @@
 # endif
 # if defined(__aarch64__)
 #    define AARCH64
-#    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD)
+#    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD) \
+        && !defined(NN_BUILD_TARGET_PLATFORM_NX)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -141,8 +142,9 @@
 #    if defined(NACL)
 #      define mach_type_known
 #    elif !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
-        && !defined(OPENBSD) && !defined(DARWIN) \
-        && !defined(_WIN32) && !defined(__CEGCC__) && !defined(SYMBIAN)
+          && !defined(OPENBSD) && !defined(DARWIN) && !defined(_WIN32) \
+          && !defined(__CEGCC__) && !defined(NN_PLATFORM_CTR) \
+          && !defined(NN_BUILD_TARGET_PLATFORM_NX) && !defined(SYMBIAN)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -613,6 +615,16 @@
 #   else
 #     define TILEPRO
 #   endif
+#   define mach_type_known
+# endif
+
+# if defined(NN_PLATFORM_CTR)
+#   define ARM32
+#   define mach_type_known
+# endif
+
+# if defined(NN_BUILD_TARGET_PLATFORM_NX)
+#   define NINTENDO_SWITCH
 #   define mach_type_known
 # endif
 
@@ -2312,6 +2324,22 @@
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
 #   endif
+#   ifdef NN_PLATFORM_CTR
+      extern unsigned char Image$$ZI$$ZI$$Base[];
+#     define DATASTART (ptr_t)(Image$$ZI$$ZI$$Base)
+      extern unsigned char Image$$ZI$$ZI$$Limit[];
+#     define DATAEND (ptr_t)(Image$$ZI$$ZI$$Limit)
+      void *n3ds_get_stack_bottom(void);
+#     define STACKBOTTOM ((ptr_t)n3ds_get_stack_bottom())
+#   endif
+#   ifdef NINTENDO_SWITCH
+      extern int __bss_end[];
+#     define NO_HANDLE_FORK
+#     define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
+#     define DATAEND (ptr_t)(&__bss_end)
+      void *switch_get_stack_bottom(void);
+#     define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
+#   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
       extern int __data_start[];
@@ -3036,6 +3064,7 @@
 #endif /* !CPPCHECK */
 
 #if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
+    || defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
     || defined(SN_TARGET_PS3)
 # define THREADS
 #endif
@@ -3358,6 +3387,9 @@
 # elif defined(SN_TARGET_PS3)
     void *ps3_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)ps3_get_mem(bytes)
+# elif defined(NINTENDO_SWITCH)
+    void *switch_get_mem(size_t bytes);
+#   define GET_MEM(bytes) (struct hblk*)switch_get_mem(bytes)
 # elif defined(HAIKU)
     ptr_t GC_haiku_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct  hblk*)GC_haiku_get_mem(bytes)

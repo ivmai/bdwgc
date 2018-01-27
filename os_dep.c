@@ -2082,8 +2082,8 @@ void GC_register_data_segments(void)
 
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
      && !defined(USE_WINALLOC) && !defined(MACOS) && !defined(DOS4GW) \
-     && !defined(NONSTOP) && !defined(SN_TARGET_PS3) && !defined(RTEMS) \
-     && !defined(__CC_ARM)
+     && !defined(NINTENDO_SWITCH) && !defined(NONSTOP) \
+     && !defined(SN_TARGET_PS3) && !defined(RTEMS) && !defined(__CC_ARM)
 
 # define SBRK_ARG_T ptrdiff_t
 
@@ -2447,7 +2447,7 @@ void * os2_alloc(size_t bytes)
 /* systems.  If you have something else, don't define           */
 /* USE_MUNMAP.                                                  */
 
-#if !defined(MSWIN32) && !defined(MSWINCE)
+#if !defined(NN_PLATFORM_CTR) && !defined(MSWIN32) && !defined(MSWINCE)
 # include <unistd.h>
 # ifdef SN_TARGET_PS3
 #   include <sys/memory.h>
@@ -2711,12 +2711,13 @@ STATIC void GC_CALLBACK GC_default_push_other_roots(void)
 
 # endif /* PCR */
 
-# if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
+# if defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
+     || defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
     STATIC void GC_CALLBACK GC_default_push_other_roots(void)
     {
       GC_push_all_stacks();
     }
-# endif /* GC_WIN32_THREADS || GC_PTHREADS */
+# endif
 
 # ifdef SN_TARGET_PS3
     STATIC void GC_CALLBACK GC_default_push_other_roots(void)
