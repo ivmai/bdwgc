@@ -2307,7 +2307,6 @@
 #     endif
 #   endif
 #   ifdef OPENBSD
-#     define ALIGNMENT 4
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
 #       include <sys/param.h>
