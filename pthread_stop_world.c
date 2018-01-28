@@ -18,7 +18,7 @@
 #include "private/pthread_support.h"
 
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && \
-    !defined(GC_DARWIN_THREADS)
+    !defined(GC_DARWIN_THREADS) && !defined(SN_TARGET_ORBIS)
 
 #ifdef NACL
 

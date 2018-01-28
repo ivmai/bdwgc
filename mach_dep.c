@@ -14,6 +14,8 @@
 
 #include "private/gc_priv.h"
 
+#if !defined(SN_TARGET_ORBIS)
+
 #include <stdio.h>
 
 #ifdef AMIGA
@@ -325,3 +327,5 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
   /* contents before we get a chance to look at them.           */
   GC_noop1((word)(&dummy));
 }
+
+#endif /* !SN_TARGET_ORBIS */

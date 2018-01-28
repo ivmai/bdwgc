@@ -35,13 +35,15 @@
 # include <time.h>
 # include <errno.h>
 # include <unistd.h>
-# if !defined(GC_RTEMS_PTHREADS)
-#   include <sys/mman.h>
+# if !defined(SN_TARGET_ORBIS)
+#   if !defined(GC_RTEMS_PTHREADS)
+#     include <sys/mman.h>
+#   endif
+#   include <sys/time.h>
+#   include <sys/types.h>
+#   include <sys/stat.h>
+#   include <fcntl.h>
 # endif
-# include <sys/time.h>
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <fcntl.h>
 # include <signal.h>
 
 # include "gc_inline.h"
@@ -1537,8 +1539,9 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
     UNLOCK();
 }
 
-GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
-{
+#if !defined(SN_TARGET_ORBIS)
+  GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
+  {
     int result;
     GC_thread t;
     DCL_LOCK_STATE;
@@ -1571,10 +1574,10 @@ GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
         UNLOCK();
     }
     return result;
-}
+  }
 
-GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
-{
+  GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
+  {
     int result;
     GC_thread t;
     DCL_LOCK_STATE;
@@ -1594,7 +1597,8 @@ GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
       UNLOCK();
     }
     return result;
-}
+  }
+#endif /* !SN_TARGET_ORBIS */
 
 #ifndef GC_NO_PTHREAD_CANCEL
   /* We should deal with the fact that apparently on Solaris and,       */
@@ -1809,10 +1813,11 @@ STATIC void * GC_start_routine(void * arg)
 #   endif
 }
 
-GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
-                     GC_PTHREAD_CREATE_CONST pthread_attr_t *attr,
-                     void *(*start_routine)(void *), void *arg)
-{
+#if !defined(SN_TARGET_ORBIS)
+  GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
+                       GC_PTHREAD_CREATE_CONST pthread_attr_t *attr,
+                       void *(*start_routine)(void *), void *arg)
+  {
     int result;
     int detachstate;
     word my_flags = 0;
@@ -1913,7 +1918,8 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     UNLOCK();
 
     return(result);
-}
+  }
+#endif /* !SN_TARGET_ORBIS */
 
 #if defined(USE_SPIN_LOCK) || !defined(NO_PTHREAD_TRYLOCK)
 /* Spend a few cycles in a way that can't introduce contention with     */

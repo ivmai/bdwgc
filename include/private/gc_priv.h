@@ -805,6 +805,8 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # if defined(LARGE_CONFIG) || !defined(SMALL_CONFIG)
 #   ifdef ALPHA
 #     define CPP_LOG_HBLKSIZE 13
+#   elif defined(SN_TARGET_ORBIS)
+#     define CPP_LOG_HBLKSIZE 16    /* page size is set to 64K  */
 #   else
 #     define CPP_LOG_HBLKSIZE 12
 #   endif

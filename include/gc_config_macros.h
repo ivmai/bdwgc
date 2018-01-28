@@ -76,7 +76,8 @@
     || defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) \
     || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS) \
     || defined(GC_OSF1_THREADS) || defined(GC_SOLARIS_THREADS) \
-    || defined(GC_WIN32_THREADS) || defined(GC_RTEMS_PTHREADS)
+    || defined(GC_WIN32_THREADS) || defined(GC_RTEMS_PTHREADS) \
+    || defined(SN_TARGET_ORBIS)
 # ifndef GC_THREADS
 #   define GC_THREADS
 # endif
@@ -90,7 +91,8 @@
 #   define GC_HAIKU_THREADS
 # elif defined(__OpenBSD__)
 #   define GC_OPENBSD_THREADS
-# elif defined(__FreeBSD__) || defined(__DragonFly__)
+# elif (defined(__FreeBSD__) && !defined(SN_TARGET_ORBIS)) \
+       || defined(__DragonFly__)
 #   define GC_FREEBSD_THREADS
 # elif defined(__NetBSD__)
 #   define GC_NETBSD_THREADS

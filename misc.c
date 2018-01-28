@@ -50,7 +50,7 @@
 # ifdef PCR
 #   include "il/PCR_IL.h"
     GC_INNER PCR_Th_ML GC_allocate_ml;
-# elif defined(SN_TARGET_PS3)
+# elif defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3)
 #   include <pthread.h>
     GC_INNER pthread_mutex_t GC_allocate_ml;
 # endif
@@ -1549,13 +1549,13 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #   define WRITE(level, buf, len) switch_log_write(buf, len)
 
 #else
-# if !defined(AMIGA) && !defined(__CC_ARM)
+# if !defined(AMIGA) && !defined(SN_TARGET_ORBIS) && !defined(__CC_ARM)
 #   include <unistd.h>
 # endif
 
   STATIC int GC_write(int fd, const char *buf, size_t len)
   {
-#   if defined(ECOS) || defined(NOSYS)
+#   if defined(ECOS) || defined(SN_TARGET_ORBIS) || defined(NOSYS)
 #     ifdef ECOS
         /* FIXME: This seems to be defined nowhere at present.  */
         /* _Jv_diag_write(buf, len); */
