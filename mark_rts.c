@@ -758,8 +758,9 @@ STATIC void GC_push_gc_structures(void)
 
 GC_INNER void GC_cond_register_dynamic_libraries(void)
 {
-# if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
-     || defined(CYGWIN32) || defined(PCR)
+# if (defined(DYNAMIC_LOADING) && !defined(MSWIN_XBOX1)) \
+     || defined(CYGWIN32) || defined(MSWIN32) || defined(MSWINCE) \
+     || defined(PCR)
     GC_remove_tmp_roots();
     if (!GC_no_dls) GC_register_dynamic_libraries();
 # else

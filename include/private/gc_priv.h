@@ -2293,14 +2293,14 @@ GC_EXTERN signed_word GC_bytes_found;
 #endif
 
 #ifdef THREADS
-# if defined(MSWIN32) || defined(MSWINCE)
+# if defined(MSWIN32) || defined(MSWINCE) || defined(MSWIN_XBOX1)
     GC_EXTERN CRITICAL_SECTION GC_write_cs; /* defined in misc.c */
-#   ifdef GC_ASSERTIONS
-      GC_EXTERN GC_bool GC_write_disabled;
+# endif
+# if defined(GC_ASSERTIONS) && (defined(MSWIN32) || defined(MSWINCE))
+    GC_EXTERN GC_bool GC_write_disabled;
                                 /* defined in win32_threads.c;  */
                                 /* protected by GC_write_cs.    */
 
-#   endif
 # endif
 # ifdef MPROTECT_VDB
     GC_EXTERN volatile AO_TS_t GC_fault_handler_lock;

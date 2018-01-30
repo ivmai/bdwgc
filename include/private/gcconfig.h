@@ -523,7 +523,11 @@
 #     else
 #       define I386
 #     endif
-#     define MSWIN32    /* or Win64 */
+#     ifdef _XBOX_ONE
+#       define MSWIN_XBOX1
+#     else
+#       define MSWIN32  /* or Win64 */
+#     endif
 #     define mach_type_known
 #   endif
 #   if defined(_MSC_VER) && defined(_M_IA64)
@@ -2624,6 +2628,25 @@
 #         define HEAP_START DATAEND
 #       endif
 #   endif
+#   ifdef MSWIN_XBOX1
+#     define NO_GETENV
+#     define DATASTART (ptr_t)ALIGNMENT
+#     define DATAEND (ptr_t)ALIGNMENT
+      LONG64 durango_get_stack_bottom(void);
+#     define STACKBOTTOM ((ptr_t)durango_get_stack_bottom())
+#     define GETPAGESIZE() 4096
+#     ifndef USE_MMAP
+#       define USE_MMAP
+#     endif
+      /* The following is from sys/mman.h:  */
+#     define PROT_NONE  0
+#     define PROT_READ  1
+#     define PROT_WRITE 2
+#     define PROT_EXEC  4
+#     define MAP_PRIVATE 2
+#     define MAP_FIXED  0x10
+#     define MAP_FAILED ((void *)-1)
+#   endif
 #   ifdef MSWIN32
 #       define OS_TYPE "MSWIN32"
                 /* STACKBOTTOM and DATASTART are handled specially in   */
@@ -2906,12 +2929,13 @@
 # define MMAP_SUPPORTED
 #endif
 
-/* Sony PS/3 may not need to be this aggressive, but the default is     */
-/* likely too lax under heavy allocation pressure.  The platform does   */
-/* not have a virtual paging system, so it does not have a large        */
-/* virtual address space that a standard x64 platform has.              */
+/* Xbox One (DURANGO) may not need to be this aggressive, but the       */
+/* default is likely too lax under heavy allocation pressure.           */
+/* The platform does not have a virtual paging system, so it does not   */
+/* have a large virtual address space that a standard x64 platform has. */
 #if defined(USE_MUNMAP) && !defined(MUNMAP_THRESHOLD) \
-    && (defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3))
+    && (defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
+        || defined(MSWIN_XBOX1))
 # define MUNMAP_THRESHOLD 2
 #endif
 
@@ -3065,8 +3089,8 @@
 #if defined(GC_AIX_THREADS) && !defined(_AIX)
 # error --> inconsistent configuration
 #endif
-#if defined(GC_WIN32_THREADS) && !defined(MSWIN32) && !defined(CYGWIN32) \
-    && !defined(MSWINCE)
+#if defined(GC_WIN32_THREADS) && !defined(CYGWIN32) && !defined(MSWIN32) \
+    && !defined(MSWINCE) && !defined(MSWIN_XBOX1)
 # error --> inconsistent configuration
 #endif
 # if defined(GC_WIN32_PTHREADS) && defined(CYGWIN32)
@@ -3371,6 +3395,9 @@
                                             SIZET_SAT_ADD(bytes, \
                                                           GC_page_size)) \
                                   + GC_page_size - 1)
+# elif defined(MSWIN_XBOX1)
+    void *durango_get_mem(size_t bytes, size_t page_size);
+#   define GET_MEM(bytes) (struct hblk *)durango_get_mem(bytes, 0)
 # elif defined(MSWIN32) || defined(CYGWIN32)
     ptr_t GC_win32_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)

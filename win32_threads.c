@@ -1204,7 +1204,7 @@ STATIC void GC_suspend(GC_thread t)
     GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED, THREAD_HANDLE(t));
 }
 
-#if defined(GC_ASSERTIONS) && !defined(CYGWIN32)
+#if defined(GC_ASSERTIONS) && (defined(MSWIN32) || defined(MSWINCE))
   GC_INNER GC_bool GC_write_disabled = FALSE;
                 /* TRUE only if GC_stop_world() acquired GC_write_cs.   */
 #endif
@@ -1230,15 +1230,17 @@ GC_INNER void GC_stop_world(void)
     GC_please_stop = TRUE;
 # endif
 # ifndef CYGWIN32
-    GC_ASSERT(!GC_write_disabled);
+#   ifndef MSWIN_XBOX1
+      GC_ASSERT(!GC_write_disabled);
+#   endif
     EnterCriticalSection(&GC_write_cs);
+# endif
+# if defined(GC_ASSERTIONS) && (defined(MSWIN32) || defined(MSWINCE))
     /* It's not allowed to call GC_printf() (and friends) here down to  */
     /* LeaveCriticalSection (same applies recursively to GC_suspend,    */
     /* GC_delete_gc_thread_no_free, GC_get_max_thread_index, GC_size    */
     /* and GC_remove_protection).                                       */
-#   ifdef GC_ASSERTIONS
-      GC_write_disabled = TRUE;
-#   endif
+    GC_write_disabled = TRUE;
 # endif
 # ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
@@ -1271,10 +1273,10 @@ GC_INNER void GC_stop_world(void)
       }
     }
   }
+# if defined(GC_ASSERTIONS) && (defined(MSWIN32) || defined(MSWINCE))
+    GC_write_disabled = FALSE;
+# endif
 # ifndef CYGWIN32
-#   ifdef GC_ASSERTIONS
-      GC_write_disabled = FALSE;
-#   endif
     LeaveCriticalSection(&GC_write_cs);
 # endif
 # ifdef PARALLEL_MARK
@@ -1991,7 +1993,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       }
 
       for (i = 0; i < GC_markers_m1; ++i) {
-#       ifdef MSWINCE
+#       if defined(MSWINCE) || defined(MSWIN_XBOX1)
           HANDLE handle;
           DWORD thread_id;
 
@@ -2271,8 +2273,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     ExitThread(dwExitCode);
   }
 
-# if !defined(MSWINCE) && !defined(CYGWIN32)
-
+# if !defined(CYGWIN32) && !defined(MSWINCE) && !defined(MSWIN_XBOX1)
     GC_API GC_uintptr_t GC_CALL GC_beginthreadex(
                                   void *security, unsigned stack_size,
                                   unsigned (__stdcall *start_address)(void *),
@@ -2323,8 +2324,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       GC_unregister_my_thread();
       _endthreadex(retval);
     }
-
-# endif /* !MSWINCE && !CYGWIN32 */
+# endif /* !CYGWIN32 && !MSWINCE && !MSWIN_XBOX1 */
 
 #ifdef GC_WINMAIN_REDIRECT
   /* This might be useful on WinCE.  Shouldn't be used with GC_DLL.     */

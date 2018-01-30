@@ -19,7 +19,7 @@
 #if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS) \
     && !defined(MSWINCE) && !defined(SN_TARGET_ORBIS) && !defined(__CC_ARM)
 # include <sys/types.h>
-# if !defined(MSWIN32)
+# if !defined(MSWIN32) && !defined(MSWIN_XBOX1)
 #   include <unistd.h>
 # endif
 #endif
@@ -2114,8 +2114,17 @@ void GC_register_data_segments(void)
   extern char* GC_get_private_path_and_zero_file(void);
 #endif
 
-STATIC ptr_t GC_unix_mmap_get_mem(size_t bytes)
-{
+# ifdef MSWIN_XBOX1
+    void *durango_get_mem(size_t bytes, size_t page_size)
+    {
+      if (0 == bytes) return NULL;
+      return VirtualAlloc(NULL, bytes, MEM_COMMIT | MEM_TOP_DOWN,
+                          PAGE_READWRITE);
+    }
+
+# else
+  STATIC ptr_t GC_unix_mmap_get_mem(size_t bytes)
+  {
     void *result;
     static ptr_t last_addr = HEAP_START;
 
@@ -2164,9 +2173,10 @@ STATIC ptr_t GC_unix_mmap_get_mem(size_t bytes)
       ABORT(
        "GC_unix_get_mem: Memory returned by mmap is not aligned to HBLKSIZE.");
     return((ptr_t)result);
-}
+  }
+# endif  /* !MSWIN_XBOX1 */
 
-# endif  /* MMAP_SUPPORTED */
+#endif  /* MMAP_SUPPORTED */
 
 #if defined(USE_MMAP)
   ptr_t GC_unix_get_mem(size_t bytes)
@@ -2316,7 +2326,7 @@ void * os2_alloc(size_t bytes)
     return(result);
   }
 
-#elif defined(USE_WINALLOC) || defined(CYGWIN32)
+#elif (defined(USE_WINALLOC) && !defined(MSWIN_XBOX1)) || defined(CYGWIN32)
 
 # ifdef USE_GLOBAL_ALLOC
 #   define GLOBAL_ALLOC_TEST 1
@@ -2448,7 +2458,8 @@ void * os2_alloc(size_t bytes)
 /* systems.  If you have something else, don't define           */
 /* USE_MUNMAP.                                                  */
 
-#if !defined(NN_PLATFORM_CTR) && !defined(MSWIN32) && !defined(MSWINCE)
+#if !defined(NN_PLATFORM_CTR) && !defined(MSWIN32) && !defined(MSWINCE) \
+    && !defined(MSWIN_XBOX1)
 # include <unistd.h>
 # ifdef SN_TARGET_PS3
 #   include <sys/memory.h>

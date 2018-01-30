@@ -712,8 +712,9 @@ GC_API int GC_CALL GC_is_init_called(void)
   return GC_is_initialized;
 }
 
-#if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
-    GC_INNER CRITICAL_SECTION GC_write_cs;
+#if (defined(MSWIN32) || defined(MSWINCE) || defined(MSWIN_XBOX1)) \
+    && defined(THREADS)
+  GC_INNER CRITICAL_SECTION GC_write_cs;
 #endif
 
 #ifndef DONT_USE_ATEXIT
@@ -1549,7 +1550,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #   define WRITE(level, buf, len) switch_log_write(buf, len)
 
 #else
-# if !defined(AMIGA) && !defined(SN_TARGET_ORBIS) && !defined(__CC_ARM)
+# if !defined(AMIGA) && !defined(MSWIN_XBOX1) && !defined(SN_TARGET_ORBIS) \
+     && !defined(__CC_ARM)
 #   include <unistd.h>
 # endif
 
