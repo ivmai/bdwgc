@@ -391,7 +391,8 @@ STATIC void GC_remove_tmp_roots(void)
 GC_INNER ptr_t GC_approx_sp(void)
 {
     volatile word sp;
-#   if GC_GNUC_PREREQ(4, 0)
+#   if defined(CPPCHECK) || (__GNUC__ >= 4) /* GC_GNUC_PREREQ(4, 0) */
+        /* TODO: Use GC_GNUC_PREREQ after fixing a bug in cppcheck. */
         sp = (word)__builtin_frame_address(0);
 #   else
         sp = (word)&sp;
