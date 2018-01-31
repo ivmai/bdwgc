@@ -262,9 +262,13 @@ STATIC void GC_init_size_map(void)
 # define SMALL_CLEAR_SIZE 256   /* Clear this much every time.  */
 #endif
 
-#if defined(STACK_NOT_SCANNED)
+#if defined(ALWAYS_SMALL_CLEAR_STACK) || defined(STACK_NOT_SCANNED)
   GC_API void * GC_CALL GC_clear_stack(void *arg)
   {
+#   ifndef STACK_NOT_SCANNED
+      word volatile dummy[SMALL_CLEAR_SIZE];
+      BZERO((/* no volatile */ void *)dummy, sizeof(dummy));
+#   endif
     return arg;
   }
 #else
@@ -391,7 +395,7 @@ STATIC void GC_init_size_map(void)
     return arg;
   }
 
-#endif /* !STACK_NOT_SCANNED */
+#endif /* !ALWAYS_SMALL_CLEAR_STACK && !STACK_NOT_SCANNED */
 
 /* Return a pointer to the base address of p, given a pointer to a      */
 /* an address within an object.  Return 0 o.w.                          */
