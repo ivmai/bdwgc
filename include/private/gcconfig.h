@@ -626,7 +626,6 @@
 # endif
 
 # if defined(NN_PLATFORM_CTR)
-#   define ARM32
 #   define mach_type_known
 # endif
 
