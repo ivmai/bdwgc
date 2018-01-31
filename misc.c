@@ -257,61 +257,70 @@ STATIC void GC_init_size_map(void)
  * that are not written.  We partially address this by clearing
  * sections of the stack whenever we get control.
  */
+
+#ifndef SMALL_CLEAR_SIZE
+# define SMALL_CLEAR_SIZE 256   /* Clear this much every time.  */
+#endif
+
+#if defined(STACK_NOT_SCANNED)
+  GC_API void * GC_CALL GC_clear_stack(void *arg)
+  {
+    return arg;
+  }
+#else
+
 # ifdef THREADS
 #   define BIG_CLEAR_SIZE 2048  /* Clear this much now and then.        */
-#   define SMALL_CLEAR_SIZE 256 /* Clear this much every time.          */
 # else
-  STATIC word GC_stack_last_cleared = 0; /* GC_no when we last did this */
-  STATIC ptr_t GC_min_sp = NULL;
+    STATIC word GC_stack_last_cleared = 0; /* GC_no when we last did this */
+    STATIC ptr_t GC_min_sp = NULL;
                         /* Coolest stack pointer value from which       */
                         /* we've already cleared the stack.             */
-  STATIC ptr_t GC_high_water = NULL;
+    STATIC ptr_t GC_high_water = NULL;
                         /* "hottest" stack pointer value we have seen   */
                         /* recently.  Degrades over time.               */
-  STATIC word GC_bytes_allocd_at_reset = 0;
+    STATIC word GC_bytes_allocd_at_reset = 0;
 #   define DEGRADE_RATE 50
 # endif
 
-# define CLEAR_SIZE 213  /* Granularity for GC_clear_stack_inner */
+# if defined(ASM_CLEAR_CODE)
+    void *GC_clear_stack_inner(void *, ptr_t);
+# else
+    /* Clear the stack up to about limit.  Return arg.  This function   */
+    /* is not static because it could also be erroneously defined in .S */
+    /* file, so this error would be caught by the linker.               */
+    void *GC_clear_stack_inner(void *arg, ptr_t limit)
+    {
+#     define CLEAR_SIZE 213 /* granularity */
+      volatile word dummy[CLEAR_SIZE];
 
-#if defined(ASM_CLEAR_CODE)
-  void *GC_clear_stack_inner(void *, ptr_t);
-#else
-  /* Clear the stack up to about limit.  Return arg.  This function is  */
-  /* not static because it could also be erroneously defined in .S      */
-  /* file, so this error would be caught by the linker.                 */
-  void * GC_clear_stack_inner(void *arg, ptr_t limit)
-  {
-    volatile word dummy[CLEAR_SIZE];
-
-    BZERO((/* no volatile */ void *)dummy, sizeof(dummy));
-    if ((word)GC_approx_sp() COOLER_THAN (word)limit) {
-        (void) GC_clear_stack_inner(arg, limit);
+      BZERO((/* no volatile */ void *)dummy, sizeof(dummy));
+      if ((word)GC_approx_sp() COOLER_THAN (word)limit) {
+        (void)GC_clear_stack_inner(arg, limit);
+      }
+      /* Make sure the recursive call is not a tail call, and the bzero */
+      /* call is not recognized as dead code.                           */
+      GC_noop1((word)dummy);
+      return(arg);
     }
-    /* Make sure the recursive call is not a tail call, and the bzero   */
-    /* call is not recognized as dead code.                             */
-    GC_noop1((word)dummy);
-    return(arg);
-  }
-#endif
+# endif /* !ASM_CLEAR_CODE */
 
-#ifdef THREADS
-  /* Used to occasionally clear a bigger chunk. */
-  /* TODO: Should be more random than it is ... */
-  GC_ATTR_NO_SANITIZE_THREAD
-  static unsigned next_random_no(void)
-  {
-    static unsigned random_no = 0;
-    return ++random_no % 13;
-  }
-#endif /* THREADS */
+# ifdef THREADS
+    /* Used to occasionally clear a bigger chunk.       */
+    /* TODO: Should be more random than it is ...       */
+    GC_ATTR_NO_SANITIZE_THREAD
+    static unsigned next_random_no(void)
+    {
+      static unsigned random_no = 0;
+      return ++random_no % 13;
+    }
+# endif /* THREADS */
 
 /* Clear some of the inaccessible part of the stack.  Returns its       */
 /* argument, so it can be used in a tail call position, hence clearing  */
 /* another frame.                                                       */
-GC_API void * GC_CALL GC_clear_stack(void *arg)
-{
-# ifndef STACK_NOT_SCANNED
+  GC_API void * GC_CALL GC_clear_stack(void *arg)
+  {
     ptr_t sp = GC_approx_sp();  /* Hotter than actual sp */
 #   ifdef THREADS
         word volatile dummy[SMALL_CLEAR_SIZE];
@@ -364,8 +373,8 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
         MAKE_HOTTER(limit, SLOP);
         if ((word)sp COOLER_THAN (word)limit) {
           limit = (ptr_t)((word)limit & ~0xf);
-                          /* Make it sufficiently aligned for assembly    */
-                          /* implementations of GC_clear_stack_inner.     */
+                          /* Make it sufficiently aligned for assembly  */
+                          /* implementations of GC_clear_stack_inner.   */
           GC_min_sp = sp;
           return GC_clear_stack_inner(arg, limit);
         }
@@ -379,9 +388,10 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
         GC_bytes_allocd_at_reset = GC_bytes_allocd;
       }
 #   endif
-# endif
-  return arg;
-}
+    return arg;
+  }
+
+#endif /* !STACK_NOT_SCANNED */
 
 /* Return a pointer to the base address of p, given a pointer to a      */
 /* an address within an object.  Return 0 o.w.                          */
