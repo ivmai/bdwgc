@@ -788,6 +788,7 @@
      && !defined(__FUJITSU) /* for FX10 system */ \
      && !(defined(POWERPC) && defined(DARWIN)) /* for MacOS X 10.3.9 */ \
      && !defined(RTEMS) \
+     && !defined(__ARMCC_VERSION) /* does not exist in armcc gnu emu */ \
      && !defined(__clang__) /* since no-op in clang (3.0) */
 #   define HAVE_BUILTIN_UNWIND_INIT
 # endif
