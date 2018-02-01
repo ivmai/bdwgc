@@ -563,10 +563,15 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #   elif defined(MSWINCE) && defined(NO_DEBUGGING)
 #     define ABORT(msg) (GC_on_abort(msg), ExitProcess(-1))
 #   elif defined(MSWIN32) || defined(MSWINCE)
-#     define ABORT(msg) { GC_on_abort(msg); DebugBreak(); }
+#     if defined(_CrtDbgBreak) && defined(_DEBUG) && defined(_MSC_VER)
+#       define ABORT(msg) { GC_on_abort(msg); \
+                            _CrtDbgBreak() /* __debugbreak() */; }
+#     else
+#       define ABORT(msg) { GC_on_abort(msg); DebugBreak(); }
                 /* Note that: on a WinCE box, this could be silently    */
                 /* ignored (i.e., the program is not aborted);          */
                 /* DebugBreak is a statement in some toolchains.        */
+#     endif
 #   else
 #     define ABORT(msg) (GC_on_abort(msg), abort())
 #   endif /* !MSWIN32 */
