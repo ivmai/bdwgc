@@ -20,7 +20,8 @@
 #include <stdio.h>
 #if !defined(MACOS) && !defined(MSWINCE)
 # include <signal.h>
-# if !defined(__CC_ARM) && !defined(SN_TARGET_ORBIS)
+# if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2) \
+     && !defined(__CC_ARM)
 #   include <sys/types.h>
 # endif
 #endif

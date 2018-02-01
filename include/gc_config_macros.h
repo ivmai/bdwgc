@@ -77,7 +77,7 @@
     || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS) \
     || defined(GC_OSF1_THREADS) || defined(GC_SOLARIS_THREADS) \
     || defined(GC_WIN32_THREADS) || defined(GC_RTEMS_PTHREADS) \
-    || defined(SN_TARGET_ORBIS)
+    || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2)
 # ifndef GC_THREADS
 #   define GC_THREADS
 # endif

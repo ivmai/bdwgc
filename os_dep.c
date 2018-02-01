@@ -17,7 +17,8 @@
 #include "private/gc_priv.h"
 
 #if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS) \
-    && !defined(MSWINCE) && !defined(SN_TARGET_ORBIS) && !defined(__CC_ARM)
+    && !defined(MSWINCE) && !defined(SN_TARGET_ORBIS) \
+    && !defined(SN_TARGET_PSP2) && !defined(__CC_ARM)
 # include <sys/types.h>
 # if !defined(MSWIN32) && !defined(MSWIN_XBOX1)
 #   include <unistd.h>
@@ -2084,7 +2085,7 @@ void GC_register_data_segments(void)
      && !defined(USE_WINALLOC) && !defined(MACOS) && !defined(DOS4GW) \
      && !defined(NINTENDO_SWITCH) && !defined(NONSTOP) \
      && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PS3) \
-     && !defined(RTEMS) && !defined(__CC_ARM)
+     && !defined(SN_TARGET_PSP2) && !defined(RTEMS) && !defined(__CC_ARM)
 
 # define SBRK_ARG_T ptrdiff_t
 

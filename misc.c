@@ -50,6 +50,8 @@
 # ifdef PCR
 #   include "il/PCR_IL.h"
     GC_INNER PCR_Th_ML GC_allocate_ml;
+# elif defined(SN_TARGET_PSP2)
+    GC_INNER WapiMutex GC_allocate_ml_PSP2 = { 0, NULL };
 # elif defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3)
 #   include <pthread.h>
     GC_INNER pthread_mutex_t GC_allocate_ml;
@@ -1565,13 +1567,14 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
 #else
 # if !defined(AMIGA) && !defined(MSWIN_XBOX1) && !defined(SN_TARGET_ORBIS) \
-     && !defined(__CC_ARM)
+     && !defined(SN_TARGET_PSP2) && !defined(__CC_ARM)
 #   include <unistd.h>
 # endif
 
   STATIC int GC_write(int fd, const char *buf, size_t len)
   {
-#   if defined(ECOS) || defined(SN_TARGET_ORBIS) || defined(NOSYS)
+#   if defined(ECOS) || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2) \
+       || defined(NOSYS)
 #     ifdef ECOS
         /* FIXME: This seems to be defined nowhere at present.  */
         /* _Jv_diag_write(buf, len); */

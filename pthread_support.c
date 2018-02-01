@@ -35,7 +35,7 @@
 # include <time.h>
 # include <errno.h>
 # include <unistd.h>
-# if !defined(SN_TARGET_ORBIS)
+# if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
 #   if !defined(GC_RTEMS_PTHREADS)
 #     include <sys/mman.h>
 #   endif
@@ -1539,7 +1539,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
     UNLOCK();
 }
 
-#if !defined(SN_TARGET_ORBIS)
+#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
   GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
   {
     int result;
@@ -1598,7 +1598,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
     }
     return result;
   }
-#endif /* !SN_TARGET_ORBIS */
+#endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
 
 #ifndef GC_NO_PTHREAD_CANCEL
   /* We should deal with the fact that apparently on Solaris and,       */
@@ -1813,7 +1813,7 @@ STATIC void * GC_start_routine(void * arg)
 #   endif
 }
 
-#if !defined(SN_TARGET_ORBIS)
+#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
   GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
                        GC_PTHREAD_CREATE_CONST pthread_attr_t *attr,
                        void *(*start_routine)(void *), void *arg)
@@ -1919,7 +1919,7 @@ STATIC void * GC_start_routine(void * arg)
 
     return(result);
   }
-#endif /* !SN_TARGET_ORBIS */
+#endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
 
 #if defined(USE_SPIN_LOCK) || !defined(NO_PTHREAD_TRYLOCK)
 /* Spend a few cycles in a way that can't introduce contention with     */

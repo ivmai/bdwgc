@@ -29,7 +29,7 @@
 # ifdef THREADS
 
 #  if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
-      && !defined(SN_TARGET_ORBIS)
+      && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
 #    include "gc_atomic_ops.h"
 #  endif
 
@@ -122,8 +122,20 @@
 #    define NO_THREAD ((unsigned long)(-1l))
                 /* != NUMERIC_THREAD_ID(pthread_self()) for any thread */
 
-#    if (!defined(THREAD_LOCAL_ALLOC) || defined(USE_SPIN_LOCK)) \
-        && !defined(USE_PTHREAD_LOCKS)
+#    ifdef SN_TARGET_PSP2
+#      include "psp2-support.h"
+       GC_EXTERN WapiMutex GC_allocate_ml_PSP2;
+#      define UNCOND_LOCK() { int res; GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                              res = PSP2_MutexLock(&GC_allocate_ml_PSP2); \
+                              GC_ASSERT(0 == res); (void)res; \
+                              SET_LOCK_HOLDER(); }
+#      define UNCOND_UNLOCK() { int res; GC_ASSERT(I_HOLD_LOCK()); \
+                              UNSET_LOCK_HOLDER(); \
+                              res = PSP2_MutexUnlock(&GC_allocate_ml_PSP2); \
+                              GC_ASSERT(0 == res); (void)res; }
+
+#    elif (!defined(THREAD_LOCAL_ALLOC) || defined(USE_SPIN_LOCK)) \
+          && !defined(USE_PTHREAD_LOCKS)
       /* In the THREAD_LOCAL_ALLOC case, the allocation lock tends to   */
       /* be held for long periods, if it is held at all.  Thus spinning */
       /* and sleeping for fixed periods are likely to result in         */

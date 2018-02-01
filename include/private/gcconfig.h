@@ -146,7 +146,8 @@
           && !defined(OPENBSD) && !defined(DARWIN) && !defined(_WIN32) \
           && !defined(__CEGCC__) && !defined(NN_PLATFORM_CTR) \
           && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
-          && !defined(SN_TARGET_ORBIS) && !defined(SYMBIAN)
+          && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2) \
+          && !defined(SYMBIAN)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -622,6 +623,10 @@
 #   else
 #     define TILEPRO
 #   endif
+#   define mach_type_known
+# endif
+
+# if defined(SN_TARGET_PSP2)
 #   define mach_type_known
 # endif
 
@@ -2329,6 +2334,13 @@
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
 #   endif
+#   ifdef SN_TARGET_PSP2
+#     define NO_HANDLE_FORK
+#     define DATASTART (ptr_t)ALIGNMENT
+#     define DATAEND (ptr_t)ALIGNMENT
+      void *psp2_get_stack_bottom(void);
+#     define STACKBOTTOM ((ptr_t)psp2_get_stack_bottom())
+#   endif
 #   ifdef NN_PLATFORM_CTR
       extern unsigned char Image$$ZI$$ZI$$Base[];
 #     define DATASTART (ptr_t)(Image$$ZI$$ZI$$Base)
@@ -2934,7 +2946,7 @@
 /* have a large virtual address space that a standard x64 platform has. */
 #if defined(USE_MUNMAP) && !defined(MUNMAP_THRESHOLD) \
     && (defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
-        || defined(MSWIN_XBOX1))
+        || defined(SN_TARGET_PSP2) || defined(MSWIN_XBOX1))
 # define MUNMAP_THRESHOLD 2
 #endif
 
@@ -3099,7 +3111,8 @@
 
 #if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
     || defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
-    || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3)
+    || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
+    || defined(SN_TARGET_PSP2)
 # define THREADS
 #endif
 
@@ -3427,6 +3440,9 @@
 # elif defined(SN_TARGET_PS3)
     void *ps3_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)ps3_get_mem(bytes)
+# elif defined(SN_TARGET_PSP2)
+    void *psp2_get_mem(size_t bytes);
+#   define GET_MEM(bytes) (struct hblk*)psp2_get_mem(bytes)
 # elif defined(NINTENDO_SWITCH)
     void *switch_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)switch_get_mem(bytes)
