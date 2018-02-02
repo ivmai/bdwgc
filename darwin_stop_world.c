@@ -64,6 +64,14 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
 #     else
         __asm__ __volatile__ ("ld %0,0(r1)" : "=r" (frame));
 #     endif
+#   elif defined(ARM32)
+        volatile ptr_t sp_reg;
+        __asm__ __volatile__ ("mov %0, r7\n" : "=r" (sp_reg));
+        frame = (StackFrame *)sp_reg;
+#   elif defined(AARCH64)
+        volatile ptr_t sp_reg;
+        __asm__ __volatile__ ("mov %0, x29\n" : "=r" (sp_reg));
+        frame = (StackFrame *)sp_reg;
 #   else
       ABORT("GC_FindTopOfStack(0) is not implemented");
 #   endif
