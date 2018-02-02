@@ -282,13 +282,15 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #   elif defined(ARM32)
       lo = (void *)state.THREAD_FLD(sp);
 #     ifndef DARWIN_DONT_PARSE_STACK
-        *phi = GC_FindTopOfStack(state.THREAD_FLD(sp));
+        *phi = GC_FindTopOfStack(state.THREAD_FLD(r[7])); /* fp */
 #     endif
       {
         int j;
-        for (j = 0; j <= 12; j++) {
+        for (j = 0; j < 7; j++)
           GC_push_one(state.THREAD_FLD(r[j]));
-        }
+        j++; /* "r7" is skipped (iOS uses it as a frame pointer) */
+        for (; j <= 12; j++)
+          GC_push_one(state.THREAD_FLD(r[j]));
       }
       /* "pc" and "sp" are skipped */
       GC_push_one(state.THREAD_FLD(lr));
@@ -297,7 +299,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #   elif defined(AARCH64)
       lo = (void *)state.THREAD_FLD(sp);
 #     ifndef DARWIN_DONT_PARSE_STACK
-        *phi = GC_FindTopOfStack(state.THREAD_FLD(sp));
+        *phi = GC_FindTopOfStack(state.THREAD_FLD(fp));
 #     endif
       {
         int j;
@@ -305,14 +307,13 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
           GC_push_one(state.THREAD_FLD(x[j]));
         }
       }
-      /* "cpsr", "pc" and "sp" are skipped */
-      GC_push_one(state.THREAD_FLD(fp));
+      /* "cpsr", "fp", "pc" and "sp" are skipped */
       GC_push_one(state.THREAD_FLD(lr));
 
 #   elif defined(CPPCHECK)
       lo = NULL;
 #   else
-#     error FIXME for non-x86 || ppc || arm architectures
+#     error FIXME for non-arm/ppc/x86 architectures
 #   endif
   } /* thread != my_thread */
 
