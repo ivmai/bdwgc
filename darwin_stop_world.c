@@ -55,21 +55,18 @@ typedef struct StackFrame {
 
 GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
 {
-  StackFrame *frame;
+  StackFrame *frame = (StackFrame *)stack_start;
 
-# ifdef POWERPC
-    if (stack_start == 0) {
+  if (stack_start == 0) {
+#   ifdef POWERPC
 #     if CPP_WORDSZ == 32
         __asm__ __volatile__ ("lwz %0,0(r1)" : "=r" (frame));
 #     else
         __asm__ __volatile__ ("ld %0,0(r1)" : "=r" (frame));
 #     endif
-    } else
-# else
-    GC_ASSERT(stack_start != 0); /* not implemented */
-# endif /* !POWERPC */
-  /* else */ {
-    frame = (StackFrame *)stack_start;
+#   else
+      ABORT("GC_FindTopOfStack(0) is not implemented");
+#   endif
   }
 
 # ifdef DEBUG_THREADS_EXTRA
