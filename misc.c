@@ -634,6 +634,8 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
 #   define GC_ENVFILE_MAXLEN 0x4000
 # endif
 
+# define GC_ENV_FILE_EXT ".gc.env"
+
   /* The routine initializes GC_envfile_content from the GC "env" file. */
   STATIC void GC_envfile_init(void)
   {
@@ -650,7 +652,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
       if (len > 4 && path[len - 4] == (TCHAR)'.') {
         len -= 4; /* strip executable file extension */
       }
-      BCOPY(TEXT(".gc.env"), &path[len], sizeof(TEXT(".gc.env")));
+      BCOPY(TEXT(GC_ENV_FILE_EXT), &path[len], sizeof(TEXT(GC_ENV_FILE_EXT)));
       hFile = CreateFile(path, GENERIC_READ,
                          FILE_SHARE_READ | FILE_SHARE_WRITE,
                          NULL /* lpSecurityAttributes */, OPEN_EXISTING,
