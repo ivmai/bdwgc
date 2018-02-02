@@ -292,9 +292,8 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
         for (; j <= 12; j++)
           GC_push_one(state.THREAD_FLD(r[j]));
       }
-      /* "pc" and "sp" are skipped */
+      /* "cpsr", "pc" and "sp" are skipped */
       GC_push_one(state.THREAD_FLD(lr));
-      GC_push_one(state.THREAD_FLD(cpsr));
 
 #   elif defined(AARCH64)
       lo = (void *)state.THREAD_FLD(sp);
