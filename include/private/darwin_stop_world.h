@@ -25,6 +25,10 @@
 #include <mach/mach.h>
 #include <mach/thread_act.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct thread_stop_info {
   mach_port_t mach_thread;
   ptr_t stack_ptr; /* Valid only when thread is in a "blocked" state.   */
@@ -41,6 +45,10 @@ struct thread_stop_info {
 
 #if defined(PARALLEL_MARK) && !defined(GC_NO_THREADS_DISCOVERY)
   GC_INNER GC_bool GC_is_mach_marker(thread_act_t);
+#endif
+
+#ifdef __cplusplus
+} /* extern "C" */
 #endif
 
 #endif

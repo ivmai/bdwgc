@@ -18,6 +18,10 @@
 #ifndef GC_LOCKS_H
 #define GC_LOCKS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Mutual exclusion between allocator/collector routines.
  * Needed if there is more than one allocator thread.
@@ -30,12 +34,32 @@
 
 #  if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
       && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #    include "gc_atomic_ops.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #  endif
 
 #  ifdef PCR
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #    include <base/PCR_Base.h>
 #    include <th/PCR_Th.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
      GC_EXTERN PCR_Th_ML GC_allocate_ml;
 #    if defined(CPPCHECK)
 #      define DCL_LOCK_STATE /* empty */
@@ -59,7 +83,17 @@
 #      define WIN32_LEAN_AND_MEAN 1
 #    endif
 #    define NOSERVICE
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #    include <windows.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #    define NO_THREAD (DWORD)(-1)
      GC_EXTERN CRITICAL_SECTION GC_allocate_ml;
 #    ifdef GC_ASSERTIONS
@@ -86,7 +120,16 @@
 #      define UNCOND_UNLOCK() LeaveCriticalSection(&GC_allocate_ml)
 #    endif /* !GC_ASSERTIONS */
 #  elif defined(GC_PTHREADS)
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #    include <pthread.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
      /* Posix allows pthread_t to be a struct, though it rarely is.     */
      /* Unfortunately, we need to use a pthread_t to index a data       */
@@ -123,7 +166,17 @@
                 /* != NUMERIC_THREAD_ID(pthread_self()) for any thread */
 
 #    ifdef SN_TARGET_PSP2
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #      include "psp2-support.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
        GC_EXTERN WapiMutex GC_allocate_ml_PSP2;
 #      define UNCOND_LOCK() { int res; GC_ASSERT(I_DONT_HOLD_LOCK()); \
                               res = PSP2_MutexLock(&GC_allocate_ml_PSP2); \
@@ -167,7 +220,17 @@
 #      endif
 #    endif /* THREAD_LOCAL_ALLOC || USE_PTHREAD_LOCKS */
 #    ifdef USE_PTHREAD_LOCKS
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #      include <pthread.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
        GC_EXTERN pthread_mutex_t GC_allocate_ml;
 #      ifdef GC_ASSERTIONS
 #        define UNCOND_LOCK() { GC_ASSERT(I_DONT_HOLD_LOCK()); \
@@ -267,5 +330,9 @@
 # ifndef DCL_LOCK_STATE
 #   define DCL_LOCK_STATE
 # endif
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* GC_LOCKS_H */

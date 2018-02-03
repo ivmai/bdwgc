@@ -18,6 +18,10 @@
 #ifndef GC_DARWIN_SEMAPHORE_H
 #define GC_DARWIN_SEMAPHORE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if !defined(GC_DARWIN_THREADS)
 # error darwin_semaphore.h included with GC_DARWIN_THREADS not defined
 #endif
@@ -76,5 +80,9 @@ GC_INLINE int sem_destroy(sem_t *sem) {
     return pthread_cond_destroy(&sem->cond) != 0
            || pthread_mutex_destroy(&sem->mutex) != 0 ? -1 : 0;
 }
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif
