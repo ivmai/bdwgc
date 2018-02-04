@@ -9,14 +9,14 @@ int main(void) {
     GC_INIT();  /* Needed if thread-local allocation is enabled.        */
                 /* FIXME: This is not ideal.                            */
     for (i = 0; i < 10; ++i) {
-        p[i] = malloc(sizeof(int)+i);
+        p[i] = (int*)malloc(sizeof(int)+i);
     }
     CHECK_LEAKS();
     for (i = 1; i < 10; ++i) {
         free(p[i]);
     }
     for (i = 0; i < 9; ++i) {
-        p[i] = malloc(sizeof(int)+i);
+        p[i] = (int*)malloc(sizeof(int)+i);
     }
     CHECK_LEAKS();
     CHECK_LEAKS();
