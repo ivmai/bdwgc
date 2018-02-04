@@ -47,6 +47,10 @@
 # endif
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef GC_PREFETCH_FOR_WRITE
 # if GC_GNUC_PREREQ(3, 0) && !defined(GC_NO_PREFETCH_FOR_WRITE)
 #   define GC_PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
@@ -181,5 +185,9 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 
 GC_API void GC_CALL GC_print_free_list(int /* kind */,
                                        size_t /* sz_in_granules */);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* !GC_INLINE_H */

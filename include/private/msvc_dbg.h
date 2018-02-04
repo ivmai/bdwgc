@@ -24,6 +24,9 @@
 
 #include <stdlib.h>
 
+/* Note: Only wrap our own declarations, and not other people's headers.
+ * i.e. never put extern "C" around an #include
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif

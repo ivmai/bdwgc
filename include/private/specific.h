@@ -16,6 +16,13 @@
 
 #include "gc_atomic_ops.h"
 
+/* Note: Only wrap our own declarations, and not other people's headers.
+ * i.e. never put extern "C" around an #include
+ */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Called during key creation or setspecific.           */
 /* For the GC we already hold lock.                     */
 /* Currently allocated objects leak on thread exit.     */
@@ -32,7 +39,7 @@
 
 /* An entry describing a thread-specific value for a given thread.      */
 /* All such accessible structures preserve the invariant that if either */
-/* thread is a valid pthread id or qtid is a valid "quick tread id"     */
+/* thread is a valid pthread id or qtid is a valid "quick thread id"     */
 /* for a thread, then value holds the corresponding thread specific     */
 /* value.  This invariant must be preserved at ALL times, since         */
 /* asynchronous reads are allowed.                                      */
@@ -99,3 +106,7 @@ GC_INLINE void * GC_getspecific(tsd * key)
     }
     return GC_slow_getspecific(key, qtid, entry_ptr);
 }
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif

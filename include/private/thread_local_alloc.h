@@ -94,6 +94,7 @@ typedef struct thread_local_freelists {
         /* Value used for gcj_freelists[-1]; allocation is      */
         /* erroneous.                                           */
 # endif
+
   /* Free lists contain either a pointer or a small count       */
   /* reflecting the number of granules allocated at that        */
   /* size.                                                      */
@@ -152,6 +153,13 @@ typedef struct thread_local_freelists {
 # error implement me
 #endif
 
+/* Note: Only wrap our own declarations, and not other people's headers.
+ * i.e. never put extern "C" around an #include
+ */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Each thread structure must be initialized.   */
 /* This call must be made from the new thread.  */
 /* Caller holds allocation lock.                */
@@ -181,6 +189,10 @@ extern
 /* This is set up by the thread_local_alloc implementation.  No need    */
 /* for cleanup on thread exit.  But the thread support layer makes sure */
 /* that GC_thread_key is traced, if necessary.                          */
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* THREAD_LOCAL_ALLOC */
 

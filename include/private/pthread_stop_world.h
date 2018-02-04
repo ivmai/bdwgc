@@ -18,6 +18,13 @@
 #ifndef GC_PTHREAD_STOP_WORLD_H
 #define GC_PTHREAD_STOP_WORLD_H
 
+/* Note: Only wrap our own declarations, and not other people's headers.
+ * i.e. never put extern "C" around an #include
+ */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct thread_stop_info {
 #   if !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
       volatile AO_t last_stop_count;
@@ -45,5 +52,9 @@ struct thread_stop_info {
 };
 
 GC_INNER void GC_stop_init(void);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif
