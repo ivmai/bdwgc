@@ -14,6 +14,25 @@
 # modified is included with the above copyright notice.
 ##
 
+SET_SOURCE_FILES_PROPERTIES(
+	disclaim_bench.c
+	disclaim_test.c
+	huge_test.c
+	initsecondarythread.c
+	leak_test.c
+	middle.c
+	realloc_test.c
+	smash_test.c
+	staticrootslib.c
+	staticrootstest.c
+	subthread_create.c
+	test.c
+	test_atomic_ops.c
+	thread_leak_test.c
+	threadkey_test.c
+	trace_test.c
+	PROPERTIES LANGUAGE CXX)
+
 ADD_DEFINITIONS(-DGC_NOT_DLL)
 
 ADD_EXECUTABLE(gctest WIN32 test.c)
