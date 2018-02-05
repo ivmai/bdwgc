@@ -31,7 +31,7 @@
 
 /* An entry describing a thread-specific value for a given thread.      */
 /* All such accessible structures preserve the invariant that if either */
-/* thread is a valid pthread id or qtid is a valid "quick tread id"     */
+/* thread is a valid pthread id or qtid is a valid "quick thread id"    */
 /* for a thread, then value holds the corresponding thread specific     */
 /* value.  This invariant must be preserved at ALL times, since         */
 /* asynchronous reads are allowed.                                      */
