@@ -432,7 +432,11 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include <windows.h>
 # include <winbase.h>
 # define CLOCK_TYPE DWORD
-# define GET_TIME(x) (void)(x = GetTickCount())
+# ifdef MSWINRT_FLAVOR
+#   define GET_TIME(x) (void)(x = (DWORD)GetTickCount64())
+# else
+#   define GET_TIME(x) (void)(x = GetTickCount())
+# endif
 # define MS_TIME_DIFF(a,b) ((long)((a)-(b)))
 #elif defined(NN_PLATFORM_CTR)
 # define CLOCK_TYPE long long

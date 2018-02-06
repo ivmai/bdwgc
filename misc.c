@@ -795,7 +795,7 @@ GC_API int GC_CALL GC_is_init_called(void)
   }
 #endif
 
-#if defined(MSWIN32) && (!defined(SMALL_CONFIG) \
+#if defined(MSWIN32) && !defined(MSWINRT_FLAVOR) && (!defined(SMALL_CONFIG) \
                          || (!defined(_WIN64) && defined(GC_WIN32_THREADS) \
                              && defined(CHECK_NOT_WOW64)))
   STATIC void GC_win32_MessageBoxA(const char *msg, const char *caption,
@@ -927,20 +927,27 @@ GC_API void GC_CALL GC_init(void)
 #     endif
 #   endif /* THREADS */
 #   if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-     {
-#     ifndef MSWINCE
-        BOOL (WINAPI *pfn) (LPCRITICAL_SECTION, DWORD) = NULL;
-        HMODULE hK32 = GetModuleHandle(TEXT("kernel32.dll"));
-        if (hK32)
-          pfn = (BOOL (WINAPI *) (LPCRITICAL_SECTION, DWORD))
-                GetProcAddress (hK32,
-                                "InitializeCriticalSectionAndSpinCount");
-        if (pfn)
-            pfn(&GC_allocate_ml, 4000);
-        else
-#     endif /* !MSWINCE */
-        /* else */ InitializeCriticalSection (&GC_allocate_ml);
-     }
+#     ifndef SPIN_COUNT
+#       define SPIN_COUNT 4000
+#     endif
+#     ifdef MSWINRT_FLAVOR
+        InitializeCriticalSectionAndSpinCount(&GC_allocate_ml, SPIN_COUNT);
+#     else
+        {
+#         ifndef MSWINCE
+            BOOL (WINAPI *pfn)(LPCRITICAL_SECTION, DWORD) = 0;
+            HMODULE hK32 = GetModuleHandle(TEXT("kernel32.dll"));
+            if (hK32)
+              pfn = (BOOL (WINAPI *)(LPCRITICAL_SECTION, DWORD))
+                      GetProcAddress(hK32,
+                                     "InitializeCriticalSectionAndSpinCount");
+            if (pfn) {
+              pfn(&GC_allocate_ml, SPIN_COUNT);
+            } else
+#         endif /* !MSWINCE */
+          /* else */ InitializeCriticalSection(&GC_allocate_ml);
+        }
+#     endif
 #   endif /* GC_WIN32_THREADS */
 #   if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
       InitializeCriticalSection(&GC_write_cs);
@@ -1410,9 +1417,97 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #   define IF_NEED_TO_LOCK(x)
 # endif /* !THREADS */
 
+# ifdef MSWINRT_FLAVOR
+#   include <windows.storage.h>
+
+    /* This API is defined in roapi.h, but we cannot include it here    */
+    /* since it does not compile in C.                                  */
+    DECLSPEC_IMPORT HRESULT WINAPI RoGetActivationFactory(
+                                        HSTRING activatableClassId,
+                                        REFIID iid, void** factory);
+
+    static GC_bool getWinRTLogPath(wchar_t* buf, size_t bufLen)
+    {
+      static const GUID kIID_IApplicationDataStatics = {
+        0x5612147B, 0xE843, 0x45E3,
+        0x94, 0xD8, 0x06, 0x16, 0x9E, 0x3C, 0x8E, 0x17
+      };
+      static const GUID kIID_IStorageItem = {
+        0x4207A996, 0xCA2F, 0x42F7,
+        0xBD, 0xE8, 0x8B, 0x10, 0x45, 0x7A, 0x7F, 0x30
+      };
+      GC_bool result = FALSE;
+      HSTRING_HEADER appDataClassNameHeader;
+      HSTRING appDataClassName;
+      __x_ABI_CWindows_CStorage_CIApplicationDataStatics* appDataStatics = 0;
+
+      GC_ASSERT(bufLen > 0);
+      if (SUCCEEDED(WindowsCreateStringReference(
+                      RuntimeClass_Windows_Storage_ApplicationData,
+                      (sizeof(RuntimeClass_Windows_Storage_ApplicationData)-1)
+                        / sizeof(wchar_t),
+                      &appDataClassNameHeader, &appDataClassName))
+          && SUCCEEDED(RoGetActivationFactory(appDataClassName,
+                                              &kIID_IApplicationDataStatics,
+                                              &appDataStatics))) {
+        __x_ABI_CWindows_CStorage_CIApplicationData* appData = NULL;
+        __x_ABI_CWindows_CStorage_CIStorageFolder* tempFolder = NULL;
+        __x_ABI_CWindows_CStorage_CIStorageItem* tempFolderItem = NULL;
+        HSTRING tempPath = NULL;
+
+        if (SUCCEEDED(appDataStatics->lpVtbl->get_Current(appDataStatics,
+                                                          &appData))
+            && SUCCEEDED(appData->lpVtbl->get_TemporaryFolder(appData,
+                                                              &tempFolder))
+            && SUCCEEDED(tempFolder->lpVtbl->QueryInterface(tempFolder,
+                                                        &kIID_IStorageItem,
+                                                        &tempFolderItem))
+            && SUCCEEDED(tempFolderItem->lpVtbl->get_Path(tempFolderItem,
+                                                          &tempPath))) {
+          UINT32 tempPathLen;
+          const wchar_t* tempPathBuf =
+                          WindowsGetStringRawBuffer(tempPath, &tempPathLen);
+
+          buf[0] = '\0';
+          if (wcsncat_s(buf, bufLen, tempPathBuf, tempPathLen) == 0
+              && wcscat_s(buf, bufLen, L"\\") == 0
+              && wcscat_s(buf, bufLen, TEXT(GC_LOG_STD_NAME)) == 0)
+            result = TRUE;
+          WindowsDeleteString(tempPath);
+        }
+
+        if (tempFolderItem != NULL)
+          tempFolderItem->lpVtbl->Release(tempFolderItem);
+        if (tempFolder != NULL)
+          tempFolder->lpVtbl->Release(tempFolder);
+        if (appData != NULL)
+          appData->lpVtbl->Release(appData);
+        appDataStatics->lpVtbl->Release(appDataStatics);
+      }
+      return result;
+    }
+# endif /* MSWINRT_FLAVOR */
+
   STATIC HANDLE GC_CreateLogFile(void)
   {
     HANDLE hFile;
+# ifdef MSWINRT_FLAVOR
+      TCHAR pathBuf[_MAX_PATH + 0x10]; /* buffer for path + ext */
+
+      hFile = INVALID_HANDLE_VALUE;
+      if (getWinRTLogPath(pathBuf, _MAX_PATH + 1)) {
+        CREATEFILE2_EXTENDED_PARAMETERS extParams;
+
+        BZERO(&extParams, sizeof(extParams));
+        extParams.dwSize = sizeof(extParams);
+        extParams.dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
+        extParams.dwFileFlags = GC_print_stats == VERBOSE ? 0
+                                    : FILE_FLAG_WRITE_THROUGH;
+        hFile = CreateFile2(pathBuf, GENERIC_WRITE, FILE_SHARE_READ,
+                            CREATE_ALWAYS, &extParams);
+      }
+
+# else
     TCHAR *logPath;
     BOOL appendToFile = FALSE;
 #   if !defined(NO_GETENV_WIN32) || !defined(OLD_WIN32_LOG_FILE)
@@ -1451,6 +1546,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
                             /* immediately flush writes unless very verbose */
                             FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH,
                        NULL /* hTemplateFile */);
+
 #   ifndef NO_GETENV_WIN32
       if (appendToFile && hFile != INVALID_HANDLE_VALUE) {
         LONG posHigh = 0;
@@ -1458,6 +1554,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
                                   /* Seek to file end (ignoring any error) */
       }
 #   endif
+# endif
     return hFile;
   }
 

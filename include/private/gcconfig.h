@@ -521,13 +521,18 @@
            && !defined(SYMBIAN))
 #     if defined(__LP64__) || defined(_WIN64)
 #       define X86_64
-#     else
+#     elif defined(_M_ARM)
+#       define ARM32
+#     else /* _M_IX86 */
 #       define I386
 #     endif
 #     ifdef _XBOX_ONE
 #       define MSWIN_XBOX1
 #     else
 #       define MSWIN32  /* or Win64 */
+#       if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+#         define MSWINRT_FLAVOR
+#       endif
 #     endif
 #     define mach_type_known
 #   endif
@@ -2670,7 +2675,9 @@
 #         define MPROTECT_VDB
 #       endif
 #       define GWW_VDB
-#       define DATAEND  /* not needed */
+#       ifndef DATAEND
+#         define DATAEND    /* not needed */
+#       endif
 #   endif
 # endif /* X86_64 */
 
@@ -3219,7 +3226,8 @@
 #  define USE_MARK_BYTES
 #endif
 
-#if defined(MSWINCE) && !defined(__CEGCC__) && !defined(NO_GETENV)
+#if (defined(MSWINCE) && !defined(__CEGCC__) || defined(MSWINRT_FLAVOR)) \
+    && !defined(NO_GETENV)
 # define NO_GETENV
 #endif
 

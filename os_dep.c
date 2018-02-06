@@ -1644,7 +1644,18 @@ void GC_register_data_segments(void)
         }
 #     endif
 
-      hK32 = GetModuleHandle(TEXT("kernel32.dll"));
+#     ifdef MSWINRT_FLAVOR
+        {
+          MEMORY_BASIC_INFORMATION memInfo;
+          SIZE_T result = VirtualQuery(GetProcAddress,
+                                       &memInfo, sizeof(memInfo));
+          if (result != sizeof(memInfo))
+            ABORT("Weird VirtualQuery result");
+          hK32 = (HMODULE)memInfo.AllocationBase;
+        }
+#     else
+        hK32 = GetModuleHandle(TEXT("kernel32.dll"));
+#     endif
       if (hK32 != (HMODULE)0 &&
           (GetWriteWatch_func = (GetWriteWatch_type)GetProcAddress(hK32,
                                                 "GetWriteWatch")) != NULL) {
@@ -2352,7 +2363,7 @@ void * os2_alloc(size_t bytes)
 # ifndef USE_WINALLOC
     result = GC_unix_get_mem(bytes);
 # else
-#   ifdef MSWIN32
+#   if defined(MSWIN32) && !defined(MSWINRT_FLAVOR)
       if (GLOBAL_ALLOC_TEST) {
         /* VirtualAlloc doesn't like PAGE_EXECUTE_READWRITE.    */
         /* There are also unconfirmed rumors of other           */
@@ -2409,26 +2420,27 @@ void * os2_alloc(size_t bytes)
 
   GC_API void GC_CALL GC_win32_free_heap(void)
   {
-#   ifndef CYGWIN32
-      if (GLOBAL_ALLOC_TEST)
-#   endif
-    {
-      while (GC_n_heap_bases-- > 0) {
-#       ifdef CYGWIN32
-          /* FIXME: Is it OK to use non-GC free() here? */
-#       else
-          GlobalFree(GC_heap_bases[GC_n_heap_bases]);
-#       endif
-        GC_heap_bases[GC_n_heap_bases] = 0;
-      }
-    } /* else */
-#   ifndef CYGWIN32
-      else {
-        /* Avoiding VirtualAlloc leak. */
-        while (GC_n_heap_bases > 0) {
-          VirtualFree(GC_heap_bases[--GC_n_heap_bases], 0, MEM_RELEASE);
+#   ifndef MSWINRT_FLAVOR
+#     ifndef CYGWIN32
+        if (GLOBAL_ALLOC_TEST)
+#     endif
+      {
+        while (GC_n_heap_bases-- > 0) {
+#         ifdef CYGWIN32
+            /* FIXME: Is it OK to use non-GC free() here? */
+#         else
+            GlobalFree(GC_heap_bases[GC_n_heap_bases]);
+#         endif
           GC_heap_bases[GC_n_heap_bases] = 0;
         }
+        return;
+      }
+#   endif
+#   ifndef CYGWIN32
+      /* Avoiding VirtualAlloc leak. */
+      while (GC_n_heap_bases > 0) {
+        VirtualFree(GC_heap_bases[--GC_n_heap_bases], 0, MEM_RELEASE);
+        GC_heap_bases[GC_n_heap_bases] = 0;
       }
 #   endif
   }
