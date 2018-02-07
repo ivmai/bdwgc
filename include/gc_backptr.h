@@ -90,7 +90,7 @@ GC_API void GC_CALL GC_generate_random_backtrace(void);
 GC_API void GC_CALL GC_print_backtrace(void *) GC_ATTR_NONNULL(1);
 
 #ifdef __cplusplus
-  } /* end of extern "C" */
+  } /* extern "C" */
 #endif
 
 #endif /* GC_BACKPTR_H */

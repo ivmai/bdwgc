@@ -115,7 +115,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_CALLOC_SIZE(1, 2) void * GC_CALL
 #endif
 
 #ifdef __cplusplus
-  } /* matches extern "C" */
+  } /* extern "C" */
 #endif
 
 #endif /* GC_TYPED_H */

@@ -104,7 +104,7 @@ GC_API int GC_gcj_debug_kind;
 #endif
 
 #ifdef __cplusplus
-  } /* end of extern "C" */
+  } /* extern "C" */
 #endif
 
 #endif /* GC_GCJ_H */
