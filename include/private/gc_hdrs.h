@@ -15,6 +15,10 @@
 #ifndef GC_HEADERS_H
 #define GC_HEADERS_H
 
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 typedef struct hblkhdr hdr;
 
 #if CPP_WORDSZ != 32 && CPP_WORDSZ < 36
@@ -207,5 +211,9 @@ typedef struct bi {
 /* Get an HBLKSIZE aligned address closer to the beginning of the block */
 /* h.  Assumes hhdr == HDR(h) and IS_FORWARDING_ADDR(hhdr).             */
 #define FORWARDED_ADDR(h, hhdr) ((struct hblk *)(h) - (size_t)(hhdr))
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 #endif /* GC_HEADERS_H */

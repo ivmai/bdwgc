@@ -17,6 +17,10 @@
 
 #include "gc.h"
 
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 /* This API is defined only if the library has been suitably compiled   */
 /* (i.e. with ENABLE_DISCLAIM defined).                                 */
 
@@ -54,5 +58,9 @@ struct GC_finalizer_closure {
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_finalized_malloc(size_t /*size*/,
                             const struct GC_finalizer_closure * /*fc*/);
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 #endif

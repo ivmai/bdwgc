@@ -313,6 +313,10 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                     /* This is now really controlled at startup,        */
                     /* through GC_all_interior_pointers.                */
 
+/* Note: never put extern "C" around an #include.                       */
+#ifdef __cplusplus
+  extern "C" {
+#endif
 
 #ifndef GC_NO_FINALIZATION
 # define GC_INVOKE_FINALIZERS() GC_notify_or_invoke_finalizers()
@@ -403,6 +407,9 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   GC_INNER void GC_print_callers(struct callinfo info[NFRAMES]);
 #endif
 
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 /*********************************/
 /*                               */
@@ -440,8 +447,14 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define MS_TIME_DIFF(a,b) ((long)((a)-(b)))
 #elif defined(NN_PLATFORM_CTR)
 # define CLOCK_TYPE long long
+# ifdef __cplusplus
+    extern "C" {
+# endif
   CLOCK_TYPE n3ds_get_system_tick(void);
   CLOCK_TYPE n3ds_convert_tick_to_ms(CLOCK_TYPE tick);
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
 # define GET_TIME(x) (void)(x = n3ds_get_system_tick())
 # define MS_TIME_DIFF(a,b) ((long)n3ds_convert_tick_to_ms((a)-(b)))
 #else /* !BSD_TIME && !NN_PLATFORM_CTR && !MSWIN32 && !MSWINCE */
@@ -495,11 +508,18 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #   define BZERO(x,n) bzero((void *)(x),(size_t)(n))
 # endif
 
+#ifdef PCR
+# include "th/PCR_ThCtl.h"
+#endif
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 /*
  * Stop and restart mutator threads.
  */
 # ifdef PCR
-#     include "th/PCR_ThCtl.h"
 #     define STOP_WORLD() \
         PCR_ThCtl_SetExclusiveMode(PCR_ThCtl_ExclusiveMode_stopNormal, \
                                    PCR_allSigsBlocked, \
@@ -638,6 +658,10 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # define GETENV(name) getenv(name)
 #endif
 
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
+
 #if defined(DARWIN)
 # include <mach/thread_status.h>
 # ifndef MAC_OS_X_VERSION_MAX_ALLOWED
@@ -719,6 +743,25 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # endif
 #endif /* DARWIN */
 
+#ifdef PARALLEL_MARK
+# include "gc_atomic_ops.h"
+# define counter_t volatile AO_t
+#else
+  typedef size_t counter_t;
+# if defined(THREADS) && (defined(MPROTECT_VDB) || defined(THREAD_SANITIZER) \
+                || (defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)))
+#   include "gc_atomic_ops.h"
+# endif
+#endif /* !PARALLEL_MARK */
+
+#include "../gc_tiny_fl.h"
+
+#include <setjmp.h>
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 /*********************************/
 /*                               */
 /* Word-size-dependent defines   */
@@ -750,7 +793,7 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 /* separate free lists for each multiple of GRANULE_BYTES       */
 /* up to (TINY_FREELISTS-1) * GRANULE_BYTES.  After that they   */
 /* may be spread out further.                                   */
-#include "../gc_tiny_fl.h"
+
 #define GRANULE_BYTES GC_GRANULE_BYTES
 #define TINY_FREELISTS GC_TINY_FREELISTS
 
@@ -965,17 +1008,6 @@ typedef word page_hash_table[PHT_SIZE];
            /* MARK_BIT_PER_OBJ is defined, we only use the   */
            /* initial group of mark bits, and it is safe     */
            /* to allocate smaller header for large objects.  */
-
-#ifdef PARALLEL_MARK
-# include "gc_atomic_ops.h"
-# define counter_t volatile AO_t
-#else
-  typedef size_t counter_t;
-# if defined(THREADS) && (defined(MPROTECT_VDB) || defined(THREAD_SANITIZER) \
-                || (defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)))
-#   include "gc_atomic_ops.h"
-# endif
-#endif /* !PARALLEL_MARK */
 
 union word_ptr_ao_u {
   word w;
@@ -2216,14 +2248,8 @@ GC_API_PRIV void GC_err_printf(const char * format, ...)
 
 /* Basic logging routine.  Typically, GC_log_printf is called directly  */
 /* only inside various DEBUG_x blocks.                                  */
-#if defined(__cplusplus) && defined(SYMBIAN)
-  extern "C" {
-#endif
 GC_API_PRIV void GC_log_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
-#if defined(__cplusplus) && defined(SYMBIAN)
-  }
-#endif
 
 #ifndef GC_ANDROID_LOG
 # define GC_PRINT_STATS_FLAG (GC_print_stats != 0)
@@ -2549,8 +2575,6 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define GC_SEM_INIT_PSHARED 0
 #endif
 
-#include <setjmp.h>
-
 /* Some macros for setjmp that works across signal handlers     */
 /* were possible, and a couple of routines to facilitate        */
 /* catching accesses to bad addresses when that's               */
@@ -2558,7 +2582,13 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #if (defined(UNIX_LIKE) || (defined(NEED_FIND_LIMIT) && defined(CYGWIN32))) \
     && !defined(GC_NO_SIGSETJMP)
 # if defined(SUNOS5SIGS) && !defined(FREEBSD) && !defined(LINUX)
-#  include <sys/siginfo.h>
+#   ifdef __cplusplus
+      } /* extern "C" */
+#   endif
+#   include <sys/siginfo.h>
+#   ifdef __cplusplus
+      extern "C" {
+#   endif
 # endif
   /* Define SETJMP and friends to be the version that restores  */
   /* the signal mask.                                           */
@@ -2591,7 +2621,13 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #endif
 
 #if defined(DATASTART_USES_BSDGETDATASTART)
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
 # include <machine/trap.h>
+# ifdef __cplusplus
+    extern "C" {
+# endif
 # if !defined(PCR)
 #   define NEED_FIND_LIMIT
 # endif
@@ -2649,5 +2685,9 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define RESTORE_CANCEL(state) (void)0
 # define ASSERT_CANCEL_DISABLED() (void)0
 #endif /* !CANCEL_SAFE */
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 #endif /* GC_PRIVATE_H */

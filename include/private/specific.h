@@ -16,6 +16,11 @@
 
 #include "gc_atomic_ops.h"
 
+/* Note: never put extern "C" around an #include.       */
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 /* Called during key creation or setspecific.           */
 /* For the GC we already hold lock.                     */
 /* Currently allocated objects leak on thread exit.     */
@@ -99,3 +104,7 @@ GC_INLINE void * GC_getspecific(tsd * key)
     }
     return GC_slow_getspecific(key, qtid, entry_ptr);
 }
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif

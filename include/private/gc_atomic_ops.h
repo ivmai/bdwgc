@@ -23,6 +23,11 @@
 #ifdef GC_BUILTIN_ATOMIC
 
 # include "gc.h" /* for GC_word */
+
+# ifdef __cplusplus
+    extern "C" {
+# endif
+
   typedef GC_word AO_t;
 
 # ifdef GC_PRIVATE_H /* have GC_INLINE */
@@ -81,6 +86,10 @@
                                         __ATOMIC_RELEASE, __ATOMIC_RELAXED);
     }
 #   define AO_HAVE_compare_and_swap_release
+# endif
+
+# ifdef __cplusplus
+    } /* extern "C" */
 # endif
 
 #else

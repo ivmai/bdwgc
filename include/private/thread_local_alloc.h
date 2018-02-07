@@ -32,6 +32,13 @@
 # error USE_HPUX_TLS macro was replaced by USE_COMPILER_TLS
 #endif
 
+#include <stdlib.h>
+
+/* Note: never put extern "C" around an #include.               */
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 #if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_WIN32_SPECIFIC) \
     && !defined(USE_WIN32_COMPILER_TLS) && !defined(USE_COMPILER_TLS) \
     && !defined(USE_CUSTOM_SPECIFIC)
@@ -70,8 +77,6 @@
 #    define USE_CUSTOM_SPECIFIC  /* Use our own. */
 # endif
 #endif
-
-#include <stdlib.h>
 
 #ifndef THREAD_FREELISTS_KINDS
 # ifdef ENABLE_DISCLAIM
@@ -128,11 +133,17 @@ typedef struct thread_local_freelists {
 # define GC_remove_specific_after_fork(key, t) (void)0
   typedef void * GC_key_t;
 #elif defined(USE_WIN32_SPECIFIC)
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
 # ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN 1
 # endif
 # define NOSERVICE
 # include <windows.h>
+# ifdef __cplusplus
+    extern "C" {
+# endif
 # define GC_getspecific TlsGetValue
 # define GC_setspecific(key, v) !TlsSetValue(key, v)
         /* We assume 0 == success, msft does the opposite.      */
@@ -147,7 +158,13 @@ typedef struct thread_local_freelists {
 # define GC_remove_specific_after_fork(key, t) (void)0
   typedef DWORD GC_key_t;
 #elif defined(USE_CUSTOM_SPECIFIC)
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
 # include "private/specific.h"
+# ifdef __cplusplus
+    extern "C" {
+# endif
 #else
 # error implement me
 #endif
@@ -181,6 +198,10 @@ extern
 /* This is set up by the thread_local_alloc implementation.  No need    */
 /* for cleanup on thread exit.  But the thread support layer makes sure */
 /* that GC_thread_key is traced, if necessary.                          */
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 #endif /* THREAD_LOCAL_ALLOC */
 

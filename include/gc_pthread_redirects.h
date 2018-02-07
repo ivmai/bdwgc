@@ -31,19 +31,28 @@
 /* to thread specific data on the thread stack.                         */
 
 #ifndef GC_PTHREAD_REDIRECTS_ONLY
+
 # include <pthread.h>
+# ifndef GC_NO_DLOPEN
+#   include <dlfcn.h>
+# endif
+# ifndef GC_NO_PTHREAD_SIGMASK
+#   include <signal.h>  /* needed anyway for proper redirection */
+# endif
+
+# ifdef __cplusplus
+    extern "C" {
+# endif
 
 # ifndef GC_SUSPEND_THREAD_ID
 #   define GC_SUSPEND_THREAD_ID pthread_t
 # endif
 
 # ifndef GC_NO_DLOPEN
-#   include <dlfcn.h>
     GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
 # endif /* !GC_NO_DLOPEN */
 
 # ifndef GC_NO_PTHREAD_SIGMASK
-#   include <signal.h>  /* needed anyway for proper redirection */
 #   if defined(GC_PTHREAD_SIGMASK_NEEDED) \
         || defined(_BSD_SOURCE) || defined(_GNU_SOURCE) \
         || (_POSIX_C_SOURCE >= 199506L) || (_XOPEN_SOURCE >= 500)
@@ -71,6 +80,11 @@
 #   define GC_PTHREAD_EXIT_DECLARED
     GC_API void GC_pthread_exit(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
 # endif
+
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
+
 #endif /* !GC_PTHREAD_REDIRECTS_ONLY */
 
 #if !defined(GC_NO_THREAD_REDIRECTS) && !defined(GC_USE_LD_WRAP)

@@ -1620,7 +1620,13 @@ GC_API void (GC_CALLBACK * GC_is_visible_print_proc)(void *);
 #ifdef GC_PTHREADS
   /* For pthread support, we generally need to intercept a number of    */
   /* thread library calls.  We do that here by macro defining them.     */
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
 # include "gc_pthread_redirects.h"
+# ifdef __cplusplus
+    extern "C" {
+# endif
 #endif
 
 /* This returns a list of objects, linked through their first word.     */
@@ -2003,7 +2009,7 @@ GC_API void GC_CALL GC_win32_free_heap(void);
 #endif /* _AMIGA && !GC_AMIGA_MAKINGLIB */
 
 #ifdef __cplusplus
-  }  /* end of extern "C" */
+  } /* extern "C" */
 #endif
 
 #endif /* GC_H */

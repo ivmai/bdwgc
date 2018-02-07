@@ -36,6 +36,11 @@
 # include "dbg_mlc.h" /* for oh type */
 #endif
 
+/* Note: never put extern "C" around an #include.                       */
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 /* We use the allocation lock to protect thread-related data structures. */
 
 /* The set of all known threads.  We intercept thread creation and      */
@@ -175,6 +180,10 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg);
 GC_INNER_PTHRSTART void GC_thread_exit_proc(void *);
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 #endif /* GC_PTHREADS && !GC_WIN32_THREADS */
 
