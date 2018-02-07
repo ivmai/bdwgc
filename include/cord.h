@@ -58,6 +58,10 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 #if defined(GC_DLL) && !defined(CORD_NOT_DLL)
   /* Same as for GC_API in gc_config_macros.h.  */
 # ifdef CORD_BUILD
@@ -169,6 +173,10 @@ CORD_API int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data);
 /* A simpler version that starts at the end:    */
 CORD_API int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
+
 /* Functions that operate on cord positions.  The easy way to traverse  */
 /* cords.  A cord position is logically a pair consisting of a cord     */
 /* and an index into that cord.  But it is much faster to retrieve a    */
@@ -180,6 +188,10 @@ CORD_API int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 /* CORD_pos_fetch, CORD_next and CORD_prev have both macro and function */
 /* definitions.  The former may evaluate their argument more than once. */
 #include "cord_pos.h"
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
 
 /*
         Visible definitions from above:
@@ -312,6 +324,9 @@ CORD_API size_t CORD_chr(CORD x, size_t i, int c);
 /* must be < CORD_len(x).                                               */
 CORD_API size_t CORD_rchr(CORD x, size_t i, int c);
 
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 /* The following are also not primitive, but are implemented in         */
 /* cordprnt.c.  They provide functionality similar to the ANSI C        */
@@ -342,12 +357,20 @@ CORD_API size_t CORD_rchr(CORD x, size_t i, int c);
 
 #include <stdarg.h>
 
+# ifdef __cplusplus
+    extern "C" {
+# endif
+
 CORD_API int CORD_sprintf(CORD * out, CORD format, ...);
 CORD_API int CORD_vsprintf(CORD * out, CORD format, va_list args);
 CORD_API int CORD_fprintf(FILE * f, CORD format, ...);
 CORD_API int CORD_vfprintf(FILE * f, CORD format, va_list args);
 CORD_API int CORD_printf(CORD format, ...);
 CORD_API int CORD_vprintf(CORD format, va_list args);
+
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
 
 #endif /* CORD_NO_IO */
 
