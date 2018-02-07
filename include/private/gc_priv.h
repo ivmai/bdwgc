@@ -473,27 +473,13 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #endif /* !NO_CLOCK */
 
 /* We use bzero and bcopy internally.  They may not be available.       */
-# if defined(SPARC) && defined(SUNOS4)
+# if defined(SPARC) && defined(SUNOS4) \
+     || (defined(M68K) && defined(NEXT)) || defined(VAX)
 #   define BCOPY_EXISTS
-# endif
-# if defined(M68K) && defined(AMIGA)
-#   define BCOPY_EXISTS
-# endif
-# if defined(M68K) && defined(NEXT)
-#   define BCOPY_EXISTS
-# endif
-# if defined(VAX)
-#   define BCOPY_EXISTS
-# endif
-# if defined(AMIGA)
+# elif defined(AMIGA) || defined(DARWIN)
 #   include <string.h>
 #   define BCOPY_EXISTS
-# endif
-# if defined(DARWIN)
-#   include <string.h>
-#   define BCOPY_EXISTS
-# endif
-# if defined(MACOS) && defined(POWERPC)
+# elif defined(MACOS) && defined(POWERPC)
 #   include <MacMemory.h>
 #   define bcopy(x,y,n) BlockMoveData(x, y, n)
 #   define bzero(x,n) BlockZero(x, n)
