@@ -93,5 +93,5 @@ void move_cursor(int column, int line);
 void invalidate_line(int line);
                         /* Invalidate line i on the screen.     */
 
-void de_error(char *s);
+void de_error(const char *s);
                         /* Display error message.       */

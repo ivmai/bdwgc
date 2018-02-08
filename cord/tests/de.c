@@ -595,7 +595,7 @@ int main(int argc, char **argv)
     arg_file_name = argv[1];
     buf = GC_MALLOC_ATOMIC(8192);
     if (NULL == buf) OUT_OF_MEMORY;
-    setvbuf(stdout, buf, _IOFBF, 8192);
+    setvbuf(stdout, (char *)buf, _IOFBF, 8192);
     initscr();
     noecho(); nonl(); cbreak();
     generic_init();

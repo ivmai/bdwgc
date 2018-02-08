@@ -32,7 +32,7 @@ int COLS = 0;
 
 HWND        hwnd;
 
-void de_error(char *s)
+void de_error(const char *s)
 {
     (void)MessageBoxA(hwnd, s, "Demonstration Editor",
                       MB_ICONINFORMATION | MB_OK);
@@ -44,7 +44,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
 {
    MSG         msg;
    WNDCLASS    wndclass;
-   HANDLE      hAccel;
+   HACCEL      hAccel;
 
    GC_INIT();
 #  if defined(CPPCHECK)
@@ -60,7 +60,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
       wndclass.hInstance      = hInstance;
       wndclass.hIcon          = LoadIcon (hInstance, szAppName);
       wndclass.hCursor        = LoadCursor (NULL, IDC_ARROW);
-      wndclass.hbrBackground  = GetStockObject(WHITE_BRUSH);
+      wndclass.hbrBackground  = (HBRUSH)GetStockObject(WHITE_BRUSH);
       wndclass.lpszMenuName   = TEXT("DE");
       wndclass.lpszClassName  = szAppName;
 
@@ -120,7 +120,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
 /* Return the argument with all control characters replaced by blanks.  */
 char * plain_chars(char * text, size_t len)
 {
-    char * result = GC_MALLOC_ATOMIC(len + 1);
+    char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
     register size_t i;
 
     if (NULL == result) return NULL;
@@ -139,7 +139,7 @@ char * plain_chars(char * text, size_t len)
 /* blank, and all control characters c replaced by c + 32.              */
 char * control_chars(char * text, size_t len)
 {
-    char * result = GC_MALLOC_ATOMIC(len + 1);
+    char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
     register size_t i;
 
     if (NULL == result) return NULL;
@@ -201,7 +201,7 @@ INT_PTR CALLBACK AboutBoxCallback( HWND hDlg, UINT message,
 LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
                           WPARAM wParam, LPARAM lParam)
 {
-   static HANDLE  hInstance;
+   static HINSTANCE hInstance;
    HDC dc;
    PAINTSTRUCT ps;
    RECT client_area;
