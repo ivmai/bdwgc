@@ -14,9 +14,11 @@ struct treenode {
 } * root[10];
 
 struct treenode * mktree(int i) {
-  struct treenode * r = GC_MALLOC(sizeof(struct treenode));
-  if (0 == i) return 0;
-  if (1 == i) r = GC_MALLOC_ATOMIC(sizeof(struct treenode));
+  struct treenode * r = GC_NEW(struct treenode);
+  if (0 == i)
+    return 0;
+  if (1 == i)
+    r = (struct treenode *)GC_MALLOC_ATOMIC(sizeof(struct treenode));
   if (r == NULL) {
     fprintf(stderr, "Out of memory\n");
     exit(1);

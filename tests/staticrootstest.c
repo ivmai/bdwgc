@@ -23,7 +23,7 @@ struct treenode *root[10] = { NULL };
 
 /* Same as "root" variable but initialized to some non-zero value (to   */
 /* be placed to .data section instead of .bss).                         */
-struct treenode *root_nz[10] = { (void *)(GC_word)1 };
+struct treenode *root_nz[10] = { (struct treenode *)(GC_word)1 };
 
 static char *staticroot; /* intentionally static */
 
@@ -38,7 +38,7 @@ void init_staticroot(void)
   /* Intentionally put staticroot initialization in a function other    */
   /* than main to prevent CSA warning that staticroot variable can be   */
   /* changed to be a local one).                                        */
-  staticroot = libsrl_init();
+  staticroot = (char *)libsrl_init();
 }
 
 int main(void)

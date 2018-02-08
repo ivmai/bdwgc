@@ -106,7 +106,7 @@ int is_pair(pair_t p)
 
 void GC_CALLBACK pair_dct(void *obj, void *cd)
 {
-    pair_t p = obj;
+    pair_t p = (pair_t)obj;
     int checksum;
 
     /* Check that obj and its car and cdr are not trashed. */
@@ -126,7 +126,7 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     /* Invalidate it. */
     memset(p->magic, '*', sizeof(p->magic));
     p->checksum = 0;
-    p->car = cd;
+    p->car = (pair_t)cd;
     p->cdr = NULL;
 }
 
@@ -136,7 +136,7 @@ pair_new(pair_t car, pair_t cdr)
     pair_t p;
     static const struct GC_finalizer_closure fc = { pair_dct, NULL };
 
-    p = GC_finalized_malloc(sizeof(struct pair_s), &fc);
+    p = (pair_t)GC_finalized_malloc(sizeof(struct pair_s), &fc);
     if (p == NULL) {
         fprintf(stderr, "Out of memory!\n");
         exit(3);
