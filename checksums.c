@@ -79,7 +79,7 @@ STATIC word GC_checksum(struct hblk *h)
   STATIC GC_bool GC_on_free_list(struct hblk *h)
   {
     hdr * hhdr = HDR(h);
-    size_t sz = BYTES_TO_WORDS(hhdr -> hb_sz);
+    word sz = BYTES_TO_WORDS(hhdr -> hb_sz);
     ptr_t p;
 
     if (sz > MAXOBJWORDS) return(FALSE);
@@ -148,11 +148,8 @@ word GC_bytes_in_used_blocks = 0;
 STATIC void GC_add_block(struct hblk *h, word dummy GC_ATTR_UNUSED)
 {
    hdr * hhdr = HDR(h);
-   size_t bytes = hhdr -> hb_sz;
 
-   bytes += HBLKSIZE-1;
-   bytes &= ~(HBLKSIZE-1);
-   GC_bytes_in_used_blocks += bytes;
+   GC_bytes_in_used_blocks += (hhdr->hb_sz + HBLKSIZE-1) & ~(HBLKSIZE-1);
 }
 
 STATIC void GC_check_blocks(void)

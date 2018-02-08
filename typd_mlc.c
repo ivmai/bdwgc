@@ -476,8 +476,8 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
                                 word env GC_ATTR_UNUSED)
 {
     hdr * hhdr = HDR(addr);
-    size_t sz = hhdr -> hb_sz;
-    size_t nwords = BYTES_TO_WORDS(sz);
+    word sz = hhdr -> hb_sz;
+    word nwords = BYTES_TO_WORDS(sz);
     complex_descriptor * descr = (complex_descriptor *)(addr[nwords-1]);
     mse * orig_mark_stack_ptr = mark_stack_ptr;
     mse * new_mark_stack_ptr;

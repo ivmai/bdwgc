@@ -280,15 +280,15 @@ typedef void (*per_object_func)(ptr_t p, size_t n_bytes, word gc_descr);
 static void per_object_helper(struct hblk *h, word fn)
 {
   hdr * hhdr = HDR(h);
-  size_t sz = hhdr -> hb_sz;
+  size_t sz = (size_t)hhdr->hb_sz;
   word descr = hhdr -> hb_descr;
   per_object_func f = (per_object_func)fn;
-  int i = 0;
+  size_t i = 0;
 
   do {
     f((ptr_t)(h -> hb_body + i), sz, descr);
-    i += (int)sz;
-  } while ((word)i + sz <= BYTES_TO_WORDS(HBLKSIZE));
+    i += sz;
+  } while (i + sz <= BYTES_TO_WORDS(HBLKSIZE));
 }
 
 GC_INLINE void GC_apply_to_each_object(per_object_func f)

@@ -895,8 +895,8 @@ GC_API void GC_CALL GC_debug_free(void * p)
           ) {
         GC_free(base);
       } else {
-        size_t i;
-        size_t obj_sz = BYTES_TO_WORDS(hhdr -> hb_sz - sizeof(oh));
+        word i;
+        word obj_sz = BYTES_TO_WORDS(hhdr->hb_sz - sizeof(oh));
 
         for (i = 0; i < obj_sz; ++i)
           ((word *)p)[i] = GC_FREED_MEM_MARKER;
@@ -1062,8 +1062,8 @@ STATIC void GC_print_all_smashed_proc(void)
 STATIC void GC_check_heap_block(struct hblk *hbp, word dummy GC_ATTR_UNUSED)
 {
     struct hblkhdr * hhdr = HDR(hbp);
-    size_t sz = hhdr -> hb_sz;
-    size_t bit_no;
+    word sz = hhdr -> hb_sz;
+    word bit_no;
     char *p, *plim;
 
     p = hbp->hb_body;
@@ -1094,8 +1094,8 @@ STATIC void GC_check_heap_proc(void)
 
 GC_INNER GC_bool GC_check_leaked(ptr_t base)
 {
-  size_t i;
-  size_t obj_sz;
+  word i;
+  word obj_sz;
   word *p;
 
   if (

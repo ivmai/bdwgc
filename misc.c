@@ -457,7 +457,7 @@ GC_API size_t GC_CALL GC_size(const void * p)
 {
     hdr * hhdr = HDR(p);
 
-    return hhdr -> hb_sz;
+    return (size_t)hhdr->hb_sz;
 }
 
 
@@ -2209,7 +2209,7 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 static void block_add_size(struct hblk *h, word pbytes)
 {
   hdr *hhdr = HDR(h);
-  *(word *)pbytes += (WORDS_TO_BYTES((word)hhdr->hb_sz) + (HBLKSIZE - 1))
+  *(word *)pbytes += (WORDS_TO_BYTES(hhdr->hb_sz) + (HBLKSIZE - 1))
                         & ~(word)(HBLKSIZE - 1);
 }
 

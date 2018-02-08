@@ -145,7 +145,7 @@ GC_INNER GC_bool GC_collection_in_progress(void)
 /* clear all mark bits in the header */
 GC_INNER void GC_clear_hdr_marks(hdr *hhdr)
 {
-    size_t last_bit = FINAL_MARK_BIT(hhdr -> hb_sz);
+    size_t last_bit = FINAL_MARK_BIT((size_t)hhdr->hb_sz);
     BZERO(hhdr -> hb_marks, sizeof(hhdr->hb_marks));
     set_mark_bit_from_hdr(hhdr, last_bit);
     hhdr -> hb_n_marks = 0;
@@ -155,7 +155,7 @@ GC_INNER void GC_clear_hdr_marks(hdr *hhdr)
 GC_INNER void GC_set_hdr_marks(hdr *hhdr)
 {
     unsigned i;
-    size_t sz = hhdr -> hb_sz;
+    size_t sz = (size_t)hhdr->hb_sz;
     unsigned n_marks = (unsigned)FINAL_MARK_BIT(sz);
 
 #   ifdef USE_MARK_BYTES
@@ -1858,7 +1858,7 @@ STATIC void GC_push_marked4(struct hblk *h, hdr *hhdr)
 /* Push all objects reachable from marked objects in the given block */
 STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 {
-    size_t sz = hhdr -> hb_sz;
+    word sz = hhdr -> hb_sz;
     word descr = hhdr -> hb_descr;
     ptr_t p;
     word bit_no;
@@ -1920,7 +1920,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 /* first word.                                                          */
  STATIC void GC_push_unconditionally(struct hblk *h, hdr *hhdr)
  {
-    size_t sz = hhdr -> hb_sz;
+    word sz = hhdr -> hb_sz;
     word descr = hhdr -> hb_descr;
     ptr_t p;
     ptr_t lim;
@@ -1951,7 +1951,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
   /* Test whether any page in the given block is dirty.   */
   STATIC GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
   {
-    size_t sz = hhdr -> hb_sz;
+    word sz = hhdr -> hb_sz;
 
     if (sz <= MAXOBJBYTES) {
          return(GC_page_was_dirty(h));

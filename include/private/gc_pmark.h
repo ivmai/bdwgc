@@ -330,7 +330,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
           size_t obj_displ; \
           /* Accurate enough if HBLKSIZE <= 2**15.      */ \
           GC_STATIC_ASSERT(HBLKSIZE <= (1 << 15)); \
-          obj_displ = (((low_prod >> 16) + 1) * hhdr->hb_sz) >> 16; \
+          obj_displ = (((low_prod >> 16) + 1) * (size_t)hhdr->hb_sz) >> 16; \
           if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
             GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \
             break; \

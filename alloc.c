@@ -807,10 +807,10 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
       struct hblk *h = HBLKPTR(q);
       struct hblk *last_h = h;
       hdr *hhdr = HDR(h);
-      IF_PER_OBJ(size_t sz = hhdr->hb_sz;)
+      IF_PER_OBJ(word sz = hhdr->hb_sz;)
 
       for (;;) {
-        unsigned bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
+        word bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
 
         if (!mark_bit_from_hdr(hhdr, bit_no)) {
           set_mark_bit_from_hdr(hhdr, bit_no);
@@ -883,10 +883,10 @@ STATIC void GC_clear_fl_marks(ptr_t q)
       struct hblk *h = HBLKPTR(q);
       struct hblk *last_h = h;
       hdr *hhdr = HDR(h);
-      size_t sz = hhdr->hb_sz; /* Normally set only once. */
+      word sz = hhdr->hb_sz; /* Normally set only once. */
 
       for (;;) {
-        unsigned bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
+        word bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
 
         if (mark_bit_from_hdr(hhdr, bit_no)) {
           size_t n_marks = hhdr -> hb_n_marks;

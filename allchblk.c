@@ -413,7 +413,7 @@ GC_INNER void GC_unmap_old(void)
         /* truncated counter value wrapping is handled correctly).      */
         if ((unsigned short)(GC_gc_no - hhdr->hb_last_reclaimed) >
                 (unsigned short)GC_unmap_threshold) {
-          GC_unmap((ptr_t)h, hhdr -> hb_sz);
+          GC_unmap((ptr_t)h, (size_t)hhdr->hb_sz);
           hhdr -> hb_flags |= WAS_UNMAPPED;
         }
       }
@@ -680,7 +680,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
 
             if (NULL == hbp) return NULL;
             GET_HDR(hbp, hhdr); /* set hhdr value */
-            size_avail = hhdr->hb_sz;
+            size_avail = (signed_word)hhdr->hb_sz;
             if (size_avail < size_needed) continue;
             if (size_avail != size_needed) {
               if (!may_split) continue;
@@ -728,7 +728,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
                   /* Make sure it's mapped before we mangle it. */
 #                   ifdef USE_MUNMAP
                       if (!IS_MAPPED(hhdr)) {
-                        GC_remap((ptr_t)hbp, hhdr -> hb_sz);
+                        GC_remap((ptr_t)hbp, (size_t)hhdr->hb_sz);
                         hhdr -> hb_flags &= ~WAS_UNMAPPED;
                       }
 #                   endif
@@ -801,7 +801,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
             if( size_avail >= size_needed ) {
 #               ifdef USE_MUNMAP
                   if (!IS_MAPPED(hhdr)) {
-                    GC_remap((ptr_t)hbp, hhdr -> hb_sz);
+                    GC_remap((ptr_t)hbp, (size_t)hhdr->hb_sz);
                     hhdr -> hb_flags &= ~WAS_UNMAPPED;
                     /* Note: This may leave adjacent, mapped free blocks. */
                   }

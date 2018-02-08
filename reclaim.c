@@ -146,7 +146,7 @@ STATIC GC_bool GC_block_nearly_full(hdr *hhdr)
  * free list.  Returns the new list.
  * Clears unmarked objects.  Sz is in bytes.
  */
-STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, size_t sz,
+STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, word sz,
                               ptr_t list, signed_word *count)
 {
     word bit_no = 0;
@@ -193,7 +193,7 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, size_t sz,
 }
 
 /* The same thing, but don't clear objects: */
-STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
+STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
                                ptr_t list, signed_word *count)
 {
     word bit_no = 0;
@@ -222,7 +222,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
 #ifdef ENABLE_DISCLAIM
   /* Call reclaim notifier for block's kind on each unmarked object in  */
   /* block, all within a pair of corresponding enter/leave callbacks.   */
-  STATIC ptr_t GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, size_t sz,
+  STATIC ptr_t GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, word sz,
                                        ptr_t list, signed_word *count)
   {
     word bit_no = 0;
@@ -331,7 +331,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
                                             GC_bool report_if_found)
 {
     hdr *hhdr = HDR(hbp);
-    size_t sz = hhdr -> hb_sz;
+    word sz = hhdr -> hb_sz;
     struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
     void **flh = &(ok -> ok_freelist[BYTES_TO_GRANULES(sz)]);
 
@@ -349,7 +349,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
   STATIC void GC_disclaim_and_reclaim_or_free_small_block(struct hblk *hbp)
   {
     hdr *hhdr = HDR(hbp);
-    size_t sz = hhdr -> hb_sz;
+    word sz = hhdr -> hb_sz;
     struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
     void **flh = &(ok -> ok_freelist[BYTES_TO_GRANULES(sz)]);
     void *flh_next;
@@ -377,7 +377,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
 STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
 {
     hdr * hhdr = HDR(hbp);
-    size_t sz = hhdr -> hb_sz;  /* size of objects in current block     */
+    word sz = hhdr -> hb_sz; /* size of objects in current block */
     struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
 
     if( sz > MAXOBJBYTES ) {  /* 1 big object */
@@ -385,7 +385,7 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
             if (report_if_found) {
               GC_add_leaked((ptr_t)hbp);
             } else {
-              size_t blocks;
+              word blocks;
 
 #             ifdef ENABLE_DISCLAIM
                 if (EXPECT(hhdr->hb_flags & HAS_DISCLAIM, 0)) {
@@ -481,7 +481,7 @@ int GC_n_set_marks(hdr *hhdr)
 {
     int result = 0;
     int i;
-    size_t sz = hhdr -> hb_sz;
+    word sz = hhdr -> hb_sz;
     int offset = (int)MARK_BIT_OFFSET(sz);
     int limit = (int)FINAL_MARK_BIT(sz);
 
@@ -675,7 +675,7 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
  * appropriate free list is nonempty, or there are no more blocks to
  * sweep.
  */
-GC_INNER void GC_continue_reclaim(size_t sz /* granules */, int kind)
+GC_INNER void GC_continue_reclaim(word sz /* granules */, int kind)
 {
     hdr * hhdr;
     struct hblk * hbp;
@@ -793,7 +793,7 @@ struct enumerate_reachable_s {
 STATIC void GC_do_enumerate_reachable_objects(struct hblk *hbp, word ped)
 {
   struct hblkhdr *hhdr = HDR(hbp);
-  size_t sz = hhdr -> hb_sz;
+  size_t sz = (size_t)hhdr->hb_sz;
   size_t bit_no;
   char *p, *plim;
 

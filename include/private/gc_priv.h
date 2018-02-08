@@ -1067,11 +1067,11 @@ struct hblkhdr {
                                 /* LARGE_INV_SZ.                        */
 #     define LARGE_INV_SZ (1 << 16)
 #   endif
-    size_t hb_sz;  /* If in use, size in bytes, of objects in the block. */
-                   /* if free, the size in bytes of the whole block      */
-                   /* We assume that this is convertible to signed_word  */
-                   /* without generating a negative result.  We avoid    */
-                   /* generating free blocks larger than that.           */
+    word hb_sz; /* If in use, size in bytes, of objects in the block.   */
+                /* if free, the size in bytes of the whole block.       */
+                /* We assume that this is convertible to signed_word    */
+                /* without generating a negative result.  We avoid      */
+                /* generating free blocks larger than that.             */
     word hb_descr;              /* object descriptor for marking.  See  */
                                 /* gc_mark.h.                           */
 #   ifdef MARK_BIT_PER_GRANULE
@@ -1671,7 +1671,7 @@ struct GC_traced_stack_sect_s {
 #endif /* !USE_MARK_BYTES */
 
 #ifdef MARK_BIT_PER_OBJ
-#  define MARK_BIT_NO(offset, sz) (((unsigned)(offset))/(sz))
+#  define MARK_BIT_NO(offset, sz) (((word)(offset))/(sz))
         /* Get the mark bit index corresponding to the given byte       */
         /* offset and size (in bytes).                                  */
 #  define MARK_BIT_OFFSET(sz) 1
@@ -1680,7 +1680,7 @@ struct GC_traced_stack_sect_s {
 #  define FINAL_MARK_BIT(sz) ((sz) > MAXOBJBYTES? 1 : HBLK_OBJS(sz))
         /* Position of final, always set, mark bit.                     */
 #else /* MARK_BIT_PER_GRANULE */
-#  define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES((unsigned)(offset))
+#  define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES((word)(offset))
 #  define MARK_BIT_OFFSET(sz) BYTES_TO_GRANULES(sz)
 #  define IF_PER_OBJ(x)
 #  define FINAL_MARK_BIT(sz) \

@@ -600,7 +600,7 @@ GC_API void GC_CALL GC_free(void * p)
         if (0 == hhdr) return;
 #   endif
     GC_ASSERT(GC_base(p) == p);
-    sz = hhdr -> hb_sz;
+    sz = (size_t)hhdr->hb_sz;
     ngranules = BYTES_TO_GRANULES(sz);
     knd = hhdr -> hb_obj_kind;
     ok = &GC_obj_kinds[knd];
@@ -650,7 +650,7 @@ GC_API void GC_CALL GC_free(void * p)
     h = HBLKPTR(p);
     hhdr = HDR(h);
     knd = hhdr -> hb_obj_kind;
-    sz = hhdr -> hb_sz;
+    sz = (size_t)hhdr->hb_sz;
     ngranules = BYTES_TO_GRANULES(sz);
     ok = &GC_obj_kinds[knd];
     if (ngranules <= MAXOBJGRANULES) {
