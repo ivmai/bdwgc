@@ -1933,7 +1933,7 @@ GC_INNER void GC_start_reclaim(GC_bool abort_if_found);
                                 /* TRUE) report them.                   */
                                 /* Sweeping of small object pages is    */
                                 /* largely deferred.                    */
-GC_INNER void GC_continue_reclaim(size_t sz, int kind);
+GC_INNER void GC_continue_reclaim(word sz, int kind);
                                 /* Sweep pages of the given size and    */
                                 /* kind, as long as possible, and       */
                                 /* as long as the corr. free list is    */
