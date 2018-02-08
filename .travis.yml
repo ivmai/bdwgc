@@ -451,6 +451,11 @@ matrix:
     - CONF_OPTIONS="--enable-munmap --enable-large-config --enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
+    compiler: gcc
+    env:
+    - CC_FOR_CHECK=g++
+    - MAKEFILE_TARGETS="all"
+  - os: linux
     addons:
       apt:
         packages:
@@ -533,6 +538,9 @@ script:
         && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
     make -j -f $MAKEFILE_NAME $MAKEFILE_TARGETS CFLAGS_EXTRA="$CFLAGS_EXTRA"
             LDFLAGS="$LDFLAGS";
+  fi
+- if [[ "$CC_FOR_CHECK" != "" ]]; then
+    make check CC=$CC_FOR_CHECK CFLAGS_EXTRA="$CFLAGS_EXTRA";
   fi
 - if [ -f gctest.log ]; then cat gctest.log; fi
 - if [[ "$CSA_CHECK" == true ]]; then
