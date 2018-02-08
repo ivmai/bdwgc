@@ -63,7 +63,7 @@ typedef struct {
   PCR_Any ed_client_data;
 } enumerate_data;
 
-void GC_enumerate_block(struct hblk *h; enumerate_data * ed)
+void GC_enumerate_block(struct hblk *h, enumerate_data * ed)
 {
     register hdr * hhdr;
     register size_t sz;
