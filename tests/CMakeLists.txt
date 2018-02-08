@@ -16,6 +16,12 @@
 
 ADD_DEFINITIONS(-DGC_NOT_DLL)
 
+# Compile some tests as C++ to test extern "C" in header files.
+SET_SOURCE_FILES_PROPERTIES(
+    leak_test.c
+    test.c
+    PROPERTIES LANGUAGE CXX)
+
 ADD_EXECUTABLE(gctest WIN32 test.c)
 TARGET_LINK_LIBRARIES(gctest gc-lib)
 ADD_TEST(NAME gctest COMMAND gctest)
