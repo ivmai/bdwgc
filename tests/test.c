@@ -220,7 +220,14 @@ volatile AO_t extra_count = 0;  /* Amount of space wasted in cons node; */
 
 #if defined(GC_AMIGA_FASTALLOC) && defined(AMIGA)
 
+# ifdef __cplusplus
+    extern "C" {
+# endif
   void GC_amiga_free_all_mem(void);
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
+
   void Amiga_Fail(void){GC_amiga_free_all_mem();abort();}
 # define FAIL Amiga_Fail()
   void *GC_amiga_gctest_malloc_explicitly_typed(size_t lb, GC_descr d){

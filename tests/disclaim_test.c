@@ -33,7 +33,13 @@
 # ifndef GC_API_PRIV
 #   define GC_API_PRIV GC_API
 # endif
+# ifdef __cplusplus
+    extern "C" {
+# endif
   GC_API_PRIV long GC_random(void);
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
 # undef rand
 # define rand() (int)GC_random()
 #endif /* LINT2 */
