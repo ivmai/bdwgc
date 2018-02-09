@@ -12,7 +12,7 @@ int main(void) {
   GC_INIT();
 
   for (i = 0; i < COUNT; i++) {
-    int **p = (int**)GC_MALLOC(sizeof(int *));
+    int **p = GC_NEW(int *);
     int *q = (int*)GC_MALLOC_ATOMIC(sizeof(int));
 
     if (p == 0 || *p != 0) {

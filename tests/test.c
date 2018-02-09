@@ -370,7 +370,7 @@ struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
 
 sexpr small_cons (sexpr x, sexpr y)
 {
-    sexpr r = (sexpr)GC_MALLOC(sizeof(struct SEXPR));
+    sexpr r = GC_NEW(struct SEXPR);
 
     CHECK_OUT_OF_MEMORY(r);
     AO_fetch_and_add1(&collectable_count);
@@ -854,7 +854,7 @@ int live_indicators_count = 0;
 
 tn * mktree(int n)
 {
-    tn * result = (tn *)GC_MALLOC(sizeof(tn));
+    tn * result = GC_NEW(tn);
 
     AO_fetch_and_add1(&collectable_count);
 #   if defined(MACOS)
@@ -1400,11 +1400,11 @@ void run_one_test(void)
 #   endif /* DBG_HDRS_ALL */
     /* Test floating point alignment */
         {
-          double *dp = (double*)GC_MALLOC(sizeof(double));
+          double *dp = GC_NEW(double);
           CHECK_OUT_OF_MEMORY(dp);
           AO_fetch_and_add1(&collectable_count);
           *dp = 1.0;
-          dp = (double*)GC_MALLOC(sizeof(double));
+          dp = GC_NEW(double);
           CHECK_OUT_OF_MEMORY(dp);
           AO_fetch_and_add1(&collectable_count);
           *dp = 1.0;
