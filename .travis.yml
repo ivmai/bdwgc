@@ -455,6 +455,16 @@ matrix:
     env:
     - CC_FOR_CHECK=g++
     - MAKEFILE_TARGETS="all"
+    - MAKEFILE_TARGETS_CHECK="check"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
+    compiler: gcc
+    env:
+    - CC_FOR_CHECK=g++
+    - CFLAGS_EXTRA="-O3 -Wall -Wextra -Werror"
+    - MAKEFILE_NAME=Makefile.direct
+    - MAKEFILE_TARGETS="cords"
+    - MAKEFILE_TARGETS_CHECK="cord/de check"
   - os: linux
     addons:
       apt:
@@ -540,7 +550,8 @@ script:
             LDFLAGS="$LDFLAGS";
   fi
 - if [[ "$CC_FOR_CHECK" != "" ]]; then
-    make check CC=$CC_FOR_CHECK CFLAGS_EXTRA="$CFLAGS_EXTRA";
+    make -f $MAKEFILE_NAME $MAKEFILE_TARGETS_CHECK CC=$CC_FOR_CHECK
+            CFLAGS_EXTRA="$CFLAGS_EXTRA";
   fi
 - if [ -f gctest.log ]; then cat gctest.log; fi
 - if [[ "$CSA_CHECK" == true ]]; then
