@@ -55,7 +55,7 @@ int getpagesize(void)
   }
 #endif
 
-struct {
+struct a_s {
   char a_a;
   char * a_b;
 } a;

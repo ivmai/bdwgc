@@ -666,7 +666,7 @@ void test_generic_malloc_or_special(void *p) {
 }
 
 /* Try to force a to be strangely aligned */
-volatile struct {
+volatile struct A_s {
   char dummy;
   AO_t aa;
 } A;
