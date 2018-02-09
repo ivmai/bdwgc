@@ -208,7 +208,7 @@ base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
 #    Ignore ranlib failure; that usually means it doesn't exist, and
 #    isn't needed.
 
-cords: $(CORD_OBJS) cord/cordtest$(EXEEXT) $(UTILS) base_lib
+cords: $(CORD_OBJS) $(UTILS) base_lib
 	rm -f dont_ar_3
 	./if_mach SPARC SOLARIS touch dont_ar_3
 	./if_mach SPARC SOLARIS $(AR) rus gc.a $(CORD_OBJS)
@@ -315,20 +315,20 @@ mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
 
 alloc.o: include/gc_version.h
 
-cord:
-	mkdir cord
-
-cord/cordbscs.o: cord $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
+cord/cordbscs.o: $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordbscs.c
+	mkdir cord || cat /dev/null
 	mv cordbscs.o cord/cordbscs.o
 #  not all compilers understand -o filename
 
-cord/cordxtra.o: cord $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
+cord/cordxtra.o: $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordxtra.c
+	mkdir cord || cat /dev/null
 	mv cordxtra.o cord/cordxtra.o
 
-cord/cordprnt.o: cord $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
+cord/cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordprnt.c
+	mkdir cord || cat /dev/null
 	mv cordprnt.o cord/cordprnt.o
 
 cord/cordtest$(EXEEXT): $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) \
