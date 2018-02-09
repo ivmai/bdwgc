@@ -281,9 +281,9 @@ GC_API void GC_CALL GC_set_mark_bit(const void *) GC_ATTR_NONNULL(1);
 /* (GC_push_conditional pushes either all or only dirty pages depending */
 /* on the third argument.)  GC_push_all_eager also ensures that stack   */
 /* is scanned immediately, not just scheduled for scanning.             */
-GC_API void GC_CALL GC_push_all(char * /* bottom */, char * /* top */);
-GC_API void GC_CALL GC_push_all_eager(char * /* bottom */, char * /* top */);
-GC_API void GC_CALL GC_push_conditional(char * /* bottom */, char * /* top */,
+GC_API void GC_CALL GC_push_all(volatile void * /* bottom */, volatile void * /* top */);
+GC_API void GC_CALL GC_push_all_eager(volatile void * /* bottom */, volatile void * /* top */);
+GC_API void GC_CALL GC_push_conditional(volatile void * /* bottom */, volatile void * /* top */,
                                         int /* bool all */);
 GC_API void GC_CALL GC_push_finalizer_structures(void);
 
