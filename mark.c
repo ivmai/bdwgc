@@ -1360,24 +1360,24 @@ GC_INNER void GC_mark_init(void)
  * Should only be used if there is no possibility of mark stack
  * overflow.
  */
-GC_API void GC_CALL GC_push_all(char *bottom, char *top)
+GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 {
-    register word length;
+    word length;
 
-    bottom = (char *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    top = (char *)(((word) top) & ~(ALIGNMENT-1));
+    bottom = (void *)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
+    top = (void *)((word)top & ~(ALIGNMENT-1));
     if ((word)bottom >= (word)top) return;
 
     GC_mark_stack_top++;
     if ((word)GC_mark_stack_top >= (word)GC_mark_stack_limit) {
         ABORT("Unexpected mark stack overflow");
     }
-    length = top - bottom;
+    length = (word)top - (word)bottom;
 #   if GC_DS_TAGS > ALIGNMENT - 1
         length += GC_DS_TAGS;
         length &= ~GC_DS_TAGS;
 #   endif
-    GC_mark_stack_top -> mse_start = bottom;
+    GC_mark_stack_top -> mse_start = (ptr_t)bottom;
     GC_mark_stack_top -> mse_descr.w = length;
 }
 
@@ -1408,7 +1408,7 @@ GC_API void GC_CALL GC_push_all(char *bottom, char *top)
         return;
     }
     if ((*dirty_fn)(h-1)) {
-        GC_push_all(bottom, (ptr_t)h);
+        GC_push_all(bottom, h);
     }
 
     while ((word)(h+1) <= (word)top) {
@@ -1416,24 +1416,24 @@ GC_API void GC_CALL GC_push_all(char *bottom, char *top)
             if ((word)(GC_mark_stack_top - GC_mark_stack)
                 > 3 * GC_mark_stack_size / 4) {
                 /* Danger of mark stack overflow */
-                GC_push_all((ptr_t)h, top);
+                GC_push_all(h, top);
                 return;
             } else {
-                GC_push_all((ptr_t)h, (ptr_t)(h+1));
+                GC_push_all(h, h + 1);
             }
         }
         h++;
     }
 
     if ((ptr_t)h != top && (*dirty_fn)(h)) {
-       GC_push_all((ptr_t)h, top);
+       GC_push_all(h, top);
     }
     if ((word)GC_mark_stack_top >= (word)GC_mark_stack_limit) {
         ABORT("Unexpected mark stack overflow");
     }
   }
 
-  GC_API void GC_CALL GC_push_conditional(char *bottom, char *top, int all)
+  GC_API void GC_CALL GC_push_conditional(void *bottom, void *top, int all)
   {
     if (!all) {
       GC_push_selected((ptr_t)bottom, (ptr_t)top, GC_page_was_dirty);
@@ -1450,7 +1450,7 @@ GC_API void GC_CALL GC_push_all(char *bottom, char *top)
     }
   }
 #else
-  GC_API void GC_CALL GC_push_conditional(char *bottom, char *top,
+  GC_API void GC_CALL GC_push_conditional(void *bottom, void *top,
                                           int all GC_ATTR_UNUSED)
   {
     GC_push_all(bottom, top);
@@ -1600,7 +1600,7 @@ GC_API void GC_CALL GC_print_trace(word gc_no)
  * change.
  */
 GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY GC_ATTR_NO_SANITIZE_THREAD
-GC_API void GC_CALL GC_push_all_eager(char *bottom, char *top)
+GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
@@ -1644,7 +1644,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
   /* Similar to GC_push_conditional but scans the whole region immediately. */
   GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY
   GC_ATTR_NO_SANITIZE_THREAD
-  GC_INNER void GC_push_conditional_eager(ptr_t bottom, ptr_t top,
+  GC_INNER void GC_push_conditional_eager(void *bottom, void *top,
                                           GC_bool all)
   {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
