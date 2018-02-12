@@ -505,13 +505,13 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
                                           GC_bool all);
 # define GC_PUSH_CONDITIONAL(b, t, all) \
                 (GC_parallel \
-                    ? GC_push_conditional_eager(b, t, all) \
-                    : GC_push_conditional((ptr_t)(b), (ptr_t)(t), all))
+                    ? GC_push_conditional_eager((b), (t), (all)) \
+                    : GC_push_conditional((b), (t), (all)))
 #elif defined(GC_DISABLE_INCREMENTAL)
-# define GC_PUSH_CONDITIONAL(b, t, all) GC_push_all((ptr_t)(b), (ptr_t)(t))
+# define GC_PUSH_CONDITIONAL(b, t, all) GC_push_all((b), (t))
 #else
 # define GC_PUSH_CONDITIONAL(b, t, all) \
-                GC_push_conditional((ptr_t)(b), (ptr_t)(t), all)
+                GC_push_conditional((b), (t), (all))
                         /* Do either of GC_push_all or GC_push_selected */
                         /* depending on the third arg.                  */
 #endif
