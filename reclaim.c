@@ -291,6 +291,16 @@ STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
     }
 }
 
+/* Is a pointer-free block?  Same as IS_PTRFREE macro (in os_dep.c) but */
+/* uses unordered atomic access to avoid racing with GC_realloc.        */
+#ifdef AO_HAVE_load
+# define IS_PTRFREE_SAFE(hhdr) \
+                (AO_load((volatile AO_t *)&(hhdr)->hb_descr) == 0)
+#else
+  /* No race as GC_realloc holds the lock while updating hb_descr.      */
+# define IS_PTRFREE_SAFE(hhdr) ((hhdr)->hb_descr == 0)
+#endif
+
 /*
  * Generic procedure to rebuild a free list in hbp.
  * Also called directly from GC_malloc_many.
@@ -304,7 +314,7 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
 
     GC_ASSERT(GC_find_header((ptr_t)hbp) == hhdr);
 #   ifndef GC_DISABLE_INCREMENTAL
-      GC_remove_protection(hbp, 1, (hhdr)->hb_descr == 0 /* Pointer-free? */);
+      GC_remove_protection(hbp, 1, IS_PTRFREE_SAFE(hhdr));
 #   endif
 #   ifdef ENABLE_DISCLAIM
       if ((hhdr -> hb_flags & HAS_DISCLAIM) != 0) {
@@ -314,7 +324,7 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
     /* else */ if (init || GC_debugging_started) {
       result = GC_reclaim_clear(hbp, hhdr, sz, list, count);
     } else {
-      GC_ASSERT((hhdr)->hb_descr == 0 /* Pointer-free block */);
+      GC_ASSERT(IS_PTRFREE_SAFE(hhdr));
       result = GC_reclaim_uninit(hbp, hhdr, sz, list, count);
     }
     if (IS_UNCOLLECTABLE(hhdr -> hb_obj_kind)) GC_set_hdr_marks(hhdr);
@@ -408,10 +418,10 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
 #        ifdef ENABLE_DISCLAIM
            in_use:
 #        endif
-            if (hhdr -> hb_descr != 0) {
-              GC_composite_in_use += sz;
-            } else {
+            if (IS_PTRFREE_SAFE(hhdr)) {
               GC_atomic_in_use += sz;
+            } else {
+              GC_composite_in_use += sz;
             }
         }
     } else {
@@ -453,11 +463,10 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
         /* already have the right cache context here.  Also     */
         /* doing it here avoids some silly lock contention in   */
         /* GC_malloc_many.                                      */
-
-        if (hhdr -> hb_descr != 0) {
-          GC_composite_in_use += sz * hhdr -> hb_n_marks;
-        } else {
+        if (IS_PTRFREE_SAFE(hhdr)) {
           GC_atomic_in_use += sz * hhdr -> hb_n_marks;
+        } else {
+          GC_composite_in_use += sz * hhdr -> hb_n_marks;
         }
     }
 }

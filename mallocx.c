@@ -106,13 +106,39 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
 
     if (sz > MAXOBJBYTES) {
         /* Round it up to the next whole heap block */
-          word descr;
+        word descr = GC_obj_kinds[obj_kind].ok_descriptor;
 
-          sz = (sz+HBLKSIZE-1) & (~HBLKMASK);
-          hhdr -> hb_sz = sz;
-          descr = GC_obj_kinds[obj_kind].ok_descriptor;
-          if (GC_obj_kinds[obj_kind].ok_relocate_descr) descr += sz;
-          hhdr -> hb_descr = descr;
+        sz = (sz + HBLKSIZE-1) & ~HBLKMASK;
+        if (GC_obj_kinds[obj_kind].ok_relocate_descr)
+          descr += sz;
+        /* GC_realloc might be changing the block size while            */
+        /* GC_reclaim_block or GC_clear_hdr_marks is examining it.      */
+        /* The change to the size field is benign, in that GC_reclaim   */
+        /* (and GC_clear_hdr_marks) would work correctly with either    */
+        /* value, since we are not changing the number of objects in    */
+        /* the block.  But seeing a half-updated value (though unlikely */
+        /* to occur in practice) could be probably bad.                 */
+        /* Using unordered atomic accesses on the size and hb_descr     */
+        /* fields would solve the issue.  (The alternate solution might */
+        /* be to initially overallocate large objects, so we do not     */
+        /* have to adjust the size in GC_realloc, if they still fit.    */
+        /* But that is probably more expensive, since we may end up     */
+        /* scanning a bunch of zeros during GC.)                        */
+#       ifdef AO_HAVE_store
+          GC_STATIC_ASSERT(sizeof(hhdr->hb_sz) == sizeof(AO_t));
+          AO_store((volatile AO_t *)&hhdr->hb_sz, (AO_t)sz);
+          AO_store((volatile AO_t *)&hhdr->hb_descr, (AO_t)descr);
+#       else
+          {
+            DCL_LOCK_STATE;
+
+            LOCK();
+            hhdr -> hb_sz = sz;
+            hhdr -> hb_descr = descr;
+            UNLOCK();
+          }
+#       endif
+
 #         ifdef MARK_BIT_PER_OBJ
             GC_ASSERT(hhdr -> hb_inv_sz == LARGE_INV_SZ);
 #         endif
