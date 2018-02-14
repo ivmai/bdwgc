@@ -247,7 +247,8 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                           len = (unsigned)prec;
                         }
                         if (width != NONE && len < (size_t)width) {
-                          char * blanks = GC_MALLOC_ATOMIC(width-len+1);
+                          char * blanks =
+                                (char *)GC_MALLOC_ATOMIC(width - len + 1);
 
                           if (NULL == blanks) OUT_OF_MEMORY;
                           memset(blanks, ' ', width-len);
@@ -306,7 +307,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                     if (prec != NONE && prec > max_size) max_size = prec;
                     max_size += CONV_RESULT_LEN;
                     if (max_size >= CORD_BUFSZ) {
-                        buf = GC_MALLOC_ATOMIC(max_size + 1);
+                        buf = (char *)GC_MALLOC_ATOMIC(max_size + 1);
                         if (NULL == buf) OUT_OF_MEMORY;
                     } else {
                         if (CORD_BUFSZ - (result[0].ec_bufptr-result[0].ec_buf)

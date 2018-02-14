@@ -42,7 +42,6 @@ oom_fn CORD_oom_fn = (oom_fn) 0;
 
 typedef unsigned long word;
 
-typedef union {
     struct Concatenation {
         char null;
         char header;
@@ -54,7 +53,8 @@ typedef union {
         word len;
         CORD left;      /* length(left) > 0     */
         CORD right;     /* length(right) > 0    */
-    } concatenation;
+    };
+
     struct Function {
         char null;
         char header;
@@ -63,14 +63,20 @@ typedef union {
         word len;
         CORD_fn fn;
         void * client_data;
-    } function;
+    };
+
     struct Generic {
         char null;
         char header;
         char depth;
         char left_len;
         word len;
-    } generic;
+    };
+
+typedef union {
+    struct Concatenation concatenation;
+    struct Function function;
+    struct Generic generic;
     char string[1];
 } CordRep;
 
@@ -161,7 +167,7 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
         lenx = strlen(x);
         result_len = lenx + leny;
         if (result_len <= SHORT_LIMIT) {
-            register char * result = GC_MALLOC_ATOMIC(result_len+1);
+            char * result = (char *)GC_MALLOC_ATOMIC(result_len + 1);
 
             if (result == 0) OUT_OF_MEMORY;
             memcpy(result, x, lenx);
@@ -193,7 +199,7 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
             }
             result_len = right_len + leny;  /* length of new_right */
             if (result_len <= SHORT_LIMIT) {
-                new_right = GC_MALLOC_ATOMIC(result_len + 1);
+                new_right = (char *)GC_MALLOC_ATOMIC(result_len + 1);
                 if (new_right == 0) OUT_OF_MEMORY;
                 memcpy(new_right, right, right_len);
                 memcpy(new_right + right_len, y, leny);
@@ -293,7 +299,7 @@ static CordRep *CORD_from_fn_inner(CORD_fn fn, void * client_data, size_t len)
             buf[i] = c;
         }
 
-        result = GC_MALLOC_ATOMIC(len+1);
+        result = (char *)GC_MALLOC_ATOMIC(len + 1);
         if (result == 0) OUT_OF_MEMORY;
         memcpy(result, buf, len);
         result[len] = '\0';
@@ -378,7 +384,7 @@ CORD CORD_substr_checked(CORD x, size_t i, size_t n)
         if (n > SUBSTR_LIMIT) {
             return(CORD_substr_closure(x, i, n, CORD_index_access_fn));
         } else {
-            register char * result = GC_MALLOC_ATOMIC(n+1);
+            char * result = (char *)GC_MALLOC_ATOMIC(n + 1);
 
             if (result == 0) OUT_OF_MEMORY;
             strncpy(result, x+i, n);
@@ -448,7 +454,7 @@ CORD CORD_substr_checked(CORD x, size_t i, size_t n)
                 }
                 *p++ = c;
             }
-            result = GC_MALLOC_ATOMIC(n+1);
+            result = (char *)GC_MALLOC_ATOMIC(n + 1);
             if (result == 0) OUT_OF_MEMORY;
             memcpy(result, buf, n);
             result[n] = '\0';

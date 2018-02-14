@@ -74,7 +74,7 @@ CORD CORD_cat_char(CORD x, char c)
     register char * string;
 
     if (c == '\0') return(CORD_cat(x, CORD_nul(1)));
-    string = GC_MALLOC_ATOMIC(2);
+    string = (char *)GC_MALLOC_ATOMIC(2);
     if (string == 0) OUT_OF_MEMORY;
     string[0] = c;
     string[1] = '\0';
@@ -244,7 +244,7 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
 char * CORD_to_char_star(CORD x)
 {
     register size_t len = CORD_len(x);
-    char * result = GC_MALLOC_ATOMIC(len + 1);
+    char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
 
     if (result == 0) OUT_OF_MEMORY;
     if (len > 0 && CORD_fill_buf(x, 0, len, result) != 1)
@@ -259,7 +259,7 @@ CORD CORD_from_char_star(const char *s)
     size_t len = strlen(s);
 
     if (0 == len) return(CORD_EMPTY);
-    result = GC_MALLOC_ATOMIC(len + 1);
+    result = (char *)GC_MALLOC_ATOMIC(len + 1);
     if (result == 0) OUT_OF_MEMORY;
     memcpy(result, s, len+1);
     return(result);
@@ -434,7 +434,7 @@ void CORD_ec_flush_buf(CORD_ec x)
     char * s;
 
     if (len == 0) return;
-    s = GC_MALLOC_ATOMIC(len+1);
+    s = (char *)GC_MALLOC_ATOMIC(len + 1);
     if (NULL == s) OUT_OF_MEMORY;
     memcpy(s, x[0].ec_buf, len);
     s[len] = '\0';
