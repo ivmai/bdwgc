@@ -494,6 +494,13 @@ GC_API size_t GC_CALL GC_get_total_bytes(void)
 
 #ifndef GC_GET_HEAP_USAGE_NOT_NEEDED
 
+GC_API size_t GC_CALL GC_get_size_map_at(int i)
+{
+  if ((unsigned)i > MAXOBJBYTES)
+    return (size_t)(signed_word)-1;
+  return GRANULES_TO_BYTES(GC_size_map[i]);
+}
+
 /* Return the heap usage information.  This is a thread-safe (atomic)   */
 /* alternative for the five above getters.  NULL pointer is allowed for */
 /* any argument.  Returned (filled in) values are of word type.         */
