@@ -1737,7 +1737,7 @@ void check_heap_stats(void)
           (void)GC_get_prof_stats_unsafe(&stats, sizeof(stats));
 #       endif
       }
-      (void)GC_get_size_map_at((size_t)(GC_signed_word)-1);
+      (void)GC_get_size_map_at(-1);
       (void)GC_get_size_map_at(1);
 #   endif
 

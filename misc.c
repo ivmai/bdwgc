@@ -497,7 +497,7 @@ GC_API size_t GC_CALL GC_get_total_bytes(void)
 GC_API size_t GC_CALL GC_get_size_map_at(int i)
 {
   if ((unsigned)i > MAXOBJBYTES)
-    return (size_t)(signed_word)-1;
+    return GC_SIZE_MAX;
   return GRANULES_TO_BYTES(GC_size_map[i]);
 }
 
