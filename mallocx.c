@@ -511,7 +511,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
     /* We could also try to make sure that the real rounded-up object size */
     /* is a multiple of align.  That would be correct up to HBLKSIZE.      */
     new_lb = SIZET_SAT_ADD(lb, align - 1);
-    result = GC_malloc(new_lb);
+    result = (ptr_t)GC_malloc(new_lb);
             /* It is OK not to check result for NULL as in that case    */
             /* GC_memalign returns NULL too since (0 + 0 % align) is 0. */
     offset = (word)result % align;
@@ -523,7 +523,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
             GC_register_displacement(offset);
         }
     }
-    result = (void *) ((ptr_t)result + offset);
+    result += offset;
     GC_ASSERT((word)result % align == 0);
     return result;
 }
@@ -558,7 +558,8 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strdup(const char *s)
   size_t lb;
   if (s == NULL) return NULL;
   lb = strlen(s) + 1;
-  if ((copy = GC_malloc_atomic(lb)) == NULL) {
+  copy = (char *)GC_malloc_atomic(lb);
+  if (NULL == copy) {
 #   ifndef MSWINCE
       errno = ENOMEM;
 #   endif
@@ -574,7 +575,7 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
   size_t len = strlen(str); /* str is expected to be non-NULL  */
   if (len > size)
     len = size;
-  copy = GC_malloc_atomic(len + 1);
+  copy = (char *)GC_malloc_atomic(len + 1);
   if (copy == NULL) {
 #   ifndef MSWINCE
       errno = ENOMEM;
@@ -593,7 +594,8 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
   GC_API GC_ATTR_MALLOC wchar_t * GC_CALL GC_wcsdup(const wchar_t *str)
   {
     size_t lb = (wcslen(str) + 1) * sizeof(wchar_t);
-    wchar_t *copy = GC_malloc_atomic(lb);
+    wchar_t *copy = (wchar_t *)GC_malloc_atomic(lb);
+
     if (copy == NULL) {
 #     ifndef MSWINCE
         errno = ENOMEM;

@@ -1788,7 +1788,7 @@ void GC_register_data_segments(void)
 
   /* Is p the base of one of the malloc heap sections we already know   */
   /* about?                                                             */
-  STATIC GC_bool GC_is_malloc_heap_base(ptr_t p)
+  STATIC GC_bool GC_is_malloc_heap_base(void *p)
   {
     struct GC_malloc_heap_list *q = GC_malloc_heap_l;
 
@@ -1849,7 +1849,7 @@ void GC_register_data_segments(void)
 
   /* Is p the start of either the malloc heap, or of one of our */
   /* heap sections?                                             */
-  GC_INNER GC_bool GC_is_heap_base(ptr_t p)
+  GC_INNER GC_bool GC_is_heap_base(void *p)
   {
      unsigned i;
 #    ifndef REDIRECT_MALLOC
@@ -1889,7 +1889,7 @@ void GC_register_data_segments(void)
                 limit = new_limit;
             } else {
                 if (base != limit) GC_add_roots_inner(base, limit, FALSE);
-                base = p;
+                base = (char *)p;
                 limit = new_limit;
             }
         }

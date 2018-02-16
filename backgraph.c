@@ -345,7 +345,7 @@ static void add_back_edges(ptr_t p, size_t n_bytes, word gc_descr)
     FIXUP_POINTER(current);
     if (current >= (word)GC_least_plausible_heap_addr &&
         current <= (word)GC_greatest_plausible_heap_addr) {
-       ptr_t target = GC_base((void *)current);
+       ptr_t target = (ptr_t)GC_base((void *)current);
        if (0 != target) {
          add_edge(p, target);
        }

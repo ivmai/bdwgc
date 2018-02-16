@@ -5,6 +5,14 @@
 # include <string.h>
 # include <unistd.h>
 
+#ifdef __cplusplus
+# define EXECV_ARGV_T char**
+#else
+  /* The 2nd argument of execvp() prototype may be either char**, or    */
+  /* char* const*, or const char* const*.                               */
+# define EXECV_ARGV_T void*
+#endif
+
 int main(int argc, char **argv)
 {
     if (argc < 4) goto Usage;
@@ -13,7 +21,7 @@ int main(int argc, char **argv)
         && strcmp(OS_TYPE, argv[2]) != 0) return(0);
     fprintf(stderr, "^^^^Starting command^^^^\n");
     fflush(stdout);
-    execvp(TRUSTED_STRING(argv[3]), (void *)(argv + 3));
+    execvp(TRUSTED_STRING(argv[3]), (EXECV_ARGV_T)(argv + 3));
     perror("Couldn't execute");
 
 Usage:

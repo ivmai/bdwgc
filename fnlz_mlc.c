@@ -42,7 +42,8 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
        /* info, GC_reclaim_with_finalization must be extended to clear  */
        /* fragments so that the assumption holds for the selected word. */
         const struct GC_finalizer_closure *fc
-                        = (void *)(fc_word & ~(word)FINALIZER_CLOSURE_FLAG);
+                        = (struct GC_finalizer_closure *)(fc_word
+                                        & ~(word)FINALIZER_CLOSURE_FLAG);
         (*fc->proc)((word *)obj + 1, fc->cd);
     }
     return 0;
@@ -87,7 +88,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
     word *op;
 
     GC_ASSERT(GC_finalized_kind != 0);
-    op = GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)), GC_finalized_kind);
+    op = (word *)GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)),
+                                GC_finalized_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
     *op = (word)fclos | FINALIZER_CLOSURE_FLAG;

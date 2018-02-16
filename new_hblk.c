@@ -187,5 +187,5 @@ GC_INNER void GC_new_hblk(size_t gran, int kind)
   /* Build the free list */
       GC_obj_kinds[kind].ok_freelist[gran] =
         GC_build_fl(h, GRANULES_TO_WORDS(gran), clear,
-                    GC_obj_kinds[kind].ok_freelist[gran]);
+                    (ptr_t)GC_obj_kinds[kind].ok_freelist[gran]);
 }

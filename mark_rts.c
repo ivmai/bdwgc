@@ -77,7 +77,7 @@ static int n_root_sets = 0;
 #ifndef THREADS
   /* Primarily for debugging support:     */
   /* Is the address p in one of the registered static root sections?      */
-  GC_INNER GC_bool GC_is_static_root(ptr_t p)
+  GC_INNER GC_bool GC_is_static_root(void *p)
   {
     static int last_root_set = MAX_ROOT_SETS;
     int i;
@@ -454,7 +454,7 @@ GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
     if (0 == GC_excl_table_entries) {
         next = 0;
     } else {
-        next = GC_next_exclusion(start);
+        next = GC_next_exclusion((ptr_t)start);
     }
     if (0 != next) {
       size_t i;

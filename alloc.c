@@ -117,7 +117,7 @@ STATIC GC_bool GC_need_full_gc = FALSE;
 STATIC word GC_used_heap_size_after_full = 0;
 
 /* GC_copyright symbol is externally visible. */
-char * const GC_copyright[] =
+const char * const GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
 "Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
 "Copyright (c) 1996-1998 by Silicon Graphics.  All rights reserved. ",
@@ -817,7 +817,7 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
           ++hhdr -> hb_n_marks;
         }
 
-        q = obj_link(q);
+        q = (ptr_t)obj_link(q);
         if (q == NULL)
           break;
 
@@ -905,7 +905,7 @@ STATIC void GC_clear_fl_marks(ptr_t q)
         }
         GC_bytes_found -= sz;
 
-        q = obj_link(q);
+        q = (ptr_t)obj_link(q);
         if (q == NULL)
           break;
 
@@ -976,8 +976,9 @@ STATIC void GC_finish_collection(void)
 
       for (kind = 0; kind < GC_n_kinds; kind++) {
         for (size = 1; size <= MAXOBJGRANULES; size++) {
-          q = GC_obj_kinds[kind].ok_freelist[size];
-          if (q != 0) GC_set_fl_marks(q);
+          q = (ptr_t)GC_obj_kinds[kind].ok_freelist[size];
+          if (q != NULL)
+            GC_set_fl_marks(q);
         }
       }
       GC_start_reclaim(TRUE);
@@ -1018,8 +1019,9 @@ STATIC void GC_finish_collection(void)
 
       for (kind = 0; kind < GC_n_kinds; kind++) {
         for (size = 1; size <= MAXOBJGRANULES; size++) {
-          q = GC_obj_kinds[kind].ok_freelist[size];
-          if (q != 0) GC_clear_fl_marks(q);
+          q = (ptr_t)GC_obj_kinds[kind].ok_freelist[size];
+          if (q != NULL)
+            GC_clear_fl_marks(q);
         }
       }
     }
@@ -1496,5 +1498,5 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
     /* Successful allocation; reset failure count.      */
     GC_fail_count = 0;
 
-    return(*flh);
+    return (ptr_t)(*flh);
 }

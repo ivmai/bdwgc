@@ -120,7 +120,7 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
     for (i = 0; i < old_size; i++) {
       p = (*table)[i];
       while (p != 0) {
-        ptr_t real_key = GC_REVEAL_POINTER(p -> hidden_key);
+        ptr_t real_key = (ptr_t)GC_REVEAL_POINTER(p->hidden_key);
         struct hash_chain_entry *next = p -> next;
         size_t new_hash = HASH3(real_key, new_size, log_new_size);
 
@@ -325,7 +325,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
   static void push_and_mark_object(void *p)
   {
-    GC_normal_finalize_mark_proc(p);
+    GC_normal_finalize_mark_proc((ptr_t)p);
     while (!GC_mark_stack_empty()) {
       MARK_FROM_MARK_STACK();
     }
@@ -392,7 +392,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     GC_ASSERT(capacity_inc >= 0);
     if (NULL == GC_toggleref_arr) {
       GC_toggleref_array_capacity = 32; /* initial capacity */
-      GC_toggleref_arr = GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
+      GC_toggleref_arr = (GCToggleRef *)GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
                         GC_toggleref_array_capacity * sizeof(GCToggleRef),
                         NORMAL);
       if (NULL == GC_toggleref_arr)
@@ -408,7 +408,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
           return FALSE;
       }
 
-      new_array = GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
+      new_array = (GCToggleRef *)GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
                         GC_toggleref_array_capacity * sizeof(GCToggleRef),
                         NORMAL);
       if (NULL == new_array)
@@ -817,8 +817,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 
       for (curr_dl = dl_hashtbl -> head[i]; curr_dl != 0;
            curr_dl = dl_next(curr_dl)) {
-        ptr_t real_ptr = GC_REVEAL_POINTER(curr_dl -> dl_hidden_obj);
-        ptr_t real_link = GC_REVEAL_POINTER(curr_dl -> dl_hidden_link);
+        ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_dl->dl_hidden_obj);
+        ptr_t real_link = (ptr_t)GC_REVEAL_POINTER(curr_dl->dl_hidden_link);
 
         GC_printf("Object: %p, link: %p\n",
                   (void *)real_ptr, (void *)real_link);
@@ -843,7 +843,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = GC_fnlz_roots.fo_head[i];
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
-        ptr_t real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
+        ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
 
         GC_printf("Finalizable object: %p\n", (void *)real_ptr);
       }
@@ -923,8 +923,8 @@ GC_INLINE void GC_make_disappearing_links_disappear(
     struct disappearing_link *curr, *next;
 
     ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr, prev)
-        ptr_t real_ptr = GC_REVEAL_POINTER(curr -> dl_hidden_obj);
-        ptr_t real_link = GC_REVEAL_POINTER(curr -> dl_hidden_link);
+        ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr->dl_hidden_obj);
+        ptr_t real_link = (ptr_t)GC_REVEAL_POINTER(curr->dl_hidden_link);
 
         if (!GC_is_marked(real_ptr)) {
             *(word *)real_link = 0;
@@ -940,7 +940,8 @@ GC_INLINE void GC_remove_dangling_disappearing_links(
     struct disappearing_link *curr, *next;
 
     ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr, prev)
-        ptr_t real_link = GC_base(GC_REVEAL_POINTER(curr -> dl_hidden_link));
+        ptr_t real_link =
+                (ptr_t)GC_base(GC_REVEAL_POINTER(curr->dl_hidden_link));
 
         if (NULL != real_link && !GC_is_marked(real_link)) {
             GC_clear_mark_bit(curr);
@@ -980,7 +981,7 @@ GC_INNER void GC_finalize(void)
       for (curr_fo = GC_fnlz_roots.fo_head[i];
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
         GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
-        real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
+        real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
             GC_MARKED_FOR_FINALIZATION(real_ptr);
             GC_MARK_FO(real_ptr, curr_fo -> fo_mark_proc);
@@ -997,7 +998,7 @@ GC_INNER void GC_finalize(void)
       curr_fo = GC_fnlz_roots.fo_head[i];
       prev_fo = 0;
       while (curr_fo != 0) {
-        real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
+        real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
             if (!GC_java_finalization) {
               GC_set_mark_bit(real_ptr);
@@ -1123,7 +1124,7 @@ GC_INNER void GC_finalize(void)
       curr_fo = GC_fnlz_roots.fo_head[i];
       GC_fnlz_roots.fo_head[i] = NULL;
       while (curr_fo != NULL) {
-          real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
+          real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
           GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
           GC_set_mark_bit(real_ptr);
 

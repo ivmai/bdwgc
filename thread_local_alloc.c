@@ -273,13 +273,13 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
 
     for (j = 0; j < TINY_FREELISTS; ++j) {
       for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
-        q = p -> _freelists[i][j];
+        q = (ptr_t)p->_freelists[i][j];
         if ((word)q > HBLKSIZE)
           GC_set_fl_marks(q);
       }
 #     ifdef GC_GCJ_SUPPORT
         if (EXPECT(j > 0, TRUE)) {
-          q = p -> gcj_freelists[j];
+          q = (ptr_t)p->gcj_freelists[j];
           if ((word)q > HBLKSIZE)
             GC_set_fl_marks(q);
         }

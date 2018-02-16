@@ -723,9 +723,9 @@ GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
   LOCK();
   me = GC_lookup_thread(self);
   if (me != NULL) {
-    me->stack = stack;
+    me->stack = (ptr_t)stack;
     me->stack_size = stack_size;
-    me->altstack = altstack;
+    me->altstack = (ptr_t)altstack;
     me->altstack_size = altstack_size;
   } else {
     /* This happens if we are called before GC_thr_init.    */
@@ -1230,9 +1230,9 @@ GC_INNER void GC_thr_init(void)
 #   endif
     t -> flags = DETACHED | MAIN_THREAD;
     if (THREAD_EQUAL(self, main_pthread_id)) {
-      t -> stack = main_stack;
+      t -> stack = (ptr_t)main_stack;
       t -> stack_size = main_stack_size;
-      t -> altstack = main_altstack;
+      t -> altstack = (ptr_t)main_altstack;
       t -> altstack_size = main_altstack_size;
     }
   }
@@ -1663,13 +1663,13 @@ GC_INLINE void GC_record_stack_base(GC_thread me,
                                     const struct GC_stack_base *sb)
 {
 #   ifndef GC_DARWIN_THREADS
-      me -> stop_info.stack_ptr = sb -> mem_base;
+      me -> stop_info.stack_ptr = (ptr_t)sb->mem_base;
 #   endif
-    me -> stack_end = sb -> mem_base;
+    me -> stack_end = (ptr_t)sb->mem_base;
     if (me -> stack_end == NULL)
       ABORT("Bad stack base in GC_register_my_thread");
 #   ifdef IA64
-      me -> backing_store_end = sb -> reg_base;
+      me -> backing_store_end = (ptr_t)sb->reg_base;
 #   endif
 }
 
@@ -1760,7 +1760,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg)
 {
-    struct start_info * si = arg;
+    struct start_info * si = (struct start_info *)arg;
     pthread_t self = pthread_self();
     GC_thread me;
     DCL_LOCK_STATE;

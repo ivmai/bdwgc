@@ -248,7 +248,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
     size_t gran_displ = BYTES_TO_GRANULES(displ); \
     size_t gran_offset = hhdr -> hb_map[gran_displ]; \
     size_t byte_offset = displ & (GRANULE_BYTES - 1); \
-    ptr_t base = current; \
+    ptr_t base = (ptr_t)(current); \
     /* The following always fails for large block references. */ \
     if (EXPECT((gran_offset | byte_offset) != 0, FALSE))  { \
         if ((hhdr -> hb_flags & LARGE_BLOCK) != 0) { \
@@ -304,7 +304,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
     size_t displ = HBLKDISPL(current); /* Displacement in block; in bytes. */\
     unsigned32 low_prod, high_prod; \
     unsigned32 inv_sz = hhdr -> hb_inv_sz; \
-    ptr_t base = current; \
+    ptr_t base = (ptr_t)(current); \
     LONG_MULT(high_prod, low_prod, (unsigned32)displ, inv_sz); \
     /* product is > and within sz_in_bytes of displ * sz_in_bytes * 2**32 */ \
     if (EXPECT(low_prod >> 16 != 0, FALSE)) { \

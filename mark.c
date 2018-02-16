@@ -664,8 +664,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
   word current;         /* Candidate pointer.                           */
   ptr_t limit = 0;      /* (Incl) limit of current candidate range.     */
   word descr;
-  ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
-  ptr_t least_ha = GC_least_plausible_heap_addr;
+  ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+  ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
   DECLARE_HDR_CACHE;
 
 # define SPLIT_RANGE_WORDS 128  /* Must be power of 2.          */
@@ -1477,7 +1477,7 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
     GET_HDR(obj, hhdr);
     if ((EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)
          && (!GC_all_interior_pointers
-             || NULL == (hhdr = GC_find_header(GC_base(obj)))))
+             || NULL == (hhdr = GC_find_header((ptr_t)GC_base(obj)))))
         || EXPECT(HBLK_IS_FREE(hhdr), FALSE)) {
       GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
       return mark_stack_ptr;
@@ -1513,7 +1513,7 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
     GET_HDR(p, hhdr);
     if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)
         && (NULL == hhdr
-            || (r = GC_base(p)) == NULL
+            || (r = (ptr_t)GC_base(p)) == NULL
             || (hhdr = HDR(r)) == NULL)) {
         GC_ADD_TO_BLACK_LIST_STACK(p, source);
         return;
@@ -1606,8 +1606,8 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
     register word *p;
     register word *lim;
-    register ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
-    register ptr_t least_ha = GC_least_plausible_heap_addr;
+    register ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+    register ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
 #   define GC_greatest_plausible_heap_addr greatest_ha
 #   define GC_least_plausible_heap_addr least_ha
 
@@ -1651,8 +1651,8 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
     register word *p;
     register word *lim;
-    register ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
-    register ptr_t least_ha = GC_least_plausible_heap_addr;
+    register ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+    register ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
 #   define GC_greatest_plausible_heap_addr greatest_ha
 #   define GC_least_plausible_heap_addr least_ha
 
@@ -1716,8 +1716,8 @@ STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
     /* Allow registers to be used for some frequently accessed  */
     /* global variables.  Otherwise aliasing issues are likely  */
     /* to prevent that.                                         */
-    ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
-    ptr_t least_ha = GC_least_plausible_heap_addr;
+    ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+    ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
     mse * mark_stack_top = GC_mark_stack_top;
     mse * mark_stack_limit = GC_mark_stack_limit;
 
@@ -1766,8 +1766,8 @@ STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
     word *p;
     word *plim;
 
-    ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
-    ptr_t least_ha = GC_least_plausible_heap_addr;
+    ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+    ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
     mse * mark_stack_top = GC_mark_stack_top;
     mse * mark_stack_limit = GC_mark_stack_limit;
 
@@ -1817,8 +1817,8 @@ STATIC void GC_push_marked4(struct hblk *h, hdr *hhdr)
     word *p;
     word *plim;
 
-    ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
-    ptr_t least_ha = GC_least_plausible_heap_addr;
+    ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+    ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
     mse * mark_stack_top = GC_mark_stack_top;
     mse * mark_stack_limit = GC_mark_stack_limit;
 

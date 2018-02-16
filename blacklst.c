@@ -56,7 +56,7 @@ STATIC void GC_clear_bl(word *);
 
 GC_INNER void GC_default_print_heap_obj_proc(ptr_t p)
 {
-    ptr_t base = GC_base(p);
+    ptr_t base = (ptr_t)GC_base(p);
     int kind = HDR(base)->hb_obj_kind;
 
     GC_err_printf("object at %p of appr. %lu bytes (%s)\n",
@@ -71,7 +71,7 @@ GC_INNER void (*GC_print_heap_obj)(ptr_t p) = GC_default_print_heap_obj_proc;
   STATIC void GC_print_blacklisted_ptr(word p, ptr_t source,
                                        const char *kind_str)
   {
-    ptr_t base = GC_base(source);
+    ptr_t base = (ptr_t)GC_base(source);
 
     if (0 == base) {
         GC_err_printf("Black listing (%s) %p referenced from %p in %s\n",
@@ -125,9 +125,9 @@ STATIC void GC_clear_bl(word *doomed)
     BZERO(doomed, sizeof(page_hash_table));
 }
 
-STATIC void GC_copy_bl(word *old, word *new)
+STATIC void GC_copy_bl(word *old, word *dest)
 {
-    BCOPY(old, new, sizeof(page_hash_table));
+    BCOPY(old, dest, sizeof(page_hash_table));
 }
 
 static word total_stack_black_listed(void);

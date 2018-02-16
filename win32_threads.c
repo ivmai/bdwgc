@@ -369,9 +369,9 @@ STATIC GC_bool GC_in_thread_creation = FALSE;
 GC_INLINE void GC_record_stack_base(GC_vthread me,
                                     const struct GC_stack_base *sb)
 {
-  me -> stack_base = sb -> mem_base;
+  me -> stack_base = (ptr_t)sb->mem_base;
 # ifdef IA64
-    me -> backing_store_end = sb -> reg_base;
+    me -> backing_store_end = (ptr_t)sb->reg_base;
 # endif
   if (me -> stack_base == NULL)
     ABORT("Bad stack base in GC_register_my_thread");
@@ -1362,7 +1362,7 @@ STATIC ptr_t GC_get_stack_min(ptr_t s)
     last_address = s;
   }
   do {
-    bottom = last_info.BaseAddress;
+    bottom = (ptr_t)last_info.BaseAddress;
     VirtualQuery(bottom - 1, &last_info, sizeof(last_info));
     last_address = bottom - 1;
   } while ((last_info.Protect & PAGE_READWRITE)
@@ -1479,7 +1479,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       if (may_be_in_stack(thread -> id == me &&
                           (word)sp < (word)thread->last_stack_min ?
                           sp : thread -> last_stack_min)) {
-        stack_min = last_info.BaseAddress;
+        stack_min = (ptr_t)last_info.BaseAddress;
         /* Do not probe rest of the stack if sp is correct. */
         if ((word)sp < (word)stack_min
             || (word)sp >= (word)thread->stack_base)
@@ -2246,11 +2246,12 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       return CreateThread(lpThreadAttributes, dwStackSize, lpStartAddress,
                           lpParameter, dwCreationFlags, lpThreadId);
     } else {
-      thread_args *args = GC_malloc_uncollectable(sizeof(thread_args));
+      thread_args *args =
+                (thread_args *)GC_malloc_uncollectable(sizeof(thread_args));
                 /* Handed off to and deallocated by child thread.       */
       HANDLE thread_h;
 
-      if (0 == args) {
+      if (NULL == args) {
         SetLastError(ERROR_NOT_ENOUGH_MEMORY);
         return NULL;
       }
@@ -2294,10 +2295,11 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                               arglist, initflag, thrdaddr);
       } else {
         GC_uintptr_t thread_h;
-        thread_args *args = GC_malloc_uncollectable(sizeof(thread_args));
+        thread_args *args =
+                (thread_args *)GC_malloc_uncollectable(sizeof(thread_args));
                 /* Handed off to and deallocated by child thread.       */
 
-        if (0 == args) {
+        if (NULL == args) {
           /* MSDN docs say _beginthreadex() returns 0 on error and sets */
           /* errno to either EAGAIN (too many threads) or EINVAL (the   */
           /* argument is invalid or the stack size is incorrect), so we */
@@ -2464,8 +2466,14 @@ GC_INNER void GC_thr_init(void)
             DWORD sysMask;
 #         endif
           int ncpu = 0;
-          if (GetProcessAffinityMask(GetCurrentProcess(),
+          if (
+#           ifdef __cplusplus
+              GetProcessAffinityMask(GetCurrentProcess(), &procMask, &sysMask)
+#           else
+              /* Cast args to void* for compatibility with some old SDKs. */
+              GetProcessAffinityMask(GetCurrentProcess(),
                                      (void *)&procMask, (void *)&sysMask)
+#           endif
               && procMask) {
             do {
               ncpu++;
@@ -2588,8 +2596,10 @@ GC_INNER void GC_thr_init(void)
 
       /* This is otherwise saved only in an area mmapped by the thread  */
       /* library, which isn't visible to the collector.                 */
-      si = GC_malloc_uncollectable(sizeof(struct start_info));
-      if (0 == si) return(EAGAIN);
+      si = (struct start_info *)GC_malloc_uncollectable(
+                                                sizeof(struct start_info));
+      if (NULL == si)
+        return EAGAIN;
 
       si -> start_routine = start_routine;
       si -> arg = arg;
@@ -2616,7 +2626,7 @@ GC_INNER void GC_thr_init(void)
   STATIC void * GC_CALLBACK GC_pthread_start_inner(struct GC_stack_base *sb,
                                                    void * arg)
   {
-    struct start_info * si = arg;
+    struct start_info * si = (struct start_info *)arg;
     void * result;
     void *(*start)(void *);
     void *start_arg;

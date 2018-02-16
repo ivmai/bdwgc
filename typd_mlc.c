@@ -62,28 +62,35 @@ typedef struct {
 /* We may eventually need to add provisions for headers and     */
 /* trailers.  Hence we provide for tree structured descriptors, */
 /* though we don't really use them currently.                   */
-typedef union ComplexDescriptor {
+
     struct LeafDescriptor {     /* Describes simple array       */
         word ld_tag;
 #       define LEAF_TAG 1
-        size_t ld_size;         /* bytes per element    */
-                                /* multiple of ALIGNMENT        */
-        size_t ld_nelements;    /* Number of elements.  */
+        size_t ld_size;         /* bytes per element            */
+                                /* multiple of ALIGNMENT.       */
+        size_t ld_nelements;    /* Number of elements.          */
         GC_descr ld_descriptor; /* A simple length, bitmap,     */
                                 /* or procedure descriptor.     */
     } ld;
+
     struct ComplexArrayDescriptor {
         word ad_tag;
 #       define ARRAY_TAG 2
         size_t ad_nelements;
         union ComplexDescriptor * ad_element_descr;
     } ad;
+
     struct SequenceDescriptor {
         word sd_tag;
 #       define SEQUENCE_TAG 3
         union ComplexDescriptor * sd_first;
         union ComplexDescriptor * sd_second;
     } sd;
+
+typedef union ComplexDescriptor {
+    struct LeafDescriptor ld;
+    struct ComplexArrayDescriptor ad;
+    struct SequenceDescriptor sd;
 } complex_descriptor;
 #define TAG ad.ad_tag
 
@@ -129,7 +136,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
 
     LOCK();
     while (GC_avail_descr + nwords >= GC_ed_size) {
-        ext_descr * new;
+        ext_descr * newExtD;
         size_t new_size;
         word ed_size = GC_ed_size;
 
@@ -143,16 +150,17 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
             new_size = 2 * ed_size;
             if (new_size > MAX_ENV) return(-1);
         }
-        new = (ext_descr *) GC_malloc_atomic(new_size * sizeof(ext_descr));
-        if (new == 0) return(-1);
+        newExtD = (ext_descr *)GC_malloc_atomic(new_size * sizeof(ext_descr));
+        if (NULL == newExtD)
+            return -1;
         LOCK();
         if (ed_size == GC_ed_size) {
             if (GC_avail_descr != 0) {
-                BCOPY(GC_ext_descriptors, new,
+                BCOPY(GC_ext_descriptors, newExtD,
                       GC_avail_descr * sizeof(ext_descr));
             }
             GC_ed_size = new_size;
-            GC_ext_descriptors = new;
+            GC_ext_descriptors = newExtD;
         }  /* else another thread already resized it in the meantime */
     }
     result = GC_avail_descr;
@@ -363,8 +371,8 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
     word bm = GC_ext_descriptors[env].ed_bitmap;
     word * current_p = addr;
     word current;
-    ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
-    ptr_t least_ha = GC_least_plausible_heap_addr;
+    ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+    ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
     DECLARE_HDR_CACHE;
 
     INIT_HDR_CACHE;
@@ -591,7 +599,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
 
     GC_ASSERT(GC_explicit_typing_initialized);
     lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
-    op = GC_malloc_kind(lb, GC_explicit_kind);
+    op = (word *)GC_malloc_kind(lb, GC_explicit_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
     /* It is not safe to use GC_size_map[lb] to compute lg here as the  */
@@ -627,7 +635,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
             /* See the comment in GC_malloc_explicitly_typed.   */
             lg = BYTES_TO_GRANULES(GC_size(op));
         } else {
-            GC_eobjfreelist[lg] = obj_link(op);
+            GC_eobjfreelist[lg] = (ptr_t)obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
             UNLOCK();
@@ -640,7 +648,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
          ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
        }
    }
-   return((void *) op);
+   return op;
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
@@ -672,7 +680,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
             lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
             break;
     }
-    op = GC_malloc_kind(lb, GC_array_kind);
+    op = (word *)GC_malloc_kind(lb, GC_array_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
     lg = BYTES_TO_GRANULES(GC_size(op));

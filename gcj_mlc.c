@@ -176,7 +176,7 @@ static void maybe_finalize(void)
                 return((*oom_fn)(lb));
             }
         } else {
-            GC_gcjobjfreelist[lg] = obj_link(op);
+            GC_gcjobjfreelist[lg] = (ptr_t)obj_link(op);
             GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
         }
         *(void **)op = ptr_to_struct_containing_descr;
@@ -224,7 +224,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     }
     UNLOCK();
     ADD_CALL_CHAIN(result, ra);
-    return (GC_store_debug_info(result, (word)lb, s, i));
+    return GC_store_debug_info((ptr_t)result, (word)lb, s, i);
 }
 
 /* There is no THREAD_LOCAL_ALLOC for GC_gcj_malloc_ignore_off_page().  */
@@ -249,7 +249,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
                 return((*oom_fn)(lb));
             }
         } else {
-            GC_gcjobjfreelist[lg] = obj_link(op);
+            GC_gcjobjfreelist[lg] = (ptr_t)obj_link(op);
             GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
         }
     } else {

@@ -408,7 +408,7 @@ GC_API void * GC_CALL GC_base(void * p)
     bottom_index *bi;
     hdr *candidate_hdr;
 
-    r = p;
+    r = (ptr_t)p;
     if (!EXPECT(GC_is_initialized, TRUE)) return 0;
     h = HBLKPTR(r);
     GET_BI(r, bi);
@@ -1890,8 +1890,8 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
         if (!GC_write_disabled)
 #     endif
       {
-        if (WRITE(GC_stderr, (void *)msg, strlen(msg)) >= 0)
-          (void)WRITE(GC_stderr, (void *)("\n"), 1);
+        if (WRITE(GC_stderr, msg, strlen(msg)) >= 0)
+          (void)WRITE(GC_stderr, "\n", 1);
       }
 #   else
       __android_log_assert("*" /* cond */, GC_ANDROID_LOG_TAG, "%s\n", msg);
@@ -1965,12 +1965,12 @@ GC_API void ** GC_CALL GC_new_free_list_inner(void)
     result = GC_INTERNAL_MALLOC((MAXOBJGRANULES+1) * sizeof(ptr_t), PTRFREE);
     if (NULL == result) ABORT("Failed to allocate freelist for new kind");
     BZERO(result, (MAXOBJGRANULES+1)*sizeof(ptr_t));
-    return result;
+    return (void **)result;
 }
 
 GC_API void ** GC_CALL GC_new_free_list(void)
 {
-    void *result;
+    void ** result;
     DCL_LOCK_STATE;
     LOCK();
     result = GC_new_free_list_inner();

@@ -10,6 +10,12 @@
 #include <dirent.h>
 #endif /* __DJGPP__ */
 
+#ifdef __cplusplus
+# define EXECV_ARGV_T char**
+#else
+# define EXECV_ARGV_T void* /* see the comment in if_mach.c */
+#endif
+
 int main(int argc, char **argv)
 {
     FILE * f;
@@ -43,7 +49,7 @@ int main(int argc, char **argv)
     if (argc == 2)
         return(2); /* the file does not exist but no command is given */
 
-    execvp(TRUSTED_STRING(argv[2]), (void *)(argv + 2));
+    execvp(TRUSTED_STRING(argv[2]), (EXECV_ARGV_T)(argv + 2));
     exit(1);
 
 Usage:

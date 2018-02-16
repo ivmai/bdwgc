@@ -621,8 +621,9 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 /* Print warning message, e.g. almost out of memory.    */
 /* The argument (if any) format specifier should be:    */
 /* "%s", "%p" or "%"WARN_PRIdPTR.                       */
-#define WARN(msg, arg) (*GC_current_warn_proc)("GC Warning: " msg, \
-                                               (word)(arg))
+#define WARN(msg, arg) \
+    (*GC_current_warn_proc)((/* no const */ char *)("GC Warning: " msg), \
+                            (word)(arg))
 GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
 /* Print format type macro for decimal signed_word value passed WARN(). */
@@ -1563,7 +1564,7 @@ GC_EXTERN size_t GC_page_size;
 #if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
   struct _SYSTEM_INFO;
   GC_EXTERN struct _SYSTEM_INFO GC_sysinfo;
-  GC_INNER GC_bool GC_is_heap_base(ptr_t p);
+  GC_INNER GC_bool GC_is_heap_base(void *p);
 #endif
 
 GC_EXTERN word GC_black_list_spacing;
@@ -1825,7 +1826,7 @@ void GC_register_data_segments(void);
   GC_INNER void GC_thr_init(void);
   GC_INNER void GC_init_parallel(void);
 #else
-  GC_INNER GC_bool GC_is_static_root(ptr_t p);
+  GC_INNER GC_bool GC_is_static_root(void *p);
                 /* Is the address p in one of the registered static     */
                 /* root sections?                                       */
 #endif

@@ -159,7 +159,7 @@ void (GC_CALLBACK *GC_is_visible_print_proc)(void * p) =
 
 #ifndef THREADS
 /* Could p be a stack address? */
-   STATIC GC_bool GC_on_stack(ptr_t p)
+   STATIC GC_bool GC_on_stack(void *p)
    {
 #    ifdef STACK_GROWS_DOWN
        if ((word)p >= (word)GC_approx_sp()
@@ -215,7 +215,7 @@ GC_API void * GC_CALL GC_is_visible(void *p)
         } else {
             /* p points to the heap. */
             word descr;
-            ptr_t base = GC_base(p);    /* Should be manually inlined? */
+            ptr_t base = (ptr_t)GC_base(p); /* Should be manually inlined? */
 
             if (base == 0) goto fail;
             if (HBLKPTR(base) != HBLKPTR(p)) hhdr = HDR((word)p);

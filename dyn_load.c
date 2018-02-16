@@ -995,7 +995,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #   ifdef MSWIN32
       if (GC_no_win32_dlls) return;
 #   endif
-    base = limit = p = GC_sysinfo.lpMinimumApplicationAddress;
+    p = GC_sysinfo.lpMinimumApplicationAddress;
+    base = limit = (char *)p;
     while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
         size_t result = VirtualQuery(p, &buf, sizeof(buf));
 
@@ -1033,7 +1034,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #               endif
                 if ((char *)p != limit) {
                     GC_cond_add_roots(base, limit);
-                    base = p;
+                    base = (char *)p;
                 }
                 limit = new_limit;
             }

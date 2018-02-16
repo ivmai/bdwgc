@@ -351,7 +351,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
         GC_reclaim_check(hbp, hhdr, sz);
     } else {
         *flh = GC_reclaim_generic(hbp, hhdr, sz, ok -> ok_init,
-                                  *flh, &GC_bytes_found);
+                                  (ptr_t)(*flh), &GC_bytes_found);
     }
 }
 
@@ -366,7 +366,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
 
     hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
     flh_next = GC_reclaim_generic(hbp, hhdr, sz, ok -> ok_init,
-                                  *flh, &GC_bytes_found);
+                                  (ptr_t)(*flh), &GC_bytes_found);
     if (hhdr -> hb_n_marks)
         *flh = flh_next;
     else {
@@ -585,17 +585,16 @@ void GC_print_block_list(void)
 /* Currently for debugger use only: */
 GC_API void GC_CALL GC_print_free_list(int kind, size_t sz_in_granules)
 {
-    ptr_t flh;
+    void *flh_next;
     int n;
 
     GC_ASSERT(kind < MAXOBJKINDS);
     GC_ASSERT(sz_in_granules <= MAXOBJGRANULES);
-    flh = GC_obj_kinds[kind].ok_freelist[sz_in_granules];
-    for (n = 0; flh; n++) {
-        struct hblk *block = HBLKPTR(flh);
+    flh_next = GC_obj_kinds[kind].ok_freelist[sz_in_granules];
+    for (n = 0; flh_next; n++) {
         GC_printf("Free object in heap block %p [%d]: %p\n",
-                  (void *)block, n, (void *)flh);
-        flh = obj_link(flh);
+                  (void *)HBLKPTR(flh_next), n, flh_next);
+        flh_next = obj_link(flh_next);
     }
 }
 
