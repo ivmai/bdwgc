@@ -650,6 +650,15 @@
 #   endif
 #   define mach_type_known
 # endif
+# if defined(__riscv) && defined(LINUX)
+#   if __riscv_xlen == 32
+#     define RISCV32
+#     define mach_type_known
+#   elif __riscv_xlen == 64
+#     define RISCV64
+#     define mach_type_known
+#   endif
+# endif
 
 # if defined(SN_TARGET_PSP2)
 #   define mach_type_known
@@ -2961,6 +2970,32 @@
 #   endif
 #   define PREFETCH(x) __insn_prefetch_l1(x)
 #   define CACHE_LINE_SIZE 64
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)__data_start)
+#     define LINUX_STACKBOTTOM
+#     define DYNAMIC_LOADING
+#   endif
+# endif
+
+# ifdef RISCV32
+#   define CPP_WORDSZ 32
+#   define MACH_TYPE "RISC-V 32"
+#   define ALIGNMENT 4
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)__data_start)
+#     define LINUX_STACKBOTTOM
+#     define DYNAMIC_LOADING
+#   endif
+# endif
+
+# ifdef RISCV64
+#   define CPP_WORDSZ 64
+#   define MACH_TYPE "RISC-V 64"
+#   define ALIGNMENT 8
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
       extern int __data_start[];
