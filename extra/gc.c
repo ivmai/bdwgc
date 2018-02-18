@@ -27,10 +27,16 @@
 /* for GC and the client otherwise GC_thread_exit_proc() is not         */
 /* guaranteed to be invoked (see the comments in pthread_start.c).      */
 
+#ifndef __cplusplus
+
+/* static is desirable here for more efficient linkage. That would      */
+/* require a larger change.                                             */
 
 #define GC_INNER STATIC
 #define GC_EXTERN GC_INNER
                 /* STATIC is defined in gcconfig.h. */
+
+#endif
 
 /* Small files go first... */
 #include "../backgraph.c"
