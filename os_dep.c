@@ -3922,7 +3922,12 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #include <mach/task.h>
 #include <pthread.h>
 
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 /* These are not defined in any header, although they are documented */
+/* Some of these are in #include <mach/exc.h>.                       */
 extern boolean_t
 exc_server(mach_msg_header_t *, mach_msg_header_t *);
 
@@ -3948,6 +3953,10 @@ GC_API_OSCALL kern_return_t
 catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
                       mach_port_t task, exception_type_t exception,
                       exception_data_t code, mach_msg_type_number_t code_count);
+
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
 
 /* These should never be called, but just in case...  */
 GC_API_OSCALL kern_return_t
