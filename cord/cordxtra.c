@@ -332,7 +332,7 @@ int CORD_rchr_proc(char c, void * client_data)
 int CORD_batched_chr_proc(const char *s, void * client_data)
 {
     chr_data * d = (chr_data *)client_data;
-    char * occ = strchr(s, d -> target);
+    const char * occ = strchr(s, d -> target);
 
     if (occ == 0) {
         d -> pos += strlen(s);
