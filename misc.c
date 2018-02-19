@@ -295,7 +295,11 @@ STATIC void GC_init_size_map(void)
     /* Clear the stack up to about limit.  Return arg.  This function   */
     /* is not static because it could also be erroneously defined in .S */
     /* file, so this error would be caught by the linker.               */
-    void *GC_clear_stack_inner(void *arg, ptr_t limit)
+    void *GC_clear_stack_inner(void *arg,
+#                           if defined(__APPLE_CC__) && !GC_CLANG_PREREQ(6, 0)
+                               volatile /* to workaround some bug */
+#                           endif
+                               ptr_t limit)
     {
 #     define CLEAR_SIZE 213 /* granularity */
       volatile word dummy[CLEAR_SIZE];
