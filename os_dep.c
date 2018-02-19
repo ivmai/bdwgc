@@ -2817,7 +2817,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   /* side of labeling pages as dirty (and this implementation does).    */
   GC_INNER GC_bool GC_page_was_dirty(struct hblk * h)
   {
-    register word index;
+    word index;
 
     if (HDR(h) == 0)
       return TRUE;
@@ -2830,7 +2830,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     /* Add all pages in pht2 to pht1.   */
     STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
     {
-      register unsigned i;
+      unsigned i;
       for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
     }
 
@@ -2841,7 +2841,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h)
 #   endif
     {
-      register word index;
+      word index;
       if (HDR(h) == 0)
         return TRUE;
       index = PHT_HASH(h);
@@ -3293,8 +3293,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   endif
 
     if (SIG_OK && CODE_OK) {
-        register struct hblk * h =
-                        (struct hblk *)((word)addr & ~(GC_page_size-1));
+        struct hblk * h = (struct hblk *)((word)addr & ~(GC_page_size-1));
         GC_bool in_allocd_block;
         size_t i;
 
@@ -3807,14 +3806,14 @@ GC_INNER void GC_read_dirty(GC_bool output_unneeded)
         limit = vaddr + pagesize * npages;
         for (; (word)vaddr < (word)limit; vaddr += pagesize) {
             if ((*bufp++) & PG_MODIFIED) {
-                register struct hblk * h;
+                struct hblk * h;
                 ptr_t next_vaddr = vaddr + pagesize;
 #               ifdef DEBUG_DIRTY_BITS
                   GC_log_printf("dirty page at: %p\n", (void *)vaddr);
 #               endif
                 for (h = (struct hblk *)vaddr;
                      (word)h < (word)next_vaddr; h++) {
-                    register word index = PHT_HASH(h);
+                    word index = PHT_HASH(h);
                     set_pht_entry_from_index(GC_grungy_pages, index);
                 }
             }
@@ -4479,7 +4478,7 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
 
     UNPROTECT(h, GC_page_size);
     for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
-      register int index = PHT_HASH(h+i);
+      int index = PHT_HASH(h+i);
       async_set_pht_entry_from_index(GC_dirty_pages, index);
     }
   } else if (GC_mprotect_state == GC_MP_DISCARDING) {
@@ -4680,7 +4679,7 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
           && nframes < NFRAMES;
         fp = (struct frame *)((long) fp -> FR_SAVFP + BIAS), nframes++) {
 #     if NARGS > 0
-        register int i;
+        int i;
 #     endif
 
       info[nframes].ci_pc = fp->FR_SAVPC;

@@ -126,7 +126,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 /* the mark stack.                                                      */
 #define PUSH_OBJ(obj, hhdr, mark_stack_top, mark_stack_limit) \
   do { \
-    register word _descr = (hhdr) -> hb_descr; \
+    word _descr = (hhdr) -> hb_descr; \
     GC_ASSERT(!HBLK_IS_FREE(hhdr)); \
     if (_descr != 0) { \
         mark_stack_top++; \
