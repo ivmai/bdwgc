@@ -4031,7 +4031,7 @@ typedef enum {
   /* This value is only used on the reply port. */
 # define ID_ACK 3
 
-  STATIC GC_mprotect_state_t GC_mprotect_state = 0;
+  STATIC GC_mprotect_state_t GC_mprotect_state;
 
   /* The following should ONLY be called when the world is stopped.     */
   STATIC void GC_mprotect_thread_notify(mach_msg_id_t id)
