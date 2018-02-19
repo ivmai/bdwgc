@@ -121,7 +121,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
 char * plain_chars(char * text, size_t len)
 {
     char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
-    register size_t i;
+    size_t i;
 
     if (NULL == result) return NULL;
     for (i = 0; i < len; i++) {
@@ -140,7 +140,7 @@ char * plain_chars(char * text, size_t len)
 char * control_chars(char * text, size_t len)
 {
     char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
-    register size_t i;
+    size_t i;
 
     if (NULL == result) return NULL;
     for (i = 0; i < len; i++) {
@@ -208,7 +208,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
    RECT this_line;
    RECT dummy;
    TEXTMETRIC tm;
-   register int i;
+   int i;
    int id;
 
    switch (message)

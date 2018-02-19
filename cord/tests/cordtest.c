@@ -65,7 +65,7 @@ char id_cord_fn(size_t i, void * client_data)
 void test_basics(void)
 {
     CORD x = CORD_from_char_star("ab");
-    register int i;
+    int i;
     CORD y;
     CORD_pos p;
 
@@ -148,7 +148,7 @@ void test_extras(void)
 {
 #   define FNAME1 "cordtst1.tmp" /* short name (8+3) for portability */
 #   define FNAME2 "cordtst2.tmp"
-    register int i;
+    int i;
     CORD y = "abcdefghijklmnopqrstuvwxyz0123456789";
     CORD x = "{}";
     CORD u, w, z;

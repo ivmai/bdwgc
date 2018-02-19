@@ -71,7 +71,7 @@ typedef void (* oom_fn)(void);
 
 CORD CORD_cat_char(CORD x, char c)
 {
-    register char * string;
+    char * string;
 
     if (c == '\0') return(CORD_cat(x, CORD_nul(1)));
     string = (char *)GC_MALLOC_ATOMIC(2);
@@ -83,13 +83,13 @@ CORD CORD_cat_char(CORD x, char c)
 
 CORD CORD_catn(int nargs, ...)
 {
-    register CORD result = CORD_EMPTY;
+    CORD result = CORD_EMPTY;
     va_list args;
-    register int i;
+    int i;
 
     va_start(args, nargs);
     for (i = 0; i < nargs; i++) {
-        register CORD next = va_arg(args, CORD);
+        CORD next = va_arg(args, CORD);
         result = CORD_cat(result, next);
     }
     va_end(args);
@@ -104,8 +104,8 @@ typedef struct {
 
 int CORD_fill_proc(char c, void * client_data)
 {
-    register CORD_fill_data * d = (CORD_fill_data *)client_data;
-    register size_t count = d -> count;
+    CORD_fill_data * d = (CORD_fill_data *)client_data;
+    size_t count = d -> count;
 
     (d -> buf)[count] = c;
     d -> count = ++count;
@@ -118,11 +118,11 @@ int CORD_fill_proc(char c, void * client_data)
 
 int CORD_batched_fill_proc(const char * s, void * client_data)
 {
-    register CORD_fill_data * d = (CORD_fill_data *)client_data;
-    register size_t count = d -> count;
-    register size_t max = d -> len;
-    register char * buf = d -> buf;
-    register const char * t = s;
+    CORD_fill_data * d = (CORD_fill_data *)client_data;
+    size_t count = d -> count;
+    size_t max = d -> len;
+    char * buf = d -> buf;
+    const char * t = s;
 
     while((buf[count] = *t++) != '\0') {
         count++;
@@ -175,14 +175,14 @@ int CORD_cmp(CORD x, CORD y)
         avail = CORD_pos_chars_left(xpos);
         if (avail == 0
             || (yavail = CORD_pos_chars_left(ypos)) == 0) {
-            register char xcurrent = CORD_pos_fetch(xpos);
-            register char ycurrent = CORD_pos_fetch(ypos);
+            char xcurrent = CORD_pos_fetch(xpos);
+            char ycurrent = CORD_pos_fetch(ypos);
             if (xcurrent != ycurrent) return(xcurrent - ycurrent);
             CORD_next(xpos);
             CORD_next(ypos);
         } else {
             /* process as many characters as we can */
-            register int result;
+            int result;
 
             if (avail > yavail) avail = yavail;
             result = strncmp(CORD_pos_cur_char_addr(xpos),
@@ -198,7 +198,7 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
 {
     CORD_pos xpos;
     CORD_pos ypos;
-    register size_t count;
+    size_t count;
 
     CORD_set_pos(xpos, x, x_start);
     CORD_set_pos(ypos, y, y_start);
@@ -217,15 +217,16 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
         }
         if ((avail = CORD_pos_chars_left(xpos)) <= 0
             || (yavail = CORD_pos_chars_left(ypos)) <= 0) {
-            register char xcurrent = CORD_pos_fetch(xpos);
-            register char ycurrent = CORD_pos_fetch(ypos);
+            char xcurrent = CORD_pos_fetch(xpos);
+            char ycurrent = CORD_pos_fetch(ypos);
+
             if (xcurrent != ycurrent) return(xcurrent - ycurrent);
             CORD_next(xpos);
             CORD_next(ypos);
             count++;
         } else {
             /* process as many characters as we can */
-            register int result;
+            int result;
 
             if (avail > yavail) avail = yavail;
             count += avail;
@@ -243,7 +244,7 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
 
 char * CORD_to_char_star(CORD x)
 {
-    register size_t len = CORD_len(x);
+    size_t len = CORD_len(x);
     char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
 
     if (result == 0) OUT_OF_MEMORY;
@@ -284,14 +285,14 @@ char CORD_fetch(CORD x, size_t i)
 
 int CORD_put_proc(char c, void * client_data)
 {
-    register FILE * f = (FILE *)client_data;
+    FILE * f = (FILE *)client_data;
 
     return(putc(c, f) == EOF);
 }
 
 int CORD_batched_put_proc(const char * s, void * client_data)
 {
-    register FILE * f = (FILE *)client_data;
+    FILE * f = (FILE *)client_data;
 
     return(fputs(s, f) == EOF);
 }
@@ -313,7 +314,7 @@ typedef struct {
 
 int CORD_chr_proc(char c, void * client_data)
 {
-    register chr_data * d = (chr_data *)client_data;
+    chr_data * d = (chr_data *)client_data;
 
     if (c == d -> target) return(1);
     (d -> pos) ++;
@@ -322,7 +323,7 @@ int CORD_chr_proc(char c, void * client_data)
 
 int CORD_rchr_proc(char c, void * client_data)
 {
-    register chr_data * d = (chr_data *)client_data;
+    chr_data * d = (chr_data *)client_data;
 
     if (c == d -> target) return(1);
     (d -> pos) --;
@@ -331,7 +332,7 @@ int CORD_rchr_proc(char c, void * client_data)
 
 int CORD_batched_chr_proc(const char *s, void * client_data)
 {
-    register chr_data * d = (chr_data *)client_data;
+    chr_data * d = (chr_data *)client_data;
     const char * occ = strchr(s, d -> target);
 
     if (NULL == occ) {
@@ -380,15 +381,15 @@ size_t CORD_str(CORD x, size_t start, CORD s)
     CORD_pos xpos;
     size_t xlen = CORD_len(x);
     size_t slen;
-    register size_t start_len;
+    size_t start_len;
     const char * s_start;
     unsigned long s_buf = 0;    /* The first few characters of s        */
     unsigned long x_buf = 0;    /* Start of candidate substring.        */
                     /* Initialized only to make compilers   */
                     /* happy.                               */
     unsigned long mask = 0;
-    register size_t i;
-    register size_t match_pos;
+    size_t i;
+    size_t match_pos;
 
     if (s == CORD_EMPTY) return(start);
     if (CORD_IS_STRING(s)) {
@@ -430,7 +431,7 @@ size_t CORD_str(CORD x, size_t start, CORD s)
 
 void CORD_ec_flush_buf(CORD_ec x)
 {
-    register size_t len = x[0].ec_bufptr - x[0].ec_buf;
+    size_t len = x[0].ec_bufptr - x[0].ec_buf;
     char * s;
 
     if (len == 0) return;
@@ -470,7 +471,7 @@ CORD CORD_from_file_eager(FILE * f)
           /* Append the right number of NULs                            */
           /* Note that any string of NULs is represented in 4 words,    */
           /* independent of its length.                                 */
-            register size_t count = 1;
+            size_t count = 1;
 
             CORD_ec_flush_buf(ecord);
             while ((c = getc(f)) == 0) count++;
@@ -528,8 +529,8 @@ typedef struct {
 /* Executed with allocation lock. */
 static char refill_cache(refill_data * client_data)
 {
-    register lf_state * state = client_data -> state;
-    register size_t file_pos = client_data -> file_pos;
+    lf_state * state = client_data -> state;
+    size_t file_pos = client_data -> file_pos;
     FILE *f = state -> lf_file;
     size_t line_start = LINE_START(file_pos);
     size_t line_no = DIV_LINE_SZ(MOD_CACHE_SZ(file_pos));
@@ -552,10 +553,10 @@ static char refill_cache(refill_data * client_data)
 
 char CORD_lf_func(size_t i, void * client_data)
 {
-    register lf_state * state = (lf_state *)client_data;
-    register cache_line * volatile * cl_addr =
-        &(state -> lf_cache[DIV_LINE_SZ(MOD_CACHE_SZ(i))]);
-    register cache_line * cl = (cache_line *)ATOMIC_READ(cl_addr);
+    lf_state * state = (lf_state *)client_data;
+    cache_line * volatile * cl_addr =
+                        &(state -> lf_cache[DIV_LINE_SZ(MOD_CACHE_SZ(i))]);
+    cache_line * cl = (cache_line *)ATOMIC_READ(cl_addr);
 
     if (cl == 0 || cl -> tag != DIV_LINE_SZ(i)) {
         /* Cache miss */
@@ -580,8 +581,8 @@ void CORD_lf_close_proc(void * obj, void * client_data CORD_ATTR_UNUSED)
 
 CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
 {
-    register lf_state * state = GC_NEW(lf_state);
-    register int i;
+    lf_state * state = GC_NEW(lf_state);
+    int i;
 
     if (state == 0) OUT_OF_MEMORY;
     if (len != 0) {
@@ -608,7 +609,7 @@ CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
 
 CORD CORD_from_file_lazy(FILE * f)
 {
-    register long len;
+    long len;
 
     if (fseek(f, 0l, SEEK_END) != 0
         || (len = ftell(f)) < 0
@@ -622,7 +623,7 @@ CORD CORD_from_file_lazy(FILE * f)
 
 CORD CORD_from_file(FILE * f)
 {
-    register long len;
+    long len;
 
     if (fseek(f, 0l, SEEK_END) != 0
         || (len = ftell(f)) < 0

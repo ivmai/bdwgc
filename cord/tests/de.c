@@ -271,7 +271,7 @@ CORD retrieve_line(CORD s, size_t pos, unsigned column)
 
     CORD retrieve_screen_line(int i)
     {
-        register size_t pos;
+        size_t pos;
 
         invalidate_map(dis_line + LINES);       /* Prune search */
         pos = line_pos(dis_line + i, 0);
@@ -283,12 +283,12 @@ CORD retrieve_line(CORD s, size_t pos, unsigned column)
 /* Display the visible section of the current file       */
 void redisplay(void)
 {
-    register int i;
+    int i;
 
     invalidate_map(dis_line + LINES);   /* Prune search */
     for (i = 0; i < LINES; i++) {
         if (need_redisplay == ALL || need_redisplay == i) {
-            register size_t pos = line_pos(dis_line + i, 0);
+            size_t pos = line_pos(dis_line + i, 0);
 
             if (pos == CORD_NOT_FOUND) break;
             replace_line(i, retrieve_line(current, pos, dis_col));
