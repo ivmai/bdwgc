@@ -2979,10 +2979,18 @@
 #   endif
 # endif
 
-# ifdef RISCV32
-#   define CPP_WORDSZ 32
-#   define MACH_TYPE "RISC-V32"
-#   define ALIGNMENT 4
+# if defined(__riscv)
+#   if defined(RISCV64)
+#     define CPP_WORDSZ 64
+#     define MACH_TYPE "RISC-V64"
+#     define ALIGNMENT 8
+#   elif defined(RISCV32)
+#     define CPP_WORDSZ 32
+#     define MACH_TYPE "RISC-V32"
+#     define ALIGNMENT 4
+#   else
+#     error Unsupported RISC-V xlen
+#   endif
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
       extern int __data_start[];
@@ -2990,20 +2998,7 @@
 #     define LINUX_STACKBOTTOM
 #     define DYNAMIC_LOADING
 #   endif
-# endif /* RISCV32 */
-
-# ifdef RISCV64
-#   define CPP_WORDSZ 64
-#   define MACH_TYPE "RISC-V64"
-#   define ALIGNMENT 8
-#   ifdef LINUX
-#     define OS_TYPE "LINUX"
-      extern int __data_start[];
-#     define DATASTART ((ptr_t)__data_start)
-#     define LINUX_STACKBOTTOM
-#     define DYNAMIC_LOADING
-#   endif
-# endif /* RISCV64 */
+# endif /* __riscv */
 
 #if defined(__GLIBC__) && !defined(DONT_USE_LIBC_PRIVATES)
   /* Use glibc's stack-end marker. */
