@@ -96,6 +96,12 @@
 # include "mm/PCR_MM.h"
 #endif
 
+#ifdef GC_DARWIN_THREADS
+/* Get extern "C" GC_mprotect_stop GC_mprotect_resume declarations      */
+/* before definitions.                                                  */
+#include "include/private/darwin_stop_world.h"
+#endif
+
 #if !defined(NO_EXECUTE_PERMISSION)
   STATIC GC_bool GC_pages_executable = TRUE;
 #else
