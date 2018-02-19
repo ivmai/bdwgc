@@ -651,13 +651,8 @@
 #   define mach_type_known
 # endif
 # if defined(__riscv) && defined(LINUX)
-#   if __riscv_xlen == 32
-#     define RISCV32
-#     define mach_type_known
-#   elif __riscv_xlen == 64
-#     define RISCV64
-#     define mach_type_known
-#   endif
+#   define RISCV
+#   define mach_type_known
 # endif
 
 # if defined(SN_TARGET_PSP2)
@@ -2979,10 +2974,10 @@
 #   endif
 # endif
 
-# ifdef RISCV32
-#   define CPP_WORDSZ 32
-#   define MACH_TYPE "RISC-V32"
-#   define ALIGNMENT 4
+# ifdef RISCV
+#   define MACH_TYPE "RISC-V"
+#   define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
+#   define ALIGNMENT (CPP_WORDSZ/8)
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
       extern int __data_start[];
@@ -2990,20 +2985,7 @@
 #     define LINUX_STACKBOTTOM
 #     define DYNAMIC_LOADING
 #   endif
-# endif /* RISCV32 */
-
-# ifdef RISCV64
-#   define CPP_WORDSZ 64
-#   define MACH_TYPE "RISC-V64"
-#   define ALIGNMENT 8
-#   ifdef LINUX
-#     define OS_TYPE "LINUX"
-      extern int __data_start[];
-#     define DATASTART ((ptr_t)__data_start)
-#     define LINUX_STACKBOTTOM
-#     define DYNAMIC_LOADING
-#   endif
-# endif /* RISCV64 */
+# endif /* RISCV */
 
 #if defined(__GLIBC__) && !defined(DONT_USE_LIBC_PRIVATES)
   /* Use glibc's stack-end marker. */
