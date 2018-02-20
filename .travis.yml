@@ -458,6 +458,12 @@ matrix:
     - MAKEFILE_TARGETS_CHECK="check"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
+    compiler: clang
+    env:
+    - CFLAGS_EXTRA="-O3 -Wall -Wextra -Werror -x c++"
+    - MAKEFILE_NAME=Makefile.direct
+    - MAKEFILE_TARGETS="cords"
+  - os: linux
     compiler: gcc
     env:
     - CC_FOR_CHECK=g++
