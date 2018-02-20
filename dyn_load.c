@@ -1247,7 +1247,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 /*#define DARWIN_DEBUG*/
 
 /* Writable sections generally available on Darwin.     */
-STATIC const struct {
+STATIC const struct dyld_sections_s {
     const char *seg;
     const char *sect;
 } GC_dyld_sections[] = {

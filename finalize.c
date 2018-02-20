@@ -71,7 +71,7 @@ struct finalizable_object {
 
 static signed_word log_fo_table_size = -1;
 
-STATIC struct {
+STATIC struct fnlz_roots_s {
   struct finalizable_object **fo_head;
   /* List of objects that should be finalized now: */
   struct finalizable_object *finalize_now;
