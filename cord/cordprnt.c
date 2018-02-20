@@ -70,12 +70,12 @@ static int ec_len(CORD_ec x)
 static int extract_conv_spec(CORD_pos source, char *buf,
                              int * width, int *prec, int *left, int * long_arg)
 {
-    register int result = 0;
-    register int current_number = 0;
-    register int saw_period = 0;
-    register int saw_number = 0;
-    register int chars_so_far = 0;
-    register char current;
+    int result = 0;
+    int current_number = 0;
+    int saw_period = 0;
+    int saw_number = 0;
+    int chars_so_far = 0;
+    char current;
 
     *width = NONE;
     buf[chars_so_far++] = '%';
@@ -191,8 +191,8 @@ static int extract_conv_spec(CORD_pos source, char *buf,
 int CORD_vsprintf(CORD * out, CORD format, va_list args)
 {
     CORD_ec result;
-    register int count;
-    register char current;
+    int count;
+    char current;
     CORD_pos pos;
     char conv_spec[CONV_SPEC_LEN + 1];
 
@@ -263,7 +263,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         goto done;
                     case 'c':
                         if (width == NONE && prec == NONE) {
-                            register char c;
+                            char c;
 
                             c = (char)va_arg(args, int);
                             CORD_ec_append(result, c);
@@ -273,7 +273,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                     case 's':
                         if (width == NONE && prec == NONE) {
                             char * str = va_arg(args, char *);
-                            register char c;
+                            char c;
 
                             while ((c = *str++)) {
                                 CORD_ec_append(result, c);
@@ -286,7 +286,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                 }
                 /* Use standard sprintf to perform conversion */
                 {
-                    register char * buf;
+                    char * buf;
                     va_list vsprintf_args;
                     int max_size = 0;
                     int res = 0;
@@ -360,7 +360,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         return(-1);
                     }
                     if (buf != result[0].ec_bufptr) {
-                        register char c;
+                        char c;
 
                         while ((c = *buf++)) {
                             CORD_ec_append(result, c);

@@ -221,7 +221,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(ebp));
 
 #   elif defined(X86_64)
-      lo = (void *)state.THREAD_FLD(rsp);
+      lo = (ptr_t)state.THREAD_FLD(rsp);
 #     ifndef DARWIN_DONT_PARSE_STACK
         *phi = GC_FindTopOfStack(state.THREAD_FLD(rsp));
 #     endif
@@ -243,7 +243,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(r15));
 
 #   elif defined(POWERPC)
-      lo = (void *)(state.THREAD_FLD(r1) - PPC_RED_ZONE_SIZE);
+      lo = (ptr_t)(state.THREAD_FLD(r1) - PPC_RED_ZONE_SIZE);
 #     ifndef DARWIN_DONT_PARSE_STACK
         *phi = GC_FindTopOfStack(state.THREAD_FLD(r1));
 #     endif
@@ -280,7 +280,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(r31));
 
 #   elif defined(ARM32)
-      lo = (void *)state.THREAD_FLD(sp);
+      lo = (ptr_t)state.THREAD_FLD(sp);
 #     ifndef DARWIN_DONT_PARSE_STACK
         *phi = GC_FindTopOfStack(state.THREAD_FLD(r[7])); /* fp */
 #     endif
@@ -296,7 +296,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(lr));
 
 #   elif defined(AARCH64)
-      lo = (void *)state.THREAD_FLD(sp);
+      lo = (ptr_t)state.THREAD_FLD(sp);
 #     ifndef DARWIN_DONT_PARSE_STACK
         *phi = GC_FindTopOfStack(state.THREAD_FLD(fp));
 #     endif

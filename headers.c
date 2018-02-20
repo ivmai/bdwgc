@@ -167,7 +167,7 @@ static hdr * hdr_free_list = 0;
 /* Return an uninitialized header */
 static hdr * alloc_hdr(void)
 {
-    register hdr * result;
+    hdr * result;
 
     if (hdr_free_list == 0) {
         result = (hdr *)GC_scratch_alloc(sizeof(hdr));
@@ -192,7 +192,7 @@ GC_INLINE void free_hdr(hdr * hhdr)
 
 GC_INNER void GC_init_headers(void)
 {
-    register unsigned i;
+    unsigned i;
 
     GC_all_nils = (bottom_index *)GC_scratch_alloc(sizeof(bottom_index));
     if (GC_all_nils == NULL) {
@@ -302,7 +302,7 @@ GC_INNER void GC_remove_header(struct hblk *h)
 /* Remove forwarding counts for h */
 GC_INNER void GC_remove_counts(struct hblk *h, size_t sz/* bytes */)
 {
-    register struct hblk * hbp;
+    struct hblk * hbp;
     for (hbp = h+1; (word)hbp < (word)h + sz; hbp += 1) {
         SET_HDR(hbp, 0);
     }
@@ -340,12 +340,12 @@ void GC_apply_to_all_blocks(void (*fn)(struct hblk *h, word client_data),
 /* Return 0 if there is none.                           */
 GC_INNER struct hblk * GC_next_used_block(struct hblk *h)
 {
-    register bottom_index * bi;
-    register word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
+    bottom_index * bi;
+    word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
 
     GET_BI(h, bi);
     if (bi == GC_all_nils) {
-        register word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
+        word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
         bi = GC_all_bottom_indices;
         while (bi != 0 && bi -> key < hi) bi = bi -> asc_link;
         j = 0;
@@ -376,12 +376,12 @@ GC_INNER struct hblk * GC_next_used_block(struct hblk *h)
 /* Unlike the above, this may return a free block.              */
 GC_INNER struct hblk * GC_prev_block(struct hblk *h)
 {
-    register bottom_index * bi;
-    register signed_word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
+    bottom_index * bi;
+    signed_word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
 
     GET_BI(h, bi);
     if (bi == GC_all_nils) {
-        register word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
+        word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
         bi = GC_all_bottom_indices_end;
         while (bi != 0 && bi -> key > hi) bi = bi -> desc_link;
         j = BOTTOM_SZ - 1;
