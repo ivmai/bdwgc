@@ -1908,7 +1908,8 @@ STATIC void * GC_start_routine(void * arg)
         DISABLE_CANCEL(cancel_state);
                 /* pthread_create is not a cancellation point. */
         while (0 != sem_wait(&(si -> registered))) {
-            if (EINTR != errno) ABORT("sem_wait failed");
+            if (EINTR != errno)
+              ABORT_ARG1("sem_wait failed", ": errcode= %d", errno);
         }
         RESTORE_CANCEL(cancel_state);
     }
