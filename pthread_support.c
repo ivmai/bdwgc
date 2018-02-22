@@ -577,8 +577,8 @@ STATIC GC_thread GC_new_thread(pthread_t id)
 STATIC void GC_delete_thread(pthread_t id)
 {
     int hv = THREAD_TABLE_INDEX(id);
-    register GC_thread p = GC_threads[hv];
-    register GC_thread prev = 0;
+    GC_thread p = GC_threads[hv];
+    GC_thread prev = NULL;
 
 #   ifdef DEBUG_THREADS
       GC_log_printf("Deleting thread %p, n_threads = %d\n",
@@ -616,8 +616,8 @@ STATIC void GC_delete_gc_thread(GC_thread t)
 {
     pthread_t id = t -> id;
     int hv = THREAD_TABLE_INDEX(id);
-    register GC_thread p = GC_threads[hv];
-    register GC_thread prev = 0;
+    GC_thread p = GC_threads[hv];
+    GC_thread prev = NULL;
 
     GC_ASSERT(I_HOLD_LOCK());
     while (p != t) {

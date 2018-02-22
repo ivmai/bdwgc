@@ -96,8 +96,8 @@ GC_API void GC_CALL GC_push_finalizer_structures(void)
 STATIC void GC_grow_table(struct hash_chain_entry ***table,
                           signed_word *log_size_ptr)
 {
-    register word i;
-    register struct hash_chain_entry *p;
+    word i;
+    struct hash_chain_entry *p;
     signed_word log_old_size = *log_size_ptr;
     signed_word log_new_size = log_old_size + 1;
     word old_size = log_old_size == -1 ? 0 : (word)1 << log_old_size;

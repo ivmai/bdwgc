@@ -1034,11 +1034,11 @@ GC_INNER void GC_start_world(void)
 {
 # ifndef NACL
     pthread_t self = pthread_self();
-    register int i;
-    register GC_thread p;
+    int i;
+    GC_thread p;
 #   ifndef GC_OPENBSD_UTHREADS
-      register int n_live_threads = 0;
-      register int result;
+      int n_live_threads = 0;
+      int result;
 #   endif
 
 #   ifdef DEBUG_THREADS

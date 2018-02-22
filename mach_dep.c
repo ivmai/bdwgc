@@ -298,8 +298,8 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
         /* We're not sure whether he would like  */
         /* to be acknowledged for it or not.     */
         jmp_buf regs;
-        register word * i = (word *) &regs;
-        register ptr_t lim = (ptr_t)(&regs) + (sizeof regs);
+        word * i = (word *)&regs;
+        ptr_t lim = (ptr_t)(&regs) + sizeof(regs);
 
         /* Setjmp doesn't always clear all of the buffer.               */
         /* That tends to preserve garbage.  Clear it.                   */

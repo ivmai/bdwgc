@@ -183,7 +183,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
       /* virtually guaranteed to be dominated by the time it    */
       /* takes to scan the roots.                               */
       {
-        register int i;
+        int i;
         struct roots * old = NULL; /* initialized to prevent warning. */
 
         for (i = 0; i < n_root_sets; i++) {
@@ -371,7 +371,7 @@ STATIC void GC_remove_tmp_roots(void)
   GC_API int GC_CALL GC_is_tmp_root(void *p)
   {
     static int last_root_set = MAX_ROOT_SETS;
-    register int i;
+    int i;
 
     if (last_root_set < n_root_sets
         && (word)p >= (word)GC_static_roots[last_root_set].r_start

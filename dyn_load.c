@@ -875,7 +875,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
                                         /* Known irrelevant map entries */
             static int n_irr = 0;
             struct stat buf;
-            register int j;
+            int j;
 
             for (j = 0; j < n_irr; j++) {
                 if (map_irr[j] == start) goto irrelevant;

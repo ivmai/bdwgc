@@ -188,7 +188,7 @@ GC_INNER void GC_set_hdr_marks(hdr *hhdr)
  */
 static void clear_marks_for_block(struct hblk *h, word dummy GC_ATTR_UNUSED)
 {
-    register hdr * hhdr = HDR(h);
+    hdr * hhdr = HDR(h);
 
     if (IS_UNCOLLECTABLE(hhdr -> hb_obj_kind)) return;
         /* Mark bit for these is cleared only once the object is        */

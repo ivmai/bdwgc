@@ -65,8 +65,8 @@ typedef struct {
 
 void GC_enumerate_block(struct hblk *h, enumerate_data * ed)
 {
-    register hdr * hhdr;
-    register size_t sz;
+    hdr * hhdr;
+    size_t sz;
     ptr_t p;
     ptr_t lim;
     word descr;

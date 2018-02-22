@@ -670,8 +670,8 @@ STATIC void GC_delete_gc_thread_no_free(GC_vthread t)
     DWORD id = ((GC_thread)t) -> id;
                 /* Cast away volatile qualifier, since we have lock.    */
     int hv = THREAD_TABLE_INDEX(id);
-    register GC_thread p = GC_threads[hv];
-    register GC_thread prev = 0;
+    GC_thread p = GC_threads[hv];
+    GC_thread prev = NULL;
 
     GC_ASSERT(I_HOLD_LOCK());
     while (p != (GC_thread)t) {
@@ -704,8 +704,8 @@ STATIC void GC_delete_thread(DWORD id)
     }
   } else {
     int hv = THREAD_TABLE_INDEX(id);
-    register GC_thread p = GC_threads[hv];
-    register GC_thread prev = 0;
+    GC_thread p = GC_threads[hv];
+    GC_thread prev = NULL;
 
     GC_ASSERT(I_HOLD_LOCK());
     while (p -> id != id) {

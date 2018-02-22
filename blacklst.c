@@ -263,7 +263,7 @@ struct hblk * GC_is_black_listed(struct hblk *h, word len)
 STATIC word GC_number_stack_black_listed(struct hblk *start,
                                          struct hblk *endp1)
 {
-    register struct hblk * h;
+    struct hblk * h;
     word result = 0;
 
     for (h = start; (word)h < (word)endp1; h++) {
@@ -277,7 +277,7 @@ STATIC word GC_number_stack_black_listed(struct hblk *start,
 /* Return the total number of (stack) black-listed bytes. */
 static word total_stack_black_listed(void)
 {
-    register unsigned i;
+    unsigned i;
     word total = 0;
 
     for (i = 0; i < GC_n_heap_sects; i++) {

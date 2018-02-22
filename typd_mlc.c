@@ -427,15 +427,15 @@ STATIC word GC_descr_obj_size(complex_descriptor *d)
 STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
                                         mse *msp, mse *msl)
 {
-    register ptr_t current = (ptr_t) addr;
-    register word nelements;
-    register word sz;
-    register word i;
+    ptr_t current = (ptr_t)addr;
+    word nelements;
+    word sz;
+    word i;
 
     switch(d -> TAG) {
       case LEAF_TAG:
         {
-          register GC_descr descr = d -> ld.ld_descriptor;
+          GC_descr descr = d -> ld.ld_descriptor;
 
           nelements = d -> ld.ld_nelements;
           if (msl - msp <= (ptrdiff_t)nelements) return(0);
@@ -450,7 +450,7 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
         }
       case ARRAY_TAG:
         {
-          register complex_descriptor *descr = d -> ad.ad_element_descr;
+          complex_descriptor *descr = d -> ad.ad_element_descr;
 
           nelements = d -> ad.ad_nelements;
           sz = GC_descr_obj_size(descr);
