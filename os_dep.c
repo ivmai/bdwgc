@@ -3376,7 +3376,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         /* and then to have the thread stopping code set the dirty      */
         /* flag, if necessary.                                          */
         for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
-            size_t index = PHT_HASH(h+i);
+            word index = PHT_HASH(h+i);
 
             async_set_pht_entry_from_index(GC_dirty_pages, index);
         }
@@ -3430,7 +3430,8 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         return;
     }
     for (current = h_trunc; (word)current < (word)h_end; ++current) {
-        size_t index = PHT_HASH(current);
+        word index = PHT_HASH(current);
+
         if (!is_ptrfree || (word)current < (word)h
             || (word)current >= (word)(h + nblocks)) {
             async_set_pht_entry_from_index(GC_dirty_pages, index);
@@ -3815,6 +3816,7 @@ GC_INNER void GC_read_dirty(GC_bool output_unneeded)
                 for (h = (struct hblk *)vaddr;
                      (word)h < (word)next_vaddr; h++) {
                     word index = PHT_HASH(h);
+
                     set_pht_entry_from_index(GC_grungy_pages, index);
                 }
             }
@@ -4479,7 +4481,7 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
 
     UNPROTECT(h, GC_page_size);
     for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
-      int index = PHT_HASH(h+i);
+      word index = PHT_HASH(h+i);
       async_set_pht_entry_from_index(GC_dirty_pages, index);
     }
   } else if (GC_mprotect_state == GC_MP_DISCARDING) {
