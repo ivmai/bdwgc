@@ -341,12 +341,13 @@ void GC_apply_to_all_blocks(void (*fn)(struct hblk *h, word client_data),
 /* Return 0 if there is none.                           */
 GC_INNER struct hblk * GC_next_used_block(struct hblk *h)
 {
-    register bottom_index * bi;
-    register word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
+    REGISTER bottom_index * bi;
+    REGISTER word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
 
     GET_BI(h, bi);
     if (bi == GC_all_nils) {
-        register word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
+        REGISTER word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
+
         bi = GC_all_bottom_indices;
         while (bi != 0 && bi -> key < hi) bi = bi -> asc_link;
         j = 0;

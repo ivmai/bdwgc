@@ -157,6 +157,15 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* The corresponding variable definition must start with GC_INNER.    */
 #endif /* !GC_INNER */
 
+#ifdef __cplusplus
+  /* Register storage specifier is deprecated in C++11. */
+# define REGISTER /* empty */
+#else
+  /* Used only for several local variables in the performance-critical  */
+  /* functions.  Should not be used for new code.                       */
+# define REGISTER register
+#endif
+
 #ifndef HEADERS_H
 # include "gc_hdrs.h"
 #endif

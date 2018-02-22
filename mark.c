@@ -1604,10 +1604,10 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
-    register word *p;
-    register word *lim;
-    register ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
-    register ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
+    REGISTER word *p;
+    REGISTER word *lim;
+    REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+    REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
 #   define GC_greatest_plausible_heap_addr greatest_ha
 #   define GC_least_plausible_heap_addr least_ha
 
@@ -1617,7 +1617,8 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
       lim = t - 1 /* longword */;
       for (p = b; (word)p <= (word)lim;
            p = (word *)(((ptr_t)p) + ALIGNMENT)) {
-        register word q = *p;
+        REGISTER word q = *p;
+
         GC_PUSH_ONE_STACK(q, p);
       }
 #   undef GC_greatest_plausible_heap_addr
@@ -1649,10 +1650,10 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
   {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
-    register word *p;
-    register word *lim;
-    register ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
-    register ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
+    REGISTER word *p;
+    REGISTER word *lim;
+    REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+    REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
 #   define GC_greatest_plausible_heap_addr greatest_ha
 #   define GC_least_plausible_heap_addr least_ha
 
@@ -1662,7 +1663,8 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 
     lim = t - 1;
     for (p = b; (word)p <= (word)lim; p = (word *)((ptr_t)p + ALIGNMENT)) {
-      register word q = *p;
+      REGISTER word q = *p;
+
       GC_PUSH_ONE_HEAP(q, p, GC_mark_stack_top);
     }
 #   undef GC_greatest_plausible_heap_addr

@@ -176,28 +176,27 @@ typedef struct bi {
   /* Set bottom_indx to point to the bottom index for address p */
 # define GET_BI(p, bottom_indx) \
         do { \
-          register word hi = \
-              (word)(p) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE); \
-          register bottom_index * _bi = GC_top_index[TL_HASH(hi)]; \
+          REGISTER word hi = (word)(p) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE); \
+          REGISTER bottom_index * _bi = GC_top_index[TL_HASH(hi)]; \
           while (_bi -> key != hi && _bi != GC_all_nils) \
               _bi = _bi -> hash_link; \
           (bottom_indx) = _bi; \
         } while (0)
 # define GET_HDR_ADDR(p, ha) \
         do { \
-          register bottom_index * bi; \
+          REGISTER bottom_index * bi; \
           GET_BI(p, bi); \
           (ha) = &HDR_FROM_BI(bi, p); \
         } while (0)
 # define GET_HDR(p, hhdr) \
         do { \
-          register hdr ** _ha; \
+          REGISTER hdr ** _ha; \
           GET_HDR_ADDR(p, _ha); \
           (hhdr) = *_ha; \
         } while (0)
 # define SET_HDR(p, hhdr) \
         do { \
-          register hdr ** _ha; \
+          REGISTER hdr ** _ha; \
           GET_HDR_ADDR(p, _ha); \
           *_ha = (hhdr); \
         } while (0)
