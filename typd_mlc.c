@@ -621,8 +621,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
     if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
-        lg = GC_size_map[lb];
         LOCK();
+        lg = GC_size_map[lb];
         op = GC_eobjfreelist[lg];
         if (EXPECT(0 == op, FALSE)) {
             UNLOCK();

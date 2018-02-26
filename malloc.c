@@ -300,11 +300,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
     if (SMALL_OBJ(lb)) {
         void *op;
         void **opp;
-        size_t lg = GC_size_map[lb];
+        size_t lg;
         DCL_LOCK_STATE;
 
         GC_DBG_COLLECT_AT_MALLOC(lb);
         LOCK();
+        lg = GC_size_map[lb];
         opp = &GC_obj_kinds[k].ok_freelist[lg];
         op = *opp;
         if (EXPECT(op != NULL, TRUE)) {
@@ -365,8 +366,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
         if (EXTRA_BYTES != 0 && lb != 0) lb--;
                   /* We don't need the extra byte, since this won't be  */
                   /* collected anyway.                                  */
-        lg = GC_size_map[lb];
         LOCK();
+        lg = GC_size_map[lb];
         opp = &GC_obj_kinds[k].ok_freelist[lg];
         op = *opp;
         if (EXPECT(op != NULL, TRUE)) {

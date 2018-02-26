@@ -1359,7 +1359,8 @@ struct _GC_arrays {
 # endif
   size_t _size_map[MAXOBJBYTES+1];
         /* Number of granules to allocate when asked for a certain      */
-        /* number of bytes.                                             */
+        /* number of bytes.  Should be accessed with the allocation     */
+        /* lock held.                                                   */
 # ifdef STUBBORN_ALLOC
 #   define GC_sobjfreelist GC_arrays._sobjfreelist
     ptr_t _sobjfreelist[MAXOBJGRANULES+1];

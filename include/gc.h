@@ -773,7 +773,9 @@ GC_API size_t GC_CALL GC_get_prof_stats(struct GC_prof_stats_s *,
 /* Get the element value (converted to bytes) at a given index of       */
 /* size_map table which provides requested-to-actual allocation size    */
 /* mapping.  Assumes the collector is initialized.  Returns -1 if the   */
-/* index is out of size_map table bounds. Does not use synchronization. */
+/* index is out of size_map table bounds. Does not use synchronization, */
+/* thus clients should call it using GC_call_with_alloc_lock typically  */
+/* to avoid data races on multiprocessors.                              */
 GC_API size_t GC_CALL GC_get_size_map_at(int i);
 
 /* Count total memory use in bytes by all allocated blocks.  Acquires   */
