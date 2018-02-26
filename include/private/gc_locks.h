@@ -28,11 +28,6 @@
  */
 # ifdef THREADS
 
-#  if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
-      && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
-#    include "gc_atomic_ops.h"
-#  endif
-
 #  ifdef PCR
 #    include <base/PCR_Base.h>
 #    include <th/PCR_Th.h>

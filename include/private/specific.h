@@ -14,8 +14,6 @@
 
 #include <errno.h>
 
-#include "gc_atomic_ops.h"
-
 /* Note: never put extern "C" around an #include.       */
 #ifdef __cplusplus
   extern "C" {

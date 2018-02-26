@@ -250,6 +250,10 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define GC_API_PRIV GC_API
 #endif
 
+#if defined(THREADS) && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+# include "gc_atomic_ops.h"
+#endif
+
 #ifndef GC_LOCKS_H
 # include "gc_locks.h"
 #endif
@@ -754,17 +758,6 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # endif
 #endif /* DARWIN */
 
-#ifdef PARALLEL_MARK
-# include "gc_atomic_ops.h"
-# define counter_t volatile AO_t
-#else
-  typedef size_t counter_t;
-# if defined(THREADS) && (defined(MPROTECT_VDB) || defined(THREAD_SANITIZER) \
-                || (defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)))
-#   include "gc_atomic_ops.h"
-# endif
-#endif /* !PARALLEL_MARK */
-
 #include "../gc_tiny_fl.h"
 
 #include <setjmp.h>
@@ -1090,7 +1083,8 @@ struct hblkhdr {
                                 /* mod BYTES_TO_GRANULES(hb_sz), except */
                                 /* for large blocks.  See GC_obj_map.   */
 #   endif
-    counter_t hb_n_marks;       /* Number of set mark bits, excluding   */
+#   ifdef PARALLEL_MARK
+      volatile AO_t hb_n_marks; /* Number of set mark bits, excluding   */
                                 /* the one always set at the end.       */
                                 /* Currently it is concurrently         */
                                 /* updated and hence only approximate.  */
@@ -1108,8 +1102,10 @@ struct hblkhdr {
                                 /* The count may also be too high if    */
                                 /* multiple mark threads mark the       */
                                 /* same object due to a race.           */
-                                /* Without parallel marking, the count  */
+#   else
+      size_t hb_n_marks;        /* Without parallel marking, the count  */
                                 /* is accurate.                         */
+#   endif
 #   ifdef USE_MARK_BYTES
 #     define MARK_BITS_SZ (MARK_BITS_PER_HBLK + 1)
         /* Unlike the other case, this is in units of bytes.            */

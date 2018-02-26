@@ -40,8 +40,7 @@ void GC_noop6(word arg1 GC_ATTR_UNUSED, word arg2 GC_ATTR_UNUSED,
               word arg5 GC_ATTR_UNUSED, word arg6 GC_ATTR_UNUSED)
 {
   /* Avoid GC_noop6 calls to be optimized away. */
-# if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
-     || defined(PARALLEL_MARK)
+# ifdef AO_CLEAR
     AO_compiler_barrier(); /* to serve as a special side-effect */
 # else
     GC_noop1(0);

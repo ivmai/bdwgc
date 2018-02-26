@@ -20,9 +20,7 @@
 
 #include <stdio.h>
 
-#if defined(GC_BUILTIN_ATOMIC) || defined(PARALLEL_MARK) \
-    || (defined(GC_THREADS) && !defined(_WIN32) && !defined(_MSC_VER) \
-        && !defined(__CYGWIN__) && !defined(__MINGW32__))
+#if defined(GC_BUILTIN_ATOMIC) || defined(GC_THREADS)
 
 # include <stdlib.h>
 

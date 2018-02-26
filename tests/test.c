@@ -171,12 +171,6 @@
               exit(1); \
             }
 
-#if defined(THREADS) && (defined(GC_BUILTIN_ATOMIC) \
-                         || defined(PARALLEL_MARK) \
-                         || !defined(GC_WIN32_THREADS))
-# include "private/gc_atomic_ops.h" /* for counters */
-#endif
-
 /* Define AO primitives for a single-threaded mode. */
 #ifndef AO_CLEAR
   /* AO_t not defined. */
