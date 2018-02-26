@@ -96,6 +96,11 @@
 # include "mm/PCR_MM.h"
 #endif
 
+#if defined(GC_DARWIN_THREADS) && defined(MPROTECT_VDB)
+  /* Declare GC_mprotect_stop and GC_mprotect_resume as extern "C".     */
+# include "private/darwin_stop_world.h"
+#endif
+
 #if !defined(NO_EXECUTE_PERMISSION)
   STATIC GC_bool GC_pages_executable = TRUE;
 #else
@@ -3919,7 +3924,12 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #include <mach/task.h>
 #include <pthread.h>
 
-/* These are not defined in any header, although they are documented */
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
+/* Some of the following prototypes are missing in any header, although */
+/* they are documented.  Some are in mach/exc.h file.                   */
 extern boolean_t
 exc_server(mach_msg_header_t *, mach_msg_header_t *);
 
@@ -3944,7 +3954,26 @@ exception_raise_state_identity(mach_port_t, mach_port_t, mach_port_t,
 GC_API_OSCALL kern_return_t
 catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
                       mach_port_t task, exception_type_t exception,
-                      exception_data_t code, mach_msg_type_number_t code_count);
+                      exception_data_t code,
+                      mach_msg_type_number_t code_count);
+
+GC_API_OSCALL kern_return_t
+catch_exception_raise_state(mach_port_name_t exception_port,
+                int exception, exception_data_t code,
+                mach_msg_type_number_t codeCnt, int flavor,
+                thread_state_t old_state, int old_stateCnt,
+                thread_state_t new_state, int new_stateCnt);
+
+GC_API_OSCALL kern_return_t
+catch_exception_raise_state_identity(mach_port_name_t exception_port,
+                mach_port_t thread, mach_port_t task, int exception,
+                exception_data_t code, mach_msg_type_number_t codeCnt,
+                int flavor, thread_state_t old_state, int old_stateCnt,
+                thread_state_t new_state, int new_stateCnt);
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 /* These should never be called, but just in case...  */
 GC_API_OSCALL kern_return_t
@@ -4019,7 +4048,7 @@ typedef enum {
   /* This value is only used on the reply port. */
 # define ID_ACK 3
 
-  STATIC GC_mprotect_state_t GC_mprotect_state = 0;
+  STATIC GC_mprotect_state_t GC_mprotect_state = GC_MP_NORMAL;
 
   /* The following should ONLY be called when the world is stopped.     */
   STATIC void GC_mprotect_thread_notify(mach_msg_id_t id)
