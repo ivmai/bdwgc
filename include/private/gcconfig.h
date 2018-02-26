@@ -335,7 +335,7 @@
 #    define HAIKU
 #    define mach_type_known
 # endif
-# if defined(__HAIKU__) && defined(__amd64__)
+# if defined(__HAIKU__) && (defined(__amd64__) || defined(__x86_64__))
 #    define X86_64
 #    define HAIKU
 #    define mach_type_known
@@ -2817,8 +2817,8 @@
         extern "C" {
 #     endif
 #     define GETPAGESIZE() (unsigned)B_PAGE_SIZE
-      extern int etext[];
-#     define DATASTART ((ptr_t)((((word)etext) + 0xfff) & ~0xfff))
+#     define HEURISTIC2
+#     define SEARCH_FOR_DATA_START
 #     define DYNAMIC_LOADING
 #     define MPROTECT_VDB
 #   endif
@@ -3279,10 +3279,11 @@
 # define DEFAULT_VDB
 #endif
 
-#if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HURD) \
-                             || defined(OPENBSD) || defined(ARM32) \
-                             || defined(MIPS) || defined(AVR32) \
-                             || defined(OR1K) || defined(NIOS2))) \
+#if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HAIKU) \
+                             || defined(HURD) || defined(OPENBSD) \
+                             || defined(ARM32) \
+                             || defined(AVR32) || defined(MIPS) \
+                             || defined(NIOS2) || defined(OR1K))) \
      || (defined(LINUX) && !defined(__gnu_linux__)) \
      || (defined(RTEMS) && defined(I386)) || defined(HOST_ANDROID)) \
     && !defined(NO_GETCONTEXT)
@@ -3722,7 +3723,7 @@
 #   define GET_MEM(bytes) (struct hblk*)switch_get_mem(bytes)
 # elif defined(HAIKU)
     ptr_t GC_haiku_get_mem(size_t bytes);
-#   define GET_MEM(bytes) (struct  hblk*)GC_haiku_get_mem(bytes)
+#   define GET_MEM(bytes) (struct hblk*)GC_haiku_get_mem(bytes)
 # else
     ptr_t GC_unix_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)

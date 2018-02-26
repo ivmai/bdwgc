@@ -333,7 +333,7 @@
 /* This may also be desirable if it is possible but expensive to        */
 /* retrieve the call chain.                                             */
 #if (defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) \
-     || defined(__FreeBSD__) || defined(__DragonFly__) \
+     || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__HAIKU__) \
      || defined(HOST_ANDROID) || defined(__ANDROID__)) \
     && !defined(GC_CAN_SAVE_CALL_STACKS)
 # define GC_ADD_CALLER
