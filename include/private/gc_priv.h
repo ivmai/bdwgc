@@ -1583,7 +1583,7 @@ GC_EXTERN word GC_black_list_spacing;
 
 #ifdef GC_GCJ_SUPPORT
   extern struct hblk * GC_hblkfreelist[];
-                                        /* Remains visible to GNU GCJ. */
+  extern word GC_free_bytes[];  /* Both remain visible to GNU GCJ.      */
 #endif
 
 #ifdef GC_DISABLE_INCREMENTAL
