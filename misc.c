@@ -79,7 +79,7 @@
 GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 
 GC_INNER GC_bool GC_debugging_started = FALSE;
-        /* defined here so we don't have to load debug_malloc.o */
+                /* defined here so we don't have to load dbg_mlc.o */
 
 ptr_t GC_stackbottom = 0;
 
