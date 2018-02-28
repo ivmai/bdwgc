@@ -2505,7 +2505,7 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define NEED_FIND_LIMIT
 #endif
 
-#if (defined(SVR4) || defined(AUX) || defined(DGUX) \
+#if (defined(SVR4) || defined(AIX) || defined(DGUX) \
     || (defined(LINUX) && defined(SPARC))) && !defined(PCR)
 # define NEED_FIND_LIMIT
 #endif
