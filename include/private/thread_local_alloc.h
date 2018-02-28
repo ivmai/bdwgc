@@ -185,6 +185,14 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p);
 /* we take care of an individual thread freelist structure.     */
 GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p);
 
+#ifdef GC_ASSERTIONS
+  GC_bool GC_is_thread_tsd_valid(void *tsd);
+  void GC_check_tls_for(GC_tlfs p);
+# if defined(USE_CUSTOM_SPECIFIC)
+    void GC_check_tsd_marks(tsd *key);
+# endif
+#endif /* GC_ASSERTIONS */
+
 #ifndef GC_ATTR_TLS_FAST
 # define GC_ATTR_TLS_FAST /* empty */
 #endif

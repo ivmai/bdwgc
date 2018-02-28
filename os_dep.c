@@ -424,8 +424,6 @@ GC_INNER char * GC_get_maps(void)
 
   ptr_t GC_data_start = NULL;
 
-  ptr_t GC_find_limit(ptr_t, GC_bool);
-
   GC_INNER void GC_init_linux_data_start(void)
   {
     ptr_t data_end = DATAEND;
@@ -498,7 +496,6 @@ GC_INNER char * GC_get_maps(void)
 
 #if defined(NETBSD) && defined(__ELF__)
   ptr_t GC_data_start = NULL;
-  ptr_t GC_find_limit(ptr_t, GC_bool);
 
   extern char **environ;
 
@@ -3231,10 +3228,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
 #ifndef DARWIN
 
-# ifdef CHECKSUMS
-    void GC_record_fault(struct hblk * h); /* from checksums.c */
-# endif
-
 # if !defined(MSWIN32) && !defined(MSWINCE)
 #   include <errno.h>
 #   if defined(FREEBSD) || defined(HURD) || defined(HPUX)
@@ -3446,9 +3439,6 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 }
 
 #ifdef USE_MUNMAP
-  GC_INNER GC_bool GC_has_unmapped_memory(void); /* from allchblk.c */
-  GC_INNER GC_bool GC_mprotect_dirty_init(void);
-
   /* MPROTECT_VDB cannot deal with address space holes (for now),   */
   /* so if the collector is configured with both MPROTECT_VDB and   */
   /* USE_MUNMAP then, as a work around, select only one of them     */
@@ -4103,10 +4093,6 @@ typedef enum {
   {
     GC_mprotect_thread_notify(ID_RESUME);
   }
-
-# ifndef GC_NO_THREADS_DISCOVERY
-    GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread);
-# endif
 
 #else
   /* The compiler should optimize away any GC_mprotect_state computations */

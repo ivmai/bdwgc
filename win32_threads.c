@@ -2897,10 +2897,6 @@ GC_INNER void GC_init_parallel(void)
   }
 
 # if defined(GC_ASSERTIONS)
-    void GC_check_tls_for(GC_tlfs p);
-#   if defined(USE_CUSTOM_SPECIFIC)
-      void GC_check_tsd_marks(tsd *key);
-#   endif
     /* Check that all thread-local free-lists are completely marked.    */
     /* also check that thread-specific-data structures are marked.      */
     void GC_check_tls(void)

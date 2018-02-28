@@ -41,6 +41,9 @@ struct thread_stop_info {
 #ifdef MPROTECT_VDB
   GC_INNER void GC_mprotect_stop(void);
   GC_INNER void GC_mprotect_resume(void);
+# ifndef GC_NO_THREADS_DISCOVERY
+    GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread);
+# endif
 #endif
 
 #if defined(PARALLEL_MARK) && !defined(GC_NO_THREADS_DISCOVERY)

@@ -499,10 +499,6 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
 }
 
 #if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
-  /* GC_mark_local does not handle memory protection faults yet.  So,   */
-  /* the static data regions are scanned immediately by GC_push_roots.  */
-  GC_INNER void GC_push_conditional_eager(void *bottom, void *top,
-                                          GC_bool all);
 # define GC_PUSH_CONDITIONAL(b, t, all) \
                 (GC_parallel \
                     ? GC_push_conditional_eager(b, t, all) \
@@ -585,11 +581,6 @@ GC_INNER void GC_push_all_stack_sections(ptr_t lo, ptr_t hi,
 }
 
 #else /* !THREADS */
-
-# ifdef TRACE_BUF
-    /* Defined in mark.c.       */
-    void GC_add_trace_entry(char *kind, word arg1, word arg2);
-# endif
 
                         /* Similar to GC_push_all_eager, but only the   */
                         /* part hotter than cold_gc_frame is scanned    */

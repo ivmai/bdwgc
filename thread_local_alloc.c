@@ -141,11 +141,6 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 #   endif
 }
 
-#ifdef GC_ASSERTIONS
-  /* Defined in pthread_support.c or win32_threads.c. */
-  GC_bool GC_is_thread_tsd_valid(void *tsd);
-#endif
-
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int knd)
 {
     size_t granules;

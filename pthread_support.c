@@ -287,11 +287,6 @@ STATIC int GC_nprocs = 1;
   }
 
 # if defined(GC_ASSERTIONS)
-    void GC_check_tls_for(GC_tlfs p);
-#   if defined(USE_CUSTOM_SPECIFIC)
-      void GC_check_tsd_marks(tsd *key);
-#   endif
-
     /* Check that all thread-local free-lists are completely marked.    */
     /* Also check that thread-specific-data structures are marked.      */
     void GC_check_tls(void)
@@ -1170,8 +1165,6 @@ static void fork_child_proc(void)
 
 #ifdef INCLUDE_LINUX_THREAD_DESCR
   __thread int GC_dummy_thread_local;
-  GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr,
-                                        ptr_t *startp, ptr_t *endp);
 #endif
 
 #ifdef PARALLEL_MARK
@@ -1787,10 +1780,6 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
 }
 
 #if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
-  GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
-                                        struct GC_stack_base *sb, void *arg);
-                                        /* defined in pthread_start.c   */
-
   STATIC void * GC_start_routine(void * arg)
   {
 #   ifdef INCLUDE_LINUX_THREAD_DESCR

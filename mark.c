@@ -255,10 +255,6 @@ GC_INNER void GC_clear_marks(void)
     scan_ptr = 0;
 }
 
-#ifdef CHECKSUMS
-  void GC_check_dirty(void);
-#endif
-
 /* Initiate a garbage collection.  Initiates a full collection if the   */
 /* mark state is invalid.                                               */
 GC_INNER void GC_initiate_gc(void)
@@ -485,12 +481,6 @@ static void alloc_mark_stack(size_t);
         }
     }
 # endif /* __GNUC__ && MSWIN32 */
-
-#if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-  GC_INNER GC_bool GC_started_thread_while_stopped(void);
-  /* In win32_threads.c.  Did we invalidate mark phase with an  */
-  /* unexpected thread start?                                   */
-#endif
 
   GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame)
   {

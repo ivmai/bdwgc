@@ -31,10 +31,6 @@ STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
     return(TRUE);
 }
 
-GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
-                                      GC_bool ignore_off_page,
-                                      GC_bool retry); /* from alloc.c */
-
 /* Allocate a large block of size lb bytes.     */
 /* The block is not cleared.                    */
 /* Flags is 0 or IGNORE_OFF_PAGE.               */

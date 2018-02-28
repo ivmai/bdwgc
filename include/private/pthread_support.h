@@ -175,6 +175,9 @@ GC_EXTERN GC_bool GC_in_thread_creation;
 # define GC_INNER_PTHRSTART GC_INNER
 #endif
 
+GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
+                                        struct GC_stack_base *sb, void *arg);
+
 GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
                                         void *(**pstart)(void *),
                                         void **pstart_arg,

@@ -1742,6 +1742,13 @@ GC_INNER void GC_push_all_stack(ptr_t b, ptr_t t);
                                     /* As GC_push_all but consider      */
                                     /* interior pointers as valid.      */
 
+#if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
+  /* GC_mark_local does not handle memory protection faults yet.  So,   */
+  /* the static data regions are scanned immediately by GC_push_roots.  */
+  GC_INNER void GC_push_conditional_eager(void *bottom, void *top,
+                                          GC_bool all);
+#endif
+
   /* In the threads case, we push part of the current thread stack      */
   /* with GC_push_all_eager when we push the registers.  This gets the  */
   /* callee-save registers that may disappear.  The remainder of the    */
@@ -1836,7 +1843,10 @@ void GC_register_data_segments(void);
   GC_INNER GC_bool GC_is_static_root(void *p);
                 /* Is the address p in one of the registered static     */
                 /* root sections?                                       */
-#endif
+# ifdef TRACE_BUF
+    void GC_add_trace_entry(char *kind, word arg1, word arg2);
+# endif
+#endif /* !THREADS */
 
 /* Black listing: */
 #ifdef PRINT_BLACK_LIST
@@ -1992,6 +2002,9 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k);
                                 /* beginning of the object while the    */
                                 /* object is live.                      */
 #endif
+
+GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
+                                      GC_bool ignore_off_page, GC_bool retry);
 
 GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
                                 /* Make the indicated                   */
@@ -2357,15 +2370,28 @@ GC_EXTERN signed_word GC_bytes_found;
   GC_EXTERN ptr_t * GC_gcjobjfreelist;
 #endif
 
-#if defined(GWW_VDB) && defined(MPROTECT_VDB)
-  GC_INNER GC_bool GC_gww_dirty_init(void);
-  /* Defined in os_dep.c.  Returns TRUE if GetWriteWatch is available.  */
-  /* May be called repeatedly.                                          */
-#endif
+#ifdef MPROTECT_VDB
+# ifdef GWW_VDB
+    GC_INNER GC_bool GC_gww_dirty_init(void);
+                        /* Returns TRUE if GetWriteWatch is available.  */
+                        /* May be called repeatedly.                    */
+# endif
+# ifdef USE_MUNMAP
+    GC_INNER GC_bool GC_mprotect_dirty_init(void);
+    GC_INNER GC_bool GC_has_unmapped_memory(void);
+# endif
+#endif /* MPROTECT_VDB */
 
 #if defined(CHECKSUMS) || defined(PROC_VDB)
   GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h);
                         /* Could the page contain valid heap pointers?  */
+#endif
+
+#ifdef CHECKSUMS
+# if defined(MPROTECT_VDB) && !defined(DARWIN)
+    void GC_record_fault(struct hblk * h);
+# endif
+  void GC_check_dirty(void);
 #endif
 
 GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
@@ -2415,6 +2441,10 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # ifdef MPROTECT_VDB
     GC_INNER void GC_set_write_fault_handler(void);
 # endif
+# if defined(WRAP_MARK_SOME) && !defined(GC_PTHREADS)
+    GC_INNER GC_bool GC_started_thread_while_stopped(void);
+        /* Did we invalidate mark phase with an unexpected thread start? */
+# endif
 #endif /* GC_WIN32_THREADS */
 
 #ifdef THREADS
@@ -2439,10 +2469,12 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 
 #ifdef SEARCH_FOR_DATA_START
   GC_INNER void GC_init_linux_data_start(void);
+  ptr_t GC_find_limit(ptr_t, GC_bool);
 #endif
 
 #if defined(NETBSD) && defined(__ELF__)
   GC_INNER void GC_init_netbsd_elf(void);
+  ptr_t GC_find_limit(ptr_t, GC_bool);
 #endif
 
 #ifdef UNIX_LIKE
@@ -2454,6 +2486,10 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
     GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
                                       char **prot, unsigned int *maj_dev,
                                       char **mapping_name);
+# endif
+# if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)
+    GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr,
+                                          ptr_t *startp, ptr_t *endp);
 # endif
   GC_INNER char *GC_get_maps(void); /* from os_dep.c */
 #endif /* NEED_PROC_MAPS */
@@ -2616,16 +2652,10 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 
 /* Do we need the GC_find_limit machinery to find the end of a  */
 /* data segment.                                                */
-#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START)
-# define NEED_FIND_LIMIT
-#endif
-
-#if !defined(STACKBOTTOM) && defined(HEURISTIC2)
-# define NEED_FIND_LIMIT
-#endif
-
-#if (defined(SVR4) || defined(AIX) || defined(DGUX) \
-    || (defined(LINUX) && defined(SPARC))) && !defined(PCR)
+#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START) \
+    || (!defined(STACKBOTTOM) && defined(HEURISTIC2)) \
+    || ((defined(SVR4) || defined(AIX) || defined(DGUX) \
+         || (defined(LINUX) && defined(SPARC))) && !defined(PCR))
 # define NEED_FIND_LIMIT
 #endif
 
