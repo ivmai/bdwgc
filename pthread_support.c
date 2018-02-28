@@ -1786,12 +1786,13 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     return me;
 }
 
-GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
+#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+  GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
                                         struct GC_stack_base *sb, void *arg);
                                         /* defined in pthread_start.c   */
 
-STATIC void * GC_start_routine(void * arg)
-{
+  STATIC void * GC_start_routine(void * arg)
+  {
 #   ifdef INCLUDE_LINUX_THREAD_DESCR
       struct GC_stack_base sb;
 
@@ -1811,9 +1812,8 @@ STATIC void * GC_start_routine(void * arg)
 #   else
       return GC_call_with_stack_base(GC_inner_start_routine, arg);
 #   endif
-}
+  }
 
-#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
   GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
                        GC_PTHREAD_CREATE_CONST pthread_attr_t *attr,
                        void *(*start_routine)(void *), void *arg)
