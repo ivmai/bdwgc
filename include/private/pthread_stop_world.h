@@ -18,10 +18,7 @@
 #ifndef GC_PTHREAD_STOP_WORLD_H
 #define GC_PTHREAD_STOP_WORLD_H
 
-/* Note: never put extern "C" around an #include.                       */
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 struct thread_stop_info {
 #   if !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
@@ -51,8 +48,6 @@ struct thread_stop_info {
 
 GC_INNER void GC_stop_init(void);
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 #endif

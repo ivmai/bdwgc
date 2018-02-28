@@ -48,9 +48,7 @@
 # include "gc_priv.h"
 #endif
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 /* The real declarations of the following is in gc_priv.h, so that      */
 /* we can avoid scanning the following table.                           */
@@ -482,8 +480,6 @@ typedef int mark_state_t;       /* Current state of marking, as follows:*/
 
 GC_EXTERN mark_state_t GC_mark_state;
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 #endif  /* GC_PMARK_H */

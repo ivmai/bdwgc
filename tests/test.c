@@ -213,14 +213,9 @@ volatile AO_t extra_count = 0;  /* Amount of space wasted in cons node; */
                                 /* chktree (for other purposes).        */
 
 #if defined(GC_AMIGA_FASTALLOC) && defined(AMIGA)
-
-# ifdef __cplusplus
-    extern "C" {
-# endif
+  EXTERN_C_BEGIN
   void GC_amiga_free_all_mem(void);
-# ifdef __cplusplus
-    } /* extern "C" */
-# endif
+  EXTERN_C_END
 
   void Amiga_Fail(void){GC_amiga_free_all_mem();abort();}
 # define FAIL Amiga_Fail()

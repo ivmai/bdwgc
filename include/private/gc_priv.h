@@ -326,10 +326,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                     /* This is now really controlled at startup,        */
                     /* through GC_all_interior_pointers.                */
 
-/* Note: never put extern "C" around an #include.                       */
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 #ifndef GC_NO_FINALIZATION
 # define GC_INVOKE_FINALIZERS() GC_notify_or_invoke_finalizers()
@@ -420,9 +417,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   GC_INNER void GC_print_callers(struct callinfo info[NFRAMES]);
 #endif
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 /*********************************/
 /*                               */
@@ -460,14 +455,10 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define MS_TIME_DIFF(a,b) ((long)((a)-(b)))
 #elif defined(NN_PLATFORM_CTR)
 # define CLOCK_TYPE long long
-# ifdef __cplusplus
-    extern "C" {
-# endif
+  EXTERN_C_BEGIN
   CLOCK_TYPE n3ds_get_system_tick(void);
   CLOCK_TYPE n3ds_convert_tick_to_ms(CLOCK_TYPE tick);
-# ifdef __cplusplus
-    } /* extern "C" */
-# endif
+  EXTERN_C_END
 # define GET_TIME(x) (void)(x = n3ds_get_system_tick())
 # define MS_TIME_DIFF(a,b) ((long)n3ds_convert_tick_to_ms((a)-(b)))
 #else /* !BSD_TIME && !NN_PLATFORM_CTR && !MSWIN32 && !MSWINCE */
@@ -525,9 +516,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include "th/PCR_ThCtl.h"
 #endif
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 /*
  * Stop and restart mutator threads.
@@ -673,9 +662,7 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # define GETENV(name) getenv(name)
 #endif
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 #if defined(DARWIN)
 # include <mach/thread_status.h>
@@ -762,9 +749,7 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
 #include <setjmp.h>
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 /*********************************/
 /*                               */
@@ -2627,13 +2612,9 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #if (defined(UNIX_LIKE) || (defined(NEED_FIND_LIMIT) && defined(CYGWIN32))) \
     && !defined(GC_NO_SIGSETJMP)
 # if defined(SUNOS5SIGS) && !defined(FREEBSD) && !defined(LINUX)
-#   ifdef __cplusplus
-      } /* extern "C" */
-#   endif
+    EXTERN_C_END
 #   include <sys/siginfo.h>
-#   ifdef __cplusplus
-      extern "C" {
-#   endif
+    EXTERN_C_BEGIN
 # endif
   /* Define SETJMP and friends to be the version that restores  */
   /* the signal mask.                                           */
@@ -2660,13 +2641,9 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #endif
 
 #if defined(DATASTART_USES_BSDGETDATASTART)
-# ifdef __cplusplus
-    } /* extern "C" */
-# endif
+  EXTERN_C_END
 # include <machine/trap.h>
-# ifdef __cplusplus
-    extern "C" {
-# endif
+  EXTERN_C_BEGIN
 # if !defined(PCR)
 #   define NEED_FIND_LIMIT
 # endif
@@ -2725,8 +2702,6 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define ASSERT_CANCEL_DISABLED() (void)0
 #endif /* !CANCEL_SAFE */
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 #endif /* GC_PRIVATE_H */

@@ -3914,9 +3914,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #include <mach/task.h>
 #include <pthread.h>
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 /* Some of the following prototypes are missing in any header, although */
 /* they are documented.  Some are in mach/exc.h file.                   */
@@ -3961,9 +3959,7 @@ catch_exception_raise_state_identity(mach_port_name_t exception_port,
                 int flavor, thread_state_t old_state, int old_stateCnt,
                 thread_state_t new_state, int new_stateCnt);
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 /* These should never be called, but just in case...  */
 GC_API_OSCALL kern_return_t

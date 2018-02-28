@@ -30,9 +30,7 @@
 # include "gc_backptr.h"
 #endif
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 #if CPP_WORDSZ == 32
 # define START_FLAG (word)0xfedcedcb
@@ -171,8 +169,6 @@ typedef struct {
 # define GC_HAS_DEBUG_INFO(p) (GC_has_other_debug_info(p) > 0)
 #endif
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 #endif /* _DBG_MLC_H */

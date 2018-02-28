@@ -14,10 +14,7 @@
 
 #include <errno.h>
 
-/* Note: never put extern "C" around an #include.       */
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 /* Called during key creation or setspecific.           */
 /* For the GC we already hold lock.                     */
@@ -103,6 +100,4 @@ GC_INLINE void * GC_getspecific(tsd * key)
     return GC_slow_getspecific(key, qtid, entry_ptr);
 }
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
