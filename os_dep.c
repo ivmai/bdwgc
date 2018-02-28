@@ -1895,7 +1895,7 @@ void GC_register_data_segments(void)
 
 # else /* !OS2 && !Windows */
 
-# if (defined(SVR4) || defined(AUX) || defined(DGUX) \
+# if (defined(SVR4) || defined(AIX) || defined(DGUX) \
       || (defined(LINUX) && defined(SPARC))) && !defined(PCR)
   ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
   {
