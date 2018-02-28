@@ -41,12 +41,12 @@ few minutes to complete.
 # include "new_gc_alloc.h"
 #endif
 
-extern "C" {
 # include "private/gcconfig.h"
 
 # ifndef GC_API_PRIV
 #   define GC_API_PRIV GC_API
 # endif
+extern "C" {
   GC_API_PRIV void GC_printf(const char * format, ...);
   /* Use GC private output to reach the same log file.  */
   /* Don't include gc_priv.h, since that may include Windows system     */
