@@ -95,23 +95,12 @@ gc.dll: $(OBJS) .AUTODEPEND
 !endif
         @%append $*.lnk name $*
         @for %i in ($(OBJS)) do @%append $*.lnk file '%i'
-!ifeq CALLING s
-      @%append $*.lnk export GC_is_marked
-      @%append $*.lnk export GC_incr_bytes_allocd
-      @%append $*.lnk export GC_incr_bytes_freed
-      @%append $*.lnk export GC_generic_malloc_words_small
-!else
-      @%append $*.lnk export GC_is_marked_
-      @%append $*.lnk export GC_incr_bytes_allocd_
-      @%append $*.lnk export GC_incr_bytes_freed_
-      @%append $*.lnk export GC_generic_malloc_words_small_
-!endif
         *wlink @$*.lnk
 !else
 gc.lib: $(OBJS) gc_cpp.obj
         @%create $*.lb1
         @for %i in ($(OBJS)) do @%append $*.lb1 +'%i'
-      @%append $*.lb1 +'gc_cpp.obj'
+        @%append $*.lb1 +'gc_cpp.obj'
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
 !endif
@@ -131,13 +120,6 @@ gctest.exe: test.obj gc.lib
         @%append $*.lnk name $*
         @%append $*.lnk file test.obj
         @%append $*.lnk library gc.lib
-!ifdef MAKE_AS_DLL
-!ifeq CALLING s
-      @%append $*.lnk import GC_is_marked gc
-!else
-      @%append $*.lnk import GC_is_marked_ gc
-!endif
-!endif
         *wlink @$*.lnk
 test_cpp.exe: test_cpp.obj gc.lib
         %create $*.lnk
@@ -153,17 +135,6 @@ test_cpp.exe: test_cpp.obj gc.lib
         @%append $*.lnk name $*
         @%append $*.lnk file test_cpp.obj
         @%append $*.lnk library gc.lib
-!ifdef MAKE_AS_DLL
-!ifeq CALLING s
-      @%append $*.lnk import GC_incr_bytes_allocd gc
-      @%append $*.lnk import GC_incr_bytes_freed gc
-      @%append $*.lnk import GC_generic_malloc_words_small gc
-!else
-      @%append $*.lnk import GC_incr_bytes_allocd_ gc
-      @%append $*.lnk import GC_incr_bytes_freed_ gc
-      @%append $*.lnk import GC_generic_malloc_words_small_ gc
-!endif
-!endif
         *wlink @$*.lnk
 
 gc_cpp.obj: gc_cpp.cc .AUTODEPEND
