@@ -72,19 +72,8 @@
 #include <stddef.h>
 #include <string.h>
 
-// The following need to match collector data structures.
 // We can't include gc_priv.h, since that pulls in way too much stuff.
-// This should eventually be factored out into another include file.
-
-extern "C" {
-    GC_API void ** const GC_objfreelist_ptr;
-    GC_API void ** const GC_aobjfreelist_ptr;
-    GC_API void ** const GC_uobjfreelist_ptr;
-    GC_API void ** const GC_auobjfreelist_ptr;
-
-    GC_API void GC_CALL GC_incr_bytes_allocd(size_t bytes);
-    GC_API void GC_CALL GC_incr_bytes_freed(size_t bytes);
-}
+#include "gc_alloc_ptrs.h"
 
 #define GC_generic_malloc_words_small(lw, k) \
                         GC_generic_malloc((lw) * sizeof(GC_word), k)

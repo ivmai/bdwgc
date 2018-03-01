@@ -40,6 +40,7 @@
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h        */
 /* or introducing dependencies on internal data structure layouts.       */
+#include "gc_alloc_ptrs.h"
 void ** const GC_objfreelist_ptr = GC_objfreelist;
 void ** const GC_aobjfreelist_ptr = GC_aobjfreelist;
 void ** const GC_uobjfreelist_ptr = GC_uobjfreelist;

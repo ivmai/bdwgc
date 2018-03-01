@@ -106,7 +106,7 @@ SRCS= $(CSRCS) \
   include/gc_inline.h include/gc_mark.h include/gc_disclaim.h \
   tools/threadlibs.c tools/if_mach.c tools/if_not_there.c gc_cpp.cc \
   include/gc_cpp.h include/weakpointer.h include/private/gc_locks.h \
-  include/new_gc_alloc.h include/gc_allocator.h \
+  include/new_gc_alloc.h include/gc_alloc_ptrs.h include/gc_allocator.h \
   include/javaxfc.h \
   include/gc_backptr.h include/gc_gcj.h include/private/dbg_mlc.h \
   include/private/specific.h include/leak_detector.h \
