@@ -3285,7 +3285,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # endif /* MSWIN32 || MSWINCE */
   {
 #   if !defined(MSWIN32) && !defined(MSWINCE)
-        char *addr = si -> si_addr;
+        char *addr = (char *)si->si_addr;
 #   else
         char * addr = (char *) (exc_info -> ExceptionRecord
                                 -> ExceptionInformation[1]);
