@@ -84,10 +84,10 @@ extern "C" {
 
     GC_API void GC_CALL GC_incr_bytes_allocd(size_t bytes);
     GC_API void GC_CALL GC_incr_bytes_freed(size_t bytes);
-
-    GC_API char * GC_CALL GC_generic_malloc_words_small(size_t word, int kind);
-                /* FIXME: Doesn't exist anymore.        */
 }
+
+#define GC_generic_malloc_words_small(lw, k) \
+                        GC_generic_malloc((lw) * sizeof(GC_word), k)
 
 // Object kinds; must match PTRFREE, NORMAL, UNCOLLECTABLE, and
 // AUNCOLLECTABLE in gc_priv.h.
