@@ -115,6 +115,9 @@ STATIC GC_bool GC_need_full_gc = FALSE;
 STATIC word GC_used_heap_size_after_full = 0;
 
 /* GC_copyright symbol is externally visible. */
+EXTERN_C_BEGIN
+extern const char * const GC_copyright[];
+EXTERN_C_END
 const char * const GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
 "Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
@@ -127,6 +130,9 @@ const char * const GC_copyright[] =
 /* Version macros are now defined in gc_version.h, which is included by */
 /* gc.h, which is included by gc_priv.h.                                */
 #ifndef GC_NO_VERSION_VAR
+  EXTERN_C_BEGIN
+  extern const unsigned GC_version;
+  EXTERN_C_END
   const unsigned GC_version = ((GC_VERSION_MAJOR << 16) |
                         (GC_VERSION_MINOR << 8) | GC_VERSION_MICRO);
 #endif
