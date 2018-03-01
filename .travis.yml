@@ -454,6 +454,7 @@ matrix:
     compiler: gcc
     env:
     - CC_FOR_CHECK=g++
+    - CONF_OPTIONS="--enable-gc-assertions --enable-handle-fork"
     - MAKEFILE_TARGETS="all"
     - MAKEFILE_TARGETS_CHECK="check"
     - NO_CLONE_LIBATOMIC_OPS=true
