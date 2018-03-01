@@ -161,10 +161,13 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
 #if defined(SOLARISDL) && !defined(USE_PROC_FOR_LIBRARIES)
 
-STATIC struct link_map *
-GC_FirstDLOpenedLinkMap(void)
-{
-    extern ElfW(Dyn) _DYNAMIC;
+  EXTERN_C_BEGIN
+  extern ElfW(Dyn) _DYNAMIC;
+  EXTERN_C_END
+
+  STATIC struct link_map *
+  GC_FirstDLOpenedLinkMap(void)
+  {
     ElfW(Dyn) *dp;
     static struct link_map * cachedResult = 0;
     static ElfW(Dyn) *dynStructureAddr = 0;
@@ -202,7 +205,7 @@ GC_FirstDLOpenedLinkMap(void)
         }
     }
     return cachedResult;
-}
+  }
 
 #endif /* SOLARISDL ... */
 
@@ -419,8 +422,11 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 # endif
 # ifdef HOST_ANDROID
     /* Android headers might have no such definition for some targets.  */
-    int dl_iterate_phdr(int (*cb)(struct dl_phdr_info *, size_t, void *),
-                        void *data);
+    EXTERN_C_BEGIN
+    extern int dl_iterate_phdr(int (*cb)(struct dl_phdr_info *,
+                                         size_t, void *),
+                               void *data);
+    EXTERN_C_END
 # endif
 #endif /* __GLIBC__ >= 2 || HOST_ANDROID */
 
@@ -435,7 +441,9 @@ GC_INNER GC_bool GC_register_main_static_data(void)
   /* We have the header files for a glibc that includes dl_iterate_phdr.*/
   /* It may still not be available in the library on the target system. */
   /* Thus we also treat it as a weak symbol.                            */
+  EXTERN_C_BEGIN
 # pragma weak dl_iterate_phdr
+  EXTERN_C_END
 #endif
 
 #if defined(HAVE_DL_ITERATE_PHDR)
@@ -682,10 +690,12 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 
 #endif /* !HAVE_DL_ITERATE_PHDR */
 
+EXTERN_C_BEGIN
 #ifdef __GNUC__
 # pragma weak _DYNAMIC
 #endif
 extern ElfW(Dyn) _DYNAMIC[];
+EXTERN_C_END
 
 STATIC struct link_map *
 GC_FirstDLOpenedLinkMap(void)
@@ -1051,9 +1061,11 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #include <loader.h>
 
+EXTERN_C_BEGIN
 extern char *sys_errlist[];
 extern int sys_nerr;
 extern int errno;
+EXTERN_C_END
 
 GC_INNER void GC_register_dynamic_libraries(void)
 {
@@ -1139,8 +1151,10 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #include <errno.h>
 #include <dl.h>
 
+EXTERN_C_BEGIN
 extern char *sys_errlist[];
 extern int sys_nerr;
+EXTERN_C_END
 
 GC_INNER void GC_register_dynamic_libraries(void)
 {

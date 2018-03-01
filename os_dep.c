@@ -412,6 +412,7 @@ GC_INNER char * GC_get_maps(void)
     /* broken, since the user program may define data_start, in which   */
     /* case we lose.  Nonetheless, we try both, preferring __data_start.*/
     /* We assume gcc-compatible pragmas.                                */
+    EXTERN_C_BEGIN
 #   pragma weak __data_start
 #   pragma weak data_start
     extern int __data_start[], data_start[];
@@ -420,6 +421,7 @@ GC_INNER char * GC_get_maps(void)
 #     pragma weak __dso_handle
       extern int _etext[], __dso_handle[];
 #   endif
+    EXTERN_C_END
 # endif /* LINUX */
 
   ptr_t GC_data_start = NULL;
@@ -497,7 +499,9 @@ GC_INNER char * GC_get_maps(void)
 #if defined(NETBSD) && defined(__ELF__)
   ptr_t GC_data_start = NULL;
 
+  EXTERN_C_BEGIN
   extern char **environ;
+  EXTERN_C_END
 
   GC_INNER void GC_init_netbsd_elf(void)
   {
@@ -524,7 +528,9 @@ GC_INNER char * GC_get_maps(void)
 
 # ifdef THREADS
 #   include <sys/syscall.h>
+    EXTERN_C_BEGIN
     extern sigset_t __syscall(quad_t, ...);
+    EXTERN_C_END
 # endif
 
   /* Don't use GC_find_limit() because siglongjmp() outside of the      */
@@ -1055,16 +1061,17 @@ GC_INNER size_t GC_page_size = 0;
                         /* field in /proc/self/stat                     */
 
 # ifdef USE_LIBC_PRIVATES
+    EXTERN_C_BEGIN
 #   pragma weak __libc_stack_end
     extern ptr_t __libc_stack_end;
-# endif
-
-# ifdef IA64
-#   ifdef USE_LIBC_PRIVATES
+#   ifdef IA64
 #     pragma weak __libc_ia64_register_backing_store_base
       extern ptr_t __libc_ia64_register_backing_store_base;
 #   endif
+    EXTERN_C_END
+# endif
 
+# ifdef IA64
     GC_INNER ptr_t GC_get_register_stack_base(void)
     {
       ptr_t result;
@@ -1190,7 +1197,10 @@ GC_INNER size_t GC_page_size = 0;
   }
 # define GET_MAIN_STACKBASE_SPECIAL
 #elif defined(SYMBIAN)
+  EXTERN_C_BEGIN
   extern int GC_get_main_symbian_stack_base(void);
+  EXTERN_C_END
+
   ptr_t GC_get_main_stack_base(void)
   {
     return (ptr_t)GC_get_main_symbian_stack_base();
@@ -2015,8 +2025,15 @@ void GC_register_data_segments(void)
 
 # else /* !OS2 && !Windows && !AMIGA && !OPENBSD */
 
-void GC_register_data_segments(void)
-{
+# if !defined(PCR) && !defined(MACOS) && defined(REDIRECT_MALLOC) \
+     && defined(GC_SOLARIS_THREADS)
+    EXTERN_C_BEGIN
+    extern caddr_t sbrk(int);
+    EXTERN_C_END
+# endif
+
+  void GC_register_data_segments(void)
+  {
 #   if !defined(PCR) && !defined(MACOS)
 #     if defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
         /* As of Solaris 2.3, the Solaris threads implementation        */
@@ -2024,8 +2041,6 @@ void GC_register_data_segments(void)
         /* sbrk at process startup.  It needs to be scanned, so that    */
         /* we don't lose some malloc allocated data structures          */
         /* hanging from it.  We're on thin ice here ...                 */
-        extern caddr_t sbrk(int);
-
         GC_ASSERT(DATASTART);
         {
           ptr_t p = (ptr_t)sbrk(0);
@@ -2084,7 +2099,7 @@ void GC_register_data_segments(void)
 
     /* Dynamic libraries are added at every collection, since they may  */
     /* change.                                                          */
-}
+  }
 
 # endif /* !AMIGA */
 # endif /* !MSWIN32 && !MSWINCE */
@@ -2124,10 +2139,6 @@ void GC_register_data_segments(void)
 # define OPT_MAP_ANON 0
 #endif
 
-#ifdef SYMBIAN
-  extern char* GC_get_private_path_and_zero_file(void);
-#endif
-
 # ifdef MSWIN_XBOX1
     void *durango_get_mem(size_t bytes, size_t page_size)
     {
@@ -2137,6 +2148,12 @@ void GC_register_data_segments(void)
     }
 
 # else
+#   if defined(SYMBIAN) && !defined(USE_MMAP_ANON)
+      EXTERN_C_BEGIN
+      extern char *GC_get_private_path_and_zero_file(void);
+      EXTERN_C_END
+#   endif
+
   STATIC ptr_t GC_unix_mmap_get_mem(size_t bytes)
   {
     void *result;
@@ -2147,7 +2164,7 @@ void GC_register_data_segments(void)
 
       if (!EXPECT(initialized, TRUE)) {
 #       ifdef SYMBIAN
-          char* path = GC_get_private_path_and_zero_file();
+          char *path = GC_get_private_path_and_zero_file();
           zero_fd = open(path, O_RDWR | O_CREAT, 0666);
           free(path);
 #       else

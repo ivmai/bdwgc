@@ -2273,10 +2273,13 @@ GC_INNER void GC_notify_all_marker(void)
 
 #ifdef PTHREAD_REGISTER_CANCEL_WEAK_STUBS
   /* Workaround "undefined reference" linkage errors on some targets. */
-  void __pthread_register_cancel() __attribute__((__weak__));
-  void __pthread_unregister_cancel() __attribute__((__weak__));
-  void __pthread_register_cancel() {}
-  void __pthread_unregister_cancel() {}
+  EXTERN_C_BEGIN
+  extern void __pthread_register_cancel(void) __attribute__((__weak__));
+  extern void __pthread_unregister_cancel(void) __attribute__((__weak__));
+  EXTERN_C_END
+
+  void __pthread_register_cancel(void) {}
+  void __pthread_unregister_cancel(void) {}
 #endif
 
 #endif /* GC_PTHREADS */

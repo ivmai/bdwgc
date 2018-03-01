@@ -406,7 +406,9 @@ STATIC void GC_restart_handler(int sig)
 }
 
 # ifdef USE_TKILL_ON_ANDROID
+    EXTERN_C_BEGIN
     extern int tkill(pid_t tid, int sig); /* from sys/linux-unistd.h */
+    EXTERN_C_END
 
     static int android_thread_kill(pid_t tid, int sig)
     {
@@ -982,8 +984,10 @@ GC_INNER void GC_stop_world(void)
     int (*register_block_hooks)(void (*pre)(void), void (*post)(void));
   };
 
+  EXTERN_C_BEGIN
   extern size_t nacl_interface_query(const char *interface_ident,
                                      void *table, size_t tablesize);
+  EXTERN_C_END
 
   GC_INNER void GC_nacl_initialize_gc_thread(void)
   {
