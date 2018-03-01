@@ -293,6 +293,10 @@ SOURCE=..\..\include\private\msvc_dbg.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\include\gc_alloc_ptrs.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\new_gc_alloc.h
 # End Source File
 # Begin Source File

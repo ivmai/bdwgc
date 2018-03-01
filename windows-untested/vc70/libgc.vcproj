@@ -237,6 +237,9 @@
                 RelativePath="..\..\include\private\msvc_dbg.h">
             </File>
             <File
+                RelativePath="..\..\include\gc_alloc_ptrs.h">
+            </File>
+            <File
                 RelativePath="..\..\include\new_gc_alloc.h">
             </File>
             <File
