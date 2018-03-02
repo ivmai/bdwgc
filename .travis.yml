@@ -451,6 +451,13 @@ matrix:
     - CONF_OPTIONS="--enable-munmap --enable-large-config --enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
+    compiler: clang
+    env:
+    - CFLAGS_EXTRA="-x c++"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-gc-debug --enable-handle-fork --disable-shared"
+    - MAKEFILE_TARGETS="all"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
     compiler: gcc
     env:
     - CC_FOR_CHECK=g++
