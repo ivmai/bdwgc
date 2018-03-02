@@ -119,7 +119,7 @@
       if (!hdr) ABORT("Invalid GC_get_back_ptr_info argument");
 #   endif
     if (!GC_HAS_DEBUG_INFO((ptr_t) hdr)) return GC_NO_SPACE;
-    bp = GC_REVEAL_POINTER(hdr -> oh_back_ptr);
+    bp = (ptr_t)GC_REVEAL_POINTER(hdr -> oh_back_ptr);
     if (MARKED_FOR_FINALIZATION == bp) return GC_FINALIZER_REFD;
     if (MARKED_FROM_REGISTER == bp) return GC_REFD_FROM_REG;
     if (NOT_MARKED == bp) return GC_UNREFERENCED;
@@ -190,7 +190,7 @@
     ptr_t result;
     ptr_t base;
     do {
-      result = GC_generate_random_heap_address();
+      result = (ptr_t)GC_generate_random_heap_address();
       base = (ptr_t)GC_base(result);
     } while (NULL == base || !GC_is_marked(base));
     return result;
@@ -205,7 +205,7 @@
     size_t offset;
     void *base;
 
-    GC_print_heap_obj(GC_base(current));
+    GC_print_heap_obj((ptr_t)GC_base(current));
 
     for (i = 0; ; ++i) {
       source = GC_get_back_ptr_info(current, &base, &offset);
@@ -231,7 +231,7 @@
         case GC_REFD_FROM_HEAP:
           GC_err_printf("offset %ld in object:\n", (long)offset);
           /* Take GC_base(base) to get real base, i.e. header. */
-          GC_print_heap_obj(GC_base(base));
+          GC_print_heap_obj((ptr_t)GC_base(base));
           break;
         default:
           GC_err_printf("INTERNAL ERROR: UNEXPECTED SOURCE!!!!\n");
