@@ -131,7 +131,10 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
       };
 #   endif
 # else
+    EXTERN_C_BEGIN      /* Workaround missing extern "C" around _DYNAMIC */
+                        /* symbol in link.h of some Linux hosts.         */
 #   include <link.h>
+    EXTERN_C_END
 # endif
 #endif
 
