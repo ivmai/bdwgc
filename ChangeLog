@@ -320,6 +320,16 @@ Also, includes 7.4.6 changes
 Also, includes 7.4.4 changes
 
 
+== [7.4.12] (not released yet) ==
+
+* Fix gctest with musl libc on s390x
+* Fix missing new-line in ABORT_ARG<n> definition
+* Fix type of local variables receiving result of PHT_HASH
+* Remove API symbols renaming in WCC_MAKEFILE
+
+Also, includes 7.2k changes
+
+
 == [7.4.10] 2018-01-22 ==
 
 * Fix error code in abort message if sem_wait failed in start_world (NetBSD)
@@ -763,6 +773,17 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 * Use pthread_key for thread-local storage on FreeBSD
 * Use union of AO_t and word to favor strict-aliasing compiler optimization
 Also, includes 7.2 changes
+
+
+== [7.2k] (not released yet) ==
+
+* Fix arguments delimiter in pcr_interface.c (PCR)
+* Fix dbg_mlc.c/o file name in documentation
+* Fix include gc_gcj.h in thread_local_alloc.c
+* Fix man section number (3)
+* Fix missing GC_generic_malloc_words_small implementation in new_gc_alloc.h
+* Fix typo in AIX macro name
+* Fix typo in comment in specific.h
 
 
 == [7.2j] 2018-01-21 ==
