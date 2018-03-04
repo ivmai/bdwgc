@@ -1,3 +1,38 @@
+2018-03-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/new_gc_alloc.h (GC_generic_malloc_words_small): Replace
+	prototype with a macro (that uses GC_generic_malloc); remove FIXME item.
+
+2018-02-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* thread_local_alloc.c [GC_GCJ_SUPPORT]: Include "gc_gcj.h" instead of
+	"include/gc_gcj.h".
+
+2018-02-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h [AIX] (NEED_FIND_LIMIT): Define macro
+	(rename AUX to AIX).
+	* os_dep.c [AIX && !PCR] (GC_SysVGetDataStart): Define function.
+
+2018-02-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README (Debugging Facilities): Fix file name ("dbg_mlc.c").
+	* misc.c (GC_debugging_started): Fix file name ("dbg_mlc.o") in
+	comment.
+
+2018-02-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/gc.man (TH GC_MALLOC): Change section number from 1L to 3.
+
+2018-02-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* extra/pcr_interface.c (GC_enumerate_block): Replace ';' with ',' in
+	the arguments list.
+
+2018-02-05  Jay Krell <jaykrell@microsoft.com>
+
+	* include/private/specific.h (tse): Fix a typo ("thread") in comment.
+
 [7.2j]
 
 2018-01-21  Ivan Maidanski <ivmai@mail.ru>
