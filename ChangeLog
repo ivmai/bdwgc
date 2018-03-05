@@ -8,6 +8,8 @@
 * Add basic calculation of the total full-collection time
 * Add check that gc_cpp operator delete is called (test_cpp)
 * Add debug logging to new_thread about GC_threads hash table collisions
+* Add GC prefix to _MSVC_DBG_H macro
+* Add initial RISC-V support
 * Add Makefile target to run all tests without test-driver
 * Add test_atomic_ops to perform minimal testing of used atomic primitives
 * Add two-argument alloc_size attribute to calloc_explicitly_typed (GCC)
@@ -17,24 +19,36 @@
 * Allow custom N_LOCAL_ITERS and ENTRIES_TO_GET values
 * Allow GC_NETBSD_THREADS_WORKAROUND macro manual definition
 * Allow to turn on spin locking even if thread-local allocations are used
+* Always include gc_atomic_ops.h unless threads are disabled
+* Avoid potential race between realloc and clear_hdr_marks/reclaim_generic
+* Avoid potential race when accessing size_map table
+* Avoid SIGSEGV during GC_INIT on some Android devices
 * Build only shared libraries by default (configure)
+* Change pointer arguments of push_all[_eager]/conditional API to void* type
+* Change type of hb_sz field (of hblkhdr) from size_t to word
 * Check that GC_WIN32_PTHREADS is not specified for Cygwin
 * Check thread_local is initialized before accessing thread_key
+* Collapse multiple BCOPY_EXISTS macro definitions
 * Collapse multiple NT_*_MAKEFILE scripts into a single NT_MAKEFILE
 * Compile checksums.c only if --enable-checksums is given (configure)
 * Convert .html files to Markdown format
+* Convert code of .c files to valid C++ code
 * Decide between memory unmapping and mprotect-based dirty bits at runtime
+* Define ABORT() using _CrtDbgBreak (if available) on Windows host
 * Define CLANG/GNUC_PREREQ macros to check gcc/clang minimum version
 * Define GC_ASSERT(x) as C assert(x) for external clients of gc_inline.h
 * Define GC_PREFETCH_FOR_WRITE to __builtin_prefetch in gc_inline.h (GCC)
 * Define GC_THREADS instead of GC_x_THREADS in Makefiles
+* Define macro to specify the environment file name extension (Win32/WinCE)
 * Detect sigsetjmp() availability by configure
 * Do not call BCOPY and BZERO if size is zero
 * Do not call sem_getvalue in stop_world if one thread exists
 * Do not call set_handle_fork(1) in gctest if pthread_atfork not supported
 * Do not compile pcr_interface.c and real_malloc.c except by PCR-Makefile
 * Do not print n_rescuing_pages value if incremental collections disabled
+* Do not push cpsr and frame pointer on Darwin/arm and Darwin/arm64
 * Do not specify version info for test libraries (Automake)
+* Do not use alternate thread library on Solaris
 * Do not use asm in GC_pause
 * Do not use system clock consistently if NO_CLOCK
 * Do not use x86 asm in PUSH_CONTENTS_HDR for NaCl
@@ -44,12 +58,15 @@
 * Enable mprotect-based incremental GC for Win64 (GCC)
 * Fix 'comparison of 255 with expr of type bool' error in gc_atomic_ops.h
 * Fix 'doc' files installation folder
+* Fix build of cord tests as C++ files (Makefile.direct)
 * Group common defines for POSIX platforms in configure and CMake scripts
 * Guard against USE_PTHREAD_LOCKS and USE_SPIN_LOCK are both defined
+* Implement FindTopOfStack(0) for ARM and AArch64 (Darwin)
 * Implement memory unmapping for Sony PS/3
 * Imply configure --single-obj-compilation if --disable-static
 * Increase MAX_HEAP_SECTS (10 times) for large-config
 * Initial support of Haiku/amd64
+* Initial support of Nintendo, Orbis, Sony PSP2, WinRT, Xbox One
 * Initial support of TIZEN platform
 * Make extend_size_map() static (code refactoring)
 * Move de_win compiled resource files to cord/tests
@@ -57,16 +74,20 @@
 * New API function (GC_dump_named) to produce named dumps
 * New API function (GC_is_incremental_mode)
 * New API function (get_expl_freed_bytes_since_gc)
+* New API function (get_size_map_at) to get content of size_map table
 * New field (expl_freed_bytes_since_gc) in public prof_stats_s
+* New macro ALWAYS_SMALL_CLEAR_STACK to avoid clearing large stack sections
 * Pass CFLAGS_FOR_PIC value to CFLAGS in Makefile.direct
 * Print time passed since GC initialization in GC_dump
 * Public API (GC_deinit) to allow Win32 critical sections deletion
 * Reduce the default MUNMAP_THRESHOLD value to 2 for Sony PS/3
 * Refactoring of USE_MMAP/USE_MMAP_ANON pairs definition in gcconfig.h
 * Remove 'dist' target from Makefile.direct
+* Remove a redundant check of __cplusplus in Symbian-specific .cpp files
 * Remove Android-specific code in gcconfig.h for M68K
 * Remove DGUX_THREADS macro which duplicates GC_DGUX386_THREADS (configure)
 * Remove done_init static variable from fnlz_mlc.c
+* Remove duplicate definition of ALIGNMENT macro for OpenBSD/arm
 * Remove duplicated sample code in leak.md
 * Remove EMX_MAKEFILE (add EMX support to Makefile.direct)
 * Remove GC code fragment (which already merged) from README.Mac
@@ -81,6 +102,8 @@
 * Remove redundant THREADS macro checks in alloc.c and gc_priv.h
 * Remove unused USE_GENERIC macro definition and description
 * Remove version info in 'de' cord test application
+* Replace GC_MALLOC(sizeof T) with GC_NEW(T) in tests
+* Report errno in case of sem_wait failure in GC_pthread_create
 * Run command passed to if_not_there directly from Makefile.direct
 * Skip grungy_pages update when mark state invalid to speedup read_dirty
 * Support configure --disable-thread-local-alloc option (similar for CMake)
@@ -105,9 +128,10 @@
 * Use same macro (NTHREADS) across all tests to specify number of threads
 * Use sigsetjmp() in setjmp_t tool if available
 * Use thread-local allocations for all multi-threaded builds
+* Workaround Clang optimizer bug crashing clear_stack_inner on OS X 10.8
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
-Also, includes 7.6.4 changes.
+Also, includes 7.6.6 changes.
 
 
 == [7.6.6] (not released yet) ==
