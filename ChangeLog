@@ -110,6 +110,14 @@
 Also, includes 7.6.4 changes.
 
 
+== [7.6.6] (not released yet) ==
+
+* Fix 'undefined reference to __builtin_unwind_init' linker error (ArmCC)
+* Workaround 'address of auto-variable returned' cppcheck error
+
+Also, includes 7.4.12 changes
+
+
 == [7.6.4] 2018-01-26 ==
 
 * Add note of set_free_space_divisor, set_warn_proc ABI change after gc-7.1
