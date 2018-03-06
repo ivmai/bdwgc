@@ -1897,6 +1897,10 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
         DISABLE_CANCEL(cancel_state);
                 /* pthread_create is not a cancellation point. */
         while (0 != sem_wait(&(si -> registered))) {
+#           if defined(GC_HAIKU_THREADS)
+              /* To workaround some bug in Haiku semaphores. */
+              if (EACCES == errno) continue;
+#           endif
             if (EINTR != errno) ABORT("sem_wait failed");
         }
         RESTORE_CANCEL(cancel_state);
