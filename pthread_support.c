@@ -1897,8 +1897,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
         DISABLE_CANCEL(cancel_state);
                 /* pthread_create is not a cancellation point. */
         while (0 != sem_wait(&(si -> registered))) {
-            if (EINTR != errno)
-              ABORT_ARG1("sem_wait failed", ": errcode= %d", errno);
+            if (EINTR != errno) ABORT("sem_wait failed");
         }
         RESTORE_CANCEL(cancel_state);
     }
