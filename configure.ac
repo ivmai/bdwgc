@@ -182,6 +182,7 @@ case "$THREADS" in
     ;;
  posix | pthreads)
     THREADS=posix
+    default_threadlibs=false
     # Common defines for most POSIX platforms.
     case "$host" in
       *-*-aix* | *-*-cygwin* | *-*-darwin* | *-*-dragonfly* | \
@@ -197,15 +198,12 @@ case "$THREADS" in
         if test "${enable_thread_local_alloc}" != no; then
           AC_DEFINE(THREAD_LOCAL_ALLOC)
         fi
+        default_threadlibs=true
         AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
         ;;
     esac
     AC_CHECK_LIB(pthread, pthread_self, THREADDLLIBS="-lpthread",,)
     case "$host" in
-      *-*-aix* | *-*-dragonfly* | *-*-haiku* | *-*-irix* | *-*-*linux* | \
-      *-*-nacl*)
-        # The default THREADDLLIBS.
-        ;;
       *-*-hpux11*)
         AC_MSG_WARN("Only HP/UX 11 POSIX threads are supported.")
         AC_DEFINE(_POSIX_C_SOURCE,199506L)
@@ -224,7 +222,7 @@ case "$THREADS" in
         AC_DEFINE(USE_COMPILER_TLS)
         THREADDLLIBS=-pthread
         ;;
-      *-*-gnu*) # Excluding kfreebsd.
+      *-*-gnu*) # E.g. linux but excluding kfreebsd.
         # The default THREADDLLIBS.
         ;;
       *-*-netbsd*)
@@ -261,7 +259,10 @@ case "$THREADS" in
         THREADDLLIBS="-lpthread -lrt"
         ;;
       *)
-        AC_MSG_ERROR("Pthreads not supported by the GC on this platform.")
+        AS_IF([test x$default_threadlibs != xtrue],
+              [ AC_MSG_ERROR(
+                    [Pthreads not supported by the GC on this platform]) ])
+        # The default THREADDLLIBS.
         ;;
     esac
     case "$host" in
