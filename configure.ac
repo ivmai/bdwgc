@@ -202,7 +202,8 @@ case "$THREADS" in
     esac
     AC_CHECK_LIB(pthread, pthread_self, THREADDLLIBS="-lpthread",,)
     case "$host" in
-      *-*-aix* | *-*-irix* | *-*-*linux* | *-*-nacl*)
+      *-*-aix* | *-*-dragonfly* | *-*-haiku* | *-*-irix* | *-*-*linux* | \
+      *-*-nacl*)
         # The default THREADDLLIBS.
         ;;
       *-*-hpux11*)
