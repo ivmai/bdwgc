@@ -24,6 +24,10 @@
 # include <windows.h>
 #endif
 
+#if defined(__HAIKU__)
+# include <errno.h>
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -125,6 +129,12 @@ int main(void)
         err = pthread_join(th[i], &res);
         if (err) {
             fprintf(stderr, "Failed to join thread: %s\n", strerror(err));
+#           if defined(__HAIKU__)
+                /* The error is just ignored (and the test is ended) to */
+                /* workaround some bug in Haiku pthread_join.           */
+                /* TODO: The thread is not deleted from GC_threads.     */
+                if (ESRCH == err) break;
+#           endif
             exit(1);
         }
 #     else
