@@ -61,15 +61,18 @@
 # define AO_HAVE_or
 
 # define AO_load(p) __atomic_load_n(p, __ATOMIC_RELAXED)
+# define AO_HAVE_load
 # define AO_load_acquire(p) __atomic_load_n(p, __ATOMIC_ACQUIRE)
 # define AO_HAVE_load_acquire
 # define AO_load_acquire_read(p) AO_load_acquire(p)
 # define AO_HAVE_load_acquire_read
 
 # define AO_store(p, v) __atomic_store_n(p, v, __ATOMIC_RELAXED)
+# define AO_HAVE_store
 # define AO_store_release(p, v) __atomic_store_n(p, v, __ATOMIC_RELEASE)
 # define AO_HAVE_store_release
 # define AO_store_release_write(p, v) AO_store_release(p, v)
+# define AO_HAVE_store_release_write
 
 # ifdef AO_REQUIRE_CAS
     AO_INLINE int
