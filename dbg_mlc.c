@@ -90,7 +90,12 @@
   GC_INNER void GC_store_back_pointer(ptr_t source, ptr_t dest)
   {
     if (GC_HAS_DEBUG_INFO(dest)) {
-      ((oh *)dest) -> oh_back_ptr = HIDE_BACK_PTR(source);
+#     ifdef PARALLEL_MARK
+        AO_store((volatile AO_t *)&((oh *)dest)->oh_back_ptr,
+                 (AO_t)HIDE_BACK_PTR(source));
+#     else
+        ((oh *)dest) -> oh_back_ptr = HIDE_BACK_PTR(source);
+#     endif
     }
   }
 
