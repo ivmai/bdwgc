@@ -38,6 +38,9 @@
 
   int main(void) {
     AO_t x = 13;
+#   if defined(AO_HAVE_char_load) || defined(AO_HAVE_char_store)
+      unsigned char c = 117;
+#   endif
 #   ifdef AO_HAVE_test_and_set_acquire
         AO_TS_t z = AO_TS_INITIALIZER;
 
@@ -48,6 +51,13 @@
     AO_compiler_barrier();
 #   ifdef AO_HAVE_nop_full
       AO_nop_full();
+#   endif
+#   ifdef AO_HAVE_char_load
+      TA_assert(AO_char_load(&c) == 117);
+#   endif
+#   ifdef AO_HAVE_char_store
+      AO_char_store(&c, 119);
+      TA_assert(c == 119);
 #   endif
 #   ifdef AO_HAVE_load_acquire
       TA_assert(AO_load_acquire(&x) == 13);

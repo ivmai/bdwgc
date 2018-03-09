@@ -74,6 +74,11 @@
 # define AO_store_release_write(p, v) AO_store_release(p, v)
 # define AO_HAVE_store_release_write
 
+# define AO_char_load(p) __atomic_load_n(p, __ATOMIC_RELAXED)
+# define AO_HAVE_char_load
+# define AO_char_store(p, v) __atomic_store_n(p, v, __ATOMIC_RELAXED)
+# define AO_HAVE_char_store
+
 # ifdef AO_REQUIRE_CAS
     AO_INLINE int
     AO_compare_and_swap(volatile AO_t *p, AO_t ov, AO_t nv)

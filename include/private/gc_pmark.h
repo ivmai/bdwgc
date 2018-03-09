@@ -148,21 +148,45 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 
 /* Set mark bit, exit (using "break" statement) if it is already set.   */
 #ifdef USE_MARK_BYTES
-  /* There is a race here, and we may set                               */
-  /* the bit twice in the concurrent case.  This can result in the      */
-  /* object being pushed twice.  But that's only a performance issue.   */
-# define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
-    { /* cannot use do-while(0) here */ \
-        char * mark_byte_addr = (char *)hhdr -> hb_marks + (bit_no); \
+# if defined(PARALLEL_MARK) && defined(AO_HAVE_char_store) \
+     && !defined(AO_USE_PTHREAD_DEFS)
+    /* There is a race here, and we may set the bit twice in the        */
+    /* concurrent case.  This can result in the object being pushed     */
+    /* twice.  But that is only a performance issue.                    */
+#   define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
+      { /* cannot use do-while(0) here */ \
+        volatile unsigned char * mark_byte_addr = \
+                        (unsigned char *)(hhdr)->hb_marks + (bit_no); \
+        /* Unordered atomic load and store are sufficient here. */ \
+        if (AO_char_load(mark_byte_addr) != 0) \
+          break; /* go to the enclosing loop end */ \
+        AO_char_store(mark_byte_addr, 1); \
+      }
+# else
+#   define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
+      { /* cannot use do-while(0) here */ \
+        char * mark_byte_addr = (char *)(hhdr)->hb_marks + (bit_no); \
         if (*mark_byte_addr != 0) break; /* go to the enclosing loop end */ \
         *mark_byte_addr = 1; \
-    }
+      }
+# endif /* !PARALLEL_MARK */
 #else
 # ifdef PARALLEL_MARK
     /* This is used only if we explicitly set USE_MARK_BITS.            */
     /* The following may fail to exit even if the bit was already set.  */
     /* For our uses, that's benign:                                     */
-#   define OR_WORD_EXIT_IF_SET(addr, bits) \
+#   ifdef THREAD_SANITIZER
+#     define OR_WORD_EXIT_IF_SET(addr, bits) \
+        { /* cannot use do-while(0) here */ \
+          if (!((word)AO_load((volatile AO_t *)(addr)) & (bits))) { \
+                /* Atomic load is just to avoid TSan false positive. */ \
+            AO_or((volatile AO_t *)(addr), (AO_t)(bits)); \
+          } else { \
+            break; /* go to the enclosing loop end */ \
+          } \
+        }
+#   else
+#     define OR_WORD_EXIT_IF_SET(addr, bits) \
         { /* cannot use do-while(0) here */ \
           if (!(*(addr) & (bits))) { \
             AO_or((volatile AO_t *)(addr), (AO_t)(bits)); \
@@ -170,6 +194,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
             break; /* go to the enclosing loop end */ \
           } \
         }
+#   endif /* !THREAD_SANITIZER */
 # else
 #   define OR_WORD_EXIT_IF_SET(addr, bits) \
         { /* cannot use do-while(0) here */ \
@@ -182,7 +207,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 # endif /* !PARALLEL_MARK */
 # define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
     { /* cannot use do-while(0) here */ \
-        word * mark_word_addr = hhdr -> hb_marks + divWORDSZ(bit_no); \
+        word * mark_word_addr = (hhdr)->hb_marks + divWORDSZ(bit_no); \
         OR_WORD_EXIT_IF_SET(mark_word_addr, \
                 (word)1 << modWORDSZ(bit_no)); /* contains "break" */ \
     }
