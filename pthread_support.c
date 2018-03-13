@@ -2002,16 +2002,12 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
 
 #endif /* !USE_SPIN_LOCK || ... */
 
-#if defined(THREAD_SANITIZER) \
-    && (defined(USE_SPIN_LOCK) || !defined(NO_PTHREAD_TRYLOCK))
+#ifdef AO_HAVE_char_load
+# define is_collecting() \
+                ((GC_bool)AO_char_load((unsigned char *)&GC_collecting))
+#else
   /* GC_collecting is a hint, a potential data race between     */
   /* GC_lock() and ENTER/EXIT_GC() is OK to ignore.             */
-  GC_ATTR_NO_SANITIZE_THREAD
-  static GC_bool is_collecting(void)
-  {
-    return GC_collecting;
-  }
-#else
 # define is_collecting() GC_collecting
 #endif
 
@@ -2025,25 +2021,14 @@ GC_INNER volatile AO_TS_t GC_allocate_lock = AO_TS_INITIALIZER;
 
 # define low_spin_max 30 /* spin cycles if we suspect uniprocessor  */
 # define high_spin_max SPIN_MAX /* spin cycles for multiprocessor   */
-  static unsigned spin_max = low_spin_max;
-  static unsigned last_spins = 0;
 
-  /* A potential data race between threads invoking GC_lock which reads */
-  /* and updates spin_max and last_spins could be ignored because these */
-  /* variables are hints only.  (Atomic getters and setters are avoided */
-  /* here for performance reasons.)                                     */
-  GC_ATTR_NO_SANITIZE_THREAD
-  static void set_last_spins_and_high_spin_max(unsigned new_last_spins)
-  {
-    last_spins = new_last_spins;
-    spin_max = high_spin_max;
-  }
-
-  GC_ATTR_NO_SANITIZE_THREAD
-  static void reset_spin_max(void)
-  {
-    spin_max = low_spin_max;
-  }
+  static volatile AO_t spin_max = low_spin_max;
+  static volatile AO_t last_spins = 0;
+                                /* A potential data race between        */
+                                /* threads invoking GC_lock which reads */
+                                /* and updates spin_max and last_spins  */
+                                /* could be ignored because these       */
+                                /* variables are hints only.            */
 
 GC_INNER void GC_lock(void)
 {
@@ -2054,8 +2039,8 @@ GC_INNER void GC_lock(void)
     if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {
         return;
     }
-    my_spin_max = spin_max;
-    my_last_spins = last_spins;
+    my_spin_max = (unsigned)AO_load(&spin_max);
+    my_last_spins = (unsigned)AO_load(&last_spins);
     for (i = 0; i < my_spin_max; i++) {
         if (is_collecting() || GC_nprocs == 1)
           goto yield;
@@ -2070,12 +2055,13 @@ GC_INNER void GC_lock(void)
              * against the other process with which we were contending.
              * Thus it makes sense to spin longer the next time.
              */
-            set_last_spins_and_high_spin_max(i);
+            AO_store(&last_spins, (AO_t)i);
+            AO_store(&spin_max, (AO_t)high_spin_max);
             return;
         }
     }
     /* We are probably being scheduled against the other process.  Sleep. */
-    reset_spin_max();
+    AO_store(&spin_max, (AO_t)low_spin_max);
 yield:
     for (i = 0;; ++i) {
         if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {

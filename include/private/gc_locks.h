@@ -211,8 +211,13 @@
 #    endif /* GC_ASSERTIONS */
 #    ifndef GC_WIN32_THREADS
        GC_EXTERN volatile GC_bool GC_collecting;
-#      define ENTER_GC() (void)(GC_collecting = TRUE)
-#      define EXIT_GC() (void)(GC_collecting = FALSE)
+#      ifdef AO_HAVE_char_store
+#        define ENTER_GC() AO_char_store((unsigned char*)&GC_collecting, TRUE)
+#        define EXIT_GC() AO_char_store((unsigned char*)&GC_collecting, FALSE)
+#      else
+#        define ENTER_GC() (void)(GC_collecting = TRUE)
+#        define EXIT_GC() (void)(GC_collecting = FALSE)
+#      endif
 #    endif
      GC_INNER void GC_lock(void);
 #  endif /* GC_PTHREADS */
