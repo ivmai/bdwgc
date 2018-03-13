@@ -363,6 +363,18 @@ matrix:
     compiler: clang-4.0
     language: c
     env:
+    - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D NO_INCREMENTAL -D USE_SPIN_LOCK -fno-omit-frame-pointer -D TEST_FORK_WITHOUT_ATFORK"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-gc-debug --enable-large-config --with-libatomic-ops=no"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - clang-4.0
+        sources:
+        - llvm-toolchain-trusty-4.0
+    compiler: clang-4.0
+    language: c
+    env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D NO_INCREMENTAL -D USE_SPIN_LOCK -fno-omit-frame-pointer -D NTHREADS=15"
     - CONF_OPTIONS="--disable-parallel-mark --enable-handle-fork --enable-munmap"
     - NO_CLONE_LIBATOMIC_OPS=true
