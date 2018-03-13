@@ -78,6 +78,15 @@ STATIC struct fnlz_roots_s {
   struct finalizable_object *finalize_now;
 } GC_fnlz_roots = { NULL, NULL };
 
+#ifdef AO_HAVE_store
+  /* Update finalize_now atomically as GC_should_invoke_finalizers does */
+  /* not acquire the allocation lock.                                   */
+# define SET_FINALIZE_NOW(fo) \
+            AO_store((volatile AO_t *)&GC_fnlz_roots.finalize_now, (AO_t)(fo))
+#else
+# define SET_FINALIZE_NOW(fo) (void)(GC_fnlz_roots.finalize_now = (fo))
+#endif /* !THREADS */
+
 GC_API void GC_CALL GC_push_finalizer_structures(void)
 {
   GC_ASSERT((word)&GC_dl_hashtbl.head % sizeof(word) == 0);
@@ -1017,7 +1026,7 @@ GC_INNER void GC_finalize(void)
 
             /* Add to list of objects awaiting finalization.    */
               fo_set_next(curr_fo, GC_fnlz_roots.finalize_now);
-              GC_fnlz_roots.finalize_now = curr_fo;
+              SET_FINALIZE_NOW(curr_fo);
               /* unhide object pointer so any future collections will   */
               /* see it.                                                */
               curr_fo -> fo_hidden_base =
@@ -1067,7 +1076,7 @@ GC_INNER void GC_finalize(void)
               GC_set_mark_bit(real_ptr);
             } else {
               if (NULL == prev_fo) {
-                GC_fnlz_roots.finalize_now = next_fo;
+                SET_FINALIZE_NOW(next_fo);
               } else {
                 fo_set_next(prev_fo, next_fo);
               }
@@ -1133,7 +1142,7 @@ GC_INNER void GC_finalize(void)
 
           /* Add to list of objects awaiting finalization.      */
           fo_set_next(curr_fo, GC_fnlz_roots.finalize_now);
-          GC_fnlz_roots.finalize_now = curr_fo;
+          SET_FINALIZE_NOW(curr_fo);
 
           /* unhide object pointer so any future collections will       */
           /* see it.                                                    */
@@ -1184,10 +1193,13 @@ GC_INNER void GC_finalize(void)
 /* Returns true if it is worth calling GC_invoke_finalizers. (Useful if */
 /* finalizers can only be called from some kind of "safe state" and     */
 /* getting into that safe state is expensive.)                          */
-GC_ATTR_NO_SANITIZE_THREAD
 GC_API int GC_CALL GC_should_invoke_finalizers(void)
 {
-  return GC_fnlz_roots.finalize_now != NULL;
+# ifdef AO_HAVE_load
+    return AO_load((volatile AO_t *)&GC_fnlz_roots.finalize_now) != 0;
+# else
+    return GC_fnlz_roots.finalize_now != NULL;
+# endif /* !THREADS */
 }
 
 /* Invoke finalizers for all objects that are ready to be finalized.    */
@@ -1210,7 +1222,8 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
         }
         curr_fo = GC_fnlz_roots.finalize_now;
 #       ifdef THREADS
-            if (curr_fo != 0) GC_fnlz_roots.finalize_now = fo_next(curr_fo);
+            if (curr_fo != NULL)
+                SET_FINALIZE_NOW(fo_next(curr_fo));
             UNLOCK();
             if (curr_fo == 0) break;
 #       else
