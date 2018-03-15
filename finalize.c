@@ -1111,18 +1111,19 @@ GC_INNER void GC_finalize(void)
   /* Enqueue all remaining finalizers to be run - Assumes lock is held. */
   STATIC void GC_enqueue_all_finalizers(void)
   {
-    struct finalizable_object * curr_fo, * next_fo;
-    ptr_t real_ptr;
+    struct finalizable_object * next_fo;
     int i;
     int fo_size;
 
     fo_size = log_fo_table_size == -1 ? 0 : 1 << log_fo_table_size;
     GC_bytes_finalized = 0;
     for (i = 0; i < fo_size; i++) {
-      curr_fo = GC_fnlz_roots.fo_head[i];
+      struct finalizable_object * curr_fo = GC_fnlz_roots.fo_head[i];
+
       GC_fnlz_roots.fo_head[i] = NULL;
       while (curr_fo != NULL) {
-          real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
+          ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
+
           GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
           GC_set_mark_bit(real_ptr);
 
