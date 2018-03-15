@@ -277,6 +277,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz GC_ATTR_UNUSED,
 {
     word * result = (word *)((oh *)p + 1);
 
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(GC_size(p) >= sizeof(oh) + sz);
     GC_ASSERT(!(SMALL_OBJ(sz) && CROSSES_HBLK((ptr_t)p, sz)));
 #   ifdef KEEP_BACK_PTRS
@@ -577,13 +578,13 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   /* An allocation function for internal use.  Normally internally      */
   /* allocated objects do not have debug information.  But in this      */
   /* case, we need to make sure that all objects have debug headers.    */
-  /* We assume we already hold the GC lock.                             */
   GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k)
   {
-    void * result = GC_generic_malloc_inner(
-                                SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    void * result;
 
-    if (result == 0) {
+    GC_ASSERT(I_HOLD_LOCK());
+    result = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    if (NULL == result) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);
@@ -598,10 +599,12 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   GC_INNER void * GC_debug_generic_malloc_inner_ignore_off_page(size_t lb,
                                                                 int k)
   {
-    void * result = GC_generic_malloc_inner_ignore_off_page(
-                                SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    void * result;
 
-    if (result == 0) {
+    GC_ASSERT(I_HOLD_LOCK());
+    result = GC_generic_malloc_inner_ignore_off_page(
+                                SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    if (NULL == result) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);

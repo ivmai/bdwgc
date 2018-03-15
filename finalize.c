@@ -400,6 +400,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
   static GC_bool ensure_toggleref_capacity(int capacity_inc)
   {
     GC_ASSERT(capacity_inc >= 0);
+    GC_ASSERT(I_HOLD_LOCK());
     if (NULL == GC_toggleref_arr) {
       GC_toggleref_array_capacity = 32; /* initial capacity */
       GC_toggleref_arr = (GCToggleRef *)GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(

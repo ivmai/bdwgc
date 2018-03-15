@@ -577,7 +577,9 @@ GC_INNER void GC_collect_a_little_inner(int n)
 {
     IF_CANCEL(int cancel_state;)
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (GC_dont_gc) return;
+
     DISABLE_CANCEL(cancel_state);
     if (GC_incremental && GC_collection_in_progress()) {
         int i;
@@ -1460,7 +1462,6 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
  * Make sure the object free list for size gran (in granules) is not empty.
  * Return a pointer to the first object on the free list.
  * The object MUST BE REMOVED FROM THE FREE LIST BY THE CALLER.
- * Assumes we hold the allocator lock.
  */
 GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
 {
@@ -1468,6 +1469,7 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
     GC_bool tried_minor = FALSE;
     GC_bool retry = FALSE;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (gran == 0) return(0);
 
     while (*flh == 0) {
