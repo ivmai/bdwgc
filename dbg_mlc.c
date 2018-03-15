@@ -604,8 +604,7 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   /* An allocation function for internal use.  Normally internally      */
   /* allocated objects do not have debug information.  But in this      */
   /* case, we need to make sure that all objects have debug headers.    */
-  /* We assume debugging was started in collector initialization, and   */
-  /* we already hold the GC lock.                                       */
+  /* We assume we already hold the GC lock.                             */
   GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k)
   {
     void * result = GC_generic_malloc_inner(
