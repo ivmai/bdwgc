@@ -223,9 +223,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     if (!GC_debugging_started) {
         GC_start_debugging_inner();
     }
-    UNLOCK();
     ADD_CALL_CHAIN(result, ra);
-    return GC_store_debug_info((ptr_t)result, (word)lb, s, i);
+    result = GC_store_debug_info_inner(result, (word)lb, s, i);
+    UNLOCK();
+    return result;
 }
 
 /* There is no THREAD_LOCAL_ALLOC for GC_gcj_malloc_ignore_off_page().  */
