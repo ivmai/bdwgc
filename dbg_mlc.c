@@ -299,11 +299,6 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz GC_ATTR_UNUSED,
 
 /* Check the allocation is successful, store debugging info into p,     */
 /* start the debugging mode (if not yet), and return displaced pointer. */
-#ifdef GC_ADD_CALLER
-# define STORE_DEBUG_INFO(p, lb, fn) store_debug_info(p, lb, fn, ra, s, i)
-#else
-# define STORE_DEBUG_INFO(p, lb, fn) store_debug_info(p, lb, fn, s, i)
-#endif
 static void *store_debug_info(void *p, size_t lb,
                               const char *fn, GC_EXTRA_PARAMS)
 {
@@ -546,7 +541,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc(size_t lb,
         GC_caller_func_offset(ra, &s, &i);
       }
 #   endif
-    return STORE_DEBUG_INFO(result, lb, "GC_debug_malloc");
+    return store_debug_info(result, lb, "GC_debug_malloc", OPT_RA s, i);
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL
@@ -554,7 +549,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 {
     void * result = GC_malloc_ignore_off_page(SIZET_SAT_ADD(lb, DEBUG_BYTES));
 
-    return STORE_DEBUG_INFO(result, lb, "GC_debug_malloc_ignore_off_page");
+    return store_debug_info(result, lb, "GC_debug_malloc_ignore_off_page",
+                            OPT_RA s, i);
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL
@@ -563,15 +559,17 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     void * result = GC_malloc_atomic_ignore_off_page(
                                 SIZET_SAT_ADD(lb, DEBUG_BYTES));
 
-    return STORE_DEBUG_INFO(result, lb,
-                            "GC_debug_malloc_atomic_ignore_off_page");
+    return store_debug_info(result, lb,
+                            "GC_debug_malloc_atomic_ignore_off_page",
+                            OPT_RA s, i);
 }
 
 STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
 {
     void * result = GC_generic_malloc(SIZET_SAT_ADD(lb, DEBUG_BYTES), knd);
 
-    return STORE_DEBUG_INFO(result, lb, "GC_debug_generic_malloc");
+    return store_debug_info(result, lb, "GC_debug_generic_malloc",
+                            OPT_RA s, i);
 }
 
 #ifdef DBG_HDRS_ALL
@@ -623,7 +621,8 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   {
     void * result = GC_malloc_stubborn(SIZET_SAT_ADD(lb, DEBUG_BYTES));
 
-    return STORE_DEBUG_INFO(result, lb, "GC_debug_malloc_stubborn");
+    return store_debug_info(result, lb, "GC_debug_malloc_stubborn",
+                            OPT_RA s, i);
   }
 
   GC_API void GC_CALL GC_debug_change_stubborn(const void *p)
@@ -677,7 +676,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_atomic(size_t lb,
 {
     void * result = GC_malloc_atomic(SIZET_SAT_ADD(lb, DEBUG_BYTES));
 
-    return STORE_DEBUG_INFO(result, lb, "GC_debug_malloc_atomic");
+    return store_debug_info(result, lb, "GC_debug_malloc_atomic",
+                            OPT_RA s, i);
 }
 
 GC_API GC_ATTR_MALLOC char * GC_CALL GC_debug_strdup(const char *str,
@@ -748,7 +748,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
     void * result = GC_malloc_uncollectable(
                                 SIZET_SAT_ADD(lb, UNCOLLECTABLE_DEBUG_BYTES));
 
-    return STORE_DEBUG_INFO(result, lb, "GC_debug_malloc_uncollectable");
+    return store_debug_info(result, lb, "GC_debug_malloc_uncollectable",
+                            OPT_RA s, i);
 }
 
 #ifdef GC_ATOMIC_UNCOLLECTABLE
@@ -758,8 +759,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
     void * result = GC_malloc_atomic_uncollectable(
                                 SIZET_SAT_ADD(lb, UNCOLLECTABLE_DEBUG_BYTES));
 
-    return STORE_DEBUG_INFO(result, lb,
-                            "GC_debug_malloc_atomic_uncollectable");
+    return store_debug_info(result, lb,
+                            "GC_debug_malloc_atomic_uncollectable",
+                            OPT_RA s, i);
   }
 #endif /* GC_ATOMIC_UNCOLLECTABLE */
 
