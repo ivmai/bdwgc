@@ -99,12 +99,18 @@ GC_API void GC_CALL GC_push_finalizer_structures(void)
   GC_PUSH_ALL_SYM(GC_fnlz_roots);
 }
 
-/* Double the size of a hash table. *size_ptr is the log of its current */
-/* size.  May be a no-op.                                               */
+/* Threshold of log_size to initiate full collection before growing     */
+/* a hash table.                                                        */
+#ifndef GC_ON_GROW_LOG_SIZE_MIN
+# define GC_ON_GROW_LOG_SIZE_MIN 12
+#endif
+
+/* Double the size of a hash table. *log_size_ptr is the log of its     */
+/* current size.  May be a no-op.                                       */
 /* *table is a pointer to an array of hash headers.  If we succeed, we  */
 /* update both *table and *log_size_ptr.  Lock is held.                 */
 STATIC void GC_grow_table(struct hash_chain_entry ***table,
-                          signed_word *log_size_ptr)
+                          signed_word *log_size_ptr, word *entries_ptr)
 {
     word i;
     struct hash_chain_entry *p;
@@ -116,6 +122,15 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
     struct hash_chain_entry **new_table;
 
     GC_ASSERT(I_HOLD_LOCK());
+    /* Avoid growing the table in case of at least 25% of entries can   */
+    /* be deleted by enforcing a collection.  Ignored for small tables. */
+    if (log_old_size >= GC_ON_GROW_LOG_SIZE_MIN) {
+      (void)GC_try_to_collect_inner(GC_never_stop_func);
+      /* GC_finalize might decrease entries value.  */
+      if (*entries_ptr < ((word)1 << log_old_size) - (*entries_ptr >> 2))
+        return;
+    }
+
     new_table = (struct hash_chain_entry **)
                     GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
                         (size_t)new_size * sizeof(struct hash_chain_entry *),
@@ -168,7 +183,7 @@ STATIC int GC_register_disappearing_link_inner(
     if (dl_hashtbl -> log_size == -1
         || dl_hashtbl -> entries > ((word)1 << dl_hashtbl -> log_size)) {
         GC_grow_table((struct hash_chain_entry ***)&dl_hashtbl -> head,
-                      &dl_hashtbl -> log_size);
+                      &dl_hashtbl -> log_size, &dl_hashtbl -> entries);
 #       ifdef LINT2
           if (dl_hashtbl->log_size < 0) ABORT("log_size is negative");
 #       endif
@@ -665,7 +680,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
     if (log_fo_table_size == -1
         || GC_fo_entries > ((word)1 << log_fo_table_size)) {
         GC_grow_table((struct hash_chain_entry ***)&GC_fnlz_roots.fo_head,
-                      &log_fo_table_size);
+                      &log_fo_table_size, &GC_fo_entries);
 #       ifdef LINT2
           if (log_fo_table_size < 0) ABORT("log_size is negative");
 #       endif
