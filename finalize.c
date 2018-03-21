@@ -102,7 +102,7 @@ GC_API void GC_CALL GC_push_finalizer_structures(void)
 /* Threshold of log_size to initiate full collection before growing     */
 /* a hash table.                                                        */
 #ifndef GC_ON_GROW_LOG_SIZE_MIN
-# define GC_ON_GROW_LOG_SIZE_MIN 12
+# define GC_ON_GROW_LOG_SIZE_MIN CPP_LOG_HBLKSIZE
 #endif
 
 /* Double the size of a hash table. *log_size_ptr is the log of its     */
@@ -125,7 +125,11 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
     /* Avoid growing the table in case of at least 25% of entries can   */
     /* be deleted by enforcing a collection.  Ignored for small tables. */
     if (log_old_size >= GC_ON_GROW_LOG_SIZE_MIN) {
+      IF_CANCEL(int cancel_state;)
+
+      DISABLE_CANCEL(cancel_state);
       (void)GC_try_to_collect_inner(GC_never_stop_func);
+      RESTORE_CANCEL(cancel_state);
       /* GC_finalize might decrease entries value.  */
       if (*entries_ptr < ((word)1 << log_old_size) - (*entries_ptr >> 2))
         return;
