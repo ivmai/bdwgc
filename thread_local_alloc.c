@@ -141,15 +141,15 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 #   endif
 }
 
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int knd)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int kind)
 {
     size_t granules;
     void *tsd;
     void *result;
 
 #   if MAXOBJKINDS > THREAD_FREELISTS_KINDS
-      if (EXPECT(knd >= THREAD_FREELISTS_KINDS, FALSE)) {
-        return GC_malloc_kind_global(bytes, knd);
+      if (EXPECT(kind >= THREAD_FREELISTS_KINDS, FALSE)) {
+        return GC_malloc_kind_global(bytes, kind);
       }
 #   endif
 #   if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_WIN32_SPECIFIC)
@@ -159,31 +159,31 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int knd)
       if (EXPECT(0 == k, FALSE)) {
         /* We haven't yet run GC_init_parallel.  That means     */
         /* we also aren't locking, so this is fairly cheap.     */
-        return GC_malloc_kind_global(bytes, knd);
+        return GC_malloc_kind_global(bytes, kind);
       }
       tsd = GC_getspecific(k);
     }
 #   else
       if (!EXPECT(keys_initialized, TRUE))
-        return GC_malloc_kind_global(bytes, knd);
+        return GC_malloc_kind_global(bytes, kind);
       tsd = GC_getspecific(GC_thread_key);
 #   endif
 #   if !defined(USE_COMPILER_TLS) && !defined(USE_WIN32_COMPILER_TLS)
       if (EXPECT(0 == tsd, FALSE)) {
-        return GC_malloc_kind_global(bytes, knd);
+        return GC_malloc_kind_global(bytes, kind);
       }
 #   endif
     GC_ASSERT(GC_is_initialized);
     GC_ASSERT(GC_is_thread_tsd_valid(tsd));
     granules = ROUNDED_UP_GRANULES(bytes);
     GC_FAST_MALLOC_GRANS(result, granules,
-                         ((GC_tlfs)tsd) -> _freelists[knd], DIRECT_GRANULES,
-                         knd, GC_malloc_kind_global(bytes, knd),
-                         (void)(knd == PTRFREE ? NULL
+                         ((GC_tlfs)tsd) -> _freelists[kind], DIRECT_GRANULES,
+                         kind, GC_malloc_kind_global(bytes, kind),
+                         (void)(kind == PTRFREE ? NULL
                                                : (obj_link(result) = 0)));
 #   ifdef LOG_ALLOCS
       GC_log_printf("GC_malloc_kind(%lu, %d) returned %p, recent GC #%lu\n",
-                    (unsigned long)bytes, knd, result,
+                    (unsigned long)bytes, kind, result,
                     (unsigned long)GC_gc_no);
 #   endif
     return result;

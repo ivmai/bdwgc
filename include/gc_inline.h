@@ -157,11 +157,11 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 /* the caller is responsible for supplying a cleared tiny_fl            */
 /* free list array.  For single-threaded applications, this may be      */
 /* a global array.                                                      */
-# define GC_MALLOC_WORDS_KIND(result,n,tiny_fl,k,init) \
+# define GC_MALLOC_WORDS_KIND(result,n,tiny_fl,kind,init) \
     do { \
-      size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
-      GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, k, \
-                           GC_malloc_kind(grans * GC_GRANULE_BYTES, k), \
+      size_t granules = GC_WORDS_TO_WHOLE_GRANULES(n); \
+      GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, 0, kind, \
+                           GC_malloc_kind(granules*GC_GRANULE_BYTES, kind), \
                            init); \
     } while (0)
 
@@ -175,9 +175,9 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 /* And once more for two word initialized objects: */
 # define GC_CONS(result, first, second, tiny_fl) \
     do { \
-      size_t grans = GC_WORDS_TO_WHOLE_GRANULES(2); \
-      GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_NORMAL, \
-                           GC_malloc_kind(grans * GC_GRANULE_BYTES, \
+      size_t granules = GC_WORDS_TO_WHOLE_GRANULES(2); \
+      GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, 0, GC_I_NORMAL, \
+                           GC_malloc_kind(granules * GC_GRANULE_BYTES, \
                                           GC_I_NORMAL), \
                            *(void **)(result) = (void *)(first)); \
       ((void **)(result))[1] = (void *)(second); \
