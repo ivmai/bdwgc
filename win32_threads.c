@@ -2759,7 +2759,6 @@ GC_INNER void GC_thr_init(void)
                          LPVOID reserved GC_ATTR_UNUSED)
   {
       DWORD thread_id;
-      static int entry_count = 0;
 
       /* Note that GC_use_threads_discovery should be called by the     */
       /* client application at start-up to activate automatic thread    */
@@ -2777,8 +2776,6 @@ GC_INNER void GC_thr_init(void)
             break;
           }
 #       endif
-        GC_ASSERT(entry_count == 0 || parallel_initialized);
-        ++entry_count;
         /* FALLTHRU */
        case DLL_PROCESS_ATTACH:
         /* This may run with the collector uninitialized. */
