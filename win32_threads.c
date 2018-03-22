@@ -2616,7 +2616,6 @@ GC_INNER void GC_thr_init(void)
 #     ifdef GC_ASSERTIONS
         int sb_result;
 #     endif
-      static int entry_count = 0;
 
       if (!GC_win32_dll_threads && parallel_initialized) return TRUE;
 
@@ -2629,8 +2628,7 @@ GC_INNER void GC_thr_init(void)
             break;
           }
 #       endif
-        GC_ASSERT(entry_count == 0 || parallel_initialized);
-        ++entry_count; /* and fall through: */
+        /* FALLTHRU */
        case DLL_PROCESS_ATTACH:
         /* This may run with the collector uninitialized. */
         thread_id = GetCurrentThreadId();
