@@ -2774,6 +2774,10 @@
 # define GC_EXPLICIT_SIGNALS_UNBLOCK
 #endif
 
+#if !defined(NO_SIGNALS_UNBLOCK_IN_MAIN) && defined(GC_NO_PTHREAD_SIGMASK)
+# define NO_SIGNALS_UNBLOCK_IN_MAIN
+#endif
+
 #if !defined(NO_MARKER_SPECIAL_SIGMASK) \
     && (defined(NACL) || defined(GC_WIN32_PTHREADS))
   /* Either there is no pthread_sigmask(), or GC marker thread cannot   */

@@ -180,7 +180,8 @@ GC_API int GC_CALL GC_get_thr_restart_signal(void)
             ? GC_sig_thr_restart : SIG_THR_RESTART;
 }
 
-#ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
+#if defined(GC_EXPLICIT_SIGNALS_UNBLOCK) \
+    || !defined(NO_SIGNALS_UNBLOCK_IN_MAIN)
   /* Some targets (e.g., Solaris) might require this to be called when  */
   /* doing thread registering from the thread destructor.               */
   GC_INNER void GC_unblock_gc_signals(void)
@@ -1148,6 +1149,10 @@ GC_INNER void GC_stop_init(void)
     if (GC_retry_signals) {
       GC_COND_LOG_PRINTF("Will retry suspend signal if necessary\n");
     }
+#   ifndef NO_SIGNALS_UNBLOCK_IN_MAIN
+      /* Explicitly unblock the signals once before new threads creation. */
+      GC_unblock_gc_signals();
+#   endif
 # endif /* !GC_OPENBSD_UTHREADS && !NACL */
 }
 
