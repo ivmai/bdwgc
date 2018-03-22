@@ -1988,7 +1988,12 @@ GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
     unsigned result = GC_n_kinds;
 
     GC_ASSERT(adjust == FALSE || adjust == TRUE);
-    GC_ASSERT(clear == FALSE || clear == TRUE);
+    /* If an object is not needed to be cleared (when moved to the      */
+    /* free list) then its descriptor should be zero to denote          */
+    /* a pointer-free object (and, as a consequence, the size of the    */
+    /* object should not be added to the descriptor template).          */
+    GC_ASSERT(clear == TRUE
+              || (descr == 0 && adjust == FALSE && clear == FALSE));
     if (result < MAXOBJKINDS) {
       GC_n_kinds++;
       GC_obj_kinds[result].ok_freelist = fl;
