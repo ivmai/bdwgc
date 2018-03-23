@@ -1620,6 +1620,11 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     } else if ((me -> flags & FINISHED) != 0) {
         /* This code is executed when a thread is registered from the   */
         /* client thread key destructor.                                */
+#       ifdef GC_DARWIN_THREADS
+          /* Reinitialize mach_thread to avoid thread_suspend fail      */
+          /* with MACH_SEND_INVALID_DEST error.                         */
+          me -> stop_info.mach_thread = mach_thread_self();
+#       endif
         GC_record_stack_base(me, sb);
         me -> flags &= ~FINISHED; /* but not DETACHED */
 #       ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
