@@ -266,13 +266,15 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
 
     for (j = 0; j < TINY_FREELISTS; ++j) {
       for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
-        q = (ptr_t)p->_freelists[i][j];
+        /* Load the pointer atomically as it might be updated   */
+        /* concurrently by GC_FAST_MALLOC_GRANS.                */
+        q = (ptr_t)AO_load((volatile AO_t *)&p->_freelists[i][j]);
         if ((word)q > HBLKSIZE)
           GC_set_fl_marks(q);
       }
 #     ifdef GC_GCJ_SUPPORT
         if (EXPECT(j > 0, TRUE)) {
-          q = (ptr_t)p->gcj_freelists[j];
+          q = (ptr_t)AO_load((volatile AO_t *)&p->gcj_freelists[j]);
           if ((word)q > HBLKSIZE)
             GC_set_fl_marks(q);
         }

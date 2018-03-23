@@ -83,6 +83,15 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 # define GC_malloc_kind_global GC_malloc_kind
 #endif
 
+/* An internal macro to update the free list pointer atomically (if     */
+/* the AO primitives are available) to avoid race with the marker.      */
+#ifdef AO_HAVE_store
+# define GC_FAST_M_AO_STORE(my_fl, next) \
+                AO_store((volatile AO_t *)(my_fl), (AO_t)(next))
+#else
+# define GC_FAST_M_AO_STORE(my_fl, next) (void)(*(my_fl) = (next))
+#endif
+
 /* The ultimately general inline allocation macro.  Allocate an object  */
 /* of size granules, putting the resulting pointer in result.  Tiny_fl  */
 /* is a "tiny" free list array, which will be used first, if the size   */
@@ -116,7 +125,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                           > (num_direct) + GC_TINY_FREELISTS + 1, 1)) { \
                 next = *(void **)(my_entry); \
                 result = (void *)my_entry; \
-                *my_fl = next; \
+                GC_FAST_M_AO_STORE(my_fl, next); \
                 init; \
                 GC_PREFETCH_FOR_WRITE(next); \
                 GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
@@ -129,7 +138,8 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                     /* (GC_word)my_entry <= (num_direct) */ \
                     && my_entry != NULL) { \
                 /* Small counter value, not NULL */ \
-                *my_fl = (char *)my_entry + (granules) + 1; \
+                GC_FAST_M_AO_STORE(my_fl, (char *)my_entry \
+                                          + (granules) + 1); \
                 result = (default_expr); \
                 break; \
             } else { \
