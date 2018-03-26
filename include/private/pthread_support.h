@@ -140,10 +140,17 @@ typedef struct GC_Thread_Rep {
 # define THREAD_TABLE_SZ 256    /* Power of 2 (for speed). */
 #endif
 
-#define THREAD_TABLE_INDEX(id) \
+#if CPP_WORDSZ == 64
+# define THREAD_TABLE_INDEX(id) \
+    (int)(((((NUMERIC_THREAD_ID(id) >> 8) ^ NUMERIC_THREAD_ID(id)) >> 16) \
+          ^ ((NUMERIC_THREAD_ID(id) >> 8) ^ NUMERIC_THREAD_ID(id))) \
+         % THREAD_TABLE_SZ)
+#else
+# define THREAD_TABLE_INDEX(id) \
                 (int)(((NUMERIC_THREAD_ID(id) >> 16) \
                        ^ (NUMERIC_THREAD_ID(id) >> 8) \
                        ^ NUMERIC_THREAD_ID(id)) % THREAD_TABLE_SZ)
+#endif
 
 GC_EXTERN volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 
