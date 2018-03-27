@@ -82,7 +82,7 @@ MESSAGE("HOST = ${HOST}")
 IF(CMAKE_USE_PTHREADS_INIT)
         SET(SRC ${SRC} pthread_start.c pthread_support.c pthread_stop_world.c)
         # Common defines for most POSIX platforms.
-        IF( HOST MATCHES .*-.*-aix.*|.*-.*-android.*|.*-.*-cygwin.*|.*-.*-darwin.*|.*-.*-.*freebsd.*|.*-.*-gnu.*|.*-.*-hpux11.*|.*-.*-irix.*|.*-.*-.*linux.*|.*-.*-nacl.*|.*-.*-netbsd.*|.*-.*-openbsd.*|.*-.*-osf.*|.*-.*-solaris.*)
+        IF( HOST MATCHES .*-.*-aix.*|.*-.*-android.*|.*-.*-cygwin.*|.*-.*-darwin.*|.*-.*-.*freebsd.*|.*-.*-haiku.*|.*-.*-gnu.*|.*-.*-hpux11.*|.*-.*-irix.*|.*-.*-.*linux.*|.*-.*-nacl.*|.*-.*-netbsd.*|.*-.*-openbsd.*|.*-.*-osf.*|.*-.*-solaris.*)
                 ADD_DEFINITIONS("-DGC_THREADS -D_REENTRANT")
                 IF(enable_parallel_mark)
                     ADD_DEFINITIONS("-DPARALLEL_MARK")
