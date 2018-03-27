@@ -185,7 +185,7 @@ case "$THREADS" in
     default_threadlibs=false
     # Common defines for most POSIX platforms.
     case "$host" in
-      *-*-aix* | *-*-cygwin* | *-*-darwin* | *-*-dragonfly* | \
+      *-*-aix* | *-*-android* | *-*-cygwin* | *-*-darwin* | *-*-dragonfly* | \
       *-*-freebsd* | *-*-haiku* | *-*-hpux11* | *-*-irix* | \
       *-*-kfreebsd*-gnu | *-*-gnu* | *-*-*linux* | *-*-nacl* | \
       *-*-netbsd* | *-*-openbsd* | *-*-osf* | *-*-solaris*)

@@ -73,13 +73,8 @@ OPTION(enable_parallel_mark "Parallelize marking and free list construction" ON)
 
 OPTION(enable_cplusplus "install C++ support" NO)
 
-SET(_HOST ${CMAKE_HOST_SYSTEM_PROCESSOR}--${CMAKE_SYSTEM}) #FIXME missing the vendor field.Use lowercase
-
+SET(_HOST ${CMAKE_HOST_SYSTEM_PROCESSOR}--${CMAKE_SYSTEM}) #FIXME missing the vendor field.
 STRING(TOLOWER ${_HOST} HOST)
-
-# Accept Android hosts as Linux.
-STRING(REPLACE "android" "linux" HOST "${HOST}")
-
 MESSAGE("HOST = ${HOST}")
 
 #Thread Detection. Relying on cmake for lib an includes.
@@ -87,7 +82,7 @@ MESSAGE("HOST = ${HOST}")
 IF(CMAKE_USE_PTHREADS_INIT)
         SET(SRC ${SRC} pthread_start.c pthread_support.c pthread_stop_world.c)
         # Common defines for most POSIX platforms.
-        IF( HOST MATCHES .*-.*-aix.*|.*-.*-cygwin.*|.*-.*-darwin.*|.*-.*-.*freebsd.*|.*-.*-gnu.*|.*-.*-hpux11.*|.*-.*-irix.*|.*-.*-.*linux.*|.*-.*-nacl.*|.*-.*-netbsd.*|.*-.*-openbsd.*|.*-.*-osf.*|.*-.*-solaris.*)
+        IF( HOST MATCHES .*-.*-aix.*|.*-.*-android.*|.*-.*-cygwin.*|.*-.*-darwin.*|.*-.*-.*freebsd.*|.*-.*-gnu.*|.*-.*-hpux11.*|.*-.*-irix.*|.*-.*-.*linux.*|.*-.*-nacl.*|.*-.*-netbsd.*|.*-.*-openbsd.*|.*-.*-osf.*|.*-.*-solaris.*)
                 ADD_DEFINITIONS("-DGC_THREADS -D_REENTRANT")
                 IF(enable_parallel_mark)
                     ADD_DEFINITIONS("-DPARALLEL_MARK")
