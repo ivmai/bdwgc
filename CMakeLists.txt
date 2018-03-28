@@ -61,6 +61,8 @@ IF(enable_threads)
         SET(LIBS ${LIBS} ${Threads_LIBRARIES})
 ENDIF(enable_threads)
 
+OPTION(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
+
 OPTION(enable_thread_local_alloc "Turn on thread-local allocation optimization" ON)
 
 OPTION(enable_parallel_mark "Parallelize marking and free list construction" ON)
@@ -104,10 +106,21 @@ IF(CMAKE_USE_PTHREADS_INIT)
                 MESSAGE("Only on NetBSD 2.0 or later.")
                 ADD_DEFINITIONS("-D_PTHREADS")
         ENDIF()
+        IF( HOST MATCHES .*-.*-aix.*|.*-.*-cygwin.*|.*-.*-.*freebsd.*|.*-.*-haiku.*|.*-.*-hpux11.*|.*-.*-irix.*|.*-.*-kfreebsd.*-gnu|.*-.*-.*linux.*|.*-.*-netbsd.*|.*-.*-openbsd.*|.*-.*-osf.*|.*-.*-solaris.*)
+                IF(enable_handle_fork)
+                    ADD_DEFINITIONS("-DHANDLE_FORK")
+                ENDIF(enable_handle_fork)
+        ENDIF()
         IF ( HOST MATCHES .*-.*-cygwin.*)
                 SET(SRC ${SRC} win32_threads.c)
         ENDIF()
         IF ( HOST MATCHES .*-.*-darwin.*)
+                IF(enable_handle_fork)
+                    # The incremental mode conflicts with fork handling.
+                    IF(enable_parallel_mark)
+                        ADD_DEFINITIONS("-DHANDLE_FORK")
+                    ENDIF(enable_parallel_mark)
+                ENDIF(enable_handle_fork)
                 SET(SRC ${SRC} darwin_stop_world.c)
                 #TODO
                 #darwin_threads=true
