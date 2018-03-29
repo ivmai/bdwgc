@@ -203,12 +203,7 @@ GC_API int GC_CALL GC_get_thr_restart_signal(void)
   }
 #endif /* GC_EXPLICIT_SIGNALS_UNBLOCK */
 
-STATIC sem_t GC_suspend_ack_sem;
-
-#ifdef GC_NETBSD_THREADS_WORKAROUND
-  /* In case of it is necessary to wait until threads have restarted.   */
-  STATIC sem_t GC_restart_ack_sem;
-#endif
+STATIC sem_t GC_suspend_ack_sem; /* also used to acknowledge restart */
 
 STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 
@@ -373,21 +368,35 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
 # ifdef DEBUG_THREADS
     GC_log_printf("Continuing %p\n", (void *)self);
 # endif
+# ifdef GC_NETBSD_THREADS_WORKAROUND
+    sem_post(&GC_suspend_ack_sem);
+# endif
   RESTORE_CANCEL(cancel_state);
+}
+
+static void suspend_restart_barrier(int n_live_threads)
+{
+    int i;
+
+    for (i = 0; i < n_live_threads; i++) {
+      while (0 != sem_wait(&GC_suspend_ack_sem)) {
+        /* On Linux, sem_wait is documented to always return zero.      */
+        /* But the documentation appears to be incorrect.               */
+        /* EINTR seems to happen with some versions of gdb.             */
+        if (errno != EINTR)
+          ABORT("sem_wait failed");
+      }
+    }
 }
 
 STATIC void GC_restart_handler(int sig)
 {
-# if defined(DEBUG_THREADS) || defined(GC_NETBSD_THREADS_WORKAROUND)
+# if defined(DEBUG_THREADS)
     int old_errno = errno;      /* Preserve errno value.        */
 # endif
 
   if (sig != GC_sig_thr_restart)
     ABORT("Bad signal in restart handler");
-
-# ifdef GC_NETBSD_THREADS_WORKAROUND
-    sem_post(&GC_restart_ack_sem);
-# endif
 
   /*
   ** Note: even if we don't do anything useful here,
@@ -396,11 +405,8 @@ STATIC void GC_restart_handler(int sig)
   ** the signals will not be delivered at all, and
   ** will thus not interrupt the sigsuspend() above.
   */
-
 # ifdef DEBUG_THREADS
     GC_log_printf("In GC_restart_handler for %p\n", (void *)pthread_self());
-# endif
-# if defined(DEBUG_THREADS) || defined(GC_NETBSD_THREADS_WORKAROUND)
     errno = old_errno;
 # endif
 }
@@ -782,9 +788,7 @@ STATIC int GC_suspend_all(void)
 GC_INNER void GC_stop_world(void)
 {
 # if !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
-    int i;
     int n_live_threads;
-    int code;
 # endif
   GC_ASSERT(I_HOLD_LOCK());
 # ifdef DEBUG_THREADS
@@ -851,20 +855,7 @@ GC_INNER void GC_stop_world(void)
         wait_usecs += WAIT_UNIT;
       }
     }
-
-    for (i = 0; i < n_live_threads; i++) {
-      retry:
-        code = sem_wait(&GC_suspend_ack_sem);
-        if (0 != code) {
-          /* On Linux, sem_wait is documented to always return zero.    */
-          /* But the documentation appears to be incorrect.             */
-          if (errno == EINTR) {
-            /* Seems to happen with some versions of gdb.       */
-            goto retry;
-          }
-          ABORT("sem_wait for handler failed");
-        }
-    }
+    suspend_restart_barrier(n_live_threads);
 # endif
 
 # ifdef PARALLEL_MARK
@@ -1095,14 +1086,7 @@ GC_INNER void GC_start_world(void)
       }
     }
 #   ifdef GC_NETBSD_THREADS_WORKAROUND
-      for (i = 0; i < n_live_threads; i++) {
-        while (0 != sem_wait(&GC_restart_ack_sem)) {
-          if (errno != EINTR) {
-            ABORT_ARG1("sem_wait() for restart handler failed",
-                       ": errcode= %d", errno);
-          }
-        }
-      }
+      suspend_restart_barrier(n_live_threads);
 #   endif
 #   if defined(GC_ASSERTIONS) && !defined(GC_OPENBSD_UTHREADS)
       {
@@ -1139,10 +1123,6 @@ GC_INNER void GC_stop_init(void)
 
     if (sem_init(&GC_suspend_ack_sem, GC_SEM_INIT_PSHARED, 0) != 0)
         ABORT("sem_init failed");
-#   ifdef GC_NETBSD_THREADS_WORKAROUND
-      if (sem_init(&GC_restart_ack_sem, GC_SEM_INIT_PSHARED, 0) != 0)
-        ABORT("sem_init failed");
-#   endif
 
 #   ifdef SA_RESTART
       act.sa_flags = SA_RESTART
