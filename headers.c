@@ -25,12 +25,12 @@
  */
 
 STATIC bottom_index * GC_all_bottom_indices = 0;
-                                /* Pointer to first (lowest addr) */
-                                /* bottom_index.                  */
+                        /* Pointer to the first (lowest address)        */
+                        /* bottom_index.  Assumes the lock is held.     */
 
 STATIC bottom_index * GC_all_bottom_indices_end = 0;
-                                /* Pointer to last (highest addr) */
-                                /* bottom_index.                  */
+                        /* Pointer to the last (highest address)        */
+                        /* bottom_index.  Assumes the lock is held.     */
 
 /* Non-macro version of header location routine */
 GC_INNER hdr * GC_find_header(ptr_t h)
@@ -216,6 +216,7 @@ static GC_bool get_index(word addr)
     bottom_index *pi; /* old_p */
     word i;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef HASH_TL
       i = TL_HASH(hi);
 
@@ -320,6 +321,7 @@ void GC_apply_to_all_blocks(void (*fn)(struct hblk *h, word client_data),
     signed_word j;
     bottom_index * index_p;
 
+    GC_ASSERT(I_HOLD_LOCK());
     for (index_p = GC_all_bottom_indices; index_p != 0;
          index_p = index_p -> asc_link) {
         for (j = BOTTOM_SZ-1; j >= 0;) {
@@ -347,6 +349,7 @@ GC_INNER struct hblk * GC_next_used_block(struct hblk *h)
     REGISTER bottom_index * bi;
     REGISTER word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
 
+    GC_ASSERT(I_HOLD_LOCK());
     GET_BI(h, bi);
     if (bi == GC_all_nils) {
         REGISTER word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
@@ -384,6 +387,7 @@ GC_INNER struct hblk * GC_prev_block(struct hblk *h)
     bottom_index * bi;
     signed_word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
 
+    GC_ASSERT(I_HOLD_LOCK());
     GET_BI(h, bi);
     if (bi == GC_all_nils) {
         word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
