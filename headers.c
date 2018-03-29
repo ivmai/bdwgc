@@ -205,7 +205,7 @@ GC_INNER void GC_init_headers(void)
     }
 }
 
-/* Make sure that there is a bottom level index block for address addr  */
+/* Make sure that there is a bottom level index block for address addr. */
 /* Return FALSE on failure.                                             */
 static GC_bool get_index(word addr)
 {
@@ -213,30 +213,31 @@ static GC_bool get_index(word addr)
     bottom_index * r;
     bottom_index * p;
     bottom_index ** prev;
-    bottom_index *pi;
+    bottom_index *pi; /* old_p */
+    word i;
 
 #   ifdef HASH_TL
-      word i = TL_HASH(hi);
-      bottom_index * old;
+      i = TL_HASH(hi);
 
-      old = p = GC_top_index[i];
+      pi = p = GC_top_index[i];
       while(p != GC_all_nils) {
           if (p -> key == hi) return(TRUE);
           p = p -> hash_link;
       }
-      r = (bottom_index *)GC_scratch_alloc(sizeof(bottom_index));
-      if (r == 0) return(FALSE);
-      BZERO(r, sizeof (bottom_index));
-      r -> hash_link = old;
-      GC_top_index[i] = r;
 #   else
-      if (GC_top_index[hi] != GC_all_nils) return(TRUE);
-      r = (bottom_index *)GC_scratch_alloc(sizeof(bottom_index));
-      if (r == 0) return(FALSE);
-      GC_top_index[hi] = r;
-      BZERO(r, sizeof (bottom_index));
+      if (GC_top_index[hi] != GC_all_nils)
+        return TRUE;
+      i = hi;
 #   endif
+    r = (bottom_index *)GC_scratch_alloc(sizeof(bottom_index));
+    if (EXPECT(NULL == r, FALSE))
+      return FALSE;
+    BZERO(r, sizeof(bottom_index));
     r -> key = hi;
+#   ifdef HASH_TL
+      r -> hash_link = pi;
+#   endif
+
     /* Add it to the list of bottom indices */
       prev = &GC_all_bottom_indices;    /* pointer to p */
       pi = 0;                           /* bottom_index preceding p */
@@ -252,6 +253,8 @@ static GC_bool get_index(word addr)
       }
       r -> asc_link = p;
       *prev = r;
+
+      GC_top_index[i] = r;
     return(TRUE);
 }
 
