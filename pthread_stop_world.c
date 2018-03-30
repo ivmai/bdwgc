@@ -334,8 +334,12 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
     {
       sigset_t set;
       sigemptyset(&set);
-      if (pthread_sigmask(SIG_SETMASK, &set, NULL) != 0)
-        ABORT("pthread_sigmask(SIG_SETMASK) failed");
+      GC_ASSERT(GC_sig_suspend != SIGNAL_UNSET);
+      GC_ASSERT(GC_sig_thr_restart != SIGNAL_UNSET);
+      sigaddset(&set, GC_sig_suspend);
+      sigaddset(&set, GC_sig_thr_restart);
+      if (pthread_sigmask(SIG_UNBLOCK, &set, NULL) != 0)
+        ABORT("pthread_sigmask failed in suspend handler");
     }
 # endif
   /* Tell the thread that wants to stop the world that this     */
