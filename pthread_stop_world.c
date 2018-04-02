@@ -417,7 +417,7 @@ static int resend_lost_signals(int n_live_threads,
           GC_COND_LOG_PRINTF("Resent %d signals after timeout\n", newly_sent);
           sem_getvalue(&GC_suspend_ack_sem, &ack_count);
           if (newly_sent < n_live_threads - ack_count) {
-            WARN("Lost some threads while stoping or starting world?!\n", 0);
+            WARN("Lost some threads while stopping or starting world?!\n", 0);
             n_live_threads = ack_count + newly_sent;
           }
           wait_usecs = 0;
