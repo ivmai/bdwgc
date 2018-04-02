@@ -123,7 +123,8 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
                         /* before they are expected to stop (unless     */
                         /* they have stopped voluntarily).              */
 
-#if defined(GC_OSF1_THREADS) || defined(THREAD_SANITIZER)
+#if defined(GC_OSF1_THREADS) || defined(THREAD_SANITIZER) \
+    || defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER)
   STATIC GC_bool GC_retry_signals = TRUE;
 #else
   STATIC GC_bool GC_retry_signals = FALSE;
@@ -362,18 +363,20 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
       sigsuspend (&suspend_handler_mask);
   } while (AO_load_acquire(&GC_world_is_stopped)
            && AO_load(&GC_stop_count) == my_stop_count);
-  /* If the RESTART signal gets lost, we can still lose.  That should   */
-  /* be less likely than losing the SUSPEND signal, since we don't do   */
-  /* much between the sem_post and sigsuspend.                          */
-  /* We'd need more handshaking to work around that.                    */
-  /* Simply dropping the sigsuspend call should be safe, but is         */
-  /* unlikely to be efficient.                                          */
 
 # ifdef DEBUG_THREADS
     GC_log_printf("Continuing %p\n", (void *)self);
 # endif
 # ifdef GC_NETBSD_THREADS_WORKAROUND
     sem_post(&GC_suspend_ack_sem);
+# else
+    if (GC_retry_signals) {
+      /* If the RESTART signal loss is possible (though it should be    */
+      /* less likely than losing the SUSPEND signal as we do not do     */
+      /* much between the sem_post and sigsuspend calls), more          */
+      /* handshaking is provided to work around it.                     */
+      sem_post(&GC_suspend_ack_sem);
+    }
 # endif
   RESTORE_CANCEL(cancel_state);
 }
@@ -1107,8 +1110,15 @@ GC_INNER void GC_start_world(void)
                     /* the list of functions which synchronize memory). */
 #   endif
     n_live_threads = GC_restart_all();
-#   if !defined(GC_OPENBSD_UTHREADS) && defined(GC_NETBSD_THREADS_WORKAROUND)
-      suspend_restart_barrier(n_live_threads);
+#   ifndef GC_OPENBSD_UTHREADS
+      if (GC_retry_signals)
+        n_live_threads = resend_lost_signals(n_live_threads, GC_restart_all);
+#     ifdef GC_NETBSD_THREADS_WORKAROUND
+        suspend_restart_barrier(n_live_threads);
+#     else
+        if (GC_retry_signals)
+          suspend_restart_barrier(n_live_threads);
+#     endif
 #   else
       (void)n_live_threads;
 #   endif
@@ -1193,7 +1203,8 @@ GC_INNER void GC_stop_init(void)
         GC_retry_signals = FALSE;
     }
     if (GC_retry_signals) {
-      GC_COND_LOG_PRINTF("Will retry suspend signal if necessary\n");
+      GC_COND_LOG_PRINTF(
+                "Will retry suspend and restart signals if necessary\n");
     }
 #   ifndef NO_SIGNALS_UNBLOCK_IN_MAIN
       /* Explicitly unblock the signals once before new threads creation. */
