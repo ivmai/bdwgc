@@ -96,13 +96,13 @@ GC_PRINT_BACK_HEIGHT - Print max length of chain through unreachable objects
                      of Conservative Garbage Collectors", POPL 2001
                      (http://www.hpl.hp.com/techreports/2001/HPL-2001-251.html).
 
-GC_RETRY_SIGNALS, GC_NO_RETRY_SIGNALS - Try to compensate for lost
+GC_RETRY_SIGNALS -   Try to compensate for lost
                      thread suspend and restart signals (Pthreads only).
                      On by default for OSF1 (Tru64) or if the library is
                      sanitized, off otherwise.  Since we've previously seen
                      similar issues on some other operating systems, it
                      was turned into a runtime flag to enable last-minute
-                     work-arounds.
+                     work-arounds.  "0" value means "do not retry signals".
 
 GC_USE_GETWRITEWATCH=<n> - Only if MPROTECT_VDB and GWW_VDB are both defined
                      (Win32 only).  Explicitly specify which strategy of

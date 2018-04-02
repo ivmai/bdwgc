@@ -1140,6 +1140,7 @@ GC_INNER void GC_stop_init(void)
 {
 # if !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
     struct sigaction act;
+    char *str;
 
     if (SIGNAL_UNSET == GC_sig_suspend)
         GC_sig_suspend = SIG_SUSPEND;
@@ -1195,12 +1196,15 @@ GC_INNER void GC_stop_init(void)
     if (sigdelset(&suspend_handler_mask, GC_sig_thr_restart) != 0)
         ABORT("sigdelset failed");
 
-    /* Check for GC_RETRY_SIGNALS.      */
-    if (0 != GETENV("GC_RETRY_SIGNALS")) {
-        GC_retry_signals = TRUE;
-    }
-    if (0 != GETENV("GC_NO_RETRY_SIGNALS")) {
-        GC_retry_signals = FALSE;
+    /* Override the default value of GC_retry_signals.  */
+    str = GETENV("GC_RETRY_SIGNALS");
+    if (str != NULL) {
+        if (*str == '0' && *(str + 1) == '\0') {
+            /* Do not retry if the environment variable is set to "0". */
+            GC_retry_signals = FALSE;
+        } else {
+            GC_retry_signals = TRUE;
+        }
     }
     if (GC_retry_signals) {
       GC_COND_LOG_PRINTF(
