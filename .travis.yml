@@ -39,11 +39,6 @@ matrix:
     env:
     - MAKEFILE_TARGETS="dist"
   - os: linux
-    compiler: clang
-    env:
-    - CONF_OPTIONS="--enable-cplusplus"
-    - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
     compiler: gcc
     env:
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-static"
