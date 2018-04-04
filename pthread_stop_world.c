@@ -115,7 +115,8 @@ STATIC void GC_remove_allowed_signals(sigset_t *set)
 static sigset_t suspend_handler_mask;
 
 STATIC volatile AO_t GC_stop_count = 0;
-                        /* Incremented at the beginning of GC_stop_world. */
+                        /* Incremented by two at the beginning of       */
+                        /* GC_stop_world (the lowest bit is always 0).  */
 
 STATIC volatile AO_t GC_world_is_stopped = FALSE;
                         /* FALSE ==> it is safe for threads to restart, */
@@ -303,6 +304,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
 # ifdef DEBUG_THREADS
     GC_log_printf("Suspending %p\n", (void *)self);
 # endif
+  GC_ASSERT(((word)my_stop_count & 1) == 0);
 
   me = GC_lookup_thread_async(self);
 
@@ -319,7 +321,8 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
     }
 # endif
 
-  if (me -> stop_info.last_stop_count == my_stop_count) {
+  if (((word)me->stop_info.last_stop_count & ~(word)0x1)
+        == (word)my_stop_count) {
       /* Duplicate signal.  OK if we are retrying.      */
       if (!GC_retry_signals) {
           WARN("Duplicate suspend signal in thread %p\n", self);
@@ -367,17 +370,25 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
 # ifdef DEBUG_THREADS
     GC_log_printf("Continuing %p\n", (void *)self);
 # endif
-# ifdef GC_NETBSD_THREADS_WORKAROUND
-    sem_post(&GC_suspend_ack_sem);
-# else
-    if (GC_retry_signals) {
-      /* If the RESTART signal loss is possible (though it should be    */
-      /* less likely than losing the SUSPEND signal as we do not do     */
-      /* much between the sem_post and sigsuspend calls), more          */
-      /* handshaking is provided to work around it.                     */
-      sem_post(&GC_suspend_ack_sem);
-    }
+# ifndef GC_NETBSD_THREADS_WORKAROUND
+    if (GC_retry_signals)
 # endif
+  {
+    /* If the RESTART signal loss is possible (though it should be      */
+    /* less likely than losing the SUSPEND signal as we do not do       */
+    /* much between the first sem_post and sigsuspend calls), more      */
+    /* handshaking is provided to work around it.                       */
+    sem_post(&GC_suspend_ack_sem);
+#   ifdef GC_NETBSD_THREADS_WORKAROUND
+      if (GC_retry_signals)
+#   endif
+    {
+      /* Set the flag (the lowest bit of last_stop_count) that the      */
+      /* thread has been restarted.                                     */
+      AO_store_release(&me->stop_info.last_stop_count,
+                       (AO_t)((word)my_stop_count | 1));
+    }
+  }
   RESTORE_CANCEL(cancel_state);
 }
 
@@ -742,7 +753,7 @@ STATIC int GC_suspend_all(void)
                 if (p -> suspended_ext) continue;
 #             endif
               if (AO_load(&p->stop_info.last_stop_count) == GC_stop_count)
-                continue;
+                continue; /* matters only if GC_retry_signals */
               n_live_threads++;
 #           endif
 #           ifdef DEBUG_THREADS
@@ -863,7 +874,7 @@ GC_INNER void GC_stop_world(void)
 # if defined(GC_OPENBSD_UTHREADS) || defined(NACL)
     (void)GC_suspend_all();
 # else
-    AO_store(&GC_stop_count, GC_stop_count+1);
+    AO_store(&GC_stop_count, (AO_t)((word)GC_stop_count + 2));
         /* Only concurrent reads are possible. */
     AO_store_release(&GC_world_is_stopped, TRUE);
     n_live_threads = GC_suspend_all();
@@ -1058,6 +1069,9 @@ GC_INNER void GC_stop_world(void)
 #           ifdef GC_ENABLE_SUSPEND_THREAD
               if (p -> suspended_ext) continue;
 #           endif
+            if (GC_retry_signals && AO_load(&p->stop_info.last_stop_count)
+                                    == (AO_t)((word)GC_stop_count | 1))
+              continue; /* The thread has been restarted. */
             n_live_threads++;
 #         endif
 #         ifdef DEBUG_THREADS
