@@ -353,12 +353,15 @@ size_t GetDescriptionFromStack(void* const frames[], size_t count,
   char*const end = begin + size;
   char* buffer = begin + (count + 1) * sizeof(char*);
   size_t i;
+  (void)format;
   for (i = 0; i < count; ++i) {
-    if (description) description[i] = buffer;
+    if (size)
+      description[i] = buffer;
     size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
     buffer += 1 + GetDescriptionFromAddress(frames[i], NULL, buffer, size);
   }
-  if (description) description[count] = NULL;
+  if (size)
+    description[count] = NULL;
   return buffer - begin;
 }
 
@@ -373,7 +376,8 @@ char** backtrace_symbols(void*const* addresses, int count)
 {
   size_t size = GetDescriptionFromStack(addresses, count, NULL, NULL, 0);
   char** symbols = (char**)malloc(size);
-  GetDescriptionFromStack(addresses, count, NULL, symbols, size);
+  if (symbols != NULL)
+    GetDescriptionFromStack(addresses, count, NULL, symbols, size);
   return symbols;
 }
 
