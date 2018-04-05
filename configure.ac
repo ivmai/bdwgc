@@ -219,7 +219,6 @@ case "$THREADS" in
         ;;
       *-*-kfreebsd*-gnu)
         AM_CFLAGS="$AM_CFLAGS -pthread"
-        AC_DEFINE(USE_COMPILER_TLS)
         THREADDLLIBS=-pthread
         ;;
       *-*-gnu*) # E.g. linux but excluding kfreebsd.
