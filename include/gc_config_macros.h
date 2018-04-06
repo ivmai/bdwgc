@@ -100,7 +100,8 @@
        && !defined(GC_OSF1_THREADS) && !defined(GC_IRIX_THREADS)
     /* FIXME: Should we really need for FreeBSD and NetBSD to check     */
     /* that no other GC_xxx_THREADS macro is set?                       */
-#   if defined(__FreeBSD__) || defined(__DragonFly__)
+#   if defined(__FreeBSD__) || defined(__DragonFly__) \
+       || defined(__FreeBSD_kernel__)
 #     define GC_FREEBSD_THREADS
 #   elif defined(__NetBSD__)
 #     define GC_NETBSD_THREADS
@@ -322,6 +323,7 @@
 /* retrieve the call chain.                                             */
 #if (defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) \
      || defined(__FreeBSD__) || defined(__DragonFly__) \
+     || defined(__FreeBSD_kernel__) \
      || defined(PLATFORM_ANDROID) || defined(__ANDROID__)) \
     && !defined(GC_CAN_SAVE_CALL_STACKS)
 # define GC_ADD_CALLER
