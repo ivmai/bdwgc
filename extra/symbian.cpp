@@ -45,7 +45,8 @@ char* GC_get_private_path_and_zero_file()
 
     size_t size = path8.Length() + 1;
     char* copyChar = (char*) malloc( size );
-    memcpy( copyChar, path8.PtrZ(), size );
+    if (copyChar)
+        memcpy( copyChar, path8.PtrZ(), size );
 
     return copyChar; // ownership passed
     }

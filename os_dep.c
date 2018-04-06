@@ -2027,7 +2027,7 @@ void GC_register_data_segments(void)
 #   define OPT_MAP_ANON MAP_ANON
 # endif
 #else
-  static int zero_fd;
+  static int zero_fd = -1;
 # define OPT_MAP_ANON 0
 #endif
 
@@ -2045,9 +2045,11 @@ STATIC ptr_t GC_unix_mmap_get_mem(size_t bytes)
 
       if (!EXPECT(initialized, TRUE)) {
 #       ifdef SYMBIAN
-          char* path = GC_get_private_path_and_zero_file();
-          zero_fd = open(path, O_RDWR | O_CREAT, 0666);
-          free(path);
+          char *path = GC_get_private_path_and_zero_file();
+          if (path != NULL) {
+            zero_fd = open(path, O_RDWR | O_CREAT, 0666);
+            free(path);
+          }
 #       else
           zero_fd = open("/dev/zero", O_RDONLY);
 #       endif
