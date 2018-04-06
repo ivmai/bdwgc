@@ -3330,7 +3330,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
           GC_log_printf("Replaced other SIGSEGV handler\n");
       }
 #   if defined(HPUX) || defined(LINUX) || defined(HURD) \
-      || (defined(FREEBSD) && defined(SUNOS5SIGS))
+       || (defined(FREEBSD) && (defined(__GLIBC__) || defined(SUNOS5SIGS)))
       sigaction(SIGBUS, &act, &oldact);
       if (oldact.sa_flags & SA_SIGINFO) {
         GC_old_bus_handler = oldact.sa_sigaction;
