@@ -4660,18 +4660,22 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
             continue;
         }
         {
+          char buf[40];
+          char *name;
 #         if defined(GC_HAVE_BUILTIN_BACKTRACE) \
              && !defined(GC_BACKTRACE_SYMBOLS_BROKEN)
             char **sym_name =
               backtrace_symbols((void **)(&(info[i].ci_pc)), 1);
-            char *name = sym_name[0];
-#         else
-            char buf[40];
-            char *name = buf;
+            if (sym_name != NULL) {
+              name = sym_name[0];
+            } else
+#         endif
+          /* else */ {
             (void)snprintf(buf, sizeof(buf), "##PC##= 0x%lx",
                            (unsigned long)info[i].ci_pc);
             buf[sizeof(buf) - 1] = '\0';
-#         endif
+            name = buf;
+          }
 #         if defined(LINUX) && !defined(SMALL_CONFIG)
             /* Try for a line number. */
             {
@@ -4765,7 +4769,8 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
           GC_err_printf("\t\t%s\n", name);
 #         if defined(GC_HAVE_BUILTIN_BACKTRACE) \
              && !defined(GC_BACKTRACE_SYMBOLS_BROKEN)
-            free(sym_name);  /* May call GC_[debug_]free; that's OK */
+            if (sym_name != NULL)
+              free(sym_name);   /* May call GC_[debug_]free; that's OK  */
 #         endif
         }
     }
