@@ -357,6 +357,7 @@ static void add_back_edges(ptr_t p, size_t n_bytes, word gc_descr)
 /* Does not examine mark bits.  Can be called before GC.                */
 GC_INNER void GC_build_back_graph(void)
 {
+  GC_ASSERT(I_HOLD_LOCK());
   GC_apply_to_each_object(add_back_edges);
 }
 
@@ -463,6 +464,7 @@ STATIC word GC_max_max_height = 0;
 
 GC_INNER void GC_traverse_back_graph(void)
 {
+  GC_ASSERT(I_HOLD_LOCK());
   GC_max_height = 0;
   GC_apply_to_each_object(update_max_height);
   if (0 != GC_deepest_obj)

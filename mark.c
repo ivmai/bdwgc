@@ -259,6 +259,7 @@ GC_INNER void GC_clear_marks(void)
 /* mark state is invalid.                                               */
 GC_INNER void GC_initiate_gc(void)
 {
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifndef GC_DISABLE_INCREMENTAL
         if (GC_incremental) {
 #         ifdef CHECKSUMS

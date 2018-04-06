@@ -659,7 +659,7 @@ GC_API int GC_CALL GC_collect_a_little(void)
 #endif
 
 /*
- * Assumes lock is held.  We stop the world and mark from all roots.
+ * We stop the world and mark from all roots.
  * If stop_func() ever returns TRUE, we may fail and return FALSE.
  * Increment GC_gc_no if we succeed.
  */
@@ -670,6 +670,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
       CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
 #   endif
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   if !defined(REDIRECT_MALLOC) && defined(USE_WINALLOC)
         GC_add_current_malloc_heap();
 #   endif
@@ -948,6 +949,7 @@ STATIC void GC_finish_collection(void)
       CLOCK_TYPE finalize_time = 0;
 #   endif
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   if defined(GC_ASSERTIONS) \
        && defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
         /* Check that we marked some of our own data.           */
