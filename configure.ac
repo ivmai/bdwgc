@@ -865,7 +865,7 @@ elif test "${enable_handle_fork}" != manual -a x$THREADS = xposix; then
           AC_DEFINE(HANDLE_FORK)
         fi
         ;;
-      *-*-aix* | *-*-cygwin* | *-*-*freebsd* | *-*-haiku* | \
+      *-*-aix* | *-*-cygwin* | *-*-freebsd* | *-*-haiku* | \
       *-*-hpux11* | *-*-irix* | *-*-kfreebsd*-gnu | \
       *-*-*linux* | *-*-netbsd* | *-*-openbsd* | *-*-osf* | *-*-solaris*)
         AC_DEFINE(HANDLE_FORK)
