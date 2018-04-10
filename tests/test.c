@@ -2261,6 +2261,9 @@ int main(void)
                   "Emulating dirty bits with mprotect/signals\n");
       }
 #   endif
+    GC_set_min_bytes_allocd(1);
+    if (GC_get_min_bytes_allocd() != 1)
+        FAIL;
     GC_set_warn_proc(warn_proc);
     if ((code = pthread_key_create(&fl_key, 0)) != 0) {
         GC_printf("Key creation failed %d\n", code);

@@ -427,6 +427,12 @@ GC_API void GC_CALL GC_set_pages_executable(int);
 /* use or need synchronization (i.e. acquiring the allocator lock).     */
 GC_API int GC_CALL GC_get_pages_executable(void);
 
+/* The setter and getter of the minimum value returned by the internal  */
+/* min_bytes_allocd().  The value should not be zero; the default value */
+/* is one.  Not synchronized.                                           */
+GC_API void GC_CALL GC_set_min_bytes_allocd(size_t);
+GC_API size_t GC_CALL GC_get_min_bytes_allocd(void);
+
 /* Overrides the default handle-fork mode.  Non-zero value means GC     */
 /* should install proper pthread_atfork handlers.  Has effect only if   */
 /* called before GC_INIT.  Clients should invoke GC_set_handle_fork     */
