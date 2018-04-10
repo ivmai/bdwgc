@@ -2264,6 +2264,10 @@ int main(void)
     GC_set_min_bytes_allocd(1);
     if (GC_get_min_bytes_allocd() != 1)
         FAIL;
+    GC_set_rate(10);
+    GC_set_max_prior_attempts(1);
+    if (GC_get_rate() != 10 || GC_get_max_prior_attempts() != 1)
+        FAIL;
     GC_set_warn_proc(warn_proc);
     if ((code = pthread_key_create(&fl_key, 0)) != 0) {
         GC_printf("Key creation failed %d\n", code);

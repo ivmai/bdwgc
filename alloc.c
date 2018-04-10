@@ -569,7 +569,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 
 /*
  * Perform n units of garbage collection work.  A unit is intended to touch
- * roughly GC_RATE pages.  Every once in a while, we do more than that.
+ * roughly GC_rate pages.  Every once in a while, we do more than that.
  * This needs to be a fairly large number with our current incremental
  * GC strategy, since otherwise we allocate too much during GC, and the
  * cleanup gets expensive.
@@ -577,6 +577,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 #ifndef GC_RATE
 # define GC_RATE 10
 #endif
+
 #ifndef MAX_PRIOR_ATTEMPTS
 # define MAX_PRIOR_ATTEMPTS 1
 #endif
@@ -588,6 +589,32 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 STATIC int GC_deficit = 0;/* The number of extra calls to GC_mark_some  */
                           /* that we have made.                         */
 
+STATIC int GC_rate = GC_RATE;
+
+GC_API void GC_CALL GC_set_rate(int value)
+{
+    GC_ASSERT(value > 0);
+    GC_rate = value;
+}
+
+GC_API int GC_CALL GC_get_rate(void)
+{
+    return GC_rate;
+}
+
+static int max_prior_attempts = MAX_PRIOR_ATTEMPTS;
+
+GC_API void GC_CALL GC_set_max_prior_attempts(int value)
+{
+    GC_ASSERT(value >= 0);
+    max_prior_attempts = value;
+}
+
+GC_API int GC_CALL GC_get_max_prior_attempts(void)
+{
+    return max_prior_attempts;
+}
+
 GC_INNER void GC_collect_a_little_inner(int n)
 {
     IF_CANCEL(int cancel_state;)
@@ -598,8 +625,9 @@ GC_INNER void GC_collect_a_little_inner(int n)
     DISABLE_CANCEL(cancel_state);
     if (GC_incremental && GC_collection_in_progress()) {
         int i;
+        int max_deficit = GC_rate * n;
 
-        for (i = GC_deficit; i < GC_RATE*n; i++) {
+        for (i = GC_deficit; i < max_deficit; i++) {
             if (GC_mark_some((ptr_t)0)) {
                 /* Need to finish a collection */
 #               ifdef SAVE_CALL_CHAIN
@@ -609,7 +637,7 @@ GC_INNER void GC_collect_a_little_inner(int n)
                     if (GC_parallel)
                       GC_wait_for_reclaim();
 #               endif
-                if (GC_n_attempts < MAX_PRIOR_ATTEMPTS
+                if (GC_n_attempts < max_prior_attempts
                     && GC_time_limit != GC_TIME_UNLIMITED) {
 #                 ifndef NO_CLOCK
                     GET_TIME(GC_start_time);
@@ -627,8 +655,11 @@ GC_INNER void GC_collect_a_little_inner(int n)
                 break;
             }
         }
-        if (GC_deficit > 0) GC_deficit -= GC_RATE*n;
-        if (GC_deficit < 0) GC_deficit = 0;
+        if (GC_deficit > 0) {
+            GC_deficit -= max_deficit;
+            if (GC_deficit < 0)
+                GC_deficit = 0;
+        }
     } else {
         GC_maybe_gc();
     }

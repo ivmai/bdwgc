@@ -433,6 +433,16 @@ GC_API int GC_CALL GC_get_pages_executable(void);
 GC_API void GC_CALL GC_set_min_bytes_allocd(size_t);
 GC_API size_t GC_CALL GC_get_min_bytes_allocd(void);
 
+/* Set/get the size in pages of units operated by GC_collect_a_little.  */
+/* The value should not be zero.  Not synchronized.                     */
+GC_API void GC_CALL GC_set_rate(int);
+GC_API int GC_CALL GC_get_rate(void);
+
+/* Set/get the maximum number of prior attempts at the world-stop       */
+/* marking.  Not synchronized.                                          */
+GC_API void GC_CALL GC_set_max_prior_attempts(int);
+GC_API int GC_CALL GC_get_max_prior_attempts(void);
+
 /* Overrides the default handle-fork mode.  Non-zero value means GC     */
 /* should install proper pthread_atfork handlers.  Has effect only if   */
 /* called before GC_INIT.  Clients should invoke GC_set_handle_fork     */
