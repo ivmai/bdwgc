@@ -871,6 +871,9 @@ GC_API void GC_CALL GC_init(void)
     /* LOCK(); -- no longer does anything this early. */
     word initial_heap_sz;
     IF_CANCEL(int cancel_state;)
+#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+      DCL_LOCK_STATE;
+#   endif
 
     if (EXPECT(GC_is_initialized, TRUE)) return;
 #   ifdef REDIRECT_MALLOC
@@ -1281,31 +1284,30 @@ GC_API void GC_CALL GC_init(void)
       GC_pcr_install();
 #   endif
     GC_is_initialized = TRUE;
+#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+        LOCK(); /* just to set GC_lock_holder */
+#   endif
 #   if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-#       if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-          DCL_LOCK_STATE;
-          LOCK(); /* just to set GC_lock_holder */
-          GC_thr_init();
-          UNLOCK();
-#       else
-          GC_thr_init();
-#       endif
+        GC_thr_init();
 #       ifdef PARALLEL_MARK
           /* Actually start helper threads.     */
+#         if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+            UNLOCK();
+#         endif
           GC_start_mark_threads_inner();
+#         if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+            LOCK();
+#         endif
 #       endif
 #   endif
     COND_DUMP;
     /* Get black list set up and/or incremental GC started */
-      if (!GC_dont_precollect || GC_incremental) {
-#       if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-          LOCK();
-          GC_gcollect_inner();
-          UNLOCK();
-#       else
-          GC_gcollect_inner();
-#       endif
-      }
+    if (!GC_dont_precollect || GC_incremental) {
+        GC_gcollect_inner();
+    }
+#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+        UNLOCK();
+#   endif
 #   ifdef STUBBORN_ALLOC
         GC_stubborn_init();
 #   endif
@@ -2190,7 +2192,11 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 #if !defined(NO_DEBUGGING)
   GC_API void GC_CALL GC_dump(void)
   {
+    DCL_LOCK_STATE;
+
+    LOCK();
     GC_dump_named(NULL);
+    UNLOCK();
   }
 
   GC_API void GC_CALL GC_dump_named(const char *name)

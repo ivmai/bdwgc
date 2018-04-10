@@ -2212,7 +2212,6 @@ void GC_print_block_list(void);
 void GC_print_hblkfreelist(void);
 void GC_print_heap_sects(void);
 void GC_print_static_roots(void);
-/* void GC_dump(void); - declared in gc.h */
 
 extern word GC_fo_entries; /* should be visible in extra/MacOS.c */
 
@@ -2524,8 +2523,9 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #ifndef NO_DEBUGGING
   GC_EXTERN GC_bool GC_dump_regularly;
                                 /* Generate regular debugging dumps.    */
-# define COND_DUMP if (EXPECT(GC_dump_regularly, FALSE)) GC_dump(); \
-                        else COND_DUMP_CHECKS
+# define COND_DUMP if (EXPECT(GC_dump_regularly, FALSE)) { \
+                        GC_dump_named(NULL); \
+                   } else COND_DUMP_CHECKS
 #else
 # define COND_DUMP COND_DUMP_CHECKS
 #endif
