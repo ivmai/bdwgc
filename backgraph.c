@@ -464,13 +464,19 @@ GC_INNER void GC_traverse_back_graph(void)
 
 void GC_print_back_graph_stats(void)
 {
-  GC_printf("Maximum backwards height of reachable objects at GC %lu is %ld\n",
+  GC_ASSERT(I_HOLD_LOCK());
+  GC_printf("Maximum backwards height of reachable objects at GC %lu is %lu\n",
             (unsigned long) GC_gc_no, (unsigned long)GC_max_height);
   if (GC_max_height > GC_max_max_height) {
+    ptr_t obj = GC_deepest_obj;
+
     GC_max_max_height = GC_max_height;
-    GC_printf("The following unreachable object is last in a longest chain "
-              "of unreachable objects:\n");
-    GC_print_heap_obj(GC_deepest_obj);
+    UNLOCK();
+    GC_err_printf(
+            "The following unreachable object is last in a longest chain "
+            "of unreachable objects:\n");
+    GC_print_heap_obj(obj);
+    LOCK();
   }
   if (GC_print_stats) {
     GC_log_printf("Needed max total of %d back-edge structs\n",
