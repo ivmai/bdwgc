@@ -1373,8 +1373,10 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
     }
   }
 
-# ifdef DARWIN_DEBUG
+# if defined(DARWIN_DEBUG) && !defined(NO_DEBUGGING)
+    LOCK();
     GC_print_static_roots();
+    UNLOCK();
 # endif
 }
 
@@ -1385,6 +1387,9 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
   unsigned long start, end;
   unsigned i, j;
   const struct GC_MACH_SECTION *sec;
+# if defined(DARWIN_DEBUG) && !defined(NO_DEBUGGING)
+    DCL_LOCK_STATE;
+# endif
 
   for (i = 0; i < sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]); i++) {
     sec = GC_GETSECTBYNAME(hdr, GC_dyld_sections[i].seg,
@@ -1426,8 +1431,10 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
     }
   }
 
-# ifdef DARWIN_DEBUG
+# if defined(DARWIN_DEBUG) && !defined(NO_DEBUGGING)
+    LOCK();
     GC_print_static_roots();
+    UNLOCK();
 # endif
 }
 
