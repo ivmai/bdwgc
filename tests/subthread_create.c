@@ -99,6 +99,7 @@ volatile AO_t thread_ended_cnt = 0;
 
 int main(void)
 {
+#if NTHREADS > 0
     int i;
 # ifdef GC_PTHREADS
     int err;
@@ -150,6 +151,7 @@ int main(void)
         CloseHandle(th[i]);
 #     endif
     }
+#endif
   printf("subthread_create: created %d threads (%d ended)\n",
          (int)AO_load(&thread_created_cnt), (int)AO_load(&thread_ended_cnt));
   return 0;
