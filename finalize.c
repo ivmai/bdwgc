@@ -1315,9 +1315,7 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
 #       endif
 #       ifdef MAKE_BACK_GRAPH
           if (GC_print_back_height) {
-            UNLOCK();
             GC_print_back_graph_stats();
-            LOCK();
           }
 #       endif
       }
