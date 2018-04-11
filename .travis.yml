@@ -65,7 +65,7 @@ matrix:
   - os: osx
     env:
     - CFLAGS_EXTRA="-m32"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-handle-fork --enable-cplusplus"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: gcc
@@ -81,7 +81,7 @@ matrix:
   - os: osx
     env:
     - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS -D LINT2"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-handle-fork=manual"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: gcc
@@ -97,7 +97,7 @@ matrix:
     compiler: clang
     env:
     - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2"
-    - CONF_OPTIONS="--with-libatomic-ops=no --enable-cplusplus"
+    - CONF_OPTIONS="--with-libatomic-ops=no --enable-cplusplus --disable-handle-fork"
   - os: linux
     addons:
       apt:
@@ -128,7 +128,7 @@ matrix:
     compiler: gcc
     env:
     - CFLAGS_EXTRA="-D NO_CLOCK -D POINTER_MASK=~0xf"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-handle-fork=manual"
   - os: linux
     compiler: gcc
     env:
@@ -161,7 +161,7 @@ matrix:
         - lcov
     compiler: gcc
     env:
-    - CONF_OPTIONS="--enable-gcov --enable-handle-fork --enable-munmap --enable-single-obj-compilation --enable-cplusplus --disable-shared --enable-gc-assertions"
+    - CONF_OPTIONS="--enable-gcov --enable-munmap --enable-single-obj-compilation --enable-cplusplus --disable-shared --enable-gc-assertions"
     - CFLAGS_EXTRA="-D USE_CUSTOM_SPECIFIC"
     - REPORT_COVERAGE=true
   - os: linux
@@ -179,7 +179,7 @@ matrix:
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
-    - CONF_OPTIONS="--enable-large-config --enable-cplusplus"
+    - CONF_OPTIONS="--enable-large-config --enable-cplusplus --disable-handle-fork"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
@@ -305,7 +305,7 @@ matrix:
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=address -O0"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-handle-fork"
+    - CONF_OPTIONS="--enable-gc-assertions"
     - LDFLAGS="-fuse-ld=gold"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
@@ -324,7 +324,7 @@ matrix:
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer"
-    - CONF_OPTIONS="--enable-handle-fork --enable-munmap --enable-static"
+    - CONF_OPTIONS=" --enable-munmap --enable-static"
     - TESTS_CUSTOM_RUN=true
     - NO_CLONE_LIBATOMIC_OPS=true
     sudo: required
@@ -333,7 +333,7 @@ matrix:
     env:
     - CFLAGS_EXTRA="-fsanitize=undefined -fno-common -fno-omit-frame-pointer"
     - TESTS_CUSTOM_RUN=true
-    - CONF_OPTIONS="--enable-cplusplus --enable-handle-fork --enable-munmap --enable-static"
+    - CONF_OPTIONS="--enable-cplusplus --enable-munmap --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
@@ -461,14 +461,14 @@ matrix:
     compiler: clang
     env:
     - CFLAGS_EXTRA="-x c++"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-gc-debug --enable-handle-fork --disable-shared"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-gc-debug --disable-shared"
     - MAKEFILE_TARGETS="all"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: gcc
     env:
     - CC_FOR_CHECK=g++
-    - CONF_OPTIONS="--enable-gc-assertions --enable-handle-fork"
+    - CONF_OPTIONS="--enable-gc-assertions"
     - MAKEFILE_TARGETS="all"
     - MAKEFILE_TARGETS_CHECK="check"
     - NO_CLONE_LIBATOMIC_OPS=true
