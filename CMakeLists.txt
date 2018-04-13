@@ -186,7 +186,7 @@ IF(enable_redirect_malloc)
         ADD_DEFINITIONS("-DREDIRECT_MALLOC=GC_debug_malloc_replacement")
         ADD_DEFINITIONS("-DREDIRECT_REALLOC=GC_debug_realloc_replacement")
         ADD_DEFINITIONS("-DREDIRECT_FREE=GC_debug_free")
-    ELSE
+    ELSE(enable_gc_debug)
         ADD_DEFINITIONS("-DREDIRECT_MALLOC=GC_malloc")
     ENDIF(enable_gc_debug)
     ADD_DEFINITIONS("-DGC_USE_DLOPEN_WRAP")
