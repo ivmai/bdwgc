@@ -180,6 +180,11 @@ IF(enable_large_config)
     ADD_DEFINITIONS("-DLARGE_CONFIG")
 ENDIF(enable_large_config)
 
+OPTION(enable_gc_assertions "Enable collector-internal assertion checking" NO)
+IF(enable_gc_assertions)
+    ADD_DEFINITIONS("-DGC_ASSERTIONS")
+ENDIF(enable_gc_assertions)
+
 OPTION(enable_checksums "Report erroneously cleared dirty bits" NO)
 IF(enable_checksums)
     IF(enable_threads)
