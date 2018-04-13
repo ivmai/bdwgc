@@ -160,6 +160,11 @@ IF(enable_java_finalization)
     ADD_DEFINITIONS("-DJAVA_FINALIZATION")
 ENDIF(enable_java_finalization)
 
+OPTION(enable_atomic_uncollectable "Support for atomic uncollectible allocation" ON)
+IF(enable_atomic_uncollectable)
+    ADD_DEFINITIONS("-DGC_ATOMIC_UNCOLLECTABLE")
+ENDIF(enable_atomic_uncollectable)
+
 OPTION(enable_gc_debug "Support for pointer back-tracing" NO)
 IF(enable_gc_debug)
     ADD_DEFINITIONS("-DDBG_HDRS_ALL -DKEEP_BACK_PTRS")
