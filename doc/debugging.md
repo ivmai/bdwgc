@@ -125,9 +125,7 @@ Unexpected heap growth can be due to one of the following:
   symptom is that GC_dump() shows much of the heap as black-listed.
   3. Heap fragmentation. This should never result in unbounded growth, but
   it may account for larger heaps. This is most commonly caused by allocation
-  of large objects. On some platforms it can be reduced by building with
-  `-DUSE_MUNMAP`, which will cause the collector to unmap memory corresponding
-  to pages that have not been recently used.
+  of large objects.
   4. Per object overhead. This is usually a relatively minor effect, but
   it may be worth considering. If the collector recognizes interior pointers,
   object sizes are increased, so that one-past-the-end pointers are correctly

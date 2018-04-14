@@ -71,7 +71,7 @@ configure (this will instruct make to compile with -D GC_DLL).
 Parallel marker is enabled by default; it could be disabled by
 "--disable-parallel-mark" option.
 
-Memory unmapping could be enabled via "--enable-munmap".
+Memory unmapping could be turned off by "--disable-munmap" option.
 
 Borland Tools
 -------------
