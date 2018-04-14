@@ -161,7 +161,7 @@ matrix:
         - lcov
     compiler: gcc
     env:
-    - CONF_OPTIONS="--enable-gcov --enable-munmap --enable-single-obj-compilation --enable-cplusplus --disable-shared --enable-gc-assertions"
+    - CONF_OPTIONS="--enable-gcov --enable-single-obj-compilation --enable-cplusplus --disable-shared --enable-gc-assertions"
     - CFLAGS_EXTRA="-D USE_CUSTOM_SPECIFIC"
     - REPORT_COVERAGE=true
   - os: linux
@@ -193,7 +193,7 @@ matrix:
   - os: linux
     compiler: gcc
     env:
-    - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus --enable-static"
+    - CONF_OPTIONS="--enable-large-config --enable-cplusplus --enable-static"
     - CFLAGS_EXTRA="-D LINT2"
   - os: linux
     addons:
@@ -311,7 +311,7 @@ matrix:
   - os: osx
     env:
     - CFLAGS_EXTRA="-fsanitize=address -m32 -fno-omit-frame-pointer"
-    - CONF_OPTIONS="--disable-shared --enable-cplusplus --enable-munmap"
+    - CONF_OPTIONS="--disable-shared --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
@@ -324,7 +324,7 @@ matrix:
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer"
-    - CONF_OPTIONS=" --enable-munmap --enable-static"
+    - CONF_OPTIONS="--enable-static"
     - TESTS_CUSTOM_RUN=true
     - NO_CLONE_LIBATOMIC_OPS=true
     sudo: required
@@ -333,7 +333,7 @@ matrix:
     env:
     - CFLAGS_EXTRA="-fsanitize=undefined -fno-common -fno-omit-frame-pointer"
     - TESTS_CUSTOM_RUN=true
-    - CONF_OPTIONS="--enable-cplusplus --enable-munmap --enable-static"
+    - CONF_OPTIONS="--enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
@@ -371,7 +371,7 @@ matrix:
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D NO_INCREMENTAL -D USE_SPIN_LOCK -fno-omit-frame-pointer -D NTHREADS=15"
-    - CONF_OPTIONS="--disable-parallel-mark --enable-munmap"
+    - CONF_OPTIONS="--disable-parallel-mark"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
@@ -411,7 +411,7 @@ matrix:
     language: c
     env:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D GC_DISABLE_INCREMENTAL"
-    - CONF_OPTIONS="--enable-munmap --enable-gc-assertions"
+    - CONF_OPTIONS="--enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
@@ -425,7 +425,7 @@ matrix:
     language: c
     env:
     - CXX=g++-5
-    - CONF_OPTIONS="--enable-munmap --enable-cplusplus --enable-gc-assertions --enable-static"
+    - CONF_OPTIONS="--enable-cplusplus --enable-gc-assertions --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
@@ -455,7 +455,7 @@ matrix:
     language: c
     env:
     - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2"
-    - CONF_OPTIONS="--enable-munmap --enable-large-config --enable-gc-assertions"
+    - CONF_OPTIONS="--enable-large-config --enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: clang
@@ -506,7 +506,7 @@ matrix:
     compiler: i686-w64-mingw32-gcc
     language: c
     env:
-    - CONF_OPTIONS="--host=i686-w64-mingw32 --enable-munmap"
+    - CONF_OPTIONS="--host=i686-w64-mingw32"
     - MAKEFILE_TARGETS="all"
     - CFLAGS_EXTRA="-fno-omit-frame-pointer"
 
