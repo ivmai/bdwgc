@@ -121,8 +121,7 @@ typedef struct {
 #define SIMPLE_ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1) - 1)
 
 /* ADD_CALL_CHAIN stores a (partial) call chain into an object  */
-/* header.  It may be called with or without the allocation     */
-/* lock.                                                        */
+/* header; it should be called with the allocation lock held.   */
 /* PRINT_CALL_CHAIN prints the call chain stored in an object   */
 /* to stderr.  It requires that we do not hold the lock.        */
 #if defined(SAVE_CALL_CHAIN)

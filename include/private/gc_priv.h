@@ -2118,12 +2118,13 @@ GC_INNER void GC_initialize_offsets(void);      /* defined in obj_map.c */
 GC_INNER void GC_bl_init(void);
 GC_INNER void GC_bl_init_no_interiors(void);    /* defined in blacklst.c */
 
-GC_INNER void GC_start_debugging(void); /* defined in dbg_mlc.c */
+GC_INNER void GC_start_debugging_inner(void);   /* defined in dbg_mlc.c. */
+                        /* Should not be called if GC_debugging_started. */
 
 /* Store debugging info into p.  Return displaced pointer.      */
-/* Assumes we don't hold allocation lock.                       */
-GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
-                                   int linenum);
+/* Assumes we hold the allocation lock.                         */
+GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
+                                         int linenum);
 
 #ifdef REDIRECT_MALLOC
 # ifdef GC_LINUX_THREADS

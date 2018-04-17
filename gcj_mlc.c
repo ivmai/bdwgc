@@ -228,12 +228,13 @@ GC_API void * GC_CALL GC_debug_gcj_malloc(size_t lb,
         return((*oom_fn)(lb));
     }
     *((void **)((ptr_t)result + sizeof(oh))) = ptr_to_struct_containing_descr;
-    UNLOCK();
     if (!GC_debugging_started) {
-        GC_start_debugging();
+        GC_start_debugging_inner();
     }
     ADD_CALL_CHAIN(result, ra);
-    return (GC_store_debug_info(result, (word)lb, s, i));
+    result = GC_store_debug_info_inner(result, (word)lb, s, i);
+    UNLOCK();
+    return result;
 }
 
 /* There is no THREAD_LOCAL_ALLOC for GC_gcj_malloc_ignore_off_page().  */
