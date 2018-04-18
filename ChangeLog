@@ -465,8 +465,11 @@ Also, includes 7.4.4 changes
 
 == [7.4.12] (not released yet) ==
 
+* Define GC_FREEBSD_THREADS and GC_ADD_CALLER macros for kFreeBSD
+* Fix comment for debug_generic_malloc_inner[_ignore_off_page]
 * Fix gctest with musl libc on s390x
 * Fix missing new-line in ABORT_ARG<n> definition
+* Fix null pointer dereference in get_private_path_and_zero_file (Symbian)
 * Fix type of local variables receiving result of PHT_HASH
 * Remove API symbols renaming in WCC_MAKEFILE
 
@@ -918,13 +921,19 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 Also, includes 7.2 changes
 
 
-== [7.2k] (not released yet) ==
+== [7.2k] 2018-04-19 ==
 
 * Fix arguments delimiter in pcr_interface.c (PCR)
+* Fix assertion violation in DllMain of win32_threads
+* Fix data race during apply_to_each_object(reset_back_edge)
 * Fix dbg_mlc.c/o file name in documentation
 * Fix include gc_gcj.h in thread_local_alloc.c
 * Fix man section number (3)
 * Fix missing GC_generic_malloc_words_small implementation in new_gc_alloc.h
+* Fix missing SIGBUS handler setup for kFreeBSD
+* Fix null dereference in print_callers on backtrace_symbols failure
+* Fix the collector hang when it is configured with --enable-gc-debug
+* Fix thread_suspend fail for threads registered from key destructor (OS X)
 * Fix typo in AIX macro name
 * Fix typo in comment in specific.h
 
