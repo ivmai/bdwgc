@@ -1,3 +1,79 @@
+2018-04-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* dbg_mlc.c (GC_store_debug_info_inner): Remove comment (as it exists
+	in the header); change from STATIC to GC_INNER; change p type from
+	ptr_t to void*.
+	* dbg_mlc.c [GC_ASSERTIONS] (GC_store_debug_info_inner): Cast p to
+	ptr_t when passed to CROSSES_HBLK().
+	* dbg_mlc.c (GC_store_debug_info): Change from GC_INNER to static;
+	remove GC_ prefix; replace ptr_t to void*; add fn argument;
+	replace "const char *string, int linenum" with GC_EXTRA_PARAMS;
+	change "word sz" argument to "size_t lb"; allow p to be null (print
+	error message in this case); call GC_start_debugging_inner unless
+	GC_debugging_started; call ADD_CALL_CHAIN.
+	* dbg_mlc.c (GC_start_debugging_inner): Define as GC_INNER (instead of
+	STATIC); call GC_register_displacement_inner() instead of
+	GC_register_displacement().
+	* dbg_mlc.c (GC_start_debugging): Remove.
+	* dbg_mlc.c (GC_debug_malloc, GC_debug_malloc_ignore_off_page,
+	GC_debug_malloc_atomic_ignore_off_page, GC_debug_generic_malloc,
+	GC_debug_malloc_atomic, GC_debug_malloc_uncollectable): Call
+	store_debug_info() instead of checking result for null and calling
+	GC_start_debugging, ADD_CALL_CHAIN, GC_store_debug_info; use OPT_RA.
+	* dbg_mlc.c [STUBBORN_ALLOC] (GC_debug_malloc_stubborn): Likewise.
+	* dbg_mlc.c [GC_ATOMIC_UNCOLLECTABLE]
+	(GC_debug_malloc_atomic_uncollectable): Likewise.
+	* gcj_mlc.c [GC_GCJ_SUPPORT] (GC_debug_gcj_malloc): Call ADD_CALL_CHAIN
+	while holding the lock; call GC_store_debug_info_inner (holding the
+	lock) instead of GC_store_debug_info.
+	* gcj_mlc.c (GC_debug_gcj_malloc): Call GC_start_debugging_inner
+	(holding the lock) instead of GC_start_debugging.
+	* include/private/dbg_mlc.h (ADD_CALL_CHAIN): Update comment.
+	* include/private/gc_priv.h (GC_store_debug_info): Replace with
+	GC_store_debug_info_inner; update comment; change ptr_t to void*.
+	* include/private/gc_priv.h (GC_start_debugging): Rename to
+	GC_start_debugging_inner; improve usage comment.
+	* os_dep.c [SAVE_CALL_CHAIN] (GC_save_callers): Add assertion that the
+	allocation lock is held; add comment.
+
+2018-04-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* backgraph.c [MAKE_BACK_GRAPH] (GC_print_back_graph_stats): Add
+	assertion that the allocation lock is held; store GC_deepest_obj to
+	obj local variable (while holding the lock); place UNLOCK/LOCK around
+	GC_print_heap_obj() call; pass obj to GC_print_heap_obj(); replace
+	GC_printf() to GC_err_printf() call to print the header for
+	GC_print_heap_obj().
+	* finalize.c [MAKE_BACK_GRAPH] (GC_notify_or_invoke_finalizers): Remove
+	UNLOCK/LOCK around GC_print_back_graph_stats() call.
+
+2018-04-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [NEED_CALLINFO && GC_HAVE_BUILTIN_BACKTRACE
+	&& !GC_BACKTRACE_SYMBOLS_BROKEN] (GC_print_callers): If sym_name is
+	NULL then print info[i].ci_pc to buf and set name to buf (instead of
+	to sym_name[0]).
+	* os_dep.c [NEED_CALLINFO && GC_HAVE_BUILTIN_BACKTRACE
+	&& !GC_BACKTRACE_SYMBOLS_BROKEN] (GC_print_callers): Do not call
+	free(sym_name) if sym_name is NULL.
+
+2018-04-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [MPROTECT_VDB && !DARWIN && !MSWIN32 && !MSWINCE && FREEBSD
+	&& __GLIBC__] (GC_mprotect_dirty_init): Call sigaction(SIGBUS).
+
+2018-03-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c [GC_DARWIN_THREADS] (GC_register_my_thread):
+	Reinitialize stop_info.mach_thread if the thread is registered from
+	the client thread key destructor; add comment.
+
+2018-03-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [!GC_NO_THREADS_DISCOVERY] (GC_DllMain): Remove
+	entry_count static variable; remove assertion for entry_count and
+	parallel_initialized values in DLL_THREAD_ATTACH case.
+
 2018-03-01  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/new_gc_alloc.h (GC_generic_malloc_words_small): Replace
