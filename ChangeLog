@@ -328,7 +328,7 @@ Also, includes 7.4.6 changes
 Also, includes 7.4.4 changes
 
 
-== [7.4.12] (not released yet) ==
+== [7.4.12] 2018-04-19 ==
 
 * Define GC_FREEBSD_THREADS and GC_ADD_CALLER macros for kFreeBSD
 * Fix comment for debug_generic_malloc_inner[_ignore_off_page]
