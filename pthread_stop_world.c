@@ -547,7 +547,7 @@ STATIC void GC_restart_handler(int sig)
       /* Set the flag making the change visible to the signal handler.  */
       AO_store_release(&t->suspended_ext, TRUE);
 
-      if ((pthread_t)thread == pthread_self()) {
+      if (THREAD_EQUAL((pthread_t)thread, pthread_self())) {
         UNLOCK();
         /* It is safe as "t" cannot become invalid here (no race with   */
         /* GC_unregister_my_thread).                                    */

@@ -91,7 +91,7 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
 #   endif
     pthread_mutex_lock(&(key -> lock));
     entry = *link;
-    while (entry != NULL && entry -> thread != t) {
+    while (entry != NULL && !THREAD_EQUAL(entry->thread, t)) {
       link = &(entry -> next);
       entry = *link;
     }
@@ -132,7 +132,7 @@ GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
     tse *entry = key->hash[hash_val].p;
 
     GC_ASSERT(qtid != INVALID_QTID);
-    while (entry != NULL && entry -> thread != self) {
+    while (entry != NULL && !THREAD_EQUAL(entry->thread, self)) {
       entry = entry -> next;
     }
     if (entry == NULL) return NULL;

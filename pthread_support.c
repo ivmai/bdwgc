@@ -1503,7 +1503,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
                 "Called GC_unregister_my_thread on %p, gc_thread = %p\n",
                 (void *)self, (void *)me);
 #   endif
-    GC_ASSERT(me->id == self);
+    GC_ASSERT(THREAD_EQUAL(me->id, self));
     GC_unregister_my_thread_inner(me);
     RESTORE_CANCEL(cancel_state);
     UNLOCK();
