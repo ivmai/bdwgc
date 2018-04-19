@@ -684,8 +684,19 @@ AC_ARG_ENABLE(gcj-support,
         [Disable support for gcj.])])
 if test x"$enable_gcj_support" != xno; then
     AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj.])
-    AC_DEFINE([GC_ENABLE_SUSPEND_THREAD], 1,
+    case "$host" in
+      *-*-kfreebsd*-gnu)
+        # FIXME: For a reason, gctest hangs up on kFreeBSD if both of
+        # THREAD_LOCAL_ALLOC and GC_ENABLE_SUSPEND_THREAD are defined.
+        if test "${enable_thread_local_alloc}" = no; then
+          AC_DEFINE(GC_ENABLE_SUSPEND_THREAD)
+        fi
+        ;;
+      *)
+        AC_DEFINE([GC_ENABLE_SUSPEND_THREAD], 1,
               [Define to turn on GC_suspend_thread support.])
+        ;;
+    esac
 fi
 
 dnl Interaction with other programs that might use signals.
