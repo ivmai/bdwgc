@@ -1,8 +1,16 @@
 
 == [7.6.6] (not released yet) ==
 
+* Eliminate 'boolean result used in bitwise operation' cppcheck warning
+* Eliminate 'there is pointer arithmetic with NULL' cppcheck warning
+* Explicitly unblock GC signals on GC initialization
+* Fix 'scope of var can be reduced' cppcheck err in enqueue_all_finalizers
 * Fix 'undefined reference to __builtin_unwind_init' linker error (ArmCC)
+* Fix unbounded heap growth in case of intensive disappearing links usage
+* Support Haiku/amd64 and Haiku/x86 hosts
+* Support threads for DragonFly in configure
 * Workaround 'address of auto-variable returned' cppcheck error
+* Workaround gctest hang on kFreeBSD (if thread-local allocations are on)
 
 Also, includes 7.4.12 changes
 
@@ -215,6 +223,7 @@ Also, includes 7.4.12 changes
 * Workaround 'variable reassigned before old value used' cppcheck warnings
 * Workaround 'waiting while holding lock' code defect in stop_world (Unix)
 * Workaround false 'uninitialized var use' code defect (initsecondarythread)
+
 Also, includes 7.4.6 changes
 
 
@@ -325,6 +334,7 @@ Also, includes 7.4.6 changes
 * Workaround 'sa_sigaction member missing' compiler error (Android/x32)
 * Workaround 'unresolved __tls_get_addr' error for Android NDK Clang
 * Workaround a bug in winpthreads causing parallel marks deadlock (MinGW)
+
 Also, includes 7.4.4 changes
 
 
