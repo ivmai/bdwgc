@@ -131,23 +131,39 @@
 * Workaround Clang optimizer bug crashing clear_stack_inner on OS X 10.8
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
-Also, includes 7.6.6 changes.
 
+== [7.6.6] 2018-04-20 ==
 
-== [7.6.6] (not released yet) ==
-
+* Define GC_FREEBSD_THREADS and GC_ADD_CALLER macros for kFreeBSD
 * Eliminate 'boolean result used in bitwise operation' cppcheck warning
 * Eliminate 'there is pointer arithmetic with NULL' cppcheck warning
 * Explicitly unblock GC signals on GC initialization
 * Fix 'scope of var can be reduced' cppcheck err in enqueue_all_finalizers
 * Fix 'undefined reference to __builtin_unwind_init' linker error (ArmCC)
+* Fix arguments delimiter in pcr_interface.c (PCR)
+* Fix assertion violation in DllMain of win32_threads
+* Fix comment for debug_generic_malloc_inner[_ignore_off_page]
+* Fix data race during apply_to_each_object(reset_back_edge)
+* Fix dbg_mlc.c/o file name in documentation
+* Fix gctest with musl libc on s390x
+* Fix include gc_gcj.h in thread_local_alloc.c
+* Fix man section number (3)
+* Fix missing GC_generic_malloc_words_small implementation in new_gc_alloc.h
+* Fix missing new-line in ABORT_ARG<n> definition
+* Fix missing SIGBUS handler setup for kFreeBSD
+* Fix null dereference in print_callers on backtrace_symbols failure
+* Fix null pointer dereference in get_private_path_and_zero_file (Symbian)
+* Fix the collector hang when it is configured with --enable-gc-debug
+* Fix thread_suspend fail for threads registered from key destructor (OS X)
+* Fix type of local variables receiving result of PHT_HASH
+* Fix typo in AIX macro name
+* Fix typo in comment in specific.h
 * Fix unbounded heap growth in case of intensive disappearing links usage
+* Remove API symbols renaming in WCC_MAKEFILE
 * Support Haiku/amd64 and Haiku/x86 hosts
 * Support threads for DragonFly in configure
 * Workaround 'address of auto-variable returned' cppcheck error
 * Workaround gctest hang on kFreeBSD (if thread-local allocations are on)
-
-Also, includes 7.4.12 changes
 
 
 == [7.6.4] 2018-01-26 ==
