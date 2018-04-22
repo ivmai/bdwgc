@@ -1,10 +1,15 @@
 
 == [7.7.0] (development) ==
 
+* Accept Android platform by both CMake and configure
+* Access finalize_now atomically to avoid TSan warning without no-sanitize
+* Acknowledge thread restart from suspend_handler (NetBSD)
 * Add a sanity check that load_acquire and store_release are available
 * Add AO primitives implementation to GC based on C11 atomic intrinsic
 * Add assertion for suspend_ack_sem in start_world
 * Add assertion to allocobj that live unmarked object cannot be reclaimed
+* Add assertions about held lock when accessing all_bottom_indices
+* Add assertions to ensure ADD_CALL_CHAIN is called holding the lock
 * Add basic calculation of the total full-collection time
 * Add check that gc_cpp operator delete is called (test_cpp)
 * Add debug logging to new_thread about GC_threads hash table collisions
@@ -14,18 +19,31 @@
 * Add test_atomic_ops to perform minimal testing of used atomic primitives
 * Add two-argument alloc_size attribute to calloc_explicitly_typed (GCC)
 * Align IRIX/OSF1_THREADS definition in gc_config_macros.h with gcconfig.h
+* Allocate non-executable memory by default (CMake)
 * Allow compilation of PROC_VDB code on Linux host (GC_NO_SYS_FAULT_H)
 * Allow configure --with-libatomic-ops=none to use GCC atomic intrinsics
 * Allow custom N_LOCAL_ITERS and ENTRIES_TO_GET values
+* Allow gc_assertions enabling in CMake script
+* Allow gc_debug, redirect_malloc, large_config options in CMake script
 * Allow GC_NETBSD_THREADS_WORKAROUND macro manual definition
+* Allow subthreadcreate_test to be compiled with zero NTHREADS
 * Allow to turn on spin locking even if thread-local allocations are used
 * Always include gc_atomic_ops.h unless threads are disabled
+* Avoid 'Unexpected heap growth' in 64-bit multi-threaded gctest if n_tests=1
+* Avoid duplication of code handling pthreads case in configure
+* Avoid potential data race during apply_to_each_object(reset_back_edge)
+* Avoid potential data race during GC_dump execution
+* Avoid potential race between malloc_kind and mark_thread_local_fls_for
 * Avoid potential race between realloc and clear_hdr_marks/reclaim_generic
+* Avoid potential race in print_static_roots called by dyld_image_add/remove
+* Avoid potential race in SET_MARK_BIT_EXIT_IF_SET if parallel marking
 * Avoid potential race when accessing size_map table
+* Avoid potential race when storing oh_back_ptr during parallel marking
 * Avoid SIGSEGV during GC_INIT on some Android devices
 * Build only shared libraries by default (configure)
 * Change pointer arguments of push_all[_eager]/conditional API to void* type
 * Change type of hb_sz field (of hblkhdr) from size_t to word
+* Check consistency of descr, adjust, clear arguments of GC_new_kind
 * Check that GC_WIN32_PTHREADS is not specified for Cygwin
 * Check thread_local is initialized before accessing thread_key
 * Collapse multiple BCOPY_EXISTS macro definitions
@@ -40,11 +58,14 @@
 * Define GC_PREFETCH_FOR_WRITE to __builtin_prefetch in gc_inline.h (GCC)
 * Define GC_THREADS instead of GC_x_THREADS in Makefiles
 * Define macro to specify the environment file name extension (Win32/WinCE)
+* Define static resend_lost_signals(), restart_all() in pthread_stop_world
 * Detect sigsetjmp() availability by configure
+* Determine whether to use compiler TLS for kFreeBSD at compile time
 * Do not call BCOPY and BZERO if size is zero
 * Do not call sem_getvalue in stop_world if one thread exists
 * Do not call set_handle_fork(1) in gctest if pthread_atfork not supported
 * Do not compile pcr_interface.c and real_malloc.c except by PCR-Makefile
+* Do not declare dl_iterate_phdr as weak for kFreeBSD
 * Do not print n_rescuing_pages value if incremental collections disabled
 * Do not push cpsr and frame pointer on Darwin/arm and Darwin/arm64
 * Do not specify version info for test libraries (Automake)
@@ -55,20 +76,23 @@
 * Document GC_BUILTIN_ATOMIC macro (and gc_atomic_ops private header file)
 * Document STACK_NOT_SCANNED macro in gcconfig.h (Emscripten)
 * Enable alternative finalization interface (DISCLAIM) in all makefiles
+* Enable handle-fork and memory unmapping by default
 * Enable mprotect-based incremental GC for Win64 (GCC)
 * Fix 'comparison of 255 with expr of type bool' error in gc_atomic_ops.h
 * Fix 'doc' files installation folder
 * Fix build of cord tests as C++ files (Makefile.direct)
 * Group common defines for POSIX platforms in configure and CMake scripts
 * Guard against USE_PTHREAD_LOCKS and USE_SPIN_LOCK are both defined
+* Handle pthread restart signals loss if retry_signals
 * Implement FindTopOfStack(0) for ARM and AArch64 (Darwin)
 * Implement memory unmapping for Sony PS/3
 * Imply configure --single-obj-compilation if --disable-static
+* Include malloc.c in extra/gc.c after include gc_inline.h
 * Increase MAX_HEAP_SECTS (10 times) for large-config
-* Initial support of Haiku/amd64
 * Initial support of Nintendo, Orbis, Sony PSP2, WinRT, Xbox One
 * Initial support of TIZEN platform
 * Make extend_size_map() static (code refactoring)
+* Match GC_FAST_MALLOC_GRANS formal and actual arguments where possible
 * Move de_win compiled resource files to cord/tests
 * Move pcr_interface.c, real_malloc.c to 'extra' folder
 * New API function (GC_dump_named) to produce named dumps
@@ -80,6 +104,7 @@
 * Pass CFLAGS_FOR_PIC value to CFLAGS in Makefile.direct
 * Print time passed since GC initialization in GC_dump
 * Public API (GC_deinit) to allow Win32 critical sections deletion
+* Reduce probability of collision in threads hashtable for 64-bit targets
 * Reduce the default MUNMAP_THRESHOLD value to 2 for Sony PS/3
 * Refactoring of USE_MMAP/USE_MMAP_ANON pairs definition in gcconfig.h
 * Remove 'dist' target from Makefile.direct
@@ -103,21 +128,25 @@
 * Remove unused USE_GENERIC macro definition and description
 * Remove version info in 'de' cord test application
 * Replace GC_MALLOC(sizeof T) with GC_NEW(T) in tests
-* Report errno in case of sem_wait failure in GC_pthread_create
+* Replace GC_NO_RETRY_SIGNALS environment variable with GC_RETRY_SIGNALS=0
 * Run command passed to if_not_there directly from Makefile.direct
 * Skip grungy_pages update when mark state invalid to speedup read_dirty
 * Support configure --disable-thread-local-alloc option (similar for CMake)
 * Support enable_checksums option in CMake script
+* Support Haiku multi-threaded build by CMake
 * Support threads for DragonFly in configure
-* Treat Android platform as Linux (CMake)
+* Turn on 'atomic uncollectable' functionality by default (CMake)
+* Turn on gcj, disclaim and java finalization by default (CMake)
 * Turn on incremental mode (if available) in disclaim_test
 * Turn on parallel marker by default for all multi-threaded builds
 * Update GC compilation and usage notes for Win32
 * Update shared libraries version info to differentiate against v7.6
+* Update top_index entry pointer only when the entry is constructed fully
 * Use __builtin_expect in SIZET_SAT_ADD macro
 * Use __declspec(allocator) for malloc-like prototypes (MS VS 2015+)
 * Use __int64 instead of 'long long' in LONG_MULT if appropriate
 * Use __thread keyword for Android NDK r12b+ Clang (arm)
+* Use atomic load/store for the concurrently accessed variables in GC_lock
 * Use C11 static_assert if available
 * Use compiler atomic intrinsics by default if available (configure)
 * Use EXPECT FALSE for mark_from code documented as executed rarely
@@ -128,6 +157,7 @@
 * Use same macro (NTHREADS) across all tests to specify number of threads
 * Use sigsetjmp() in setjmp_t tool if available
 * Use thread-local allocations for all multi-threaded builds
+* Use THREAD_EQUAL consistently to compare pthread_t values
 * Workaround Clang optimizer bug crashing clear_stack_inner on OS X 10.8
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
