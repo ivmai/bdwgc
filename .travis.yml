@@ -178,7 +178,7 @@ matrix:
   - os: linux
     compiler: gcc
     env:
-    - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus"
+    - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus --enable-gc-assertions --enable-static"
     - CFLAGS_EXTRA="-D LINT2"
   - os: linux
     addons:
