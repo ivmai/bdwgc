@@ -193,7 +193,7 @@ matrix:
   - os: linux
     compiler: gcc
     env:
-    - CONF_OPTIONS="--enable-large-config --enable-cplusplus --enable-static"
+    - CONF_OPTIONS="--enable-large-config --enable-cplusplus --enable-gc-assertions --enable-static"
     - CFLAGS_EXTRA="-D LINT2"
   - os: linux
     addons:
