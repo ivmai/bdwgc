@@ -38,7 +38,6 @@ dist_doc_DATA = \
         doc/README.win64 \
         doc/debugging.md \
         doc/finalization.md \
-        doc/gc.man \
         doc/gcdescr.md \
         doc/gcinterface.md \
         doc/leak.md \
@@ -47,4 +46,6 @@ dist_doc_DATA = \
         doc/scale.md \
         doc/simple_example.md \
         doc/tree.md
+
+dist_man3_MANS = doc/gc.man
 endif
