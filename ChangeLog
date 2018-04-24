@@ -78,6 +78,8 @@
 * Enable alternative finalization interface (DISCLAIM) in all makefiles
 * Enable handle-fork and memory unmapping by default
 * Enable mprotect-based incremental GC for Win64 (GCC)
+* Expose API to control rate and max prior attempts of collect_a_little
+* Expose API to control the minimum bytes allocated before a GC occurs
 * Fix 'comparison of 255 with expr of type bool' error in gc_atomic_ops.h
 * Fix 'doc' files installation folder
 * Fix build of cord tests as C++ files (Makefile.direct)
@@ -91,6 +93,7 @@
 * Increase MAX_HEAP_SECTS (10 times) for large-config
 * Initial support of Nintendo, Orbis, Sony PSP2, WinRT, Xbox One
 * Initial support of TIZEN platform
+* Install gc.3 man page instead of copying gc.man to doc folder (configure)
 * Make extend_size_map() static (code refactoring)
 * Match GC_FAST_MALLOC_GRANS formal and actual arguments where possible
 * Move de_win compiled resource files to cord/tests
