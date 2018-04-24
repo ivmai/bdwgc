@@ -340,7 +340,7 @@ matrix:
     language: c
     env:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D GC_DISABLE_INCREMENTAL"
-    - CONF_OPTIONS="--enable-munmap --enable-gc-assertions"
+    - CONF_OPTIONS="--enable-munmap --enable-gc-assertions --enable-gc-debug"
   - os: linux
     addons:
       apt:
