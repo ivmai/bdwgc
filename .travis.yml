@@ -411,7 +411,7 @@ matrix:
     language: c
     env:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D GC_DISABLE_INCREMENTAL"
-    - CONF_OPTIONS="--enable-gc-assertions"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-gc-debug"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
