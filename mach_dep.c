@@ -266,7 +266,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
           context = &ctxt;
         }
         if (EXPECT(0 == getcontext_works, FALSE))
-          getcontext_works = context != NULL 1 : -1;
+          getcontext_works = context != NULL ? 1 : -1;
       }
 #     ifdef GETCONTEXT_FPU_EXCMASK_BUG
 #       ifdef X86_64
