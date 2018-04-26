@@ -829,6 +829,11 @@ GC_API int GC_CALL GC_is_init_called(void)
   }
 #endif /* MSWIN32 */
 
+#if defined(THREADS) && defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
+  static void callee_saves_pushed_dummy_fn(ptr_t data GC_ATTR_UNUSED,
+                                           void * context GC_ATTR_UNUSED) {}
+#endif
+
 STATIC word GC_parse_mem_size_arg(const char *str)
 {
   word result = 0; /* bad value */
@@ -1307,6 +1312,11 @@ GC_API void GC_CALL GC_init(void)
     }
 #   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
         UNLOCK();
+#   endif
+#   if defined(THREADS) && defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
+      /* Ensure getcontext_works is set to avoid potential data race.   */
+      if (GC_dont_gc || GC_dont_precollect)
+        GC_with_callee_saves_pushed(callee_saves_pushed_dummy_fn, NULL);
 #   endif
 #   ifdef STUBBORN_ALLOC
         GC_stubborn_init();
