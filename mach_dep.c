@@ -235,6 +235,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
       /* Older versions of Darwin seem to lack getcontext().    */
       /* ARM and MIPS Linux often doesn't support a real        */
       /* getcontext().                                          */
+      static signed char getcontext_works = 0; /* (-1) - broken, 1 - works */
       ucontext_t ctxt;
 #     ifdef GETCONTEXT_FPU_EXCMASK_BUG
         /* Workaround a bug (clearing the FPU exception mask) in        */
@@ -253,12 +254,17 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 #       endif
 #     endif
 
-      if (getcontext(&ctxt) < 0) {
-        WARN("getcontext failed:"
-             " using another register retrieval method...\n", 0);
-        /* E.g., to workaround a bug in Docker ubuntu_32bit.    */
-      } else {
-        context = &ctxt;
+      if (getcontext_works >= 0) {
+        if (getcontext(&ctxt) < 0) {
+          WARN("getcontext failed:"
+               " using another register retrieval method...\n", 0);
+          /* getcontext() is broken, do not try again.          */
+          /* E.g., to workaround a bug in Docker ubuntu_32bit.  */
+        } else {
+          context = &ctxt;
+        }
+        if (EXPECT(0 == getcontext_works, FALSE))
+          getcontext_works = context != NULL ? 1 : -1;
       }
 #     ifdef GETCONTEXT_FPU_EXCMASK_BUG
 #       ifdef X86_64
