@@ -464,10 +464,8 @@ esac
 AM_CONDITIONAL(AVOID_CPP_LIB,test $avoid_cpp_lib = yes)
 
 # Check for various headers.
-AC_CHECK_HEADERS([execinfo.h])
-if test "$ac_cv_header_execinfo_h" != "yes"; then
-  AC_DEFINE([GC_MISSING_EXECINFO_H], [1], [Missing execinfo.h header])
-fi
+AC_CHECK_HEADER([execinfo.h], [],
+    [ AC_DEFINE([GC_MISSING_EXECINFO_H], [1], [Missing execinfo.h header]) ])
 
 # extra LD Flags which are required for targets
 case "${host}" in
