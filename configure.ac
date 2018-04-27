@@ -442,10 +442,6 @@ fi
 
 # Check whether dl_iterate_phdr exists (as a strong symbol).
 AC_CHECK_FUNCS([dl_iterate_phdr])
-if test "$ac_cv_func_dl_iterate_phdr" = "yes"; then
-  AC_DEFINE([HAVE_DL_ITERATE_PHDR], [1],
-            [Define if 'dl_iterate_phdr' function is available.])
-fi
 
 case "$host" in
 # While IRIX 6 has libdl for the O32 and N32 ABIs, it's missing for N64
