@@ -435,10 +435,8 @@ if test "$GCC" = yes; then
 fi
 
 # Check for getcontext (uClibc can be configured without it, for example)
-AC_CHECK_FUNCS([getcontext])
-if test "$ac_cv_func_getcontext" = "no"; then
-  AC_DEFINE([NO_GETCONTEXT], [1], [Missing getcontext()])
-fi
+AC_CHECK_FUNC([getcontext], [],
+    [ AC_DEFINE([NO_GETCONTEXT], [1], [Missing getcontext()]) ])
 
 # Check whether dl_iterate_phdr exists (as a strong symbol).
 AC_CHECK_FUNCS([dl_iterate_phdr])
