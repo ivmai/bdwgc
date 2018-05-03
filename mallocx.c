@@ -533,7 +533,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
 GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
 {
   /* Check alignment properly.  */
-  if (((align - 1) & align) != 0 || align < sizeof(void *)) {
+  size_t align_minus_one = align - 1; /* to workaround a cppcheck warning */
+  if (align < sizeof(void *) || (align_minus_one & align) != 0) {
 #   ifdef MSWINCE
       return ERROR_INVALID_PARAMETER;
 #   else
