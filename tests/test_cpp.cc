@@ -103,6 +103,26 @@ int B::deleting = 0;
 class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
     /* A collectible class with cleanup and virtual multiple inheritance. */
 
+    // The class uses dynamic memory/resource allocation, so provide both
+    // a copy constructor and an assignment operator to workaround a cppcheck
+    // warning.
+    C(const C& c) : A(c.i), level(c.level) {
+        left = c.left ? new C(*c.left) : 0;
+        right = c.right ? new C(*c.right) : 0;
+    }
+
+    C& operator=(const C& c) {
+        if (this != &c) {
+            delete left;
+            delete right;
+            i = c.i;
+            level = c.level;
+            left = c.left ? new C(*c.left) : 0;
+            right = c.right ? new C(*c.right) : 0;
+        }
+        return *this;
+    }
+
     GC_ATTR_EXPLICIT C( int levelArg ): A( levelArg ), level( levelArg ) {
         nAllocated++;
         if (level > 0) {
