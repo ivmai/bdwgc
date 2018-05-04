@@ -306,7 +306,7 @@ static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
     }
 }
 
-STATIC word GC_register_map_entries(char *maps)
+STATIC void GC_register_map_entries(char *maps)
 {
     char *prot;
     char *buf_ptr = maps;
@@ -324,7 +324,8 @@ STATIC word GC_register_map_entries(char *maps)
     for (;;) {
         buf_ptr = GC_parse_map_entry(buf_ptr, &start, &end, &prot,
                                      &maj_dev, 0);
-        if (buf_ptr == NULL) return 1;
+        if (NULL == buf_ptr)
+            break;
         if (prot[1] == 'w') {
             /* This is a writable mapping.  Add it to           */
             /* the root set unless it is already otherwise      */
@@ -391,13 +392,15 @@ STATIC word GC_register_map_entries(char *maps)
                   GC_add_roots_inner((char *)start, (char *)end, TRUE);
         }
     }
-    return 1;
 }
 
 GC_INNER void GC_register_dynamic_libraries(void)
 {
-    if (!GC_register_map_entries(GC_get_maps()))
+    char *maps = GC_get_maps();
+
+    if (NULL == maps)
         ABORT("Failed to read /proc for library registration");
+    GC_register_map_entries(maps);
 }
 
 /* We now take care of the main data segment ourselves: */
