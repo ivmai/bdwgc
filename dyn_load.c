@@ -246,11 +246,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
               {
                 if( !(p->p_flags & PF_W) ) break;
                 start = ((char *)(p->p_vaddr)) + offset;
-                GC_add_roots_inner(
-                  start,
-                  start + p->p_memsz,
-                  TRUE
-                );
+                GC_add_roots_inner(start, start + p->p_memsz, TRUE);
               }
               break;
             default:
@@ -367,7 +363,7 @@ STATIC void GC_register_map_entries(char *maps)
             if ((word)end <= (word)least_ha
                 || (word)start >= (word)greatest_ha) {
               /* The easy case; just trace entire segment */
-              GC_add_roots_inner((char *)start, (char *)end, TRUE);
+              GC_add_roots_inner(start, end, TRUE);
               continue;
             }
             /* Add sections that don't belong to us. */
@@ -385,14 +381,14 @@ STATIC void GC_register_map_entries(char *maps)
                      && (word)GC_our_memory[i].hs_start < (word)end
                      && (word)start < (word)end) {
                   if ((word)start < (word)GC_our_memory[i].hs_start)
-                    GC_add_roots_inner((char *)start,
+                    GC_add_roots_inner(start,
                                        GC_our_memory[i].hs_start, TRUE);
                   start = GC_our_memory[i].hs_start
                           + GC_our_memory[i].hs_bytes;
                   ++i;
               }
               if ((word)start < (word)end)
-                  GC_add_roots_inner((char *)start, (char *)end, TRUE);
+                  GC_add_roots_inner(start, end, TRUE);
         }
     }
 }
@@ -617,8 +613,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
       }
 #   endif
   } else {
-      char *datastart;
-      char *dataend;
+      ptr_t datastart, dataend;
 #     ifdef DATASTART_IS_FUNC
         static ptr_t datastart_cached = (ptr_t)(word)-1;
 
@@ -626,7 +621,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
         if (datastart_cached == (ptr_t)(word)-1) {
           datastart_cached = DATASTART;
         }
-        datastart = (char *)datastart_cached;
+        datastart = datastart_cached;
 #     else
         datastart = DATASTART;
 #     endif
@@ -637,7 +632,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
           if (dataend_cached == 0) {
             dataend_cached = DATAEND;
           }
-          dataend = (char *)dataend_cached;
+          dataend = dataend_cached;
         }
 #     else
         dataend = DATAEND;
@@ -1557,8 +1552,8 @@ GC_INNER GC_bool GC_register_main_static_data(void)
       for (q = p -> lf_ls; q != NIL; q = q -> ls_next) {
         if ((q -> ls_flags & PCR_IL_SegFlags_Traced_MASK)
             == PCR_IL_SegFlags_Traced_on) {
-          GC_add_roots_inner((char *)(q -> ls_addr),
-                             (char *)(q -> ls_addr) + q -> ls_bytes, TRUE);
+          GC_add_roots_inner((ptr_t)q->ls_addr,
+                             (ptr_t)q->ls_addr + q->ls_bytes, TRUE);
         }
       }
     }
