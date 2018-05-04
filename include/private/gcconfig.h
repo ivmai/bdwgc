@@ -3073,7 +3073,8 @@ EXTERN_C_BEGIN
 # define MUNMAP_THRESHOLD 2
 #endif
 
-#if defined(GC_DISABLE_INCREMENTAL) || defined(MANUAL_VDB)
+#if defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB) \
+    || defined(MANUAL_VDB)
 # undef GWW_VDB
 # undef MPROTECT_VDB
 # undef PCR_VDB
@@ -3124,7 +3125,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
-    && !defined(GWW_VDB) && !defined(MANUAL_VDB) \
+    && !defined(GWW_VDB) && !defined(DEFAULT_VDB) && !defined(MANUAL_VDB) \
     && !defined(GC_DISABLE_INCREMENTAL)
 # define DEFAULT_VDB
 #endif
