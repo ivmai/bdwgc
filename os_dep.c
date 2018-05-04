@@ -245,8 +245,6 @@ GC_INNER char * GC_get_maps(void)
         } while (maps_size >= maps_buf_sz || maps_size < old_maps_size);
                 /* In the single-threaded case, the second clause is false. */
         maps_buf[maps_size] = '\0';
-
-        /* Apply fn to result.  */
         return maps_buf;
 }
 
