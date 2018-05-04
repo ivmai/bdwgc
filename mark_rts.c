@@ -317,6 +317,9 @@ STATIC void GC_remove_root_at_pos(int i)
 STATIC void GC_remove_tmp_roots(void)
 {
     int i;
+#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+      int old_n_roots = n_root_sets;
+#   endif
 
     for (i = 0; i < n_root_sets; ) {
         if (GC_static_roots[i].r_tmp) {
@@ -326,7 +329,8 @@ STATIC void GC_remove_tmp_roots(void)
         }
     }
 #   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
-      GC_rebuild_root_index();
+      if (n_root_sets < old_n_roots)
+        GC_rebuild_root_index();
 #   endif
 }
 #endif
@@ -352,15 +356,19 @@ STATIC void GC_remove_tmp_roots(void)
   STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
   {
     int i;
+    GC_bool rebuild = FALSE;
+
     for (i = 0; i < n_root_sets; ) {
         if ((word)GC_static_roots[i].r_start >= (word)b
             && (word)GC_static_roots[i].r_end <= (word)e) {
             GC_remove_root_at_pos(i);
+            rebuild = TRUE;
         } else {
             i++;
         }
     }
-    GC_rebuild_root_index();
+    if (rebuild)
+        GC_rebuild_root_index();
   }
 #endif /* !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) */
 
