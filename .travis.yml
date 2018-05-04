@@ -96,7 +96,7 @@ matrix:
   - os: linux
     compiler: clang
     env:
-    - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2"
+    - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2 -D DEFAULT_VDB"
     - CONF_OPTIONS="--with-libatomic-ops=no --enable-cplusplus --disable-handle-fork"
   - os: linux
     addons:
