@@ -1698,6 +1698,9 @@ GC_INNER void GC_set_fl_marks(ptr_t p);
                                     /* set.  Abort if not.              */
 #endif
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp);
+#ifdef USE_PROC_FOR_LIBRARIES
+  GC_INNER void GC_remove_roots_subregion(ptr_t b, ptr_t e);
+#endif
 GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish);
 #if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
     || defined(CYGWIN32) || defined(PCR)
