@@ -330,6 +330,85 @@ STATIC void GC_remove_tmp_roots(void)
   }
 #endif /* !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) */
 
+#ifdef USE_PROC_FOR_LIBRARIES
+  /* Remove given range from every static root which intersects with    */
+  /* the range.  It is assumed GC_remove_tmp_roots is called before     */
+  /* this function is called repeatedly by GC_register_map_entries.     */
+  GC_INNER void GC_remove_roots_subregion(ptr_t b, ptr_t e)
+  {
+    int i;
+    GC_bool rebuild = FALSE;
+
+    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT((word)b % sizeof(word) == 0 && (word)e % sizeof(word) == 0);
+    for (i = 0; i < n_root_sets; i++) {
+      ptr_t r_start, r_end;
+
+      if (GC_static_roots[i].r_tmp) {
+        /* The remaining roots are skipped as they are all temporary. */
+#       ifdef GC_ASSERTIONS
+          int j;
+          for (j = i + 1; j < n_root_sets; j++) {
+            GC_ASSERT(GC_static_roots[j].r_tmp);
+          }
+#       endif
+        break;
+      }
+      r_start = GC_static_roots[i].r_start;
+      r_end = GC_static_roots[i].r_end;
+      if (!EXPECT((word)e <= (word)r_start || (word)r_end <= (word)b, TRUE)) {
+#       ifdef DEBUG_ADD_DEL_ROOTS
+          GC_log_printf("Removing %p .. %p from root section %d (%p .. %p)\n",
+                        (void *)b, (void *)e,
+                        i, (void *)r_start, (void *)r_end);
+#       endif
+        if ((word)r_start < (word)b) {
+          GC_root_size -= r_end - b;
+          GC_static_roots[i].r_end = b;
+          /* No need to rebuild as hash does not use r_end value. */
+          if ((word)e < (word)r_end) {
+            int j;
+
+            if (rebuild) {
+              GC_rebuild_root_index();
+              rebuild = FALSE;
+            }
+            GC_add_roots_inner(e, r_end, FALSE); /* updates n_root_sets */
+            for (j = i + 1; j < n_root_sets; j++)
+              if (GC_static_roots[j].r_tmp)
+                break;
+            if (j < n_root_sets-1 && !GC_static_roots[n_root_sets-1].r_tmp) {
+              /* Exchange the roots to have all temporary ones at the end. */
+              ptr_t tmp_r_start = GC_static_roots[j].r_start;
+              ptr_t tmp_r_end = GC_static_roots[j].r_end;
+
+              GC_static_roots[j].r_start =
+                                GC_static_roots[n_root_sets-1].r_start;
+              GC_static_roots[j].r_end = GC_static_roots[n_root_sets-1].r_end;
+              GC_static_roots[j].r_tmp = FALSE;
+              GC_static_roots[n_root_sets-1].r_start = tmp_r_start;
+              GC_static_roots[n_root_sets-1].r_end = tmp_r_end;
+              GC_static_roots[n_root_sets-1].r_tmp = TRUE;
+              rebuild = TRUE;
+            }
+          }
+        } else {
+          if ((word)e < (word)r_end) {
+            GC_root_size -= e - r_start;
+            GC_static_roots[i].r_start = e;
+          } else {
+            GC_remove_root_at_pos(i);
+            i--;
+          }
+          rebuild = TRUE;
+        }
+      }
+    }
+    if (rebuild)
+      GC_rebuild_root_index();
+  }
+#endif /* USE_PROC_FOR_LIBRARIES */
+
 #if (defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)) \
     && !defined(NO_DEBUGGING)
   /* Not used at present (except for, may be, debugging purpose).       */
