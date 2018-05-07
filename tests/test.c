@@ -1872,7 +1872,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #   endif
     GC_COND_INIT();
     GC_set_warn_proc(warn_proc);
-#   if (defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(GWW_VDB)) \
+#   if !defined(GC_DISABLE_INCREMENTAL) && !defined(DEFAULT_VDB) \
           && !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL) \
           && !(defined(MPROTECT_VDB) && defined(USE_MUNMAP))
       GC_enable_incremental();
@@ -1884,9 +1884,9 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #       ifdef MPROTECT_VDB
           GC_printf("Or emulating dirty bits with mprotect/signals\n");
 #       endif
-#     else /* MPROTECT_VDB && !GWW_VDB */
+#     elif defined(MPROTECT_VDB)
         GC_printf("Emulating dirty bits with mprotect/signals\n");
-#     endif
+#     endif /* MPROTECT_VDB && !GWW_VDB */
 #   endif
     set_print_procs();
     run_one_test();
@@ -2304,12 +2304,15 @@ int main(void)
         }
 #   endif
     n_tests = 0;
-#   if defined(MPROTECT_VDB) && !defined(REDIRECT_MALLOC) \
+#   if !defined(GC_DISABLE_INCREMENTAL) && !defined(DEFAULT_VDB) \
+            && !defined(REDIRECT_MALLOC) \
             && !defined(MAKE_BACK_GRAPH) && !defined(USE_PROC_FOR_LIBRARIES) \
             && !defined(NO_INCREMENTAL) && !defined(USE_MUNMAP)
         GC_enable_incremental();
         GC_printf("Switched to incremental mode\n");
-        GC_printf("Emulating dirty bits with mprotect/signals\n");
+#       ifdef MPROTECT_VDB
+          GC_printf("Emulating dirty bits with mprotect/signals\n");
+#       endif
 #   endif
     GC_set_warn_proc(warn_proc);
     if ((code = pthread_key_create(&fl_key, 0)) != 0) {
