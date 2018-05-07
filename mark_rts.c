@@ -372,6 +372,49 @@ STATIC void GC_remove_tmp_roots(void)
   }
 #endif /* !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) */
 
+#ifdef USE_PROC_FOR_LIBRARIES
+  /* If there is a static root containing [b,e) then replace this root  */
+  /* [r_start,r_end) with roots [r_start,b) and [e,r_end).              */
+  /* It is assumed that GC_remove_tmp_roots() is called before this     */
+  /* function is called repeatedly by GC_register_map_entries().        */
+  GC_INNER void GC_remove_roots_subregion(ptr_t b, ptr_t e)
+  {
+    int i;
+
+    GC_ASSERT(I_HOLD_LOCK());
+    for (i = 0; i < n_root_sets; i++) {
+      ptr_t r_start, r_end;
+
+      if (GC_static_roots[i].r_tmp) {
+        /* The remaining roots are skipped as they are all temporary. */
+#       ifdef GC_ASSERTIONS
+          int j;
+          for (j = i + 1; j < n_root_sets; j++) {
+            GC_ASSERT(GC_static_roots[j].r_tmp);
+          }
+#       endif
+        break;
+      }
+      r_start = GC_static_roots[i].r_start;
+      r_end = GC_static_roots[i].r_end;
+      if (EXPECT((word)r_start <= (word)b && (word)e <= (word)r_end, FALSE)) {
+#       ifdef DEBUG_ADD_DEL_ROOTS
+          GC_log_printf("Removing %p .. %p from root section %d (%p .. %p)\n",
+                        (void *)b, (void *)e,
+                        i, (void *)r_start, (void *)r_end);
+#       endif
+        GC_remove_root_at_pos(i);
+        GC_rebuild_root_index();
+        if ((word)r_start < (word)b)
+          GC_add_roots_inner(r_start, b, FALSE);
+        if ((word)e < (word)r_end)
+          GC_add_roots_inner(e, r_end, FALSE);
+        break;
+      }
+    }
+  }
+#endif /* USE_PROC_FOR_LIBRARIES */
+
 #if !defined(NO_DEBUGGING)
   /* For the debugging purpose only.                                    */
   /* Workaround for the OS mapping and unmapping behind our back:       */
