@@ -139,8 +139,11 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(2); \
     GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
                          NORMAL, GC_malloc(grans*GC_GRANULE_BYTES), \
-                         *(void **)(result) = (void *)(first)); \
-    ((void **)(result))[1] = (void *)(second); \
+                         (void)0); \
+    if ((result) != 0 /* NULL */) { \
+      *(void **)(result) = (void *)(first); \
+      ((void **)(result))[1] = (void *)(second); \
+    } \
 }
 
 #endif /* !GC_INLINE_H */
