@@ -390,6 +390,10 @@ STATIC void GC_register_map_entries(char *maps)
               }
               if ((word)start < (word)end)
                   GC_add_roots_inner((char *)start, (char *)end, TRUE);
+        } else if (prot[0] == '-' && prot[1] == '-' && prot[2] == '-') {
+            /* Even roots added statically might disappear partially    */
+            /* (e.g. the roots added by INCLUDE_LINUX_THREAD_DESCR).    */
+            GC_remove_roots_subregion(start, end);
         }
     }
 }
