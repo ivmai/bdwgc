@@ -79,7 +79,7 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
 {
     unsigned hash_val = HASH(t);
     tse *entry;
-    tse **link = &key->hash[hash_val].p;
+    tse *prev = NULL;
 
 #   ifdef CAN_HANDLE_FORK
       /* Both GC_setspecific and GC_remove_specific should be called    */
@@ -88,16 +88,20 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
       GC_ASSERT(I_HOLD_LOCK());
 #   endif
     pthread_mutex_lock(&(key -> lock));
-    entry = *link;
+    entry = key->hash[hash_val].p;
     while (entry != NULL && entry -> thread != t) {
-      link = &(entry -> next);
-      entry = *link;
+      prev = entry;
+      entry = entry->next;
     }
     /* Invalidate qtid field, since qtids may be reused, and a later    */
     /* cache lookup could otherwise find this entry.                    */
     if (entry != NULL) {
       entry -> qtid = INVALID_QTID;
-      *link = entry -> next;
+      if (NULL == prev) {
+        key->hash[hash_val].p = entry->next;
+      } else {
+        prev->next = entry->next;
+      }
       /* Atomic! concurrent accesses still work.        */
       /* They must, since readers don't lock.           */
       /* We shouldn't need a volatile access here,      */
