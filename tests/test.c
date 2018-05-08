@@ -369,6 +369,7 @@ sexpr small_cons (sexpr x, sexpr y)
     AO_fetch_and_add1(&collectable_count);
     r -> sexpr_car = x;
     r -> sexpr_cdr = y;
+    GC_END_STUBBORN_CHANGE(r);
     return(r);
 }
 
@@ -380,6 +381,7 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
     AO_fetch_and_add1(&uncollectable_count);
     r -> sexpr_car = x;
     r -> sexpr_cdr = (sexpr)(~(GC_word)y);
+    GC_END_STUBBORN_CHANGE(r);
     return(r);
 }
 
@@ -397,6 +399,7 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
     result = (sexpr)(r + 1);
     result -> sexpr_car = x;
     result -> sexpr_cdr = y;
+    GC_END_STUBBORN_CHANGE(r);
     return(result);
   }
 #endif /* GC_GCJ_SUPPORT */
@@ -865,12 +868,16 @@ tn * mktree(int n)
     result -> rchild = mktree(n-1);
     if (AO_fetch_and_add1(&extra_count) % 17 == 0 && n >= 2) {
         tn * tmp;
+        tn * left = result -> lchild;
+        tn * right = result -> rchild;
 
-        CHECK_OUT_OF_MEMORY(result->lchild);
-        tmp = result -> lchild -> rchild;
-        CHECK_OUT_OF_MEMORY(result->rchild);
-        result -> lchild -> rchild = result -> rchild -> lchild;
-        result -> rchild -> lchild = tmp;
+        CHECK_OUT_OF_MEMORY(left);
+        tmp = left -> rchild;
+        CHECK_OUT_OF_MEMORY(right);
+        left -> rchild = right -> lchild;
+        right -> lchild = tmp;
+        GC_END_STUBBORN_CHANGE(left);
+        GC_END_STUBBORN_CHANGE(right);
     }
     if (AO_fetch_and_add1(&extra_count) % 119 == 0) {
 #       ifndef GC_NO_FINALIZATION
@@ -959,6 +966,7 @@ tn * mktree(int n)
 #     endif
         GC_reachable_here(result);
     }
+    GC_END_STUBBORN_CHANGE(result);
     return(result);
 }
 
@@ -1016,6 +1024,7 @@ void * alloc8bytes(void)
     }
     *my_free_list_ptr = GC_NEXT(my_free_list);
     GC_NEXT(my_free_list) = 0;
+    GC_END_STUBBORN_CHANGE(my_free_list_ptr);
     AO_fetch_and_add1(&collectable_count);
     return(my_free_list);
 # endif
@@ -1159,12 +1168,14 @@ void typed_test(void)
         CHECK_OUT_OF_MEMORY(newP);
         newP[0] = 17;
         newP[1] = (GC_word)old;
+        GC_END_STUBBORN_CHANGE(newP);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
         newP = (GC_word*)GC_malloc_explicitly_typed(33 * sizeof(GC_word), d3);
         CHECK_OUT_OF_MEMORY(newP);
         newP[0] = 17;
         newP[1] = (GC_word)old;
+        GC_END_STUBBORN_CHANGE(newP);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
         newP = (GC_word *)GC_calloc_explicitly_typed(4, 2 * sizeof(GC_word),
@@ -1172,6 +1183,7 @@ void typed_test(void)
         CHECK_OUT_OF_MEMORY(newP);
         newP[0] = 17;
         newP[1] = (GC_word)old;
+        GC_END_STUBBORN_CHANGE(newP);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
         if (i & 0xff) {
@@ -1189,6 +1201,7 @@ void typed_test(void)
         CHECK_OUT_OF_MEMORY(newP);
         newP[0] = 17;
         newP[1] = (GC_word)old;
+        GC_END_STUBBORN_CHANGE(newP);
         old = newP;
     }
     for (i = 0; i < 20000; i++) {
@@ -1348,6 +1361,7 @@ void run_one_test(void)
       CHECK_OUT_OF_MEMORY(z);
       AO_fetch_and_add1(&collectable_count);
       GC_PTR_STORE(z, x);
+      GC_end_stubborn_change(z);
       if (*z != x) {
         GC_printf("GC_PTR_STORE failed: %p != %p\n", (void *)(*z), (void *)x);
         FAIL;
@@ -1846,7 +1860,6 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #   if defined(CPPCHECK)
        /* Entry points we should be testing, but aren't.        */
 #      ifndef GC_DEBUG
-         UNTESTED(GC_debug_end_stubborn_change);
          UNTESTED(GC_debug_generic_or_special_malloc);
          UNTESTED(GC_debug_register_displacement);
          UNTESTED(GC_post_incr);

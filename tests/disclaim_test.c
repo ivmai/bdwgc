@@ -128,6 +128,7 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     p->checksum = 0;
     p->car = (pair_t)cd;
     p->cdr = NULL;
+    GC_end_stubborn_change(p);
 }
 
 pair_t
@@ -147,6 +148,7 @@ pair_new(pair_t car, pair_t cdr)
     p->checksum = 782 + (car? car->checksum : 0) + (cdr? cdr->checksum : 0);
     p->car = car;
     p->cdr = cdr;
+    GC_end_stubborn_change(p);
 #   ifdef DEBUG_DISCLAIM_DESTRUCT
       printf("Construct %p = (%p, %p)\n",
              (void *)p, (void *)p->car, (void *)p->cdr);
