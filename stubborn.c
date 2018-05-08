@@ -23,34 +23,21 @@
   /* by a stack.                                                        */
 
   void GC_dirty(ptr_t p);
+#endif
 
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_stubborn(size_t lb)
-  {
-    return(GC_malloc(lb));
-  }
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_stubborn(size_t lb)
+{
+  return(GC_malloc(lb));
+}
 
-  GC_API void GC_CALL GC_end_stubborn_change(const void *p)
-  {
+GC_API void GC_CALL GC_end_stubborn_change(const void *p GC_ATTR_UNUSED)
+{
+# ifdef MANUAL_VDB
     GC_dirty((ptr_t)p);
-  }
+# endif
+}
 
-  GC_API void GC_CALL GC_change_stubborn(const void *p GC_ATTR_UNUSED)
-  {
-  }
-
-#else /* !MANUAL_VDB */
-
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_stubborn(size_t lb)
-  {
-    return(GC_malloc(lb));
-  }
-
-  GC_API void GC_CALL GC_end_stubborn_change(const void *p GC_ATTR_UNUSED)
-  {
-  }
-
-  GC_API void GC_CALL GC_change_stubborn(const void *p GC_ATTR_UNUSED)
-  {
-  }
-
-#endif /* !MANUAL_VDB */
+GC_API void GC_CALL GC_change_stubborn(const void *p GC_ATTR_UNUSED)
+{
+  /* Empty. */
+}
