@@ -311,7 +311,9 @@ sexpr cons (sexpr x, sexpr y)
     r -> sexpr_car = x;
     r -> sexpr_cdr = y;
     GC_END_STUBBORN_CHANGE(r);
-    return(r);
+    GC_reachable_here(x);
+    GC_reachable_here(y);
+    return r;
 }
 # endif
 
@@ -366,7 +368,10 @@ sexpr small_cons (sexpr x, sexpr y)
     AO_fetch_and_add1(&collectable_count);
     r -> sexpr_car = x;
     r -> sexpr_cdr = y;
-    return(r);
+    GC_END_STUBBORN_CHANGE(r);
+    GC_reachable_here(x);
+    GC_reachable_here(y);
+    return r;
 }
 
 sexpr small_cons_uncollectable (sexpr x, sexpr y)
@@ -377,7 +382,9 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
     AO_fetch_and_add1(&uncollectable_count);
     r -> sexpr_car = x;
     r -> sexpr_cdr = (sexpr)(~(GC_word)y);
-    return(r);
+    GC_END_STUBBORN_CHANGE(r);
+    GC_reachable_here(x);
+    return r;
 }
 
 #ifdef GC_GCJ_SUPPORT
@@ -394,7 +401,10 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
     result = (sexpr)(r + 1);
     result -> sexpr_car = x;
     result -> sexpr_cdr = y;
-    return(result);
+    GC_END_STUBBORN_CHANGE(r);
+    GC_reachable_here(x);
+    GC_reachable_here(y);
+    return result;
   }
 #endif /* GC_GCJ_SUPPORT */
 
@@ -692,6 +702,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     sexpr d;
     sexpr e;
     sexpr *f, *g, *h;
+    sexpr tmp;
 
     if (data == 0) {
       /* This stack frame is not guaranteed to be scanned. */
@@ -729,26 +740,42 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     f = (sexpr *)GC_REALLOC((void *)f, 6 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(f);
     AO_fetch_and_add1(&realloc_count);
-    f[5] = ints(1,17);
+    tmp = ints(1,17);
+    f[5] = tmp;
+    GC_END_STUBBORN_CHANGE(f + 5);
+    GC_reachable_here(tmp);
     AO_fetch_and_add1(&collectable_count);
     g = (sexpr *)GC_MALLOC(513 * sizeof(sexpr));
     test_generic_malloc_or_special(g);
     g = (sexpr *)GC_REALLOC((void *)g, 800 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(g);
     AO_fetch_and_add1(&realloc_count);
-    g[799] = ints(1,18);
+    tmp = ints(1,18);
+    g[799] = tmp;
+    GC_END_STUBBORN_CHANGE(g + 799);
+    GC_reachable_here(tmp);
     AO_fetch_and_add1(&collectable_count);
     h = (sexpr *)GC_MALLOC(1025 * sizeof(sexpr));
     h = (sexpr *)GC_REALLOC((void *)h, 2000 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(h);
     AO_fetch_and_add1(&realloc_count);
 #   ifdef GC_GCJ_SUPPORT
-      h[1999] = gcj_ints(1,200);
-      for (i = 0; i < 51; ++i)
-        h[1999] = gcj_reverse(h[1999]);
+      tmp = gcj_ints(1,200);
+      h[1999] = tmp;
+      GC_END_STUBBORN_CHANGE(h + 1999);
+      GC_reachable_here(tmp);
+      for (i = 0; i < 51; ++i) {
+        tmp = gcj_reverse(h[1999]);
+        h[1999] = tmp;
+        GC_END_STUBBORN_CHANGE(h + 1999);
+        GC_reachable_here(tmp);
+      }
       /* Leave it as the reversed list for now. */
 #   else
-      h[1999] = ints(1,200);
+      tmp = ints(1,200);
+      h[1999] = tmp;
+      GC_END_STUBBORN_CHANGE(h + 1999);
+      GC_reachable_here(tmp);
 #   endif
     /* Try to force some collections and reuse of small list elements */
     for (i = 0; i < 10; i++) {
@@ -797,7 +824,10 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     check_ints(f[5], 1,17);
     check_ints(g[799], 1,18);
 #   ifdef GC_GCJ_SUPPORT
-      h[1999] = gcj_reverse(h[1999]);
+      tmp = gcj_reverse(h[1999]);
+      h[1999] = tmp;
+      GC_END_STUBBORN_CHANGE(h + 1999);
+      GC_reachable_here(tmp);
 #   endif
     check_ints(h[1999], 1,200);
 #   ifndef THREADS
@@ -862,6 +892,7 @@ int live_indicators_count = 0;
 tn * mktree(int n)
 {
     tn * result = (tn *)GC_MALLOC(sizeof(tn));
+    tn * left, * right;
 
     AO_fetch_and_add1(&collectable_count);
 #   if defined(MACOS)
@@ -875,16 +906,21 @@ tn * mktree(int n)
     if (n == 0) return(0);
     CHECK_OUT_OF_MEMORY(result);
     result -> level = n;
-    result -> lchild = mktree(n-1);
-    result -> rchild = mktree(n-1);
+    result -> lchild = left = mktree(n - 1);
+    result -> rchild = right = mktree(n - 1);
     if (AO_fetch_and_add1(&extra_count) % 17 == 0 && n >= 2) {
-        tn * tmp;
+        tn * tmp, * right_left;
 
-        CHECK_OUT_OF_MEMORY(result->lchild);
-        tmp = result -> lchild -> rchild;
-        CHECK_OUT_OF_MEMORY(result->rchild);
-        result -> lchild -> rchild = result -> rchild -> lchild;
-        result -> rchild -> lchild = tmp;
+        CHECK_OUT_OF_MEMORY(left);
+        tmp = left -> rchild;
+        CHECK_OUT_OF_MEMORY(right);
+        right_left = right -> lchild;
+        left -> rchild = right_left;
+        right -> lchild = tmp;
+        GC_END_STUBBORN_CHANGE(left);
+        GC_reachable_here(right_left);
+        GC_END_STUBBORN_CHANGE(right);
+        GC_reachable_here(tmp);
     }
     if (AO_fetch_and_add1(&extra_count) % 119 == 0) {
 #       ifndef GC_NO_FINALIZATION
@@ -975,6 +1011,9 @@ tn * mktree(int n)
 #   endif
       GC_reachable_here(result);
     }
+    GC_END_STUBBORN_CHANGE(result);
+    GC_reachable_here(left);
+    GC_reachable_here(right);
     return(result);
 }
 
@@ -1014,6 +1053,7 @@ void * alloc8bytes(void)
 # else
     void ** my_free_list_ptr;
     void * my_free_list;
+    void * next;
 
     my_free_list_ptr = (void **)pthread_getspecific(fl_key);
     if (my_free_list_ptr == 0) {
@@ -1030,8 +1070,11 @@ void * alloc8bytes(void)
         my_free_list = GC_malloc_many(8);
         CHECK_OUT_OF_MEMORY(my_free_list);
     }
-    *my_free_list_ptr = GC_NEXT(my_free_list);
+    next = GC_NEXT(my_free_list);
+    *my_free_list_ptr = next;
     GC_NEXT(my_free_list) = 0;
+    GC_END_STUBBORN_CHANGE(my_free_list_ptr);
+    GC_reachable_here(next);
     AO_fetch_and_add1(&collectable_count);
     return(my_free_list);
 # endif
@@ -1101,7 +1144,7 @@ void tree_test(void)
     }
     dropped_something = 1;
     FINALIZER_UNLOCK();
-    GC_noop1((word)root);       /* Root needs to remain live until      */
+    GC_reachable_here(root);    /* Root needs to remain live until      */
                                 /* dropped_something is set.            */
     root = mktree(TREE_HEIGHT);
     chktree(root, TREE_HEIGHT);
@@ -1171,18 +1214,24 @@ void typed_test(void)
         }
         new[0] = 17;
         new[1] = (GC_word)old;
+        GC_END_STUBBORN_CHANGE(new);
+        GC_reachable_here(old);
         old = new;
         AO_fetch_and_add1(&collectable_count);
         new = (GC_word *) GC_malloc_explicitly_typed(4 * sizeof(GC_word), d2);
         CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
+        GC_END_STUBBORN_CHANGE(new);
+        GC_reachable_here(old);
         old = new;
         AO_fetch_and_add1(&collectable_count);
         new = (GC_word *) GC_malloc_explicitly_typed(33 * sizeof(GC_word), d3);
         CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
+        GC_END_STUBBORN_CHANGE(new);
+        GC_reachable_here(old);
         old = new;
         AO_fetch_and_add1(&collectable_count);
         new = (GC_word *) GC_calloc_explicitly_typed(4, 2 * sizeof(GC_word),
@@ -1190,6 +1239,8 @@ void typed_test(void)
         CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
+        GC_END_STUBBORN_CHANGE(new);
+        GC_reachable_here(old);
         old = new;
         AO_fetch_and_add1(&collectable_count);
         if (i & 0xff) {
@@ -1207,6 +1258,8 @@ void typed_test(void)
         CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
+        GC_END_STUBBORN_CHANGE(new);
+        GC_reachable_here(old);
         old = new;
     }
     for (i = 0; i < 20000; i++) {
@@ -1363,6 +1416,7 @@ void run_one_test(void)
       CHECK_OUT_OF_MEMORY(z);
       AO_fetch_and_add1(&collectable_count);
       GC_PTR_STORE(z, x);
+      GC_end_stubborn_change(z);
       if (*z != x) {
         GC_printf("GC_PTR_STORE failed: %p != %p\n", (void *)(*z), (void *)x);
         FAIL;
@@ -1843,7 +1897,6 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #   if defined(CPPCHECK)
        /* Entry points we should be testing, but aren't.        */
 #      ifndef GC_DEBUG
-         UNTESTED(GC_debug_end_stubborn_change);
          UNTESTED(GC_debug_generic_or_special_malloc);
          UNTESTED(GC_debug_register_displacement);
          UNTESTED(GC_post_incr);
