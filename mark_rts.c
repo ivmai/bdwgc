@@ -236,12 +236,18 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
         struct roots * old = (struct roots *)GC_roots_present(b);
 
         if (old != 0) {
-          if ((word)e <= (word)old->r_end)
+          if ((word)e <= (word)old->r_end) {
+            old -> r_tmp &= tmp;
             return; /* already there */
-          /* else extend */
-          GC_root_size += e - old -> r_end;
-          old -> r_end = e;
-          return;
+          }
+          if (old -> r_tmp == tmp || !tmp) {
+            /* Extend the existing root. */
+            GC_root_size += e - old -> r_end;
+            old -> r_end = e;
+            old -> r_tmp = tmp;
+            return;
+          }
+          b = old -> r_end;
         }
       }
 #   endif
