@@ -238,6 +238,9 @@ case "$THREADS" in
         THREADDLLIBS=""
         win32_threads=true
         ;;
+      *-*-redox*)
+        THREADDLLIBS=""
+        ;;
       *-*-mingw*)
         AC_DEFINE(GC_WIN32_PTHREADS)
         # Using pthreads-win32 (or other non-Cygwin pthreads) library.
