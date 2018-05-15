@@ -151,10 +151,9 @@ STATIC void GC_extend_size_map(size_t i)
     GC_size_map[low_limit] = granule_sz;
 }
 
-/* Allocate lb bytes for an object of kind k.   */
-/* Should not be used to directly to allocate   */
-/* objects such as STUBBORN objects that        */
-/* require special handling on allocation.      */
+/* Allocate lb bytes for an object of kind k.           */
+/* Should not be used to directly to allocate objects   */
+/* that require special handling on allocation.         */
 GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 {
     void *op;

@@ -66,7 +66,7 @@ handled somewhat differently by certain parts of the garbage collector.
 Certain kinds are scanned for pointers, others are not. Some may have
 per-object type descriptors that determine pointer locations. Or a specific
 kind may correspond to one specific object layout. Two built-in kinds are
-uncollectible. One (`STUBBORN`) is immutable without special precautions.
+uncollectible.
 In spite of that, it is very likely that most C clients of the collector
 currently use at most two kinds: `NORMAL` and `PTRFREE` objects. The
 [GCJ](https://gcc.gnu.org/onlinedocs/gcc-4.8.5/gcj/) runtime also makes heavy
@@ -387,8 +387,6 @@ again from marked objects on those pages, this time with the mutator stopped.
 
 We keep track of modified pages using one of several distinct mechanisms:
 
-  * Through explicit mutator cooperation. Currently this requires the use of
-  `GC_malloc_stubborn`, and is rarely used.
   * (`MPROTECT_VDB`) By write-protecting physical pages and catching write
   faults. This is implemented for many Unix-like systems and for Win32. It is
   not possible in a few environments.
@@ -399,10 +397,11 @@ We keep track of modified pages using one of several distinct mechanisms:
   performance may actually be better with `mprotect` and signals.)
   * (`PCR_VDB`) By relying on an external dirty bit implementation, in this
   case the one in Xerox PCR.
+  * (`MANUAL_VDB`) Through explicit mutator cooperation. This requires the
+  client code to call `GC_end_stubborn_change`, and is rarely used.
   * (`DEFAULT_VDB`) By treating all pages as dirty. This is the default
-  if none of the other techniques is known to be usable, and
-  `GC_malloc_stubborn` is not used. (Practical only for testing, or if the
-  vast majority of objects use `GC_malloc_stubborn`.)
+  if none of the other techniques is known to be usable. (Practical only for
+  testing.)
 
 ## Black-listing
 

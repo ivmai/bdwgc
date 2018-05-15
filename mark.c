@@ -82,18 +82,7 @@ GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
                 /* 0 | */ GC_DS_LENGTH, FALSE /* add length to descr */, FALSE
                 /*, */ OK_DISCLAIM_INITZ },
 # endif
-# ifdef STUBBORN_ALLOC
-              { (void **)&GC_sobjfreelist[0], 0,
-                /* 0 | */ GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
-                /*, */ OK_DISCLAIM_INITZ },
-# endif
 };
-
-# ifdef STUBBORN_ALLOC
-#   define GC_N_KINDS_INITIAL_VALUE (STUBBORN+1)
-# else
-#   define GC_N_KINDS_INITIAL_VALUE STUBBORN
-# endif
 
 GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
 
@@ -107,7 +96,7 @@ GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
                 /* let it grow dynamically.                             */
 # endif
 
-#if !defined(GC_DISABLE_INCREMENTAL) || defined(STUBBORN_ALLOC)
+#if !defined(GC_DISABLE_INCREMENTAL)
   STATIC word GC_n_rescuing_pages = 0;
                                 /* Number of dirty pages we marked from */
                                 /* excludes ptrfree pages, etc.         */
@@ -269,13 +258,10 @@ GC_INNER void GC_initiate_gc(void)
 #         endif
         }
 #   endif
-#   ifdef STUBBORN_ALLOC
-        GC_read_changed();
-#   endif
 #   ifdef CHECKSUMS
         if (GC_incremental) GC_check_dirty();
 #   endif
-#   if !defined(GC_DISABLE_INCREMENTAL) || defined(STUBBORN_ALLOC)
+#   if !defined(GC_DISABLE_INCREMENTAL)
         GC_n_rescuing_pages = 0;
 #   endif
     if (GC_mark_state == MS_NONE) {
@@ -340,8 +326,7 @@ static void alloc_mark_stack(size_t);
             } else {
                 scan_ptr = GC_push_next_marked_dirty(scan_ptr);
                 if (scan_ptr == 0) {
-#                 if !defined(GC_DISABLE_INCREMENTAL) \
-                     || defined(STUBBORN_ALLOC)
+#                 if !defined(GC_DISABLE_INCREMENTAL)
                     GC_COND_LOG_PRINTF("Marked from %lu dirty pages\n",
                                        (unsigned long)GC_n_rescuing_pages);
 #                 endif
@@ -1870,7 +1855,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     /* Some quick shortcuts: */
         if ((/* 0 | */ GC_DS_LENGTH) == descr) return;
         if (GC_block_empty(hhdr)/* nothing marked */) return;
-#   if !defined(GC_DISABLE_INCREMENTAL) || defined(STUBBORN_ALLOC)
+#   if !defined(GC_DISABLE_INCREMENTAL)
       GC_n_rescuing_pages++;
 #   endif
     GC_objects_are_marked = TRUE;
@@ -1931,7 +1916,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     if ((/* 0 | */ GC_DS_LENGTH) == descr)
         return;
 
-#   if !defined(GC_DISABLE_INCREMENTAL) || defined(STUBBORN_ALLOC)
+#   if !defined(GC_DISABLE_INCREMENTAL)
       GC_n_rescuing_pages++;
 #   endif
     GC_objects_are_marked = TRUE;
@@ -2004,15 +1989,8 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
             if (NULL == h) ABORT("Bad HDR() definition");
 #         endif
         }
-#       ifdef STUBBORN_ALLOC
-          if (hhdr -> hb_obj_kind == STUBBORN) {
-            if (GC_page_was_changed(h) && GC_block_was_dirty(h, hhdr))
-                break;
-          } else
-#       endif
-        /* else */ {
-          if (GC_block_was_dirty(h, hhdr)) break;
-        }
+        if (GC_block_was_dirty(h, hhdr))
+          break;
         h += OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
         hhdr = HDR(h);
     }

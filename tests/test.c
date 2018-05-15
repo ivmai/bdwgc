@@ -206,7 +206,6 @@
 #endif
 
 /* Allocation Statistics.  Synchronization is not strictly necessary.   */
-volatile AO_t stubborn_count = 0;
 volatile AO_t uncollectable_count = 0;
 volatile AO_t collectable_count = 0;
 volatile AO_t atomic_count = 0;
@@ -296,9 +295,9 @@ sexpr cons (sexpr x, sexpr y)
     int *p;
     unsigned my_extra = (unsigned)AO_fetch_and_add1(&extra_count) % 5000;
 
-    r = (sexpr) GC_MALLOC_STUBBORN(sizeof(struct SEXPR) + my_extra);
+    r = (sexpr)GC_MALLOC(sizeof(struct SEXPR) + my_extra);
     CHECK_OUT_OF_MEMORY(r);
-    AO_fetch_and_add1(&stubborn_count);
+    AO_fetch_and_add1(&collectable_count);
     for (p = (int *)r;
          (word)p < (word)r + my_extra + sizeof(struct SEXPR); p++) {
         if (*p) {
@@ -766,7 +765,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
         /* of 49 integers.  Thus, this is thread safe without locks,    */
         /* assuming acquire/release barriers in a_get/set() and atomic  */
         /* pointer assignments (otherwise, e.g., check_ints() may see   */
-        /* an uninitialized object returned by GC_MALLOC_STUBBORN).     */
+        /* an uninitialized object returned by GC_MALLOC).              */
         a_set(reverse(reverse(a_get())));
 #       if !defined(AT_END) && !defined(THREADS)
           /* This is not thread safe, since realloc explicitly deallocates */
@@ -1664,7 +1663,6 @@ void check_heap_stats(void)
     GC_printf("Allocated %d uncollectable objects\n",
                   (int)uncollectable_count);
     GC_printf("Allocated %d atomic objects\n", (int)atomic_count);
-    GC_printf("Allocated %d stubborn objects\n", (int)stubborn_count);
     GC_printf("Reallocated %d objects\n", (int)realloc_count);
     GC_printf("Finalized %d/%d objects - ",
                   finalized_count, finalizable_count);

@@ -49,10 +49,10 @@ then including `gc.h`. In this environment `GC_MALLOC` is a macro which causes
 at least the file name and line number at the allocation point to be saved
 as part of the object. Leak reports will then also include this information.
 
-Many collector features (e.g. stubborn objects, finalization, and
-disappearing links) are less useful in this context, and are not fully
-supported. Their use will usually generate additional bogus leak reports,
-since the collector itself drops some associated objects.
+Many collector features (e.g. finalization and disappearing links) are less
+useful in this context, and are not fully supported. Their use will usually
+generate additional bogus leak reports, since the collector itself drops some
+associated objects.
 
 The same is generally true of thread support. However, as of 6.0alpha4,
 correct leak reports should be generated with linuxthreads.

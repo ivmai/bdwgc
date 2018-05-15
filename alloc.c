@@ -1042,10 +1042,6 @@ STATIC void GC_finish_collection(void)
 #   ifndef GC_NO_FINALIZATION
       GC_finalize();
 #   endif
-#   ifdef STUBBORN_ALLOC
-      GC_clean_changing_list();
-#   endif
-
 #   ifndef NO_CLOCK
       if (GC_print_stats)
         GET_TIME(finalize_time);

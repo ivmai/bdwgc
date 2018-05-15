@@ -14,7 +14,7 @@ WHATS NEW:
 
    The lower part of the new file AmigaOS.c does this in various ways, mainly by
    wrapping GC_malloc, GC_malloc_atomic, GC_malloc_uncollectable,
-   GC_malloc_atomic_uncollectable, GC_malloc_stubborn, GC_malloc_ignore_off_page
+   GC_malloc_atomic_uncollectable, GC_malloc_ignore_off_page
    and GC_malloc_atomic_ignore_off_page. GC_realloc is also wrapped, but
    doesn't do the same effort in preventing to return chip-mem.
    Other allocating-functions (f.ex. GC_*_typed_) can probably be

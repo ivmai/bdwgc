@@ -294,10 +294,6 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 /*                               */
 /*********************************/
 
-/* #define STUBBORN_ALLOC */
-                    /* Enable stubborn allocation, and thus a limited   */
-                    /* form of incremental collection w/o dirty bits.   */
-
 /* #define ALL_INTERIOR_POINTERS */
                     /* Forces all pointers into the interior of an      */
                     /* object to be considered valid.  Also causes the  */
@@ -1346,11 +1342,6 @@ struct _GC_arrays {
         /* Number of granules to allocate when asked for a certain      */
         /* number of bytes.  Should be accessed with the allocation     */
         /* lock held.                                                   */
-# ifdef STUBBORN_ALLOC
-#   define GC_sobjfreelist GC_arrays._sobjfreelist
-    ptr_t _sobjfreelist[MAXOBJGRANULES+1];
-                          /* Free list for immutable objects.   */
-# endif
 # ifdef MARK_BIT_PER_GRANULE
 #   define GC_obj_map GC_arrays._obj_map
     unsigned short * _obj_map[MAXOBJGRANULES + 1];
@@ -1370,16 +1361,6 @@ struct _GC_arrays {
   char _valid_offsets[VALID_OFFSET_SZ];
                                 /* GC_valid_offsets[i] == TRUE ==> i    */
                                 /* is registered as a displacement.     */
-# ifdef STUBBORN_ALLOC
-#   define GC_changed_pages GC_arrays._changed_pages
-    page_hash_table _changed_pages;
-        /* Stubborn object pages that were changes since last call to   */
-        /* GC_read_changed.                                             */
-#   define GC_prev_changed_pages GC_arrays._prev_changed_pages
-    page_hash_table _prev_changed_pages;
-        /* Stubborn object pages that were changes before last call to  */
-        /* GC_read_changed.                                             */
-# endif
 # if defined(PROC_VDB) || defined(MPROTECT_VDB) \
      || defined(GWW_VDB) || defined(MANUAL_VDB)
 #   define GC_grungy_pages GC_arrays._grungy_pages
@@ -1522,11 +1503,11 @@ GC_EXTERN struct obj_kind {
 #define UNCOLLECTABLE 2
 #ifdef GC_ATOMIC_UNCOLLECTABLE
 # define AUNCOLLECTABLE 3
-# define STUBBORN 4
 # define IS_UNCOLLECTABLE(k) (((k) & ~1) == UNCOLLECTABLE)
+# define GC_N_KINDS_INITIAL_VALUE 4
 #else
-# define STUBBORN 3
 # define IS_UNCOLLECTABLE(k) ((k) == UNCOLLECTABLE)
+# define GC_N_KINDS_INITIAL_VALUE 3
 #endif
 
 GC_EXTERN unsigned GC_n_kinds;
@@ -2201,14 +2182,6 @@ GC_EXTERN GC_bool GC_print_back_height;
 
 /* Same as GC_base but excepts and returns a pointer to const object.   */
 #define GC_base_C(p) ((const void *)GC_base((/* no const */ void *)(p)))
-
-/* Stubborn objects: */
-void GC_read_changed(void); /* Analogous to GC_read_dirty */
-GC_bool GC_page_was_changed(struct hblk * h);
-                                /* Analogous to GC_page_was_dirty */
-void GC_clean_changing_list(void);
-                                /* Collect obsolete changing list entries */
-void GC_stubborn_init(void);
 
 /* Debugging print routines: */
 void GC_print_block_list(void);

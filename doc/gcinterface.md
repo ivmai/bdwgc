@@ -91,9 +91,8 @@ to perform a small amount of work every few invocations of `GC_MALLOC` or the
 like, instead of performing an entire collection at once. This is likely
 to increase total running time. It will improve response on a platform that
 either has suitable support in the garbage collector (Linux and most Unix
-versions, Win32 if the collector was suitably built) or if _stubborn_
-allocation is used (see `gc.h`). On many platforms this interacts poorly with
-system calls that write to the garbage collected heap.
+versions, Win32 if the collector was suitably built). On many platforms this
+interacts poorly with system calls that write to the garbage collected heap.
 
 **`GC_warn_proc GC_set_warn_proc(GC_warn_proc)`** - Replace the default
 procedure used by the collector to print warnings. The collector may otherwise

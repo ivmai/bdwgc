@@ -62,10 +62,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_or_special_malloc(size_t lb,
                                                                   int knd)
 {
     switch(knd) {
-#     ifdef STUBBORN_ALLOC
-        case STUBBORN:
-            return GC_malloc_stubborn(lb);
-#     endif
         case PTRFREE:
         case NORMAL:
             return GC_malloc_kind(lb, knd);
@@ -152,13 +148,9 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
     }
     if (ADD_SLOP(lb) <= sz) {
         if (lb >= (sz >> 1)) {
-#           ifdef STUBBORN_ALLOC
-                if (obj_kind == STUBBORN) GC_change_stubborn(p);
-#           endif
             if (orig_sz > lb) {
               /* Clear unneeded part of object to avoid bogus pointer */
               /* tracing.                                             */
-              /* Safe for stubborn objects.                           */
                 BZERO(((ptr_t)p) + lb, orig_sz - lb);
             }
             return(p);

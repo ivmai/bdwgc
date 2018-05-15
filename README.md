@@ -499,34 +499,11 @@ of information:
    (other than read) be handled specially by client code.
    See os_dep.c for details.
 
-2. Information supplied by the programmer.  We define "stubborn"
-   objects to be objects that are rarely changed.  Such an object
-   can be allocated (and enabled for writing) with `GC_malloc_stubborn`.
-   Once it has been initialized, the collector should be informed with
-   a call to `GC_end_stubborn_change`.  Subsequent writes that store
-   pointers into the object must be preceded by a call to
-   `GC_change_stubborn`.
-
-This mechanism performs best for objects that are written only for
-initialization, and such that only one stubborn object is writable
-at once.  It is typically not worth using for short-lived
-objects.  Stubborn objects are treated less efficiently than pointer-free
-(atomic) objects.
-
-A rough rule of thumb is that, in the absence of VM information, garbage
-collection pauses are proportional to the amount of pointerful storage
-plus the amount of modified "stubborn" storage that is reachable during
-the collection.
-
-Initial allocation of stubborn objects takes longer than allocation
-of other objects, since other data structures need to be maintained.
-
-We recommend against random use of stubborn objects in client
-code, since bugs caused by inappropriate writes to stubborn objects
-are likely to be very infrequently observed and hard to trace.
-However, their use may be appropriate in a few carefully written
-library routines that do not make the objects themselves available
-for writing by client code.
+2. Information supplied by the programmer.  The object is considered dirty
+   after a call to `GC_end_stubborn_change` provided the library has been
+   compiled suitably. It is typically not worth using for short-lived objects.
+   Note that bugs caused by a missing `GC_end_stubborn_change` call are
+   likely to be observed very infrequently and hard to trace.
 
 
 ## Bugs

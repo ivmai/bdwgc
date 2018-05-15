@@ -406,9 +406,6 @@ STATIC void GC_print_obj(ptr_t p)
               kind_str = "ATOMIC_UNCOLLECTABLE";
               break;
 #         endif
-          case STUBBORN:
-            kind_str = "STUBBORN";
-            break;
           default:
             kind_str = NULL;
                 /* The alternative is to use snprintf(buffer) but it is */
@@ -615,42 +612,13 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   }
 #endif /* DBG_HDRS_ALL */
 
-#ifdef STUBBORN_ALLOC
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_stubborn(size_t lb,
-                                                        GC_EXTRA_PARAMS)
-  {
-    void * result = GC_malloc_stubborn(SIZET_SAT_ADD(lb, DEBUG_BYTES));
-
-    return store_debug_info(result, lb, "GC_debug_malloc_stubborn",
-                            OPT_RA s, i);
-  }
-
-  GC_API void GC_CALL GC_debug_change_stubborn(const void *p)
-  {
-    const void * q = GC_base_C(p);
-    hdr * hhdr;
-
-    if (q == 0) {
-        ABORT_ARG1("GC_debug_change_stubborn: bad arg", ": %p", p);
-    }
-    hhdr = HDR(q);
-    if (hhdr -> hb_obj_kind != STUBBORN) {
-        ABORT_ARG1("GC_debug_change_stubborn: arg not stubborn", ": %p", p);
-    }
-    GC_change_stubborn(q);
-  }
-
-#else /* !STUBBORN_ALLOC */
-
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_stubborn(size_t lb,
-                                                        GC_EXTRA_PARAMS)
-  {
+GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
+{
     return GC_debug_malloc(lb, OPT_RA s, i);
-  }
+}
 
-  GC_API void GC_CALL GC_debug_change_stubborn(
+GC_API void GC_CALL GC_debug_change_stubborn(
                                 const void * p GC_ATTR_UNUSED) {}
-#endif /* !STUBBORN_ALLOC */
 
 GC_API void GC_CALL GC_debug_end_stubborn_change(const void *p)
 {
@@ -659,11 +627,6 @@ GC_API void GC_CALL GC_debug_end_stubborn_change(const void *p)
     if (NULL == q) {
         ABORT_ARG1("GC_debug_end_stubborn_change: bad arg", ": %p", p);
     }
-# ifdef STUBBORN_ALLOC
-    if (HDR(q) -> hb_obj_kind != STUBBORN)
-        ABORT_ARG1("GC_debug_end_stubborn_change: arg not stubborn",
-                   ": %p", p);
-# endif
     GC_end_stubborn_change(q);
 }
 
@@ -885,11 +848,6 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
     }
     hhdr = HDR(base);
     switch (hhdr -> hb_obj_kind) {
-#    ifdef STUBBORN_ALLOC
-      case STUBBORN:
-        result = GC_debug_malloc_stubborn(lb, OPT_RA s, i);
-        break;
-#    endif
       case NORMAL:
         result = GC_debug_malloc(lb, OPT_RA s, i);
         break;
@@ -927,10 +885,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_debug_generic_or_special_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
 {
     switch (knd) {
-#     ifdef STUBBORN_ALLOC
-        case STUBBORN:
-            return GC_debug_malloc_stubborn(lb, OPT_RA s, i);
-#     endif
         case PTRFREE:
             return GC_debug_malloc_atomic(lb, OPT_RA s, i);
         case NORMAL:

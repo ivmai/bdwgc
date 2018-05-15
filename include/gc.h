@@ -484,16 +484,12 @@ GC_API void GC_CALL GC_deinit(void);
 /* General purpose allocation routines, with roughly malloc calling     */
 /* conv.  The atomic versions promise that no relevant pointers are     */
 /* contained in the object.  The non-atomic versions guarantee that the */
-/* new object is cleared.  GC_malloc_stubborn promises that no changes  */
-/* to the object will occur after GC_end_stubborn_change has been       */
-/* called on the result of GC_malloc_stubborn.  GC_malloc_uncollectable */
-/* allocates an object that is scanned for pointers to collectible      */
+/* new object is cleared.  GC_malloc_uncollectable allocates            */
+/* an object that is scanned for pointers to collectible                */
 /* objects, but is not itself collectible.  The object is scanned even  */
 /* if it does not appear to be reachable.  GC_malloc_uncollectable and  */
 /* GC_free called on the resulting object implicitly update             */
 /* GC_non_gc_bytes appropriately.                                       */
-/* Note that the GC_malloc_stubborn support doesn't really exist        */
-/* anymore.  MANUAL_VDB provides comparable functionality.              */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_malloc(size_t /* size_in_bytes */);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
@@ -503,8 +499,7 @@ GC_API GC_ATTR_MALLOC char * GC_CALL
         GC_strndup(const char *, size_t) GC_ATTR_NONNULL(1);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_malloc_uncollectable(size_t /* size_in_bytes */);
-GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
-        GC_malloc_stubborn(size_t /* size_in_bytes */);
+GC_API GC_ATTR_DEPRECATED void * GC_CALL GC_malloc_stubborn(size_t);
 
 /* GC_memalign() is not well tested.                                    */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
@@ -514,27 +509,23 @@ GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,
 
 /* Explicitly deallocate an object.  Dangerous if used incorrectly.     */
 /* Requires a pointer to the base of an object.                         */
-/* If the argument is stubborn, it should not be changeable when freed. */
 /* An object should not be enabled for finalization (and it should not  */
 /* contain registered disappearing links of any kind) when it is        */
 /* explicitly deallocated.                                              */
 /* GC_free(0) is a no-op, as required by ANSI C for free.               */
 GC_API void GC_CALL GC_free(void *);
 
-/* Stubborn objects may be changed only if the collector is explicitly  */
-/* informed.  The collector is implicitly informed of coming change     */
-/* when such an object is first allocated.  The following routines      */
-/* inform the collector that an object will no longer be changed, or    */
-/* that it will once again be changed.  Only non-NULL pointer stores    */
-/* into the object are considered to be changes.  The argument to       */
-/* GC_end_stubborn_change must be exactly the value returned by         */
-/* GC_malloc_stubborn or passed to GC_change_stubborn.  (In the second  */
-/* case, it may be an interior pointer within 512 bytes of the          */
-/* beginning of the objects.)  There is a performance penalty for       */
-/* allowing more than one stubborn object to be changed at once, but it */
-/* is acceptable to do so.  The same applies to dropping stubborn       */
-/* objects that are still changeable.                                   */
-GC_API void GC_CALL GC_change_stubborn(const void *) GC_ATTR_NONNULL(1);
+/* The "stubborn" objects allocation is not supported anymore.  Exists  */
+/* only for the backward compatibility.                                 */
+#define GC_MALLOC_STUBBORN(sz)  GC_MALLOC(sz)
+#define GC_NEW_STUBBORN(t)      GC_NEW(t)
+#define GC_CHANGE_STUBBORN(p)   GC_change_stubborn(p)
+GC_API GC_ATTR_DEPRECATED void GC_CALL GC_change_stubborn(const void *);
+
+/* Inform the collector that the object has been changed.               */
+/* Only non-NULL pointer stores into the object are considered to be    */
+/* changes.  Matters only if the library has been compiled with         */
+/* MANUAL_VDB defined (otherwise the function does nothing).            */
 GC_API void GC_CALL GC_end_stubborn_change(const void *) GC_ATTR_NONNULL(1);
 
 /* Return a pointer to the base (lowest address) of an object given     */
@@ -566,7 +557,6 @@ GC_API size_t GC_CALL GC_size(const void * /* obj_addr */) GC_ATTR_NONNULL(1);
 /* or with the standard C library, your code is broken.  In my          */
 /* opinion, it shouldn't have been invented, but now we're stuck. -HB   */
 /* The resulting object has the same kind as the original.              */
-/* If the argument is stubborn, the result will have changes enabled.   */
 /* It is an error to have changes enabled for the original object.      */
 /* It does not change the content of the object from its beginning to   */
 /* the minimum of old size and new_size_in_bytes; the content above in  */
@@ -897,7 +887,7 @@ GC_API GC_ATTR_MALLOC char * GC_CALL
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_debug_malloc_uncollectable(size_t /* size_in_bytes */,
                                       GC_EXTRA_PARAMS);
-GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+GC_API GC_ATTR_DEPRECATED void * GC_CALL
         GC_debug_malloc_stubborn(size_t /* size_in_bytes */, GC_EXTRA_PARAMS);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_debug_malloc_ignore_off_page(size_t /* size_in_bytes */,
@@ -909,7 +899,11 @@ GC_API void GC_CALL GC_debug_free(void *);
 GC_API void * GC_CALL GC_debug_realloc(void * /* old_object */,
                         size_t /* new_size_in_bytes */, GC_EXTRA_PARAMS)
                         /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);
-GC_API void GC_CALL GC_debug_change_stubborn(const void *) GC_ATTR_NONNULL(1);
+GC_API
+#if !defined(CPPCHECK)
+  GC_ATTR_DEPRECATED
+#endif
+void GC_CALL GC_debug_change_stubborn(const void *);
 GC_API void GC_CALL GC_debug_end_stubborn_change(const void *)
                                                         GC_ATTR_NONNULL(1);
 
@@ -963,8 +957,6 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
       GC_debug_register_finalizer_no_order(p, f, d, of, od)
 # define GC_REGISTER_FINALIZER_UNREACHABLE(p, f, d, of, od) \
       GC_debug_register_finalizer_unreachable(p, f, d, of, od)
-# define GC_MALLOC_STUBBORN(sz) GC_debug_malloc_stubborn(sz, GC_EXTRAS)
-# define GC_CHANGE_STUBBORN(p) GC_debug_change_stubborn(p)
 # define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
 # define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
       GC_general_register_disappearing_link(link, \
@@ -991,8 +983,6 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
       GC_register_finalizer_no_order(p, f, d, of, od)
 # define GC_REGISTER_FINALIZER_UNREACHABLE(p, f, d, of, od) \
       GC_register_finalizer_unreachable(p, f, d, of, od)
-# define GC_MALLOC_STUBBORN(sz) GC_malloc_stubborn(sz)
-# define GC_CHANGE_STUBBORN(p) GC_change_stubborn(p)
 # define GC_END_STUBBORN_CHANGE(p) GC_end_stubborn_change(p)
 # define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
       GC_general_register_disappearing_link(link, obj)
@@ -1008,7 +998,6 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
 /* may return NULL (if out of memory).                                  */
 #define GC_NEW(t)               ((t*)GC_MALLOC(sizeof(t)))
 #define GC_NEW_ATOMIC(t)        ((t*)GC_MALLOC_ATOMIC(sizeof(t)))
-#define GC_NEW_STUBBORN(t)      ((t*)GC_MALLOC_STUBBORN(sizeof(t)))
 #define GC_NEW_UNCOLLECTABLE(t) ((t*)GC_MALLOC_UNCOLLECTABLE(sizeof(t)))
 
 #ifdef GC_REQUIRE_WCSDUP
@@ -2027,8 +2016,6 @@ GC_API void GC_CALL GC_win32_free_heap(void);
         (*GC_amiga_allocwrapper_do)(a,GC_malloc_atomic)
 # define GC_malloc_uncollectable(a) \
         (*GC_amiga_allocwrapper_do)(a,GC_malloc_uncollectable)
-# define GC_malloc_stubborn(a) \
-        (*GC_amiga_allocwrapper_do)(a,GC_malloc_stubborn)
 # define GC_malloc_atomic_uncollectable(a) \
         (*GC_amiga_allocwrapper_do)(a,GC_malloc_atomic_uncollectable)
 # define GC_malloc_ignore_off_page(a) \

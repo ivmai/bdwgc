@@ -927,10 +927,9 @@ fi
 
 AC_ARG_ENABLE(checksums,
     [AS_HELP_STRING([--enable-checksums],
-                    [Report on erroneously cleared dirty bits and
-                     unexpectedly altered stubborn objects, at
-                     substantial performance cost; use only for debugging
-                     of the incremental collector])])
+                    [Report on erroneously cleared dirty bits at
+                     substantial performance cost; use only for
+                     debugging of the incremental collector])])
 if test x$enable_checksums = xyes; then
     if test x$enable_munmap != xno -o x$THREADS != xnone; then
         AC_MSG_ERROR([CHECKSUMS not compatible with USE_MUNMAP or threads])

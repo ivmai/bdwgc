@@ -359,10 +359,9 @@ SAVE_CALL_NARGS=<n>     Set the number of functions arguments to be saved
   with each call frame.  Default is zero.  Ignored if we don't know how to
   retrieve arguments on the platform.
 
-CHECKSUMS       Reports on erroneously clear dirty bits, and unexpectedly
-  altered stubborn objects, at substantial performance cost.  Use only for
-  debugging of the incremental collector.  Not compatible with USE_MUNMAP
-  or threads.
+CHECKSUMS       Reports on erroneously clear dirty bits (at a substantial
+  performance cost).  Use only for debugging of the incremental collector.
+  Not compatible with USE_MUNMAP or threads.
 
 GC_GCJ_SUPPORT  Includes support for gcj (and possibly other systems
   that include a pointer to a type descriptor in each allocated object).
@@ -457,10 +456,6 @@ MAKE_BACK_GRAPH         Enable GC_PRINT_BACK_HEIGHT environment variable.
 GC_PRINT_BACK_HEIGHT    Permanently turn on back-height printing mode
   (useful when NO_GETENV).  See the similar environment variable description
   in README.environment.  Requires MAKE_BACK_GRAPH defined.
-
-STUBBORN_ALLOC  Allows allocation of "hard to change" objects, and thus
-  makes incremental collection easier.  Was enabled by default until 6.0.
-  Rarely used, to my knowledge.
 
 HANDLE_FORK (Unix and Cygwin only)      Attempt by default to make GC_malloc()
   work in a child process fork()'ed from a multi-threaded parent.  Not fully

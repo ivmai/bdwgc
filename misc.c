@@ -1318,9 +1318,6 @@ GC_API void GC_CALL GC_init(void)
       if (GC_dont_gc || GC_dont_precollect)
         GC_with_callee_saves_pushed(callee_saves_pushed_dummy_fn, NULL);
 #   endif
-#   ifdef STUBBORN_ALLOC
-        GC_stubborn_init();
-#   endif
 #   ifndef DONT_USE_ATEXIT
       if (GC_find_leak) {
         /* This is to give us at least one chance to detect leaks.        */
