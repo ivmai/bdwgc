@@ -129,7 +129,7 @@ allocation is used (see
 <A type="text/plain" HREF="../include/gc.h">gc.h</a>).
 On many platforms this interacts poorly with system calls
 that write to the garbage collected heap.
-<DT> <B> GC_warn_proc GC_set_warn_proc(GC_warn_proc <I>p</i>) </b>
+<DT> <B> void GC_set_warn_proc(GC_warn_proc <I>p</i>) </b>
 <DD>
 Replace the default procedure used by the collector to print warnings.
 The collector
