@@ -194,9 +194,6 @@
                 </FileConfiguration>
             </File>
             <File
-                RelativePath="..\..\stubborn.c">
-            </File>
-            <File
                 RelativePath="..\..\typd_mlc.c">
             </File>
             <File

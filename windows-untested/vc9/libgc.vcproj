@@ -393,10 +393,6 @@
                 >
             </File>
             <File
-                RelativePath="..\..\stubborn.c"
-                >
-            </File>
-            <File
                 RelativePath="..\..\thread_local_alloc.c"
                 >
             </File>

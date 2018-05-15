@@ -197,10 +197,6 @@ SOURCE=..\stdafx.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\stubborn.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\typd_mlc.c
 # End Source File
 # Begin Source File
