@@ -94,8 +94,8 @@ either has suitable support in the garbage collector (Linux and most Unix
 versions, Win32 if the collector was suitably built). On many platforms this
 interacts poorly with system calls that write to the garbage collected heap.
 
-**`GC_warn_proc GC_set_warn_proc(GC_warn_proc)`** - Replace the default
-procedure used by the collector to print warnings. The collector may otherwise
+**void `GC_set_warn_proc`(GC_warn_proc)** - Replace the default procedure
+used by the collector to print warnings. The collector may otherwise
 write to `stderr`, most commonly because `GC_malloc` was used in a situation
 in which `GC_malloc_ignore_off_page` would have been more appropriate. See
 `gc.h` for details.
