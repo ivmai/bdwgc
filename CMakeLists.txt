@@ -50,8 +50,8 @@ INCLUDE_DIRECTORIES(libatomic_ops/src)
 
 SET(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
         mark_rts.c headers.c mark.c obj_map.c blacklst.c finalize.c
-        new_hblk.c dbg_mlc.c malloc.c stubborn.c dyn_load.c
-        typd_mlc.c ptr_chck.c mallocx.c)
+        new_hblk.c dbg_mlc.c malloc.c dyn_load.c typd_mlc.c ptr_chck.c
+        mallocx.c)
 SET(LIBS)
 OPTION(enable_threads "TODO" NO)
 IF(enable_threads)

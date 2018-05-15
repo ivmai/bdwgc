@@ -196,7 +196,7 @@ struct gc_private_assert_intsize_{ char x[ sizeof(int)>=4 ? 1 : 0 ]; };
 #endif
 ---- ( cut here ) ----  end of gc_prefix_common.h  -----------------
 
-Files to  build the GC libraries:
+Files to build the GC libraries:
 --------------------------------
     allchblk.c
     alloc.c
@@ -217,7 +217,6 @@ Files to  build the GC libraries:
     os_dep.c   -- contains MacOS code
     ptr_chck.c
     reclaim.c
-    stubborn.c
     typd_mlc.c
     gc++.cc    -- this is 'gc_cpp.cc' with less 'inline' and
                -- throw std::bad_alloc when out of memory

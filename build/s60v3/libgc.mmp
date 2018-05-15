@@ -54,7 +54,6 @@ SOURCE          os_dep.c
 SOURCE          extra/symbian.cpp
 SOURCE          ptr_chck.c
 SOURCE          reclaim.c
-SOURCE          stubborn.c
 SOURCE          typd_mlc.c
 
 /*

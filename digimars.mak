@@ -36,7 +36,6 @@ OBJS=	\
 	os_dep.obj\
 	ptr_chck.obj\
 	reclaim.obj\
-	stubborn.obj\
 	typd_mlc.obj\
 	win32_threads.obj
 
@@ -87,6 +86,5 @@ obj_map.obj: obj_map.c
 os_dep.obj: os_dep.c
 ptr_chck.obj: ptr_chck.c
 reclaim.obj: reclaim.c
-stubborn.obj: stubborn.c
 typd_mlc.obj: typd_mlc.c
 win32_threads.obj: win32_threads.c

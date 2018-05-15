@@ -44,7 +44,6 @@
 #include "../new_hblk.c"
 #include "../obj_map.c"
 #include "../ptr_chck.c"
-#include "../stubborn.c"
 
 #include "gc_inline.h"
 #include "../allchblk.c"

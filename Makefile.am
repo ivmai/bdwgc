@@ -72,7 +72,7 @@ libgc_la_SOURCES = \
     allchblk.c alloc.c blacklst.c dbg_mlc.c \
     dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c \
     mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
-    obj_map.c os_dep.c ptr_chck.c reclaim.c specific.c stubborn.c typd_mlc.c
+    obj_map.c os_dep.c ptr_chck.c reclaim.c specific.c typd_mlc.c
 
 # C Library: Architecture Dependent
 # ---------------------------------

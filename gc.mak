@@ -104,8 +104,6 @@ CLEAN :
 	-@erase ".\Release\ptr_chck.sbr"
 	-@erase ".\Release\reclaim.obj"
 	-@erase ".\Release\reclaim.sbr"
-	-@erase ".\Release\stubborn.obj"
-	-@erase ".\Release\stubborn.sbr"
 	-@erase ".\Release\typd_mlc.obj"
 	-@erase ".\Release\typd_mlc.sbr"
 	-@erase ".\Release\win32_threads.obj"
@@ -179,7 +177,6 @@ BSC32_SBRS=\
 	".\Release\os_dep.sbr"\
 	".\Release\ptr_chck.sbr"\
 	".\Release\reclaim.sbr"\
-	".\Release\stubborn.sbr"\
 	".\Release\typd_mlc.sbr"\
 	".\Release\msvc_dbg.copied.sbr"\
 	".\Release\win32_threads.sbr"
@@ -219,7 +216,6 @@ LINK32_OBJS=\
 	".\Release\os_dep.obj"\
 	".\Release\ptr_chck.obj"\
 	".\Release\reclaim.obj"\
-	".\Release\stubborn.obj"\
 	".\Release\typd_mlc.obj"\
 	".\Release\msvc_dbg.copied.obj"\
 	".\Release\win32_threads.obj"
@@ -295,8 +291,6 @@ CLEAN :
 	-@erase ".\Debug\ptr_chck.sbr"
 	-@erase ".\Debug\reclaim.obj"
 	-@erase ".\Debug\reclaim.sbr"
-	-@erase ".\Debug\stubborn.obj"
-	-@erase ".\Debug\stubborn.sbr"
 	-@erase ".\Debug\typd_mlc.obj"
 	-@erase ".\Debug\typd_mlc.sbr"
 	-@erase ".\Debug\vc40.idb"
@@ -372,7 +366,6 @@ BSC32_SBRS=\
 	".\Debug\os_dep.sbr"\
 	".\Debug\ptr_chck.sbr"\
 	".\Debug\reclaim.sbr"\
-	".\Debug\stubborn.sbr"\
 	".\Debug\typd_mlc.sbr"\
 	".\Debug\msvc_dbg.copied.sbr"\
 	".\Debug\win32_threads.sbr"
@@ -412,7 +405,6 @@ LINK32_OBJS=\
 	".\Debug\os_dep.obj"\
 	".\Debug\ptr_chck.obj"\
 	".\Debug\reclaim.obj"\
-	".\Debug\stubborn.obj"\
 	".\Debug\typd_mlc.obj"\
 	".\Debug\msvc_dbg.copied.obj"\
 	".\Debug\win32_threads.obj"
@@ -1238,54 +1230,6 @@ NODEP_CPP_ALLCH=\
 ".\Debug\allchblk.obj" : $(SOURCE) $(DEP_CPP_ALLCH) "$(INTDIR)"
 
 ".\Debug\allchblk.sbr" : $(SOURCE) $(DEP_CPP_ALLCH) "$(INTDIR)"
-
-
-!ENDIF
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\stubborn.c
-
-!IF  "$(CFG)" == "gc - Win32 Release"
-
-DEP_CPP_STUBB=\
-	".\include\private\gcconfig.h"\
-	".\include\gc.h"\
-	".\include\private\gc_hdrs.h"\
-	".\include\private\gc_priv.h"\
-	{$(INCLUDE)}"\sys\TYPES.H"\
-
-NODEP_CPP_STUBB=\
-	".\th\PCR_Th.h"\
-	".\th\PCR_ThCrSec.h"\
-	".\th\PCR_ThCtl.h"\
-
-
-".\Release\stubborn.obj" : $(SOURCE) $(DEP_CPP_STUBB) "$(INTDIR)"
-
-".\Release\stubborn.sbr" : $(SOURCE) $(DEP_CPP_STUBB) "$(INTDIR)"
-
-
-!ELSEIF  "$(CFG)" == "gc - Win32 Debug"
-
-DEP_CPP_STUBB=\
-	".\include\private\gcconfig.h"\
-	".\include\gc.h"\
-	".\include\private\gc_hdrs.h"\
-	".\include\private\gc_priv.h"\
-	{$(INCLUDE)}"\sys\TYPES.H"\
-
-NODEP_CPP_STUBB=\
-	".\th\PCR_Th.h"\
-	".\th\PCR_ThCrSec.h"\
-	".\th\PCR_ThCtl.h"\
-
-
-".\Debug\stubborn.obj" : $(SOURCE) $(DEP_CPP_STUBB) "$(INTDIR)"
-
-".\Debug\stubborn.sbr" : $(SOURCE) $(DEP_CPP_STUBB) "$(INTDIR)"
 
 
 !ENDIF

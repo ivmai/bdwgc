@@ -600,3 +600,24 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
     return copy;
   }
 #endif /* GC_REQUIRE_WCSDUP */
+
+GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
+{
+  return GC_malloc(lb);
+}
+
+GC_API void GC_CALL GC_change_stubborn(const void *p GC_ATTR_UNUSED)
+{
+  /* Empty. */
+}
+
+#if defined(MANUAL_VDB)
+  void GC_dirty(ptr_t p);
+#endif
+
+GC_API void GC_CALL GC_end_stubborn_change(const void *p GC_ATTR_UNUSED)
+{
+# ifdef MANUAL_VDB
+    GC_dirty((ptr_t)p);
+# endif
+}
