@@ -186,9 +186,7 @@ static void maybe_finalize(void)
             *opp = obj_link(op);
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
         }
-        *(void **)op = ptr_to_struct_containing_descr;
         GC_ASSERT(((void **)op)[1] == 0);
-        UNLOCK();
     } else {
         LOCK();
         maybe_finalize();
@@ -198,9 +196,9 @@ static void maybe_finalize(void)
             UNLOCK();
             return((*oom_fn)(lb));
         }
-        *(void **)op = ptr_to_struct_containing_descr;
-        UNLOCK();
     }
+    *(void **)op = ptr_to_struct_containing_descr;
+    UNLOCK();
     return((void *) op);
 }
 
