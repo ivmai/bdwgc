@@ -628,15 +628,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
             GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
             UNLOCK();
         }
-        ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
-   } else {
-       op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
-       if (op != NULL) {
-         lg = BYTES_TO_GRANULES(GC_size(op));
-         ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
-       }
-   }
-   return((void *) op);
+    } else {
+        op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
+        if (NULL == op) return NULL;
+        lg = BYTES_TO_GRANULES(GC_size(op));
+    }
+    ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
+    return op;
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
