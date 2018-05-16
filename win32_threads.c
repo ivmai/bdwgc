@@ -346,6 +346,7 @@ STATIC GC_thread GC_new_thread(DWORD id)
   if (!EXPECT(first_thread_used, TRUE)) {
     result = &first_thread;
     first_thread_used = TRUE;
+    GC_ASSERT(NULL == GC_threads[hv]);
   } else {
     GC_ASSERT(!GC_win32_dll_threads);
     result = (struct GC_Thread_Rep *)
@@ -680,6 +681,7 @@ STATIC void GC_delete_gc_thread_no_free(GC_vthread t)
     if (prev == 0) {
       GC_threads[hv] = p -> tm.next;
     } else {
+      GC_ASSERT(prev != &first_thread);
       prev -> tm.next = p -> tm.next;
     }
   }
@@ -717,9 +719,10 @@ STATIC void GC_delete_thread(DWORD id)
     if (prev == 0) {
       GC_threads[hv] = p -> tm.next;
     } else {
+      GC_ASSERT(prev != &first_thread);
       prev -> tm.next = p -> tm.next;
     }
-    if (p != &first_thread) {
+    if (EXPECT(p != &first_thread, TRUE)) {
       GC_INTERNAL_FREE(p);
     }
   }
@@ -2649,6 +2652,7 @@ GC_INNER void GC_thr_init(void)
     /* we don't need to hold the allocation lock during pthread_create. */
     me = GC_register_my_thread_inner(sb, thread_id);
     SET_PTHREAD_MAP_CACHE(pthread_id, thread_id);
+    GC_ASSERT(me != &first_thread);
     me -> pthread_id = pthread_id;
     if (si->detached) me -> flags |= DETACHED;
     UNLOCK();

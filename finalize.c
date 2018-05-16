@@ -256,7 +256,6 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
 #endif
 
 /* Unregisters given link and returns the link entry to free.   */
-/* Assume the lock is held.                                     */
 GC_INLINE struct disappearing_link *GC_unregister_disappearing_link_inner(
                                 struct dl_hashtbl_s *dl_hashtbl, void **link)
 {
@@ -264,6 +263,7 @@ GC_INLINE struct disappearing_link *GC_unregister_disappearing_link_inner(
     struct disappearing_link *prev_dl = NULL;
     size_t index;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (dl_hashtbl->log_size == -1)
         return NULL; /* prevent integer shift by a negative amount */
 
@@ -531,6 +531,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     word curr_hidden_link;
     word new_hidden_link;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (dl_hashtbl->log_size == -1)
         return GC_NOT_FOUND; /* prevent integer shift by a negative amount */
 
@@ -921,6 +922,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     size_t i; \
     size_t dl_size = dl_hashtbl->log_size == -1 ? 0 : \
                                 (size_t)1 << dl_hashtbl->log_size; \
+    GC_ASSERT(I_HOLD_LOCK()); \
     for (i = 0; i < dl_size; i++) { \
       struct disappearing_link *prev_dl = NULL; \
       curr_dl = dl_hashtbl -> head[i]; \
@@ -991,6 +993,7 @@ GC_INNER void GC_finalize(void)
     size_t fo_size = log_fo_table_size == -1 ? 0 :
                                 (size_t)1 << log_fo_table_size;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifndef SMALL_CONFIG
       /* Save current GC_[dl/ll]_entries value for stats printing */
       GC_old_dl_entries = GC_dl_hashtbl.entries;
@@ -1140,13 +1143,14 @@ GC_INNER void GC_finalize(void)
 
 #ifndef JAVA_FINALIZATION_NOT_NEEDED
 
-  /* Enqueue all remaining finalizers to be run - Assumes lock is held. */
+  /* Enqueue all remaining finalizers to be run.        */
   STATIC void GC_enqueue_all_finalizers(void)
   {
     struct finalizable_object * next_fo;
     int i;
     int fo_size;
 
+    GC_ASSERT(I_HOLD_LOCK());
     fo_size = log_fo_table_size == -1 ? 0 : 1 << log_fo_table_size;
     GC_bytes_finalized = 0;
     for (i = 0; i < fo_size; i++) {
@@ -1172,7 +1176,7 @@ GC_INNER void GC_finalize(void)
           GC_bytes_finalized +=
                 curr_fo -> fo_object_size + sizeof(struct finalizable_object);
           curr_fo = next_fo;
-        }
+      }
     }
     GC_fo_entries = 0;  /* all entries deleted from the hash table */
   }

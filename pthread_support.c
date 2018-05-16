@@ -522,6 +522,7 @@ void GC_push_thread_structures(void)
 #endif /* DEBUG_THREADS */
 
 /* It may not be safe to allocate when we register the first thread.    */
+/* As "next" and "status" fields are unused, no need to push this.      */
 static struct GC_Thread_Rep first_thread;
 
 /* Add a thread to GC_threads.  We assume it wasn't already there.      */
@@ -544,6 +545,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
     if (!EXPECT(first_thread_used, TRUE)) {
         result = &first_thread;
         first_thread_used = TRUE;
+        GC_ASSERT(NULL == GC_threads[hv]);
 #       if defined(THREAD_SANITIZER) && defined(CPPCHECK)
           GC_noop1(result->dummy[0]);
 #       endif
@@ -593,6 +595,7 @@ STATIC void GC_delete_thread(pthread_t id)
     if (prev == 0) {
         GC_threads[hv] = p -> next;
     } else {
+        GC_ASSERT(prev != &first_thread);
         prev -> next = p -> next;
     }
     if (p != &first_thread) {
@@ -622,6 +625,7 @@ STATIC void GC_delete_gc_thread(GC_thread t)
     if (prev == 0) {
         GC_threads[hv] = p -> next;
     } else {
+        GC_ASSERT(prev != &first_thread);
         prev -> next = p -> next;
     }
 #   ifdef GC_DARWIN_THREADS
