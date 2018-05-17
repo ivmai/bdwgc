@@ -22,8 +22,6 @@
   /* written, but not yet GC_dirty()ed objects must be referenced       */
   /* by a stack.                                                        */
 
-  void GC_dirty(ptr_t p);
-
   GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_stubborn(size_t lb)
   {
     return(GC_malloc(lb));
@@ -31,7 +29,7 @@
 
   GC_API void GC_CALL GC_end_stubborn_change(const void *p)
   {
-    GC_dirty((ptr_t)p);
+    GC_dirty(p); /* entire object */
   }
 
   GC_API void GC_CALL GC_change_stubborn(const void *p GC_ATTR_UNUSED)
