@@ -2181,11 +2181,10 @@ GC_EXTERN GC_bool GC_print_back_height;
 #endif /* !GC_DISABLE_INCREMENTAL */
 
 #ifdef MANUAL_VDB
-  GC_INNER void GC_dirty_async_inner(const void *p);
-# define GC_dirty_async(p) \
-                (GC_incremental ? GC_dirty_async_inner(p) : (void)0)
+  GC_INNER void GC_dirty_inner(const void *p); /* does not require locking */
+# define GC_dirty(p) (GC_incremental ? GC_dirty_inner(p) : (void)0)
 #else
-# define GC_dirty_async(p) (void)(p)
+# define GC_dirty(p) (void)(p)
 #endif
 
 /* Same as GC_base but excepts and returns a pointer to const object.   */

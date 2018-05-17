@@ -613,5 +613,5 @@ GC_API void GC_CALL GC_change_stubborn(const void *p GC_ATTR_UNUSED)
 
 GC_API void GC_CALL GC_end_stubborn_change(const void *p)
 {
-  GC_dirty_async(p); /* entire object */
+  GC_dirty(p); /* entire object */
 }

@@ -1496,7 +1496,7 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
 #   ifdef THREADS
       /* Pointer is on the stack.  We may have dirtied the object       */
       /* it points to, but have not called GC_dirty yet.                */
-      GC_dirty_async(p); /* entire object */
+      GC_dirty(p); /* entire object */
 #   endif
     PUSH_CONTENTS_HDR(r, GC_mark_stack_top, GC_mark_stack_limit,
                       source, hhdr, FALSE);
