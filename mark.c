@@ -1463,10 +1463,6 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
     return mark_stack_ptr;
 }
 
-#if defined(MANUAL_VDB) && defined(THREADS)
-  void GC_dirty(ptr_t p);
-#endif
-
 /* Mark and push (i.e. gray) a single object p onto the main    */
 /* mark stack.  Consider p to be valid if it is an interior     */
 /* pointer.                                                     */
@@ -1497,10 +1493,10 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
         GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
         return;
     }
-#   if defined(MANUAL_VDB) && defined(THREADS)
+#   ifdef THREADS
       /* Pointer is on the stack.  We may have dirtied the object       */
-      /* it points to, but not yet have called GC_dirty();              */
-      GC_dirty(p);      /* Implicitly affects entire object.            */
+      /* it points to, but have not called GC_dirty yet.                */
+      GC_dirty_async(p); /* entire object */
 #   endif
     PUSH_CONTENTS_HDR(r, GC_mark_stack_top, GC_mark_stack_limit,
                       source, hhdr, FALSE);
