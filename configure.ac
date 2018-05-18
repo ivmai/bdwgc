@@ -1018,13 +1018,12 @@ missing_libatomic_ops=false
 AS_IF([test x"$with_libatomic_ops" != xno -a x"$with_libatomic_ops" != xnone],
   [ missing_libatomic_ops=true ])
 
-dnl Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
-dnl means Autotools pkg.m4 file was not found during aclocal.m4 generation;
-dnl in this case, most probably, you should run pkg-config once before running
-dnl autogen.sh (autoreconf); alternatively, comment out the following 3 lines.
-AS_IF([test x$missing_libatomic_ops = xtrue],
-  [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops],
-    [ missing_libatomic_ops=false ], [ [] ]) ])
+dnl To avoid "syntax error near unexpected token ATOMIC_OPS" configure error
+dnl observed by some clients, the following 3 code lines are commented out:
+dnl
+dnl AS_IF([test x$missing_libatomic_ops = xtrue],
+dnl  [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops],
+dnl    [ missing_libatomic_ops=false ], [ [] ]) ])
 
 dnl Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
 AS_IF([test x$missing_libatomic_ops = xtrue],

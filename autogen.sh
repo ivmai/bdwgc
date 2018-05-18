@@ -5,8 +5,8 @@ set -e
 # config.h.in, Makefile.in, etc.) missing in the source repository.
 #
 # If you compile from a distribution tarball, you can skip this.  Otherwise,
-# make sure that you have Autoconf, Automake, Libtool, and pkg-config
-# installed on your system, and that the corresponding *.m4 files are visible
+# make sure that you have Autoconf, Automake and Libtool installed
+# on your system, and that the corresponding *.m4 files are visible
 # to the aclocal.  The latter can be achieved by using packages shipped by
 # your OS, or by installing custom versions of all four packages to the same
 # prefix.  Otherwise, you may need to invoke autoreconf with the appropriate
