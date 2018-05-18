@@ -193,6 +193,7 @@ static void maybe_finalize(void)
     }
     *(void **)op = ptr_to_struct_containing_descr;
     UNLOCK();
+    GC_dirty(op);
     return((void *) op);
 }
 
@@ -224,6 +225,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     ADD_CALL_CHAIN(result, ra);
     result = GC_store_debug_info_inner(result, (word)lb, s, i);
     UNLOCK();
+    GC_dirty(result);
     return result;
 }
 
@@ -265,6 +267,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
     }
     *(void **)op = ptr_to_struct_containing_descr;
     UNLOCK();
+    GC_dirty(op);
     return((void *) op);
 }
 

@@ -565,6 +565,8 @@ STATIC GC_thread GC_new_thread(pthread_t id)
       GC_nacl_initialize_gc_thread();
 #   endif
     GC_ASSERT(result -> flags == 0 && result -> thread_blocked == 0);
+    if (EXPECT(result != &first_thread, TRUE))
+      GC_dirty(result);
     return(result);
 }
 
@@ -597,6 +599,7 @@ STATIC void GC_delete_thread(pthread_t id)
     } else {
         GC_ASSERT(prev != &first_thread);
         prev -> next = p -> next;
+        GC_dirty(prev);
     }
     if (p != &first_thread) {
 #     ifdef GC_DARWIN_THREADS
@@ -627,6 +630,7 @@ STATIC void GC_delete_gc_thread(GC_thread t)
     } else {
         GC_ASSERT(prev != &first_thread);
         prev -> next = p -> next;
+        GC_dirty(prev);
     }
 #   ifdef GC_DARWIN_THREADS
         mach_port_deallocate(mach_task_self(), p->stop_info.mach_thread);

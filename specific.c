@@ -70,6 +70,8 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
     /* There can only be one writer at a time, but this needs to be     */
     /* atomic with respect to concurrent readers.                       */
     AO_store_release(&key->hash[hash_val].ao, (AO_t)entry);
+    GC_dirty((/* no volatile */ void *)entry);
+    GC_dirty(key->hash + hash_val);
     pthread_mutex_unlock(&(key -> lock));
     return 0;
 }
@@ -101,8 +103,10 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
       entry -> qtid = INVALID_QTID;
       if (NULL == prev) {
         key->hash[hash_val].p = entry->next;
+        GC_dirty(key->hash + hash_val);
       } else {
         prev->next = entry->next;
+        GC_dirty(prev);
       }
       /* Atomic! concurrent accesses still work.        */
       /* They must, since readers don't lock.           */

@@ -128,6 +128,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                 GC_FAST_M_AO_STORE(my_fl, next); \
                 init; \
                 GC_PREFETCH_FOR_WRITE(next); \
+                if ((kind) != GC_I_PTRFREE) GC_end_stubborn_change(my_fl); \
                 GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
                 GC_ASSERT((kind) == GC_I_PTRFREE \
                           || ((GC_word *)result)[1] == 0); \
@@ -140,6 +141,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                 /* Small counter value, not NULL */ \
                 GC_FAST_M_AO_STORE(my_fl, (char *)my_entry \
                                           + (granules) + 1); \
+                if ((kind) != GC_I_PTRFREE) GC_end_stubborn_change(my_fl); \
                 result = (default_expr); \
                 break; \
             } else { \
@@ -189,6 +191,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
       if ((result) != NULL) { \
         *(void **)(result) = (void *)(first); \
         ((void **)(result))[1] = (void *)(second); \
+        GC_end_stubborn_change(result); \
       } \
     } while (0)
 
