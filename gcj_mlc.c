@@ -192,7 +192,9 @@ static void maybe_finalize(void)
     }
     *(void **)op = ptr_to_struct_containing_descr;
     UNLOCK();
-    return((void *) op);
+    GC_dirty(op);
+    REACHABLE_AFTER_DIRTY(ptr_to_struct_containing_descr);
+    return (void *)op;
 }
 
 /* Similar to GC_gcj_malloc, but add debug info.  This is allocated     */
@@ -223,6 +225,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     ADD_CALL_CHAIN(result, ra);
     result = GC_store_debug_info_inner(result, (word)lb, s, i);
     UNLOCK();
+    GC_dirty(result);
+    REACHABLE_AFTER_DIRTY(ptr_to_struct_containing_descr);
     return result;
 }
 
@@ -263,7 +267,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
     }
     *(void **)op = ptr_to_struct_containing_descr;
     UNLOCK();
-    return((void *) op);
+    GC_dirty(op);
+    REACHABLE_AFTER_DIRTY(ptr_to_struct_containing_descr);
+    return (void *)op;
 }
 
 #endif  /* GC_GCJ_SUPPORT */

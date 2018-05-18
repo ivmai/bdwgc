@@ -2150,8 +2150,10 @@ GC_EXTERN GC_bool GC_print_back_height;
 #ifdef MANUAL_VDB
   GC_INNER void GC_dirty_inner(const void *p); /* does not require locking */
 # define GC_dirty(p) (GC_incremental ? GC_dirty_inner(p) : (void)0)
+# define REACHABLE_AFTER_DIRTY(p) GC_reachable_here(p)
 #else
 # define GC_dirty(p) (void)(p)
+# define REACHABLE_AFTER_DIRTY(p) (void)(p)
 #endif
 
 /* Same as GC_base but excepts and returns a pointer to const object.   */

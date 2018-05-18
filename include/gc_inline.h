@@ -106,6 +106,10 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                 *my_fl = next; \
                 init; \
                 GC_PREFETCH_FOR_WRITE(next); \
+                if ((kind) != GC_I_PTRFREE) { \
+                    GC_end_stubborn_change(my_fl); \
+                    GC_reachable_here(next); \
+                } \
                 GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
                 GC_ASSERT((kind) == GC_I_PTRFREE \
                           || ((GC_word *)result)[1] == 0); \
@@ -162,10 +166,15 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 /* And once more for two word initialized objects: */
 # define GC_CONS(result, first, second, tiny_fl) \
     do { \
+      void *l = (void *)(first); \
+      void *r = (void *)(second); \
       GC_MALLOC_WORDS_KIND(result, 2, tiny_fl, GC_I_NORMAL, (void)0); \
       if ((result) != NULL) { \
-        *(void **)(result) = (void *)(first); \
-        ((void **)(result))[1] = (void *)(second); \
+        *(void **)(result) = l; \
+        ((void **)(result))[1] = r; \
+        GC_end_stubborn_change(result); \
+        GC_reachable_here(l); \
+        GC_reachable_here(r); \
       } \
     } while (0)
 
