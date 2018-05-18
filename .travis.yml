@@ -135,6 +135,11 @@ matrix:
     - CFLAGS_EXTRA="-D PROC_VDB -D GC_NO_SYS_FAULT_H -D NO_INCREMENTAL -D DEBUG_DIRTY_BITS"
     - CONF_OPTIONS="--enable-cplusplus --disable-docs"
   - os: linux
+    compiler: clang
+    env:
+    - CFLAGS_EXTRA="-D MANUAL_VDB"
+    - CONF_OPTIONS="--enable-gc-assertions --disable-parallel-mark"
+  - os: linux
     compiler: gcc
     env:
     - CFLAGS_EXTRA="-D SMALL_CONFIG -D NO_GETENV"
