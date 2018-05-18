@@ -33,7 +33,6 @@ matrix:
     - AUTOMAKE_VER=1.15
     - M4_VER=1.4.18
     - LIBTOOL_VER=2.4.6
-    - PKG_CONFIG_VER=0.29.2
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     env:
@@ -522,7 +521,7 @@ before_install:
     make --directory ~/cppcheck -j CXXFLAGS="-O3 -march=native -D NDEBUG";
   fi
 - if [[ "$AUTOMAKE_VER" != "" || "$LIBTOOL_VER" != ""
-        || "$M4_VER" != "" || "$PKG_CONFIG_VER" != "" ]]; then
+        || "$M4_VER" != "" ]]; then
     GNUTOOLS_ROOT=`pwd`/../gnu-tools;
     export PATH=$GNUTOOLS_ROOT/bin:$PATH;
   fi
@@ -541,17 +540,11 @@ before_install:
     wget -O - $AUTOMAKE_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/automake-$AUTOMAKE_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
   fi
-- if [[ "$PKG_CONFIG_VER" != "" ]]; then
-    PKG_CONFIG_GZ_URL=https://pkgconfig.freedesktop.org/releases/pkg-config-$PKG_CONFIG_VER.tar.gz;
-    wget -O - $PKG_CONFIG_GZ_URL | tar xf - --gz --directory ~;
-    (cd ~/pkg-config-$PKG_CONFIG_VER && ./configure --with-internal-glib --prefix=$GNUTOOLS_ROOT && make -j check && make install);
-  fi
 - if [[ "$MAKEFILE_TARGETS" == *"dist"* ]]; then
     autoconf --version;
     automake --version;
     m4 --version;
     libtool --version || true;
-    pkg-config --version;
   fi
 - if [[ "$MAKEFILE_NAME" == "" ]]; then MAKEFILE_NAME=Makefile; fi
 - if [[ "$MAKEFILE_TARGETS" == "" ]]; then MAKEFILE_TARGETS="check"; fi
