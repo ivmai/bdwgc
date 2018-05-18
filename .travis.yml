@@ -141,6 +141,11 @@ matrix:
   - os: linux
     compiler: gcc
     env:
+    - CFLAGS_EXTRA="-D MANUAL_VDB"
+    - CONF_OPTIONS="--enable-gc-assertions --disable-munmap"
+  - os: linux
+    compiler: gcc
+    env:
     - CFLAGS_EXTRA="-D SMALL_CONFIG -D NO_GETENV"
     - CONF_OPTIONS="--enable-cplusplus"
   - os: linux
