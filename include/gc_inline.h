@@ -92,6 +92,10 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
                 *my_fl = next; \
                 init; \
                 GC_PREFETCH_FOR_WRITE(next); \
+                if ((kind) != GC_I_PTRFREE) { \
+                    GC_end_stubborn_change(my_fl); \
+                    GC_reachable_here(next); \
+                } \
                 GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
                 GC_ASSERT((kind) == GC_I_PTRFREE \
                           || ((GC_word *)result)[1] == 0); \
@@ -148,12 +152,17 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
 # define GC_CONS(result, first, second, tiny_fl) \
   do { \
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(2); \
+    void *l = (void *)(first); \
+    void *r = (void *)(second); \
     GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_NORMAL, \
                          GC_malloc(grans * GC_GRANULE_BYTES), \
                          (void)0); \
     if ((result) != NULL) { \
-      *(void **)(result) = (void *)(first); \
-      ((void **)(result))[1] = (void *)(second); \
+        *(void **)(result) = l; \
+        ((void **)(result))[1] = r; \
+        GC_end_stubborn_change(result); \
+        GC_reachable_here(l); \
+        GC_reachable_here(r); \
     } \
   } while (0)
 

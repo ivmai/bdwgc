@@ -126,12 +126,14 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
         size_t new_hash = HASH3(real_key, new_size, log_new_size);
 
         p -> next = new_table[new_hash];
+        GC_dirty(p);
         new_table[new_hash] = p;
         p = next;
       }
     }
     *log_size_ptr = log_new_size;
     *table = new_table;
+    GC_dirty(new_table); /* entire object */
 }
 
 GC_API int GC_CALL GC_register_disappearing_link(void * * link)
@@ -203,8 +205,10 @@ STATIC int GC_register_disappearing_link_inner(
     new_dl -> dl_hidden_obj = GC_HIDE_POINTER(obj);
     new_dl -> dl_hidden_link = GC_HIDE_POINTER(link);
     dl_set_next(new_dl, dl_hashtbl -> head[index]);
+    GC_dirty(new_dl);
     dl_hashtbl -> head[index] = new_dl;
     dl_hashtbl -> entries++;
+    GC_dirty(dl_hashtbl->head + index);
     UNLOCK();
     return GC_SUCCESS;
 }
@@ -238,8 +242,10 @@ GC_INLINE struct disappearing_link *GC_unregister_disappearing_link_inner(
             /* Remove found entry from the table. */
             if (NULL == prev_dl) {
                 dl_hashtbl -> head[index] = dl_next(curr_dl);
+                GC_dirty(dl_hashtbl->head + index);
             } else {
                 dl_set_next(prev_dl, dl_next(curr_dl));
+                GC_dirty(prev_dl);
             }
             dl_hashtbl -> entries--;
             break;
@@ -334,10 +340,13 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
       dl_hashtbl -> head[curr_index] = dl_next(curr_dl);
     } else {
       dl_set_next(prev_dl, dl_next(curr_dl));
+      GC_dirty(prev_dl);
     }
     curr_dl -> dl_hidden_link = new_hidden_link;
     dl_set_next(curr_dl, dl_hashtbl -> head[new_index]);
     dl_hashtbl -> head[new_index] = curr_dl;
+    GC_dirty(curr_dl);
+    GC_dirty(dl_hashtbl->head); /* entire object */
     return GC_SUCCESS;
   }
 
@@ -474,6 +483,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
             GC_fo_head[index] = fo_next(curr_fo);
           } else {
             fo_set_next(prev_fo, fo_next(curr_fo));
+            GC_dirty(prev_fo);
           }
           if (fn == 0) {
             GC_fo_entries--;
@@ -487,14 +497,18 @@ STATIC void GC_register_finalizer_inner(void * obj,
             curr_fo -> fo_fn = fn;
             curr_fo -> fo_client_data = (ptr_t)cd;
             curr_fo -> fo_mark_proc = mp;
+            GC_dirty(curr_fo);
             /* Reinsert it.  We deleted it first to maintain    */
             /* consistency in the event of a signal.            */
             if (prev_fo == 0) {
               GC_fo_head[index] = curr_fo;
             } else {
               fo_set_next(prev_fo, curr_fo);
+              GC_dirty(prev_fo);
             }
           }
+          if (NULL == prev_fo)
+            GC_dirty(GC_fo_head + index);
           UNLOCK();
 #         ifndef DBG_HDRS_ALL
             if (EXPECT(new_fo != 0, FALSE)) {
@@ -555,8 +569,10 @@ STATIC void GC_register_finalizer_inner(void * obj,
     new_fo -> fo_object_size = hhdr -> hb_sz;
     new_fo -> fo_mark_proc = mp;
     fo_set_next(new_fo, GC_fo_head[index]);
+    GC_dirty(new_fo);
     GC_fo_entries++;
     GC_fo_head[index] = new_fo;
+    GC_dirty(GC_fo_head + index);
     UNLOCK();
 }
 
@@ -682,6 +698,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     size_t i; \
     size_t dl_size = dl_hashtbl->log_size == -1 ? 0 : \
                                 (size_t)1 << dl_hashtbl->log_size; \
+    GC_bool needs_barrier = FALSE; \
     for (i = 0; i < dl_size; i++) { \
       curr_dl = dl_hashtbl -> head[i]; \
       prev_dl = NULL; \
@@ -692,6 +709,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
         curr_dl = dl_next(curr_dl); \
       } \
     } \
+    if (needs_barrier) \
+      GC_dirty(dl_hashtbl -> head); /* entire object */ \
   }
 
 #define DELETE_DL_HASHTBL_ENTRY(dl_hashtbl, curr_dl, prev_dl, next_dl) \
@@ -699,8 +718,10 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     next_dl = dl_next(curr_dl); \
     if (NULL == prev_dl) { \
         dl_hashtbl -> head[i] = next_dl; \
+        needs_barrier = TRUE; \
     } else { \
         dl_set_next(prev_dl, next_dl); \
+        GC_dirty(prev_dl); \
     } \
     GC_clear_mark_bit(curr_dl); \
     dl_hashtbl -> entries--; \
@@ -748,6 +769,7 @@ GC_INNER void GC_finalize(void)
     size_t i;
     size_t fo_size = log_fo_table_size == -1 ? 0 :
                                 (size_t)1 << log_fo_table_size;
+    GC_bool needs_barrier = FALSE;
 
 #   ifndef SMALL_CONFIG
       /* Save current GC_[dl/ll]_entries value for stats printing */
@@ -792,12 +814,15 @@ GC_INNER void GC_finalize(void)
               next_fo = fo_next(curr_fo);
               if (prev_fo == 0) {
                 GC_fo_head[i] = next_fo;
+                needs_barrier = TRUE;
               } else {
                 fo_set_next(prev_fo, next_fo);
+                GC_dirty(prev_fo);
               }
               GC_fo_entries--;
             /* Add to list of objects awaiting finalization.    */
               fo_set_next(curr_fo, GC_finalize_now);
+              GC_dirty(curr_fo);
               GC_finalize_now = curr_fo;
               /* unhide object pointer so any future collections will   */
               /* see it.                                                */
@@ -843,21 +868,24 @@ GC_INNER void GC_finalize(void)
             if (!GC_is_marked(real_ptr)) {
               GC_set_mark_bit(real_ptr);
             } else {
-              if (prev_fo == 0)
+              if (prev_fo == 0) {
                 GC_finalize_now = next_fo;
-              else
+              } else {
                 fo_set_next(prev_fo, next_fo);
-
+                GC_dirty(prev_fo);
+              }
               curr_fo -> fo_hidden_base =
                                 GC_HIDE_POINTER(curr_fo -> fo_hidden_base);
               GC_bytes_finalized -=
                   curr_fo->fo_object_size + sizeof(struct finalizable_object);
 
               i = HASH2(real_ptr, log_fo_table_size);
-              fo_set_next (curr_fo, GC_fo_head[i]);
+              fo_set_next(curr_fo, GC_fo_head[i]);
+              GC_dirty(curr_fo);
               GC_fo_entries++;
               GC_fo_head[i] = curr_fo;
               curr_fo = prev_fo;
+              needs_barrier = TRUE;
             }
           }
           prev_fo = curr_fo;
@@ -865,6 +893,8 @@ GC_INNER void GC_finalize(void)
         }
       }
   }
+  if (needs_barrier)
+    GC_dirty(GC_fo_head); /* entire object */
 
   GC_remove_dangling_disappearing_links(&GC_dl_hashtbl);
 # ifndef GC_LONG_REFS_NOT_NEEDED
@@ -914,6 +944,7 @@ GC_INNER void GC_finalize(void)
 
           /* Add to list of objects awaiting finalization.      */
           fo_set_next(curr_fo, GC_finalize_now);
+          GC_dirty(curr_fo);
           GC_finalize_now = curr_fo;
 
           /* unhide object pointer so any future collections will       */

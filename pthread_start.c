@@ -59,6 +59,7 @@ GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
     GC_log_printf("Finishing thread %p\n", (void *)pthread_self());
 # endif
   me -> status = result;
+  GC_dirty(me);
 # ifndef NACL
     pthread_cleanup_pop(1);
     /* Cleanup acquires lock, ensuring that we can't exit while         */
