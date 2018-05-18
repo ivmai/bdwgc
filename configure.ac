@@ -1,4 +1,6 @@
 # Copyright (c) 1999-2001 by Red Hat, Inc. All rights reserved.
+# Copyright (c) 2005-2009 Hewlett-Packard Development Company, L.P.
+# Copyright (c) 2009-2018 Ivan Maidanski
 #
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -14,11 +16,10 @@
 
 dnl Process this file with autoconf to produce configure.
 
-# Initialization
-# ==============
-
+dnl Initialization.
 AC_INIT(gc,7.2,https://github.com/ivmai/bdwgc/issues)
-    ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
+dnl version must conform to: [0-9]+[.][0-9]+(alpha[0-9]+)?
+
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
@@ -113,7 +114,7 @@ AC_C_INLINE
 
 THREADDLLIBS=
 need_atomic_ops_asm=false
-## Libraries needed to support dynamic loading and/or threads.
+# Libraries needed to support dynamic loading and/or threads.
 case "$THREADS" in
  no | none | single)
     THREADS=none
@@ -542,13 +543,13 @@ AC_ARG_WITH(target-subdir,
 AC_ARG_WITH(cross-host,
 [  --with-cross-host=HOST  configuring with a cross compiler])
 
-# automake wants to see AC_EXEEXT.  But we don't need it.  And having
-# it is actually a problem, because the compiler we're passed can't
-# necessarily do a full link.  So we fool automake here.
+dnl automake wants to see AC_EXEEXT.  But we don't need it.  And having
+dnl it is actually a problem, because the compiler we're passed can't
+dnl necessarily do a full link.  So we fool automake here.
 if false; then
-  # autoconf 2.50 runs AC_EXEEXT by default, and the macro expands
-  # to nothing, so nothing would remain between `then' and `fi' if it
-  # were not for the `:' below.
+  dnl autoconf 2.50 runs AC_EXEEXT by default, and the macro expands
+  dnl to nothing, so nothing would remain between `then' and `fi' if it
+  dnl were not for the `:' below.
   :
   AC_EXEEXT
 fi
@@ -648,7 +649,7 @@ ac_is_dgux=no
 AC_CHECK_HEADER(sys/dg_sys_info.h,
 [ac_is_dgux=yes;])
 
-    ## :GOTCHA: we do not check anything but sys/dg_sys_info.h
+dnl :GOTCHA: we do not check anything but sys/dg_sys_info.h
 if test $ac_is_dgux = yes; then
     dgux_spec_opts="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
     CFLAGS="$dgux_spec_opts $CFLAGS"
@@ -776,13 +777,13 @@ AC_ARG_WITH([libatomic-ops],
 
 # Check for an external libatomic_ops if the answer was yes or check.  If not
 # found, fail on yes, and convert check to no.
-# Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
-# means Autotools pkg.m4 file was not found during aclocal.m4 generation.
+dnl Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
+dnl means Autotools pkg.m4 file was not found during aclocal.m4 generation.
 missing_libatomic_ops=false
 AS_IF([test x"$with_libatomic_ops" != xno],
   [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops], [],
                       [ missing_libatomic_ops=true ]) ])
-# Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
+dnl Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
 AS_IF([test x$missing_libatomic_ops = xtrue],
       [ AC_CHECK_HEADER([atomic_ops.h], [missing_libatomic_ops=false]) ])
 AS_IF([test x$missing_libatomic_ops = xtrue],
