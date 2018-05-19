@@ -311,7 +311,14 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     DCL_LOCK_STATE;
 
     GC_ASSERT(lb != 0 && (lb & (GRANULE_BYTES-1)) == 0);
-    if (!SMALL_OBJ(lb)) {
+    if (!SMALL_OBJ(lb)
+#     ifdef MANUAL_VDB
+        /* Currently a single object is allocated.                      */
+        /* TODO: GC_dirty should be called for each linked object (but  */
+        /* the last one) to support multiple objects allocation.        */
+        || GC_incremental
+#     endif
+       ) {
         op = GC_generic_malloc(lb, k);
         if (EXPECT(0 != op, TRUE))
             obj_link(op) = 0;

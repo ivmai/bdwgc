@@ -149,6 +149,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                 GC_generic_malloc_many(((granules) == 0? GC_GRANULE_BYTES : \
                                         GC_RAW_BYTES_FROM_INDEX(granules)), \
                                        kind, my_fl); \
+                GC_end_stubborn_change(my_fl); \
                 my_entry = *my_fl; \
                 if (my_entry == 0) { \
                     result = (*GC_get_oom_fn())((granules)*GC_GRANULE_BYTES); \
