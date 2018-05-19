@@ -2405,7 +2405,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #ifdef GC_WIN32_THREADS
   GC_INNER void GC_get_next_stack(char *start, char * limit, char **lo,
                                   char **hi);
-# ifdef MPROTECT_VDB
+# if defined(MPROTECT_VDB) && !defined(CYGWIN32)
     GC_INNER void GC_set_write_fault_handler(void);
 # endif
 # if defined(WRAP_MARK_SOME) && !defined(GC_PTHREADS)

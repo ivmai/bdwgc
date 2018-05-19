@@ -3094,7 +3094,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # elif !defined(USE_WINALLOC)
 #   include <sys/mman.h>
 #   include <signal.h>
-#   if !defined(HAIKU)
+#   if !defined(CYGWIN32) && !defined(HAIKU)
 #     include <sys/syscall.h>
 #   endif
 
@@ -3272,7 +3272,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     define CODE_OK (si -> si_code == 2 /* experimentally determined */)
 #   elif defined(IRIX5)
 #     define CODE_OK (si -> si_code == EACCES)
-#   elif defined(HAIKU) || defined(HURD)
+#   elif defined(CYGWIN32) || defined(HAIKU) || defined(HURD)
 #     define CODE_OK TRUE
 #   elif defined(LINUX)
 #     define CODE_OK TRUE
@@ -3411,7 +3411,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   endif
   }
 
-# ifdef GC_WIN32_THREADS
+# if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)
     GC_INNER void GC_set_write_fault_handler(void)
     {
       SetUnhandledExceptionFilter(GC_write_fault_handler);

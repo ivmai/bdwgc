@@ -392,7 +392,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
   /* The following should be a no-op according to the win32     */
   /* documentation.  There is empirical evidence that it        */
   /* isn't.             - HB                                    */
-# if defined(MPROTECT_VDB)
+# if defined(MPROTECT_VDB) && !defined(CYGWIN32)
     if (GC_incremental
 #       ifdef GWW_VDB
           && !GC_gww_dirty_init()
