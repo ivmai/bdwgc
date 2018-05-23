@@ -134,6 +134,7 @@ void prune_map(void)
         current_map_size++;
         if (map -> line < start_line - LINES && map -> previous != 0) {
             map -> previous = map -> previous -> previous;
+            GC_end_stubborn_change(map);
         }
         map = map -> previous;
     } while (map != 0);
@@ -149,6 +150,7 @@ void add_map(int line, size_t pos)
     new_map -> line = line;
     new_map -> pos = pos;
     new_map -> previous = current_map;
+    GC_end_stubborn_change(new_map);
     current_map = new_map;
     current_map_size++;
 }
@@ -194,7 +196,11 @@ void add_hist(CORD s)
     new_file -> file_contents = current = s;
     current_len = CORD_len(s);
     new_file -> previous = now;
-    if (now != 0) now -> map = current_map;
+    GC_end_stubborn_change(new_file);
+    if (now != NULL) {
+        now -> map = current_map;
+        GC_end_stubborn_change(now);
+    }
     now = new_file;
 }
 
@@ -245,6 +251,7 @@ void replace_line(int i, CORD s)
             }
         }
         screen[i] = s;
+        GC_end_stubborn_change(screen + i);
     }
 }
 #else
@@ -566,6 +573,7 @@ void generic_init(void)
     add_hist(initial);
     now -> map = current_map;
     now -> previous = now;  /* Can't back up further: beginning of the world */
+    GC_end_stubborn_change(now);
     need_redisplay = ALL;
     fix_cursor();
 }

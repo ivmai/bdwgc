@@ -547,6 +547,8 @@ static char refill_cache(refill_data * client_data)
     new_cache -> tag = DIV_LINE_SZ(file_pos);
     /* Store barrier goes here. */
     ATOMIC_WRITE(state -> lf_cache[line_no], new_cache);
+    GC_end_stubborn_change((/* no volatile */ void *)(state -> lf_cache
+                                                      + line_no));
     state -> lf_current = line_start + LINE_SZ;
     return(new_cache->data[MOD_LINE_SZ(file_pos)]);
 }
