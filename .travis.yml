@@ -491,7 +491,7 @@ matrix:
     compiler: gcc
     env:
     - CC_FOR_CHECK=g++
-    - CFLAGS_EXTRA="-O3 -Wall -Wextra -Werror"
+    - CFLAGS_EXTRA="-O3 -Wall -Wextra -Werror -D MANUAL_VDB"
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="cords"
     - MAKEFILE_TARGETS_CHECK="cord/de check"
