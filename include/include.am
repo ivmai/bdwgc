@@ -26,8 +26,7 @@ pkginclude_HEADERS += \
         include/gc_typed.h \
         include/gc_version.h \
         include/javaxfc.h \
-        include/leak_detector.h \
-        include/weakpointer.h
+        include/leak_detector.h
 
 # headers which are not installed
 #
