@@ -308,6 +308,9 @@ int main(void)
         printf("cordtest:\n");
 #   endif
     GC_INIT();
+#   ifndef NO_INCREMENTAL
+      GC_enable_incremental();
+#   endif
     test_basics();
     test_extras();
     test_printf();

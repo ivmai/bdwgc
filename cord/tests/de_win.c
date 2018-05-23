@@ -47,6 +47,9 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
    HACCEL      hAccel;
 
    GC_INIT();
+#  ifndef NO_INCREMENTAL
+     GC_enable_incremental();
+#  endif
 #  if defined(CPPCHECK)
      GC_noop1((GC_word)&WinMain);
 #  endif

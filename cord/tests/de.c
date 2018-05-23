@@ -583,6 +583,9 @@ int main(int argc, char **argv)
         argc = ccommand(&argv);
 #   endif
     GC_INIT();
+#   ifndef NO_INCREMENTAL
+      GC_enable_incremental();
+#   endif
 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s file\n", argv[0]);

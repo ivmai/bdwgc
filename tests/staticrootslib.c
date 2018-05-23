@@ -48,6 +48,9 @@ static struct treenode *root_nz[10] = { (struct treenode *)(GC_word)2 };
 #   ifndef STATICROOTSLIB_INIT_IN_MAIN
       GC_INIT();
 #   endif
+#   ifndef NO_INCREMENTAL
+      GC_enable_incremental();
+#   endif
     return GC_MALLOC(sizeof(struct treenode));
   }
 
