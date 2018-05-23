@@ -25,6 +25,8 @@ struct treenode * mktree(int i) {
   }
   r -> x = mktree(i-1);
   r -> y = mktree(i-1);
+  if (i != 1)
+    GC_end_stubborn_change(r);
   return r;
 }
 

@@ -39,6 +39,8 @@ static struct treenode *root_nz[10] = { (struct treenode *)(GC_word)2 };
     if (r) {
       r -> x = libsrl_mktree(i-1);
       r -> y = libsrl_mktree(i-1);
+      if (i != 1)
+        GC_end_stubborn_change(r);
     }
     return r;
   }
