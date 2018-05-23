@@ -226,6 +226,9 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
         result->len = (word)result_len;
         result->left = x;
         result->right = y;
+        GC_END_STUBBORN_CHANGE(result);
+        GC_reachable_here(x);
+        GC_reachable_here(y);
         if (depth >= MAX_DEPTH) {
             return(CORD_balance((CORD)result));
         } else {
@@ -268,6 +271,9 @@ CORD CORD_cat(CORD x, CORD y)
         result->len = (word)result_len;
         result->left = x;
         result->right = y;
+        GC_END_STUBBORN_CHANGE(result);
+        GC_reachable_here(x);
+        GC_reachable_here(y);
         if (depth >= MAX_DEPTH) {
             return(CORD_balance((CORD)result));
         } else {
@@ -310,6 +316,8 @@ CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len)
         result->len = (word)len;
         result->fn = fn;
         result->client_data = client_data;
+        GC_END_STUBBORN_CHANGE(result);
+        GC_reachable_here(client_data);
         return((CORD) result);
     }
 }
@@ -355,6 +363,8 @@ CORD CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
     if (sa == 0) OUT_OF_MEMORY;
     sa->sa_cord = (CordRep *)x;
     sa->sa_index = i;
+    GC_END_STUBBORN_CHANGE(sa);
+    GC_reachable_here(x);
     result = (CordRep *)CORD_from_fn(f, (void *)sa, n);
     if ((CORD)result != CORD_EMPTY && 0 == result -> function.null)
         result -> function.header = SUBSTR_HDR;
