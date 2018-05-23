@@ -303,10 +303,6 @@ SOURCE=..\stdafx.h
 
 SOURCE=..\..\include\gc_version.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\include\weakpointer.h
-# End Source File
 # End Group
 # Begin Group "Resource Files"
 

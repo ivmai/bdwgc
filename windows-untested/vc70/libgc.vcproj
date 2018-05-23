@@ -245,9 +245,6 @@
             <File
                 RelativePath="..\..\include\gc_version.h">
             </File>
-            <File
-                RelativePath="..\..\include\weakpointer.h">
-            </File>
         </Filter>
     </Files>
     <Globals>

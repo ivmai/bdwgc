@@ -256,10 +256,6 @@ SOURCE=..\stdafx.h
 
 SOURCE=..\..\include\gc_version.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\include\weakpointer.h
-# End Source File
 # End Group
 # End Target
 # End Project
