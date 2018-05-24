@@ -281,6 +281,9 @@ void* Undisguise( GC_word i ) {
                         /* needed due to C++ multiple inheritance used  */
 
     GC_INIT();
+#   ifndef NO_INCREMENTAL
+      GC_enable_incremental();
+#   endif
 
     int i, iters, n;
 #   ifndef DONT_USE_STD_ALLOCATOR
