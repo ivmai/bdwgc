@@ -106,9 +106,13 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
     // The class uses dynamic memory/resource allocation, so provide both
     // a copy constructor and an assignment operator to workaround a cppcheck
     // warning.
-    C(const C& c) : A(c.i), level(c.level) {
-        left = c.left ? new C(*c.left) : 0;
-        right = c.right ? new C(*c.right) : 0;
+    C(const C& c) : A(c.i), level(c.level), left(0), right(0) {
+        if (level > 0) {
+            left = new C(*c.left);
+            right = new C(*c.right);
+            GC_end_stubborn_change(left);
+            GC_end_stubborn_change(right);
+        }
     }
 
     C& operator=(const C& c) {
@@ -117,8 +121,14 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
             delete right;
             i = c.i;
             level = c.level;
-            left = c.left ? new C(*c.left) : 0;
-            right = c.right ? new C(*c.right) : 0;
+            left = 0;
+            right = 0;
+            if (level > 0) {
+                left = new C(*c.left);
+                right = new C(*c.right);
+                GC_end_stubborn_change(left);
+                GC_end_stubborn_change(right);
+            }
         }
         return *this;
     }
@@ -127,8 +137,10 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
         nAllocated++;
         if (level > 0) {
             left = new C( level - 1 );
-            right = new C( level - 1 );}
-        else {
+            right = new C( level - 1 );
+            GC_end_stubborn_change(left);
+            GC_end_stubborn_change(right);
+        } else {
             left = right = 0;}}
     ~C() {
         this->A::Test( level );
@@ -302,6 +314,7 @@ void* Undisguise( GC_word i ) {
         exit(3);
       }
       *xptr = x;
+      GC_end_stubborn_change(xptr);
       x = 0;
 #   endif
     if (argc != 2
@@ -327,6 +340,7 @@ void* Undisguise( GC_word i ) {
             Later we'll check to make sure they've gone away. */
         for (i = 0; i < 1000; i++) {
             C* c = new C( 2 );
+            GC_end_stubborn_change(c);
             C c1( 2 );           /* stack allocation should work too */
             D* d;
             F* f;
