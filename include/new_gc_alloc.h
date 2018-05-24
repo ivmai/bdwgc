@@ -90,6 +90,8 @@ extern "C" {
 #define GC_generic_malloc_words_small(lw, k) \
                         GC_generic_malloc((lw) * sizeof(GC_word), k)
 
+#define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()
+
 // Object kinds; must match PTRFREE, NORMAL, UNCOLLECTABLE, and
 // AUNCOLLECTABLE in gc_priv.h.
 
@@ -160,6 +162,10 @@ size_t GC_aux_template<dummy>::GC_uncollectable_bytes_recently_freed = 0;
 template <int dummy>
 void * GC_aux_template<dummy>::GC_out_of_line_malloc(size_t nwords, int kind)
 {
+    void * op = GC_generic_malloc_words_small(nwords, kind);
+    if (0 == op)
+        GC_ALLOCATOR_THROW_OR_ABORT();
+
     GC_bytes_recently_allocd += GC_uncollectable_bytes_recently_allocd;
     GC_non_gc_bytes +=
                 GC_uncollectable_bytes_recently_allocd;
@@ -174,8 +180,7 @@ void * GC_aux_template<dummy>::GC_out_of_line_malloc(size_t nwords, int kind)
 
     GC_incr_bytes_freed(GC_bytes_recently_freed);
     GC_bytes_recently_freed = 0;
-
-    return GC_generic_malloc_words_small(nwords, kind);
+    return op;
 }
 
 typedef GC_aux_template<0> GC_aux;
@@ -193,7 +198,12 @@ class single_client_gc_alloc_template {
             void ** flh;
             void * op;
 
-            if (n > GC_max_fast_bytes) return GC_malloc(n);
+            if (n > GC_max_fast_bytes) {
+                op = GC_malloc(n);
+                if (0 == op)
+                    GC_ALLOCATOR_THROW_OR_ABORT();
+                return op;
+            }
             flh = &GC_objfreelist_ptr[nwords];
             op = *flh;
             if (0 == op) {
@@ -209,7 +219,12 @@ class single_client_gc_alloc_template {
             void ** flh;
             void * op;
 
-            if (n > GC_max_fast_bytes) return GC_malloc_atomic(n);
+            if (n > GC_max_fast_bytes) {
+                op = GC_malloc_atomic(n);
+                if (0 == op)
+                    GC_ALLOCATOR_THROW_OR_ABORT();
+                return op;
+            }
             flh = &GC_aobjfreelist_ptr[nwords];
             op = *flh;
             if (0 == op) {
@@ -261,7 +276,12 @@ class single_client_traceable_alloc_template {
             void ** flh;
             void * op;
 
-            if (n > GC_max_fast_bytes) return GC_malloc_uncollectable(n);
+            if (n > GC_max_fast_bytes) {
+                op = GC_malloc_uncollectable(n);
+                if (0 == op)
+                    GC_ALLOCATOR_THROW_OR_ABORT();
+                return op;
+            }
             flh = &GC_uobjfreelist_ptr[nwords];
             op = *flh;
             if (0 == op) {
@@ -278,7 +298,12 @@ class single_client_traceable_alloc_template {
             void ** flh;
             void * op;
 
-            if (n > GC_max_fast_bytes) return GC_malloc_atomic_uncollectable(n);
+            if (n > GC_max_fast_bytes) {
+                op = GC_malloc_atomic_uncollectable(n);
+                if (0 == op)
+                    GC_ALLOCATOR_THROW_OR_ABORT();
+                return op;
+            }
             flh = &GC_auobjfreelist_ptr[nwords];
             op = *flh;
             if (0 == op) {
@@ -324,9 +349,18 @@ typedef single_client_traceable_alloc_template<0> single_client_traceable_alloc;
 template < int dummy >
 class gc_alloc_template {
     public:
-        static void * allocate(size_t n) { return GC_malloc(n); }
-        static void * ptr_free_allocate(size_t n)
-                { return GC_malloc_atomic(n); }
+        static void * allocate(size_t n) {
+            void * op = GC_malloc(n);
+            if (0 == op)
+                GC_ALLOCATOR_THROW_OR_ABORT();
+            return op;
+        }
+        static void * ptr_free_allocate(size_t n) {
+            void * op = GC_malloc_atomic(n);
+            if (0 == op)
+                GC_ALLOCATOR_THROW_OR_ABORT();
+            return op;
+        }
         static void deallocate(void *, size_t) { }
         static void ptr_free_deallocate(void *, size_t) { }
 };
@@ -336,9 +370,18 @@ typedef gc_alloc_template < 0 > gc_alloc;
 template < int dummy >
 class traceable_alloc_template {
     public:
-        static void * allocate(size_t n) { return GC_malloc_uncollectable(n); }
-        static void * ptr_free_allocate(size_t n)
-                { return GC_malloc_atomic_uncollectable(n); }
+        static void * allocate(size_t n) {
+            void * op = GC_malloc_uncollectable(n);
+            if (0 == op)
+                GC_ALLOCATOR_THROW_OR_ABORT();
+            return op;
+        }
+        static void * ptr_free_allocate(size_t n) {
+            void * op = GC_malloc_atomic_uncollectable(n);
+            if (0 == op)
+                GC_ALLOCATOR_THROW_OR_ABORT();
+            return op;
+        }
         static void deallocate(void *p, size_t) { GC_free(p); }
         static void ptr_free_deallocate(void *p, size_t) { GC_free(p); }
 };
@@ -355,12 +398,12 @@ typedef traceable_alloc_template < 0 > traceable_alloc;
   class simple_alloc<T, alloc> { \
   public: \
     static T *allocate(size_t n) \
-        { return 0 == n? 0 : \
-            reinterpret_cast<T*>(alloc::ptr_free_allocate(n * sizeof(T))); } \
+        { reinterpret_cast<T*>(alloc::ptr_free_allocate(0 == n ? 1 \
+                                                    : n * sizeof(T))); } \
     static T *allocate(void) \
         { return reinterpret_cast<T*>(alloc::ptr_free_allocate(sizeof(T))); } \
     static void deallocate(T *p, size_t n) \
-        { if (0 != n) alloc::ptr_free_deallocate(p, n * sizeof(T)); } \
+        { alloc::ptr_free_deallocate(p, 0 == n ? 1 : n * sizeof(T)); } \
     static void deallocate(T *p) \
         { alloc::ptr_free_deallocate(p, sizeof(T)); } \
   };

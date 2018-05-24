@@ -38,11 +38,10 @@
  */
 
 #ifndef GC_ALLOCATOR_H
-
 #define GC_ALLOCATOR_H
 
 #include "gc.h"
-#include <new> // for placement new
+#include <new> // for placement new and bad_alloc
 
 #ifndef GC_ATTR_EXPLICIT
 # if (__cplusplus >= 201103L) || defined(CPPCHECK)
@@ -50,6 +49,12 @@
 # else
 #   define GC_ATTR_EXPLICIT /* empty */
 # endif
+#endif
+
+#if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
+# define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()
+#else
+# define GC_ALLOCATOR_THROW_OR_ABORT() throw std::bad_alloc()
 #endif
 
 /* First some helpers to allow us to dispatch on whether or not a type
@@ -87,7 +92,10 @@ GC_DECLARE_PTRFREE(long double);
 // pointer-free object.
 template <class GC_Tp>
 inline void * GC_selective_alloc(size_t n, GC_Tp, bool ignore_off_page) {
-    return ignore_off_page?GC_MALLOC_IGNORE_OFF_PAGE(n):GC_MALLOC(n);
+    void *obj = ignore_off_page ? GC_MALLOC_IGNORE_OFF_PAGE(n) : GC_MALLOC(n);
+    if (0 == obj)
+      GC_ALLOCATOR_THROW_OR_ABORT();
+    return obj;
 }
 
 #if !defined(__WATCOMC__)
@@ -95,8 +103,11 @@ inline void * GC_selective_alloc(size_t n, GC_Tp, bool ignore_off_page) {
   template <>
   inline void * GC_selective_alloc<GC_true_type>(size_t n, GC_true_type,
                                                  bool ignore_off_page) {
-    return ignore_off_page? GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(n)
-                          : GC_MALLOC_ATOMIC(n);
+    void * obj = ignore_off_page ? GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(n)
+                                 : GC_MALLOC_ATOMIC(n);
+    if (0 == obj)
+      GC_ALLOCATOR_THROW_OR_ABORT();
+    return obj;
   }
 #endif
 
@@ -288,7 +299,10 @@ public:
   // GC_n is permitted to be 0.  The C++ standard says nothing about what
   // the return value is when GC_n == 0.
   GC_Tp* allocate(size_type GC_n, const void* = 0) {
-    return static_cast<GC_Tp*>(GC_MALLOC_UNCOLLECTABLE(GC_n * sizeof(GC_Tp)));
+    void * obj = GC_MALLOC_UNCOLLECTABLE(GC_n * sizeof(GC_Tp));
+    if (0 == obj)
+      GC_ALLOCATOR_THROW_OR_ABORT();
+    return static_cast<GC_Tp*>(obj);
   }
 
   // __p is not permitted to be a null pointer.
