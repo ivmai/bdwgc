@@ -105,6 +105,7 @@ endif
 
 if ENABLE_DISCLAIM
 libgc_la_SOURCES += fnlz_mlc.c
+pkginclude_HEADERS += include/gc_disclaim.h
 endif
 
 ## End of !SINGLE_GC_OBJ
@@ -132,7 +133,7 @@ if CPLUSPLUS
 # C++ Interface
 # -------------
 lib_LTLIBRARIES += libgccpp.la
-pkginclude_HEADERS += include/gc_cpp.h
+pkginclude_HEADERS += include/gc_allocator.h include/gc_cpp.h
 include_HEADERS += include/extra/gc_cpp.h
 libgccpp_la_SOURCES = gc_cpp.cc
 libgccpp_la_LIBADD = ./libgc.la

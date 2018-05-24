@@ -14,10 +14,8 @@
 #
 pkginclude_HEADERS += \
         include/gc.h \
-        include/gc_allocator.h \
         include/gc_backptr.h \
         include/gc_config_macros.h \
-        include/gc_disclaim.h \
         include/gc_gcj.h \
         include/gc_inline.h \
         include/gc_mark.h \
