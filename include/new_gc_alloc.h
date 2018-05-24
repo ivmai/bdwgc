@@ -148,6 +148,9 @@ size_t GC_aux_template<dummy>::GC_uncollectable_bytes_recently_freed = 0;
 template <int dummy>
 void * GC_aux_template<dummy>::GC_out_of_line_malloc(size_t nwords, int kind)
 {
+    void * op = GC_generic_malloc_words_small(nwords, kind);
+    if (!op) return 0;
+
     GC_bytes_recently_allocd += GC_uncollectable_bytes_recently_allocd;
     GC_non_gc_bytes +=
                 GC_uncollectable_bytes_recently_allocd;
@@ -162,8 +165,7 @@ void * GC_aux_template<dummy>::GC_out_of_line_malloc(size_t nwords, int kind)
 
     GC_incr_bytes_freed(GC_bytes_recently_freed);
     GC_bytes_recently_freed = 0;
-
-    return GC_generic_malloc_words_small(nwords, kind);
+    return op;
 }
 
 typedef GC_aux_template<0> GC_aux;
