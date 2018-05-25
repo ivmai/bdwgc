@@ -65,7 +65,7 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
     /* Could easily check for an existing entry here.   */
     entry -> next = key->hash[hash_val].p;
     entry -> thread = self;
-    entry -> value = value;
+    entry -> value = TS_HIDE_VALUE(value);
     GC_ASSERT(entry -> qtid == INVALID_QTID);
     /* There can only be one writer at a time, but this needs to be     */
     /* atomic with respect to concurrent readers.                       */
@@ -153,7 +153,7 @@ GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
     *cache_ptr = entry;
         /* Again this is safe since pointer assignments are     */
         /* presumed atomic, and either pointer is valid.        */
-    return entry -> value;
+    return TS_REVEAL_PTR(entry -> value);
 }
 
 #ifdef GC_ASSERTIONS

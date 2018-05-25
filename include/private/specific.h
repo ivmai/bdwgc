@@ -30,6 +30,18 @@ EXTERN_C_BEGIN
 #define HASH(p) \
           ((unsigned)((((word)(p)) >> 8) ^ (word)(p)) & (TS_HASH_SIZE - 1))
 
+#ifdef GC_ASSERTIONS
+  /* Thread-local storage is not guaranteed to be scanned by GC.        */
+  /* We hide values stored in "specific" entries for a test purpose.    */
+  typedef GC_hidden_pointer ts_entry_value_t;
+# define TS_HIDE_VALUE(p) GC_HIDE_POINTER(p)
+# define TS_REVEAL_PTR(p) GC_REVEAL_POINTER(p)
+#else
+  typedef void * ts_entry_value_t;
+# define TS_HIDE_VALUE(p) (p)
+# define TS_REVEAL_PTR(p) (p)
+#endif
+
 /* An entry describing a thread-specific value for a given thread.      */
 /* All such accessible structures preserve the invariant that if either */
 /* thread is a valid pthread id or qtid is a valid "quick thread id"    */
@@ -38,7 +50,7 @@ EXTERN_C_BEGIN
 /* asynchronous reads are allowed.                                      */
 typedef struct thread_specific_entry {
         volatile AO_t qtid;     /* quick thread id, only for cache */
-        void * value;
+        ts_entry_value_t value;
         struct thread_specific_entry *next;
         pthread_t thread;
 } tse;
@@ -95,7 +107,7 @@ GC_INLINE void * GC_getspecific(tsd * key)
     GC_ASSERT(qtid != INVALID_QTID);
     if (EXPECT(entry -> qtid == qtid, TRUE)) {
       GC_ASSERT(entry -> thread == pthread_self());
-      return entry -> value;
+      return TS_REVEAL_PTR(entry -> value);
     }
     return GC_slow_getspecific(key, qtid, entry_ptr);
 }
