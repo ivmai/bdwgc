@@ -123,6 +123,7 @@ matrix:
     compiler: gcc
     env:
     - CFLAGS_EXTRA="-m32 -D MARK_BIT_PER_OBJ"
+    - CONF_OPTIONS="--enable-gc-assertions"
   - os: linux
     compiler: gcc
     env:
