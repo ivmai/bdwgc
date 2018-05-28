@@ -122,12 +122,12 @@ matrix:
         - gcc-multilib
     compiler: gcc
     env:
-    - CFLAGS_EXTRA="-m32 -D MARK_BIT_PER_OBJ"
+    - CFLAGS_EXTRA="-m32 -D MARK_BIT_PER_OBJ -D USE_CUSTOM_SPECIFIC"
     - CONF_OPTIONS="--enable-gc-assertions"
   - os: linux
     compiler: clang
     env:
-    - CFLAGS_EXTRA="-D MARK_BIT_PER_OBJ -D USE_CUSTOM_SPECIFIC"
+    - CFLAGS_EXTRA="-D MARK_BIT_PER_OBJ"
     - CONF_OPTIONS="--enable-cplusplus"
   - os: linux
     compiler: gcc
