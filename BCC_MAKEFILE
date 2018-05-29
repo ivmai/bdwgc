@@ -13,7 +13,7 @@ rc=	 $(bcbin)\brc32
 lib=	 $(bcbin)\tlib
 link=	 $(bcbin)\ilink32
 cflags=  -O2 -R -v- -vi -H -H=gc.csm -I$(bcinclude);$(gcinclude1);$(gcinclude2) -L$(bclib) \
-	 -w-pro -w-aus -w-par -w-ccc -w-rch -a4
+	 -w-pro -w-aus -w-par -w-ccc -w-inl -w-rch -a4
 defines= -DALL_INTERIOR_POINTERS -DNO_GETENV -DJAVA_FINALIZATION -DENABLE_DISCLAIM -DGC_OPERATOR_NEW_ARRAY
 
 .c.obj:
