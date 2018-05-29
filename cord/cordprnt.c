@@ -275,7 +275,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                             char * str = va_arg(args, char *);
                             char c;
 
-                            while ((c = *str++)) {
+                            while ((c = *str++) != '\0') {
                                 CORD_ec_append(result, c);
                             }
                             goto done;
@@ -362,7 +362,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                     if (buf != result[0].ec_bufptr) {
                         char c;
 
-                        while ((c = *buf++)) {
+                        while ((c = *buf++) != '\0') {
                             CORD_ec_append(result, c);
                         }
                     } else {
