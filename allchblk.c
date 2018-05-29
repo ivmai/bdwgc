@@ -754,7 +754,8 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
                   GC_large_alloc_warn_suppressed = 0;
                 }
                 size_avail = orig_avail;
-              } else if (size_avail == 0 && size_needed == HBLKSIZE
+              } else if (size_avail == 0
+                         && size_needed == (signed_word)HBLKSIZE
                          && IS_MAPPED(hhdr)) {
                 if (!GC_find_leak) {
                   static unsigned count = 0;
