@@ -728,7 +728,8 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
                 }
                 hhdr = HDR(hbp);
                 *rlh = hhdr -> hb_next;
-                if (!ignore_old || hhdr -> hb_last_reclaimed == GC_gc_no - 1) {
+                if (!ignore_old
+                    || (word)hhdr->hb_last_reclaimed == GC_gc_no - 1) {
                     /* It's likely we'll need it this time, too */
                     /* It's been touched recently, so this      */
                     /* shouldn't trigger paging.                */
