@@ -547,7 +547,9 @@ EXTERN_C_BEGIN
 #     ifdef _XBOX_ONE
 #       define MSWIN_XBOX1
 #     else
-#       define MSWIN32  /* or Win64 */
+#       ifndef MSWIN32
+#         define MSWIN32 /* or Win64 */
+#       endif
 #       if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
 #         define MSWINRT_FLAVOR
 #       endif
