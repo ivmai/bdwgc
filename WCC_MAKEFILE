@@ -25,7 +25,7 @@ CPU=5
 OPTIM=-oneatx -s
 #OPTIM=-ohneatx -s
 
-DEFS=-DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM #-DSMALL_CONFIG #-DGC_DEBUG
+DEFS=-DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM #-DSMALL_CONFIG
 
 
 #####
@@ -66,10 +66,10 @@ TEST_DLLFLAG=
 CC=wcc386
 CXX=wpp386
 
-CFLAGS=-$(CPU)$(CALLING) $(OPTIM) -zp4 -zc $(SYSFLAG) $(DLLFLAG) $(DEFS)
-CXXFLAGS= $(CFLAGS)
-TEST_CFLAGS=-$(CPU)$(CALLING) $(OPTIM) -zp4 -zc $(SYSFLAG) $(TEST_DLLFLAG) $(DEFS)
-TEST_CXXFLAGS= $(TEST_CFLAGS)
+CFLAGS=-$(CPU)$(CALLING) $(OPTIM) -iinclude -zp4 -zc $(SYSFLAG) $(DLLFLAG) $(DEFS)
+CXXFLAGS= $(CFLAGS) -xs
+TEST_CFLAGS=-$(CPU)$(CALLING) $(OPTIM) -iinclude -zp4 -zc $(SYSFLAG) $(TEST_DLLFLAG) $(DEFS)
+TEST_CXXFLAGS= $(TEST_CFLAGS) -xs
 
 OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj &
       mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj &
@@ -138,12 +138,11 @@ test_cpp.exe: test_cpp.obj gc.lib
         *wlink @$*.lnk
 
 gc_cpp.obj: gc_cpp.cc .AUTODEPEND
-        $(CXX) $(TEST_CXXFLAGS) -iinclude $*.cc
+        $(CXX) $(TEST_CXXFLAGS) $*.cc
 test.obj: tests\test.c .AUTODEPEND
-        $(CC) $(TEST_CFLAGS) $*.c
+        $(CC) $(TEST_CFLAGS) tests\test.c
 test_cpp.obj: tests\test_cpp.cc .AUTODEPEND
-        $(CXX) $(TEST_CXXFLAGS) -iinclude $*.cc
-
+        $(CXX) $(TEST_CXXFLAGS) tests\test_cpp.cc
 
 .c.obj: .AUTODEPEND
         $(CC) $(CFLAGS) $*.c
