@@ -137,6 +137,7 @@ stamp-h1
 *.ilk
 *.pdb
 *.sbr
+*.tds
 
 # Stuff from VS build system and IDE
 *.vcproj.*.user
