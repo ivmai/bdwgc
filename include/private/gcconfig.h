@@ -424,7 +424,9 @@
 #     else
 #       define I386
 #     endif
-#     define MSWIN32    /* or Win64 */
+#     ifndef MSWIN32
+#       define MSWIN32 /* or Win64 */
+#     endif
 #     define mach_type_known
 #   endif
 #   if defined(_MSC_VER) && defined(_M_IA64)
