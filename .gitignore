@@ -155,6 +155,7 @@ stamp-h1
 *.pdb
 *.sbr
 *.tds
+gc.def
 
 # Stuff from VS build system and IDE
 *.vcproj.*.user
