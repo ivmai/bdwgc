@@ -88,12 +88,15 @@ inline void * GC_selective_alloc(size_t n, GC_Tp, bool ignore_off_page) {
     return ignore_off_page?GC_MALLOC_IGNORE_OFF_PAGE(n):GC_MALLOC(n);
 }
 
-template <>
-inline void * GC_selective_alloc<GC_true_type>(size_t n, GC_true_type,
-                                               bool ignore_off_page) {
+#if !defined(__WATCOMC__)
+  /* Note: template-id not supported in this context by Watcom compiler. */
+  template <>
+  inline void * GC_selective_alloc<GC_true_type>(size_t n, GC_true_type,
+                                                 bool ignore_off_page) {
     return ignore_off_page? GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(n)
                           : GC_MALLOC_ATOMIC(n);
-}
+  }
+#endif
 
 /* Now the public gc_allocator<T> class:
  */
