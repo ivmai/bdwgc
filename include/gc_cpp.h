@@ -174,6 +174,32 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 # define GC_PLACEMENT_DELETE
 #endif
 
+#ifndef GC_DECL_DELETE_THROW
+# if defined(__DMC__) || (defined(__BORLANDC__) \
+        && (defined(_RWSTD_NO_EXCEPTIONS) || defined(_RWSTD_NO_EX_SPEC))) \
+     || (defined(_MSC_VER) && defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS) \
+     || (defined(__WATCOMC__) && !defined(_CPPUNWIND))
+#   define GC_DECL_DELETE_THROW /* empty */
+#   ifndef GC_NEW_ABORTS_ON_OOM
+#     define GC_NEW_ABORTS_ON_OOM
+#   endif
+# else
+#   define GC_DECL_DELETE_THROW throw()
+# endif
+#endif // !GC_DECL_DELETE_THROW
+
+#if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
+# define GC_OP_NEW_OOM_CHECK(obj) \
+                do { if (!(obj)) GC_abort_on_oom(); } while (0)
+#elif defined(GC_INCLUDE_NEW)
+# include <new> // for bad_alloc
+# define GC_OP_NEW_OOM_CHECK(obj) if (obj) {} else throw std::bad_alloc()
+#else
+  // "new" header is not included, so bad_alloc cannot be thrown directly.
+  GC_API void GC_CALL GC_throw_bad_alloc();
+# define GC_OP_NEW_OOM_CHECK(obj) if (obj) {} else GC_throw_bad_alloc()
+#endif // !GC_NEW_ABORTS_ON_OOM && !GC_INCLUDE_NEW
+
 #ifdef GC_NAMESPACE
 namespace boehmgc
 {
@@ -290,7 +316,9 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 # if _MSC_VER > 1020
     inline void* operator new[](size_t size)
     {
-      return GC_MALLOC_UNCOLLECTABLE(size);
+      void* obj = GC_MALLOC_UNCOLLECTABLE(size);
+      GC_OP_NEW_OOM_CHECK(obj);
+      return obj;
     }
 
     inline void operator delete[](void* obj)
@@ -301,7 +329,9 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 
   inline void* operator new(size_t size)
   {
-    return GC_MALLOC_UNCOLLECTABLE(size);
+    void* obj = GC_MALLOC_UNCOLLECTABLE(size);
+    GC_OP_NEW_OOM_CHECK(obj);
+    return obj;
   }
 
   inline void operator delete(void* obj)
@@ -314,13 +344,17 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
     inline void* operator new(size_t size, int /* nBlockUse */,
                               const char* szFileName, int nLine)
     {
-      return GC_debug_malloc_uncollectable(size, szFileName, nLine);
+      void* obj = GC_debug_malloc_uncollectable(size, szFileName, nLine);
+      GC_OP_NEW_OOM_CHECK(obj);
+      return obj;
     }
 # else
     inline void* operator new(size_t size, int /* nBlockUse */,
                               const char* /* szFileName */, int /* nLine */)
     {
-      return GC_malloc_uncollectable(size);
+      void* obj = GC_malloc_uncollectable(size);
+      GC_OP_NEW_OOM_CHECK(obj);
+      return obj;
     }
 # endif /* !GC_DEBUG */
 
@@ -351,24 +385,32 @@ namespace boehmgc
 
 inline void* gc::operator new(size_t size)
 {
-  return GC_MALLOC(size);
+  void* obj = GC_MALLOC(size);
+  GC_OP_NEW_OOM_CHECK(obj);
+  return obj;
 }
 
 inline void* gc::operator new(size_t size, GCPlacement gcp)
 {
+  void* obj;
   switch (gcp) {
   case UseGC:
-    return GC_MALLOC(size);
+    obj = GC_MALLOC(size);
+    break;
   case PointerFreeGC:
-    return GC_MALLOC_ATOMIC(size);
+    obj = GC_MALLOC_ATOMIC(size);
+    break;
 # ifdef GC_ATOMIC_UNCOLLECTABLE
     case PointerFreeNoGC:
-      return GC_MALLOC_ATOMIC_UNCOLLECTABLE(size);
+      obj = GC_MALLOC_ATOMIC_UNCOLLECTABLE(size);
+      break;
 # endif
   case NoGC:
   default:
-    return GC_MALLOC_UNCOLLECTABLE(size);
+    obj = GC_MALLOC_UNCOLLECTABLE(size);
   }
+  GC_OP_NEW_OOM_CHECK(obj);
+  return obj;
 }
 
 inline void* gc::operator new(size_t /* size */, void* p)
@@ -462,20 +504,24 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   switch (gcp) {
   case GC_NS_QUALIFY(UseGC):
     obj = GC_MALLOC(size);
-    if (cleanup != 0) {
+    if (cleanup != 0 && obj != 0) {
       GC_REGISTER_FINALIZER_IGNORE_SELF(obj, cleanup, clientData, 0, 0);
     }
-    return obj;
+    break;
   case GC_NS_QUALIFY(PointerFreeGC):
-    return GC_MALLOC_ATOMIC(size);
+    obj = GC_MALLOC_ATOMIC(size);
+    break;
 # ifdef GC_ATOMIC_UNCOLLECTABLE
     case GC_NS_QUALIFY(PointerFreeNoGC):
-      return GC_MALLOC_ATOMIC_UNCOLLECTABLE(size);
+      obj = GC_MALLOC_ATOMIC_UNCOLLECTABLE(size);
+      break;
 # endif
   case GC_NS_QUALIFY(NoGC):
   default:
-    return GC_MALLOC_UNCOLLECTABLE(size);
+    obj = GC_MALLOC_UNCOLLECTABLE(size);
   }
+  GC_OP_NEW_OOM_CHECK(obj);
+  return obj;
 }
 
 #ifdef GC_PLACEMENT_DELETE

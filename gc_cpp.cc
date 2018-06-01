@@ -27,26 +27,42 @@ built-in "new" and "delete".
 # define GC_BUILD
 #endif
 
-#include "gc_cpp.h"
+#include "gc.h"
 
-#if !defined(GC_NEW_DELETE_NEED_THROW) && defined(__GNUC__) \
-    && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2))
-# define GC_NEW_DELETE_NEED_THROW
+#include <new> // for bad_alloc, precedes include of gc_cpp.h
+
+#include "gc_cpp.h" // for GC_OPERATOR_NEW_ARRAY, GC_DECL_DELETE_THROW
+
+#if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
+# define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()
+#else
+# define GC_ALLOCATOR_THROW_OR_ABORT() throw std::bad_alloc()
 #endif
 
-#ifdef GC_NEW_DELETE_NEED_THROW
-# include <new> /* for std::bad_alloc */
-# define GC_DECL_NEW_THROW throw(std::bad_alloc)
-# define GC_DECL_DELETE_THROW throw()
-#else
-# define GC_DECL_NEW_THROW /* empty */
-# define GC_DECL_DELETE_THROW /* empty */
-#endif // !GC_NEW_DELETE_NEED_THROW
+GC_API void GC_CALL GC_throw_bad_alloc() {
+  GC_ALLOCATOR_THROW_OR_ABORT();
+}
 
 #ifndef _MSC_VER
 
+# if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
+     && !defined(GC_NEW_DELETE_NEED_THROW) \
+     && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)) \
+     && (__cplusplus < 201103L || defined(__clang__))
+#   define GC_NEW_DELETE_NEED_THROW
+# endif
+
+# ifdef GC_NEW_DELETE_NEED_THROW
+#   define GC_DECL_NEW_THROW throw(std::bad_alloc)
+# else
+#   define GC_DECL_NEW_THROW /* empty */
+# endif
+
   void* operator new(size_t size) GC_DECL_NEW_THROW {
-    return GC_MALLOC_UNCOLLECTABLE(size);
+    void* obj = GC_MALLOC_UNCOLLECTABLE(size);
+    if (0 == obj)
+      GC_ALLOCATOR_THROW_OR_ABORT();
+    return obj;
   }
 
   void operator delete(void* obj) GC_DECL_DELETE_THROW {
@@ -55,7 +71,10 @@ built-in "new" and "delete".
 
 # if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
     void* operator new[](size_t size) GC_DECL_NEW_THROW {
-      return GC_MALLOC_UNCOLLECTABLE(size);
+      void* obj = GC_MALLOC_UNCOLLECTABLE(size);
+      if (0 == obj)
+        GC_ALLOCATOR_THROW_OR_ABORT();
+      return obj;
     }
 
     void operator delete[](void* obj) GC_DECL_DELETE_THROW {

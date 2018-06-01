@@ -1300,6 +1300,9 @@ typedef void (GC_CALLBACK * GC_abort_func)(const char * /* msg */);
 GC_API void GC_CALL GC_set_abort_func(GC_abort_func) GC_ATTR_NONNULL(1);
 GC_API GC_abort_func GC_CALL GC_get_abort_func(void);
 
+/* A portable way to abort the application because of not enough memory.*/
+GC_API void GC_CALL GC_abort_on_oom(void);
+
 /* The following is intended to be used by a higher level       */
 /* (e.g. Java-like) finalization facility.  It is expected      */
 /* that finalization code will arrange for hidden pointers to   */
