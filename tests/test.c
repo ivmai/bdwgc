@@ -1882,6 +1882,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
          UNTESTED(GetModuleNameFromStack);
          UNTESTED(GetSymbolNameFromStack);
 #      endif
+       UNTESTED(GC_abort_on_oom);
        UNTESTED(GC_get_bytes_since_gc);
        UNTESTED(GC_get_dont_expand);
        UNTESTED(GC_get_dont_precollect);

@@ -29,23 +29,12 @@ built-in "new" and "delete".
 
 #include "gc_cpp.h"
 
-#if GC_GNUC_PREREQ(4, 2) && !defined(GC_NEW_DELETE_NEED_THROW)
-# define GC_NEW_DELETE_NEED_THROW
-#endif
-
-#ifdef GC_NEW_DELETE_NEED_THROW
-# include <new> /* for std::bad_alloc */
-# define GC_DECL_NEW_THROW throw(std::bad_alloc)
-# define GC_DECL_DELETE_THROW throw()
-#else
-# define GC_DECL_NEW_THROW /* empty */
-# define GC_DECL_DELETE_THROW /* empty */
-#endif // !GC_NEW_DELETE_NEED_THROW
-
 #ifndef _MSC_VER
 
   void* operator new(size_t size) GC_DECL_NEW_THROW {
-    return GC_MALLOC_UNCOLLECTABLE(size);
+    void* obj = GC_MALLOC_UNCOLLECTABLE(size);
+    GC_OP_NEW_OOM_CHECK(obj);
+    return obj;
   }
 
   void operator delete(void* obj) GC_DECL_DELETE_THROW {
@@ -54,7 +43,9 @@ built-in "new" and "delete".
 
 # if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
     void* operator new[](size_t size) GC_DECL_NEW_THROW {
-      return GC_MALLOC_UNCOLLECTABLE(size);
+      void* obj = GC_MALLOC_UNCOLLECTABLE(size);
+      GC_OP_NEW_OOM_CHECK(obj);
+      return obj;
     }
 
     void operator delete[](void* obj) GC_DECL_DELETE_THROW {
