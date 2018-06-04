@@ -29,7 +29,7 @@ built-in "new" and "delete".
 
 #include "gc_cpp.h"
 
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__DMC__)
 
   void* operator new(size_t size) GC_DECL_NEW_THROW {
     void* obj = GC_MALLOC_UNCOLLECTABLE(size);
