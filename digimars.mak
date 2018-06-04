@@ -2,7 +2,7 @@
 # compiler from www.digitalmars.com
 # Written by Walter Bright
 
-DEFINES=-D_WINDOWS -DGC_DLL -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_THREADS
+DEFINES=-D_WINDOWS -DGC_DLL -DGC_THREADS -DGC_DISCOVER_TASK_THREADS -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM
 CFLAGS=-Iinclude -Ilibatomic_ops\src $(DEFINES) -wx -g
 LFLAGS=/ma/implib/co
 CC=sc
@@ -76,7 +76,7 @@ dbg_mlc.obj: dbg_mlc.c
 dyn_load.obj: dyn_load.c
 finalize.obj: finalize.c
 fnlz_mlc.obj: fnlz_mlc.c
-gc_cpp.obj: gc_cpp.cpp
+gc_cpp.obj: gc_cpp.cc gc_cpp.cpp
 headers.obj: headers.c
 mach_dep.obj: mach_dep.c
 malloc.obj: malloc.c
