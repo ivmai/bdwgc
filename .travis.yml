@@ -254,10 +254,10 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
     - CSA_CHECK=true
@@ -297,13 +297,13 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
-    - CXX=clang++-4.0
+    - CXX=clang++-5.0
     - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -313,10 +313,10 @@ matrix:
     addons:
       apt:
         packages:
-        - gcc-5
+        - gcc-7
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-5
+    compiler: gcc-7
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=address -O0"
@@ -332,10 +332,10 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer"
@@ -354,10 +354,10 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D NO_INCREMENTAL -D USE_SPIN_LOCK -fno-omit-frame-pointer -D TEST_FORK_WITHOUT_ATFORK"
@@ -367,10 +367,10 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D NO_INCREMENTAL -D USE_SPIN_LOCK -fno-omit-frame-pointer -D TEST_FORK_WITHOUT_ATFORK"
@@ -379,10 +379,10 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D NO_INCREMENTAL -D USE_SPIN_LOCK -fno-omit-frame-pointer -D NTHREADS=15"
@@ -392,10 +392,10 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D NO_INCREMENTAL -fno-omit-frame-pointer"
@@ -404,13 +404,13 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
-    - CXX=clang++-4.0
+    - CXX=clang++-5.0
     - CFLAGS_EXTRA="-O3 -march=native"
     - CONF_OPTIONS="--enable-cplusplus --enable-static --enable-single-obj-compilation"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -418,11 +418,11 @@ matrix:
     addons:
       apt:
         packages:
-        - clang-4.0
+        - clang-5.0
         - gcc-multilib
         sources:
-        - llvm-toolchain-trusty-4.0
-    compiler: clang-4.0
+        - llvm-toolchain-trusty-5.0
+    compiler: clang-5.0
     language: c
     env:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D GC_DISABLE_INCREMENTAL"
@@ -432,26 +432,26 @@ matrix:
     addons:
       apt:
         packages:
-        - gcc-5
-        - g++-5
+        - gcc-7
+        - g++-7
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-5
+    compiler: gcc-7
     language: c
     env:
-    - CXX=g++-5
+    - CXX=g++-7
     - CONF_OPTIONS="--enable-cplusplus --enable-gc-assertions --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
         packages:
-        - gcc-5
-        - gcc-5-multilib
+        - gcc-7
+        - gcc-7-multilib
         - gcc-multilib
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-5
+    compiler: gcc-7
     language: c
     env:
     - CFLAGS_EXTRA="-m32 -O3"
@@ -461,12 +461,12 @@ matrix:
     addons:
       apt:
         packages:
-        - gcc-5
-        - gcc-5-multilib
+        - gcc-7
+        - gcc-7-multilib
         - gcc-multilib
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-5
+    compiler: gcc-7
     language: c
     env:
     - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2"
