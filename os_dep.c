@@ -3281,7 +3281,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                 }
 #           endif
 
-            if (old_handler == (SIG_HNDLR_PTR)SIG_DFL) {
+            if (old_handler == (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
 #               if !defined(MSWIN32) && !defined(MSWINCE)
                     ABORT_ARG1("Unexpected bus error or segmentation fault",
                                " at %p", (void *)addr);
@@ -3301,7 +3301,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                       ((SIG_HNDLR_PTR)old_handler) (sig, si, raw_sc);
                     else
                       /* FIXME: should pass nonstandard args as well. */
-                      ((PLAIN_HNDLR_PTR)old_handler) (sig);
+                      ((PLAIN_HNDLR_PTR)(signed_word)old_handler)(sig);
                     return;
 #               endif
             }
@@ -3419,14 +3419,14 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         GC_old_segv_handler = oldact.sa_sigaction;
         GC_old_segv_handler_used_si = TRUE;
       } else {
-        GC_old_segv_handler = (SIG_HNDLR_PTR)oldact.sa_handler;
+        GC_old_segv_handler = (SIG_HNDLR_PTR)(signed_word)oldact.sa_handler;
         GC_old_segv_handler_used_si = FALSE;
       }
-      if (GC_old_segv_handler == (SIG_HNDLR_PTR)SIG_IGN) {
+      if (GC_old_segv_handler == (SIG_HNDLR_PTR)(signed_word)SIG_IGN) {
         WARN("Previously ignored segmentation violation!?\n", 0);
-        GC_old_segv_handler = (SIG_HNDLR_PTR)SIG_DFL;
+        GC_old_segv_handler = (SIG_HNDLR_PTR)(signed_word)SIG_DFL;
       }
-      if (GC_old_segv_handler != (SIG_HNDLR_PTR)SIG_DFL) {
+      if (GC_old_segv_handler != (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
         GC_VERBOSE_LOG_PRINTF("Replaced other SIGSEGV handler\n");
       }
 #   if defined(HPUX) || defined(LINUX) || defined(HURD) \
@@ -3438,19 +3438,19 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
           GC_old_bus_handler_used_si = TRUE;
 #       endif
       } else {
-        GC_old_bus_handler = (SIG_HNDLR_PTR)oldact.sa_handler;
+        GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)oldact.sa_handler;
 #       if !defined(LINUX)
           GC_old_bus_handler_used_si = FALSE;
 #       endif
       }
-      if (GC_old_bus_handler == (SIG_HNDLR_PTR)SIG_IGN) {
+      if (GC_old_bus_handler == (SIG_HNDLR_PTR)(signed_word)SIG_IGN) {
         WARN("Previously ignored bus error!?\n", 0);
 #       if !defined(LINUX)
-          GC_old_bus_handler = (SIG_HNDLR_PTR)SIG_DFL;
+          GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)SIG_DFL;
 #       else
           /* GC_old_bus_handler is not used by GC_write_fault_handler.  */
 #       endif
-      } else if (GC_old_bus_handler != (SIG_HNDLR_PTR)SIG_DFL) {
+      } else if (GC_old_bus_handler != (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
           GC_VERBOSE_LOG_PRINTF("Replaced other SIGBUS handler\n");
       }
 #   endif /* HPUX || LINUX || HURD || (FREEBSD && SUNOS5SIGS) */
@@ -4172,7 +4172,7 @@ GC_INNER GC_bool GC_dirty_init(void)
       /* sa.sa_restorer is deprecated and should not be initialized. */
       if (sigaction(SIGBUS, &sa, &oldsa) < 0)
         ABORT("sigaction failed");
-      if ((SIG_HNDLR_PTR)oldsa.sa_handler != SIG_DFL) {
+      if (oldsa.sa_handler != (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
         GC_VERBOSE_LOG_PRINTF("Replaced other SIGBUS handler\n");
       }
     }

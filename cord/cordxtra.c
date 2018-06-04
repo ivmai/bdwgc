@@ -526,14 +526,14 @@ typedef struct {
 } refill_data;
 
 /* Executed with allocation lock. */
-static char refill_cache(refill_data * client_data)
+static void * GC_CALLBACK refill_cache(void * client_data)
 {
-    register lf_state * state = client_data -> state;
-    register size_t file_pos = client_data -> file_pos;
+    register lf_state * state = ((refill_data *)client_data) -> state;
+    register size_t file_pos = ((refill_data *)client_data) -> file_pos;
     FILE *f = state -> lf_file;
     size_t line_start = LINE_START(file_pos);
     size_t line_no = DIV_LINE_SZ(MOD_CACHE_SZ(file_pos));
-    cache_line * new_cache = client_data -> new_cache;
+    cache_line * new_cache = ((refill_data *)client_data) -> new_cache;
 
     if (line_start != state -> lf_current
         && fseek(f, (long)line_start, SEEK_SET) != 0) {
@@ -547,7 +547,7 @@ static char refill_cache(refill_data * client_data)
     /* Store barrier goes here. */
     ATOMIC_WRITE(state -> lf_cache[line_no], new_cache);
     state -> lf_current = line_start + LINE_SZ;
-    return(new_cache->data[MOD_LINE_SZ(file_pos)]);
+    return (void *)((GC_word)new_cache->data[MOD_LINE_SZ(file_pos)]);
 }
 
 char CORD_lf_func(size_t i, void * client_data)
@@ -565,8 +565,7 @@ char CORD_lf_func(size_t i, void * client_data)
         rd.file_pos =  i;
         rd.new_cache = GC_NEW_ATOMIC(cache_line);
         if (rd.new_cache == 0) OUT_OF_MEMORY;
-        return((char)(GC_word)
-              GC_call_with_alloc_lock((GC_fn_type) refill_cache, &rd));
+        return (char)((GC_word)GC_call_with_alloc_lock(refill_cache, &rd));
     }
     return(cl -> data[MOD_LINE_SZ(i)]);
 }
