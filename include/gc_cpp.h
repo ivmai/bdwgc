@@ -304,7 +304,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
                               GC_NS_QUALIFY(GCCleanUpFunc), void*);
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__DMC__)
   // The following ensures that the system default operator new[] does not
   // get undefined, which is what seems to happen on VC++ 6 for some reason
   // if we define a multi-argument operator new[].
@@ -313,7 +313,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   // Inlining done to avoid mix up of new and delete operators by VC++ 9 (due
   // to arbitrary ordering during linking).
 
-# if _MSC_VER > 1020
+# ifdef GC_OPERATOR_NEW_ARRAY
     inline void* operator new[](size_t size)
     {
       void* obj = GC_MALLOC_UNCOLLECTABLE(size);
@@ -358,7 +358,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
     }
 # endif /* !GC_DEBUG */
 
-# if _MSC_VER > 1020
+# ifdef GC_OPERATOR_NEW_ARRAY
     // This new operator is used by VC++ 7+ in Debug builds:
     inline void* operator new[](size_t size, int nBlockUse,
                                 const char* szFileName, int nLine)

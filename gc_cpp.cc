@@ -43,7 +43,7 @@ GC_API void GC_CALL GC_throw_bad_alloc() {
   GC_ALLOCATOR_THROW_OR_ABORT();
 }
 
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__DMC__)
 
 # if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
      && !defined(GC_NEW_DELETE_NEED_THROW) \
