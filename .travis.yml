@@ -313,16 +313,15 @@ matrix:
     addons:
       apt:
         packages:
-        - gcc-7
+        - gcc-8
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-7
+    compiler: gcc-8
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=address -O0"
     - CONF_OPTIONS="--enable-gc-assertions"
     - LDFLAGS="-fuse-ld=gold"
-    - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
     - CFLAGS_EXTRA="-fsanitize=address -m32 -fno-omit-frame-pointer"
@@ -432,26 +431,26 @@ matrix:
     addons:
       apt:
         packages:
-        - gcc-7
-        - g++-7
+        - gcc-8
+        - g++-8
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-7
+    compiler: gcc-8
     language: c
     env:
-    - CXX=g++-7
+    - CXX=g++-8
     - CONF_OPTIONS="--enable-cplusplus --enable-gc-assertions --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     addons:
       apt:
         packages:
-        - gcc-7
-        - gcc-7-multilib
+        - gcc-8
+        - gcc-8-multilib
         - gcc-multilib
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-7
+    compiler: gcc-8
     language: c
     env:
     - CFLAGS_EXTRA="-m32 -O3"
@@ -461,12 +460,12 @@ matrix:
     addons:
       apt:
         packages:
-        - gcc-7
-        - gcc-7-multilib
+        - gcc-8
+        - gcc-8-multilib
         - gcc-multilib
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-7
+    compiler: gcc-8
     language: c
     env:
     - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2"
