@@ -182,8 +182,13 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 
 #ifdef GC_NEW_DELETE_NEED_THROW
 # include <new> /* for std::bad_alloc */
-# define GC_DECL_NEW_THROW throw(std::bad_alloc)
-# define GC_DECL_DELETE_THROW throw()
+# if __cplusplus >= 201103L && !defined(__clang__)
+#   define GC_DECL_NEW_THROW /* empty */
+#   define GC_DECL_DELETE_THROW /* empty */
+# else
+#   define GC_DECL_NEW_THROW throw(std::bad_alloc)
+#   define GC_DECL_DELETE_THROW throw()
+# endif
 # define GC_OP_NEW_OOM_CHECK(obj) \
                 do { if (!(obj)) throw std::bad_alloc(); } while (0)
 #else
