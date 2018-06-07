@@ -51,6 +51,11 @@
 # endif
 #endif
 
+#if !defined(GC_NO_MEMBER_TEMPLATES) && defined(_MSC_VER) && _MSC_VER <= 1200
+  // MSVC++ 6.0 do not support member templates.
+# define GC_NO_MEMBER_TEMPLATES
+#endif
+
 #ifndef GC_NOEXCEPT
 # if (defined(__BORLANDC__) \
         && (defined(_RWSTD_NO_EXCEPTIONS) || defined(_RWSTD_NO_EX_SPEC))) \
@@ -127,13 +132,12 @@ inline void * GC_selective_alloc(size_t n, GC_Tp, bool ignore_off_page) {
   }
 #endif
 
-/* Now the public gc_allocator<T> class:
- */
+// Now the public gc_allocator<T> class.
 template <class GC_Tp>
 class gc_allocator {
 public:
-  typedef size_t     size_type;
-  typedef ptrdiff_t  difference_type;
+  typedef size_t       size_type;
+  typedef ptrdiff_t    difference_type;
   typedef GC_Tp*       pointer;
   typedef const GC_Tp* const_pointer;
   typedef GC_Tp&       reference;
@@ -146,9 +150,8 @@ public:
 
   gc_allocator() GC_NOEXCEPT {}
   gc_allocator(const gc_allocator&) GC_NOEXCEPT {}
-# if !(GC_NO_MEMBER_TEMPLATES || 0 < _MSC_VER && _MSC_VER <= 1200)
-  // MSVC++ 6.0 do not support member templates
-  template <class GC_Tp1> GC_ATTR_EXPLICIT
+# ifndef GC_NO_MEMBER_TEMPLATES
+    template <class GC_Tp1> GC_ATTR_EXPLICIT
     gc_allocator(const gc_allocator<GC_Tp1>&) GC_NOEXCEPT {}
 # endif
   ~gc_allocator() GC_NOEXCEPT {}
@@ -160,9 +163,9 @@ public:
   // the return value is when GC_n == 0.
   GC_Tp* allocate(size_type GC_n, const void* = 0) {
     GC_type_traits<GC_Tp> traits;
-    return static_cast<GC_Tp *>
-            (GC_selective_alloc(GC_n * sizeof(GC_Tp),
-                                traits.GC_is_ptr_free, false));
+    return static_cast<GC_Tp *>(GC_selective_alloc(GC_n * sizeof(GC_Tp),
+                                                   traits.GC_is_ptr_free,
+                                                   false));
   }
 
   void deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
@@ -204,13 +207,12 @@ inline bool operator!=(const gc_allocator<GC_T1>&,
 }
 
 
-/* Now the public gc_allocator_ignore_off_page<T> class:
- */
+// Now the public gc_allocator_ignore_off_page<T> class.
 template <class GC_Tp>
 class gc_allocator_ignore_off_page {
 public:
-  typedef size_t     size_type;
-  typedef ptrdiff_t  difference_type;
+  typedef size_t       size_type;
+  typedef ptrdiff_t    difference_type;
   typedef GC_Tp*       pointer;
   typedef const GC_Tp* const_pointer;
   typedef GC_Tp&       reference;
@@ -224,9 +226,8 @@ public:
   gc_allocator_ignore_off_page() GC_NOEXCEPT {}
   gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page&)
     GC_NOEXCEPT {}
-# if !(GC_NO_MEMBER_TEMPLATES || 0 < _MSC_VER && _MSC_VER <= 1200)
-  // MSVC++ 6.0 do not support member templates
-  template <class GC_Tp1> GC_ATTR_EXPLICIT
+# ifndef GC_NO_MEMBER_TEMPLATES
+    template <class GC_Tp1> GC_ATTR_EXPLICIT
     gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page<GC_Tp1>&)
       GC_NOEXCEPT {}
 # endif
@@ -239,9 +240,9 @@ public:
   // the return value is when GC_n == 0.
   GC_Tp* allocate(size_type GC_n, const void* = 0) {
     GC_type_traits<GC_Tp> traits;
-    return static_cast<GC_Tp *>
-            (GC_selective_alloc(GC_n * sizeof(GC_Tp),
-                                traits.GC_is_ptr_free, true));
+    return static_cast<GC_Tp *>(GC_selective_alloc(GC_n * sizeof(GC_Tp),
+                                                   traits.GC_is_ptr_free,
+                                                   true));
   }
 
   void deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
@@ -281,13 +282,13 @@ inline bool operator!=(const gc_allocator_ignore_off_page<GC_T1>&,
   return false;
 }
 
-/*
- * And the public traceable_allocator class.
+// And the public traceable_allocator class.
+
+/* Note that we currently don't specialize the pointer-free case, since a
+ * pointer-free traceable container doesn't make that much sense,
+ * though it could become an issue due to abstraction boundaries.
  */
 
-// Note that we currently don't specialize the pointer-free case, since a
-// pointer-free traceable container doesn't make that much sense,
-// though it could become an issue due to abstraction boundaries.
 template <class GC_Tp>
 class traceable_allocator {
 public:
@@ -304,10 +305,9 @@ public:
   };
 
   traceable_allocator() GC_NOEXCEPT {}
-    traceable_allocator(const traceable_allocator&) GC_NOEXCEPT {}
-# if !(GC_NO_MEMBER_TEMPLATES || 0 < _MSC_VER && _MSC_VER <= 1200)
-  // MSVC++ 6.0 do not support member templates
-  template <class GC_Tp1> GC_ATTR_EXPLICIT
+  traceable_allocator(const traceable_allocator&) GC_NOEXCEPT {}
+# ifndef GC_NO_MEMBER_TEMPLATES
+    template <class GC_Tp1> GC_ATTR_EXPLICIT
     traceable_allocator(const traceable_allocator<GC_Tp1>&) GC_NOEXCEPT {}
 # endif
   ~traceable_allocator() GC_NOEXCEPT {}
