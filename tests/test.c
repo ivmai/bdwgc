@@ -155,8 +155,13 @@
 #  define GC_OPT_INIT /* empty */
 #endif
 
+#define INIT_FIND_LEAK \
+    if (!GC_get_find_leak()) {} else \
+      GC_printf("This test program is not designed for leak detection mode\n")
+
 #define GC_COND_INIT() \
-    INIT_FORK_SUPPORT; GC_OPT_INIT; CHECK_GCLIB_VERSION; INIT_PRINT_STATS
+    INIT_FORK_SUPPORT; GC_OPT_INIT; CHECK_GCLIB_VERSION; \
+    INIT_PRINT_STATS; INIT_FIND_LEAK
 
 #define CHECK_OUT_OF_MEMORY(p) \
             if ((p) == NULL) { \
@@ -897,7 +902,8 @@ tn * mktree(int n)
           FINALIZER_UNLOCK();
         }
 
-#     ifndef GC_NO_FINALIZATION
+#   ifndef GC_NO_FINALIZATION
+      if (!GC_get_find_leak()) {
         GC_REGISTER_FINALIZER((void *)result, finalizer, (void *)(GC_word)n,
                               (GC_finalization_proc *)0, (void * *)0);
         if (my_index >= MAX_FINALIZED) {
@@ -965,8 +971,9 @@ tn * mktree(int n)
             FAIL;
           }
 #       endif
-#     endif
-        GC_reachable_here(result);
+      }
+#   endif
+      GC_reachable_here(result);
     }
     return(result);
 }
@@ -1284,11 +1291,6 @@ void run_one_test(void)
       int wstatus;
 #   endif
 
-#   ifdef FIND_LEAK
-        GC_printf(
-              "This test program is not designed for leak detection mode\n");
-        GC_printf("Expect lots of problems\n");
-#   endif
     GC_FREE(0);
 #   ifdef THREADS
       if (!GC_thread_is_registered() && GC_is_init_called()) {
@@ -1568,10 +1570,6 @@ void check_heap_stats(void)
     size_t max_heap_sz;
     int i;
 #   ifndef GC_NO_FINALIZATION
-      int still_live;
-#     ifndef GC_LONG_REFS_NOT_NEEDED
-        int still_long_live = 0;
-#     endif
 #     ifdef FINALIZE_ON_DEMAND
         int late_finalize_count = 0;
 #     endif
@@ -1655,7 +1653,13 @@ void check_heap_stats(void)
     GC_printf("Reallocated %d objects\n", (int)realloc_count);
     GC_printf("Finalized %d/%d objects - ",
                   finalized_count, finalizable_count);
-#   ifndef GC_NO_FINALIZATION
+# ifndef GC_NO_FINALIZATION
+    if (!GC_get_find_leak()) {
+      int still_live = 0;
+#     ifndef GC_LONG_REFS_NOT_NEEDED
+        int still_long_live = 0;
+#     endif
+
 #     ifdef FINALIZE_ON_DEMAND
         if (finalized_count != late_finalize_count) {
             GC_printf("Demand finalization error\n");
@@ -1669,7 +1673,6 @@ void check_heap_stats(void)
       } else {
         GC_printf("finalization is probably ok\n");
       }
-      still_live = 0;
       for (i = 0; i < MAX_FINALIZED; i++) {
         if (live_indicators[i] != 0) {
             still_live++;
@@ -1695,7 +1698,8 @@ void check_heap_stats(void)
           GC_printf("%d 'long' links remain\n", still_long_live);
         }
 #     endif
-#   endif
+    }
+# endif
     GC_printf("Total number of bytes allocated is %lu\n",
                   (unsigned long)GC_get_total_bytes());
     GC_printf("Total memory use by allocated blocks is %lu bytes\n",
@@ -1712,7 +1716,8 @@ void check_heap_stats(void)
       GC_printf("Incorrect execution - missed some allocations\n");
       FAIL;
     }
-    if (GC_get_heap_size() + GC_get_unmapped_bytes() > max_heap_sz) {
+    if (GC_get_heap_size() + GC_get_unmapped_bytes() > max_heap_sz
+            && !GC_get_find_leak()) {
         GC_printf("Unexpected heap growth - collector may be broken"
                   " (heapsize: %lu, expected: %lu)\n",
             (unsigned long)(GC_get_heap_size() + GC_get_unmapped_bytes()),
@@ -1868,7 +1873,6 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
        UNTESTED(GC_get_dont_precollect);
        UNTESTED(GC_get_finalize_on_demand);
        UNTESTED(GC_get_finalizer_notifier);
-       UNTESTED(GC_get_find_leak);
        UNTESTED(GC_get_force_unmap_on_gcollect);
        UNTESTED(GC_get_free_bytes);
        UNTESTED(GC_get_free_space_divisor);
