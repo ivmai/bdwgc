@@ -313,10 +313,10 @@ matrix:
     addons:
       apt:
         packages:
-        - gcc-8
+        - gcc-5
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-8
+    compiler: gcc-5
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=address -O0"
