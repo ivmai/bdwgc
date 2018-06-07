@@ -51,6 +51,22 @@
 # endif
 #endif
 
+#ifndef GC_NOEXCEPT
+# if (defined(__BORLANDC__) \
+        && (defined(_RWSTD_NO_EXCEPTIONS) || defined(_RWSTD_NO_EX_SPEC))) \
+     || (defined(_MSC_VER) && defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS) \
+     || (defined(__WATCOMC__) && !defined(_CPPUNWIND))
+#   define GC_NOEXCEPT /* empty */
+#   ifndef GC_NEW_ABORTS_ON_OOM
+#     define GC_NEW_ABORTS_ON_OOM
+#   endif
+# elif __cplusplus >= 201103L
+#   define GC_NOEXCEPT noexcept
+# else
+#   define GC_NOEXCEPT throw()
+# endif
+#endif // !GC_NOEXCEPT
+
 #if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 # define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()
 #else
@@ -128,14 +144,14 @@ public:
     typedef gc_allocator<GC_Tp1> other;
   };
 
-  gc_allocator()  {}
-    gc_allocator(const gc_allocator&) throw() {}
+  gc_allocator() GC_NOEXCEPT {}
+  gc_allocator(const gc_allocator&) GC_NOEXCEPT {}
 # if !(GC_NO_MEMBER_TEMPLATES || 0 < _MSC_VER && _MSC_VER <= 1200)
   // MSVC++ 6.0 do not support member templates
   template <class GC_Tp1> GC_ATTR_EXPLICIT
-    gc_allocator(const gc_allocator<GC_Tp1>&) throw() {}
+    gc_allocator(const gc_allocator<GC_Tp1>&) GC_NOEXCEPT {}
 # endif
-  ~gc_allocator() throw() {}
+  ~gc_allocator() GC_NOEXCEPT {}
 
   pointer address(reference GC_x) const { return &GC_x; }
   const_pointer address(const_reference GC_x) const { return &GC_x; }
@@ -149,11 +165,10 @@ public:
                                 traits.GC_is_ptr_free, false));
   }
 
-  // __p is not permitted to be a null pointer.
-  void deallocate(pointer __p, size_type /* GC_n */)
+  void deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
     { GC_FREE(__p); }
 
-  size_type max_size() const throw()
+  size_type max_size() const GC_NOEXCEPT
     { return size_t(-1) / sizeof(GC_Tp); }
 
   void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
@@ -175,13 +190,15 @@ class gc_allocator<void> {
 
 
 template <class GC_T1, class GC_T2>
-inline bool operator==(const gc_allocator<GC_T1>&, const gc_allocator<GC_T2>&)
+inline bool operator==(const gc_allocator<GC_T1>&,
+                       const gc_allocator<GC_T2>&) GC_NOEXCEPT
 {
   return true;
 }
 
 template <class GC_T1, class GC_T2>
-inline bool operator!=(const gc_allocator<GC_T1>&, const gc_allocator<GC_T2>&)
+inline bool operator!=(const gc_allocator<GC_T1>&,
+                       const gc_allocator<GC_T2>&) GC_NOEXCEPT
 {
   return false;
 }
@@ -204,15 +221,16 @@ public:
     typedef gc_allocator_ignore_off_page<GC_Tp1> other;
   };
 
-  gc_allocator_ignore_off_page()  {}
-    gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page&) throw() {}
+  gc_allocator_ignore_off_page() GC_NOEXCEPT {}
+  gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page&)
+    GC_NOEXCEPT {}
 # if !(GC_NO_MEMBER_TEMPLATES || 0 < _MSC_VER && _MSC_VER <= 1200)
   // MSVC++ 6.0 do not support member templates
   template <class GC_Tp1> GC_ATTR_EXPLICIT
     gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page<GC_Tp1>&)
-        throw() {}
+      GC_NOEXCEPT {}
 # endif
-  ~gc_allocator_ignore_off_page() throw() {}
+  ~gc_allocator_ignore_off_page() GC_NOEXCEPT {}
 
   pointer address(reference GC_x) const { return &GC_x; }
   const_pointer address(const_reference GC_x) const { return &GC_x; }
@@ -226,11 +244,10 @@ public:
                                 traits.GC_is_ptr_free, true));
   }
 
-  // __p is not permitted to be a null pointer.
-  void deallocate(pointer __p, size_type /* GC_n */)
+  void deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
     { GC_FREE(__p); }
 
-  size_type max_size() const throw()
+  size_type max_size() const GC_NOEXCEPT
     { return size_t(-1) / sizeof(GC_Tp); }
 
   void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
@@ -251,13 +268,15 @@ class gc_allocator_ignore_off_page<void> {
 };
 
 template <class GC_T1, class GC_T2>
-inline bool operator==(const gc_allocator_ignore_off_page<GC_T1>&, const gc_allocator_ignore_off_page<GC_T2>&)
+inline bool operator==(const gc_allocator_ignore_off_page<GC_T1>&,
+                       const gc_allocator_ignore_off_page<GC_T2>&) GC_NOEXCEPT
 {
   return true;
 }
 
 template <class GC_T1, class GC_T2>
-inline bool operator!=(const gc_allocator_ignore_off_page<GC_T1>&, const gc_allocator_ignore_off_page<GC_T2>&)
+inline bool operator!=(const gc_allocator_ignore_off_page<GC_T1>&,
+                       const gc_allocator_ignore_off_page<GC_T2>&) GC_NOEXCEPT
 {
   return false;
 }
@@ -284,14 +303,14 @@ public:
     typedef traceable_allocator<GC_Tp1> other;
   };
 
-  traceable_allocator() throw() {}
-    traceable_allocator(const traceable_allocator&) throw() {}
+  traceable_allocator() GC_NOEXCEPT {}
+    traceable_allocator(const traceable_allocator&) GC_NOEXCEPT {}
 # if !(GC_NO_MEMBER_TEMPLATES || 0 < _MSC_VER && _MSC_VER <= 1200)
   // MSVC++ 6.0 do not support member templates
   template <class GC_Tp1> GC_ATTR_EXPLICIT
-    traceable_allocator(const traceable_allocator<GC_Tp1>&) throw() {}
+    traceable_allocator(const traceable_allocator<GC_Tp1>&) GC_NOEXCEPT {}
 # endif
-  ~traceable_allocator() throw() {}
+  ~traceable_allocator() GC_NOEXCEPT {}
 
   pointer address(reference GC_x) const { return &GC_x; }
   const_pointer address(const_reference GC_x) const { return &GC_x; }
@@ -305,11 +324,10 @@ public:
     return static_cast<GC_Tp*>(obj);
   }
 
-  // __p is not permitted to be a null pointer.
-  void deallocate(pointer __p, size_type /* GC_n */)
+  void deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
     { GC_FREE(__p); }
 
-  size_type max_size() const throw()
+  size_type max_size() const GC_NOEXCEPT
     { return size_t(-1) / sizeof(GC_Tp); }
 
   void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
@@ -331,13 +349,15 @@ class traceable_allocator<void> {
 
 
 template <class GC_T1, class GC_T2>
-inline bool operator==(const traceable_allocator<GC_T1>&, const traceable_allocator<GC_T2>&)
+inline bool operator==(const traceable_allocator<GC_T1>&,
+                       const traceable_allocator<GC_T2>&) GC_NOEXCEPT
 {
   return true;
 }
 
 template <class GC_T1, class GC_T2>
-inline bool operator!=(const traceable_allocator<GC_T1>&, const traceable_allocator<GC_T2>&)
+inline bool operator!=(const traceable_allocator<GC_T1>&,
+                       const traceable_allocator<GC_T2>&) GC_NOEXCEPT
 {
   return false;
 }
