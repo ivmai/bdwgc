@@ -57,7 +57,7 @@
 #endif
 
 #ifndef GC_NOEXCEPT
-# if (defined(__BORLANDC__) \
+# if defined(__DMC__) || (defined(__BORLANDC__) \
         && (defined(_RWSTD_NO_EXCEPTIONS) || defined(_RWSTD_NO_EX_SPEC))) \
      || (defined(_MSC_VER) && defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS) \
      || (defined(__WATCOMC__) && !defined(_CPPUNWIND))
