@@ -141,6 +141,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 ****************************************************************************/
 
 #include "gc.h"
+#include <new> // for bad_alloc
 
 #ifdef GC_NAMESPACE
 # define GC_NS_QUALIFY(T) boehmgc::T
@@ -174,29 +175,40 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 #endif
 
 #if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
-    && !defined(GC_NEW_DELETE_NEED_THROW) \
-    && (GC_GNUC_PREREQ(4, 2) || __BORLANDC__ >= 0x0550 \
-        || _MSC_VER > 1020 || __WATCOMC__ >= 1050)
+    && !defined(GC_NEW_DELETE_NEED_THROW) && GC_GNUC_PREREQ(4, 2) \
+    && (__cplusplus < 201103L || defined(__clang__))
 # define GC_NEW_DELETE_NEED_THROW
 #endif
 
 #ifdef GC_NEW_DELETE_NEED_THROW
-# include <new> /* for std::bad_alloc */
-# if __cplusplus >= 201103L && !defined(__clang__)
-#   define GC_DECL_NEW_THROW /* empty */
-#   define GC_DECL_DELETE_THROW /* empty */
+# define GC_DECL_NEW_THROW throw(std::bad_alloc)
+#else
+# define GC_DECL_NEW_THROW /* empty */
+#endif
+
+#ifndef GC_NOEXCEPT
+# if defined(__DMC__) || (defined(__BORLANDC__) \
+        && (defined(_RWSTD_NO_EXCEPTIONS) || defined(_RWSTD_NO_EX_SPEC))) \
+     || (defined(_MSC_VER) && defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS) \
+     || (defined(__WATCOMC__) && !defined(_CPPUNWIND))
+#   define GC_NOEXCEPT /* empty */
+#   ifndef GC_NEW_ABORTS_ON_OOM
+#     define GC_NEW_ABORTS_ON_OOM
+#   endif
+# elif __cplusplus >= 201103L
+#   define GC_NOEXCEPT noexcept
 # else
-#   define GC_DECL_NEW_THROW throw(std::bad_alloc)
-#   define GC_DECL_DELETE_THROW throw()
+#   define GC_NOEXCEPT throw()
 # endif
+#endif // !GC_NOEXCEPT
+
+#if !defined(GC_NEW_ABORTS_ON_OOM) && !defined(_LIBCPP_NO_EXCEPTIONS)
 # define GC_OP_NEW_OOM_CHECK(obj) \
                 do { if (!(obj)) throw std::bad_alloc(); } while (0)
 #else
-# define GC_DECL_NEW_THROW /* empty */
-# define GC_DECL_DELETE_THROW /* empty */
 # define GC_OP_NEW_OOM_CHECK(obj) \
                 do { if (!(obj)) GC_abort_on_oom(); } while (0)
-#endif // !GC_NEW_DELETE_NEED_THROW
+#endif // !GC_NEW_ABORTS_ON_OOM
 
 #ifdef GC_NAMESPACE
 namespace boehmgc
@@ -225,26 +237,26 @@ class gc
 public:
   inline void* operator new(size_t size) GC_DECL_NEW_THROW;
   inline void* operator new(size_t size, GCPlacement gcp) GC_DECL_NEW_THROW;
-  inline void* operator new(size_t size, void* p);
+  inline void* operator new(size_t size, void* p) GC_NOEXCEPT;
     // Must be redefined here, since the other overloadings hide
     // the global definition.
-  inline void operator delete(void* obj);
+  inline void operator delete(void* obj) GC_NOEXCEPT;
 
 # ifdef GC_PLACEMENT_DELETE
-    inline void operator delete(void*, GCPlacement);
+    inline void operator delete(void*, GCPlacement) GC_NOEXCEPT;
       // Called if construction fails.
-    inline void operator delete(void*, void*);
+    inline void operator delete(void*, void*) GC_NOEXCEPT;
 # endif // GC_PLACEMENT_DELETE
 
 # ifdef GC_OPERATOR_NEW_ARRAY
     inline void* operator new[](size_t size) GC_DECL_NEW_THROW;
     inline void* operator new[](size_t size, GCPlacement gcp)
                                                         GC_DECL_NEW_THROW;
-    inline void* operator new[](size_t size, void* p);
-    inline void operator delete[](void* obj);
+    inline void* operator new[](size_t size, void* p) GC_NOEXCEPT;
+    inline void operator delete[](void* obj) GC_NOEXCEPT;
 #   ifdef GC_PLACEMENT_DELETE
-      inline void operator delete[](void*, GCPlacement);
-      inline void operator delete[](void*, void*);
+      inline void operator delete[](void*, GCPlacement) GC_NOEXCEPT;
+      inline void operator delete[](void*, void*) GC_NOEXCEPT;
 #   endif
 # endif // GC_OPERATOR_NEW_ARRAY
 };
@@ -297,7 +309,8 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 
 #ifdef GC_PLACEMENT_DELETE
   inline void operator delete(void*, GC_NS_QUALIFY(GCPlacement),
-                              GC_NS_QUALIFY(GCCleanUpFunc), void*);
+                              GC_NS_QUALIFY(GCCleanUpFunc),
+                              void*) GC_NOEXCEPT;
 #endif
 
 #if defined(_MSC_VER) || defined(__DMC__)
@@ -317,7 +330,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
       return obj;
     }
 
-    inline void operator delete[](void* obj)
+    inline void operator delete[](void* obj) GC_NOEXCEPT
     {
       GC_FREE(obj);
     }
@@ -330,7 +343,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
     return obj;
   }
 
-  inline void operator delete(void* obj)
+  inline void operator delete(void* obj) GC_NOEXCEPT
   {
     GC_FREE(obj);
   }
@@ -412,20 +425,20 @@ inline void* gc::operator new(size_t size, GCPlacement gcp) GC_DECL_NEW_THROW
   return obj;
 }
 
-inline void* gc::operator new(size_t /* size */, void* p)
+inline void* gc::operator new(size_t /* size */, void* p) GC_NOEXCEPT
 {
   return p;
 }
 
-inline void gc::operator delete(void* obj)
+inline void gc::operator delete(void* obj) GC_NOEXCEPT
 {
   GC_FREE(obj);
 }
 
 #ifdef GC_PLACEMENT_DELETE
-  inline void gc::operator delete(void*, void*) {}
+  inline void gc::operator delete(void*, void*) GC_NOEXCEPT {}
 
-  inline void gc::operator delete(void* p, GCPlacement /* gcp */)
+  inline void gc::operator delete(void* p, GCPlacement /* gcp */) GC_NOEXCEPT
   {
     GC_FREE(p);
   }
@@ -443,20 +456,21 @@ inline void gc::operator delete(void* obj)
     return gc::operator new(size, gcp);
   }
 
-  inline void* gc::operator new[](size_t /* size */, void* p)
+  inline void* gc::operator new[](size_t /* size */, void* p) GC_NOEXCEPT
   {
     return p;
   }
 
-  inline void gc::operator delete[](void* obj)
+  inline void gc::operator delete[](void* obj) GC_NOEXCEPT
   {
     gc::operator delete(obj);
   }
 
 # ifdef GC_PLACEMENT_DELETE
-    inline void gc::operator delete[](void*, void*) {}
+    inline void gc::operator delete[](void*, void*) GC_NOEXCEPT {}
 
-    inline void gc::operator delete[](void* p, GCPlacement /* gcp */)
+    inline void gc::operator delete[](void* p,
+                                      GCPlacement /* gcp */) GC_NOEXCEPT
     {
       gc::operator delete(p);
     }
@@ -527,7 +541,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 #ifdef GC_PLACEMENT_DELETE
   inline void operator delete(void* p, GC_NS_QUALIFY(GCPlacement) /* gcp */,
                               GC_NS_QUALIFY(GCCleanUpFunc) /* cleanup */,
-                              void* /* clientData */)
+                              void* /* clientData */) GC_NOEXCEPT
   {
     GC_FREE(p);
   }

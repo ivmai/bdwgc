@@ -37,7 +37,7 @@ built-in "new" and "delete".
     return obj;
   }
 
-  void operator delete(void* obj) GC_DECL_DELETE_THROW {
+  void operator delete(void* obj) GC_NOEXCEPT {
     GC_FREE(obj);
   }
 
@@ -48,19 +48,19 @@ built-in "new" and "delete".
       return obj;
     }
 
-    void operator delete[](void* obj) GC_DECL_DELETE_THROW {
+    void operator delete[](void* obj) GC_NOEXCEPT {
       GC_FREE(obj);
     }
 # endif // GC_OPERATOR_NEW_ARRAY
 
 # if __cplusplus > 201103L // C++14
-    void operator delete(void* obj, size_t size) GC_DECL_DELETE_THROW {
+    void operator delete(void* obj, size_t size) GC_NOEXCEPT {
       (void)size; // size is ignored
       GC_FREE(obj);
     }
 
 #   if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
-      void operator delete[](void* obj, size_t size) GC_DECL_DELETE_THROW {
+      void operator delete[](void* obj, size_t size) GC_NOEXCEPT {
         (void)size;
         GC_FREE(obj);
       }
