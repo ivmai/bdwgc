@@ -158,11 +158,6 @@ GC_EXTERN GC_bool GC_thr_initialized;
 
 GC_INNER GC_thread GC_lookup_thread(pthread_t id);
 
-GC_EXTERN GC_bool GC_in_thread_creation;
-        /* We may currently be in thread creation or destruction.       */
-        /* Only set to TRUE while allocation lock is held.              */
-        /* When set, it is OK to run GC from unknown thread.            */
-
 #ifdef NACL
   GC_EXTERN __thread GC_thread GC_nacl_gc_thread_self;
   GC_INNER void GC_nacl_initialize_gc_thread(void);

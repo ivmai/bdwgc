@@ -760,7 +760,13 @@ GC_API int GC_CALL GC_is_init_called(void)
   STATIC void GC_exit_check(void)
   {
     if (GC_find_leak && !skip_gc_atexit) {
-      GC_gcollect();
+#     if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+        GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
+        GC_gcollect();
+        GC_in_thread_creation = FALSE;
+#     else
+        GC_gcollect();
+#     endif
     }
   }
 #endif
