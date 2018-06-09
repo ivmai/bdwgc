@@ -3435,7 +3435,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       if (GC_old_segv_handler != NULL) {
         GC_COND_LOG_PRINTF("Replaced other UnhandledExceptionFilter\n");
       } else {
-          GC_old_segv_handler = (signed_word)SIG_DFL;
+          GC_old_segv_handler = SIG_DFL;
       }
 #   elif defined(MSWINCE)
       /* MPROTECT_VDB is unsupported for WinCE at present.      */
