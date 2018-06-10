@@ -114,7 +114,8 @@
 # endif
 # if defined(__aarch64__)
 #    define AARCH64
-#    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD)
+#    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD) \
+        && !defined(NETBSD)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -163,6 +164,10 @@
 # endif
 # if defined(NETBSD) && (defined(__arm32__) || defined(__arm__))
 #    define ARM32
+#    define mach_type_known
+# endif
+# if defined(NETBSD) && defined(__aarch64__)
+#    define AARCH64
 #    define mach_type_known
 # endif
 # if defined(NETBSD) && defined(__sh__)
@@ -2202,6 +2207,14 @@
       extern char etext[];
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #     define DATASTART_USES_BSDGETDATASTART
+#   endif
+#   ifdef NETBSD
+#     define OS_TYPE "NETBSD"
+#     define HEURISTIC2
+      extern ptr_t GC_data_start;
+#     define DATASTART GC_data_start
+#     define ELF_CLASS ELFCLASS64
+#     define DYNAMIC_LOADING
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.   */
