@@ -486,13 +486,13 @@ struct Print_stats
 
 /* Return the number of set mark bits in the given header.      */
 /* Remains externally visible as used by GNU GCJ currently.     */
-int GC_n_set_marks(hdr *hhdr)
+unsigned GC_n_set_marks(hdr *hhdr)
 {
-    int result = 0;
-    int i;
+    unsigned result = 0;
+    word i;
     word sz = hhdr -> hb_sz;
-    int offset = (int)MARK_BIT_OFFSET(sz);
-    int limit = (int)FINAL_MARK_BIT(sz);
+    word offset = MARK_BIT_OFFSET(sz);
+    word limit = FINAL_MARK_BIT(sz);
 
     for (i = 0; i < limit; i += offset) {
         result += hhdr -> hb_marks[i];
@@ -504,10 +504,10 @@ int GC_n_set_marks(hdr *hhdr)
 #else
 
 /* Number of set bits in a word.  Not performance critical.     */
-static int set_bits(word n)
+static unsigned set_bits(word n)
 {
     word m = n;
-    int result = 0;
+    unsigned result = 0;
 
     while (m > 0) {
         if (m & 1) result++;
@@ -516,13 +516,13 @@ static int set_bits(word n)
     return(result);
 }
 
-int GC_n_set_marks(hdr *hhdr)
+unsigned GC_n_set_marks(hdr *hhdr)
 {
-    int result = 0;
-    int i;
-    int n_mark_words;
+    unsigned result = 0;
+    word i;
+    word n_mark_words;
 #   ifdef MARK_BIT_PER_OBJ
-      int n_objs = (int)HBLK_OBJS(hhdr -> hb_sz);
+      word n_objs = HBLK_OBJS(hhdr -> hb_sz);
 
       if (0 == n_objs) n_objs = 1;
       n_mark_words = divWORDSZ(n_objs + WORDSZ - 1);
