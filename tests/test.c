@@ -1206,7 +1206,7 @@ void run_one_test(void)
 #   endif
     GC_FREE(0);
 #   ifdef THREADS
-      if (!GC_thread_is_registered()) {
+      if (!GC_thread_is_registered() && GC_is_init_called()) {
         GC_printf("Current thread is not registered with GC\n");
         FAIL;
       }
