@@ -57,8 +57,11 @@
 #   include <assert.h>  /* Not normally used, but handy for debugging.  */
 # endif
 
+#ifndef NO_TYPED_TEST
 # include "gc_typed.h"
-# include "private/gc_priv.h"   /* For output, locking, MIN_WORDS,      */
+#endif
+
+#include "private/gc_priv.h"    /* For output, locking, MIN_WORDS,      */
                                 /* some statistics and gcconfig.h.      */
 
 # if defined(MSWIN32) || defined(MSWINCE)
@@ -226,6 +229,7 @@ volatile AO_t extra_count = 0;  /* Amount of space wasted in cons node; */
 
   void Amiga_Fail(void){GC_amiga_free_all_mem();abort();}
 # define FAIL Amiga_Fail()
+#ifndef NO_TYPED_TEST
   void *GC_amiga_gctest_malloc_explicitly_typed(size_t lb, GC_descr d){
     void *ret=GC_malloc_explicitly_typed(lb,d);
     if(ret==NULL){
@@ -254,6 +258,7 @@ volatile AO_t extra_count = 0;  /* Amount of space wasted in cons node; */
   }
 # define GC_malloc_explicitly_typed(a,b) GC_amiga_gctest_malloc_explicitly_typed(a,b)
 # define GC_calloc_explicitly_typed(a,b,c) GC_amiga_gctest_calloc_explicitly_typed(a,b,c)
+#endif /* !NO_TYPED_TEST */
 
 #else /* !AMIGA_FASTALLOC */
 
@@ -1114,6 +1119,7 @@ void tree_test(void)
 
 unsigned n_tests = 0;
 
+#ifndef NO_TYPED_TEST
 const GC_word bm_huge[320 / CPP_WORDSZ] = {
 # if CPP_WORDSZ == 32
     0xffffffff,
@@ -1221,6 +1227,7 @@ void typed_test(void)
     GC_gcollect();
     GC_noop1((word)x);
 }
+#endif /* !NO_TYPED_TEST */
 
 #ifdef DBG_HDRS_ALL
 # define set_print_procs() (void)(A.dummy = 17)
@@ -1504,7 +1511,7 @@ void run_one_test(void)
                         (unsigned) time_diff, (void *)&start_time);
         }
 #   endif
-#   ifndef DBG_HDRS_ALL
+#   if !defined(DBG_HDRS_ALL) && !defined(NO_TYPED_TEST)
       typed_test();
 #     ifndef NO_CLOCK
         if (print_stats) {
