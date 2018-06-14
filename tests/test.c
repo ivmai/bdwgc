@@ -381,6 +381,21 @@ sexpr small_cons (sexpr x, sexpr y)
     return(r);
 }
 
+#ifdef NO_CONS_ATOMIC_LEAF
+# define small_cons_leaf(x) small_cons(INT_TO_SEXPR(x), nil)
+#else
+  sexpr small_cons_leaf(int x)
+  {
+    sexpr r = (sexpr)GC_MALLOC_ATOMIC(sizeof(struct SEXPR));
+
+    CHECK_OUT_OF_MEMORY(r);
+    AO_fetch_and_add1(&atomic_count);
+    r -> sexpr_car = INT_TO_SEXPR(x);
+    r -> sexpr_cdr = nil;
+    return r;
+  }
+#endif
+
 sexpr small_cons_uncollectable (sexpr x, sexpr y)
 {
     sexpr r = (sexpr)GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR));
@@ -435,7 +450,7 @@ sexpr ints(int low, int up)
     if (low > up) {
         return(nil);
     } else {
-        return(small_cons(small_cons(INT_TO_SEXPR(low), nil), ints(low+1, up)));
+        return small_cons(small_cons_leaf(low), ints(low + 1, up));
     }
 }
 
@@ -472,7 +487,7 @@ sexpr uncollectable_ints(int low, int up)
     if (low > up) {
         return(nil);
     } else {
-        return(small_cons_uncollectable(small_cons(INT_TO_SEXPR(low), nil),
+        return(small_cons_uncollectable(small_cons_leaf(low),
                uncollectable_ints(low+1, up)));
     }
 }
