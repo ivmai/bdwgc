@@ -1336,8 +1336,8 @@ K&R-style function definition with the ANSI C one.
 * extra/setjmp_t.c (nested_sp): Implement in the same way as
 GC_approx_sp.
 
-* dyn_load.c (GC_dyld_sections): Add more sctions.
-* dyn_load.c (GC_dyld_add_sect_fmts): New static varaible.
+* dyn_load.c (GC_dyld_sections): Add more sections.
+* dyn_load.c (GC_dyld_add_sect_fmts): New static variable.
 * dyn_load.c (L2_MAX_OFILE_ALIGNMENT): New macro.
 * dyn_load.c (GC_dyld_image_add, GC_dyld_image_remove): Improve
 logging; add support for on-demand sections.
@@ -2675,7 +2675,7 @@ GC_enable_incremental() if MAKE_BACKGRAPH is defined, but
 do invoke it even if parallel marking is enabled.
 
 * tests/test.c (reverse_test): Comment out a check for MSWIN32
-(when determing BIG value) assuming outdated win32S.
+(when determining BIG value) assuming outdated win32S.
 * tests/test.c (reverse_test): Rename to reverse_test_inner;
 change the declaration (to be of GC_fn_type); call itself thru
 GC_call_with_gc_active() if the argument is zero.
@@ -4950,7 +4950,7 @@ anymore and GCC produces a warning for it).
 * alloc.c (GC_stopped_mark): Adjust printf argument type
 specifier.
 * backgraph.c: Include dbg_mlc.h before ifdef MAKE_BACK_GRAPH (for
-the case when the configuration information comes from aconfig
+the case when the configuration information comes from a config.h
 file).
 * checksums.c: Likewise.
 * include/gc_allocator.h (GC_ATTR_UNUSED): Use "__unused__"
@@ -5498,7 +5498,7 @@ structure.
 * include/private/gc_pmark.h (PUSH_CONTENTS_HDR for
 MARK_BIT_PER_OBJ): Add missing backslash before eoln.
 
-* misc.c (GC_set_warn_proc): Implicitly intialize GC on
+* misc.c (GC_set_warn_proc): Implicitly initialize GC on
 non-Cygwin win32.
 
 * configure.ac: Enable thread-local allocation for sparc-linux.
@@ -7339,7 +7339,7 @@ This is really a purely generational mode, and we can afford to
 postpone the collection until the heap is (nearly) full.
 * Remove read() wrapper for MPROTECT_VDB.  It was causing more harm than
 good.  It is often no longer needed if system calls avoid writing to
-pointerfull heap objects.
+pointerful heap objects.
 * Fix MACOSX test in gcconfig.h (thanks to John Clements).
 * Change GC_test_and_set so that it consistently has one argument.
 Add spaces to ::: in powerpc assembly code in gc_locks.h (thanks to
@@ -7358,7 +7358,7 @@ Wink Saville for pointing this out).
 * Added a bit more assertion checking to make sure that gcj objects
 on free lists never have a nonzero second word.
 * Replaced BCC_MAKEFILE with an up-to-date one (thanks to Andre Leiradella).
-* Upgraded libtool, cinfigure.in and some related files to hopefully
+* Upgraded libtool, configure.in and some related files to hopefully
 support NetBSD/SPARC (thanks to Adrian Bunk).  Unfortunately,
 libtool 1.4.2 seemed to be buggy due to missing quotes in several
 "test" invocations.  Fixed those in the ltmain.sh script.
@@ -7700,7 +7700,7 @@ Toshio Endo for pointing out the problem.)
 irix_threads.c and now unnecessary.  Some comments were obviously wrong.
 * (Mostly) fixed a longstanding problem with setting of dirty bits from
 a signal handler.  In the presence of threads, dirty bits could get lost,
-since the etting of a bit in the bit vector was not atomic with respect
+since the getting of a bit in the bit vector was not atomic with respect
 to other updates.  The fix is 100% correct only for platforms for which
 GC_test_and_set is defined.  The goal is to make that all platforms with
 thread support.  Matters only if incremental GC and threads are both
