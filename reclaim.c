@@ -418,7 +418,7 @@ int GC_n_set_marks(hdr *hhdr)
 #   else
       result += set_bits(hhdr -> hb_marks[n_mark_words - 1]);
 #   endif
-    return(result - 1);
+    return result; /* the number of set bits excluding the one past the end */
 }
 
 #endif /* !USE_MARK_BYTES  */
