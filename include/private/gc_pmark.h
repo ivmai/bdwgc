@@ -325,14 +325,10 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
                            source, hhdr, do_offset_check) \
   do { \
     size_t displ = HBLKDISPL(current); /* Displacement in block; in bytes. */\
-    unsigned32 low_prod, high_prod; \
+    unsigned32 high_prod; \
     unsigned32 inv_sz = hhdr -> hb_inv_sz; \
-    ptr_t base = (ptr_t)(current); \
-    LONG_MULT(high_prod, low_prod, (unsigned32)displ, inv_sz); \
-    /* product is > and within sz_in_bytes of displ * sz_in_bytes * 2**32 */ \
-    if (EXPECT(low_prod >> 16 != 0, FALSE)) { \
-      /* FIXME: fails if offset is a multiple of HBLKSIZE which becomes 0 */ \
-        if (inv_sz == LARGE_INV_SZ) { \
+    ptr_t base; \
+    if (EXPECT(inv_sz == LARGE_INV_SZ, FALSE)) { \
           size_t obj_displ; \
           base = (ptr_t)(hhdr -> hb_block); \
           obj_displ = (ptr_t)(current) - base; \
@@ -348,8 +344,13 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
           } \
           GC_ASSERT(hhdr -> hb_sz > HBLKSIZE || \
                     hhdr -> hb_block == HBLKPTR(current)); \
-          GC_ASSERT((word)hhdr->hb_block < (word)(current)); \
-        } else { \
+          GC_ASSERT((word)(hhdr)->hb_block <= (word)(current)); \
+          high_prod = 0; \
+    } else { \
+        unsigned32 low_prod; \
+        base = (ptr_t)(current); \
+        LONG_MULT(high_prod, low_prod, (unsigned32)displ, inv_sz); \
+        if ((low_prod >> 16) != 0) { \
           size_t obj_displ; \
           /* Accurate enough if HBLKSIZE <= 2**15.      */ \
           GC_STATIC_ASSERT(HBLKSIZE <= (1 << 15)); \
