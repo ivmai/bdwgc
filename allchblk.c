@@ -250,7 +250,7 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
 
 #   ifdef MARK_BIT_PER_OBJ
      /* Set hb_inv_sz as portably as possible.                          */
-     /* We set it to the smallest value such that sz * inv_sz > 2**32    */
+     /* We set it to the smallest value such that sz * inv_sz >= 2**32  */
      /* This may be more precision than necessary.                      */
       if (byte_sz > MAXOBJBYTES) {
          hhdr -> hb_inv_sz = LARGE_INV_SZ;
@@ -265,6 +265,9 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
           inv_sz = ((unsigned)1 << 31)/byte_sz;
           inv_sz *= 2;
           while (inv_sz*byte_sz > byte_sz) ++inv_sz;
+#       endif
+#       ifdef INV_SZ_COMPUTATION_CHECK
+          GC_ASSERT(((1ULL << 32) + byte_sz - 1) / byte_sz == inv_sz);
 #       endif
         hhdr -> hb_inv_sz = inv_sz;
       }
