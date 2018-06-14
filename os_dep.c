@@ -2138,15 +2138,7 @@ void GC_register_data_segments(void)
 # define OPT_MAP_ANON 0
 #endif
 
-# ifdef MSWIN_XBOX1
-    void *durango_get_mem(size_t bytes, size_t page_size)
-    {
-      if (0 == bytes) return NULL;
-      return VirtualAlloc(NULL, bytes, MEM_COMMIT | MEM_TOP_DOWN,
-                          PAGE_READWRITE);
-    }
-
-# else
+# ifndef MSWIN_XBOX1
 #   if defined(SYMBIAN) && !defined(USE_MMAP_ANON)
       EXTERN_C_BEGIN
       extern char *GC_get_private_path_and_zero_file(void);
@@ -2302,6 +2294,15 @@ void * os2_alloc(size_t bytes)
 }
 
 # endif /* OS2 */
+
+# ifdef MSWIN_XBOX1
+    void *durango_get_mem(size_t bytes, size_t page_size)
+    {
+      if (0 == bytes) return NULL;
+      return VirtualAlloc(NULL, bytes, MEM_COMMIT | MEM_TOP_DOWN,
+                          PAGE_READWRITE);
+    }
+# endif
 
 #ifdef MSWINCE
   ptr_t GC_wince_get_mem(size_t bytes)
