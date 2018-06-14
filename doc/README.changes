@@ -1217,7 +1217,7 @@ Since 6.0alpha5:
    irix_threads.c and now unnecessary.  Some comments were obviously wrong.
  - (Mostly) fixed a longstanding problem with setting of dirty bits from
    a signal handler.  In the presence of threads, dirty bits could get lost,
-   since the etting of a bit in the bit vector was not atomic with respect
+   since the getting of a bit in the bit vector was not atomic with respect
    to other updates.  The fix is 100% correct only for platforms for which
    GC_test_and_set is defined.  The goal is to make that all platforms with
    thread support.  Matters only if incremental GC and threads are both
@@ -1486,7 +1486,7 @@ Since 6.1alpha3:
    postpone the collection until the heap is (nearly) full.
  - Remove read() wrapper for MPROTECT_VDB.  It was causing more harm than
    good.  It is often no longer needed if system calls avoid writing to
-   pointerfull heap objects.
+   pointerful heap objects.
  - Fix MACOSX test in gcconfig.h. (Thanks to John Clements.)
  - Change GC_test_and_set so that it consistently has one argument.
    Add spaces to ::: in powerpc assembly code in gc_locks.h.
@@ -1506,7 +1506,7 @@ Since 6.1alpha3:
    on free lists never have a nonzero second word.
  - Replaced BCC_MAKEFILE with an up-to-date one.  (Thanks to 
    Andre Leiradella.)
- - Upgraded libtool, cinfigure.in and some related files to hopefully
+ - Upgraded libtool, configure.in and some related files to hopefully
    support NetBSD/SPARC.  (Thanks to Adrian Bunk.)  Unfortunately,
    libtool 1.4.2 seemed to be buggy due to missing quotes in several
    "test" invocations.  Fixed those in the ltmain.sh script.
