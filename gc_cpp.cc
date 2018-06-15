@@ -29,7 +29,19 @@ built-in "new" and "delete".
 
 #include "gc_cpp.h"
 
+#if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
+    && !defined(GC_NEW_DELETE_NEED_THROW) && GC_GNUC_PREREQ(4, 2) \
+    && (__cplusplus < 201103L || defined(__clang__))
+# define GC_NEW_DELETE_NEED_THROW
+#endif
+
 #if !defined(_MSC_VER) && !defined(__DMC__)
+
+# ifdef GC_NEW_DELETE_NEED_THROW
+#   define GC_DECL_NEW_THROW throw(std::bad_alloc)
+# else
+#   define GC_DECL_NEW_THROW /* empty */
+# endif
 
   void* operator new(size_t size) GC_DECL_NEW_THROW {
     void* obj = GC_MALLOC_UNCOLLECTABLE(size);

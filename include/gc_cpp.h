@@ -174,18 +174,6 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 # define GC_PLACEMENT_DELETE
 #endif
 
-#if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
-    && !defined(GC_NEW_DELETE_NEED_THROW) && GC_GNUC_PREREQ(4, 2) \
-    && (__cplusplus < 201103L || defined(__clang__))
-# define GC_NEW_DELETE_NEED_THROW
-#endif
-
-#ifdef GC_NEW_DELETE_NEED_THROW
-# define GC_DECL_NEW_THROW throw(std::bad_alloc)
-#else
-# define GC_DECL_NEW_THROW /* empty */
-#endif
-
 #ifndef GC_NOEXCEPT
 # if defined(__DMC__) || (defined(__BORLANDC__) \
         && (defined(_RWSTD_NO_EXCEPTIONS) || defined(_RWSTD_NO_EX_SPEC))) \
@@ -235,8 +223,8 @@ enum GCPlacement
 class gc
 {
 public:
-  inline void* operator new(size_t size) GC_DECL_NEW_THROW;
-  inline void* operator new(size_t size, GCPlacement gcp) GC_DECL_NEW_THROW;
+  inline void* operator new(size_t size);
+  inline void* operator new(size_t size, GCPlacement gcp);
   inline void* operator new(size_t size, void* p) GC_NOEXCEPT;
     // Must be redefined here, since the other overloadings hide
     // the global definition.
@@ -249,9 +237,8 @@ public:
 # endif // GC_PLACEMENT_DELETE
 
 # ifdef GC_OPERATOR_NEW_ARRAY
-    inline void* operator new[](size_t size) GC_DECL_NEW_THROW;
-    inline void* operator new[](size_t size, GCPlacement gcp)
-                                                        GC_DECL_NEW_THROW;
+    inline void* operator new[](size_t size);
+    inline void* operator new[](size_t size, GCPlacement gcp);
     inline void* operator new[](size_t size, void* p) GC_NOEXCEPT;
     inline void operator delete[](void* obj) GC_NOEXCEPT;
 #   ifdef GC_PLACEMENT_DELETE
@@ -293,7 +280,7 @@ extern "C" {
 
 inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
                           GC_NS_QUALIFY(GCCleanUpFunc) /* cleanup */ = 0,
-                          void* /* clientData */ = 0) GC_DECL_NEW_THROW;
+                          void* /* clientData */ = 0);
     // Allocates a collectible or uncollectible object, according to the
     // value of "gcp".
     //
@@ -323,7 +310,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   // to arbitrary ordering during linking).
 
 # ifdef GC_OPERATOR_NEW_ARRAY
-    inline void* operator new[](size_t size) GC_DECL_NEW_THROW
+    inline void* operator new[](size_t size)
     {
       void* obj = GC_MALLOC_UNCOLLECTABLE(size);
       GC_OP_NEW_OOM_CHECK(obj);
@@ -336,7 +323,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
     }
 # endif
 
-  inline void* operator new(size_t size) GC_DECL_NEW_THROW
+  inline void* operator new(size_t size)
   {
     void* obj = GC_MALLOC_UNCOLLECTABLE(size);
     GC_OP_NEW_OOM_CHECK(obj);
@@ -352,7 +339,6 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 # ifdef GC_DEBUG
     inline void* operator new(size_t size, int /* nBlockUse */,
                               const char* szFileName, int nLine)
-                                                        GC_DECL_NEW_THROW
     {
       void* obj = GC_debug_malloc_uncollectable(size, szFileName, nLine);
       GC_OP_NEW_OOM_CHECK(obj);
@@ -361,7 +347,6 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 # else
     inline void* operator new(size_t size, int /* nBlockUse */,
                               const char* /* szFileName */, int /* nLine */)
-                                                        GC_DECL_NEW_THROW
     {
       void* obj = GC_malloc_uncollectable(size);
       GC_OP_NEW_OOM_CHECK(obj);
@@ -373,7 +358,6 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
     // This new operator is used by VC++ 7+ in Debug builds:
     inline void* operator new[](size_t size, int nBlockUse,
                                 const char* szFileName, int nLine)
-                                                        GC_DECL_NEW_THROW
     {
       return operator new(size, nBlockUse, szFileName, nLine);
     }
@@ -385,7 +369,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   // The operator new for arrays, identical to the above.
   inline void* operator new[](size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
                               GC_NS_QUALIFY(GCCleanUpFunc) /* cleanup */ = 0,
-                              void* /* clientData */ = 0) GC_DECL_NEW_THROW;
+                              void* /* clientData */ = 0);
 #endif // GC_OPERATOR_NEW_ARRAY
 
 /* Inline implementation */
@@ -395,14 +379,14 @@ namespace boehmgc
 {
 #endif
 
-inline void* gc::operator new(size_t size) GC_DECL_NEW_THROW
+inline void* gc::operator new(size_t size)
 {
   void* obj = GC_MALLOC(size);
   GC_OP_NEW_OOM_CHECK(obj);
   return obj;
 }
 
-inline void* gc::operator new(size_t size, GCPlacement gcp) GC_DECL_NEW_THROW
+inline void* gc::operator new(size_t size, GCPlacement gcp)
 {
   void* obj;
   switch (gcp) {
@@ -445,13 +429,12 @@ inline void gc::operator delete(void* obj) GC_NOEXCEPT
 #endif // GC_PLACEMENT_DELETE
 
 #ifdef GC_OPERATOR_NEW_ARRAY
-  inline void* gc::operator new[](size_t size) GC_DECL_NEW_THROW
+  inline void* gc::operator new[](size_t size)
   {
     return gc::operator new(size);
   }
 
   inline void* gc::operator new[](size_t size, GCPlacement gcp)
-                                                        GC_DECL_NEW_THROW
   {
     return gc::operator new(size, gcp);
   }
@@ -512,7 +495,7 @@ inline gc_cleanup::gc_cleanup()
 
 inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
                           GC_NS_QUALIFY(GCCleanUpFunc) cleanup,
-                          void* clientData) GC_DECL_NEW_THROW
+                          void* clientData)
 {
   void* obj;
   switch (gcp) {
@@ -550,7 +533,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 #ifdef GC_OPERATOR_NEW_ARRAY
   inline void* operator new[](size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
                               GC_NS_QUALIFY(GCCleanUpFunc) cleanup,
-                              void* clientData) GC_DECL_NEW_THROW
+                              void* clientData)
   {
     return ::operator new(size, gcp, cleanup, clientData);
   }
