@@ -88,7 +88,7 @@ cord\tests\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cm
 cord\de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj $(GC_LIB)
 	$(link) /MACHINE:$(CPU) $(ldebug) $(guiflags) -out:cord\de.exe cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj $(GC_LIB) $(guilibs)
 
-gc_cpp.obj: include\gc_cpp.h include\gc.h
+gc_cpp.obj: gc_cpp.cc include\gc_cpp.h include\gc.h
 
 test_cpp.cpp: tests\test_cpp.cc
 	copy tests\test_cpp.cc test_cpp.cpp
