@@ -141,13 +141,13 @@ void prune_map(void)
 }
 
 /* Add mapping entry */
-void add_map(int line, size_t pos)
+void add_map(int line_arg, size_t pos)
 {
     line_map new_map = GC_NEW(struct LineMapRep);
 
     if (NULL == new_map) OUT_OF_MEMORY;
     if (current_map_size >= MAX_MAP_SIZE) prune_map();
-    new_map -> line = line;
+    new_map -> line = line_arg;
     new_map -> pos = pos;
     new_map -> previous = current_map;
     GC_end_stubborn_change(new_map);
