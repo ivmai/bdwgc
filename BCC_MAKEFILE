@@ -64,7 +64,7 @@ cord\de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj \
 |
 	$(rc) cord\tests\de_win.res cord\de.exe
 
-gc_cpp.obj: include\gc_cpp.h include\gc.h
+gc_cpp.obj: gc_cpp.cc include\gc_cpp.h include\gc.h
 
 test_cpp.cpp: tests\test_cpp.cc
 	copy tests\test_cpp.cc test_cpp.cpp
@@ -76,4 +76,5 @@ test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib
 
 clean:
 	-del *.obj *.res *.exe *.csm cord\*.obj cord\*.res cord\*.exe cord\*.csm
+	-del cord\*.tds cord\tests\*.obj cord\tests\*.res
 	-del *.log *.tds gc.lib tests\test.obj "gc.#0*"
