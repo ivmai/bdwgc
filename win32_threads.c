@@ -2194,6 +2194,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     /* This is probably pointless, since an uncaught exception is       */
     /* supposed to result in the process being killed.                  */
 #   ifndef __GNUC__
+      ret = NULL; /* to suppress "might be uninitialized" compiler warning */
       __try
 #   endif
     {
