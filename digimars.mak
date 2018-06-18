@@ -52,7 +52,7 @@ gc.def: digimars.mak
 	echo GC_is_valid_displacement_print_proc >>gc.def
 
 clean:
-	del gc.def gc.dll gc.lib gc.map gctest.map test_cpp.map
+	del *.log gc.def gc.dll gc.lib gc.map gctest.map test_cpp.map
 	del tests\test.obj gctest.exe tests\test_cpp.obj test_cpp.exe
 	del $(OBJS)
 
