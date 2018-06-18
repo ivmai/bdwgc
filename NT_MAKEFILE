@@ -46,7 +46,7 @@ cord\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cmds.h
 cord\de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\de_win.rbj gc.lib
 	$(link) -debug -debugtype:cv $(guiflags) -stack:16384 -out:cord\de.exe  cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\de_win.rbj gc.lib $(guilibs)
 
-gc_cpp.obj: include\gc_cpp.h include\gc.h
+gc_cpp.obj: gc_cpp.cc include\gc_cpp.h include\gc.h
 
 gc_cpp.cpp: gc_cpp.cc
 #	copy gc_cpp.cc gc_cpp.cpp
