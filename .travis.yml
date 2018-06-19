@@ -337,7 +337,7 @@ matrix:
     compiler: clang-5.0
     language: c
     env:
-    - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer"
+    - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer -std=gnu11"
     - CONF_OPTIONS="--enable-static"
     - TESTS_CUSTOM_RUN=true
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -424,7 +424,7 @@ matrix:
     compiler: clang-5.0
     language: c
     env:
-    - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D GC_DISABLE_INCREMENTAL"
+    - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D GC_DISABLE_INCREMENTAL -std=gnu11"
     - CONF_OPTIONS="--enable-gc-assertions --enable-gc-debug"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
@@ -453,7 +453,7 @@ matrix:
     compiler: gcc-8
     language: c
     env:
-    - CFLAGS_EXTRA="-m32 -O3"
+    - CFLAGS_EXTRA="-m32 -O3 -std=gnu11"
     - CONF_OPTIONS="--disable-shared --enable-static --enable-single-obj-compilation"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
