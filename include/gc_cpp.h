@@ -141,7 +141,6 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 ****************************************************************************/
 
 #include "gc.h"
-#include <new> // for bad_alloc
 
 #ifdef GC_NAMESPACE
 # define GC_NS_QUALIFY(T) boehmgc::T
@@ -190,13 +189,17 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 # endif
 #endif // !GC_NOEXCEPT
 
-#if !defined(GC_NEW_ABORTS_ON_OOM) && !defined(_LIBCPP_NO_EXCEPTIONS)
-# define GC_OP_NEW_OOM_CHECK(obj) \
-                do { if (!(obj)) throw std::bad_alloc(); } while (0)
-#else
+#if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 # define GC_OP_NEW_OOM_CHECK(obj) \
                 do { if (!(obj)) GC_abort_on_oom(); } while (0)
-#endif // !GC_NEW_ABORTS_ON_OOM
+#elif defined(GC_INCLUDE_NEW)
+# include <new> // for bad_alloc
+# define GC_OP_NEW_OOM_CHECK(obj) if (obj) {} else throw std::bad_alloc()
+#else
+  // "new" header is not included, so bad_alloc cannot be thrown directly.
+  GC_API void GC_CALL GC_throw_bad_alloc();
+# define GC_OP_NEW_OOM_CHECK(obj) if (obj) {} else GC_throw_bad_alloc()
+#endif // !GC_NEW_ABORTS_ON_OOM && !GC_INCLUDE_NEW
 
 #ifdef GC_NAMESPACE
 namespace boehmgc

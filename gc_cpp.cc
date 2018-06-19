@@ -27,15 +27,29 @@ built-in "new" and "delete".
 # define GC_BUILD
 #endif
 
-#include "gc_cpp.h"
+#include "gc.h"
 
-#if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
-    && !defined(GC_NEW_DELETE_NEED_THROW) && GC_GNUC_PREREQ(4, 2) \
-    && (__cplusplus < 201103L || defined(__clang__))
-# define GC_NEW_DELETE_NEED_THROW
+#include <new> // for bad_alloc, precedes include of gc_cpp.h
+
+#include "gc_cpp.h" // for GC_OPERATOR_NEW_ARRAY, GC_NOEXCEPT
+
+#if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
+# define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()
+#else
+# define GC_ALLOCATOR_THROW_OR_ABORT() throw std::bad_alloc()
 #endif
 
+GC_API void GC_CALL GC_throw_bad_alloc() {
+  GC_ALLOCATOR_THROW_OR_ABORT();
+}
+
 #if !defined(_MSC_VER) && !defined(__DMC__)
+
+# if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
+    && !defined(GC_NEW_DELETE_NEED_THROW) && GC_GNUC_PREREQ(4, 2) \
+    && (__cplusplus < 201103L || defined(__clang__))
+#   define GC_NEW_DELETE_NEED_THROW
+# endif
 
 # ifdef GC_NEW_DELETE_NEED_THROW
 #   define GC_DECL_NEW_THROW throw(std::bad_alloc)
@@ -45,7 +59,8 @@ built-in "new" and "delete".
 
   void* operator new(size_t size) GC_DECL_NEW_THROW {
     void* obj = GC_MALLOC_UNCOLLECTABLE(size);
-    GC_OP_NEW_OOM_CHECK(obj);
+    if (0 == obj)
+      GC_ALLOCATOR_THROW_OR_ABORT();
     return obj;
   }
 
@@ -56,7 +71,8 @@ built-in "new" and "delete".
 # if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
     void* operator new[](size_t size) GC_DECL_NEW_THROW {
       void* obj = GC_MALLOC_UNCOLLECTABLE(size);
-      GC_OP_NEW_OOM_CHECK(obj);
+      if (0 == obj)
+        GC_ALLOCATOR_THROW_OR_ABORT();
       return obj;
     }
 
