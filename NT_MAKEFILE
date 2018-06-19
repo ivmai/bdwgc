@@ -1,47 +1,41 @@
 # Makefile for Windows NT.  Assumes Microsoft compiler.
-# Use "nmake -f NT_MAKEFILE nodebug=1 all" for optimized versions of library,
-# gctest and editor.  Please adjust/uncomment CPU, CVTRES_CPU, GC_DLL, GC_LIB,
-# CFLAGS_SPECIFIC, LINK_GC variables below for the desired configuration.
-
-# For building x86 (32-bit) library:
-CPU=i386
-CVTRES_CPU=X86
-#
-# For building x64 (amd64) library:
-#CPU=AMD64
-#CVTRES_CPU=X64
+# Should be invoked as "nmake -f NT_MAKEFILE [<args>]"; the optional arguments
+# are: "cpu=AMD64" - to target x64, "cpu=i386" - to target x86,
+# "make_as_lib=1" - to build it as a static library, "nodebug=1" - to produce
+# the release variant of the library, "nothreads=1" - to build the library and
+# the tests without threads support.
 
 !include <ntwin32.mak>
 
-# For a static single-threaded collector library:
-#CFLAGS_SPECIFIC=$(cvars) -DGC_NOT_DLL
-#GC_DLL=
-#GC_LIB=gc.lib
-#LINK_GC=lib /out:$(GC_LIB)
-#
-# For a static multi-threaded collector library:
-#CFLAGS_SPECIFIC=$(cvarsmt) -DGC_NOT_DLL -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
-#GC_DLL=
-#GC_LIB=gc.lib
-#LINK_GC=lib /out:$(GC_LIB)
-#
-# For a dynamic 32-bit multi-threaded collector library:
-CFLAGS_SPECIFIC=$(cvarsmt) -DGC_DLL -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
+!IF "$(CPU)" == "i386"
+CVTRES_CPU=X86
+!ELSEIF "$(CPU)" == "AMD64"
+CVTRES_CPU=X64
+!ENDIF
+
+!IFNDEF NOTHREADS
+CFLAGS_MT=$(cvarsmt) -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
+!ENDIF
+
+!IFDEF MAKE_AS_LIB
+CFLAGS_GCDLL=-DGC_NOT_DLL
+GC_LIB=gc.lib
+LINK_GC=lib /out:$(GC_LIB)
+!ELSE
+CFLAGS_GCDLL=-DGC_DLL
+!IF "$(CPU)" == "AMD64"
+GC_DLL=gc64.dll
+GC_LIB=gc64_dll.lib
+!ELSE
 GC_DLL=gc.dll
 GC_LIB=gc_dll.lib
-#
-# For a dynamic 64-bit multi-threaded collector library:
-#CFLAGS_SPECIFIC=$(cvarsmt) -DGC_DLL -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
-#GC_DLL=gc64.dll
-#GC_LIB=gc64_dll.lib
+!ENDIF
+LINK_DLL_FLAGS=kernel32.lib user32.lib /subsystem:windows /dll \
+  /INCREMENTAL:NO /pdb:"gc.pdb" /out:$(GC_DLL) /implib:$(GC_LIB)
+LINK_GC=$(link) $(ldebug) $(LINK_DLL_FLAGS)
+!ENDIF
 
-LINK_DLL_FLAGS=kernel32.lib user32.lib \
-  /nologo /subsystem:windows /dll /incremental:no /pdb:"gc.pdb" \
-  /out:$(GC_DLL) /implib:$(GC_LIB)
-
-# For a dynamic 32- or 64-bit multi-threaded collector library:
-LINK_GC=link $(ldebug) $(LINK_DLL_FLAGS)
-
+CFLAGS_SPECIFIC=$(CFLAGS_GCDLL) $(CFLAGS_MT)
 
 # Make sure that .cc is not viewed as a suffix.  It is for VC++2005, but
 # not earlier versions.  We can deal with either, but not inconsistency.
