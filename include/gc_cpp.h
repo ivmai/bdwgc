@@ -252,6 +252,9 @@ extern "C" {
   // Disable warning that "no matching operator delete found; memory will
   // not be freed if initialization throws an exception"
 # pragma warning(disable:4291)
+  // TODO: "non-member operator new or delete may not be declared inline"
+  // warning is disabled for now.
+# pragma warning(disable:4595)
 #endif
 
 inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
