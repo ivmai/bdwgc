@@ -48,7 +48,7 @@ CFLAGS_SPECIFIC=$(CFLAGS_GCDLL) $(CFLAGS_MT)
 AO_SRC_DIR=libatomic_ops/src
 AO_INCLUDE_DIR=$(AO_SRC_DIR)
 
-OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj stubborn.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj mallocx.obj win32_threads.obj extra\msvc_dbg.obj thread_local_alloc.obj
+OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj stubborn.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj mallocx.obj extra\msvc_dbg.obj thread_local_alloc.obj
 
 all: gctest.exe cord\de.exe test_cpp.exe
 
@@ -65,7 +65,7 @@ $(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h incl
 $(GC_LIB): $(OBJS)
 	$(LINK_GC) /MACHINE:$(CPU) $(OBJS)
 
-gctest.exe: tests\test.obj $(GC_LIB)
+gctest.exe: $(GC_LIB) tests\test.obj
 	$(link) /MACHINE:$(CPU) $(ldebug) $(guiflags) -out:$*.exe tests\test.obj $(guilibs) $(GC_LIB)
 #	mapsympe -n -o gctest.sym gctest.exe
 # This produces a GUI app that opens no window and writes to gctest.gc.log.
