@@ -20,8 +20,12 @@
 #ifdef GC_PTHREADS
 # include <pthread.h>
 #else
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
 # include <windows.h>
-#endif
+#endif /* !GC_PTHREADS */
 
 #if defined(__HAIKU__)
 # include <errno.h>

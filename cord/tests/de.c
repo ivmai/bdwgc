@@ -44,6 +44,10 @@
 #endif
 
 #if defined(WIN32)
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN 1
+#  endif
+#  define NOSERVICE
 #  include <windows.h>
 #  include "de_win.h"
 #elif defined(MACINTOSH)

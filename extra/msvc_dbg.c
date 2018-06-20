@@ -28,7 +28,10 @@
 #include "private/msvc_dbg.h"
 #include "gc.h"
 
-#define WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN 1
+#endif
+#define NOSERVICE
 #include <windows.h>
 
 #pragma pack(push, 8)

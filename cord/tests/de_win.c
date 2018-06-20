@@ -19,7 +19,12 @@
  * This was written by a nonexpert windows programmer.
  */
 
-#include "windows.h"
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN 1
+#endif
+#define NOSERVICE
+#include <windows.h>
+
 #include "gc.h"
 #include "cord.h"
 #include "de_cmds.h"

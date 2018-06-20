@@ -46,7 +46,12 @@ int getpagesize(void)
     return((int)(result[0]));
 }
 #elif defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
 # include <windows.h>
+
   int getpagesize(void)
   {
     SYSTEM_INFO sysinfo;

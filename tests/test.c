@@ -64,9 +64,13 @@
 #include "private/gc_priv.h"    /* For output, locking, MIN_WORDS,      */
                                 /* some statistics and gcconfig.h.      */
 
-# if defined(MSWIN32) || defined(MSWINCE)
-#   include <windows.h>
+#if defined(MSWIN32) || defined(MSWINCE)
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
 # endif
+# define NOSERVICE
+# include <windows.h>
+#endif /* MSWIN32 || MSWINCE */
 
 #ifdef GC_PRINT_VERBOSE_STATS
 # define print_stats VERBOSE
