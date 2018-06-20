@@ -745,6 +745,10 @@ EXTERN_C_END
 
 #include <setjmp.h>
 
+#if __STDC_VERSION__ >= 201112L
+# include <assert.h> /* for static_assert */
+#endif
+
 EXTERN_C_BEGIN
 
 /*********************************/
@@ -2484,8 +2488,11 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #endif
 
 /* Check a compile time assertion at compile time.      */
-#if defined(static_assert) && (__STDC_VERSION__ >= 201112L)
-# define GC_STATIC_ASSERT(expr) static_assert(expr, "")
+#if _MSC_VER >= 1700
+# define GC_STATIC_ASSERT(expr) \
+                static_assert(expr, "static assertion failed: " #expr)
+#elif defined(static_assert) && __STDC_VERSION__ >= 201112L
+# define GC_STATIC_ASSERT(expr) static_assert(expr, #expr)
 #elif defined(mips) && !defined(__GNUC__)
 /* DOB: MIPSPro C gets an internal error taking the sizeof an array type.
    This code works correctly (ugliness is to avoid "unused var" warnings) */
