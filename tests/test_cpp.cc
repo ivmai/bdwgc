@@ -28,6 +28,7 @@ few minutes to complete.
 
 #undef GC_BUILD
 
+#define GC_DONT_INCL_WINDOWS_H
 #include "gc_cpp.h"
 
 #include <stdio.h>

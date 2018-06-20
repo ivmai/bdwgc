@@ -1688,7 +1688,8 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
                 /* Note: for Cygwin and pthreads-win32, this is skipped */
                 /* unless windows.h is included before gc.h.            */
 
-# if !defined(GC_NO_THREAD_DECLS) || defined(GC_BUILD)
+# if (!defined(GC_NO_THREAD_DECLS) || defined(GC_BUILD)) \
+     && !defined(GC_DONT_INCL_WINDOWS_H)
 
 #   ifdef __cplusplus
       } /* Including windows.h in an extern "C" context no longer works. */
