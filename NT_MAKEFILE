@@ -5,7 +5,42 @@
 # the release variant of the library, "nothreads=1" - to build the library and
 # the tests without threads support.
 
-!include <ntwin32.mak>
+cc = cl
+link = link
+rc = rc
+
+!IF !DEFINED(CPU) || "$(CPU)" == ""
+CPU = $(PROCESSOR_ARCHITECTURE)
+!ENDIF
+!IF "$(CPU)" == "I386" || "$(CPU)" == "X86" || "$(CPU)" == "x86"
+CPU = i386
+!ELSEIF "$(CPU)" == "X64" || "$(CPU)" == "x64" || "$(CPU)" == "amd64"
+CPU = AMD64
+!ENDIF
+
+!IF !DEFINED(NMAKE_WINVER)
+NMAKE_WINVER = 0x0600
+!ENDIF
+
+cflags = $(cflags) -c -DCRTAPI1=_cdecl -DCRTAPI2=_cdecl -GS -D_WINNT -W4
+!IF "$(CPU)" == "i386"
+cflags = $(cflags) -D_X86_=1  -DWIN32 -D_WIN32
+!ELSEIF "$(CPU)" == "AMD64"
+cflags = $(cflags) -D_AMD64_=1 -DWIN64 -D_WIN64  -DWIN32 -D_WIN32
+!ENDIF
+cflags = $(cflags) -D_WIN32_WINNT=$(NMAKE_WINVER) -DWINVER=$(NMAKE_WINVER)
+
+!IFDEF NODEBUG
+cvarsmt = -D_MT -MT
+cdebug = -Ox -DNDEBUG
+rcvars = -DWIN32 -D_WIN32 -DWINVER=$(NMAKE_WINVER)
+ldebug = /RELEASE
+!ELSE
+cvarsmt = -D_MT -MTd
+cdebug = -Zi -Od -DDEBUG
+rcvars = -DWIN32 -D_WIN32 -DWINVER=$(NMAKE_WINVER) -DDEBUG -D_DEBUG
+ldebug = /DEBUG /DEBUGTYPE:cv
+!ENDIF
 
 !IF "$(CPU)" == "i386"
 CVTRES_CPU=X86
@@ -66,7 +101,7 @@ $(GC_LIB): $(OBJS)
 	$(LINK_GC) /MACHINE:$(CPU) $(OBJS)
 
 gctest.exe: $(GC_LIB) tests\test.obj
-	$(link) /MACHINE:$(CPU) $(ldebug) $(guiflags) -out:$*.exe tests\test.obj $(guilibs) $(GC_LIB)
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:$*.exe tests\test.obj $(GC_LIB)
 #	mapsympe -n -o gctest.sym gctest.exe
 # This produces a GUI app that opens no window and writes to gctest.gc.log.
 
@@ -80,7 +115,7 @@ cord\tests\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cm
 
 # Cord/de is a real win32 GUI app.
 cord\de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj $(GC_LIB)
-	$(link) /MACHINE:$(CPU) $(ldebug) $(guiflags) -out:cord\de.exe cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj $(GC_LIB) $(guilibs)
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:cord\de.exe cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj $(GC_LIB) gdi32.lib user32.lib
 
 gc_cpp.obj: gc_cpp.cc include\gc_cpp.h include\gc.h
 
@@ -91,7 +126,7 @@ test_cpp.cpp: tests\test_cpp.cc
 # a single numeric argument, which is the number of iterations.
 # The output appears in test_cpp.gc.log file.
 test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h $(GC_LIB)
-	$(link) /MACHINE:$(CPU) $(ldebug) $(guiflags) -out:test_cpp.exe test_cpp.obj $(GC_LIB) $(guilibs)
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:test_cpp.exe test_cpp.obj $(GC_LIB)
 
 $(AO_SRC_DIR):
 	tar xvfz $(AO_SRC_DIR).tar.gz
