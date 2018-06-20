@@ -1862,6 +1862,8 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
          break;
 #     endif
 #    endif
+#   else
+     case 1: /* to suppress "switch statement contains no case" warning */
 #   endif
      default:
       GC_mark_stack_top_reg = GC_mark_stack_top;
