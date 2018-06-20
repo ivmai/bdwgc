@@ -417,7 +417,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
       /* variants.                                                      */
                   /* cast away volatile qualifier */
       for (i = 0;
-           InterlockedExchange((void*)&dll_thread_table[i].tm.in_use, 1) != 0;
+           InterlockedExchange((word*)&dll_thread_table[i].tm.in_use, 1) != 0;
            i++) {
         /* Compare-and-swap would make this cleaner, but that's not     */
         /* supported before Windows 98 and NT 4.0.  In Windows 2000,    */

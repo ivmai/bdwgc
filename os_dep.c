@@ -2603,9 +2603,10 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
               != sizeof(mem_info))
               ABORT("Weird VirtualQuery result");
           alloc_len = (len < mem_info.RegionSize) ? len : mem_info.RegionSize;
-          result = VirtualAlloc(start_addr, alloc_len, MEM_COMMIT,
-                                GC_pages_executable ? PAGE_EXECUTE_READWRITE :
-                                                      PAGE_READWRITE);
+          result = (ptr_t)VirtualAlloc(start_addr, alloc_len, MEM_COMMIT,
+                                       GC_pages_executable
+                                                ? PAGE_EXECUTE_READWRITE
+                                                : PAGE_READWRITE);
           if (result != start_addr) {
               if (GetLastError() == ERROR_NOT_ENOUGH_MEMORY ||
                   GetLastError() == ERROR_OUTOFMEMORY) {
