@@ -48,6 +48,10 @@ CVTRES_CPU=X86
 CVTRES_CPU=X64
 !ENDIF
 
+!IFNDEF NODEBUG
+CFLAGS_DEBUG=-DGC_ASSERTIONS
+!ENDIF
+
 !IFNDEF NOTHREADS
 CFLAGS_MT=$(cvarsmt) -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
 !ENDIF
@@ -70,7 +74,7 @@ LINK_DLL_FLAGS=kernel32.lib user32.lib /subsystem:windows /dll \
 LINK_GC=$(link) $(ldebug) $(LINK_DLL_FLAGS)
 !ENDIF
 
-CFLAGS_SPECIFIC=$(CFLAGS_GCDLL) $(CFLAGS_MT)
+CFLAGS_SPECIFIC=$(CFLAGS_DEBUG) $(CFLAGS_GCDLL) $(CFLAGS_MT)
 
 # Make sure that .cc is not viewed as a suffix.  It is for VC++2005, but
 # not earlier versions.  We can deal with either, but not inconsistency.
