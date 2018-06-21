@@ -104,6 +104,18 @@ class B: public GC_NS_QUALIFY(gc), public A { public:
 
 int B::deleting = 0;
 
+#define C_INIT_LEFT_RIGHT(arg_l, arg_r) \
+    { \
+        C *l = new C(arg_l); \
+        C *r = new C(arg_r); \
+        left = l; \
+        right = r; \
+        if (GC_is_heap_ptr(this)) { \
+            GC_END_STUBBORN_CHANGE(this); \
+            GC_reachable_here(l); \
+            GC_reachable_here(r); \
+        } \
+    }
 
 class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
     /* A collectible class with cleanup and virtual multiple inheritance. */
@@ -112,12 +124,8 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
     // a copy constructor and an assignment operator to workaround a cppcheck
     // warning.
     C(const C& c) : A(c.i), level(c.level), left(0), right(0) {
-        if (level > 0) {
-            left = new C(*c.left);
-            right = new C(*c.right);
-            GC_end_stubborn_change(left);
-            GC_end_stubborn_change(right);
-        }
+        if (level > 0)
+            C_INIT_LEFT_RIGHT(*c.left, *c.right);
     }
 
     C& operator=(const C& c) {
@@ -128,12 +136,8 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
             level = c.level;
             left = 0;
             right = 0;
-            if (level > 0) {
-                left = new C(*c.left);
-                right = new C(*c.right);
-                GC_end_stubborn_change(left);
-                GC_end_stubborn_change(right);
-            }
+            if (level > 0)
+                C_INIT_LEFT_RIGHT(*c.left, *c.right);
         }
         return *this;
     }
@@ -141,10 +145,7 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
     GC_ATTR_EXPLICIT C( int levelArg ): A( levelArg ), level( levelArg ) {
         nAllocated++;
         if (level > 0) {
-            left = new C( level - 1 );
-            right = new C( level - 1 );
-            GC_end_stubborn_change(left);
-            GC_end_stubborn_change(right);
+            C_INIT_LEFT_RIGHT(level - 1, level - 1);
         } else {
             left = right = 0;}}
     ~C() {
@@ -319,7 +320,8 @@ void* Undisguise( GC_word i ) {
         exit(3);
       }
       *xptr = x;
-      GC_end_stubborn_change(xptr);
+      GC_END_STUBBORN_CHANGE(xptr);
+      GC_reachable_here(x);
       x = 0;
 #   endif
     if (argc != 2
@@ -345,7 +347,6 @@ void* Undisguise( GC_word i ) {
             Later we'll check to make sure they've gone away. */
         for (i = 0; i < 1000; i++) {
             C* c = new C( 2 );
-            GC_end_stubborn_change(c);
             C c1( 2 );           /* stack allocation should work too */
             D* d;
             F* f;

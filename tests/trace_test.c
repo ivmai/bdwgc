@@ -15,6 +15,7 @@ struct treenode {
 
 struct treenode * mktree(int i) {
   struct treenode * r = GC_NEW(struct treenode);
+  struct treenode *x, *y;
   if (0 == i)
     return 0;
   if (1 == i)
@@ -23,10 +24,15 @@ struct treenode * mktree(int i) {
     fprintf(stderr, "Out of memory\n");
     exit(1);
   }
-  r -> x = mktree(i-1);
-  r -> y = mktree(i-1);
-  if (i != 1)
-    GC_end_stubborn_change(r);
+  x = mktree(i - 1);
+  y = mktree(i - 1);
+  r -> x = x;
+  r -> y = y;
+  if (i != 1) {
+    GC_END_STUBBORN_CHANGE(r);
+    GC_reachable_here(x);
+    GC_reachable_here(y);
+  }
   return r;
 }
 

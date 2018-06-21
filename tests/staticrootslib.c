@@ -37,10 +37,15 @@ static struct treenode *root_nz[10] = { (struct treenode *)(GC_word)2 };
     if (1 == i)
       r = (struct treenode *)GC_MALLOC_ATOMIC(sizeof(struct treenode));
     if (r) {
-      r -> x = libsrl_mktree(i-1);
-      r -> y = libsrl_mktree(i-1);
-      if (i != 1)
-        GC_end_stubborn_change(r);
+      struct treenode *x = libsrl_mktree(i - 1);
+      struct treenode *y = libsrl_mktree(i - 1);
+      r -> x = x;
+      r -> y = y;
+      if (i != 1) {
+        GC_END_STUBBORN_CHANGE(r);
+        GC_reachable_here(x);
+        GC_reachable_here(y);
+      }
     }
     return r;
   }

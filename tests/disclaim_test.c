@@ -129,6 +129,7 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     p->car = (pair_t)cd;
     p->cdr = NULL;
     GC_end_stubborn_change(p);
+    GC_reachable_here(cd);
 }
 
 pair_t
@@ -149,6 +150,8 @@ pair_new(pair_t car, pair_t cdr)
     p->car = car;
     p->cdr = cdr;
     GC_end_stubborn_change(p);
+    GC_reachable_here(car);
+    GC_reachable_here(cdr);
 #   ifdef DEBUG_DISCLAIM_DESTRUCT
       printf("Construct %p = (%p, %p)\n",
              (void *)p, (void *)p->car, (void *)p->cdr);
