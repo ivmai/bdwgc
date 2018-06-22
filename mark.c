@@ -1383,6 +1383,11 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
         return;
     }
     if ((*dirty_fn)(h-1)) {
+        if ((word)(GC_mark_stack_top - GC_mark_stack)
+            > 3 * GC_mark_stack_size / 4) {
+            GC_push_all(bottom, top);
+            return;
+        }
         GC_push_all(bottom, h);
     }
 
@@ -1402,9 +1407,6 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 
     if ((ptr_t)h != top && (*dirty_fn)(h)) {
        GC_push_all(h, top);
-    }
-    if ((word)GC_mark_stack_top >= (word)GC_mark_stack_limit) {
-        ABORT("Unexpected mark stack overflow");
     }
   }
 
