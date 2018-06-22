@@ -1329,6 +1329,11 @@ void GC_push_all(ptr_t bottom, ptr_t top)
         return;
     }
     if ((*dirty_fn)(h-1)) {
+        if ((word)(GC_mark_stack_top - GC_mark_stack)
+            > 3 * GC_mark_stack_size / 4) {
+            GC_push_all(bottom, top);
+            return;
+        }
         GC_push_all(bottom, (ptr_t)h);
     }
 
@@ -1348,9 +1353,6 @@ void GC_push_all(ptr_t bottom, ptr_t top)
 
     if ((ptr_t)h != top && (*dirty_fn)(h)) {
        GC_push_all((ptr_t)h, top);
-    }
-    if (GC_mark_stack_top >= GC_mark_stack_limit) {
-        ABORT("Unexpected mark stack overflow");
     }
   }
 
