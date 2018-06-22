@@ -526,6 +526,8 @@ GC_API GC_ATTR_DEPRECATED void GC_CALL GC_change_stubborn(const void *);
 /* Only non-NULL pointer stores into the object are considered to be    */
 /* changes.  Matters only if the library has been compiled with         */
 /* MANUAL_VDB defined (otherwise the function does nothing).            */
+/* Should be followed typically by GC_reachable_here called for each    */
+/* of the stored pointers.                                              */
 GC_API void GC_CALL GC_end_stubborn_change(const void *) GC_ATTR_NONNULL(1);
 
 /* Return a pointer to the base (lowest address) of an object given     */

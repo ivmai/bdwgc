@@ -326,6 +326,8 @@ GC_make_sequence_descriptor(complex_descriptor *first,
         result -> sd_first = first;
         result -> sd_second = second;
         GC_dirty(result);
+        REACHABLE_AFTER_DIRTY(first);
+        REACHABLE_AFTER_DIRTY(second);
     }
     return((complex_descriptor *)result);
 }
@@ -604,6 +606,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     lg = BYTES_TO_GRANULES(GC_size(op));
     op[GRANULES_TO_WORDS(lg) - 1] = d;
     GC_dirty(op + GRANULES_TO_WORDS(lg) - 1);
+    REACHABLE_AFTER_DIRTY(d);
     return op;
 }
 
@@ -645,6 +648,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     }
     ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
     GC_dirty(op + GRANULES_TO_WORDS(lg) - 1);
+    REACHABLE_AFTER_DIRTY(d);
     return op;
 }
 
@@ -699,6 +703,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
 
         op[lw - 1] = (word)complex_descr;
         GC_dirty(op + lw - 1);
+        REACHABLE_AFTER_DIRTY(complex_descr);
+
         /* Make sure the descriptor is cleared once there is any danger */
         /* it may have been collected.                                  */
         if (EXPECT(GC_general_register_disappearing_link(

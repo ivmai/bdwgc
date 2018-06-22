@@ -398,7 +398,8 @@ We keep track of modified pages using one of several distinct mechanisms:
   * (`PCR_VDB`) By relying on an external dirty bit implementation, in this
   case the one in Xerox PCR.
   * (`MANUAL_VDB`) Through explicit mutator cooperation. This requires the
-  client code to call `GC_end_stubborn_change`, and is rarely used.
+  client code to call `GC_end_stubborn_change` (followed by a number of
+  `GC_reachable_here` calls), and is rarely used.
   * (`DEFAULT_VDB`) By treating all pages as dirty. This is the default
   if none of the other techniques is known to be usable. (Practical only for
   testing.)

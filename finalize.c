@@ -236,11 +236,11 @@ STATIC int GC_register_disappearing_link_inner(
     new_dl -> dl_hidden_obj = GC_HIDE_POINTER(obj);
     new_dl -> dl_hidden_link = GC_HIDE_POINTER(link);
     dl_set_next(new_dl, dl_hashtbl -> head[index]);
+    GC_dirty(new_dl);
     dl_hashtbl -> head[index] = new_dl;
     dl_hashtbl -> entries++;
     GC_dirty(dl_hashtbl->head + index);
     UNLOCK();
-    GC_dirty(new_dl);
     return GC_SUCCESS;
 }
 
@@ -814,11 +814,11 @@ STATIC void GC_register_finalizer_inner(void * obj,
     new_fo -> fo_object_size = hhdr -> hb_sz;
     new_fo -> fo_mark_proc = mp;
     fo_set_next(new_fo, GC_fnlz_roots.fo_head[index]);
+    GC_dirty(new_fo);
     GC_fo_entries++;
     GC_fnlz_roots.fo_head[index] = new_fo;
     GC_dirty(GC_fnlz_roots.fo_head + index);
     UNLOCK();
-    GC_dirty(new_fo);
 }
 
 GC_API void GC_CALL GC_register_finalizer(void * obj,
@@ -1069,7 +1069,11 @@ GC_INNER void GC_finalize(void)
               next_fo = fo_next(curr_fo);
               if (NULL == prev_fo) {
                 GC_fnlz_roots.fo_head[i] = next_fo;
-                needs_barrier = TRUE;
+                if (GC_object_finalized_proc) {
+                  GC_dirty(GC_fnlz_roots.fo_head + i);
+                } else {
+                  needs_barrier = TRUE;
+                }
               } else {
                 fo_set_next(prev_fo, next_fo);
                 GC_dirty(prev_fo);

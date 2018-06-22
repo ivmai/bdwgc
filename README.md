@@ -498,8 +498,9 @@ of information:
 2. Information supplied by the programmer.  The object is considered dirty
    after a call to `GC_end_stubborn_change` provided the library has been
    compiled suitably. It is typically not worth using for short-lived objects.
-   Note that bugs caused by a missing `GC_end_stubborn_change` call are
-   likely to be observed very infrequently and hard to trace.
+   Note that bugs caused by a missing `GC_end_stubborn_change` or
+   `GC_reachable_here` call are likely to be observed very infrequently and
+   hard to trace.
 
 
 ## Bugs

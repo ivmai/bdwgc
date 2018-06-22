@@ -2267,6 +2267,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       args -> start = lpStartAddress;
       args -> param = lpParameter;
       GC_dirty(args);
+      REACHABLE_AFTER_DIRTY(lpParameter);
 
       set_need_to_lock();
       thread_h = CreateThread(lpThreadAttributes, dwStackSize, GC_win32_start,
@@ -2320,6 +2321,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         args -> start = (LPTHREAD_START_ROUTINE)start_address;
         args -> param = arglist;
         GC_dirty(args);
+        REACHABLE_AFTER_DIRTY(arglist);
 
         set_need_to_lock();
         thread_h = _beginthreadex(security, stack_size,
@@ -2613,6 +2615,7 @@ GC_INNER void GC_thr_init(void)
       si -> start_routine = start_routine;
       si -> arg = arg;
       GC_dirty(si);
+      REACHABLE_AFTER_DIRTY(arg);
       if (attr != 0 &&
           pthread_attr_getdetachstate(attr, &si->detached)
           == PTHREAD_CREATE_DETACHED) {

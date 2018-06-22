@@ -128,7 +128,10 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                 GC_FAST_M_AO_STORE(my_fl, next); \
                 init; \
                 GC_PREFETCH_FOR_WRITE(next); \
-                if ((kind) != GC_I_PTRFREE) GC_end_stubborn_change(my_fl); \
+                if ((kind) != GC_I_PTRFREE) { \
+                    GC_end_stubborn_change(my_fl); \
+                    GC_reachable_here(next); \
+                } \
                 GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
                 GC_ASSERT((kind) == GC_I_PTRFREE \
                           || ((GC_word *)result)[1] == 0); \
@@ -141,7 +144,6 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                 /* Small counter value, not NULL */ \
                 GC_FAST_M_AO_STORE(my_fl, (char *)my_entry \
                                           + (granules) + 1); \
-                if ((kind) != GC_I_PTRFREE) GC_end_stubborn_change(my_fl); \
                 result = (default_expr); \
                 break; \
             } else { \
@@ -149,7 +151,6 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                 GC_generic_malloc_many(((granules) == 0? GC_GRANULE_BYTES : \
                                         GC_RAW_BYTES_FROM_INDEX(granules)), \
                                        kind, my_fl); \
-                GC_end_stubborn_change(my_fl); \
                 my_entry = *my_fl; \
                 if (my_entry == 0) { \
                     result = (*GC_get_oom_fn())((granules)*GC_GRANULE_BYTES); \
@@ -193,6 +194,8 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         *(void **)(result) = (void *)(first); \
         ((void **)(result))[1] = (void *)(second); \
         GC_end_stubborn_change(result); \
+        GC_reachable_here(first); \
+        GC_reachable_here(second); \
       } \
     } while (0)
 

@@ -323,6 +323,12 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
         if (EXPECT(0 != op, TRUE))
             obj_link(op) = 0;
         *result = op;
+#       ifdef MANUAL_VDB
+          if (GC_is_heap_ptr(result)) {
+            GC_dirty(result);
+            REACHABLE_AFTER_DIRTY(op);
+          }
+#       endif
         return;
     }
     GC_ASSERT(k < MAXOBJKINDS);
