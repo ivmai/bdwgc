@@ -238,12 +238,12 @@ void* Undisguise( GC_word i ) {
     return (void*) ~ i;}
 
 #define GC_CHECKED_DELETE(p) \
-    do { \
+    { \
       size_t freed_before = GC_get_expl_freed_bytes_since_gc(); \
       delete p; /* the operator should invoke GC_FREE() */ \
       size_t freed_after = GC_get_expl_freed_bytes_since_gc(); \
       my_assert(freed_before != freed_after); \
-    } while (0)
+    }
 
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
