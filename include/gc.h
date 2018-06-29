@@ -1629,9 +1629,10 @@ GC_API void GC_CALL GC_dump_finalization(void);
 /* Safer assignment of a pointer to a non-stack location.       */
 #ifdef GC_DEBUG
 # define GC_PTR_STORE(p, q) \
-        (*(void **)GC_is_visible(p) = GC_is_valid_displacement(q))
+        (*(void **)GC_is_visible((void *)(p)) = \
+                    GC_is_valid_displacement((void *)(q)))
 #else
-# define GC_PTR_STORE(p, q) (*(p) = (q))
+# define GC_PTR_STORE(p, q) (*(void **)(p) = (void *)(q))
 #endif
 
 /* Functions called to report pointer checking errors */
