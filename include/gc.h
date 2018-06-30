@@ -1612,10 +1612,10 @@ GC_API void GC_CALL GC_dump_finalization(void);
         ((type_of_result)GC_pre_incr((void **)(&(x)), (n)*sizeof(*x)))
 # define GC_POST_INCR3(x, n, type_of_result) \
         ((type_of_result)GC_post_incr((void **)(&(x)), (n)*sizeof(*x)))
-# define GC_PTR_ADD(x, n) GC_PTR_ADD3(x, n, typeof(x))
-# define GC_PRE_INCR(x, n) GC_PRE_INCR3(x, n, typeof(x))
-# define GC_POST_INCR(x) GC_POST_INCR3(x, 1, typeof(x))
-# define GC_POST_DECR(x) GC_POST_INCR3(x, -1, typeof(x))
+# define GC_PTR_ADD(x, n) GC_PTR_ADD3(x, n, __typeof__(x))
+# define GC_PRE_INCR(x, n) GC_PRE_INCR3(x, n, __typeof__(x))
+# define GC_POST_INCR(x) GC_POST_INCR3(x, 1, __typeof__(x))
+# define GC_POST_DECR(x) GC_POST_INCR3(x, -1, __typeof__(x))
 #else /* !GC_DEBUG || !__GNUC__ */
   /* We can't do this right without typeof, which ANSI decided was not    */
   /* sufficiently useful.  Without it we resort to the non-debug version. */
