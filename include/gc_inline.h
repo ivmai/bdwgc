@@ -189,13 +189,15 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 /* And once more for two word initialized objects: */
 # define GC_CONS(result, first, second, tiny_fl) \
     do { \
+      void *l = (void *)(first); \
+      void *r = (void *)(second); \
       GC_MALLOC_WORDS_KIND(result, 2, tiny_fl, GC_I_NORMAL, (void)0); \
       if ((result) != NULL) { \
-        *(void **)(result) = (void *)(first); \
-        ((void **)(result))[1] = (void *)(second); \
+        *(void **)(result) = l; \
+        ((void **)(result))[1] = r; \
         GC_end_stubborn_change(result); \
-        GC_reachable_here(first); \
-        GC_reachable_here(second); \
+        GC_reachable_here(l); \
+        GC_reachable_here(r); \
       } \
     } while (0)
 
