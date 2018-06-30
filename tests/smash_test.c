@@ -1,7 +1,9 @@
-/*
- * Test that overwrite error detection works reasonably.
- */
-#define GC_DEBUG
+/* Test that overwrite error detection works reasonably.        */
+
+#ifndef GC_DEBUG
+# define GC_DEBUG
+#endif
+
 #include "gc.h"
 
 #include <stdio.h>
