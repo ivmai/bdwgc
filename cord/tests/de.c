@@ -139,9 +139,7 @@ void prune_map(void)
         if (map -> line < start_line - LINES && map -> previous != 0) {
             line_map pred = map -> previous -> previous;
 
-            map -> previous = pred;
-            GC_END_STUBBORN_CHANGE(map);
-            GC_reachable_here(pred);
+            GC_PTR_STORE_AND_DIRTY(&map->previous, pred);
         }
         map = map -> previous;
     } while (map != 0);
@@ -158,9 +156,7 @@ void add_map(int line_arg, size_t pos)
     new_map -> line = line_arg;
     new_map -> pos = pos;
     cur_map = current_map;
-    new_map -> previous = cur_map;
-    GC_END_STUBBORN_CHANGE(new_map);
-    GC_reachable_here(cur_map);
+    GC_PTR_STORE_AND_DIRTY(&new_map->previous, cur_map);
     current_map = new_map;
     current_map_size++;
 }
@@ -260,9 +256,7 @@ void replace_line(int i, CORD s)
                 addch(c);
             }
         }
-        screen[i] = s;
-        GC_END_STUBBORN_CHANGE(screen + i);
-        GC_reachable_here(s);
+        GC_PTR_STORE_AND_DIRTY(screen + i, s);
     }
 }
 #else

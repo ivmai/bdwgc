@@ -630,6 +630,13 @@ GC_API void GC_CALL GC_debug_end_stubborn_change(const void *p)
     GC_end_stubborn_change(q);
 }
 
+GC_API void GC_CALL GC_debug_ptr_store_and_dirty(void *p, const void *q)
+{
+    *(void **)GC_is_visible(p) = GC_is_valid_displacement((void *)q);
+    GC_debug_end_stubborn_change(p);
+    REACHABLE_AFTER_DIRTY(q);
+}
+
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_atomic(size_t lb,
                                                             GC_EXTRA_PARAMS)
 {

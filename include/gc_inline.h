@@ -194,10 +194,8 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
       GC_MALLOC_WORDS_KIND(result, 2, tiny_fl, GC_I_NORMAL, (void)0); \
       if ((result) != NULL) { \
         *(void **)(result) = l; \
-        ((void **)(result))[1] = r; \
-        GC_end_stubborn_change(result); \
+        GC_PTR_STORE_AND_DIRTY((void **)(result) + 1, r); \
         GC_reachable_here(l); \
-        GC_reachable_here(r); \
       } \
     } while (0)
 

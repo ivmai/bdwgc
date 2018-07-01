@@ -319,9 +319,7 @@ void* Undisguise( GC_word i ) {
         fprintf(stderr, "Out of memory!\n");
         exit(3);
       }
-      *xptr = x;
-      GC_END_STUBBORN_CHANGE(xptr);
-      GC_reachable_here(x);
+      GC_PTR_STORE_AND_DIRTY(xptr, x);
       x = 0;
 #   endif
     if (argc != 2

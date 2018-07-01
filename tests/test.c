@@ -324,10 +324,8 @@ sexpr cons (sexpr x, sexpr y)
         r = (sexpr)((char *)r + (my_extra & ~7));
 #   endif
     r -> sexpr_car = x;
-    r -> sexpr_cdr = y;
-    GC_END_STUBBORN_CHANGE(r);
+    GC_PTR_STORE_AND_DIRTY(&r->sexpr_cdr, y);
     GC_reachable_here(x);
-    GC_reachable_here(y);
     return r;
 }
 # endif
@@ -382,10 +380,8 @@ sexpr small_cons (sexpr x, sexpr y)
     CHECK_OUT_OF_MEMORY(r);
     AO_fetch_and_add1(&collectable_count);
     r -> sexpr_car = x;
-    r -> sexpr_cdr = y;
-    GC_END_STUBBORN_CHANGE(r);
+    GC_PTR_STORE_AND_DIRTY(&r->sexpr_cdr, y);
     GC_reachable_here(x);
-    GC_reachable_here(y);
     return r;
 }
 
@@ -410,10 +406,8 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
 
     CHECK_OUT_OF_MEMORY(r);
     AO_fetch_and_add1(&uncollectable_count);
-    r -> sexpr_car = x;
     r -> sexpr_cdr = (sexpr)(~(GC_word)y);
-    GC_END_STUBBORN_CHANGE(r);
-    GC_reachable_here(x);
+    GC_PTR_STORE_AND_DIRTY(&r->sexpr_car, x);
     return r;
 }
 
@@ -430,10 +424,8 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
     CHECK_OUT_OF_MEMORY(r);
     result = (sexpr)(r + 1);
     result -> sexpr_car = x;
-    result -> sexpr_cdr = y;
-    GC_END_STUBBORN_CHANGE(r);
+    GC_PTR_STORE_AND_DIRTY(&result->sexpr_cdr, y);
     GC_reachable_here(x);
-    GC_reachable_here(y);
     return result;
   }
 #endif /* GC_GCJ_SUPPORT */
@@ -715,7 +707,6 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     sexpr d;
     sexpr e;
     sexpr *f, *g, *h;
-    sexpr tmp;
 
     if (data == 0) {
       /* This stack frame is not guaranteed to be scanned. */
@@ -753,42 +744,27 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     f = (sexpr *)GC_REALLOC((void *)f, 6 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(f);
     AO_fetch_and_add1(&realloc_count);
-    tmp = ints(1,17);
-    f[5] = tmp;
-    GC_END_STUBBORN_CHANGE(f + 5);
-    GC_reachable_here(tmp);
+    GC_PTR_STORE_AND_DIRTY(f + 5, ints(1, 17));
     AO_fetch_and_add1(&collectable_count);
     g = (sexpr *)GC_MALLOC(513 * sizeof(sexpr));
     test_generic_malloc_or_special(g);
     g = (sexpr *)GC_REALLOC((void *)g, 800 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(g);
     AO_fetch_and_add1(&realloc_count);
-    tmp = ints(1,18);
-    g[799] = tmp;
-    GC_END_STUBBORN_CHANGE(g + 799);
-    GC_reachable_here(tmp);
+    GC_PTR_STORE_AND_DIRTY(g + 799, ints(1, 18));
     AO_fetch_and_add1(&collectable_count);
     h = (sexpr *)GC_MALLOC(1025 * sizeof(sexpr));
     h = (sexpr *)GC_REALLOC((void *)h, 2000 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(h);
     AO_fetch_and_add1(&realloc_count);
 #   ifdef GC_GCJ_SUPPORT
-      tmp = gcj_ints(1,200);
-      h[1999] = tmp;
-      GC_END_STUBBORN_CHANGE(h + 1999);
-      GC_reachable_here(tmp);
+      GC_PTR_STORE_AND_DIRTY(h + 1999, gcj_ints(1, 200));
       for (i = 0; i < 51; ++i) {
-        tmp = gcj_reverse(h[1999]);
-        h[1999] = tmp;
-        GC_END_STUBBORN_CHANGE(h + 1999);
-        GC_reachable_here(tmp);
+        GC_PTR_STORE_AND_DIRTY(h + 1999, gcj_reverse(h[1999]));
       }
       /* Leave it as the reversed list for now. */
 #   else
-      tmp = ints(1,200);
-      h[1999] = tmp;
-      GC_END_STUBBORN_CHANGE(h + 1999);
-      GC_reachable_here(tmp);
+      GC_PTR_STORE_AND_DIRTY(h + 1999, ints(1, 200));
 #   endif
     /* Try to force some collections and reuse of small list elements */
     for (i = 0; i < 10; i++) {
@@ -837,10 +813,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     check_ints(f[5], 1,17);
     check_ints(g[799], 1,18);
 #   ifdef GC_GCJ_SUPPORT
-      tmp = gcj_reverse(h[1999]);
-      h[1999] = tmp;
-      GC_END_STUBBORN_CHANGE(h + 1999);
-      GC_reachable_here(tmp);
+      GC_PTR_STORE_AND_DIRTY(h + 1999, gcj_reverse(h[1999]));
 #   endif
     check_ints(h[1999], 1,200);
 #   ifndef THREADS
@@ -922,18 +895,13 @@ tn * mktree(int n)
     result -> lchild = left = mktree(n - 1);
     result -> rchild = right = mktree(n - 1);
     if (AO_fetch_and_add1(&extra_count) % 17 == 0 && n >= 2) {
-        tn * tmp, * right_left;
+        tn * tmp;
 
         CHECK_OUT_OF_MEMORY(left);
         tmp = left -> rchild;
         CHECK_OUT_OF_MEMORY(right);
-        right_left = right -> lchild;
-        left -> rchild = right_left;
-        right -> lchild = tmp;
-        GC_END_STUBBORN_CHANGE(left);
-        GC_reachable_here(right_left);
-        GC_END_STUBBORN_CHANGE(right);
-        GC_reachable_here(tmp);
+        GC_PTR_STORE_AND_DIRTY(&left->rchild, right->lchild);
+        GC_PTR_STORE_AND_DIRTY(&right->lchild, tmp);
     }
     if (AO_fetch_and_add1(&extra_count) % 119 == 0) {
 #       ifndef GC_NO_FINALIZATION
@@ -1084,10 +1052,8 @@ void * alloc8bytes(void)
         CHECK_OUT_OF_MEMORY(my_free_list);
     }
     next = GC_NEXT(my_free_list);
-    *my_free_list_ptr = next;
+    GC_PTR_STORE_AND_DIRTY(my_free_list_ptr, next);
     GC_NEXT(my_free_list) = 0;
-    GC_END_STUBBORN_CHANGE(my_free_list_ptr);
-    GC_reachable_here(next);
     AO_fetch_and_add1(&collectable_count);
     return(my_free_list);
 # endif
@@ -1231,26 +1197,20 @@ void typed_test(void)
         newP = (GC_word *)GC_malloc_explicitly_typed(4 * sizeof(GC_word), d2);
         CHECK_OUT_OF_MEMORY(newP);
         newP[0] = 17;
-        newP[1] = (GC_word)old;
-        GC_END_STUBBORN_CHANGE(newP);
-        GC_reachable_here(old);
+        GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
         newP = (GC_word*)GC_malloc_explicitly_typed(33 * sizeof(GC_word), d3);
         CHECK_OUT_OF_MEMORY(newP);
         newP[0] = 17;
-        newP[1] = (GC_word)old;
-        GC_END_STUBBORN_CHANGE(newP);
-        GC_reachable_here(old);
+        GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
         newP = (GC_word *)GC_calloc_explicitly_typed(4, 2 * sizeof(GC_word),
                                                      d1);
         CHECK_OUT_OF_MEMORY(newP);
         newP[0] = 17;
-        newP[1] = (GC_word)old;
-        GC_END_STUBBORN_CHANGE(newP);
-        GC_reachable_here(old);
+        GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
         if (i & 0xff) {
@@ -1267,9 +1227,7 @@ void typed_test(void)
         }
         CHECK_OUT_OF_MEMORY(newP);
         newP[0] = 17;
-        newP[1] = (GC_word)old;
-        GC_END_STUBBORN_CHANGE(newP);
-        GC_reachable_here(old);
+        GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
     }
     for (i = 0; i < 20000; i++) {

@@ -960,6 +960,7 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
 # define GC_REGISTER_FINALIZER_UNREACHABLE(p, f, d, of, od) \
       GC_debug_register_finalizer_unreachable(p, f, d, of, od)
 # define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
+# define GC_PTR_STORE_AND_DIRTY(p, q) GC_debug_ptr_store_and_dirty(p, q)
 # define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
       GC_general_register_disappearing_link(link, \
                                         GC_base((/* no const */ void *)(obj)))
@@ -986,6 +987,7 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
 # define GC_REGISTER_FINALIZER_UNREACHABLE(p, f, d, of, od) \
       GC_register_finalizer_unreachable(p, f, d, of, od)
 # define GC_END_STUBBORN_CHANGE(p) GC_end_stubborn_change(p)
+# define GC_PTR_STORE_AND_DIRTY(p, q) GC_ptr_store_and_dirty(p, q)
 # define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
       GC_general_register_disappearing_link(link, obj)
 # define GC_REGISTER_LONG_LINK(link, obj) \
@@ -1634,6 +1636,14 @@ GC_API void GC_CALL GC_dump_finalization(void);
 #else
 # define GC_PTR_STORE(p, q) (*(void **)(p) = (void *)(q))
 #endif
+
+/* GC_PTR_STORE_AND_DIRTY(p,q) is equivalent to GC_PTR_STORE(p,q)       */
+/* followed by GC_END_STUBBORN_CHANGE(p) and GC_reachable_here(q)       */
+/* (assuming p and q do not have side effects).                         */
+GC_API void GC_CALL GC_ptr_store_and_dirty(void * /* p */,
+                                           const void * /* q */);
+GC_API void GC_CALL GC_debug_ptr_store_and_dirty(void * /* p */,
+                                                 const void * /* q */);
 
 /* Functions called to report pointer checking errors */
 GC_API void (GC_CALLBACK * GC_same_obj_print_proc)(void * /* p */,

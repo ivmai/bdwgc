@@ -628,3 +628,10 @@ GC_API void GC_CALL GC_end_stubborn_change(const void *p)
 {
   GC_dirty(p); /* entire object */
 }
+
+GC_API void GC_CALL GC_ptr_store_and_dirty(void *p, const void *q)
+{
+  *(const void **)p = q;
+  GC_dirty(p);
+  REACHABLE_AFTER_DIRTY(q);
+}
