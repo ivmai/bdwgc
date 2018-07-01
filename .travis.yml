@@ -85,7 +85,7 @@ matrix:
   - os: linux
     compiler: gcc
     env:
-    - CFLAGS_EXTRA="-D DEBUG_ADD_DEL_ROOTS -D DEBUG_THREADS -D GC_LOG_TO_FILE_ALWAYS"
+    - CFLAGS_EXTRA="-D DEBUG_ADD_DEL_ROOTS -D DEBUG_THREADS -D GC_DEBUG -D GC_LOG_TO_FILE_ALWAYS"
     - CONF_OPTIONS="--enable-cplusplus"
   - os: linux
     compiler: gcc
