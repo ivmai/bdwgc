@@ -181,30 +181,6 @@ GC_INLINE void pop_in_progress(ptr_t p GC_ATTR_UNUSED)
                 (ptr_t)GC_REVEAL_POINTER(((oh *)(p)) -> oh_bg_ptr)
 #define SET_OH_BG_PTR(p,q) (((oh *)(p)) -> oh_bg_ptr = GC_HIDE_POINTER(q))
 
-/* Execute s once for each predecessor q of p in the points-to graph.   */
-/* s should be a bracketed statement.  We declare q.                    */
-#define FOR_EACH_PRED(q, p, s) \
-  do { \
-    ptr_t q = GET_OH_BG_PTR(p); \
-    if (!((word)q & FLAG_MANY)) { \
-      if (q && !((word)q & 1)) s \
-              /* !((word)q & 1) checks for a misinterpreted freelist link */ \
-    } else { \
-      back_edges *orig_be_ = (back_edges *)((word)q & ~FLAG_MANY); \
-      back_edges *be_ = orig_be_; \
-      int local_; \
-      word total_; \
-      word n_edges_ = be_ -> n_edges; \
-      for (total_ = 0, local_ = 0; total_ < n_edges_; ++local_, ++total_) { \
-          if (local_ == MAX_IN) { \
-              be_ = be_ -> cont; \
-              local_ = 0; \
-          } \
-          q = be_ -> edges[local_]; s \
-      } \
-    } \
-  } while (0)
-
 /* Ensure that p has a back_edges structure associated with it. */
 static void ensure_struct(ptr_t p)
 {
@@ -230,7 +206,7 @@ static void ensure_struct(ptr_t p)
 /* q are pointers to the object base, i.e. pointers to an oh.           */
 static void add_edge(ptr_t p, ptr_t q)
 {
-    ptr_t old_back_ptr = GET_OH_BG_PTR(q);
+    ptr_t pred = GET_OH_BG_PTR(q);
     back_edges * be, *be_cont;
     word i;
 
@@ -240,7 +216,7 @@ static void add_edge(ptr_t p, ptr_t q)
       /* a pointer to a free list.  Don't overwrite it!                 */
       return;
     }
-    if (0 == old_back_ptr) {
+    if (NULL == pred) {
       static unsigned random_number = 13;
 #     define GOT_LUCKY_NUMBER (((++random_number) & 0x7f) == 0)
         /* A not very random number we use to occasionally allocate a   */
@@ -253,11 +229,37 @@ static void add_edge(ptr_t p, ptr_t q)
         if (GOT_LUCKY_NUMBER) ensure_struct(q);
         return;
     }
+
     /* Check whether it was already in the list of predecessors. */
-      FOR_EACH_PRED(pred, q, { if (p == pred) return; });
+    {
+      back_edges *e = (back_edges *)((word)pred & ~FLAG_MANY);
+      word n_edges;
+      word total;
+      int local = 0;
+
+      if (((word)pred & FLAG_MANY) != 0) {
+        n_edges = e -> n_edges;
+      } else if (pred != NULL && ((word)pred & 1) == 0) {
+        /* A misinterpreted freelist link.      */
+        n_edges = 1;
+        local = -1;
+      } else {
+        n_edges = 0;
+      }
+      for (total = 0; total < n_edges; ++total) {
+        if (local == MAX_IN) {
+          e = e -> cont;
+          local = 0;
+        }
+        if (local >= 0)
+          pred = e -> edges[local++];
+        if (pred == p)
+          return;
+      }
+    }
+
     ensure_struct(q);
-    old_back_ptr = GET_OH_BG_PTR(q);
-    be = (back_edges *)((word)old_back_ptr & ~FLAG_MANY);
+    be = (back_edges *)((word)GET_OH_BG_PTR(q) & ~FLAG_MANY);
     for (i = be -> n_edges, be_cont = be; i > MAX_IN; i -= MAX_IN)
         be_cont = be_cont -> cont;
     if (i == MAX_IN) {
@@ -367,39 +369,68 @@ GC_INNER void GC_build_back_graph(void)
 static word backwards_height(ptr_t p)
 {
   word result;
-  ptr_t back_ptr = GET_OH_BG_PTR(p);
+  ptr_t pred = GET_OH_BG_PTR(p);
   back_edges *be;
 
-  if (0 == back_ptr) return 1;
-  if (!((word)back_ptr & FLAG_MANY)) {
+  if (NULL == pred)
+    return 1;
+  if (((word)pred & FLAG_MANY) == 0) {
     if (is_in_progress(p)) return 0; /* DFS back edge, i.e. we followed */
                                      /* an edge to an object already    */
                                      /* on our stack: ignore            */
     push_in_progress(p);
-    result = backwards_height(back_ptr)+1;
+    result = backwards_height(pred) + 1;
     pop_in_progress(p);
     return result;
   }
-  be = (back_edges *)((word)back_ptr & ~FLAG_MANY);
+  be = (back_edges *)((word)pred & ~FLAG_MANY);
   if (be -> height >= 0 && be -> height_gc_no == (unsigned short)GC_gc_no)
       return be -> height;
   /* Ignore back edges in DFS */
     if (be -> height == HEIGHT_IN_PROGRESS) return 0;
   result = (be -> height > 0? be -> height : 1);
   be -> height = HEIGHT_IN_PROGRESS;
-  FOR_EACH_PRED(q, p, {
-    word this_height;
-    if (GC_is_marked(q) && !(FLAG_MANY & (word)GET_OH_BG_PTR(p))) {
-      GC_COND_LOG_PRINTF("Found bogus pointer from %p to %p\n",
-                         (void *)q, (void *)p);
-        /* Reachable object "points to" unreachable one.                */
-        /* Could be caused by our lax treatment of GC descriptors.      */
-      this_height = 1;
-    } else {
-        this_height = backwards_height(q);
-    }
-    if (this_height >= result) result = this_height + 1;
-  });
+
+  {
+      back_edges *e = be;
+      word n_edges;
+      word total;
+      int local = 0;
+
+      if (((word)pred & FLAG_MANY) != 0) {
+        n_edges = e -> n_edges;
+      } else if (pred != NULL && ((word)pred & 1) == 0) {
+        /* A misinterpreted freelist link.      */
+        n_edges = 1;
+        local = -1;
+      } else {
+        n_edges = 0;
+      }
+      for (total = 0; total < n_edges; ++total) {
+        word this_height;
+        if (local == MAX_IN) {
+          e = e -> cont;
+          local = 0;
+        }
+        if (local >= 0)
+          pred = e -> edges[local++];
+
+        /* Execute the following once for each predecessor pred of p    */
+        /* in the points-to graph.                                      */
+        if (GC_is_marked(pred) && ((word)GET_OH_BG_PTR(p) & FLAG_MANY) == 0) {
+          GC_COND_LOG_PRINTF("Found bogus pointer from %p to %p\n",
+                             (void *)pred, (void *)p);
+            /* Reachable object "points to" unreachable one.            */
+            /* Could be caused by our lax treatment of GC descriptors.  */
+          this_height = 1;
+        } else {
+          this_height = backwards_height(pred);
+        }
+        if (this_height >= result)
+          result = this_height + 1;
+      }
+  }
+
   be -> height = result;
   be -> height_gc_no = (unsigned short)GC_gc_no;
   return result;
@@ -431,17 +462,43 @@ static void update_max_height(ptr_t p, size_t n_bytes GC_ATTR_UNUSED,
       be = (back_edges *)((word)back_ptr & ~FLAG_MANY);
       if (be -> height != HEIGHT_UNKNOWN) p_height = be -> height;
     }
-    FOR_EACH_PRED(q, p, {
-      if (!GC_is_marked(q) && GC_HAS_DEBUG_INFO(q)) {
-        word q_height;
 
-        q_height = backwards_height(q);
-        if (q_height > p_height) {
-          p_height = q_height;
-          p_deepest_obj = q;
+    {
+      ptr_t pred = GET_OH_BG_PTR(p);
+      back_edges *e = (back_edges *)((word)pred & ~FLAG_MANY);
+      word n_edges;
+      word total;
+      int local = 0;
+
+      if (((word)pred & FLAG_MANY) != 0) {
+        n_edges = e -> n_edges;
+      } else if (pred != NULL && ((word)pred & 1) == 0) {
+        /* A misinterpreted freelist link.      */
+        n_edges = 1;
+        local = -1;
+      } else {
+        n_edges = 0;
+      }
+      for (total = 0; total < n_edges; ++total) {
+        if (local == MAX_IN) {
+          e = e -> cont;
+          local = 0;
+        }
+        if (local >= 0)
+          pred = e -> edges[local++];
+
+        /* Execute the following once for each predecessor pred of p    */
+        /* in the points-to graph.                                      */
+        if (!GC_is_marked(pred) && GC_HAS_DEBUG_INFO(pred)) {
+          word this_height = backwards_height(pred);
+          if (this_height > p_height) {
+            p_height = this_height;
+            p_deepest_obj = pred;
+          }
         }
       }
-    });
+    }
+
     if (p_height > 0) {
       /* Remember the height for next time. */
         if (be == 0) {
