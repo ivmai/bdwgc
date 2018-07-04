@@ -719,7 +719,6 @@ GC_INLINE void GC_make_disappearing_links_disappear(
         real_link = GC_REVEAL_POINTER(curr -> dl_hidden_link);
         if (!GC_is_marked(real_ptr)) {
             *(word *)real_link = 0;
-            GC_clear_mark_bit(curr);
             DELETE_DL_HASHTBL_ENTRY(dl_hashtbl, curr, prev, next);
         }
     ITERATE_DL_HASHTBL_END(curr, prev)
@@ -734,7 +733,6 @@ GC_INLINE void GC_remove_dangling_disappearing_links(
     ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr, prev)
         real_link = GC_base(GC_REVEAL_POINTER(curr -> dl_hidden_link));
         if (NULL != real_link && !GC_is_marked(real_link)) {
-            GC_clear_mark_bit(curr);
             DELETE_DL_HASHTBL_ENTRY(dl_hashtbl, curr, prev, next);
         }
     ITERATE_DL_HASHTBL_END(curr, prev)
