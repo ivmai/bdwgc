@@ -940,72 +940,53 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
   }
 #endif /* THREADS */
 
-#define ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr_dl, prev_dl) \
-  { \
-    size_t i; \
-    size_t dl_size = dl_hashtbl->log_size == -1 ? 0 : \
-                                (size_t)1 << dl_hashtbl->log_size; \
-    GC_bool needs_barrier = FALSE; \
-    GC_ASSERT(I_HOLD_LOCK()); \
-    for (i = 0; i < dl_size; i++) { \
-      struct disappearing_link *prev_dl = NULL; \
-      curr_dl = dl_hashtbl -> head[i]; \
-      while (curr_dl) {
-
-#define ITERATE_DL_HASHTBL_END(curr_dl, prev_dl) \
-        prev_dl = curr_dl; \
-        curr_dl = dl_next(curr_dl); \
-      } \
-    } \
-    if (needs_barrier) \
-      GC_dirty(dl_hashtbl -> head); /* entire object */ \
-  }
-
-#define DELETE_DL_HASHTBL_ENTRY(dl_hashtbl, curr_dl, prev_dl, next_dl) \
-  { \
-    next_dl = dl_next(curr_dl); \
-    if (NULL == prev_dl) { \
-        dl_hashtbl -> head[i] = next_dl; \
-        needs_barrier = TRUE; \
-    } else { \
-        dl_set_next(prev_dl, next_dl); \
-        GC_dirty(prev_dl); \
-    } \
-    GC_clear_mark_bit(curr_dl); \
-    dl_hashtbl -> entries--; \
-    curr_dl = next_dl; \
-    continue; \
-  }
-
 GC_INLINE void GC_make_disappearing_links_disappear(
-                                struct dl_hashtbl_s* dl_hashtbl)
+                                        struct dl_hashtbl_s* dl_hashtbl,
+                                        GC_bool is_remove_dangling)
 {
-    struct disappearing_link *curr, *next;
+  size_t i;
+  size_t dl_size = dl_hashtbl->log_size == -1 ? 0
+                        : (size_t)1 << dl_hashtbl->log_size;
+  GC_bool needs_barrier = FALSE;
 
-    ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr, prev)
-        ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr->dl_hidden_obj);
-        ptr_t real_link = (ptr_t)GC_REVEAL_POINTER(curr->dl_hidden_link);
+  GC_ASSERT(I_HOLD_LOCK());
+  for (i = 0; i < dl_size; i++) {
+    struct disappearing_link *curr_dl, *next_dl;
+    struct disappearing_link *prev_dl = NULL;
 
-        if (!GC_is_marked(real_ptr)) {
-            *(word *)real_link = 0;
-            DELETE_DL_HASHTBL_ENTRY(dl_hashtbl, curr, prev, next);
+    for (curr_dl = dl_hashtbl->head[i]; curr_dl != NULL; curr_dl = next_dl) {
+      next_dl = dl_next(curr_dl);
+      if (is_remove_dangling) {
+        ptr_t real_link = (ptr_t)GC_base(GC_REVEAL_POINTER(
+                                                curr_dl->dl_hidden_link));
+
+        if (NULL == real_link || EXPECT(GC_is_marked(real_link), TRUE)) {
+          prev_dl = curr_dl;
+          continue;
         }
-    ITERATE_DL_HASHTBL_END(curr, prev)
-}
-
-GC_INLINE void GC_remove_dangling_disappearing_links(
-                                struct dl_hashtbl_s* dl_hashtbl)
-{
-    struct disappearing_link *curr, *next;
-
-    ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr, prev)
-        ptr_t real_link =
-                (ptr_t)GC_base(GC_REVEAL_POINTER(curr->dl_hidden_link));
-
-        if (NULL != real_link && !GC_is_marked(real_link)) {
-            DELETE_DL_HASHTBL_ENTRY(dl_hashtbl, curr, prev, next);
+      } else {
+        if (EXPECT(GC_is_marked((ptr_t)GC_REVEAL_POINTER(
+                                        curr_dl->dl_hidden_obj)), TRUE)) {
+          prev_dl = curr_dl;
+          continue;
         }
-    ITERATE_DL_HASHTBL_END(curr, prev)
+        *(ptr_t *)GC_REVEAL_POINTER(curr_dl->dl_hidden_link) = NULL;
+      }
+
+      /* Delete curr_dl entry from dl_hashtbl.  */
+      if (NULL == prev_dl) {
+        dl_hashtbl -> head[i] = next_dl;
+        needs_barrier = TRUE;
+      } else {
+        dl_set_next(prev_dl, next_dl);
+        GC_dirty(prev_dl);
+      }
+      GC_clear_mark_bit(curr_dl);
+      dl_hashtbl -> entries--;
+    }
+  }
+  if (needs_barrier)
+    GC_dirty(dl_hashtbl -> head); /* entire object */
 }
 
 /* Called with held lock (but the world is running).                    */
@@ -1032,7 +1013,7 @@ GC_INNER void GC_finalize(void)
 #   ifndef GC_TOGGLE_REFS_NOT_NEEDED
       GC_mark_togglerefs();
 #   endif
-    GC_make_disappearing_links_disappear(&GC_dl_hashtbl);
+    GC_make_disappearing_links_disappear(&GC_dl_hashtbl, FALSE);
 
   /* Mark all objects reachable via chains of 1 or more pointers        */
   /* from finalizable objects.                                          */
@@ -1160,13 +1141,15 @@ GC_INNER void GC_finalize(void)
   if (needs_barrier)
     GC_dirty(GC_fnlz_roots.fo_head); /* entire object */
 
-  GC_remove_dangling_disappearing_links(&GC_dl_hashtbl);
+  /* Remove dangling disappearing links. */
+  GC_make_disappearing_links_disappear(&GC_dl_hashtbl, TRUE);
+
 # ifndef GC_TOGGLE_REFS_NOT_NEEDED
     GC_clear_togglerefs();
 # endif
 # ifndef GC_LONG_REFS_NOT_NEEDED
-    GC_make_disappearing_links_disappear(&GC_ll_hashtbl);
-    GC_remove_dangling_disappearing_links(&GC_ll_hashtbl);
+    GC_make_disappearing_links_disappear(&GC_ll_hashtbl, FALSE);
+    GC_make_disappearing_links_disappear(&GC_ll_hashtbl, TRUE);
 # endif
 
   if (GC_fail_count) {
