@@ -799,11 +799,17 @@ GC_API void GC_CALL GC_debug_free(void * p)
         GC_free(base);
       } else {
         word i;
-        word obj_sz = BYTES_TO_WORDS(hhdr->hb_sz - sizeof(oh));
+        word sz = hhdr -> hb_sz;
+        word obj_sz = BYTES_TO_WORDS(sz - sizeof(oh));
 
         for (i = 0; i < obj_sz; ++i)
           ((word *)p)[i] = GC_FREED_MEM_MARKER;
-        GC_ASSERT((word *)p + i == (word *)(base + hhdr -> hb_sz));
+        GC_ASSERT((word *)p + i == (word *)(base + sz));
+        /* Update the counter even though the real deallocation */
+        /* is deferred.                                         */
+        LOCK();
+        GC_bytes_freed += sz;
+        UNLOCK();
       }
     } /* !GC_find_leak */
 }
