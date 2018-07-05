@@ -1885,10 +1885,11 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
       GC_mark_stack_top_reg = GC_mark_stack_top;
       for (p = h -> hb_body, bit_no = 0; (word)p <= (word)lim;
            p += sz, bit_no += MARK_BIT_OFFSET(sz)) {
-         if (mark_bit_from_hdr(hhdr, bit_no)) {
-           /* Mark from fields inside the object */
-             PUSH_OBJ(p, hhdr, GC_mark_stack_top_reg, mark_stack_limit);
-         }
+        if (mark_bit_from_hdr(hhdr, bit_no)) {
+          /* Mark from fields inside the object. */
+          GC_mark_stack_top_reg = GC_push_obj(p, hhdr, GC_mark_stack_top_reg,
+                                              mark_stack_limit);
+        }
       }
       GC_mark_stack_top = GC_mark_stack_top_reg;
     }
@@ -1927,8 +1928,9 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 
     GC_mark_stack_top_reg = GC_mark_stack_top;
     for (p = h -> hb_body; (word)p <= (word)lim; p += sz)
-        if ((*(word *)p & 0x3) != 0)
-            PUSH_OBJ(p, hhdr, GC_mark_stack_top_reg, mark_stack_limit);
+      if ((*(word *)p & 0x3) != 0)
+        GC_mark_stack_top_reg = GC_push_obj(p, hhdr, GC_mark_stack_top_reg,
+                                            mark_stack_limit);
     GC_mark_stack_top = GC_mark_stack_top_reg;
   }
 #endif /* ENABLE_DISCLAIM */

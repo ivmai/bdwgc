@@ -634,10 +634,8 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 /* overflow is handled by the caller, and is not a disaster.            */
 STATIC void GC_normal_finalize_mark_proc(ptr_t p)
 {
-    hdr * hhdr = HDR(p);
-
-    PUSH_OBJ(p, hhdr, GC_mark_stack_top,
-             &(GC_mark_stack[GC_mark_stack_size]));
+    GC_mark_stack_top = GC_push_obj(p, HDR(p), GC_mark_stack_top,
+                                    GC_mark_stack + GC_mark_stack_size);
 }
 
 /* This only pays very partial attention to the mark descriptor.        */

@@ -121,20 +121,23 @@ GC_EXTERN size_t GC_mark_stack_size;
 GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 
 /* Push the object obj with corresponding heap block header hhdr onto   */
-/* the mark stack.                                                      */
-#define PUSH_OBJ(obj, hhdr, mark_stack_top, mark_stack_limit) \
-  do { \
-    word _descr = (hhdr) -> hb_descr; \
-    GC_ASSERT(!HBLK_IS_FREE(hhdr)); \
-    if (_descr != 0) { \
-        mark_stack_top++; \
-        if ((word)mark_stack_top >= (word)(mark_stack_limit)) { \
-          mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top); \
-        } \
-        mark_stack_top -> mse_start = (obj); \
-        mark_stack_top -> mse_descr.w = _descr; \
-    } \
-  } while (0)
+/* the mark stack.  Returns the updated mark_stack_top value.           */
+GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr,  mse * mark_stack_top,
+                            mse * mark_stack_limit)
+{
+  word descr = hhdr -> hb_descr;
+
+  GC_ASSERT(!HBLK_IS_FREE(hhdr));
+  if (descr != 0) {
+    mark_stack_top++;
+    if ((word)mark_stack_top >= (word)mark_stack_limit) {
+      mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top);
+    }
+    mark_stack_top -> mse_start = obj;
+    mark_stack_top -> mse_descr.w = descr;
+  }
+  return mark_stack_top;
+}
 
 /* Push the contents of current onto the mark stack if it is a valid    */
 /* ptr to a currently unmarked object.  Mark it.                        */
@@ -316,7 +319,8 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
                       (unsigned)GC_gc_no, (void *)base, (void *)(source))); \
     INCR_MARKS(hhdr); \
     GC_STORE_BACK_PTR((ptr_t)(source), base); \
-    PUSH_OBJ(base, hhdr, mark_stack_top, mark_stack_limit); \
+    mark_stack_top = GC_push_obj(base, hhdr, mark_stack_top, \
+                                 mark_stack_limit); \
   } while (0)
 #endif /* MARK_BIT_PER_GRANULE */
 
@@ -375,7 +379,8 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
                       (unsigned)GC_gc_no, (void *)base, (void *)(source))); \
     INCR_MARKS(hhdr); \
     GC_STORE_BACK_PTR((ptr_t)(source), base); \
-    PUSH_OBJ(base, hhdr, mark_stack_top, mark_stack_limit); \
+    mark_stack_top = GC_push_obj(base, hhdr, mark_stack_top, \
+                                 mark_stack_limit); \
   } while (0)
 #endif /* MARK_BIT_PER_OBJ */
 
