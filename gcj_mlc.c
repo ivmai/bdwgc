@@ -67,7 +67,9 @@ STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr GC_ATTR_UNUSED,
 GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
                                        void * /* really GC_mark_proc */mp)
 {
-    GC_bool ignore_gcj_info;
+#   ifndef GC_IGNORE_GCJ_INFO
+      GC_bool ignore_gcj_info;
+#   endif
     DCL_LOCK_STATE;
 
     if (mp == 0)        /* In case GC_DS_PROC is unused.        */
@@ -82,7 +84,7 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
     GC_gcj_malloc_initialized = TRUE;
 #   ifdef GC_IGNORE_GCJ_INFO
       /* This is useful for debugging on platforms with missing getenv(). */
-      ignore_gcj_info = 1;
+#     define ignore_gcj_info TRUE
 #   else
       ignore_gcj_info = (0 != GETENV("GC_IGNORE_GCJ_INFO"));
 #   endif
@@ -119,6 +121,7 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
                                 FALSE, TRUE);
       }
     UNLOCK();
+#   undef ignore_gcj_info
 }
 
 #define GENERAL_MALLOC_INNER(lb,k) \
