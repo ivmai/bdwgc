@@ -1298,11 +1298,10 @@ static void alloc_mark_stack(size_t n)
         } else {
           WARN("Failed to grow mark stack to %" WARN_PRIdPTR " frames\n", n);
         }
+    } else if (NULL == new_stack) {
+        GC_err_printf("No space for mark stack\n");
+        EXIT();
     } else {
-        if (new_stack == 0) {
-            GC_err_printf("No space for mark stack\n");
-            EXIT();
-        }
         GC_mark_stack = new_stack;
         GC_mark_stack_size = n;
         GC_mark_stack_limit = new_stack + n;
