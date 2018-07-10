@@ -1191,7 +1191,7 @@ void typed_test(void)
             FAIL;
         }
         newP[0] = 17;
-        newP[1] = (GC_word)old;
+        GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
         newP = (GC_word *)GC_malloc_explicitly_typed(4 * sizeof(GC_word), d2);
