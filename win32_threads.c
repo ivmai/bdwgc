@@ -2546,7 +2546,9 @@ GC_INNER void GC_thr_init(void)
   GC_API int GC_pthread_join(pthread_t pthread_id, void **retval)
   {
     int result;
-    GC_thread t;
+#   ifndef GC_WIN32_PTHREADS
+      GC_thread t;
+#   endif
     DCL_LOCK_STATE;
 
     GC_ASSERT(!GC_win32_dll_threads);
@@ -2569,7 +2571,7 @@ GC_INNER void GC_thr_init(void)
     if (0 == result) {
 #     ifdef GC_WIN32_PTHREADS
         /* pthreads-win32 and winpthreads id are unique (not recycled). */
-        t = GC_lookup_pthread(pthread_id);
+        GC_thread t = GC_lookup_pthread(pthread_id);
         if (NULL == t) ABORT("Thread not registered");
 #     endif
 
