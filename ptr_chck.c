@@ -131,8 +131,7 @@ GC_API void * GC_CALL GC_is_valid_displacement(void *p)
            h = FORWARDED_ADDR(h, hhdr);
            hhdr = HDR(h);
         }
-    }
-    if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
+    } else if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
         goto fail;
     }
     sz = hhdr -> hb_sz;
@@ -140,7 +139,8 @@ GC_API void * GC_CALL GC_is_valid_displacement(void *p)
     offset = pdispl % sz;
     if ((sz > MAXOBJBYTES && (ptr_t)p >= (ptr_t)h + sz)
         || !GC_valid_offsets[offset]
-        || (ptr_t)p - offset + sz > (ptr_t)(h + 1)) {
+        || ((word)p + (sz - offset) > (word)(h + 1)
+            && !IS_FORWARDING_ADDR_OR_NIL(HDR(h + 1)))) {
         goto fail;
     }
     return(p);
@@ -214,10 +214,12 @@ GC_API void * GC_CALL GC_is_visible(void *p)
         } else {
             /* p points to the heap. */
             word descr;
-            ptr_t base = GC_base(p);    /* Should be manually inlined? */
+            ptr_t base = (ptr_t)GC_base(p);
+                        /* TODO: should GC_base be manually inlined? */
 
-            if (base == 0) goto fail;
-            if (HBLKPTR(base) != HBLKPTR(p)) hhdr = HDR((word)p);
+            if (NULL == base) goto fail;
+            if (HBLKPTR(base) != HBLKPTR(p))
+                hhdr = HDR(base);
             descr = hhdr -> hb_descr;
     retry:
             switch(descr & GC_DS_TAGS) {
