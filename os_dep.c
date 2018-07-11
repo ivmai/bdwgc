@@ -4801,14 +4801,16 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
                 }
                 /* Get rid of embedded newline, if any.  Test for "main" */
                 {
-                   char * nl = strchr(result_buf, '\n');
-                   if (nl != NULL
-                       && (word)nl < (word)(result_buf + result_len)) {
-                     *nl = ':';
-                   }
-                   if (strncmp(result_buf, "main", nl - result_buf) == 0) {
-                     stop = TRUE;
-                   }
+                  char * nl = strchr(result_buf, '\n');
+                  if (nl != NULL
+                      && (word)nl < (word)(result_buf + result_len)) {
+                    *nl = ':';
+                  }
+                  if (strncmp(result_buf, "main",
+                              nl != NULL ? (size_t)(nl - result_buf)
+                                         : result_len) == 0) {
+                    stop = TRUE;
+                  }
                 }
                 if (result_len < RESULT_SZ - 25) {
                   /* Add in hex address */
