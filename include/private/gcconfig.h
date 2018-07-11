@@ -161,7 +161,6 @@ EXTERN_C_BEGIN
 #    elif !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
           && !defined(OPENBSD) && !defined(DARWIN) && !defined(_WIN32) \
           && !defined(__CEGCC__) && !defined(NN_PLATFORM_CTR) \
-          && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
           && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2) \
           && !defined(SYMBIAN)
 #      define NOSYS
@@ -2305,6 +2304,14 @@ EXTERN_C_BEGIN
 #     define ELF_CLASS ELFCLASS64
 #     define DYNAMIC_LOADING
 #   endif
+#   ifdef NINTENDO_SWITCH
+      extern int __bss_end[];
+#     define NO_HANDLE_FORK
+#     define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
+#     define DATAEND (ptr_t)(&__bss_end)
+      void *switch_get_stack_bottom(void);
+#     define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
+#   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.   */
       extern int __data_start[];
@@ -2442,14 +2449,6 @@ EXTERN_C_BEGIN
 #     define DATAEND (ptr_t)(Image$$ZI$$ZI$$Limit)
       void *n3ds_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)n3ds_get_stack_bottom())
-#   endif
-#   ifdef NINTENDO_SWITCH
-      extern int __bss_end[];
-#     define NO_HANDLE_FORK
-#     define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
-#     define DATAEND (ptr_t)(&__bss_end)
-      void *switch_get_stack_bottom(void);
-#     define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
