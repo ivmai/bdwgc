@@ -1,6 +1,6 @@
 The collector has at various times been compiled under Windows 95 & later, NT,
 and XP, with the original Microsoft SDK, with Visual C++ 2.0, 4.0, and 6, with
-the GNU win32 tools, with Borland 4.5,  with Watcom C, and recently
+the GNU win32 tools, with Borland C++ Builder, with Watcom C, and
 with the Digital Mars compiler.  It is likely that some of these have been
 broken in the meantime.  Patches are appreciated.
 
@@ -95,7 +95,7 @@ I expect that -a1 introduces major performance penalties on a
 486 or Pentium.)  Note that this changes structure layouts.  (As a last
 resort, gcconfig.h can be changed to allow 1 byte alignment.  But
 this has significant negative performance implications.)
-The Makefile is set up to assume Borland 4.5.  If you have another
+The Makefile is set up to assume Borland 5.5.  If you have another
 version, change the line near the top.  By default, it does not
 require the assembler.  If you do have the assembler, I recommend
 removing the -DUSE_GENERIC.
