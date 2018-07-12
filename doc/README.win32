@@ -40,10 +40,13 @@ since we now separate heap sections with an unused page.)
 
 Microsoft Tools
 ---------------
-For Microsoft development tools, rename NT_MAKEFILE as
-MAKEFILE.  (Make sure that the CPU environment variable is defined
-to be i386.)  In order to use the gc_cpp.h C++ interface, all
-client code should include gc_cpp.h.
+For Microsoft development tools, type
+"nmake -f NT_MAKEFILE cpu=i386 make_as_lib=1 nothreads=1 nodebug=1"
+to build the release variant of the collector as a static library without
+threads support.
+
+In order to use the gc_cpp.h C++ interface, all client code should include
+gc_cpp.h.
 
 [See above for gctest.]
 
@@ -171,9 +174,15 @@ to the collector DLL still exists, but requires that both
 We generally recommend avoiding this if possible, since it seems to
 be less than 100% reliable.
 
-Use gc.mak instead of NT_MAKEFILE to build a version that supports
-both kinds of thread tracking.  To build the garbage collector
-test with VC++ from the command line, use
+To build the collector as a dynamic library which handles threads similarly
+to other platforms, type "nmake -f NT_MAKEFILE".  If automatic tracking of
+threads attached to the collector DLL (i.e. support of both kinds of thread
+tracking) is needed then delete "-DTHREAD_LOCAL_ALLOC" from NT_MAKEFILE
+manually before the build.
+
+The alternate way (not well tested) to build the dynamic library that supports
+both kinds of thread tracking is to use gc.mak instead of NT_MAKEFILE.
+To build the garbage collector test with VC++ from the command line, use
 
 nmake /F ".\gc.mak" CFG="gctest - Win32 Release"
 
