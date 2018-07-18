@@ -241,11 +241,7 @@ case "$THREADS" in
         if test "${enable_parallel_mark}" = yes; then
           AC_DEFINE(PARALLEL_MARK)
         fi
-        # FIXME: For a reason, gctest hangs up on kFreeBSD if both of
-        # THREAD_LOCAL_ALLOC and GC_ENABLE_SUSPEND_THREAD are defined.
-        if test x"$enable_gcj_support" = xno; then
-          AC_DEFINE(THREAD_LOCAL_ALLOC)
-        fi
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
         AC_DEFINE(USE_COMPILER_TLS)
         ;;
      *-*-gnu*)
