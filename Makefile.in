@@ -158,7 +158,7 @@ DIST_COMMON = $(srcdir)/include/include.am $(srcdir)/cord/cord.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
 	$(top_srcdir)/include/private/config.h.in mkinstalldirs \
 	$(srcdir)/bdw-gc.pc.in $(dist_noinst_SCRIPTS) depcomp \
-	$(dist_doc_DATA) $(dist_noinst_HEADERS) \
+	$(dist_man3_MANS) $(dist_doc_DATA) $(dist_noinst_HEADERS) \
 	$(am__include_HEADERS_DIST) $(am__pkginclude_HEADERS_DIST) \
 	test-driver ChangeLog compile config.guess config.sub \
 	install-sh missing ltmain.sh
@@ -213,9 +213,9 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(docdir)" \
-	"$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)" \
-	"$(DESTDIR)$(pkgincludedir)"
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(man3dir)" \
+	"$(DESTDIR)$(docdir)" "$(DESTDIR)$(pkgconfigdir)" \
+	"$(DESTDIR)$(includedir)" "$(DESTDIR)$(pkgincludedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libcord_la_DEPENDENCIES = $(top_builddir)/libgc.la
 am__dirstamp = $(am__leading_dot)dirstamp
@@ -434,6 +434,9 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+man3dir = $(mandir)/man3
+NROFF = nroff
+MANS = $(dist_man3_MANS)
 DATA = $(dist_doc_DATA) $(pkgconfig_DATA)
 am__include_HEADERS_DIST = include/extra/gc_cpp.h include/extra/gc.h
 am__pkginclude_HEADERS_DIST = include/gc_cpp.h include/gc.h \
@@ -855,12 +858,6 @@ top_srcdir = @top_srcdir@
 SUBDIRS = 
 ACLOCAL_AMFLAGS = -I m4
 
-# Initialize variables so that we can declare files locally.
-
-# FIXME: If Visual C++ users use Makefile.am, this should go into
-# pkginclude_HEADERS with proper AM_CONDITIONALization.  Otherwise
-# delete this comment.
-
 # headers which are not installed
 # (see include/include.am for more)
 #
@@ -1017,7 +1014,6 @@ libstaticrootslib_la_DEPENDENCIES = $(top_builddir)/libgc.la
 dist_doc_DATA = \
 	doc/barrett_diagram \
 	doc/debugging.html \
-	doc/gc.man \
 	doc/gcdescr.html \
 	doc/README \
 	doc/README.amiga \
@@ -1052,6 +1048,7 @@ dist_doc_DATA = \
 	doc/simple_example.html \
 	doc/porting.html
 
+dist_man3_MANS = doc/gc.man
 all: all-recursive
 
 .SUFFIXES:
@@ -1425,6 +1422,47 @@ clean-libtool:
 
 distclean-libtool:
 	-rm -f libtool config.lt
+install-man3: $(dist_man3_MANS)
+	@$(NORMAL_INSTALL)
+	@list1='$(dist_man3_MANS)'; \
+	list2=''; \
+	test -n "$(man3dir)" \
+	  && test -n "`echo $$list1$$list2`" \
+	  || exit 0; \
+	echo " $(MKDIR_P) '$(DESTDIR)$(man3dir)'"; \
+	$(MKDIR_P) "$(DESTDIR)$(man3dir)" || exit 1; \
+	{ for i in $$list1; do echo "$$i"; done;  \
+	if test -n "$$list2"; then \
+	  for i in $$list2; do echo "$$i"; done \
+	    | sed -n '/\.3[a-z]*$$/p'; \
+	fi; \
+	} | while read p; do \
+	  if test -f $$p; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; echo "$$p"; \
+	done | \
+	sed -e 'n;s,.*/,,;p;h;s,.*\.,,;s,^[^3][0-9a-z]*$$,3,;x' \
+	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,' | \
+	sed 'N;N;s,\n, ,g' | { \
+	list=; while read file base inst; do \
+	  if test "$$base" = "$$inst"; then list="$$list $$file"; else \
+	    echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man3dir)/$$inst'"; \
+	    $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man3dir)/$$inst" || exit $$?; \
+	  fi; \
+	done; \
+	for i in $$list; do echo "$$i"; done | $(am__base_list) | \
+	while read files; do \
+	  test -z "$$files" || { \
+	    echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(man3dir)'"; \
+	    $(INSTALL_DATA) $$files "$(DESTDIR)$(man3dir)" || exit $$?; }; \
+	done; }
+
+uninstall-man3:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_man3_MANS)'; test -n "$(man3dir)" || exit 0; \
+	files=`{ for i in $$list; do echo "$$i"; done; \
+	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^3][0-9a-z]*$$,3,;x' \
+	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
+	dir='$(DESTDIR)$(man3dir)'; $(am__uninstall_files_from_dir)
 install-dist_docDATA: $(dist_doc_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(dist_doc_DATA)'; test -n "$(docdir)" || list=; \
@@ -2047,10 +2085,10 @@ check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) $(check_LTLIBRARIES) $(check_PROGRAMS)
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-recursive
-all-am: Makefile $(LTLIBRARIES) $(SCRIPTS) $(DATA) $(HEADERS)
+all-am: Makefile $(LTLIBRARIES) $(SCRIPTS) $(MANS) $(DATA) $(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(pkgincludedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(man3dir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(pkgincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -2117,7 +2155,7 @@ info: info-recursive
 info-am:
 
 install-data-am: install-dist_docDATA install-includeHEADERS \
-	install-pkgconfigDATA install-pkgincludeHEADERS
+	install-man install-pkgconfigDATA install-pkgincludeHEADERS
 
 install-dvi: install-dvi-recursive
 
@@ -2133,7 +2171,7 @@ install-info: install-info-recursive
 
 install-info-am:
 
-install-man:
+install-man: install-man3
 
 install-pdf: install-pdf-recursive
 
@@ -2166,8 +2204,10 @@ ps: ps-recursive
 ps-am:
 
 uninstall-am: uninstall-dist_docDATA uninstall-includeHEADERS \
-	uninstall-libLTLIBRARIES uninstall-pkgconfigDATA \
+	uninstall-libLTLIBRARIES uninstall-man uninstall-pkgconfigDATA \
 	uninstall-pkgincludeHEADERS
+
+uninstall-man: uninstall-man3
 
 .MAKE: $(am__recursive_targets) check-am install-am install-strip
 
@@ -2184,16 +2224,16 @@ uninstall-am: uninstall-dist_docDATA uninstall-includeHEADERS \
 	install-dist_docDATA install-dvi install-dvi-am install-exec \
 	install-exec-am install-html install-html-am \
 	install-includeHEADERS install-info install-info-am \
-	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
-	install-pkgconfigDATA install-pkgincludeHEADERS install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs installdirs-am maintainer-clean \
+	install-libLTLIBRARIES install-man install-man3 install-pdf \
+	install-pdf-am install-pkgconfigDATA install-pkgincludeHEADERS \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	recheck tags tags-am uninstall uninstall-am \
 	uninstall-dist_docDATA uninstall-includeHEADERS \
-	uninstall-libLTLIBRARIES uninstall-pkgconfigDATA \
-	uninstall-pkgincludeHEADERS
+	uninstall-libLTLIBRARIES uninstall-man uninstall-man3 \
+	uninstall-pkgconfigDATA uninstall-pkgincludeHEADERS
 
 
 .s.lo:
@@ -2207,9 +2247,6 @@ uninstall-am: uninstall-dist_docDATA uninstall-includeHEADERS \
 # it will not remove dest if building fails
 .S.s:
 	if $(CPP) $< >$@ ; then :; else rm -f $@; fi
-
-# Putting these at the top causes cord to be built first, and not find libgc.a
-# on HP/UX.  There may be a better fix.
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

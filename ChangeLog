@@ -1,3 +1,8 @@
+2018-07-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure: Regenerate.
+	* Makefile.in: Likewise.
+
 2018-07-11  Ivan Maidanski <ivmai@mail.ru>
 
 	* ptr_chck.c (GC_is_valid_displacement): Remove redundant

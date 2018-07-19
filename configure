@@ -2455,7 +2455,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-    ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
+
 
 
 ac_aux_dir=
@@ -4928,7 +4928,7 @@ esac
 
 THREADDLLIBS=
 need_atomic_ops_asm=false
-## Libraries needed to support dynamic loading and/or threads.
+# Libraries needed to support dynamic loading and/or threads.
 case "$THREADS" in
  no | none | single)
     THREADS=none
@@ -16331,14 +16331,8 @@ if test "${with_cross_host+set}" = set; then :
 fi
 
 
-# automake wants to see AC_EXEEXT.  But we don't need it.  And having
-# it is actually a problem, because the compiler we're passed can't
-# necessarily do a full link.  So we fool automake here.
 if false; then
-  # autoconf 2.50 runs AC_EXEEXT by default, and the macro expands
-  # to nothing, so nothing would remain between `then' and `fi' if it
-  # were not for the `:' below.
-  :
+        :
 
 fi
 
@@ -16500,7 +16494,6 @@ fi
 
 
 
-    ## :GOTCHA: we do not check anything but sys/dg_sys_info.h
 if test $ac_is_dgux = yes; then
     dgux_spec_opts="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
     CFLAGS="$dgux_spec_opts $CFLAGS"
@@ -16671,8 +16664,6 @@ fi
 
 # Check for an external libatomic_ops if the answer was yes or check.  If not
 # found, fail on yes, and convert check to no.
-# Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
-# means Autotools pkg.m4 file was not found during aclocal.m4 generation.
 missing_libatomic_ops=false
 
 
@@ -16867,7 +16858,6 @@ $as_echo "yes" >&6; }
 
 fi
 fi
-# Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
 if test x$missing_libatomic_ops = xtrue; then :
    ac_fn_c_check_header_mongrel "$LINENO" "atomic_ops.h" "ac_cv_header_atomic_ops_h" "$ac_includes_default"
 if test "x$ac_cv_header_atomic_ops_h" = xyes; then :
