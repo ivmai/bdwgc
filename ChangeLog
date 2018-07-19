@@ -165,6 +165,73 @@
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
 
+== [7.6.8] (not released yet) ==
+
+* Add cpu, make_as_lib, nothreads options to NT_MAKEFILE
+* Add NetBSD/aarch64 and initial RISC-V support
+* Avoid multiple 'getcontext failed' warnings if getcontext is broken
+* Cleanup BCC Makefile (remove absolute GC paths, fix del cmd, update clean)
+* Collapse multiple NT_*_MAKEFILE scripts into a single NT_MAKEFILE
+* Do not call GC_dirty_inner unless GC_incremental
+* Eliminate 'cast between incompatible function types' compiler warning
+* Eliminate 'comparing signed and unsigned values' compiler warnings (bcc)
+* Eliminate 'condition is always true' cppcheck warning in init_gcj_malloc
+* Eliminate 'declaration of var hides global declaration' compiler warning
+* Eliminate 'language extension used' Clang warning in gc.h
+* Eliminate 'possibly incorrect assignment in CORD_vsprintf' compiler warning
+* Eliminate 'ptr arithmetic with NULL' cppcheck warning in alloc_mark_stack
+* Eliminate 'scope of var can be reduced' cppcheck warning in pthread_join
+* Eliminate 'switch statement contains no case label' compiler warning
+* Eliminate 'variable might be uninitialized' warning in win32_start_inner
+* Eliminate duplicate clear_mark_bit call when removing disappearing link
+* Fast fail on invalid CPU parameter passed to NT_MAKEFILE
+* Fix 'collecting from unknown thread' abort in leak-finding mode
+* Fix 'pointer arithmetic with NULL' code defect in print_callers
+* Fix Borland version in documentation to match that in BCC_MAKEFILE
+* Fix comment about inv_sz computation in setup_header
+* Fix comments style in configure.ac and Makefile.am
+* Fix compilation by digimars.mak (DMC)
+* Fix compilation by WCC makefile
+* Fix cords for MANUAL_VDB
+* Fix dependency on gc_cpp source in BCC_MAKEFILE and NT_MAKEFILE
+* Fix GC_is_valid_displacement and GC_is_visible for non-small objects
+* Fix gctest in leak-finding mode
+* Fix infinite restarting of mark_some when a static root disappeared (Linux)
+* Fix large object base computation in PUSH_CONTENTS() if MARK_BIT_PER_OBJ
+* Fix mark stack overflow checking in push_selected
+* Fix missing GC_dirty calls for GC-allocated objects used internally
+* Fix missing GC_dirty invocation from debug_end_stubborn_change
+* Fix MSWIN32 macro redefinition (WCC)
+* Fix multi-threaded gctest for the case of NTHREADS is set to zero
+* Fix new and delete operators definition for DigitalMars compiler
+* Fix NT_MAKEFILE for VS 2017
+* Fix potential null dereference in GC_CONS
+* Fix register_dynamic_libraries on Windows 10
+* Fix result computation in n_set_marks
+* Fix return type in GC_set_warn_proc API documentation
+* Fix tests for GC compiled with MANUAL_VDB
+* Fix typo in comment for CORD_ec_flush_buf prototype
+* Fix typos in ChangeLog and generic_malloc
+* Fix VirtualQuery call in case of malloc failure (Win32)
+* Install gc.3 man page instead of copying gc.man to doc folder (configure)
+* Keep pointer to the start of previous entry in remove_specific_after_fork
+* Move de_win compiled resource files to cord/tests
+* Never return null by C++ GC allocators and gc_cpp operator new
+* Really abort if failed to read /proc for library registration (Linux)
+* Remove code duplication in gcj_malloc and malloc_explicitly_typed
+* Remove duplicate local variable in reclaim_block
+* Remove unused USE_GENERIC macro definition and description
+* Suppress 'functions containing switch are not expanded inline' bcc warning
+* Suppress 'non-member operator new/delete may not be inline' VC++ warning
+* Turn on incremental collection in gctest also if MANUAL_VDB
+* Update EXTRA_DIST in Makefile, Win32/64 docs after NT_*_MAKEFILE removal
+* Update NT_MAKEFILE usage information in README files for Win32 and Win64
+* Workaround 'class C does not have a copy constructor' cppcheck warning
+* Workaround 'function nested_sp is never used' cppcheck style warning
+* Workaround 'opposite expression on both sides of &' cppcheck style warning
+* Workaround 'template-id not supported in this context' compiler error (WCC)
+
+
 == [7.6.6] 2018-04-20 ==
 
 * Define GC_FREEBSD_THREADS and GC_ADD_CALLER macros for kFreeBSD
