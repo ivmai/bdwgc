@@ -356,6 +356,35 @@ Also, includes 7.4.6 changes
 Also, includes 7.4.4 changes
 
 
+== [7.4.14] (not released yet) ==
+
+* Cleanup BCC Makefile (remove absolute GC paths, fix del cmd, update clean)
+* Do not call GC_dirty_inner unless GC_incremental
+* Eliminate 'cast between incompatible function types' compiler warning
+* Eliminate 'comparing signed and unsigned values' compiler warnings (bcc)
+* Eliminate 'language extension used' Clang warning in gc.h
+* Eliminate 'possibly incorrect assignment in CORD_vsprintf' compiler warning
+* Eliminate 'switch statement contains no case label' compiler warning
+* Eliminate 'variable might be uninitialized' warning in win32_start_inner
+* Eliminate duplicate clear_mark_bit call when removing disappearing link
+* Fix 'collecting from unknown thread' abort in leak-finding mode
+* Fix compilation by digimars.mak (DMC) and by WCC makefile
+* Fix cords for MANUAL_VDB
+* Fix dependency on gc_cpp source in BCC_MAKEFILE and NT_MAKEFILE
+* Fix gctest in leak-finding mode
+* Fix missing GC_dirty calls for GC-allocated objects used internally
+* Fix missing GC_dirty invocation from debug_end_stubborn_change
+* Fix multi-threaded gctest for the case of NTHREADS is set to zero
+* Fix typos in ChangeLog and generic_malloc
+* Keep pointer to the start of previous entry in remove_specific_after_fork
+* New API function (GC_is_init_called) to check if BDWGC is initialized
+* Remove code duplication in gcj_malloc and malloc_explicitly_typed
+* Remove duplicate local variable in reclaim_block
+* Workaround 'dynamic exception specifications deprecated in C++11' warning
+
+Also, includes 7.2l changes
+
+
 == [7.4.12] 2018-04-19 ==
 
 * Define GC_FREEBSD_THREADS and GC_ADD_CALLER macros for kFreeBSD
@@ -812,6 +841,29 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 * Use pthread_key for thread-local storage on FreeBSD
 * Use union of AO_t and word to favor strict-aliasing compiler optimization
 Also, includes 7.2 changes
+
+
+== [7.2l] (not released yet) ==
+
+* Fix 'pointer arithmetic with NULL' code defect in print_callers
+* Fix Borland version in documentation to match that in BCC_MAKEFILE
+* Fix comment about inv_sz computation in setup_header
+* Fix comments style in configure.ac and Makefile.am
+* Fix GC_is_valid_displacement and GC_is_visible for non-small objects
+* Fix global operator delete definition for C++14 in gc_cpp
+* Fix infinite restarting of mark_some when a static root disappeared (Linux)
+* Fix large object base computation in PUSH_CONTENTS() if MARK_BIT_PER_OBJ
+* Fix mark stack overflow checking in push_selected
+* Fix MSWIN32 macro redefinition (WCC)
+* Fix potential null dereference in GC_CONS
+* Fix register_dynamic_libraries on Windows 10
+* Fix result computation in n_set_marks
+* Fix return type in GC_set_warn_proc API documentation
+* Fix typo in comment for CORD_ec_flush_buf prototype
+* Fix typos in ChangeLog
+* Fix VirtualQuery call in case of malloc failure (Win32)
+* Install gc.3 man page instead of copying gc.man to doc folder (configure)
+* Workaround 'template-id not supported in this context' compiler error (WCC)
 
 
 == [7.2k] 2018-04-19 ==
