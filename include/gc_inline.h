@@ -140,7 +140,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
             /* Entry contains counter or NULL */ \
             if ((GC_signed_word)my_entry - (GC_signed_word)(num_direct) <= 0 \
                     /* (GC_word)my_entry <= (num_direct) */ \
-                    && my_entry != NULL) { \
+                    && my_entry != 0 /* NULL */) { \
                 /* Small counter value, not NULL */ \
                 GC_FAST_M_AO_STORE(my_fl, (char *)my_entry \
                                           + (granules) + 1); \
@@ -192,7 +192,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
       void *l = (void *)(first); \
       void *r = (void *)(second); \
       GC_MALLOC_WORDS_KIND(result, 2, tiny_fl, GC_I_NORMAL, (void)0); \
-      if ((result) != NULL) { \
+      if ((result) != 0 /* NULL */) { \
         *(void **)(result) = l; \
         GC_PTR_STORE_AND_DIRTY((void **)(result) + 1, r); \
         GC_reachable_here(l); \
