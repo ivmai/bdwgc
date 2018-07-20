@@ -157,7 +157,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
     GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_NORMAL, \
                          GC_malloc(grans * GC_GRANULE_BYTES), \
                          (void)0); \
-    if ((result) != NULL) { \
+    if ((result) != 0 /* NULL */) { \
         *(void **)(result) = l; \
         ((void **)(result))[1] = r; \
         GC_end_stubborn_change(result); \
