@@ -567,10 +567,7 @@ The files Makefile.am, and configure.in are
 
 Several files supporting GNU-style builds are copyrighted by the Free
 Software Foundation, and carry a different license from that given
-below.  The files included in the libatomic_ops distribution (included
-here) use either the license below, or a similar MIT-style license,
-or, for some files not actually used by the garbage-collector library, the
-GPL.
+below.
 
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -586,8 +583,3 @@ slightly different licenses, though they are all similar in spirit.  A few
 are GPL'ed, but with an exception that should cover all uses in the
 collector. (If you are concerned about such things, I recommend you look
 at the notice in config.guess or ltmain.sh.)
-
-The atomic_ops library contains some code that is covered by the GNU General
-Public License, but is not needed by, nor linked into the collector library.
-It is included here only because the atomic_ops distribution is, for
-simplicity, included in its entirety.
