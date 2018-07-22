@@ -2,6 +2,8 @@ This is an attempt to acknowledge contributions to the garbage collector.
 Early contributions also mentioned (duplicated) in ChangeLog file; details of
 later ones should be in "git log".
 
+Currently maintained by Ivan Maidanski.
+
 HISTORY -
 
   Early versions of this collector were developed as a part of research

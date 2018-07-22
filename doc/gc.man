@@ -1,4 +1,4 @@
-.TH BDWGC 3 "2 October 2003"
+.TH BDWGC 3 "22 July 2018"
 .SH NAME
 GC_malloc, GC_malloc_atomic, GC_free, GC_realloc, GC_enable_incremental, GC_register_finalizer, GC_malloc_ignore_off_page, GC_malloc_atomic_ignore_off_page, GC_set_warn_proc \- Garbage collecting malloc replacement
 .SH SYNOPSIS
@@ -100,4 +100,4 @@ The malloc(3) man page.
 .LP
 .SH AUTHOR
 Hans-J. Boehm (boehm@acm.org).
-Some of the code was written by others, most notably Alan Demers.
+Some of the code was written by others (see the AUTHORS file for the details), most notably by Alan Demers, and, recently, Ivan Maidanski.
