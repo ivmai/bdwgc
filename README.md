@@ -556,14 +556,27 @@ GitHub.
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2011 by Hewlett-Packard Development Company.
+ * Copyright (c) 2009-2018 Ivan Maidanski
 
-The files pthread_stop_world.c and pthread_support.c are also
+The files pthread_stop_world.c, pthread_support.c and some others are also
 
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
 
-The files Makefile.am, and configure.in are
+The file gc.h is also
 
-* Copyright (c) 2001 by Red Hat Inc. All rights reserved.
+ * Copyright (c) 2007 Free Software Foundation, Inc
+
+The files Makefile.am and configure.ac are
+
+ * Copyright (c) 2001 by Red Hat Inc. All rights reserved.
+
+The files msvc_dbg.c and msvc_dbg.h are
+
+ * Copyright (c) 2004-2005 Andrei Polushin
+
+The file initsecondarythread.c is
+
+ * Copyright (c) 2011 Ludovic Courtes
 
 Several files supporting GNU-style builds are copyrighted by the Free
 Software Foundation, and carry a different license from that given
