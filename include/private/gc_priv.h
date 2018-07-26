@@ -2217,7 +2217,7 @@ extern word GC_fo_entries; /* should be visible in extra/MacOS.c */
 #  define GC_STORE_BACK_PTR(source, dest) GC_store_back_pointer(source, dest)
 #  define GC_MARKED_FOR_FINALIZATION(dest) GC_marked_for_finalization(dest)
 #else
-#  define GC_STORE_BACK_PTR(source, dest)
+#  define GC_STORE_BACK_PTR(source, dest) (void)(source)
 #  define GC_MARKED_FOR_FINALIZATION(dest)
 #endif
 

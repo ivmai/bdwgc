@@ -145,8 +145,9 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr,  mse * mark_stack_top,
   do { \
     hdr * my_hhdr; \
     HC_GET_HDR(current, my_hhdr, source); /* contains "break" */ \
-    PUSH_CONTENTS_HDR(current, mark_stack_top, mark_stack_limit, \
-                      source, my_hhdr, TRUE); \
+    mark_stack_top = GC_push_contents_hdr(current, mark_stack_top, \
+                                          mark_stack_limit, \
+                                          source, my_hhdr, TRUE); \
   } while (0)
 
 /* Set mark bit, exit (using "break" statement) if it is already set.   */
@@ -263,126 +264,103 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr,  mse * mark_stack_top,
 /* here.  Note in particular that the "displ" value is the displacement */
 /* from the beginning of the heap block, which may itself be in the     */
 /* interior of a large object.                                          */
-#ifdef MARK_BIT_PER_GRANULE
-# define PUSH_CONTENTS_HDR(current, mark_stack_top, mark_stack_limit, \
-                           source, hhdr, do_offset_check) \
-  do { \
-    size_t displ = HBLKDISPL(current); /* Displacement in block; in bytes. */\
-    /* displ is always within range.  If current doesn't point to       */ \
-    /* first block, then we are in the all_interior_pointers case, and  */ \
-    /* it is safe to use any displacement value.                        */ \
-    size_t gran_displ = BYTES_TO_GRANULES(displ); \
-    size_t gran_offset = hhdr -> hb_map[gran_displ]; \
-    size_t byte_offset = displ & (GRANULE_BYTES - 1); \
-    ptr_t base = (ptr_t)(current); \
-    /* The following always fails for large block references. */ \
-    if (EXPECT((gran_offset | byte_offset) != 0, FALSE))  { \
-        if ((hhdr -> hb_flags & LARGE_BLOCK) != 0) { \
-          /* gran_offset is bogus.      */ \
-          size_t obj_displ; \
-          base = (ptr_t)(hhdr -> hb_block); \
-          obj_displ = (ptr_t)(current) - base; \
-          if (obj_displ != displ) { \
-            GC_ASSERT(obj_displ < hhdr -> hb_sz); \
-            /* Must be in all_interior_pointer case, not first block */ \
-            /* already did validity check on cache miss.             */ \
-          } else { \
-            if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
-              GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \
-              break; /* go to the end of PUSH_CONTENTS_HDR */ \
-            } \
-          } \
-          gran_displ = 0; \
-          GC_ASSERT(hhdr -> hb_sz > HBLKSIZE || \
-                    hhdr -> hb_block == HBLKPTR(current)); \
-          GC_ASSERT((word)hhdr->hb_block <= (word)(current)); \
-        } else { \
-          size_t obj_displ = GRANULES_TO_BYTES(gran_offset) \
-                             + byte_offset; \
-          if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
-            GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \
-            break; \
-          } \
-          gran_displ -= gran_offset; \
-          base -= obj_displ; \
-        } \
-    } \
-    GC_ASSERT(hhdr == GC_find_header(base)); \
-    GC_ASSERT(gran_displ % BYTES_TO_GRANULES(hhdr -> hb_sz) == 0); \
-    TRACE(source, GC_log_printf("GC #%u: passed validity tests\n", \
-                                (unsigned)GC_gc_no)); \
-    SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ); \
-    TRACE(source, GC_log_printf("GC #%u: previously unmarked\n", \
-                                (unsigned)GC_gc_no)); \
-    TRACE_TARGET(base, \
-        GC_log_printf("GC #%u: marking %p from %p instead\n", \
-                      (unsigned)GC_gc_no, (void *)base, (void *)(source))); \
-    INCR_MARKS(hhdr); \
-    GC_STORE_BACK_PTR((ptr_t)(source), base); \
-    mark_stack_top = GC_push_obj(base, hhdr, mark_stack_top, \
-                                 mark_stack_limit); \
-  } while (0)
-#endif /* MARK_BIT_PER_GRANULE */
+GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
+                                     mse * mark_stack_limit, ptr_t source,
+                                     hdr * hhdr, GC_bool do_offset_check)
+{
+  do {
+    size_t displ = HBLKDISPL(current); /* Displacement in block; in bytes. */
+    /* displ is always within range.  If current doesn't point to the   */
+    /* first block, then we are in the all_interior_pointers case, and  */
+    /* it is safe to use any displacement value.                        */
+    ptr_t base = current;
+#   ifdef MARK_BIT_PER_GRANULE
+      size_t gran_displ = BYTES_TO_GRANULES(displ);
+      size_t gran_offset = hhdr -> hb_map[gran_displ];
+      size_t byte_offset = displ & (GRANULE_BYTES - 1);
 
-#ifdef MARK_BIT_PER_OBJ
-# define PUSH_CONTENTS_HDR(current, mark_stack_top, mark_stack_limit, \
-                           source, hhdr, do_offset_check) \
-  do { \
-    size_t displ = HBLKDISPL(current); /* Displacement in block; in bytes. */\
-    unsigned32 high_prod; \
-    unsigned32 inv_sz = hhdr -> hb_inv_sz; \
-    ptr_t base; \
-    if (EXPECT(inv_sz == LARGE_INV_SZ, FALSE)) { \
-          size_t obj_displ; \
-          base = (ptr_t)(hhdr -> hb_block); \
-          obj_displ = (ptr_t)(current) - base; \
-          if (obj_displ != displ) { \
-            GC_ASSERT(obj_displ < hhdr -> hb_sz); \
-            /* Must be in all_interior_pointer case, not first block */ \
-            /* already did validity check on cache miss.             */ \
-          } else { \
-            if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
-              GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \
-              break; /* go to the end of PUSH_CONTENTS_HDR */ \
-            } \
-          } \
-          GC_ASSERT(hhdr -> hb_sz > HBLKSIZE || \
-                    hhdr -> hb_block == HBLKPTR(current)); \
-          GC_ASSERT((word)(hhdr)->hb_block <= (word)(current)); \
-          high_prod = 0; \
-    } else { \
-        unsigned32 low_prod; \
-        base = (ptr_t)(current); \
-        LONG_MULT(high_prod, low_prod, (unsigned32)displ, inv_sz); \
-        if ((low_prod >> 16) != 0) { \
-          size_t obj_displ; \
-          /* Accurate enough if HBLKSIZE <= 2**15.      */ \
-          GC_STATIC_ASSERT(HBLKSIZE <= (1 << 15)); \
-          obj_displ = (((low_prod >> 16) + 1) * (size_t)hhdr->hb_sz) >> 16; \
-          if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
-            GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \
-            break; \
-          } \
-          base -= obj_displ; \
-        } \
-    } \
-    /* May get here for pointer to start of block not at        */ \
-    /* beginning of object.  If so, it's valid, and we're fine. */ \
-    GC_ASSERT(high_prod <= HBLK_OBJS(hhdr -> hb_sz)); \
-    TRACE(source, GC_log_printf("GC #%u: passed validity tests\n", \
-                                (unsigned)GC_gc_no)); \
-    SET_MARK_BIT_EXIT_IF_SET(hhdr, high_prod); \
-    TRACE(source, GC_log_printf("GC #%u: previously unmarked\n", \
-                                (unsigned)GC_gc_no)); \
-    TRACE_TARGET(base, \
-        GC_log_printf("GC #%u: marking %p from %p instead\n", \
-                      (unsigned)GC_gc_no, (void *)base, (void *)(source))); \
-    INCR_MARKS(hhdr); \
-    GC_STORE_BACK_PTR((ptr_t)(source), base); \
-    mark_stack_top = GC_push_obj(base, hhdr, mark_stack_top, \
-                                 mark_stack_limit); \
-  } while (0)
-#endif /* MARK_BIT_PER_OBJ */
+      /* The following always fails for large block references.         */
+      if (EXPECT((gran_offset | byte_offset) != 0, FALSE))
+#   else
+      unsigned32 gran_displ; /* high_prod */
+      unsigned32 inv_sz = hhdr -> hb_inv_sz;
+#   endif /* MARK_BIT_PER_OBJ */
+
+    {
+#     ifdef MARK_BIT_PER_GRANULE
+        if ((hhdr -> hb_flags & LARGE_BLOCK) != 0)
+#     else
+        if (EXPECT(inv_sz == LARGE_INV_SZ, FALSE))
+#     endif /* MARK_BIT_PER_OBJ */
+      {
+        /* gran_offset is bogus.        */
+        size_t obj_displ;
+
+        base = (ptr_t)hhdr->hb_block;
+        obj_displ = current - base;
+        if (obj_displ != displ) {
+          GC_ASSERT(obj_displ < hhdr -> hb_sz);
+          /* Must be in all_interior_pointer case, not first block      */
+          /* already did validity check on cache miss.                  */
+        } else if (do_offset_check && !GC_valid_offsets[obj_displ]) {
+          GC_ADD_TO_BLACK_LIST_NORMAL(current, source);
+          break;
+        }
+        GC_ASSERT(hhdr -> hb_sz > HBLKSIZE
+                  || hhdr -> hb_block == HBLKPTR(current));
+        GC_ASSERT((word)hhdr->hb_block <= (word)current);
+        gran_displ = 0;
+      } else {
+#       ifdef MARK_BIT_PER_GRANULE
+          size_t obj_displ = GRANULES_TO_BYTES(gran_offset) + byte_offset;
+#       else
+          unsigned32 low_prod;
+
+          LONG_MULT(gran_displ, low_prod, (unsigned32)displ, inv_sz);
+          if ((low_prod >> 16) != 0)
+#       endif /* MARK_BIT_PER_OBJ */
+        {
+#         ifdef MARK_BIT_PER_OBJ
+            size_t obj_displ;
+
+            /* Accurate enough if HBLKSIZE <= 2**15.    */
+            GC_STATIC_ASSERT(HBLKSIZE <= (1 << 15));
+            obj_displ = (((low_prod >> 16) + 1) * (size_t)hhdr->hb_sz) >> 16;
+#         endif
+          if (do_offset_check && !GC_valid_offsets[obj_displ]) {
+            GC_ADD_TO_BLACK_LIST_NORMAL(current, source);
+            break;
+          }
+#         ifdef MARK_BIT_PER_GRANULE
+            gran_displ -= gran_offset;
+#         endif
+          base -= obj_displ;
+        }
+      }
+    }
+#   ifdef MARK_BIT_PER_GRANULE
+      GC_ASSERT(hhdr == GC_find_header(base));
+      GC_ASSERT(gran_displ % BYTES_TO_GRANULES(hhdr -> hb_sz) == 0);
+#   else
+      /* May get here for pointer to start of block not at the          */
+      /* beginning of object.  If so, it is valid, and we are fine.     */
+      GC_ASSERT(gran_displ <= HBLK_OBJS(hhdr -> hb_sz));
+#   endif /* MARK_BIT_PER_OBJ */
+    TRACE(source, GC_log_printf("GC #%u: passed validity tests\n",
+                                (unsigned)GC_gc_no));
+    SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ); /* contains "break" */
+    TRACE(source, GC_log_printf("GC #%u: previously unmarked\n",
+                                (unsigned)GC_gc_no));
+    TRACE_TARGET(base, GC_log_printf("GC #%u: marking %p from %p instead\n",
+                                     (unsigned)GC_gc_no, (void *)base,
+                                     (void *)source));
+    INCR_MARKS(hhdr);
+    GC_STORE_BACK_PTR(source, base);
+    mark_stack_top = GC_push_obj(base, hhdr, mark_stack_top,
+                                 mark_stack_limit);
+  } while (0);
+  return mark_stack_top;
+}
 
 #if defined(PRINT_BLACK_LIST) || defined(KEEP_BACK_PTRS)
 # define PUSH_ONE_CHECKED_STACK(p, source) \

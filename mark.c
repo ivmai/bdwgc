@@ -1458,10 +1458,8 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
       GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
       return mark_stack_ptr;
     }
-
-    PUSH_CONTENTS_HDR(obj, mark_stack_ptr /* modified */, mark_stack_limit,
-                      (ptr_t)src, hhdr, TRUE);
-    return mark_stack_ptr;
+    return GC_push_contents_hdr((ptr_t)obj, mark_stack_ptr, mark_stack_limit,
+                                (ptr_t)src, hhdr, TRUE);
 }
 
 /* Mark and push (i.e. gray) a single object p onto the main    */
@@ -1499,8 +1497,9 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
       /* it points to, but have not called GC_dirty yet.                */
       GC_dirty(p); /* entire object */
 #   endif
-    PUSH_CONTENTS_HDR(r, GC_mark_stack_top, GC_mark_stack_limit,
-                      source, hhdr, FALSE);
+    GC_mark_stack_top = GC_push_contents_hdr(r, GC_mark_stack_top,
+                                             GC_mark_stack_limit,
+                                             source, hhdr, FALSE);
     /* We silently ignore pointers to near the end of a block,  */
     /* which is very mildly suboptimal.                         */
     /* FIXME: We should probably add a header word to address   */
