@@ -2011,12 +2011,6 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
           && !defined(MSWIN32) && !defined(MSWINCE)
          UNTESTED(GC_set_log_fd);
 #      endif
-#      ifdef THREADS
-         UNTESTED(GC_allow_register_threads);
-         UNTESTED(GC_get_on_thread_event);
-         UNTESTED(GC_register_altstack);
-         UNTESTED(GC_set_on_thread_event);
-#      endif
 #      ifndef REDIRECT_MALLOC_IN_HEADER
 #        ifdef REDIRECT_MALLOC
 #          ifndef strndup
@@ -2342,6 +2336,10 @@ int main(void)
     (void)fflush(stdout);
     (void)pthread_attr_destroy(&attr);
 #   if defined(CPPCHECK)
+      UNTESTED(GC_allow_register_threads);
+      UNTESTED(GC_get_on_thread_event);
+      UNTESTED(GC_register_altstack);
+      UNTESTED(GC_set_on_thread_event);
       UNTESTED(GC_set_suspend_signal);
       UNTESTED(GC_set_thr_restart_signal);
 #     ifndef GC_NO_DLOPEN
