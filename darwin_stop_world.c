@@ -442,7 +442,9 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
 #   ifdef DEBUG_THREADS
       GC_log_printf("Suspending %p\n", (void *)(word)thread);
 #   endif
-    kern_result = thread_suspend(thread);
+    do {
+      kern_result = thread_suspend(thread);
+    } while (kern_result == KERN_ABORTED);
     if (kern_result != KERN_SUCCESS) {
       /* The thread may have quit since the thread_threads() call we  */
       /* mark already suspended so it's not dealt with anymore later. */
