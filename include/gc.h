@@ -2042,6 +2042,9 @@ GC_API void GC_CALL GC_win32_free_heap(void);
         (*GC_amiga_allocwrapper_do)(a,GC_malloc_atomic_ignore_off_page)
 #endif /* _AMIGA && !GC_AMIGA_MAKINGLIB */
 
+GC_API void GC_CALL GC_stop_world_external(void);
+GC_API void GC_CALL GC_start_world_external(void);
+
 #ifdef __cplusplus
   } /* extern "C" */
 #endif

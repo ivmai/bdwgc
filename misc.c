@@ -2528,3 +2528,15 @@ GC_API void GC_CALL GC_abort_on_oom(void)
     GC_err_printf("Insufficient memory for the allocation\n");
     EXIT();
 }
+
+GC_API void GC_CALL GC_stop_world_external(void)
+{
+    LOCK();
+    STOP_WORLD();
+}
+
+GC_API void GC_CALL GC_start_world_external(void)
+{
+    START_WORLD();
+    UNLOCK();
+}
