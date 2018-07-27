@@ -1503,6 +1503,10 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* be called inside a GC callback function (except for                */
   /* GC_call_with_stack_base() one).                                    */
   GC_API int GC_CALL GC_unregister_my_thread(void);
+
+  /* Stop/start the world explicitly.  Not recommended for general use. */
+  GC_API void GC_CALL GC_stop_world_external(void);
+  GC_API void GC_CALL GC_start_world_external(void);
 #endif /* GC_THREADS */
 
 /* Wrapper for functions that are likely to block (or, at least, do not */
@@ -2041,9 +2045,6 @@ GC_API void GC_CALL GC_win32_free_heap(void);
 # define GC_malloc_atomic_ignore_off_page(a) \
         (*GC_amiga_allocwrapper_do)(a,GC_malloc_atomic_ignore_off_page)
 #endif /* _AMIGA && !GC_AMIGA_MAKINGLIB */
-
-GC_API void GC_CALL GC_stop_world_external(void);
-GC_API void GC_CALL GC_start_world_external(void);
 
 #ifdef __cplusplus
   } /* extern "C" */

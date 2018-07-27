@@ -2529,14 +2529,29 @@ GC_API void GC_CALL GC_abort_on_oom(void)
     EXIT();
 }
 
-GC_API void GC_CALL GC_stop_world_external(void)
-{
+#ifdef THREADS
+  GC_API void GC_CALL GC_stop_world_external(void)
+  {
+    GC_ASSERT(GC_is_initialized);
     LOCK();
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_ASSERT(!GC_world_stopped);
+#   endif
     STOP_WORLD();
-}
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_world_stopped = TRUE;
+#   endif
+  }
 
-GC_API void GC_CALL GC_start_world_external(void)
-{
+  GC_API void GC_CALL GC_start_world_external(void)
+  {
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_ASSERT(GC_world_stopped);
+      GC_world_stopped = FALSE;
+#   else
+      GC_ASSERT(GC_is_initialized);
+#   endif
     START_WORLD();
     UNLOCK();
-}
+  }
+#endif /* THREADS */

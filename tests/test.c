@@ -2340,6 +2340,8 @@ int main(void)
       UNTESTED(GC_set_on_thread_event);
       UNTESTED(GC_set_suspend_signal);
       UNTESTED(GC_set_thr_restart_signal);
+      UNTESTED(GC_stop_world_external);
+      UNTESTED(GC_start_world_external);
 #     ifndef GC_NO_DLOPEN
         UNTESTED(GC_dlopen);
 #     endif
