@@ -140,6 +140,14 @@ AC_ARG_ENABLE(thread-local-alloc,
         ;;
     esac])
 
+AC_ARG_ENABLE(threads-discovery,
+    [AC_HELP_STRING([--disable-threads-discovery],
+                    [disable threads discovery in GC])])
+if test "${enable_threads_discovery}" = no; then
+    AC_DEFINE([GC_NO_THREADS_DISCOVERY], 1,
+              [Disable threads discovery in GC.])
+fi
+
 AC_ARG_ENABLE(cplusplus,
     [AC_HELP_STRING([--enable-cplusplus], [install C++ support])])
 
