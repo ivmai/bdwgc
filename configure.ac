@@ -447,7 +447,7 @@ fi
 
 # Check for getcontext (uClibc can be configured without it, for example)
 AC_CHECK_FUNC([getcontext], [],
-    [ AC_DEFINE([NO_GETCONTEXT], [1], [Missing getcontext()]) ])
+    [ AC_DEFINE([NO_GETCONTEXT], [1], [Missing getcontext function.]) ])
 
 # Check whether dl_iterate_phdr exists (as a strong symbol).
 AC_CHECK_FUNCS([dl_iterate_phdr])
@@ -476,7 +476,7 @@ AM_CONDITIONAL(AVOID_CPP_LIB,test $avoid_cpp_lib = yes)
 
 # Check for various headers.
 AC_CHECK_HEADER([execinfo.h], [],
-    [ AC_DEFINE([GC_MISSING_EXECINFO_H], [1], [Missing execinfo.h header]) ])
+    [ AC_DEFINE([GC_MISSING_EXECINFO_H], [1], [Missing execinfo.h header.]) ])
 
 # extra LD Flags which are required for targets
 case "${host}" in
@@ -683,8 +683,7 @@ dnl
 dnl By default, make the library as general as possible.
 dnl enable_gcj_support=no
 AC_ARG_ENABLE(gcj-support,
-    [AC_HELP_STRING([--disable-gcj-support],
-        [Disable support for gcj.])])
+    [AC_HELP_STRING([--disable-gcj-support], [disable support for gcj])])
 if test x"$enable_gcj_support" != xno; then
     AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj.])
     case "$host" in
@@ -705,7 +704,7 @@ fi
 dnl Interaction with other programs that might use signals.
 AC_ARG_ENABLE(sigrt-signals,
     [AC_HELP_STRING([--enable-sigrt-signals],
-        [Force GC to use SIGRTMIN-based signals for thread suspend/resume])])
+        [force GC to use SIGRTMIN-based signals for thread suspend/resume])])
 if test x"${enable_sigrt_signals}" = xyes; then
     AC_DEFINE([GC_USESIGRT_SIGNALS], 1,
               [Force the GC to use signals based on SIGRTMIN+k.])
@@ -784,7 +783,7 @@ AC_TRY_LINK([#include <setjmp.h>],
             [sigjmp_buf t; sigsetjmp(t, 0)],
   [AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
-   AC_DEFINE([GC_NO_SIGSETJMP], [1], [Missing sigsetjmp])])
+   AC_DEFINE([GC_NO_SIGSETJMP], [1], [Missing sigsetjmp function.])])
 CFLAGS="$old_CFLAGS"
 
 # Check for AViiON Machines running DGUX
@@ -807,14 +806,14 @@ fi
 
 AC_ARG_ENABLE(java-finalization,
     [AC_HELP_STRING([--disable-java-finalization],
-        [Disable support for java finalization.])])
+                    [disable support for java finalization])])
 if test x"$enable_java_finalization" != xno; then
     AC_DEFINE([JAVA_FINALIZATION], 1, [See doc/README.macros.])
 fi
 
 AC_ARG_ENABLE(atomic-uncollectable,
     [AC_HELP_STRING([--disable-atomic-uncollectible],
-        [Disable support for atomic uncollectible allocation.])])
+                    [disable support for atomic uncollectible allocation])])
 if test x"$enable_atomic_uncollectible" != x"no"; then
     AC_DEFINE([GC_ATOMIC_UNCOLLECTABLE], 1,
         [Define to enable atomic uncollectible allocation.])
@@ -822,7 +821,7 @@ fi
 
 AC_ARG_ENABLE(redirect-malloc,
     [AC_HELP_STRING([--enable-redirect-malloc],
-        [Redirect malloc and friends to GC routines])])
+                    [redirect malloc and friends to GC routines])])
 
 if test "${enable_redirect_malloc}" = yes; then
     if test "${enable_gc_debug}" = yes; then
@@ -840,7 +839,7 @@ fi
 
 AC_ARG_ENABLE(disclaim,
     [AC_HELP_STRING([--disable-disclaim],
-        [Disable alternative (more efficient) finalization interface.])])
+        [disable alternative (more efficient) finalization interface])])
 if test x"$enable_disclaim" != xno; then
     AC_DEFINE(ENABLE_DISCLAIM, 1,
         [Define to enable alternative finalization interface.])
@@ -850,15 +849,15 @@ AM_CONDITIONAL(ENABLE_DISCLAIM,
 
 AC_ARG_ENABLE(large-config,
     [AC_HELP_STRING([--enable-large-config],
-        [Optimize for large (> 100 MB) heap or root set])])
-
+        [optimize for large (> 100 MB) heap or root set])])
 if test "${enable_large_config}" = yes; then
-    AC_DEFINE(LARGE_CONFIG, 1, [Define to optimize for large heaps or root sets.])
+    AC_DEFINE(LARGE_CONFIG, 1,
+              [Define to optimize for large heaps or root sets.])
 fi
 
 AC_ARG_ENABLE(handle-fork,
     [AC_HELP_STRING([--enable-handle-fork[=yes|no|auto|manual]],
-                    [Attempt to ensure a usable collector after fork()
+                    [attempt to ensure a usable collector after fork()
                      in multi-threaded programs (default: auto;
                      manual: GC_atfork_prepare/parent/child should be
                      called by the client)])])
@@ -910,12 +909,13 @@ AC_ARG_ENABLE(gc-assertions,
     [AC_HELP_STRING([--enable-gc-assertions],
         [collector-internal assertion checking])])
 if test "${enable_gc_assertions}" = yes; then
-    AC_DEFINE([GC_ASSERTIONS], 1, [Define to enable internal debug assertions.])
+    AC_DEFINE([GC_ASSERTIONS], 1,
+              [Define to enable internal debug assertions.])
 fi
 
 AC_ARG_ENABLE(munmap,
     [AC_HELP_STRING([--enable-munmap=N],
-                    [Return page to the OS if empty for N collections
+                    [return page to the OS if empty for N collections
                      (default: 6)])],
     MUNMAP_THRESHOLD=$enableval)
 if test x$enable_munmap != xno; then
@@ -941,7 +941,7 @@ fi
 
 AC_ARG_ENABLE(checksums,
     [AS_HELP_STRING([--enable-checksums],
-                    [Report on erroneously cleared dirty bits at
+                    [report on erroneously cleared dirty bits at
                      substantial performance cost; use only for
                      debugging of the incremental collector])])
 if test x$enable_checksums = xyes; then
@@ -956,8 +956,9 @@ AM_CONDITIONAL([CHECKSUMS], test x$enable_checksums = xyes)
 
 AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
 
-AC_ARG_ENABLE(werror, [--enable-werror Pass -Werror to the C compiler],
-              werror_flag=$enableval, werror_flag=no)
+AC_ARG_ENABLE(werror,
+    [AS_HELP_STRING([--enable-werror], [pass -Werror to the C compiler])],
+    werror_flag=$enableval, werror_flag=no)
 if test x$werror_flag = xyes; then
     WERROR_CFLAGS="-Werror"
     case "$host" in
@@ -971,15 +972,15 @@ AC_SUBST([WERROR_CFLAGS])
 
 AC_ARG_ENABLE(single-obj-compilation,
    [AC_HELP_STRING([--enable-single-obj-compilation],
-                   [Compile all libgc source files into single .o
+                   [compile all libgc source files into single .o
                     (default: yes if static libraries are disabled)])],
    [], [ AS_IF([test x"$enable_static" = xno],
                [enable_single_obj_compilation=yes]) ])
 AM_CONDITIONAL([SINGLE_GC_OBJ],
                [test x"$enable_single_obj_compilation" = xyes])
 
-AC_ARG_ENABLE(gcov, AC_HELP_STRING([--enable-gcov],
-                                   [Turn on code coverage analysis]))
+AC_ARG_ENABLE(gcov,
+    [AC_HELP_STRING([--enable-gcov], [turn on code coverage analysis])])
 if test "$enable_gcov" = "yes"; then
   CFLAGS="$CFLAGS --coverage"
   if test "${enable_shared}" = no; then
@@ -994,7 +995,7 @@ fi
 
 AC_ARG_ENABLE(docs,
         [AC_HELP_STRING([--disable-docs],
-                        [Do not build and install documentation])])
+                        [do not build and install documentation])])
 AM_CONDITIONAL(ENABLE_DOCS, test x$enable_docs != xno)
 
 # Atomic Ops
@@ -1061,7 +1062,7 @@ AS_IF([test x"$with_libatomic_ops" != xno],
             AS_IF([test x"$THREADS" != xnone],
                   [ AC_DEFINE([GC_BUILTIN_ATOMIC], [1],
                               [Use C11 (GCC) atomic intrinsics instead of
-                               libatomic_ops primitives]) ]) ]) ],
+                               libatomic_ops primitives.]) ]) ]) ],
   [ AC_MSG_RESULT([internal])
     ATOMIC_OPS_CFLAGS='-I$(top_builddir)/libatomic_ops/src -I$(top_srcdir)/libatomic_ops/src'
     ATOMIC_OPS_LIBS=""
