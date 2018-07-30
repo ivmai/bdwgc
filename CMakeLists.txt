@@ -209,6 +209,11 @@ IF(enable_gc_assertions)
     ADD_DEFINITIONS("-DGC_ASSERTIONS")
 ENDIF(enable_gc_assertions)
 
+OPTION(enable_threads_discovery "Enable threads discovery in GC" ON)
+IF(NOT enable_threads_discovery)
+    ADD_DEFINITIONS("-DGC_NO_THREADS_DISCOVERY")
+ENDIF()
+
 OPTION(enable_checksums "Report erroneously cleared dirty bits" NO)
 IF(enable_checksums)
     IF(enable_munmap OR enable_threads)
