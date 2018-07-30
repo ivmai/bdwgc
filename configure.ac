@@ -954,6 +954,14 @@ if test "${enable_dynamic_loading}" = "no"; then
              collector with disabled tracing of dynamic library data roots).])
 fi
 
+AC_ARG_ENABLE(register-main-static-data,
+    [AC_HELP_STRING([--disable-register-main-static-data],
+                    [skip the initial guess of data root sets])])
+if test "${enable_register_main_static_data}" = "no"; then
+    AC_DEFINE([GC_DONT_REGISTER_MAIN_STATIC_DATA], 1,
+              [Skip the initial guess of data root sets.])
+fi
+
 AC_ARG_ENABLE(checksums,
     [AS_HELP_STRING([--enable-checksums],
                     [report on erroneously cleared dirty bits at
