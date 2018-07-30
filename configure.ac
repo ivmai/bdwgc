@@ -913,6 +913,11 @@ if test "${enable_gc_assertions}" = yes; then
               [Define to enable internal debug assertions.])
 fi
 
+AC_ARG_ENABLE(mmap,
+    [AC_HELP_STRING([--enable-mmap],
+                    [use mmap instead of sbrk to expand the heap])],
+    gc_use_mmap=$enableval)
+
 AC_ARG_ENABLE(munmap,
     [AC_HELP_STRING([--enable-munmap=N],
                     [return page to the OS if empty for N collections
