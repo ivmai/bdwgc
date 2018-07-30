@@ -944,6 +944,16 @@ else
     fi
 fi
 
+AC_ARG_ENABLE(dynamic-loading,
+    [AC_HELP_STRING([--disable-dynamic-loading],
+                    [build the collector with disabled tracing
+                     of dynamic library data roots])])
+if test "${enable_dynamic_loading}" = "no"; then
+  AC_DEFINE([IGNORE_DYNAMIC_LOADING], 1,
+            [Do not define DYNAMIC_LOADING even if supported (i.e., build the
+             collector with disabled tracing of dynamic library data roots).])
+fi
+
 AC_ARG_ENABLE(checksums,
     [AS_HELP_STRING([--enable-checksums],
                     [report on erroneously cleared dirty bits at
