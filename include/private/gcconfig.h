@@ -1680,9 +1680,7 @@ EXTERN_C_BEGIN
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
 #     define DARWIN_DONT_PARSE_STACK
-#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
-#       define DYNAMIC_LOADING
-#     endif
+#     define DYNAMIC_LOADING
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default). */
 #     define DATASTART ((ptr_t)get_etext())
@@ -2264,9 +2262,7 @@ EXTERN_C_BEGIN
       /* iOS */
 #     define OS_TYPE "DARWIN"
 #     define DARWIN_DONT_PARSE_STACK
-#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
-#       define DYNAMIC_LOADING
-#     endif
+#     define DYNAMIC_LOADING
 #     define DATASTART ((ptr_t)get_etext())
 #     define DATAEND   ((ptr_t)get_end())
 #     define STACKBOTTOM ((ptr_t)0x16fdfffff)
@@ -2397,9 +2393,7 @@ EXTERN_C_BEGIN
       /* iOS */
 #     define OS_TYPE "DARWIN"
 #     define DARWIN_DONT_PARSE_STACK
-#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
-#       define DYNAMIC_LOADING
-#     endif
+#     define DYNAMIC_LOADING
 #     define DATASTART ((ptr_t)get_etext())
 #     define DATAEND   ((ptr_t)get_end())
 #     define STACKBOTTOM ((ptr_t)0x30000000)
@@ -2634,9 +2628,7 @@ EXTERN_C_BEGIN
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
 #     define DARWIN_DONT_PARSE_STACK
-#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
-#       define DYNAMIC_LOADING
-#     endif
+#     define DYNAMIC_LOADING
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default)  */
 #     define DATASTART ((ptr_t)get_etext())
