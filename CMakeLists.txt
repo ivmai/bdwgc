@@ -194,10 +194,14 @@ IF(enable_redirect_malloc)
     ADD_DEFINITIONS("-DGC_USE_DLOPEN_WRAP")
 ENDIF(enable_redirect_malloc)
 
+OPTION(enable_mmap "Use mmap instead of sbrk to expand the heap" NO)
+
 OPTION(enable_munmap "Return page to the OS if empty for N collections" ON)
 IF(enable_munmap)
     ADD_DEFINITIONS("-DUSE_MMAP -DUSE_MUNMAP")
-ENDIF(enable_munmap)
+ELSEIF(enable_mmap)
+    ADD_DEFINITIONS("-DUSE_MMAP")
+ENDIF()
 
 OPTION(enable_large_config "Optimize for large heap or root set" NO)
 IF(enable_large_config)
