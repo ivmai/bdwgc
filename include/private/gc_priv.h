@@ -555,7 +555,9 @@ EXTERN_C_BEGIN
 # elif defined(PCR)
 #   define ABORT(s) PCR_Base_Panic(s)
 # else
-#   if defined(MSWINCE) && !defined(DebugBreak) \
+#   if defined(MSWIN_XBOX1) && !defined(DebugBreak)
+#     define DebugBreak() __debugbreak()
+#   elif defined(MSWINCE) && !defined(DebugBreak) \
        && (!defined(UNDER_CE) || (defined(__MINGW32CE__) && !defined(ARM32)))
       /* This simplifies linking for WinCE (and, probably, doesn't      */
       /* hurt debugging much); use -DDebugBreak=DebugBreak to override  */

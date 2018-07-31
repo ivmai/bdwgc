@@ -812,9 +812,10 @@ GC_API int GC_CALL GC_is_init_called(void)
   }
 #endif
 
-#if defined(MSWIN32) && !defined(MSWINRT_FLAVOR) && (!defined(SMALL_CONFIG) \
-                         || (!defined(_WIN64) && defined(GC_WIN32_THREADS) \
-                             && defined(CHECK_NOT_WOW64)))
+#if defined(MSWIN32) && !defined(MSWINRT_FLAVOR) && !defined(MSWIN_XBOX1) \
+    && (!defined(SMALL_CONFIG) \
+        || (!defined(_WIN64) && defined(GC_WIN32_THREADS) \
+            && defined(CHECK_NOT_WOW64)))
   STATIC void GC_win32_MessageBoxA(const char *msg, const char *caption,
                                    unsigned flags)
   {
@@ -1895,7 +1896,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 #   endif
 
     if (msg != NULL) {
-#     if defined(MSWIN32)
+#     if defined(MSWIN32) && !defined(MSWINRT_FLAVOR) && !defined(MSWIN_XBOX1)
         GC_win32_MessageBoxA(msg, "Fatal error in GC", MB_ICONERROR | MB_OK);
         /* Also duplicate msg to GC log file.   */
 #     endif
