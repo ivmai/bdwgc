@@ -208,6 +208,11 @@ IF(NOT enable_dynamic_loading)
     ADD_DEFINITIONS("-DIGNORE_DYNAMIC_LOADING")
 ENDIF()
 
+OPTION(enable_register_main_static_data "Perform the initial guess of data root sets" ON)
+IF(NOT enable_register_main_static_data)
+    ADD_DEFINITIONS("-DGC_DONT_REGISTER_MAIN_STATIC_DATA")
+ENDIF()
+
 OPTION(enable_large_config "Optimize for large heap or root set" NO)
 IF(enable_large_config)
     ADD_DEFINITIONS("-DLARGE_CONFIG")
