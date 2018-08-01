@@ -250,7 +250,8 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define GC_API_PRIV GC_API
 #endif
 
-#if defined(THREADS) && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+#if defined(THREADS) && !defined(NN_PLATFORM_CTR) \
+    && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
 # include "gc_atomic_ops.h"
 #endif
 

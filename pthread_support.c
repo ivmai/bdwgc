@@ -1937,7 +1937,11 @@ STATIC void GC_pause(void)
 
     for (i = 0; i < GC_PAUSE_SPIN_CYCLES; ++i) {
         /* Something that's unlikely to be optimized away. */
+#     ifdef AO_CLEAR
         AO_compiler_barrier();
+#     else
+        GC_noop1(i);
+#     endif
     }
 }
 #endif
