@@ -129,7 +129,7 @@ AC_ARG_ENABLE(parallel-mark,
 )
 
 AC_ARG_ENABLE(thread-local-alloc,
-   [AC_HELP_STRING([--disable-thread-local-alloc],
+   [AS_HELP_STRING([--disable-thread-local-alloc],
         [turn off thread-local allocation optimization])],
    [case "$THREADS" in
       no | none | single)
@@ -141,7 +141,7 @@ AC_ARG_ENABLE(thread-local-alloc,
     esac])
 
 AC_ARG_ENABLE(threads-discovery,
-    [AC_HELP_STRING([--disable-threads-discovery],
+    [AS_HELP_STRING([--disable-threads-discovery],
                     [disable threads discovery in GC])])
 if test "${enable_threads_discovery}" = no; then
     AC_DEFINE([GC_NO_THREADS_DISCOVERY], 1,
@@ -914,7 +914,7 @@ if test "${enable_gc_assertions}" = yes; then
 fi
 
 AC_ARG_ENABLE(mmap,
-    [AC_HELP_STRING([--enable-mmap],
+    [AS_HELP_STRING([--enable-mmap],
                     [use mmap instead of sbrk to expand the heap])],
     gc_use_mmap=$enableval)
 
@@ -945,7 +945,7 @@ else
 fi
 
 AC_ARG_ENABLE(dynamic-loading,
-    [AC_HELP_STRING([--disable-dynamic-loading],
+    [AS_HELP_STRING([--disable-dynamic-loading],
                     [build the collector with disabled tracing
                      of dynamic library data roots])])
 if test "${enable_dynamic_loading}" = "no"; then
@@ -955,7 +955,7 @@ if test "${enable_dynamic_loading}" = "no"; then
 fi
 
 AC_ARG_ENABLE(register-main-static-data,
-    [AC_HELP_STRING([--disable-register-main-static-data],
+    [AS_HELP_STRING([--disable-register-main-static-data],
                     [skip the initial guess of data root sets])])
 if test "${enable_register_main_static_data}" = "no"; then
     AC_DEFINE([GC_DONT_REGISTER_MAIN_STATIC_DATA], 1,
@@ -1003,7 +1003,7 @@ AM_CONDITIONAL([SINGLE_GC_OBJ],
                [test x"$enable_single_obj_compilation" = xyes])
 
 AC_ARG_ENABLE(gcov,
-    [AC_HELP_STRING([--enable-gcov], [turn on code coverage analysis])])
+    [AS_HELP_STRING([--enable-gcov], [turn on code coverage analysis])])
 if test "$enable_gcov" = "yes"; then
   CFLAGS="$CFLAGS --coverage"
   if test "${enable_shared}" = no; then
