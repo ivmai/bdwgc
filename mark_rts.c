@@ -365,6 +365,23 @@ STATIC void GC_remove_tmp_roots(void)
 #endif /* !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) */
 
 #ifdef USE_PROC_FOR_LIBRARIES
+  /* Exchange the elements of the roots table.  Requires rebuild of     */
+  /* the roots index table after the swap.                              */
+  GC_INLINE void swap_static_roots(int i, int j)
+  {
+    ptr_t r_start = GC_static_roots[i].r_start;
+    ptr_t r_end = GC_static_roots[i].r_end;
+    GC_bool r_tmp = GC_static_roots[i].r_tmp;
+
+    GC_static_roots[i].r_start = GC_static_roots[j].r_start;
+    GC_static_roots[i].r_end = GC_static_roots[j].r_end;
+    GC_static_roots[i].r_tmp = GC_static_roots[j].r_tmp;
+    /* No need to swap r_next values.   */
+    GC_static_roots[j].r_start = r_start;
+    GC_static_roots[j].r_end = r_end;
+    GC_static_roots[j].r_tmp = r_tmp;
+  }
+
   /* Remove given range from every static root which intersects with    */
   /* the range.  It is assumed GC_remove_tmp_roots is called before     */
   /* this function is called repeatedly by GC_register_map_entries.     */
@@ -413,16 +430,7 @@ STATIC void GC_remove_tmp_roots(void)
                 break;
             if (j < n_root_sets-1 && !GC_static_roots[n_root_sets-1].r_tmp) {
               /* Exchange the roots to have all temporary ones at the end. */
-              ptr_t tmp_r_start = GC_static_roots[j].r_start;
-              ptr_t tmp_r_end = GC_static_roots[j].r_end;
-
-              GC_static_roots[j].r_start =
-                                GC_static_roots[n_root_sets-1].r_start;
-              GC_static_roots[j].r_end = GC_static_roots[n_root_sets-1].r_end;
-              GC_static_roots[j].r_tmp = FALSE;
-              GC_static_roots[n_root_sets-1].r_start = tmp_r_start;
-              GC_static_roots[n_root_sets-1].r_end = tmp_r_end;
-              GC_static_roots[n_root_sets-1].r_tmp = TRUE;
+              swap_static_roots(j, n_root_sets - 1);
               rebuild = TRUE;
             }
           }
@@ -432,6 +440,16 @@ STATIC void GC_remove_tmp_roots(void)
             GC_static_roots[i].r_start = e;
           } else {
             GC_remove_root_at_pos(i);
+            if (i < n_root_sets - 1 && GC_static_roots[i].r_tmp
+                && !GC_static_roots[i + 1].r_tmp) {
+              int j;
+
+              for (j = i + 2; j < n_root_sets; j++)
+                if (GC_static_roots[j].r_tmp)
+                  break;
+              /* Exchange the roots to have all temporary ones at the end. */
+              swap_static_roots(i, j - 1);
+            }
             i--;
           }
           rebuild = TRUE;
