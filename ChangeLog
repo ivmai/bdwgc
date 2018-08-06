@@ -24,9 +24,13 @@
 * Allow compilation of PROC_VDB code on Linux host (GC_NO_SYS_FAULT_H)
 * Allow configure --with-libatomic-ops=none to use GCC atomic intrinsics
 * Allow custom N_LOCAL_ITERS and ENTRIES_TO_GET values
+* Allow disabling of dynamic loading in CMake script and configure
+* Allow disabling of main static data registration in CMake and configure
+* Allow disabling of threads discovery in CMake script and configure
 * Allow gc_assertions enabling in CMake script
 * Allow gc_debug, redirect_malloc, large_config options in CMake script
 * Allow GC_NETBSD_THREADS_WORKAROUND macro manual definition
+* Allow mmap enabling in CMake script and configure
 * Allow passing -D DEFAULT_VDB to CFLAGS
 * Allow subthreadcreate_test to be compiled with zero NTHREADS
 * Allow to turn on spin locking even if thread-local allocations are used
@@ -59,6 +63,7 @@
 * Declare t local variable in the block where the variable is used
 * Define ABORT() using _CrtDbgBreak (if available) on Windows host
 * Define CLANG/GNUC_PREREQ macros to check gcc/clang minimum version
+* Define DYNAMIC_LOADING for Darwin unless IGNORE_DYNAMIC_LOADING
 * Define GC_ASSERT(x) as C assert(x) for external clients of gc_inline.h
 * Define GC_PREFETCH_FOR_WRITE to __builtin_prefetch in gc_inline.h (GCC)
 * Define GC_THREADS instead of GC_x_THREADS in Makefiles
@@ -117,6 +122,7 @@
 * New API function (GC_is_incremental_mode)
 * New API function (get_expl_freed_bytes_since_gc)
 * New API function (get_size_map_at) to get content of size_map table
+* New API to stop and start the GC world externally
 * New field (expl_freed_bytes_since_gc) in public prof_stats_s
 * New macro ALWAYS_SMALL_CLEAR_STACK to avoid clearing large stack sections
 * New public API (PTR_STORE_AND_DIRTY) to simplify store-and-dirty operation
@@ -145,6 +151,7 @@
 * Remove multi-line macros (FOR_EACH_PRED, ITERATE_DL_HASHTBL_*, PUSH_OBJ)
 * Remove name of optional arguments of operator new and new[] in gc_cpp.h
 * Remove notes that K&R C compiler is unsupported
+* Remove PUSH_CONTENTS_HDR multi-line macro
 * Remove redundant check that clear_fl_marks argument is non-null
 * Remove redundant THREADS macro checks in alloc.c and gc_priv.h
 * Remove stubborn objects allocation code completely, remove stubborn.c
@@ -166,8 +173,8 @@
 * Turn on GC assertions in NT_MAKEFILE for debug builds
 * Turn on gcj, disclaim and java finalization by default (CMake)
 * Turn on incremental collection in gctest also if DEFAULT_VDB or MANUAL_VDB
-* Turn on incremental mode in disclaim_test, test_cpp and staticroots test
 * Turn on incremental mode in cordtest and cord/de
+* Turn on incremental mode in disclaim_test, test_cpp and staticroots test
 * Turn on parallel marker by default for all multi-threaded builds
 * Update GC compilation and usage notes for Win32
 * Update shared libraries version info to differentiate against v7.6
