@@ -23,6 +23,7 @@
 * New API function (GC_is_init_called) to check if BDWGC is initialized
 * Remove code duplication in gcj_malloc and malloc_explicitly_typed
 * Remove duplicate local variable in reclaim_block
+* Remove libatomic_ops license information from README
 * Workaround 'dynamic exception specifications deprecated in C++11' warning
 
 Also, includes 7.2l changes
@@ -506,6 +507,7 @@ Also, includes 7.2 changes
 * Fix typos in ChangeLog
 * Fix VirtualQuery call in case of malloc failure (Win32)
 * Install gc.3 man page instead of copying gc.man to doc folder (configure)
+* Perform thread_suspend in loop as it may be interrupted (Darwin)
 * Workaround 'template-id not supported in this context' compiler error (WCC)
 
 
