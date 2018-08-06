@@ -1,3 +1,24 @@
+2018-08-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark_rts.c [USE_PROC_FOR_LIBRARIES] (swap_static_roots): New inline
+	function.
+	* mark_rts.c [USE_PROC_FOR_LIBRARIES] (GC_remove_roots_subregion):
+	Use swap_static_roots (after GC_add_roots_inner); if there is
+	a temporary root after GC_remove_root_at_pos then swap it with the
+	appropriate non-temporary one to ensure all temporary roots are
+	grouped at the end.
+
+2018-07-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c [!GC_NO_THREADS_DISCOVERY]
+	(GC_suspend_thread_list): Retry thread_suspend if failed with
+	KERN_ABORTED.
+
+2018-07-24  Jonathan Chambers <joncham@gmail.com>
+
+	* darwin_stop_world.c (GC_stop_world): Retry thread_suspend() on
+	KERN_ABORTED.
+
 2018-07-20  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure: Regenerate.
