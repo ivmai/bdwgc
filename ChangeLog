@@ -198,10 +198,12 @@
 
 * Add cpu, make_as_lib, nothreads options to NT_MAKEFILE
 * Add NetBSD/aarch64 and initial RISC-V support
+* Adjust formatting of configure help messages and config.h comments
 * Avoid multiple 'getcontext failed' warnings if getcontext is broken
 * Cleanup BCC Makefile (remove absolute GC paths, fix del cmd, update clean)
 * Collapse multiple NT_*_MAKEFILE scripts into a single NT_MAKEFILE
 * Do not call GC_dirty_inner unless GC_incremental
+* Do not use NULL in gc_inline.h
 * Eliminate 'cast between incompatible function types' compiler warning
 * Eliminate 'comparing signed and unsigned values' compiler warnings (bcc)
 * Eliminate 'condition is always true' cppcheck warning in init_gcj_malloc
@@ -221,6 +223,7 @@
 * Fix comments style in configure.ac and Makefile.am
 * Fix compilation by digimars.mak (DMC)
 * Fix compilation by WCC makefile
+* Fix compilation of darwin_stop_world for iOS 8+
 * Fix cords for MANUAL_VDB
 * Fix dependency on gc_cpp source in BCC_MAKEFILE and NT_MAKEFILE
 * Fix GC_is_valid_displacement and GC_is_visible for non-small objects
@@ -239,20 +242,26 @@
 * Fix result computation in n_set_marks
 * Fix return type in GC_set_warn_proc API documentation
 * Fix tests for GC compiled with MANUAL_VDB
+* Fix the build for Emscripten
 * Fix typo in comment for CORD_ec_flush_buf prototype
 * Fix typos in ChangeLog and generic_malloc
+* Fix UNTESTED for multi-threaded API functions in gctest
 * Fix VirtualQuery call in case of malloc failure (Win32)
 * Install gc.3 man page instead of copying gc.man to doc folder (configure)
 * Keep pointer to the start of previous entry in remove_specific_after_fork
 * Move de_win compiled resource files to cord/tests
 * Never return null by C++ GC allocators and gc_cpp operator new
+* Perform thread_suspend in loop as it may be interrupted (Darwin)
 * Really abort if failed to read /proc for library registration (Linux)
 * Remove code duplication in gcj_malloc and malloc_explicitly_typed
 * Remove duplicate local variable in reclaim_block
+* Remove information how to send bugs from README.cords file
+* Remove libatomic_ops license information
 * Remove unused USE_GENERIC macro definition and description
 * Suppress 'functions containing switch are not expanded inline' bcc warning
 * Suppress 'non-member operator new/delete may not be inline' VC++ warning
 * Turn on incremental collection in gctest also if MANUAL_VDB
+* Update copyright information in alloc.c, gc.c/h and the documentation
 * Update EXTRA_DIST in Makefile, Win32/64 docs after NT_*_MAKEFILE removal
 * Update NT_MAKEFILE usage information in README files for Win32 and Win64
 * Workaround 'class C does not have a copy constructor' cppcheck warning
