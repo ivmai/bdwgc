@@ -539,7 +539,7 @@ EXTERN_C_BEGIN
 # else
 #   if ((defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300)) \
        || (defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__) \
-           && !defined(SYMBIAN))
+           && !defined(__INTERIX) && !defined(SYMBIAN))
 #     if defined(__LP64__) || defined(_WIN64)
 #       define X86_64
 #     elif defined(_M_ARM)
@@ -579,6 +579,11 @@ EXTERN_C_BEGIN
 #     define I386
 #   endif
 #   define CYGWIN32
+#   define mach_type_known
+# endif
+# if defined(__INTERIX)
+#   define I386
+#   define INTERIX
 #   define mach_type_known
 # endif
 # if defined(__MINGW32__) && !defined(mach_type_known)
@@ -1535,6 +1540,21 @@ EXTERN_C_BEGIN
 #         define NEED_FIND_LIMIT
 #         define USE_MMAP_ANON
 #       endif
+#   endif
+#   ifdef INTERIX
+#     define OS_TYPE "INTERIX"
+      extern int _data_start__[];
+      extern int _bss_end__[];
+#     define DATASTART ((ptr_t)_data_start__)
+#     define DATAEND   ((ptr_t)_bss_end__)
+#     define STACKBOTTOM ({ ptr_t rv; \
+                            __asm__ __volatile__ ("movl %%fs:4, %%eax" \
+                                                  : "=a" (rv)); \
+                            rv; })
+#     ifndef USE_MMAP
+#       define USE_MMAP
+#     endif
+#     define USE_MMAP_ANON
 #   endif
 #   ifdef OS2
 #       define OS_TYPE "OS2"

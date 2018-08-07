@@ -32,6 +32,10 @@
 # define _GNU_SOURCE 1
 #endif
 
+#if defined(__INTERIX) && !defined(_ALL_SOURCE)
+# define _ALL_SOURCE 1
+#endif
+
 #if (defined(DGUX) && defined(GC_THREADS) || defined(DGUX386_THREADS) \
      || defined(GC_DGUX386_THREADS)) && !defined(_USING_POSIX4A_DRAFT10)
 # define _USING_POSIX4A_DRAFT10 1
