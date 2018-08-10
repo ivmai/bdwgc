@@ -920,7 +920,7 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 Also, includes 7.2 changes
 
 
-== [7.2l] (not released yet) ==
+== [7.2l] 2018-08-10 ==
 
 * Fix 'pointer arithmetic with NULL' code defect in print_callers
 * Fix Borland version in documentation to match that in BCC_MAKEFILE
