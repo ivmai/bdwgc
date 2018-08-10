@@ -1,3 +1,12 @@
+[7.2l]
+
+2018-08-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README: Bump version to 7.2l (rev. L).
+	* Makefile.am (libgc_la_LDFLAGS): Bump version-info to 2:4:1.
+	* Makefile.am (libgccpp_la_LDFLAGS): Bump version-info to 1:5:0.
+	* Makefile.in: Regenerate.
+
 2018-08-03  Ivan Maidanski <ivmai@mail.ru>
 
 	* mark_rts.c [USE_PROC_FOR_LIBRARIES] (swap_static_roots): New inline
