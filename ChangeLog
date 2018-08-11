@@ -1,5 +1,5 @@
 
-== [7.6.8] (not released yet) ==
+== [7.6.8] 2018-08-12 ==
 
 * Add cpu, make_as_lib, nothreads options to NT_MAKEFILE
 * Add NetBSD/aarch64 and initial RISC-V support
