@@ -1,5 +1,5 @@
 
-== [7.4.14] (not released yet) ==
+== [7.4.14] 2018-08-11 ==
 
 * Cleanup BCC Makefile (remove absolute GC paths, fix del cmd, update clean)
 * Do not call GC_dirty_inner unless GC_incremental

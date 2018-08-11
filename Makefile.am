@@ -14,8 +14,8 @@
 # Info (current:revision:age) for the Libtool versioning system.
 # These numbers should be updated at most once just before the release,
 # and, optionally, at most once during the development (after the release).
-LIBGC_VER_INFO = 3:4:2
-LIBGCCPP_VER_INFO = 3:0:2
+LIBGC_VER_INFO = 3:5:2
+LIBGCCPP_VER_INFO = 3:1:2
 
 ## FIXME: `make distcheck' in this directory will not currently work.
 ##     This is most likely to the explicit flags passed to submakes.
