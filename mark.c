@@ -1287,9 +1287,10 @@ static void alloc_mark_stack(size_t n)
       /* Don't recycle a stack segment obtained with the wrong flags.   */
       /* Win32 GetWriteWatch requires the right kind of memory.         */
       static GC_bool GC_incremental_at_stack_alloc = FALSE;
-      GC_bool recycle_old = (!GC_incremental || GC_incremental_at_stack_alloc);
+      GC_bool recycle_old = !GC_auto_incremental
+                            || GC_incremental_at_stack_alloc;
 
-      GC_incremental_at_stack_alloc = GC_incremental;
+      GC_incremental_at_stack_alloc = GC_auto_incremental;
 #   else
 #     define recycle_old TRUE
 #   endif
@@ -1415,7 +1416,7 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
       GC_push_selected((ptr_t)bottom, (ptr_t)top, GC_page_was_dirty);
     } else {
 #     ifdef PROC_VDB
-        if (GC_incremental) {
+        if (GC_auto_incremental) {
           /* Pages that were never dirtied cannot contain pointers.     */
           GC_push_selected((ptr_t)bottom, (ptr_t)top, GC_page_was_ever_dirty);
         } else
@@ -1598,18 +1599,18 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 
 GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 {
-# if defined(THREADS) && defined(MPROTECT_VDB)
-    GC_push_all_eager(bottom, top);
-# else
 #   ifndef NEED_FIXUP_POINTER
-      if (GC_all_interior_pointers) {
+      if (GC_all_interior_pointers
+#         if defined(THREADS) && defined(MPROTECT_VDB)
+            && !GC_auto_incremental
+#         endif
+         ) {
         GC_push_all(bottom, top);
       } else
 #   endif
     /* else */ {
       GC_push_all_eager(bottom, top);
     }
-# endif
 }
 
 #if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)

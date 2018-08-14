@@ -1520,8 +1520,13 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
 
     while (*flh == 0) {
       ENTER_GC();
-      /* Do our share of marking work */
-        if(TRUE_INCREMENTAL) GC_collect_a_little_inner(1);
+#     ifndef GC_DISABLE_INCREMENTAL
+        if (GC_incremental && GC_time_limit != GC_TIME_UNLIMITED) {
+          /* True incremental mode, not just generational.      */
+          /* Do our share of marking work.                      */
+          GC_collect_a_little_inner(1);
+        }
+#     endif
       /* Sweep blocks for objects of this size */
         GC_ASSERT(!GC_is_full_gc
                   || NULL == GC_obj_kinds[kind].ok_reclaim_list

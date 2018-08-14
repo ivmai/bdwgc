@@ -148,6 +148,14 @@
 
 #include <stdarg.h>
 
+#ifdef TEST_MANUAL_VDB
+# define INIT_MANUAL_VDB_ALLOWED GC_set_manual_vdb_allowed(1)
+#elif !defined(SMALL_CONFIG)
+# define INIT_MANUAL_VDB_ALLOWED GC_set_manual_vdb_allowed(0)
+#else
+# define INIT_MANUAL_VDB_ALLOWED /* empty */
+#endif
+
 #define CHECK_GCLIB_VERSION \
             if (GC_get_version() != ((GC_VERSION_MAJOR<<16) \
                                     | (GC_VERSION_MINOR<<8) \
@@ -177,7 +185,8 @@
 #endif
 
 #define GC_COND_INIT() \
-    INIT_FORK_SUPPORT; GC_OPT_INIT; CHECK_GCLIB_VERSION; \
+    INIT_FORK_SUPPORT; INIT_MANUAL_VDB_ALLOWED; \
+    GC_OPT_INIT; CHECK_GCLIB_VERSION; \
     INIT_PRINT_STATS; INIT_FIND_LEAK; INIT_PERF_MEASUREMENT
 
 #define CHECK_OUT_OF_MEMORY(p) \
@@ -1862,7 +1871,13 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
         GC_enable_incremental();
 #     endif
       if (GC_is_incremental_mode()) {
-        GC_printf("Switched to incremental mode\n");
+#       ifndef SMALL_CONFIG
+          if (GC_get_manual_vdb_allowed()) {
+            GC_printf("Switched to incremental mode (manual VDB)\n");
+          } else
+#       endif
+        /* else */ {
+          GC_printf("Switched to incremental mode\n");
 #       ifdef PROC_VDB
           GC_printf("Reading dirty bits from /proc\n");
 #       elif defined(GWW_VDB)
@@ -1873,6 +1888,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #       elif defined(MPROTECT_VDB)
           GC_printf("Emulating dirty bits with mprotect/signals\n");
 #       endif /* MPROTECT_VDB && !GWW_VDB */
+        }
       }
 #   endif
     set_print_procs();
@@ -2294,10 +2310,17 @@ int main(void)
         GC_enable_incremental();
 #     endif
       if (GC_is_incremental_mode()) {
-        GC_printf("Switched to incremental mode\n");
-#       ifdef MPROTECT_VDB
-          GC_printf("Emulating dirty bits with mprotect/signals\n");
+#       ifndef SMALL_CONFIG
+          if (GC_get_manual_vdb_allowed()) {
+            GC_printf("Switched to incremental mode (manual VDB)\n");
+          } else
 #       endif
+        /* else */ {
+          GC_printf("Switched to incremental mode\n");
+#         ifdef MPROTECT_VDB
+            GC_printf("Emulating dirty bits with mprotect/signals\n");
+#         endif
+        }
       }
 #   endif
     GC_set_min_bytes_allocd(1);

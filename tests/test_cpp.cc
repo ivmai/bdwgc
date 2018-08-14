@@ -298,6 +298,9 @@ void* Undisguise( GC_word i ) {
     GC_set_all_interior_pointers(1);
                         /* needed due to C++ multiple inheritance used  */
 
+#   ifdef TEST_MANUAL_VDB
+      GC_set_manual_vdb_allowed(1);
+#   endif
     GC_INIT();
 #   ifndef NO_INCREMENTAL
       GC_enable_incremental();

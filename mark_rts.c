@@ -704,7 +704,7 @@ GC_INNER void GC_push_all_stack_sections(ptr_t lo, ptr_t hi,
  * register values are not lost.
  * Cold_gc_frame delimits the stack section that must be scanned
  * eagerly.  A zero value indicates that no eager scanning is needed.
- * We don't need to worry about the MANUAL_VDB case here, since this
+ * We don't need to worry about the manual VDB case here, since this
  * is only called in the single-threaded case.  We assume that we
  * cannot collect between an assignment and the corresponding
  * GC_dirty() call.

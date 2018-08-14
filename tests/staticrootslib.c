@@ -52,6 +52,9 @@ static struct treenode *root_nz[10] = { (struct treenode *)(GC_word)2 };
 
   GC_TEST_EXPORT_API void * libsrl_init(void)
   {
+#   ifdef TEST_MANUAL_VDB
+      GC_set_manual_vdb_allowed(1);
+#   endif
 #   ifndef STATICROOTSLIB_INIT_IN_MAIN
       GC_INIT();
 #   endif

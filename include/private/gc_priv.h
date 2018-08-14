@@ -1372,13 +1372,10 @@ struct _GC_arrays {
   char _valid_offsets[VALID_OFFSET_SZ];
                                 /* GC_valid_offsets[i] == TRUE ==> i    */
                                 /* is registered as a displacement.     */
-# if defined(PROC_VDB) || defined(MPROTECT_VDB) \
-     || defined(GWW_VDB) || defined(MANUAL_VDB)
+# ifndef GC_DISABLE_INCREMENTAL
 #   define GC_grungy_pages GC_arrays._grungy_pages
     page_hash_table _grungy_pages; /* Pages that were dirty at last     */
                                    /* GC_read_dirty.                    */
-# endif
-# if defined(MPROTECT_VDB) || defined(MANUAL_VDB)
 #   define GC_dirty_pages GC_arrays._dirty_pages
     volatile page_hash_table _dirty_pages;
                         /* Pages dirtied since last GC_read_dirty. */
@@ -1562,19 +1559,6 @@ GC_EXTERN word GC_black_list_spacing;
   extern struct hblk * GC_hblkfreelist[];
   extern word GC_free_bytes[];  /* Both remain visible to GNU GCJ.      */
 #endif
-
-#ifdef GC_DISABLE_INCREMENTAL
-# define GC_incremental FALSE
-                        /* Hopefully allow optimizer to remove some code. */
-# define TRUE_INCREMENTAL FALSE
-#else
-  GC_EXTERN GC_bool GC_incremental;
-                        /* Using incremental/generational collection.   */
-                        /* Assumes dirty bits are being maintained.     */
-# define TRUE_INCREMENTAL \
-        (GC_incremental && GC_time_limit != GC_TIME_UNLIMITED)
-        /* True incremental, not just generational, mode */
-#endif /* !GC_DISABLE_INCREMENTAL */
 
 GC_EXTERN word GC_root_size; /* Total size of registered root sections. */
 
@@ -2170,7 +2154,18 @@ GC_EXTERN GC_bool GC_print_back_height;
                 /* accompanying routines are no-op in such a case.      */
 #endif
 
-#ifndef GC_DISABLE_INCREMENTAL
+#ifdef GC_DISABLE_INCREMENTAL
+# define GC_incremental FALSE
+# define GC_auto_incremental FALSE
+# define GC_manual_vdb FALSE
+# define GC_dirty(p) (void)(p)
+# define REACHABLE_AFTER_DIRTY(p) (void)(p)
+
+#else /* !GC_DISABLE_INCREMENTAL */
+  GC_EXTERN GC_bool GC_incremental;
+                        /* Using incremental/generational collection.   */
+                        /* Assumes dirty bits are being maintained.     */
+
   /* Virtual dirty bit implementation:            */
   /* Each implementation exports the following:   */
   GC_INNER void GC_read_dirty(GC_bool output_unneeded);
@@ -2196,16 +2191,18 @@ GC_EXTERN GC_bool GC_print_back_height;
                 /* Returns true if dirty bits are maintained (otherwise */
                 /* it is OK to be called again if the client invokes    */
                 /* GC_enable_incremental once more).                    */
-#endif /* !GC_DISABLE_INCREMENTAL */
 
-#ifdef MANUAL_VDB
+  GC_EXTERN GC_bool GC_manual_vdb;
+                /* The incremental collection is in the manual VDB      */
+                /* mode.  Assumes GC_incremental is true.  Should not   */
+                /* be modified once GC_incremental is set to true.      */
+
+# define GC_auto_incremental (GC_incremental && !GC_manual_vdb)
+
   GC_INNER void GC_dirty_inner(const void *p); /* does not require locking */
-# define GC_dirty(p) (GC_incremental ? GC_dirty_inner(p) : (void)0)
+# define GC_dirty(p) (GC_manual_vdb ? GC_dirty_inner(p) : (void)0)
 # define REACHABLE_AFTER_DIRTY(p) GC_reachable_here(p)
-#else
-# define GC_dirty(p) (void)(p)
-# define REACHABLE_AFTER_DIRTY(p) (void)(p)
-#endif
+#endif /* !GC_DISABLE_INCREMENTAL */
 
 /* Same as GC_base but excepts and returns a pointer to const object.   */
 #define GC_base_C(p) ((const void *)GC_base((/* no const */ void *)(p)))

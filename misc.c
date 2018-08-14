@@ -220,7 +220,11 @@ GC_API void GC_CALL GC_set_handle_fork(int value GC_ATTR_UNUSED)
 # elif defined(THREADS) || (defined(DARWIN) && defined(MPROTECT_VDB))
     if (!GC_is_initialized && value) {
 #     ifndef SMALL_CONFIG
-        GC_init(); /* just to initialize GC_stderr */
+        GC_init(); /* to initialize GC_manual_vdb and GC_stderr */
+#       ifndef THREADS
+          if (GC_manual_vdb)
+            return;
+#       endif
 #     endif
       ABORT("fork() handling unsupported");
     }
@@ -841,6 +845,24 @@ GC_API int GC_CALL GC_is_init_called(void)
                                            void * context GC_ATTR_UNUSED) {}
 #endif
 
+#ifndef SMALL_CONFIG
+# ifdef MANUAL_VDB
+    static GC_bool manual_vdb_allowed = TRUE;
+# else
+    static GC_bool manual_vdb_allowed = FALSE;
+# endif
+
+  GC_API void GC_CALL GC_set_manual_vdb_allowed(int value)
+  {
+    manual_vdb_allowed = (GC_bool)value;
+  }
+
+  GC_API int GC_CALL GC_get_manual_vdb_allowed(void)
+  {
+    return (int)manual_vdb_allowed;
+  }
+#endif /* !SMALL_CONFIG */
+
 STATIC word GC_parse_mem_size_arg(const char *str)
 {
   word result = 0; /* bad value */
@@ -1236,10 +1258,20 @@ GC_API void GC_CALL GC_init(void)
 #   endif
 #   ifndef GC_DISABLE_INCREMENTAL
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
-        /* For GWW_VDB on Win32, this needs to happen before any        */
-        /* heap memory is allocated.                                    */
-        GC_incremental = GC_dirty_init();
-        GC_ASSERT(GC_bytes_allocd == 0);
+#       if defined(CHECKSUMS) || defined(SMALL_CONFIG)
+          /* TODO: Implement CHECKSUMS for manual VDB. */
+#       else
+          if (manual_vdb_allowed) {
+              GC_manual_vdb = TRUE;
+              GC_incremental = TRUE;
+          } else
+#       endif
+        /* else */ {
+          /* For GWW_VDB on Win32, this needs to happen before any      */
+          /* heap memory is allocated.                                  */
+          GC_incremental = GC_dirty_init();
+          GC_ASSERT(GC_bytes_allocd == 0);
+        }
       }
 #   endif
 
@@ -1371,7 +1403,15 @@ GC_API void GC_CALL GC_enable_incremental(void)
           GC_init();
           LOCK();
         } else {
-          GC_incremental = GC_dirty_init();
+#         if !defined(CHECKSUMS) && !defined(SMALL_CONFIG)
+            if (manual_vdb_allowed) {
+              GC_manual_vdb = TRUE;
+              GC_incremental = TRUE;
+            } else
+#         endif
+          /* else */ {
+            GC_incremental = GC_dirty_init();
+          }
         }
         if (GC_incremental && !GC_dont_gc) {
                                 /* Can't easily do it if GC_dont_gc.    */

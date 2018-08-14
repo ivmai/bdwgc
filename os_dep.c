@@ -2797,12 +2797,12 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
  * DEFAULT_VDB: A simple dummy implementation that treats every page
  *              as possibly dirty.  This makes incremental collection
  *              useless, but the implementation is still correct.
- * MANUAL_VDB:  Stacks and static data are always considered dirty.
+ * Manual VDB:  Stacks and static data are always considered dirty.
  *              Heap pages are considered dirty if GC_dirty(p) has been
  *              called on some pointer p pointing to somewhere inside
  *              an object on that page.  A GC_dirty() call on a large
- *              object directly dirties only a single page, but for
- *              MANUAL_VDB we are careful to treat an object with a dirty
+ *              object directly dirties only a single page, but for the
+ *              manual VDB we are careful to treat an object with a dirty
  *              page as completely dirty.
  *              In order to avoid races, an object must be marked dirty
  *              after it is written, and a reference to the object
@@ -2947,30 +2947,10 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   GC_INNER GC_bool GC_dirty_init(void)
   {
     GC_VERBOSE_LOG_PRINTF("Initializing DEFAULT_VDB...\n");
-    return TRUE;
-  }
-#endif /* DEFAULT_VDB */
-
-#ifdef MANUAL_VDB
-  /* Initialize virtual dirty bit implementation.       */
-  GC_INNER GC_bool GC_dirty_init(void)
-  {
-    GC_VERBOSE_LOG_PRINTF("Initializing MANUAL_VDB...\n");
     /* GC_dirty_pages and GC_grungy_pages are already cleared.  */
     return TRUE;
   }
-
-# define async_set_pht_entry_from_index(db, index) \
-                        set_pht_entry_from_index(db, index) /* for now */
-
-  /* Mark the page containing p as dirty.  Logically, this dirties the  */
-  /* entire object.                                                     */
-  GC_INNER void GC_dirty_inner(const void *p)
-  {
-    word index = PHT_HASH(p);
-    async_set_pht_entry_from_index(GC_dirty_pages, index);
-  }
-#endif /* MANUAL_VDB */
+#endif /* DEFAULT_VDB */
 
 #ifdef MPROTECT_VDB
   /*
@@ -3721,33 +3701,50 @@ GC_INNER GC_bool GC_dirty_init(void)
 #endif /* PCR_VDB */
 
 #ifndef GC_DISABLE_INCREMENTAL
+  GC_INNER GC_bool GC_manual_vdb = FALSE;
+
+  /* Manually mark the page containing p as dirty.  Logically, this     */
+  /* dirties the entire object.                                         */
+  GC_INNER void GC_dirty_inner(const void *p)
+  {
+    word index = PHT_HASH(p);
+
+#   if defined(MPROTECT_VDB)
+      /* Do not update GC_dirty_pages if it should be followed by the   */
+      /* page unprotection.                                             */
+      GC_ASSERT(GC_manual_vdb);
+#   endif
+    set_pht_entry_from_index(GC_dirty_pages, index); /* FIXME: concurrent */
+  }
+
   /* Retrieve system dirty bits for the heap to a local buffer (unless  */
   /* output_unneeded).  Restore the systems notion of which pages are   */
   /* dirty.  We assume that either the world is stopped or it is OK to  */
   /* lose dirty bits while it's happening (as in GC_enable_incremental).*/
   GC_INNER void GC_read_dirty(GC_bool output_unneeded)
   {
-#   if defined(MANUAL_VDB) || defined(MPROTECT_VDB)
-      if (!GC_GWW_AVAILABLE())
-      {
-        if (!output_unneeded)
-          BCOPY((/* no volatile */ void *)GC_dirty_pages, GC_grungy_pages,
-                sizeof(GC_dirty_pages));
-        BZERO((/* no volatile */ void *)GC_dirty_pages,
-              sizeof(GC_dirty_pages));
-#       ifdef MPROTECT_VDB
-          GC_protect_heap();
+    if (GC_manual_vdb
+#       if defined(MPROTECT_VDB)
+          || !GC_GWW_AVAILABLE()
 #       endif
-        return;
-      }
-#   endif
+        ) {
+      if (!output_unneeded)
+        BCOPY((/* no volatile */ void *)GC_dirty_pages, GC_grungy_pages,
+              sizeof(GC_dirty_pages));
+      BZERO((/* no volatile */ void *)GC_dirty_pages,
+            sizeof(GC_dirty_pages));
+#     ifdef MPROTECT_VDB
+        if (!GC_manual_vdb)
+          GC_protect_heap();
+#     endif
+      return;
+    }
 
 #   ifdef GWW_VDB
       GC_gww_read_dirty(output_unneeded);
 #   elif defined(PROC_VDB)
       GC_proc_read_dirty(output_unneeded);
 #   elif defined(PCR_VDB)
-      (void)output_unneeded;
       /* lazily enable dirty bits on newly added heap sects */
       {
         static int onhs = 0;
@@ -3762,8 +3759,6 @@ GC_INNER GC_bool GC_dirty_init(void)
           != PCR_ERes_okay) {
         ABORT("Dirty bit read failed");
       }
-#   elif !defined(MPROTECT_VDB)
-      (void)output_unneeded;
 #   endif
   }
 
@@ -3774,18 +3769,19 @@ GC_INNER GC_bool GC_dirty_init(void)
   GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
   {
 #   ifdef PCR_VDB
-      if ((word)h < (word)GC_vd_base
-          || (word)h >= (word)(GC_vd_base + NPAGES*HBLKSIZE)) {
-        return TRUE;
+      if (!GC_manual_vdb) {
+        if ((word)h < (word)GC_vd_base
+            || (word)h >= (word)(GC_vd_base + NPAGES * HBLKSIZE)) {
+          return TRUE;
+        }
+        return GC_grungy_bits[h-(struct hblk*)GC_vd_base] & PCR_VD_DB_dirtyBit;
       }
-      return GC_grungy_bits[h - (struct hblk*)GC_vd_base] & PCR_VD_DB_dirtyBit;
 #   elif defined(DEFAULT_VDB)
-      (void)h;
-      return TRUE;
-#   else
-      return NULL == HDR(h)
-             || get_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
+      if (!GC_manual_vdb)
+        return TRUE;
 #   endif
+    return NULL == HDR(h)
+             || get_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
   }
 
 # if defined(CHECKSUMS) || defined(PROC_VDB)
@@ -3817,6 +3813,8 @@ GC_INNER GC_bool GC_dirty_init(void)
   {
 #   ifdef PCR_VDB
       (void)is_ptrfree;
+      if (!GC_auto_incremental)
+        return;
       PCR_VD_WriteProtectDisable(h, nblocks*HBLKSIZE);
       PCR_VD_WriteProtectEnable(h, nblocks*HBLKSIZE);
 #   elif defined(MPROTECT_VDB)
@@ -3824,7 +3822,7 @@ GC_INNER GC_bool GC_dirty_init(void)
       struct hblk * h_end;      /* Page boundary following block end */
       struct hblk * current;
 
-      if (!GC_incremental || GC_GWW_AVAILABLE())
+      if (!GC_auto_incremental || GC_GWW_AVAILABLE())
         return;
       h_trunc = (struct hblk *)((word)h & ~(GC_page_size-1));
       h_end = (struct hblk *)(((word)(h + nblocks) + GC_page_size - 1)

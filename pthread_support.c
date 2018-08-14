@@ -1149,7 +1149,7 @@ static void fork_child_proc(void)
   {
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
 #   if defined(GC_DARWIN_THREADS) && defined(MPROTECT_VDB)
-      if (GC_incremental) {
+      if (GC_auto_incremental) {
         GC_ASSERT(0 == GC_handle_fork);
         ABORT("Unable to fork while mprotect_thread is running");
       }

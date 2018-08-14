@@ -525,8 +525,8 @@ GC_API GC_ATTR_DEPRECATED void GC_CALL GC_change_stubborn(const void *);
 
 /* Inform the collector that the object has been changed.               */
 /* Only non-NULL pointer stores into the object are considered to be    */
-/* changes.  Matters only if the library has been compiled with         */
-/* MANUAL_VDB defined (otherwise the function does nothing).            */
+/* changes.  Matters only if the incremental collection is enabled in   */
+/* the manual VDB mode (otherwise the function does nothing).           */
 /* Should be followed typically by GC_reachable_here called for each    */
 /* of the stored pointers.                                              */
 GC_API void GC_CALL GC_end_stubborn_change(const void *) GC_ATTR_NONNULL(1);
@@ -803,6 +803,18 @@ GC_API int GC_CALL GC_is_disabled(void);
 /* calls nest.  Garbage collection is enabled if the number of calls to */
 /* both functions is equal.                                             */
 GC_API void GC_CALL GC_enable(void);
+
+/* Select whether to use the manual VDB mode for the incremental        */
+/* collection.  Has no effect if called after enabling the incremental  */
+/* collection.  The default value is off unless the collector is        */
+/* compiled with MANUAL_VDB defined.  The manual VDB mode should be     */
+/* used only if the client has the appropriate GC_END_STUBBORN_CHANGE   */
+/* and GC_reachable_here (or, alternatively, GC_PTR_STORE_AND_DIRTY)    */
+/* calls (to ensure proper write barriers).  Both the setter and getter */
+/* are not synchronized, and are defined only if the library has been   */
+/* compiled without SMALL_CONFIG.                                       */
+GC_API void GC_CALL GC_set_manual_vdb_allowed(int);
+GC_API int GC_CALL GC_get_manual_vdb_allowed(void);
 
 /* Enable incremental/generational collection.  Not advisable unless    */
 /* dirty bits are available or most heap objects are pointer-free       */

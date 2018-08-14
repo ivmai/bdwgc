@@ -223,6 +223,9 @@ int main(void)
 # endif
 
     GC_set_all_interior_pointers(0); /* for a stricter test */
+#   ifdef TEST_MANUAL_VDB
+        GC_set_manual_vdb_allowed(1);
+#   endif
     GC_INIT();
     GC_init_finalized_malloc();
 #   ifndef NO_INCREMENTAL

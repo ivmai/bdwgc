@@ -393,7 +393,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
   /* documentation.  There is empirical evidence that it        */
   /* isn't.             - HB                                    */
 # if defined(MPROTECT_VDB) && !defined(CYGWIN32)
-    if (GC_incremental
+    if (GC_auto_incremental
 #       ifdef GWW_VDB
           && !GC_gww_dirty_init()
 #       endif
@@ -622,7 +622,8 @@ GC_API void GC_CALL GC_register_altstack(void *stack GC_ATTR_UNUSED,
 /* lock may be required for fault handling.                             */
 #if defined(MPROTECT_VDB)
 # define UNPROTECT_THREAD(t) \
-    if (!GC_win32_dll_threads && GC_incremental && t != &first_thread) { \
+    if (!GC_win32_dll_threads && GC_auto_incremental \
+        && t != &first_thread) { \
       GC_ASSERT(SMALL_OBJ(GC_size(t))); \
       GC_remove_protection(HBLKPTR(t), 1, FALSE); \
     } else (void)0

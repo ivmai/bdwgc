@@ -652,7 +652,7 @@ GC_INNER void GC_stop_world(void)
   }
 
 # ifdef MPROTECT_VDB
-    if(GC_incremental) {
+    if (GC_auto_incremental) {
       GC_mprotect_stop();
     }
 # endif
@@ -699,7 +699,7 @@ GC_INNER void GC_start_world(void)
     GC_log_printf("World starting\n");
 # endif
 # ifdef MPROTECT_VDB
-    if(GC_incremental) {
+    if (GC_auto_incremental) {
       GC_mprotect_resume();
     }
 # endif
