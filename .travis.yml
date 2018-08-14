@@ -142,12 +142,12 @@ matrix:
   - os: linux
     compiler: clang
     env:
-    - CFLAGS_EXTRA="-D MANUAL_VDB"
+    - CFLAGS_EXTRA="-D TEST_MANUAL_VDB"
     - CONF_OPTIONS="--enable-gc-assertions --disable-parallel-mark"
   - os: linux
     compiler: gcc
     env:
-    - CFLAGS_EXTRA="-D MANUAL_VDB"
+    - CFLAGS_EXTRA="-D TEST_MANUAL_VDB"
     - CONF_OPTIONS="--enable-gc-assertions --disable-munmap"
   - os: linux
     compiler: gcc
@@ -496,7 +496,7 @@ matrix:
     compiler: gcc
     env:
     - CC_FOR_CHECK=g++
-    - CFLAGS_EXTRA="-O3 -Wall -Wextra -Werror -D MANUAL_VDB"
+    - CFLAGS_EXTRA="-O3 -Wall -Wextra -Werror -D TEST_MANUAL_VDB"
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="cords"
     - MAKEFILE_TARGETS_CHECK="cord/de check"
