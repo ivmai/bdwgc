@@ -349,7 +349,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
       GC_FREE(obj);
     }
 
-#   if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
+#   if defined(GC_OPERATOR_NEW_ARRAY)
       inline void operator delete[](void* obj, size_t size) GC_NOEXCEPT {
         (void)size;
         GC_FREE(obj);
