@@ -1,8 +1,8 @@
-.TH BDWGC 3 "22 July 2018"
+.TH BDWGC 3 "15 Aug 2018"
 .SH NAME
 GC_malloc, GC_malloc_atomic, GC_free, GC_realloc, GC_enable_incremental, GC_register_finalizer, GC_malloc_ignore_off_page, GC_malloc_atomic_ignore_off_page, GC_set_warn_proc \- Garbage collecting malloc replacement
 .SH SYNOPSIS
-#include "gc.h"
+#include <gc.h>
 .br
 void * GC_malloc(size_t size);
 .br
