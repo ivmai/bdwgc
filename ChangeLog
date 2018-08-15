@@ -100,6 +100,7 @@
 * Fix 'comparison of 255 with expr of type bool' error in gc_atomic_ops.h
 * Fix 'doc' files installation folder
 * Fix build of cord tests as C++ files (Makefile.direct)
+* Fix delete operator redirection if gc_cpp is built as .dll (Cygwin, MinGW)
 * Fix test_cpp failure in case GC_DEBUG is defined
 * Group common defines for POSIX platforms in configure and CMake scripts
 * Guard against USE_PTHREAD_LOCKS and USE_SPIN_LOCK are both defined
@@ -110,6 +111,7 @@
 * Imply configure --single-obj-compilation if --disable-static
 * Include malloc.c in extra/gc.c after include gc_inline.h
 * Increase MAX_HEAP_SECTS (10 times) for large-config
+* Initial single-threaded support of Interix subsystem
 * Initial support of Nintendo, Orbis, Sony PSP2, WinRT, Xbox One
 * Initial support of TIZEN platform
 * Install gc.3 man page instead of copying gc.man to doc folder (configure)
@@ -123,6 +125,7 @@
 * New API function (get_expl_freed_bytes_since_gc)
 * New API function (get_size_map_at) to get content of size_map table
 * New API to stop and start the GC world externally
+* New API to turn on manual VDB at runtime
 * New field (expl_freed_bytes_since_gc) in public prof_stats_s
 * New macro ALWAYS_SMALL_CLEAR_STACK to avoid clearing large stack sections
 * New public API (PTR_STORE_AND_DIRTY) to simplify store-and-dirty operation
@@ -190,6 +193,7 @@
 * Use EXPECT FALSE for mark_from code documented as executed rarely
 * Use heap-allocated memory for local mark stack of non-marker thread
 * Use HOST_ANDROID define instead of PLATFORM_ANDROID
+* Use include gc.h with the angle brackets in the man page synopsis
 * Use longjmp in fault_handler_openbsd if siglongjmp unavailable (OpenBSD)
 * Use MARK_BIT_PER_GRANULE instead of MARK_BIT_PER_OBJ where appropriate
 * Use noexcept specifier in gc_allocator and gc_cpp if C++11
