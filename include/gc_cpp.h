@@ -304,7 +304,9 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
                               GC_NS_QUALIFY(GCCleanUpFunc), void*);
 #endif
 
-#if defined(_MSC_VER) || defined(__DMC__)
+#if defined(_MSC_VER) || defined(__DMC__) \
+    || ((defined(__CYGWIN32__) || defined(__CYGWIN__) \
+        || defined(__MINGW32__)) && !defined(GC_BUILD) && !defined(GC_NOT_DLL))
   // The following ensures that the system default operator new[] does not
   // get undefined, which is what seems to happen on VC++ 6 for some reason
   // if we define a multi-argument operator new[].
@@ -321,7 +323,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
       return obj;
     }
 
-    inline void operator delete[](void* obj)
+    inline void operator delete[](void* obj) GC_DECL_DELETE_THROW
     {
       GC_FREE(obj);
     }
@@ -334,10 +336,28 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
     return obj;
   }
 
-  inline void operator delete(void* obj)
+  inline void operator delete(void* obj) GC_DECL_DELETE_THROW
   {
     GC_FREE(obj);
   }
+
+# if __cplusplus > 201103L // C++14
+    inline void operator delete(void* obj, size_t size) GC_DECL_DELETE_THROW {
+      (void)size; // size is ignored
+      GC_FREE(obj);
+    }
+
+#   if defined(GC_OPERATOR_NEW_ARRAY)
+      inline void operator delete[](void* obj, size_t size)
+                                        GC_DECL_DELETE_THROW {
+        (void)size;
+        GC_FREE(obj);
+      }
+#   endif
+# endif // C++14
+#endif
+
+#ifdef _MSC_VER
 
   // This new operator is used by VC++ in case of Debug builds:
 # ifdef GC_DEBUG
