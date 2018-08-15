@@ -534,19 +534,20 @@ before_install:
         || "$M4_VER" != "" ]]; then
     GNUTOOLS_ROOT=`pwd`/../gnu-tools;
     export PATH=$GNUTOOLS_ROOT/bin:$PATH;
+    GNU_DOWNLOAD_SITE=https://ftp.gnu.org/gnu
   fi
 - if [[ "$M4_VER" != "" ]]; then
-    M4_XZ_URL=https://ftp.gnu.org/gnu/m4/m4-$M4_VER.tar.xz;
+    M4_XZ_URL=$GNU_DOWNLOAD_SITE/m4/m4-$M4_VER.tar.xz;
     wget -O - $M4_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/m4-$M4_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j check && make install);
   fi
 - if [[ "$LIBTOOL_VER" != "" ]]; then
-    LIBTOOL_XZ_URL=https://ftp.gnu.org/gnu/libtool/libtool-$LIBTOOL_VER.tar.xz;
+    LIBTOOL_XZ_URL=$GNU_DOWNLOAD_SITE/libtool/libtool-$LIBTOOL_VER.tar.xz;
     wget -O - $LIBTOOL_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/libtool-$LIBTOOL_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
   fi
 - if [[ "$AUTOMAKE_VER" != "" ]]; then
-    AUTOMAKE_XZ_URL=https://ftp.gnu.org/gnu/automake/automake-$AUTOMAKE_VER.tar.xz;
+    AUTOMAKE_XZ_URL=$GNU_DOWNLOAD_SITE/automake/automake-$AUTOMAKE_VER.tar.xz;
     wget -O - $AUTOMAKE_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/automake-$AUTOMAKE_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
   fi
