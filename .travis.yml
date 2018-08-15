@@ -534,7 +534,7 @@ before_install:
         || "$M4_VER" != "" ]]; then
     GNUTOOLS_ROOT=`pwd`/../gnu-tools;
     export PATH=$GNUTOOLS_ROOT/bin:$PATH;
-    GNU_DOWNLOAD_SITE=https://ftp.gnu.org/gnu
+    GNU_DOWNLOAD_SITE=https://ftp.gnu.org/gnu;
   fi
 - if [[ "$M4_VER" != "" ]]; then
     M4_XZ_URL=$GNU_DOWNLOAD_SITE/m4/m4-$M4_VER.tar.xz;
