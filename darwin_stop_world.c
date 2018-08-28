@@ -560,7 +560,6 @@ GC_INNER void GC_stop_world(void)
 
   if (GC_query_task_threads) {
 #   ifndef GC_NO_THREADS_DISCOVERY
-      unsigned i;
       GC_bool changed;
       thread_act_array_t act_list, prev_list;
       mach_msg_type_number_t listcount, prevcount;
