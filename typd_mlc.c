@@ -71,21 +71,21 @@ typedef struct {
         size_t ld_nelements;    /* Number of elements.          */
         GC_descr ld_descriptor; /* A simple length, bitmap,     */
                                 /* or procedure descriptor.     */
-    } ld;
+    };
 
     struct ComplexArrayDescriptor {
         word ad_tag;
 #       define ARRAY_TAG 2
         size_t ad_nelements;
         union ComplexDescriptor * ad_element_descr;
-    } ad;
+    };
 
     struct SequenceDescriptor {
         word sd_tag;
 #       define SEQUENCE_TAG 3
         union ComplexDescriptor * sd_first;
         union ComplexDescriptor * sd_second;
-    } sd;
+    };
 
 typedef union ComplexDescriptor {
     struct LeafDescriptor ld;
