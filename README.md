@@ -4,6 +4,8 @@
 [![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/ivmai/bdwgc?branch=master&svg=true)](https://ci.appveyor.com/project/ivmai/bdwgc)
 [![Coveralls test coverage status](https://coveralls.io/repos/github/ivmai/bdwgc/badge.png?branch=master)](https://coveralls.io/github/ivmai/bdwgc)
 [![Coverity Scan build status](https://scan.coverity.com/projects/10813/badge.svg)](https://scan.coverity.com/projects/ivmai-bdwgc)
+[![LGTM Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/context:cpp)
+[![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/alerts)
 
 This is version 7.7.0 (next release development) of a conservative garbage
 collector for C and C++.
