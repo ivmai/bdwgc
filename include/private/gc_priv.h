@@ -916,9 +916,6 @@ EXTERN_C_BEGIN
 # endif
 # define ADD_SLOP(lb) /* lb should have no side-effect */ \
                 SIZET_SAT_ADD(lb, EXTRA_BYTES)
-# ifndef MIN_WORDS
-#  define MIN_WORDS 2   /* FIXME: obsolete */
-# endif
 
 /*
  * Hash table representation of sets of pages.

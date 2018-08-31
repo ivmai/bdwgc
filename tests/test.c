@@ -61,7 +61,7 @@
 # include "gc_typed.h"
 #endif
 
-#include "private/gc_priv.h"    /* For output, locking, MIN_WORDS,      */
+#include "private/gc_priv.h"    /* For output, locking,                 */
                                 /* some statistics and gcconfig.h.      */
 
 #if defined(MSWIN32) || defined(MSWINCE)
@@ -1302,6 +1302,10 @@ void * GC_CALLBACK inc_int_counter(void *pcounter)
  ++(*(int *)pcounter);
  return NULL;
 }
+
+#ifndef MIN_WORDS
+# define MIN_WORDS 2
+#endif
 
 void run_one_test(void)
 {
