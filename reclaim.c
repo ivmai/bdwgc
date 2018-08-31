@@ -138,7 +138,7 @@ STATIC GC_bool GC_block_nearly_full(hdr *hhdr)
     return (hhdr -> hb_n_marks > 7 * HBLK_OBJS(hhdr -> hb_sz)/8);
 }
 
-/* FIXME: This should perhaps again be specialized for USE_MARK_BYTES   */
+/* TODO: This should perhaps again be specialized for USE_MARK_BYTES    */
 /* and USE_MARK_BITS cases.                                             */
 
 /*

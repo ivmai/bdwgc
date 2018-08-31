@@ -412,7 +412,7 @@ STATIC void GC_maybe_gc(void)
         static int n_partial_gcs = 0;
 
         if (!GC_incremental) {
-            /* FIXME: If possible, GC_default_stop_func should be used here */
+            /* TODO: If possible, GC_default_stop_func should be used here */
             GC_try_to_collect_inner(GC_never_stop_func);
             n_partial_gcs = 0;
             return;
@@ -441,7 +441,7 @@ STATIC void GC_maybe_gc(void)
 #       ifndef NO_CLOCK
           if (GC_time_limit != GC_TIME_UNLIMITED) { GET_TIME(GC_start_time); }
 #       endif
-        /* FIXME: If possible, GC_default_stop_func should be   */
+        /* TODO: If possible, GC_default_stop_func should be    */
         /* used instead of GC_never_stop_func here.             */
         if (GC_stopped_mark(GC_time_limit == GC_TIME_UNLIMITED?
                             GC_never_stop_func : GC_timeout_stop_func)) {
@@ -649,7 +649,7 @@ GC_INNER void GC_collect_a_little_inner(int n)
                     break;
                   }
                 } else {
-                  /* FIXME: If possible, GC_default_stop_func should be */
+                  /* TODO: If possible, GC_default_stop_func should be  */
                   /* used here.                                         */
                   (void)GC_stopped_mark(GC_never_stop_func);
                 }
@@ -1001,7 +1001,7 @@ STATIC void GC_finish_collection(void)
 #   if defined(GC_ASSERTIONS) \
        && defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
         /* Check that we marked some of our own data.           */
-        /* FIXME: Add more checks.                              */
+        /* TODO: Add more checks. */
         GC_check_tls();
 #   endif
 

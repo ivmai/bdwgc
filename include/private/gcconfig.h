@@ -174,7 +174,6 @@ EXTERN_C_BEGIN
 #    error M68K based HP machines no longer supported.
 # endif
 # if defined(OPENBSD) && defined(m68k)
-     /* FIXME: Should we remove this case? */
 #    define M68K
 #    define mach_type_known
 # endif
@@ -904,7 +903,6 @@ EXTERN_C_BEGIN
 #   define MACH_TYPE "M68K"
 #   define ALIGNMENT 2
 #   ifdef OPENBSD
-        /* FIXME: Should we remove this case? */
 #       define OS_TYPE "OPENBSD"
 #       define HEURISTIC2
 #       ifdef __ELF__
@@ -2634,7 +2632,7 @@ EXTERN_C_BEGIN
           /* At present, there's a bug in GLibc getcontext() on         */
           /* Linux/x64 (it clears FPU exception mask).  We define this  */
           /* macro to workaround it.                                    */
-          /* FIXME: This seems to be fixed in GLibc v2.14.              */
+          /* TODO: This seems to be fixed in GLibc v2.14.               */
 #         define GETCONTEXT_FPU_EXCMASK_BUG
 #       endif
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)

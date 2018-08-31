@@ -325,7 +325,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 #     endif /* !HAVE_BUILTIN_UNWIND_INIT */
     }
 # endif /* !HAVE_PUSH_REGS */
-  /* FIXME: context here is sometimes just zero.  At the moment the     */
+  /* TODO: context here is sometimes just zero.  At the moment, the     */
   /* callees don't really need it.                                      */
   fn(arg, context);
   /* Strongly discourage the compiler from treating the above   */

@@ -787,7 +787,7 @@ STATIC void GC_push_all_stack_part_eager_sections(ptr_t lo, ptr_t hi,
  * In the presence of threads, push enough of the current stack
  * to ensure that callee-save registers saved in collector frames have been
  * seen.
- * FIXME: Merge with per-thread stuff.
+ * TODO: Merge it with per-thread stuff.
  */
 STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
                                   void * context GC_ATTR_UNUSED)

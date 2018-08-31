@@ -136,7 +136,7 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
 /* rarely executed point at which it is safe to release the lock.       */
 /* We do this even where we could just call GC_INVOKE_FINALIZERS,       */
 /* since it's probably cheaper and certainly more uniform.              */
-/* FIXME - Consider doing the same elsewhere?                           */
+/* TODO: Consider doing the same elsewhere? */
 static void maybe_finalize(void)
 {
    static word last_finalized_no = 0;

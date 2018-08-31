@@ -1678,7 +1678,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
       return res ? (int)written : -1;
   }
 
-  /* FIXME: This is pretty ugly ... */
+  /* TODO: This is pretty ugly ... */
 # define WRITE(f, buf, len) GC_write(buf, len)
 
 #elif defined(OS2) || defined(MACOS)

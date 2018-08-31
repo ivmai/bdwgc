@@ -480,7 +480,7 @@ GC_INNER char * GC_get_maps(void)
 #   define ECOS_GC_MEMORY_SIZE (448 * 1024)
 # endif /* ECOS_GC_MEMORY_SIZE */
 
-  /* FIXME: This is a simple way of allocating memory which is          */
+  /* TODO: This is a simple way of allocating memory which is           */
   /* compatible with ECOS early releases.  Later releases use a more    */
   /* sophisticated means of allocating memory than this simple static   */
   /* allocator, but this method is at least bound to work.              */
@@ -1478,7 +1478,7 @@ GC_INNER size_t GC_page_size = 0;
     /* stack of one thread and the register backing store of the        */
     /* next.  Thus this is likely to identify way too large a           */
     /* "stack" and thus at least result in disastrous performance.      */
-    /* FIXME - Implement better strategies here.                        */
+    /* TODO: Implement better strategies here. */
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
     {
       IF_CANCEL(int cancel_state;)
@@ -3802,7 +3802,7 @@ GC_INNER GC_bool GC_dirty_init(void)
         return NULL == HDR(h)
                || get_pht_entry_from_index(GC_written_pages, PHT_HASH(h));
 #     else
-        /* FIXME - implement me for MANUAL_VDB. */
+        /* TODO: implement me for MANUAL_VDB. */
         (void)h;
         return TRUE;
 #     endif

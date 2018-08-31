@@ -1638,7 +1638,7 @@ GC_API void GC_CALL GC_dump_finalization(void);
 #else /* !GC_DEBUG || !__GNUC__ */
   /* We can't do this right without typeof, which ANSI decided was not    */
   /* sufficiently useful.  Without it we resort to the non-debug version. */
-  /* FIXME: This should eventually support C++0x decltype.                */
+  /* TODO: This should eventually support C++0x decltype. */
 # define GC_PTR_ADD(x, n) ((x)+(n))
 # define GC_PRE_INCR(x, n) ((x) += (n))
 # define GC_POST_INCR(x) ((x)++)
