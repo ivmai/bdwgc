@@ -172,7 +172,10 @@ GC_INNER char * GC_get_maps(void)
     ssize_t result;
     static char *maps_buf = NULL;
     static size_t maps_buf_sz = 1;
-    size_t maps_size, old_maps_size = 0;
+    size_t maps_size;
+#   ifdef THREADS
+      size_t old_maps_size = 0;
+#   endif
 
     /* The buffer is essentially static, so there must be a single client. */
     GC_ASSERT(I_HOLD_LOCK());
