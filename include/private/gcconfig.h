@@ -631,7 +631,7 @@
  *
  * DATASTART is the beginning of the data segment.
  * On some platforms SEARCH_FOR_DATA_START is defined.
- * SEARCH_FOR_DATASTART will cause GC_data_start to
+ * The latter will cause GC_data_start to
  * be set to an address determined by accessing data backwards from _end
  * until an unmapped page is found.  DATASTART will be defined to be
  * GC_data_start.
