@@ -15,7 +15,7 @@
  * A really simple-minded text editor based on cords.
  * Things it does right:
  *      No size bounds.
- *      Inbounded undo.
+ *      Unbounded undo.
  *      Shouldn't crash no matter what file you invoke it on (e.g. /vmunix)
  *              (Make sure /vmunix is not writable before you try this.)
  *      Scrolls horizontally.
