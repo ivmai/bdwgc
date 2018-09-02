@@ -943,7 +943,7 @@ Since 5.0 alpha4
    in a barely measurable performance gain.  Added support for interleaved
    lookups of two pointers, but unconfigured that since the performance
    gain is currently near zero, and it adds to code size.
- - Changed Linux DATA_START definition to check both data_start and
+ - Changed Linux DATASTART definition to check both data_start and
    __data_start, since nothing else seems to be portable.
  - Added -DUSE_LD_WRAP to optionally take advantage of the GNU ld function
    wrapping mechanism.  Probably currently useful only on Linux.
