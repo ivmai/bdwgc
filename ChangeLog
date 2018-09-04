@@ -1,5 +1,5 @@
 
-== [7.7.0] (development) ==
+== [8.0.0] 2018-09-05 ==
 
 * Accept Android platform by both CMake and configure
 * Access finalize_now atomically to avoid TSan warning without no-sanitize
