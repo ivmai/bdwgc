@@ -650,8 +650,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 # ifdef OS2 /* Use untweaked version to circumvent compiler problem */
     while ((word)mark_stack_top >= (word)mark_stack && credit >= 0)
 # else
-    while ((signed_word)(((word)mark_stack_top - (word)mark_stack)
-                         | (word)credit) >= 0)
+    while (((((word)mark_stack_top - (word)mark_stack) | (word)credit)
+            & SIGNB) == 0)
 # endif
   {
     current_p = mark_stack_top -> mse_start;
