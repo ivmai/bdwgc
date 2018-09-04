@@ -90,7 +90,9 @@
 * Do not use x86 asm in PUSH_CONTENTS_HDR for NaCl
 * Document GC_BUILTIN_ATOMIC macro (and gc_atomic_ops private header file)
 * Document STACK_NOT_SCANNED macro in gcconfig.h (Emscripten)
+* Eliminate 'comparison is always false' code defect in get_maps
 * Eliminate 'GC_DEBUG redefined' compiler warning in smashtest
+* Eliminate 'potential unsafe sign check of a bitwise operation' code defect
 * Enable alternative finalization interface (DISCLAIM) in all makefiles
 * Enable compilation for Cygwin with MPROTECT_VDB
 * Enable handle-fork and memory unmapping by default
@@ -100,7 +102,9 @@
 * Fix 'comparison of 255 with expr of type bool' error in gc_atomic_ops.h
 * Fix 'doc' files installation folder
 * Fix build of cord tests as C++ files (Makefile.direct)
+* Fix comment typos in backgraph.c, de.c, gcconfig.h
 * Fix delete operator redirection if gc_cpp is built as .dll (Cygwin, MinGW)
+* Fix start_world not resuming all threads on Darwin
 * Fix test_cpp failure in case GC_DEBUG is defined
 * Group common defines for POSIX platforms in configure and CMake scripts
 * Guard against USE_PTHREAD_LOCKS and USE_SPIN_LOCK are both defined
@@ -151,6 +155,7 @@
 * Remove HIGH_BIT macro duplicating SIGNB
 * Remove lint-specific code
 * Remove Makefile KandRtest target (that supported K&R C compiler)
+* Remove MIN_WORDS macro from gc_priv.h
 * Remove multi-line macros (FOR_EACH_PRED, ITERATE_DL_HASHTBL_*, PUSH_OBJ)
 * Remove name of optional arguments of operator new and new[] in gc_cpp.h
 * Remove notes that K&R C compiler is unsupported
@@ -164,6 +169,7 @@
 * Remove version info in 'de' cord test application
 * Replace GC_MALLOC(sizeof T) with GC_NEW(T) in tests
 * Replace GC_NO_RETRY_SIGNALS environment variable with GC_RETRY_SIGNALS=0
+* Replace some FIXME items with TODO ones
 * Run command passed to if_not_there directly from Makefile.direct
 * Same type casts for GC_PTR_STORE arguments regardless of GC_DEBUG
 * Skip grungy_pages update when mark state invalid to speedup read_dirty
@@ -201,6 +207,7 @@
 * Use sigsetjmp() in setjmp_t tool if available
 * Use thread-local allocations for all multi-threaded builds
 * Use THREAD_EQUAL consistently to compare pthread_t values
+* Workaround 'bad pointer arithmetic' false waring in check_annotated_obj
 * Workaround Clang optimizer bug crashing clear_stack_inner on OS X 10.8
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
