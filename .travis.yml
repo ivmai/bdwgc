@@ -17,18 +17,6 @@ matrix:
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     env:
-    - COVERITY_SCAN_BRANCH=1
-    addons:
-      coverity_scan:
-        project:
-          name: ivmai/bdwgc
-          version: 8.0.0
-        notification_email: ivmai@mail.ru
-        branch_pattern: master
-        build_command_prepend: "./configure --enable-cplusplus --disable-shared --enable-single-obj-compilation"
-        build_command: make -j check CFLAGS_EXTRA=-DLINT2
-  - os: linux
-    env:
     - MAKEFILE_TARGETS="distcheck"
     - AUTOMAKE_VER=1.15
     - M4_VER=1.4.18
@@ -562,7 +550,8 @@ before_install:
 
 install:
 - if [[ "$NO_CLONE_LIBATOMIC_OPS" != true ]]; then
-    git clone --depth=50 https://github.com/ivmai/libatomic_ops.git;
+    git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
+            -b release-7_6;
   fi
 - "./autogen.sh"
 - if [[ "$GNUTOOLS_ROOT" != "" ]]; then mv $GNUTOOLS_ROOT $GNUTOOLS_ROOT-x; fi
@@ -610,7 +599,6 @@ after_success:
     lcov --remove coverage.info '/usr/*' 'cord/tests/*' 'libatomic_ops/*' 'tests/*' --output-file coverage.info;
     lcov --list coverage.info;
     coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info;
-    bash <(curl -s https://codecov.io/bash);
   fi
 
 deploy:
