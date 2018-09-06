@@ -231,7 +231,7 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
             result->left_len = (unsigned char)lenx;
         result->len = (word)result_len;
         result->left = x;
-        GC_PTR_STORE_AND_DIRTY(&result->right, y);
+        GC_PTR_STORE_AND_DIRTY((void *)&result->right, y);
         GC_reachable_here(x);
         if (depth >= MAX_DEPTH) {
             return(CORD_balance((CORD)result));
@@ -273,7 +273,7 @@ CORD CORD_cat(CORD x, CORD y)
             result->left_len = (unsigned char)lenx;
         result->len = (word)result_len;
         result->left = x;
-        GC_PTR_STORE_AND_DIRTY(&result->right, y);
+        GC_PTR_STORE_AND_DIRTY((void *)&result->right, y);
         GC_reachable_here(x);
         if (depth >= MAX_DEPTH) {
             return(CORD_balance((CORD)result));
