@@ -22,7 +22,7 @@ matrix:
       coverity_scan:
         project:
           name: ivmai/bdwgc
-          version: 8.0.0
+          version: 8.1.0
         notification_email: ivmai@mail.ru
         branch_pattern: master
         build_command_prepend: "./configure --enable-cplusplus --disable-shared --enable-single-obj-compilation"
