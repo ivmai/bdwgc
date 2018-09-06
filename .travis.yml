@@ -585,6 +585,7 @@ script:
   fi
 - if [ -f gctest.log ]; then cat gctest.log; fi
 - if [ -f disclaim_bench.log ]; then cat disclaim_bench.log; fi
+- if [ -f disclaim_test.log ]; then cat disclaim_test.log; fi
 - if [ -f threadkey_test.log ]; then cat threadkey_test.log; fi
 - if [[ "$CSA_CHECK" == true ]]; then
     ${CC} --analyze -Xanalyzer -analyzer-output=text -Werror
