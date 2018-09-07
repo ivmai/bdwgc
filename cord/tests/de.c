@@ -37,7 +37,8 @@
 #endif
 #include <ctype.h>
 
-#if (defined(__BORLANDC__) || defined(__CYGWIN__)) && !defined(WIN32)
+#if (defined(__BORLANDC__) || defined(__CYGWIN__) || defined(__MINGW32__) \
+     || defined(__NT__) || defined(_WIN32)) && !defined(WIN32)
     /* If this is DOS or win16, we'll fail anyway.      */
     /* Might as well assume win32.                      */
 #   define WIN32
