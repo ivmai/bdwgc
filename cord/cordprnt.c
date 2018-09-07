@@ -174,11 +174,11 @@ static int extract_conv_spec(CORD_pos source, char *buf,
     return(result);
 }
 
-#if defined(DJGPP) || defined(__STRICT_ANSI__)
+#if defined(__DJGPP__) || defined(__STRICT_ANSI__)
   /* vsnprintf is missing in DJGPP (v2.0.3) */
 # define GC_VSNPRINTF(buf, bufsz, format, args) vsprintf(buf, format, args)
 #elif defined(_MSC_VER)
-# ifdef MSWINCE
+# if defined(_WIN32_WCE)
     /* _vsnprintf is deprecated in WinCE */
 #   define GC_VSNPRINTF StringCchVPrintfA
 # else
