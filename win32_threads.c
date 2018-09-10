@@ -1418,6 +1418,12 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       PUSH4(R0,R1,R2,R3),PUSH4(R4,R5,R6,R7),PUSH4(R8,R9,R10,R11);
       PUSH1(R12);
       sp = (ptr_t)context.Sp;
+#   elif defined(AARCH64)
+      PUSH4(X0,X1,X2,X3),PUSH4(X4,X5,X6,X7),PUSH4(X8,X9,X10,X11);
+      PUSH4(X12,X13,X14,X15),PUSH4(X16,X17,X18,X19),PUSH4(X20,X21,X22,X23);
+      PUSH4(X24,X25,X26,X27),PUSH1(X28);
+      PUSH1(Lr);
+      sp = (ptr_t)context.Sp;
 #   elif defined(SHx)
       PUSH4(R0,R1,R2,R3), PUSH4(R4,R5,R6,R7), PUSH4(R8,R9,R10,R11);
       PUSH2(R12,R13), PUSH1(R14);
