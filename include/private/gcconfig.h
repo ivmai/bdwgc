@@ -539,10 +539,12 @@ EXTERN_C_BEGIN
 #   if ((defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300)) \
        || (defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__) \
            && !defined(__INTERIX) && !defined(SYMBIAN))
-#     if defined(__LP64__) || defined(_WIN64)
+#     if defined(__LP64__) || defined(_M_X64)
 #       define X86_64
 #     elif defined(_M_ARM)
 #       define ARM32
+#     elif defined(_M_ARM64)
+#       define AARCH64
 #     else /* _M_IX86 */
 #       define I386
 #     endif
