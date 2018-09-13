@@ -82,7 +82,7 @@ SET(_HOST ${CMAKE_HOST_SYSTEM_PROCESSOR}--${CMAKE_SYSTEM}) #FIXME missing the ve
 STRING(TOLOWER ${_HOST} HOST)
 MESSAGE("HOST = ${HOST}")
 
-#Thread Detection. Relying on cmake for lib an includes.
+# Thread Detection.  Relying on cmake for lib and includes.
 #TODO check cmake detection
 IF(CMAKE_USE_PTHREADS_INIT)
         SET(SRC ${SRC} pthread_start.c pthread_support.c pthread_stop_world.c)
