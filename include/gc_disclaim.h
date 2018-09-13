@@ -39,8 +39,8 @@ typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /*obj*/);
 /* but at the expense that long chains of objects will take many cycles */
 /* to reclaim.                                                          */
 GC_API void GC_CALL GC_register_disclaim_proc(int /*kind*/,
-                                              GC_disclaim_proc /*proc*/,
-                                              int /*mark_from_all*/);
+                                GC_disclaim_proc /*proc*/,
+                                int /*mark_from_all*/) GC_ATTR_NONNULL(2);
 
 /* The finalizer closure used by GC_finalized_malloc.                   */
 struct GC_finalizer_closure {
@@ -57,7 +57,7 @@ struct GC_finalizer_closure {
 /* result points to a word prior to the start of the allocated object.  */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_finalized_malloc(size_t /*size*/,
-                            const struct GC_finalizer_closure * /*fc*/);
+                const struct GC_finalizer_closure * /*fc*/) GC_ATTR_NONNULL(2);
 
 #ifdef __cplusplus
   } /* extern "C" */

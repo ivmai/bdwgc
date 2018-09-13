@@ -78,6 +78,7 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
                                               int mark_unconditionally)
 {
     GC_ASSERT((unsigned)kind < MAXOBJKINDS);
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(proc));
     GC_obj_kinds[kind].ok_disclaim_proc = proc;
     GC_obj_kinds[kind].ok_mark_unconditionally = (GC_bool)mark_unconditionally;
 }
@@ -88,6 +89,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
     word *op;
 
     GC_ASSERT(GC_finalized_kind != 0);
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(fclos));
+    GC_ASSERT(((word)fclos & FINALIZER_CLOSURE_FLAG) == 0);
     op = (word *)GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)),
                                 GC_finalized_kind);
     if (EXPECT(NULL == op, FALSE))
