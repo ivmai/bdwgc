@@ -200,7 +200,7 @@ case "$THREADS" in
     case "$host" in
       *-*-aix* | *-*-android* | *-*-cygwin* | *-*-darwin* | *-*-dragonfly* | \
       *-*-freebsd* | *-*-haiku* | *-*-hpux11* | *-*-irix* | \
-      *-*-kfreebsd*-gnu | *-*-gnu* | *-*-*linux* | *-*-nacl* | \
+      *-*-kfreebsd*-gnu | *-*-gnu* | *-*-*linux* | *-*-msys* | *-*-nacl* | \
       *-*-netbsd* | *-*-openbsd* | *-*-osf* | *-*-solaris*)
         AC_DEFINE(GC_THREADS)
         AC_DEFINE([_REENTRANT], [1],
@@ -241,7 +241,7 @@ case "$THREADS" in
       *-*-solaris*)
         THREADDLLIBS="-lpthread -lrt"
         ;;
-      *-*-cygwin*)
+      *-*-cygwin* | *-*-msys*)
         # Cygwin doesn't have a real libpthread, so Libtool can't link
         # against it.
         THREADDLLIBS=""
@@ -435,8 +435,8 @@ case "$host" in
   mips-sgi-irix6*) ;;
 # We never want libdl on darwin. It is a fake libdl that just ends up making
 # dyld calls anyway.  The same applies to Cygwin.
-  *-*-darwin*) ;;
-  *-*-cygwin*) ;;
+  *-*-cygwin* | *-*-darwin* | *-*-msys*)
+    ;;
   *)
     AC_CHECK_LIB(dl, dlopen, THREADDLLIBS="$THREADDLLIBS -ldl")
     ;;
@@ -497,7 +497,7 @@ AM_CONDITIONAL(CPLUSPLUS, test "${enable_cplusplus}" = yes)
 if test "$GCC" = yes; then
   if test "${enable_cplusplus}" = yes; then
     case "$host" in
-      *-*-cygwin* | *-*-mingw*)
+      *-*-cygwin* | *-*-mingw* | *-*-msys*)
         AC_MSG_CHECKING([whether libsupc++ required])
         SUPC="`$CXX -print-file-name=libsupc++.a 2>/dev/null`"
         if test -n "$SUPC" -a "$SUPC" != "libsupc++.a"; then
