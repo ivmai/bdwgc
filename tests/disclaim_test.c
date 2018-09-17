@@ -103,6 +103,7 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     pair_t p = obj;
     int checksum;
 
+    my_assert(cd == NULL);
     /* Check that obj and its car and cdr are not trashed. */
 #   ifdef DEBUG_DISCLAIM_DESTRUCT
       printf("Destruct %p = (%p, %p)\n",
@@ -120,10 +121,8 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     /* Invalidate it. */
     memset(p->magic, '*', sizeof(p->magic));
     p->checksum = 0;
-    p->car = cd;
+    p->car = NULL;
     p->cdr = NULL;
-    GC_end_stubborn_change(p);
-    GC_reachable_here(cd);
 }
 
 pair_t
