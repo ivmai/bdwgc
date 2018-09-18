@@ -67,6 +67,10 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
     /* start of the user region.                                        */
     GC_register_displacement_inner(sizeof(word));
 
+    /* And, the pointer to the finalizer closure object itself is       */
+    /* displaced due to baking in this indicator.                       */
+    GC_register_displacement_inner(FINALIZER_CLOSURE_FLAG);
+
     GC_finalized_kind = GC_new_kind_inner(GC_new_free_list_inner(),
                                           GC_DS_LENGTH, TRUE, TRUE);
     GC_ASSERT(GC_finalized_kind != 0);
@@ -96,6 +100,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
     if (EXPECT(NULL == op, FALSE))
         return NULL;
     *op = (word)fclos | FINALIZER_CLOSURE_FLAG;
+    GC_dirty(op);
+    REACHABLE_AFTER_DIRTY(fclos);
     return op + 1;
 }
 
