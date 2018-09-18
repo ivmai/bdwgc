@@ -17,6 +17,7 @@
 #ifdef ENABLE_DISCLAIM
 
 #include "gc_disclaim.h"
+#include "private/dbg_mlc.h" /* for oh type */
 
 #ifdef THREAD_LOCAL_ALLOC
 # include "private/thread_local_alloc.h"
@@ -73,6 +74,11 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
     /* offset interior pointers, and that GC_base does not return the   */
     /* start of the user region.                                        */
     GC_register_displacement_inner(sizeof(word));
+
+    /* And, the pointer to the finalizer closure object itself is       */
+    /* displaced due to baking in this indicator.                       */
+    GC_register_displacement_inner(FINALIZER_CLOSURE_FLAG);
+    GC_register_displacement_inner(sizeof(oh) + FINALIZER_CLOSURE_FLAG);
 
     GC_finalized_objfreelist = (ptr_t *)GC_new_free_list_inner();
     GC_finalized_kind = GC_new_kind_inner((void **)GC_finalized_objfreelist,
@@ -131,6 +137,8 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
         GC_ASSERT(GC_size(op) >= lb);
     }
     *(word *)op = (word)fclos | FINALIZER_CLOSURE_FLAG;
+    GC_dirty(op);
+    REACHABLE_AFTER_DIRTY(fclos);
     return GC_clear_stack((word *)op + 1);
 }
 
@@ -172,6 +180,8 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
     *my_fl = next;
     obj_link(result) = 0;
     *(word *)result = (word)fclos | FINALIZER_CLOSURE_FLAG;
+    GC_dirty(result);
+    REACHABLE_AFTER_DIRTY(fclos);
     GC_PREFETCH_FOR_WRITE(next);
     return (word *)result + 1;
   }
