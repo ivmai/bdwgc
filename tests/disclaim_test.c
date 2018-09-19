@@ -98,12 +98,14 @@ int is_pair(pair_t p)
     return memcmp(p->magic, pair_magic, sizeof(p->magic)) == 0;
 }
 
+#define PTR_HASH(p) (GC_HIDE_POINTER(p) >> 4)
+
 void GC_CALLBACK pair_dct(void *obj, void *cd)
 {
     pair_t p = obj;
     int checksum;
 
-    my_assert(cd == NULL);
+    my_assert(cd == (void *)PTR_HASH(p));
     /* Check that obj and its car and cdr are not trashed. */
 #   ifdef DEBUG_DISCLAIM_DESTRUCT
       printf("Destruct %p = (%p, %p)\n",
@@ -129,13 +131,20 @@ pair_t
 pair_new(pair_t car, pair_t cdr)
 {
     pair_t p;
-    static const struct GC_finalizer_closure fc = { pair_dct, NULL };
+    struct GC_finalizer_closure *pfc =
+                        GC_NEW_ATOMIC(struct GC_finalizer_closure);
 
-    p = GC_finalized_malloc(sizeof(struct pair_s), &fc);
+    if (NULL == pfc) {
+        fprintf(stderr, "Out of memory!\n");
+        exit(3);
+    }
+    pfc->proc = pair_dct;
+    p = (pair_t)GC_finalized_malloc(sizeof(struct pair_s), pfc);
     if (p == NULL) {
         fprintf(stderr, "Out of memory!\n");
         exit(3);
     }
+    pfc->cd = (void *)PTR_HASH(p);
     my_assert(!is_pair(p));
     my_assert(memeq(p, 0, sizeof(struct pair_s)));
     memcpy(p->magic, pair_magic, sizeof(p->magic));
