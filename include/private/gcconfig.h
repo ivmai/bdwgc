@@ -2580,9 +2580,6 @@ EXTERN_C_BEGIN
 #   ifdef SN_TARGET_ORBIS
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
-      EXTERN_C_END
-#     include <pthread.h>
-      EXTERN_C_BEGIN
       void *ps4_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)ps4_get_stack_bottom())
 #   endif
@@ -3257,9 +3254,9 @@ EXTERN_C_BEGIN
 #endif /* !CPPCHECK */
 
 #if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
-    || defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
-    || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
-    || defined(SN_TARGET_PSP2)
+    || ((defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
+         || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
+         || defined(SN_TARGET_PSP2)) && defined(GC_THREADS))
 # define THREADS
 #endif
 
