@@ -36,9 +36,9 @@ typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /*obj*/);
 /* reclaimed.  If "proc" returns non-zero, the collector will not       */
 /* reclaim the object on this GC cycle ("proc" should not try to        */
 /* resurrect the object otherwise).  Objects reachable from "proc"      */
-/* will be protected from collection if "mark_from_all" is non-zero,    */
-/* but at the expense that long chains of objects will take many cycles */
-/* to reclaim.                                                          */
+/* (including the referred closure object) will be protected from       */
+/* collection if "mark_from_all" is non-zero, but at the expense that   */
+/* long chains of objects will take many cycles to reclaim.             */
 GC_API void GC_CALL GC_register_disclaim_proc(int /*kind*/,
                                 GC_disclaim_proc /*proc*/,
                                 int /*mark_from_all*/) GC_ATTR_NONNULL(2);
@@ -55,7 +55,8 @@ struct GC_finalizer_closure {
 /* GC_init_finalized_malloc must be called before using this.           */
 /* The collector will reclaim the object during this GC cycle (thus,    */
 /* "proc" should not try to resurrect the object).  The other objects   */
-/* reachable from "proc" will be protected from collection.             */
+/* reachable from "proc" (including the closure object in case it is    */
+/* a heap-allocated one) will be protected from collection.             */
 /* Note that GC_size (applied to such allocated object) returns a value */
 /* slightly bigger than the specified allocation size, and that GC_base */
 /* result points to a word prior to the start of the allocated object.  */
