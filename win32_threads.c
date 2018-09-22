@@ -1157,15 +1157,7 @@ STATIC void GC_suspend(GC_thread t)
       return;
     }
 # endif
-# if defined(MPROTECT_VDB)
-    /* Acquire the spin lock we use to update dirty bits.       */
-    /* Threads shouldn't get stopped holding it.  But we may    */
-    /* acquire and release it in the UNPROTECT_THREAD call.     */
-    while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {
-      /* empty */
-    }
-# endif
-
+  GC_acquire_dirty_lock();
 # ifdef MSWINCE
     /* SuspendThread() will fail if thread is running kernel code.      */
     while (SuspendThread(THREAD_HANDLE(t)) == (DWORD)-1)
@@ -1175,9 +1167,7 @@ STATIC void GC_suspend(GC_thread t)
       ABORT("SuspendThread failed");
 # endif /* !MSWINCE */
   t -> suspended = (unsigned char)TRUE;
-# if defined(MPROTECT_VDB)
-    AO_CLEAR(&GC_fault_handler_lock);
-# endif
+  GC_release_dirty_lock();
 }
 
 #if defined(GC_ASSERTIONS) && !defined(CYGWIN32)
