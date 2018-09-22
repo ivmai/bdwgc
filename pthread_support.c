@@ -1087,6 +1087,7 @@ static void fork_prepare_proc(void)
         if (GC_parallel)
           GC_acquire_mark_lock();
 #     endif
+      GC_acquire_dirty_lock();
 }
 
 /* Called in parent after a fork() (even if the latter failed). */
@@ -1095,6 +1096,7 @@ static void fork_prepare_proc(void)
 #endif
 static void fork_parent_proc(void)
 {
+    GC_release_dirty_lock();
 #   if defined(PARALLEL_MARK)
       if (GC_parallel)
         GC_release_mark_lock();
@@ -1109,11 +1111,12 @@ static void fork_parent_proc(void)
 #endif
 static void fork_child_proc(void)
 {
-    /* Clean up the thread table, so that just our thread is left. */
+    GC_release_dirty_lock();
 #   if defined(PARALLEL_MARK)
       if (GC_parallel)
         GC_release_mark_lock();
 #   endif
+    /* Clean up the thread table, so that just our thread is left.      */
     GC_remove_all_threads_but_me();
 #   ifdef PARALLEL_MARK
       /* Turn off parallel marking in the child, since we are probably  */

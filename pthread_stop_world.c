@@ -574,6 +574,14 @@ STATIC void GC_restart_handler(int sig)
           GC_wait_for_reclaim();
 #     endif
 
+      if (GC_manual_vdb) {
+        /* See the relevant comment in GC_stop_world.   */
+        GC_acquire_dirty_lock();
+      }
+      /* Else do not acquire the lock as the write fault handler might  */
+      /* be trying to acquire this lock too, and the suspend handler    */
+      /* execution is deferred until the write fault handler completes. */
+
       /* TODO: Support GC_retry_signals (not needed for TSan) */
       switch (RAISE_SIGNAL(t, GC_sig_suspend)) {
       /* ESRCH cannot happen as terminated threads are handled above.   */
@@ -590,6 +598,8 @@ STATIC void GC_restart_handler(int sig)
         if (errno != EINTR)
           ABORT("sem_wait for handler failed (suspend_self)");
       }
+      if (GC_manual_vdb)
+        GC_release_dirty_lock();
       RESTORE_CANCEL(cancel_state);
       UNLOCK();
     }
@@ -763,8 +773,11 @@ STATIC int GC_suspend_all(void)
 #           ifdef GC_OPENBSD_UTHREADS
               {
                 stack_t stack;
+
+                GC_acquire_dirty_lock();
                 if (pthread_suspend_np(p -> id) != 0)
                   ABORT("pthread_suspend_np failed");
+                GC_release_dirty_lock();
                 if (pthread_stackseg_np(p->id, &stack))
                   ABORT("pthread_stackseg_np failed");
                 p -> stop_info.stack_ptr = (ptr_t)stack.ss_sp - stack.ss_size;
@@ -773,6 +786,11 @@ STATIC int GC_suspend_all(void)
                                      (void *)p->id);
               }
 #           else
+              /* The synchronization between GC_dirty (based on         */
+              /* test-and-set) and the signal-based thread suspension   */
+              /* is performed in GC_stop_world because                  */
+              /* GC_release_dirty_lock cannot be called before          */
+              /* acknowledging the thread is really suspended.          */
               result = RAISE_SIGNAL(p, GC_sig_suspend);
               switch(result) {
                 case ESRCH:
@@ -808,6 +826,8 @@ STATIC int GC_suspend_all(void)
     GC_nacl_thread_parker = pthread_self();
     GC_nacl_park_threads_now = 1;
 
+    if (GC_manual_vdb)
+      GC_acquire_dirty_lock();
     while (1) {
       int num_threads_parked = 0;
       struct timespec ts;
@@ -843,6 +863,8 @@ STATIC int GC_suspend_all(void)
         num_sleeps = 0;
       }
     }
+    if (GC_manual_vdb)
+      GC_release_dirty_lock();
 # endif /* NACL */
   return n_live_threads;
 }
@@ -876,11 +898,19 @@ GC_INNER void GC_stop_world(void)
 # else
     AO_store(&GC_stop_count, (AO_t)((word)GC_stop_count + 2));
         /* Only concurrent reads are possible. */
+    if (GC_manual_vdb) {
+      GC_acquire_dirty_lock();
+      /* The write fault handler cannot be called if GC_manual_vdb      */
+      /* (thus double-locking should not occur in                       */
+      /* async_set_pht_entry_from_index based on test-and-set).         */
+    }
     AO_store_release(&GC_world_is_stopped, TRUE);
     n_live_threads = GC_suspend_all();
     if (GC_retry_signals)
       n_live_threads = resend_lost_signals(n_live_threads, GC_suspend_all);
     suspend_restart_barrier(n_live_threads);
+    if (GC_manual_vdb)
+      GC_release_dirty_lock(); /* cannot be done in GC_suspend_all */
 # endif
 
 # ifdef PARALLEL_MARK
