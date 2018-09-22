@@ -512,9 +512,11 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
 #   endif
     /* Unconditionally suspend the thread.  It will do no     */
     /* harm if it is already suspended by the client logic.   */
+    GC_acquire_dirty_lock();
     do {
       kern_result = thread_suspend(thread);
     } while (kern_result == KERN_ABORTED);
+    GC_release_dirty_lock();
     if (kern_result != KERN_SUCCESS) {
       /* The thread may have quit since the thread_threads() call we  */
       /* mark already suspended so it's not dealt with anymore later. */
@@ -613,10 +615,11 @@ GC_INNER void GC_stop_world(void)
       for (p = GC_threads[i]; p != NULL; p = p->next) {
         if ((p->flags & FINISHED) == 0 && !p->thread_blocked &&
              p->stop_info.mach_thread != my_thread) {
-
+          GC_acquire_dirty_lock();
           do {
             kern_result = thread_suspend(p->stop_info.mach_thread);
           } while (kern_result == KERN_ABORTED);
+          GC_release_dirty_lock();
           if (kern_result != KERN_SUCCESS)
             ABORT("thread_suspend failed");
           if (GC_on_thread_event)

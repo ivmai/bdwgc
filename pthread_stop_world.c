@@ -457,6 +457,10 @@ STATIC void GC_restart_handler(int sig)
         if (GC_parallel)
           GC_wait_for_reclaim();
 #     endif
+#     ifdef MANUAL_VDB
+        /* See the relevant comment in GC_stop_world.   */
+        GC_acquire_dirty_lock();
+#     endif
 
       /* TODO: Support GC_retry_signals */
       switch (RAISE_SIGNAL(t, GC_sig_suspend)) {
@@ -474,6 +478,9 @@ STATIC void GC_restart_handler(int sig)
         if (errno != EINTR)
           ABORT("sem_wait for handler failed (suspend_self)");
       }
+#     ifdef MANUAL_VDB
+        GC_release_dirty_lock();
+#     endif
       RESTORE_CANCEL(cancel_state);
       UNLOCK();
     }
@@ -651,8 +658,11 @@ STATIC int GC_suspend_all(void)
 #           ifdef GC_OPENBSD_UTHREADS
               {
                 stack_t stack;
+
+                GC_acquire_dirty_lock();
                 if (pthread_suspend_np(p -> id) != 0)
                   ABORT("pthread_suspend_np failed");
+                GC_release_dirty_lock();
                 if (pthread_stackseg_np(p->id, &stack))
                   ABORT("pthread_stackseg_np failed");
                 p -> stop_info.stack_ptr = (ptr_t)stack.ss_sp - stack.ss_size;
@@ -661,6 +671,11 @@ STATIC int GC_suspend_all(void)
                                      (void *)p->id);
               }
 #           else
+              /* The synchronization between GC_dirty (based on         */
+              /* test-and-set) and the signal-based thread suspension   */
+              /* is performed in GC_stop_world because                  */
+              /* GC_release_dirty_lock cannot be called before          */
+              /* acknowledging the thread is really suspended.          */
               result = RAISE_SIGNAL(p, GC_sig_suspend);
               switch(result) {
                 case ESRCH:
@@ -700,6 +715,9 @@ STATIC int GC_suspend_all(void)
       GC_stopping_pid = getpid();
 #   endif
 
+#   ifdef MANUAL_VDB
+      GC_acquire_dirty_lock();
+#   endif
     while (1) {
       int num_threads_parked = 0;
       struct timespec ts;
@@ -735,6 +753,9 @@ STATIC int GC_suspend_all(void)
         num_sleeps = 0;
       }
     }
+#   ifdef MANUAL_VDB
+      GC_release_dirty_lock();
+#   endif
 # endif /* NACL */
   return n_live_threads;
 }
@@ -768,6 +789,12 @@ GC_INNER void GC_stop_world(void)
 # else
     AO_store(&GC_stop_count, GC_stop_count+1);
         /* Only concurrent reads are possible. */
+#   ifdef MANUAL_VDB
+      GC_acquire_dirty_lock();
+      /* The write fault handler cannot be called if manual VDB         */
+      /* (thus double-locking should not occur in                       */
+      /* async_set_pht_entry_from_index based on test-and-set).         */
+#   endif
     AO_store_release(&GC_world_is_stopped, TRUE);
     n_live_threads = GC_suspend_all();
 
@@ -825,6 +852,9 @@ GC_INNER void GC_stop_world(void)
           ABORT("sem_wait for handler failed");
         }
     }
+#   ifdef MANUAL_VDB
+      GC_release_dirty_lock(); /* cannot be done in GC_suspend_all */
+#   endif
 # endif
 
 # ifdef PARALLEL_MARK

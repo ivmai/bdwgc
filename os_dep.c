@@ -2961,6 +2961,28 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
 #endif /* DEFAULT_VDB */
 
+#if defined(MANUAL_VDB) || defined(MPROTECT_VDB)
+# ifndef THREADS
+#   define async_set_pht_entry_from_index(db, index) \
+                        set_pht_entry_from_index(db, index)
+# elif defined(AO_HAVE_test_and_set_acquire)
+    /* We need to lock around the bitmap update (in the write fault     */
+    /* handler or GC_dirty) in order to avoid the risk of losing a bit. */
+    /* We do this with a test-and-set spin lock if possible.            */
+    GC_INNER volatile AO_TS_t GC_fault_handler_lock = AO_TS_INITIALIZER;
+
+    static void async_set_pht_entry_from_index(volatile page_hash_table db,
+                                               size_t index)
+    {
+      GC_acquire_dirty_lock();
+      set_pht_entry_from_index(db, index);
+      GC_release_dirty_lock();
+    }
+# else
+#   error No test_and_set operation: Introduces a race.
+# endif /* THREADS && !AO_HAVE_test_and_set_acquire */
+#endif /* MANUAL_VDB || MPROTECT_VDB */
+
 #ifdef MANUAL_VDB
   /* Initialize virtual dirty bit implementation.       */
   GC_INNER GC_bool GC_dirty_init(void)
@@ -2978,9 +3000,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
           (sizeof GC_dirty_pages));
     BZERO((word *)GC_dirty_pages, (sizeof GC_dirty_pages));
   }
-
-# define async_set_pht_entry_from_index(db, index) \
-                        set_pht_entry_from_index(db, index) /* for now */
 
   /* Mark the page containing p as dirty.  Logically, this dirties the  */
   /* entire object.                                                     */
@@ -3110,62 +3129,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     STATIC GC_bool GC_old_segv_handler_used_si = FALSE;
 # endif /* !MSWIN32 */
 #endif /* !DARWIN */
-
-#if defined(THREADS)
-/* We need to lock around the bitmap update in the write fault handler  */
-/* in order to avoid the risk of losing a bit.  We do this with a       */
-/* test-and-set spin lock if we know how to do that.  Otherwise we      */
-/* check whether we are already in the handler and use the dumb but     */
-/* safe fallback algorithm of setting all bits in the word.             */
-/* Contention should be very rare, so we do the minimum to handle it    */
-/* correctly.                                                           */
-#ifdef AO_HAVE_test_and_set_acquire
-  GC_INNER volatile AO_TS_t GC_fault_handler_lock = AO_TS_INITIALIZER;
-  static void async_set_pht_entry_from_index(volatile page_hash_table db,
-                                             size_t index)
-  {
-    while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {
-      /* empty */
-    }
-    /* Could also revert to set_pht_entry_from_index_safe if initial    */
-    /* GC_test_and_set fails.                                           */
-    set_pht_entry_from_index(db, index);
-    AO_CLEAR(&GC_fault_handler_lock);
-  }
-#else /* !AO_HAVE_test_and_set_acquire */
-# error No test_and_set operation: Introduces a race.
-  /* THIS WOULD BE INCORRECT!                                           */
-  /* The dirty bit vector may be temporarily wrong,                     */
-  /* just before we notice the conflict and correct it. We may end up   */
-  /* looking at it while it's wrong.  But this requires contention      */
-  /* exactly when a GC is triggered, which seems far less likely to     */
-  /* fail than the old code, which had no reported failures.  Thus we   */
-  /* leave it this way while we think of something better, or support   */
-  /* GC_test_and_set on the remaining platforms.                        */
-  static int * volatile currently_updating = 0;
-  static void async_set_pht_entry_from_index(volatile page_hash_table db,
-                                             size_t index)
-  {
-    int update_dummy;
-    currently_updating = &update_dummy;
-    set_pht_entry_from_index(db, index);
-    /* If we get contention in the 10 or so instruction window here,    */
-    /* and we get stopped by a GC between the two updates, we lose!     */
-    if (currently_updating != &update_dummy) {
-        set_pht_entry_from_index_safe(db, index);
-        /* We claim that if two threads concurrently try to update the  */
-        /* dirty bit vector, the first one to execute UPDATE_START      */
-        /* will see it changed when UPDATE_END is executed.  (Note that */
-        /* &update_dummy must differ in two distinct threads.)  It      */
-        /* will then execute set_pht_entry_from_index_safe, thus        */
-        /* returning us to a safe state, though not soon enough.        */
-    }
-  }
-#endif /* !AO_HAVE_test_and_set_acquire */
-#else /* !THREADS */
-# define async_set_pht_entry_from_index(db, index) \
-                        set_pht_entry_from_index(db, index)
-#endif /* !THREADS */
 
 #ifndef DARWIN
 
