@@ -961,8 +961,6 @@ typedef word page_hash_table[PHT_SIZE];
                 (((bl)[divWORDSZ(index)] >> modWORDSZ(index)) & 1)
 # define set_pht_entry_from_index(bl, index) \
                 (bl)[divWORDSZ(index)] |= (word)1 << modWORDSZ(index)
-# define clear_pht_entry_from_index(bl, index) \
-                (bl)[divWORDSZ(index)] &= ~((word)1 << modWORDSZ(index))
 /* And a dumb but thread-safe version of set_pht_entry_from_index.      */
 /* This sets (many) extra bits.                                         */
 # define set_pht_entry_from_index_safe(bl, index) \
