@@ -545,6 +545,9 @@ STATIC void GC_restart_handler(int sig)
       }
 
       /* Set the flag making the change visible to the signal handler.  */
+      /* This also removes the protection for t object, preventing      */
+      /* write faults in GC_store_stack_ptr (thus double-locking should */
+      /* not occur in async_set_pht_entry_from_index).                  */
       AO_store_release(&t->suspended_ext, TRUE);
 
       if (THREAD_EQUAL((pthread_t)thread, pthread_self())) {
@@ -575,6 +578,7 @@ STATIC void GC_restart_handler(int sig)
 #     endif
 
       /* TODO: Support GC_retry_signals (not needed for TSan) */
+      GC_acquire_dirty_lock();
       switch (RAISE_SIGNAL(t, GC_sig_suspend)) {
       /* ESRCH cannot happen as terminated threads are handled above.   */
       case 0:
@@ -590,6 +594,7 @@ STATIC void GC_restart_handler(int sig)
         if (errno != EINTR)
           ABORT("sem_wait for handler failed (suspend_self)");
       }
+      GC_release_dirty_lock();
       RESTORE_CANCEL(cancel_state);
       UNLOCK();
     }
@@ -763,8 +768,11 @@ STATIC int GC_suspend_all(void)
 #           ifdef GC_OPENBSD_UTHREADS
               {
                 stack_t stack;
+
+                GC_acquire_dirty_lock();
                 if (pthread_suspend_np(p -> id) != 0)
                   ABORT("pthread_suspend_np failed");
+                GC_release_dirty_lock();
                 if (pthread_stackseg_np(p->id, &stack))
                   ABORT("pthread_stackseg_np failed");
                 p -> stop_info.stack_ptr = (ptr_t)stack.ss_sp - stack.ss_size;
@@ -773,6 +781,11 @@ STATIC int GC_suspend_all(void)
                                      (void *)p->id);
               }
 #           else
+              /* The synchronization between GC_dirty (based on         */
+              /* test-and-set) and the signal-based thread suspension   */
+              /* is performed in GC_stop_world because                  */
+              /* GC_release_dirty_lock cannot be called before          */
+              /* acknowledging the thread is really suspended.          */
               result = RAISE_SIGNAL(p, GC_sig_suspend);
               switch(result) {
                 case ESRCH:
@@ -876,11 +889,19 @@ GC_INNER void GC_stop_world(void)
 # else
     AO_store(&GC_stop_count, (AO_t)((word)GC_stop_count + 2));
         /* Only concurrent reads are possible. */
+    if (GC_manual_vdb) {
+      GC_acquire_dirty_lock();
+      /* The write fault handler cannot be called if GC_manual_vdb      */
+      /* (thus double-locking should not occur in                       */
+      /* async_set_pht_entry_from_index based on test-and-set).         */
+    }
     AO_store_release(&GC_world_is_stopped, TRUE);
     n_live_threads = GC_suspend_all();
     if (GC_retry_signals)
       n_live_threads = resend_lost_signals(n_live_threads, GC_suspend_all);
     suspend_restart_barrier(n_live_threads);
+    if (GC_manual_vdb)
+      GC_release_dirty_lock(); /* cannot be done in GC_suspend_all */
 # endif
 
 # ifdef PARALLEL_MARK
