@@ -2965,6 +2965,9 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # ifndef THREADS
 #   define async_set_pht_entry_from_index(db, index) \
                         set_pht_entry_from_index(db, index)
+# elif defined(set_pht_entry_from_index_concurrent)
+#   define async_set_pht_entry_from_index(db, index) \
+                        set_pht_entry_from_index_concurrent(db, index)
 # elif defined(AO_HAVE_test_and_set_acquire)
     /* We need to lock around the bitmap update (in the write fault     */
     /* handler or GC_dirty) in order to avoid the risk of losing a bit. */
