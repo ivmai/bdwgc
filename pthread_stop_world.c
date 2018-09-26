@@ -545,9 +545,6 @@ STATIC void GC_restart_handler(int sig)
       }
 
       /* Set the flag making the change visible to the signal handler.  */
-      /* This also removes the protection for t object, preventing      */
-      /* write faults in GC_store_stack_ptr (thus double-locking should */
-      /* not occur in async_set_pht_entry_from_index).                  */
       AO_store_release(&t->suspended_ext, TRUE);
 
       if (THREAD_EQUAL((pthread_t)thread, pthread_self())) {
@@ -577,8 +574,15 @@ STATIC void GC_restart_handler(int sig)
           GC_wait_for_reclaim();
 #     endif
 
+      if (GC_manual_vdb) {
+        /* See the relevant comment in GC_stop_world.   */
+        GC_acquire_dirty_lock();
+      }
+      /* Else do not acquire the lock as the write fault handler might  */
+      /* be trying to acquire this lock too, and the suspend handler    */
+      /* execution is deferred until the write fault handler completes. */
+
       /* TODO: Support GC_retry_signals (not needed for TSan) */
-      GC_acquire_dirty_lock();
       switch (RAISE_SIGNAL(t, GC_sig_suspend)) {
       /* ESRCH cannot happen as terminated threads are handled above.   */
       case 0:
@@ -594,7 +598,8 @@ STATIC void GC_restart_handler(int sig)
         if (errno != EINTR)
           ABORT("sem_wait for handler failed (suspend_self)");
       }
-      GC_release_dirty_lock();
+      if (GC_manual_vdb)
+        GC_release_dirty_lock();
       RESTORE_CANCEL(cancel_state);
       UNLOCK();
     }
@@ -821,6 +826,8 @@ STATIC int GC_suspend_all(void)
     GC_nacl_thread_parker = pthread_self();
     GC_nacl_park_threads_now = 1;
 
+    if (GC_manual_vdb)
+      GC_acquire_dirty_lock();
     while (1) {
       int num_threads_parked = 0;
       struct timespec ts;
@@ -856,6 +863,8 @@ STATIC int GC_suspend_all(void)
         num_sleeps = 0;
       }
     }
+    if (GC_manual_vdb)
+      GC_release_dirty_lock();
 # endif /* NACL */
   return n_live_threads;
 }
