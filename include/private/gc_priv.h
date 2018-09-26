@@ -960,20 +960,16 @@ typedef word page_hash_table[PHT_SIZE];
 # define get_pht_entry_from_index(bl, index) \
                 (((bl)[divWORDSZ(index)] >> modWORDSZ(index)) & 1)
 # define set_pht_entry_from_index(bl, index) \
-                (bl)[divWORDSZ(index)] |= (word)1 << modWORDSZ(index)
+                (void)((bl)[divWORDSZ(index)] |= (word)1 << modWORDSZ(index))
 
-/* And, one more version for GC_add_to_black_list_normal/stack.         */
-/* The latter ones are invoked (indirectly) by GC_do_local_mark.        */
-#if defined(PARALLEL_MARK) && defined(THREAD_SANITIZER)
+#if defined(THREADS) && defined(AO_HAVE_or)
+  /* And, one more version for GC_add_to_black_list_normal/stack        */
+  /* (invoked indirectly by GC_do_local_mark) and                       */
+  /* async_set_pht_entry_from_index (invoked by GC_dirty or the write   */
+  /* fault handler).                                                    */
 # define set_pht_entry_from_index_concurrent(bl, index) \
                 AO_or((volatile AO_t *)&(bl)[divWORDSZ(index)], \
                       (AO_t)((word)1 << modWORDSZ(index)))
-#else
-  /* It is safe to set a bit in a blacklist even without        */
-  /* synchronization, the only drawback is that we might have   */
-  /* to redo blacklisting sometimes.                            */
-# define set_pht_entry_from_index_concurrent(bl, index) \
-                set_pht_entry_from_index(bl, index)
 #endif
 
 
@@ -2320,7 +2316,8 @@ GC_EXTERN signed_word GC_bytes_found;
                                 /* protected by GC_write_cs.    */
 
 # endif
-# if defined(GC_DISABLE_INCREMENTAL)
+# if defined(GC_DISABLE_INCREMENTAL) \
+     || defined(set_pht_entry_from_index_concurrent)
 #   define GC_acquire_dirty_lock() (void)0
 #   define GC_release_dirty_lock() (void)0
 # else
