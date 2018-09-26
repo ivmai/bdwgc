@@ -2962,13 +2962,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # ifndef THREADS
 #   define async_set_pht_entry_from_index(db, index) \
                         set_pht_entry_from_index(db, index)
+# elif defined(set_pht_entry_from_index_concurrent)
+#   define async_set_pht_entry_from_index(db, index) \
+                        set_pht_entry_from_index_concurrent(db, index)
 # elif defined(AO_HAVE_test_and_set_acquire)
     /* We need to lock around the bitmap update (in the write fault     */
     /* handler or GC_dirty) in order to avoid the risk of losing a bit. */
     /* We do this with a test-and-set spin lock if possible.            */
     GC_INNER volatile AO_TS_t GC_fault_handler_lock = AO_TS_INITIALIZER;
 
-    GC_ATTR_NO_SANITIZE_THREAD
     static void async_set_pht_entry_from_index(volatile page_hash_table db,
                                                size_t index)
     {

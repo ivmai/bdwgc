@@ -175,6 +175,18 @@ GC_INNER void GC_unpromote_black_lists(void)
     GC_copy_bl(GC_old_stack_bl, GC_incomplete_stack_bl);
 }
 
+#if defined(set_pht_entry_from_index_concurrent) && defined(PARALLEL_MARK) \
+    && defined(THREAD_SANITIZER)
+# define backlist_set_pht_entry_from_index(db, index) \
+                        set_pht_entry_from_index_concurrent(db, index)
+#else
+  /* It is safe to set a bit in a blacklist even without        */
+  /* synchronization, the only drawback is that we might have   */
+  /* to redo blacklisting sometimes.                            */
+# define backlist_set_pht_entry_from_index(bl, index) \
+                        set_pht_entry_from_index(bl, index)
+#endif
+
 /* P is not a valid pointer reference, but it falls inside      */
 /* the plausible heap bounds.                                   */
 /* Add it to the normal incomplete black list if appropriate.   */
@@ -193,7 +205,7 @@ GC_INNER void GC_unpromote_black_lists(void)
           GC_print_blacklisted_ptr(p, source, "normal");
         }
 #     endif
-      set_pht_entry_from_index_concurrent(GC_incomplete_normal_bl, index);
+      backlist_set_pht_entry_from_index(GC_incomplete_normal_bl, index);
     } /* else this is probably just an interior pointer to an allocated */
       /* object, and isn't worth black listing.                         */
   }
@@ -214,7 +226,7 @@ GC_INNER void GC_unpromote_black_lists(void)
         GC_print_blacklisted_ptr(p, source, "stack");
       }
 #   endif
-    set_pht_entry_from_index_concurrent(GC_incomplete_stack_bl, index);
+    backlist_set_pht_entry_from_index(GC_incomplete_stack_bl, index);
   }
 }
 
