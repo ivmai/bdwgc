@@ -645,6 +645,16 @@ Also, includes 7.4.6 changes
 Also, includes 7.4.4 changes
 
 
+== [7.4.16] (not released yet) ==
+
+* Fix 'undefined reference to GC_incremental' linker error in pthread_start
+* Fix concurrent bitmap update in GC_dirty
+* Fix marking of finalizer closure object
+* Fix missing curses.h in cord/de when compiling manually (MS VC, MinGW)
+
+Also, includes 7.2m changes
+
+
 == [7.4.14] 2018-08-11 ==
 
 * Cleanup BCC Makefile (remove absolute GC paths, fix del cmd, update clean)
@@ -1131,6 +1141,12 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 * Use pthread_key for thread-local storage on FreeBSD
 * Use union of AO_t and word to favor strict-aliasing compiler optimization
 Also, includes 7.2 changes
+
+
+== [7.2m] (not released yet) ==
+
+* Fix comment typos in CMakeLists.txt, backgraph.c, de.c, gcconfig.h
+* Fix start_world not resuming all threads on Darwin
 
 
 == [7.2l] 2018-08-10 ==
