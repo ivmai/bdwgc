@@ -1549,9 +1549,6 @@ EXTERN_C_BEGIN
                             __asm__ __volatile__ ("movl %%fs:4, %%eax" \
                                                   : "=a" (rv)); \
                             rv; })
-#     ifndef USE_MMAP
-#       define USE_MMAP
-#     endif
 #     define USE_MMAP_ANON
 #   endif
 #   ifdef OS2
