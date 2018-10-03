@@ -1183,7 +1183,6 @@ EXTERN_C_BEGIN
 #   define STACK_GRAN 0x10000
 #   define HEURISTIC1
 #   define NO_PTHREAD_GETATTR_NP
-#   define USE_MUNMAP
 #   define USE_MMAP_ANON
 #   define GETPAGESIZE() 65536
 #   define MAX_NACL_GC_THREADS 1024
