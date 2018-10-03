@@ -2487,13 +2487,18 @@
 #            define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       endif
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)
+          /* A workaround for GCF (Google Cloud Function) which does    */
+          /* not support mmap() for "/dev/zero".  Should not cause any  */
+          /* harm to other targets.                                     */
+#         ifndef USE_MMAP
+#           define USE_MMAP
+#         endif
+#         define USE_MMAP_ANON
           /* At present, there's a bug in GLibc getcontext() on         */
           /* Linux/x64 (it clears FPU exception mask).  We define this  */
           /* macro to workaround it.                                    */
           /* FIXME: This seems to be fixed in GLibc v2.14.              */
 #         define GETCONTEXT_FPU_EXCMASK_BUG
-#       endif
-#       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* Workaround lock elision implementation for some glibc.     */
 #         define GLIBC_2_19_TSX_BUG
 #         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
