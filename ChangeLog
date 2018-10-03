@@ -212,6 +212,25 @@
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
 
+== [7.6.10] (not released yet) ==
+
+* Call real pthread_sigmask instead of its wrapper in start_mark_threads
+* Fix 'undefined reference to GC_incremental' linker error in pthread_start
+* Fix comment typos in CMakeLists.txt, backgraph.c, de.c, gcconfig.h
+* Fix concurrent bitmap update in GC_dirty
+* Fix delete operator redirection if gc_cpp is built as .dll (Cygwin, MinGW)
+* Fix GC_VSNPRINTF in cordprnt for DJGPP and MS VC for WinCE
+* Fix marking of finalizer closure object
+* Fix memory allocation on GCF (Linux/x64)
+* Fix missing curses.h in cord/de when compiling manually (MS VC, MinGW)
+* Fix start_world not resuming all threads on Darwin
+* Fix unneeded end_stubborn_change in disclaim_test
+* Refine documentation in gc_disclaim.h
+* Test marking of finalizer closure object in disclaim_test
+* Use AO_or in async_set_pht_entry_from_index if available
+* Use include gc.h with the angle brackets in the man page synopsis
+
+
 == [7.6.8] 2018-08-12 ==
 
 * Add cpu, make_as_lib, nothreads options to NT_MAKEFILE
