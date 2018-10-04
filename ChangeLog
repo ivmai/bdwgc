@@ -1,4 +1,24 @@
 
+== [8.0.2] (not released yet) ==
+
+* Call real pthread_sigmask instead of its wrapper in start_mark_threads
+* Default to a single-threaded build for Nintendo, Orbis, Sony PSP targets
+* Eliminate 'different const qualifiers' MS VC warnings in cordbscs
+* Fix 'USE_MUNMAP macro redefinition' error for NaCl
+* Fix comment typo in CMakeLists.txt
+* Fix concurrent bitmap update in GC_dirty
+* Fix GC_VSNPRINTF in cordprnt for DJGPP and MS VC for WinCE
+* Fix marking of finalizer closure object
+* Fix memory allocation on GCF (Linux/x64)
+* Fix missing curses.h in cord/de when compiling manually (MS VC, MinGW)
+* Fix unneeded end_stubborn_change/ptr_store_and_dirty in disclaim_test
+* Refine documentation in gc_disclaim.h
+* Remove extra USE_MMAP definition for Interix
+* Specify register_disclaim_proc and finalized_malloc argument as non-null
+* Test marking of finalizer closure object in disclaim_test
+* Use AO_or in async_set_pht_entry_from_index if available
+
+
 == [8.0.0] 2018-09-05 ==
 
 * Accept Android platform by both CMake and configure
