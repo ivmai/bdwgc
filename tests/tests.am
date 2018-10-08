@@ -124,6 +124,13 @@ check_PROGRAMS += disclaim_bench
 disclaim_bench_SOURCES = tests/disclaim_bench.c
 disclaim_bench_LDADD = $(test_ldadd)
 
+if THREADS
+TESTS += disclaim_weakmap_test$(EXEEXT)
+check_PROGRAMS += disclaim_weakmap_test
+disclaim_weakmap_test_SOURCES = tests/disclaim_weakmap_test.c
+disclaim_weakmap_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
+endif
+
 endif
 
 # Run the tests directly (without test-driver):
@@ -138,6 +145,7 @@ check-without-test-driver: $(TESTS)
 	./staticrootstest$(EXEEXT)
 	test ! -f disclaim_bench$(EXEEXT) || ./disclaim_bench$(EXEEXT)
 	test ! -f disclaim_test$(EXEEXT) || ./disclaim_test$(EXEEXT)
+	test ! -f disclaim_weakmap_test$(EXEEXT) || ./disclaim_weakmap_test$(EXEEXT)
 	test ! -f initsecondarythread_test$(EXEEXT) \
 	  || ./initsecondarythread_test$(EXEEXT)
 	test ! -f test_atomic_ops$(EXEEXT) || ./test_atomic_ops$(EXEEXT)
