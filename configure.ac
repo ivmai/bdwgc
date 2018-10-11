@@ -402,6 +402,7 @@ if test "$GCC" = yes; then
   AS_IF([test "$ac_cv_cc_pedantic" = yes],
         [WPEDANTIC="-Wpedantic -Wno-long-long"])
   CFLAGS="-Wall $WEXTRA $WPEDANTIC $CFLAGS"
+  CXXFLAGS="-Wall $WEXTRA $WPEDANTIC $CXXFLAGS"
 fi
 
 AC_MSG_CHECKING(for xlc)
