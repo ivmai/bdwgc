@@ -276,6 +276,14 @@
 # endif
 #endif
 
+#ifndef GC_ATTR_CONST
+# if GC_GNUC_PREREQ(4, 0)
+#   define GC_ATTR_CONST __attribute__((__const__))
+# else
+#   define GC_ATTR_CONST /* empty */
+# endif
+#endif
+
 #ifndef GC_ATTR_DEPRECATED
 # ifdef GC_BUILD
 #   undef GC_ATTR_DEPRECATED
