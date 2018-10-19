@@ -557,7 +557,7 @@ The files pthread_stop_world.c, pthread_support.c and some others are also
 
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
 
-The file gc.h is also
+The file include/gc.h is also
 
  * Copyright (c) 2007 Free Software Foundation, Inc
 
@@ -565,11 +565,11 @@ The files Makefile.am and configure.ac are
 
  * Copyright (c) 2001 by Red Hat Inc. All rights reserved.
 
-The files msvc_dbg.c and msvc_dbg.h are
+The files extra/msvc_dbg.c and include/private/msvc_dbg.h are
 
  * Copyright (c) 2004-2005 Andrei Polushin
 
-The file initsecondarythread.c is
+The file tests/initsecondarythread.c is
 
  * Copyright (c) 2011 Ludovic Courtes
 
