@@ -581,6 +581,10 @@ The file tests/initsecondarythread.c is
 
  * Copyright (c) 2011 Ludovic Courtes
 
+The file tests/disclaim_weakmap_test.c is
+
+ * Copyright (c) 2018 Petter A. Urkedal
+
 Several files supporting GNU-style builds are copyrighted by the Free
 Software Foundation, and carry a different license from that given
 below.
