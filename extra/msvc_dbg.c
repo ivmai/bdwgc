@@ -75,7 +75,7 @@ static ULONG_ADDR CALLBACK GetModuleBase(HANDLE hProcess, ULONG_ADDR dwAddress)
 {
   MEMORY_BASIC_INFORMATION memoryInfo;
   ULONG_ADDR dwAddrBase = SymGetModuleBase(hProcess, dwAddress);
-  if (dwAddrBase) {
+  if (dwAddrBase != 0) {
     return dwAddrBase;
   }
   if (VirtualQueryEx(hProcess, (void*)(GC_ULONG_PTR)dwAddress, &memoryInfo,
