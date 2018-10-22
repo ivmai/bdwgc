@@ -655,6 +655,7 @@
                     /*             S390       ==> 390-like machine      */
                     /*                  running LINUX                   */
                     /*             AARCH64    ==> ARM AArch64           */
+                    /*                  (LP64 and ILP32 variants)       */
                     /*             ARM32      ==> Intel StrongARM       */
                     /*             IA64       ==> Intel IPF             */
                     /*                            (e.g. Itanium)        */
