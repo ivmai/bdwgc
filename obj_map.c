@@ -35,6 +35,7 @@ GC_API void GC_CALL GC_register_displacement(size_t offset)
 
 GC_INNER void GC_register_displacement_inner(size_t offset)
 {
+    GC_ASSERT(I_HOLD_LOCK());
     if (offset >= VALID_OFFSET_SZ) {
         ABORT("Bad argument to GC_register_displacement");
     }

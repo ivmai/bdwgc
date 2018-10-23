@@ -1340,6 +1340,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     word expansion_slop;        /* Number of bytes by which we expect the */
                                 /* heap to expand soon.                   */
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (n < MINHINCR) n = MINHINCR;
     bytes = ROUNDUP_PAGESIZE((size_t)n * HBLKSIZE);
     if (GC_max_heapsize != 0
@@ -1433,6 +1434,7 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
     word blocks_to_get;
     IF_CANCEL(int cancel_state;)
 
+    GC_ASSERT(I_HOLD_LOCK());
     DISABLE_CANCEL(cancel_state);
     if (!GC_incremental && !GC_dont_gc &&
         ((GC_dont_expand && GC_bytes_allocd > 0)
