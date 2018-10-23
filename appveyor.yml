@@ -5,6 +5,11 @@ environment:
   - TARGET: cmake
     CMAKE_CONFIG: Debug
     CMAKE_OPTIONS: -Denable_gc_assertions=ON
+  - TARGET: cygwin64
+    CONF_OPTIONS: --enable-cplusplus
+  - TARGET: cygwin64
+    CFLAGS_EXTRA: -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB
+    CONF_OPTIONS: --enable-cplusplus --enable-gc-assertions --disable-shared
   - TARGET: mingw
     CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic
   - TARGET: mingw
@@ -24,12 +29,16 @@ install:
 - cmd: echo CMAKE_CONFIG=%CMAKE_CONFIG%
 - cmd: echo CMAKE_OPTIONS=%CMAKE_OPTIONS%
 - cmd: echo CFLAGS_EXTRA=%CFLAGS_EXTRA%
+- cmd: echo CONF_OPTIONS=%CONF_OPTIONS%
 - cmd: git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
 
 build_script:
 - cmd: if [%TARGET%]==[cmake] (
     cmake %CMAKE_OPTIONS% &&
     cmake --build . --config %CMAKE_CONFIG% )
+- cmd: if [%TARGET%]==[cygwin64] (
+    C:\cygwin64\bin\bash -e -l -c
+      "cd /cygdrive/c/projects/bdwgc && ./autogen.sh && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
       "cd /c/projects/bdwgc && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
@@ -42,6 +51,9 @@ build_script:
 
 test_script:
 - cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
+- cmd: if [%TARGET%]==[cygwin64] (
+    C:\cygwin64\bin\bash -e -l -c
+      "cd /cygdrive/c/projects/bdwgc && make -j check CFLAGS_EXTRA='%CFLAGS_EXTRA%' && cat gctest.log" )
 - cmd: if [%TARGET%]==[mingw] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
       "cd /c/projects/bdwgc && make -j -f Makefile.direct check check-cpp CC=gcc CFLAGS_EXTRA='-DGC_NOT_DLL %CFLAGS_EXTRA%'" )
