@@ -5,6 +5,18 @@ environment:
   - TARGET: cmake
     CMAKE_CONFIG: Debug
     CMAKE_OPTIONS: -Denable_gc_assertions=ON
+  - TARGET: mingw
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic
+  - TARGET: mingw
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D EMPTY_GETENV_RESULTS -D GC_GCJ_SUPPORT -D USE_MUNMAP -D LARGE_CONFIG
+  - TARGET: mingw
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT
+  - TARGET: mingw-shared-no-make
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D GC_ASSERTIONS -DENABLE_DISCLAIM -D GC_GCJ_SUPPORT -D GC_CALL=__stdcall -D GC_CALLBACK=__fastcall
+  - TARGET: mingw-w64
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic
+  - TARGET: mingw-w64
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT
 
 clone_depth: 50
 
@@ -15,6 +27,24 @@ build_script:
 - cmd: if [%TARGET%]==[cmake] (
     cmake %CMAKE_OPTIONS% &&
     cmake --build . --config %CMAKE_CONFIG% )
+- cmd: if [%TARGET%]==[mingw] (
+    C:\MinGW\msys\1.0\bin\bash -e -l -c
+      "cd /c/projects/bdwgc && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[mingw-shared-no-make] (
+    C:\MinGW\msys\1.0\bin\bash -e -l -c
+      "cd /c/projects/bdwgc && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL %CFLAGS_EXTRA% -shared -o gc.dll extra/gc.c" )
+- cmd: if [%TARGET%]==[mingw-w64] (
+    C:\msys64\usr\bin\bash -e -l -c
+      "cd /c/projects/bdwgc && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 
 test_script:
 - cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
+- cmd: if [%TARGET%]==[mingw] (
+    C:\MinGW\msys\1.0\bin\bash -e -l -c
+      "cd /c/projects/bdwgc && make -j -f Makefile.direct check check-cpp CC=gcc CFLAGS_EXTRA='-DGC_NOT_DLL %CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[mingw-shared-no-make] (
+    C:\MinGW\msys\1.0\bin\bash -e -l -c
+      "cd /c/projects/bdwgc && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL %CFLAGS_EXTRA% -o gctest.exe tests/test.c gc.dll && gctest.exe && cat gctest.gc.log" )
+- cmd: if [%TARGET%]==[mingw-w64] (
+    C:\msys64\usr\bin\bash -e -l -c
+      "cd /c/projects/bdwgc && make -j -f Makefile.direct check check-cpp CC=gcc CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
