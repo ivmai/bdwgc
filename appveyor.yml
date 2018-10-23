@@ -1,11 +1,22 @@
 version: 8.1.0-{build}
 
+environment:
+  matrix:
+  - TARGET: cmake
+    CMAKE_CONFIG: Debug
+    CMAKE_OPTIONS: -Denable_gc_assertions=ON
+
 clone_depth: 50
 
+install:
+- cmd: echo CMAKE_CONFIG=%CMAKE_CONFIG%
+- cmd: echo CMAKE_OPTIONS=%CMAKE_OPTIONS%
+- cmd: git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
+
 build_script:
-  - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
-  - cmake -Denable_gc_assertions=ON
-  - cmake --build . --config Debug
+- cmd: if [%TARGET%]==[cmake] (
+    cmake %CMAKE_OPTIONS% &&
+    cmake --build . --config %CMAKE_CONFIG% )
 
 test_script:
-  - ctest --build-config Debug -V
+- cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
