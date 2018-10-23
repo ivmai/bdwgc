@@ -1301,6 +1301,9 @@ GC_API void GC_CALL GC_init(void)
           GC_set_max_heap_size(max_heap_sz);
         }
     }
+#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+        LOCK(); /* just to set GC_lock_holder */
+#   endif
     if (!GC_expand_hp_inner(divHBLKSZ(initial_heap_sz))) {
         GC_err_printf("Can't start up: not enough memory\n");
         EXIT();
@@ -1328,9 +1331,6 @@ GC_API void GC_CALL GC_init(void)
       GC_pcr_install();
 #   endif
     GC_is_initialized = TRUE;
-#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-        LOCK(); /* just to set GC_lock_holder */
-#   endif
 #   if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
         GC_thr_init();
 #       ifdef PARALLEL_MARK
