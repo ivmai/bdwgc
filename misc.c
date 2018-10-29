@@ -1659,7 +1659,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #       endif
       }
       res = WriteFile(GC_log, buf, (DWORD)len, &written, NULL);
-#     if defined(_MSC_VER) && defined(_DEBUG)
+#     if defined(_MSC_VER) && defined(_DEBUG) && !defined(NO_CRT)
 #         ifdef MSWINCE
               /* There is no CrtDbgReport() in WinCE */
               {

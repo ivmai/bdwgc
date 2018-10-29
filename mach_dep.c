@@ -298,6 +298,9 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
         /* force callee-save registers and register windows onto        */
         /* the stack.                                                   */
         __builtin_unwind_init();
+#     elif defined(NO_CRT) && defined(MSWIN32)
+        CONTEXT ctx;
+        RtlCaptureContext(&ctx);
 #     else
         /* Generic code                          */
         /* The idea is due to Parag Patel at HP. */
