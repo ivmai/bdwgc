@@ -236,6 +236,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
     while ((word)p <= (word)plim) {
         int marked = mark_bit_from_hdr(hhdr, bit_no);
         if (!marked && (*disclaim)(p)) {
+            set_mark_bit_from_hdr(hhdr, bit_no);
             hhdr -> hb_n_marks++;
             marked = 1;
         }
