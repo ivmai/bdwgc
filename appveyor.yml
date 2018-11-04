@@ -5,6 +5,10 @@ environment:
   - TARGET: cmake
     CMAKE_CONFIG: Debug
     CMAKE_OPTIONS: -Denable_gc_assertions=ON
+  - TARGET: cygwin
+    CONF_OPTIONS: --enable-cplusplus
+  - TARGET: cygwin
+    CONF_OPTIONS: --enable-cplusplus --disable-munmap --enable-gc-assertions
   - TARGET: cygwin64
     CONF_OPTIONS: --enable-cplusplus
   - TARGET: cygwin64
@@ -32,6 +36,9 @@ build_script:
 - cmd: if [%TARGET%]==[cmake] (
     cmake %CMAKE_OPTIONS% &&
     cmake --build . --config %CMAKE_CONFIG% )
+- cmd: if [%TARGET%]==[cygwin] (
+    C:\cygwin\bin\bash -e -l -c
+      "cd /cygdrive/c/projects/bdwgc && ./autogen.sh && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[cygwin64] (
     C:\cygwin64\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc && ./autogen.sh && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
@@ -47,6 +54,9 @@ build_script:
 
 test_script:
 - cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
+- cmd: if [%TARGET%]==[cygwin] (
+    C:\cygwin\bin\bash -e -l -c
+      "cd /cygdrive/c/projects/bdwgc && make -j check CFLAGS_EXTRA='%CFLAGS_EXTRA%' && cat gctest.log" )
 - cmd: if [%TARGET%]==[cygwin64] (
     C:\cygwin64\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc && make -j check CFLAGS_EXTRA='%CFLAGS_EXTRA%' && cat gctest.log" )
