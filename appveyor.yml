@@ -26,10 +26,6 @@ environment:
 clone_depth: 50
 
 install:
-- cmd: echo CMAKE_CONFIG=%CMAKE_CONFIG%
-- cmd: echo CMAKE_OPTIONS=%CMAKE_OPTIONS%
-- cmd: echo CFLAGS_EXTRA=%CFLAGS_EXTRA%
-- cmd: echo CONF_OPTIONS=%CONF_OPTIONS%
 - cmd: git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
 
 build_script:
