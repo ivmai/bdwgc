@@ -1029,7 +1029,10 @@ AS_IF([test x"$with_libatomic_ops" = xno \
 AC_MSG_CHECKING([which libatomic_ops to use])
 AS_IF([test x"$with_libatomic_ops" != xno],
   [ AS_IF([test x"$THREADS" != xnone],
-          [ AC_MSG_RESULT([external]) ], [ AC_MSG_RESULT([none]) ]) ],
+          [ AC_MSG_RESULT([external])
+            ATOMIC_OPS_LIBS="-latomic_ops"
+            AC_SUBST([ATOMIC_OPS_LIBS]) ],
+          [ AC_MSG_RESULT([none]) ]) ],
   [ AC_MSG_RESULT([internal])
     ATOMIC_OPS_CFLAGS='-I$(top_builddir)/libatomic_ops/src -I$(top_srcdir)/libatomic_ops/src'
     ATOMIC_OPS_LIBS=""
