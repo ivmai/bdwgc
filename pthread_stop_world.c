@@ -114,9 +114,12 @@ STATIC void GC_remove_allowed_signals(sigset_t *set)
 
 static sigset_t suspend_handler_mask;
 
+#define THREAD_RESTARTED 0x1
+
 STATIC volatile AO_t GC_stop_count = 0;
-                        /* Incremented by two at the beginning of       */
-                        /* GC_stop_world (the lowest bit is always 0).  */
+                        /* Incremented by two (not to alter             */
+                        /* THREAD_RESTARTED bit) at the beginning of    */
+                        /* GC_stop_world.                               */
 
 STATIC volatile AO_t GC_world_is_stopped = FALSE;
                         /* FALSE ==> it is safe for threads to restart, */
@@ -304,7 +307,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
 # ifdef DEBUG_THREADS
     GC_log_printf("Suspending %p\n", (void *)self);
 # endif
-  GC_ASSERT(((word)my_stop_count & 1) == 0);
+  GC_ASSERT(((word)my_stop_count & THREAD_RESTARTED) == 0);
 
   me = GC_lookup_thread_async(self);
 
@@ -321,7 +324,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
     }
 # endif
 
-  if (((word)me->stop_info.last_stop_count & ~(word)0x1)
+  if (((word)me->stop_info.last_stop_count & ~(word)THREAD_RESTARTED)
         == (word)my_stop_count) {
       /* Duplicate signal.  OK if we are retrying.      */
       if (!GC_retry_signals) {
@@ -383,10 +386,9 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
       if (GC_retry_signals)
 #   endif
     {
-      /* Set the flag (the lowest bit of last_stop_count) that the      */
-      /* thread has been restarted.                                     */
+      /* Set the flag that the thread has been restarted.       */
       AO_store_release(&me->stop_info.last_stop_count,
-                       (AO_t)((word)my_stop_count | 1));
+                       (AO_t)((word)my_stop_count | THREAD_RESTARTED));
     }
   }
   RESTORE_CANCEL(cancel_state);
@@ -896,7 +898,8 @@ GC_INNER void GC_stop_world(void)
 # if defined(GC_OPENBSD_UTHREADS) || defined(NACL)
     (void)GC_suspend_all();
 # else
-    AO_store(&GC_stop_count, (AO_t)((word)GC_stop_count + 2));
+    AO_store(&GC_stop_count,
+             (AO_t)((word)GC_stop_count + (THREAD_RESTARTED+1)));
         /* Only concurrent reads are possible. */
     if (GC_manual_vdb) {
       GC_acquire_dirty_lock();
@@ -1099,8 +1102,9 @@ GC_INNER void GC_stop_world(void)
 #           ifdef GC_ENABLE_SUSPEND_THREAD
               if (p -> suspended_ext) continue;
 #           endif
-            if (GC_retry_signals && AO_load(&p->stop_info.last_stop_count)
-                                    == (AO_t)((word)GC_stop_count | 1))
+            if (GC_retry_signals
+                && AO_load(&p->stop_info.last_stop_count)
+                    == (AO_t)((word)GC_stop_count | THREAD_RESTARTED))
               continue; /* The thread has been restarted. */
             n_live_threads++;
 #         endif
