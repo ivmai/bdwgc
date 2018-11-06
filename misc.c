@@ -2444,7 +2444,7 @@ GC_API int GC_CALL GC_get_all_interior_pointers(void)
 
 GC_API void GC_CALL GC_set_finalize_on_demand(int value)
 {
-    GC_ASSERT(value != -1);
+    GC_ASSERT(value != -1); /* -1 was used to retrieve old value in gc-7.2 */
     /* value is of boolean type. */
     GC_finalize_on_demand = value;
 }
@@ -2456,7 +2456,7 @@ GC_API int GC_CALL GC_get_finalize_on_demand(void)
 
 GC_API void GC_CALL GC_set_java_finalization(int value)
 {
-    GC_ASSERT(value != -1);
+    GC_ASSERT(value != -1); /* -1 was used to retrieve old value in gc-7.2 */
     /* value is of boolean type. */
     GC_java_finalization = value;
 }
@@ -2468,7 +2468,7 @@ GC_API int GC_CALL GC_get_java_finalization(void)
 
 GC_API void GC_CALL GC_set_dont_expand(int value)
 {
-    GC_ASSERT(value != -1);
+    GC_ASSERT(value != -1); /* -1 was used to retrieve old value in gc-7.2 */
     /* value is of boolean type. */
     GC_dont_expand = value;
 }
@@ -2480,7 +2480,7 @@ GC_API int GC_CALL GC_get_dont_expand(void)
 
 GC_API void GC_CALL GC_set_no_dls(int value)
 {
-    GC_ASSERT(value != -1);
+    GC_ASSERT(value != -1); /* -1 was used to retrieve old value in gc-7.2 */
     /* value is of boolean type. */
     GC_no_dls = value;
 }
@@ -2513,7 +2513,8 @@ GC_API GC_word GC_CALL GC_get_free_space_divisor(void)
 
 GC_API void GC_CALL GC_set_max_retries(GC_word value)
 {
-    GC_ASSERT(value != ~(word)0);
+    GC_ASSERT((GC_signed_word)value != -1);
+                        /* -1 was used to retrieve old value in gc-7.2 */
     GC_max_retries = value;
 }
 
@@ -2524,7 +2525,7 @@ GC_API GC_word GC_CALL GC_get_max_retries(void)
 
 GC_API void GC_CALL GC_set_dont_precollect(int value)
 {
-    GC_ASSERT(value != -1);
+    GC_ASSERT(value != -1); /* -1 was used to retrieve old value in gc-7.2 */
     /* value is of boolean type. */
     GC_dont_precollect = value;
 }
@@ -2547,7 +2548,8 @@ GC_API int GC_CALL GC_get_full_freq(void)
 
 GC_API void GC_CALL GC_set_time_limit(unsigned long value)
 {
-    GC_ASSERT(value != (unsigned long)-1L);
+    GC_ASSERT((long)value != -1L);
+                        /* -1 was used to retrieve old value in gc-7.2 */
     GC_time_limit = value;
 }
 
