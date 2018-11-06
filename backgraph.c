@@ -62,9 +62,9 @@ typedef struct back_edges_struct {
   signed_word height;
                 /* Longest path through unreachable nodes to this node  */
                 /* that we found using depth first search.              */
+# define HEIGHT_UNKNOWN      (-2)
+# define HEIGHT_IN_PROGRESS  (-1)
 
-#   define HEIGHT_UNKNOWN ((signed_word)(-2))
-#   define HEIGHT_IN_PROGRESS ((signed_word)(-1))
   ptr_t edges[MAX_IN];
   struct back_edges_struct *cont;
                 /* Pointer to continuation structure; we use only the   */
