@@ -312,6 +312,7 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   char*const end = buffer + size;
   size_t line_number = 0;
 
+  (void)format;
   if (size) {
     *buffer = 0;
   }
@@ -356,11 +357,11 @@ size_t GetDescriptionFromStack(void* const frames[], size_t count,
   const GC_ULONG_PTR end = begin + size;
   GC_ULONG_PTR buffer = begin + (count + 1) * sizeof(char*);
   size_t i;
-  (void)format;
+
   for (i = 0; i < count; ++i) {
     if (description)
       description[i] = (char*)buffer;
-    buffer += 1 + GetDescriptionFromAddress(frames[i], NULL, (char*)buffer,
+    buffer += 1 + GetDescriptionFromAddress(frames[i], format, (char*)buffer,
                                             end < buffer ? 0 : end - buffer);
   }
   if (description)
