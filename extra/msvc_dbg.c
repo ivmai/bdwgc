@@ -352,18 +352,18 @@ size_t GetDescriptionFromStack(void* const frames[], size_t count,
                                const char* format, char* description[],
                                size_t size)
 {
-  char*const begin = (char*)description;
-  char*const end = begin + size;
-  char* buffer = begin + (count + 1) * sizeof(char*);
+  const GC_ULONG_PTR begin = (GC_ULONG_PTR)description;
+  const GC_ULONG_PTR end = begin + size;
+  GC_ULONG_PTR buffer = begin + (count + 1) * sizeof(char*);
   size_t i;
   (void)format;
   for (i = 0; i < count; ++i) {
-    if (size)
-      description[i] = buffer;
-    size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
-    buffer += 1 + GetDescriptionFromAddress(frames[i], NULL, buffer, size);
+    if (description)
+      description[i] = (char*)buffer;
+    buffer += 1 + GetDescriptionFromAddress(frames[i], NULL, (char*)buffer,
+                                            end < buffer ? 0 : end - buffer);
   }
-  if (size)
+  if (description)
     description[count] = NULL;
   return buffer - begin;
 }
