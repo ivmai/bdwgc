@@ -1029,7 +1029,7 @@ GC_INNER size_t GC_page_size = 0;
 
     ptr_t GC_find_limit(ptr_t p, GC_bool up)
     {
-        return GC_find_limit_with_bound(p, up, up ? (ptr_t)(word)(-1) : 0);
+        return GC_find_limit_with_bound(p, up, up ? (ptr_t)GC_WORD_MAX : 0);
     }
 # endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES */
 
@@ -4039,7 +4039,7 @@ STATIC void *GC_mprotect_thread(void *arg)
   } msg;
   mach_msg_id_t id;
 
-  if ((word)arg == (word)-1) return 0; /* to make compiler happy */
+  if ((word)arg == GC_WORD_MAX) return 0; /* to prevent a compiler warning */
 # if defined(CPPCHECK)
     reply.data[0] = 0; /* to prevent "field unused" warnings */
     msg.data[0] = 0;

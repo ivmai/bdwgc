@@ -619,10 +619,10 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
   } else {
       ptr_t datastart, dataend;
 #     ifdef DATASTART_IS_FUNC
-        static ptr_t datastart_cached = (ptr_t)(word)-1;
+        static ptr_t datastart_cached = (ptr_t)GC_WORD_MAX;
 
         /* Evaluate DATASTART only once.  */
-        if (datastart_cached == (ptr_t)(word)-1) {
+        if (datastart_cached == (ptr_t)GC_WORD_MAX) {
           datastart_cached = DATASTART;
         }
         datastart = datastart_cached;

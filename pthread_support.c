@@ -340,7 +340,7 @@ STATIC void * GC_mark_thread(void * id)
   word my_mark_no = 0;
   IF_CANCEL(int cancel_state;)
 
-  if ((word)id == (word)-1) return 0; /* to make compiler happy */
+  if ((word)id == GC_WORD_MAX) return 0; /* to prevent a compiler warning */
   DISABLE_CANCEL(cancel_state);
                          /* Mark threads are not cancellable; they      */
                          /* should be invisible to client.              */
