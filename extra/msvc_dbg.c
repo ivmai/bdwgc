@@ -332,7 +332,7 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   if (size) {
     strncpy(buffer, "at ", size)[size - 1] = 0;
   }
-  buffer += strlen("at ");
+  buffer += sizeof("at ") - 1;
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   buffer += GetSymbolNameFromAddress(address, buffer, size, NULL);
@@ -341,7 +341,7 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   if (size) {
     strncpy(buffer, " in ", size)[size - 1] = 0;
   }
-  buffer += strlen(" in ");
+  buffer += sizeof(" in ") - 1;
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   buffer += GetModuleNameFromAddress(address, buffer, size);
