@@ -349,7 +349,7 @@ STATIC void GC_clear_a_few_frames(void)
 
 /* Heap size at which we need a collection to avoid expanding past      */
 /* limits used by blacklisting.                                         */
-STATIC word GC_collect_at_heapsize = (word)(-1);
+STATIC word GC_collect_at_heapsize = GC_WORD_MAX;
 
 /* Have we allocated enough to amortize a collection? */
 GC_INNER GC_bool GC_should_collect(void)
@@ -984,7 +984,7 @@ GC_INLINE int GC_compute_heap_usage_percent(void)
 {
   word used = GC_composite_in_use + GC_atomic_in_use;
   word heap_sz = GC_heapsize - GC_unmapped_bytes;
-  return used >= heap_sz ? 0 : used < ((word)-1) / 100 ?
+  return used >= heap_sz ? 0 : used < GC_WORD_MAX / 100 ?
                 (int)((used * 100) / heap_sz) : (int)(used / (heap_sz / 100));
 }
 
@@ -1267,7 +1267,7 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
      */
     GC_collect_at_heapsize += bytes;
     if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
-       GC_collect_at_heapsize = (word)(-1);
+       GC_collect_at_heapsize = GC_WORD_MAX;
 
     if ((word)p <= (word)GC_least_plausible_heap_addr
         || GC_least_plausible_heap_addr == 0) {
@@ -1307,7 +1307,7 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
   }
 #endif
 
-void * GC_least_plausible_heap_addr = (void *)ONES;
+void * GC_least_plausible_heap_addr = (void *)GC_WORD_MAX;
 void * GC_greatest_plausible_heap_addr = 0;
 
 GC_INLINE word GC_max(word x, word y)
@@ -1389,7 +1389,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
       GC_collect_at_heapsize =
          GC_heapsize + expansion_slop - 2*MAXHINCR*HBLKSIZE;
       if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
-         GC_collect_at_heapsize = (word)(-1);
+         GC_collect_at_heapsize = GC_WORD_MAX;
     if (GC_on_heap_resize)
       (*GC_on_heap_resize)(GC_heapsize);
 
@@ -1419,8 +1419,6 @@ GC_INNER unsigned GC_fail_count = 0;
 
 static word last_fo_entries = 0;
 static word last_bytes_finalized = 0;
-
-#define GC_WORD_MAX (~(word)0)
 
 /* Collect or expand heap in an attempt make the indicated number of    */
 /* free blocks available.  Should be called until the blocks are        */

@@ -168,7 +168,7 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 
 STATIC DWORD GC_main_thread = 0;
 
-#define ADDR_LIMIT ((ptr_t)(word)-1)
+#define ADDR_LIMIT ((ptr_t)GC_WORD_MAX)
 
 struct GC_Thread_Rep {
   union {
@@ -1744,7 +1744,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
   {
     word my_mark_no = 0;
 
-    if ((word)id == (word)-1) return 0; /* to make compiler happy */
+    if ((word)id == GC_WORD_MAX) return 0; /* to prevent a compiler warning */
     marker_sp[(word)id] = GC_approx_sp();
 #   ifdef IA64
       marker_bsp[(word)id] = GC_save_regs_in_stack();

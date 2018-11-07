@@ -283,17 +283,19 @@ GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz/* bytes */)
     struct hblk * hbp;
 
     for (hbp = h; (word)hbp < (word)h + sz; hbp += BOTTOM_SZ) {
-        if (!get_index((word) hbp)) return(FALSE);
-        if ((word)hbp > (~(word)0) - (word)BOTTOM_SZ * HBLKSIZE)
+        if (!get_index((word)hbp))
+            return FALSE;
+        if ((word)hbp > GC_WORD_MAX - (word)BOTTOM_SZ * HBLKSIZE)
             break; /* overflow of hbp+=BOTTOM_SZ is expected */
     }
-    if (!get_index((word)h + sz - 1)) return(FALSE);
+    if (!get_index((word)h + sz - 1))
+        return FALSE;
     for (hbp = h + 1; (word)hbp < (word)h + sz; hbp += 1) {
         word i = HBLK_PTR_DIFF(hbp, h);
 
         SET_HDR(hbp, (hdr *)(i > MAX_JUMP? MAX_JUMP : i));
     }
-    return(TRUE);
+    return TRUE;
 }
 
 /* Remove the header for block h */

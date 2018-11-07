@@ -263,13 +263,13 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include "gc_locks.h"
 #endif
 
-#define ONES ((word)(signed_word)(-1))
+#define GC_WORD_MAX (~(word)0)
 
 # ifdef STACK_GROWS_DOWN
 #   define COOLER_THAN >
 #   define HOTTER_THAN <
 #   define MAKE_COOLER(x,y) if ((word)((x) + (y)) > (word)(x)) {(x) += (y);} \
-                            else (x) = (ptr_t)ONES
+                            else (x) = (ptr_t)GC_WORD_MAX
 #   define MAKE_HOTTER(x,y) (x) -= (y)
 # else
 #   define COOLER_THAN <

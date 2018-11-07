@@ -1326,7 +1326,7 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
 #       ifdef KEEP_BACK_PTRS
           long i;
           /* Stops when GC_gc_no wraps; that's OK.      */
-          last_back_trace_gc_no = (word)(-1);  /* disable others. */
+          last_back_trace_gc_no = GC_WORD_MAX;  /* disable others. */
           for (i = 0; i < GC_backtraces; ++i) {
               /* FIXME: This tolerates concurrent heap mutation,        */
               /* which may cause occasional mysterious results.         */

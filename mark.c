@@ -161,7 +161,7 @@ GC_INNER void GC_set_hdr_marks(hdr *hhdr)
       }
 #   else
       for (i = 0; i < divWORDSZ(n_marks + WORDSZ); ++i) {
-        hhdr -> hb_marks[i] = ONES;
+        hhdr -> hb_marks[i] = GC_WORD_MAX;
       }
 #   endif
 #   ifdef MARK_BIT_PER_OBJ
