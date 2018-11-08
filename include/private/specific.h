@@ -12,6 +12,9 @@
  * by adding a lock.
  */
 
+#ifndef GC_SPECIFIC_H
+#define GC_SPECIFIC_H
+
 #include <errno.h>
 #include "atomic_ops.h"
 
@@ -98,3 +101,5 @@ GC_INLINE void * GC_getspecific(tsd * key)
     }
     return GC_slow_getspecific(key, qtid, entry_ptr);
 }
+
+#endif /* GC_SPECIFIC_H */
