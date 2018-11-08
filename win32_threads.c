@@ -1022,12 +1022,14 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     STATIC void GC_remove_all_threads_but_me(void)
     {
       int hv;
-      GC_thread p, next, me = NULL;
+      GC_thread me = NULL;
       DWORD thread_id;
       pthread_t pthread_id = pthread_self(); /* same as in parent */
 
       GC_ASSERT(!GC_win32_dll_threads);
       for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
+        GC_thread p, next;
+
         for (p = GC_threads[hv]; 0 != p; p = next) {
           next = p -> tm.next;
           if (THREAD_EQUAL(p -> pthread_id, pthread_id)

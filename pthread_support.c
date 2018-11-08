@@ -746,10 +746,11 @@ STATIC void GC_remove_all_threads_but_me(void)
 {
     pthread_t self = pthread_self();
     int hv;
-    GC_thread p, next, me;
 
     for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
-      me = 0;
+      GC_thread p, next;
+      GC_thread me = NULL;
+
       for (p = GC_threads[hv]; 0 != p; p = next) {
         next = p -> next;
         if (THREAD_EQUAL(p -> id, self)
