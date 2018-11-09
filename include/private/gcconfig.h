@@ -1331,7 +1331,9 @@ EXTERN_C_BEGIN
 #       endif
         extern char etext[];
         extern char edata[];
-        extern char end[];
+#       if !defined(CPPCHECK)
+          extern char end[];
+#       endif
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
         ptr_t GC_find_limit(ptr_t, GC_bool);
@@ -1657,11 +1659,9 @@ EXTERN_C_BEGIN
 #       include <sys/unistd.h>
         EXTERN_C_BEGIN
         extern int etext[];
-        extern int end[];
         void *rtems_get_stack_bottom(void);
 #       define InitStackBottom rtems_get_stack_bottom()
 #       define DATASTART ((ptr_t)etext)
-#       define DATAEND ((ptr_t)end)
 #       define STACKBOTTOM ((ptr_t)InitStackBottom)
 #       define SIG_SUSPEND SIGUSR1
 #       define SIG_THR_RESTART SIGUSR2
@@ -1757,27 +1757,30 @@ EXTERN_C_BEGIN
 #     endif
 #   endif /* Linux */
 #   ifdef EWS4800
-#      define HEURISTIC2
-#      if defined(_MIPS_SZPTR) && (_MIPS_SZPTR == 64)
-         extern int _fdata[], _end[];
-#        define DATASTART ((ptr_t)_fdata)
-#        define DATAEND ((ptr_t)_end)
-#        define CPP_WORDSZ _MIPS_SZPTR
-#        define ALIGNMENT (_MIPS_SZPTR/8)
-#      else
-         extern int etext[], edata[], end[];
-         extern int _DYNAMIC_LINKING[], _gp[];
-#        define DATASTART ((ptr_t)((((word)(etext) + 0x3ffff) & ~0x3ffff) \
-                                   + ((word)(etext) & 0xffff)))
-#        define DATAEND ((ptr_t)(edata))
-#        define GC_HAVE_DATAREGION2
-#        define DATASTART2 (_DYNAMIC_LINKING \
-               ? (ptr_t)(((word)_gp + 0x8000 + 0x3ffff) & ~0x3ffff) \
-               : (ptr_t)edata)
-#        define DATAEND2 ((ptr_t)(end))
-#        define ALIGNMENT 4
-#      endif
-#      define OS_TYPE "EWS4800"
+#     define HEURISTIC2
+#     if defined(_MIPS_SZPTR) && (_MIPS_SZPTR == 64)
+        extern int _fdata[], _end[];
+#       define DATASTART ((ptr_t)_fdata)
+#       define DATAEND ((ptr_t)_end)
+#       define CPP_WORDSZ _MIPS_SZPTR
+#       define ALIGNMENT (_MIPS_SZPTR/8)
+#     else
+        extern int etext[], edata[];
+#       if !defined(CPPCHECK)
+          extern int end[];
+#       endif
+        extern int _DYNAMIC_LINKING[], _gp[];
+#       define DATASTART ((ptr_t)((((word)(etext) + 0x3ffff) & ~0x3ffff) \
+                                  + ((word)(etext) & 0xffff)))
+#       define DATAEND ((ptr_t)(edata))
+#       define GC_HAVE_DATAREGION2
+#       define DATASTART2 (_DYNAMIC_LINKING \
+                ? (ptr_t)(((word)_gp + 0x8000 + 0x3ffff) & ~0x3ffff) \
+                : (ptr_t)edata)
+#       define DATAEND2 ((ptr_t)(end))
+#       define ALIGNMENT 4
+#     endif
+#     define OS_TYPE "EWS4800"
 #   endif
 #   ifdef ULTRIX
 #       define HEURISTIC2
@@ -2036,7 +2039,9 @@ EXTERN_C_BEGIN
 /* Handle unmapped hole alpha*-*-freebsd[45]* puts between etext and edata. */
         extern char etext[];
         extern char edata[];
-        extern char end[];
+#       if !defined(CPPCHECK)
+          extern char end[];
+#       endif
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
         ptr_t GC_find_limit(ptr_t, GC_bool);
@@ -2928,7 +2933,9 @@ EXTERN_C_BEGIN
 #endif
 
 #ifndef DATAEND
-  extern int end[];
+# if !defined(CPPCHECK)
+    extern int end[];
+# endif
 # define DATAEND ((ptr_t)(end))
 #endif
 
