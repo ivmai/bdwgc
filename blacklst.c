@@ -175,8 +175,7 @@ GC_INNER void GC_unpromote_black_lists(void)
     GC_copy_bl(GC_old_stack_bl, GC_incomplete_stack_bl);
 }
 
-#if defined(set_pht_entry_from_index_concurrent) && defined(PARALLEL_MARK) \
-    && defined(THREAD_SANITIZER)
+#if defined(PARALLEL_MARK) && defined(THREAD_SANITIZER)
 # define backlist_set_pht_entry_from_index(db, index) \
                         set_pht_entry_from_index_concurrent(db, index)
 #else
