@@ -1274,8 +1274,8 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "LINUX"
 #     ifdef __ELF__
 #       define DYNAMIC_LOADING
-#     else
-#       error --> Linux SPARC a.out not supported
+#     elif !defined(CPPCHECK)
+#       error Linux SPARC a.out not supported
 #     endif
       extern int _end[];
       extern int _etext[];
@@ -1347,7 +1347,7 @@ EXTERN_C_BEGIN
 
 # ifdef I386
 #   define MACH_TYPE "I386"
-#   if defined(__LP64__) || defined(_WIN64)
+#   if (defined(__LP64__) || defined(_WIN64)) && !defined(CPPCHECK)
 #     error This should be handled as X86_64
 #   else
 #     define CPP_WORDSZ 32
@@ -2099,8 +2099,8 @@ EXTERN_C_BEGIN
             /* Requires 8 byte alignment for malloc */
 #         define ALIGNMENT 4
 #       else
-#         ifndef _LP64
-#           error --> unknown ABI
+#         if !defined(_LP64) && !defined(CPPCHECK)
+#           error Unknown ABI
 #         endif
 #         define CPP_WORDSZ 64
             /* Requires 16 byte alignment for malloc */
@@ -3043,10 +3043,8 @@ EXTERN_C_BEGIN
 #if defined(CPPCHECK)
 # undef CPP_WORDSZ
 # define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
-#endif
-
-#if CPP_WORDSZ != 32 && CPP_WORDSZ != 64
-# error --> bad word size
+#elif CPP_WORDSZ != 32 && CPP_WORDSZ != 64
+# error Bad word size
 #endif
 
 #if !defined(ALIGNMENT) && !defined(CPPCHECK)
