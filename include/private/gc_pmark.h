@@ -320,7 +320,8 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
           if ((low_prod >> 16) != 0)
 #       endif /* MARK_BIT_PER_OBJ */
         {
-#         ifdef MARK_BIT_PER_OBJ
+#         if defined(MARK_BIT_PER_OBJ) \
+             && !defined(MARK_BIT_PER_GRANULE) /* for cppcheck */
             size_t obj_displ;
 
             /* Accurate enough if HBLKSIZE <= 2**15.    */
