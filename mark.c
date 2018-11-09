@@ -526,7 +526,7 @@ static void alloc_mark_stack(size_t);
 #       endif
         er.alt_path = &&handle_ex;
 #       pragma GCC diagnostic pop
-#     else /* pragma diagnostic is not supported */
+#     elif !defined(CPPCHECK) /* pragma diagnostic is not supported */
         er.alt_path = &&handle_ex;
 #     endif
       er.ex_reg.handler = mark_ex_handler;
