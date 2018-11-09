@@ -1449,7 +1449,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       PUSH4(IntT10,IntT11,IntT12,IntAt);
       sp = (ptr_t)context.IntSp;
 #   elif !defined(CPPCHECK)
-#     error "architecture is not supported"
+#     error Architecture is not supported
 #   endif
   } /* ! current thread */
 

@@ -171,7 +171,7 @@ EXTERN_C_BEGIN
 #    error SUNOS4 no longer supported
 # endif
 # if defined(hp9000s300) && !defined(CPPCHECK)
-#    error M68K based HP machines no longer supported.
+#    error M68K based HP machines no longer supported
 # endif
 # if defined(OPENBSD) && defined(m68k)
 #    define M68K
@@ -276,7 +276,7 @@ EXTERN_C_BEGIN
 #    define mach_type_known
 # endif
 # if defined(ibm032) && !defined(CPPCHECK)
-#   error IBM PC/RT no longer supported.
+#   error IBM PC/RT no longer supported
 # endif
 # if (defined(sun) || defined(__sun)) && (defined(sparc) || defined(__sparc))
             /* Test for SunOS 5.x */
@@ -695,7 +695,7 @@ EXTERN_C_BEGIN
 /* SYSV on an M68K actually means A/UX.                                 */
 /* The distinction in these cases is usually the stack starting address */
 # if !defined(mach_type_known) && !defined(CPPCHECK)
-#   error "The collector has not been ported to this machine/OS combination."
+#   error The collector has not been ported to this machine/OS combination
 # endif
                     /* Mapping is: M68K       ==> Motorola 680X0        */
                     /*             (NEXT, and SYSV (A/UX),              */
@@ -2813,15 +2813,15 @@ EXTERN_C_BEGIN
 #           if defined(__GLIBC__) && __GLIBC__ >= 2
 #               define SEARCH_FOR_DATA_START
 #           else
-#               error --> unknown Hexagon libc configuration
+#               error Unknown Hexagon libc configuration
 #           endif
             extern int _end[];
 #           define DATAEND ((ptr_t)(_end))
 #       elif !defined(CPPCHECK)
-#           error --> bad Hexagon Linux configuration
+#           error Bad Hexagon Linux configuration
 #       endif
 #   else
-#       error --> unknown Hexagon OS configuration
+#       error Unknown Hexagon OS configuration
 #   endif
 # endif
 
@@ -3044,11 +3044,11 @@ EXTERN_C_BEGIN
 # undef CPP_WORDSZ
 # define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
 #elif CPP_WORDSZ != 32 && CPP_WORDSZ != 64
-# error Bad word size
+#   error Bad word size
 #endif
 
 #if !defined(ALIGNMENT) && !defined(CPPCHECK)
-# error --> undefined ALIGNMENT
+# error Undefined ALIGNMENT
 #endif
 
 #ifdef PCR
@@ -3063,7 +3063,7 @@ EXTERN_C_BEGIN
 
 #if !defined(STACKBOTTOM) && (defined(ECOS) || defined(NOSYS)) \
     && !defined(CPPCHECK)
-# error --> undefined STACKBOTTOM
+# error Undefined STACKBOTTOM
 #endif
 
 #ifdef IGNORE_DYNAMIC_LOADING
@@ -3229,33 +3229,33 @@ EXTERN_C_BEGIN
 #endif
 
 #if !defined(CPPCHECK)
-#if defined(GC_IRIX_THREADS) && !defined(IRIX5)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_LINUX_THREADS) && !defined(LINUX) && !defined(NACL)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_NETBSD_THREADS) && !defined(NETBSD)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_FREEBSD_THREADS) && !defined(FREEBSD)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_SOLARIS_THREADS) && !defined(SOLARIS)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_HPUX_THREADS) && !defined(HPUX)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_AIX_THREADS) && !defined(_AIX)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_WIN32_THREADS) && !defined(CYGWIN32) && !defined(MSWIN32) \
-    && !defined(MSWINCE) && !defined(MSWIN_XBOX1)
-# error --> inconsistent configuration
-#endif
+# if defined(GC_IRIX_THREADS) && !defined(IRIX5)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_LINUX_THREADS) && !defined(LINUX) && !defined(NACL)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_NETBSD_THREADS) && !defined(NETBSD)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_FREEBSD_THREADS) && !defined(FREEBSD)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_SOLARIS_THREADS) && !defined(SOLARIS)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_HPUX_THREADS) && !defined(HPUX)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_AIX_THREADS) && !defined(_AIX)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_WIN32_THREADS) && !defined(CYGWIN32) && !defined(MSWIN32) \
+     && !defined(MSWINCE) && !defined(MSWIN_XBOX1)
+#   error Inconsistent configuration
+# endif
 # if defined(GC_WIN32_PTHREADS) && defined(CYGWIN32)
-#   error --> inconsistent configuration
+#   error Inconsistent configuration
 # endif
 #endif /* !CPPCHECK */
 
@@ -3267,7 +3267,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(PARALLEL_MARK) && !defined(THREADS) && !defined(CPPCHECK)
-# error "invalid config - PARALLEL_MARK requires GC_THREADS"
+# error Invalid config: PARALLEL_MARK requires GC_THREADS
 #endif
 
 #if (((defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__)) \
@@ -3504,21 +3504,19 @@ EXTERN_C_BEGIN
 
 /* Some static sanity tests.    */
 #if !defined(CPPCHECK)
-#if defined(MARK_BIT_PER_GRANULE) && defined(MARK_BIT_PER_OBJ)
-# error Define only one of MARK_BIT_PER_GRANULE and MARK_BIT_PER_OBJ.
-#endif
-
-#if defined(STACK_GROWS_UP) && defined(STACK_GROWS_DOWN)
-# error "Only one of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd."
-#endif
-#if !defined(STACK_GROWS_UP) && !defined(STACK_GROWS_DOWN)
-# error "One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd."
-#endif
-
-#if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \
+# if defined(MARK_BIT_PER_GRANULE) && defined(MARK_BIT_PER_OBJ)
+#   error Define only one of MARK_BIT_PER_GRANULE and MARK_BIT_PER_OBJ
+# endif
+# if defined(STACK_GROWS_UP) && defined(STACK_GROWS_DOWN)
+#   error Only one of STACK_GROWS_UP and STACK_GROWS_DOWN should be defined
+# endif
+# if !defined(STACK_GROWS_UP) && !defined(STACK_GROWS_DOWN)
+#   error One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defined
+# endif
+# if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \
      && !defined(REDIRECT_MALLOC_IN_HEADER)
-# error "REDIRECT_MALLOC with THREADS works at most on Linux."
-#endif
+#   error REDIRECT_MALLOC with THREADS works at most on Linux
+# endif
 #endif /* !CPPCHECK */
 
 #ifdef GC_PRIVATE_H
