@@ -1937,7 +1937,7 @@ void GC_register_data_segments(void)
     word next_page = ((text_end + (word)max_page_size - 1)
                       & ~((word)max_page_size - 1));
     word page_offset = (text_end & ((word)max_page_size - 1));
-    char * volatile result = (char *)(next_page + page_offset);
+    volatile ptr_t result = (char *)(next_page + page_offset);
     /* Note that this isn't equivalent to just adding           */
     /* max_page_size to &etext if &etext is at a page boundary  */
 
@@ -1965,7 +1965,7 @@ void GC_register_data_segments(void)
         /* text and data segments, so plan A brought us something.      */
         result = (char *)GC_find_limit(DATAEND, FALSE);
     }
-    return((ptr_t)result);
+    return (/* no volatile */ ptr_t)result;
   }
 # endif
 
