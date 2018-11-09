@@ -918,6 +918,9 @@ typedef word page_hash_table[PHT_SIZE];
 # define set_pht_entry_from_index_concurrent(bl, index) \
                 AO_or((volatile AO_t *)&(bl)[divWORDSZ(index)], \
                       (AO_t)((word)1 << modWORDSZ(index)))
+#else
+# define set_pht_entry_from_index_concurrent(bl, index) \
+                set_pht_entry_from_index(bl, index)
 #endif
 
 
@@ -2299,7 +2302,7 @@ GC_EXTERN signed_word GC_bytes_found;
 #   endif
 # endif
 # if (!defined(MANUAL_VDB) && !defined(MPROTECT_VDB)) \
-     || defined(set_pht_entry_from_index_concurrent)
+     || defined(AO_HAVE_or)
 #   define GC_acquire_dirty_lock() (void)0
 #   define GC_release_dirty_lock() (void)0
 # else

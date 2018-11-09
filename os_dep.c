@@ -2962,10 +2962,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #endif /* DEFAULT_VDB */
 
 #if defined(MANUAL_VDB) || defined(MPROTECT_VDB)
-# ifndef THREADS
-#   define async_set_pht_entry_from_index(db, index) \
-                        set_pht_entry_from_index(db, index)
-# elif defined(set_pht_entry_from_index_concurrent)
+# if !defined(THREADS) || defined(AO_HAVE_or)
 #   define async_set_pht_entry_from_index(db, index) \
                         set_pht_entry_from_index_concurrent(db, index)
 # elif defined(AO_HAVE_test_and_set_acquire)
