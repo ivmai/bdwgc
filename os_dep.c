@@ -71,7 +71,7 @@
 
 #if defined(MMAP_SUPPORTED) || defined(ADD_HEAP_GUARD_PAGES)
 # if defined(USE_MUNMAP) && !defined(USE_MMAP) && !defined(CPPCHECK)
-#   error "invalid config - USE_MUNMAP requires USE_MMAP"
+#   error Invalid config: USE_MUNMAP requires USE_MMAP
 # endif
 # include <sys/types.h>
 # include <sys/mman.h>
