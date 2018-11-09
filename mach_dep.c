@@ -228,7 +228,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
                                           volatile ptr_t arg)
 {
   volatile int dummy;
-  void * volatile context = 0;
+  volatile ptr_t context = 0;
 
 # if defined(HAVE_PUSH_REGS)
     GC_push_regs();
@@ -263,7 +263,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
           /* getcontext() is broken, do not try again.          */
           /* E.g., to workaround a bug in Docker ubuntu_32bit.  */
         } else {
-          context = &ctxt;
+          context = (ptr_t)&ctxt;
         }
         if (EXPECT(0 == getcontext_works, FALSE))
           getcontext_works = context != NULL ? 1 : -1;
@@ -330,7 +330,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 # endif /* !HAVE_PUSH_REGS */
   /* TODO: context here is sometimes just zero.  At the moment, the     */
   /* callees don't really need it.                                      */
-  fn(arg, context);
+  fn(arg, (/* no volatile */ void *)context);
   /* Strongly discourage the compiler from treating the above   */
   /* as a tail-call, since that would pop the register          */
   /* contents before we get a chance to look at them.           */
