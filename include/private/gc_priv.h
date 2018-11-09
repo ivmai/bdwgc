@@ -860,8 +860,8 @@ EXTERN_C_BEGIN
 #   define CPP_LOG_HBLKSIZE 13
 # elif HBLKSIZE == 16384
 #   define CPP_LOG_HBLKSIZE 14
-# else
-#   error fix HBLKSIZE
+# elif !defined(CPPCHECK)
+#   error Bad HBLKSIZE value
 # endif
 # undef HBLKSIZE
 #endif

@@ -15,7 +15,7 @@
 #ifndef GC_HEADERS_H
 #define GC_HEADERS_H
 
-#if CPP_WORDSZ != 32 && CPP_WORDSZ < 36
+#if CPP_WORDSZ != 32 && CPP_WORDSZ < 36 && !defined(CPPCHECK)
 # error Get a real machine
 #endif
 
