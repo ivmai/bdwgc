@@ -84,6 +84,7 @@ class A {public:
     GC_ATTR_EXPLICIT A( int iArg ): i( iArg ) {}
     void Test( int iArg ) {
         my_assert( i == iArg );}
+    virtual ~A() {}
     int i;};
 
 
