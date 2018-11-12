@@ -1031,7 +1031,7 @@ GC_API void GC_CALL GC_init(void)
             if (0 != file_name)
 #         endif
           {
-            int log_d = open(file_name, O_CREAT|O_WRONLY|O_APPEND, 0666);
+            int log_d = open(file_name, O_CREAT | O_WRONLY | O_APPEND, 0644);
             if (log_d < 0) {
               GC_err_printf("Failed to open %s as log file\n", file_name);
             } else {
