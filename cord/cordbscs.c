@@ -170,7 +170,13 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
             char * result = (char *)GC_MALLOC_ATOMIC(result_len + 1);
 
             if (result == 0) OUT_OF_MEMORY;
-            memcpy(result, x, lenx);
+#           ifdef LINT2
+                memcpy(result, x, lenx + 1);
+#           else
+                memcpy(result, x, lenx);
+                                /* No need to copy the terminating zero */
+                                /* as result[lenx] is written below.    */
+#           endif
             memcpy(result + lenx, y, leny);
             result[result_len] = '\0';
             return((CORD) result);
