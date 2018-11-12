@@ -545,7 +545,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
     pstats->non_gc_bytes = GC_non_gc_bytes;
     pstats->gc_no = GC_gc_no; /* could be -1 */
 #   ifdef PARALLEL_MARK
-      pstats->markers_m1 = (word)GC_markers_m1;
+      pstats->markers_m1 = (word)((signed_word)GC_markers_m1);
 #   else
       pstats->markers_m1 = 0; /* one marker */
 #   endif
@@ -1154,7 +1154,7 @@ GC_API void GC_CALL GC_init(void)
         if (space_divisor_string != NULL) {
           int space_divisor = atoi(space_divisor_string);
           if (space_divisor > 0)
-            GC_free_space_divisor = (word)space_divisor;
+            GC_free_space_divisor = (unsigned)space_divisor;
         }
     }
 #   ifdef USE_MUNMAP
@@ -1753,7 +1753,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
       IF_CANCEL(int cancel_state;)
 
       DISABLE_CANCEL(cancel_state);
-      while ((size_t)bytes_written < len) {
+      while ((unsigned)bytes_written < len) {
 #        ifdef GC_SOLARIS_THREADS
              int result = syscall(SYS_write, fd, buf + bytes_written,
                                              len - bytes_written);

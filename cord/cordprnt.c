@@ -241,18 +241,18 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         if (prec == VARIABLE) prec = va_arg(args, int);
                         arg = va_arg(args, CORD);
                         len = CORD_len(arg);
-                        if (prec != NONE && len > (size_t)prec) {
+                        if (prec != NONE && len > (unsigned)prec) {
                           if (prec < 0) return(-1);
-                          arg = CORD_substr(arg, 0, prec);
+                          arg = CORD_substr(arg, 0, (unsigned)prec);
                           len = (unsigned)prec;
                         }
-                        if (width != NONE && len < (size_t)width) {
-                          char * blanks =
-                                (char *)GC_MALLOC_ATOMIC(width - len + 1);
+                        if (width != NONE && len < (unsigned)width) {
+                          char * blanks = (char *)GC_MALLOC_ATOMIC(
+                                                (unsigned)width - len + 1);
 
                           if (NULL == blanks) OUT_OF_MEMORY;
-                          memset(blanks, ' ', width-len);
-                          blanks[width-len] = '\0';
+                          memset(blanks, ' ', (unsigned)width - len);
+                          blanks[(unsigned)width - len] = '\0';
                           if (left_adj) {
                             arg = CORD_cat(arg, blanks);
                           } else {
@@ -307,7 +307,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                     if (prec != NONE && prec > max_size) max_size = prec;
                     max_size += CONV_RESULT_LEN;
                     if (max_size >= CORD_BUFSZ) {
-                        buf = (char *)GC_MALLOC_ATOMIC(max_size + 1);
+                        buf = (char *)GC_MALLOC_ATOMIC((unsigned)max_size + 1);
                         if (NULL == buf) OUT_OF_MEMORY;
                     } else {
                         if (CORD_BUFSZ - (result[0].ec_bufptr-result[0].ec_buf)
@@ -352,7 +352,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                            && !defined(__EMX__))
                       va_end(vsprintf_args);
 #                   endif
-                    len = (size_t)res;
+                    len = (unsigned)res;
                     if ((char *)(GC_word)res == buf) {
                         /* old style vsprintf */
                         len = strlen(buf);
