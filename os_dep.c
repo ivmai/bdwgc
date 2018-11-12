@@ -2124,7 +2124,7 @@ STATIC ptr_t GC_unix_mmap_get_mem(size_t bytes)
 #       ifdef SYMBIAN
           char *path = GC_get_private_path_and_zero_file();
           if (path != NULL) {
-            zero_fd = open(path, O_RDWR | O_CREAT, 0666);
+            zero_fd = open(path, O_RDWR | O_CREAT, 0644);
             free(path);
           }
 #       else
