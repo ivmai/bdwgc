@@ -65,7 +65,7 @@ char id_cord_fn(size_t i, void * client_data)
 void test_basics(void)
 {
     CORD x = CORD_from_char_star("ab");
-    register int i;
+    size_t i;
     CORD y;
     CORD_pos p;
 
@@ -128,7 +128,8 @@ void test_basics(void)
     while(CORD_pos_valid(p)) {
         char c = CORD_pos_fetch(p);
 
-        if(c != i) ABORT("Traversal of function node failed");
+        if ((unsigned char)c != i)
+            ABORT("Traversal of function node failed");
         CORD_next(p);
         i++;
     }
