@@ -923,7 +923,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     UNLOCK();
     client_data = fn(client_data);
     /* Prevent treating the above as a tail call.       */
-    GC_noop1((word)(&stacksect));
+    GC_noop1(COVERT_DATAFLOW(&stacksect));
     return client_data; /* result */
   }
 

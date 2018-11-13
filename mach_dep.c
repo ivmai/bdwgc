@@ -334,7 +334,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
   /* Strongly discourage the compiler from treating the above   */
   /* as a tail-call, since that would pop the register          */
   /* contents before we get a chance to look at them.           */
-  GC_noop1((word)(&dummy));
+  GC_noop1(COVERT_DATAFLOW(&dummy));
 }
 
 #endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */

@@ -314,7 +314,7 @@ STATIC void GC_init_size_map(void)
       }
       /* Make sure the recursive call is not a tail call, and the bzero */
       /* call is not recognized as dead code.                           */
-      GC_noop1((word)dummy);
+      GC_noop1(COVERT_DATAFLOW(dummy));
       return(arg);
     }
 # endif /* !ASM_CLEAR_CODE */
@@ -2130,7 +2130,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
     result = fn(&base, arg);
     /* Strongly discourage the compiler from treating the above */
     /* as a tail call.                                          */
-    GC_noop1((word)(&base));
+    GC_noop1(COVERT_DATAFLOW(&base));
     return result;
 }
 
@@ -2155,13 +2155,13 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     /* GC_get_main_stack_base() is unimplemented or broken for  */
     /* the platform).                                           */
     if ((word)GC_stackbottom HOTTER_THAN (word)(&stacksect))
-      GC_stackbottom = (ptr_t)(&stacksect);
+      GC_stackbottom = (ptr_t)COVERT_DATAFLOW(&stacksect);
 
     if (GC_blocked_sp == NULL) {
       /* We are not inside GC_do_blocking() - do nothing more.  */
       client_data = fn(client_data);
       /* Prevent treating the above as a tail call.     */
-      GC_noop1((word)(&stacksect));
+      GC_noop1(COVERT_DATAFLOW(&stacksect));
       return client_data; /* result */
     }
 

@@ -1424,7 +1424,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     } else {
       /* The original stack. */
       if ((word)GC_stackbottom HOTTER_THAN (word)(&stacksect))
-        GC_stackbottom = (ptr_t)(&stacksect);
+        GC_stackbottom = (ptr_t)COVERT_DATAFLOW(&stacksect);
     }
 
     if (!me->thread_blocked) {
@@ -1432,7 +1432,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       UNLOCK();
       client_data = fn(client_data);
       /* Prevent treating the above as a tail call.     */
-      GC_noop1((word)(&stacksect));
+      GC_noop1(COVERT_DATAFLOW(&stacksect));
       return client_data; /* result */
     }
 
