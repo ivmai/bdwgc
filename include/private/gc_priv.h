@@ -80,13 +80,8 @@
 # endif
 #endif
 
-#ifndef GC_TINY_FL_H
-# include "../gc_tiny_fl.h"
-#endif
-
-#ifndef GC_MARK_H
-# include "../gc_mark.h"
-#endif
+#include "../gc_tiny_fl.h"
+#include "../gc_mark.h"
 
 typedef GC_word word;
 typedef GC_signed_word signed_word;
@@ -122,9 +117,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #define SIZET_SAT_ADD(a, b) \
             (EXPECT((a) < GC_SIZE_MAX - (b), TRUE) ? (a) + (b) : GC_SIZE_MAX)
 
-#ifndef GCCONFIG_H
-# include "gcconfig.h"
-#endif
+#include "gcconfig.h"
 
 #if !defined(GC_ATOMIC_UNCOLLECTABLE) && defined(ATOMIC_UNCOLLECTABLE)
   /* For compatibility with old-style naming. */
@@ -259,9 +252,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include "gc_atomic_ops.h"
 #endif
 
-#ifndef GC_LOCKS_H
-# include "gc_locks.h"
-#endif
+#include "gc_locks.h"
 
 #define GC_WORD_MAX (~(word)0)
 

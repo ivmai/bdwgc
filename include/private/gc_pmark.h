@@ -22,7 +22,7 @@
 #ifndef GC_PMARK_H
 #define GC_PMARK_H
 
-#if defined(HAVE_CONFIG_H) && !defined(GC_PRIVATE_H)
+#ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
@@ -40,13 +40,8 @@
 # include "dbg_mlc.h"
 #endif
 
-#ifndef GC_MARK_H
-# include "../gc_mark.h"
-#endif
-
-#ifndef GC_PRIVATE_H
-# include "gc_priv.h"
-#endif
+#include "../gc_mark.h"
+#include "gc_priv.h"
 
 EXTERN_C_BEGIN
 
