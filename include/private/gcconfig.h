@@ -25,6 +25,14 @@
 #ifndef GCCONFIG_H
 #define GCCONFIG_H
 
+#ifdef CPPCHECK
+# undef CLOCKS_PER_SEC
+# undef FIXUP_POINTER
+# undef POINTER_MASK
+# undef POINTER_SHIFT
+# undef REDIRECT_REALLOC
+#enfif
+
 #ifndef PTR_T_DEFINED
   typedef char * ptr_t;
 # define PTR_T_DEFINED
@@ -3487,11 +3495,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
-# if defined(CPPCHECK)
-#   define FIXUP_POINTER(p) (p = (p) << 4) /* e.g. */
-# else
-#   define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
-# endif
+# define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
 #endif
 
 #if defined(FIXUP_POINTER)
