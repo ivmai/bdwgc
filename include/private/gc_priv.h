@@ -91,9 +91,12 @@ typedef int GC_bool;
 #define TRUE 1
 #define FALSE 0
 
-typedef char * ptr_t;   /* A generic pointer to which we can add        */
+#ifndef PTR_T_DEFINED
+  typedef char * ptr_t; /* A generic pointer to which we can add        */
                         /* byte displacements and which can be used     */
                         /* for address comparisons.                     */
+# define PTR_T_DEFINED
+#endif
 
 #ifndef SIZE_MAX
 # include <limits.h>
