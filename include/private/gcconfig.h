@@ -31,7 +31,7 @@
 # undef POINTER_MASK
 # undef POINTER_SHIFT
 # undef REDIRECT_REALLOC
-#enfif
+#endif
 
 #ifndef PTR_T_DEFINED
   typedef char * ptr_t;
