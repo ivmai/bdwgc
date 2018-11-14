@@ -25,12 +25,14 @@
 #ifndef GCCONFIG_H
 #define GCCONFIG_H
 
-# ifndef GC_PRIVATE_H
-    /* Fake ptr_t declaration, just to avoid compilation errors.        */
-    /* This avoids many instances if "ifndef GC_PRIVATE_H" below.       */
-    typedef struct GC_undefined_struct * ptr_t;
-#   include <stddef.h>  /* For size_t etc. */
-# endif
+#ifndef PTR_T_DEFINED
+  typedef char * ptr_t;
+# define PTR_T_DEFINED
+#endif
+
+#if !defined(sony_news)
+# include <stddef.h> /* For size_t, etc. */
+#endif
 
 /* Note: Only wrap our own declarations, and not the included headers.  */
 /* In this case, wrap our entire file, but temporarily unwrap/rewrap    */
