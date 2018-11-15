@@ -56,10 +56,10 @@ test_script:
 - cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
 - cmd: if [%TARGET%]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c
-      "cd /cygdrive/c/projects/bdwgc && make -j check CFLAGS_EXTRA='%CFLAGS_EXTRA%' && cat gctest.log" )
+      "cd /cygdrive/c/projects/bdwgc && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[cygwin64] (
     C:\cygwin64\bin\bash -e -l -c
-      "cd /cygdrive/c/projects/bdwgc && make -j check CFLAGS_EXTRA='%CFLAGS_EXTRA%' && cat gctest.log" )
+      "cd /cygdrive/c/projects/bdwgc && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
       "cd /c/projects/bdwgc && make -j -f Makefile.direct check check-cpp CC=gcc CFLAGS_EXTRA='-DGC_NOT_DLL %CFLAGS_EXTRA%'" )
