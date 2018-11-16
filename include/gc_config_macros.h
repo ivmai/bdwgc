@@ -146,7 +146,7 @@
 #if !defined(_REENTRANT) && defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
   /* Better late than never.  This fails if system headers that depend  */
   /* on this were previously included.                                  */
-# define _REENTRANT
+# define _REENTRANT 1
 #endif
 
 #define __GC

@@ -1238,7 +1238,7 @@ EXTERN_C_BEGIN
 #       define DATASTART_IS_FUNC
 #       define DATAEND ((ptr_t)(_end))
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
-#         define USE_MMAP
+#         define USE_MMAP 1
             /* Otherwise we now use calloc.  Mmap may result in the     */
             /* heap interleaved with thread stacks, which can result in */
             /* excessive blacklisting.  Sbrk is unusable since it       */
@@ -1417,7 +1417,7 @@ EXTERN_C_BEGIN
 #       endif
 #       define DYNAMIC_LOADING
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
-#         define USE_MMAP
+#         define USE_MMAP 1
             /* Otherwise we now use calloc.  Mmap may result in the     */
             /* heap interleaved with thread stacks, which can result in */
             /* excessive blacklisting.  Sbrk is unusable since it       */
@@ -1459,7 +1459,7 @@ EXTERN_C_BEGIN
 #       define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 #       define DYNAMIC_LOADING
 #       ifndef USE_MMAP
-#         define USE_MMAP
+#         define USE_MMAP 1
 #       endif
 #       define MAP_FAILED (void *) ((word)-1)
 #       define HEAP_START (ptr_t)0x40000000
@@ -1507,7 +1507,7 @@ EXTERN_C_BEGIN
                /* (setjmp is used instead to find data_start).  The bug */
                /* is fixed in Android NDK r8e (so, ok to use sigsetjmp  */
                /* if gcc4.8+, clang3.2+ or Android API level 18+).      */
-#              define GC_NO_SIGSETJMP
+#              define GC_NO_SIGSETJMP 1
 #            endif
 #       else
              extern int etext[];
@@ -1706,7 +1706,7 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
-#     define DARWIN_DONT_PARSE_STACK
+#     define DARWIN_DONT_PARSE_STACK 1
 #     define DYNAMIC_LOADING
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default). */
@@ -2293,7 +2293,7 @@ EXTERN_C_BEGIN
 #   ifdef DARWIN
       /* iOS */
 #     define OS_TYPE "DARWIN"
-#     define DARWIN_DONT_PARSE_STACK
+#     define DARWIN_DONT_PARSE_STACK 1
 #     define DYNAMIC_LOADING
 #     define DATASTART ((ptr_t)get_etext())
 #     define DATAEND   ((ptr_t)get_end())
@@ -2334,7 +2334,7 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef NINTENDO_SWITCH
       extern int __bss_end[];
-#     define NO_HANDLE_FORK
+#     define NO_HANDLE_FORK 1
 #     define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
 #     define DATAEND (ptr_t)(&__bss_end)
       void *switch_get_stack_bottom(void);
@@ -2424,7 +2424,7 @@ EXTERN_C_BEGIN
 #   ifdef DARWIN
       /* iOS */
 #     define OS_TYPE "DARWIN"
-#     define DARWIN_DONT_PARSE_STACK
+#     define DARWIN_DONT_PARSE_STACK 1
 #     define DYNAMIC_LOADING
 #     define DATASTART ((ptr_t)get_etext())
 #     define DATAEND   ((ptr_t)get_end())
@@ -2462,7 +2462,7 @@ EXTERN_C_BEGIN
 #     define DYNAMIC_LOADING
 #   endif
 #   ifdef SN_TARGET_PSP2
-#     define NO_HANDLE_FORK
+#     define NO_HANDLE_FORK 1
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
       void *psp2_get_stack_bottom(void);
@@ -2658,7 +2658,7 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
-#     define DARWIN_DONT_PARSE_STACK
+#     define DARWIN_DONT_PARSE_STACK 1
 #     define DYNAMIC_LOADING
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default)  */
@@ -2759,7 +2759,7 @@ EXTERN_C_BEGIN
 #       endif
 #       define DYNAMIC_LOADING
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
-#         define USE_MMAP
+#         define USE_MMAP 1
             /* Otherwise we now use calloc.  Mmap may result in the     */
             /* heap interleaved with thread stacks, which can result in */
             /* excessive blacklisting.  Sbrk is unusable since it       */
@@ -2779,7 +2779,7 @@ EXTERN_C_BEGIN
 #     define STACKBOTTOM ((ptr_t)durango_get_stack_bottom())
 #     define GETPAGESIZE() 4096
 #     ifndef USE_MMAP
-#       define USE_MMAP
+#       define USE_MMAP 1
 #     endif
       /* The following is from sys/mman.h:  */
 #     define PROT_NONE  0
@@ -2897,7 +2897,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(USE_MMAP_ANON) && !defined(USE_MMAP)
-#   define USE_MMAP
+#   define USE_MMAP 1
 #elif defined(LINUX) && defined(USE_MMAP)
     /* The kernel may do a somewhat better job merging mappings etc.    */
     /* with anonymous mappings.                                         */
@@ -3087,7 +3087,7 @@ EXTERN_C_BEGIN
 
 #if (defined(MSWIN32) || defined(MSWINCE)) && !defined(USE_WINALLOC)
   /* USE_WINALLOC is only an option for Cygwin. */
-# define USE_WINALLOC
+# define USE_WINALLOC 1
 #endif
 
 #ifdef USE_WINALLOC
@@ -3173,7 +3173,7 @@ EXTERN_C_BEGIN
      || (defined(LINUX) && !defined(__gnu_linux__)) \
      || (defined(RTEMS) && defined(I386)) || defined(HOST_ANDROID)) \
     && !defined(NO_GETCONTEXT)
-# define NO_GETCONTEXT
+# define NO_GETCONTEXT 1
 #endif
 
 #ifndef PREFETCH
@@ -3479,11 +3479,11 @@ EXTERN_C_BEGIN
         || (defined(SOLARIS) && (!defined(_XOPEN_SOURCE) \
                                  || defined(__EXTENSIONS__))) \
         || defined(LINUX)) && !defined(HAVE_DLADDR)
-# define HAVE_DLADDR
+# define HAVE_DLADDR 1
 #endif
 
 #if defined(MAKE_BACK_GRAPH) && !defined(DBG_HDRS_ALL)
-# define DBG_HDRS_ALL
+# define DBG_HDRS_ALL 1
 #endif
 
 #if defined(POINTER_MASK) && !defined(POINTER_SHIFT)
