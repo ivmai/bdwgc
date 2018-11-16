@@ -22,7 +22,9 @@
 #ifndef GC_PMARK_H
 #define GC_PMARK_H
 
-#ifdef HAVE_CONFIG_H
+#if defined(HAVE_CONFIG_H) && !defined(GC_PRIVATE_H)
+  /* When gc_pmark.h is included from gc_priv.h, some of macros might   */
+  /* be undefined in gcconfig.h, so skip config.h in this case.         */
 # include "config.h"
 #endif
 
