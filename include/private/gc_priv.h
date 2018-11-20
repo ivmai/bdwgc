@@ -2302,7 +2302,7 @@ GC_EXTERN signed_word GC_bytes_found;
 #   endif
 # endif
 # if (!defined(MANUAL_VDB) && !defined(MPROTECT_VDB)) \
-     || defined(AO_HAVE_or)
+     || defined(HAVE_LOCKFREE_AO_OR)
 #   define GC_acquire_dirty_lock() (void)0
 #   define GC_release_dirty_lock() (void)0
 # else
