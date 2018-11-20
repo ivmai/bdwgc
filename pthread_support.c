@@ -1940,7 +1940,7 @@ STATIC void GC_pause(void)
 
     for (i = 0; i < GC_PAUSE_SPIN_CYCLES; ++i) {
         /* Something that's unlikely to be optimized away. */
-#     ifdef AO_CLEAR
+#     if defined(AO_CLEAR) && !defined(BASE_ATOMIC_OPS_EMULATED)
         AO_compiler_barrier();
 #     else
         GC_noop1(i);
@@ -2022,7 +2022,7 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
 
 #endif /* !USE_SPIN_LOCK || ... */
 
-#ifdef AO_HAVE_char_load
+#if defined(AO_HAVE_char_load) && !defined(BASE_ATOMIC_OPS_EMULATED)
 # define is_collecting() \
                 ((GC_bool)AO_char_load((unsigned char *)&GC_collecting))
 #else

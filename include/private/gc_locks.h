@@ -54,7 +54,8 @@
 
 #  if (!defined(AO_HAVE_test_and_set_acquire) || defined(GC_RTEMS_PTHREADS) \
        || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
-       || defined(GC_WIN32_THREADS) || defined(LINT2)) && defined(GC_PTHREADS)
+       || defined(GC_WIN32_THREADS) || defined(BASE_ATOMIC_OPS_EMULATED) \
+       || defined(LINT2)) && defined(GC_PTHREADS)
 #    define USE_PTHREAD_LOCKS
 #    undef USE_SPIN_LOCK
 #  endif
