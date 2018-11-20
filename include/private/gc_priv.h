@@ -2313,7 +2313,7 @@ GC_EXTERN signed_word GC_bytes_found;
                                 /* protected by GC_write_cs.    */
 
 # endif
-# if defined(GC_DISABLE_INCREMENTAL) || defined(AO_HAVE_or)
+# if defined(GC_DISABLE_INCREMENTAL) || defined(HAVE_LOCKFREE_AO_OR)
 #   define GC_acquire_dirty_lock() (void)0
 #   define GC_release_dirty_lock() (void)0
 # else

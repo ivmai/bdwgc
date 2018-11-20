@@ -1109,6 +1109,13 @@ AM_CONDITIONAL([NEED_ATOMIC_OPS_ASM],
 AS_IF([test x$with_libatomic_ops != xnone -a x$need_atomic_ops_asm != xtrue],
     [ old_CFLAGS="$CFLAGS"
       CFLAGS="$CFLAGS $AO_TRYLINK_CFLAGS $CFLAGS_EXTRA"
+      AC_MSG_CHECKING([for lock-free AO_or primitive])
+      AC_TRY_LINK([#include "atomic_ops.h"],
+                  [AO_t x=0;AO_or(&x,1)],
+        [ AC_MSG_RESULT(yes)
+          AC_DEFINE([HAVE_LOCKFREE_AO_OR], [1],
+            [libatomic_ops AO_or primitive implementation is lock-free.]) ],
+        [ AC_MSG_RESULT(no) ])
       AC_MSG_CHECKING([for lock-free AO load/store, test-and-set primitives])
       AC_TRY_LINK([#include "atomic_ops.h"],
  [AO_t x=0;unsigned char c=0;AO_TS_t z=AO_TS_INITIALIZER;

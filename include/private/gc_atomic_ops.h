@@ -100,6 +100,11 @@
     } /* extern "C" */
 # endif
 
+# ifndef NO_LOCKFREE_AO_OR
+    /* __atomic_or_fetch is assumed to be lock-free.    */
+#   define HAVE_LOCKFREE_AO_OR 1
+# endif
+
 #else
   /* Fallback to libatomic_ops. */
 # include "atomic_ops.h"
