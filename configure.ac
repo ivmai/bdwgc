@@ -1087,8 +1087,10 @@ AS_IF([test x"$with_libatomic_ops" != xno],
             AS_IF([test x"$THREADS" != xnone],
                   [ AC_DEFINE([GC_BUILTIN_ATOMIC], [1],
                               [Use C11 (GCC) atomic intrinsics instead of
-                               libatomic_ops primitives.]) ]) ]) ],
+                               libatomic_ops primitives.]) ]) ])
+    AO_TRYLINK_CFLAGS="" ],
   [ AC_MSG_RESULT([internal])
+    AO_TRYLINK_CFLAGS="-I${srcdir}/libatomic_ops/src"
     ATOMIC_OPS_CFLAGS='-I$(top_builddir)/libatomic_ops/src -I$(top_srcdir)/libatomic_ops/src'
     ATOMIC_OPS_LIBS=""
     AC_SUBST([ATOMIC_OPS_CFLAGS])
@@ -1098,6 +1100,26 @@ AM_CONDITIONAL([USE_INTERNAL_LIBATOMIC_OPS],
     [test x$with_libatomic_ops = xno -a x"$THREADS" != xnone])
 AM_CONDITIONAL([NEED_ATOMIC_OPS_ASM],
     [test x$with_libatomic_ops = xno -a x$need_atomic_ops_asm = xtrue])
+
+# Check whether particular AO primitives are emulated with locks.
+# The check below is based on the fact that linking with the libatomic_ops
+# binary file is not needed in case of absence of the emulation (except for
+# Solaris SPARC).
+AS_IF([test x$with_libatomic_ops != xnone -a x$need_atomic_ops_asm != xtrue],
+    [ old_CFLAGS="$CFLAGS"
+      CFLAGS="$CFLAGS $AO_TRYLINK_CFLAGS $CFLAGS_EXTRA"
+      AC_MSG_CHECKING([for lock-free AO load/store, test-and-set primitives])
+      AC_TRY_LINK([#include "atomic_ops.h"],
+ [AO_t x=0;unsigned char c=0;AO_TS_t z=AO_TS_INITIALIZER;
+  (void)AO_test_and_set_acquire(&z);AO_CLEAR(&z);AO_compiler_barrier();
+  AO_store(&x,AO_load(&x)+1);AO_char_store(&c,AO_char_load(&c)+1);
+  AO_store_release(&x,AO_load_acquire(&x)+1)],
+        [ AC_MSG_RESULT(yes) ],
+        [ AC_MSG_RESULT(no)
+          AC_DEFINE([BASE_ATOMIC_OPS_EMULATED], [1],
+                    [AO load, store and/or test-and-set primitives are
+                     implemented in libatomic_ops using locks.]) ])
+      CFLAGS="$old_CFLAGS" ])
 
 dnl Produce the Files
 dnl -----------------

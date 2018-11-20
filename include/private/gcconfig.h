@@ -3108,6 +3108,12 @@ EXTERN_C_BEGIN
 # undef GWW_VDB
 #endif
 
+#if defined(BASE_ATOMIC_OPS_EMULATED)
+  /* GC_write_fault_handler() cannot use lock-based atomic primitives   */
+  /* as this could lead to a deadlock.                                  */
+# undef MPROTECT_VDB
+#endif
+
 #if defined(USE_MUNMAP) && defined(GWW_VDB)
 # undef MPROTECT_VDB  /* TODO: Cannot deal with address space holes. */
   /* Else if MPROTECT_VDB is available but not GWW_VDB then decide      */
