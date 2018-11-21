@@ -150,7 +150,7 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr,  mse * mark_stack_top,
 /* Set mark bit, exit (using "break" statement) if it is already set.   */
 #ifdef USE_MARK_BYTES
 # if defined(PARALLEL_MARK) && defined(AO_HAVE_char_store) \
-     && !defined(AO_USE_PTHREAD_DEFS)
+     && !defined(BASE_ATOMIC_OPS_EMULATED)
     /* There is a race here, and we may set the bit twice in the        */
     /* concurrent case.  This can result in the object being pushed     */
     /* twice.  But that is only a performance issue.                    */
