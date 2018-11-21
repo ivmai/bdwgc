@@ -113,6 +113,21 @@ matrix:
   - os: linux
     compiler: gcc
     env:
+    - CONF_CFLAGS="-D AO_USE_PTHREAD_DEFS"
+    - CONF_OPTIONS="--with-libatomic-ops=no --enable-gc-assertions --enable-cplusplus --enable-static"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - libatomic-ops-dev
+    compiler: clang
+    env:
+    - CONF_CFLAGS="-D AO_USE_PTHREAD_DEFS"
+    - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus --enable-static"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
+    compiler: gcc
+    env:
     - CFLAGS_EXTRA="-D DONT_ADD_BYTE_AT_END"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
   - os: linux
@@ -556,6 +571,7 @@ before_install:
     m4 --version;
     libtool --version || true;
   fi
+- if [[ "$CONF_CFLAGS" == "" ]]; then CONF_CFLAGS="-g -O2"; fi
 - if [[ "$MAKEFILE_NAME" == "" ]]; then MAKEFILE_NAME=Makefile; fi
 - if [[ "$MAKEFILE_TARGETS" == "" ]]; then MAKEFILE_TARGETS="check"; fi
 
@@ -571,7 +587,8 @@ script:
 - if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == ""
         && "$MAKEFILE_NAME" != "Makefile.direct"
         && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
-    ./configure $CONF_OPTIONS --enable-werror && cat include/config.h;
+    CFLAGS="$CONF_CFLAGS" ./configure $CONF_OPTIONS --enable-werror &&
+    cat include/config.h;
   fi
 - if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == ""
         && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
