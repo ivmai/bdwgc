@@ -103,7 +103,9 @@ GC_INNER void GC_print_all_errors(void)
     }
     for (i = 0; i < n_leaked; i++) {
         ptr_t p = leaked[i];
-        GC_print_heap_obj(p);
+#       ifndef SKIP_LEAKED_OBJECTS_PRINTING
+          GC_print_heap_obj(p);
+#       endif
         GC_free(p);
     }
 
