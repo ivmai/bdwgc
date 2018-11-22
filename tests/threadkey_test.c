@@ -87,8 +87,10 @@ void make_key (void)
 int main (void)
 {
   int i;
-  GC_INIT ();
 
+  GC_INIT();
+  if (GC_get_find_leak())
+    printf("This test program is not designed for leak detection mode\n");
 # ifdef GC_SOLARIS_THREADS
     pthread_key_create (&key, on_thread_exit);
 # else
