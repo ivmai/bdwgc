@@ -51,6 +51,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
    WNDCLASS    wndclass;
    HACCEL      hAccel;
 
+   GC_set_find_leak(0);
    GC_INIT();
 #  ifndef NO_INCREMENTAL
      GC_enable_incremental();

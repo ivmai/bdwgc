@@ -596,6 +596,7 @@ int main(int argc, char **argv)
         cshow(stdout);
         argc = ccommand(&argv);
 #   endif
+    GC_set_find_leak(0); /* app is not for testing leak detection mode */
     GC_INIT();
 #   ifndef NO_INCREMENTAL
       GC_enable_incremental();
