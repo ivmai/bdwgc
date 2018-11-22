@@ -4022,21 +4022,25 @@ typedef enum {
 # define GC_mprotect_state GC_MP_NORMAL
 #endif /* !THREADS */
 
+struct mp_reply_s {
+  mach_msg_header_t head;
+  char data[256];
+};
+
+struct mp_msg_s {
+  mach_msg_header_t head;
+  mach_msg_body_t msgh_body;
+  char data[1024];
+};
+
 STATIC void *GC_mprotect_thread(void *arg)
 {
   mach_msg_return_t r;
   /* These two structures contain some private kernel data.  We don't   */
   /* need to access any of it so we don't bother defining a proper      */
   /* struct.  The correct definitions are in the xnu source code.       */
-  struct reply_s {
-    mach_msg_header_t head;
-    char data[256];
-  } reply;
-  struct msg_s {
-    mach_msg_header_t head;
-    mach_msg_body_t msgh_body;
-    char data[1024];
-  } msg;
+  struct mp_reply_s reply;
+  struct mp_msg_s msg;
   mach_msg_id_t id;
 
   if ((word)arg == GC_WORD_MAX) return 0; /* to prevent a compiler warning */

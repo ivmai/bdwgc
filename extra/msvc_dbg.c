@@ -212,6 +212,11 @@ size_t GetModuleNameFromStack(size_t skip, char* moduleName, size_t size)
   return 0;
 }
 
+union sym_namebuf_u {
+  IMAGEHLP_SYMBOL sym;
+  char symNameBuffer[sizeof(IMAGEHLP_SYMBOL) + MAX_SYM_NAME];
+};
+
 size_t GetSymbolNameFromAddress(void* address, char* symbolName, size_t size,
                                 size_t* offsetBytes)
 {
@@ -219,10 +224,8 @@ size_t GetSymbolNameFromAddress(void* address, char* symbolName, size_t size,
   if (offsetBytes) *offsetBytes = 0;
   __try {
     ULONG_ADDR dwOffset = 0;
-    union {
-      IMAGEHLP_SYMBOL sym;
-      char symNameBuffer[sizeof(IMAGEHLP_SYMBOL) + MAX_SYM_NAME];
-    } u;
+    union sym_namebuf_u u;
+
     u.sym.SizeOfStruct  = sizeof(u.sym);
     u.sym.MaxNameLength = sizeof(u.symNameBuffer) - sizeof(u.sym);
 
