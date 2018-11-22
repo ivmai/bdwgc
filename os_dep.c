@@ -4500,6 +4500,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 #  if defined(LINUX)
 #    include <features.h>
 
+#   if defined(SAVE_CALL_CHAIN)
      struct frame {
         long    fr_local[8];
         long    fr_arg[6];
@@ -4511,6 +4512,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
         long    fr_argd[6];
         long    fr_argx[0];
      };
+#   endif
 #  elif defined (DRSNX)
 #    include <sys/sparc/frame.h>
 #  elif defined(OPENBSD)
