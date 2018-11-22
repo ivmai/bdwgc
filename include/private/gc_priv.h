@@ -1854,7 +1854,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func f);
 #define GC_gcollect_inner() \
                 (void)GC_try_to_collect_inner(GC_never_stop_func)
 
-#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+#ifdef THREADS
   GC_EXTERN GC_bool GC_in_thread_creation;
         /* We may currently be in thread creation or destruction.       */
         /* Only set to TRUE while allocation lock is held.              */
