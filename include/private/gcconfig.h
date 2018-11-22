@@ -31,6 +31,7 @@
 # undef POINTER_MASK
 # undef POINTER_SHIFT
 # undef REDIRECT_REALLOC
+# undef _MAX_PATH
 #endif
 
 #ifndef PTR_T_DEFINED
