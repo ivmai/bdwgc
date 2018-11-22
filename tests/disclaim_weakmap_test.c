@@ -432,6 +432,8 @@ int main(void)
 # ifndef NO_INCREMENTAL
     GC_enable_incremental();
 # endif
+  if (GC_get_find_leak())
+    printf("This test program is not designed for leak detection mode\n");
 
   weakobj_free_list = GC_new_free_list();
   CHECK_OOM(weakobj_free_list);

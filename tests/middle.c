@@ -11,6 +11,8 @@ int main (void)
 
   GC_set_all_interior_pointers(0);
   GC_INIT();
+  if (GC_get_find_leak())
+    printf("This test program is not designed for leak detection mode\n");
 
   for (i = 0; i < 20000; ++i) {
     (void)GC_malloc_atomic(4096);

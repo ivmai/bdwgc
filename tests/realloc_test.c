@@ -10,6 +10,8 @@ int main(void) {
   unsigned long last_heap_size = 0;
 
   GC_INIT();
+  if (GC_get_find_leak())
+    printf("This test program is not designed for leak detection mode\n");
 
   for (i = 0; i < COUNT; i++) {
     int **p = GC_NEW(int *);

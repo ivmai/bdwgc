@@ -312,6 +312,8 @@ int main(void)
 #   ifndef NO_INCREMENTAL
       GC_enable_incremental();
 #   endif
+    if (GC_get_find_leak())
+        printf("This test program is not designed for leak detection mode\n");
     test_basics();
     test_extras();
     test_printf();

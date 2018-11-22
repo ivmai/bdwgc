@@ -49,6 +49,8 @@ int main(void)
     GC_INIT();
 # endif
   init_staticroot();
+  if (GC_get_find_leak())
+    printf("This test program is not designed for leak detection mode\n");
   if (NULL == staticroot) {
     fprintf(stderr, "GC_malloc returned NULL\n");
     return 2;

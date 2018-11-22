@@ -39,7 +39,10 @@ struct treenode * mktree(int i) {
 int main(void)
 {
   int i;
+
   GC_INIT();
+  if (GC_get_find_leak())
+    printf("This test program is not designed for leak detection mode\n");
   for (i = 0; i < 10; ++i) {
     root[i] = mktree(12);
   }

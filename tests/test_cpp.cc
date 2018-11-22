@@ -309,6 +309,8 @@ void* Undisguise( GC_word i ) {
 #   ifndef NO_INCREMENTAL
       GC_enable_incremental();
 #   endif
+    if (GC_get_find_leak())
+      GC_printf("This test program is not designed for leak detection mode\n");
 
     int i, iters, n;
 #   ifndef DONT_USE_STD_ALLOCATOR
