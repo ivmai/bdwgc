@@ -370,7 +370,7 @@ STATIC GC_thread GC_new_thread(DWORD id)
   return(result);
 }
 
-STATIC GC_bool GC_in_thread_creation = FALSE;
+GC_INNER GC_bool GC_in_thread_creation = FALSE;
                                 /* Protected by allocation lock. */
 
 GC_INLINE void GC_record_stack_base(GC_vthread me,
