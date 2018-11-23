@@ -1998,6 +1998,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
          UNTESTED(GC_gcj_malloc_ignore_off_page);
 #      endif
 #      ifndef NO_DEBUGGING
+         UNTESTED(GC_dump);
          UNTESTED(GC_dump_regions);
          UNTESTED(GC_is_tmp_root);
          UNTESTED(GC_print_free_list);
