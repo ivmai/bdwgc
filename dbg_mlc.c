@@ -619,13 +619,15 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   }
 #endif /* DBG_HDRS_ALL */
 
-GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
-{
+#ifndef CPPCHECK
+  GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
+  {
     return GC_debug_malloc(lb, OPT_RA s, i);
-}
+  }
 
-GC_API void GC_CALL GC_debug_change_stubborn(
+  GC_API void GC_CALL GC_debug_change_stubborn(
                                 const void * p GC_ATTR_UNUSED) {}
+#endif /* !CPPCHECK */
 
 GC_API void GC_CALL GC_debug_end_stubborn_change(const void *p)
 {

@@ -1969,7 +1969,6 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
        UNTESTED(GC_set_stop_func);
        UNTESTED(GC_set_time_limit);
        UNTESTED(GC_malloc_explicitly_typed_ignore_off_page);
-       UNTESTED(GC_debug_change_stubborn);
        UNTESTED(GC_debug_strndup);
        UNTESTED(GC_deinit);
        UNTESTED(GC_strndup);

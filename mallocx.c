@@ -610,15 +610,17 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
   }
 #endif /* GC_REQUIRE_WCSDUP */
 
-GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
-{
-  return GC_malloc(lb);
-}
+#ifndef CPPCHECK
+  GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
+  {
+    return GC_malloc(lb);
+  }
 
-GC_API void GC_CALL GC_change_stubborn(const void *p GC_ATTR_UNUSED)
-{
-  /* Empty. */
-}
+  GC_API void GC_CALL GC_change_stubborn(const void *p GC_ATTR_UNUSED)
+  {
+    /* Empty. */
+  }
+#endif /* !CPPCHECK */
 
 GC_API void GC_CALL GC_end_stubborn_change(const void *p)
 {

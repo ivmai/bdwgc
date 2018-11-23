@@ -914,11 +914,7 @@ GC_API void GC_CALL GC_debug_free(void *);
 GC_API void * GC_CALL GC_debug_realloc(void * /* old_object */,
                         size_t /* new_size_in_bytes */, GC_EXTRA_PARAMS)
                         /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);
-GC_API
-#if !defined(CPPCHECK)
-  GC_ATTR_DEPRECATED
-#endif
-void GC_CALL GC_debug_change_stubborn(const void *);
+GC_API GC_ATTR_DEPRECATED void GC_CALL GC_debug_change_stubborn(const void *);
 GC_API void GC_CALL GC_debug_end_stubborn_change(const void *)
                                                         GC_ATTR_NONNULL(1);
 
