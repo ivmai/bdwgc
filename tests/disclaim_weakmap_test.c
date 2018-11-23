@@ -126,7 +126,7 @@ struct weakmap {
   size_t obj_size;
   size_t capacity;
   unsigned weakobj_kind;
-  struct weakmap_link **links;
+  struct weakmap_link **links; /* NULL means weakmap is destroyed */
 };
 
 void weakmap_lock(struct weakmap *wm, unsigned h)
@@ -245,6 +245,8 @@ int GC_CALLBACK weakmap_disclaim(void *obj_base)
 
   my_assert((hdr & INVALIDATE_FLAG) == 0);
   wm = (struct weakmap *)(hdr & ~(GC_word)FINALIZER_CLOSURE_FLAG);
+  if (NULL == wm->links)
+    return 0;   /* weakmap has been already destroyed */
   obj = (GC_word *)obj_base + 1;
 
   /* Lock and check for mark.   */
@@ -321,9 +323,8 @@ void weakmap_destroy(struct weakmap *wm)
     for (i = 0; i < WEAKMAP_MUTEX_COUNT; ++i) {
       (void)pthread_mutex_destroy(&wm->mutex[i]);
     }
-# else
-    (void)wm;
 # endif
+  wm->links = NULL; /* weakmap is destroyed */
 }
 
 struct weakmap *pair_hcset;
