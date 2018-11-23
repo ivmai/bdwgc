@@ -1557,6 +1557,10 @@ void run_one_test(void)
 #     endif
 #   endif /* DBG_HDRS_ALL */
     tree_test();
+#   ifdef TEST_WITH_SYSTEM_MALLOC
+      free(calloc(1,1));
+      free(realloc(NULL, 64));
+#   endif
 #   ifndef NO_CLOCK
       if (print_stats) {
         CLOCK_TYPE tree_time;
