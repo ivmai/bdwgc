@@ -94,6 +94,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
 {
     word *op;
 
+    if (EXPECT(GC_find_leak, FALSE))
+        return NULL;
     GC_ASSERT(GC_finalized_kind != 0);
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fclos));
     GC_ASSERT(((word)fclos & FINALIZER_CLOSURE_FLAG) == 0);

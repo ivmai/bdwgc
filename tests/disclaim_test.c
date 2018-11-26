@@ -20,6 +20,16 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef FIND_LEAK
+
+int main(void)
+{
+  printf("disclaim_weakmap_test skipped in leak detection mode.\n");
+  return 0;
+}
+
+#else
+
 #ifdef HAVE_CONFIG_H
   /* For GC_[P]THREADS */
 # include "config.h"
@@ -270,3 +280,5 @@ int main(void)
 # endif
     return 0;
 }
+
+#endif /* FIND_LEAK */
