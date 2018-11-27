@@ -533,7 +533,7 @@ matrix:
 
 before_install:
 - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
-    CPPCHECK_VER=master;
+    CPPCHECK_VER=1.85;
     git clone --depth=3 https://github.com/danmar/cppcheck.git
             ~/cppcheck -b $CPPCHECK_VER;
     make --directory ~/cppcheck -j CXXFLAGS="-O3 -march=native -D NDEBUG";
