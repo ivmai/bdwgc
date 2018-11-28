@@ -3570,8 +3570,8 @@ EXTERN_C_BEGIN
                                                           GC_page_size)) \
                                   + GC_page_size - 1)
 # elif defined(MSWIN_XBOX1)
-    void *durango_get_mem(size_t bytes, size_t page_size);
-#   define GET_MEM(bytes) (struct hblk *)durango_get_mem(bytes, 0)
+    ptr_t GC_durango_get_mem(size_t bytes);
+#   define GET_MEM(bytes) (struct hblk *)GC_durango_get_mem(bytes)
 # elif defined(MSWIN32) || defined(CYGWIN32)
     ptr_t GC_win32_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
