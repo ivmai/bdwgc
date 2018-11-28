@@ -39,14 +39,15 @@ matrix:
     - MAKEFILE_TARGETS="dist"
   - os: linux
     env:
-    - CPPCHECK_ENABLE="--enable=unusedFunction -D GC_BUILTIN_ATOMIC *.c *.cc cord/*.c cord/tests/*.c tests/*.c tests/*.cc tools/*.c"
+    - CPPCHECK_ENABLE="--enable=unusedFunction -D GC_BUILTIN_ATOMIC extra/gc.c *.cc cord/*.c cord/tests/*.c tests/*.c tests/*.cc"
+    - CPPCHECK_OUT_FILTER="Z"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     env:
-    - CPPCHECK_ENABLE="-j4 --enable=information,performance,portability,style,warning *.c"
+    - CPPCHECK_ENABLE="-j4 --enable=information,performance,portability,style,warning -U GC_PRIVATE_H -I libatomic_ops/src *.c"
   - os: linux
     env:
-    - CPPCHECK_ENABLE="-j4 --enable=information,performance,portability,style,warning *.cc cord/*.c cord/tests/*.c extra/AmigaOS.c extra/MacOS.c extra/msvc_dbg.c extra/real_malloc.c extra/symbian.cpp tests/*.c tests/*.cc tools/*.c"
+    - CPPCHECK_ENABLE="-j4 --enable=information,performance,portability,style,warning -U GC_PRIVATE_H -I libatomic_ops/src *.cc cord/*.c cord/tests/*.c extra/AmigaOS.c extra/MacOS.c extra/msvc_dbg.c extra/real_malloc.c extra/symbian.cpp tests/*.c tests/*.cc tools/*.c"
   - os: linux
     compiler: gcc
     env:
@@ -621,9 +622,10 @@ script:
         tests/*.c tests/*.cc tools/*.c;
   fi
 - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
+    if [[ "$CPPCHECK_OUT_FILTER" == "" ]]; then CPPCHECK_OUT_FILTER="c "; fi;
     set -o pipefail; ~/cppcheck/cppcheck --force --error-exitcode=2
-        -U GC_API -U GC_PRIVATE_H -D CPPCHECK -I include -I libatomic_ops/src
-        $CPPCHECK_ENABLE | grep --line-buffered "c ";
+        -U GC_API -D CPPCHECK -I include $CPPCHECK_ENABLE |
+        grep --line-buffered "$CPPCHECK_OUT_FILTER";
   fi
 - if [[ "$TESTS_CUSTOM_RUN" == true ]]; then
     ASAN_OPTIONS="detect_leaks=1" UBSAN_OPTIONS="halt_on_error=1"
