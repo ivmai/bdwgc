@@ -2377,6 +2377,9 @@ int main(void)
       UNTESTED(GC_set_thr_restart_signal);
       UNTESTED(GC_stop_world_external);
       UNTESTED(GC_start_world_external);
+#     if defined(GC_DARWIN_THREADS) || defined(GC_OPENBSD_UTHREADS)
+        UNTESTED(GC_get_thr_restart_signal);
+#     endif
 #     ifndef GC_NO_DLOPEN
         UNTESTED(GC_dlopen);
 #     endif
