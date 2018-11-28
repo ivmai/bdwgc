@@ -425,6 +425,9 @@ void *GC_amiga_allocwrapper_any(size_t size,void *(*AllocFunction)(size_t size2)
 #endif
         }
 
+#   if defined(CPPCHECK)
+      if (GC_amiga_dontalloc) /* variable is actually used by AllocFunction */
+#   endif
         GC_amiga_dontalloc=FALSE;
 
         return ret;
