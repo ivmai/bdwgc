@@ -2301,16 +2301,14 @@ void * os2_alloc(size_t bytes)
 
 # endif /* OS2 */
 
-# ifdef MSWIN_XBOX1
-    void *durango_get_mem(size_t bytes, size_t page_size)
+#ifdef MSWIN_XBOX1
+    ptr_t GC_durango_get_mem(size_t bytes)
     {
       if (0 == bytes) return NULL;
-      return VirtualAlloc(NULL, bytes, MEM_COMMIT | MEM_TOP_DOWN,
-                          PAGE_READWRITE);
+      return (ptr_t)VirtualAlloc(NULL, bytes, MEM_COMMIT | MEM_TOP_DOWN,
+                                 PAGE_READWRITE);
     }
-# endif
-
-#ifdef MSWINCE
+#elif defined(MSWINCE)
   ptr_t GC_wince_get_mem(size_t bytes)
   {
     ptr_t result = 0; /* initialized to prevent warning. */
