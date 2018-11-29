@@ -35,6 +35,8 @@ typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /*obj*/);
 /* (including the referred closure object) will be protected from       */
 /* collection if "mark_from_all" is non-zero, but at the expense that   */
 /* long chains of objects will take many cycles to reclaim.             */
+/* Calls to GC_free() will free its argument without inquiring "proc".  */
+/* No-op in the leak-finding mode.                                      */
 GC_API void GC_CALL GC_register_disclaim_proc(int /*kind*/,
                                               GC_disclaim_proc /*proc*/,
                                               int /*mark_from_all*/);
@@ -56,6 +58,7 @@ struct GC_finalizer_closure {
 /* Note that GC_size (applied to such allocated object) returns a value */
 /* slightly bigger than the specified allocation size, and that GC_base */
 /* result points to a word prior to the start of the allocated object.  */
+/* The disclaim procedure is not invoked in the leak-finding mode.      */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_finalized_malloc(size_t /*size*/,
                             const struct GC_finalizer_closure * /*fc*/);
