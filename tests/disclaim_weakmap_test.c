@@ -184,7 +184,8 @@ void *weakmap_add(struct weakmap *wm, void *obj)
   weakmap_lock(wm, h);
 
   for (link = *first; link != NULL; link = link->next) {
-    void *old_obj = GC_REVEAL_POINTER(link->obj);
+    void *old_obj = GC_get_find_leak() ? (void *)link->obj
+                        : GC_REVEAL_POINTER(link->obj);
 
     if (memcmp(old_obj, obj, key_size) == 0) {
       GC_call_with_alloc_lock(set_mark_bit, (GC_word *)old_obj - 1);
@@ -218,7 +219,8 @@ void *weakmap_add(struct weakmap *wm, void *obj)
   /* Add the object to the map. */
   new_link = GC_NEW(struct weakmap_link);
   CHECK_OOM(new_link);
-  new_link->obj = GC_HIDE_POINTER(new_obj);
+  new_link->obj = GC_get_find_leak() ? (GC_word)new_obj
+                        : GC_HIDE_POINTER(new_obj);
   new_link->next = *first;
   GC_END_STUBBORN_CHANGE(new_link);
   GC_PTR_STORE_AND_DIRTY(first, new_link);
@@ -280,7 +282,8 @@ int GC_CALLBACK weakmap_disclaim(void *obj_base)
       fprintf(stderr, "Did not find %p\n", obj);
       exit(70);
     }
-    old_obj = GC_REVEAL_POINTER((*link)->obj);
+    old_obj = GC_get_find_leak() ? (void *)(*link)->obj
+                : GC_REVEAL_POINTER((*link)->obj);
     if (old_obj == obj)
       break;
     my_assert(memcmp(old_obj, obj, wm->key_size) != 0);
