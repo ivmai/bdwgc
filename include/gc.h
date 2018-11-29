@@ -1309,6 +1309,7 @@ GC_API void GC_CALL GC_abort_on_oom(void);
 /* that finalization code will arrange for hidden pointers to   */
 /* disappear.  Otherwise objects can be accessed after they     */
 /* have been collected.                                         */
+/* Should not be used in the leak-finding mode.                 */
 /* Note that putting pointers in atomic objects or in           */
 /* non-pointer slots of "typed" objects is equivalent to        */
 /* disguising them in this way, and may have other advantages.  */
