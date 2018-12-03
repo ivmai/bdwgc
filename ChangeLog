@@ -1,3 +1,14 @@
+2018-11-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordbscs.c (CORD__pos_fetch, CORD__next): Call ABORT() if
+	CORD_pos_valid() returns false for the argument (do not compute pe
+	in this case).
+
+2018-11-04  Ivan Maidanski <ivmai@mail.ru>
+
+	* headers.c (GC_install_counts): If hbp+=BOTTOM_SZ overflow is expected
+	then break the first loop; add comment.
+
 2018-09-13  Ivan Maidanski <ivmai@mail.ru>
 
 	* CMakeLists.txt (CMAKE_USE_PTHREADS_INIT): Fix typo
