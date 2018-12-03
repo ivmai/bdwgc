@@ -285,7 +285,7 @@ matrix:
     language: c
     env:
     - CXX=clang++-5.0
-    - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer"
+    - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer -D AO_NO_PTHREADS"
     - CONF_OPTIONS="--enable-cplusplus"
     - TESTS_CUSTOM_RUN=true
     sudo: required
