@@ -1,10 +1,14 @@
 
 == [7.4.16] (not released yet) ==
 
+* Fix 'collecting from unknown thread' abort in leak-finding mode for Win32
 * Fix 'undefined reference to GC_incremental' linker error in pthread_start
+* Fix GC_register_disclaim_proc for leak-finding mode
 * Fix concurrent bitmap update in GC_dirty
 * Fix marking of finalizer closure object
+* Fix marks and hb_n_marks consistency when disclaim returns true
 * Fix missing curses.h in cord/de when compiling manually (MS VC, MinGW)
+* Refine documentation in gc_disclaim.h
 
 Also, includes 7.2m changes
 
@@ -500,7 +504,9 @@ Also, includes 7.2 changes
 == [7.2m] (not released yet) ==
 
 * Fix comment typos in CMakeLists.txt, backgraph.c, de.c, gcconfig.h
+* Fix hbp overflow in GC_install_counts
 * Fix start_world not resuming all threads on Darwin
+* Guard against potential buffer overflow in CORD_next and CORD_pos_fetch
 
 
 == [7.2l] 2018-08-10 ==
