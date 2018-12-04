@@ -1,4 +1,18 @@
 
+== [8.1.0] (development) ==
+
+* Add I_HOLD_LOCK assertion to expand_hp_inner and related functions
+* Enable compilation without C runtime (Win32)
+* New API function to get size of object debug header
+* Remove redundant type casts in backgraph HEIGHT_UNKNOWN/IN_PROGRESS
+* Workaround '*_stubborn function is never used' cppcheck warnings
+* Workaround 'GC_get_thr_restart_signal is never used' cppcheck warning
+* Workaround 'identical inner return condition always true' cppcheck warning
+* Workaround 'var reassigned before old value use' cppcheck false positive
+
+Also, includes 8.0.2 changes
+
+
 == [8.0.2] (not released yet) ==
 
 * Add initial testing of GC_enable/disable, MALLOC[_ATOMIC]_IGNORE_OFF_PAGE
