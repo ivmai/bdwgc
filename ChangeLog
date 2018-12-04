@@ -1,22 +1,77 @@
 
 == [8.0.2] (not released yet) ==
 
+* Add initial testing of GC_enable/disable, MALLOC[_ATOMIC]_IGNORE_OFF_PAGE
+* Add paths to filenames mentioned in the copyright section in README
+* Add test using disclaim notifiers to implement a weak map
+* Adjust #error messages format
+* Avoid potential 'macro redefinition' errors for config.h macros
 * Call real pthread_sigmask instead of its wrapper in start_mark_threads
+* Check result of pthread_mutex_unlock in specific.c
 * Default to a single-threaded build for Nintendo, Orbis, Sony PSP targets
+* Do not use spin locks if AO test-and-set is emulated (pthreads)
+* Document assertion in the setters that used to return old value
+* Eliminate 'casting signed to bigger unsigned int' CSA warning
 * Eliminate 'different const qualifiers' MS VC warnings in cordbscs
+* Eliminate 'function is never used' cppcheck warning for calloc/realloc
+* Eliminate 'non-virtual destructor for class with inheritors' CSA warning
+* Eliminate 'pointer targets differ in signedness' compiler warning (Win32)
+* Eliminate 'struct member is never used' cppcheck warnings in os_dep
+* Eliminate 'uninitialized var' cppcheck false positive in mach_dep, os_dep
+* Eliminate 'unreferenced formal parameter' compiler warning in msvc_dbg
+* Eliminate redundant check in backwards_height
 * Fix 'USE_MUNMAP macro redefinition' error for NaCl
+* Fix 'collecting from unknown thread' abort in leak-finding mode for Win32
+* Fix 'too wide non-owner permissions are set for resource' code defect
+* Fix GC_VSNPRINTF in cordprnt for DJGPP and MS VC for WinCE
+* Fix GC_register_disclaim_proc for leak-finding mode
+* Fix a deadlock in write_fault_handler if AO_or is emulated
 * Fix comment typo in CMakeLists.txt
 * Fix concurrent bitmap update in GC_dirty
-* Fix GC_VSNPRINTF in cordprnt for DJGPP and MS VC for WinCE
+* Fix deadlocks in write and suspend handlers if AO test-and-set is emulated
+* Fix hbp overflow in GC_install_counts
+* Fix linkage with a system libatomic_ops shared library
+* Fix lock assertion violation in get_index if GC_ALWAYS_MULTITHREADED
 * Fix marking of finalizer closure object
+* Fix marks and hb_n_marks consistency when disclaim returns true
 * Fix memory allocation on GCF (Linux/x64)
 * Fix missing curses.h in cord/de when compiling manually (MS VC, MinGW)
+* Fix test_cpp assertion violation in find-leak mode
+* Fix tests linkage with internal atomic_ops.o
 * Fix unneeded end_stubborn_change/ptr_store_and_dirty in disclaim_test
+* Guard against potential buffer overflow in CORD_next and CORD_pos_fetch
+* New macro to suppress printing of leaked objects
+* Pass -Wall -Wextra -Wpedantic to g++ if supported (configure)
+* Prefix internal durango_get_mem symbol with 'GC_'
+* Prevent double inclusion of javaxfc.h and private/specific.h
+* Print relevant message in tests not appropriate for leak detection mode
+* Reduce scope of local variables in GC_remove_all_threads_but_me
+* Refine HIDE_POINTER documentation for the case of the leak-finding mode
 * Refine documentation in gc_disclaim.h
 * Remove extra USE_MMAP definition for Interix
+* Remove redundant header double-inclusion checks in the private headers
+* Remove strlen calls with a constant string argument in msvc_dbg
 * Specify register_disclaim_proc and finalized_malloc argument as non-null
+* Support UWP/arm64 target
 * Test marking of finalizer closure object in disclaim_test
+* Turn off leak detection mode explicitly in cord/de
+* Turn off parallel marker, thread-local allocation if used AO ops emulated
+* Update documentation about arm64 ABI in gcconfig.h
 * Use AO_or in async_set_pht_entry_from_index if available
+* Use GC_WORD_MAX macro across all C source files
+* Use macro to operate on a flag residing in GC_stop_count
+* Use standalone private macro to guard against ptr_t redefinition
+* Workaround '#error' cppcheck messages in backgraph and private headers
+* Workaround 'AST broken' syntax error reported by cppcheck in GC_mark_some
+* Workaround 'GC_dump function is never used' cppcheck warning
+* Workaround 'local address assignment to a global variable' CSA warning
+* Workaround 'local variable end shadows outer symbol' cppcheck warnings
+* Workaround 'local variable obj_displ shadows outer symbol' cppcheck warning
+* Workaround 'nonlocal var will use ptr to local var' cppcheck false positive
+* Workaround 'pointer addition with NULL pointer' cppcheck error in msvc_dbg
+* Workaround 'potential non-terminated string' false positive in cordbscs
+* Workaround 'value of _MAX_PATH is unknown' cppcheck warning
+* Workaround cppcheck warnings regarding CLOCKS_PER_SEC, REDIRECT_REALLOC
 
 
 == [8.0.0] 2018-09-05 ==
