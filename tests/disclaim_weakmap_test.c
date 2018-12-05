@@ -36,6 +36,7 @@
 #else
 # undef NTHREADS
 # define NTHREADS 1
+# define AO_t GC_word
 #endif
 
 #ifdef LINT2
@@ -85,11 +86,6 @@
         } \
     } while (0)
 
-/* Define AO primitives in case of no threads support.  */
-#ifndef AO_CLEAR
-  /* AO_t not defined. */
-# define AO_t GC_word
-#endif
 #ifndef AO_HAVE_fetch_and_add1
 # define AO_fetch_and_add1(p) ((*(p))++)
                 /* This is used only to update counters.        */
