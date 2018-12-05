@@ -196,7 +196,7 @@
             }
 
 /* Define AO primitives for a single-threaded mode. */
-#ifndef AO_CLEAR
+#ifndef AO_HAVE_compiler_barrier
   /* AO_t not defined. */
 # define AO_t GC_word
 #endif
