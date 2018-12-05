@@ -1947,7 +1947,8 @@ STATIC void GC_pause(void)
 
     for (i = 0; i < GC_PAUSE_SPIN_CYCLES; ++i) {
         /* Something that's unlikely to be optimized away. */
-#     if defined(AO_CLEAR) && !defined(BASE_ATOMIC_OPS_EMULATED)
+#     if defined(AO_HAVE_compiler_barrier) \
+         && !defined(BASE_ATOMIC_OPS_EMULATED)
         AO_compiler_barrier();
 #     else
         GC_noop1(i);

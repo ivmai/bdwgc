@@ -253,6 +253,9 @@ typedef int GC_bool;
 #if defined(THREADS) && !defined(NN_PLATFORM_CTR) \
     && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
 # include "gc_atomic_ops.h"
+# ifndef AO_HAVE_compiler_barrier
+#   define AO_HAVE_compiler_barrier 1
+# endif
 #endif
 
 #include "gc_locks.h"
