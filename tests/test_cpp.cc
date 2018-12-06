@@ -270,7 +270,6 @@ void* Undisguise( GC_word i ) {
           argv[argc] = NULL;
           break;
         }
-        argv[argc] = cmd;
         for (; *cmd != '\0'; cmd++) {
           if (*cmd != ' ' && *cmd != '\t')
             break;
