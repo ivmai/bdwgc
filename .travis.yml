@@ -23,6 +23,7 @@ matrix:
     env:
     - MAKEFILE_TARGETS="distcheck"
     - GC_REAL_VERSION=7.2l
+    - AO_SRC_VER=v7.2i
   - os: linux
     env:
     - MAKEFILE_TARGETS="dist"
@@ -133,8 +134,9 @@ before_install:
 
 install:
 - if [[ "$NO_CLONE_LIBATOMIC_OPS" != true ]]; then
+    if [[ "$AO_SRC_VER" == "" ]]; then AO_SRC_VER="release-7_2"; fi;
     git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
-              -b release-7_2;
+              -b $AO_SRC_VER;
   fi
 - if [[ "$WORKAROUND_ACLOCAL_MISSING" == true ]]; then
     autoreconf --force --install;
