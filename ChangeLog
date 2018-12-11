@@ -501,7 +501,7 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 Also, includes 7.2 changes
 
 
-== [7.2m] (not released yet) ==
+== [7.2m] 2018-12-11 ==
 
 * Fix comment typos in CMakeLists.txt, backgraph.c, de.c, gcconfig.h
 * Fix hbp overflow in GC_install_counts
