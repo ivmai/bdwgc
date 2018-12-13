@@ -758,7 +758,7 @@ Also, includes 7.4.6 changes
 Also, includes 7.4.4 changes
 
 
-== [7.4.16] (not released yet) ==
+== [7.4.16] 2018-12-13 ==
 
 * Fix 'collecting from unknown thread' abort in leak-finding mode for Win32
 * Fix 'undefined reference to GC_incremental' linker error in pthread_start
