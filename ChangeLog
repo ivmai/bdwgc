@@ -1,5 +1,5 @@
 
-== [7.6.10] (not released yet) ==
+== [7.6.10] 2018-12-13 ==
 
 * Add paths to filenames mentioned in the copyright section in README
 * Call real pthread_sigmask instead of its wrapper in start_mark_threads
