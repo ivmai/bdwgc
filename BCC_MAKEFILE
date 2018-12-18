@@ -13,7 +13,8 @@ lib=	 $(bcbin)\tlib
 link=	 $(bcbin)\ilink32
 cflags=  -O2 -R -v- -vi -H -H=gc.csm -I$(bcinclude);$(gcinclude1) -L$(bclib) \
 	 -w-pro -w-aus -w-par -w-ccc -w-inl -w-rch -a4
-defines= -DALL_INTERIOR_POINTERS -DNO_GETENV -DJAVA_FINALIZATION -DENABLE_DISCLAIM -DGC_OPERATOR_NEW_ARRAY
+defines= -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION -DNO_GETENV \
+     -DENABLE_DISCLAIM -DJAVA_FINALIZATION -DGC_OPERATOR_NEW_ARRAY
 
 .c.obj:
 	$(cc) @&&|
