@@ -436,7 +436,7 @@ GC_INNER char * GC_get_maps(void)
 
 #   if (defined(LINUX) || defined(HURD)) && !defined(IGNORE_PROG_DATA_START)
       /* Try the easy approaches first: */
-#     ifdef HOST_ANDROID
+#     if defined(HOST_ANDROID) && !defined(CPPCHECK)
         /* Workaround for "gold" (default) linker (as of Android NDK r10e). */
         if ((word)__data_start < (word)_etext
             && (word)_etext < (word)__dso_handle) {
