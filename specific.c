@@ -51,7 +51,7 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
 GC_INNER int GC_setspecific(tsd * key, void * value)
 {
     pthread_t self = pthread_self();
-    int hash_val = HASH(self);
+    unsigned hash_val = HASH(self);
     volatile tse * entry;
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -138,8 +138,7 @@ GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
                                     tse * volatile * cache_ptr)
 {
     pthread_t self = pthread_self();
-    unsigned hash_val = HASH(self);
-    tse *entry = key->hash[hash_val].p;
+    tse *entry = key->hash[HASH(self)].p;
 
     GC_ASSERT(qtid != INVALID_QTID);
     while (entry != NULL && !THREAD_EQUAL(entry->thread, self)) {
