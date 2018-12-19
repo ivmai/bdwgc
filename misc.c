@@ -314,7 +314,11 @@ STATIC void GC_init_size_map(void)
       }
       /* Make sure the recursive call is not a tail call, and the bzero */
       /* call is not recognized as dead code.                           */
-      GC_noop1(COVERT_DATAFLOW(dummy));
+#     if defined(CPPCHECK)
+        GC_noop1(dummy[0]);
+#     else
+        GC_noop1(COVERT_DATAFLOW(dummy));
+#     endif
       return(arg);
     }
 # endif /* !ASM_CLEAR_CODE */
