@@ -2263,6 +2263,11 @@ ptr_t GC_unix_get_mem(size_t bytes)
     static GC_bool sbrk_failed = FALSE;
     ptr_t result = 0;
 
+    if (GC_pages_executable) {
+        /* If the allocated memory should have the execute permission   */
+        /* then sbrk() cannot be used.                                  */
+        return GC_unix_mmap_get_mem(bytes);
+    }
     if (!sbrk_failed) result = GC_unix_sbrk_get_mem(bytes);
     if (0 == result) {
         sbrk_failed = TRUE;
