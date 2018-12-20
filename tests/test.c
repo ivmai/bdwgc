@@ -156,6 +156,12 @@
 # define INIT_MANUAL_VDB_ALLOWED /* empty */
 #endif
 
+#ifdef TEST_PAGES_EXECUTABLE
+# define INIT_PAGES_EXECUTABLE GC_set_pages_executable(1)
+#else
+# define INIT_PAGES_EXECUTABLE (void)0
+#endif
+
 #define CHECK_GCLIB_VERSION \
             if (GC_get_version() != ((GC_VERSION_MAJOR<<16) \
                                     | (GC_VERSION_MINOR<<8) \
@@ -185,7 +191,7 @@
 #endif
 
 #define GC_COND_INIT() \
-    INIT_FORK_SUPPORT; INIT_MANUAL_VDB_ALLOWED; \
+    INIT_FORK_SUPPORT; INIT_MANUAL_VDB_ALLOWED; INIT_PAGES_EXECUTABLE; \
     GC_OPT_INIT; CHECK_GCLIB_VERSION; \
     INIT_PRINT_STATS; INIT_FIND_LEAK; INIT_PERF_MEASUREMENT
 
@@ -1971,7 +1977,6 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
        UNTESTED(GC_set_on_collection_event);
        UNTESTED(GC_set_on_heap_resize);
        UNTESTED(GC_set_oom_fn);
-       UNTESTED(GC_set_pages_executable);
        UNTESTED(GC_set_push_other_roots);
        UNTESTED(GC_set_start_callback);
        UNTESTED(GC_set_stop_func);
