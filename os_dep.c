@@ -2471,12 +2471,14 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
       int result;
       if (0 == start_addr) return;
 
-#     ifndef NACL
+#     if !defined(NACL) && !defined(NETBSD)
         result = mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
                                     | (GC_pages_executable ? PROT_EXEC : 0));
 #     else
         {
           /* NaCl does not expose mprotect, but mmap should work fine.  */
+          /* In case of NetBSD, mprotect fails (unlike mmap) even       */
+          /* without PROT_EXEC if PaX MPROTECT feature is enabled.      */
           void *mmap_result = mmap(start_addr, len, (PROT_READ | PROT_WRITE)
                                     | (GC_pages_executable ? PROT_EXEC : 0),
                                    MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
