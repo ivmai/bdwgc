@@ -116,6 +116,7 @@ matrix:
     compiler: gcc
     env:
     - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus"
+    - CFLAGS_EXTRA="-D TEST_PAGES_EXECUTABLE"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
