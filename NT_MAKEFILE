@@ -76,6 +76,8 @@ LINK_GC=$(link) $(ldebug) $(LINK_DLL_FLAGS)
 
 CFLAGS_SPECIFIC=$(CFLAGS_DEBUG) $(CFLAGS_GCDLL) $(CFLAGS_MT)
 
+CFLAGS_DEFAULT=-DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION
+
 # Make sure that .cc is not viewed as a suffix.  It is for VC++2005, but
 # not earlier versions.  We can deal with either, but not inconsistency.
 .SUFFIXES:
@@ -87,17 +89,17 @@ CFLAGS_SPECIFIC=$(CFLAGS_DEBUG) $(CFLAGS_GCDLL) $(CFLAGS_MT)
 AO_SRC_DIR=libatomic_ops/src
 AO_INCLUDE_DIR=$(AO_SRC_DIR)
 
-OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj mallocx.obj extra\msvc_dbg.obj thread_local_alloc.obj
+OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj gcj_mlc.obj mallocx.obj extra\msvc_dbg.obj thread_local_alloc.obj
 
 all: gctest.exe cord\de.exe test_cpp.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION -DCORD_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
+	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -DCORD_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
 # Disable crt security warnings, since unfortunately they warn about all sorts
 # of safe uses of strncpy.  It would be nice to leave the rest enabled.
 
 .cpp.obj:
-	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude -DGC_ATOMIC_UNCOLLECTABLE -D_CRT_SECURE_NO_DEPRECATE $*.cpp /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude $(CFLAGS_DEFAULT) -D_CRT_SECURE_NO_DEPRECATE $*.cpp /Fo$*.obj
 
 $(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h include\gc_disclaim.h include\private\msvc_dbg.h
 
