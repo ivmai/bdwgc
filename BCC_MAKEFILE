@@ -15,7 +15,7 @@ cflags=  -O2 -R -v- -vi -H -H=gc.csm -I$(bcinclude);$(gcinclude1) -L$(bclib) \
 	 -w-pro -w-aus -w-par -w-ccc -w-inl -w-rch -a4
 defines= -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION -DNO_GETENV \
      -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DJAVA_FINALIZATION \
-     -DGC_OPERATOR_NEW_ARRAY
+     -DGC_GCJ_SUPPORT -DGC_OPERATOR_NEW_ARRAY
 
 .c.obj:
 	$(cc) @&&|
@@ -35,7 +35,7 @@ XXXOBJS= XXXalloc.obj XXXreclaim.obj XXXallchblk.obj XXXmisc.obj \
     XXXobj_map.obj XXXblacklst.obj XXXfinalize.obj XXXnew_hblk.obj \
     XXXdbg_mlc.obj XXXmalloc.obj XXXdyn_load.obj \
     XXXtypd_mlc.obj XXXptr_chck.obj XXXgc_cpp.obj XXXmallocx.obj \
-    XXXfnlz_mlc.obj
+    XXXfnlz_mlc.obj XXXgcj_mlc.obj
 
 OBJS= $(XXXOBJS:XXX=)
 
