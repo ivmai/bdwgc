@@ -56,6 +56,9 @@ CFLAGS= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
 # To build the preload library that intercepts malloc, add:
 # -DGC_USE_DLOPEN_WRAP -DREDIRECT_MALLOC=GC_malloc -fpic
 
+# To build the collector with fork() support by default, add to the above:
+# -DHANDLE_FORK
+
 # HOSTCC and HOSTCFLAGS are used to build executables that will be run as
 # part of the build process, i.e. on the build machine.  These will usually
 # be the same as CC and CFLAGS, except in a cross-compilation environment.
