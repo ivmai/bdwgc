@@ -13,7 +13,7 @@
 Also, includes 8.0.2 changes
 
 
-== [8.0.2] (not released yet) ==
+== [8.0.2] 2018-12-23 ==
 
 * Abort with appropriate message if executable pages cannot be allocated
 * Add initial testing of GC_enable/disable, MALLOC[_ATOMIC]_IGNORE_OFF_PAGE
