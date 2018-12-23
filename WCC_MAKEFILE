@@ -48,6 +48,7 @@ SYSTEM=Unknown
 SYSFLAG=-DDOS4GW -bt=dos
 !else ifdef MSWIN32
 SYSFLAG=-DMSWIN32 -bt=nt
+DEFS=$(DEFS) -DUSE_MUNMAP
 !else ifdef OS2
 SYSFLAG=-DOS2 -bt=os2
 !else
