@@ -349,9 +349,6 @@ cord/de: $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o base_lib \
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses -ltermlib -ldld `./threadlibs`
 	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
 	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a
-	./if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
-	./if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
-	./if_mach IA64 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
 	./if_not_there cord/de$(EXEEXT) || $(CC) $(CFLAGS) -o cord/de$(EXEEXT) $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) `./threadlibs`
 
