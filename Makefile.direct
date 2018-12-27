@@ -192,12 +192,10 @@ specific.o pthread_support.o thread_local_alloc.o win32_threads.o: \
 
 dbg_mlc.o gcj_mlc.o: $(srcdir)/include/private/dbg_mlc.h
 
-tests/test.o: tests $(srcdir)/tests/test.c
+tests/test.o: $(srcdir)/tests/test.c
+	mkdir tests || cat /dev/null
 	$(CC) $(CFLAGS) -c $(srcdir)/tests/test.c
 	mv test.o tests/test.o
-
-tests:
-	mkdir tests
 
 base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
 	rm -f dont_ar_1
