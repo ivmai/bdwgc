@@ -764,6 +764,9 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   if (me == 0) {
 #   ifdef GC_PTHREADS
       me = GC_register_my_thread_inner(sb, thread_id);
+#     if defined(CPPCHECK)
+        GC_noop1(me->flags);
+#     endif
       me -> flags |= DETACHED;
           /* Treat as detached, since we do not need to worry about     */
           /* pointer results.                                           */
