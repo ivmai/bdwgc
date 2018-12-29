@@ -39,7 +39,7 @@ matrix:
     - MAKEFILE_TARGETS="dist"
   - os: linux
     env:
-    - CPPCHECK_ENABLE="--enable=unusedFunction --quiet -I libatomic_ops/src extra/gc.c tests/*.c"
+    - CPPCHECK_ENABLE="--enable=unusedFunction -I libatomic_ops/src extra/gc.c tests/*.c"
   - os: linux
     env:
     - CPPCHECK_ENABLE="--enable=unusedFunction --force -D GC_BUILTIN_ATOMIC *.cc cord/*.c cord/tests/*.c tests/*.c tests/*.cc"
