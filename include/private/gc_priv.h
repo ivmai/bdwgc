@@ -435,8 +435,8 @@ EXTERN_C_END
                   getrusage(RUSAGE_SELF, &rusage); \
                   x = rusage.ru_utime; \
                 } while (0)
-# define MS_TIME_DIFF(a,b) ((unsigned long)(a.tv_sec - b.tv_sec) * 1000 \
-                            + (unsigned long)(a.tv_usec - b.tv_usec) / 1000)
+# define MS_TIME_DIFF(a,b) ((unsigned long)((long)(a.tv_sec-b.tv_sec) * 1000 \
+                                    + (long)(a.tv_usec-b.tv_usec) / 1000))
 #elif defined(MSWIN32) || defined(MSWINCE)
 # ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN 1
