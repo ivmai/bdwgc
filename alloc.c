@@ -173,10 +173,36 @@ GC_INNER int GC_CALLBACK GC_never_stop_func(void)
 #endif
 
 #ifndef NO_CLOCK
+  STATIC unsigned long GC_time_lim_nsec = 0;
+                        /* The nanoseconds add-on to GC_time_limit      */
+                        /* value.  Not updated by GC_set_time_limit().  */
+                        /* Ignored if the value of GC_time_limit is     */
+                        /* GC_TIME_UNLIMITED; ignored on some platforms */
+                        /* (depending on GET_TIME implementation).      */
+
+# define TV_NSEC_LIMIT (1000UL * 1000) /* amount of nanoseconds in 1 ms */
+
+  GC_API void GC_CALL GC_set_time_limit_tv(struct GC_timeval_s tv)
+  {
+    GC_ASSERT(tv.tv_ms <= GC_TIME_UNLIMITED);
+    GC_ASSERT(tv.tv_nsec < TV_NSEC_LIMIT);
+    GC_time_limit = tv.tv_ms;
+    GC_time_lim_nsec = tv.tv_nsec;
+  }
+
+  GC_API struct GC_timeval_s GC_CALL GC_get_time_limit_tv(void)
+  {
+    struct GC_timeval_s tv;
+
+    tv.tv_ms = GC_time_limit;
+    tv.tv_nsec = GC_time_lim_nsec;
+    return tv;
+  }
+
   STATIC CLOCK_TYPE GC_start_time = CLOCK_TYPE_INITIALIZER;
                                 /* Time at which we stopped world.      */
                                 /* used only in GC_timeout_stop_func.   */
-#endif
+#endif /* !NO_CLOCK */
 
 STATIC int GC_n_attempts = 0;   /* Number of attempts at finishing      */
                                 /* collection within GC_time_limit.     */

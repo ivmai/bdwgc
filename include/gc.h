@@ -378,9 +378,12 @@ GC_API int GC_CALL GC_get_dont_precollect(void);
 
 GC_API GC_ATTR_DEPRECATED unsigned long GC_time_limit;
                                /* If incremental collection is enabled, */
-                               /* We try to terminate collections       */
-                               /* after this many milliseconds.  Not a  */
-                               /* hard time bound.  Setting this to     */
+                               /* we try to terminate collections       */
+                               /* after this many milliseconds (plus    */
+                               /* the amount of nanoseconds as given in */
+                               /* the latest GC_set_time_limit_tv call, */
+                               /* if any).  Not a hard time bound.      */
+                               /* Setting this variable to              */
                                /* GC_TIME_UNLIMITED will essentially    */
                                /* disable incremental collection while  */
                                /* leaving generational collection       */
@@ -393,10 +396,31 @@ GC_API GC_ATTR_DEPRECATED unsigned long GC_time_limit;
                         /* GC_call_with_alloc_lock() is required to     */
                         /* avoid data races (if the value is modified   */
                         /* after the GC is put to multi-threaded mode). */
+                        /* The setter does not update the value of the  */
+                        /* nanosecond part of the time limit (it is     */
+                        /* zero unless ever set by GC_set_time_limit_tv */
+                        /* call).                                       */
 GC_API void GC_CALL GC_set_time_limit(unsigned long);
 GC_API unsigned long GC_CALL GC_get_time_limit(void);
 
+/* A portable type definition of time with a nanosecond precision.      */
+struct GC_timeval_s {
+  unsigned long tv_ms;  /* time in milliseconds */
+  unsigned long tv_nsec;/* nanoseconds fraction (<1000000) */
+};
+
 /* Public procedures */
+
+/* Set/get the time limit of the incremental collections.  This is      */
+/* similar to GC_set_time_limit and GC_get_time_limit but the time is   */
+/* provided with the nanosecond precision.  The value of tv_nsec part   */
+/* should be less than a million.  If the value of tv_ms part is        */
+/* GC_TIME_UNLIMITED then tv_nsec is ignored.  Initially, the value of  */
+/* tv_nsec part of the time limit is zero.  The functions do not use    */
+/* any synchronization.  Defined only if the library has been compiled  */
+/* without NO_CLOCK.                                                    */
+GC_API void GC_CALL GC_set_time_limit_tv(struct GC_timeval_s);
+GC_API struct GC_timeval_s GC_CALL GC_get_time_limit_tv(void);
 
 /* Tell the collector to start various performance measurements.        */
 /* Only the total time taken by full collections is calculated, as      */
@@ -1967,7 +1991,7 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 #endif
 
 #if defined(GC_TIME_LIMIT) && !defined(CPPCHECK)
-  /* Set GC_time_limit to the desired value at start-up */
+  /* Set GC_time_limit (in ms) to the desired value at start-up. */
 # define GC_INIT_CONF_TIME_LIMIT GC_set_time_limit(GC_TIME_LIMIT)
 #else
 # define GC_INIT_CONF_TIME_LIMIT /* empty */

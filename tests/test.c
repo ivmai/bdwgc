@@ -2001,6 +2001,10 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #      ifdef GC_GCJ_SUPPORT
          UNTESTED(GC_gcj_malloc_ignore_off_page);
 #      endif
+#      ifndef NO_CLOCK
+         UNTESTED(GC_get_time_limit_tv);
+         UNTESTED(GC_set_time_limit_tv);
+#      endif
 #      ifndef NO_DEBUGGING
          UNTESTED(GC_dump);
          UNTESTED(GC_dump_regions);
