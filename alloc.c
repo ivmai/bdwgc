@@ -141,7 +141,7 @@ GC_INNER int GC_CALLBACK GC_never_stop_func(void)
 #endif
 
 #ifndef NO_CLOCK
-  STATIC CLOCK_TYPE GC_start_time = 0;
+  STATIC CLOCK_TYPE GC_start_time = CLOCK_TYPE_INITIALIZER;
                                 /* Time at which we stopped world.      */
                                 /* used only in GC_timeout_stop_func.   */
 #endif
@@ -438,7 +438,7 @@ GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void)
 GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 {
 #   ifndef SMALL_CONFIG
-      CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
+      CLOCK_TYPE start_time = CLOCK_TYPE_INITIALIZER;
 #   endif
 
     ASSERT_CANCEL_DISABLED();
@@ -627,7 +627,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 {
     unsigned i;
 #   ifndef SMALL_CONFIG
-      CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
+      CLOCK_TYPE start_time = CLOCK_TYPE_INITIALIZER;
 #   endif
 
 #   if !defined(REDIRECT_MALLOC) && defined(USE_WINALLOC)
@@ -903,8 +903,8 @@ GC_INLINE int GC_compute_heap_usage_percent(void)
 STATIC void GC_finish_collection(void)
 {
 #   ifndef SMALL_CONFIG
-      CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
-      CLOCK_TYPE finalize_time = 0;
+      CLOCK_TYPE start_time = CLOCK_TYPE_INITIALIZER;
+      CLOCK_TYPE finalize_time = CLOCK_TYPE_INITIALIZER;
 #   endif
 
 #   if defined(GC_ASSERTIONS) && defined(THREADS) \

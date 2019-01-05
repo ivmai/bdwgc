@@ -406,6 +406,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # undef GET_TIME
 # undef MS_TIME_DIFF
 # define CLOCK_TYPE struct timeval
+# define CLOCK_TYPE_INITIALIZER { 0, 0 }
 # define GET_TIME(x) \
                 do { \
                   struct rusage rusage; \
@@ -450,6 +451,12 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* Avoid using double type since some targets (like ARM) might        */
   /* require -lm option for double-to-long conversion.                  */
 #endif /* !BSD_TIME && !MSWIN32 */
+
+# ifndef CLOCK_TYPE_INITIALIZER
+    /* This is used to initialize CLOCK_TYPE variables (to some value)  */
+    /* to avoid "variable might be uninitialized" compiler warnings.    */
+#   define CLOCK_TYPE_INITIALIZER 0
+# endif
 
 /* We use bzero and bcopy internally.  They may not be available.       */
 # if defined(SPARC) && defined(SUNOS4)
