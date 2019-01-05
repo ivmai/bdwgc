@@ -429,6 +429,7 @@ EXTERN_C_END
 # undef GET_TIME
 # undef MS_TIME_DIFF
 # define CLOCK_TYPE struct timeval
+# define CLOCK_TYPE_INITIALIZER { 0, 0 }
 # define GET_TIME(x) \
                 do { \
                   struct rusage rusage; \
@@ -485,6 +486,11 @@ EXTERN_C_END
   /* Avoid using double type since some targets (like ARM) might        */
   /* require -lm option for double-to-long conversion.                  */
 #endif /* !BSD_TIME && !MSWIN32 */
+# ifndef CLOCK_TYPE_INITIALIZER
+    /* This is used to initialize CLOCK_TYPE variables (to some value)  */
+    /* to avoid "variable might be uninitialized" compiler warnings.    */
+#   define CLOCK_TYPE_INITIALIZER 0
+# endif
 #endif /* !NO_CLOCK */
 
 /* We use bzero and bcopy internally.  They may not be available.       */

@@ -722,7 +722,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
     struct hblk ** rlp;
     struct hblk ** rlh;
 #   ifndef NO_CLOCK
-      CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
+      CLOCK_TYPE start_time = CLOCK_TYPE_INITIALIZER;
 
       if (GC_print_stats == VERBOSE)
         GET_TIME(start_time);
