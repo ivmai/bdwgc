@@ -1804,7 +1804,7 @@ void check_heap_stats(void)
 #   endif
     GC_printf("Completed %u collections", (unsigned)GC_get_gc_no());
 #   ifndef NO_CLOCK
-      GC_printf(" in %lu msecs", GC_get_full_gc_total_time());
+      GC_printf(" in %lu ms", GC_get_full_gc_total_time());
 #   endif
 #   ifdef PARALLEL_MARK
       GC_printf(" (using %d marker threads)", GC_get_parallel() + 1);

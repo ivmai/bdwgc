@@ -522,7 +522,7 @@ heap sizes.  But collection pauses will increase for larger heaps.
 They will decrease with the number of processors if parallel marking
 is enabled.
 
-(On 2007 vintage machines, GC times may be on the order of 5 msecs
+(On 2007 vintage machines, GC times may be on the order of 5 ms
 per MB of accessible memory that needs to be scanned and processor.
 Your mileage may vary.)  The incremental/generational collection facility
 may help in some cases.

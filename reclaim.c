@@ -755,7 +755,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
         CLOCK_TYPE done_time;
 
         GET_TIME(done_time);
-        GC_verbose_log_printf("Disposing of reclaim lists took %lu msecs\n",
+        GC_verbose_log_printf("Disposing of reclaim lists took %lu ms\n",
                               MS_TIME_DIFF(done_time,start_time));
       }
 #   endif

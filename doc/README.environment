@@ -127,17 +127,18 @@ GC_ENABLE_INCREMENTAL - Turn on incremental collection at startup.  Note that,
                      to be transparent, it may cause unintended system call
                      failures.  Use with caution.
 
-GC_PAUSE_TIME_TARGET - Set the desired garbage collector pause time in msecs.
-                     This only has an effect if incremental collection is
-                     enabled.  If a collection requires appreciably more time
-                     than this, the client will be restarted, and the collector
-                     will need to do additional work to compensate.  The
-                     special value "999999" indicates that pause time is
-                     unlimited, and the incremental collector will behave
-                     completely like a simple generational collector.  If
-                     the collector is configured for parallel marking, and
-                     run on a multiprocessor, incremental collection should
-                     only be used with unlimited pause time.
+GC_PAUSE_TIME_TARGET - Set the desired garbage collector pause time in
+                     milliseconds (ms).  This only has an effect if incremental
+                     collection is enabled.  If a collection requires
+                     appreciably more time than this, the client will be
+                     restarted, and the collector will need to do additional
+                     work to compensate.  The special value "999999" indicates
+                     that pause time is unlimited, and the incremental
+                     collector will behave completely like a simple
+                     generational collector.  If the collector is configured
+                     for parallel marking, and run on a multiprocessor,
+                     incremental collection should only be used with unlimited
+                     pause time.
 
 GC_FULL_FREQUENCY - Set the desired number of partial collections between full
                     collections.  Matters only if GC_incremental is set.

@@ -375,7 +375,7 @@ void fix_pos(void)
 }
 
 #if defined(WIN32)
-#  define beep() Beep(1000 /* Hz */, 300 /* msecs */)
+#  define beep() Beep(1000 /* Hz */, 300 /* ms */)
 #elif defined(MACINTOSH)
 #  define beep() SysBeep(1)
 #else

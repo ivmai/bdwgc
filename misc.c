@@ -2273,7 +2273,7 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
     }
 #   ifndef NO_CLOCK
       /* Note that the time is wrapped in ~49 days if sizeof(long)==4.  */
-      GC_printf("Time since GC init: %lu msecs\n",
+      GC_printf("Time since GC init: %lu ms\n",
                 MS_TIME_DIFF(current_time, GC_init_time));
 #   endif
 

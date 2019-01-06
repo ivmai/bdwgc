@@ -69,7 +69,7 @@ word GC_non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
 word GC_gc_no = 0;
 
 #ifndef NO_CLOCK
-  static unsigned long full_gc_total_time = 0; /* in msecs, may wrap */
+  static unsigned long full_gc_total_time = 0; /* in ms, may wrap */
   static GC_bool measure_performance = FALSE;
                 /* Do performance measurements if set to true (e.g.,    */
                 /* accumulation of the total time of full collections). */
@@ -246,7 +246,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
     time_diff = MS_TIME_DIFF(current_time,GC_start_time);
     if (time_diff >= GC_time_limit) {
         GC_COND_LOG_PRINTF(
-                "Abandoning stopped marking after %lu msecs (attempt %d)\n",
+                "Abandoning stopped marking after %lu ms (attempt %d)\n",
                 time_diff, GC_n_attempts);
         return(1);
     }
@@ -587,7 +587,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
         if (measure_performance)
           full_gc_total_time += time_diff; /* may wrap */
         if (GC_print_stats)
-          GC_log_printf("Complete collection took %lu msecs\n", time_diff);
+          GC_log_printf("Complete collection took %lu ms\n", time_diff);
       }
 #   endif
     if (GC_on_collection_event)
@@ -873,9 +873,8 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         world_stopped_total_divisor = ++divisor;
 
         GC_ASSERT(divisor != 0);
-        GC_log_printf(
-                "World-stopped marking took %lu msecs (%u in average)\n",
-                time_diff, total_time / divisor);
+        GC_log_printf("World-stopped marking took %lu ms (%u in average)\n",
+                      time_diff, total_time / divisor);
       }
 #   endif
     return(TRUE);
@@ -1151,7 +1150,7 @@ STATIC void GC_finish_collection(void)
           /* A convenient place to output finalization statistics.      */
           GC_print_finalization_stats();
 #       endif
-        GC_log_printf("Finalize plus initiate sweep took %lu + %lu msecs\n",
+        GC_log_printf("Finalize plus initiate sweep took %lu + %lu ms\n",
                       MS_TIME_DIFF(finalize_time,start_time),
                       MS_TIME_DIFF(done_time,finalize_time));
       }
