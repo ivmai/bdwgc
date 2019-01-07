@@ -362,6 +362,16 @@ GC_API GC_ATTR_DEPRECATED char *GC_stackbottom;
                                 /* GC_call_with_gc_active() and         */
                                 /* GC_register_my_thread() instead.     */
 
+/* Sets the cool end of user stack in the specified thread.             */
+/* MUST be called with the GC disabled.                                 */
+GC_API void GC_CALL GC_set_stackbottom(void * thread, char * stackbottom);
+
+/* Returns the cool end of user stack of the current thread/coroutine.  */
+/* When a thread starts it will be computed upon creation.              */
+/* If GC_switch_to_coroutine() is called, the returned value will match */
+/* the specified value in that function.                                */
+GC_API char * GC_CALL GC_get_stackbottom();
+
 GC_API GC_ATTR_DEPRECATED int GC_dont_precollect;
                                 /* Do not collect as part of GC         */
                                 /* initialization.  Should be set only  */
