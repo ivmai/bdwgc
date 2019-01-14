@@ -177,8 +177,7 @@ GC_INNER int GC_CALLBACK GC_never_stop_func(void)
                         /* The nanoseconds add-on to GC_time_limit      */
                         /* value.  Not updated by GC_set_time_limit().  */
                         /* Ignored if the value of GC_time_limit is     */
-                        /* GC_TIME_UNLIMITED; ignored on some platforms */
-                        /* (depending on GET_TIME implementation).      */
+                        /* GC_TIME_UNLIMITED.                           */
 
 # define TV_NSEC_LIMIT (1000UL * 1000) /* amount of nanoseconds in 1 ms */
 
@@ -236,7 +235,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
   {
     CLOCK_TYPE current_time;
     static unsigned count = 0;
-    unsigned long time_diff;
+    unsigned long time_diff, nsec_diff;
 
     if ((*GC_default_stop_func)())
       return(1);
@@ -244,11 +243,13 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
     if ((count++ & 3) != 0) return(0);
     GET_TIME(current_time);
     time_diff = MS_TIME_DIFF(current_time,GC_start_time);
-    if (time_diff >= GC_time_limit) {
-        GC_COND_LOG_PRINTF(
-                "Abandoning stopped marking after %lu ms (attempt %d)\n",
-                time_diff, GC_n_attempts);
-        return(1);
+    nsec_diff = NS_FRAC_TIME_DIFF(current_time, GC_start_time);
+    if (time_diff >= GC_time_limit
+        && (time_diff > GC_time_limit || nsec_diff >= GC_time_lim_nsec)) {
+      GC_COND_LOG_PRINTF("Abandoning stopped marking after %lu ms %lu ns"
+                         " (attempt %d)\n",
+                         time_diff, nsec_diff, GC_n_attempts);
+      return 1;
     }
     return(0);
   }
@@ -587,7 +588,8 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
         if (measure_performance)
           full_gc_total_time += time_diff; /* may wrap */
         if (GC_print_stats)
-          GC_log_printf("Complete collection took %lu ms\n", time_diff);
+          GC_log_printf("Complete collection took %lu ms %lu ns\n", time_diff,
+                        NS_FRAC_TIME_DIFF(current_time, start_time));
       }
 #   endif
     if (GC_on_collection_event)
@@ -873,8 +875,10 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         world_stopped_total_divisor = ++divisor;
 
         GC_ASSERT(divisor != 0);
-        GC_log_printf("World-stopped marking took %lu ms (%u in average)\n",
-                      time_diff, total_time / divisor);
+        GC_log_printf("World-stopped marking took %lu ms %lu ns"
+                      " (%u ms in average)\n",
+                      time_diff, NS_FRAC_TIME_DIFF(current_time, start_time),
+                      total_time / divisor);
       }
 #   endif
     return(TRUE);
@@ -1150,9 +1154,12 @@ STATIC void GC_finish_collection(void)
           /* A convenient place to output finalization statistics.      */
           GC_print_finalization_stats();
 #       endif
-        GC_log_printf("Finalize plus initiate sweep took %lu + %lu ms\n",
-                      MS_TIME_DIFF(finalize_time,start_time),
-                      MS_TIME_DIFF(done_time,finalize_time));
+        GC_log_printf("Finalize and initiate sweep took %lu ms %lu ns"
+                      " + %lu ms %lu ns\n",
+                      MS_TIME_DIFF(finalize_time, start_time),
+                      NS_FRAC_TIME_DIFF(finalize_time, start_time),
+                      MS_TIME_DIFF(done_time, finalize_time),
+                      NS_FRAC_TIME_DIFF(done_time, finalize_time));
       }
 #   elif !defined(SMALL_CONFIG) && !defined(GC_NO_FINALIZATION)
       if (GC_print_stats)
