@@ -458,11 +458,11 @@ EXTERN_C_END
 #   define CLOCK_TYPE ULONGLONG
 #   define GET_TIME(x) \
                 do { \
-                  LARGE_INTEGER freq, t; \
+                  LARGE_INTEGER freq, tc; \
                   if (!QueryPerformanceFrequency(&freq) \
-                      || !QueryPerformanceCounter(&t)) \
+                      || !QueryPerformanceCounter(&tc)) \
                     ABORT("QueryPerformanceCounter requires WinXP+"); \
-                  x = (CLOCK_TYPE)((double)t.QuadPart/freq.QuadPart * 1e9); \
+                  x = (CLOCK_TYPE)((double)tc.QuadPart/freq.QuadPart * 1e9); \
                 } while (0)
                 /* TODO: Call QueryPerformanceFrequency once at GC init. */
 #   define MS_TIME_DIFF(a, b) ((unsigned long)(((a) - (b)) / 1000000UL))
