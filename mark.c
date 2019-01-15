@@ -253,15 +253,11 @@ GC_INNER void GC_initiate_gc(void)
         if (GC_incremental) {
 #         ifdef CHECKSUMS
             GC_read_dirty(FALSE);
+            GC_check_dirty();
 #         else
             GC_read_dirty(GC_mark_state == MS_INVALID);
 #         endif
         }
-#   endif
-#   ifdef CHECKSUMS
-        if (GC_incremental) GC_check_dirty();
-#   endif
-#   if !defined(GC_DISABLE_INCREMENTAL)
         GC_n_rescuing_pages = 0;
 #   endif
     if (GC_mark_state == MS_NONE) {

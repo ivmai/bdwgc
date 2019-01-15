@@ -832,16 +832,14 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
     if (GC_debugging_started) {
       (*GC_check_heap)();
     }
-    if (GC_on_collection_event)
+    if (GC_on_collection_event) {
       GC_on_collection_event(GC_EVENT_MARK_END);
-
+#     ifdef THREADS
+        GC_on_collection_event(GC_EVENT_PRE_START_WORLD);
+#     endif
+    }
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = FALSE;
-#   endif
-
-#   ifdef THREADS
-      if (GC_on_collection_event)
-        GC_on_collection_event(GC_EVENT_PRE_START_WORLD);
 #   endif
 
     START_WORLD();
