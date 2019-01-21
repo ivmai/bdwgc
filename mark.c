@@ -1589,7 +1589,9 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
     GC_push_all_eager(bottom, top);
 # else
 #   ifndef NEED_FIXUP_POINTER
-      if (GC_all_interior_pointers) {
+      if (GC_all_interior_pointers
+          && (word)GC_mark_stack_top
+             < (word)(GC_mark_stack_limit - INITIAL_MARK_STACK_SIZE/8)) {
         GC_push_all(bottom, top);
       } else
 #   endif
