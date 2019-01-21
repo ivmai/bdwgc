@@ -1605,7 +1605,8 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 #         if defined(THREADS) && defined(MPROTECT_VDB)
             && !GC_auto_incremental
 #         endif
-         ) {
+          && (word)GC_mark_stack_top
+             < (word)(GC_mark_stack_limit - INITIAL_MARK_STACK_SIZE/8)) {
         GC_push_all(bottom, top);
       } else
 #   endif
