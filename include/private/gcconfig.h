@@ -2953,7 +2953,8 @@ EXTERN_C_BEGIN
 /* Workaround for Android NDK clang 3.5+ (as of NDK r10e) which does    */
 /* not provide correct _end symbol.  Unfortunately, alternate __end__   */
 /* symbol is provided only by NDK "bfd" linker.                         */
-#if defined(HOST_ANDROID) && defined(__clang__)
+#if defined(HOST_ANDROID) && defined(__clang__) \
+    && !defined(BROKEN_UUENDUU_SYM)
 # undef DATAEND
 # pragma weak __end__
   extern int __end__[];
