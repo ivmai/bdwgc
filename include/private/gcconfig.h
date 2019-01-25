@@ -2285,6 +2285,9 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
+#     if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
+#       define MPROTECT_VDB
+#     endif
 #     define DYNAMIC_LOADING
 #     if defined(HOST_ANDROID)
 #       define SEARCH_FOR_DATA_START
@@ -2382,6 +2385,9 @@ EXTERN_C_BEGIN
 #       define LINUX_STACKBOTTOM
 #       undef STACK_GRAN
 #       define STACK_GRAN 0x10000000
+#       if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
+#           define MPROTECT_VDB
+#       endif
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
             EXTERN_C_END
