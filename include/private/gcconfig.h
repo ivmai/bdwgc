@@ -2167,9 +2167,13 @@
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
 #     define DYNAMIC_LOADING
-      extern int __data_start[];
+#     if defined(PLATFORM_ANDROID)
+#       define SEARCH_FOR_DATA_START
+#     else
+        extern int __data_start[];
+#       define DATASTART ((ptr_t)__data_start)
+#     endif
       extern int _end[];
-#     define DATASTART ((ptr_t)__data_start)
 #     define DATAEND ((ptr_t)(&_end))
 #   endif
 #   ifdef DARWIN
