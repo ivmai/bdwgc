@@ -2286,9 +2286,16 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
 #     define DYNAMIC_LOADING
-      extern int __data_start[];
+#     if defined(HOST_ANDROID)
+#       define SEARCH_FOR_DATA_START
+                        /* As of NDK r18b, __data_start is not provided */
+                        /* if "gold" linker is used.  But __dso_handle  */
+                        /* symbol should be usable instead.             */
+#     else
+        extern int __data_start[];
+#       define DATASTART ((ptr_t)__data_start)
+#     endif
       extern int _end[];
-#     define DATASTART ((ptr_t)__data_start)
 #     define DATAEND ((ptr_t)(&_end))
 #   endif
 #   ifdef DARWIN
