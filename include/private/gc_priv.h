@@ -250,7 +250,7 @@ typedef int GC_bool;
 # define GC_API_PRIV GC_API
 #endif
 
-#if defined(THREADS) && !defined(NN_PLATFORM_CTR) && !defined(SN_TARGET_PSP2)
+#if defined(THREADS) && !defined(NN_PLATFORM_CTR)
 # include "gc_atomic_ops.h"
 # ifndef AO_HAVE_compiler_barrier
 #   define AO_HAVE_compiler_barrier 1
