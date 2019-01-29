@@ -1,3 +1,39 @@
+2019-01-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c [!(THREADS && MPROTECT_VDB)]
+	(GC_push_all_stack): Call GC_push_all_eager() instead of GC_push_all()
+	if GC_mark_stack_top is rather close to GC_mark_stack_limit.
+
+2019-01-04  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h [BSD_TIME] (MS_TIME_DIFF):
+	Cast the result of a.tv_usec-b.tv_usec to long (so that the result of
+	the division should be negative if a.tv_usec is less than b.tv_usec).
+
+2019-01-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c [!SMALL_CONFIG] (GC_start_time): Initialize to
+	CLOCK_TYPE_INITIALIZER (instead of 0).
+	* alloc.c [!SMALL_CONFIG] (GC_try_to_collect_inner, GC_stopped_mark,
+	GC_finish_collection): Initialize local variable of CLOCK_TYPE type to
+	CLOCK_TYPE_INITIALIZER (instead of 0); remove comment (duplicating that
+	in gc_priv.h).
+	* reclaim.c [!SMALL_CONFIG] (GC_reclaim_all): Likewise.
+	* include/private/gc_priv.h (CLOCK_TYPE_INITIALIZER):
+	Define macro.
+
+2018-12-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [USE_MUNMAP && !MSWIN32 && !MSWINCE && NETBSD] (GC_remap):
+	Call mmap() instead of mprotect().
+
+2018-12-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [!OS2 && !PCR && !AMIGA && !MSWIN32 && !MSWINCE && !MACOS
+	&& !DOS4GW && !NONSTOP && !SN_TARGET_PSP2 && !RTEMS && !__CC_ARM
+	&& MMAP_SUPPORTED] (GC_unix_get_mem): Do not call GC_unix_sbrk_get_mem
+	if GC_pages_executable; add comment.
+
 [7.2m]
 
 2018-12-11  Ivan Maidanski <ivmai@mail.ru>
