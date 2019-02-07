@@ -1011,7 +1011,13 @@ GC_INLINE int GC_compute_heap_usage_percent(void)
 {
   word used = GC_composite_in_use + GC_atomic_in_use;
   word heap_sz = GC_heapsize - GC_unmapped_bytes;
-  return used >= heap_sz ? 0 : used < GC_WORD_MAX / 100 ?
+# if defined(CPPCHECK)
+    word limit = (GC_WORD_MAX >> 1) / 50; /* to avoid a false positive */
+# else
+    const word limit = GC_WORD_MAX / 100;
+# endif
+
+  return used >= heap_sz ? 0 : used < limit ?
                 (int)((used * 100) / heap_sz) : (int)(used / (heap_sz / 100));
 }
 

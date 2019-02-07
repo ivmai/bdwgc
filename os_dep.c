@@ -1307,7 +1307,9 @@ GC_INNER size_t GC_page_size = 0;
           result = (ptr_t)(signed_word)(-sizeof(ptr_t));
 #     endif
 #   endif
-    GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)result);
+#   if !defined(CPPCHECK)
+      GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)result);
+#   endif
     return(result);
   }
 # define GET_MAIN_STACKBASE_SPECIAL
