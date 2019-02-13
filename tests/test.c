@@ -855,7 +855,10 @@ typedef struct treenode {
     struct treenode * rchild;
 } tn;
 
-int finalizable_count = 0;
+#ifndef GC_NO_FINALIZATION
+  int finalizable_count = 0;
+#endif
+
 int finalized_count = 0;
 int dropped_something = 0;
 
@@ -927,8 +930,8 @@ tn * mktree(int n)
         {
           FINALIZER_LOCK();
                 /* Losing a count here causes erroneous report of failure. */
-          finalizable_count++;
 #         ifndef GC_NO_FINALIZATION
+            finalizable_count++;
             my_index = live_indicators_count++;
 #         endif
           FINALIZER_UNLOCK();
@@ -1710,8 +1713,6 @@ void check_heap_stats(void)
                   (int)uncollectable_count);
     GC_printf("Allocated %d atomic objects\n", (int)atomic_count);
     GC_printf("Reallocated %d objects\n", (int)realloc_count);
-    GC_printf("Finalized %d/%d objects - ",
-                  finalized_count, finalizable_count);
 # ifndef GC_NO_FINALIZATION
     if (!GC_get_find_leak()) {
       int still_live = 0;
@@ -1721,16 +1722,20 @@ void check_heap_stats(void)
 
 #     ifdef FINALIZE_ON_DEMAND
         if (finalized_count != late_finalize_count) {
-            GC_printf("Demand finalization error\n");
-            FAIL;
+          GC_printf("Finalized %d/%d objects - demand finalization error\n",
+                    finalized_count, finalizable_count);
+          FAIL;
         }
 #     endif
       if (finalized_count > finalizable_count
           || finalized_count < finalizable_count/2) {
-        GC_printf("finalization is probably broken\n");
+        GC_printf("Finalized %d/%d objects - "
+                  "finalization is probably broken\n",
+                  finalized_count, finalizable_count);
         FAIL;
       } else {
-        GC_printf("finalization is probably ok\n");
+        GC_printf("Finalized %d/%d objects - finalization is probably OK\n",
+                  finalized_count, finalizable_count);
       }
       for (i = 0; i < MAX_FINALIZED; i++) {
         if (live_indicators[i] != 0) {
@@ -1802,14 +1807,18 @@ void check_heap_stats(void)
 #   ifdef THREADS
       GC_unregister_my_thread(); /* just to check it works (for main) */
 #   endif
-    GC_printf("Completed %u collections", (unsigned)GC_get_gc_no());
-#   ifndef NO_CLOCK
-      GC_printf(" in %lu ms", GC_get_full_gc_total_time());
+#   ifdef NO_CLOCK
+      GC_printf("Completed %u collections\n", (unsigned)GC_get_gc_no());
+#   elif !defined(PARALLEL_MARK)
+      GC_printf("Completed %u collections in %lu ms\n",
+                (unsigned)GC_get_gc_no(), GC_get_full_gc_total_time());
+#   else
+      GC_printf("Completed %u collections in %lu ms"
+                " (using %d marker threads)\n",
+                (unsigned)GC_get_gc_no(), GC_get_full_gc_total_time(),
+                GC_get_parallel() + 1);
 #   endif
-#   ifdef PARALLEL_MARK
-      GC_printf(" (using %d marker threads)", GC_get_parallel() + 1);
-#   endif
-    GC_printf("\n" "Collector appears to work\n");
+    GC_printf("Collector appears to work\n");
 }
 
 #if defined(MACOS)
