@@ -1347,8 +1347,8 @@ EXTERN_C_BEGIN
 #       endif
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
-        ptr_t GC_find_limit(ptr_t, GC_bool);
-#       define DATAEND GC_find_limit(DATASTART, TRUE)
+        void * GC_find_limit(void *, int);
+#       define DATAEND (ptr_t)GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
 #       define GC_HAVE_DATAREGION2
 #       define DATASTART2 ((ptr_t)(&edata))
@@ -2055,8 +2055,8 @@ EXTERN_C_BEGIN
 #       endif
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
-        ptr_t GC_find_limit(ptr_t, GC_bool);
-#       define DATAEND GC_find_limit(DATASTART, TRUE)
+        void * GC_find_limit(void *, int);
+#       define DATAEND (ptr_t)GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
 #       define GC_HAVE_DATAREGION2
 #       define DATASTART2 ((ptr_t)(&edata))
@@ -2288,9 +2288,6 @@ EXTERN_C_BEGIN
 #     define DYNAMIC_LOADING
 #     if defined(HOST_ANDROID)
 #       define SEARCH_FOR_DATA_START
-                        /* As of NDK r18b, __data_start is not provided */
-                        /* if "gold" linker is used.  But __dso_handle  */
-                        /* symbol should be usable instead.             */
 #     else
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
