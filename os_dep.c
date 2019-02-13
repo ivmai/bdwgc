@@ -407,16 +407,11 @@ GC_INNER char * GC_get_maps(void)
 #   pragma weak __data_start
 #   pragma weak data_start
     extern int __data_start[], data_start[];
-#   ifdef PLATFORM_ANDROID
-#     pragma weak _etext
-#     pragma weak __dso_handle
-      extern int _etext[], __dso_handle[];
-#   endif
 # endif /* LINUX */
 
   ptr_t GC_data_start = NULL;
 
-  ptr_t GC_find_limit(ptr_t, GC_bool);
+  void * GC_find_limit(void *, int);
 
   GC_INNER void GC_init_linux_data_start(void)
   {
@@ -424,19 +419,6 @@ GC_INNER char * GC_get_maps(void)
 
 #   if (defined(LINUX) || defined(HURD)) && !defined(IGNORE_PROG_DATA_START)
       /* Try the easy approaches first: */
-#     ifdef PLATFORM_ANDROID
-        /* Workaround for "gold" (default) linker (as of Android NDK r10e). */
-        if ((word)__data_start < (word)_etext
-            && (word)_etext < (word)__dso_handle) {
-          GC_data_start = (ptr_t)(__dso_handle);
-#         ifdef DEBUG_ADD_DEL_ROOTS
-            GC_log_printf(
-                "__data_start is wrong; using __dso_handle as data start\n");
-#         endif
-          GC_ASSERT((word)GC_data_start <= (word)data_end);
-          return;
-        }
-#     endif
       if ((ptr_t)__data_start != 0) {
           GC_data_start = (ptr_t)(__data_start);
           GC_ASSERT((word)GC_data_start <= (word)data_end);
@@ -491,7 +473,7 @@ GC_INNER char * GC_get_maps(void)
 
 #if defined(NETBSD) && defined(__ELF__)
   ptr_t GC_data_start = NULL;
-  ptr_t GC_find_limit(ptr_t, GC_bool);
+  void * GC_find_limit(void *, int);
 
   extern char **environ;
 
@@ -979,9 +961,10 @@ GC_INNER size_t GC_page_size = 0;
         return(result);
     }
 
-    ptr_t GC_find_limit(ptr_t p, GC_bool up)
+    void * GC_find_limit(void * p, int up)
     {
-        return GC_find_limit_with_bound(p, up, up ? (ptr_t)(word)(-1) : 0);
+        return GC_find_limit_with_bound((ptr_t)p, (GC_bool)up,
+                                        up ? (ptr_t)(word)(-1) : 0);
     }
 # endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES */
 

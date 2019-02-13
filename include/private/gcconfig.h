@@ -1158,8 +1158,8 @@
         extern char end[];
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
-        ptr_t GC_find_limit(ptr_t, GC_bool);
-#       define DATAEND (GC_find_limit (DATASTART, TRUE))
+        void * GC_find_limit(void *, int);
+#       define DATAEND (ptr_t)GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
@@ -1787,8 +1787,8 @@
         extern char end[];
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
-        ptr_t GC_find_limit(ptr_t, GC_bool);
-#       define DATAEND (GC_find_limit (DATASTART, TRUE))
+        void * GC_find_limit(void *, int);
+#       define DATAEND (ptr_t)GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
