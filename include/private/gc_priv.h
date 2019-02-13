@@ -2485,12 +2485,12 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 
 #ifdef SEARCH_FOR_DATA_START
   GC_INNER void GC_init_linux_data_start(void);
-  ptr_t GC_find_limit(ptr_t, GC_bool);
+  void * GC_find_limit(void *, int);
 #endif
 
 #if defined(NETBSD) && defined(__ELF__)
   GC_INNER void GC_init_netbsd_elf(void);
-  ptr_t GC_find_limit(ptr_t, GC_bool);
+  void * GC_find_limit(void *, int);
 #endif
 
 #ifdef UNIX_LIKE
