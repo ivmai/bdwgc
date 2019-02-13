@@ -1804,30 +1804,16 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 # define GC_DATAEND ((void *)((ulong)_end))
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND)
 #elif (defined(PLATFORM_ANDROID) || defined(__ANDROID__)) \
-      && !defined(GC_NOT_DLL)
-# pragma weak _etext
-# pragma weak __data_start
+      && defined(IGNORE_DYNAMIC_LOADING)
+  /* This is ugly but seems the only way to register data roots of the  */
+  /* client shared library if the GC dynamic loading support is off.    */
 # pragma weak __dso_handle
-  extern int _etext[], __data_start[], __dso_handle[];
-# pragma weak __end__
-  extern int __end__[], _end[];
-  /* Explicitly register caller static data roots.  Workaround for      */
-  /* __data_start: NDK "gold" linker might miss it or place it          */
-  /* incorrectly, __dso_handle is an alternative data start reference.  */
-  /* Workaround for _end: NDK Clang 3.5+ does not place it at correct   */
-  /* offset (as of NDK r10e) but "bfd" linker provides __end__ symbol   */
-  /* that could be used instead.                                        */
-# define GC_INIT_CONF_ROOTS \
-                (void)((GC_word)__data_start < (GC_word)_etext \
-                        && (GC_word)_etext < (GC_word)__dso_handle \
-                        ? (__end__ != 0 \
-                            ? (GC_add_roots(__dso_handle, __end__), 0) \
-                            : (GC_word)__dso_handle < (GC_word)_end \
-                            ? (GC_add_roots(__dso_handle, _end), 0) : 0) \
-                        : __data_start != 0 ? (__end__ != 0 \
-                            ? (GC_add_roots(__data_start, __end__), 0) \
-                            : (GC_word)__data_start < (GC_word)_end \
-                            ? (GC_add_roots(__data_start, _end), 0) : 0) : 0)
+  extern int __dso_handle[];
+  GC_API void * GC_CALL GC_find_limit(void * /* start */, int /* up */);
+# define GC_INIT_CONF_ROOTS (void)(__dso_handle != 0 \
+                                   ? (GC_add_roots(__dso_handle, \
+                                            GC_find_limit(__dso_handle, \
+                                                          1 /*up*/)), 0) : 0)
 #else
 # define GC_INIT_CONF_ROOTS /* empty */
 #endif
