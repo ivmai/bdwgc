@@ -656,7 +656,8 @@ GC_INLINE void GC_thread_resume(thread_act_t thread)
   kern_return_t kern_result;
 # if defined(DEBUG_THREADS) || defined(GC_ASSERTIONS)
     struct thread_basic_info info;
-    mach_msg_type_number_t outCount = THREAD_INFO_MAX;
+    mach_msg_type_number_t outCount = THREAD_BASIC_INFO_COUNT;
+
     kern_result = thread_info(thread, THREAD_BASIC_INFO,
                               (thread_info_t)&info, &outCount);
     if (kern_result != KERN_SUCCESS)
