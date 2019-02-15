@@ -1470,9 +1470,7 @@ void run_one_test(void)
              test_generic_malloc_or_special(GC_malloc_atomic(1));
              AO_fetch_and_add1(&atomic_count);
              GC_FREE(GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(1));
-             GC_disable();
              GC_FREE(GC_MALLOC_IGNORE_OFF_PAGE(2));
-             GC_enable();
            }
          }
 #   ifdef GC_GCJ_SUPPORT
@@ -1595,6 +1593,13 @@ void run_one_test(void)
       if (print_stats)
         GC_log_printf("Finished %p\n", (void *)&start_time);
 #   endif
+}
+
+/* Execute some tests after termination of other test threads (if any). */
+void run_single_threaded_test(void) {
+    GC_disable();
+    GC_FREE(GC_MALLOC(100));
+    GC_enable();
 }
 
 void GC_CALLBACK reachable_objs_counter(void *obj, size_t size,
@@ -1911,6 +1916,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #   endif
     set_print_procs();
     run_one_test();
+    run_single_threaded_test();
     check_heap_stats();
 #   ifndef MSWINCE
       fflush(stdout);
@@ -2218,6 +2224,7 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
     if (WaitForSingleObject(win_thr_h, INFINITE) != WAIT_OBJECT_0)
       FAIL;
 # endif
+  run_single_threaded_test();
   check_heap_stats();
 # if defined(CPPCHECK) && defined(GC_WIN32_THREADS)
     UNTESTED(GC_ExitThread);
@@ -2259,6 +2266,7 @@ int test(void)
         != PCR_ERes_okay || code != 0) {
         GC_printf("Thread 2 failed\n");
     }
+    run_single_threaded_test();
     check_heap_stats();
     return(0);
 }
@@ -2371,6 +2379,7 @@ int main(void)
         }
       }
 #   endif
+    run_single_threaded_test();
     check_heap_stats();
     (void)fflush(stdout);
     (void)pthread_attr_destroy(&attr);
