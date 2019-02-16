@@ -1,3 +1,18 @@
+2019-02-08  Hamayama <hamay1010@gmail.com>
+
+	* win32_threads.c [I386] (isWow64): New static variable.
+	* win32_threads.c [I386] (GC_push_stack_for): If isWow64 then set also
+	CONTEXT_EXCEPTION_REQUEST and CONTEXT_SEGMENTS bits in ContextFlags;
+	if isWow64, and CONTEXT_EXCEPTION_REPORTING and
+	CONTEXT_EXCEPTION_ACTIVE are set on return from GetThreadContext then
+	call GetThreadSelectorEntry and use StackLimit of FS selector to set
+	sp local variable (instead of context.Esp); add comment.
+	* win32_threads.c [I386 && DEBUG_THREADS] (GC_push_stack_for): Call
+	GC_log_printf() to report TIB stack limit/base and the case when
+	CONTEXT_EXCEPTION_REQUEST is not supported.
+	* win32_threads.c [I386] (GC_thr_init): Set isWow64 by IsWow64Process()
+	if the later is available.
+
 2019-01-22  Ivan Maidanski <ivmai@mail.ru>
 
 	* mark.c [!(THREADS && MPROTECT_VDB)]
