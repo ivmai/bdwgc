@@ -23,6 +23,21 @@
 Also, includes 8.0.2 changes
 
 
+== [8.0.4] (not released yet) ==
+
+* Avoid test.o rebuild on tests folder timestamp change (Makefile.direct)
+* Avoid unexpected heap growth in gctest caused by GC_disable
+* Ensure result of every variant of MS_TIME_DIFF has unsigned long type
+* Fix 'undefined reference to __data_start' linker error (Android/aarch64)
+* Fix 'unexpected mark stack overflow' abort in push_all_stack
+* Fix 'wrong __data_start/_end pair' error on Android
+* Fix BSD_TIME variant of MS_TIME_DIFF for the case of a.tv_usec < b.tv_usec
+* Fix GetThreadContext stale register values use if WoW64 (Win32)
+* Fix invalid initializer of CLOCK_TYPE variables if BSD_TIME
+* Fix thread_info() count argument value (OS X)
+* Support de_win.c compilation by Makefile.direct (cord/de)
+
+
 == [8.0.2] 2018-12-23 ==
 
 * Abort with appropriate message if executable pages cannot be allocated
