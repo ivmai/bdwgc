@@ -300,6 +300,21 @@
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
 
+== [7.6.12] (not released yet) ==
+
+* Eliminate 'assigned value never used' compiler warning in test_cpp WinMain
+* Fix 'mprotect remapping failed' abort on NetBSD with PaX enabled
+* Fix 'undefined reference to __data_start' linker error (Android/aarch64)
+* Fix 'unexpected mark stack overflow' abort in push_all_stack
+* Fix 'wrong __data_start/_end pair' error on Android
+* Fix BSD_TIME variant of MS_TIME_DIFF for the case of a.tv_usec < b.tv_usec
+* Fix GetThreadContext stale register values use if WoW64 (Win32)
+* Fix executable memory allocation in GC_unix_get_mem
+* Fix invalid initializer of CLOCK_TYPE variables if BSD_TIME
+* Fix thread_info() count argument value (OS X)
+* Update NO_EXECUTE_PERMISSION documentation
+
+
 == [7.6.10] 2018-12-13 ==
 
 * Add paths to filenames mentioned in the copyright section in README
