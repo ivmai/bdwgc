@@ -124,7 +124,9 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
     GC_ASSERT(I_HOLD_LOCK());
     /* Avoid growing the table in case of at least 25% of entries can   */
     /* be deleted by enforcing a collection.  Ignored for small tables. */
-    if (log_old_size >= GC_ON_GROW_LOG_SIZE_MIN) {
+    /* In incremental mode we skip this optimization, as we want to     */
+    /* avoid triggering a full GC whenever possible.                    */
+    if (log_old_size >= GC_ON_GROW_LOG_SIZE_MIN && !GC_incremental) {
       IF_CANCEL(int cancel_state;)
 
       DISABLE_CANCEL(cancel_state);
