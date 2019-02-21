@@ -158,6 +158,11 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
         left = right = 0;
         level = -123456;}
     static void Test() {
+        if (GC_is_incremental_mode() && nFreed < (nAllocated / 5) * 4) {
+          // An explicit GC might be needed to reach the expected number
+          // of the finalized objects.
+          GC_gcollect();
+        }
         my_assert(nFreed <= nAllocated);
         my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
     }
