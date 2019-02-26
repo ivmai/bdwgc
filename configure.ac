@@ -964,6 +964,8 @@ AC_ARG_ENABLE(docs,
                         [do not build and install documentation])])
 AM_CONDITIONAL(ENABLE_DOCS, test x$enable_docs != xno)
 
+AM_CONDITIONAL(ENABLE_SHARED, test x$enable_shared = xyes)
+
 # Atomic Ops
 # ----------
 
