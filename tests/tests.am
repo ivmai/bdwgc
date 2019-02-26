@@ -50,8 +50,8 @@ TESTS += staticrootstest$(EXEEXT)
 check_PROGRAMS += staticrootstest
 staticrootstest_SOURCES = tests/staticrootstest.c
 staticrootstest_CFLAGS = -DSTATICROOTSLIB2
-staticrootstest_LDADD = $(test_ldadd) libstaticrootslib_test.la \
-                        libstaticrootslib2_test.la
+staticrootstest_LDADD = $(nodist_libgc_la_OBJECTS) $(EXTRA_TEST_LIBS) \
+                        libstaticrootslib_test.la libstaticrootslib2_test.la
 check_LTLIBRARIES += libstaticrootslib_test.la libstaticrootslib2_test.la
 libstaticrootslib_test_la_SOURCES = tests/staticrootslib.c
 libstaticrootslib_test_la_LIBADD = $(test_ldadd)
@@ -61,6 +61,9 @@ libstaticrootslib2_test_la_SOURCES = tests/staticrootslib.c
 libstaticrootslib2_test_la_LIBADD = $(test_ldadd)
 libstaticrootslib2_test_la_CFLAGS = -DSTATICROOTSLIB2
 libstaticrootslib2_test_la_LDFLAGS = -no-undefined -rpath /nowhere
+if ENABLE_SHARED
+staticrootstest_LDADD += $(top_builddir)/libgc.la
+endif
 
 if KEEP_BACK_PTRS
 TESTS += tracetest$(EXEEXT)
@@ -106,7 +109,13 @@ test_cpp_SOURCES = tests/test_cpp.cc
 if AVOID_CPP_LIB
 test_cpp_LDADD = gc_cpp.o $(test_ldadd) $(CXXLIBS)
 else
-test_cpp_LDADD = libgccpp.la $(test_ldadd) $(CXXLIBS)
+test_cpp_LDADD = libgccpp.la $(nodist_libgc_la_OBJECTS) \
+                $(EXTRA_TEST_LIBS) $(CXXLIBS)
+## In case of static libraries build, libgc.a is already referenced in
+## dependency_libs attribute of libgccpp.la file.
+if ENABLE_SHARED
+test_cpp_LDADD += $(top_builddir)/libgc.la
+endif
 endif
 endif
 
