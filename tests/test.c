@@ -1508,19 +1508,23 @@ void run_one_test(void)
             FAIL;
           }
           if (print_stats)
-            GC_log_printf("Forked child process\n");
+            GC_log_printf("Forked child process, pid=%ld\n", (long)pid);
           if (waitpid(pid, &wstatus, 0) == -1) {
             GC_printf("Wait for child process failed\n");
             FAIL;
           }
           if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
-            GC_printf("Child process failed, status= 0x%x\n", wstatus);
+            GC_printf("Child process failed, pid=%ld, status=0x%x\n",
+                      (long)pid, wstatus);
             FAIL;
           }
         } else {
+          pid_t child_pid = getpid();
+
           GC_atfork_child();
           if (print_stats)
-            GC_log_printf("Started a child process\n");
+            GC_log_printf("Started a child process, pid=%ld\n",
+                          (long)child_pid);
 #         ifdef THREADS
 #           ifdef PARALLEL_MARK
               GC_gcollect(); /* no parallel markers */
@@ -1529,11 +1533,15 @@ void run_one_test(void)
 #         endif
           GC_gcollect();
 #         ifdef THREADS
+            if (print_stats)
+              GC_log_printf("Starting tiny reverse test, pid=%ld\n",
+                            (long)child_pid);
             tiny_reverse_test(0);
             GC_gcollect();
 #         endif
           if (print_stats)
-            GC_log_printf("Finished a child process\n");
+            GC_log_printf("Finished a child process, pid=%ld\n",
+                          (long)child_pid);
           exit(0);
         }
 #   endif
