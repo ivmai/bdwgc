@@ -72,7 +72,7 @@
 # include <windows.h>
 #endif /* MSWIN32 || MSWINCE */
 
-#ifdef GC_PRINT_VERBOSE_STATS
+#if defined(GC_PRINT_VERBOSE_STATS) || defined(GCTEST_PRINT_VERBOSE)
 # define print_stats VERBOSE
 # define INIT_PRINT_STATS /* empty */
 #else
