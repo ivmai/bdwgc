@@ -7,10 +7,12 @@ environment:
     CMAKE_OPTIONS: -Denable_gc_assertions=ON
   - TARGET: cygwin
     CONF_OPTIONS: --enable-cplusplus
+    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
   - TARGET: cygwin
     CONF_OPTIONS: --enable-cplusplus --disable-munmap --enable-gc-assertions
   - TARGET: cygwin64
     CONF_OPTIONS: --enable-cplusplus
+    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
   - TARGET: cygwin64
     CFLAGS_EXTRA: -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB
     CONF_OPTIONS: --enable-cplusplus --enable-gc-assertions --disable-shared
