@@ -1554,7 +1554,7 @@ void run_one_test(void)
         if (print_stats) {
           GET_TIME(reverse_time);
           time_diff = MS_TIME_DIFF(reverse_time, start_time);
-          GC_log_printf("-------------Finished reverse_test at time %u (%p)\n",
+          GC_log_printf("Finished reverse_test at time %u (%p)\n",
                         (unsigned) time_diff, (void *)&start_time);
         }
 #   endif
@@ -1566,7 +1566,7 @@ void run_one_test(void)
 
           GET_TIME(typed_time);
           time_diff = MS_TIME_DIFF(typed_time, start_time);
-          GC_log_printf("-------------Finished typed_test at time %u (%p)\n",
+          GC_log_printf("Finished typed_test at time %u (%p)\n",
                         (unsigned) time_diff, (void *)&start_time);
         }
 #     endif
@@ -1582,7 +1582,7 @@ void run_one_test(void)
 
         GET_TIME(tree_time);
         time_diff = MS_TIME_DIFF(tree_time, start_time);
-        GC_log_printf("-------------Finished tree_test at time %u (%p)\n",
+        GC_log_printf("Finished tree_test at time %u (%p)\n",
                       (unsigned) time_diff, (void *)&start_time);
       }
 #   endif
@@ -1592,9 +1592,8 @@ void run_one_test(void)
       if (print_stats) {
         GET_TIME(reverse_time);
         time_diff = MS_TIME_DIFF(reverse_time, start_time);
-        GC_log_printf(
-                "-------------Finished second reverse_test at time %u (%p)\n",
-                (unsigned)time_diff, (void *)&start_time);
+        GC_log_printf("Finished second reverse_test at time %u (%p)\n",
+                      (unsigned)time_diff, (void *)&start_time);
       }
 #   endif
     /* GC_allocate_ml and GC_need_to_lock are no longer exported, and   */
