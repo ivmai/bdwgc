@@ -1,5 +1,5 @@
 
-== [7.4.18] (not released yet) ==
+== [7.4.18] 2019-03-01 ==
 
 * Fix 'wrong __data_start/_end pair' error on Android
 * Fix thread_info() count argument value (OS X)
