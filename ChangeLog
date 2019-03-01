@@ -1,9 +1,12 @@
 
 == [8.0.4] (not released yet) ==
 
+* Avoid a full GC when growing finalizer tables if in incremental mode
+* Avoid potential race in hb_sz access between realloc and reclaim_block
 * Avoid test.o rebuild on tests folder timestamp change (Makefile.direct)
 * Avoid unexpected heap growth in gctest caused by GC_disable
 * Ensure result of every variant of MS_TIME_DIFF has unsigned long type
+* Fix 'duplicate symbol' error for tests using multiple static libs (OS X)
 * Fix 'undefined reference to __data_start' linker error (Android/aarch64)
 * Fix 'unexpected mark stack overflow' abort in push_all_stack
 * Fix 'wrong __data_start/_end pair' error on Android
@@ -315,7 +318,7 @@
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
 
-== [7.6.12] (not released yet) ==
+== [7.6.12] 2019-03-01 ==
 
 * Eliminate 'assigned value never used' compiler warning in test_cpp WinMain
 * Fix 'mprotect remapping failed' abort on NetBSD with PaX enabled
