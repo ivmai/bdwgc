@@ -1,5 +1,5 @@
 
-== [7.6.12] (not released yet) ==
+== [7.6.12] 2019-03-01 ==
 
 * Eliminate 'assigned value never used' compiler warning in test_cpp WinMain
 * Fix 'mprotect remapping failed' abort on NetBSD with PaX enabled
