@@ -22,7 +22,7 @@ matrix:
         - libatomic-ops-dev
     env:
     - MAKEFILE_TARGETS="distcheck"
-    - GC_REAL_VERSION=7.2m
+    - GC_REAL_VERSION=7.2n
     - AO_SRC_VER=v7.2i
   - os: linux
     env:

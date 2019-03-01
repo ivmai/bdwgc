@@ -1,3 +1,9 @@
+[7.2n]
+
+2019-03-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README: Bump version to 7.2n (rev. N).
+
 2019-02-08  Hamayama <hamay1010@gmail.com>
 
 	* win32_threads.c [I386] (isWow64): New static variable.
