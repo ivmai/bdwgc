@@ -1344,7 +1344,7 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 Also, includes 7.2 changes
 
 
-== [7.2n] (not released yet) ==
+== [7.2n] 2019-03-01 ==
 
 * Fix 'mprotect remapping failed' abort on NetBSD with PaX enabled
 * Fix 'unexpected mark stack overflow' abort in push_all_stack
