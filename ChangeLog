@@ -9,7 +9,10 @@
 * Enable compilation without C runtime (Win32)
 * Enable mprotect-based incremental GC for Linux/arm and Linux/aarch64
 * New API function to get size of object debug header
+* New macro (GCTEST_PRINT_VERBOSE) to enable verbose logging in test.c only
+* Print pid of child processes if verbose logging (gctest)
 * Remove Linux-specific commands for building cord/de from Makefile.direct
+* Remove dash characters comprising prefix of some verbose logs (gctest)
 * Remove goto statement in print_callers (code refactoring)
 * Remove redundant options for building 'cord' in gc.mak
 * Remove redundant type casts in backgraph HEIGHT_UNKNOWN/IN_PROGRESS
@@ -32,7 +35,7 @@
 * Workaround 'var reassigned before old value use' cppcheck false positive
 
 
-== [8.0.4] (not released yet) ==
+== [8.0.4] 2019-03-02 ==
 
 * Avoid a full GC when growing finalizer tables if in incremental mode
 * Avoid potential race in hb_sz access between realloc and reclaim_block
