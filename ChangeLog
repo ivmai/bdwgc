@@ -1,5 +1,5 @@
 
-== [8.0.4] (not released yet) ==
+== [8.0.4] 2019-03-02 ==
 
 * Avoid a full GC when growing finalizer tables if in incremental mode
 * Avoid potential race in hb_sz access between realloc and reclaim_block
