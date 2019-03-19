@@ -696,9 +696,6 @@
                 RelativePath="..\..\include\gc_gcj.h">
             </File>
             <File
-                RelativePath="..\..\include\gc_inl.h">
-            </File>
-            <File
                 RelativePath="..\..\include\gc_inline.h">
             </File>
             <File
