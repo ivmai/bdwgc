@@ -237,10 +237,6 @@ SOURCE=..\..\include\private\gc_hdrs.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\include\gc_inl.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\include\gc_inline.h
 # End Source File
 # Begin Source File

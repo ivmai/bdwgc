@@ -218,10 +218,6 @@ SOURCE=..\..\include\gc_gcj.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\include\gc_inl.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\include\gc_inline.h
 # End Source File
 # Begin Source File
