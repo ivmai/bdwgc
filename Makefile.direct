@@ -118,7 +118,7 @@ SRCS= $(CSRCS) \
   include/private/pthread_stop_world.h include/private/darwin_semaphore.h \
   include/private/darwin_stop_world.h include/private/thread_local_alloc.h \
   ia64_save_regs_in_stack.s sparc_mach_dep.S \
-  sparc_netbsd_mach_dep.s sparc_sunos4_mach_dep.s $(CORD_SRCS)
+  sparc_netbsd_mach_dep.s $(CORD_SRCS)
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
   $(srcdir)/include/ec.h $(srcdir)/include/cord_pos.h

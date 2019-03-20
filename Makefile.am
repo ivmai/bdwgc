@@ -127,7 +127,7 @@ libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info $(LIBGC_VER_INFO) \
     -no-undefined
 
 EXTRA_libgc_la_SOURCES = ia64_save_regs_in_stack.s sparc_mach_dep.S \
-    sparc_netbsd_mach_dep.s sparc_sunos4_mach_dep.s
+    sparc_netbsd_mach_dep.s
 
 if CPLUSPLUS
 # C++ Interface
