@@ -50,7 +50,7 @@ matrix:
     - CPPCHECK_ENABLE="-j4 --enable=information,performance,portability,style,warning --force -U GC_PRIVATE_H -I libatomic_ops/src *.c"
   - os: linux
     env:
-    - CPPCHECK_ENABLE="-j4 --enable=information,performance,portability,style,warning --force -U GC_PRIVATE_H -I libatomic_ops/src *.cc cord/*.c cord/tests/*.c extra/AmigaOS.c extra/MacOS.c extra/msvc_dbg.c extra/real_malloc.c extra/symbian.cpp tests/*.c tests/*.cc tools/*.c"
+    - CPPCHECK_ENABLE="-j4 --enable=information,performance,portability,style,warning --force -U GC_PRIVATE_H -I libatomic_ops/src *.cc cord/*.c cord/tests/*.c extra/AmigaOS.c extra/MacOS.c extra/msvc_dbg.c extra/symbian.cpp tests/*.c tests/*.cc tools/*.c"
   - os: linux
     compiler: gcc
     env:
