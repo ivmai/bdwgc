@@ -135,7 +135,7 @@ uses explicit invocation.
 5. GC name conflicts:
 
 Many other systems seem to use the identifier "GC" as an abbreviation
-for "Graphics Context".  Since version 5.0, GC placement has been replaced
+for "Graphics Context".  Thus, GC placement has been replaced
 by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 
 ****************************************************************************/

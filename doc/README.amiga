@@ -187,18 +187,16 @@ TECHNICAL NOTES
 
 In addition to Jesper's notes, I have the following to say:
 
-- Starting with version 4.3, gctest checks to see if the code segment is
-  added to the root set or not, and complains if it is. Previous versions
-  of this Amiga port added the code segment to the root set, so I tried to
-  fix that. The only problem is that, as far as I know, it is impossible to
-  know which segments are code segments and which are data segments (there
-  are indeed solutions to this problem, like scanning the program on disk
-  or patch the LoadSeg functions, but they are rather complicated). The
-  solution I have chosen (see os_dep.c) is to test whether the program
-  counter is in the segment we are about to add to the root set, and if it
-  is, to skip the segment. The problems are that this solution is rather
-  awkward and that it works only for one code segment. This means that if
-  your program has more than one code segment, all of them but one will be
+- gctest checks to see if the code segment is added to the root set or not,
+  and complains if it is. The only problem is that, as far as I know, it is
+  impossible to know which segments are code segments and which are data
+  segments (there are indeed solutions to this problem, like scanning the
+  program on disk or patch the LoadSeg functions, but they are rather
+  complicated). The solution I have chosen (see os_dep.c) is to test whether
+  the program counter is in the segment we are about to add to the root set,
+  and if it is, to skip the segment. The problems are that this solution is
+  rather awkward and that it works only for one code segment. This means that
+  if your program has more than one code segment, all of them but one will be
   added to the root set. This isn't a big problem in fact, since the
   collector will continue to work correctly, but it may be slower.
 

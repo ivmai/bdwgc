@@ -1078,9 +1078,7 @@ GC_INNER size_t GC_page_size = 0;
       result = backing_store_base_from_proc();
       if (0 == result) {
           result = (ptr_t)GC_find_limit(GC_save_regs_in_stack(), FALSE);
-          /* Now seems to work better than constant displacement        */
-          /* heuristic used in 6.X versions.  The latter seems to       */
-          /* fail for 2.6 kernels.                                      */
+          /* This works better than a constant displacement heuristic.  */
       }
       return result;
     }

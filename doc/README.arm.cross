@@ -7,21 +7,21 @@ There may well be better ways to do some of this, but ....
 
 The badge4 has a StrongArm-1110 processor and a StrongArm-1111 coprocessor.
 
-Assume that the garbage collector distribution is unpacked into /home/arm/gc6.0,
+Assume that the garbage collector distribution is unpacked into /home/arm/gc,
 which is visible to both the ARM machine and a linux desktop (e.g. via NFS mounting).
 
 Assume that you have a file /home/arm/config.site with contents something like the
 example attached below.  Notice that our local ARM toolchain lives in
 /skiff/local.
 
-Go to /home/arm/gc6.0 directory.  Do
+Go to /home/arm/gc directory.  Do
   CONFIG_SITE=/home/arm/config.site ./configure --target=arm-linux
---prefix=/home/arm/gc6.0
+--prefix=/home/arm/gc
 
 On your desktop, do:
    make
    make install
-The main garbage collector library should now be in ../gc6.0/lib/libgc.so.
+The main garbage collector library should now be in ../gc/lib/libgc.so.
 
 To test the garbage collector, first do the following on your desktop
    make gctest

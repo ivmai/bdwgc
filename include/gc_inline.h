@@ -167,10 +167,9 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 /* Allocate n words (NOT BYTES).  X is made to point to the result.     */
 /* This should really only be used if GC_all_interior_pointers is       */
 /* not set, or DONT_ADD_BYTE_AT_END is set.  See above.                 */
-/* The semantics changed in version 7.0; we no longer lock, and         */
-/* the caller is responsible for supplying a cleared tiny_fl            */
-/* free list array.  For single-threaded applications, this may be      */
-/* a global array.                                                      */
+/* Does not acquire lock.  The caller is responsible for supplying      */
+/* a cleared tiny_fl free list array.  For single-threaded              */
+/* applications, this may be a global array.                            */
 # define GC_MALLOC_WORDS_KIND(result,n,tiny_fl,kind,init) \
     do { \
       size_t granules = GC_WORDS_TO_WHOLE_GRANULES(n); \

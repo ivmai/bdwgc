@@ -1,6 +1,5 @@
-Starting from GC v6.0, we support GNU-style builds based on automake,
-autoconf and libtool.  This is based almost entirely on Tom Tromey's work
-with gcj.
+We support GNU-style builds based on automake, autoconf and libtool.
+This is based almost entirely on Tom Tromey's work with gcj.
 
 To build and install libraries use
 

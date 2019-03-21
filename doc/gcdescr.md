@@ -78,20 +78,20 @@ larger than half of `HBLKSIZE`, which is a power of 2, typically on the order
 of the page size.
 
 Large block sizes are rounded up to the next multiple of `HBLKSIZE` and then
-allocated by `GC_allochblk`. Recent versions of the collector use an
-approximate best fit algorithm by keeping free lists for several large block
-sizes. The actual implementation of `GC_allochblk` is significantly
-complicated by black-listing issues (see below).
+allocated by `GC_allochblk`. The collector use an approximate best fit
+algorithm by keeping free lists for several large block sizes. The actual
+implementation of `GC_allochblk` is significantly complicated by black-listing
+issues (see below).
 
 Small blocks are allocated in chunks of size `HBLKSIZE`. Each chunk
 is dedicated to only one object size and kind.
 
 The allocator maintains separate free lists for each size and kind of object.
 Associated with each kind is an array of free list pointers, with entry
-`freelist[i]` pointing to a free list of size 'i' objects. In recent versions
-of the collector, index `i` is expressed in granules, which are the minimum
-allocatable unit, typically 8 or 16 bytes. The free lists themselves are
-linked through the first word in each object (see `obj_link` macro).
+`freelist[i]` pointing to a free list of size 'i' objects. Index `i` is
+expressed in granules, which are the minimum allocatable unit, typically 8 or
+16 bytes. The free lists themselves are linked through the first word in each
+object (see `obj_link` macro).
 
 Once a large block is split for use in smaller objects, it can only be used
 for objects of that size, unless the collector discovers a completely empty
@@ -132,14 +132,13 @@ of fragmentation. In particular:
 
   * Programs with a large root set size and little live heap memory will
   expand the heap to amortize the cost of scanning the roots.
-  * GC v5 actually collect more frequently in non-incremental mode. The large
+  * GC actually collect more frequently in non-incremental mode. The large
   block allocator usually refuses to split large heap blocks once the garbage
   collection threshold is reached. This often has the effect of collecting
   well before the heap fills up, thus reducing fragmentation and working set
-  size at the expense of GC time. GC v6 chooses an intermediate strategy
-  depending on how much large object allocation has taken place in the past.
-  (If the collector is configured to unmap unused pages, GC v6 uses the
-  strategy of GC v5.)
+  size at the expense of GC time. (If the collector is configured not to unmap
+  unused pages, GC chooses an intermediate strategy depending on how much
+  large object allocation has taken place in the past.)
   * In calculating the amount of allocation since the last collection we give
   partial credit for objects we expect to be explicitly deallocated. Even
   if all objects are explicitly managed, it is often desirable to collect
@@ -466,10 +465,10 @@ stacks. This is current accomplished with `#define`'s in `gc.h` (really
 `gc_pthread_redirects.h`), or optionally by using `ld`'s function call
 wrapping mechanism under Linux.
 
-Recent versions of the collector support several facilities to enhance the
-processor-scalability and thread performance of the collector. These are
-discussed in more detail [here](scale.md). We briefly outline the data
-approach to thread-local allocation in the next section.
+The collector support several facilities to enhance the processor-scalability
+and thread performance of the collector. These are discussed in more detail
+[here](scale.md). We briefly outline the data approach to thread-local
+allocation in the next section.
 
 ## Thread-local allocation
 
@@ -514,8 +513,9 @@ is required to mark all objects on pointer-free and gcj local free lists.
 On thread exit, any remaining thread-local free list entries are transferred
 back to the global free list.
 
-Note that if the collector is configured for thread-local allocation,
-`GC_malloc` only uses thread-local allocation (starting from GC v7).
+Note that if the collector is configured for thread-local allocation (the
+default for most platforms), `GC_malloc` and friends only use thread-local
+allocation.
 
 For some more details see [here](scale.md), and the technical report entitled
 ["Fast Multiprocessor Memory Allocation and Garbage Collection"](http://www.hpl.hp.com/techreports/2000/HPL-2000-165.html).

@@ -165,9 +165,9 @@ Note that incremental collection is disabled with -DSMALL_CONFIG.
 Threads
 -------
 
-This version of the collector by default handles threads similarly
-to other platforms.  James Clark's code which tracks threads attached
-to the collector DLL still exists, but requires that both
+The collector by default handles threads similarly to other platforms.
+James Clark's code which tracks threads attached to the collector DLL still
+exists, but requires that both
 - the collector is built in a DLL with GC_DLL defined, and
 - GC_use_threads_discovery() is called before GC initialization, which
   in turn must happen before creating additional threads.
@@ -189,13 +189,13 @@ nmake /F ".\gc.mak" CFG="gctest - Win32 Release"
 This requires that the subdirectory gctest\Release exist.
 The test program and DLL will reside in the Release directory.
 
-This version currently supports incremental collection only if it is
-enabled before any additional threads are created.
+The incremental collection is supported only if it is enabled before any
+additional threads are created.
 
-Since 6.3alpha2, threads are also better supported in static library builds
-with Microsoft tools (e.g., NT_MAKEFILE) and with the GNU
-tools.  The collector must be built with GC_THREADS defined (this is the
-default in NT_MAKEFILE, ./configure and CMakeLists.txt).
+Threads are also supported in static library builds with Microsoft tools
+(e.g., NT_MAKEFILE) and with the GNU tools.  The collector must be built with
+GC_THREADS defined (this is the default in NT_MAKEFILE, ./configure and
+CMakeLists.txt).
 
 For the normal, non-dll-based thread tracking to work properly,
 threads should be created with GC_CreateThread or GC_beginthreadex,

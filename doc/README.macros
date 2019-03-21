@@ -258,17 +258,16 @@ GC_COLLECT_AT_MALLOC=<n>        Force garbage collection at every
   (Might be useful for application debugging or in find-leak mode.)
 
 JAVA_FINALIZATION       Makes it somewhat safer to finalize objects out of
-  order by specifying a nonstandard finalization mark procedure  (see
+  order by specifying a nonstandard finalization mark procedure (see
   finalize.c).  Objects reachable from finalizable objects will be marked
   in a separate post-pass, and hence their memory won't be reclaimed.
   Not recommended unless you are implementing a language that specifies
-  these semantics.  Since 5.0, determines only the initial value
+  these semantics.  Actually, the macro determines only the initial value
   of GC_java_finalization variable.
 
 FINALIZE_ON_DEMAND      Causes finalizers to be run only in response
-  to explicit GC_invoke_finalizers() calls.
-  In 5.0 this became runtime adjustable, and this only determines the
-  initial value of GC_finalize_on_demand.
+  to explicit GC_invoke_finalizers() calls.  Actually, the macro only
+  determines the initial value of GC_finalize_on_demand.
 
 GC_NO_FINALIZATION      Exclude finalization support (for smaller code size).
 

@@ -27,10 +27,9 @@ SOLARIS THREADS:
 Unless --disable-threads option is given, threads support is on by default in
 configure.  This causes the collector to be compiled with -D GC_THREADS
 ensuring thread safety.  This assumes use of the pthread_ interface; old-style
-Solaris threads are no longer supported.
-Thread-local allocation is now on by default.  Parallel marking is on by
-default starting from GC v7.3 but it could be disabled manually
-by configure --disable-parallel-mark option.
+Solaris threads are no longer supported.  Thread-local allocation is on by
+default.  Parallel marking is on by default (it could be disabled manually
+by configure --disable-parallel-mark option).
 
 It is also essential that gc.h be included in files that call pthread_create,
 pthread_join, pthread_detach, or dlopen.  gc.h macro defines these to also do
@@ -38,10 +37,9 @@ GC bookkeeping, etc.  gc.h must be included with one or both of these macros
 defined, otherwise these replacements are not visible.  A collector built in
 this way way only be used by programs that are linked with the threads library.
 
-Since 5.0 alpha5, dlopen disables collection temporarily,
-unless USE_PROC_FOR_LIBRARIES is defined.  In some unlikely cases, this
-can result in unpleasant heap growth.  But it seems better than the
-race/deadlock issues we had before.
+Unless USE_PROC_FOR_LIBRARIES is defined, dlopen disables collection
+temporarily.  In some unlikely cases, this can result in unpleasant heap
+growth.  But it seems better than the race/deadlock issues we had before.
 
 If threads are used on an X86 processor with malloc redirected to
 GC_malloc, it is necessary to call GC_INIT explicitly before forking the

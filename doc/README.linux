@@ -60,9 +60,9 @@ To use threads, you need to abide by the following requirements:
    collector.  This probably depends on the linuxthreads version.  For the
    time being, any collectible memory referenced by thread local storage
    should also be referenced from elsewhere, or be allocated as uncollectible.
-   (This is really a bug that should be fixed somehow.  The current GC
-   version probably gets things right if there are not too many tls locations
-   and if dlopen is not used.)
+   (This is really a bug that should be fixed somehow.  Actually, the
+   collector probably gets things right, on Linux at least, if there are not
+   too many tls locations and if dlopen is not used.)
 
 
 M68K LINUX:

@@ -5,7 +5,7 @@
  * Copyright 1999 by Hewlett-Packard Company.  All rights reserved.
  * Copyright (C) 2007 Free Software Foundation, Inc
  * Copyright (c) 2000-2011 by Hewlett-Packard Development Company.
- * Copyright (c) 2009-2018 Ivan Maidanski
+ * Copyright (c) 2009-2019 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -99,11 +99,10 @@ GC_API GC_word GC_CALL GC_get_gc_no(void);
                         /* collection is only partially functional,     */
                         /* and may not be desirable.  The getter does   */
                         /* not use or need synchronization (i.e.        */
-                        /* acquiring the GC lock).  Starting from       */
-                        /* GC v7.3, GC_parallel value is equal to the   */
-                        /* number of marker threads minus one (i.e.     */
-                        /* number of existing parallel marker threads   */
-                        /* excluding the initiating one).               */
+                        /* acquiring the GC lock).  GC_parallel value   */
+                        /* is equal to the number of marker threads     */
+                        /* minus one (i.e. number of existing parallel  */
+                        /* marker threads excluding the initiating one).*/
   GC_API int GC_CALL GC_get_parallel(void);
 #endif
 
@@ -242,8 +241,8 @@ GC_API
 # ifndef GC_DONT_GC
     GC_ATTR_DEPRECATED
 # endif
-  int GC_dont_gc;       /* != 0 ==> Don't collect.  In versions 6.2a1+, */
-                        /* this overrides explicit GC_gcollect() calls. */
+  int GC_dont_gc;       /* != 0 ==> Do not collect.  This overrides     */
+                        /* explicit GC_gcollect() calls as well.        */
                         /* Used as a counter, so that nested enabling   */
                         /* and disabling work correctly.  Should        */
                         /* normally be updated with GC_enable() and     */
@@ -261,8 +260,7 @@ GC_API int GC_CALL GC_get_dont_expand(void);
 
 GC_API GC_ATTR_DEPRECATED int GC_use_entire_heap;
                 /* Causes the non-incremental collector to use the      */
-                /* entire heap before collecting.  This was the only    */
-                /* option for GC versions < 5.0.  This sometimes        */
+                /* entire heap before collecting.  This sometimes       */
                 /* results in more large block fragmentation, since     */
                 /* very large blocks will tend to get broken up         */
                 /* during each GC cycle.  It is likely to result in a   */
@@ -329,8 +327,8 @@ GC_API GC_ATTR_DEPRECATED GC_word GC_free_space_divisor;
                         /* GC_call_with_alloc_lock() is required to     */
                         /* avoid data races (if the value is modified   */
                         /* after the GC is put to multi-threaded mode). */
-                        /* In version 7.1 (and before), the setter      */
-                        /* returned the old value.                      */
+                        /* In GC v7.1 (and before), the setter returned */
+                        /* the old value.                               */
 GC_API void GC_CALL GC_set_free_space_divisor(GC_word);
 GC_API GC_word GC_CALL GC_get_free_space_divisor(void);
 
@@ -476,8 +474,8 @@ GC_API int GC_CALL GC_get_max_prior_attempts(void);
 /* activities are not fully POSIX-compliant.)  GC_set_handle_fork       */
 /* instructs GC_init to setup GC fork handlers using pthread_atfork,    */
 /* the latter might fail (or, even, absent on some targets) causing     */
-/* abort at GC initialization.  Starting from 7.3alpha3, problems with  */
-/* missing (or failed) pthread_atfork() could be avoided by invocation  */
+/* abort at GC initialization.  Issues with missing (or failed)         */
+/* pthread_atfork() could be avoided by invocation                      */
 /* of GC_set_handle_fork(-1) at application start-up and surrounding    */
 /* each fork() with the relevant GC_atfork_prepare/parent/child calls.  */
 GC_API void GC_CALL GC_set_handle_fork(int);
@@ -735,8 +733,6 @@ GC_API size_t GC_CALL GC_get_total_bytes(void);
 /* the allocator lock thus preventing data racing and returning the     */
 /* consistent result.)  Passing NULL pointer is allowed for any         */
 /* argument.  Returned (filled in) values are of word type.             */
-/* (This API function was introduced in GC v7.2alpha7 at the same time  */
-/* when GC_get_heap_size and the friends were made lock-free again.)    */
 GC_API void GC_CALL GC_get_heap_usage_safe(GC_word * /* pheap_size */,
                                            GC_word * /* pfree_bytes */,
                                            GC_word * /* punmapped_bytes */,
@@ -1359,7 +1355,7 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 /* GC_set_warn_proc can be used to redirect or filter warning messages. */
 /* p may not be a NULL pointer.  msg is printf format string (arg must  */
 /* match the format).  Both the setter and the getter acquire the GC    */
-/* lock (to avoid data races).  In version 7.1 (and before), the setter */
+/* lock (to avoid data races).  In GC v7.1 (and before), the setter     */
 /* returned the old warn_proc value.                                    */
 typedef void (GC_CALLBACK * GC_warn_proc)(char * /* msg */,
                                           GC_word /* arg */);

@@ -3,7 +3,7 @@ You probably really wanted README.darwin.
 
 ---------------------------------------------
 
-Patrick Beard's Notes for building GC v4.12 with CodeWarrior Pro 2:
+Patrick Beard's Notes for building GC with CodeWarrior Pro 2:
 ----------------------------------------------------------------------------
 The current build environment for the collector is CodeWarrior Pro 2.
 Projects for CodeWarrior Pro 2 (and for quite a few older versions)
@@ -24,15 +24,10 @@ problems when used as distribution media. This note tries to provide
 porting instructions in pure TEXT form to avoid those problems. A manual
 'makefile' if you like.
 
-    GC version:     4.12a2
     Codewarrior:    CWPro1
     date:           18 July 1997
 
-The notes may or may not apply to earlier or later versions of the
-GC/CWPro. Actually, they do apply to earlier versions of both except that
-until recently a project could only build one target so each target was a
-separate project. The notes will most likely apply to future versions too.
-Possibly with minor tweaks.
+The notes may or may not apply to earlier or later versions of the CWPro.
 
 This is just to record my experiences. These notes do not mean I now
 provide a supported port of the GC to MacOS. It works for me. If it works
@@ -291,7 +286,7 @@ __datastart__, __data_end__ that wraps all globals.
 
 Patrick Beard's instructions (may be dated):
 
-v4.3 of the collector now runs under Symantec C++/THINK C v7.0.4, and
+The collector should run under Symantec C++/THINK C v7.0.4, and
 Metrowerks C/C++ v4.5 both 68K and PowerPC. Project files are provided
 to build and test the collector under both development systems.
 

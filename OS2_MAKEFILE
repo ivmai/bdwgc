@@ -3,7 +3,7 @@
 # Adding thread support may be nontrivial, since we haven't yet figured out how to
 # look at another thread's registers.
 
-# Significantly revised for GC version 4.4 by Mark Boulter (Jan 1994).
+# Significantly revised by Mark Boulter (Jan 1994).
 
 OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj typd_mlc.obj ptr_chck.obj mallocx.obj gcj_mlc.obj
 

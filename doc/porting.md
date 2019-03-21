@@ -152,7 +152,7 @@ contents that the collector must trace from are copied to the stack. Typically
 this can be done portably, but on some platforms it may require assembly code,
 or just tweaking of conditional compilation tests.
 
-For GC v7, if your platform supports `getcontext`, then defining the macro
+If your platform supports `getcontext` then defining the macro
 `UNIX_LIKE` for your OS in `gcconfig.h` (if it is not defined there yet)
 is likely to solve the problem. otherwise, if you are using gcc,
 `_builtin_unwind_init` will be used, and should work fine. If that is not
@@ -160,10 +160,8 @@ applicable either, the implementation will try to use `setjmp`. This will work
 if your `setjmp` implementation saves all possibly pointer-valued registers
 into the buffer, as opposed to trying to unwind the stack at `longjmp` time.
 The `setjmp_test` test tries to determine this, but often does not get it
-right.
-
-In GC v6.x versions of the collector, tracing of registers was more commonly
-handled with assembly code. In GC v7, this is generally to be avoided.
+right. Registers tracing handled with an assembly code is generally to be
+avoided.
 
 Most commonly `os_dep.c` will not require attention, but see below.
 
@@ -197,7 +195,7 @@ stopped with signals. In this case, the changes involve:
   be automatically defined by `gc_config_macros.h` in the right cases.
   It should also result in a definition of `GC_PTHREADS`, as for the existing
   cases.
-  2. For GC v7, ensuring that the `atomic_ops` package at least minimally
+  2. Ensuring that the `atomic_ops` package at least minimally
   supports the platform. If incremental GC is needed, or if pthread locks
   do not perform adequately as the allocation lock, you will probably need
   to ensure that a sufficient `atomic_ops` port exists for the platform

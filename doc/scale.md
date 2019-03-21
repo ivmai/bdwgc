@@ -25,11 +25,9 @@ implementations in most cases, sometimes drastically so.
 
 ## Options for enhanced scalability
 
-Version 6.0 of the collector adds two facilities to enhance collector
-scalability on multiprocessors. As of 6.0alpha1, these are supported only
-under Linux on X86 and IA64 processors, though ports to other otherwise
-supported Pthreads platforms should be straightforward. They are intended
-to be used together.
+The collector uses two facilities to enhance collector scalability on
+multiprocessors. They are intended to be used together. (The following refers
+to Makefile.direct again.)
 
   * Building the collector with `-DPARALLEL_MARK` allows the collector to run
   the mark phase in parallel in multiple threads, and thus on multiple
@@ -111,8 +109,8 @@ We conducted some simple experiments with a version of
 modified to run multiple concurrent client threads in the same address space.
 Each client thread does the same work as the original benchmark, but they
 share a heap. This benchmark involves very little work outside of memory
-allocation. This was run with GC 6.0alpha3 on a dual processor Pentium III/500
-machine under Linux 2.2.12.
+allocation. This was run with an ancient GC (released in 2000) on a dual
+processor Pentium III/500 machine under Linux 2.2.12.
 
 Running with a thread-unsafe collector, the benchmark ran in 9 seconds. With
 the simple thread-safe collector, built with `-DGC_THREADS`, the execution

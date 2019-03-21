@@ -16,16 +16,13 @@ structures. Thus it does not require all objects to be deallocated at process
 exit time, a potentially useless activity that often triggers large amounts
 of paging.
 
-All non-ancient versions of the garbage collector provide leak detection
-support. Version 5.3 adds the following features:
+The garbage collector provide leak detection support. This includes the
+following features:
 
   1. Leak detection mode can be initiated at run-time by setting
   `GC_find_leak` instead of building the collector with `FIND_LEAK` defined.
   This variable should be set to a nonzero value at program startup.
   2. Leaked objects should be reported and then correctly garbage collected.
-  Prior versions either reported leaks or functioned as a garbage collector.
-  For the rest of this description we will give instructions that work with
-  any reasonable version of the collector.
 
 To use the collector as a leak detector, follow the following steps:
 
@@ -54,8 +51,8 @@ useful in this context, and are not fully supported. Their use will usually
 generate additional bogus leak reports, since the collector itself drops some
 associated objects.
 
-The same is generally true of thread support. However, as of 6.0alpha4,
-correct leak reports should be generated with linuxthreads.
+The same is generally true of thread support. However, the correct leak
+reports should be generated with linuxthreads, at least.
 
 On a few platforms (currently Solaris/SPARC, Irix, and, with
 -DSAVE_CALL_CHAIN, Linux/X86), `GC_MALLOC` also causes some more information
@@ -68,9 +65,8 @@ the aid of a debugger.
 The `leak_detector.h` file is included in the "include" subdirectory of the
 distribution.
 
-Assume the collector has been built with `-DFIND_LEAK`. (For newer versions
-of the collector, we could instead add the statement `GC_set_find_leak(1)` as
-the first statement in `main`.
+Assume the collector has been built with `-DFIND_LEAK` or
+`GC_set_find_leak(1)` exists as the first statement in `main`.
 
 The program to be tested for leaks can then look like "leak_test.c" file
 in the "tests" subdirectory of the distribution.
@@ -116,19 +112,17 @@ In the Irix case, only the address inside the caller to main is given.
 
 In many cases, a debugger is needed to interpret the additional information.
 On systems supporting the "adb" debugger, the `tools/callprocs.sh` script can
-be used to replace program counter values with symbolic names. As of version
-6.1, the collector tries to generate symbolic names for call stacks if it
-knows how to do so on the platform. This is true on Linux/X86, but not on most
-other platforms.
+be used to replace program counter values with symbolic names. The collector
+tries to generate symbolic names for call stacks if it knows how to do so on
+the platform. This is true on Linux/X86, but not on most other platforms.
 
 ## Simplified leak detection under Linux
 
-Since version 6.1, it should be possible to run the collector in leak
-detection mode on a program a.out under Linux/X86 as follows:
+It should be possible to run the collector in the leak detection mode on
+a program a.out under Linux/X86 as follows:
 
-  1. _Ensure that a.out is a single-threaded executable, or you are using
-  a very recent (7.0alpha7+) collector version on Linux._ On most platforms
-  this does not work at all for the multi-threaded programs.
+  1. If possible, ensure that a.out is a single-threaded executable. On some
+  platforms this does not work at all for the multi-threaded programs.
   2. If possible, ensure that the `addr2line` program is installed
   in `/usr/bin`. (It comes with most Linux distributions.)
   3. If possible, compile your program, which we'll call `a.out`, with full

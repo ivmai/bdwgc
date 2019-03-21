@@ -2858,7 +2858,7 @@ GC_INNER void GC_thr_init(void)
 
       /* Note that GC_use_threads_discovery should be called by the     */
       /* client application at start-up to activate automatic thread    */
-      /* registration (it is the default GC behavior since v7.0alpha7); */
+      /* registration (it is the default GC behavior);                  */
       /* to always have automatic thread registration turned on, the GC */
       /* should be compiled with -D GC_DISCOVER_TASK_THREADS.           */
       if (!GC_win32_dll_threads && parallel_initialized) return TRUE;

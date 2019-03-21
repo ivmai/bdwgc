@@ -81,8 +81,7 @@ be significantly reduced.
 the main executable_, _not from a dynamic library_, before the initial
 invocation of a GC routine. It is recommended that this be done in portable
 code, though we try to ensure that it expands to a no-op on as many platforms
-as possible. In GC v7.0, it was required if thread-local allocation is enabled
-in the collector build, and `malloc` is not redirected to `GC_malloc`.
+as possible.
 
 **void `GC_gcollect`(void)** - Explicitly force a garbage collection.
 

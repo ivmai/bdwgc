@@ -8,8 +8,7 @@ If you use -DREDIRECT_MALLOC=GC_malloc with C++ code, your code should make
 at least one explicit call to malloc instead of new to ensure that the proper
 version of malloc is linked in.
 
-Sproc threads are not supported in this version, though there may exist other
-ports.
+Sproc threads are not supported.
 
 Pthreads support is provided.  This requires that:
 
