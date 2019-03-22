@@ -8,7 +8,7 @@
 <H1>C Interface</h1>
 On many platforms, a single-threaded garbage collector library can be built
 to act as a plug-in malloc replacement.
-(Build with <TT>-DREDIRECT_MALLOC=GC_malloc -DIGNORE_FREE</tt>.)
+(Build it with <TT>-DREDIRECT_MALLOC=GC_malloc -DIGNORE_FREE</tt>.)
 This is often the best way to deal with third-party libraries
 which leak or prematurely free objects.
 <TT>-DREDIRECT_MALLOC=GC_malloc</tt> is intended
@@ -79,7 +79,7 @@ block itself does not appear to be reachable.  (Objects allocated in this way
 are effectively treated as roots by the collector.)
 <DT> <B> void * GC_REALLOC(void *<I>old</i>, size_t <I>new_size</i>) </b>
 <DD>
-Allocate a new object of the indicated size and copy (a prefix of) the
+Allocates a new object of the indicated size and copy (a prefix of) the
 old object into the new object.  The old object is reused in place if
 convenient.  If the original object was allocated with
 <TT>GC_MALLOC_ATOMIC</tt>,
@@ -88,7 +88,7 @@ as an uncollectible object, then the new object is uncollectible, and
 the old object (if different) is deallocated.
 <DT> <B> void GC_FREE(void *<I>dead</i>) </b>
 <DD>
-Explicitly deallocate an object.  Typically not useful for small
+Explicitly deallocates an object.  Typically not useful for small
 collectible objects.
 <DT> <B> void * GC_MALLOC_IGNORE_OFF_PAGE(size_t <I>nbytes</i>) </b>
 <DD>
@@ -116,10 +116,10 @@ thread-local allocation is enabled in the collector build, and <TT>malloc</tt>
 is not redirected to <TT>GC_malloc</tt>.
 <DT> <B> void GC_gcollect(void) </b>
 <DD>
-Explicitly force a garbage collection.
+Explicitly forces a garbage collection.
 <DT> <B> void GC_enable_incremental(void) </b>
 <DD>
-Cause the garbage collector to perform a small amount of work
+Causes the garbage collector to perform a small amount of work
 every few invocations of <TT>GC_MALLOC</tt> or the like, instead of performing
 an entire collection at once.  This is likely to increase total
 running time.  It will improve response on a platform that either has
@@ -131,14 +131,14 @@ On many platforms this interacts poorly with system calls
 that write to the garbage collected heap.
 <DT> <B> void GC_set_warn_proc(GC_warn_proc <I>p</i>) </b>
 <DD>
-Replace the default procedure used by the collector to print warnings.
+Replaces the default procedure used by the collector to print warnings.
 The collector
 may otherwise write to stderr, most commonly because GC_malloc was used
 in a situation in which GC_malloc_ignore_off_page would have been more
 appropriate.  See <A HREF="http://www.hboehm.info/gc/gc_source/gch.txt">gc.h</a> for details.
 <DT> <B> void GC_REGISTER_FINALIZER(...) </b>
 <DD>
-Register a function to be called when an object becomes inaccessible.
+Registers a function to be called when an object becomes inaccessible.
 This is often useful as a backup method for releasing system resources
 (<I>e.g.</i> closing files) when the object referencing them becomes
 inaccessible.
@@ -239,8 +239,8 @@ STL header files.  This is increasingly discouraged.
 <P>
 This defines SGI-style allocators
 <UL>
-<LI> <TT>alloc</tt>
-<LI> <TT>single_client_alloc</tt>
+<LI> <TT>traceable_alloc</tt>
+<LI> <TT>single_client_traceable_alloc</tt>
 <LI> <TT>gc_alloc</tt>
 <LI> <TT>single_client_gc_alloc</tt>
 </ul>

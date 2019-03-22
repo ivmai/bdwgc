@@ -138,7 +138,7 @@ address space.
 
 There are a number of routines which modify the pointer recognition
 algorithm.  GC_register_displacement allows certain interior pointers
-to be recognized even if ALL_INTERIOR_POINTERS is nor defined.
+to be recognized even if ALL_INTERIOR_POINTERS is not defined.
 GC_malloc_ignore_off_page allows some pointers into the middle of large objects
 to be disregarded, greatly reducing the probability of accidental
 retention of large objects.  For most purposes it seems best to compile
@@ -378,7 +378,7 @@ near the top of gc_priv.h.
 #define malloc(n) GC_malloc(n)
 #define calloc(m,n) GC_malloc((m)*(n))
 
-  For small pieces of VERY allocation intensive code, gc_inl.h
+  For small pieces of VERY allocation intensive code, gc_inline.h
 includes some allocation macros that may be used in place of GC_malloc
 and friends.
 
@@ -472,7 +472,7 @@ extra arguments, where appropriate.  If gc.h is included without GC_DEBUG
 defined, then all these macros will instead be defined to their nondebugging
 equivalents.  (GC_REGISTER_FINALIZER is necessary, since pointers to
 objects with debugging information are really pointers to a displacement
-of 16 bytes form the object beginning, and some translation is necessary
+of 16 bytes from the object beginning, and some translation is necessary
 when finalization routines are invoked.  For details, about what's stored
 in the header, see the definition of the type oh in dbg_mlc.c file.)
 
@@ -548,7 +548,7 @@ heap sizes.  But collection pauses will increase for larger heaps.
 They will decrease with the number of processors if parallel marking
 is enabled.
 (On 2007 vintage machines, GC times may be on the order of 5 msecs
-per MB of accessible memory that needs to be scanned and processor.
+per MB of accessible memory that needs to be scanned and processed.
 Your mileage may vary.)  The incremental/generational collection facility
 may help in some cases.
   Please address bug reports to https://github.com/ivmai/bdwgc/issues.

@@ -1612,7 +1612,7 @@ void GC_register_data_segments(void)
           GC_ULONG_PTR count = 16;
           DWORD page_size;
           /* Check that it actually works.  In spite of some            */
-          /* documentation it actually seems to exist on W2K.           */
+          /* documentation it actually seems to exist on Win2K.         */
           /* This test may be unnecessary, but ...                      */
           if (GetWriteWatch_func(WRITE_WATCH_FLAG_RESET,
                                  page, GC_page_size,
@@ -1660,7 +1660,7 @@ void GC_register_data_segments(void)
         /* assembly code to do that right.                              */
 
   GC_INNER GC_bool GC_wnt = FALSE;
-         /* This is a Windows NT derivative, i.e. NT, W2K, XP or later. */
+         /* This is a Windows NT derivative, i.e. NT, Win2K, XP or later. */
 
   GC_INNER void GC_init_win32(void)
   {
@@ -2744,8 +2744,8 @@ STATIC void GC_default_push_other_roots(void)
         count = GC_GWW_BUF_LEN;
         /* GetWriteWatch is documented as returning non-zero when it    */
         /* fails, but the documentation doesn't explicitly say why it   */
-        /* would fail or what its behaviour will be if it fails.        */
-        /* It does appear to fail, at least on recent W2K instances, if */
+        /* would fail or what its behavior will be if it fails.  It     */
+        /* does appear to fail, at least on recent Win2K instances, if  */
         /* the underlying memory was not allocated with the appropriate */
         /* flag.  This is common if GC_enable_incremental is called     */
         /* shortly after GC initialization.  To avoid modifying the     */
