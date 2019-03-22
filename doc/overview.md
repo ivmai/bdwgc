@@ -4,7 +4,6 @@
 # A garbage collector for C and C++
 
   * Platforms
-  * Scalable multiprocessor versions
   * Some collector details
   * Further reading
   * Local Links for this collector
@@ -71,29 +70,6 @@ and a few other operating systems. Some ports are more polished than others.
 Irix pthreads, Linux threads, Win32 threads, Solaris threads (pthreads only),
 HP/UX 11 pthreads, Tru64 pthreads, and MacOS X threads are supported in recent
 versions.
-
-### Separately distributed ports
-
-For MacOS 9/Classic use, Patrick Beard's latest port is available from
-`http://homepage.mac.com/pcbeard/gc/`. (Unfortunately, that's now quite dated.
-I'm not in a position to test under MacOS. Although I try to incorporate
-changes, it is impossible for me to update the project file.)
-
-Precompiled versions of the collector for NetBSD are available
-[here](ftp://ftp.netbsd.org/pub/pkgsrc/current/pkgsrc/devel/boehm-gc/README.html).
-
-
-[Debian Linux](http://www.debian.org/) includes prepackaged versions of the
-collector.
-
-## Scalable multiprocessor versions
-
-Kenjiro Taura, Toshio Endo, and Akinori Yonezawa have made available
-a [parallel collector](http://ieeexplore.ieee.org/abstract/document/1592629/)
-based on this one. Their collector takes advantage of multiple processors
-during a collection. Starting with GC v6.0alpha1 we also do this, though with
-more modest processor scalability goals. Our approach is discussed briefly
-in [this document](scale.md).
 
 ## Some Collector Details
 
