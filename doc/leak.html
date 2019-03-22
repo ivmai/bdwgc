@@ -11,7 +11,7 @@ In this case, the primary function of the collector is to report
 objects that were allocated (typically with <TT>GC_MALLOC</tt>),
 not deallocated (normally with <TT>GC_FREE</tt>), but are
 no longer accessible.  Since the object is no longer accessible,
-there in normally no way to deallocate the object at a later time;
+there is normally no way to deallocate the object at a later time;
 thus it can safely be assumed that the object has been "leaked".
 <P>
 This is substantially different from counting leak detectors,

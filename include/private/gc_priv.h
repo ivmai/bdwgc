@@ -1189,8 +1189,8 @@ typedef struct GC_ms_entry {
 /* be pointers are also put here.               */
 /* The main fields should precede any           */
 /* conditionally included fields, so that       */
-/* gc_inl.h will work even if a different set   */
-/* of macros is defined when the client is      */
+/* gc_inline.h will work even if a different    */
+/* set of macros is defined when the client is  */
 /* compiled.                                    */
 
 struct _GC_arrays {

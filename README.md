@@ -103,7 +103,7 @@ address space.
 
 There are a number of routines which modify the pointer recognition
 algorithm.  `GC_register_displacement` allows certain interior pointers
-to be recognized even if `ALL_INTERIOR_POINTERS` is nor defined.
+to be recognized even if `ALL_INTERIOR_POINTERS` is not defined.
 `GC_malloc_ignore_off_page` allows some pointers into the middle of
 large objects to be disregarded, greatly reducing the probability of
 accidental retention of large objects.  For most purposes it seems
@@ -361,7 +361,7 @@ If only `GC_malloc` is intended to be used, it might be appropriate to define:
     #define malloc(n) GC_malloc(n)
     #define calloc(m,n) GC_malloc((m)*(n))
 
-For small pieces of VERY allocation intensive code, gc_inl.h includes
+For small pieces of VERY allocation intensive code, gc_inline.h includes
 some allocation macros that may be used in place of `GC_malloc` and
 friends.
 
@@ -460,7 +460,7 @@ extra arguments, where appropriate.  If gc.h is included without `GC_DEBUG`
 defined, then all these macros will instead be defined to their nondebugging
 equivalents.  (`GC_REGISTER_FINALIZER` is necessary, since pointers to
 objects with debugging information are really pointers to a displacement
-of 16 bytes form the object beginning, and some translation is necessary
+of 16 bytes from the object beginning, and some translation is necessary
 when finalization routines are invoked.  For details, about what's stored
 in the header, see the definition of the type oh in dbg_mlc.c file.)
 
@@ -539,7 +539,7 @@ They will decrease with the number of processors if parallel marking
 is enabled.
 
 (On 2007 vintage machines, GC times may be on the order of 5 msecs
-per MB of accessible memory that needs to be scanned and processor.
+per MB of accessible memory that needs to be scanned and processed.
 Your mileage may vary.)  The incremental/generational collection facility
 may help in some cases.
 
@@ -575,7 +575,7 @@ GitHub.
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2011 by Hewlett-Packard Development Company.
- * Copyright (c) 2008-2018 Ivan Maidanski
+ * Copyright (c) 2008-2019 Ivan Maidanski
 
 The files pthread_stop_world.c, pthread_support.c and some others are also
 

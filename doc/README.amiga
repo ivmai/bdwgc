@@ -9,15 +9,15 @@ updated 'Makefile', and hope it compiles fine.
 WHATS NEW:
 
 1.
-   Made a pretty big effort in preventing GCs allocating-functions from returning
-   chip-mem.
+   Made a pretty big effort in preventing GC allocating-functions from
+   returning chip-mem.
 
    The lower part of the new file AmigaOS.c does this in various ways, mainly by
    wrapping GC_malloc, GC_malloc_atomic, GC_malloc_uncollectable,
    GC_malloc_atomic_uncollectable, GC_malloc_stubborn, GC_malloc_ignore_off_page
    and GC_malloc_atomic_ignore_off_page. GC_realloc is also wrapped, but
    doesn't do the same effort in preventing to return chip-mem.
-   Other allocating-functions (f.ex. GC_*_typed_) can probably be
+   Other allocating-functions (e.g., GC_*_typed) can probably be
    used without any problems, but beware that the warn hook will not be called.
    In case of problems, don't define GC_AMIGA_FASTALLOC.
 
@@ -81,7 +81,7 @@ WHATS NEW:
    GC_AMIGA_FASTALLOC by letting the function go thru the new
    GC_amiga_allocwrapper_do function-pointer (see gc.h). Means that
    sending function-pointers, such as GC_malloc, GC_malloc_atomic, etc.,
-   for later to be called like f.ex this, (*GC_malloc_function_pointer)(size),
+   for later to be called, e.g., like this, (*GC_malloc_function_pointer)(size),
    will not wrap the function. This is normally not a big problem, unless
    all allocation function is called like this, which will cause the
    atexit un-allocating function never to be called. Then you either
@@ -91,7 +91,7 @@ WHATS NEW:
    There are probably better ways this problem could be handled, unfortunately,
    I didn't find any without rewriting or replacing a lot of the GC-code, which
    I really didn't want to. (Making new GC_malloc_* functions, and just
-   define f.ex GC_malloc as GC_amiga_malloc should work too).
+   defining, e.g., GC_malloc as GC_amiga_malloc should work too).
 
 
    New Amiga-specific function:
@@ -99,13 +99,13 @@ WHATS NEW:
      void GC_amiga_set_toany(void (*func)(void));
 
    'func' is a function that will be called right before gc has to change
-   allocation-method from MEMF_FAST to MEMF_ANY. Ie. when it is likely
+   allocation-method from MEMF_FAST to MEMF_ANY. I.e., when it is likely
    it will return chip-mem.
 
 
 2. A few small compiler-specific additions to make it compile with SAS/C again.
 
-3. Updated and rewritten the smakefile, so that it works again and that
+3. Updated and rewritten the SMakefile.amiga, so that it works again and that
    the "unnecessary" 'SCOPTIONS' files could be removed. Also included
    the cord-smakefile stuff in the main smakefile, so that the cord smakefile
    could be removed too. By writing smake -f Smakefile.smk, both gc.lib and
@@ -246,10 +246,10 @@ the SAS/C commercial development system.
 
 In keeping with the porting philosophy outlined above, this port
 will not behave well with Amiga specific code. Especially not inter-
-process comms via messages, and setting up public structures like
+process communications via messages, and setting up public structures like
 Intuition objects or anything else in the system lists. For the
 time being the use of this library is limited to single threaded
-ANSI/POSIX  compliant or near-compliant code. (ie. Stick to stdio
+ANSI/POSIX compliant or near-compliant code. (i.e., stick to stdio
 for now). Given this limitation there is currently no mechanism for
 allocating "CHIP" or "PUBLIC" memory under the garbage collector.
 I'll add this after giving it considerable thought. The major
