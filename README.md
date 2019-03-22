@@ -203,7 +203,7 @@ useful primarily if you have a machine that's not already supported.  Gctest is
 a somewhat superficial test of collector functionality.  Failure is indicated
 by a core dump or a message to the effect that the collector is broken.  Gctest
 takes about a second to two to run on reasonable 2007 vintage desktops.  It may
-use up to about 30MB of memory.  (The multi-threaded version will use more.
+use up to about 30 MB of memory.  (The multi-threaded version will use more.
 64-bit versions may use more.) `make test` will also, as its last step, attempt
 to build and test the "cord" string library.)
 
@@ -327,7 +327,7 @@ all of the following, plus many others.
        the somewhere within the first 256 bytes of the object while it is
        live.  (This pointer should normally be declared volatile to prevent
        interference from compiler optimizations.)  This is the recommended
-       way to allocate anything that is likely to be larger than 100 Kbytes
+       way to allocate anything that is likely to be larger than 100 KB
        or so.  (`GC_malloc` may result in failure to reclaim such objects.)
 
  7) `GC_set_warn_proc(proc)`

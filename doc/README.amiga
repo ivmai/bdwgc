@@ -24,7 +24,7 @@ WHATS NEW:
    Programs using more time actually using the memory allocated
    (instead of just allocate and free rapidly) have
    the most to earn on this, but even gctest now normally runs twice
-   as fast and uses less memory, on my poor 8MB machine.
+   as fast and uses less memory, on my poor 8 MB machine.
 
    The changes have only effect when there is no more
    fast-mem left. But with the way GC works, it
@@ -279,8 +279,6 @@ THE GOOD NEWS
 The library as it stands is compatible with the GigaMem commercial
 virtual memory software, and probably similar PD software.
 
-The performance of "gctest" on an Amiga 2630 (68030 @ 25Mhz)
+The performance of "gctest" on an Amiga 2630 (68030 @ 25 MHz)
 compares favorably with an HP9000 with similar architecture (a 325
 with a 68030 I think).
-
------------------------------------------------------------------------

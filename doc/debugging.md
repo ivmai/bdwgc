@@ -88,7 +88,7 @@ to be permanent, the warning indicates a memory leak.
         }
 
 
-  4. In the unlikely case that even relatively small object (<20KB)
+  4. In the unlikely case that even relatively small object (<20 KB)
   allocations are triggering these warnings, then your address space contains
   lots of "bogus pointers", i.e. values that appear to be pointers but aren't.
   Usually this can be solved by using `GC_malloc_atomic` or the routines
@@ -133,11 +133,11 @@ Unexpected heap growth can be due to one of the following:
   (`-DDONT_ADD_BYTE_AT_END`).
 
 The collector rounds up object sizes so the result fits well into the chunk
-size (`HBLKSIZE`, normally 4K on 32 bit machines, 8K on 64 bit machines) used
-by the collector. Thus it may be worth avoiding objects of size 2K + 1 (or 2K
-if a byte is being added at the end.)  The last two cases can often
-be identified by looking at the output of a call to `GC_dump`. Among other
-things, it will print the list of free heap blocks, and a very brief
+size (`HBLKSIZE`, normally 4 KB on 32-bit machines, 8 KB on 64-bit ones) used
+by the collector. Thus it may be worth avoiding objects of size 2K + 1 bytes
+(or exactly 2 KB if a byte is being added at the end.)  The last two cases can
+often be identified by looking at the output of a call to `GC_dump`. Among
+other things, it will print the list of free heap blocks, and a very brief
 description of all chunks in the heap, the object sizes they correspond to,
 and how many live objects were found in the chunk at the last collection.
 
@@ -172,8 +172,9 @@ be resolved using one or more of the following techniques:
   beginning, either try the typed allocation primitives is`gc_typed.h`,
   or separate out the pointer-free component.
   3. Consider using `GC_malloc_ignore_off_page` to allocate large objects.
-  (See `gc.h` and above for details. Large means >100K in most environments.)
-  4. If your heap size is larger than 100MB or so, build the collector with
+  (See `gc.h` and above for details. Large means more than 100 KB in most
+  environments.)
+  4. If your heap size is larger than 100 MB or so, build the collector with
   `-DLARGE_CONFIG`. This allows the collector to keep more precise black-list
   information.
   5. If you are using heaps close to, or larger than, a gigabyte on a 32-bit

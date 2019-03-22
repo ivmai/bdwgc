@@ -885,7 +885,7 @@ GC_API int GC_CALL GC_collect_a_little(void);
 /* it reduces the chance of the allocator not finding space for such    */
 /* an array, since it will try hard to avoid introducing such a false   */
 /* reference.)  On a SunOS 4.X or MS Windows system this is recommended */
-/* for arrays likely to be larger than 100K or so.  For other systems,  */
+/* for arrays likely to be larger than 100 KB or so.  For other systems,*/
 /* or if the collector is not configured to recognize all interior      */
 /* pointers, the threshold is normally much higher.                     */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL

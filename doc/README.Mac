@@ -310,7 +310,7 @@ For your convenience project files for the major Macintosh development
 systems are provided.
 
 For Symantec C++/THINK C, you must build the two projects gclib-1 and
-gclib-2. It has to be split up because the collector has more than 32k
+gclib-2. It has to be split up because the collector has more than 32 KB
 of static data and no library can have more than this in the Symantec
 environment. (Future versions will probably fix this.)
 

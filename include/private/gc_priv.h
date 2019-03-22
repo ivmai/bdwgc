@@ -313,7 +313,7 @@ typedef int GC_bool;
                     /*    by integers, etc.  Under SunOS 4.X with a     */
                     /*    statically linked libc, we empirically        */
                     /*    observed that it would be difficult to        */
-                    /*    allocate individual objects larger than 100K. */
+                    /*    allocate individual objects > 100 KB.         */
                     /*    Even if only smaller objects are allocated,   */
                     /*    more swap space is likely to be needed.       */
                     /*    Fortunately, much of this will never be       */
@@ -863,16 +863,16 @@ EXTERN_C_BEGIN
 /* Heap block size, bytes. Should be power of 2.                */
 /* Incremental GC with MPROTECT_VDB currently requires the      */
 /* page size to be a multiple of HBLKSIZE.  Since most modern   */
-/* architectures support variable page sizes down to 4K, and    */
-/* X86 is generally 4K, we now default to 4K, except for        */
-/*   Alpha: Seems to be used with 8K pages.                     */
+/* architectures support variable page sizes down to 4 KB, and  */
+/* X86 is generally 4 KB, we now default to 4 KB, except for    */
+/*   Alpha: Seems to be used with 8 KB pages.                   */
 /*   SMALL_CONFIG: Want less block-level fragmentation.         */
 #ifndef HBLKSIZE
 # if defined(LARGE_CONFIG) || !defined(SMALL_CONFIG)
 #   ifdef ALPHA
 #     define CPP_LOG_HBLKSIZE 13
 #   elif defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2)
-#     define CPP_LOG_HBLKSIZE 16    /* page size is set to 64K  */
+#     define CPP_LOG_HBLKSIZE 16    /* page size is set to 64 KB */
 #   else
 #     define CPP_LOG_HBLKSIZE 12
 #   endif
@@ -961,27 +961,27 @@ EXTERN_C_BEGIN
 # ifdef LARGE_CONFIG
 #   if CPP_WORDSZ == 32
 #     define LOG_PHT_ENTRIES 20 /* Collisions likely at 1M blocks,      */
-                                /* which is >= 4GB.  Each table takes   */
-                                /* 128KB, some of which may never be    */
+                                /* which is >= 4 GB.  Each table takes  */
+                                /* 128 KB, some of which may never be   */
                                 /* touched.                             */
 #   else
 #     define LOG_PHT_ENTRIES 21 /* Collisions likely at 2M blocks,      */
-                                /* which is >= 8GB.  Each table takes   */
-                                /* 256KB, some of which may never be    */
+                                /* which is >= 8 GB.  Each table takes  */
+                                /* 256 KB, some of which may never be   */
                                 /* touched.                             */
 #   endif
 # elif !defined(SMALL_CONFIG)
 #   define LOG_PHT_ENTRIES  18   /* Collisions are likely if heap grows */
-                                 /* to more than 256K hblks >= 1GB.     */
-                                 /* Each hash table occupies 32K bytes. */
+                                 /* to more than 256K hblks >= 1 GB.    */
+                                 /* Each hash table occupies 32 KB.     */
                                  /* Even for somewhat smaller heaps,    */
                                  /* say half that, collisions may be an */
                                  /* issue because we blacklist          */
                                  /* addresses outside the heap.         */
 # else
 #   define LOG_PHT_ENTRIES  15   /* Collisions are likely if heap grows */
-                                 /* to more than 32K hblks = 128MB.     */
-                                 /* Each hash table occupies 4K bytes.  */
+                                 /* to more than 32K hblks (128 MB).    */
+                                 /* Each hash table occupies 4 KB.      */
 # endif
 # define PHT_ENTRIES ((word)1 << LOG_PHT_ENTRIES)
 # define PHT_SIZE (PHT_ENTRIES >> LOGWL)
@@ -1227,12 +1227,12 @@ struct roots {
 #   if defined(PARALLEL_MARK) && (defined(MSWIN32) || defined(CYGWIN32))
 #     define MAX_HEAP_SECTS 384
 #   else
-#     define MAX_HEAP_SECTS 128         /* Roughly 256MB (128*2048*1K)  */
+#     define MAX_HEAP_SECTS 128         /* Roughly 256 MB (128*2048*1024) */
 #   endif
 # elif CPP_WORDSZ > 32
-#   define MAX_HEAP_SECTS 1024          /* Roughly 8GB                  */
+#   define MAX_HEAP_SECTS 1024          /* Roughly 8 GB */
 # else
-#   define MAX_HEAP_SECTS 512           /* Roughly 4GB                  */
+#   define MAX_HEAP_SECTS 512           /* Roughly 4 GB */
 # endif
 #endif /* !MAX_HEAP_SECTS */
 
@@ -2268,7 +2268,7 @@ GC_API void GC_CALL GC_noop1(word);
 GC_API_PRIV void GC_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
                         /* A version of printf that doesn't allocate,   */
-                        /* 1K total output length.                      */
+                        /* 1 KB total output length.                    */
                         /* (We use sprintf.  Hopefully that doesn't     */
                         /* allocate for long arguments.)                */
 GC_API_PRIV void GC_err_printf(const char * format, ...)

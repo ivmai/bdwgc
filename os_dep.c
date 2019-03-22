@@ -2334,8 +2334,8 @@ void * os2_alloc(size_t bytes)
                                 GC_pages_executable ? PAGE_EXECUTE_READWRITE :
                                                       PAGE_READWRITE);
         if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
-            /* If I read the documentation correctly, this can  */
-            /* only happen if HBLKSIZE > 64k or not a power of 2.       */
+            /* If I read the documentation correctly, this can          */
+            /* only happen if HBLKSIZE > 64 KB or not a power of 2.     */
         if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
         if (result == NULL) return NULL;
         GC_heap_bases[GC_n_heap_bases] = result;
@@ -2370,7 +2370,7 @@ void * os2_alloc(size_t bytes)
     DWORD GC_mem_top_down = MEM_TOP_DOWN;
                            /* Use GC_USE_MEM_TOP_DOWN for better 64-bit */
                            /* testing.  Otherwise all addresses tend to */
-                           /* end up in first 4GB, hiding bugs.         */
+                           /* end up in first 4 GB, hiding bugs.        */
 # else
 #   define GC_mem_top_down 0
 # endif /* !GC_USE_MEM_TOP_DOWN */
@@ -2431,7 +2431,7 @@ void * os2_alloc(size_t bytes)
 # endif /* USE_WINALLOC */
     if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
         /* If I read the documentation correctly, this can      */
-        /* only happen if HBLKSIZE > 64k or not a power of 2.   */
+        /* only happen if HBLKSIZE > 64 KB or not a power of 2. */
     if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
     if (0 != result) GC_heap_bases[GC_n_heap_bases++] = result;
     return(result);

@@ -730,13 +730,13 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 
 #   if defined(MACOS) \
        || (defined(UNIX_LIKE) && defined(NO_GETCONTEXT)) /* e.g. musl */
-      /* Assume 128K stacks at least. */
+      /* Assume 128 KB stacks at least. */
 #     define BIG 1000
 #   elif defined(PCR)
-      /* PCR default stack is 100K.  Stack frames are up to 120 bytes. */
+      /* PCR default stack is 100 KB.  Stack frames are up to 120 bytes. */
 #     define BIG 700
 #   elif defined(MSWINCE) || defined(RTEMS)
-      /* WinCE only allows 64K stacks */
+      /* WinCE only allows 64 KB stacks. */
 #     define BIG 500
 #   elif defined(OSF1)
       /* OSF has limited stack space by default, and large frames. */

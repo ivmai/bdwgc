@@ -1477,7 +1477,7 @@ EXTERN_C_BEGIN
 #       endif
 #       define HEAP_START (ptr_t)0x1000
                 /* This encourages mmap to give us low addresses,       */
-                /* thus allowing the heap to grow to ~3GB               */
+                /* thus allowing the heap to grow to ~3 GB.             */
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
             EXTERN_C_END
