@@ -4,7 +4,7 @@ The garbage collector may be used as a leak detector. In this case, the
 primary function of the collector is to report objects that were allocated
 (typically with `GC_MALLOC`), not deallocated (normally with `GC_FREE`), but
 are no longer accessible. Since the object is no longer accessible, there
-in normally no way to deallocate the object at a later time; thus it can
+is normally no way to deallocate the object at a later time; thus it can
 safely be assumed that the object has been "leaked".
 
 This is substantially different from counting leak detectors, which simply
@@ -16,7 +16,7 @@ structures. Thus it does not require all objects to be deallocated at process
 exit time, a potentially useless activity that often triggers large amounts
 of paging.
 
-The garbage collector provide leak detection support. This includes the
+The garbage collector provides leak detection support. This includes the
 following features:
 
   1. Leak detection mode can be initiated at run-time by setting
