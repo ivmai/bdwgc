@@ -7,7 +7,6 @@
   * Scalable multiprocessor versions
   * Some collector details
   * Further reading
-  * Current users
   * Local Links for this collector
   * Local Background Links
   * Contacts and Mailing List
@@ -239,68 +238,10 @@ Henry Baker's [paper collection](http://home.pipeline.com/%7Ehbaker1/).
 Slides for Hans Boehm's
 [Allocation and GC Myths](http://www.hboehm.info/gc/myths.ps) talk.
 
-## Current users
-
-Known current users of some variant of this collector include:
-
-The runtime system for [GCJ](https://gcc.gnu.org/onlinedocs/gcc-4.8.5/gcj/),
-the static GNU java compiler.
-
-[W3m](http://w3m.sourceforge.net/), a text-based web browser.
-
-Some versions of the Xerox DocuPrint printer software.
-
-The [Mozilla](http://www.mozilla.org/) project, as leak detector.
-
-The [Mono](http://www.mono-project.com) project, an open source implementation
-of the .NET development framework.
-
-The [DotGNU Portable.NET project](http://www.gnu.org/projects/dotgnu/),
-another open source .NET implementation.
-
-The [Irssi IRC client](http://irssi.org/).
-
-[The Berkeley Titanium project](http://titanium.cs.berkeley.edu/).
-
-[The NAGWare f90 Fortran 90 compiler](http://www.nag.co.uk/nagware/NP/NP_desc.asp).
-
-Elwood Corporation's Eclipse Common Lisp system, C library, and translator.
-
-The [Bigloo Scheme](http://www-sop.inria.fr/mimosa/fp/Bigloo/) and
-[Camloo ML compilers](https://github.com/samoht/camloo) written by Manuel
-Serrano and others.
-
-Brent Benson's
-[libscheme](http://www.cs.indiana.edu/scheme-repository/libscheme-vhll/final.html).
-
-The MzScheme scheme implementation.
-
-The
-[University of Washington Cecil Implementation](http://www.cs.washington.edu/research/projects/cecil/www/cecil-home.html).
-
-[The Berkeley Sather implementation](http://www1.icsi.berkeley.edu/~sather/).
-
-[The Berkeley Harmonia Project](http://www.cs.berkeley.edu/~harmonia/harmonia/index.html).
-
-The
-[Toba](http://www.cs.arizona.edu/projects/sumatra/toba/) Java Virtual Machine
-to C translator.
-
-The [Gwydion Dylan compiler](http://www.gwydiondylan.org/).
-
-The
-[GNU Objective C runtime](http://gcc.gnu.org/onlinedocs/gcc/Objective-C.html).
-
-[Macaulay 2](http://www.math.uiuc.edu/Macaulay2), a system to support research
-in algebraic geometry and commutative algebra.
-
-The [Vesta](http://www.vestasys.org/) configuration management system.
-
-[Visual Prolog 6](http://www.visual-prolog.com/).
-
-[Asymptote LaTeX-compatible vector graphics language](http://asymptote.sf.net/).
-
 ## Information provided on the BDWGC site
+
+[Current users](https://github.com/ivmai/bdwgc/wiki/Known-clients) (the list
+may be rather outdated).
 
 [A simple illustration of how to build and use the collector](simple_example.md).
 
