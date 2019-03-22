@@ -130,7 +130,7 @@ We also expect that in many cases any additional overhead will be more than
 compensated for by decreased copying etc. if programs are written and tuned
 for garbage collection.
 
-# Further Reading:
+## Further reading
 
 **The beginnings of a frequently asked questions list for this collector are
 [here](http://www.hboehm.info/gc/faq.html)**.
@@ -164,7 +164,7 @@ is a related letter to the editor and a minor correction in the next issue.
 
 Boehm, H., and [M. Weiser](http://www.ubiq.com/hypertext/weiser/weiser.html),
 [Garbage Collection in an Uncooperative Environment](http://www.hboehm.info/spe_gc_paper/),
-_Software Practice &amp; Experience_, September 1988, pp. 807-820.
+_Software Practice and Experience_, September 1988, pp. 807-820.
 
 Boehm, H., A. Demers, and S. Shenker,
 [Mostly Parallel Garbage Collection](http://www.hboehm.info/gc/papers/pldi91.ps.Z),
@@ -239,7 +239,7 @@ Henry Baker's [paper collection](http://home.pipeline.com/%7Ehbaker1/).
 Slides for Hans Boehm's
 [Allocation and GC Myths](http://www.hboehm.info/gc/myths.ps) talk.
 
-# Current users:
+## Current users
 
 Known current users of some variant of this collector include:
 
@@ -300,7 +300,7 @@ The [Vesta](http://www.vestasys.org/) configuration management system.
 
 [Asymptote LaTeX-compatible vector graphics language](http://asymptote.sf.net/).
 
-# More information on the BDWGC primary site
+## Information provided on the BDWGC site
 
 [A simple illustration of how to build and use the collector](simple_example.md).
 
@@ -324,7 +324,7 @@ The [Vesta](http://www.vestasys.org/) configuration management system.
 files of all garbage collector releases. It duplicates
 [Download](https://github.com/ivmai/bdwgc/wiki/Download) page on GitHub.
 
-# More background information
+## More background information
 
 [An attempt to establish a bound on space usage of conservative garbage collectors](http://www.hboehm.info/gc/bounds.html).
 
@@ -352,7 +352,7 @@ version).
 
 [Related papers](http://www.hboehm.info/gc/papers/).
 
-# Contacts and new release announcements
+## Contacts and new release announcements
 
 GitHub and Stack Overflow are the major two places for communication.
 

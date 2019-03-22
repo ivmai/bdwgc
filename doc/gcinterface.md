@@ -1,7 +1,7 @@
 # C/C++ Interface
 
 On many platforms, a single-threaded garbage collector library can be built
-to act as a plug-in `malloc` replacement. (Build with
+to act as a plug-in `malloc` replacement. (Build it with
 `-DREDIRECT_MALLOC=GC_malloc -DIGNORE_FREE`.) This is often the best way to
 deal with third-party libraries which leak or prematurely free objects.
 `-DREDIRECT_MALLOC=GC_malloc` is intended primarily as an easy way to adapt
@@ -55,15 +55,15 @@ object for pointers to garbage-collectible memory, even if the block itself
 does not appear to be reachable. (Objects allocated in this way are
 effectively treated as roots by the collector.)
 
-**void * `GC_REALLOC`(void * _old_, size_t _new_size_)** - Allocate a new
+**void * `GC_REALLOC`(void * _old_, size_t _new_size_)** - Allocates a new
 object of the indicated size and copy (a prefix of) the old object into the
 new object. The old object is reused in place if convenient. If the original
 object was allocated with `GC_MALLOC_ATOMIC`, the new object is subject to the
 same constraints. If it was allocated as an uncollectible object, then the new
 object is uncollectible, and the old object (if different) is deallocated.
 
-**void `GC_FREE`(void * _dead_)** - Explicitly deallocate an object. Typically
-not useful for small collectible objects.
+**void `GC_FREE`(void * _dead_)** - Explicitly deallocates an object.
+Typically not useful for small collectible objects.
 
 **void * `GC_MALLOC_IGNORE_OFF_PAGE`(size_t _nbytes_)** and
 **void * `GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE`(size_t _nbytes_)** - Analogous
@@ -84,9 +84,9 @@ code, though we try to ensure that it expands to a no-op on as many platforms
 as possible. In GC v7.0, it was required if thread-local allocation is enabled
 in the collector build, and `malloc` is not redirected to `GC_malloc`.
 
-**void `GC_gcollect`(void)** - Explicitly force a garbage collection.
+**void `GC_gcollect`(void)** - Explicitly forces a garbage collection.
 
-**void `GC_enable_incremental`(void)** - Cause the garbage collector
+**void `GC_enable_incremental`(void)** - Causes the garbage collector
 to perform a small amount of work every few invocations of `GC_MALLOC` or the
 like, instead of performing an entire collection at once. This is likely
 to increase total running time. It will improve response on a platform that
@@ -94,13 +94,13 @@ either has suitable support in the garbage collector (Linux and most Unix
 versions, Win32 if the collector was suitably built). On many platforms this
 interacts poorly with system calls that write to the garbage collected heap.
 
-**void `GC_set_warn_proc`(GC_warn_proc)** - Replace the default procedure
+**void `GC_set_warn_proc`(GC_warn_proc)** - Replaces the default procedure
 used by the collector to print warnings. The collector may otherwise
 write to `stderr`, most commonly because `GC_malloc` was used in a situation
 in which `GC_malloc_ignore_off_page` would have been more appropriate. See
 `gc.h` for details.
 
-**void `GC_REGISTER_FINALIZER`(...)** - Register a function to be called when
+**void `GC_REGISTER_FINALIZER`(...)** - Registers a function to be called when
 an object becomes inaccessible. This is often useful as a backup method for
 releasing system resources (e.g. closing files) when the object referencing
 them becomes inaccessible. It is not an acceptable method to perform actions
@@ -189,8 +189,8 @@ discouraged.
 
 This defines SGI-style allocators
 
-  * `alloc`
-  * `single_client_alloc`
+  * `traceable_alloc`
+  * `single_client_traceable_alloc`
   * `gc_alloc`
   * `single_client_gc_alloc`
 

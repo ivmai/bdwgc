@@ -47,6 +47,7 @@ The `gcconfig.h` file consists of three sections:
   RISC variants.) On GNU-based systems, `cpp -dM empty_source_file.c` seems
   to generate a set of predefined macros. On some other systems, the "verbose"
   compiler option may do so, or the manual page may list them.
+
   2. A section that defines a small number of platform-specific macros, which
   are then used directly by the collector. For simple ports, this is where
   most of the effort is required. We describe the macros below. This section
@@ -84,7 +85,7 @@ operating system:
   trace all memory between `DATASTART` and `DATAEND` for root pointers.
   On some platforms, this can be defined to a constant address, though
   experience has shown that to be risky. Ideally the linker will define
-  a symbol (e.g. `_data` whose address is the beginning of the data segment.
+  a symbol (e.g. `_data`) whose address is the beginning of the data segment.
   Sometimes the value can be computed using the `GC_SysVGetDataStart`
   function. Not used if either the next macro is defined, or if dynamic
   loading is supported, and the dynamic loading support defines a function
@@ -114,8 +115,8 @@ operating system:
   three macros is defined, client code must explicitly set `GC_stackbottom`
   to an appropriate value before calling `GC_INIT` or any other `GC_` routine.
   * `LINUX_STACKBOTTOM` - May be defined instead of `STACKBOTTOM`. If defined,
-  then the cold end of the stack will be determined Currently we usually read
-  it from `/proc`.
+  then the cold end of the stack will be determined, we usually read it from
+  `/proc`.
   * `HEURISTIC1` - May be defined instead of `STACKBOTTOM`. `STACK_GRAN`
   should generally also be redefined. The cold end of the stack is determined
   by taking an address inside `GC_init`s frame, and rounding it up to the next
@@ -154,7 +155,7 @@ or just tweaking of conditional compilation tests.
 
 For GC v7, if your platform supports `getcontext`, then defining the macro
 `UNIX_LIKE` for your OS in `gcconfig.h` (if it is not defined there yet)
-is likely to solve the problem. otherwise, if you are using gcc,
+is likely to solve the problem. Otherwise, if you are using gcc,
 `_builtin_unwind_init` will be used, and should work fine. If that is not
 applicable either, the implementation will try to use `setjmp`. This will work
 if your `setjmp` implementation saves all possibly pointer-valued registers
@@ -226,7 +227,7 @@ If dynamic library data sections must also be traced, then:
   `gcconfig.h`.
   * An appropriate versions of the functions `GC_register_dynamic_libraries`
   should be defined in `dyn_load.c`. This function should invoke
-  `GC_cond_add_roots(_region_start, region_end_, TRUE)` on each dynamic
+  `GC_cond_add_roots(region_start, region_end, TRUE)` on each dynamic
   library data section.
 
 Implementations that scan for writable data segments are error prone,
@@ -244,7 +245,7 @@ locking behavior in this case.
 
 For incremental and generational collection to work, `os_dep.c` must contain
 a suitable _virtual dirty bit_ implementation, which allows the collector
-to track which heap pages (assumed to be a multiple of the collectors block
+to track which heap pages (assumed to be a multiple of the collector's block
 size) have been written during a certain time interval. The collector provides
 several implementations, which might be adapted. The default (`DEFAULT_VDB`)
 is a placeholder which treats all pages as having been written. This ensures
@@ -253,7 +254,7 @@ useless.
 
 ## Stack traces for debug support
 
-If stack traces in objects are need for debug support, `GC_dave_callers` and
+If stack traces in objects are needed for debug support, `GC_save_callers` and
 `GC_print_callers` must be implemented.
 
 ## Disclaimer

@@ -51,7 +51,7 @@ In single-threaded code, it is also often easiest to have finalizers queue
 actions, which are then explicitly run during an explicit call by the user's
 program.
 
-# Topologically Ordered Finalization
+## Topologically ordered finalization
 
 Our _conservative garbage collector_ supports a form of finalization (with
 `GC_register_finalizer`) in which objects are finalized in topological order.
@@ -67,7 +67,7 @@ making it accessible again. Or it may mutate the rest of the chain.
 
 Cycles involving one or more finalizable objects are never finalized.
 
-#  Why topological ordering?
+## Why topological ordering?
 
 It is important to keep in mind that the choice of finalization ordering
 matters only in relatively rare cases. In spite of the fact that it has
@@ -123,7 +123,7 @@ finalization simply extends this to object finalization; an finalizable object
 reachable from another finalizer via a pointer chain is presumed to be
 accessible by the finalizer, and thus should not be finalized.
 
-# Programming with topological finalization
+## Programming with topological finalization
 
 Experience with Cedar has shown that cycles or long chains of finalizable
 objects are typically not a problem. Finalizable objects are typically rare.
@@ -141,7 +141,7 @@ cleared by the finalization procedure that deallocates the resource). If any
 references are still left at process exit, they can be explicitly deallocated
 then.
 
-# Getting around topological finalization ordering
+## Getting around topological finalization ordering
 
 There are certain situations in which cycles between finalizable objects are
 genuinely unavoidable. Most notably, C++ compilers introduce self-cycles

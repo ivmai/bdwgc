@@ -132,7 +132,7 @@ of fragmentation. In particular:
 
   * Programs with a large root set size and little live heap memory will
   expand the heap to amortize the cost of scanning the roots.
-  * GC v5 actually collect more frequently in non-incremental mode. The large
+  * GC v5 actually collects more frequently in non-incremental mode. The large
   block allocator usually refuses to split large heap blocks once the garbage
   collection threshold is reached. This often has the effect of collecting
   well before the heap fills up, thus reducing fragmentation and working set
@@ -203,8 +203,8 @@ progression of mark states for a stop-the-world collection is:
   objects, roots, and then mark everything reachable from them. `scan_ptr`
   is advanced through the heap until all uncollectible objects are pushed, and
   objects reachable from them are marked. At that point, the next call
-  to `GC_mark_some` calls `GC_push_roots` to push the roots. It the advances
-  the mark state to
+  to `GC_mark_some` calls `GC_push_roots` to push the roots. It, then,
+  advances the mark state to
   3. `MS_ROOTS_PUSHED` asserting that once the mark stack is empty, all
   reachable objects are marked. Once in this state, we work only on emptying
   the mark stack. Once this is completed, the state changes to
@@ -255,7 +255,7 @@ block. This is done in the following steps:
   the page is not part of the garbage collected heap, a small integer _n_,
   indicating that the page is part of large object, starting at least _n_
   pages back, or a pointer to a descriptor for the page. In the first case,
-  the candidate pointer `i` not a true pointer and can be safely ignored.
+  the candidate pointer is not a true pointer and can be safely ignored.
   In the last two cases, we can obtain a descriptor for the page containing
   the beginning of the object.
   * The starting address of the referenced object is computed. The page
@@ -506,7 +506,7 @@ is otherwise similar to the global free lists. The local free lists are also
 linked using the first word in the object. In most cases this means they
 require considerably less time.
 
-Local free lists are treated buy most of the rest of the collector as though
+Local free lists are treated by most of the rest of the collector as though
 they were in-use reachable data. This requires some care, since pointer-free
 objects are not normally traced, and hence a special tracing procedure
 is required to mark all objects on pointer-free and gcj local free lists.

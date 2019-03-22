@@ -24,7 +24,7 @@ GC on EWS4800
    *** Caution: The following information is empirical. ***
 
  32-bit:
-   ELF file has an unique format. (See a.out(4) and end(3C).)
+   ELF file has a unique format. (See a.out(4) and end(3C).)
 
      &_start
         :      text segment

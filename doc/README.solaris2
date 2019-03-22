@@ -61,7 +61,7 @@ delete.)
 I encountered "symbol <unknown>: offset .... is non-aligned" errors.  These
 appear to be traceable to the use of the GNU assembler with the Sun linker.
 The former appears to generate a relocation not understood by the latter.
-The fix appears to be to use a consistent tool chain.  (As a non-Solaris-expert
+The fix appears to be to use a consistent toolchain.  (As a non-Solaris-expert
 my solution involved hacking the libtool script, but I'm sure you can
 do something less ugly.)
 
