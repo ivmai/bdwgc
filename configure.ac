@@ -1,6 +1,6 @@
 # Copyright (c) 1999-2001 by Red Hat, Inc. All rights reserved.
 # Copyright (c) 2005-2009 Hewlett-Packard Development Company, L.P.
-# Copyright (c) 2009-2018 Ivan Maidanski
+# Copyright (c) 2009-2019 Ivan Maidanski
 #
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -618,10 +618,9 @@ if false; then
   AC_EXEEXT
 fi
 
-dnl As of 4.13a2, the collector will not properly work on Solaris when
+dnl The collector might not properly work on IBM AIX when
 dnl built with gcc and -O.  So we remove -O in the appropriate case.
-dnl Not needed anymore on Solaris.
-AC_MSG_CHECKING(whether Solaris gcc optimization fix is necessary)
+AC_MSG_CHECKING(whether AIX gcc optimization fix is necessary)
 case "$host" in
  *aix*)
     if test "$GCC" = yes; then
