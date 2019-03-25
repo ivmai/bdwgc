@@ -242,14 +242,13 @@ on DEC AXP machines plus perhaps a few others listed near the top
 of dyn_load.c.  On other machines we recommend that you do one of
 the following:
 
- 1) Add dynamic library support (and send us the code).
- 2) Use static versions of the libraries.
- 3) Arrange for dynamic libraries to use the standard malloc.
-    This is still dangerous if the library stores a pointer to a
-    garbage collected object.  But nearly all standard interfaces
-    prohibit this, because they deal correctly with pointers
-    to stack allocated objects.  (Strtok is an exception.  Don't
-    use it.)
+  1. Add dynamic library support (and send us the code).
+  2. Use static versions of the libraries.
+  3. Arrange for dynamic libraries to use the standard malloc. This is still
+  dangerous if the library stores a pointer to a garbage collected object.
+  But nearly all standard interfaces prohibit this, because they deal
+  correctly with pointers to stack allocated objects.  (`strtok` is an
+  exception.  Don't use it.)
 
 In all cases we assume that pointer alignment is consistent with that
 enforced by the standard C compilers.  If you use a nonstandard compiler
@@ -278,76 +277,67 @@ HP PA machines, since there is no good way for the collector to
 compute this value.)  Client code may include "gc.h", which defines
 all of the following, plus many others.
 
- 1) `GC_malloc(nbytes)`
-    - Allocate an object of size nbytes.  Unlike malloc, the object is
-      cleared before being returned to the user.  `GC_malloc` will
-      invoke the garbage collector when it determines this to be appropriate.
-      GC_malloc may return 0 if it is unable to acquire sufficient
-      space from the operating system.  This is the most probable
-      consequence of running out of space.  Other possible consequences
-      are that a function call will fail due to lack of stack space,
-      or that the collector will fail in other ways because it cannot
-      maintain its internal data structures, or that a crucial system
-      process will fail and take down the machine.  Most of these
-      possibilities are independent of the malloc implementation.
+  1. `GC_malloc(bytes)` - Allocate an object of a given size.  Unlike malloc,
+  the object is cleared before being returned to the user.  `GC_malloc` will
+  invoke the garbage collector when it determines this to be appropriate.
+  GC_malloc may return 0 if it is unable to acquire sufficient space from the
+  operating system.  This is the most probable consequence of running out
+  of space.  Other possible consequences are that a function call will fail
+  due to lack of stack space, or that the collector will fail in other ways
+  because it cannot maintain its internal data structures, or that a crucial
+  system process will fail and take down the machine.  Most of these
+  possibilities are independent of the malloc implementation.
 
- 2) `GC_malloc_atomic(nbytes)`
-     - Allocate an object of size nbytes that is guaranteed not to contain any
-       pointers.  The returned object is not guaranteed to be cleared.
-       (Can always be replaced by `GC_malloc`, but results in faster collection
-       times.  The collector will probably run faster if large character
-       arrays, etc. are allocated with `GC_malloc_atomic` than if they are
-       statically allocated.)
+  2. `GC_malloc_atomic(bytes)` - Allocate an object of a given size that
+  is guaranteed not to contain any pointers.  The returned object is not
+  guaranteed to be cleared. (Can always be replaced by `GC_malloc`, but
+  results in faster collection times.  The collector will probably run faster
+  if large character arrays, etc. are allocated with `GC_malloc_atomic` than
+  if they are statically allocated.)
 
- 3) `GC_realloc(object, new_size)`
-    - Change the size of object to be `new_size`.  Returns a pointer to the
-      new object, which may, or may not, be the same as the pointer to
-      the old object.  The new object is taken to be atomic if and only if the
-      old one was.  If the new object is composite and larger than the original
-      object,then the newly added bytes are cleared (we hope).  This is very
-      likely to allocate a new object, unless `MERGE_SIZES` is defined in
-      gc_priv.h.  Even then, it is likely to recycle the old object only if the
-      object is grown in small additive increments (which, we claim, is
-      generally bad coding practice.)
+  3. `GC_realloc(object, new_bytes)` - Change the size of object to be of
+  a given size.  Returns a pointer to the new object, which may, or may not,
+  be the same as the pointer to the old object.  The new object is taken to
+  be atomic if and only if the old one was.  If the new object is composite
+  and larger than the original object then the newly added bytes are cleared
+  (we hope).  This is very likely to allocate a new object, unless
+  `MERGE_SIZES` is defined in gc_priv.h.  Even then, it is likely to recycle
+  the old object only if the object is grown in small additive increments
+  (which, we claim, is generally bad coding practice).
 
- 4) `GC_free(object)`
-    - Explicitly deallocate an object returned by `GC_malloc` or
-      `GC_malloc_atomic`.  Not necessary, but can be used to minimize
-      collections if performance is critical.  Probably a performance
-      loss for very small objects (<= 8 bytes).
+  4. `GC_free(object)` - Explicitly deallocate an object returned by
+  `GC_malloc` or `GC_malloc_atomic`, or friends.  Not necessary, but can be
+  used to minimize collections if performance is critical.  Probably
+  a performance loss for very small objects (<= 8 bytes).
 
- 5) `GC_expand_hp(bytes)`
-     - Explicitly increase the heap size.  (This is normally done automatically
-       if a garbage collection failed to `GC_reclaim` enough memory.  Explicit
-       calls to `GC_expand_hp` may prevent unnecessarily frequent collections at
-       program startup.)
+  5. `GC_expand_hp(bytes)` - Explicitly increase the heap size.  (This is
+  normally done automatically if a garbage collection failed to reclaim
+  enough memory.  Explicit calls to `GC_expand_hp` may prevent unnecessarily
+  frequent collections at program startup.)
 
- 6) `GC_malloc_ignore_off_page(bytes)`
-     - Identical to `GC_malloc`, but the client promises to keep a pointer to
-       the somewhere within the first 256 bytes of the object while it is
-       live.  (This pointer should normally be declared volatile to prevent
-       interference from compiler optimizations.)  This is the recommended
-       way to allocate anything that is likely to be larger than 100 KB
-       or so.  (`GC_malloc` may result in failure to reclaim such objects.)
+  6. `GC_malloc_ignore_off_page(bytes)` - Identical to `GC_malloc`, but the
+  client promises to keep a pointer to the somewhere within the first 256
+  bytes of the object while it is live.  (This pointer should normally be
+  declared volatile to prevent interference from compiler optimizations.)
+  This is the recommended way to allocate anything that is likely to be
+  larger than 100 KB or so.  (`GC_malloc` may result in a failure to reclaim
+  such objects.)
 
- 7) `GC_set_warn_proc(proc)`
-     - Can be used to redirect warnings from the collector.  Such warnings
-       should be rare, and should not be ignored during code development.
+  7. `GC_set_warn_proc(proc)` - Can be used to redirect warnings from the
+  collector.  Such warnings should be rare, and should not be ignored during
+  code development.
 
- 8) `GC_enable_incremental()`
-     - Enables generational and incremental collection.  Useful for large
-       heaps on machines that provide access to page dirty information.
-       Some dirty bit implementations may interfere with debugging
-       (by catching address faults) and place restrictions on heap arguments
-       to system calls (since write faults inside a system call may not be
-       handled well).
+  8. `GC_enable_incremental()` - Enables generational and incremental
+  collection.  Useful for large heaps on machines that provide access to page
+  dirty information.  Some dirty bit implementations may interfere with
+  debugging (by catching address faults) and place restrictions on heap
+  arguments to system calls (since write faults inside a system call may not
+  be handled well).
 
- 9) Several routines to allow for registration of finalization code.
-    User supplied finalization code may be invoked when an object becomes
-    unreachable.  To call `(*f)(obj, x)` when obj becomes inaccessible, use
-    `GC_register_finalizer(obj, f, x, 0, 0);`
-    For more sophisticated uses, and for finalization ordering issues,
-    see gc.h.
+  9. `GC_register_finalizer(object, proc, data, 0, 0)` and friends - Allow for
+  registration of finalization code.  User supplied finalization code
+  (`(*proc)(object, data)`) is invoked after object becomes unreachable.
+  For more sophisticated uses, and for finalization ordering issues, see gc.h.
 
 The global variable `GC_free_space_divisor` may be adjusted up from it
 default value of 3 to use less space and more collection time, or down for
@@ -489,21 +479,20 @@ pause times only if the collector has some way to tell which objects
 or pages have been recently modified.  The collector uses two sources
 of information:
 
-1. Information provided by the VM system.  This may be provided in
-   one of several forms.  Under Solaris 2.X (and potentially under other
-   similar systems) information on dirty pages can be read from the
-   /proc file system.  Under other systems (currently SunOS4.X) it is
-   possible to write-protect the heap, and catch the resulting faults.
-   On these systems we require that system calls writing to the heap
-   (other than read) be handled specially by client code.
-   See os_dep.c for details.
+  1. Information provided by the VM system.  This may be provided in one of
+  several forms.  Under Solaris 2.X (and potentially under other similar
+  systems) information on dirty pages can be read from the /proc file system.
+  Under other systems (currently SunOS4.X) it is possible to write-protect
+  the heap, and catch the resulting faults. On these systems we require that
+  system calls writing to the heap (other than read) be handled specially by
+  client code. See `os_dep.c` for details.
 
-2. Information supplied by the programmer.  The object is considered dirty
-   after a call to `GC_end_stubborn_change` provided the library has been
-   compiled suitably. It is typically not worth using for short-lived objects.
-   Note that bugs caused by a missing `GC_end_stubborn_change` or
-   `GC_reachable_here` call are likely to be observed very infrequently and
-   hard to trace.
+  2. Information supplied by the programmer.  The object is considered dirty
+  after a call to `GC_end_stubborn_change` provided the library has been
+  compiled suitably. It is typically not worth using for short-lived objects.
+  Note that bugs caused by a missing `GC_end_stubborn_change` or
+  `GC_reachable_here` call are likely to be observed very infrequently and
+  hard to trace.
 
 
 ## Bugs
