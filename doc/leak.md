@@ -32,13 +32,15 @@ To use the collector as a leak detector, follow the following steps:
   the garbage collector.
   3. Arrange to call `GC_gcollect` at appropriate points to check for leaks.
   (For sufficiently long running programs, this will happen implicitly, but
-  probably not with sufficient frequency.)  The second step can usually
-  be accomplished with the `-DREDIRECT_MALLOC=GC_malloc` option when the
-  collector is built, or by defining `malloc`, `calloc`, `realloc` and `free`
-  to call the corresponding garbage collector functions. But this, by itself,
-  will not yield very informative diagnostics, since the collector does not
-  keep track of information about how objects were allocated. The error
-  reports will include only object addresses.
+  probably not with sufficient frequency.)
+
+The second step can usually be accomplished with the
+`-DREDIRECT_MALLOC=GC_malloc` option when the collector is built, or by
+defining `malloc`, `calloc`, `realloc` and `free` to call the corresponding
+garbage collector functions. But this, by itself, will not yield very
+informative diagnostics, since the collector does not keep track of
+information about how objects were allocated. The error reports will include
+only object addresses.
 
 For more precise error reports, as much of the program as possible should use
 the all uppercase variants of these functions, after defining `GC_DEBUG`, and
@@ -129,25 +131,28 @@ a program a.out under Linux/X86 as follows:
   debug information. This will improve the quality of the leak reports.
   With this approach, it is no longer necessary to call `GC_` routines
   explicitly, though that can also improve the quality of the leak reports.
-  4. Build the collector and install it in directory _foo_ as follows:
-    * `configure --prefix=_foo_ --enable-gc-debug --enable-redirect-malloc --disable-threads`
-    * `make`
-    * `make install`
+  4. Build the collector and install it in directory _foo_ as follows (it may
+  be safe to omit the `--disable-threads` option on Linux, but the combination
+  of thread support and `malloc` replacement is not yet rock solid):
 
-    With a very recent collector on Linux, it may sometimes be safe to omit
-    the `--disable-threads`. But the combination of thread support and
-    `malloc` replacement is not yet rock solid.
-  5. Set environment variables as follows:
-    * `LD_PRELOAD=`_foo_`/lib/libgc.so`
-    * `GC_FIND_LEAK`
+   - `configure --prefix=_foo_ --enable-gc-debug --enable-redirect-malloc --disable-threads`
+   - `make`
+   - `make install`
 
-    You may also want to set `GC_PRINT_STATS` (to confirm that the collector
-    is running) and/or `GC_LOOP_ON_ABORT` (to facilitate debugging from
-    another window if something goes wrong).
+  5. Set environment variables as follows (the last two are optional, just to
+  confirm the collector is running, and to facilitate debugging from another
+  console window if something goes wrong, respectively):
+
+   - `LD_PRELOAD=_foo_/lib/libgc.so`
+   - `GC_FIND_LEAK`
+   - `GC_PRINT_STATS`
+   - `GC_LOOP_ON_ABORT`
+
   6. Simply run `a.out` as you normally would. Note that if you run anything
   else (e.g. your editor) with those environment variables set, it will also
   be leak tested. This may or may not be useful and/or embarrassing. It can
   generate mountains of leak reports if the application was not designed
-  to avoid leaks, e.g. because it's always short-lived.  This has not yet
-  been thoroughly tested on large applications, but it's known to do the right
-  thing on at least some small ones.
+  to avoid leaks, e.g. because it's always short-lived.
+
+This has not yet been thoroughly tested on large applications, but it's known
+to do the right thing on at least some small ones.
