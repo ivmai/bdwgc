@@ -208,13 +208,14 @@ progression of mark states for a stop-the-world collection is:
   3. `MS_ROOTS_PUSHED` asserting that once the mark stack is empty, all
   reachable objects are marked. Once in this state, we work only on emptying
   the mark stack. Once this is completed, the state changes to
-  4. `MS_NONE` indicating that reachable objects are marked.  The core mark
-  routine `GC_mark_from`, is called repeatedly by several of the sub-phases
-  when the mark stack starts to fill up. It is also called repeatedly
-  in `MS_ROOTS_PUSHED` state to empty the mark stack. The routine is designed
-  to only perform a limited amount of marking at each call, so that it can
-  also be used by the incremental collector. It is fairly carefully tuned,
-  since it usually consumes a large majority of the garbage collection time.
+  4. `MS_NONE` indicating that reachable objects are marked.
+
+The core mark routine `GC_mark_from`, is called repeatedly by several of the
+sub-phases when the mark stack starts to fill up. It is also called repeatedly
+in `MS_ROOTS_PUSHED` state to empty the mark stack. The routine is designed
+to only perform a limited amount of marking at each call, so that it can
+also be used by the incremental collector. It is fairly carefully tuned,
+since it usually consumes a large majority of the garbage collection time.
 
 The fact that it performs only a small amount of work per call also allows
 it to be used as the core routine of the parallel marker. In that case it is
