@@ -11,18 +11,18 @@ CFLAGS="-arch ppc -arch i386 -arch x86_64" ./configure --disable-dependency-trac
 
 == Important Usage Notes ==
 
-GC_init() MUST be called before calling any other GC functions. This
+GC_INIT() MUST be called before calling any other GC functions. This
 is necessary to properly register segments in dynamic libraries. This
 call is required even if you code does not use dynamic libraries as the
 dyld code handles registering all data segments.
 
 When your use of the garbage collector is confined to dylibs and you
-cannot call GC_init() before your libraries' static initializers have
+cannot call GC_INIT() before your libraries' static initializers have
 run and perhaps called GC_malloc(), create an initialization routine
-for each library to call GC_init():
+for each library to call GC_INIT(), e.g.:
 
 #include "gc.h"
-extern "C" void my_library_init() { GC_init(); }
+extern "C" void my_library_init() { GC_INIT(); }
 
 Compile this code into a my_library_init.o, and link it into your
 dylib. When you link the dylib, pass the -init argument with
@@ -31,10 +31,10 @@ my_library_init.o -init _my_library_init). This causes
 my_library_init() to be called before any static initializers, and
 will initialize the garbage collector properly.
 
-Note: It doesn't hurt to call GC_init() more than once, so it's best,
+Note: It doesn't hurt to call GC_INIT() more than once, so it's best,
 if you have an application or set of libraries that all use the
 garbage collector, to create an initialization routine for each of
-them that calls GC_init(). Better safe than sorry.
+them that calls GC_INIT(). Better safe than sorry.
 
 The incremental collector is still a bit flaky on darwin. It seems to
 work reliably with workarounds for a few possible bugs in place however

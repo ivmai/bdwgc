@@ -15,7 +15,8 @@ on how the collector is built, this will be `gc.a` or `libgc.{a,so}`.
 The following describes the standard C interface to the garbage collector.
 It is not a complete definition of the interface. It describes only the most
 commonly used functionality, approximately in decreasing order of frequency
-of use. The full interface is described in `gc.h` file.
+of use. This somewhat duplicates the information in `gc.man` file. The full
+interface is described in `gc.h` file.
 
 Clients should include `gc.h` (i.e., not `gc_config_macros.h`,
 `gc_pthread_redirects.h`, `gc_version.h`). In the case of multi-threaded code,
@@ -27,11 +28,11 @@ to cooperate with the GC on many platforms.
 Thread users should also be aware that on many platforms objects reachable
 only from thread-local variables may be prematurely reclaimed. Thus objects
 pointed to by thread-local variables should also be pointed to by a globally
-visible data structure. (This is viewed as a bug, but as one that
-is exceedingly hard to fix without some `libc` hooks.)
+visible data area, e.g. thread's stack. (This behavior is viewed as a bug, but
+as one that is exceedingly hard to fix without some `libc` hooks.)
 
-**void * `GC_MALLOC`(size_t _nbytes_)** - Allocates and clears _nbytes_
-of storage. Requires (amortized) time proportional to _nbytes_. The resulting
+**void * `GC_MALLOC`(size_t _bytes_)** - Allocates and clears _bytes_
+of storage. Requires (amortized) time proportional to _bytes_. The resulting
 object will be automatically deallocated when unreferenced. References from
 objects allocated with the system malloc are usually not considered by the
 collector. (See `GC_MALLOC_UNCOLLECTABLE`, however. Building the collector
@@ -40,33 +41,33 @@ with `-DREDIRECT_MALLOC=GC_malloc_uncollectable` is often a way around this.)
 is defined before `gc.h` is included, a debugging version that checks
 occasionally for overwrite errors, and the like.
 
-**void * `GC_MALLOC_ATOMIC`(size_t _nbytes_)** - Allocates _nbytes_
-of storage. Requires (amortized) time proportional to _nbytes_. The resulting
+**void * `GC_MALLOC_ATOMIC`(size_t _bytes_)** - Allocates _bytes_
+of storage. Requires (amortized) time proportional to _bytes_. The resulting
 object will be automatically deallocated when unreferenced. The client
 promises that the resulting object will never contain any pointers. The memory
 is not cleared. This is the preferred way to allocate strings, floating point
 arrays, bitmaps, etc. More precise information about pointer locations can be
 communicated to the collector using the interface in `gc_typed.h`.
 
-**void * `GC_MALLOC_UNCOLLECTABLE`(size_t _nbytes_)** - Identical
+**void * `GC_MALLOC_UNCOLLECTABLE`(size_t _bytes_)** - Identical
 to `GC_MALLOC`, except that the resulting object is not automatically
 deallocated. Unlike the system-provided `malloc`, the collector does scan the
 object for pointers to garbage-collectible memory, even if the block itself
 does not appear to be reachable. (Objects allocated in this way are
 effectively treated as roots by the collector.)
 
-**void * `GC_REALLOC`(void * _old_, size_t _new_size_)** - Allocates a new
-object of the indicated size and copy (a prefix of) the old object into the
+**void * `GC_REALLOC`(void * _old_object_, size_t _new_bytes_)** - Allocates
+a new object of the indicated size and copy the old object's content into the
 new object. The old object is reused in place if convenient. If the original
 object was allocated with `GC_MALLOC_ATOMIC`, the new object is subject to the
 same constraints. If it was allocated as an uncollectible object, then the new
 object is uncollectible, and the old object (if different) is deallocated.
 
-**void `GC_FREE`(void * _dead_)** - Explicitly deallocates an object.
+**void `GC_FREE`(void * _object_)** - Explicitly deallocates an _object_.
 Typically not useful for small collectible objects.
 
-**void * `GC_MALLOC_IGNORE_OFF_PAGE`(size_t _nbytes_)** and
-**void * `GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE`(size_t _nbytes_)** - Analogous
+**void * `GC_MALLOC_IGNORE_OFF_PAGE`(size_t _bytes_)** and
+**void * `GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE`(size_t _bytes_)** - Analogous
 to `GC_MALLOC` and `GC_MALLOC_ATOMIC`, respectively, except that the client
 guarantees that as long as the resulting object is of use, a pointer
 is maintained to someplace inside the first 512 bytes of the object. This
@@ -75,7 +76,9 @@ optimizations. (Other nonvolatile pointers to the object may exist as well.)
 This is the preferred way to allocate objects that are likely to be
 more than 100 KB in size. It greatly reduces the risk that such objects will
 be accidentally retained when they are no longer needed. Thus space usage may
-be significantly reduced.
+be significantly reduced. Another way is `GC_set_all_interior_pointers(0)`
+called at program start (this, however, is generally not suitable for C++ code
+because of multiple inheretance).
 
 **void `GC_INIT()`** - On some platforms, it is necessary to invoke this _from
 the main executable_, _not from a dynamic library_, before the initial
@@ -89,9 +92,9 @@ as possible.
 to perform a small amount of work every few invocations of `GC_MALLOC` or the
 like, instead of performing an entire collection at once. This is likely
 to increase total running time. It will improve response on a platform that
-either has suitable support in the garbage collector (Linux and most Unix
-versions, Win32 if the collector was suitably built). On many platforms this
-interacts poorly with system calls that write to the garbage collected heap.
+has suitable support in the garbage collector (Linux and most Unix versions,
+Win32 if the collector was suitably built). On many platforms this interacts
+poorly with system calls that write to the garbage collected heap.
 
 **void `GC_set_warn_proc`(GC_warn_proc)** - Replaces the default procedure
 used by the collector to print warnings. The collector may otherwise
@@ -105,20 +108,17 @@ releasing system resources (e.g. closing files) when the object referencing
 them becomes inaccessible. It is not an acceptable method to perform actions
 that must be performed in a timely fashion. See `gc.h` for details of the
 interface. See also [here](finalization.md) for a more detailed discussion
-of the design.
-
-Note that an object may become inaccessible before client code is done
-operating on objects referenced by its fields. Suitable synchronization
-is usually required. See
-[here](http://portal.acm.org/citation.cfm?doid=604131.604153)
-or [here](http://www.hpl.hp.com/techreports/2002/HPL-2002-335.html) for
-details.
+of the design. Note that an object may become inaccessible before client code
+is done operating on objects referenced by its fields. Suitable
+synchronization is usually required. See
+[here](http://portal.acm.org/citation.cfm?doid=604131.604153) or
+[here](http://www.hpl.hp.com/techreports/2002/HPL-2002-335.html) for details.
 
 If you are concerned with multiprocessor performance and scalability, you
 should consider enabling and using thread local allocation.
 
-If your platform supports it, you should build the collector with parallel
-marking support (`-DPARALLEL_MARK`); configure has it on by default.
+If your platform supports it, you should also build the collector with
+parallel marking support (`-DPARALLEL_MARK`); configure has it on by default.
 
 If the collector is used in an environment in which pointer location
 information for heap objects is easily available, this can be passed on to the

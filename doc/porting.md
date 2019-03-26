@@ -6,8 +6,7 @@ as scanning the stack(s), that are not possible in portable C code.
 
 All of the following assumes that the collector is being ported to
 a byte-addressable 32- or 64-bit machine. Currently all successful ports
-to 64-bit machines involve LP64 targets. The code base includes some
-provisions for P64 targets (notably Win64), but that has not been tested. You
+to 64-bit machines involve LP64 and LLP64 targets (notably Win64). You
 are hereby discouraged from attempting a port to non-byte-addressable,
 or 8-bit, or 16-bit machines.
 
@@ -96,7 +95,7 @@ operating system:
   is found. This often works on Posix-like platforms. It makes it harder
   to debug client programs, since startup involves generating and catching
   a segmentation fault, which tends to confuse users.
-  * `DATAEND` - Set to the end of the main data segment. Defaults to `end`,
+  * `DATAEND` - Set to the end of the main data segment. Defaults to `_end`,
   where that is declared as an array. This works in some cases, since the
   linker introduces a suitable symbol.
   * `DATASTART2`, `DATAEND2` - Some platforms have two discontiguous main data
@@ -131,11 +130,12 @@ operating system:
   plausible page boundary, and use that as the stack base.
   * `DYNAMIC_LOADING` - Should be defined if `dyn_load.c` has been updated for
   this platform and tracing of dynamic library roots is supported.
-  * `MPROTECT_VDB`, `PROC_VDB` - May be defined if the corresponding
-  _virtual dirty bit_ implementation in `os_dep.c` is usable on this platform.
-  This allows incremental/generational garbage collection. `MPROTECT_VDB`
-  identifies modified pages by write protecting the heap and catching faults.
-  `PROC_VDB` uses the /proc primitives to read dirty bits.
+  * `GWW_VDB`, `MPROTECT_VDB`, `PROC_VDB` - May be defined if the
+  corresponding _virtual dirty bit_ implementation in `os_dep.c` is usable on
+  this platform. This allows incremental/generational garbage collection.
+  (`GWW_VDB` uses the Win32 `GetWriteWatch` function to read dirty bits,
+  `MPROTECT_VDB` identifies modified pages by write protecting the heap and
+  catching faults. `PROC_VDB` uses the /proc primitives to read dirty bits.)
   * `PREFETCH`, `GC_PREFETCH_FOR_WRITE` - The collector uses `PREFETCH(x)`
   to preload the cache with the data at _x_ address. This defaults to a no-op.
   * `CLEAR_DOUBLE` - If `CLEAR_DOUBLE` is defined, then `CLEAR_DOUBLE(x)`
@@ -209,7 +209,7 @@ stopped with signals. In this case, the changes involve:
   workarounds are common.  Non-preemptive threads packages will probably
   require further work. Similarly thread-local allocation and parallel marking
   requires further work in `pthread_support.c`, and may require better
-  `atomic_ops` support.
+  `atomic_ops` support for the designed platform.
 
 ## Dynamic library support
 

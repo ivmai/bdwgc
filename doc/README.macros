@@ -83,11 +83,12 @@ GC_NOT_DLL      User-settable macro that overrides _DLL, e.g. if runtime
                 dynamic libraries are used, but the collector is in a static
                 library.  Tested by gc_config_macros.h.
 
-GC_REQUIRE_WCSDUP       Force GC to export GC_wcsdup() (the Unicode version
-                of GC_strdup); could be useful in the leak-finding mode.
-
 
 These define arguments influence the collector configuration:
+
+GC_REQUIRE_WCSDUP       Force GC to export GC_wcsdup() (the Unicode version
+  of GC_strdup); could be useful in the leak-finding mode.  Clients should
+  define it before including gc.h if the function is needed.
 
 FIND_LEAK       Causes GC_find_leak to be initially set.  This causes the
   collector to assume that all inaccessible objects should have been
@@ -111,13 +112,13 @@ SUNOS5SIGS      Solaris-like signal handling.  This is probably misnamed,
 PCR     Set if the collector is being built as part of the Xerox Portable
   Common Runtime.
 
-IMPORTANT: Any of the _THREADS options must normally also be defined in
-  the client before including gc.h.  This redefines thread primitives to
-  invoke the GC_ versions instead.  Alternatively, linker-based symbol
-  interception can be used on a few platforms.
-
 GC_THREADS      Should set the appropriate one of the below macros,
   except GC_WIN32_PTHREADS, which must be set explicitly.  Tested by gc.h.
+  IMPORTANT: GC_THREADS macro (or the relevant platform-specific deprecated
+  one) must normally also be defined by the client before including gc.h.
+  This redefines thread primitives to invoke the GC_ wrappers instead.
+  Alternatively, linker-based symbol interception can be used on a few
+  platforms.
 
 GC_SOLARIS_THREADS      Enables support for Solaris pthreads.
   Must also define _REENTRANT.  Deprecated, use GC_THREADS instead.
@@ -155,8 +156,7 @@ GC_DGUX386_THREADS      Enables support for DB/UX on I386 threads.
   See README.DGUX386.  (Probably has not been tested recently.)  Deprecated,
   use GC_THREADS instead.
 
-GC_WIN32_THREADS        Enables support for Win32 threads.  That makes sense
-  for Makefile (and Makefile.direct) only under Cygwin or MinGW.  Deprecated,
+GC_WIN32_THREADS        Enables support for Win32 threads.  Deprecated,
   use GC_THREADS instead.
 
 GC_WIN32_PTHREADS       Enables support for pthreads-win32 (or other
@@ -183,9 +183,9 @@ NO_CLOCK        Do not use system clock.  Disables some statistic printing.
 
 GC_DISABLE_INCREMENTAL  Turn off the incremental collection support.
 
-NO_INCREMENTAL  Causes the gctest program to not invoke the incremental
-  collector.  This has no impact on the generated library, only on the test
-  program.  (This is often useful for debugging failures unrelated to
+NO_INCREMENTAL  Causes the GC test programs to not invoke the incremental mode
+  of the collector.  This has no impact on the generated library, only on the
+  test programs.  (This is often useful for debugging failures unrelated to
   incremental GC.)
 
 LARGE_CONFIG    Tunes the collector for unusually large heaps.
@@ -211,7 +211,7 @@ NO_EXECUTE_PERMISSION   May cause some or all of the heap to not
   execute permission is required.
 
 GC_NO_OPERATOR_NEW_ARRAY        Declares that the C++ compiler does not
-  support the  new syntax "operator new[]" for allocating and deleting arrays.
+  support the new syntax "operator new[]" for allocating and deleting arrays.
   See gc_cpp.h for details.  No effect on the C part of the collector.
   This is defined implicitly in a few environments.  Must also be defined
   by clients that use gc_cpp.h.
@@ -327,9 +327,9 @@ KEEP_BACK_PTRS  Add code to save back pointers in debugging headers
   for debugging/profiling purposes.  The gc_backptr.h interface is
   implemented only if this is defined.
 
-GC_ASSERTIONS   Enable some internal GC assertion checking.  Currently
-  this facility is only used in a few places.  It is intended primarily
-  for debugging of the garbage collector itself, but could also...
+GC_ASSERTIONS   Enable some internal GC assertion checking.  It is intended
+  primarily for debugging of the garbage collector itself, but could also
+  help to identify cases of incorrect GC usage by a client.
 
 DBG_HDRS_ALL    Make sure that all objects have debug headers.  Increases
   the reliability (from 99.9999% to 100% mod. bugs) of some of the debugging
@@ -350,10 +350,10 @@ SHORT_DBG_HDRS  Assume that all objects have debug headers.  Shorten
 SAVE_CALL_COUNT=<n>     Set the number of call frames saved with objects
   allocated through the debugging interface.  Affects the amount of
   information generated in leak reports.  Only matters on platforms
-  on which we can quickly generate call stacks, currently Linux/(X86 & SPARC)
-  and Solaris/SPARC and platforms that provide execinfo.h.
-  Default is zero.  On X86, client
-  code should NOT be compiled with -fomit-frame-pointer.
+  on which we can quickly generate call stacks, currently Linux/X86,
+  Linux/SPARC, Solaris/SPARC, and platforms that provide execinfo.h.
+  Default is zero.  On X86, client code should NOT be compiled with
+  -fomit-frame-pointer.
 
 SAVE_CALL_NARGS=<n>     Set the number of functions arguments to be saved
   with each call frame.  Default is zero.  Ignored if we don't know how to
@@ -367,13 +367,11 @@ GC_GCJ_SUPPORT  Includes support for gcj (and possibly other systems
   that include a pointer to a type descriptor in each allocated object).
 
 USE_I686_PREFETCH       Causes the collector to issue Pentium III style
-  prefetch instructions.  No effect except on X86 Linux platforms.
-  Assumes a very recent gcc-compatible compiler and assembler.
-  (Gas prefetcht0 support was added around May 1999.)
+  prefetch instructions.  No effect except on Linux/X86 platforms.
   Empirically the code appears to still run correctly on Pentium II
   processors, though with no performance benefit.  May not run on other
-  X86 processors?  In some cases this improves performance by
-  15% or so.
+  X86 processors probably.  In some cases this improves performance by 15%
+  or so.
 
 USE_3DNOW_PREFETCH      Causes the collector to issue AMD 3DNow style
   prefetch instructions.  Same restrictions as USE_I686_PREFETCH.
@@ -396,8 +394,7 @@ GC_USE_DLOPEN_WRAP      Causes the collector to redefine malloc and
 THREAD_LOCAL_ALLOC      Defines GC_malloc(), GC_malloc_atomic() and
   GC_gcj_malloc() to use a per-thread set of free-lists. These then allocate
   in a way that usually does not involve acquisition of a global lock.
-  Recommended for multiprocessors.  Requires explicit GC_INIT() call, unless
-  REDIRECT_MALLOC is defined and GC_malloc is used first.
+  Recommended for multiprocessors.
 
 USE_COMPILER_TLS        Causes thread local allocation to use
   the compiler-supported "__thread" thread-local variables.  This is the
@@ -535,7 +532,7 @@ DONT_USE_USER32_DLL (Win32 only)        Don't use "user32" DLL import library
 GC_PREFER_MPROTECT_VDB  Choose MPROTECT_VDB manually in case of multiple
   virtual dirty bit strategies are implemented (at present useful on Win32 and
   Solaris to force MPROTECT_VDB strategy instead of the default GWW_VDB or
-  PROC_VDB ones).
+  PROC_VDB ones, respectively).
 
 GC_IGNORE_GCJ_INFO      Disable GCJ-style type information (useful for
   debugging on WinCE).

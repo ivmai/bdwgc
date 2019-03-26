@@ -1,7 +1,7 @@
 See README.alpha for Linux on DEC AXP info.
 
-This file applies mostly to Linux/Intel IA32.  Ports to Linux on an M68K,
-IA64, SPARC, MIPS, Alpha and PowerPC are integrated too.  They should behave
+This file applies mostly to Linux/Intel IA-32.  Ports to Linux on an M68K,
+IA-64, SPARC, MIPS, Alpha and PowerPC are integrated too.  They should behave
 similarly, except that the PowerPC port lacks incremental GC support, and
 it is unknown to what extent the Linux threads code is functional.
 See below for M68K specific notes.
@@ -29,8 +29,8 @@ To use threads, you need to abide by the following requirements:
    in the Makefile.
 
 3a) Every file that makes thread calls should define GC_THREADS, and then
-   include gc.h.  Gc.h redefines some of the pthread primitives as macros
-   which also provide the collector with information it requires.
+   include gc.h.  The latter redefines some of the pthread primitives as
+   macros which also provide the collector with information it requires.
 
 3b) A new alternative to (3a) is to build the collector and compile GC clients
    with -DGC_USE_LD_WRAP, and to link the final program with

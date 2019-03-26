@@ -199,9 +199,10 @@ Files to build the GC libraries:
     checksums.c
     dbg_mlc.c
     finalize.c
+    fnlz_mlc.c
     headers.c
     mach_dep.c
-    MacOS.c    -- contains MacOS code
+    extra/MacOS.c -- contains MacOS code
     malloc.c
     mallocx.c
     mark.c
@@ -213,9 +214,7 @@ Files to build the GC libraries:
     ptr_chck.c
     reclaim.c
     typd_mlc.c
-    gc++.cc    -- this is 'gc_cpp.cc' with less 'inline' and
-               -- throw std::bad_alloc when out of memory
-               -- gc_cpp.cc works just fine too
+    gc_cpp.cc
 
 == 2. Test that the library works with 'test.c' ==
 

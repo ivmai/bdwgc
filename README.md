@@ -63,7 +63,7 @@ Many of the ideas underlying the collector have previously been explored
 by others.  Notably, some of the run-time systems developed at Xerox PARC
 in the early 1980s conservatively scanned thread stacks to locate possible
 pointers (cf. Paul Rovner, "On Adding Garbage Collection and Runtime Types
-to a Strongly-Typed Statically Checked, Concurrent Language"  Xerox PARC
+to a Strongly-Typed Statically Checked, Concurrent Language" Xerox PARC
 CSL 84-7).  Doug McIlroy wrote a simpler fully conservative collector that
 was part of version 8 UNIX (tm), but appears to not have received
 widespread use.
@@ -142,8 +142,8 @@ at least one call to `GC_is_visible` to ensure that those areas are
 visible to the collector.
 
 Note that the garbage collector does not need to be informed of shared
-read-only data.  However if the shared library mechanism can introduce
-discontiguous data areas that may contain pointers, then the collector does
+read-only data.  However, if the shared library mechanism can introduce
+discontiguous data areas that may contain pointers then the collector does
 need to be informed.
 
 Signal processing for most signals may be deferred during collection,
@@ -166,7 +166,7 @@ stored on the thread's stack for the duration of their lifetime.
 
 ## Installation and Portability
 
-As distributed, the collector operates silently
+The collector operates silently in the default configuration.
 In the event of problems, this can usually be changed by defining the
 `GC_PRINT_STATS` or `GC_PRINT_VERBOSE_STATS` environment variables.  This
 will result in a few lines of descriptive output for each collection.
@@ -215,12 +215,6 @@ runs a number of tests.  `make install` installs at least libgc, and libcord.
 Try `./configure --help` to see the configuration options.  It is currently
 not possible to exercise all combinations of build options this way.
 
-It is suggested that if you need to replace a piece of the collector
-(e.g. GC_mark_rts.c) you simply list your version ahead of gc.a on the
-ld command line, rather than replacing the one in gc.a.  (This will
-generate numerous warnings under some versions of AIX, but it still
-works.)
-
 All include files that need to be used by clients will be put in the
 include subdirectory.  (Normally this is just gc.h.  `make cords` adds
 "cord.h" and "ec.h".)
@@ -228,8 +222,6 @@ include subdirectory.  (Normally this is just gc.h.  `make cords` adds
 The collector currently is designed to run essentially unmodified on
 machines that use a flat 32-bit or 64-bit address space.
 That includes the vast majority of Workstations and X86 (X >= 3) PCs.
-(The list here was deleted because it was getting too long and constantly
-out of date.)
 
 In a few cases (Amiga, OS/2, Win32, MacOS) a separate makefile
 or equivalent is supplied.  Many of these have separate README.system
@@ -299,11 +291,8 @@ all of the following, plus many others.
   a given size.  Returns a pointer to the new object, which may, or may not,
   be the same as the pointer to the old object.  The new object is taken to
   be atomic if and only if the old one was.  If the new object is composite
-  and larger than the original object then the newly added bytes are cleared
-  (we hope).  This is very likely to allocate a new object, unless
-  `MERGE_SIZES` is defined in gc_priv.h.  Even then, it is likely to recycle
-  the old object only if the object is grown in small additive increments
-  (which, we claim, is generally bad coding practice).
+  and larger than the original object then the newly added bytes are cleared.
+  This is very likely to allocate a new object.
 
   4. `GC_free(object)` - Explicitly deallocate an object returned by
   `GC_malloc` or `GC_malloc_atomic`, or friends.  Not necessary, but can be
@@ -363,7 +352,7 @@ friends.
 
 All externally visible names in the garbage collector start with `GC_`.
 To avoid name conflicts, client code should avoid this prefix, except when
-accessing garbage collector routines or variables.
+accessing garbage collector routines.
 
 There are provisions for allocation with explicit type information.
 This is rarely necessary.  Details can be found in gc_typed.h.
@@ -371,12 +360,12 @@ This is rarely necessary.  Details can be found in gc_typed.h.
 
 ## The C++ Interface to the Allocator
 
-The Ellis-Hull C++ interface to the collector is included in
-the collector distribution.  If you intend to use this, type
-`make c++` after the initial build of the collector is complete.
-See gc_cpp.h for the definition of the interface.  This interface
-tries to approximate the Ellis-Detlefs C++ garbage collection
-proposal without compiler changes.
+The Ellis-Hull C++ interface to the collector is included in the collector
+distribution.  If you intend to use this, type
+`./configure --enable-cplusplus; make` (or `make -f Makefile.direct c++`)
+after the initial build of the collector is complete.  See gc_cpp.h for the
+definition of the interface.  This interface tries to approximate the
+Ellis-Detlefs C++ garbage collection proposal without compiler changes.
 
 Very often it will also be necessary to use gc_allocator.h and the
 allocator declared there to construct STL data structures.  Otherwise
@@ -389,26 +378,25 @@ allocator, and objects they refer to may be prematurely collected.
 The collector may be used to track down leaks in C programs that are
 intended to run with malloc/free (e.g. code with extreme real-time or
 portability constraints).  To do so define `FIND_LEAK` in Makefile.
-This will cause the collector to invoke the `report_leak`
-routine defined near the top of reclaim.c whenever an inaccessible
-object is found that has not been explicitly freed.  Such objects will
-also be automatically reclaimed.
+This will cause the collector to print a human-readable object description
+whenever an inaccessible object is found that has not been explicitly freed.
+Such objects will also be automatically reclaimed.
 
-If all objects are allocated with `GC_DEBUG_MALLOC` (see next section), then
-the default version of report_leak will report at least the source file and
-line number at which the leaked object was allocated.  This may sometimes be
-sufficient.  (On a few machines, it will also report a cryptic stack trace.
-If this is not symbolic, it can sometimes be called into a symbolic stack
-trace by invoking program "foo" with "tools/callprocs.sh foo".  It is a short
-shell script that invokes adb to expand program counter values to symbolic
-addresses.  It was largely supplied by Scott Schwartz.)
+If all objects are allocated with `GC_DEBUG_MALLOC` (see the next section)
+then, by default, the human-readable object description will at least contain
+the source file and the line number at which the leaked object was allocated.
+This may sometimes be sufficient.  (On a few machines, it will also report
+a cryptic stack trace.  If this is not symbolic, it can sometimes be called
+into a symbolic stack trace by invoking program "foo" with
+`tools/callprocs.sh foo`.  It is a short shell script that invokes adb to
+expand program counter values to symbolic addresses.  It was largely supplied
+by Scott Schwartz.)
 
 Note that the debugging facilities described in the next section can
-sometimes be slightly LESS effective in leak finding mode, since in
-leak finding mode, `GC_debug_free` actually results in reuse of the object.
-(Otherwise the object is simply marked invalid.)  Also note that the test
-program is not designed to run meaningfully in `FIND_LEAK` mode.
-Use "make gc.a" to build the collector.
+sometimes be slightly LESS effective in leak finding mode, since in the latter
+`GC_debug_free` actually results in reuse of the object.  (Otherwise the
+object is simply marked invalid.)  Also, note that most GC tests are not
+designed to run meaningfully in `FIND_LEAK` mode.
 
 
 ## Debugging Facilities
@@ -428,8 +416,8 @@ object, so accidentally repeated calls to `GC_debug_free` will report the
 deallocation of an object without debugging information.  Out of
 memory errors will be reported to stderr, in addition to returning `NULL`.
 
-`GC_debug_malloc` checking  during garbage collection is enabled
-with the first call to `GC_debug_malloc`.  This will result in some
+`GC_debug_malloc` checking during garbage collection is enabled
+with the first call to this function.  This will result in some
 slowdown during collections.  If frequent heap checks are desired,
 this can be achieved by explicitly invoking `GC_gcollect`, e.g. from
 the debugger.
@@ -442,18 +430,18 @@ low probability that `GC_malloc` allocated objects may be misidentified as
 having been overwritten.  This should happen with probability at most
 one in 2**32.  This probability is zero if `GC_debug_malloc` is never called.
 
-`GC_debug_malloc`, `GC_malloc_atomic`, and `GC_debug_realloc` take two
+`GC_debug_malloc`, `GC_debug_malloc_atomic`, and `GC_debug_realloc` take two
 additional trailing arguments, a string and an integer.  These are not
 interpreted by the allocator.  They are stored in the object (the string is
 not copied).  If an error involving the object is detected, they are printed.
 
-The macros `GC_MALLOC`, `GC_MALLOC_ATOMIC`, `GC_REALLOC`, `GC_FREE`, and
-`GC_REGISTER_FINALIZER` are also provided.  These require the same arguments
-as the corresponding (nondebugging) routines.  If gc.h is included
+The macros `GC_MALLOC`, `GC_MALLOC_ATOMIC`, `GC_REALLOC`, `GC_FREE`,
+`GC_REGISTER_FINALIZER` and friends are also provided.  These require the same
+arguments as the corresponding (nondebugging) routines.  If gc.h is included
 with `GC_DEBUG` defined, they call the debugging versions of these
 functions, passing the current file name and line number as the two
 extra arguments, where appropriate.  If gc.h is included without `GC_DEBUG`
-defined, then all these macros will instead be defined to their nondebugging
+defined then all these macros will instead be defined to their nondebugging
 equivalents.  (`GC_REGISTER_FINALIZER` is necessary, since pointers to
 objects with debugging information are really pointers to a displacement
 of 16 bytes from the object beginning, and some translation is necessary
@@ -482,7 +470,7 @@ of information:
   1. Information provided by the VM system.  This may be provided in one of
   several forms.  Under Solaris 2.X (and potentially under other similar
   systems) information on dirty pages can be read from the /proc file system.
-  Under other systems (currently SunOS4.X) it is possible to write-protect
+  Under other systems (e.g. SunOS4.X) it is possible to write-protect
   the heap, and catch the resulting faults. On these systems we require that
   system calls writing to the heap (other than read) be handled specially by
   client code. See `os_dep.c` for details.

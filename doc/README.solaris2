@@ -10,7 +10,7 @@ the collector normally obtains memory through sbrk.  There is some reason
 to expect that this is not safe if the client program also calls the system
 malloc, or especially realloc.  The sbrk man page strongly suggests this is
 not safe: "Many library routines use malloc() internally, so use brk()
-and sbrk() only when you know  that malloc() definitely will not be used by
+and sbrk() only when you know that malloc() definitely will not be used by
 any library routine."  This doesn't make a lot of sense to me, since there
 seems to be no documentation as to which routines can transitively call malloc.
 Nonetheless, under Solaris2, the collector now allocates
@@ -33,9 +33,9 @@ by configure --disable-parallel-mark option).
 
 It is also essential that gc.h be included in files that call pthread_create,
 pthread_join, pthread_detach, or dlopen.  gc.h macro defines these to also do
-GC bookkeeping, etc.  gc.h must be included with one or both of these macros
-defined, otherwise these replacements are not visible.  A collector built in
-this way way only be used by programs that are linked with the threads library.
+GC bookkeeping, etc.  gc.h must be included with GC_THREADS macro defined
+first, otherwise these replacements are not visible.  A collector built in
+this way may only be used by programs that are linked with the threads library.
 
 Unless USE_PROC_FOR_LIBRARIES is defined, dlopen disables collection
 temporarily.  In some unlikely cases, this can result in unpleasant heap
@@ -46,11 +46,11 @@ GC_malloc, it is necessary to call GC_INIT explicitly before forking the
 first thread.  (This avoids a deadlock arising from calling GC_thr_init
 with the allocation lock held.)
 
-It appears that there is a problem in using gc_cpp.h in conjunction with
-Solaris threads and Sun's C++ runtime.  Apparently the overloaded new operator
-is invoked by some iostream initialization code before threads are correctly
-initialized.  As a result, call to thr_self() in garbage collector
-initialization  SEGV faults.  Currently the only known workaround is to not
+There could be an issue when using gc_cpp.h in conjunction with Solaris
+threads and Sun's C++ runtime.  Apparently the overloaded new operator
+may be invoked by some iostream initialization code before threads are
+correctly initialized.  This may cause a SIGSEGV during initialization
+of the garbage collector.  Currently the only known workaround is to not
 invoke the garbage collector from a user defined global operator new, or to
 have it invoke the garbage-collector's allocators only after main has started.
 (Note that the latter requires a moderately expensive test in operator

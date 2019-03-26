@@ -43,13 +43,8 @@ currently uses SIGPWR and SIGXCPU by default.
 The garbage collector generates warning messages of the form:
 
 
-    Needed to allocate blacklisted block at 0x...
-
-
-or
-
-
     Repeated allocation of very large block ...
+    May lead to memory leak and poor performance
 
 
 when it needs to allocate a block at a location that it knows to be referenced

@@ -37,19 +37,18 @@ In general the following guidelines should be followed:
   recently used logically open files. Any other needed files would be closed
   after saving their state. They would then be reopened on demand.
   Finalization would logically close the file, closing the real descriptor
-  only if it happened to be cached.) Note that most modern systems (e.g. Irix)
-  allow hundreds or thousands of open files, and this is typically not
-  an issue.
+  only if it happened to be cached.) Note that most modern systems allow
+  thousands of open files, and this is typically not an issue.
   * Finalization code may be run anyplace an allocation or other call to the
   collector takes place. In multi-threaded programs, finalizers have to obey
   the normal locking conventions to ensure safety. Code run directly from
   finalizers should not acquire locks that may be held during allocation.
-  This restriction can be easily circumvented by registering a finalizer which
-  enqueues the real action for execution in a separate thread.
+  This restriction can be easily circumvented by calling
+  `GC_set_finalize_on_demand(1)` at program start and creating a separate
+  thread dedicated to periodic invocation of `GC_invoke_finalizers()`.
 
-In single-threaded code, it is also often easiest to have finalizers queue
-actions, which are then explicitly run during an explicit call by the user's
-program.
+In single-threaded code, it is also often easiest to have finalizers queued
+and, then to have them explicitly executed by `GC_invoke_finalizers()`.
 
 ## Topologically ordered finalization
 

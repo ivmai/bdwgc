@@ -1,4 +1,4 @@
-.TH BDWGC 3 "15 Aug 2018"
+.TH BDWGC 3 "26 Mar 2019"
 .SH NAME
 GC_malloc, GC_malloc_atomic, GC_free, GC_realloc, GC_enable_incremental, GC_register_finalizer, GC_malloc_ignore_off_page, GC_malloc_atomic_ignore_off_page, GC_set_warn_proc \- Garbage collecting malloc replacement
 .SH SYNOPSIS
@@ -6,9 +6,19 @@ GC_malloc, GC_malloc_atomic, GC_free, GC_realloc, GC_enable_incremental, GC_regi
 .br
 void * GC_malloc(size_t size);
 .br
+void * GC_malloc_atomic(size_t size);
+.br
 void GC_free(void *ptr);
 .br
 void * GC_realloc(void *ptr, size_t size);
+.br
+void GC_enable_incremental();
+.br
+void * GC_malloc_ignore_off_page(size_t size);
+.br
+void * GC_malloc_atomic_ignore_off_page(size_t size);
+.br
+void GC_set_warn_proc(void (*proc)(char *, GC_word));
 .br
 .sp
 cc ... -lgc
@@ -67,7 +77,7 @@ inform the collector that the client code will always maintain a pointer to near
 .LP
 It is also possible to use the collector to find storage leaks in programs destined to be run with standard malloc/free.  The collector can be compiled for thread-safe operation.  Unlike standard malloc, it is safe to call malloc after a previous malloc call was interrupted by a signal, provided the original malloc call is not resumed.
 .LP
-The collector may, on rare occasion produce warning messages.  On UNIX machines these appear on stderr.  Warning messages can be filtered, redirected, or ignored with
+The collector may, on rare occasion, produce warning messages.  On UNIX machines these appear on stderr.  Warning messages can be filtered, redirected, or ignored with
 .I
 GC_set_warn_proc
 This is recommended for production code.  See gc.h for details.
@@ -75,7 +85,7 @@ This is recommended for production code.  See gc.h for details.
 Fully portable code should call
 .I
 GC_INIT
-from the main program before making any other GC calls.
+from the primordial thread of the main program before making any other GC calls.
 On most platforms this does nothing and the collector is initialized on first use.
 On a few platforms explicit initialization is necessary.  And it can never hurt.
 .LP

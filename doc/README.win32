@@ -1,8 +1,7 @@
-The collector has at various times been compiled under Windows 95 & later, NT,
-and XP, with the original Microsoft SDK, with Visual C++ 2.0, 4.0, and 6, with
-the GNU win32 tools, with Borland C++ Builder, with Watcom C, and
-with the Digital Mars compiler.  It is likely that some of these have been
-broken in the meantime.  Patches are appreciated.
+The collector has at various times been compiled under Windows 95 and later,
+NT, and XP, with the original Microsoft SDK, with Visual C++ 2.0, 4.0, and 6,
+with the GNU win32 tools, with Borland C++ Builder, with Watcom C, with EMX,
+and with the Digital Mars compiler (DMC).
 
 For historical reasons,
 the collector test program "gctest" is linked as a GUI application,
@@ -11,8 +10,8 @@ but does not open any windows.  Its output normally appears in the file
 cursor may appear as long as it's running.  If it is started from the
 command line, it will usually run in the background.  Wait a few
 minutes (a few seconds on a modern machine) before you check the output.
-You should see either a failure indication or a "Collector appears to
-work" message.
+You should see either a failure indication or a "Collector appears to work"
+message.
 
 A toy editor (cord/de.exe) based on cords (heavyweight
 strings represented as trees) has been ported and is included.
@@ -40,6 +39,7 @@ since we now separate heap sections with an unused page.)
 
 Microsoft Tools
 ---------------
+
 For Microsoft development tools, type
 "nmake -f NT_MAKEFILE cpu=i386 make_as_lib=1 nothreads=1 nodebug=1"
 to build the release variant of the collector as a static library without
@@ -61,6 +61,7 @@ collector was built as a static library.
 
 GNU Tools
 ---------
+
 The collector should be buildable under Cygwin with the
 "./configure; make check" machinery.
 
@@ -78,6 +79,7 @@ Memory unmapping could be turned off by "--disable-munmap" option.
 
 Borland Tools
 -------------
+
 [Rarely tested.]
 For Borland tools, use BCC_MAKEFILE.  Note that
 Borland's compiler defaults to 1 byte alignment in structures (-a1),
@@ -132,7 +134,6 @@ If the gc is compiled as dll, the macro "GC_DLL" should be defined before
 including "gc.h" (for example, with -DGC_DLL compiler option). It's
 important, otherwise resulting programs will not run.
 
-
 Special note for OpenWatcom users: the C (unlike the C++) compiler (of the
 latest stable release, not sure for older ones) doesn't force pointer global
 variables (i.e. not struct fields, not sure for locals) to be aligned unless
@@ -141,9 +142,9 @@ pragma) only controls alignment for structs; I don't know whether it's a bug or
 a feature (see an old report of same kind -
 http://bugzilla.openwatcom.org/show_bug.cgi?id=664), so You are warned.
 
-
 Incremental Collection
 ----------------------
+
 There is some support for incremental collection.  By default, the
 collector chooses between explicit page protection, and GetWriteWatch-based
 write tracking automatically, depending on the platform.
@@ -199,7 +200,7 @@ CMakeLists.txt).
 
 For the normal, non-dll-based thread tracking to work properly,
 threads should be created with GC_CreateThread or GC_beginthreadex,
-and exit normally or call GC_endthreadex or GC_ExitThread.  (For Cygwin, the
+and exit normally, or call GC_endthreadex or GC_ExitThread.  (For Cygwin, the
 standard pthread_create/exit calls could be used instead.)  As in the pthread
 case, including gc.h will redefine CreateThread, _beginthreadex,
 _endthreadex, and ExitThread to call the GC_ versions instead.

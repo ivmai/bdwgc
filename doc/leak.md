@@ -19,26 +19,26 @@ of paging.
 The garbage collector provides leak detection support. This includes the
 following features:
 
-  1. Leak detection mode can be initiated at run-time by setting
-  `GC_find_leak` instead of building the collector with `FIND_LEAK` defined.
-  This variable should be set to a nonzero value at program startup.
+  1. Leak detection mode can be initiated at run-time by `GC_set_find_leak(1)`
+  call at program startup instead of building the collector with `FIND_LEAK`
+  macro defined.
   2. Leaked objects should be reported and then correctly garbage collected.
 
-To use the collector as a leak detector, follow the following steps:
+To use the collector as a leak detector, do the following steps:
 
-  1. Build the collector with `-DFIND_LEAK`. Otherwise use default build
-  options.
+  1. Activate the leak detection mode as described above.
   2. Change the program so that all allocation and deallocation goes through
   the garbage collector.
-  3. Arrange to call `GC_gcollect` at appropriate points to check for leaks.
-  (For sufficiently long running programs, this will happen implicitly, but
-  probably not with sufficient frequency.)
+  3. Arrange to call `GC_gcollect` (or `CHECK_LEAKS()`) at appropriate points
+  to check for leaks. (This happens implicitly but probably not with
+  a sufficient frequency for long running programs.)
 
 The second step can usually be accomplished with the
 `-DREDIRECT_MALLOC=GC_malloc` option when the collector is built, or by
-defining `malloc`, `calloc`, `realloc` and `free` to call the corresponding
+defining `malloc`, `calloc`, `realloc`, `free` (as well as `strdup`,
+`strndup`, `wcsdup`, `memalign`, `posix_memalign`) to call the corresponding
 garbage collector functions. But this, by itself, will not yield very
-informative diagnostics, since the collector does not keep track of
+informative diagnostics, since the collector does not keep track of the
 information about how objects were allocated. The error reports will include
 only object addresses.
 
@@ -57,7 +57,7 @@ The same is generally true of thread support. However, the correct leak
 reports should be generated with linuxthreads, at least.
 
 On a few platforms (currently Solaris/SPARC, Irix, and, with
--DSAVE_CALL_CHAIN, Linux/X86), `GC_MALLOC` also causes some more information
+`-DSAVE_CALL_CHAIN`, Linux/X86), `GC_MALLOC` also causes some more information
 about its call stack to be saved in the object. Such information is reproduced
 in the error reports in very non-symbolic form, but it can be very useful with
 the aid of a debugger.
@@ -70,13 +70,14 @@ distribution.
 Assume the collector has been built with `-DFIND_LEAK` or
 `GC_set_find_leak(1)` exists as the first statement in `main`.
 
-The program to be tested for leaks can then look like "leak_test.c" file
-in the "tests" subdirectory of the distribution.
+The program to be tested for leaks could look like `tests/leak_test.c` file
+of the distribution.
 
 On an Intel X86 Linux system this produces on the stderr stream:
 
 
-    Leaked composite object at 0x806dff0 (leak_test.c:8, sz=4)
+    Found 1 leaked objects:
+    0x806dff0 (tests/leak_test.c:19, sz=4, NORMAL)
 
 
 (On most unmentioned operating systems, the output is similar to this. If the
@@ -87,7 +88,8 @@ not be compiled with `-fomit_frame_pointer`.)
 On Irix it reports:
 
 
-    Leaked composite object at 0x10040fe0 (leak_test.c:8, sz=4)
+    Found 1 leaked objects:
+    0x10040fe0 (tests/leak_test.c:19, sz=4, NORMAL)
             Caller at allocation:
                     ##PC##= 0x10004910
 
@@ -95,7 +97,8 @@ On Irix it reports:
 and on Solaris the error report is:
 
 
-    Leaked composite object at 0xef621fc8 (leak_test.c:8, sz=4)
+    Found 1 leaked objects:
+    0xef621fc8 (tests/leak_test.c:19, sz=4, NORMAL)
             Call chain at allocation:
                     args: 4 (0x4), 200656 (0x30FD0)
                     ##PC##= 0x14ADC
@@ -106,14 +109,13 @@ and on Solaris the error report is:
 In the latter two cases some additional information is given about how malloc
 was called when the leaked object was allocated. For Solaris, the first line
 specifies the arguments to `GC_debug_malloc` (the actual allocation routine),
-The second the program counter inside main, the third the arguments to `main`,
-and finally the program counter inside the caller to main (i.e. in the
-C startup code).
-
-In the Irix case, only the address inside the caller to main is given.
+The second one specifies the program counter inside `main`, the third one
+specifies the arguments to `main`, and, finally, the program counter inside
+the caller to `main` (i.e. in the C startup code). In the Irix case, only the
+address inside the caller to `main` is given.
 
 In many cases, a debugger is needed to interpret the additional information.
-On systems supporting the "adb" debugger, the `tools/callprocs.sh` script can
+On systems supporting the `adb` debugger, the `tools/callprocs.sh` script can
 be used to replace program counter values with symbolic names. The collector
 tries to generate symbolic names for call stacks if it knows how to do so on
 the platform. This is true on Linux/X86, but not on most other platforms.

@@ -58,17 +58,16 @@ of the garbage collector is stored inside the `_GC_arrays` structure. This
 allows the garbage collector to easily ignore the collectors own data
 structures when it searches for root pointers. Other allocator and collector
 internal data structures are allocated dynamically with `GC_scratch_alloc`.
-`GC_scratch_alloc` does not allow for deallocation, and is therefore used only
-for permanent data structures.
+The latter does not allow for deallocation, and is therefore used only for
+permanent data structures.
 
-The allocator allocates objects of different _kinds_. Different kinds are
+The allocator returns objects of different _kinds_. Different _kinds_ are
 handled somewhat differently by certain parts of the garbage collector.
 Certain kinds are scanned for pointers, others are not. Some may have
 per-object type descriptors that determine pointer locations. Or a specific
 kind may correspond to one specific object layout. Two built-in kinds are
-uncollectible.
-In spite of that, it is very likely that most C clients of the collector
-currently use at most two kinds: `NORMAL` and `PTRFREE` objects. The
+uncollectible. In spite of that, it is very likely that most C clients of the
+collector currently use at most two kinds: `NORMAL` and `PTRFREE` objects. The
 [GCJ](https://gcc.gnu.org/onlinedocs/gcc-4.8.5/gcj/) runtime also makes heavy
 use of a kind (allocated with `GC_gcj_malloc`) that stores type information
 at a known offset in method tables.
@@ -181,7 +180,7 @@ variables are located, it scans the following _root segments_ for pointers:
   a length. (For other possibilities, see `gc_mark.h`.)
 
 At the beginning of the mark phase, all root segments (as described above) are
-pushed on the stack by `GC_push_roots`. (Registers and eagerly processed stack
+pushed on the stack by `GC_push_roots`. (Registers and eagerly scanned stack
 sections are processed by pushing the referenced objects instead of the stack
 section itself.) If `ALL_INTERIOR_POINTERS` is not defined, then stack roots
 require special treatment. In this case, the normal marking code ignores
@@ -233,9 +232,9 @@ forward progress, even in case of repeated mark stack overflows. Every mark
 attempt results in additional marked objects.
 
 Each mark stack entry is processed by examining all candidate pointers in the
-range described by the entry. If the region has no associated type
-information, then this typically requires that each 4-byte aligned quantity
-(8-byte aligned with 64-bit pointers) be considered a candidate pointer.
+range described by the entry. If the region has no associated type information
+then this typically requires that each 4-byte aligned quantity (8-byte aligned
+if 64-bit pointers) be considered a candidate pointer.
 
 We determine whether a candidate pointer is actually the address of a heap
 block. This is done in the following steps:
@@ -248,8 +247,10 @@ block. This is done in the following steps:
   * The candidate pointer is divided into two pieces; the most significant
   bits identify a `HBLKSIZE`-sized page in the address space, and the least
   significant bits specify an offset within that page. (A hardware page may
-  actually consist of multiple such pages. HBLKSIZE is usually the page size
-  divided by a small power of two.)
+  actually consist of multiple such pages. Normally, HBLKSIZE is usually the
+  page size divided by a small power of two. Alternatively, if the collector
+  is built with `-DLARGE_CONFIG`, such a page may consist of multiple hardware
+  pages.)
   * The page address part of the candidate pointer is looked up in
   a [table](tree.md). Each table entry contains either 0, indicating that
   the page is not part of the garbage collected heap, a small integer _n_,
@@ -268,8 +269,8 @@ block. This is done in the following steps:
   operation in computing the object start address.
   * The mark bit for the target object is checked and set. If the object was
   previously unmarked, the object is pushed on the mark stack. The descriptor
-  is read from the page descriptor. (This is computed from information
-  `GC_obj_kinds` when the page is first allocated.)
+  is read from the page descriptor. (This is computed from information stored
+  in `GC_obj_kinds` when the page is first allocated.)
 
 At the end of the mark phase, mark bits for left-over free lists are cleared,
 in case a free list was accidentally marked due to a stray pointer.
@@ -372,7 +373,7 @@ collector, and hence provoking unneeded heap growth.
 
 In incremental mode, the heap is always expanded when we encounter
 insufficient space for an allocation. Garbage collection is triggered whenever
-we notice that more than `GC_heap_size`/2 * `GC_free_space_divisor` bytes
+we notice that more than `GC_heap_size / 2 * GC_free_space_divisor` bytes
 of allocation have taken place. After `GC_full_freq` minor collections a major
 collection is started.
 
@@ -473,27 +474,27 @@ allocation in the next section.
 
 ## Thread-local allocation
 
-If thread-local allocation is enabled, the collector keeps separate arrays
-of free lists for each thread. Thread-local allocation is currently only
-supported on a few platforms.
+If thread-local allocation is enabled (which is true in the default
+configuration for most supported platforms), the collector keeps separate
+arrays of free lists for each thread.
 
 The free list arrays associated with each thread are only used to satisfy
 requests for objects that are both very small, and belong to one of a small
-number of well-known kinds. These currently include _normal_ and pointer-free
-objects. Depending on the configuration, _gcj_ objects may also be included.
+number of well-known kinds. These include _normal_, pointer-free, _gcj_ and
+_disclaim_ objects.
 
 Thread-local free list entries contain either a pointer to the first element
 of a free list, or they contain a counter of the number of allocation
 granules, corresponding to objects of this size, allocated so far. Initially
 they contain the value one, i.e. a small counter value.
 
-Thread-local allocation allocates directly through the global allocator,
-if the object is of a size or kind not covered by the local free lists.
+Thread-local allocation goes directly through the global allocator if the
+object is of a size or kind not covered by the local free lists.
 
 If there is an appropriate local free list, the allocator checks whether
 it contains a sufficiently small counter value. If so, the counter is simply
-incremented by the counter value, and the global allocator is used. In this
-way, the initial few allocations of a given size bypass the local allocator.
+incremented by a value, and the global allocator is used. In this way,
+the initial few allocations of a given size bypass the local allocator.
 A thread that only allocates a handful of objects of a given size will not
 build up its own free list for that size. This avoids wasting space for
 unpopular objects sizes or kinds.
