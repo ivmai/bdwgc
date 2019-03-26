@@ -78,7 +78,7 @@ more than 100 KB in size. It greatly reduces the risk that such objects will
 be accidentally retained when they are no longer needed. Thus space usage may
 be significantly reduced. Another way is `GC_set_all_interior_pointers(0)`
 called at program start (this, however, is generally not suitable for C++ code
-because of multiple inheretance).
+because of multiple inheritance).
 
 **void `GC_INIT()`** - On some platforms, it is necessary to invoke this _from
 the main executable_, _not from a dynamic library_, before the initial
