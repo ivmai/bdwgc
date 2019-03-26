@@ -99,7 +99,8 @@ The following program `loop.c` is a trivial example:
             assert(*p == 0);
             *p = (int *) GC_REALLOC(q, 2 * sizeof(int));
             if (i % 100000 == 0)
-                printf("Heap size = %d\n", GC_get_heap_size());
+                printf("Heap size = %lu bytes\n",
+                       (unsigned long)GC_get_heap_size());
         }
         return 0;
     }
