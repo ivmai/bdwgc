@@ -318,6 +318,14 @@
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
 
+== [7.6.14] (not released yet) ==
+
+* Fix compiling by Makefile.direct on OpenBSD/UltraSparc
+* Fix configure message about 'AIX gcc optimization fix'
+* Fix printf format specifier in simple_example.html
+* Fix various typos mostly in documentation files
+
+
 == [7.6.12] 2019-03-01 ==
 
 * Eliminate 'assigned value never used' compiler warning in test_cpp WinMain
