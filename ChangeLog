@@ -840,6 +840,13 @@ Also, includes 7.4.6 changes
 Also, includes 7.4.4 changes
 
 
+== [7.4.20] (not released yet) ==
+
+* Fix configure message about 'AIX gcc optimization fix'
+
+Also, includes 7.2o changes
+
+
 == [7.4.18] 2019-03-01 ==
 
 * Fix 'wrong __data_start/_end pair' error on Android
@@ -1348,6 +1355,13 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 * Use pthread_key for thread-local storage on FreeBSD
 * Use union of AO_t and word to favor strict-aliasing compiler optimization
 Also, includes 7.2 changes
+
+
+== [7.2o] (not released yet) ==
+
+* Fix configure message about 'AIX gcc optimization fix'
+* Fix printf format specifier in simple_example.html
+* Fix various typos mostly in documentation files
 
 
 == [7.2n] 2019-03-01 ==
