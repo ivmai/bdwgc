@@ -1,4 +1,15 @@
 
+== [8.0.6] (not released yet) ==
+
+* Fix compiling by Makefile.direct on OpenBSD/UltraSparc
+* Fix configure message about 'AIX gcc optimization fix'
+* Fix incorrect markup formatting in documentation
+* Fix printf format specifier in simple_example.md
+* Fix various typos mostly in documentation files
+* Refine GC_INIT documentation about its multiple invocation
+* Support MSYS builds by CMake and configure
+
+
 == [8.0.4] 2019-03-02 ==
 
 * Avoid a full GC when growing finalizer tables if in incremental mode
