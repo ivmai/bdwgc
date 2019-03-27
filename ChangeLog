@@ -1,3 +1,39 @@
+2019-03-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/simple_example.html (Writing the program): Adjust printf format
+	specifier to match the argument type (cast the argument as well).
+
+2019-03-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac [$host=*aix*]: Update comment and AC_MSG_CHECKING
+	message to match the checked condition.
+
+2019-03-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* OS2_MAKEFILE: Fix a typo in comment ("it is there").
+	* doc/README: Fix typos ("is not", "gc_inline.h", "bytes from",
+	"processed").
+	* doc/README.OS2: Fix typos ("how", "linking").
+	* doc/README.amiga: Fix typos ("GC", "e.g.", "GC_*_typed", "i.e.",
+	"SMakefile.amiga", "communications").
+	* doc/README.cmake: Fix a typo ("go to").
+	* doc/README.ews4800: Fix a typo ("a unique").
+	* doc/README.solaris2: Fix a typo ("toolchain").
+	* doc/gcdescr.html: Fix typos ("then advances", "is not",
+	"treated by").
+	* doc/gcinterface.html: Fix typos ("Build it", "Allocates",
+	"deallocates", "forces", "Causes", "Replaces", "Registers",
+	"traceable_alloc", "single_client_traceable_alloc").
+	* doc/leak.html: Fix typos ("there is").
+	* doc/porting.html: Add missing ")" symbol; add missing comma; fix
+	typos ("collector's", "are needed", "GC_save_callers").
+	* include/private/gc_priv.h: Fix a typo in comment ("gc_inline.h").
+	* os_dep.c [GWW_VDB] (detect_GetWriteWatch, GC_gww_read_dirty): Fix
+	abbreviation ("Win2K") in a comment.
+	* os_dep.c [MSWIN32] (GC_wnt): Likewise.
+	* os_dep.c [GWW_VDB] (GC_gww_read_dirty): Fix a typo in comment
+	("behavior").
+
 [7.2n]
 
 2019-03-01  Ivan Maidanski <ivmai@mail.ru>
