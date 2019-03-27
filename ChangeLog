@@ -3,6 +3,8 @@
 
 * Add API for accessing incremental GC time limit with nanosecond precision
 * Add I_HOLD_LOCK assertion to expand_hp_inner and related functions
+* Adjust formatting of numbered lists in README.md to match other .md files
+* Adjust highlighting of API prototypes in gcinterface.md
 * Adjust printf calls in gctest check_heap_stats so that each has new-line
 * Eliminate 'hash_val value is never used' cppcheck false positive
 * Eliminate 'stop variable is always 0' compiler warning in print_callers
@@ -11,14 +13,22 @@
 * New API function to get size of object debug header
 * New macro (GCTEST_PRINT_VERBOSE) to enable verbose logging in test.c only
 * Print pid of child processes if verbose logging (gctest)
+* Reformat gc.man (wrap long lines)
+* Remove 'current users' section from overview.md
+* Remove 'distributed ports', 'scalable versions' sections from overview.md
 * Remove Linux-specific commands for building cord/de from Makefile.direct
 * Remove dash characters comprising prefix of some verbose logs (gctest)
+* Remove documentation specific to particular old BDWGC releases
 * Remove goto statement in print_callers (code refactoring)
 * Remove redundant options for building 'cord' in gc.mak
 * Remove redundant type casts in backgraph HEIGHT_UNKNOWN/IN_PROGRESS
+* Remove unused sparc_sunos4_mach_dep.s file
 * Replace "msecs" with "ms" in all comments and messages
 * Report time with a nanosecond precision where available
 * Update libgc.so version info to differentiate against v8.0.x
+* Update the ASCII diagrams describing the tree structure for pointer lookups
+* Update the documentation to match the current GC implementation
+* Use KB/MB/GB abbreviations uniformly across entire documentation
 * Use atomic primitives for Sony PlayStation Portable 2 and PS4
 * Use better precision Windows timers
 * Workaround '*_stubborn function is never used' cppcheck warnings
