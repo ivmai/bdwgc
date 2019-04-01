@@ -1183,7 +1183,7 @@ void typed_test(void)
     GC_descr d2;
     GC_descr d3 = GC_make_descriptor(bm_large, 32);
     GC_descr d4 = GC_make_descriptor(bm_huge, 320);
-    GC_word * x = (GC_word *)GC_malloc_explicitly_typed(
+    GC_word * x = (GC_word *)GC_MALLOC_EXPLICITLY_TYPED(
                                 320 * sizeof(GC_word) + 123, d4);
     int i;
 
@@ -1201,7 +1201,7 @@ void typed_test(void)
     d2 = GC_make_descriptor(bm2, 2);
     old = 0;
     for (i = 0; i < 4000; i++) {
-        newP = (GC_word *)GC_malloc_explicitly_typed(4 * sizeof(GC_word), d1);
+        newP = (GC_word *)GC_MALLOC_EXPLICITLY_TYPED(4 * sizeof(GC_word), d1);
         CHECK_OUT_OF_MEMORY(newP);
         AO_fetch_and_add1(&collectable_count);
         if (newP[0] != 0 || newP[1] != 0) {
@@ -1212,19 +1212,19 @@ void typed_test(void)
         GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
-        newP = (GC_word *)GC_malloc_explicitly_typed(4 * sizeof(GC_word), d2);
+        newP = (GC_word *)GC_MALLOC_EXPLICITLY_TYPED(4 * sizeof(GC_word), d2);
         CHECK_OUT_OF_MEMORY(newP);
         newP[0] = 17;
         GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
-        newP = (GC_word*)GC_malloc_explicitly_typed(33 * sizeof(GC_word), d3);
+        newP = (GC_word*)GC_MALLOC_EXPLICITLY_TYPED(33 * sizeof(GC_word), d3);
         CHECK_OUT_OF_MEMORY(newP);
         newP[0] = 17;
         GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
-        newP = (GC_word *)GC_calloc_explicitly_typed(4, 2 * sizeof(GC_word),
+        newP = (GC_word *)GC_CALLOC_EXPLICITLY_TYPED(4, 2 * sizeof(GC_word),
                                                      d1);
         CHECK_OUT_OF_MEMORY(newP);
         newP[0] = 17;
@@ -1232,10 +1232,10 @@ void typed_test(void)
         old = newP;
         AO_fetch_and_add1(&collectable_count);
         if (i & 0xff) {
-          newP = (GC_word *)GC_calloc_explicitly_typed(7, 3 * sizeof(GC_word),
+          newP = (GC_word *)GC_CALLOC_EXPLICITLY_TYPED(7, 3 * sizeof(GC_word),
                                                        d2);
         } else {
-          newP = (GC_word *)GC_calloc_explicitly_typed(1001,
+          newP = (GC_word *)GC_CALLOC_EXPLICITLY_TYPED(1001,
                                                        3 * sizeof(GC_word),
                                                        d2);
           if (newP != NULL && (newP[0] != 0 || newP[1] != 0)) {
