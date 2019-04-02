@@ -913,6 +913,7 @@ EXTERN_C_BEGIN
 # endif
 
 # define STACK_GRAN 0x1000000
+
 # ifdef M68K
 #   define MACH_TYPE "M68K"
 #   define ALIGNMENT 2
@@ -1547,8 +1548,6 @@ EXTERN_C_BEGIN
 #       define OS_TYPE "CYGWIN32"
 #       define DATASTART ((ptr_t)GC_DATASTART)  /* From gc.h */
 #       define DATAEND   ((ptr_t)GC_DATAEND)
-#       undef STACK_GRAN
-#       define STACK_GRAN 0x10000
 #       ifdef USE_MMAP
 #         define NEED_FIND_LIMIT
 #         define USE_MMAP_ANON
@@ -2207,7 +2206,7 @@ EXTERN_C_BEGIN
 #       define DATASTART ((ptr_t)((((word)(etext) + 0x3fffff) & ~0x3fffff) \
                                   + 0x10000))
 #   endif
-#   ifdef  DGUX
+#   ifdef DGUX
 #       define OS_TYPE "DGUX"
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)etext)
@@ -2369,8 +2368,6 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
-#       undef STACK_GRAN
-#       define STACK_GRAN 0x10000000
 #       if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       endif
@@ -2567,8 +2564,6 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
-#     undef STACK_GRAN
-#     define STACK_GRAN 0x10000000
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
