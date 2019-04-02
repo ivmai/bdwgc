@@ -1548,7 +1548,10 @@ EXTERN_C_BEGIN
 #       define OS_TYPE "CYGWIN32"
 #       define DATASTART ((ptr_t)GC_DATASTART)  /* From gc.h */
 #       define DATAEND   ((ptr_t)GC_DATAEND)
-#       ifdef USE_MMAP
+#       define MPROTECT_VDB
+#       ifdef USE_WINALLOC
+#         define GWW_VDB
+#       elif defined(USE_MMAP)
 #         define NEED_FIND_LIMIT
 #         define USE_MMAP_ANON
 #       endif
@@ -2768,7 +2771,10 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef CYGWIN32
 #       define OS_TYPE "CYGWIN32"
-#       ifdef USE_MMAP
+#       define MPROTECT_VDB
+#       ifdef USE_WINALLOC
+#         define GWW_VDB
+#       elif defined(USE_MMAP)
 #         define USE_MMAP_ANON
 #       endif
 #   endif
@@ -3286,6 +3292,10 @@ EXTERN_C_BEGIN
 
 #if defined(PARALLEL_MARK) && !defined(THREADS) && !defined(CPPCHECK)
 # error Invalid config: PARALLEL_MARK requires GC_THREADS
+#endif
+
+#if defined(GWW_VDB) && !defined(USE_WINALLOC) && !defined(CPPCHECK)
+# error Invalid config: GWW_VDB requires USE_WINALLOC
 #endif
 
 #if (((defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__)) \
