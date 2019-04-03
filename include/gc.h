@@ -92,8 +92,8 @@ GC_API GC_word GC_CALL GC_get_gc_no(void);
                         /* multiprocessors.  Currently set only         */
                         /* implicitly if collector is built with        */
                         /* PARALLEL_MARK defined and if either:         */
-                        /*  Env variable GC_NPROC is set to > 1, or     */
-                        /*  GC_NPROC is not set and this is an MP.      */
+                        /*  Env variable GC_NPROCS is set to > 1, or    */
+                        /*  GC_NPROCS is not set and this is an MP.     */
                         /* If GC_parallel is on (non-zero), incremental */
                         /* collection is only partially functional,     */
                         /* and may not be desirable.  The getter does   */
