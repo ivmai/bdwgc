@@ -2386,17 +2386,11 @@ GC_EXTERN signed_word GC_bytes_found;
   GC_EXTERN ptr_t * GC_gcjobjfreelist;
 #endif
 
-#ifdef MPROTECT_VDB
-# ifdef GWW_VDB
+#if defined(MPROTECT_VDB) && defined(GWW_VDB)
     GC_INNER GC_bool GC_gww_dirty_init(void);
                         /* Returns TRUE if GetWriteWatch is available.  */
                         /* May be called repeatedly.                    */
-# endif
-# ifdef USE_MUNMAP
-    GC_INNER GC_bool GC_mprotect_dirty_init(void);
-    GC_INNER GC_bool GC_has_unmapped_memory(void);
-# endif
-#endif /* MPROTECT_VDB */
+#endif
 
 #if defined(CHECKSUMS) || defined(PROC_VDB)
   GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h);

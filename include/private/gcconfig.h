@@ -3139,15 +3139,6 @@ EXTERN_C_BEGIN
 # undef MPROTECT_VDB
 #endif
 
-#if defined(USE_MUNMAP) && defined(GWW_VDB)
-# undef MPROTECT_VDB  /* TODO: Cannot deal with address space holes. */
-  /* Else if MPROTECT_VDB is available but not GWW_VDB then decide      */
-  /* whether to disable memory unmapping or mprotect-based virtual      */
-  /* dirty bits at runtime when GC_enable_incremental is called.        */
-#endif
-
-/* PARALLEL_MARK does not cause undef MPROTECT_VDB any longer.  */
-
 #if defined(MPROTECT_VDB) && defined(GC_PREFER_MPROTECT_VDB)
   /* Choose MPROTECT_VDB manually (if multiple strategies available).   */
 # undef PCR_VDB
