@@ -23,7 +23,6 @@
  * For better performance, also look at GC_MALLOC_ATOMIC, and
  * GC_enable_incremental.  If you need an action to be performed
  * immediately before an object is collected, look at GC_register_finalizer.
- * If you are using Solaris threads, look at the end of this file.
  * Everything else is best ignored unless you encounter performance
  * problems.
  */
