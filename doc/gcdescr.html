@@ -51,7 +51,7 @@ variables are again scanned similarly.
 <LI>
 <I>Sweep phase</i> Scans the heap for inaccessible, and hence unmarked,
 objects, and returns them to an appropriate free list for reuse.  This is
-not really a separate phase; even in non incremental mode this is operation
+not really a separate phase; even in non-incremental mode this operation
 is usually performed on demand during an allocation that discovers an empty
 free list.  Thus the sweep phase is very unlikely to touch a page that
 would not have been touched shortly thereafter anyway.

@@ -130,7 +130,7 @@ STATIC GC_bool GC_objects_are_marked = FALSE;
                 /* Are there collectible marked objects in the heap?    */
 
 /* Is a collection in progress?  Note that this can return true in the  */
-/* nonincremental case, if a collection has been abandoned and the      */
+/* non-incremental case, if a collection has been abandoned and the     */
 /* mark state is now MS_INVALID.                                        */
 GC_INNER GC_bool GC_collection_in_progress(void)
 {
