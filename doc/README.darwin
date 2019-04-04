@@ -36,11 +36,6 @@ if you have an application or set of libraries that all use the
 garbage collector, to create an initialization routine for each of
 them that calls GC_init(). Better safe than sorry.
 
-The incremental collector is still a bit flaky on darwin. It seems to
-work reliably with workarounds for a few possible bugs in place however
-these workaround may not work correctly in all cases. There may also
-be additional problems that I have not found.
-
 Thread-local GC allocation will not work with threads that are not
 created using the GC-provided override of pthread_create(). Threads
 created without the GC-provided pthread_create() do not have the
@@ -76,10 +71,8 @@ programs that use JNI. If you run code that does not follow the stack
 layout or stack pointer conventions laid out in the PPC Mach-O ABI,
 then this will likely crash the garbage collector.
 
-The original incremental collector support unfortunately no longer works
-on recent Darwin versions. It also relied on some undocumented kernel
-structures. Mach, however, does have a very clean interface to exception
-handing. The current implementation uses Mach's exception handling.
+Mach has a very clean interface to exception handing. So, the current
+implementation of the incremental collection uses Mach's exception handling.
 
 Much thanks goes to Andrew Stone, Dietmar Planitzer, Andrew Begel,
 Jeff Sturm, and Jesse Rosenstock for all their work on the

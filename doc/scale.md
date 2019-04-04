@@ -39,7 +39,8 @@ to be used together.
   is performed by the thread that triggered the collection, together with
   _N_ - 1 dedicated threads, where _N_ is the number of processors detected
   by the collector. The dedicated threads are created once at initialization
-  time. A second effect of this flag is to switch to a more concurrent
+  time (and optionally recreated in child processes after forking).
+  A second effect of this flag is to switch to a more concurrent
   implementation of `GC_malloc_many`, so that free lists can be built, and
   memory can be cleared, by more than one thread concurrently.
   * Building the collector with `-DTHREAD_LOCAL_ALLOC` adds support for

@@ -114,7 +114,7 @@ Note that all compilations were done under Windows 95 or NT.
 For unknown reason compiling under Windows 3.11 for NT (one
 attempt has been made) leads to broken executables.
 
-Incremental collection is not supported.
+Incremental collection is supported (except for MSDOS and OS/2).
 
 cord is not ported.
 
