@@ -36,7 +36,7 @@ of a memory allocation:
   to be reachable from variables are again scanned similarly.
   3. _Sweep phase_ Scans the heap for inaccessible, and hence unmarked,
   objects, and returns them to an appropriate free list for reuse. This is not
-  really a separate phase; even in non incremental mode this is operation
+  really a separate phase; even in non-incremental mode this operation
   is usually performed on demand during an allocation that discovers an empty
   free list. Thus the sweep phase is very unlikely to touch a page that would
   not have been touched shortly thereafter anyway.
