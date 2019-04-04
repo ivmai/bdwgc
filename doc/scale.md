@@ -38,8 +38,9 @@ to Makefile.direct again.)
   collector itself, though not the allocation process. Currently the marking
   is performed by the thread that triggered the collection, together with
   _N_ - 1 dedicated threads, where _N_ is the number of processors (cores)
-  detected by the collector. The dedicated marker threads are created once at
-  initialization time. Another effect of this flag is to switch to a more
+  detected by the collector. The dedicated marker threads are created at
+  initialization time (and optionally recreated in child processes after
+  forking). Another effect of this flag is to switch to a more
   concurrent implementation of `GC_malloc_many`, so that free lists can be
   built and memory can be cleared by more than one thread concurrently.
   * Building the collector with `-DTHREAD_LOCAL_ALLOC` adds support for
