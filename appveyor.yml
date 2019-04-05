@@ -21,7 +21,7 @@ environment:
   - TARGET: mingw
     CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D EMPTY_GETENV_RESULTS -D GC_GCJ_SUPPORT -D USE_MUNMAP -D LARGE_CONFIG
   - TARGET: mingw
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT -D WINXP_USE_PERF_COUNTER
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT -D GC_TIME_LIMIT=10 -D WINXP_USE_PERF_COUNTER
   - TARGET: mingw-shared-no-make
     CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D GC_ASSERTIONS -D ENABLE_DISCLAIM -D GC_GCJ_SUPPORT -D GC_PREFER_MPROTECT_VDB -D GC_CALL=__stdcall -D GC_CALLBACK=__fastcall
   - TARGET: mingw-w64

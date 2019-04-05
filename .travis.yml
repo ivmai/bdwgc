@@ -143,7 +143,7 @@ matrix:
   - os: linux
     compiler: gcc
     env:
-    - CFLAGS_EXTRA="-D DONT_ADD_BYTE_AT_END"
+    - CFLAGS_EXTRA="-D DONT_ADD_BYTE_AT_END -D GC_TIME_LIMIT=10"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
   - os: linux
     addons:
