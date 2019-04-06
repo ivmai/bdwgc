@@ -331,10 +331,12 @@
 
 == [7.6.14] (not released yet) ==
 
+* Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
 * Fix compiling by Makefile.direct on OpenBSD/UltraSparc
 * Fix configure message about 'AIX gcc optimization fix'
 * Fix printf format specifier in simple_example.html
 * Fix various typos mostly in documentation files
+* Remove a misleading comment about Solaris in gc.h
 
 
 == [7.6.12] 2019-03-01 ==
