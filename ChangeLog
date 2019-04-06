@@ -3,9 +3,12 @@
 
 * Add API for accessing incremental GC time limit with nanosecond precision
 * Add I_HOLD_LOCK assertion to expand_hp_inner and related functions
+* Add testing of GC_CALLOC/MALLOC_EXPLICITLY_TYPED (gctest)
 * Adjust formatting of numbered lists in README.md to match other .md files
 * Adjust highlighting of API prototypes in gcinterface.md
 * Adjust printf calls in gctest check_heap_stats so that each has new-line
+* Allow incremental GC on Cygwin
+* Allow memory unmapping in case of MPROTECT_VDB
 * Eliminate 'hash_val value is never used' cppcheck false positive
 * Eliminate 'stop variable is always 0' compiler warning in print_callers
 * Enable compilation without C runtime (Win32)
@@ -22,6 +25,7 @@
 * Remove goto statement in print_callers (code refactoring)
 * Remove redundant options for building 'cord' in gc.mak
 * Remove redundant type casts in backgraph HEIGHT_UNKNOWN/IN_PROGRESS
+* Remove unused STACK_GRAN macro definitions (code refactoring)
 * Remove unused sparc_sunos4_mach_dep.s file
 * Replace "msecs" with "ms" in all comments and messages
 * Report time with a nanosecond precision where available
