@@ -1,3 +1,19 @@
+2019-04-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/gcdescr.html (Introduction): Fix typos ("non-incremental",
+	"this operation").
+	* mark.c (GC_collection_in_progress): Fix a typo in comment
+	("non-incremental").
+
+2019-04-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h [GC_THREADS] (GC_parallel): Fix a typo in comment
+	("GC_NPROCS").
+
+2019-04-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h: Remove a comment about Solaris.
+
 2019-03-26  Ivan Maidanski <ivmai@mail.ru>
 
 	* doc/simple_example.html (Writing the program): Adjust printf format
