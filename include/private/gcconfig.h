@@ -216,7 +216,7 @@ EXTERN_C_BEGIN
 #    endif
 #    define mach_type_known
 # endif
-# if defined(__NetBSD__) && defined(__vax__)
+# if defined(NETBSD) && defined(__vax__)
 #    define VAX
 #    define mach_type_known
 # endif
@@ -233,7 +233,7 @@ EXTERN_C_BEGIN
 #        define IRIX5   /* or IRIX 6.X */
 #      endif
 #    endif /* !LINUX */
-#    if defined(__NetBSD__) && defined(__MIPSEL__)
+#    if defined(NETBSD) && defined(__MIPSEL__)
 #      undef ULTRIX
 #    endif
 #    define mach_type_known
@@ -253,7 +253,7 @@ EXTERN_C_BEGIN
 # if defined(DGUX) && (defined(i386) || defined(__i386__))
 #    define I386
 #    ifndef _USING_DGUX
-#    define _USING_DGUX
+#      define _USING_DGUX
 #    endif
 #    define mach_type_known
 # endif
@@ -289,8 +289,7 @@ EXTERN_C_BEGIN
 #   define SOLARIS
 #   define mach_type_known
 # elif defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
-       && !defined(__OpenBSD__) && !defined(__NetBSD__) \
-       && !defined(__FreeBSD__) && !defined(__DragonFly__)
+       && !defined(FREEBSD) && !defined(NETBSD) && !defined(OPENBSD)
 #   define SPARC
 #   define DRSNX
 #   define mach_type_known
@@ -300,7 +299,7 @@ EXTERN_C_BEGIN
 #   define AIX
 #   define mach_type_known
 # endif
-# if defined(__NetBSD__) && defined(__sparc__)
+# if defined(NETBSD) && defined(__sparc__)
 #   define SPARC
 #   define mach_type_known
 # endif
@@ -424,9 +423,8 @@ EXTERN_C_BEGIN
 #   define MACOS
 #   define mach_type_known
 # endif
-# if defined(__OpenBSD__) && defined(__powerpc__)
+# if defined(OPENBSD) && defined(__powerpc__)
 #   define POWERPC
-#   define OPENBSD
 #   define mach_type_known
 # endif
 # if defined(DARWIN)
@@ -462,16 +460,15 @@ EXTERN_C_BEGIN
 #   define NEXT
 #   define mach_type_known
 # endif
-# if defined(__OpenBSD__) && (defined(i386) || defined(__i386__))
-#   define I386
-#   define OPENBSD
-#   define mach_type_known
-# endif
-# if defined(__NetBSD__) && (defined(i386) || defined(__i386__))
+# if defined(OPENBSD) && (defined(i386) || defined(__i386__))
 #   define I386
 #   define mach_type_known
 # endif
-# if defined(__NetBSD__) && defined(__x86_64__)
+# if defined(NETBSD) && (defined(i386) || defined(__i386__))
+#   define I386
+#   define mach_type_known
+# endif
+# if defined(NETBSD) && defined(__x86_64__)
 #    define X86_64
 #    define mach_type_known
 # endif
@@ -2236,14 +2233,14 @@ EXTERN_C_BEGIN
 # ifdef S390
 #   define MACH_TYPE "S390"
 #   ifndef __s390x__
-#   define ALIGNMENT 4
-#   define CPP_WORDSZ 32
+#     define ALIGNMENT 4
+#     define CPP_WORDSZ 32
 #   else
-#   define ALIGNMENT 8
-#   define CPP_WORDSZ 64
-#   ifndef HBLKSIZE
-#     define HBLKSIZE 4096
-#   endif
+#     define ALIGNMENT 8
+#     define CPP_WORDSZ 64
+#     ifndef HBLKSIZE
+#       define HBLKSIZE 4096
+#     endif
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
@@ -2487,12 +2484,14 @@ EXTERN_C_BEGIN
 #   define MACH_TYPE "CRIS"
 #   define CPP_WORDSZ 32
 #   define ALIGNMENT 1
-#   define OS_TYPE "LINUX"
-#   define DYNAMIC_LOADING
-#   define LINUX_STACKBOTTOM
-#   define SEARCH_FOR_DATA_START
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+#     define DYNAMIC_LOADING
+#     define LINUX_STACKBOTTOM
+#     define SEARCH_FOR_DATA_START
       extern int _end[];
-#   define DATAEND ((ptr_t)(_end))
+#     define DATAEND ((ptr_t)(_end))
+#   endif
 # endif
 
 # if defined(SH) && !defined(SH4)
@@ -2540,21 +2539,25 @@ EXTERN_C_BEGIN
 
 # ifdef SH4
 #   define MACH_TYPE "SH4"
-#   define OS_TYPE "MSWINCE"
 #   define ALIGNMENT 4
-#   define DATAEND /* not needed */
+#   ifdef MSWINCE
+#     define OS_TYPE "MSWINCE"
+#     define DATAEND /* not needed */
+#   endif
 # endif
 
 # ifdef AVR32
 #   define MACH_TYPE "AVR32"
 #   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
-#   define OS_TYPE "LINUX"
-#   define DYNAMIC_LOADING
-#   define LINUX_STACKBOTTOM
-#   define SEARCH_FOR_DATA_START
-    extern int _end[];
-#   define DATAEND ((ptr_t)(_end))
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+#     define DYNAMIC_LOADING
+#     define LINUX_STACKBOTTOM
+#     define SEARCH_FOR_DATA_START
+      extern int _end[];
+#     define DATAEND ((ptr_t)(_end))
+#   endif
 # endif
 
 # ifdef M32R
