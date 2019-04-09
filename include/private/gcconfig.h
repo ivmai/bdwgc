@@ -109,19 +109,6 @@ EXTERN_C_BEGIN
 #   define LINUX
 # endif
 
-/* And one for QNX: */
-# if defined(__QNX__)
-#    define I386
-#    define OS_TYPE "QNX"
-#    define SA_RESTART 0
-#    define HEURISTIC1
-     extern char etext[];
-     extern int _end[];
-#    define DATASTART ((ptr_t)(etext))
-#    define DATAEND ((ptr_t)(_end))
-#    define mach_type_known
-# endif
-
 /* And one for NetBSD: */
 # if defined(__NetBSD__)
 #    define NETBSD
@@ -250,6 +237,10 @@ EXTERN_C_BEGIN
 #      undef ULTRIX
 #    endif
 #    define mach_type_known
+# endif
+# if defined(__QNX__)
+#   define I386
+#   define mach_type_known
 # endif
 # if defined(__NIOS2__) || defined(__NIOS2) || defined(__nios2__)
 #   define NIOS2 /* Altera NIOS2 */
@@ -896,22 +887,6 @@ EXTERN_C_BEGIN
 #   define DATAEND (ptr_t)ALIGNMENT
 # endif
 
-# ifdef __EMSCRIPTEN__
-#   define OS_TYPE "EMSCRIPTEN"
-#   define CPP_WORDSZ 32
-#   define ALIGNMENT 4
-#   define DATASTART (ptr_t)ALIGNMENT
-#   define DATAEND (ptr_t)ALIGNMENT
-    /* Since JavaScript/asm.js/WebAssembly is not able to access the    */
-    /* function call stack or the local data stack, it is not possible  */
-    /* for GC to perform its stack walking operation to find roots on   */
-    /* the stack.  To work around that, the clients generally only do   */
-    /* BDWGC steps when the stack is empty so it is known that there    */
-    /* are no objects that would be found on the stack, and BDWGC is    */
-    /* compiled with stack walking disabled.                            */
-#   define STACK_NOT_SCANNED
-# endif
-
 # define STACK_GRAN 0x1000000
 
 # ifdef M68K
@@ -1373,6 +1348,28 @@ EXTERN_C_BEGIN
         extern int etext[];
 #       define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       define STACKBOTTOM ((ptr_t)0x3ffff000)
+#   endif
+#   if defined(__EMSCRIPTEN__)
+#     define OS_TYPE "EMSCRIPTEN"
+#     define DATASTART (ptr_t)ALIGNMENT
+#     define DATAEND (ptr_t)ALIGNMENT
+      /* Since JavaScript/asm.js/WebAssembly is not able to access the  */
+      /* function call stack or the local data stack, it's not possible */
+      /* for GC to perform its stack walking operation to find roots on */
+      /* the stack.  To work around that, the clients generally only do */
+      /* BDWGC steps when the stack is empty so it is known that there  */
+      /* are no objects that would be found on the stack, and BDWGC is  */
+      /* compiled with stack walking disabled.                          */
+#     define STACK_NOT_SCANNED
+#   endif
+#   if defined(__QNX__)
+#     define OS_TYPE "QNX"
+#     define SA_RESTART 0
+#     define HEURISTIC1
+      extern char etext[];
+      extern int _end[];
+#     define DATASTART ((ptr_t)etext)
+#     define DATAEND ((ptr_t)_end)
 #   endif
 #   ifdef HAIKU
 #     define OS_TYPE "HAIKU"
