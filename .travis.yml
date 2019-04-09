@@ -74,7 +74,7 @@ matrix:
     compiler: gcc
     env:
     - CFLAGS_EXTRA="-m32"
-    - CONF_OPTIONS="--enable-gc-assertions"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-mmap"
   - os: osx
     env:
     - CFLAGS_EXTRA="-m32"
