@@ -1542,12 +1542,14 @@ EXTERN_C_BEGIN
 #       define OS_TYPE "CYGWIN32"
 #       define DATASTART ((ptr_t)GC_DATASTART)  /* From gc.h */
 #       define DATAEND   ((ptr_t)GC_DATAEND)
-#       define MPROTECT_VDB
 #       ifdef USE_WINALLOC
 #         define GWW_VDB
-#       elif defined(USE_MMAP)
-#         define NEED_FIND_LIMIT
-#         define USE_MMAP_ANON
+#       else
+#         define MPROTECT_VDB
+#         ifdef USE_MMAP
+#           define NEED_FIND_LIMIT
+#           define USE_MMAP_ANON
+#         endif
 #       endif
 #   endif
 #   ifdef INTERIX
@@ -2771,11 +2773,13 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef CYGWIN32
 #       define OS_TYPE "CYGWIN32"
-#       define MPROTECT_VDB
 #       ifdef USE_WINALLOC
 #         define GWW_VDB
-#       elif defined(USE_MMAP)
-#         define USE_MMAP_ANON
+#       else
+#         define MPROTECT_VDB
+#         ifdef USE_MMAP
+#           define USE_MMAP_ANON
+#         endif
 #       endif
 #   endif
 #   ifdef MSWIN_XBOX1
