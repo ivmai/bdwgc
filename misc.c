@@ -1087,15 +1087,12 @@ GC_API void GC_CALL GC_init(void)
         }
       }
 #   endif
-#   ifndef GC_DISABLE_INCREMENTAL
+#   if !defined(GC_DISABLE_INCREMENTAL) && !defined(NO_CLOCK)
       {
         char * time_limit_string = GETENV("GC_PAUSE_TIME_TARGET");
         if (0 != time_limit_string) {
           long time_limit = atol(time_limit_string);
-          if (time_limit < 5) {
-            WARN("GC_PAUSE_TIME_TARGET environment variable value too small "
-                 "or bad syntax: Ignoring\n", 0);
-          } else {
+          if (time_limit > 0) {
             GC_time_limit = time_limit;
           }
         }
