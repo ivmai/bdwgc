@@ -2569,6 +2569,9 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
                         /* Number of mark threads we would like to have */
                         /* excluding the initiating thread.             */
 
+  GC_EXTERN GC_bool GC_parallel_mark_disabled;
+                        /* A flag to temporarily avoid parallel marking.*/
+
   /* The mark lock and condition variable.  If the GC lock is also      */
   /* acquired, the GC lock must be acquired first.  The mark lock is    */
   /* used to both protect some variables used by the parallel           */

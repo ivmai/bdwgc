@@ -168,6 +168,10 @@ GC_INNER int GC_CALLBACK GC_never_stop_func(void)
   unsigned long GC_time_limit = GC_TIME_LIMIT;
                            /* We try to keep pause times from exceeding  */
                            /* this by much. In milliseconds.             */
+#elif defined(PARALLEL_MARK)
+  unsigned long GC_time_limit = GC_TIME_UNLIMITED;
+                        /* The parallel marker cannot be interrupted for */
+                        /* now, so the time limit is absent by default.  */
 #else
   unsigned long GC_time_limit = 50;
 #endif
@@ -657,10 +661,17 @@ GC_INNER void GC_collect_a_little_inner(int n)
         int i;
         int max_deficit = GC_rate * n;
 
+#       ifdef PARALLEL_MARK
+            if (GC_time_limit != GC_TIME_UNLIMITED)
+                GC_parallel_mark_disabled = TRUE;
+#       endif
         for (i = GC_deficit; i < max_deficit; i++) {
             if (GC_mark_some(NULL))
                 break;
         }
+#       ifdef PARALLEL_MARK
+            GC_parallel_mark_disabled = FALSE;
+#       endif
 
         if (i < max_deficit) {
             /* Need to finish a collection.     */
@@ -797,12 +808,25 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
             GC_noop6(0,0,0,0,0,0);
 
         GC_initiate_gc();
+#       ifdef PARALLEL_MARK
+          if (stop_func != GC_never_stop_func)
+            GC_parallel_mark_disabled = TRUE;
+#       endif
         for (i = 0; !(*stop_func)(); i++) {
           if (GC_mark_some(GC_approx_sp())) {
+#           ifdef PARALLEL_MARK
+              if (GC_parallel && GC_parallel_mark_disabled) {
+                GC_COND_LOG_PRINTF("Stopped marking done after %d iterations"
+                                   " with disabled parallel marker\n", i);
+              }
+#           endif
             i = -1;
             break;
           }
         }
+#       ifdef PARALLEL_MARK
+          GC_parallel_mark_disabled = FALSE;
+#       endif
 
         if (i >= 0) {
           GC_COND_LOG_PRINTF("Abandoned stopped marking after"

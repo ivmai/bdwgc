@@ -111,6 +111,8 @@ GC_INNER size_t GC_mark_stack_size = 0;
         /* that may be nonempty.        */
         /* Updated only by initiating   */
         /* thread.                      */
+
+  GC_INNER GC_bool GC_parallel_mark_disabled = FALSE;
 #endif
 
 GC_INNER mark_state_t GC_mark_state = MS_NONE;
@@ -354,15 +356,13 @@ static void alloc_mark_stack(size_t);
 
         case MS_ROOTS_PUSHED:
 #           ifdef PARALLEL_MARK
-              /* In the incremental GC case, this currently doesn't     */
-              /* quite do the right thing, since it runs to             */
-              /* completion.  On the other hand, starting a             */
-              /* parallel marker is expensive, so perhaps it is         */
-              /* the right thing?                                       */
               /* Eventually, incremental marking should run             */
               /* asynchronously in multiple threads, without grabbing   */
               /* the allocation lock.                                   */
-                if (GC_parallel) {
+              /* For now, parallel marker is disabled if there is       */
+              /* a chance that marking could be interrupted by          */
+              /* a client-supplied time limit or custom stop function.  */
+                if (GC_parallel && !GC_parallel_mark_disabled) {
                   GC_do_parallel_mark();
                   GC_ASSERT((word)GC_mark_stack_top < (word)GC_first_nonempty);
                   GC_mark_stack_top = GC_mark_stack - 1;

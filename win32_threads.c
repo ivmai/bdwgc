@@ -2582,7 +2582,6 @@ GC_INNER void GC_thr_init(void)
     }
 
     /* Check whether parallel mode could be enabled.    */
-    {
       if (GC_win32_dll_threads || available_markers_m1 <= 0) {
         /* Disable parallel marking. */
         GC_parallel = FALSE;
@@ -2603,10 +2602,7 @@ GC_INNER void GC_thr_init(void)
               || mark_cv == (HANDLE)0)
             ABORT("CreateEvent failed");
 #       endif
-        /* Disable true incremental collection, but generational is OK. */
-        GC_time_limit = GC_TIME_UNLIMITED;
       }
-    }
 # endif /* PARALLEL_MARK */
 
   GC_ASSERT(0 == GC_lookup_thread_inner(GC_main_thread));

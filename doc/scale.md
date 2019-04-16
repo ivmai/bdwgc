@@ -86,10 +86,10 @@ It does require synchronization, but should be relatively rare.
 The sequential marking code is reused to process local mark stacks. Hence the
 amount of additional code required for parallel marking is minimal.
 
-It should be possible to use generational collection in the presence of the
-parallel collector, by calling `GC_enable_incremental`. This does not result
-in fully incremental collection, since parallel mark phases cannot currently
-be interrupted, and doing so may be too expensive.
+It should be possible to use incremental/generational collection in the
+presence of the parallel collector by calling `GC_enable_incremental`, but
+the current implementation does not allow interruption of the parallel marker,
+so the latter is mostly avoided if the client sets the collection time limit.
 
 Gcj-style mark descriptors do not currently mix with the combination of local
 allocation and incremental collection. They should work correctly with one or

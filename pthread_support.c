@@ -1302,8 +1302,6 @@ GC_INNER void GC_thr_init(void)
       GC_COND_LOG_PRINTF(
                 "Single marker thread, turning off parallel marking\n");
     } else {
-      /* Disable true incremental collection, but generational is OK.   */
-      GC_time_limit = GC_TIME_UNLIMITED;
       setup_mark_lock();
     }
 # endif

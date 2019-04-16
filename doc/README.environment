@@ -135,10 +135,9 @@ GC_PAUSE_TIME_TARGET - Set the desired garbage collector pause time in
                      work to compensate.  The special value "999999" indicates
                      that pause time is unlimited, and the incremental
                      collector will behave completely like a simple
-                     generational collector.  If the collector is configured
-                     for parallel marking, and run on a multiprocessor,
-                     incremental collection should only be used with unlimited
-                     pause time.
+                     generational collector.  Any value, except for the given
+                     special one, disables parallel marker (almost fully) for
+                     now.
 
 GC_FULL_FREQUENCY - Set the desired number of partial collections between full
                     collections.  Matters only if GC_incremental is set.
