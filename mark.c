@@ -1263,9 +1263,8 @@ GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
     if (page_offset != 0)
       displ = GC_page_size - page_offset;
     recycled_bytes = (bytes - displ) & ~(GC_page_size - 1);
-    GC_COND_LOG_PRINTF("Recycle %lu/%lu scratch-allocated bytes at %p\n",
-                       (unsigned long)recycled_bytes, (unsigned long)bytes,
-                       ptr);
+    GC_COND_LOG_PRINTF("Recycle %lu scratch-allocated bytes at %p\n",
+                       (unsigned long)recycled_bytes, ptr);
     if (recycled_bytes > 0)
       GC_add_to_heap((struct hblk *)((word)ptr + displ), recycled_bytes);
   }
