@@ -166,8 +166,6 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 # endif
 }
 
-STATIC DWORD GC_main_thread = 0;
-
 #define ADDR_LIMIT ((ptr_t)GC_WORD_MAX)
 
 struct GC_Thread_Rep {
@@ -260,23 +258,20 @@ typedef struct GC_Thread_Rep * GC_thread;
 typedef volatile struct GC_Thread_Rep * GC_vthread;
 
 #ifndef GC_NO_THREADS_DISCOVERY
+  STATIC DWORD GC_main_thread = 0;
+
+  /* We track thread attachments while the world is supposed to be      */
+  /* stopped.  Unfortunately, we cannot stop them from starting, since  */
+  /* blocking in DllMain seems to cause the world to deadlock.  Thus,   */
+  /* we have to recover if we notice this in the middle of marking.     */
+  STATIC volatile AO_t GC_attached_thread = FALSE;
+
   /* We assumed that volatile ==> memory ordering, at least among       */
   /* volatiles.  This code should consistently use atomic_ops.          */
   STATIC volatile GC_bool GC_please_stop = FALSE;
 #elif defined(GC_ASSERTIONS)
   STATIC GC_bool GC_please_stop = FALSE;
-#endif
-
-/*
- * We track thread attachments while the world is supposed to be stopped.
- * Unfortunately, we can't stop them from starting, since blocking in
- * DllMain seems to cause the world to deadlock.  Thus we have to recover
- * If we notice this in the middle of marking.
- */
-
-#ifndef GC_NO_THREADS_DISCOVERY
-  STATIC volatile AO_t GC_attached_thread = FALSE;
-#endif
+#endif /* GC_NO_THREADS_DISCOVERY && GC_ASSERTIONS */
 
 #if defined(WRAP_MARK_SOME) && !defined(GC_PTHREADS)
   /* Return TRUE if an thread was attached since we last asked or */
@@ -2490,7 +2485,11 @@ GC_INNER void GC_thr_init(void)
   if (GC_thr_initialized) return;
 
   GC_ASSERT((word)&GC_threads % sizeof(word) == 0);
-  GC_main_thread = GetCurrentThreadId();
+# ifdef GC_NO_THREADS_DISCOVERY
+#   define GC_main_thread GetCurrentThreadId()
+# else
+    GC_main_thread = GetCurrentThreadId();
+# endif
   GC_thr_initialized = TRUE;
 
 # ifdef CAN_HANDLE_FORK
@@ -2607,6 +2606,7 @@ GC_INNER void GC_thr_init(void)
 
   GC_ASSERT(0 == GC_lookup_thread_inner(GC_main_thread));
   GC_register_my_thread_inner(&sb, GC_main_thread);
+# undef GC_main_thread
 }
 
 #ifdef GC_PTHREADS
