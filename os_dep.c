@@ -4588,7 +4588,12 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
     fp = (struct frame *)((long) frame -> FR_SAVFP + BIAS);
 #endif
 
-   for (; (!(fp HOTTER_THAN frame) && !(GC_stackbottom HOTTER_THAN (ptr_t)fp)
+   for (; (!(fp HOTTER_THAN frame)
+#          ifndef THREADS
+             && !((word)GC_stackbottom HOTTER_THAN (word)fp)
+#          elif defined(STACK_GROWS_UP)
+             && fp != NULL
+#          endif
            && (nframes < NFRAMES));
        fp = (struct frame *)((long) fp -> FR_SAVFP + BIAS), nframes++) {
       register int i;
