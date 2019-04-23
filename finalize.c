@@ -1368,8 +1368,8 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
 
     /* These variables require synchronization to avoid data races.     */
     if (last_finalizer_notification != GC_gc_no) {
-        last_finalizer_notification = GC_gc_no;
         notifier_fn = GC_finalizer_notifier;
+        last_finalizer_notification = GC_gc_no;
     }
     UNLOCK();
     if (notifier_fn != 0)

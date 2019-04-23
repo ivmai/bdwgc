@@ -564,9 +564,9 @@ handle_ex:
 
         /* Warn about it at most once per collection. */
         if (warned_gc_no != GC_gc_no) {
-          warned_gc_no = GC_gc_no;
           WARN("Caught ACCESS_VIOLATION in marker;"
                " memory mapping disappeared\n", 0);
+          warned_gc_no = GC_gc_no;
         }
       }
       /* We have bad roots on the stack.  Discard mark stack.   */
