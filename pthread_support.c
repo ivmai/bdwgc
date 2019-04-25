@@ -253,8 +253,10 @@
 
 # define INIT_REAL_SYMS() if (EXPECT(GC_syms_initialized, TRUE)) {} \
                             else GC_init_real_syms()
+# define ASSERT_SYMS_INITIALIZED() GC_ASSERT(GC_syms_initialized)
 #else
 # define INIT_REAL_SYMS() (void)0
+# define ASSERT_SYMS_INITIALIZED() GC_ASSERT(parallel_initialized)
 #endif
 
 static GC_bool parallel_initialized = FALSE;
@@ -1555,7 +1557,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
     GC_thread t;
     DCL_LOCK_STATE;
 
-    INIT_REAL_SYMS();
+    ASSERT_SYMS_INITIALIZED();
     LOCK();
     t = GC_lookup_thread(thread);
     /* This is guaranteed to be the intended one, since the thread id   */
@@ -1591,7 +1593,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
     GC_thread t;
     DCL_LOCK_STATE;
 
-    INIT_REAL_SYMS();
+    ASSERT_SYMS_INITIALIZED();
     LOCK();
     t = GC_lookup_thread(thread);
     UNLOCK();
