@@ -1534,8 +1534,13 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
 /* the current thread (this means that the thread is not suspended and  */
 /* the thread's stack frames "belonging" to the functions in the        */
 /* "inactive" state are not scanned during garbage collections).  It is */
-/* allowed for fn to call GC_call_with_gc_active() (even recursively),  */
-/* thus temporarily toggling the collector's state back to "active".    */
+/* assumed that the collector is already initialized and the current    */
+/* thread is registered.  It is allowed for fn to call                  */
+/* GC_call_with_gc_active() (even recursively), thus temporarily        */
+/* toggling the collector's state back to "active".  The latter         */
+/* technique might be used to make stack scanning more precise (i.e.    */
+/* scan only stack frames of functions that allocate garbage collected  */
+/* memory and/or manipulate pointers to the garbage collected heap).    */
 GC_API void * GC_CALL GC_do_blocking(GC_fn_type /* fn */,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
 
