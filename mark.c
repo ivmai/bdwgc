@@ -1507,7 +1507,7 @@ struct trace_entry {
     word bytes_allocd;
     word arg1;
     word arg2;
-} GC_trace_buf[TRACE_ENTRIES];
+} GC_trace_buf[TRACE_ENTRIES] = { { NULL, 0, 0, 0, 0 } };
 
 int GC_trace_buf_ptr = 0;
 
