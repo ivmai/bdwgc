@@ -2202,14 +2202,6 @@ STATIC void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 
 #endif /* !THREADS */
 
-/* Wrapper for functions that are likely to block (or, at least, do not */
-/* allocate garbage collected memory and/or manipulate pointers to the  */
-/* garbage collected heap) for an appreciable length of time.           */
-/* In the single threaded case, GC_do_blocking() (together              */
-/* with GC_call_with_gc_active()) might be used to make stack scanning  */
-/* more precise (i.e. scan only stack frames of functions that allocate */
-/* garbage collected memory and/or manipulate pointers to the garbage   */
-/* collected heap).                                                     */
 GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 {
     struct blocking_data my_data;
