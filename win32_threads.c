@@ -910,7 +910,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   LOCK();   /* This will block if the world is stopped.         */
   me = GC_lookup_thread_inner(thread_id);
   CHECK_LOOKUP_MY_THREAD(me);
-  /* Adjust our stack base value (this could happen unless      */
+  /* Adjust our stack bottom pointer (this could happen unless  */
   /* GC_get_stack_base() was used which returned GC_SUCCESS).   */
   GC_ASSERT(me -> stack_base != NULL);
   if ((word)me->stack_base < (word)(&stacksect))

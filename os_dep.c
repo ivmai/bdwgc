@@ -1086,7 +1086,7 @@ GC_INNER size_t GC_page_size = 0;
 
   STATIC ptr_t GC_linux_main_stack_base(void)
   {
-    /* We read the stack base value from /proc/self/stat.  We do this   */
+    /* We read the stack bottom value from /proc/self/stat.  We do this */
     /* using direct I/O system calls in order to avoid calling malloc   */
     /* in case REDIRECT_MALLOC is defined.                              */
 #   ifndef STAT_READ
@@ -1434,8 +1434,8 @@ GC_INNER size_t GC_page_size = 0;
 
     if (!stackbase_main_self && thr_main() != 0)
       {
-        /* Cache the stack base value for the primordial thread (this   */
-        /* is done during GC_init, so there is no race).                */
+        /* Cache the stack bottom pointer for the primordial thread     */
+        /* (this is done during GC_init, so there is no race).          */
         stackbase_main_ss_sp = s.ss_sp;
         stackbase_main_self = self;
       }
@@ -1457,7 +1457,7 @@ GC_INNER size_t GC_page_size = 0;
 
 #ifndef HAVE_GET_STACK_BASE
 # ifdef NEED_FIND_LIMIT
-    /* Retrieve stack base.                                             */
+    /* Retrieve the stack bottom.                                       */
     /* Using the GC_find_limit version is risky.                        */
     /* On IA64, for example, there is no guard page between the         */
     /* stack of one thread and the register backing store of the        */

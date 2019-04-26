@@ -774,7 +774,7 @@ EXTERN_C_BEGIN
  * cause failures on alpha*-*-* with -msmall-data or -fpic or mips-*-*
  * without any special options.
  *
- * STACKBOTTOM is the cool end of the stack, which is usually the
+ * STACKBOTTOM is the cold end of the stack, which is usually the
  * highest address in the stack.
  * Under PCR or OS/2, we have other ways of finding thread stacks.
  * For each machine, the following should:
@@ -784,8 +784,8 @@ EXTERN_C_BEGIN
  *      LINUX_STACKBOTTOM
  *      HEURISTIC1
  *      HEURISTIC2
- * If STACKBOTTOM is defined, then its value will be used directly as the
- * stack base.  If LINUX_STACKBOTTOM is defined, then it will be determined
+ * If STACKBOTTOM is defined, then its value will be used directly (as the
+ * stack bottom).  If LINUX_STACKBOTTOM is defined, then it will be determined
  * with a method appropriate for most Linux systems.  Currently we look
  * first for __libc_stack_end (currently only if USE_LIBC_PRIVATES is
  * defined), and if that fails read it from /proc.  (If USE_LIBC_PRIVATES
@@ -2900,7 +2900,7 @@ EXTERN_C_BEGIN
 #if defined(LINUX_STACKBOTTOM) && defined(NO_PROC_STAT) \
     && !defined(USE_LIBC_PRIVATES)
     /* This combination will fail, since we have no way to get  */
-    /* the stack base.  Use HEURISTIC2 instead.                 */
+    /* the stack bottom.  Use HEURISTIC2 instead.               */
 #   undef LINUX_STACKBOTTOM
 #   define HEURISTIC2
     /* This may still fail on some architectures like IA64.     */

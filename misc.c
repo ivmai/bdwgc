@@ -2128,7 +2128,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     struct GC_traced_stack_sect_s stacksect;
     GC_ASSERT(GC_is_initialized);
 
-    /* Adjust our stack base value (this could happen if        */
+    /* Adjust our stack bottom pointer (this could happen if    */
     /* GC_get_main_stack_base() is unimplemented or broken for  */
     /* the platform).                                           */
     if ((word)GC_stackbottom HOTTER_THAN (word)(&stacksect))

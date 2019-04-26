@@ -342,7 +342,7 @@ GC_API GC_word GC_CALL GC_get_max_retries(void);
 
 
 GC_API GC_ATTR_DEPRECATED char *GC_stackbottom;
-                                /* Cool end of user stack.              */
+                                /* The cold end (bottom) of user stack. */
                                 /* May be set in the client prior to    */
                                 /* calling any GC_ routines.  This      */
                                 /* avoids some overhead, and            */
@@ -1414,15 +1414,15 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type /* fn */,
 /* is to always make redundant registration safe.  In the short run,    */
 /* this is being implemented a platform at a time.                      */
 /* The interface is complicated by the fact that we probably will not   */
-/* ever be able to automatically determine the stack base for thread    */
+/* ever be able to automatically determine the stack bottom for thread  */
 /* stacks on all platforms.                                             */
 
-/* Structure representing the base of a thread stack.  On most          */
-/* platforms this contains just a single address.                       */
+/* Structure representing the bottom (cold end) of a thread stack.      */
+/* On most platforms this contains just a single address.               */
 struct GC_stack_base {
-  void * mem_base; /* Base of memory stack. */
+  void * mem_base;      /* the bottom of the general-purpose stack */
 # if defined(__ia64) || defined(__ia64__) || defined(_M_IA64)
-    void * reg_base; /* Base of separate register stack. */
+    void * reg_base;    /* the bottom of the register stack */
 # endif
 };
 
@@ -1431,7 +1431,7 @@ typedef void * (GC_CALLBACK * GC_stack_base_func)(
 
 /* Call a function with a stack base structure corresponding to         */
 /* somewhere in the GC_call_with_stack_base frame.  This often can      */
-/* be used to provide a sufficiently accurate stack base.  And we       */
+/* be used to provide a sufficiently accurate stack bottom.  And we     */
 /* implement it everywhere.                                             */
 GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
                                         void * /* arg */) GC_ATTR_NONNULL(1);
@@ -1484,7 +1484,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* registering of a thread (it should be called as late as possible). */
   GC_API void GC_CALL GC_allow_register_threads(void);
 
-  /* Register the current thread, with the indicated stack base, as     */
+  /* Register the current thread, with the indicated stack bottom, as   */
   /* a new thread whose stack(s) should be traced by the GC.  If it     */
   /* is not implicitly called by the GC, this must be called before a   */
   /* thread can allocate garbage collected memory, or assign pointers   */
@@ -1564,11 +1564,11 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type /* fn */,
 /* initialized and the current thread is registered.  fn may toggle     */
 /* the collector thread's state temporarily to "inactive" one by using  */
 /* GC_do_blocking.  GC_call_with_gc_active() often can be used to       */
-/* provide a sufficiently accurate stack base.                          */
+/* provide a sufficiently accurate stack bottom.                        */
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type /* fn */,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
 
-/* Attempt to fill in the GC_stack_base structure with the stack base   */
+/* Attempt to fill in the GC_stack_base structure with the stack bottom */
 /* for this thread.  This appears to be required to implement anything  */
 /* like the JNI AttachCurrentThread in an environment in which new      */
 /* threads are not automatically registered with the collector.         */

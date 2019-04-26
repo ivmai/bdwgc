@@ -1418,7 +1418,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     LOCK();   /* This will block if the world is stopped.       */
     me = GC_lookup_thread(self);
 
-    /* Adjust our stack base value (this could happen unless    */
+    /* Adjust our stack bottom value (this could happen unless  */
     /* GC_get_stack_base() was used which returned GC_SUCCESS). */
     if ((me -> flags & MAIN_THREAD) == 0) {
       GC_ASSERT(me -> stack_end != NULL);

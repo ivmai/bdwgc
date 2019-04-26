@@ -106,20 +106,21 @@ operating system:
   architecture has more than one stack per thread, and is not supported yet,
   you will need to do more work. Grep for "IA64" in the source for an
   example.)
-  * `STACKBOTTOM` - Defined to be the cool end of the stack, which is usually
-  the highest address in the stack. It must bound the region of the stack that
-  contains pointers into the GC heap. With thread support, this must be the
-  cold end of the main stack, which typically cannot be found in the same way
-  as the other thread stacks. If this is not defined and none of the following
-  three macros is defined, client code must explicitly set `GC_stackbottom`
-  to an appropriate value before calling `GC_INIT` or any other `GC_` routine.
+  * `STACKBOTTOM` - Defined to be the cold end of the stack, which is usually
+  (i.e. when the stacks grow down) the highest address in the stack. It must
+  bound the region of the stack that contains pointers into the GC heap. With
+  thread support, this must be the cold end of the main stack, which typically
+  cannot be found in the same way as the other thread stacks. If this is not
+  defined and none of the following three macros is defined, client code must
+  explicitly set `GC_stackbottom` to an appropriate value before calling
+  `GC_INIT` or any other `GC_` routine.
   * `LINUX_STACKBOTTOM` - May be defined instead of `STACKBOTTOM`. If defined,
   then the cold end of the stack will be determined, we usually read it from
   `/proc`.
   * `HEURISTIC1` - May be defined instead of `STACKBOTTOM`. `STACK_GRAN`
   should generally also be redefined. The cold end of the stack is determined
   by taking an address inside `GC_init`s frame, and rounding it up to the next
-  multiple of `STACK_GRAN`. This works well if the stack base is always
+  multiple of `STACK_GRAN`. This works well if the stack bottom is always
   aligned to a large power of two. (`STACK_GRAN` is predefined to 0x1000000,
   which is rarely optimal.)
   * `HEURISTIC2` - May be defined instead of `STACKBOTTOM`. The cold end
@@ -127,7 +128,7 @@ operating system:
   incrementing it repeatedly in small steps (decrement if `STACK_GROWS_UP`),
   and reading the value at each location. We remember the value when the first
   Segmentation violation or Bus error is signaled, round that to the nearest
-  plausible page boundary, and use that as the stack base.
+  plausible page boundary, and use that as the stack bottom.
   * `DYNAMIC_LOADING` - Should be defined if `dyn_load.c` has been updated for
   this platform and tracing of dynamic library roots is supported.
   * `GWW_VDB`, `MPROTECT_VDB`, `PROC_VDB` - May be defined if the
