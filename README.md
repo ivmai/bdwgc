@@ -264,7 +264,7 @@ Note that usually only `GC_malloc` is necessary.  `GC_clear_roots` and
 `GC_add_roots` calls may be required if the collector has to trace
 from nonstandard places (e.g. from dynamic library data areas on a
 machine on which the collector doesn't already understand them.)  On
-some machines, it may be desirable to set `GC_stacktop` to a good
+some machines, it may be desirable to set `GC_stackbottom` to a good
 approximation of the stack base.  (This enhances code portability on
 HP PA machines, since there is no good way for the collector to
 compute this value.)  Client code may include "gc.h", which defines
