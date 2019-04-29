@@ -312,7 +312,7 @@ STATIC volatile LONG GC_max_thread_index = 0;
 
 /* And now the version used if GC_win32_dll_threads is not set. */
 /* This is a chained hash table, with much of the code borrowed */
-/* From the Posix implementation.                               */
+/* from the Posix implementation.                               */
 #ifndef THREAD_TABLE_SZ
 # define THREAD_TABLE_SZ 256    /* Power of 2 (for speed). */
 #endif
@@ -2398,9 +2398,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 GC_INNER void GC_thr_init(void)
 {
   struct GC_stack_base sb;
-# ifdef GC_ASSERTIONS
-    int sb_result;
-# endif
 
   GC_ASSERT(I_HOLD_LOCK());
   if (GC_thr_initialized) return;
@@ -2439,11 +2436,11 @@ GC_INNER void GC_thr_init(void)
 # endif
 
   /* Add the initial thread, so we can stop it. */
-# ifdef GC_ASSERTIONS
-    sb_result =
+  sb.mem_base = GC_stackbottom;
+  GC_ASSERT(sb.mem_base != NULL);
+# ifdef IA64
+    sb.reg_base = GC_register_stackbottom;
 # endif
-        GC_get_stack_base(&sb);
-  GC_ASSERT(sb_result == GC_SUCCESS);
 
 # if defined(PARALLEL_MARK)
     {
