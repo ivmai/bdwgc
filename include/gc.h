@@ -1578,6 +1578,30 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type /* fn */,
 GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *)
                                                         GC_ATTR_NONNULL(1);
 
+/* Fill in the GC_stack_base structure with the cold end (bottom) of    */
+/* the stack of the current thread (or coroutine).                      */
+/* Unlike GC_get_stack_base, it retrieves the value stored in the       */
+/* collector (which is initially set by the collector upon the thread   */
+/* is started or registered manually but it could be later updated by   */
+/* client using GC_set_stackbottom).  Returns the GC-internal non-NULL  */
+/* handle of the thread which could be passed to GC_set_stackbottom     */
+/* later.  It is assumed that the collector is already initialized and  */
+/* the thread is registered.  Acquires the GC lock to avoid data races. */
+GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *)
+                                                        GC_ATTR_NONNULL(1);
+
+/* Set the cool end of the user (coroutine) stack of the specified      */
+/* thread.  The GC thread handle is either the one returned by          */
+/* GC_get_my_stackbottom or NULL (the latter designates the current     */
+/* thread).  The caller should hold the GC lock (e.g. using             */
+/* GC_call_with_alloc_lock).  Also, the function could be used for      */
+/* setting GC_stackbottom value (the bottom of the primordial thread)   */
+/* before the collector is initialized (the GC lock is not needed to be */
+/* acquired in this case).                                              */
+GC_API void GC_CALL GC_set_stackbottom(void * /* gc_thread_handle */,
+                                       const struct GC_stack_base *)
+                                                        GC_ATTR_NONNULL(2);
+
 /* The following routines are primarily intended for use with a         */
 /* preprocessor which inserts calls to check C pointer arithmetic.      */
 /* They indicate failure by invoking the corresponding _print_proc.     */

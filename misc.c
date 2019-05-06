@@ -2200,6 +2200,30 @@ STATIC void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
     GC_blocked_sp = NULL;
 }
 
+  GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
+                                         const struct GC_stack_base *sb)
+  {
+    GC_ASSERT(sb -> mem_base != NULL);
+    GC_ASSERT(NULL == gc_thread_handle || &GC_stackbottom == gc_thread_handle);
+    GC_ASSERT(NULL == GC_blocked_sp
+              && NULL == GC_traced_stack_sect); /* for now */
+    (void)gc_thread_handle;
+
+    GC_stackbottom = (char *)sb->mem_base;
+#   ifdef IA64
+      GC_register_stackbottom = (ptr_t)sb->reg_base;
+#   endif
+  }
+
+  GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
+  {
+    GC_ASSERT(GC_is_initialized);
+    sb -> mem_base = GC_stackbottom;
+#   ifdef IA64
+      sb -> reg_base = GC_register_stackbottom;
+#   endif
+    return &GC_stackbottom; /* gc_thread_handle */
+  }
 #endif /* !THREADS */
 
 GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)

@@ -214,6 +214,11 @@ struct GC_Thread_Rep {
 # ifdef IA64
     ptr_t backing_store_end;
     ptr_t backing_store_ptr;
+# elif defined(I386)
+    ptr_t initial_stack_base;
+                        /* The cold end of the stack saved by   */
+                        /* GC_record_stack_base (never modified */
+                        /* by GC_set_stackbottom).              */
 # endif
 
   ptr_t thread_blocked_sp;      /* Protected by GC lock.                */
@@ -374,6 +379,8 @@ GC_INLINE void GC_record_stack_base(GC_vthread me,
   me -> stack_base = (ptr_t)sb->mem_base;
 # ifdef IA64
     me -> backing_store_end = (ptr_t)sb->reg_base;
+# elif defined(I386)
+    me -> initial_stack_base = (ptr_t)sb->mem_base;
 # endif
   if (me -> stack_base == NULL)
     ABORT("Bad stack base in GC_register_my_thread");
@@ -913,8 +920,12 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   /* Adjust our stack bottom pointer (this could happen unless  */
   /* GC_get_stack_base() was used which returned GC_SUCCESS).   */
   GC_ASSERT(me -> stack_base != NULL);
-  if ((word)me->stack_base < (word)(&stacksect))
+  if ((word)me->stack_base < (word)(&stacksect)) {
     me -> stack_base = (ptr_t)(&stacksect);
+#   if defined(I386)
+      me -> initial_stack_base = me -> stack_base;
+#   endif
+  }
 
   if (me -> thread_blocked_sp == NULL) {
     /* We are not inside GC_do_blocking() - do nothing more.    */
@@ -956,6 +967,53 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   UNLOCK();
 
   return client_data; /* result */
+}
+
+GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
+                                       const struct GC_stack_base *sb)
+{
+  GC_thread t = (GC_thread)gc_thread_handle;
+
+  GC_ASSERT(sb -> mem_base != NULL);
+  if (!EXPECT(GC_is_initialized, TRUE)) {
+    GC_ASSERT(NULL == t);
+    GC_stackbottom = (char *)sb->mem_base;
+#   ifdef IA64
+      GC_register_stackbottom = (ptr_t)sb->reg_base;
+#   endif
+    return;
+  }
+
+  GC_ASSERT(I_HOLD_LOCK());
+  if (NULL == t) { /* current thread? */
+    t = GC_lookup_thread_inner(GetCurrentThreadId());
+    CHECK_LOOKUP_MY_THREAD(t);
+  }
+  GC_ASSERT(!KNOWN_FINISHED(t));
+  GC_ASSERT(NULL == t -> thread_blocked_sp
+            && NULL == t -> traced_stack_sect); /* for now */
+  t -> stack_base = (ptr_t)sb->mem_base;
+  t -> last_stack_min = ADDR_LIMIT; /* reset the known minimum */
+# ifdef IA64
+    t -> backing_store_end = (ptr_t)sb->reg_base;
+# endif
+}
+
+GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
+{
+  DWORD thread_id = GetCurrentThreadId();
+  GC_thread me;
+  DCL_LOCK_STATE;
+
+  LOCK();
+  me = GC_lookup_thread_inner(thread_id);
+  CHECK_LOOKUP_MY_THREAD(me); /* the thread is assumed to be registered */
+  sb -> mem_base = me -> stack_base;
+# ifdef IA64
+    sb -> reg_base = me -> backing_store_end;
+# endif
+  UNLOCK();
+  return (void *)me; /* gc_thread_handle */
 }
 
 #ifdef GC_PTHREADS
@@ -1454,6 +1512,20 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
 #       endif
         GC_ASSERT(!((word)thread->stack_base
                     COOLER_THAN (word)tib->StackBase));
+        if (thread->stack_base != thread->initial_stack_base) {
+          /* We are in a coroutine.     */
+          if ((word)thread->stack_base <= (word)sp /* StackLimit */
+              || (word)tib->StackBase < (word)thread->stack_base) {
+            /* The coroutine stack is not within TIB stack.     */
+            sp = (ptr_t)context.Esp;
+            WARN("GetThreadContext might return stale register values"
+                 " including ESP=%p\n", sp);
+            /* TODO: Because of WoW64 bug, there is no guarantee that   */
+            /* sp really points to the stack top but, for now, we do    */
+            /* our best as the TIB stack limit/base cannot be used      */
+            /* while we are inside a coroutine.                         */
+          }
+        }
       } else {
 #       ifdef DEBUG_THREADS
           {
