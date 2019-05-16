@@ -1865,8 +1865,8 @@ EXTERN_C_BEGIN
 #         define HEURISTIC2
 #       endif
 #     endif
-      extern int _fdata[];
-#     define DATASTART ((ptr_t)_fdata)
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)__data_start)
       extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
