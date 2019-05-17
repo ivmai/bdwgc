@@ -1,15 +1,24 @@
 
 == [8.0.6] (not released yet) ==
 
+* Add support of OpenBSD/aarch64
+* Allow GC_PAUSE_TIME_TARGET environment variable values smaller than 5 ms
 * Avoid compiler warning about unused d in GC_CALLOC/MALLOC_EXPLICITLY_TYPED
+* Enable sbrk-to-mmap fallback on major supported Unix-like platforms
+* Explicitly zero-initialize trace_buf (fix trace_buf initialization)
+* Fix MPROTECT_VDB definition for single-threaded GC builds
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
 * Fix compiling by Makefile.direct on OpenBSD/UltraSparc
 * Fix configure message about 'AIX gcc optimization fix'
+* Fix first_thread stack_base initialization if custom GC_stackbottom (Win32)
 * Fix incorrect markup formatting in documentation
 * Fix printf format specifier in simple_example.md
+* Fix save_callers for multi-threaded case if built-in backtrace unavailable
 * Fix various typos mostly in documentation files
+* Fix word size, data start and alignment for OpenBSD/mips64(el)
 * Refine GC_INIT documentation about its multiple invocation
 * Refine GC_parallel documentation in gc.h
+* Refine do_blocking() documentation in gc.h
 * Remove a misleading comment about Solaris in gc.h
 * Support MSYS builds by CMake and configure
 * Update documentation about the incremental collector support
