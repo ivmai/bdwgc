@@ -1,3 +1,47 @@
+2019-04-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [GC_ASSERTIONS] (GC_thr_init): Remove sb_result local
+	variable.
+	* win32_threads.c (GC_thr_init): Initalize sb mem_base and reg_base
+	fields with GC_stackbottom and GC_register_stackbottom, respectively;
+	do not call GC_get_stack_base().
+
+2019-04-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README (The C Interface to the Allocator): Fix a typo
+	("GC_stackbottom").
+
+2019-04-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c [TRACE_BUF] (GC_trace_buf): Initialize to all zeros.
+
+2019-04-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [SAVE_CALL_CHAIN && (NARGS!=0 || NFRAMES%2!=0
+	|| !GC_HAVE_BUILTIN_BACKTRACE) && THREADS] (GC_save_callers): Do not
+	compare fp to GC_stackbottom.
+	* os_dep.c [SAVE_CALL_CHAIN && (NARGS!=0 || NFRAMES%2!=0
+	|| !GC_HAVE_BUILTIN_BACKTRACE) && THREADS && STACK_GROWS_UP]
+	(GC_save_callers): Break the loop if fp is NULL.
+
+2015-06-27  Jasper Lievisse Adriaanse <jasper@openbsd.org>
+
+	* include/private/gcconfig.h [MIPS && OPENBSD] (CPP_WORDSZ): Define
+	macro; add comment.
+	* include/private/gcconfig.h [MIPS && OPENBSD] (ALIGNMENT): Define to 8
+	(instead of 4).
+	* include/private/gcconfig.h [MIPS && OPENBSD] (__data_start): Declare
+	extern variable (instead of _fdata).
+	* include/private/gcconfig.h [MIPS && OPENBSD] (DATASTART): Use
+	__data_start.
+	* include/private/gcconfig.h [MIPS && OPENBSD] (_end): Change the type
+	to int[].
+
+2014-02-09  Alexandr Shadchin <shadchin@openbsd.org>
+
+	* include/gc_config_macros.h [GC_THREADS && __OpenBSD__]
+	(GC_OPENBSD_THREADS): Define macro regardless of __sparc one.
+
 2019-04-05  Ivan Maidanski <ivmai@mail.ru>
 
 	* doc/gcdescr.html (Introduction): Fix typos ("non-incremental",
