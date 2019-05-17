@@ -519,9 +519,14 @@ Also, includes 7.2 changes
 
 == [7.2o] (not released yet) ==
 
+* Explicitly zero-initialize trace_buf (fix trace_buf initialization)
 * Fix configure message about 'AIX gcc optimization fix'
+* Fix first_thread stack_base initialization if custom GC_stackbottom (Win32)
+* Fix incorrect define GC_OPENBSD_THREADS on sparc64
 * Fix printf format specifier in simple_example.html
+* Fix save_callers for multi-threaded case if built-in backtrace unavailable
 * Fix various typos mostly in documentation files
+* Fix word size, data start and alignment for OpenBSD/mips64(el)
 * Remove a misleading comment about Solaris in gc.h
 
 
