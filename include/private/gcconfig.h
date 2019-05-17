@@ -2980,8 +2980,8 @@
 # define NO_SA_SIGACTION
 #endif
 
-#if defined(NO_SA_SIGACTION) && defined(MPROTECT_VDB) && !defined(DARWIN) \
-    && !defined(MSWIN32) && !defined(MSWINCE)
+#if (defined(NO_SA_SIGACTION) && !defined(DARWIN) && !defined(MSWIN32) \
+     && !defined(MSWINCE)) || defined(GC_NO_SIGSETJMP)
 # undef MPROTECT_VDB
 #endif
 
