@@ -1550,7 +1550,7 @@ EXTERN_C_BEGIN
 #       ifdef USE_WINALLOC
 #         define GWW_VDB
 #       else
-#         define MPROTECT_VDB
+#         /* MPROTECT_VDB does not work, it leads to a spurious exit.   */
 #         ifdef USE_MMAP
 #           define NEED_FIND_LIMIT
 #           define USE_MMAP_ANON
@@ -2802,7 +2802,13 @@ EXTERN_C_BEGIN
 #       ifdef USE_WINALLOC
 #         define GWW_VDB
 #       else
-#         define MPROTECT_VDB
+#         if defined(THREAD_LOCAL_ALLOC)
+            /* TODO: For an unknown reason, thread-local allocations    */
+            /* lead to spurious process exit after the fault handler is */
+            /* once invoked.                                            */
+#         else
+#           define MPROTECT_VDB
+#         endif
 #         ifdef USE_MMAP
 #           define USE_MMAP_ANON
 #         endif
