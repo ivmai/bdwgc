@@ -29,24 +29,18 @@ INCLUDE(CTest)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
+option(BDWGC_INSTALL_CORD "Install cord" OFF)
+option(BDWGC_SKIP_HEADERS "Skip installing header files" OFF)
+
 ADD_DEFINITIONS("-D_CRT_SECURE_NO_DEPRECATE
-                 -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
+                 -DALL_INTERIOR_POINTERS 
+                 -DNO_EXECUTE_PERMISSION")
 
 IF(APPLE)
     IF("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "")
         SET(CMAKE_OSX_ARCHITECTURES "ppc;i386;x86_64" CACHE STRING "Build architectures for Mac OS X" FORCE)
     ENDIF()
 ENDIF(APPLE)
-
-#LIBATOMIC #TODO
-#ADD_LIBRARY(atomic_ops STATIC )
-#SET_TARGET_PROPERTIES(atomic_ops PROPERTIES COMPILE_FLAGS -DNO_DEBUGGING)
-
-
-#LIBGC
-
-INCLUDE_DIRECTORIES(include)
-INCLUDE_DIRECTORIES(libatomic_ops/src)
 
 SET(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
         mark_rts.c headers.c mark.c obj_map.c blacklst.c finalize.c
@@ -237,25 +231,54 @@ IF(enable_checksums)
     SET(SRC ${SRC} checksums.c)
 ENDIF(enable_checksums)
 
-ADD_LIBRARY(          gc-lib   STATIC      ${SRC})
-SET_TARGET_PROPERTIES(gc-lib   PROPERTIES
-                      COMPILE_DEFINITIONS GC_NOT_DLL)
-#TODO TARGET_LINK_LIBRARIES(...  ...  ${LIBS})
+add_library(gc ${SRC})
+target_include_directories(gc  
+    PUBLIC     
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
+if (NOT BUILD_SHARED_LIBS)
+    target_compile_definitions(gc PRIVATE GC_NOT_DLL)
+else()
+    target_compile_definitions(gc PRIVATE GC_DLL)
+endif()
 
-ADD_LIBRARY(          gcmt-lib STATIC      ${SRC})
-SET_TARGET_PROPERTIES(gcmt-lib PROPERTIES
-                      COMPILE_DEFINITIONS GC_NOT_DLL)
+# Install library
+install(
+    TARGETS gc
+    LIBRARY DESTINATION lib 
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin 
+    INCLUDES DESTINATION include
+)
 
-ADD_LIBRARY(          gcmt-dll  SHARED     ${SRC})
+# Install headers
+if (NOT BDWGC_SKIP_HEADERS)
+    file(GLOB BDWGC_HEADERS "include/*.h")
+    install(FILES ${BDWGC_HEADERS} DESTINATION include/gc)
 
-IF(WIN32)
-  ADD_EXECUTABLE(cord cord/cordbscs.c cord/cordxtra.c
-                 cord/tests/de.c cord/tests/de_win.c)
-  SET_TARGET_PROPERTIES(cord PROPERTIES WIN32_EXECUTABLE TRUE)
-  SET_TARGET_PROPERTIES(cord    PROPERTIES
-                      COMPILE_DEFINITIONS GC_NOT_DLL)
-  TARGET_LINK_LIBRARIES(cord gc-lib)
-  TARGET_LINK_LIBRARIES(cord gdi32)
-ENDIF(WIN32)
+    file(GLOB BDWGC_EXTRA_HEADERS "include/extra/*.h")
+    install(FILES ${BDWGC_EXTRA_HEADERS} DESTINATION include)
+endif()
 
-ADD_SUBDIRECTORY(tests)
+# Install tools
+if (WIN32 AND BDWGC_INSTALL_CORD)
+    add_executable(cord 
+                   cord/cordbscs.c 
+                   cord/cordxtra.c
+                   cord/tests/de.c
+                   cord/tests/de_win.c)
+    set_target_properties(cord PROPERTIES WIN32_EXECUTABLE TRUE)
+    target_compile_definitions(cord PRIVATE GC_NOT_DLL)
+
+    target_link_libraries(cord PRIVATE gc gdi32)
+    target_include_directories(cord
+        PRIVATE      
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    )
+
+    install(
+        TARGETS cord 
+        DESTINATION tools/cord 
+    )
+endif()
