@@ -3246,8 +3246,8 @@ EXTERN_C_BEGIN
 #endif
 
 #ifndef STATIC
-# ifndef NO_DEBUGGING
-#   define STATIC /* ignore to aid profiling and possibly debugging     */
+# ifdef GC_ASSERTIONS
+#   define STATIC /* ignore to aid debugging (or profiling) */
 # else
 #   define STATIC static
 # endif
