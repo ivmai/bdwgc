@@ -14,34 +14,34 @@
 # modified is included with the above copyright notice.
 ##
 
-ADD_DEFINITIONS(-DGC_NOT_DLL)
+add_definitions("-DGC_NOT_DLL")
 
 # Compile some tests as C++ to test extern "C" in header files.
-SET_SOURCE_FILES_PROPERTIES(
+set_source_files_properties(
     leak_test.c
     test.c
     PROPERTIES LANGUAGE CXX)
 
-ADD_EXECUTABLE(gctest WIN32 test.c)
-TARGET_LINK_LIBRARIES(gctest gc-lib)
-ADD_TEST(NAME gctest COMMAND gctest)
+add_executable(gctest WIN32 test.c)
+target_link_libraries(gctest gc-lib)
+add_test(NAME gctest COMMAND gctest)
 
-ADD_EXECUTABLE(hugetest huge_test.c)
-TARGET_LINK_LIBRARIES(hugetest gc-lib)
-ADD_TEST(NAME hugetest COMMAND hugetest)
+add_executable(hugetest huge_test.c)
+target_link_libraries(hugetest gc-lib)
+add_test(NAME hugetest COMMAND hugetest)
 
-ADD_EXECUTABLE(leaktest leak_test.c)
-TARGET_LINK_LIBRARIES(leaktest gc-lib)
-ADD_TEST(NAME leaktest COMMAND leaktest)
+add_executable(leaktest leak_test.c)
+target_link_libraries(leaktest gc-lib)
+add_test(NAME leaktest COMMAND leaktest)
 
-ADD_EXECUTABLE(middletest middle.c)
-TARGET_LINK_LIBRARIES(middletest gc-lib)
-ADD_TEST(NAME middletest COMMAND middletest)
+add_executable(middletest middle.c)
+target_link_libraries(middletest gc-lib)
+add_test(NAME middletest COMMAND middletest)
 
-ADD_EXECUTABLE(realloc_test realloc_test.c)
-TARGET_LINK_LIBRARIES(realloc_test gc-lib)
-ADD_TEST(NAME realloc_test COMMAND realloc_test)
+add_executable(realloc_test realloc_test.c)
+target_link_libraries(realloc_test gc-lib)
+add_test(NAME realloc_test COMMAND realloc_test)
 
-ADD_EXECUTABLE(smashtest smash_test.c)
-TARGET_LINK_LIBRARIES(smashtest gc-lib)
-ADD_TEST(NAME smashtest COMMAND smashtest)
+add_executable(smashtest smash_test.c)
+target_link_libraries(smashtest gc-lib)
+add_test(NAME smashtest COMMAND smashtest)
