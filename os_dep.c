@@ -4200,6 +4200,9 @@ GC_INNER GC_bool GC_dirty_init(void)
       }
     }
 # endif /* BROKEN_EXCEPTION_HANDLING  */
+# if defined(CPPCHECK)
+    GC_noop1((word)GC_ports.os_callback[0]);
+# endif
   return TRUE;
 }
 
