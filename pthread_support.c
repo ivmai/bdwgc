@@ -2111,22 +2111,25 @@ yield:
     }
 }
 
-#else  /* !USE_SPIN_LOCK */
+#elif defined(USE_PTHREAD_LOCKS)
 
-GC_INNER void GC_lock(void)
-{
-#ifndef NO_PTHREAD_TRYLOCK
-    if (1 == GC_nprocs || is_collecting()) {
+# ifndef NO_PTHREAD_TRYLOCK
+    GC_INNER void GC_lock(void)
+    {
+      if (1 == GC_nprocs || is_collecting()) {
         pthread_mutex_lock(&GC_allocate_ml);
-    } else {
+      } else {
         GC_generic_lock(&GC_allocate_ml);
+      }
     }
-#else  /* !NO_PTHREAD_TRYLOCK */
-    pthread_mutex_lock(&GC_allocate_ml);
-#endif /* !NO_PTHREAD_TRYLOCK */
-}
+# elif defined(GC_ASSERTIONS)
+    GC_INNER void GC_lock(void)
+    {
+      pthread_mutex_lock(&GC_allocate_ml);
+    }
+# endif
 
-#endif /* !USE_SPIN_LOCK */
+#endif /* !USE_SPIN_LOCK && USE_PTHREAD_LOCKS */
 
 #ifdef PARALLEL_MARK
 
