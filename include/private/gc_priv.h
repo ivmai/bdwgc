@@ -1781,10 +1781,13 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes);
                                 /* possible.  May return NULL.          */
 
 /* Heap block layout maps: */
-GC_INNER GC_bool GC_add_map_entry(size_t sz);
+#ifdef MARK_BIT_PER_GRANULE
+  GC_INNER GC_bool GC_add_map_entry(size_t sz);
                                 /* Add a heap block map for objects of  */
                                 /* size sz to obj_map.                  */
                                 /* Return FALSE on failure.             */
+#endif
+
 GC_INNER void GC_register_displacement_inner(size_t offset);
                                 /* Version of GC_register_displacement  */
                                 /* that assumes lock is already held.   */
