@@ -14,34 +14,40 @@
 # modified is included with the above copyright notice.
 ##
 
-add_definitions("-DGC_NOT_DLL")
-
 # Compile some tests as C++ to test extern "C" in header files.
-set_source_files_properties(
-    leak_test.c
-    test.c
-    PROPERTIES LANGUAGE CXX)
+if (NOT BUILD_SHARED_LIBS)
+	set_source_files_properties(
+		leak_test.c
+		test.c
+		PROPERTIES LANGUAGE CXX)
 
-add_executable(gctest WIN32 test.c)
-target_link_libraries(gctest gc-lib)
-add_test(NAME gctest COMMAND gctest)
+	add_executable(gctest WIN32 test.c)
+	target_link_libraries(gctest gc)
+	target_compile_definitions(gctest PRIVATE GC_NOT_DLL)
+	add_test(NAME gctest COMMAND gctest)
 
-add_executable(hugetest huge_test.c)
-target_link_libraries(hugetest gc-lib)
-add_test(NAME hugetest COMMAND hugetest)
+	add_executable(hugetest huge_test.c)
+	target_link_libraries(hugetest gc)
+	target_compile_definitions(hugetest PRIVATE GC_NOT_DLL)
+	add_test(NAME hugetest COMMAND hugetest)
 
-add_executable(leaktest leak_test.c)
-target_link_libraries(leaktest gc-lib)
-add_test(NAME leaktest COMMAND leaktest)
+	add_executable(leaktest leak_test.c)
+	target_link_libraries(leaktest gc)
+	target_compile_definitions(leaktest PRIVATE GC_NOT_DLL)
+	add_test(NAME leaktest COMMAND leaktest)
 
-add_executable(middletest middle.c)
-target_link_libraries(middletest gc-lib)
-add_test(NAME middletest COMMAND middletest)
+	add_executable(middletest middle.c)
+	target_link_libraries(middletest gc)
+	target_compile_definitions(middletest PRIVATE GC_NOT_DLL)
+	add_test(NAME middletest COMMAND middletest)
 
-add_executable(realloc_test realloc_test.c)
-target_link_libraries(realloc_test gc-lib)
-add_test(NAME realloc_test COMMAND realloc_test)
+	add_executable(realloc_test realloc_test.c)
+	target_link_libraries(realloc_test gc)
+	target_compile_definitions(realloc_test PRIVATE GC_NOT_DLL)
+	add_test(NAME realloc_test COMMAND realloc_test)
 
-add_executable(smashtest smash_test.c)
-target_link_libraries(smashtest gc-lib)
-add_test(NAME smashtest COMMAND smashtest)
+	add_executable(smashtest smash_test.c)
+	target_link_libraries(smashtest gc)
+	target_compile_definitions(smashtest PRIVATE GC_NOT_DLL)
+	add_test(NAME smashtest COMMAND smashtest)
+endif()
