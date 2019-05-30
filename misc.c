@@ -2310,6 +2310,18 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
     return GC_parallel;
   }
 
+  GC_API void GC_CALL GC_alloc_lock(void)
+  {
+    DCL_LOCK_STATE;
+    LOCK();
+  }
+
+  GC_API void GC_CALL GC_alloc_unlock(void)
+  {
+    /* no DCL_LOCK_STATE */
+    UNLOCK();
+  }
+
   GC_INNER GC_on_thread_event_proc GC_on_thread_event = 0;
 
   GC_API void GC_CALL GC_set_on_thread_event(GC_on_thread_event_proc fn)

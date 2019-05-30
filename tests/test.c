@@ -1648,12 +1648,6 @@ void GC_CALLBACK reachable_objs_counter(void *obj, size_t size,
   (*(unsigned *)pcounter)++;
 }
 
-void * GC_CALLBACK reachable_objs_count_enumerator(void *pcounter)
-{
-  GC_enumerate_reachable_objects_inner(reachable_objs_counter, pcounter);
-  return NULL;
-}
-
 #define NUMBER_ROUND_UP(v, bound) ((((v) + (bound) - 1) / (bound)) * (bound))
 
 void check_heap_stats(void)
@@ -1733,8 +1727,9 @@ void check_heap_stats(void)
           FAIL;
         }
       }
-    (void)GC_call_with_alloc_lock(reachable_objs_count_enumerator,
-                                  &obj_count);
+    GC_alloc_lock();
+    GC_enumerate_reachable_objects_inner(reachable_objs_counter, &obj_count);
+    GC_alloc_unlock();
     GC_printf("Completed %u tests\n", n_tests);
     GC_printf("Allocated %d collectable objects\n", (int)collectable_count);
     GC_printf("Allocated %d uncollectable objects\n",
