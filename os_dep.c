@@ -3077,11 +3077,13 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #ifndef DARWIN
   STATIC SIG_HNDLR_PTR GC_old_segv_handler = 0;
                         /* Also old MSWIN32 ACCESS_VIOLATION filter */
-# if !defined(MSWIN32) && !defined(MSWINCE)
+# if defined(FREEBSD) || defined(HPUX) || defined(HURD) || defined(LINUX)
     STATIC SIG_HNDLR_PTR GC_old_bus_handler = 0;
-#   if defined(FREEBSD) || defined(HURD) || defined(HPUX)
+#   ifndef LINUX
       STATIC GC_bool GC_old_bus_handler_used_si = FALSE;
 #   endif
+# endif
+# if !defined(MSWIN32) && !defined(MSWINCE)
     STATIC GC_bool GC_old_segv_handler_used_si = FALSE;
 # endif /* !MSWIN32 */
 #endif /* !DARWIN */
@@ -3363,9 +3365,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #       endif
       } else {
         GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)oldact.sa_handler;
-#       if !defined(LINUX)
-          GC_old_bus_handler_used_si = FALSE;
-#       endif
       }
       if (GC_old_bus_handler == (SIG_HNDLR_PTR)(signed_word)SIG_IGN) {
         WARN("Previously ignored bus error!?\n", 0);
