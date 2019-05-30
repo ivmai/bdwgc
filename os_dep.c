@@ -1853,14 +1853,14 @@ void GC_register_data_segments(void)
   /* heap sections?                                             */
   GC_INNER GC_bool GC_is_heap_base(void *p)
   {
-     unsigned i;
+     int i;
 #    ifndef REDIRECT_MALLOC
        if (GC_root_size > GC_max_root_size) GC_max_root_size = GC_root_size;
 #      ifdef USE_WINALLOC
          if (GC_is_malloc_heap_base(p)) return TRUE;
 #      endif
 #    endif
-     for (i = 0; i < GC_n_heap_bases; i++) {
+     for (i = 0; i < (int)GC_n_heap_bases; i++) {
          if (GC_heap_bases[i] == p) return TRUE;
      }
      return FALSE;
