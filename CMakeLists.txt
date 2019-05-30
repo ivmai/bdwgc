@@ -21,13 +21,11 @@
 #  this will generate gc.sln
 #
 
-set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
-
 project(gc)
 
 include(CTest)
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.1)
 
 add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 add_definitions("-DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
