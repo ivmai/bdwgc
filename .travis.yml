@@ -621,6 +621,7 @@ script:
 - if [ -f disclaim_test.log ]; then cat disclaim_test.log; fi
 - if [ -f disclaim_weakmap_test.log ]; then cat disclaim_weakmap_test.log; fi
 - if [ -f threadkey_test.log ]; then cat threadkey_test.log; fi
+- if [ -f threadleaktest.log ]; then cat threadleaktest.log; fi
 - if [[ "$CSA_CHECK" == true ]]; then
     ${CC} --analyze -Xanalyzer -analyzer-output=text -Werror
         -I include -I libatomic_ops/src $CFLAGS_EXTRA
