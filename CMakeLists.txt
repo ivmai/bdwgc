@@ -29,7 +29,7 @@ cmake_minimum_required(VERSION 3.1)
 
 # Customize CMake options by passing "-D<OPTION_NAME>=ON|OFF" in your command line
 option(install_cord "Install cord" ON)
-option(install_headers) "Install header files" ON)
+option(install_headers "Install header files" ON)
 option(install_tests "Install library tests" ON)
 option(enable_threads "TODO" OFF) #TODO Support it
 option(enable_parallel_mark "Parallelize marking and free list construction" ON)
