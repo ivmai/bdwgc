@@ -21,8 +21,6 @@
 #  this will generate gc.sln
 #
 
-set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
-
 project(gc)
 
 include(CTest)
@@ -30,27 +28,28 @@ include(CTest)
 cmake_minimum_required(VERSION 3.1)
 
 # Customize CMake options by passing "-D<OPTION_NAME>=ON|OFF" in your command line
-option(INSTALL_CORD "Install cord" ON)
-option(INSTALL_HEADERS "Install header files" ON)
-option(INSTALL_TESTS "Install library tests" ON)
-option(ENABLE_THREADS "TODO" OFF)
-option(ENABLE_HANDLE_FORK "Attempt to ensure a usable collector after fork()" ON)
-option(ENABLE_THREAD_LOCAL_ALLOC "Turn on thread-local allocation optimization" ON)
-option(ENABLE_PARALLEL_MARK "Parallelize marking and free list construction" ON)
-option(ENABLE_GCJ_SUPPORT "Support for gcj" ON)
-option(ENABLE_DISCLAIM "Support alternative finalization interface" ON)
-option(ENABLE_JAVA_FINALIZATION "Support for java finalization" ON)
-option(ENABLE_ATOMIC_UNCOLLECTABLE "Support for atomic uncollectible allocation" ON)
-option(ENABLE_GC_DEBUG "Support for pointer back-tracing" OFF)
-option(ENABLE_REDIRECT_MALLOC "Redirect malloc and friends to GC routines" OFF)
-option(ENABLE_MMAP "Use mmap instead of sbrk to expand the heap" OFF)
-option(ENABLE_MUNMAP "Return page to the OS if empty for N collections" ON)
-option(ENABLE_DYNAMIC_LOADING "Enable tracing of dynamic library data roots" ON)
-option(ENABLE_REGISTER_MAIN_STATIC_DATA "Perform the initial guess of data root sets" ON)
-option(ENABLE_LARGE_CONFIG "Optimize for large heap or root set" OFF)
-option(ENABLE_GC_ASSERTIONS "Enable collector-internal assertion checking" OFF)
-option(ENABLE_THREADS_DISCOVERY "Enable threads discovery in GC" ON)
-option(ENABLE_CHECKSUM "Report erroneously cleared dirty bits" OFF)
+option(install_cord "Install cord" ON)
+option(install_headers) "Install header files" ON)
+option(install_tests "Install library tests" ON)
+option(enable_threads "TODO" OFF) #TODO Support it
+option(enable_parallel_mark "Parallelize marking and free list construction" ON)
+option(enable_thread_local_alloc "Turn on thread-local allocation optimization" ON)
+option(enable_threads_discovery "Enable threads discovery in GC" ON)
+#TODO Support OPTION(enable_cplusplus "install C++ support" OFF)
+option(enable_gcj_support "Support for gcj" ON)
+option(enable_gc_debug "Support for pointer back-tracing" OFF)
+option(enable_java_finalization "Support for java finalization" ON)
+option(enable_atomic_uncollectable "Support for atomic uncollectible allocation" ON)
+option(enable_redirect_malloc "Redirect malloc and friends to GC routines" OFF)
+option(enable_disclaim "Support alternative finalization interface" ON)
+option(enable_large_config "Optimize for large heap or root set" OFF)
+option(enable_gc_assertions "Enable collector-internal assertion checking" OFF)
+option(enable_mmap "Use mmap instead of sbrk to expand the heap" OFF)
+option(enable_munmap "Return page to the OS if empty for N collections" ON)
+option(enable_dynamic_loading "Enable tracing of dynamic library data roots" ON)
+option(enable_register_main_static_data "Perform the initial guess of data root sets" ON)
+option(enable_checksums "Report erroneously cleared dirty bits" OFF)
+option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 
 if (WIN32)
   add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
@@ -71,7 +70,7 @@ set(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
         mallocx.c)
 set(LIBS)
 
-if (ENABLE_THREADS)
+if (enable_threads)
   find_package(Threads REQUIRED)
   message("Thread Model: ${CMAKE_THREAD_LIBS_INIT}" )
   include_directories(${Threads_INCLUDE_DIR})
@@ -148,7 +147,7 @@ if (CMAKE_USE_WIN32_THREADS_INIT)
   set(SRC ${SRC} win32_threads.c)
 endif()
 
-if (ENABLE_GCJ_SUPPORT)
+if (enable_gcj_support)
   add_definitions("-DGC_GCJ_SUPPORT")
   if (ENABLE_THREADS)
     add_definitions("-DGC_ENABLE_SUSPEND_THREAD")
@@ -156,20 +155,20 @@ if (ENABLE_GCJ_SUPPORT)
   set(SRC ${SRC} gcj_mlc.c)
 endif()
 
-if (ENABLE_DISCLAIM)
+if (enable_disclaim)
   add_definitions("-DENABLE_DISCLAIM")
   set(SRC ${SRC} fnlz_mlc.c)
 endif()
 
-if (ENABLE_JAVA_FINALIZATION)
+if (enable_java_finalization)
   add_definitions("-DJAVA_FINALIZATION")
 endif()
 
-if (ENABLE_ATOMIC_UNCOLLECTABLE)
+if (enable_atomic_uncollectable)
   add_definitions("-DGC_ATOMIC_UNCOLLECTABLE")
 endif()
 
-if (ENABLE_GC_DEBUG)
+if (enable_gc_debug)
   add_definitions("-DDBG_HDRS_ALL -DKEEP_BACK_PTRS")
   if (HOST MATCHES ia64-.*-linux.*|i586-.*-linux.*|i686-.*-linux.*|x86-.*-linux.*|x86_64-.*-linux.*)
     add_definitions("-DMAKE_BACK_GRAPH")
@@ -182,8 +181,8 @@ if (ENABLE_GC_DEBUG)
   endif()
 endif()
 
-if (ENABLE_REDIRECT_MALLOC)
-  if (ENABLE_GC_DEBUG)
+if (enable_redirect_malloc)
+  if (enable_gc_debug)
     add_definitions("-DREDIRECT_MALLOC=GC_debug_malloc_replacement")
     add_definitions("-DREDIRECT_REALLOC=GC_debug_realloc_replacement")
     add_definitions("-DREDIRECT_FREE=GC_debug_free")
@@ -193,34 +192,34 @@ if (ENABLE_REDIRECT_MALLOC)
   add_definitions("-DGC_USE_DLOPEN_WRAP")
 endif()
 
-if (ENABLE_MUNMAP)
+if (enable_munmap)
   add_definitions("-DUSE_MMAP -DUSE_MUNMAP")
 elseif (ENABLE_MMAP)
   add_definitions("-DUSE_MMAP")
 endif()
 
-if (NOT ENABLE_DYNAMIC_LOADING)
+if (NOT enable_dynamic_loading)
   add_definitions("-DIGNORE_DYNAMIC_LOADING")
 endif()
 
-if (NOT ENABLE_REGISTER_MAIN_STATIC_DATA)
+if (NOT enable_register_main_static_data)
   add_definitions("-DGC_DONT_REGISTER_MAIN_STATIC_DATA")
 endif()
 
-if (ENABLE_LARGE_CONFIG)
+if (enable_large_config)
   add_definitions("-DLARGE_CONFIG")
 endif()
 
-if (ENABLE_GC_ASSERTIONS)
+if (enable_gc_assertions)
   add_definitions("-DGC_ASSERTIONS")
 endif()
 
-if (NOT ENABLE_THREADS_DISCOVERY)
+if (NOT enable_threads_discovery)
   add_definitions("-DGC_NO_THREADS_DISCOVERY")
 endif()
 
-if (ENABLE_CHECKSUM)
-  if (ENABLE_MUNMAP OR ENABLE_THREADS)
+if (enable_checksums)
+  if (enable_munmap OR enable_threads)
     message("CHECKSUMS not compatible with USE_MUNMAP or threads")
   endif()
   add_definitions("-DCHECKSUMS")
@@ -251,7 +250,7 @@ install(
 )
 
 # Install headers
-if (INSTALL_HEADERS)
+if (install_headers)
     file(GLOB BDWGC_HEADERS "include/*.h")
     install(FILES ${BDWGC_HEADERS} DESTINATION include/gc)
 
@@ -260,7 +259,7 @@ if (INSTALL_HEADERS)
 endif()
 
 # Install tools
-if (WIN32 AND INSTALL_CORD)
+if (WIN32 AND install_cord)
     add_executable(cord 
                    cord/cordbscs.c 
                    cord/cordxtra.c
@@ -281,6 +280,6 @@ if (WIN32 AND INSTALL_CORD)
     )
 endif()
 
-if (INSTALL_TESTS)
+if (install_tests)
   add_subdirectory(tests)
 endif()

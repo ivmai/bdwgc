@@ -1403,6 +1403,18 @@ typedef GC_word GC_hidden_pointer;
 # define REVEAL_POINTER(p) GC_REVEAL_POINTER(p)
 #endif
 
+/* The routines to acquire/release the allocator lock.                  */
+/* The lock is not reentrant.  GC_alloc_unlock() should not be called   */
+/* unless the lock is acquired by the current thread.                   */
+#ifdef GC_THREADS
+  GC_API void GC_CALL GC_alloc_lock(void);
+  GC_API void GC_CALL GC_alloc_unlock(void);
+#else
+  /* No need for real locking if the client is single-threaded.         */
+# define GC_alloc_lock() (void)0
+# define GC_alloc_unlock() (void)0
+#endif /* !GC_THREADS */
+
 typedef void * (GC_CALLBACK * GC_fn_type)(void * /* client_data */);
 GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type /* fn */,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
