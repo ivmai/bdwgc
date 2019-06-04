@@ -33,6 +33,7 @@ option(enable_thread_local_alloc "Turn on thread-local allocation optimization" 
 option(enable_threads_discovery "Enable threads discovery in GC" ON)
 #TODO Support OPTION(enable_cplusplus "install C++ support" OFF)
 option(enable_gcj_support "Support for gcj" ON)
+option(enable_sigrt_signals "Use SIGRTMIN-based signals for thread suspend/resume" OFF)
 option(enable_gc_debug "Support for pointer back-tracing" OFF)
 option(enable_java_finalization "Support for java finalization" ON)
 option(enable_atomic_uncollectable "Support for atomic uncollectible allocation" ON)
@@ -140,6 +141,9 @@ if (CMAKE_USE_PTHREADS_INIT)
     endif(enable_handle_fork)
     set(SRC ${SRC} darwin_stop_world.c)
     #TODO darwin_threads=true
+  endif()
+  if (enable_sigrt_signals)
+    add_definitions("-DGC_USESIGRT_SIGNALS")
   endif()
 endif(CMAKE_USE_PTHREADS_INIT)
 
