@@ -59,6 +59,7 @@
 /leaktest
 /libalphagc.so
 /libgc.so
+/libgcmt-dll.dll.a
 /libirixgc.so
 /liblinuxgc.so
 /libtool
