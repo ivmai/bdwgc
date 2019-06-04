@@ -58,7 +58,10 @@
 /initsecondarythread_test
 /leaktest
 /libalphagc.so
+/libcord.so
 /libgc.so
+/libgccpp.so
+/libgcmt-dll.dll.a
 /libirixgc.so
 /liblinuxgc.so
 /libtool
@@ -126,8 +129,14 @@ stamp-h1
 /Testing/Temporary/
 /cmake_install.cmake
 /gc.sln
+/libcord.a
+/libcord.dll.a
 /libgc*-dll.so
 /libgc*-lib.a
+/libgc.a
+/libgc.dll.a
+/libgccpp.a
+/libgccpp.dll.a
 /tests/*.vcxproj
 /tests/*.vcxproj.filters
 /tests/*test
