@@ -263,10 +263,10 @@ if (install_headers)
     install(FILES ${BDWGC_EXTRA_HEADERS} DESTINATION include)
 endif()
 
-if (install_cord)
+if (build_cord)
   add_subdirectory(cord)
 endif()
 
-if (install_tests)
+if (build_tests)
   add_subdirectory(tests)
 endif()
