@@ -253,13 +253,6 @@ set_target_properties(gcmt-lib PROPERTIES
 
 add_library(gcmt-dll SHARED ${SRC})
 
-if (WIN32)
-  add_executable(cord cord/cordbscs.c cord/cordxtra.c
-                 cord/tests/de.c cord/tests/de_win.c)
-  set_target_properties(cord PROPERTIES WIN32_EXECUTABLE TRUE)
-  set_target_properties(cord PROPERTIES COMPILE_DEFINITIONS GC_NOT_DLL)
-  target_link_libraries(cord gc-lib)
-  target_link_libraries(cord gdi32)
-endif()
+add_subdirectory(cord)
 
 add_subdirectory(tests)
