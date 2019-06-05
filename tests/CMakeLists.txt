@@ -46,8 +46,28 @@ add_executable(smashtest smash_test.c)
 target_link_libraries(smashtest gc-lib)
 add_test(NAME smashtest COMMAND smashtest)
 
+if (enable_gc_debug)
+  add_executable(tracetest trace_test.c)
+  target_link_libraries(tracetest gc-lib)
+  add_test(NAME tracetest COMMAND tracetest)
+endif()
+
 if (enable_cplusplus)
   # TODO add_executable(test_cpp test_cpp.cc)
   # target_link_libraries(test_cpp gc-lib)
   # add_test(NAME test_cpp COMMAND test_cpp)
+endif()
+
+if (enable_disclaim)
+  add_executable(disclaim_bench disclaim_bench.c)
+  target_link_libraries(disclaim_bench gc-lib)
+  add_test(NAME disclaim_bench COMMAND disclaim_bench)
+
+  add_executable(disclaim_test disclaim_test.c)
+  target_link_libraries(disclaim_test gc-lib)
+  add_test(NAME disclaim_test COMMAND disclaim_test)
+
+  add_executable(disclaim_weakmap_test disclaim_weakmap_test.c)
+  target_link_libraries(disclaim_weakmap_test gc-lib)
+  add_test(NAME disclaim_weakmap_test COMMAND disclaim_weakmap_test)
 endif()
