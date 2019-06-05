@@ -199,7 +199,7 @@ EXTRA_DIST += README.QUICK
 EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
     OS2_MAKEFILE PCR-Makefile digimars.mak \
     Makefile.direct SMakefile.amiga WCC_MAKEFILE autogen.sh \
-    CMakeLists.txt tests/CMakeLists.txt
+    CMakeLists.txt cord/CMakeLists.txt tests/CMakeLists.txt
 
 # files used by makefiles other than Makefile.am
 #

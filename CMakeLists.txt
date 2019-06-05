@@ -28,15 +28,16 @@ include(CTest)
 cmake_minimum_required(VERSION 3.1)
 
 # Customize CMake options by passing "-D<OPTION_NAME>=ON|OFF" in your command line
-option(install_cord "Install cord" ON)
+option(build_cord "Install cord" ON)
+option(build_tests "Install library tests" ON)
 option(install_headers "Install header files" ON)
-option(install_tests "Install library tests" ON)
 option(enable_threads "TODO" OFF) #TODO Support it
 option(enable_parallel_mark "Parallelize marking and free list construction" ON)
 option(enable_thread_local_alloc "Turn on thread-local allocation optimization" ON)
 option(enable_threads_discovery "Enable threads discovery in GC" ON)
-#TODO Support OPTION(enable_cplusplus "install C++ support" OFF)
+option(enable_cplusplus "C++ support" OFF)
 option(enable_gcj_support "Support for gcj" ON)
+option(enable_sigrt_signals "Use SIGRTMIN-based signals for thread suspend/resume" OFF)
 option(enable_gc_debug "Support for pointer back-tracing" OFF)
 option(enable_java_finalization "Support for java finalization" ON)
 option(enable_atomic_uncollectable "Support for atomic uncollectible allocation" ON)
@@ -51,10 +52,6 @@ option(enable_register_main_static_data "Perform the initial guess of data root 
 option(enable_checksums "Report erroneously cleared dirty bits" OFF)
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 
-if (WIN32)
-  add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
-endif()
-
 add_definitions("-DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
 
 if (APPLE)
@@ -62,7 +59,10 @@ if (APPLE)
     set(CMAKE_OSX_ARCHITECTURES "ppc;i386;x86_64"
         CACHE STRING "Build architectures for Mac OS X" FORCE)
   endif()
+elseif (MSVC)
+  add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 endif()
+
 
 set(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
         mark_rts.c headers.c mark.c obj_map.c blacklst.c finalize.c
@@ -77,7 +77,9 @@ if (enable_threads)
   set(LIBS ${LIBS} ${Threads_LIBRARIES})
 endif()
 
-set(SRC ${SRC} gc_cpp.cc)
+if (enable_cplusplus)
+  set(SRC ${SRC} gc_cpp.cc)
+endif()
 
 set(_HOST ${CMAKE_HOST_SYSTEM_PROCESSOR}--${CMAKE_SYSTEM})
                                 #FIXME missing the vendor field.
@@ -91,10 +93,10 @@ if (CMAKE_USE_PTHREADS_INIT)
   # Common defines for most POSIX platforms.
   if (HOST MATCHES .*-.*-aix.*|.*-.*-android.*|.*-.*-cygwin.*|.*-.*-darwin.*|.*-.*-.*freebsd.*|.*-.*-haiku.*|.*-.*-gnu.*|.*-.*-hpux11.*|.*-.*-irix.*|.*-.*-.*linux.*|.*-.*-msys.*|.*-.*-nacl.*|.*-.*-netbsd.*|.*-.*-openbsd.*|.*-.*-osf.*|.*-.*-solaris.*)
     add_definitions("-DGC_THREADS -D_REENTRANT")
-    if (ENABLE_PARALLEL_MARK)
+    if (enable_parallel_mark)
       add_definitions("-DPARALLEL_MARK")
     endif()
-    if (ENABLE_THREAD_LOCAL_ALLOC)
+    if (enable_thread_local_alloc)
       add_definitions("-DTHREAD_LOCAL_ALLOC")
       set(SRC ${SRC} thread_local_alloc.c)
     endif()
@@ -115,30 +117,33 @@ if (CMAKE_USE_PTHREADS_INIT)
   if (HOST MATCHES .*-.*-android.*)
     # Android NDK does not provide pthread_atfork.
   elseif (HOST MATCHES .*-.*-aix.*|.*-.*-cygwin.*|.*-.*-freebsd.*|.*-.*-haiku.*|.*-.*-hpux11.*|.*-.*-irix.*|.*-.*-kfreebsd.*-gnu|.*-.*-.*linux.*|.*-.*-netbsd.*|.*-.*-openbsd.*|.*-.*-osf.*|.*-.*-solaris.*)
-    if (ENABLE_HANDLE_FORK)
+    if (enable_handle_fork)
       add_definitions("-DHANDLE_FORK")
-    endif(ENABLE_HANDLE_FORK)
+    endif(enable_handle_fork)
   endif()
   if (HOST MATCHES .*-.*-cygwin.*|.*-.*-msys.*)
     set(SRC ${SRC} win32_threads.c)
   endif()
   if (HOST MATCHES .*-.*-darwin.*)
-    if (ENABLE_HANDLE_FORK)
+    if (enable_handle_fork)
       # The incremental mode conflicts with fork handling.
-      if (ENABLE_PARALLEL_MARK)
+      if (enable_parallel_mark)
         add_definitions("-DHANDLE_FORK")
       endif()
     endif()
     set(SRC ${SRC} darwin_stop_world.c)
     #TODO darwin_threads=true
   endif()
-endif()
+  if (enable_sigrt_signals)
+    add_definitions("-DGC_USESIGRT_SIGNALS")
+  endif()
+endif(CMAKE_USE_PTHREADS_INIT)
 
 if (CMAKE_USE_WIN32_THREADS_INIT)
   add_definitions("-DGC_THREADS")
-  if (ENABLE_PARALLEL_MARK)
+  if (enable_parallel_mark)
     add_definitions("-DPARALLEL_MARK")
-    if (ENABLE_THREAD_LOCAL_ALLOC)
+    if (enable_thread_local_alloc)
       add_definitions("-DTHREAD_LOCAL_ALLOC")
       set(SRC ${SRC} thread_local_alloc.c)
     endif()
@@ -149,7 +154,7 @@ endif()
 
 if (enable_gcj_support)
   add_definitions("-DGC_GCJ_SUPPORT")
-  if (ENABLE_THREADS)
+  if (enable_threads)
     add_definitions("-DGC_ENABLE_SUSPEND_THREAD")
   endif()
   set(SRC ${SRC} gcj_mlc.c)
@@ -194,7 +199,7 @@ endif()
 
 if (enable_munmap)
   add_definitions("-DUSE_MMAP -DUSE_MUNMAP")
-elseif (ENABLE_MMAP)
+elseif (enable_mmap)
   add_definitions("-DUSE_MMAP")
 endif()
 
@@ -258,26 +263,8 @@ if (install_headers)
     install(FILES ${BDWGC_EXTRA_HEADERS} DESTINATION include)
 endif()
 
-# Install tools
-if (WIN32 AND install_cord)
-    add_executable(cord 
-                   cord/cordbscs.c 
-                   cord/cordxtra.c
-                   cord/tests/de.c
-                   cord/tests/de_win.c)
-    set_target_properties(cord PROPERTIES WIN32_EXECUTABLE TRUE)
-    target_compile_definitions(cord PRIVATE GC_NOT_DLL)
-
-    target_link_libraries(cord PRIVATE gc gdi32)
-    target_include_directories(cord
-        PRIVATE      
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    )
-
-    install(
-        TARGETS cord 
-        DESTINATION tools/cord 
-    )
+if (install_cord)
+  add_subdirectory(cord)
 endif()
 
 if (install_tests)
