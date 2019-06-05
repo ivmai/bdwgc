@@ -17,10 +17,10 @@
 add_definitions("-DGC_NOT_DLL")
 
 # Compile some tests as C++ to test extern "C" in header files.
-set_source_files_properties(
-    leak_test.c
-    test.c
-    PROPERTIES LANGUAGE CXX)
+if (enable_cplusplus)
+  set_source_files_properties(leak_test.c test.c
+                              PROPERTIES LANGUAGE CXX)
+endif()
 
 add_executable(gctest WIN32 test.c)
 target_link_libraries(gctest gc-lib)
@@ -45,3 +45,9 @@ add_test(NAME realloc_test COMMAND realloc_test)
 add_executable(smashtest smash_test.c)
 target_link_libraries(smashtest gc-lib)
 add_test(NAME smashtest COMMAND smashtest)
+
+if (enable_cplusplus)
+  # TODO add_executable(test_cpp test_cpp.cc)
+  # target_link_libraries(test_cpp gc-lib)
+  # add_test(NAME test_cpp COMMAND test_cpp)
+endif()

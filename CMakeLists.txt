@@ -31,7 +31,7 @@ option(enable_threads "TODO" OFF) #TODO Support it
 option(enable_parallel_mark "Parallelize marking and free list construction" ON)
 option(enable_thread_local_alloc "Turn on thread-local allocation optimization" ON)
 option(enable_threads_discovery "Enable threads discovery in GC" ON)
-#TODO Support OPTION(enable_cplusplus "install C++ support" OFF)
+option(enable_cplusplus "C++ support" OFF)
 option(enable_gcj_support "Support for gcj" ON)
 option(enable_sigrt_signals "Use SIGRTMIN-based signals for thread suspend/resume" OFF)
 option(enable_gc_debug "Support for pointer back-tracing" OFF)
@@ -87,7 +87,9 @@ endif()
 #       MESSAGE("Parallel mark requires enable_threads ON" )
 #ENDIF(Threads_FOUND)
 
-set(SRC ${SRC} gc_cpp.cc)
+if (enable_cplusplus)
+  set(SRC ${SRC} gc_cpp.cc)
+endif()
 
 set(_HOST ${CMAKE_HOST_SYSTEM_PROCESSOR}--${CMAKE_SYSTEM})
                                 #FIXME missing the vendor field.
