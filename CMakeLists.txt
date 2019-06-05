@@ -48,7 +48,6 @@ option(enable_register_main_static_data "Perform the initial guess of data root 
 option(enable_checksums "Report erroneously cleared dirty bits" OFF)
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 
-add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 add_definitions("-DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
 
 if (APPLE)
@@ -56,7 +55,9 @@ if (APPLE)
     set(CMAKE_OSX_ARCHITECTURES "ppc;i386;x86_64"
         CACHE STRING "Build architectures for Mac OS X" FORCE)
   endif()
-endif(APPLE)
+elseif (WIN32)
+  add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
+endif()
 
 #LIBATOMIC #TODO
 #ADD_LIBRARY(atomic_ops STATIC )
