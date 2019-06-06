@@ -56,7 +56,7 @@ add_definitions("-DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
 
 if (APPLE)
   if ("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "")
-    set(CMAKE_OSX_ARCHITECTURES "ppc;i386;x86_64"
+    set(CMAKE_OSX_ARCHITECTURES "x86_64;i386"
         CACHE STRING "Build architectures for Mac OS X" FORCE)
   endif()
 elseif (MSVC)
