@@ -27,6 +27,9 @@ include(CTest)
 
 cmake_minimum_required(VERSION 3.1)
 
+# Customize the build by passing "-D<option_name>=ON|OFF" in the command line.
+option(build_cord "Build cord library" ON)
+option(build_tests "Build tests" OFF)
 option(enable_threads "TODO" OFF) #TODO Support it
 option(enable_parallel_mark "Parallelize marking and free list construction" ON)
 option(enable_thread_local_alloc "Turn on thread-local allocation optimization" ON)
@@ -253,6 +256,10 @@ set_target_properties(gcmt-lib PROPERTIES
 
 add_library(gcmt-dll SHARED ${SRC})
 
-add_subdirectory(cord)
+if (build_cord)
+  add_subdirectory(cord)
+endif()
 
-add_subdirectory(tests)
+if (build_tests)
+  add_subdirectory(tests)
+endif()
