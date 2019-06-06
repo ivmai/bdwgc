@@ -11,11 +11,21 @@
 # modified is included with the above copyright notice.
 ##
 
-add_executable(cord cordbscs.c cordxtra.c tests/de.c tests/de_win.c)
-set_target_properties(cord PROPERTIES COMPILE_DEFINITIONS GC_NOT_DLL)
-target_link_libraries(cord PRIVATE gc)
+# TODO add_library(cord ...)
 
-if (WIN32)
-  set_target_properties(cord PROPERTIES WIN32_EXECUTABLE TRUE)
-  target_link_libraries(cord PRIVATE gdi32)
+if (build_tests)
+  add_executable(cordtest cordbscs.c cordprnt.c cordxtra.c
+                 tests/cordtest.c)
+  target_compile_definitions(cordtest PRIVATE GC_NOT_DLL)
+  target_link_libraries(cordtest PRIVATE gc)
+  add_test(NAME cordtest COMMAND cordtest)
+
+  if (WIN32)
+    add_executable(de cordbscs.c cordxtra.c
+                   tests/de.c tests/de_win.c)
+    set_target_properties(de PROPERTIES WIN32_EXECUTABLE TRUE)
+    target_compile_definitions(de PRIVATE GC_NOT_DLL)
+    target_link_libraries(de PRIVATE gc)
+    target_link_libraries(de PRIVATE gdi32)
+  endif(WIN32)
 endif()

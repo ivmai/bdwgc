@@ -4,7 +4,7 @@ environment:
   matrix:
   - TARGET: cmake
     CMAKE_CONFIG: Debug
-    CMAKE_OPTIONS: -Denable_gc_assertions=ON
+    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON
   - TARGET: cygwin
     CONF_OPTIONS: --enable-cplusplus
     CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
@@ -54,7 +54,7 @@ build_script:
       "cd /c/projects/bdwgc && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 
 test_script:
-- cmd: if [%TARGET%]==[cmake] ( ctest -V )
+- cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
 - cmd: if [%TARGET%]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
