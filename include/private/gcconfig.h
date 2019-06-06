@@ -976,7 +976,7 @@ EXTERN_C_BEGIN
 #   endif
 # endif
 
-# if defined(POWERPC)
+# ifdef POWERPC
 #   define MACH_TYPE "POWERPC"
 #   ifdef MACOS
 #     define ALIGNMENT 2  /* Still necessary?  Could it be 4?   */
@@ -1091,9 +1091,7 @@ EXTERN_C_BEGIN
 #       define SIG_SUSPEND SIGUSR1
 #       define SIG_THR_RESTART SIGUSR2
 #       define FREEBSD_STACKBOTTOM
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
+#       define DYNAMIC_LOADING
         extern char etext[];
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #       define DATASTART_USES_BSDGETDATASTART
@@ -1315,9 +1313,7 @@ EXTERN_C_BEGIN
 #       define SIG_SUSPEND SIGUSR1
 #       define SIG_THR_RESTART SIGUSR2
 #       define FREEBSD_STACKBOTTOM
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
+#       define DYNAMIC_LOADING
         extern char etext[];
         extern char edata[];
 #       if !defined(CPPCHECK)
@@ -1834,7 +1830,7 @@ EXTERN_C_BEGIN
 #       define ALIGNMENT 4
 #       define DATAEND /* not needed */
 #   endif
-#   if defined(NETBSD)
+#   ifdef NETBSD
 #     define OS_TYPE "NETBSD"
 #     define ALIGNMENT 4
 #     define HEURISTIC2
@@ -1878,9 +1874,7 @@ EXTERN_C_BEGIN
 #    define SIG_SUSPEND SIGUSR1
 #    define SIG_THR_RESTART SIGUSR2
 #    define FREEBSD_STACKBOTTOM
-#    ifdef __ELF__
-#      define DYNAMIC_LOADING
-#    endif
+#    define DYNAMIC_LOADING
      extern char etext[];
 #    define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #    define DATASTART_USES_BSDGETDATASTART
@@ -2048,9 +2042,7 @@ EXTERN_C_BEGIN
 #       define SIG_THR_RESTART SIGUSR2
                 /* SIGTSTP and SIGCONT could be used alternatively.     */
 #       define FREEBSD_STACKBOTTOM
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
+#       define DYNAMIC_LOADING
 /* Handle unmapped hole alpha*-*-freebsd[45]* puts between etext and edata. */
         extern char etext[];
         extern char edata[];
@@ -2318,9 +2310,7 @@ EXTERN_C_BEGIN
 #       define MPROTECT_VDB
 #     endif
 #     define FREEBSD_STACKBOTTOM
-#     ifdef __ELF__
-#       define DYNAMIC_LOADING
-#     endif
+#     define DYNAMIC_LOADING
       extern char etext[];
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #     define DATASTART_USES_BSDGETDATASTART
@@ -2396,17 +2386,16 @@ EXTERN_C_BEGIN
 #       if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       endif
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-            EXTERN_C_END
-#           include <features.h>
-            EXTERN_C_BEGIN
-#           if defined(__GLIBC__) && __GLIBC__ >= 2 \
+#       define DYNAMIC_LOADING
+        EXTERN_C_END
+#       include <features.h>
+        EXTERN_C_BEGIN
+#       if defined(__GLIBC__) && __GLIBC__ >= 2 \
                 || defined(HOST_ANDROID) || defined(HOST_TIZEN)
-#                define SEARCH_FOR_DATA_START
-#           else
-                 extern char **__environ;
-#                define DATASTART ((ptr_t)(&__environ))
+#           define SEARCH_FOR_DATA_START
+#       else
+            extern char **__environ;
+#           define DATASTART ((ptr_t)(&__environ))
                               /* hideous kludge: __environ is the first */
                               /* word in crt0.o, and delimits the start */
                               /* of the data segment, no matter which   */
@@ -2415,13 +2404,9 @@ EXTERN_C_BEGIN
                               /* would include .rodata, which may       */
                               /* contain large read-only data tables    */
                               /* that we'd rather not scan.             */
-#           endif
-            extern int _end[];
-#           define DATAEND ((ptr_t)(_end))
-#       else
-            extern int etext[];
-#           define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       endif
+        extern int _end[];
+#       define DATAEND ((ptr_t)(_end))
 #   endif
 #   ifdef MSWINCE
 #     define OS_TYPE "MSWINCE"
@@ -2436,9 +2421,7 @@ EXTERN_C_BEGIN
 #     define SIG_SUSPEND SIGUSR1
 #     define SIG_THR_RESTART SIGUSR2
 #     define FREEBSD_STACKBOTTOM
-#     ifdef __ELF__
-#       define DYNAMIC_LOADING
-#     endif
+#     define DYNAMIC_LOADING
       extern char etext[];
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #     define DATASTART_USES_BSDGETDATASTART
@@ -2653,18 +2636,13 @@ EXTERN_C_BEGIN
             /* possibly because Linux threads is itself a malloc client */
             /* and can't deal with the signals.                         */
 #       endif
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-            EXTERN_C_END
-#           include <features.h>
-            EXTERN_C_BEGIN
-#           define SEARCH_FOR_DATA_START
-            extern int _end[];
-#           define DATAEND ((ptr_t)(_end))
-#       else
-             extern int etext[];
-#            define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
-#       endif
+#       define DYNAMIC_LOADING
+        EXTERN_C_END
+#       include <features.h>
+        EXTERN_C_BEGIN
+#       define SEARCH_FOR_DATA_START
+        extern int _end[];
+#       define DATAEND ((ptr_t)(_end))
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* A workaround for GCF (Google Cloud Function) which does    */
           /* not support mmap() for "/dev/zero".  Should not cause any  */
@@ -2721,9 +2699,7 @@ EXTERN_C_BEGIN
                 /* SIGTSTP and SIGCONT could be used alternatively.     */
 #       endif
 #       define FREEBSD_STACKBOTTOM
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
+#       define DYNAMIC_LOADING
         extern char etext[];
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #       define DATASTART_USES_BSDGETDATASTART
@@ -2731,13 +2707,9 @@ EXTERN_C_BEGIN
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
 #       define HEURISTIC2
-#       ifdef __ELF__
-            extern ptr_t GC_data_start;
-#           define DATASTART GC_data_start
-#           define DYNAMIC_LOADING
-#       else
-#           define SEARCH_FOR_DATA_START
-#       endif
+        extern ptr_t GC_data_start;
+#       define DATASTART GC_data_start
+#       define DYNAMIC_LOADING
 #   endif
 #   ifdef HAIKU
 #     define OS_TYPE "HAIKU"
@@ -2855,26 +2827,20 @@ EXTERN_C_BEGIN
 #   define MACH_TYPE "HEXAGON"
 #   define ALIGNMENT 4
 #   ifdef LINUX
-#       define OS_TYPE "LINUX"
-#       define LINUX_STACKBOTTOM
-#       define MPROTECT_VDB
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-            EXTERN_C_END
-#           include <features.h>
-            EXTERN_C_BEGIN
-#           if defined(__GLIBC__) && __GLIBC__ >= 2
-#               define SEARCH_FOR_DATA_START
-#           else
-#               error Unknown Hexagon libc configuration
-#           endif
-            extern int _end[];
-#           define DATAEND ((ptr_t)(_end))
-#       elif !defined(CPPCHECK)
-#           error Bad Hexagon Linux configuration
-#       endif
-#   else
-#       error Unknown Hexagon OS configuration
+#     define OS_TYPE "LINUX"
+#     define LINUX_STACKBOTTOM
+#     define MPROTECT_VDB
+#     define DYNAMIC_LOADING
+      EXTERN_C_END
+#     include <features.h>
+      EXTERN_C_BEGIN
+#     if defined(__GLIBC__)
+#       define SEARCH_FOR_DATA_START
+#     elif !defined(CPPCHECK)
+#       error Unknown Hexagon libc configuration
+#     endif
+      extern int _end[];
+#     define DATAEND ((ptr_t)(_end))
 #   endif
 # endif
 
