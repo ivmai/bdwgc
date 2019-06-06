@@ -1799,8 +1799,8 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
         /* Required at least if GC is in a DLL.  And doesn't hurt. */
 #elif defined(_AIX)
   extern int _data[], _end[];
-# define GC_DATASTART ((void *)((ulong)_data))
-# define GC_DATAEND ((void *)((ulong)_end))
+# define GC_DATASTART ((void *)_data)
+# define GC_DATAEND ((void *)_end)
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND)
 #elif (defined(PLATFORM_ANDROID) || defined(__ANDROID__)) \
       && defined(IGNORE_DYNAMIC_LOADING)
