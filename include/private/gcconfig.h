@@ -909,14 +909,9 @@ EXTERN_C_BEGIN
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
 #       define HEURISTIC2
-#       ifdef __ELF__
-          extern ptr_t GC_data_start;
-#         define DATASTART GC_data_start
-#         define DYNAMIC_LOADING
-#       else
-          extern char etext[];
-#         define DATASTART ((ptr_t)(etext))
-#       endif
+        extern ptr_t GC_data_start;
+#       define DATASTART GC_data_start
+#       define DYNAMIC_LOADING
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
@@ -1301,14 +1296,9 @@ EXTERN_C_BEGIN
 #   ifdef NETBSD
 #     define OS_TYPE "NETBSD"
 #     define HEURISTIC2
-#     ifdef __ELF__
-        extern ptr_t GC_data_start;
-#       define DATASTART GC_data_start
-#       define DYNAMIC_LOADING
-#     else
-        extern char etext[];
-#       define DATASTART ((ptr_t)(etext))
-#     endif
+      extern ptr_t GC_data_start;
+#     define DATASTART GC_data_start
+#     define DYNAMIC_LOADING
 #   endif
 #   ifdef FREEBSD
 #       define OS_TYPE "FREEBSD"
@@ -1645,9 +1635,7 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
+#       define DYNAMIC_LOADING
 #   endif
 #   ifdef THREE86BSD
 #       define OS_TYPE "THREE86BSD"
@@ -1838,15 +1826,10 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "NETBSD"
 #     define ALIGNMENT 4
 #     define HEURISTIC2
-#     ifdef __ELF__
-        extern ptr_t GC_data_start;
-#       define DATASTART GC_data_start
-#       define NEED_FIND_LIMIT
-#       define DYNAMIC_LOADING
-#     else
-#       define DATASTART ((ptr_t)0x10000000)
-#       define STACKBOTTOM ((ptr_t)0x7ffff000)
-#     endif /* _ELF_ */
+      extern ptr_t GC_data_start;
+#     define DATASTART GC_data_start
+#     define NEED_FIND_LIMIT
+#     define DYNAMIC_LOADING
 #  endif
 #  ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
@@ -2381,14 +2364,9 @@ EXTERN_C_BEGIN
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
 #       define HEURISTIC2
-#       ifdef __ELF__
-           extern ptr_t GC_data_start;
-#          define DATASTART GC_data_start
-#          define DYNAMIC_LOADING
-#       else
-           extern char etext[];
-#          define DATASTART ((ptr_t)(etext))
-#       endif
+        extern ptr_t GC_data_start;
+#       define DATASTART GC_data_start
+#       define DYNAMIC_LOADING
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
@@ -2731,13 +2709,9 @@ EXTERN_C_BEGIN
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
 #       define HEURISTIC2
-#       ifdef __ELF__
-            extern ptr_t GC_data_start;
-#           define DATASTART GC_data_start
-#           define DYNAMIC_LOADING
-#       else
-#           define SEARCH_FOR_DATA_START
-#       endif
+        extern ptr_t GC_data_start;
+#       define DATASTART GC_data_start
+#       define DYNAMIC_LOADING
 #   endif
 #   ifdef HAIKU
 #     define OS_TYPE "HAIKU"
