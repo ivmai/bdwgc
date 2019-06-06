@@ -4,7 +4,7 @@ environment:
   matrix:
   - TARGET: cmake
     CMAKE_CONFIG: Debug
-    CMAKE_OPTIONS: -Denable_gc_assertions=ON
+    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON
   - TARGET: cygwin
     CONF_OPTIONS: --enable-cplusplus
     CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
