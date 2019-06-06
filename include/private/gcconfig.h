@@ -1081,9 +1081,7 @@ EXTERN_C_BEGIN
 #       define SIG_SUSPEND SIGUSR1
 #       define SIG_THR_RESTART SIGUSR2
 #       define FREEBSD_STACKBOTTOM
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
+#       define DYNAMIC_LOADING
         extern char etext[];
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #       define DATASTART_USES_BSDGETDATASTART
@@ -1296,9 +1294,7 @@ EXTERN_C_BEGIN
 #       define SIG_SUSPEND SIGUSR1
 #       define SIG_THR_RESTART SIGUSR2
 #       define FREEBSD_STACKBOTTOM
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
+#       define DYNAMIC_LOADING
         extern char etext[];
         extern char edata[];
 #       if !defined(CPPCHECK)
@@ -1612,9 +1608,7 @@ EXTERN_C_BEGIN
                 /* SIGTSTP and SIGCONT could be used alternatively.     */
 #       endif
 #       define FREEBSD_STACKBOTTOM
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
+#       define DYNAMIC_LOADING
         extern char etext[];
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #       define DATASTART_USES_BSDGETDATASTART
@@ -1847,9 +1841,7 @@ EXTERN_C_BEGIN
 #    define SIG_SUSPEND SIGUSR1
 #    define SIG_THR_RESTART SIGUSR2
 #    define FREEBSD_STACKBOTTOM
-#    ifdef __ELF__
-#      define DYNAMIC_LOADING
-#    endif
+#    define DYNAMIC_LOADING
      extern char etext[];
 #    define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #    define DATASTART_USES_BSDGETDATASTART
@@ -2017,9 +2009,7 @@ EXTERN_C_BEGIN
 #       define SIG_THR_RESTART SIGUSR2
                 /* SIGTSTP and SIGCONT could be used alternatively.     */
 #       define FREEBSD_STACKBOTTOM
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
+#       define DYNAMIC_LOADING
 /* Handle unmapped hole alpha*-*-freebsd[45]* puts between etext and edata. */
         extern char etext[];
         extern char edata[];
@@ -2283,9 +2273,7 @@ EXTERN_C_BEGIN
 #       define MPROTECT_VDB
 #     endif
 #     define FREEBSD_STACKBOTTOM
-#     ifdef __ELF__
-#       define DYNAMIC_LOADING
-#     endif
+#     define DYNAMIC_LOADING
       extern char etext[];
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #     define DATASTART_USES_BSDGETDATASTART
@@ -2391,9 +2379,7 @@ EXTERN_C_BEGIN
 #     define SIG_SUSPEND SIGUSR1
 #     define SIG_THR_RESTART SIGUSR2
 #     define FREEBSD_STACKBOTTOM
-#     ifdef __ELF__
-#       define DYNAMIC_LOADING
-#     endif
+#     define DYNAMIC_LOADING
       extern char etext[];
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #     define DATASTART_USES_BSDGETDATASTART
@@ -2671,9 +2657,7 @@ EXTERN_C_BEGIN
                 /* SIGTSTP and SIGCONT could be used alternatively.     */
 #       endif
 #       define FREEBSD_STACKBOTTOM
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
+#       define DYNAMIC_LOADING
         extern char etext[];
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #       define DATASTART_USES_BSDGETDATASTART
