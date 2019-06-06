@@ -917,7 +917,6 @@ EXTERN_C_BEGIN
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
 #       define MPROTECT_VDB
-#       ifdef __ELF__
 #         define DYNAMIC_LOADING
           EXTERN_C_END
 #         include <features.h>
@@ -938,10 +937,6 @@ EXTERN_C_BEGIN
 #         endif /* !GLIBC2 */
           extern int _end[];
 #         define DATAEND ((ptr_t)(_end))
-#       else
-          extern int etext[];
-#         define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
-#       endif
 #   endif
 #   ifdef AMIGA
 #       define OS_TYPE "AMIGA"
@@ -1256,11 +1251,7 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
-#     ifdef __ELF__
-#       define DYNAMIC_LOADING
-#     elif !defined(CPPCHECK)
-#       error Linux SPARC a.out not supported
-#     endif
+#     define DYNAMIC_LOADING
       extern int _end[];
       extern int _etext[];
 #     define DATAEND ((ptr_t)(_end))
@@ -1468,7 +1459,6 @@ EXTERN_C_BEGIN
 #       define HEAP_START (ptr_t)0x1000
                 /* This encourages mmap to give us low addresses,       */
                 /* thus allowing the heap to grow to ~3 GB.             */
-#       ifdef __ELF__
 #           define DYNAMIC_LOADING
             EXTERN_C_END
 #           include <features.h>
@@ -1500,10 +1490,6 @@ EXTERN_C_BEGIN
                /* if gcc4.8+, clang3.2+ or Android API level 18+).      */
 #              define GC_NO_SIGSETJMP 1
 #            endif
-#       else
-             extern int etext[];
-#            define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
-#       endif
 #       ifdef USE_I686_PREFETCH
 #         define PREFETCH(x) \
             __asm__ __volatile__ ("prefetchnta %0" : : "m"(*(char *)(x)))
@@ -2075,12 +2061,8 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
-#       ifdef __ELF__
-#         define SEARCH_FOR_DATA_START
-#         define DYNAMIC_LOADING
-#       else
-#           define DATASTART ((ptr_t)0x140000000)
-#       endif
+#       define SEARCH_FOR_DATA_START
+#       define DYNAMIC_LOADING
         extern int _end[];
 #       define DATAEND ((ptr_t)(_end))
 #       define MPROTECT_VDB
@@ -2374,7 +2356,6 @@ EXTERN_C_BEGIN
 #       if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       endif
-#       ifdef __ELF__
 #           define DYNAMIC_LOADING
             EXTERN_C_END
 #           include <features.h>
@@ -2396,10 +2377,6 @@ EXTERN_C_BEGIN
 #           endif
             extern int _end[];
 #           define DATAEND ((ptr_t)(_end))
-#       else
-            extern int etext[];
-#           define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
-#       endif
 #   endif
 #   ifdef MSWINCE
 #     define OS_TYPE "MSWINCE"
@@ -2631,7 +2608,6 @@ EXTERN_C_BEGIN
             /* possibly because Linux threads is itself a malloc client */
             /* and can't deal with the signals.                         */
 #       endif
-#       ifdef __ELF__
 #           define DYNAMIC_LOADING
             EXTERN_C_END
 #           include <features.h>
@@ -2639,10 +2615,6 @@ EXTERN_C_BEGIN
 #           define SEARCH_FOR_DATA_START
             extern int _end[];
 #           define DATAEND ((ptr_t)(_end))
-#       else
-             extern int etext[];
-#            define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
-#       endif
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* A workaround for GCF (Google Cloud Function) which does    */
           /* not support mmap() for "/dev/zero".  Should not cause any  */
@@ -2832,7 +2804,6 @@ EXTERN_C_BEGIN
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
 #       define MPROTECT_VDB
-#       ifdef __ELF__
 #           define DYNAMIC_LOADING
             EXTERN_C_END
 #           include <features.h>
@@ -2844,9 +2815,6 @@ EXTERN_C_BEGIN
 #           endif
             extern int _end[];
 #           define DATAEND ((ptr_t)(_end))
-#       elif !defined(CPPCHECK)
-#           error Bad Hexagon Linux configuration
-#       endif
 #   else
 #       error Unknown Hexagon OS configuration
 #   endif
