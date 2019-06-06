@@ -54,7 +54,7 @@ build_script:
       "cd /c/projects/bdwgc && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 
 test_script:
-- cmd: if [%TARGET%]==[cmake] ( ctest -V )
+- cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
 - cmd: if [%TARGET%]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
