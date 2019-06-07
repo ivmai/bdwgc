@@ -59,7 +59,7 @@ if (APPLE)
     set(CMAKE_OSX_ARCHITECTURES "ppc;i386;x86_64"
         CACHE STRING "Build architectures for Mac OS X" FORCE)
   endif()
-elseif (WIN32)
+elseif (MSVC)
   add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 endif()
 
