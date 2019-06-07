@@ -49,6 +49,7 @@ option(enable_munmap "Return page to the OS if empty for N collections" ON)
 option(enable_dynamic_loading "Enable tracing of dynamic library data roots" ON)
 option(enable_register_main_static_data "Perform the initial guess of data root sets" ON)
 option(enable_checksums "Report erroneously cleared dirty bits" OFF)
+option(enable_single_obj_compilation "Compile all libgc source files into single .o" OFF)
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 option(install_headers "Install header files" ON)
 
@@ -245,6 +246,14 @@ if (enable_checksums)
   add_definitions("-DCHECKSUMS")
   set(SRC ${SRC} checksums.c)
 endif(enable_checksums)
+
+if (enable_single_obj_compilation)
+  set(SRC extra/gc.c) # override SRC
+  if (CMAKE_USE_PTHREADS_INIT)
+    add_definitions("-DGC_PTHREAD_START_STANDALONE")
+    set(SRC ${SRC} pthread_start.c)
+  endif(CMAKE_USE_PTHREADS_INIT)
+endif()
 
 add_library(gc-lib STATIC ${SRC})
 set_target_properties(gc-lib PROPERTIES
