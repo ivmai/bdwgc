@@ -50,7 +50,9 @@ option(enable_munmap "Return page to the OS if empty for N collections" ON)
 option(enable_dynamic_loading "Enable tracing of dynamic library data roots" ON)
 option(enable_register_main_static_data "Perform the initial guess of data root sets" ON)
 option(enable_checksums "Report erroneously cleared dirty bits" OFF)
+option(enable_single_obj_compilation "Compile all libgc source files into single .o" OFF)
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
+option(install_headers "Install header files" ON)
 
 add_definitions("-DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
 
@@ -229,6 +231,14 @@ if (enable_checksums)
   endif()
   add_definitions("-DCHECKSUMS")
   set(SRC ${SRC} checksums.c)
+endif(enable_checksums)
+
+if (enable_single_obj_compilation)
+  set(SRC extra/gc.c) # override SRC
+  if (CMAKE_USE_PTHREADS_INIT)
+    add_definitions("-DGC_PTHREAD_START_STANDALONE")
+    set(SRC ${SRC} pthread_start.c)
+  endif(CMAKE_USE_PTHREADS_INIT)
 endif()
 
 # Create target
@@ -247,7 +257,7 @@ endif()
 # Install library
 install(
     TARGETS gc
-    EXPORT gcExports
+    EXPORT gcTargets
     LIBRARY DESTINATION lib 
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin 
@@ -256,11 +266,32 @@ install(
 
 # Install headers
 if (install_headers)
-    file(GLOB BDWGC_HEADERS "include/*.h")
-    install(FILES ${BDWGC_HEADERS} DESTINATION include/gc)
+  install(FILES include/gc.h
+                include/gc_backptr.h
+                include/gc_config_macros.h
+                include/gc_gcj.h
+                include/gc_inline.h
+                include/gc_mark.h
+                include/gc_pthread_redirects.h
+                include/gc_tiny_fl.h
+                include/gc_typed.h
+                include/gc_version.h
+                include/javaxfc.h
+                include/leak_detector.h
+          DESTINATION include/gc)
+  install(FILES include/extra/gc.h DESTINATION include)
 
-    file(GLOB BDWGC_EXTRA_HEADERS "include/extra/*.h")
-    install(FILES ${BDWGC_EXTRA_HEADERS} DESTINATION include)
+  if (enable_cplusplus)
+    install(FILES include/gc_allocator.h
+                  include/gc_cpp.h
+            DESTINATION include/gc)
+    install(FILES include/extra/gc_cpp.h DESTINATION include)
+  endif(enable_cplusplus)
+  
+  if (enable_disclaim)
+    install(FILES include/gc_disclaim.h DESTINATION include/gc)
+  endif(enable_disclaim)
+  # TODO if build_cord then install cord.h, cord_pos.h, ec.h
 endif()
 
 if (build_cord)
