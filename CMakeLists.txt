@@ -50,6 +50,7 @@ option(enable_dynamic_loading "Enable tracing of dynamic library data roots" ON)
 option(enable_register_main_static_data "Perform the initial guess of data root sets" ON)
 option(enable_checksums "Report erroneously cleared dirty bits" OFF)
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
+option(install_headers "Install header files" ON)
 
 add_definitions("-DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
 
@@ -258,6 +259,33 @@ add_library(gcmt-dll SHARED ${SRC})
 
 if (build_cord)
   add_subdirectory(cord)
+endif()
+
+if (install_headers)
+  install(FILES include/gc.h
+                include/gc_backptr.h
+                include/gc_config_macros.h
+                include/gc_gcj.h
+                include/gc_inline.h
+                include/gc_mark.h
+                include/gc_pthread_redirects.h
+                include/gc_tiny_fl.h
+                include/gc_typed.h
+                include/gc_version.h
+                include/javaxfc.h
+                include/leak_detector.h
+          DESTINATION include/gc)
+  install(FILES include/extra/gc.h DESTINATION include)
+  if (enable_cplusplus)
+    install(FILES include/gc_allocator.h
+                  include/gc_cpp.h
+            DESTINATION include/gc)
+    install(FILES include/extra/gc_cpp.h DESTINATION include)
+  endif(enable_cplusplus)
+  if (enable_disclaim)
+    install(FILES include/gc_disclaim.h DESTINATION include/gc)
+  endif(enable_disclaim)
+  # TODO if build_cord then install cord.h, cord_pos.h, ec.h
 endif()
 
 if (build_tests)
