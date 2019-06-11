@@ -58,10 +58,10 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
     && !defined(CYGWIN32) && !defined(MSWIN32) && !defined(MSWINCE) \
     && !(defined(ALPHA) && defined(OSF1)) \
     && !(defined(FREEBSD) && defined(__ELF__)) \
-    && !((defined(LINUX) || defined(NACL)) && defined(__ELF__)) \
+    && !(defined(LINUX) && defined(__ELF__)) \
     && !(defined(NETBSD) && defined(__ELF__)) \
-    && !defined(HAIKU) && !defined(HURD) \
     && !(defined(OPENBSD) && (defined(__ELF__) || defined(M68K))) \
+    && !defined(HAIKU) && !defined(HURD) && !defined(NACL) \
     && !defined(CPPCHECK)
 # error We only know how to find data segments of dynamic libraries for above.
 # error Additional SVR4 variants might not be too hard to add.
@@ -88,10 +88,9 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 # endif
 #endif /* OPENBSD */
 
-#if defined(SCO_ELF) || defined(DGUX) || defined(HURD) \
+#if defined(SCO_ELF) || defined(DGUX) || defined(HURD) || defined(NACL) \
     || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
-                             || defined(NACL) || defined(NETBSD) \
-                             || defined(OPENBSD)))
+                             || defined(NETBSD) || defined(OPENBSD)))
 # include <stddef.h>
 # if !defined(OPENBSD) && !defined(HOST_ANDROID)
     /* OpenBSD does not have elf.h file; link.h below is sufficient.    */
@@ -259,10 +258,9 @@ GC_INNER void GC_register_dynamic_libraries(void)
 # endif /* !USE_PROC ... */
 # endif /* SOLARISDL */
 
-#if defined(SCO_ELF) || defined(DGUX) || defined(HURD) \
+#if defined(SCO_ELF) || defined(DGUX) || defined(HURD) || defined(NACL) \
     || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
-                             || defined(NACL) || defined(NETBSD) \
-                             || defined(OPENBSD)))
+                             || defined(NETBSD) || defined(OPENBSD)))
 
 #ifdef USE_PROC_FOR_LIBRARIES
 
