@@ -129,6 +129,7 @@ stamp-h1
 /gc.sln
 /libgc*-dll.so
 /libgc*-lib.a
+/libgc.a
 /tests/*.vcxproj
 /tests/*.vcxproj.filters
 /tests/*test
