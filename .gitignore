@@ -130,6 +130,7 @@ stamp-h1
 /libgc*-dll.so
 /libgc*-lib.a
 /libgc.a
+/libgc.dll.a
 /tests/*.vcxproj
 /tests/*.vcxproj.filters
 /tests/*test
