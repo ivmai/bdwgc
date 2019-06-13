@@ -93,10 +93,6 @@ endif()
 #       MESSAGE("Parallel mark requires enable_threads ON" )
 #ENDIF(Threads_FOUND)
 
-if (enable_cplusplus)
-  set(SRC ${SRC} gc_cpp.cc)
-endif()
-
 set(_HOST ${CMAKE_HOST_SYSTEM_PROCESSOR}--${CMAKE_SYSTEM})
                                 #FIXME missing the vendor field.
 string(TOLOWER ${_HOST} HOST)
@@ -253,6 +249,10 @@ if (enable_single_obj_compilation)
     add_definitions("-DGC_PTHREAD_START_STANDALONE")
     set(SRC ${SRC} pthread_start.c)
   endif(CMAKE_USE_PTHREADS_INIT)
+endif()
+
+if (enable_cplusplus)
+  set(SRC ${SRC} gc_cpp.cc)
 endif()
 
 add_library(gc-lib STATIC ${SRC})
