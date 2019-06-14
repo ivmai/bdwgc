@@ -243,10 +243,6 @@ SET_TARGET_PROPERTIES(gc-lib   PROPERTIES
                       COMPILE_DEFINITIONS GC_NOT_DLL)
 #TODO TARGET_LINK_LIBRARIES(...  ...  ${LIBS})
 
-ADD_LIBRARY(          gcmt-lib STATIC      ${SRC})
-SET_TARGET_PROPERTIES(gcmt-lib PROPERTIES
-                      COMPILE_DEFINITIONS GC_NOT_DLL)
-
 ADD_LIBRARY(          gcmt-dll  SHARED     ${SRC})
 
 IF(WIN32)
