@@ -264,8 +264,6 @@ set_target_properties(gc-lib PROPERTIES
                       COMPILE_DEFINITIONS GC_NOT_DLL)
 #TODO TARGET_LINK_LIBRARIES(...  ...  ${LIBS})
 
-add_library(gcmt-dll SHARED ${SRC})
-
 if (build_cord)
   add_subdirectory(cord)
 endif()
