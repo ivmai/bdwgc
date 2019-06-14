@@ -21,7 +21,12 @@
 #  this will generate gc.sln
 #
 
-project(gc)
+option(enable_cplusplus "C++ support" OFF)
+if (enable_cplusplus)
+  project(gc)
+else()
+  project(gc C)
+endif()
 
 include(CTest)
 
@@ -34,7 +39,6 @@ option(enable_threads "TODO" OFF) #TODO Support it
 option(enable_parallel_mark "Parallelize marking and free list construction" ON)
 option(enable_thread_local_alloc "Turn on thread-local allocation optimization" ON)
 option(enable_threads_discovery "Enable threads discovery in GC" ON)
-option(enable_cplusplus "C++ support" OFF)
 option(enable_gcj_support "Support for gcj" ON)
 option(enable_sigrt_signals "Use SIGRTMIN-based signals for thread suspend/resume" OFF)
 option(enable_gc_debug "Support for pointer back-tracing" OFF)
