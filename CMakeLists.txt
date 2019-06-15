@@ -259,8 +259,8 @@ if (enable_cplusplus)
   set(SRC ${SRC} gc_cpp.cc)
 endif()
 
-add_library(gc-lib STATIC ${SRC})
-set_target_properties(gc-lib PROPERTIES
+add_library(gc STATIC ${SRC})
+set_target_properties(gc PROPERTIES
                       COMPILE_DEFINITIONS GC_NOT_DLL)
 #TODO TARGET_LINK_LIBRARIES(...  ...  ${LIBS})
 
