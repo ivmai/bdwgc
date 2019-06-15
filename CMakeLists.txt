@@ -264,9 +264,7 @@ set_target_properties(gc PROPERTIES
                       COMPILE_DEFINITIONS GC_NOT_DLL)
 #TODO TARGET_LINK_LIBRARIES(...  ...  ${LIBS})
 
-if (build_cord)
-  add_subdirectory(cord)
-endif()
+# TODO if build_cord then add_library(cord ...)
 
 if (install_headers)
   install(FILES include/gc.h
@@ -296,5 +294,75 @@ if (install_headers)
 endif()
 
 if (build_tests)
-  add_subdirectory(tests)
-endif()
+  add_definitions("-DGC_NOT_DLL")
+
+  if (build_cord)
+    add_executable(cordtest cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c
+                   cord/tests/cordtest.c)
+    target_link_libraries(cordtest PRIVATE gc)
+    add_test(NAME cordtest COMMAND cordtest)
+
+    if (WIN32)
+      add_executable(de cord/cordbscs.c cord/cordxtra.c
+                     cord/tests/de.c cord/tests/de_win.c)
+      set_target_properties(de PROPERTIES WIN32_EXECUTABLE TRUE)
+      target_link_libraries(de PRIVATE gc gdi32)
+    endif()
+  endif(build_cord)
+
+  # Compile some tests as C++ to test extern "C" in header files.
+  if (enable_cplusplus)
+    set_source_files_properties(tests/leak_test.c tests/test.c
+                                PROPERTIES LANGUAGE CXX)
+  endif()
+
+  add_executable(gctest WIN32 tests/test.c)
+  target_link_libraries(gctest PRIVATE gc)
+  add_test(NAME gctest COMMAND gctest)
+
+  add_executable(hugetest tests/huge_test.c)
+  target_link_libraries(hugetest PRIVATE gc)
+  add_test(NAME hugetest COMMAND hugetest)
+
+  add_executable(leaktest tests/leak_test.c)
+  target_link_libraries(leaktest PRIVATE gc)
+  add_test(NAME leaktest COMMAND leaktest)
+
+  add_executable(middletest tests/middle.c)
+  target_link_libraries(middletest PRIVATE gc)
+  add_test(NAME middletest COMMAND middletest)
+
+  add_executable(realloc_test tests/realloc_test.c)
+  target_link_libraries(realloc_test PRIVATE gc)
+  add_test(NAME realloc_test COMMAND realloc_test)
+
+  add_executable(smashtest tests/smash_test.c)
+  target_link_libraries(smashtest PRIVATE gc)
+  add_test(NAME smashtest COMMAND smashtest)
+
+  if (enable_gc_debug)
+    add_executable(tracetest tests/trace_test.c)
+    target_link_libraries(tracetest PRIVATE gc)
+    add_test(NAME tracetest COMMAND tracetest)
+  endif()
+
+  if (enable_cplusplus)
+    # TODO add_executable(test_cpp tests/test_cpp.cc)
+    # target_link_libraries(test_cpp PRIVATE gc)
+    # add_test(NAME test_cpp COMMAND test_cpp)
+  endif()
+
+  if (enable_disclaim)
+    add_executable(disclaim_bench tests/disclaim_bench.c)
+    target_link_libraries(disclaim_bench PRIVATE gc)
+    add_test(NAME disclaim_bench COMMAND disclaim_bench)
+
+    add_executable(disclaim_test tests/disclaim_test.c)
+    target_link_libraries(disclaim_test PRIVATE gc)
+    add_test(NAME disclaim_test COMMAND disclaim_test)
+
+    add_executable(disclaim_weakmap_test tests/disclaim_weakmap_test.c)
+    target_link_libraries(disclaim_weakmap_test PRIVATE gc)
+    add_test(NAME disclaim_weakmap_test COMMAND disclaim_weakmap_test)
+  endif()
+endif(build_tests)

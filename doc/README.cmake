@@ -46,5 +46,5 @@ BUILD PROCESS
 INPUT
 -----
 
-The main input to cmake are the CMakeLists.txt files in each directory.  For
+The main input to cmake is CMakeLists.txt file in the GC root directory.  For
 help, go to cmake.org.
