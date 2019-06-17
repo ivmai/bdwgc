@@ -347,9 +347,9 @@ if (build_tests)
   endif()
 
   if (enable_cplusplus)
-    # TODO add_executable(test_cpp tests/test_cpp.cc)
-    # target_link_libraries(test_cpp PRIVATE gc)
-    # add_test(NAME test_cpp COMMAND test_cpp)
+    add_executable(test_cpp tests/test_cpp.cc)
+    target_link_libraries(test_cpp PRIVATE gc)
+    add_test(NAME test_cpp COMMAND test_cpp)
   endif()
 
   if (enable_disclaim)
