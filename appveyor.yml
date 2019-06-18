@@ -5,6 +5,8 @@ environment:
   - TARGET: cmake
     CMAKE_CONFIG: Debug
     CMAKE_OPTIONS: -Denable_gc_assertions=ON
+  - TARGET: cmake
+    CMAKE_CONFIG: Release
   - TARGET: cygwin
     CONF_OPTIONS: --enable-cplusplus
   - TARGET: cygwin
