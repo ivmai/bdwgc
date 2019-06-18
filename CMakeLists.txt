@@ -33,6 +33,7 @@ include(CTest)
 cmake_minimum_required(VERSION 3.1)
 
 # Customize the build by passing "-D<option_name>=ON|OFF" in the command line.
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(build_cord "Build cord library" ON)
 option(build_tests "Build tests" OFF)
 option(enable_threads "TODO" OFF) #TODO Support it
@@ -67,13 +68,6 @@ if (APPLE)
 elseif (MSVC)
   add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 endif()
-
-#LIBATOMIC #TODO
-#ADD_LIBRARY(atomic_ops STATIC )
-#SET_TARGET_PROPERTIES(atomic_ops PROPERTIES COMPILE_FLAGS -DNO_DEBUGGING)
-
-
-#LIBGC
 
 include_directories(include)
 include_directories(libatomic_ops/src)
@@ -247,7 +241,7 @@ if (enable_checksums)
   set(SRC ${SRC} checksums.c)
 endif(enable_checksums)
 
-if (enable_single_obj_compilation)
+if (enable_single_obj_compilation OR BUILD_SHARED_LIBS)
   set(SRC extra/gc.c) # override SRC
   if (CMAKE_USE_PTHREADS_INIT)
     add_definitions("-DGC_PTHREAD_START_STANDALONE")
@@ -259,10 +253,13 @@ if (enable_cplusplus)
   set(SRC ${SRC} gc_cpp.cc)
 endif()
 
-add_library(gc STATIC ${SRC})
-set_target_properties(gc PROPERTIES
-                      COMPILE_DEFINITIONS GC_NOT_DLL)
-#TODO TARGET_LINK_LIBRARIES(...  ...  ${LIBS})
+if (BUILD_SHARED_LIBS)
+  add_definitions("-DGC_DLL")
+else()
+  add_definitions("-DGC_NOT_DLL")
+endif()
+
+add_library(gc ${SRC})
 
 # TODO if build_cord then add_library(cord ...)
 
@@ -294,8 +291,6 @@ if (install_headers)
 endif()
 
 if (build_tests)
-  add_definitions("-DGC_NOT_DLL")
-
   if (build_cord)
     add_executable(cordtest cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c
                    cord/tests/cordtest.c)
