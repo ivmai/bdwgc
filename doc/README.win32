@@ -13,7 +13,7 @@ minutes (a few seconds on a modern machine) before you check the output.
 You should see either a failure indication or a "Collector appears to work"
 message.
 
-A toy editor (cord/de.exe) based on cords (heavyweight
+A toy editor (de.exe) based on cords (heavyweight
 strings represented as trees) has been ported and is included.
 It runs fine under either win32 or win32S.  It serves as an example
 of a true Windows application, except that it was written by a

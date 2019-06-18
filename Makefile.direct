@@ -331,24 +331,26 @@ cord/cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 	mkdir cord || cat /dev/null
 	mv cordprnt.o cord/cordprnt.o
 
-cord/cordtest$(EXEEXT): $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) \
+cordtest$(EXEEXT): $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) \
   base_lib $(UTILS)
-	rm -f cord/cordtest$(EXEEXT)
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a -lucb
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a -ldld `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cord/cordtest $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a `./threadlibs`
-	./if_not_there cord/cordtest$(EXEEXT) || $(CC) $(CFLAGS) -o cord/cordtest$(EXEEXT) $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a `./threadlibs`
+	rm -f cordtest$(EXEEXT)
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cordtest $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a -lucb
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cordtest $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a -ldld `./threadlibs`
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cordtest $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a `./threadlibs`
+	./if_not_there cordtest$(EXEEXT) || $(CC) $(CFLAGS) -o cordtest$(EXEEXT) $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a `./threadlibs`
 
-cord/de: $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c \
+cord/de: de$(EXEEXT)
+
+de$(EXEEXT): $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c \
   $(srcdir)/cord/tests/de_win.h cord/cordbscs.o cord/cordxtra.o base_lib \
   $(UTILS)
-	rm -f cord/de
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses -ltermlib -lucb `./threadlibs`
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses -ltermlib -ldld `./threadlibs`
-	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
-	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
-	./if_not_there cord/de$(EXEEXT) || $(CC) $(CFLAGS) -o cord/de$(EXEEXT) $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) `./threadlibs`
+	rm -f de$(EXEEXT)
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses -ltermlib -lucb `./threadlibs`
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses -ltermlib -ldld `./threadlibs`
+	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
+	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
+	./if_not_there de$(EXEEXT) || $(CC) $(CFLAGS) -o de$(EXEEXT) $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) `./threadlibs`
 
 if_mach$(EXEEXT): $(srcdir)/tools/if_mach.c \
   $(srcdir)/include/private/gcconfig.h
@@ -364,8 +366,7 @@ if_not_there$(EXEEXT): $(srcdir)/tools/if_not_there.c
 clean:
 	rm -f gc.a *.i *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
 	      setjmp_test mon.out gmon.out a.out core if_not_there if_mach \
-	      base_lib c++ $(CORD_OBJS) cord/cordtest cord/de cords \
-	      dont_ar_* threadlibs
+	      base_lib c++ $(CORD_OBJS) cordtest de cords dont_ar_* threadlibs
 	-rm -f *~
 
 gctest$(EXEEXT): tests/test.o base_lib $(UTILS)
@@ -382,10 +383,10 @@ setjmp_test$(EXEEXT): $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h \
   $(UTILS)
 	$(CC) $(CFLAGS) -o setjmp_test$(EXEEXT) $(srcdir)/tools/setjmp_t.c
 
-check: cord/cordtest$(EXEEXT) gctest$(EXEEXT) setjmp_test$(EXEEXT)
+check: cordtest$(EXEEXT) gctest$(EXEEXT) setjmp_test$(EXEEXT)
 	./setjmp_test
 	./gctest
-	cord/cordtest
+	cordtest
 
 # A synonym to "check" (for compatibility with older GC versions).
 test: check

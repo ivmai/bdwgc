@@ -36,7 +36,7 @@ editing operations are efficient, even on very large files.
 arguments.  Note that ^R^N and ^R^P move the cursor by
 almost a screen.  It does not understand tabs, which will show
 up as highlighted "I"s.  Use the UNIX "expand" program first.)
-To build the editor, type "make cord/de" in the gc directory.
+To build the editor, type "make de" in the gc directory.
 
 Note that CORD_printf and friends use C functions with variable numbers
 of arguments in non-standard-conforming ways.  This code is known to

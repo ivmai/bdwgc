@@ -49,16 +49,16 @@ CSCOPT= $(OPT) DEFINE AMIGA IGNORE=100 IGNORE=161
 #------------------LINKING----------------------------
 
 
-all: gctest setjmp_t cord/cordtest
+all: gctest setjmp_t cordtest
 
 clean:
-	delete *.lib gctest setjmp_t *.o *.lnk cord/*.o cord/*.lib cord/*.lnk cord/cordtest
+	delete *.lib gctest setjmp_t *.o *.lnk cord/*.o cord/*.lib cord/*.lnk cordtest
 	smake
 
-test: setjmp_t gctest cord/cordtest
+test: setjmp_t gctest cordtest
 	setjmp_t
 	gctest
-	cord/cordtest
+	cordtest
 
 gctest: gc$(CPU).lib GCAmigaOS$(CPU).lib test.o
 	$(LINKER) LIB:c.o test.o TO gctest LIB gc$(CPU).lib LIB:sc.lib $(MATHLIB)
@@ -66,8 +66,8 @@ gctest: gc$(CPU).lib GCAmigaOS$(CPU).lib test.o
 setjmp_t: setjmp_t.o gc.h
 	$(LINKER) LIB:c.o setjmp_t.o to setjmp_t lib LIB:sc.lib
 
-cord/cordtest: cord/cordtest.o cord/cord$(CPU).lib gc$(CPU).lib
-	slink LIB:c.o cord/cordtest.o LIB $(MATHLIB) gc$(CPU).lib cord/cord$(CPU).lib LIB:sc.lib TO cord/cordtest
+cordtest: cord/cordtest.o cord/cord$(CPU).lib gc$(CPU).lib
+	slink LIB:c.o cord/cordtest.o LIB $(MATHLIB) gc$(CPU).lib cord/cord$(CPU).lib LIB:sc.lib TO cordtest
 
 
 #------------------LIBBING----------------------------

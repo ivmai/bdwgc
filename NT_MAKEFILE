@@ -91,7 +91,7 @@ AO_INCLUDE_DIR=$(AO_SRC_DIR)
 
 OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj gcj_mlc.obj mallocx.obj extra\msvc_dbg.obj thread_local_alloc.obj
 
-all: gctest.exe cord\de.exe test_cpp.exe
+all: gctest.exe de.exe test_cpp.exe
 
 .c.obj:
 	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -DCORD_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
@@ -120,8 +120,8 @@ cord\tests\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cm
 	$(rc) $(rcvars) -r -fo cord\tests\de_win.res cord\tests\de_win.rc
 
 # Cord/de is a real win32 GUI app.
-cord\de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj $(GC_LIB)
-	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:cord\de.exe cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj $(GC_LIB) gdi32.lib user32.lib
+de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj $(GC_LIB)
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:de.exe cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj $(GC_LIB) gdi32.lib user32.lib
 
 gc_cpp.obj: gc_cpp.cc include\gc_cpp.h include\gc.h
 
