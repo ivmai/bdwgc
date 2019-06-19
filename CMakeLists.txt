@@ -266,6 +266,25 @@ if (build_cord)
   set(CORD_SRC cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c)
   add_library(cord ${CORD_SRC})
   target_link_libraries(cord PRIVATE gc)
+  install(TARGETS cord EXPORT cordExports
+          LIBRARY DESTINATION lib
+          ARCHIVE DESTINATION lib
+          RUNTIME DESTINATION bin
+          INCLUDES DESTINATION include)
+endif()
+
+install(TARGETS gc EXPORT gcExports
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include)
+
+if (enable_cplusplus)
+  install(TARGETS gccpp EXPORT gccppExports
+          LIBRARY DESTINATION lib
+          ARCHIVE DESTINATION lib
+          RUNTIME DESTINATION bin
+          INCLUDES DESTINATION include)
 endif()
 
 if (install_headers)
