@@ -249,10 +249,6 @@ if (enable_single_obj_compilation OR BUILD_SHARED_LIBS)
   endif(CMAKE_USE_PTHREADS_INIT)
 endif()
 
-if (enable_cplusplus)
-  set(SRC ${SRC} gc_cpp.cc)
-endif()
-
 if (BUILD_SHARED_LIBS)
   add_definitions("-DGC_DLL")
 else()
@@ -260,6 +256,11 @@ else()
 endif()
 
 add_library(gc ${SRC})
+
+if (enable_cplusplus)
+  add_library(gccpp gc_cpp.cc)
+  target_link_libraries(gccpp PRIVATE gc)
+endif()
 
 if (build_cord)
   set(CORD_SRC cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c)
@@ -350,7 +351,7 @@ if (build_tests)
 
   if (enable_cplusplus)
     add_executable(test_cpp WIN32 tests/test_cpp.cc)
-    target_link_libraries(test_cpp PRIVATE gc)
+    target_link_libraries(test_cpp PRIVATE gc gccpp)
     add_test(NAME test_cpp COMMAND test_cpp)
   endif()
 
