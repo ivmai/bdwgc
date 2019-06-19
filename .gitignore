@@ -58,6 +58,7 @@
 /initsecondarythread_test
 /leaktest
 /libalphagc.so
+/libcord.so
 /libgc.so
 /libgcmt-dll.dll.a
 /libirixgc.so
@@ -127,6 +128,8 @@ stamp-h1
 /cord/CMakeFiles/
 /cord/Makefile
 /gc.sln
+/libcord.a
+/libcord.dll.a
 /libgc*-dll.so
 /libgc*-lib.a
 /libgc.a
