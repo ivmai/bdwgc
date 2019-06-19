@@ -386,7 +386,7 @@ setjmp_test$(EXEEXT): $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h \
 check: cordtest$(EXEEXT) gctest$(EXEEXT) setjmp_test$(EXEEXT)
 	./setjmp_test
 	./gctest
-	cordtest
+	./cordtest
 
 # A synonym to "check" (for compatibility with older GC versions).
 test: check
