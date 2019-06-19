@@ -261,7 +261,11 @@ endif()
 
 add_library(gc ${SRC})
 
-# TODO if build_cord then add_library(cord ...)
+if (build_cord)
+  set(CORD_SRC cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c)
+  add_library(cord ${CORD_SRC})
+  target_link_libraries(cord PRIVATE gc)
+endif()
 
 if (install_headers)
   install(FILES include/gc.h
@@ -283,25 +287,28 @@ if (install_headers)
                   include/gc_cpp.h
             DESTINATION include/gc)
     install(FILES include/extra/gc_cpp.h DESTINATION include)
-  endif(enable_cplusplus)
+  endif()
   if (enable_disclaim)
     install(FILES include/gc_disclaim.h DESTINATION include/gc)
-  endif(enable_disclaim)
-  # TODO if build_cord then install cord.h, cord_pos.h, ec.h
-endif()
+  endif()
+  if (build_cord)
+    install(FILES include/cord.h
+                  include/cord_pos.h
+                  include/ec.h
+            DESTINATION include/gc)
+  endif()
+endif(install_headers)
 
 if (build_tests)
   if (build_cord)
-    add_executable(cordtest cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c
-                   cord/tests/cordtest.c)
-    target_link_libraries(cordtest PRIVATE gc)
+    add_executable(cordtest cord/tests/cordtest.c)
+    target_link_libraries(cordtest PRIVATE cord gc)
     add_test(NAME cordtest COMMAND cordtest)
 
     if (WIN32)
-      add_executable(de cord/cordbscs.c cord/cordxtra.c
-                     cord/tests/de.c cord/tests/de_win.c)
+      add_executable(de cord/tests/de.c cord/tests/de_win.c)
       set_target_properties(de PROPERTIES WIN32_EXECUTABLE TRUE)
-      target_link_libraries(de PRIVATE gc gdi32)
+      target_link_libraries(de PRIVATE cord gc gdi32)
     endif()
   endif(build_cord)
 
