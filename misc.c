@@ -1234,6 +1234,7 @@ GC_API void GC_CALL GC_init(void)
 #   ifndef GC_DISABLE_INCREMENTAL
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
 #       if defined(BASE_ATOMIC_OPS_EMULATED) || defined(CHECKSUMS) \
+           || defined(REDIRECT_MALLOC) || defined(REDIRECT_MALLOC_IN_HEADER) \
            || defined(SMALL_CONFIG)
           /* TODO: Implement CHECKSUMS for manual VDB. */
 #       else
@@ -1380,7 +1381,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
           LOCK();
         } else {
 #         if !defined(BASE_ATOMIC_OPS_EMULATED) && !defined(CHECKSUMS) \
-             && !defined(SMALL_CONFIG)
+             && !defined(REDIRECT_MALLOC) \
+             && !defined(REDIRECT_MALLOC_IN_HEADER) && !defined(SMALL_CONFIG)
             if (manual_vdb_allowed) {
               GC_manual_vdb = TRUE;
               GC_incremental = TRUE;
