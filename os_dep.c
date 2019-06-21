@@ -291,10 +291,12 @@ GC_INNER char * GC_get_maps(void)
     GC_ASSERT(*p == 'r' || *p == '-');
     *prot = (char *)p;
     /* Skip past protection field to offset field */
-       while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
+    while (!isspace(*p)) ++p;
+    while (isspace(*p)) p++;
     GC_ASSERT(isxdigit(*p));
     /* Skip past offset field, which we ignore */
-          while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
+    while (!isspace(*p)) ++p;
+    while (isspace(*p)) p++;
     maj_dev_start = p;
     GC_ASSERT(isxdigit(*maj_dev_start));
     *maj_dev = strtoul((char *)maj_dev_start, NULL, 16);
