@@ -921,7 +921,9 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
-#       define MPROTECT_VDB
+#       if !defined(REDIRECT_MALLOC)
+#         define MPROTECT_VDB
+#       endif
 #       ifdef __ELF__
 #         define DYNAMIC_LOADING
           EXTERN_C_END
@@ -1464,7 +1466,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
-#       if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
+#       if !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       else
             /* We seem to get random errors in incremental mode,        */
@@ -2092,9 +2094,11 @@ EXTERN_C_BEGIN
 #       endif
         extern int _end[];
 #       define DATAEND ((ptr_t)(_end))
-#       define MPROTECT_VDB
+#       if !defined(REDIRECT_MALLOC)
+#           define MPROTECT_VDB
                 /* Has only been superficially tested.  May not */
                 /* work on all versions.                        */
+#       endif
 #   endif
 # endif
 
@@ -2157,8 +2161,10 @@ EXTERN_C_BEGIN
           /* statically linked executables and an undefined reference   */
           /* to _DYNAMIC                                                */
 #       endif
-#       define MPROTECT_VDB
+#       if !defined(REDIRECT_MALLOC)
+#         define MPROTECT_VDB
                 /* Requires Linux 2.3.47 or later.      */
+#       endif
         extern int _end[];
 #       define DATAEND ((ptr_t)(_end))
 #       ifdef __GNUC__
@@ -2270,7 +2276,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
-#     if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
+#     if !defined(REDIRECT_MALLOC)
 #       define MPROTECT_VDB
 #     endif
 #     define DYNAMIC_LOADING
@@ -2383,7 +2389,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
-#       if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
+#       if !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       endif
 #       define DYNAMIC_LOADING
@@ -2629,7 +2635,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
-#       if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
+#       if !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       else
             /* We seem to get random errors in incremental mode,        */
@@ -2829,7 +2835,9 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
-#     define MPROTECT_VDB
+#     if !defined(REDIRECT_MALLOC)
+#       define MPROTECT_VDB
+#     endif
 #     define DYNAMIC_LOADING
       EXTERN_C_END
 #     include <features.h>
