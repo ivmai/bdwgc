@@ -161,8 +161,14 @@ GC_API GC_ATTR_CONST size_t GC_CALL GC_get_debug_header_size(void);
                 ((void *)((char *)(p) + GC_get_debug_header_size()))
 
 /* The same but defined as a variable.  Exists only for the backward    */
-/* compatibility.                                                       */
-GC_API GC_ATTR_DEPRECATED const size_t GC_debug_header_size;
+/* compatibility.  Some compilers do not accept "const" together with   */
+/* deprecated or dllimport attributes, so the symbol is exported as     */
+/* a non-constant one.                                                  */
+GC_API GC_ATTR_DEPRECATED
+# ifdef GC_BUILD
+    const
+# endif
+  size_t GC_debug_header_size;
 
 /* And some routines to support creation of new "kinds", e.g. with      */
 /* custom mark procedures, by language runtimes.                        */
