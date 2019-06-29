@@ -848,6 +848,8 @@ Also, includes 7.4.4 changes
 
 == [7.4.20] (not released yet) ==
 
+* Eliminate 'unused function GC_add_map_entry' compiler warning
+* Eliminate 'while clause does not guard' GCC warning in GC_parse_map_entry
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
 * Fix configure message about 'AIX gcc optimization fix'
 
@@ -1367,8 +1369,10 @@ Also, includes 7.2 changes
 == [7.2o] (not released yet) ==
 
 * Explicitly zero-initialize trace_buf (fix trace_buf initialization)
+* Fix 'expected function body after declarator' clang error in gc_cpp.cc
 * Fix configure message about 'AIX gcc optimization fix'
 * Fix first_thread stack_base initialization if custom GC_stackbottom (Win32)
+* Fix fread failure after enable_incremental if malloc is redirected (Linux)
 * Fix incorrect define GC_OPENBSD_THREADS on sparc64
 * Fix printf format specifier in simple_example.html
 * Fix save_callers for multi-threaded case if built-in backtrace unavailable
