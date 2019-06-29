@@ -1,3 +1,9 @@
+2019-06-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h [(M68K || I386 || ALPHA || IA64
+	|| X86_64 || HEXAGON) && LINUX] (MPROTECT_VDB): Do not define
+	if REDIRECT_MALLOC.
+
 2019-04-29  Ivan Maidanski <ivmai@mail.ru>
 
 	* win32_threads.c [GC_ASSERTIONS] (GC_thr_init): Remove sb_result local
