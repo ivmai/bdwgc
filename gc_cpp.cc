@@ -79,13 +79,13 @@ void* operator new[](size_t size, int nBlockUse, const char* szFileName, int nLi
 #else
 
 # if __cplusplus > 201103L // C++14
-    void operator delete(void* obj, size_t size) GC_DECL_DELETE_THROW {
+    void operator delete(void* obj, size_t size) {
       (void)size; // size is ignored
       GC_FREE(obj);
     }
 
 #   if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
-      void operator delete[](void* obj, size_t size) GC_DECL_DELETE_THROW {
+      void operator delete[](void* obj, size_t size) {
         (void)size;
         GC_FREE(obj);
       }
