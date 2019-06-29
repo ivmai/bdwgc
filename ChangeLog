@@ -1,3 +1,10 @@
+2019-06-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* gc_cpp.cc [!_MSC_VER && __cplusplus>201103L] (operator delete):
+	Remove undefined GC_DECL_DELETE_THROW attribute.
+	* gc_cpp.cc [!_MSC_VER && __cplusplus>201103L && GC_OPERATOR_NEW_ARRAY
+	&& !CPPCHECK] (operator delete[]): Likewise.
+
 2019-06-21  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/private/gcconfig.h [(M68K || I386 || ALPHA || IA64
