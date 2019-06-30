@@ -66,14 +66,24 @@
 * Add support of OpenBSD/aarch64
 * Allow GC_PAUSE_TIME_TARGET environment variable values smaller than 5 ms
 * Avoid compiler warning about unused d in GC_CALLOC/MALLOC_EXPLICITLY_TYPED
+* Do not use Manual VDB mode if C malloc is redirected
+* Eliminate 'GC_old_bus_handler defined but not used' compiler warning
+* Eliminate 'unused function' compiler warnings (GC_add_map_entry, GC_lock)
+* Eliminate 'while clause does not guard' GCC warning in GC_parse_map_entry
 * Enable sbrk-to-mmap fallback on major supported Unix-like platforms
 * Explicitly zero-initialize trace_buf (fix trace_buf initialization)
+* Fix 'ISO C++17 does not allow dynamic exception spec' clang-8 error
+* Fix 'external linkage required for var because of dllimport' error on MinGW
+* Fix 'ulong undefined' compilation error on AIX
 * Fix MPROTECT_VDB definition for single-threaded GC builds
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
+* Fix build for OS X (CMake)
+* Fix building of shared library with C++ support on MinGW
 * Fix compiling by Makefile.direct on OpenBSD/UltraSparc
 * Fix configure message about 'AIX gcc optimization fix'
 * Fix first_thread stack_base initialization if custom GC_stackbottom (Win32)
 * Fix incorrect markup formatting in documentation
+* Fix mmap(PROT_NONE) failure on AIX
 * Fix printf format specifier in simple_example.md
 * Fix save_callers for multi-threaded case if built-in backtrace unavailable
 * Fix various typos mostly in documentation files
@@ -82,8 +92,10 @@
 * Refine GC_parallel documentation in gc.h
 * Refine do_blocking() documentation in gc.h
 * Remove a misleading comment about Solaris in gc.h
+* Remove gcmt-lib generation by CMake
 * Support MSYS builds by CMake and configure
 * Update documentation about the incremental collector support
+* Workaround fread fail after enable_incremental if malloc redirected (Linux)
 
 
 == [8.0.4] 2019-03-02 ==
