@@ -7235,7 +7235,7 @@ process.
 * Separate gc_conf_macros.h from gc.h.
 * Added generic GC_THREADS client-defined macro to set the appropriate
 GC_XXX_THREADS internal macro.  (gc_config_macros.h.)
-* Add debugging versions of _ignore_off_page allocation primitves.
+* Add debugging versions of _ignore_off_page allocation primitives.
 * Moved declarations of GC_make_closure and GC_debug_invoke_finalizer
 from gc.h to gc_priv.h.
 * Reset GC_fail_count even if only a small allocation succeeds.
