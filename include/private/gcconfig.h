@@ -3414,6 +3414,14 @@ EXTERN_C_BEGIN
 # define NO_GETENV_WIN32
 #endif
 
+#if !defined(MSGBOX_ON_ERROR) && !defined(NO_MSGBOX_ON_ERROR) \
+    && !defined(SMALL_CONFIG) && defined(MSWIN32) \
+    && !defined(MSWINRT_FLAVOR) && !defined(MSWIN_XBOX1)
+  /* Show Windows message box with "OK" button on a GC fatal error.     */
+  /* Client application is terminated once the user clicks the button.  */
+# define MSGBOX_ON_ERROR
+#endif
+
 #ifndef STRTOULL
 # if defined(_WIN64) && !defined(__GNUC__)
 #   define STRTOULL _strtoui64

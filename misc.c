@@ -820,8 +820,7 @@ GC_API int GC_CALL GC_is_init_called(void)
   }
 #endif
 
-#if defined(MSWIN32) && !defined(MSWINRT_FLAVOR) && !defined(MSWIN_XBOX1) \
-    && !defined(SMALL_CONFIG)
+#ifdef MSGBOX_ON_ERROR
   STATIC void GC_win32_MessageBoxA(const char *msg, const char *caption,
                                    unsigned flags)
   {
@@ -840,7 +839,7 @@ GC_API int GC_CALL GC_is_init_called(void)
       }
 #   endif
   }
-#endif /* MSWIN32 */
+#endif /* MSGBOX_ON_ERROR */
 
 #if defined(THREADS) && defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
   static void callee_saves_pushed_dummy_fn(ptr_t data GC_ATTR_UNUSED,
@@ -1915,7 +1914,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 #   endif
 
     if (msg != NULL) {
-#     if defined(MSWIN32) && !defined(MSWINRT_FLAVOR) && !defined(MSWIN_XBOX1)
+#     ifdef MSGBOX_ON_ERROR
         GC_win32_MessageBoxA(msg, "Fatal error in GC", MB_ICONERROR | MB_OK);
         /* Also duplicate msg to GC log file.   */
 #     endif

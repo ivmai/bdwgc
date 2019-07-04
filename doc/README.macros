@@ -524,6 +524,11 @@ GC_DLL  Build dynamic-link library (or dynamic shared object).  For Unix this
   causes the exported symbols to have 'default' visibility (ignored unless
   GCC v4+) and the internal ones to have 'hidden' visibility.
 
+NO_MSGBOX_ON_ERROR (Win32 only)         Do not show Windows message box with
+  "OK" button on a GC fatal error.  Otherwise the client application is
+  terminated only once the user clicks "OK" button.  Useful for non-GUI (or
+  non-interactive) applications.
+
 DONT_USE_USER32_DLL (Win32 only)        Don't use "user32" DLL import library
   (containing MessageBox() entry); useful for a static GC library.
 
