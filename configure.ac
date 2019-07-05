@@ -551,6 +551,16 @@ if test "${enable_shared}" = yes; then
   fi
 fi
 
+# Do not require the clients to link with "user32" system library.
+if test "${enable_static}" = yes -o "${enable_shared}" = no; then
+  case "$host" in
+    *-*-cygwin* | *-*-mingw* | *-*-msys*)
+      AC_DEFINE([DONT_USE_USER32_DLL], 1,
+                [Do not use user32.dll import library (Win32).])
+      ;;
+  esac
+fi
+
 # Configuration of machine-dependent code
 #
 AC_MSG_CHECKING(which machine-dependent code should be used)

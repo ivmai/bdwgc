@@ -253,6 +253,10 @@ if (BUILD_SHARED_LIBS)
   add_definitions("-DGC_DLL")
 else()
   add_definitions("-DGC_NOT_DLL")
+  if (WIN32)
+    # Do not require the clients to link with "user32" system library.
+    add_definitions("-DDONT_USE_USER32_DLL")
+  endif(WIN32)
 endif()
 
 add_library(gc ${SRC})
