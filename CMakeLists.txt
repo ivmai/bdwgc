@@ -54,19 +54,29 @@ option(enable_munmap "Return page to the OS if empty for N collections" ON)
 option(enable_dynamic_loading "Enable tracing of dynamic library data roots" ON)
 option(enable_register_main_static_data "Perform the initial guess of data root sets" ON)
 option(enable_checksums "Report erroneously cleared dirty bits" OFF)
+option(enable_werror "Pass -Werror to the C compiler (treat warnings as errors)" OFF)
 option(enable_single_obj_compilation "Compile all libgc source files into single .o" OFF)
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 option(install_headers "Install header files" ON)
 
 add_definitions("-DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
 
-if (APPLE)
-  if ("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "")
+if (APPLE AND ("${CMAKE_OSX_ARCHITECTURES}" STREQUAL ""))
     set(CMAKE_OSX_ARCHITECTURES "x86_64;i386"
         CACHE STRING "Build architectures for Mac OS X" FORCE)
-  endif()
-elseif (MSVC)
+endif()
+
+# Output all warnings.
+if (MSVC)
+  # All warnings but ignoring "unreferenced formal parameter" and
+  # "conditional expression is constant" ones.
+  add_compile_options(/W4 /wd4100 /wd4127)
+  # Disable crt security warnings, since unfortunately they warn about all
+  # sorts of safe uses of strncpy.
   add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
+else()
+  # TODO add -[W]pedantic -Wno-long-long
+  add_compile_options(-Wall -Wextra)
 endif()
 
 include_directories(include)
@@ -240,6 +250,18 @@ if (enable_checksums)
   add_definitions("-DCHECKSUMS")
   set(SRC ${SRC} checksums.c)
 endif(enable_checksums)
+
+if (enable_werror)
+  if (MSVC)
+    add_compile_options(/WX)
+  else()
+    add_compile_options(-Werror)
+    if (APPLE)
+      # _dyld_bind_fully_image_containing_address is deprecated in OS X 10.5+
+      add_compile_options(-Wno-deprecated-declarations)
+    endif()
+  endif()
+endif(enable_werror)
 
 if (enable_single_obj_compilation OR BUILD_SHARED_LIBS)
   set(SRC extra/gc.c) # override SRC
