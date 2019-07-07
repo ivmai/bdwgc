@@ -78,7 +78,7 @@ void test_misc_sizes(void)
         }
         my_assert(memeq(p, 0, (size_t)1 << i));
         memset(p, 0x56, (size_t)1 << i);
-        *(unsigned char *)p = i;
+        *(unsigned char *)p = (unsigned char)i;
     }
 }
 
