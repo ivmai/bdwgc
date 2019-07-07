@@ -58,19 +58,11 @@ CFLAGS_MT=$(cvarsmt) -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
 
 !IFDEF MAKE_AS_LIB
 CFLAGS_GCDLL=-DGC_NOT_DLL
-GC_LIB=gc.lib
-LINK_GC=lib /out:$(GC_LIB)
+LINK_GC=lib /out:gc.lib
 !ELSE
 CFLAGS_GCDLL=-DGC_DLL
-!IF "$(CPU)" == "AMD64"
-GC_DLL=gc64.dll
-GC_LIB=gc64_dll.lib
-!ELSE
-GC_DLL=gc.dll
-GC_LIB=gc_dll.lib
-!ENDIF
 LINK_DLL_FLAGS=kernel32.lib user32.lib /subsystem:windows /dll \
-  /INCREMENTAL:NO /pdb:"gc.pdb" /out:$(GC_DLL) /implib:$(GC_LIB)
+  /INCREMENTAL:NO /pdb:"gc.pdb" /out:gc.dll /implib:gc.lib
 LINK_GC=$(link) $(ldebug) $(LINK_DLL_FLAGS)
 !ENDIF
 
@@ -103,11 +95,11 @@ all: gctest.exe de.exe test_cpp.exe
 
 $(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h include\gc_disclaim.h include\private\msvc_dbg.h
 
-$(GC_LIB): $(OBJS)
+gc.lib: $(OBJS)
 	$(LINK_GC) /MACHINE:$(CPU) $(OBJS)
 
-gctest.exe: $(GC_LIB) tests\test.obj
-	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:$*.exe tests\test.obj $(GC_LIB)
+gctest.exe: gc.lib tests\test.obj
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:$*.exe tests\test.obj gc.lib
 #	mapsympe -n -o gctest.sym gctest.exe
 # This produces a GUI app that opens no window and writes to gctest.gc.log.
 
@@ -120,8 +112,8 @@ cord\tests\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cm
 	$(rc) $(rcvars) -r -fo cord\tests\de_win.res cord\tests\de_win.rc
 
 # Cord/de is a real win32 GUI app.
-de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj $(GC_LIB)
-	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:de.exe cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj $(GC_LIB) gdi32.lib user32.lib
+de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:de.exe cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib gdi32.lib user32.lib
 
 gc_cpp.obj: gc_cpp.cc include\gc_cpp.h include\gc.h
 
@@ -131,8 +123,8 @@ test_cpp.cpp: tests\test_cpp.cc
 # This generates the C++ test executable.  The executable expects
 # a single numeric argument, which is the number of iterations.
 # The output appears in test_cpp.gc.log file.
-test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h $(GC_LIB)
-	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:test_cpp.exe test_cpp.obj $(GC_LIB)
+test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:test_cpp.exe test_cpp.obj gc.lib
 
 $(AO_SRC_DIR):
 	tar xvfz $(AO_SRC_DIR).tar.gz
