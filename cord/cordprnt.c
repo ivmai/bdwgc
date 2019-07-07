@@ -232,7 +232,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         } else {
                             short * pos_ptr;
                             pos_ptr = va_arg(args, short *);
-                            *pos_ptr = ec_len(result);
+                            *pos_ptr = (short)ec_len(result);
                         }
                         goto done;
                     case 'r':
