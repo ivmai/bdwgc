@@ -41,7 +41,7 @@ install:
 
 build_script:
 - cmd: if [%TARGET%]==[cmake] (
-    cmake %CMAKE_OPTIONS% . && cmake --build . --config %CMAKE_CONFIG% )
+    cmake %CMAKE_OPTIONS% -Denable_werror=ON . && cmake --build . --config %CMAKE_CONFIG% )
 - cmd: if [%TARGET%]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc && ./autogen.sh && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
