@@ -39,6 +39,7 @@
 /cordtest
 /core
 /de
+/de.dir/
 /disclaim_bench
 /disclaim_test
 /disclaim_weakmap_test
