@@ -124,7 +124,7 @@ Before compiling you may need to edit WCC_MAKEFILE to set target
 platform, library type (dynamic or static), calling conventions, and
 optimization options.
 
-To compile the collector and testing programs use the command:
+To compile the collector use the command:
     wmake -f WCC_MAKEFILE
 
 All programs using gc should be compiled with 4-byte alignment.

@@ -4,9 +4,10 @@ with Microsoft Visual C++ 2005 or with mingw-w64 gcc.
 NT_MAKEFILE has been used in this environment.  Type
 "nmake -f NT_MAKEFILE cpu=AMD64 nodebug=1" in a Visual C++ command line
 window to build the release variant of the dynamic library with threads
-support and the usual test programs.
-To verify that the collector is at least somewhat functional, run gctest.exe.
-This should create gctest.gc.log after a few seconds.
+support.
+To verify that the collector is at least somewhat functional,
+type "nmake -f NT_MAKEFILE cpu=AMD64 check" to build and run the usual test
+programs.  This should create gctest.gc.log after a few seconds.
 
 Test_cpp.exe might not run correctly in case of dynamic GC linking.  (It seems
 that we're getting wrong instances of operator new/delete in some cases.)

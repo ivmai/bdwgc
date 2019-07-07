@@ -39,7 +39,13 @@ OBJS=	\
 	typd_mlc.obj\
 	win32_threads.obj
 
-targets: gc.dll gc.lib gctest.exe test_cpp.exe
+targets: gc.dll gc.lib
+
+check: gctest.exe test_cpp.exe
+	gctest.exe
+	test_cpp.exe
+
+gc.lib: gc.dll
 
 gc.dll: $(OBJS) gc.def digimars.mak
 	$(CC) -ogc.dll $(OBJS) -L$(LFLAGS) gc.def kernel32.lib user32.lib

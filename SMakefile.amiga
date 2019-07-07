@@ -49,13 +49,13 @@ CSCOPT= $(OPT) DEFINE AMIGA IGNORE=100 IGNORE=161
 #------------------LINKING----------------------------
 
 
-all: gctest setjmp_t cordtest
+all: gc.lib cord.lib
 
 clean:
 	delete *.lib gctest setjmp_t *.o *.lnk cord/*.o cord/tests/*.o cordtest
 	smake
 
-test: setjmp_t gctest cordtest
+check: setjmp_t gctest cordtest
 	setjmp_t
 	gctest
 	cordtest

@@ -30,7 +30,7 @@ Then do the following on the ARM machine
    cd .libs
    ./lt-gctest
 
-Do not try to do "make test" (the usual way of running the test
+Do not try to do "make check" (the usual way of running the test
 program).  This does not work and seems to erase some of the important
 files.
 

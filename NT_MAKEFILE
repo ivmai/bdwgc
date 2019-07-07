@@ -83,7 +83,11 @@ AO_INCLUDE_DIR=$(AO_SRC_DIR)
 
 OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj gcj_mlc.obj mallocx.obj extra\msvc_dbg.obj thread_local_alloc.obj
 
-all: gctest.exe de.exe test_cpp.exe
+all: gc.lib
+
+check: gctest.exe test_cpp.exe de.exe
+	gctest.exe
+	test_cpp.exe
 
 .c.obj:
 	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -DCORD_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701

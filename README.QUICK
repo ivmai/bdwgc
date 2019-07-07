@@ -36,7 +36,7 @@ Alternative 2 (the new way): type
         See doc/README.autoconf for details
 
 Under Windows 95, 98, Me, NT, or 2000:
-copy the appropriate makefile to MAKEFILE, read it, and type "nmake test".
+copy the appropriate makefile to MAKEFILE, read it, and type "nmake check".
 (Under Windows, this assumes you have Microsoft command-line tools
 installed, and suitably configured.)
 Read the machine specific README.XXX in the doc directory if one exists.

@@ -39,7 +39,11 @@ XXXOBJS= XXXalloc.obj XXXreclaim.obj XXXallchblk.obj XXXmisc.obj \
 
 OBJS= $(XXXOBJS:XXX=)
 
-all: gctest.exe de.exe test_cpp.exe
+all: gc.lib
+
+check: gctest.exe test_cpp.exe de.exe
+	gctest.exe
+	test_cpp.exe
 
 $(OBJS) test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h MAKEFILE
 

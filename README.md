@@ -204,8 +204,8 @@ a somewhat superficial test of collector functionality.  Failure is indicated
 by a core dump or a message to the effect that the collector is broken.  Gctest
 takes about a second to two to run on reasonable 2007 vintage desktops.  It may
 use up to about 30 MB of memory.  (The multi-threaded version will use more.
-64-bit versions may use more.) `make test` will also, as its last step, attempt
-to build and test the "cord" string library.)
+64-bit versions may use more.) `make check` will also, as its last step,
+attempt to build and test the "cord" string library.)
 
 Makefile.direct will generate a library gc.a which you should link against.
 Typing "make cords" will add the cord library to gc.a.

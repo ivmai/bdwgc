@@ -15,7 +15,11 @@ CFLAGS= /O /Q /DALL_INTERIOR_POINTERS /DENABLE_DISCLAIM /DGC_ATOMIC_UNCOLLECTABL
 # Setjmp_test may yield overly optimistic results when compiled
 # without optimization.
 
-all: $(OBJS) gctest.exe cordtest.exe
+all: gc.lib
+
+check: gctest.exe cordtest.exe
+        gctest.exe
+        cordtest.exe
 
 $(OBJS) test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h
 

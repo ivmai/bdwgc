@@ -78,7 +78,11 @@ OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj &
       dbg_mlc.obj malloc.obj dyn_load.obj &
       typd_mlc.obj ptr_chck.obj mallocx.obj fnlz_mlc.obj gcj_mlc.obj
 
-all: gc.lib gctest.exe test_cpp.exe
+all: gc.lib
+
+check: gctest.exe test_cpp.exe .SYMBOLIC
+        *gctest.exe
+        *test_cpp.exe
 
 !ifdef MAKE_AS_DLL
 
