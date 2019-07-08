@@ -1,4 +1,0 @@
-gc.def should probably be removed completely.
-
-I removed an apparently erroneous line for GC_CreateThread.  Unfortunately
-gc.def is referenced in various other places I cannot easily edit.  -HB
