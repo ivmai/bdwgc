@@ -307,8 +307,10 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 #endif
 
 #if defined(_MSC_VER) || defined(__DMC__) \
-    || ((defined(__CYGWIN32__) || defined(__CYGWIN__) \
-        || defined(__MINGW32__)) && !defined(GC_BUILD) && !defined(GC_NOT_DLL))
+    || ((defined(__BORLANDC__) || defined(__CYGWIN__) \
+         || defined(__CYGWIN32__) || defined(__MINGW32__) \
+         || defined(__WATCOMC__)) \
+        && !defined(GC_BUILD) && !defined(GC_NOT_DLL))
   // The following ensures that the system default operator new[] does not
   // get undefined, which is what seems to happen on VC++ 6 for some reason
   // if we define a multi-argument operator new[].
