@@ -61,8 +61,8 @@ void CORD_ec_flush_buf(CORD_ec x);
 
 /* Append a character to an extensible cord.    */
 #define CORD_ec_append(x, c) \
-                (((x)[0].ec_bufptr == (x)[0].ec_buf + CORD_BUFSZ ? \
-                        (CORD_ec_flush_buf(x), 0) : 0), \
+                ((void)((x)[0].ec_bufptr == (x)[0].ec_buf + CORD_BUFSZ \
+                        ? (CORD_ec_flush_buf(x), 0) : 0), \
                  (void)(*(x)[0].ec_bufptr++ = (c)))
 
 /* Append a cord to an extensible cord.  Structure remains shared with  */
