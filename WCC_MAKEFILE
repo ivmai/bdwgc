@@ -145,7 +145,7 @@ test_cpp.exe: test_cpp.obj gc.lib
 gc_cpp.obj: gc_cpp.cc .AUTODEPEND
         $(CXX) $(TEST_CXXFLAGS) $*.cc
 test.obj: tests\test.c .AUTODEPEND
-        $(CC) $(TEST_CFLAGS) tests\test.c
+        $(CC) $(TEST_CFLAGS) /wcd=13 /wcd=201 /wcd=367 /wcd=368 tests\test.c
 test_cpp.obj: tests\test_cpp.cc .AUTODEPEND
         $(CXX) $(TEST_CXXFLAGS) tests\test_cpp.cc
 
