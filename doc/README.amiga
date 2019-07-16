@@ -109,7 +109,7 @@ WHATS NEW:
 3. Updated and rewritten the SMakefile.amiga, so that it works again and that
    the "unnecessary" 'SCOPTIONS' files could be removed. Also included
    the cord-smakefile stuff in the main smakefile, so that the cord smakefile
-   could be removed too. By writing smake -f Smakefile.smk, both gc.lib and
+   could be removed too. By typing "smake -f SMakefile.amiga", both gc.lib and
    cord.lib will be made.
 
 
