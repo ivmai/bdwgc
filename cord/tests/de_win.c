@@ -141,7 +141,7 @@ char * plain_chars(char * text, size_t len)
 }
 
 /* Return the argument with all non-control-characters replaced by      */
-/* blank, and all control characters c replaced by c + 32.              */
+/* blank, and all control characters c replaced by c + 64.              */
 char * control_chars(char * text, size_t len)
 {
     char * result = GC_MALLOC_ATOMIC(len + 1);
