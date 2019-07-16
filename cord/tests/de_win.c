@@ -156,7 +156,7 @@ char * control_chars(char * text, size_t len)
     if (NULL == result) return NULL;
     for (i = 0; i < len; i++) {
        if (iscntrl(((unsigned char *)text)[i])) {
-           result[i] = text[i] + 0x40;
+           result[i] = (char)(text[i] + 0x40);
        } else {
            result[i] = ' ';
        }
