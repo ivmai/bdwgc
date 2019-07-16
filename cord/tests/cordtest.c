@@ -131,7 +131,7 @@ void test_basics(void)
     while(CORD_pos_valid(p)) {
         char c = CORD_pos_fetch(p);
 
-        if ((unsigned char)c != i)
+        if ((size_t)(unsigned char)c != i)
             ABORT("Traversal of function node failed");
         CORD_next(p);
         i++;
