@@ -4,7 +4,6 @@
 * text=auto
 
 # These files should use CR/LF line ending:
-/BCC_MAKEFILE -text
 /digimars.mak -text
 
 # Note: "core.eol" configuration variable controls which line endings to use
