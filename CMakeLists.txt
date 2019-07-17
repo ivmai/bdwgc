@@ -66,14 +66,26 @@ if (APPLE AND ("${CMAKE_OSX_ARCHITECTURES}" STREQUAL ""))
         CACHE STRING "Build architectures for Mac OS X" FORCE)
 endif()
 
+# Set struct packing alignment to word (instead of 1-byte).
+if (BORLAND)
+  add_compile_options(/a4)
+elseif (WATCOM)
+  add_compile_options(/zp4)
+endif()
+
 # Output all warnings.
-if (MSVC)
+if (BORLAND)
+  # All warnings except for particular ones.
+  add_compile_options(/w /w-pro /w-aus /w-par /w-ccc /w-inl /w-rch)
+elseif (MSVC)
   # All warnings but ignoring "unreferenced formal parameter" and
   # "conditional expression is constant" ones.
   add_compile_options(/W4 /wd4100 /wd4127)
   # Disable crt security warnings, since unfortunately they warn about all
   # sorts of safe uses of strncpy.
   add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
+elseif (WATCOM)
+  add_compile_options(/wx)
 else()
   # TODO add -[W]pedantic -Wno-long-long
   add_compile_options(-Wall -Wextra)
@@ -252,8 +264,12 @@ if (enable_checksums)
 endif(enable_checksums)
 
 if (enable_werror)
-  if (MSVC)
+  if (BORLAND)
+    add_compile_options(/w!)
+  elseif (MSVC)
     add_compile_options(/WX)
+  elseif (WATCOM)
+    add_compile_options(/we)
   else()
     add_compile_options(-Werror)
     if (APPLE)
@@ -269,6 +285,9 @@ if (enable_single_obj_compilation OR BUILD_SHARED_LIBS)
     add_definitions("-DGC_PTHREAD_START_STANDALONE")
     set(SRC ${SRC} pthread_start.c)
   endif(CMAKE_USE_PTHREADS_INIT)
+elseif (BORLAND)
+  # Suppress "GC_push_contents_hdr() is declared but never used" warning.
+  add_compile_options(/w-use)
 endif()
 
 if (BUILD_SHARED_LIBS)
@@ -367,6 +386,12 @@ if (build_tests)
   add_executable(gctest WIN32 tests/test.c)
   target_link_libraries(gctest PRIVATE gc)
   add_test(NAME gctest COMMAND gctest)
+  if (WATCOM)
+    # Suppress "conditional expression in if statement is always true/false"
+    # and "unreachable code" warnings in GC_MALLOC_[ATOMIC_]WORDS.
+    target_compile_options(gctest PRIVATE
+                           /wcd=13 /wcd=201 /wcd=367 /wcd=368 /wcd=726)
+  endif()
 
   add_executable(hugetest tests/huge_test.c)
   target_link_libraries(hugetest PRIVATE gc)
