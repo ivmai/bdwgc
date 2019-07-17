@@ -43,7 +43,6 @@
 * Remove documentation specific to particular old BDWGC releases
 * Remove gcmt-dll generation, rename libgc-lib.a to libgc.a (CMake)
 * Remove goto statement in print_callers (code refactoring)
-* Remove redundant options for building 'cord' in gc.mak
 * Remove redundant type casts in backgraph HEIGHT_UNKNOWN/IN_PROGRESS
 * Remove unused STACK_GRAN macro definitions (code refactoring)
 * Remove unused sparc_sunos4_mach_dep.s file

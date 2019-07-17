@@ -180,15 +180,6 @@ threads attached to the collector DLL (i.e. support of both kinds of thread
 tracking) is needed then delete "-DTHREAD_LOCAL_ALLOC" from NT_MAKEFILE
 manually before the build.
 
-The alternate way (not well tested) to build the dynamic library that supports
-both kinds of thread tracking is to use gc.mak instead of NT_MAKEFILE.
-To build the garbage collector test with VC++ from the command line, use
-
-nmake /F ".\gc.mak" CFG="gctest - Win32 Release"
-
-This requires that the subdirectory gctest\Release exist.
-The test program and DLL will reside in the Release directory.
-
 The incremental collection is supported only if it is enabled before any
 additional threads are created.
 
@@ -219,3 +210,6 @@ To build the collector for MinGW pthreads-win32 (or other non-Cygwin pthreads
 implementation for Windows), use Makefile.direct and explicitly set
 GC_WIN32_PTHREADS (or pass --enable-threads=pthreads to configure).
 Use -DPTW32_STATIC_LIB for the static threads library.
+
+The alternate (better) way to build the library is to use CMake script;
+please see README.cmake for the details.
