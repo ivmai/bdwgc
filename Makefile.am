@@ -196,8 +196,7 @@ EXTRA_DIST += README.QUICK
 
 # other makefiles
 # :GOTCHA: deliberately we do not include 'Makefile'
-EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
-    OS2_MAKEFILE PCR-Makefile digimars.mak \
+EXTRA_DIST += NT_MAKEFILE OS2_MAKEFILE PCR-Makefile digimars.mak \
     Makefile.direct SMakefile.amiga WCC_MAKEFILE autogen.sh CMakeLists.txt
 
 # files used by makefiles other than Makefile.am
