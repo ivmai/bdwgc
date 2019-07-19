@@ -8,8 +8,8 @@ SYSTEM=MSWIN32
 
 # The collector can be built either as dynamic or as static library.
 # Select the library type you need.
-#MAKE_AS_DLL=1
-MAKE_AS_LIB=1
+MAKE_AS_DLL=1
+#MAKE_AS_LIB=1
 
 # Select calling conventions.
 # Possible choices are r and s.
