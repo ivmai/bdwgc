@@ -16,7 +16,7 @@ This process is completely analogous to NT_MAKEFILE usage
 for the 32-bit library version.
 
 A similar procedure using NT_MAKEFILE is applicable to build the static
-library - just pass "make_as_lib=1" as an extra argument to nmake.
+library - just pass "enable_static=1" as an extra argument to nmake.
 If needed, it is also possible to build the library without threads
 support - this could be done by passing "disable_threads=1" argument to nmake.
 

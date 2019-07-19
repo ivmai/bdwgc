@@ -6,10 +6,9 @@ SYSTEM=MSWIN32
 #SYSTEM=DOS4GW
 #SYSTEM=OS2
 
-# The collector can be built either as dynamic or as static library.
-# Select the library type you need.
-MAKE_AS_DLL=1
-#MAKE_AS_LIB=1
+# The collector can be built either as dynamic (the default) or as static
+# library. The latter is selected by setting ENABLE_STATIC variable.
+#ENABLE_STATIC=1
 
 # Select calling conventions.
 # Possible choices are r and s.
@@ -54,14 +53,13 @@ SYSFLAG=-DOS2 -bt=os2
 !else
 !error undefined or unsupported target platform: $(SYSTEM)
 !endif
-!ifdef MAKE_AS_DLL
-DLLFLAG=-bd -DGC_DLL
-TEST_DLLFLAG=-DGC_DLL
-!else ifdef MAKE_AS_LIB
+
+!ifdef ENABLE_STATIC
 DLLFLAG=
 TEST_DLLFLAG=-DGC_NOT_DLL
 !else
-!error Either MAKE_AS_LIB or MAKE_AS_DLL should be defined
+DLLFLAG=-bd -DGC_DLL
+TEST_DLLFLAG=-DGC_DLL
 !endif
 
 CC=wcc386
@@ -84,7 +82,19 @@ check: gctest.exe test_cpp.exe .SYMBOLIC
         *gctest.exe
         *test_cpp.exe
 
-!ifdef MAKE_AS_DLL
+!ifdef ENABLE_STATIC
+
+gc.lib: $(OBJS)
+        @%create $*.lb1
+        @for %i in ($(OBJS)) do @%append $*.lb1 +'%i'
+        *wlib -b -c -n -p=512 $@ @$*.lb1
+
+gccpp.lib: gc_cpp.obj
+        @%create $*.lb1
+        @%append $*.lb1 +'gc_cpp.obj'
+        *wlib -b -c -n -p=512 $@ @$*.lb1
+
+!else
 
 gc.lib: gc.dll
         *wlib -b -c -n -p=512 $@ +gc.dll
@@ -122,20 +132,7 @@ gccpp.dll: gc_cpp.obj gc.lib .AUTODEPEND
         @%append $*.lnk library wr7$(CALLING)dll.lib
         *wlink @$*.lnk
 
-!else
-
-gc.lib: $(OBJS)
-        @%create $*.lb1
-        @for %i in ($(OBJS)) do @%append $*.lb1 +'%i'
-        *wlib -b -c -n -p=512 $@ @$*.lb1
-
-gccpp.lib: gc_cpp.obj
-        @%create $*.lb1
-        @%append $*.lb1 +'gc_cpp.obj'
-        *wlib -b -c -n -p=512 $@ @$*.lb1
-
 !endif
-
 
 gctest.exe: test.obj gc.lib
         %create $*.lnk

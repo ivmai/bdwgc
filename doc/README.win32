@@ -41,7 +41,7 @@ Microsoft Tools
 ---------------
 
 For Microsoft development tools, type
-"nmake -f NT_MAKEFILE cpu=i386 make_as_lib=1 disable_threads=1 nodebug=1"
+"nmake -f NT_MAKEFILE cpu=i386 disable_threads=1 enable_static=1 nodebug=1"
 to build the release variant of the collector as a static library without
 threads support.
 
