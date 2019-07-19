@@ -59,7 +59,7 @@ DLLFLAG=-bd -DGC_DLL
 TEST_DLLFLAG=-DGC_DLL
 !else ifdef MAKE_AS_LIB
 DLLFLAG=
-TEST_DLLFLAG=
+TEST_DLLFLAG=-DGC_NOT_DLL
 !else
 !error Either MAKE_AS_LIB or MAKE_AS_DLL should be defined
 !endif
@@ -78,7 +78,7 @@ OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj &
       dbg_mlc.obj malloc.obj dyn_load.obj &
       typd_mlc.obj ptr_chck.obj mallocx.obj fnlz_mlc.obj gcj_mlc.obj
 
-all: gc.lib
+all: gc.lib gccpp.lib
 
 check: gctest.exe test_cpp.exe .SYMBOLIC
         *gctest.exe
@@ -86,8 +86,8 @@ check: gctest.exe test_cpp.exe .SYMBOLIC
 
 !ifdef MAKE_AS_DLL
 
-gc.lib: gc.dll gc_cpp.obj
-        *wlib -b -c -n -p=512 $@ +gc.dll +gc_cpp.obj
+gc.lib: gc.dll
+        *wlib -b -c -n -p=512 $@ +gc.dll
 
 gc.dll: $(OBJS) .AUTODEPEND
         @%create $*.lnk
@@ -98,13 +98,39 @@ gc.dll: $(OBJS) .AUTODEPEND
 !else ifdef OS2
         @%append $*.lnk sys os2v2_dll
 !endif
+        @%append $*.lnk op case
         @%append $*.lnk name $*
         @for %i in ($(OBJS)) do @%append $*.lnk file '%i'
         *wlink @$*.lnk
+
+gccpp.lib: gccpp.dll
+        *wlib -b -c -n -p=512 $@ +gccpp.dll
+
+gccpp.dll: gc_cpp.obj gc.lib .AUTODEPEND
+        @%create $*.lnk
+!ifdef DOS4GW
+        @%append $*.lnk sys os2v2_dll
+!else ifdef MSWIN32
+        @%append $*.lnk sys nt_dll
+!else ifdef OS2
+        @%append $*.lnk sys os2v2_dll
+!endif
+        @%append $*.lnk op case
+        @%append $*.lnk name $*
+        @%append $*.lnk file 'gc_cpp.obj'
+        @%append $*.lnk library gc.lib
+        @%append $*.lnk library wr7$(CALLING)dll.lib
+        *wlink @$*.lnk
+
 !else
-gc.lib: $(OBJS) gc_cpp.obj
+
+gc.lib: $(OBJS)
         @%create $*.lb1
         @for %i in ($(OBJS)) do @%append $*.lb1 +'%i'
+        *wlib -b -c -n -p=512 $@ @$*.lb1
+
+gccpp.lib: gc_cpp.obj
+        @%create $*.lb1
         @%append $*.lb1 +'gc_cpp.obj'
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
@@ -126,7 +152,8 @@ gctest.exe: test.obj gc.lib
         @%append $*.lnk file test.obj
         @%append $*.lnk library gc.lib
         *wlink @$*.lnk
-test_cpp.exe: test_cpp.obj gc.lib
+
+test_cpp.exe: test_cpp.obj gc.lib gccpp.lib
         %create $*.lnk
 !ifdef DOS4GW
         @%append $*.lnk sys dos4g
@@ -140,6 +167,7 @@ test_cpp.exe: test_cpp.obj gc.lib
         @%append $*.lnk name $*
         @%append $*.lnk file test_cpp.obj
         @%append $*.lnk library gc.lib
+        @%append $*.lnk library gccpp.lib
         *wlink @$*.lnk
 
 gc_cpp.obj: gc_cpp.cc .AUTODEPEND
@@ -155,7 +183,7 @@ test_cpp.obj: tests\test_cpp.cc .AUTODEPEND
 .cc.obj: .AUTODEPEND
         $(CXX) $(CXXFLAGS) $*.cc
 
-clean : .SYMBOLIC
+clean: .SYMBOLIC
     @if exist *.obj del *.obj
     @if exist *.map del *.map
     @if exist *.lnk del *.lnk

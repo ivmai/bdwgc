@@ -58,12 +58,8 @@ CFLAGS_MT=$(cvarsmt) -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
 
 !IFDEF MAKE_AS_LIB
 CFLAGS_GCDLL=-DGC_NOT_DLL
-LINK_GC=lib /out:gc.lib
 !ELSE
 CFLAGS_GCDLL=-DGC_DLL
-LINK_DLL_FLAGS=kernel32.lib user32.lib /subsystem:windows /dll \
-  /INCREMENTAL:NO /pdb:"gc.pdb" /out:gc.dll /implib:gc.lib
-LINK_GC=$(link) $(ldebug) $(LINK_DLL_FLAGS)
 !ENDIF
 
 CFLAGS_SPECIFIC=$(CFLAGS_DEBUG) $(CFLAGS_GCDLL) $(CFLAGS_MT)
@@ -81,9 +77,9 @@ CFLAGS_DEFAULT=-DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTAB
 AO_SRC_DIR=libatomic_ops/src
 AO_INCLUDE_DIR=$(AO_SRC_DIR)
 
-OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj gcj_mlc.obj mallocx.obj extra\msvc_dbg.obj thread_local_alloc.obj
+OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gcj_mlc.obj mallocx.obj extra\msvc_dbg.obj thread_local_alloc.obj
 
-all: gc.lib
+all: gc.lib gccpp.lib
 
 check: gctest.exe test_cpp.exe de.exe
 	gctest.exe
@@ -99,8 +95,23 @@ check: gctest.exe test_cpp.exe de.exe
 
 $(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h include\gc_disclaim.h include\private\msvc_dbg.h
 
+!IFDEF MAKE_AS_LIB
+
 gc.lib: $(OBJS)
-	$(LINK_GC) /MACHINE:$(CPU) $(OBJS)
+	lib /out:gc.lib /MACHINE:$(CPU) $(OBJS)
+
+gccpp.lib: gc_cpp.obj
+	lib /out:gccpp.lib /MACHINE:$(CPU) gc_cpp.obj
+
+!ELSE
+
+gc.lib: $(OBJS)
+	$(link) $(ldebug) kernel32.lib user32.lib /subsystem:windows /dll /INCREMENTAL:NO /pdb:"gc.pdb" /out:gc.dll /implib:gc.lib /MACHINE:$(CPU) $(OBJS)
+
+gccpp.lib: gc_cpp.obj
+	$(link) $(ldebug) gc.lib /subsystem:windows /dll /INCREMENTAL:NO /pdb:"gccpp.pdb" /out:gccpp.dll /implib:gccpp.lib /MACHINE:$(CPU) gc_cpp.obj
+
+!ENDIF
 
 gctest.exe: gc.lib tests\test.obj
 	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:$*.exe tests\test.obj gc.lib
@@ -127,8 +138,8 @@ test_cpp.cpp: tests\test_cpp.cc
 # This generates the C++ test executable.  The executable expects
 # a single numeric argument, which is the number of iterations.
 # The output appears in test_cpp.gc.log file.
-test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib
-	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:test_cpp.exe test_cpp.obj gc.lib
+test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib gccpp.lib
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:test_cpp.exe test_cpp.obj gc.lib gccpp.lib
 
 $(AO_SRC_DIR):
 	tar xvfz $(AO_SRC_DIR).tar.gz

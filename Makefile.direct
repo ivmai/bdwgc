@@ -2,13 +2,13 @@
 # to build the collector.
 #
 # Primary targets:
-# gc.a - builds basic library
-# c++ - adds C++ interface to library
+# all - builds gc.a, gccpp.a
+# base_lib - builds gc.a only (basic library)
+# c++ - builds gccpp.a only (C++ interface to library)
 # cords - adds cords (heavyweight strings) to library
-# check - prints porting information, then builds basic version of gc.a,
-#       and runs some tests of collector and cords.  Does not add cords or
-#       c++ interface to gc.a
-# check-cpp - runs C++ test without adding C++ (and cords) interface to gc.a
+# check - same as "all" but also prints porting information, and runs some
+#         tests of collector and cords
+# check-cpp - builds gc.a and gccpp.a, runs C++ only test
 # cord/de - builds dumb editor based on cords.
 
 ABI_FLAG=
@@ -25,7 +25,7 @@ CC=cc $(ABI_FLAG)
 # Compiler executable name.  For EMX, replace to "gcc".
 
 CXX=g++ $(ABI_FLAG)
-# Needed only for "make c++", which adds the c++ interface.
+# Needed only for "make c++", which builds the C++ interface.
 
 AS=as $(AS_ABI_FLAG)
 # The above doesn't work with gas, which doesn't run cpp.
@@ -143,7 +143,7 @@ SPECIALCFLAGS= -I$(srcdir)/include -I$(AO_SRC_DIR)/src $(CFLAGS_FOR_PIC)
 # not time-critical anyway.
 # Set SPECIALCFLAGS to -q nodirect_code on Encore.
 
-all: base_lib
+all: base_lib c++
 
 atomic_ops.o: $(AO_SRC_DIR)/src/atomic_ops.c
 	$(CC) $(CFLAGS) -c -o $@ $(AO_SRC_DIR)/src/atomic_ops.c
@@ -156,9 +156,10 @@ LEAKFLAGS= $(CFLAGS) -DFIND_LEAK
 
 BSD-pkg-all: bsd-libgc.a bsd-libleak.a
 
-bsd-libgc.a:
+bsd-libgc.a bsd-libgccpp.a:
 	$(MAKE) -f Makefile.direct CFLAGS="$(CFLAGS)" clean c++-t
 	mv gc.a bsd-libgc.a
+	mv gccpp.a bsd-libgccpp.a
 
 bsd-libleak.a:
 	$(MAKE) -f Makefile.direct CFLAGS="$(LEAKFLAGS)" clean c++-nt
@@ -167,6 +168,8 @@ bsd-libleak.a:
 BSD-pkg-install: BSD-pkg-all
 	${CP} bsd-libgc.a libgc.a
 	${INSTALL_DATA} libgc.a ${PREFIX}/lib
+	${CP} bsd-libgccpp.a libgccpp.a
+	${INSTALL_DATA} libgccpp.a ${PREFIX}/lib
 	${INSTALL_DATA} gc.h gc_cpp.h ${PREFIX}/include
 	${INSTALL_MAN} doc/gc.man ${PREFIX}/man/man3/gc.3
 
@@ -223,10 +226,10 @@ gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 
 test_cpp$(EXEEXT): $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h \
-  $(srcdir)/include/gc.h gc_cpp.o base_lib $(UTILS)
+  $(srcdir)/include/gc.h c++ base_lib $(UTILS)
 	rm -f test_cpp$(EXEEXT)
-	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc_cpp.o gc.a -ldld `./threadlibs`
-	./if_not_there test_cpp$(EXEEXT) || $(CXX) $(CXXFLAGS) -o test_cpp$(EXEEXT) $(srcdir)/tests/test_cpp.cc gc_cpp.o gc.a `./threadlibs`
+	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc.a gccpp.a -ldld `./threadlibs`
+	./if_not_there test_cpp$(EXEEXT) || $(CXX) $(CXXFLAGS) -o test_cpp$(EXEEXT) $(srcdir)/tests/test_cpp.cc gc.a gccpp.a `./threadlibs`
 
 check-cpp: test_cpp$(EXEEXT)
 	./test_cpp
@@ -237,14 +240,14 @@ c++-t: c++ test_cpp$(EXEEXT)
 c++-nt: c++
 	@echo "Use ./test_cpp 1 to test the leak library"
 
-c++: gc_cpp.o $(srcdir)/include/gc_cpp.h base_lib $(UTILS)
+c++ gccpp.a: gc_cpp.o $(UTILS)
 	rm -f dont_ar_4
 	./if_mach SPARC SOLARIS touch dont_ar_4
-	./if_mach SPARC SOLARIS $(AR) rus gc.a gc_cpp.o
+	./if_mach SPARC SOLARIS $(AR) rus gccpp.a gc_cpp.o
 	./if_mach M68K AMIGA touch dont_ar_4
-	./if_mach M68K AMIGA $(AR) -vrus gc.a gc_cpp.o
-	./if_not_there dont_ar_4 || $(AR) ru gc.a gc_cpp.o
-	./if_not_there dont_ar_4 || $(RANLIB) gc.a || cat /dev/null
+	./if_mach M68K AMIGA $(AR) -vrus gccpp.a gc_cpp.o
+	./if_not_there dont_ar_4 || $(AR) ru gccpp.a gc_cpp.o
+	./if_not_there dont_ar_4 || $(RANLIB) gccpp.a || cat /dev/null
 	echo > c++
 
 dyn_load_sunos53.o: dyn_load.c
@@ -364,7 +367,7 @@ if_not_there$(EXEEXT): $(srcdir)/tools/if_not_there.c
 	$(HOSTCC) $(HOSTCFLAGS) -o if_not_there$(EXEEXT) $(srcdir)/tools/if_not_there.c
 
 clean:
-	rm -f gc.a *.i *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
+	rm -f *.a *.i *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
 	      setjmp_test mon.out gmon.out a.out core if_not_there if_mach \
 	      base_lib c++ $(CORD_OBJS) cordtest de cords dont_ar_* threadlibs
 	-rm -f *~
@@ -383,10 +386,11 @@ setjmp_test$(EXEEXT): $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h \
   $(UTILS)
 	$(CC) $(CFLAGS) -o setjmp_test$(EXEEXT) $(srcdir)/tools/setjmp_t.c
 
-check: cordtest$(EXEEXT) gctest$(EXEEXT) setjmp_test$(EXEEXT)
+check: cordtest$(EXEEXT) gctest$(EXEEXT) setjmp_test$(EXEEXT) test_cpp$(EXEEXT)
 	./setjmp_test
 	./gctest
 	./cordtest
+	./test_cpp
 
 # A synonym to "check" (for compatibility with older GC versions).
 test: check
