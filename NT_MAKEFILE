@@ -2,8 +2,8 @@
 # Should be invoked as "nmake -f NT_MAKEFILE [<args>]"; the optional arguments
 # are: "cpu=AMD64" - to target x64, "cpu=i386" - to target x86,
 # "make_as_lib=1" - to build it as a static library, "nodebug=1" - to produce
-# the release variant of the library, "nothreads=1" - to build the library and
-# the tests without threads support.
+# the release variant of the library, "disable_threads=1" - to build the
+# library and the tests without threads support.
 
 cc = cl
 link = link
@@ -52,7 +52,7 @@ CVTRES_CPU=X64
 CFLAGS_DEBUG=-DGC_ASSERTIONS
 !ENDIF
 
-!IFNDEF NOTHREADS
+!IFNDEF DISABLE_THREADS
 CFLAGS_MT=$(cvarsmt) -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
 !ENDIF
 
