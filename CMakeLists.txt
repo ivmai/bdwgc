@@ -290,6 +290,11 @@ elseif (BORLAND)
   add_compile_options(/w-use)
 endif()
 
+# Add implementation of backtrace() and backtrace_symbols().
+if (MSVC)
+  set(SRC ${SRC} extra/msvc_dbg.c)
+endif()
+
 if (BUILD_SHARED_LIBS)
   add_definitions("-DGC_DLL")
 else()
