@@ -1970,7 +1970,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #      if defined(MACOS) && defined(USE_TEMPORARY_MEMORY)
          UNTESTED(GC_MacTemporaryNewPtr);
 #      endif
-#      if !defined(_M_AMD64) && defined(_MSC_VER)
+#      if !defined(_M_X64) && defined(_MSC_VER)
          UNTESTED(GetFileLineFromStack);
          UNTESTED(GetModuleNameFromStack);
          UNTESTED(GetSymbolNameFromStack);

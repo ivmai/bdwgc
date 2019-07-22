@@ -20,7 +20,7 @@
   THE SOFTWARE.
 */
 
-#if !defined(_M_AMD64) && defined(_MSC_VER)
+#if !defined(_M_X64) && defined(_MSC_VER)
 
 /* X86_64 is currently missing some meachine-dependent code below.  */
 
@@ -90,12 +90,11 @@ static ULONG_ADDR CALLBACK GetModuleBase(HANDLE hProcess, ULONG_ADDR dwAddress)
     /* article Q189780.                                                 */
     GetCurrentDirectoryA(sizeof(curDir), curDir);
     GetModuleFileNameA(NULL, exePath, sizeof(exePath));
-#if defined(_MSC_VER) && _MSC_VER == 1200
-    /* use strcat for VC6 */
-    strcat(exePath, "\\..");
-#else
+#if _MSC_VER > 1200
     strcat_s(exePath, sizeof(exePath), "\\..");
-#endif /* _MSC_VER >= 1200 */
+#else /* VC6 or earlier */
+    strcat(exePath, "\\..");
+#endif
     SetCurrentDirectoryA(exePath);
 #ifdef _DEBUG
     GetCurrentDirectoryA(sizeof(exePath), exePath);
@@ -393,4 +392,4 @@ char** backtrace_symbols(void*const* addresses, int count)
   extern int GC_quiet;
         /* ANSI C does not allow translation units to be empty. */
 
-#endif /* _M_AMD64 */
+#endif
