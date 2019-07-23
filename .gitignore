@@ -14,6 +14,7 @@
 
 *.gc.log
 .dirstamp
+/*.a
 /*_bench.log
 /*_bench.trs
 /*test.log
@@ -23,8 +24,6 @@
 /add_gc_prefix
 /base_lib
 /bdw-gc.pc
-/bsd-libgc.a
-/bsd-libleak.a
 /c++
 /config.cache
 /config.log
@@ -47,7 +46,6 @@
 /dont_ar_3
 /dont_ar_4
 /gc-*
-/gc.a
 /gc.log
 /gcname
 /gctest
@@ -62,7 +60,6 @@
 /libcord.so
 /libgc.so
 /libgccpp.so
-/libgcmt-dll.dll.a
 /libirixgc.so
 /liblinuxgc.so
 /libtool
@@ -113,14 +110,7 @@ stamp-h1
 /Testing/Temporary/
 /cmake_install.cmake
 /gc.sln
-/libcord.a
-/libcord.dll.a
 /libgc*-dll.so
-/libgc*-lib.a
-/libgc.a
-/libgc.dll.a
-/libgccpp.a
-/libgccpp.dll.a
 /tests/*.vcxproj
 /tests/*.vcxproj.filters
 /tests/*test
