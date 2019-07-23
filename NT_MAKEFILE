@@ -108,7 +108,7 @@ gccpp.lib: gc_cpp.obj
 gc.lib: $(OBJS)
 	$(link) $(ldebug) kernel32.lib user32.lib /subsystem:windows /dll /INCREMENTAL:NO /pdb:"gc.pdb" /out:gc.dll /implib:gc.lib /MACHINE:$(CPU) $(OBJS)
 
-gccpp.lib: gc_cpp.obj
+gccpp.lib: gc_cpp.obj gc.lib
 	$(link) $(ldebug) gc.lib /subsystem:windows /dll /INCREMENTAL:NO /pdb:"gccpp.pdb" /out:gccpp.dll /implib:gccpp.lib /MACHINE:$(CPU) gc_cpp.obj
 
 !ENDIF
