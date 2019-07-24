@@ -52,14 +52,25 @@ CVTRES_CPU=X64
 CFLAGS_DEBUG=-DGC_ASSERTIONS
 !ENDIF
 
-!IFNDEF DISABLE_THREADS
-CFLAGS_MT=$(cvarsmt) -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
-!ENDIF
-
 !IFDEF ENABLE_STATIC
 CFLAGS_GCDLL=-DGC_NOT_DLL
+CORDFLAG=
 !ELSE
 CFLAGS_GCDLL=-DGC_DLL
+# cord.dll and its clients should not link C library statically otherwise
+# FILE-related functions might not work (because own set of opened FILEs
+# is maintained by each copy of the C library thus making impossible to pass
+# FILE pointer from .exe code to .dll code).
+cvarsmt=
+!IFDEF NODEBUG
+CORDFLAG=-MD
+!ELSE
+CORDFLAG=-MDd
+!ENDIF
+!ENDIF
+
+!IFNDEF DISABLE_THREADS
+CFLAGS_MT=$(cvarsmt) -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
 !ENDIF
 
 CFLAGS_SPECIFIC=$(CFLAGS_DEBUG) $(CFLAGS_GCDLL) $(CFLAGS_MT)
@@ -79,14 +90,17 @@ AO_INCLUDE_DIR=$(AO_SRC_DIR)
 
 OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gcj_mlc.obj mallocx.obj extra\msvc_dbg.obj thread_local_alloc.obj
 
-all: gc.lib gccpp.lib
+COBJS= cord\cordbscs.obj cord\cordxtra.obj cord\cordprnt.obj
 
-check: gctest.exe test_cpp.exe de.exe
+all: gc.lib cord.lib gccpp.lib
+
+check: gctest.exe test_cpp.exe cordtest.exe de.exe
 	gctest.exe
+	cordtest.exe
 	test_cpp.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -DCORD_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
+	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) $(CORDFLAG) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
 # Disable crt security warnings, since unfortunately they warn about all sorts
 # of safe uses of strncpy.  It would be nice to leave the rest enabled.
 
@@ -100,6 +114,9 @@ $(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h incl
 gc.lib: $(OBJS)
 	lib /out:gc.lib /MACHINE:$(CPU) $(OBJS)
 
+cord.lib: $(COBJS)
+	lib /out:cord.lib /MACHINE:$(CPU) $(COBJS)
+
 gccpp.lib: gc_cpp.obj
 	lib /out:gccpp.lib /MACHINE:$(CPU) gc_cpp.obj
 
@@ -107,6 +124,9 @@ gccpp.lib: gc_cpp.obj
 
 gc.lib: $(OBJS)
 	$(link) $(ldebug) kernel32.lib user32.lib /subsystem:windows /dll /INCREMENTAL:NO /pdb:"gc.pdb" /out:gc.dll /implib:gc.lib /MACHINE:$(CPU) $(OBJS)
+
+cord.lib: $(COBJS) gc.lib
+	$(link) $(ldebug) gc.lib /subsystem:windows /dll /INCREMENTAL:NO /pdb:"cord.pdb" /out:cord.dll /implib:cord.lib /MACHINE:$(CPU) $(COBJS)
 
 gccpp.lib: gc_cpp.obj gc.lib
 	$(link) $(ldebug) gc.lib /subsystem:windows /dll /INCREMENTAL:NO /pdb:"gccpp.pdb" /out:gccpp.dll /implib:gccpp.lib /MACHINE:$(CPU) gc_cpp.obj
@@ -127,8 +147,11 @@ cord\tests\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cm
 	$(rc) $(rcvars) -r -fo cord\tests\de_win.res cord\tests\de_win.rc
 
 # Cord/de is a real win32 GUI app.
-de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib
-	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:de.exe cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib gdi32.lib user32.lib
+de.exe: cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib cord.lib
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:de.exe cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib cord.lib gdi32.lib user32.lib
+
+cordtest.exe: cord\tests\cordtest.obj gc.lib cord.lib
+	$(link) /subsystem:console /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:cordtest.exe cord\tests\cordtest.obj gc.lib cord.lib user32.lib
 
 gc_cpp.obj: gc_cpp.cc include\gc_cpp.h include\gc.h
 
@@ -145,4 +168,4 @@ $(AO_SRC_DIR):
 	tar xvfz $(AO_SRC_DIR).tar.gz
 
 clean:
-	del *.exe *.log *.obj *.pdb cord\*.exe cord\*.exp cord\*.lib cord\*.obj cord\*.pdb cord\tests\*.rbj cord\tests\*.res cord\tests\*.obj extra\*.obj gc*.lib gc*.dll gc*.exp test_cpp.cpp tests\*.obj 2> nul
+	del *.dll *.exe *.exp *.lib *.log *.obj *.pdb cordtst*.tmp cord\*.obj cord\tests\*.rbj cord\tests\*.res cord\tests\*.obj extra\*.obj test_cpp.cpp tests\*.obj 2> nul

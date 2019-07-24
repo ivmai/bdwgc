@@ -208,7 +208,7 @@ use up to about 30 MB of memory.  (The multi-threaded version will use more.
 attempt to build and test the "cord" string library.)
 
 Makefile.direct will generate a library gc.a which you should link against.
-Typing "make cords" will add the cord library to gc.a.
+Typing "make cords" will build the cord library (cord.a).
 
 The GNU style build process understands the usual targets.  `make check`
 runs a number of tests.  `make install` installs at least libgc, and libcord.

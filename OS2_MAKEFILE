@@ -15,7 +15,7 @@ CFLAGS= /O /Q /DALL_INTERIOR_POINTERS /DENABLE_DISCLAIM /DGC_ATOMIC_UNCOLLECTABL
 # Setjmp_test may yield overly optimistic results when compiled
 # without optimization.
 
-all: gc.lib
+all: gc.lib cord.lib
 
 check: gctest.exe cordtest.exe
         gctest.exe
@@ -45,5 +45,15 @@ cord\cordxtra.obj: cord\cordxtra.c include\cord.h include\cord_pos.h include\ec.
 cord\cordprnt.obj: cord\cordprnt.c include\cord.h include\cord_pos.h include\ec.h
         $(CC) $(CFLAGS) /C /Focord\cordprnt cord\cordprnt.c
 
-cordtest.exe: cord\tests\cordtest.c include\cord.h include\cord_pos.h include\ec.h $(CORDOBJS) gc.lib
-        $(CC) $(CFLAGS) /B"/STACK:65536" /Fecordtest cord\tests\cordtest.c gc.lib $(CORDOBJS)
+cord.lib: $(CORDOBJS)
+        echo . > cord.lib
+        erase cord.lib
+        LIB cord.lib $(CORDOBJS), cord.lst
+
+cordtest.exe: cord\tests\cordtest.c include\cord.h include\cord_pos.h include\ec.h gc.lib cord.lib
+        $(CC) $(CFLAGS) /B"/STACK:65536" /Fecordtest cord\tests\cordtest.c gc.lib cord.lib
+
+clean:
+        erase gc.lib cord.lib
+        erase gctest.exe cordtest.exe
+        erase $(OBJS) $(CORDOBJS)
