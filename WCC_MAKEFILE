@@ -76,12 +76,6 @@ CXXFLAGS= $(CFLAGS) -xs
 TEST_CFLAGS=-$(CPU)$(CALLING) $(OPTIM) -iinclude -zp4 -zc $(SYSFLAG) $(TEST_DLLFLAG) $(DEFS)
 TEST_CXXFLAGS= $(TEST_CFLAGS) -xs
 
-OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj &
-      mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj &
-      obj_map.obj blacklst.obj finalize.obj new_hblk.obj &
-      dbg_mlc.obj malloc.obj dyn_load.obj &
-      typd_mlc.obj ptr_chck.obj mallocx.obj fnlz_mlc.obj gcj_mlc.obj
-
 COBJS= cordbscs.obj cordxtra.obj cordprnt.obj
 
 all: gc.lib gccpp.lib cord.lib
@@ -92,6 +86,12 @@ check: gctest.exe test_cpp.exe cordtest.exe .SYMBOLIC
         *cordtest.exe
 
 !ifdef ENABLE_STATIC
+
+OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj &
+      mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj &
+      obj_map.obj blacklst.obj finalize.obj new_hblk.obj &
+      dbg_mlc.obj malloc.obj dyn_load.obj &
+      typd_mlc.obj ptr_chck.obj mallocx.obj fnlz_mlc.obj gcj_mlc.obj
 
 gc.lib: $(OBJS)
         @%create $*.lb1
@@ -110,10 +110,13 @@ gccpp.lib: gc_cpp.obj
 
 !else
 
+gc.obj: extra\gc.c .AUTODEPEND
+        $(CC) $(CFLAGS) extra\gc.c
+
 gc.lib: gc.dll
         *wlib -b -c -n -p=512 $@ +gc.dll
 
-gc.dll: $(OBJS) .AUTODEPEND
+gc.dll: gc.obj .AUTODEPEND
         @%create $*.lnk
 !ifdef DOS4GW
         @%append $*.lnk sys os2v2_dll
@@ -124,7 +127,7 @@ gc.dll: $(OBJS) .AUTODEPEND
 !endif
         @%append $*.lnk op case
         @%append $*.lnk name $*
-        @for %i in ($(OBJS)) do @%append $*.lnk file '%i'
+        @%append $*.lnk file 'gc.obj'
         *wlink @$*.lnk
 
 cord.lib: cord.dll
