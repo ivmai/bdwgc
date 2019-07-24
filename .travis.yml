@@ -298,16 +298,16 @@ matrix:
     compiler: clang
     env:
     - MAKEFILE_NAME=Makefile.direct
-    - MAKEFILE_TARGETS="check check-cpp cord/de"
+    - MAKEFILE_TARGETS="check cord/de"
   - os: linux
     compiler: gcc
     env:
     - MAKEFILE_NAME=Makefile.direct
-    - MAKEFILE_TARGETS="check check-cpp cord/de"
+    - MAKEFILE_TARGETS="check cord/de"
   - os: osx
     env:
     - MAKEFILE_NAME=Makefile.direct
-    - MAKEFILE_TARGETS="check check-cpp cord/de"
+    - MAKEFILE_TARGETS="check cord/de"
   - os: linux
     addons:
       apt:
