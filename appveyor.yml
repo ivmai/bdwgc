@@ -68,10 +68,10 @@ test_script:
       "cd /cygdrive/c/projects/bdwgc && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && make -j -f Makefile.direct check check-cpp CC=gcc CFLAGS_EXTRA='-DGC_NOT_DLL %CFLAGS_EXTRA%'" )
+      "cd /c/projects/bdwgc && make -j -f Makefile.direct check CC=gcc CFLAGS_EXTRA='-DGC_NOT_DLL %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw-shared-no-make] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
       "cd /c/projects/bdwgc && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL %CFLAGS_EXTRA% -o gctest.exe tests/test.c gc.dll && gctest.exe && cat gctest.gc.log" )
 - cmd: if [%TARGET%]==[mingw-w64] (
     C:\msys64\usr\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && make -j -f Makefile.direct check check-cpp CC=gcc CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+      "cd /c/projects/bdwgc && make -j -f Makefile.direct check CC=gcc CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
