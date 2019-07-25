@@ -268,6 +268,9 @@ if (enable_werror)
     add_compile_options(/w!)
   elseif (MSVC)
     add_compile_options(/WX)
+    # Workaround "typedef ignored on left of ..." warning reported in
+    # imagehlp.h of e.g. Windows Kit 8.1.
+    add_compile_options(/wd4091)
   elseif (WATCOM)
     add_compile_options(/we)
   else()
