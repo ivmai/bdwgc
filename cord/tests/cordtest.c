@@ -40,7 +40,8 @@ int count;
 
 int test_fn(char c, void * client_data)
 {
-    if (client_data != (void *)13) ABORT("bad client data");
+    if (client_data != (void *)(GC_word)13)
+        ABORT("bad client data");
     if (count < 64*1024+1) {
         if ((count & 1) == 0) {
             if (c != 'b') ABORT("bad char");
@@ -81,7 +82,8 @@ void test_basics(void)
     if (CORD_len(x) != 128*1024+1) ABORT("bad length");
 
     count = 0;
-    if (CORD_iter5(x, 64*1024-1, test_fn, CORD_NO_FN, (void *)13) == 0) {
+    if (CORD_iter5(x, 64*1024-1, test_fn, CORD_NO_FN,
+                   (void *)(GC_word)13) == 0) {
         ABORT("CORD_iter5 failed");
     }
     if (count != 64*1024 + 2) ABORT("CORD_iter5 failed");
@@ -89,7 +91,7 @@ void test_basics(void)
     count = 0;
     CORD_set_pos(p, x, 64*1024-1);
     while(CORD_pos_valid(p)) {
-        (void) test_fn(CORD_pos_fetch(p), (void *)13);
+        (void)test_fn(CORD_pos_fetch(p), (void *)(GC_word)13);
     CORD_next(p);
     }
     if (count != 64*1024 + 2) ABORT("Position based iteration failed");
@@ -113,7 +115,8 @@ void test_basics(void)
     if (CORD_len(x) != 128*1024+1) ABORT("bad length");
 
     count = 0;
-    if (CORD_iter5(x, 64*1024-1, test_fn, CORD_NO_FN, (void *)13) == 0) {
+    if (CORD_iter5(x, 64*1024-1, test_fn, CORD_NO_FN,
+                   (void *)(GC_word)13) == 0) {
         ABORT("CORD_iter5 failed");
     }
     if (count != 64*1024 + 2) ABORT("CORD_iter5 failed");
