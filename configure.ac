@@ -532,8 +532,7 @@ esac
 AC_MSG_RESULT($enable_shared)
 
 # Compile with GC_DLL defined unless building static libraries.
-if test "${enable_shared}" = yes; then
-  if test "${enable_static}" = no; then
+if test "${enable_shared}" != no -a "${enable_static}" != yes; then
     AC_DEFINE(GC_DLL)
     if test "$GCC" = yes; then
       # Pass -fvisibility=hidden option if supported
@@ -548,13 +547,11 @@ if test "${enable_shared}" = yes; then
             [CFLAGS="-DGC_NO_VISIBILITY $CFLAGS"])
       AC_MSG_RESULT($ac_cv_fvisibility_hidden)
     fi
-  fi
-fi
+else
 
-# Do not require the clients to link with "user32" system library.
-if test "${enable_static}" = yes -o "${enable_shared}" = no; then
   case "$host" in
     *-*-cygwin* | *-*-mingw* | *-*-msys*)
+      # Do not require the clients to link with "user32" system library.
       AC_DEFINE([DONT_USE_USER32_DLL], 1,
                 [Do not use user32.dll import library (Win32).])
       ;;
