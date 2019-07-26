@@ -554,6 +554,10 @@ else
       # Do not require the clients to link with "user32" system library.
       AC_DEFINE([DONT_USE_USER32_DLL], 1,
                 [Do not use user32.dll import library (Win32).])
+      # Use inline version of GC new and delete operators in test_cpp
+      # otherwise the system ones might be used instead because of arbitrary
+      # ordering of object files when linking.
+      CXXFLAGS="$CXXFLAGS -DGC_NOT_DLL"
       ;;
   esac
 fi
