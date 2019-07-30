@@ -56,7 +56,7 @@ install:
 
 build_script:
 - cmd: if [%TARGET%]==[cmake] (
-    cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA='%CFLAGS_EXTRA%' . && cmake --build . --config %CMAKE_CONFIG% -v )
+    cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA='%CFLAGS_EXTRA%' . && cmake --build . --config %CMAKE_CONFIG% )
 - cmd: if [%TARGET%]==[nmake] (
     "C:\Program Files\Microsoft SDKs\Windows\%MS_SDK_VER%\Bin\SetEnv.cmd" /%CPU% /%BLD% && nmake /f NT_MAKEFILE %MACRO_DEFS% )
 - cmd: if [%TARGET%]==[cygwin] (
