@@ -308,6 +308,14 @@ else()
   endif(WIN32)
 endif()
 
+# Extra user-defined flags to pass both to C and C++ compilers.
+if (DEFINED CFLAGS_EXTRA)
+  set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} ${CFLAGS_EXTRA})
+  if (enable_cplusplus)
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${CFLAGS_EXTRA})
+  endif()
+endif()
+
 add_library(gc ${SRC})
 
 if (enable_cplusplus)
