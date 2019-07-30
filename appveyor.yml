@@ -3,10 +3,10 @@ version: 8.1.0-{build}
 environment:
   matrix:
   - TARGET: cmake
-    CFLAGS_EXTRA: -D NO_MSGBOX_ON_ERROR
     CMAKE_CONFIG: Debug
     CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Werror=deprecated
   - TARGET: cmake
+    CFLAGS_EXTRA: -DNO_MSGBOX_ON_ERROR
     CMAKE_CONFIG: Release
     CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_large_config=ON
   - TARGET: cmake
@@ -56,7 +56,7 @@ install:
 
 build_script:
 - cmd: if [%TARGET%]==[cmake] (
-    cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA='%CFLAGS_EXTRA%' . && cmake --build . --config %CMAKE_CONFIG% )
+    cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" . && cmake --build . --config %CMAKE_CONFIG% )
 - cmd: if [%TARGET%]==[nmake] (
     "C:\Program Files\Microsoft SDKs\Windows\%MS_SDK_VER%\Bin\SetEnv.cmd" /%CPU% /%BLD% && nmake /f NT_MAKEFILE %MACRO_DEFS% )
 - cmd: if [%TARGET%]==[cygwin] (
