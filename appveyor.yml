@@ -3,6 +3,7 @@ version: 8.1.0-{build}
 environment:
   matrix:
   - TARGET: cmake
+    CFLAGS_EXTRA: -D NO_MSGBOX_ON_ERROR
     CMAKE_CONFIG: Debug
     CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Werror=deprecated
   - TARGET: cmake
@@ -38,13 +39,13 @@ environment:
   - TARGET: mingw
     CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic
   - TARGET: mingw
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D EMPTY_GETENV_RESULTS -D GC_GCJ_SUPPORT -D USE_MUNMAP -D LARGE_CONFIG
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D EMPTY_GETENV_RESULTS -D GC_GCJ_SUPPORT -D USE_MUNMAP -D LARGE_CONFIG -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT -D GC_TIME_LIMIT=10 -D WINXP_USE_PERF_COUNTER
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT -D GC_TIME_LIMIT=10 -D WINXP_USE_PERF_COUNTER -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw-shared-no-make
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D GC_ASSERTIONS -D ENABLE_DISCLAIM -D GC_GCJ_SUPPORT -D GC_PREFER_MPROTECT_VDB -D GC_CALL=__stdcall -D GC_CALLBACK=__fastcall
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D GC_ASSERTIONS -D ENABLE_DISCLAIM -D GC_GCJ_SUPPORT -D GC_PREFER_MPROTECT_VDB -D GC_CALL=__stdcall -D GC_CALLBACK=__fastcall -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw-w64
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw-w64
     CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT
 
@@ -55,7 +56,7 @@ install:
 
 build_script:
 - cmd: if [%TARGET%]==[cmake] (
-    cmake %CMAKE_OPTIONS% -Denable_werror=ON . && cmake --build . --config %CMAKE_CONFIG% -v )
+    cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA='%CFLAGS_EXTRA%' . && cmake --build . --config %CMAKE_CONFIG% -v )
 - cmd: if [%TARGET%]==[nmake] (
     "C:\Program Files\Microsoft SDKs\Windows\%MS_SDK_VER%\Bin\SetEnv.cmd" /%CPU% /%BLD% && nmake /f NT_MAKEFILE %MACRO_DEFS% )
 - cmd: if [%TARGET%]==[cygwin] (
