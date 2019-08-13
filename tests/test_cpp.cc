@@ -76,7 +76,7 @@ extern "C" {
         exit( 1 ); }
 
 #ifndef GC_ATTR_EXPLICIT
-# if (__cplusplus >= 201103L) || defined(CPPCHECK)
+# if (__cplusplus >= 201103L) && !defined(__clang__) || defined(CPPCHECK)
 #   define GC_ATTR_EXPLICIT explicit
 # else
 #   define GC_ATTR_EXPLICIT /* empty */
