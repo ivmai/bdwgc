@@ -394,7 +394,11 @@ if (build_tests)
   if (enable_cplusplus)
     set_source_files_properties(tests/leak_test.c tests/test.c
                                 PROPERTIES LANGUAGE CXX)
-  endif()
+    # To avoid "treating 'c' input as 'c++' when in C++ mode" Clang warning.
+    if (NOT (BORLAND OR MSVC OR WATCOM))
+      add_compile_options(-x c++)
+    endif()
+  endif(enable_cplusplus)
 
   add_executable(gctest WIN32 tests/test.c)
   target_link_libraries(gctest PRIVATE gc)
