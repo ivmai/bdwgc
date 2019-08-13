@@ -284,6 +284,29 @@ matrix:
     - CONF_OPTIONS="--disable-threads --enable-cplusplus"
     - CFLAGS_EXTRA="-O3 -march=native"
     - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
+    compiler: clang
+    env:
+    - CMAKE_CONFIG="Debug"
+    - CMAKE_OPTIONS="-Denable_cplusplus=ON -Denable_gc_assertions=ON"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
+    compiler: gcc
+    env:
+    - CMAKE_CONFIG="Release"
+    - CMAKE_OPTIONS="-Denable_cplusplus=ON -Denable_large_config=ON"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
+    compiler: gcc
+    env:
+    - CMAKE_CONFIG="Debug"
+    - CMAKE_OPTIONS="-DBUILD_SHARED_LIBS=OFF -Denable_gc_debug=ON"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: osx
+    env:
+    - CMAKE_CONFIG="Debug"
+    - CMAKE_OPTIONS="-Denable_cplusplus=ON"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
     - CSA_CHECK=true
@@ -534,21 +557,31 @@ install:
 - if [[ "$NO_CLONE_LIBATOMIC_OPS" != true ]]; then
     git clone --depth=50 https://github.com/ivmai/libatomic_ops.git;
   fi
-- "./autogen.sh"
+- if [[ "$CMAKE_CONFIG" == "" ]]; then
+    ./autogen.sh;
+  fi
 - if [[ "$GNUTOOLS_ROOT" != "" ]]; then mv $GNUTOOLS_ROOT $GNUTOOLS_ROOT-x; fi
 - if [[ "$REPORT_COVERAGE" == true ]]; then gem install coveralls-lcov; fi
 
 script:
-- if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == ""
-        && "$MAKEFILE_NAME" != "Makefile.direct"
+- if [[ "$CSA_CHECK" != true && "$CMAKE_CONFIG" == ""
+        && "$CPPCHECK_ENABLE" == "" && "$MAKEFILE_NAME" != "Makefile.direct"
         && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
     CFLAGS="$CONF_CFLAGS" ./configure $CONF_OPTIONS --enable-werror &&
     cat include/config.h;
   fi
-- if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == ""
-        && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
+- if [[ "$CSA_CHECK" != true && "$CMAKE_CONFIG" == ""
+        && "$CPPCHECK_ENABLE" == "" && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
     make -j -f $MAKEFILE_NAME $MAKEFILE_TARGETS CFLAGS_EXTRA="$CFLAGS_EXTRA"
             LDFLAGS="$LDFLAGS";
+  fi
+- if [[ "$CMAKE_CONFIG" != "" ]]; then
+    cmake $CMAKE_OPTIONS -Dbuild_tests=ON -Denable_werror=ON
+          -Werror=deprecated . &&
+    cmake --build . --config $CMAKE_CONFIG;
+  fi
+- if [[ "$CMAKE_CONFIG" != "" ]]; then
+    ctest --build-config $CMAKE_CONFIG -V;
   fi
 - if [[ "$CC_FOR_CHECK" != "" ]]; then
     make -f $MAKEFILE_NAME $MAKEFILE_TARGETS_CHECK CC=$CC_FOR_CHECK
