@@ -240,7 +240,7 @@ static void add_edge(ptr_t p, ptr_t q)
 
       if (((word)pred & FLAG_MANY) != 0) {
         n_edges = e -> n_edges;
-      } else if (pred != NULL && ((word)pred & 1) == 0) {
+      } else if (((word)pred & 1) == 0) {
         /* A misinterpreted freelist link.      */
         n_edges = 1;
         local = -1;
