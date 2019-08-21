@@ -58,7 +58,7 @@ volatile AO_t thread_ended_cnt = 0;
   DWORD WINAPI entry(LPVOID arg)
 #endif
 {
-    int thread_num = AO_fetch_and_add1(&thread_created_cnt);
+    int thread_num = (int)AO_fetch_and_add1(&thread_created_cnt);
     GC_word my_depth = (GC_word)arg + 1;
 
     if (my_depth <= MAX_SUBTHREAD_DEPTH
