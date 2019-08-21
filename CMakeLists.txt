@@ -383,8 +383,9 @@ if (build_tests)
     target_link_libraries(cordtest PRIVATE cord gc)
     add_test(NAME cordtest COMMAND cordtest)
 
-    if (WIN32)
-      add_executable(de cord/tests/de.c cord/tests/de_win.c cord/tests/de_win.rc)
+    if (WIN32 AND NOT CYGWIN)
+      add_executable(de cord/tests/de.c cord/tests/de_win.c
+                     cord/tests/de_win.rc)
       set_target_properties(de PROPERTIES WIN32_EXECUTABLE TRUE)
       target_link_libraries(de PRIVATE cord gc gdi32)
     endif()
