@@ -257,7 +257,7 @@ endif()
 
 if (enable_checksums)
   if (enable_munmap OR enable_threads)
-    message("CHECKSUMS not compatible with USE_MUNMAP or threads")
+    message(FATAL_ERROR "CHECKSUMS not compatible with USE_MUNMAP or threads")
   endif()
   add_definitions("-DCHECKSUMS")
   set(SRC ${SRC} checksums.c)
