@@ -21,6 +21,8 @@
 #  this will generate gc.sln
 #
 
+cmake_minimum_required(VERSION 3.1)
+
 option(enable_cplusplus "C++ support" OFF)
 if (enable_cplusplus)
   project(gc)
@@ -29,8 +31,6 @@ else()
 endif()
 
 include(CTest)
-
-cmake_minimum_required(VERSION 3.1)
 
 # Customize the build by passing "-D<option_name>=ON|OFF" in the command line.
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
