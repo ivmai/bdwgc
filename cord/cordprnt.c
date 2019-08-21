@@ -52,7 +52,7 @@
 
 static int ec_len(CORD_ec x)
 {
-    return(CORD_len(x[0].ec_cord) + (x[0].ec_bufptr - x[0].ec_buf));
+    return (int)(CORD_len(x[0].ec_cord) + (x[0].ec_bufptr - x[0].ec_buf));
 }
 
 /* Possible nonumeric precision values. */
