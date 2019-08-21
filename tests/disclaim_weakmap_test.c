@@ -98,7 +98,7 @@ unsigned memhash(void *src, size_t len)
 
   my_assert(len % sizeof(GC_word) == 0);
   for (i = 0; i < len / sizeof(GC_word); ++i) {
-    acc = (2003 * acc + ((GC_word *)src)[i]) / 3;
+    acc = (unsigned)((2003 * (GC_word)acc + ((GC_word *)src)[i]) / 3);
   }
   return acc;
 }
