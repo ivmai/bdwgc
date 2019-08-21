@@ -100,6 +100,10 @@ set(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
         mallocx.c)
 set(LIBS)
 
+set(_HOST ${CMAKE_SYSTEM_PROCESSOR}-unknown-${CMAKE_SYSTEM})
+string(TOLOWER ${_HOST} HOST)
+message(STATUS "TARGET = ${HOST}")
+
 if (enable_threads)
   find_package(Threads REQUIRED)
   message("Thread Model: ${CMAKE_THREAD_LIBS_INIT}" )
@@ -112,11 +116,6 @@ endif()
 #ELSE
 #       MESSAGE("Parallel mark requires enable_threads ON" )
 #ENDIF(Threads_FOUND)
-
-set(_HOST ${CMAKE_HOST_SYSTEM_PROCESSOR}--${CMAKE_SYSTEM})
-                                #FIXME missing the vendor field.
-string(TOLOWER ${_HOST} HOST)
-message("HOST = ${HOST}")
 
 # Thread Detection.  Relying on cmake for lib and includes.
 #TODO check cmake detection
