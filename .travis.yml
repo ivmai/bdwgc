@@ -302,10 +302,21 @@ matrix:
     - CMAKE_CONFIG="Debug"
     - CMAKE_OPTIONS="-DBUILD_SHARED_LIBS=OFF -Denable_gc_debug=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
+  - os: linux
+    compiler: gcc
+    env:
+    - CMAKE_CONFIG="Release"
+    - CMAKE_OPTIONS="-DBUILD_SHARED_LIBS=OFF -Denable_threads=OFF"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
     - CMAKE_CONFIG="Debug"
     - CMAKE_OPTIONS="-Denable_cplusplus=ON"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: osx
+    env:
+    - CMAKE_CONFIG="Release"
+    - CMAKE_OPTIONS="-DBUILD_SHARED_LIBS=OFF -Denable_cplusplus=ON -Denable_gc_assertions=ON -Denable_large_config=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
