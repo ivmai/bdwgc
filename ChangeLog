@@ -3,6 +3,8 @@
 
 * Add support of OpenBSD/aarch64
 * Eliminate 'GC_old_bus_handler defined but not used' compiler warning
+* Eliminate 'comparing signed and unsigned values' BCC warning in cordtest
+* Eliminate 'possible loss of data' BCC and MS VC warnings
 * Eliminate 'unused function GC_add_map_entry' compiler warning
 * Eliminate 'while clause does not guard' GCC warning in GC_parse_map_entry
 * Explicitly zero-initialize trace_buf (fix trace_buf initialization)
@@ -11,13 +13,18 @@
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
 * Fix compiling by Makefile.direct on OpenBSD/UltraSparc
 * Fix configure message about 'AIX gcc optimization fix'
+* Fix cordtest build in SMakefile.amiga
 * Fix first_thread stack_base initialization if custom GC_stackbottom (Win32)
+* Fix gc_allocator.h compilation by Clang
 * Fix incorrect define GC_OPENBSD_THREADS on sparc64
 * Fix printf format specifier in simple_example.html
 * Fix save_callers for multi-threaded case if built-in backtrace unavailable
+* Fix test_cpp failure caused by arbitrary link order (Win32)
+* Fix test_cpp failure when gc_cpp resides in a dll (Borland, Watcom)
 * Fix various typos mostly in documentation files
 * Fix word size, data start and alignment for OpenBSD/mips64(el)
 * Remove a misleading comment about Solaris in gc.h
+* Workaround 'expression is only useful for its side effects' WCC warning
 * Workaround fread fail after enable_incremental if malloc redirected (Linux)
 
 
