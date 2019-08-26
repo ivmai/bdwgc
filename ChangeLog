@@ -1,3 +1,11 @@
+2019-07-17  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/tests/de_win.c (control_chars): Replace "32" to "64" in comment.
+
+2019-07-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.amiga (WHATS NEW): Change SMakefile.smk to SMakefile.amiga.
+
 2019-06-29  Ivan Maidanski <ivmai@mail.ru>
 
 	* gc_cpp.cc [!_MSC_VER && __cplusplus>201103L] (operator delete):
