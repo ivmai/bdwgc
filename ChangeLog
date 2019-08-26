@@ -513,6 +513,7 @@ Also, includes 7.4.4 changes
 * Eliminate 'while clause does not guard' GCC warning in GC_parse_map_entry
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
 * Fix configure message about 'AIX gcc optimization fix'
+* Fix cordtest build in SMakefile.amiga
 
 Also, includes 7.2o changes
 
