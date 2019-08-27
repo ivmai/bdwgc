@@ -4,7 +4,7 @@
 * Add API for accessing incremental GC time limit with nanosecond precision
 * Add I_HOLD_LOCK assertion to expand_hp_inner and related functions
 * Add assertion that GC is initialized to base incremental_protection_needs
-* Add cordtest, test_cpp, tracetest and disclaim tests (CMake)
+* Add cordtest, staticrootstest, test_cpp, tracetest, disclaim tests (CMake)
 * Add testing of GC_CALLOC/MALLOC_EXPLICITLY_TYPED (gctest)
 * Adjust formatting of numbered lists in README.md to match other .md files
 * Adjust highlighting of API prototypes in gcinterface.md
@@ -12,34 +12,46 @@
 * Adjust printf calls in gctest check_heap_stats so that each has new-line
 * Allow incremental GC on Cygwin
 * Allow memory unmapping in case of MPROTECT_VDB
-* Build gc as a shared library by default (CMake)
+* Build cord.lib by Makefile.direct, NT_MAKEFILE, OS2_MAKEFILE, WCC_MAKEFILE
+* Build gc as a shared multi-threaded library by default (CMake)
+* Build gccpp library by Makefile.direct, NT_MAKEFILE and WCC_MAKEFILE
+* Build shared libraries by default (WCC_MAKEFILE)
 * Check real-symbols are already initialized in pthread_join/detach
 * Comments reformatting in mark.c to properly delimit sentences
 * Compile de test GUI app with resources (CMake)
+* Compile gc.c unless building static libraries (NT_MAKEFILE, WCC_MAKEFILE)
+* Compile msvc_dbg.c by CMake script (MS VC)
 * Define STATIC macro to static by default
+* Do not build tests by default (Makefile.direct and other Makefiles)
 * Do not build the tests by default (CMake)
 * Eliminate 'checking if unsigned i < 0' cppcheck FP in is_heap_base
 * Eliminate 'hash_val value is never used' cppcheck false positive
 * Eliminate 'stop variable is always 0' compiler warning in print_callers
 * Eliminate 'struct member os_callback is never used' cppcheck warning
+* Enable CMake-based build for Borland and Watcom compilers
 * Enable compilation without C runtime (Win32)
 * Enable mprotect-based incremental GC for Linux/arm and Linux/aarch64
 * Enable true incremental collection even if parallel marker is on
+* Fix HOST determination in CMake script
 * Generate cordtest and de executable files in GC base folder
 * Get rid of some non-ELF ifdefs (code refactoring)
 * Move QNX and Emscripten macro definitions to proper place in gcconfig.h
 * New API function to get size of object debug header
 * New API standalone functions to acquire and release the allocator lock
 * New macro (GCTEST_PRINT_VERBOSE) to enable verbose logging in test.c only
+* New macro (NO_MSGBOX_ON_ERROR) to avoid message box on GC abort (Win32)
+* Pass -D GC_DLL -fvisibility=hidden if default configure build is requested
 * Print pid of child processes if verbose logging (gctest)
 * Refine flags field comment in pthread_support.h
 * Reformat gc.man (wrap long lines)
 * Reformatting and code refactoring of CMake script
 * Remove 'current users' section from overview.md
 * Remove 'distributed ports', 'scalable versions' sections from overview.md
+* Remove Borland-specific Makefile and gc.mak script
 * Remove Linux-specific commands for building cord/de from Makefile.direct
 * Remove Win32 main_thread static variable if threads discovery is disabled
 * Remove dash characters comprising prefix of some verbose logs (gctest)
+* Remove dependency on user32.dll import library from static libgc (Win32)
 * Remove documentation specific to particular old BDWGC releases
 * Remove gcmt-dll generation, rename libgc-lib.a to libgc.a (CMake)
 * Remove goto statement in print_callers (code refactoring)
@@ -47,14 +59,22 @@
 * Remove unused STACK_GRAN macro definitions (code refactoring)
 * Remove unused sparc_sunos4_mach_dep.s file
 * Rename cord/cord test executable to de (CMake)
+* Rename gc64.dll to gc.dll and gc[64]_dll.lib to gc.lib in NT_MAKEFILE
+* Rename gc68060.lib to gc.lib, cord/cord68060.lib to cord.lib in SMakefile
+* Rename make_as_lib option to enable_static in NT_MAKEFILE and WCC_MAKEFILE
+* Rename nothreads option to disable_threads in NT_MAKEFILE
 * Replace "msecs" with "ms" in all comments and messages
 * Replace 'stack base' with 'stack bottom' in the documentation
+* Replace _M_AMD64 macro with _M_X64 (code refactoring)
 * Report time with a nanosecond precision where available
 * Simplify logged message in scratch_recycle
 * Simplify loops of collect_a_little/stopped_mark invoking mark_some
+* Support CFLAGS_EXTRA to pass extra user-defined compiler flags (CMake)
 * Support header files installation (CMake)
 * Support most configure options in CMake script
+* Suppress warnings in test_tinyfl() of gctest reported by Watcom C complier
 * Turn off C++ API by default, export it in gccpp library (CMake)
+* Update README.cmake regarding Unix, C++ and tests
 * Update libgc.so version info to differentiate against v8.0.x
 * Update the ASCII diagrams describing the tree structure for pointer lookups
 * Update the documentation to match the current GC implementation
@@ -67,6 +87,7 @@
 * Workaround '__data_start<_etext is always false' cppcheck false positive
 * Workaround 'argument dummy to GC_noop1 is always 1' cppcheck false positive
 * Workaround 'checking if unsigned expression < 0' cppcheck warnings
+* Workaround 'condition (pred&1)==0 is always false' cppcheck false positive
 * Workaround 'duplicate expression for condition and assignment' cppcheck FP
 * Workaround 'identical inner return condition always true' cppcheck warning
 * Workaround 'if condition is the same as the previous one' cppcheck warnings
