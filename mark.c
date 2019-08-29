@@ -553,10 +553,12 @@ static void alloc_mark_stack(size_t);
       /* thread that is in the process of exiting, and disappears       */
       /* while we are marking it.  This seems extremely difficult to    */
       /* avoid otherwise.                                               */
-      if (GC_incremental) {
-        WARN("Incremental GC incompatible with /proc roots\n", 0);
-        /* I'm not sure if this could still work ...    */
-      }
+#     ifndef DEFAULT_VDB
+        if (GC_auto_incremental) {
+          WARN("Incremental GC incompatible with /proc roots\n", 0);
+          /* I'm not sure if this could still work ...  */
+        }
+#     endif
       GC_setup_temporary_fault_handler();
       if(SETJMP(GC_jmp_buf) != 0) goto handle_ex;
       ret_val = GC_mark_some_inner(cold_gc_frame);
