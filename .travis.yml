@@ -217,7 +217,7 @@ matrix:
   - os: linux
     compiler: gcc
     env:
-    - CONF_OPTIONS="--enable-redirect-malloc --enable-gc-debug --enable-cplusplus --enable-gc-assertions"
+    - CONF_OPTIONS="--enable-redirect-malloc --enable-gc-debug --enable-cplusplus --enable-gc-assertions --disable-static"
   - os: linux
     compiler: clang
     env:
