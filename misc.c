@@ -1186,7 +1186,7 @@ GC_API void GC_CALL GC_init(void)
 #   if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
         WARN("USE_PROC_FOR_LIBRARIES + GC_LINUX_THREADS performs poorly.\n", 0);
         /* If thread stacks are cached, they tend to be scanned in      */
-        /* entirety as part of the root set.  This wil grow them to     */
+        /* entirety as part of the root set.  This will grow them to    */
         /* maximum size, and is generally not desirable.                */
 #   endif
 #   if defined(SEARCH_FOR_DATA_START)
