@@ -3179,6 +3179,11 @@ EXTERN_C_BEGIN
 
 /* PARALLEL_MARK does not cause undef MPROTECT_VDB any longer.  */
 
+#if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
+  /* Incremental GC is incompatible with /proc roots.   */
+# undef MPROTECT_VDB
+#endif
+
 #if defined(MPROTECT_VDB) && defined(GC_PREFER_MPROTECT_VDB)
   /* Choose MPROTECT_VDB manually (if multiple strategies available).   */
 # undef PCR_VDB
