@@ -2357,6 +2357,13 @@ EXTERN_C_BEGIN
       void *switch_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
 #   endif
+#   ifdef MSWIN32   /* UWP */
+#     define OS_TYPE "MSWIN32"
+      /* TODO: Enable GWW_VDB and/or MPROTECT_VDB */
+#     ifndef DATAEND
+#       define DATAEND  /* not needed */
+#     endif
+#   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.   */
       extern int __data_start[];
@@ -2486,6 +2493,13 @@ EXTERN_C_BEGIN
 #     define DATAEND (ptr_t)(Image$$ZI$$ZI$$Limit)
       void *n3ds_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)n3ds_get_stack_bottom())
+#   endif
+#   ifdef MSWIN32   /* UWP */
+#     define OS_TYPE "MSWIN32"
+      /* TODO: Enable GWW_VDB and/or MPROTECT_VDB */
+#     ifndef DATAEND
+#       define DATAEND  /* not needed */
+#     endif
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
