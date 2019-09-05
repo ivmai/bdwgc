@@ -1552,6 +1552,7 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef CYGWIN32
 #       define OS_TYPE "CYGWIN32"
+#       define WOW64_THREAD_CONTEXT_WORKAROUND
 #       define DATASTART ((ptr_t)GC_DATASTART)  /* From gc.h */
 #       define DATAEND   ((ptr_t)GC_DATAEND)
 #       undef STACK_GRAN
@@ -1582,6 +1583,7 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef MSWIN32
 #       define OS_TYPE "MSWIN32"
+#       define WOW64_THREAD_CONTEXT_WORKAROUND
                 /* STACKBOTTOM and DATASTART are handled specially in   */
                 /* os_dep.c.                                            */
 #       define MPROTECT_VDB
