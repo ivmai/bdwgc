@@ -1460,6 +1460,7 @@
 #   ifdef CYGWIN32
 #       define OS_TYPE "CYGWIN32"
 #       define WOW64_THREAD_CONTEXT_WORKAROUND
+#       define RETRY_GET_THREAD_CONTEXT
 #       define DATASTART ((ptr_t)GC_DATASTART)  /* From gc.h */
 #       define DATAEND   ((ptr_t)GC_DATAEND)
 #       undef STACK_GRAN
@@ -1479,6 +1480,7 @@
 #   ifdef MSWIN32
 #       define OS_TYPE "MSWIN32"
 #       define WOW64_THREAD_CONTEXT_WORKAROUND
+#       define RETRY_GET_THREAD_CONTEXT
                 /* STACKBOTTOM and DATASTART are handled specially in   */
                 /* os_dep.c.                                            */
 #       define MPROTECT_VDB
@@ -2645,12 +2647,14 @@
 #   endif
 #   ifdef CYGWIN32
 #       define OS_TYPE "CYGWIN32"
+#       define RETRY_GET_THREAD_CONTEXT
 #       ifdef USE_MMAP
 #         define USE_MMAP_ANON
 #       endif
 #   endif
 #   ifdef MSWIN32
 #       define OS_TYPE "MSWIN32"
+#       define RETRY_GET_THREAD_CONTEXT
                 /* STACKBOTTOM and DATASTART are handled specially in   */
                 /* os_dep.c.                                            */
 #       if !defined(__GNUC__) || defined(__INTEL_COMPILER)
@@ -2740,6 +2744,10 @@
 #if defined(__GLIBC__) && !defined(DONT_USE_LIBC_PRIVATES)
   /* Use glibc's stack-end marker. */
 # define USE_LIBC_PRIVATES
+#endif
+
+#ifdef NO_RETRY_GET_THREAD_CONTEXT
+# undef RETRY_GET_THREAD_CONTEXT
 #endif
 
 #if defined(LINUX_STACKBOTTOM) && defined(NO_PROC_STAT) \

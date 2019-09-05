@@ -74,6 +74,24 @@
 
 #endif /* !GC_PTHREADS && !MSWINCE */
 
+/* PUSHED_REGS_COUNT is the number of copied registers in copy_ptr_regs. */
+static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext);
+#if defined(I386)
+# ifdef WOW64_THREAD_CONTEXT_WORKAROUND
+#   define PUSHED_REGS_COUNT 9
+# else
+#   define PUSHED_REGS_COUNT 7
+# endif
+#elif defined(X86_64) || defined(SHx)
+# define PUSHED_REGS_COUNT 15
+#elif defined(ARM32)
+# define PUSHED_REGS_COUNT 13
+#elif defined(MIPS) || defined(ALPHA)
+# define PUSHED_REGS_COUNT 28
+#elif defined(PPC)
+# define PUSHED_REGS_COUNT 29
+#endif
+
 /* DllMain-based thread registration is currently incompatible  */
 /* with thread-local allocation, pthreads and WinCE.            */
 #if (defined(GC_DLL) || defined(GC_INSIDE_DLL)) \
@@ -250,6 +268,14 @@ struct GC_Thread_Rep {
 # ifdef THREAD_LOCAL_ALLOC
     struct thread_local_freelists tlfs;
 # endif
+
+# ifdef RETRY_GET_THREAD_CONTEXT
+    ptr_t context_sp;
+    word context_regs[PUSHED_REGS_COUNT];
+                        /* Populated as part of GC_suspend() as         */
+                        /* resume/suspend loop may be needed for the    */
+                        /* call to GetThreadContext() to succeed.       */
+# endif
 };
 
 typedef struct GC_Thread_Rep * GC_thread;
@@ -325,8 +351,8 @@ STATIC volatile LONG GC_max_thread_index = 0;
 STATIC GC_thread GC_threads[THREAD_TABLE_SZ];
 
 /* It may not be safe to allocate when we register the first thread.    */
-/* Thus we allocated one statically.  It does not contain any field we  */
-/* need to push ("next" and "status" fields are unused).                */
+/* Thus we allocated one statically.  It does not contain any pointer   */
+/* field we need to push ("next" and "status" fields are unused).       */
 static struct GC_Thread_Rep first_thread;
 static GC_bool first_thread_used = FALSE;
 
@@ -661,6 +687,10 @@ STATIC void GC_delete_gc_thread_no_free(GC_vthread t)
       /* see GC_stop_world() for the information.                       */
       t -> stack_base = 0;
       t -> id = 0;
+      t -> suspended = FALSE;
+#     ifdef RETRY_GET_THREAD_CONTEXT
+        t -> context_sp = NULL;
+#     endif
       AO_store_release(&t->tm.in_use, FALSE);
     } else
 # endif
@@ -1174,12 +1204,11 @@ void GC_push_thread_structures(void)
 STATIC void GC_suspend(GC_thread t)
 {
 # ifndef MSWINCE
-    /* Apparently the Windows 95 GetOpenFileName call creates           */
-    /* a thread that does not properly get cleaned up, and              */
-    /* SuspendThread on its descriptor may provoke a crash.             */
-    /* This reduces the probability of that event, though it still      */
-    /* appears there's a race here.                                     */
     DWORD exitCode;
+# endif
+# ifdef RETRY_GET_THREAD_CONTEXT
+    int retry_cnt = 0;
+#   define MAX_SUSPEND_THREAD_RETRIES (1000 * 1000)
 # endif
 
   UNPROTECT_THREAD(t);
@@ -1192,6 +1221,50 @@ STATIC void GC_suspend(GC_thread t)
       Sleep(10); /* in millis */
       GC_acquire_dirty_lock();
     }
+# elif defined(RETRY_GET_THREAD_CONTEXT)
+    for (;;) {
+      /* Apparently the Windows 95 GetOpenFileName call creates         */
+      /* a thread that does not properly get cleaned up, and            */
+      /* SuspendThread on its descriptor may provoke a crash.           */
+      /* This reduces the probability of that event, though it still    */
+      /* appears there is a race here.                                  */
+      if (GetExitCodeThread(t -> handle, &exitCode)
+          && exitCode != STILL_ACTIVE) {
+        GC_release_dirty_lock();
+#       ifdef GC_PTHREADS
+          t -> stack_base = 0; /* prevent stack from being pushed */
+#       else
+          /* This breaks pthread_join on Cygwin, which is guaranteed to */
+          /* only see user threads.                                     */
+          GC_ASSERT(GC_win32_dll_threads);
+          GC_delete_gc_thread_no_free(t);
+#       endif
+        return;
+      }
+
+      if (SuspendThread(t->handle) != (DWORD)-1) {
+        CONTEXT context;
+
+        context.ContextFlags = GET_THREAD_CONTEXT_FLAGS;
+        if (GetThreadContext(t->handle, &context)) {
+          /* TODO: WoW64 extra workaround: if CONTEXT_EXCEPTION_ACTIVE  */
+          /* then Sleep(1) and retry.                                   */
+          t->context_sp = copy_ptr_regs(t->context_regs, &context);
+          break; /* success; the context pointer registers are saved */
+        }
+
+        /* Resume the thread, try to suspend it in a better location.   */
+        if (ResumeThread(t->handle) == (DWORD)-1)
+          ABORT("ResumeThread failed in suspend loop");
+      }
+      if (retry_cnt > 1) {
+        GC_release_dirty_lock();
+        Sleep(0); /* yield */
+        GC_acquire_dirty_lock();
+      }
+      if (++retry_cnt >= MAX_SUSPEND_THREAD_RETRIES)
+        ABORT("SuspendThread loop failed"); /* something must be wrong */
+    }
 # else
     if (GetExitCodeThread(t -> handle, &exitCode)
         && exitCode != STILL_ACTIVE) {
@@ -1199,8 +1272,6 @@ STATIC void GC_suspend(GC_thread t)
 #     ifdef GC_PTHREADS
         t -> stack_base = 0; /* prevent stack from being pushed */
 #     else
-        /* this breaks pthread_join on Cygwin, which is guaranteed to  */
-        /* only see user pthreads                                      */
         GC_ASSERT(GC_win32_dll_threads);
         GC_delete_gc_thread_no_free(t);
 #     endif
@@ -1392,31 +1463,23 @@ static GC_bool may_be_in_stack(ptr_t s)
           && !(last_info.Protect & PAGE_GUARD);
 }
 
-STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
-{
-  ptr_t sp, stack_min;
-
-  struct GC_traced_stack_sect_s *traced_stack_sect =
-                                      thread -> traced_stack_sect;
-  if (thread -> id == me) {
-    GC_ASSERT(thread -> thread_blocked_sp == NULL);
-    sp = GC_approx_sp();
-  } else if ((sp = thread -> thread_blocked_sp) == NULL) {
-              /* Use saved sp value for blocked threads. */
-    /* For unblocked threads call GetThreadContext().   */
-    CONTEXT context;
-
-    context.ContextFlags = GET_THREAD_CONTEXT_FLAGS;
-    if (!GetThreadContext(THREAD_HANDLE(thread), &context))
-      ABORT("GetThreadContext failed");
-
-    /* Push all registers that might point into the heap.  Frame        */
-    /* pointer registers are included in case client code was           */
-    /* compiled with the 'omit frame pointer' optimization.             */
-#   define PUSH1(reg) GC_push_one((word)context.reg)
+/* Copy all registers that might point into the heap.  Frame    */
+/* pointer registers are included in case client code was       */
+/* compiled with the 'omit frame pointer' optimization.         */
+/* The context register values are stored to regs argument      */
+/* which is expected to be of PUSHED_REGS_COUNT length exactly. */
+/* The functions returns the context stack pointer value.       */
+static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext) {
+    ptr_t sp;
+    int cnt = 0;
+#   define context (*pcontext)
+#   define PUSH1(reg) (regs[cnt++] = (word)pcontext->reg)
 #   define PUSH2(r1,r2) (PUSH1(r1), PUSH1(r2))
 #   define PUSH4(r1,r2,r3,r4) (PUSH2(r1,r2), PUSH2(r3,r4))
 #   if defined(I386)
+#     ifdef WOW64_THREAD_CONTEXT_WORKAROUND
+        PUSH2(ContextFlags, SegFs); /* cannot contain pointers */
+#     endif
       PUSH4(Edi,Esi,Ebx,Edx), PUSH2(Ecx,Eax), PUSH1(Ebp);
       sp = (ptr_t)context.Esp;
 #   elif defined(X86_64)
@@ -1449,47 +1512,110 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       PUSH4(IntA0,IntA1,IntA2,IntA3), PUSH4(IntA4,IntA5,IntT8,IntT9);
       PUSH4(IntT10,IntT11,IntT12,IntAt);
       sp = (ptr_t)context.IntSp;
-#   elif !defined(CPPCHECK)
+#   elif defined(CPPCHECK)
+      sp = (ptr_t)(word)cnt; /* to workaround "cnt not used" false positive */
+#   else
 #     error "architecture is not supported"
 #   endif
+#   undef context
+    GC_ASSERT(cnt == PUSHED_REGS_COUNT);
+    return sp;
+}
+
+STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
+{
+  ptr_t sp, stack_min;
+
+  struct GC_traced_stack_sect_s *traced_stack_sect =
+                                      thread -> traced_stack_sect;
+  if (thread -> id == me) {
+    GC_ASSERT(thread -> thread_blocked_sp == NULL);
+    sp = GC_approx_sp();
+  } else if ((sp = thread -> thread_blocked_sp) == NULL) {
+              /* Use saved sp value for blocked threads. */
+    int i = 0;
+#   ifdef RETRY_GET_THREAD_CONTEXT
+      /* We cache context when suspending the thread since it may       */
+      /* require looping.                                               */
+      word *regs = thread->context_regs;
+
+      if (thread->suspended) {
+        sp = thread->context_sp;
+      } else
+#   else
+      word regs[PUSHED_REGS_COUNT];
+#   endif
+
+      /* else */ {
+        CONTEXT context;
+
+        /* For unblocked threads call GetThreadContext().       */
+        context.ContextFlags = GET_THREAD_CONTEXT_FLAGS;
+        if (GetThreadContext(THREAD_HANDLE(thread), &context)) {
+          sp = copy_ptr_regs(regs, &context);
+        } else {
+#         ifdef RETRY_GET_THREAD_CONTEXT
+            /* At least, try to use the stale context if saved. */
+            sp = thread->context_sp;
+            if (NULL == sp) {
+              /* Skip the current thread, anyway its stack will */
+              /* be pushed when the world is stopped.           */
+              return 0;
+            }
+#         else
+            ABORT("GetThreadContext failed");
+#         endif
+        }
+      }
+
+#   ifdef WOW64_THREAD_CONTEXT_WORKAROUND
+      i += 2; /* skip ContextFlags and SegFs */
+#   endif
+    for (; i < PUSHED_REGS_COUNT; i++)
+      GC_push_one(regs[i]);
+
 #   ifdef WOW64_THREAD_CONTEXT_WORKAROUND
       /* WoW64 workaround. */
-      if (isWow64
-          && (context.ContextFlags & CONTEXT_EXCEPTION_REPORTING) != 0
-          && (context.ContextFlags & (CONTEXT_EXCEPTION_ACTIVE
-                                      /* | CONTEXT_SERVICE_ACTIVE */)) != 0) {
-        LDT_ENTRY selector;
-        PNT_TIB tib;
+      if (isWow64) {
+        DWORD ContextFlags = (DWORD)regs[0];
+        WORD SegFs = (WORD)regs[1];
 
-        if (!GetThreadSelectorEntry(THREAD_HANDLE(thread), context.SegFs,
-                                    &selector))
-          ABORT("GetThreadSelectorEntry failed");
-        tib = (PNT_TIB)(selector.BaseLow
-                        | (selector.HighWord.Bits.BaseMid << 16)
-                        | (selector.HighWord.Bits.BaseHi << 24));
-        /* GetThreadContext() might return stale register values, so    */
-        /* we scan the entire stack region (down to the stack limit).   */
-        /* There is no 100% guarantee that all the registers are pushed */
-        /* but we do our best (the proper solution would be to fix it   */
-        /* inside Windows OS).                                          */
-        sp = (ptr_t)tib->StackLimit;
+        if ((ContextFlags & CONTEXT_EXCEPTION_REPORTING) != 0
+            && (ContextFlags & (CONTEXT_EXCEPTION_ACTIVE
+                                /* | CONTEXT_SERVICE_ACTIVE */)) != 0) {
+          LDT_ENTRY selector;
+          PNT_TIB tib;
+
+          if (!GetThreadSelectorEntry(THREAD_HANDLE(thread), SegFs, &selector))
+            ABORT("GetThreadSelectorEntry failed");
+          tib = (PNT_TIB)(selector.BaseLow
+                          | (selector.HighWord.Bits.BaseMid << 16)
+                          | (selector.HighWord.Bits.BaseHi << 24));
+#         ifdef DEBUG_THREADS
+            GC_log_printf("TIB stack limit/base: %p .. %p\n",
+                          (void *)tib->StackLimit, (void *)tib->StackBase);
+#         endif
+          GC_ASSERT(!((word)thread->stack_base
+                      COOLER_THAN (word)tib->StackBase));
+
+            /* GetThreadContext() might return stale register values,   */
+            /* so we scan the entire stack region (down to the stack    */
+            /* limit).  There is no 100% guarantee that all the         */
+            /* registers are pushed but we do our best (the proper      */
+            /* solution would be to fix it inside Windows OS).          */
+            sp = (ptr_t)tib->StackLimit;
+        } /* else */
 #       ifdef DEBUG_THREADS
-          GC_log_printf("TIB stack limit/base: %p .. %p\n",
-                        (void *)tib->StackLimit, (void *)tib->StackBase);
-#       endif
-        GC_ASSERT(!((word)thread->stack_base
-                    COOLER_THAN (word)tib->StackBase));
-      } /* else */
-#     ifdef DEBUG_THREADS
-        else {
-          static GC_bool logged;
-          if (isWow64 && !logged
-              && (context.ContextFlags & CONTEXT_EXCEPTION_REPORTING) == 0) {
-            GC_log_printf("CONTEXT_EXCEPTION_REQUEST not supported\n");
-            logged = TRUE;
+          else {
+            static GC_bool logged;
+            if (!logged
+                && (ContextFlags & CONTEXT_EXCEPTION_REPORTING) == 0) {
+              GC_log_printf("CONTEXT_EXCEPTION_REQUEST not supported\n");
+              logged = TRUE;
+            }
           }
-        }
-#     endif
+#       endif
+      }
 #   endif /* WOW64_THREAD_CONTEXT_WORKAROUND */
   } /* ! current thread */
 
@@ -1575,6 +1701,8 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
   return thread->stack_base - sp; /* stack grows down */
 }
 
+/* We hold allocation lock.  Should do exactly the right thing if the   */
+/* world is stopped.  Should not fail if it isn't.                      */
 GC_INNER void GC_push_all_stacks(void)
 {
   DWORD thread_id = GetCurrentThreadId();
