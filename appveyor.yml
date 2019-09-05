@@ -48,7 +48,7 @@ environment:
   - TARGET: mingw-w64
     CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw-w64
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT -D NO_RETRY_GET_THREAD_CONTEXT
 
 clone_depth: 50
 
