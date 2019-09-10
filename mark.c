@@ -1428,14 +1428,21 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
   }
 #endif /* GC_DISABLE_INCREMENTAL */
 
-#if defined(MSWIN32) || defined(MSWINCE)
-  void __cdecl GC_push_one(word p)
-#else
+#if defined(AMIGA) || defined(MACOS) || defined(GC_DARWIN_THREADS)
   void GC_push_one(word p)
-#endif
-{
+  {
     GC_PUSH_ONE_STACK(p, MARKED_FROM_REGISTER);
-}
+  }
+#endif
+
+#ifdef GC_WIN32_THREADS
+  GC_INNER void GC_push_many_regs(const word *regs, unsigned count)
+  {
+    unsigned i;
+    for (i = 0; i < count; i++)
+      GC_PUSH_ONE_STACK(regs[i], MARKED_FROM_REGISTER);
+  }
+#endif
 
 GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
                                                 mse *mark_stack_ptr,

@@ -1585,7 +1585,6 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
     sp = GC_approx_sp();
   } else if ((sp = thread -> thread_blocked_sp) == NULL) {
               /* Use saved sp value for blocked threads. */
-    int i = 0;
 #   ifdef RETRY_GET_THREAD_CONTEXT
       /* We cache context when suspending the thread since it may       */
       /* require looping.                                               */
@@ -1605,13 +1604,12 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       }
 #   endif
 
-#   ifdef WOW64_THREAD_CONTEXT_WORKAROUND
-      i += 2; /* skip ContextFlags and SegFs */
-#   endif
-    for (; i < PUSHED_REGS_COUNT; i++)
-      GC_push_one(regs[i]);
+#   ifndef WOW64_THREAD_CONTEXT_WORKAROUND
+      GC_push_many_regs(regs, PUSHED_REGS_COUNT);
+#   else
+      GC_push_many_regs(regs + 2, PUSHED_REGS_COUNT - 2);
+                                        /* skip ContextFlags and SegFs */
 
-#   ifdef WOW64_THREAD_CONTEXT_WORKAROUND
       /* WoW64 workaround. */
       if (isWow64) {
         DWORD ContextFlags = (DWORD)regs[0];

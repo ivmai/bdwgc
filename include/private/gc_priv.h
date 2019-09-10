@@ -1766,11 +1766,9 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
   /* pointer to the top of the corresponding memory stack.              */
   ptr_t GC_save_regs_in_stack(void);
 #endif
-                        /* Push register contents onto mark stack.      */
 
-#if defined(MSWIN32) || defined(MSWINCE)
-  void __cdecl GC_push_one(word p);
-#else
+                        /* Push register contents onto mark stack.      */
+#if defined(AMIGA) || defined(MACOS) || defined(GC_DARWIN_THREADS)
   void GC_push_one(word p);
                               /* If p points to an object, mark it    */
                               /* and push contents on the mark stack  */
@@ -1778,6 +1776,11 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
                               /* accepts interior pointers, i.e. this */
                               /* is appropriate for pointers found on */
                               /* stack.                               */
+#endif
+
+#ifdef GC_WIN32_THREADS
+  /* Same as GC_push_one but for a sequence of registers.       */
+  GC_INNER void GC_push_many_regs(const word *regs, unsigned count);
 #endif
 
 #if defined(PRINT_BLACK_LIST) || defined(KEEP_BACK_PTRS)
