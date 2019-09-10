@@ -775,10 +775,8 @@ STATIC void GC_register_finalizer_inner(void * obj,
             GC_dirty(GC_fnlz_roots.fo_head + index);
           UNLOCK();
 #         ifndef DBG_HDRS_ALL
-            if (EXPECT(new_fo != 0, FALSE)) {
               /* Free unused new_fo returned by GC_oom_fn() */
               GC_free((void *)new_fo);
-            }
 #         endif
           return;
         }
