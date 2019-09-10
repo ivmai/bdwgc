@@ -916,7 +916,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 /* Set all mark bits for the free list whose first entry is q   */
 GC_INNER void GC_set_fl_marks(ptr_t q)
 {
-    if (q != NULL) {
+    if (q /* != NULL */) { /* CPPCHECK */
       struct hblk *h = HBLKPTR(q);
       struct hblk *last_h = h;
       hdr *hhdr = HDR(h);

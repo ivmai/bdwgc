@@ -349,8 +349,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
         struct hblk * hbp;
         hdr * hhdr;
 
-        rlh += lg;
-        while ((hbp = *rlh) != 0) {
+        for (rlh += lg; (hbp = *rlh) != NULL; ) {
             hhdr = HDR(hbp);
             *rlh = hhdr -> hb_next;
             GC_ASSERT(hhdr -> hb_sz == lb);
@@ -441,7 +440,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     /* Next try to allocate a new block worth of objects of this size.  */
     {
         struct hblk *h = GC_allochblk(lb, k, 0);
-        if (h != 0) {
+        if (h /* != NULL */) { /* CPPCHECK */
           if (IS_UNCOLLECTABLE(k)) GC_set_hdr_marks(HDR(h));
           GC_bytes_allocd += HBLKSIZE - HBLKSIZE % lb;
 #         ifdef PARALLEL_MARK

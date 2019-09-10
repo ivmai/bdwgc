@@ -126,7 +126,7 @@ void GC_MacFreeTemporaryMemory(void)
         long totalMemoryUsed = 0;
 #     endif
         TemporaryMemoryHandle tempMemBlock = theTemporaryMemory;
-        while (tempMemBlock != NULL) {
+        while (tempMemBlock /* != NULL */) {
                 TemporaryMemoryHandle nextBlock = (**tempMemBlock).nextBlock;
 #             if !defined(SHARED_LIBRARY_BUILD)
                 totalMemoryUsed += GetHandleSize((Handle)tempMemBlock);

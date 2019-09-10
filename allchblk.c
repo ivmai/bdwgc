@@ -130,7 +130,7 @@ void GC_print_hblkfreelist(void)
 
       if (0 != h) GC_printf("Free list %u (total size %lu):\n",
                             i, (unsigned long)GC_free_bytes[i]);
-      while (h != 0) {
+      while (h /* != NULL */) { /* CPPCHECK */
         hdr * hhdr = HDR(h);
 
         GC_printf("\t%p size %lu %s black listed\n",
@@ -345,7 +345,7 @@ STATIC struct hblk * GC_free_block_ending_at(struct hblk *h)
         }
     }
     p = GC_prev_block(h - 1);
-    if (0 != p) {
+    if (p /* != NULL */) { /* CPPCHECK */
       phdr = HDR(p);
       if (HBLK_IS_FREE(phdr) && (ptr_t)p + phdr -> hb_sz == (ptr_t)h) {
         return p;
@@ -378,7 +378,7 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
     GC_ASSERT(GC_free_bytes[index] <= GC_large_free_bytes);
     hhdr -> hb_next = second;
     hhdr -> hb_prev = 0;
-    if (0 != second) {
+    if (second /* != NULL */) { /* CPPCHECK */
       hdr * second_hdr;
 
       GET_HDR(second, second_hdr);
@@ -553,12 +553,12 @@ STATIC void GC_split_block(struct hblk *h, hdr *hhdr, struct hblk *n,
       nhdr -> hb_next = next;
       nhdr -> hb_sz = total_size - h_size;
       nhdr -> hb_flags = 0;
-      if (0 != prev) {
+      if (prev /* != NULL */) { /* CPPCHECK */
         HDR(prev) -> hb_next = n;
       } else {
         GC_hblkfreelist[index] = n;
       }
-      if (0 != next) {
+      if (next /* != NULL */) {
         HDR(next) -> hb_prev = n;
       }
       GC_ASSERT(GC_free_bytes[index] > h_size);
@@ -663,7 +663,11 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
         for (hbp = GC_hblkfreelist[n];; hbp = hhdr -> hb_next) {
             signed_word size_avail; /* bytes available in this block */
 
-            if (NULL == hbp) return NULL;
+            if (hbp /* != NULL */) {
+              /* CPPCHECK */
+            } else {
+              return NULL;
+            }
             GET_HDR(hbp, hhdr); /* set hhdr value */
             size_avail = (signed_word)hhdr->hb_sz;
             if (size_avail < size_needed) continue;
@@ -673,7 +677,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
               /* This prevents us from disassembling a single large     */
               /* block to get tiny blocks.                              */
               thishbp = hhdr -> hb_next;
-              if (thishbp != 0) {
+              if (thishbp /* != NULL */) { /* CPPCHECK */
                 signed_word next_size;
 
                 GET_HDR(thishbp, thishdr);
@@ -875,7 +879,7 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
         GC_remove_header(next);
       }
     /* Coalesce with predecessor, if possible. */
-      if (0 != prev) {
+      if (prev /* != NULL */) { /* CPPCHECK */
         prevhdr = HDR(prev);
         if (IS_MAPPED(prevhdr)
             && (signed_word)(hhdr -> hb_sz + prevhdr -> hb_sz) > 0) {

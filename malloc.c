@@ -381,14 +381,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
         }
         GC_ASSERT(0 == op || GC_is_marked(op));
     } else {
-        hdr * hhdr;
-
-        op = GC_generic_malloc(lb, k);
-        if (NULL == op)
-            return NULL;
+      op = GC_generic_malloc(lb, k);
+      if (op /* != NULL */) { /* CPPCHECK */
+        hdr * hhdr = HDR(op);
 
         GC_ASSERT(((word)op & (HBLKSIZE - 1)) == 0); /* large block */
-        hhdr = HDR(op);
         /* We don't need the lock here, since we have an undisguised    */
         /* pointer.  We do need to hold the lock while we adjust        */
         /* mark bits.                                                   */
@@ -401,6 +398,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
 #       endif
         hhdr -> hb_n_marks = 1;
         UNLOCK();
+      }
     }
     return op;
 }
@@ -564,8 +562,13 @@ GC_API void GC_CALL GC_free(void * p)
     struct obj_kind * ok;
     DCL_LOCK_STATE;
 
-    if (p == 0) return;
+    if (p /* != NULL */) {
+        /* CPPCHECK */
+    } else {
         /* Required by ANSI.  It's not my fault ...     */
+        return;
+    }
+
 #   ifdef LOG_ALLOCS
       GC_log_printf("GC_free(%p) after GC #%lu\n",
                     p, (unsigned long)GC_gc_no);

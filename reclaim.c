@@ -710,9 +710,10 @@ GC_INNER void GC_continue_reclaim(word sz /* granules */, int kind)
     struct hblk ** rlh = ok -> ok_reclaim_list;
     void **flh = &(ok -> ok_freelist[sz]);
 
-    if (rlh == 0) return;       /* No blocks of this kind.      */
-    rlh += sz;
-    while ((hbp = *rlh) != 0) {
+    if (NULL == rlh)
+        return; /* No blocks of this kind.      */
+
+    for (rlh += sz; (hbp = *rlh) != NULL; ) {
         hhdr = HDR(hbp);
         *rlh = hhdr -> hb_next;
         GC_reclaim_small_nonempty_block(hbp, hhdr -> hb_sz, FALSE);
@@ -751,8 +752,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
         rlp = ok -> ok_reclaim_list;
         if (rlp == 0) continue;
         for (sz = 1; sz <= MAXOBJGRANULES; sz++) {
-            rlh = rlp + sz;
-            while ((hbp = *rlh) != 0) {
+            for (rlh = rlp + sz; (hbp = *rlh) != NULL; ) {
                 if (stop_func != (GC_stop_func)0 && (*stop_func)()) {
                     return(FALSE);
                 }
