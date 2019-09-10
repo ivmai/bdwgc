@@ -1566,7 +1566,9 @@ static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext) {
       PUSH4(IntA0,IntA1,IntA2,IntA3), PUSH4(IntA4,IntA5,IntT8,IntT9);
       PUSH4(IntT10,IntT11,IntT12,IntAt);
       sp = (ptr_t)context.IntSp;
-#   elif !defined(CPPCHECK)
+#   elif defined(CPPCHECK)
+      sp = (ptr_t)(word)cnt; /* to workaround "cnt not used" false positive */
+#   else
 #     error Architecture is not supported
 #   endif
 #   undef context
