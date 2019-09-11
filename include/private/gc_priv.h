@@ -2348,15 +2348,15 @@ GC_EXTERN signed_word GC_bytes_found;
 #endif
 
 #ifdef THREADS
-# if defined(MSWIN32) || defined(MSWINCE) || defined(MSWIN_XBOX1)
+# if defined(MSWIN32) || defined(MSWINCE)
     GC_EXTERN CRITICAL_SECTION GC_write_cs; /* defined in misc.c */
-# endif
-# if defined(GC_ASSERTIONS) && (defined(MSWIN32) || defined(MSWINCE))
-    GC_EXTERN GC_bool GC_write_disabled;
+#   ifdef GC_ASSERTIONS
+      GC_EXTERN GC_bool GC_write_disabled;
                                 /* defined in win32_threads.c;  */
                                 /* protected by GC_write_cs.    */
 
-# endif
+#   endif
+# endif /* MSWIN32 || MSWINCE */
 # if defined(GC_DISABLE_INCREMENTAL) || defined(HAVE_LOCKFREE_AO_OR)
 #   define GC_acquire_dirty_lock() (void)0
 #   define GC_release_dirty_lock() (void)0

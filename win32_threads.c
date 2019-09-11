@@ -1357,18 +1357,16 @@ GC_INNER void GC_stop_world(void)
 # if !defined(GC_NO_THREADS_DISCOVERY) || defined(GC_ASSERTIONS)
     GC_please_stop = TRUE;
 # endif
-# ifndef CYGWIN32
-#   ifndef MSWIN_XBOX1
-      GC_ASSERT(!GC_write_disabled);
-#   endif
+# if defined(MSWIN32) || defined(MSWINCE)
+    GC_ASSERT(!GC_write_disabled);
     EnterCriticalSection(&GC_write_cs);
-# endif
-# if defined(GC_ASSERTIONS) && (defined(MSWIN32) || defined(MSWINCE))
     /* It's not allowed to call GC_printf() (and friends) here down to  */
     /* LeaveCriticalSection (same applies recursively to GC_suspend,    */
     /* GC_delete_gc_thread_no_free, GC_get_max_thread_index, GC_size    */
     /* and GC_remove_protection).                                       */
-    GC_write_disabled = TRUE;
+#   ifdef GC_ASSERTIONS
+      GC_write_disabled = TRUE;
+#   endif
 # endif
 # ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
@@ -1401,10 +1399,10 @@ GC_INNER void GC_stop_world(void)
       }
     }
   }
-# if defined(GC_ASSERTIONS) && (defined(MSWIN32) || defined(MSWINCE))
-    GC_write_disabled = FALSE;
-# endif
-# ifndef CYGWIN32
+# if defined(MSWIN32) || defined(MSWINCE)
+#   ifdef GC_ASSERTIONS
+      GC_write_disabled = FALSE;
+#   endif
     LeaveCriticalSection(&GC_write_cs);
 # endif
 # ifdef PARALLEL_MARK

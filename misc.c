@@ -749,8 +749,7 @@ GC_API int GC_CALL GC_is_init_called(void)
   return GC_is_initialized;
 }
 
-#if (defined(MSWIN32) || defined(MSWINCE) || defined(MSWIN_XBOX1)) \
-    && defined(THREADS)
+#if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
   GC_INNER CRITICAL_SECTION GC_write_cs;
 #endif
 
