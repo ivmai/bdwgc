@@ -44,7 +44,7 @@ environment:
   - TARGET: mingw
     CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT -D GC_TIME_LIMIT=10 -D WINXP_USE_PERF_COUNTER -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw-shared-no-make
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D GC_ASSERTIONS -D ENABLE_DISCLAIM -D GC_GCJ_SUPPORT -D GC_PREFER_MPROTECT_VDB -D GC_CALL=__stdcall -D GC_CALLBACK=__fastcall -D NO_MSGBOX_ON_ERROR
+    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D GC_ASSERTIONS -D ENABLE_DISCLAIM -D GC_GCJ_SUPPORT -D GC_PREFER_MPROTECT_VDB -D GC_CALL=__stdcall -D GC_CALLBACK=__fastcall -D CONSOLE_LOG -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw-w64
     CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw-w64
@@ -91,7 +91,7 @@ test_script:
       "cd /c/projects/bdwgc && make -j -f Makefile.direct check CC=gcc CFLAGS_EXTRA='-DGC_NOT_DLL %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw-shared-no-make] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL %CFLAGS_EXTRA% -o gctest.exe tests/test.c gc.dll && (gctest.exe && cat gctest.gc.log || (cat gctest.gc.log && exit 1))" )
+      "cd /c/projects/bdwgc && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL %CFLAGS_EXTRA% -o gctest.exe tests/test.c gc.dll && gctest.exe" )
 - cmd: if [%TARGET%]==[mingw-w64] (
     C:\msys64\usr\bin\bash -e -l -c
       "cd /c/projects/bdwgc && make -j -f Makefile.direct check CC=gcc CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
