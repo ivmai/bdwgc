@@ -549,6 +549,9 @@ GC_ONLY_LOG_TO_FILE     Don't redirect GC stdout and stderr to the log file
 
 GC_ANDROID_LOG (Android only)   Output error/debug information to Android log.
 
+CONSOLE_LOG (Win32 only)        Output error/debug information to stdout and
+  stderr.
+
 GC_DONT_EXPAND  Don't expand the heap unless explicitly requested or forced to.
 
 GC_USE_ENTIRE_HEAP      Causes the non-incremental collector to use the

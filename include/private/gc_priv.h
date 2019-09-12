@@ -2348,7 +2348,7 @@ GC_EXTERN signed_word GC_bytes_found;
 #endif
 
 #ifdef THREADS
-# if defined(MSWIN32) || defined(MSWINCE)
+# if (defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE)
     GC_EXTERN CRITICAL_SECTION GC_write_cs; /* defined in misc.c */
 #   ifdef GC_ASSERTIONS
       GC_EXTERN GC_bool GC_write_disabled;

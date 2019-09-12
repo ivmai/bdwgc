@@ -36,7 +36,8 @@
 # include <windows.h>
 #endif
 
-#if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN)
+#if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN) \
+    || (defined(CONSOLE_LOG) && defined(MSWIN32))
 # include <fcntl.h>
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -749,7 +750,8 @@ GC_API int GC_CALL GC_is_init_called(void)
   return GC_is_initialized;
 }
 
-#if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
+#if defined(GC_WIN32_THREADS) \
+    && ((defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE))
   GC_INNER CRITICAL_SECTION GC_write_cs;
 #endif
 
@@ -808,15 +810,17 @@ GC_API int GC_CALL GC_is_init_called(void)
 
 #if !defined(OS2) && !defined(MACOS) && !defined(GC_ANDROID_LOG) \
     && !defined(NN_PLATFORM_CTR) && !defined(NINTENDO_SWITCH) \
-    && !defined(MSWIN32) && !defined(MSWINCE)
+    && (!defined(MSWIN32) || defined(CONSOLE_LOG)) && !defined(MSWINCE)
   STATIC int GC_stdout = GC_DEFAULT_STDOUT_FD;
   STATIC int GC_stderr = GC_DEFAULT_STDERR_FD;
   STATIC int GC_log = GC_DEFAULT_STDERR_FD;
 
-  GC_API void GC_CALL GC_set_log_fd(int fd)
-  {
-    GC_log = fd;
-  }
+# ifndef MSWIN32
+    GC_API void GC_CALL GC_set_log_fd(int fd)
+    {
+      GC_log = fd;
+    }
+# endif
 #endif
 
 #ifdef MSGBOX_ON_ERROR
@@ -972,8 +976,9 @@ GC_API void GC_CALL GC_init(void)
           /* else */ InitializeCriticalSection(&GC_allocate_ml);
         }
 #     endif
-#   endif /* GC_WIN32_THREADS */
-#   if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
+#   endif /* GC_WIN32_THREADS && !GC_PTHREADS */
+#   if defined(GC_WIN32_THREADS) \
+       && ((defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE))
       InitializeCriticalSection(&GC_write_cs);
 #   endif
     GC_setpagesize();
@@ -997,6 +1002,7 @@ GC_API void GC_CALL GC_init(void)
 #     endif
 #   endif
 #   if ((defined(UNIX_LIKE) && !defined(GC_ANDROID_LOG)) \
+        || (defined(CONSOLE_LOG) && defined(MSWIN32)) \
         || defined(CYGWIN32) || defined(SYMBIAN)) && !defined(SMALL_CONFIG)
         {
           char * file_name = TRUSTED_STRING(GETENV("GC_LOG_FILE"));
@@ -1436,14 +1442,16 @@ GC_API void GC_CALL GC_enable_incremental(void)
     if (GC_is_initialized) {
       /* Prevent duplicate resource close.  */
       GC_is_initialized = FALSE;
-#     if defined(THREADS) && (defined(MSWIN32) || defined(MSWINCE))
-        DeleteCriticalSection(&GC_write_cs);
+#     if defined(GC_WIN32_THREADS) && (defined(MSWIN32) || defined(MSWINCE))
+#       if !defined(CONSOLE_LOG) || defined(MSWINCE)
+          DeleteCriticalSection(&GC_write_cs);
+#       endif
         DeleteCriticalSection(&GC_allocate_ml);
 #     endif
     }
   }
 
-#if defined(MSWIN32) || defined(MSWINCE)
+#if (defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE)
 
 # if defined(_MSC_VER) && defined(_DEBUG) && !defined(MSWINCE)
 #   include <crtdbg.h>
@@ -1701,16 +1709,18 @@ GC_API void GC_CALL GC_enable_incremental(void)
 # define WRITE(level, buf, unused_len) \
                 __android_log_write(level, GC_ANDROID_LOG_TAG, buf)
 
-# elif defined(NN_PLATFORM_CTR)
-    int n3ds_log_write(const char* text, int length);
-#   define WRITE(level, buf, len) n3ds_log_write(buf, len)
-# elif defined(NINTENDO_SWITCH)
-    int switch_log_write(const char* text, int length);
-#   define WRITE(level, buf, len) switch_log_write(buf, len)
+#elif defined(NN_PLATFORM_CTR)
+  int n3ds_log_write(const char* text, int length);
+# define WRITE(level, buf, len) n3ds_log_write(buf, len)
+
+#elif defined(NINTENDO_SWITCH)
+  int switch_log_write(const char* text, int length);
+# define WRITE(level, buf, len) switch_log_write(buf, len)
 
 #else
-# if !defined(AMIGA) && !defined(MSWIN_XBOX1) && !defined(SN_TARGET_ORBIS) \
-     && !defined(SN_TARGET_PSP2) && !defined(__CC_ARM)
+# if !defined(AMIGA) && !defined(MSWIN32) && !defined(MSWIN_XBOX1) \
+     && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2) \
+     && !defined(__CC_ARM)
 #   include <unistd.h>
 # endif
 
@@ -1750,7 +1760,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
   }
 
 # define WRITE(f, buf, len) GC_write(f, buf, len)
-#endif /* !MSWIN32 && !OS2 && !MACOS && !GC_ANDROID_LOG */
+#endif /* !MSWINCE && !OS2 && !MACOS && !GC_ANDROID_LOG */
 
 #define BUFSZ 1024
 
@@ -1922,8 +1932,8 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
       /* Avoid calling GC_err_printf() here, as GC_on_abort() could be  */
       /* called from it.  Note 1: this is not an atomic output.         */
       /* Note 2: possible write errors are ignored.                     */
-#     if defined(THREADS) && defined(GC_ASSERTIONS) \
-         && (defined(MSWIN32) || defined(MSWINCE))
+#     if defined(GC_WIN32_THREADS) && defined(GC_ASSERTIONS) \
+         && ((defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE))
         if (!GC_write_disabled)
 #     endif
       {

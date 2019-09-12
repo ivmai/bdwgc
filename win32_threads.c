@@ -1332,7 +1332,8 @@ STATIC void GC_suspend(GC_thread t)
     GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED, THREAD_HANDLE(t));
 }
 
-#if defined(GC_ASSERTIONS) && (defined(MSWIN32) || defined(MSWINCE))
+#if defined(GC_ASSERTIONS) \
+    && ((defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE))
   GC_INNER GC_bool GC_write_disabled = FALSE;
                 /* TRUE only if GC_stop_world() acquired GC_write_cs.   */
 #endif
@@ -1357,7 +1358,7 @@ GC_INNER void GC_stop_world(void)
 # if !defined(GC_NO_THREADS_DISCOVERY) || defined(GC_ASSERTIONS)
     GC_please_stop = TRUE;
 # endif
-# if defined(MSWIN32) || defined(MSWINCE)
+# if (defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE)
     GC_ASSERT(!GC_write_disabled);
     EnterCriticalSection(&GC_write_cs);
     /* It's not allowed to call GC_printf() (and friends) here down to  */
@@ -1399,7 +1400,7 @@ GC_INNER void GC_stop_world(void)
       }
     }
   }
-# if defined(MSWIN32) || defined(MSWINCE)
+# if (defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE)
 #   ifdef GC_ASSERTIONS
       GC_write_disabled = FALSE;
 #   endif
