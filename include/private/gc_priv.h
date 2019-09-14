@@ -1455,8 +1455,12 @@ GC_EXTERN size_t GC_page_size;
 #endif
 
 #if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-  struct _SYSTEM_INFO;
-  GC_EXTERN struct _SYSTEM_INFO GC_sysinfo;
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
+# include <windows.h>
+  GC_EXTERN SYSTEM_INFO GC_sysinfo;
   GC_INNER GC_bool GC_is_heap_base(ptr_t p);
 #endif
 
