@@ -61,13 +61,6 @@
 #  endif
 
 #  if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS)
-#    ifndef WIN32_LEAN_AND_MEAN
-#      define WIN32_LEAN_AND_MEAN 1
-#    endif
-#    define NOSERVICE
-     EXTERN_C_END
-#    include <windows.h>
-     EXTERN_C_BEGIN
 #    define NO_THREAD (DWORD)(-1)
      GC_EXTERN CRITICAL_SECTION GC_allocate_ml;
 #    ifdef GC_ASSERTIONS

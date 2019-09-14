@@ -921,11 +921,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 # if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 
-# ifndef WIN32_LEAN_AND_MEAN
-#   define WIN32_LEAN_AND_MEAN 1
-# endif
-# define NOSERVICE
-# include <windows.h>
 # include <stdlib.h>
 
   /* We traverse the entire address space and register all segments     */

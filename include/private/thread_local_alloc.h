@@ -133,13 +133,6 @@ typedef struct thread_local_freelists {
 # define GC_remove_specific_after_fork(key, t) (void)0
   typedef void * GC_key_t;
 #elif defined(USE_WIN32_SPECIFIC)
-# ifndef WIN32_LEAN_AND_MEAN
-#   define WIN32_LEAN_AND_MEAN 1
-# endif
-# define NOSERVICE
-  EXTERN_C_END
-# include <windows.h>
-  EXTERN_C_BEGIN
 # define GC_getspecific TlsGetValue
 # define GC_setspecific(key, v) !TlsSetValue(key, v)
         /* We assume 0 == success, msft does the opposite.      */

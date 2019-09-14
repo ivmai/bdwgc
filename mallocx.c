@@ -27,13 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef MSWINCE
-# ifndef WIN32_LEAN_AND_MEAN
-#   define WIN32_LEAN_AND_MEAN 1
-# endif
-# define NOSERVICE
-# include <windows.h>
-#else
+#ifndef MSWINCE
 # include <errno.h>
 #endif
 

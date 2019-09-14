@@ -27,15 +27,6 @@
 # include <sys/syscall.h>
 #endif
 
-#if defined(MSWIN32) || defined(MSWINCE) \
-    || (defined(CYGWIN32) && defined(GC_READ_ENV_FILE))
-# ifndef WIN32_LEAN_AND_MEAN
-#   define WIN32_LEAN_AND_MEAN 1
-# endif
-# define NOSERVICE
-# include <windows.h>
-#endif
-
 #if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN) \
     || (defined(CONSOLE_LOG) && defined(MSWIN32))
 # include <fcntl.h>
