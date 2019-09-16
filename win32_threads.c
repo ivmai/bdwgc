@@ -1289,6 +1289,9 @@ STATIC void GC_suspend(GC_thread t)
       return;
     }
 # endif
+# ifdef DEBUG_THREADS
+    GC_log_printf("Suspending 0x%x\n", (int)t->id);
+# endif
   GC_acquire_dirty_lock();
 # ifdef MSWINCE
     /* SuspendThread() will fail if thread is running kernel code.      */
@@ -1420,6 +1423,9 @@ GC_INNER void GC_start_world(void)
     for (i = 0; i <= my_max; i++) {
       GC_thread t = (GC_thread)(dll_thread_table + i);
       if (t -> suspended) {
+#       ifdef DEBUG_THREADS
+          GC_log_printf("Resuming 0x%x\n", (int)t->id);
+#       endif
         GC_ASSERT(t -> stack_base != 0 && t -> id != thread_id);
         if (ResumeThread(THREAD_HANDLE(t)) == (DWORD)-1)
           ABORT("ResumeThread failed");
@@ -1427,6 +1433,7 @@ GC_INNER void GC_start_world(void)
         if (GC_on_thread_event)
           GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, THREAD_HANDLE(t));
       }
+      /* Else thread is unregistered or not suspended. */
     }
   } else {
     GC_thread t;
@@ -1435,6 +1442,9 @@ GC_INNER void GC_start_world(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (t = GC_threads[i]; t != 0; t = t -> tm.next) {
         if (t -> suspended) {
+#         ifdef DEBUG_THREADS
+            GC_log_printf("Resuming 0x%x\n", (int)t->id);
+#         endif
           GC_ASSERT(t -> stack_base != 0 && t -> id != thread_id);
           if (ResumeThread(THREAD_HANDLE(t)) == (DWORD)-1)
             ABORT("ResumeThread failed");
@@ -1442,6 +1452,11 @@ GC_INNER void GC_start_world(void)
           t -> suspended = FALSE;
           if (GC_on_thread_event)
             GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, THREAD_HANDLE(t));
+        } else {
+#         ifdef DEBUG_THREADS
+            GC_log_printf("Not resuming thread 0x%x as it is not suspended\n",
+                          (int)t->id);
+#         endif
         }
       }
     }
