@@ -223,3 +223,6 @@ include tests/tests.am
 include doc/doc.am
 ## Putting these at the top causes cord to be built first, and not find
 ## libgc.a on HP/UX.  There may be a better fix.
+
+# A dummy target for mono build.
+test-bundle:
