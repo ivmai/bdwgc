@@ -1600,6 +1600,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       /* require looping.                                               */
       word *regs = thread->context_regs;
 
+      GC_ASSERT(thread->suspended);
       sp = thread->context_sp;
 #   else
       /* For unblocked threads call GetThreadContext(). */
@@ -1607,6 +1608,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       {
         CONTEXT context;
 
+        GC_ASSERT(thread->suspended);
         context.ContextFlags = GET_THREAD_CONTEXT_FLAGS;
         if (!GetThreadContext(THREAD_HANDLE(thread), &context))
           ABORT("GetThreadContext failed");
