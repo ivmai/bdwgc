@@ -876,82 +876,78 @@ STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
     GC_with_callee_saves_pushed(GC_push_current_stack, cold_gc_frame);
 }
 
-/*
- * Call the mark routines (GC_push_one for a single pointer,
- * GC_push_conditional on groups of pointers) on every top level
- * accessible pointer.
- * If all is FALSE, arrange to push only possibly altered values.
- * Cold_gc_frame is an address inside a GC frame that
- * remains valid until all marking is complete.
- * A zero value indicates that it's OK to miss some
- * register values.
- */
+/* Call the mark routines (GC_push_one for a single pointer,            */
+/* GC_push_conditional on groups of pointers) on every top level        */
+/* accessible pointer.  If all is false, arrange to push only possibly  */
+/* altered values.  Cold_gc_frame is an address inside a GC frame that  */
+/* remains valid until all marking is complete; a NULL value indicates  */
+/* that it is OK to miss some register values.  Called with the         */
+/* allocation lock held.                                                */
 GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame GC_ATTR_UNUSED)
 {
     int i;
     unsigned kind;
 
-    /*
-     * Next push static data.  This must happen early on, since it's
-     * not robust against mark stack overflow.
-     */
-     /* Re-register dynamic libraries, in case one got added.           */
-     /* There is some argument for doing this as late as possible,      */
-     /* especially on win32, where it can change asynchronously.        */
-     /* In those cases, we do it here.  But on other platforms, it's    */
-     /* not safe with the world stopped, so we do it earlier.           */
-#      if !defined(REGISTER_LIBRARIES_EARLY)
-         GC_cond_register_dynamic_libraries();
-#      endif
+    /* Next push static data.  This must happen early on, since it is   */
+    /* not robust against mark stack overflow.                          */
+    /* Re-register dynamic libraries, in case one got added.            */
+    /* There is some argument for doing this as late as possible,       */
+    /* especially on win32, where it can change asynchronously.         */
+    /* In those cases, we do it here.  But on other platforms, it's     */
+    /* not safe with the world stopped, so we do it earlier.            */
+#   if !defined(REGISTER_LIBRARIES_EARLY)
+        GC_cond_register_dynamic_libraries();
+#   endif
 
-     /* Mark everything in static data areas                             */
-       for (i = 0; i < n_root_sets; i++) {
-         GC_push_conditional_with_exclusions(
+    /* Mark everything in static data areas.                            */
+    for (i = 0; i < n_root_sets; i++) {
+        GC_push_conditional_with_exclusions(
                              GC_static_roots[i].r_start,
                              GC_static_roots[i].r_end, all);
-       }
+    }
 
-     /* Mark all free list header blocks, if those were allocated from  */
-     /* the garbage collected heap.  This makes sure they don't         */
-     /* disappear if we are not marking from static data.  It also      */
-     /* saves us the trouble of scanning them, and possibly that of     */
-     /* marking the freelists.                                          */
-       for (kind = 0; kind < GC_n_kinds; kind++) {
-         void *base = GC_base(GC_obj_kinds[kind].ok_freelist);
-         if (0 != base) {
-           GC_set_mark_bit(base);
-         }
-       }
+    /* Mark all free list header blocks, if those were allocated from   */
+    /* the garbage collected heap.  This makes sure they don't          */
+    /* disappear if we are not marking from static data.  It also       */
+    /* saves us the trouble of scanning them, and possibly that of      */
+    /* marking the freelists.                                           */
+    for (kind = 0; kind < GC_n_kinds; kind++) {
+        void *base = GC_base(GC_obj_kinds[kind].ok_freelist);
+        if (base != NULL) {
+            GC_set_mark_bit(base);
+        }
+    }
 
-     /* Mark from GC internal roots if those might otherwise have       */
-     /* been excluded.                                                  */
-       if (GC_no_dls || roots_were_cleared) {
-           GC_push_gc_structures();
-       }
+    /* Mark from GC internal roots if those might otherwise have        */
+    /* been excluded.                                                   */
+    if (GC_no_dls || roots_were_cleared) {
+        GC_push_gc_structures();
+    }
 
-     /* Mark thread local free lists, even if their mark        */
-     /* descriptor excludes the link field.                     */
-     /* If the world is not stopped, this is unsafe.  It is     */
-     /* also unnecessary, since we will do this again with the  */
-     /* world stopped.                                          */
-#      if defined(THREAD_LOCAL_ALLOC)
-         if (GC_world_stopped) GC_mark_thread_local_free_lists();
-#      endif
+    /* Mark thread local free lists, even if their mark        */
+    /* descriptor excludes the link field.                     */
+    /* If the world is not stopped, this is unsafe.  It is     */
+    /* also unnecessary, since we will do this again with the  */
+    /* world stopped.                                          */
+#   if defined(THREAD_LOCAL_ALLOC)
+        if (GC_world_stopped)
+            GC_mark_thread_local_free_lists();
+#   endif
 
-    /*
-     * Now traverse stacks, and mark from register contents.
-     * These must be done last, since they can legitimately overflow
-     * the mark stack.
-     * This is usually done by saving the current context on the
-     * stack, and then just tracing from the stack.
-     */
-#    ifndef STACK_NOT_SCANNED
-       GC_push_regs_and_stack(cold_gc_frame);
-#    endif
+    /* Now traverse stacks, and mark from register contents.    */
+    /* These must be done last, since they can legitimately     */
+    /* overflow the mark stack.  This is usually done by saving */
+    /* the current context on the stack, and then just tracing  */
+    /* from the stack.                                          */
+#   ifndef STACK_NOT_SCANNED
+        GC_push_regs_and_stack(cold_gc_frame);
+#   endif
 
-    if (GC_push_other_roots != 0) (*GC_push_other_roots)();
+    if (GC_push_other_roots != 0) {
         /* In the threads case, this also pushes thread stacks. */
         /* Note that without interior pointer recognition lots  */
         /* of stuff may have been pushed already, and this      */
         /* should be careful about mark stack overflows.        */
+        (*GC_push_other_roots)();
+    }
 }
