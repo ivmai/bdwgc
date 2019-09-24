@@ -773,27 +773,19 @@ STATIC void GC_push_all_stack_part_eager_sections(ptr_t lo, ptr_t hi,
 
 #endif /* !THREADS */
 
-                        /* Push enough of the current stack eagerly to  */
-                        /* ensure that callee-save registers saved in   */
-                        /* GC frames are scanned.                       */
-                        /* In the non-threads case, schedule entire     */
-                        /* stack for scanning.                          */
-                        /* The second argument is a pointer to the      */
-                        /* (possibly null) thread context, for          */
-                        /* (currently hypothetical) more precise        */
-                        /* stack scanning.                              */
-/*
- * In the absence of threads, push the stack contents.
- * In the presence of threads, push enough of the current stack
- * to ensure that callee-save registers saved in collector frames have been
- * seen.
- * TODO: Merge it with per-thread stuff.
- */
+/* Push enough of the current stack eagerly to ensure that callee-save  */
+/* registers saved in GC frames are scanned.  In the non-threads case,  */
+/* schedule entire stack for scanning.  The 2nd argument is a pointer   */
+/* to the (possibly null) thread context, for (currently hypothetical)  */
+/* more precise stack scanning.  In the presence of threads, push       */
+/* enough of the current stack to ensure that callee-save registers     */
+/* saved in collector frames have been seen.                            */
+/* TODO: Merge it with per-thread stuff. */
 STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
                                   void * context GC_ATTR_UNUSED)
 {
 #   if defined(THREADS)
-        if (0 == cold_gc_frame) return;
+        /* cold_gc_frame is non-NULL.   */
 #       ifdef STACK_GROWS_DOWN
           GC_push_all_eager(GC_approx_sp(), cold_gc_frame);
           /* For IA64, the register stack backing store is handled      */
@@ -873,6 +865,10 @@ GC_INNER void GC_cond_register_dynamic_libraries(void)
 
 STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
 {
+#   ifdef THREADS
+      if (NULL == cold_gc_frame)
+        return; /* GC_push_all_stacks should push registers and stack */
+#   endif
     GC_with_callee_saves_pushed(GC_push_current_stack, cold_gc_frame);
 }
 
