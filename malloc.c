@@ -52,8 +52,11 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
       LOCK();
     }
     /* Do our share of marking work */
-        if (GC_incremental && !GC_dont_gc)
+        if (GC_incremental && !GC_dont_gc) {
+            ENTER_GC();
             GC_collect_a_little_inner((int)n_blocks);
+            EXIT_GC();
+        }
     h = GC_allochblk(lb, k, flags);
 #   ifdef USE_MUNMAP
         if (0 == h) {

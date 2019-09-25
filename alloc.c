@@ -534,7 +534,9 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
               /* TODO: Notify GC_EVENT_ABANDON */
               return(FALSE);
             }
+            ENTER_GC();
             GC_collect_a_little_inner(1);
+            EXIT_GC();
         }
     }
     GC_notify_full_gc();
@@ -719,7 +721,9 @@ GC_API int GC_CALL GC_collect_a_little(void)
     DCL_LOCK_STATE;
 
     LOCK();
+    ENTER_GC();
     GC_collect_a_little_inner(1);
+    EXIT_GC();
     result = (int)GC_collection_in_progress();
     UNLOCK();
     if (!result && GC_debugging_started) GC_print_all_smashed();

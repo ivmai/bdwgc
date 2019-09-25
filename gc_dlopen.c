@@ -46,7 +46,9 @@
     DCL_LOCK_STATE;
     LOCK();
     while (GC_incremental && GC_collection_in_progress()) {
+      ENTER_GC();
       GC_collect_a_little_inner(1000);
+      EXIT_GC();
     }
     ++GC_dont_gc;
     UNLOCK();
