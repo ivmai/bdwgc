@@ -351,8 +351,8 @@ STATIC volatile LONG GC_max_thread_index = 0;
 STATIC GC_thread GC_threads[THREAD_TABLE_SZ];
 
 /* It may not be safe to allocate when we register the first thread.    */
-/* Thus we allocated one statically.  It does not contain any field we  */
-/* need to push ("next" and "status" fields are unused).                */
+/* Thus we allocated one statically.  It does not contain any pointer   */
+/* field we need to push ("next" and "status" fields are unused).       */
 static struct GC_Thread_Rep first_thread;
 static GC_bool first_thread_used = FALSE;
 
@@ -694,6 +694,9 @@ STATIC void GC_delete_gc_thread_no_free(GC_vthread t)
       /* see GC_stop_world() for the information.                       */
       t -> stack_base = 0;
       t -> id = 0;
+#     ifdef RETRY_GET_THREAD_CONTEXT
+        t -> context_sp = NULL;
+#     endif
       AO_store_release(&t->tm.in_use, FALSE);
     } else
 # endif
@@ -1600,20 +1603,36 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       /* require looping.                                               */
       word *regs = thread->context_regs;
 
-      GC_ASSERT(thread->suspended);
-      sp = thread->context_sp;
+      if (thread->suspended) {
+        sp = thread->context_sp;
+      } else
 #   else
-      /* For unblocked threads call GetThreadContext(). */
       word regs[PUSHED_REGS_COUNT];
-      {
+#   endif
+
+      /* else */ {
         CONTEXT context;
 
-        GC_ASSERT(thread->suspended);
+        /* For unblocked threads call GetThreadContext().       */
         context.ContextFlags = GET_THREAD_CONTEXT_FLAGS;
-        if (!GetThreadContext(THREAD_HANDLE(thread), &context))
-          ABORT("GetThreadContext failed");
-        sp = copy_ptr_regs(regs, &context);
+        if (GetThreadContext(THREAD_HANDLE(thread), &context)) {
+          sp = copy_ptr_regs(regs, &context);
+        } else {
+#         ifdef RETRY_GET_THREAD_CONTEXT
+            /* At least, try to use the stale context if saved. */
+            sp = thread->context_sp;
+            if (NULL == sp) {
+              /* Skip the current thread, anyway its stack will */
+              /* be pushed when the world is stopped.           */
+              return 0;
+            }
+#         else
+            ABORT("GetThreadContext failed");
+#         endif
+        }
       }
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_ASSERT(thread->suspended || !GC_world_stopped);
 #   endif
 
 #   ifndef WOW64_THREAD_CONTEXT_WORKAROUND
@@ -1760,6 +1779,8 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
   return thread->stack_base - sp; /* stack grows down */
 }
 
+/* We hold allocation lock.  Should do exactly the right thing if the   */
+/* world is stopped.  Should not fail if it isn't.                      */
 GC_INNER void GC_push_all_stacks(void)
 {
   DWORD thread_id = GetCurrentThreadId();
