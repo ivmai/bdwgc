@@ -1552,7 +1552,11 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
 # else
     TCHAR *logPath;
-    BOOL appendToFile = FALSE;
+#   if defined(NO_GETENV_WIN32) && defined(CPPCHECK)
+#     define appendToFile FALSE
+#   else
+      BOOL appendToFile = FALSE;
+#   endif
 #   if !defined(NO_GETENV_WIN32) || !defined(OLD_WIN32_LOG_FILE)
       TCHAR pathBuf[_MAX_PATH + 0x10]; /* buffer for path + ext */
 
@@ -1597,6 +1601,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
                                   /* Seek to file end (ignoring any error) */
       }
 #   endif
+#   undef appendToFile
 # endif
     return hFile;
   }
