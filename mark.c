@@ -493,7 +493,8 @@ static void alloc_mark_stack(size_t);
         /* to the exception case; our results are invalid and we have   */
         /* to start over.  This cannot be prevented since we can't      */
         /* block in DllMain.                                            */
-        if (GC_started_thread_while_stopped()) goto handle_ex;
+        if (GC_started_thread_while_stopped())
+          goto handle_thr_start;
 #     endif
      rm_handler:
       return ret_val;
@@ -530,7 +531,7 @@ static void alloc_mark_stack(size_t);
           goto handle_ex;
 #     if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
         if (GC_started_thread_while_stopped())
-          goto handle_ex;
+          goto handle_thr_start;
 #     endif
     rm_handler:
       /* Uninstall the exception handler.       */
@@ -571,6 +572,9 @@ handle_ex:
           warned_gc_no = GC_gc_no;
         }
       }
+#   if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
+      handle_thr_start:
+#   endif
       /* We have bad roots on the stack.  Discard mark stack.   */
       /* Rescan from marked objects.  Redetermine roots.        */
 #     ifdef REGISTER_LIBRARIES_EARLY
