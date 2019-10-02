@@ -36,7 +36,9 @@
 #if defined(CPPCHECK) && defined(GC_PTHREADS) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE 1
 #endif
-#undef GC_NO_THREAD_REDIRECTS
+#ifdef GC_NO_THREADS_DISCOVERY
+# undef GC_NO_THREAD_REDIRECTS
+#endif
 #include "gc.h"
 
 #ifndef NTHREADS /* Number of additional threads to fork. */
@@ -656,8 +658,8 @@ void check_marks_int_list(sexpr x)
     {
         DWORD thread_id;
         HANDLE h;
-        h = GC_CreateThread((SECURITY_ATTRIBUTES *)NULL, (word)0,
-                            tiny_reverse_test, NULL, (DWORD)0, &thread_id);
+        h = CreateThread((SECURITY_ATTRIBUTES *)NULL, (word)0,
+                         tiny_reverse_test, NULL, (DWORD)0, &thread_id);
                                 /* Explicitly specify types of the      */
                                 /* arguments to test the prototype.     */
         if (h == (HANDLE)NULL) {
@@ -2213,7 +2215,7 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
       GC_printf("Event creation failed %d\n", (int)GetLastError());
       FAIL;
     }
-    win_thr_h = GC_CreateThread(NULL, 0, thr_window, 0, 0, &thread_id);
+    win_thr_h = CreateThread(NULL, 0, thr_window, 0, 0, &thread_id);
     if (win_thr_h == (HANDLE)NULL) {
       GC_printf("Thread creation failed %d\n", (int)GetLastError());
       FAIL;
@@ -2225,7 +2227,7 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
   set_print_procs();
 # if NTHREADS > 0
    for (i = 0; i < NTHREADS; i++) {
-    h[i] = GC_CreateThread(NULL, 0, thr_run_one_test, 0, 0, &thread_id);
+    h[i] = CreateThread(NULL, 0, thr_run_one_test, 0, 0, &thread_id);
     if (h[i] == (HANDLE)NULL) {
       GC_printf("Thread creation failed %d\n", (int)GetLastError());
       FAIL;
