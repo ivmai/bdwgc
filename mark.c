@@ -511,7 +511,8 @@ static void alloc_mark_stack(size_t);
         /* to the exception case; our results are invalid and we have   */
         /* to start over.  This cannot be prevented since we can't      */
         /* block in DllMain.                                            */
-        if (GC_started_thread_while_stopped()) goto handle_ex;
+        if (GC_started_thread_while_stopped())
+          goto handle_thr_start;
 #     endif
      rm_handler:
       return ret_val;
@@ -565,6 +566,10 @@ handle_ex:
       WARN("Caught ACCESS_VIOLATION in marker;"
            " memory mapping disappeared\n", 0);
 
+#   if (defined(MSWIN32) || defined(MSWINCE)) && defined(GC_WIN32_THREADS) \
+       && !defined(__GNUC__)
+      handle_thr_start:
+#   endif
       /* We have bad roots on the stack.  Discard mark stack.   */
       /* Rescan from marked objects.  Redetermine roots.        */
 #     ifdef REGISTER_LIBRARIES_EARLY
