@@ -572,7 +572,8 @@ handle_ex:
           warned_gc_no = GC_gc_no;
         }
       }
-#   if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
+#   if (defined(MSWIN32) || defined(MSWINCE)) && defined(GC_WIN32_THREADS) \
+       && !defined(GC_PTHREADS)
       handle_thr_start:
 #   endif
       /* We have bad roots on the stack.  Discard mark stack.   */
