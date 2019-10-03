@@ -1157,10 +1157,21 @@ STATIC void GC_suspend(GC_thread t)
     /* appears there's a race here.                                     */
     DWORD exitCode;
 # endif
+
   UNPROTECT_THREAD(t);
-# ifndef MSWINCE
-    if (GetExitCodeThread(t -> handle, &exitCode) &&
-        exitCode != STILL_ACTIVE) {
+  GC_acquire_dirty_lock();
+
+# ifdef MSWINCE
+    /* SuspendThread() will fail if thread is running kernel code.      */
+    while (SuspendThread(THREAD_HANDLE(t)) == (DWORD)-1) {
+      GC_release_dirty_lock();
+      Sleep(10); /* in millis */
+      GC_acquire_dirty_lock();
+    }
+# else
+    if (GetExitCodeThread(t -> handle, &exitCode)
+        && exitCode != STILL_ACTIVE) {
+      GC_release_dirty_lock();
 #     ifdef GC_PTHREADS
         t -> stack_base = 0; /* prevent stack from being pushed */
 #     else
@@ -1171,16 +1182,9 @@ STATIC void GC_suspend(GC_thread t)
 #     endif
       return;
     }
-# endif
-  GC_acquire_dirty_lock();
-# ifdef MSWINCE
-    /* SuspendThread() will fail if thread is running kernel code.      */
-    while (SuspendThread(THREAD_HANDLE(t)) == (DWORD)-1)
-      Sleep(10); /* in millis */
-# else
     if (SuspendThread(t -> handle) == (DWORD)-1)
       ABORT("SuspendThread failed");
-# endif /* !MSWINCE */
+# endif
   t -> suspended = (unsigned char)TRUE;
   GC_release_dirty_lock();
 }
