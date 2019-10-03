@@ -1277,10 +1277,16 @@ STATIC void GC_suspend(GC_thread t)
     int retry_cnt = 0;
 #   define MAX_SUSPEND_THREAD_RETRIES (1000 * 1000)
 # endif
+
+# ifdef DEBUG_THREADS
+    GC_log_printf("Suspending 0x%x\n", (int)t->id);
+# endif
   UNPROTECT_THREAD(t);
+  GC_acquire_dirty_lock();
 # ifndef MSWINCE
     if (GetExitCodeThread(t -> handle, &exitCode) &&
         exitCode != STILL_ACTIVE) {
+      GC_release_dirty_lock();
 #     ifdef GC_PTHREADS
         t -> stack_base = 0; /* prevent stack from being pushed */
 #     else
@@ -1292,14 +1298,14 @@ STATIC void GC_suspend(GC_thread t)
       return;
     }
 # endif
-# ifdef DEBUG_THREADS
-    GC_log_printf("Suspending 0x%x\n", (int)t->id);
-# endif
-  GC_acquire_dirty_lock();
+
 # ifdef MSWINCE
     /* SuspendThread() will fail if thread is running kernel code.      */
-    while (SuspendThread(THREAD_HANDLE(t)) == (DWORD)-1)
+    while (SuspendThread(THREAD_HANDLE(t)) == (DWORD)-1) {
+      GC_release_dirty_lock();
       Sleep(10); /* in millis */
+      GC_acquire_dirty_lock();
+    }
 # elif defined(RETRY_GET_THREAD_CONTEXT)
     for (;;) {
       if (SuspendThread(t->handle) != (DWORD)-1) {
@@ -1317,8 +1323,11 @@ STATIC void GC_suspend(GC_thread t)
         if (ResumeThread(t->handle) == (DWORD)-1)
           ABORT("ResumeThread failed");
       }
-      if (retry_cnt > 1)
+      if (retry_cnt > 1) {
+        GC_release_dirty_lock();
         Sleep(0); /* yield */
+        GC_acquire_dirty_lock();
+      }
       if (++retry_cnt >= MAX_SUSPEND_THREAD_RETRIES)
         ABORT("SuspendThread loop failed"); /* something must be wrong */
     }
