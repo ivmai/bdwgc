@@ -1113,21 +1113,8 @@ STATIC void GC_suspend(GC_thread t)
     /* appears there's a race here.                                     */
     DWORD exitCode;
 # endif
+
   UNPROTECT_THREAD(t);
-# ifndef MSWINCE
-    if (GetExitCodeThread(t -> handle, &exitCode) &&
-        exitCode != STILL_ACTIVE) {
-#     ifdef GC_PTHREADS
-        t -> stack_base = 0; /* prevent stack from being pushed */
-#     else
-        /* this breaks pthread_join on Cygwin, which is guaranteed to  */
-        /* only see user pthreads                                      */
-        GC_ASSERT(GC_win32_dll_threads);
-        GC_delete_gc_thread(t);
-#     endif
-      return;
-    }
-# endif
 # if defined(MPROTECT_VDB)
     /* Acquire the spin lock we use to update dirty bits.       */
     /* Threads shouldn't get stopped holding it.  But we may    */
@@ -1142,9 +1129,24 @@ STATIC void GC_suspend(GC_thread t)
     while (SuspendThread(THREAD_HANDLE(t)) == (DWORD)-1)
       Sleep(10); /* in millis */
 # else
+    if (GetExitCodeThread(t -> handle, &exitCode)
+        && exitCode != STILL_ACTIVE) {
+#     ifdef MPROTECT_VDB
+        AO_CLEAR(&GC_fault_handler_lock);
+#     endif
+#     ifdef GC_PTHREADS
+        t -> stack_base = 0; /* prevent stack from being pushed */
+#     else
+        /* this breaks pthread_join on Cygwin, which is guaranteed to  */
+        /* only see user pthreads                                      */
+        GC_ASSERT(GC_win32_dll_threads);
+        GC_delete_gc_thread(t);
+#     endif
+      return;
+    }
     if (SuspendThread(t -> handle) == (DWORD)-1)
       ABORT("SuspendThread failed");
-# endif /* !MSWINCE */
+# endif
   t -> suspended = (unsigned char)TRUE;
 # if defined(MPROTECT_VDB)
     AO_CLEAR(&GC_fault_handler_lock);
