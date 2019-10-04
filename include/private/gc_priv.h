@@ -166,6 +166,14 @@ typedef int GC_bool;
 # define REGISTER register
 #endif
 
+#if defined(CPPCHECK)
+# define MACRO_BLKSTMT_BEGIN {
+# define MACRO_BLKSTMT_END   }
+#else
+# define MACRO_BLKSTMT_BEGIN do {
+# define MACRO_BLKSTMT_END   } while (0)
+#endif
+
 #ifndef HEADERS_H
 # include "gc_hdrs.h"
 #endif
@@ -631,21 +639,21 @@ EXTERN_C_BEGIN
 /* literals.  C_msg should not contain format specifiers.  Arguments    */
 /* should match their format specifiers.                                */
 #define ABORT_ARG1(C_msg, C_fmt, arg1) \
-                do { \
+                MACRO_BLKSTMT_BEGIN \
                   GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt "\n", arg1); \
                   ABORT(C_msg); \
-                } while (0)
+                MACRO_BLKSTMT_END
 #define ABORT_ARG2(C_msg, C_fmt, arg1, arg2) \
-                do { \
+                MACRO_BLKSTMT_BEGIN \
                   GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt "\n", arg1, arg2); \
                   ABORT(C_msg); \
-                } while (0)
+                MACRO_BLKSTMT_END
 #define ABORT_ARG3(C_msg, C_fmt, arg1, arg2, arg3) \
-                do { \
+                MACRO_BLKSTMT_BEGIN \
                   GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt "\n", \
                                     arg1, arg2, arg3); \
                   ABORT(C_msg); \
-                } while (0)
+                MACRO_BLKSTMT_END
 
 /* Same as ABORT but does not have 'no-return' attribute.       */
 /* ABORT on a dummy condition (which is always true).           */
