@@ -18,7 +18,7 @@
 /*
  * This file contains the functions:
  *      ptr_t GC_build_flXXX(h, old_fl)
- *      void GC_new_hblk(size)
+ *      void GC_new_hblk(size, kind)
  */
 
 #include <stdio.h>
