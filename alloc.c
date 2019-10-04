@@ -1604,9 +1604,15 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
                   || NULL == GC_obj_kinds[kind].ok_reclaim_list[gran]);
         GC_continue_reclaim(gran, kind);
       EXIT_GC();
-      if (*flh == 0) {
+#     if defined(CPPCHECK)
+        GC_noop1((word)flh);
+#     endif
+      if (NULL == *flh) {
         GC_new_hblk(gran, kind);
-        if (*flh == 0) {
+#       if defined(CPPCHECK)
+          GC_noop1((word)flh);
+#       endif
+        if (NULL == *flh) {
           ENTER_GC();
           if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED
               && !tried_minor) {
