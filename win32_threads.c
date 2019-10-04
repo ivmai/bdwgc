@@ -694,6 +694,7 @@ STATIC void GC_delete_gc_thread_no_free(GC_vthread t)
       /* see GC_stop_world() for the information.                       */
       t -> stack_base = 0;
       t -> id = 0;
+      t -> suspended = FALSE;
 #     ifdef RETRY_GET_THREAD_CONTEXT
         t -> context_sp = NULL;
 #     endif
@@ -1266,11 +1267,6 @@ void GC_push_thread_structures(void)
 STATIC void GC_suspend(GC_thread t)
 {
 # ifndef MSWINCE
-    /* Apparently the Windows 95 GetOpenFileName call creates           */
-    /* a thread that does not properly get cleaned up, and              */
-    /* SuspendThread on its descriptor may provoke a crash.             */
-    /* This reduces the probability of that event, though it still      */
-    /* appears there's a race here.                                     */
     DWORD exitCode;
 # endif
 # ifdef RETRY_GET_THREAD_CONTEXT
@@ -1283,21 +1279,6 @@ STATIC void GC_suspend(GC_thread t)
 # endif
   UNPROTECT_THREAD(t);
   GC_acquire_dirty_lock();
-# ifndef MSWINCE
-    if (GetExitCodeThread(t -> handle, &exitCode) &&
-        exitCode != STILL_ACTIVE) {
-      GC_release_dirty_lock();
-#     ifdef GC_PTHREADS
-        t -> stack_base = 0; /* prevent stack from being pushed */
-#     else
-        /* this breaks pthread_join on Cygwin, which is guaranteed to  */
-        /* only see user pthreads                                      */
-        GC_ASSERT(GC_win32_dll_threads);
-        GC_delete_gc_thread_no_free(t);
-#     endif
-      return;
-    }
-# endif
 
 # ifdef MSWINCE
     /* SuspendThread() will fail if thread is running kernel code.      */
@@ -1308,6 +1289,25 @@ STATIC void GC_suspend(GC_thread t)
     }
 # elif defined(RETRY_GET_THREAD_CONTEXT)
     for (;;) {
+      /* Apparently the Windows 95 GetOpenFileName call creates         */
+      /* a thread that does not properly get cleaned up, and            */
+      /* SuspendThread on its descriptor may provoke a crash.           */
+      /* This reduces the probability of that event, though it still    */
+      /* appears there is a race here.                                  */
+      if (GetExitCodeThread(t -> handle, &exitCode)
+          && exitCode != STILL_ACTIVE) {
+        GC_release_dirty_lock();
+#       ifdef GC_PTHREADS
+          t -> stack_base = 0; /* prevent stack from being pushed */
+#       else
+          /* This breaks pthread_join on Cygwin, which is guaranteed to */
+          /* only see user threads.                                     */
+          GC_ASSERT(GC_win32_dll_threads);
+          GC_delete_gc_thread_no_free(t);
+#       endif
+        return;
+      }
+
       if (SuspendThread(t->handle) != (DWORD)-1) {
         CONTEXT context;
 
@@ -1321,7 +1321,7 @@ STATIC void GC_suspend(GC_thread t)
 
         /* Resume the thread, try to suspend it in a better location.   */
         if (ResumeThread(t->handle) == (DWORD)-1)
-          ABORT("ResumeThread failed");
+          ABORT("ResumeThread failed in suspend loop");
       }
       if (retry_cnt > 1) {
         GC_release_dirty_lock();
@@ -1332,6 +1332,17 @@ STATIC void GC_suspend(GC_thread t)
         ABORT("SuspendThread loop failed"); /* something must be wrong */
     }
 # else
+    if (GetExitCodeThread(t -> handle, &exitCode)
+        && exitCode != STILL_ACTIVE) {
+      GC_release_dirty_lock();
+#     ifdef GC_PTHREADS
+        t -> stack_base = 0; /* prevent stack from being pushed */
+#     else
+        GC_ASSERT(GC_win32_dll_threads);
+        GC_delete_gc_thread_no_free(t);
+#     endif
+      return;
+    }
     if (SuspendThread(t -> handle) == (DWORD)-1)
       ABORT("SuspendThread failed");
 # endif
