@@ -368,12 +368,15 @@
 == [7.6.14] (not released yet) ==
 
 * Add support of OpenBSD/aarch64
+* Disable mprotect-based incremental GC if /proc roots are used (Linux)
 * Eliminate 'GC_old_bus_handler defined but not used' compiler warning
 * Eliminate 'comparing signed and unsigned values' BCC warning in cordtest
 * Eliminate 'possible loss of data' BCC and MS VC warnings
+* Eliminate 'static GC_sysinfo definition has incomplete type' Clang warning
 * Eliminate 'unused function GC_add_map_entry' compiler warning
 * Eliminate 'while clause does not guard' GCC warning in GC_parse_map_entry
 * Explicitly zero-initialize trace_buf (fix trace_buf initialization)
+* Fix 'ACCESS_VIOLATION in marker' GC warning on Win32 async thread start
 * Fix 'ulong undefined' compilation error on AIX
 * Fix MPROTECT_VDB definition for single-threaded GC builds
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
@@ -389,6 +392,10 @@
 * Fix test_cpp failure when gc_cpp resides in a dll (Borland, Watcom)
 * Fix various typos mostly in documentation files
 * Fix word size, data start and alignment for OpenBSD/mips64(el)
+* Prevent GetThreadContext failure (Windows)
+* Prevent WARN of incompatible incremental GC if default or manual VDB
+* Reduce a time period between GetExitCodeThread and SuspendThread (Win32)
+* Refactoring of WoW64 workaround (Win32)
 * Remove a misleading comment about Solaris in gc.h
 * Workaround 'expression is only useful for its side effects' WCC warning
 * Workaround fread fail after enable_incremental if malloc redirected (Linux)
