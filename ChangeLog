@@ -103,14 +103,18 @@
 * Add support of OpenBSD/aarch64
 * Allow GC_PAUSE_TIME_TARGET environment variable values smaller than 5 ms
 * Avoid compiler warning about unused d in GC_CALLOC/MALLOC_EXPLICITLY_TYPED
+* Define OS_TYPE and DATAEND for UWP targets
+* Disable mprotect-based incremental GC if /proc roots are used (Linux)
 * Do not use Manual VDB mode if C malloc is redirected
 * Eliminate 'GC_old_bus_handler defined but not used' compiler warning
 * Eliminate 'comparing signed and unsigned values' BCC warning in cordtest
 * Eliminate 'possible loss of data' BCC and MS VC warnings
+* Eliminate 'static GC_sysinfo definition has incomplete type' Clang warning
 * Eliminate 'unused function' compiler warnings (GC_add_map_entry, GC_lock)
 * Eliminate 'while clause does not guard' GCC warning in GC_parse_map_entry
 * Enable sbrk-to-mmap fallback on major supported Unix-like platforms
 * Explicitly zero-initialize trace_buf (fix trace_buf initialization)
+* Fix 'ACCESS_VIOLATION in marker' GC warning on Win32 async thread start
 * Fix 'ISO C++17 does not allow dynamic exception spec' clang-8 error
 * Fix 'condition pred!=NULL is always true' compiler warning
 * Fix 'external linkage required for var because of dllimport' error on MinGW
@@ -134,6 +138,10 @@
 * Fix test_cpp failure when gc_cpp resides in a dll (Borland, Watcom)
 * Fix various typos mostly in documentation files
 * Fix word size, data start and alignment for OpenBSD/mips64(el)
+* Prevent GetThreadContext failure (Windows)
+* Prevent WARN of incompatible incremental GC if default or manual VDB
+* Reduce a time period between GetExitCodeThread and SuspendThread (Win32)
+* Refactoring of WoW64 workaround (Win32)
 * Refine GC_INIT documentation about its multiple invocation
 * Refine GC_parallel documentation in gc.h
 * Refine do_blocking() documentation in gc.h
