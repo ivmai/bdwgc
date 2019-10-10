@@ -1,3 +1,41 @@
+2019-10-04  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [!MSWINCE && MPROTECT_VDB] (GC_suspend): Move
+	AO_test_and_set_acquire() call to be before GetExitCodeThread();
+	call AO_CLEAR() immediately if GetExitCodeThread() failed.
+
+2019-10-04  Ivan Maidanski <ivmai@mail.ru>
+
+	* new_hblk.c: Specify the 2nd argument (kind) of GC_new_hblk in the
+	head comment.
+
+2019-10-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c [WRAP_MARK_SOME && (MSWIN32 || MSWINCE) && GC_WIN32_THREADS
+	&& !__GNUC__] (GC_mark_some): If GC_started_thread_while_stopped()
+	then goto handle_thr_start instead of handle_ex; define
+	handle_thr_start label right after WARN() call.
+
+2019-08-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h [USE_PROC_FOR_LIBRARIES
+	&& GC_LINUX_THREADS] (MPROTECT_VDB): Undefine; add comment.
+
+2019-08-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c [WRAP_MARK_SOME && !MSWIN32 && !MSWINCE] (GC_mark_some):
+	Do not WARN about incompatibility of incremental GC with /proc roots
+	if DEFAULT_VDB or MANUAL_VDB.
+
+2019-08-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c [USE_PROC_FOR_LIBRARIES && GC_LINUX_THREADS] (GC_init): Fix
+	typo in comment ("will").
+
+2019-07-01  Sorawee Porncharoenwase <sorawee.pwase@gmail.com>
+
+	* doc/README.changes (6.0alpha7, 6.2alpha4): Fix typo ("primitives").
+
 2019-07-17  Ivan Maidanski <ivmai@mail.ru>
 
 	* cord/tests/de_win.c (control_chars): Replace "32" to "64" in comment.
