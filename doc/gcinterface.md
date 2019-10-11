@@ -206,7 +206,7 @@ in garbage collectible memory by having those classes inherit from class `gc`.
 For details see `gc_cpp.h` file.
 
 Linking against `libgccpp` in addition to the `gc` library overrides `::new`
-(and friends) to allocate traceable memory but uncollectible memory, making
+(and friends) to allocate traceable but uncollectible memory, making
 it safe to refer to collectible objects from the resulting memory.
 
 ## C interface
