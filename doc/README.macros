@@ -22,7 +22,7 @@ instead of features.  In many cases, this is a mistake.
 Many of the tested configuration macros are at least somewhat defined in
 either include/private/gcconfig.h or in Makefile.direct.  Here is an attempt
 at documenting these macros:  (Thanks to Walter Bright for suggesting
-this.  This is a work in progress)
+this.)
 
 MACRO           EXPLANATION
 -----           -----------
