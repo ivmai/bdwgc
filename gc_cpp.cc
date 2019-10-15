@@ -44,7 +44,7 @@ GC_API void GC_CALL GC_throw_bad_alloc() {
   GC_ALLOCATOR_THROW_OR_ABORT();
 }
 
-#if !defined(_MSC_VER) && !defined(__DMC__)
+#if !(defined(_MSC_VER) || defined(__DMC__)) || defined(GC_NO_INLINE_STD_NEW)
 
 # if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
     && !defined(GC_NEW_DELETE_NEED_THROW) && GC_GNUC_PREREQ(4, 2) \
@@ -71,6 +71,23 @@ GC_API void GC_CALL GC_throw_bad_alloc() {
     return obj;
   }
 
+# ifdef _MSC_VER
+    // This new operator is used by VC++ in case of Debug builds.
+    void* operator new(size_t size, int /* nBlockUse */,
+                       const char* szFileName, int nLine)
+    {
+#     ifdef GC_DEBUG
+        void* obj = GC_debug_malloc_uncollectable(size, szFileName, nLine);
+#     else
+        void* obj = GC_MALLOC_UNCOLLECTABLE(size);
+        (void)szFileName; (void)nLine;
+#     endif
+      if (0 == obj)
+        GC_ALLOCATOR_THROW_OR_ABORT();
+      return obj;
+    }
+# endif // _MSC_VER
+
   void operator delete(void* obj) GC_NOEXCEPT {
     GC_FREE(obj);
   }
@@ -82,6 +99,15 @@ GC_API void GC_CALL GC_throw_bad_alloc() {
         GC_ALLOCATOR_THROW_OR_ABORT();
       return obj;
     }
+
+#   ifdef _MSC_VER
+      // This new operator is used by VC++ 7+ in Debug builds.
+      void* operator new[](size_t size, int nBlockUse,
+                           const char* szFileName, int nLine)
+      {
+        return operator new(size, nBlockUse, szFileName, nLine);
+      }
+#   endif // _MSC_VER
 
     void operator delete[](void* obj) GC_NOEXCEPT {
       GC_FREE(obj);
@@ -102,4 +128,4 @@ GC_API void GC_CALL GC_throw_bad_alloc() {
 #   endif
 # endif // C++14
 
-#endif // !_MSC_VER
+#endif // !_MSC_VER && !__DMC__ || GC_NO_INLINE_STD_NEW

@@ -57,6 +57,10 @@ _ENABLE_ARRAYNEW
                 operator new[] and delete[] are separately
                 overloadable. Used in gc_cpp.h.
 
+GC_NO_INLINE_STD_NEW    Tested by gc_cpp.cc and gc_cpp.h.  MS Windows only.
+                Define the system-wide new and delete operators in gccpp.dll
+                instead of providing an inline version of the operators.
+
 _DLL            Tested by gc_config_macros.h. Defined by Visual C++ if runtime
                 dynamic libraries are in use.  Used (only if none of GC_DLL,
                 GC_NOT_DLL, __GNUC__ are defined) to test whether
