@@ -306,16 +306,13 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
                               void*) GC_NOEXCEPT;
 #endif
 
+#ifndef GC_NO_INLINE_STD_NEW
+
 #if defined(_MSC_VER) || defined(__DMC__) \
     || ((defined(__BORLANDC__) || defined(__CYGWIN__) \
          || defined(__CYGWIN32__) || defined(__MINGW32__) \
          || defined(__WATCOMC__)) \
         && !defined(GC_BUILD) && !defined(GC_NOT_DLL))
-  // The following ensures that the system default operator new[] does not
-  // get undefined, which is what seems to happen on VC++ 6 for some reason
-  // if we define a multi-argument operator new[].
-  // There seems to be no way to redirect new in this environment without
-  // including this everywhere.
   // Inlining done to avoid mix up of new and delete operators by VC++ 9 (due
   // to arbitrary ordering during linking).
 
@@ -391,6 +388,24 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 # endif
 
 #endif // _MSC_VER
+
+#elif defined(_MSC_VER)
+  // The following ensures that the system default operator new[] does not
+  // get undefined, which is what seems to happen on VC++ 6 for some reason
+  // if we define a multi-argument operator new[].
+  // There seems to be no way to redirect new in this environment without
+  // including this everywhere.
+# ifdef GC_OPERATOR_NEW_ARRAY
+    void *operator new[](size_t size);
+    void operator delete[](void* obj);
+# endif
+
+  void* operator new(size_t size);
+  void operator delete(void* obj);
+
+  void* operator new(size_t size, int /* nBlockUse */,
+                     const char * szFileName, int nLine);
+#endif // GC_NO_INLINE_STD_NEW && _MSC_VER
 
 #ifdef GC_OPERATOR_NEW_ARRAY
   // The operator new for arrays, identical to the above.
