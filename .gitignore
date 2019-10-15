@@ -56,12 +56,7 @@
 /if_not_there
 /initsecondarythread_test
 /leaktest
-/libalphagc.so
-/libcord.so
-/libgc.so
-/libgccpp.so
-/libirixgc.so
-/liblinuxgc.so
+/lib*.so
 /libtool
 /middletest
 /realloc_test
@@ -127,7 +122,6 @@ stamp-h1
 /cord/CMakeFiles/
 /cord/Makefile
 /gc.sln
-/libgc*-dll.so
 /tests/*.vcxproj
 /tests/*.vcxproj.filters
 /tests/*test
