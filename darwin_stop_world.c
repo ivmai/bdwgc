@@ -73,6 +73,9 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
         __asm__ __volatile__ ("mov %0, x29\n" : "=r" (sp_reg));
         frame = (StackFrame *)sp_reg;
 #   else
+#     if defined(CPPCHECK)
+        GC_noop1((word)&frame);
+#     endif
       ABORT("GC_FindTopOfStack(0) is not implemented");
 #   endif
   }
