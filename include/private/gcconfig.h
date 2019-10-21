@@ -2309,7 +2309,9 @@ EXTERN_C_BEGIN
 #     define DATAEND   ((ptr_t)get_end())
 #     define STACKBOTTOM ((ptr_t)0x16fdfffff)
 #     define USE_MMAP_ANON
-#     define MPROTECT_VDB
+      /* MPROTECT_VDB causes use of non-public API like exc_server,     */
+      /* this could be a reason for blocking the client application in  */
+      /* the store.                                                     */
       EXTERN_C_END
 #     include <unistd.h>
       EXTERN_C_BEGIN
@@ -2467,7 +2469,7 @@ EXTERN_C_BEGIN
 #     define DATAEND   ((ptr_t)get_end())
 #     define STACKBOTTOM ((ptr_t)0x30000000)
 #     define USE_MMAP_ANON
-#     define MPROTECT_VDB
+      /* MPROTECT_VDB causes use of non-public API.     */
       EXTERN_C_END
 #     include <unistd.h>
       EXTERN_C_BEGIN
