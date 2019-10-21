@@ -2194,7 +2194,9 @@
 #       define USE_MMAP
 #     endif
 #     define USE_MMAP_ANON
-#     define MPROTECT_VDB
+      /* MPROTECT_VDB causes use of non-public API like exc_server,     */
+      /* this could be a reason for blocking the client application in  */
+      /* the store.                                                     */
 #     include <unistd.h>
 #     define GETPAGESIZE() (unsigned)getpagesize()
       /* FIXME: There seems to be some issues with trylock hanging on   */
@@ -2336,7 +2338,7 @@
 #       define USE_MMAP
 #     endif
 #     define USE_MMAP_ANON
-#     define MPROTECT_VDB
+      /* MPROTECT_VDB causes use of non-public API.     */
 #     include <unistd.h>
 #     define GETPAGESIZE() (unsigned)getpagesize()
       /* FIXME: There seems to be some issues with trylock hanging on   */
