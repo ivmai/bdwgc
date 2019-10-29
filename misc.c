@@ -1555,6 +1555,9 @@ GC_API void GC_CALL GC_enable_incremental(void)
 # if !defined(AMIGA) && !defined(__CC_ARM)
 #   include <unistd.h>
 # endif
+# if !defined(ECOS) && !defined(NOSYS)
+#   include <errno.h>
+# endif
 
   STATIC int GC_write(int fd, const char *buf, size_t len)
   {
@@ -1580,6 +1583,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #        endif
 
          if (-1 == result) {
+             if (EAGAIN == errno) /* Resource temporarily unavailable */
+               continue;
              RESTORE_CANCEL(cancel_state);
              return(result);
          }
