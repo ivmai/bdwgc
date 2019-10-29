@@ -1714,11 +1714,16 @@ GC_API void GC_CALL GC_enable_incremental(void)
 # define WRITE(level, buf, len) switch_log_write(buf, len)
 
 #else
-# if !defined(AMIGA) && !defined(MSWIN32) && !defined(MSWIN_XBOX1) \
-     && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2) \
-     && !defined(__CC_ARM)
-#   include <unistd.h>
-# endif
+
+# if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+#   if !defined(AMIGA) && !defined(MSWIN32) && !defined(MSWIN_XBOX1) \
+       && !defined(__CC_ARM)
+#     include <unistd.h>
+#   endif
+#   if !defined(ECOS) && !defined(NOSYS)
+#     include <errno.h>
+#   endif
+# endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
 
   STATIC int GC_write(int fd, const char *buf, size_t len)
   {
@@ -1745,6 +1750,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #        endif
 
          if (-1 == result) {
+             if (EAGAIN == errno) /* Resource temporarily unavailable */
+               continue;
              RESTORE_CANCEL(cancel_state);
              return(result);
          }
