@@ -103,8 +103,9 @@ cord.lib: $(COBJS)
         @for %i in ($(COBJS)) do @%append $*.lb1 +'%i'
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
-gccpp.lib: gc_cpp.obj
+gccpp.lib: gc_badalc.obj gc_cpp.obj
         @%create $*.lb1
+        @%append $*.lb1 +'gc_badalc.obj'
         @%append $*.lb1 +'gc_cpp.obj'
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
@@ -151,7 +152,7 @@ cord.dll: $(COBJS) gc.lib .AUTODEPEND
 gccpp.lib: gccpp.dll
         *wlib -b -c -n -p=512 $@ +gccpp.dll
 
-gccpp.dll: gc_cpp.obj gc.lib .AUTODEPEND
+gccpp.dll: gc_badalc.obj gc_cpp.obj gc.lib .AUTODEPEND
         @%create $*.lnk
 !ifdef DOS4GW
         @%append $*.lnk sys os2v2_dll
@@ -162,6 +163,7 @@ gccpp.dll: gc_cpp.obj gc.lib .AUTODEPEND
 !endif
         @%append $*.lnk op case
         @%append $*.lnk name $*
+        @%append $*.lnk file 'gc_badalc.obj'
         @%append $*.lnk file 'gc_cpp.obj'
         @%append $*.lnk library gc.lib
         @%append $*.lnk library wr7$(CALLING)dll.lib
@@ -226,8 +228,11 @@ cordxtra.obj: cord\cordxtra.c .AUTODEPEND
 cordprnt.obj: cord\cordprnt.c .AUTODEPEND
         $(CC) $(CFLAGS) $(CORDFLAG) cord\cordprnt.c
 
+gc_badalc.obj: gc_badalc.cc .AUTODEPEND
+        $(CXX) $(TEST_CXXFLAGS) $*.cc
 gc_cpp.obj: gc_cpp.cc .AUTODEPEND
         $(CXX) $(TEST_CXXFLAGS) $*.cc
+
 test.obj: tests\test.c .AUTODEPEND
         $(CC) $(TEST_CFLAGS) /wcd=13 /wcd=201 /wcd=367 /wcd=368 tests\test.c
 cordtest.obj: cord\tests\cordtest.c .AUTODEPEND

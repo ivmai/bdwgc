@@ -34,17 +34,14 @@ built-in "new" and "delete".
 
 #include "gc_cpp.h" // for GC_OPERATOR_NEW_ARRAY, GC_NOEXCEPT
 
+#if !(defined(_MSC_VER) || defined(__DMC__)) || defined(GC_NO_INLINE_STD_NEW)
+
 #if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 # define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()
 #else
+// Use bad_alloc() directly instead of GC_throw_bad_alloc() call.
 # define GC_ALLOCATOR_THROW_OR_ABORT() throw std::bad_alloc()
 #endif
-
-GC_API void GC_CALL GC_throw_bad_alloc() {
-  GC_ALLOCATOR_THROW_OR_ABORT();
-}
-
-#if !(defined(_MSC_VER) || defined(__DMC__)) || defined(GC_NO_INLINE_STD_NEW)
 
 # if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
     && !defined(GC_NEW_DELETE_NEED_THROW) && GC_GNUC_PREREQ(4, 2) \

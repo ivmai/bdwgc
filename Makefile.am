@@ -135,7 +135,7 @@ if CPLUSPLUS
 lib_LTLIBRARIES += libgccpp.la
 pkginclude_HEADERS += include/gc_allocator.h include/gc_cpp.h
 include_HEADERS += include/extra/gc_cpp.h
-libgccpp_la_SOURCES = gc_cpp.cc
+libgccpp_la_SOURCES = gc_badalc.cc gc_cpp.cc
 libgccpp_la_LIBADD = ./libgc.la
 libgccpp_la_LDFLAGS = -version-info $(LIBGCCPP_VER_INFO) -no-undefined
 endif
@@ -143,7 +143,7 @@ endif
 ## FIXME: If Visual C++ users use Makefile.am, this should go into
 ## pkginclude_HEADERS with proper AM_CONDITIONALization.  Otherwise
 ## delete this comment.
-EXTRA_DIST += gc_cpp.cpp
+EXTRA_DIST += gc_badalc.cpp gc_cpp.cpp
 
 
 # Misc

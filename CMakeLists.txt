@@ -310,7 +310,7 @@ if (enable_threads)
 endif()
 
 if (enable_cplusplus)
-  add_library(gccpp gc_cpp.cc)
+  add_library(gccpp gc_badalc.cc gc_cpp.cc)
   target_link_libraries(gccpp PRIVATE gc)
 endif()
 

@@ -214,6 +214,7 @@ Files to build the GC libraries:
     ptr_chck.c
     reclaim.c
     typd_mlc.c
+    gc_badalc.cc
     gc_cpp.cc
 
 == 2. Test that the library works with 'test.c' ==

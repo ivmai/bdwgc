@@ -108,10 +108,10 @@ SRCS= $(CSRCS) \
   include/gc_version.h include/private/gc_hdrs.h include/private/gc_priv.h \
   include/private/gcconfig.h include/private/gc_pmark.h \
   include/gc_inline.h include/gc_mark.h include/gc_disclaim.h \
-  tools/threadlibs.c tools/if_mach.c tools/if_not_there.c gc_cpp.cc \
-  include/gc_cpp.h include/private/gc_locks.h include/new_gc_alloc.h \
-  include/gc_alloc_ptrs.h include/gc_allocator.h include/javaxfc.h \
-  include/gc_backptr.h include/gc_gcj.h include/private/dbg_mlc.h \
+  tools/threadlibs.c tools/if_mach.c tools/if_not_there.c gc_badalc.cc \
+  gc_cpp.cc include/gc_cpp.h include/new_gc_alloc.h include/gc_alloc_ptrs.h \
+  include/gc_allocator.h include/javaxfc.h include/gc_backptr.h \
+  include/gc_gcj.h include/private/gc_locks.h include/private/dbg_mlc.h \
   include/private/specific.h include/leak_detector.h \
   include/gc_pthread_redirects.h include/private/gc_atomic_ops.h \
   include/gc_config_macros.h include/private/pthread_support.h \
@@ -222,6 +222,10 @@ cords cord.a: $(CORD_OBJS) $(UTILS)
 	./if_not_there dont_ar_3 || $(RANLIB) cord.a || cat /dev/null
 	echo > cords
 
+gc_badalc.o: $(srcdir)/gc_badalc.cc $(srcdir)/include/gc_cpp.h \
+  $(srcdir)/include/gc.h
+	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_badalc.cc
+
 gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 
@@ -240,13 +244,13 @@ c++-t: c++ test_cpp$(EXEEXT)
 c++-nt: c++
 	@echo "Use ./test_cpp 1 to test the leak library"
 
-c++ gccpp.a: gc_cpp.o $(UTILS)
+c++ gccpp.a: gc_badalc.o gc_cpp.o $(UTILS)
 	rm -f dont_ar_4
 	./if_mach SPARC SOLARIS touch dont_ar_4
-	./if_mach SPARC SOLARIS $(AR) rus gccpp.a gc_cpp.o
+	./if_mach SPARC SOLARIS $(AR) rus gccpp.a gc_badalc.o gc_cpp.o
 	./if_mach M68K AMIGA touch dont_ar_4
-	./if_mach M68K AMIGA $(AR) -vrus gccpp.a gc_cpp.o
-	./if_not_there dont_ar_4 || $(AR) ru gccpp.a gc_cpp.o
+	./if_mach M68K AMIGA $(AR) -vrus gccpp.a gc_badalc.o gc_cpp.o
+	./if_not_there dont_ar_4 || $(AR) ru gccpp.a gc_badalc.o gc_cpp.o
 	./if_not_there dont_ar_4 || $(RANLIB) gccpp.a || cat /dev/null
 	echo > c++
 

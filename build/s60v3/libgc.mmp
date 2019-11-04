@@ -41,6 +41,7 @@ SOURCE          dbg_mlc.c
 SOURCE          dyn_load.c
 SOURCE          finalize.c
 SOURCE          fnlz_mlc.c
+//SOURCE        gc_badalc.cpp
 //SOURCE        gc_cpp.cpp
 SOURCE          gcj_mlc.c
 SOURCE          headers.c

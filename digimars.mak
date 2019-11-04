@@ -22,6 +22,7 @@ OBJS=	\
 	fnlz_mlc.obj\
 	dyn_load.obj\
 	finalize.obj\
+	gc_badalc.obj\
 	gc_cpp.obj\
 	gcj_mlc.obj\
 	headers.obj\
@@ -83,6 +84,7 @@ dbg_mlc.obj: dbg_mlc.c
 dyn_load.obj: dyn_load.c
 finalize.obj: finalize.c
 fnlz_mlc.obj: fnlz_mlc.c
+gc_badalc.obj: gc_badalc.cc gc_badalc.cpp
 gc_cpp.obj: gc_cpp.cc gc_cpp.cpp
 headers.obj: headers.c
 mach_dep.obj: mach_dep.c

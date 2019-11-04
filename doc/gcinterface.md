@@ -133,11 +133,11 @@ The C++ interface is implemented as a thin layer on the C interface.
 Unfortunately, this thin layer appears to be very sensitive to variations
 in C++ implementations, particularly since it tries to replace the global
 `::new` operator, something that appears to not be well-standardized. Your
-platform may need minor adjustments in this layer (`gc_cpp.cc`, `gc_cpp.h`,
-and possibly `gc_allocator.h`). Such changes do not require understanding
-of collector internals, though they may require a good understanding of your
-platform. (Patches enhancing portability are welcome. But it is easy to break
-one platform by fixing another.)
+platform may need minor adjustments in this layer (`gc_badalc.cc`,
+`gc_cpp.cc`, `gc_cpp.h`, and possibly `gc_allocator.h`). Such changes do not
+require understanding of collector internals, though they may require a good
+understanding of your platform. (Patches enhancing portability are welcome.
+But it is easy to break one platform by fixing another.)
 
 Usage of the collector from C++ is also complicated by the fact that there are
 many _standard_ ways to allocate memory in C++. The default `::new` operator,

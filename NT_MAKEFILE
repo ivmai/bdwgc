@@ -121,8 +121,8 @@ gc.lib: $(OBJS)
 cord.lib: $(COBJS)
 	lib /out:cord.lib /MACHINE:$(CPU) $(COBJS)
 
-gccpp.lib: gc_cpp.obj
-	lib /out:gccpp.lib /MACHINE:$(CPU) gc_cpp.obj
+gccpp.lib: gc_badalc.obj gc_cpp.obj
+	lib /out:gccpp.lib /MACHINE:$(CPU) gc_badalc.obj gc_cpp.obj
 
 !ELSE
 
@@ -132,8 +132,8 @@ gc.lib: $(OBJS)
 cord.lib: $(COBJS) gc.lib
 	$(link) $(ldebug) gc.lib /subsystem:windows /dll /INCREMENTAL:NO /pdb:"cord.pdb" /out:cord.dll /implib:cord.lib /MACHINE:$(CPU) $(COBJS)
 
-gccpp.lib: gc_cpp.obj gc.lib
-	$(link) $(ldebug) gc.lib /subsystem:windows /dll /INCREMENTAL:NO /pdb:"gccpp.pdb" /out:gccpp.dll /implib:gccpp.lib /MACHINE:$(CPU) gc_cpp.obj
+gccpp.lib: gc_badalc.obj gc_cpp.obj gc.lib
+	$(link) $(ldebug) gc.lib /subsystem:windows /dll /INCREMENTAL:NO /pdb:"gccpp.pdb" /out:gccpp.dll /implib:gccpp.lib /MACHINE:$(CPU) gc_badalc.obj gc_cpp.obj
 
 !ENDIF
 
@@ -156,6 +156,8 @@ de.exe: cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib cor
 
 cordtest.exe: cord\tests\cordtest.obj gc.lib cord.lib
 	$(link) /subsystem:console /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:cordtest.exe cord\tests\cordtest.obj gc.lib cord.lib user32.lib
+
+gc_badalc.obj: gc_badalc.cc include\gc_cpp.h include\gc.h
 
 gc_cpp.obj: gc_cpp.cc include\gc_cpp.h include\gc.h
 
