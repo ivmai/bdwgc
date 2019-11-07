@@ -52,9 +52,11 @@ cordprnt.c is known to be less than perfectly portable.  The rest of the
 package should still work.)  See include/cord.h for the API.
 
 If you wish to use the collector from C++, type "make c++", or use
---enable-cplusplus with the configure script.   With Makefile.direct,
-"make c++" creates gccpp.a file.   With the alternate build process, this
-generates libgccpp.a and/or libgccpp.so.  See include/gc_cpp.h.
+--enable-cplusplus with the configure script.  With Makefile.direct,
+"make c++" creates gccpp.a and gctba.a files (you should link with either
+gccpp.a or gctba.a).  With the alternate (preferred) build process, this
+generates libgccpp.a and libgctba.a, and/or libgccpp.so and libgctba.so.
+See include/gc_cpp.h and doc/gcinterface.md.
 
 TYPICAL USE:
 Include "gc.h" from the include subdirectory.  Link against the

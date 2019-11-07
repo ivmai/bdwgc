@@ -209,6 +209,15 @@ Linking against `libgccpp` in addition to the `gc` library overrides `::new`
 (and friends) to allocate traceable but uncollectible memory, making
 it safe to refer to collectible objects from the resulting memory.
 
+If the user includes `gc_cpp.h` but `::new` should not be overridden then
+`libgctba` (in addition to the `gc`) library should be linked with to provide
+the definition of `GC_throw_bad_alloc` C++ function used by operator `new` of
+class `gc`. Alternatively, the client may define `GC_NEW_ABORTS_ON_OOM` macro
+before include of `gc_cpp.h` (this instructs `::new` to issue an abort instead
+of throwing an exception), or may define `GC_INCLUDE_NEW` one before include
+of `gc_cpp.h` (however, this might not compile or work as expected on some
+platforms).
+
 ## C interface
 
 It is also possible to use the C interface from `gc.h` directly. On platforms

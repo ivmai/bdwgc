@@ -494,6 +494,13 @@ esac
 
 AM_CONDITIONAL(CPLUSPLUS, test "${enable_cplusplus}" = yes)
 
+AC_ARG_ENABLE(throw-bad-alloc-library,
+    [AC_HELP_STRING([--disable-throw-bad-alloc-library],
+                    [do not build C++ gctba library])])
+AM_CONDITIONAL(GC_TBA_LIBRARY,
+               test "${enable_cplusplus}" = yes \
+                    -a "${enable_throw_bad_alloc_library}" != no)
+
 if test "$GCC" = yes; then
   if test "${enable_cplusplus}" = yes; then
     case "$host" in

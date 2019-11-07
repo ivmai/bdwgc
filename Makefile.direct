@@ -2,13 +2,13 @@
 # to build the collector.
 #
 # Primary targets:
-# all - builds gc.a, gccpp.a and cord.a
+# all - builds gc.a, gccpp.a, gctba.a and cord.a
 # base_lib - builds gc.a only (basic library)
-# c++ - builds gccpp.a only (C++ interface to library)
+# c++ - builds gccpp.a and gctba.a only (C++ interface to library)
 # cords - builds cord.a only (heavyweight strings library)
 # check - same as "all" but also prints porting information, and runs some
 #         tests of collector and cords
-# check-cpp - builds gc.a and gccpp.a, runs C++ only test
+# check-cpp - builds gc.a, gccpp.a and gctba.a, runs C++ only test
 # cord/de - builds dumb editor based on cords.
 
 ABI_FLAG=
@@ -156,10 +156,11 @@ LEAKFLAGS= $(CFLAGS) -DFIND_LEAK
 
 BSD-pkg-all: bsd-libgc.a bsd-libleak.a
 
-bsd-libgc.a bsd-libgccpp.a:
+bsd-libgc.a bsd-libgccpp.a bsd-libgctba.a:
 	$(MAKE) -f Makefile.direct CFLAGS="$(CFLAGS)" clean c++-t
 	mv gc.a bsd-libgc.a
 	mv gccpp.a bsd-libgccpp.a
+	mv gctba.a bsd-libgctba.a
 
 bsd-libleak.a:
 	$(MAKE) -f Makefile.direct CFLAGS="$(LEAKFLAGS)" clean c++-nt
@@ -170,12 +171,14 @@ BSD-pkg-install: BSD-pkg-all
 	${INSTALL_DATA} libgc.a ${PREFIX}/lib
 	${CP} bsd-libgccpp.a libgccpp.a
 	${INSTALL_DATA} libgccpp.a ${PREFIX}/lib
+	${CP} bsd-libgctba.a libgctba.a
+	${INSTALL_DATA} libgctba.a ${PREFIX}/lib
 	${INSTALL_DATA} gc.h gc_cpp.h ${PREFIX}/include
 	${INSTALL_MAN} doc/gc.man ${PREFIX}/man/man3/gc.3
 
 pcr: PCR-Makefile include/private/gc_private.h include/private/gc_hdrs.h \
-include/private/gc_locks.h include/gc.h include/private/gcconfig.h \
-mach_dep.o $(SRCS)
+  include/private/gc_locks.h include/gc.h include/private/gcconfig.h \
+  mach_dep.o $(SRCS)
 	$(MAKE) -f PCR-Makefile depend
 	$(MAKE) -f PCR-Makefile
 
@@ -244,14 +247,18 @@ c++-t: c++ test_cpp$(EXEEXT)
 c++-nt: c++
 	@echo "Use ./test_cpp 1 to test the leak library"
 
-c++ gccpp.a: gc_badalc.o gc_cpp.o $(UTILS)
+c++ gccpp.a gctba.a: gc_badalc.o gc_cpp.o $(UTILS)
 	rm -f dont_ar_4
 	./if_mach SPARC SOLARIS touch dont_ar_4
 	./if_mach SPARC SOLARIS $(AR) rus gccpp.a gc_badalc.o gc_cpp.o
+	./if_mach SPARC SOLARIS $(AR) rus gctba.a gc_badalc.o
 	./if_mach M68K AMIGA touch dont_ar_4
 	./if_mach M68K AMIGA $(AR) -vrus gccpp.a gc_badalc.o gc_cpp.o
+	./if_mach M68K AMIGA $(AR) -vrus gctba.a gc_badalc.o
 	./if_not_there dont_ar_4 || $(AR) ru gccpp.a gc_badalc.o gc_cpp.o
 	./if_not_there dont_ar_4 || $(RANLIB) gccpp.a || cat /dev/null
+	./if_not_there dont_ar_4 || $(AR) ru gctba.a gc_badalc.o
+	./if_not_there dont_ar_4 || $(RANLIB) gctba.a || cat /dev/null
 	echo > c++
 
 dyn_load_sunos53.o: dyn_load.c

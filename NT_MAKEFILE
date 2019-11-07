@@ -98,7 +98,7 @@ OBJS= extra\gc.obj extra\msvc_dbg.obj
 
 COBJS= cord\cordbscs.obj cord\cordxtra.obj cord\cordprnt.obj
 
-all: gc.lib cord.lib gccpp.lib
+all: gc.lib cord.lib gccpp.lib gctba.lib
 
 check: gctest.exe test_cpp.exe cordtest.exe de.exe
 	gctest.exe
@@ -126,6 +126,10 @@ cord.lib: $(COBJS)
 gccpp.lib: gc_badalc.obj gc_cpp.obj
 	lib /out:gccpp.lib /MACHINE:$(CPU) gc_badalc.obj gc_cpp.obj
 
+# The same as gccpp.lib but contains only gc_badalc.obj.
+gctba.lib: gc_badalc.obj
+	lib /out:gctba.lib /MACHINE:$(CPU) gc_badalc.obj
+
 !ELSE
 
 gc.lib: $(OBJS)
@@ -136,6 +140,9 @@ cord.lib: $(COBJS) gc.lib
 
 gccpp.lib: gc_badalc.obj gc_cpp.obj gc.lib
 	$(link) $(ldebug) gc.lib /subsystem:windows /dll /INCREMENTAL:NO /pdb:"gccpp.pdb" /out:gccpp.dll /implib:gccpp.lib /MACHINE:$(CPU) gc_badalc.obj gc_cpp.obj
+
+gctba.lib: gc_badalc.obj gc.lib
+	$(link) $(ldebug) gc.lib /subsystem:windows /dll /INCREMENTAL:NO /pdb:"gctba.pdb" /out:gctba.dll /implib:gctba.lib /MACHINE:$(CPU) gc_badalc.obj
 
 !ENDIF
 

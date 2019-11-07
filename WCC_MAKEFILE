@@ -78,7 +78,7 @@ TEST_CXXFLAGS= $(TEST_CFLAGS) -xs
 
 COBJS= cordbscs.obj cordxtra.obj cordprnt.obj
 
-all: gc.lib gccpp.lib cord.lib
+all: gc.lib gccpp.lib gctba.lib cord.lib
 
 check: gctest.exe test_cpp.exe cordtest.exe .SYMBOLIC
         *gctest.exe
@@ -107,6 +107,12 @@ gccpp.lib: gc_badalc.obj gc_cpp.obj
         @%create $*.lb1
         @%append $*.lb1 +'gc_badalc.obj'
         @%append $*.lb1 +'gc_cpp.obj'
+        *wlib -b -c -n -p=512 $@ @$*.lb1
+
+# The same as gccpp.lib but contains only gc_badalc.obj.
+gctba.lib: gc_badalc.obj
+        @%create $*.lb1
+        @%append $*.lb1 +'gc_badalc.obj'
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
 !else
@@ -165,6 +171,25 @@ gccpp.dll: gc_badalc.obj gc_cpp.obj gc.lib .AUTODEPEND
         @%append $*.lnk name $*
         @%append $*.lnk file 'gc_badalc.obj'
         @%append $*.lnk file 'gc_cpp.obj'
+        @%append $*.lnk library gc.lib
+        @%append $*.lnk library wr7$(CALLING)dll.lib
+        *wlink @$*.lnk
+
+gctba.lib: gctba.dll
+        *wlib -b -c -n -p=512 $@ +gctba.dll
+
+gctba.dll: gc_badalc.obj gc.lib .AUTODEPEND
+        @%create $*.lnk
+!ifdef DOS4GW
+        @%append $*.lnk sys os2v2_dll
+!else ifdef MSWIN32
+        @%append $*.lnk sys nt_dll
+!else ifdef OS2
+        @%append $*.lnk sys os2v2_dll
+!endif
+        @%append $*.lnk op case
+        @%append $*.lnk name $*
+        @%append $*.lnk file 'gc_badalc.obj'
         @%append $*.lnk library gc.lib
         @%append $*.lnk library wr7$(CALLING)dll.lib
         *wlink @$*.lnk
