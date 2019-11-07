@@ -94,7 +94,7 @@ matrix:
   - os: osx
     env:
     - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS -D LINT2"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-handle-fork=manual"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-handle-fork=manual --disable-throw-bad-alloc-library"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: linux
     compiler: gcc
@@ -118,7 +118,7 @@ matrix:
         - libatomic-ops-dev
     compiler: gcc
     env:
-    - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus"
+    - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus --disable-throw-bad-alloc-library"
     - CFLAGS_EXTRA="-D TEST_PAGES_EXECUTABLE"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
