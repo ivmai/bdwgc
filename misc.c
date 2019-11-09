@@ -1807,8 +1807,13 @@ void GC_printf(const char *format, ...)
         (void)WRITE(GC_stdout, buf, strlen(buf));
         /* Ignore errors silently.      */
 #     else
-        if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
+        if (WRITE(GC_stdout, buf, strlen(buf)) < 0
+#           if defined(CYGWIN32) || (defined(CONSOLE_LOG) && defined(MSWIN32))
+              && GC_stdout != GC_DEFAULT_STDOUT_FD
+#           endif
+           ) {
           ABORT("write to stdout failed");
+        }
 #     endif
     }
 }
@@ -1829,8 +1834,13 @@ void GC_log_printf(const char *format, ...)
 #   ifdef NACL
       (void)WRITE(GC_log, buf, strlen(buf));
 #   else
-      if (WRITE(GC_log, buf, strlen(buf)) < 0)
+      if (WRITE(GC_log, buf, strlen(buf)) < 0
+#         if defined(CYGWIN32) || (defined(CONSOLE_LOG) && defined(MSWIN32))
+            && GC_log != GC_DEFAULT_STDERR_FD
+#         endif
+         ) {
         ABORT("write to GC log failed");
+      }
 #   endif
 }
 
