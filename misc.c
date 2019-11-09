@@ -1552,8 +1552,13 @@ void GC_printf(const char *format, ...)
 
     if (!GC_quiet) {
       GC_PRINTF_FILLBUF(buf, format);
-      if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
+      if (WRITE(GC_stdout, buf, strlen(buf)) < 0
+#           if defined(CYGWIN32)
+              && GC_stdout != GC_DEFAULT_STDOUT_FD
+#           endif
+         ) {
         ABORT("write to stdout failed");
+      }
     }
 }
 
@@ -1570,8 +1575,13 @@ void GC_log_printf(const char *format, ...)
     char buf[BUFSZ + 1];
 
     GC_PRINTF_FILLBUF(buf, format);
-    if (WRITE(GC_log, buf, strlen(buf)) < 0)
+    if (WRITE(GC_log, buf, strlen(buf)) < 0
+#         if defined(CYGWIN32)
+            && GC_log != GC_DEFAULT_STDERR_FD
+#         endif
+       ) {
       ABORT("write to GC log failed");
+    }
 }
 
 #ifndef GC_ANDROID_LOG
