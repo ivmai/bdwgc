@@ -282,7 +282,7 @@ case "$THREADS" in
         ;;
     esac
     ;;
- win32)
+ mcf | win32)
     AC_DEFINE(GC_THREADS)
     use_parallel_mark=$enable_parallel_mark
     if test "${enable_parallel_mark}" != no \
