@@ -2070,8 +2070,8 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
                     GC_INIT_CONF_IGNORE_WARN; \
                     GC_INIT_CONF_INITIAL_HEAP_SIZE; }
 
-/* win32S may not free all resources on process exit.   */
-/* This explicitly deallocates the heap.                */
+/* win32S may not free all resources on process exit.                   */
+/* This explicitly deallocates the heap.  Defined only for Windows.     */
 GC_API void GC_CALL GC_win32_free_heap(void);
 
 #if defined(__SYMBIAN32__)

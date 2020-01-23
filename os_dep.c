@@ -1760,7 +1760,7 @@ void GC_register_data_segments(void)
   }
 # endif /* MSWIN32 */
 
-# ifndef REDIRECT_MALLOC
+# if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
   /* We maintain a linked list of AllocationBase values that we know    */
   /* correspond to malloc heap sections.  Currently this is only called */
   /* during a GC.  But there is some hope that for long running         */
@@ -1772,7 +1772,6 @@ void GC_register_data_segments(void)
 
   STATIC size_t GC_max_root_size = 100000; /* Appr. largest root size.  */
 
-# ifdef USE_WINALLOC
   /* In the long run, a better data structure would also be nice ...    */
   STATIC struct GC_malloc_heap_list {
     void * allocation_base;
@@ -1835,9 +1834,7 @@ void GC_register_data_segments(void)
     new_l -> next = GC_malloc_heap_l;
     GC_malloc_heap_l = new_l;
   }
-# endif /* USE_WINALLOC */
-
-# endif /* !REDIRECT_MALLOC */
+# endif /* USE_WINALLOC && !REDIRECT_MALLOC */
 
   STATIC word GC_n_heap_bases = 0;      /* See GC_heap_bases.   */
 
@@ -1846,11 +1843,12 @@ void GC_register_data_segments(void)
   GC_INNER GC_bool GC_is_heap_base(void *p)
   {
      int i;
-#    ifndef REDIRECT_MALLOC
-       if (GC_root_size > GC_max_root_size) GC_max_root_size = GC_root_size;
-#      ifdef USE_WINALLOC
-         if (GC_is_malloc_heap_base(p)) return TRUE;
-#      endif
+
+#    if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
+       if (GC_root_size > GC_max_root_size)
+         GC_max_root_size = GC_root_size;
+       if (GC_is_malloc_heap_base(p))
+         return TRUE;
 #    endif
      for (i = 0; i < (int)GC_n_heap_bases; i++) {
          if (GC_heap_bases[i] == p) return TRUE;
@@ -2428,34 +2426,40 @@ void * os2_alloc(size_t bytes)
     if (0 != result) GC_heap_bases[GC_n_heap_bases++] = result;
     return(result);
   }
+#endif /* USE_WINALLOC || CYGWIN32 */
 
+#if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32) \
+    || defined(MSWIN_XBOX1)
   GC_API void GC_CALL GC_win32_free_heap(void)
   {
-#   ifndef MSWINRT_FLAVOR
+#   if (defined(USE_WINALLOC) && !defined(MSWIN_XBOX1) \
+        && !defined(MSWINCE)) || defined(CYGWIN32)
+#     ifndef MSWINRT_FLAVOR
+#       ifndef CYGWIN32
+          if (GLOBAL_ALLOC_TEST)
+#       endif
+        {
+          while (GC_n_heap_bases-- > 0) {
+#           ifdef CYGWIN32
+              /* FIXME: Is it OK to use non-GC free() here? */
+#           else
+              GlobalFree(GC_heap_bases[GC_n_heap_bases]);
+#           endif
+            GC_heap_bases[GC_n_heap_bases] = 0;
+          }
+          return;
+        }
+#     endif /* !MSWINRT_FLAVOR */
 #     ifndef CYGWIN32
-        if (GLOBAL_ALLOC_TEST)
-#     endif
-      {
-        while (GC_n_heap_bases-- > 0) {
-#         ifdef CYGWIN32
-            /* FIXME: Is it OK to use non-GC free() here? */
-#         else
-            GlobalFree(GC_heap_bases[GC_n_heap_bases]);
-#         endif
+        /* Avoiding VirtualAlloc leak.  */
+        while (GC_n_heap_bases > 0) {
+          VirtualFree(GC_heap_bases[--GC_n_heap_bases], 0, MEM_RELEASE);
           GC_heap_bases[GC_n_heap_bases] = 0;
         }
-        return;
-      }
-#   endif
-#   ifndef CYGWIN32
-      /* Avoiding VirtualAlloc leak. */
-      while (GC_n_heap_bases > 0) {
-        VirtualFree(GC_heap_bases[--GC_n_heap_bases], 0, MEM_RELEASE);
-        GC_heap_bases[GC_n_heap_bases] = 0;
-      }
-#   endif
+#     endif
+#   endif /* USE_WINALLOC || CYGWIN32 */
   }
-#endif /* USE_WINALLOC || CYGWIN32 */
+#endif /* Windows */
 
 #ifdef AMIGA
 # define GC_AMIGA_AM

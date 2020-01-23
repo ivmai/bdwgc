@@ -2081,7 +2081,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
          UNTESTED(GC_debug_wcsdup);
 #      endif
 #   endif
-#   ifdef MSWIN32
+#   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
       GC_win32_free_heap();
 #   endif
 #   ifdef RTEMS
