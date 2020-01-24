@@ -1834,6 +1834,20 @@ void GC_register_data_segments(void)
     new_l -> next = GC_malloc_heap_l;
     GC_malloc_heap_l = new_l;
   }
+
+  /* Free all the linked list nodes. Could be invoked at process exit   */
+  /* to avoid memory leak complains of a dynamic code analysis tool.    */
+  STATIC void GC_free_malloc_heap_list(void)
+  {
+    struct GC_malloc_heap_list *q = GC_malloc_heap_l;
+
+    GC_malloc_heap_l = NULL;
+    while (q != NULL) {
+      struct GC_malloc_heap_list *next = q -> next;
+      free(q);
+      q = next;
+    }
+  }
 # endif /* USE_WINALLOC && !REDIRECT_MALLOC */
 
   STATIC word GC_n_heap_bases = 0;      /* See GC_heap_bases.   */
@@ -2432,6 +2446,10 @@ void * os2_alloc(size_t bytes)
     || defined(MSWIN_XBOX1)
   GC_API void GC_CALL GC_win32_free_heap(void)
   {
+#   if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC) \
+       && !defined(MSWIN_XBOX1)
+      GC_free_malloc_heap_list();
+#   endif
 #   if (defined(USE_WINALLOC) && !defined(MSWIN_XBOX1) \
         && !defined(MSWINCE)) || defined(CYGWIN32)
 #     ifndef MSWINRT_FLAVOR
