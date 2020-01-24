@@ -426,6 +426,9 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
                 }
 #             endif
               blocks = OBJ_SZ_TO_BLOCKS(sz);
+#             if defined(CPPCHECK)
+                GC_noop1((word)&blocks);
+#             endif
               if (blocks > 1) {
                 GC_large_allocd_bytes -= blocks * HBLKSIZE;
               }
