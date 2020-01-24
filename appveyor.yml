@@ -16,6 +16,9 @@ environment:
   - TARGET: cygwin64
     CFLAGS_EXTRA: -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB
     CONF_OPTIONS: --enable-cplusplus --enable-gc-assertions --disable-shared
+  - TARGET: cygwin64
+    CONF_OPTIONS: --disable-threads
+    CFLAGS_EXTRA: -D USE_WINALLOC
   - TARGET: mingw
     CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic
   - TARGET: mingw
