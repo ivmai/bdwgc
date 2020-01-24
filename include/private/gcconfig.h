@@ -1107,6 +1107,7 @@ EXTERN_C_BEGIN
 #     define DYNAMIC_LOADING
 #   endif
 #   ifdef SN_TARGET_PS3
+#     define OS_TYPE "SN_TARGET_PS3"
 #     define NO_GETENV
 #     define CPP_WORDSZ 32
 #     define ALIGNMENT 4
@@ -2356,6 +2357,7 @@ EXTERN_C_BEGIN
 #     define DYNAMIC_LOADING
 #   endif
 #   ifdef NINTENDO_SWITCH
+#     define OS_TYPE "NINTENDO_SWITCH"
       extern int __bss_end[];
 #     define NO_HANDLE_FORK 1
 #     define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
@@ -2486,6 +2488,7 @@ EXTERN_C_BEGIN
 #     define DYNAMIC_LOADING
 #   endif
 #   ifdef SN_TARGET_PSP2
+#     define OS_TYPE "SN_TARGET_PSP2"
 #     define NO_HANDLE_FORK 1
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
@@ -2493,6 +2496,7 @@ EXTERN_C_BEGIN
 #     define STACKBOTTOM ((ptr_t)psp2_get_stack_bottom())
 #   endif
 #   ifdef NN_PLATFORM_CTR
+#     define OS_TYPE "NN_PLATFORM_CTR"
       extern unsigned char Image$$ZI$$ZI$$Base[];
 #     define DATASTART (ptr_t)(Image$$ZI$$ZI$$Base)
       extern unsigned char Image$$ZI$$ZI$$Limit[];
@@ -2627,6 +2631,7 @@ EXTERN_C_BEGIN
 #     define CACHE_LINE_SIZE 64
 #   endif
 #   ifdef SN_TARGET_ORBIS
+#     define OS_TYPE "SN_TARGET_ORBIS"
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
       void *ps4_get_stack_bottom(void);
@@ -2814,6 +2819,7 @@ EXTERN_C_BEGIN
 #       endif
 #   endif
 #   ifdef MSWIN_XBOX1
+#     define OS_TYPE "MSWIN_XBOX1"
 #     define NO_GETENV
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
