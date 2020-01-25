@@ -1874,6 +1874,27 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 
 #if !defined(PCR) && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
 
+#if defined(_DEBUG) && (_MSC_VER >= 1900) /* VS 2015+ */
+# ifndef _CRTDBG_MAP_ALLOC
+#   define _CRTDBG_MAP_ALLOC
+# endif
+# include <crtdbg.h>
+  /* Ensure that there is no system-malloc-allocated objects at normal  */
+  /* exit (i.e. no such memory leaked).                                 */
+# define CRTMEM_CHECK_INIT() \
+        (void)_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF)
+# define CRTMEM_DUMP_LEAKS() \
+        do { \
+          if (_CrtDumpMemoryLeaks()) { \
+            GC_printf("System-malloc-allocated memory leaked\n"); \
+            FAIL; \
+          } \
+        } while (0)
+#else
+# define CRTMEM_CHECK_INIT() (void)0
+# define CRTMEM_DUMP_LEAKS() (void)0
+#endif // !_MSC_VER
+
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
   int APIENTRY WinMain(HINSTANCE instance GC_ATTR_UNUSED,
@@ -1894,6 +1915,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
   int main(void)
 #endif
 {
+    CRTMEM_CHECK_INIT();
 #   if defined(CPPCHECK) && !defined(NO_WINMAIN_ENTRY) \
        && ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE))
       GC_noop1((GC_word)&WinMain);
@@ -2084,6 +2106,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
       GC_win32_free_heap();
 #   endif
+    CRTMEM_DUMP_LEAKS();
 #   ifdef RTEMS
       exit(0);
 #   else
