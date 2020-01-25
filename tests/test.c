@@ -1874,6 +1874,25 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 
 #if !defined(PCR) && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
 
+#if defined(_MSC_VER)
+#ifndef _CRTDBG_MAP_ALLOC
+#define _CRTDBG_MAP_ALLOC
+#endif // _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
+#define MEM_CHECK_BEGIN() do { _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); } while(0)
+#define MEM_CHECK_DUMP_LEAKS() do { _CrtDumpMemoryLeaks(); } while(0)
+#else
+#define MEM_CHECK_BEGIN() do { ; } while(0)
+#define MEM_CHECK_DUMP_LEAKS() do { ; } while(0)
+#endif
+
+int _onexit_func(void) {
+    MEM_CHECK_DUMP_LEAKS();
+    return 0;
+}
+
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
   int APIENTRY WinMain(HINSTANCE instance GC_ATTR_UNUSED,
@@ -1894,6 +1913,8 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
   int main(void)
 #endif
 {
+    MEM_CHECK_BEGIN();
+    onexit(_onexit_func);
 #   if defined(CPPCHECK) && !defined(NO_WINMAIN_ENTRY) \
        && ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE))
       GC_noop1((GC_word)&WinMain);
