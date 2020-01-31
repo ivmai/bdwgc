@@ -128,8 +128,9 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
                         /* before they are expected to stop (unless     */
                         /* they have stopped voluntarily).              */
 
-#if defined(GC_OSF1_THREADS) || defined(THREAD_SANITIZER) \
-    || defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER)
+#ifndef NO_RETRY_SIGNALS
+  /* Any platform could lose signals, so let's be conservative and      */
+  /* always enable signals retry logic.                                 */
   STATIC GC_bool GC_retry_signals = TRUE;
 #else
   STATIC GC_bool GC_retry_signals = FALSE;
