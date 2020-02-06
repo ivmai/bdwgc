@@ -780,6 +780,37 @@ AC_TRY_LINK([#include <setjmp.h>],
    AC_DEFINE([GC_NO_SIGSETJMP], [1], [Missing sigsetjmp function.])])
 CFLAGS="$old_CFLAGS"
 
+# pthread_setname_np, if available, may have 1, 2 or 3 arguments.
+AS_IF([test "$THREADS" = posix],
+  [AC_MSG_CHECKING(for pthread_setname_np)
+   old_CFLAGS="$CFLAGS"
+   CFLAGS="$CFLAGS $CFLAGS_EXTRA -Werror"
+   AC_TRY_LINK([#include <pthread.h>],
+               [pthread_setname_np("thread-name")],
+     [AC_MSG_RESULT([yes (w/o tid)])
+      AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID], [1],
+                [Define to use 'pthread_setname_np(const char*)' function.])],
+     [AC_TRY_LINK([#include <pthread.h>],
+                  [pthread_setname_np(pthread_self(), "thread-name-%u", 0)],
+       [AC_MSG_RESULT([yes (with tid and arg)])
+        AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG], [1],
+         [Define to use 'pthread_setname_np(pthread_t, const char*, void *)'
+          function.])],
+       [AC_TRY_LINK([
+#ifdef __CYGWIN__
+#define _GNU_SOURCE 1
+#elif defined(__linux__) || defined(__GLIBC__) || defined(__GNU__)
+#define _GNU_SOURCE 1
+#endif
+#include <pthread.h>],
+                    [pthread_setname_np(pthread_self(), "thread-name")],
+         [AC_MSG_RESULT([yes (with tid)])
+          AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_WITH_TID], [1],
+                    [Define to use 'pthread_setname_np(pthread_t, const char*)'
+                     function.])],
+         [AC_MSG_RESULT(no)])])])
+   CFLAGS="$old_CFLAGS"])
+
 # Check for AViiON Machines running DGUX
 ac_is_dgux=no
 AC_CHECK_HEADER(sys/dg_sys_info.h,

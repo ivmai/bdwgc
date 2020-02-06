@@ -337,6 +337,36 @@ static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
   }
 #endif /* GC_DARWIN_THREADS */
 
+#ifdef HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG /* NetBSD */
+  static void set_marker_thread_name(unsigned id)
+  {
+    int err = pthread_setname_np(pthread_self(), "GC-marker-%zu",
+                                 (void*)(size_t)id);
+    if (err != 0)
+      WARN("pthread_setname_np failed, errno = %" WARN_PRIdPTR "\n", err);
+  }
+#elif defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) \
+      || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
+  static void set_marker_thread_name(unsigned id)
+  {
+#   if defined(__STRICT_ANSI__)
+#     define name_buf "GC-marker"
+#   else
+      char name_buf[16]; /* pthread_setname_np may fail for longer names */
+      (void)snprintf(name_buf, sizeof(name_buf), "GC-marker-%u", id);
+#   endif
+#   ifdef HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID /* iOS, OS X */
+      (void)pthread_setname_np(name_buf);
+#   else /* Linux, Solaris, etc. */
+      if (pthread_setname_np(pthread_self(), name_buf) != 0)
+        WARN("pthread_setname_np failed\n", 0);
+#   endif
+#   undef name_buf
+  }
+#else
+# define set_marker_thread_name(id) (void)(id)
+#endif
+
 STATIC void * GC_mark_thread(void * id)
 {
   word my_mark_no = 0;
@@ -346,6 +376,7 @@ STATIC void * GC_mark_thread(void * id)
   DISABLE_CANCEL(cancel_state);
                          /* Mark threads are not cancellable; they      */
                          /* should be invisible to client.              */
+  set_marker_thread_name((unsigned)(word)id);
   marker_sp[(word)id] = GC_approx_sp();
 # ifdef IA64
     marker_bsp[(word)id] = GC_save_regs_in_stack();

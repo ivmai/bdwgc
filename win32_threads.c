@@ -2001,6 +2001,23 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                         /* only a few entries).                         */
 # endif
 
+# if defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID)
+    static void set_marker_thread_name(unsigned id)
+    {
+#     if defined(__STRICT_ANSI__)
+#       define name_buf "GC-marker"
+#     else
+        char name_buf[16]; /* pthread_setname_np may fail for longer names */
+        (void)snprintf(name_buf, sizeof(name_buf), "GC-marker-%u", id);
+#     endif
+      if (pthread_setname_np(pthread_self(), name_buf) != 0)
+        WARN("pthread_setname_np failed\n", 0);
+#     undef name_buf
+    }
+# else
+#   define set_marker_thread_name(id) (void)(id)
+# endif
+
   /* GC_mark_thread() is the same as in pthread_support.c */
 # ifdef GC_PTHREADS_PARAMARK
     STATIC void * GC_mark_thread(void * id)
@@ -2013,6 +2030,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     word my_mark_no = 0;
 
     if ((word)id == GC_WORD_MAX) return 0; /* to prevent a compiler warning */
+    set_marker_thread_name((unsigned)(word)id);
     marker_sp[(word)id] = GC_approx_sp();
 #   ifdef IA64
       marker_bsp[(word)id] = GC_save_regs_in_stack();
