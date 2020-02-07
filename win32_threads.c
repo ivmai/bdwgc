@@ -2004,15 +2004,20 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 # if defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID)
     static void set_marker_thread_name(unsigned id)
     {
-#     if defined(__STRICT_ANSI__)
-#       define name_buf "GC-marker"
-#     else
-        char name_buf[16]; /* pthread_setname_np may fail for longer names */
-        (void)snprintf(name_buf, sizeof(name_buf), "GC-marker-%u", id);
-#     endif
+      /* This code is the same as in pthread_support.c. */
+      char name_buf[16]; /* pthread_setname_np may fail for longer names */
+      int len = sizeof("GC-marker-") - 1;
+
+      /* Compose the name manually as snprintf may be unavailable or    */
+      /* "%u directive output may be truncated" warning may occur.      */
+      BCOPY("GC-marker-", name_buf, len);
+      if (id >= 10)
+        name_buf[len++] = (char)('0' + (id / 10) % 10);
+      name_buf[len] = (char)('0' + id % 10);
+      name_buf[len + 1] = '\0';
+
       if (pthread_setname_np(pthread_self(), name_buf) != 0)
         WARN("pthread_setname_np failed\n", 0);
-#     undef name_buf
     }
 # else
 #   define set_marker_thread_name(id) (void)(id)

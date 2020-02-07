@@ -349,19 +349,23 @@ static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
       || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
   static void set_marker_thread_name(unsigned id)
   {
-#   if defined(__STRICT_ANSI__)
-#     define name_buf "GC-marker"
-#   else
-      char name_buf[16]; /* pthread_setname_np may fail for longer names */
-      (void)snprintf(name_buf, sizeof(name_buf), "GC-marker-%u", id);
-#   endif
+    char name_buf[16];  /* pthread_setname_np may fail for longer names */
+    int len = sizeof("GC-marker-") - 1;
+
+    /* Compose the name manually as snprintf may be unavailable or      */
+    /* "%u directive output may be truncated" warning may occur.        */
+    BCOPY("GC-marker-", name_buf, len);
+    if (id >= 10)
+      name_buf[len++] = (char)('0' + (id / 10) % 10);
+    name_buf[len] = (char)('0' + id % 10);
+    name_buf[len + 1] = '\0';
+
 #   ifdef HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID /* iOS, OS X */
       (void)pthread_setname_np(name_buf);
 #   else /* Linux, Solaris, etc. */
       if (pthread_setname_np(pthread_self(), name_buf) != 0)
         WARN("pthread_setname_np failed\n", 0);
 #   endif
-#   undef name_buf
   }
 #else
 # define set_marker_thread_name(id) (void)(id)
