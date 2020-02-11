@@ -1223,7 +1223,7 @@ static void fork_child_proc(void)
 GC_INNER void GC_thr_init(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
-  GC_ASSERT(!GC_thr_initialized);
+  if (GC_thr_initialized) return;
   GC_thr_initialized = TRUE;
 
   GC_ASSERT((word)&GC_threads % sizeof(word) == 0);
