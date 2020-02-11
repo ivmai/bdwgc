@@ -2001,7 +2001,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                         /* only a few entries).                         */
 # endif
 
-# if defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID)
+# if defined(GC_PTHREADS) && defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID)
     static void set_marker_thread_name(unsigned id)
     {
       /* This code is the same as in pthread_support.c. */
@@ -2018,6 +2018,32 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
       if (pthread_setname_np(pthread_self(), name_buf) != 0)
         WARN("pthread_setname_np failed\n", 0);
+    }
+
+# elif !defined(MSWINCE)
+    /* A pointer to SetThreadDescription() which is available since     */
+    /* Windows 10.  The function prototype is in processthreadsapi.h.   */
+    static FARPROC setThreadDescription_fn;
+
+    static void set_marker_thread_name(unsigned id)
+    {
+      WCHAR name_buf[16];
+      int len = sizeof(L"GC-marker-") / sizeof(WCHAR) - 1;
+      HRESULT hr;
+
+      if (!setThreadDescription_fn) return; /* missing SetThreadDescription */
+
+      /* Compose the name manually as swprintf may be unavailable.      */
+      BCOPY(L"GC-marker-", name_buf, len * sizeof(WCHAR));
+      if (id >= 10)
+        name_buf[len++] = (WCHAR)('0' + (id / 10) % 10);
+      name_buf[len] = (WCHAR)('0' + id % 10);
+      name_buf[len + 1] = 0;
+
+      hr = ((HRESULT (WINAPI *)(HANDLE, const WCHAR *))
+            setThreadDescription_fn)(GetCurrentThread(), name_buf);
+      if (FAILED(hr))
+        WARN("SetThreadDescription failed\n", 0);
     }
 # else
 #   define set_marker_thread_name(id) (void)(id)
@@ -2711,6 +2737,10 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 GC_INNER void GC_thr_init(void)
 {
   struct GC_stack_base sb;
+# if (!defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) && !defined(MSWINCE) \
+      && defined(PARALLEL_MARK)) || defined(WOW64_THREAD_CONTEXT_WORKAROUND)
+    HMODULE hK32 = GetModuleHandle(TEXT("kernel32.dll"));
+# endif
 
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(!GC_thr_initialized);
@@ -2739,8 +2769,6 @@ GC_INNER void GC_thr_init(void)
 
 # ifdef WOW64_THREAD_CONTEXT_WORKAROUND
     /* Set isWow64 flag. */
-    {
-      HMODULE hK32 = GetModuleHandle(TEXT("kernel32.dll"));
       if (hK32) {
         FARPROC pfn = GetProcAddress(hK32, "IsWow64Process");
         if (pfn
@@ -2748,7 +2776,6 @@ GC_INNER void GC_thr_init(void)
                                                       &isWow64))
           isWow64 = FALSE; /* IsWow64Process failed */
       }
-    }
 # endif
 
   /* Add the initial thread, so we can stop it. */
@@ -2830,6 +2857,11 @@ GC_INNER void GC_thr_init(void)
           if (mark_mutex_event == (HANDLE)0 || builder_cv == (HANDLE)0
               || mark_cv == (HANDLE)0)
             ABORT("CreateEvent failed");
+#       endif
+#       if !defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) && !defined(MSWINCE)
+          if (hK32)
+            setThreadDescription_fn = GetProcAddress(hK32,
+                                                     "SetThreadDescription");
 #       endif
       }
 # endif /* PARALLEL_MARK */
