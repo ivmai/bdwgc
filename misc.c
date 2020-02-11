@@ -1304,7 +1304,7 @@ GC_API void GC_CALL GC_init(void)
 #   endif
     GC_is_initialized = TRUE;
 #   if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-        GC_thr_init();
+        if (!GC_thr_initialized) GC_thr_init();
 #       ifdef PARALLEL_MARK
           /* Actually start helper threads.     */
 #         if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)

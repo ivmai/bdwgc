@@ -2713,8 +2713,7 @@ GC_INNER void GC_thr_init(void)
   struct GC_stack_base sb;
 
   GC_ASSERT(I_HOLD_LOCK());
-  if (GC_thr_initialized) return;
-
+  GC_ASSERT(!GC_thr_initialized);
   GC_ASSERT((word)&GC_threads % sizeof(word) == 0);
 # ifdef GC_NO_THREADS_DISCOVERY
 #   define GC_main_thread GetCurrentThreadId()
