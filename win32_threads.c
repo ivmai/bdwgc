@@ -2040,8 +2040,10 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       name_buf[len] = (WCHAR)('0' + id % 10);
       name_buf[len + 1] = 0;
 
+      /* Invoke SetThreadDescription().  Cast the function pointer to word  */
+      /* first to avoid "incompatible function types" compiler warning.     */
       hr = ((HRESULT (WINAPI *)(HANDLE, const WCHAR *))
-            setThreadDescription_fn)(GetCurrentThread(), name_buf);
+            (word)setThreadDescription_fn)(GetCurrentThread(), name_buf);
       if (FAILED(hr))
         WARN("SetThreadDescription failed\n", 0);
     }
