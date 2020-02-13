@@ -1962,13 +1962,20 @@ EXTERN_C_BEGIN
         /* default, since it may not work on older machine/OS           */
         /* combinations. (Thanks to Raymond X.T. Nijssen for uncovering */
         /* this.)                                                       */
+        /* This technique also doesn't work with HP/UX 11.xx.  The      */
+        /* stack size is settable using the kernel maxssiz variable,    */
+        /* and in 11.23 and latter, the size can be set dynamically.    */
+        /* It also doesn't handle SHMEM_MAGIC binaries which have       */
+        /* stack and data in the first quadrant.                        */
 #       define STACKBOTTOM ((ptr_t)0x7b033000) /* from /etc/conf/h/param.h */
-#     else
+#     elif defined(USE_ENVIRON_POINTER)
         /* Gustavo Rodriguez-Rivera suggested changing HEURISTIC2       */
         /* to this.  Note that the GC must be initialized before the    */
-        /* first putenv call.                                           */
+        /* first putenv call.  Unfortunately, some clients do not obey. */
         extern char ** environ;
 #       define STACKBOTTOM ((ptr_t)environ)
+#     else
+#       define HEURISTIC2
 #     endif
 #     define DYNAMIC_LOADING
       EXTERN_C_END
