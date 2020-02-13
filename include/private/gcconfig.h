@@ -1958,6 +1958,9 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "HPUX"
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
+#     ifdef USE_MMAP
+#       define USE_MMAP_ANON
+#     endif
 #     ifdef USE_HPUX_FIXED_STACKBOTTOM
         /* The following appears to work for 7xx systems running HP/UX  */
         /* 9.xx.  Furthermore, it might result in much faster           */
@@ -2134,6 +2137,9 @@ EXTERN_C_BEGIN
 #       define OS_TYPE "HPUX"
         extern int __data_start[];
 #       define DATASTART ((ptr_t)(__data_start))
+#       ifdef USE_MMAP
+#         define USE_MMAP_ANON
+#       endif
         /* Gustavo Rodriguez-Rivera suggested changing HEURISTIC2       */
         /* to this.  Note that the GC must be initialized before the    */
         /* first putenv call.                                           */

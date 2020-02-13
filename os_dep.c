@@ -2562,7 +2562,7 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
       /* We immediately remap it to prevent an intervening mmap from    */
       /* accidentally grabbing the same address space.                  */
       {
-#       if defined(AIX) || defined(CYGWIN32)
+#       if defined(AIX) || defined(CYGWIN32) || defined(HPUX)
           /* On AIX, mmap(PROT_NONE) fails with ENOMEM unless the       */
           /* environment variable XPG_SUS_ENV is set to ON.             */
           /* On Cygwin, calling mmap() with the new protection flags on */
@@ -2692,7 +2692,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 #   else
       if (len != 0) {
         /* Immediately remap as above. */
-#       if defined(AIX) || defined(CYGWIN32)
+#       if defined(AIX) || defined(CYGWIN32) || defined(HPUX)
           if (mprotect(start_addr, len, PROT_NONE))
             ABORT("mprotect(PROT_NONE) failed");
 #       else
