@@ -566,12 +566,13 @@ GC_INNER char * GC_get_maps(void)
     return(result);
   }
 
+  static volatile int firstpass;
+
   /* Return first addressable location > p or bound.    */
   /* Requires the allocation lock.                      */
   STATIC ptr_t GC_skip_hole_openbsd(ptr_t p, ptr_t bound)
   {
     static volatile ptr_t result;
-    static volatile int firstpass;
 
     struct sigaction act;
     word pgsz = (word)sysconf(_SC_PAGESIZE);
