@@ -1428,7 +1428,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
     d -> client_data = (d -> fn)(d -> client_data);
     LOCK();   /* This will block if the world is stopped.       */
 #   if defined(CPPCHECK)
-      GC_noop1((unsigned)me->thread_blocked);
+      GC_noop1((word)&me->thread_blocked);
 #   endif
     me -> thread_blocked = FALSE;
 #   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
