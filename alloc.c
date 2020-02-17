@@ -248,6 +248,9 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
     GET_TIME(current_time);
     time_diff = MS_TIME_DIFF(current_time,GC_start_time);
     nsec_diff = NS_FRAC_TIME_DIFF(current_time, GC_start_time);
+#   if defined(CPPCHECK)
+      GC_noop1((word)&nsec_diff);
+#   endif
     if (time_diff >= GC_time_limit
         && (time_diff > GC_time_limit || nsec_diff >= GC_time_lim_nsec)) {
       GC_COND_LOG_PRINTF("Abandoning stopped marking after %lu ms %lu ns"
