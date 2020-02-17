@@ -1605,12 +1605,12 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
         GC_continue_reclaim(gran, kind);
       EXIT_GC();
 #     if defined(CPPCHECK)
-        GC_noop1((word)flh);
+        GC_noop1((word)&flh);
 #     endif
       if (NULL == *flh) {
         GC_new_hblk(gran, kind);
 #       if defined(CPPCHECK)
-          GC_noop1((word)flh);
+          GC_noop1((word)&flh);
 #       endif
         if (NULL == *flh) {
           ENTER_GC();
