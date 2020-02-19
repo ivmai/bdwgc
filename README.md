@@ -255,6 +255,15 @@ or win16 is hard.
 For machines not already mentioned, or for nonstandard compilers,
 some porting suggestions are provided [here](doc/porting.md).
 
+You can download and install bdwgc using the [vcpkg](https://github.com/Microsoft/vcpkg) dependency manager:
+
+    git clone https://github.com/Microsoft/vcpkg.git
+    cd vcpkg
+    ./bootstrap-vcpkg.sh
+    ./vcpkg integrate install
+    vcpkg install bdwgc
+    
+The bdwgc port in vcpkg is kept up to date by Microsoft team members and community contributors. If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
 
 ## The C Interface to the Allocator
 
