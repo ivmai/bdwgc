@@ -30,6 +30,7 @@ else()
   project(gc C)
 endif()
 
+include(CheckFunctionExists)
 include(CTest)
 
 # Customize the build by passing "-D<option_name>=ON|OFF" in the command line.
@@ -303,6 +304,18 @@ endif()
 # Extra user-defined flags to pass both to C and C++ compilers.
 if (DEFINED CFLAGS_EXTRA)
   add_compile_options(${CFLAGS_EXTRA})
+endif()
+
+# Check for getcontext (uClibc can be configured without it, for example).
+check_function_exists(getcontext HAVE_GETCONTEXT)
+if (NOT HAVE_GETCONTEXT)
+  add_definitions("-DNO_GETCONTEXT")
+endif()
+
+# Check whether dl_iterate_phdr exists (as a strong symbol).
+check_function_exists(dl_iterate_phdr HAVE_DL_ITERATE_PHDR)
+if (HAVE_DL_ITERATE_PHDR)
+  add_definitions("-DHAVE_DL_ITERATE_PHDR")
 endif()
 
 add_library(gc ${SRC})
