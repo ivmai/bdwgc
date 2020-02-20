@@ -306,6 +306,12 @@ if (DEFINED CFLAGS_EXTRA)
   add_compile_options(${CFLAGS_EXTRA})
 endif()
 
+# Check whether execinfo.h header file is present.
+check_include_file(execinfo.h HAVE_EXECINFO_H)
+if (NOT HAVE_EXECINFO_H)
+  add_definitions("-DGC_MISSING_EXECINFO_H")
+endif()
+
 # Check for getcontext (uClibc can be configured without it, for example).
 check_function_exists(getcontext HAVE_GETCONTEXT)
 if (NOT HAVE_GETCONTEXT)
