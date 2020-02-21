@@ -30,6 +30,7 @@ else()
   project(gc C)
 endif()
 
+include(CheckCCompilerFlag)
 include(CheckFunctionExists)
 include(CheckIncludeFiles)
 include(CTest)
@@ -300,6 +301,13 @@ else()
     # Do not require the clients to link with "user32" system library.
     add_definitions("-DDONT_USE_USER32_DLL")
   endif(WIN32)
+endif()
+
+# Disable strict aliasing optimizations.
+# It could re-enabled back by a flag passed in CFLAGS_EXTRA.
+check_c_compiler_flag(-fno-strict-aliasing HAVE_FLAG_F_NO_STRICT_ALIASING)
+if (HAVE_FLAG_F_NO_STRICT_ALIASING)
+  add_compile_options(-fno-strict-aliasing)
 endif()
 
 # Extra user-defined flags to pass both to C and C++ compilers.
