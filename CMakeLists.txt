@@ -31,6 +31,7 @@ else()
 endif()
 
 include(CheckFunctionExists)
+include(CheckIncludeFiles)
 include(CTest)
 
 # Customize the build by passing "-D<option_name>=ON|OFF" in the command line.
