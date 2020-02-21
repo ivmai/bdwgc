@@ -76,7 +76,7 @@ word (*volatile nested_sp_fn)(void) = nested_sp;
 
 int g(int x);
 
-char *a_str = "a";
+const char *a_str = "a";
 
 int main(void)
 {
