@@ -76,7 +76,11 @@ word (*volatile nested_sp_fn)(void) = nested_sp;
 
 int g(int x);
 
-const char *a_str = "a";
+#if defined(CPPCHECK) || !defined(__cplusplus)
+  const char *a_str = "a";
+#else
+# define a_str "a"
+#endif
 
 int main(void)
 {
