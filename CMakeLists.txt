@@ -33,6 +33,7 @@ endif()
 include(CheckCCompilerFlag)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
+include(CheckSymbolExists)
 include(CTest)
 
 # Customize the build by passing "-D<option_name>=ON|OFF" in the command line.
@@ -331,6 +332,11 @@ endif()
 check_function_exists(dl_iterate_phdr HAVE_DL_ITERATE_PHDR)
 if (HAVE_DL_ITERATE_PHDR)
   add_definitions("-DHAVE_DL_ITERATE_PHDR")
+endif()
+
+check_symbol_exists(sigsetjmp setjmp.h HAVE_SIGSETJMP)
+if (NOT HAVE_SIGSETJMP)
+  add_definitions("-DGC_NO_SIGSETJMP")
 endif()
 
 add_library(gc ${SRC})
