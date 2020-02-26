@@ -31,6 +31,7 @@ else()
 endif()
 
 include(CheckCCompilerFlag)
+include(CheckCSourceCompiles)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
 include(CheckSymbolExists)
@@ -337,6 +338,17 @@ endif()
 check_symbol_exists(sigsetjmp setjmp.h HAVE_SIGSETJMP)
 if (NOT HAVE_SIGSETJMP)
   add_definitions("-DGC_NO_SIGSETJMP")
+endif()
+
+# Check for dladdr (used for debugging).
+check_c_source_compiles("
+#define _GNU_SOURCE 1\n
+#include <dlfcn.h>\n
+int main(void) { Dl_info info; (void)dladdr(\"\", &info); return 0; }"
+  HAVE_DLADDR)
+if (HAVE_DLADDR)
+  # Define to use 'dladdr' function.
+  add_definitions("-DHAVE_DLADDR")
 endif()
 
 add_library(gc ${SRC})
