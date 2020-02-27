@@ -18,6 +18,9 @@
 /* Our pthread support normally needs to intercept a number of thread   */
 /* calls.  We arrange to do that here, if appropriate.                  */
 
+#ifndef GC_PTHREAD_REDIRECTS_H
+#define GC_PTHREAD_REDIRECTS_H
+
 /* Included from gc.h only.  Included only if GC_PTHREADS.              */
 #if defined(GC_H) && defined(GC_PTHREADS)
 
@@ -117,3 +120,5 @@
 #endif /* !GC_NO_THREAD_REDIRECTS */
 
 #endif /* GC_PTHREADS */
+
+#endif /* GC_PTHREAD_REDIRECTS_H */
