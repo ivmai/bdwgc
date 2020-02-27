@@ -218,6 +218,9 @@ endif(enable_gc_debug)
 
 if (disable_gc_debug)
   add_definitions("-DNO_DEBUGGING")
+elseif (WINCE)
+  # Read environment variables from "<program>.gc.env" file.
+  add_definitions("-DGC_READ_ENV_FILE")
 endif()
 
 if (enable_redirect_malloc)
