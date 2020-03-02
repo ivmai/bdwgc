@@ -308,6 +308,15 @@ if (MSVC)
   set(SRC ${SRC} extra/msvc_dbg.c)
 endif()
 
+# Instruct check_c_source_compiles and similar CMake checks not to ignore
+# compiler warnings (like "implicit declaration of function").
+if (NOT BORLAND AND NOT MSVC AND NOT WATCOM)
+  check_c_compiler_flag(-Werror HAVE_FLAG_WERROR)
+  if (HAVE_FLAG_WERROR)
+    SET(CMAKE_REQUIRED_FLAGS "-Werror")
+  endif(HAVE_FLAG_WERROR)
+endif()
+
 if (BUILD_SHARED_LIBS)
   add_definitions("-DGC_DLL")
   # Pass -fvisibility=hidden option if supported.
@@ -359,6 +368,41 @@ endif()
 check_symbol_exists(sigsetjmp setjmp.h HAVE_SIGSETJMP)
 if (NOT HAVE_SIGSETJMP)
   add_definitions("-DGC_NO_SIGSETJMP")
+endif()
+
+# pthread_setname_np, if available, may have 1, 2 or 3 arguments.
+if (CMAKE_USE_PTHREADS_INIT)
+  check_c_source_compiles("
+#include <pthread.h>\n
+int main(void) { (void)pthread_setname_np(\"thread-name\"); return 0; }"
+    HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
+  if (HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
+    # Define to use 'pthread_setname_np(const char*)' function.
+    add_definitions("-DHAVE_PTHREAD_SETNAME_NP_WITHOUT_TID")
+  else()
+    check_c_source_compiles("
+#include <pthread.h>\n
+int main(void) {\n
+  (void)pthread_setname_np(pthread_self(), \"thread-name-%u\", 0); return 0; }"
+      HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG)
+    if (HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG)
+      # Define to use 'pthread_setname_np(pthread_t, const char*, void *)'.
+      add_definitions("-DHAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG")
+    else()
+      check_c_source_compiles("
+#if defined(__linux__) || defined(__GLIBC__) || defined(__GNU__) || defined(__CYGWIN__)\n
+#define _GNU_SOURCE 1\n
+#endif\n
+#include <pthread.h>\n
+int main(void) {\n
+  (void)pthread_setname_np(pthread_self(), \"thread-name\"); return 0; }"
+        HAVE_PTHREAD_SETNAME_NP_WITH_TID)
+      if (HAVE_PTHREAD_SETNAME_NP_WITH_TID)
+        # Define to use 'pthread_setname_np(pthread_t, const char*)' function.
+        add_definitions("-DHAVE_PTHREAD_SETNAME_NP_WITH_TID")
+      endif()
+    endif(HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG)
+  endif (HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
 endif()
 
 # Check for dladdr (used for debugging).
