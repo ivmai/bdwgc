@@ -42,8 +42,8 @@ dnl AC_PROG_LIBTOOL) is undefined, Libtool installation should be checked.
 # Special CFLAGS to use when building
 gc_cflags=""
 
-# gc_use_mmap   Set to "yes" on platforms where mmap should be used instead
-#               of sbrk. This will define USE_MMAP.
+# Set to "yes" on platforms where mmap should be used instead of sbrk.
+# This will define USE_MMAP.
 gc_use_mmap=""
 
 # We should set -fexceptions if we are using gcc and might be used
@@ -61,13 +61,6 @@ else
         ;;
     esac
 fi
-
-case "${host}" in
-  *-linux*)
-    # FIXME: This seems to be no longer needed as configured in gcconfig.h
-    #gc_use_mmap=yes
-    ;;
-esac
 
 #   target_optspace     --enable-target-optspace ("yes", "no", "")
 case "${target_optspace}:${host}" in
