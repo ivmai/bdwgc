@@ -92,7 +92,7 @@ dnl Extra user-defined flags to pass both to C and C++ compilers.
 AC_SUBST([CFLAGS_EXTRA])
 
 AC_ARG_ENABLE(threads,
-  [AC_HELP_STRING([--enable-threads=TYPE], [choose threading package])],
+  [AS_HELP_STRING([--enable-threads=TYPE], [choose threading package])],
   THREADS=$enableval,
   [ AC_MSG_CHECKING([for thread model used by GCC])
     THREADS=`$CC -v 2>&1 | sed -n 's/^Thread model: //p'`
@@ -110,28 +110,28 @@ AC_ARG_ENABLE(threads,
     AC_MSG_RESULT([$THREADS]) ])
 
 AC_ARG_ENABLE(parallel-mark,
-   [AC_HELP_STRING([--disable-parallel-mark],
+    [AS_HELP_STRING([--disable-parallel-mark],
         [do not parallelize marking and free list construction])],
-   [case "$THREADS" in
+    [case "$THREADS" in
       no | none | single)
         if test "${enable_parallel_mark}" != no; then
           AC_MSG_ERROR([Parallel mark requires --enable-threads=x spec])
         fi
         ;;
-    esac ]
+     esac]
 )
 
 AC_ARG_ENABLE(thread-local-alloc,
-   [AS_HELP_STRING([--disable-thread-local-alloc],
+    [AS_HELP_STRING([--disable-thread-local-alloc],
         [turn off thread-local allocation optimization])],
-   [case "$THREADS" in
+    [case "$THREADS" in
       no | none | single)
         if test "${enable_thread_local_alloc}" = yes; then
           AC_MSG_ERROR(
                 [Thread-local allocation requires --enable-threads=x spec])
         fi
         ;;
-    esac])
+     esac])
 
 AC_ARG_ENABLE(threads-discovery,
     [AS_HELP_STRING([--disable-threads-discovery],
@@ -142,7 +142,7 @@ if test "${enable_threads_discovery}" = no; then
 fi
 
 AC_ARG_ENABLE(cplusplus,
-    [AC_HELP_STRING([--enable-cplusplus], [install C++ support])])
+    [AS_HELP_STRING([--enable-cplusplus], [install C++ support])])
 
 dnl Features which may be selected in the following thread-detection switch.
 AH_TEMPLATE([PARALLEL_MARK], [Define to enable parallel marking.])
@@ -288,7 +288,6 @@ case "$THREADS" in
     ;;
  dgux386)
     AC_DEFINE(GC_THREADS)
-    THREADS=dgux386
     AC_MSG_RESULT($THREADDLLIBS)
     # Use pthread GCC switch
     THREADDLLIBS=-pthread
@@ -488,7 +487,7 @@ esac
 AM_CONDITIONAL(CPLUSPLUS, test "${enable_cplusplus}" = yes)
 
 AC_ARG_ENABLE(throw-bad-alloc-library,
-    [AC_HELP_STRING([--disable-throw-bad-alloc-library],
+    [AS_HELP_STRING([--disable-throw-bad-alloc-library],
                     [do not build C++ gctba library])])
 AM_CONDITIONAL(GC_TBA_LIBRARY,
                test "${enable_cplusplus}" = yes \
@@ -670,7 +669,7 @@ dnl
 dnl By default, make the library as general as possible.
 dnl enable_gcj_support=no
 AC_ARG_ENABLE(gcj-support,
-    [AC_HELP_STRING([--disable-gcj-support], [disable support for gcj])])
+    [AS_HELP_STRING([--disable-gcj-support], [disable support for gcj])])
 if test x"$enable_gcj_support" != xno; then
     AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj.])
     case "$host" in
@@ -690,7 +689,7 @@ fi
 
 dnl Interaction with other programs that might use signals.
 AC_ARG_ENABLE(sigrt-signals,
-    [AC_HELP_STRING([--enable-sigrt-signals],
+    [AS_HELP_STRING([--enable-sigrt-signals],
         [force GC to use SIGRTMIN-based signals for thread suspend/resume])])
 if test x"${enable_sigrt_signals}" = xyes; then
     AC_DEFINE([GC_USESIGRT_SIGNALS], 1,
@@ -709,8 +708,8 @@ AH_TEMPLATE([SAVE_CALL_COUNT],
              debugging API.])
 UNWINDLIBS=
 AC_ARG_ENABLE(gc-debug,
-[AC_HELP_STRING([--enable-gc-debug],
-    [include full support for pointer backtracing etc.])],
+              [AS_HELP_STRING([--enable-gc-debug],
+                    [include full support for pointer backtracing etc.])],
 [ if test "$enable_gc_debug" = "yes"; then
     AC_MSG_WARN("Should define GC_DEBUG and use debug alloc in clients.")
     AC_DEFINE([KEEP_BACK_PTRS], 1,
@@ -823,14 +822,14 @@ if test $ac_is_dgux = yes; then
 fi
 
 AC_ARG_ENABLE(java-finalization,
-    [AC_HELP_STRING([--disable-java-finalization],
+    [AS_HELP_STRING([--disable-java-finalization],
                     [disable support for java finalization])])
 if test x"$enable_java_finalization" != xno; then
     AC_DEFINE([JAVA_FINALIZATION], 1, [See doc/README.macros.])
 fi
 
 AC_ARG_ENABLE(atomic-uncollectable,
-    [AC_HELP_STRING([--disable-atomic-uncollectible],
+    [AS_HELP_STRING([--disable-atomic-uncollectible],
                     [disable support for atomic uncollectible allocation])])
 if test x"$enable_atomic_uncollectible" != x"no"; then
     AC_DEFINE([GC_ATOMIC_UNCOLLECTABLE], 1,
@@ -838,7 +837,7 @@ if test x"$enable_atomic_uncollectible" != x"no"; then
 fi
 
 AC_ARG_ENABLE(redirect-malloc,
-    [AC_HELP_STRING([--enable-redirect-malloc],
+    [AS_HELP_STRING([--enable-redirect-malloc],
                     [redirect malloc and friends to GC routines])])
 
 if test "${enable_redirect_malloc}" = yes; then
@@ -856,7 +855,7 @@ if test "${enable_redirect_malloc}" = yes; then
 fi
 
 AC_ARG_ENABLE(disclaim,
-    [AC_HELP_STRING([--disable-disclaim],
+    [AS_HELP_STRING([--disable-disclaim],
         [disable alternative (more efficient) finalization interface])])
 if test x"$enable_disclaim" != xno; then
     AC_DEFINE(ENABLE_DISCLAIM, 1,
@@ -866,7 +865,7 @@ AM_CONDITIONAL(ENABLE_DISCLAIM,
     [test x"$enable_disclaim" != xno])
 
 AC_ARG_ENABLE(large-config,
-    [AC_HELP_STRING([--enable-large-config],
+    [AS_HELP_STRING([--enable-large-config],
         [optimize for large (> 100 MB) heap or root set])])
 if test "${enable_large_config}" = yes; then
     AC_DEFINE(LARGE_CONFIG, 1,
@@ -890,7 +889,7 @@ fi
 AC_SUBST(UNWINDLIBS)
 
 AC_ARG_ENABLE(gc-assertions,
-    [AC_HELP_STRING([--enable-gc-assertions],
+    [AS_HELP_STRING([--enable-gc-assertions],
         [collector-internal assertion checking])])
 if test "${enable_gc_assertions}" = yes; then
     AC_DEFINE([GC_ASSERTIONS], 1,
@@ -903,7 +902,7 @@ AC_ARG_ENABLE(mmap,
     gc_use_mmap=$enableval)
 
 AC_ARG_ENABLE(munmap,
-    [AC_HELP_STRING([--enable-munmap=N],
+    [AS_HELP_STRING([--enable-munmap=N],
                     [return page to the OS if empty for N collections
                      (default: 6)])],
     MUNMAP_THRESHOLD=$enableval)
@@ -978,11 +977,11 @@ fi
 AC_SUBST([WERROR_CFLAGS])
 
 AC_ARG_ENABLE(single-obj-compilation,
-   [AC_HELP_STRING([--enable-single-obj-compilation],
-                   [compile all libgc source files into single .o
-                    (default: yes if static libraries are disabled)])],
-   [], [ AS_IF([test x"$enable_static" = xno],
-               [enable_single_obj_compilation=yes]) ])
+    [AS_HELP_STRING([--enable-single-obj-compilation],
+                    [compile all libgc source files into single .o
+                     (default: yes if static libraries are disabled)])],
+    [], [ AS_IF([test x"$enable_static" = xno],
+                [enable_single_obj_compilation=yes]) ])
 AM_CONDITIONAL([SINGLE_GC_OBJ],
                [test x"$enable_single_obj_compilation" = xyes])
 
@@ -1001,7 +1000,7 @@ if test "$enable_gcov" = "yes"; then
 fi
 
 AC_ARG_ENABLE(docs,
-        [AC_HELP_STRING([--disable-docs],
+        [AS_HELP_STRING([--disable-docs],
                         [do not build and install documentation])])
 AM_CONDITIONAL(ENABLE_DOCS, test x$enable_docs != xno)
 
@@ -1132,11 +1131,11 @@ AS_IF([test x$use_thread_local_alloc != xno],
 AM_CONDITIONAL(THREAD_LOCAL_ALLOC, test x$use_thread_local_alloc != xno)
 
 AC_ARG_ENABLE(handle-fork,
-    [ AC_HELP_STRING([--enable-handle-fork[=yes|no|auto|manual]],
-                     [attempt to ensure a usable collector after fork()
-                      in multi-threaded programs (default: auto;
-                      manual: GC_atfork_prepare/parent/child should be
-                      called by the client)]) ])
+    [AS_HELP_STRING([--enable-handle-fork[=yes|no|auto|manual]],
+                    [attempt to ensure a usable collector after fork()
+                     in multi-threaded programs (default: auto;
+                     manual: GC_atfork_prepare/parent/child should be
+                     called by the client)])])
 if test "${enable_handle_fork}" = yes; then
     AC_DEFINE(HANDLE_FORK, 1,
               [Define to install pthread_atfork() handlers by default.])
