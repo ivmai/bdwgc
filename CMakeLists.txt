@@ -327,6 +327,7 @@ if (BUILD_SHARED_LIBS)
   else()
     add_definitions("-DGC_NO_VISIBILITY")
   endif()
+  check_c_compiler_flag(-Wl,--no-undefined HAVE_FLAG_WL_NO_UNDEFINED)
 else()
   add_definitions("-DGC_NOT_DLL")
   if (WIN32)
@@ -440,6 +441,21 @@ if (build_cord)
           ARCHIVE DESTINATION lib
           RUNTIME DESTINATION bin
           INCLUDES DESTINATION include)
+endif()
+
+if (BUILD_SHARED_LIBS AND HAVE_FLAG_WL_NO_UNDEFINED)
+  # Declare that the libraries do not refer to external symbols.
+  # TODO: use add_link_options() when cmake_minimum_required > 3.13
+  target_link_libraries(gc PRIVATE -Wl,--no-undefined)
+  if (enable_cplusplus)
+    target_link_libraries(gccpp PRIVATE -Wl,--no-undefined)
+    if (enable_throw_bad_alloc_library)
+      target_link_libraries(gctba PRIVATE -Wl,--no-undefined)
+    endif(enable_throw_bad_alloc_library)
+  endif(enable_cplusplus)
+  if (build_cord)
+    target_link_libraries(cord PRIVATE -Wl,--no-undefined)
+  endif(build_cord)
 endif()
 
 install(TARGETS gc EXPORT gcExports
