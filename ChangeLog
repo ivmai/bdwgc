@@ -1,3 +1,16 @@
+2019-10-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c [!(MSWIN32 || MSWINCE) && !OS2 && !MACOS
+	&& !ECOS && !NOSYS]: Include errno.h.
+	* misc.c [!(MSWIN32 || MSWINCE) && !OS2 && !MACOS
+	&& !ECOS && !NOSYS] (GC_write): Retry write()
+	if result is -1 and errno is EAGAIN.
+
+2019-10-11  Dima Pasechnik <dimpase@gmail.com>
+
+	* doc/gcinterface.html (Class inheritance-based interface): Fix a typo
+	("traceable but uncollectible memory").
+
 2019-10-04  Ivan Maidanski <ivmai@mail.ru>
 
 	* win32_threads.c [!MSWINCE && MPROTECT_VDB] (GC_suspend): Move
