@@ -1709,7 +1709,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #else
 
 # if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
-#   if !defined(AMIGA) && && !defined(MSWIN_XBOX1) \
+#   if !defined(AMIGA) && !defined(MSWIN_XBOX1) \
        && !defined(__CC_ARM)
 #     include <unistd.h>
 #   endif
