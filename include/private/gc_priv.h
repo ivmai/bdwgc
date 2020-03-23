@@ -493,7 +493,20 @@ EXTERN_C_END
 # define GET_TIME(x) (void)(x = n3ds_get_system_tick())
 # define MS_TIME_DIFF(a,b) ((unsigned long)n3ds_convert_tick_to_ms((a)-(b)))
 # define NS_FRAC_TIME_DIFF(a, b) 0UL /* TODO: implement it */
-#else /* !BSD_TIME && !NN_PLATFORM_CTR && !MSWIN32 && !MSWINCE */
+#elif defined(NINTENDO_SWITCH)
+# include <time.h>
+# define CLOCK_TYPE long long
+# define GET_TIME(x) \
+                do { \
+                  struct timespec t; \
+                  int r = clock_gettime(CLOCK_REALTIME, &t); \
+                  if (r == -1) \
+                    ABORT("clock_gettime failed"); \
+                  x = (t.tv_sec * 1000000000) + t.tv_nsec; \
+                } while (0)
+# define MS_TIME_DIFF(a, b) ((unsigned long)(((a) - (b)) / 1000000))
+# define NS_FRAC_TIME_DIFF(a, b) ((unsigned long)(((a) - (b)) % 1000000UL))
+#else /* !BSD_TIME && !NINTENDO_SWITCH && !NN_PLATFORM_CTR && !MSWIN32 */
 # include <time.h>
 # if defined(FREEBSD) && !defined(CLOCKS_PER_SEC)
 #   include <machine/limits.h>
