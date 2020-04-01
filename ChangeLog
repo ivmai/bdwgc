@@ -377,6 +377,7 @@
 
 * Add support of OpenBSD/aarch64
 * Disable mprotect-based incremental GC if /proc roots are used (Linux)
+* Do not use iOS private symbols
 * Eliminate 'GC_old_bus_handler defined but not used' compiler warning
 * Eliminate 'comparing signed and unsigned values' BCC warning in cordtest
 * Eliminate 'possible loss of data' BCC and MS VC warnings
@@ -386,8 +387,11 @@
 * Explicitly zero-initialize trace_buf (fix trace_buf initialization)
 * Fix 'ACCESS_VIOLATION in marker' GC warning on Win32 async thread start
 * Fix 'ulong undefined' compilation error on AIX
+* Fix 'write to GC log failed' error
 * Fix MPROTECT_VDB definition for single-threaded GC builds
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
+* Fix STACKBOTTOM on 32-bit HP/UX 11.11
+* Fix abort in GC_printf when gctest is built as WinMain executable (Cygwin)
 * Fix compiling by Makefile.direct on OpenBSD/UltraSparc
 * Fix configure message about 'AIX gcc optimization fix'
 * Fix cordtest build in SMakefile.amiga
