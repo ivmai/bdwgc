@@ -1,46 +1,39 @@
 dist: xenial
 language: cpp
+os: linux
 
 jobs:
   include:
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-cplusplus"
   - os: osx
     env:
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    env:
+  - env:
     - MAKEFILE_TARGETS="distcheck"
     - AUTOMAKE_VER=1.15
     - M4_VER=1.4.18
     - LIBTOOL_VER=2.4.6
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    env:
+  - env:
     - MAKEFILE_TARGETS="dist"
-  - os: linux
-    env:
+  - env:
     - CPPCHECK_ENABLE="--enable=unusedFunction -D GC_BUILTIN_ATOMIC extra/gc.c"
     - CPPCHECK_OUT_FILTER="Z"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    env:
+  - env:
     - CPPCHECK_ENABLE="-j4 --enable=information,performance,portability,style,warning -I libatomic_ops/src extra/AmigaOS.c extra/MacOS.c extra/msvc_dbg.c extra/real_malloc.c extra/symbian.cpp *.c tools/*.c"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - gcc-multilib
@@ -49,8 +42,7 @@ jobs:
     - CFLAGS_EXTRA="-m32"
     - CONF_OPTIONS="--enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - gcc-multilib
@@ -63,13 +55,11 @@ jobs:
     - CFLAGS_EXTRA="-m32"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--disable-threads --enable-checksums --disable-munmap --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
@@ -79,23 +69,19 @@ jobs:
     - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS -D LINT2"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-handle-fork=manual"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CFLAGS_EXTRA="-D DEBUG_ADD_DEL_ROOTS -D DEBUG_THREADS -D GC_DEBUG -D GC_LOG_TO_FILE_ALWAYS"
     - CONF_OPTIONS="--enable-cplusplus"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CFLAGS_EXTRA="-D BSD_TIME -D DEFAULT_STACK_MAYBE_SMALL -D ENABLE_TRACE -D EMPTY_GETENV_RESULTS -D GC_ALWAYS_MULTITHREADED -D GC_NETBSD_THREADS_WORKAROUND -D CPPCHECK"
     - CONF_OPTIONS="--enable-cplusplus"
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2 -D DEFAULT_VDB -D TEST_WITH_SYSTEM_MALLOC"
     - CONF_OPTIONS="--with-libatomic-ops=no --enable-cplusplus --disable-handle-fork"
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - libatomic-ops-dev
@@ -107,13 +93,11 @@ jobs:
     env:
     - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2 -D AO_DISABLE_GCC_ATOMICS"
     - CONF_OPTIONS="--with-libatomic-ops=no --enable-munmap --enable-cplusplus --enable-static"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_CFLAGS="-D AO_USE_PTHREAD_DEFS"
     - CONF_OPTIONS="--with-libatomic-ops=no --enable-gc-assertions --enable-cplusplus --enable-static"
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - libatomic-ops-dev
@@ -122,13 +106,11 @@ jobs:
     - CONF_CFLAGS="-D AO_USE_PTHREAD_DEFS"
     - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CFLAGS_EXTRA="-D DONT_ADD_BYTE_AT_END"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - gcc-multilib
@@ -136,58 +118,47 @@ jobs:
     env:
     - CFLAGS_EXTRA="-m32 -D MARK_BIT_PER_OBJ -D USE_CUSTOM_SPECIFIC"
     - CONF_OPTIONS="--enable-gc-assertions"
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CFLAGS_EXTRA="-D MARK_BIT_PER_OBJ"
     - CONF_OPTIONS="--enable-cplusplus"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CFLAGS_EXTRA="-D NO_CLOCK -D POINTER_MASK=~0xf"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-handle-fork=manual"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CFLAGS_EXTRA="-D PROC_VDB -D GC_NO_SYS_FAULT_H -D NO_INCREMENTAL -D DEBUG_DIRTY_BITS"
     - CONF_OPTIONS="--enable-cplusplus --disable-docs"
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CFLAGS_EXTRA="-D TEST_MANUAL_VDB"
     - CONF_OPTIONS="--enable-gc-assertions --disable-parallel-mark"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CFLAGS_EXTRA="-D TEST_MANUAL_VDB"
     - CONF_OPTIONS="--enable-gc-assertions --disable-munmap"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CFLAGS_EXTRA="-D FIND_LEAK -D SKIP_LEAKED_OBJECTS_PRINTING"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CFLAGS_EXTRA="-D SMALL_CONFIG -D NO_GETENV"
     - CONF_OPTIONS="--enable-cplusplus"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CFLAGS_EXTRA="-std=c11 -D GC_NO_SIGSETJMP"
     - CONF_OPTIONS="--disable-threads --enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CONF_OPTIONS="--disable-thread-local-alloc --enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--disable-parallel-mark --disable-thread-local-alloc --enable-gc-assertions --enable-cplusplus"
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - lcov
@@ -196,16 +167,13 @@ jobs:
     - CONF_OPTIONS="--enable-gcov --enable-single-obj-compilation --enable-cplusplus --disable-shared --enable-gc-assertions"
     - CFLAGS_EXTRA="-D USE_CUSTOM_SPECIFIC"
     - REPORT_COVERAGE=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-gc-debug --enable-cplusplus"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--disable-gc-debug --enable-cplusplus"
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus --disable-shared --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -213,8 +181,7 @@ jobs:
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus --disable-handle-fork"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - gcc-multilib
@@ -222,13 +189,11 @@ jobs:
     env:
     - CONF_OPTIONS="--enable-large-config --disable-munmap"
     - CFLAGS_EXTRA="-m32"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus --enable-gc-assertions --enable-static"
     - CFLAGS_EXTRA="-D LINT2"
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - gcc-multilib
@@ -242,18 +207,15 @@ jobs:
     - CONF_OPTIONS="--enable-redirect-malloc --enable-cplusplus --enable-static --disable-threads"
     - CFLAGS_EXTRA="-m32"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-redirect-malloc --enable-gc-debug --enable-cplusplus --enable-gc-assertions"
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CONF_OPTIONS="--disable-threads --enable-cplusplus"
     - CFLAGS_EXTRA="-O3 -march=native"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
     - CFLAGS_EXTRA="-O3 -march=native"
@@ -267,19 +229,16 @@ jobs:
     env:
     - CSA_CHECK=true
     - CFLAGS_EXTRA="-m32"
-  - os: linux
-    compiler: clang
+  - compiler: clang
     language: c
     env:
     - CSA_CHECK=true
     - CFLAGS_EXTRA="-D ALL_INTERIOR_POINTERS -D CHECKSUMS -D DBG_HDRS_ALL -D DEBUG_THREADS -D ENABLE_TRACE -D GC_ALWAYS_MULTITHREADED -D GC_ASSERTIONS -D GC_ATOMIC_UNCOLLECTABLE -D GC_ENABLE_SUSPEND_THREAD -D GC_GCJ_SUPPORT -D GC_PRINT_BACK_HEIGHT -D GC_THREADS -D HANDLE_FORK -D JAVA_FINALIZATION -D KEEP_BACK_PTRS -D MAKE_BACK_GRAPH -D PARALLEL_MARK -D PRINT_BLACK_LIST -D THREAD_LOCAL_ALLOC -D USE_MMAP -D USE_MUNMAP"
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check check-cpp cord/de"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check check-cpp cord/de"
@@ -287,8 +246,7 @@ jobs:
     env:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check check-cpp cord/de"
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - musl-tools
@@ -296,15 +254,13 @@ jobs:
     language: c
     env:
     - CONF_OPTIONS="--disable-parallel-mark --enable-gc-assertions"
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
     - TESTS_CUSTOM_RUN=true
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - gcc-5
@@ -321,29 +277,25 @@ jobs:
     - CFLAGS_EXTRA="-fsanitize=address -m32 -fno-omit-frame-pointer"
     - CONF_OPTIONS="--disable-shared --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: clang
+  - compiler: clang
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer -std=gnu11"
     - CONF_OPTIONS="--enable-static"
     - TESTS_CUSTOM_RUN=true
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CFLAGS_EXTRA="-fsanitize=undefined -fno-common -fno-omit-frame-pointer"
     - TESTS_CUSTOM_RUN=true
     - CONF_OPTIONS="--enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CFLAGS_EXTRA="-O3 -march=native"
     - CONF_OPTIONS="--enable-cplusplus --enable-static --enable-single-obj-compilation"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - gcc-multilib
@@ -352,8 +304,7 @@ jobs:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D GC_DISABLE_INCREMENTAL -std=gnu11"
     - CONF_OPTIONS="--enable-gc-assertions --enable-gc-debug"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - gcc-8
@@ -366,8 +317,7 @@ jobs:
     - CXX=g++-8
     - CONF_OPTIONS="--enable-cplusplus --enable-gc-assertions --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - gcc-8
@@ -381,8 +331,7 @@ jobs:
     - CFLAGS_EXTRA="-m32 -O3 -std=gnu11"
     - CONF_OPTIONS="--disable-shared --enable-static --enable-single-obj-compilation"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - gcc-8
@@ -396,37 +345,32 @@ jobs:
     - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2"
     - CONF_OPTIONS="--enable-large-config --enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CFLAGS_EXTRA="-x c++"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-gc-debug --disable-shared"
     - MAKEFILE_TARGETS="all"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CC_FOR_CHECK=g++
     - CONF_OPTIONS="--enable-gc-assertions"
     - MAKEFILE_TARGETS="all"
     - MAKEFILE_TARGETS_CHECK="check"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CFLAGS_EXTRA="-O3 -Wall -Wextra -Werror -x c++"
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="cords"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CC_FOR_CHECK=g++
     - CFLAGS_EXTRA="-O3 -Wall -Wextra -Werror -D TEST_MANUAL_VDB"
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="cords"
     - MAKEFILE_TARGETS_CHECK="cord/de check"
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - g++-mingw-w64
@@ -437,8 +381,7 @@ jobs:
     - CXX=x86_64-w64-mingw32-g++
     - CONF_OPTIONS="--host=x86_64-w64-mingw32 --enable-cplusplus --enable-static"
     - MAKEFILE_TARGETS="all"
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - gcc-mingw-w64
