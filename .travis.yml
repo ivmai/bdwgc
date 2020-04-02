@@ -1,23 +1,21 @@
 dist: xenial
 language: cpp
+os: linux
 
 jobs:
   include:
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CONF_OPTIONS="--enable-cplusplus"
     - WORKAROUND_ACLOCAL_MISSING=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-cplusplus"
     - WORKAROUND_ACLOCAL_MISSING=true
   - os: osx
     env:
     - CONF_OPTIONS="--enable-cplusplus"
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - libatomic-ops-dev
@@ -25,12 +23,10 @@ jobs:
     - MAKEFILE_TARGETS="distcheck"
     - GC_REAL_VERSION=7.2n
     - AO_SRC_VER=v7.2i
-  - os: linux
-    env:
+  - env:
     - MAKEFILE_TARGETS="dist"
     - WORKAROUND_ACLOCAL_MISSING=true
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - libatomic-ops-dev
@@ -38,8 +34,7 @@ jobs:
     env:
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    addons:
+  - addons:
       apt:
         packages:
         - libatomic-ops-dev
@@ -47,75 +42,63 @@ jobs:
     env:
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CONF_OPTIONS="--enable-gc-assertions"
     - WORKAROUND_ACLOCAL_MISSING=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-gc-assertions"
     - WORKAROUND_ACLOCAL_MISSING=true
   - os: osx
     env:
     - CONF_OPTIONS="--enable-gc-assertions --enable-handle-fork --enable-cplusplus"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-gc-debug --enable-cplusplus"
     - WORKAROUND_ACLOCAL_MISSING=true
   - os: osx
     env:
     - CONF_OPTIONS="--enable-munmap --enable-cplusplus"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-handle-fork --enable-munmap --enable-cplusplus --disable-shared --enable-gc-assertions"
     - WORKAROUND_ACLOCAL_MISSING=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--disable-gc-debug --enable-cplusplus"
     - WORKAROUND_ACLOCAL_MISSING=true
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus"
     - WORKAROUND_ACLOCAL_MISSING=true
   - os: osx
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-large-config --disable-munmap"
     - WORKAROUND_ACLOCAL_MISSING=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus --enable-gc-assertions --enable-static"
     - WORKAROUND_ACLOCAL_MISSING=true
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CONF_OPTIONS="--enable-redirect-malloc --disable-threads"
     - WORKAROUND_ACLOCAL_MISSING=true
   - os: osx
     env:
     - CONF_OPTIONS="--enable-redirect-malloc --enable-cplusplus --disable-threads"
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-redirect-malloc --enable-gc-debug --enable-cplusplus --enable-gc-assertions"
     - WORKAROUND_ACLOCAL_MISSING=true
-  - os: linux
-    compiler: clang
+  - compiler: clang
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
     - WORKAROUND_ACLOCAL_MISSING=true
-  - os: linux
-    compiler: gcc
+  - compiler: gcc
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
     - WORKAROUND_ACLOCAL_MISSING=true
