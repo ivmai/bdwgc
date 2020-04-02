@@ -16,14 +16,22 @@
 * Build cord.lib by Makefile.direct, NT_MAKEFILE, OS2_MAKEFILE, WCC_MAKEFILE
 * Build gc as a shared multi-threaded library by default (CMake)
 * Build gccpp library by Makefile.direct, NT_MAKEFILE and WCC_MAKEFILE
+* Build gctba library
 * Build shared libraries by default (WCC_MAKEFILE)
+* Check leak of objects allocated by CRT malloc in gctest (MS VC)
 * Check real-symbols are already initialized in pthread_join/detach
 * Collapse multiple includes of windows.h (code refactoring)
 * Comments reformatting in mark.c to properly delimit sentences
 * Compile de test GUI app with resources (CMake)
 * Compile gc.c unless building static libraries (NT_MAKEFILE, WCC_MAKEFILE)
 * Compile msvc_dbg.c by CMake script (MS VC)
+* Define GC_win32_free_heap API function for all Windows targets
 * Define STATIC macro to static by default
+* Detect dladdr() presence in CMake script
+* Detect presence of execinfo.h system header in CMake script
+* Detect presence of getcontext and dl_iterate_phdr in CMake script
+* Detect sigsetjmp() availability in CMake script
+* Disable Clang/GCC aliasing optimization in CMake script by default
 * Do not build tests by default (Makefile.direct and other Makefiles)
 * Do not build the tests by default (CMake)
 * Do not define GC_write_cs for Xbox One target
@@ -31,21 +39,28 @@
 * Eliminate 'hash_val value is never used' cppcheck false positive
 * Eliminate 'stop variable is always 0' compiler warning in print_callers
 * Eliminate 'struct member os_callback is never used' cppcheck warning
+* Eliminate memory leak reported in add_current_malloc_heap at exit (Win32)
 * Enable CMake-based build for Borland and Watcom compilers
 * Enable compilation without C runtime (Win32)
 * Enable mprotect-based incremental GC for Linux/arm and Linux/aarch64
 * Enable true incremental collection even if parallel marker is on
 * Fix HOST determination in CMake script
+* Fix missing OS_TYPE definition for some targets
 * Generate cordtest and de executable files in GC base folder
 * Get rid of some non-ELF ifdefs (code refactoring)
+* Move GC_throw_bad_alloc definition to new C++ file
 * Move QNX and Emscripten macro definitions to proper place in gcconfig.h
 * New API function to get size of object debug header
 * New API standalone functions to acquire and release the allocator lock
+* New CMake option (disable_gc_debug) to remove debugging code
+* New CMake option (disable_handle_fork) to disable fork handling completely
 * New macro (CONSOLE_LOG) to enable logging to console on Win32
 * New macro (GCTEST_PRINT_VERBOSE) to enable verbose logging in test.c only
 * New macro (NO_MSGBOX_ON_ERROR) to avoid message box on GC abort (Win32)
 * Pass -D GC_DLL -fvisibility=hidden if default configure build is requested
+* Pass -no-undefined linker flag if building shared libraries (CMake)
 * Print pid of child processes if verbose logging (gctest)
+* Read environment variables from a file on WinCE (CMake script)
 * Refine flags field comment in pthread_support.h
 * Reformat code of GC_push_roots
 * Reformat gc.man (wrap long lines)
@@ -55,6 +70,7 @@
 * Remove Borland-specific Makefile and gc.mak script
 * Remove Linux-specific commands for building cord/de from Makefile.direct
 * Remove Win32 main_thread static variable if threads discovery is disabled
+* Remove commented out assignment of gc_use_mmap in configure (refactoring)
 * Remove dash characters comprising prefix of some verbose logs (gctest)
 * Remove dependency on user32.dll import library from static libgc (Win32)
 * Remove documentation specific to particular old BDWGC releases
@@ -73,11 +89,14 @@
 * Replace "msecs" with "ms" in all comments and messages
 * Replace 'stack base' with 'stack bottom' in the documentation
 * Replace _M_AMD64 macro with _M_X64 (code refactoring)
+* Replace obsolete AC_HELP_STRING with AS_HELP_STRING (refactoring)
 * Replace push_one calls with push_many_regs one for Win32 thread context
 * Report time with a nanosecond precision where available
 * Set GC_collecting hint for GC_collect_a_little_inner calls (pthreads)
+* Set name of GC marker threads
 * Simplify logged message in scratch_recycle
 * Simplify loops of collect_a_little/stopped_mark invoking mark_some
+* Support -fvisibility=hidden option in CMake script
 * Support CFLAGS_EXTRA to pass extra user-defined compiler flags (CMake)
 * Support header files installation (CMake)
 * Support most configure options in CMake script
