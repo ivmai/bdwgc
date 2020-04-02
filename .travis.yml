@@ -1,6 +1,6 @@
 language: c++
 
-matrix:
+jobs:
   include:
   - os: linux
     compiler: clang
