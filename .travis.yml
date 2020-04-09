@@ -451,6 +451,84 @@ jobs:
     - CONF_OPTIONS="--host=i686-w64-mingw32"
     - MAKEFILE_TARGETS="all"
     - CFLAGS_EXTRA="-fno-omit-frame-pointer"
+  - arch: arm64
+    compiler: clang
+  - arch: arm64
+    compiler: gcc
+  - addons:
+      apt:
+        packages:
+        - clang-8
+        sources:
+        - ubuntu-toolchain-r-test
+    arch: arm64
+    compiler: clang-8
+    env:
+    - CFLAGS_EXTRA="-O3"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --disable-shared"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - addons:
+      apt:
+        packages:
+        - gcc-9
+        sources:
+        - ubuntu-toolchain-r-test
+    arch: arm64
+    compiler: gcc-9
+    env:
+    - CFLAGS_EXTRA="-O3 -march=native"
+    - CONF_OPTIONS="--enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - addons:
+      apt:
+        packages:
+        - musl-tools
+    arch: arm64
+    compiler: musl-gcc
+    language: c
+    env:
+    - CFLAGS_EXTRA="-O3"
+    - CONF_OPTIONS="--enable-gc-assertions"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - arch: arm64
+    compiler: gcc
+    env:
+    - CONF_OPTIONS="--disable-threads"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - arch: arm64
+    addons:
+      apt:
+        packages:
+        - libatomic-ops-dev
+    compiler: gcc
+    env:
+    - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus --disable-munmap"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - addons:
+      apt:
+        packages:
+        - clang-8
+        sources:
+        - ubuntu-toolchain-r-test
+    arch: arm64
+    compiler: clang-8
+    language: c
+    env:
+    - CFLAGS_EXTRA="-fsanitize=memory,undefined -fno-omit-frame-pointer"
+    - CONF_OPTIONS="--enable-static"
+    - NO_CLONE_LIBATOMIC_OPS=true
+    - TESTS_CUSTOM_RUN=true
+  - arch: arm64
+    compiler: clang
+    env:
+    - CMAKE_CONFIG="Release"
+    - CMAKE_OPTIONS="-Dbuild_tests=ON -DBUILD_SHARED_LIBS=OFF -Denable_cplusplus=ON -Denable_gc_assertions=ON"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - arch: arm64
+    compiler: gcc
+    env:
+    - MAKEFILE_NAME=Makefile.direct
+    - MAKEFILE_TARGETS="check cord/de"
   - env:
     - MAKEFILE_TARGETS="distcheck"
     - AUTOMAKE_VER=1.15
