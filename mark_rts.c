@@ -502,8 +502,11 @@ STATIC void GC_remove_tmp_roots(void)
 GC_INNER ptr_t GC_approx_sp(void)
 {
     volatile word sp;
-#   if defined(CPPCHECK) || (__GNUC__ >= 4 /* GC_GNUC_PREREQ(4, 0) */ \
-                             && !defined(STACK_NOT_SCANNED))
+#   if defined(S390) && !defined(CPPCHECK) && (__clang_major__ < 8)
+        /* Workaround a crash in SystemZTargetLowering of libLLVM-3.8.  */
+        sp = (word)&sp;
+#   elif defined(CPPCHECK) || (__GNUC__ >= 4 /* GC_GNUC_PREREQ(4, 0) */ \
+                               && !defined(STACK_NOT_SCANNED))
         /* TODO: Use GC_GNUC_PREREQ after fixing a bug in cppcheck. */
         sp = (word)__builtin_frame_address(0);
 #   else
