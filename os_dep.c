@@ -199,6 +199,11 @@ GC_INNER char * GC_get_maps(void)
             int f;
 
             while (maps_size >= maps_buf_sz) {
+#             ifdef LINT2
+                /* Workaround passing tainted maps_buf to a tainted sink. */
+                if (maps_buf != NULL)
+                  BZERO(maps_buf, maps_buf_sz);
+#             endif
               GC_scratch_recycle_no_gww(maps_buf, maps_buf_sz);
               /* Grow only by powers of 2, since we leak "too small" buffers.*/
               while (maps_size >= maps_buf_sz) maps_buf_sz *= 2;
