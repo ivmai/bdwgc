@@ -34,6 +34,10 @@
 # include <sys/stat.h>
 #endif
 
+#if defined(CONSOLE_LOG) && defined(MSWIN32) && defined(_MSC_VER)
+# include <io.h>
+#endif
+
 #ifdef NONSTOP
 # include <floss.h>
 #endif
@@ -1004,7 +1008,11 @@ GC_API void GC_CALL GC_init(void)
             if (0 != file_name)
 #         endif
           {
-            int log_d = open(file_name, O_CREAT | O_WRONLY | O_APPEND, 0644);
+#           if defined(_MSC_VER)
+              int log_d = _open(file_name, O_CREAT | O_WRONLY | O_APPEND);
+#           else
+              int log_d = open(file_name, O_CREAT | O_WRONLY | O_APPEND, 0644);
+#           endif
             if (log_d < 0) {
               GC_err_printf("Failed to open %s as log file\n", file_name);
             } else {
@@ -1745,6 +1753,9 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #        ifdef GC_SOLARIS_THREADS
              int result = syscall(SYS_write, fd, buf + bytes_written,
                                              len - bytes_written);
+#        elif defined(_MSC_VER)
+             int result = _write(fd, buf + bytes_written,
+                                 (unsigned)(len - bytes_written));
 #        else
              int result = write(fd, buf + bytes_written, len - bytes_written);
 #        endif
