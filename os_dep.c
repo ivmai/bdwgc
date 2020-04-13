@@ -1016,6 +1016,29 @@ GC_INNER size_t GC_page_size = 0;
     }
 # endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES */
 
+#ifdef HPUX_MAIN_STACKBOTTOM
+# include <sys/param.h>
+# include <sys/pstat.h>
+
+  STATIC ptr_t GC_hpux_main_stack_base(void)
+  {
+    struct pst_vm_status vm_status;
+    int i = 0;
+
+    while (pstat_getprocvm(&vm_status, sizeof(vm_status), 0, i++) == 1) {
+      if (vm_status.pst_type == PS_STACK)
+        return (ptr_t)vm_status.pst_vaddr;
+    }
+
+    /* Old way to get the stack bottom. */
+#   ifdef STACK_GROWS_UP
+      return (ptr_t)GC_find_limit(GC_approx_sp(), /* up= */ FALSE);
+#   else /* not HP_PA */
+      return (ptr_t)GC_find_limit(GC_approx_sp(), TRUE);
+#   endif
+  }
+#endif /* HPUX_MAIN_STACKBOTTOM */
+
 #ifdef HPUX_STACKBOTTOM
 
 #include <sys/param.h>
@@ -1253,10 +1276,12 @@ GC_INNER size_t GC_page_size = 0;
 #       else
           result = (ptr_t)((word)GC_approx_sp() & ~STACKBOTTOM_ALIGNMENT_M1);
 #       endif
+#     elif defined(HPUX_MAIN_STACKBOTTOM)
+        result = GC_hpux_main_stack_base();
 #     elif defined(LINUX_STACKBOTTOM)
-         result = GC_linux_main_stack_base();
+        result = GC_linux_main_stack_base();
 #     elif defined(FREEBSD_STACKBOTTOM)
-         result = GC_freebsd_main_stack_base();
+        result = GC_freebsd_main_stack_base();
 #     elif defined(HEURISTIC2)
         {
           ptr_t sp = GC_approx_sp();

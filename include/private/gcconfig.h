@@ -1974,8 +1974,10 @@ EXTERN_C_BEGIN
         /* first putenv call.  Unfortunately, some clients do not obey. */
         extern char ** environ;
 #       define STACKBOTTOM ((ptr_t)environ)
-#     else
-#       define HEURISTIC2
+#     elif !defined(HEURISTIC2)
+        /* This uses pst_vm_status support. */
+#       define HPUX_MAIN_STACKBOTTOM
+#       define NEED_FIND_LIMIT
 #     endif
 #     define DYNAMIC_LOADING
       EXTERN_C_END
