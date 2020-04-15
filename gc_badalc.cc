@@ -28,8 +28,6 @@
 
 #include <new> // for bad_alloc, precedes include of gc_cpp.h
 
-#include "gc_cpp.h" // for GC_NEW_ABORTS_ON_OOM
-
 #if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 # define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()
 #else

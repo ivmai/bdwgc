@@ -75,15 +75,6 @@ extern "C" {
                     __LINE__ ); \
         exit( 1 ); }
 
-#ifndef GC_ATTR_EXPLICIT
-# if __cplusplus >= 201103L && !defined(__clang__) || _MSVC_LANG >= 201103L \
-     || defined(CPPCHECK)
-#   define GC_ATTR_EXPLICIT explicit
-# else
-#   define GC_ATTR_EXPLICIT /* empty */
-# endif
-#endif
-
 class A {public:
     /* An uncollectible class. */
 

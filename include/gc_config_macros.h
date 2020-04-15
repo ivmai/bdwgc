@@ -421,4 +421,33 @@
 
 #endif /* GC_PTHREADS */
 
+#ifdef __cplusplus
+
+#ifndef GC_ATTR_EXPLICIT
+# if __cplusplus >= 201103L && !defined(__clang__) || _MSVC_LANG >= 201103L \
+     || defined(CPPCHECK)
+#   define GC_ATTR_EXPLICIT explicit
+# else
+#   define GC_ATTR_EXPLICIT /* empty */
+# endif
+#endif
+
+#ifndef GC_NOEXCEPT
+# if defined(__DMC__) || (defined(__BORLANDC__) \
+        && (defined(_RWSTD_NO_EXCEPTIONS) || defined(_RWSTD_NO_EX_SPEC))) \
+     || (defined(_MSC_VER) && defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS) \
+     || (defined(__WATCOMC__) && !defined(_CPPUNWIND))
+#   define GC_NOEXCEPT /* empty */
+#   ifndef GC_NEW_ABORTS_ON_OOM
+#     define GC_NEW_ABORTS_ON_OOM
+#   endif
+# elif __cplusplus >= 201103L || _MSVC_LANG >= 201103L
+#   define GC_NOEXCEPT noexcept
+# else
+#   define GC_NOEXCEPT throw()
+# endif
+#endif
+
+#endif /* __cplusplus */
+
 #endif

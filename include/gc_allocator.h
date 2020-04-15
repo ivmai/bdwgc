@@ -43,35 +43,10 @@
 #include "gc.h"
 #include <new> // for placement new and bad_alloc
 
-#ifndef GC_ATTR_EXPLICIT
-# if __cplusplus >= 201103L && !defined(__clang__) || _MSVC_LANG >= 201103L \
-     || defined(CPPCHECK)
-#   define GC_ATTR_EXPLICIT explicit
-# else
-#   define GC_ATTR_EXPLICIT /* empty */
-# endif
-#endif
-
 #if !defined(GC_NO_MEMBER_TEMPLATES) && defined(_MSC_VER) && _MSC_VER <= 1200
   // MSVC++ 6.0 do not support member templates.
 # define GC_NO_MEMBER_TEMPLATES
 #endif
-
-#ifndef GC_NOEXCEPT
-# if defined(__DMC__) || (defined(__BORLANDC__) \
-        && (defined(_RWSTD_NO_EXCEPTIONS) || defined(_RWSTD_NO_EX_SPEC))) \
-     || (defined(_MSC_VER) && defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS) \
-     || (defined(__WATCOMC__) && !defined(_CPPUNWIND))
-#   define GC_NOEXCEPT /* empty */
-#   ifndef GC_NEW_ABORTS_ON_OOM
-#     define GC_NEW_ABORTS_ON_OOM
-#   endif
-# elif __cplusplus >= 201103L || _MSVC_LANG >= 201103L
-#   define GC_NOEXCEPT noexcept
-# else
-#   define GC_NOEXCEPT throw()
-# endif
-#endif // !GC_NOEXCEPT
 
 #if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 # define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()

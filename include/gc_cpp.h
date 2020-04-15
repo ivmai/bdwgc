@@ -173,22 +173,6 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 # define GC_PLACEMENT_DELETE
 #endif
 
-#ifndef GC_NOEXCEPT
-# if defined(__DMC__) || (defined(__BORLANDC__) \
-        && (defined(_RWSTD_NO_EXCEPTIONS) || defined(_RWSTD_NO_EX_SPEC))) \
-     || (defined(_MSC_VER) && defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS) \
-     || (defined(__WATCOMC__) && !defined(_CPPUNWIND))
-#   define GC_NOEXCEPT /* empty */
-#   ifndef GC_NEW_ABORTS_ON_OOM
-#     define GC_NEW_ABORTS_ON_OOM
-#   endif
-# elif __cplusplus >= 201103L || _MSVC_LANG >= 201103L
-#   define GC_NOEXCEPT noexcept
-# else
-#   define GC_NOEXCEPT throw()
-# endif
-#endif // !GC_NOEXCEPT
-
 #if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 # define GC_OP_NEW_OOM_CHECK(obj) \
                 do { if (!(obj)) GC_abort_on_oom(); } while (0)

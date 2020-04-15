@@ -32,7 +32,7 @@ built-in "new" and "delete".
 
 #include <new> // for bad_alloc, precedes include of gc_cpp.h
 
-#include "gc_cpp.h" // for GC_OPERATOR_NEW_ARRAY, GC_NOEXCEPT
+#include "gc_cpp.h" // for GC_OPERATOR_NEW_ARRAY
 
 #if !(defined(_MSC_VER) || defined(__DMC__)) || defined(GC_NO_INLINE_STD_NEW)
 
