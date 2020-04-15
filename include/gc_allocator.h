@@ -44,7 +44,8 @@
 #include <new> // for placement new and bad_alloc
 
 #ifndef GC_ATTR_EXPLICIT
-# if (__cplusplus >= 201103L) && !defined(__clang__) || defined(CPPCHECK)
+# if __cplusplus >= 201103L && !defined(__clang__) || _MSVC_LANG >= 201103L \
+     || defined(CPPCHECK)
 #   define GC_ATTR_EXPLICIT explicit
 # else
 #   define GC_ATTR_EXPLICIT /* empty */
@@ -65,7 +66,7 @@
 #   ifndef GC_NEW_ABORTS_ON_OOM
 #     define GC_NEW_ABORTS_ON_OOM
 #   endif
-# elif __cplusplus >= 201103L
+# elif __cplusplus >= 201103L || _MSVC_LANG >= 201103L
 #   define GC_NOEXCEPT noexcept
 # else
 #   define GC_NOEXCEPT throw()

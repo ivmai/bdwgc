@@ -53,12 +53,12 @@ GC_API void GC_CALL GC_throw_bad_alloc() {
 # endif
 
 # ifdef GC_NEW_DELETE_NEED_THROW
-#   if __cplusplus < 201703L
-#     define GC_DECL_NEW_THROW throw(std::bad_alloc)
-#   else
-      // The "dynamic exception" syntax was deprecated in C++11
-      // and removed in C++17.
+#   if __cplusplus >= 201703L || _MSVC_LANG >= 201703L
+      // The "dynamic exception" syntax had been deprecated in C++11
+      // and was removed in C++17.
 #     define GC_DECL_NEW_THROW noexcept(false)
+#   else
+#     define GC_DECL_NEW_THROW throw(std::bad_alloc)
 #   endif
 # else
 #   define GC_DECL_NEW_THROW /* empty */
@@ -114,7 +114,7 @@ GC_API void GC_CALL GC_throw_bad_alloc() {
     }
 # endif // GC_OPERATOR_NEW_ARRAY
 
-# if __cplusplus > 201103L // C++14
+# if __cplusplus >= 201402L || _MSVC_LANG >= 201402L // C++14
     void operator delete(void* obj, size_t size) GC_NOEXCEPT {
       (void)size; // size is ignored
       GC_FREE(obj);

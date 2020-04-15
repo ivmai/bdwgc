@@ -182,7 +182,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 #   ifndef GC_NEW_ABORTS_ON_OOM
 #     define GC_NEW_ABORTS_ON_OOM
 #   endif
-# elif __cplusplus >= 201103L
+# elif __cplusplus >= 201103L || _MSVC_LANG >= 201103L
 #   define GC_NOEXCEPT noexcept
 # else
 #   define GC_NOEXCEPT throw()
@@ -342,7 +342,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
     GC_FREE(obj);
   }
 
-# if __cplusplus > 201103L // C++14
+# if __cplusplus >= 201402L || _MSVC_LANG >= 201402L // C++14
     inline void operator delete(void* obj, size_t size) GC_NOEXCEPT {
       (void)size; // size is ignored
       GC_FREE(obj);
