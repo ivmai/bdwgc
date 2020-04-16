@@ -70,6 +70,7 @@ word GC_gc_no = 0;
 
 #ifndef NO_CLOCK
   static unsigned long full_gc_total_time = 0; /* in ms, may wrap */
+  static unsigned full_gc_total_ns_frac = 0; /* fraction of 1 ms */
   static GC_bool measure_performance = FALSE;
                 /* Do performance measurements if set to true (e.g.,    */
                 /* accumulation of the total time of full collections). */
@@ -590,15 +591,23 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 #   ifndef NO_CLOCK
       if (start_time_valid) {
         CLOCK_TYPE current_time;
-        unsigned long time_diff;
+        unsigned long time_diff, ns_frac_diff;
 
         GET_TIME(current_time);
         time_diff = MS_TIME_DIFF(current_time, start_time);
-        if (measure_performance)
+        ns_frac_diff = NS_FRAC_TIME_DIFF(current_time, start_time);
+        if (measure_performance) {
           full_gc_total_time += time_diff; /* may wrap */
+          full_gc_total_ns_frac += (unsigned)ns_frac_diff;
+          if (full_gc_total_ns_frac >= 1000000U) {
+            /* Overflow of the nanoseconds part. */
+            full_gc_total_ns_frac -= 1000000U;
+            full_gc_total_time++;
+          }
+        }
         if (GC_print_stats)
-          GC_log_printf("Complete collection took %lu ms %lu ns\n", time_diff,
-                        NS_FRAC_TIME_DIFF(current_time, start_time));
+          GC_log_printf("Complete collection took %lu ms %lu ns\n",
+                        time_diff, ns_frac_diff);
       }
 #   endif
     if (GC_on_collection_event)
