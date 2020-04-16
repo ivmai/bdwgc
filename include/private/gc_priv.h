@@ -464,6 +464,7 @@ EXTERN_C_END
                  + (long)(a.tv_usec - b.tv_usec) % 1000) * 1000)
                         /* The total time difference could be computed as   */
                         /* MS_TIME_DIFF(a,b)*1000000+NS_FRAC_TIME_DIFF(a,b).*/
+
 #elif defined(MSWIN32) || defined(MSWINCE) || defined(WINXP_USE_PERF_COUNTER)
 # if defined(MSWINRT_FLAVOR) || defined(WINXP_USE_PERF_COUNTER)
 #   define CLOCK_TYPE ULONGLONG
@@ -484,6 +485,7 @@ EXTERN_C_END
 #   define MS_TIME_DIFF(a, b) ((unsigned long)((a) - (b)))
 #   define NS_FRAC_TIME_DIFF(a, b) 0UL
 # endif /* !WINXP_USE_PERF_COUNTER */
+
 #elif defined(NN_PLATFORM_CTR)
 # define CLOCK_TYPE long long
   EXTERN_C_BEGIN
@@ -493,19 +495,24 @@ EXTERN_C_END
 # define GET_TIME(x) (void)(x = n3ds_get_system_tick())
 # define MS_TIME_DIFF(a,b) ((unsigned long)n3ds_convert_tick_to_ms((a)-(b)))
 # define NS_FRAC_TIME_DIFF(a, b) 0UL /* TODO: implement it */
+
 #elif defined(NINTENDO_SWITCH)
 # include <time.h>
-# define CLOCK_TYPE long long
+# define CLOCK_TYPE struct timespec
+# define CLOCK_TYPE_INITIALIZER { 0, 0 }
 # define GET_TIME(x) \
                 do { \
-                  struct timespec t; \
-                  int r = clock_gettime(CLOCK_REALTIME, &t); \
-                  if (r == -1) \
+                  /* TODO: Use CLOCK_MONOTONIC */ \
+                  if (clock_gettime(CLOCK_REALTIME, &x) == -1) \
                     ABORT("clock_gettime failed"); \
-                  x = (t.tv_sec * 1000000000) + t.tv_nsec; \
                 } while (0)
-# define MS_TIME_DIFF(a, b) ((unsigned long)(((a) - (b)) / 1000000))
-# define NS_FRAC_TIME_DIFF(a, b) ((unsigned long)(((a) - (b)) % 1000000UL))
+# define MS_TIME_DIFF(a, b) \
+    /* a.tv_nsec - b.tv_nsec is in range -1e9 to 1e9 exclusively */ \
+    ((unsigned long)((a).tv_nsec + (1000000L*1000 - (b).tv_nsec)) / 1000000UL \
+     + ((unsigned long)((a).tv_sec - (b).tv_sec) * 1000UL) - 1000UL)
+# define NS_FRAC_TIME_DIFF(a, b) \
+    ((unsigned long)((a).tv_nsec + (1000000L*1000 - (b).tv_nsec)) % 1000000UL)
+
 #else /* !BSD_TIME && !NINTENDO_SWITCH && !NN_PLATFORM_CTR && !MSWIN32 */
 # include <time.h>
 # if defined(FREEBSD) && !defined(CLOCKS_PER_SEC)
