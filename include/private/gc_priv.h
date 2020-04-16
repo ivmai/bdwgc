@@ -496,16 +496,23 @@ EXTERN_C_END
 # define MS_TIME_DIFF(a,b) ((unsigned long)n3ds_convert_tick_to_ms((a)-(b)))
 # define NS_FRAC_TIME_DIFF(a, b) 0UL /* TODO: implement it */
 
-#elif defined(NINTENDO_SWITCH)
+#elif defined(NINTENDO_SWITCH) || defined(CYGWIN32) || defined(LINUX)
 # include <time.h>
 # define CLOCK_TYPE struct timespec
 # define CLOCK_TYPE_INITIALIZER { 0, 0 }
-# define GET_TIME(x) \
+# if defined(_POSIX_MONOTONIC_CLOCK)
+#   define GET_TIME(x) \
                 do { \
-                  /* TODO: Use CLOCK_MONOTONIC */ \
+                  if (clock_gettime(CLOCK_MONOTONIC, &x) == -1) \
+                    ABORT("clock_gettime failed"); \
+                } while (0)
+# else
+#   define GET_TIME(x) \
+                do { \
                   if (clock_gettime(CLOCK_REALTIME, &x) == -1) \
                     ABORT("clock_gettime failed"); \
                 } while (0)
+# endif
 # define MS_TIME_DIFF(a, b) \
     /* a.tv_nsec - b.tv_nsec is in range -1e9 to 1e9 exclusively */ \
     ((unsigned long)((a).tv_nsec + (1000000L*1000 - (b).tv_nsec)) / 1000000UL \
