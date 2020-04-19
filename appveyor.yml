@@ -38,7 +38,7 @@ environment:
     CONF_OPTIONS: --enable-cplusplus
     CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
   - TARGET: cygwin64
-    CFLAGS_EXTRA: -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB
+    CFLAGS_EXTRA: -std=c11 -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB
     CONF_OPTIONS: --enable-cplusplus --enable-gc-assertions --disable-shared
   - TARGET: cygwin64
     CONF_OPTIONS: --disable-threads
