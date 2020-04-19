@@ -2042,7 +2042,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
       /* Invoke SetThreadDescription().  Cast the function pointer to word  */
       /* first to avoid "incompatible function types" compiler warning.     */
-      hr = ((HRESULT (WINAPI *)(HANDLE, const WCHAR *))
+      hr = (*(HRESULT (WINAPI *)(HANDLE, const WCHAR *))
             (word)setThreadDescription_fn)(GetCurrentThread(), name_buf);
       if (FAILED(hr))
         WARN("SetThreadDescription failed\n", 0);
@@ -2775,8 +2775,8 @@ GC_INNER void GC_thr_init(void)
       if (hK32) {
         FARPROC pfn = GetProcAddress(hK32, "IsWow64Process");
         if (pfn
-            && !(*(BOOL (WINAPI*)(HANDLE, BOOL*))pfn)(GetCurrentProcess(),
-                                                      &isWow64))
+            && !(*(BOOL (WINAPI*)(HANDLE, BOOL*))(word)pfn)(
+                                        GetCurrentProcess(), &isWow64))
           isWow64 = FALSE; /* IsWow64Process failed */
       }
 # endif
