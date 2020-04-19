@@ -26,7 +26,8 @@
 # define GC_BUILD
 #endif
 
-#if (defined(__linux__) || defined(__GLIBC__) || defined(__GNU__)) \
+#if (defined(__linux__) || defined(__GLIBC__) || defined(__GNU__) \
+     || (defined(__CYGWIN__) && !defined(USE_MMAP))) \
     && !defined(_GNU_SOURCE)
   /* Can't test LINUX, since this must be defined before other includes. */
 # define _GNU_SOURCE 1
