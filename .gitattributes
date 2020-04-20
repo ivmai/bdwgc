@@ -9,8 +9,8 @@
 # Ensure all text files have normalized line endings in the repository.
 * text=auto
 
-# The following file should use CR/LF line endings.
-/digimars.mak text eol=crlf
+# These files should use CR/LF line ending:
+/digimars.mak -text
 
 # Note: "core.eol" configuration variable controls which line endings to use
 # for the normalized files in the working directory (the default is native).
