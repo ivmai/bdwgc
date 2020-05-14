@@ -920,7 +920,7 @@ EXTERN_C_BEGIN
 # if defined(LARGE_CONFIG) || !defined(SMALL_CONFIG)
 #   ifdef ALPHA
 #     define CPP_LOG_HBLKSIZE 13
-#   elif defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2)
+#   elif defined(SN_TARGET_PSP2)
 #     define CPP_LOG_HBLKSIZE 16    /* page size is set to 64 KB */
 #   else
 #     define CPP_LOG_HBLKSIZE 12

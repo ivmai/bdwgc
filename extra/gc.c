@@ -67,8 +67,12 @@
 #include "../darwin_stop_world.c"
 #include "../dyn_load.c"
 #include "../gc_dlopen.c"
-#include "../mach_dep.c"
-#include "../pthread_stop_world.c"
+#if !defined(PLATFORM_MACH_DEP)
+# include "../mach_dep.c"
+#endif
+#if !defined(PLATFORM_STOP_WORLD)
+# include "../pthread_stop_world.c"
+#endif
 #include "../pthread_support.c"
 #include "../specific.c"
 #include "../win32_threads.c"

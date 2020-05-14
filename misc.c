@@ -49,7 +49,7 @@
     GC_INNER PCR_Th_ML GC_allocate_ml;
 # elif defined(SN_TARGET_PSP2)
     GC_INNER WapiMutex GC_allocate_ml_PSP2 = { 0, NULL };
-# elif defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3)
+# elif defined(GC_DEFN_ALLOCATE_ML) || defined(SN_TARGET_PS3)
 #   include <pthread.h>
     GC_INNER pthread_mutex_t GC_allocate_ml;
 # endif
@@ -1729,7 +1729,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
 #else
 
-# if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+# if !defined(GC_NO_TYPES) && !defined(SN_TARGET_PSP2)
 #   if !defined(AMIGA) && !defined(MSWIN32) && !defined(MSWIN_XBOX1) \
        && !defined(__CC_ARM)
 #     include <unistd.h>
@@ -1737,11 +1737,11 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #   if !defined(ECOS) && !defined(NOSYS)
 #     include <errno.h>
 #   endif
-# endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
+# endif /* !GC_NO_TYPES && !SN_TARGET_PSP2 */
 
   STATIC int GC_write(int fd, const char *buf, size_t len)
   {
-#   if defined(ECOS) || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2) \
+#   if defined(ECOS) || defined(PLATFORM_WRITE) || defined(SN_TARGET_PSP2) \
        || defined(NOSYS)
 #     ifdef ECOS
         /* FIXME: This seems to be defined nowhere at present.  */

@@ -14,7 +14,7 @@
 
 #include "private/gc_priv.h"
 
-#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+#if !defined(PLATFORM_MACH_DEP) && !defined(SN_TARGET_PSP2)
 
 #include <stdio.h>
 
@@ -339,4 +339,4 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
   GC_noop1(COVERT_DATAFLOW(&dummy));
 }
 
-#endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
+#endif /* !PLATFORM_MACH_DEP && !SN_TARGET_PSP2 */

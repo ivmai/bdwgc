@@ -91,8 +91,8 @@
 #   define GC_HPUX_THREADS
 # elif defined(__HAIKU__)
 #   define GC_HAIKU_THREADS
-# elif defined(__DragonFly__) || defined(__FreeBSD_kernel__) \
-       || (defined(__FreeBSD__) && !defined(SN_TARGET_ORBIS))
+# elif (defined(__DragonFly__) || defined(__FreeBSD_kernel__) \
+        || defined(__FreeBSD__)) && !defined(GC_NO_FREEBSD)
 #   define GC_FREEBSD_THREADS
 # elif defined(__NetBSD__)
 #   define GC_NETBSD_THREADS
