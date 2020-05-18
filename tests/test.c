@@ -1967,6 +1967,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
       }
 #   endif
     set_print_procs();
+    GC_start_incremental_collection();
     run_one_test();
     run_single_threaded_test();
     check_heap_stats();

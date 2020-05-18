@@ -88,6 +88,7 @@ word GC_gc_no = 0;
 
 #ifndef GC_DISABLE_INCREMENTAL
   GC_INNER GC_bool GC_incremental = FALSE; /* By default, stop the world. */
+  STATIC GC_bool GC_should_start_incremental_collection = FALSE;
 #endif
 
 GC_API int GC_CALL GC_is_incremental_mode(void)
@@ -386,6 +387,21 @@ STATIC void GC_clear_a_few_frames(void)
 /* limits used by blacklisting.                                         */
 STATIC word GC_collect_at_heapsize = GC_WORD_MAX;
 
+GC_API void GC_CALL GC_start_incremental_collection(void)
+{
+# ifndef GC_DISABLE_INCREMENTAL
+    DCL_LOCK_STATE;
+
+    if (!GC_incremental) return;
+    LOCK();
+    GC_should_start_incremental_collection = TRUE;
+    ENTER_GC();
+    GC_collect_a_little_inner(1);
+    EXIT_GC();
+    UNLOCK();
+# endif
+}
+
 /* Have we allocated enough to amortize a collection? */
 GC_INNER GC_bool GC_should_collect(void)
 {
@@ -395,6 +411,12 @@ GC_INNER GC_bool GC_should_collect(void)
       last_min_bytes_allocd = min_bytes_allocd();
       last_gc_no = GC_gc_no;
     }
+# ifndef GC_DISABLE_INCREMENTAL
+    if (GC_should_start_incremental_collection) {
+      GC_should_start_incremental_collection = FALSE;
+      return TRUE;
+    }
+# endif
     return(GC_adj_bytes_allocd() >= last_min_bytes_allocd
            || GC_heapsize >= GC_collect_at_heapsize);
 }

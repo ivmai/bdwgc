@@ -887,6 +887,10 @@ GC_API int GC_CALL GC_is_incremental_mode(void);
 /* The collector is assumed to be initialized before this call.         */
 GC_API int GC_CALL GC_incremental_protection_needs(void);
 
+/* Force start of incremental collection.  Acquires the GC lock.        */
+/* No-op unless GC incremental mode is on.                              */
+GC_API void GC_CALL GC_start_incremental_collection(void);
+
 /* Perform some garbage collection work, if appropriate.        */
 /* Return 0 if there is no more work to be done (including the  */
 /* case when garbage collection is not appropriate).            */
