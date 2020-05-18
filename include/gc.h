@@ -618,6 +618,9 @@ GC_API void GC_CALL GC_set_max_heap_size(GC_word /* n */);
 GC_API void GC_CALL GC_exclude_static_roots(void * /* low_address */,
                                             void * /* high_address_plus_1 */);
 
+/* Clear the number of entries in the exclusion table.  Wizards only.   */
+GC_API void GC_CALL GC_clear_exclusion_table(void);
+
 /* Clear the set of root segments.  Wizards only.                       */
 GC_API void GC_CALL GC_clear_roots(void);
 

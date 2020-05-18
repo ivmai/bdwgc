@@ -534,6 +534,11 @@ struct exclusion GC_excl_table[MAX_EXCLUSIONS];
 
 STATIC size_t GC_excl_table_entries = 0;/* Number of entries in use.      */
 
+GC_API void GC_CALL GC_clear_exclusion_table(void)
+{
+    GC_excl_table_entries = 0;
+}
+
 /* Return the first exclusion range that includes an address >= start_addr */
 /* Assumes the exclusion table contains at least one entry (namely the     */
 /* GC data structures).                                                    */

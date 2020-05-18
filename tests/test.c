@@ -1923,6 +1923,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
       GC_noop1((GC_word)&Init);
 #   endif
     n_tests = 0;
+    GC_clear_exclusion_table(); /* no-op as called before GC init */
 #   if defined(MACOS)
         /* Make sure we have lots and lots of stack space.      */
         SetMinimumStack(cMinStackSpace);
