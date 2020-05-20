@@ -2743,7 +2743,7 @@
 #   define ALIGNMENT (CPP_WORDSZ/8)
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
-      extern int __data_start[];
+      extern int __data_start[] __attribute__((__weak__));
 #     define DATASTART ((ptr_t)__data_start)
 #     define LINUX_STACKBOTTOM
 #     define DYNAMIC_LOADING
