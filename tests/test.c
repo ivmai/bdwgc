@@ -2440,6 +2440,8 @@ int main(void)
     check_heap_stats();
     (void)fflush(stdout);
     (void)pthread_attr_destroy(&attr);
+    GC_set_disable_automatic_collection(FALSE);
+    (void)GC_get_disable_automatic_collection();
 #   if defined(CPPCHECK)
       UNTESTED(GC_allow_register_threads);
       UNTESTED(GC_get_on_thread_event);

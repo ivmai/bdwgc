@@ -115,6 +115,28 @@ STATIC GC_bool GC_need_full_gc = FALSE;
   GC_INNER GC_bool GC_world_stopped = FALSE;
 #endif
 
+STATIC GC_bool GC_disable_automatic_collection = FALSE;
+
+GC_API void GC_CALL GC_set_disable_automatic_collection(int value)
+{
+  DCL_LOCK_STATE;
+
+  LOCK();
+  GC_disable_automatic_collection = (GC_bool)value;
+  UNLOCK();
+}
+
+GC_API int GC_CALL GC_get_disable_automatic_collection(void)
+{
+  int value;
+  DCL_LOCK_STATE;
+
+  LOCK();
+  value = (int)GC_disable_automatic_collection;
+  UNLOCK();
+  return value;
+}
+
 STATIC word GC_used_heap_size_after_full = 0;
 
 /* GC_copyright symbol is externally visible. */
@@ -407,6 +429,8 @@ GC_INNER GC_bool GC_should_collect(void)
 {
     static word last_min_bytes_allocd;
     static word last_gc_no;
+
+    GC_ASSERT(I_HOLD_LOCK());
     if (last_gc_no != GC_gc_no) {
       last_min_bytes_allocd = min_bytes_allocd();
       last_gc_no = GC_gc_no;
@@ -417,6 +441,8 @@ GC_INNER GC_bool GC_should_collect(void)
       return TRUE;
     }
 # endif
+    if (GC_disable_automatic_collection) return FALSE;
+
     return(GC_adj_bytes_allocd() >= last_min_bytes_allocd
            || GC_heapsize >= GC_collect_at_heapsize);
 }

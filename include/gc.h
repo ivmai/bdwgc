@@ -487,6 +487,12 @@ GC_API int GC_CALL GC_get_rate(void);
 GC_API void GC_CALL GC_set_max_prior_attempts(int);
 GC_API int GC_CALL GC_get_max_prior_attempts(void);
 
+/* Control whether to disable algorithm deciding if a collection should */
+/* be started when we allocated enough to amortize GC.  Both the setter */
+/* and the getter acquire the GC lock (to avoid data races).            */
+GC_API void GC_CALL GC_set_disable_automatic_collection(int);
+GC_API int GC_CALL GC_get_disable_automatic_collection(void);
+
 /* Overrides the default handle-fork mode.  Non-zero value means GC     */
 /* should install proper pthread_atfork handlers.  Has effect only if   */
 /* called before GC_INIT.  Clients should invoke GC_set_handle_fork     */
