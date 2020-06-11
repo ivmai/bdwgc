@@ -3679,6 +3679,9 @@ EXTERN_C_BEGIN
 # elif defined(HAIKU)
     ptr_t GC_haiku_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)GC_haiku_get_mem(bytes)
+# elif defined(EMSCRIPTEN_TINY)
+    void *emmalloc_memalign(size_t alignment, size_t size);
+#   define GET_MEM(bytes) (struct hblk*)emmalloc_memalign(GC_page_size, bytes)
 # else
     ptr_t GC_unix_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
