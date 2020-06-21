@@ -56,14 +56,14 @@ STATIC int GC_array_kind = 0;
 typedef struct {
         word ed_bitmap; /* lsb corresponds to first word.       */
         GC_bool ed_continued;   /* next entry is continuation.  */
-} ext_descr;
+} typed_ext_descr_t;
 
 /* Array descriptors.  GC_array_mark_proc understands these.    */
 /* We may eventually need to add provisions for headers and     */
 /* trailers.  Hence we provide for tree structured descriptors, */
 /* though we don't really use them currently.                   */
 
-    struct LeafDescriptor {     /* Describes simple array       */
+struct LeafDescriptor {         /* Describes simple array.      */
         word ld_tag;
 #       define LEAF_TAG 1
         size_t ld_size;         /* bytes per element            */
@@ -71,21 +71,21 @@ typedef struct {
         size_t ld_nelements;    /* Number of elements.          */
         GC_descr ld_descriptor; /* A simple length, bitmap,     */
                                 /* or procedure descriptor.     */
-    };
+};
 
-    struct ComplexArrayDescriptor {
+struct ComplexArrayDescriptor {
         word ad_tag;
 #       define ARRAY_TAG 2
         size_t ad_nelements;
         union ComplexDescriptor * ad_element_descr;
-    };
+};
 
-    struct SequenceDescriptor {
+struct SequenceDescriptor {
         word sd_tag;
 #       define SEQUENCE_TAG 3
         union ComplexDescriptor * sd_first;
         union ComplexDescriptor * sd_second;
-    };
+};
 
 typedef union ComplexDescriptor {
     struct LeafDescriptor ld;
@@ -94,7 +94,7 @@ typedef union ComplexDescriptor {
 } complex_descriptor;
 #define TAG ad.ad_tag
 
-STATIC ext_descr * GC_ext_descriptors = NULL;
+STATIC typed_ext_descr_t * GC_ext_descriptors = NULL;
                                         /* Points to array of extended  */
                                         /* descriptors.                 */
 
@@ -132,7 +132,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
 
     LOCK();
     while (GC_avail_descr + nwords >= GC_ed_size) {
-        ext_descr * newExtD;
+        typed_ext_descr_t *newExtD;
         size_t new_size;
         word ed_size = GC_ed_size;
 
@@ -146,14 +146,15 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
             new_size = 2 * ed_size;
             if (new_size > MAX_ENV) return(-1);
         }
-        newExtD = (ext_descr *)GC_malloc_atomic(new_size * sizeof(ext_descr));
+        newExtD = (typed_ext_descr_t*)GC_malloc_atomic(new_size
+                                                * sizeof(typed_ext_descr_t));
         if (NULL == newExtD)
             return -1;
         LOCK();
         if (ed_size == GC_ed_size) {
             if (GC_avail_descr != 0) {
                 BCOPY(GC_ext_descriptors, newExtD,
-                      GC_avail_descr * sizeof(ext_descr));
+                      GC_avail_descr * sizeof(typed_ext_descr_t));
             }
             GC_ed_size = new_size;
             GC_ext_descriptors = newExtD;
