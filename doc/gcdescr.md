@@ -198,7 +198,7 @@ progression of mark states for a stop-the-world collection is:
   In this case `GC_objects_are_marked` will simultaneously be false, so the
   mark state is advanced to
   2. `MS_PUSH_UNCOLLECTABLE` indicating that it suffices to push uncollectible
-  objects, roots, and then mark everything reachable from them. `scan_ptr`
+  objects, roots, and then mark everything reachable from them. `GC_scan_ptr`
   is advanced through the heap until all uncollectible objects are pushed, and
   objects reachable from them are marked. At that point, the next call
   to `GC_mark_some` calls `GC_push_roots` to push the roots. It, then,

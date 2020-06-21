@@ -271,7 +271,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
     n_root_sets++;
 }
 
-static GC_bool roots_were_cleared = FALSE;
+STATIC GC_bool GC_roots_were_cleared = FALSE;
 
 GC_API void GC_CALL GC_clear_roots(void)
 {
@@ -279,7 +279,7 @@ GC_API void GC_CALL GC_clear_roots(void)
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
-    roots_were_cleared = TRUE;
+    GC_roots_were_cleared = TRUE;
     n_root_sets = 0;
     GC_root_size = 0;
 #   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
@@ -545,8 +545,10 @@ GC_API void GC_CALL GC_clear_exclusion_table(void)
 STATIC struct exclusion * GC_next_exclusion(ptr_t start_addr)
 {
     size_t low = 0;
-    size_t high = GC_excl_table_entries - 1;
+    size_t high;
 
+    GC_ASSERT(GC_excl_table_entries > 0);
+    high = GC_excl_table_entries - 1;
     while (high > low) {
         size_t mid = (low + high) >> 1;
 
@@ -924,7 +926,7 @@ GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame GC_ATTR_UNUSED)
 
     /* Mark from GC internal roots if those might otherwise have        */
     /* been excluded.                                                   */
-    if (GC_no_dls || roots_were_cleared) {
+    if (GC_no_dls || GC_roots_were_cleared) {
         GC_push_gc_structures();
     }
 

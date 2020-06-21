@@ -110,20 +110,20 @@ GC_INNER hdr *
 /* Routines to dynamically allocate collector data structures that will */
 /* never be freed.                                                      */
 
-static ptr_t scratch_free_ptr = 0;
+STATIC ptr_t GC_scratch_free_ptr = 0;
 
 /* GC_scratch_last_end_ptr is end point of last obtained scratch area.  */
 /* GC_scratch_end_ptr is end point of current scratch area.             */
 
 GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
 {
-    ptr_t result = scratch_free_ptr;
+    ptr_t result = GC_scratch_free_ptr;
     size_t bytes_to_get;
 
     bytes = ROUNDUP_GRANULE_SIZE(bytes);
     for (;;) {
-        scratch_free_ptr += bytes;
-        if ((word)scratch_free_ptr <= (word)GC_scratch_end_ptr) {
+        GC_scratch_free_ptr += bytes;
+        if ((word)GC_scratch_free_ptr <= (word)GC_scratch_end_ptr) {
             /* Unallocated space of scratch buffer has enough size. */
             return result;
         }
@@ -133,7 +133,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             result = (ptr_t)GET_MEM(bytes_to_get);
             GC_add_to_our_memory(result, bytes_to_get);
             /* Undo scratch free area pointer update; get memory directly. */
-            scratch_free_ptr -= bytes;
+            GC_scratch_free_ptr -= bytes;
             if (result != NULL) {
                 /* Update end point of last obtained area (needed only  */
                 /* by GC_register_dynamic_libraries for some targets).  */
@@ -149,39 +149,39 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
         if (NULL == result) {
             WARN("Out of memory - trying to allocate requested amount"
                  " (%" WARN_PRIdPTR " bytes)...\n", (word)bytes);
-            scratch_free_ptr -= bytes; /* Undo free area pointer update */
+            GC_scratch_free_ptr -= bytes; /* Undo free area pointer update */
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = (ptr_t)GET_MEM(bytes_to_get);
             GC_add_to_our_memory(result, bytes_to_get);
             return result;
         }
         /* Update scratch area pointers and retry.      */
-        scratch_free_ptr = result;
-        GC_scratch_end_ptr = scratch_free_ptr + bytes_to_get;
+        GC_scratch_free_ptr = result;
+        GC_scratch_end_ptr = GC_scratch_free_ptr + bytes_to_get;
         GC_scratch_last_end_ptr = GC_scratch_end_ptr;
     }
 }
 
-static hdr * hdr_free_list = 0;
+STATIC hdr * GC_hdr_free_list = 0;
 
 /* Return an uninitialized header */
 static hdr * alloc_hdr(void)
 {
     hdr * result;
 
-    if (NULL == hdr_free_list) {
+    if (NULL == GC_hdr_free_list) {
         result = (hdr *)GC_scratch_alloc(sizeof(hdr));
     } else {
-        result = hdr_free_list;
-        hdr_free_list = (hdr *) (result -> hb_next);
+        result = GC_hdr_free_list;
+        GC_hdr_free_list = (hdr *) result -> hb_next;
     }
     return(result);
 }
 
 GC_INLINE void free_hdr(hdr * hhdr)
 {
-    hhdr -> hb_next = (struct hblk *) hdr_free_list;
-    hdr_free_list = hhdr;
+    hhdr -> hb_next = (struct hblk *) GC_hdr_free_list;
+    GC_hdr_free_list = hhdr;
 }
 
 #ifdef COUNT_HDR_CACHE_HITS
@@ -194,6 +194,7 @@ GC_INNER void GC_init_headers(void)
 {
     unsigned i;
 
+    GC_ASSERT(NULL == GC_all_nils);
     GC_all_nils = (bottom_index *)GC_scratch_alloc(sizeof(bottom_index));
     if (GC_all_nils == NULL) {
       GC_err_printf("Insufficient memory for GC_all_nils\n");

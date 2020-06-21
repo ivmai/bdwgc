@@ -113,7 +113,7 @@ GC_INNER mark_state_t GC_mark_state = MS_NONE;
 
 GC_INNER GC_bool GC_mark_stack_too_small = FALSE;
 
-static struct hblk * scan_ptr;
+STATIC struct hblk * GC_scan_ptr;
 
 STATIC GC_bool GC_objects_are_marked = FALSE;
                 /* Are there collectible marked objects in the heap?    */
@@ -233,7 +233,7 @@ GC_INNER void GC_clear_marks(void)
     GC_apply_to_all_blocks(clear_marks_for_block, (word)0);
     GC_objects_are_marked = FALSE;
     GC_mark_state = MS_INVALID;
-    scan_ptr = 0;
+    GC_scan_ptr = NULL;
 }
 
 /* Initiate a garbage collection.  Initiates a full collection if the   */
@@ -257,7 +257,7 @@ GC_INNER void GC_initiate_gc(void)
     } else if (GC_mark_state != MS_INVALID) {
         ABORT("Unexpected state");
     } /* Else this is really a full collection, and mark bits are invalid. */
-    scan_ptr = 0;
+    GC_scan_ptr = NULL;
 }
 
 #ifdef PARALLEL_MARK
@@ -311,8 +311,8 @@ static void alloc_mark_stack(size_t);
                 MARK_FROM_MARK_STACK();
                 break;
             } else {
-                scan_ptr = GC_push_next_marked_dirty(scan_ptr);
-                if (scan_ptr == 0) {
+                GC_scan_ptr = GC_push_next_marked_dirty(GC_scan_ptr);
+                if (NULL == GC_scan_ptr) {
 #                 if !defined(GC_DISABLE_INCREMENTAL)
                     GC_COND_LOG_PRINTF("Marked from %lu dirty pages\n",
                                        (unsigned long)GC_n_rescuing_pages);
@@ -337,8 +337,8 @@ static void alloc_mark_stack(size_t);
                 MARK_FROM_MARK_STACK();
                 break;
             } else {
-                scan_ptr = GC_push_next_marked_uncollectable(scan_ptr);
-                if (scan_ptr == 0) {
+                GC_scan_ptr = GC_push_next_marked_uncollectable(GC_scan_ptr);
+                if (NULL == GC_scan_ptr) {
                     GC_push_roots(TRUE, cold_gc_frame);
                     GC_objects_are_marked = TRUE;
                     if (GC_mark_state != MS_INVALID) {
@@ -391,7 +391,7 @@ static void alloc_mark_stack(size_t);
                 MARK_FROM_MARK_STACK();
                 break;
             }
-            if (scan_ptr == 0 && GC_mark_state == MS_INVALID) {
+            if (NULL == GC_scan_ptr && GC_mark_state == MS_INVALID) {
                 /* About to start a heap scan for marked objects. */
                 /* Mark stack is empty.  OK to reallocate.        */
                 if (GC_mark_stack_too_small) {
@@ -399,8 +399,8 @@ static void alloc_mark_stack(size_t);
                 }
                 GC_mark_state = MS_PARTIALLY_INVALID;
             }
-            scan_ptr = GC_push_next_marked(scan_ptr);
-            if (scan_ptr == 0 && GC_mark_state == MS_PARTIALLY_INVALID) {
+            GC_scan_ptr = GC_push_next_marked(GC_scan_ptr);
+            if (NULL == GC_scan_ptr && GC_mark_state == MS_PARTIALLY_INVALID) {
                 GC_push_roots(TRUE, cold_gc_frame);
                 GC_objects_are_marked = TRUE;
                 if (GC_mark_state != MS_INVALID) {
@@ -578,8 +578,7 @@ handle_ex:
         STOP_WORLD();
 #     endif
       GC_invalidate_mark_state();
-      scan_ptr = 0;
-
+      GC_scan_ptr = NULL;
       ret_val = FALSE;
       goto rm_handler;  /* Back to platform-specific code. */
   }
@@ -906,7 +905,7 @@ STATIC unsigned GC_active_count = 0;    /* Number of active helpers.    */
 
 GC_INNER word GC_mark_no = 0;
 
-static mse *main_local_mark_stack;
+STATIC mse *GC_main_local_mark_stack;
 
 #ifdef LINT2
 # define LOCAL_MARK_STACK_SIZE (HBLKSIZE / 8)
@@ -928,17 +927,17 @@ GC_INNER void GC_wait_for_markers_init(void)
 
   /* Allocate the local mark stack for the thread that holds GC lock.   */
 # ifndef CAN_HANDLE_FORK
-    GC_ASSERT(NULL == main_local_mark_stack);
+    GC_ASSERT(NULL == GC_main_local_mark_stack);
 # else
-    if (NULL == main_local_mark_stack)
+    if (NULL == GC_main_local_mark_stack)
 # endif
   {
     size_t bytes_to_get =
                 ROUNDUP_PAGESIZE_IF_MMAP(LOCAL_MARK_STACK_SIZE * sizeof(mse));
-    main_local_mark_stack = (mse *)GET_MEM(bytes_to_get);
-    if (NULL == main_local_mark_stack)
+    GC_main_local_mark_stack = (mse *)GET_MEM(bytes_to_get);
+    if (NULL == GC_main_local_mark_stack)
       ABORT("Insufficient memory for main local_mark_stack");
-    GC_add_to_our_memory((ptr_t)main_local_mark_stack, bytes_to_get);
+    GC_add_to_our_memory((ptr_t)GC_main_local_mark_stack, bytes_to_get);
   }
 
   /* Reuse marker lock and builders count to synchronize        */
@@ -1207,7 +1206,7 @@ STATIC void GC_do_parallel_mark(void)
     GC_help_wanted = TRUE;
     GC_notify_all_marker();
         /* Wake up potential helpers.   */
-    GC_mark_local(main_local_mark_stack, 0);
+    GC_mark_local(GC_main_local_mark_stack, 0);
     GC_help_wanted = FALSE;
     /* Done; clean up.  */
     while (GC_helper_count > 0) {

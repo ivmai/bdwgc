@@ -469,19 +469,21 @@ typedef int mark_state_t;       /* Current state of marking, as follows:*/
                                 /* being pushed.  "I" holds, except     */
                                 /* that grungy roots may point to       */
                                 /* unmarked objects, as may marked      */
-                                /* grungy objects above scan_ptr.       */
+                                /* grungy objects above GC_scan_ptr.    */
 
 #define MS_PUSH_UNCOLLECTABLE 2 /* "I" holds, except that marked        */
-                                /* uncollectible objects above scan_ptr */
-                                /* may point to unmarked objects.       */
-                                /* Roots may point to unmarked objects  */
+                                /* uncollectible objects above          */
+                                /* GC_scan_ptr may point to unmarked    */
+                                /* objects.  Roots may point to         */
+                                /* unmarked objects.                    */
 
 #define MS_ROOTS_PUSHED 3       /* "I" holds, mark stack may be nonempty. */
 
 #define MS_PARTIALLY_INVALID 4  /* "I" may not hold, e.g. because of    */
-                                /* the mark stack overflow.  However    */
-                                /* marked heap objects below scan_ptr   */
-                                /* point to marked or stacked objects.  */
+                                /* the mark stack overflow.  However,   */
+                                /* marked heap objects below            */
+                                /* GC_scan_ptr point to marked or       */
+                                /* stacked objects.                     */
 
 #define MS_INVALID 5            /* "I" may not hold.                    */
 
