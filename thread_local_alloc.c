@@ -223,7 +223,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t bytes,
     void *result;
     void **tiny_fl;
 
-    GC_ASSERT(GC_gcj_malloc_initialized);
+    GC_ASSERT(GC_gcjobjfreelist != NULL);
     tiny_fl = ((GC_tlfs)GC_getspecific(GC_thread_key))->gcj_freelists;
     GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES,
                          GC_gcj_kind,

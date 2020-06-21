@@ -2426,9 +2426,6 @@ GC_EXTERN signed_word GC_bytes_found;
 #endif
 
 #ifdef GC_GCJ_SUPPORT
-# ifdef GC_ASSERTIONS
-    GC_EXTERN GC_bool GC_gcj_malloc_initialized; /* defined in gcj_mlc.c */
-# endif
   GC_EXTERN ptr_t * GC_gcjobjfreelist;
 #endif
 

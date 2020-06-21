@@ -39,13 +39,6 @@
 #include "gc_gcj.h"
 #include "private/dbg_mlc.h"
 
-#ifdef GC_ASSERTIONS
-  GC_INNER /* variable is also used in thread_local_alloc.c */
-#else
-  STATIC
-#endif
-GC_bool GC_gcj_malloc_initialized = FALSE;
-
 int GC_gcj_kind = 0;    /* Object kind for objects with descriptors     */
                         /* in "vtable".                                 */
 int GC_gcj_debug_kind = 0;
@@ -77,11 +70,11 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
 
     GC_init();  /* In case it's not already done.       */
     LOCK();
-    if (GC_gcj_malloc_initialized) {
+    if (GC_gcjobjfreelist != NULL) {
+      /* Already initialized.   */
       UNLOCK();
       return;
     }
-    GC_gcj_malloc_initialized = TRUE;
 #   ifdef GC_IGNORE_GCJ_INFO
       /* This is useful for debugging on platforms with missing getenv(). */
 #     define ignore_gcj_info TRUE
@@ -96,30 +89,27 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
     if ((unsigned)mp_index >= GC_n_mark_procs)
         ABORT("GC_init_gcj_malloc: bad index");
     /* Set up object kind gcj-style indirect descriptor. */
-      GC_gcjobjfreelist = (ptr_t *)GC_new_free_list_inner();
-      if (ignore_gcj_info) {
+    GC_gcjobjfreelist = (ptr_t *)GC_new_free_list_inner();
+    if (ignore_gcj_info) {
         /* Use a simple length-based descriptor, thus forcing a fully   */
         /* conservative scan.                                           */
         GC_gcj_kind = GC_new_kind_inner((void **)GC_gcjobjfreelist,
                                         /* 0 | */ GC_DS_LENGTH,
                                         TRUE, TRUE);
-      } else {
+        GC_gcj_debug_kind = GC_gcj_kind;
+    } else {
         GC_gcj_kind = GC_new_kind_inner(
                         (void **)GC_gcjobjfreelist,
                         (((word)(-(signed_word)MARK_DESCR_OFFSET
                                  - GC_INDIR_PER_OBJ_BIAS))
                          | GC_DS_PER_OBJECT),
                         FALSE, TRUE);
-      }
-    /* Set up object kind for objects that require mark proc call.      */
-      if (ignore_gcj_info) {
-        GC_gcj_debug_kind = GC_gcj_kind;
-      } else {
+        /* Set up object kind for objects that require mark proc call.  */
         GC_gcj_debug_kind = GC_new_kind_inner(GC_new_free_list_inner(),
                                 GC_MAKE_PROC(mp_index,
                                              1 /* allocated with debug info */),
                                 FALSE, TRUE);
-      }
+    }
     UNLOCK();
 #   undef ignore_gcj_info
 }
