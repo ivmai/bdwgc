@@ -74,6 +74,10 @@
 
 GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 
+GC_INNER unsigned GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
+
+GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
+
 GC_INNER GC_bool GC_debugging_started = FALSE;
                 /* defined here so we don't have to load dbg_mlc.o */
 

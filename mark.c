@@ -56,10 +56,6 @@ GC_API void GC_CALL GC_noop1(word x)
     GC_noop_sink = x;
 }
 
-/* mark_proc GC_mark_procs[MAX_MARK_PROCS] = {0} -- declared in gc_priv.h */
-
-GC_INNER unsigned GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
-
 /* Initialize GC_obj_kinds properly and standard free lists properly.   */
 /* This must be done statically since they may be accessed before       */
 /* GC_init is called.                                                   */
@@ -83,8 +79,6 @@ GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
                 /*, */ OK_DISCLAIM_INITZ },
 # endif
 };
-
-GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
 
 # ifndef INITIAL_MARK_STACK_SIZE
 #   define INITIAL_MARK_STACK_SIZE (1*HBLKSIZE)
