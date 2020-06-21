@@ -97,6 +97,7 @@ GC_API void GC_CALL GC_push_finalizer_structures(void)
 # endif
   GC_PUSH_ALL_SYM(GC_dl_hashtbl.head);
   GC_PUSH_ALL_SYM(GC_fnlz_roots);
+  /* GC_toggleref_arr is pushed specially by GC_mark_togglerefs.        */
 }
 
 /* Threshold of log_size to initiate full collection before growing     */
@@ -315,13 +316,13 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
   STATIC GC_toggleref_func GC_toggleref_callback = 0;
   STATIC GCToggleRef *GC_toggleref_arr = NULL;
-  STATIC int GC_toggleref_array_size = 0;
-  STATIC int GC_toggleref_array_capacity = 0;
+  STATIC size_t GC_toggleref_array_size = 0;
+  STATIC size_t GC_toggleref_array_capacity = 0;
 
   GC_INNER void GC_process_togglerefs(void)
   {
-    int i;
-    int new_size = 0;
+    size_t i;
+    size_t new_size = 0;
     GC_bool needs_barrier = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -377,7 +378,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
   STATIC void GC_mark_togglerefs(void)
   {
-    int i;
+    size_t i;
     if (NULL == GC_toggleref_arr)
       return;
 
@@ -393,7 +394,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
   STATIC void GC_clear_togglerefs(void)
   {
-    int i;
+    size_t i;
     for (i = 0; i < GC_toggleref_array_size; ++i) {
       if ((GC_toggleref_arr[i].weak_ref & 1) != 0) {
         if (!GC_is_marked(GC_REVEAL_POINTER(GC_toggleref_arr[i].weak_ref))) {
@@ -425,9 +426,8 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     return fn;
   }
 
-  static GC_bool ensure_toggleref_capacity(int capacity_inc)
+  static GC_bool ensure_toggleref_capacity(size_t capacity_inc)
   {
-    GC_ASSERT(capacity_inc >= 0);
     GC_ASSERT(I_HOLD_LOCK());
     if (NULL == GC_toggleref_arr) {
       GC_toggleref_array_capacity = 32; /* initial capacity */
@@ -437,14 +437,15 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
       if (NULL == GC_toggleref_arr)
         return FALSE;
     }
-    if ((unsigned)GC_toggleref_array_size + (unsigned)capacity_inc
-        >= (unsigned)GC_toggleref_array_capacity) {
+    if (GC_toggleref_array_size + capacity_inc
+        >= GC_toggleref_array_capacity) {
       GCToggleRef *new_array;
-      while ((unsigned)GC_toggleref_array_capacity
-              < (unsigned)GC_toggleref_array_size + (unsigned)capacity_inc) {
+      while (GC_toggleref_array_capacity
+              < GC_toggleref_array_size + capacity_inc) {
         GC_toggleref_array_capacity *= 2;
-        if (GC_toggleref_array_capacity < 0) /* overflow */
-          return FALSE;
+        if ((GC_toggleref_array_capacity
+             & ((size_t)1 << (sizeof(size_t) * 8 - 1))) != 0)
+          return FALSE; /* overflow */
       }
 
       new_array = (GCToggleRef *)GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
