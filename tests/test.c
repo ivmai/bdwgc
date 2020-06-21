@@ -2036,8 +2036,6 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
        UNTESTED(GC_deinit);
        UNTESTED(GC_strndup);
        UNTESTED(GC_posix_memalign);
-       UNTESTED(GC_new_free_list);
-       UNTESTED(GC_new_kind);
        UNTESTED(GC_new_proc);
        UNTESTED(GC_clear_roots);
        UNTESTED(GC_exclude_static_roots);
