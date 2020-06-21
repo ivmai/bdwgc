@@ -503,7 +503,7 @@ EXTERN_C_END
 # include <time.h>
 # define CLOCK_TYPE struct timespec
 # define CLOCK_TYPE_INITIALIZER { 0, 0 }
-# if defined(_POSIX_MONOTONIC_CLOCK)
+# if defined(_POSIX_MONOTONIC_CLOCK) && !defined(NINTENDO_SWITCH)
 #   define GET_TIME(x) \
                 do { \
                   if (clock_gettime(CLOCK_MONOTONIC, &x) == -1) \
