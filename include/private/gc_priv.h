@@ -509,6 +509,7 @@ EXTERN_C_END
       || (((defined(LINUX) && defined(__USE_POSIX199309)) \
            || defined(CYGWIN32)) && defined(_POSIX_TIMERS))
 # include <time.h>
+# define HAVE_CLOCK_GETTIME 1
 # define CLOCK_TYPE struct timespec
 # define CLOCK_TYPE_INITIALIZER { 0, 0 }
 # if defined(_POSIX_MONOTONIC_CLOCK) && !defined(NINTENDO_SWITCH)
@@ -531,7 +532,7 @@ EXTERN_C_END
 # define NS_FRAC_TIME_DIFF(a, b) \
     ((unsigned long)((a).tv_nsec + (1000000L*1000 - (b).tv_nsec)) % 1000000UL)
 
-#else /* !BSD_TIME && !NINTENDO_SWITCH && !NN_PLATFORM_CTR && !MSWIN32 */
+#else /* !BSD_TIME && !LINUX && !NN_PLATFORM_CTR && !MSWIN32 */
 # include <time.h>
 # if defined(FREEBSD) && !defined(CLOCKS_PER_SEC)
 #   include <machine/limits.h>
