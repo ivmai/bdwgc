@@ -36,9 +36,6 @@ struct roots GC_static_roots[MAX_ROOT_SETS];
 
 int GC_no_dls = 0;      /* Register dynamic library data segments.      */
 
-static int n_root_sets = 0;
-        /* GC_static_roots[0..n_root_sets) contains the valid root sets. */
-
 #if !defined(NO_DEBUGGING) || defined(GC_ASSERTIONS)
   /* Should return the same value as GC_root_size.      */
   GC_INNER word GC_compute_root_size(void)
@@ -270,8 +267,6 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
     GC_root_size += e - b;
     n_root_sets++;
 }
-
-STATIC GC_bool GC_roots_were_cleared = FALSE;
 
 GC_API void GC_CALL GC_clear_roots(void)
 {
@@ -531,8 +526,6 @@ struct exclusion GC_excl_table[MAX_EXCLUSIONS];
                                         -- Array of exclusions, ascending
                                         -- address order.
 */
-
-STATIC size_t GC_excl_table_entries = 0;/* Number of entries in use.      */
 
 GC_API void GC_CALL GC_clear_exclusion_table(void)
 {

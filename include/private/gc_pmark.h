@@ -74,8 +74,6 @@ GC_EXTERN unsigned GC_n_mark_procs;
 /* Number of mark stack entries to discard on overflow. */
 #define GC_MARK_STACK_DISCARDS (INITIAL_MARK_STACK_SIZE/8)
 
-GC_EXTERN size_t GC_mark_stack_size;
-
 #ifdef PARALLEL_MARK
     /*
      * Allow multiple threads to participate in the marking process.
@@ -442,14 +440,6 @@ GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
     } \
   } while (0)
 
-GC_EXTERN GC_bool GC_mark_stack_too_small;
-                                /* We need a larger mark stack.  May be */
-                                /* set by client supplied mark routines.*/
-
-typedef int mark_state_t;       /* Current state of marking, as follows:*/
-                                /* Used to remember where we are during */
-                                /* concurrent marking.                  */
-
                                 /* We say something is dirty if it was  */
                                 /* written since the last time we       */
                                 /* retrieved dirty bits.  We say it's   */
@@ -486,8 +476,6 @@ typedef int mark_state_t;       /* Current state of marking, as follows:*/
                                 /* stacked objects.                     */
 
 #define MS_INVALID 5            /* "I" may not hold.                    */
-
-GC_EXTERN mark_state_t GC_mark_state;
 
 EXTERN_C_END
 

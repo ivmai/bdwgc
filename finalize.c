@@ -70,8 +70,6 @@ struct finalizable_object {
     finalization_mark_proc fo_mark_proc;        /* Mark-through procedure */
 };
 
-STATIC unsigned GC_log_fo_table_size = 0;
-
 STATIC struct fnlz_roots_s {
   struct finalizable_object **fo_head;
   /* List of objects that should be finalized now: */
@@ -316,8 +314,6 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
   STATIC GC_toggleref_func GC_toggleref_callback = 0;
   STATIC GCToggleRef *GC_toggleref_arr = NULL;
-  STATIC size_t GC_toggleref_array_size = 0;
-  STATIC size_t GC_toggleref_array_capacity = 0;
 
   GC_INNER void GC_process_togglerefs(void)
   {

@@ -97,26 +97,11 @@ GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
                                 /* Used for logging only.               */
 #endif
 
-GC_INNER size_t GC_mark_stack_size = 0;
-
 #ifdef PARALLEL_MARK
-  STATIC volatile AO_t GC_first_nonempty = 0;
-        /* Lowest entry on mark stack   */
-        /* that may be nonempty.        */
-        /* Updated only by initiating   */
-        /* thread.                      */
-
   GC_INNER GC_bool GC_parallel_mark_disabled = FALSE;
 #endif
 
-GC_INNER mark_state_t GC_mark_state = MS_NONE;
-
-GC_INNER GC_bool GC_mark_stack_too_small = FALSE;
-
 STATIC struct hblk * GC_scan_ptr;
-
-STATIC GC_bool GC_objects_are_marked = FALSE;
-                /* Are there collectible marked objects in the heap?    */
 
 /* Is a collection in progress?  Note that this can return true in the  */
 /* non-incremental case, if a collection has been abandoned and the     */
@@ -1521,8 +1506,6 @@ struct trace_entry {
     word arg1;
     word arg2;
 } GC_trace_buf[TRACE_ENTRIES] = { { NULL, 0, 0, 0, 0 } };
-
-int GC_trace_buf_ptr = 0;
 
 void GC_add_trace_entry(char *kind, word arg1, word arg2)
 {

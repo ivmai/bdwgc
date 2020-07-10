@@ -1284,6 +1284,10 @@ typedef struct GC_ms_entry {
                         /* as described in gc_mark.h.                   */
 } mse;
 
+typedef int mark_state_t;   /* Current state of marking, as follows:    */
+                            /* Used to remember where we are during     */
+                            /* concurrent marking.                      */
+
 /* Lists of all heap blocks and free lists      */
 /* as well as other random data structures      */
 /* that should not be scanned by the            */
@@ -1345,7 +1349,10 @@ struct _GC_arrays {
         /* finalizers were running.  Used to approximate memory */
         /* explicitly deallocated by finalizers.                */
   ptr_t _scratch_end_ptr;
+        /* GC_scratch_end_ptr is end point of the current scratch area. */
   ptr_t _scratch_last_end_ptr;
+        /* GC_scratch_last_end_ptr is the end point of the last */
+        /* obtained scratch area.                               */
         /* Used by headers.c, and can easily appear to point to */
         /* heap.  Also used by GC_register_dynamic_libraries(). */
   mse *_mark_stack;
@@ -1371,10 +1378,74 @@ struct _GC_arrays {
 #   define GC_unmapped_bytes 0
 # endif
   bottom_index * _all_nils;
+# ifdef PARALLEL_MARK
+#   define GC_first_nonempty GC_arrays._first_nonempty
+    volatile AO_t _first_nonempty;
+                        /* Lowest entry on mark stack that may be       */
+                        /* nonempty. Updated only by initiating thread. */
+# endif
+# define GC_mark_stack_size GC_arrays._mark_stack_size
+  size_t _mark_stack_size;
+# define GC_mark_state GC_arrays._mark_state
+  mark_state_t _mark_state; /* Initialized to MS_NONE (0). */
+# define GC_mark_stack_too_small GC_arrays._mark_stack_too_small
+  GC_bool _mark_stack_too_small;
+                        /* We need a larger mark stack.  May be set by  */
+                        /* client supplied mark routines.               */
+# define GC_objects_are_marked GC_arrays._objects_are_marked
+  GC_bool _objects_are_marked;
+                /* Are there collectible marked objects in the heap?    */
 # ifdef ENABLE_TRACE
 #   define GC_trace_addr GC_arrays._trace_addr
     ptr_t _trace_addr;
 # endif
+# define GC_n_heap_sects GC_arrays._n_heap_sects
+  word _n_heap_sects;   /* Number of separately added heap sections.    */
+# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+#   define GC_n_heap_bases GC_arrays._n_heap_bases
+    word _n_heap_bases; /* See GC_heap_bases.   */
+# endif
+# ifdef USE_PROC_FOR_LIBRARIES
+#   define GC_n_memory GC_arrays._n_memory
+    word _n_memory;     /* Number of GET_MEM allocated memory sections. */
+# endif
+# define GC_fo_entries GC_arrays._fo_entries
+  word _fo_entries;
+# ifndef GC_NO_FINALIZATION
+#   define GC_log_fo_table_size GC_arrays._log_fo_table_size
+    unsigned _log_fo_table_size;
+#   ifndef GC_TOGGLE_REFS_NOT_NEEDED
+#     define GC_toggleref_array_size GC_arrays._toggleref_array_size
+#     define GC_toggleref_array_capacity GC_arrays._toggleref_array_capacity
+      size_t _toggleref_array_size;
+      size_t _toggleref_array_capacity;
+#   endif
+# endif
+# ifdef TRACE_BUF
+#   define GC_trace_buf_ptr GC_arrays._trace_buf_ptr
+    int _trace_buf_ptr;
+# endif
+# ifdef ENABLE_DISCLAIM
+#   define GC_finalized_kind GC_arrays._finalized_kind
+    int _finalized_kind;
+# endif
+# define n_root_sets GC_arrays._n_root_sets
+# define GC_excl_table_entries GC_arrays._excl_table_entries
+# define GC_roots_were_cleared GC_arrays._roots_were_cleared
+  int _n_root_sets;     /* GC_static_roots[0..n_root_sets) contains the */
+                        /* valid root sets.                             */
+  size_t _excl_table_entries;   /* Number of entries in use.    */
+  GC_bool _roots_were_cleared;
+# define GC_explicit_typing_initialized GC_arrays._explicit_typing_initialized
+# define GC_ed_size GC_arrays._ed_size
+# define GC_avail_descr GC_arrays._avail_descr
+# ifdef AO_HAVE_load_acquire
+    volatile AO_t _explicit_typing_initialized;
+# else
+    GC_bool _explicit_typing_initialized;
+# endif
+  size_t _ed_size;      /* Current size of above arrays.        */
+  size_t _avail_descr;  /* Next available slot.                 */
   GC_mark_proc _mark_procs[MAX_MARK_PROCS];
         /* Table of user-defined mark procedures.  There is     */
         /* a small number of these, which can be referenced     */
@@ -1582,14 +1653,6 @@ GC_EXTERN struct obj_kind {
 #endif
 
 GC_EXTERN unsigned GC_n_kinds;
-
-GC_EXTERN word GC_n_heap_sects; /* Number of separately added heap      */
-                                /* sections.                            */
-
-#ifdef USE_PROC_FOR_LIBRARIES
-  GC_EXTERN word GC_n_memory;   /* Number of GET_MEM allocated memory   */
-                                /* sections.                            */
-#endif
 
 GC_EXTERN size_t GC_page_size;
 
@@ -1976,7 +2039,7 @@ GC_INNER void GC_freehblk(struct hblk * p);
                                 /* Deallocate a heap block and mark it  */
                                 /* as invalid.                          */
 
-/*  Misc GC: */
+/*  Miscellaneous GC routines.  */
 GC_INNER GC_bool GC_expand_hp_inner(word n);
 GC_INNER void GC_start_reclaim(GC_bool abort_if_found);
                                 /* Restore unmarked objects to free     */
@@ -2280,8 +2343,6 @@ void GC_print_block_list(void);
 void GC_print_hblkfreelist(void);
 void GC_print_heap_sects(void);
 void GC_print_static_roots(void);
-
-extern word GC_fo_entries; /* should be visible in extra/MacOS.c */
 
 #ifdef KEEP_BACK_PTRS
    GC_INNER void GC_store_back_pointer(ptr_t source, ptr_t dest);

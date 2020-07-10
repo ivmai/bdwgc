@@ -1879,8 +1879,6 @@ void GC_register_data_segments(void)
   }
 # endif /* USE_WINALLOC && !REDIRECT_MALLOC */
 
-  STATIC word GC_n_heap_bases = 0;      /* See GC_heap_bases.   */
-
   /* Is p the start of either the malloc heap, or of one of our */
   /* heap sections?                                             */
   GC_INNER GC_bool GC_is_heap_base(void *p)

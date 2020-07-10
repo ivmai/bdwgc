@@ -1280,14 +1280,6 @@ GC_API void GC_CALL GC_gcollect_and_unmap(void)
     (void)GC_try_to_collect_general(GC_never_stop_func, TRUE);
 }
 
-GC_INNER word GC_n_heap_sects = 0;
-                        /* Number of sections currently in heap. */
-
-#ifdef USE_PROC_FOR_LIBRARIES
-  GC_INNER word GC_n_memory = 0;
-                        /* Number of GET_MEM allocated memory sections. */
-#endif
-
 #ifdef USE_PROC_FOR_LIBRARIES
   /* Add HBLKSIZE aligned, GET_MEM-generated block to GC_our_memory. */
   /* Defined to do nothing if USE_PROC_FOR_LIBRARIES not set.       */
@@ -1493,8 +1485,6 @@ GC_API int GC_CALL GC_expand_hp(size_t bytes)
     UNLOCK();
     return(result);
 }
-
-word GC_fo_entries = 0; /* used also in extra/MacOS.c */
 
 GC_INNER unsigned GC_fail_count = 0;
                         /* How many consecutive GC/expansion failures?  */

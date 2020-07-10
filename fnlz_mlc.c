@@ -20,8 +20,6 @@
 #include "gc_inline.h" /* for GC_malloc_kind */
 #include "private/dbg_mlc.h" /* for oh type */
 
-STATIC int GC_finalized_kind = 0;
-
 #if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
   /* The first bit is already used for a debug purpose. */
 # define FINALIZER_CLOSURE_FLAG 0x2

@@ -98,19 +98,10 @@ STATIC typed_ext_descr_t * GC_ext_descriptors = NULL;
                                         /* Points to array of extended  */
                                         /* descriptors.                 */
 
-STATIC size_t GC_ed_size = 0;   /* Current size of above arrays.        */
 #define ED_INITIAL_SIZE 100
-
-STATIC size_t GC_avail_descr = 0;       /* Next available slot.         */
 
 STATIC int GC_typed_mark_proc_index = 0; /* Indices of my mark          */
 STATIC int GC_array_mark_proc_index = 0; /* procedures.                 */
-
-#ifdef AO_HAVE_load_acquire
-  STATIC volatile AO_t GC_explicit_typing_initialized = FALSE;
-#else
-  STATIC GC_bool GC_explicit_typing_initialized = FALSE;
-#endif
 
 STATIC void GC_push_typed_structures_proc(void)
 {
