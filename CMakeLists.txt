@@ -69,11 +69,6 @@ option(install_headers "Install header files" ON)
 
 add_definitions("-DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
 
-if (APPLE AND ("${CMAKE_OSX_ARCHITECTURES}" STREQUAL ""))
-    set(CMAKE_OSX_ARCHITECTURES "x86_64;i386"
-        CACHE STRING "Build architectures for Mac OS X" FORCE)
-endif()
-
 # Set struct packing alignment to word (instead of 1-byte).
 if (BORLAND)
   add_compile_options(/a4)
