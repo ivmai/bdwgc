@@ -417,7 +417,6 @@ void *test(void *data)
 int main(void)
 {
   unsigned weakobj_kind;
-  void **weakobj_free_list;
 # ifdef GC_PTHREADS
     int i;
     pthread_t th[NTHREADS];
@@ -434,10 +433,7 @@ int main(void)
 # endif
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
-
-  weakobj_free_list = GC_new_free_list();
-  CHECK_OOM(weakobj_free_list);
-  weakobj_kind = GC_new_kind(weakobj_free_list, /* 0 | */ GC_DS_LENGTH,
+  weakobj_kind = GC_new_kind(GC_new_free_list(), /* 0 | */ GC_DS_LENGTH,
                              1 /* adjust */, 1 /* clear */);
   GC_register_disclaim_proc(weakobj_kind, weakmap_disclaim,
                             1 /* mark_unconditionally */);
