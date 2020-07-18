@@ -2058,7 +2058,7 @@ GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
 {
     unsigned result = GC_n_kinds;
 
-    GC_ASSERT(fl != NULL);
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(fl));
     GC_ASSERT(adjust == FALSE || adjust == TRUE);
     /* If an object is not needed to be cleared (when moved to the      */
     /* free list) then its descriptor should be zero to denote          */
