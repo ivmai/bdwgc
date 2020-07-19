@@ -45,8 +45,6 @@ int GC_gcj_debug_kind = 0;
                         /* The kind of objects that is always marked    */
                         /* with a mark proc call.                       */
 
-GC_INNER ptr_t * GC_gcjobjfreelist = NULL;
-
 STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr GC_ATTR_UNUSED,
                         struct GC_ms_entry *mark_stack_ptr,
                         struct GC_ms_entry * mark_stack_limit GC_ATTR_UNUSED,

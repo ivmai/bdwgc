@@ -44,18 +44,6 @@ struct disappearing_link {
     word dl_hidden_obj;         /* Pointer to object base       */
 };
 
-struct dl_hashtbl_s {
-    struct disappearing_link **head;
-    word entries;
-    unsigned log_size;
-};
-
-STATIC struct dl_hashtbl_s GC_dl_hashtbl = {
-    /* head */ NULL, /* entries */ 0, /* log_size */ 0 };
-#ifndef GC_LONG_REFS_NOT_NEEDED
-  STATIC struct dl_hashtbl_s GC_ll_hashtbl = { NULL, 0, 0 };
-#endif
-
 struct finalizable_object {
     struct hash_chain_entry prolog;
 #   define fo_hidden_base prolog.hidden_key
@@ -69,12 +57,6 @@ struct finalizable_object {
     word fo_object_size;        /* In bytes.                    */
     finalization_mark_proc fo_mark_proc;        /* Mark-through procedure */
 };
-
-STATIC struct fnlz_roots_s {
-  struct finalizable_object **fo_head;
-  /* List of objects that should be finalized now: */
-  struct finalizable_object *finalize_now;
-} GC_fnlz_roots = { NULL, NULL };
 
 #ifdef AO_HAVE_store
   /* Update finalize_now atomically as GC_should_invoke_finalizers does */
@@ -306,14 +288,9 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
 /* Toggle-ref support.  */
 #ifndef GC_TOGGLE_REFS_NOT_NEEDED
-  typedef union {
-    /* Lowest bit is used to distinguish between choices.       */
-    void *strong_ref;
-    GC_hidden_pointer weak_ref;
-  } GCToggleRef;
+  typedef union toggle_ref_u GCToggleRef;
 
   STATIC GC_toggleref_func GC_toggleref_callback = 0;
-  STATIC GCToggleRef *GC_toggleref_arr = NULL;
 
   GC_INNER void GC_process_togglerefs(void)
   {
@@ -378,7 +355,6 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     if (NULL == GC_toggleref_arr)
       return;
 
-    /* TODO: Hide GC_toggleref_arr to avoid its marking from roots. */
     GC_set_mark_bit(GC_toggleref_arr);
     for (i = 0; i < GC_toggleref_array_size; ++i) {
       void *obj = GC_toggleref_arr[i].strong_ref;

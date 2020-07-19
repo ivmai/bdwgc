@@ -274,7 +274,9 @@ GC_API void GC_CALL GC_clear_roots(void)
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
-    GC_roots_were_cleared = TRUE;
+#   ifdef THREADS
+      GC_roots_were_cleared = TRUE;
+#   endif
     n_root_sets = 0;
     GC_root_size = 0;
 #   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
@@ -833,27 +835,6 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
 
 GC_INNER void (*GC_push_typed_structures)(void) = 0;
 
-                        /* Push GC internal roots.  These are normally  */
-                        /* included in the static data segment, and     */
-                        /* Thus implicitly pushed.  But we must do this */
-                        /* explicitly if normal root processing is      */
-                        /* disabled.                                    */
-/*
- * Push GC internal roots.  Only called if there is some reason to believe
- * these would not otherwise get registered.
- */
-STATIC void GC_push_gc_structures(void)
-{
-#   ifndef GC_NO_FINALIZATION
-      GC_push_finalizer_structures();
-#   endif
-#   if defined(THREADS)
-      GC_push_thread_structures();
-#   endif
-    if( GC_push_typed_structures )
-      GC_push_typed_structures();
-}
-
 GC_INNER void GC_cond_register_dynamic_libraries(void)
 {
 # if (defined(DYNAMIC_LOADING) && !defined(MSWIN_XBOX1)) \
@@ -919,9 +900,15 @@ GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame GC_ATTR_UNUSED)
 
     /* Mark from GC internal roots if those might otherwise have        */
     /* been excluded.                                                   */
-    if (GC_no_dls || GC_roots_were_cleared) {
-        GC_push_gc_structures();
-    }
+#   ifndef GC_NO_FINALIZATION
+        GC_push_finalizer_structures();
+#   endif
+#   ifdef THREADS
+        if (GC_no_dls || GC_roots_were_cleared)
+            GC_push_thread_structures();
+#   endif
+    if (GC_push_typed_structures)
+        GC_push_typed_structures();
 
     /* Mark thread local free lists, even if their mark        */
     /* descriptor excludes the link field.                     */

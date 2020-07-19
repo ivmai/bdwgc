@@ -50,14 +50,6 @@ STATIC int GC_array_kind = 0;
                         /* Object kind for objects with complex         */
                         /* descriptors and GC_array_mark_proc.          */
 
-/* Extended descriptors.  GC_typed_mark_proc understands these. */
-/* These are used for simple objects that are larger than what  */
-/* can be described by a BITMAP_BITS sized bitmap.              */
-typedef struct {
-        word ed_bitmap; /* lsb corresponds to first word.       */
-        GC_bool ed_continued;   /* next entry is continuation.  */
-} typed_ext_descr_t;
-
 /* Array descriptors.  GC_array_mark_proc understands these.    */
 /* We may eventually need to add provisions for headers and     */
 /* trailers.  Hence we provide for tree structured descriptors, */
@@ -93,10 +85,6 @@ typedef union ComplexDescriptor {
     struct SequenceDescriptor sd;
 } complex_descriptor;
 #define TAG ad.ad_tag
-
-STATIC typed_ext_descr_t * GC_ext_descriptors = NULL;
-                                        /* Points to array of extended  */
-                                        /* descriptors.                 */
 
 #define ED_INITIAL_SIZE 100
 

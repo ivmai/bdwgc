@@ -101,8 +101,6 @@ GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
   GC_INNER GC_bool GC_parallel_mark_disabled = FALSE;
 #endif
 
-STATIC struct hblk * GC_scan_ptr;
-
 /* Is a collection in progress?  Note that this can return true in the  */
 /* non-incremental case, if a collection has been abandoned and the     */
 /* mark state is now MS_INVALID.                                        */
@@ -889,8 +887,6 @@ STATIC unsigned GC_active_count = 0;    /* Number of active helpers.    */
                                         /* stays zero for the cycle.    */
 
 GC_INNER word GC_mark_no = 0;
-
-STATIC mse *GC_main_local_mark_stack;
 
 #ifdef LINT2
 # define LOCAL_MARK_STACK_SIZE (HBLKSIZE / 8)

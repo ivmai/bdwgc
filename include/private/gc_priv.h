@@ -1288,6 +1288,35 @@ typedef int mark_state_t;   /* Current state of marking, as follows:    */
                             /* Used to remember where we are during     */
                             /* concurrent marking.                      */
 
+struct disappearing_link;
+struct finalizable_object;
+
+struct dl_hashtbl_s {
+    struct disappearing_link **head;
+    word entries;
+    unsigned log_size;
+};
+
+struct fnlz_roots_s {
+  struct finalizable_object **fo_head;
+  /* List of objects that should be finalized now: */
+  struct finalizable_object *finalize_now;
+};
+
+union toggle_ref_u {
+  /* The lowest bit is used to distinguish between choices.     */
+  void *strong_ref;
+  GC_hidden_pointer weak_ref;
+};
+
+/* Extended descriptors.  GC_typed_mark_proc understands these. */
+/* These are used for simple objects that are larger than what  */
+/* can be described by a BITMAP_BITS sized bitmap.              */
+typedef struct {
+    word ed_bitmap;     /* lsb corresponds to first word.       */
+    GC_bool ed_continued;       /* next entry is continuation.  */
+} typed_ext_descr_t;
+
 /* Lists of all heap blocks and free lists      */
 /* as well as other random data structures      */
 /* that should not be scanned by the            */
@@ -1348,6 +1377,14 @@ struct _GC_arrays {
         /* Bytes of memory explicitly deallocated while         */
         /* finalizers were running.  Used to approximate memory */
         /* explicitly deallocated by finalizers.                */
+  bottom_index *_all_bottom_indices;
+        /* Pointer to the first (lowest address) bottom_index;  */
+        /* assumes the lock is held.                            */
+  bottom_index *_all_bottom_indices_end;
+        /* Pointer to the last (highest address) bottom_index;  */
+        /* assumes the lock is held.                            */
+  ptr_t _scratch_free_ptr;
+  hdr *_hdr_free_list;
   ptr_t _scratch_end_ptr;
         /* GC_scratch_end_ptr is end point of the current scratch area. */
   ptr_t _scratch_last_end_ptr;
@@ -1378,7 +1415,11 @@ struct _GC_arrays {
 #   define GC_unmapped_bytes 0
 # endif
   bottom_index * _all_nils;
+# define GC_scan_ptr GC_arrays._scan_ptr
+  struct hblk * _scan_ptr;
 # ifdef PARALLEL_MARK
+#   define GC_main_local_mark_stack GC_arrays._main_local_mark_stack
+    mse *_main_local_mark_stack;
 #   define GC_first_nonempty GC_arrays._first_nonempty
     volatile AO_t _first_nonempty;
                         /* Lowest entry on mark stack that may be       */
@@ -1409,14 +1450,28 @@ struct _GC_arrays {
 #   define GC_n_memory GC_arrays._n_memory
     word _n_memory;     /* Number of GET_MEM allocated memory sections. */
 # endif
+# ifdef GC_GCJ_SUPPORT
+#   define GC_gcjobjfreelist GC_arrays._gcjobjfreelist
+    ptr_t *_gcjobjfreelist;
+# endif
 # define GC_fo_entries GC_arrays._fo_entries
   word _fo_entries;
 # ifndef GC_NO_FINALIZATION
+#   define GC_dl_hashtbl GC_arrays._dl_hashtbl
+#   define GC_fnlz_roots GC_arrays._fnlz_roots
 #   define GC_log_fo_table_size GC_arrays._log_fo_table_size
+#   ifndef GC_LONG_REFS_NOT_NEEDED
+#     define GC_ll_hashtbl GC_arrays._ll_hashtbl
+      struct dl_hashtbl_s _ll_hashtbl;
+#   endif
+    struct dl_hashtbl_s _dl_hashtbl;
+    struct fnlz_roots_s _fnlz_roots;
     unsigned _log_fo_table_size;
 #   ifndef GC_TOGGLE_REFS_NOT_NEEDED
+#     define GC_toggleref_arr GC_arrays._toggleref_arr
 #     define GC_toggleref_array_size GC_arrays._toggleref_array_size
 #     define GC_toggleref_array_capacity GC_arrays._toggleref_array_capacity
+      union toggle_ref_u *_toggleref_arr;
       size_t _toggleref_array_size;
       size_t _toggleref_array_capacity;
 #   endif
@@ -1431,14 +1486,17 @@ struct _GC_arrays {
 # endif
 # define n_root_sets GC_arrays._n_root_sets
 # define GC_excl_table_entries GC_arrays._excl_table_entries
-# define GC_roots_were_cleared GC_arrays._roots_were_cleared
   int _n_root_sets;     /* GC_static_roots[0..n_root_sets) contains the */
                         /* valid root sets.                             */
   size_t _excl_table_entries;   /* Number of entries in use.    */
-  GC_bool _roots_were_cleared;
+# ifdef THREADS
+#   define GC_roots_were_cleared GC_arrays._roots_were_cleared
+    GC_bool _roots_were_cleared;
+# endif
 # define GC_explicit_typing_initialized GC_arrays._explicit_typing_initialized
 # define GC_ed_size GC_arrays._ed_size
 # define GC_avail_descr GC_arrays._avail_descr
+# define GC_ext_descriptors GC_arrays._ext_descriptors
 # ifdef AO_HAVE_load_acquire
     volatile AO_t _explicit_typing_initialized;
 # else
@@ -1446,6 +1504,8 @@ struct _GC_arrays {
 # endif
   size_t _ed_size;      /* Current size of above arrays.        */
   size_t _avail_descr;  /* Next available slot.                 */
+  typed_ext_descr_t *_ext_descriptors;  /* Points to array of extended  */
+                                        /* descriptors.                 */
   GC_mark_proc _mark_procs[MAX_MARK_PROCS];
         /* Table of user-defined mark procedures.  There is     */
         /* a small number of these, which can be referenced     */
@@ -1570,6 +1630,10 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define GC_modws_valid_offsets GC_arrays._modws_valid_offsets
 #define GC_prev_heap_addr GC_arrays._prev_heap_addr
 #define GC_requested_heapsize GC_arrays._requested_heapsize
+#define GC_all_bottom_indices GC_arrays._all_bottom_indices
+#define GC_all_bottom_indices_end GC_arrays._all_bottom_indices_end
+#define GC_scratch_free_ptr GC_arrays._scratch_free_ptr
+#define GC_hdr_free_list GC_arrays._hdr_free_list
 #define GC_scratch_end_ptr GC_arrays._scratch_end_ptr
 #define GC_scratch_last_end_ptr GC_arrays._scratch_last_end_ptr
 #define GC_size_map GC_arrays._size_map
@@ -2484,10 +2548,6 @@ GC_EXTERN signed_word GC_bytes_found;
 #ifdef THREAD_LOCAL_ALLOC
   GC_EXTERN GC_bool GC_world_stopped; /* defined in alloc.c */
   GC_INNER void GC_mark_thread_local_free_lists(void);
-#endif
-
-#ifdef GC_GCJ_SUPPORT
-  GC_EXTERN ptr_t * GC_gcjobjfreelist;
 #endif
 
 #if defined(MPROTECT_VDB) && defined(GWW_VDB)
