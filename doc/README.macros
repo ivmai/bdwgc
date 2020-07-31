@@ -571,6 +571,9 @@ GC_INITIAL_HEAP_SIZE=<value>    Set the desired default initial heap size
 GC_FREE_SPACE_DIVISOR=<value>   Set alternate default GC_free_space_divisor
   value.
 
+GC_ALLOCD_BYTES_PER_FINALIZER=<value>   Set alternate default value of
+  GC_allocd_bytes_per_finalizer.
+
 GC_TIME_LIMIT=<milliseconds>    Set alternate default GC_time_limit value
   (setting this to GC_TIME_UNLIMITED will essentially disable incremental
   collection while leaving generational collection enabled).

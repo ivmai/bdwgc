@@ -1993,6 +1993,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
          UNTESTED(GetSymbolNameFromStack);
 #      endif
        UNTESTED(GC_abort_on_oom);
+       UNTESTED(GC_get_allocd_bytes_per_finalizer);
        UNTESTED(GC_get_bytes_since_gc);
        UNTESTED(GC_get_dont_expand);
        UNTESTED(GC_get_dont_precollect);
@@ -2015,6 +2016,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
        UNTESTED(GC_get_time_limit);
        UNTESTED(GC_get_warn_proc);
        UNTESTED(GC_is_disabled);
+       UNTESTED(GC_set_allocd_bytes_per_finalizer);
        UNTESTED(GC_set_dont_precollect);
        UNTESTED(GC_set_finalize_on_demand);
        UNTESTED(GC_set_finalizer_notifier);

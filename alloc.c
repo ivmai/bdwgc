@@ -1490,6 +1490,26 @@ GC_INNER unsigned GC_fail_count = 0;
                         /* How many consecutive GC/expansion failures?  */
                         /* Reset by GC_allochblk.                       */
 
+/* The minimum value of the ratio of allocated bytes since the latest   */
+/* GC to the amount of finalizers created since that GC which triggers  */
+/* the collection instead heap expansion.  Has no effect in the         */
+/* incremental mode.                                                    */
+#if defined(GC_ALLOCD_BYTES_PER_FINALIZER) && !defined(CPPCHECK)
+  STATIC word GC_allocd_bytes_per_finalizer = GC_ALLOCD_BYTES_PER_FINALIZER;
+#else
+  STATIC word GC_allocd_bytes_per_finalizer = 10000;
+#endif
+
+GC_API void GC_CALL GC_set_allocd_bytes_per_finalizer(GC_word value)
+{
+  GC_allocd_bytes_per_finalizer = value;
+}
+
+GC_API GC_word GC_CALL GC_get_allocd_bytes_per_finalizer(void)
+{
+  return GC_allocd_bytes_per_finalizer;
+}
+
 static word last_fo_entries = 0;
 static word last_bytes_finalized = 0;
 
@@ -1509,8 +1529,10 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
     DISABLE_CANCEL(cancel_state);
     if (!GC_incremental && !GC_dont_gc &&
         ((GC_dont_expand && GC_bytes_allocd > 0)
-         || (GC_fo_entries > (last_fo_entries + 500)
-             && (last_bytes_finalized | GC_bytes_finalized) != 0)
+         || (GC_fo_entries > last_fo_entries
+             && (last_bytes_finalized | GC_bytes_finalized) != 0
+             && (GC_fo_entries - last_fo_entries)
+                * GC_allocd_bytes_per_finalizer > GC_bytes_allocd)
          || GC_should_collect())) {
       /* Try to do a full collection using 'default' stop_func (unless  */
       /* nothing has been allocated since the latest collection or heap */
