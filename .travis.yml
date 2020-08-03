@@ -126,7 +126,7 @@ jobs:
     compiler: gcc
     env:
     - CFLAGS_EXTRA="-std=c11 -D GC_NO_SIGSETJMP"
-    - CONF_OPTIONS="--disable-threads --enable-gc-assertions --enable-cplusplus"
+    - CONF_OPTIONS="--disable-threads --enable-gc-assertions"
   - os: linux
     compiler: gcc
     env:
