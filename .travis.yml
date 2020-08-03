@@ -158,7 +158,7 @@ jobs:
   - compiler: gcc
     env:
     - CFLAGS_EXTRA="-std=c11 -D GC_NO_SIGSETJMP"
-    - CONF_OPTIONS="--disable-threads --enable-gc-assertions --enable-cplusplus"
+    - CONF_OPTIONS="--disable-threads --enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
     env:
