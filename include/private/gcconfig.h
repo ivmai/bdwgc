@@ -3229,7 +3229,8 @@ EXTERN_C_BEGIN
 # define NO_SA_SIGACTION
 #endif
 
-#if defined(NO_SA_SIGACTION) && defined(MPROTECT_VDB) && !defined(DARWIN) \
+#if (defined(NO_SA_SIGACTION) || defined(GC_NO_SIGSETJMP)) \
+    && defined(MPROTECT_VDB) && !defined(DARWIN) \
     && !defined(MSWIN32) && !defined(MSWINCE)
 # undef MPROTECT_VDB
 #endif
