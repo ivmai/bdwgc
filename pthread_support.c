@@ -1219,7 +1219,18 @@ static void fork_child_proc(void)
 
 #ifdef PARALLEL_MARK
   static void setup_mark_lock(void);
-#endif
+
+  static unsigned required_markers_cnt = 0;
+                        /* The default value (0) means the number of    */
+                        /* markers should be selected automatically.    */
+#endif /* PARALLEL_MARK */
+
+GC_API void GC_CALL GC_set_markers_count(unsigned markers GC_ATTR_UNUSED)
+{
+# ifdef PARALLEL_MARK
+    required_markers_cnt = markers < MAX_MARKERS ? markers : MAX_MARKERS;
+# endif
+}
 
 GC_INNER void GC_thr_init(void)
 {
@@ -1309,7 +1320,7 @@ GC_INNER void GC_thr_init(void)
 #   ifdef PARALLEL_MARK
       {
         char * markers_string = GETENV("GC_MARKERS");
-        int markers;
+        int markers = required_markers_cnt;
 
         if (markers_string != NULL) {
           markers = atoi(markers_string);
@@ -1318,7 +1329,10 @@ GC_INNER void GC_thr_init(void)
                  "; using maximum threads\n", (signed_word)markers);
             markers = MAX_MARKERS;
           }
-        } else {
+        } else if (0 == markers) {
+          /* Unless the client sets the desired number of       */
+          /* parallel markers, it is determined based on the    */
+          /* number of CPU cores.                               */
           markers = GC_nprocs;
 #         if defined(GC_MIN_MARKERS) && !defined(CPPCHECK)
             /* This is primarily for targets without getenv().  */

@@ -87,6 +87,10 @@ GC_NOT_DLL      User-settable macro that overrides _DLL, e.g. if runtime
                 dynamic libraries are used, but the collector is in a static
                 library.  Tested by gc_config_macros.h.
 
+GC_MARKERS=<n>  Set the desired number of marker threads.  If not defined or
+                defined to zero, then the collector decides based on the
+                number of CPU cores.  Only if compiled with PARALLEL_MARK.
+
 
 These define arguments influence the collector configuration:
 

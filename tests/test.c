@@ -2361,6 +2361,7 @@ int main(void)
       GC_use_threads_discovery();
       GC_printf("Using Darwin task-threads-based world stop and push\n");
 #   endif
+    GC_set_markers_count(0);
     GC_COND_INIT();
 
     if ((code = pthread_attr_init(&attr)) != 0) {

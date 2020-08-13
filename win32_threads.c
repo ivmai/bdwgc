@@ -2500,6 +2500,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
 # endif /* ! GC_PTHREADS_PARAMARK */
 
+  static unsigned required_markers_cnt = 0;
+                        /* The default value (0) means the number of    */
+                        /* markers should be selected automatically.    */
 #endif /* PARALLEL_MARK */
 
   /* We have no DllMain to take care of new threads.  Thus we   */
@@ -2737,6 +2740,14 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
 #endif /* GC_WINMAIN_REDIRECT */
 
+GC_API void GC_CALL GC_set_markers_count(unsigned markers GC_ATTR_UNUSED)
+{
+  /* The same implementation as in pthread_support.c.   */
+# ifdef PARALLEL_MARK
+    required_markers_cnt = markers < MAX_MARKERS ? markers : MAX_MARKERS;
+# endif
+}
+
 GC_INNER void GC_thr_init(void)
 {
   struct GC_stack_base sb;
@@ -2792,7 +2803,7 @@ GC_INNER void GC_thr_init(void)
 # if defined(PARALLEL_MARK)
     {
       char * markers_string = GETENV("GC_MARKERS");
-      int markers;
+      int markers = required_markers_cnt;
 
       if (markers_string != NULL) {
         markers = atoi(markers_string);
@@ -2801,7 +2812,10 @@ GC_INNER void GC_thr_init(void)
                "; using maximum threads\n", (signed_word)markers);
           markers = MAX_MARKERS;
         }
-      } else {
+      } else if (0 == markers) {
+        /* Unless the client sets the desired number of         */
+        /* parallel markers, it is determined based on the      */
+        /* number of CPU cores.                                 */
 #       ifdef MSWINCE
           /* There is no GetProcessAffinityMask() in WinCE.     */
           /* GC_sysinfo is already initialized.                 */
