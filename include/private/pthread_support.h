@@ -132,7 +132,7 @@ typedef struct GC_Thread_Rep {
                                 /* and detach.                          */
 
 #   ifdef THREAD_LOCAL_ALLOC
-        struct thread_local_freelists tlfs;
+        struct thread_local_freelists tlfs GC_ATTR_WORD_ALIGNED;
 #   endif
 } * GC_thread;
 

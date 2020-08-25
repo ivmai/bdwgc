@@ -175,6 +175,14 @@ typedef int GC_bool;
 # define MACRO_BLKSTMT_END   } while (0)
 #endif
 
+#if defined(M68K) && defined(__GNUC__)
+  /* By default, __alignof__(word) is 2 on m68k.  Use this attribute to */
+  /* have proper word alignment (i.e. 4-byte on a 32-bit arch).         */
+# define GC_ATTR_WORD_ALIGNED __attribute__((__aligned__(sizeof(word))))
+#else
+# define GC_ATTR_WORD_ALIGNED /* empty */
+#endif
+
 #ifndef HEADERS_H
 # include "gc_hdrs.h"
 #endif
