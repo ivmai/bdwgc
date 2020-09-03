@@ -10,6 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
+
 /* An sprintf implementation that understands cords.  This is probably  */
 /* not terribly portable.  It assumes an ANSI stdarg.h.  It further     */
 /* assumes that I can make copies of va_list variables, and read        */
