@@ -1416,6 +1416,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
                                 /* heap to expand soon.                   */
 
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(GC_page_size != 0);
     if (n < MINHINCR) n = MINHINCR;
     bytes = ROUNDUP_PAGESIZE((size_t)n * HBLKSIZE);
     if (GC_max_heapsize != 0

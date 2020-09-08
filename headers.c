@@ -115,6 +115,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             return result;
         }
 
+        GC_ASSERT(GC_page_size != 0);
         if (bytes >= MINHINCR * HBLKSIZE) {
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = (ptr_t)GET_MEM(bytes_to_get);

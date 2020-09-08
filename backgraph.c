@@ -90,6 +90,7 @@ static back_edges * new_back_edges(void)
     size_t bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(MAX_BACK_EDGE_STRUCTS
                                                    * sizeof(back_edges));
 
+    GC_ASSERT(GC_page_size != 0);
     back_edge_space = (back_edges *)GET_MEM(bytes_to_get);
     if (NULL == back_edge_space)
       ABORT("Insufficient memory for back edges");
@@ -132,6 +133,7 @@ static void push_in_progress(ptr_t p)
   if (n_in_progress >= in_progress_size) {
     ptr_t * new_in_progress_space;
 
+    GC_ASSERT(GC_page_size != 0);
     if (NULL == in_progress_space) {
       in_progress_size = ROUNDUP_PAGESIZE_IF_MMAP(INITIAL_IN_PROGRESS
                                                         * sizeof(ptr_t))
