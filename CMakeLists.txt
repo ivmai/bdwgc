@@ -84,7 +84,8 @@ MESSAGE("HOST = ${HOST}")
 # Thread Detection.  Relying on cmake for lib and includes.
 #TODO check cmake detection
 IF(CMAKE_USE_PTHREADS_INIT)
-        SET(SRC ${SRC} pthread_start.c pthread_support.c pthread_stop_world.c)
+        SET(SRC ${SRC} gc_dlopen.c pthread_start.c pthread_stop_world.c
+                pthread_support.c)
         # Common defines for most POSIX platforms.
         IF( HOST MATCHES .*-.*-aix.*|.*-.*-android.*|.*-.*-cygwin.*|.*-.*-darwin.*|.*-.*-.*freebsd.*|.*-.*-haiku.*|.*-.*-gnu.*|.*-.*-hpux11.*|.*-.*-irix.*|.*-.*-.*linux.*|.*-.*-msys.*|.*-.*-nacl.*|.*-.*-netbsd.*|.*-.*-openbsd.*|.*-.*-osf.*|.*-.*-solaris.*)
                 ADD_DEFINITIONS("-DGC_THREADS -D_REENTRANT")
