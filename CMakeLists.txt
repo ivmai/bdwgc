@@ -120,7 +120,8 @@ endif(enable_threads)
 
 # Thread support detection.
 if (CMAKE_USE_PTHREADS_INIT)
-  set(SRC ${SRC} pthread_start.c pthread_support.c pthread_stop_world.c)
+  set(SRC ${SRC} gc_dlopen.c pthread_start.c pthread_stop_world.c
+        pthread_support.c)
   if (HOST MATCHES .*-.*-hpux10.*)
     message(FATAL_ERROR "HP/UX 10 POSIX threads are not supported.")
   endif()
