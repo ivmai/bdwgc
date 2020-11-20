@@ -663,7 +663,7 @@ EXTERN_C_BEGIN
 #   endif
 #   define mach_type_known
 # endif
-# if defined(__riscv) && defined(LINUX)
+# if defined(__riscv) && (defined(FREEBSD) || defined(LINUX))
 #   define RISCV
 #   define mach_type_known
 # endif
@@ -2958,6 +2958,19 @@ EXTERN_C_BEGIN
 #   define MACH_TYPE "RISC-V"
 #   define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
 #   define ALIGNMENT (CPP_WORDSZ/8)
+#   ifdef FREEBSD
+#     define OS_TYPE "FREEBSD"
+#     ifndef GC_FREEBSD_THREADS
+#       define MPROTECT_VDB
+#     endif
+#     define SIG_SUSPEND SIGUSR1
+#     define SIG_THR_RESTART SIGUSR2
+#     define FREEBSD_STACKBOTTOM
+#     define DYNAMIC_LOADING
+      extern char etext[];
+#     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
+#     define DATASTART_USES_BSDGETDATASTART
+#   endif
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
       extern int __data_start[] __attribute__((__weak__));
