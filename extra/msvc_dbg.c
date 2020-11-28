@@ -22,7 +22,7 @@
 
 #if !defined(_M_AMD64) && defined(_MSC_VER)
 
-/* X86_64 is currently missing some meachine-dependent code below.  */
+/* X86_64 is currently missing some machine-dependent code below.  */
 
 #define GC_BUILD
 #include "private/msvc_dbg.h"
