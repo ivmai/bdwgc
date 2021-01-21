@@ -1,3 +1,15 @@
+# Table of Contents
+- [Conservative GC Algorithmic Overview](#conservative-gc-algorithmic-overview)    
+- [Introduction](#introduction)    
+- [Allocation](#allocation)    
+- [Mark phase](#mark-phase)
+- [Swep phase](#sweep-phase)    
+- [Finalization](#finalization) 
+- [Generational Collection and Dirty Bits](#generational-collection-and-dirty-bits)
+- [Black-Listing](#black-listing)   
+- [Thread support](#thread-support)  
+- [Thread-local allocation](#thread-local-allocation)
+
 # Conservative GC Algorithmic Overview
 
 This is a description of the algorithms and data structures used in our
