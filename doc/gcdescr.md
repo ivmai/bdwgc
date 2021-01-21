@@ -18,6 +18,17 @@ non-incremental mode, though the presence of the incremental collector will
 be apparent in the design. We assume the default finalization model, but the
 code affected by that is very localized.
 
+Table of Contents
+  * [Introduction](#introduction)
+  * [Allocation](#allocation)
+  * [Mark phase](#mark-phase)
+  * [Sweep phase](#sweep-phase)
+  * [Finalization](#finalization)
+  * [Generational Collection and Dirty Bits](#generational-collection-and-dirty-bits)
+  * [Black-listing](#black-listing)
+  * [Thread support](#thread-support)
+  * [Thread-local allocation](#thread-local-allocation)
+
 ## Introduction
 
 The garbage collector uses a modified mark-sweep algorithm. Conceptually
