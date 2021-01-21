@@ -151,7 +151,8 @@ EXTERN_C_BEGIN
 # endif
 # if defined(__aarch64__) && !defined(DARWIN) && !defined(LINUX) \
      && !defined(FREEBSD) && !defined(NETBSD) && !defined(OPENBSD) \
-     && !defined(NN_BUILD_TARGET_PLATFORM_NX) && !defined(_WIN32)
+     && !defined(QNX) && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
+     && !defined(_WIN32)
 #   define AARCH64
 #   define NOSYS
 #   define mach_type_known
@@ -160,11 +161,11 @@ EXTERN_C_BEGIN
 #   define ARM32
 #   if defined(NACL)
 #     define mach_type_known
-#   elif !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
-         && !defined(OPENBSD) && !defined(DARWIN) && !defined(_WIN32) \
-         && !defined(__CEGCC__) && !defined(NN_PLATFORM_CTR) \
-         && !defined(GC_NO_NOSYS) && !defined(SN_TARGET_PSP2) \
-         && !defined(SYMBIAN)
+#   elif !defined(DARWIN) && !defined(LINUX) && !defined(FREEBSD) \
+         && !defined(NETBSD) && !defined(OPENBSD) && !defined(QNX) \
+         && !defined(NN_PLATFORM_CTR) && !defined(SN_TARGET_PSP2) \
+         && !defined(SYMBIAN) && !defined(_WIN32) && !defined(__CEGCC__) \
+         && !defined(GC_NO_NOSYS)
 #     define NOSYS
 #     define mach_type_known
 #   endif
@@ -497,15 +498,16 @@ EXTERN_C_BEGIN
 
 # if defined(__aarch64__) \
        && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
-            || defined(NETBSD) || defined(OPENBSD))
+            || defined(NETBSD) || defined(OPENBSD) || defined(QNX))
 #   define AARCH64
 #   define mach_type_known
 # elif defined(__arc__) && defined(LINUX)
 #   define ARC
 #   define mach_type_known
-# elif (defined(__arm) || defined(__arm__) || defined(__arm32__)) \
+# elif (defined(__arm) || defined(__arm__) || defined(__arm32__) \
+        || defined(__ARM__)) \
        && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
-            || defined(NETBSD) || defined(OPENBSD) \
+            || defined(NETBSD) || defined(OPENBSD) || defined(QNX) \
             || defined(NN_PLATFORM_CTR) || defined(SN_TARGET_PSP2))
 #   define ARM32
 #   define mach_type_known
@@ -523,7 +525,7 @@ EXTERN_C_BEGIN
 # elif defined(__hexagon__) && defined(LINUX)
 #   define HEXAGON
 #   define mach_type_known
-# elif (defined(__i386__) || defined(i386)) \
+# elif (defined(__i386__) || defined(i386) || defined(__X86__)) \
        && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
             || defined(NETBSD) || defined(OPENBSD) || defined(QNX))
 #   define I386
@@ -579,9 +581,10 @@ EXTERN_C_BEGIN
 # elif defined(__sw_64__) && defined(LINUX)
 #   define SW_64
 #   define mach_type_known
-# elif (defined(__x86_64) || defined(__x86_64__) || defined(__amd64__)) \
+# elif (defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) \
+        || defined(__X86_64__)) \
        && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
-            || defined(NETBSD) || defined(OPENBSD))
+            || defined(NETBSD) || defined(OPENBSD) || defined(QNX))
 #   define X86_64
 #   define mach_type_known
 # endif
@@ -2056,6 +2059,9 @@ EXTERN_C_BEGIN
 #       define HAVE_CLOCK_GETTIME 1
 #     endif
 #   endif
+#   ifdef QNX
+      /* Nothing specific. */
+#   endif
 #   ifdef MSWIN32   /* UWP */
       /* TODO: Enable MPROTECT_VDB */
 #   endif
@@ -2111,6 +2117,9 @@ EXTERN_C_BEGIN
 #     endif
 #   endif
 #   ifdef OPENBSD
+      /* Nothing specific. */
+#   endif
+#   ifdef QNX
       /* Nothing specific. */
 #   endif
 #   ifdef SN_TARGET_PSP2
@@ -2277,6 +2286,9 @@ EXTERN_C_BEGIN
 #   ifdef HAIKU
 #     define HEURISTIC2
 #     define SEARCH_FOR_DATA_START
+#   endif
+#   ifdef QNX
+      /* Nothing specific. */
 #   endif
 #   ifdef SOLARIS
 #     define ELF_CLASS ELFCLASS64
@@ -2567,7 +2579,7 @@ EXTERN_C_BEGIN
 #if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
     || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
     || defined(DGUX) || defined(BSD) || defined(HAIKU) || defined(HURD) \
-    || defined(AIX) || defined(DARWIN) || defined(OSF1)
+    || defined(AIX) || defined(DARWIN) || defined(OSF1) || defined(QNX)
 # define UNIX_LIKE      /* Basic Unix-like system calls work.   */
 #endif
 
@@ -2747,7 +2759,7 @@ EXTERN_C_BEGIN
 
 #if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HAIKU) \
                              || defined(HURD) || defined(OPENBSD) \
-                             || defined(ARM32) \
+                             || defined(QNX) || defined(ARM32) \
                              || defined(AVR32) || defined(MIPS) \
                              || defined(NIOS2) || defined(OR1K))) \
      || (defined(LINUX) && !defined(__gnu_linux__)) \
