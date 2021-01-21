@@ -24,24 +24,35 @@ The garbage collector uses a modified mark-sweep algorithm. Conceptually
 it operates roughly in four phases, which are performed occasionally as part
 of a memory allocation:
 
-  1. _Preparation_ Each object has an associated mark bit. Clear all mark
-  bits, indicating that all objects are potentially unreachable.
-  2. _Mark phase_ Marks all objects that can be reachable via chains
-  of pointers from variables. Often the collector has no real information
-  about the location of pointer variables in the heap, so it views all static
-  data areas, stacks and registers as potentially containing pointers. Any bit
-  patterns that represent addresses inside heap objects managed by the
-  collector are viewed as pointers. Unless the client program has made heap
-  object layout information available to the collector, any heap objects found
-  to be reachable from variables are again scanned similarly.
-  3. _Sweep phase_ Scans the heap for inaccessible, and hence unmarked,
-  objects, and returns them to an appropriate free list for reuse. This is not
-  really a separate phase; even in non-incremental mode this operation
-  is usually performed on demand during an allocation that discovers an empty
-  free list. Thus the sweep phase is very unlikely to touch a page that would
-  not have been touched shortly thereafter anyway.
-  4. _Finalization phase_ Unreachable objects which had been registered for
-  finalization are enqueued for finalization outside the collector.
+  1. _Preparation phase_ 
+  
+      Each object has an associated mark bit. Clear all mark
+      bits, indicating that all objects are potentially unreachable.
+  
+  2. _Mark phase_ 
+  
+      Marks all objects that can be reachable via chains
+      of pointers from variables. Often the collector has no real information
+      about the location of pointer variables in the heap, so it views all static
+      data areas, stacks and registers as potentially containing pointers. Any bit
+      patterns that represent addresses inside heap objects managed by the
+      collector are viewed as pointers. Unless the client program has made heap
+      object layout information available to the collector, any heap objects found
+      to be reachable from variables are again scanned similarly.
+  
+  3. _Sweep phase_ 
+  
+      Scans the heap for inaccessible, and hence unmarked,
+      objects, and returns them to an appropriate free list for reuse. This is not
+      really a separate phase; even in non-incremental mode this operation
+      is usually performed on demand during an allocation that discovers an empty
+      free list. Thus the sweep phase is very unlikely to touch a page that would
+      not have been touched shortly thereafter anyway.
+  
+  4. _Finalization phase_ 
+  
+      Unreachable objects which had been registered for
+      finalization are enqueued for finalization outside the collector.
 
 The remaining sections describe the memory allocation data structures, and
 then the last 3 collection phases in more detail. We conclude by outlining
