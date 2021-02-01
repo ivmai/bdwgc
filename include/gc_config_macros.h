@@ -84,13 +84,13 @@
 #elif defined(GC_THREADS)
 # if defined(__linux__)
 #   define GC_LINUX_THREADS
+# elif defined(__OpenBSD__)
+#   define GC_OPENBSD_THREADS
 # elif defined(_PA_RISC1_1) || defined(_PA_RISC2_0) || defined(hppa) \
        || defined(__HPPA) || (defined(__ia64) && defined(_HPUX_SOURCE))
 #   define GC_HPUX_THREADS
 # elif defined(__HAIKU__)
 #   define GC_HAIKU_THREADS
-# elif defined(__OpenBSD__)
-#   define GC_OPENBSD_THREADS
 # elif defined(__DragonFly__) || defined(__FreeBSD_kernel__) \
        || (defined(__FreeBSD__) && !defined(SN_TARGET_ORBIS))
 #   define GC_FREEBSD_THREADS
