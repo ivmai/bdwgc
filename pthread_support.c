@@ -443,8 +443,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
       if (sigfillset(&set) != 0)
         ABORT("sigfillset failed");
 
-#     if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_UTHREADS) \
-         && !defined(NACL)
+#     if !defined(GC_DARWIN_THREADS) && !defined(NACL)
         /* These are used by GC to stop and restart the world.  */
         if (sigdelset(&set, GC_get_suspend_signal()) != 0
             || sigdelset(&set, GC_get_thr_restart_signal()) != 0)
