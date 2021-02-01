@@ -1085,17 +1085,7 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "OPENBSD"
 #     define ALIGNMENT 4
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-        /* USRSTACK is defined in <machine/vmparam.h> but that is       */
-        /* protected by _KERNEL in <uvm/uvm_param.h> file.              */
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -1311,15 +1301,7 @@ EXTERN_C_BEGIN
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -1612,15 +1594,7 @@ EXTERN_C_BEGIN
 #   ifdef OPENBSD
 #       define OS_TYPE "OPENBSD"
 #       ifndef GC_OPENBSD_THREADS
-          EXTERN_C_END
-#         include <sys/param.h>
-#         include <uvm/uvm_extern.h>
-          EXTERN_C_BEGIN
-#         ifdef USRSTACK
-#           define STACKBOTTOM ((ptr_t)USRSTACK)
-#         else
 #           define HEURISTIC2
-#         endif
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
@@ -1861,15 +1835,7 @@ EXTERN_C_BEGIN
 #     define CPP_WORDSZ 64 /* all OpenBSD/mips platforms are 64-bit */
 #     define ALIGNMENT 8
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -2009,15 +1975,7 @@ EXTERN_C_BEGIN
 #  ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -2045,15 +2003,7 @@ EXTERN_C_BEGIN
 #       define OS_TYPE "OPENBSD"
 #       define ELF_CLASS ELFCLASS64
 #       ifndef GC_OPENBSD_THREADS
-          EXTERN_C_END
-#         include <sys/param.h>
-#         include <uvm/uvm_extern.h>
-          EXTERN_C_BEGIN
-#         ifdef USRSTACK
-#           define STACKBOTTOM ((ptr_t)USRSTACK)
-#         else
 #           define HEURISTIC2
-#         endif
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
@@ -2363,15 +2313,7 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "OPENBSD"
 #     define ELF_CLASS ELFCLASS64
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -2499,15 +2441,7 @@ EXTERN_C_BEGIN
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -2584,15 +2518,7 @@ EXTERN_C_BEGIN
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -2662,15 +2588,7 @@ EXTERN_C_BEGIN
 #       define OS_TYPE "OPENBSD"
 #       define ELF_CLASS ELFCLASS64
 #       ifndef GC_OPENBSD_THREADS
-          EXTERN_C_END
-#         include <sys/param.h>
-#         include <uvm/uvm_extern.h>
-          EXTERN_C_BEGIN
-#         ifdef USRSTACK
-#           define STACKBOTTOM ((ptr_t)USRSTACK)
-#         else
 #           define HEURISTIC2
-#         endif
 #       endif
         extern int __data_start[];
         extern int _end[];
