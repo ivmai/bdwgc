@@ -81,13 +81,6 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #   define ELFSIZE ARCH_ELFSIZE
 #endif
 
-#if defined(OPENBSD)
-# include <sys/param.h>
-# if (OpenBSD >= 200519) && !defined(HAVE_DL_ITERATE_PHDR)
-#   define HAVE_DL_ITERATE_PHDR
-# endif
-#endif /* OPENBSD */
-
 #if defined(SCO_ELF) || defined(DGUX) || defined(HURD) || defined(NACL) \
     || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
                              || defined(NETBSD) || defined(OPENBSD)))
@@ -149,8 +142,10 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #    elif defined(NETBSD) || defined(OPENBSD)
 #      if ELFSIZE == 32
 #        define ElfW(type) Elf32_##type
-#      else
+#      elif ELFSIZE == 64
 #        define ElfW(type) Elf64_##type
+#      else
+#        error Missing required ELFSIZE define
 #      endif
 #    else
 #      if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
