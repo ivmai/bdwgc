@@ -1999,7 +1999,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef OPENBSD
 #       define OS_TYPE "OPENBSD"
-#       define ELF_CLASS ELFCLASS64
 #       ifndef GC_OPENBSD_THREADS
 #         define HEURISTIC2
 #       endif
@@ -2309,7 +2308,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
-#     define ELF_CLASS ELFCLASS64
 #     ifndef GC_OPENBSD_THREADS
 #       define HEURISTIC2
 #     endif
@@ -2584,7 +2582,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef OPENBSD
 #       define OS_TYPE "OPENBSD"
-#       define ELF_CLASS ELFCLASS64
 #       ifndef GC_OPENBSD_THREADS
 #         define HEURISTIC2
 #       endif
