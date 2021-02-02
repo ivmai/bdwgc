@@ -2048,7 +2048,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef OPENBSD
 #       define OS_TYPE "OPENBSD"
-#       define ELF_CLASS ELFCLASS64
 #       ifndef GC_OPENBSD_THREADS
           EXTERN_C_END
 #         include <sys/param.h>
@@ -2369,7 +2368,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
-#     define ELF_CLASS ELFCLASS64
 #     ifndef GC_OPENBSD_THREADS
         EXTERN_C_END
 #       include <sys/param.h>
@@ -2675,7 +2673,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef OPENBSD
 #       define OS_TYPE "OPENBSD"
-#       define ELF_CLASS ELFCLASS64
 #       ifndef GC_OPENBSD_THREADS
           EXTERN_C_END
 #         include <sys/param.h>
