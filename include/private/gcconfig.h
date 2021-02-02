@@ -1056,7 +1056,12 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
-#     define ALIGNMENT 4
+#     if defined(__powerpc64__)
+#       define ALIGNMENT 8
+#       define CPP_WORDSZ 64
+#     else
+#       define ALIGNMENT 4
+#     endif
 #     ifndef GC_OPENBSD_THREADS
 #       define HEURISTIC2
 #     endif
