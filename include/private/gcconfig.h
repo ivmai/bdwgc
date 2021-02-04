@@ -2886,6 +2886,8 @@ EXTERN_C_BEGIN
     /* The kernel may do a somewhat better job merging mappings etc.    */
     /* with anonymous mappings.                                         */
 #   define USE_MMAP_ANON
+#elif defined(OPENBSD) && defined(USE_MMAP)
+#   define USE_MMAP_ANON
 #endif
 
 #if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC) \
