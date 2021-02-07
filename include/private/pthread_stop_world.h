@@ -21,8 +21,8 @@
 EXTERN_C_BEGIN
 
 struct thread_stop_info {
-#   if !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
-       && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+#   if !defined(NACL) && !defined(SN_TARGET_ORBIS) \
+       && !defined(SN_TARGET_PSP2)
       volatile AO_t last_stop_count;
                         /* The value of GC_stop_count when the thread   */
                         /* last successfully handled a suspend signal.  */

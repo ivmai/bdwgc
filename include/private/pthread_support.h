@@ -67,7 +67,7 @@ typedef struct GC_Thread_Rep {
     struct thread_stop_info stop_info;
 
 #   if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
-        && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
+        && !defined(NACL)
       volatile AO_t suspended_ext;  /* Thread was suspended externally. */
 #   endif
 

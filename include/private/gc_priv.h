@@ -2795,9 +2795,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #     define SIG_SUSPEND SIGPWR
 #   endif
 # elif defined(GC_OPENBSD_THREADS)
-#   ifndef GC_OPENBSD_UTHREADS
-#     define SIG_SUSPEND SIGXFSZ
-#   endif
+#   define SIG_SUSPEND SIGXFSZ
 # elif defined(_SIGRTMIN) && !defined(CPPCHECK)
 #   define SIG_SUSPEND _SIGRTMIN + 6
 # else
