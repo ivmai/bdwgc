@@ -968,7 +968,9 @@ EXTERN_C_BEGIN
 # ifdef QNX
 #   define OS_TYPE "QNX"
 #   define SA_RESTART 0
-#   define HEURISTIC1
+#   ifndef QNX_STACKBOTTOM /* TODO: not the default one for now */
+#     define HEURISTIC1
+#   endif
     extern char etext[];
 #   define DATASTART ((ptr_t)etext)
     extern int _end[];

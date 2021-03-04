@@ -1154,6 +1154,15 @@ GC_INNER size_t GC_page_size = 0;
   }
 #endif /* LINUX_STACKBOTTOM */
 
+#ifdef QNX_STACKBOTTOM
+  STATIC ptr_t GC_qnx_main_stack_base(void)
+  {
+    /* TODO: this approach is not very exact but it works for the       */
+    /* tests, at least, unlike other available heuristics.              */
+    return (ptr_t)__builtin_frame_address(0);
+  }
+#endif /* QNX_STACKBOTTOM */
+
 #ifdef FREEBSD_STACKBOTTOM
   /* This uses an undocumented sysctl call, but at least one expert     */
   /* believes it will stay.                                             */
@@ -1283,6 +1292,8 @@ GC_INNER size_t GC_page_size = 0;
         result = GC_hpux_main_stack_base();
 #     elif defined(LINUX_STACKBOTTOM)
         result = GC_linux_main_stack_base();
+#     elif defined(QNX_STACKBOTTOM)
+        result = GC_qnx_main_stack_base();
 #     elif defined(FREEBSD_STACKBOTTOM)
         result = GC_freebsd_main_stack_base();
 #     elif defined(HEURISTIC2)
