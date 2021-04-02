@@ -667,6 +667,10 @@ EXTERN_C_BEGIN
 #   define RISCV
 #   define mach_type_known
 # endif
+# if defined(__arc__) && defined(LINUX)
+#   define ARC
+#   define mach_type_known
+# endif
 
 # if defined(SN_TARGET_PSP2)
 #   define mach_type_known
@@ -2940,6 +2944,20 @@ EXTERN_C_BEGIN
 #     define DYNAMIC_LOADING
 #   endif
 # endif /* RISCV */
+
+# ifdef ARC
+#   define CPP_WORDSZ 32
+#   define MACH_TYPE "ARC"
+#   define ALIGNMENT 4
+#   define CACHE_LINE_SIZE 64
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+      extern int __data_start[] __attribute__((__weak__));
+#     define DATASTART ((ptr_t)__data_start)
+#     define LINUX_STACKBOTTOM
+#     define DYNAMIC_LOADING
+#   endif
+# endif
 
 #if defined(__GLIBC__) && !defined(DONT_USE_LIBC_PRIVATES)
   /* Use glibc's stack-end marker. */
