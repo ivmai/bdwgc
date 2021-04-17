@@ -70,7 +70,7 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
         frame = (StackFrame *)sp_reg;
 #   elif defined(AARCH64)
         volatile ptr_t sp_reg;
-        __asm__ __volatile__ ("mov %0, x29\n" : "=r" (sp_reg));
+        __asm__ __volatile__ ("mov %0, fp\n" : "=r" (sp_reg));
         frame = (StackFrame *)sp_reg;
 #   else
 #     if defined(CPPCHECK)
