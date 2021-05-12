@@ -1,0 +1,15 @@
+
+The build system (at least autotools-based) should detect and configure
+emscripten correctly.
+
+As of now, gctest almost passes, except for the tests that involve a_get().
+
+No thread support for now. No idea how to stop other threads (perhaps we need
+support from JS side).
+
+How to build:
+
+    # source EMSDK first
+    emconfigure ./configure
+    emmake make gctest.html
+    # point your browser at .libs/gctest.html

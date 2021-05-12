@@ -21,6 +21,17 @@ gctest_LDADD += $(THREADDLLIBS)
 endif
 gctest_DEPENDENCIES = $(top_builddir)/libgc.la
 
+if EMSCRIPTEN
+# Note: because of libtool, you'll need to point your browser to
+# .libs/gctest.html, not gctest.html at topdir.
+check_PROGRAMS += gctest.html
+gctest_html_SOURCES = $(gctest_SOURCES)
+gctest_html_LDADD = $(gctest_LDADD)
+# Bug in the linker not being able to determine that _memalign and
+# _memalign is needed? it's part of mmap.
+gctest_html_LDFLAGS = -s "EXPORTED_FUNCTIONS=['_memalign', '_main', '_memset']"
+endif
+
 TESTS += leaktest$(EXEEXT)
 check_PROGRAMS += leaktest
 leaktest_SOURCES = tests/leak_test.c
