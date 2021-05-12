@@ -787,13 +787,17 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     GC_FREE((void *)e);
 
     check_ints(b,1,50);
+#ifndef __EMSCRIPTEN__
     check_ints(a_get(),1,49);
+#endif
     for (i = 0; i < 50; i++) {
         check_ints(b,1,50);
         b = reverse(reverse(b));
     }
     check_ints(b,1,50);
+#ifndef __EMSCRIPTEN__
     check_ints(a_get(),1,49);
+#endif
     for (i = 0; i < 60; i++) {
 #       if (defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)) \
            && (NTHREADS > 0)
@@ -811,7 +815,9 @@ void *GC_CALLBACK reverse_test_inner(void *data)
           AO_fetch_and_add1(&realloc_count);
 #       endif
     }
+#ifndef __EMSCRIPTEN__
     check_ints(a_get(),1,49);
+#endif
     check_ints(b,1,50);
 
     /* Restore c and d values. */

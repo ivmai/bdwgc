@@ -72,6 +72,7 @@
 #include "../pthread_support.c"
 #include "../specific.c"
 #include "../win32_threads.c"
+#include "../emscripten.c"
 
 #ifndef GC_PTHREAD_START_STANDALONE
 # include "../pthread_start.c"

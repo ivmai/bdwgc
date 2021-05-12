@@ -91,6 +91,10 @@ endif
 endif
 endif
 
+if EMSCRIPTEN
+libgc_la_SOURCES += emscripten.c
+endif
+
 if THREAD_LOCAL_ALLOC
 libgc_la_SOURCES += thread_local_alloc.c
 endif

@@ -1220,6 +1220,16 @@ GC_INNER size_t GC_page_size = 0;
     return (ptr_t)GC_get_main_symbian_stack_base();
   }
 # define GET_MAIN_STACKBASE_SPECIAL
+#elif defined(__EMSCRIPTEN__)
+  EXTERN_C_BEGIN
+  extern void *GC_get_main_emscripten_stack_base(void);
+  EXTERN_C_END
+
+  ptr_t GC_get_main_stack_base(void)
+  {
+    return (ptr_t)GC_get_main_emscripten_stack_base();
+  }
+# define GET_MAIN_STACKBASE_SPECIAL
 #elif !defined(AMIGA) && !defined(HAIKU) && !defined(OS2) \
       && !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
       && !defined(GC_OPENBSD_THREADS) \
@@ -2622,6 +2632,9 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
           /* with PROT_NONE seems to work fine.                         */
           if (mprotect(start_addr, len, PROT_NONE))
             ABORT("mprotect(PROT_NONE) failed");
+#       elif defined(__EMSCRIPTEN__)
+	  /* Nothing to do in emscripten, mmap(PROT_NONE) is not        */
+	  /* supported and mprotect() is just no-op                     */
 #       else
           void * result = mmap(start_addr, len, PROT_NONE,
                                MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
@@ -2769,7 +2782,12 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 /* environment, this is also responsible for marking from       */
 /* thread stacks.                                               */
 #ifndef THREADS
+#if defined(__EMSCRIPTEN__)
+extern void GC_CALLBACK GC_default_emscripten_push_other_roots(void);
+  GC_push_other_roots_proc GC_push_other_roots = GC_default_emscripten_push_other_roots;
+#else
   GC_push_other_roots_proc GC_push_other_roots = 0;
+#endif
 #else /* THREADS */
 
 # ifdef PCR

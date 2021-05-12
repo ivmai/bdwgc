@@ -232,6 +232,8 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 
 # if defined(HAVE_PUSH_REGS)
     GC_push_regs();
+# elif defined(__EMSCRIPTEN__)
+    /* nothing, "registers" are push in GC_push_other_roots() */
 # else
 #   if defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
       /* Older versions of Darwin seem to lack getcontext().    */

@@ -86,6 +86,20 @@ esac
 
 
 GC_CFLAGS=${gc_cflags}
+
+AC_MSG_CHECKING([for emscripten])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#ifdef __EMSCRIPTEN__
+#error "this is emscripten"
+#endif
+]])], [emscripten=no], [emscripten=yes])
+dnl -s ASYNCIFY is required to scan the stack, ASYNCIFY_STACK_SIZE is
+dnl probably needed for gctest only
+AS_IF([test "x$emscripten" = "xyes"],
+      [GC_CFLAGS="$GC_CFLAGS -s ASYNCIFY -s ASYNCIFY_STACK_SIZE=128000"])
+AM_CONDITIONAL(EMSCRIPTEN, test x$emscripten = xyes)
+AC_MSG_RESULT([$emscripten])
+
 AC_SUBST(GC_CFLAGS)
 
 dnl Extra user-defined flags to pass both to C and C++ compilers.
@@ -96,7 +110,7 @@ AC_ARG_ENABLE(threads,
   THREADS=$enableval,
   [ AC_MSG_CHECKING([for thread model used by GCC])
     THREADS=`$CC -v 2>&1 | sed -n 's/^Thread model: //p'`
-    if test -z "$THREADS"; then
+    if test -z "$THREADS" -o "x$emscripten" = "xyes"; then
       THREADS=no
     fi
     if test "$THREADS" = "posix"; then
