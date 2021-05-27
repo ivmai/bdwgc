@@ -1214,7 +1214,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #endif /* HPUX */
 
 #ifdef AIX
-# pragma alloca
+# include <alloca.h>
 # include <sys/ldr.h>
 # include <sys/errno.h>
   GC_INNER void GC_register_dynamic_libraries(void)
