@@ -36,6 +36,7 @@ include(CheckFunctionExists)
 include(CheckIncludeFile)
 include(CheckSymbolExists)
 include(CTest)
+include(GNUInstallDirs)
 
 # Customize the build by passing "-D<option_name>=ON|OFF" in the command line.
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
@@ -433,10 +434,10 @@ if (build_cord)
   add_library(cord ${CORD_SRC})
   target_link_libraries(cord PRIVATE gc)
   install(TARGETS cord EXPORT cordExports
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib
-          RUNTIME DESTINATION bin
-          INCLUDES DESTINATION include)
+          LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+          ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+          RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+          INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 endif()
 
 if (BUILD_SHARED_LIBS AND HAVE_FLAG_WL_NO_UNDEFINED)
@@ -455,17 +456,17 @@ if (BUILD_SHARED_LIBS AND HAVE_FLAG_WL_NO_UNDEFINED)
 endif()
 
 install(TARGETS gc EXPORT gcExports
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include)
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 if (enable_cplusplus)
   install(TARGETS gccpp EXPORT gccppExports
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib
-          RUNTIME DESTINATION bin
-          INCLUDES DESTINATION include)
+          LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+          ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+          RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+          INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 endif()
 
 if (install_headers)
@@ -481,22 +482,24 @@ if (install_headers)
                 include/gc_version.h
                 include/javaxfc.h
                 include/leak_detector.h
-          DESTINATION include/gc)
-  install(FILES include/extra/gc.h DESTINATION include)
+          DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
+  install(FILES include/extra/gc.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
   if (enable_cplusplus)
     install(FILES include/gc_allocator.h
                   include/gc_cpp.h
-            DESTINATION include/gc)
-    install(FILES include/extra/gc_cpp.h DESTINATION include)
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
+    install(FILES include/extra/gc_cpp.h
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
   endif()
   if (enable_disclaim)
-    install(FILES include/gc_disclaim.h DESTINATION include/gc)
+    install(FILES include/gc_disclaim.h
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
   endif()
   if (build_cord)
     install(FILES include/cord.h
                   include/cord_pos.h
                   include/ec.h
-            DESTINATION include/gc)
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
   endif()
 endif(install_headers)
 
