@@ -36,6 +36,7 @@ include(CheckFunctionExists)
 include(CheckIncludeFile)
 include(CheckSymbolExists)
 include(CTest)
+include(GNUInstallDirs)
 
 # Customize the build by passing "-D<option_name>=ON|OFF" in the command line.
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
@@ -66,6 +67,35 @@ option(enable_single_obj_compilation "Compile all libgc source files into single
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 option(disable_handle_fork "Prohibit installation of pthread_atfork() handlers" OFF)
 option(install_headers "Install header files" ON)
+
+# Library versioning extracted from Makefile.am
+if (BUILD_SHARED_LIBS)
+file(STRINGS Makefile.am lib_vers REGEX "^LIBGC(CPP)?_VER_INFO.*$")
+  foreach(ver_info ${lib_vers})
+    if(${ver_info} MATCHES "^LIBGC_VER_INFO.*$")
+      string(REGEX REPLACE ".*([0-9]+):[0-9]+:[0-9]+$" "\\1"
+		   gc_curr ${ver_info})
+      string(REGEX REPLACE ".*[0-9]+:([0-9]+):[0-9]+$" "\\1"
+		   gc_rev ${ver_info})
+      string(REGEX REPLACE ".*[0-9]+:[0-9]+:([0-9]+)$" "\\1"
+		   gc_age ${ver_info})
+      math(EXPR GC_SOVERSION "${gc_curr} - ${gc_age}")
+      set(GC_VERSION "${GC_SOVERSION}.${gc_age}.${gc_rev}")
+      continue()
+    endif()
+    if(${ver_info} MATCHES "^LIBGCCPP_VER_INFO.*$")
+      string(REGEX REPLACE ".*([0-9]+):[0-9]+:[0-9]+$" "\\1"
+		   gccpp_curr ${ver_info})
+      string(REGEX REPLACE ".*[0-9]+:([0-9]+):[0-9]+$" "\\1"
+		   gccpp_rev ${ver_info})
+      string(REGEX REPLACE ".*[0-9]+:[0-9]+:([0-9]+)$" "\\1"
+		   gccpp_age ${ver_info})
+      math(EXPR GCCPP_SOVERSION "${gccpp_curr} - ${gccpp_age}")
+      set(GCCPP_VERSION "${GCCPP_SOVERSION}.${gccpp_age}.${gccpp_rev}")
+      continue()
+    endif()
+  endforeach()
+endif()
 
 add_definitions("-DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
 
@@ -113,8 +143,12 @@ if (enable_threads)
   include_directories(${Threads_INCLUDE_DIR})
   set(THREADDLLIBS ${CMAKE_THREAD_LIBS_INIT})
   if (NOT (APPLE OR CYGWIN OR MSYS OR WIN32 OR HOST MATCHES mips-.*-irix6.*))
-    set(THREADDLLIBS ${THREADDLLIBS} -ldl)
-                                # The predefined CMAKE_DL_LIBS may be broken.
+    # some cmake versions have a broken CMAKE_DL_LIBS that omits the '-l'
+    if(${CMAKE_DL_LIBS} MATCHES "^-l.*$")
+      set(THREADDLLIBS "${THREADDLLIBS} ${CMAKE_DL_LIBS}")
+    else()
+      set(THREADDLLIBS "${THREADDLLIBS} -l${CMAKE_DL_LIBS}")
+    endif()
   endif()
 endif(enable_threads)
 
@@ -432,11 +466,15 @@ if (build_cord)
   set(CORD_SRC cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c)
   add_library(cord ${CORD_SRC})
   target_link_libraries(cord PRIVATE gc)
+  if (BUILD_SHARED_LIBS)
+    set_property(TARGET cord PROPERTY VERSION ${GCCPP_VERSION})
+    set_property(TARGET cord PROPERTY SOVERSION ${GCCPP_SOVERSION})
+  endif()
   install(TARGETS cord EXPORT cordExports
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib
-          RUNTIME DESTINATION bin
-          INCLUDES DESTINATION include)
+          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+          INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
 if (BUILD_SHARED_LIBS AND HAVE_FLAG_WL_NO_UNDEFINED)
@@ -454,18 +492,37 @@ if (BUILD_SHARED_LIBS AND HAVE_FLAG_WL_NO_UNDEFINED)
   endif(build_cord)
 endif()
 
+if (BUILD_SHARED_LIBS)
+  set_property(TARGET gc PROPERTY VERSION ${GC_VERSION})
+  set_property(TARGET gc PROPERTY SOVERSION ${GC_SOVERSION})
+endif()
 install(TARGETS gc EXPORT gcExports
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include)
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 if (enable_cplusplus)
+  if (BUILD_SHARED_LIBS)
+    set_property(TARGET gccpp PROPERTY VERSION ${GCCPP_VERSION})
+    set_property(TARGET gccpp PROPERTY SOVERSION ${GCCPP_SOVERSION})
+  endif()
   install(TARGETS gccpp EXPORT gccppExports
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib
-          RUNTIME DESTINATION bin
-          INCLUDES DESTINATION include)
+          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+          INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  if (enable_throw_bad_alloc_library)
+    if (BUILD_SHARED_LIBS)
+      set_property(TARGET gctba PROPERTY VERSION ${GCCPP_VERSION})
+      set_property(TARGET gctba PROPERTY SOVERSION ${GCCPP_SOVERSION})
+    endif()
+    install(TARGETS gctba EXPORT gctbaExports
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  endif()
 endif()
 
 if (install_headers)
@@ -481,22 +538,22 @@ if (install_headers)
                 include/gc_version.h
                 include/javaxfc.h
                 include/leak_detector.h
-          DESTINATION include/gc)
-  install(FILES include/extra/gc.h DESTINATION include)
+          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gc)
+  install(FILES include/extra/gc.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
   if (enable_cplusplus)
     install(FILES include/gc_allocator.h
                   include/gc_cpp.h
-            DESTINATION include/gc)
-    install(FILES include/extra/gc_cpp.h DESTINATION include)
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gc)
+    install(FILES include/extra/gc_cpp.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
   endif()
   if (enable_disclaim)
-    install(FILES include/gc_disclaim.h DESTINATION include/gc)
+    install(FILES include/gc_disclaim.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gc)
   endif()
   if (build_cord)
     install(FILES include/cord.h
                   include/cord_pos.h
                   include/ec.h
-            DESTINATION include/gc)
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gc)
   endif()
 endif(install_headers)
 
@@ -617,3 +674,29 @@ if (build_tests)
     add_test(NAME disclaim_weakmap_test COMMAND disclaim_weakmap_test)
   endif()
 endif(build_tests)
+
+## pkg-config
+file(STRINGS configure.ac PACKAGE_VERSION REGEX "^AC_INIT.*$")
+string(REGEX REPLACE ".*([0-9]+\.[0-9]+\.[0-9]+).*" "\\1"
+	     PACKAGE_VERSION ${PACKAGE_VERSION})
+set(prefix ${CMAKE_INSTALL_PREFIX})
+set(exec_prefix \${prefix})
+set(libdir ${CMAKE_INSTALL_FULL_LIBDIR})
+set(includedir ${CMAKE_INSTALL_FULL_INCLUDEDIR})
+configure_file(bdw-gc.pc.in bdw-gc.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bdw-gc.pc
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+## docs
+install(FILES AUTHORS
+	      README.md
+	      README.QUICK
+        DESTINATION ${CMAKE_INSTALL_DOCDIR})
+install(DIRECTORY doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR}
+		  PATTERN "doc.am" EXCLUDE
+		  PATTERN "gc.man" EXCLUDE)
+
+install(FILES doc/gc.man
+        DESTINATION ${CMAKE_INSTALL_MANDIR}/man3
+	RENAME gc.3)
+
