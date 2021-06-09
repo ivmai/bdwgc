@@ -1419,6 +1419,10 @@ struct _GC_arrays {
 # ifdef USE_MUNMAP
 #   define GC_unmapped_bytes GC_arrays._unmapped_bytes
     word _unmapped_bytes;
+#   ifdef COUNT_UNMAPPED_REGIONS
+#     define GC_num_unmapped_regions GC_arrays._num_unmapped_regions
+      signed_word _num_unmapped_regions;
+#   endif
 # else
 #   define GC_unmapped_bytes 0
 # endif
@@ -1864,12 +1868,16 @@ void GC_apply_to_all_blocks(void (*fn)(struct hblk *h, word client_data),
                             word client_data);
                         /* Invoke fn(hbp, client_data) for each         */
                         /* allocated heap block.                        */
-GC_INNER struct hblk * GC_next_used_block(struct hblk * h);
-                        /* Return first in-use block >= h       */
+GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free);
+                        /* Get the next block whose address is at least */
+                        /* h.  Returned block is managed by GC.  The    */
+                        /* block must be in use unless allow_free is    */
+                        /* true.  Return 0 if there is no such block.   */
 GC_INNER struct hblk * GC_prev_block(struct hblk * h);
-                        /* Return last block <= h.  Returned block      */
-                        /* is managed by GC, but may or may not be in   */
-                        /* use.                                         */
+                        /* Get the last (highest address) block whose   */
+                        /* address is at most h.  Returned block is     */
+                        /* managed by GC, but may or may not be in use. */
+                        /* Return 0 if there is no such block.          */
 GC_INNER void GC_mark_init(void);
 GC_INNER void GC_clear_marks(void);
                         /* Clear mark bits for all heap objects.        */
@@ -2338,7 +2346,13 @@ GC_EXTERN GC_bool GC_print_back_height;
   GC_INNER void GC_remap(ptr_t start, size_t bytes);
   GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
                              size_t bytes2);
-#endif
+
+  /* Compute end address for an unmap operation on the indicated block. */
+  GC_INLINE ptr_t GC_unmap_end(ptr_t start, size_t bytes)
+  {
+     return (ptr_t)((word)(start + bytes) & ~(GC_page_size - 1));
+  }
+#endif /* USE_MUNMAP */
 
 #ifdef CAN_HANDLE_FORK
   GC_EXTERN int GC_handle_fork;

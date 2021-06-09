@@ -1939,8 +1939,8 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
     hdr * hhdr = HDR(h);
 
     if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr) || HBLK_IS_FREE(hhdr), FALSE)) {
-      h = GC_next_used_block(h);
-      if (h == 0) return(0);
+      h = GC_next_block(h, FALSE);
+      if (NULL == h) return NULL;
       hhdr = GC_find_header((ptr_t)h);
     } else {
 #     ifdef LINT2
@@ -1961,8 +1961,8 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
     for (;;) {
         if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr)
                    || HBLK_IS_FREE(hhdr), FALSE)) {
-          h = GC_next_used_block(h);
-          if (h == 0) return(0);
+          h = GC_next_block(h, FALSE);
+          if (NULL == h) return NULL;
           hhdr = GC_find_header((ptr_t)h);
         } else {
 #         ifdef LINT2
@@ -2002,8 +2002,8 @@ STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h)
     for (;;) {
         if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr)
                    || HBLK_IS_FREE(hhdr), FALSE)) {
-          h = GC_next_used_block(h);
-          if (h == 0) return(0);
+          h = GC_next_block(h, FALSE);
+          if (NULL == h) return NULL;
           hhdr = GC_find_header((ptr_t)h);
         } else {
 #         ifdef LINT2
