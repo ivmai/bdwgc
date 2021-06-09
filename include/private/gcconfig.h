@@ -2692,6 +2692,11 @@ EXTERN_C_BEGIN
                 /* SIGTSTP and SIGCONT could be used alternatively.     */
 #       endif
 #       define FREEBSD_STACKBOTTOM
+#       if defined(__DragonFly__)
+            /* DragonFly BSD still has vm.max_proc_mmap, according to   */
+            /* its mmap(2) man page.                                    */
+#           define COUNT_UNMAPPED_REGIONS
+#       endif
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
 #       endif
@@ -3136,7 +3141,11 @@ EXTERN_C_BEGIN
   /* Therefore if we aim to use up to half of vm.max_map_count for the  */
   /* GC (leaving half for the rest of the process) then the number of   */
   /* unmapped regions should be one quarter of vm.max_map_count.        */
+# if defined(__DragonFly__)
+#   define GC_UNMAPPED_REGIONS_SOFT_LIMIT (1000000 / 4)
+# else
 #   define GC_UNMAPPED_REGIONS_SOFT_LIMIT 16384
+# endif
 #endif
 
 #if defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB)
