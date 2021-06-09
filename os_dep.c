@@ -2544,13 +2544,6 @@ STATIC ptr_t GC_unmap_start(ptr_t start, size_t bytes)
     return result;
 }
 
-/* Compute end address for an unmap operation on the indicated  */
-/* block.                                                       */
-STATIC ptr_t GC_unmap_end(ptr_t start, size_t bytes)
-{
-    return (ptr_t)((word)(start + bytes) & ~(GC_page_size - 1));
-}
-
 /* Under Win32/WinCE we commit (map) and decommit (unmap)       */
 /* memory using VirtualAlloc and VirtualFree.  These functions  */
 /* work on individual allocations of virtual memory, made       */

@@ -948,6 +948,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
+#       define COUNT_UNMAPPED_REGIONS
 #       if !defined(REDIRECT_MALLOC)
 #         define MPROTECT_VDB
 #       endif
@@ -1040,6 +1041,7 @@ EXTERN_C_BEGIN
 #     else
 #       define LINUX_STACKBOTTOM
 #     endif
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
@@ -1285,6 +1287,7 @@ EXTERN_C_BEGIN
 #     elif !defined(CPPCHECK)
 #       error Linux SPARC a.out not supported
 #     endif
+#     define COUNT_UNMAPPED_REGIONS
       extern int _end[];
       extern int _etext[];
 #     define DATAEND ((ptr_t)(_end))
@@ -1457,6 +1460,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
+#       define COUNT_UNMAPPED_REGIONS
 #       if !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       else
@@ -1732,6 +1736,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define DYNAMIC_LOADING
+#     define COUNT_UNMAPPED_REGIONS
       extern int _end[];
 #     pragma weak __data_start
       extern int __data_start[];
@@ -1876,6 +1881,7 @@ EXTERN_C_BEGIN
 #  ifdef LINUX
 #    define OS_TYPE "LINUX"
 #    define DYNAMIC_LOADING
+#    define COUNT_UNMAPPED_REGIONS
      extern int _end[];
      extern int __data_start[];
 #    define DATASTART ((ptr_t)(__data_start))
@@ -1894,6 +1900,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define DYNAMIC_LOADING
+#     define COUNT_UNMAPPED_REGIONS
       extern int _end[];
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
@@ -1967,6 +1974,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
@@ -2062,6 +2070,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
+#       define COUNT_UNMAPPED_REGIONS
 #       ifdef __ELF__
 #         define SEARCH_FOR_DATA_START
 #         define DYNAMIC_LOADING
@@ -2132,6 +2141,7 @@ EXTERN_C_BEGIN
         /* backing store.                                       */
         extern ptr_t GC_register_stackbottom;
 #       define BACKING_STORE_BASE GC_register_stackbottom
+#       define COUNT_UNMAPPED_REGIONS
 #       define SEARCH_FOR_DATA_START
 #       ifdef __GNUC__
 #         define DYNAMIC_LOADING
@@ -2230,6 +2240,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
+#       define COUNT_UNMAPPED_REGIONS
 #       define DYNAMIC_LOADING
         extern int __data_start[] __attribute__((__weak__));
 #       define DATASTART ((ptr_t)(__data_start))
@@ -2255,6 +2266,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #     if defined(HOST_ANDROID)
 #       define SEARCH_FOR_DATA_START
@@ -2368,6 +2380,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
+#       define COUNT_UNMAPPED_REGIONS
 #       undef STACK_GRAN
 #       define STACK_GRAN 0x10000000
 #       ifdef __ELF__
@@ -2488,6 +2501,7 @@ EXTERN_C_BEGIN
 #   define OS_TYPE "LINUX"
 #   define DYNAMIC_LOADING
 #   define LINUX_STACKBOTTOM
+#   define COUNT_UNMAPPED_REGIONS
 #   define SEARCH_FOR_DATA_START
       extern int _end[];
 #   define DATAEND ((ptr_t)(_end))
@@ -2503,6 +2517,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
@@ -2542,6 +2557,7 @@ EXTERN_C_BEGIN
 #   define OS_TYPE "LINUX"
 #   define DYNAMIC_LOADING
 #   define LINUX_STACKBOTTOM
+#   define COUNT_UNMAPPED_REGIONS
 #   define SEARCH_FOR_DATA_START
     extern int _end[];
 #   define DATAEND ((ptr_t)(_end))
@@ -2554,6 +2570,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     undef STACK_GRAN
 #     define STACK_GRAN 0x10000000
 #     define DYNAMIC_LOADING
@@ -2606,6 +2623,7 @@ EXTERN_C_BEGIN
             /* possibly because Linux threads is itself a malloc client */
             /* and can't deal with the signals.                         */
 #       endif
+#       define COUNT_UNMAPPED_REGIONS
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
             EXTERN_C_END
@@ -2801,6 +2819,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
+#       define COUNT_UNMAPPED_REGIONS
 #       define MPROTECT_VDB
 #       ifdef __ELF__
 #           if !defined(REDIRECT_MALLOC)
@@ -2835,6 +2854,7 @@ EXTERN_C_BEGIN
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #   endif
 # endif
@@ -2853,6 +2873,7 @@ EXTERN_C_BEGIN
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #   endif
 # endif
@@ -2866,6 +2887,7 @@ EXTERN_C_BEGIN
       extern int __data_start[] __attribute__((__weak__));
 #     define DATASTART ((ptr_t)__data_start)
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #   endif
 # endif /* RISCV */
@@ -3105,6 +3127,16 @@ EXTERN_C_BEGIN
     && (defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
         || defined(SN_TARGET_PSP2) || defined(MSWIN_XBOX1))
 # define MUNMAP_THRESHOLD 2
+#endif
+
+#if defined(USE_MUNMAP) && defined(COUNT_UNMAPPED_REGIONS) \
+    && !defined(GC_UNMAPPED_REGIONS_SOFT_LIMIT)
+  /* The default limit of vm.max_map_count on Linux is ~65530.          */
+  /* There is approximately one mapped region to every unmapped region. */
+  /* Therefore if we aim to use up to half of vm.max_map_count for the  */
+  /* GC (leaving half for the rest of the process) then the number of   */
+  /* unmapped regions should be one quarter of vm.max_map_count.        */
+#   define GC_UNMAPPED_REGIONS_SOFT_LIMIT 16384
 #endif
 
 #if defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB)
