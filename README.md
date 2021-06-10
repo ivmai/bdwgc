@@ -8,6 +8,11 @@
 [![LGTM Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/context:cpp)
 [![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/alerts)
 
+[![Hits-of-Code](https://hitsofcode.com/github/ivmai/bdwgc?branch=master)](https://hitsofcode.com/github/ivmai/bdwgc/view)
+[![Lines of code](https://img.shields.io/tokei/lines/github/ivmai/bdwgc)]()
+[![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/ivmai/bdwgc)]()
+[![Github All Releases](https://img.shields.io/github/downloads/ivmai/bdwgc/total.svg)]()
+
 This is version 8.1.0 (next release development) of a conservative garbage
 collector for C and C++.
 
