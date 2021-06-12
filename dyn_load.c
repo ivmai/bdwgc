@@ -149,8 +149,10 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #    elif defined(NETBSD) || defined(OPENBSD)
 #      if ELFSIZE == 32
 #        define ElfW(type) Elf32_##type
-#      else
+#      elif ELFSIZE == 64
 #        define ElfW(type) Elf64_##type
+#      else
+#        error Missing ELFSIZE define
 #      endif
 #    else
 #      if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
