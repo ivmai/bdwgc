@@ -235,7 +235,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(rdi));
       GC_push_one(state.THREAD_FLD(rsi));
       GC_push_one(state.THREAD_FLD(rbp));
-      /* GC_push_one(state.THREAD_FLD(rsp)); */
+      /* rsp is skipped.        */
       GC_push_one(state.THREAD_FLD(r8));
       GC_push_one(state.THREAD_FLD(r9));
       GC_push_one(state.THREAD_FLD(r10));
@@ -251,6 +251,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
         *phi = GC_FindTopOfStack(state.THREAD_FLD(r1));
 #     endif
       GC_push_one(state.THREAD_FLD(r0));
+      /* r1 is skipped. */
       GC_push_one(state.THREAD_FLD(r2));
       GC_push_one(state.THREAD_FLD(r3));
       GC_push_one(state.THREAD_FLD(r4));
