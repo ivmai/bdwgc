@@ -354,10 +354,10 @@ static struct hblk * get_block_ending_at(struct hblk *h)
 STATIC struct hblk * GC_free_block_ending_at(struct hblk *h)
 {
     struct hblk * p = get_block_ending_at(h);
-    hdr * phdr;
 
     if (p /* != NULL */) { /* CPPCHECK */
-      phdr = HDR(p);
+      hdr * phdr = HDR(p);
+
       if (HBLK_IS_FREE(phdr)) {
         return p;
       }
