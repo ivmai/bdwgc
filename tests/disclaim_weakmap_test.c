@@ -166,7 +166,7 @@ void *GC_CALLBACK set_mark_bit(void *obj)
   return NULL;
 }
 
-void *weakmap_add(struct weakmap *wm, void *obj)
+void *weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
 {
   struct weakmap_link *link, *new_link, **first;
   GC_word *new_base;
@@ -175,6 +175,7 @@ void *weakmap_add(struct weakmap *wm, void *obj)
   size_t key_size = wm->key_size;
 
   /* Lock and look for an existing entry.       */
+  my_assert(key_size <= obj_size);
   h = memhash(obj, key_size);
   first = &wm->links[h % wm->capacity];
   weakmap_lock(wm, h);
@@ -353,7 +354,7 @@ struct pair *pair_new(struct pair *car, struct pair *cdr)
   tmpl.cdr = cdr;
   memcpy(tmpl.magic, pair_magic, PAIR_MAGIC_SIZE);
   tmpl.checksum = 782 + (car? car->checksum : 0) + (cdr? cdr->checksum : 0);
-  return (struct pair *)weakmap_add(pair_hcset, &tmpl);
+  return (struct pair *)weakmap_add(pair_hcset, &tmpl, sizeof(tmpl));
 }
 
 void pair_check_rec(struct pair *p, int line)
