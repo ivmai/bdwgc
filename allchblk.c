@@ -938,7 +938,7 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
 
     GET_HDR(hbp, hhdr);
     size = HBLKSIZE * OBJ_SZ_TO_BLOCKS(hhdr->hb_sz);
-    if ((signed_word)size <= 0)
+    if ((size & SIGNB) != 0)
       ABORT("Deallocating excessively large block.  Too large an allocation?");
       /* Probably possible if we try to allocate more than half the address */
       /* space at once.  If we don't catch it here, strange things happen   */
