@@ -45,6 +45,7 @@ include(CheckCSourceCompiles)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
 include(CheckSymbolExists)
+include(CMakePackageConfigHelpers)
 include(CTest)
 include(GNUInstallDirs)
 
@@ -459,14 +460,23 @@ add_library(gc ${SRC})
 if (enable_threads)
   target_link_libraries(gc PRIVATE ${THREADDLLIBS} ${ATOMIC_OPS_LIBS})
 endif()
+target_include_directories(gc INTERFACE
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include>")
 
 if (enable_cplusplus)
   add_library(gccpp gc_badalc.cc gc_cpp.cc)
   target_link_libraries(gccpp PRIVATE gc)
+  target_include_directories(gccpp INTERFACE
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include>")
   if (enable_throw_bad_alloc_library)
     # The same as gccpp but contains only gc_badalc.
     add_library(gctba gc_badalc.cc)
     target_link_libraries(gctba PRIVATE gc)
+    target_include_directories(gctba INTERFACE
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include>")
   endif(enable_throw_bad_alloc_library)
 endif()
 
@@ -474,16 +484,19 @@ if (build_cord)
   set(CORD_SRC cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c)
   add_library(cord ${CORD_SRC})
   target_link_libraries(cord PRIVATE gc)
+  target_include_directories(cord INTERFACE
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include>")
   if (BUILD_SHARED_LIBS)
     set_property(TARGET cord PROPERTY VERSION ${CORD_VERSION})
     set_property(TARGET cord PROPERTY SOVERSION ${CORD_SOVERSION})
   endif()
-  install(TARGETS cord EXPORT cordExports
+  install(TARGETS cord EXPORT BDWgcTargets
           LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
           ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
           RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
           INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-endif()
+endif(build_cord)
 
 if (BUILD_SHARED_LIBS AND HAVE_FLAG_WL_NO_UNDEFINED)
   # Declare that the libraries do not refer to external symbols.
@@ -504,7 +517,7 @@ if (BUILD_SHARED_LIBS)
   set_property(TARGET gc PROPERTY VERSION ${GC_VERSION})
   set_property(TARGET gc PROPERTY SOVERSION ${GC_SOVERSION})
 endif()
-install(TARGETS gc EXPORT gcExports
+install(TARGETS gc EXPORT BDWgcTargets
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
@@ -515,7 +528,7 @@ if (enable_cplusplus)
     set_property(TARGET gccpp PROPERTY VERSION ${GCCPP_VERSION})
     set_property(TARGET gccpp PROPERTY SOVERSION ${GCCPP_SOVERSION})
   endif()
-  install(TARGETS gccpp EXPORT gccppExports
+  install(TARGETS gccpp EXPORT BDWgcTargets
           LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
           ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
           RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
@@ -525,13 +538,13 @@ if (enable_cplusplus)
       set_property(TARGET gctba PROPERTY VERSION ${GCCPP_VERSION})
       set_property(TARGET gctba PROPERTY SOVERSION ${GCCPP_SOVERSION})
     endif()
-    install(TARGETS gctba EXPORT gctbaExports
+    install(TARGETS gctba EXPORT BDWgcTargets
             LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
             ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
             RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
             INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
   endif(enable_throw_bad_alloc_library)
-endif()
+endif(enable_cplusplus)
 
 if (install_headers)
   install(FILES include/gc.h
@@ -707,3 +720,23 @@ if (enable_docs)
   install(FILES doc/gc.man DESTINATION "${CMAKE_INSTALL_MANDIR}/man3"
           RENAME gc.3)
 endif(enable_docs)
+
+# CMake config/targets files.
+install(EXPORT BDWgcTargets FILE BDWgcTargets.cmake
+        NAMESPACE BDWgc:: DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bdwgc")
+
+configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/BDWgcConfig.cmake"
+        INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bdwgc"
+        NO_SET_AND_CHECK_MACRO)
+
+write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/BDWgcConfigVersion.cmake"
+        VERSION "${PACKAGE_VERSION}" COMPATIBILITY AnyNewerVersion)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/BDWgcConfig.cmake"
+              "${CMAKE_CURRENT_BINARY_DIR}/BDWgcConfigVersion.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bdwgc")
+
+export(EXPORT BDWgcTargets
+       FILE "${CMAKE_CURRENT_BINARY_DIR}/BDWgcTargets.cmake")

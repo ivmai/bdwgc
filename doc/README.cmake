@@ -47,3 +47,16 @@ INPUT
 
 The main input to cmake is CMakeLists.txt file in the GC root directory.  For
 help, go to cmake.org.
+
+
+HOW TO IMPORT BDWGC
+-------------------
+
+Another project could add bdwgc as one of its dependencies with something like
+this in their CMakeLists.txt:
+
+find_package(BDWgc 8.1.0 REQUIRED)
+add_executable(Foo foo.c)
+target_link_libraries(Foo BDWgc::gc)
+
+Other exported libraries are: cord, gccpp, gctba.

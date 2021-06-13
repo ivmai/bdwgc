@@ -1,0 +1,5 @@
+# The BDWgc CMake configuration file.
+
+@PACKAGE_INIT@
+include("${CMAKE_CURRENT_LIST_DIR}/BDWgcTargets.cmake")
+check_required_components(gc)
