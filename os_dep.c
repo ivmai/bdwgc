@@ -516,22 +516,21 @@ GC_INNER char * GC_get_maps(void)
   static struct sigaction old_segv_act;
   STATIC JMP_BUF GC_jmp_buf_openbsd;
 
-# ifdef THREADS
+  STATIC void GC_fault_handler_openbsd(int sig GC_ATTR_UNUSED)
+  {
+     LONGJMP(GC_jmp_buf_openbsd, 1);
+  }
+
+# ifdef GC_OPENBSD_UTHREADS
 #   include <sys/syscall.h>
     EXTERN_C_BEGIN
     extern sigset_t __syscall(quad_t, ...);
     EXTERN_C_END
-# endif
 
   /* Don't use GC_find_limit() because siglongjmp() outside of the      */
   /* signal handler by-passes our userland pthreads lib, leaving        */
   /* SIGSEGV and SIGPROF masked.  Instead, use this custom one that     */
   /* works-around the issues.                                           */
-
-  STATIC void GC_fault_handler_openbsd(int sig GC_ATTR_UNUSED)
-  {
-     LONGJMP(GC_jmp_buf_openbsd, 1);
-  }
 
   /* Return the first non-addressable location > p or bound.    */
   /* Requires the allocation lock.                              */
@@ -575,6 +574,7 @@ GC_INNER char * GC_get_maps(void)
     sigaction(SIGSEGV, &old_segv_act, 0);
     return(result);
   }
+# endif /* GC_OPENBSD_UTHREADS */
 
   static volatile int firstpass;
 
@@ -887,7 +887,7 @@ GC_INNER size_t GC_page_size = 0;
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
            || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
-           || defined(NETBSD)
+           || defined(NETBSD) || defined(OPENBSD)
           struct sigaction act;
 
           act.sa_handler = h;
@@ -952,7 +952,7 @@ GC_INNER size_t GC_page_size = 0;
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
            || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
-           || defined(NETBSD)
+           || defined(NETBSD) || defined(OPENBSD)
           (void) sigaction(SIGSEGV, &old_segv_act, 0);
 #         if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
              || defined(HURD) || defined(NETBSD)
@@ -2042,7 +2042,11 @@ void GC_register_data_segments(void)
     ABORT_ARG2("Wrong DATASTART/END pair",
                ": %p .. %p", (void *)region_start, (void *)DATAEND);
   for (;;) {
-    ptr_t region_end = GC_find_limit_openbsd(region_start, DATAEND);
+#   ifdef GC_OPENBSD_UTHREADS
+      ptr_t region_end = GC_find_limit_openbsd(region_start, DATAEND);
+#   else
+      ptr_t region_end = GC_find_limit_with_bound(region_start, TRUE, DATAEND);
+#   endif
 
     GC_add_roots_inner(region_start, region_end, FALSE);
     if ((word)region_end >= (word)DATAEND)
