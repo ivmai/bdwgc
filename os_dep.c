@@ -2766,7 +2766,8 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 /* environment, this is also responsible for marking from       */
 /* thread stacks.                                               */
 #ifndef THREADS
-  GC_push_other_roots_proc GC_push_other_roots = 0;
+#   define GC_default_push_other_roots 0
+
 #else /* THREADS */
 
 # ifdef PCR
@@ -2809,17 +2810,7 @@ STATIC void GC_CALLBACK GC_default_push_other_roots(void)
         }
 }
 
-# endif /* PCR */
-
-# if defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
-     || defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-    STATIC void GC_CALLBACK GC_default_push_other_roots(void)
-    {
-      GC_push_all_stacks();
-    }
-# endif
-
-# ifdef SN_TARGET_PS3
+# elif defined(SN_TARGET_PS3)
     STATIC void GC_CALLBACK GC_default_push_other_roots(void)
     {
       ABORT("GC_default_push_other_roots is not implemented");
@@ -2829,10 +2820,17 @@ STATIC void GC_CALLBACK GC_default_push_other_roots(void)
     {
       ABORT("GC_push_thread_structures is not implemented");
     }
-# endif /* SN_TARGET_PS3 */
 
-  GC_push_other_roots_proc GC_push_other_roots = GC_default_push_other_roots;
+# else /* GC_PTHREADS, or GC_WIN32_THREADS, etc.        */
+    STATIC void GC_CALLBACK GC_default_push_other_roots(void)
+    {
+      GC_push_all_stacks();
+    }
+# endif
+
 #endif /* THREADS */
+
+GC_push_other_roots_proc GC_push_other_roots = GC_default_push_other_roots;
 
 GC_API void GC_CALL GC_set_push_other_roots(GC_push_other_roots_proc fn)
 {
