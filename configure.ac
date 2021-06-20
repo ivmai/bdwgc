@@ -50,9 +50,9 @@ if test :"$GCC": = :yes: ; then
     gc_cflags="${gc_cflags} -fexceptions"
 else
     case "$host" in
-        hppa*-*-hpux* )
+      hppa*-*-hpux* )
         if test :$GCC: != :"yes": ; then
-            gc_cflags="${gc_flags} +ESdbgasm"
+            gc_cflags="${gc_cflags} +ESdbgasm"
         fi
         # :TODO: actually we should check using Autoconf if
         #     the compiler supports this option.
