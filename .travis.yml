@@ -681,8 +681,8 @@ script:
   fi
 - if [[ "$CSA_CHECK" != true && "$CMAKE_CONFIG" == ""
         && "$CPPCHECK_ENABLE" == "" && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
-    make -j -f $MAKEFILE_NAME $MAKEFILE_TARGETS CFLAGS_EXTRA="$CFLAGS_EXTRA"
-            LDFLAGS="$LDFLAGS";
+    make -j`nproc` -f $MAKEFILE_NAME $MAKEFILE_TARGETS
+         CFLAGS_EXTRA="$CFLAGS_EXTRA" LDFLAGS="$LDFLAGS";
   fi
 - if [[ "$CMAKE_CONFIG" != "" ]]; then
     cmake $CMAKE_OPTIONS -Dbuild_tests=ON -Denable_werror=ON
