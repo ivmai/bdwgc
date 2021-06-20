@@ -29,7 +29,7 @@ else
     case "$host" in
         hppa*-*-hpux* )
 	if test :$GCC: != :"yes": ; then
-            gc_cflags="${gc_flags} +ESdbgasm"
+            gc_cflags="${gc_cflags} +ESdbgasm"
 	fi
         # :TODO: actaully we should check using Autoconf if
         #     the compiler supports this option.
