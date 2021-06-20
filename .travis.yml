@@ -25,6 +25,9 @@ jobs:
         branch_pattern: master
         build_command_prepend: "./configure --enable-cplusplus --disable-shared --enable-single-obj-compilation"
         build_command: make -j check CFLAGS_EXTRA=-DLINT2
+  - os: freebsd
+    env:
+    - CONF_OPTIONS="--enable-cplusplus"
   - env:
     - MAKEFILE_TARGETS="dist"
   - env:
