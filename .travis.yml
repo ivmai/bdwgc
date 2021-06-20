@@ -681,7 +681,7 @@ script:
   fi
 - if [[ "$CSA_CHECK" != true && "$CMAKE_CONFIG" == ""
         && "$CPPCHECK_ENABLE" == "" && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
-    make -j`nproc` -f $MAKEFILE_NAME $MAKEFILE_TARGETS
+    make -j32 -f $MAKEFILE_NAME $MAKEFILE_TARGETS
          CFLAGS_EXTRA="$CFLAGS_EXTRA" LDFLAGS="$LDFLAGS";
   fi
 - if [[ "$CMAKE_CONFIG" != "" ]]; then
