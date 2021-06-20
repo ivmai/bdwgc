@@ -27,7 +27,9 @@ jobs:
         build_command: make -j check CFLAGS_EXTRA=-DLINT2
   - os: freebsd
     env:
-    - CONF_OPTIONS="--enable-cplusplus"
+    - CMAKE_CONFIG="Release"
+    - CMAKE_OPTIONS="-Denable_cplusplus=ON"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - env:
     - MAKEFILE_TARGETS="dist"
   - env:
@@ -681,7 +683,7 @@ script:
   fi
 - if [[ "$CSA_CHECK" != true && "$CMAKE_CONFIG" == ""
         && "$CPPCHECK_ENABLE" == "" && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
-    make -j32 -f $MAKEFILE_NAME $MAKEFILE_TARGETS
+    make -j -f $MAKEFILE_NAME $MAKEFILE_TARGETS
          CFLAGS_EXTRA="$CFLAGS_EXTRA" LDFLAGS="$LDFLAGS";
   fi
 - if [[ "$CMAKE_CONFIG" != "" ]]; then
