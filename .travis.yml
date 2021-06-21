@@ -181,6 +181,9 @@ jobs:
     - CONF_OPTIONS="--enable-gcov --enable-single-obj-compilation --enable-cplusplus --disable-shared --enable-gc-assertions"
     - CFLAGS_EXTRA="-D USE_CUSTOM_SPECIFIC"
     - REPORT_COVERAGE=true
+    - CC_FOR_CHECK=g++
+    - MAKEFILE_TARGETS="all"
+    - MAKEFILE_TARGETS_CHECK="check"
   - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-gc-debug --enable-cplusplus"
