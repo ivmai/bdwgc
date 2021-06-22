@@ -30,6 +30,12 @@ jobs:
     - CMAKE_CONFIG="Release"
     - CMAKE_OPTIONS="-Denable_cplusplus=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
+  - os: freebsd
+    compiler: clang
+    env:
+    - MAKEFILE_NAME=Makefile.direct
+    - MAKEFILE_TARGETS="check cord/de"
+    - MAKE_NPROC=8
   - env:
     - MAKEFILE_TARGETS="dist"
   - env:
@@ -686,7 +692,7 @@ script:
   fi
 - if [[ "$CSA_CHECK" != true && "$CMAKE_CONFIG" == ""
         && "$CPPCHECK_ENABLE" == "" && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
-    make -j -f $MAKEFILE_NAME $MAKEFILE_TARGETS
+    make -j$MAKE_NPROC -f $MAKEFILE_NAME $MAKEFILE_TARGETS
          CFLAGS_EXTRA="$CFLAGS_EXTRA" LDFLAGS="$LDFLAGS";
   fi
 - if [[ "$CMAKE_CONFIG" != "" ]]; then
