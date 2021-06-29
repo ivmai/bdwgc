@@ -671,7 +671,8 @@ EXTERN_C_BEGIN
 #   endif
 #   define mach_type_known
 # endif
-# if defined(__riscv) && (defined(FREEBSD) || defined(LINUX))
+# if defined(__riscv) && (defined(FREEBSD) || defined(LINUX) \
+                          || defined(OPENBSD))
 #   define RISCV
 #   define mach_type_known
 # endif
@@ -2520,6 +2521,9 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
       extern int __data_start[] __attribute__((__weak__));
 #     define DATASTART ((ptr_t)__data_start)
+#   endif
+#   ifdef OPENBSD
+      /* Nothing specific. */
 #   endif
 # endif /* RISCV */
 
