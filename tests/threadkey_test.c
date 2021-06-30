@@ -24,7 +24,7 @@
 
 #ifdef SKIP_THREADKEY_TEST
 
-int main (void)
+int main(void)
 {
   printf("threadkey_test skipped\n");
   return 0;
@@ -81,10 +81,12 @@ void make_key (void)
 }
 
 #ifndef NTHREADS
-# define NTHREADS 30 /* number of initial threads */
+# define NTHREADS 5
 #endif
 
-int main (void)
+#define NTHREADS_INNER (NTHREADS * 6) /* number of threads to create */
+
+int main(void)
 {
   int i;
 
@@ -96,7 +98,7 @@ int main (void)
 # else
     pthread_once (&key_once, make_key);
 # endif
-  for (i = 0; i < NTHREADS; i++) {
+  for (i = 0; i < NTHREADS_INNER; i++) {
     pthread_t t;
 
     if (GC_pthread_create(&t, NULL, entry, NULL) == 0) {

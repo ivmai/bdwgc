@@ -35,8 +35,10 @@
 #include <string.h>
 
 #ifndef NTHREADS
-# define NTHREADS 31 /* number of initial threads */
+# define NTHREADS 5
 #endif
+
+#define NTHREADS_INNER (NTHREADS * 6) /* number of threads to create */
 
 #ifndef MAX_SUBTHREAD_DEPTH
 # define MAX_ALIVE_THREAD_COUNT 55
@@ -106,13 +108,13 @@ int main(void)
     int i;
 # ifdef GC_PTHREADS
     int err;
-    pthread_t th[NTHREADS];
+    pthread_t th[NTHREADS_INNER];
 # else
-    HANDLE th[NTHREADS];
+    HANDLE th[NTHREADS_INNER];
 # endif
 
     GC_INIT();
-    for (i = 0; i < NTHREADS; ++i) {
+    for (i = 0; i < NTHREADS_INNER; ++i) {
 #     ifdef GC_PTHREADS
         err = pthread_create(&th[i], NULL, entry, 0);
         if (err) {
@@ -130,7 +132,7 @@ int main(void)
 #     endif
     }
 
-    for (i = 0; i < NTHREADS; ++i) {
+    for (i = 0; i < NTHREADS_INNER; ++i) {
 #     ifdef GC_PTHREADS
         void *res;
         err = pthread_join(th[i], &res);

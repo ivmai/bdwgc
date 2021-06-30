@@ -1000,7 +1000,7 @@ AM_CONDITIONAL([SINGLE_GC_OBJ],
 AC_ARG_ENABLE(gcov,
     [AS_HELP_STRING([--enable-gcov], [turn on code coverage analysis])])
 if test "$enable_gcov" = "yes"; then
-  CFLAGS="$CFLAGS --coverage"
+  CFLAGS="-D NTHREADS=20 $CFLAGS --coverage"
   if test "${enable_shared}" = no; then
     # FIXME: As of g++-4.8.4/x86_64, in case of shared library build, test_cpp
     # linkage fails with "hidden symbol atexit is referenced by DSO" message.
