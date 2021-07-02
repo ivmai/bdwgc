@@ -26,6 +26,91 @@
 # endif
 #endif
 
+#ifdef E2K
+# include <errno.h>
+# include <asm/e2k_syswork.h>
+# include <sys/syscall.h>
+
+# define VA_SIZE 48
+# define E2K_PSHTP_SIZE 12
+
+# if defined(__clang__)
+#   define VLIW_CMD_BRACES_PREFIX "%" /* a workaround for clang-9 */
+# else
+#   define VLIW_CMD_BRACES_PREFIX /* empty */
+# endif
+
+# define get_stack_index(ps_ptr)                    \
+        do {                                        \
+          word psp_lo, psp_hi;                      \
+          signed_word pshtp;                        \
+          char tmp = 0, val;                        \
+                                                    \
+          __asm__ __volatile__ (                    \
+            "1:\n\t"                                \
+            "ldb %4, 0, %0, mas = 7\n\t"            \
+            "rrd %%pshtp,  %1\n\t"                  \
+            "rrd %%psp.lo, %2\n\t"                  \
+            "rrd %%psp.hi, %3\n\t"                  \
+            VLIW_CMD_BRACES_PREFIX "{\n\t"          \
+            "  stb %4, 0, %0, mas = 2\n\t"          \
+            "  rbranch 1b\n\t"                      \
+            VLIW_CMD_BRACES_PREFIX "}"              \
+            : "=&r" (val), "=&r" (pshtp),           \
+              "=&r" (psp_lo), "=&r" (psp_hi)        \
+            : "r" (&tmp));                          \
+          *(ps_ptr) = (psp_lo & ((1UL<<VA_SIZE)-1)) \
+            + (unsigned)psp_hi                      \
+            + (word)((pshtp << (64-E2K_PSHTP_SIZE)) \
+                     >> (63-E2K_PSHTP_SIZE));       \
+        } while (0)
+
+  GC_INNER size_t GC_get_procedure_stack(ptr_t *buf_ptr) {
+    word ps;
+    ptr_t buf = NULL;
+    word buf_sz = 0;
+    word new_sz = 0;
+
+    get_stack_index(&ps);
+    for (;;) {
+      if (syscall(__NR_access_hw_stacks, E2K_READ_PROCEDURE_STACK,
+                  &ps, buf, buf_sz, &new_sz) != -1)
+        break;
+
+      if (ENOMEM == errno && buf_sz != new_sz) {
+        free(buf);
+        buf = malloc((size_t)new_sz);
+        if (NULL == buf)
+          ABORT_ARG1("Could not allocate memory for procedure stack",
+                     ", %lu bytes requested", (unsigned long)new_sz);
+        if (0 == buf_sz) {
+          buf_sz = new_sz;
+          continue; /* skip get_stack_index() once */
+        }
+        buf_sz = new_sz;
+      } else if (errno != EAGAIN) {
+        ABORT_ARG1("Cannot read procedure stack", ": errno= %d", errno);
+      }
+      get_stack_index(&ps);
+    }
+
+    if (buf_sz != new_sz)
+      ABORT_ARG2("Buffer size mismatch while reading procedure stack",
+                 ": buf_sz= %lu, new_sz= %lu",
+                 (unsigned long)buf_sz, (unsigned long)new_sz);
+    *buf_ptr = buf;
+    return (size_t)new_sz;
+  }
+
+  ptr_t GC_save_regs_in_stack(void) {
+    __asm__ __volatile__ ("flushr");
+    return NULL;
+  }
+
+# undef VLIW_CMD_BRACES_PREFIX
+# undef get_stack_index
+#endif /* E2K */
+
 #if defined(MACOS) && defined(__MWERKS__)
 
 #if defined(POWERPC)
@@ -286,11 +371,14 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
             ABORT("feenableexcept failed");
 #       endif
 #     endif /* GETCONTEXT_FPU_EXCMASK_BUG */
-#     if defined(SPARC) || defined(IA64)
+#     if defined(E2K) || defined(IA64) || defined(SPARC)
         /* On a register window machine, we need to save register       */
         /* contents on the stack for this to work.  This may already be */
         /* subsumed by the getcontext() call.                           */
-        GC_save_regs_ret_val = GC_save_regs_in_stack();
+#       if defined(IA64) || defined(SPARC)
+          GC_save_regs_ret_val =
+#       endif
+            GC_save_regs_in_stack();
 #     endif
       if (NULL == context) /* getcontext failed */
 #   endif /* !NO_GETCONTEXT */

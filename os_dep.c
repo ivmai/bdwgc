@@ -1416,6 +1416,8 @@ GC_INNER size_t GC_page_size = 0;
         RESTORE_CANCEL(cancel_state);
       }
       UNLOCK();
+#   elif defined(E2K)
+      b -> reg_base = NULL;
 #   endif
     return GC_SUCCESS;
   }
@@ -1531,11 +1533,13 @@ GC_INNER size_t GC_page_size = 0;
       DISABLE_CANCEL(cancel_state);  /* May be unnecessary? */
 #     ifdef STACK_GROWS_DOWN
         b -> mem_base = GC_find_limit(GC_approx_sp(), TRUE);
-#       ifdef IA64
-          b -> reg_base = GC_find_limit(GC_save_regs_in_stack(), FALSE);
-#       endif
 #     else
         b -> mem_base = GC_find_limit(GC_approx_sp(), FALSE);
+#     endif
+#     ifdef IA64
+        b -> reg_base = GC_find_limit(GC_save_regs_in_stack(), FALSE);
+#     elif defined(E2K)
+        b -> reg_base = NULL;
 #     endif
       RESTORE_CANCEL(cancel_state);
       UNLOCK();

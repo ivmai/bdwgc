@@ -363,6 +363,10 @@ EXTERN_C_BEGIN
 #    define IA64
 #    define mach_type_known
 # endif
+# if defined(LINUX) && defined(__e2k__)
+#    define E2K
+#    define mach_type_known
+# endif
 # if defined(LINUX) && defined(__aarch64__)
 #    define AARCH64
 #    define mach_type_known
@@ -739,6 +743,8 @@ EXTERN_C_BEGIN
                     /*                  running LINUX                   */
                     /*             AARCH64    ==> ARM AArch64           */
                     /*                  (LP64 and ILP32 variants)       */
+                    /*             E2K        ==> Elbrus 2000           */
+                    /*                  running LINUX                   */
                     /*             ARM32      ==> Intel StrongARM       */
                     /*                  (many variants)                 */
                     /*             IA64       ==> Intel IPF             */
@@ -894,7 +900,7 @@ EXTERN_C_BEGIN
      && !defined(__INTEL_COMPILER) && !defined(__PATHCC__) \
      && !defined(__FUJITSU) /* for FX10 system */ \
      && !(defined(POWERPC) && defined(DARWIN)) /* for MacOS X 10.3.9 */ \
-     && !defined(RTEMS) \
+     && !defined(E2K) && !defined(RTEMS) \
      && !defined(__ARMCC_VERSION) /* does not exist in armcc gnu emu */ \
      && (!defined(__clang__) \
          || GC_CLANG_PREREQ(8, 0) /* was no-op in clang-3 at least */)
@@ -2056,6 +2062,19 @@ EXTERN_C_BEGIN
 #     define ALIGNMENT 8
 #   endif
 # endif
+
+# ifdef E2K
+#   define MACH_TYPE "E2K"
+#   define CPP_WORDSZ 64
+#   define ALIGNMENT 8
+#   ifndef HBLKSIZE
+#     define HBLKSIZE 4096
+#   endif
+#   ifdef LINUX
+      extern int __dso_handle[];
+#     define DATASTART ((ptr_t)__dso_handle)
+#   endif
+# endif /* E2K */
 
 # ifdef M88K
 #   define MACH_TYPE "M88K"

@@ -251,7 +251,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
     ABORT("Bad signal in suspend_handler");
   }
 
-# if defined(IA64) || defined(HP_PA) || defined(M68K)
+# if defined(E2K) || defined(HP_PA) || defined(IA64) || defined(M68K)
     GC_with_callee_saves_pushed(GC_suspend_handler_inner, NULL);
 # else
     /* We believe that in all other cases the full context is already   */
@@ -305,6 +305,15 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 
 GC_INLINE void GC_store_stack_ptr(GC_thread me)
 {
+# ifdef E2K
+    ptr_t bs_lo;
+    size_t stack_size;
+
+    (void)GC_save_regs_in_stack();
+    stack_size = GC_get_procedure_stack(&bs_lo);
+    me -> backing_store_end = bs_lo;
+    me -> backing_store_ptr = bs_lo + stack_size;
+# endif
   /* There is no data race between the suspend handler (storing         */
   /* stack_ptr) and GC_push_all_stacks (fetching stack_ptr) because     */
   /* GC_push_all_stacks is executed after GC_stop_world exits and the   */
@@ -314,7 +323,7 @@ GC_INLINE void GC_store_stack_ptr(GC_thread me)
   /* avoid the related TSan warning.                                    */
 # ifdef SPARC
     ao_store_async((volatile AO_t *)&me->stop_info.stack_ptr,
-             (AO_t)GC_save_regs_in_stack());
+                   (AO_t)GC_save_regs_in_stack());
 # else
 #   ifdef IA64
       me -> backing_store_ptr = GC_save_regs_in_stack();
@@ -411,6 +420,11 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
 
 # ifdef DEBUG_THREADS
     GC_log_printf("Continuing %p\n", (void *)self);
+# endif
+# ifdef E2K
+    free(me -> backing_store_end);
+    me -> backing_store_ptr = NULL;
+    me -> backing_store_end = NULL;
 # endif
 # ifndef GC_NETBSD_THREADS_WORKAROUND
     if (GC_retry_signals)
@@ -718,9 +732,12 @@ GC_INNER void GC_push_all_stacks(void)
     int i;
     GC_thread p;
     ptr_t lo, hi;
-#   ifdef IA64
-      /* On IA64, we also need to scan the register backing store. */
+#   if defined(E2K) || defined(IA64)
+      /* We also need to scan the register backing store.   */
       ptr_t bs_lo, bs_hi;
+#     ifdef E2K
+        size_t stack_size;
+#     endif
 #   endif
     struct GC_traced_stack_sect_s *traced_stack_sect;
     pthread_t self = pthread_self();
@@ -744,12 +761,19 @@ GC_INNER void GC_push_all_stacks(void)
               lo = GC_approx_sp();
 #             ifdef IA64
                 bs_hi = GC_save_regs_in_stack();
+#             elif defined(E2K)
+                (void)GC_save_regs_in_stack();
+                stack_size = GC_get_procedure_stack(&bs_lo);
+                bs_hi = bs_lo + stack_size;
 #             endif
 #           endif
             found_me = TRUE;
         } else {
             lo = (ptr_t)AO_load((volatile AO_t *)&p->stop_info.stack_ptr);
 #           ifdef IA64
+              bs_hi = p -> backing_store_ptr;
+#           elif defined(E2K)
+              bs_lo = p -> backing_store_end;
               bs_hi = p -> backing_store_ptr;
 #           endif
             if (traced_stack_sect != NULL
@@ -795,17 +819,22 @@ GC_INNER void GC_push_all_stacks(void)
               (ptr_t)(p -> stop_info.reg_storage + NACL_GC_REG_STORAGE_SIZE));
           total_size += NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t);
 #       endif
-#       ifdef IA64
+#       if defined(E2K) || defined(IA64)
 #         ifdef DEBUG_THREADS
             GC_log_printf("Reg stack for thread %p is [%p,%p)\n",
                           (void *)p->id, (void *)bs_lo, (void *)bs_hi);
 #         endif
+          GC_ASSERT(bs_lo != NULL && bs_hi != NULL);
           /* FIXME: This (if p->id==self) may add an unbounded number of */
           /* entries, and hence overflow the mark stack, which is bad.   */
           GC_push_all_register_sections(bs_lo, bs_hi,
                                         THREAD_EQUAL(p -> id, self),
                                         traced_stack_sect);
           total_size += bs_hi - bs_lo; /* bs_lo <= bs_hi */
+#       endif
+#       ifdef E2K
+          if (THREAD_EQUAL(p -> id, self))
+            free(bs_lo);
 #       endif
       }
     }

@@ -712,11 +712,11 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #         endif /* ENABLE_TRACE */
           descr &= ~GC_DS_TAGS;
           credit -= WORDS_TO_BYTES(WORDSZ/2); /* guess */
-          while (descr != 0) {
-            if ((descr & SIGNB) != 0) {
-              current = *(word *)current_p;
-              FIXUP_POINTER(current);
-              if (current >= (word)least_ha && current < (word)greatest_ha) {
+          for (; descr != 0; descr <<= 1, current_p += sizeof(word)) {
+            if ((descr & SIGNB) == 0) continue;
+            LOAD_WORD_OR_CONTINUE(current, current_p);
+            FIXUP_POINTER(current);
+            if (current >= (word)least_ha && current < (word)greatest_ha) {
                 PREFETCH((ptr_t)current);
 #               ifdef ENABLE_TRACE
                   if (GC_trace_addr == current_p) {
@@ -727,10 +727,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #               endif /* ENABLE_TRACE */
                 PUSH_CONTENTS((ptr_t)current, mark_stack_top,
                               mark_stack_limit, current_p);
-              }
             }
-            descr <<= 1;
-            current_p += sizeof(word);
           }
           continue;
         case GC_DS_PROC:
@@ -803,7 +800,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
     {
 #     define PREF_DIST 4
 
-#     ifndef SMALL_CONFIG
+#     if !defined(SMALL_CONFIG) && !defined(E2K)
         word deferred;
 
         /* Try to prefetch the next pointer to be examined ASAP.        */
@@ -836,11 +833,11 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         }
 #     endif
 
-      while ((word)current_p <= (word)limit) {
+      for (; (word)current_p <= (word)limit; current_p += ALIGNMENT) {
         /* Empirically, unrolling this loop doesn't help a lot. */
         /* Since PUSH_CONTENTS expands to a lot of code,        */
         /* we don't.                                            */
-        current = *(word *)current_p;
+        LOAD_WORD_OR_CONTINUE(current, current_p);
         FIXUP_POINTER(current);
         PREFETCH(current_p + PREF_DIST*CACHE_LINE_SIZE);
         if (current >= (word)least_ha && current < (word)greatest_ha) {
@@ -857,10 +854,9 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           PUSH_CONTENTS((ptr_t)current, mark_stack_top,
                         mark_stack_limit, current_p);
         }
-        current_p += ALIGNMENT;
       }
 
-#     ifndef SMALL_CONFIG
+#     if !defined(SMALL_CONFIG) && !defined(E2K)
         /* We still need to mark the entry we previously prefetched.    */
         /* We already know that it passes the preliminary pointer       */
         /* validity test.                                               */
@@ -1584,8 +1580,9 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
       lim = t - 1 /* longword */;
       for (p = b; (word)p <= (word)lim;
            p = (word *)(((ptr_t)p) + ALIGNMENT)) {
-        REGISTER word q = *p;
+        REGISTER word q;
 
+        LOAD_WORD_OR_CONTINUE(q, p);
         GC_PUSH_ONE_STACK(q, p);
       }
 #   undef GC_greatest_plausible_heap_addr

@@ -2178,6 +2178,8 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
       base.reg_base = (void *)GC_save_regs_in_stack();
       /* Unnecessarily flushes register stack,          */
       /* but that probably doesn't hurt.                */
+#   elif defined(E2K)
+      base.reg_base = NULL; /* not used by GC currently */
 #   endif
     result = fn(&base, arg);
     /* Strongly discourage the compiler from treating the above */
@@ -2257,9 +2259,11 @@ STATIC void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
         GC_blocked_sp = GC_save_regs_in_stack();
 #   else
         GC_blocked_sp = (ptr_t) &d; /* save approx. sp */
-#   endif
-#   ifdef IA64
-        GC_blocked_register_sp = GC_save_regs_in_stack();
+#       ifdef IA64
+            GC_blocked_register_sp = GC_save_regs_in_stack();
+#       elif defined(E2K)
+            (void)GC_save_regs_in_stack();
+#       endif
 #   endif
 
     d -> client_data = (d -> fn)(d -> client_data);
@@ -2296,6 +2300,8 @@ STATIC void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
     sb -> mem_base = GC_stackbottom;
 #   ifdef IA64
       sb -> reg_base = GC_register_stackbottom;
+#   elif defined(E2K)
+      sb -> reg_base = NULL;
 #   endif
     return &GC_stackbottom; /* gc_thread_handle */
   }

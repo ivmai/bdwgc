@@ -1458,12 +1458,19 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
     GC_thread me;
 #   if defined(SPARC) || defined(IA64)
         ptr_t stack_ptr = GC_save_regs_in_stack();
+#   elif defined(E2K)
+        ptr_t bs_lo;
+        size_t stack_size;
 #   endif
 #   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
         GC_bool topOfStackUnset = FALSE;
 #   endif
     DCL_LOCK_STATE;
 
+#   ifdef E2K
+        (void)GC_save_regs_in_stack();
+        stack_size = GC_get_procedure_stack(&bs_lo);
+#   endif
     LOCK();
     me = GC_lookup_thread(self);
     GC_ASSERT(!(me -> thread_blocked));
@@ -1482,6 +1489,10 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 #   endif
 #   ifdef IA64
         me -> backing_store_ptr = stack_ptr;
+#   elif defined(E2K)
+        GC_ASSERT(NULL == me -> backing_store_end);
+        me -> backing_store_end = bs_lo;
+        me -> backing_store_ptr = bs_lo + stack_size;
 #   endif
     me -> thread_blocked = (unsigned char)TRUE;
     /* Save context here if we want to support precise stack marking */
@@ -1492,6 +1503,14 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
       GC_noop1((word)&me->thread_blocked);
 #   endif
     me -> thread_blocked = FALSE;
+#   ifdef E2K
+        GC_ASSERT(me -> backing_store_end != NULL);
+         /* Note that me->backing_store_end value here may differ from  */
+         /* the one stored in this function previously.                 */
+        free(me -> backing_store_end);
+        me -> backing_store_ptr = NULL;
+        me -> backing_store_end = NULL;
+#   endif
 #   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
         if (topOfStackUnset)
             me -> topOfStack = NULL; /* make topOfStack unset again */
@@ -1544,11 +1563,15 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
         sb -> mem_base = me -> stack_end;
 #       ifdef IA64
             sb -> reg_base = me -> backing_store_end;
+#       elif defined(E2K)
+            sb -> reg_base = NULL;
 #       endif
     } else {
         sb -> mem_base = GC_stackbottom;
 #       ifdef IA64
             sb -> reg_base = GC_register_stackbottom;
+#       elif defined(E2K)
+            sb -> reg_base = NULL;
 #       endif
     }
     UNLOCK();
@@ -1565,6 +1588,10 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     struct GC_traced_stack_sect_s stacksect;
     pthread_t self = pthread_self();
     GC_thread me;
+#   ifdef E2K
+      ptr_t bs_lo;
+      size_t stack_size;
+#   endif
     DCL_LOCK_STATE;
 
     LOCK();   /* This will block if the world is stopped.       */
@@ -1599,6 +1626,11 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       /* Unnecessarily flushes register stack,          */
       /* but that probably doesn't hurt.                */
       stacksect.saved_backing_store_ptr = me -> backing_store_ptr;
+#   elif defined(E2K)
+      GC_ASSERT(me -> backing_store_end != NULL);
+      free(me -> backing_store_end);
+      me -> backing_store_ptr = NULL;
+      me -> backing_store_end = NULL;
 #   endif
     stacksect.prev = me -> traced_stack_sect;
     me -> thread_blocked = FALSE;
@@ -1613,10 +1645,18 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 #   if defined(CPPCHECK)
       GC_noop1((word)me->traced_stack_sect);
 #   endif
+#   ifdef E2K
+      (void)GC_save_regs_in_stack();
+      stack_size = GC_get_procedure_stack(&bs_lo);
+#   endif
     LOCK();
     me -> traced_stack_sect = stacksect.prev;
 #   ifdef IA64
       me -> backing_store_ptr = stacksect.saved_backing_store_ptr;
+#   elif defined(E2K)
+      GC_ASSERT(NULL == me -> backing_store_end);
+      me -> backing_store_end = bs_lo;
+      me -> backing_store_ptr = bs_lo + stack_size;
 #   endif
     me -> thread_blocked = (unsigned char)TRUE;
     me -> stop_info.stack_ptr = stacksect.saved_stack_ptr;
