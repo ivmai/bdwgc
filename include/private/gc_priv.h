@@ -1811,7 +1811,7 @@ struct GC_traced_stack_sect_s {
                         /* NULL if no such "frame" active.              */
 #endif /* !THREADS */
 
-#ifdef IA64
+#if defined(E2K) || defined(IA64)
   /* Similar to GC_push_all_stack_sections() but for IA-64 registers store. */
   GC_INNER void GC_push_all_register_sections(ptr_t bs_lo, ptr_t bs_hi,
                   int eager, struct GC_traced_stack_sect_s *traced_stack_sect);
@@ -1969,11 +1969,42 @@ GC_EXTERN void (*GC_push_typed_structures)(void);
 GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
                                           volatile ptr_t arg);
 
-#if defined(SPARC) || defined(IA64)
+#if defined(E2K) || defined(IA64) || defined(SPARC)
   /* Cause all stacked registers to be saved in memory.  Return a       */
   /* pointer to the top of the corresponding memory stack.              */
   ptr_t GC_save_regs_in_stack(void);
 #endif
+
+#ifdef E2K
+  /* Allocate the buffer and copy the full procedure stack to it.       */
+  GC_INNER size_t GC_get_procedure_stack(ptr_t *);
+
+  /* Load value and get tag of the target memory.   */
+# if defined(__ptr64__)
+#   define LOAD_TAGGED_VALUE(v, tag, p)         \
+        do {                                    \
+          word val;                             \
+          __asm__ __volatile__ (                \
+            "ldd, sm %[adr], 0x0, %[val]\n\t"   \
+            "gettagd %[val], %[tag]\n"          \
+            : [val] "=r" (val),                 \
+              [tag] "=r" (tag)                  \
+            : [adr] "r" (p));                   \
+          v = val;                              \
+        } while (0)
+# else
+#   error "Unsupported -march for e2k target"
+# endif
+
+# define LOAD_WORD_OR_CONTINUE(v, p) \
+        { \
+          int tag; \
+          LOAD_TAGGED_VALUE(v, tag, p); \
+          if (tag != 0) continue; \
+        }
+#else
+# define LOAD_WORD_OR_CONTINUE(v, p) (void)(v = *(word *)(p))
+#endif /* !E2K */
 
 #if defined(AMIGA) || defined(MACOS) || defined(GC_DARWIN_THREADS)
   void GC_push_one(word p);

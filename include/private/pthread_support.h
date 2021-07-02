@@ -113,7 +113,7 @@ typedef struct GC_Thread_Rep {
                                 /* valid only if the thread is blocked; */
                                 /* non-NULL value means already set.    */
 #   endif
-#   ifdef IA64
+#   if defined(E2K) || defined(IA64)
         ptr_t backing_store_end;
         ptr_t backing_store_ptr;
 #   endif

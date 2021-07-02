@@ -26,6 +26,104 @@
 # endif
 #endif
 
+#ifdef E2K
+# include <errno.h>
+# include <sys/syscall.h>
+
+# include <asm/e2k_syswork.h>
+
+# define VA_SIZE 48
+# define E2K_PSHTP_SIZE 12
+
+  struct e2k_rwap_lo_fields {
+    word base : VA_SIZE; /* [VA_SIZE-1:0] */
+  };
+
+  union e2k_rwap_lo_u {
+    struct e2k_rwap_lo_fields fields;
+    word w;
+  };
+
+  struct e2k_rwap_hi_fields {
+    word curptr : 32; /* [31:0] */
+  };
+
+  union e2k_rwap_hi_u {
+    struct e2k_rwap_hi_fields fields;
+    word w;
+  };
+
+# define get_stack_index(ps_ptr)                                \
+        do {                                                    \
+          union e2k_rwap_lo_u psp_lo;                           \
+          union e2k_rwap_hi_u psp_hi;                           \
+          signed_word pshtp;                                    \
+          char tmp = 0;                                         \
+          char val = 0;                                         \
+                                                                \
+          __asm__ __volatile__ (                                \
+            "1:\n\t"                                            \
+            "ldb [%[tmp] + 0x0] 0x7, %[val]\n\t"                \
+            "rrd %%pshtp, %[pshtp]\n\t"                         \
+            "rrd %%psp.lo, %[psp_lo]\n\t"                       \
+            "rrd %%psp.hi, %[psp_hi]\n\t"                       \
+            "stb [%[tmp] + 0x0] 0x2, %[val]\n\t"                \
+            "ibranch 1b ? %%MLOCK\n"                            \
+            : [val] "=&r" (val),                                \
+              [psp_lo] "=&r" (psp_lo.w),                        \
+              [psp_hi] "=&r" (psp_hi.w),                        \
+              [pshtp] "=&r" (pshtp)                             \
+            : [tmp] "r" (&tmp));                                \
+          *(ps_ptr) = psp_lo.fields.base + psp_hi.fields.curptr \
+                + 2 * ((word)((pshtp << (64 - E2K_PSHTP_SIZE))  \
+                              >> (64 - E2K_PSHTP_SIZE)));       \
+        } while (0)
+
+  GC_INNER size_t GC_get_procedure_stack(ptr_t *buf_ptr) {
+    word ps;
+    ptr_t buf = NULL;
+    word buf_sz = 0;
+    word new_sz = 0;
+
+    get_stack_index(&ps);
+    for (;;) {
+      int res = syscall(__NR_access_hw_stacks, E2K_READ_PROCEDURE_STACK,
+                        &ps, buf, buf_sz, &new_sz);
+
+      if (res != -1) break;
+      if (ENOMEM == errno && buf_sz != new_sz) {
+        /* FIXME: use GC_scratch_alloc to support malloc redirection? */
+        free(buf);
+        buf = malloc((size_t)new_sz);
+        if (NULL == buf)
+          ABORT_ARG1("Could not allocate memory for procedure stack",
+                     ", %lu bytes requested", (unsigned long)new_sz);
+        if (0 == buf_sz) {
+          buf_sz = new_sz;
+          continue; /* skip get_stack_index() once */
+        }
+        buf_sz = new_sz;
+      } else if (errno != EAGAIN) {
+        ABORT_ARG1("Cannot read procedure stack", ": errno= %d", errno);
+      }
+      get_stack_index(&ps);
+    }
+
+    if (buf_sz != new_sz)
+      ABORT_ARG2("Buffer size mismatch while reading procedure stack",
+                 ": buf_sz= %lu, new_sz= %lu",
+                 (unsigned long)buf_sz, (unsigned long)new_sz);
+    GC_ASSERT(buf != NULL);
+    *buf_ptr = buf;
+    return (size_t)buf_sz;
+  }
+
+  ptr_t GC_save_regs_in_stack(void) {
+    __asm__ __volatile__ ("flushr");
+    return NULL;
+  }
+#endif /* E2K */
+
 #if defined(MACOS) && defined(__MWERKS__)
 
 #if defined(POWERPC)
@@ -286,11 +384,14 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
             ABORT("feenableexcept failed");
 #       endif
 #     endif /* GETCONTEXT_FPU_EXCMASK_BUG */
-#     if defined(SPARC) || defined(IA64)
+#     if defined(E2K) || defined(IA64) || defined(SPARC)
         /* On a register window machine, we need to save register       */
         /* contents on the stack for this to work.  This may already be */
         /* subsumed by the getcontext() call.                           */
-        GC_save_regs_ret_val = GC_save_regs_in_stack();
+#       if defined(IA64) || defined(SPARC)
+          GC_save_regs_ret_val =
+#       endif
+            GC_save_regs_in_stack();
 #     endif
       if (NULL == context) /* getcontext failed */
 #   endif /* !NO_GETCONTEXT */

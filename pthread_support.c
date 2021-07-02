@@ -1472,6 +1472,10 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 #   endif
     DCL_LOCK_STATE;
 
+#   ifdef E2K
+        (void)GC_save_regs_in_stack();
+        /* FIXME: call GC_get_procedure_stack */
+#   endif
     LOCK();
     me = GC_lookup_thread(self);
     GC_ASSERT(!(me -> thread_blocked));
@@ -1552,11 +1556,15 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
         sb -> mem_base = me -> stack_end;
 #       ifdef IA64
             sb -> reg_base = me -> backing_store_end;
+#       elif defined(E2K)
+            sb -> reg_base = NULL;
 #       endif
     } else {
         sb -> mem_base = GC_stackbottom;
 #       ifdef IA64
             sb -> reg_base = GC_register_stackbottom;
+#       elif defined(E2K)
+            sb -> reg_base = NULL;
 #       endif
     }
     UNLOCK();

@@ -644,12 +644,15 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
     }
 }
 
-#ifdef IA64
+#if defined(E2K) || defined(IA64)
   /* Similar to GC_push_all_stack_sections() but for IA-64 registers store. */
   GC_INNER void GC_push_all_register_sections(ptr_t bs_lo, ptr_t bs_hi,
                   int eager, struct GC_traced_stack_sect_s *traced_stack_sect)
   {
-    while (traced_stack_sect != NULL) {
+#   ifdef E2K
+      (void)traced_stack_sect; /* TODO: Not implemented yet */
+#   else
+      while (traced_stack_sect != NULL) {
         ptr_t frame_bs_lo = traced_stack_sect -> backing_store_end;
         GC_ASSERT((word)frame_bs_lo <= (word)bs_hi);
         if (eager) {
@@ -659,7 +662,8 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
         }
         bs_hi = traced_stack_sect -> saved_backing_store_ptr;
         traced_stack_sect = traced_stack_sect -> prev;
-    }
+      }
+#   endif
     GC_ASSERT((word)bs_lo <= (word)bs_hi);
     if (eager) {
         GC_push_all_eager(bs_lo, bs_hi);
@@ -667,7 +671,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
         GC_push_all_stack(bs_lo, bs_hi);
     }
   }
-#endif /* IA64 */
+#endif /* E2K || IA64 */
 
 #ifdef THREADS
 
@@ -826,6 +830,18 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
                 /* All values should be sufficiently aligned that we    */
                 /* don't have to worry about the boundary.              */
               }
+#       elif defined(E2K)
+          /* We also need to push procedure stack store.        */
+          /* Procedure stack grows up.                          */
+          {
+            ptr_t bs_lo;
+            size_t stack_size = GC_get_procedure_stack(&bs_lo);
+
+            GC_push_all_register_sections(bs_lo, bs_lo + stack_size,
+                                          TRUE /* eager */,
+                                          GC_traced_stack_sect);
+            free(bs_lo);
+          }
 #       endif
 #   endif /* !THREADS */
 }

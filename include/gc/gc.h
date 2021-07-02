@@ -1384,8 +1384,13 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 /* The function is sometimes called keep_alive in other         */
 /* settings.                                                    */
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-# define GC_reachable_here(ptr) \
-                __asm__ __volatile__(" " : : "X"(ptr) : "memory")
+# if defined(__e2k__)
+#   define GC_reachable_here(ptr) \
+                __asm__ __volatile__ (" " : : "r"(ptr) : "memory")
+# else
+#   define GC_reachable_here(ptr) \
+                __asm__ __volatile__ (" " : : "X"(ptr) : "memory")
+# endif
 #else
   GC_API void GC_CALL GC_noop1(GC_word);
 # ifdef LINT2
@@ -1481,7 +1486,8 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type /* fn */,
 /* On most platforms this contains just a single address.               */
 struct GC_stack_base {
   void * mem_base;      /* the bottom of the general-purpose stack */
-# if defined(__ia64) || defined(__ia64__) || defined(_M_IA64)
+# if defined(__e2k__) \
+     || defined(__ia64) || defined(__ia64__) || defined(_M_IA64)
     void * reg_base;    /* the bottom of the register stack */
 # endif
 };
