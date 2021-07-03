@@ -800,7 +800,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 # ifndef __EMSCRIPTEN__
     check_ints(a_get(),1,49);
 # endif
-    for (i = 0; i < 60; i++) {
+    for (i = 0; i < 10 * (NTHREADS+1); i++) {
 #       if (defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)) \
            && (NTHREADS > 0)
             if (i % 10 == 0) fork_a_thread();
