@@ -23,6 +23,10 @@
 
 cmake_minimum_required(VERSION 3.1)
 
+set(PACKAGE_VERSION 8.1.0)
+# Version must match that in AC_INIT of configure.ac and that in README.
+# Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
+
 option(enable_cplusplus "C++ support" OFF)
 if (enable_cplusplus)
   project(gc)
@@ -67,7 +71,7 @@ option(enable_werror "Pass -Werror to the C compiler (treat warnings as errors)"
 option(enable_single_obj_compilation "Compile all libgc source files into single .o" OFF)
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 option(disable_handle_fork "Prohibit installation of pthread_atfork() handlers" OFF)
-option(install_headers "Install header files" ON)
+option(install_headers "Install header and pkg-config metadata files" ON)
 
 add_definitions("-DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
 
@@ -122,6 +126,8 @@ if (enable_threads)
     set(THREADDLLIBS ${THREADDLLIBS} ${CMAKE_DL_LIBS})
   endif()
 endif(enable_threads)
+
+set(ATOMIC_OPS_LIBS "") # TODO: Assume libatomic_ops library is not needed.
 
 # Thread support detection.
 if (CMAKE_USE_PTHREADS_INIT)
@@ -420,7 +426,7 @@ endif()
 
 add_library(gc ${SRC})
 if (enable_threads)
-  target_link_libraries(gc PRIVATE ${THREADDLLIBS})
+  target_link_libraries(gc PRIVATE ${THREADDLLIBS} ${ATOMIC_OPS_LIBS})
 endif()
 
 if (enable_cplusplus)
@@ -512,6 +518,16 @@ if (install_headers)
                   include/ec.h
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
   endif()
+
+  # Provide pkg-config metadata.
+  set(prefix "${CMAKE_INSTALL_PREFIX}")
+  set(exec_prefix \${prefix})
+  set(includedir "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
+  set(libdir "${CMAKE_INSTALL_FULL_LIBDIR}")
+  # ATOMIC_OPS_LIBS, PACKAGE_VERSION, THREADDLLIBS are defined above.
+  configure_file(bdw-gc.pc.in bdw-gc.pc @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bdw-gc.pc"
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 endif(install_headers)
 
 if (build_tests)
