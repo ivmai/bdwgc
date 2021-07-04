@@ -42,6 +42,7 @@ include(GNUInstallDirs)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(build_cord "Build cord library" ON)
 option(build_tests "Build tests" OFF)
+option(enable_docs "Build and install documentation" ON)
 option(enable_threads "Support threads" ON)
 option(enable_parallel_mark "Parallelize marking and free list construction" ON)
 option(enable_thread_local_alloc "Turn on thread-local allocation optimization" ON)
@@ -630,3 +631,16 @@ if (build_tests)
     add_test(NAME disclaim_weakmap_test COMMAND disclaim_weakmap_test)
   endif()
 endif(build_tests)
+
+if (enable_docs)
+  # Note: documentation which is not installed: README.QUICK
+  install(FILES AUTHORS README.md
+          DESTINATION "${CMAKE_INSTALL_DOCDIR}")
+  install(DIRECTORY doc/ DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+          FILES_MATCHING
+            PATTERN "README.*"
+            PATTERN "*.md")
+
+  install(FILES doc/gc.man DESTINATION "${CMAKE_INSTALL_MANDIR}/man3"
+          RENAME gc.3)
+endif(enable_docs)
