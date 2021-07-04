@@ -113,9 +113,12 @@ if (enable_threads)
   include_directories(libatomic_ops/src)
   include_directories(${Threads_INCLUDE_DIR})
   set(THREADDLLIBS ${CMAKE_THREAD_LIBS_INIT})
-  if (NOT (APPLE OR CYGWIN OR MSYS OR WIN32 OR HOST MATCHES mips-.*-irix6.*))
-    set(THREADDLLIBS ${THREADDLLIBS} -ldl)
-                                # The predefined CMAKE_DL_LIBS may be broken.
+  if (${CMAKE_DL_LIBS} MATCHES ^[^-].*)
+    # Some cmake versions have a broken non-empty CMAKE_DL_LIBS omitting "-l".
+    # Assume CMAKE_DL_LIBS contains just one library.
+    set(THREADDLLIBS ${THREADDLLIBS} -l${CMAKE_DL_LIBS})
+  else()
+    set(THREADDLLIBS ${THREADDLLIBS} ${CMAKE_DL_LIBS})
   endif()
 endif(enable_threads)
 
