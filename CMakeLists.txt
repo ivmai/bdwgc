@@ -467,6 +467,13 @@ if (enable_cplusplus)
           ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
           RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
           INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+  if (enable_throw_bad_alloc_library)
+    install(TARGETS gctba EXPORT gctbaExports
+            LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+            INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+  endif(enable_throw_bad_alloc_library)
 endif()
 
 if (install_headers)
