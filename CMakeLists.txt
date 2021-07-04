@@ -27,6 +27,12 @@ set(PACKAGE_VERSION 8.1.0)
 # Version must match that in AC_INIT of configure.ac and that in README.
 # Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
 
+# Info (current:revision:age) for the Libtool versioning system.
+# These values should match those in cord/cord.am and Makefile.am.
+set(LIBCORD_VER_INFO    5:0:4)
+set(LIBGC_VER_INFO      6:0:5)
+set(LIBGCCPP_VER_INFO   5:0:4)
+
 option(enable_cplusplus "C++ support" OFF)
 if (enable_cplusplus)
   project(gc)
@@ -72,6 +78,31 @@ option(enable_single_obj_compilation "Compile all libgc source files into single
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 option(disable_handle_fork "Prohibit installation of pthread_atfork() handlers" OFF)
 option(install_headers "Install header and pkg-config metadata files" ON)
+
+# Convert VER_INFO values to [SO]VERSION ones.
+if (BUILD_SHARED_LIBS)
+  # cord:
+  string(REGEX REPLACE "(.+):.+:.+"  "\\1" cord_cur ${LIBCORD_VER_INFO})
+  string(REGEX REPLACE ".+:(.+):.+"  "\\1" cord_rev ${LIBCORD_VER_INFO})
+  string(REGEX REPLACE ".+:.+:(.+)$" "\\1" cord_age ${LIBCORD_VER_INFO})
+  math(EXPR CORD_SOVERSION "${cord_cur} - ${cord_age}")
+  set(CORD_VERSION "${CORD_SOVERSION}.${cord_age}.${cord_rev}")
+  message(STATUS "CORD_VERSION = ${CORD_VERSION}")
+  # gc:
+  string(REGEX REPLACE "(.+):.+:.+"  "\\1" gc_cur ${LIBGC_VER_INFO})
+  string(REGEX REPLACE ".+:(.+):.+"  "\\1" gc_rev ${LIBGC_VER_INFO})
+  string(REGEX REPLACE ".+:.+:(.+)$" "\\1" gc_age ${LIBGC_VER_INFO})
+  math(EXPR GC_SOVERSION "${gc_cur} - ${gc_age}")
+  set(GC_VERSION "${GC_SOVERSION}.${gc_age}.${gc_rev}")
+  message(STATUS "GC_VERSION = ${GC_VERSION}")
+  # gccpp and gctba:
+  string(REGEX REPLACE "(.+):.+:.+"  "\\1" gccpp_cur ${LIBGCCPP_VER_INFO})
+  string(REGEX REPLACE ".+:(.+):.+"  "\\1" gccpp_rev ${LIBGCCPP_VER_INFO})
+  string(REGEX REPLACE ".+:.+:(.+)$" "\\1" gccpp_age ${LIBGCCPP_VER_INFO})
+  math(EXPR GCCPP_SOVERSION "${gccpp_cur} - ${gccpp_age}")
+  set(GCCPP_VERSION "${GCCPP_SOVERSION}.${gccpp_age}.${gccpp_rev}")
+  message(STATUS "GCCPP_VERSION = ${GCCPP_VERSION}")
+endif(BUILD_SHARED_LIBS)
 
 add_definitions("-DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
 
@@ -443,6 +474,10 @@ if (build_cord)
   set(CORD_SRC cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c)
   add_library(cord ${CORD_SRC})
   target_link_libraries(cord PRIVATE gc)
+  if (BUILD_SHARED_LIBS)
+    set_property(TARGET cord PROPERTY VERSION ${CORD_VERSION})
+    set_property(TARGET cord PROPERTY SOVERSION ${CORD_SOVERSION})
+  endif()
   install(TARGETS cord EXPORT cordExports
           LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
           ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
@@ -465,6 +500,10 @@ if (BUILD_SHARED_LIBS AND HAVE_FLAG_WL_NO_UNDEFINED)
   endif(build_cord)
 endif()
 
+if (BUILD_SHARED_LIBS)
+  set_property(TARGET gc PROPERTY VERSION ${GC_VERSION})
+  set_property(TARGET gc PROPERTY SOVERSION ${GC_SOVERSION})
+endif()
 install(TARGETS gc EXPORT gcExports
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
@@ -472,12 +511,20 @@ install(TARGETS gc EXPORT gcExports
         INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 if (enable_cplusplus)
+  if (BUILD_SHARED_LIBS)
+    set_property(TARGET gccpp PROPERTY VERSION ${GCCPP_VERSION})
+    set_property(TARGET gccpp PROPERTY SOVERSION ${GCCPP_SOVERSION})
+  endif()
   install(TARGETS gccpp EXPORT gccppExports
           LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
           ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
           RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
           INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
   if (enable_throw_bad_alloc_library)
+    if (BUILD_SHARED_LIBS)
+      set_property(TARGET gctba PROPERTY VERSION ${GCCPP_VERSION})
+      set_property(TARGET gctba PROPERTY SOVERSION ${GCCPP_SOVERSION})
+    endif()
     install(TARGETS gctba EXPORT gctbaExports
             LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
             ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
