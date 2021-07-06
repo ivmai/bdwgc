@@ -376,6 +376,10 @@ EXTERN_C_BEGIN
 #    endif
 #    define mach_type_known
 # endif
+# if defined(LINUX) && defined(__loongarch__)
+#    define LOONGARCH
+#    define mach_type_known
+# endif
 # if defined(LINUX) && (defined(powerpc) || defined(__powerpc__) \
                         || defined(powerpc64) || defined(__powerpc64__))
 #    define POWERPC
@@ -719,9 +723,11 @@ EXTERN_C_BEGIN
                     /*             HP_PA      ==> HP9000/700 & /800     */
                     /*                            HP/UX, LINUX          */
                     /*             SPARC      ==> SPARC v7/v8/v9        */
-                    /*                  (SOLARIS, LINUX, DRSNX variants)        */
+                    /*                 (SOLARIS, LINUX, DRSNX variants) */
                     /*             ALPHA      ==> DEC Alpha             */
                     /*                  (OSF1 and LINUX variants)       */
+                    /*             LOONGARCH  ==> Loongson LoongArch    */
+                    /*                  (LINUX 32- and 64-bit variants) */
                     /*             M88K       ==> Motorola 88XX0        */
                     /*                  (CX_UX and DGUX)                */
                     /*             S370       ==> 370-like machine      */
@@ -1727,6 +1733,23 @@ EXTERN_C_BEGIN
                               /* ld options were passed through.        */
 #   define STACKBOTTOM ((ptr_t)0xfffff000) /* for Encore */
 # endif
+
+# ifdef LOONGARCH
+#   define MACH_TYPE "LoongArch"
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+#     define DYNAMIC_LOADING
+#     define COUNT_UNMAPPED_REGIONS
+#     pragma weak __data_start
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)(__data_start))
+      extern int _end[];
+#     define DATAEND ((ptr_t)(_end))
+#     define CPP_WORDSZ _LOONGARCH_SZPTR
+#     define ALIGNMENT (_LOONGARCH_SZPTR/8)
+#     define LINUX_STACKBOTTOM
+#   endif
+# endif /* LOONGARCH */
 
 # ifdef MIPS
 #   define MACH_TYPE "MIPS"
