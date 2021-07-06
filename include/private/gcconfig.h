@@ -376,6 +376,10 @@ EXTERN_C_BEGIN
 #    endif
 #    define mach_type_known
 # endif
+# if defined(LINUX) && defined(__loongarch__)
+#    define LOONGARCH
+#    define mach_type_known
+# endif
 # if defined(LINUX) && (defined(powerpc) || defined(__powerpc__) \
                         || defined(powerpc64) || defined(__powerpc64__))
 #    define POWERPC
@@ -748,6 +752,9 @@ EXTERN_C_BEGIN
                     /*             HEXAGON    ==> Qualcomm Hexagon      */
                     /*             TILEPRO    ==> Tilera TILEPro        */
                     /*             TILEGX     ==> Tilera TILE-Gx        */
+                    /*             LOONGARCH  ==> Loongson LoongArch    */
+                    /*                  running LINUX                   */
+                    /*                  Handles 32 and 64-bit variants. */
 
 
 /*
@@ -1727,6 +1734,22 @@ EXTERN_C_BEGIN
                               /* of the data segment, no matter which   */
                               /* ld options were passed through.        */
 #   define STACKBOTTOM ((ptr_t)0xfffff000) /* for Encore */
+# endif
+
+# ifdef LOONGARCH
+#   define MACH_TYPE "LoongArch"
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+#     define DYNAMIC_LOADING
+      extern int _end[];
+#     pragma weak __data_start
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)(__data_start))
+#     define DATAEND ((ptr_t)(_end))
+#     define CPP_WORDSZ _LOONGARCH_SZPTR
+#     define ALIGNMENT (_LOONGARCH_SZPTR/8)
+#     define LINUX_STACKBOTTOM
+#   endif
 # endif
 
 # ifdef MIPS
