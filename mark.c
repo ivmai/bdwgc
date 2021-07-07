@@ -867,9 +867,30 @@ GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
     {
 #define PREF_DIST 4
 
-#if !defined(SMALL_CONFIG) && !defined(USE_PTR_HWTAG)
+#if !defined(SMALL_CONFIG) && !(defined(E2K) && defined(USE_PTR_HWTAG))
       ptr_t deferred;
 
+#  ifdef CHERI_PURECAP
+      /* Check each pointer for validity before dereferencing         */
+      /* to prevent capability exceptions.  Utilize the pointer       */
+      /* meta-data to speed-up the loop.  If the loop is below the    */
+      /* pointer bounds, skip the rest of marking for that chunk.     */
+      /* If the limit capability restricts us to reading fewer than   */
+      /* size of a pointer, then there cannot possibly be a pointer   */
+      /* at limit's pointer, and reading at that location will raise  */
+      /* a capability exception.                                      */
+      {
+        word cap_limit = cheri_base_get(limit) + cheri_length_get(limit);
+
+        if (ADDR(limit) + sizeof(ptr_t) > cap_limit) {
+          /* Decrement limit so that it to be within bounds of current_p. */
+          GC_ASSERT(cap_limit > sizeof(ptr_t));
+          limit = (ptr_t)cheri_address_set(
+              current_p, (cap_limit - sizeof(ptr_t)) & ~(sizeof(ptr_t) - 1));
+          goto check_limit;
+        }
+      }
+#  endif
       /* Try to prefetch the next pointer to be examined ASAP.        */
       /* Empirically, this also seems to help slightly without        */
       /* prefetches, at least on Linux/i686.  Presumably this loop    */
@@ -879,13 +900,26 @@ GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
       for (;;) {
         PREFETCH(limit - PREF_DIST * CACHE_LINE_SIZE);
         GC_ASSERT(ADDR_GE(limit, current_p));
+#  ifdef CHERI_PURECAP
+        if (ADDR(limit) < cheri_base_get(limit))
+          goto next_object;
+        if (!HAS_TAG_AND_PERM_LOAD(limit)) {
+          limit -= ALIGNMENT;
+          goto check_limit;
+        }
+#  endif
         deferred = *(ptr_t *)limit;
         FIXUP_POINTER(deferred);
         limit -= ALIGNMENT;
+#  ifdef CHERI_PURECAP
+        if (!HAS_TAG_AND_PERM_LOAD(deferred))
+          goto check_limit;
+#  endif
         if (ADDR_LT(least_ha, deferred) && ADDR_LT(deferred, greatest_ha)) {
           PREFETCH(deferred);
           break;
         }
+#  ifndef CHERI_PURECAP
         if (ADDR_LT(limit, current_p))
           goto next_object;
         /* Unroll once, so we don't do too many of the prefetches     */
@@ -897,6 +931,9 @@ GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
           PREFETCH(deferred);
           break;
         }
+#  else
+      check_limit:
+#  endif
         if (ADDR_LT(limit, current_p))
           goto next_object;
       }
@@ -924,7 +961,7 @@ GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
         }
       }
 
-#if !defined(SMALL_CONFIG) && !defined(USE_PTR_HWTAG)
+#if !defined(SMALL_CONFIG) && !(defined(E2K) && defined(USE_PTR_HWTAG))
       /* We still need to mark the entry we previously prefetched.    */
       /* We already know that it passes the preliminary pointer       */
       /* validity test.                                               */

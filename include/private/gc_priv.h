@@ -2257,16 +2257,18 @@ ptr_t GC_save_regs_in_stack(void);
         continue;                    \
     }
 #elif defined(CHERI_PURECAP)
-#  define LOAD_PTR_OR_CONTINUE(v, p)                                        \
-    {                                                                       \
-      word base_addr;                                                       \
-      v = *(ptr_t *)(p);                                                    \
-      if (cheri_tag_get(v) == 0)                                            \
-        continue;                                                           \
-      base_addr = cheri_base_get(v);                                        \
-      if (ADDR(v) < base_addr || ADDR(v) >= base_addr + cheri_length_get(v) \
-          || (cheri_perms_get(v) & CHERI_PERM_LOAD) == 0)                   \
-        continue;                                                           \
+#  define HAS_TAG_AND_PERM_LOAD(cap) \
+    (cheri_tag_get(cap) != 0 && (cheri_perms_get(cap) & CHERI_PERM_LOAD) != 0)
+
+#  define LOAD_PTR_OR_CONTINUE(v, p)                                         \
+    {                                                                        \
+      word base_addr;                                                        \
+      v = *(ptr_t *)(p);                                                     \
+      if (!HAS_TAG_AND_PERM_LOAD(v))                                         \
+        continue;                                                            \
+      base_addr = cheri_base_get(v);                                         \
+      if (ADDR(v) < base_addr || ADDR(v) >= base_addr + cheri_length_get(v)) \
+        continue;                                                            \
     }
 
 #  define CAPABILITY_COVERS_RANGE(cap, b_addr, e_addr) \
