@@ -153,9 +153,9 @@ if (enable_threads)
   if (${CMAKE_DL_LIBS} MATCHES ^[^-].*)
     # Some cmake versions have a broken non-empty CMAKE_DL_LIBS omitting "-l".
     # Assume CMAKE_DL_LIBS contains just one library.
-    set(THREADDLLIBS ${THREADDLLIBS} -l${CMAKE_DL_LIBS})
+    set(THREADDLLIBS "${THREADDLLIBS} -l${CMAKE_DL_LIBS}")
   else()
-    set(THREADDLLIBS ${THREADDLLIBS} ${CMAKE_DL_LIBS})
+    set(THREADDLLIBS "${THREADDLLIBS} ${CMAKE_DL_LIBS}")
   endif()
 endif(enable_threads)
 
