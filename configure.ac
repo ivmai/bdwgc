@@ -300,7 +300,6 @@ case "$THREADS" in
     ;;
  dgux386)
     AC_DEFINE(GC_THREADS)
-    AC_MSG_RESULT($THREADDLLIBS)
     # Use pthread GCC switch
     THREADDLLIBS=-pthread
     use_parallel_mark=$enable_parallel_mark
