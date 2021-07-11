@@ -138,7 +138,7 @@ set(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
         mark_rts.c headers.c mark.c obj_map.c blacklst.c finalize.c
         new_hblk.c dbg_mlc.c malloc.c dyn_load.c typd_mlc.c ptr_chck.c
         mallocx.c)
-set(THREADDLLIBS)
+set(THREADDLLIBS_LIST)
 
 set(_HOST ${CMAKE_SYSTEM_PROCESSOR}-unknown-${CMAKE_SYSTEM})
 string(TOLOWER ${_HOST} HOST)
@@ -149,13 +149,13 @@ if (enable_threads)
   message(STATUS "Thread library: ${CMAKE_THREAD_LIBS_INIT}")
   include_directories(libatomic_ops/src)
   include_directories(${Threads_INCLUDE_DIR})
-  set(THREADDLLIBS ${CMAKE_THREAD_LIBS_INIT})
+  set(THREADDLLIBS_LIST ${CMAKE_THREAD_LIBS_INIT})
   if (${CMAKE_DL_LIBS} MATCHES ^[^-].*)
     # Some cmake versions have a broken non-empty CMAKE_DL_LIBS omitting "-l".
     # Assume CMAKE_DL_LIBS contains just one library.
-    set(THREADDLLIBS "${THREADDLLIBS} -l${CMAKE_DL_LIBS}")
+    set(THREADDLLIBS_LIST ${THREADDLLIBS_LIST} -l${CMAKE_DL_LIBS})
   else()
-    set(THREADDLLIBS "${THREADDLLIBS} ${CMAKE_DL_LIBS}")
+    set(THREADDLLIBS_LIST ${THREADDLLIBS_LIST} ${CMAKE_DL_LIBS})
   endif()
 endif(enable_threads)
 
@@ -458,7 +458,7 @@ endif()
 
 add_library(gc ${SRC})
 if (enable_threads)
-  target_link_libraries(gc PRIVATE ${THREADDLLIBS} ${ATOMIC_OPS_LIBS})
+  target_link_libraries(gc PRIVATE ${THREADDLLIBS_LIST} ${ATOMIC_OPS_LIBS})
 endif()
 target_include_directories(gc INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -584,7 +584,8 @@ if (install_headers)
   set(exec_prefix \${prefix})
   set(includedir "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
   set(libdir "${CMAKE_INSTALL_FULL_LIBDIR}")
-  # ATOMIC_OPS_LIBS, PACKAGE_VERSION, THREADDLLIBS are defined above.
+  string(REPLACE ";" " " THREADDLLIBS "${THREADDLLIBS_LIST}")
+  # ATOMIC_OPS_LIBS, PACKAGE_VERSION are defined above.
   configure_file(bdw-gc.pc.in bdw-gc.pc @ONLY)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bdw-gc.pc"
           DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
@@ -615,7 +616,7 @@ if (build_tests)
   endif(enable_cplusplus)
 
   add_executable(gctest WIN32 tests/test.c)
-  target_link_libraries(gctest PRIVATE gc ${THREADDLLIBS})
+  target_link_libraries(gctest PRIVATE gc ${THREADDLLIBS_LIST})
   add_test(NAME gctest COMMAND gctest)
   if (WATCOM)
     # Suppress "conditional expression in if statement is always true/false"
@@ -669,21 +670,22 @@ if (build_tests)
     add_test(NAME test_atomic_ops COMMAND test_atomic_ops)
 
     add_executable(threadleaktest tests/thread_leak_test.c)
-    target_link_libraries(threadleaktest PRIVATE gc ${THREADDLLIBS})
+    target_link_libraries(threadleaktest PRIVATE gc ${THREADDLLIBS_LIST})
     add_test(NAME threadleaktest COMMAND threadleaktest)
 
     if (NOT WIN32)
       add_executable(threadkey_test tests/threadkey_test.c)
-      target_link_libraries(threadkey_test PRIVATE gc ${THREADDLLIBS})
+      target_link_libraries(threadkey_test PRIVATE gc ${THREADDLLIBS_LIST})
       add_test(NAME threadkey_test COMMAND threadkey_test)
     endif()
 
     add_executable(subthreadcreate_test tests/subthread_create.c)
-    target_link_libraries(subthreadcreate_test PRIVATE gc ${THREADDLLIBS})
+    target_link_libraries(subthreadcreate_test PRIVATE gc ${THREADDLLIBS_LIST})
     add_test(NAME subthreadcreate_test COMMAND subthreadcreate_test)
 
     add_executable(initsecondarythread_test tests/initsecondarythread.c)
-    target_link_libraries(initsecondarythread_test PRIVATE gc ${THREADDLLIBS})
+    target_link_libraries(initsecondarythread_test
+                          PRIVATE gc ${THREADDLLIBS_LIST})
     add_test(NAME initsecondarythread_test COMMAND initsecondarythread_test)
   endif(enable_threads)
 
@@ -699,11 +701,12 @@ if (build_tests)
     add_test(NAME disclaim_bench COMMAND disclaim_bench)
 
     add_executable(disclaim_test tests/disclaim_test.c)
-    target_link_libraries(disclaim_test PRIVATE gc ${THREADDLLIBS})
+    target_link_libraries(disclaim_test PRIVATE gc ${THREADDLLIBS_LIST})
     add_test(NAME disclaim_test COMMAND disclaim_test)
 
     add_executable(disclaim_weakmap_test tests/disclaim_weakmap_test.c)
-    target_link_libraries(disclaim_weakmap_test PRIVATE gc ${THREADDLLIBS})
+    target_link_libraries(disclaim_weakmap_test
+                          PRIVATE gc ${THREADDLLIBS_LIST})
     add_test(NAME disclaim_weakmap_test COMMAND disclaim_weakmap_test)
   endif()
 endif(build_tests)
