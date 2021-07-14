@@ -29,18 +29,18 @@
   /* first free list entry.                                             */
   STATIC ptr_t GC_build_fl_clear2(struct hblk *h, ptr_t ofl)
   {
-    word * p = (word *)(h -> hb_body);
+    word ** p = (word *)(h -> hb_body);
     word * lim = (word *)(h + 1);
 
-    p[0] = (word)ofl;
+    p[0] = (word *)ofl;
     p[1] = 0;
-    p[2] = (word)p;
+    p[2] = (word *)p;
     p[3] = 0;
     p += 4;
     for (; (word)p < (word)lim; p += 4) {
-        p[0] = (word)(p-2);
+        p[0] = (word *)(p-2);
         p[1] = 0;
-        p[2] = (word)p;
+        p[2] = (word *)p;
         p[3] = 0;
     };
     return((ptr_t)(p-2));
@@ -49,17 +49,17 @@
   /* The same for size 4 cleared objects.       */
   STATIC ptr_t GC_build_fl_clear4(struct hblk *h, ptr_t ofl)
   {
-    word * p = (word *)(h -> hb_body);
+    word ** p = (word *)(h -> hb_body);
     word * lim = (word *)(h + 1);
 
-    p[0] = (word)ofl;
+    p[0] = (word *)ofl;
     p[1] = 0;
     p[2] = 0;
     p[3] = 0;
     p += 4;
     for (; (word)p < (word)lim; p += 4) {
         GC_PREFETCH_FOR_WRITE((ptr_t)(p + 64));
-        p[0] = (word)(p-4);
+        p[0] = (word *)(p-4);
         p[1] = 0;
         CLEAR_DOUBLE(p+2);
     };
@@ -69,15 +69,15 @@
   /* The same for size 2 uncleared objects.     */
   STATIC ptr_t GC_build_fl2(struct hblk *h, ptr_t ofl)
   {
-    word * p = (word *)(h -> hb_body);
+    word ** p = (word *)(h -> hb_body);
     word * lim = (word *)(h + 1);
 
-    p[0] = (word)ofl;
-    p[2] = (word)p;
+    p[0] = (word *)ofl;
+    p[2] = (word *)p;
     p += 4;
     for (; (word)p < (word)lim; p += 4) {
-        p[0] = (word)(p-2);
-        p[2] = (word)p;
+        p[0] = (word *)(p-2);
+        p[2] = (word *)p;
     };
     return((ptr_t)(p-2));
   }
@@ -85,16 +85,16 @@
   /* The same for size 4 uncleared objects.     */
   STATIC ptr_t GC_build_fl4(struct hblk *h, ptr_t ofl)
   {
-    word * p = (word *)(h -> hb_body);
+    word ** p = (word *)(h -> hb_body);
     word * lim = (word *)(h + 1);
 
-    p[0] = (word)ofl;
-    p[4] = (word)p;
+    p[0] = (word *)ofl;
+    p[4] = (word *)p;
     p += 8;
     for (; (word)p < (word)lim; p += 8) {
         GC_PREFETCH_FOR_WRITE((ptr_t)(p + 64));
-        p[0] = (word)(p-4);
-        p[4] = (word)p;
+        p[0] = (word *)(p-4);
+        p[4] = (word *)p;
     };
     return((ptr_t)(p-4));
   }
@@ -109,8 +109,8 @@
 GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
                            ptr_t list)
 {
-  word *p, *prev;
-  word *last_object;            /* points to last object in new hblk    */
+  word **p, **prev;
+  word **last_object;            /* points to last object in new hblk    */
 
   /* Do a few prefetches here, just because its cheap.          */
   /* If we were more serious about it, these should go inside   */
@@ -143,7 +143,7 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
     if (clear) BZERO(h, HBLKSIZE);
 
   /* Add objects to free list */
-    p = (word *)(h -> hb_body) + sz;    /* second object in *h  */
+    p = (word **)(h -> hb_body) + sz;    /* second object in *h  */
     prev = (word *)(h -> hb_body);              /* One object behind p  */
     last_object = (word *)((char *)h + HBLKSIZE);
     last_object -= sz;
