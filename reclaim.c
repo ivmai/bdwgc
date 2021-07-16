@@ -143,6 +143,30 @@ STATIC GC_bool GC_block_nearly_full(hdr *hhdr, word sz)
 /* TODO: This should perhaps again be specialized for USE_MARK_BYTES    */
 /* and USE_MARK_BITS cases.                                             */
 
+GC_INLINE word *GC_clear_block(word *p, word sz, signed_word *count)
+{
+  word *q = (word *)((ptr_t)p + sz);
+
+  /* Clear object, advance p to next object in the process.     */
+# ifdef USE_MARK_BYTES
+    GC_ASSERT((sz & 1) == 0);
+    GC_ASSERT(((word)p & (2 * sizeof(word) - 1)) == 0);
+    p[1] = 0;
+    p += 2;
+    while ((word)p < (word)q) {
+      CLEAR_DOUBLE(p);
+      p += 2;
+    }
+# else
+    p++; /* Skip link field */
+    while ((word)p < (word)q) {
+      *p++ = 0;
+    }
+# endif
+  *count += sz;
+  return p;
+}
+
 /*
  * Restore unmarked small objects in h of size sz to the object
  * free list.  Returns the new list.
@@ -152,8 +176,7 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, word sz,
                               ptr_t list, signed_word *count)
 {
     word bit_no = 0;
-    word *p, *q, *plim;
-    signed_word n_bytes_found = 0;
+    ptr_t p, plim;
 
     GC_ASSERT(hhdr == GC_find_header((ptr_t)hbp));
 #   ifndef THREADS
@@ -162,40 +185,23 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, word sz,
       /* Skip the assertion because of a potential race with GC_realloc. */
 #   endif
     GC_ASSERT((sz & (BYTES_PER_WORD-1)) == 0);
-    p = (word *)(hbp->hb_body);
-    plim = (word *)(hbp->hb_body + HBLKSIZE - sz);
+    p = hbp->hb_body;
+    plim = p + HBLKSIZE - sz;
 
     /* go through all words in block */
         while ((word)p <= (word)plim) {
             if (mark_bit_from_hdr(hhdr, bit_no)) {
-                p = (word *)((ptr_t)p + sz);
+                p += sz;
             } else {
-                n_bytes_found += sz;
-                /* object is available - put on list */
-                    obj_link(p) = list;
-                    list = ((ptr_t)p);
-                /* Clear object, advance p to next object in the process */
-                    q = (word *)((ptr_t)p + sz);
-#                   ifdef USE_MARK_BYTES
-                      GC_ASSERT(!(sz & 1)
-                                && !((word)p & (2 * sizeof(word) - 1)));
-                      p[1] = 0;
-                      p += 2;
-                      while ((word)p < (word)q) {
-                        CLEAR_DOUBLE(p);
-                        p += 2;
-                      }
-#                   else
-                      p++; /* Skip link field */
-                      while ((word)p < (word)q) {
-                        *p++ = 0;
-                      }
-#                   endif
+                /* Object is available - put it on list. */
+                obj_link(p) = list;
+                list = p;
+
+                p = (ptr_t)GC_clear_block((word *)p, sz, count);
             }
             bit_no += MARK_BIT_OFFSET(sz);
         }
-    *count += n_bytes_found;
-    return(list);
+    return list;
 }
 
 /* The same thing, but don't clear objects: */
@@ -234,52 +240,29 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
                                        ptr_t list, signed_word *count)
   {
     word bit_no = 0;
-    word *p, *q, *plim;
-    signed_word n_bytes_found = 0;
+    ptr_t p, plim;
     struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
     int (GC_CALLBACK *disclaim)(void *) = ok->ok_disclaim_proc;
 
 #   ifndef THREADS
       GC_ASSERT(sz == hhdr -> hb_sz);
 #   endif
-    p = (word *)(hbp -> hb_body);
-    plim = (word *)((ptr_t)p + HBLKSIZE - sz);
+    p = hbp->hb_body;
+    plim = p + HBLKSIZE - sz;
 
-    while ((word)p <= (word)plim) {
-        int marked = mark_bit_from_hdr(hhdr, bit_no);
-        if (!marked && (*disclaim)(p)) {
+    for (; (word)p <= (word)plim; bit_no += MARK_BIT_OFFSET(sz)) {
+        if (mark_bit_from_hdr(hhdr, bit_no)) {
+            p += sz;
+        } else if ((*disclaim)(p)) {
             set_mark_bit_from_hdr(hhdr, bit_no);
             hhdr -> hb_n_marks++;
-            marked = 1;
+            p += sz;
+        } else {
+            obj_link(p) = list;
+            list = p;
+            p = (ptr_t)GC_clear_block((word *)p, sz, count);
         }
-        if (marked)
-            p = (word *)((ptr_t)p + sz);
-        else {
-                n_bytes_found += sz;
-                /* object is available - put on list */
-                    obj_link(p) = list;
-                    list = ((ptr_t)p);
-                /* Clear object, advance p to next object in the process */
-                    q = (word *)((ptr_t)p + sz);
-#                   ifdef USE_MARK_BYTES
-                      GC_ASSERT((sz & 1) == 0);
-                      GC_ASSERT(((word)p & (2 * sizeof(word) - 1)) == 0);
-                      p[1] = 0;
-                      p += 2;
-                      while ((word)p < (word)q) {
-                        CLEAR_DOUBLE(p);
-                        p += 2;
-                      }
-#                   else
-                      p++; /* Skip link field */
-                      while ((word)p < (word)q) {
-                        *p++ = 0;
-                      }
-#                   endif
-        }
-        bit_no += MARK_BIT_OFFSET(sz);
     }
-    *count += n_bytes_found;
     return list;
   }
 #endif /* ENABLE_DISCLAIM */
