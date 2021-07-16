@@ -58,6 +58,9 @@
        || defined(LINT2)) && defined(GC_PTHREADS)
 #    define USE_PTHREAD_LOCKS
 #    undef USE_SPIN_LOCK
+#    if defined(LINT2) && !defined(NO_PTHREAD_TRYLOCK)
+#      define NO_PTHREAD_TRYLOCK
+#    endif
 #  endif
 
 #  if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS)
