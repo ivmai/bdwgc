@@ -2002,46 +2002,6 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
          UNTESTED(GetSymbolNameFromStack);
 #      endif
        UNTESTED(GC_abort_on_oom);
-       UNTESTED(GC_get_allocd_bytes_per_finalizer);
-       UNTESTED(GC_get_bytes_since_gc);
-       UNTESTED(GC_get_dont_expand);
-       UNTESTED(GC_get_dont_precollect);
-       UNTESTED(GC_get_finalize_on_demand);
-       UNTESTED(GC_get_finalizer_notifier);
-       UNTESTED(GC_get_force_unmap_on_gcollect);
-       UNTESTED(GC_get_free_bytes);
-       UNTESTED(GC_get_free_space_divisor);
-       UNTESTED(GC_get_full_freq);
-       UNTESTED(GC_get_java_finalization);
-       UNTESTED(GC_get_max_retries);
-       UNTESTED(GC_get_no_dls);
-       UNTESTED(GC_get_non_gc_bytes);
-       UNTESTED(GC_get_on_collection_event);
-       UNTESTED(GC_get_on_heap_resize);
-       UNTESTED(GC_get_pages_executable);
-       UNTESTED(GC_get_push_other_roots);
-       UNTESTED(GC_get_start_callback);
-       UNTESTED(GC_get_stop_func);
-       UNTESTED(GC_get_time_limit);
-       UNTESTED(GC_get_warn_proc);
-       UNTESTED(GC_is_disabled);
-       UNTESTED(GC_set_allocd_bytes_per_finalizer);
-       UNTESTED(GC_set_dont_precollect);
-       UNTESTED(GC_set_finalize_on_demand);
-       UNTESTED(GC_set_finalizer_notifier);
-       UNTESTED(GC_set_free_space_divisor);
-       UNTESTED(GC_set_full_freq);
-       UNTESTED(GC_set_java_finalization);
-       UNTESTED(GC_set_max_retries);
-       UNTESTED(GC_set_no_dls);
-       UNTESTED(GC_set_non_gc_bytes);
-       UNTESTED(GC_set_on_collection_event);
-       UNTESTED(GC_set_on_heap_resize);
-       UNTESTED(GC_set_oom_fn);
-       UNTESTED(GC_set_push_other_roots);
-       UNTESTED(GC_set_start_callback);
-       UNTESTED(GC_set_stop_func);
-       UNTESTED(GC_set_time_limit);
        UNTESTED(GC_malloc_explicitly_typed_ignore_off_page);
        UNTESTED(GC_debug_strndup);
        UNTESTED(GC_deinit);
@@ -2053,16 +2013,8 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
        UNTESTED(GC_expand_hp);
        UNTESTED(GC_register_describe_type_fn);
        UNTESTED(GC_register_has_static_roots_callback);
-#      if !defined(PCR) && !defined(SMALL_CONFIG)
-         UNTESTED(GC_get_abort_func);
-         UNTESTED(GC_set_abort_func);
-#      endif
 #      ifdef GC_GCJ_SUPPORT
          UNTESTED(GC_gcj_malloc_ignore_off_page);
-#      endif
-#      ifndef NO_CLOCK
-         UNTESTED(GC_get_time_limit_tv);
-         UNTESTED(GC_set_time_limit_tv);
 #      endif
 #      ifndef NO_DEBUGGING
          UNTESTED(GC_dump);
@@ -2075,9 +2027,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #      endif
 #      ifndef GC_NO_FINALIZATION
          UNTESTED(GC_debug_register_finalizer_unreachable);
-         UNTESTED(GC_get_await_finalize_proc);
          UNTESTED(GC_register_disappearing_link);
-         UNTESTED(GC_set_await_finalize_proc);
          UNTESTED(GC_should_invoke_finalizers);
 #        ifndef JAVA_FINALIZATION_NOT_NEEDED
            UNTESTED(GC_finalize_all);
@@ -2086,8 +2036,6 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
            UNTESTED(GC_dump_finalization);
 #        endif
 #        ifndef GC_TOGGLE_REFS_NOT_NEEDED
-           UNTESTED(GC_get_toggleref_func);
-           UNTESTED(GC_set_toggleref_func);
            UNTESTED(GC_toggleref_add);
 #        endif
 #      endif
@@ -2440,20 +2388,53 @@ int main(void)
     check_heap_stats();
     (void)fflush(stdout);
     (void)pthread_attr_destroy(&attr);
-    GC_set_disable_automatic_collection(FALSE);
-    (void)GC_get_disable_automatic_collection();
+
+    /* Dummy checking of various getters and setters. */
+    (void)GC_get_bytes_since_gc();
+    (void)GC_get_free_bytes();
+    (void)GC_get_pages_executable();
+    (void)GC_get_warn_proc();
+    (void)GC_is_disabled();
+    GC_set_allocd_bytes_per_finalizer(GC_get_allocd_bytes_per_finalizer());
+    GC_set_disable_automatic_collection(GC_get_disable_automatic_collection());
+    GC_set_dont_expand(GC_get_dont_expand());
+    GC_set_dont_precollect(GC_get_dont_precollect());
+    GC_set_finalize_on_demand(GC_get_finalize_on_demand());
+    GC_set_finalizer_notifier(GC_get_finalizer_notifier());
+    GC_set_force_unmap_on_gcollect(GC_get_force_unmap_on_gcollect());
+    GC_set_free_space_divisor(GC_get_free_space_divisor());
+    GC_set_full_freq(GC_get_full_freq());
+    GC_set_java_finalization(GC_get_java_finalization());
+    GC_set_max_retries(GC_get_max_retries());
+    GC_set_no_dls(GC_get_no_dls());
+    GC_set_non_gc_bytes(GC_get_non_gc_bytes());
+    GC_set_on_collection_event(GC_get_on_collection_event());
+    GC_set_on_heap_resize(GC_get_on_heap_resize());
+    GC_set_on_thread_event(GC_get_on_thread_event());
+    GC_set_oom_fn(GC_get_oom_fn());
+    GC_set_push_other_roots(GC_get_push_other_roots());
+    GC_set_start_callback(GC_get_start_callback());
+    GC_set_stop_func(GC_get_stop_func());
+    GC_set_suspend_signal(GC_get_suspend_signal());
+    GC_set_thr_restart_signal(GC_get_thr_restart_signal());
+    GC_set_time_limit(GC_get_time_limit());
+#   if !defined(PCR) && !defined(SMALL_CONFIG)
+      GC_set_abort_func(GC_get_abort_func());
+#   endif
+#   ifndef NO_CLOCK
+      GC_set_time_limit_tv(GC_get_time_limit_tv());
+#   endif
+#   ifndef GC_NO_FINALIZATION
+      GC_set_await_finalize_proc(GC_get_await_finalize_proc());
+#     ifndef GC_TOGGLE_REFS_NOT_NEEDED
+        GC_set_toggleref_func(GC_get_toggleref_func());
+#     endif
+#   endif
 #   if defined(CPPCHECK)
       UNTESTED(GC_allow_register_threads);
-      UNTESTED(GC_get_on_thread_event);
       UNTESTED(GC_register_altstack);
-      UNTESTED(GC_set_on_thread_event);
-      UNTESTED(GC_set_suspend_signal);
-      UNTESTED(GC_set_thr_restart_signal);
       UNTESTED(GC_stop_world_external);
       UNTESTED(GC_start_world_external);
-#     if defined(GC_DARWIN_THREADS) || defined(GC_OPENBSD_UTHREADS)
-        UNTESTED(GC_get_thr_restart_signal);
-#     endif
 #     ifndef GC_NO_DLOPEN
         UNTESTED(GC_dlopen);
 #     endif
