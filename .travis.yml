@@ -211,6 +211,16 @@ jobs:
     - MAKEFILE_TARGETS="check cord/de"
   - os: freebsd
     env:
+    - CONF_OPTIONS="--enable-cplusplus"
+    - MAKE_NPROC=8
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: freebsd
+    env:
+    - CONF_OPTIONS="--enable-gc-assertions --disable-shared"
+    - MAKE_NPROC=8
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: freebsd
+    env:
     - CMAKE_CONFIG="Release"
     - CMAKE_OPTIONS="-Denable_cplusplus=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
