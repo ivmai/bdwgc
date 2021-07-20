@@ -7,7 +7,7 @@ LIBCORD_VER_INFO = 5:0:4
 
 lib_LTLIBRARIES += libcord.la
 
-libcord_la_LIBADD = $(top_builddir)/libgc.la
+libcord_la_LIBADD = libgc.la
 libcord_la_LDFLAGS = -version-info $(LIBCORD_VER_INFO) -no-undefined
 libcord_la_CPPFLAGS = $(AM_CPPFLAGS)
 
