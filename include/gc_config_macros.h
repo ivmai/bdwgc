@@ -360,10 +360,13 @@
     /* how to generate call stacks.                                     */
 #   define GC_RETURN_ADDR (GC_word)__builtin_return_address(0)
 #   if GC_GNUC_PREREQ(4, 0) && (defined(__i386__) || defined(__amd64__) \
-                        || defined(__x86_64__) /* and probably others... */)
+                        || defined(__x86_64__) /* and probably others... */) \
+       && !defined(GC_NO_RETURN_ADDR_PARENT)
 #     define GC_HAVE_RETURN_ADDR_PARENT
 #     define GC_RETURN_ADDR_PARENT \
         (GC_word)__builtin_extract_return_addr(__builtin_return_address(1))
+            /* Note: a compiler might complain that calling                 */
+            /* __builtin_return_address with a nonzero argument is unsafe.  */
 #   endif
 # else
     /* Just pass 0 for gcc compatibility.       */
