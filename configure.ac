@@ -755,6 +755,22 @@ AC_ARG_ENABLE(gc-debug,
 AM_CONDITIONAL([MAKE_BACK_GRAPH], [test x"$enable_gc_debug" = xyes])
 AM_CONDITIONAL([KEEP_BACK_PTRS], [test x"$keep_back_ptrs" = xtrue])
 
+# Check whether a compiler warning of unsafe __builtin_return_address(1)
+# could be suppressed by -Wno-frame-address option.
+# __builtin_return_address(1) is used by libgc for debugging purposes only.
+AC_MSG_CHECKING([whether -Wno-frame-address works])
+use_wno_error_frame_address=no
+old_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Werror -Wno-frame-address $CFLAGS_EXTRA"
+AC_TRY_COMPILE([], [{
+    if (!__builtin_return_address(1)) return 1;
+}], [ use_wno_error_frame_address=yes ])
+CFLAGS="$old_CFLAGS"
+AC_MSG_RESULT($use_wno_error_frame_address)
+if test x"$use_wno_error_frame_address" = xyes; then
+  CFLAGS="$CFLAGS -Wno-frame-address"
+fi
+
 # Check for dladdr (used for debugging).
 AC_MSG_CHECKING(for dladdr)
 have_dladdr=no
