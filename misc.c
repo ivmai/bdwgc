@@ -1069,7 +1069,11 @@ GC_API void GC_CALL GC_init(void)
       GC_all_interior_pointers = 1;
     }
     if (0 != GETENV("GC_DONT_GC")) {
-      GC_dont_gc = 1;
+#     ifdef LINT2
+        GC_disable();
+#     else
+        GC_dont_gc = 1;
+#     endif
     }
     if (0 != GETENV("GC_PRINT_BACK_HEIGHT")) {
       GC_print_back_height = TRUE;

@@ -683,6 +683,7 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
     int split_limit; /* Highest index of free list whose blocks we      */
                      /* split.                                          */
 
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((sz & (GRANULE_BYTES - 1)) == 0);
     blocks = OBJ_SZ_TO_BLOCKS_CHECKED(sz);
     if ((signed_word)(blocks * HBLKSIZE) < 0) {

@@ -1581,6 +1581,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
 STATIC void GC_unregister_my_thread_inner(GC_thread me)
 {
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef DEBUG_THREADS
       GC_log_printf(
                 "Unregistering thread %p, gc_thread = %p, n_threads = %d\n",

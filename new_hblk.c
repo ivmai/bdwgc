@@ -174,6 +174,7 @@ GC_INNER void GC_new_hblk(size_t gran, int kind)
   GC_bool clear = GC_obj_kinds[kind].ok_init;
 
   GC_STATIC_ASSERT((sizeof (struct hblk)) == HBLKSIZE);
+  GC_ASSERT(I_HOLD_LOCK());
 
   if (GC_debugging_started) clear = TRUE;
 
