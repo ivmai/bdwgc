@@ -87,6 +87,8 @@ extern "C" {
     GC_API void GC_CALL GC_incr_bytes_freed(size_t bytes);
 }
 
+#include "gc_mark.h" // for GC_generic_malloc
+
 #define GC_generic_malloc_words_small(lw, k) \
                         GC_generic_malloc((lw) * sizeof(GC_word), k)
 
