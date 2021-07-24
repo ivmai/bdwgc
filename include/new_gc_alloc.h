@@ -134,6 +134,9 @@ public:
   static size_t GC_uncollectable_bytes_recently_freed;
 
   static void * GC_out_of_line_malloc(size_t nwords, int kind);
+
+private:
+  static void * GC_CALLBACK GC_update_byte_counters(void *);
 };
 
 template <int dummy>
@@ -155,6 +158,18 @@ void * GC_aux_template<dummy>::GC_out_of_line_malloc(size_t nwords, int kind)
     if (0 == op)
         GC_ALLOCATOR_THROW_OR_ABORT();
 
+#   ifdef LINT2
+      return GC_call_with_alloc_lock(GC_update_byte_counters, op);
+#   else
+      // Anyway, the relevant allocators are not safe for concurrent use
+      // by multiple threads.
+      return GC_update_byte_counters(op);
+#   endif
+}
+
+template <int dummy>
+void * GC_CALLBACK GC_aux_template<dummy>::GC_update_byte_counters(void *op)
+{
     GC_word non_gc_bytes = GC_get_non_gc_bytes();
     GC_bytes_recently_allocd += GC_uncollectable_bytes_recently_allocd;
     non_gc_bytes += GC_uncollectable_bytes_recently_allocd;
@@ -179,6 +194,8 @@ typedef GC_aux_template<0> GC_aux;
 // We assume the first word will be immediately overwritten.
 // In this version, deallocation is not a no-op, and explicit
 // deallocation is likely to help performance.
+// Note: the single_client_... allocators are not safe for concurrent access
+// by multiple threads.
 template <int dummy>
 class single_client_gc_alloc_template {
     public:
