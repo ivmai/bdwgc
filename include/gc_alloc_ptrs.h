@@ -30,8 +30,13 @@ GC_API void ** const GC_uobjfreelist_ptr;
   GC_API void ** const GC_auobjfreelist_ptr;
 #endif
 
-GC_API void GC_CALL GC_incr_bytes_allocd(size_t bytes);
-GC_API void GC_CALL GC_incr_bytes_freed(size_t bytes);
+/* Manually update the number of bytes allocated during the current     */
+/* collection cycle and the number of explicitly deallocated bytes of   */
+/* memory since the last collection, respectively.  Both functions are  */
+/* unsynchronized, GC_call_with_alloc_lock() should be used to avoid    */
+/* data races.                                                          */
+GC_API void GC_CALL GC_incr_bytes_allocd(size_t /* bytes */);
+GC_API void GC_CALL GC_incr_bytes_freed(size_t /* bytes */);
 
 #ifdef __cplusplus
   } /* extern "C" */
