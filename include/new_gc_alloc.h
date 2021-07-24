@@ -74,6 +74,8 @@
 // We can't include gc_priv.h, since that pulls in way too much stuff.
 #include "gc_alloc_ptrs.h"
 
+#include "gc_mark.h" // for GC_generic_malloc
+
 #define GC_generic_malloc_words_small(lw, k) \
                         GC_generic_malloc((lw) * sizeof(GC_word), k)
 
