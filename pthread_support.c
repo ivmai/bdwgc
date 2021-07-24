@@ -1666,7 +1666,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
 
     ASSERT_SYMS_INITIALIZED();
     LOCK();
-    t = GC_lookup_thread(thread);
+    t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
     /* This is guaranteed to be the intended one, since the thread id   */
     /* can't have been recycled by pthreads.                            */
     UNLOCK();
@@ -1702,7 +1702,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
 
     ASSERT_SYMS_INITIALIZED();
     LOCK();
-    t = GC_lookup_thread(thread);
+    t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
     UNLOCK();
     result = REAL_FUNC(pthread_detach)(thread);
     if (result == 0) {

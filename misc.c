@@ -1322,7 +1322,13 @@ GC_API void GC_CALL GC_init(void)
 #   endif
     GC_is_initialized = TRUE;
 #   if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-        GC_thr_init();
+#       ifdef LINT2
+          LOCK();
+          GC_thr_init();
+          UNLOCK();
+#       else
+          GC_thr_init();
+#       endif
 #       ifdef PARALLEL_MARK
           /* Actually start helper threads.     */
 #         if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
