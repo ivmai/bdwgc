@@ -155,14 +155,15 @@ void * GC_aux_template<dummy>::GC_out_of_line_malloc(size_t nwords, int kind)
     if (0 == op)
         GC_ALLOCATOR_THROW_OR_ABORT();
 
+    GC_word non_gc_bytes = GC_get_non_gc_bytes();
     GC_bytes_recently_allocd += GC_uncollectable_bytes_recently_allocd;
-    GC_non_gc_bytes +=
-                GC_uncollectable_bytes_recently_allocd;
+    non_gc_bytes += GC_uncollectable_bytes_recently_allocd;
     GC_uncollectable_bytes_recently_allocd = 0;
 
     GC_bytes_recently_freed += GC_uncollectable_bytes_recently_freed;
-    GC_non_gc_bytes -= GC_uncollectable_bytes_recently_freed;
+    non_gc_bytes -= GC_uncollectable_bytes_recently_freed;
     GC_uncollectable_bytes_recently_freed = 0;
+    GC_set_non_gc_bytes(non_gc_bytes);
 
     GC_incr_bytes_allocd(GC_bytes_recently_allocd);
     GC_bytes_recently_allocd = 0;
