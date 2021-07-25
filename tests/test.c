@@ -1309,10 +1309,17 @@ static void uniq(void *p, ...) {
       }
 }
 
+#include "private/gc_alloc_ptrs.h"
+
 void * GC_CALLBACK inc_int_counter(void *pcounter)
 {
- ++(*(int *)pcounter);
- return NULL;
+  ++(*(int *)pcounter);
+
+  /* Dummy checking of API functions while GC lock is held.     */
+  GC_incr_bytes_allocd(0);
+  GC_incr_bytes_freed(0);
+
+  return NULL;
 }
 
 struct thr_hndl_sb_s {
