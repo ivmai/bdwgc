@@ -11,7 +11,7 @@
  * modified is included with the above copyright notice.
  */
 
-/* This file should never be included by clients directly.      */
+/* This file is kept for a binary compatibility purpose only.   */
 
 #ifndef GC_ALLOC_PTRS_H
 #define GC_ALLOC_PTRS_H
@@ -22,12 +22,16 @@
   extern "C" {
 #endif
 
-GC_API void ** const GC_objfreelist_ptr;
-GC_API void ** const GC_aobjfreelist_ptr;
-GC_API void ** const GC_uobjfreelist_ptr;
+#ifndef GC_API_PRIV
+# define GC_API_PRIV GC_API
+#endif
+
+GC_API_PRIV void ** const GC_objfreelist_ptr;
+GC_API_PRIV void ** const GC_aobjfreelist_ptr;
+GC_API_PRIV void ** const GC_uobjfreelist_ptr;
 
 #ifdef GC_ATOMIC_UNCOLLECTABLE
-  GC_API void ** const GC_auobjfreelist_ptr;
+  GC_API_PRIV void ** const GC_auobjfreelist_ptr;
 #endif
 
 /* Manually update the number of bytes allocated during the current     */
@@ -35,8 +39,8 @@ GC_API void ** const GC_uobjfreelist_ptr;
 /* memory since the last collection, respectively.  Both functions are  */
 /* unsynchronized, GC_call_with_alloc_lock() should be used to avoid    */
 /* data races.                                                          */
-GC_API void GC_CALL GC_incr_bytes_allocd(size_t /* bytes */);
-GC_API void GC_CALL GC_incr_bytes_freed(size_t /* bytes */);
+GC_API_PRIV void GC_CALL GC_incr_bytes_allocd(size_t /* bytes */);
+GC_API_PRIV void GC_CALL GC_incr_bytes_freed(size_t /* bytes */);
 
 #ifdef __cplusplus
   } /* extern "C" */

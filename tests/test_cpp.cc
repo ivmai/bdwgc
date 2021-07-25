@@ -36,12 +36,7 @@ few minutes to complete.
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef DONT_USE_STD_ALLOCATOR
-# include "gc_allocator.h"
-#else
-  /* Note: This works only for ancient STL versions.    */
-# include "new_gc_alloc.h"
-#endif
+#include "gc_allocator.h"
 
 # include "private/gcconfig.h"
 
@@ -310,24 +305,18 @@ void* Undisguise( GC_word i ) {
       GC_printf("This test program is not designed for leak detection mode\n");
 
     int i, iters, n;
-#   ifndef DONT_USE_STD_ALLOCATOR
-      int *x = gc_allocator<int>().allocate(1);
-      int *xio;
-      xio = gc_allocator_ignore_off_page<int>().allocate(1);
-      (void)xio;
-      int **xptr = traceable_allocator<int *>().allocate(1);
-#   else
-      int *x = (int *)gc_alloc::allocate(sizeof(int));
-#   endif
+    int *x = gc_allocator<int>().allocate(1);
+    int *xio;
+    xio = gc_allocator_ignore_off_page<int>().allocate(1);
+    (void)xio;
+    int **xptr = traceable_allocator<int *>().allocate(1);
     *x = 29;
-#   ifndef DONT_USE_STD_ALLOCATOR
-      if (!xptr) {
-        fprintf(stderr, "Out of memory!\n");
-        exit(3);
-      }
-      GC_PTR_STORE_AND_DIRTY(xptr, x);
-      x = 0;
-#   endif
+    if (!xptr) {
+      fprintf(stderr, "Out of memory!\n");
+      exit(3);
+    }
+    GC_PTR_STORE_AND_DIRTY(xptr, x);
+    x = 0;
     if (argc != 2
         || (n = (int)COVERT_DATAFLOW(atoi(argv[1]))) <= 0) {
       GC_printf("usage: test_cpp number-of-iterations\n"
@@ -413,9 +402,7 @@ void* Undisguise( GC_word i ) {
         D::Test();
         F::Test();}
 
-#   ifndef DONT_USE_STD_ALLOCATOR
-      x = *xptr;
-#   endif
+    x = *xptr;
     my_assert (29 == x[0]);
     GC_printf( "The test appears to have succeeded.\n" );
     return( 0 );

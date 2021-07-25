@@ -181,24 +181,6 @@ memory. The latter allocates garbage-collected memory.
 
 These should work with any fully standard-conforming C++ compiler.
 
-Users of the [SGI extended STL](http://www.sgi.com/tech/stl) or its
-derivatives (including most g++ versions) may instead be able to include
-`new_gc_alloc.h` before including STL header files. This is increasingly
-discouraged.
-
-This defines SGI-style allocators
-
-  * `traceable_alloc`
-  * `single_client_traceable_alloc`
-  * `gc_alloc`
-  * `single_client_gc_alloc`
-
-The first two allocate uncollectible but traced memory, while the second two
-allocate collectible memory. The `single_client_...` versions are not safe for
-concurrent access by multiple threads, but are faster.
-
-See sample code [here](http://www.hboehm.info/gc/gc_alloc_exC.txt).
-
 ### Class inheritance based interface for new-based allocation
 
 Users may include `gc_cpp.h` and then cause members of classes to be allocated
