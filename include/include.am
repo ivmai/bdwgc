@@ -29,9 +29,6 @@ pkginclude_HEADERS += \
 # headers which are not installed
 #
 dist_noinst_HEADERS += \
-        include/cord.h \
-        include/cord_pos.h \
-        include/ec.h \
         include/gc_alloc_ptrs.h \
         include/new_gc_alloc.h \
         include/private/darwin_semaphore.h \
