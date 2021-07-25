@@ -551,10 +551,8 @@ if (install_headers)
   install(FILES include/gc.h
                 include/gc_backptr.h
                 include/gc_config_macros.h
-                include/gc_gcj.h
                 include/gc_inline.h
                 include/gc_mark.h
-                include/gc_pthread_redirects.h
                 include/gc_tiny_fl.h
                 include/gc_typed.h
                 include/gc_version.h
@@ -571,6 +569,14 @@ if (install_headers)
   endif()
   if (enable_disclaim)
     install(FILES include/gc_disclaim.h
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
+  endif()
+  if (enable_gcj_support)
+    install(FILES include/gc_gcj.h
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
+  endif()
+  if (enable_threads AND CMAKE_USE_PTHREADS_INIT)
+    install(FILES include/gc_pthread_redirects.h
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
   endif()
   if (build_cord)

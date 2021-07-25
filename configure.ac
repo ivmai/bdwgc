@@ -678,7 +678,6 @@ dnl Interface Selection
 dnl -------------------
 dnl
 dnl By default, make the library as general as possible.
-dnl enable_gcj_support=no
 AC_ARG_ENABLE(gcj-support,
     [AS_HELP_STRING([--disable-gcj-support], [disable support for gcj])])
 if test x"$enable_gcj_support" != xno; then
@@ -697,6 +696,7 @@ if test x"$enable_gcj_support" != xno; then
         ;;
     esac
 fi
+AM_CONDITIONAL(ENABLE_GCJ_SUPPORT, [test x"enable_gcj_support" != xno])
 
 dnl Interaction with other programs that might use signals.
 AC_ARG_ENABLE(sigrt-signals,

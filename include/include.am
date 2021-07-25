@@ -16,10 +16,8 @@ pkginclude_HEADERS += \
         include/gc.h \
         include/gc_backptr.h \
         include/gc_config_macros.h \
-        include/gc_gcj.h \
         include/gc_inline.h \
         include/gc_mark.h \
-        include/gc_pthread_redirects.h \
         include/gc_tiny_fl.h \
         include/gc_typed.h \
         include/gc_version.h \

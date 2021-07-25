@@ -70,7 +70,7 @@ else
 EXTRA_DIST += extra/gc.c
 libgc_la_SOURCES = \
     allchblk.c alloc.c blacklst.c dbg_mlc.c \
-    dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c \
+    dyn_load.c finalize.c gc_dlopen.c headers.c \
     mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
     obj_map.c os_dep.c ptr_chck.c reclaim.c specific.c typd_mlc.c
 
@@ -83,6 +83,7 @@ else
 if PTHREADS
 # Not Cygwin or MinGW.
 libgc_la_SOURCES += pthread_start.c pthread_support.c
+pkginclude_HEADERS += include/gc_pthread_redirects.h
 if DARWIN_THREADS
 libgc_la_SOURCES += darwin_stop_world.c
 else
@@ -101,6 +102,11 @@ endif
 
 if CHECKSUMS
 libgc_la_SOURCES += checksums.c
+endif
+
+if ENABLE_GCJ_SUPPORT
+libgc_la_SOURCES += gcj_mlc.c
+pkginclude_HEADERS += include/gc_gcj.h
 endif
 
 if ENABLE_DISCLAIM
