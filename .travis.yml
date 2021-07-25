@@ -72,7 +72,7 @@ jobs:
     compiler: gcc-9
     env:
     - CFLAGS_EXTRA="-O3 -march=native"
-    - CONF_OPTIONS="--enable-cplusplus"
+    - CONF_OPTIONS="--enable-cplusplus --disable-gcj-support"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
       apt:
