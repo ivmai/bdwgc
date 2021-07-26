@@ -1322,7 +1322,8 @@ GC_API void GC_CALL GC_init(void)
 #   endif
     GC_is_initialized = TRUE;
 #   if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-#       ifdef LINT2
+#       if defined(LINT2) \
+           && !(defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED))
           LOCK();
           GC_thr_init();
           UNLOCK();
