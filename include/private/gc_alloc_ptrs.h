@@ -26,12 +26,22 @@
 # define GC_API_PRIV GC_API
 #endif
 
-GC_API_PRIV void ** const GC_objfreelist_ptr;
-GC_API_PRIV void ** const GC_aobjfreelist_ptr;
-GC_API_PRIV void ** const GC_uobjfreelist_ptr;
+/* Some compilers do not accept "const" together with the dllimport     */
+/* attribute, so the symbols below are exported as non-constant ones.   */
+#ifndef GC_APIVAR_CONST
+# if defined(GC_BUILD) || !defined(GC_DLL)
+#   define GC_APIVAR_CONST const
+# else
+#   define GC_APIVAR_CONST /* empty */
+# endif
+#endif
+
+GC_API_PRIV void ** GC_APIVAR_CONST GC_objfreelist_ptr;
+GC_API_PRIV void ** GC_APIVAR_CONST GC_aobjfreelist_ptr;
+GC_API_PRIV void ** GC_APIVAR_CONST GC_uobjfreelist_ptr;
 
 #ifdef GC_ATOMIC_UNCOLLECTABLE
-  GC_API_PRIV void ** const GC_auobjfreelist_ptr;
+  GC_API_PRIV void ** GC_APIVAR_CONST GC_auobjfreelist_ptr;
 #endif
 
 /* Manually update the number of bytes allocated during the current     */
