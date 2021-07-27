@@ -50,7 +50,11 @@
         || defined(__s390x__) \
         || (defined(__x86_64__) && !defined(__ILP32__)) \
         || defined(__alpha__) || defined(__powerpc64__) \
-        || defined(__arch64__)
+        || defined(__arch64__) \
+        || (defined(__riscv) && __riscv_xlen == 64)
+#  if defined(__CHERI_PURE_CAPABILITY__)
+#    error FIXME Expand Granule size and subsequent uses for pointer sizes being different from word sizes
+#  endif
 #  define GC_GRANULE_BYTES 16
 #  define GC_GRANULE_WORDS 2
 # else

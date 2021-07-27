@@ -856,12 +856,26 @@ EXTERN_C_BEGIN
 #endif
 
 #if CPP_WORDSZ == 64
-#  define WORDS_TO_BYTES(x)   ((x)<<3)
-#  define BYTES_TO_WORDS(x)   ((x)>>3)
-#  define LOGWL               ((word)6)    /* log[2] of CPP_WORDSZ */
-#  define modWORDSZ(n) ((n) & 0x3f)        /* n mod size of word            */
-#  if ALIGNMENT != 8
-#       define UNALIGNED_PTRS
+#  if defined(__CHERI_PURE_CAPABILITY__) 
+#    if __CHERI_CAPABILITY_WIDTH__ == 128
+#      define WORDS_TO_BYTES(x)   ((x)<<4)
+#      define BYTES_TO_WORDS(x)   ((x)>>4)
+#      define LOGWL               ((word)7)    /* log[2] of CPP_WORDSZ */
+#      define modWORDSZ(n) ((n) & 0x7f)        /* n mod size of word            */
+#      if ALIGNMENT != 16
+#        define UNALIGNED_PTRS
+#      endif
+#    else 
+#      error Unsupported Capability Width
+#    endif 
+#  elif
+#    define WORDS_TO_BYTES(x)   ((x)<<3)
+#    define BYTES_TO_WORDS(x)   ((x)>>3)
+#    define LOGWL               ((word)6)    /* log[2] of CPP_WORDSZ */
+#    define modWORDSZ(n) ((n) & 0x3f)        /* n mod size of word            */
+#    if ALIGNMENT != 8
+#      define UNALIGNED_PTRS
+#    endif
 #  endif
 #endif
 

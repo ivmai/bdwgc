@@ -1230,7 +1230,9 @@ GC_API void GC_CALL GC_init(void)
       }
 #   endif
 #   if !defined(CPPCHECK)
-      GC_STATIC_ASSERT(sizeof(ptr_t) == sizeof(word));
+#     if !defined(__CHERI_PURE_CAPABILITY__)
+        GC_STATIC_ASSERT(sizeof(ptr_t) == sizeof(word));
+#     endif
       GC_STATIC_ASSERT(sizeof(signed_word) == sizeof(word));
 #     if !defined(_AUX_SOURCE) || defined(__GNUC__)
         GC_STATIC_ASSERT((word)(-1) > (word)0);

@@ -1373,8 +1373,12 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 /* The function is sometimes called keep_alive in other         */
 /* settings.                                                    */
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#if 0 //FIXME CHERI
 # define GC_reachable_here(ptr) \
                 __asm__ __volatile__(" " : : "X"(ptr) : "memory")
+#endif //FIXME CHERI
+# define GC_reachable_here(ptr) \
+                __asm__ __volatile__(" " : : "g"(ptr) : "memory")
 #else
   GC_API void GC_CALL GC_noop1(GC_word);
 # ifdef LINT2

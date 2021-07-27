@@ -2915,7 +2915,11 @@ EXTERN_C_BEGIN
 # ifdef RISCV
 #   define MACH_TYPE "RISC-V"
 #   define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
-#   define ALIGNMENT (CPP_WORDSZ/8)
+#   if defined(__CHERI_PURE_CAPABILITY__)
+#     define ALIGNMENT (__riscv_clen >> 3)
+#   else 
+#     define ALIGNMENT (CPP_WORDSZ/8)
+#   endif
 #   ifdef FREEBSD
 #     define OS_TYPE "FREEBSD"
 #     ifndef GC_FREEBSD_THREADS
@@ -2924,7 +2928,9 @@ EXTERN_C_BEGIN
 #     define SIG_SUSPEND SIGUSR1
 #     define SIG_THR_RESTART SIGUSR2
 #     define FREEBSD_STACKBOTTOM
-#     define DYNAMIC_LOADING
+#     if 0  //FIXME CHERI  - commented to simplify initial port
+#     define DYNAMIC_LOADING   
+#     endif 
       extern char etext[];
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #     define DATASTART_USES_BSDGETDATASTART
