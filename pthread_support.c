@@ -925,8 +925,6 @@ STATIC void GC_remove_all_threads_but_me(void)
 #endif /* IA64 */
 
 #ifndef STAT_READ
-  /* Also defined in os_dep.c.  */
-# define STAT_BUF_SIZE 4096
 # define STAT_READ read
         /* If read is wrapped, this may need to be redefined to call    */
         /* the real one.                                                */
@@ -958,16 +956,27 @@ STATIC void GC_remove_all_threads_but_me(void)
     /* Should be "return sysconf(_SC_NPROCESSORS_ONLN);" but that     */
     /* appears to be buggy in many cases.                             */
     /* We look for lines "cpu<n>" in /proc/stat.                      */
-    char stat_buf[STAT_BUF_SIZE];
+#   define PROC_STAT_BUF_SZ ((1 + MAX_MARKERS) * 100) /* should be enough */
+    /* No need to read the entire /proc/stat to get maximum cpu<N> as   */
+    /* - the requested lines are located at the beginning of the file;  */
+    /* - the lines with cpu<N> where N > MAX_MARKERS are not needed.    */
+    char stat_buf[PROC_STAT_BUF_SZ+1];
     int f;
     int result, i, len;
 
     f = open("/proc/stat", O_RDONLY);
     if (f < 0) {
-      WARN("Couldn't read /proc/stat\n", 0);
+      WARN("Could not open /proc/stat\n", 0);
       return 1; /* assume an uniprocessor */
     }
-    len = STAT_READ(f, stat_buf, STAT_BUF_SIZE);
+    len = STAT_READ(f, stat_buf, sizeof(stat_buf)-1);
+    /* Unlikely that we need to retry because of an incomplete read here. */
+    if (len < 0) {
+      WARN("Failed to read /proc/stat, errno = %" WARN_PRIdPTR "\n", errno);
+      close(f);
+      return 1;
+    }
+    stat_buf[len] = '\0'; /* to avoid potential buffer overrun by atoi() */
     close(f);
 
     result = 1;
@@ -975,7 +984,7 @@ STATIC void GC_remove_all_threads_but_me(void)
         /* entry in /proc/stat.  We identify those as           */
         /* uniprocessors.                                       */
 
-    for (i = 0; i < len - 100; ++i) {
+    for (i = 0; i < len - 4; ++i) {
       if (stat_buf[i] == '\n' && stat_buf[i+1] == 'c'
           && stat_buf[i+2] == 'p' && stat_buf[i+3] == 'u') {
         int cpu_no = atoi(&stat_buf[i + 4]);
