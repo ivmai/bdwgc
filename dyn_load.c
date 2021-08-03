@@ -397,11 +397,7 @@ STATIC void GC_register_map_entries(const char *maps)
 
 GC_INNER void GC_register_dynamic_libraries(void)
 {
-    const char *maps = GC_get_maps();
-
-    if (NULL == maps)
-        ABORT("Failed to read /proc for library registration");
-    GC_register_map_entries(maps);
+    GC_register_map_entries(GC_get_maps());
 }
 
 /* We now take care of the main data segment ourselves: */

@@ -67,6 +67,10 @@
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
+#endif
+
+#if defined(ADD_HEAP_GUARD_PAGES) || defined(MMAP_SUPPORTED) \
+    || defined(NEED_PROC_MAPS)
 # include <errno.h>
 #endif
 
@@ -128,6 +132,7 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
   /* Determine the length of a file by incrementally reading it into a  */
   /* buffer.  This would be silly to use it on a file supporting lseek, */
   /* but Linux /proc files usually do not.                              */
+  /* As of Linux 4.15.0, lseek(SEEK_END) fails for /proc/self/maps.     */
   STATIC size_t GC_get_file_len(int f)
   {
     size_t total = 0;
@@ -155,9 +160,7 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 #endif /* THREADS */
 
 /* Copy the contents of /proc/self/maps to a buffer in our address      */
-/* space.  Return the address of the buffer, or zero on failure.        */
-/* This code could be simplified if we could determine its size ahead   */
-/* of time.                                                             */
+/* space.  Return the address of the buffer.                            */
 GC_INNER const char * GC_get_maps(void)
 {
     ssize_t result;
@@ -176,19 +179,19 @@ GC_INNER const char * GC_get_maps(void)
     /* threads that we already think of as dead release their   */
     /* stacks.  And there is no easy way to read the entire     */
     /* file atomically.  This is arguably a misfeature of the   */
-    /* /proc/.../maps interface.                                */
+    /* /proc/self/maps interface.                               */
     /* Since we expect the file can grow asynchronously in rare */
     /* cases, it should suffice to first determine              */
-    /* the size (using lseek or read), and then to reread the   */
-    /* file.  If the size is inconsistent we have to retry.     */
+    /* the size (using read), and then to reread the file.      */
+    /* If the size is inconsistent we have to retry.            */
     /* This only matters with threads enabled, and if we use    */
     /* this to locate roots (not the default).                  */
 
 #   ifdef THREADS
         /* Determine the initial size of /proc/self/maps.       */
-        /* Note that lseek doesn't work, at least as of 2.6.15. */
         maps_size = GC_get_maps_len();
-        if (0 == maps_size) return 0;
+        if (0 == maps_size)
+          ABORT("Cannot determine length of /proc/self/maps");
 #   else
         maps_size = 4000;       /* Guess */
 #   endif
@@ -209,18 +212,23 @@ GC_INNER const char * GC_get_maps(void)
               /* Grow only by powers of 2, since we leak "too small" buffers.*/
               while (maps_size >= maps_buf_sz) maps_buf_sz *= 2;
               maps_buf = GC_scratch_alloc(maps_buf_sz);
+              if (NULL == maps_buf)
+                ABORT_ARG1("Insufficient space for /proc/self/maps buffer",
+                        ", %lu bytes requested", (unsigned long)maps_buf_sz);
 #             ifdef THREADS
                 /* Recompute initial length, since we allocated.        */
                 /* This can only happen a few times per program         */
                 /* execution.                                           */
                 maps_size = GC_get_maps_len();
-                if (0 == maps_size) return 0;
+                if (0 == maps_size)
+                  ABORT("Cannot determine length of /proc/self/maps");
 #             endif
-              if (maps_buf == 0) return 0;
             }
             GC_ASSERT(maps_buf_sz >= maps_size + 1);
             f = open("/proc/self/maps", O_RDONLY);
-            if (-1 == f) return 0;
+            if (-1 == f)
+              ABORT_ARG1("Cannot open /proc/self/maps",
+                         ": errno = %d", errno);
 #           ifdef THREADS
               old_maps_size = maps_size;
 #           endif
@@ -228,8 +236,8 @@ GC_INNER const char * GC_get_maps(void)
             do {
                 result = GC_repeat_read(f, maps_buf, maps_buf_sz-1);
                 if (result <= 0) {
-                    close(f);
-                    return 0;
+                  ABORT_ARG1("Failed to read /proc/self/maps",
+                             ": errno = %d", result < 0 ? errno : 0);
                 }
                 maps_size += result;
             } while ((size_t)result == maps_buf_sz-1);
@@ -332,7 +340,6 @@ GC_INNER const char * GC_get_maps(void)
     unsigned int maj_dev;
     const char *maps_ptr = GC_get_maps();
 
-    if (NULL == maps_ptr) return FALSE;
     for (;;) {
       maps_ptr = GC_parse_map_entry(maps_ptr, &my_start, &my_end,
                                     &prot, &maj_dev, 0);
@@ -360,7 +367,6 @@ GC_INNER const char * GC_get_maps(void)
     unsigned int maj_dev;
     const char *maps_ptr = GC_get_maps();
 
-    if (NULL == maps_ptr) return FALSE;
     for (;;) {
       maps_ptr = GC_parse_map_entry(maps_ptr, &my_start, &my_end,
                                     &prot, &maj_dev, &map_path);
@@ -4905,7 +4911,7 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
     const char *maps = GC_get_maps();
 
     GC_err_printf("---------- Begin address map ----------\n");
-    GC_err_puts(maps != NULL ? maps : "Failed to get map!\n");
+    GC_err_puts(maps);
     GC_err_printf("---------- End address map ----------\n");
   }
 #endif /* LINUX && ELF */
