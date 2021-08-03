@@ -2680,15 +2680,17 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 
 #ifdef NEED_PROC_MAPS
 # if defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES)
-    GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
-                                      char **prot, unsigned int *maj_dev,
-                                      char **mapping_name);
+    GC_INNER const char *GC_parse_map_entry(const char *maps_ptr,
+                                            ptr_t *start, ptr_t *end,
+                                            const char **prot,
+                                            unsigned *maj_dev,
+                                            const char **mapping_name);
 # endif
 # if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)
     GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr,
                                           ptr_t *startp, ptr_t *endp);
 # endif
-  GC_INNER char *GC_get_maps(void); /* from os_dep.c */
+  GC_INNER const char *GC_get_maps(void);
 #endif /* NEED_PROC_MAPS */
 
 #ifdef GC_ASSERTIONS

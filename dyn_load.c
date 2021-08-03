@@ -305,10 +305,9 @@ static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
     }
 }
 
-STATIC void GC_register_map_entries(char *maps)
+STATIC void GC_register_map_entries(const char *maps)
 {
-    char *prot;
-    char *buf_ptr = maps;
+    const char *prot;
     ptr_t start, end;
     unsigned int maj_dev;
     ptr_t least_ha, greatest_ha;
@@ -321,10 +320,9 @@ STATIC void GC_register_map_entries(char *maps)
                   + GC_our_memory[GC_n_memory-1].hs_bytes;
 
     for (;;) {
-        buf_ptr = GC_parse_map_entry(buf_ptr, &start, &end, &prot,
-                                     &maj_dev, 0);
-        if (NULL == buf_ptr)
-            break;
+        maps = GC_parse_map_entry(maps, &start, &end, &prot, &maj_dev, 0);
+        if (NULL == maps) break;
+
         if (prot[1] == 'w') {
             /* This is a writable mapping.  Add it to           */
             /* the root set unless it is already otherwise      */
@@ -399,7 +397,7 @@ STATIC void GC_register_map_entries(char *maps)
 
 GC_INNER void GC_register_dynamic_libraries(void)
 {
-    char *maps = GC_get_maps();
+    const char *maps = GC_get_maps();
 
     if (NULL == maps)
         ABORT("Failed to read /proc for library registration");

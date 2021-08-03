@@ -158,7 +158,7 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 /* space.  Return the address of the buffer, or zero on failure.        */
 /* This code could be simplified if we could determine its size ahead   */
 /* of time.                                                             */
-GC_INNER char * GC_get_maps(void)
+GC_INNER const char * GC_get_maps(void)
 {
     ssize_t result;
     static char *maps_buf = NULL;
@@ -264,40 +264,41 @@ GC_INNER char * GC_get_maps(void)
  *  anywhere, which is safer anyway.
  */
 
-/* Assign various fields of the first line in buf_ptr to (*start),      */
+/* Assign various fields of the first line in maps_ptr to (*start),     */
 /* (*end), (*prot), (*maj_dev) and (*mapping_name).  mapping_name may   */
 /* be NULL. (*prot) and (*mapping_name) are assigned pointers into the  */
 /* original buffer.                                                     */
 #if (defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES)) \
     || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
     || defined(REDIRECT_MALLOC)
-  GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
-                                    char **prot, unsigned int *maj_dev,
-                                    char **mapping_name)
+  GC_INNER const char *GC_parse_map_entry(const char *maps_ptr,
+                                          ptr_t *start, ptr_t *end,
+                                          const char **prot, unsigned *maj_dev,
+                                          const char **mapping_name)
   {
-    unsigned char *start_start, *end_start, *maj_dev_start;
-    unsigned char *p;   /* unsigned for isspace, isxdigit */
+    const unsigned char *start_start, *end_start, *maj_dev_start;
+    const unsigned char *p; /* unsigned for isspace, isxdigit */
 
-    if (buf_ptr == NULL || *buf_ptr == '\0') {
+    if (maps_ptr == NULL || *maps_ptr == '\0') {
         return NULL;
     }
 
-    p = (unsigned char *)buf_ptr;
+    p = (const unsigned char *)maps_ptr;
     while (isspace(*p)) ++p;
     start_start = p;
     GC_ASSERT(isxdigit(*start_start));
-    *start = (ptr_t)strtoul((char *)start_start, (char **)&p, 16);
+    *start = (ptr_t)strtoul((const char *)start_start, (char **)&p, 16);
     GC_ASSERT(*p=='-');
 
     ++p;
     end_start = p;
     GC_ASSERT(isxdigit(*end_start));
-    *end = (ptr_t)strtoul((char *)end_start, (char **)&p, 16);
+    *end = (ptr_t)strtoul((const char *)end_start, (char **)&p, 16);
     GC_ASSERT(isspace(*p));
 
     while (isspace(*p)) ++p;
     GC_ASSERT(*p == 'r' || *p == '-');
-    *prot = (char *)p;
+    *prot = (const char *)p;
     /* Skip past protection field to offset field */
     while (!isspace(*p)) ++p;
     while (isspace(*p)) p++;
@@ -307,16 +308,14 @@ GC_INNER char * GC_get_maps(void)
     while (isspace(*p)) p++;
     maj_dev_start = p;
     GC_ASSERT(isxdigit(*maj_dev_start));
-    *maj_dev = strtoul((char *)maj_dev_start, NULL, 16);
+    *maj_dev = strtoul((const char *)maj_dev_start, NULL, 16);
 
-    if (mapping_name == 0) {
-      while (*p && *p++ != '\n');
-    } else {
+    if (mapping_name != NULL) {
       while (*p && *p != '\n' && *p != '/' && *p != '[') p++;
-      *mapping_name = (char *)p;
-      while (*p && *p++ != '\n');
+      *mapping_name = (const char *)p;
     }
-    return (char *)p;
+    while (*p && *p++ != '\n');
+    return (const char *)p;
   }
 #endif /* REDIRECT_MALLOC || DYNAMIC_LOADING || IA64 || ... */
 
@@ -328,24 +327,22 @@ GC_INNER char * GC_get_maps(void)
   GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp,
                                         ptr_t *endp)
   {
-    char *prot;
+    const char *prot;
     ptr_t my_start, my_end;
     unsigned int maj_dev;
-    char *maps = GC_get_maps();
-    char *buf_ptr = maps;
+    const char *maps_ptr = GC_get_maps();
 
-    if (0 == maps) return(FALSE);
+    if (NULL == maps_ptr) return FALSE;
     for (;;) {
-      buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
-                                   &prot, &maj_dev, 0);
+      maps_ptr = GC_parse_map_entry(maps_ptr, &my_start, &my_end,
+                                    &prot, &maj_dev, 0);
+      if (NULL == maps_ptr) break;
 
-      if (buf_ptr == NULL) return FALSE;
-      if (prot[1] == 'w' && maj_dev == 0) {
-          if ((word)my_end > (word)addr && (word)my_start <= (word)addr) {
+      if (prot[1] == 'w' && maj_dev == 0
+          && (word)my_end > (word)addr && (word)my_start <= (word)addr) {
             *startp = my_start;
             *endp = my_end;
             return TRUE;
-          }
       }
     }
     return FALSE;
@@ -358,21 +355,20 @@ GC_INNER char * GC_get_maps(void)
   GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp)
   {
     size_t nm_len = strlen(nm);
-    char *prot;
-    char *map_path;
+    const char *prot, *map_path;
     ptr_t my_start, my_end;
     unsigned int maj_dev;
-    char *maps = GC_get_maps();
-    char *buf_ptr = maps;
+    const char *maps_ptr = GC_get_maps();
 
-    if (0 == maps) return(FALSE);
+    if (NULL == maps_ptr) return FALSE;
     for (;;) {
-      buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
-                                   &prot, &maj_dev, &map_path);
+      maps_ptr = GC_parse_map_entry(maps_ptr, &my_start, &my_end,
+                                    &prot, &maj_dev, &map_path);
+      if (NULL == maps_ptr) break;
 
-      if (buf_ptr == NULL) return FALSE;
       if (prot[0] == 'r' && prot[1] == '-' && prot[2] == 'x') {
-          char *p = map_path;
+          const char *p = map_path;
+
           /* Set p to point just past last slash, if any. */
             while (*p != '\0' && *p != '\n' && *p != ' ' && *p != '\t') ++p;
             while (*p != '/' && (word)p >= (word)map_path) --p;
@@ -4906,10 +4902,9 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
   /* addresses in FIND_LEAK output.                                     */
   void GC_print_address_map(void)
   {
-    char *maps;
+    const char *maps = GC_get_maps();
 
     GC_err_printf("---------- Begin address map ----------\n");
-    maps = GC_get_maps();
     GC_err_puts(maps != NULL ? maps : "Failed to get map!\n");
     GC_err_printf("---------- End address map ----------\n");
   }
