@@ -1466,7 +1466,7 @@ EXTERN_C_BEGIN
 #       else
             /* We seem to get random errors in incremental mode,        */
             /* possibly because Linux threads is itself a malloc client */
-            /* and can't deal with the signals.                         */
+            /* and can't deal with the signals.  fread uses malloc too. */
 #       endif
 #       define HEAP_START (ptr_t)0x1000
                 /* This encourages mmap to give us low addresses,       */
@@ -2640,7 +2640,7 @@ EXTERN_C_BEGIN
 #       else
             /* We seem to get random errors in incremental mode,        */
             /* possibly because Linux threads is itself a malloc client */
-            /* and can't deal with the signals.                         */
+            /* and can't deal with the signals.  fread uses malloc too. */
 #       endif
 #       define COUNT_UNMAPPED_REGIONS
 #       define DYNAMIC_LOADING
