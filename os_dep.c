@@ -104,6 +104,12 @@
 #define IGNORE_PAGES_EXECUTABLE 1
                         /* Undefined on GC_pages_executable real use.   */
 
+#if (defined(LINUX_STACKBOTTOM) || defined(NEED_PROC_MAPS) \
+     || defined(PROC_VDB)) && !defined(PROC_READ)
+# define PROC_READ read
+          /* Should probably call the real read, if read is wrapped.    */
+#endif
+
 #ifdef NEED_PROC_MAPS
 /* We need to parse /proc/self/maps, either to find dynamic libraries,  */
 /* and/or to find the register backing store base (IA64).  Do it once   */
@@ -113,18 +119,16 @@
 /* we encounter EOF.                                            */
 STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 {
-#   define READ read
     size_t num_read = 0;
 
     ASSERT_CANCEL_DISABLED();
     while (num_read < count) {
-        ssize_t result = READ(fd, buf + num_read, count - num_read);
+        ssize_t result = PROC_READ(fd, buf + num_read, count - num_read);
 
         if (result < 0) return result;
         if (result == 0) break;
         num_read += result;
     }
-#   undef READ
     return num_read;
 }
 
@@ -141,7 +145,7 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
     char buf[GET_FILE_LEN_BUF_SZ];
 
     do {
-        result = read(f, buf, GET_FILE_LEN_BUF_SZ);
+        result = PROC_READ(f, buf, sizeof(buf));
         if (result == -1) return 0;
         total += result;
     } while (result > 0);
@@ -1118,12 +1122,7 @@ GC_INNER size_t GC_page_size = 0;
     /* We read the stack bottom value from /proc/self/stat.  We do this */
     /* using direct I/O system calls in order to avoid calling malloc   */
     /* in case REDIRECT_MALLOC is defined.                              */
-#   ifndef STAT_READ
-      /* Also defined in pthread_support.c. */
 #     define STAT_BUF_SIZE 4096
-#     define STAT_READ read
-#   endif
-          /* Should probably call the real read, if read is wrapped.    */
     char stat_buf[STAT_BUF_SIZE];
     int f;
     word result;
@@ -1153,10 +1152,11 @@ GC_INNER size_t GC_page_size = 0;
 #       endif
       }
 #   endif
+
     f = open("/proc/self/stat", O_RDONLY);
     if (f < 0)
       ABORT("Couldn't read /proc/self/stat");
-    len = STAT_READ(f, stat_buf, STAT_BUF_SIZE);
+    len = PROC_READ(f, stat_buf, sizeof(stat_buf));
     close(f);
 
     /* Skip the required number of fields.  This number is hopefully    */
@@ -3618,13 +3618,12 @@ GC_INNER GC_bool GC_dirty_init(void)
 
 GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 {
-#   define READ read
     int nmaps;
     char * bufp = GC_proc_buf;
     int i;
 
     BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
-    if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
+    if (PROC_READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
         /* Retry with larger buffer.    */
         size_t new_size = 2 * GC_proc_buf_size;
         char *new_buf;
@@ -3637,7 +3636,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
             GC_proc_buf = bufp = new_buf;
             GC_proc_buf_size = new_size;
         }
-        if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
+        if (PROC_READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
             WARN("Insufficient space for /proc read\n", 0);
             /* Punt:        */
             if (!output_unneeded)
@@ -3699,7 +3698,6 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 
     /* Update GC_written_pages (even if output_unneeded).       */
     GC_or_pages(GC_written_pages, GC_grungy_pages);
-#   undef READ
 }
 
 #endif /* PROC_VDB */
