@@ -69,8 +69,8 @@
 # include <sys/stat.h>
 #endif
 
-#if defined(ADD_HEAP_GUARD_PAGES) || defined(MMAP_SUPPORTED) \
-    || defined(NEED_PROC_MAPS)
+#if defined(ADD_HEAP_GUARD_PAGES) || defined(LINUX_STACKBOTTOM) \
+    || defined(MMAP_SUPPORTED) || defined(NEED_PROC_MAPS)
 # include <errno.h>
 #endif
 
@@ -110,15 +110,11 @@
           /* Should probably call the real read, if read is wrapped.    */
 #endif
 
-#ifdef NEED_PROC_MAPS
-/* We need to parse /proc/self/maps, either to find dynamic libraries,  */
-/* and/or to find the register backing store base (IA64).  Do it once   */
-/* here.                                                                */
-
-/* Repeatedly perform a read call until the buffer is filled or */
-/* we encounter EOF.                                            */
-STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
-{
+#if defined(LINUX_STACKBOTTOM) || defined(NEED_PROC_MAPS)
+  /* Repeatedly perform a read call until the buffer is filled  */
+  /* up, or we encounter EOF or an error.                       */
+  STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
+  {
     size_t num_read = 0;
 
     ASSERT_CANCEL_DISABLED();
@@ -130,7 +126,13 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
         num_read += result;
     }
     return num_read;
-}
+  }
+#endif /* LINUX_STACKBOTTOM || NEED_PROC_MAPS */
+
+#ifdef NEED_PROC_MAPS
+/* We need to parse /proc/self/maps, either to find dynamic libraries,  */
+/* and/or to find the register backing store base (IA64).  Do it once   */
+/* here.                                                                */
 
 #ifdef THREADS
   /* Determine the length of a file by incrementally reading it into a  */
@@ -1126,7 +1128,7 @@ GC_INNER size_t GC_page_size = 0;
     char stat_buf[STAT_BUF_SIZE];
     int f;
     word result;
-    int i, buf_offset = 0, len;
+    ssize_t i, buf_offset = 0, len;
 
     /* First try the easy way.  This should work for glibc 2.2  */
     /* This fails in a prelinked ("prelink" command) executable */
@@ -1154,9 +1156,12 @@ GC_INNER size_t GC_page_size = 0;
 #   endif
 
     f = open("/proc/self/stat", O_RDONLY);
-    if (f < 0)
-      ABORT("Couldn't read /proc/self/stat");
-    len = PROC_READ(f, stat_buf, sizeof(stat_buf));
+    if (-1 == f)
+      ABORT_ARG1("Could not open /proc/self/stat", ": errno = %d", errno);
+    len = GC_repeat_read(f, stat_buf, sizeof(stat_buf));
+    if (len < 0)
+      ABORT_ARG1("Failed to read /proc/self/stat",
+                 ": errno = %d", errno);
     close(f);
 
     /* Skip the required number of fields.  This number is hopefully    */
@@ -1182,7 +1187,8 @@ GC_INNER size_t GC_page_size = 0;
 
     result = (word)STRTOULL(&stat_buf[buf_offset], NULL, 10);
     if (result < 0x100000 || (result & (sizeof(word) - 1)) != 0)
-      ABORT("Absurd stack bottom value");
+      ABORT_ARG1("Absurd stack bottom value",
+                 ": 0x%lx", (unsigned long)result);
     return (ptr_t)result;
   }
 #endif /* LINUX_STACKBOTTOM */
