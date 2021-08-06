@@ -868,8 +868,12 @@ EXTERN_C_BEGIN
 #if CPP_WORDSZ == 128
 # define WORDS_TO_BYTES(x)   ((x)<<4)
 # define BYTES_TO_WORDS(x)   ((x)>>4)
-# define LOGWL               ((word)7)    /* log[2] of CPP_WORDSZ */
-# define modWORDSZ(n) ((n) & 0x7f)        /* n mod size of word            */
+# if defined(__CHERI_PURE_CAPABILITY__)
+#   define LOGCL             ((word)7)    /* log[2] of CPP_WORDSZ */
+#   define modCAPSZ(n)       ((n) & 0x7f) /* n mod size of capability      */
+# endif
+# define LOGWL               ((word)6)    /* log[2] of INTEGER_WORDSZ */
+# define modWORDSZ(n) ((n) & 0x3f)        /* n mod size of word            */
 # if ALIGNMENT != 16
 #   define UNALIGNED_PTRS
 # endif
@@ -887,11 +891,12 @@ EXTERN_C_BEGIN
 #define WORDSZ ((word)CPP_WORDSZ)
 #if defined(__CHERI_PURE_CAPABILITY__)
 # define SIGNB  ((word)1 << (INTEGER_WORDSZ-1))
+# define BYTES_PER_WORD      ((word)(sizeof (word *)))
 #else  /* defined(__CHERI_PURE_CAPABILITY__) */
 # define SIGNB  ((word)1 << (WORDSZ-1))
+# define BYTES_PER_WORD      ((word)(sizeof (word)))
 #endif /* defined(__CHERI_PURE_CAPABILITY__) */
-#define BYTES_PER_WORD      ((word)(sizeof (word)))
-#define divWORDSZ(n) ((n) >> LOGWL)     /* divide n by size of word */
+# define divWORDSZ(n) ((n) >> LOGWL)     /* divide n by size of word */
 
 #if GRANULE_BYTES == 8
 # define BYTES_TO_GRANULES(n) ((n)>>3)
@@ -1202,7 +1207,11 @@ struct hblkhdr {
       } _mark_byte_union;
 #     define hb_marks _mark_byte_union._hb_marks
 #   else
-#     define MARK_BITS_SZ (MARK_BITS_PER_HBLK/CPP_WORDSZ + 1)
+#     if defined(__CHERI_PURE_CAPABILITY__)
+#       define MARK_BITS_SZ (MARK_BITS_PER_HBLK/INTEGER_WORDSZ + 1)
+#     else  /* defined(__CHERI_PURE_CAPABILITY__) */
+#       define MARK_BITS_SZ (MARK_BITS_PER_HBLK/CPP_WORDSZ + 1)
+#     endif  /* defined(__CHERI_PURE_CAPABILITY__) */
       word hb_marks[MARK_BITS_SZ];
 #   endif /* !USE_MARK_BYTES */
 };
