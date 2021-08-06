@@ -312,11 +312,11 @@ STATIC int GC_nprocs = 1;
 
 #endif /* THREAD_LOCAL_ALLOC */
 
-#ifdef PARALLEL_MARK
-
 # ifndef MAX_MARKERS
 #   define MAX_MARKERS 16
 # endif
+
+#ifdef PARALLEL_MARK
 
 static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
 #ifdef IA64
