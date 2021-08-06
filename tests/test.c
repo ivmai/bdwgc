@@ -42,7 +42,8 @@
 #include "gc.h"
 
 #ifndef NTHREADS /* Number of additional threads to fork. */
-#  define NTHREADS 5 /* excludes main thread, which also runs a test. */
+# define NTHREADS 5 /* Excludes main thread, which also runs a test. */
+        /* In the single-threaded case, the number of times to rerun it. */
         /* Not respected by PCR test. */
 #endif
 
@@ -723,6 +724,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
       return GC_call_with_gc_active(reverse_test_inner, (void*)(word)1);
     }
 
+# ifndef BIG
 #   if defined(MACOS) \
        || (defined(UNIX_LIKE) && defined(NO_GETCONTEXT)) /* e.g. musl */
       /* Assume 128 KB stacks at least. */
@@ -741,6 +743,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   else
 #     define BIG 4500
 #   endif
+# endif
 
     a_set(ints(1, 49));
     b = ints(1, 50);
@@ -1976,6 +1979,13 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
     set_print_procs();
     GC_start_incremental_collection();
     run_one_test();
+#   if NTHREADS > 0
+      {
+        int i;
+        for (i = 0; i < NTHREADS; i++)
+          run_one_test();
+      }
+#   endif
     run_single_threaded_test();
     check_heap_stats();
 #   ifndef MSWINCE
