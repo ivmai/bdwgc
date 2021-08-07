@@ -105,7 +105,7 @@
                         /* Undefined on GC_pages_executable real use.   */
 
 #if (defined(LINUX_STACKBOTTOM) || defined(NEED_PROC_MAPS) \
-     || defined(PROC_VDB)) && !defined(PROC_READ)
+     || defined(PROC_VDB) || defined(SOFT_VDB)) && !defined(PROC_READ)
 # define PROC_READ read
           /* Should probably call the real read, if read is wrapped.    */
 #endif
@@ -824,7 +824,8 @@ GC_INNER size_t GC_page_size = 0;
 #else /* !MSWIN32 */
   GC_INNER void GC_setpagesize(void)
   {
-#   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(USE_MMAP)
+#   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(SOFT_VDB) \
+       || defined(USE_MMAP)
       GC_page_size = (size_t)GETPAGESIZE();
 #     if !defined(CPPCHECK)
         if (0 == GC_page_size)
@@ -2913,6 +2914,13 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
  *              too slow to be entirely satisfactory.  Requires reading
  *              dirty bits for entire address space.  Implementations tend
  *              to assume that the client is a (slow) debugger.
+ * SOFT_VDB:    Use the /proc facility for reading soft-dirty PTEs.
+ *              Works on Linux 3.18 or later. The proposed implementation
+ *              iterates over GC_heap_sects and examines the soft-dirty bit
+ *              of the words in /proc/self/pagemap corresponding to the
+ *              pages of the sections; finally all soft-dirty bits of the
+ *              process are cleared (by writing some special value to
+ *              /proc/self/clear_refs file).
  * MPROTECT_VDB:Protect pages and then catch the faults to keep track of
  *              dirtied pages.  The implementation (and implementability)
  *              is highly system dependent.  This usually fails when system
@@ -2926,14 +2934,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
  *              MPROTECT_VDB may be defined as a fallback strategy.
  */
 
-#if (defined(CHECKSUMS) && defined(GWW_VDB)) || defined(PROC_VDB)
+#if (defined(CHECKSUMS) && (defined(GWW_VDB) || defined(SOFT_VDB))) \
+    || defined(PROC_VDB)
     /* Add all pages in pht2 to pht1.   */
     STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
     {
       unsigned i;
       for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
     }
-#endif /* CHECKSUMS && GWW_VDB || PROC_VDB */
+#endif /* CHECKSUMS && (GWW_VDB || SOFT_VDB) || PROC_VDB */
 
 #ifdef GWW_VDB
 
@@ -3708,6 +3717,116 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 
 #endif /* PROC_VDB */
 
+#ifdef SOFT_VDB
+# define VDB_BUF_SZ 16384
+  static unsigned char *soft_vdb_buf;
+  static int clear_refs_fd, pagemap_fd;
+
+  static int open_proc_fd(const char *proc_filename, int mode)
+  {
+    int f;
+    char buf[40];
+
+    (void)snprintf(buf, sizeof(buf), "/proc/%ld/%s", (long)getpid(),
+                   proc_filename);
+    buf[sizeof(buf) - 1] = '\0';
+    f = open(buf, mode);
+    if (-1 == f) {
+      WARN("/proc/self/%s open failed; cannot enable GC incremental mode\n",
+           proc_filename);
+    } else if (fcntl(f, F_SETFD, FD_CLOEXEC) == -1) {
+      WARN("Could not set FD_CLOEXEC for /proc\n", 0);
+    }
+    return f;
+  }
+
+  GC_INNER GC_bool GC_dirty_init(void)
+  {
+    clear_refs_fd = open_proc_fd("clear_refs", O_WRONLY);
+    if (-1 == clear_refs_fd)
+      return FALSE;
+    pagemap_fd = open_proc_fd("pagemap", O_RDONLY);
+    if (-1 == pagemap_fd) {
+      close(clear_refs_fd);
+      return FALSE;
+    }
+    soft_vdb_buf = (unsigned char *)GC_scratch_alloc(VDB_BUF_SZ);
+    if (NULL == soft_vdb_buf)
+      ABORT("Insufficient space for /proc pagemap buffer");
+    return TRUE;
+  }
+
+  /* The bit 55 of the 64-bit qword of pagemap file is the soft-dirty one. */
+# define PAGEMAP_ENTRY_SZ (64/8)
+# define PM_SOFTDIRTY_OFS (55/8)
+# define PM_SOFTDIRTY_MASK (1<<(55%8))
+
+  GC_INLINE void GC_soft_read_dirty(GC_bool output_unneeded)
+  {
+    ssize_t res;
+
+    if (!output_unneeded) {
+      word i;
+
+      GC_ASSERT(GC_page_size != 0);
+      BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
+
+      for (i = 0; i != GC_n_heap_sects; ++i) {
+        ptr_t vaddr = GC_heap_sects[i].hs_start;
+        ptr_t limit = vaddr + GC_heap_sects[i].hs_bytes;
+        word limit_buf;
+        word pm_ofs = (word)vaddr / GC_page_size * PAGEMAP_ENTRY_SZ;
+        unsigned char *bufp;
+
+        /* TODO: page-aligned lseek, read less bytes if possible. */
+        /* TODO: don't read if data already in buf */
+        if (lseek(pagemap_fd, (off_t)pm_ofs, SEEK_SET) == (off_t)(-1))
+          ABORT_ARG2("Failed to lseek /proc/self/pagemap",
+                     ": offset = %lu, errno = %d",
+                     (unsigned long)pm_ofs, errno);
+        res = PROC_READ(pagemap_fd, soft_vdb_buf, VDB_BUF_SZ);
+        if (res < PAGEMAP_ENTRY_SZ)
+          ABORT_ARG1("Failed to read /proc/self/pagemap",
+                     ": errno = %d", res < 0 ? errno : 0);
+
+        limit_buf = (pm_ofs + (size_t)res) / PAGEMAP_ENTRY_SZ * GC_page_size;
+        if ((word)limit > limit_buf)
+          limit = (ptr_t)limit_buf;
+
+        for (bufp = soft_vdb_buf; (word)vaddr < (word)limit;
+             vaddr += GC_page_size, bufp += PAGEMAP_ENTRY_SZ) {
+          if ((bufp[PM_SOFTDIRTY_OFS] & PM_SOFTDIRTY_MASK) != 0) {
+            struct hblk * h;
+            ptr_t next_vaddr = vaddr + GC_page_size;
+
+            /* If the bit is set, the respective PTE was written to     */
+            /* since clearing the soft-dirty bits.                      */
+#           ifdef DEBUG_DIRTY_BITS
+              GC_log_printf("dirty page at: %p\n", (void *)vaddr);
+#           endif
+            for (h = (struct hblk *)vaddr;
+                 (word)h < (word)next_vaddr; h++) {
+              word index = PHT_HASH(h);
+              set_pht_entry_from_index(GC_grungy_pages, index);
+            }
+          }
+        }
+      }
+    }
+
+#   ifdef CHECKSUMS
+      GC_ASSERT(!output_unneeded);
+      GC_or_pages(GC_written_pages, GC_grungy_pages);
+#   endif
+
+    /* Clear soft-dirty bits from the task's PTEs. */
+    res = write(clear_refs_fd, "4\n", 2);
+    if (res != 2)
+      ABORT_ARG1("Failed to write to /proc/self/clear_refs",
+                 ": errno = %d", res < 0 ? errno : 0);
+  }
+#endif /* SOFT_VDB */
+
 #ifdef PCR_VDB
 
 # include "vd/PCR_VD.h"
@@ -3779,6 +3898,8 @@ GC_INNER GC_bool GC_dirty_init(void)
       GC_gww_read_dirty(output_unneeded);
 #   elif defined(PROC_VDB)
       GC_proc_read_dirty(output_unneeded);
+#   elif defined(SOFT_VDB)
+      GC_soft_read_dirty(output_unneeded);
 #   elif defined(PCR_VDB)
       /* lazily enable dirty bits on newly added heap sects */
       {
@@ -3823,7 +3944,7 @@ GC_INNER GC_bool GC_dirty_init(void)
     /* Could any valid GC heap pointer ever have been written to this page? */
     GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
     {
-#     if defined(GWW_VDB) || defined(PROC_VDB)
+#     if defined(GWW_VDB) || defined(PROC_VDB) || defined(SOFT_VDB)
 #       ifdef MPROTECT_VDB
           if (!GC_GWW_AVAILABLE())
             return TRUE;

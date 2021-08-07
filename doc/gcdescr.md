@@ -418,6 +418,7 @@ We keep track of modified pages using one of several distinct mechanisms:
   * (`PROC_VDB`) By retrieving dirty bit information from /proc. (Currently
   only Sun's Solaris supports this. Though this is considerably cleaner,
   performance may actually be better with `mprotect` and signals.)
+  * (`SOFT_VDB`) By retrieving Linux soft-dirty bit information from /proc.
   * (`PCR_VDB`) By relying on an external dirty bit implementation, in this
   case the one in Xerox PCR.
   * Through explicit mutator cooperation. This enabled by

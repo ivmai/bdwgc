@@ -854,9 +854,10 @@ EXTERN_C_BEGIN
  *
  * Each architecture may also define the style of virtual dirty bit
  * implementation to be used:
- *   MPROTECT_VDB: Write protect the heap and catch faults.
  *   GWW_VDB: Use win32 GetWriteWatch primitive.
+ *   MPROTECT_VDB: Write protect the heap and catch faults.
  *   PROC_VDB: Use the SVR4 /proc primitives to read dirty bits.
+ *   SOFT_VDB: Use the Linux /proc primitives to track dirty bits.
  *
  * The first and second one may be combined, in which case a runtime
  * selection will be made, based on GetWriteWatch availability.
@@ -3195,6 +3196,7 @@ EXTERN_C_BEGIN
 # undef MPROTECT_VDB
 # undef PCR_VDB
 # undef PROC_VDB
+# undef SOFT_VDB
 #endif
 
 #ifdef GC_DISABLE_INCREMENTAL
@@ -3213,7 +3215,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
-  /* Incremental GC is incompatible with /proc roots.   */
+  /* Incremental GC based on mprotect is incompatible with /proc roots. */
 # undef MPROTECT_VDB
 #endif
 
@@ -3221,10 +3223,11 @@ EXTERN_C_BEGIN
   /* Choose MPROTECT_VDB manually (if multiple strategies available).   */
 # undef PCR_VDB
 # undef PROC_VDB
+# undef SOFT_VDB
   /* #undef GWW_VDB - handled in os_dep.c       */
 #endif
 
-#ifdef PROC_VDB
+#if defined(PROC_VDB) || defined(SOFT_VDB)
   /* Multi-VDB mode is not implemented. */
 # undef MPROTECT_VDB
 #endif
@@ -3248,7 +3251,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
-    && !defined(GWW_VDB) && !defined(DEFAULT_VDB) \
+    && !defined(GWW_VDB) && !defined(SOFT_VDB) && !defined(DEFAULT_VDB) \
     && !defined(GC_DISABLE_INCREMENTAL)
 # define DEFAULT_VDB
 #endif

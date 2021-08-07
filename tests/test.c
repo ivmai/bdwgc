@@ -1963,7 +1963,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #       endif
         /* else */ {
           GC_printf("Switched to incremental mode\n");
-#       ifdef PROC_VDB
+#       if defined(PROC_VDB) || defined(SOFT_VDB)
           GC_printf("Reading dirty bits from /proc\n");
 #       elif defined(GWW_VDB)
           GC_printf("Using GetWriteWatch-based implementation\n");
@@ -2365,7 +2365,9 @@ int main(void)
 #       endif
         /* else */ {
           GC_printf("Switched to incremental mode\n");
-#         ifdef MPROTECT_VDB
+#         if defined(PROC_VDB) || defined(SOFT_VDB)
+            GC_printf("Reading dirty bits from /proc\n");
+#         elif defined(MPROTECT_VDB)
             GC_printf("Emulating dirty bits with mprotect/signals\n");
 #         endif
         }

@@ -131,12 +131,13 @@ operating system:
   plausible page boundary, and use that as the stack bottom.
   * `DYNAMIC_LOADING` - Should be defined if `dyn_load.c` has been updated for
   this platform and tracing of dynamic library roots is supported.
-  * `GWW_VDB`, `MPROTECT_VDB`, `PROC_VDB` - May be defined if the
+  * `GWW_VDB`, `MPROTECT_VDB`, `PROC_VDB`, `SOFT_VDB` - May be defined if the
   corresponding _virtual dirty bit_ implementation in `os_dep.c` is usable on
   this platform. This allows incremental/generational garbage collection.
   (`GWW_VDB` uses the Win32 `GetWriteWatch` function to read dirty bits,
   `MPROTECT_VDB` identifies modified pages by write protecting the heap and
-  catching faults. `PROC_VDB` uses the /proc primitives to read dirty bits.)
+  catching faults. `PROC_VDB` and `SOFT_VDB` use the /proc pseudo-files to
+  read dirty bits.)
   * `PREFETCH`, `GC_PREFETCH_FOR_WRITE` - The collector uses `PREFETCH(x)`
   to preload the cache with the data at _x_ address. This defaults to a no-op.
   * `CLEAR_DOUBLE` - If `CLEAR_DOUBLE` is defined, then `CLEAR_DOUBLE(x)`

@@ -542,8 +542,8 @@ DONT_USE_USER32_DLL (Win32 only)        Don't use "user32" DLL import library
 
 GC_PREFER_MPROTECT_VDB  Choose MPROTECT_VDB manually in case of multiple
   virtual dirty bit strategies are implemented (at present useful on Win32 and
-  Solaris to force MPROTECT_VDB strategy instead of the default GWW_VDB or
-  PROC_VDB ones, respectively).
+  Solaris to force MPROTECT_VDB strategy instead of the default GWW_VDB,
+  PROC_VDB or SOFT_VDB ones, respectively).
 
 GC_IGNORE_GCJ_INFO      Disable GCJ-style type information (useful for
   debugging on WinCE).
