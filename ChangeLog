@@ -1,3 +1,58 @@
+2021-07-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* mallocx.c (GC_generic_malloc_many): Do not increment rlh by lg (use
+	rlh[lg] instead); reload rlh value after
+	acquiring the GC lock (at the end of the loop).
+
+2021-07-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/new_gc_alloc.h: Include gc_mark.h (to declare
+	GC_generic_malloc).
+
+2021-06-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.host [!GCC && $host=hppa*-*-hpux*] (gc_cflags): Change
+	$gc_flags to $gc_cflags.
+
+2020-11-28  Tim Gates <tim.gates@iress.com>
+
+	* extra/msvc_dbg.c [!_M_X64 && _MSC_VER]: Fix a typo ("machine") in
+	comment.
+
+2020-10-16  Mahder Gebremedhin <mahder.gebremedhin@liu.se>
+
+	* CMakeLists.txt [CMAKE_USE_PTHREADS_INIT] (SRC): Add gc_dlopen.c file.
+
+2020-08-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (GC_ATTR_WORD_ALIGNED): New macro.
+	* include/private/pthread_support.h [THREAD_LOCAL_ALLOC]
+	(GC_Thread_Rep.tlfs): Specify GC_ATTR_WORD_ALIGNED.
+
+2020-07-28  Jonathan Chambers <joncham@gmail.com>
+
+	* darwin_stop_world.c (GC_stack_range_for): Retry
+	thread_get_state(GC_MACH_THREAD_STATE) while KERN_ABORTED.
+
+2013-07-31  Ondrej Bilka <neleai@seznam.cz>
+
+	* darwin_stop_world.c (GC_use_threads_discovery): Fix a typo in
+	comment ("stopped").
+	* doc/porting.html: Fix typos in comment ("defining", "support").
+	* include/private/gc_priv.h (GC_have_errors): Fix a typo in comment
+	("OK").
+	* os_dep.c (GC_win32_free_heap): Likewise.
+	* pthread_support.c (GC_remove_all_threads_but_me): Likewise.
+	* win32_threads.c (GC_remove_all_threads_but_me): Likewise.
+	* doc/README.Mac: Likewise.
+	* include/private/gcconfig.h: Fix a typo in comment ("SPARC").
+	* ChangeLog: Likewise.
+	* os_dep.c (GC_linux_main_stack_base): Likewise.
+	* include/private/gcconfig.h: Fix a typo in comment ("release").
+	* mallocx.c (GC_generic_malloc_many): Fix a typo in comment
+	("reacquiring").
+	* pthread_support.c: Fix a typo in comment ("which").
+
 2019-10-29  Ivan Maidanski <ivmai@mail.ru>
 
 	* misc.c [!(MSWIN32 || MSWINCE) && !OS2 && !MACOS
