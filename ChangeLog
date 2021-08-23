@@ -1,18 +1,25 @@
 
 == [8.0.6] (not released yet) ==
 
+* Add loop to handle abort error like in suspend logic on Darwin
 * Add support of OpenBSD/aarch64
+* Add threading libraries to bdw-gc.pc
 * Allocate start_info struct on the stack in GC_pthread_create
 * Allow GC_PAUSE_TIME_TARGET environment variable values smaller than 5 ms
 * Avoid compiler warning about unused d in GC_CALLOC/MALLOC_EXPLICITLY_TYPED
+* Avoid gcc stringop-overflow warning for intended overflow in smashtest
+* Check _MSVC_LANG macro in addition to __cplusplus (MS VC)
 * Compile C++ code with exception handling enabled in NT_MAKEFILE
 * Define OS_TYPE and DATAEND for UWP targets
 * Disable mprotect-based incremental GC if /proc roots are used (Linux)
 * Do not use Manual VDB mode if C malloc is redirected
 * Do not use iOS private symbols
+* Eliminate 'GC_non_gc_bytes is deprecated' warning in new_gc_alloc.h
 * Eliminate 'GC_old_bus_handler defined but not used' compiler warning
+* Eliminate 'cast between incompatible func types' warnings for FARPROC vars
 * Eliminate 'comparing signed and unsigned values' BCC warning in cordtest
 * Eliminate 'gc_pthread_redirects.h should contain header guard' code defect
+* Eliminate 'implicit declaration of sbrk' gcc warning if -std=c11 on Cygwin
 * Eliminate 'possible loss of data' BCC and MS VC warnings
 * Eliminate 'static GC_sysinfo definition has incomplete type' Clang warning
 * Eliminate 'unused function' compiler warnings (GC_add_map_entry, GC_lock)
@@ -20,12 +27,18 @@
 * Enable sbrk-to-mmap fallback on major supported Unix-like platforms
 * Explicitly zero-initialize trace_buf (fix trace_buf initialization)
 * Fix 'ACCESS_VIOLATION in marker' GC warning on Win32 async thread start
+* Fix 'GC_generic_malloc must be available' GCC error in new_gc_alloc.h
 * Fix 'ISO C++17 does not allow dynamic exception spec' clang-8 error
+* Fix 'Wrong __data_start/_end pair' if -Bsymbolic-functions used (Linux)
 * Fix 'condition pred!=NULL is always true' compiler warning
 * Fix 'external linkage required for var because of dllimport' error on MinGW
 * Fix 'ulong undefined' compilation error on AIX
+* Fix 'undefined reference to __data_start' linker error on RISC-V
+* Fix 'use of undeclared BUS_PAGE_FAULT' compilation error on FreeBSD 12
 * Fix 'write to GC log failed' error (Cygwin)
 * Fix 'wrong finalization data' gctest failure on Windows
+* Fix CMake build on macOS Catalina
+* Fix GC_OPENBSD_THREADS definition (OpenBSD/hppa)
 * Fix MPROTECT_VDB definition for single-threaded GC builds
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
 * Fix STACKBOTTOM on 32-bit HP/UX 11.11
@@ -35,11 +48,14 @@
 * Fix compiling by Makefile.direct on OpenBSD/UltraSparc
 * Fix configure message about 'AIX gcc optimization fix'
 * Fix cordtest build in SMakefile.amiga
+* Fix data race regarding *rlh value in generic_malloc_many
 * Fix first_thread stack_base initialization if custom GC_stackbottom (Win32)
 * Fix gc_allocator.h compilation by Clang
+* Fix gc_cflags variable name in configure (HP/UX)
 * Fix incorrect markup formatting in documentation
-* Fix mmap() failures on HP/UX
-* Fix mmap(PROT_NONE) failure on AIX
+* Fix misaligned tlfs passed to AO_load on m68k
+* Fix missing gc_dlopen.c and specific.c in CMake script
+* Fix mmap() failures on AIX, HP/UX and Haiku
 * Fix printf format specifier in simple_example.md
 * Fix save_callers for multi-threaded case if built-in backtrace unavailable
 * Fix subexpression widening in memhash() of disclaim_weakmap_test
@@ -47,6 +63,8 @@
 * Fix test_cpp failure when gc_cpp resides in a dll (Borland, Watcom)
 * Fix various typos mostly in documentation files
 * Fix word size, data start and alignment for OpenBSD/mips64(el)
+* Include <alloca.h> when using alloca on AIX
+* Limit number of unmapped regions (Linux and DragonFly)
 * New macro to avoid system-wide new/delete inlining in gc_cpp.h (Win32)
 * Prevent GetThreadContext failure (Windows)
 * Prevent WARN of incompatible incremental GC if default or manual VDB
@@ -56,10 +74,15 @@
 * Refine GC_parallel documentation in gc.h
 * Refine do_blocking() documentation in gc.h
 * Remove a misleading comment about Solaris in gc.h
+* Remove cord .h files from list of non-installed headers (Automake)
+* Remove dead part of condition to define NEED_FIND_LIMIT in gc_priv.h
 * Remove gcmt-lib generation by CMake
 * Support MSYS builds by CMake and configure
 * Update documentation about the incremental collector support
+* Use HEURISTIC2 on OpenBSD when single-threaded
+* Use pstat_getprocvm to determine main stack bottom on HP-UX
 * Workaround 'expression is only useful for its side effects' WCC warning
+* Workaround clang-3.8/s390x bug when processing __builtin_frame_address
 * Workaround fread fail after enable_incremental if malloc redirected (Linux)
 
 
