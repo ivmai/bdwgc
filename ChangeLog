@@ -527,18 +527,24 @@ Also, includes 7.2 changes
 
 == [7.2o] (not released yet) ==
 
+* Add loop to handle abort error like in suspend logic on Darwin
 * Disable mprotect-based incremental GC if /proc roots are used (Linux)
 * Explicitly zero-initialize trace_buf (fix trace_buf initialization)
 * Fix 'ACCESS_VIOLATION in marker' GC warning on Win32 async thread start
+* Fix 'GC_generic_malloc must be available' GCC error in new_gc_alloc.h
 * Fix 'expected function body after declarator' clang error in gc_cpp.cc
 * Fix 'write to GC log failed' error
 * Fix configure message about 'AIX gcc optimization fix'
+* Fix data race regarding *rlh value in generic_malloc_many
 * Fix first_thread stack_base initialization if custom GC_stackbottom (Win32)
 * Fix fread failure after enable_incremental if malloc is redirected (Linux)
+* Fix gc_cflags variable name in configure (HP/UX)
 * Fix incorrect define GC_OPENBSD_THREADS on sparc64
+* Fix misaligned tlfs passed to AO_load on m68k
+* Fix missing gc_dlopen.c in CMake script
 * Fix printf format specifier in simple_example.html
 * Fix save_callers for multi-threaded case if built-in backtrace unavailable
-* Fix various typos mostly in documentation files
+* Fix various typos in comments and documentation files
 * Fix word size, data start and alignment for OpenBSD/mips64(el)
 * Prevent WARN of incompatible incremental GC if default or manual VDB
 * Reduce a time period between GetExitCodeThread and SuspendThread (Win32)
