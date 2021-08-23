@@ -1,7 +1,9 @@
 
 == [7.6.14] (not released yet) ==
 
+* Add loop to handle abort error like in suspend logic on Darwin
 * Add support of OpenBSD/aarch64
+* Add threading libraries to bdw-gc.pc
 * Disable mprotect-based incremental GC if /proc roots are used (Linux)
 * Do not use iOS private symbols
 * Eliminate 'GC_old_bus_handler defined but not used' compiler warning
@@ -12,7 +14,9 @@
 * Eliminate 'while clause does not guard' GCC warning in GC_parse_map_entry
 * Explicitly zero-initialize trace_buf (fix trace_buf initialization)
 * Fix 'ACCESS_VIOLATION in marker' GC warning on Win32 async thread start
+* Fix 'GC_generic_malloc must be available' GCC error in new_gc_alloc.h
 * Fix 'ulong undefined' compilation error on AIX
+* Fix 'undefined reference to __data_start' linker error on RISC-V
 * Fix 'write to GC log failed' error
 * Fix MPROTECT_VDB definition for single-threaded GC builds
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
@@ -21,9 +25,13 @@
 * Fix compiling by Makefile.direct on OpenBSD/UltraSparc
 * Fix configure message about 'AIX gcc optimization fix'
 * Fix cordtest build in SMakefile.amiga
+* Fix data race regarding *rlh value in generic_malloc_many
 * Fix first_thread stack_base initialization if custom GC_stackbottom (Win32)
 * Fix gc_allocator.h compilation by Clang
+* Fix gc_cflags variable name in configure (HP/UX)
 * Fix incorrect define GC_OPENBSD_THREADS on sparc64
+* Fix misaligned tlfs passed to AO_load on m68k
+* Fix missing gc_dlopen.c in CMake script
 * Fix printf format specifier in simple_example.html
 * Fix save_callers for multi-threaded case if built-in backtrace unavailable
 * Fix test_cpp failure caused by arbitrary link order (Win32)
