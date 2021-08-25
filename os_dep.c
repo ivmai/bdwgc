@@ -3924,6 +3924,8 @@ GC_INNER GC_bool GC_dirty_init(void)
   /* side of labeling pages as dirty (and this implementation does).    */
   GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
   {
+    word index;
+
 #   ifdef PCR_VDB
       if (!GC_manual_vdb) {
         if ((word)h < (word)GC_vd_base
@@ -3935,9 +3937,16 @@ GC_INNER GC_bool GC_dirty_init(void)
 #   elif defined(DEFAULT_VDB)
       if (!GC_manual_vdb)
         return TRUE;
+#   elif defined(PROC_VDB)
+      /* Unless manual VDB is on, the bitmap covers all process memory. */
+      if (GC_manual_vdb)
 #   endif
-    return NULL == HDR(h)
-             || get_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
+      {
+        if (NULL == HDR(h))
+          return TRUE;
+      }
+    index = PHT_HASH(h);
+    return get_pht_entry_from_index(GC_grungy_pages, index);
   }
 
 # if defined(CHECKSUMS) || defined(PROC_VDB)
@@ -3945,12 +3954,21 @@ GC_INNER GC_bool GC_dirty_init(void)
     GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
     {
 #     if defined(GWW_VDB) || defined(PROC_VDB) || defined(SOFT_VDB)
+        word index;
+
 #       ifdef MPROTECT_VDB
           if (!GC_GWW_AVAILABLE())
             return TRUE;
 #       endif
-        return NULL == HDR(h)
-               || get_pht_entry_from_index(GC_written_pages, PHT_HASH(h));
+#       if defined(PROC_VDB)
+          if (GC_manual_vdb)
+#       endif
+        {
+          if (NULL == HDR(h))
+            return TRUE;
+        }
+        index = PHT_HASH(h);
+        return get_pht_entry_from_index(GC_written_pages, index);
 #     else
         /* TODO: implement me for MANUAL_VDB. */
         (void)h;
