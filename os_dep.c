@@ -2782,8 +2782,12 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   {
     register word index;
 
+# if defined(PROC_VDB)
+    /* The bitmap covers all process memory.    */
+# else
     if (HDR(h) == 0)
       return TRUE;
+# endif
     index = PHT_HASH(h);
     return get_pht_entry_from_index(GC_grungy_pages, index);
   }
@@ -2805,8 +2809,10 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   endif
     {
       register word index;
+#   if !defined(PROC_VDB)
       if (HDR(h) == 0)
         return TRUE;
+#   endif
       index = PHT_HASH(h);
       return get_pht_entry_from_index(GC_written_pages, index);
     }
