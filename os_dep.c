@@ -3761,6 +3761,56 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 # define PM_SOFTDIRTY_OFS (55/8)
 # define PM_SOFTDIRTY_MASK (1<<(55%8))
 
+  static void soft_set_grungy_pages(ptr_t vaddr, ptr_t limit)
+  {
+    ssize_t res;
+    word limit_buf;
+    word pm_ofs = (word)vaddr / GC_page_size * PAGEMAP_ENTRY_SZ;
+    unsigned char *bufp;
+
+    /* TODO: page-aligned lseek, read less bytes if possible. */
+    /* TODO: don't read if data already in buf */
+    if (lseek(pagemap_fd, (off_t)pm_ofs, SEEK_SET) == (off_t)(-1))
+      ABORT_ARG2("Failed to lseek /proc/self/pagemap",
+                 ": offset = %lu, errno = %d",
+                 (unsigned long)pm_ofs, errno);
+
+    while ((word)vaddr < (word)limit) {
+      res = PROC_READ(pagemap_fd, soft_vdb_buf, VDB_BUF_SZ);
+      if (res < PAGEMAP_ENTRY_SZ)
+        ABORT_ARG1("Failed to read /proc/self/pagemap",
+                   ": errno = %d", res < 0 ? errno : 0);
+      if ((res % PAGEMAP_ENTRY_SZ) != 0)
+        ABORT("Unsupported: incomplete read of pagemap not multiple"
+              " of entry size");
+
+      pm_ofs += (size_t)res;
+      limit_buf = pm_ofs / PAGEMAP_ENTRY_SZ * GC_page_size;
+      if (limit_buf > (word)limit)
+        limit_buf = (word)limit;
+
+      for (bufp = soft_vdb_buf; (word)vaddr < limit_buf;
+           vaddr += GC_page_size, bufp += PAGEMAP_ENTRY_SZ) {
+        if ((bufp[PM_SOFTDIRTY_OFS] & PM_SOFTDIRTY_MASK) != 0) {
+          struct hblk * h;
+          ptr_t next_vaddr = vaddr + GC_page_size;
+
+          /* If the bit is set, the respective PTE was written to       */
+          /* since clearing the soft-dirty bits.                        */
+#         ifdef DEBUG_DIRTY_BITS
+            GC_log_printf("dirty page at: %p\n", (void *)vaddr);
+#         endif
+          for (h = (struct hblk *)vaddr;
+               (word)h < (word)next_vaddr; h++) {
+            word index = PHT_HASH(h);
+            set_pht_entry_from_index(GC_grungy_pages, index);
+          }
+        }
+      }
+      /* Read the next portion of pagemap file if incomplete.   */
+    }
+  }
+
   GC_INLINE void GC_soft_read_dirty(GC_bool output_unneeded)
   {
     ssize_t res;
@@ -3773,44 +3823,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 
       for (i = 0; i != GC_n_heap_sects; ++i) {
         ptr_t vaddr = GC_heap_sects[i].hs_start;
-        ptr_t limit = vaddr + GC_heap_sects[i].hs_bytes;
-        word limit_buf;
-        word pm_ofs = (word)vaddr / GC_page_size * PAGEMAP_ENTRY_SZ;
-        unsigned char *bufp;
 
-        /* TODO: page-aligned lseek, read less bytes if possible. */
-        /* TODO: don't read if data already in buf */
-        if (lseek(pagemap_fd, (off_t)pm_ofs, SEEK_SET) == (off_t)(-1))
-          ABORT_ARG2("Failed to lseek /proc/self/pagemap",
-                     ": offset = %lu, errno = %d",
-                     (unsigned long)pm_ofs, errno);
-        res = PROC_READ(pagemap_fd, soft_vdb_buf, VDB_BUF_SZ);
-        if (res < PAGEMAP_ENTRY_SZ)
-          ABORT_ARG1("Failed to read /proc/self/pagemap",
-                     ": errno = %d", res < 0 ? errno : 0);
-
-        limit_buf = (pm_ofs + (size_t)res) / PAGEMAP_ENTRY_SZ * GC_page_size;
-        if ((word)limit > limit_buf)
-          limit = (ptr_t)limit_buf;
-
-        for (bufp = soft_vdb_buf; (word)vaddr < (word)limit;
-             vaddr += GC_page_size, bufp += PAGEMAP_ENTRY_SZ) {
-          if ((bufp[PM_SOFTDIRTY_OFS] & PM_SOFTDIRTY_MASK) != 0) {
-            struct hblk * h;
-            ptr_t next_vaddr = vaddr + GC_page_size;
-
-            /* If the bit is set, the respective PTE was written to     */
-            /* since clearing the soft-dirty bits.                      */
-#           ifdef DEBUG_DIRTY_BITS
-              GC_log_printf("dirty page at: %p\n", (void *)vaddr);
-#           endif
-            for (h = (struct hblk *)vaddr;
-                 (word)h < (word)next_vaddr; h++) {
-              word index = PHT_HASH(h);
-              set_pht_entry_from_index(GC_grungy_pages, index);
-            }
-          }
-        }
+        soft_set_grungy_pages(vaddr, vaddr + GC_heap_sects[i].hs_bytes);
       }
     }
 
