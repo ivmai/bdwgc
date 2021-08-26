@@ -615,22 +615,13 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
     UNLOCK();
 }
 
-#ifdef NO_VDB_FOR_STATIC_ROOTS
-# define GC_PUSH_CONDITIONAL_STATIC(b, t, all) \
-                ((void)(all), GC_push_all(b, t))
-#else
-# define GC_PUSH_CONDITIONAL_STATIC(b, t, all) GC_push_conditional(b, t, all)
-                        /* Do either of GC_push_all or GC_push_selected */
-                        /* depending on the third arg.                  */
-#endif
-
 #if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
 # define GC_PUSH_CONDITIONAL(b, t, all) \
                 (GC_parallel \
                     ? GC_push_conditional_eager(b, t, all) \
-                    : GC_PUSH_CONDITIONAL_STATIC(b, t, all))
+                    : GC_push_conditional_static(b, t, all))
 #else
-# define GC_PUSH_CONDITIONAL(b, t, all) GC_PUSH_CONDITIONAL_STATIC(b, t, all)
+# define GC_PUSH_CONDITIONAL(b, t, all) GC_push_conditional_static(b, t, all)
 #endif
 
 /* Invoke push_conditional on ranges that are not excluded. */

@@ -1402,6 +1402,38 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
       }
     }
   }
+
+# ifndef NO_VDB_FOR_STATIC_ROOTS
+#   ifndef PROC_VDB
+      /* Same as GC_page_was_dirty but h is allowed to point to some    */
+      /* page in the registered static roots only.                      */
+      STATIC GC_bool GC_static_page_was_dirty(struct hblk *h)
+      {
+        if (GC_manual_vdb) return TRUE;
+
+        return get_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
+      }
+#   endif
+
+    GC_INNER void GC_push_conditional_static(void *bottom, void *top,
+                                             GC_bool all)
+    {
+#     ifdef PROC_VDB
+        /* Just redirect to the generic routine because PROC_VDB        */
+        /* implementation gets the dirty bits map for the whole         */
+        /* process memory.                                              */
+        GC_push_conditional(bottom, top, all);
+#     else
+        if (all) {
+          GC_push_all(bottom, top);
+        } else {
+          GC_push_selected((ptr_t)bottom, (ptr_t)top,
+                           GC_static_page_was_dirty);
+        }
+#     endif
+    }
+# endif /* !NO_VDB_FOR_STATIC_ROOTS */
+
 #else
   GC_API void GC_CALL GC_push_conditional(void *bottom, void *top,
                                           int all GC_ATTR_UNUSED)

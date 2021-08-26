@@ -3256,7 +3256,8 @@ EXTERN_C_BEGIN
 # define DEFAULT_VDB
 #endif
 
-#if !defined(PROC_VDB) && !defined(NO_VDB_FOR_STATIC_ROOTS)
+#if !defined(PROC_VDB) && !defined(SOFT_VDB) \
+    && !defined(NO_VDB_FOR_STATIC_ROOTS)
   /* Cannot determine whether a static root page is dirty?      */
 # define NO_VDB_FOR_STATIC_ROOTS
 #endif

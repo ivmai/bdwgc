@@ -2916,11 +2916,11 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
  *              to assume that the client is a (slow) debugger.
  * SOFT_VDB:    Use the /proc facility for reading soft-dirty PTEs.
  *              Works on Linux 3.18 or later. The proposed implementation
- *              iterates over GC_heap_sects and examines the soft-dirty bit
- *              of the words in /proc/self/pagemap corresponding to the
- *              pages of the sections; finally all soft-dirty bits of the
- *              process are cleared (by writing some special value to
- *              /proc/self/clear_refs file).
+ *              iterates over GC_heap_sects and GC_static_roots examining
+ *              the soft-dirty bit of the words in /proc/self/pagemap
+ *              corresponding to the pages of the sections; finally all
+ *              soft-dirty bits of the process are cleared (by writing
+ *              some special value to /proc/self/clear_refs file).
  * MPROTECT_VDB:Protect pages and then catch the faults to keep track of
  *              dirtied pages.  The implementation (and implementability)
  *              is highly system dependent.  This usually fails when system
@@ -3826,12 +3826,17 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 
         soft_set_grungy_pages(vaddr, vaddr + GC_heap_sects[i].hs_bytes);
       }
-    }
+#     ifdef CHECKSUMS
+        GC_or_pages(GC_written_pages, GC_grungy_pages);
+#     endif
 
-#   ifdef CHECKSUMS
-      GC_ASSERT(!output_unneeded);
-      GC_or_pages(GC_written_pages, GC_grungy_pages);
-#   endif
+#     ifndef NO_VDB_FOR_STATIC_ROOTS
+        for (i = 0; (int)i < n_root_sets; ++i) {
+          soft_set_grungy_pages(GC_static_roots[i].r_start,
+                                GC_static_roots[i].r_end);
+        }
+#     endif
+    }
 
     /* Clear soft-dirty bits from the task's PTEs. */
     res = write(clear_refs_fd, "4\n", 2);
