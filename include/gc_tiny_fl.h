@@ -52,11 +52,13 @@
         || defined(__alpha__) || defined(__powerpc64__) \
         || defined(__arch64__) \
         || (defined(__riscv) && __riscv_xlen == 64)
-#  if defined(__CHERI_PURE_CAPABILITY__)
-#    error FIXME Expand Granule size and subsequent uses for pointer sizes being different from word sizes
-#  endif
-#  define GC_GRANULE_BYTES 16
-#  define GC_GRANULE_WORDS 2
+#  if __CHERI_CAPABILITY_WIDTH__ == 128
+#   define GC_GRANULE_BYTES 16
+#   define GC_GRANULE_WORDS 1
+#  else /* __CHERI_CAPABILITY_WIDTH__ == 128 */
+#   define GC_GRANULE_BYTES 16
+#   define GC_GRANULE_WORDS 2
+#  endif /* __CHERI_CAPABILITY_WIDTH__ == 128 */
 # else
 #  define GC_GRANULE_BYTES 8
 #  define GC_GRANULE_WORDS 2
