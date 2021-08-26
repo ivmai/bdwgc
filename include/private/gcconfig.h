@@ -2914,10 +2914,12 @@ EXTERN_C_BEGIN
 
 # ifdef RISCV
 #   define MACH_TYPE "RISC-V"
-#   define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
 #   if defined(__CHERI_PURE_CAPABILITY__)
+#     define INTEGER_WORDSZ __riscv_xlen /* 32 or 64 */
+#     define CPP_WORDSZ __riscv_clen /* 64 or 128 */
 #     define ALIGNMENT (__riscv_clen >> 3)
-#   else 
+#   else
+#     define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
 #     define ALIGNMENT (CPP_WORDSZ/8)
 #   endif
 #   ifdef FREEBSD
@@ -3122,7 +3124,7 @@ EXTERN_C_BEGIN
 #if defined(CPPCHECK)
 # undef CPP_WORDSZ
 # define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
-#elif CPP_WORDSZ != 32 && CPP_WORDSZ != 64
+#elif CPP_WORDSZ != 32 && CPP_WORDSZ != 64 && CPP_WORDSZ != 128
 #   error Bad word size
 #endif
 
