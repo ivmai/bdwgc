@@ -597,7 +597,7 @@ STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
     GC_ASSERT((total_size & (HBLKSIZE-1)) == 0);
     GC_remove_from_fl_at(hhdr, index);
     if (total_size == bytes) return h;
-    rest = (struct hblk *)((word)h + bytes);
+    rest = (struct hblk *)((ptr_t)h + bytes);
     rest_hdr = GC_install_header(rest);
     if (0 == rest_hdr) {
         /* FIXME: This is likely to be very bad news ... */
