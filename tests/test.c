@@ -790,7 +790,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     GC_FREE((void *)e);
 
     check_ints(b,1,50);
-# ifndef __EMSCRIPTEN__
+# ifndef EMSCRIPTEN
     check_ints(a_get(),1,49);
 # else
     /* FIXME: gctest fails unless check_ints(a_get(), ...) are skipped. */
@@ -800,7 +800,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
         b = reverse(reverse(b));
     }
     check_ints(b,1,50);
-# ifndef __EMSCRIPTEN__
+# ifndef EMSCRIPTEN
     check_ints(a_get(),1,49);
 # endif
     for (i = 0; i < 10 * (NTHREADS+1); i++) {
@@ -820,7 +820,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
           AO_fetch_and_add1(&realloc_count);
 #       endif
     }
-# ifndef __EMSCRIPTEN__
+# ifndef EMSCRIPTEN
     check_ints(a_get(),1,49);
 # endif
     check_ints(b,1,50);

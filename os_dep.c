@@ -1229,7 +1229,7 @@ GC_INNER size_t GC_page_size = 0;
     return (ptr_t)GC_get_main_symbian_stack_base();
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#elif defined(__EMSCRIPTEN__)
+#elif defined(EMSCRIPTEN)
 # include <emscripten.h>
 
   static void* emscripten_stack_base;
@@ -2645,7 +2645,7 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
           /* with PROT_NONE seems to work fine.                         */
           if (mprotect(start_addr, len, PROT_NONE))
             ABORT("mprotect(PROT_NONE) failed");
-#       elif defined(__EMSCRIPTEN__)
+#       elif defined(EMSCRIPTEN)
           /* Nothing to do, mmap(PROT_NONE) is not supported and        */
           /* mprotect() is just a no-op.                                */
 #       else
@@ -2796,7 +2796,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 /* thread stacks.                                               */
 #ifndef THREADS
 
-# if defined(__EMSCRIPTEN__)
+# ifdef EMSCRIPTEN
     static void scan_regs_cb(void *begin, void *end)
     {
       GC_push_all_stack((ptr_t)begin, (ptr_t)end);
