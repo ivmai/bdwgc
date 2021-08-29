@@ -738,6 +738,7 @@ EXTERN_C_BEGIN
                     /*             AARCH64    ==> ARM AArch64           */
                     /*                  (LP64 and ILP32 variants)       */
                     /*             ARM32      ==> Intel StrongARM       */
+                    /*                  (many variants)                 */
                     /*             IA64       ==> Intel IPF             */
                     /*                            (e.g. Itanium)        */
                     /*                  (LINUX and HPUX)                */
@@ -749,9 +750,14 @@ EXTERN_C_BEGIN
                     /*                   LINUX, NETBSD, AIX, NOSYS      */
                     /*                   variants)                      */
                     /*                  Handles 32 and 64-bit variants. */
+                    /*             ARC        ==> Synopsys ARC          */
+                    /*             AVR32      ==> Atmel RISC 32-bit     */
                     /*             CRIS       ==> Axis Etrax            */
                     /*             M32R       ==> Renesas M32R          */
+                    /*             NIOS2      ==> Altera NIOS2          */
                     /*             HEXAGON    ==> Qualcomm Hexagon      */
+                    /*             OR1K       ==> OpenRISC/or1k         */
+                    /*             RISCV      ==> RISC-V 32/64-bit      */
                     /*             TILEPRO    ==> Tilera TILEPro        */
                     /*             TILEGX     ==> Tilera TILE-Gx        */
 
@@ -961,6 +967,25 @@ EXTERN_C_BEGIN
 #   define GETPAGESIZE() (unsigned)sysconf(_SC_PAGE_SIZE)
 # endif /* HPUX */
 
+# ifdef LINUX
+#   define OS_TYPE "LINUX"
+    EXTERN_C_END
+#   include <features.h> /* for __GLIBC__ */
+    EXTERN_C_BEGIN
+#   define COUNT_UNMAPPED_REGIONS
+#   if !defined(MIPS) && !defined(POWERPC)
+#     define LINUX_STACKBOTTOM
+#   endif
+#   if defined(__ELF__) && !defined(IA64)
+#     define DYNAMIC_LOADING
+#   endif
+#   if defined(__ELF__) && !defined(ARC) && !defined(RISCV) \
+       && !defined(S390) && !defined(TILEGX) && !defined(TILEPRO)
+      extern int _end[];
+#     define DATAEND ((ptr_t)(_end))
+#   endif
+# endif /* LINUX */
+
 # ifdef MACOS
 #   define OS_TYPE "MACOS"
 #   ifndef __LOWMEM__
@@ -1091,17 +1116,10 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef LINUX
-#       define OS_TYPE "LINUX"
-#       define LINUX_STACKBOTTOM
-#       define COUNT_UNMAPPED_REGIONS
 #       if !defined(REDIRECT_MALLOC)
 #         define MPROTECT_VDB
 #       endif
 #       ifdef __ELF__
-#         define DYNAMIC_LOADING
-          EXTERN_C_END
-#         include <features.h>
-          EXTERN_C_BEGIN
 #         if defined(__GLIBC__) && __GLIBC__ >= 2
 #           define SEARCH_FOR_DATA_START
 #         else /* !GLIBC2 */
@@ -1116,8 +1134,6 @@ EXTERN_C_BEGIN
                              /* contain large read-only data tables    */
                              /* that we'd rather not scan.             */
 #         endif /* !GLIBC2 */
-          extern int _end[];
-#         define DATAEND ((ptr_t)(_end))
 #       else
           extern int etext[];
 #         define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
@@ -1153,7 +1169,6 @@ EXTERN_C_BEGIN
 #     else
 #       define ALIGNMENT 4
 #     endif
-#     define OS_TYPE "LINUX"
       /* HEURISTIC1 has been reliably reported to fail for a 32-bit     */
       /* executable on a 64 bit kernel.                                 */
 #     if defined(__bg__)
@@ -1164,11 +1179,7 @@ EXTERN_C_BEGIN
 #     else
 #       define LINUX_STACKBOTTOM
 #     endif
-#     define COUNT_UNMAPPED_REGIONS
-#     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
-      extern int _end[];
-#     define DATAEND ((ptr_t)(_end))
 #   endif
 #   ifdef DARWIN
 #     if defined(__ppc64__)
@@ -1336,17 +1347,11 @@ EXTERN_C_BEGIN
 #       define DYNAMIC_LOADING
 #   endif
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     ifdef __ELF__
-#       define DYNAMIC_LOADING
-#     elif !defined(CPPCHECK)
+#     if !defined(__ELF__) && !defined(CPPCHECK)
 #       error Linux SPARC a.out not supported
 #     endif
-#     define COUNT_UNMAPPED_REGIONS
-      extern int _end[];
-      extern int _etext[];
-#     define DATAEND ((ptr_t)(_end))
 #     define SVR4
+      extern int _etext[];
       ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #     ifdef __arch64__
 #       define DATASTART GC_SysVGetDataStart(0x100000, (ptr_t)_etext)
@@ -1354,7 +1359,6 @@ EXTERN_C_BEGIN
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #     endif
 #     define DATASTART_IS_FUNC
-#     define LINUX_STACKBOTTOM
 #   endif
 #   ifdef OPENBSD
       /* Nothing specific. */
@@ -1462,9 +1466,6 @@ EXTERN_C_BEGIN
 #       define HEAP_START (ptr_t)0x40000000
 #   endif /* DGUX */
 #   ifdef LINUX
-#       define OS_TYPE "LINUX"
-#       define LINUX_STACKBOTTOM
-#       define COUNT_UNMAPPED_REGIONS
 #       if !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       else
@@ -1476,10 +1477,6 @@ EXTERN_C_BEGIN
                 /* This encourages mmap to give us low addresses,       */
                 /* thus allowing the heap to grow to ~3 GB.             */
 #       ifdef __ELF__
-#           define DYNAMIC_LOADING
-            EXTERN_C_END
-#           include <features.h>
-            EXTERN_C_BEGIN
 #            if defined(__GLIBC__) && __GLIBC__ >= 2 \
                 || defined(HOST_ANDROID) || defined(HOST_TIZEN)
 #                define SEARCH_FOR_DATA_START
@@ -1495,8 +1492,6 @@ EXTERN_C_BEGIN
                               /* contain large read-only data tables    */
                               /* that we'd rather not scan.             */
 #            endif
-             extern int _end[];
-#            define DATAEND ((ptr_t)(_end))
 #            if !defined(GC_NO_SIGSETJMP) && (defined(HOST_TIZEN) \
                     || (defined(HOST_ANDROID) \
                         && !(GC_GNUC_PREREQ(4, 8) || GC_CLANG_PREREQ(3, 2) \
@@ -1692,31 +1687,20 @@ EXTERN_C_BEGIN
 # ifdef LOONGARCH
 #   define MACH_TYPE "LoongArch"
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     define DYNAMIC_LOADING
-#     define COUNT_UNMAPPED_REGIONS
 #     pragma weak __data_start
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
-      extern int _end[];
-#     define DATAEND ((ptr_t)(_end))
 #     define CPP_WORDSZ _LOONGARCH_SZPTR
 #     define ALIGNMENT (_LOONGARCH_SZPTR/8)
-#     define LINUX_STACKBOTTOM
 #   endif
 # endif /* LOONGARCH */
 
 # ifdef MIPS
 #   define MACH_TYPE "MIPS"
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     define DYNAMIC_LOADING
-#     define COUNT_UNMAPPED_REGIONS
-      extern int _end[];
 #     pragma weak __data_start
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
-#     define DATAEND ((ptr_t)(_end))
 #     ifdef _MIPS_SZPTR
 #       define CPP_WORDSZ _MIPS_SZPTR
 #       define ALIGNMENT (_MIPS_SZPTR/8)
@@ -1822,42 +1806,30 @@ EXTERN_C_BEGIN
 # endif
 
 # ifdef NIOS2
-#  define CPP_WORDSZ 32
-#  define MACH_TYPE "NIOS2"
-#  ifdef LINUX
-#    define OS_TYPE "LINUX"
-#    define DYNAMIC_LOADING
-#    define COUNT_UNMAPPED_REGIONS
-     extern int _end[];
-     extern int __data_start[];
-#    define DATASTART ((ptr_t)(__data_start))
-#    define DATAEND ((ptr_t)(_end))
-#    define ALIGNMENT 4
-#    ifndef HBLKSIZE
-#      define HBLKSIZE 4096
-#    endif
-#    define LINUX_STACKBOTTOM
-#  endif /* Linux */
-# endif
+#   define CPP_WORDSZ 32
+#   define MACH_TYPE "NIOS2"
+#   ifdef LINUX
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)(__data_start))
+#     define ALIGNMENT 4
+#     ifndef HBLKSIZE
+#       define HBLKSIZE 4096
+#     endif
+#   endif
+# endif /* NIOS2 */
 
 # ifdef OR1K
 #   define CPP_WORDSZ 32
 #   define MACH_TYPE "OR1K"
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     define DYNAMIC_LOADING
-#     define COUNT_UNMAPPED_REGIONS
-      extern int _end[];
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
-#     define DATAEND ((ptr_t)(_end))
 #     define ALIGNMENT 4
 #     ifndef HBLKSIZE
 #       define HBLKSIZE 4096
 #     endif
-#     define LINUX_STACKBOTTOM
-#   endif /* Linux */
-# endif
+#   endif
+# endif /* OR1K */
 
 # ifdef HP_PA
 #   define MACH_TYPE "HP_PA"
@@ -1906,14 +1878,8 @@ EXTERN_C_BEGIN
 #     endif
 #   endif /* HPUX */
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     define LINUX_STACKBOTTOM
-#     define COUNT_UNMAPPED_REGIONS
-#     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
-      extern int _end[];
-#     define DATAEND ((ptr_t)(&_end))
-#   endif /* LINUX */
+#   endif
 #   ifdef OPENBSD
       /* Nothing specific. */
 #   endif
@@ -1975,24 +1941,20 @@ EXTERN_C_BEGIN
 #       define DYNAMIC_LOADING
 #   endif
 #   ifdef LINUX
-#       define OS_TYPE "LINUX"
-#       define LINUX_STACKBOTTOM
-#       define COUNT_UNMAPPED_REGIONS
 #       ifdef __ELF__
 #         define SEARCH_FOR_DATA_START
-#         define DYNAMIC_LOADING
 #       else
-#           define DATASTART ((ptr_t)0x140000000)
+#         define DATASTART ((ptr_t)0x140000000)
+          extern int _end[];
+#         define DATAEND ((ptr_t)(_end))
 #       endif
-        extern int _end[];
-#       define DATAEND ((ptr_t)(_end))
 #       if !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
                 /* Has only been superficially tested.  May not */
                 /* work on all versions.                        */
 #       endif
 #   endif
-# endif
+# endif /* ALPHA */
 
 # ifdef IA64
 #   define MACH_TYPE "IA64"
@@ -2026,16 +1988,13 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define CPP_WORDSZ 64
 #       define ALIGNMENT 8
-#       define OS_TYPE "LINUX"
         /* The following works on NUE and older kernels:        */
-/* #       define STACKBOTTOM ((ptr_t) 0xa000000000000000l)     */
-        /* This does not work on NUE:                           */
-#       define LINUX_STACKBOTTOM
+        /* define STACKBOTTOM ((ptr_t)0xa000000000000000l)      */
+        /* TODO: LINUX_STACKBOTTOM does not work on NUE.        */
         /* We also need the base address of the register stack  */
         /* backing store.                                       */
         extern ptr_t GC_register_stackbottom;
 #       define BACKING_STORE_BASE GC_register_stackbottom
-#       define COUNT_UNMAPPED_REGIONS
 #       define SEARCH_FOR_DATA_START
 #       ifdef __GNUC__
 #         define DYNAMIC_LOADING
@@ -2048,8 +2007,6 @@ EXTERN_C_BEGIN
 #         define MPROTECT_VDB
                 /* Requires Linux 2.3.47 or later.      */
 #       endif
-        extern int _end[];
-#       define DATAEND ((ptr_t)(_end))
 #       ifdef __GNUC__
 #         ifndef __INTEL_COMPILER
 #           define PREFETCH(x) \
@@ -2128,10 +2085,6 @@ EXTERN_C_BEGIN
 #     endif
 #   endif
 #   ifdef LINUX
-#       define OS_TYPE "LINUX"
-#       define LINUX_STACKBOTTOM
-#       define DYNAMIC_LOADING
-#       define COUNT_UNMAPPED_REGIONS
         extern int __data_start[] __attribute__((__weak__));
 #       define DATASTART ((ptr_t)(__data_start))
         extern int _end[] __attribute__((__weak__));
@@ -2139,7 +2092,7 @@ EXTERN_C_BEGIN
 #       define CACHE_LINE_SIZE 256
 #       define GETPAGESIZE() 4096
 #   endif
-# endif
+# endif /* S390 */
 
 # ifdef AARCH64
 #   define MACH_TYPE "AARCH64"
@@ -2154,21 +2107,15 @@ EXTERN_C_BEGIN
 #     define HBLKSIZE 4096
 #   endif
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     define LINUX_STACKBOTTOM
-#     define COUNT_UNMAPPED_REGIONS
 #     if !defined(REDIRECT_MALLOC)
 #       define MPROTECT_VDB
 #     endif
-#     define DYNAMIC_LOADING
 #     if defined(HOST_ANDROID)
 #       define SEARCH_FOR_DATA_START
 #     else
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
 #     endif
-      extern int _end[];
-#     define DATAEND ((ptr_t)(&_end))
 #   endif
 #   ifdef DARWIN
       /* iOS */
@@ -2224,16 +2171,9 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef LINUX
-#       define OS_TYPE "LINUX"
-#       define LINUX_STACKBOTTOM
-#       define COUNT_UNMAPPED_REGIONS
 #       if !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       endif
-#       define DYNAMIC_LOADING
-        EXTERN_C_END
-#       include <features.h>
-        EXTERN_C_BEGIN
 #       if defined(__GLIBC__) && __GLIBC__ >= 2 \
                 || defined(HOST_ANDROID) || defined(HOST_TIZEN)
 #           define SEARCH_FOR_DATA_START
@@ -2249,8 +2189,6 @@ EXTERN_C_BEGIN
                               /* contain large read-only data tables    */
                               /* that we'd rather not scan.             */
 #       endif
-        extern int _end[];
-#       define DATAEND ((ptr_t)(_end))
 #   endif
 #   ifdef MSWINCE
       /* Nothing specific. */
@@ -2307,27 +2245,15 @@ EXTERN_C_BEGIN
 #   define CPP_WORDSZ 32
 #   define ALIGNMENT 1
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     define DYNAMIC_LOADING
-#     define LINUX_STACKBOTTOM
-#     define COUNT_UNMAPPED_REGIONS
 #     define SEARCH_FOR_DATA_START
-      extern int _end[];
-#     define DATAEND ((ptr_t)(_end))
 #   endif
-# endif
+# endif /* CRIS */
 
 # if defined(SH) && !defined(SH4)
 #   define MACH_TYPE "SH"
 #   define ALIGNMENT 4
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     define LINUX_STACKBOTTOM
-#     define COUNT_UNMAPPED_REGIONS
-#     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
-      extern int _end[];
-#     define DATAEND ((ptr_t)(_end))
 #   endif
 #   ifdef NETBSD
       /* Nothing specific. */
@@ -2353,30 +2279,18 @@ EXTERN_C_BEGIN
 #   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     define DYNAMIC_LOADING
-#     define LINUX_STACKBOTTOM
-#     define COUNT_UNMAPPED_REGIONS
 #     define SEARCH_FOR_DATA_START
-      extern int _end[];
-#     define DATAEND ((ptr_t)(_end))
 #   endif
-# endif
+# endif /* AVR32 */
 
 # ifdef M32R
 #   define CPP_WORDSZ 32
 #   define MACH_TYPE "M32R"
 #   define ALIGNMENT 4
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     define LINUX_STACKBOTTOM
-#     define COUNT_UNMAPPED_REGIONS
-#     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
-      extern int _end[];
-#     define DATAEND ((ptr_t)(_end))
 #   endif
-# endif
+# endif /* M32R */
 
 # ifdef X86_64
 #   define MACH_TYPE "X86_64"
@@ -2404,8 +2318,6 @@ EXTERN_C_BEGIN
 #     define STACKBOTTOM ((ptr_t)platform_get_stack_bottom())
 #   endif
 #   ifdef LINUX
-#       define OS_TYPE "LINUX"
-#       define LINUX_STACKBOTTOM
 #       if !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       else
@@ -2413,14 +2325,7 @@ EXTERN_C_BEGIN
             /* possibly because Linux threads is itself a malloc client */
             /* and can't deal with the signals.  fread uses malloc too. */
 #       endif
-#       define COUNT_UNMAPPED_REGIONS
-#       define DYNAMIC_LOADING
-        EXTERN_C_END
-#       include <features.h>
-        EXTERN_C_BEGIN
 #       define SEARCH_FOR_DATA_START
-        extern int _end[];
-#       define DATAEND ((ptr_t)(_end))
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* A workaround for GCF (Google Cloud Function) which does    */
           /* not support mmap() for "/dev/zero".  Should not cause any  */
@@ -2535,10 +2440,6 @@ EXTERN_C_BEGIN
 #   define ALIGNMENT 4
 #   define CACHE_LINE_SIZE 64
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     define LINUX_STACKBOTTOM
-#     define COUNT_UNMAPPED_REGIONS
-#     define DYNAMIC_LOADING
       extern int __data_start[] __attribute__((__weak__));
 #     define DATASTART ((ptr_t)__data_start)
 #   endif
@@ -2549,25 +2450,16 @@ EXTERN_C_BEGIN
 #   define MACH_TYPE "HEXAGON"
 #   define ALIGNMENT 4
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     define LINUX_STACKBOTTOM
 #     if !defined(REDIRECT_MALLOC)
 #       define MPROTECT_VDB
 #     endif
-#     define COUNT_UNMAPPED_REGIONS
-#     define DYNAMIC_LOADING
-      EXTERN_C_END
-#     include <features.h>
-      EXTERN_C_BEGIN
 #     if defined(__GLIBC__)
 #       define SEARCH_FOR_DATA_START
 #     elif !defined(CPPCHECK)
 #       error Unknown Hexagon libc configuration
 #     endif
-      extern int _end[];
-#     define DATAEND ((ptr_t)(_end))
 #   endif
-# endif
+# endif /* HEXAGON */
 
 # ifdef TILEPRO
 #   define CPP_WORDSZ 32
@@ -2576,14 +2468,10 @@ EXTERN_C_BEGIN
 #   define PREFETCH(x) __insn_prefetch(x)
 #   define CACHE_LINE_SIZE 64
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
-#     define LINUX_STACKBOTTOM
-#     define COUNT_UNMAPPED_REGIONS
-#     define DYNAMIC_LOADING
 #   endif
-# endif
+# endif /* TILEPRO */
 
 # ifdef TILEGX
 #   define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
@@ -2595,14 +2483,10 @@ EXTERN_C_BEGIN
 #   define PREFETCH(x) __insn_prefetch_l1(x)
 #   define CACHE_LINE_SIZE 64
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
-#     define LINUX_STACKBOTTOM
-#     define COUNT_UNMAPPED_REGIONS
-#     define DYNAMIC_LOADING
 #   endif
-# endif
+# endif /* TILEGX */
 
 # ifdef RISCV
 #   define MACH_TYPE "RISC-V"
@@ -2613,12 +2497,8 @@ EXTERN_C_BEGIN
 #     define SIG_THR_RESTART SIGUSR2
 #   endif
 #   ifdef LINUX
-#     define OS_TYPE "LINUX"
       extern int __data_start[] __attribute__((__weak__));
 #     define DATASTART ((ptr_t)__data_start)
-#     define LINUX_STACKBOTTOM
-#     define COUNT_UNMAPPED_REGIONS
-#     define DYNAMIC_LOADING
 #   endif
 # endif /* RISCV */
 
