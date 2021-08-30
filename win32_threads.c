@@ -1269,10 +1269,10 @@ STATIC void GC_suspend(GC_thread t)
 {
 # ifndef MSWINCE
     DWORD exitCode;
-# endif
-# ifdef RETRY_GET_THREAD_CONTEXT
-    int retry_cnt = 0;
-#   define MAX_SUSPEND_THREAD_RETRIES (1000 * 1000)
+#   ifdef RETRY_GET_THREAD_CONTEXT
+      int retry_cnt;
+#     define MAX_SUSPEND_THREAD_RETRIES (1000 * 1000)
+#   endif
 # endif
 
 # ifdef DEBUG_THREADS
@@ -1289,7 +1289,7 @@ STATIC void GC_suspend(GC_thread t)
       GC_acquire_dirty_lock();
     }
 # elif defined(RETRY_GET_THREAD_CONTEXT)
-    for (;;) {
+    for (retry_cnt = 0;;) {
       /* Apparently the Windows 95 GetOpenFileName call creates         */
       /* a thread that does not properly get cleaned up, and            */
       /* SuspendThread on its descriptor may provoke a crash.           */
