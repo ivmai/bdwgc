@@ -3740,9 +3740,6 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 #   define VDB_BUF_SZ 16384
 # endif
 
-  static unsigned char *soft_vdb_buf;
-  static int clear_refs_fd, pagemap_fd;
-
   static int open_proc_fd(const char *proc_filename, int mode)
   {
     int f;
@@ -3761,7 +3758,10 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     return f;
   }
 
-  GC_INNER GC_bool GC_dirty_init(void)
+  static unsigned char *soft_vdb_buf;
+  static int clear_refs_fd = -1, pagemap_fd = -1;
+
+  static GC_bool soft_dirty_open_files(void)
   {
     clear_refs_fd = open_proc_fd("clear_refs", O_WRONLY);
     if (-1 == clear_refs_fd)
@@ -3769,8 +3769,29 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     pagemap_fd = open_proc_fd("pagemap", O_RDONLY);
     if (-1 == pagemap_fd) {
       close(clear_refs_fd);
+      clear_refs_fd = -1;
       return FALSE;
     }
+    return TRUE;
+  }
+
+# ifdef CAN_HANDLE_FORK
+    GC_INNER void GC_dirty_update_child(void)
+    {
+      if (-1 == clear_refs_fd)
+        return; /* GC incremental mode is off */
+
+      close(clear_refs_fd);
+      close(pagemap_fd);
+      if (!soft_dirty_open_files())
+        GC_incremental = FALSE;
+    }
+# endif /* CAN_HANDLE_FORK */
+
+  GC_INNER GC_bool GC_dirty_init(void)
+  {
+    if (!soft_dirty_open_files())
+      return FALSE;
     soft_vdb_buf = (unsigned char *)GC_scratch_alloc(VDB_BUF_SZ);
     if (NULL == soft_vdb_buf)
       ABORT("Insufficient space for /proc pagemap buffer");
