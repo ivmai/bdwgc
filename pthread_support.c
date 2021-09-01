@@ -898,7 +898,10 @@ STATIC void GC_fork_child_proc(void)
       /* just going to exec, and we would have to restart mark threads. */
         GC_markers = 1;
         GC_parallel = FALSE;
-#   endif /* PARALLEL_MARK */
+#   endif
+#   ifndef GC_DISABLE_INCREMENTAL
+      GC_dirty_update_child();
+#   endif
     RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
     /* Even though after a fork the child only inherits the single      */

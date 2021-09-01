@@ -3643,25 +3643,22 @@ ssize_t read(int fd, void *buf, size_t nbyte)
 # include <sys/procfs.h>
 # include <sys/stat.h>
 
+# ifndef THREADS
+    static pid_t saved_proc_pid; /* pid used to compose /proc file name */
+# endif
+
 # define INITIAL_BUF_SZ 16384
   STATIC word GC_proc_buf_size = INITIAL_BUF_SZ;
   STATIC char *GC_proc_buf = NULL;
-  STATIC int GC_proc_fd = 0;
+  STATIC int GC_proc_fd = -1;
 
-GC_INNER GC_bool GC_dirty_init(void)
-{
+  static GC_bool proc_dirty_open_files(void)
+  {
     int fd;
     char buf[30];
+    pid_t pid = getpid();
 
-    if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
-      memset(GC_written_pages, 0xff, sizeof(page_hash_table));
-      if (GC_print_stats == VERBOSE)
-        GC_log_printf("Allocated bytes:%lu:all pages may have been written\n",
-                      (unsigned long)(GC_bytes_allocd
-                                      + GC_bytes_allocd_before_gc));
-    }
-
-    sprintf(buf, "/proc/%ld", (long)getpid());
+    sprintf(buf, "/proc/%ld", (long)pid);
     fd = open(buf, O_RDONLY);
     if (fd < 0) {
       WARN("/proc open failed; cannot enable GC incremental mode\n", 0);
@@ -3670,11 +3667,39 @@ GC_INNER GC_bool GC_dirty_init(void)
     GC_proc_fd = syscall(SYS_ioctl, fd, PIOCOPENPD, 0);
     close(fd);
     syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC);
-    if (GC_proc_fd < 0) {
+    if (-1 == GC_proc_fd) {
         WARN("/proc ioctl(PIOCOPENPD) failed", 0);
         return FALSE;
     }
+#   ifndef THREADS
+      saved_proc_pid = pid; /* updated on success only */
+#   endif
+    return TRUE;
+  }
 
+# ifdef CAN_HANDLE_FORK
+    GC_INNER void GC_dirty_update_child(void)
+    {
+      if (-1 == GC_proc_fd)
+        return; /* GC incremental mode is off */
+
+      close(GC_proc_fd);
+      if (!proc_dirty_open_files())
+        GC_incremental = FALSE; /* should be safe to turn it off */
+    }
+# endif /* CAN_HANDLE_FORK */
+
+GC_INNER GC_bool GC_dirty_init(void)
+{
+    if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
+      memset(GC_written_pages, 0xff, sizeof(page_hash_table));
+      if (GC_print_stats == VERBOSE)
+        GC_log_printf("Allocated bytes:%lu: all pages may have been written\n",
+                      (unsigned long)(GC_bytes_allocd
+                                      + GC_bytes_allocd_before_gc));
+    }
+    if (!proc_dirty_open_files())
+      return FALSE;
     GC_proc_buf = GC_scratch_alloc(GC_proc_buf_size);
     if (GC_proc_buf == NULL)
       ABORT("Insufficient space for /proc read");
@@ -3692,6 +3717,23 @@ GC_INNER void GC_read_dirty(void)
     struct prasmap * map;
     char * bufp;
     int i;
+
+#   ifndef THREADS
+      /* If the current pid differs from the saved one, then we are in  */
+      /* the forked (child) process, the current /proc file should be   */
+      /* closed, the new one should be opened with the updated path.    */
+      /* Note, this is not needed for multi-threaded case because       */
+      /* fork_child_proc() reopens the file right after fork.           */
+      if (getpid() != saved_proc_pid
+          && (-1 == GC_proc_fd /* no need to retry */
+              || (close(GC_proc_fd), !proc_dirty_open_files()))) {
+        /* Failed to reopen the file.  Punt!    */
+        if (!output_unneeded)
+          memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
+        memset(GC_written_pages, 0xff, sizeof(page_hash_table));
+        return;
+      }
+#   endif
 
     BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
     bufp = GC_proc_buf;
