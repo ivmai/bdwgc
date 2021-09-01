@@ -2214,6 +2214,17 @@ GC_EXTERN GC_bool GC_print_back_height;
                 /* pointer-free system call buffers in the heap are     */
                 /* not protected.                                       */
 
+# ifdef CAN_HANDLE_FORK
+#   if defined(PROC_VDB)
+      GC_INNER void GC_dirty_update_child(void);
+                /* Update pid-specific resources (like /proc file       */
+                /* descriptors) needed by the dirty bits implementation */
+                /* after fork in the child process.                     */
+#   else
+#     define GC_dirty_update_child() (void)0
+#   endif
+# endif /* CAN_HANDLE_FORK */
+
   GC_INNER GC_bool GC_dirty_init(void);
                 /* Returns true if dirty bits are maintained (otherwise */
                 /* it is OK to be called again if the client invokes    */
