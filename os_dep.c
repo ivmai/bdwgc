@@ -104,8 +104,9 @@
 #define IGNORE_PAGES_EXECUTABLE 1
                         /* Undefined on GC_pages_executable real use.   */
 
-#if (defined(LINUX_STACKBOTTOM) || defined(NEED_PROC_MAPS) \
-     || defined(PROC_VDB) || defined(SOFT_VDB)) && !defined(PROC_READ)
+#if ((defined(LINUX_STACKBOTTOM) || defined(NEED_PROC_MAPS) \
+      || defined(PROC_VDB) || defined(SOFT_VDB)) && !defined(PROC_READ)) \
+    || defined(CPPCHECK)
 # define PROC_READ read
           /* Should probably call the real read, if read is wrapped.    */
 #endif
