@@ -2794,6 +2794,11 @@ EXTERN_C_BEGIN
 # undef MPROTECT_VDB
 #endif
 
+#ifdef PROC_VDB
+  /* For a test purpose only.   */
+# undef SOFT_VDB
+#endif
+
 #if defined(MPROTECT_VDB) && !defined(MSWIN32) && !defined(MSWINCE)
 # include <signal.h> /* for SA_SIGINFO, SIGBUS */
 #endif
