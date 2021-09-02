@@ -909,6 +909,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
     }
     /* Don't keep cached descriptor, for now.  Some kernels don't like us */
     /* to keep a /proc file descriptor around during kill -9.             */
+    /* Otherwise, it should also require FD_CLOEXEC and proper handling   */
+    /* at fork (i.e. close because of the pid change).                    */
         if (close(fd) < 0) ABORT("Couldn't close /proc file");
         fd = -1;
 }
