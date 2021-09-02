@@ -3825,7 +3825,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
       ofs = (size_t)(fpos - pagemap_buf_fpos);
       res = (ssize_t)(pagemap_buf_fpos + pagemap_buf_len - fpos);
     } else {
-      off_t aligned_pos = fpos & ~(GC_page_size-1);
+      off_t aligned_pos = fpos & ~(GC_page_size < VDB_BUF_SZ
+                                    ? GC_page_size-1 : VDB_BUF_SZ-1);
 
       for (;;) {
         size_t count;
