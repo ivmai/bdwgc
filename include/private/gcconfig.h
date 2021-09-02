@@ -1180,6 +1180,16 @@ EXTERN_C_BEGIN
 #       define LINUX_STACKBOTTOM
 #     endif
 #     define SEARCH_FOR_DATA_START
+#     if defined(__GLIBC__) && !defined(__UCLIBC__) \
+         && !defined(DEFAULT_VDB) && !defined(SOFT_VDB) \
+         && !defined(GC_PREFER_MPROTECT_VDB)
+        EXTERN_C_END
+#       include <linux/version.h> /* for LINUX_VERSION[_CODE] */
+        EXTERN_C_BEGIN
+#       if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+#         define SOFT_VDB
+#       endif
+#     endif
 #   endif
 #   ifdef DARWIN
 #     if defined(__ppc64__)
@@ -1534,6 +1544,16 @@ EXTERN_C_BEGIN
           EXTERN_C_END
 #         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
           EXTERN_C_BEGIN
+#       endif
+#       if defined(__GLIBC__) && !defined(__UCLIBC__) \
+           && !defined(DEFAULT_VDB) && !defined(SOFT_VDB) \
+           && !defined(GC_PREFER_MPROTECT_VDB)
+          EXTERN_C_END
+#         include <linux/version.h> /* for LINUX_VERSION[_CODE] */
+          EXTERN_C_BEGIN
+#         if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+#           define SOFT_VDB
+#         endif
 #       endif
 #   endif
 #   ifdef CYGWIN32
@@ -2347,6 +2367,16 @@ EXTERN_C_BEGIN
           EXTERN_C_END
 #         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
           EXTERN_C_BEGIN
+#       endif
+#       if defined(__GLIBC__) && !defined(__UCLIBC__) \
+           && !defined(DEFAULT_VDB) && !defined(SOFT_VDB) \
+           && !defined(GC_PREFER_MPROTECT_VDB)
+          EXTERN_C_END
+#         include <linux/version.h> /* for LINUX_VERSION[_CODE] */
+          EXTERN_C_BEGIN
+#         if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+#           define SOFT_VDB
+#         endif
 #       endif
 #   endif
 #   ifdef DARWIN
