@@ -3788,6 +3788,30 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     }
 # endif /* CAN_HANDLE_FORK */
 
+  /* The bit 55 of the 64-bit qword of pagemap file is the soft-dirty one. */
+# define PAGEMAP_ENTRY_SZ (64/8)
+# define PM_SOFTDIRTY_OFS (55/8)
+# define PM_SOFTDIRTY_MASK (1<<(55%8))
+
+  static GC_bool detect_soft_dirty_supported(ptr_t vaddr)
+  {
+    off_t fpos;
+    char buf[PAGEMAP_ENTRY_SZ];
+
+    *vaddr = 1; /* make it dirty */
+
+    /* Read the relevant PTE from the pagemap file.     */
+    GC_ASSERT(GC_page_size != 0);
+    fpos = (off_t)((word)vaddr / GC_page_size * PAGEMAP_ENTRY_SZ);
+    if (lseek(pagemap_fd, fpos, SEEK_SET) == (off_t)(-1))
+      return FALSE;
+    if (PROC_READ(pagemap_fd, buf, sizeof(buf)) != (int)sizeof(buf))
+      return FALSE;
+
+    /* Is the soft-dirty bit set? */
+    return (buf[PM_SOFTDIRTY_OFS] & PM_SOFTDIRTY_MASK) != 0;
+  }
+
   GC_INNER GC_bool GC_dirty_init(void)
   {
     if (!soft_dirty_open_files())
@@ -3795,13 +3819,19 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     soft_vdb_buf = (unsigned char *)GC_scratch_alloc(VDB_BUF_SZ);
     if (NULL == soft_vdb_buf)
       ABORT("Insufficient space for /proc pagemap buffer");
+    if (!detect_soft_dirty_supported((ptr_t)soft_vdb_buf)) {
+      GC_COND_LOG_PRINTF("Soft-dirty bit is not supported by kernel\n");
+      /* Release the resources. */
+      /* TODO: recycle soft_vdb_buf */
+      close(clear_refs_fd);
+      clear_refs_fd = -1;
+      close(pagemap_fd);
+      pagemap_fd = -1;
+      /* TODO: fallback to MPROTECT_VDB */
+      return FALSE;
+    }
     return TRUE;
   }
-
-  /* The bit 55 of the 64-bit qword of pagemap file is the soft-dirty one. */
-# define PAGEMAP_ENTRY_SZ (64/8)
-# define PM_SOFTDIRTY_OFS (55/8)
-# define PM_SOFTDIRTY_MASK (1<<(55%8))
 
   static off_t pagemap_buf_fpos; /* valid only if pagemap_buf_len > 0 */
   static size_t pagemap_buf_len;
