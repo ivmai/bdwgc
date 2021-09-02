@@ -1008,6 +1008,7 @@ EXTERN_C_BEGIN
  * Used by black-listing code, and perhaps by dirty bit maintenance code.
  */
 
+#ifndef LOG_PHT_ENTRIES
 # ifdef LARGE_CONFIG
 #   if CPP_WORDSZ == 32
 #     define LOG_PHT_ENTRIES 20 /* Collisions likely at 1M blocks,      */
@@ -1033,6 +1034,8 @@ EXTERN_C_BEGIN
                                  /* to more than 32K hblks (128 MB).    */
                                  /* Each hash table occupies 4 KB.      */
 # endif
+#endif /* !LOG_PHT_ENTRIES */
+
 # define PHT_ENTRIES ((word)1 << LOG_PHT_ENTRIES)
 # define PHT_SIZE (PHT_ENTRIES >> LOGWL)
 typedef word page_hash_table[PHT_SIZE];
