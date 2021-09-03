@@ -1879,6 +1879,37 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
     /*FAIL;*/
 }
 
+void enable_incremental_mode(void)
+{
+# if !defined(GC_DISABLE_INCREMENTAL) \
+     && (defined(TEST_DEFAULT_VDB) || !defined(DEFAULT_VDB))
+#   if !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL) \
+       && !defined(REDIRECT_MALLOC) && !defined(USE_PROC_FOR_LIBRARIES)
+      GC_enable_incremental();
+#   endif
+    if (GC_is_incremental_mode()) {
+#     ifndef SMALL_CONFIG
+        if (GC_get_manual_vdb_allowed()) {
+          GC_printf("Switched to incremental mode (manual VDB)\n");
+        } else
+#     endif
+      /* else */ {
+        GC_printf("Switched to incremental mode\n");
+#       if defined(PROC_VDB) || defined(SOFT_VDB)
+          GC_printf("Reading dirty bits from /proc\n");
+#       elif defined(GWW_VDB)
+          GC_printf("Using GetWriteWatch-based implementation\n");
+#         ifdef MPROTECT_VDB
+            GC_printf("Or emulating dirty bits with mprotect/signals\n");
+#         endif
+#       elif defined(MPROTECT_VDB)
+          GC_printf("Emulating dirty bits with mprotect/signals\n");
+#       endif
+      }
+    }
+# endif
+}
+
 #if defined(CPPCHECK)
 # include "javaxfc.h" /* for GC_finalize_all */
 # define UNTESTED(sym) GC_noop1((word)&sym)
@@ -1950,32 +1981,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #   endif
     GC_COND_INIT();
     GC_set_warn_proc(warn_proc);
-#   if !defined(GC_DISABLE_INCREMENTAL) \
-       && (defined(TEST_DEFAULT_VDB) || !defined(DEFAULT_VDB))
-#     if !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL)
-        GC_enable_incremental();
-#     endif
-      if (GC_is_incremental_mode()) {
-#       ifndef SMALL_CONFIG
-          if (GC_get_manual_vdb_allowed()) {
-            GC_printf("Switched to incremental mode (manual VDB)\n");
-          } else
-#       endif
-        /* else */ {
-          GC_printf("Switched to incremental mode\n");
-#       if defined(PROC_VDB) || defined(SOFT_VDB)
-          GC_printf("Reading dirty bits from /proc\n");
-#       elif defined(GWW_VDB)
-          GC_printf("Using GetWriteWatch-based implementation\n");
-#         ifdef MPROTECT_VDB
-            GC_printf("Or emulating dirty bits with mprotect/signals\n");
-#         endif
-#       elif defined(MPROTECT_VDB)
-          GC_printf("Emulating dirty bits with mprotect/signals\n");
-#       endif /* MPROTECT_VDB && !GWW_VDB */
-        }
-      }
-#   endif
+    enable_incremental_mode();
     set_print_procs();
     GC_start_incremental_collection();
     run_one_test();
@@ -2202,9 +2208,7 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
     GC_printf("Using DllMain to track threads\n");
 # endif
   GC_COND_INIT();
-# if !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL)
-    GC_enable_incremental();
-# endif
+  enable_incremental_mode();
   InitializeCriticalSection(&incr_cs);
   GC_set_warn_proc(warn_proc);
 # ifdef MSWINCE
@@ -2351,28 +2355,7 @@ int main(void)
         }
 #   endif
     n_tests = 0;
-#   if !defined(GC_DISABLE_INCREMENTAL) \
-       && (defined(TEST_DEFAULT_VDB) || !defined(DEFAULT_VDB))
-#     if !defined(REDIRECT_MALLOC) && !defined(MAKE_BACK_GRAPH) \
-         && !defined(USE_PROC_FOR_LIBRARIES) && !defined(NO_INCREMENTAL)
-        GC_enable_incremental();
-#     endif
-      if (GC_is_incremental_mode()) {
-#       ifndef SMALL_CONFIG
-          if (GC_get_manual_vdb_allowed()) {
-            GC_printf("Switched to incremental mode (manual VDB)\n");
-          } else
-#       endif
-        /* else */ {
-          GC_printf("Switched to incremental mode\n");
-#         if defined(PROC_VDB) || defined(SOFT_VDB)
-            GC_printf("Reading dirty bits from /proc\n");
-#         elif defined(MPROTECT_VDB)
-            GC_printf("Emulating dirty bits with mprotect/signals\n");
-#         endif
-        }
-      }
-#   endif
+    enable_incremental_mode();
     GC_set_min_bytes_allocd(1);
     if (GC_get_min_bytes_allocd() != 1)
         FAIL;
