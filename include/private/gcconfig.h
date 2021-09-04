@@ -1180,6 +1180,9 @@ EXTERN_C_BEGIN
 #       define LINUX_STACKBOTTOM
 #     endif
 #     define SEARCH_FOR_DATA_START
+#     if !defined(REDIRECT_MALLOC)
+#       define MPROTECT_VDB
+#     endif
 #     if defined(__GLIBC__) && !defined(__UCLIBC__) && !defined(SOFT_VDB) \
          && !defined(DEFAULT_VDB) && !defined(NO_SOFT_VDB)
         EXTERN_C_END
@@ -2109,6 +2112,9 @@ EXTERN_C_BEGIN
 #       define DATAEND ((ptr_t)(_end))
 #       define CACHE_LINE_SIZE 256
 #       define GETPAGESIZE() 4096
+#       if !defined(REDIRECT_MALLOC)
+#         define MPROTECT_VDB
+#       endif
 #   endif
 # endif /* S390 */
 
