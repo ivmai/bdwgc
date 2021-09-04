@@ -1406,11 +1406,10 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 # ifndef NO_VDB_FOR_STATIC_ROOTS
 #   ifndef PROC_VDB
       /* Same as GC_page_was_dirty but h is allowed to point to some    */
-      /* page in the registered static roots only.                      */
+      /* page in the registered static roots only.  Not used if         */
+      /* manual VDB is on.                                              */
       STATIC GC_bool GC_static_page_was_dirty(struct hblk *h)
       {
-        if (GC_manual_vdb) return TRUE;
-
         return get_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
       }
 #   endif
@@ -1424,7 +1423,7 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
         /* process memory.                                              */
         GC_push_conditional(bottom, top, all);
 #     else
-        if (all) {
+        if (all || !GC_is_vdb_for_static_roots()) {
           GC_push_all(bottom, top);
         } else {
           GC_push_selected((ptr_t)bottom, (ptr_t)top,

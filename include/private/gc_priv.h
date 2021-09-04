@@ -2419,6 +2419,11 @@ GC_EXTERN GC_bool GC_print_back_height;
                 /* pointer-free system call buffers in the heap are     */
                 /* not protected.                                       */
 
+# if !defined(NO_VDB_FOR_STATIC_ROOTS) && !defined(PROC_VDB)
+    GC_INNER GC_bool GC_is_vdb_for_static_roots(void);
+                /* Is VDB working for static roots?                     */
+# endif
+
 # ifdef CAN_HANDLE_FORK
 #   if defined(PROC_VDB) || defined(SOFT_VDB)
       GC_INNER void GC_dirty_update_child(void);

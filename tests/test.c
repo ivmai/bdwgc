@@ -1899,12 +1899,14 @@ void enable_incremental_mode(void)
           GC_printf("Reading dirty bits from /proc\n");
 #       elif defined(GWW_VDB)
           GC_printf("Using GetWriteWatch-based implementation\n");
-#         ifdef MPROTECT_VDB
-            GC_printf("Or emulating dirty bits with mprotect/signals\n");
-#         endif
-#       elif defined(MPROTECT_VDB)
-          GC_printf("Emulating dirty bits with mprotect/signals\n");
 #       endif
+#       ifdef MPROTECT_VDB
+#         if defined(GWW_VDB) || defined(SOFT_VDB)
+            GC_printf("Or emulating dirty bits with mprotect/signals\n");
+#         else
+            GC_printf("Emulating dirty bits with mprotect/signals\n");
+#         endif
+#       endif /* MPROTECT_VDB */
       }
     }
 # endif

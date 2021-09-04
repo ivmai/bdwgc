@@ -1180,9 +1180,8 @@ EXTERN_C_BEGIN
 #       define LINUX_STACKBOTTOM
 #     endif
 #     define SEARCH_FOR_DATA_START
-#     if defined(__GLIBC__) && !defined(__UCLIBC__) \
-         && !defined(DEFAULT_VDB) && !defined(SOFT_VDB) \
-         && !defined(GC_PREFER_MPROTECT_VDB)
+#     if defined(__GLIBC__) && !defined(__UCLIBC__) && !defined(SOFT_VDB) \
+         && !defined(DEFAULT_VDB) && !defined(NO_SOFT_VDB)
         EXTERN_C_END
 #       include <linux/version.h> /* for LINUX_VERSION[_CODE] */
         EXTERN_C_BEGIN
@@ -1545,9 +1544,8 @@ EXTERN_C_BEGIN
 #         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
           EXTERN_C_BEGIN
 #       endif
-#       if defined(__GLIBC__) && !defined(__UCLIBC__) \
-           && !defined(DEFAULT_VDB) && !defined(SOFT_VDB) \
-           && !defined(GC_PREFER_MPROTECT_VDB)
+#       if defined(__GLIBC__) && !defined(__UCLIBC__) && !defined(SOFT_VDB) \
+           && !defined(DEFAULT_VDB) && !defined(NO_SOFT_VDB)
           EXTERN_C_END
 #         include <linux/version.h> /* for LINUX_VERSION[_CODE] */
           EXTERN_C_BEGIN
@@ -2368,9 +2366,8 @@ EXTERN_C_BEGIN
 #         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
           EXTERN_C_BEGIN
 #       endif
-#       if defined(__GLIBC__) && !defined(__UCLIBC__) \
-           && !defined(DEFAULT_VDB) && !defined(SOFT_VDB) \
-           && !defined(GC_PREFER_MPROTECT_VDB)
+#       if defined(__GLIBC__) && !defined(__UCLIBC__) && !defined(SOFT_VDB) \
+           && !defined(DEFAULT_VDB) && !defined(NO_SOFT_VDB)
           EXTERN_C_END
 #         include <linux/version.h> /* for LINUX_VERSION[_CODE] */
           EXTERN_C_BEGIN
@@ -2815,12 +2812,11 @@ EXTERN_C_BEGIN
   /* Choose MPROTECT_VDB manually (if multiple strategies available).   */
 # undef PCR_VDB
 # undef PROC_VDB
-# undef SOFT_VDB
-  /* #undef GWW_VDB - handled in os_dep.c       */
+  /* GWW_VDB, SOFT_VDB are handled in os_dep.c. */
 #endif
 
-#if defined(PROC_VDB) || defined(SOFT_VDB)
-  /* Multi-VDB mode is not implemented. */
+#if defined(PROC_VDB)
+  /* Mutually exclusive VDB implementations (for now).  */
 # undef MPROTECT_VDB
 #endif
 

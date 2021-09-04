@@ -2916,12 +2916,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
  *              dirty bits for entire address space.  Implementations tend
  *              to assume that the client is a (slow) debugger.
  * SOFT_VDB:    Use the /proc facility for reading soft-dirty PTEs.
- *              Works on Linux 3.18 or later. The proposed implementation
- *              iterates over GC_heap_sects and GC_static_roots examining
- *              the soft-dirty bit of the words in /proc/self/pagemap
- *              corresponding to the pages of the sections; finally all
- *              soft-dirty bits of the process are cleared (by writing
- *              some special value to /proc/self/clear_refs file).
+ *              Works on Linux 3.18+ if the kernel is properly configured.
+ *              The proposed implementation iterates over GC_heap_sects and
+ *              GC_static_roots examining the soft-dirty bit of the words
+ *              in /proc/self/pagemap corresponding to the pages of the
+ *              sections; finally all soft-dirty bits of the process are
+ *              cleared (by writing some special value to
+ *              /proc/self/clear_refs file).  In case the soft-dirty bit is
+ *              not supported by the kernel, MPROTECT_VDB may be defined as
+ *              a fallback strategy.
  * MPROTECT_VDB:Protect pages and then catch the faults to keep track of
  *              dirtied pages.  The implementation (and implementability)
  *              is highly system dependent.  This usually fails when system
@@ -3037,9 +3040,12 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       GC_or_pages(GC_written_pages, GC_grungy_pages);
 #   endif
   }
+
+#elif defined(SOFT_VDB)
+# define GC_GWW_AVAILABLE() (clear_refs_fd != -1)
 #else
 # define GC_GWW_AVAILABLE() FALSE
-#endif /* !GWW_VDB */
+#endif /* !GWW_VDB && !SOFT_VDB */
 
 #ifdef DEFAULT_VDB
   /* All of the following assume the allocation lock is held.   */
@@ -3384,9 +3390,11 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       SetUnhandledExceptionFilter(GC_write_fault_handler);
     }
 # endif
-#endif /* !DARWIN */
 
-#if !defined(DARWIN)
+# ifdef SOFT_VDB
+    static GC_bool soft_dirty_init(void);
+# endif
+
   GC_INNER GC_bool GC_dirty_init(void)
   {
 #   if !defined(MSWIN32) && !defined(MSWINCE)
@@ -3407,7 +3415,25 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     if (GC_page_size % HBLKSIZE != 0) {
         ABORT("Page size not multiple of HBLKSIZE");
     }
-#   if !defined(MSWIN32) && !defined(MSWINCE)
+#   ifdef GWW_VDB
+      if (GC_gww_dirty_init())
+        return TRUE;
+#   elif defined(SOFT_VDB)
+      if (soft_dirty_init())
+        return TRUE;
+#   endif
+#   ifdef MSWIN32
+      GC_old_segv_handler = SetUnhandledExceptionFilter(
+                                        GC_write_fault_handler);
+      if (GC_old_segv_handler != NULL) {
+        GC_COND_LOG_PRINTF("Replaced other UnhandledExceptionFilter\n");
+      } else {
+          GC_old_segv_handler = SIG_DFL;
+      }
+#   elif defined(MSWINCE)
+      /* MPROTECT_VDB is unsupported for WinCE at present.      */
+      /* FIXME: implement it (if possible). */
+#   else
       /* act.sa_restorer is deprecated and should not be initialized. */
 #     if defined(GC_IRIX_THREADS)
         sigaction(SIGSEGV, 0, &oldact);
@@ -3455,21 +3481,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       }
 #   endif /* HPUX || LINUX || HURD || (FREEBSD && SUNOS5SIGS) */
 #   endif /* ! MS windows */
-#   if defined(GWW_VDB)
-      if (GC_gww_dirty_init())
-        return TRUE;
-#   endif
-#   if defined(MSWIN32)
-      GC_old_segv_handler = SetUnhandledExceptionFilter(GC_write_fault_handler);
-      if (GC_old_segv_handler != NULL) {
-        GC_COND_LOG_PRINTF("Replaced other UnhandledExceptionFilter\n");
-      } else {
-          GC_old_segv_handler = SIG_DFL;
-      }
-#   elif defined(MSWINCE)
-      /* MPROTECT_VDB is unsupported for WinCE at present.      */
-      /* FIXME: implement it (if possible). */
-#   endif
 #   if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
       GC_noop1((word)&__asan_default_options);
 #   endif
@@ -3812,22 +3823,36 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     return (buf[PM_SOFTDIRTY_OFS] & PM_SOFTDIRTY_MASK) != 0;
   }
 
-  GC_INNER GC_bool GC_dirty_init(void)
+# ifdef MPROTECT_VDB
+    static GC_bool soft_dirty_init(void)
+# else
+    GC_INNER GC_bool GC_dirty_init(void)
+# endif
   {
+#   ifdef MPROTECT_VDB
+      char * str = GETENV("GC_USE_GETWRITEWATCH");
+#     ifdef GC_PREFER_MPROTECT_VDB
+        if (str == NULL || (*str == '0' && *(str + 1) == '\0'))
+          return FALSE; /* the environment variable is unset or set to "0" */
+#     else
+        if (str != NULL && *str == '0' && *(str + 1) == '\0')
+          return FALSE; /* the environment variable is set "0" */
+#     endif
+#   endif
     if (!soft_dirty_open_files())
       return FALSE;
-    soft_vdb_buf = (unsigned char *)GC_scratch_alloc(VDB_BUF_SZ);
+    if (NULL == soft_vdb_buf)
+      soft_vdb_buf = (unsigned char *)GC_scratch_alloc(VDB_BUF_SZ);
     if (NULL == soft_vdb_buf)
       ABORT("Insufficient space for /proc pagemap buffer");
     if (!detect_soft_dirty_supported((ptr_t)soft_vdb_buf)) {
       GC_COND_LOG_PRINTF("Soft-dirty bit is not supported by kernel\n");
       /* Release the resources. */
-      /* TODO: recycle soft_vdb_buf */
+      /* TODO: recycle soft_vdb_buf, add assert it is null on enter */
       close(clear_refs_fd);
       clear_refs_fd = -1;
       close(pagemap_fd);
       pagemap_fd = -1;
-      /* TODO: fallback to MPROTECT_VDB */
       return FALSE;
     }
     return TRUE;
@@ -4072,6 +4097,20 @@ GC_INNER GC_bool GC_dirty_init(void)
       }
 #   endif
   }
+
+# if !defined(NO_VDB_FOR_STATIC_ROOTS) && !defined(PROC_VDB)
+    GC_INNER GC_bool GC_is_vdb_for_static_roots(void)
+    {
+      if (GC_manual_vdb) return FALSE;
+#     if defined(MPROTECT_VDB)
+        /* Currently used only in conjunction with SOFT_VDB.    */
+        return GC_GWW_AVAILABLE();
+#     else
+        GC_ASSERT(GC_incremental);
+        return TRUE;
+#     endif
+    }
+# endif
 
   /* Is the HBLKSIZE sized page at h marked dirty in the local buffer?  */
   /* If the actual page size is different, this returns TRUE if any     */
