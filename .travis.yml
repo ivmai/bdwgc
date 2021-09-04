@@ -82,7 +82,7 @@ jobs:
     compiler: musl-gcc
     language: c
     env:
-    - CFLAGS_EXTRA="-O3"
+    - CFLAGS_EXTRA="-O3 -D SOFT_VDB"
     - CONF_OPTIONS="--enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: arm64
@@ -149,7 +149,7 @@ jobs:
     arch: ppc64le
     compiler: gcc-9
     env:
-    - CFLAGS_EXTRA="-O3"
+    - CFLAGS_EXTRA="-O3 -D NO_MPROTECT_VDB"
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
