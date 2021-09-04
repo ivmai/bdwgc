@@ -202,7 +202,7 @@ jobs:
     compiler: gcc-9
     env:
     - CFLAGS_EXTRA="-O3"
-    - CONF_OPTIONS="--enable-cpluspluss --disable-shared"
+    - CONF_OPTIONS="--enable-cplusplus --disable-shared"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: s390x
     compiler: gcc
