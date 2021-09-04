@@ -9,7 +9,7 @@ environment:
     CMAKE_CONFIG: Debug
     CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Denable_gc_debug=ON -Denable_threads=OFF
   - TARGET: cmake
-    CFLAGS_EXTRA: -DGC_NO_INLINE_STD_NEW -DNO_MSGBOX_ON_ERROR
+    CFLAGS_EXTRA: -DGC_NO_INLINE_STD_NEW -DNO_MSGBOX_ON_ERROR -DNO_MPROTECT_VDB
     CMAKE_CONFIG: Release
     CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_large_config=ON -Ddisable_gc_debug=ON
   - TARGET: cmake
