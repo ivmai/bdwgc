@@ -525,7 +525,12 @@ static void alloc_mark_stack(size_t);
       /* avoid otherwise.                                               */
 #     ifndef DEFAULT_VDB
         if (GC_auto_incremental) {
-          WARN("Incremental GC incompatible with /proc roots\n", 0);
+          static GC_bool is_warned = FALSE;
+
+          if (!is_warned) {
+            is_warned = TRUE;
+            WARN("Incremental GC incompatible with /proc roots\n", 0);
+          }
           /* I'm not sure if this could still work ...  */
         }
 #     endif
