@@ -2788,6 +2788,14 @@ EXTERN_C_BEGIN
 # undef SOFT_VDB
 #endif
 
+#ifdef NO_GWW_VDB
+# undef GWW_VDB
+#endif
+
+#ifdef NO_MPROTECT_VDB
+# undef MPROTECT_VDB
+#endif
+
 #ifdef GC_DISABLE_INCREMENTAL
 # undef CHECKSUMS
 #endif
