@@ -1559,6 +1559,10 @@ void run_one_test(void)
             GC_start_mark_threads();
 #         endif
           GC_gcollect();
+          tree_test();
+#         if !defined(DBG_HDRS_ALL) && !defined(NO_TYPED_TEST)
+            typed_test();
+#         endif
 #         ifdef THREADS
             if (print_stats)
               GC_log_printf("Starting tiny reverse test, pid=%ld\n",
