@@ -1183,14 +1183,8 @@ EXTERN_C_BEGIN
 #     if !defined(REDIRECT_MALLOC)
 #       define MPROTECT_VDB
 #     endif
-#     if defined(__GLIBC__) && !defined(__UCLIBC__) && !defined(SOFT_VDB) \
-         && !defined(DEFAULT_VDB) && !defined(NO_SOFT_VDB)
-        EXTERN_C_END
-#       include <linux/version.h> /* for LINUX_VERSION[_CODE] */
-        EXTERN_C_BEGIN
-#       if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
-#         define SOFT_VDB
-#       endif
+#     ifndef SOFT_VDB
+#       define SOFT_VDB
 #     endif
 #   endif
 #   ifdef DARWIN
@@ -1547,14 +1541,8 @@ EXTERN_C_BEGIN
 #         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
           EXTERN_C_BEGIN
 #       endif
-#       if defined(__GLIBC__) && !defined(__UCLIBC__) && !defined(SOFT_VDB) \
-           && !defined(DEFAULT_VDB) && !defined(NO_SOFT_VDB)
-          EXTERN_C_END
-#         include <linux/version.h> /* for LINUX_VERSION[_CODE] */
-          EXTERN_C_BEGIN
-#         if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
-#           define SOFT_VDB
-#         endif
+#       ifndef SOFT_VDB
+#         define SOFT_VDB
 #       endif
 #   endif
 #   ifdef CYGWIN32
@@ -2372,14 +2360,8 @@ EXTERN_C_BEGIN
 #         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
           EXTERN_C_BEGIN
 #       endif
-#       if defined(__GLIBC__) && !defined(__UCLIBC__) && !defined(SOFT_VDB) \
-           && !defined(DEFAULT_VDB) && !defined(NO_SOFT_VDB)
-          EXTERN_C_END
-#         include <linux/version.h> /* for LINUX_VERSION[_CODE] */
-          EXTERN_C_BEGIN
-#         if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
-#           define SOFT_VDB
-#         endif
+#       ifndef SOFT_VDB
+#         define SOFT_VDB
 #       endif
 #   endif
 #   ifdef DARWIN
@@ -2802,6 +2784,20 @@ EXTERN_C_BEGIN
 # undef MPROTECT_VDB
 #endif
 
+#ifdef NO_SOFT_VDB
+# undef SOFT_VDB
+#endif
+
+#if defined(SOFT_VDB) && defined(SOFT_VDB_LINUX_VER_STATIC_CHECK)
+  EXTERN_C_END
+# include <linux/version.h> /* for LINUX_VERSION[_CODE] */
+  EXTERN_C_BEGIN
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+    /* Not reliable in kernels prior to v3.18.  */
+#   undef SOFT_VDB
+# endif
+#endif /* SOFT_VDB */
+
 #ifdef GC_DISABLE_INCREMENTAL
 # undef CHECKSUMS
 #endif
@@ -2829,12 +2825,9 @@ EXTERN_C_BEGIN
   /* GWW_VDB, SOFT_VDB are handled in os_dep.c. */
 #endif
 
-#if defined(PROC_VDB)
+#ifdef PROC_VDB
   /* Mutually exclusive VDB implementations (for now).  */
 # undef MPROTECT_VDB
-#endif
-
-#ifdef PROC_VDB
   /* For a test purpose only.   */
 # undef SOFT_VDB
 #endif

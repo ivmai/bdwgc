@@ -2888,6 +2888,31 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     return GC_push_other_roots;
 }
 
+#if defined(SOFT_VDB) && !defined(NO_SOFT_VDB_LINUX_VER_RUNTIME_CHECK) \
+    || (defined(GLIBC_2_19_TSX_BUG) && defined(THREADS))
+  GC_INNER int GC_parse_version(int *pminor, const char *pverstr) {
+    char *endp;
+    unsigned long value = strtoul(pverstr, &endp, 10);
+    int major = (int)value;
+
+    if (major < 0 || (char *)pverstr == endp || (unsigned)major != value) {
+      /* Parse error.   */
+      return -1;
+    }
+    if (*endp != '.') {
+      /* No minor part. */
+      *pminor = -1;
+    } else {
+      value = strtoul(endp + 1, &endp, 10);
+      *pminor = (int)value;
+      if (*pminor < 0 || (unsigned)(*pminor) != value) {
+        return -1;
+      }
+    }
+    return major;
+  }
+#endif
+
 /*
  * Routines for accessing dirty bits on virtual pages.
  * There are six ways to maintain this information:
@@ -3823,6 +3848,30 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     return (buf[PM_SOFTDIRTY_OFS] & PM_SOFTDIRTY_MASK) != 0;
   }
 
+# ifndef NO_SOFT_VDB_LINUX_VER_RUNTIME_CHECK
+#   include <sys/utsname.h>
+#   include <string.h> /* for strcmp() */
+
+    /* Ensure the linux (kernel) major/minor version is as given or higher. */
+    static GC_bool ensure_min_linux_ver(int major, int minor) {
+      struct utsname info;
+      int actual_major;
+      int actual_minor = -1;
+
+      if (uname(&info) == -1) {
+        return FALSE; /* uname() failed, should not happen actually. */
+      }
+      if (strcmp(info.sysname, "Linux")) {
+        WARN("Cannot ensure Linux version as running on other OS: %s\n",
+             info.sysname);
+        return FALSE;
+      }
+      actual_major = GC_parse_version(&actual_minor, info.release);
+      return actual_major > major
+             || (actual_major == major && actual_minor >= minor);
+    }
+# endif
+
 # ifdef MPROTECT_VDB
     static GC_bool soft_dirty_init(void)
 # else
@@ -3838,6 +3887,13 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
         if (str != NULL && *str == '0' && *(str + 1) == '\0')
           return FALSE; /* the environment variable is set "0" */
 #     endif
+#   endif
+#   ifndef NO_SOFT_VDB_LINUX_VER_RUNTIME_CHECK
+      if (!ensure_min_linux_ver(3, 18)) {
+        GC_COND_LOG_PRINTF(
+            "Running on old kernel lacking correct soft-dirty bit support\n");
+        return FALSE;
+      }
 #   endif
     if (!soft_dirty_open_files())
       return FALSE;

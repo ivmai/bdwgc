@@ -2603,6 +2603,11 @@ GC_EXTERN signed_word GC_bytes_found;
   GC_INNER void GC_mark_thread_local_free_lists(void);
 #endif
 
+#if defined(GLIBC_2_19_TSX_BUG) && defined(THREADS)
+  /* Parse string like <major>[.<minor>[<tail>]] and return major value. */
+  GC_INNER int GC_parse_version(int *pminor, const char *pverstr);
+#endif
+
 #if defined(MPROTECT_VDB) && defined(GWW_VDB)
     GC_INNER GC_bool GC_gww_dirty_init(void);
                         /* Returns TRUE if GetWriteWatch is available.  */
