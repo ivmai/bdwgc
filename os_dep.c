@@ -3636,6 +3636,10 @@ STATIC void GC_protect_heap(void)
 #   include <sys/procfs.h>
 # endif
 
+# ifndef THREADS
+    static pid_t saved_proc_pid; /* pid used to compose /proc file name */
+# endif
+
 # define INITIAL_BUF_SZ 16384
   STATIC size_t GC_proc_buf_size = INITIAL_BUF_SZ;
   STATIC char *GC_proc_buf = NULL;
@@ -3644,8 +3648,9 @@ STATIC void GC_protect_heap(void)
   static GC_bool proc_dirty_open_files(void)
   {
     char buf[40];
+    pid_t pid = getpid();
 
-    (void)snprintf(buf, sizeof(buf), "/proc/%ld/pagedata", (long)getpid());
+    (void)snprintf(buf, sizeof(buf), "/proc/%ld/pagedata", (long)pid);
     buf[sizeof(buf) - 1] = '\0';
     GC_proc_fd = open(buf, O_RDONLY);
     if (-1 == GC_proc_fd) {
@@ -3654,6 +3659,9 @@ STATIC void GC_protect_heap(void)
     }
     if (syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC) == -1)
       WARN("Could not set FD_CLOEXEC for /proc\n", 0);
+#   ifndef THREADS
+      saved_proc_pid = pid; /* updated on success only */
+#   endif
     return TRUE;
   }
 
@@ -3690,6 +3698,23 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     int nmaps;
     char * bufp = GC_proc_buf;
     int i;
+
+#   ifndef THREADS
+      /* If the current pid differs from the saved one, then we are in  */
+      /* the forked (child) process, the current /proc file should be   */
+      /* closed, the new one should be opened with the updated path.    */
+      /* Note, this is not needed for multi-threaded case because       */
+      /* fork_child_proc() reopens the file right after fork.           */
+      if (getpid() != saved_proc_pid
+          && (-1 == GC_proc_fd /* no need to retry */
+              || (close(GC_proc_fd), !proc_dirty_open_files()))) {
+        /* Failed to reopen the file.  Punt!    */
+        if (!output_unneeded)
+          memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
+        memset(GC_written_pages, 0xff, sizeof(page_hash_table));
+        return;
+      }
+#   endif
 
     BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
     if (PROC_READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
