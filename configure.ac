@@ -1177,11 +1177,7 @@ elif test "${enable_handle_fork}" != manual -a x$THREADS = xposix; then
         # Android NDK does not provide pthread_atfork.
         ;;
       *-*-darwin*)
-        # The incremental mode (which is off if parallel marking) conflicts
-        # with fork handling on Darwin.
-        if test x$use_parallel_mark != xno; then
-          AC_DEFINE(HANDLE_FORK)
-        fi
+        # The incremental mode conflicts with fork handling on Darwin.
         ;;
       *-*-aix* | *-*-cygwin* | *-*-freebsd* | *-*-haiku* | \
       *-*-hpux11* | *-*-irix* | *-*-kfreebsd*-gnu | \

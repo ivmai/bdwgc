@@ -194,12 +194,8 @@ if (CMAKE_USE_PTHREADS_INIT)
   if (ANDROID OR MSYS) # ANDROID variable is defined by CMake v3.7.0+.
     # Android NDK does not provide pthread_atfork.
   elseif (APPLE)
-    if (enable_handle_fork AND NOT disable_handle_fork)
-      # The incremental mode conflicts with fork handling.
-      if (enable_parallel_mark)
-        add_definitions("-DHANDLE_FORK")
-      endif(enable_parallel_mark)
-    endif()
+    # The incremental mode conflicts with fork handling (for now).
+    # Thus, HANDLE_FORK is not defined.
     set(SRC ${SRC} darwin_stop_world.c)
   elseif (enable_handle_fork AND NOT disable_handle_fork)
     add_definitions("-DHANDLE_FORK")
