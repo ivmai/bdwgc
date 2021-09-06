@@ -3602,6 +3602,10 @@ STATIC void GC_protect_heap(void)
 /* to the write-protected heap with a system call.                      */
 #endif /* MPROTECT_VDB */
 
+#if !defined(THREADS) && (defined(PROC_VDB) || defined(SOFT_VDB))
+  static pid_t saved_proc_pid; /* pid used to compose /proc file names */
+#endif
+
 #ifdef PROC_VDB
 /* This implementation assumes a Solaris 2.X like /proc                 */
 /* pseudo-file-system from which we can read page modified bits.  This  */
@@ -3634,10 +3638,6 @@ STATIC void GC_protect_heap(void)
 # else
 #   include <sys/fault.h>
 #   include <sys/procfs.h>
-# endif
-
-# ifndef THREADS
-    static pid_t saved_proc_pid; /* pid used to compose /proc file name */
 # endif
 
 # define INITIAL_BUF_SZ 16384
@@ -3801,12 +3801,12 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 #   define VDB_BUF_SZ 16384
 # endif
 
-  static int open_proc_fd(const char *proc_filename, int mode)
+  static int open_proc_fd(pid_t pid, const char *proc_filename, int mode)
   {
     int f;
     char buf[40];
 
-    (void)snprintf(buf, sizeof(buf), "/proc/%ld/%s", (long)getpid(),
+    (void)snprintf(buf, sizeof(buf), "/proc/%ld/%s", (long)pid,
                    proc_filename);
     buf[sizeof(buf) - 1] = '\0';
     f = open(buf, mode);
@@ -3820,19 +3820,24 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
   }
 
   static unsigned char *soft_vdb_buf;
-  static int clear_refs_fd = -1, pagemap_fd = -1;
+  static int clear_refs_fd = -1, pagemap_fd;
 
   static GC_bool soft_dirty_open_files(void)
   {
-    clear_refs_fd = open_proc_fd("clear_refs", O_WRONLY);
+    pid_t pid = getpid();
+
+    clear_refs_fd = open_proc_fd(pid, "clear_refs", O_WRONLY);
     if (-1 == clear_refs_fd)
       return FALSE;
-    pagemap_fd = open_proc_fd("pagemap", O_RDONLY);
+    pagemap_fd = open_proc_fd(pid, "pagemap", O_RDONLY);
     if (-1 == pagemap_fd) {
       close(clear_refs_fd);
       clear_refs_fd = -1;
       return FALSE;
     }
+#   ifndef THREADS
+      saved_proc_pid = pid; /* updated on success only */
+#   endif
     return TRUE;
   }
 
@@ -3933,7 +3938,6 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
       close(clear_refs_fd);
       clear_refs_fd = -1;
       close(pagemap_fd);
-      pagemap_fd = -1;
       return FALSE;
     }
     return TRUE;
@@ -4052,6 +4056,24 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
   GC_INLINE void GC_soft_read_dirty(GC_bool output_unneeded)
   {
     ssize_t res;
+
+#   ifndef THREADS
+      /* Similar as for GC_proc_read_dirty.     */
+      if (getpid() != saved_proc_pid
+          && (-1 == clear_refs_fd /* no need to retry */
+              || (close(clear_refs_fd), close(pagemap_fd),
+                  !soft_dirty_open_files()))) {
+        /* Failed to reopen the files.  */
+        if (!output_unneeded) {
+          /* Punt: */
+          memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
+#         ifdef CHECKSUMS
+            memset(GC_written_pages, 0xff, sizeof(page_hash_table));
+#         endif
+        }
+        return;
+      }
+#   endif
 
     if (!output_unneeded) {
       word i;
