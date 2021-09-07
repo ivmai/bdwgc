@@ -392,6 +392,7 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
+    - CFLAGS_EXTRA="-D TEST_HANDLE_FORK"
     - CONF_OPTIONS="--enable-cplusplus --disable-shared --enable-static"
   - os: osx
     env:
