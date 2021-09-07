@@ -2505,11 +2505,24 @@ EXTERN_C_BEGIN
 
 # ifdef RISCV
 #   define MACH_TYPE "RISC-V"
-#   define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
-#   define ALIGNMENT (CPP_WORDSZ/8)
+#   if defined(__CHERI_PURE_CAPABILITY__)
+#     define INTEGER_WORDSZ __riscv_xlen /* 32 or 64 */
+#     define CPP_WORDSZ __riscv_clen /* 64 or 128 */
+#     define ALIGNMENT (__riscv_clen >> 3)
+#   else
+#     define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
+#     define ALIGNMENT (CPP_WORDSZ/8)
+#   endif
 #   ifdef FREEBSD
 #     define SIG_SUSPEND SIGUSR1
 #     define SIG_THR_RESTART SIGUSR2
+#     define FREEBSD_STACKBOTTOM
+#     if 0  //FIXME CHERI  - commented to simplify initial port
+#     define DYNAMIC_LOADING   
+#     endif 
+      extern char etext[];
+#     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
+#     define DATASTART_USES_BSDGETDATASTART
 #   endif
 #   ifdef LINUX
       extern int __data_start[] __attribute__((__weak__));
@@ -2694,7 +2707,7 @@ EXTERN_C_BEGIN
 #if defined(CPPCHECK)
 # undef CPP_WORDSZ
 # define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
-#elif CPP_WORDSZ != 32 && CPP_WORDSZ != 64
+#elif CPP_WORDSZ != 32 && CPP_WORDSZ != 64 && CPP_WORDSZ != 128
 #   error Bad word size
 #endif
 

@@ -2025,29 +2025,57 @@ void GC_register_data_segments(void)
 /* For now we don't assume that there is always an empty page after     */
 /* etext.  But in some cases there actually seems to be slightly more.  */
 /* This also deals with holes between read-only data and writable data. */
-  GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t max_page_size,
-                                        ptr_t etext_addr)
-  {
-    word text_end = ((word)(etext_addr) + sizeof(word) - 1)
-                     & ~(word)(sizeof(word) - 1);
-        /* etext rounded to word boundary       */
-    volatile word next_page = (text_end + (word)max_page_size - 1)
-                              & ~((word)max_page_size - 1);
-    volatile ptr_t result = (ptr_t)text_end;
-    GC_setup_temporary_fault_handler();
-    if (SETJMP(GC_jmp_buf) == 0) {
-        /* Try reading at the address.                          */
-        /* This should happen before there is another thread.   */
-        for (; next_page < (word)DATAEND; next_page += (word)max_page_size)
-            *(volatile char *)next_page;
-        GC_reset_fault_handler();
-    } else {
-        GC_reset_fault_handler();
-        /* As above, we go to plan B    */
-        result = (ptr_t)GC_find_limit(DATAEND, FALSE);
+# if !defined(__CHERI_PURE_CAPABILITY__)
+    GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t max_page_size,
+                                          ptr_t etext_addr)
+    {
+      word text_end = ((word)(etext_addr) + sizeof(word) - 1)
+                       & ~(word)(sizeof(word) - 1);
+          /* etext rounded to word boundary       */
+      volatile word next_page = (text_end + (word)max_page_size - 1)
+                                & ~((word)max_page_size - 1);
+      volatile ptr_t result = (ptr_t)text_end;
+      GC_setup_temporary_fault_handler();
+      if (SETJMP(GC_jmp_buf) == 0) {
+          /* Try reading at the address.                          */
+          /* This should happen before there is another thread.   */
+          for (; next_page < (word)DATAEND; next_page += (word)max_page_size)
+              *(volatile char *)next_page;
+          GC_reset_fault_handler();
+      } else {
+          GC_reset_fault_handler();
+          /* As above, we go to plan B    */
+          result = (ptr_t)GC_find_limit(DATAEND, FALSE);
+      }
+      return(result);
     }
-    return(result);
-  }
+# else  /* !defined(__CHERI_PURE_CAPABILITY__) */
+    GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t max_page_size,
+                                          ptr_t etext_addr)
+    {
+      volatile ptr_t cap_next_page = NULL;
+      vaddr_t text_end = ((vaddr_t)(cheri_getaddress(etext_addr)) + sizeof(ptr_t) - 1)
+                          & ~(vaddr_t)(sizeof(ptr_t) - 1);
+      volatile vaddr_t next_page = (text_end + (word)max_page_size - 1)
+                                    & ~((word)max_page_size - 1);
+      /* etext rounded to word boundary       */
+      volatile ptr_t result = (ptr_t)cheri_setaddress(etext_addr, text_end);
+      GC_setup_temporary_fault_handler();
+      if (SETJMP(GC_jmp_buf) == 0) {
+          /* Try reading at the address.                          */
+          /* This should happen before there is another thread.   */
+          for (; next_page < (word)DATAEND; next_page += (word)max_page_size)
+  	    cap_next_page = cheri_setaddress(etext_addr, next_page);
+              *cap_next_page;
+          GC_reset_fault_handler();
+      } else {
+          GC_reset_fault_handler();
+          /* As above, we go to plan B    */
+          result = (ptr_t)GC_find_limit(DATAEND, FALSE);
+      }
+      return(result);
+    }
+# endif  /* !defined(__CHERI_PURE_CAPABILITY__) */
 #endif /* DATASTART_USES_BSDGETDATASTART */
 
 #ifdef AMIGA

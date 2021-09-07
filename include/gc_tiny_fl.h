@@ -50,9 +50,15 @@
         || defined(__s390x__) \
         || (defined(__x86_64__) && !defined(__ILP32__)) \
         || defined(__alpha__) || defined(__powerpc64__) \
-        || defined(__arch64__)
-#  define GC_GRANULE_BYTES 16
-#  define GC_GRANULE_WORDS 2
+        || defined(__arch64__) \
+        || (defined(__riscv) && __riscv_xlen == 64)
+#  if __CHERI_CAPABILITY_WIDTH__ == 128
+#   define GC_GRANULE_BYTES 16
+#   define GC_GRANULE_WORDS 1
+#  else /* __CHERI_CAPABILITY_WIDTH__ == 128 */
+#   define GC_GRANULE_BYTES 16
+#   define GC_GRANULE_WORDS 2
+#  endif /* __CHERI_CAPABILITY_WIDTH__ == 128 */
 # else
 #  define GC_GRANULE_BYTES 8
 #  define GC_GRANULE_WORDS 2

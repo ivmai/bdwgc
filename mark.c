@@ -28,6 +28,9 @@
 #include "private/gc_pmark.h"
 
 #include <stdio.h>
+#if defined(__CHERI_PURE_CAPABILITY__)
+#include <cheri/cheric.h>
+#endif
 
 #if defined(MSWIN32) && defined(__GNUC__)
 # include <excpt.h>
@@ -697,7 +700,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #         endif
           /* Make sure that pointers overlapping the two ranges are     */
           /* considered.                                                */
-          limit += sizeof(word) - ALIGNMENT;
+          limit += sizeof(ptr_t) - ALIGNMENT;
           break;
         case GC_DS_BITMAP:
           mark_stack_top--;
@@ -799,13 +802,14 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
     /* The simple case in which we're scanning a range. */
     GC_ASSERT(!((word)current_p & (ALIGNMENT-1)));
     credit -= limit - current_p;
-    limit -= sizeof(word);
+    limit -= sizeof(ptr_t);
     {
 #     define PREF_DIST 4
 
 #     ifndef SMALL_CONFIG
         word deferred;
 
+#       if !defined(__CHERI_PURE_CAPABILITY__)
         /* Try to prefetch the next pointer to be examined ASAP.        */
         /* Empirically, this also seems to help slightly without        */
         /* prefetches, at least on linux/X86.  Presumably this loop     */
@@ -834,6 +838,41 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           }
           if ((word)current_p > (word)limit) goto next_object;
         }
+#       else   /* !defined(__CHERI_PURE_CAPABILITY__) */
+        /* Check each pointer for validity before dereferencing         */
+        /* to prevent capability exceptions.                            */
+        /* Utilise the pointer meta-data to speed-up the loop.          */
+        /* If the loop is below the pointer bounds, skip the rest of    */
+        /* marking for that chunk.                                      */
+        /* If the *limit* capability restricts us to reading fewer than */
+        /* sizeof(ptr_t),                                               */
+        /*  a. there can't possibly be a pointer at limit's pointer     */
+        /*  b. reading at that location will raise a capability         */
+        /*     exception                                                */
+        if (cheri_getaddress(limit) + sizeof(ptr_t) - 1
+              >= (cheri_getbase(limit) + cheri_getlength(limit))) {
+          /* Decrement limit so that it's within current_p's bounds */
+          limit = cheri_setaddress( current_p, ((cheri_getbase(limit)
+                                    + cheri_getlength(limit) - sizeof(ptr_t))
+                                    & ~(sizeof(ptr_t)-1)));
+          if ((word)current_p > (word)limit) goto next_object;
+        }
+        for(;;) {
+          GC_ASSERT((word)limit >= (word)current_p);
+          if (cheri_getaddress(limit) < cheri_getbase(limit)) goto next_object;
+
+          if (cheri_gettag(limit) == 0) {
+            limit -= ALIGNMENT;
+          } else {
+            deferred = *(word *)limit;
+            FIXUP_POINTER(deferred);
+            limit -= ALIGNMENT;
+            if (deferred >= (word)least_ha && deferred < (word)greatest_ha)
+              break;
+          }
+          if ((word)current_p > (word)limit) goto next_object;
+        }
+#       endif   // defined(__CHERI_PURE_CAPABILITY__)
 #     endif
 
       while ((word)current_p <= (word)limit) {
@@ -1320,8 +1359,13 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 {
     word length;
 
+# if defined(__CHERI_PURE_CAPABILITY__)
+    bottom = cheri_setaddress(bottom, (((word)cheri_getaddress(bottom) + ALIGNMENT-1) & ~(ALIGNMENT-1)));
+    top = cheri_setaddress(top, ((word)cheri_getaddress(top) & ~(ALIGNMENT-1)));
+# else
     bottom = (void *)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     top = (void *)((word)top & ~(ALIGNMENT-1));
+#endif    
     if ((word)bottom >= (word)top) return;
 
     GC_mark_stack_top++;
@@ -1589,8 +1633,14 @@ GC_API void GC_CALL GC_print_trace(word gc_no)
 GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY GC_ATTR_NO_SANITIZE_THREAD
 GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 {
+#   if defined(__CHERI_PURE_CAPABILITY__)
+    word * b = (word *)cheri_setaddress(bottom, (((vaddr_t) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1)));
+    word * t = (word *)cheri_setaddress(top, (((vaddr_t) top) & ~(ALIGNMENT-1)));
+# else 
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
+#   endif 
+
     REGISTER word *p;
     REGISTER word *lim;
     REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
