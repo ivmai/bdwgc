@@ -96,15 +96,11 @@
 
 # if defined(GC_PTHREADS) && !defined(GC_WIN32_PTHREADS)
 #   include <pthread.h>
-# else
-#   define NO_TEST_HANDLE_FORK
 # endif
 
-# if (!defined(THREADS) || !defined(HANDLE_FORK) \
-      || (defined(DARWIN) && defined(MPROTECT_VDB) \
-          && !defined(NO_INCREMENTAL) && !defined(MAKE_BACK_GRAPH))) \
-     && !defined(NO_TEST_HANDLE_FORK) && !defined(TEST_HANDLE_FORK) \
-     && !defined(TEST_FORK_WITHOUT_ATFORK)
+#if ((defined(DARWIN) && defined(MPROTECT_VDB) \
+      && !defined(MAKE_BACK_GRAPH) && !defined(TEST_HANDLE_FORK)) \
+     || defined(HAVE_NO_FORK)) && !defined(NO_TEST_HANDLE_FORK)
 #   define NO_TEST_HANDLE_FORK
 # endif
 
