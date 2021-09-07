@@ -3068,8 +3068,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if !defined(CAN_HANDLE_FORK) && !defined(HAVE_NO_FORK) \
-    && (defined(MSWIN32) || defined(MSWINCE) || defined(DOS4GW) \
-        || defined(OS2) || defined(SYMBIAN) /* and probably others ... */)
+    && !(defined(CYGWIN32) || defined(SOLARIS) || defined(UNIX_LIKE))
 # define HAVE_NO_FORK
 #endif
 
