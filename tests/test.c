@@ -98,9 +98,10 @@
 #   include <pthread.h>
 # endif
 
-#if ((defined(DARWIN) && defined(MPROTECT_VDB) \
-      && !defined(MAKE_BACK_GRAPH) && !defined(TEST_HANDLE_FORK)) \
-     || defined(HAVE_NO_FORK)) && !defined(NO_TEST_HANDLE_FORK)
+# if ((defined(DARWIN) && defined(MPROTECT_VDB) \
+       && !defined(MAKE_BACK_GRAPH) && !defined(TEST_HANDLE_FORK)) \
+      || defined(HAVE_NO_FORK) || defined(USE_WINALLOC)) \
+     && !defined(NO_TEST_HANDLE_FORK)
 #   define NO_TEST_HANDLE_FORK
 # endif
 
