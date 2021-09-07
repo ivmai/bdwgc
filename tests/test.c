@@ -42,7 +42,8 @@
 #include "gc.h"
 
 #ifndef NTHREADS /* Number of additional threads to fork. */
-#  define NTHREADS 5 /* excludes main thread, which also runs a test. */
+# define NTHREADS 5 /* Excludes main thread, which also runs a test. */
+        /* In the single-threaded case, the number of times to rerun it. */
         /* Not respected by PCR test. */
 #endif
 
@@ -723,6 +724,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
       return GC_call_with_gc_active(reverse_test_inner, (void*)(word)1);
     }
 
+# ifndef BIG
 #   if defined(MACOS) \
        || (defined(UNIX_LIKE) && defined(NO_GETCONTEXT)) /* e.g. musl */
       /* Assume 128 KB stacks at least. */
@@ -741,6 +743,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   else
 #     define BIG 4500
 #   endif
+# endif
 
     a_set(ints(1, 49));
     b = ints(1, 50);
@@ -787,7 +790,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     GC_FREE((void *)e);
 
     check_ints(b,1,50);
-# ifndef __EMSCRIPTEN__
+# ifndef EMSCRIPTEN
     check_ints(a_get(),1,49);
 # else
     /* FIXME: gctest fails unless check_ints(a_get(), ...) are skipped. */
@@ -797,7 +800,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
         b = reverse(reverse(b));
     }
     check_ints(b,1,50);
-# ifndef __EMSCRIPTEN__
+# ifndef EMSCRIPTEN
     check_ints(a_get(),1,49);
 # endif
     for (i = 0; i < 10 * (NTHREADS+1); i++) {
@@ -817,7 +820,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
           AO_fetch_and_add1(&realloc_count);
 #       endif
     }
-# ifndef __EMSCRIPTEN__
+# ifndef EMSCRIPTEN
     check_ints(a_get(),1,49);
 # endif
     check_ints(b,1,50);
@@ -1556,6 +1559,10 @@ void run_one_test(void)
             GC_start_mark_threads();
 #         endif
           GC_gcollect();
+          tree_test();
+#         if !defined(DBG_HDRS_ALL) && !defined(NO_TYPED_TEST)
+            typed_test();
+#         endif
 #         ifdef THREADS
             if (print_stats)
               GC_log_printf("Starting tiny reverse test, pid=%ld\n",
@@ -1876,6 +1883,39 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
     /*FAIL;*/
 }
 
+void enable_incremental_mode(void)
+{
+# if !defined(GC_DISABLE_INCREMENTAL) \
+     && (defined(TEST_DEFAULT_VDB) || !defined(DEFAULT_VDB))
+#   if !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL) \
+       && !defined(REDIRECT_MALLOC) && !defined(USE_PROC_FOR_LIBRARIES)
+      GC_enable_incremental();
+#   endif
+    if (GC_is_incremental_mode()) {
+#     ifndef SMALL_CONFIG
+        if (GC_get_manual_vdb_allowed()) {
+          GC_printf("Switched to incremental mode (manual VDB)\n");
+        } else
+#     endif
+      /* else */ {
+        GC_printf("Switched to incremental mode\n");
+#       if defined(PROC_VDB) || defined(SOFT_VDB)
+          GC_printf("Reading dirty bits from /proc\n");
+#       elif defined(GWW_VDB)
+          GC_printf("Using GetWriteWatch-based implementation\n");
+#       endif
+#       ifdef MPROTECT_VDB
+#         if defined(GWW_VDB) || defined(SOFT_VDB)
+            GC_printf("Or emulating dirty bits with mprotect/signals\n");
+#         else
+            GC_printf("Emulating dirty bits with mprotect/signals\n");
+#         endif
+#       endif /* MPROTECT_VDB */
+      }
+    }
+# endif
+}
+
 #if defined(CPPCHECK)
 # include "javaxfc.h" /* for GC_finalize_all */
 # define UNTESTED(sym) GC_noop1((word)&sym)
@@ -1947,35 +1987,17 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #   endif
     GC_COND_INIT();
     GC_set_warn_proc(warn_proc);
-#   if !defined(GC_DISABLE_INCREMENTAL) \
-       && (defined(TEST_DEFAULT_VDB) || !defined(DEFAULT_VDB))
-#     if !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL)
-        GC_enable_incremental();
-#     endif
-      if (GC_is_incremental_mode()) {
-#       ifndef SMALL_CONFIG
-          if (GC_get_manual_vdb_allowed()) {
-            GC_printf("Switched to incremental mode (manual VDB)\n");
-          } else
-#       endif
-        /* else */ {
-          GC_printf("Switched to incremental mode\n");
-#       ifdef PROC_VDB
-          GC_printf("Reading dirty bits from /proc\n");
-#       elif defined(GWW_VDB)
-          GC_printf("Using GetWriteWatch-based implementation\n");
-#         ifdef MPROTECT_VDB
-            GC_printf("Or emulating dirty bits with mprotect/signals\n");
-#         endif
-#       elif defined(MPROTECT_VDB)
-          GC_printf("Emulating dirty bits with mprotect/signals\n");
-#       endif /* MPROTECT_VDB && !GWW_VDB */
-        }
-      }
-#   endif
+    enable_incremental_mode();
     set_print_procs();
     GC_start_incremental_collection();
     run_one_test();
+#   if NTHREADS > 0
+      {
+        int i;
+        for (i = 0; i < NTHREADS; i++)
+          run_one_test();
+      }
+#   endif
     run_single_threaded_test();
     check_heap_stats();
 #   ifndef MSWINCE
@@ -2192,9 +2214,7 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
     GC_printf("Using DllMain to track threads\n");
 # endif
   GC_COND_INIT();
-# if !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL)
-    GC_enable_incremental();
-# endif
+  enable_incremental_mode();
   InitializeCriticalSection(&incr_cs);
   GC_set_warn_proc(warn_proc);
 # ifdef MSWINCE
@@ -2341,26 +2361,7 @@ int main(void)
         }
 #   endif
     n_tests = 0;
-#   if !defined(GC_DISABLE_INCREMENTAL) \
-       && (defined(TEST_DEFAULT_VDB) || !defined(DEFAULT_VDB))
-#     if !defined(REDIRECT_MALLOC) && !defined(MAKE_BACK_GRAPH) \
-         && !defined(USE_PROC_FOR_LIBRARIES) && !defined(NO_INCREMENTAL)
-        GC_enable_incremental();
-#     endif
-      if (GC_is_incremental_mode()) {
-#       ifndef SMALL_CONFIG
-          if (GC_get_manual_vdb_allowed()) {
-            GC_printf("Switched to incremental mode (manual VDB)\n");
-          } else
-#       endif
-        /* else */ {
-          GC_printf("Switched to incremental mode\n");
-#         ifdef MPROTECT_VDB
-            GC_printf("Emulating dirty bits with mprotect/signals\n");
-#         endif
-        }
-      }
-#   endif
+    enable_incremental_mode();
     GC_set_min_bytes_allocd(1);
     if (GC_get_min_bytes_allocd() != 1)
         FAIL;

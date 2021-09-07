@@ -82,7 +82,7 @@ jobs:
     compiler: musl-gcc
     language: c
     env:
-    - CFLAGS_EXTRA="-O3"
+    - CFLAGS_EXTRA="-O3 -D SOFT_VDB"
     - CONF_OPTIONS="--enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: arm64
@@ -149,7 +149,7 @@ jobs:
     arch: ppc64le
     compiler: gcc-9
     env:
-    - CFLAGS_EXTRA="-O3"
+    - CFLAGS_EXTRA="-O3 -D NO_MPROTECT_VDB"
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
@@ -202,7 +202,7 @@ jobs:
     compiler: gcc-9
     env:
     - CFLAGS_EXTRA="-O3"
-    - CONF_OPTIONS="--enable-cpluspluss --disable-shared"
+    - CONF_OPTIONS="--enable-cplusplus --disable-shared"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: s390x
     compiler: gcc
@@ -408,7 +408,7 @@ jobs:
   - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus --enable-gc-assertions --enable-static"
-    - CFLAGS_EXTRA="-D LINT2"
+    - CFLAGS_EXTRA="-D LINT2 -D NO_VDB_FOR_STATIC_ROOTS"
   - addons:
       apt:
         packages:
@@ -434,7 +434,7 @@ jobs:
   - compiler: gcc
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
-    - CFLAGS_EXTRA="-O3 -march=native"
+    - CFLAGS_EXTRA="-O3 -march=native -D GC_PREFER_MPROTECT_VDB"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:

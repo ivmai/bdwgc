@@ -509,6 +509,7 @@ EXTERN_C_END
       || (((defined(LINUX) && defined(__USE_POSIX199309)) \
            || defined(CYGWIN32)) && defined(_POSIX_TIMERS))
 # include <time.h>
+# define HAVE_CLOCK_GETTIME 1
 # define CLOCK_TYPE struct timespec
 # define CLOCK_TYPE_INITIALIZER { 0, 0 }
 # if defined(_POSIX_MONOTONIC_CLOCK) && !defined(NINTENDO_SWITCH)
@@ -531,7 +532,7 @@ EXTERN_C_END
 # define NS_FRAC_TIME_DIFF(a, b) \
     ((unsigned long)((a).tv_nsec + (1000000L*1000 - (b).tv_nsec)) % 1000000UL)
 
-#else /* !BSD_TIME && !NINTENDO_SWITCH && !NN_PLATFORM_CTR && !MSWIN32 */
+#else /* !BSD_TIME && !LINUX && !NN_PLATFORM_CTR && !MSWIN32 */
 # include <time.h>
 # if defined(FREEBSD) && !defined(CLOCKS_PER_SEC)
 #   include <machine/limits.h>
@@ -1026,6 +1027,7 @@ EXTERN_C_BEGIN
  * Used by black-listing code, and perhaps by dirty bit maintenance code.
  */
 
+#ifndef LOG_PHT_ENTRIES
 # ifdef LARGE_CONFIG
 #   if CPP_WORDSZ == 32
 #     define LOG_PHT_ENTRIES 20 /* Collisions likely at 1M blocks,      */
@@ -1051,6 +1053,8 @@ EXTERN_C_BEGIN
                                  /* to more than 32K hblks (128 MB).    */
                                  /* Each hash table occupies 4 KB.      */
 # endif
+#endif /* !LOG_PHT_ENTRIES */
+
 # define PHT_ENTRIES ((word)1 << LOG_PHT_ENTRIES)
 # define PHT_SIZE (PHT_ENTRIES >> LOGWL)
 typedef word page_hash_table[PHT_SIZE];
@@ -1609,7 +1613,8 @@ struct _GC_arrays {
     volatile page_hash_table _dirty_pages;
                         /* Pages dirtied since last GC_read_dirty. */
 # endif
-# if (defined(CHECKSUMS) && defined(GWW_VDB)) || defined(PROC_VDB)
+# if (defined(CHECKSUMS) && (defined(GWW_VDB) || defined(SOFT_VDB))) \
+     || defined(PROC_VDB)
 #   define GC_written_pages GC_arrays._written_pages
     page_hash_table _written_pages;     /* Pages ever dirtied   */
 # endif
@@ -1930,6 +1935,16 @@ GC_INNER GC_bool GC_collection_in_progress(void);
 GC_INNER void GC_push_all_stack(ptr_t b, ptr_t t);
                                     /* As GC_push_all but consider      */
                                     /* interior pointers as valid.      */
+
+#ifdef NO_VDB_FOR_STATIC_ROOTS
+# define GC_push_conditional_static(b, t, all) \
+                ((void)(all), GC_push_all(b, t))
+#else
+  /* Same as GC_push_conditional (does either of GC_push_all or         */
+  /* GC_push_selected depending on the third argument) but the caller   */
+  /* guarantees the region belongs to the registered static roots.      */
+  GC_INNER void GC_push_conditional_static(void *b, void *t, GC_bool all);
+#endif
 
 #if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
   /* GC_mark_local does not handle memory protection faults yet.  So,   */
@@ -2427,6 +2442,22 @@ GC_EXTERN GC_bool GC_print_back_height;
                 /* pointer-free system call buffers in the heap are     */
                 /* not protected.                                       */
 
+# if !defined(NO_VDB_FOR_STATIC_ROOTS) && !defined(PROC_VDB)
+    GC_INNER GC_bool GC_is_vdb_for_static_roots(void);
+                /* Is VDB working for static roots?                     */
+# endif
+
+# ifdef CAN_HANDLE_FORK
+#   if defined(PROC_VDB) || defined(SOFT_VDB)
+      GC_INNER void GC_dirty_update_child(void);
+                /* Update pid-specific resources (like /proc file       */
+                /* descriptors) needed by the dirty bits implementation */
+                /* after fork in the child process.                     */
+#   else
+#     define GC_dirty_update_child() (void)0
+#   endif
+# endif /* CAN_HANDLE_FORK */
+
   GC_INNER GC_bool GC_dirty_init(void);
                 /* Returns true if dirty bits are maintained (otherwise */
                 /* it is OK to be called again if the client invokes    */
@@ -2595,6 +2626,11 @@ GC_EXTERN signed_word GC_bytes_found;
   GC_INNER void GC_mark_thread_local_free_lists(void);
 #endif
 
+#if defined(GLIBC_2_19_TSX_BUG) && defined(THREADS)
+  /* Parse string like <major>[.<minor>[<tail>]] and return major value. */
+  GC_INNER int GC_parse_version(int *pminor, const char *pverstr);
+#endif
+
 #if defined(MPROTECT_VDB) && defined(GWW_VDB)
     GC_INNER GC_bool GC_gww_dirty_init(void);
                         /* Returns TRUE if GetWriteWatch is available.  */
@@ -2702,15 +2738,17 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 
 #ifdef NEED_PROC_MAPS
 # if defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES)
-    GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
-                                      char **prot, unsigned int *maj_dev,
-                                      char **mapping_name);
+    GC_INNER const char *GC_parse_map_entry(const char *maps_ptr,
+                                            ptr_t *start, ptr_t *end,
+                                            const char **prot,
+                                            unsigned *maj_dev,
+                                            const char **mapping_name);
 # endif
 # if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)
     GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr,
                                           ptr_t *startp, ptr_t *endp);
 # endif
-  GC_INNER char *GC_get_maps(void); /* from os_dep.c */
+  GC_INNER const char *GC_get_maps(void);
 #endif /* NEED_PROC_MAPS */
 
 #ifdef GC_ASSERTIONS

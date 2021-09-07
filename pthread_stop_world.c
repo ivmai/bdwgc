@@ -434,8 +434,8 @@ static void suspend_restart_barrier(int n_live_threads)
 static int resend_lost_signals(int n_live_threads,
                                int (*suspend_restart_all)(void))
 {
-#   define WAIT_UNIT 3000
-#   define RETRY_INTERVAL 100000
+#   define WAIT_UNIT 3000 /* us */
+#   define RETRY_INTERVAL 100000 /* us */
 
     if (n_live_threads > 0) {
       unsigned long wait_usecs = 0;  /* Total wait since retry. */
@@ -477,6 +477,37 @@ static int resend_lost_signals(int n_live_threads,
       }
     }
     return n_live_threads;
+}
+
+#ifdef HAVE_CLOCK_GETTIME
+# define TS_NSEC_ADD(ts, ns) \
+                (ts.tv_nsec += (ns), \
+                 (void)(ts.tv_nsec >= 1000000L*1000 ? \
+                       (ts.tv_nsec -= 1000000L*1000, ts.tv_sec++, 0) : 0))
+#endif
+
+static void resend_lost_signals_retry(int n_live_threads,
+                                      int (*suspend_restart_all)(void))
+{
+# if defined(HAVE_CLOCK_GETTIME) && !defined(DONT_TIMEDWAIT_ACK_SEM)
+#   define TIMEOUT_BEFORE_RESEND 10000 /* us */
+    int i;
+    struct timespec ts;
+
+    if (n_live_threads > 0 && clock_gettime(CLOCK_REALTIME, &ts) == 0) {
+      TS_NSEC_ADD(ts, TIMEOUT_BEFORE_RESEND * 1000);
+      /* First, try to wait for the semaphore with some timeout.            */
+      /* On failure, fallback to WAIT_UNIT pause and resend of the signal.  */
+      for (i = 0; i < n_live_threads; i++) {
+        if (0 != sem_timedwait(&GC_suspend_ack_sem, &ts))
+          break; /* Wait timed out or any other error.  */
+      }
+      /* Update the count of threads to wait the ack from.      */
+      n_live_threads -= i;
+    }
+# endif
+  n_live_threads = resend_lost_signals(n_live_threads, suspend_restart_all);
+  suspend_restart_barrier(n_live_threads);
 }
 
 STATIC void GC_restart_handler(int sig)
@@ -931,9 +962,11 @@ GC_INNER void GC_stop_world(void)
     }
     AO_store_release(&GC_world_is_stopped, TRUE);
     n_live_threads = GC_suspend_all();
-    if (GC_retry_signals)
-      n_live_threads = resend_lost_signals(n_live_threads, GC_suspend_all);
-    suspend_restart_barrier(n_live_threads);
+    if (GC_retry_signals) {
+      resend_lost_signals_retry(n_live_threads, GC_suspend_all);
+    } else {
+      suspend_restart_barrier(n_live_threads);
+    }
     if (GC_manual_vdb)
       GC_release_dirty_lock(); /* cannot be done in GC_suspend_all */
 # endif
@@ -1182,15 +1215,15 @@ GC_INNER void GC_start_world(void)
     n_live_threads = GC_restart_all();
 #   ifdef GC_OPENBSD_UTHREADS
       (void)n_live_threads;
-#   elif defined(GC_NETBSD_THREADS_WORKAROUND)
-      if (GC_retry_signals)
-        n_live_threads = resend_lost_signals(n_live_threads, GC_restart_all);
-      suspend_restart_barrier(n_live_threads);
 #   else
       if (GC_retry_signals) {
-        n_live_threads = resend_lost_signals(n_live_threads, GC_restart_all);
-        suspend_restart_barrier(n_live_threads);
-      }
+        resend_lost_signals_retry(n_live_threads, GC_restart_all);
+      } /* else */
+#     ifdef GC_NETBSD_THREADS_WORKAROUND
+        else {
+          suspend_restart_barrier(n_live_threads);
+        }
+#     endif
 #   endif
 #   ifdef DEBUG_THREADS
       GC_log_printf("World started\n");

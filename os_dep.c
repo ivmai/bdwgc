@@ -67,6 +67,10 @@
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
+#endif
+
+#if defined(ADD_HEAP_GUARD_PAGES) || defined(LINUX_STACKBOTTOM) \
+    || defined(MMAP_SUPPORTED) || defined(NEED_PROC_MAPS)
 # include <errno.h>
 #endif
 
@@ -100,34 +104,42 @@
 #define IGNORE_PAGES_EXECUTABLE 1
                         /* Undefined on GC_pages_executable real use.   */
 
-#ifdef NEED_PROC_MAPS
-/* We need to parse /proc/self/maps, either to find dynamic libraries,  */
-/* and/or to find the register backing store base (IA64).  Do it once   */
-/* here.                                                                */
+#if ((defined(LINUX_STACKBOTTOM) || defined(NEED_PROC_MAPS) \
+      || defined(PROC_VDB) || defined(SOFT_VDB)) && !defined(PROC_READ)) \
+    || defined(CPPCHECK)
+# define PROC_READ read
+          /* Should probably call the real read, if read is wrapped.    */
+#endif
 
-/* Repeatedly perform a read call until the buffer is filled or */
-/* we encounter EOF.                                            */
-STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
-{
-#   define READ read
+#if defined(LINUX_STACKBOTTOM) || defined(NEED_PROC_MAPS)
+  /* Repeatedly perform a read call until the buffer is filled  */
+  /* up, or we encounter EOF or an error.                       */
+  STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
+  {
     size_t num_read = 0;
 
     ASSERT_CANCEL_DISABLED();
     while (num_read < count) {
-        ssize_t result = READ(fd, buf + num_read, count - num_read);
+        ssize_t result = PROC_READ(fd, buf + num_read, count - num_read);
 
         if (result < 0) return result;
         if (result == 0) break;
         num_read += result;
     }
-#   undef READ
     return num_read;
-}
+  }
+#endif /* LINUX_STACKBOTTOM || NEED_PROC_MAPS */
+
+#ifdef NEED_PROC_MAPS
+/* We need to parse /proc/self/maps, either to find dynamic libraries,  */
+/* and/or to find the register backing store base (IA64).  Do it once   */
+/* here.                                                                */
 
 #ifdef THREADS
   /* Determine the length of a file by incrementally reading it into a  */
   /* buffer.  This would be silly to use it on a file supporting lseek, */
   /* but Linux /proc files usually do not.                              */
+  /* As of Linux 4.15.0, lseek(SEEK_END) fails for /proc/self/maps.     */
   STATIC size_t GC_get_file_len(int f)
   {
     size_t total = 0;
@@ -136,7 +148,7 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
     char buf[GET_FILE_LEN_BUF_SZ];
 
     do {
-        result = read(f, buf, GET_FILE_LEN_BUF_SZ);
+        result = PROC_READ(f, buf, sizeof(buf));
         if (result == -1) return 0;
         total += result;
     } while (result > 0);
@@ -155,10 +167,8 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 #endif /* THREADS */
 
 /* Copy the contents of /proc/self/maps to a buffer in our address      */
-/* space.  Return the address of the buffer, or zero on failure.        */
-/* This code could be simplified if we could determine its size ahead   */
-/* of time.                                                             */
-GC_INNER char * GC_get_maps(void)
+/* space.  Return the address of the buffer.                            */
+GC_INNER const char * GC_get_maps(void)
 {
     ssize_t result;
     static char *maps_buf = NULL;
@@ -176,19 +186,19 @@ GC_INNER char * GC_get_maps(void)
     /* threads that we already think of as dead release their   */
     /* stacks.  And there is no easy way to read the entire     */
     /* file atomically.  This is arguably a misfeature of the   */
-    /* /proc/.../maps interface.                                */
+    /* /proc/self/maps interface.                               */
     /* Since we expect the file can grow asynchronously in rare */
     /* cases, it should suffice to first determine              */
-    /* the size (using lseek or read), and then to reread the   */
-    /* file.  If the size is inconsistent we have to retry.     */
+    /* the size (using read), and then to reread the file.      */
+    /* If the size is inconsistent we have to retry.            */
     /* This only matters with threads enabled, and if we use    */
     /* this to locate roots (not the default).                  */
 
 #   ifdef THREADS
         /* Determine the initial size of /proc/self/maps.       */
-        /* Note that lseek doesn't work, at least as of 2.6.15. */
         maps_size = GC_get_maps_len();
-        if (0 == maps_size) return 0;
+        if (0 == maps_size)
+          ABORT("Cannot determine length of /proc/self/maps");
 #   else
         maps_size = 4000;       /* Guess */
 #   endif
@@ -209,18 +219,23 @@ GC_INNER char * GC_get_maps(void)
               /* Grow only by powers of 2, since we leak "too small" buffers.*/
               while (maps_size >= maps_buf_sz) maps_buf_sz *= 2;
               maps_buf = GC_scratch_alloc(maps_buf_sz);
+              if (NULL == maps_buf)
+                ABORT_ARG1("Insufficient space for /proc/self/maps buffer",
+                        ", %lu bytes requested", (unsigned long)maps_buf_sz);
 #             ifdef THREADS
                 /* Recompute initial length, since we allocated.        */
                 /* This can only happen a few times per program         */
                 /* execution.                                           */
                 maps_size = GC_get_maps_len();
-                if (0 == maps_size) return 0;
+                if (0 == maps_size)
+                  ABORT("Cannot determine length of /proc/self/maps");
 #             endif
-              if (maps_buf == 0) return 0;
             }
             GC_ASSERT(maps_buf_sz >= maps_size + 1);
             f = open("/proc/self/maps", O_RDONLY);
-            if (-1 == f) return 0;
+            if (-1 == f)
+              ABORT_ARG1("Cannot open /proc/self/maps",
+                         ": errno = %d", errno);
 #           ifdef THREADS
               old_maps_size = maps_size;
 #           endif
@@ -228,8 +243,8 @@ GC_INNER char * GC_get_maps(void)
             do {
                 result = GC_repeat_read(f, maps_buf, maps_buf_sz-1);
                 if (result <= 0) {
-                    close(f);
-                    return 0;
+                  ABORT_ARG1("Failed to read /proc/self/maps",
+                             ": errno = %d", result < 0 ? errno : 0);
                 }
                 maps_size += result;
             } while ((size_t)result == maps_buf_sz-1);
@@ -264,40 +279,41 @@ GC_INNER char * GC_get_maps(void)
  *  anywhere, which is safer anyway.
  */
 
-/* Assign various fields of the first line in buf_ptr to (*start),      */
+/* Assign various fields of the first line in maps_ptr to (*start),     */
 /* (*end), (*prot), (*maj_dev) and (*mapping_name).  mapping_name may   */
 /* be NULL. (*prot) and (*mapping_name) are assigned pointers into the  */
 /* original buffer.                                                     */
 #if (defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES)) \
     || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
     || defined(REDIRECT_MALLOC)
-  GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
-                                    char **prot, unsigned int *maj_dev,
-                                    char **mapping_name)
+  GC_INNER const char *GC_parse_map_entry(const char *maps_ptr,
+                                          ptr_t *start, ptr_t *end,
+                                          const char **prot, unsigned *maj_dev,
+                                          const char **mapping_name)
   {
-    unsigned char *start_start, *end_start, *maj_dev_start;
-    unsigned char *p;   /* unsigned for isspace, isxdigit */
+    const unsigned char *start_start, *end_start, *maj_dev_start;
+    const unsigned char *p; /* unsigned for isspace, isxdigit */
 
-    if (buf_ptr == NULL || *buf_ptr == '\0') {
+    if (maps_ptr == NULL || *maps_ptr == '\0') {
         return NULL;
     }
 
-    p = (unsigned char *)buf_ptr;
+    p = (const unsigned char *)maps_ptr;
     while (isspace(*p)) ++p;
     start_start = p;
     GC_ASSERT(isxdigit(*start_start));
-    *start = (ptr_t)strtoul((char *)start_start, (char **)&p, 16);
+    *start = (ptr_t)strtoul((const char *)start_start, (char **)&p, 16);
     GC_ASSERT(*p=='-');
 
     ++p;
     end_start = p;
     GC_ASSERT(isxdigit(*end_start));
-    *end = (ptr_t)strtoul((char *)end_start, (char **)&p, 16);
+    *end = (ptr_t)strtoul((const char *)end_start, (char **)&p, 16);
     GC_ASSERT(isspace(*p));
 
     while (isspace(*p)) ++p;
     GC_ASSERT(*p == 'r' || *p == '-');
-    *prot = (char *)p;
+    *prot = (const char *)p;
     /* Skip past protection field to offset field */
     while (!isspace(*p)) ++p;
     while (isspace(*p)) p++;
@@ -307,16 +323,14 @@ GC_INNER char * GC_get_maps(void)
     while (isspace(*p)) p++;
     maj_dev_start = p;
     GC_ASSERT(isxdigit(*maj_dev_start));
-    *maj_dev = strtoul((char *)maj_dev_start, NULL, 16);
+    *maj_dev = strtoul((const char *)maj_dev_start, NULL, 16);
 
-    if (mapping_name == 0) {
-      while (*p && *p++ != '\n');
-    } else {
+    if (mapping_name != NULL) {
       while (*p && *p != '\n' && *p != '/' && *p != '[') p++;
-      *mapping_name = (char *)p;
-      while (*p && *p++ != '\n');
+      *mapping_name = (const char *)p;
     }
-    return (char *)p;
+    while (*p && *p++ != '\n');
+    return (const char *)p;
   }
 #endif /* REDIRECT_MALLOC || DYNAMIC_LOADING || IA64 || ... */
 
@@ -328,24 +342,21 @@ GC_INNER char * GC_get_maps(void)
   GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp,
                                         ptr_t *endp)
   {
-    char *prot;
+    const char *prot;
     ptr_t my_start, my_end;
     unsigned int maj_dev;
-    char *maps = GC_get_maps();
-    char *buf_ptr = maps;
+    const char *maps_ptr = GC_get_maps();
 
-    if (0 == maps) return(FALSE);
     for (;;) {
-      buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
-                                   &prot, &maj_dev, 0);
+      maps_ptr = GC_parse_map_entry(maps_ptr, &my_start, &my_end,
+                                    &prot, &maj_dev, 0);
+      if (NULL == maps_ptr) break;
 
-      if (buf_ptr == NULL) return FALSE;
-      if (prot[1] == 'w' && maj_dev == 0) {
-          if ((word)my_end > (word)addr && (word)my_start <= (word)addr) {
+      if (prot[1] == 'w' && maj_dev == 0
+          && (word)my_end > (word)addr && (word)my_start <= (word)addr) {
             *startp = my_start;
             *endp = my_end;
             return TRUE;
-          }
       }
     }
     return FALSE;
@@ -358,21 +369,19 @@ GC_INNER char * GC_get_maps(void)
   GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp)
   {
     size_t nm_len = strlen(nm);
-    char *prot;
-    char *map_path;
+    const char *prot, *map_path;
     ptr_t my_start, my_end;
     unsigned int maj_dev;
-    char *maps = GC_get_maps();
-    char *buf_ptr = maps;
+    const char *maps_ptr = GC_get_maps();
 
-    if (0 == maps) return(FALSE);
     for (;;) {
-      buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
-                                   &prot, &maj_dev, &map_path);
+      maps_ptr = GC_parse_map_entry(maps_ptr, &my_start, &my_end,
+                                    &prot, &maj_dev, &map_path);
+      if (NULL == maps_ptr) break;
 
-      if (buf_ptr == NULL) return FALSE;
       if (prot[0] == 'r' && prot[1] == '-' && prot[2] == 'x') {
-          char *p = map_path;
+          const char *p = map_path;
+
           /* Set p to point just past last slash, if any. */
             while (*p != '\0' && *p != '\n' && *p != ' ' && *p != '\t') ++p;
             while (*p != '/' && (word)p >= (word)map_path) --p;
@@ -816,7 +825,8 @@ GC_INNER size_t GC_page_size = 0;
 #else /* !MSWIN32 */
   GC_INNER void GC_setpagesize(void)
   {
-#   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(USE_MMAP)
+#   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(SOFT_VDB) \
+       || defined(USE_MMAP)
       GC_page_size = (size_t)GETPAGESIZE();
 #     if !defined(CPPCHECK)
         if (0 == GC_page_size)
@@ -1116,16 +1126,11 @@ GC_INNER size_t GC_page_size = 0;
     /* We read the stack bottom value from /proc/self/stat.  We do this */
     /* using direct I/O system calls in order to avoid calling malloc   */
     /* in case REDIRECT_MALLOC is defined.                              */
-#   ifndef STAT_READ
-      /* Also defined in pthread_support.c. */
 #     define STAT_BUF_SIZE 4096
-#     define STAT_READ read
-#   endif
-          /* Should probably call the real read, if read is wrapped.    */
     char stat_buf[STAT_BUF_SIZE];
     int f;
     word result;
-    int i, buf_offset = 0, len;
+    ssize_t i, buf_offset = 0, len;
 
     /* First try the easy way.  This should work for glibc 2.2  */
     /* This fails in a prelinked ("prelink" command) executable */
@@ -1151,10 +1156,14 @@ GC_INNER size_t GC_page_size = 0;
 #       endif
       }
 #   endif
+
     f = open("/proc/self/stat", O_RDONLY);
-    if (f < 0)
-      ABORT("Couldn't read /proc/self/stat");
-    len = STAT_READ(f, stat_buf, STAT_BUF_SIZE);
+    if (-1 == f)
+      ABORT_ARG1("Could not open /proc/self/stat", ": errno = %d", errno);
+    len = GC_repeat_read(f, stat_buf, sizeof(stat_buf));
+    if (len < 0)
+      ABORT_ARG1("Failed to read /proc/self/stat",
+                 ": errno = %d", errno);
     close(f);
 
     /* Skip the required number of fields.  This number is hopefully    */
@@ -1180,7 +1189,8 @@ GC_INNER size_t GC_page_size = 0;
 
     result = (word)STRTOULL(&stat_buf[buf_offset], NULL, 10);
     if (result < 0x100000 || (result & (sizeof(word) - 1)) != 0)
-      ABORT("Absurd stack bottom value");
+      ABORT_ARG1("Absurd stack bottom value",
+                 ": 0x%lx", (unsigned long)result);
     return (ptr_t)result;
   }
 #endif /* LINUX_STACKBOTTOM */
@@ -1220,7 +1230,7 @@ GC_INNER size_t GC_page_size = 0;
     return (ptr_t)GC_get_main_symbian_stack_base();
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#elif defined(__EMSCRIPTEN__)
+#elif defined(EMSCRIPTEN)
 # include <emscripten.h>
 
   static void* emscripten_stack_base;
@@ -2664,7 +2674,7 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
           /* with PROT_NONE seems to work fine.                         */
           if (mprotect(start_addr, len, PROT_NONE))
             ABORT("mprotect(PROT_NONE) failed");
-#       elif defined(__EMSCRIPTEN__)
+#       elif defined(EMSCRIPTEN)
           /* Nothing to do, mmap(PROT_NONE) is not supported and        */
           /* mprotect() is just a no-op.                                */
 #       else
@@ -2815,7 +2825,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 /* thread stacks.                                               */
 #ifndef THREADS
 
-# if defined(__EMSCRIPTEN__)
+# ifdef EMSCRIPTEN
     static void scan_regs_cb(void *begin, void *end)
     {
       GC_push_all_stack((ptr_t)begin, (ptr_t)end);
@@ -2906,6 +2916,31 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     return GC_push_other_roots;
 }
 
+#if defined(SOFT_VDB) && !defined(NO_SOFT_VDB_LINUX_VER_RUNTIME_CHECK) \
+    || (defined(GLIBC_2_19_TSX_BUG) && defined(THREADS))
+  GC_INNER int GC_parse_version(int *pminor, const char *pverstr) {
+    char *endp;
+    unsigned long value = strtoul(pverstr, &endp, 10);
+    int major = (int)value;
+
+    if (major < 0 || (char *)pverstr == endp || (unsigned)major != value) {
+      /* Parse error.   */
+      return -1;
+    }
+    if (*endp != '.') {
+      /* No minor part. */
+      *pminor = -1;
+    } else {
+      value = strtoul(endp + 1, &endp, 10);
+      *pminor = (int)value;
+      if (*pminor < 0 || (unsigned)(*pminor) != value) {
+        return -1;
+      }
+    }
+    return major;
+  }
+#endif
+
 /*
  * Routines for accessing dirty bits on virtual pages.
  * There are six ways to maintain this information:
@@ -2933,6 +2968,16 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
  *              too slow to be entirely satisfactory.  Requires reading
  *              dirty bits for entire address space.  Implementations tend
  *              to assume that the client is a (slow) debugger.
+ * SOFT_VDB:    Use the /proc facility for reading soft-dirty PTEs.
+ *              Works on Linux 3.18+ if the kernel is properly configured.
+ *              The proposed implementation iterates over GC_heap_sects and
+ *              GC_static_roots examining the soft-dirty bit of the words
+ *              in /proc/self/pagemap corresponding to the pages of the
+ *              sections; finally all soft-dirty bits of the process are
+ *              cleared (by writing some special value to
+ *              /proc/self/clear_refs file).  In case the soft-dirty bit is
+ *              not supported by the kernel, MPROTECT_VDB may be defined as
+ *              a fallback strategy.
  * MPROTECT_VDB:Protect pages and then catch the faults to keep track of
  *              dirtied pages.  The implementation (and implementability)
  *              is highly system dependent.  This usually fails when system
@@ -2946,14 +2991,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
  *              MPROTECT_VDB may be defined as a fallback strategy.
  */
 
-#if (defined(CHECKSUMS) && defined(GWW_VDB)) || defined(PROC_VDB)
+#if (defined(CHECKSUMS) && (defined(GWW_VDB) || defined(SOFT_VDB))) \
+    || defined(PROC_VDB)
     /* Add all pages in pht2 to pht1.   */
     STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
     {
       unsigned i;
       for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
     }
-#endif /* CHECKSUMS && GWW_VDB || PROC_VDB */
+#endif /* CHECKSUMS && (GWW_VDB || SOFT_VDB) || PROC_VDB */
 
 #ifdef GWW_VDB
 
@@ -3047,9 +3093,12 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       GC_or_pages(GC_written_pages, GC_grungy_pages);
 #   endif
   }
+
+#elif defined(SOFT_VDB)
+# define GC_GWW_AVAILABLE() (clear_refs_fd != -1)
 #else
 # define GC_GWW_AVAILABLE() FALSE
-#endif /* !GWW_VDB */
+#endif /* !GWW_VDB && !SOFT_VDB */
 
 #ifdef DEFAULT_VDB
   /* All of the following assume the allocation lock is held.   */
@@ -3394,9 +3443,11 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       SetUnhandledExceptionFilter(GC_write_fault_handler);
     }
 # endif
-#endif /* !DARWIN */
 
-#if !defined(DARWIN)
+# ifdef SOFT_VDB
+    static GC_bool soft_dirty_init(void);
+# endif
+
   GC_INNER GC_bool GC_dirty_init(void)
   {
 #   if !defined(MSWIN32) && !defined(MSWINCE)
@@ -3417,7 +3468,25 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     if (GC_page_size % HBLKSIZE != 0) {
         ABORT("Page size not multiple of HBLKSIZE");
     }
-#   if !defined(MSWIN32) && !defined(MSWINCE)
+#   ifdef GWW_VDB
+      if (GC_gww_dirty_init())
+        return TRUE;
+#   elif defined(SOFT_VDB)
+      if (soft_dirty_init())
+        return TRUE;
+#   endif
+#   ifdef MSWIN32
+      GC_old_segv_handler = SetUnhandledExceptionFilter(
+                                        GC_write_fault_handler);
+      if (GC_old_segv_handler != NULL) {
+        GC_COND_LOG_PRINTF("Replaced other UnhandledExceptionFilter\n");
+      } else {
+          GC_old_segv_handler = SIG_DFL;
+      }
+#   elif defined(MSWINCE)
+      /* MPROTECT_VDB is unsupported for WinCE at present.      */
+      /* FIXME: implement it (if possible). */
+#   else
       /* act.sa_restorer is deprecated and should not be initialized. */
 #     if defined(GC_IRIX_THREADS)
         sigaction(SIGSEGV, 0, &oldact);
@@ -3465,21 +3534,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       }
 #   endif /* HPUX || LINUX || HURD || (FREEBSD && SUNOS5SIGS) */
 #   endif /* ! MS windows */
-#   if defined(GWW_VDB)
-      if (GC_gww_dirty_init())
-        return TRUE;
-#   endif
-#   if defined(MSWIN32)
-      GC_old_segv_handler = SetUnhandledExceptionFilter(GC_write_fault_handler);
-      if (GC_old_segv_handler != NULL) {
-        GC_COND_LOG_PRINTF("Replaced other UnhandledExceptionFilter\n");
-      } else {
-          GC_old_segv_handler = SIG_DFL;
-      }
-#   elif defined(MSWINCE)
-      /* MPROTECT_VDB is unsupported for WinCE at present.      */
-      /* FIXME: implement it (if possible). */
-#   endif
 #   if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
       GC_noop1((word)&__asan_default_options);
 #   endif
@@ -3576,6 +3630,10 @@ STATIC void GC_protect_heap(void)
 /* to the write-protected heap with a system call.                      */
 #endif /* MPROTECT_VDB */
 
+#if !defined(THREADS) && (defined(PROC_VDB) || defined(SOFT_VDB))
+  static pid_t saved_proc_pid; /* pid used to compose /proc file names */
+#endif
+
 #ifdef PROC_VDB
 /* This implementation assumes a Solaris 2.X like /proc                 */
 /* pseudo-file-system from which we can read page modified bits.  This  */
@@ -3613,29 +3671,50 @@ STATIC void GC_protect_heap(void)
 # define INITIAL_BUF_SZ 16384
   STATIC size_t GC_proc_buf_size = INITIAL_BUF_SZ;
   STATIC char *GC_proc_buf = NULL;
-  STATIC int GC_proc_fd = 0;
+  STATIC int GC_proc_fd = -1;
+
+  static GC_bool proc_dirty_open_files(void)
+  {
+    char buf[40];
+    pid_t pid = getpid();
+
+    (void)snprintf(buf, sizeof(buf), "/proc/%ld/pagedata", (long)pid);
+    buf[sizeof(buf) - 1] = '\0';
+    GC_proc_fd = open(buf, O_RDONLY);
+    if (-1 == GC_proc_fd) {
+      WARN("/proc open failed; cannot enable GC incremental mode\n", 0);
+      return FALSE;
+    }
+    if (syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC) == -1)
+      WARN("Could not set FD_CLOEXEC for /proc\n", 0);
+#   ifndef THREADS
+      saved_proc_pid = pid; /* updated on success only */
+#   endif
+    return TRUE;
+  }
+
+# ifdef CAN_HANDLE_FORK
+    GC_INNER void GC_dirty_update_child(void)
+    {
+      if (-1 == GC_proc_fd)
+        return; /* GC incremental mode is off */
+
+      close(GC_proc_fd);
+      if (!proc_dirty_open_files())
+        GC_incremental = FALSE; /* should be safe to turn it off */
+    }
+# endif /* CAN_HANDLE_FORK */
 
 GC_INNER GC_bool GC_dirty_init(void)
 {
-    char buf[40];
-
     if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
       memset(GC_written_pages, 0xff, sizeof(page_hash_table));
       GC_VERBOSE_LOG_PRINTF(
                 "Allocated %lu bytes: all pages may have been written\n",
                 (unsigned long)(GC_bytes_allocd + GC_bytes_allocd_before_gc));
     }
-
-    (void)snprintf(buf, sizeof(buf), "/proc/%ld/pagedata", (long)getpid());
-    buf[sizeof(buf) - 1] = '\0';
-    GC_proc_fd = open(buf, O_RDONLY);
-    if (GC_proc_fd < 0) {
-      WARN("/proc open failed; cannot enable GC incremental mode\n", 0);
+    if (!proc_dirty_open_files())
       return FALSE;
-    }
-    if (syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC) == -1)
-      WARN("Could not set FD_CLOEXEC for /proc\n", 0);
-
     GC_proc_buf = GC_scratch_alloc(GC_proc_buf_size);
     if (GC_proc_buf == NULL)
       ABORT("Insufficient space for /proc read");
@@ -3644,13 +3723,29 @@ GC_INNER GC_bool GC_dirty_init(void)
 
 GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 {
-#   define READ read
     int nmaps;
     char * bufp = GC_proc_buf;
     int i;
 
+#   ifndef THREADS
+      /* If the current pid differs from the saved one, then we are in  */
+      /* the forked (child) process, the current /proc file should be   */
+      /* closed, the new one should be opened with the updated path.    */
+      /* Note, this is not needed for multi-threaded case because       */
+      /* fork_child_proc() reopens the file right after fork.           */
+      if (getpid() != saved_proc_pid
+          && (-1 == GC_proc_fd /* no need to retry */
+              || (close(GC_proc_fd), !proc_dirty_open_files()))) {
+        /* Failed to reopen the file.  Punt!    */
+        if (!output_unneeded)
+          memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
+        memset(GC_written_pages, 0xff, sizeof(page_hash_table));
+        return;
+      }
+#   endif
+
     BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
-    if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
+    if (PROC_READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
         /* Retry with larger buffer.    */
         size_t new_size = 2 * GC_proc_buf_size;
         char *new_buf;
@@ -3663,7 +3758,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
             GC_proc_buf = bufp = new_buf;
             GC_proc_buf_size = new_size;
         }
-        if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
+        if (PROC_READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
             WARN("Insufficient space for /proc read\n", 0);
             /* Punt:        */
             if (!output_unneeded)
@@ -3725,10 +3820,323 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 
     /* Update GC_written_pages (even if output_unneeded).       */
     GC_or_pages(GC_written_pages, GC_grungy_pages);
-#   undef READ
 }
 
 #endif /* PROC_VDB */
+
+#ifdef SOFT_VDB
+# ifndef VDB_BUF_SZ
+#   define VDB_BUF_SZ 16384
+# endif
+
+  static int open_proc_fd(pid_t pid, const char *proc_filename, int mode)
+  {
+    int f;
+    char buf[40];
+
+    (void)snprintf(buf, sizeof(buf), "/proc/%ld/%s", (long)pid,
+                   proc_filename);
+    buf[sizeof(buf) - 1] = '\0';
+    f = open(buf, mode);
+    if (-1 == f) {
+      WARN("/proc/self/%s open failed; cannot enable GC incremental mode\n",
+           proc_filename);
+    } else if (fcntl(f, F_SETFD, FD_CLOEXEC) == -1) {
+      WARN("Could not set FD_CLOEXEC for /proc\n", 0);
+    }
+    return f;
+  }
+
+  static unsigned char *soft_vdb_buf;
+  static int clear_refs_fd = -1, pagemap_fd;
+
+  static GC_bool soft_dirty_open_files(void)
+  {
+    pid_t pid = getpid();
+
+    clear_refs_fd = open_proc_fd(pid, "clear_refs", O_WRONLY);
+    if (-1 == clear_refs_fd)
+      return FALSE;
+    pagemap_fd = open_proc_fd(pid, "pagemap", O_RDONLY);
+    if (-1 == pagemap_fd) {
+      close(clear_refs_fd);
+      clear_refs_fd = -1;
+      return FALSE;
+    }
+#   ifndef THREADS
+      saved_proc_pid = pid; /* updated on success only */
+#   endif
+    return TRUE;
+  }
+
+# ifdef CAN_HANDLE_FORK
+    GC_INNER void GC_dirty_update_child(void)
+    {
+      if (-1 == clear_refs_fd)
+        return; /* GC incremental mode is off */
+
+      close(clear_refs_fd);
+      close(pagemap_fd);
+      if (!soft_dirty_open_files())
+        GC_incremental = FALSE;
+    }
+# endif /* CAN_HANDLE_FORK */
+
+  /* The bit 55 of the 64-bit qword of pagemap file is the soft-dirty one. */
+# define PAGEMAP_ENTRY_SZ (64/8)
+# define PM_SOFTDIRTY_OFS (55/8)
+# define PM_SOFTDIRTY_MASK (1<<(55%8))
+
+  static GC_bool detect_soft_dirty_supported(ptr_t vaddr)
+  {
+    off_t fpos;
+    char buf[PAGEMAP_ENTRY_SZ];
+
+    *vaddr = 1; /* make it dirty */
+
+    /* Read the relevant PTE from the pagemap file.     */
+    GC_ASSERT(GC_page_size != 0);
+    fpos = (off_t)((word)vaddr / GC_page_size * PAGEMAP_ENTRY_SZ);
+    if (lseek(pagemap_fd, fpos, SEEK_SET) == (off_t)(-1))
+      return FALSE;
+    if (PROC_READ(pagemap_fd, buf, sizeof(buf)) != (int)sizeof(buf))
+      return FALSE;
+
+    /* Is the soft-dirty bit set? */
+    return (buf[PM_SOFTDIRTY_OFS] & PM_SOFTDIRTY_MASK) != 0;
+  }
+
+# ifndef NO_SOFT_VDB_LINUX_VER_RUNTIME_CHECK
+#   include <sys/utsname.h>
+#   include <string.h> /* for strcmp() */
+
+    /* Ensure the linux (kernel) major/minor version is as given or higher. */
+    static GC_bool ensure_min_linux_ver(int major, int minor) {
+      struct utsname info;
+      int actual_major;
+      int actual_minor = -1;
+
+      if (uname(&info) == -1) {
+        return FALSE; /* uname() failed, should not happen actually. */
+      }
+      if (strcmp(info.sysname, "Linux")) {
+        WARN("Cannot ensure Linux version as running on other OS: %s\n",
+             info.sysname);
+        return FALSE;
+      }
+      actual_major = GC_parse_version(&actual_minor, info.release);
+      return actual_major > major
+             || (actual_major == major && actual_minor >= minor);
+    }
+# endif
+
+# ifdef MPROTECT_VDB
+    static GC_bool soft_dirty_init(void)
+# else
+    GC_INNER GC_bool GC_dirty_init(void)
+# endif
+  {
+#   ifdef MPROTECT_VDB
+      char * str = GETENV("GC_USE_GETWRITEWATCH");
+#     ifdef GC_PREFER_MPROTECT_VDB
+        if (str == NULL || (*str == '0' && *(str + 1) == '\0'))
+          return FALSE; /* the environment variable is unset or set to "0" */
+#     else
+        if (str != NULL && *str == '0' && *(str + 1) == '\0')
+          return FALSE; /* the environment variable is set "0" */
+#     endif
+#   endif
+#   ifndef NO_SOFT_VDB_LINUX_VER_RUNTIME_CHECK
+      if (!ensure_min_linux_ver(3, 18)) {
+        GC_COND_LOG_PRINTF(
+            "Running on old kernel lacking correct soft-dirty bit support\n");
+        return FALSE;
+      }
+#   endif
+    if (!soft_dirty_open_files())
+      return FALSE;
+    if (NULL == soft_vdb_buf)
+      soft_vdb_buf = (unsigned char *)GC_scratch_alloc(VDB_BUF_SZ);
+    if (NULL == soft_vdb_buf)
+      ABORT("Insufficient space for /proc pagemap buffer");
+    if (!detect_soft_dirty_supported((ptr_t)soft_vdb_buf)) {
+      GC_COND_LOG_PRINTF("Soft-dirty bit is not supported by kernel\n");
+      /* Release the resources. */
+      /* TODO: recycle soft_vdb_buf, add assert it is null on enter */
+      close(clear_refs_fd);
+      clear_refs_fd = -1;
+      close(pagemap_fd);
+      return FALSE;
+    }
+    return TRUE;
+  }
+
+  static off_t pagemap_buf_fpos; /* valid only if pagemap_buf_len > 0 */
+  static size_t pagemap_buf_len;
+
+  /* Read bytes from /proc/self/pagemap at given file position.         */
+  /* len - the maximum number of bytes to read; (*pres) - amount of     */
+  /* bytes actually read, always bigger than 0 but never exceeds len;   */
+  /* next_fpos_hint - the file position of the next bytes block to read */
+  /* ahead if possible (0 means no information provided).               */
+  static const unsigned char *pagemap_buffered_read(size_t *pres,
+                                                    off_t fpos, size_t len,
+                                                    off_t next_fpos_hint)
+  {
+    ssize_t res;
+    size_t ofs;
+
+    GC_ASSERT(len > 0);
+    if (pagemap_buf_fpos <= fpos
+        && fpos < pagemap_buf_fpos + (off_t)pagemap_buf_len) {
+      /* The requested data is already in the buffer.   */
+      ofs = (size_t)(fpos - pagemap_buf_fpos);
+      res = (ssize_t)(pagemap_buf_fpos + pagemap_buf_len - fpos);
+    } else {
+      off_t aligned_pos = fpos & ~(GC_page_size < VDB_BUF_SZ
+                                    ? GC_page_size-1 : VDB_BUF_SZ-1);
+
+      for (;;) {
+        size_t count;
+
+        if ((0 == pagemap_buf_len
+             || pagemap_buf_fpos + (off_t)pagemap_buf_len != aligned_pos)
+            && lseek(pagemap_fd, aligned_pos, SEEK_SET) == (off_t)(-1))
+          ABORT_ARG2("Failed to lseek /proc/self/pagemap",
+                     ": offset = %lu, errno = %d",
+                     (unsigned long)fpos, errno);
+
+        /* How much to read at once?    */
+        ofs = (size_t)(fpos - aligned_pos);
+        GC_ASSERT(ofs < VDB_BUF_SZ);
+        if (next_fpos_hint > aligned_pos
+            && next_fpos_hint - aligned_pos < VDB_BUF_SZ) {
+          count = VDB_BUF_SZ;
+        } else {
+          count = len + ofs;
+          if (count > VDB_BUF_SZ)
+            count = VDB_BUF_SZ;
+        }
+
+        res = PROC_READ(pagemap_fd, soft_vdb_buf, count);
+        if (res > (ssize_t)ofs)
+          break;
+        if (res <= 0)
+          ABORT_ARG1("Failed to read /proc/self/pagemap",
+                     ": errno = %d", res < 0 ? errno : 0);
+        /* Retry (once) w/o page-alignment.     */
+        aligned_pos = fpos;
+      }
+
+      /* Save the buffer (file window) position and size.       */
+      pagemap_buf_fpos = aligned_pos;
+      pagemap_buf_len = (size_t)res;
+      res -= (ssize_t)ofs;
+    }
+
+    *pres = (size_t)res < len ? (size_t)res : len;
+    return &soft_vdb_buf[ofs];
+  }
+
+  static void soft_set_grungy_pages(ptr_t vaddr /* start */, ptr_t limit,
+                                    ptr_t next_start_hint)
+  {
+    GC_ASSERT(GC_page_size != 0);
+    while ((word)vaddr < (word)limit) {
+      size_t res;
+      word limit_buf;
+      const unsigned char *bufp = pagemap_buffered_read(&res,
+                (off_t)((word)vaddr / GC_page_size * PAGEMAP_ENTRY_SZ),
+                (size_t)((((word)limit - (word)vaddr + GC_page_size-1)
+                         / GC_page_size) * PAGEMAP_ENTRY_SZ),
+                (off_t)((word)next_start_hint / GC_page_size
+                        * PAGEMAP_ENTRY_SZ));
+
+      if ((res % PAGEMAP_ENTRY_SZ) != 0) {
+        /* Punt: */
+        memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
+        WARN("Incomplete read of pagemap, not multiple of entry size\n", 0);
+        break;
+      }
+
+      limit_buf = ((word)vaddr & ~(GC_page_size-1))
+                  + (res / PAGEMAP_ENTRY_SZ) * GC_page_size;
+      for (; (word)vaddr < limit_buf;
+           vaddr += GC_page_size, bufp += PAGEMAP_ENTRY_SZ)
+        if ((bufp[PM_SOFTDIRTY_OFS] & PM_SOFTDIRTY_MASK) != 0) {
+          struct hblk * h;
+          ptr_t next_vaddr = vaddr + GC_page_size;
+
+          /* If the bit is set, the respective PTE was written to       */
+          /* since clearing the soft-dirty bits.                        */
+#         ifdef DEBUG_DIRTY_BITS
+            GC_log_printf("dirty page at: %p\n", (void *)vaddr);
+#         endif
+          for (h = (struct hblk *)vaddr; (word)h < (word)next_vaddr; h++) {
+            word index = PHT_HASH(h);
+            set_pht_entry_from_index(GC_grungy_pages, index);
+          }
+        }
+      /* Read the next portion of pagemap file if incomplete.   */
+    }
+  }
+
+  GC_INLINE void GC_soft_read_dirty(GC_bool output_unneeded)
+  {
+    ssize_t res;
+
+#   ifndef THREADS
+      /* Similar as for GC_proc_read_dirty.     */
+      if (getpid() != saved_proc_pid
+          && (-1 == clear_refs_fd /* no need to retry */
+              || (close(clear_refs_fd), close(pagemap_fd),
+                  !soft_dirty_open_files()))) {
+        /* Failed to reopen the files.  */
+        if (!output_unneeded) {
+          /* Punt: */
+          memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
+#         ifdef CHECKSUMS
+            memset(GC_written_pages, 0xff, sizeof(page_hash_table));
+#         endif
+        }
+        return;
+      }
+#   endif
+
+    if (!output_unneeded) {
+      word i;
+
+      BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
+      pagemap_buf_len = 0; /* invalidate soft_vdb_buf */
+
+      for (i = 0; i != GC_n_heap_sects; ++i) {
+        ptr_t vaddr = GC_heap_sects[i].hs_start;
+
+        soft_set_grungy_pages(vaddr, vaddr + GC_heap_sects[i].hs_bytes,
+                              i < GC_n_heap_sects-1 ?
+                                    GC_heap_sects[i+1].hs_start : NULL);
+      }
+#     ifdef CHECKSUMS
+        GC_or_pages(GC_written_pages, GC_grungy_pages);
+#     endif
+
+#     ifndef NO_VDB_FOR_STATIC_ROOTS
+        for (i = 0; (int)i < n_root_sets; ++i) {
+          soft_set_grungy_pages(GC_static_roots[i].r_start,
+                                GC_static_roots[i].r_end,
+                                (int)i < n_root_sets-1 ?
+                                    GC_static_roots[i+1].r_start : NULL);
+        }
+#     endif
+    }
+
+    /* Clear soft-dirty bits from the task's PTEs. */
+    res = write(clear_refs_fd, "4\n", 2);
+    if (res != 2)
+      ABORT_ARG1("Failed to write to /proc/self/clear_refs",
+                 ": errno = %d", res < 0 ? errno : 0);
+  }
+#endif /* SOFT_VDB */
 
 #ifdef PCR_VDB
 
@@ -3801,6 +4209,8 @@ GC_INNER GC_bool GC_dirty_init(void)
       GC_gww_read_dirty(output_unneeded);
 #   elif defined(PROC_VDB)
       GC_proc_read_dirty(output_unneeded);
+#   elif defined(SOFT_VDB)
+      GC_soft_read_dirty(output_unneeded);
 #   elif defined(PCR_VDB)
       /* lazily enable dirty bits on newly added heap sects */
       {
@@ -3819,12 +4229,28 @@ GC_INNER GC_bool GC_dirty_init(void)
 #   endif
   }
 
+# if !defined(NO_VDB_FOR_STATIC_ROOTS) && !defined(PROC_VDB)
+    GC_INNER GC_bool GC_is_vdb_for_static_roots(void)
+    {
+      if (GC_manual_vdb) return FALSE;
+#     if defined(MPROTECT_VDB)
+        /* Currently used only in conjunction with SOFT_VDB.    */
+        return GC_GWW_AVAILABLE();
+#     else
+        GC_ASSERT(GC_incremental);
+        return TRUE;
+#     endif
+    }
+# endif
+
   /* Is the HBLKSIZE sized page at h marked dirty in the local buffer?  */
   /* If the actual page size is different, this returns TRUE if any     */
   /* of the pages overlapping h are dirty.  This routine may err on the */
   /* side of labeling pages as dirty (and this implementation does).    */
   GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
   {
+    word index;
+
 #   ifdef PCR_VDB
       if (!GC_manual_vdb) {
         if ((word)h < (word)GC_vd_base
@@ -3836,22 +4262,38 @@ GC_INNER GC_bool GC_dirty_init(void)
 #   elif defined(DEFAULT_VDB)
       if (!GC_manual_vdb)
         return TRUE;
+#   elif defined(PROC_VDB)
+      /* Unless manual VDB is on, the bitmap covers all process memory. */
+      if (GC_manual_vdb)
 #   endif
-    return NULL == HDR(h)
-             || get_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
+      {
+        if (NULL == HDR(h))
+          return TRUE;
+      }
+    index = PHT_HASH(h);
+    return get_pht_entry_from_index(GC_grungy_pages, index);
   }
 
 # if defined(CHECKSUMS) || defined(PROC_VDB)
     /* Could any valid GC heap pointer ever have been written to this page? */
     GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
     {
-#     if defined(GWW_VDB) || defined(PROC_VDB)
+#     if defined(GWW_VDB) || defined(PROC_VDB) || defined(SOFT_VDB)
+        word index;
+
 #       ifdef MPROTECT_VDB
           if (!GC_GWW_AVAILABLE())
             return TRUE;
 #       endif
-        return NULL == HDR(h)
-               || get_pht_entry_from_index(GC_written_pages, PHT_HASH(h));
+#       if defined(PROC_VDB)
+          if (GC_manual_vdb)
+#       endif
+        {
+          if (NULL == HDR(h))
+            return TRUE;
+        }
+        index = PHT_HASH(h);
+        return get_pht_entry_from_index(GC_written_pages, index);
 #     else
         /* TODO: implement me for MANUAL_VDB. */
         (void)h;
@@ -4934,11 +5376,10 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
   /* addresses in FIND_LEAK output.                                     */
   void GC_print_address_map(void)
   {
-    char *maps;
+    const char *maps = GC_get_maps();
 
     GC_err_printf("---------- Begin address map ----------\n");
-    maps = GC_get_maps();
-    GC_err_puts(maps != NULL ? maps : "Failed to get map!\n");
+    GC_err_puts(maps);
     GC_err_printf("---------- End address map ----------\n");
   }
 #endif /* LINUX && ELF */
