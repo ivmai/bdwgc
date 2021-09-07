@@ -1753,6 +1753,9 @@ void check_heap_stats(void)
                   (int)uncollectable_count);
     GC_printf("Allocated %d atomic objects\n", (int)atomic_count);
     GC_printf("Reallocated %d objects\n", (int)realloc_count);
+#   ifndef NO_TEST_HANDLE_FORK
+      GC_printf("Garbage collection after fork is tested too\n");
+#   endif
 # ifndef GC_NO_FINALIZATION
     if (!GC_get_find_leak()) {
       int still_live = 0;
