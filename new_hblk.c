@@ -42,7 +42,7 @@
         p[1] = 0;
         p[2] = (word)p;
         p[3] = 0;
-    };
+    }
     return((ptr_t)(p-2));
   }
 
@@ -62,7 +62,7 @@
         p[0] = (word)(p-4);
         p[1] = 0;
         CLEAR_DOUBLE(p+2);
-    };
+    }
     return((ptr_t)(p-4));
   }
 
@@ -78,7 +78,7 @@
     for (; (word)p < (word)lim; p += 4) {
         p[0] = (word)(p-2);
         p[2] = (word)p;
-    };
+    }
     return((ptr_t)(p-2));
   }
 
@@ -95,7 +95,7 @@
         GC_PREFETCH_FOR_WRITE((ptr_t)(p + 64));
         p[0] = (word)(p-4);
         p[4] = (word)p;
-    };
+    }
     return((ptr_t)(p-4));
   }
 #endif /* !SMALL_CONFIG */

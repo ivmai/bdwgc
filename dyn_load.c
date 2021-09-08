@@ -847,7 +847,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
         ABORT_ARG3("/proc PIOCMAP ioctl failed",
                    ": errcode= %d, needed_sz= %d, addr_map= %p",
                    errno, needed_sz, (void *)addr_map);
-    };
+    }
     if (GC_n_heap_sects > 0) {
         heap_end = GC_heap_sects[GC_n_heap_sects-1].hs_start
                         + GC_heap_sects[GC_n_heap_sects-1].hs_bytes;
