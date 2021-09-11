@@ -1349,6 +1349,7 @@ static void add_to_heap_inner(struct hblk *p, size_t bytes)
     hdr * phdr;
     word endp;
 
+    GC_ASSERT(GC_all_nils != NULL);
     if (GC_n_heap_sects >= MAX_HEAP_SECTS) {
         ABORT("Too many heap sections: Increase MAXHINCR or MAX_HEAP_SECTS");
     }

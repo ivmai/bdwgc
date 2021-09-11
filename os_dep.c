@@ -3908,6 +3908,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     GC_INNER GC_bool GC_dirty_init(void)
 # endif
   {
+    GC_ASSERT(NULL == soft_vdb_buf);
 #   ifdef MPROTECT_VDB
       char * str = GETENV("GC_USE_GETWRITEWATCH");
 #     ifdef GC_PREFER_MPROTECT_VDB
@@ -3927,14 +3928,14 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 #   endif
     if (!soft_dirty_open_files())
       return FALSE;
-    if (NULL == soft_vdb_buf)
-      soft_vdb_buf = (unsigned char *)GC_scratch_alloc(VDB_BUF_SZ);
+    soft_vdb_buf = (unsigned char *)GC_scratch_alloc(VDB_BUF_SZ);
     if (NULL == soft_vdb_buf)
       ABORT("Insufficient space for /proc pagemap buffer");
     if (!detect_soft_dirty_supported((ptr_t)soft_vdb_buf)) {
       GC_COND_LOG_PRINTF("Soft-dirty bit is not supported by kernel\n");
       /* Release the resources. */
-      /* TODO: recycle soft_vdb_buf, add assert it is null on enter */
+      GC_scratch_recycle_no_gww(soft_vdb_buf, VDB_BUF_SZ);
+      soft_vdb_buf = NULL;
       close(clear_refs_fd);
       clear_refs_fd = -1;
       close(pagemap_fd);

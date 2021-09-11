@@ -1244,6 +1244,7 @@ GC_API void GC_CALL GC_init(void)
 #   ifndef THREADS
       GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)GC_approx_sp()));
 #   endif
+    GC_init_headers();
 #   ifndef GC_DISABLE_INCREMENTAL
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
 #       if defined(BASE_ATOMIC_OPS_EMULATED) || defined(CHECKSUMS) \
@@ -1268,7 +1269,6 @@ GC_API void GC_CALL GC_init(void)
     /* Add initial guess of root sets.  Do this first, since sbrk(0)    */
     /* might be used.                                                   */
       if (GC_REGISTER_MAIN_STATIC_DATA()) GC_register_data_segments();
-    GC_init_headers();
     GC_bl_init();
     GC_mark_init();
     {
