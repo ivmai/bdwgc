@@ -1348,7 +1348,13 @@ static void add_to_heap_inner(struct hblk *p, size_t bytes)
 {
     hdr * phdr;
     word endp;
+#   ifdef GC_ASSERTIONS
+      unsigned i;
+#   endif
 
+    GC_ASSERT((word)p % HBLKSIZE == 0);
+    GC_ASSERT(bytes % HBLKSIZE == 0);
+    GC_ASSERT(bytes > 0);
     GC_ASSERT(GC_all_nils != NULL);
     if (GC_n_heap_sects >= MAX_HEAP_SECTS) {
         ABORT("Too many heap sections: Increase MAXHINCR or MAX_HEAP_SECTS");
@@ -1374,6 +1380,18 @@ static void add_to_heap_inner(struct hblk *p, size_t bytes)
         return;
     }
     GC_ASSERT(endp > (word)p && endp == (word)p + bytes);
+#   ifdef GC_ASSERTIONS
+      /* Ensure no intersection between sections.       */
+      for (i = 0; i < GC_n_heap_sects; i++) {
+        word hs_start = (word)GC_heap_sects[i].hs_start;
+        word hs_end = hs_start + GC_heap_sects[i].hs_bytes;
+        word p_e = (word)p + bytes;
+
+        GC_ASSERT(!((hs_start <= (word)p && (word)p < hs_end)
+                    || (hs_start < p_e && p_e <= hs_end)
+                    || ((word)p < hs_start && hs_end < p_e)));
+      }
+#   endif
     GC_heap_sects[GC_n_heap_sects].hs_start = (ptr_t)p;
     GC_heap_sects[GC_n_heap_sects].hs_bytes = bytes;
     GC_n_heap_sects++;
