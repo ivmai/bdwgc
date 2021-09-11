@@ -148,6 +148,8 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = (ptr_t)GET_MEM(bytes_to_get);
             GC_add_to_our_memory(result, bytes_to_get);
+            if (result != NULL)
+                GC_scratch_last_end_ptr = result + bytes;
             return result;
         }
         scratch_free_ptr = result;
