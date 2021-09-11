@@ -2253,9 +2253,6 @@ GC_INNER void GC_remove_counts(struct hblk * h, size_t sz);
                                 /* Remove forwarding counts for h.      */
 GC_INNER hdr * GC_find_header(ptr_t h);
 
-GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes);
-                        /* Add a HBLKSIZE aligned chunk to the heap.    */
-
 #ifdef USE_PROC_FOR_LIBRARIES
   GC_INNER void GC_add_to_our_memory(ptr_t p, size_t bytes);
                         /* Add a chunk to GC_our_memory.        */

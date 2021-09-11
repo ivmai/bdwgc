@@ -1303,6 +1303,7 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
 }
 
 /* Externally callable routines to invoke full, stop-the-world collection. */
+
 GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
 {
     GC_ASSERT(NONNULL_ARG_NOT_NULL(stop_func));
@@ -1469,6 +1470,29 @@ GC_API void GC_CALL GC_set_max_heap_size(GC_word n)
 
 GC_word GC_max_retries = 0;
 
+STATIC void GC_add_to_heap(struct hblk *p, size_t bytes);
+
+GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
+{
+  size_t page_offset;
+  size_t displ = 0;
+  size_t recycled_bytes;
+
+  if (NULL == ptr) return;
+
+  GC_ASSERT(bytes != 0);
+  GC_ASSERT(GC_page_size != 0);
+  /* TODO: Assert correct memory flags if GWW_VDB */
+  page_offset = (word)ptr & (GC_page_size - 1);
+  if (page_offset != 0)
+    displ = GC_page_size - page_offset;
+  recycled_bytes = (bytes - displ) & ~(GC_page_size - 1);
+  GC_COND_LOG_PRINTF("Recycle %lu scratch-allocated bytes at %p\n",
+                     (unsigned long)recycled_bytes, ptr);
+  if (recycled_bytes > 0)
+    GC_add_to_heap((struct hblk *)((word)ptr + displ), recycled_bytes);
+}
+
 /* This explicitly increases the size of the heap.  It is used          */
 /* internally, but may also be invoked from GC_expand_hp by the user.   */
 /* The argument is in units of HBLKSIZE (tiny values are rounded up).   */
@@ -1502,7 +1526,8 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     return TRUE;
 }
 
-GC_INNER void GC_add_to_heap(struct hblk * space, size_t bytes)
+/* Add a HBLKSIZE aligned chunk to the heap (adjusting the limits).     */
+STATIC void GC_add_to_heap(struct hblk * space, size_t bytes)
 {
     word expansion_slop = min_bytes_allocd() + 4 * MAXHINCR * HBLKSIZE;
                                 /* Number of bytes by which we expect   */
@@ -1514,7 +1539,7 @@ GC_INNER void GC_add_to_heap(struct hblk * space, size_t bytes)
     if ((GC_last_heap_addr == 0 && !((word)space & SIGNB))
         || (GC_last_heap_addr != 0
             && (word)GC_last_heap_addr < (word)space)) {
-        /* Assume the heap is growing up */
+        /* Assume the heap is growing up. */
         word new_limit = (word)space + (word)bytes + expansion_slop;
         if (new_limit > (word)space) {
           GC_greatest_plausible_heap_addr =
@@ -1522,7 +1547,7 @@ GC_INNER void GC_add_to_heap(struct hblk * space, size_t bytes)
                            (word)new_limit);
         }
     } else {
-        /* Heap is growing down */
+        /* Heap is growing down. */
         word new_limit = (word)space - expansion_slop;
         if (new_limit < (word)space) {
           GC_least_plausible_heap_addr =
@@ -1535,13 +1560,13 @@ GC_INNER void GC_add_to_heap(struct hblk * space, size_t bytes)
 
     add_to_heap_inner(space, bytes);
 
-    /* Force GC before we are likely to allocate past expansion_slop */
-      GC_collect_at_heapsize =
-         GC_heapsize + expansion_slop - 2*MAXHINCR*HBLKSIZE;
-      if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
-         GC_collect_at_heapsize = GC_WORD_MAX;
+    /* Force GC before we are likely to allocate past expansion_slop.   */
+    GC_collect_at_heapsize =
+        GC_heapsize + expansion_slop - 2 * MAXHINCR * HBLKSIZE;
+    if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
+        GC_collect_at_heapsize = GC_WORD_MAX;
     if (GC_on_heap_resize)
-      (*GC_on_heap_resize)(GC_heapsize);
+        (*GC_on_heap_resize)(GC_heapsize);
 }
 
 /* Really returns a bool, but it's externally visible, so that's clumsy. */
