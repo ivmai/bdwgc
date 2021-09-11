@@ -1399,11 +1399,14 @@ struct _GC_arrays {
   hdr *_hdr_free_list;
   ptr_t _scratch_end_ptr;
         /* GC_scratch_end_ptr is end point of the current scratch area. */
-  ptr_t _scratch_last_end_ptr;
+# if defined(IRIX5) || (defined(USE_PROC_FOR_LIBRARIES) && !defined(LINUX))
+#   define USE_SCRATCH_LAST_END_PTR
+#   define GC_scratch_last_end_ptr GC_arrays._scratch_last_end_ptr
+    ptr_t _scratch_last_end_ptr;
         /* GC_scratch_last_end_ptr is the end point of the last */
         /* obtained scratch area.                               */
-        /* Used by headers.c, and can easily appear to point to */
-        /* heap.  Also used by GC_register_dynamic_libraries(). */
+        /* Used by GC_register_dynamic_libraries().             */
+# endif
   mse *_mark_stack;
         /* Limits of stack for GC_mark routine.  All ranges     */
         /* between GC_mark_stack (incl.) and GC_mark_stack_top  */
@@ -1652,7 +1655,6 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define GC_scratch_free_ptr GC_arrays._scratch_free_ptr
 #define GC_hdr_free_list GC_arrays._hdr_free_list
 #define GC_scratch_end_ptr GC_arrays._scratch_end_ptr
-#define GC_scratch_last_end_ptr GC_arrays._scratch_last_end_ptr
 #define GC_size_map GC_arrays._size_map
 #define GC_static_roots GC_arrays._static_roots
 #define GC_top_index GC_arrays._top_index

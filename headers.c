@@ -122,11 +122,13 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             GC_add_to_our_memory(result, bytes_to_get);
             /* Undo scratch free area pointer update; get memory directly. */
             GC_scratch_free_ptr -= bytes;
-            if (result != NULL) {
+#           ifdef USE_SCRATCH_LAST_END_PTR
+              if (result != NULL) {
                 /* Update end point of last obtained area (needed only  */
                 /* by GC_register_dynamic_libraries for some targets).  */
                 GC_scratch_last_end_ptr = result + bytes;
-            }
+              }
+#           endif
             return result;
         }
 
@@ -141,14 +143,19 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = (ptr_t)GET_MEM(bytes_to_get);
             GC_add_to_our_memory(result, bytes_to_get);
-            if (result != NULL)
+#           ifdef USE_SCRATCH_LAST_END_PTR
+              if (result != NULL)
                 GC_scratch_last_end_ptr = result + bytes;
+#           endif
             return result;
         }
+        /* TODO: some amount of unallocated space may remain unused forever */
         /* Update scratch area pointers and retry.      */
         GC_scratch_free_ptr = result;
         GC_scratch_end_ptr = GC_scratch_free_ptr + bytes_to_get;
-        GC_scratch_last_end_ptr = GC_scratch_end_ptr;
+#       ifdef USE_SCRATCH_LAST_END_PTR
+          GC_scratch_last_end_ptr = GC_scratch_end_ptr;
+#       endif
     }
 }
 
