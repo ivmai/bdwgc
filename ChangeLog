@@ -1,3 +1,33 @@
+2021-09-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* headers.c (GC_scratch_alloc): Update GC_scratch_last_end_ptr even if
+	the first GET_MEM() call fails because of out of memory.
+
+2021-09-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h [!GC_DISABLE_INCREMENTAL
+	&& CAN_HANDLE_FORK] (GC_dirty_update_child): Declare (as a function
+	or as a macro).
+	* os_dep.c [PROC_VDB && !THREADS] (saved_proc_pid): New static
+	variable.
+	* os_dep.c [PROC_VDB] (GC_proc_fd): Initialize to -1 (instead of 0).
+	* os_dep.c [PROC_VDB] (proc_dirty_open_files): New static function
+	(part of code is moved from GC_dirty_init).
+	* os_dep.c [PROC_VDB && !THREADS] (proc_dirty_open_files): Store
+	pid to saved_proc_pid when true is returned.
+	* os_dep.c [PROC_VDB && CAN_HANDLE_FORK] (GC_dirty_update_child): New
+	GC_INNER function.
+	* os_dep.c [PROC_VDB] (GC_dirty_init): Call proc_dirty_open_files().
+	* os_dep.c [PROC_VDB && !THREADS] (GC_proc_read_dirty): Call
+	proc_dirty_open_files() if current pid differs from saved_proc_pid.
+	* pthread_support.c [CAN_HANDLE_FORK && !GC_DISABLE_INCREMENTAL]
+	(fork_child_proc): Call GC_dirty_update_child().
+
+2021-08-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [PROC_VDB] (GC_page_was_dirty, GC_page_was_ever_dirty): Do
+	not check result of HDR(h); add comment.
+
 2021-07-29  Ivan Maidanski <ivmai@mail.ru>
 
 	* mallocx.c (GC_generic_malloc_many): Do not increment rlh by lg (use
