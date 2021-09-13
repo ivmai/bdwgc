@@ -278,6 +278,25 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
     GC_mark_state = MS_ROOTS_PUSHED;
 }
 
+STATIC GC_on_mark_stack_empty_proc GC_on_mark_stack_empty;
+
+GC_API void GC_CALL GC_set_on_mark_stack_empty(GC_on_mark_stack_empty_proc fn)
+{
+  LOCK();
+  GC_on_mark_stack_empty = fn;
+  UNLOCK();
+}
+
+GC_API GC_on_mark_stack_empty_proc GC_CALL GC_get_on_mark_stack_empty(void)
+{
+  GC_on_mark_stack_empty_proc fn;
+
+  LOCK();
+  fn = GC_on_mark_stack_empty;
+  UNLOCK();
+  return fn;
+}
+
 /* Perform a small amount of marking.                   */
 /* We try to touch roughly a page of memory.            */
 /* Return TRUE if we just finished a mark phase.        */
@@ -368,10 +387,25 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
             if ((word)GC_mark_stack_top >= (word)GC_mark_stack) {
                 MARK_FROM_MARK_STACK();
             } else {
-                GC_mark_state = MS_NONE;
+                GC_on_mark_stack_empty_proc on_ms_empty;
+
                 if (GC_mark_stack_too_small) {
+                    GC_mark_state = MS_NONE;
                     alloc_mark_stack(2*GC_mark_stack_size);
+                    return TRUE;
                 }
+                on_ms_empty = GC_on_mark_stack_empty;
+                if (on_ms_empty != 0) {
+                    GC_mark_stack_top = on_ms_empty(GC_mark_stack_top,
+                                                    GC_mark_stack_limit);
+                    /* If we pushed new items or overflowed the stack,  */
+                    /* we need to continue processing.                  */
+                    if ((word)GC_mark_stack_top >= (word)GC_mark_stack
+                            || GC_mark_stack_too_small)
+                        break;
+                }
+
+                GC_mark_state = MS_NONE;
                 return TRUE;
             }
             GC_ASSERT(GC_mark_state == MS_ROOTS_PUSHED

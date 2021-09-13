@@ -2665,6 +2665,7 @@ int main(void)
     GC_set_non_gc_bytes(GC_get_non_gc_bytes());
     GC_set_on_collection_event(GC_get_on_collection_event());
     GC_set_on_heap_resize(GC_get_on_heap_resize());
+    GC_set_on_mark_stack_empty(GC_get_on_mark_stack_empty());
     GC_set_on_thread_event(GC_get_on_thread_event());
     GC_set_oom_fn(GC_get_oom_fn());
     GC_set_push_other_roots(GC_get_push_other_roots());

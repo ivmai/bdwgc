@@ -367,6 +367,16 @@ GC_API int GC_CALL GC_is_tmp_root(void *);
 GC_API void GC_CALL GC_print_trace(GC_word /* gc_no */);
 GC_API void GC_CALL GC_print_trace_inner(GC_word /* gc_no */);
 
+/* Set the client for when mark stack is empty.  A client can use       */
+/* this callback to process (un)marked objects and push additional      */
+/* work onto the stack.  Useful for implementing ephemerons.            */
+/* Both the setter and getter acquire the GC lock.                      */
+typedef struct GC_ms_entry *(GC_CALLBACK *GC_on_mark_stack_empty_proc)(
+                                struct GC_ms_entry* /* mark_stack_ptr */,
+                                struct GC_ms_entry* /* mark_stack_limit */);
+GC_API void GC_CALL GC_set_on_mark_stack_empty(GC_on_mark_stack_empty_proc);
+GC_API GC_on_mark_stack_empty_proc GC_CALL GC_get_on_mark_stack_empty(void);
+
 #ifdef __cplusplus
   } /* extern "C" */
 #endif
