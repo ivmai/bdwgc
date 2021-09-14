@@ -20,7 +20,10 @@
 * Adjust printf calls in gctest check_heap_stats so that each has new-line
 * Allow incremental GC on Cygwin
 * Allow memory unmapping in case of MPROTECT_VDB
+* Allow to disable GWW or mprotect-based VDB at build
+* Allow to disable Glibc FPU exception mask and TSX workarounds (Linux)
 * Allow to disable __builtin_return_address(1) usage (x86 and x64)
+* Allow to specify custom value of LOG_PHT_ENTRIES
 * Always abort on failure to access /proc/self/maps (Linux)
 * Always define default_push_other_roots (code refactoring)
 * Avoid gcc stringop-overflow warning for intended overflow in smashtest
@@ -31,6 +34,7 @@
 * Build gctba library
 * Build shared libraries by default (WCC_MAKEFILE)
 * Change CLOCK_TYPE to timespec for Nintendo Switch (code refactoring)
+* Change EMSCRIPTEN macro for internal use to no-underscore format
 * Change log_size fields of finalizer to unsigned type (code refactoring)
 * Change type of toggleref_array_size/capacity to size_t (code refactoring)
 * Check leak of objects allocated by CRT malloc in gctest (MS VC)
@@ -50,10 +54,13 @@
 * Disable Clang/GCC aliasing optimization in CMake script by default
 * Do not build tests by default (Makefile.direct and other Makefiles)
 * Do not build the tests by default (CMake)
+* Do not call GC_push_conditional unless PROC_VDB
 * Do not compile pthread_*.c files in Cygwin or MSYS (CMake)
 * Do not define GC_write_cs for Xbox One target
+* Do not define HAVE_NO_FORK for all Unix-like systems
 * Do not hard-code CMAKE_DL_LIBS value and install paths (CMake)
 * Do not hard-code finalizable objects limit which triggers GC
+* Do not update scratch_last_end_ptr unless used by reg dynamic libraries
 * Document GC_incr_bytes_allocd/freed API function
 * Eliminate '(long)size<=0 is always false' cppcheck FP
 * Eliminate 'Consecutive return is unnecessary' cppcheck style warning
@@ -62,6 +69,7 @@
 * Eliminate 'checking if unsigned i < 0' cppcheck FP in is_heap_base
 * Eliminate 'hash_val value is never used' cppcheck false positive
 * Eliminate 'passing tainted var maps_buf to tainted sink' code defect FP
+* Eliminate 'retry_cnt is assigned value but never used' cppcheck FP
 * Eliminate 'stop variable is always 0' compiler warning in print_callers
 * Eliminate 'struct member os_callback is never used' cppcheck warning
 * Eliminate 't->flags not atomically updated' code defect FP
@@ -73,9 +81,11 @@
 * Emscripten single-threaded support (detect stack base, push registers)
 * Enable CMake-based build for Borland and Watcom compilers
 * Enable compilation without C runtime (Win32)
+* Enable fork testing in single-thread builds (Unix-like)
 * Enable mprotect-based incremental GC for Linux/arm and Linux/aarch64
 * Enable true incremental collection even if parallel marker is on
 * Ensure ELFSIZE is defined in dyn_load.c for OpenBSD (code refactoring)
+* Ensure add_to_heap_inner arguments are valid (refactoring)
 * Ensure all getters and setters are run at least once by gctest (pthreads)
 * Export CMake targets with namespace BDWgc
 * Fix 'const obj must be initialized if not extern' error in gc_alloc_ptrs.h
@@ -83,6 +93,7 @@
 * Fix HOST determination in CMake script
 * Fix copyright message in de_win.rc, gc_cpp.cc, ec.h and specific.h
 * Fix missing OS_TYPE definition for some targets
+* Fix missing heap limits adjustment if scratch_recycle_inner is called
 * Generate cordtest and de executable files in GC base folder
 * Generate pkg-config metadata file (CMake)
 * Get rid of some non-ELF ifdefs (code refactoring)
@@ -95,6 +106,7 @@
 * Move C++ GC_ATTR_EXPLICIT and GC_NOEXCEPT definition to gc_config_macros.h
 * Move GC state non-pointer variables into GC_arrays (code refactoring)
 * Move GC state pointer variables into GC_arrays
+* Move GC_scratch_recycle_inner() to alloc.c (refactoring)
 * Move GC_throw_bad_alloc definition to new C++ file
 * Move QNX and Emscripten macro definitions to proper place in gcconfig.h
 * Move definition of GC_n_mark_procs and GC_n_kinds from mark.c to misc.c
@@ -129,6 +141,8 @@
 * Remove dash characters comprising prefix of some verbose logs (gctest)
 * Remove dependency on user32.dll import library from static libgc (Win32)
 * Remove documentation specific to particular old BDWGC releases
+* Remove duplicate Linux-related macro definitions in gcconfig.h
+* Remove duplicate macro definitions in gcconfig.h except for Linux
 * Remove gcmt-dll generation, rename libgc-lib.a to libgc.a (CMake)
 * Remove goto statement in print_callers (code refactoring)
 * Remove new_gc_alloc.h file
@@ -137,6 +151,7 @@
 * Remove redundant type casts in backgraph HEIGHT_UNKNOWN/IN_PROGRESS
 * Remove unused STACK_GRAN macro definitions (code refactoring)
 * Remove unused sparc_sunos4_mach_dep.s file
+* Remove useless empty statements after block ones (refactoring)
 * Remove weakobj_free_list variable in disclaim_weakmap_test (refactoring)
 * Rename READ to PROC_READ in os_dep.c (code refactoring)
 * Rename cord/cord test executable to de (CMake)
@@ -153,7 +168,9 @@
 * Replace find_limit_openbsd to find_limit_with_bound (OpenBSD 5.2+)
 * Replace obsolete AC_HELP_STRING with AS_HELP_STRING (refactoring)
 * Replace push_one calls with push_many_regs one for Win32 thread context
+* Report presence of process fork testing (gctest)
 * Report time with a nanosecond precision where available
+* Run tree and typed tests in child process (gctest)
 * Set GC_collecting hint for GC_collect_a_little_inner calls (pthreads)
 * Set name of GC marker threads
 * Set so-version for installed shared libraries (CMake)
@@ -180,6 +197,7 @@
 * Use better precision Windows timers
 * Use clock_gettime() instead of clock() on Cygwin and Linux
 * Use compiler TLS on FreeBSD and NetBSD
+* Use mprotect-based VDB on PowerPC and S390 (Linux)
 * Workaround 'condition result<=0 is always false' cppcheck FP in get_maps
 * Workaround 'same value in both branches of ternary operator' cppcheck FP
 * Workaround various cppcheck false positives
