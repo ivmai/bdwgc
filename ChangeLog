@@ -610,6 +610,7 @@
 * Fix 'ulong undefined' compilation error on AIX
 * Fix 'undefined reference to __data_start' linker error on RISC-V
 * Fix 'write to GC log failed' error
+* Fix GC_proc_fd value in child process at fork (Solaris)
 * Fix MPROTECT_VDB definition for single-threaded GC builds
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
 * Fix STACKBOTTOM on 32-bit HP/UX 11.11
@@ -624,6 +625,8 @@
 * Fix incorrect define GC_OPENBSD_THREADS on sparc64
 * Fix misaligned tlfs passed to AO_load on m68k
 * Fix missing gc_dlopen.c in CMake script
+* Fix missing scratch_last_end_ptr update (Irix)
+* Fix page_was_[ever_]dirty() for static roots (Solaris)
 * Fix printf format specifier in simple_example.html
 * Fix save_callers for multi-threaded case if built-in backtrace unavailable
 * Fix test_cpp failure caused by arbitrary link order (Win32)
