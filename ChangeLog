@@ -198,6 +198,7 @@
 * Compile C++ code with exception handling enabled in NT_MAKEFILE
 * Define OS_TYPE and DATAEND for UWP targets
 * Disable mprotect-based incremental GC if /proc roots are used (Linux)
+* Do not report 'Incremental GC incompatible' warning more than once
 * Do not use Manual VDB mode if C malloc is redirected
 * Do not use iOS private symbols
 * Eliminate 'GC_non_gc_bytes is deprecated' warning in new_gc_alloc.h
@@ -225,6 +226,7 @@
 * Fix 'wrong finalization data' gctest failure on Windows
 * Fix CMake build on macOS Catalina
 * Fix GC_OPENBSD_THREADS definition (OpenBSD/hppa)
+* Fix GC_proc_fd value in child process at fork (Solaris)
 * Fix MPROTECT_VDB definition for single-threaded GC builds
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
 * Fix STACKBOTTOM on 32-bit HP/UX 11.11
@@ -241,7 +243,9 @@
 * Fix incorrect markup formatting in documentation
 * Fix misaligned tlfs passed to AO_load on m68k
 * Fix missing gc_dlopen.c and specific.c in CMake script
+* Fix missing scratch_last_end_ptr update (Irix)
 * Fix mmap() failures on AIX, HP/UX and Haiku
+* Fix page_was_[ever_]dirty() for static roots (Solaris)
 * Fix printf format specifier in simple_example.md
 * Fix save_callers for multi-threaded case if built-in backtrace unavailable
 * Fix subexpression widening in memhash() of disclaim_weakmap_test
