@@ -534,6 +534,7 @@ Also, includes 7.2 changes
 * Fix 'GC_generic_malloc must be available' GCC error in new_gc_alloc.h
 * Fix 'expected function body after declarator' clang error in gc_cpp.cc
 * Fix 'write to GC log failed' error
+* Fix GC_proc_fd value in child process at fork (Solaris)
 * Fix configure message about 'AIX gcc optimization fix'
 * Fix data race regarding *rlh value in generic_malloc_many
 * Fix first_thread stack_base initialization if custom GC_stackbottom (Win32)
@@ -542,6 +543,8 @@ Also, includes 7.2 changes
 * Fix incorrect define GC_OPENBSD_THREADS on sparc64
 * Fix misaligned tlfs passed to AO_load on m68k
 * Fix missing gc_dlopen.c in CMake script
+* Fix missing scratch_last_end_ptr update (Irix)
+* Fix page_was_[ever_]dirty() for static roots (Solaris)
 * Fix printf format specifier in simple_example.html
 * Fix save_callers for multi-threaded case if built-in backtrace unavailable
 * Fix various typos in comments and documentation files
