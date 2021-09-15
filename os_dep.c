@@ -2608,13 +2608,11 @@ STATIC ptr_t GC_unmap_start(ptr_t start, size_t bytes)
 /* We assume that GC_remap is called on exactly the same range  */
 /* as a previous call to GC_unmap.  It is safe to consistently  */
 /* round the endpoints in both places.                          */
-GC_INNER void GC_unmap(ptr_t start, size_t bytes)
-{
-    ptr_t start_addr = GC_unmap_start(start, bytes);
-    ptr_t end_addr = GC_unmap_end(start, bytes);
-    word len = end_addr - start_addr;
 
+static void block_unmap_inner(ptr_t start_addr, size_t len)
+{
     if (0 == start_addr) return;
+
 #   ifdef USE_WINALLOC
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
@@ -2635,7 +2633,7 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
 #   else
       /* We immediately remap it to prevent an intervening mmap from    */
       /* accidentally grabbing the same address space.                  */
-      {
+      if (len != 0) {
 #       if defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
            || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)) \
            || defined(HPUX)
@@ -2662,10 +2660,18 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
             /* Explicitly store the resource handle to a global variable. */
             GC_noop1((word)result);
 #         endif
-#       endif /* !CYGWIN32 */
+#       endif
+        GC_unmapped_bytes += len;
       }
-      GC_unmapped_bytes += len;
 #   endif
+}
+
+GC_INNER void GC_unmap(ptr_t start, size_t bytes)
+{
+    ptr_t start_addr = GC_unmap_start(start, bytes);
+    ptr_t end_addr = GC_unmap_end(start, bytes);
+
+    block_unmap_inner(start_addr, (size_t)(end_addr - start_addr));
 }
 
 GC_INNER void GC_remap(ptr_t start, size_t bytes)
@@ -2747,50 +2753,11 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
     ptr_t start2_addr = GC_unmap_start(start2, bytes2);
     ptr_t start_addr = end1_addr;
     ptr_t end_addr = start2_addr;
-    size_t len;
 
     GC_ASSERT(start1 + bytes1 == start2);
     if (0 == start1_addr) start_addr = GC_unmap_start(start1, bytes1 + bytes2);
     if (0 == start2_addr) end_addr = GC_unmap_end(start1, bytes1 + bytes2);
-    if (0 == start_addr) return;
-    len = end_addr - start_addr;
-#   ifdef USE_WINALLOC
-      while (len != 0) {
-          MEMORY_BASIC_INFORMATION mem_info;
-          word free_len;
-
-          if (VirtualQuery(start_addr, &mem_info, sizeof(mem_info))
-              != sizeof(mem_info))
-              ABORT("Weird VirtualQuery result");
-          free_len = (len < mem_info.RegionSize) ? len : mem_info.RegionSize;
-          if (!VirtualFree(start_addr, free_len, MEM_DECOMMIT))
-              ABORT("VirtualFree failed");
-          GC_unmapped_bytes += free_len;
-          start_addr += free_len;
-          len -= free_len;
-      }
-#   else
-      if (len != 0) {
-        /* Immediately remap as above. */
-#       if defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
-           || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)) \
-           || defined(HPUX)
-          if (mprotect(start_addr, len, PROT_NONE))
-            ABORT("mprotect(PROT_NONE) failed");
-#       else
-          void * result = mmap(start_addr, len, PROT_NONE,
-                               MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
-                               zero_fd, 0/* offset */);
-
-          if (result != (void *)start_addr)
-            ABORT("mmap(PROT_NONE) failed");
-#         if defined(CPPCHECK) || defined(LINT2)
-            GC_noop1((word)result);
-#         endif
-#       endif /* !CYGWIN32 */
-        GC_unmapped_bytes += len;
-      }
-#   endif
+    block_unmap_inner(start_addr, (size_t)(end_addr - start_addr));
 }
 
 #endif /* USE_MUNMAP */
