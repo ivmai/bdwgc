@@ -3133,16 +3133,13 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
        decrease the likelihood of some of the problems described below. */
 #   include <mach/vm_map.h>
     STATIC mach_port_t GC_task_self = 0;
-#   define PROTECT(addr,len) \
+#   define PROTECT_INNER(addr, len, allow_write, C_msg_prefix) \
         if (vm_protect(GC_task_self, (vm_address_t)(addr), (vm_size_t)(len), \
                        FALSE, VM_PROT_READ \
+                              | ((allow_write) ? VM_PROT_WRITE : 0) \
                               | (GC_pages_executable ? VM_PROT_EXECUTE : 0)) \
-                == KERN_SUCCESS) {} else ABORT("vm_protect(PROTECT) failed")
-#   define UNPROTECT(addr,len) \
-        if (vm_protect(GC_task_self, (vm_address_t)(addr), (vm_size_t)(len), \
-                       FALSE, (VM_PROT_READ | VM_PROT_WRITE) \
-                              | (GC_pages_executable ? VM_PROT_EXECUTE : 0)) \
-                == KERN_SUCCESS) {} else ABORT("vm_protect(UNPROTECT) failed")
+                == KERN_SUCCESS) {} else ABORT(C_msg_prefix \
+                                               "vm_protect() failed")
 
 # elif !defined(USE_WINALLOC)
 #   include <sys/mman.h>
@@ -3151,19 +3148,14 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     include <sys/syscall.h>
 #   endif
 
-#   define PROTECT(addr, len) \
+#   define PROTECT_INNER(addr, len, allow_write, C_msg_prefix) \
         if (mprotect((caddr_t)(addr), (size_t)(len), \
-                     PROT_READ \
-                     | (GC_pages_executable ? PROT_EXEC : 0)) >= 0) { \
-        } else ABORT("mprotect failed")
-#   define UNPROTECT(addr, len) \
-        if (mprotect((caddr_t)(addr), (size_t)(len), \
-                     (PROT_READ | PROT_WRITE) \
+                     PROT_READ | ((allow_write) ? PROT_WRITE : 0) \
                      | (GC_pages_executable ? PROT_EXEC : 0)) >= 0) { \
         } else ABORT(GC_pages_executable ? \
-                                "un-mprotect executable page failed" \
-                                    " (probably disabled by OS)" : \
-                                "un-mprotect failed")
+                        C_msg_prefix "mprotect executable page failed" \
+                                        " (probably disabled by OS)" : \
+                        C_msg_prefix "mprotect failed")
 #   undef IGNORE_PAGES_EXECUTABLE
 
 # else /* USE_WINALLOC */
@@ -3172,20 +3164,20 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   endif
 
     static DWORD protect_junk;
-#   define PROTECT(addr, len) \
-        if (VirtualProtect((addr), (len), \
-                           GC_pages_executable ? PAGE_EXECUTE_READ : \
+#   define PROTECT_INNER(addr, len, allow_write, C_msg_prefix) \
+        if (VirtualProtect(addr, len, \
+                           GC_pages_executable ? \
+                                ((allow_write) ? PAGE_EXECUTE_READWRITE : \
+                                                 PAGE_EXECUTE_READ) : \
+                                 (allow_write) ? PAGE_READWRITE : \
                                                  PAGE_READONLY, \
                            &protect_junk)) { \
-        } else ABORT_ARG1("VirtualProtect failed", \
+        } else ABORT_ARG1(C_msg_prefix "VirtualProtect failed", \
                           ": errcode= 0x%X", (unsigned)GetLastError())
-#   define UNPROTECT(addr, len) \
-        if (VirtualProtect((addr), (len), \
-                           GC_pages_executable ? PAGE_EXECUTE_READWRITE : \
-                                                 PAGE_READWRITE, \
-                           &protect_junk)) { \
-        } else ABORT("un-VirtualProtect failed")
 # endif /* USE_WINALLOC */
+
+# define PROTECT(addr, len) PROTECT_INNER(addr, len, FALSE, "")
+# define UNPROTECT(addr, len) PROTECT_INNER(addr, len, TRUE, "un-")
 
 # if defined(MSWIN32)
     typedef LPTOP_LEVEL_EXCEPTION_FILTER SIG_HNDLR_PTR;
