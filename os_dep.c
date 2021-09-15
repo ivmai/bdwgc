@@ -2637,6 +2637,7 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
       /* accidentally grabbing the same address space.                  */
       {
 #       if defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
+           || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)) \
            || defined(HPUX)
           /* On AIX, mmap(PROT_NONE) fails with ENOMEM unless the       */
           /* environment variable XPG_SUS_ENV is set to ON.             */
@@ -2644,6 +2645,7 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
           /* an existing memory map with MAP_FIXED is broken.           */
           /* However, calling mprotect() on the given address range     */
           /* with PROT_NONE seems to work fine.                         */
+          /* On Linux, low RLIMIT_AS value may lead to mmap failure.    */
           if (mprotect(start_addr, len, PROT_NONE))
             ABORT("mprotect(PROT_NONE) failed");
 #       elif defined(EMSCRIPTEN)
@@ -2771,6 +2773,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
       if (len != 0) {
         /* Immediately remap as above. */
 #       if defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
+           || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)) \
            || defined(HPUX)
           if (mprotect(start_addr, len, PROT_NONE))
             ABORT("mprotect(PROT_NONE) failed");
