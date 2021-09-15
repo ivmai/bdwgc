@@ -2566,6 +2566,13 @@ void * os2_alloc(size_t bytes)
   }
 #endif /* HAIKU */
 
+#if (defined(USE_MUNMAP) || defined(MPROTECT_VDB)) && !defined(USE_WINALLOC)
+# define ABORT_ON_REMAP_FAIL(C_msg_prefix, start_addr, len) \
+        ABORT_ARG3(C_msg_prefix " failed", \
+                   " at %p (length %lu), errno= %d", \
+                   (void *)(start_addr), (unsigned long)(len), errno)
+#endif
+
 #ifdef USE_MUNMAP
 
 /* For now, this only works on Win32/WinCE and some Unix-like   */
@@ -2645,7 +2652,7 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
           /* with PROT_NONE seems to work fine.                         */
           /* On Linux, low RLIMIT_AS value may lead to mmap failure.    */
           if (mprotect(start_addr, len, PROT_NONE))
-            ABORT("mprotect(PROT_NONE) failed");
+            ABORT_ON_REMAP_FAIL("unmap: mprotect", start_addr, len);
 #       elif defined(EMSCRIPTEN)
           /* Nothing to do, mmap(PROT_NONE) is not supported and        */
           /* mprotect() is just a no-op.                                */
@@ -2654,8 +2661,10 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
                                MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
                                zero_fd, 0/* offset */);
 
+          if (EXPECT(MAP_FAILED == result, FALSE))
+            ABORT_ON_REMAP_FAIL("unmap: mmap", start_addr, len);
           if (result != (void *)start_addr)
-            ABORT("mmap(PROT_NONE) failed");
+            ABORT("unmap: mmap() result differs from start_addr");
 #         if defined(CPPCHECK) || defined(LINT2)
             /* Explicitly store the resource handle to a global variable. */
             GC_noop1((word)result);
@@ -2722,18 +2731,17 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
                                     | (GC_pages_executable ? PROT_EXEC : 0),
                                    MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
                                    zero_fd, 0 /* offset */);
+          if (EXPECT(MAP_FAILED == result, FALSE))
+            ABORT_ON_REMAP_FAIL("remap: mmap", start_addr, len);
           if (result != (void *)start_addr)
-            ABORT("mmap as mprotect failed");
+            ABORT("remap: mmap() result differs from start_addr");
 #         if defined(CPPCHECK) || defined(LINT2)
             GC_noop1((word)result);
 #         endif
 #       else
           if (mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
-                            | (GC_pages_executable ? PROT_EXEC : 0)) != 0) {
-            ABORT_ARG3("mprotect remapping failed",
-                       " at %p (length %lu), errcode= %d",
-                       (void *)start_addr, (unsigned long)len, errno);
-          }
+                            | (GC_pages_executable ? PROT_EXEC : 0)))
+            ABORT_ON_REMAP_FAIL("remap: mprotect", start_addr, len);
 #       endif /* !NACL */
       }
 #     undef IGNORE_PAGES_EXECUTABLE
@@ -3119,10 +3127,11 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         if (mprotect((caddr_t)(addr), (size_t)(len), \
                      PROT_READ | ((allow_write) ? PROT_WRITE : 0) \
                      | (GC_pages_executable ? PROT_EXEC : 0)) >= 0) { \
-        } else ABORT(GC_pages_executable ? \
-                        C_msg_prefix "mprotect executable page failed" \
-                                        " (probably disabled by OS)" : \
-                        C_msg_prefix "mprotect failed")
+        } else if (GC_pages_executable) { \
+            ABORT_ON_REMAP_FAIL(C_msg_prefix \
+                                    "mprotect vdb executable pages", \
+                                addr, len); \
+        } else ABORT_ON_REMAP_FAIL(C_msg_prefix "mprotect vdb", addr, len)
 #   undef IGNORE_PAGES_EXECUTABLE
 
 # else /* USE_WINALLOC */
