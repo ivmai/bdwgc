@@ -832,7 +832,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
     }
     if (ioctl(fd, PIOCNMAP, &needed_sz) < 0) {
         ABORT_ARG2("/proc PIOCNMAP ioctl failed",
-                   ": fd = %d, errno = %d", fd, errno);
+                   ": fd= %d, errno= %d", fd, errno);
     }
     if (needed_sz >= current_sz) {
         GC_scratch_recycle_no_gww(addr_map,
@@ -973,11 +973,12 @@ GC_INNER void GC_register_dynamic_libraries(void)
 # ifdef DEBUG_VIRTUALQUERY
   void GC_dump_meminfo(MEMORY_BASIC_INFORMATION *buf)
   {
-    GC_printf("BaseAddress = 0x%lx, AllocationBase = 0x%lx,"
-              " RegionSize = 0x%lx(%lu)\n", buf -> BaseAddress,
-              buf -> AllocationBase, buf -> RegionSize, buf -> RegionSize);
-    GC_printf("\tAllocationProtect = 0x%lx, State = 0x%lx, Protect = 0x%lx, "
-              "Type = 0x%lx\n", buf -> AllocationProtect, buf -> State,
+    GC_printf("BaseAddress= 0x%lx, AllocationBase= 0x%lx,"
+              " RegionSize= 0x%lx(%lu)\n",
+              buf -> BaseAddress, buf -> AllocationBase,
+              buf -> RegionSize, buf -> RegionSize);
+    GC_printf("\tAllocationProtect= 0x%lx, State= 0x%lx, Protect= 0x%lx, "
+              "Type= 0x%lx\n", buf -> AllocationProtect, buf -> State,
               buf -> Protect, buf -> Type);
   }
 # endif /* DEBUG_VIRTUALQUERY */
@@ -1106,10 +1107,10 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #     ifdef DL_VERBOSE
         GC_log_printf("---Module---\n");
-        GC_log_printf("Module ID\t = %16ld\n", moduleinfo.lmi_modid);
-        GC_log_printf("Count of regions = %16d\n", moduleinfo.lmi_nregion);
-        GC_log_printf("flags for module = %16lx\n", moduleinfo.lmi_flags);
-        GC_log_printf("module pathname\t = \"%s\"\n", moduleinfo.lmi_name);
+        GC_log_printf("Module ID: %ld\n", moduleinfo.lmi_modid);
+        GC_log_printf("Count of regions: %d\n", moduleinfo.lmi_nregion);
+        GC_log_printf("Flags for module: %016lx\n", moduleinfo.lmi_flags);
+        GC_log_printf("Module pathname: \"%s\"\n", moduleinfo.lmi_name);
 #     endif
 
       /* For each region in this module */
@@ -1126,14 +1127,12 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #         ifdef DL_VERBOSE
             GC_log_printf("--- Region ---\n");
-            GC_log_printf("Region number\t = %16ld\n",
-                          regioninfo.lri_region_no);
-            GC_log_printf("Protection flags = %016x\n", regioninfo.lri_prot);
-            GC_log_printf("Virtual address\t = %16p\n", regioninfo.lri_vaddr);
-            GC_log_printf("Mapped address\t = %16p\n",
-                          regioninfo.lri_mapaddr);
-            GC_log_printf("Region size\t = %16ld\n", regioninfo.lri_size);
-            GC_log_printf("Region name\t = \"%s\"\n", regioninfo.lri_name);
+            GC_log_printf("Region number: %ld\n", regioninfo.lri_region_no);
+            GC_log_printf("Protection flags: %016x\n", regioninfo.lri_prot);
+            GC_log_printf("Virtual address: %p\n", regioninfo.lri_vaddr);
+            GC_log_printf("Mapped address: %p\n", regioninfo.lri_mapaddr);
+            GC_log_printf("Region size: %ld\n", regioninfo.lri_size);
+            GC_log_printf("Region name: \"%s\"\n", regioninfo.lri_name);
 #         endif
 
           /* register region as a garbage collection root */
@@ -1185,15 +1184,14 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #     ifdef DL_VERBOSE
         GC_log_printf("---Shared library---\n");
-        GC_log_printf("\tfilename\t= \"%s\"\n", shl_desc->filename);
-        GC_log_printf("\tindex\t\t= %d\n", index);
-        GC_log_printf("\thandle\t\t= %08x\n",
-                      (unsigned long) shl_desc->handle);
-        GC_log_printf("\ttext seg.start\t= %08x\n", shl_desc->tstart);
-        GC_log_printf("\ttext seg.end\t= %08x\n", shl_desc->tend);
-        GC_log_printf("\tdata seg.start\t= %08x\n", shl_desc->dstart);
-        GC_log_printf("\tdata seg.end\t= %08x\n", shl_desc->dend);
-        GC_log_printf("\tref.count\t= %lu\n", shl_desc->ref_count);
+        GC_log_printf("filename= \"%s\"\n", shl_desc->filename);
+        GC_log_printf("index= %d\n", index);
+        GC_log_printf("handle= %08x\n", (unsigned long) shl_desc->handle);
+        GC_log_printf("text seg.start= %08x\n", shl_desc->tstart);
+        GC_log_printf("text seg.end= %08x\n", shl_desc->tend);
+        GC_log_printf("data seg.start= %08x\n", shl_desc->dstart);
+        GC_log_printf("data seg.end= %08x\n", shl_desc->dend);
+        GC_log_printf("ref.count= %lu\n", shl_desc->ref_count);
 #     endif
 
       /* register shared library's data segment as a garbage collection root */

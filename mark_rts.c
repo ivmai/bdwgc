@@ -64,7 +64,7 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
                   (void *)GC_static_roots[i].r_end,
                   GC_static_roots[i].r_tmp ? " (temporary)" : "");
     }
-    GC_printf("GC_root_size: %lu\n", (unsigned long)GC_root_size);
+    GC_printf("GC_root_size= %lu\n", (unsigned long)GC_root_size);
 
     if ((size = GC_compute_root_size()) != GC_root_size)
       GC_err_printf("GC_root_size incorrect!! Should be: %lu\n",

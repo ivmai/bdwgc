@@ -736,7 +736,7 @@ STATIC void GC_delete_thread(DWORD id)
     GC_vthread t = GC_lookup_thread_inner(id);
 
     if (0 == t) {
-      WARN("Removing nonexistent thread, id = %" WARN_PRIdPTR "\n", id);
+      WARN("Removing nonexistent thread, id= %" WARN_PRIdPTR "\n", id);
     } else {
       GC_delete_gc_thread_no_free(t);
     }
@@ -1690,7 +1690,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
                   || (word)tib->StackBase < (word)thread->stack_base)) {
             /* The coroutine stack is not within TIB stack.   */
             WARN("GetThreadContext might return stale register values"
-                 " including ESP=%p\n", sp);
+                 " including ESP= %p\n", sp);
             /* TODO: Because of WoW64 bug, there is no guarantee that   */
             /* sp really points to the stack top but, for now, we do    */
             /* our best as the TIB stack limit/base cannot be used      */
@@ -2157,7 +2157,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
           ABORT("sigfillset failed");
         if (pthread_sigmask(SIG_BLOCK, &set, &oldset) < 0) {
           WARN("pthread_sigmask set failed, no markers started,"
-               " errno = %" WARN_PRIdPTR "\n", errno);
+               " errno= %" WARN_PRIdPTR "\n", errno);
           GC_markers_m1 = 0;
           (void)pthread_attr_destroy(&attr);
           return;
@@ -2182,7 +2182,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #     ifndef NO_MARKER_SPECIAL_SIGMASK
         /* Restore previous signal mask.        */
         if (pthread_sigmask(SIG_SETMASK, &oldset, NULL) < 0) {
-          WARN("pthread_sigmask restore failed, errno = %" WARN_PRIdPTR "\n",
+          WARN("pthread_sigmask restore failed, errno= %" WARN_PRIdPTR "\n",
                errno);
         }
 #     endif

@@ -198,7 +198,7 @@ void *weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
       weakmap_unlock(wm, h);
       AO_fetch_and_add1(&stat_found);
 #     ifdef DEBUG_DISCLAIM_WEAKMAP
-        printf("Found %p, hash=%p\n", old_obj, (void *)(GC_word)h);
+        printf("Found %p, hash= %p\n", old_obj, (void *)(GC_word)h);
 #     endif
       return old_obj;
     }
@@ -224,7 +224,7 @@ void *weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
   weakmap_unlock(wm, h);
   AO_fetch_and_add1(&stat_added);
 # ifdef DEBUG_DISCLAIM_WEAKMAP
-    printf("Added %p, hash=%p\n", new_obj, (void *)(GC_word)h);
+    printf("Added %p, hash= %p\n", new_obj, (void *)(GC_word)h);
 # endif
   return new_obj;
 }
@@ -253,7 +253,7 @@ int GC_CALLBACK weakmap_disclaim(void *obj_base)
   if (weakmap_trylock(wm, h) != 0) {
     AO_fetch_and_add1(&stat_skip_locked);
 #   ifdef DEBUG_DISCLAIM_WEAKMAP
-      printf("Skipping locked %p, hash=%p\n", obj, (void *)(GC_word)h);
+      printf("Skipping locked %p, hash= %p\n", obj, (void *)(GC_word)h);
 #   endif
     return 1;
   }
@@ -261,7 +261,7 @@ int GC_CALLBACK weakmap_disclaim(void *obj_base)
     weakmap_unlock(wm, h);
     AO_fetch_and_add1(&stat_skip_marked);
 #   ifdef DEBUG_DISCLAIM_WEAKMAP
-      printf("Skipping marked %p, hash=%p\n", obj, (void *)(GC_word)h);
+      printf("Skipping marked %p, hash= %p\n", obj, (void *)(GC_word)h);
 #   endif
     return 1;
   }
@@ -269,7 +269,7 @@ int GC_CALLBACK weakmap_disclaim(void *obj_base)
   /* Remove obj from wm.        */
   AO_fetch_and_add1(&stat_removed);
 # ifdef DEBUG_DISCLAIM_WEAKMAP
-    printf("Removing %p, hash=%p\n", obj, (void *)(GC_word)h);
+    printf("Removing %p, hash= %p\n", obj, (void *)(GC_word)h);
 # endif
   *(GC_word *)obj_base |= INVALIDATE_FLAG;
   for (link = &wm->links[h % wm->capacity];; link = &(*link)->next) {
@@ -371,7 +371,7 @@ void pair_check_rec(struct pair *p, int line)
     if (p->cdr != NULL)
       checksum += p->cdr->checksum;
     if (p->checksum != checksum) {
-      fprintf(stderr, "Checksum failure for %p = (%p, %p) at %d\n",
+      fprintf(stderr, "Checksum failure for %p: (car= %p, cdr= %p) at %d\n",
               (void *)p, (void *)p->car, (void *)p->cdr, line);
       exit(70);
     }

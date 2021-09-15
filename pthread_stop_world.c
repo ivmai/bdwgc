@@ -745,7 +745,7 @@ GC_INNER void GC_push_all_stacks(void)
             IF_IA64(bs_lo = BACKING_STORE_BASE;)
         }
 #       ifdef DEBUG_THREADS
-          GC_log_printf("Stack for thread %p = [%p,%p)\n",
+          GC_log_printf("Stack for thread %p is [%p,%p)\n",
                         (void *)p->id, (void *)lo, (void *)hi);
 #       endif
         if (0 == lo) ABORT("GC_push_all_stacks: sp not set!");
@@ -769,7 +769,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       endif
 #       ifdef IA64
 #         ifdef DEBUG_THREADS
-            GC_log_printf("Reg stack for thread %p = [%p,%p)\n",
+            GC_log_printf("Reg stack for thread %p is [%p,%p)\n",
                           (void *)p->id, (void *)bs_lo, (void *)bs_hi);
 #         endif
           /* FIXME: This (if p->id==self) may add an unbounded number of */
@@ -875,7 +875,7 @@ STATIC int GC_suspend_all(void)
     unsigned long num_sleeps = 0;
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("pthread_stop_world: num_threads=%d\n",
+      GC_log_printf("pthread_stop_world: number of threads: %d\n",
                     GC_nacl_num_gc_threads - 1);
 #   endif
     GC_nacl_thread_parker = pthread_self();

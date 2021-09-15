@@ -107,7 +107,7 @@ int main(void)
                                 : GC_pthread_detach(t);
 
       if (code != 0) {
-        fprintf(stderr, "Thread %s failed %d\n",
+        fprintf(stderr, "Thread %s failed, errno= %d\n",
                 (i & 1) != 0 ? "join" : "detach", code);
         exit(2);
       }

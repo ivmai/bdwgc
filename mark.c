@@ -591,7 +591,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp)
 #   else
       GC_mark_stack_too_small = TRUE;
 #   endif
-    GC_COND_LOG_PRINTF("Mark stack overflow; current size = %lu entries\n",
+    GC_COND_LOG_PRINTF("Mark stack overflow; current size: %lu entries\n",
                        (unsigned long)GC_mark_stack_size);
     return(msp - GC_MARK_STACK_DISCARDS);
 }

@@ -344,7 +344,7 @@ static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
     int err = pthread_setname_np(pthread_self(), "GC-marker-%zu",
                                  (void*)(size_t)id);
     if (err != 0)
-      WARN("pthread_setname_np failed, errno = %" WARN_PRIdPTR "\n", err);
+      WARN("pthread_setname_np failed, errno= %" WARN_PRIdPTR "\n", err);
   }
 #elif defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) \
       || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
@@ -491,7 +491,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
 
       if (REAL_FUNC(pthread_sigmask)(SIG_BLOCK, &set, &oldset) < 0) {
         WARN("pthread_sigmask set failed, no markers started,"
-             " errno = %" WARN_PRIdPTR "\n", errno);
+             " errno= %" WARN_PRIdPTR "\n", errno);
         GC_markers_m1 = 0;
         (void)pthread_attr_destroy(&attr);
         return;
@@ -505,7 +505,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
     for (i = 0; i < available_markers_m1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
-        WARN("Marker thread creation failed, errno = %" WARN_PRIdPTR "\n",
+        WARN("Marker thread creation failed, errno= %" WARN_PRIdPTR "\n",
              errno);
         /* Don't try to create other marker threads.    */
         GC_markers_m1 = i;
@@ -516,7 +516,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
 #   ifndef NO_MARKER_SPECIAL_SIGMASK
       /* Restore previous signal mask.  */
       if (REAL_FUNC(pthread_sigmask)(SIG_SETMASK, &oldset, NULL) < 0) {
-        WARN("pthread_sigmask restore failed, errno = %" WARN_PRIdPTR "\n",
+        WARN("pthread_sigmask restore failed, errno= %" WARN_PRIdPTR "\n",
              errno);
       }
 #   endif
@@ -618,7 +618,7 @@ STATIC void GC_delete_thread(pthread_t id)
     GC_thread prev = NULL;
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Deleting thread %p, n_threads = %d\n",
+      GC_log_printf("Deleting thread %p, n_threads= %d\n",
                     (void *)id, GC_count_threads());
 #   endif
 
@@ -676,7 +676,7 @@ STATIC void GC_delete_gc_thread(GC_thread t)
     GC_INTERNAL_FREE(p);
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Deleted thread %p, n_threads = %d\n",
+      GC_log_printf("Deleted thread %p, n_threads= %d\n",
                     (void *)id, GC_count_threads());
 #   endif
 }
@@ -972,7 +972,7 @@ STATIC void GC_remove_all_threads_but_me(void)
     len = STAT_READ(f, stat_buf, sizeof(stat_buf)-1);
     /* Unlikely that we need to retry because of an incomplete read here. */
     if (len < 0) {
-      WARN("Failed to read /proc/stat, errno = %" WARN_PRIdPTR "\n", errno);
+      WARN("Failed to read /proc/stat, errno= %" WARN_PRIdPTR "\n", errno);
       close(f);
       return 1;
     }
@@ -1358,7 +1358,7 @@ GC_INNER void GC_thr_init(void)
       }
 #   endif
   }
-  GC_COND_LOG_PRINTF("Number of processors = %d\n", GC_nprocs);
+  GC_COND_LOG_PRINTF("Number of processors: %d\n", GC_nprocs);
 # ifdef PARALLEL_MARK
     if (available_markers_m1 <= 0) {
       /* Disable parallel marking.      */
@@ -1596,7 +1596,7 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef DEBUG_THREADS
       GC_log_printf(
-                "Unregistering thread %p, gc_thread = %p, n_threads = %d\n",
+                "Unregistering thread %p, gc_thread= %p, n_threads= %d\n",
                 (void *)me->id, (void *)me, GC_count_threads());
 #   endif
     GC_ASSERT(!(me -> flags & FINISHED));
@@ -1637,7 +1637,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     me = GC_lookup_thread(self);
 #   ifdef DEBUG_THREADS
         GC_log_printf(
-                "Called GC_unregister_my_thread on %p, gc_thread = %p\n",
+                "Called GC_unregister_my_thread on %p, gc_thread= %p\n",
                 (void *)self, (void *)me);
 #   endif
     GC_ASSERT(THREAD_EQUAL(me->id, self));
@@ -1658,7 +1658,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
     DCL_LOCK_STATE;
 
 #   ifdef DEBUG_THREADS
-        GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread = %p\n",
+        GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread= %p\n",
                       (void *)((GC_thread)arg)->id, arg);
 #   endif
     LOCK();
@@ -1904,7 +1904,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     DCL_LOCK_STATE;
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Starting thread %p, pid = %ld, sp = %p\n",
+      GC_log_printf("Starting thread %p, pid= %ld, sp= %p\n",
                     (void *)self, (long)getpid(), (void *)&arg);
 #   endif
     LOCK();
@@ -1916,7 +1916,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     UNLOCK();
     *pstart = si -> start_routine;
 #   ifdef DEBUG_THREADS
-      GC_log_printf("start_routine = %p\n", (void *)(signed_word)(*pstart));
+      GC_log_printf("start_routine= %p\n", (void *)(signed_word)(*pstart));
 #   endif
     *pstart_arg = si -> arg;
     sem_post(&(si -> registered));      /* Last action on si.   */

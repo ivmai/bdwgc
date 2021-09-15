@@ -114,7 +114,7 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     my_assert(cd == (void *)PTR_HASH(p));
     /* Check that obj and its car and cdr are not trashed. */
 #   ifdef DEBUG_DISCLAIM_DESTRUCT
-      printf("Destruct %p = (%p, %p)\n",
+      printf("Destruct %p: (car= %p, cdr= %p)\n",
              (void *)p, (void *)p->car, (void *)p->cdr);
 #   endif
     my_assert(GC_base(obj));
@@ -159,7 +159,7 @@ pair_new(pair_t car, pair_t cdr)
     GC_ptr_store_and_dirty(&p->cdr, cdr);
     GC_reachable_here(car);
 #   ifdef DEBUG_DISCLAIM_DESTRUCT
-      printf("Construct %p = (%p, %p)\n",
+      printf("Construct %p: (car= %p, cdr= %p)\n",
              (void *)p, (void *)p->car, (void *)p->cdr);
 #   endif
     return p;
@@ -251,7 +251,7 @@ int main(void)
     for (i = 0; i < NTHREADS; ++i) {
         int err = pthread_create(&th[i], NULL, test, NULL);
         if (err) {
-            fprintf(stderr, "Failed to create thread # %d: %s\n", i,
+            fprintf(stderr, "Failed to create thread #%d: %s\n", i,
                     strerror(err));
             exit(1);
         }
@@ -259,7 +259,7 @@ int main(void)
     for (i = 0; i < NTHREADS; ++i) {
         int err = pthread_join(th[i], NULL);
         if (err) {
-            fprintf(stderr, "Failed to join thread # %d: %s\n", i,
+            fprintf(stderr, "Failed to join thread #%d: %s\n", i,
                     strerror(err));
             exit(69);
         }

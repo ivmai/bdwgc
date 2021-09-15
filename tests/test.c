@@ -662,13 +662,13 @@ void check_marks_int_list(sexpr x)
                                 /* Explicitly specify types of the      */
                                 /* arguments to test the prototype.     */
         if (h == (HANDLE)NULL) {
-            GC_printf("Small thread creation failed %d\n",
-                          (int)GetLastError());
+            GC_printf("Small thread creation failed, errcode= %d\n",
+                      (int)GetLastError());
             FAIL;
         }
         if (WaitForSingleObject(h, INFINITE) != WAIT_OBJECT_0) {
-            GC_printf("Small thread wait failed %d\n",
-                          (int)GetLastError());
+            GC_printf("Small thread wait failed, errcode= %d\n",
+                      (int)GetLastError());
             FAIL;
         }
     }
@@ -1533,13 +1533,13 @@ void run_one_test(void)
             FAIL;
           }
           if (print_stats)
-            GC_log_printf("Forked child process, pid=%ld\n", (long)pid);
+            GC_log_printf("Forked child process, pid= %ld\n", (long)pid);
           if (waitpid(pid, &wstatus, 0) == -1) {
             GC_printf("Wait for child process failed\n");
             FAIL;
           }
           if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
-            GC_printf("Child process failed, pid=%ld, status=0x%x\n",
+            GC_printf("Child process failed, pid= %ld, status= 0x%x\n",
                       (long)pid, wstatus);
             FAIL;
           }
@@ -1548,7 +1548,7 @@ void run_one_test(void)
 
           GC_atfork_child();
           if (print_stats)
-            GC_log_printf("Started a child process, pid=%ld\n",
+            GC_log_printf("Started a child process, pid= %ld\n",
                           (long)child_pid);
 #         ifdef THREADS
 #           ifdef PARALLEL_MARK
@@ -1563,13 +1563,13 @@ void run_one_test(void)
 #         endif
 #         ifdef THREADS
             if (print_stats)
-              GC_log_printf("Starting tiny reverse test, pid=%ld\n",
+              GC_log_printf("Starting tiny reverse test, pid= %ld\n",
                             (long)child_pid);
             tiny_reverse_test(0);
             GC_gcollect();
 #         endif
           if (print_stats)
-            GC_log_printf("Finished a child process, pid=%ld\n",
+            GC_log_printf("Finished a child process, pid= %ld\n",
                           (long)child_pid);
           exit(0);
         }
@@ -2221,12 +2221,12 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
 # ifdef MSWINCE
     win_created_h = CreateEvent(NULL, FALSE, FALSE, NULL);
     if (win_created_h == (HANDLE)NULL) {
-      GC_printf("Event creation failed %d\n", (int)GetLastError());
+      GC_printf("Event creation failed, errcode= %d\n", (int)GetLastError());
       FAIL;
     }
     win_thr_h = CreateThread(NULL, 0, thr_window, 0, 0, &thread_id);
     if (win_thr_h == (HANDLE)NULL) {
-      GC_printf("Thread creation failed %d\n", (int)GetLastError());
+      GC_printf("Thread creation failed, errcode= %d\n", (int)GetLastError());
       FAIL;
     }
     if (WaitForSingleObject(win_created_h, INFINITE) != WAIT_OBJECT_0)
@@ -2238,7 +2238,7 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
    for (i = 0; i < NTHREADS; i++) {
     h[i] = CreateThread(NULL, 0, thr_run_one_test, 0, 0, &thread_id);
     if (h[i] == (HANDLE)NULL) {
-      GC_printf("Thread creation failed %d\n", (int)GetLastError());
+      GC_printf("Thread creation failed, errcode= %d\n", (int)GetLastError());
       FAIL;
     }
    }
@@ -2247,7 +2247,7 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
 # if NTHREADS > 0
    for (i = 0; i < NTHREADS; i++) {
     if (WaitForSingleObject(h[i], INFINITE) != WAIT_OBJECT_0) {
-      GC_printf("Thread wait failed %d\n", (int)GetLastError());
+      GC_printf("Thread wait failed, errcode= %d\n", (int)GetLastError());
       FAIL;
     }
    }
@@ -2350,14 +2350,14 @@ int main(void)
     GC_COND_INIT();
 
     if ((code = pthread_attr_init(&attr)) != 0) {
-      GC_printf("pthread_attr_init failed, error=%d\n", code);
+      GC_printf("pthread_attr_init failed, errno= %d\n", code);
       FAIL;
     }
 #   if defined(GC_IRIX_THREADS) || defined(GC_FREEBSD_THREADS) \
         || defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS) \
         || defined(GC_OPENBSD_THREADS)
         if ((code = pthread_attr_setstacksize(&attr, 1000 * 1024)) != 0) {
-          GC_printf("pthread_attr_setstacksize failed, error=%d\n", code);
+          GC_printf("pthread_attr_setstacksize failed, errno= %d\n", code);
           FAIL;
         }
 #   endif
@@ -2372,14 +2372,14 @@ int main(void)
         FAIL;
     GC_set_warn_proc(warn_proc);
     if ((code = pthread_key_create(&fl_key, 0)) != 0) {
-        GC_printf("Key creation failed %d\n", code);
+        GC_printf("Key creation failed, errno= %d\n", code);
         FAIL;
     }
     set_print_procs();
 #   if NTHREADS > 0
       for (i = 0; i < NTHREADS; ++i) {
         if ((code = pthread_create(th+i, &attr, thr_run_one_test, 0)) != 0) {
-          GC_printf("Thread %d creation failed %d\n", i, code);
+          GC_printf("Thread %d creation failed, errno= %d\n", i, code);
           FAIL;
         }
       }
@@ -2388,7 +2388,7 @@ int main(void)
 #   if NTHREADS > 0
       for (i = 0; i < NTHREADS; ++i) {
         if ((code = pthread_join(th[i], 0)) != 0) {
-          GC_printf("Thread %d failed %d\n", i, code);
+          GC_printf("Thread %d join failed, errno= %d\n", i, code);
           FAIL;
         }
       }

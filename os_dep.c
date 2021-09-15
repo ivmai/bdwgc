@@ -235,7 +235,7 @@ GC_INNER const char * GC_get_maps(void)
             f = open("/proc/self/maps", O_RDONLY);
             if (-1 == f)
               ABORT_ARG1("Cannot open /proc/self/maps",
-                         ": errno = %d", errno);
+                         ": errno= %d", errno);
 #           ifdef THREADS
               old_maps_size = maps_size;
 #           endif
@@ -244,7 +244,7 @@ GC_INNER const char * GC_get_maps(void)
                 result = GC_repeat_read(f, maps_buf, maps_buf_sz-1);
                 if (result <= 0) {
                   ABORT_ARG1("Failed to read /proc/self/maps",
-                             ": errno = %d", result < 0 ? errno : 0);
+                             ": errno= %d", result < 0 ? errno : 0);
                 }
                 maps_size += result;
             } while ((size_t)result == maps_buf_sz-1);
@@ -1159,11 +1159,11 @@ GC_INNER size_t GC_page_size = 0;
 
     f = open("/proc/self/stat", O_RDONLY);
     if (-1 == f)
-      ABORT_ARG1("Could not open /proc/self/stat", ": errno = %d", errno);
+      ABORT_ARG1("Could not open /proc/self/stat", ": errno= %d", errno);
     len = GC_repeat_read(f, stat_buf, sizeof(stat_buf));
     if (len < 0)
       ABORT_ARG1("Failed to read /proc/self/stat",
-                 ": errno = %d", errno);
+                 ": errno= %d", errno);
     close(f);
 
     /* Skip the required number of fields.  This number is hopefully    */
@@ -3725,7 +3725,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
         size_t new_size = 2 * GC_proc_buf_size;
         char *new_buf;
 
-        WARN("/proc read failed: GC_proc_buf_size = %" WARN_PRIdPTR "\n",
+        WARN("/proc read failed: GC_proc_buf_size= %" WARN_PRIdPTR "\n",
              (signed_word)GC_proc_buf_size);
         new_buf = GC_scratch_alloc(new_size);
         if (new_buf != 0) {
@@ -3979,8 +3979,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
              || pagemap_buf_fpos + (off_t)pagemap_buf_len != aligned_pos)
             && lseek(pagemap_fd, aligned_pos, SEEK_SET) == (off_t)(-1))
           ABORT_ARG2("Failed to lseek /proc/self/pagemap",
-                     ": offset = %lu, errno = %d",
-                     (unsigned long)fpos, errno);
+                     ": offset= %lu, errno= %d", (unsigned long)fpos, errno);
 
         /* How much to read at once?    */
         ofs = (size_t)(fpos - aligned_pos);
@@ -3999,7 +3998,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
           break;
         if (res <= 0)
           ABORT_ARG1("Failed to read /proc/self/pagemap",
-                     ": errno = %d", res < 0 ? errno : 0);
+                     ": errno= %d", res < 0 ? errno : 0);
         /* Retry (once) w/o page-alignment.     */
         aligned_pos = fpos;
       }
@@ -4110,7 +4109,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     res = write(clear_refs_fd, "4\n", 2);
     if (res != 2)
       ABORT_ARG1("Failed to write to /proc/self/clear_refs",
-                 ": errno = %d", res < 0 ? errno : 0);
+                 ": errno= %d", res < 0 ? errno : 0);
   }
 #endif /* SOFT_VDB */
 
