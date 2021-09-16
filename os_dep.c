@@ -1745,13 +1745,6 @@ void GC_register_data_segments(void)
           GetWriteWatch_func = 0;
         }
       }
-#     ifndef SMALL_CONFIG
-        if (!GetWriteWatch_func) {
-          GC_COND_LOG_PRINTF("Did not find a usable GetWriteWatch()\n");
-        } else {
-          GC_COND_LOG_PRINTF("Using GetWriteWatch()\n");
-        }
-#     endif
       done = TRUE;
     }
 
@@ -3412,11 +3405,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         ABORT("Page size not multiple of HBLKSIZE");
     }
 #   ifdef GWW_VDB
-      if (GC_gww_dirty_init())
+      if (GC_gww_dirty_init()) {
+        GC_COND_LOG_PRINTF("Using GetWriteWatch()\n");
         return TRUE;
+      }
 #   elif defined(SOFT_VDB)
-      if (soft_dirty_init())
+      if (soft_dirty_init()) {
+        GC_COND_LOG_PRINTF("Using soft-dirty bit feature\n");
         return TRUE;
+      }
 #   endif
 #   ifdef MSWIN32
       GC_old_segv_handler = SetUnhandledExceptionFilter(
