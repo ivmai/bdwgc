@@ -1250,7 +1250,7 @@ static void alloc_mark_stack(size_t n)
               size_t displ = 0;
 
               if (0 != page_offset) displ = GC_page_size - page_offset;
-              size = (size - displ) & ~(GC_page_size - 1);
+              size = size > displ ? (size - displ) & ~(GC_page_size - 1) : 0;
               if (size > 0) {
                 GC_add_to_heap((struct hblk *)
                                 ((word)GC_mark_stack + displ), (word)size);
