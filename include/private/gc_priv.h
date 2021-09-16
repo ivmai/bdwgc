@@ -679,17 +679,17 @@ EXTERN_C_BEGIN
 /* should match their format specifiers.                                */
 #define ABORT_ARG1(C_msg, C_fmt, arg1) \
                 MACRO_BLKSTMT_BEGIN \
-                  GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt "\n", arg1); \
+                  GC_ERRINFO_PRINTF(C_msg /* + */ C_fmt "\n", arg1); \
                   ABORT(C_msg); \
                 MACRO_BLKSTMT_END
 #define ABORT_ARG2(C_msg, C_fmt, arg1, arg2) \
                 MACRO_BLKSTMT_BEGIN \
-                  GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt "\n", arg1, arg2); \
+                  GC_ERRINFO_PRINTF(C_msg /* + */ C_fmt "\n", arg1, arg2); \
                   ABORT(C_msg); \
                 MACRO_BLKSTMT_END
 #define ABORT_ARG3(C_msg, C_fmt, arg1, arg2, arg3) \
                 MACRO_BLKSTMT_BEGIN \
-                  GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt "\n", \
+                  GC_ERRINFO_PRINTF(C_msg /* + */ C_fmt "\n", \
                                     arg1, arg2, arg3); \
                   ABORT(C_msg); \
                 MACRO_BLKSTMT_END
@@ -2519,6 +2519,12 @@ GC_API_PRIV void GC_log_printf(const char * format, ...)
   GC_INNER void GC_verbose_log_printf(const char *format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
 #endif /* GC_ANDROID_LOG */
+
+#if defined(SMALL_CONFIG) || defined(GC_ANDROID_LOG)
+# define GC_ERRINFO_PRINTF GC_INFOLOG_PRINTF
+#else
+# define GC_ERRINFO_PRINTF GC_log_printf
+#endif
 
 /* Convenient macros for GC_[verbose_]log_printf invocation.    */
 #define GC_COND_LOG_PRINTF \
