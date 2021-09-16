@@ -1263,7 +1263,7 @@ GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
     /* TODO: Assert correct memory flags if GWW_VDB */
     if (page_offset != 0)
       displ = GC_page_size - page_offset;
-    recycled_bytes = (bytes - displ) & ~(GC_page_size - 1);
+    recycled_bytes = bytes > displ ? (bytes - displ) & ~(GC_page_size-1) : 0;
     GC_COND_LOG_PRINTF("Recycle %lu/%lu scratch-allocated bytes at %p\n",
                        (unsigned long)recycled_bytes, (unsigned long)bytes,
                        ptr);
