@@ -1349,6 +1349,8 @@ static void add_to_heap_inner(struct hblk *p, size_t bytes)
 {
     hdr * phdr;
     word endp;
+    size_t old_capacity = 0;
+    void *old_heap_sects = NULL;
 #   ifdef GC_ASSERTIONS
       unsigned i;
 #   endif
@@ -1357,9 +1359,37 @@ static void add_to_heap_inner(struct hblk *p, size_t bytes)
     GC_ASSERT(bytes % HBLKSIZE == 0);
     GC_ASSERT(bytes > 0);
     GC_ASSERT(GC_all_nils != NULL);
-    if (GC_n_heap_sects >= MAX_HEAP_SECTS) {
-        ABORT("Too many heap sections: Increase MAXHINCR or MAX_HEAP_SECTS");
+
+    if (GC_n_heap_sects == GC_capacity_heap_sects) {
+      /* Allocate new GC_heap_sects with sufficient capacity.   */
+#     ifndef INITIAL_HEAP_SECTS
+#       define INITIAL_HEAP_SECTS 32
+#     endif
+      size_t new_capacity = GC_n_heap_sects > 0 ?
+                (size_t)GC_n_heap_sects * 2 : INITIAL_HEAP_SECTS;
+      void *new_heap_sects =
+                GC_scratch_alloc(new_capacity * sizeof(struct HeapSect));
+
+      if (EXPECT(NULL == new_heap_sects, FALSE)) {
+        /* Retry with smaller yet sufficient capacity.  */
+        new_capacity = (size_t)GC_n_heap_sects + INITIAL_HEAP_SECTS;
+        new_heap_sects =
+                GC_scratch_alloc(new_capacity * sizeof(struct HeapSect));
+        if (NULL == new_heap_sects)
+          ABORT("Insufficient memory for heap sections");
+      }
+      old_capacity = GC_capacity_heap_sects;
+      old_heap_sects = GC_heap_sects;
+      /* Transfer GC_heap_sects contents to the newly allocated array.  */
+      if (GC_n_heap_sects > 0)
+        BCOPY(old_heap_sects, new_heap_sects,
+              GC_n_heap_sects * sizeof(struct HeapSect));
+      GC_capacity_heap_sects = new_capacity;
+      GC_heap_sects = (struct HeapSect *)new_heap_sects;
+      GC_COND_LOG_PRINTF("Grew heap sections array to %lu elements\n",
+                         (unsigned long)new_capacity);
     }
+
     while ((word)p <= HBLKSIZE) {
         /* Can't handle memory near address zero. */
         ++p;
@@ -1420,6 +1450,18 @@ static void add_to_heap_inner(struct hblk *p, size_t bytes)
     }
     if ((word)p + bytes >= (word)GC_greatest_plausible_heap_addr) {
         GC_greatest_plausible_heap_addr = (void *)endp;
+    }
+
+    if (old_capacity > 0) {
+#     ifndef GWW_VDB
+        /* Recycling may call add_to_heap_inner() again but should not  */
+        /* cause resizing of GC_heap_sects.                             */
+        GC_scratch_recycle_no_gww(old_heap_sects,
+                                  old_capacity * sizeof(struct HeapSect));
+#     else
+        /* TODO: implement GWW-aware recycling as in alloc_mark_stack */
+        GC_noop1((word)old_heap_sects);
+#     endif
     }
 }
 
