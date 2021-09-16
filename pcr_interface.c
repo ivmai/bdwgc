@@ -150,6 +150,8 @@ PCR_GC_Setup(void)
     return PCR_ERes_okay;
 }
 
+extern GC_bool GC_quiet;
+
 PCR_ERes
 PCR_GC_Run(void)
 {
