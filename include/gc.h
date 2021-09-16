@@ -882,15 +882,20 @@ GC_API void GC_CALL GC_enable_incremental(void);
 /* Does not acquire the lock.                                           */
 GC_API int GC_CALL GC_is_incremental_mode(void);
 
-/* Does incremental mode write-protect pages?  Returns zero or  */
-/* more of the following, or'ed together:                       */
 #define GC_PROTECTS_POINTER_HEAP  1 /* May protect non-atomic objects.  */
 #define GC_PROTECTS_PTRFREE_HEAP  2
 #define GC_PROTECTS_STATIC_DATA   4 /* Currently never.                 */
 #define GC_PROTECTS_STACK         8 /* Probably impractical.            */
 
 #define GC_PROTECTS_NONE 0
-/* The collector is assumed to be initialized before this call.         */
+
+/* Does incremental mode write-protect pages?  Returns zero or  */
+/* more of the above GC_PROTECTS_*, or'ed together.             */
+/* The collector is assumed to be initialized before this call. */
+/* The result is not affected by GC_set_manual_vdb_allowed().   */
+/* Call of GC_enable_incremental() may change the result to     */
+/* GC_PROTECTS_NONE if some implementation is chosen at runtime */
+/* not needing to write-protect the pages.                      */
 GC_API int GC_CALL GC_incremental_protection_needs(void);
 
 /* Force start of incremental collection.  Acquires the GC lock.        */

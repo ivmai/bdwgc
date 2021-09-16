@@ -3038,6 +3038,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   }
 
 #elif defined(SOFT_VDB)
+  static int clear_refs_fd = -1;
 # define GC_GWW_AVAILABLE() (clear_refs_fd != -1)
 #else
 # define GC_GWW_AVAILABLE() FALSE
@@ -3484,7 +3485,11 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 GC_API int GC_CALL GC_incremental_protection_needs(void)
 {
     GC_ASSERT(GC_is_initialized);
-
+#   if defined(GWW_VDB) || defined(SOFT_VDB)
+      /* Only if the incremental mode is already switched on.   */
+      if (GC_GWW_AVAILABLE())
+        return GC_PROTECTS_NONE;
+#   endif
     if (GC_page_size == HBLKSIZE) {
         return GC_PROTECTS_POINTER_HEAP;
     } else {
@@ -3792,7 +3797,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
   typedef uint64_t pagemap_elem_t;
 
   static pagemap_elem_t *soft_vdb_buf;
-  static int clear_refs_fd = -1, pagemap_fd;
+  static int pagemap_fd;
 
   static GC_bool soft_dirty_open_files(void)
   {

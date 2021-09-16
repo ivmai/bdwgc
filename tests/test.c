@@ -1900,18 +1900,15 @@ void enable_incremental_mode(void)
 #     endif
       /* else */ {
         GC_printf("Switched to incremental mode\n");
-#       if defined(PROC_VDB) || defined(SOFT_VDB)
-          GC_printf("Reading dirty bits from /proc\n");
-#       elif defined(GWW_VDB)
-          GC_printf("Using GetWriteWatch-based implementation\n");
-#       endif
-#       ifdef MPROTECT_VDB
-#         if defined(GWW_VDB) || defined(SOFT_VDB)
-            GC_printf("Or emulating dirty bits with mprotect/signals\n");
-#         else
-            GC_printf("Emulating dirty bits with mprotect/signals\n");
+        if (GC_incremental_protection_needs() == GC_PROTECTS_NONE) {
+#         if defined(PROC_VDB) || defined(SOFT_VDB)
+            GC_printf("Reading dirty bits from /proc\n");
+#         elif defined(GWW_VDB)
+            GC_printf("Using GetWriteWatch-based implementation\n");
 #         endif
-#       endif /* MPROTECT_VDB */
+        } else {
+          GC_printf("Emulating dirty bits with mprotect/signals\n");
+        }
       }
     }
 # endif
