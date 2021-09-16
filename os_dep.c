@@ -3790,7 +3790,11 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     return f;
   }
 
-  static unsigned char *soft_vdb_buf;
+# include <stdint.h> /* for uint64_t */
+
+  typedef uint64_t pagemap_elem_t;
+
+  static pagemap_elem_t *soft_vdb_buf;
   static int clear_refs_fd = -1, pagemap_fd;
 
   static GC_bool soft_dirty_open_files(void)
@@ -3826,27 +3830,25 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 # endif /* CAN_HANDLE_FORK */
 
   /* The bit 55 of the 64-bit qword of pagemap file is the soft-dirty one. */
-# define PAGEMAP_ENTRY_SZ (64/8)
-# define PM_SOFTDIRTY_OFS (55/8)
-# define PM_SOFTDIRTY_MASK (1<<(55%8))
+# define PM_SOFTDIRTY_MASK ((pagemap_elem_t)1 << 55)
 
   static GC_bool detect_soft_dirty_supported(ptr_t vaddr)
   {
     off_t fpos;
-    char buf[PAGEMAP_ENTRY_SZ];
+    pagemap_elem_t buf[1];
 
     *vaddr = 1; /* make it dirty */
 
     /* Read the relevant PTE from the pagemap file.     */
     GC_ASSERT(GC_page_size != 0);
-    fpos = (off_t)((word)vaddr / GC_page_size * PAGEMAP_ENTRY_SZ);
+    fpos = (off_t)((word)vaddr / GC_page_size * sizeof(pagemap_elem_t));
     if (lseek(pagemap_fd, fpos, SEEK_SET) == (off_t)(-1))
       return FALSE;
     if (PROC_READ(pagemap_fd, buf, sizeof(buf)) != (int)sizeof(buf))
       return FALSE;
 
     /* Is the soft-dirty bit set? */
-    return (buf[PM_SOFTDIRTY_OFS] & PM_SOFTDIRTY_MASK) != 0;
+    return (buf[0] & PM_SOFTDIRTY_MASK) != 0;
   }
 
 # ifndef NO_SOFT_VDB_LINUX_VER_RUNTIME_CHECK
@@ -3899,7 +3901,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 #   endif
     if (!soft_dirty_open_files())
       return FALSE;
-    soft_vdb_buf = (unsigned char *)GC_scratch_alloc(VDB_BUF_SZ);
+    soft_vdb_buf = (pagemap_elem_t *)GC_scratch_alloc(VDB_BUF_SZ);
     if (NULL == soft_vdb_buf)
       ABORT("Insufficient space for /proc pagemap buffer");
     if (!detect_soft_dirty_supported((ptr_t)soft_vdb_buf)) {
@@ -3923,9 +3925,9 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
   /* bytes actually read, always bigger than 0 but never exceeds len;   */
   /* next_fpos_hint - the file position of the next bytes block to read */
   /* ahead if possible (0 means no information provided).               */
-  static const unsigned char *pagemap_buffered_read(size_t *pres,
-                                                    off_t fpos, size_t len,
-                                                    off_t next_fpos_hint)
+  static const pagemap_elem_t *pagemap_buffered_read(size_t *pres,
+                                                     off_t fpos, size_t len,
+                                                     off_t next_fpos_hint)
   {
     ssize_t res;
     size_t ofs;
@@ -3961,6 +3963,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
             count = VDB_BUF_SZ;
         }
 
+        GC_ASSERT(count % sizeof(pagemap_elem_t) == 0);
         res = PROC_READ(pagemap_fd, soft_vdb_buf, count);
         if (res > (ssize_t)ofs)
           break;
@@ -3977,8 +3980,9 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
       res -= (ssize_t)ofs;
     }
 
+    GC_ASSERT(ofs % sizeof(pagemap_elem_t) == 0);
     *pres = (size_t)res < len ? (size_t)res : len;
-    return &soft_vdb_buf[ofs];
+    return &soft_vdb_buf[ofs / sizeof(pagemap_elem_t)];
   }
 
   static void soft_set_grungy_pages(ptr_t vaddr /* start */, ptr_t limit,
@@ -3988,14 +3992,14 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     while ((word)vaddr < (word)limit) {
       size_t res;
       word limit_buf;
-      const unsigned char *bufp = pagemap_buffered_read(&res,
-                (off_t)((word)vaddr / GC_page_size * PAGEMAP_ENTRY_SZ),
+      const pagemap_elem_t *bufp = pagemap_buffered_read(&res,
+                (off_t)((word)vaddr / GC_page_size * sizeof(pagemap_elem_t)),
                 (size_t)((((word)limit - (word)vaddr + GC_page_size-1)
-                         / GC_page_size) * PAGEMAP_ENTRY_SZ),
+                         / GC_page_size) * sizeof(pagemap_elem_t)),
                 (off_t)((word)next_start_hint / GC_page_size
-                        * PAGEMAP_ENTRY_SZ));
+                        * sizeof(pagemap_elem_t)));
 
-      if ((res % PAGEMAP_ENTRY_SZ) != 0) {
+      if (res % sizeof(pagemap_elem_t) != 0) {
         /* Punt: */
         memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
         WARN("Incomplete read of pagemap, not multiple of entry size\n", 0);
@@ -4003,10 +4007,9 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
       }
 
       limit_buf = ((word)vaddr & ~(GC_page_size-1))
-                  + (res / PAGEMAP_ENTRY_SZ) * GC_page_size;
-      for (; (word)vaddr < limit_buf;
-           vaddr += GC_page_size, bufp += PAGEMAP_ENTRY_SZ)
-        if ((bufp[PM_SOFTDIRTY_OFS] & PM_SOFTDIRTY_MASK) != 0) {
+                  + (res / sizeof(pagemap_elem_t)) * GC_page_size;
+      for (; (word)vaddr < limit_buf; vaddr += GC_page_size, bufp++)
+        if ((*bufp & PM_SOFTDIRTY_MASK) != 0) {
           struct hblk * h;
           ptr_t next_vaddr = vaddr + GC_page_size;
 
