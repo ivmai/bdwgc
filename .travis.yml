@@ -190,7 +190,7 @@ jobs:
     arch: s390x
     compiler: clang-8
     env:
-    - CFLAGS_EXTRA="-O3"
+    - CFLAGS_EXTRA="-O3 -D NO_RETRY_SIGNALS"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
   - addons:
       apt:
