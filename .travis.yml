@@ -191,7 +191,7 @@ jobs:
     compiler: clang-8
     env:
     - CFLAGS_EXTRA="-O3"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplu"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
   - addons:
       apt:
         packages:
