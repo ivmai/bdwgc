@@ -2104,6 +2104,9 @@ EXTERN_C_BEGIN
 #       if !defined(REDIRECT_MALLOC)
 #         define MPROTECT_VDB
 #       endif
+#       ifndef SOFT_VDB
+#         define SOFT_VDB
+#       endif
 #   endif
 # endif /* S390 */
 
