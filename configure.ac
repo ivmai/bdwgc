@@ -588,11 +588,6 @@ case "$host" in
     AC_DEFINE([SOLARIS25_PROC_VDB_BUG_FIXED], 1,
               [See the comment in gcconfig.h.])
     ;;
- mips-*-*)
-    dnl AC_DEFINE(NO_EXECUTE_PERMISSION)
-    dnl This is now redundant, but it is also important for incremental GC
-    dnl performance under Irix.
-    ;;
  sparc-*-netbsd*)
     machdep="sparc_netbsd_mach_dep.lo"
     ;;
@@ -609,9 +604,6 @@ case "$host" in
     ;;
  ia64-*-*)
     machdep="ia64_save_regs_in_stack.lo"
-    ;;
- *-*-nacl*)
-    AC_DEFINE(NO_EXECUTE_PERMISSION)
     ;;
 esac
 AC_MSG_RESULT($machdep)
