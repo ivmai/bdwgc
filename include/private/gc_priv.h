@@ -1330,6 +1330,11 @@ typedef struct {
     GC_bool ed_continued;       /* next entry is continuation.  */
 } typed_ext_descr_t;
 
+struct HeapSect {
+    ptr_t hs_start;
+    size_t hs_bytes;
+};
+
 /* Lists of all heap blocks and free lists      */
 /* as well as other random data structures      */
 /* that should not be scanned by the            */
@@ -1602,10 +1607,7 @@ struct _GC_arrays {
     page_hash_table _written_pages;     /* Pages ever dirtied   */
 # endif
 # define GC_heap_sects GC_arrays._heap_sects
-  struct HeapSect {
-    ptr_t hs_start;
-    size_t hs_bytes;
-  } *_heap_sects;                       /* Heap segments potentially    */
+  struct HeapSect *_heap_sects;         /* Heap segments potentially    */
                                         /* client objects.              */
 # if defined(USE_PROC_FOR_LIBRARIES)
 #   define GC_our_memory GC_arrays._our_memory
