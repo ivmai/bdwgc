@@ -1165,13 +1165,10 @@ elif test "${enable_handle_fork}" != manual -a x$THREADS = xposix; then
     # If the option is omitted, pthread_atfork handlers are installed
     # by default for the targets where pthread_atfork is known to work.
     case "$host" in
-      *-*-android*)
-        # Android NDK does not provide pthread_atfork.
-        ;;
       *-*-darwin*)
         # The incremental mode conflicts with fork handling on Darwin.
         ;;
-      *-*-aix* | *-*-cygwin* | *-*-freebsd* | *-*-haiku* | \
+      *-*-aix* | *-*-android* | *-*-cygwin* | *-*-freebsd* | *-*-haiku* | \
       *-*-hpux11* | *-*-irix* | *-*-kfreebsd*-gnu | \
       *-*-*linux* | *-*-netbsd* | *-*-openbsd* | *-*-osf* | *-*-solaris*)
         AC_DEFINE(HANDLE_FORK)

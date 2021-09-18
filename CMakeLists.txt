@@ -192,8 +192,8 @@ if (CMAKE_USE_PTHREADS_INIT)
     message("Only on NetBSD 2.0 or later.")
     add_definitions("-D_PTHREADS")
   endif()
-  if (ANDROID OR MSYS) # ANDROID variable is defined by CMake v3.7.0+.
-    # Android NDK does not provide pthread_atfork.
+  if (MSYS)
+    # Does not provide process fork functionality.
   elseif (APPLE)
     # The incremental mode conflicts with fork handling (for now).
     # Thus, HANDLE_FORK is not defined.
