@@ -190,8 +190,6 @@ GC_oom_func GC_oom_fn = GC_default_oom_fn;
 # endif
 
 #elif !defined(HAVE_NO_FORK)
-
-  /* Same as above but with GC_CALL calling conventions.  */
   GC_API void GC_CALL GC_atfork_prepare(void)
   {
 #   ifdef THREADS
