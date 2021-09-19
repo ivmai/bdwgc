@@ -1,3 +1,19 @@
+2021-09-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* dyn_load.c [HAVE_DL_ITERATE_PHDR && PT_GNU_RELRO]
+	(GC_register_dynlib_callback): Round load_segs[j].end up to nearest
+	page boundary in the assertion; add comment.
+
+2021-09-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c (alloc_mark_stack): Set size (which is passed to
+	GC_add_to_heap) to 0 if GC_mark_stack_size*sizeof(GC_ms_entry) is
+	less than displ.
+
+2021-09-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* pcr_interface.c (GC_quiet): Declare as extern variable.
+
 2021-09-11  Ivan Maidanski <ivmai@mail.ru>
 
 	* headers.c (GC_scratch_alloc): Update GC_scratch_last_end_ptr even if
