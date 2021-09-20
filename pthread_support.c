@@ -1245,11 +1245,7 @@ GC_INNER void GC_thr_init(void)
     }
   }
 
-# ifndef GC_DARWIN_THREADS
-    GC_stop_init();
-# endif
-
-  /* Set GC_nprocs.     */
+  /* Set GC_nprocs and available_markers_m1.    */
   {
     char * nprocs_string = GETENV("GC_NPROCS");
     GC_nprocs = -1;
@@ -1298,6 +1294,43 @@ GC_INNER void GC_thr_init(void)
 #   endif
   }
   GC_COND_LOG_PRINTF("Number of processors = %d\n", GC_nprocs);
+
+# if defined(BASE_ATOMIC_OPS_EMULATED) && !defined(GC_DARWIN_THREADS) \
+     && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
+     && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+    /* Ensure the process is running on just one CPU core.      */
+    /* This is needed because the AO primitives emulated with   */
+    /* locks cannot be used inside signal handlers.             */
+    {
+      cpu_set_t mask;
+      int cpu_set_cnt = 0;
+      int cpu_lowest_set = 0;
+      int i = GC_nprocs > 1 ? GC_nprocs : 2; /* check at least 2 cores */
+
+      if (sched_getaffinity(0 /* current process */,
+                            sizeof(mask), &mask) == -1)
+        ABORT_ARG1("sched_getaffinity failed", ": errno= %d", errno);
+      while (i-- > 0)
+        if (CPU_ISSET(i, &mask)) {
+          cpu_lowest_set = i;
+          cpu_set_cnt++;
+        }
+      if (0 == cpu_set_cnt)
+        ABORT("sched_getaffinity returned empty mask");
+      if (cpu_set_cnt > 1) {
+        CPU_ZERO(&mask);
+        CPU_SET(cpu_lowest_set, &mask); /* select just one CPU */
+        if (sched_setaffinity(0, sizeof(mask), &mask) == -1)
+          ABORT_ARG1("sched_setaffinity failed", ": errno= %d", errno);
+        WARN("CPU affinity mask is set to %p\n", (word)1 << cpu_lowest_set);
+      }
+    }
+# endif /* BASE_ATOMIC_OPS_EMULATED */
+
+# ifndef GC_DARWIN_THREADS
+    GC_stop_init();
+# endif
+
 # ifdef PARALLEL_MARK
     if (available_markers_m1 <= 0) {
       /* Disable parallel marking.      */
