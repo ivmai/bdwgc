@@ -25,6 +25,20 @@ jobs:
         branch_pattern: master
         build_command_prepend: "./configure --enable-cplusplus --disable-shared --enable-single-obj-compilation"
         build_command: make -j check CFLAGS_EXTRA=-DLINT2
+  - addons:
+      apt:
+        packages:
+        - lcov
+    compiler: gcc
+    env:
+    - CONF_OPTIONS="--enable-gcov --enable-single-obj-compilation --enable-cplusplus --disable-shared --enable-gc-assertions"
+    - CFLAGS_EXTRA="-D USE_CUSTOM_SPECIFIC"
+    - CC_FOR_CHECK=g++
+    - MAKEFILE_TARGETS="all"
+    - MAKEFILE_TARGETS_CHECK="check"
+    - NO_CLONE_LIBATOMIC_OPS=true
+    - REPORT_COVERAGE=true
+    - TESTS_CUSTOM_RUN=true
   - env:
     - MAKEFILE_TARGETS="dist"
   - os: osx
@@ -366,20 +380,6 @@ jobs:
   - compiler: gcc
     env:
     - CONF_OPTIONS="--disable-parallel-mark --disable-thread-local-alloc --enable-gc-assertions --enable-cplusplus"
-  - addons:
-      apt:
-        packages:
-        - lcov
-    compiler: gcc
-    env:
-    - CONF_OPTIONS="--enable-gcov --enable-single-obj-compilation --enable-cplusplus --disable-shared --enable-gc-assertions"
-    - CFLAGS_EXTRA="-D USE_CUSTOM_SPECIFIC"
-    - CC_FOR_CHECK=g++
-    - MAKEFILE_TARGETS="all"
-    - MAKEFILE_TARGETS_CHECK="check"
-    - NO_CLONE_LIBATOMIC_OPS=true
-    - REPORT_COVERAGE=true
-    - TESTS_CUSTOM_RUN=true
   - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-gc-debug --enable-cplusplus"
