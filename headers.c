@@ -120,10 +120,12 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
     register ptr_t result = scratch_free_ptr;
 
     bytes = ROUNDUP_GRANULE_SIZE(bytes);
-    scratch_free_ptr += bytes;
-    if ((word)scratch_free_ptr <= (word)GC_scratch_end_ptr) {
+    GC_ASSERT((word)GC_scratch_end_ptr >= (word)result);
+    if (bytes <= (word)GC_scratch_end_ptr - (word)result) {
+        scratch_free_ptr = result + bytes;
         return(result);
     }
+
     {
         word bytes_to_get = MINHINCR * HBLKSIZE;
 
@@ -132,7 +134,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = (ptr_t)GET_MEM(bytes_to_get);
             GC_add_to_our_memory(result, bytes_to_get);
-            scratch_free_ptr -= bytes;
+            /* No update of scratch free area pointer; get memory directly. */
             if (result != NULL) {
                 GC_scratch_last_end_ptr = result + bytes;
             }
@@ -144,7 +146,6 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
         GC_add_to_our_memory(result, bytes_to_get);
         if (result == 0) {
             WARN("Out of memory - trying to allocate less\n", 0);
-            scratch_free_ptr -= bytes;
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = (ptr_t)GET_MEM(bytes_to_get);
             GC_add_to_our_memory(result, bytes_to_get);
