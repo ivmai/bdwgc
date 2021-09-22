@@ -342,13 +342,13 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
       /* beginning of object.  If so, it is valid, and we are fine.     */
       GC_ASSERT(gran_displ <= HBLK_OBJS(hhdr -> hb_sz));
 #   endif /* MARK_BIT_PER_OBJ */
-    TRACE(source, GC_log_printf("GC #%u: passed validity tests\n",
-                                (unsigned)GC_gc_no));
+    TRACE(source, GC_log_printf("GC #%lu: passed validity tests\n",
+                                (unsigned long)GC_gc_no));
     SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ); /* contains "break" */
-    TRACE(source, GC_log_printf("GC #%u: previously unmarked\n",
-                                (unsigned)GC_gc_no));
-    TRACE_TARGET(base, GC_log_printf("GC #%u: marking %p from %p instead\n",
-                                     (unsigned)GC_gc_no, (void *)base,
+    TRACE(source, GC_log_printf("GC #%lu: previously unmarked\n",
+                                (unsigned long)GC_gc_no));
+    TRACE_TARGET(base, GC_log_printf("GC #%lu: marking %p from %p instead\n",
+                                     (unsigned long)GC_gc_no, (void *)base,
                                      (void *)source));
     INCR_MARKS(hhdr);
     GC_STORE_BACK_PTR(source, base);

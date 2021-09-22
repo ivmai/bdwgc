@@ -670,9 +670,9 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #             ifdef ENABLE_TRACE
                 if ((word)GC_trace_addr >= (word)current_p
                     && (word)GC_trace_addr < (word)(current_p + descr)) {
-                  GC_log_printf("GC #%u: large section; start %p, len %lu,"
+                  GC_log_printf("GC #%lu: large section; start %p, len %lu,"
                                 " splitting (parallel) at %p\n",
-                                (unsigned)GC_gc_no, (void *)current_p,
+                                (unsigned long)GC_gc_no, (void *)current_p,
                                 (unsigned long)descr,
                                 (void *)(current_p + new_size));
                 }
@@ -689,9 +689,9 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #         ifdef ENABLE_TRACE
             if ((word)GC_trace_addr >= (word)current_p
                 && (word)GC_trace_addr < (word)(current_p + descr)) {
-              GC_log_printf("GC #%u: large section; start %p, len %lu,"
+              GC_log_printf("GC #%lu: large section; start %p, len %lu,"
                             " splitting at %p\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (unsigned long)descr, (void *)limit);
             }
 #         endif
@@ -705,8 +705,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             if ((word)GC_trace_addr >= (word)current_p
                 && (word)GC_trace_addr < (word)(current_p
                                                 + WORDS_TO_BYTES(WORDSZ-2))) {
-              GC_log_printf("GC #%u: tracing from %p bitmap descr %lu\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+              GC_log_printf("GC #%lu: tracing from %p bitmap descr %lu\n",
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (unsigned long)descr);
             }
 #         endif /* ENABLE_TRACE */
@@ -720,8 +720,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                 PREFETCH((ptr_t)current);
 #               ifdef ENABLE_TRACE
                   if (GC_trace_addr == current_p) {
-                    GC_log_printf("GC #%u: considering(3) %p -> %p\n",
-                                  (unsigned)GC_gc_no, (void *)current_p,
+                    GC_log_printf("GC #%lu: considering(3) %p -> %p\n",
+                                  (unsigned long)GC_gc_no, (void *)current_p,
                                   (void *)current);
                   }
 #               endif /* ENABLE_TRACE */
@@ -739,8 +739,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             if ((word)GC_trace_addr >= (word)current_p
                 && GC_base(current_p) != 0
                 && GC_base(current_p) == GC_base(GC_trace_addr)) {
-              GC_log_printf("GC #%u: tracing from %p, proc descr %lu\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+              GC_log_printf("GC #%lu: tracing from %p, proc descr %lu\n",
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (unsigned long)descr);
             }
 #         endif /* ENABLE_TRACE */
@@ -789,8 +789,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #     ifdef ENABLE_TRACE
         if ((word)GC_trace_addr >= (word)current_p
             && (word)GC_trace_addr < (word)(current_p + descr)) {
-          GC_log_printf("GC #%u: small object; start %p, len %lu\n",
-                        (unsigned)GC_gc_no, (void *)current_p,
+          GC_log_printf("GC #%lu: small object; start %p, len %lu\n",
+                        (unsigned long)GC_gc_no, (void *)current_p,
                         (unsigned long)descr);
         }
 #     endif
@@ -849,8 +849,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           PREFETCH((ptr_t)current);
 #         ifdef ENABLE_TRACE
             if (GC_trace_addr == current_p) {
-              GC_log_printf("GC #%u: considering(1) %p -> %p\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+              GC_log_printf("GC #%lu: considering(1) %p -> %p\n",
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (void *)current);
             }
 #         endif /* ENABLE_TRACE */
@@ -866,8 +866,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         /* validity test.                                               */
 #       ifdef ENABLE_TRACE
             if (GC_trace_addr == current_p) {
-              GC_log_printf("GC #%u: considering(2) %p -> %p\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+              GC_log_printf("GC #%lu: considering(2) %p -> %p\n",
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (void *)deferred);
             }
 #       endif /* ENABLE_TRACE */
