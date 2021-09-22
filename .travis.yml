@@ -67,11 +67,12 @@ jobs:
   - addons:
       apt:
         packages:
-        - clang-8
+        - clang-12
         sources:
         - ubuntu-toolchain-r-test
     arch: arm64
-    compiler: clang-8
+    compiler: clang-12
+    dist: focal
     env:
     - CFLAGS_EXTRA="-O3"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --disable-shared"
@@ -117,11 +118,12 @@ jobs:
   - addons:
       apt:
         packages:
-        - clang-8
+        - clang-12
         sources:
         - ubuntu-toolchain-r-test
     arch: arm64
-    compiler: clang-8
+    compiler: clang-12
+    dist: focal
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory,undefined -fno-omit-frame-pointer"
@@ -146,11 +148,12 @@ jobs:
   - addons:
       apt:
         packages:
-        - clang-8
+        - clang-12
         sources:
         - ubuntu-toolchain-r-test
     arch: ppc64le
-    compiler: clang-8
+    compiler: clang-12
+    dist: focal
     env:
     - CFLAGS_EXTRA="-O3"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-static"
@@ -171,11 +174,12 @@ jobs:
   - addons:
       apt:
         packages:
-        - clang-8
+        - clang-12
         sources:
         - ubuntu-toolchain-r-test
     arch: ppc64le
-    compiler: clang-8
+    compiler: clang-12
+    dist: focal
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory,undefined -fno-omit-frame-pointer"
@@ -200,11 +204,12 @@ jobs:
   - addons:
       apt:
         packages:
-        - clang-8
+        - clang-12
         sources:
         - ubuntu-toolchain-r-test
     arch: s390x
-    compiler: clang-8
+    compiler: clang-12
+    dist: focal
     env:
     - CFLAGS_EXTRA="-O3 -D NO_RETRY_SIGNALS"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
