@@ -664,6 +664,8 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
       unsigned len;
       DWORD nBytesRead;
       TCHAR path[_MAX_PATH + 0x10]; /* buffer for path + ext */
+      size_t bytes_to_get;
+
       len = (unsigned)GetModuleFileName(NULL /* hModule */, path,
                                         _MAX_PATH + 1);
       /* If GetModuleFileName() has failed then len is 0. */
@@ -685,11 +687,13 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
       /* At this execution point, GC_setpagesize() and GC_init_win32()  */
       /* must already be called (for GET_MEM() to work correctly).      */
       GC_ASSERT(GC_page_size != 0);
-      content = (char *)GET_MEM(ROUNDUP_PAGESIZE_IF_MMAP((size_t)len + 1));
+      bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP((size_t)len + 1);
+      content = (char *)GET_MEM(bytes_to_get);
       if (content == NULL) {
         CloseHandle(hFile);
         return; /* allocation failure */
       }
+      GC_add_to_our_memory(content, bytes_to_get);
       ofs = 0;
       nBytesRead = (DWORD)-1L;
           /* Last ReadFile() call should clear nBytesRead on success. */
@@ -699,8 +703,10 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
           break;
       }
       CloseHandle(hFile);
-      if (ofs != len || nBytesRead != 0)
+      if (ofs != len || nBytesRead != 0) {
+        /* TODO: recycle content */
         return; /* read operation is failed - ignoring the file content */
+      }
       content[ofs] = '\0';
       while (ofs-- > 0) {
        if (content[ofs] == '\r' || content[ofs] == '\n')
