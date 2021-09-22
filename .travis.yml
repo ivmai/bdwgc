@@ -79,11 +79,12 @@ jobs:
   - addons:
       apt:
         packages:
-        - gcc-9
+        - gcc-11
         sources:
         - ubuntu-toolchain-r-test
     arch: arm64
-    compiler: gcc-9
+    compiler: gcc-11
+    dist: bionic
     env:
     - CFLAGS_EXTRA="-O3 -march=native"
     - CONF_OPTIONS="--enable-cplusplus --disable-gcj-support"
@@ -157,11 +158,12 @@ jobs:
   - addons:
       apt:
         packages:
-        - gcc-9
+        - gcc-11
         sources:
         - ubuntu-toolchain-r-test
     arch: ppc64le
-    compiler: gcc-9
+    compiler: gcc-11
+    dist: bionic
     env:
     - CFLAGS_EXTRA="-O3 -D NO_MPROTECT_VDB"
     - CONF_OPTIONS="--enable-cplusplus"
@@ -209,11 +211,12 @@ jobs:
   - addons:
       apt:
         packages:
-        - gcc-9
+        - gcc-11
         sources:
         - ubuntu-toolchain-r-test
     arch: s390x
-    compiler: gcc-9
+    compiler: gcc-11
+    dist: bionic
     env:
     - CFLAGS_EXTRA="-O3"
     - CONF_OPTIONS="--enable-cplusplus --disable-shared"
@@ -250,6 +253,18 @@ jobs:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check cord/de"
     - MAKE_NPROC=8
+  - addons:
+      apt:
+        packages:
+        - gcc-11
+        sources:
+        - ubuntu-toolchain-r-test
+    compiler: gcc-11
+    dist: bionic
+    env:
+    - CFLAGS_EXTRA="-O3 -march=native"
+    - CONF_OPTIONS="--enable-cplusplus"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-static"
