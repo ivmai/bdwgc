@@ -2261,9 +2261,8 @@ GC_INNER hdr * GC_find_header(ptr_t h);
 #ifdef USE_PROC_FOR_LIBRARIES
   GC_INNER void GC_add_to_our_memory(ptr_t p, size_t bytes);
                         /* Add a chunk to GC_our_memory.        */
-                        /* If p == 0, do nothing.               */
 #else
-# define GC_add_to_our_memory(p, bytes)
+# define GC_add_to_our_memory(p, bytes) ((void)(p), (void)(bytes))
 #endif
 
 GC_INNER void GC_print_all_errors(void);

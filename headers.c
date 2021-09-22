@@ -120,34 +120,37 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
         if (bytes >= MINHINCR * HBLKSIZE) {
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = (ptr_t)GET_MEM(bytes_to_get);
-            GC_add_to_our_memory(result, bytes_to_get);
-            /* No update of scratch free area pointer; get memory directly. */
-#           ifdef USE_SCRATCH_LAST_END_PTR
-              if (result != NULL) {
+            if (result != NULL) {
+              GC_add_to_our_memory(result, bytes_to_get);
+              /* No update of scratch free area pointer;        */
+              /* get memory directly.                           */
+#             ifdef USE_SCRATCH_LAST_END_PTR
                 /* Update end point of last obtained area (needed only  */
                 /* by GC_register_dynamic_libraries for some targets).  */
                 GC_scratch_last_end_ptr = result + bytes;
-              }
-#           endif
+#             endif
+            }
             return result;
         }
 
         bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(MINHINCR * HBLKSIZE);
                                                 /* round up for safety */
         result = (ptr_t)GET_MEM(bytes_to_get);
-        GC_add_to_our_memory(result, bytes_to_get);
-        if (NULL == result) {
+        if (EXPECT(NULL == result, FALSE)) {
             WARN("Out of memory - trying to allocate requested amount"
                  " (%" WARN_PRIdPTR " bytes)...\n", (word)bytes);
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = (ptr_t)GET_MEM(bytes_to_get);
-            GC_add_to_our_memory(result, bytes_to_get);
-#           ifdef USE_SCRATCH_LAST_END_PTR
-              if (result != NULL)
+            if (result != NULL) {
+              GC_add_to_our_memory(result, bytes_to_get);
+#             ifdef USE_SCRATCH_LAST_END_PTR
                 GC_scratch_last_end_ptr = result + bytes;
-#           endif
+#             endif
+            }
             return result;
         }
+
+        GC_add_to_our_memory(result, bytes_to_get);
         /* TODO: some amount of unallocated space may remain unused forever */
         /* Update scratch area pointers and retry.      */
         GC_scratch_free_ptr = result;

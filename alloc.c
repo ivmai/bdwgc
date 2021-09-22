@@ -1334,7 +1334,7 @@ GC_API void GC_CALL GC_gcollect_and_unmap(void)
   /* Defined to do nothing if USE_PROC_FOR_LIBRARIES not set.       */
   GC_INNER void GC_add_to_our_memory(ptr_t p, size_t bytes)
   {
-    if (0 == p) return;
+    GC_ASSERT(p != NULL);
     if (GC_n_memory >= MAX_HEAP_SECTS)
       ABORT("Too many GC-allocated memory sections: Increase MAX_HEAP_SECTS");
     GC_our_memory[GC_n_memory].hs_start = p;
@@ -1555,12 +1555,12 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
         return(FALSE);
     }
     space = GET_MEM(bytes);
-    GC_add_to_our_memory((ptr_t)space, bytes);
-    if (space == 0) {
+    if (EXPECT(NULL == space, FALSE)) {
         WARN("Failed to expand heap by %" WARN_PRIdPTR " bytes\n",
              (word)bytes);
         return(FALSE);
     }
+    GC_add_to_our_memory((ptr_t)space, bytes);
     GC_INFOLOG_PRINTF("Grow heap to %lu KiB after %lu bytes allocated\n",
                       TO_KiB_UL(GC_heapsize + (word)bytes),
                       (unsigned long)GC_bytes_allocd);

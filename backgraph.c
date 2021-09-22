@@ -148,8 +148,9 @@ static void push_in_progress(ptr_t p)
         BCOPY(in_progress_space, new_in_progress_space,
               n_in_progress * sizeof(ptr_t));
     }
-    GC_add_to_our_memory((ptr_t)new_in_progress_space,
-                         in_progress_size * sizeof(ptr_t));
+    if (EXPECT(new_in_progress_space != NULL, TRUE))
+      GC_add_to_our_memory((ptr_t)new_in_progress_space,
+                           in_progress_size * sizeof(ptr_t));
 #   ifndef GWW_VDB
       GC_scratch_recycle_no_gww(in_progress_space,
                                 n_in_progress * sizeof(ptr_t));
