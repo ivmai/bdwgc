@@ -1297,7 +1297,7 @@ typedef struct GC_ms_entry {
                         /* as described in gc_mark.h.                   */
 } mse;
 
-typedef int mark_state_t;   /* Current state of marking, as follows:    */
+typedef int mark_state_t;   /* Current state of marking.                */
                             /* Used to remember where we are during     */
                             /* concurrent marking.                      */
 

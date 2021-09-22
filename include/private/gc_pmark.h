@@ -440,6 +440,8 @@ GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
     } \
   } while (0)
 
+                                /* Current state of marking, as follows.*/
+
                                 /* We say something is dirty if it was  */
                                 /* written since the last time we       */
                                 /* retrieved dirty bits.  We say it's   */
