@@ -1374,6 +1374,8 @@ struct _GC_arrays {
   word _bytes_allocd_before_gc;
                 /* Number of bytes allocated before this        */
                 /* collection cycle.                            */
+# define GC_our_mem_bytes GC_arrays._our_mem_bytes
+  word _our_mem_bytes;
 # ifndef SEPARATE_GLOBALS
 #   define GC_bytes_allocd GC_arrays._bytes_allocd
     word _bytes_allocd;
@@ -2262,7 +2264,8 @@ GC_INNER hdr * GC_find_header(ptr_t h);
   GC_INNER void GC_add_to_our_memory(ptr_t p, size_t bytes);
                         /* Add a chunk to GC_our_memory.        */
 #else
-# define GC_add_to_our_memory(p, bytes) ((void)(p), (void)(bytes))
+# define GC_add_to_our_memory(p, bytes) \
+                (GC_our_mem_bytes += (bytes), (void)(p))
 #endif
 
 GC_INNER void GC_print_all_errors(void);

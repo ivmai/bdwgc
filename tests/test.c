@@ -1830,6 +1830,14 @@ void check_heap_stats(void)
             (unsigned long)max_heap_sz);
         FAIL;
     }
+#   ifdef USE_MUNMAP
+      GC_printf("Obtained %lu bytes from OS (of which %lu bytes unmapped)\n",
+                (unsigned long)GC_get_obtained_from_os_bytes(),
+                (unsigned long)GC_get_unmapped_bytes());
+#   else
+      GC_printf("Obtained %lu bytes from OS\n",
+                (unsigned long)GC_get_obtained_from_os_bytes());
+#   endif
     GC_printf("Final number of reachable objects is %u\n", obj_count);
 
 #   ifndef GC_GET_HEAP_USAGE_NOT_NEEDED

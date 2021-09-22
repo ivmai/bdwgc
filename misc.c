@@ -482,6 +482,11 @@ GC_API size_t GC_CALL GC_get_heap_size(void)
     return (size_t)(GC_heapsize - GC_unmapped_bytes);
 }
 
+GC_API size_t GC_CALL GC_get_obtained_from_os_bytes(void)
+{
+    return (size_t)GC_our_mem_bytes;
+}
+
 GC_API size_t GC_CALL GC_get_free_bytes(void)
 {
     /* ignore the memory space returned to OS */
@@ -556,6 +561,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
                                         (word)GC_bytes_found : 0;
     pstats->reclaimed_bytes_before_gc = GC_reclaimed_bytes_before_gc;
     pstats->expl_freed_bytes_since_gc = GC_bytes_freed; /* since gc-7.7 */
+    pstats->obtained_from_os_bytes = GC_our_mem_bytes; /* since gc-8.2 */
   }
 
 # include <string.h> /* for memset() */

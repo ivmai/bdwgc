@@ -729,7 +729,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void);
 /* This getter remains lock-free (unsynchronized) for compatibility     */
 /* reason since some existing clients call it from a GC callback        */
 /* holding the allocator lock.  (This API function and the following    */
-/* four ones below were made thread-safe in GC v7.2alpha1 and          */
+/* four ones below were made thread-safe in GC v7.2alpha1 and           */
 /* reverted back in v7.2alpha7 for the reason described.)               */
 GC_API size_t GC_CALL GC_get_heap_size(void);
 
@@ -757,6 +757,10 @@ GC_API size_t GC_CALL GC_get_expl_freed_bytes_since_gc(void);
 /* Never decreases, except due to wrapping.  This is an unsynchronized  */
 /* getter (see GC_get_heap_size comment regarding thread-safety).       */
 GC_API size_t GC_CALL GC_get_total_bytes(void);
+
+/* Return the total number of bytes obtained from OS.  Includes the     */
+/* unmapped memory.  Never decreases.  It is an unsynchronized getter.  */
+GC_API size_t GC_CALL GC_get_obtained_from_os_bytes(void);
 
 /* Return the heap usage information.  This is a thread-safe (atomic)   */
 /* alternative for the five above getters.   (This function acquires    */
@@ -808,6 +812,8 @@ struct GC_prof_stats_s {
   GC_word expl_freed_bytes_since_gc;
             /* Number of bytes freed explicitly since the recent GC.    */
             /* Same as returned by GC_get_expl_freed_bytes_since_gc().  */
+  GC_word obtained_from_os_bytes;
+            /* Total amount of memory obtained from OS, in bytes.       */
 };
 
 /* Atomically get GC statistics (various global counters).  Clients     */

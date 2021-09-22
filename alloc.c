@@ -917,11 +917,17 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         }
 
     GC_gc_no++;
-    GC_DBGLOG_PRINTF("GC #%lu freed %ld bytes, heap %lu KiB"
-                     IF_USE_MUNMAP(" (+ %lu KiB unmapped)") "\n",
+#   ifdef USE_MUNMAP
+      GC_ASSERT(GC_heapsize >= GC_unmapped_bytes);
+#   endif
+    GC_ASSERT(GC_our_mem_bytes >= GC_heapsize);
+    GC_DBGLOG_PRINTF("GC #%lu freed %ld bytes, heap %lu KiB ("
+                     IF_USE_MUNMAP("+ %lu KiB unmapped ")
+                     "+ %lu KiB internal)\n",
                      (unsigned long)GC_gc_no, (long)GC_bytes_found,
                      TO_KiB_UL(GC_heapsize - GC_unmapped_bytes) /*, */
-                     COMMA_IF_USE_MUNMAP(TO_KiB_UL(GC_unmapped_bytes)));
+                     COMMA_IF_USE_MUNMAP(TO_KiB_UL(GC_unmapped_bytes)),
+                     TO_KiB_UL(GC_our_mem_bytes - GC_heapsize));
 
     /* Check all debugged objects for consistency */
     if (GC_debugging_started) {
@@ -1331,7 +1337,6 @@ GC_API void GC_CALL GC_gcollect_and_unmap(void)
 
 #ifdef USE_PROC_FOR_LIBRARIES
   /* Add HBLKSIZE aligned, GET_MEM-generated block to GC_our_memory. */
-  /* Defined to do nothing if USE_PROC_FOR_LIBRARIES not set.       */
   GC_INNER void GC_add_to_our_memory(ptr_t p, size_t bytes)
   {
     GC_ASSERT(p != NULL);
@@ -1340,6 +1345,7 @@ GC_API void GC_CALL GC_gcollect_and_unmap(void)
     GC_our_memory[GC_n_memory].hs_start = p;
     GC_our_memory[GC_n_memory].hs_bytes = bytes;
     GC_n_memory++;
+    GC_our_mem_bytes += bytes;
   }
 #endif
 
