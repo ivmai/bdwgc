@@ -888,7 +888,8 @@ EXTERN_C_BEGIN
      && !(defined(POWERPC) && defined(DARWIN)) /* for MacOS X 10.3.9 */ \
      && !defined(RTEMS) \
      && !defined(__ARMCC_VERSION) /* does not exist in armcc gnu emu */ \
-     && !defined(__clang__) /* since no-op in clang (3.0) */
+     && (!defined(__clang__) \
+         || (GC_CLANG_PREREQ(8, 0) && defined(HOST_ANDROID)))
 #   define HAVE_BUILTIN_UNWIND_INIT
 # endif
 
