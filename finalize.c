@@ -600,29 +600,14 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 
 /* Possible finalization_marker procedures.  Note that mark stack       */
 /* overflow is handled by the caller, and is not a disaster.            */
+#if defined(_MSC_VER) && defined(I386)
+  GC_ATTR_NOINLINE
+  /* Otherwise some optimizer bug is tickled in VC for X86 (v19, at least). */
+#endif
 STATIC void GC_normal_finalize_mark_proc(ptr_t p)
 {
-# if defined(_MSC_VER) && defined(I386)
-    hdr * hhdr = HDR(p);
-    /* This is a manually inlined variant of GC_push_obj().  Otherwise  */
-    /* some optimizer bug is tickled in VC for X86 (v19, at least).     */
-#   define mark_stack_top GC_mark_stack_top
-    mse * mark_stack_limit = GC_mark_stack + GC_mark_stack_size;
-    word descr = hhdr -> hb_descr;
-
-    if (descr != 0) {
-      mark_stack_top++;
-      if ((word)mark_stack_top >= (word)mark_stack_limit) {
-        mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top);
-      }
-      mark_stack_top -> mse_start = p;
-      mark_stack_top -> mse_descr.w = descr;
-    }
-#   undef mark_stack_top
-# else
     GC_mark_stack_top = GC_push_obj(p, HDR(p), GC_mark_stack_top,
                                     GC_mark_stack + GC_mark_stack_size);
-# endif
 }
 
 /* This only pays very partial attention to the mark descriptor.        */
