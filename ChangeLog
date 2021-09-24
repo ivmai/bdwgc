@@ -1,3 +1,9 @@
+2021-09-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* headers.c (GC_scratch_alloc): Add bytes to scratch_free_ptr only
+	if no overflow (and not beyond GC_scratch_end_ptr); add assertion that
+	GC_scratch_end_ptr is not less than scratch_free_ptr.
+
 2021-09-19  Ivan Maidanski <ivmai@mail.ru>
 
 	* dyn_load.c [HAVE_DL_ITERATE_PHDR && PT_GNU_RELRO]
