@@ -23,6 +23,7 @@
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
 * Fix STACKBOTTOM on 32-bit HP/UX 11.11
 * Fix abort in GC_printf when gctest is built as WinMain executable (Cygwin)
+* Fix assertion violation in register_dynlib_callback on Android
 * Fix compiling by Makefile.direct on OpenBSD/UltraSparc
 * Fix configure message about 'AIX gcc optimization fix'
 * Fix cordtest build in SMakefile.amiga
@@ -30,10 +31,13 @@
 * Fix first_thread stack_base initialization if custom GC_stackbottom (Win32)
 * Fix gc_allocator.h compilation by Clang
 * Fix gc_cflags variable name in configure (HP/UX)
+* Fix handling of areas smaller than page size in GC_scratch_recycle
 * Fix incorrect define GC_OPENBSD_THREADS on sparc64
 * Fix misaligned tlfs passed to AO_load on m68k
+* Fix missing GC_quiet declaration in pcr_interface.c
 * Fix missing gc_dlopen.c in CMake script
 * Fix missing scratch_last_end_ptr update (Irix)
+* Fix overflow of scratch_free_ptr value
 * Fix page_was_[ever_]dirty() for static roots (Solaris)
 * Fix printf format specifier in simple_example.html
 * Fix save_callers for multi-threaded case if built-in backtrace unavailable
