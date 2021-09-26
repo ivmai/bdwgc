@@ -1358,7 +1358,6 @@ struct _GC_arrays {
   word _heapsize;       /* Heap size in bytes (value never goes down).  */
   word _requested_heapsize;     /* Heap size due to explicit expansion. */
   ptr_t _last_heap_addr;
-  ptr_t _prev_heap_addr;
   word _large_free_bytes;
         /* Total bytes contained in blocks on large object free */
         /* list.                                                */
@@ -1655,7 +1654,6 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define GC_mark_procs GC_arrays._mark_procs
 #define GC_max_large_allocd_bytes GC_arrays._max_large_allocd_bytes
 #define GC_modws_valid_offsets GC_arrays._modws_valid_offsets
-#define GC_prev_heap_addr GC_arrays._prev_heap_addr
 #define GC_requested_heapsize GC_arrays._requested_heapsize
 #define GC_all_bottom_indices GC_arrays._all_bottom_indices
 #define GC_all_bottom_indices_end GC_arrays._all_bottom_indices_end

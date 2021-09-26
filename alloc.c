@@ -1603,7 +1603,6 @@ STATIC void GC_add_to_heap(struct hblk * space, size_t bytes)
                            (word)space - expansion_slop);
         }
     }
-    GC_prev_heap_addr = GC_last_heap_addr;
     GC_last_heap_addr = (ptr_t)space;
 
     add_to_heap_inner(space, bytes);
