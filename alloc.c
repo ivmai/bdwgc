@@ -1351,7 +1351,7 @@ GC_API void GC_CALL GC_gcollect_and_unmap(void)
 
 /* Use the chunk of memory starting at p of size bytes as part of the heap. */
 /* Assumes p is HBLKSIZE aligned, and bytes is a multiple of HBLKSIZE.      */
-static void add_to_heap_inner(struct hblk *p, size_t bytes)
+STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
 {
     hdr * phdr;
     word endp;
@@ -1460,7 +1460,7 @@ static void add_to_heap_inner(struct hblk *p, size_t bytes)
 
     if (old_capacity > 0) {
 #     ifndef GWW_VDB
-        /* Recycling may call add_to_heap_inner() again but should not  */
+        /* Recycling may call GC_add_to_heap() again but should not     */
         /* cause resizing of GC_heap_sects.                             */
         GC_scratch_recycle_no_gww(old_heap_sects,
                                   old_capacity * sizeof(struct HeapSect));
@@ -1518,8 +1518,6 @@ GC_API void GC_CALL GC_set_max_heap_size(GC_word n)
 
 GC_word GC_max_retries = 0;
 
-STATIC void GC_add_to_heap(struct hblk *p, size_t bytes);
-
 GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
 {
   size_t page_offset;
@@ -1549,6 +1547,8 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
 {
     size_t bytes;
     struct hblk * space;
+    word expansion_slop;        /* Number of bytes by which we expect   */
+                                /* the heap to expand soon.             */
 
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(GC_page_size != 0);
@@ -1570,20 +1570,11 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     GC_INFOLOG_PRINTF("Grow heap to %lu KiB after %lu bytes allocated\n",
                       TO_KiB_UL(GC_heapsize + (word)bytes),
                       (unsigned long)GC_bytes_allocd);
-    GC_add_to_heap(space, bytes);
-    return TRUE;
-}
-
-/* Add a HBLKSIZE aligned chunk to the heap (adjusting the limits).     */
-STATIC void GC_add_to_heap(struct hblk * space, size_t bytes)
-{
-    word expansion_slop = min_bytes_allocd() + 4 * MAXHINCR * HBLKSIZE;
-                                /* Number of bytes by which we expect   */
-                                /* the heap to expand soon.             */
 
     /* Adjust heap limits generously for blacklisting to work better.   */
-    /* add_to_heap_inner performs minimal adjustment needed for         */
+    /* GC_add_to_heap performs minimal adjustment needed for            */
     /* correctness.                                                     */
+    expansion_slop = min_bytes_allocd() + 4 * MAXHINCR * HBLKSIZE;
     if ((GC_last_heap_addr == 0 && !((word)space & SIGNB))
         || (GC_last_heap_addr != 0
             && (word)GC_last_heap_addr < (word)space)) {
@@ -1605,7 +1596,7 @@ STATIC void GC_add_to_heap(struct hblk * space, size_t bytes)
     }
     GC_last_heap_addr = (ptr_t)space;
 
-    add_to_heap_inner(space, bytes);
+    GC_add_to_heap(space, bytes);
 
     /* Force GC before we are likely to allocate past expansion_slop.   */
     GC_collect_at_heapsize =
@@ -1614,6 +1605,8 @@ STATIC void GC_add_to_heap(struct hblk * space, size_t bytes)
         GC_collect_at_heapsize = GC_WORD_MAX;
     if (GC_on_heap_resize)
         (*GC_on_heap_resize)(GC_heapsize);
+
+    return(TRUE);
 }
 
 /* Really returns a bool, but it's externally visible, so that's clumsy. */
