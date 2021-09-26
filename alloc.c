@@ -1261,7 +1261,7 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
     GC_heapsize += bytes;
 
     /* Normally the caller calculates a new GC_collect_at_heapsize,
-     * but this is also called directly from alloc_mark_stack, so
+     * but this is also called directly from GC_scratch_recycle_inner, so
      * adjust here. It will be recalculated when called from
      * GC_expand_hp_inner.
      */
