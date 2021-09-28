@@ -44,6 +44,7 @@
 * Compile de test GUI app with resources (CMake)
 * Compile gc.c unless building static libraries (NT_MAKEFILE, WCC_MAKEFILE)
 * Compile msvc_dbg.c by CMake script (MS VC)
+* Declare API function and print amount of memory obtained from OS
 * Define GC_win32_free_heap API function for all Windows targets
 * Define STATIC macro to static by default
 * Depend number of fork_a_thread calls on NTHREADS (gctest)
@@ -55,6 +56,7 @@
 * Do not build tests by default (Makefile.direct and other Makefiles)
 * Do not build the tests by default (CMake)
 * Do not call GC_push_conditional unless PROC_VDB
+* Do not call add_to_our_memory with null pointer (refactoring)
 * Do not compile pthread_*.c files in Cygwin or MSYS (CMake)
 * Do not define GC_write_cs for Xbox One target
 * Do not define HAVE_NO_FORK for all Unix-like systems
@@ -84,6 +86,7 @@
 * Enable fork testing in single-thread builds (Unix-like)
 * Enable mprotect-based incremental GC for Linux/arm and Linux/aarch64
 * Enable true incremental collection even if parallel marker is on
+* Enable use of __builtin_unwind_init() if clang-8 or later
 * Ensure ELFSIZE is defined in dyn_load.c for OpenBSD (code refactoring)
 * Ensure add_to_heap_inner arguments are valid (refactoring)
 * Ensure all getters and setters are run at least once by gctest (pthreads)
@@ -93,7 +96,7 @@
 * Fix HOST determination in CMake script
 * Fix copyright message in de_win.rc, gc_cpp.cc, ec.h and specific.h
 * Fix missing OS_TYPE definition for some targets
-* Fix missing heap limits adjustment if scratch_recycle_inner is called
+* Fix mmap(PROT_NONE) failure if RLIMIT_AS value is low (Linux)
 * Generate cordtest and de executable files in GC base folder
 * Generate pkg-config metadata file (CMake)
 * Get rid of some non-ELF ifdefs (code refactoring)
@@ -102,6 +105,7 @@
 * Increase NTHREADS value in tests if code coverage analysis
 * Install docs and man page if enable_docs (CMake)
 * Install gc_gcj.h and gc_pthread_redirects.h only if appropriate
+* Log abort message details even if not print_stats (unless SMALL_CONFIG)
 * Mark buffer returned by get_maps as const (code refactoring)
 * Move C++ GC_ATTR_EXPLICIT and GC_NOEXCEPT definition to gc_config_macros.h
 * Move GC state non-pointer variables into GC_arrays (code refactoring)
@@ -126,6 +130,7 @@
 * Read environment variables from a file on WinCE (CMake script)
 * Reduce stack-allocated buffer in get_nprocs from 4KB to 1.7KB
 * Refine flags field comment in pthread_support.h
+* Reflect result of VDB selection at runtime in incremental_protection_needs
 * Reformat code of GC_push_roots
 * Reformat gc.man (wrap long lines)
 * Reformatting and code refactoring of CMake script
@@ -137,6 +142,8 @@
 * Remove GC_gcj_malloc_initialized variable (code refactoring)
 * Remove Linux-specific commands for building cord/de from Makefile.direct
 * Remove Win32 main_thread static variable if threads discovery is disabled
+* Remove code duplication between GC_unmap and GC_unmap_gap (refactoring)
+* Remove code duplication between PROTECT and UNPROTECT macros (refactoring)
 * Remove commented out assignment of gc_use_mmap in configure (refactoring)
 * Remove dash characters comprising prefix of some verbose logs (gctest)
 * Remove dependency on user32.dll import library from static libgc (Win32)
@@ -145,10 +152,12 @@
 * Remove duplicate macro definitions in gcconfig.h except for Linux
 * Remove gcmt-dll generation, rename libgc-lib.a to libgc.a (CMake)
 * Remove goto statement in print_callers (code refactoring)
+* Remove limit on number of heap sections
 * Remove new_gc_alloc.h file
 * Remove redundant GC_with_callee_saves_pushed call in multi-threaded builds
 * Remove redundant check of GC_free argument in register_finalizer
 * Remove redundant type casts in backgraph HEIGHT_UNKNOWN/IN_PROGRESS
+* Remove unused GC_prev_heap_addr (refactoring)
 * Remove unused STACK_GRAN macro definitions (code refactoring)
 * Remove unused sparc_sunos4_mach_dep.s file
 * Remove useless empty statements after block ones (refactoring)
@@ -168,8 +177,10 @@
 * Replace find_limit_openbsd to find_limit_with_bound (OpenBSD 5.2+)
 * Replace obsolete AC_HELP_STRING with AS_HELP_STRING (refactoring)
 * Replace push_one calls with push_many_regs one for Win32 thread context
+* Report memory region bounds and errno on GC_unmap/remap failure
 * Report presence of process fork testing (gctest)
 * Report time with a nanosecond precision where available
+* Retry suspend/resume signals on all platforms by default
 * Run tree and typed tests in child process (gctest)
 * Set GC_collecting hint for GC_collect_a_little_inner calls (pthreads)
 * Set name of GC marker threads
@@ -184,6 +195,7 @@
 * Suppress warnings in test_tinyfl() of gctest reported by Watcom C complier
 * Take nanoseconds into account when updating full_gc_total_time
 * Turn off C++ API by default, export it in gccpp library (CMake)
+* Turn on automatic fork() handling by default on Android
 * Update README.cmake regarding Unix, C++ and tests
 * Update libgc.so version info to differentiate against v8.0.x
 * Update the ASCII diagrams describing the tree structure for pointer lookups
@@ -198,12 +210,14 @@
 * Use clock_gettime() instead of clock() on Cygwin and Linux
 * Use compiler TLS on FreeBSD and NetBSD
 * Use mprotect-based VDB on PowerPC and S390 (Linux)
+* Use soft dirty bits on Linux (i386, powerpc, s390, x86_64)
 * Workaround 'condition result<=0 is always false' cppcheck FP in get_maps
+* Workaround 'push_regs configured incorrectly' error (GCC-11)
 * Workaround 'same value in both branches of ternary operator' cppcheck FP
 * Workaround various cppcheck false positives
 
 
-== [8.0.6] (not released yet) ==
+== [8.0.6] 2021-09-28 ==
 
 * Add loop to handle abort error like in suspend logic on Darwin
 * Add support of OpenBSD/aarch64
