@@ -1558,6 +1558,13 @@ void run_one_test(void)
             GC_start_mark_threads();
 #         endif
           GC_gcollect();
+#         ifdef THREADS
+            /* Skip "Premature finalization" check in the       */
+            /* child process because there could be a chance    */
+            /* that some other thread of the parent was         */
+            /* executing mktree at the moment of fork.          */
+            dropped_something = 1;
+#         endif
           tree_test();
 #         if !defined(DBG_HDRS_ALL) && !defined(NO_TYPED_TEST)
             typed_test();
