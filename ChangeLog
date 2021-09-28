@@ -230,6 +230,7 @@
 * Eliminate 'unused function' compiler warnings (GC_add_map_entry, GC_lock)
 * Eliminate 'while clause does not guard' GCC warning in GC_parse_map_entry
 * Enable sbrk-to-mmap fallback on major supported Unix-like platforms
+* Ensure process is running on one CPU core if AO ops are emulated with locks
 * Explicitly zero-initialize trace_buf (fix trace_buf initialization)
 * Fix 'ACCESS_VIOLATION in marker' GC warning on Win32 async thread start
 * Fix 'GC_generic_malloc must be available' GCC error in new_gc_alloc.h
@@ -245,10 +246,12 @@
 * Fix CMake build on macOS Catalina
 * Fix GC_OPENBSD_THREADS definition (OpenBSD/hppa)
 * Fix GC_proc_fd value in child process at fork (Solaris)
+* Fix GC_with_callee_saves_pushed for Android NDK r23 (clang-12)
 * Fix MPROTECT_VDB definition for single-threaded GC builds
 * Fix OS_TYPE and USE_MMAP_ANON definitions for Cygwin/x64
 * Fix STACKBOTTOM on 32-bit HP/UX 11.11
 * Fix abort in GC_printf when gctest is built as WinMain executable (Cygwin)
+* Fix assertion violation in register_dynlib_callback on Android
 * Fix build for OS X (CMake)
 * Fix building of shared library with C++ support on MinGW
 * Fix compiling by Makefile.direct on OpenBSD/UltraSparc
@@ -258,11 +261,14 @@
 * Fix first_thread stack_base initialization if custom GC_stackbottom (Win32)
 * Fix gc_allocator.h compilation by Clang
 * Fix gc_cflags variable name in configure (HP/UX)
+* Fix handling of areas smaller than page size in GC_scratch_recycle
 * Fix incorrect markup formatting in documentation
 * Fix misaligned tlfs passed to AO_load on m68k
+* Fix missing GC_quiet declaration in pcr_interface.c
 * Fix missing gc_dlopen.c and specific.c in CMake script
 * Fix missing scratch_last_end_ptr update (Irix)
 * Fix mmap() failures on AIX, HP/UX and Haiku
+* Fix overflow of scratch_free_ptr value
 * Fix page_was_[ever_]dirty() for static roots (Solaris)
 * Fix printf format specifier in simple_example.md
 * Fix save_callers for multi-threaded case if built-in backtrace unavailable
@@ -613,7 +619,7 @@
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
 
-== [7.6.14] (not released yet) ==
+== [7.6.14] 2021-09-28 ==
 
 * Add loop to handle abort error like in suspend logic on Darwin
 * Add support of OpenBSD/aarch64
