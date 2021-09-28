@@ -1476,7 +1476,7 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 Also, includes 7.2 changes
 
 
-== [7.2o] (not released yet) ==
+== [7.2o] 2021-09-28 ==
 
 * Add loop to handle abort error like in suspend logic on Darwin
 * Disable mprotect-based incremental GC if /proc roots are used (Linux)
