@@ -950,7 +950,7 @@ Also, includes 7.4.6 changes
 Also, includes 7.4.4 changes
 
 
-== [7.4.20] (not released yet) ==
+== [7.4.20] 2021-09-28 ==
 
 * Do not hold GC_fault_handler_lock when in Sleep (Windows)
 * Eliminate 'static GC_sysinfo definition has incomplete type' Clang warning
