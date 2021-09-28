@@ -1,5 +1,5 @@
 
-== [7.6.14] (not released yet) ==
+== [7.6.14] 2021-09-28 ==
 
 * Add loop to handle abort error like in suspend logic on Darwin
 * Add support of OpenBSD/aarch64
