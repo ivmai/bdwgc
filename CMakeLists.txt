@@ -24,7 +24,7 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-set(PACKAGE_VERSION 8.2.0)
+set(PACKAGE_VERSION 8.3.0)
 # Version must match that in AC_INIT of configure.ac and that in README.
 # Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
 

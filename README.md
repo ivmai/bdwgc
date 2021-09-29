@@ -1,6 +1,19 @@
 # Boehm-Demers-Weiser Garbage Collector
 
-This is version 8.2.0 (next release development) of a conservative garbage
+[![Travis-CI build status](https://travis-ci.com/ivmai/bdwgc.svg?branch=master)](https://travis-ci.com/ivmai/bdwgc)
+[![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/ivmai/bdwgc?branch=master&svg=true)](https://ci.appveyor.com/project/ivmai/bdwgc)
+[![Codecov.io](https://codecov.io/github/ivmai/bdwgc/coverage.svg?branch=master)](https://codecov.io/github/ivmai/bdwgc?branch=master)
+[![Coveralls test coverage status](https://coveralls.io/repos/github/ivmai/bdwgc/badge.png?branch=master)](https://coveralls.io/github/ivmai/bdwgc)
+[![Coverity Scan build status](https://scan.coverity.com/projects/10813/badge.svg)](https://scan.coverity.com/projects/ivmai-bdwgc)
+[![LGTM Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/context:cpp)
+[![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/alerts)
+
+[![Hits-of-Code](https://hitsofcode.com/github/ivmai/bdwgc?branch=master)](https://hitsofcode.com/github/ivmai/bdwgc/view)
+[![Lines of code](https://img.shields.io/tokei/lines/github/ivmai/bdwgc)](https://shields.io/category/size)
+[![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/ivmai/bdwgc)](https://shields.io/category/size)
+[![Github All Releases](https://img.shields.io/github/downloads/ivmai/bdwgc/total.svg)](https://shields.io/category/downloads)
+
+This is version 8.3.0 (next release development) of a conservative garbage
 collector for C and C++.
 
 
