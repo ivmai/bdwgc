@@ -1,5 +1,5 @@
 
-== [8.1.0] (development) ==
+== [8.2.0] 2021-09-29 ==
 
 * Add API for accessing incremental GC time limit with nanosecond precision
 * Add API function to force start of incremental collection

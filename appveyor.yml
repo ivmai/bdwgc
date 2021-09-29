@@ -1,4 +1,4 @@
-version: 8.1.0-{build}
+version: 8.2.x-{build}
 
 environment:
   matrix:

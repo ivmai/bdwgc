@@ -24,7 +24,7 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-set(PACKAGE_VERSION 8.1.0)
+set(PACKAGE_VERSION 8.2.0)
 # Version must match that in AC_INIT of configure.ac and that in README.
 # Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
 
@@ -32,7 +32,7 @@ set(PACKAGE_VERSION 8.1.0)
 # These values should match those in cord/cord.am and Makefile.am.
 set(LIBCORD_VER_INFO    5:0:4)
 set(LIBGC_VER_INFO      6:0:5)
-set(LIBGCCPP_VER_INFO   5:0:4)
+set(LIBGCCPP_VER_INFO   6:0:5)
 
 option(enable_cplusplus "C++ support" OFF)
 if (enable_cplusplus)
