@@ -101,15 +101,24 @@ int main(void)
 # endif
   for (i = 0; i < NTHREADS_INNER; i++) {
     pthread_t t;
+    void *res;
+    int code = GC_pthread_create(&t, NULL, entry, NULL);
 
-    if (GC_pthread_create(&t, NULL, entry, NULL) == 0) {
-      void *res;
-      int code = (i & 1) != 0 ? GC_pthread_join(t, &res)
-                                : GC_pthread_detach(t);
+    if (code != 0) {
+      fprintf(stderr, "Thread #%d creation failed: %s\n", i, strerror(code));
+      exit(2);
+    }
 
+    if ((i & 1) != 0) {
+      code = GC_pthread_join(t, &res);
       if (code != 0) {
-        fprintf(stderr, "Thread #%d %s failed: %s\n",
-                i, (i & 1) != 0 ? "join" : "detach", strerror(code));
+        fprintf(stderr, "Thread #%d join failed: %s\n", i, strerror(code));
+        exit(2);
+      }
+    } else {
+      code = GC_pthread_detach(t);
+      if (code != 0) {
+        fprintf(stderr, "Thread #%d detach failed: %s\n", i, strerror(code));
         exit(2);
       }
     }
