@@ -251,16 +251,16 @@ int main(void)
     for (i = 0; i < NTHREADS; ++i) {
         int err = pthread_create(&th[i], NULL, test, NULL);
         if (err) {
-            fprintf(stderr, "Failed to create thread #%d: %s\n", i,
-                    strerror(err));
+            fprintf(stderr, "Thread #%d creation failed: %s\n",
+                    i, strerror(err));
             exit(1);
         }
     }
     for (i = 0; i < NTHREADS; ++i) {
         int err = pthread_join(th[i], NULL);
         if (err) {
-            fprintf(stderr, "Failed to join thread #%d: %s\n", i,
-                    strerror(err));
+            fprintf(stderr, "Thread #%d join failed: %s\n",
+                    i, strerror(err));
             exit(69);
         }
     }

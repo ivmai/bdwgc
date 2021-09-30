@@ -30,7 +30,7 @@
 # ifndef NTHREADS
 #   define NTHREADS 8
 # endif
-# include <errno.h>
+# include <errno.h> /* for EBUSY */
 # include <pthread.h>
 # include "private/gc_atomic_ops.h" /* for AO_t and AO_fetch_and_add1 */
 #else
@@ -445,7 +445,7 @@ int main(void)
     for (i = 0; i < NTHREADS; ++i) {
       int err = pthread_create(&th[i], NULL, test, NULL);
       if (err != 0) {
-        fprintf(stderr, "Failed to create thread #%d: %s\n",
+        fprintf(stderr, "Thread #%d creation failed: %s\n",
                 i, strerror(err));
         exit(1);
       }
@@ -453,7 +453,7 @@ int main(void)
     for (i = 0; i < NTHREADS; ++i) {
       int err = pthread_join(th[i], NULL);
       if (err != 0) {
-        fprintf(stderr, "Failed to join thread #%d: %s\n", i, strerror(err));
+        fprintf(stderr, "Thread #%d join failed: %s\n", i, strerror(err));
         exit(69);
       }
     }

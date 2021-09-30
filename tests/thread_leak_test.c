@@ -12,6 +12,7 @@
 
 #ifdef GC_PTHREADS
 # include <pthread.h>
+# include <string.h>
 #else
 # ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN 1
@@ -68,14 +69,19 @@ int main(void) {
     for (i = 0; i < NTHREADS; ++i) {
 #       ifdef GC_PTHREADS
           code = pthread_create(t + i, 0, test, 0);
+          if (code != 0) {
+            fprintf(stderr, "Thread #%d creation failed: %s\n",
+                    i, strerror(code));
+            exit(2);
+          }
 #       else
           t[i] = CreateThread(NULL, 0, test, 0, 0, &thread_id);
-          code = t[i] != NULL ? 0 : (int)GetLastError();
-#       endif
-        if (code != 0) {
-            fprintf(stderr, "Thread creation failed, errcode= %d\n", code);
+          if (NULL == t[i]) {
+            fprintf(stderr, "Thread #%d creation failed, errcode= %d\n",
+                    i, (int)GetLastError());
             exit(2);
-        }
+          }
+#       endif
     }
 
     for (i = 0; i < NTHREADS; ++i) {
@@ -86,7 +92,8 @@ int main(void) {
                                                         (int)GetLastError();
 #       endif
         if (code != 0) {
-            fprintf(stderr, "Thread join failed, errcode= %d\n", code);
+            fprintf(stderr, "Thread #%d join failed, errcode= %d\n",
+                    i, code);
             exit(2);
         }
     }

@@ -648,7 +648,7 @@ void check_marks_int_list(sexpr x)
         GC_resume_thread(t); /* should be no-op */
 #     endif
       if ((code = pthread_join(t, 0)) != 0) {
-        GC_printf("Small thread join failed %d\n", code);
+        GC_printf("Small thread join failed, errno= %d\n", code);
         FAIL;
       }
     }
@@ -2392,7 +2392,7 @@ int main(void)
 #   if NTHREADS > 0
       for (i = 0; i < NTHREADS; ++i) {
         if ((code = pthread_create(th+i, &attr, thr_run_one_test, 0)) != 0) {
-          GC_printf("Thread %d creation failed, errno= %d\n", i, code);
+          GC_printf("Thread #%d creation failed, errno= %d\n", i, code);
           FAIL;
         }
       }
@@ -2401,7 +2401,7 @@ int main(void)
 #   if NTHREADS > 0
       for (i = 0; i < NTHREADS; ++i) {
         if ((code = pthread_join(th[i], 0)) != 0) {
-          GC_printf("Thread %d join failed, errno= %d\n", i, code);
+          GC_printf("Thread #%d join failed, errno= %d\n", i, code);
           FAIL;
         }
       }

@@ -33,6 +33,7 @@ int main(void)
 #else
 
 #include <pthread.h>
+#include <string.h>
 
 pthread_key_t key;
 
@@ -107,8 +108,8 @@ int main(void)
                                 : GC_pthread_detach(t);
 
       if (code != 0) {
-        fprintf(stderr, "Thread %s failed, errno= %d\n",
-                (i & 1) != 0 ? "join" : "detach", code);
+        fprintf(stderr, "Thread #%d %s failed: %s\n",
+                i, (i & 1) != 0 ? "join" : "detach", strerror(code));
         exit(2);
       }
     }
