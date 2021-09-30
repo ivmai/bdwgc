@@ -32,7 +32,6 @@ few minutes to complete.
 #define GC_DONT_INCL_WINDOWS_H
 #include "gc_cpp.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -312,7 +311,7 @@ void* Undisguise( GC_word i ) {
     int **xptr = traceable_allocator<int *>().allocate(1);
     *x = 29;
     if (!xptr) {
-      fprintf(stderr, "Out of memory!\n");
+      GC_printf("Out of memory!\n");
       exit(3);
     }
     GC_PTR_STORE_AND_DIRTY(xptr, x);
