@@ -18,6 +18,7 @@
 #ifdef AO_HAVE_fetch_and_add1
 
 #ifdef GC_PTHREADS
+# include <errno.h> /* for EAGAIN */
 # include <pthread.h>
 # include <string.h>
 #else
@@ -74,16 +75,18 @@ volatile AO_t thread_ended_cnt = 0;
 
         err = pthread_create(&th, NULL, entry, (void *)my_depth);
         if (err != 0) {
-            fprintf(stderr,
-                    "Thread #%d creation failed from other thread: %s\n",
-                    thread_num, strerror(err));
+          fprintf(stderr,
+                  "Thread #%d creation failed from other thread: %s\n",
+                  thread_num, strerror(err));
+          if (err != EAGAIN)
             exit(2);
-        }
-        err = pthread_detach(th);
-        if (err != 0) {
+        } else {
+          err = pthread_detach(th);
+          if (err != 0) {
             fprintf(stderr, "Thread #%d detach failed: %s\n",
                     thread_num, strerror(err));
             exit(2);
+          }
         }
 # else
         HANDLE th;
@@ -106,41 +109,44 @@ volatile AO_t thread_ended_cnt = 0;
 int main(void)
 {
 #if NTHREADS > 0
-    int i;
+    int i, n;
 # ifdef GC_PTHREADS
     int err;
     pthread_t th[NTHREADS_INNER];
 # else
     HANDLE th[NTHREADS_INNER];
 # endif
+    int th_nums[NTHREADS_INNER];
 
     GC_INIT();
     for (i = 0; i < NTHREADS_INNER; ++i) {
+      th_nums[i] = (int)AO_fetch_and_add1(&thread_created_cnt);
 #     ifdef GC_PTHREADS
         err = pthread_create(&th[i], NULL, entry, 0);
         if (err) {
             fprintf(stderr, "Thread #%d creation failed: %s\n",
-                    i, strerror(err));
+                    th_nums[i], strerror(err));
+            if (i > 0 && EAGAIN == err) break;
             exit(1);
         }
 #     else
         DWORD thread_id;
         th[i] = CreateThread(NULL, 0, entry, 0, 0, &thread_id);
         if (th[i] == NULL) {
-            fprintf(stderr, "Thread creation failed, errcode= %d\n",
-                    (int)GetLastError());
+            fprintf(stderr, "Thread #%d creation failed, errcode= %d\n",
+                    th_nums[i], (int)GetLastError());
             exit(1);
         }
 #     endif
     }
-
-    for (i = 0; i < NTHREADS_INNER; ++i) {
+    n = i;
+    for (i = 0; i < n; ++i) {
 #     ifdef GC_PTHREADS
         void *res;
         err = pthread_join(th[i], &res);
         if (err) {
             fprintf(stderr, "Thread #%d join failed: %s\n",
-                    i, strerror(err));
+                    th_nums[i], strerror(err));
 #           if defined(__HAIKU__)
                 /* The error is just ignored (and the test is ended) to */
                 /* workaround some bug in Haiku pthread_join.           */
@@ -152,7 +158,7 @@ int main(void)
 #     else
         if (WaitForSingleObject(th[i], INFINITE) != WAIT_OBJECT_0) {
             fprintf(stderr, "Thread #%d join failed, errcode= %d\n",
-                    i, (int)GetLastError());
+                    th_nums[i], (int)GetLastError());
             CloseHandle(th[i]);
             exit(1);
         }

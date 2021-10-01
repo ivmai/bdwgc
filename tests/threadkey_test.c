@@ -32,6 +32,7 @@ int main(void)
 
 #else
 
+#include <errno.h> /* for EAGAIN */
 #include <pthread.h>
 #include <string.h>
 
@@ -106,6 +107,7 @@ int main(void)
 
     if (code != 0) {
       fprintf(stderr, "Thread #%d creation failed: %s\n", i, strerror(code));
+      if (i > 0 && EAGAIN == code) break;
       exit(2);
     }
 

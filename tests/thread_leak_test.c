@@ -11,6 +11,7 @@
 #include "leak_detector.h"
 
 #ifdef GC_PTHREADS
+# include <errno.h> /* for EAGAIN */
 # include <pthread.h>
 # include <string.h>
 #else
@@ -51,7 +52,7 @@
 
 int main(void) {
 # if NTHREADS > 0
-    int i;
+    int i, n;
 #   ifdef GC_PTHREADS
       pthread_t t[NTHREADS];
 #   else
@@ -72,6 +73,7 @@ int main(void) {
           if (code != 0) {
             fprintf(stderr, "Thread #%d creation failed: %s\n",
                     i, strerror(code));
+            if (i > 1 && EAGAIN == code) break;
             exit(2);
           }
 #       else
@@ -83,8 +85,8 @@ int main(void) {
           }
 #       endif
     }
-
-    for (i = 0; i < NTHREADS; ++i) {
+    n = i;
+    for (i = 0; i < n; ++i) {
 #       ifdef GC_PTHREADS
           code = pthread_join(t[i], 0);
 #       else
