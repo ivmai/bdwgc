@@ -184,6 +184,7 @@ pair_check_rec(pair_t p)
 # ifndef NTHREADS
 #   define NTHREADS 6
 # endif
+# include <errno.h> /* for EAGAIN */
 # include <pthread.h>
 #else
 # undef NTHREADS
@@ -229,7 +230,7 @@ int main(void)
 {
 # if NTHREADS > 1
     pthread_t th[NTHREADS];
-    int i;
+    int i, n;
 # endif
 
     GC_set_all_interior_pointers(0); /* for a stricter test */
@@ -253,10 +254,12 @@ int main(void)
         if (err) {
             fprintf(stderr, "Failed to create thread #%d: %s\n", i,
                     strerror(err));
+            if (i > 1 && EAGAIN == err) break;
             exit(1);
         }
     }
-    for (i = 0; i < NTHREADS; ++i) {
+    n = i;
+    for (i = 0; i < n; ++i) {
         int err = pthread_join(th[i], NULL);
         if (err) {
             fprintf(stderr, "Failed to join thread #%d: %s\n", i,

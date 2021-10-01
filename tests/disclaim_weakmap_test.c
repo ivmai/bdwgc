@@ -30,7 +30,7 @@
 # ifndef NTHREADS
 #   define NTHREADS 8
 # endif
-# include <errno.h>
+# include <errno.h> /* for EAGAIN, EBUSY */
 # include <pthread.h>
 # include "private/gc_atomic_ops.h" /* for AO_t and AO_fetch_and_add1 */
 #else
@@ -419,7 +419,7 @@ int main(void)
 {
   unsigned weakobj_kind;
 # ifdef GC_PTHREADS
-    int i;
+    int i, n;
     pthread_t th[NTHREADS];
 # endif
 
@@ -447,10 +447,12 @@ int main(void)
       if (err != 0) {
         fprintf(stderr, "Failed to create thread #%d: %s\n",
                 i, strerror(err));
+        if (i > 1 && EAGAIN == err) break;
         exit(1);
       }
     }
-    for (i = 0; i < NTHREADS; ++i) {
+    n = i;
+    for (i = 0; i < n; ++i) {
       int err = pthread_join(th[i], NULL);
       if (err != 0) {
         fprintf(stderr, "Failed to join thread #%d: %s\n", i, strerror(err));

@@ -2319,6 +2319,8 @@ int test(void)
 #endif
 
 #if defined(GC_PTHREADS)
+# include <errno.h> /* for EAGAIN */
+
 void * thr_run_one_test(void * arg GC_ATTR_UNUSED)
 {
     run_one_test();
@@ -2333,7 +2335,7 @@ int main(void)
 {
 #   if NTHREADS > 0
       pthread_t th[NTHREADS];
-      int i;
+      int i, nthreads;
 #   endif
     pthread_attr_t attr;
     int code;
@@ -2393,18 +2395,22 @@ int main(void)
       for (i = 0; i < NTHREADS; ++i) {
         if ((code = pthread_create(th+i, &attr, thr_run_one_test, 0)) != 0) {
           GC_printf("Thread %d creation failed, errno= %d\n", i, code);
+          if (i > 0 && EAGAIN == code)
+            break; /* Resource temporarily unavailable */
           FAIL;
         }
       }
-#   endif
-    run_one_test();
-#   if NTHREADS > 0
-      for (i = 0; i < NTHREADS; ++i) {
+      nthreads = i;
+      for (; i <= NTHREADS; i++)
+        run_one_test();
+      for (i = 0; i < nthreads; ++i) {
         if ((code = pthread_join(th[i], 0)) != 0) {
           GC_printf("Thread %d join failed, errno= %d\n", i, code);
           FAIL;
         }
       }
+#   else
+      run_one_test();
 #   endif
     run_single_threaded_test();
     check_heap_stats();

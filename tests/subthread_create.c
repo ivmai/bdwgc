@@ -18,6 +18,7 @@
 #ifdef AO_HAVE_fetch_and_add1
 
 #ifdef GC_PTHREADS
+# include <errno.h> /* for EAGAIN */
 # include <pthread.h>
 #else
 # ifndef WIN32_LEAN_AND_MEAN
@@ -74,15 +75,17 @@ volatile AO_t thread_ended_cnt = 0;
 
         err = pthread_create(&th, NULL, entry, (void *)my_depth);
         if (err != 0) {
-            fprintf(stderr, "Thread #%d creation failed, error: %s\n",
-                    thread_num, strerror(err));
+          fprintf(stderr, "Thread #%d creation failed, error: %s\n",
+                  thread_num, strerror(err));
+          if (err != EAGAIN)
             exit(2);
-        }
-        err = pthread_detach(th);
-        if (err != 0) {
+        } else {
+          err = pthread_detach(th);
+          if (err != 0) {
             fprintf(stderr, "Thread #%d detach failed, error: %s\n",
                     thread_num, strerror(err));
             exit(2);
+          }
         }
 # else
         HANDLE th;
@@ -105,7 +108,7 @@ volatile AO_t thread_ended_cnt = 0;
 int main(void)
 {
 #if NTHREADS > 0
-    int i;
+    int i, n;
 # ifdef GC_PTHREADS
     int err;
     pthread_t th[NTHREADS_INNER];
@@ -120,6 +123,7 @@ int main(void)
         if (err) {
             fprintf(stderr, "Thread creation failed, error: %s\n",
                     strerror(err));
+            if (i > 0 && EAGAIN == err) break;
             exit(1);
         }
 #     else
@@ -132,8 +136,8 @@ int main(void)
         }
 #     endif
     }
-
-    for (i = 0; i < NTHREADS_INNER; ++i) {
+    n = i;
+    for (i = 0; i < n; ++i) {
 #     ifdef GC_PTHREADS
         void *res;
         err = pthread_join(th[i], &res);
