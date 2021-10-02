@@ -408,8 +408,8 @@ STATIC void * GC_mark_thread(void * id)
         my_mark_no = GC_mark_no;
     }
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Starting mark helper for mark number %lu\n",
-                    (unsigned long)my_mark_no);
+      GC_log_printf("Starting helper for mark number %lu (thread %u)\n",
+                    (unsigned long)my_mark_no, (unsigned)(word)id);
 #   endif
     GC_help_marker(my_mark_no);
   }
@@ -505,8 +505,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
     for (i = 0; i < available_markers_m1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
-        WARN("Marker thread creation failed, errno= %" WARN_PRIdPTR "\n",
-             errno);
+        WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
         /* Don't try to create other marker threads.    */
         GC_markers_m1 = i;
         break;

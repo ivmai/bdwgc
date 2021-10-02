@@ -2085,8 +2085,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         my_mark_no = GC_mark_no;
       }
 #     ifdef DEBUG_THREADS
-        GC_log_printf("Starting mark helper for mark number %lu\n",
-                      (unsigned long)my_mark_no);
+        GC_log_printf("Starting helper for mark number %lu (thread %u)\n",
+                      (unsigned long)my_mark_no, (unsigned)(word)id);
 #     endif
       GC_help_marker(my_mark_no);
     }
@@ -2172,7 +2172,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         marker_last_stack_min[i] = ADDR_LIMIT;
         if (0 != pthread_create(&new_thread, &attr,
                                 GC_mark_thread, (void *)(word)i)) {
-          WARN("Marker thread creation failed\n", 0);
+          WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
           /* Don't try to create other marker threads.    */
           GC_markers_m1 = i;
           break;
@@ -2331,7 +2331,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                                 GC_mark_thread, (LPVOID)(word)i,
                                 0 /* fdwCreate */, &thread_id);
           if (handle == NULL) {
-            WARN("Marker thread creation failed\n", 0);
+            WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
             /* The most probable failure reason is "not enough memory". */
             /* Don't try to create other marker threads.                */
             break;
@@ -2348,7 +2348,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                                 MARK_THREAD_STACK_SIZE, GC_mark_thread,
                                 (void *)(word)i, 0 /* flags */, &thread_id);
           if (!handle || handle == (GC_uintptr_t)-1L) {
-            WARN("Marker thread creation failed\n", 0);
+            WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
             /* Don't try to create other marker threads.                */
             break;
           } else {/* We may detach the thread (if handle is of HANDLE type) */
