@@ -1704,7 +1704,7 @@ void GC_register_data_segments(void)
 #     ifdef MSWINRT_FLAVOR
         {
           MEMORY_BASIC_INFORMATION memInfo;
-          SIZE_T result = VirtualQuery(GetProcAddress,
+          SIZE_T result = VirtualQuery((void*)GetProcAddress,
                                        &memInfo, sizeof(memInfo));
           if (result != sizeof(memInfo))
             ABORT("Weird VirtualQuery result");
