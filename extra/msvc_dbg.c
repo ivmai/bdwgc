@@ -52,6 +52,10 @@ typedef GC_word word;
         typedef ULONG        ULONG_ADDR;
 #endif
 
+#ifndef MAX_SYM_NAME
+#define MAX_SYM_NAME 2000
+#endif
+
 static HANDLE GetSymHandle(void)
 {
   static HANDLE symHandle = NULL;
@@ -115,7 +119,11 @@ static ULONG_ADDR CheckAddress(void* address)
   return dwAddress;
 }
 
-size_t GetStackFrames(size_t skip, void* frames[], size_t maxFrames)
+static size_t GetStackFramesFromContext(HANDLE hProcess, HANDLE hThread,
+                                        CONTEXT* context, size_t skip,
+                                        void* frames[], size_t maxFrames);
+
+static size_t GetStackFrames(size_t skip, void* frames[], size_t maxFrames)
 {
   HANDLE hProcess = GetSymHandle();
   HANDLE hThread = GetCurrentThread();
@@ -132,9 +140,9 @@ size_t GetStackFrames(size_t skip, void* frames[], size_t maxFrames)
                                    frames, maxFrames);
 }
 
-size_t GetStackFramesFromContext(HANDLE hProcess, HANDLE hThread,
-                                 CONTEXT* context, size_t skip,
-                                 void* frames[], size_t maxFrames)
+static size_t GetStackFramesFromContext(HANDLE hProcess, HANDLE hThread,
+                                        CONTEXT* context, size_t skip,
+                                        void* frames[], size_t maxFrames)
 {
   size_t frameIndex;
   DWORD machineType;
@@ -180,37 +188,26 @@ size_t GetStackFramesFromContext(HANDLE hProcess, HANDLE hThread,
   return frameIndex;
 }
 
-size_t GetModuleNameFromAddress(void* address, char* moduleName, size_t size)
+static size_t GetModuleNameFromAddress(void* address, char* moduleName,
+                                       size_t size)
 {
-  if (size) *moduleName = 0;
-  {
-    const char* sourceName;
-    IMAGEHLP_MODULE moduleInfo = { sizeof (moduleInfo) };
-    if (!SymGetModuleInfo(GetSymHandle(), CheckAddress(address),
-                          &moduleInfo)) {
-      return 0;
-    }
-    sourceName = strrchr(moduleInfo.ImageName, '\\');
-    if (sourceName) {
-      sourceName++;
-    } else {
-      sourceName = moduleInfo.ImageName;
-    }
-    if (size) {
-      strncpy(moduleName, sourceName, size)[size - 1] = 0;
-    }
-    return strlen(sourceName);
-  }
-}
+  const char* sourceName;
+  IMAGEHLP_MODULE moduleInfo = { sizeof(moduleInfo) };
 
-size_t GetModuleNameFromStack(size_t skip, char* moduleName, size_t size)
-{
-  void* address = NULL;
-  GetStackFrames(skip + 1, &address, 1);
-  if (address) {
-    return GetModuleNameFromAddress(address, moduleName, size);
+  if (size) *moduleName = 0;
+  if (!SymGetModuleInfo(GetSymHandle(), CheckAddress(address), &moduleInfo)) {
+    return 0;
   }
-  return 0;
+  sourceName = strrchr(moduleInfo.ImageName, '\\');
+  if (sourceName) {
+    sourceName++;
+  } else {
+    sourceName = moduleInfo.ImageName;
+  }
+  if (size) {
+    strncpy(moduleName, sourceName, size)[size - 1] = 0;
+  }
+  return strlen(sourceName);
 }
 
 union sym_namebuf_u {
@@ -218,8 +215,8 @@ union sym_namebuf_u {
   char symNameBuffer[sizeof(IMAGEHLP_SYMBOL) + MAX_SYM_NAME];
 };
 
-size_t GetSymbolNameFromAddress(void* address, char* symbolName, size_t size,
-                                size_t* offsetBytes)
+static size_t GetSymbolNameFromAddress(void* address, char* symbolName,
+                                       size_t size, size_t* offsetBytes)
 {
   if (size) *symbolName = 0;
   if (offsetBytes) *offsetBytes = 0;
@@ -256,61 +253,38 @@ size_t GetSymbolNameFromAddress(void* address, char* symbolName, size_t size,
   return 0;
 }
 
-size_t GetSymbolNameFromStack(size_t skip, char* symbolName, size_t size,
-                              size_t* offsetBytes)
+static size_t GetFileLineFromAddress(void* address, char* fileName,
+                                     size_t size, size_t* lineNumber,
+                                     size_t* offsetBytes)
 {
-  void* address = NULL;
-  GetStackFrames(skip + 1, &address, 1);
-  if (address) {
-    return GetSymbolNameFromAddress(address, symbolName, size, offsetBytes);
-  }
-  return 0;
-}
+  char* sourceName;
+  IMAGEHLP_LINE line = { sizeof (line) };
+  GC_ULONG_PTR dwOffset = 0;
 
-size_t GetFileLineFromAddress(void* address, char* fileName, size_t size,
-                              size_t* lineNumber, size_t* offsetBytes)
-{
   if (size) *fileName = 0;
   if (lineNumber) *lineNumber = 0;
   if (offsetBytes) *offsetBytes = 0;
-  {
-    char* sourceName;
-    IMAGEHLP_LINE line = { sizeof (line) };
-    GC_ULONG_PTR dwOffset = 0;
-    if (!SymGetLineFromAddr(GetSymHandle(), CheckAddress(address), &dwOffset,
-                            &line)) {
-      return 0;
-    }
-    if (lineNumber) {
-      *lineNumber = line.LineNumber;
-    }
-    if (offsetBytes) {
-      *offsetBytes = dwOffset;
-    }
-    sourceName = line.FileName;
-    /* TODO: resolve relative filenames, found in 'source directories'  */
-    /* registered with MSVC IDE.                                        */
-    if (size) {
-      strncpy(fileName, sourceName, size)[size - 1] = 0;
-    }
-    return strlen(sourceName);
+  if (!SymGetLineFromAddr(GetSymHandle(), CheckAddress(address), &dwOffset,
+                          &line)) {
+    return 0;
   }
+  if (lineNumber) {
+    *lineNumber = line.LineNumber;
+  }
+  if (offsetBytes) {
+    *offsetBytes = dwOffset;
+  }
+  sourceName = line.FileName;
+  /* TODO: resolve relative filenames, found in "source directories"    */
+  /* registered with MSVC IDE.                                          */
+  if (size) {
+    strncpy(fileName, sourceName, size)[size - 1] = 0;
+  }
+  return strlen(sourceName);
 }
 
-size_t GetFileLineFromStack(size_t skip, char* fileName, size_t size,
-                            size_t* lineNumber, size_t* offsetBytes)
-{
-  void* address = NULL;
-  GetStackFrames(skip + 1, &address, 1);
-  if (address) {
-    return GetFileLineFromAddress(address, fileName, size, lineNumber,
-                                  offsetBytes);
-  }
-  return 0;
-}
-
-size_t GetDescriptionFromAddress(void* address, const char* format,
-                                 char* buffer, size_t size)
+static size_t GetDescriptionFromAddress(void* address, const char* format,
+                                        char* buffer, size_t size)
 {
   char*const begin = buffer;
   char*const end = buffer + size;
@@ -353,9 +327,9 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   return buffer - begin;
 }
 
-size_t GetDescriptionFromStack(void* const frames[], size_t count,
-                               const char* format, char* description[],
-                               size_t size)
+static size_t GetDescriptionFromStack(void* const frames[], size_t count,
+                                      const char* format, char* description[],
+                                      size_t size)
 {
   const GC_ULONG_PTR begin = (GC_ULONG_PTR)description;
   const GC_ULONG_PTR end = begin + size;
