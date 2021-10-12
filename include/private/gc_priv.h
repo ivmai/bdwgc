@@ -480,9 +480,13 @@ EXTERN_C_END
 #   define GET_TIME(x) \
                 do { \
                   LARGE_INTEGER freq, tc; \
-                  if (!QueryPerformanceFrequency(&freq) \
-                      || !QueryPerformanceCounter(&tc)) \
-                    ABORT("QueryPerformanceCounter requires WinXP+"); \
+                  if (!QueryPerformanceFrequency(&freq)) \
+                    ABORT("QueryPerformanceFrequency requires WinXP+"); \
+                  /* Note: two standalone if statements are needed to   */ \
+                  /* avoid MS VC false warning about potentially        */ \
+                  /* uninitialized tc variable.                         */ \
+                  if (!QueryPerformanceCounter(&tc)) \
+                    ABORT("QueryPerformanceCounter failed"); \
                   x = (CLOCK_TYPE)((double)tc.QuadPart/freq.QuadPart * 1e9); \
                 } while (0)
                 /* TODO: Call QueryPerformanceFrequency once at GC init. */
