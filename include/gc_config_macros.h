@@ -328,6 +328,7 @@
 #endif /* GLIBC */
 
 #if defined(_MSC_VER) && _MSC_VER >= 1200 /* version 12.0+ (MSVC 6.0+) */ \
+        && !defined(_M_ARM) && !defined(_M_ARM64) \
         && !defined(_AMD64_) && !defined(_M_X64) && !defined(_WIN32_WCE) \
         && !defined(GC_HAVE_NO_BUILTIN_BACKTRACE) \
         && !defined(GC_HAVE_BUILTIN_BACKTRACE)

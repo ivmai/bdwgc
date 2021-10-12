@@ -1943,6 +1943,11 @@ void enable_incremental_mode(void)
 
 #if !defined(PCR) && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
 
+#if defined(CPPCHECK) && defined(_MSC_VER) && !defined(_M_ARM) \
+    && !defined(_M_ARM64) && !defined(_M_X64)
+# include "private/msvc_dbg.h"
+#endif
+
 #if defined(_DEBUG) && (_MSC_VER >= 1900) /* VS 2015+ */
 # ifndef _CRTDBG_MAP_ALLOC
 #   define _CRTDBG_MAP_ALLOC
@@ -2039,7 +2044,8 @@ void enable_incremental_mode(void)
 #      if defined(MACOS) && defined(USE_TEMPORARY_MEMORY)
          UNTESTED(GC_MacTemporaryNewPtr);
 #      endif
-#      if !defined(_M_X64) && defined(_MSC_VER)
+#      if !defined(_M_ARM) && !defined(_M_ARM64) \
+          && !defined(_M_X64) && defined(_MSC_VER)
          UNTESTED(GetFileLineFromStack);
          UNTESTED(GetModuleNameFromStack);
          UNTESTED(GetSymbolNameFromStack);

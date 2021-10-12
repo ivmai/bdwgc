@@ -20,9 +20,11 @@
   THE SOFTWARE.
 */
 
-#if !defined(_M_X64) && defined(_MSC_VER)
+#if !defined(_M_ARM) && !defined(_M_ARM64) \
+    && !defined(_M_X64) && defined(_MSC_VER)
 
-/* X86_64 is currently missing some machine-dependent code below.  */
+/* TODO: arm[64], x86_64 currently miss some machine-dependent code below.  */
+/* See also GC_HAVE_BUILTIN_BACKTRACE in gc_config_macros.h.                */
 
 #define GC_BUILD
 #include "private/msvc_dbg.h"
