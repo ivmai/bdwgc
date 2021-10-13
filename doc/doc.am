@@ -30,7 +30,7 @@ dist_doc_DATA = \
         doc/README.hp \
         doc/README.linux \
         doc/README.macros \
-        doc/README.rs6000 \
+        doc/README.aix \
         doc/README.sgi \
         doc/README.solaris2 \
         doc/README.symbian \
