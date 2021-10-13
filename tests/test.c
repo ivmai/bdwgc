@@ -1462,7 +1462,7 @@ void run_one_test(void)
           }
         }
 #     ifndef ALL_INTERIOR_POINTERS
-#      if defined(RS6000) || defined(POWERPC)
+#      if defined(POWERPC)
         if (!TEST_FAIL_COUNT(1))
 #      else
         if (!TEST_FAIL_COUNT(GC_get_all_interior_pointers() ? 1 : 2))
