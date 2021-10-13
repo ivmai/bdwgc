@@ -1976,7 +1976,6 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
   ptr_t GC_save_regs_in_stack(void);
 #endif
 
-                        /* Push register contents onto mark stack.      */
 #if defined(AMIGA) || defined(MACOS) || defined(GC_DARWIN_THREADS)
   void GC_push_one(word p);
                               /* If p points to an object, mark it    */
