@@ -1682,7 +1682,6 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
   /* pointer to the top of the corresponding memory stack.              */
   ptr_t GC_save_regs_in_stack(void);
 #endif
-                        /* Push register contents onto mark stack.      */
 
 #if defined(MSWIN32) || defined(MSWINCE)
   void __cdecl GC_push_one(word p);
