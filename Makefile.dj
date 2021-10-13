@@ -212,7 +212,6 @@ cord/de$(EXE_SUFFIX): $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $
 	rm -f cord/de cord/de$(EXE_SUFFIX)
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -lucb `./threadlibs`
 	./if_mach HP_PA "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -ldld
-	./if_mach RS6000 "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
 	./if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
 	./if_not_there cord/de$(EXE_SUFFIX) $(CC) $(CFLAGS) -o cord/de$(EXE_SUFFIX) $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES)
