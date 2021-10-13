@@ -1407,16 +1407,15 @@ void run_one_test(void)
         GC_printf("GC_PTR_STORE failed: %p != %p\n", (void *)(*z), (void *)x);
         FAIL;
       }
-      if (!TEST_FAIL_COUNT(1)) {
-#       if!(defined(POWERPC) || defined(IA64)) || defined(M68K)
+#     if !defined(IA64) && !defined(POWERPC)
+        if (!TEST_FAIL_COUNT(1)) {
           /* On POWERPCs function pointers point to a descriptor in the */
           /* data segment, so there should have been no failures.       */
-          /* The same applies to IA64.  Something similar seems to      */
-          /* be going on with NetBSD/M68K.                              */
+          /* The same applies to IA64.                                  */
           GC_printf("GC_is_visible produced wrong failure indication\n");
           FAIL;
-#       endif
-      }
+        }
+#     endif
       if (GC_is_valid_displacement(y) != y
         || GC_is_valid_displacement(x) != x
         || GC_is_valid_displacement(x + 3) != x + 3) {
