@@ -1860,9 +1860,6 @@ GC_INNER void GC_push_all_stacks(void)
 
   static ptr_t marker_sp[MAX_MARKERS - 1]; /* The cold end of the stack */
                                            /* for markers.              */
-# ifdef IA64
-    static ptr_t marker_bsp[MAX_MARKERS - 1];
-# endif
 
   static ptr_t marker_last_stack_min[MAX_MARKERS - 1];
                                 /* Last known minimum (hottest) address */
@@ -2066,9 +2063,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     if ((word)id == GC_WORD_MAX) return 0; /* to prevent a compiler warning */
     set_marker_thread_name((unsigned)(word)id);
     marker_sp[(word)id] = GC_approx_sp();
-#   ifdef IA64
-      marker_bsp[(word)id] = GC_save_regs_in_stack();
-#   endif
 #   if !defined(GC_PTHREADS_PARAMARK)
       GC_marker_Id[(word)id] = GetCurrentThreadId();
 #   endif

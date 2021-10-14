@@ -318,10 +318,15 @@ STATIC int GC_nprocs = 1;
 
 #ifdef PARALLEL_MARK
 
-static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
-#ifdef IA64
-  static ptr_t marker_bsp[MAX_MARKERS - 1] = {0};
-#endif
+# if defined(USE_PROC_FOR_LIBRARIES) \
+     || (defined(IA64) && (defined(HAVE_PTHREAD_ATTR_GET_NP) \
+                           || defined(HAVE_PTHREAD_GETATTR_NP)))
+    static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
+# endif
+
+# if defined(IA64) && defined(USE_PROC_FOR_LIBRARIES)
+    static ptr_t marker_bsp[MAX_MARKERS - 1] = {0};
+# endif
 
 #if defined(GC_DARWIN_THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
   static mach_port_t marker_mach_threads[MAX_MARKERS - 1] = {0};
@@ -382,8 +387,12 @@ STATIC void * GC_mark_thread(void * id)
                          /* Mark threads are not cancellable; they      */
                          /* should be invisible to client.              */
   set_marker_thread_name((unsigned)(word)id);
-  marker_sp[(word)id] = GC_approx_sp();
-# ifdef IA64
+# if defined(USE_PROC_FOR_LIBRARIES) \
+     || (defined(IA64) && (defined(HAVE_PTHREAD_ATTR_GET_NP) \
+                           || defined(HAVE_PTHREAD_GETATTR_NP)))
+    marker_sp[(word)id] = GC_approx_sp();
+# endif
+# if defined(IA64) && defined(USE_PROC_FOR_LIBRARIES)
     marker_bsp[(word)id] = GC_save_regs_in_stack();
 # endif
 # if defined(GC_DARWIN_THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
