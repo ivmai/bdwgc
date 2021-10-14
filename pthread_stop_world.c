@@ -709,11 +709,6 @@ STATIC void GC_restart_handler(int sig)
 # undef ao_store_release_async
 #endif /* !GC_OPENBSD_UTHREADS && !NACL */
 
-#ifdef IA64
-# define IF_IA64(x) x
-#else
-# define IF_IA64(x)
-#endif
 /* We hold allocation lock.  Should do exactly the right thing if the   */
 /* world is stopped.  Should not fail if it isn't.                      */
 GC_INNER void GC_push_all_stacks(void)
@@ -723,8 +718,10 @@ GC_INNER void GC_push_all_stacks(void)
     int i;
     GC_thread p;
     ptr_t lo, hi;
-    /* On IA64, we also need to scan the register backing store. */
-    IF_IA64(ptr_t bs_lo; ptr_t bs_hi;)
+#   ifdef IA64
+      /* On IA64, we also need to scan the register backing store. */
+      ptr_t bs_lo, bs_hi;
+#   endif
     struct GC_traced_stack_sect_s *traced_stack_sect;
     pthread_t self = pthread_self();
     word total_size = 0;
@@ -742,15 +739,19 @@ GC_INNER void GC_push_all_stacks(void)
         if (THREAD_EQUAL(p -> id, self)) {
             GC_ASSERT(!p->thread_blocked);
 #           ifdef SPARC
-                lo = (ptr_t)GC_save_regs_in_stack();
+              lo = GC_save_regs_in_stack();
 #           else
-                lo = GC_approx_sp();
+              lo = GC_approx_sp();
+#             ifdef IA64
+                bs_hi = GC_save_regs_in_stack();
+#             endif
 #           endif
             found_me = TRUE;
-            IF_IA64(bs_hi = (ptr_t)GC_save_regs_in_stack();)
         } else {
             lo = (ptr_t)AO_load((volatile AO_t *)&p->stop_info.stack_ptr);
-            IF_IA64(bs_hi = p -> backing_store_ptr;)
+#           ifdef IA64
+              bs_hi = p -> backing_store_ptr;
+#           endif
             if (traced_stack_sect != NULL
                     && traced_stack_sect->saved_stack_ptr == lo) {
               /* If the thread has never been stopped since the recent  */
@@ -761,11 +762,15 @@ GC_INNER void GC_push_all_stacks(void)
         }
         if ((p -> flags & MAIN_THREAD) == 0) {
             hi = p -> stack_end;
-            IF_IA64(bs_lo = p -> backing_store_end);
+#           ifdef IA64
+              bs_lo = p -> backing_store_end;
+#           endif
         } else {
             /* The original stack. */
             hi = GC_stackbottom;
-            IF_IA64(bs_lo = BACKING_STORE_BASE;)
+#           ifdef IA64
+              bs_lo = BACKING_STORE_BASE;
+#           endif
         }
 #       ifdef DEBUG_THREADS
           GC_log_printf("Stack for thread %p is [%p,%p)\n",
