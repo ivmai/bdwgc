@@ -2700,7 +2700,8 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 # ifdef USE_PROC_FOR_LIBRARIES
     GC_INNER GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi);
 # endif
-# ifdef IA64
+# if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
+     && defined(IA64)
     GC_INNER ptr_t GC_greatest_stack_base_below(ptr_t bound);
 # endif
 #endif /* THREADS */

@@ -894,7 +894,8 @@ STATIC void GC_remove_all_threads_but_me(void)
   }
 #endif /* USE_PROC_FOR_LIBRARIES */
 
-#ifdef IA64
+#if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
+    && defined(IA64)
   /* Find the largest stack_base smaller than bound.  May be used       */
   /* to find the boundary between a register stack and adjacent         */
   /* immediately preceding memory stack.                                */
