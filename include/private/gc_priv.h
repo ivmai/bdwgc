@@ -2931,7 +2931,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
      /* May be needed for register backing store base. */
 #endif
 
-#if defined(NEED_FIND_LIMIT) \
+#if defined(NEED_FIND_LIMIT) || defined(WRAP_MARK_SOME) \
      || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
   GC_EXTERN JMP_BUF GC_jmp_buf;
 
