@@ -1569,9 +1569,7 @@ GC_API void GC_CALL GC_print_trace(word gc_no)
 GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY GC_ATTR_NO_SANITIZE_THREAD
 GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 {
-    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
-    REGISTER word *p;
+    REGISTER ptr_t current_p;
     REGISTER word *lim;
     REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
     REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
@@ -1581,13 +1579,13 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
     if (top == 0) return;
 
     /* Check all pointers in range and push if they appear to be valid. */
-      lim = t - 1 /* longword */;
-      for (p = b; (word)p <= (word)lim;
-           p = (word *)(((ptr_t)p) + ALIGNMENT)) {
-        REGISTER word q = *p;
+    lim = (word *)(((word)top) & ~(ALIGNMENT-1)) - 1;
+    for (current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
+         (word)current_p <= (word)lim; current_p += ALIGNMENT) {
+      REGISTER word q = *(word *)current_p;
 
-        GC_PUSH_ONE_STACK(q, p);
-      }
+      GC_PUSH_ONE_STACK(q, current_p);
+    }
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr
 }
@@ -1616,9 +1614,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
   GC_INNER void GC_push_conditional_eager(void *bottom, void *top,
                                           GC_bool all)
   {
-    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
-    REGISTER word *p;
+    REGISTER ptr_t current_p;
     REGISTER word *lim;
     REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
     REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
@@ -1629,11 +1625,12 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
       return;
     (void)all; /* TODO: If !all then scan only dirty pages. */
 
-    lim = t - 1;
-    for (p = b; (word)p <= (word)lim; p = (word *)((ptr_t)p + ALIGNMENT)) {
-      REGISTER word q = *p;
+    lim = (word *)(((word)top) & ~(ALIGNMENT-1)) - 1;
+    for (current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
+         (word)current_p <= (word)lim; current_p += ALIGNMENT) {
+      REGISTER word q = *(word *)current_p;
 
-      GC_PUSH_ONE_HEAP(q, p, GC_mark_stack_top);
+      GC_PUSH_ONE_HEAP(q, current_p, GC_mark_stack_top);
     }
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr
