@@ -18,6 +18,7 @@ dist_doc_DATA = \
         doc/README.DGUX386 \
         doc/README.Mac \
         doc/README.OS2 \
+        doc/README.aix \
         doc/README.amiga \
         doc/README.arm.cross \
         doc/README.autoconf \
@@ -30,7 +31,6 @@ dist_doc_DATA = \
         doc/README.hp \
         doc/README.linux \
         doc/README.macros \
-        doc/README.aix \
         doc/README.sgi \
         doc/README.solaris2 \
         doc/README.symbian \
