@@ -30,8 +30,6 @@
 
 #define MAX_IN  10      /* Maximum in-degree we handle directly */
 
-/* #include <unistd.h> */
-
 #if (!defined(DBG_HDRS_ALL) || (ALIGNMENT != CPP_WORDSZ/8) \
      /* || !defined(UNIX_LIKE) */) && !defined(CPPCHECK)
 # error The configuration does not support MAKE_BACK_GRAPH
