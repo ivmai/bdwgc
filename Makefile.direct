@@ -69,7 +69,7 @@ HOSTCFLAGS=$(CFLAGS)
 # For dynamic library builds, it may be necessary to add flags to generate
 # PIC code, e.g. -fPIC on Linux.
 
-# Setjmp_test may yield overly optimistic results when compiled
+# setjmp_test may yield overly optimistic results when compiled
 # without optimization.
 
 # Look into doc/README.macros for the description of the "define arguments"
@@ -389,7 +389,7 @@ gctest$(EXEEXT): tests/test.o base_lib $(UTILS)
 	./if_not_there gctest$(EXEEXT) || $(CC) $(CFLAGS) -o gctest$(EXEEXT) tests/test.o gc.a `./threadlibs`
 
 # If an optimized setjmp_test generates a segmentation fault,
-# odds are your compiler is broken.  Gctest may still work.
+# odds are your compiler is broken.  gctest may still work.
 # Try compiling setjmp_t.c unoptimized.
 setjmp_test$(EXEEXT): $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h \
   $(UTILS)

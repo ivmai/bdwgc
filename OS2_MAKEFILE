@@ -12,7 +12,7 @@ CORDOBJS= cord\cordbscs.obj cord\cordxtra.obj cord\cordprnt.obj
 CC= icc
 CFLAGS= /O /Q /DALL_INTERIOR_POINTERS /DENABLE_DISCLAIM /DGC_ATOMIC_UNCOLLECTABLE /DGC_GCJ_SUPPORT /DJAVA_FINALIZATION /DNO_EXECUTE_PERMISSION /DSMALL_CONFIG
 # Use /Ti instead of /O for debugging
-# Setjmp_test may yield overly optimistic results when compiled
+# setjmp_test may yield overly optimistic results when compiled
 # without optimization.
 
 all: gc.lib cord.lib

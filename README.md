@@ -203,10 +203,10 @@ atomic intrinsics.
 Below we focus on the collector build using classic makefile.
 For the Makefile.direct-based process, typing `make check` instead of `make`
 will automatically build the collector and then run `setjmp_test` and `gctest`.
-`Setjmp_test` will give you information about configuring the collector, which is
-useful primarily if you have a machine that's not already supported.  Gctest is
+`setjmp_test` will give you information about configuring the collector, which is
+useful primarily if you have a machine that's not already supported.  gctest is
 a somewhat superficial test of collector functionality.  Failure is indicated
-by a core dump or a message to the effect that the collector is broken.  Gctest
+by a core dump or a message to the effect that the collector is broken.  gctest
 takes about a second to two to run on reasonable 2007 vintage desktops.  It may
 use up to about 30 MB of memory.  (The multi-threaded version will use more.
 64-bit versions may use more.) `make check` will also, as its last step,

@@ -119,7 +119,7 @@ blacklst.o : blacklst.c $(INC)
 
 finalize.o : finalize.c $(INC)
 	$(CC) finalize.c $(SCOPT) noopt
-# Could sas/c still have problems with this one? Gctest sometimes fails to finalize all.
+# Could sas/c still have problems with this one? gctest sometimes fails to finalize all.
 
 new_hblk.o : new_hblk.c $(INC)
 	$(CC) new_hblk.c $(SCOPT)
