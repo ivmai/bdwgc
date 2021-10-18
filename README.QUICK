@@ -26,14 +26,18 @@ use of the collector on a machine that is already supported.
 For the version number, see README.md or include/gc_version.h files.
 
 INSTALLATION:
-Under UN*X, Linux:
+Under UN*X, Linux, Cygwin:
 Alternative 1 (the old way): type "make -f Makefile.direct check".
         Link against gc.a.
 
 Alternative 2 (the new way): type
         "./configure --prefix=<dir>; make; make check; make install".
         Link against <dir>/lib/libgc.a or <dir>/lib/libgc.so.
-        See doc/README.autoconf for details
+        See doc/README.autoconf for details.
+
+Alternative 3 (another new way): type
+        "mkdir out; cd out; cmake ..; cmake --build ."
+        See doc/README.cmake for details.
 
 Under Windows 95, 98, Me, NT, or 2000:
 copy the appropriate makefile to MAKEFILE, read it, and type "nmake check".

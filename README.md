@@ -200,6 +200,19 @@ build of `master` branch of the collector could look like:
 Cloning of `libatomic_ops` is now optional provided the compiler supports
 atomic intrinsics.
 
+Alternatively, the collector could be built with CMake, like this:
+
+    mkdir out
+    cd out
+    cmake ..
+    cmake --build .
+    ctest
+
+Finally, on most targets, the collector could be built and tested directly
+with a single compiler invocation, like this:
+
+    gcc -I include -o gctest tests/test.c extra/gc.c && ./gctest
+
 Below we focus on the collector build using classic makefile.
 For the Makefile.direct-based process, typing `make check` instead of `make`
 will automatically build the collector and then run `setjmp_test` and `gctest`.
