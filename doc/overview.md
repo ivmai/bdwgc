@@ -222,8 +222,7 @@ Slides for Hans Boehm's
 
 ## Information provided on the BDWGC site
 
-[Current users](https://github.com/ivmai/bdwgc/wiki/Known-clients) (the list
-may be rather outdated).
+[Current users](https://github.com/ivmai/bdwgc/wiki/Known-clients) list.
 
 [A simple illustration of how to build and use the collector](simple_example.md).
 
