@@ -57,9 +57,7 @@ int main(void) {
       pthread_t t[NTHREADS];
 #   else
       HANDLE t[NTHREADS];
-      DWORD thread_id;
 #   endif
-    int code;
 # endif
 
     GC_set_find_leak(1); /* for new collect versions not compiled       */
@@ -69,7 +67,8 @@ int main(void) {
 # if NTHREADS > 0
     for (i = 0; i < NTHREADS; ++i) {
 #       ifdef GC_PTHREADS
-          code = pthread_create(t + i, 0, test, 0);
+          int code = pthread_create(t + i, 0, test, 0);
+
           if (code != 0) {
             fprintf(stderr, "Thread #%d creation failed: %s\n",
                     i, strerror(code));
@@ -77,6 +76,8 @@ int main(void) {
             exit(2);
           }
 #       else
+          DWORD thread_id;
+
           t[i] = CreateThread(NULL, 0, test, 0, 0, &thread_id);
           if (NULL == t[i]) {
             fprintf(stderr, "Thread #%d creation failed, errcode= %d\n",
@@ -87,6 +88,8 @@ int main(void) {
     }
     n = i;
     for (i = 0; i < n; ++i) {
+        int code;
+
 #       ifdef GC_PTHREADS
           code = pthread_join(t[i], 0);
 #       else
