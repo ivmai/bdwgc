@@ -1273,8 +1273,9 @@ struct roots {
 #   define RT_SIZE (1 << LOG_RT_SIZE) /* Power of 2, may be != MAX_ROOT_SETS */
 #endif
 
-#if !defined(MAX_HEAP_SECTS) && (defined(CYGWIN32) || defined(MSWIN32) \
-                    || defined(MSWINCE) || defined(USE_PROC_FOR_LIBRARIES))
+#if (!defined(MAX_HEAP_SECTS) || defined(CPPCHECK)) \
+    && (defined(CYGWIN32) || defined(MSWIN32) || defined(MSWINCE) \
+        || defined(USE_PROC_FOR_LIBRARIES))
 # ifdef LARGE_CONFIG
 #   if CPP_WORDSZ > 32
 #     define MAX_HEAP_SECTS 81920
