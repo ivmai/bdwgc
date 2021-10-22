@@ -1216,6 +1216,13 @@ GC_INNER void GC_finalize(void)
 
 #endif /* !JAVA_FINALIZATION_NOT_NEEDED */
 
+STATIC GC_bool GC_interrupt_finalizers = FALSE;
+
+GC_API void GC_CALL GC_set_interrupt_finalizers(void)
+{
+  GC_interrupt_finalizers = TRUE;
+}
+
 /* Returns true if it is worth calling GC_invoke_finalizers. (Useful if */
 /* finalizers can only be called from some kind of "safe state" and     */
 /* getting into that safe state is expensive.)                          */
@@ -1235,7 +1242,7 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
     word bytes_freed_before = 0; /* initialized to prevent warning. */
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
-    while (GC_should_invoke_finalizers()) {
+    while (GC_should_invoke_finalizers() && !GC_interrupt_finalizers) {
         struct finalizable_object * curr_fo;
 
 #       ifdef THREADS
