@@ -1095,7 +1095,15 @@ GC_freehblk(struct hblk *hbp)
   GET_HDR(next, nexthdr);
   prev = GC_free_block_ending_at(hbp);
   /* Coalesce with successor, if possible.    */
-  if (nexthdr != NULL && HBLK_IS_FREE(nexthdr) && IS_MAPPED(nexthdr)
+  if (nexthdr != NULL && HBLK_IS_FREE(nexthdr)
+      && IS_MAPPED(nexthdr)
+#ifdef CHERI_PURECAP
+      /* FIXME: Coalesce with super-capability. */
+      /* Bounds of capability should span the entire coalesced memory;   */
+      /* bounds being larger than the block size is OK; bounded by the   */
+      /* imprecision of original capability obtained from system memory. */
+      && CAPABILITY_COVERS_RANGE(hbp, ADDR(next), ADDR(next) + nexthdr->hb_sz)
+#endif
       && !BLOCKS_MERGE_OVERFLOW(hhdr, nexthdr)) {
     GC_remove_from_fl(nexthdr);
     hhdr->hb_sz += nexthdr->hb_sz;
@@ -1105,7 +1113,12 @@ GC_freehblk(struct hblk *hbp)
   /* Coalesce with predecessor, if possible. */
   if (prev /* != NULL */) { /* CPPCHECK */
     prevhdr = HDR(prev);
-    if (IS_MAPPED(prevhdr) && !BLOCKS_MERGE_OVERFLOW(prevhdr, hhdr)) {
+    if (IS_MAPPED(prevhdr)
+#ifdef CHERI_PURECAP
+        /* FIXME: Coalesce with super-capability. */
+        && cheri_base_get(hbp) <= ADDR(prev)
+#endif
+        && !BLOCKS_MERGE_OVERFLOW(prevhdr, hhdr)) {
       GC_remove_from_fl(prevhdr);
       prevhdr->hb_sz += hhdr->hb_sz;
 #ifdef USE_MUNMAP

@@ -2178,9 +2178,11 @@ ptr_t GC_save_regs_in_stack(void);
 #endif /* !E2K */
 
 #ifdef CHERI_PURECAP
+#  define CAPABILITY_COVERS_RANGE(cap, b_addr, e_addr) \
+    (cheri_base_get(cap) <= (b_addr)                   \
+     && cheri_base_get(cap) + cheri_length_get(cap) >= (e_addr))
 #  define SPANNING_CAPABILITY(cap, b_addr, e_addr)                       \
-    (cheri_tag_get(cap) && cheri_base_get(cap) <= (b_addr)               \
-     && cheri_base_get(cap) + cheri_length_get(cap) >= (e_addr)          \
+    (cheri_tag_get(cap) && CAPABILITY_COVERS_RANGE(cap, b_addr, e_addr)  \
      && (cheri_perms_get(cap) & (CHERI_PERM_LOAD | CHERI_PERM_LOAD_CAP)) \
             != 0)
 #endif
