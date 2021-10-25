@@ -656,10 +656,10 @@ jobs:
     - CONF_OPTIONS="--host=i686-w64-mingw32"
     - MAKEFILE_TARGETS="all"
     - CFLAGS_EXTRA="-fno-omit-frame-pointer"
-  - env:
+  - dist: focal
+    env:
     - MAKEFILE_TARGETS="distcheck"
-    - AUTOMAKE_VER=1.15
-    - M4_VER=1.4.18
+    - AUTOMAKE_VER=1.16.5
     - LIBTOOL_VER=2.4.6
     - NO_CLONE_LIBATOMIC_OPS=true
 
@@ -678,17 +678,17 @@ before_install:
   fi
 - if [[ "$M4_VER" != "" ]]; then
     M4_XZ_URL=$GNU_DOWNLOAD_SITE/m4/m4-$M4_VER.tar.xz;
-    wget --no-check-certificate -O - $M4_XZ_URL | tar xf - --xz --directory ~;
+    wget -O - $M4_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/m4-$M4_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j check && make install);
   fi
 - if [[ "$LIBTOOL_VER" != "" ]]; then
     LIBTOOL_XZ_URL=$GNU_DOWNLOAD_SITE/libtool/libtool-$LIBTOOL_VER.tar.xz;
-    wget --no-check-certificate -O - $LIBTOOL_XZ_URL | tar xf - --xz --directory ~;
+    wget -O - $LIBTOOL_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/libtool-$LIBTOOL_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
   fi
 - if [[ "$AUTOMAKE_VER" != "" ]]; then
     AUTOMAKE_XZ_URL=$GNU_DOWNLOAD_SITE/automake/automake-$AUTOMAKE_VER.tar.xz;
-    wget --no-check-certificate -O - $AUTOMAKE_XZ_URL | tar xf - --xz --directory ~;
+    wget -O - $AUTOMAKE_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/automake-$AUTOMAKE_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
   fi
 - if [[ "$MAKEFILE_TARGETS" == *"dist"* ]]; then
