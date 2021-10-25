@@ -390,9 +390,13 @@ GC_INNER struct hblk * GC_prev_block(struct hblk *h)
             } else if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
                 j -= (signed_word)hhdr;
             } else {
+	      #if !defined(__CHERI_PURE_CAPABILITY__)
                 return((struct hblk *)
                           (((bi -> key << LOG_BOTTOM_SZ) + j)
                                << LOG_HBLKSIZE));
+	      #else
+                return((struct hblk *)hhdr->hb_block);
+	      #endif
             }
         }
         j = BOTTOM_SZ - 1;

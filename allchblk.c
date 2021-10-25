@@ -17,6 +17,9 @@
 #include "private/gc_priv.h"
 
 #include <stdio.h>
+#if defined(__CHERI_PURE_CAPABILITY__)
+# include <cheriintrin.h>
+#endif
 
 #ifdef GC_USE_ENTIRE_HEAP
   int GC_use_entire_heap = TRUE;
@@ -604,6 +607,7 @@ STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
         WARN("Header allocation failed: dropping block\n", 0);
         return(0);
     }
+    rest_hdr -> hb_block = rest;
     rest_hdr -> hb_sz = total_size - bytes;
     rest_hdr -> hb_flags = 0;
 #   ifdef GC_ASSERTIONS
@@ -964,6 +968,13 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
     /* Coalesce with successor, if possible */
       if(0 != nexthdr && HBLK_IS_FREE(nexthdr) && IS_MAPPED(nexthdr)
          && (signed_word)(hhdr -> hb_sz + nexthdr -> hb_sz) > 0
+#     if defined(__CHERI_PURE_CAPABILITY__)
+         /* Bounds of capability should span entire coalesced memory */
+         /* Bounds being larger than blk-size is OK; bounded by the imprecision */
+         /* of original capability obtained from system memory */
+         && (cheri_base_get(hbp) <= cheri_address_get(next))
+         && (cheri_base_get(hbp) + cheri_length_get(hbp)) >= (cheri_address_get(next) + nexthdr->hb_sz)
+#     endif
          /* no overflow */) {
         GC_remove_from_fl(nexthdr);
         hhdr -> hb_sz += nexthdr -> hb_sz;
@@ -973,7 +984,11 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
       if (prev /* != NULL */) { /* CPPCHECK */
         prevhdr = HDR(prev);
         if (IS_MAPPED(prevhdr)
-            && (signed_word)(hhdr -> hb_sz + prevhdr -> hb_sz) > 0) {
+            && (signed_word)(hhdr -> hb_sz + prevhdr -> hb_sz) > 0
+#       if defined(__CHERI_PURE_CAPABILITY__)
+            && (cheri_base_get(hbp) <= cheri_address_get(prev))
+#       endif
+            /* no overflow */ ) {
           GC_remove_from_fl(prevhdr);
           prevhdr -> hb_sz += hhdr -> hb_sz;
 #         ifdef USE_MUNMAP
