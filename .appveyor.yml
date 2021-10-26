@@ -23,6 +23,7 @@ environment:
   - TARGET: nmake
     BLD: debug
     CPU: x64
+    MACRO_DEFS: CFLAGS_EXTRA=-J
     MS_SDK_VER: v7.1
   - TARGET: nmake
     BLD: release
