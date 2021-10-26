@@ -73,6 +73,9 @@ CORDFLAG=-MDd
 CFLAGS_MT=$(cvarsmt) -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
 !ENDIF
 
+# Extra user-defined flags to pass both to C and C++ compilers.
+CFLAGS_EXTRA=
+
 CFLAGS_SPECIFIC=$(CFLAGS_DEBUG) $(CFLAGS_GCDLL) $(CFLAGS_MT)
 
 CFLAGS_DEFAULT=-DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION -DUSE_MUNMAP
@@ -106,12 +109,12 @@ check: gctest.exe test_cpp.exe cordtest.exe de.exe
 	test_cpp.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) $(CORDFLAG) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
+	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) $(CORDFLAG) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
 # Disable crt security warnings, since unfortunately they warn about all sorts
 # of safe uses of strncpy.  It would be nice to leave the rest enabled.
 
 .cpp.obj:
-	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude $(CFLAGS_DEFAULT) $(CXXFLAGS_SPECIFIC) -D_CRT_SECURE_NO_DEPRECATE $*.cpp /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude $(CFLAGS_DEFAULT) $(CXXFLAGS_SPECIFIC) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.cpp /Fo$*.obj
 
 $(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h include\gc_disclaim.h include\private\msvc_dbg.h
 

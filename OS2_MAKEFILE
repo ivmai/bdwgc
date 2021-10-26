@@ -9,8 +9,11 @@ OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_r
 
 CORDOBJS= cord\cordbscs.obj cord\cordxtra.obj cord\cordprnt.obj
 
+# Extra user-defined flags to pass to the compiler.
+CFLAGS_EXTRA=
+
 CC= icc
-CFLAGS= /O /Q /DALL_INTERIOR_POINTERS /DENABLE_DISCLAIM /DGC_ATOMIC_UNCOLLECTABLE /DGC_GCJ_SUPPORT /DJAVA_FINALIZATION /DNO_EXECUTE_PERMISSION /DSMALL_CONFIG
+CFLAGS= /O /Q /DALL_INTERIOR_POINTERS /DENABLE_DISCLAIM /DGC_ATOMIC_UNCOLLECTABLE /DGC_GCJ_SUPPORT /DJAVA_FINALIZATION /DNO_EXECUTE_PERMISSION /DSMALL_CONFIG $(CFLAGS_EXTRA)
 # Use /Ti instead of /O for debugging
 # setjmp_test may yield overly optimistic results when compiled
 # without optimization.

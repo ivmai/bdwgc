@@ -24,6 +24,9 @@ CPU=5
 OPTIM=-oneatx -s
 #OPTIM=-ohneatx -s
 
+# Extra user-defined flags to pass both to C and C++ compilers.
+CFLAGS_EXTRA=
+
 DEFS=-DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION #-DSMALL_CONFIG
 
 
@@ -71,9 +74,9 @@ CORDFLAG=-br
 CC=wcc386
 CXX=wpp386
 
-CFLAGS=-$(CPU)$(CALLING) $(OPTIM) -iinclude -zp4 -zc $(SYSFLAG) $(DLLFLAG) $(DEFS)
+CFLAGS=-$(CPU)$(CALLING) $(OPTIM) -iinclude -zp4 -zc $(SYSFLAG) $(DLLFLAG) $(DEFS) $(CFLAGS_EXTRA)
 CXXFLAGS= $(CFLAGS) -xs
-TEST_CFLAGS=-$(CPU)$(CALLING) $(OPTIM) -iinclude -zp4 -zc $(SYSFLAG) $(TEST_DLLFLAG) $(DEFS)
+TEST_CFLAGS=-$(CPU)$(CALLING) $(OPTIM) -iinclude -zp4 -zc $(SYSFLAG) $(TEST_DLLFLAG) $(DEFS) $(CFLAGS_EXTRA)
 TEST_CXXFLAGS= $(TEST_CFLAGS) -xs
 
 COBJS= cordbscs.obj cordxtra.obj cordprnt.obj
