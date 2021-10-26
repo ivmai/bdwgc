@@ -280,7 +280,7 @@ jobs:
         - gcc-multilib
     compiler: clang
     env:
-    - CFLAGS_EXTRA="-m32"
+    - CFLAGS_EXTRA="-m32 -funsigned-char"
     - CONF_OPTIONS="--enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
@@ -350,7 +350,7 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: gcc
     env:
-    - CFLAGS_EXTRA="-D DONT_ADD_BYTE_AT_END -D GC_TIME_LIMIT=10"
+    - CFLAGS_EXTRA="-funsigned-char -D DONT_ADD_BYTE_AT_END -D GC_TIME_LIMIT=10"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
   - addons:
       apt:
