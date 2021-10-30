@@ -1038,7 +1038,7 @@ AS_IF([test x"$with_libatomic_ops" != xno],
           [ AC_MSG_RESULT([none])
             AS_IF([test x"$THREADS" != xnone],
                   [ AC_DEFINE([GC_BUILTIN_ATOMIC], [1],
-                              [Use C11 (GCC) atomic intrinsics instead of
+                              [Use GCC atomic intrinsics instead of
                                libatomic_ops primitives.]) ]) ])
     AO_TRYLINK_CFLAGS="" ],
   [ AC_MSG_RESULT([internal])
