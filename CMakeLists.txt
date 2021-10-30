@@ -173,7 +173,7 @@ if (CMAKE_USE_PTHREADS_INIT)
   if (HOST MATCHES .*-.*-hpux10.*)
     message(FATAL_ERROR "HP/UX 10 POSIX threads are not supported.")
   endif()
-  # Assume the compiler supports C11 (GCC) atomic intrinsics.
+  # Assume the compiler supports GCC atomic intrinsics.
   add_definitions("-DGC_BUILTIN_ATOMIC")
   # Common defines for POSIX platforms.
   add_definitions("-DGC_THREADS -D_REENTRANT")
