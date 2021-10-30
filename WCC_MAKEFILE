@@ -83,7 +83,9 @@ COBJS= cordbscs.obj cordxtra.obj cordprnt.obj
 
 all: gc.lib gccpp.lib gctba.lib cord.lib
 
-check: gctest.exe test_cpp.exe cordtest.exe .SYMBOLIC
+check-deps: gctest.exe test_cpp.exe cordtest.exe .SYMBOLIC
+
+check: check-deps .SYMBOLIC
         *gctest.exe
         *test_cpp.exe
         *cordtest.exe

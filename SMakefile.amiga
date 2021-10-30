@@ -55,7 +55,9 @@ clean:
 	delete *.lib gctest setjmp_t *.o *.lnk cord/*.o cord/tests/*.o cordtest
 	smake
 
-check: setjmp_t gctest cordtest
+check-deps: setjmp_t gctest cordtest
+
+check: check-deps
 	setjmp_t
 	gctest
 	cordtest

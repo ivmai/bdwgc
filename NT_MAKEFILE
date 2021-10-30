@@ -103,7 +103,9 @@ COBJS= cord\cordbscs.obj cord\cordxtra.obj cord\cordprnt.obj
 
 all: gc.lib cord.lib gccpp.lib gctba.lib
 
-check: gctest.exe test_cpp.exe cordtest.exe de.exe
+check-deps: gctest.exe test_cpp.exe cordtest.exe de.exe
+
+check: check-deps
 	gctest.exe
 	cordtest.exe
 	test_cpp.exe

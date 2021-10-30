@@ -20,7 +20,9 @@ CFLAGS= /O /Q /DALL_INTERIOR_POINTERS /DENABLE_DISCLAIM /DGC_ATOMIC_UNCOLLECTABL
 
 all: gc.lib cord.lib
 
-check: gctest.exe cordtest.exe
+check-deps: gctest.exe cordtest.exe
+
+check: check-deps
         gctest.exe
         cordtest.exe
 

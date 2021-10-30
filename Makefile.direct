@@ -8,7 +8,9 @@
 # cords - builds cord.a only (heavyweight strings library)
 # check - same as "all" but also prints porting information, and runs some
 #         tests of collector and cords
+# check-deps - same as check but do not run the tests
 # check-cpp - builds gc.a, gccpp.a and gctba.a, runs C++ only test
+# check-cpp-deps - same as check-cpp but do not run the test
 # cord/de - builds dumb editor based on cords.
 
 ABI_FLAG=
@@ -238,7 +240,9 @@ test_cpp$(EXEEXT): $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h \
 	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc.a gccpp.a -ldld `./threadlibs`
 	./if_not_there test_cpp$(EXEEXT) || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o test_cpp$(EXEEXT) $(srcdir)/tests/test_cpp.cc gc.a gccpp.a `./threadlibs`
 
-check-cpp: test_cpp$(EXEEXT)
+check-cpp-deps: test_cpp$(EXEEXT)
+
+check-cpp: check-cpp-deps
 	./test_cpp
 
 c++-t: c++ test_cpp$(EXEEXT)
@@ -395,7 +399,10 @@ setjmp_test$(EXEEXT): $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h \
   $(UTILS)
 	$(CC) $(CFLAGS) -o setjmp_test$(EXEEXT) $(srcdir)/tools/setjmp_t.c
 
-check: cordtest$(EXEEXT) gctest$(EXEEXT) setjmp_test$(EXEEXT) test_cpp$(EXEEXT)
+check-deps: cordtest$(EXEEXT) gctest$(EXEEXT) setjmp_test$(EXEEXT) \
+  test_cpp$(EXEEXT)
+
+check: check-deps
 	./setjmp_test
 	./gctest
 	./cordtest
