@@ -426,7 +426,7 @@
 * Access finalize_now atomically to avoid TSan warning without no-sanitize
 * Acknowledge thread restart from suspend_handler (NetBSD)
 * Add a sanity check that load_acquire and store_release are available
-* Add AO primitives implementation to GC based on C11 atomic intrinsic
+* Add AO primitives implementation to GC based on GCC atomic intrinsic
 * Add assertion for suspend_ack_sem in start_world
 * Add assertion to allocobj that live unmarked object cannot be reclaimed
 * Add assertions about held lock when accessing all_bottom_indices
