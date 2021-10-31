@@ -1,9 +1,10 @@
 version: 8.3.0-{build}
 
 image:
-- Visual Studio 2015
+- Visual Studio 2019
 
 environment:
+  STUDIO_VERSION_EDITION: Studio\2019\Community
   matrix:
   - TARGET: cmake
     CMAKE_CONFIG: Debug
@@ -20,15 +21,12 @@ environment:
     CMAKE_OPTIONS: -Denable_parallel_mark=OFF
   - TARGET: nmake
     ARCH: x86
-    BLD: debug
     NMAKE_OPTIONS: enable_static=1
   - TARGET: nmake
     ARCH: x64
-    BLD: debug
     CFLAGS_EXTRA: /J
   - TARGET: nmake
     ARCH: x86
-    BLD: release
     NMAKE_OPTIONS: nodebug=1
   - TARGET: cygwin
     CONF_OPTIONS: --enable-cplusplus
@@ -66,7 +64,7 @@ build_script:
 - cmd: if [%TARGET%]==[cmake] (
     cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" . && cmake --build . --config %CMAKE_CONFIG% )
 - cmd: if [%TARGET%]==[nmake] (
-    "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /%ARCH% /%BLD% && nmake /f NT_MAKEFILE %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" )
+    "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH% && nmake /f NT_MAKEFILE %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" )
 - cmd: if [%TARGET%]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc && ./autogen.sh && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
@@ -86,7 +84,7 @@ build_script:
 test_script:
 - cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
 - cmd: if [%TARGET%]==[nmake] (
-    "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /%ARCH% /%BLD% && nmake /f NT_MAKEFILE check %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" && nmake /f NT_MAKEFILE clean )
+    "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH% && nmake /f NT_MAKEFILE check %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" && nmake /f NT_MAKEFILE clean )
 - cmd: if [%TARGET%]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
