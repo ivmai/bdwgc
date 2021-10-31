@@ -1,5 +1,8 @@
 version: 7.6.x-{build}
 
+image:
+- Visual Studio 2015
+
 clone_depth: 50
 
 build_script:
