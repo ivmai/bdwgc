@@ -28,6 +28,9 @@ environment:
   - TARGET: nmake
     ARCH: x86
     NMAKE_OPTIONS: nodebug=1
+  - TARGET: nmake
+    ARCH: x64
+    NMAKE_OPTIONS: disable_threads=1
   - TARGET: cygwin
     CONF_OPTIONS: --enable-cplusplus
     CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
