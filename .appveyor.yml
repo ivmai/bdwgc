@@ -16,20 +16,17 @@ environment:
     CMAKE_CONFIG: Release
     CMAKE_OPTIONS: -Denable_parallel_mark=OFF
   - TARGET: nmake
+    ARCH: x86
     BLD: debug
-    CPU: x86
-    MACRO_DEFS: enable_static=1
-    MS_SDK_VER: v7.1
+    NMAKE_OPTIONS: enable_static=1
   - TARGET: nmake
+    ARCH: x64
     BLD: debug
-    CPU: x64
-    MACRO_DEFS: CFLAGS_EXTRA=-J
-    MS_SDK_VER: v7.1
+    CFLAGS_EXTRA: /J
   - TARGET: nmake
+    ARCH: x86
     BLD: release
-    CPU: x86
-    MACRO_DEFS: nodebug=1
-    MS_SDK_VER: v7.1
+    NMAKE_OPTIONS: nodebug=1
   - TARGET: cygwin
     CONF_OPTIONS: --enable-cplusplus
     CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
@@ -45,17 +42,17 @@ environment:
     CONF_OPTIONS: --disable-threads
     CFLAGS_EXTRA: -D USE_WINALLOC
   - TARGET: mingw
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic
+    CFLAGS_EXTRA:
   - TARGET: mingw
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D EMPTY_GETENV_RESULTS -D GC_GCJ_SUPPORT -D USE_MUNMAP -D LARGE_CONFIG -D NO_MSGBOX_ON_ERROR
+    CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D EMPTY_GETENV_RESULTS -D GC_GCJ_SUPPORT -D USE_MUNMAP -D LARGE_CONFIG -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT -D GC_TIME_LIMIT=10 -D WINXP_USE_PERF_COUNTER -D NO_MSGBOX_ON_ERROR
+    CFLAGS_EXTRA: -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT -D GC_TIME_LIMIT=10 -D WINXP_USE_PERF_COUNTER -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw-shared-no-make
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D GC_ASSERTIONS -D ENABLE_DISCLAIM -D GC_GCJ_SUPPORT -D GC_PREFER_MPROTECT_VDB -D GC_CALL=__stdcall -D GC_CALLBACK=__fastcall -D CONSOLE_LOG -D NO_MSGBOX_ON_ERROR
+    CFLAGS_EXTRA: -D GC_THREADS -D GC_ASSERTIONS -D ENABLE_DISCLAIM -D GC_GCJ_SUPPORT -D GC_PREFER_MPROTECT_VDB -D GC_CALL=__stdcall -D GC_CALLBACK=__fastcall -D CONSOLE_LOG -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw-w64
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D NO_MSGBOX_ON_ERROR
+    CFLAGS_EXTRA: -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw-w64
-    CFLAGS_EXTRA: -Werror -Wall -Wextra -Wpedantic -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT -D NO_RETRY_GET_THREAD_CONTEXT
+    CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT -D NO_RETRY_GET_THREAD_CONTEXT
 
 clone_depth: 50
 
@@ -66,7 +63,7 @@ build_script:
 - cmd: if [%TARGET%]==[cmake] (
     cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" . && cmake --build . --config %CMAKE_CONFIG% )
 - cmd: if [%TARGET%]==[nmake] (
-    "C:\Program Files\Microsoft SDKs\Windows\%MS_SDK_VER%\Bin\SetEnv.cmd" /%CPU% /%BLD% && nmake /f NT_MAKEFILE %MACRO_DEFS% )
+    "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /%ARCH% /%BLD% && nmake /f NT_MAKEFILE %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" )
 - cmd: if [%TARGET%]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc && ./autogen.sh && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
@@ -75,18 +72,18 @@ build_script:
       "cd /cygdrive/c/projects/bdwgc && ./autogen.sh && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+      "cd /c/projects/bdwgc && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw-shared-no-make] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL %CFLAGS_EXTRA% -shared -o gc.dll extra/gc.c" )
+      "cd /c/projects/bdwgc && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -shared -o gc.dll extra/gc.c" )
 - cmd: if [%TARGET%]==[mingw-w64] (
     C:\msys64\usr\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+      "cd /c/projects/bdwgc && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 
 test_script:
 - cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
 - cmd: if [%TARGET%]==[nmake] (
-    "C:\Program Files\Microsoft SDKs\Windows\%MS_SDK_VER%\Bin\SetEnv.cmd" /%CPU% /%BLD% && nmake /f NT_MAKEFILE check %MACRO_DEFS% && nmake /f NT_MAKEFILE clean )
+    "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /%ARCH% /%BLD% && nmake /f NT_MAKEFILE check %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" && nmake /f NT_MAKEFILE clean )
 - cmd: if [%TARGET%]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
@@ -95,10 +92,10 @@ test_script:
       "cd /cygdrive/c/projects/bdwgc && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && make -j -f Makefile.direct check CC=gcc CFLAGS_EXTRA='-DGC_NOT_DLL %CFLAGS_EXTRA%'" )
+      "cd /c/projects/bdwgc && make -j -f Makefile.direct check CC=gcc CFLAGS_EXTRA='-DGC_NOT_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw-shared-no-make] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL %CFLAGS_EXTRA% -o gctest.exe tests/test.c gc.dll && gctest.exe" )
+      "cd /c/projects/bdwgc && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o gctest.exe tests/test.c gc.dll && gctest.exe" )
 - cmd: if [%TARGET%]==[mingw-w64] (
     C:\msys64\usr\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && make -j -f Makefile.direct check CC=gcc CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+      "cd /c/projects/bdwgc && make -j -f Makefile.direct check CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
