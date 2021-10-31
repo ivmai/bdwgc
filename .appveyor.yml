@@ -1,5 +1,8 @@
 version: 8.3.0-{build}
 
+image:
+- Visual Studio 2015
+
 environment:
   matrix:
   - TARGET: cmake
