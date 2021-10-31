@@ -43,6 +43,10 @@
 #pragma comment(lib, "dbghelp.lib")
 #pragma optimize("gy", off)
 
+/* Disable a warning that /GS can not protect parameters and local      */
+/* variables from local buffer overrun because optimizations are off.   */
+#pragma warning(disable:4748)
+
 typedef GC_word word;
 #define GC_ULONG_PTR word
 
