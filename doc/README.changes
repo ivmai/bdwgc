@@ -886,7 +886,7 @@ Since 5.0 alpha3
  - Removed the tests for SGI_SOURCE in new_gc_alloc.h.  This was causing that
    interface to fail on nonSGI platforms.
  - Changed the Linux stack finding code to use /proc, after changing it
-   to use HEURISTIC1.  (Thanks to David Mossberger for pointing out the
+   to use HEURISTIC1.  (Thanks to David Mosberger for pointing out the
    /proc hook.)
  - Added HP/UX incremental GC support and HP/UX 11 thread support.
    Thread support is currently still flaky.
