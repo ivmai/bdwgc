@@ -1864,6 +1864,9 @@ void GC_register_data_segments(void)
     void *candidate;
 
     if (NULL == new_l) return;
+    new_l -> allocation_base = NULL;
+                        /* to suppress maybe-uninitialized gcc warning  */
+
     candidate = GC_get_allocation_base(new_l);
     if (GC_is_malloc_heap_base(candidate)) {
       /* Try a little harder to find malloc heap.                       */
