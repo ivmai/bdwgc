@@ -9120,7 +9120,7 @@ Henderson and Roman Hodek.
 * Removed the tests for SGI_SOURCE in new_gc_alloc.h.  This was causing that
 interface to fail on non-SGI platforms.
 * Changed the Linux stack finding code to use /proc, after changing it
-to use HEURISTIC1 (thanks to David Mossberger for pointing out /proc hook).
+to use HEURISTIC1 (thanks to David Mosberger for pointing out /proc hook).
 * Added HP/UX incremental GC support and HP/UX 11 thread support.
 Thread support is currently still flaky.
 * Added basic Linux/IA64 support.
