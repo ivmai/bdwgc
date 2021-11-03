@@ -164,7 +164,6 @@ dist_noinst_SCRIPTS = callprocs configure.host
 EXTRA_DIST += README.QUICK
 
 # other makefiles
-# :GOTCHA: deliberately we do not include 'Makefile'
 EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
     OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE	\
     Makefile.direct Makefile.dj Makefile.DLLs SMakefile.amiga \
