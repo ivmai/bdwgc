@@ -26,7 +26,7 @@ To use threads, you need to abide by the following requirements:
    MIT pthreads).
 
 2) You must compile the collector with "-DGC_THREADS -D_REENTRANT" specified
-   in the Makefile.
+   in the Makefile.direct file.
 
 3a) Every file that makes thread calls should define GC_THREADS, and then
    include gc.h.  Gc.h redefines some of the pthread primitives as macros
