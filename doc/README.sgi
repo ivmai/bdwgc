@@ -2,7 +2,7 @@ Performance of the incremental collector can be greatly enhanced with
 -DNO_EXECUTE_PERMISSION.
 
 The collector should run with all of the -32, -n32 and -64 ABIs.  Remember to
-define the AS macro in the Makefile to be "as -64", or "as -n32".
+define the AS macro in the Makefile.direct to be "as -64", or "as -n32".
 
 If you use -DREDIRECT_MALLOC=GC_malloc with C++ code, your code should make
 at least one explicit call to malloc instead of new to ensure that the proper
@@ -13,7 +13,8 @@ ports.
 
 Pthreads support is provided.  This requires that:
 
-1) You compile the collector with -DGC_IRIX_THREADS specified in the Makefile.
+1) You compile the collector with -DGC_IRIX_THREADS specified in the
+Makefile.direct.
 
 2) You have the latest pthreads patches installed.
 
