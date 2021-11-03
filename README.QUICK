@@ -78,10 +78,10 @@ Do not store the only pointer to an object in memory allocated
 with system malloc, since the collector usually does not scan
 memory allocated in this way.
 
-Use with threads may be supported on your system, but requires the
-collector to be built with thread support.  See Makefile.  The collector
-does not guarantee to scan thread-local storage (e.g. of the kind
-accessed with pthread_getspecific()).  The collector does scan
+Use with threads may be supported on your system, but requires the collector
+to be built with thread support.  See Makefile.am or Makefile.direct.
+The collector does not guarantee to scan thread-local storage (e.g. of the
+kind accessed with pthread_getspecific()).  The collector does scan
 thread stacks though, so generally the best solution is to ensure that
 any pointers stored in thread-local storage are also stored on the
 thread's stack for the duration of their lifetime.
