@@ -83,7 +83,6 @@ else
 if PTHREADS
 # Not Cygwin or MinGW.
 libgc_la_SOURCES += pthread_start.c pthread_support.c
-pkginclude_HEADERS += include/gc_pthread_redirects.h
 if DARWIN_THREADS
 libgc_la_SOURCES += darwin_stop_world.c
 else
@@ -106,15 +105,25 @@ endif
 
 if ENABLE_GCJ_SUPPORT
 libgc_la_SOURCES += gcj_mlc.c
-pkginclude_HEADERS += include/gc_gcj.h
 endif
 
 if ENABLE_DISCLAIM
 libgc_la_SOURCES += fnlz_mlc.c
-pkginclude_HEADERS += include/gc_disclaim.h
 endif
 
 ## End of !SINGLE_GC_OBJ
+endif
+
+if PTHREADS
+pkginclude_HEADERS += include/gc_pthread_redirects.h
+endif
+
+if ENABLE_GCJ_SUPPORT
+pkginclude_HEADERS += include/gc_gcj.h
+endif
+
+if ENABLE_DISCLAIM
+pkginclude_HEADERS += include/gc_disclaim.h
 endif
 
 if USE_INTERNAL_LIBATOMIC_OPS
