@@ -105,10 +105,13 @@ endif
 
 if ENABLE_DISCLAIM
 libgc_la_SOURCES += fnlz_mlc.c
-pkginclude_HEADERS += include/gc_disclaim.h
 endif
 
 ## End of !SINGLE_GC_OBJ
+endif
+
+if ENABLE_DISCLAIM
+pkginclude_HEADERS += include/gc_disclaim.h
 endif
 
 if USE_INTERNAL_LIBATOMIC_OPS
