@@ -670,7 +670,7 @@ if (build_tests)
 
   if (enable_threads)
     add_executable(test_atomic_ops tests/test_atomic_ops.c)
-    target_link_libraries(test_atomic_ops PRIVATE gc)
+    target_link_libraries(test_atomic_ops PRIVATE ${THREADDLLIBS_LIST})
     add_test(NAME test_atomic_ops COMMAND test_atomic_ops)
 
     add_executable(threadleaktest tests/thread_leak_test.c)
