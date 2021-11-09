@@ -12,6 +12,7 @@
 [![Lines of code](https://img.shields.io/tokei/lines/github/ivmai/bdwgc)](https://shields.io/category/size)
 [![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/ivmai/bdwgc)](https://shields.io/category/size)
 [![Github All Releases](https://img.shields.io/github/downloads/ivmai/bdwgc/total.svg)](https://shields.io/category/downloads)
+[![Packaging status](https://repology.org/badge/tiny-repos/boehm-gc.svg)](https://repology.org/project/boehm-gc/versions)
 
 This is version 8.3.0 (next release development) of a conservative garbage
 collector for C and C++.
