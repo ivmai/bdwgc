@@ -114,18 +114,6 @@ endif
 ## End of !SINGLE_GC_OBJ
 endif
 
-if PTHREADS
-pkginclude_HEADERS += include/gc_pthread_redirects.h
-endif
-
-if ENABLE_GCJ_SUPPORT
-pkginclude_HEADERS += include/gc_gcj.h
-endif
-
-if ENABLE_DISCLAIM
-pkginclude_HEADERS += include/gc_disclaim.h
-endif
-
 if USE_INTERNAL_LIBATOMIC_OPS
 nodist_libgc_la_SOURCES = libatomic_ops/src/atomic_ops.c
 endif
@@ -148,8 +136,6 @@ if CPLUSPLUS
 # C++ Interface
 # -------------
 lib_LTLIBRARIES += libgccpp.la
-pkginclude_HEADERS += include/gc_allocator.h include/gc_cpp.h
-include_HEADERS += include/extra/gc_cpp.h
 libgccpp_la_SOURCES = gc_badalc.cc gc_cpp.cc
 libgccpp_la_LIBADD = libgc.la
 libgccpp_la_LDFLAGS = -version-info $(LIBGCCPP_VER_INFO) -no-undefined
@@ -163,9 +149,6 @@ libgctba_la_LDFLAGS = -version-info $(LIBGCCPP_VER_INFO) -no-undefined
 endif
 endif
 
-## FIXME: If Visual C++ users use Makefile.am, this should go into
-## pkginclude_HEADERS with proper AM_CONDITIONALization.  Otherwise
-## delete this comment.
 EXTRA_DIST += gc_badalc.cpp gc_cpp.cpp
 
 
@@ -230,8 +213,7 @@ EXTRA_DIST += tools/if_mach.c tools/if_not_there.c tools/setjmp_t.c \
     extra/symbian/init_global_static_roots.cpp extra/symbian.cpp \
     extra/pcr_interface.c extra/real_malloc.c \
     extra/Mac_files/datastart.c extra/Mac_files/dataend.c \
-    extra/Mac_files/MacOS_config.h \
-    include/private/msvc_dbg.h extra/msvc_dbg.c tools/callprocs.sh
+    extra/Mac_files/MacOS_config.h extra/msvc_dbg.c tools/callprocs.sh
 
 #
 # :GOTCHA: GNU make rule for making .s out of .S is flawed,

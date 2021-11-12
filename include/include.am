@@ -24,6 +24,26 @@ pkginclude_HEADERS += \
         include/javaxfc.h \
         include/leak_detector.h
 
+if ENABLE_DISCLAIM
+pkginclude_HEADERS += include/gc_disclaim.h
+endif
+
+if ENABLE_GCJ_SUPPORT
+pkginclude_HEADERS += include/gc_gcj.h
+endif
+
+if PTHREADS
+pkginclude_HEADERS += include/gc_pthread_redirects.h
+endif
+
+if CPLUSPLUS
+pkginclude_HEADERS += \
+        include/gc_allocator.h \
+        include/gc_cpp.h
+
+include_HEADERS += include/extra/gc_cpp.h
+endif
+
 # headers which are not installed
 #
 dist_noinst_HEADERS += \
@@ -41,6 +61,9 @@ dist_noinst_HEADERS += \
         include/private/pthread_support.h \
         include/private/specific.h \
         include/private/thread_local_alloc.h
+
+# files used by makefiles other than *.am
+EXTRA_DIST += include/private/msvc_dbg.h
 
 # unprefixed header
 include_HEADERS += \
