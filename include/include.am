@@ -39,7 +39,6 @@ dist_noinst_HEADERS += \
 	include/private/gc_hdrs.h \
 	include/private/gc_priv.h \
 	include/private/gcconfig.h \
-	include/private/msvc_dbg.h \
 	include/private/gc_pmark.h \
 	include/private/gc_locks.h \
 	include/private/dbg_mlc.h \
