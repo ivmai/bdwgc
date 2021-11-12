@@ -2108,7 +2108,11 @@ EXTERN_C_BEGIN
 
 # ifdef AARCH64
 #   define MACH_TYPE "AARCH64"
-#   ifdef __ILP32__
+#   if defined(__CHERI_PURE_CAPABILITY__)
+#     define INTEGER_WORDSZ 64
+#     define CPP_WORDSZ 128
+#     define ALIGNMENT (CPP_WORDSZ >> 3)
+#   elif defined( __ILP32__)
 #     define CPP_WORDSZ 32
 #     define ALIGNMENT 4
 #   else

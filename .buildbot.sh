@@ -19,4 +19,16 @@ build_bdwgc()
     cmake --build ${BUILD_DIR}
 }
 
+clean_bdwgc()
+{
+    BUILD_DIR=bdwgc_build
+    INSTALL_DIR=bdwgc_install
+    rm -rf ${BUILD_DIR}
+    rm -rf ${INSTALL_DIR}
+}
+
+clean_bdwgc
 build_bdwgc riscv64-purecap.cmake
+clean_bdwgc
+build_bdwgc morello-purecap.cmake
+clean_bdwgc
