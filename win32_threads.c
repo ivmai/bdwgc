@@ -2753,7 +2753,17 @@ GC_INNER void GC_thr_init(void)
   struct GC_stack_base sb;
 # if (!defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) && !defined(MSWINCE) \
       && defined(PARALLEL_MARK)) || defined(WOW64_THREAD_CONTEXT_WORKAROUND)
-    HMODULE hK32 = GetModuleHandle(TEXT("kernel32.dll"));
+    HMODULE hK32;
+#   ifdef MSWINRT_FLAVOR
+      MEMORY_BASIC_INFORMATION memInfo;
+
+      if (VirtualQuery((void*)(word)GetProcAddress, &memInfo, sizeof(memInfo))
+          != sizeof(memInfo))
+        ABORT("Weird VirtualQuery result");
+      hK32 = (HMODULE)memInfo.AllocationBase;
+#   else
+      hK32 = GetModuleHandle(TEXT("kernel32.dll"));
+#   endif
 # endif
 
   GC_ASSERT(I_HOLD_LOCK());
