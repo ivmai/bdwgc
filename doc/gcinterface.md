@@ -10,7 +10,7 @@ old code, not for new development.
 New code should use the interface discussed below.
 
 Code must be linked against the GC library. On most UNIX platforms, depending
-on how the collector is built, this will be `gc.a` or `libgc.{a,so}`.
+on how the collector is built, this will be `libgc.a` or `libgc.so`.
 
 The following describes the standard C interface to the garbage collector.
 It is not a complete definition of the interface. It describes only the most

@@ -28,7 +28,7 @@ For the version number, see README.md or include/gc_version.h files.
 INSTALLATION:
 Under UN*X, Linux, Cygwin:
 Alternative 1 (the old way): type "make -f Makefile.direct check".
-        Link against gc.a.
+        Link against libgc.a.
 
 Alternative 2 (the new way): type
         "./configure --prefix=<dir>; make; make check; make install".
@@ -56,15 +56,14 @@ cordprnt.c is known to be less than perfectly portable.  The rest of the
 package should still work.)  See include/cord.h for the API.
 
 If you wish to use the collector from C++, type "make c++", or use
---enable-cplusplus with the configure script.  With Makefile.direct,
-"make c++" creates gccpp.a and gctba.a files (you should link with either
-gccpp.a or gctba.a).  With the alternate (preferred) build process, this
-generates libgccpp.a and libgctba.a, and/or libgccpp.so and libgctba.so.
-See include/gc_cpp.h and doc/gcinterface.md.
+--enable-cplusplus with the configure script.  This creates libgccpp.a and
+libgctba.a files, or their shared library equivalents (libgccpp.so and
+libgctba.so).  You should link with either the first or the second one, but
+not both.  See include/gc_cpp.h and doc/gcinterface.md.
 
 TYPICAL USE:
 Include "gc.h" from the include subdirectory.  Link against the
-appropriate library ("gc.a" under UN*X).  Replace calls to malloc
+appropriate library ("libgc.a" under UN*X).  Replace calls to malloc
 by calls to GC_MALLOC, and calls to realloc by calls to GC_REALLOC.
 If the object is known to never contain pointers, use GC_MALLOC_ATOMIC
 instead of GC_MALLOC.

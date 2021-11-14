@@ -2,14 +2,14 @@
 # to build the collector.
 #
 # Primary targets:
-# all - builds gc.a, gccpp.a, gctba.a and cord.a
-# base_lib - builds gc.a only (basic library)
-# c++ - builds gccpp.a and gctba.a only (C++ interface to library)
-# cords - builds cord.a only (heavyweight strings library)
+# all - builds libgc.a, libgccpp.a, libgctba.a and libcord.a
+# base_lib - builds libgc.a only (basic library)
+# c++ - builds libgccpp.a and libgctba.a only (C++ interface to library)
+# cords - builds libcord.a only (heavyweight strings library)
 # check - same as "all" but also prints porting information, and runs some
 #         tests of collector and cords
 # check-deps - same as check but do not run the tests
-# check-cpp - builds gc.a, gccpp.a and gctba.a, runs C++ only test
+# check-cpp - builds libgc.a, libgccpp.a and libgctba.a, runs C++ only test
 # check-cpp-deps - same as check-cpp but do not run the test
 # cord/de - builds dumb editor based on cords.
 
@@ -160,13 +160,13 @@ BSD-pkg-all: bsd-libgc.a bsd-libleak.a
 
 bsd-libgc.a bsd-libgccpp.a bsd-libgctba.a:
 	$(MAKE) -f Makefile.direct CFLAGS="$(CFLAGS)" clean c++-t
-	mv gc.a bsd-libgc.a
-	mv gccpp.a bsd-libgccpp.a
-	mv gctba.a bsd-libgctba.a
+	mv libgc.a bsd-libgc.a
+	mv libgccpp.a bsd-libgccpp.a
+	mv libgctba.a bsd-libgctba.a
 
 bsd-libleak.a:
 	$(MAKE) -f Makefile.direct CFLAGS="$(LEAKFLAGS)" clean c++-nt
-	mv gc.a bsd-libleak.a
+	mv libgc.a bsd-libleak.a
 
 BSD-pkg-install: BSD-pkg-all
 	${CP} bsd-libgc.a libgc.a
@@ -205,26 +205,26 @@ tests/test.o: $(srcdir)/tests/test.c
 	$(CC) $(CFLAGS) -c $(srcdir)/tests/test.c
 	mv test.o tests/test.o
 
-base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
+base_lib libgc.a: $(OBJS) dyn_load.o $(UTILS)
 	rm -f dont_ar_1
 	./if_mach SPARC SOLARIS touch dont_ar_1
-	./if_mach SPARC SOLARIS $(AR) rus gc.a $(OBJS) dyn_load.o
+	./if_mach SPARC SOLARIS $(AR) rus libgc.a $(OBJS) dyn_load.o
 	./if_mach M68K AMIGA touch dont_ar_1
-	./if_mach M68K AMIGA $(AR) -vrus gc.a $(OBJS) dyn_load.o
-	./if_not_there dont_ar_1 || $(AR) ru gc.a $(OBJS) dyn_load.o
-	./if_not_there dont_ar_1 || $(RANLIB) gc.a || cat /dev/null
+	./if_mach M68K AMIGA $(AR) -vrus libgc.a $(OBJS) dyn_load.o
+	./if_not_there dont_ar_1 || $(AR) ru libgc.a $(OBJS) dyn_load.o
+	./if_not_there dont_ar_1 || $(RANLIB) libgc.a || cat /dev/null
 	echo > base_lib
 #    Ignore ranlib failure; that usually means it doesn't exist, and
 #    isn't needed.
 
-cords cord.a: $(CORD_OBJS) $(UTILS)
+cords libcord.a: $(CORD_OBJS) $(UTILS)
 	rm -f dont_ar_3
 	./if_mach SPARC SOLARIS touch dont_ar_3
-	./if_mach SPARC SOLARIS $(AR) rus cord.a $(CORD_OBJS)
+	./if_mach SPARC SOLARIS $(AR) rus libcord.a $(CORD_OBJS)
 	./if_mach M68K AMIGA touch dont_ar_3
-	./if_mach M68K AMIGA $(AR) -vrus cord.a $(CORD_OBJS)
-	./if_not_there dont_ar_3 || $(AR) ru cord.a $(CORD_OBJS)
-	./if_not_there dont_ar_3 || $(RANLIB) cord.a || cat /dev/null
+	./if_mach M68K AMIGA $(AR) -vrus libcord.a $(CORD_OBJS)
+	./if_not_there dont_ar_3 || $(AR) ru libcord.a $(CORD_OBJS)
+	./if_not_there dont_ar_3 || $(RANLIB) libcord.a || cat /dev/null
 	echo > cords
 
 gc_badalc.o: $(srcdir)/gc_badalc.cc $(srcdir)/include/gc_cpp.h \
@@ -237,8 +237,8 @@ gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
 test_cpp$(EXEEXT): $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h \
   $(srcdir)/include/gc.h c++ base_lib $(UTILS)
 	rm -f test_cpp$(EXEEXT)
-	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc.a gccpp.a -ldld `./threadlibs`
-	./if_not_there test_cpp$(EXEEXT) || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o test_cpp$(EXEEXT) $(srcdir)/tests/test_cpp.cc gc.a gccpp.a `./threadlibs`
+	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc libgc.a libgccpp.a -ldld `./threadlibs`
+	./if_not_there test_cpp$(EXEEXT) || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o test_cpp$(EXEEXT) $(srcdir)/tests/test_cpp.cc libgc.a libgccpp.a `./threadlibs`
 
 check-cpp-deps: test_cpp$(EXEEXT)
 
@@ -251,18 +251,18 @@ c++-t: c++ test_cpp$(EXEEXT)
 c++-nt: c++
 	@echo "Use ./test_cpp 1 to test the leak library"
 
-c++ gccpp.a gctba.a: gc_badalc.o gc_cpp.o $(UTILS)
+c++ libgccpp.a libgctba.a: gc_badalc.o gc_cpp.o $(UTILS)
 	rm -f dont_ar_4
 	./if_mach SPARC SOLARIS touch dont_ar_4
-	./if_mach SPARC SOLARIS $(AR) rus gccpp.a gc_badalc.o gc_cpp.o
-	./if_mach SPARC SOLARIS $(AR) rus gctba.a gc_badalc.o
+	./if_mach SPARC SOLARIS $(AR) rus libgccpp.a gc_badalc.o gc_cpp.o
+	./if_mach SPARC SOLARIS $(AR) rus libgctba.a gc_badalc.o
 	./if_mach M68K AMIGA touch dont_ar_4
-	./if_mach M68K AMIGA $(AR) -vrus gccpp.a gc_badalc.o gc_cpp.o
-	./if_mach M68K AMIGA $(AR) -vrus gctba.a gc_badalc.o
-	./if_not_there dont_ar_4 || $(AR) ru gccpp.a gc_badalc.o gc_cpp.o
-	./if_not_there dont_ar_4 || $(RANLIB) gccpp.a || cat /dev/null
-	./if_not_there dont_ar_4 || $(AR) ru gctba.a gc_badalc.o
-	./if_not_there dont_ar_4 || $(RANLIB) gctba.a || cat /dev/null
+	./if_mach M68K AMIGA $(AR) -vrus libgccpp.a gc_badalc.o gc_cpp.o
+	./if_mach M68K AMIGA $(AR) -vrus libgctba.a gc_badalc.o
+	./if_not_there dont_ar_4 || $(AR) ru libgccpp.a gc_badalc.o gc_cpp.o
+	./if_not_there dont_ar_4 || $(RANLIB) libgccpp.a || cat /dev/null
+	./if_not_there dont_ar_4 || $(AR) ru libgctba.a gc_badalc.o
+	./if_not_there dont_ar_4 || $(RANLIB) libgctba.a || cat /dev/null
 	echo > c++
 
 dyn_load_sunos53.o: dyn_load.c
@@ -351,22 +351,22 @@ cord/cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 
 cordtest$(EXEEXT): $(srcdir)/cord/tests/cordtest.c cords base_lib $(UTILS)
 	rm -f cordtest$(EXEEXT)
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cordtest $(srcdir)/cord/tests/cordtest.c gc.a cord.a -lucb
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cordtest $(srcdir)/cord/tests/cordtest.c gc.a cord.a -ldld `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cordtest $(srcdir)/cord/tests/cordtest.c gc.a cord.a `./threadlibs`
-	./if_not_there cordtest$(EXEEXT) || $(CC) $(CFLAGS) -o cordtest$(EXEEXT) $(srcdir)/cord/tests/cordtest.c gc.a cord.a `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cordtest $(srcdir)/cord/tests/cordtest.c libgc.a libcord.a -lucb
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cordtest $(srcdir)/cord/tests/cordtest.c libgc.a libcord.a -ldld `./threadlibs`
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cordtest $(srcdir)/cord/tests/cordtest.c libgc.a libcord.a `./threadlibs`
+	./if_not_there cordtest$(EXEEXT) || $(CC) $(CFLAGS) -o cordtest$(EXEEXT) $(srcdir)/cord/tests/cordtest.c libgc.a libcord.a `./threadlibs`
 
 cord/de: de$(EXEEXT)
 
 de$(EXEEXT): $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c \
   $(srcdir)/cord/tests/de_win.h cords base_lib $(UTILS)
 	rm -f de$(EXEEXT)
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c gc.a cord.a -lcurses -ltermlib -lucb `./threadlibs`
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c gc.a cord.a -lcurses -ltermlib -ldld `./threadlibs`
-	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c gc.a cord.a -lcurses
-	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c gc.a cord.a
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o de $(srcdir)/cord/tests/de.c gc.a cord.a -lcurses
-	./if_not_there de$(EXEEXT) || $(CC) $(CFLAGS) -o de$(EXEEXT) $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c gc.a cord.a $(CURSES) `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c libgc.a libcord.a -lcurses -ltermlib -lucb `./threadlibs`
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c libgc.a libcord.a -lcurses -ltermlib -ldld `./threadlibs`
+	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c libgc.a libcord.a -lcurses
+	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c libgc.a libcord.a
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o de $(srcdir)/cord/tests/de.c libgc.a libcord.a -lcurses
+	./if_not_there de$(EXEEXT) || $(CC) $(CFLAGS) -o de$(EXEEXT) $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c libgc.a libcord.a $(CURSES) `./threadlibs`
 
 if_mach$(EXEEXT): $(srcdir)/tools/if_mach.c \
   $(srcdir)/include/private/gcconfig.h
@@ -387,10 +387,10 @@ clean:
 
 gctest$(EXEEXT): tests/test.o base_lib $(UTILS)
 	rm -f gctest$(EXEEXT)
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o gctest tests/test.o gc.a -lucb
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o gctest tests/test.o gc.a -ldld `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o gctest  tests/test.o gc.a `./threadlibs`
-	./if_not_there gctest$(EXEEXT) || $(CC) $(CFLAGS) -o gctest$(EXEEXT) tests/test.o gc.a `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o gctest tests/test.o libgc.a -lucb
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o gctest tests/test.o libgc.a -ldld `./threadlibs`
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o gctest  tests/test.o libgc.a `./threadlibs`
+	./if_not_there gctest$(EXEEXT) || $(CC) $(CFLAGS) -o gctest$(EXEEXT) tests/test.o libgc.a `./threadlibs`
 
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  gctest may still work.

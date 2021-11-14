@@ -229,8 +229,8 @@ use up to about 30 MB of memory.  (The multi-threaded version will use more.
 64-bit versions may use more.) `make check` will also, as its last step,
 attempt to build and test the "cord" string library.)
 
-Makefile.direct will generate a library gc.a which you should link against.
-Typing "make cords" will build the cord library (cord.a).
+Makefile.direct will generate a library libgc.a which you should link against.
+Typing "make cords" will build the cord library (libcord.a).
 
 The GNU style build process understands the usual targets.  `make check`
 runs a number of tests.  `make install` installs at least libgc, and libcord.
