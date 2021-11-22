@@ -554,23 +554,23 @@ GitHub.
 
 ## Copyright & Warranty
 
- * Copyright (c) 1988, 1989 Hans-J. Boehm, Alan J. Demers
+ * Copyright (c) 1988-1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
- * Copyright (c) 1999-2011 by Hewlett-Packard Development Company.
+ * Copyright (c) 1999-2011 Hewlett-Packard Development Company, L.P.
  * Copyright (c) 2008-2021 Ivan Maidanski
 
 The files pthread_stop_world.c, pthread_support.c and some others are also
 
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
 
-The file include/gc.h is also
+The files dbg_mlc.c, finalize.c and include/gc.h are also
 
- * Copyright (c) 2007 Free Software Foundation, Inc
+ * Copyright (c) 2007 Free Software Foundation, Inc.
 
 The files Makefile.am and configure.ac are
 
- * Copyright (c) 2001 by Red Hat Inc. All rights reserved.
+ * Copyright (c) 1999-2001 by Red Hat, Inc.  All rights reserved.
 
 The files extra/msvc_dbg.c and include/private/msvc_dbg.h are
 

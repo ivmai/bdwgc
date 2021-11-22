@@ -1,8 +1,8 @@
 /*
- * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
+ * Copyright (c) 1988-1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
- * Copyright (c) 1998 by Silicon Graphics.  All rights reserved.
- * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 1999-2011 Hewlett-Packard Development Company, L.P.
  * Copyright (c) 2008-2021 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
@@ -143,15 +143,16 @@ STATIC word GC_used_heap_size_after_full = 0;
 EXTERN_C_BEGIN
 extern const char * const GC_copyright[];
 EXTERN_C_END
-const char * const GC_copyright[] =
-{"Copyright 1988, 1989 Hans-J. Boehm and Alan J. Demers ",
-"Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
-"Copyright (c) 1996-1998 by Silicon Graphics.  All rights reserved. ",
-"Copyright (c) 1999-2009 by Hewlett-Packard Company.  All rights reserved. ",
-"Copyright (c) 2008-2021 Ivan Maidanski ",
-"THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY",
-" EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.",
-"See source code for details." };
+const char * const GC_copyright[] = {
+  "Copyright (c) 1988-1989 Hans-J. Boehm, Alan J. Demers",
+  "Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.",
+  "Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.",
+  "Copyright (c) 1999-2011 Hewlett-Packard Development Company, L.P.",
+  "Copyright (c) 2008-2021 Ivan Maidanski",
+  "THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED"
+    " OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.",
+  "See source code for details."
+};
 
 /* Version macros are now defined in gc_version.h, which is included by */
 /* gc.h, which is included by gc_priv.h.                                */
