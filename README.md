@@ -554,7 +554,6 @@ GitHub.
 
 ## Copyright & Warranty, Contributors
 
-The exact licensing information is provided in [README.QUICK](README.QUICK)
-file.
+The exact licensing information is provided in [LICENSE](LICENSE) file.
 
 All the contributors are listed in [AUTHORS](AUTHORS) file.

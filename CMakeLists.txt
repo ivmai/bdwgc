@@ -716,8 +716,7 @@ if (build_tests)
 endif(build_tests)
 
 if (enable_docs)
-  # Note: documentation which is not installed: README.QUICK
-  install(FILES AUTHORS README.md
+  install(FILES AUTHORS LICENSE README.md
           DESTINATION "${CMAKE_INSTALL_DOCDIR}")
   install(DIRECTORY doc/ DESTINATION "${CMAKE_INSTALL_DOCDIR}"
           FILES_MATCHING

@@ -196,10 +196,6 @@ CCASFLAGS += $(DEFS)
 # (see include/include.am for more)
 #
 
-# documentation which is not installed
-#
-EXTRA_DIST += README.QUICK
-
 # other makefiles
 EXTRA_DIST += NT_MAKEFILE OS2_MAKEFILE PCR-Makefile digimars.mak \
     Makefile.direct SMakefile.amiga WCC_MAKEFILE autogen.sh CMakeLists.txt \

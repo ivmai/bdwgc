@@ -1,7 +1,7 @@
     Garbage Collector (parallel version) for x86 DG/UX Release R4.20MU07
 
 
-     *READ* the file README.QUICK.
+     *READ* the file README.md first.
 
      You need the GCC-3.0.3 rev (DG/UX) compiler to build this tree.
      This compiler has the new "dgux386" threads package implemented.

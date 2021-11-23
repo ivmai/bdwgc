@@ -14,6 +14,7 @@
 if ENABLE_DOCS
 dist_doc_DATA = \
         AUTHORS \
+        LICENSE \
         README.md \
         doc/README.DGUX386 \
         doc/README.Mac \
