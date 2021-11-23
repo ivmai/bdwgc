@@ -30,6 +30,8 @@
 #include "private/msvc_dbg.h"
 #include "gc.h"
 
+#include <stdio.h>
+
 #ifndef WIN32_LEAN_AND_MEAN
 # define WIN32_LEAN_AND_MEAN 1
 #endif
@@ -313,11 +315,13 @@ size_t GetFileLineFromStack(size_t skip, char* fileName, size_t size,
   return 0;
 }
 
+#define GC_SNPRINTF _snprintf
+
 size_t GetDescriptionFromAddress(void* address, const char* format,
                                  char* buffer, size_t size)
 {
-  char*const begin = buffer;
-  char*const end = buffer + size;
+  char* const begin = buffer;
+  char* const end = buffer + size;
   size_t line_number = 0;
 
   (void)format;
@@ -328,9 +332,10 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   if (line_number) {
-    char str[128];
+    char str[20];
 
-    wsprintf(str, "(%d) : ", (int)line_number);
+    (void)GC_SNPRINTF(str, sizeof(str), "(%d) : ", (int)line_number);
+    str[sizeof(str) - 1] = '\0';
     if (size) {
       strncpy(buffer, str, size)[size - 1] = 0;
     }
