@@ -572,7 +572,7 @@ The files Makefile.am and configure.ac are
 
  * Copyright (c) 1999-2001 by Red Hat, Inc.  All rights reserved.
 
-The files extra/msvc_dbg.c and include/private/msvc_dbg.h are
+The file extra/msvc_dbg.c is
 
  * Copyright (c) 2004-2005 Andrei Polushin
 

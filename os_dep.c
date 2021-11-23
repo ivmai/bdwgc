@@ -5035,11 +5035,14 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 
 #if defined(GC_HAVE_BUILTIN_BACKTRACE)
 # ifdef _MSC_VER
-#  include "private/msvc_dbg.h"
+    EXTERN_C_BEGIN
+    int backtrace(void* addresses[], int count);
+    char** backtrace_symbols(void* const addresses[], int count);
+    EXTERN_C_END
 # else
 #  include <execinfo.h>
 # endif
-#endif
+#endif /* GC_HAVE_BUILTIN_BACKTRACE */
 
 #ifdef SAVE_CALL_CHAIN
 

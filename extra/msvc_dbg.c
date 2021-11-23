@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2004 Andrei Polushin
+  Copyright (c) 2004-2005 Andrei Polushin
 
   Permission is hereby granted, free of charge,  to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +26,9 @@
 /* TODO: arm[64], x86_64 currently miss some machine-dependent code below.  */
 /* See also GC_HAVE_BUILTIN_BACKTRACE in gc_config_macros.h.                */
 
+#include <stdlib.h>
+
 #define GC_BUILD
-#include "private/msvc_dbg.h"
 #include "gc.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -39,6 +40,18 @@
 #pragma pack(push, 8)
 #include <imagehlp.h>
 #pragma pack(pop)
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
+/* Compatibility with <execinfo.h> */
+int backtrace(void* addresses[], int count);
+char** backtrace_symbols(void* const addresses[], int count);
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 #pragma comment(lib, "dbghelp.lib")
 #pragma optimize("gy", off)
@@ -358,7 +371,7 @@ int backtrace(void* addresses[], int count)
   return GetStackFrames(1, addresses, count);
 }
 
-char** backtrace_symbols(void*const* addresses, int count)
+char** backtrace_symbols(void* const addresses[], int count)
 {
   size_t size = GetDescriptionFromStack(addresses, count, NULL, NULL, 0);
   char** symbols = (char**)malloc(size);

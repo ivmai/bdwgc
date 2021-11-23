@@ -62,9 +62,6 @@ dist_noinst_HEADERS += \
         include/private/specific.h \
         include/private/thread_local_alloc.h
 
-# files used by makefiles other than *.am
-EXTRA_DIST += include/private/msvc_dbg.h
-
 # unprefixed header
 include_HEADERS += \
         include/extra/gc.h
