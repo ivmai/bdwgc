@@ -552,7 +552,9 @@ To be notified on all issues, please
 GitHub.
 
 
-## Copyright & Warranty
+## Copyright & Warranty, Contributors
 
 The exact licensing information is provided in [README.QUICK](README.QUICK)
 file.
+
+All the contributors are listed in [AUTHORS](AUTHORS) file.
