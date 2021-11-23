@@ -139,20 +139,6 @@ GC_API int GC_CALL GC_get_disable_automatic_collection(void)
 
 STATIC word GC_used_heap_size_after_full = 0;
 
-/* GC_copyright symbol is externally visible. */
-EXTERN_C_BEGIN
-extern const char * const GC_copyright[];
-EXTERN_C_END
-const char * const GC_copyright[] = {
-  "Copyright (c) 1988-1989 Hans-J. Boehm, Alan J. Demers",
-  "Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.",
-  "Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.",
-  "Copyright (c) 1999-2011 Hewlett-Packard Development Company, L.P.",
-  "Copyright (c) 2008-2021 Ivan Maidanski",
-  "THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.",
-  "See source code for details."
-};
-
 /* Version macros are now defined in gc_version.h, which is included by */
 /* gc.h, which is included by gc_priv.h.                                */
 #ifndef GC_NO_VERSION_VAR
