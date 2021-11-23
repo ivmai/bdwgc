@@ -26,6 +26,7 @@
 /* TODO: arm[64], x86_64 currently miss some machine-dependent code below.  */
 /* See also GC_HAVE_BUILTIN_BACKTRACE in gc_config_macros.h.                */
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #define GC_BUILD
@@ -300,11 +301,13 @@ static size_t GetFileLineFromAddress(void* address, char* fileName,
   return strlen(sourceName);
 }
 
+#define GC_SNPRINTF _snprintf
+
 static size_t GetDescriptionFromAddress(void* address, const char* format,
                                         char* buffer, size_t size)
 {
-  char*const begin = buffer;
-  char*const end = buffer + size;
+  char* const begin = buffer;
+  char* const end = buffer + size;
   size_t line_number = 0;
 
   (void)format;
@@ -315,9 +318,10 @@ static size_t GetDescriptionFromAddress(void* address, const char* format,
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   if (line_number) {
-    char str[128];
+    char str[20];
 
-    wsprintf(str, "(%d) : ", (int)line_number);
+    (void)GC_SNPRINTF(str, sizeof(str), "(%d) : ", (int)line_number);
+    str[sizeof(str) - 1] = '\0';
     if (size) {
       strncpy(buffer, str, size)[size - 1] = 0;
     }
