@@ -575,6 +575,14 @@ GC_merge_unmapped(void)
       }
 
       next_size = nexthdr->hb_sz;
+#  ifdef CHERI_PURECAP
+      /* FIXME: Coalesce with super-capability. */
+      if (!CAPABILITY_COVERS_RANGE(h, ADDR(next), ADDR(next) + nextsize)) {
+        h = hhdr->hb_next;
+        continue;
+      }
+#  endif
+
       /* Note that we usually try to avoid adjacent free blocks     */
       /* that are either both mapped or both unmapped.  But that    */
       /* isn't guaranteed to hold since we remap blocks when we     */
