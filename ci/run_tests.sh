@@ -85,5 +85,4 @@ run()
 setup
 
 # Execute 
-run OK "bdwgc_install/bin/small_fixed_alloc.elf"
-run to_fail "bdwgc_install/bin/random_mixed_alloc.elf"
+run OK "bdwgc_install/bin/small_fixed_alloc.elf" "bdwgc_install/bin/random_mixed_alloc.elf"
