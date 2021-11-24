@@ -17,6 +17,8 @@
 This is version 8.3.0 (next release development) of a conservative garbage
 collector for C and C++.
 
+License: [MIT-style](LICENSE)
+
 
 ## Download
 
@@ -572,6 +574,12 @@ GitHub.
 
 
 ## Copyright & Warranty, Contributors
+
+Our intent is to make it easy to use bdwgc (libgc), in both free and
+proprietary software.  Hence, the Boehm-Demers-Weiser conservative garbage
+collector code that we expect to be linked dynamically or statically into
+a client application is covered by own license, which is similar in
+spirit to an MIT-style one.
 
 The exact licensing information is provided in [LICENSE](LICENSE) file.
 
