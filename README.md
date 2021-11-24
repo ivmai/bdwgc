@@ -53,8 +53,6 @@ discussed in
  * Boehm, H., and D. Chase, "A Proposal for GC-safe C Compilation",
    The Journal of C Language Translation 4, 2 (December 1992).
 
-and
-
  * Boehm H., "Simple GC-safe Compilation", Proceedings of the ACM SIGPLAN '96
    Conference on Programming Language Design and Implementation.
 
@@ -62,7 +60,7 @@ Unlike the collector described in the second reference, this collector
 operates either with the mutator stopped during the entire collection
 (default) or incrementally during allocations.  (The latter is supported
 on fewer machines.)  On the most common platforms, it can be built
-with or without thread support.  On a few platforms, it can take advantage
+with or without thread support.  On some platforms, it can take advantage
 of a multiprocessor to speed up garbage collection.
 
 Many of the ideas underlying the collector have previously been explored
@@ -74,13 +72,13 @@ CSL 84-7).  Doug McIlroy wrote a simpler fully conservative collector that
 was part of version 8 UNIX (tm), but appears to not have received
 widespread use.
 
-Rudimentary tools for use of the collector as a
-[leak detector](doc/leak.md) are included,
-as is a fairly sophisticated string package "cord" that makes use of the
-collector.  (See doc/README.cords and H.-J. Boehm, R. Atkinson, and M. Plass,
-"Ropes: An Alternative to Strings", Software Practice and Experience 25, 12
-(December 1995), pp. 1315-1330.  This is very similar to the "rope" package
-in Xerox Cedar, or the "rope" package in the SGI STL or the g++ distribution.)
+Rudimentary tools for use of the collector as a [leak detector](doc/leak.md)
+are included, as is a fairly sophisticated string package "cord" that
+makes use of the collector.  (See [README.cords](doc/README.cords) and
+H.-J. Boehm, R. Atkinson, and M. Plass, "Ropes: An Alternative to Strings",
+Software Practice and Experience 25, 12 (December 1995), pp. 1315-1330.
+This is very similar to the "rope" package in Xerox Cedar, or the "rope"
+package in the SGI STL or the g++ distribution.)
 
 Further collector documentation can be found in the
 [overview](doc/overview.md).
@@ -128,9 +126,9 @@ best to compile with `ALL_INTERIOR_POINTERS` and to use
 `GC_malloc_ignore_off_page` if you get collector warnings from
 allocations of very large objects.  See [here](doc/debugging.md) for details.
 
-_WARNING_: pointers inside memory allocated by the standard `malloc` are not
-seen by the garbage collector.  Thus objects pointed to only from such a
-region may be prematurely deallocated.  It is thus suggested that the
+_WARNING_: pointers inside memory allocated by the standard (system) `malloc`
+are not seen by the garbage collector.  Thus objects pointed to only from such
+a region may be prematurely deallocated.  It is thus suggested that the
 standard `malloc` be used only for memory regions, such as I/O buffers, that
 are guaranteed not to contain pointers to garbage collectible memory.
 Pointers in C language automatic, static, or register variables,
@@ -139,16 +137,16 @@ semantics similar to standard malloc, but allocates objects that are
 traced by the collector.)
 
 _WARNING_: the collector does not always know how to find pointers in data
-areas that are associated with dynamic libraries.  This is easy to
-remedy IF you know how to find those data areas on your operating
-system (see `GC_add_roots`).  Code for doing this under SunOS, IRIX
-5.X and 6.X, HP/UX, Alpha OSF/1, Linux, and win32 is included and used
-by default.  (See doc/README.win32 for Win32 details.)  On other systems
-pointers from dynamic library data areas may not be considered by the
-collector.  If you're writing a program that depends on the collector
-scanning dynamic library data areas, it may be a good idea to include
-at least one call to `GC_is_visible` to ensure that those areas are
-visible to the collector.
+areas that are associated with dynamic libraries.  This is easy to remedy
+if you know how to find those data areas on your operating system (see
+`GC_add_roots`).  Code for doing this under SunOS, IRIX 5.X and 6.X, HP/UX,
+Alpha OSF/1, Linux, and Win32 is included and used by default.
+(See [README.win32](doc/README.win32) and [README.win64](doc/README.win64)
+for Windows details.)  On other systems, pointers from dynamic library data
+areas may not be considered by the collector.  If you're writing a program
+that depends on the collector scanning dynamic library data areas, it may
+be a good idea to include at least one call to `GC_is_visible` to ensure
+that those areas are visible to the collector.
 
 Note that the garbage collector does not need to be informed of shared
 read-only data.  However, if the shared library mechanism can introduce
@@ -176,18 +174,18 @@ stored on the thread's stack for the duration of their lifetime.
 ## Installation and Portability
 
 The collector operates silently in the default configuration.
-In the event of problems, this can usually be changed by defining the
+In the event of issues, this can usually be changed by defining the
 `GC_PRINT_STATS` or `GC_PRINT_VERBOSE_STATS` environment variables.  This
 will result in a few lines of descriptive output for each collection.
 (The given statistics exhibit a few peculiarities.
 Things don't appear to add up for a variety of reasons, most notably
 fragmentation losses.  These are probably much more significant for the
-contrived program "test.c" than for your application.)
+contrived program `tests/test.c` than for your application.)
 
 On most Unix-like platforms, the collector can be built either using a
 GNU autoconf-based build infrastructure (type `./configure; make` in the
-simplest case), or with a classic makefile by itself (type
-`make -f Makefile.direct`).
+simplest case), or using CMake (see the sample below), or with a classic
+makefile by itself (type `make -f Makefile.direct`).
 
 Please note that the collector source repository does not contain configure
 and similar auto-generated files, thus the full procedure of autoconf-based
@@ -202,9 +200,10 @@ build of `master` branch of the collector could look like:
     make check
 
 Cloning of `libatomic_ops` is now optional provided the compiler supports
-atomic intrinsics.
+atomic intrinsics.  See [README.autoconf](doc/README.autoconf) for details.
 
-Alternatively, the collector could be built with CMake, like this:
+As noted above, alternatively, the collector could be built with CMake, like
+this:
 
     mkdir out
     cd out
@@ -212,10 +211,24 @@ Alternatively, the collector could be built with CMake, like this:
     cmake --build .
     ctest
 
+See [README.cmake](doc/README.cmake) for details.
+
 Finally, on most targets, the collector could be built and tested directly
 with a single compiler invocation, like this:
 
     gcc -I include -o gctest tests/test.c extra/gc.c && ./gctest
+
+On Windows, CMake could be used to build the library as described above or
+by typing `nmake -f NT_MAKEFILE`, this assumes you have Microsoft command-line
+tools installed and suitably configured.  See [README.win32](doc/README.win32)
+for details.
+
+The library is built with threads support on (i.e. for thread-safe operation)
+by default, unless `--disable-threads` is passed to `./configure` (or
+`-Denable_threads=OFF` is passed to `cmake` tool).
+
+The library could be configured more precisely during the build by defining
+the macros listed in [README.macros](doc/README.macros) file.
 
 Below we focus on the collector build using classic makefile.  For the
 Makefile.direct-based process, typing `make check` instead of `make` will
@@ -230,7 +243,8 @@ version will use more.  64-bit versions may use more.) `make check` will also,
 as its last step, attempt to build and test the "cord" string library.)
 
 Makefile.direct will generate a library libgc.a which you should link against.
-Typing "make cords" will build the cord library (libcord.a).
+Typing `make -f Makefile.direct cords` will build the cord library (libcord.a)
+as well.
 
 The GNU style build process understands the usual targets.  `make check`
 runs a number of tests.  `make install` installs at least libgc, and libcord.
@@ -245,13 +259,13 @@ The collector currently is designed to run essentially unmodified on
 machines that use a flat 32-bit or 64-bit address space.
 That includes the vast majority of Workstations and X86 (X >= 3) PCs.
 
-In a few cases (Amiga, OS/2, Win32, MacOS) a separate makefile
-or equivalent is supplied.  Many of these have separate README.system
-files.
+In a few cases (Amiga, OS/2, PCR, Symbian, Win32) a separate makefile
+or equivalent is supplied.  Many of these have separate a host-specific
+doc/README.* file.
 
 Dynamic libraries are completely supported only under SunOS/Solaris,
 (and even that support is not functional on the last Sun 3 release),
-Linux, FreeBSD, NetBSD, IRIX 5&6, HP/UX, Win32 (not Win32S) and OSF/1
+Linux, FreeBSD, NetBSD, IRIX, HP/UX, Win32 (not Win32s) and OSF/1
 on DEC AXP machines plus perhaps a few others listed near the top
 of dyn_load.c.  On other machines we recommend that you do one of
 the following:
@@ -384,10 +398,15 @@ This is rarely necessary.  Details can be found in gc_typed.h.
 
 The Ellis-Hull C++ interface to the collector is included in the collector
 distribution.  If you intend to use this, type
-`./configure --enable-cplusplus; make` (or `make -f Makefile.direct c++`)
-after the initial build of the collector is complete.  See gc_cpp.h for the
-definition of the interface.  This interface tries to approximate the
-Ellis-Detlefs C++ garbage collection proposal without compiler changes.
+`./configure --enable-cplusplus && make` (or
+`cmake -Denable_cplusplus=ON . && cmake --build .`, or
+`make -f Makefile.direct c++` depending on the build system you use).
+This creates libgccpp.a and libgctba.a files, or their shared library
+equivalents (libgccpp.so and libgctba.so).  You should link with either the
+first (gccpp) or the second one (gctba), but not both.  See gc_cpp.h and
+[gcinterface.md](doc/gcinterface.md) for the definition of the interface.
+This interface tries to approximate the Ellis-Detlefs C++ garbage collection
+proposal without compiler changes.
 
 Very often it will also be necessary to use gc_allocator.h and the
 allocator declared there to construct STL data structures.  Otherwise

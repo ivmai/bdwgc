@@ -5,7 +5,12 @@ See cord.h for a description of the functions provided.  Ec.h describes
 to a cord.  These allow for efficient construction of cords without
 requiring a bound on the size of a cord.
 
-More details on the data structure can be found in
+The cord library is built by default in case of the GNU autoconf-based build
+and the CMake-based one (unless "-Dbuild_cord=OFF" option is given to cmake).
+If you wish to build the library with the stand-alone Makefile.direct, type
+"make -f Makefile.direct cords".
+
+More details on the data structure can be found in:
 
 Boehm, Atkinson, and Plass, "Ropes: An Alternative to Strings",
 Software Practice and Experience 25, 12, December 1995, pp. 1315-1330.
