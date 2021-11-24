@@ -463,14 +463,22 @@ target_include_directories(gc INTERFACE
         "$<INSTALL_INTERFACE:include>")
 
 if (enable_cplusplus)
-  add_library(gccpp gc_badalc.cc gc_cpp.cc)
+  if (BORLAND OR MSVC OR WATCOM)
+    add_library(gccpp gc_badalc.cpp gc_cpp.cpp)
+  else()
+    add_library(gccpp gc_badalc.cc gc_cpp.cc)
+  endif()
   target_link_libraries(gccpp PRIVATE gc)
   target_include_directories(gccpp INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include>")
   if (enable_throw_bad_alloc_library)
     # The same as gccpp but contains only gc_badalc.
-    add_library(gctba gc_badalc.cc)
+    if (BORLAND OR MSVC OR WATCOM)
+      add_library(gctba gc_badalc.cpp)
+    else()
+      add_library(gctba gc_badalc.cc)
+    endif()
     target_link_libraries(gctba PRIVATE gc)
     target_include_directories(gctba INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
