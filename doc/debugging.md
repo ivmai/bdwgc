@@ -144,8 +144,8 @@ Growing data structures can usually be identified by:
   be identified by their allocation site,
   3. Running the application long enough so that most of the heap is composed
   of "leaked" memory, and
-  4. Then calling `GC_generate_random_backtrace` from gc_backptr.h a few times
-  to determine why some randomly sampled objects in the heap are being
+  4. Then calling `GC_generate_random_backtrace` from `gc_backptr.h` a few
+  times to determine why some randomly sampled objects in the heap are being
   retained.
 
 The same technique can often be used to identify problems with false pointers,

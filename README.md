@@ -384,7 +384,7 @@ If only `GC_malloc` is intended to be used, it might be appropriate to define:
     #define malloc(n) GC_malloc(n)
     #define calloc(m,n) GC_malloc((m)*(n))
 
-For small pieces of VERY allocation intensive code, gc_inline.h includes
+For small pieces of VERY allocation intensive code, `gc_inline.h` includes
 some allocation macros that may be used in place of `GC_malloc` and
 friends.
 
@@ -393,7 +393,7 @@ To avoid name conflicts, client code should avoid this prefix, except when
 accessing garbage collector routines.
 
 There are provisions for allocation with explicit type information.
-This is rarely necessary.  Details can be found in gc_typed.h.
+This is rarely necessary.  Details can be found in `gc_typed.h`.
 
 
 ## The C++ Interface to the Allocator
@@ -410,7 +410,7 @@ first (gccpp) or the second one (gctba), but not both.  See gc_cpp.h and
 This interface tries to approximate the Ellis-Detlefs C++ garbage collection
 proposal without compiler changes.
 
-Very often it will also be necessary to use gc_allocator.h and the
+Very often it will also be necessary to use `gc_allocator.h` and the
 allocator declared there to construct STL data structures.  Otherwise
 subobjects of STL data structures will be allocated using a system
 allocator, and objects they refer to may be prematurely collected.
