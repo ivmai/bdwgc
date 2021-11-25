@@ -182,7 +182,7 @@ pseudo-random numbers, and the like.  It is also likely to improve GC
 performance, perhaps drastically so if the application is paging.
 <LI> If you allocate large objects containing only
 one or two pointers at the beginning, either try the typed allocation
-primitives is <TT>gc_typed.h</tt>, or separate out the pointer-free component.
+primitives in <TT>gc_typed.h</tt>, or separate out the pointer-free component.
 <LI> Consider using <TT>GC_malloc_ignore_off_page()</tt>
 to allocate large objects.  (See <TT>gc.h</tt> and above for details.
 Large means &gt; 100K in most environments.)
