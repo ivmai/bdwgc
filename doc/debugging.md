@@ -169,7 +169,7 @@ be resolved using one or more of the following techniques:
   pseudo-random numbers, and the like. It is also likely to improve GC
   performance, perhaps drastically so if the application is paging.
   2. If you allocate large objects containing only one or two pointers at the
-  beginning, either try the typed allocation primitives is`gc_typed.h`,
+  beginning, either try the typed allocation primitives in `gc_typed.h`,
   or separate out the pointer-free component.
   3. Consider using `GC_malloc_ignore_off_page` to allocate large objects.
   (See `gc.h` and above for details. Large means >100K in most environments.)
