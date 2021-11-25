@@ -27,7 +27,7 @@
 
 #include "gc_priv.h"
 #ifdef KEEP_BACK_PTRS
-# include "gc_backptr.h"
+# include "gc/gc_backptr.h"
 #endif
 
 EXTERN_C_BEGIN

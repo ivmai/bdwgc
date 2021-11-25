@@ -553,41 +553,40 @@ if (enable_cplusplus)
 endif(enable_cplusplus)
 
 if (install_headers)
-  install(FILES include/gc.h
-                include/gc_backptr.h
-                include/gc_config_macros.h
-                include/gc_inline.h
-                include/gc_mark.h
-                include/gc_tiny_fl.h
-                include/gc_typed.h
-                include/gc_version.h
-                include/javaxfc.h
-                include/leak_detector.h
+  install(FILES include/gc/gc.h
+                include/gc/gc_backptr.h
+                include/gc/gc_config_macros.h
+                include/gc/gc_inline.h
+                include/gc/gc_mark.h
+                include/gc/gc_tiny_fl.h
+                include/gc/gc_typed.h
+                include/gc/gc_version.h
+                include/gc/javaxfc.h
+                include/gc/leak_detector.h
           DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
-  install(FILES include/extra/gc.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+  install(FILES include/gc.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
   if (enable_cplusplus)
-    install(FILES include/gc_allocator.h
-                  include/gc_cpp.h
+    install(FILES include/gc_cpp.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+    install(FILES include/gc/gc_allocator.h
+                  include/gc/gc_cpp.h
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
-    install(FILES include/extra/gc_cpp.h
-            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
   endif()
   if (enable_disclaim)
-    install(FILES include/gc_disclaim.h
+    install(FILES include/gc/gc_disclaim.h
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
   endif()
   if (enable_gcj_support)
-    install(FILES include/gc_gcj.h
+    install(FILES include/gc/gc_gcj.h
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
   endif()
   if (enable_threads AND CMAKE_USE_PTHREADS_INIT)
-    install(FILES include/gc_pthread_redirects.h
+    install(FILES include/gc/gc_pthread_redirects.h
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
   endif()
   if (build_cord)
-    install(FILES include/cord.h
-                  include/cord_pos.h
-                  include/ec.h
+    install(FILES include/gc/cord.h
+                  include/gc/cord_pos.h
+                  include/gc/ec.h
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
   endif()
 

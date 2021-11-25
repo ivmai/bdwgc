@@ -14,7 +14,7 @@
  */
 
 #include "private/gc_pmark.h"
-#include "gc_inline.h" /* for GC_malloc_kind */
+#include "gc/gc_inline.h" /* for GC_malloc_kind */
 
 /*
  * Some simple primitives for allocation with explicit type information.
@@ -38,7 +38,7 @@
  * since they are not accessible through the current interface.
  */
 
-#include "gc_typed.h"
+#include "gc/gc_typed.h"
 
 #define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
 

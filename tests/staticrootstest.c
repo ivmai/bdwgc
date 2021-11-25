@@ -7,7 +7,7 @@
 #endif
 
 #include "gc.h"
-#include "gc_backptr.h"
+#include "gc/gc_backptr.h"
 
 #ifndef GC_TEST_IMPORT_API
 # define GC_TEST_IMPORT_API extern

@@ -6,7 +6,7 @@
 #endif
 
 #include "gc.h"
-#include "gc_backptr.h"
+#include "gc/gc_backptr.h"
 
 struct treenode {
     struct treenode *x;

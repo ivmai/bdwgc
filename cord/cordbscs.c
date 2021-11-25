@@ -18,11 +18,12 @@
 # define CORD_BUILD
 #endif
 
-# include "gc.h"
-# include "cord.h"
 # include <stdlib.h>
 # include <stdio.h>
 # include <string.h>
+
+#include "gc.h"
+#include "gc/cord.h"
 
 /* An implementation of the cord primitives.  These are the only        */
 /* Functions that understand the representation.  We perform only       */

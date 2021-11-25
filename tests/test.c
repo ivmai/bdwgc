@@ -62,7 +62,7 @@
 # endif
 
 #ifndef NO_TYPED_TEST
-# include "gc_typed.h"
+# include "gc/gc_typed.h"
 #endif
 
 #define NOT_GCBUILD
@@ -340,11 +340,11 @@ sexpr cons (sexpr x, sexpr y)
 }
 # endif
 
-#include "gc_mark.h"
+#include "gc/gc_mark.h"
 
 #ifdef GC_GCJ_SUPPORT
 
-#include "gc_gcj.h"
+#include "gc/gc_gcj.h"
 
 /* The following struct emulates the vtable in gcj.     */
 /* This assumes the default value of MARK_DESCR_OFFSET. */
@@ -613,7 +613,7 @@ void check_marks_int_list(sexpr x)
 
 # if defined(GC_PTHREADS)
 #   if defined(GC_ENABLE_SUSPEND_THREAD)
-#     include "javaxfc.h"
+#     include "gc/javaxfc.h"
 #   endif
 
     void fork_a_thread(void)
@@ -1086,7 +1086,7 @@ void * alloc8bytes(void)
 #   define alloc8bytes() GC_MALLOC_ATOMIC(8)
 #endif
 
-#include "gc_inline.h"
+#include "gc/gc_inline.h"
 
 void test_tinyfl(void)
 {
@@ -1930,7 +1930,7 @@ void enable_incremental_mode(void)
 }
 
 #if defined(CPPCHECK)
-# include "javaxfc.h" /* for GC_finalize_all */
+# include "gc/javaxfc.h" /* for GC_finalize_all */
 # define UNTESTED(sym) GC_noop1((word)&sym)
 #endif
 

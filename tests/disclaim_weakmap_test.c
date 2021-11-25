@@ -23,8 +23,8 @@
 # include "config.h"
 #endif
 
-#include "gc_disclaim.h" /* includes gc.h */
-#include "gc_mark.h"
+#include "gc/gc_disclaim.h" /* includes gc.h */
+#include "gc/gc_mark.h"
 
 #ifdef GC_PTHREADS
 # ifndef NTHREADS

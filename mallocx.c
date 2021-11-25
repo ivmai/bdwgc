@@ -16,7 +16,7 @@
  */
 
 #include "private/gc_priv.h"
-#include "gc_inline.h" /* for GC_malloc_kind */
+#include "gc/gc_inline.h" /* for GC_malloc_kind */
 
 /*
  * These are extra allocation routines which are likely to be less

@@ -26,7 +26,7 @@
 #endif
 
 #undef GC_NO_THREAD_REDIRECTS
-#include "gc_disclaim.h"
+#include "gc/gc_disclaim.h"
 
 #ifdef LINT2
   /* Avoid include gc_priv.h. */

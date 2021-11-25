@@ -1,4 +1,5 @@
-#include "leak_detector.h"
+
+#include "gc/leak_detector.h"
 
 int main(void) {
     int *p[10];

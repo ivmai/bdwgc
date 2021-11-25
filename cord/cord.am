@@ -35,6 +35,6 @@ EXTRA_DIST += \
         cord/tests/de_win.rc
 
 pkginclude_HEADERS += \
-        include/cord.h \
-        include/cord_pos.h \
-        include/ec.h
+        include/gc/cord.h \
+        include/gc/cord_pos.h \
+        include/gc/ec.h

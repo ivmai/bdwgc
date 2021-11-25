@@ -99,31 +99,31 @@ CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c \
   backgraph.c win32_threads.c pthread_start.c thread_local_alloc.c fnlz_mlc.c
 
 CORD_SRCS= cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/tests/de.c \
-  cord/tests/cordtest.c include/cord.h include/ec.h \
-  include/cord_pos.h cord/tests/de_win.c cord/tests/de_win.h \
+  cord/tests/cordtest.c include/gc/cord.h include/gc/ec.h \
+  include/gc/cord_pos.h cord/tests/de_win.c cord/tests/de_win.h \
   cord/tests/de_cmds.h cord/tests/de_win.rc
 
 CORD_OBJS= cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
 SRCS= $(CSRCS) \
-  include/gc.h include/gc_typed.h include/gc_tiny_fl.h \
-  include/gc_version.h include/private/gc_hdrs.h include/private/gc_priv.h \
+  include/gc/gc_typed.h include/gc/gc_tiny_fl.h include/gc/gc_version.h \
+  include/gc.h include/private/gc_hdrs.h include/private/gc_priv.h \
   include/private/gcconfig.h include/private/gc_pmark.h \
-  include/gc_inline.h include/gc_mark.h include/gc_disclaim.h \
+  include/gc/gc_inline.h include/gc/gc_mark.h include/gc/gc_disclaim.h \
   tools/threadlibs.c tools/if_mach.c tools/if_not_there.c gc_badalc.cc \
   gc_cpp.cc include/gc_cpp.h include/private/gc_alloc_ptrs.h \
-  include/gc_allocator.h include/javaxfc.h include/gc_backptr.h \
-  include/gc_gcj.h include/private/gc_locks.h include/private/dbg_mlc.h \
-  include/private/specific.h include/leak_detector.h \
-  include/gc_pthread_redirects.h include/private/gc_atomic_ops.h \
-  include/gc_config_macros.h include/private/pthread_support.h \
+  include/gc/gc_allocator.h include/gc/javaxfc.h include/gc/gc_backptr.h \
+  include/gc/gc_gcj.h include/private/gc_locks.h include/private/dbg_mlc.h \
+  include/private/specific.h include/gc/leak_detector.h \
+  include/gc/gc_pthread_redirects.h include/private/gc_atomic_ops.h \
+  include/gc/gc_config_macros.h include/private/pthread_support.h \
   include/private/pthread_stop_world.h include/private/darwin_semaphore.h \
   include/private/darwin_stop_world.h include/private/thread_local_alloc.h \
   ia64_save_regs_in_stack.s sparc_mach_dep.S \
   sparc_netbsd_mach_dep.s $(CORD_SRCS)
 
-CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
-  $(srcdir)/include/ec.h $(srcdir)/include/cord_pos.h
+CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/gc/cord.h \
+  $(srcdir)/include/gc/ec.h $(srcdir)/include/gc/cord_pos.h
 
 # Executable file name extension.  For EMX, specify ".exe".
 EXEEXT=
@@ -187,15 +187,15 @@ pcr: PCR-Makefile include/private/gc_private.h include/private/gc_hdrs.h \
 $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
   $(srcdir)/include/private/gc_priv.h \
   $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
-  $(srcdir)/include/gc.h $(srcdir)/include/gc_pthread_redirects.h \
-  $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h \
-  $(srcdir)/include/gc_config_macros.h
+  $(srcdir)/include/gc.h $(srcdir)/include/gc/gc_pthread_redirects.h \
+  $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc/gc_typed.h \
+  $(srcdir)/include/gc/gc_config_macros.h
 
-mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h \
+mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc/gc_mark.h \
 					 $(srcdir)/include/private/gc_pmark.h
 
 specific.o pthread_support.o thread_local_alloc.o win32_threads.o: \
-  $(srcdir)/include/private/specific.h $(srcdir)/include/gc_inline.h \
+  $(srcdir)/include/private/specific.h $(srcdir)/include/gc/gc_inline.h \
   $(srcdir)/include/private/thread_local_alloc.h
 
 dbg_mlc.o gcj_mlc.o: $(srcdir)/include/private/dbg_mlc.h
@@ -331,7 +331,7 @@ mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
 #   Work-around for DEC optimizer tail recursion elimination bug.
 #   The ALPHA-specific line should be removed if gcc is used.
 
-alloc.o: include/gc_version.h
+alloc.o: include/gc/gc_version.h
 
 cord/cordbscs.o: $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordbscs.c

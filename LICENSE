@@ -23,7 +23,7 @@ provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
 
-Several files (include/gc_allocator.h, extra/msvc_dbg.c) come with slightly
+Several files (gc/gc_allocator.h, extra/msvc_dbg.c) come with slightly
 different licenses, though they are all similar in spirit (the exact
 licensing terms are given at the beginning of the corresponding source file).
 

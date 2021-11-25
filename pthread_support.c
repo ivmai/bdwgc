@@ -47,7 +47,7 @@
 # endif
 # include <signal.h>
 
-# include "gc_inline.h"
+# include "gc/gc_inline.h"
 
 #if defined(GC_DARWIN_THREADS)
 # include "private/darwin_semaphore.h"

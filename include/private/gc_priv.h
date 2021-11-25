@@ -54,7 +54,7 @@
 # endif
 
 #ifndef GC_H
-# include "../gc.h"
+# include "gc.h"
 #endif
 
 #include <stdlib.h>
@@ -81,8 +81,8 @@
 # endif
 #endif
 
-#include "../gc_tiny_fl.h"
-#include "../gc_mark.h"
+#include "gc/gc_tiny_fl.h"
+#include "gc/gc_mark.h"
 
 typedef GC_word word;
 typedef GC_signed_word signed_word;

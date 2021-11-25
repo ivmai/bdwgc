@@ -20,7 +20,7 @@
 # include "config.h"
 #endif
 
-#include "gc_disclaim.h"
+#include "gc/gc_disclaim.h"
 
 #define NOT_GCBUILD
 #include "private/gc_priv.h" /* for CLOCK_TYPE, COVERT_DATAFLOW, GC_random */

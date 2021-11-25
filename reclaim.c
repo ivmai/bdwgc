@@ -18,7 +18,7 @@
 #include "private/gc_priv.h"
 
 #ifdef ENABLE_DISCLAIM
-#  include "gc_disclaim.h"
+#  include "gc/gc_disclaim.h"
 #endif
 
 #include <stdio.h>
@@ -586,7 +586,7 @@ void GC_print_block_list(void)
               (unsigned long)pstats.total_bytes);
 }
 
-#include "gc_inline.h" /* for GC_print_free_list prototype */
+#include "gc/gc_inline.h" /* for GC_print_free_list prototype */
 
 /* Currently for debugger use only: */
 GC_API void GC_CALL GC_print_free_list(int kind, size_t sz_in_granules)

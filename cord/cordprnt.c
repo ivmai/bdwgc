@@ -29,8 +29,8 @@
 # define CORD_BUILD
 #endif
 
-#include "cord.h"
-#include "ec.h"
+#include "gc/cord.h"
+#include "gc/ec.h"
 
 #include <stdarg.h>
 #include <stdio.h>

@@ -8,7 +8,7 @@
 #endif
 
 #undef GC_NO_THREAD_REDIRECTS
-#include "leak_detector.h"
+#include "gc/leak_detector.h"
 
 #ifdef GC_PTHREADS
 # include <errno.h> /* for EAGAIN */

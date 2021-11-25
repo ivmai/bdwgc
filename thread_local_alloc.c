@@ -196,7 +196,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int kind)
 
 #ifdef GC_GCJ_SUPPORT
 
-# include "gc_gcj.h"
+# include "gc/gc_gcj.h"
 
 /* Gcj-style allocation without locks is extremely tricky.  The         */
 /* fundamental issue is that we may end up marking a free list, which   */

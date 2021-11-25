@@ -28,7 +28,7 @@
 #include <windows.h>
 
 #include "gc.h"
-#include "cord.h"
+#include "gc/cord.h"
 #include "de_cmds.h"
 #include "de_win.h"
 

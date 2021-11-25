@@ -42,7 +42,7 @@
 # include "dbg_mlc.h"
 #endif
 
-#include "../gc_mark.h"
+#include "gc/gc_mark.h"
 #include "gc_priv.h"
 
 EXTERN_C_BEGIN

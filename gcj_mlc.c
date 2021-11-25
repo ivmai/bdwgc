@@ -36,7 +36,7 @@
  *  2) FASTLOCK is not a significant win.
  */
 
-#include "gc_gcj.h"
+#include "gc/gc_gcj.h"
 #include "private/dbg_mlc.h"
 
 int GC_gcj_kind = 0;    /* Object kind for objects with descriptors     */

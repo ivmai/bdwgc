@@ -35,7 +35,7 @@ few minutes to complete.
 #include <stdlib.h>
 #include <string.h>
 
-#include "gc_allocator.h"
+#include "gc/gc_allocator.h"
 
 # include "private/gcconfig.h"
 
