@@ -54,7 +54,7 @@ The garbage collector code is copyrighted by
 [Hewlett-Packard Company](http://www.hp.com/),
 [Ivan Maidanski](https://github.com/ivmai), and partially by some others.
 It may be used and copied without payment of a fee under minimal restrictions.
-See the README.md file in the distribution or the
+See the LICENSE file in the distribution or the
 [license](http://www.hboehm.info/gc/license.txt) for more details.
 **IT IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED OR IMPLIED.
 ANY USE IS AT YOUR OWN RISK.**
