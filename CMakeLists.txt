@@ -730,8 +730,7 @@ if (enable_docs)
             PATTERN "README.*"
             PATTERN "*.md")
 
-  install(FILES doc/gc.man DESTINATION "${CMAKE_INSTALL_MANDIR}/man3"
-          RENAME gc.3)
+  install(FILES gc.man DESTINATION "${CMAKE_INSTALL_MANDIR}/man3" RENAME gc.3)
 endif(enable_docs)
 
 # CMake config/targets files.

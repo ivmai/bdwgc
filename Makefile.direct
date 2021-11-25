@@ -176,7 +176,7 @@ BSD-pkg-install: BSD-pkg-all
 	${CP} bsd-libgctba.a libgctba.a
 	${INSTALL_DATA} libgctba.a ${PREFIX}/lib
 	${INSTALL_DATA} gc.h gc_cpp.h ${PREFIX}/include
-	${INSTALL_MAN} doc/gc.man ${PREFIX}/man/man3/gc.3
+	${INSTALL_MAN} gc.man ${PREFIX}/man/man3/gc.3
 
 pcr: PCR-Makefile include/private/gc_private.h include/private/gc_hdrs.h \
   include/private/gc_locks.h include/gc.h include/private/gcconfig.h \

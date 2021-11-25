@@ -206,9 +206,51 @@ EXTRA_DIST += tools/if_mach.c tools/if_not_there.c tools/setjmp_t.c \
 include include/include.am
 include cord/cord.am
 include tests/tests.am
-include doc/doc.am
+
 ## Putting these at the top causes cord to be built first, and not find
 ## libgc.a on HP/UX.  There may be a better fix.
+
+# Installed documentation.
+if ENABLE_DOCS
+dist_doc_DATA = \
+    AUTHORS \
+    LICENSE \
+    README.md \
+    doc/README.DGUX386 \
+    doc/README.Mac \
+    doc/README.OS2 \
+    doc/README.aix \
+    doc/README.amiga \
+    doc/README.arm.cross \
+    doc/README.autoconf \
+    doc/README.cmake \
+    doc/README.cords \
+    doc/README.darwin \
+    doc/README.emscripten \
+    doc/README.environment \
+    doc/README.ews4800 \
+    doc/README.hp \
+    doc/README.linux \
+    doc/README.macros \
+    doc/README.sgi \
+    doc/README.solaris2 \
+    doc/README.symbian \
+    doc/README.uts \
+    doc/README.win32 \
+    doc/README.win64 \
+    doc/debugging.md \
+    doc/finalization.md \
+    doc/gcdescr.md \
+    doc/gcinterface.md \
+    doc/leak.md \
+    doc/overview.md \
+    doc/porting.md \
+    doc/scale.md \
+    doc/simple_example.md \
+    doc/tree.md
+
+dist_man3_MANS = gc.man
+endif
 
 # A dummy target for mono build.
 test-bundle:
