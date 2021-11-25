@@ -22,7 +22,7 @@
 #ifndef GC_THREAD_LOCAL_ALLOC_H
 #define GC_THREAD_LOCAL_ALLOC_H
 
-#include "private/gc_priv.h"
+#include "gc_priv.h"
 
 #ifdef THREAD_LOCAL_ALLOC
 
@@ -149,7 +149,7 @@ typedef struct thread_local_freelists {
   typedef DWORD GC_key_t;
 #elif defined(USE_CUSTOM_SPECIFIC)
   EXTERN_C_END
-# include "private/specific.h"
+# include "specific.h"
   EXTERN_C_BEGIN
 #else
 # error implement me

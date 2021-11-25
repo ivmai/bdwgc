@@ -18,14 +18,14 @@
 #ifndef GC_PTHREAD_SUPPORT_H
 #define GC_PTHREAD_SUPPORT_H
 
-#include "private/gc_priv.h"
+#include "gc_priv.h"
 
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
 #if defined(GC_DARWIN_THREADS)
-# include "private/darwin_stop_world.h"
+# include "darwin_stop_world.h"
 #else
-# include "private/pthread_stop_world.h"
+# include "pthread_stop_world.h"
 #endif
 
 #ifdef THREAD_LOCAL_ALLOC
