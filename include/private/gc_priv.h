@@ -834,8 +834,6 @@ EXTERN_C_END
 # endif
 #endif /* DARWIN */
 
-#include "../gc_tiny_fl.h"
-
 #include <setjmp.h>
 
 #if __STDC_VERSION__ >= 201112L
