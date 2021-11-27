@@ -143,7 +143,7 @@ SHELL= /bin/sh
 
 SPECIALCFLAGS= -I$(srcdir)/include -I$(AO_SRC_DIR)/src $(CFLAGS_FOR_PIC)
 # Alternative flags to the C compiler for mach_dep.c.
-# Mach_dep.c often doesn't like optimization, and it's
+# mach_dep.c often doesn't like optimization, and it's
 # not time-critical anyway.
 # Set SPECIALCFLAGS to -q nodirect_code on Encore.
 
@@ -294,19 +294,6 @@ liblinuxgc.so: $(OBJS) $(NODIST_OBJS) dyn_load.o
 dyn_test:
 	$(CC) $(CFLAGS) -o gctest$(EXEEXT) tests/test.c libgc.so `./threadlibs`
 	./gctest
-
-# Alternative Linux rule.  This is preferable, but is likely to break the
-# Makefile for some non-linux platforms.
-# LIBOBJS= $(patsubst %.o, %.lo, $(OBJS))
-#
-#.SUFFIXES: .lo $(SUFFIXES)
-#
-#.c.lo:
-# $(CC) $(CFLAGS) $(CPPFLAGS) -fPIC -c $< -o $@
-#
-# liblinuxgc.so: $(LIBOBJS) dyn_load.lo
-# 	gcc -shared -Wl,-soname=libgc.so.0 -o libgc.so.0 $(LIBOBJS) dyn_load.lo
-#	touch liblinuxgc.so
 
 mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/sparc_mach_dep.S \
   $(srcdir)/ia64_save_regs_in_stack.s \
