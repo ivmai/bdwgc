@@ -52,7 +52,7 @@ CFLAGS= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
   -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION \
   -DUSE_MMAP -DUSE_MUNMAP $(CFLAGS_FOR_PIC) $(CFLAGS_EXTRA)
 
-# To build the collector with threads support, add to the above:
+# To build the collector with threads support, add to CFLAGS_EXTRA:
 # -DGC_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
 #
 # To build the preload library that intercepts malloc, add:
@@ -89,7 +89,9 @@ OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o \
   malloc.o checksums.o pthread_support.o pthread_stop_world.o \
   darwin_stop_world.o typd_mlc.o ptr_chck.o mallocx.o gcj_mlc.o specific.o \
   gc_dlopen.o backgraph.o win32_threads.o pthread_start.o \
-  thread_local_alloc.o fnlz_mlc.o atomic_ops.o atomic_ops_sysdeps.o
+  thread_local_alloc.o fnlz_mlc.o
+
+NODIST_OBJS= atomic_ops.o atomic_ops_sysdeps.o
 
 CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c \
   headers.c mark.c obj_map.c blacklst.c finalize.c \
@@ -235,10 +237,10 @@ gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 
 test_cpp$(EXEEXT): $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h \
-  $(srcdir)/include/gc.h c++ base_lib $(UTILS)
+  $(srcdir)/include/gc.h c++ base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f test_cpp$(EXEEXT)
-	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc libgc.a libgccpp.a -ldld `./threadlibs`
-	./if_not_there test_cpp$(EXEEXT) || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o test_cpp$(EXEEXT) $(srcdir)/tests/test_cpp.cc libgc.a libgccpp.a `./threadlibs`
+	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a -ldld `./threadlibs`
+	./if_not_there test_cpp$(EXEEXT) || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o test_cpp$(EXEEXT) $(srcdir)/tests/test_cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a `./threadlibs`
 
 check-cpp-deps: test_cpp$(EXEEXT)
 
@@ -269,23 +271,23 @@ dyn_load_sunos53.o: dyn_load.c
 	$(CC) $(CFLAGS) -DSUNOS53_SHARED_LIB -c $(srcdir)/dyn_load.c -o $@
 
 # SunOS5 shared library version of the collector
-sunos5gc.so: $(OBJS) dyn_load_sunos53.o
-	$(CC) -G -o sunos5gc.so $(OBJS) dyn_load_sunos53.o -ldl
+sunos5gc.so: $(OBJS) $(NODIST_OBJS) dyn_load_sunos53.o
+	$(CC) -G -o sunos5gc.so $(OBJS) $(NODIST_OBJS) dyn_load_sunos53.o -ldl
 	ln sunos5gc.so libgc.so
 
 # Alpha/OSF shared library version of the collector
-libalphagc.so: $(OBJS)
-	$(LD) -shared -o libalphagc.so $(OBJS) dyn_load.o -lc
+libalphagc.so: $(OBJS) $(NODIST_OBJS)
+	$(LD) -shared -o libalphagc.so $(OBJS) $(NODIST_OBJS) dyn_load.o -lc
 	ln libalphagc.so libgc.so
 
 # IRIX shared library version of the collector
-libirixgc.so: $(OBJS) dyn_load.o
-	$(LD) -shared $(ABI_FLAG) -o libirixgc.so $(OBJS) dyn_load.o -lc
+libirixgc.so: $(OBJS) $(NODIST_OBJS) dyn_load.o
+	$(LD) -shared $(ABI_FLAG) -o libirixgc.so $(OBJS) $(NODIST_OBJS) dyn_load.o -lc
 	ln libirixgc.so libgc.so
 
 # Linux shared library version of the collector
-liblinuxgc.so: $(OBJS) dyn_load.o
-	gcc -shared -o liblinuxgc.so $(OBJS) dyn_load.o
+liblinuxgc.so: $(OBJS) $(NODIST_OBJS) dyn_load.o
+	gcc -shared -o liblinuxgc.so $(OBJS) $(NODIST_OBJS) dyn_load.o
 	ln liblinuxgc.so libgc.so
 
 # Build gctest with dynamic library
@@ -349,24 +351,24 @@ cord/cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 	mkdir cord || cat /dev/null
 	mv cordprnt.o cord/cordprnt.o
 
-cordtest$(EXEEXT): $(srcdir)/cord/tests/cordtest.c cords base_lib $(UTILS)
+cordtest$(EXEEXT): $(srcdir)/cord/tests/cordtest.c cords base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f cordtest$(EXEEXT)
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cordtest $(srcdir)/cord/tests/cordtest.c libgc.a libcord.a -lucb
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cordtest $(srcdir)/cord/tests/cordtest.c libgc.a libcord.a -ldld `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cordtest $(srcdir)/cord/tests/cordtest.c libgc.a libcord.a `./threadlibs`
-	./if_not_there cordtest$(EXEEXT) || $(CC) $(CFLAGS) -o cordtest$(EXEEXT) $(srcdir)/cord/tests/cordtest.c libgc.a libcord.a `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cordtest $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a -lucb
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cordtest $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a -ldld `./threadlibs`
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cordtest $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a `./threadlibs`
+	./if_not_there cordtest$(EXEEXT) || $(CC) $(CFLAGS) -o cordtest$(EXEEXT) $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a `./threadlibs`
 
 cord/de: de$(EXEEXT)
 
 de$(EXEEXT): $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c \
-  $(srcdir)/cord/tests/de_win.h cords base_lib $(UTILS)
+  $(srcdir)/cord/tests/de_win.h cords base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f de$(EXEEXT)
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c libgc.a libcord.a -lcurses -ltermlib -lucb `./threadlibs`
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c libgc.a libcord.a -lcurses -ltermlib -ldld `./threadlibs`
-	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c libgc.a libcord.a -lcurses
-	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c libgc.a libcord.a
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o de $(srcdir)/cord/tests/de.c libgc.a libcord.a -lcurses
-	./if_not_there de$(EXEEXT) || $(CC) $(CFLAGS) -o de$(EXEEXT) $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c libgc.a libcord.a $(CURSES) `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses -ltermlib -lucb `./threadlibs`
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses -ltermlib -ldld `./threadlibs`
+	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses
+	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o de $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o de $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses
+	./if_not_there de$(EXEEXT) || $(CC) $(CFLAGS) -o de$(EXEEXT) $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c $(NODIST_OBJS) libgc.a libcord.a $(CURSES) `./threadlibs`
 
 if_mach$(EXEEXT): $(srcdir)/tools/if_mach.c \
   $(srcdir)/include/private/gcconfig.h
@@ -385,12 +387,12 @@ clean:
 	      base_lib c++ $(CORD_OBJS) cordtest de cords dont_ar_* threadlibs
 	-rm -f *~
 
-gctest$(EXEEXT): tests/test.o base_lib $(UTILS)
+gctest$(EXEEXT): tests/test.o base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f gctest$(EXEEXT)
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o gctest tests/test.o libgc.a -lucb
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o gctest tests/test.o libgc.a -ldld `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o gctest  tests/test.o libgc.a `./threadlibs`
-	./if_not_there gctest$(EXEEXT) || $(CC) $(CFLAGS) -o gctest$(EXEEXT) tests/test.o libgc.a `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o gctest tests/test.o $(NODIST_OBJS) libgc.a -lucb
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o gctest tests/test.o $(NODIST_OBJS) libgc.a -ldld `./threadlibs`
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o gctest tests/test.o $(NODIST_OBJS) libgc.a `./threadlibs`
+	./if_not_there gctest$(EXEEXT) || $(CC) $(CFLAGS) -o gctest$(EXEEXT) tests/test.o $(NODIST_OBJS) libgc.a `./threadlibs`
 
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  gctest may still work.
