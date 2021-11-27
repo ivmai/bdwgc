@@ -8,7 +8,7 @@
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
 
-# Common libs to _LDADD for all tests.
+# Common libs to *_LDADD for most tests.
 test_ldadd = $(nodist_libgc_la_OBJECTS) $(top_builddir)/libgc.la \
             $(EXTRA_TEST_LIBS)
 
@@ -17,6 +17,9 @@ check_PROGRAMS += gctest
 gctest_SOURCES = tests/test.c
 gctest_LDADD = $(test_ldadd)
 if THREADS
+if ENABLE_SHARED
+gctest_LDADD += $(ATOMIC_OPS_LIBS)
+endif
 gctest_LDADD += $(THREADDLLIBS)
 endif
 gctest_DEPENDENCIES = $(top_builddir)/libgc.la
@@ -88,8 +91,8 @@ if THREADS
 TESTS += test_atomic_ops$(EXEEXT)
 check_PROGRAMS += test_atomic_ops
 test_atomic_ops_SOURCES = tests/test_atomic_ops.c
-# Really should need only $(ATOMIC_OPS_LIBS)
-test_atomic_ops_LDADD = $(test_ldadd) $(THREADDLLIBS)
+test_atomic_ops_LDADD = $(nodist_libgc_la_OBJECTS) $(EXTRA_TEST_LIBS) \
+                $(ATOMIC_OPS_LIBS) $(THREADDLLIBS)
 
 TESTS += threadleaktest$(EXEEXT)
 check_PROGRAMS += threadleaktest
@@ -104,7 +107,11 @@ threadkey_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
 TESTS += subthreadcreate_test$(EXEEXT)
 check_PROGRAMS += subthreadcreate_test
 subthreadcreate_test_SOURCES = tests/subthread_create.c
-subthreadcreate_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
+subthreadcreate_test_LDADD = $(test_ldadd)
+if ENABLE_SHARED
+subthreadcreate_test_LDADD += $(ATOMIC_OPS_LIBS)
+endif
+subthreadcreate_test_LDADD += $(THREADDLLIBS)
 
 TESTS += initsecondarythread_test$(EXEEXT)
 check_PROGRAMS += initsecondarythread_test
@@ -150,6 +157,9 @@ check_PROGRAMS += disclaim_weakmap_test
 disclaim_weakmap_test_SOURCES = tests/disclaim_weakmap_test.c
 disclaim_weakmap_test_LDADD = $(test_ldadd)
 if THREADS
+if ENABLE_SHARED
+disclaim_weakmap_test_LDADD += $(ATOMIC_OPS_LIBS)
+endif
 disclaim_weakmap_test_LDADD += $(THREADDLLIBS)
 endif
 
