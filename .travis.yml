@@ -321,7 +321,7 @@ jobs:
   - compiler: clang
     env:
     - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2 -D DEFAULT_VDB -D TEST_WITH_SYSTEM_MALLOC"
-    - CONF_OPTIONS="--with-libatomic-ops=no --enable-cplusplus --disable-handle-fork"
+    - CONF_OPTIONS="--without-libatomic-ops --enable-cplusplus --disable-handle-fork"
   - addons:
       apt:
         packages:
@@ -334,11 +334,11 @@ jobs:
   - os: osx
     env:
     - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2 -D AO_DISABLE_GCC_ATOMICS"
-    - CONF_OPTIONS="--with-libatomic-ops=no --enable-munmap --enable-cplusplus --enable-static"
+    - CONF_OPTIONS="--without-libatomic-ops --enable-munmap --enable-cplusplus --enable-static"
   - compiler: gcc
     env:
     - CONF_CFLAGS="-D AO_USE_PTHREAD_DEFS"
-    - CONF_OPTIONS="--with-libatomic-ops=no --enable-gc-assertions --enable-cplusplus --enable-static"
+    - CONF_OPTIONS="--without-libatomic-ops --enable-gc-assertions --enable-cplusplus --enable-static"
   - addons:
       apt:
         packages:
@@ -475,8 +475,7 @@ jobs:
   - compiler: gcc
     env:
     - CMAKE_CONFIG="Debug"
-    - CMAKE_OPTIONS="-DBUILD_SHARED_LIBS=OFF -Denable_gc_debug=ON"
-    - NO_CLONE_LIBATOMIC_OPS=true
+    - CMAKE_OPTIONS="-DBUILD_SHARED_LIBS=OFF -Denable_gc_debug=ON -Dwithout_libatomic_ops=ON"
   - compiler: gcc
     env:
     - CMAKE_CONFIG="Release"
@@ -556,7 +555,7 @@ jobs:
   - compiler: clang
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D NO_INCREMENTAL -D USE_SPIN_LOCK -fno-omit-frame-pointer -D TEST_FORK_WITHOUT_ATFORK"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-gc-debug --enable-handle-fork=manual --enable-large-config --with-libatomic-ops=no"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-gc-debug --enable-handle-fork=manual --enable-large-config --without-libatomic-ops"
   - compiler: clang
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D NO_INCREMENTAL -D USE_SPIN_LOCK -fno-omit-frame-pointer -D NTHREADS=15"
@@ -565,7 +564,7 @@ jobs:
   - compiler: clang
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_CANCEL_SAFE -D NO_INCREMENTAL -fno-omit-frame-pointer"
-    - CONF_OPTIONS="--disable-parallel-mark --disable-thread-local-alloc --disable-shared --enable-gc-assertions --with-libatomic-ops=no"
+    - CONF_OPTIONS="--disable-parallel-mark --disable-thread-local-alloc --disable-shared --enable-gc-assertions --without-libatomic-ops"
   - compiler: clang
     env:
     - CFLAGS_EXTRA="-O3 -march=native"
