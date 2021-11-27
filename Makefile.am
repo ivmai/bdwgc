@@ -80,10 +80,9 @@ endif
 
 if USE_INTERNAL_LIBATOMIC_OPS
 nodist_libgc_la_SOURCES = libatomic_ops/src/atomic_ops.c
-endif
-
 if NEED_ATOMIC_OPS_ASM
-nodist_libgc_la_SOURCES = libatomic_ops/src/atomic_ops_sysdeps.S
+nodist_libgc_la_SOURCES += libatomic_ops/src/atomic_ops_sysdeps.S
+endif
 endif
 
 # Include THREADDLLIBS here to ensure that the correct versions of
