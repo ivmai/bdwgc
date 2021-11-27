@@ -80,6 +80,7 @@ option(enable_single_obj_compilation "Compile all libgc source files into single
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 option(disable_handle_fork "Prohibit installation of pthread_atfork() handlers" OFF)
 option(install_headers "Install header and pkg-config metadata files" ON)
+option(without_libatomic_ops "Use atomic_ops.h in libatomic_ops/src" OFF)
 
 # Convert VER_INFO values to [SO]VERSION ones.
 if (BUILD_SHARED_LIBS)
@@ -148,7 +149,13 @@ message(STATUS "TARGET = ${HOST}")
 if (enable_threads)
   find_package(Threads REQUIRED)
   message(STATUS "Thread library: ${CMAKE_THREAD_LIBS_INIT}")
-  include_directories(libatomic_ops/src)
+  if (without_libatomic_ops OR BORLAND OR MSVC OR WATCOM)
+    include_directories(libatomic_ops/src)
+    # Note: alternatively, use CFLAGS_EXTRA to pass -I<...>/libatomic_ops/src.
+  else()
+    # Assume the compiler supports GCC atomic intrinsics.
+    add_definitions("-DGC_BUILTIN_ATOMIC")
+  endif()
   include_directories(${Threads_INCLUDE_DIR})
   set(THREADDLLIBS_LIST ${CMAKE_THREAD_LIBS_INIT})
   if (${CMAKE_DL_LIBS} MATCHES ^[^-].*)
@@ -173,8 +180,6 @@ if (CMAKE_USE_PTHREADS_INIT)
   if (HOST MATCHES .*-.*-hpux10.*)
     message(FATAL_ERROR "HP/UX 10 POSIX threads are not supported.")
   endif()
-  # Assume the compiler supports GCC atomic intrinsics.
-  add_definitions("-DGC_BUILTIN_ATOMIC")
   # Common defines for POSIX platforms.
   add_definitions("-DGC_THREADS -D_REENTRANT")
   if (enable_parallel_mark)
