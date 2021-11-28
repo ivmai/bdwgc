@@ -184,7 +184,7 @@ CCASFLAGS += $(DEFS)
 # other makefiles
 EXTRA_DIST += NT_MAKEFILE OS2_MAKEFILE PCR-Makefile digimars.mak \
     Makefile.direct SMakefile.amiga WCC_MAKEFILE autogen.sh CMakeLists.txt \
-    Config.cmake.in build/s60v3/bld.inf build/s60v3/libgc.mmp
+    Config.cmake.in
 
 # files used by makefiles other than Makefile.am
 #
