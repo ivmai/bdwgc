@@ -3,7 +3,7 @@
 Compiles under SAS/C again. Should also still compile under other
 Amiga compilers without big changes. I haven't checked if it still
 works under gcc, because I don't have gcc for Amiga. But I have
-updated 'Makefile', and hope it compiles fine.
+updated Makefile.direct, and hope it compiles fine.
 
 
 WHATS NEW:
@@ -105,12 +105,18 @@ WHATS NEW:
 
 2. A few small compiler-specific additions to make it compile with SAS/C again.
 
-3. Updated and rewritten the SMakefile.amiga, so that it works again and that
-   the "unnecessary" 'SCOPTIONS' files could be removed. Also included
-   the cord-smakefile stuff in the main smakefile, so that the cord smakefile
-   could be removed too. By typing "smake -f SMakefile.amiga", both gc.lib and
-   cord.lib will be made.
+3. To build the collector with SAS/C, create SMakefile including the following
+   specific content:
 
+IGNORE= IGNORE=85 IGNORE=154 IGNORE=161 IGNORE=100
+OPTIMIZE=optimize optimizetime optglobal optimizerdepth=100 optimizerpeephole optloop OPTSCHED optimizerinlocal optimizerrecurdepth=100
+OPT= $(OPTIMIZE) NOSTACKCHECK MAPHUNK NOVERSION NOICONS nodebug parm=reg
+
+DEFINE __USE_SYSBASE DEFINE AMIGA_SKIP_SEG DEFINE GC_ATOMIC_UNCOLLECTABLE
+DEFINE GC_AMIGA_FASTALLOC GC_AMIGA_RETRY GC_AMIGA_PRINTSTATS GC_AMIGA_GC
+
+DEFINE GC_AMIGA_MAKINGLIB
+DEFINE AMIGA IGNORE=100 IGNORE=161
 
 
 STILL MISSING:
@@ -135,7 +141,7 @@ tested with hardware: MC68060
                            Martin Tauchmann's notes             (1-Apr-99)
 
 Works now, also with the GNU-C compiler V2.7.2.1. <ftp://ftp.unina.it/pub/amiga/geekgadgets/amiga/m68k/snapshots/971125/amiga-bin/>
-Modify the `Makefile`
+Modify the `Makefile.direct`
 CC=cc $(ABI_FLAG)
 to
 CC=gcc $(ABI_FLAG)

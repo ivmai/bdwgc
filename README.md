@@ -261,8 +261,8 @@ The collector currently is designed to run essentially unmodified on
 machines that use a flat 32-bit or 64-bit address space.
 That includes the vast majority of Workstations and X86 (X >= 3) PCs.
 
-In a few cases (Amiga, OS/2, PCR, Win32) a separate makefile or equivalent
-is supplied.  Many of these have a separate host-specific doc/README.* file.
+In a few cases (OS/2, PCR, Win32) a separate makefile is supplied.  Many of
+these have a separate host-specific doc/README.* file.
 
 Dynamic libraries are completely supported only under SunOS/Solaris,
 (and even that support is not functional on the last Sun 3 release),
