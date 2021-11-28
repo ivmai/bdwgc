@@ -193,27 +193,8 @@ struct gc_private_assert_intsize_{ char x[ sizeof(int)>=4 ? 1 : 0 ]; };
 
 Files to build the GC libraries:
 --------------------------------
-    allchblk.c
-    alloc.c
-    blacklst.c
-    checksums.c
-    dbg_mlc.c
-    finalize.c
-    fnlz_mlc.c
-    headers.c
-    mach_dep.c
+    extra/gc.c
     extra/MacOS.c -- contains MacOS code
-    malloc.c
-    mallocx.c
-    mark.c
-    mark_rts.c
-    misc.c
-    new_hblk.c
-    obj_map.c
-    os_dep.c   -- contains MacOS code
-    ptr_chck.c
-    reclaim.c
-    typd_mlc.c
     gc_badalc.cc
     gc_cpp.cc
 
