@@ -2817,13 +2817,15 @@ EXTERN_C_BEGIN
 # undef GWW_VDB
 #endif
 
-#if defined(BASE_ATOMIC_OPS_EMULATED)
-  /* GC_write_fault_handler() cannot use lock-based atomic primitives   */
-  /* as this could lead to a deadlock.                                  */
-# undef MPROTECT_VDB
+#if defined(AO_USE_PTHREAD_DEFS) && !defined(BASE_ATOMIC_OPS_EMULATED)
+  /* For a test purpose only.   */
+# define BASE_ATOMIC_OPS_EMULATED 1
 #endif
 
-#if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
+#if defined(BASE_ATOMIC_OPS_EMULATED) \
+    || (defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS))
+  /* GC_write_fault_handler() cannot use lock-based atomic primitives   */
+  /* as this could lead to a deadlock.                                  */
   /* Incremental GC based on mprotect is incompatible with /proc roots. */
 # undef MPROTECT_VDB
 #endif
