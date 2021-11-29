@@ -9,6 +9,9 @@ CFLAGS=-Iinclude -Ilibatomic_ops\src $(DEFINES) -wx -g
 LFLAGS=/ma/implib/co
 CC=sc
 
+# Must precede other goals.
+all: gc.dll gc.lib
+
 gc.obj: extra\gc.c
 	$(CC) -c $(CFLAGS) extra\gc.c -ogc.obj
 
@@ -16,8 +19,6 @@ gc.obj: extra\gc.c
 	$(CC) -c $(CFLAGS) -Aa $*
 
 OBJS= gc.obj gc_badalc.obj gc_cpp.obj
-
-targets: gc.dll gc.lib
 
 check: gctest.exe test_cpp.exe
 	gctest.exe
