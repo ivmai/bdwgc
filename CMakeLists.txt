@@ -80,6 +80,7 @@ option(enable_single_obj_compilation "Compile all libgc source files into single
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 option(disable_handle_fork "Prohibit installation of pthread_atfork() handlers" OFF)
 option(install_headers "Install header and pkg-config metadata files" ON)
+option(with_libatomic_ops "Use an external libatomic_ops" OFF)
 option(without_libatomic_ops "Use atomic_ops.h in libatomic_ops/src" OFF)
 
 # Convert VER_INFO values to [SO]VERSION ones.
@@ -140,6 +141,7 @@ set(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
         mark_rts.c headers.c mark.c obj_map.c blacklst.c finalize.c
         new_hblk.c dbg_mlc.c malloc.c dyn_load.c typd_mlc.c ptr_chck.c
         mallocx.c)
+set(ATOMIC_OPS_LIBS)
 set(THREADDLLIBS_LIST)
 
 set(_HOST ${CMAKE_SYSTEM_PROCESSOR}-unknown-${CMAKE_SYSTEM})
@@ -149,14 +151,20 @@ message(STATUS "TARGET = ${HOST}")
 if (enable_threads)
   find_package(Threads REQUIRED)
   message(STATUS "Thread library: ${CMAKE_THREAD_LIBS_INIT}")
-  if (without_libatomic_ops OR BORLAND OR MSVC OR WATCOM)
+  include_directories(${Threads_INCLUDE_DIR})
+  if (with_libatomic_ops)
+    if (without_libatomic_ops)
+      message(FATAL_ERROR
+        "with_libatomic_ops and without_libatomic_ops are mutually exclusive")
+    endif()
+    set(ATOMIC_OPS_LIBS "-latomic_ops")
+  elseif (without_libatomic_ops OR BORLAND OR MSVC OR WATCOM)
     include_directories(libatomic_ops/src)
     # Note: alternatively, use CFLAGS_EXTRA to pass -I<...>/libatomic_ops/src.
   else()
     # Assume the compiler supports GCC atomic intrinsics.
     add_definitions("-DGC_BUILTIN_ATOMIC")
   endif()
-  include_directories(${Threads_INCLUDE_DIR})
   set(THREADDLLIBS_LIST ${CMAKE_THREAD_LIBS_INIT})
   if (${CMAKE_DL_LIBS} MATCHES ^[^-].*)
     # Some cmake versions have a broken non-empty CMAKE_DL_LIBS omitting "-l".
@@ -166,8 +174,6 @@ if (enable_threads)
     set(THREADDLLIBS_LIST ${THREADDLLIBS_LIST} ${CMAKE_DL_LIBS})
   endif()
 endif(enable_threads)
-
-set(ATOMIC_OPS_LIBS "") # TODO: Assume libatomic_ops library is not needed.
 
 # Thread support detection.
 if (CMAKE_USE_PTHREADS_INIT)
@@ -461,7 +467,7 @@ endif()
 
 add_library(gc ${SRC})
 if (enable_threads)
-  target_link_libraries(gc PRIVATE ${THREADDLLIBS_LIST} ${ATOMIC_OPS_LIBS})
+  target_link_libraries(gc PRIVATE ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
 endif()
 target_include_directories(gc INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -632,7 +638,8 @@ if (build_tests)
   endif(enable_cplusplus)
 
   add_executable(gctest WIN32 tests/test.c)
-  target_link_libraries(gctest PRIVATE gc ${THREADDLLIBS_LIST})
+  target_link_libraries(gctest
+                        PRIVATE gc ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
   add_test(NAME gctest COMMAND gctest)
   if (WATCOM)
     # Suppress "conditional expression in if statement is always true/false"
@@ -682,7 +689,8 @@ if (build_tests)
 
   if (enable_threads)
     add_executable(test_atomic_ops tests/test_atomic_ops.c)
-    target_link_libraries(test_atomic_ops PRIVATE ${THREADDLLIBS_LIST})
+    target_link_libraries(test_atomic_ops
+                          PRIVATE ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
     add_test(NAME test_atomic_ops COMMAND test_atomic_ops)
 
     add_executable(threadleaktest tests/thread_leak_test.c)
@@ -696,7 +704,8 @@ if (build_tests)
     endif()
 
     add_executable(subthreadcreate_test tests/subthread_create.c)
-    target_link_libraries(subthreadcreate_test PRIVATE gc ${THREADDLLIBS_LIST})
+    target_link_libraries(subthreadcreate_test
+                          PRIVATE gc ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
     add_test(NAME subthreadcreate_test COMMAND subthreadcreate_test)
 
     add_executable(initsecondarythread_test tests/initsecondarythread.c)
@@ -722,7 +731,7 @@ if (build_tests)
 
     add_executable(disclaim_weakmap_test tests/disclaim_weakmap_test.c)
     target_link_libraries(disclaim_weakmap_test
-                          PRIVATE gc ${THREADDLLIBS_LIST})
+                          PRIVATE gc ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
     add_test(NAME disclaim_weakmap_test COMMAND disclaim_weakmap_test)
   endif()
 endif(build_tests)
