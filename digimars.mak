@@ -2,43 +2,20 @@
 # compiler from www.digitalmars.com
 # Written by Walter Bright
 
-DEFINES=-D_WINDOWS -DGC_DLL -DGC_THREADS -DGC_DISCOVER_TASK_THREADS -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION -DUSE_MUNMAP
+DEFINES=-D_WINDOWS -DGC_DLL -DGC_THREADS -DGC_DISCOVER_TASK_THREADS \
+    -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE \
+    -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION -DUSE_MUNMAP
 CFLAGS=-Iinclude -Ilibatomic_ops\src $(DEFINES) -wx -g
 LFLAGS=/ma/implib/co
 CC=sc
 
-.c.obj:
-	$(CC) -c $(CFLAGS) $*
+gc.obj: extra\gc.c
+	$(CC) -c $(CFLAGS) extra\gc.c -ogc.obj
 
 .cpp.obj:
 	$(CC) -c $(CFLAGS) -Aa $*
 
-OBJS=	\
-	allchblk.obj\
-	alloc.obj\
-	blacklst.obj\
-	checksums.obj\
-	dbg_mlc.obj\
-	fnlz_mlc.obj\
-	dyn_load.obj\
-	finalize.obj\
-	gc_badalc.obj\
-	gc_cpp.obj\
-	gcj_mlc.obj\
-	headers.obj\
-	mach_dep.obj\
-	malloc.obj\
-	mallocx.obj\
-	mark.obj\
-	mark_rts.obj\
-	misc.obj\
-	new_hblk.obj\
-	obj_map.obj\
-	os_dep.obj\
-	ptr_chck.obj\
-	reclaim.obj\
-	typd_mlc.obj\
-	win32_threads.obj
+OBJS= gc.obj gc_badalc.obj gc_cpp.obj
 
 targets: gc.dll gc.lib
 
@@ -76,27 +53,5 @@ test_cpp.exe: gc.lib tests\test_cpp.obj
 tests\test_cpp.obj: tests\test_cpp.cc
 	$(CC) -c $(CFLAGS) -cpp tests\test_cpp.cc -otests\test_cpp.obj
 
-allchblk.obj: allchblk.c
-alloc.obj: alloc.c
-blacklst.obj: blacklst.c
-checksums.obj: checksums.c
-dbg_mlc.obj: dbg_mlc.c
-dyn_load.obj: dyn_load.c
-finalize.obj: finalize.c
-fnlz_mlc.obj: fnlz_mlc.c
 gc_badalc.obj: gc_badalc.cc gc_badalc.cpp
 gc_cpp.obj: gc_cpp.cc gc_cpp.cpp
-headers.obj: headers.c
-mach_dep.obj: mach_dep.c
-malloc.obj: malloc.c
-mallocx.obj: mallocx.c
-mark.obj: mark.c
-mark_rts.obj: mark_rts.c
-misc.obj: misc.c
-new_hblk.obj: new_hblk.c
-obj_map.obj: obj_map.c
-os_dep.obj: os_dep.c
-ptr_chck.obj: ptr_chck.c
-reclaim.obj: reclaim.c
-typd_mlc.obj: typd_mlc.c
-win32_threads.obj: win32_threads.c
