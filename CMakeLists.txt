@@ -141,6 +141,7 @@ set(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
         mark_rts.c headers.c mark.c obj_map.c blacklst.c finalize.c
         new_hblk.c dbg_mlc.c malloc.c dyn_load.c typd_mlc.c ptr_chck.c
         mallocx.c)
+set(NODIST_SRC)
 set(ATOMIC_OPS_LIBS)
 set(THREADDLLIBS_LIST)
 
@@ -158,7 +159,15 @@ if (enable_threads)
         "with_libatomic_ops and without_libatomic_ops are mutually exclusive")
     endif()
     set(ATOMIC_OPS_LIBS "-latomic_ops")
-  elseif (without_libatomic_ops OR BORLAND OR MSVC OR WATCOM)
+  elseif (without_libatomic_ops)
+    include_directories(libatomic_ops/src)
+    # In the tests we use the source files directly from libatomic_ops subtree.
+    set(NODIST_SRC libatomic_ops/src/atomic_ops.c)
+    if (CMAKE_C_COMPILER_ID STREQUAL "SunPro")
+      # SunCC compiler on SunOS (Solaris).
+      set(NODIST_SRC ${NODIST_SRC} libatomic_ops/src/atomic_ops_sysdeps.S)
+    endif()
+  elseif (BORLAND OR MSVC OR WATCOM)
     include_directories(libatomic_ops/src)
     # Note: alternatively, use CFLAGS_EXTRA to pass -I<...>/libatomic_ops/src.
   else()
@@ -616,13 +625,13 @@ endif(install_headers)
 
 if (build_tests)
   if (build_cord)
-    add_executable(cordtest cord/tests/cordtest.c)
+    add_executable(cordtest cord/tests/cordtest.c ${NODIST_SRC})
     target_link_libraries(cordtest PRIVATE cord gc)
     add_test(NAME cordtest COMMAND cordtest)
 
     if (WIN32 AND NOT CYGWIN)
       add_executable(de cord/tests/de.c cord/tests/de_win.c
-                     cord/tests/de_win.rc)
+                     cord/tests/de_win.rc ${NODIST_SRC})
       set_target_properties(de PROPERTIES WIN32_EXECUTABLE TRUE)
       target_link_libraries(de PRIVATE cord gc gdi32)
     endif()
@@ -638,7 +647,7 @@ if (build_tests)
     endif()
   endif(enable_cplusplus)
 
-  add_executable(gctest WIN32 tests/test.c)
+  add_executable(gctest WIN32 tests/test.c ${NODIST_SRC})
   target_link_libraries(gctest
                         PRIVATE gc ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
   add_test(NAME gctest COMMAND gctest)
@@ -649,23 +658,23 @@ if (build_tests)
                            /wcd=13 /wcd=201 /wcd=367 /wcd=368 /wcd=726)
   endif()
 
-  add_executable(hugetest tests/huge_test.c)
+  add_executable(hugetest tests/huge_test.c ${NODIST_SRC})
   target_link_libraries(hugetest PRIVATE gc)
   add_test(NAME hugetest COMMAND hugetest)
 
-  add_executable(leaktest tests/leak_test.c)
+  add_executable(leaktest tests/leak_test.c ${NODIST_SRC})
   target_link_libraries(leaktest PRIVATE gc)
   add_test(NAME leaktest COMMAND leaktest)
 
-  add_executable(middletest tests/middle.c)
+  add_executable(middletest tests/middle.c ${NODIST_SRC})
   target_link_libraries(middletest PRIVATE gc)
   add_test(NAME middletest COMMAND middletest)
 
-  add_executable(realloc_test tests/realloc_test.c)
+  add_executable(realloc_test tests/realloc_test.c ${NODIST_SRC})
   target_link_libraries(realloc_test PRIVATE gc)
   add_test(NAME realloc_test COMMAND realloc_test)
 
-  add_executable(smashtest tests/smash_test.c)
+  add_executable(smashtest tests/smash_test.c ${NODIST_SRC})
   target_link_libraries(smashtest PRIVATE gc)
   add_test(NAME smashtest COMMAND smashtest)
 
@@ -675,7 +684,7 @@ if (build_tests)
     add_library(staticrootslib2_test tests/staticrootslib.c)
     target_compile_options(staticrootslib2_test PRIVATE "-DSTATICROOTSLIB2")
     target_link_libraries(staticrootslib2_test PRIVATE gc)
-    add_executable(staticrootstest tests/staticrootstest.c)
+    add_executable(staticrootstest tests/staticrootstest.c ${NODIST_SRC})
     target_compile_options(staticrootstest PRIVATE "-DSTATICROOTSLIB2")
     target_link_libraries(staticrootstest PRIVATE
                           gc staticrootslib_test staticrootslib2_test)
@@ -683,54 +692,57 @@ if (build_tests)
   endif()
 
   if (enable_gc_debug)
-    add_executable(tracetest tests/trace_test.c)
+    add_executable(tracetest tests/trace_test.c ${NODIST_SRC})
     target_link_libraries(tracetest PRIVATE gc)
     add_test(NAME tracetest COMMAND tracetest)
   endif()
 
   if (enable_threads)
-    add_executable(test_atomic_ops tests/test_atomic_ops.c)
+    add_executable(test_atomic_ops tests/test_atomic_ops.c ${NODIST_SRC})
     target_link_libraries(test_atomic_ops
                           PRIVATE ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
     add_test(NAME test_atomic_ops COMMAND test_atomic_ops)
 
-    add_executable(threadleaktest tests/thread_leak_test.c)
+    add_executable(threadleaktest tests/thread_leak_test.c ${NODIST_SRC})
     target_link_libraries(threadleaktest PRIVATE gc ${THREADDLLIBS_LIST})
     add_test(NAME threadleaktest COMMAND threadleaktest)
 
     if (NOT WIN32)
-      add_executable(threadkey_test tests/threadkey_test.c)
+      add_executable(threadkey_test tests/threadkey_test.c ${NODIST_SRC})
       target_link_libraries(threadkey_test PRIVATE gc ${THREADDLLIBS_LIST})
       add_test(NAME threadkey_test COMMAND threadkey_test)
     endif()
 
-    add_executable(subthreadcreate_test tests/subthread_create.c)
+    add_executable(subthreadcreate_test
+                   tests/subthread_create.c ${NODIST_SRC})
     target_link_libraries(subthreadcreate_test
                           PRIVATE gc ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
     add_test(NAME subthreadcreate_test COMMAND subthreadcreate_test)
 
-    add_executable(initsecondarythread_test tests/initsecondarythread.c)
+    add_executable(initsecondarythread_test
+                   tests/initsecondarythread.c ${NODIST_SRC})
     target_link_libraries(initsecondarythread_test
                           PRIVATE gc ${THREADDLLIBS_LIST})
     add_test(NAME initsecondarythread_test COMMAND initsecondarythread_test)
   endif(enable_threads)
 
   if (enable_cplusplus)
-    add_executable(test_cpp WIN32 tests/test_cpp.cc)
+    add_executable(test_cpp WIN32 tests/test_cpp.cc ${NODIST_SRC})
     target_link_libraries(test_cpp PRIVATE gc gccpp)
     add_test(NAME test_cpp COMMAND test_cpp)
   endif()
 
   if (enable_disclaim)
-    add_executable(disclaim_bench tests/disclaim_bench.c)
+    add_executable(disclaim_bench tests/disclaim_bench.c ${NODIST_SRC})
     target_link_libraries(disclaim_bench PRIVATE gc)
     add_test(NAME disclaim_bench COMMAND disclaim_bench)
 
-    add_executable(disclaim_test tests/disclaim_test.c)
+    add_executable(disclaim_test tests/disclaim_test.c ${NODIST_SRC})
     target_link_libraries(disclaim_test PRIVATE gc ${THREADDLLIBS_LIST})
     add_test(NAME disclaim_test COMMAND disclaim_test)
 
-    add_executable(disclaim_weakmap_test tests/disclaim_weakmap_test.c)
+    add_executable(disclaim_weakmap_test
+                   tests/disclaim_weakmap_test.c ${NODIST_SRC})
     target_link_libraries(disclaim_weakmap_test
                           PRIVATE gc ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
     add_test(NAME disclaim_weakmap_test COMMAND disclaim_weakmap_test)
