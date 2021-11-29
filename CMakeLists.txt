@@ -342,10 +342,10 @@ endif(enable_werror)
 
 if (enable_single_obj_compilation OR BUILD_SHARED_LIBS)
   set(SRC extra/gc.c) # override SRC
-  if (CMAKE_USE_PTHREADS_INIT)
+  if (CMAKE_USE_PTHREADS_INIT AND NOT (CYGWIN OR MSYS))
     add_definitions("-DGC_PTHREAD_START_STANDALONE")
     set(SRC ${SRC} pthread_start.c)
-  endif(CMAKE_USE_PTHREADS_INIT)
+  endif()
 elseif (BORLAND)
   # Suppress "GC_push_contents_hdr() is declared but never used" warning.
   add_compile_options(/w-use)
