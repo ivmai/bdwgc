@@ -45,7 +45,6 @@
 #ifndef NTHREADS /* Number of additional threads to fork. */
 # define NTHREADS 5 /* Excludes main thread, which also runs a test. */
         /* In the single-threaded case, the number of times to rerun it. */
-        /* Not respected by PCR test. */
 #endif
 
 # if defined(mips) && defined(SYSTYPE_BSD43)

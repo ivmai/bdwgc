@@ -37,7 +37,7 @@ AS=as $(AS_ABI_FLAG)
 
 LD=ld
 
-# Redefining srcdir allows object code for the nonPCR version of the collector
+# Redefining srcdir allows object code of the collector
 # to be generated in different directories.
 srcdir= .
 VPATH= $(srcdir)
@@ -179,12 +179,6 @@ BSD-pkg-install: BSD-pkg-all
 	${INSTALL_DATA} libgctba.a ${PREFIX}/lib
 	${INSTALL_DATA} gc.h gc_cpp.h ${PREFIX}/include
 	${INSTALL_MAN} gc.man ${PREFIX}/man/man3/gc.3
-
-pcr: PCR-Makefile include/private/gc_private.h include/private/gc_hdrs.h \
-  include/private/gc_locks.h include/gc.h include/private/gcconfig.h \
-  mach_dep.o $(SRCS)
-	$(MAKE) -f PCR-Makefile depend
-	$(MAKE) -f PCR-Makefile
 
 $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
   $(srcdir)/include/private/gc_priv.h \
