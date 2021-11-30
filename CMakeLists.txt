@@ -143,6 +143,7 @@ set(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
         mallocx.c)
 set(NODIST_SRC)
 set(ATOMIC_OPS_LIBS)
+set(ATOMIC_OPS_LIBS_CMAKE)
 set(THREADDLLIBS_LIST)
 
 set(_HOST ${CMAKE_SYSTEM_PROCESSOR}-unknown-${CMAKE_SYSTEM})
@@ -159,6 +160,16 @@ if (enable_threads)
         "with_libatomic_ops and without_libatomic_ops are mutually exclusive")
     endif()
     set(ATOMIC_OPS_LIBS "-latomic_ops")
+    find_package(Atomic_ops CONFIG)
+    if (Atomic_ops_FOUND)
+      get_target_property(AO_INCLUDE_DIRS Atomic_ops::atomic_ops
+                          INTERFACE_INCLUDE_DIRECTORIES)
+      include_directories(${AO_INCLUDE_DIRS})
+      message(STATUS "AO_INCLUDE_DIRS = ${AO_INCLUDE_DIRS}")
+      set(ATOMIC_OPS_LIBS_CMAKE Atomic_ops::atomic_ops)
+    else()
+      set(ATOMIC_OPS_LIBS_CMAKE ${ATOMIC_OPS_LIBS})
+    endif()
   elseif (without_libatomic_ops)
     include_directories(libatomic_ops/src)
     # In the tests we use the source files directly from libatomic_ops subtree.
@@ -477,7 +488,8 @@ endif()
 
 add_library(gc ${SRC})
 if (enable_threads)
-  target_link_libraries(gc PRIVATE ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
+  target_link_libraries(gc
+                PRIVATE ${ATOMIC_OPS_LIBS_CMAKE} ${THREADDLLIBS_LIST})
 endif()
 target_include_directories(gc INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -649,7 +661,7 @@ if (build_tests)
 
   add_executable(gctest WIN32 tests/test.c ${NODIST_SRC})
   target_link_libraries(gctest
-                        PRIVATE gc ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
+                PRIVATE gc ${ATOMIC_OPS_LIBS_CMAKE} ${THREADDLLIBS_LIST})
   add_test(NAME gctest COMMAND gctest)
   if (WATCOM)
     # Suppress "conditional expression in if statement is always true/false"
@@ -700,7 +712,7 @@ if (build_tests)
   if (enable_threads)
     add_executable(test_atomic_ops tests/test_atomic_ops.c ${NODIST_SRC})
     target_link_libraries(test_atomic_ops
-                          PRIVATE ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
+                PRIVATE ${ATOMIC_OPS_LIBS_CMAKE} ${THREADDLLIBS_LIST})
     add_test(NAME test_atomic_ops COMMAND test_atomic_ops)
 
     add_executable(threadleaktest tests/thread_leak_test.c ${NODIST_SRC})
@@ -716,7 +728,7 @@ if (build_tests)
     add_executable(subthreadcreate_test
                    tests/subthread_create.c ${NODIST_SRC})
     target_link_libraries(subthreadcreate_test
-                          PRIVATE gc ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
+                PRIVATE gc ${ATOMIC_OPS_LIBS_CMAKE} ${THREADDLLIBS_LIST})
     add_test(NAME subthreadcreate_test COMMAND subthreadcreate_test)
 
     add_executable(initsecondarythread_test
@@ -744,7 +756,7 @@ if (build_tests)
     add_executable(disclaim_weakmap_test
                    tests/disclaim_weakmap_test.c ${NODIST_SRC})
     target_link_libraries(disclaim_weakmap_test
-                          PRIVATE gc ${ATOMIC_OPS_LIBS} ${THREADDLLIBS_LIST})
+                PRIVATE gc ${ATOMIC_OPS_LIBS_CMAKE} ${THREADDLLIBS_LIST})
     add_test(NAME disclaim_weakmap_test COMMAND disclaim_weakmap_test)
   endif()
 endif(build_tests)
