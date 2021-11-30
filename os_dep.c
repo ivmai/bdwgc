@@ -2677,6 +2677,8 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
 #       elif defined(EMSCRIPTEN)
           /* Nothing to do, mmap(PROT_NONE) is not supported and        */
           /* mprotect() is just a no-op.                                */
+#       elif defined(__CHERI_PURE_CAPABILITY__)
+          /* Nothing to do, avoid downgrading permissions on CHERI.     */
 #       else
           void * result = mmap(start_addr, len, PROT_NONE,
                                MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
@@ -2731,6 +2733,8 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
           start_addr += alloc_len;
           len -= alloc_len;
       }
+#   elif defined(__CHERI_PURE_CAPABILITY__)
+      /* Nothing to do, avoid downgrading permissions on CHERI. */
 #   else
       /* It was already remapped with PROT_NONE. */
       {
