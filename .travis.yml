@@ -476,6 +476,14 @@ jobs:
     - CMAKE_CONFIG="Debug"
     - CMAKE_OPTIONS="-Denable_cplusplus=ON -Denable_gc_assertions=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
+  - addons:
+      apt:
+        packages:
+        - libatomic-ops-dev
+    compiler: clang
+    env:
+    - CMAKE_CONFIG="Debug"
+    - CMAKE_OPTIONS="-Denable_cplusplus=ON -Denable_munmap=OFF -Dwith_libatomic_ops=ON"
   - compiler: gcc
     env:
     - CMAKE_CONFIG="Release"
