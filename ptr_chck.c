@@ -123,6 +123,11 @@ GC_API void * GC_CALL GC_is_valid_displacement(void *p)
     word sz;
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
+
+    /* A quick check to avoid TSan report about the data race   */
+    /* between GC_find_header() and GC_remove_counts().         */
+    if (NULL == p) return NULL;
+
     hhdr = HDR((word)p);
     if (hhdr == 0) return(p);
     h = HBLKPTR(p);
