@@ -2,10 +2,11 @@
 # compiler from www.digitalmars.com
 # Written by Walter Bright
 
+CFLAGS_EXTRA=
 DEFINES=-D_WINDOWS -DGC_DLL -DGC_THREADS -DGC_DISCOVER_TASK_THREADS \
     -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE \
     -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION -DUSE_MUNMAP
-CFLAGS=-Iinclude -Ilibatomic_ops\src $(DEFINES) -wx -g
+CFLAGS=-Iinclude -Ilibatomic_ops\src $(DEFINES) -wx -g $(CFLAGS_EXTRA)
 LFLAGS=/ma/implib/co
 CC=sc
 
