@@ -71,41 +71,58 @@ install:
 
 build_script:
 - cmd: if [%TARGET%]==[cmake] (
-    cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" . && cmake --build . --config %CMAKE_CONFIG% )
+    cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" .
+    && cmake --build . --config %CMAKE_CONFIG% )
 - cmd: if [%TARGET%]==[nmake] (
-    "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH% && nmake /f NT_MAKEFILE %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" )
+    "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
+    && nmake /f NT_MAKEFILE %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" )
 - cmd: if [%TARGET%]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c
-      "cd /cygdrive/c/projects/bdwgc && ./autogen.sh && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+      "cd /cygdrive/c/projects/bdwgc && ./autogen.sh
+       && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h
+       && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[cygwin64] (
     C:\cygwin64\bin\bash -e -l -c
-      "cd /cygdrive/c/projects/bdwgc && ./autogen.sh && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+      "cd /cygdrive/c/projects/bdwgc && ./autogen.sh
+       && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h
+       && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+      "cd /c/projects/bdwgc
+       && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw-shared-no-make] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -shared -o gc.dll extra/gc.c" )
+      "cd /c/projects/bdwgc
+       && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -shared -o gc.dll extra/gc.c" )
 - cmd: if [%TARGET%]==[mingw-w64] (
     C:\msys64\usr\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+      "cd /c/projects/bdwgc
+       && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 
 test_script:
 - cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
 - cmd: if [%TARGET%]==[nmake] (
-    "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH% && nmake /f NT_MAKEFILE %TEST_TARGET% %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" && nmake /f NT_MAKEFILE clean )
+    "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
+    && nmake /f NT_MAKEFILE %TEST_TARGET% %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%"
+    && nmake /f NT_MAKEFILE clean )
 - cmd: if [%TARGET%]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c
-      "cd /cygdrive/c/projects/bdwgc && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+      "cd /cygdrive/c/projects/bdwgc
+       && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[cygwin64] (
     C:\cygwin64\bin\bash -e -l -c
-      "cd /cygdrive/c/projects/bdwgc && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+      "cd /cygdrive/c/projects/bdwgc
+       && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && make -j -f Makefile.direct %TEST_TARGET% CC=gcc CFLAGS_EXTRA='-DGC_NOT_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+      "cd /c/projects/bdwgc
+       && make -j -f Makefile.direct %TEST_TARGET% CC=gcc CFLAGS_EXTRA='-DGC_NOT_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw-shared-no-make] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o gctest.exe tests/test.c gc.dll && gctest.exe" )
+      "cd /c/projects/bdwgc
+       && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o gctest.exe tests/test.c gc.dll
+       && gctest.exe" )
 - cmd: if [%TARGET%]==[mingw-w64] (
     C:\msys64\usr\bin\bash -e -l -c
-      "cd /c/projects/bdwgc && make -j -f Makefile.direct %TEST_TARGET% CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+      "cd /c/projects/bdwgc
+       && make -j -f Makefile.direct %TEST_TARGET% CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
