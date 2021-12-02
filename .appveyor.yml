@@ -38,6 +38,8 @@ environment:
   - TARGET: nmake
     ARCH: x64
     NMAKE_OPTIONS: disable_threads=1
+  - TARGET: djgpp-no-make
+    CFLAGS_EXTRA: -O3 -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT
   - TARGET: dmc
     CFLAGS_EXTRA: -s
   - TARGET: cygwin
@@ -88,6 +90,13 @@ build_script:
       "cd /cygdrive/c/projects/bdwgc && ./autogen.sh
        && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h
        && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[djgpp-no-make] (
+    appveyor DownloadFile "https://github.com/andrewwutw/build-djgpp/releases/download/v3.1/djgpp-mingw-gcc1020-standalone.zip"
+    && 7z x -o.. djgpp-mingw-gcc1020-standalone.zip > nul
+    && ..\djgpp\setenv.bat
+    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -c extra/gc.c
+    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o cordtest.exe cord/tests/cordtest.c cord/*.c gc.o
+    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -v -o gctest.exe tests/test.c gc.o )
 - cmd: if [%TARGET%]==[dmc] (
     appveyor DownloadFile "http://ftp.digitalmars.com/Digital_Mars_C++/Patch/dm857c.zip"
     && 7z x -o.. dm857c.zip > nul && set "path=%cd%\..\dm\bin;%path%"
