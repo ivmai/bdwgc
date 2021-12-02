@@ -310,6 +310,15 @@ GC_INNER void GC_remove_counts(struct hblk *h, size_t sz/* bytes */)
 {
     struct hblk * hbp;
 
+    if (sz <= HBLKSIZE) return;
+    if (HDR(h+1) == 0) {
+#     ifdef GC_ASSERTIONS
+        for (hbp = h+2; (word)hbp < (word)h + sz; hbp++)
+          GC_ASSERT(HDR(hbp) == 0);
+#     endif
+      return;
+    }
+
     for (hbp = h+1; (word)hbp < (word)h + sz; hbp += 1) {
         SET_HDR(hbp, 0);
     }
