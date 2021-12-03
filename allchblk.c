@@ -532,6 +532,11 @@ GC_INNER void GC_merge_unmapped(void)
         /* Coalesce with successor, if possible */
           if (0 != nexthdr && HBLK_IS_FREE(nexthdr)
               && (signed_word) (size + (nextsize = nexthdr->hb_sz)) > 0
+#           if defined(__CHERI_PURE_CAPABILITY__)
+              /* CVMFIXME : coalesce with super-capability */
+              && (cheri_base_get(h) <= cheri_address_get(next))
+              && (cheri_base_get(h) + cheri_length_get(h)) >= (cheri_address_get(next) + nextsize)
+#           endif
                  /* no pot. overflow */) {
             /* Note that we usually try to avoid adjacent free blocks   */
             /* that are either both mapped or both unmapped.  But that  */
@@ -969,6 +974,7 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
       if(0 != nexthdr && HBLK_IS_FREE(nexthdr) && IS_MAPPED(nexthdr)
          && (signed_word)(hhdr -> hb_sz + nexthdr -> hb_sz) > 0
 #     if defined(__CHERI_PURE_CAPABILITY__)
+         /* CVMFIXME : coalesce with super-capability */
          /* Bounds of capability should span entire coalesced memory */
          /* Bounds being larger than blk-size is OK; bounded by the imprecision */
          /* of original capability obtained from system memory */
@@ -986,6 +992,7 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
         if (IS_MAPPED(prevhdr)
             && (signed_word)(hhdr -> hb_sz + prevhdr -> hb_sz) > 0
 #       if defined(__CHERI_PURE_CAPABILITY__)
+            /* CVMFIXME : coalesce with super-capability */
             && (cheri_base_get(hbp) <= cheri_address_get(prev))
 #       endif
             /* no overflow */ ) {
