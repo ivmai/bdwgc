@@ -664,7 +664,7 @@ GC_INLINE void GC_thread_resume(thread_act_t thread)
     struct thread_basic_info info;
     mach_msg_type_number_t outCount = THREAD_BASIC_INFO_COUNT;
 
-#   if defined(CPPCHECK) && defined(DEBUG_THREADS)
+#   ifdef CPPCHECK
       info.run_state = 0;
 #   endif
     kern_result = thread_info(thread, THREAD_BASIC_INFO,
