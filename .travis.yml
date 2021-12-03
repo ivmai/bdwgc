@@ -677,6 +677,15 @@ jobs:
       apt:
         packages:
         - gcc-mingw-w64
+    compiler: x86_64-w64-mingw32-gcc
+    language: c
+    env:
+    - CONF_OPTIONS="--host=x86_64-w64-mingw32 --enable-gc-assertions --enable-gc-debug --enable-threads=pthreads"
+    - MAKEFILE_TARGETS="all"
+  - addons:
+      apt:
+        packages:
+        - gcc-mingw-w64
     compiler: i686-w64-mingw32-gcc
     language: c
     env:
