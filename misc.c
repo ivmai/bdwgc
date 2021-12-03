@@ -1472,7 +1472,9 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #       if !defined(CONSOLE_LOG) || defined(MSWINCE)
           DeleteCriticalSection(&GC_write_cs);
 #       endif
-        DeleteCriticalSection(&GC_allocate_ml);
+#       ifndef GC_PTHREADS
+          DeleteCriticalSection(&GC_allocate_ml);
+#       endif
 #     endif
     }
   }
