@@ -67,6 +67,16 @@ environment:
     CFLAGS_EXTRA: -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw-w64
     CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT -D NO_RETRY_GET_THREAD_CONTEXT
+  - TARGET: wcc
+    WCC_SYSTEM: OS2
+    CFLAGS_EXTRA: -DGC_ASSERTIONS
+    ENABLE_STATIC_OPT: "ENABLE_STATIC=1"
+    TEST_TARGET: check-deps
+    WCC_INC_SUBDIR: os2
+  - TARGET: wcc
+    WCC_SYSTEM: MSWIN32
+    CFLAGS_EXTRA: -DCONSOLE_LOG -DUSE_MMAP -DUSE_MUNMAP
+    WCC_INC_SUBDIR: nt
 
 clone_depth: 50
 
@@ -111,6 +121,12 @@ build_script:
     C:\msys64\usr\bin\bash -e -l -c
       "cd /c/projects/bdwgc
        && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[wcc] (
+    appveyor DownloadFile "https://iweb.dl.sourceforge.net/project/openwatcom/open-watcom-2.0-2017-11-01/ow-snapshot.7z"
+    && 7z x -o..\watcom ow-snapshot.7z > nul
+    && set "watcom=%cd%\..\watcom" && set "path=%cd%\..\watcom\binnt64"
+    && set "include=%cd%\..\watcom\h\%WCC_INC_SUBDIR%;%cd%\..\watcom\h"
+    && wmake -f WCC_MAKEFILE SYSTEM=%WCC_SYSTEM% %ENABLE_STATIC_OPT% CFLAGS_EXTRA="-we %CFLAGS_EXTRA%" )
 
 test_script:
 - cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
@@ -148,3 +164,8 @@ test_script:
     C:\msys64\usr\bin\bash -e -l -c
       "cd /c/projects/bdwgc
        && make -j -f Makefile.direct %TEST_TARGET% CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[wcc] (
+    set "watcom=%cd%\..\watcom" && set "beginlibpath=%cd%\..\watcom\binp\dll"
+    && set "path=%cd%\..\watcom\binnt64;%cd%\..\watcom\binnt"
+    && wmake -f WCC_MAKEFILE %TEST_TARGET% SYSTEM=%WCC_SYSTEM% %ENABLE_STATIC_OPT% CFLAGS_EXTRA="-we %CFLAGS_EXTRA%"
+    && wmake -f WCC_MAKEFILE clean )
