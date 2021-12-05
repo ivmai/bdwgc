@@ -317,7 +317,7 @@ jobs:
   - compiler: gcc
     env:
     - CFLAGS_EXTRA="-D BSD_TIME -D DEFAULT_STACK_MAYBE_SMALL -D ENABLE_TRACE -D EMPTY_GETENV_RESULTS -D GC_ALWAYS_MULTITHREADED -D GC_NETBSD_THREADS_WORKAROUND -D CPPCHECK"
-    - CONF_OPTIONS="--enable-cplusplus"
+    - CONF_OPTIONS="--enable-cplusplus --enable-gc-assertions"
   - compiler: clang
     env:
     - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2 -D DEFAULT_VDB -D TEST_WITH_SYSTEM_MALLOC"
