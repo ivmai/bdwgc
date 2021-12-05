@@ -35,7 +35,7 @@
 # include <sys/stat.h>
 #endif
 
-#if defined(CONSOLE_LOG) && defined(MSWIN32) && defined(_MSC_VER)
+#if defined(CONSOLE_LOG) && defined(MSWIN32) && !defined(__GNUC__)
 # include <io.h>
 #endif
 
