@@ -94,9 +94,7 @@ build_script:
     appveyor DownloadFile "https://github.com/andrewwutw/build-djgpp/releases/download/v3.1/djgpp-mingw-gcc1020-standalone.zip"
     && 7z x -o.. djgpp-mingw-gcc1020-standalone.zip > nul
     && ..\djgpp\setenv.bat
-    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -c extra/gc.c
-    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o cordtest.exe cord/tests/cordtest.c cord/*.c gc.o
-    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -v -o gctest.exe tests/test.c gc.o )
+    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -c extra/gc.c )
 - cmd: if [%TARGET%]==[dmc] (
     appveyor DownloadFile "http://ftp.digitalmars.com/Digital_Mars_C++/Patch/dm857c.zip"
     && 7z x -o.. dm857c.zip > nul && set "path=%cd%\..\dm\bin;%path%"
@@ -128,6 +126,10 @@ test_script:
     C:\cygwin64\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc
        && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[djgpp-no-make] (
+    ..\djgpp\setenv.bat
+    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o cordtest.exe cord/tests/cordtest.c cord/*.c gc.o
+    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -v -o gctest.exe tests/test.c gc.o )
 - cmd: if [%TARGET%]==[dmc] (
     set "path=%cd%\..\dm\bin;%path%"
     && make -f digimars.mak %TEST_TARGET% CFLAGS_EXTRA="-wx %CFLAGS_EXTRA%"
