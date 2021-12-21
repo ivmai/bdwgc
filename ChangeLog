@@ -1,4 +1,40 @@
 
+== [8.2.2] (not released yet) ==
+
+* Add CMake option to force libatomic_ops headers usage
+* Add _PROP suffix to CORD/GC[CPP]_VERSION variables in CMake script
+* Allow not to bypass pthread_cancel hardening in pthread_start
+* Distribute gc_gcj.h and some other headers in single-obj-compilation
+* Do not call SET_HDR() to remove forwarding counts if none exists in hblk
+* Do not fail tests if pthread_create returns resource unavailable error
+* Do not name GCC intrinsics as C11 ones
+* Eliminate '/GS can not protect parameters' MS VC warning in msvc_dbg
+* Eliminate 'function/data pointer conversion in expression' MSVC warning
+* Eliminate 'new_l may be used uninitialized' gcc warning in os_dep (Cygwin)
+* Eliminate 'potentially uninitialized local variable tc' warning (MSVC)
+* Eliminate 'skipping config since MAX_HEAP_SECTS is unknown' cppcheck FP
+* Fix 'GC_greatest_stack_base_below is defined but not used' warning (IA64)
+* Fix 'ISO C forbids conversion of function pointer to object' warning
+* Fix 'unresolved __imp__wsprintfA' linker error in msvc_dbg.c (MSVC)
+* Fix 'unresolved symbol GetModuleHandle' error in win32_threads.c (UWP)
+* Fix GC_allocate_ml incorrect cleanup in GC_deinit if pthreads (MinGW)
+* Fix a typo in debugging.md
+* Fix lock assertion violation in GC_find_limit if always multi-threaded
+* Fix missing write() declaration if CONSOLE_LOG (Watcom)
+* Fix nodist_libgc_la_SOURCES value in Makefile.am for Solaris/sparc
+* Refer to Makefile.direct instead of deleted Makefile file in README
+* Remove checking of RS6000 completely
+* Remove duplicate include gc_tiny_fl.h in gc_priv.h
+* Remove non-working check of M68K in gctest
+* Revert addition of msvc_dbg.h in include.am
+* Support GCC MCF thread model (mcfgthreads) in configure (MinGW)
+* Support OpenBSD/riscv64
+* Update README.win32 about default build configuration (configure, cmake)
+* Workaround 'info is not assigned' cppcheck FP if assertions on (OS X)
+* Workaround Thread Sanitizer (TSan) FP warning in is_valid_displacement
+* Workaround msvc_dbg.c build failure on arm[64] (MSVC)
+
+
 == [8.2.0] 2021-09-29 ==
 
 * Add API for accessing incremental GC time limit with nanosecond precision
