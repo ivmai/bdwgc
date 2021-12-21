@@ -1,4 +1,23 @@
 
+== [8.0.8] (not released yet) ==
+
+* Distribute gc_disclaim.h in single-obj-compilation
+* Do not name GCC intrinsics as C11 ones
+* Eliminate 'function/data pointer conversion in expression' MSVC warning
+* Eliminate 'new_l may be used uninitialized' gcc warning in os_dep (Cygwin)
+* Fix 'GC_greatest_stack_base_below is defined but not used' warning (IA64)
+* Fix 'ISO C forbids conversion of function pointer to object' warning
+* Fix GC_allocate_ml incorrect cleanup in GC_deinit if pthreads (MinGW)
+* Fix a typo in debugging.md
+* Fix lock assertion violation in GC_find_limit if always multi-threaded
+* Fix nodist_libgc_la_SOURCES value in Makefile.am for Solaris/sparc
+* Refer to Makefile.direct instead of deleted Makefile file in README
+* Remove checking of RS6000 completely
+* Remove non-working check of M68K in gctest
+* Revert addition of msvc_dbg.h in include.am
+* Workaround Thread Sanitizer (TSan) FP warning in is_valid_displacement
+
+
 == [8.0.6] 2021-09-28 ==
 
 * Add loop to handle abort error like in suspend logic on Darwin
