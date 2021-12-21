@@ -1,3 +1,47 @@
+2021-11-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.am [NEED_ATOMIC_OPS_ASM] (nodist_libgc_la_SOURCES): Append
+	atomic_ops_sysdeps.S instead of overwriting atomic_ops.c item (and
+	only if USE_INTERNAL_LIBATOMIC_OPS).
+
+2021-11-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/debugging.html (Unexpectedly Large Heap): Fix typo
+	"primitives in", add missing space after it.
+
+2021-11-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/include.am (dist_noinst_HEADERS): Remove msvc_dbg.h entry.
+
+2021-11-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.am (EXTRA_DIST): Remove outdated comment exclusion of
+	"Makefile" file.
+	* README.QUICK (WARNINGS): Mention "Makefile.am or Makefile.direct"
+	instead of "Makefile".
+	* doc/README.linux: Mention "Makefile.direct" instead of "Makefile".
+	* doc/README.sgi: Likewise.
+
+2021-11-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.changes: Fix typo in name (David Mosberger).
+
+2021-10-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c [!DBG_HDRS_ALL && (IA64 || POWERPC)] (run_one_test):
+	Do not test M68K macro; move TEST_FAIL_COUNT(1) inside ifdef.
+
+2021-10-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c [!DBG_HDRS_ALL && !ALL_INTERIOR_POINTERS]
+	(run_one_test): Do not test for RS6000.
+	* Makefile.dj (cord/de): Likewise.
+
+2021-10-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (GC_push_one): Remove comment belonging to
+	deleted GC_push_proc ("Push register contents onto mark stack").
+
 [7.2o]
 
 2021-09-28  Ivan Maidanski <ivmai@mail.ru>
