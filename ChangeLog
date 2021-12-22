@@ -1,4 +1,46 @@
 
+== [8.3.0] (development) ==
+
+* Add 'lib' prefix to build artifact names in Makefile.direct
+* Add check-deps goal to Makefiles to build the tests but not execute them
+* Allow to build with forced WRAP_MARK_SOME
+* Assert SET_HDR does not write to GC_all_nils
+* Build extra/gc.c in digimars.mak
+* Change p local variable to current_p in push_all/conditional_eager
+* Define marker_[b]sp only if needed (refactoring)
+* Do not compile pthread_start.c on Cygwin even if build shared libs (CMake)
+* Do not compile pthread_stop_world.c on Darwin (CMake)
+* Do not put atomic_ops[_sysdeps].o to libgc.a in Makefile.direct
+* Do not treat warnings as errors by default in digimars.mak
+* Enable without_libatomic_ops for targets requiring atomic_ops.c (CMake)
+* Fail threadkey_test on pthread_create error in main loop
+* Fix digimars.mak to build 'all' by default
+* Make all functions static in msvc_dbg.c except for backtrace[_symbols]
+* Mention CMake-based build in README.md and README.QUICK
+* Move non-cord [pkg]include_HEADERS assignments to include.am (refactoring)
+* Move non-license info from LICENSE file to README and vice versa
+* Move public header files to include/gc in source tree
+* New CMake option to link with external libatomic_ops (system library)
+* Pass ATOMIC_OPS_LIBS to tests using AO primitives directly (Automake)
+* Print iteration number on thread creation or join failure in tests
+* Print thread number on marker thread creation failure
+* Put gc_badalc/cpp.cpp instead of .cc ones in CMake script (MSVC/BCC/WCC)
+* Relax required dependencies for test_atomic_ops (CMake)
+* Remove GC_copyright symbol
+* Remove IF_IA64 macro in pthread_stop_world (refactoring)
+* Remove Symbian makefile
+* Remove ancient OS2_MAKEFILE, PCR-Makefile, SMakefile.amiga
+* Remove doc.am, and move gc.man to base folder (refactoring)
+* Remove msvc_dbg.h file (refactoring)
+* Remove redundant 'private' prefix in include directives in include/private
+* Rename README.QUICK to LICENSE and install it by default
+* Rename README.rs6000 to README.aix
+* State explicitly that license is MIT-style
+* Support CFLAGS_EXTRA in rare build scripts (NT/WCC_MAKEFILE, digimars.mak)
+* Try find libatomic_ops installed by cmake if with_libatomic_ops (CMake)
+* Use GC_printf in test_cpp consistently (refactoring)
+
+
 == [8.2.2] (not released yet) ==
 
 * Add CMake option to force libatomic_ops headers usage
