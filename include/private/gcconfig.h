@@ -161,7 +161,7 @@ EXTERN_C_BEGIN
 #    define AARCH64
 #    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD) \
         && !defined(NETBSD) && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
-        && !defined(OPENBSD)
+        && !defined(OPENBSD) && !defined(_WIN32)
 #      define NOSYS
 #      define mach_type_known
 #    endif
