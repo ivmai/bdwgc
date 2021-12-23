@@ -36,8 +36,8 @@ AC_PROG_INSTALL
 LT_INIT([disable-static])
 # Only the shared libraries are produced by default, use "--enable-static"
 # option to override it.
-dnl Note: If Autoconf reports that LIBTOOL (or AC_ENABLE_SHARED, or
-dnl AC_PROG_LIBTOOL) is undefined, Libtool installation should be checked.
+dnl Note: If Autoconf reports that LIBTOOL (or AC_ENABLE_SHARED) is
+dnl undefined, Libtool installation should be checked.
 
 # Special CFLAGS to use when building
 gc_cflags=""
@@ -610,8 +610,6 @@ AC_MSG_RESULT($machdep)
 addobjs="$addobjs $machdep"
 AC_SUBST(addobjs)
 AC_SUBST(addlibs)
-
-AC_PROG_LIBTOOL
 
 dnl We use these options to decide which functions to include.
 AC_ARG_WITH(target-subdir,
