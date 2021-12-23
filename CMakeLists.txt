@@ -387,7 +387,8 @@ endif()
 
 # Extra user-defined flags to pass both to C and C++ compilers.
 if (DEFINED CFLAGS_EXTRA)
-  add_compile_options(${CFLAGS_EXTRA})
+  separate_arguments(CFLAGS_EXTRA_LIST UNIX_COMMAND "${CFLAGS_EXTRA}")
+  add_compile_options(${CFLAGS_EXTRA_LIST})
 endif()
 
 # Check whether execinfo.h header file is present.
