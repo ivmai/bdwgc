@@ -809,6 +809,9 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   }
 }
 
+#ifdef GC_DISABLE_INCREMENTAL
+# define GC_wait_for_gc_completion(wait_for_all) (void)(wait_for_all)
+#else
 /* Similar to that in pthread_support.c.        */
 STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
@@ -832,6 +835,7 @@ STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
              && (wait_for_all || old_gc_no == GC_gc_no));
   }
 }
+#endif /* !GC_DISABLE_INCREMENTAL */
 
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
