@@ -223,7 +223,7 @@ jobs:
     compiler: gcc-11
     dist: bionic
     env:
-    - CFLAGS_EXTRA="-O3"
+    - CFLAGS_EXTRA="-O3 -flto=auto -D _FORTIFY_SOURCE=2"
     - CONF_OPTIONS="--enable-cplusplus --disable-shared"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: s390x
@@ -410,7 +410,7 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: gcc
     env:
-    - CFLAGS_EXTRA="-O3 -D _FORTIFY_SOURCE=2"
+    - CFLAGS_EXTRA="-O3 -flto -D _FORTIFY_SOURCE=2"
     - CONF_OPTIONS="--disable-parallel-mark --disable-thread-local-alloc --enable-gc-assertions --enable-cplusplus"
   - compiler: gcc
     env:
