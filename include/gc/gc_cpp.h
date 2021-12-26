@@ -500,8 +500,8 @@ inline void GC_CALLBACK gc_cleanup::cleanup(void* obj, void* displ)
 
 inline gc_cleanup::gc_cleanup()
 {
-  GC_finalization_proc oldProc;
-  void* oldData;
+  GC_finalization_proc oldProc = 0;
+  void* oldData = NULL; // to avoid "might be uninitialized" compiler warning
   void* this_ptr = (void*)this;
   void* base = GC_base(this_ptr);
   if (base != 0) {
