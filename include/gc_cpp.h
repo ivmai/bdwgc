@@ -373,8 +373,8 @@ inline void GC_CALLBACK gc_cleanup::cleanup( void* obj, void* displ ) {
 }
 
 inline gc_cleanup::gc_cleanup() {
-    GC_finalization_proc oldProc;
-    void* oldData;
+    GC_finalization_proc oldProc = 0;
+    void* oldData = NULL; // to avoid "might be uninitialized" compiler warning
     void* base = GC_base( (void *) this );
     if (0 != base)  {
       // Don't call the debug version, since this is a real base address.
