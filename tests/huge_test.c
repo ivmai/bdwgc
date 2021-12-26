@@ -48,10 +48,12 @@
 
 int main(void)
 {
-    GC_INIT();
+  GC_INIT();
 
-    CHECK_ALLOC_FAILED(GC_MALLOC(GC_SWORD_MAX - 1024), "SWORD_MAX-1024");
-    CHECK_ALLOC_FAILED(GC_MALLOC(GC_SWORD_MAX), "SWORD_MAX");
+  CHECK_ALLOC_FAILED(GC_MALLOC(GC_SWORD_MAX - 1024), "SWORD_MAX-1024");
+  CHECK_ALLOC_FAILED(GC_MALLOC(GC_SWORD_MAX), "SWORD_MAX");
+  /* Skip other checks to avoid "exceeds maximum object size" gcc warning. */
+# if !defined(_FORTIFY_SOURCE)
     CHECK_ALLOC_FAILED(GC_MALLOC((GC_word)GC_SWORD_MAX + 1), "SWORD_MAX+1");
     CHECK_ALLOC_FAILED(GC_MALLOC((GC_word)GC_SWORD_MAX + 1024),
                        "SWORD_MAX+1024");
@@ -60,5 +62,6 @@ int main(void)
     CHECK_ALLOC_FAILED(GC_MALLOC(GC_WORD_MAX - 8), "WORD_MAX-8");
     CHECK_ALLOC_FAILED(GC_MALLOC(GC_WORD_MAX - 4), "WORD_MAX-4");
     CHECK_ALLOC_FAILED(GC_MALLOC(GC_WORD_MAX), "WORD_MAX");
-    return 0;
+# endif
+  return 0;
 }
