@@ -666,7 +666,10 @@ STATIC void GC_register_finalizer_inner(void * obj,
     hdr *hhdr = NULL; /* initialized to prevent warning. */
     DCL_LOCK_STATE;
 
-    if (EXPECT(GC_find_leak, FALSE)) return;
+    if (EXPECT(GC_find_leak, FALSE)) {
+      /* No-op.  *ocd and *ofn remain unchanged.    */
+      return;
+    }
     LOCK();
     if (EXPECT(NULL == GC_fnlz_roots.fo_head, FALSE)
         || EXPECT(GC_fo_entries > ((word)1 << GC_log_fo_table_size), FALSE)) {
@@ -762,7 +765,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
       new_fo = (struct finalizable_object *)
                 (*oom_fn)(sizeof(struct finalizable_object));
       if (0 == new_fo) {
-        /* No enough memory.  *ocd and *ofn remains unchanged.  */
+        /* No enough memory.  *ocd and *ofn remain unchanged.   */
         return;
       }
       /* It's not likely we'll make it here, but ... */
