@@ -79,6 +79,12 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
     struct hblk * h;
     hdr * hhdr;
     void * result;
+#   if defined(_FORTIFY_SOURCE) && GC_GNUC_PREREQ(9, 0) && !defined(__clang__)
+      volatile  /* Use cleared_p instead of p as a workaround to avoid  */
+                /* passing alloc_size(lb) attribute associated with p   */
+                /* to memset (including memset call inside GC_free).    */
+#   endif
+      word cleared_p = (word)p;
     size_t sz;      /* Current size in bytes    */
     size_t orig_sz; /* Original sz in bytes     */
     int obj_kind;
@@ -146,10 +152,6 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
             if (orig_sz > lb) {
               /* Clear unneeded part of object to avoid bogus pointer */
               /* tracing.                                             */
-                word cleared_p = (word)p;
-                        /* A workaround to avoid passing alloc_size(lb) */
-                        /* attribute associated with p to memset.       */
-
                 BZERO((ptr_t)cleared_p + lb, orig_sz - lb);
             }
             return(p);
@@ -163,7 +165,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
       /* But this gives the client warning of imminent disaster.        */
       BCOPY(p, result, sz);
 #     ifndef IGNORE_FREE
-        GC_free(p);
+        GC_free((ptr_t)cleared_p);
 #     endif
     }
     return result;
