@@ -79,7 +79,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
     struct hblk * h;
     hdr * hhdr;
     void * result;
-#   if defined(_FORTIFY_SOURCE) && GC_GNUC_PREREQ(9, 0) && !defined(__clang__)
+#   if defined(_FORTIFY_SOURCE) && defined(__GNUC__) && !defined(__clang__)
       volatile  /* Use cleared_p instead of p as a workaround to avoid  */
                 /* passing alloc_size(lb) attribute associated with p   */
                 /* to memset (including memset call inside GC_free).    */
