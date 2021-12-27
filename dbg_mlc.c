@@ -532,7 +532,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc(size_t lb,
     /* Note that according to malloc() specification, if size is 0 then */
     /* malloc() returns either NULL, or a unique pointer value that can */
     /* later be successfully passed to free(). We always do the latter. */
-    result = GC_malloc(SIZET_SAT_ADD(lb, DEBUG_BYTES));
+#   if defined(_FORTIFY_SOURCE) && !defined(__clang__)
+      /* Workaround to avoid "exceeds maximum object size" gcc warning. */
+      result = GC_malloc(lb < GC_SIZE_MAX - DEBUG_BYTES ? lb + DEBUG_BYTES
+                                                        : GC_SIZE_MAX >> 1);
+#   else
+      result = GC_malloc(SIZET_SAT_ADD(lb, DEBUG_BYTES));
+#   endif
 #   ifdef GC_ADD_CALLER
       if (s == NULL) {
         GC_caller_func_offset(ra, &s, &i);
