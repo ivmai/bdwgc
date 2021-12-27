@@ -151,7 +151,11 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
             if (orig_sz > lb) {
               /* Clear unneeded part of object to avoid bogus pointer */
               /* tracing.                                             */
-                BZERO(((ptr_t)p) + lb, orig_sz - lb);
+                word cleared_p = (word)p;
+                        /* A workaround to avoid passing alloc_size(lb) */
+                        /* attribute associated with p to memset.       */
+
+                BZERO((ptr_t)cleared_p + lb, orig_sz - lb);
             }
             return(p);
         }
