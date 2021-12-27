@@ -74,19 +74,23 @@ jobs:
     compiler: clang-12
     dist: focal
     env:
+    - CC=clang-12
+    - CXX=clang++-12
     - CFLAGS_EXTRA="-O3"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --disable-shared"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
       apt:
         packages:
-        - gcc-11
+        - g++-11
         sources:
         - ubuntu-toolchain-r-test
     arch: arm64
-    compiler: gcc-11
+    compiler: g++-11
     dist: bionic
     env:
+    - CC=gcc-11
+    - CXX=g++-11
     - CFLAGS_EXTRA="-O3 -march=native"
     - CONF_OPTIONS="--enable-cplusplus --disable-gcj-support"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -155,19 +159,23 @@ jobs:
     compiler: clang-12
     dist: focal
     env:
+    - CC=clang-12
+    - CXX=clang++-12
     - CFLAGS_EXTRA="-O3 -D _FORTIFY_SOURCE=2"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
       apt:
         packages:
-        - gcc-11
+        - g++-11
         sources:
         - ubuntu-toolchain-r-test
     arch: ppc64le
-    compiler: gcc-11
+    compiler: g++-11
     dist: bionic
     env:
+    - CC=gcc-11
+    - CXX=g++-11
     - CFLAGS_EXTRA="-O3 -D NO_MPROTECT_VDB"
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -211,18 +219,22 @@ jobs:
     compiler: clang-12
     dist: focal
     env:
+    - CC=clang-12
+    - CXX=clang++-12
     - CFLAGS_EXTRA="-O3 -D _FORTIFY_SOURCE=2 -D NO_RETRY_SIGNALS"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
   - addons:
       apt:
         packages:
-        - gcc-11
+        - g++-11
         sources:
         - ubuntu-toolchain-r-test
     arch: s390x
-    compiler: gcc-11
+    compiler: g++-11
     dist: bionic
     env:
+    - CC=gcc-11
+    - CXX=g++-11
     - CFLAGS_EXTRA="-O3 -flto=auto -D _FORTIFY_SOURCE=2"
     - CONF_OPTIONS="--enable-cplusplus --disable-shared"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -262,12 +274,14 @@ jobs:
   - addons:
       apt:
         packages:
-        - gcc-11
+        - g++-11
         sources:
         - ubuntu-toolchain-r-test
-    compiler: gcc-11
+    compiler: g++-11
     dist: bionic
     env:
+    - CC=gcc-11
+    - CXX=g++-11
     - CFLAGS_EXTRA="-O3 -march=native"
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
