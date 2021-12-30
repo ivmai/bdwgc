@@ -617,8 +617,11 @@ if (build_tests)
 
   # Compile some tests as C++ to test extern "C" in header files.
   if (enable_cplusplus)
-    set_source_files_properties(tests/leak_test.c tests/test.c
-                                PROPERTIES LANGUAGE CXX)
+    set_source_files_properties(tests/leak_test.c PROPERTIES LANGUAGE CXX)
+    if (NOT MSVC)
+      # WinMain-based test hangs at startup if compiled by VC as C++ code.
+      set_source_files_properties(tests/test.c PROPERTIES LANGUAGE CXX)
+    endif()
     # To avoid "treating 'c' input as 'c++' when in C++ mode" Clang warning.
     if (NOT (BORLAND OR MSVC OR WATCOM))
       add_compile_options(-x c++)
