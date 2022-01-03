@@ -485,7 +485,7 @@ GC_INNER void GC_merge_unmapped(void)
             GC_add_to_fl(h, hhdr);
             /* Start over at beginning of list */
             h = GC_hblkfreelist[i];
-          } else /* not mergable with successor */ {
+          } else /* not mergeable with successor */ {
             h = hhdr -> hb_next;
           }
       } /* while (h != 0) ... */
