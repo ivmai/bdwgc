@@ -4907,7 +4907,7 @@ replacing GC_never_stop_func with GC_default_stop_func (if
 possible).
 * alloc.c (GC_gcollect): Use GC_default_stop_func.
 * alloc.c (GC_collect_or_expand): Use GC_default_stop_func
-(instead of GC_never_stop_func) unless it is trigged due to out of
+(instead of GC_never_stop_func) unless it is triggered due to out of
 memory; don't increment GC_fail_count and don't output warning
 (before trying to collect again) in case the collection has been
 interrupted (by GC_default_stop_func) and the heap expansion has
@@ -6540,7 +6540,7 @@ GC_delete_gc_thread.
 * misc.c: Declare GC_thr_init().
 
 * allchblk.c (add_to_fl): disable assertions with USE_MUNMAP,
-and refine assertions to handle huge unmergable blocks.
+and refine assertions to handle huge unmergeable blocks.
 (GC_allochblk_nth): Add comment.
 
 * include/private/gcconfig.h: Add missing FREEBSD macro
