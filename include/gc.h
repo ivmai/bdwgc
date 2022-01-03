@@ -659,8 +659,8 @@ GC_API int GC_CALL GC_try_to_collect(GC_stop_func /* stop_func */)
                                                         GC_ATTR_NONNULL(1);
 
 /* Set and get the default stop_func.  The default stop_func is used by */
-/* GC_gcollect() and by implicitly trigged collections (except for the  */
-/* case when handling out of memory).  Must not be 0.                   */
+/* GC_gcollect() and by implicitly triggered collections (except for    */
+/* the case when handling out of memory).  Must not be 0.               */
 /* Both the setter and getter acquire the GC lock to avoid data races.  */
 GC_API void GC_CALL GC_set_stop_func(GC_stop_func /* stop_func */)
                                                         GC_ATTR_NONNULL(1);
