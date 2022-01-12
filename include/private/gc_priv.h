@@ -1811,6 +1811,10 @@ struct GC_traced_stack_sect_s {
                         /* NULL if no such "frame" active.              */
 #endif /* !THREADS */
 
+#ifdef IA64
+  GC_EXTERN ptr_t GC_register_stackbottom;
+#endif
+
 #if defined(E2K) || defined(IA64)
   /* Similar to GC_push_all_stack_sections() but for IA-64 registers store. */
   GC_INNER void GC_push_all_register_sections(ptr_t bs_lo, ptr_t bs_hi,
@@ -2061,6 +2065,7 @@ ptr_t GC_get_main_stack_base(void);     /* Cold end of stack.           */
   GC_INNER ptr_t GC_get_register_stack_base(void);
                                         /* Cold end of register stack.  */
 #endif
+
 void GC_register_data_segments(void);
 
 #ifdef THREADS

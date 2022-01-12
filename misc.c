@@ -85,7 +85,7 @@ GC_INNER GC_bool GC_debugging_started = FALSE;
 ptr_t GC_stackbottom = 0;
 
 #ifdef IA64
-  ptr_t GC_register_stackbottom = 0;
+  GC_INNER ptr_t GC_register_stackbottom = NULL;
 #endif
 
 int GC_dont_gc = FALSE;
@@ -2174,7 +2174,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
     base.mem_base = (void *)&base;
 #   ifdef IA64
       base.reg_base = (void *)GC_save_regs_in_stack();
-      /* Unnecessarily flushes register stack,          */
+      /* TODO: Unnecessarily flushes register stack,    */
       /* but that probably doesn't hurt.                */
 #   elif defined(E2K)
       base.reg_base = NULL; /* not used by GC currently */
