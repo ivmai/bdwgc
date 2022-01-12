@@ -500,8 +500,11 @@ STATIC void GC_remove_tmp_roots(void)
 GC_INNER ptr_t GC_approx_sp(void)
 {
     volatile word sp;
-#   if defined(S390) && !defined(CPPCHECK) && (__clang_major__ < 8)
-        /* Workaround a crash in SystemZTargetLowering of libLLVM-3.8.  */
+#   if ((defined(E2K) && defined(__clang__)) \
+        || (defined(S390) && (__clang_major__ < 8))) && !defined(CPPCHECK)
+        /* Workaround some bugs in clang:                                   */
+        /* "undefined reference to llvm.frameaddress" error (clang-9/e2k);  */
+        /* a crash in SystemZTargetLowering of libLLVM-3.8 (S390).          */
         sp = (word)&sp;
 #   elif defined(CPPCHECK) || (__GNUC__ >= 4 /* GC_GNUC_PREREQ(4, 0) */ \
                                && !defined(STACK_NOT_SCANNED))
