@@ -617,7 +617,7 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
 {
     hdr * hhdr = HDR(p);
     word descr = hhdr -> hb_descr;
-    ptr_t q;
+    ptr_t current_p;
     ptr_t scan_limit;
     ptr_t target_limit = p + hhdr -> hb_sz - 1;
 
@@ -626,11 +626,13 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
     } else {
        scan_limit = target_limit + 1 - sizeof(word);
     }
-    for (q = p; (word)q <= (word)scan_limit; q += ALIGNMENT) {
-        word r = *(word *)q;
+    for (current_p = p; (word)current_p <= (word)scan_limit;
+         current_p += ALIGNMENT) {
+        word q;
 
-        if (r < (word)p || r > (word)target_limit) {
-            GC_PUSH_ONE_HEAP(r, q, GC_mark_stack_top);
+        LOAD_WORD_OR_CONTINUE(q, current_p);
+        if (q < (word)p || q > (word)target_limit) {
+            GC_PUSH_ONE_HEAP(q, current_p, GC_mark_stack_top);
         }
     }
 }

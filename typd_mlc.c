@@ -344,20 +344,21 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
                                 mse * mark_stack_limit, word env)
 {
     word bm = GC_ext_descriptors[env].ed_bitmap;
-    word * current_p = addr;
-    word current;
+    ptr_t current_p = (ptr_t)addr;
     ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
     ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
     DECLARE_HDR_CACHE;
 
     INIT_HDR_CACHE;
-    for (; bm != 0; bm >>= 1, current_p++) {
+    for (; bm != 0; bm >>= 1, current_p += sizeof(word)) {
         if (bm & 1) {
-            current = *current_p;
+            word current;
+
+            LOAD_WORD_OR_CONTINUE(current, current_p);
             FIXUP_POINTER(current);
             if (current >= (word)least_ha && current <= (word)greatest_ha) {
                 PUSH_CONTENTS((ptr_t)current, mark_stack_ptr,
-                              mark_stack_limit, (ptr_t)current_p);
+                              mark_stack_limit, current_p);
             }
         }
     }

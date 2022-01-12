@@ -1626,8 +1626,9 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
     lim = (word *)(((word)top) & ~(ALIGNMENT-1)) - 1;
     for (current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
          (word)current_p <= (word)lim; current_p += ALIGNMENT) {
-      REGISTER word q = *(word *)current_p;
+      REGISTER word q;
 
+      LOAD_WORD_OR_CONTINUE(q, current_p);
       GC_PUSH_ONE_HEAP(q, current_p, GC_mark_stack_top);
     }
 #   undef GC_greatest_plausible_heap_addr

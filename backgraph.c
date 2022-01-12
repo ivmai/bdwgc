@@ -338,14 +338,17 @@ static void reset_back_edge(ptr_t p, size_t n_bytes GC_ATTR_UNUSED,
 
 static void add_back_edges(ptr_t p, size_t n_bytes, word gc_descr)
 {
-  word *currentp = (word *)(p + sizeof(oh));
+  ptr_t current_p = p + sizeof(oh);
 
   /* For now, fix up non-length descriptors conservatively.     */
     if((gc_descr & GC_DS_TAGS) != GC_DS_LENGTH) {
       gc_descr = n_bytes;
     }
-  while ((word)currentp < (word)(p + gc_descr)) {
-    word current = *currentp++;
+
+  for (; (word)current_p < (word)(p + gc_descr); current_p += sizeof(word)) {
+    word current;
+
+    LOAD_WORD_OR_CONTINUE(current, current_p);
     FIXUP_POINTER(current);
     if (current >= (word)GC_least_plausible_heap_addr &&
         current <= (word)GC_greatest_plausible_heap_addr) {
