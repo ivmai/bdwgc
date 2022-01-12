@@ -802,6 +802,7 @@ GC_INNER void GC_push_all_stacks(void)
             GC_log_printf("Reg stack for thread %p is [%p,%p)\n",
                           (void *)p->id, (void *)bs_lo, (void *)bs_hi);
 #         endif
+          GC_ASSERT(bs_lo != NULL && bs_hi != NULL);
           /* FIXME: This (if p->id==self) may add an unbounded number of */
           /* entries, and hence overflow the mark stack, which is bad.   */
           GC_push_all_register_sections(bs_lo, bs_hi,
