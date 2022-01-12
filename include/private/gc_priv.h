@@ -1982,7 +1982,9 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 #ifdef E2K
   /* Allocate the buffer and copy the full procedure stack to it.       */
   GC_INNER size_t GC_get_procedure_stack(ptr_t *);
+#endif
 
+#if defined(E2K) && defined(USE_PTR_HWTAG)
   /* Load value and get tag of the target memory.   */
 # if defined(__ptr64__)
 #   define LOAD_TAGGED_VALUE(v, tag, p)         \
