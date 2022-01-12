@@ -451,7 +451,7 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
           /* Here we assume two markers, but this is extremely          */
           /* unlikely to fail spuriously with more.  And if it does, it */
           /* should be looked at.                                       */
-          GC_ASSERT(hhdr -> hb_n_marks <= 2 * (HBLKSIZE/sz + 1) + 16);
+          GC_ASSERT(sz != 0 && hhdr->hb_n_marks <= 2 * (HBLKSIZE/sz + 1) + 16);
 #       else
           GC_ASSERT(sz * hhdr -> hb_n_marks <= HBLKSIZE);
 #       endif
