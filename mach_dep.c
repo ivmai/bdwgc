@@ -35,48 +35,28 @@
 # define VA_SIZE 48
 # define E2K_PSHTP_SIZE 12
 
-  struct e2k_rwap_lo_fields {
-    word base : VA_SIZE; /* [VA_SIZE-1:0] */
-  };
-
-  union e2k_rwap_lo_u {
-    struct e2k_rwap_lo_fields fields;
-    word w;
-  };
-
-  struct e2k_rwap_hi_fields {
-    word curptr : 32; /* [31:0] */
-  };
-
-  union e2k_rwap_hi_u {
-    struct e2k_rwap_hi_fields fields;
-    word w;
-  };
-
-# define get_stack_index(ps_ptr)                                \
-        do {                                                    \
-          union e2k_rwap_lo_u psp_lo;                           \
-          union e2k_rwap_hi_u psp_hi;                           \
-          signed_word pshtp;                                    \
-          char tmp = 0;                                         \
-          char val = 0;                                         \
-                                                                \
-          __asm__ __volatile__ (                                \
-            "1:\n\t"                                            \
-            "ldb [%[tmp] + 0x0] 0x7, %[val]\n\t"                \
-            "rrd %%pshtp, %[pshtp]\n\t"                         \
-            "rrd %%psp.lo, %[psp_lo]\n\t"                       \
-            "rrd %%psp.hi, %[psp_hi]\n\t"                       \
-            "stb [%[tmp] + 0x0] 0x2, %[val]\n\t"                \
-            "ibranch 1b ? %%MLOCK\n"                            \
-            : [val] "=&r" (val),                                \
-              [psp_lo] "=&r" (psp_lo.w),                        \
-              [psp_hi] "=&r" (psp_hi.w),                        \
-              [pshtp] "=&r" (pshtp)                             \
-            : [tmp] "r" (&tmp));                                \
-          *(ps_ptr) = psp_lo.fields.base + psp_hi.fields.curptr \
-                + 2 * ((word)((pshtp << (64 - E2K_PSHTP_SIZE))  \
-                              >> (64 - E2K_PSHTP_SIZE)));       \
+# define get_stack_index(ps_ptr)                    \
+        do {                                        \
+          word psp_lo, psp_hi;                      \
+          signed_word pshtp;                        \
+          char tmp = 0, val;                        \
+                                                    \
+          __asm__ __volatile__ (                    \
+            "1:\n\t"                                \
+            "ldb %4, 0, %0, mas = 7\n\t"            \
+            "rrd %%pshtp,  %1\n\t"                  \
+            "rrd %%psp.lo, %2\n\t"                  \
+            "rrd %%psp.hi, %3\n\t"                  \
+            /* FIXME: start next VLIW command */    \
+            "stb %4, 0, %0, mas = 2\n\t"            \
+            "rbranch 1b\n"                          \
+            : "=&r" (val), "=&r" (pshtp),           \
+              "=&r" (psp_lo), "=&r" (psp_hi)        \
+            : "r" (&tmp));                          \
+          *(ps_ptr) = (psp_lo & ((1UL<<VA_SIZE)-1)) \
+            + (unsigned)psp_hi                      \
+            + (word)((pshtp << (64-E2K_PSHTP_SIZE)) \
+                     >> (63-E2K_PSHTP_SIZE));       \
         } while (0)
 
   GC_INNER size_t GC_get_procedure_stack(ptr_t *buf_ptr) {
@@ -122,6 +102,8 @@
     __asm__ __volatile__ ("flushr");
     return NULL;
   }
+
+# undef get_stack_index
 #endif /* E2K */
 
 #if defined(MACOS) && defined(__MWERKS__)
