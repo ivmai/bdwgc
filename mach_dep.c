@@ -35,6 +35,12 @@
 # define VA_SIZE 48
 # define E2K_PSHTP_SIZE 12
 
+# if defined(__clang__)
+#   define VLIW_CMD_BRACES_PREFIX "%" /* a workaround for clang-9 */
+# else
+#   define VLIW_CMD_BRACES_PREFIX /* empty */
+# endif
+
 # define get_stack_index(ps_ptr)                    \
         do {                                        \
           word psp_lo, psp_hi;                      \
@@ -47,9 +53,10 @@
             "rrd %%pshtp,  %1\n\t"                  \
             "rrd %%psp.lo, %2\n\t"                  \
             "rrd %%psp.hi, %3\n\t"                  \
-            /* FIXME: start next VLIW command */    \
-            "stb %4, 0, %0, mas = 2\n\t"            \
-            "rbranch 1b\n"                          \
+            VLIW_CMD_BRACES_PREFIX "{\n\t"          \
+            "  stb %4, 0, %0, mas = 2\n\t"          \
+            "  rbranch 1b\n\t"                      \
+            VLIW_CMD_BRACES_PREFIX "}"              \
             : "=&r" (val), "=&r" (pshtp),           \
               "=&r" (psp_lo), "=&r" (psp_hi)        \
             : "r" (&tmp));                          \
@@ -103,6 +110,7 @@
     return NULL;
   }
 
+# undef VLIW_CMD_BRACES_PREFIX
 # undef get_stack_index
 #endif /* E2K */
 
