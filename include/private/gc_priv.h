@@ -170,9 +170,11 @@ typedef int GC_bool;
 #if defined(CPPCHECK)
 # define MACRO_BLKSTMT_BEGIN {
 # define MACRO_BLKSTMT_END   }
+# define LOCAL_VAR_INIT_OK =0 /* to avoid "uninit var" false positive */
 #else
 # define MACRO_BLKSTMT_BEGIN do {
 # define MACRO_BLKSTMT_END   } while (0)
+# define LOCAL_VAR_INIT_OK /* empty */
 #endif
 
 #if defined(M68K) && defined(__GNUC__)
@@ -2004,7 +2006,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 
 # define LOAD_WORD_OR_CONTINUE(v, p) \
         { \
-          int tag; \
+          int tag LOCAL_VAR_INIT_OK; \
           LOAD_TAGGED_VALUE(v, tag, p); \
           if (tag != 0) continue; \
         }
