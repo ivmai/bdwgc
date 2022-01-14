@@ -24,7 +24,24 @@
 #endif
 
 #include "gc_disclaim.h" /* includes gc.h */
-#include "gc_mark.h"
+
+#if defined(GC_PTHREADS) || defined(LINT2)
+# include "private/gc_priv.h"
+
+  GC_ATTR_NO_SANITIZE_THREAD
+  static int GC_rand(void) /* same as in disclaim_test.c */
+  {
+    static unsigned seed; /* concurrent update does not hurt the test */
+
+    seed = (seed * 1103515245U + 12345) & (~0U >> 1);
+    return (int)seed;
+  }
+
+# undef rand
+# define rand() GC_rand()
+#endif /* GC_PTHREADS || LINT2 */
+
+#include "gc_mark.h" /* should not precede include gc_priv.h */
 
 #ifdef GC_PTHREADS
 # ifndef NTHREADS
@@ -38,22 +55,6 @@
 # define NTHREADS 1
 # define AO_t GC_word
 #endif
-
-#ifdef LINT2
-  /* Avoid include gc_priv.h. */
-# ifndef GC_API_PRIV
-#   define GC_API_PRIV GC_API
-# endif
-# ifdef __cplusplus
-    extern "C" {
-# endif
-  GC_API_PRIV long GC_random(void);
-# ifdef __cplusplus
-    } /* extern "C" */
-# endif
-# undef rand
-# define rand() (int)GC_random()
-#endif /* LINT2 */
 
 #define POP_SIZE 200
 #define MUTATE_CNT (5000000 / NTHREADS)
