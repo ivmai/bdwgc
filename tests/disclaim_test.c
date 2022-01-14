@@ -28,6 +28,23 @@
 #undef GC_NO_THREAD_REDIRECTS
 #include "gc_disclaim.h"
 
+#if defined(GC_PTHREADS)
+  static int GC_rand(void)
+  {
+    static unsigned seed; /* concurrent update does not hurt the test */
+
+    seed = (seed * 1103515245U + 12345) & (~0U >> 1);
+    return (int)seed;
+  }
+
+  /* Redefine the standard rand() with a trivial (yet sufficient for    */
+  /* the test purpose) implementation to avoid crashes inside rand()    */
+  /* on some targets (e.g. FreeBSD 13.0) when used concurrently.        */
+  /* The standard specifies rand() as not a thread-safe API function.   */
+# undef rand
+# define rand() GC_rand()
+#endif /* GC_PTHREADS */
+
 #define my_assert(e) \
     if (!(e)) { \
         fprintf(stderr, "Assertion failure, line %d: " #e "\n", __LINE__); \
