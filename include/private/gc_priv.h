@@ -2026,7 +2026,6 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
 
 #ifdef KEEP_BACK_PTRS
   GC_EXTERN long GC_backtraces;
-  GC_INNER void GC_generate_random_backtrace_no_gc(void);
 #endif
 
 GC_EXTERN GC_bool GC_print_back_height;
