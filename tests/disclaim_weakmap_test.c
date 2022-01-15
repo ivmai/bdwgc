@@ -23,6 +23,7 @@
 # include "config.h"
 #endif
 
+#undef GC_NO_THREAD_REDIRECTS
 #include "gc/gc_disclaim.h" /* includes gc.h */
 
 #if defined(GC_PTHREADS) || defined(LINT2)

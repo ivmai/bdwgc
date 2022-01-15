@@ -5,6 +5,7 @@
 #endif
 
 #ifdef GC_THREADS
+# undef GC_NO_THREAD_REDIRECTS
 # include "gc.h"
 
 # ifdef PARALLEL_MARK
