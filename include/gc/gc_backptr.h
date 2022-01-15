@@ -69,12 +69,13 @@ GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void * /* dest */,
                                 void ** /* base_p */, size_t * /* offset_p */)
                                 GC_ATTR_NONNULL(1);
 
-/* Generate a random heap address.            */
-/* The resulting address is in the heap, but  */
-/* not necessarily inside a valid object.     */
+/* Generate a random heap address.  The resulting address is    */
+/* in the heap, but not necessarily inside a valid object.      */
+/* The caller should hold the allocation lock.                  */
 GC_API void * GC_CALL GC_generate_random_heap_address(void);
 
 /* Generate a random address inside a valid marked heap object. */
+/* The caller should hold the allocation lock.                  */
 GC_API void * GC_CALL GC_generate_random_valid_address(void);
 
 /* Force a garbage collection and generate a backtrace from a   */

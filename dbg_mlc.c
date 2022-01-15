@@ -208,6 +208,7 @@
     size_t offset;
     void *base;
 
+    GC_ASSERT(I_DONT_HOLD_LOCK());
     GC_print_heap_obj((ptr_t)GC_base(current));
 
     for (i = 0; ; ++i) {
@@ -250,6 +251,7 @@
     void *current;
     DCL_LOCK_STATE;
 
+    GC_ASSERT(I_DONT_HOLD_LOCK());
     if (GC_try_to_collect(GC_never_stop_func) == 0) {
       GC_err_printf("Cannot generate a backtrace: "
                     "garbage collection is disabled!\n");
