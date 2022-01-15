@@ -107,5 +107,6 @@ int main(void) {
     CHECK_LEAKS();
     CHECK_LEAKS();
     CHECK_LEAKS();
+    printf("SUCCEEDED\n");
     return 0;
 }

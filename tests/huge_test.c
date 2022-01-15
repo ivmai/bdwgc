@@ -63,5 +63,6 @@ int main(void)
     CHECK_ALLOC_FAILED(GC_MALLOC(GC_WORD_MAX - 4), "WORD_MAX-4");
     CHECK_ALLOC_FAILED(GC_MALLOC(GC_WORD_MAX), "WORD_MAX");
 # endif
+  printf("SUCCEEDED\n");
   return 0;
 }

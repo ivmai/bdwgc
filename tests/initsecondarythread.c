@@ -112,5 +112,6 @@ int main(void)
     }
     CloseHandle(t);
 # endif
+  printf("SUCCEEDED\n");
   return 0;
 }

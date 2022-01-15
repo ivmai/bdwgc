@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -50,5 +51,6 @@ int main(void)
   GC_generate_random_backtrace();
   GC_generate_random_backtrace();
   GC_generate_random_backtrace();
+  printf("SUCCEEDED\n");
   return 0;
 }

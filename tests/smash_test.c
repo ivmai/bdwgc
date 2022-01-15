@@ -37,5 +37,6 @@ int main(void)
         *q = 42;
      }
   }
+  printf("SUCCEEDED\n");
   return 0;
 }

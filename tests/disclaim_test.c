@@ -271,8 +271,8 @@ int main(void)
         }
     }
 # else
-    printf("Unthreaded disclaim test.\n");
     test(NULL);
 # endif
+    printf("SUCCEEDED\n");
     return 0;
 }

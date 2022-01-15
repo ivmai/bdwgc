@@ -125,6 +125,7 @@ int main(void)
       }
     }
   }
+  printf("SUCCEEDED\n");
   return 0;
 }
 

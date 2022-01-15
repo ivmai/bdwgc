@@ -1,4 +1,6 @@
 
+#include <stdio.h>
+
 #include "gc/leak_detector.h"
 
 int main(void) {
@@ -22,5 +24,6 @@ int main(void) {
     CHECK_LEAKS();
     CHECK_LEAKS();
     CHECK_LEAKS();
+    printf("SUCCEEDED\n");
     return 0;
 }

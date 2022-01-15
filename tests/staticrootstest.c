@@ -69,9 +69,10 @@ int main(void)
       for (i = 0; i < (int)sizeof(struct treenode); ++i) {
         if (staticroot[i] != 0x42) {
           fprintf(stderr, "Memory check failed\n");
-          return -1;
+          return 1;
         }
       }
   }
+  printf("SUCCEEDED\n");
   return 0;
 }
