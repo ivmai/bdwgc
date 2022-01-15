@@ -870,8 +870,11 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
               /* which may cause occasional mysterious results.         */
               /* We need to release the GC lock, since GC_print_callers */
               /* acquires it.  It probably shouldn't.                   */
+              void *current = GC_generate_random_valid_address();
+
               UNLOCK();
-              GC_generate_random_backtrace_no_gc();
+              GC_printf("\n****Chosen address %p in object\n", current);
+              GC_print_backtrace(current);
               LOCK();
           }
           last_back_trace_gc_no = GC_gc_no;
