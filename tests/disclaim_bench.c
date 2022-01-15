@@ -23,11 +23,12 @@
 #include "gc_disclaim.h"
 
 #define NOT_GCBUILD
-#include "private/gc_priv.h" /* for CLOCK_TYPE, COVERT_DATAFLOW, GC_random */
+#include "private/gc_priv.h"
 
 #ifdef LINT2
 # undef rand
-# define rand() (int)GC_random()
+  static GC_RAND_STATE_T seed;
+# define rand() GC_RAND_NEXT(&seed)
 #endif
 
 #define my_assert(e) \

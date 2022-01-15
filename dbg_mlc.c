@@ -54,23 +54,20 @@
   }
 #endif /* !SHORT_DBG_HDRS */
 
-#ifdef LINT2
-  long GC_random(void)
-  {
-    static unsigned seed = 1; /* not thread-safe */
-
-    /* Linear congruential pseudo-random numbers generator.     */
-    seed = (seed * 1103515245U + 12345) & GC_RAND_MAX; /* overflow is ok */
-    return (long)seed;
-  }
-#endif
-
 #ifdef KEEP_BACK_PTRS
 
 #ifdef LINT2
-# define RANDOM() GC_random()
+  static int GC_rand(void)
+  {
+    static GC_RAND_STATE_T seed;
+
+    return GC_RAND_NEXT(&seed);
+  }
+
+# define RANDOM() (long)GC_rand()
 #else
 # include <stdlib.h>
+# undef GC_RAND_MAX
 # define GC_RAND_MAX RAND_MAX
 
 # if defined(__GLIBC__) || defined(SOLARIS) \
@@ -163,16 +160,17 @@
   GC_API void * GC_CALL GC_generate_random_heap_address(void)
   {
     size_t i;
-    word heap_offset = RANDOM();
+    word heap_offset = (word)RANDOM();
 
-    if (GC_heapsize > GC_RAND_MAX) {
+    if (GC_heapsize > (word)GC_RAND_MAX) {
         heap_offset *= GC_RAND_MAX;
-        heap_offset += RANDOM();
+        heap_offset += (word)RANDOM();
     }
     heap_offset %= GC_heapsize;
         /* This doesn't yield a uniform distribution, especially if     */
-        /* e.g. RAND_MAX = 1.5* GC_heapsize.  But for typical cases,    */
+        /* e.g. RAND_MAX is 1.5*GC_heapsize.  But for typical cases,    */
         /* it's not too bad.                                            */
+
     for (i = 0;; ++i) {
         size_t size;
 

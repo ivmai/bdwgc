@@ -2447,10 +2447,14 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
   GC_EXTERN long GC_backtraces;
 #endif
 
-#ifdef LINT2
-# define GC_RAND_MAX (~0U >> 1)
-  GC_API_PRIV long GC_random(void);
-#endif
+#if defined(THREADS) || defined(LINT2)
+  /* A trivial (linear congruential) pseudo-random numbers generator,   */
+  /* safe for the concurrent usage.                                     */
+# define GC_RAND_STATE_T unsigned
+# define GC_RAND_MAX ((int)(~0U >> 1))
+# define GC_RAND_NEXT(pseed) /* overflow is OK */ \
+    (int)(*(pseed) = (*(pseed) * 1103515245U + 12345) & (unsigned)GC_RAND_MAX)
+#endif /* THREADS || LINT2 */
 
 GC_EXTERN GC_bool GC_print_back_height;
 

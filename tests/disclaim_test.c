@@ -33,12 +33,10 @@
 # include "private/gc_priv.h"
 
   GC_ATTR_NO_SANITIZE_THREAD
-  static int GC_rand(void) /* nearly identical to GC_random */
+  static int GC_rand(void)
   {
-    static unsigned seed; /* concurrent update does not hurt the test */
-
-    seed = (seed * 1103515245U + 12345) & (~0U >> 1);
-    return (int)seed;
+    static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
+    return GC_RAND_NEXT(&seed);
   }
 
   /* Redefine the standard rand() with a trivial (yet sufficient for    */
