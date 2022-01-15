@@ -125,7 +125,7 @@ build_script:
       "cd /c/projects/bdwgc
        && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[wcc] (
-    appveyor DownloadFile "https://iweb.dl.sourceforge.net/project/openwatcom/open-watcom-2.0-2017-11-01/ow-snapshot.7z"
+    appveyor DownloadFile "https://master.dl.sourceforge.net/project/openwatcom/open-watcom-2.0-2017-11-01/ow-snapshot.7z"
     && 7z x -o..\watcom ow-snapshot.7z > nul
     && set "watcom=%cd%\..\watcom" && set "path=%cd%\..\watcom\binnt64"
     && set "include=%cd%\..\watcom\h\%WCC_INC_SUBDIR%;%cd%\..\watcom\h"
