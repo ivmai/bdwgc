@@ -32,10 +32,8 @@
   GC_ATTR_NO_SANITIZE_THREAD
   static int GC_rand(void) /* same as in disclaim_test.c */
   {
-    static unsigned seed; /* concurrent update does not hurt the test */
-
-    seed = (seed * 1103515245U + 12345) & (~0U >> 1);
-    return (int)seed;
+    static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
+    return GC_RAND_NEXT(&seed);
   }
 
 # undef rand
