@@ -245,24 +245,23 @@
     out:;
   }
 
-  /* Force a garbage collection and generate/print a backtrace  */
-  /* from a random heap address.                                */
-  GC_INNER void GC_generate_random_backtrace_no_gc(void)
-  {
-    void * current;
-    current = GC_generate_random_valid_address();
-    GC_printf("\n****Chosen address %p in object\n", current);
-    GC_print_backtrace(current);
-  }
-
   GC_API void GC_CALL GC_generate_random_backtrace(void)
   {
+    void *current;
+    DCL_LOCK_STATE;
+
     if (GC_try_to_collect(GC_never_stop_func) == 0) {
       GC_err_printf("Cannot generate a backtrace: "
                     "garbage collection is disabled!\n");
       return;
     }
-    GC_generate_random_backtrace_no_gc();
+
+    /* Generate/print a backtrace from a random heap address.   */
+    LOCK();
+    current = GC_generate_random_valid_address();
+    UNLOCK();
+    GC_printf("\n****Chosen address %p in object\n", current);
+    GC_print_backtrace(current);
   }
 
 #endif /* KEEP_BACK_PTRS */
