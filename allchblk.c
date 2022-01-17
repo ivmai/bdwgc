@@ -228,6 +228,7 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
 {
     word descr;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef MARK_BIT_PER_GRANULE
       if (byte_sz > MAXOBJBYTES)
         flags |= LARGE_BLOCK;
@@ -590,10 +591,12 @@ GC_INNER void GC_merge_unmapped(void)
 STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
                                        size_t bytes, int index)
 {
-    word total_size = hhdr -> hb_sz;
+    word total_size;
     struct hblk * rest;
     hdr * rest_hdr;
 
+    GC_ASSERT(I_HOLD_LOCK());
+    total_size = hhdr -> hb_sz;
     GC_ASSERT((total_size & (HBLKSIZE-1)) == 0);
     GC_remove_from_fl_at(hhdr, index);
     if (total_size == bytes) return h;
@@ -748,6 +751,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
     signed_word size_needed = HBLKSIZE * OBJ_SZ_TO_BLOCKS_CHECKED(sz);
                                 /* number of bytes in requested objects */
 
+    GC_ASSERT(I_HOLD_LOCK());
     /* search for a big enough block in free list */
         for (hbp = GC_hblkfreelist[n];; hbp = hhdr -> hb_next) {
             signed_word size_avail; /* bytes available in this block */

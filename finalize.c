@@ -338,6 +338,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
   static void push_and_mark_object(void *p)
   {
+    GC_ASSERT(I_HOLD_LOCK());
     GC_normal_finalize_mark_proc((ptr_t)p);
     while (!GC_mark_stack_empty()) {
       MARK_FROM_MARK_STACK();
@@ -353,6 +354,8 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
   STATIC void GC_mark_togglerefs(void)
   {
     size_t i;
+
+    GC_ASSERT(I_HOLD_LOCK());
     if (NULL == GC_toggleref_arr)
       return;
 

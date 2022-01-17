@@ -107,6 +107,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
     ptr_t result = GC_scratch_free_ptr;
     size_t bytes_to_get;
 
+    GC_ASSERT(I_HOLD_LOCK());
     bytes = ROUNDUP_GRANULE_SIZE(bytes);
     for (;;) {
         GC_ASSERT((word)GC_scratch_end_ptr >= (word)result);
@@ -166,6 +167,7 @@ static hdr * alloc_hdr(void)
 {
     hdr * result;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (NULL == GC_hdr_free_list) {
         result = (hdr *)GC_scratch_alloc(sizeof(hdr));
     } else {
@@ -191,6 +193,7 @@ GC_INNER void GC_init_headers(void)
 {
     unsigned i;
 
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(NULL == GC_all_nils);
     GC_all_nils = (bottom_index *)GC_scratch_alloc(sizeof(bottom_index));
     if (GC_all_nils == NULL) {
@@ -264,9 +267,11 @@ GC_INNER struct hblkhdr * GC_install_header(struct hblk *h)
 {
     hdr * result;
 
-    if (!get_index((word) h)) return(0);
+    GC_ASSERT(I_HOLD_LOCK());
+    if (EXPECT(!get_index((word)h), FALSE)) return NULL;
+
     result = alloc_hdr();
-    if (result) {
+    if (EXPECT(result != NULL, TRUE)) {
       SET_HDR(h, result);
 #     ifdef USE_MUNMAP
         result -> hb_last_reclaimed = (unsigned short)GC_gc_no;

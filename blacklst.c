@@ -91,6 +91,7 @@ GC_INNER void (*GC_print_heap_obj)(ptr_t p) = GC_default_print_heap_obj_proc;
 
 GC_INNER void GC_bl_init_no_interiors(void)
 {
+  GC_ASSERT(I_HOLD_LOCK());
   if (GC_incomplete_normal_bl == 0) {
     GC_old_normal_bl = (word *)GC_scratch_alloc(sizeof(page_hash_table));
     GC_incomplete_normal_bl = (word *)GC_scratch_alloc(
@@ -106,8 +107,9 @@ GC_INNER void GC_bl_init_no_interiors(void)
 
 GC_INNER void GC_bl_init(void)
 {
+    GC_ASSERT(I_HOLD_LOCK());
     if (!GC_all_interior_pointers) {
-      GC_bl_init_no_interiors();
+        GC_bl_init_no_interiors();
     }
     GC_ASSERT(NULL == GC_old_stack_bl && NULL == GC_incomplete_stack_bl);
     GC_old_stack_bl = (word *)GC_scratch_alloc(sizeof(page_hash_table));

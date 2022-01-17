@@ -128,6 +128,7 @@ static size_t n_in_progress = 0;
 
 static void push_in_progress(ptr_t p)
 {
+  GC_ASSERT(I_HOLD_LOCK());
   if (n_in_progress >= in_progress_size) {
     ptr_t * new_in_progress_space;
 
@@ -377,6 +378,7 @@ static word backwards_height(ptr_t p)
   ptr_t pred = GET_OH_BG_PTR(p);
   back_edges *be;
 
+  GC_ASSERT(I_HOLD_LOCK());
   if (NULL == pred)
     return 1;
   if (((word)pred & FLAG_MANY) == 0) {

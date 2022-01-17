@@ -317,7 +317,6 @@ STATIC void GC_remove_root_at_pos(int i)
 
 #if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
      || defined(PCR) || defined(CYGWIN32)
-/* Internal use only; lock held.        */
 STATIC void GC_remove_tmp_roots(void)
 {
     int i;
@@ -325,6 +324,7 @@ STATIC void GC_remove_tmp_roots(void)
       int old_n_roots = n_root_sets;
 #   endif
 
+    GC_ASSERT(I_HOLD_LOCK());
     for (i = 0; i < n_root_sets; ) {
         if (GC_static_roots[i].r_tmp) {
             GC_remove_root_at_pos(i);
@@ -853,6 +853,7 @@ GC_INNER void (*GC_push_typed_structures)(void) = 0;
 
 GC_INNER void GC_cond_register_dynamic_libraries(void)
 {
+  GC_ASSERT(I_HOLD_LOCK());
 # if (defined(DYNAMIC_LOADING) && !defined(MSWIN_XBOX1)) \
      || defined(CYGWIN32) || defined(MSWIN32) || defined(MSWINCE) \
      || defined(PCR)
@@ -877,12 +878,13 @@ STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
 /* accessible pointer.  If all is false, arrange to push only possibly  */
 /* altered values.  Cold_gc_frame is an address inside a GC frame that  */
 /* remains valid until all marking is complete; a NULL value indicates  */
-/* that it is OK to miss some register values.  Called with the         */
-/* allocation lock held.                                                */
+/* that it is OK to miss some register values.                          */
 GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame GC_ATTR_UNUSED)
 {
     int i;
     unsigned kind;
+
+    GC_ASSERT(I_HOLD_LOCK());
 
     /* Next push static data.  This must happen early on, since it is   */
     /* not robust against mark stack overflow.                          */

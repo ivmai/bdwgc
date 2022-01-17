@@ -232,6 +232,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 {
   struct link_map *lm;
 
+  GC_ASSERT(I_HOLD_LOCK());
   for (lm = GC_FirstDLOpenedLinkMap(); lm != 0; lm = lm->l_next) {
         ElfW(Ehdr) * e;
         ElfW(Phdr) * p;
@@ -753,6 +754,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 {
   struct link_map *lm;
 
+  GC_ASSERT(I_HOLD_LOCK());
 # ifdef HAVE_DL_ITERATE_PHDR
     if (GC_register_dynamic_libraries_dl_iterate_phdr()) {
         return;
@@ -811,9 +813,10 @@ GC_INNER void GC_register_dynamic_libraries(void)
 GC_INNER void GC_register_dynamic_libraries(void)
 {
     static int fd = -1;
-    char buf[30];
     static prmap_t * addr_map = 0;
     static int current_sz = 0;  /* Number of records currently in addr_map */
+
+    char buf[32];
     int needed_sz = 0;          /* Required size of addr_map            */
     int i;
     long flags;
@@ -826,6 +829,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #     define MA_PHYS 0
 #   endif /* SOLARISDL */
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (fd < 0) {
       (void)snprintf(buf, sizeof(buf), "/proc/%ld", (long)getpid());
       buf[sizeof(buf) - 1] = '\0';
@@ -1005,6 +1009,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
     char * base;
     char * limit, * new_limit;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef MSWIN32
       if (GC_no_win32_dlls) return;
 #   endif

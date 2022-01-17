@@ -1347,6 +1347,7 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
       unsigned i;
 #   endif
 
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((word)p % HBLKSIZE == 0);
     GC_ASSERT(bytes % HBLKSIZE == 0);
     GC_ASSERT(bytes > 0);
@@ -1510,6 +1511,7 @@ GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
   size_t displ = 0;
   size_t recycled_bytes;
 
+  GC_ASSERT(I_HOLD_LOCK());
   if (NULL == ptr) return;
 
   GC_ASSERT(bytes != 0);

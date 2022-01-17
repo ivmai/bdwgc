@@ -1213,8 +1213,7 @@ GC_API void GC_CALL GC_init(void)
         /* entirety as part of the root set.  This will grow them to    */
         /* maximum size, and is generally not desirable.                */
 #   endif
-#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED) \
-       && (defined(SEARCH_FOR_DATA_START) || defined(NETBSD))
+#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
         LOCK(); /* just to set GC_lock_holder */
 #   endif
 #   if defined(SEARCH_FOR_DATA_START)
@@ -1222,10 +1221,6 @@ GC_API void GC_CALL GC_init(void)
 #   endif
 #   if defined(NETBSD) && defined(__ELF__)
         GC_init_netbsd_elf();
-#   endif
-#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED) \
-       && (defined(SEARCH_FOR_DATA_START) || defined(NETBSD))
-        UNLOCK();
 #   endif
 #   if !defined(THREADS) || defined(GC_PTHREADS) \
         || defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
@@ -1309,9 +1304,6 @@ GC_API void GC_CALL GC_init(void)
           GC_set_max_heap_size(max_heap_sz);
         }
     }
-#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-        LOCK(); /* just to set GC_lock_holder */
-#   endif
     if (!GC_expand_hp_inner(divHBLKSZ(initial_heap_sz))) {
         GC_err_printf("Can't start up: not enough memory\n");
         EXIT();

@@ -432,6 +432,7 @@ GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
  */
 #define GC_MARK_FO(real_ptr, mark_proc) \
   do { \
+    GC_ASSERT(I_HOLD_LOCK()); \
     (*(mark_proc))(real_ptr); \
     while (!GC_mark_stack_empty()) MARK_FROM_MARK_STACK(); \
     if (GC_mark_state != MS_NONE) { \

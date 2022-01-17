@@ -401,6 +401,8 @@ GC_INNER const char * GC_get_maps(void)
   static ptr_t backing_store_base_from_proc(void)
   {
     ptr_t my_start, my_end;
+
+    GC_ASSERT(I_HOLD_LOCK());
     if (!GC_enclosing_mapping(GC_save_regs_in_stack(), &my_start, &my_end)) {
         GC_COND_LOG_PRINTF("Failed to find backing store base from /proc\n");
         return 0;
@@ -594,10 +596,11 @@ GC_INNER const char * GC_get_maps(void)
     static volatile ptr_t result;
 
     struct sigaction act;
-    word pgsz = (word)sysconf(_SC_PAGESIZE);
+    word pgsz;
 
-    GC_ASSERT((word)bound >= pgsz);
     GC_ASSERT(I_HOLD_LOCK());
+    pgsz = (word)sysconf(_SC_PAGESIZE);
+    GC_ASSERT((word)bound >= pgsz);
 
     act.sa_handler = GC_fault_handler_openbsd;
     sigemptyset(&act.sa_mask);
@@ -1077,6 +1080,7 @@ GC_INNER size_t GC_page_size = 0;
     }
 
     /* old way to get the register stackbottom */
+    GC_ASSERT(GC_stackbottom != NULL);
     return (ptr_t)(((word)GC_stackbottom - BACKING_STORE_DISPLACEMENT - 1)
                    & ~(BACKING_STORE_ALIGNMENT - 1));
   }
@@ -1107,6 +1111,7 @@ GC_INNER size_t GC_page_size = 0;
     {
       ptr_t result;
 
+      GC_ASSERT(I_HOLD_LOCK());
 #     ifdef USE_LIBC_PRIVATES
         if (0 != &__libc_ia64_register_backing_store_base
             && 0 != __libc_ia64_register_backing_store_base) {
@@ -1944,6 +1949,7 @@ void GC_register_data_segments(void)
       char * base;
       char * limit;
 
+      GC_ASSERT(I_HOLD_LOCK());
       if (!GC_no_win32_dlls) return;
       p = base = limit = GC_least_described_address(static_root);
       while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
@@ -2070,6 +2076,7 @@ void GC_register_data_segments(void)
 {
   ptr_t region_start = DATASTART;
 
+  GC_ASSERT(I_HOLD_LOCK());
   if ((word)region_start - 1U >= (word)DATAEND)
     ABORT_ARG2("Wrong DATASTART/END pair",
                ": %p .. %p", (void *)region_start, (void *)DATAEND);
@@ -2098,6 +2105,7 @@ void GC_register_data_segments(void)
 
   void GC_register_data_segments(void)
   {
+    GC_ASSERT(I_HOLD_LOCK());
 #   if !defined(PCR) && !defined(MACOS)
 #     if defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
         /* As of Solaris 2.3, the Solaris threads implementation        */
@@ -2969,6 +2977,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
     GC_INNER GC_bool GC_gww_dirty_init(void)
     {
+      GC_ASSERT(I_HOLD_LOCK());
       detect_GetWriteWatch();
       return GC_GWW_AVAILABLE();
     }
@@ -2977,6 +2986,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   {
     word i;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (!output_unneeded)
       BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
 
@@ -3401,6 +3411,10 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   {
 #   if !defined(MSWIN32) && !defined(MSWINCE)
       struct sigaction act, oldact;
+#   endif
+
+    GC_ASSERT(I_HOLD_LOCK());
+#   if !defined(MSWIN32) && !defined(MSWINCE)
       act.sa_flags = SA_RESTART | SA_SIGINFO;
       act.sa_sigaction = GC_write_fault_handler;
       (void)sigemptyset(&act.sa_mask);
@@ -3664,6 +3678,7 @@ STATIC void GC_protect_heap(void)
 
 GC_INNER GC_bool GC_dirty_init(void)
 {
+    GC_ASSERT(I_HOLD_LOCK());
     if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
       memset(GC_written_pages, 0xff, sizeof(page_hash_table));
       GC_VERBOSE_LOG_PRINTF(
@@ -3684,6 +3699,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     char * bufp = GC_proc_buf;
     int i;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifndef THREADS
       /* If the current pid differs from the saved one, then we are in  */
       /* the forked (child) process, the current /proc file should be   */
@@ -3895,6 +3911,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     GC_INNER GC_bool GC_dirty_init(void)
 # endif
   {
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(NULL == soft_vdb_buf);
 #   ifdef MPROTECT_VDB
       char * str = GETENV("GC_USE_GETWRITEWATCH");
@@ -4045,6 +4062,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
   {
     ssize_t res;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifndef THREADS
       /* Similar as for GC_proc_read_dirty.     */
       if (getpid() != saved_proc_pid
@@ -4148,6 +4166,7 @@ GC_INNER GC_bool GC_dirty_init(void)
   /* lose dirty bits while it's happening (as in GC_enable_incremental).*/
   GC_INNER void GC_read_dirty(GC_bool output_unneeded)
   {
+    GC_ASSERT(I_HOLD_LOCK());
     if (GC_manual_vdb
 #       if defined(MPROTECT_VDB)
           || !GC_GWW_AVAILABLE()
@@ -4640,6 +4659,7 @@ GC_INNER GC_bool GC_dirty_init(void)
   pthread_attr_t attr;
   exception_mask_t mask;
 
+  GC_ASSERT(I_HOLD_LOCK());
 # ifdef CAN_HANDLE_FORK
     if (GC_handle_fork) {
       /* To both support GC incremental mode and GC functions usage in  */

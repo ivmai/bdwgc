@@ -54,12 +54,15 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
     unsigned displ;
     unsigned short * new_map;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (granules > BYTES_TO_GRANULES(MAXOBJBYTES)) granules = 0;
     if (GC_obj_map[granules] != 0) {
         return(TRUE);
     }
+
     new_map = (unsigned short *)GC_scratch_alloc(MAP_LEN * sizeof(short));
-    if (new_map == 0) return(FALSE);
+    if (EXPECT(NULL == new_map, FALSE)) return FALSE;
+
     GC_COND_LOG_PRINTF(
                 "Adding block map for size of %u granules (%u bytes)\n",
                 (unsigned)granules, (unsigned)GRANULES_TO_BYTES(granules));

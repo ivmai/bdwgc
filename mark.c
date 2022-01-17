@@ -281,6 +281,7 @@ static void alloc_mark_stack(size_t);
   GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame)
 #endif
 {
+    GC_ASSERT(I_HOLD_LOCK());
     switch(GC_mark_state) {
         case MS_NONE:
             break;
@@ -540,7 +541,6 @@ static void alloc_mark_stack(size_t);
     rm_handler:
       GC_reset_fault_handler();
       return ret_val;
-
 #   endif /* !MSWIN32 */
 
 handle_ex:
@@ -1240,7 +1240,10 @@ GC_INNER void GC_help_marker(word my_mark_no)
 /* May silently fail.                                              */
 static void alloc_mark_stack(size_t n)
 {
-    mse * new_stack = (mse *)GC_scratch_alloc(n * sizeof(struct GC_ms_entry));
+    mse * new_stack;
+
+    GC_ASSERT(I_HOLD_LOCK());
+    new_stack = (mse *)GC_scratch_alloc(n * sizeof(struct GC_ms_entry));
 #   ifdef GWW_VDB
       /* Don't recycle a stack segment obtained with the wrong flags.   */
       /* Win32 GetWriteWatch requires the right kind of memory.         */
