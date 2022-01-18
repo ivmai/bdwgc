@@ -282,8 +282,10 @@ typedef void (GC_CALLBACK * GC_start_callback_proc)(void);
 GC_API void GC_CALL GC_set_start_callback(GC_start_callback_proc);
 GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void);
 
-/* Slow/general mark bit manipulation.  The caller must hold the        */
-/* allocation lock.  GC_is_marked returns 1 (TRUE) or 0.                */
+/* Slow/general mark bit manipulation.  The caller should hold the      */
+/* allocation lock.  GC_is_marked returns 1 (TRUE) or 0.  The argument  */
+/* should be the real address of an object (i.e. the address of the     */
+/* debug header if there is one).                                       */
 GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);
 GC_API void GC_CALL GC_clear_mark_bit(const void *) GC_ATTR_NONNULL(1);
 GC_API void GC_CALL GC_set_mark_bit(const void *) GC_ATTR_NONNULL(1);
