@@ -2671,7 +2671,8 @@ GC_EXTERN signed_word GC_bytes_found;
 #if defined(MPROTECT_VDB) && defined(GWW_VDB)
     GC_INNER GC_bool GC_gww_dirty_init(void);
                         /* Returns TRUE if GetWriteWatch is available.  */
-                        /* May be called repeatedly.                    */
+                        /* May be called repeatedly.  May be called     */
+                        /* with or without the GC lock held.            */
 #endif
 
 #if defined(CHECKSUMS) || defined(PROC_VDB)

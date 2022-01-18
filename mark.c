@@ -1240,6 +1240,11 @@ GC_INNER void GC_help_marker(word my_mark_no)
 /* May silently fail.                                              */
 static void alloc_mark_stack(size_t n)
 {
+#   ifdef GWW_VDB
+      static GC_bool GC_incremental_at_stack_alloc = FALSE;
+
+      GC_bool recycle_old;
+#   endif
     mse * new_stack;
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -1247,19 +1252,17 @@ static void alloc_mark_stack(size_t n)
 #   ifdef GWW_VDB
       /* Don't recycle a stack segment obtained with the wrong flags.   */
       /* Win32 GetWriteWatch requires the right kind of memory.         */
-      static GC_bool GC_incremental_at_stack_alloc = FALSE;
-      GC_bool recycle_old = !GC_auto_incremental
-                            || GC_incremental_at_stack_alloc;
-
+      recycle_old = !GC_auto_incremental || GC_incremental_at_stack_alloc;
       GC_incremental_at_stack_alloc = GC_auto_incremental;
-#   else
-#     define recycle_old TRUE
 #   endif
 
     GC_mark_stack_too_small = FALSE;
     if (GC_mark_stack != NULL) {
         if (new_stack != 0) {
-          if (recycle_old) {
+#         ifdef GWW_VDB
+            if (recycle_old)
+#         endif
+          {
             /* Recycle old space.       */
             GC_scratch_recycle_inner(GC_mark_stack,
                         GC_mark_stack_size * sizeof(struct GC_ms_entry));

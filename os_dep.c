@@ -2977,7 +2977,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
     GC_INNER GC_bool GC_gww_dirty_init(void)
     {
-      GC_ASSERT(I_HOLD_LOCK());
+      /* No assumption about the GC lock. */
       detect_GetWriteWatch();
       return GC_GWW_AVAILABLE();
     }
