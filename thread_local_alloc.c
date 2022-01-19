@@ -15,8 +15,8 @@
 
 #if defined(THREAD_LOCAL_ALLOC)
 
-#ifndef THREADS
-# error "invalid config - THREAD_LOCAL_ALLOC requires GC_THREADS"
+#if !defined(THREADS) && !defined(CPPCHECK)
+# error Invalid config - THREAD_LOCAL_ALLOC requires GC_THREADS
 #endif
 
 #include "private/thread_local_alloc.h"

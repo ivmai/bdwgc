@@ -2005,8 +2005,8 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
             : [adr] "r" (p));                   \
           v = val;                              \
         } while (0)
-# else
-#   error "Unsupported -march for e2k target"
+# elif !defined(CPPCHECK)
+#   error Unsupported -march for e2k target
 # endif
 
 # define LOAD_WORD_OR_CONTINUE(v, p) \
