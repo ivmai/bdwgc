@@ -2063,6 +2063,13 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
       extern int __dso_handle[];
 #     define DATASTART ((ptr_t)__dso_handle)
+#     ifdef REDIRECT_MALLOC
+#       if !defined(GC_LINUX_THREADS)
+#         define E2K_USE_SCRATCH
+#       elif !defined(CPPCHECK)
+#         error malloc redirection with threads is not supported on E2K yet
+#       endif
+#     endif
 #   endif
 # endif /* E2K */
 
