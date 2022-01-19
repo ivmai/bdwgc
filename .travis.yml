@@ -456,6 +456,11 @@ jobs:
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus --enable-gc-assertions --enable-static"
     - CFLAGS_EXTRA="-D LINT2 -D NO_VDB_FOR_STATIC_ROOTS"
+  - compiler: gcc
+    env:
+    - CONF_OPTIONS="--enable-large-config --enable-redirect-malloc --disable-threads"
+    - CFLAGS_EXTRA="-O3"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
       apt:
         packages:
