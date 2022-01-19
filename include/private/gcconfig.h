@@ -2448,9 +2448,9 @@ EXTERN_C_BEGIN
 #   ifdef MSWIN32
 #       define RETRY_GET_THREAD_CONTEXT
 #       if !defined(__GNUC__) || defined(__INTEL_COMPILER) \
-           || GC_GNUC_PREREQ(4, 7)
-          /* Older GCC has not supported SetUnhandledExceptionFilter    */
-          /* properly on x64 (e.g. SEH unwinding information missed).   */
+           || (GC_GNUC_PREREQ(4, 7) && !defined(__MINGW64__))
+          /* Older GCC and Mingw-w64 (both GCC and Clang) do not    */
+          /* support SetUnhandledExceptionFilter() properly on x64. */
 #         define MPROTECT_VDB
 #       endif
 #   endif
