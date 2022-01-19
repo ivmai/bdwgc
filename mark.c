@@ -800,8 +800,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
     {
 #     define PREF_DIST 4
 
-#     if !defined(SMALL_CONFIG) && !defined(E2K)
-        /* TODO: enable prefetching for E2K? */
+#     if !defined(SMALL_CONFIG) && !defined(USE_PTR_HWTAG)
         word deferred;
 
         /* Try to prefetch the next pointer to be examined ASAP.        */
@@ -857,7 +856,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         }
       }
 
-#     if !defined(SMALL_CONFIG) && !defined(E2K)
+#     if !defined(SMALL_CONFIG) && !defined(USE_PTR_HWTAG)
         /* We still need to mark the entry we previously prefetched.    */
         /* We already know that it passes the preliminary pointer       */
         /* validity test.                                               */
