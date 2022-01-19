@@ -285,7 +285,7 @@ GC_INNER const char * GC_get_maps(void)
 /* original buffer.                                                     */
 #if (defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES)) \
     || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
-    || defined(REDIRECT_MALLOC)
+    || (defined(REDIRECT_MALLOC) && defined(GC_LINUX_THREADS))
   GC_INNER const char *GC_parse_map_entry(const char *maps_ptr,
                                           ptr_t *start, ptr_t *end,
                                           const char **prot, unsigned *maj_dev,
@@ -363,7 +363,7 @@ GC_INNER const char * GC_get_maps(void)
   }
 #endif /* IA64 || INCLUDE_LINUX_THREAD_DESCR */
 
-#if defined(REDIRECT_MALLOC)
+#if defined(REDIRECT_MALLOC) && defined(GC_LINUX_THREADS)
   /* Find the text(code) mapping for the library whose name, after      */
   /* stripping the directory part, starts with nm.                      */
   GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp)
