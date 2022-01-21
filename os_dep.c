@@ -3340,7 +3340,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
             if (old_handler == (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
 #               if !defined(MSWIN32) && !defined(MSWINCE)
-                    ABORT_ARG1("Unexpected bus error or segmentation fault",
+                    ABORT_ARG1("Unexpected segmentation fault outside heap",
                                " at %p", (void *)addr);
 #               else
                     return(EXCEPTION_CONTINUE_SEARCH);
