@@ -2069,7 +2069,9 @@ EXTERN_C_BEGIN
 #       elif !defined(CPPCHECK)
 #         error malloc redirection with threads is not supported on E2K yet
 #       endif
-#     endif
+#     elif !defined(THREAD_LOCAL_ALLOC)
+#       define MPROTECT_VDB
+#     endif /* !REDIRECT_MALLOC && !THREAD_LOCAL_ALLOC */
 #   endif
 # endif /* E2K */
 
