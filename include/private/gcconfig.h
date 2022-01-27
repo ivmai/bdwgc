@@ -1423,7 +1423,6 @@ EXTERN_C_BEGIN
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
 #     define USE_MMAP_ANON      /* avoid /dev/zero, not supported */
-#     define STACK_GROWS_DOWN
 #   endif
 #   if defined(__QNX__)
 #     define OS_TYPE "QNX"
@@ -1468,7 +1467,6 @@ EXTERN_C_BEGIN
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)(&_etext))
 #       define DATASTART_IS_FUNC
 #       define DATAEND ((ptr_t)(&_end))
-#       define STACK_GROWS_DOWN
 #       define HEURISTIC2
         EXTERN_C_END
 #       include <unistd.h>
@@ -1669,7 +1667,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef HURD
 #     define OS_TYPE "HURD"
-#     define STACK_GROWS_DOWN
 #     define HEURISTIC2
 #     define SIG_SUSPEND SIGUSR1
 #     define SIG_THR_RESTART SIGUSR2
