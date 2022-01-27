@@ -2617,14 +2617,6 @@ STATIC ptr_t GC_unmap_start(ptr_t start, size_t bytes)
     return result;
 }
 
-/* Under Win32/WinCE we commit (map) and decommit (unmap)       */
-/* memory using VirtualAlloc and VirtualFree.  These functions  */
-/* work on individual allocations of virtual memory, made       */
-/* previously using VirtualAlloc with the MEM_RESERVE flag.     */
-/* The ranges we need to (de)commit may span several of these   */
-/* allocations; therefore we use VirtualQuery to check          */
-/* allocation lengths, and split up the range as necessary.     */
-
 /* We assume that GC_remap is called on exactly the same range  */
 /* as a previous call to GC_unmap.  It is safe to consistently  */
 /* round the endpoints in both places.                          */
@@ -2634,6 +2626,13 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
     if (0 == start_addr) return;
 
 #   ifdef USE_WINALLOC
+      /* Under Win32/WinCE we commit (map) and decommit (unmap)         */
+      /* memory using VirtualAlloc and VirtualFree.  These functions    */
+      /* work on individual allocations of virtual memory, made         */
+      /* previously using VirtualAlloc with the MEM_RESERVE flag.       */
+      /* The ranges we need to (de)commit may span several of these     */
+      /* allocations; therefore we use VirtualQuery to check            */
+      /* allocation lengths, and split up the range as necessary.       */
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
           word free_len;
@@ -2649,8 +2648,6 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
           len -= free_len;
       }
 #   else
-      /* We immediately remap it to prevent an intervening mmap from    */
-      /* accidentally grabbing the same address space.                  */
       if (len != 0) {
 #       ifdef SN_TARGET_PS3
           ps3_free_mem(start_addr, len);
@@ -2667,6 +2664,8 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
           if (mprotect(start_addr, len, PROT_NONE))
             ABORT_ON_REMAP_FAIL("unmap: mprotect", start_addr, len);
 #       else
+          /* We immediately remap it to prevent an intervening mmap()   */
+          /* from accidentally grabbing the same address space.         */
           void * result = mmap(start_addr, len, PROT_NONE,
                                MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
                                zero_fd, 0/* offset */);
