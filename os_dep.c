@@ -2666,9 +2666,6 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
           /* On Linux, low RLIMIT_AS value may lead to mmap failure.    */
           if (mprotect(start_addr, len, PROT_NONE))
             ABORT_ON_REMAP_FAIL("unmap: mprotect", start_addr, len);
-#       elif defined(EMSCRIPTEN)
-          /* Nothing to do, mmap(PROT_NONE) is not supported and        */
-          /* mprotect() is just a no-op.                                */
 #       else
           void * result = mmap(start_addr, len, PROT_NONE,
                                MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,

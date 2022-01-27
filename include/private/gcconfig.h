@@ -1423,6 +1423,7 @@ EXTERN_C_BEGIN
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
 #     define USE_MMAP_ANON      /* avoid /dev/zero, not supported */
+#     undef USE_MUNMAP /* mmap(PROT_NONE) is unsupported, mprotect is no-op */
 #   endif
 #   if defined(__QNX__)
 #     define OS_TYPE "QNX"
