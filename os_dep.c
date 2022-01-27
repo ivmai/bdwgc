@@ -2648,15 +2648,15 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
           start_addr += free_len;
           len -= free_len;
       }
-#   elif defined(SN_TARGET_PS3)
-      ps3_free_mem(start_addr, len);
 #   else
       /* We immediately remap it to prevent an intervening mmap from    */
       /* accidentally grabbing the same address space.                  */
       if (len != 0) {
-#       if defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
-           || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)) \
-           || defined(HPUX)
+#       ifdef SN_TARGET_PS3
+          ps3_free_mem(start_addr, len);
+#       elif defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
+             || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)) \
+             || defined(HPUX)
           /* On AIX, mmap(PROT_NONE) fails with ENOMEM unless the       */
           /* environment variable XPG_SUS_ENV is set to ON.             */
           /* On Cygwin, calling mmap() with the new protection flags on */
