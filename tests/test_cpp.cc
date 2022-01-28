@@ -331,11 +331,14 @@ void* Undisguise( GC_word i ) {
     GC_PTR_STORE_AND_DIRTY(xptr, x);
     x = 0;
     if (argc != 2
-        || (n = (int)COVERT_DATAFLOW(atoi(argv[1]))) <= 0) {
+        || (n = atoi(argv[1])) <= 0) {
       GC_printf("usage: test_cpp number-of-iterations\n"
                 "Assuming 10 iters\n");
       n = 10;
     }
+#   ifdef LINT2
+      if (n > 100 * 1000) n = 100 * 1000;
+#   endif
 
     for (iters = 1; iters <= n; iters++) {
         GC_printf( "Starting iteration %d\n", iters );
