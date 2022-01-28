@@ -2663,6 +2663,13 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
           /* On Linux, low RLIMIT_AS value may lead to mmap failure.    */
           if (mprotect(start_addr, len, PROT_NONE))
             ABORT_ON_REMAP_FAIL("unmap: mprotect", start_addr, len);
+#         if !defined(CYGWIN32)
+            /* On Linux (and some other platforms probably),    */
+            /* mprotect(PROT_NONE) is just disabling access to  */
+            /* the pages but not returning them to OS.          */
+            if (madvise(start_addr, len, MADV_DONTNEED) == -1)
+              ABORT_ON_REMAP_FAIL("unmap: madvise", start_addr, len);
+#         endif
 #       else
           /* We immediately remap it to prevent an intervening mmap()   */
           /* from accidentally grabbing the same address space.         */
