@@ -2649,8 +2649,12 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
           /* However, calling mprotect() on the given address range     */
           /* with PROT_NONE seems to work fine.                         */
           /* On Linux, low RLIMIT_AS value may lead to mmap failure.    */
-          if (mprotect(start_addr, len, PROT_NONE))
-            ABORT_ON_REMAP_FAIL("unmap: mprotect", start_addr, len);
+#         if defined(LINUX) && !defined(FORCE_MPROTECT_BEFORE_MADVISE)
+            /* On Linux, at least, madvise() should be sufficient.      */
+#         else
+            if (mprotect(start_addr, len, PROT_NONE))
+              ABORT_ON_REMAP_FAIL("unmap: mprotect", start_addr, len);
+#         endif
 #         if !defined(CYGWIN32)
             /* On Linux (and some other platforms probably),    */
             /* mprotect(PROT_NONE) is just disabling access to  */
@@ -2725,10 +2729,14 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
           start_addr += alloc_len;
           len -= alloc_len;
       }
+#     undef IGNORE_PAGES_EXECUTABLE
 #   else
       /* It was already remapped with PROT_NONE. */
       {
-#       if defined(NACL) || defined(NETBSD)
+#       if !defined(SN_TARGET_PS3) && !defined(FORCE_MPROTECT_BEFORE_MADVISE) \
+           && defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)
+          /* Nothing to unprotect as madvise() is just a hint.  */
+#       elif defined(NACL) || defined(NETBSD)
           /* NaCl does not expose mprotect, but mmap should work fine.  */
           /* In case of NetBSD, mprotect fails (unlike mmap) even       */
           /* without PROT_EXEC if PaX MPROTECT feature is enabled.      */
@@ -2743,13 +2751,14 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 #         if defined(CPPCHECK) || defined(LINT2)
             GC_noop1((word)result);
 #         endif
+#         undef IGNORE_PAGES_EXECUTABLE
 #       else
           if (mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
                             | (GC_pages_executable ? PROT_EXEC : 0)))
             ABORT_ON_REMAP_FAIL("remap: mprotect", start_addr, len);
+#         undef IGNORE_PAGES_EXECUTABLE
 #       endif /* !NACL */
       }
-#     undef IGNORE_PAGES_EXECUTABLE
       GC_unmapped_bytes -= len;
 #   endif
 }
