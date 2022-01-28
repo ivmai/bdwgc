@@ -68,10 +68,11 @@ static void return_freelists(void **fl, void **gfl)
         fl[i] = (ptr_t)HBLKSIZE;
     }
     /* The 0 granule freelist really contains 1 granule objects.        */
-#   ifdef GC_GCJ_SUPPORT
-      if (fl[0] == ERROR_FL) return;
-#   endif
-    if ((word)(fl[0]) >= HBLKSIZE) {
+    if ((word)fl[0] >= HBLKSIZE
+#       ifdef GC_GCJ_SUPPORT
+          && fl[0] != ERROR_FL
+#       endif
+       ) {
         return_single_freelist(fl[0], &gfl[1]);
     }
 }
