@@ -806,12 +806,12 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
         GC_push_all_stack_part_eager_sections(GC_approx_sp(), GC_stackbottom,
                                         cold_gc_frame, GC_traced_stack_sect);
 #       ifdef IA64
-              /* We also need to push the register stack backing store. */
-              /* This should really be done in the same way as the      */
-              /* regular stack.  For now we fudge it a bit.             */
-              /* Note that the backing store grows up, so we can't use  */
-              /* GC_push_all_stack_partially_eager.                     */
-              {
+            /* We also need to push the register stack backing store.   */
+            /* This should really be done in the same way as the        */
+            /* regular stack.  For now we fudge it a bit.               */
+            /* Note that the backing store grows up, so we can't use    */
+            /* GC_push_all_stack_partially_eager.                       */
+            {
                 ptr_t bsp = GC_save_regs_ret_val;
                 ptr_t cold_gc_bs_pointer = bsp - 2048;
                 if (GC_all_interior_pointers
@@ -832,18 +832,19 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
                 }
                 /* All values should be sufficiently aligned that we    */
                 /* don't have to worry about the boundary.              */
-              }
+            }
 #       elif defined(E2K)
           /* We also need to push procedure stack store.        */
           /* Procedure stack grows up.                          */
           {
             ptr_t bs_lo;
-            size_t stack_size = GC_get_procedure_stack(&bs_lo);
+            size_t stack_size;
 
+            GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
             GC_push_all_register_sections(bs_lo, bs_lo + stack_size,
                                           TRUE /* eager */,
                                           GC_traced_stack_sect);
-            free(bs_lo);
+            FREE_PROCEDURE_STACK_LOCAL(bs_lo, stack_size);
           }
 #       endif
 #   endif /* !THREADS */

@@ -301,15 +301,6 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 
 GC_INLINE void GC_store_stack_ptr(GC_thread me)
 {
-# ifdef E2K
-    ptr_t bs_lo;
-    size_t stack_size;
-
-    (void)GC_save_regs_in_stack();
-    stack_size = GC_get_procedure_stack(&bs_lo);
-    me -> backing_store_end = bs_lo;
-    me -> backing_store_ptr = bs_lo + stack_size;
-# endif
   /* There is no data race between the suspend handler (storing         */
   /* stack_ptr) and GC_push_all_stacks (fetching stack_ptr) because     */
   /* GC_push_all_stacks is executed after GC_stop_world exits and the   */
@@ -320,6 +311,7 @@ GC_INLINE void GC_store_stack_ptr(GC_thread me)
 # ifdef SPARC
     ao_store_async((volatile AO_t *)&me->stop_info.stack_ptr,
                    (AO_t)GC_save_regs_in_stack());
+    /* TODO: regs saving already done by GC_with_callee_saves_pushed */
 # else
 #   ifdef IA64
       me -> backing_store_ptr = GC_save_regs_in_stack();
@@ -334,6 +326,10 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
 {
   pthread_t self = pthread_self();
   GC_thread me;
+# ifdef E2K
+    ptr_t bs_lo;
+    size_t stack_size;
+# endif
   IF_CANCEL(int cancel_state;)
   AO_t my_stop_count = ao_load_acquire_async(&GC_stop_count);
                         /* After the barrier, this thread should see    */
@@ -358,10 +354,21 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
 # ifdef GC_ENABLE_SUSPEND_THREAD
     if (ao_load_async(&me->suspended_ext)) {
       GC_store_stack_ptr(me);
+#     ifdef E2K
+        GC_ASSERT(NULL == me -> backing_store_end);
+        GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
+        me -> backing_store_end = bs_lo;
+        me -> backing_store_ptr = bs_lo + stack_size;
+#     endif
       sem_post(&GC_suspend_ack_sem);
       suspend_self_inner(me);
 #     ifdef DEBUG_THREADS
         GC_log_printf("Continuing %p on GC_resume_thread\n", (void *)self);
+#     endif
+#     ifdef E2K
+        FREE_PROCEDURE_STACK_LOCAL(bs_lo, stack_size);
+        me -> backing_store_ptr = NULL;
+        me -> backing_store_end = NULL;
 #     endif
       RESTORE_CANCEL(cancel_state);
       return;
@@ -378,6 +385,12 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
       return;
   }
   GC_store_stack_ptr(me);
+# ifdef E2K
+    GC_ASSERT(NULL == me -> backing_store_end);
+    GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
+    me -> backing_store_end = bs_lo;
+    me -> backing_store_ptr = bs_lo + stack_size;
+# endif
 
 # ifdef THREAD_SANITIZER
     /* TSan disables signals around signal handlers.  Without   */
@@ -418,7 +431,8 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
     GC_log_printf("Continuing %p\n", (void *)self);
 # endif
 # ifdef E2K
-    free(me -> backing_store_end);
+    GC_ASSERT(me -> backing_store_end == bs_lo);
+    FREE_PROCEDURE_STACK_LOCAL(bs_lo, stack_size);
     me -> backing_store_ptr = NULL;
     me -> backing_store_end = NULL;
 # endif
@@ -743,13 +757,13 @@ GC_INNER void GC_push_all_stacks(void)
 #   if defined(E2K) || defined(IA64)
       /* We also need to scan the register backing store.   */
       ptr_t bs_lo, bs_hi;
-#     ifdef E2K
-        size_t stack_size;
-#     endif
 #   endif
     struct GC_traced_stack_sect_s *traced_stack_sect;
     pthread_t self = pthread_self();
     word total_size = 0;
+#   ifdef E2K
+      GC_bool is_stopped = (GC_bool)GC_world_is_stopped;
+#   endif
 
     if (!EXPECT(GC_thr_initialized, TRUE))
       GC_thr_init();
@@ -770,9 +784,13 @@ GC_INNER void GC_push_all_stacks(void)
 #             ifdef IA64
                 bs_hi = GC_save_regs_in_stack();
 #             elif defined(E2K)
+                GC_ASSERT(NULL == p -> backing_store_end);
                 (void)GC_save_regs_in_stack();
-                stack_size = GC_get_procedure_stack(&bs_lo);
-                bs_hi = bs_lo + stack_size;
+                {
+                  size_t stack_size;
+                  GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
+                  bs_hi = bs_lo + stack_size;
+                }
 #             endif
 #           endif
             found_me = TRUE;
@@ -827,6 +845,14 @@ GC_INNER void GC_push_all_stacks(void)
               (ptr_t)(p -> stop_info.reg_storage + NACL_GC_REG_STORAGE_SIZE));
           total_size += NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t);
 #       endif
+#       ifdef E2K
+          if (!is_stopped && !p->thread_blocked
+#             ifdef GC_ENABLE_SUSPEND_THREAD
+                && !p->suspended_ext
+#             endif
+              && !THREAD_EQUAL(p -> id, self))
+            continue; /* procedure stack buffer has already been freed */
+#       endif
 #       if defined(E2K) || defined(IA64)
 #         ifdef DEBUG_THREADS
             GC_log_printf("Reg stack for thread %p is [%p,%p)\n",
@@ -842,7 +868,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       endif
 #       ifdef E2K
           if (THREAD_EQUAL(p -> id, self))
-            free(bs_lo);
+            FREE_PROCEDURE_STACK_LOCAL(bs_lo, (size_t)(bs_hi - bs_lo));
 #       endif
       }
     }

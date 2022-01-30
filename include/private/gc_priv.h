@@ -1981,9 +1981,73 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 #endif
 
 #ifdef E2K
-  /* Allocate the buffer and copy the full procedure stack to it.       */
+  /* Copy the full procedure stack to the provided buffer (with the     */
+  /* given capacity).  Returns either the required buffer size if it    */
+  /* is bigger than capacity, otherwise the amount of copied bytes.     */
   /* May be called from a signal handler.                               */
-  GC_INNER size_t GC_get_procedure_stack(ptr_t *);
+  GC_INNER size_t GC_get_procedure_stack(ptr_t, size_t);
+
+# if defined(CPPCHECK)
+#   define PS_ALLOCA_BUF(sz) NULL
+#   define ALLOCA_SAFE_LIMIT 0
+# else
+#   define PS_ALLOCA_BUF(sz) alloca(sz) /* cannot return NULL */
+#   ifndef ALLOCA_SAFE_LIMIT
+#     define ALLOCA_SAFE_LIMIT (HBLKSIZE*3)
+#   endif
+# endif /* !CPPCHECK */
+
+  /* Copy procedure (register) stack to a stack-allocated or    */
+  /* memory-mapped buffer.  Usable from a signal handler.       */
+  /* FREE_PROCEDURE_STACK_LOCAL() must be called with the same  */
+  /* *pbuf and *psz values before the caller function returns   */
+  /* (thus, the buffer is valid only within the function).      */
+# define GET_PROCEDURE_STACK_LOCAL(pbuf, psz)                   \
+        do {                                                    \
+          size_t capacity = 0;                                  \
+          GC_ASSERT(GC_page_size != 0);                         \
+          for (*(pbuf) = NULL; ; capacity = *(psz)) {           \
+            *(psz) = GC_get_procedure_stack(*(pbuf), capacity); \
+            if (*(psz) <= capacity) break;                      \
+            if (*(psz) > ALLOCA_SAFE_LIMIT                      \
+                || EXPECT(capacity != 0, FALSE)) {              \
+              /* Deallocate old buffer if any. */               \
+              if (EXPECT(capacity > ALLOCA_SAFE_LIMIT, FALSE))  \
+                GC_unmap_procedure_stack_buf(*(pbuf),capacity); \
+              *(psz) = ROUNDUP_PAGESIZE(*(psz));                \
+              *(pbuf) = GC_mmap_procedure_stack_buf(*(psz));    \
+            } else {                                            \
+              /* Allocate buffer on the stack if not large. */  \
+              *(pbuf) = PS_ALLOCA_BUF(*(psz));                  \
+            }                                                   \
+          }                                                     \
+          if (capacity > ALLOCA_SAFE_LIMIT                      \
+              && EXPECT(((capacity - *(psz))                    \
+                         & ~(GC_page_size-1)) != 0, FALSE)) {   \
+            /* Ensure sz value passed to munmap() later */      \
+            /* matches that passed to mmap() above.     */      \
+            *(psz) = capacity - (GC_page_size - 1);             \
+          }                                                     \
+        } while (0)
+
+  /* Indicate that the buffer with copied procedure stack is not needed. */
+# define FREE_PROCEDURE_STACK_LOCAL(buf, sz) \
+        (void)((sz) > ALLOCA_SAFE_LIMIT \
+                ? (GC_unmap_procedure_stack_buf(buf, sz), 0) : 0)
+
+  GC_INNER ptr_t GC_mmap_procedure_stack_buf(size_t);
+  GC_INNER void GC_unmap_procedure_stack_buf(ptr_t, size_t);
+
+# ifdef THREADS
+    /* Allocate a buffer in the GC heap (as an atomic object) and copy  */
+    /* procedure stack there.  Assumes the GC allocation lock is held.  */
+    /* May trigger a collection (thus, cannot be used in GC_push_roots  */
+    /* or in a signal handler).  The buffer should be freed with        */
+    /* GC_INTERNAL_FREE later when not needed (or, alternatively, it    */
+    /* could be just garbage-collected).                                */
+    /* Similar to GET_PROCEDURE_STACK_LOCAL in other aspects.           */
+    GC_INNER size_t GC_alloc_and_get_procedure_stack(ptr_t *pbuf);
+# endif
 
   /* Load value and get tag of the target memory.   */
 # if defined(__ptr64__)
