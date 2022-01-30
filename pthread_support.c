@@ -540,10 +540,18 @@ GC_INNER GC_bool GC_thr_initialized = FALSE;
 
 GC_INNER volatile GC_thread GC_threads[THREAD_TABLE_SZ] = {0};
 
+/* It may not be safe to allocate when we register the first thread.    */
+/* As "next" and "status" fields are unused, no need to push this       */
+/* (but "backing_store_end" field should be pushed on E2K).             */
+static struct GC_Thread_Rep first_thread;
+
 void GC_push_thread_structures(void)
 {
     GC_ASSERT(I_HOLD_LOCK());
     GC_PUSH_ALL_SYM(GC_threads);
+#   ifdef E2K
+      GC_PUSH_ALL_SYM(first_thread.backing_store_end);
+#   endif
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_PUSH_ALL_SYM(GC_thread_key);
 #   endif
@@ -566,10 +574,6 @@ void GC_push_thread_structures(void)
     return count;
   }
 #endif /* DEBUG_THREADS */
-
-/* It may not be safe to allocate when we register the first thread.    */
-/* As "next" and "status" fields are unused, no need to push this.      */
-static struct GC_Thread_Rep first_thread;
 
 /* Add a thread to GC_threads.  We assume it wasn't already there.      */
 /* Caller holds allocation lock.                                        */
@@ -1467,7 +1471,6 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 #   if defined(SPARC) || defined(IA64)
         ptr_t stack_ptr = GC_save_regs_in_stack();
 #   elif defined(E2K)
-        ptr_t bs_lo;
         size_t stack_size;
 #   endif
 #   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
@@ -1477,7 +1480,6 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 
 #   ifdef E2K
         (void)GC_save_regs_in_stack();
-        stack_size = GC_get_procedure_stack(&bs_lo);
 #   endif
     LOCK();
     me = GC_lookup_thread(self);
@@ -1499,8 +1501,8 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
         me -> backing_store_ptr = stack_ptr;
 #   elif defined(E2K)
         GC_ASSERT(NULL == me -> backing_store_end);
-        me -> backing_store_end = bs_lo;
-        me -> backing_store_ptr = bs_lo + stack_size;
+        stack_size = GC_alloc_and_get_procedure_stack(&me->backing_store_end);
+        me->backing_store_ptr = me->backing_store_end + stack_size;
 #   endif
     me -> thread_blocked = (unsigned char)TRUE;
     /* Save context here if we want to support precise stack marking */
@@ -1513,8 +1515,9 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
     me -> thread_blocked = FALSE;
 #   ifdef E2K
         GC_ASSERT(me -> backing_store_end != NULL);
-         /* Note that me->backing_store_end may differ from bs_lo.  */
-        free(me -> backing_store_end);
+         /* Note that me->backing_store_end value here may differ from  */
+         /* the one stored in this function previously.                 */
+        GC_INTERNAL_FREE(me -> backing_store_end);
         me -> backing_store_ptr = NULL;
         me -> backing_store_end = NULL;
 #   endif
@@ -1596,7 +1599,6 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     pthread_t self = pthread_self();
     GC_thread me;
 #   ifdef E2K
-      ptr_t bs_lo;
       size_t stack_size;
 #   endif
     DCL_LOCK_STATE;
@@ -1635,7 +1637,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       stacksect.saved_backing_store_ptr = me -> backing_store_ptr;
 #   elif defined(E2K)
       GC_ASSERT(me -> backing_store_end != NULL);
-      free(me -> backing_store_end);
+      GC_INTERNAL_FREE(me -> backing_store_end);
       me -> backing_store_ptr = NULL;
       me -> backing_store_end = NULL;
 #   endif
@@ -1654,7 +1656,6 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 #   endif
 #   ifdef E2K
       (void)GC_save_regs_in_stack();
-      stack_size = GC_get_procedure_stack(&bs_lo);
 #   endif
     LOCK();
     me -> traced_stack_sect = stacksect.prev;
@@ -1662,8 +1663,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       me -> backing_store_ptr = stacksect.saved_backing_store_ptr;
 #   elif defined(E2K)
       GC_ASSERT(NULL == me -> backing_store_end);
-      me -> backing_store_end = bs_lo;
-      me -> backing_store_ptr = bs_lo + stack_size;
+      stack_size = GC_alloc_and_get_procedure_stack(&me->backing_store_end);
+      me->backing_store_ptr = me->backing_store_end + stack_size;
 #   endif
     me -> thread_blocked = (unsigned char)TRUE;
     me -> stop_info.stack_ptr = stacksect.saved_stack_ptr;

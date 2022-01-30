@@ -1982,9 +1982,34 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 #endif
 
 #ifdef E2K
-  /* Allocate the buffer and copy the full procedure stack to it.       */
-  GC_INNER size_t GC_get_procedure_stack(ptr_t *);
-#endif
+  /* Copy the full procedure stack to the provided buffer (with the     */
+  /* given capacity).  Returns either the required buffer size if it    */
+  /* is bigger than capacity, otherwise the amount of copied bytes.     */
+  /* May be called from a signal handler.                               */
+  GC_INNER size_t GC_get_procedure_stack(ptr_t, size_t);
+
+  /* Copy procedure (register) stack to a stack-allocated buffer.       */
+  /* The buffer is freed automatically on the function return.          */
+  /* May be used from a signal handler.                                 */
+# define PROCEDURE_STACK_ALLOCA_AND_STORE(pbuf, psz)            \
+        do {                                                    \
+          size_t buf_sz = 0;                                    \
+          for (*(pbuf) = NULL; ; buf_sz = *(psz)) {             \
+            *(psz) = GC_get_procedure_stack(*(pbuf), buf_sz);   \
+            if (*(psz) <= buf_sz) break;                        \
+            *(pbuf) = alloca(*(psz)); /* cannot return NULL */  \
+          }                                                     \
+        } while (0)
+
+# ifdef THREADS
+    /* Allocate a buffer in the GC heap (as an atomic object) and copy  */
+    /* procedure stack there.  Assumes the GC allocation lock is held.  */
+    /* The buffer should be freed with GC_INTERNAL_FREE later when not  */
+    /* needed (or, alternatively, it could be just garbage-collected).  */
+    /* Similar to PROCEDURE_STACK_ALLOCA_AND_STORE in other aspects.    */
+    GC_INNER size_t GC_alloc_and_get_procedure_stack(ptr_t *pbuf);
+# endif
+#endif /* E2K */
 
 #if defined(E2K) && defined(USE_PTR_HWTAG)
   /* Load value and get tag of the target memory.   */

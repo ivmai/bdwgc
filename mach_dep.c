@@ -66,49 +66,64 @@
                      >> (63-E2K_PSHTP_SIZE));       \
         } while (0)
 
-  GC_INNER size_t GC_get_procedure_stack(ptr_t *buf_ptr) {
+  GC_INNER size_t GC_get_procedure_stack(ptr_t buf, size_t buf_sz) {
     word ps;
-    ptr_t buf = NULL;
-    word buf_sz = 0;
     word new_sz = 0;
 
-    get_stack_index(&ps);
+    GC_ASSERT(0 == buf_sz || buf != NULL);
     for (;;) {
-      int res = syscall(__NR_access_hw_stacks, E2K_READ_PROCEDURE_STACK,
-                        &ps, buf, buf_sz, &new_sz);
+      get_stack_index(&ps);
+      if (syscall(__NR_access_hw_stacks, E2K_READ_PROCEDURE_STACK,
+                  &ps, buf, buf_sz, &new_sz) != -1)
+        break;
 
-      if (res != -1) break;
-      if (ENOMEM == errno && buf_sz != new_sz) {
-        /* FIXME: use GC_scratch_alloc to support malloc redirection? */
-        free(buf);
-        buf = malloc((size_t)new_sz);
-        if (NULL == buf)
-          ABORT_ARG1("Could not allocate memory for procedure stack",
-                     ", %lu bytes requested", (unsigned long)new_sz);
-        if (0 == buf_sz) {
-          buf_sz = new_sz;
-          continue; /* skip get_stack_index() once */
-        }
-        buf_sz = new_sz;
+      if (ENOMEM == errno && (word)buf_sz < new_sz) {
+#       ifdef LOG_E2K_ALLOCS
+          if (buf_sz > 0) /* probably may happen */
+            GC_log_printf("GC_get_procedure_stack():"
+                          " buffer size/requested %lu/%lu bytes, GC #%lu\n",
+                          (unsigned long)buf_sz, (unsigned long)new_sz,
+                          (unsigned long)GC_gc_no);
+#       endif
+        return (size_t)new_sz; /* buffer not enough */
       } else if (errno != EAGAIN) {
         ABORT_ARG1("Cannot read procedure stack", ": errno= %d", errno);
       }
-      get_stack_index(&ps);
     }
 
-    if (buf_sz != new_sz)
-      ABORT_ARG2("Buffer size mismatch while reading procedure stack",
+    if ((word)buf_sz < new_sz)
+      ABORT_ARG2("Buffer overflow while reading procedure stack",
                  ": buf_sz= %lu, new_sz= %lu",
                  (unsigned long)buf_sz, (unsigned long)new_sz);
-    GC_ASSERT(buf != NULL);
-    *buf_ptr = buf;
-    return (size_t)buf_sz;
+    return (size_t)new_sz;
   }
 
   ptr_t GC_save_regs_in_stack(void) {
     __asm__ __volatile__ ("flushr");
     return NULL;
   }
+
+# ifdef THREADS
+    GC_INNER size_t GC_alloc_and_get_procedure_stack(ptr_t *pbuf)
+    {
+      ptr_t buf = NULL;
+      size_t new_sz, buf_sz;
+
+      GC_ASSERT(I_HOLD_LOCK());
+      for (buf_sz = 0; ; buf_sz = new_sz) {
+        new_sz = GC_get_procedure_stack(buf, buf_sz);
+        if (new_sz <= buf_sz) break;
+
+        if (EXPECT(buf != NULL, FALSE))
+          GC_INTERNAL_FREE(buf);
+        buf = (ptr_t)GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(new_sz, PTRFREE);
+        if (NULL == buf)
+          ABORT("Could not allocate memory for procedure stack");
+      }
+      *pbuf = buf;
+      return new_sz;
+    }
+# endif /* THREADS */
 
 # undef VLIW_CMD_BRACES_PREFIX
 # undef get_stack_index
