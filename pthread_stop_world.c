@@ -402,7 +402,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
     GC_log_printf("Continuing %p\n", (void *)self);
 # endif
 # ifdef E2K
-    GC_free_procedure_stack(me -> backing_store_end);
+    free(me -> backing_store_end);
     me -> backing_store_ptr = NULL;
     me -> backing_store_end = NULL;
 # endif
@@ -713,6 +713,9 @@ GC_INNER void GC_push_all_stacks(void)
 #   if defined(E2K) || defined(IA64)
       /* We also need to scan the register backing store.   */
       ptr_t bs_lo, bs_hi;
+#     ifdef E2K
+        size_t stack_size;
+#     endif
 #   endif
     struct GC_traced_stack_sect_s *traced_stack_sect;
     pthread_t self = pthread_self();
@@ -729,10 +732,6 @@ GC_INNER void GC_push_all_stacks(void)
         ++nthreads;
         traced_stack_sect = p -> traced_stack_sect;
         if (THREAD_EQUAL(p -> id, self)) {
-#           ifdef E2K
-              size_t stack_size;
-#           endif
-
             GC_ASSERT(!p->thread_blocked);
 #           ifdef SPARC
               lo = GC_save_regs_in_stack();
@@ -813,7 +812,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       endif
 #       ifdef E2K
           if (THREAD_EQUAL(p -> id, self))
-            GC_free_procedure_stack(bs_lo);
+            free(bs_lo);
 #       endif
       }
     }

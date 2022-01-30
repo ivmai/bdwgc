@@ -1514,7 +1514,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 #   ifdef E2K
         GC_ASSERT(me -> backing_store_end != NULL);
          /* Note that me->backing_store_end may differ from bs_lo.  */
-        GC_free_procedure_stack(me -> backing_store_end);
+        free(me -> backing_store_end);
         me -> backing_store_ptr = NULL;
         me -> backing_store_end = NULL;
 #   endif
@@ -1635,7 +1635,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       stacksect.saved_backing_store_ptr = me -> backing_store_ptr;
 #   elif defined(E2K)
       GC_ASSERT(me -> backing_store_end != NULL);
-      GC_free_procedure_stack(me -> backing_store_end);
+      free(me -> backing_store_end);
       me -> backing_store_ptr = NULL;
       me -> backing_store_end = NULL;
 #   endif

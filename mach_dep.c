@@ -66,10 +66,6 @@
                      >> (63-E2K_PSHTP_SIZE));       \
         } while (0)
 
-  GC_INNER void GC_free_procedure_stack(ptr_t buf) {
-    free(buf);
-  }
-
   GC_INNER size_t GC_get_procedure_stack(ptr_t *buf_ptr) {
     word ps;
     ptr_t buf = NULL;

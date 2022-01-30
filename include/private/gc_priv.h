@@ -1983,14 +1983,8 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 
 #ifdef E2K
   /* Allocate the buffer and copy the full procedure stack to it.       */
-  /* May be called from a signal handler.                               */
   GC_INNER size_t GC_get_procedure_stack(ptr_t *);
-
-  /* Indicate that the given buffer (used to get a procedure stack)     */
-  /* is not need anymore.                                               */
-  /* May be called from a signal handler.                               */
-  GC_INNER void GC_free_procedure_stack(ptr_t);
-#endif /* E2K */
+#endif
 
 #if defined(E2K) && defined(USE_PTR_HWTAG)
   /* Load value and get tag of the target memory.   */
