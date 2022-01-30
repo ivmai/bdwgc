@@ -1988,6 +1988,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 
   /* Indicate that the given buffer (used to get a procedure stack)     */
   /* is not need anymore.                                               */
+  /* May be called from a signal handler.                               */
   GC_INNER void GC_free_procedure_stack(ptr_t);
 #endif /* E2K */
 

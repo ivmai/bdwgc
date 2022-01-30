@@ -402,7 +402,9 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
     GC_log_printf("Continuing %p\n", (void *)self);
 # endif
 # ifdef E2K
-    GC_ASSERT(NULL == me -> backing_store_end);
+    GC_free_procedure_stack(me -> backing_store_end);
+    me -> backing_store_ptr = NULL;
+    me -> backing_store_end = NULL;
 # endif
 # ifndef GC_NETBSD_THREADS_WORKAROUND
     if (GC_retry_signals)
@@ -740,14 +742,17 @@ GC_INNER void GC_push_all_stacks(void)
                 bs_hi = GC_save_regs_in_stack();
 #             elif defined(E2K)
                 (void)GC_save_regs_in_stack();
-                stack_size = GC_get_procedure_stack(&p->backing_store_end);
-                p -> backing_store_ptr = p -> backing_store_end + stack_size;
+                stack_size = GC_get_procedure_stack(&bs_lo);
+                bs_hi = bs_lo + stack_size;
 #             endif
 #           endif
             found_me = TRUE;
         } else {
             lo = (ptr_t)AO_load((volatile AO_t *)&p->stop_info.stack_ptr);
 #           ifdef IA64
+              bs_hi = p -> backing_store_ptr;
+#           elif defined(E2K)
+              bs_lo = p -> backing_store_end;
               bs_hi = p -> backing_store_ptr;
 #           endif
             if (traced_stack_sect != NULL
@@ -770,10 +775,6 @@ GC_INNER void GC_push_all_stacks(void)
               bs_lo = BACKING_STORE_BASE;
 #           endif
         }
-#       ifdef E2K
-          bs_lo = p -> backing_store_end;
-          bs_hi = p -> backing_store_ptr;
-#       endif
 #       ifdef DEBUG_THREADS
           GC_log_printf("Stack for thread %p is [%p,%p)\n",
                         (void *)p->id, (void *)lo, (void *)hi);
@@ -809,6 +810,10 @@ GC_INNER void GC_push_all_stacks(void)
                                         THREAD_EQUAL(p -> id, self),
                                         traced_stack_sect);
           total_size += bs_hi - bs_lo; /* bs_lo <= bs_hi */
+#       endif
+#       ifdef E2K
+          if (THREAD_EQUAL(p -> id, self))
+            GC_free_procedure_stack(bs_lo);
 #       endif
       }
     }
@@ -1236,21 +1241,6 @@ GC_INNER void GC_start_world(void)
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef DEBUG_THREADS
       GC_log_printf("World starting\n");
-#   endif
-#   ifdef E2K
-      {
-        int i;
-        GC_thread p;
-
-        /* Safe to free the procedure stacks now.       */
-        for (i = 0; i < THREAD_TABLE_SZ; i++)
-          for (p = GC_threads[i]; p != NULL; p = p -> next) {
-            if ((p -> flags & FINISHED) != 0 || p -> thread_blocked) continue;
-            GC_free_procedure_stack(p -> backing_store_end);
-            p -> backing_store_ptr = NULL;
-            p -> backing_store_end = NULL;
-          }
-      }
 #   endif
 #   ifndef GC_OPENBSD_UTHREADS
       AO_store_release(&GC_world_is_stopped, FALSE);
