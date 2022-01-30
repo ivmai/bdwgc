@@ -67,29 +67,15 @@
         } while (0)
 
   GC_INNER void GC_free_procedure_stack(ptr_t buf) {
-#   ifdef E2K_USE_SCRATCH
-      GC_ASSERT(buf != NULL);
-      GC_ASSERT(NULL == GC_e2k_ps_buffer);
-      GC_e2k_ps_buffer = buf; /* the buffer could be reused */
-#   else
-      free(buf);
-#   endif
+    free(buf);
   }
 
   GC_INNER size_t GC_get_procedure_stack(ptr_t *buf_ptr) {
     word ps;
-    ptr_t buf;
-    word buf_sz;
+    ptr_t buf = NULL;
+    word buf_sz = 0;
     word new_sz = 0;
 
-#   ifdef E2K_USE_SCRATCH
-      buf = GC_e2k_ps_buffer;
-      buf_sz = (word)GC_e2k_ps_capacity;
-      GC_e2k_ps_buffer = NULL; /* indicate the buffer is in use */
-#   else
-      buf = NULL;
-      buf_sz = 0;
-#   endif
     get_stack_index(&ps);
     for (;;) {
       int res = syscall(__NR_access_hw_stacks, E2K_READ_PROCEDURE_STACK,
@@ -97,22 +83,9 @@
 
       if (res != -1) break;
       if (ENOMEM == errno && buf_sz != new_sz) {
-#       ifdef LOG_E2K_ALLOCS
-          GC_log_printf("GC_get_procedure_stack(): free/alloc %lu/%lu bytes,"
-                        " GC #%lu\n",
-                        (unsigned long)buf_sz, (unsigned long)new_sz,
-                        (unsigned long)GC_gc_no);
-#       endif
-#       ifdef E2K_USE_SCRATCH
-          GC_ASSERT(new_sz > (word)GC_e2k_ps_capacity);
-          GC_scratch_recycle_no_gww(buf, GC_e2k_ps_capacity);
-          buf = GC_scratch_alloc((size_t)new_sz);
-          GC_e2k_ps_capacity = (size_t)new_sz;
-          /* TODO: support malloc redirection if multi-threaded */
-#       else
-          free(buf);
-          buf = malloc((size_t)new_sz);
-#       endif
+        /* FIXME: use GC_scratch_alloc to support malloc redirection? */
+        free(buf);
+        buf = malloc((size_t)new_sz);
         if (NULL == buf)
           ABORT_ARG1("Could not allocate memory for procedure stack",
                      ", %lu bytes requested", (unsigned long)new_sz);
@@ -127,13 +100,13 @@
       get_stack_index(&ps);
     }
 
-    if (buf_sz < new_sz)
+    if (buf_sz != new_sz)
       ABORT_ARG2("Buffer size mismatch while reading procedure stack",
                  ": buf_sz= %lu, new_sz= %lu",
                  (unsigned long)buf_sz, (unsigned long)new_sz);
     GC_ASSERT(buf != NULL);
     *buf_ptr = buf;
-    return (size_t)new_sz;
+    return (size_t)buf_sz;
   }
 
   ptr_t GC_save_regs_in_stack(void) {
