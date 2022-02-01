@@ -2061,7 +2061,9 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
       extern int __dso_handle[];
 #     define DATASTART ((ptr_t)__dso_handle)
-#     if !defined(REDIRECT_MALLOC) && !defined(THREAD_LOCAL_ALLOC)
+#     ifdef REDIRECT_MALLOC
+#       define NO_PROC_FOR_LIBRARIES
+#     elif !defined(THREAD_LOCAL_ALLOC)
 #       define MPROTECT_VDB
 #     endif
 #   endif
