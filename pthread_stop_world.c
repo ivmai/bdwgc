@@ -340,7 +340,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
     if (ao_load_async(&me->suspended_ext)) {
       GC_store_stack_ptr(me);
 #     ifdef E2K
-        PROCEDURE_STACK_ALLOCA_AND_STORE(&bs_lo, &stack_size);
+        GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
         me -> backing_store_end = bs_lo;
         me -> backing_store_ptr = bs_lo + stack_size;
 #     endif
@@ -350,6 +350,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
         GC_log_printf("Continuing %p on GC_resume_thread\n", (void *)self);
 #     endif
 #     ifdef E2K
+        FREE_PROCEDURE_STACK_LOCAL(bs_lo, stack_size);
         me -> backing_store_ptr = NULL;
         me -> backing_store_end = NULL;
 #     endif
@@ -369,7 +370,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
   }
   GC_store_stack_ptr(me);
 # ifdef E2K
-    PROCEDURE_STACK_ALLOCA_AND_STORE(&bs_lo, &stack_size);
+    GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
     me -> backing_store_end = bs_lo;
     me -> backing_store_ptr = bs_lo + stack_size;
 # endif
@@ -414,6 +415,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
 # endif
 # ifdef E2K
     GC_ASSERT(me -> backing_store_end == bs_lo);
+    FREE_PROCEDURE_STACK_LOCAL(bs_lo, stack_size);
     me -> backing_store_ptr = NULL;
     me -> backing_store_end = NULL;
 # endif
@@ -757,7 +759,7 @@ GC_INNER void GC_push_all_stacks(void)
 #             elif defined(E2K)
                 GC_ASSERT(NULL == p -> backing_store_end);
                 (void)GC_save_regs_in_stack();
-                PROCEDURE_STACK_ALLOCA_AND_STORE(&bs_lo, &stack_size);
+                GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
                 bs_hi = bs_lo + stack_size;
 #             endif
 #           endif
@@ -833,6 +835,10 @@ GC_INNER void GC_push_all_stacks(void)
                                         THREAD_EQUAL(p -> id, self),
                                         traced_stack_sect);
           total_size += bs_hi - bs_lo; /* bs_lo <= bs_hi */
+#       endif
+#       ifdef E2K
+          if (THREAD_EQUAL(p -> id, self))
+            FREE_PROCEDURE_STACK_LOCAL(bs_lo, (size_t)(bs_hi - bs_lo));
 #       endif
       }
     }

@@ -28,9 +28,9 @@
 
 #ifdef E2K
 # include <errno.h>
-# include <sys/syscall.h>
-
 # include <asm/e2k_syswork.h>
+# include <sys/mman.h>
+# include <sys/syscall.h>
 
 # define VA_SIZE 48
 # define E2K_PSHTP_SIZE 12
@@ -101,6 +101,24 @@
   ptr_t GC_save_regs_in_stack(void) {
     __asm__ __volatile__ ("flushr");
     return NULL;
+  }
+
+  GC_INNER ptr_t GC_mmap_procedure_stack_buf(size_t aligned_sz)
+  {
+    void *buf = mmap(NULL, aligned_sz, PROT_READ | PROT_WRITE,
+                     MAP_PRIVATE | MAP_ANON, 0 /* fd */, 0 /* offset */);
+    if (MAP_FAILED == buf)
+      ABORT_ARG2("Could not map memory for procedure stack",
+                 ": requested %lu bytes, errno= %d",
+                 (unsigned long)aligned_sz, errno);
+    return (ptr_t)buf;
+  }
+
+  GC_INNER void GC_unmap_procedure_stack_buf(ptr_t buf, size_t sz)
+  {
+    if (munmap(buf, ROUNDUP_PAGESIZE(sz)) == -1)
+      ABORT_ARG1("munmap failed (for procedure stack space)",
+                 ": errno= %d", errno);
   }
 
 # ifdef THREADS

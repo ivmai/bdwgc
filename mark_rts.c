@@ -840,10 +840,11 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
             ptr_t bs_lo;
             size_t stack_size;
 
-            PROCEDURE_STACK_ALLOCA_AND_STORE(&bs_lo, &stack_size);
+            GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
             GC_push_all_register_sections(bs_lo, bs_lo + stack_size,
                                           TRUE /* eager */,
                                           GC_traced_stack_sect);
+            FREE_PROCEDURE_STACK_LOCAL(bs_lo, stack_size);
           }
 #       endif
 #   endif /* !THREADS */
