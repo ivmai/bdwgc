@@ -254,7 +254,7 @@ GC_INNER char * GC_get_maps(void)
                 maps_size += result;
             } while ((size_t)result == maps_buf_sz-1);
             close(f);
-            if (result <= 0)
+            if (result < 0 || 0 == maps_size)
               return 0;
 #           ifdef THREADS
               if (maps_size > old_maps_size) {
