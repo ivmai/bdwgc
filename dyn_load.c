@@ -309,7 +309,7 @@ static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
 
 STATIC void GC_register_map_entries(const char *maps)
 {
-    const char *prot;
+    const char *prot, *path;
     ptr_t start, end;
     unsigned int maj_dev;
     ptr_t least_ha, greatest_ha;
@@ -322,7 +322,7 @@ STATIC void GC_register_map_entries(const char *maps)
                   + GC_our_memory[GC_n_memory-1].hs_bytes;
 
     for (;;) {
-        maps = GC_parse_map_entry(maps, &start, &end, &prot, &maj_dev, 0);
+        maps = GC_parse_map_entry(maps, &start, &end, &prot, &maj_dev, &path);
         if (NULL == maps) break;
 
         if (prot[1] == 'w') {
@@ -334,6 +334,9 @@ STATIC void GC_register_map_entries(const char *maps)
                 /* Stack mapping; discard       */
                 continue;
             }
+            if (path[0] == '[' && strncmp(path+1, "heap]", 5) != 0)
+              continue; /* discard if a pseudo-path unless "[heap]" */
+
 #           ifdef THREADS
               /* This may fail, since a thread may already be           */
               /* unregistered, but its thread stack may still be there. */
