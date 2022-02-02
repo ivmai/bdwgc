@@ -334,6 +334,12 @@ STATIC void GC_register_map_entries(const char *maps)
                 /* Stack mapping; discard       */
                 continue;
             }
+#           if defined(E2K) && defined(__ptr64__)
+              /* TODO: avoid hard-coded addresses */
+              if ((word)start == 0xc2fffffff000UL
+                  && (word)end == 0xc30000000000UL && path[0] == '\n')
+                continue; /* discard some special mapping */
+#           endif
             if (path[0] == '[' && strncmp(path+1, "heap]", 5) != 0)
               continue; /* discard if a pseudo-path unless "[heap]" */
 
