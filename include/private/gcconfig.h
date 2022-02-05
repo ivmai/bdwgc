@@ -1703,12 +1703,12 @@ EXTERN_C_BEGIN
 
 # ifdef LOONGARCH
 #   define MACH_TYPE "LoongArch"
+#   define CPP_WORDSZ _LOONGARCH_SZPTR
+#   define ALIGNMENT (_LOONGARCH_SZPTR/8)
 #   ifdef LINUX
 #     pragma weak __data_start
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
-#     define CPP_WORDSZ _LOONGARCH_SZPTR
-#     define ALIGNMENT (_LOONGARCH_SZPTR/8)
 #   endif
 # endif /* LOONGARCH */
 
@@ -1823,28 +1823,28 @@ EXTERN_C_BEGIN
 # endif
 
 # ifdef NIOS2
-#   define CPP_WORDSZ 32
 #   define MACH_TYPE "NIOS2"
+#   define CPP_WORDSZ 32
+#   define ALIGNMENT 4
+#   ifndef HBLKSIZE
+#     define HBLKSIZE 4096
+#   endif
 #   ifdef LINUX
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
-#     define ALIGNMENT 4
-#     ifndef HBLKSIZE
-#       define HBLKSIZE 4096
-#     endif
 #   endif
 # endif /* NIOS2 */
 
 # ifdef OR1K
-#   define CPP_WORDSZ 32
 #   define MACH_TYPE "OR1K"
+#   define CPP_WORDSZ 32
+#   define ALIGNMENT 4
+#   ifndef HBLKSIZE
+#     define HBLKSIZE 4096
+#   endif
 #   ifdef LINUX
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
-#     define ALIGNMENT 4
-#     ifndef HBLKSIZE
-#       define HBLKSIZE 4096
-#     endif
 #   endif
 # endif /* OR1K */
 
@@ -2323,8 +2323,8 @@ EXTERN_C_BEGIN
 # endif /* AVR32 */
 
 # ifdef M32R
-#   define CPP_WORDSZ 32
 #   define MACH_TYPE "M32R"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   ifdef LINUX
 #     define SEARCH_FOR_DATA_START
@@ -2477,8 +2477,8 @@ EXTERN_C_BEGIN
 # endif /* X86_64 */
 
 # ifdef ARC
-#   define CPP_WORDSZ 32
 #   define MACH_TYPE "ARC"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   define CACHE_LINE_SIZE 64
 #   ifdef LINUX
@@ -2488,8 +2488,8 @@ EXTERN_C_BEGIN
 # endif /* ARC */
 
 # ifdef HEXAGON
-#   define CPP_WORDSZ 32
 #   define MACH_TYPE "HEXAGON"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   ifdef LINUX
 #     if !defined(REDIRECT_MALLOC)
@@ -2504,8 +2504,8 @@ EXTERN_C_BEGIN
 # endif /* HEXAGON */
 
 # ifdef TILEPRO
-#   define CPP_WORDSZ 32
 #   define MACH_TYPE "TILEPro"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   define PREFETCH(x) __insn_prefetch(x)
 #   define CACHE_LINE_SIZE 64
@@ -2516,8 +2516,8 @@ EXTERN_C_BEGIN
 # endif /* TILEPRO */
 
 # ifdef TILEGX
-#   define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
 #   define MACH_TYPE "TILE-Gx"
+#   define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
 #   define ALIGNMENT __SIZEOF_POINTER__
 #   if CPP_WORDSZ < 64
 #     define CLEAR_DOUBLE(x) (*(long long *)(x) = 0)
