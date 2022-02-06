@@ -994,6 +994,14 @@ EXTERN_C_BEGIN
       extern int _end[];
 #     define DATAEND ((ptr_t)(_end))
 #   endif
+#   if !defined(REDIRECT_MALLOC)
+      /* Requires Linux 2.3.47 or later. */
+#     define MPROTECT_VDB
+#   else
+      /* We seem to get random errors in incremental mode,          */
+      /* possibly because Linux threads is itself a malloc client   */
+      /* and can't deal with the signals.  fread uses malloc too.   */
+#   endif
 # endif /* LINUX */
 
 # ifdef MACOS
@@ -1126,9 +1134,6 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef LINUX
-#       if !defined(REDIRECT_MALLOC)
-#         define MPROTECT_VDB
-#       endif
 #       ifdef __ELF__
 #         if defined(__GLIBC__) && __GLIBC__ >= 2
 #           define SEARCH_FOR_DATA_START
@@ -1190,9 +1195,6 @@ EXTERN_C_BEGIN
 #       define LINUX_STACKBOTTOM
 #     endif
 #     define SEARCH_FOR_DATA_START
-#     if !defined(REDIRECT_MALLOC)
-#       define MPROTECT_VDB
-#     endif
 #     ifndef SOFT_VDB
 #       define SOFT_VDB
 #     endif
@@ -1481,13 +1483,6 @@ EXTERN_C_BEGIN
 #       define HEAP_START (ptr_t)0x40000000
 #   endif /* DGUX */
 #   ifdef LINUX
-#       if !defined(REDIRECT_MALLOC)
-#           define MPROTECT_VDB
-#       else
-            /* We seem to get random errors in incremental mode,        */
-            /* possibly because Linux threads is itself a malloc client */
-            /* and can't deal with the signals.  fread uses malloc too. */
-#       endif
 #       define HEAP_START (ptr_t)0x1000
                 /* This encourages mmap to give us low addresses,       */
                 /* thus allowing the heap to grow to ~3 GB.             */
@@ -1965,11 +1960,6 @@ EXTERN_C_BEGIN
           extern int _end[];
 #         define DATAEND ((ptr_t)(_end))
 #       endif
-#       if !defined(REDIRECT_MALLOC)
-#           define MPROTECT_VDB
-                /* Has only been superficially tested.  May not */
-                /* work on all versions.                        */
-#       endif
 #   endif
 # endif /* ALPHA */
 
@@ -2018,10 +2008,6 @@ EXTERN_C_BEGIN
           /* statically linked executables and an undefined reference   */
           /* to _DYNAMIC                                                */
 #       endif
-#       if !defined(REDIRECT_MALLOC)
-#         define MPROTECT_VDB
-                /* Requires Linux 2.3.47 or later.      */
-#       endif
 #       ifdef __GNUC__
 #         ifndef __INTEL_COMPILER
 #           define PREFETCH(x) \
@@ -2063,8 +2049,6 @@ EXTERN_C_BEGIN
 #     define DATASTART ((ptr_t)__dso_handle)
 #     ifdef REDIRECT_MALLOC
 #       define NO_PROC_FOR_LIBRARIES
-#     elif !defined(THREAD_LOCAL_ALLOC)
-#       define MPROTECT_VDB
 #     endif
 #   endif
 # endif /* E2K */
@@ -2124,9 +2108,6 @@ EXTERN_C_BEGIN
 #       define DATAEND ((ptr_t)(_end))
 #       define CACHE_LINE_SIZE 256
 #       define GETPAGESIZE() 4096
-#       if !defined(REDIRECT_MALLOC)
-#         define MPROTECT_VDB
-#       endif
 #       ifndef SOFT_VDB
 #         define SOFT_VDB
 #       endif
@@ -2146,9 +2127,6 @@ EXTERN_C_BEGIN
 #     define HBLKSIZE 4096
 #   endif
 #   ifdef LINUX
-#     if !defined(REDIRECT_MALLOC)
-#       define MPROTECT_VDB
-#     endif
 #     if defined(HOST_ANDROID)
 #       define SEARCH_FOR_DATA_START
 #     else
@@ -2210,9 +2188,6 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef LINUX
-#       if !defined(REDIRECT_MALLOC)
-#           define MPROTECT_VDB
-#       endif
 #       if defined(__GLIBC__) && __GLIBC__ >= 2 \
                 || defined(HOST_ANDROID) || defined(HOST_TIZEN)
 #           define SEARCH_FOR_DATA_START
@@ -2357,13 +2332,6 @@ EXTERN_C_BEGIN
 #     define STACKBOTTOM ((ptr_t)platform_get_stack_bottom())
 #   endif
 #   ifdef LINUX
-#       if !defined(REDIRECT_MALLOC)
-#           define MPROTECT_VDB
-#       else
-            /* We seem to get random errors in incremental mode,        */
-            /* possibly because Linux threads is itself a malloc client */
-            /* and can't deal with the signals.  fread uses malloc too. */
-#       endif
 #       define SEARCH_FOR_DATA_START
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* A workaround for GCF (Google Cloud Function) which does    */
@@ -2492,9 +2460,6 @@ EXTERN_C_BEGIN
 #   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   ifdef LINUX
-#     if !defined(REDIRECT_MALLOC)
-#       define MPROTECT_VDB
-#     endif
 #     if defined(__GLIBC__)
 #       define SEARCH_FOR_DATA_START
 #     elif !defined(CPPCHECK)
