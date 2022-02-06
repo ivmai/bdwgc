@@ -87,7 +87,7 @@ testobj_t testobj_new(int model)
     return obj;
 }
 
-#define ALLOC_CNT (4*1024*1024)
+#define ALLOC_CNT (2*1024*1024)
 #define KEEP_CNT      (32*1024)
 
 static char const *model_str[3] = {

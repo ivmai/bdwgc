@@ -195,11 +195,7 @@ pair_check_rec(pair_t p)
 #endif
 
 #define POP_SIZE 1000
-#if NTHREADS > 1
-# define MUTATE_CNT (2000000/NTHREADS)
-#else
-# define MUTATE_CNT 10000000
-#endif
+#define MUTATE_CNT (6*1000000/NTHREADS)
 #define GROW_LIMIT (MUTATE_CNT/10)
 
 void *test(void *data)
