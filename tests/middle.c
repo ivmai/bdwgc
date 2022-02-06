@@ -5,6 +5,9 @@
 #include "gc.h"
 #include <stdio.h>
 
+#define N_TESTS 40000
+#define ALLOC_SZ 4096 /* typical page size */
+
 int main (void)
 {
   int i;
@@ -14,13 +17,13 @@ int main (void)
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
 
-  for (i = 0; i < 20000; ++i) {
-    (void)GC_malloc_atomic(4096);
-    (void)GC_malloc(4096);
+  for (i = 0; i < N_TESTS; ++i) {
+    (void)GC_malloc_atomic(ALLOC_SZ);
+    (void)GC_malloc(ALLOC_SZ);
   }
-  for (i = 0; i < 20000; ++i) {
-    (void)GC_malloc_atomic(2048);
-    (void)GC_malloc(2048);
+  for (i = 0; i < N_TESTS; ++i) {
+    (void)GC_malloc_atomic(ALLOC_SZ/2);
+    (void)GC_malloc(ALLOC_SZ/2);
   }
   printf("Final heap size is %lu\n", (unsigned long)GC_get_heap_size());
   return 0;

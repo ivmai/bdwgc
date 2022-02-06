@@ -24,19 +24,21 @@
 
 #include <stdio.h>
 
+#define N_TESTS 100
+
 #ifdef GC_PTHREADS
   void * test(void * arg)
 #else
   DWORD WINAPI test(LPVOID arg)
 #endif
 {
-    int *p[10];
+    int *p[N_TESTS];
     int i;
-    for (i = 0; i < 10; ++i) {
+    for (i = 0; i < N_TESTS; ++i) {
         p[i] = (int *)malloc(sizeof(int) + i);
     }
     CHECK_LEAKS();
-    for (i = 1; i < 10; ++i) {
+    for (i = 1; i < N_TESTS; ++i) {
         free(p[i]);
     }
 #   ifdef GC_PTHREADS
