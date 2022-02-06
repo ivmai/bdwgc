@@ -649,7 +649,11 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   if defined(MACOS) \
        || (defined(UNIX_LIKE) && defined(NO_GETCONTEXT)) /* e.g. musl */
       /* Assume 128K stacks at least. */
-#     define BIG 1000
+#     if defined(__s390x__)
+#       define BIG 600
+#     else
+#       define BIG 1000
+#     endif
 #   elif defined(PCR)
       /* PCR default stack is 100K.  Stack frames are up to 120 bytes. */
 #     define BIG 700
