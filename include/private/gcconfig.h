@@ -1810,6 +1810,7 @@
         extern int _end[];
 #       define DATAEND ((ptr_t) &_end)
         extern char ** environ;
+#       include <unistd.h>
         /* round up from the value of environ to the nearest page boundary */
         /* Probably breaks if putenv is called before collector            */
         /* initialization.                                                 */
@@ -2519,7 +2520,7 @@
 #endif
 
 #ifndef GETPAGESIZE
-# if defined(SOLARIS) || defined(IRIX5) || defined(LINUX) \
+# if defined(AIX) || defined(IRIX5) || defined(LINUX) || defined(SOLARIS) \
      || defined(NETBSD) || defined(FREEBSD) || defined(HPUX)
 #   include <unistd.h>
 # endif
