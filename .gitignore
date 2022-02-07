@@ -17,11 +17,13 @@
 /*.a
 /*_bench.log
 /*_bench.trs
+/*_test
 /*test.log
 /*test.trs
 /.libs/
 /Makefile
 /add_gc_prefix
+/atomicopstest
 /base_lib
 /bdw-gc.pc
 /c++
@@ -37,11 +39,11 @@
 /cords
 /cordtest
 /core
+/cpptest
 /de
 /de.dir/
 /disclaim_bench
-/disclaim_test
-/disclaim_weakmap_test
+/disclaimtest
 /dont_ar_1
 /dont_ar_3
 /dont_ar_4
@@ -54,16 +56,15 @@
 /hugetest
 /if_mach
 /if_not_there
-/initsecondarythread_test
+/initfromthreadtest
 /leaktest
 /lib*.so
 /libtool
 /middletest
-/realloc_test
-/setjmp_test
+/realloctest
 /smashtest
 /staticrootstest
-/subthreadcreate_test
+/subthreadcreatetest
 /sunos5gc.so
 /test-suite.log
 /test_atomic_ops
@@ -73,10 +74,11 @@
 /test_cpp.cpp
 /test_cpp.log
 /test_cpp.trs
-/threadkey_test
+/threadkeytest
 /threadleaktest
 /threadlibs
 /tracetest
+/weakmaptest
 
 /out/
 
