@@ -148,11 +148,11 @@ test_script:
 - cmd: if [%TARGET%]==[djgpp-no-make] (
     ..\djgpp\setenv.bat
     && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o cordtest.exe cord/tests/cordtest.c cord/*.c gc.o
-    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -v -o gctest.exe tests/test.c gc.o )
+    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -v -o gctest.exe tests/gctest.c gc.o )
 - cmd: if [%TARGET%]==[dmc] (
     set "path=%cd%\..\dm\bin;%path%"
     && make -f digimars.mak %TEST_TARGET% CFLAGS_EXTRA="-wx %CFLAGS_EXTRA%"
-    && type gctest.gc.log test_cpp.gc.log
+    && type gctest.gc.log cpptest.gc.log
     && make -f digimars.mak clean )
 - cmd: if [%TARGET%]==[mingw] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
@@ -161,7 +161,7 @@ test_script:
 - cmd: if [%TARGET%]==[mingw-shared-no-make] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
       "cd /c/projects/bdwgc
-       && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o gctest.exe tests/test.c gc.dll
+       && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o gctest.exe tests/gctest.c gc.dll
        && gctest.exe" )
 - cmd: if [%TARGET%]==[mingw-w64] (
     C:\msys64\usr\bin\bash -e -l -c
