@@ -1994,7 +1994,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 # else
 #   define PS_ALLOCA_BUF(sz) alloca(sz) /* cannot return NULL */
 #   ifndef ALLOCA_SAFE_LIMIT
-#     define ALLOCA_SAFE_LIMIT (GC_page_size-16U)
+#     define ALLOCA_SAFE_LIMIT (HBLKSIZE*3)
 #   endif
 # endif /* !CPPCHECK */
 
