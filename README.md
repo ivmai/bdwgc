@@ -182,7 +182,7 @@ will result in a few lines of descriptive output for each collection.
 (The given statistics exhibit a few peculiarities.
 Things don't appear to add up for a variety of reasons, most notably
 fragmentation losses.  These are probably much more significant for the
-contrived program `tests/test.c` than for your application.)
+contrived program `gctest` than for your application.)
 
 On most Unix-like platforms, the collector can be built either using a
 GNU autoconf-based build infrastructure (type `./configure; make` in the
@@ -218,7 +218,7 @@ See [README.cmake](doc/README.cmake) for details.
 Finally, on most targets, the collector could be built and tested directly
 with a single compiler invocation, like this:
 
-    gcc -I include -o gctest tests/test.c extra/gc.c && ./gctest
+    gcc -I include -o gctest tests/gctest.c extra/gc.c && ./gctest
 
 On Windows, CMake could be used to build the library as described above or
 by typing `nmake -f NT_MAKEFILE`, this assumes you have Microsoft command-line

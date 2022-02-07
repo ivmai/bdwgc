@@ -91,7 +91,7 @@
 
   int main(void)
   {
-    printf("test_atomic_ops skipped\n");
+    printf("test skipped\n");
     return 0;
   }
 

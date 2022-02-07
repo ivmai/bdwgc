@@ -11,14 +11,9 @@
  * modified is included with the above copyright notice.
  */
 
-/****************************************************************************
-usage: test_cpp number-of-iterations
-
-This program tries to test the specific C++ functionality provided by
-gc_cpp.h that isn't tested by the more general test routines of the
-collector.
-
-***************************************************************************/
+// This program tries to test the specific C++ functionality provided by
+// gc_cpp.h that isn't tested by the more general test routines of the
+// collector.
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -282,7 +277,7 @@ void* Undisguise( GC_word i ) {
       }
 #elif defined(MACOS)
   int main() {
-    char* argv_[] = {"test_cpp", "7"}; // MacOS doesn't have a command line
+    char* argv_[] = {"cpptest", "7"}; // MacOS doesn't have a command line
     argv = argv_;
     argc = sizeof(argv_)/sizeof(argv_[0]);
 #else
@@ -317,7 +312,7 @@ void* Undisguise( GC_word i ) {
     x = 0;
     if (argc != 2
         || (n = atoi(argv[1])) <= 0) {
-      GC_printf("usage: test_cpp number-of-iterations\n"
+      GC_printf("usage: cpptest <number-of-iterations>\n"
                 "Assuming %d iterations\n", N_TESTS);
       n = N_TESTS;
     }

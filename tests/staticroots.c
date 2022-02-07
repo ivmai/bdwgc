@@ -13,7 +13,7 @@
 # define GC_TEST_IMPORT_API extern
 #endif
 
-/* Should match that in staticrootslib.c.       */
+/* Should match that in staticroots_lib.c.      */
 struct treenode {
     struct treenode *x;
     struct treenode *y;

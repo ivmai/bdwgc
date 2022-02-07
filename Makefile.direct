@@ -180,7 +180,7 @@ BSD-pkg-install: BSD-pkg-all
 	${INSTALL_DATA} gc.h gc_cpp.h ${PREFIX}/include
 	${INSTALL_MAN} gc.man ${PREFIX}/man/man3/gc.3
 
-$(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
+$(OBJS) tests/gctest.o dyn_load.o dyn_load_sunos53.o: \
   $(srcdir)/include/private/gc_priv.h \
   $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
   $(srcdir)/include/gc.h $(srcdir)/include/gc/gc_pthread_redirects.h \
@@ -196,10 +196,10 @@ specific.o pthread_support.o thread_local_alloc.o win32_threads.o: \
 
 dbg_mlc.o gcj_mlc.o: $(srcdir)/include/private/dbg_mlc.h
 
-tests/test.o: $(srcdir)/tests/test.c
+tests/gctest.o: $(srcdir)/tests/gctest.c
 	mkdir tests || cat /dev/null
-	$(CC) $(CFLAGS) -c $(srcdir)/tests/test.c
-	mv test.o tests/test.o
+	$(CC) $(CFLAGS) -c $(srcdir)/tests/gctest.c
+	mv gctest.o tests/gctest.o
 
 base_lib libgc.a: $(OBJS) dyn_load.o $(UTILS)
 	rm -f dont_ar_1
@@ -230,22 +230,22 @@ gc_badalc.o: $(srcdir)/gc_badalc.cc $(srcdir)/include/gc_cpp.h \
 gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 
-test_cpp$(EXEEXT): $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h \
+cpptest$(EXEEXT): $(srcdir)/tests/cpp.cc $(srcdir)/include/gc_cpp.h \
   $(srcdir)/include/gc.h c++ base_lib $(NODIST_OBJS) $(UTILS)
-	rm -f test_cpp$(EXEEXT)
-	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a -ldld `./threadlibs`
-	./if_not_there test_cpp$(EXEEXT) || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o test_cpp$(EXEEXT) $(srcdir)/tests/test_cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a `./threadlibs`
+	rm -f cpptest$(EXEEXT)
+	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o cpptest $(srcdir)/tests/cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a -ldld `./threadlibs`
+	./if_not_there cpptest$(EXEEXT) || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o cpptest$(EXEEXT) $(srcdir)/tests/cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a `./threadlibs`
 
-check-cpp-deps: test_cpp$(EXEEXT)
+check-cpp-deps: cpptest$(EXEEXT)
 
 check-cpp: check-cpp-deps
-	./test_cpp
+	./cpptest
 
-c++-t: c++ test_cpp$(EXEEXT)
-	./test_cpp 1
+c++-t: c++ cpptest$(EXEEXT)
+	./cpptest 1
 
 c++-nt: c++
-	@echo "Use ./test_cpp 1 to test the leak library"
+	@echo "Use ./cpptest 1 to test the leak library"
 
 c++ libgccpp.a libgctba.a: gc_badalc.o gc_cpp.o $(UTILS)
 	rm -f dont_ar_4
@@ -286,7 +286,7 @@ liblinuxgc.so: $(OBJS) $(NODIST_OBJS) dyn_load.o
 
 # Build gctest with dynamic library
 dyn_test:
-	$(CC) $(CFLAGS) -o gctest$(EXEEXT) tests/test.c libgc.so `./threadlibs`
+	$(CC) $(CFLAGS) -o gctest$(EXEEXT) tests/gctest.c libgc.so `./threadlibs`
 	./gctest
 
 mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/sparc_mach_dep.S \
@@ -363,17 +363,17 @@ if_not_there$(EXEEXT): $(srcdir)/tools/if_not_there.c
 	$(HOSTCC) $(HOSTCFLAGS) -o if_not_there$(EXEEXT) $(srcdir)/tools/if_not_there.c
 
 clean:
-	rm -f *.a *.i *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
+	rm -f *.a *.i *.o *.exe tests/*.o cpptest gctest gctest_dyn_link \
 	      setjmp_test mon.out gmon.out a.out core if_not_there if_mach \
 	      base_lib c++ $(CORD_OBJS) cordtest de cords dont_ar_* threadlibs
 	-rm -f *~
 
-gctest$(EXEEXT): tests/test.o base_lib $(NODIST_OBJS) $(UTILS)
+gctest$(EXEEXT): tests/gctest.o base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f gctest$(EXEEXT)
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o gctest tests/test.o $(NODIST_OBJS) libgc.a -lucb
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o gctest tests/test.o $(NODIST_OBJS) libgc.a -ldld `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o gctest tests/test.o $(NODIST_OBJS) libgc.a `./threadlibs`
-	./if_not_there gctest$(EXEEXT) || $(CC) $(CFLAGS) -o gctest$(EXEEXT) tests/test.o $(NODIST_OBJS) libgc.a `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o gctest tests/gctest.o $(NODIST_OBJS) libgc.a -lucb
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o gctest tests/gctest.o $(NODIST_OBJS) libgc.a -ldld `./threadlibs`
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o gctest tests/gctest.o $(NODIST_OBJS) libgc.a `./threadlibs`
+	./if_not_there gctest$(EXEEXT) || $(CC) $(CFLAGS) -o gctest$(EXEEXT) tests/gctest.o $(NODIST_OBJS) libgc.a `./threadlibs`
 
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  gctest may still work.
@@ -383,13 +383,13 @@ setjmp_test$(EXEEXT): $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h \
 	$(CC) $(CFLAGS) -o setjmp_test$(EXEEXT) $(srcdir)/tools/setjmp_t.c
 
 check-deps: cordtest$(EXEEXT) gctest$(EXEEXT) setjmp_test$(EXEEXT) \
-  test_cpp$(EXEEXT)
+  cpptest$(EXEEXT)
 
 check: check-deps
 	./setjmp_test
 	./gctest
 	./cordtest
-	./test_cpp
+	./cpptest
 
 # A synonym to "check" (for compatibility with older GC versions).
 test: check
@@ -398,22 +398,22 @@ test: check
 # Currently works only under SunOS5.  Requires GC_INIT call from statically
 # loaded client code.
 ABSDIR= `pwd`
-gctest_dyn_link: tests/test.o libgc.so
-	$(CC) -L$(ABSDIR) -R$(ABSDIR) -o gctest_dyn_link tests/test.o -lgc -ldl -lthread
+gctest_dyn_link: tests/gcgctest.o libgc.so
+	$(CC) -L$(ABSDIR) -R$(ABSDIR) -o gctest_dyn_link tests/gctest.o -lgc -ldl -lthread
 
-gctest_irix_dyn_link: tests/test.o libirixgc.so
-	$(CC) -L$(ABSDIR) -o gctest_irix_dyn_link tests/test.o -lirixgc
+gctest_irix_dyn_link: tests/gctest.o libirixgc.so
+	$(CC) -L$(ABSDIR) -o gctest_irix_dyn_link tests/gctest.o -lirixgc
 
 SYM_PREFIX-libgc=GC
 
 reserved_namespace: $(SRCS)
-	for file in $(SRCS) tests/test.c tests/test_cpp.cc; do \
+	for file in $(SRCS) tests/gctest.c tests/cpp.cc; do \
 		sed s/GC_/_GC_/g < $$file > tmp; \
 		cp tmp $$file; \
 		done
 
 user_namespace: $(SRCS)
-	for file in $(SRCS) tests/test.c tests/test_cpp.cc; do \
+	for file in $(SRCS) tests/gctest.c tests/cpp.cc; do \
 		sed s/_GC_/GC_/g < $$file > tmp; \
 		cp tmp $$file; \
 		done

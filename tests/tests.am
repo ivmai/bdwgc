@@ -14,7 +14,7 @@ test_ldadd = $(nodist_libgc_la_OBJECTS) $(top_builddir)/libgc.la \
 
 TESTS += gctest$(EXEEXT)
 check_PROGRAMS += gctest
-gctest_SOURCES = tests/test.c
+gctest_SOURCES = tests/gctest.c
 gctest_LDADD = $(test_ldadd)
 if THREADS
 if ENABLE_SHARED
@@ -35,9 +35,14 @@ gctest_html_LDADD = $(gctest_LDADD)
 gctest_html_LDFLAGS = -s "EXPORTED_FUNCTIONS=['_memalign', '_main', '_memset']"
 endif
 
+TESTS += hugetest$(EXEEXT)
+check_PROGRAMS += hugetest
+hugetest_SOURCES = tests/huge.c
+hugetest_LDADD = $(test_ldadd)
+
 TESTS += leaktest$(EXEEXT)
 check_PROGRAMS += leaktest
-leaktest_SOURCES = tests/leak_test.c
+leaktest_SOURCES = tests/leak.c
 leaktest_LDADD = $(test_ldadd)
 
 TESTS += middletest$(EXEEXT)
@@ -45,36 +50,31 @@ check_PROGRAMS += middletest
 middletest_SOURCES = tests/middle.c
 middletest_LDADD = $(test_ldadd)
 
+TESTS += realloctest$(EXEEXT)
+check_PROGRAMS += realloctest
+realloctest_SOURCES = tests/realloc.c
+realloctest_LDADD = $(test_ldadd)
+
 TESTS += smashtest$(EXEEXT)
 check_PROGRAMS += smashtest
-smashtest_SOURCES = tests/smash_test.c
+smashtest_SOURCES = tests/smash.c
 smashtest_LDADD = $(test_ldadd)
-
-TESTS += hugetest$(EXEEXT)
-check_PROGRAMS += hugetest
-hugetest_SOURCES = tests/huge_test.c
-hugetest_LDADD = $(test_ldadd)
-
-TESTS += realloc_test$(EXEEXT)
-check_PROGRAMS += realloc_test
-realloc_test_SOURCES = tests/realloc_test.c
-realloc_test_LDADD = $(test_ldadd)
 
 TESTS += staticrootstest$(EXEEXT)
 check_PROGRAMS += staticrootstest
-staticrootstest_SOURCES = tests/staticrootstest.c
+staticrootstest_SOURCES = tests/staticroots.c
 staticrootstest_CFLAGS = -DSTATICROOTSLIB2
 staticrootstest_LDADD = $(nodist_libgc_la_OBJECTS) $(EXTRA_TEST_LIBS) \
-                        libstaticrootslib_test.la libstaticrootslib2_test.la
-check_LTLIBRARIES += libstaticrootslib_test.la libstaticrootslib2_test.la
-libstaticrootslib_test_la_SOURCES = tests/staticrootslib.c
-libstaticrootslib_test_la_LIBADD = $(test_ldadd)
-libstaticrootslib_test_la_LDFLAGS = -no-undefined -rpath /nowhere
-libstaticrootslib_test_la_DEPENDENCIES = $(top_builddir)/libgc.la
-libstaticrootslib2_test_la_SOURCES = tests/staticrootslib.c
-libstaticrootslib2_test_la_LIBADD = $(test_ldadd)
-libstaticrootslib2_test_la_CFLAGS = -DSTATICROOTSLIB2
-libstaticrootslib2_test_la_LDFLAGS = -no-undefined -rpath /nowhere
+                        libstaticroots_lib_test.la libstaticroots_lib2_test.la
+check_LTLIBRARIES += libstaticroots_lib_test.la libstaticroots_lib2_test.la
+libstaticroots_lib_test_la_SOURCES = tests/staticroots_lib.c
+libstaticroots_lib_test_la_LIBADD = $(test_ldadd)
+libstaticroots_lib_test_la_LDFLAGS = -no-undefined -rpath /nowhere
+libstaticroots_lib_test_la_DEPENDENCIES = $(top_builddir)/libgc.la
+libstaticroots_lib2_test_la_SOURCES = tests/staticroots_lib.c
+libstaticroots_lib2_test_la_LIBADD = $(test_ldadd)
+libstaticroots_lib2_test_la_CFLAGS = -DSTATICROOTSLIB2
+libstaticroots_lib2_test_la_LDFLAGS = -no-undefined -rpath /nowhere
 if ENABLE_SHARED
 staticrootstest_LDADD += $(top_builddir)/libgc.la
 endif
@@ -82,69 +82,69 @@ endif
 if KEEP_BACK_PTRS
 TESTS += tracetest$(EXEEXT)
 check_PROGRAMS += tracetest
-tracetest_SOURCES = tests/trace_test.c
+tracetest_SOURCES = tests/trace.c
 tracetest_LDADD = $(test_ldadd)
 endif
 
 if THREADS
 
-TESTS += test_atomic_ops$(EXEEXT)
-check_PROGRAMS += test_atomic_ops
-test_atomic_ops_SOURCES = tests/test_atomic_ops.c
-test_atomic_ops_LDADD = $(nodist_libgc_la_OBJECTS) $(EXTRA_TEST_LIBS) \
+TESTS += atomicopstest$(EXEEXT)
+check_PROGRAMS += atomicopstest
+atomicopstest_SOURCES = tests/atomicops.c
+atomicopstest_LDADD = $(nodist_libgc_la_OBJECTS) $(EXTRA_TEST_LIBS) \
                 $(ATOMIC_OPS_LIBS) $(THREADDLLIBS)
+
+TESTS += initfromthreadtest$(EXEEXT)
+check_PROGRAMS += initfromthreadtest
+initfromthreadtest_SOURCES = tests/initfromthread.c
+initfromthreadtest_LDADD = $(test_ldadd) $(THREADDLLIBS)
+
+TESTS += subthreadcreatetest$(EXEEXT)
+check_PROGRAMS += subthreadcreatetest
+subthreadcreatetest_SOURCES = tests/subthreadcreate.c
+subthreadcreatetest_LDADD = $(test_ldadd)
+if ENABLE_SHARED
+subthreadcreatetest_LDADD += $(ATOMIC_OPS_LIBS)
+endif
+subthreadcreatetest_LDADD += $(THREADDLLIBS)
+
+TESTS += threadkeytest$(EXEEXT)
+check_PROGRAMS += threadkeytest
+threadkeytest_SOURCES = tests/threadkey.c
+threadkeytest_LDADD = $(test_ldadd) $(THREADDLLIBS)
 
 TESTS += threadleaktest$(EXEEXT)
 check_PROGRAMS += threadleaktest
-threadleaktest_SOURCES = tests/thread_leak_test.c
+threadleaktest_SOURCES = tests/threadleak.c
 threadleaktest_LDADD = $(test_ldadd) $(THREADDLLIBS)
-
-TESTS += threadkey_test$(EXEEXT)
-check_PROGRAMS += threadkey_test
-threadkey_test_SOURCES = tests/threadkey_test.c
-threadkey_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
-
-TESTS += subthreadcreate_test$(EXEEXT)
-check_PROGRAMS += subthreadcreate_test
-subthreadcreate_test_SOURCES = tests/subthread_create.c
-subthreadcreate_test_LDADD = $(test_ldadd)
-if ENABLE_SHARED
-subthreadcreate_test_LDADD += $(ATOMIC_OPS_LIBS)
-endif
-subthreadcreate_test_LDADD += $(THREADDLLIBS)
-
-TESTS += initsecondarythread_test$(EXEEXT)
-check_PROGRAMS += initsecondarythread_test
-initsecondarythread_test_SOURCES = tests/initsecondarythread.c
-initsecondarythread_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
 
 endif
 
 if CPLUSPLUS
-TESTS += test_cpp$(EXEEXT)
-check_PROGRAMS += test_cpp
-test_cpp_SOURCES = tests/test_cpp.cc
+TESTS += cpptest$(EXEEXT)
+check_PROGRAMS += cpptest
+cpptest_SOURCES = tests/cpp.cc
 if AVOID_CPP_LIB
-test_cpp_LDADD = gc_badalc.o gc_cpp.o $(test_ldadd) $(CXXLIBS)
+cpptest_LDADD = gc_badalc.o gc_cpp.o $(test_ldadd) $(CXXLIBS)
 else
-test_cpp_LDADD = libgccpp.la $(nodist_libgc_la_OBJECTS) \
+cpptest_LDADD = libgccpp.la $(nodist_libgc_la_OBJECTS) \
                 $(EXTRA_TEST_LIBS) $(CXXLIBS)
 ## In case of static libraries build, libgc.a is already referenced in
 ## dependency_libs attribute of libgccpp.la file.
 if ENABLE_SHARED
-test_cpp_LDADD += $(top_builddir)/libgc.la
+cpptest_LDADD += $(top_builddir)/libgc.la
 endif
 endif
 endif
 
 if ENABLE_DISCLAIM
 
-TESTS += disclaim_test$(EXEEXT)
-check_PROGRAMS += disclaim_test
-disclaim_test_SOURCES = tests/disclaim_test.c
-disclaim_test_LDADD = $(test_ldadd)
+TESTS += disclaimtest$(EXEEXT)
+check_PROGRAMS += disclaimtest
+disclaimtest_SOURCES = tests/disclaim.c
+disclaimtest_LDADD = $(test_ldadd)
 if THREADS
-disclaim_test_LDADD += $(THREADDLLIBS)
+disclaimtest_LDADD += $(THREADDLLIBS)
 endif
 
 TESTS += disclaim_bench$(EXEEXT)
@@ -152,15 +152,15 @@ check_PROGRAMS += disclaim_bench
 disclaim_bench_SOURCES = tests/disclaim_bench.c
 disclaim_bench_LDADD = $(test_ldadd)
 
-TESTS += disclaim_weakmap_test$(EXEEXT)
-check_PROGRAMS += disclaim_weakmap_test
-disclaim_weakmap_test_SOURCES = tests/disclaim_weakmap_test.c
-disclaim_weakmap_test_LDADD = $(test_ldadd)
+TESTS += weakmaptest$(EXEEXT)
+check_PROGRAMS += weakmaptest
+weakmaptest_SOURCES = tests/weakmap.c
+weakmaptest_LDADD = $(test_ldadd)
 if THREADS
 if ENABLE_SHARED
-disclaim_weakmap_test_LDADD += $(ATOMIC_OPS_LIBS)
+weakmaptest_LDADD += $(ATOMIC_OPS_LIBS)
 endif
-disclaim_weakmap_test_LDADD += $(THREADDLLIBS)
+weakmaptest_LDADD += $(THREADDLLIBS)
 endif
 
 endif
@@ -172,18 +172,17 @@ check-without-test-driver: $(TESTS)
 	./hugetest$(EXEEXT)
 	./leaktest$(EXEEXT)
 	./middletest$(EXEEXT)
-	./realloc_test$(EXEEXT)
+	./realloctest$(EXEEXT)
 	./smashtest$(EXEEXT)
 	./staticrootstest$(EXEEXT)
+	test ! -f atomicopstest$(EXEEXT) || ./atomicopstest$(EXEEXT)
+	test ! -f cpptest$(EXEEXT) || ./cpptest$(EXEEXT)
 	test ! -f disclaim_bench$(EXEEXT) || ./disclaim_bench$(EXEEXT)
-	test ! -f disclaim_test$(EXEEXT) || ./disclaim_test$(EXEEXT)
-	test ! -f disclaim_weakmap_test$(EXEEXT) || ./disclaim_weakmap_test$(EXEEXT)
-	test ! -f initsecondarythread_test$(EXEEXT) \
-	  || ./initsecondarythread_test$(EXEEXT)
-	test ! -f test_atomic_ops$(EXEEXT) || ./test_atomic_ops$(EXEEXT)
-	test ! -f threadkey_test$(EXEEXT) || ./threadkey_test$(EXEEXT)
+	test ! -f disclaimtest$(EXEEXT) || ./disclaimtest$(EXEEXT)
+	test ! -f initfromthreadtest$(EXEEXT) || ./initfromthreadtest$(EXEEXT)
+	test ! -f subthreadcreatetest$(EXEEXT) || ./subthreadcreatetest$(EXEEXT)
+	test ! -f threadkeytest$(EXEEXT) || ./threadkeytest$(EXEEXT)
 	test ! -f threadleaktest$(EXEEXT) || ./threadleaktest$(EXEEXT)
-	test ! -f subthreadcreate_test$(EXEEXT) || ./subthreadcreate_test$(EXEEXT)
-	test ! -f test_cpp$(EXEEXT) || ./test_cpp$(EXEEXT)
 	test ! -f tracetest$(EXEEXT) || ./tracetest$(EXEEXT)
+	test ! -f weakmaptest$(EXEEXT) || ./weakmaptest$(EXEEXT)
 	./cordtest$(EXEEXT)

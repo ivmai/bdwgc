@@ -565,7 +565,7 @@ else
       # Do not require the clients to link with "user32" system library.
       AC_DEFINE([DONT_USE_USER32_DLL], 1,
                 [Do not use user32.dll import library (Win32).])
-      # Use inline version of GC new and delete operators in test_cpp
+      # Use inline version of GC new and delete operators in cpptest
       # otherwise the system ones might be used instead because of arbitrary
       # ordering of object files when linking.
       CXXFLAGS="$CXXFLAGS -DGC_NOT_DLL"
@@ -1009,7 +1009,7 @@ AC_ARG_ENABLE(gcov,
 if test "$enable_gcov" = "yes"; then
   CFLAGS="-D NTHREADS=20 $CFLAGS --coverage"
   if test "${enable_shared}" = no; then
-    # FIXME: As of g++-4.8.4/x86_64, in case of shared library build, test_cpp
+    # FIXME: As of g++-4.8.4/x86_64, in case of shared library build, cpptest
     # linkage fails with "hidden symbol atexit is referenced by DSO" message.
     CXXFLAGS="$CXXFLAGS --coverage"
   fi
@@ -1042,8 +1042,8 @@ if test x"$with_libatomic_ops" = xcheck; then
   AC_MSG_CHECKING(for compiler intrinsics support)
   old_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $CFLAGS_EXTRA -DGC_BUILTIN_ATOMIC"
-  CFLAGS="$CFLAGS -I${srcdir}/include -I${srcdir}/tests"
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[#include "test_atomic_ops.c"]])],
+  CFLAGS="$CFLAGS -I${srcdir}/include -I${srcdir}"
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[#include "tests/atomicops.c"]])],
     [AC_MSG_RESULT(yes)
      with_libatomic_ops=none],
     [AC_MSG_RESULT(no)], [AC_MSG_RESULT(skipped because cross-compiling)])

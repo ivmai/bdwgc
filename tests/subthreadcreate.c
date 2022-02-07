@@ -167,7 +167,7 @@ int main(void)
 #     endif
     }
 #endif
-  printf("subthread_create: created %d threads (%d ended)\n",
+  printf("Created %d threads (%d ended)\n",
          (int)AO_load(&thread_created_cnt), (int)AO_load(&thread_ended_cnt));
   return 0;
 }
@@ -176,7 +176,7 @@ int main(void)
 
 int main(void)
 {
-  printf("subthread_create test skipped\n");
+  printf("test skipped\n");
   return 0;
 }
 

@@ -83,11 +83,11 @@ COBJS= cordbscs.obj cordxtra.obj cordprnt.obj
 
 all: gc.lib gccpp.lib gctba.lib cord.lib
 
-check-deps: gctest.exe test_cpp.exe cordtest.exe .SYMBOLIC
+check-deps: gctest.exe cpptest.exe cordtest.exe .SYMBOLIC
 
 check: check-deps .SYMBOLIC
         *gctest.exe
-        *test_cpp.exe
+        *cpptest.exe
         *cordtest.exe
 
 !ifdef ENABLE_STATIC
@@ -201,7 +201,7 @@ gctba.dll: gc_badalc.obj gc.lib .AUTODEPEND
 
 !endif
 
-gctest.exe: test.obj gc.lib
+gctest.exe: gctest.obj gc.lib
         %create $*.lnk
 !ifdef DOS4GW
         @%append $*.lnk sys dos4g
@@ -213,7 +213,7 @@ gctest.exe: test.obj gc.lib
         @%append $*.lnk op case
         @%append $*.lnk op stack=256K
         @%append $*.lnk name $*
-        @%append $*.lnk file test.obj
+        @%append $*.lnk file gctest.obj
         @%append $*.lnk library gc.lib
         *wlink @$*.lnk
 
@@ -234,7 +234,7 @@ cordtest.exe: cordtest.obj gc.lib cord.lib
         @%append $*.lnk library cord.lib
         *wlink @$*.lnk
 
-test_cpp.exe: test_cpp.obj gc.lib gccpp.lib
+cpptest.exe: cpptest.obj gc.lib gccpp.lib
         %create $*.lnk
 !ifdef DOS4GW
         @%append $*.lnk sys dos4g
@@ -246,7 +246,7 @@ test_cpp.exe: test_cpp.obj gc.lib gccpp.lib
         @%append $*.lnk op case
         @%append $*.lnk op stack=256K
         @%append $*.lnk name $*
-        @%append $*.lnk file test_cpp.obj
+        @%append $*.lnk file cpptest.obj
         @%append $*.lnk library gc.lib
         @%append $*.lnk library gccpp.lib
         *wlink @$*.lnk
@@ -263,12 +263,12 @@ gc_badalc.obj: gc_badalc.cc .AUTODEPEND
 gc_cpp.obj: gc_cpp.cc .AUTODEPEND
         $(CXX) $(TEST_CXXFLAGS) $*.cc
 
-test.obj: tests\test.c .AUTODEPEND
-        $(CC) $(TEST_CFLAGS) /wcd=13 /wcd=201 /wcd=367 /wcd=368 tests\test.c
+gctest.obj: tests\gctest.c .AUTODEPEND
+        $(CC) $(TEST_CFLAGS) /wcd=13 /wcd=201 /wcd=367 /wcd=368 tests\gctest.c
 cordtest.obj: cord\tests\cordtest.c .AUTODEPEND
         $(CC) $(TEST_CFLAGS) $(CORDFLAG) cord\tests\cordtest.c
-test_cpp.obj: tests\test_cpp.cc .AUTODEPEND
-        $(CXX) $(TEST_CXXFLAGS) tests\test_cpp.cc
+cpptest.obj: tests\cpp.cc .AUTODEPEND
+        $(CXX) $(TEST_CXXFLAGS) -fo=cpptest.obj tests\cpp.cc
 
 .c.obj: .AUTODEPEND
         $(CC) $(CFLAGS) $*.c

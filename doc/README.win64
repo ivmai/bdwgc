@@ -9,7 +9,7 @@ To verify that the collector is at least somewhat functional,
 type "nmake -f NT_MAKEFILE cpu=AMD64 check" to build and run the usual test
 programs.  This should create gctest.gc.log after a few seconds.
 
-Test_cpp.exe might not run correctly in case of dynamic GC linking.  (It seems
+cpptest.exe might not run correctly in case of dynamic GC linking.  (It seems
 that we're getting wrong instances of operator new/delete in some cases.)
 
 This process is completely analogous to NT_MAKEFILE usage
