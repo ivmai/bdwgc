@@ -816,20 +816,20 @@ void CORD__next(CORD_pos p)
         if (cur_pos < end_pos) {
           /* Fill cache and return. */
             size_t i;
-            size_t limit = cur_pos + FUNCTION_BUF_SZ;
+            size_t limit = FUNCTION_BUF_SZ;
             CORD_fn fn = f -> fn;
             void * client_data = f -> client_data;
 
-            if (limit > end_pos) {
-                limit = end_pos;
+            if (end_pos - cur_pos < FUNCTION_BUF_SZ) {
+                limit = end_pos - cur_pos;
             }
-            for (i = cur_pos; i < limit; i++) {
-                p[0].function_buf[i - cur_pos] =
-                        (*fn)(i - start_pos, client_data);
+            for (i = 0; i < limit; i++) {
+                p[0].function_buf[i] = (*fn)(i + cur_pos - start_pos,
+                                             client_data);
             }
             p[0].cur_start = cur_pos;
             p[0].cur_leaf = p[0].function_buf;
-            p[0].cur_end = limit;
+            p[0].cur_end = cur_pos + limit;
             return;
         }
     }
