@@ -3149,7 +3149,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # elif !defined(USE_WINALLOC)
 #   include <sys/mman.h>
 #   include <signal.h>
-#   if !defined(CYGWIN32) && !defined(HAIKU)
+#   if !defined(AIX) && !defined(CYGWIN32) && !defined(HAIKU)
 #     include <sys/syscall.h>
 #   endif
 
@@ -3270,7 +3270,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     define CODE_OK (si -> si_code == 2 /* experimentally determined */)
 #   elif defined(IRIX5)
 #     define CODE_OK (si -> si_code == EACCES)
-#   elif defined(CYGWIN32) || defined(HAIKU) || defined(HURD)
+#   elif defined(AIX) || defined(CYGWIN32) || defined(HAIKU) || defined(HURD)
 #     define CODE_OK TRUE
 #   elif defined(LINUX)
 #     define CODE_OK TRUE

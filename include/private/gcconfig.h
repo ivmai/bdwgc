@@ -1286,6 +1286,7 @@ EXTERN_C_BEGIN
 #     define DATASTART ((ptr_t)((ulong)_data))
 #     define DATAEND ((ptr_t)((ulong)_end))
       extern int errno;
+#     define MPROTECT_VDB
 #     define DYNAMIC_LOADING
         /* For really old versions of AIX, this may have to be removed. */
 #   endif
