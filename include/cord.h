@@ -26,7 +26,7 @@
  * - A text editor that converts the input file to a cord, and then
  *   performs editing operations by producing a new cord representing
  *   the file after each character change (and keeping the old ones in an
- *   edit history)
+ *   edit history).
  *
  * For optimal performance, cords should be built by
  * concatenating short sections.
@@ -44,14 +44,15 @@
  * CORD_cat(cord1,cord2) - concatenation of two cords;
  * CORD_substr(cord, start, len) - substring (or subcord);
  * CORD_pos i;  CORD_FOR(i, cord) {  ... CORD_pos_fetch(i) ... } -
- *    examine each character in a cord.  CORD_pos_fetch(i) is the char.
- * CORD_fetch(int i) - Retrieve i'th character (slowly).
- * CORD_cmp(cord1, cord2) - compare two cords.
- * CORD_from_file(FILE * f) - turn a read-only file into a cord.
- * CORD_to_char_star(cord) - convert to C string.
- *   (Non-NULL C constant strings are cords.)
- * CORD_printf (etc.) - cord version of printf. Use %r for cords.
+ *  examine each character in a cord (CORD_pos_fetch(i) is the char);
+ * CORD_fetch(int i) - Retrieve i'th character (slowly);
+ * CORD_cmp(cord1, cord2) - compare two cords;
+ * CORD_from_file(FILE * f) - turn a read-only file into a cord;
+ * CORD_to_char_star(cord) - convert to C string
+ *  (non-NULL C constant strings are cords);
+ * CORD_printf (etc.) - cord version of printf (use %r for cords).
  */
+
 #ifndef CORD_H
 #define CORD_H
 
@@ -97,7 +98,7 @@
 
 typedef const char * CORD;
 
-/* An empty cord is always represented as nil   */
+/* An empty cord is always represented as nil.  */
 #define CORD_EMPTY 0
 
 /* Is a nonempty cord represented as a C string? */
@@ -114,10 +115,10 @@ CORD_API CORD CORD_cat(CORD x, CORD y);
 /* not be altered by the caller.                                        */
 CORD_API CORD CORD_cat_char_star(CORD x, const char * y, size_t leny);
 
-/* Compute the length of a cord */
+/* Compute the length of a cord. */
 CORD_API size_t CORD_len(CORD x);
 
-/* Cords may be represented by functions defining the ith character */
+/* Cords may be represented by functions defining the ith character.    */
 typedef char (* CORD_fn)(size_t i, void * client_data);
 
 /* Turn a functional description into a cord.   */
@@ -152,8 +153,8 @@ typedef int (* CORD_batched_iter_fn)(const char * s, void * client_data);
 #define CORD_NO_FN ((CORD_batched_iter_fn)0)
 
 /* Apply f1 to each character in the cord, in ascending order,          */
-/* starting at position i. If                                           */
-/* f2 is not CORD_NO_FN, then multiple calls to f1 may be replaced by   */
+/* starting at position i.  If f2 is not CORD_NO_FN, then               */
+/* multiple calls to f1 may be replaced by                              */
 /* a single call to f2.  The parameter f2 is provided only to allow     */
 /* some optimization by the client.  This terminates when the right     */
 /* end of this string is reached, or when f1 or f2 return != 0.  In the */
@@ -162,15 +163,15 @@ typedef int (* CORD_batched_iter_fn)(const char * s, void * client_data);
 CORD_API int CORD_iter5(CORD x, size_t i, CORD_iter_fn f1,
                         CORD_batched_iter_fn f2, void * client_data);
 
-/* A simpler version that starts at 0, and without f2:  */
+/* A simpler version that starts at 0, and without f2.  */
 CORD_API int CORD_iter(CORD x, CORD_iter_fn f1, void * client_data);
 #define CORD_iter(x, f1, cd) CORD_iter5(x, 0, f1, CORD_NO_FN, cd)
 
-/* Similar to CORD_iter5, but end-to-beginning. No provisions for       */
+/* Similar to CORD_iter5, but end-to-beginning.  No provisions for      */
 /* CORD_batched_iter_fn.                                                */
 CORD_API int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data);
 
-/* A simpler version that starts at the end:    */
+/* A simpler version that starts at the end.    */
 CORD_API int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 
 #ifdef __cplusplus
@@ -184,9 +185,9 @@ CORD_API int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 /* positions are big (order of a few 100 bytes), so allocate them with  */
 /* caution.                                                             */
 /* Things in cord_pos.h should be treated as opaque, except as          */
-/* described below.  Also note that                                     */
-/* CORD_pos_fetch, CORD_next and CORD_prev have both macro and function */
-/* definitions.  The former may evaluate their argument more than once. */
+/* described below.  Also, note that CORD_pos_fetch, CORD_next and      */
+/* CORD_prev have both macro and function definitions.  The former      */
+/* may evaluate their argument more than once.                          */
 #include "cord_pos.h"
 
 #ifdef __cplusplus
@@ -245,10 +246,10 @@ CORD_API CORD CORD_cat_char(CORD x, char c);
 /* Concatenate n cords. */
 CORD_API CORD CORD_catn(int n, /* CORD */ ...);
 
-/* Return the character in CORD_substr(x, i, 1)         */
+/* Return the character in CORD_substr(x, i, 1).        */
 CORD_API char CORD_fetch(CORD x, size_t i);
 
-/* Return < 0, 0, or > 0, depending on whether x < y, x = y, x > y      */
+/* Return < 0, 0, or > 0, depending on whether x < y, x = y, x > y.     */
 CORD_API int CORD_cmp(CORD x, CORD y);
 
 /* A generalization that takes both starting positions for the          */
@@ -276,13 +277,13 @@ CORD_API CORD CORD_chars(char c, size_t i);
 /* We must have exclusive access to the descriptor f, i.e. we may       */
 /* read it at any time, and expect the file pointer to be               */
 /* where we left it.  Normally this should be invoked as                */
-/* CORD_from_file(fopen(...))                                           */
+/* CORD_from_file(fopen(...)).                                          */
 /* CORD_from_file arranges to close the file descriptor when it is no   */
 /* longer needed (e.g. when the result becomes inaccessible).           */
 /* The file f must be such that ftell reflects the actual character     */
 /* position in the file, i.e. the number of characters that can be      */
-/* or were read with fread.  On UNIX systems this is always true.  On   */
-/* MS Windows systems, f must be opened in binary mode.                 */
+/* or were read with fread.  On UNIX systems this is always true.       */
+/* On MS Windows systems, f must be opened in binary mode.              */
 CORD_API CORD CORD_from_file(FILE * f);
 
 /* Equivalent to the above, except that the entire file will be read    */
@@ -290,8 +291,8 @@ CORD_API CORD CORD_from_file(FILE * f);
 /* The binary mode restriction from above does not apply.               */
 CORD_API CORD CORD_from_file_eager(FILE * f);
 
-/* Equivalent to the above, except that the file will be read on demand.*/
-/* The binary mode restriction applies.                                 */
+/* Equivalent to the above, except that the file will be read on        */
+/* demand.  The binary mode restriction applies.                        */
 CORD_API CORD CORD_from_file_lazy(FILE * f);
 
 /* Turn a cord into a C string. The result shares no structure with     */
@@ -306,8 +307,8 @@ CORD_API CORD CORD_from_char_star(const char *s);
 /* the argument and is thus not modifiable.                             */
 CORD_API const char * CORD_to_const_char_star(CORD x);
 
-/* Write a cord to a file, starting at the current position.  No        */
-/* trailing NULs are newlines are added.                                */
+/* Write a cord to a file, starting at the current position.            */
+/* No trailing NULs are newlines are added.                             */
 /* Returns EOF if a write error occurs, 1 otherwise.                    */
 CORD_API int CORD_put(CORD x, FILE * f);
 
@@ -316,11 +317,11 @@ CORD_API int CORD_put(CORD x, FILE * f);
 
 /* A vague analog of strchr.  Returns the position (an integer, not     */
 /* a pointer) of the first occurrence of (char) c inside x at position  */
-/* i or later. The value i must be < CORD_len(x).                       */
+/* i or later.  The value i must be < CORD_len(x).                      */
 CORD_API size_t CORD_chr(CORD x, size_t i, int c);
 
 /* A vague analog of strrchr.  Returns index of the last occurrence     */
-/* of (char) c inside x at position i or earlier. The value i           */
+/* of (char) c inside x at position i or earlier.  The value i          */
 /* must be < CORD_len(x).                                               */
 CORD_API size_t CORD_rchr(CORD x, size_t i, int c);
 
@@ -337,8 +338,8 @@ CORD_API size_t CORD_rchr(CORD x, size_t i, int c);
 /*    (Note that %c, %C, and %S were already taken.)                    */
 /* 2. The format string is represented as a CORD.                       */
 /* 3. CORD_sprintf and CORD_vsprintf assign the result through the 1st  */
-/*    argument. Unlike their ANSI C versions, there is no need to guess */
-/*    the correct buffer size.                                          */
+/*    argument.  Unlike their ANSI C versions, there is no need to      */
+/*    guess the correct buffer size.                                    */
 /* 4. Most of the conversions are implement through the native          */
 /*    vsprintf.  Hence they are usually no faster, and                  */
 /*    idiosyncrasies of the native printf are preserved.  However,      */
