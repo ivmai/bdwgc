@@ -794,12 +794,12 @@ script:
     make -f $MAKEFILE_NAME $MAKEFILE_TARGETS_CHECK CC=$CC_FOR_CHECK
             CFLAGS_EXTRA="$CFLAGS_EXTRA";
   fi
-- if [ -f gctest.log ]; then cat gctest.log; fi
 - if [ -f disclaim_bench.log ]; then cat disclaim_bench.log; fi
-- if [ -f disclaim_test.log ]; then cat disclaim_test.log; fi
-- if [ -f disclaim_weakmap_test.log ]; then cat disclaim_weakmap_test.log; fi
-- if [ -f threadkey_test.log ]; then cat threadkey_test.log; fi
+- if [ -f disclaimtest.log ]; then cat disclaimtest.log; fi
+- if [ -f gctest.log ]; then cat gctest.log; fi
+- if [ -f threadkeytest.log ]; then cat threadkeytest.log; fi
 - if [ -f threadleaktest.log ]; then cat threadleaktest.log; fi
+- if [ -f weakmaptest.log ]; then cat weakmaptest.log; fi
 - if [[ "$CSA_CHECK" == true ]]; then
     ${CC} --analyze -Xanalyzer -analyzer-output=text -Werror
         -I include -I libatomic_ops/src $CFLAGS_EXTRA
