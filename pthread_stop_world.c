@@ -564,26 +564,27 @@ STATIC void GC_restart_handler(int sig)
     EXTERN_C_BEGIN
     extern int tkill(pid_t tid, int sig); /* from sys/linux-unistd.h */
     EXTERN_C_END
-
-    static int android_thread_kill(pid_t tid, int sig)
-    {
-      int ret;
-      int old_errno = errno;
-
-      ret = tkill(tid, sig);
-      if (ret < 0) {
-          ret = errno;
-          errno = old_errno;
-      }
-      return ret;
-    }
-
 #   define THREAD_SYSTEM_ID(t) (t)->kernel_id
-#   define RAISE_SIGNAL(t, sig) android_thread_kill(THREAD_SYSTEM_ID(t), sig)
 # else
 #   define THREAD_SYSTEM_ID(t) (t)->id
-#   define RAISE_SIGNAL(t, sig) pthread_kill(THREAD_SYSTEM_ID(t), sig)
-# endif /* !USE_TKILL_ON_ANDROID */
+# endif
+
+  static int raise_signal(GC_thread p, int sig)
+  {
+    int res;
+#   ifdef USE_TKILL_ON_ANDROID
+        int old_errno = errno;
+
+        res = tkill(THREAD_SYSTEM_ID(p), sig);
+        if (res < 0) {
+          res = errno;
+          errno = old_errno;
+        }
+#   else
+        res = pthread_kill(THREAD_SYSTEM_ID(p), sig);
+#   endif
+    return res;
+  }
 
 # ifdef GC_ENABLE_SUSPEND_THREAD
 #   include <sys/time.h>
@@ -662,7 +663,7 @@ STATIC void GC_restart_handler(int sig)
       /* execution is deferred until the write fault handler completes. */
 
       /* TODO: Support GC_retry_signals (not needed for TSan) */
-      switch (RAISE_SIGNAL(t, GC_sig_suspend)) {
+      switch (raise_signal(t, GC_sig_suspend)) {
       /* ESRCH cannot happen as terminated threads are handled above.   */
       case 0:
         break;
@@ -907,7 +908,7 @@ STATIC int GC_suspend_all(void)
               /* is performed in GC_stop_world because                  */
               /* GC_release_dirty_lock cannot be called before          */
               /* acknowledging the thread is really suspended.          */
-              result = RAISE_SIGNAL(p, GC_sig_suspend);
+              result = raise_signal(p, GC_sig_suspend);
               switch(result) {
                 case ESRCH:
                     /* Not really there anymore.  Possible? */
@@ -1233,7 +1234,7 @@ GC_INNER void GC_stop_world(void)
             if (GC_on_thread_event)
               GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)p->id);
 #         else
-            result = RAISE_SIGNAL(p, GC_sig_thr_restart);
+            result = raise_signal(p, GC_sig_thr_restart);
             switch(result) {
             case ESRCH:
               /* Not really there anymore.  Possible?   */
