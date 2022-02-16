@@ -23,9 +23,39 @@
     && !defined(SN_TARGET_PSP2)
 
 #ifdef NACL
-
 # include <unistd.h>
 # include <sys/time.h>
+#elif defined(GC_OPENBSD_UTHREADS)
+# include <pthread_np.h>
+#else
+# include <signal.h>
+# include <semaphore.h>
+# include <errno.h>
+# include <time.h> /* for nanosleep() */
+# include <unistd.h>
+#endif /* !GC_OPENBSD_UTHREADS && !NACL */
+
+#ifndef GC_OPENBSD_UTHREADS
+  GC_INLINE void GC_usleep(unsigned us)
+  {
+#   ifdef LINT2
+      /* Workaround "waiting while holding a lock" warning.     */
+      while (us-- > 0)
+        sched_yield(); /* pretending it takes 1us */
+#   elif defined(CPPCHECK) /* || _POSIX_C_SOURCE >= 199309L */
+      struct timespec ts;
+
+      ts.tv_sec = 0;
+      ts.tv_nsec = us * 1000;
+      /* This requires _POSIX_TIMERS feature. */
+      (void)nanosleep(&ts, NULL);
+#   else
+      usleep(us);
+#   endif
+  }
+#endif /* !GC_OPENBSD_UTHREADS */
+
+#ifdef NACL
 
   STATIC int GC_nacl_num_gc_threads = 0;
   STATIC __thread int GC_nacl_thread_idx = -1;
@@ -37,17 +67,7 @@
   volatile int GC_nacl_thread_parked[MAX_NACL_GC_THREADS];
   int GC_nacl_thread_used[MAX_NACL_GC_THREADS];
 
-#elif defined(GC_OPENBSD_UTHREADS)
-
-# include <pthread_np.h>
-
-#else /* !GC_OPENBSD_UTHREADS && !NACL */
-
-#include <signal.h>
-#include <semaphore.h>
-#include <errno.h>
-#include <time.h> /* for nanosleep() */
-#include <unistd.h>
+#elif !defined(GC_OPENBSD_UTHREADS)
 
 #if (!defined(AO_HAVE_load_acquire) || !defined(AO_HAVE_store_release)) \
     && !defined(CPPCHECK)
@@ -432,10 +452,11 @@ static void suspend_restart_barrier(int n_live_threads)
 #   endif
 }
 
+# define WAIT_UNIT 3000 /* us */
+
 static int resend_lost_signals(int n_live_threads,
                                int (*suspend_restart_all)(void))
 {
-#   define WAIT_UNIT 3000 /* us */
 #   define RETRY_INTERVAL 100000 /* us */
 
     if (n_live_threads > 0) {
@@ -457,23 +478,7 @@ static int resend_lost_signals(int n_live_threads,
           }
           wait_usecs = 0;
         }
-
-#       ifdef LINT2
-          /* Workaround "waiting while holding a lock" warning. */
-#         undef WAIT_UNIT
-#         define WAIT_UNIT 1
-          sched_yield();
-#       elif defined(CPPCHECK) /* || _POSIX_C_SOURCE >= 199309L */
-          {
-            struct timespec ts;
-
-            ts.tv_sec = 0;
-            ts.tv_nsec = WAIT_UNIT * 1000;
-            (void)nanosleep(&ts, NULL);
-          }
-#       else
-          usleep(WAIT_UNIT);
-#       endif
+        GC_usleep(WAIT_UNIT);
         wait_usecs += WAIT_UNIT;
       }
     }
@@ -870,10 +875,9 @@ STATIC int GC_suspend_all(void)
     }
 
 # else /* NACL */
-#   ifndef NACL_PARK_WAIT_NANOSECONDS
-#     define NACL_PARK_WAIT_NANOSECONDS (100 * 1000)
+#   ifndef NACL_PARK_WAIT_USEC
+#     define NACL_PARK_WAIT_USEC 100 /* us */
 #   endif
-#   define NANOS_PER_SECOND (1000UL * 1000 * 1000)
     unsigned long num_sleeps = 0;
 
 #   ifdef DEBUG_THREADS
@@ -885,9 +889,8 @@ STATIC int GC_suspend_all(void)
 
     if (GC_manual_vdb)
       GC_acquire_dirty_lock();
-    while (1) {
+    for (;;) {
       int num_threads_parked = 0;
-      struct timespec ts;
       int num_used = 0;
 
       /* Check the 'parked' flag for each thread the GC knows about.    */
@@ -905,15 +908,12 @@ STATIC int GC_suspend_all(void)
       /* -1 for the current thread.     */
       if (num_threads_parked >= GC_nacl_num_gc_threads - 1)
         break;
-      ts.tv_sec = 0;
-      ts.tv_nsec = NACL_PARK_WAIT_NANOSECONDS;
 #     ifdef DEBUG_THREADS
         GC_log_printf("Sleep waiting for %d threads to park...\n",
                       GC_nacl_num_gc_threads - num_threads_parked - 1);
 #     endif
-      /* This requires _POSIX_TIMERS feature.   */
-      nanosleep(&ts, 0);
-      if (++num_sleeps > NANOS_PER_SECOND / NACL_PARK_WAIT_NANOSECONDS) {
+      GC_usleep(NACL_PARK_WAIT_USEC);
+      if (++num_sleeps > (1000 * 1000) / NACL_PARK_WAIT_USEC) {
         WARN("GC appears stalled waiting for %" WARN_PRIdPTR
              " threads to park...\n",
              GC_nacl_num_gc_threads - num_threads_parked - 1);
