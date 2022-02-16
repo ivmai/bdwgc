@@ -574,10 +574,20 @@ STATIC void GC_restart_handler(int sig)
 #   define THREAD_SYSTEM_ID(t) (t)->id
 # endif
 
+# ifndef RETRY_TKILL_EAGAIN_LIMIT
+#   define RETRY_TKILL_EAGAIN_LIMIT 16
+# endif
+
   static int raise_signal(GC_thread p, int sig)
   {
     int res;
-#   ifdef USE_TKILL_ON_ANDROID
+#   ifdef RETRY_TKILL_ON_EAGAIN
+      int retry;
+
+      for (retry = 0; ; retry++)
+#   endif
+    {
+#     ifdef USE_TKILL_ON_ANDROID
         int old_errno = errno;
 
         res = tkill(THREAD_SYSTEM_ID(p), sig);
@@ -585,9 +595,15 @@ STATIC void GC_restart_handler(int sig)
           res = errno;
           errno = old_errno;
         }
-#   else
+#     else
         res = pthread_kill(THREAD_SYSTEM_ID(p), sig);
-#   endif
+#     endif
+#     ifdef RETRY_TKILL_ON_EAGAIN
+        if (res != EAGAIN || retry >= RETRY_TKILL_EAGAIN_LIMIT) break;
+        /* A temporal overflow of the real-time signal queue.   */
+        GC_usleep(WAIT_UNIT);
+#     endif
+    }
     return res;
   }
 

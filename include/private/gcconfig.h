@@ -983,6 +983,7 @@ EXTERN_C_BEGIN
 #   include <features.h> /* for __GLIBC__ */
     EXTERN_C_BEGIN
 #   define COUNT_UNMAPPED_REGIONS
+#   define RETRY_TKILL_ON_EAGAIN
 #   if !defined(MIPS) && !defined(POWERPC)
 #     define LINUX_STACKBOTTOM
 #   endif
