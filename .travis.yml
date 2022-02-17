@@ -161,7 +161,7 @@ jobs:
     env:
     - CC=clang-12
     - CXX=clang++-12
-    - CFLAGS_EXTRA="-O3 -D _FORTIFY_SOURCE=2"
+    - CFLAGS_EXTRA="-O3 -D _FORTIFY_SOURCE=2 -D FORCE_MPROTECT_BEFORE_MADVISE"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
@@ -235,7 +235,7 @@ jobs:
     env:
     - CC=gcc-11
     - CXX=g++-11
-    - CFLAGS_EXTRA="-O3 -flto=auto -D _FORTIFY_SOURCE=2"
+    - CFLAGS_EXTRA="-O3 -flto=auto -D _FORTIFY_SOURCE=2 -D PREFER_MMAP_PROT_NONE"
     - CONF_OPTIONS="--enable-cplusplus --disable-shared"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: s390x
