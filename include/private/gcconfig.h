@@ -976,7 +976,10 @@ EXTERN_C_BEGIN
     EXTERN_C_END
 #   include <features.h> /* for __GLIBC__ */
     EXTERN_C_BEGIN
-#   define COUNT_UNMAPPED_REGIONS
+#   if defined(FORCE_MPROTECT_BEFORE_MADVISE) \
+       || defined(PREFER_MMAP_PROT_NONE)
+#     define COUNT_UNMAPPED_REGIONS
+#   endif
 #   define RETRY_TKILL_ON_EAGAIN
 #   if !defined(MIPS) && !defined(POWERPC)
 #     define LINUX_STACKBOTTOM
