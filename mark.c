@@ -1701,7 +1701,7 @@ GC_API void GC_CALL
 GC_push_all_eager(void *bottom, void *top)
 {
   REGISTER ptr_t current_p;
-  REGISTER ptr_t lim;
+  REGISTER word lim_addr;
   REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
   REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
 #define GC_greatest_plausible_heap_addr greatest_ha
@@ -1711,8 +1711,16 @@ GC_push_all_eager(void *bottom, void *top)
     return;
   /* Check all pointers in range and push if they appear to be valid. */
   current_p = PTR_ALIGN_UP((ptr_t)bottom, ALIGNMENT);
-  lim = PTR_ALIGN_DOWN((ptr_t)top, ALIGNMENT) - sizeof(ptr_t);
-  for (; ADDR_GE(lim, current_p); current_p += ALIGNMENT) {
+  lim_addr = ADDR(PTR_ALIGN_DOWN((ptr_t)top, ALIGNMENT)) - sizeof(ptr_t);
+#ifdef CHERI_PURECAP
+  {
+    word cap_limit = cheri_base_get(current_p) + cheri_length_get(current_p);
+
+    if (lim_addr >= cap_limit)
+      lim_addr = cap_limit - sizeof(ptr_t);
+  }
+#endif
+  for (; ADDR(current_p) <= lim_addr; current_p += ALIGNMENT) {
     REGISTER ptr_t q;
 
     LOAD_PTR_OR_CONTINUE(q, current_p);
