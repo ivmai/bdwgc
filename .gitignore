@@ -129,7 +129,6 @@ stamp-h1
 /tests/*test
 /tests/CMakeFiles/
 /tests/Makefile
-/tests/cpptest
 /tests/test_cpp
 CTestTestfile.cmake
 cmake_install.cmake
