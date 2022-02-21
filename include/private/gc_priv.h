@@ -2256,11 +2256,19 @@ ptr_t GC_save_regs_in_stack(void);
       if (tag != 0)                  \
         continue;                    \
     }
-#else
-#  define LOAD_PTR_OR_CONTINUE(v, p) (void)(v = *(ptr_t *)(p))
-#endif /* !E2K */
+#elif defined(CHERI_PURECAP)
+#  define LOAD_PTR_OR_CONTINUE(v, p)                                        \
+    {                                                                       \
+      word base_addr;                                                       \
+      v = *(ptr_t *)(p);                                                    \
+      if (cheri_tag_get(v) == 0)                                            \
+        continue;                                                           \
+      base_addr = cheri_base_get(v);                                        \
+      if (ADDR(v) < base_addr || ADDR(v) >= base_addr + cheri_length_get(v) \
+          || (cheri_perms_get(v) & CHERI_PERM_LOAD) == 0)                   \
+        continue;                                                           \
+    }
 
-#ifdef CHERI_PURECAP
 #  define CAPABILITY_COVERS_RANGE(cap, b_addr, e_addr) \
     (cheri_base_get(cap) <= (b_addr)                   \
      && cheri_base_get(cap) + cheri_length_get(cap) >= (e_addr))
@@ -2268,7 +2276,9 @@ ptr_t GC_save_regs_in_stack(void);
     (cheri_tag_get(cap) && CAPABILITY_COVERS_RANGE(cap, b_addr, e_addr)  \
      && (cheri_perms_get(cap) & (CHERI_PERM_LOAD | CHERI_PERM_LOAD_CAP)) \
             != 0)
-#endif
+#else
+#  define LOAD_PTR_OR_CONTINUE(v, p) (void)(v = *(ptr_t *)(p))
+#endif /* !CHERI_PURECAP */
 
 #if defined(DARWIN) && defined(THREADS)
 /* If p points to an object, mark it and push contents on the     */
