@@ -69,13 +69,13 @@ run()
         if [ "$1" = "to_fail" ]; then
             exit_status=0
             RESULT={{$(ssh -o "StrictHostKeyChecking no" -p ${SSHPORT} root@${SSHHOST} -t \
-	                   "setenv LD_LIBRARY_PATH /root && ./$(basename ${name})")} && exit_status=1} || true
+	                   "LD_LIBRARY_PATH=/root:\$\{LD_LIBRARY_PATH\} ./$(basename ${name})")} && exit_status=1} || true
             if [ $exit_status != 0 ]; then
                 exit 1
             fi
         else
             ssh -o "StrictHostKeyChecking no" -p ${SSHPORT} root@${SSHHOST} -t \
-	                   "setenv LD_LIBRARY_PATH /root && ./$(basename ${name})"
+	                   "LD_LIBRARY_PATH=/root:\$\{LD_LIBRARY_PATH\} ./$(basename ${name})"
         fi
     done
 
@@ -85,4 +85,6 @@ run()
 setup
 
 # Execute 
-run OK "bdwgc_install/bin/small_fixed_alloc.elf" "bdwgc_install/bin/random_mixed_alloc.elf"
+run OK "bdwgc_install/bin/small_fixed_alloc.elf" \
+       "bdwgc_install/bin/random_mixed_alloc.elf" \
+       "bdwgc_install/bin/binary_tree.elf"

@@ -8,7 +8,9 @@ project(BoehmGC
 include_directories(AFTER ${CMAKE_INSTALL_PREFIX}/include) 
 add_executable(random_mixed_alloc.elf random_mixed_alloc.c)
 add_executable(small_fixed_alloc.elf small_fixed_alloc.c)
+add_executable(binary_tree.elf binary_tree.c)
 target_link_libraries(random_mixed_alloc.elf libpthread.so ${CMAKE_INSTALL_PREFIX}/lib/libgc.so)
 target_link_libraries(small_fixed_alloc.elf libpthread.so ${CMAKE_INSTALL_PREFIX}/lib/libgc.so)
+target_link_libraries(binary_tree.elf libm.so libpthread.so ${CMAKE_INSTALL_PREFIX}/lib/libgc.so)
 
-install(TARGETS random_mixed_alloc.elf small_fixed_alloc.elf  RUNTIME DESTINATION bin) 
+install(TARGETS random_mixed_alloc.elf small_fixed_alloc.elf  binary_tree.elf RUNTIME DESTINATION bin)
