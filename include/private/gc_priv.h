@@ -1362,6 +1362,8 @@ struct HeapSect {
 struct _GC_arrays {
   word _heapsize;       /* Heap size in bytes (value never goes down).  */
   word _requested_heapsize;     /* Heap size due to explicit expansion. */
+# define GC_heapsize_on_gc_disable GC_arrays._heapsize_on_gc_disable
+  word _heapsize_on_gc_disable;
   ptr_t _last_heap_addr;
   word _large_free_bytes;
         /* Total bytes contained in blocks on large object free */

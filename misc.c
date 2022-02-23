@@ -2040,6 +2040,9 @@ GC_API void GC_CALL GC_enable(void)
     LOCK();
     GC_ASSERT(GC_dont_gc != 0); /* ensure no counter underflow */
     GC_dont_gc--;
+    if (!GC_dont_gc && GC_heapsize > GC_heapsize_on_gc_disable)
+      WARN("Heap grown by %" WARN_PRIdPTR " bytes while GC was disabled\n",
+           GC_heapsize - GC_heapsize_on_gc_disable);
     UNLOCK();
 }
 
@@ -2047,6 +2050,8 @@ GC_API void GC_CALL GC_disable(void)
 {
     DCL_LOCK_STATE;
     LOCK();
+    if (!GC_dont_gc)
+      GC_heapsize_on_gc_disable = GC_heapsize;
     GC_dont_gc++;
     UNLOCK();
 }

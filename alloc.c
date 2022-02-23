@@ -1608,7 +1608,13 @@ GC_API int GC_CALL GC_expand_hp(size_t bytes)
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
     result = GC_expand_hp_inner(n_blocks);
-    if (result) GC_requested_heapsize += bytes;
+    if (result) {
+      GC_requested_heapsize += bytes;
+      if (GC_dont_gc) {
+        /* Do not call WARN if the heap growth is intentional.  */
+        GC_heapsize_on_gc_disable += n_blocks * HBLKSIZE;
+      }
+    }
     UNLOCK();
     return (int)result;
 }
