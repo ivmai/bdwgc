@@ -1,3 +1,48 @@
+2022-02-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [NEED_PROC_MAPS] (GC_get_maps): Do not return 0 from the
+	function if GC_repeat_read returns 0 unless maps_size is 0.
+
+2022-01-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* dbg_mlc.c [KEEP_BACK_PTRS] (GC_generate_random_backtrace_no_gc):
+	Wrap GC_generate_random_valid_address() call into LOCK/UNLOCK.
+	* finalize.c [KEEP_BACK_PTRS] (GC_notify_or_invoke_finalizers):
+	Declare current local variable; expand
+	GC_generate_random_backtrace_no_gc() manually.
+	* finalize.c [KEEP_BACK_PTRS] (GC_notify_or_invoke_finalizers):
+	UNLOCK after GC_generate_random_valid_address() call.
+	* include/private/gc_priv.h [KEEP_BACK_PTRS]
+	(GC_generate_random_backtrace_no_gc): Remove declaration.
+
+2022-01-03  Dimitris Apostolou <dimitris.apostolou@icloud.com>
+
+	* allchblk.c (GC_merge_unmapped): Fix a typo in comment ("mergeable").
+	* include/gc.h (GC_set_stop_func): Fix a typo in comment
+	("triggered").
+	* ChangeLog: Likewise.
+	* ChangeLog: Fix a typo in comment ("unmergeable").
+
+2021-12-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* dbg_mlc.c [!GC_NO_FINALIZATION] (GC_debug_register_finalizer_no_order,
+	GC_debug_register_finalizer, GC_debug_register_finalizer_unreachable,
+	GC_debug_register_finalizer_ignore_self): Initialize my_old_cd to 0;
+	add comment.
+	* include/gc_cpp.h (gc_cleanup::gc_cleanup): Initialize oldProc and
+	oldData to 0; add comment.
+
+2021-12-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* finalize.c (GC_register_finalizer_inner): Document the case when
+	GC_find_leak is true; fix a typo ("remain") in comment.
+
+2021-12-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [!GC_PTHREADS && !GC_NO_THREADS_DISCOVERY]
+	(GC_DllMain): Do not assert parallel_initialized unless
+	GC_win32_dll_threads on DLL_THREAD_DETACH.
+
 2021-11-27  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile.am [NEED_ATOMIC_OPS_ASM] (nodist_libgc_la_SOURCES): Append
