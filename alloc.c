@@ -1601,15 +1601,16 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
 /* The argument is in bytes.  Includes GC_init() call.                   */
 GC_API int GC_CALL GC_expand_hp(size_t bytes)
 {
-    int result;
+    word n_blocks = OBJ_SZ_TO_BLOCKS_CHECKED(bytes);
+    GC_bool result;
     DCL_LOCK_STATE;
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
-    result = (int)GC_expand_hp_inner(divHBLKSZ((word)bytes));
+    result = GC_expand_hp_inner(n_blocks);
     if (result) GC_requested_heapsize += bytes;
     UNLOCK();
-    return(result);
+    return (int)result;
 }
 
 GC_INNER unsigned GC_fail_count = 0;
