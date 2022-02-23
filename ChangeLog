@@ -436,16 +436,12 @@
 
 == [7.6.16] (not released yet) ==
 
-* Eliminate 'new_l may be used uninitialized' gcc warning in os_dep (Cygwin)
+* Eliminate 'old_gc_no is initialized but not referenced' MS VC false warning
 * Fix 'GC_greatest_stack_base_below is defined but not used' warning (IA64)
-* Fix a typo in debugging.html
 * Fix lock assertion violation in GC_find_limit if always multi-threaded
-* Fix nodist_libgc_la_SOURCES value in Makefile.am for Solaris/sparc
-* Refer to Makefile.direct instead of deleted Makefile file in README
-* Remove checking of RS6000 completely
-* Remove non-working check of M68K in gctest
-* Revert addition of msvc_dbg.h in include.am
 * Workaround Thread Sanitizer (TSan) FP warning in is_valid_displacement
+
+Also, includes 7.4.22 changes
 
 
 == [7.6.14] 2021-09-28 ==
