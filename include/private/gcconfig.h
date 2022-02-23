@@ -1002,9 +1002,10 @@ EXTERN_C_BEGIN
       /* Requires Linux 2.3.47 or later. */
 #     define MPROTECT_VDB
 #   else
-      /* We seem to get random errors in incremental mode,          */
-      /* possibly because Linux threads is itself a malloc client   */
-      /* and can't deal with the signals.  fread uses malloc too.   */
+      /* We seem to get random errors in the incremental mode,  */
+      /* possibly because the Linux threads implementation      */
+      /* itself is a malloc client and cannot deal with the     */
+      /* signals.  fread() uses malloc too.                     */
 #   endif
 # endif /* LINUX */
 

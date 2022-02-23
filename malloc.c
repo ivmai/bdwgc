@@ -34,10 +34,9 @@ STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
     return TRUE;
 }
 
-/* Allocate a large block of size lb bytes.     */
-/* The block is not cleared.                    */
-/* Flags is 0 or IGNORE_OFF_PAGE.               */
-/* EXTRA_BYTES were already added to lb.        */
+/* Allocate a large block of size lb bytes.  The block is not cleared.  */
+/* flags argument should be 0 or IGNORE_OFF_PAGE.  EXTRA_BYTES value    */
+/* was already added to lb.                                             */
 GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
 {
     struct hblk * h;

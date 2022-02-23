@@ -1336,7 +1336,7 @@ GC_API void GC_CALL GC_gcollect_and_unmap(void)
 #endif
 
 /* Use the chunk of memory starting at p of size bytes as part of the heap. */
-/* Assumes p is HBLKSIZE aligned, and bytes is a multiple of HBLKSIZE.      */
+/* Assumes p is HBLKSIZE aligned, bytes argument is a multiple of HBLKSIZE. */
 STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
 {
     hdr * phdr;
@@ -1598,7 +1598,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
 }
 
 /* Really returns a bool, but it's externally visible, so that's clumsy. */
-/* Arguments is in bytes.  Includes GC_init() call.                      */
+/* The argument is in bytes.  Includes GC_init() call.                   */
 GC_API int GC_CALL GC_expand_hp(size_t bytes)
 {
     int result;
