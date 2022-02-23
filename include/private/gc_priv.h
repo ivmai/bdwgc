@@ -2131,8 +2131,8 @@ GC_INNER struct hblk * GC_allochblk(size_t size_in_bytes, int kind,
 
 GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags);
                         /* Allocate a large block of size lb bytes.     */
-                        /* The block is not cleared.                    */
-                        /* Flags is 0 or IGNORE_OFF_PAGE.               */
+                        /* The block is not cleared.  flags argument    */
+                        /* should be 0 or IGNORE_OFF_PAGE.              */
                         /* Calls GC_allchblk to do the actual           */
                         /* allocation, but also triggers GC and/or      */
                         /* heap expansion as appropriate.               */

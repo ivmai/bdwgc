@@ -1483,9 +1483,10 @@ EXTERN_C_BEGIN
 #       if !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       else
-            /* We seem to get random errors in incremental mode,        */
-            /* possibly because Linux threads is itself a malloc client */
-            /* and can't deal with the signals.  fread uses malloc too. */
+            /* We seem to get random errors in the incremental mode,    */
+            /* possibly because the Linux threads implementation        */
+            /* itself is a malloc client and cannot deal with the       */
+            /* signals.  fread() uses malloc too.                       */
 #       endif
 #       define HEAP_START (ptr_t)0x1000
                 /* This encourages mmap to give us low addresses,       */
@@ -2347,9 +2348,10 @@ EXTERN_C_BEGIN
 #       if !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       else
-            /* We seem to get random errors in incremental mode,        */
-            /* possibly because Linux threads is itself a malloc client */
-            /* and can't deal with the signals.  fread uses malloc too. */
+            /* We seem to get random errors in the incremental mode,    */
+            /* possibly because the Linux threads implementation        */
+            /* itself is a malloc client and cannot deal with the       */
+            /* signals.  fread() uses malloc too.                       */
 #       endif
 #       define SEARCH_FOR_DATA_START
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)
