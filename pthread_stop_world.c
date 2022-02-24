@@ -583,7 +583,17 @@ STATIC void GC_restart_handler(int sig)
     int res;
 #   ifdef RETRY_TKILL_ON_EAGAIN
       int retry;
+#   endif
+#   if defined(SIMULATE_LOST_SIGNALS) && !defined(GC_ENABLE_SUSPEND_THREAD)
+#     ifndef LOST_SIGNALS_RATIO
+#       define LOST_SIGNALS_RATIO 5
+#     endif
+      static int signal_cnt; /* race is OK, it is for test purpose only */
 
+      if (GC_retry_signals && (++signal_cnt) % LOST_SIGNALS_RATIO == 0)
+        return 0; /* simulate the signal is sent but lost */
+#   endif
+#   ifdef RETRY_TKILL_ON_EAGAIN
       for (retry = 0; ; retry++)
 #   endif
     {
