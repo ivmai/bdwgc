@@ -461,8 +461,8 @@ GC_INLINE void GC_adjust_num_unmapped(struct hblk *h GC_ATTR_UNUSED,
 # endif
 }
 
-/* Unmap blocks that haven't been recently touched.  This is the only way */
-/* way blocks are ever unmapped.                                          */
+/* Unmap blocks that haven't been recently touched.  This is the only   */
+/* way blocks are ever unmapped.                                        */
 GC_INNER void GC_unmap_old(void)
 {
     int i;
