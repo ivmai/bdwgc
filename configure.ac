@@ -922,8 +922,8 @@ AC_ARG_ENABLE(mmap,
 
 AC_ARG_ENABLE(munmap,
     [AS_HELP_STRING([--enable-munmap=N],
-                    [return page to the OS if empty for N collections
-                     (default: 6)])],
+                    [return page to the OS if page is marked as
+                     empty during N collections (default: 7)])],
     MUNMAP_THRESHOLD=$enableval)
 if test x$enable_munmap != xno; then
     AC_DEFINE([USE_MMAP], 1,
@@ -935,10 +935,11 @@ if test x$enable_munmap != xno; then
               [Define to return memory to OS with munmap calls
                (see doc/README.macros).])
     if test x$MUNMAP_THRESHOLD = x -o x$MUNMAP_THRESHOLD = xyes; then
-      MUNMAP_THRESHOLD=6
+      MUNMAP_THRESHOLD=7
     fi
     AC_DEFINE_UNQUOTED([MUNMAP_THRESHOLD], [${MUNMAP_THRESHOLD}],
-        [Number of GC cycles to wait before unmapping an unused block.])
+        [Number of sequential garbage collections during those a candidate
+         block for unmapping should be marked as free.])
 else
     if test "${gc_use_mmap}" = "yes"; then
       AC_DEFINE([USE_MMAP], 1,

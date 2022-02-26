@@ -402,7 +402,7 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 #ifdef USE_MUNMAP
 
 #   ifndef MUNMAP_THRESHOLD
-#     define MUNMAP_THRESHOLD 6
+#     define MUNMAP_THRESHOLD 7
 #   endif
 
 GC_INNER int GC_unmap_threshold = MUNMAP_THRESHOLD;
@@ -484,10 +484,10 @@ GC_INNER void GC_unmap_old(void)
         hhdr = HDR(h);
         if (!IS_MAPPED(hhdr)) continue;
 
-        /* Check that the interval is larger than the threshold (the    */
-        /* truncated counter value wrapping is handled correctly).      */
-        if ((unsigned short)(GC_gc_no - hhdr->hb_last_reclaimed) >
-                (unsigned short)GC_unmap_threshold) {
+        /* Check that the interval is not smaller than the threshold.   */
+        /* The truncated counter value wrapping is handled correctly.   */
+        if ((unsigned short)(GC_gc_no - hhdr->hb_last_reclaimed)
+            >= (unsigned short)GC_unmap_threshold) {
 #         ifdef COUNT_UNMAPPED_REGIONS
             /* Continue with unmapping the block only if it will not    */
             /* create too many unmapped regions, or if unmapping        */

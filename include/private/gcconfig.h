@@ -2755,7 +2755,7 @@ EXTERN_C_BEGIN
 #if defined(USE_MUNMAP) && !defined(MUNMAP_THRESHOLD) \
     && (defined(SN_TARGET_PS3) \
         || defined(SN_TARGET_PSP2) || defined(MSWIN_XBOX1))
-# define MUNMAP_THRESHOLD 2
+# define MUNMAP_THRESHOLD 3
 #endif
 
 #if defined(USE_MUNMAP) && defined(COUNT_UNMAPPED_REGIONS) \

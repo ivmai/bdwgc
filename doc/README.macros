@@ -312,9 +312,10 @@ USE_MUNMAP      Causes memory to be returned to the OS under the right
 USE_WINALLOC (Cygwin only)   Use Win32 VirtualAlloc (instead of sbrk or mmap)
   to get new memory.  Useful if memory unmapping (USE_MUNMAP) is enabled.
 
-MUNMAP_THRESHOLD=<value>        Set the desired memory blocks unmapping
-  threshold (the number of sequential garbage collections for which
-  a candidate block for unmapping should remain free).
+MUNMAP_THRESHOLD=<value>        Set the default threshold of memory blocks
+  unmapping (the number of sequential garbage collections during those
+  a candidate block for unmapping should be marked as free).  The special
+  value "0" completely disables unmapping.
 
 GC_FORCE_UNMAP_ON_GCOLLECT      Set "unmap as much as possible on explicit GC"
   mode on by default.  The mode could be changed at run-time.  Has no effect
