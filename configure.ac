@@ -1033,7 +1033,7 @@ AM_CONDITIONAL(ENABLE_SHARED, test x$enable_shared = xyes)
 # found.
 AC_ARG_WITH([libatomic-ops],
     [AS_HELP_STRING([--with-libatomic-ops[=yes|no|check|none]],
-                    [Use an external libatomic_ops? (default: check;
+                    [use an external libatomic_ops? (default: check;
                      none: use compiler intrinsics or no thread support)])],
     [], [ AS_IF([test x"$THREADS" != xnone],
                 [with_libatomic_ops=check], [with_libatomic_ops=none]) ])
