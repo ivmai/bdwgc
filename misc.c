@@ -880,34 +880,31 @@ GC_API int GC_CALL GC_is_init_called(void)
 
 STATIC word GC_parse_mem_size_arg(const char *str)
 {
-  word result = 0; /* bad value */
+  word result;
+  char *endptr;
+  char ch;
 
-  if (*str != '\0') {
-    char *endptr;
-    char ch;
-
-    result = (word)STRTOULL(str, &endptr, 10);
-    ch = *endptr;
-    if (ch != '\0') {
-      if (*(endptr + 1) != '\0')
-        return 0;
-      /* Allow k, M or G suffix. */
-      switch (ch) {
-      case 'K':
-      case 'k':
-        result <<= 10;
-        break;
-      case 'M':
-      case 'm':
-        result <<= 20;
-        break;
-      case 'G':
-      case 'g':
-        result <<= 30;
-        break;
-      default:
-        result = 0;
-      }
+  if ('\0' == *str) return GC_WORD_MAX; /* bad value */
+  result = (word)STRTOULL(str, &endptr, 10);
+  ch = *endptr;
+  if (ch != '\0') {
+    if (*(endptr + 1) != '\0') return GC_WORD_MAX;
+    /* Allow k, M or G suffix.  */
+    switch (ch) {
+    case 'K':
+    case 'k':
+      result <<= 10;
+      break;
+    case 'M':
+    case 'm':
+      result <<= 20;
+      break;
+    case 'G':
+    case 'g':
+      result <<= 30;
+      break;
+    default:
+      result = GC_WORD_MAX;
     }
   }
   return result;
@@ -1288,7 +1285,8 @@ GC_API void GC_CALL GC_init(void)
         char * sz_str = GETENV("GC_INITIAL_HEAP_SIZE");
         if (sz_str != NULL) {
           initial_heap_sz = GC_parse_mem_size_arg(sz_str);
-          if (initial_heap_sz <= MINHINCR * HBLKSIZE) {
+          if ((initial_heap_sz != 0 && initial_heap_sz < MINHINCR * HBLKSIZE)
+              || GC_WORD_MAX == initial_heap_sz) {
             WARN("Bad initial heap size %s - ignoring it.\n", sz_str);
           }
         }
@@ -1297,18 +1295,20 @@ GC_API void GC_CALL GC_init(void)
         char * sz_str = GETENV("GC_MAXIMUM_HEAP_SIZE");
         if (sz_str != NULL) {
           word max_heap_sz = GC_parse_mem_size_arg(sz_str);
-          if (max_heap_sz < initial_heap_sz) {
+          if (max_heap_sz < initial_heap_sz || GC_WORD_MAX == max_heap_sz) {
             WARN("Bad maximum heap size %s - ignoring it.\n", sz_str);
           }
           if (0 == GC_max_retries) GC_max_retries = 2;
           GC_set_max_heap_size(max_heap_sz);
         }
     }
-    if (!GC_expand_hp_inner(divHBLKSZ(initial_heap_sz))) {
+    if (initial_heap_sz != 0) {
+      if (!GC_expand_hp_inner(divHBLKSZ(initial_heap_sz))) {
         GC_err_printf("Can't start up: not enough memory\n");
         EXIT();
-    } else {
+      } else {
         GC_requested_heapsize += initial_heap_sz;
+      }
     }
     if (GC_all_interior_pointers)
       GC_initialize_offsets();
