@@ -1204,7 +1204,8 @@ STATIC void GC_finish_collection(void)
                      (unsigned long)GC_gc_no, (long)GC_bytes_found,
                      TO_KiB_UL(GC_heapsize - GC_unmapped_bytes) /*, */
                      COMMA_IF_USE_MUNMAP(TO_KiB_UL(GC_unmapped_bytes)),
-                     TO_KiB_UL(GC_our_mem_bytes - GC_heapsize));
+                     TO_KiB_UL(GC_our_mem_bytes - GC_heapsize
+                               + sizeof(GC_arrays)));
     GC_DBGLOG_PRINTF("In-use heap: %d%% (%lu KiB pointers + %lu KiB other)\n",
                      GC_compute_heap_usage_percent(),
                      TO_KiB_UL(GC_composite_in_use),
