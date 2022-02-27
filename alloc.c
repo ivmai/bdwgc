@@ -903,18 +903,6 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         }
 
     GC_gc_no++;
-#   ifdef USE_MUNMAP
-      GC_ASSERT(GC_heapsize >= GC_unmapped_bytes);
-#   endif
-    GC_ASSERT(GC_our_mem_bytes >= GC_heapsize);
-    GC_DBGLOG_PRINTF("GC #%lu freed %ld bytes, heap %lu KiB ("
-                     IF_USE_MUNMAP("+ %lu KiB unmapped ")
-                     "+ %lu KiB internal)\n",
-                     (unsigned long)GC_gc_no, (long)GC_bytes_found,
-                     TO_KiB_UL(GC_heapsize - GC_unmapped_bytes) /*, */
-                     COMMA_IF_USE_MUNMAP(TO_KiB_UL(GC_unmapped_bytes)),
-                     TO_KiB_UL(GC_our_mem_bytes - GC_heapsize));
-
     /* Check all debugged objects for consistency */
     if (GC_debugging_started) {
       (*GC_check_heap)();
@@ -1203,6 +1191,20 @@ STATIC void GC_finish_collection(void)
 
     /* Reconstruct free lists to contain everything not marked */
     GC_start_reclaim(FALSE);
+
+#   ifdef USE_MUNMAP
+      GC_unmap_old();
+
+      GC_ASSERT(GC_heapsize >= GC_unmapped_bytes);
+#   endif
+    GC_ASSERT(GC_our_mem_bytes >= GC_heapsize);
+    GC_DBGLOG_PRINTF("GC #%lu freed %ld bytes, heap %lu KiB ("
+                     IF_USE_MUNMAP("+ %lu KiB unmapped ")
+                     "+ %lu KiB internal)\n",
+                     (unsigned long)GC_gc_no, (long)GC_bytes_found,
+                     TO_KiB_UL(GC_heapsize - GC_unmapped_bytes) /*, */
+                     COMMA_IF_USE_MUNMAP(TO_KiB_UL(GC_unmapped_bytes)),
+                     TO_KiB_UL(GC_our_mem_bytes - GC_heapsize));
     GC_DBGLOG_PRINTF("In-use heap: %d%% (%lu KiB pointers + %lu KiB other)\n",
                      GC_compute_heap_usage_percent(),
                      TO_KiB_UL(GC_composite_in_use),
@@ -1215,13 +1217,6 @@ STATIC void GC_finish_collection(void)
                             > min_bytes_allocd();
     }
 
-    GC_VERBOSE_LOG_PRINTF("Immediately reclaimed %ld bytes, heapsize:"
-                          " %lu bytes" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
-                          (long)GC_bytes_found,
-                          (unsigned long)GC_heapsize /*, */
-                          COMMA_IF_USE_MUNMAP((unsigned long)
-                                              GC_unmapped_bytes));
-
     /* Reset or increment counters for next cycle */
     GC_n_attempts = 0;
     GC_is_full_gc = FALSE;
@@ -1231,8 +1226,6 @@ STATIC void GC_finish_collection(void)
     GC_bytes_dropped = 0;
     GC_bytes_freed = 0;
     GC_finalizer_bytes_freed = 0;
-
-    IF_USE_MUNMAP(GC_unmap_old());
 
     if (GC_on_collection_event)
       GC_on_collection_event(GC_EVENT_RECLAIM_END);
