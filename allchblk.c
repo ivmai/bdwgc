@@ -401,12 +401,6 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 
 #ifdef USE_MUNMAP
 
-#   ifndef MUNMAP_THRESHOLD
-#     define MUNMAP_THRESHOLD 7
-#   endif
-
-GC_INNER int GC_unmap_threshold = MUNMAP_THRESHOLD;
-
 #ifdef COUNT_UNMAPPED_REGIONS
   /* GC_unmap_old will avoid creating more than this many unmapped regions, */
   /* but an unmapped region may be split again so exceeding the limit.      */
@@ -463,12 +457,10 @@ GC_INLINE void GC_adjust_num_unmapped(struct hblk *h GC_ATTR_UNUSED,
 
 /* Unmap blocks that haven't been recently touched.  This is the only   */
 /* way blocks are ever unmapped.                                        */
-GC_INNER void GC_unmap_old(void)
+GC_INNER void GC_unmap_old(unsigned threshold)
 {
     int i;
 
-    if (GC_unmap_threshold == 0)
-      return; /* unmapping disabled */
 # ifdef COUNT_UNMAPPED_REGIONS
     /* Skip unmapping if we have already exceeded the soft limit.       */
     /* This forgoes any opportunities to merge unmapped regions though. */
@@ -487,7 +479,7 @@ GC_INNER void GC_unmap_old(void)
         /* Check that the interval is not smaller than the threshold.   */
         /* The truncated counter value wrapping is handled correctly.   */
         if ((unsigned short)(GC_gc_no - hhdr->hb_last_reclaimed)
-            >= (unsigned short)GC_unmap_threshold) {
+            >= (unsigned short)threshold) {
 #         ifdef COUNT_UNMAPPED_REGIONS
             /* Continue with unmapping the block only if it will not    */
             /* create too many unmapped regions, or if unmapping        */

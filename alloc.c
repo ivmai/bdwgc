@@ -791,6 +791,11 @@ GC_API int GC_CALL GC_collect_a_little(void)
 #endif /* !NO_CLOCK */
 
 #ifdef USE_MUNMAP
+# ifndef MUNMAP_THRESHOLD
+#   define MUNMAP_THRESHOLD 7
+# endif
+  GC_INNER unsigned GC_unmap_threshold = MUNMAP_THRESHOLD;
+
 # define IF_USE_MUNMAP(x) x
 # define COMMA_IF_USE_MUNMAP(x) /* comma */, x
 #else
@@ -1193,8 +1198,9 @@ STATIC void GC_finish_collection(void)
     GC_start_reclaim(FALSE);
 
 #   ifdef USE_MUNMAP
-      if (EXPECT(GC_gc_no != 1, TRUE)) /* do not unmap during GC init */
-        GC_unmap_old();
+      if (GC_unmap_threshold > 0 /* unmapping enabled? */
+          && EXPECT(GC_gc_no != 1, TRUE)) /* do not unmap during GC init */
+        GC_unmap_old(GC_unmap_threshold);
 
       GC_ASSERT(GC_heapsize >= GC_unmapped_bytes);
 #   endif
@@ -1705,6 +1711,13 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
         blocks_to_get = divHBLKSZ(GC_WORD_MAX);
     }
 
+#   ifdef USE_MUNMAP
+      if (GC_unmap_threshold > 1) {
+        /* Return as much memory to the OS as possible before   */
+        /* trying to get memory from it.                        */
+        GC_unmap_old(0);
+      }
+#   endif
     if (!GC_expand_hp_inner(blocks_to_get)
         && (blocks_to_get == needed_blocks
             || !GC_expand_hp_inner(needed_blocks))) {

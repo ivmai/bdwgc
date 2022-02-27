@@ -2471,7 +2471,7 @@ GC_EXTERN GC_bool GC_print_back_height;
 
 #ifdef USE_MUNMAP
   /* Memory unmapping: */
-  GC_INNER void GC_unmap_old(void);
+  GC_INNER void GC_unmap_old(unsigned threshold);
   GC_INNER void GC_merge_unmapped(void);
   GC_INNER void GC_unmap(ptr_t start, size_t bytes);
   GC_INNER void GC_remap(ptr_t start, size_t bytes);
@@ -2677,7 +2677,7 @@ GC_EXTERN signed_word GC_bytes_found;
 #endif
 
 #ifdef USE_MUNMAP
-  GC_EXTERN int GC_unmap_threshold; /* defined in allchblk.c */
+  GC_EXTERN unsigned GC_unmap_threshold; /* defined in alloc.c */
   GC_EXTERN GC_bool GC_force_unmap_on_gcollect; /* defined in misc.c */
 #endif
 
