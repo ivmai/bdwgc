@@ -1193,7 +1193,8 @@ STATIC void GC_finish_collection(void)
     GC_start_reclaim(FALSE);
 
 #   ifdef USE_MUNMAP
-      GC_unmap_old();
+      if (EXPECT(GC_gc_no != 1, TRUE)) /* do not unmap during GC init */
+        GC_unmap_old();
 
       GC_ASSERT(GC_heapsize >= GC_unmapped_bytes);
 #   endif
