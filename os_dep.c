@@ -2738,6 +2738,7 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 #         ifdef LINT2
             GC_noop1((word)result);
 #         endif
+          GC_ASSERT(GC_unmapped_bytes >= alloc_len);
           GC_unmapped_bytes -= alloc_len;
           start_addr += alloc_len;
           len -= alloc_len;
@@ -2772,6 +2773,7 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 #         undef IGNORE_PAGES_EXECUTABLE
 #       endif /* !NACL */
       }
+      GC_ASSERT(GC_unmapped_bytes >= len);
       GC_unmapped_bytes -= len;
 #   endif
 }
