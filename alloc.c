@@ -391,10 +391,6 @@ STATIC void GC_clear_a_few_frames(void)
     BZERO((word *)frames, CLEAR_NWORDS * sizeof(word));
 }
 
-/* Heap size at which we need a collection to avoid expanding past      */
-/* limits used by blacklisting.                                         */
-STATIC word GC_collect_at_heapsize = GC_WORD_MAX;
-
 GC_API void GC_CALL GC_start_incremental_collection(void)
 {
 # ifndef GC_DISABLE_INCREMENTAL
@@ -429,8 +425,10 @@ GC_INNER GC_bool GC_should_collect(void)
 # endif
     if (GC_disable_automatic_collection) return FALSE;
 
-    return(GC_adj_bytes_allocd() >= last_min_bytes_allocd
-           || GC_heapsize >= GC_collect_at_heapsize);
+    if (GC_last_heap_growth_gc_no == GC_gc_no)
+      return TRUE; /* avoid expanding past limits used by blacklisting  */
+
+    return GC_adj_bytes_allocd() >= last_min_bytes_allocd;
 }
 
 /* STATIC */ GC_start_callback_proc GC_start_call_back = 0;
@@ -1425,15 +1423,6 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
     GC_freehblk(p);
     GC_heapsize += bytes;
 
-    /* Normally the caller calculates a new GC_collect_at_heapsize,
-     * but this is also called directly from GC_scratch_recycle_inner, so
-     * adjust here. It will be recalculated when called from
-     * GC_expand_hp_inner.
-     */
-    GC_collect_at_heapsize += bytes;
-    if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
-       GC_collect_at_heapsize = GC_WORD_MAX;
-
     if ((word)p <= (word)GC_least_plausible_heap_addr
         || GC_least_plausible_heap_addr == 0) {
         GC_least_plausible_heap_addr = (void *)((ptr_t)p - sizeof(word));
@@ -1556,6 +1545,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
         return(FALSE);
     }
     GC_add_to_our_memory((ptr_t)space, bytes);
+    GC_last_heap_growth_gc_no = GC_gc_no;
     GC_INFOLOG_PRINTF("Grow heap to %lu KiB after %lu bytes allocated\n",
                       TO_KiB_UL(GC_heapsize + (word)bytes),
                       (unsigned long)GC_bytes_allocd);
@@ -1586,12 +1576,6 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     GC_last_heap_addr = (ptr_t)space;
 
     GC_add_to_heap(space, bytes);
-
-    /* Force GC before we are likely to allocate past expansion_slop.   */
-    GC_collect_at_heapsize =
-        GC_heapsize + expansion_slop - 2 * MAXHINCR * HBLKSIZE;
-    if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
-        GC_collect_at_heapsize = GC_WORD_MAX;
     if (GC_on_heap_resize)
         (*GC_on_heap_resize)(GC_heapsize);
 

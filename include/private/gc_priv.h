@@ -1437,6 +1437,9 @@ struct _GC_arrays {
                           /* composite objects.                 */
   word _atomic_in_use;    /* Number of bytes in the accessible  */
                           /* atomic objects.                    */
+# define GC_last_heap_growth_gc_no GC_arrays._last_heap_growth_gc_no
+  word _last_heap_growth_gc_no;
+                /* GC number of latest successful GC_expand_hp_inner call */
 # ifdef USE_MUNMAP
 #   define GC_unmapped_bytes GC_arrays._unmapped_bytes
     word _unmapped_bytes;
