@@ -1650,6 +1650,7 @@ void run_one_test(void)
 void run_single_threaded_test(void) {
     GC_disable();
     GC_FREE(GC_MALLOC(100));
+    GC_expand_hp(0); /* add a block to heap */
     GC_enable();
 }
 
@@ -2050,7 +2051,6 @@ void enable_incremental_mode(void)
        UNTESTED(GC_new_proc);
        UNTESTED(GC_clear_roots);
        UNTESTED(GC_exclude_static_roots);
-       UNTESTED(GC_expand_hp);
        UNTESTED(GC_register_describe_type_fn);
        UNTESTED(GC_register_has_static_roots_callback);
 #      ifdef GC_GCJ_SUPPORT

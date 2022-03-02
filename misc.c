@@ -58,7 +58,7 @@
 #endif /* THREADS */
 
 #ifdef DYNAMIC_LOADING
-  /* We need to register the main data segment.  Returns  TRUE unless   */
+  /* We need to register the main data segment.  Returns TRUE unless    */
   /* this is done implicitly as part of dynamic library registration.   */
 # define GC_REGISTER_MAIN_STATIC_DATA() GC_register_main_static_data()
 #elif defined(GC_DONT_REGISTER_MAIN_STATIC_DATA)
@@ -1285,8 +1285,7 @@ GC_API void GC_CALL GC_init(void)
         char * sz_str = GETENV("GC_INITIAL_HEAP_SIZE");
         if (sz_str != NULL) {
           word value = GC_parse_mem_size_arg(sz_str);
-          if ((value != 0 && value < MINHINCR * HBLKSIZE)
-              || GC_WORD_MAX == value) {
+          if (GC_WORD_MAX == value) {
             WARN("Bad initial heap size %s - ignoring it.\n", sz_str);
           } else {
             initial_heap_sz = value;

@@ -1530,7 +1530,7 @@ GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
 
 /* This explicitly increases the size of the heap.  It is used          */
 /* internally, but may also be invoked from GC_expand_hp by the user.   */
-/* The argument is in units of HBLKSIZE (tiny values are rounded up).   */
+/* The argument is in units of HBLKSIZE (zero is treated as 1).         */
 /* Returns FALSE on failure.                                            */
 GC_INNER GC_bool GC_expand_hp_inner(word n)
 {
@@ -1541,7 +1541,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
 
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(GC_page_size != 0);
-    if (n < MINHINCR) n = MINHINCR;
+    if (0 == n) n = 1;
     bytes = ROUNDUP_PAGESIZE((size_t)n * HBLKSIZE);
     if (GC_max_heapsize != 0
         && (GC_max_heapsize < (word)bytes
@@ -1709,7 +1709,10 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
       }
       if (blocks_to_get > divHBLKSZ(GC_WORD_MAX))
         blocks_to_get = divHBLKSZ(GC_WORD_MAX);
+    } else if (blocks_to_get < MINHINCR) {
+      blocks_to_get = MINHINCR;
     }
+
     if (GC_max_heapsize > GC_heapsize) {
       word max_get_blocks = divHBLKSZ(GC_max_heapsize - GC_heapsize);
       if (blocks_to_get > max_get_blocks)
