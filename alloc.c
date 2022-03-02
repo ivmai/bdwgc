@@ -1710,6 +1710,12 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
       if (blocks_to_get > divHBLKSZ(GC_WORD_MAX))
         blocks_to_get = divHBLKSZ(GC_WORD_MAX);
     }
+    if (GC_max_heapsize > GC_heapsize) {
+      word max_get_blocks = divHBLKSZ(GC_max_heapsize - GC_heapsize);
+      if (blocks_to_get > max_get_blocks)
+        blocks_to_get = max_get_blocks > needed_blocks
+                        ? max_get_blocks : needed_blocks;
+    }
 
 #   ifdef USE_MUNMAP
       if (GC_unmap_threshold > 1) {
