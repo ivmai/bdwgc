@@ -1476,16 +1476,6 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
 void * GC_least_plausible_heap_addr = (void *)GC_WORD_MAX;
 void * GC_greatest_plausible_heap_addr = 0;
 
-GC_INLINE word GC_max(word x, word y)
-{
-    return(x > y? x : y);
-}
-
-GC_INLINE word GC_min(word x, word y)
-{
-    return(x < y? x : y);
-}
-
 STATIC word GC_max_heapsize = 0;
 
 GC_API void GC_CALL GC_set_max_heap_size(GC_word n)
@@ -1559,19 +1549,15 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
             && (word)GC_last_heap_addr < (word)space)) {
         /* Assume the heap is growing up. */
         word new_limit = (word)space + (word)bytes + expansion_slop;
-        if (new_limit > (word)space) {
-          GC_greatest_plausible_heap_addr =
-            (void *)GC_max((word)GC_greatest_plausible_heap_addr,
-                           (word)new_limit);
-        }
+        if (new_limit > (word)space
+            && (word)GC_greatest_plausible_heap_addr < new_limit)
+          GC_greatest_plausible_heap_addr = (void *)new_limit;
     } else {
         /* Heap is growing down. */
         word new_limit = (word)space - expansion_slop;
-        if (new_limit < (word)space) {
-          GC_least_plausible_heap_addr =
-            (void *)GC_min((word)GC_least_plausible_heap_addr,
-                           (word)space - expansion_slop);
-        }
+        if (new_limit < (word)space
+            && (word)GC_least_plausible_heap_addr > new_limit)
+          GC_least_plausible_heap_addr = (void *)new_limit;
     }
     GC_last_heap_addr = (ptr_t)space;
 
