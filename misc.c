@@ -1284,10 +1284,12 @@ GC_API void GC_CALL GC_init(void)
     {
         char * sz_str = GETENV("GC_INITIAL_HEAP_SIZE");
         if (sz_str != NULL) {
-          initial_heap_sz = GC_parse_mem_size_arg(sz_str);
-          if ((initial_heap_sz != 0 && initial_heap_sz < MINHINCR * HBLKSIZE)
-              || GC_WORD_MAX == initial_heap_sz) {
+          word value = GC_parse_mem_size_arg(sz_str);
+          if ((value != 0 && value < MINHINCR * HBLKSIZE)
+              || GC_WORD_MAX == value) {
             WARN("Bad initial heap size %s - ignoring it.\n", sz_str);
+          } else {
+            initial_heap_sz = value;
           }
         }
     }
@@ -1297,9 +1299,10 @@ GC_API void GC_CALL GC_init(void)
           word max_heap_sz = GC_parse_mem_size_arg(sz_str);
           if (max_heap_sz < initial_heap_sz || GC_WORD_MAX == max_heap_sz) {
             WARN("Bad maximum heap size %s - ignoring it.\n", sz_str);
+          } else {
+            if (0 == GC_max_retries) GC_max_retries = 2;
+            GC_set_max_heap_size(max_heap_sz);
           }
-          if (0 == GC_max_retries) GC_max_retries = 2;
-          GC_set_max_heap_size(max_heap_sz);
         }
     }
     if (initial_heap_sz != 0) {
