@@ -1099,6 +1099,12 @@ GC_INLINE int GC_compute_heap_usage_percent(void)
                 (int)((used * 100) / heap_sz) : (int)(used / (heap_sz / 100));
 }
 
+#define GC_DBGLOG_PRINT_HEAP_IN_USE() \
+  GC_DBGLOG_PRINTF("In-use heap: %d%% (%lu KiB pointers + %lu KiB other)\n", \
+                   GC_compute_heap_usage_percent(), \
+                   TO_KiB_UL(GC_composite_in_use), \
+                   TO_KiB_UL(GC_atomic_in_use))
+
 /* Finish up a collection.  Assumes mark bits are consistent, lock is   */
 /* held, but the world is otherwise running.                            */
 STATIC void GC_finish_collection(void)
@@ -1211,10 +1217,7 @@ STATIC void GC_finish_collection(void)
                      COMMA_IF_USE_MUNMAP(TO_KiB_UL(GC_unmapped_bytes)),
                      TO_KiB_UL(GC_our_mem_bytes - GC_heapsize
                                + sizeof(GC_arrays)));
-    GC_DBGLOG_PRINTF("In-use heap: %d%% (%lu KiB pointers + %lu KiB other)\n",
-                     GC_compute_heap_usage_percent(),
-                     TO_KiB_UL(GC_composite_in_use),
-                     TO_KiB_UL(GC_atomic_in_use));
+    GC_DBGLOG_PRINT_HEAP_IN_USE();
     if (GC_is_full_gc) {
         GC_used_heap_size_after_full = USED_HEAP_SIZE;
         GC_need_full_gc = FALSE;
@@ -1522,6 +1525,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     GC_ASSERT(GC_page_size != 0);
     if (0 == n) n = 1;
     bytes = ROUNDUP_PAGESIZE((size_t)n * HBLKSIZE);
+    GC_DBGLOG_PRINT_HEAP_IN_USE();
     if (GC_max_heapsize != 0
         && (GC_max_heapsize < (word)bytes
             || GC_heapsize > GC_max_heapsize - (word)bytes)) {
