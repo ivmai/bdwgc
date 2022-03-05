@@ -576,12 +576,11 @@ void GC_print_block_list(void)
 {
     struct Print_stats pstats;
 
-    GC_printf("kind(0=ptrfree,1=normal,2=unc.),"
-              "size_in_bytes,#_marks_set,#objs\n");
-    pstats.number_of_blocks = 0;
-    pstats.total_bytes = 0;
+    GC_printf("kind(0=ptrfree/1=normal/2=unc.),"
+              "obj_sz,#marks_set,#objs_in_block\n");
+    BZERO(&pstats, sizeof(pstats));
     GC_apply_to_all_blocks(GC_print_block_descr, (word)&pstats);
-    GC_printf("blocks= %lu, bytes= %lu\n",
+    GC_printf("blocks= %lu, total_bytes= %lu\n",
               (unsigned long)pstats.number_of_blocks,
               (unsigned long)pstats.total_bytes);
 }
