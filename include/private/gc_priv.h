@@ -1188,10 +1188,10 @@ struct hblkhdr {
         char _hb_marks[MARK_BITS_SZ];
                             /* The i'th byte is 1 if the object         */
                             /* starting at granule i or object i is     */
-                            /* marked, 0 o.w.                           */
-                            /* The mark bit for the "one past the       */
-                            /* end" object is always set to avoid a     */
-                            /* special case test in the marker.         */
+                            /* marked, 0 otherwise.                     */
+                            /* The mark bit for the "one past the end"  */
+                            /* object is always set to avoid a special  */
+                            /* case test in the marker.                 */
         word dummy;     /* Force word alignment of mark bytes. */
       } _mark_byte_union;
 #     define hb_marks _mark_byte_union._hb_marks
@@ -1590,7 +1590,7 @@ struct _GC_arrays {
     unsigned short * _obj_map[MAXOBJGRANULES + 1];
                        /* If not NULL, then a pointer to a map of valid */
                        /* object addresses.                             */
-                       /* _obj_map[sz_in_granules][i] is                */
+                       /* GC_obj_map[sz_in_granules][i] is              */
                        /* i % sz_in_granules.                           */
                        /* This is now used purely to replace a          */
                        /* division in the marker by a table lookup.     */
@@ -1598,7 +1598,7 @@ struct _GC_arrays {
                        /* contains all nonzero entries.  This gets us   */
                        /* out of the marker fast path without an extra  */
                        /* test.                                         */
-#   define MAP_LEN BYTES_TO_GRANULES(HBLKSIZE)
+#   define OBJ_MAP_LEN  BYTES_TO_GRANULES(HBLKSIZE)
 # endif
 # define VALID_OFFSET_SZ HBLKSIZE
   char _valid_offsets[VALID_OFFSET_SZ];
