@@ -522,20 +522,34 @@ static unsigned count_ones(word n)
 unsigned GC_n_set_marks(hdr *hhdr)
 {
     unsigned result = 0;
+    word sz = hhdr -> hb_sz;
     word i;
 #   ifdef MARK_BIT_PER_OBJ
-      word n_objs = HBLK_OBJS(hhdr -> hb_sz);
-      word n_mark_words = divWORDSZ((n_objs > 0 ? n_objs : 1) + WORDSZ - 1);
+      word n_objs = HBLK_OBJS(sz);
+      word n_mark_words = divWORDSZ(n_objs > 0 ? n_objs : 1); /* round down */
 
-      for (i = 0; i < n_mark_words; i++) {
+      for (i = 0; i <= n_mark_words; i++) {
           result += count_ones(hhdr -> hb_marks[i]);
       }
 #   else /* MARK_BIT_PER_GRANULE */
+
       for (i = 0; i < MARK_BITS_SZ; i++) {
           result += count_ones(hhdr -> hb_marks[i]);
       }
 #   endif
-    return result; /* the number of set bits excluding the one past the end */
+    GC_ASSERT(result > 0);
+    result--; /* exclude the one bit set past the end */
+#   ifndef MARK_BIT_PER_OBJ
+      if (IS_UNCOLLECTABLE(hhdr -> hb_obj_kind)) {
+        size_t ngranules = BYTES_TO_GRANULES(sz);
+
+        /* As mentioned in GC_set_hdr_marks(), all the bits are set     */
+        /* instead of every n-th, thus the result should be adjusted.   */
+        GC_ASSERT(ngranules > 0 && result % ngranules == 0);
+        result /= ngranules;
+      }
+#   endif
+    return result;
 }
 
 #endif /* !USE_MARK_BYTES  */
@@ -549,13 +563,12 @@ STATIC void GC_print_block_descr(struct hblk *h,
     unsigned n_marks = GC_n_set_marks(hhdr);
     unsigned n_objs = (unsigned)HBLK_OBJS(sz);
 
-    if (hhdr -> hb_n_marks != n_marks) {
-      GC_printf("%u,%u,%u!=%u,%u\n", hhdr->hb_obj_kind, (unsigned)sz,
-                (unsigned)hhdr->hb_n_marks, n_marks, n_objs);
-    } else {
-      GC_printf("%u,%u,%u,%u\n",
+#   ifndef PARALLEL_MARK
+        GC_ASSERT(hhdr -> hb_n_marks == n_marks);
+#   endif
+    GC_ASSERT((n_objs > 0 ? n_objs : 1) >= n_marks);
+    GC_printf("%u,%u,%u,%u\n",
               hhdr -> hb_obj_kind, (unsigned)sz, n_marks, n_objs);
-    }
     ps -> number_of_blocks++;
     ps -> total_bytes += (sz + (HBLKSIZE-1)) & ~(HBLKSIZE-1); /* round up */
 }
