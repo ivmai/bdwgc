@@ -541,7 +541,7 @@ unsigned GC_n_set_marks(hdr *hhdr)
     result--; /* exclude the one bit set past the end */
 #   ifndef MARK_BIT_PER_OBJ
       if (IS_UNCOLLECTABLE(hhdr -> hb_obj_kind)) {
-        size_t ngranules = BYTES_TO_GRANULES(sz);
+        unsigned ngranules = (unsigned)BYTES_TO_GRANULES(sz);
 
         /* As mentioned in GC_set_hdr_marks(), all the bits are set     */
         /* instead of every n-th, thus the result should be adjusted.   */
