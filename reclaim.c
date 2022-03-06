@@ -549,7 +549,6 @@ STATIC void GC_print_block_descr(struct hblk *h,
     unsigned n_marks = GC_n_set_marks(hhdr);
     unsigned n_objs = (unsigned)HBLK_OBJS(sz);
 
-    if (0 == n_objs) n_objs = 1;
     if (hhdr -> hb_n_marks != n_marks) {
       GC_printf("%u,%u,%u!=%u,%u\n", hhdr->hb_obj_kind, (unsigned)sz,
                 (unsigned)hhdr->hb_n_marks, n_marks, n_objs);
