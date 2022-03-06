@@ -140,9 +140,14 @@ GC_INNER void GC_set_hdr_marks(hdr *hhdr)
         hhdr -> hb_marks[i] = 1;
       }
 #   else
-      for (i = 0; i < divWORDSZ(n_marks + WORDSZ); ++i) {
+      /* Note that all bits are set even in case of MARK_BIT_PER_GRANULE,   */
+      /* instead of setting every n-th bit where n is MARK_BIT_OFFSET(sz).  */
+      /* This is done for a performance reason.                             */
+      for (i = 0; i < divWORDSZ(n_marks); ++i) {
         hhdr -> hb_marks[i] = GC_WORD_MAX;
       }
+      /* Set the remaining bits near the end (plus one bit past the end).   */
+      hhdr -> hb_marks[i] = ((((word)1 << modWORDSZ(n_marks)) - 1) << 1) | 1;
 #   endif
 #   ifdef MARK_BIT_PER_OBJ
       hhdr -> hb_n_marks = n_marks;

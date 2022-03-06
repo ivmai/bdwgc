@@ -525,15 +525,11 @@ unsigned GC_n_set_marks(hdr *hhdr)
     word i;
 #   ifdef MARK_BIT_PER_OBJ
       word n_objs = HBLK_OBJS(hhdr -> hb_sz);
-      word n_mark_words;
+      word n_mark_words = divWORDSZ((n_objs > 0 ? n_objs : 1) + WORDSZ - 1);
 
-      if (0 == n_objs) n_objs = 1;
-      n_mark_words = divWORDSZ(n_objs + WORDSZ - 1);
-      for (i = 0; i < n_mark_words - 1; i++) {
+      for (i = 0; i < n_mark_words; i++) {
           result += count_ones(hhdr -> hb_marks[i]);
       }
-      result += count_ones((hhdr -> hb_marks[n_mark_words - 1])
-                           << (n_mark_words * WORDSZ - n_objs));
 #   else /* MARK_BIT_PER_GRANULE */
       for (i = 0; i < MARK_BITS_SZ; i++) {
           result += count_ones(hhdr -> hb_marks[i]);
