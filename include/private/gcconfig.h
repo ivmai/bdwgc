@@ -1055,15 +1055,18 @@ EXTERN_C_BEGIN
 
 # ifdef OPENBSD
 #   define OS_TYPE "OPENBSD"
-#   if !defined(M68K) /* TODO: probably do not exclude it */
-#     ifndef GC_OPENBSD_THREADS
-#       define HEURISTIC2
-#     endif
+#   ifndef GC_OPENBSD_THREADS
+#     define HEURISTIC2
+#   endif
+#   ifdef __ELF__
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
       extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
+#   else
+      extern char etext[];
+#     define DATASTART ((ptr_t)(etext))
 #   endif
 # endif /* OPENBSD */
 
@@ -1125,15 +1128,7 @@ EXTERN_C_BEGIN
 #   define MACH_TYPE "M68K"
 #   define ALIGNMENT 2
 #   ifdef OPENBSD
-#       define HEURISTIC2
-#       ifdef __ELF__
-          extern ptr_t GC_data_start;
-#         define DATASTART GC_data_start
-#         define DYNAMIC_LOADING
-#       else
-          extern char etext[];
-#         define DATASTART ((ptr_t)(etext))
-#       endif
+      /* Nothing specific. */
 #   endif
 #   ifdef NETBSD
       /* Nothing specific. */
