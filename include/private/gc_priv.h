@@ -3014,36 +3014,13 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 # define JMP_BUF jmp_buf
 #endif /* !UNIX_LIKE || GC_NO_SIGSETJMP */
 
-/* Do we need the GC_find_limit machinery to find the end of a  */
-/* data segment.                                                */
-#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START) \
-    || ((defined(SVR4) || defined(AIX) || defined(DGUX) \
-         || (defined(LINUX) && defined(SPARC))) && !defined(PCR))
-# define NEED_FIND_LIMIT
-#endif
-
 #if defined(DATASTART_USES_BSDGETDATASTART)
   EXTERN_C_END
 # include <machine/trap.h>
   EXTERN_C_BEGIN
-# if !defined(PCR)
-#   define NEED_FIND_LIMIT
-# endif
   GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
 # define DATASTART_IS_FUNC
 #endif /* DATASTART_USES_BSDGETDATASTART */
-
-#if ((defined(NETBSD) && defined(__ELF__)) \
-     || (defined(OPENBSD) && !defined(GC_OPENBSD_UTHREADS))) \
-    && !defined(NEED_FIND_LIMIT)
-  /* Used by GC_init_netbsd_elf or GC_register_data_segments in os_dep.c. */
-# define NEED_FIND_LIMIT
-#endif
-
-#if defined(IA64) && !defined(NEED_FIND_LIMIT)
-# define NEED_FIND_LIMIT
-     /* May be needed for register backing store base. */
-#endif
 
 #if defined(NEED_FIND_LIMIT) \
      || (defined(WRAP_MARK_SOME) && !defined(MSWIN32) && !defined(MSWINCE)) \

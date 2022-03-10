@@ -1402,7 +1402,7 @@ EXTERN_C_BEGIN
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
 #   endif
-# endif
+# endif /* SPARC */
 
 # ifdef I386
 #   define MACH_TYPE "I386"
@@ -1556,9 +1556,6 @@ EXTERN_C_BEGIN
 #       define DATAEND   ((ptr_t)GC_DATAEND)
 #       ifndef USE_WINALLOC
 #         /* MPROTECT_VDB does not work, it leads to a spurious exit.   */
-#         ifdef USE_MMAP
-#           define NEED_FIND_LIMIT
-#         endif
 #       endif
 #   endif
 #   ifdef INTERIX
@@ -1881,7 +1878,6 @@ EXTERN_C_BEGIN
 #     elif !defined(HEURISTIC2)
         /* This uses pst_vm_status support. */
 #       define HPUX_MAIN_STACKBOTTOM
-#       define NEED_FIND_LIMIT
 #     endif
 #     ifndef __GNUC__
 #       define PREFETCH(x)  do { \
@@ -2898,6 +2894,20 @@ EXTERN_C_BEGIN
 # else
 #   define STATIC static
 # endif
+#endif
+
+/* Do we need the GC_find_limit machinery to find the end of    */
+/* a data segment (or the backing store base)?                  */
+#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START) \
+    || defined(HPUX_MAIN_STACKBOTTOM) || defined(IA64) \
+    || (defined(CYGWIN32) && defined(I386) && defined(USE_MMAP) \
+        && !defined(USE_WINALLOC)) \
+    || (defined(NETBSD) && defined(__ELF__)) \
+    || (defined(OPENBSD) && !defined(GC_OPENBSD_UTHREADS)) \
+    || ((defined(SVR4) || defined(AIX) || defined(DGUX) \
+         || defined(DATASTART_USES_BSDGETDATASTART) \
+         || (defined(LINUX) && defined(SPARC))) && !defined(PCR))
+# define NEED_FIND_LIMIT
 #endif
 
 #if defined(LINUX) && (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64) \
