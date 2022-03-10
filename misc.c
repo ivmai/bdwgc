@@ -1213,9 +1213,6 @@ GC_API void GC_CALL GC_init(void)
 #   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
         LOCK(); /* just to set GC_lock_holder */
 #   endif
-#   if defined(SEARCH_FOR_DATA_START)
-        GC_init_linux_data_start();
-#   endif
 #   if !defined(THREADS) || defined(GC_PTHREADS) \
         || defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
         || defined(GC_WIN32_THREADS) || defined(GC_SOLARIS_THREADS)
@@ -1252,6 +1249,11 @@ GC_API void GC_CALL GC_init(void)
       GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)GC_approx_sp()));
 #   endif
     GC_init_headers();
+#   ifdef SEARCH_FOR_DATA_START
+      /* For MPROTECT_VDB, the temporary fault handler should be        */
+      /* installed first, before the write fault one in GC_dirty_init.  */
+      if (GC_REGISTER_MAIN_STATIC_DATA()) GC_init_linux_data_start();
+#   endif
 #   ifndef GC_DISABLE_INCREMENTAL
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
 #       if defined(BASE_ATOMIC_OPS_EMULATED) || defined(CHECKSUMS) \
@@ -1276,6 +1278,7 @@ GC_API void GC_CALL GC_init(void)
     /* Add initial guess of root sets.  Do this first, since sbrk(0)    */
     /* might be used.                                                   */
       if (GC_REGISTER_MAIN_STATIC_DATA()) GC_register_data_segments();
+
     GC_bl_init();
     GC_mark_init();
     {
