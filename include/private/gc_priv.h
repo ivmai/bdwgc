@@ -2952,9 +2952,10 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 # define DATASTART_IS_FUNC
 #endif /* DATASTART_USES_BSDGETDATASTART */
 
-#if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__) \
+#if ((defined(NETBSD) && defined(__ELF__)) \
+     || (defined(OPENBSD) && !defined(GC_OPENBSD_UTHREADS))) \
     && !defined(NEED_FIND_LIMIT)
-  /* Used by GC_init_netbsd_elf() in os_dep.c. */
+  /* Used by GC_init_netbsd_elf or GC_register_data_segments in os_dep.c. */
 # define NEED_FIND_LIMIT
 #endif
 
