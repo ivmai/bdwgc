@@ -1216,9 +1216,6 @@ GC_API void GC_CALL GC_init(void)
 #   if defined(SEARCH_FOR_DATA_START)
         GC_init_linux_data_start();
 #   endif
-#   if defined(NETBSD) && defined(__ELF__)
-        GC_init_netbsd_elf();
-#   endif
 #   if !defined(THREADS) || defined(GC_PTHREADS) \
         || defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
         || defined(GC_WIN32_THREADS) || defined(GC_SOLARIS_THREADS)
@@ -1250,7 +1247,7 @@ GC_API void GC_CALL GC_init(void)
       /* are explicitly cast to word in every less/greater comparison.  */
       GC_STATIC_ASSERT((signed_word)(-1) < (signed_word)0);
 #   endif
-    GC_STATIC_ASSERT(sizeof (struct hblk) == HBLKSIZE);
+    GC_STATIC_ASSERT(sizeof(struct hblk) == HBLKSIZE);
 #   ifndef THREADS
       GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)GC_approx_sp()));
 #   endif

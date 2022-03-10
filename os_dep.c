@@ -432,7 +432,11 @@ GC_INNER const char * GC_get_maps(void)
 #   pragma weak data_start
     extern int __data_start[], data_start[];
     EXTERN_C_END
-# endif /* LINUX */
+# elif defined(NETBSD)
+    EXTERN_C_BEGIN
+    extern char **environ;
+    EXTERN_C_END
+# endif
 
   ptr_t GC_data_start = NULL;
 
@@ -469,7 +473,13 @@ GC_INNER const char * GC_get_maps(void)
       return;
     }
 
-    GC_data_start = (ptr_t)GC_find_limit(data_end, FALSE);
+#   ifdef NETBSD
+      /* This may need to be environ, without the underscore, for       */
+      /* some versions.                                                 */
+      GC_data_start = (ptr_t)GC_find_limit(&environ, FALSE);
+#   else
+      GC_data_start = (ptr_t)GC_find_limit(data_end, FALSE);
+#   endif
   }
 #endif /* SEARCH_FOR_DATA_START */
 
@@ -498,21 +508,6 @@ GC_INNER const char * GC_get_maps(void)
   }
 # define sbrk tiny_sbrk
 #endif /* ECOS */
-
-#if defined(NETBSD) && defined(__ELF__)
-  ptr_t GC_data_start = NULL;
-
-  EXTERN_C_BEGIN
-  extern char **environ;
-  EXTERN_C_END
-
-  GC_INNER void GC_init_netbsd_elf(void)
-  {
-        /* This may need to be environ, without the underscore, for     */
-        /* some versions.                                               */
-    GC_data_start = (ptr_t)GC_find_limit(&environ, FALSE);
-  }
-#endif /* NETBSD */
 
 #if defined(ADDRESS_SANITIZER) && (defined(UNIX_LIKE) \
                     || defined(NEED_FIND_LIMIT) || defined(MPROTECT_VDB)) \

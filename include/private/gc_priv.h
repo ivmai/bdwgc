@@ -2831,11 +2831,6 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   void * GC_find_limit(void *, int);
 #endif
 
-#if defined(NETBSD) && defined(__ELF__)
-  GC_INNER void GC_init_netbsd_elf(void);
-  void * GC_find_limit(void *, int);
-#endif
-
 #ifdef UNIX_LIKE
   GC_INNER void GC_set_and_save_fault_handler(void (*handler)(int));
 #endif

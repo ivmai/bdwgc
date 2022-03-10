@@ -1037,8 +1037,7 @@ EXTERN_C_BEGIN
 #   define OS_TYPE "NETBSD"
 #   define HEURISTIC2
 #   ifdef __ELF__
-      extern ptr_t GC_data_start;
-#     define DATASTART GC_data_start
+#     define SEARCH_FOR_DATA_START
 #     define DYNAMIC_LOADING
 #   elif !defined(MIPS) /* TODO: probably do not exclude it */
       extern char etext[];
