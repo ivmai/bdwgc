@@ -71,14 +71,21 @@ extern "C" {
                     __LINE__ ); \
         exit( 1 ); }
 
+#if defined(__powerpc64__) && !defined(__clang__) && GC_GNUC_PREREQ(10, 0)
+  /* Suppress "layout of aggregates ... has changed" GCC note. */
+# define A_I_TYPE short
+#else
+# define A_I_TYPE int
+#endif
+
 class A {public:
     /* An uncollectible class. */
 
-    GC_ATTR_EXPLICIT A( int iArg ): i( iArg ) {}
+    GC_ATTR_EXPLICIT A( int iArg ): i((A_I_TYPE)iArg) {}
     void Test( int iArg ) {
         my_assert( i == iArg );}
     virtual ~A() {}
-    int i;};
+    A_I_TYPE i; };
 
 
 class B: public GC_NS_QUALIFY(gc), public A { public:
