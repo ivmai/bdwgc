@@ -88,13 +88,10 @@ objects.  In practice, it finds almost all of them.
 
 Cautions:
 
-1. Be sure the collector has been augmented with "make c++" or
-"--enable-cplusplus".
+1. Be sure the collector is compiled with the C++ support
+(e.g. --enable-cplusplus option is passed to make).
 
-2.  If your compiler supports the new "operator new[]" syntax, then
-add -DGC_OPERATOR_NEW_ARRAY to the Makefile.
-
-If your compiler doesn't support "operator new[]", beware that an
+2. If the compiler does not support "operator new[]", beware that an
 array of type T, where T is derived from "gc", may or may not be
 allocated as a collectible object (it depends on the compiler).  Use
 the explicit GC placement to make the array collectible.  For example:
@@ -120,19 +117,7 @@ clean-up function:
 that preserves the correct exception semantics requires a language
 extension, e.g. the "gc" keyword.)
 
-4. Compiler bugs (now hopefully history):
-
-* Solaris 2's CC (SC3.0) doesn't implement t->~T() correctly, so the
-destructors of classes derived from gc_cleanup won't be invoked.
-You'll have to explicitly register a clean-up function with
-new-placement syntax.
-
-* Evidently cfront 3.0 does not allow destructors to be explicitly
-invoked using the ANSI-conforming syntax t->~T().  If you're using
-cfront 3.0, you'll have to comment out the class gc_cleanup, which
-uses explicit invocation.
-
-5. GC name conflicts:
+4. GC name conflicts:
 
 Many other systems seem to use the identifier "GC" as an abbreviation
 for "Graphics Context".  Thus, GC placement has been replaced
