@@ -2078,9 +2078,6 @@ void enable_incremental_mode(void)
 #        ifndef JAVA_FINALIZATION_NOT_NEEDED
            UNTESTED(GC_finalize_all);
 #        endif
-#        ifndef NO_DEBUGGING
-           UNTESTED(GC_dump_finalization);
-#        endif
 #        ifndef GC_TOGGLE_REFS_NOT_NEEDED
            UNTESTED(GC_toggleref_add);
 #        endif

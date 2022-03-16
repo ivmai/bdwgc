@@ -2332,9 +2332,9 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
       GET_TIME(current_time);
 #   endif
     if (name != NULL) {
-      GC_printf("***GC Dump %s\n", name);
+      GC_printf("\n***GC Dump %s\n", name);
     } else {
-      GC_printf("***GC Dump collection #%lu\n", (unsigned long)GC_gc_no);
+      GC_printf("\n***GC Dump collection #%lu\n", (unsigned long)GC_gc_no);
     }
 #   ifndef NO_CLOCK
       /* Note that the time is wrapped in ~49 days if sizeof(long)==4.  */
@@ -2350,6 +2350,9 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
     GC_print_hblkfreelist();
     GC_printf("\n***Blocks in use:\n");
     GC_print_block_list();
+#   ifndef GC_NO_FINALIZATION
+      GC_dump_finalization();
+#   endif
   }
 #endif /* !NO_DEBUGGING */
 
