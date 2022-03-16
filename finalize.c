@@ -168,6 +168,9 @@ STATIC int GC_register_disappearing_link_inner(
     DCL_LOCK_STATE;
 
     if (EXPECT(GC_find_leak, FALSE)) return GC_UNIMPLEMENTED;
+#   ifdef GC_ASSERTIONS
+      GC_noop1((word)(*link)); /* check accessibility */
+#   endif
     LOCK();
     GC_ASSERT(obj != NULL && GC_base_C(obj) == obj);
     if (EXPECT(NULL == dl_hashtbl -> head, FALSE)
@@ -520,6 +523,9 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     size_t curr_index, new_index;
     word curr_hidden_link, new_hidden_link;
 
+#   ifdef GC_ASSERTIONS
+      GC_noop1((word)(*new_link));
+#   endif
     GC_ASSERT(I_HOLD_LOCK());
     if (EXPECT(NULL == dl_hashtbl -> head, FALSE)) return GC_NOT_FOUND;
 
@@ -931,6 +937,10 @@ GC_INLINE void GC_make_disappearing_links_disappear(
 
     for (curr_dl = dl_hashtbl->head[i]; curr_dl != NULL; curr_dl = next_dl) {
       next_dl = dl_next(curr_dl);
+#     ifdef GC_ASSERTIONS
+         /* Check accessibility of the location pointed by link. */
+        GC_noop1(*(word *)GC_REVEAL_POINTER(curr_dl->dl_hidden_link));
+#     endif
       if (is_remove_dangling) {
         ptr_t real_link = (ptr_t)GC_base(GC_REVEAL_POINTER(
                                                 curr_dl->dl_hidden_link));
