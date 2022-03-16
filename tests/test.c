@@ -933,9 +933,10 @@ tn * mktree(int n)
     if (AO_fetch_and_add1(&extra_count) % 119 == 0) {
 #       ifndef GC_NO_FINALIZATION
           int my_index;
-          void *new_link;
+          void **new_link = GC_NEW(void *);
 #       endif
 
+        CHECK_OUT_OF_MEMORY(new_link);
         {
           FINALIZER_LOCK();
                 /* Losing a count here causes erroneous report of failure. */
@@ -965,18 +966,23 @@ tn * mktree(int n)
                 GC_printf("GC_move_disappearing_link(link,link) failed\n");
                 FAIL;
         }
-        new_link = (void *)live_indicators[my_index];
+        *new_link = (void *)live_indicators[my_index];
         if (GC_move_disappearing_link((void **)(&(live_indicators[my_index])),
-                                      &new_link) != GC_SUCCESS) {
+                                      new_link) != GC_SUCCESS) {
                 GC_printf("GC_move_disappearing_link(new_link) failed\n");
                 FAIL;
         }
-        if (GC_unregister_disappearing_link(&new_link) == 0) {
+        /* Note: if other thread is performing fork at this moment,     */
+        /* then the stack of the current thread is dropped (together    */
+        /* with new_link variable) in the child process, and            */
+        /* GC_dl_hashtbl entry with the link equal to new_link will be  */
+        /* removed when a collection occurs (as expected).              */
+        if (GC_unregister_disappearing_link(new_link) == 0) {
                 GC_printf("GC_unregister_disappearing_link failed\n");
                 FAIL;
         }
         if (GC_move_disappearing_link((void **)(&(live_indicators[my_index])),
-                                      &new_link) != GC_NOT_FOUND) {
+                                      new_link) != GC_NOT_FOUND) {
                 GC_printf("GC_move_disappearing_link(new_link) failed 2\n");
                 FAIL;
         }
@@ -995,18 +1001,18 @@ tn * mktree(int n)
             GC_printf("GC_move_long_link(link,link) failed\n");
             FAIL;
           }
-          new_link = live_long_refs[my_index];
+          *new_link = live_long_refs[my_index];
           if (GC_move_long_link(&live_long_refs[my_index],
-                                &new_link) != GC_SUCCESS) {
+                                new_link) != GC_SUCCESS) {
             GC_printf("GC_move_long_link(new_link) failed\n");
             FAIL;
           }
-          if (GC_unregister_long_link(&new_link) == 0) {
+          if (GC_unregister_long_link(new_link) == 0) {
             GC_printf("GC_unregister_long_link failed\n");
             FAIL;
           }
           if (GC_move_long_link(&live_long_refs[my_index],
-                                &new_link) != GC_NOT_FOUND) {
+                                new_link) != GC_NOT_FOUND) {
             GC_printf("GC_move_long_link(new_link) failed 2\n");
             FAIL;
           }
