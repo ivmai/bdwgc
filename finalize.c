@@ -854,8 +854,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
         ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_dl->dl_hidden_obj);
         ptr_t real_link = (ptr_t)GC_REVEAL_POINTER(curr_dl->dl_hidden_link);
 
-        GC_printf("Object: %p, link: %p\n",
-                  (void *)real_ptr, (void *)real_link);
+        GC_printf("Object: %p, link value: %p, link addr: %p\n",
+                  (void *)real_ptr, *(void **)real_link, (void *)real_link);
       }
     }
   }
@@ -867,13 +867,13 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     size_t fo_size = GC_fnlz_roots.fo_head == NULL ? 0 :
                                 (size_t)1 << GC_log_fo_table_size;
 
-    GC_printf("Disappearing (short) links:\n");
+    GC_printf("\n***Disappearing (short) links:\n");
     GC_dump_finalization_links(&GC_dl_hashtbl);
 #   ifndef GC_LONG_REFS_NOT_NEEDED
-      GC_printf("Disappearing long links:\n");
+      GC_printf("\n***Disappearing long links:\n");
       GC_dump_finalization_links(&GC_ll_hashtbl);
 #   endif
-    GC_printf("Finalizers:\n");
+    GC_printf("\n***Finalizers:\n");
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = GC_fnlz_roots.fo_head[i];
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
