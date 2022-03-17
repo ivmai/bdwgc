@@ -937,7 +937,7 @@ GC_INLINE void GC_make_disappearing_links_disappear(
 
     for (curr_dl = dl_hashtbl->head[i]; curr_dl != NULL; curr_dl = next_dl) {
       next_dl = dl_next(curr_dl);
-#     ifdef GC_ASSERTIONS
+#     if defined(GC_ASSERTIONS) && !defined(THREAD_SANITIZER)
          /* Check accessibility of the location pointed by link. */
         GC_noop1(*(word *)GC_REVEAL_POINTER(curr_dl->dl_hidden_link));
 #     endif
