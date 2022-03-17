@@ -552,7 +552,7 @@ void GC_push_thread_structures(void)
 #   ifdef E2K
       GC_PUSH_ALL_SYM(first_thread.backing_store_end);
 #   endif
-#   if defined(THREAD_LOCAL_ALLOC)
+#   if defined(THREAD_LOCAL_ALLOC) && defined(USE_CUSTOM_SPECIFIC)
       GC_PUSH_ALL_SYM(GC_thread_key);
 #   endif
 }
