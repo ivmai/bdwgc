@@ -466,7 +466,7 @@ void GC_push_thread_structures(void)
 {
     GC_ASSERT(I_HOLD_LOCK());
     GC_push_all((ptr_t)(GC_threads), (ptr_t)(GC_threads)+sizeof(GC_threads));
-#   if defined(THREAD_LOCAL_ALLOC)
+#   if defined(THREAD_LOCAL_ALLOC) && defined(USE_CUSTOM_SPECIFIC)
       GC_push_all((ptr_t)(&GC_thread_key),
                   (ptr_t)(&GC_thread_key) + sizeof(GC_thread_key));
 #   endif
