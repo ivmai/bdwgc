@@ -485,9 +485,13 @@ static int resend_lost_signals(int n_live_threads,
                                int (*suspend_restart_all)(void))
 {
 #   define RETRY_INTERVAL 100000 /* us */
+#   define RESEND_SIGNALS_LIMIT 25
 
     if (n_live_threads > 0) {
       unsigned long wait_usecs = 0;  /* Total wait since retry. */
+      int retry = 0;
+      int prev_sent = 0;
+
       for (;;) {
         int ack_count;
 
@@ -497,12 +501,18 @@ static int resend_lost_signals(int n_live_threads,
         if (wait_usecs > RETRY_INTERVAL) {
           int newly_sent = suspend_restart_all();
 
-          GC_COND_LOG_PRINTF("Resent %d signals after timeout\n", newly_sent);
+          if (newly_sent == prev_sent /* no progress */
+              && ++retry >= RESEND_SIGNALS_LIMIT)
+            ABORT("Signals delivery fails constantly");
+
+          GC_COND_LOG_PRINTF("Resent %d signals after timeout, retry: %d\n",
+                             newly_sent, retry);
           sem_getvalue(&GC_suspend_ack_sem, &ack_count);
           if (newly_sent < n_live_threads - ack_count) {
             WARN("Lost some threads while stopping or starting world?!\n", 0);
             n_live_threads = ack_count + newly_sent;
           }
+          prev_sent = newly_sent;
           wait_usecs = 0;
         }
         GC_usleep(WAIT_UNIT);
