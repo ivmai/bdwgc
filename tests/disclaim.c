@@ -198,6 +198,8 @@ void *test(void *data)
     memset(pop, 0, sizeof(pop));
     for (i = 0; i < MUTATE_CNT; ++i) {
         int t = rand() % POP_SIZE;
+        int j;
+
         switch (rand() % (i > GROW_LIMIT? 5 : 3)) {
         case 0: case 3:
             if (pop[t])
@@ -208,8 +210,8 @@ void *test(void *data)
                 pop[t] = pop[t]->cdr;
             break;
         case 2:
-            pop[t] = pair_new(pop[rand() % POP_SIZE],
-                              pop[rand() % POP_SIZE]);
+            j = rand() % POP_SIZE;
+            pop[t] = pair_new(pop[j], pop[rand() % POP_SIZE]);
             break;
         }
         if (rand() % 8 == 1)
