@@ -3140,6 +3140,10 @@ EXTERN_C_BEGIN
     /* GCC v4.8+ */
 #   define ADDRESS_SANITIZER
 # endif
+# ifdef __SANITIZE_THREAD__
+    /* GCC v7.1+ */
+#   define THREAD_SANITIZER
+# endif
 #endif /* !__has_feature */
 
 #if defined(SPARC)
