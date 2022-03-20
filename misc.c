@@ -325,11 +325,17 @@ STATIC void GC_init_size_map(void)
 # ifdef THREADS
     /* Used to occasionally clear a bigger chunk.       */
     /* TODO: Should be more random than it is ...       */
-    GC_ATTR_NO_SANITIZE_THREAD
     static unsigned next_random_no(void)
     {
-      static unsigned random_no = 0;
-      return ++random_no % 13;
+#     ifdef AO_HAVE_fetch_and_add1
+        static volatile AO_t random_no;
+
+        return (unsigned)AO_fetch_and_add1(&random_no) % 13;
+#     else
+        static unsigned random_no = 0;
+
+        return (random_no++) % 13;
+#     endif
     }
 # endif /* THREADS */
 
