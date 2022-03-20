@@ -29,16 +29,9 @@
 #if defined(GC_PTHREADS) || defined(LINT2)
 # define NOT_GCBUILD
 # include "private/gc_priv.h"
-
-  GC_ATTR_NO_SANITIZE_THREAD
-  static int GC_rand(void) /* same as in disclaim.c */
-  {
-    static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
-    return GC_RAND_NEXT(&seed);
-  }
-
 # undef rand
-# define rand() GC_rand()
+  static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
+# define rand() GC_RAND_NEXT(&seed)
 #endif /* GC_PTHREADS || LINT2 */
 
 #include "gc/gc_mark.h" /* should not precede include gc_priv.h */

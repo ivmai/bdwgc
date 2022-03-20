@@ -31,20 +31,13 @@
 #if defined(GC_PTHREADS) || defined(LINT2)
 # define NOT_GCBUILD
 # include "private/gc_priv.h"
-
-  GC_ATTR_NO_SANITIZE_THREAD
-  static int GC_rand(void)
-  {
-    static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
-    return GC_RAND_NEXT(&seed);
-  }
-
   /* Redefine the standard rand() with a trivial (yet sufficient for    */
   /* the test purpose) implementation to avoid crashes inside rand()    */
   /* on some targets (e.g. FreeBSD 13.0) when used concurrently.        */
   /* The standard specifies rand() as not a thread-safe API function.   */
 # undef rand
-# define rand() GC_rand()
+  static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
+# define rand() GC_RAND_NEXT(&seed)
 #endif /* GC_PTHREADS || LINT2 */
 
 #define my_assert(e) \
