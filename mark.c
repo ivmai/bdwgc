@@ -1683,6 +1683,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 #ifdef USE_PUSH_MARKED_ACCELERATORS
 /* Push all objects reachable from marked objects in the given block */
 /* containing objects of size 1 granule.                             */
+GC_ATTR_NO_SANITIZE_THREAD
 STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
 {
     word * mark_word_addr = &(hhdr->hb_marks[0]);
