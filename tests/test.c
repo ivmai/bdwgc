@@ -1289,11 +1289,11 @@ void typed_test(void)
 #ifdef DBG_HDRS_ALL
 # define set_print_procs() (void)(A.dummy = 17)
 #else
-  int fail_count = 0;
+  volatile AO_t fail_count = 0;
 
   void GC_CALLBACK fail_proc1(void *x GC_ATTR_UNUSED)
   {
-    fail_count++;
+    AO_fetch_and_add1(&fail_count);
   }
 
   void set_print_procs(void)
@@ -1307,7 +1307,7 @@ void typed_test(void)
 # ifdef THREADS
 #   define TEST_FAIL_COUNT(n) 1
 # else
-#   define TEST_FAIL_COUNT(n) (fail_count >= (n))
+#   define TEST_FAIL_COUNT(n) (fail_count >= (AO_t)(n))
 # endif
 #endif /* !DBG_HDRS_ALL */
 
@@ -1398,7 +1398,7 @@ void run_one_test(void)
         GC_printf("GC_is_heap_ptr(&local_var) produced incorrect result\n");
         FAIL;
       }
-      if (GC_is_heap_ptr(&fail_count) || GC_is_heap_ptr(NULL)) {
+      if (GC_is_heap_ptr((void *)&fail_count) || GC_is_heap_ptr(NULL)) {
         GC_printf("GC_is_heap_ptr(&global_var) produced incorrect result\n");
         FAIL;
       }
