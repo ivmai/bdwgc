@@ -48,13 +48,22 @@ void GC_noop6(word arg1 GC_ATTR_UNUSED, word arg2 GC_ATTR_UNUSED,
 # endif
 }
 
-volatile word GC_noop_sink;
+#if defined(AO_HAVE_store) && defined(THREAD_SANITIZER)
+  volatile AO_t GC_noop_sink;
+#else
+  volatile word GC_noop_sink;
+#endif
 
-/* Single argument version, robust against whole program analysis. */
-GC_ATTR_NO_SANITIZE_THREAD
+/* Make the argument appear live to compiler.  This is similar  */
+/* to GC_noop6(), but with a single argument.  Robust against   */
+/* whole program analysis.                                      */
 GC_API void GC_CALL GC_noop1(word x)
 {
+# if defined(AO_HAVE_store) && defined(THREAD_SANITIZER)
+    AO_store(&GC_noop_sink, (AO_t)x);
+# else
     GC_noop_sink = x;
+# endif
 }
 
 /* Initialize GC_obj_kinds properly and standard free lists properly.   */
