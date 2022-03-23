@@ -1065,6 +1065,20 @@ STATIC void GC_remove_all_threads_but_me(void)
   }
 #endif /* ARM32 && GC_LINUX_THREADS && !NACL */
 
+#if defined(CAN_HANDLE_FORK) && defined(THREAD_SANITIZER)
+# include "private/gc_pmark.h" /* for MS_NONE */
+
+  /* Workaround for TSan which does not notice that the GC lock */
+  /* is acquired in fork_prepare_proc().                        */
+  GC_ATTR_NO_SANITIZE_THREAD
+  static GC_bool collection_in_progress(void)
+  {
+    return GC_mark_state != MS_NONE;
+  }
+#else
+# define collection_in_progress() GC_collection_in_progress()
+#endif
+
 /* We hold the GC lock.  Wait until an in-progress GC has finished.     */
 /* Repeatedly RELEASES GC LOCK in order to wait.                        */
 /* If wait_for_all is true, then we exit with the GC lock held and no   */
@@ -1079,12 +1093,12 @@ STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
       GC_ASSERT(I_HOLD_LOCK());
 #   endif
     ASSERT_CANCEL_DISABLED();
-    if (GC_incremental && GC_collection_in_progress()) {
+    if (GC_incremental && collection_in_progress()) {
         word old_gc_no = GC_gc_no;
 
         /* Make sure that no part of our stack is still on the mark stack, */
         /* since it's about to be unmapped.                                */
-        while (GC_incremental && GC_collection_in_progress()
+        while (GC_incremental && collection_in_progress()
                && (wait_for_all || old_gc_no == GC_gc_no)) {
             ENTER_GC();
             GC_in_thread_creation = TRUE;
@@ -1110,6 +1124,15 @@ STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
 IF_CANCEL(static int fork_cancel_state;)
                                 /* protected by allocation lock.        */
 
+# ifdef PARALLEL_MARK
+#   ifdef THREAD_SANITIZER
+      GC_ATTR_NO_SANITIZE_THREAD
+      static void wait_for_reclaim_atfork(void);
+#   else
+#     define wait_for_reclaim_atfork() GC_wait_for_reclaim()
+#   endif
+# endif /* PARALLEL_MARK */
+
 /* Called before a fork()               */
 #if defined(GC_ASSERTIONS) && defined(CAN_CALL_ATFORK)
   /* GC_lock_holder is updated safely (no data race actually).  */
@@ -1129,7 +1152,7 @@ static void fork_prepare_proc(void)
                 /* Following waits may include cancellation points. */
 #     if defined(PARALLEL_MARK)
         if (GC_parallel)
-          GC_wait_for_reclaim();
+          wait_for_reclaim_atfork();
 #     endif
       GC_wait_for_gc_completion(TRUE);
 #     if defined(PARALLEL_MARK)
@@ -2419,6 +2442,20 @@ GC_INNER void GC_wait_for_reclaim(void)
     }
     GC_release_mark_lock();
 }
+
+# if defined(CAN_HANDLE_FORK) && defined(THREAD_SANITIZER)
+    /* Identical to GC_wait_for_reclaim() but with the no_sanitize      */
+    /* attribute as a workaround for TSan which does not notice that    */
+    /* the GC lock is acquired in fork_prepare_proc().                  */
+    GC_ATTR_NO_SANITIZE_THREAD
+    static void wait_for_reclaim_atfork(void)
+    {
+      GC_acquire_mark_lock();
+      while (GC_fl_builder_count > 0)
+        GC_wait_builder();
+      GC_release_mark_lock();
+    }
+# endif /* CAN_HANDLE_FORK && THREAD_SANITIZER */
 
 GC_INNER void GC_notify_all_builder(void)
 {
