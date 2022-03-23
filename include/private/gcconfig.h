@@ -3126,13 +3126,13 @@ EXTERN_C_BEGIN
 
 #if defined(__has_feature)
   /* __has_feature() is supported.      */
-# if __has_feature(address_sanitizer) && !defined(ADDRESS_SANITIZER)
+# if __has_feature(address_sanitizer)
 #   define ADDRESS_SANITIZER
 # endif
-# if __has_feature(memory_sanitizer) && !defined(MEMORY_SANITIZER)
+# if __has_feature(memory_sanitizer)
 #   define MEMORY_SANITIZER
 # endif
-# if __has_feature(thread_sanitizer) && !defined(THREAD_SANITIZER)
+# if __has_feature(thread_sanitizer) && defined(THREADS)
 #   define THREAD_SANITIZER
 # endif
 #else
@@ -3140,7 +3140,7 @@ EXTERN_C_BEGIN
     /* GCC v4.8+ */
 #   define ADDRESS_SANITIZER
 # endif
-# ifdef __SANITIZE_THREAD__
+# if defined(__SANITIZE_THREAD__) && defined(THREADS)
     /* GCC v7.1+ */
 #   define THREAD_SANITIZER
 # endif
