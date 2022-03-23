@@ -2431,7 +2431,7 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
   /* A trivial (linear congruential) pseudo-random numbers generator,   */
   /* safe for the concurrent usage.                                     */
 # define GC_RAND_MAX ((int)(~0U >> 1))
-# ifdef THREAD_SANITIZER
+# if defined(AO_HAVE_store) && defined(THREAD_SANITIZER)
 #   define GC_RAND_STATE_T volatile AO_t
 #   define GC_RAND_NEXT(pseed) GC_rand_next(pseed)
     GC_INLINE int GC_rand_next(GC_RAND_STATE_T *pseed)
