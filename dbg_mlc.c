@@ -981,7 +981,11 @@ STATIC void GC_check_heap_block(struct hblk *hbp, word dummy GC_ATTR_UNUSED)
     word bit_no;
     char *p, *plim;
 
-    p = hbp->hb_body;
+#   if defined(__CHERI_PURE_CAPABILITY__)
+      p = hhdr->hb_block;
+#   else
+      p = hbp->hb_body;
+#   endif
     if (sz > MAXOBJBYTES) {
       plim = p;
     } else {
