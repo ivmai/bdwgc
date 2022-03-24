@@ -251,17 +251,13 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
     ABORT("Bad signal in suspend_handler");
   }
 
-# if defined(E2K) || defined(HP_PA) || defined(IA64) || defined(M68K)
+# if defined(E2K) || defined(HP_PA) || defined(IA64) || defined(M68K) \
+     || defined(NO_SA_SIGACTION)
     GC_with_callee_saves_pushed(GC_suspend_handler_inner, NULL);
 # else
-    /* We believe that in all other cases the full context is already   */
+    /* We believe that in this case the full context is already         */
     /* in the signal handler frame.                                     */
-    {
-#     ifdef NO_SA_SIGACTION
-        void *context = 0;
-#     endif
       GC_suspend_handler_inner(NULL, context);
-    }
 # endif
   errno = old_errno;
 }
