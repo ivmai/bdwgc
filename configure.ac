@@ -683,7 +683,7 @@ if test x"$enable_gcj_support" != xno; then
         ;;
       *)
         AC_DEFINE([GC_ENABLE_SUSPEND_THREAD], 1,
-              [Define to turn on GC_suspend_thread support.])
+              [Define to turn on GC_suspend_thread support (Linux only).])
         ;;
     esac
 fi
