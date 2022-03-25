@@ -2989,6 +2989,13 @@ EXTERN_C_BEGIN
 # error Invalid config: GWW_VDB requires USE_WINALLOC
 #endif
 
+#if defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS) && !defined(NACL) \
+    && !defined(GC_OPENBSD_UTHREADS) && !defined(GC_WIN32_THREADS) \
+    && (defined(E2K) || defined(HP_PA) || defined(IA64) || defined(M68K) \
+        || defined(NO_SA_SIGACTION))
+# define SUSPEND_HANDLER_NO_CONTEXT
+#endif
+
 #if (((defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__)) \
         || (defined(MSWIN32) && defined(I386)) /* for Win98 */ \
         || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))) \

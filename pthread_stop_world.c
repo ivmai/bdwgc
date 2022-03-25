@@ -234,11 +234,11 @@ STATIC sem_t GC_suspend_ack_sem; /* also used to acknowledge restart */
 
 STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 
-#ifndef NO_SA_SIGACTION
-  STATIC void GC_suspend_handler(int sig, siginfo_t * info GC_ATTR_UNUSED,
-                                 void * context GC_ATTR_UNUSED)
-#else
+#ifdef SUSPEND_HANDLER_NO_CONTEXT
   STATIC void GC_suspend_handler(int sig)
+#else
+  STATIC void GC_suspend_sigaction(int sig, siginfo_t * info GC_ATTR_UNUSED,
+                                   void * context)
 #endif
 {
   int old_errno = errno;
@@ -251,8 +251,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
     ABORT("Bad signal in suspend_handler");
   }
 
-# if defined(E2K) || defined(HP_PA) || defined(IA64) || defined(M68K) \
-     || defined(NO_SA_SIGACTION)
+# ifdef SUSPEND_HANDLER_NO_CONTEXT
     GC_with_callee_saves_pushed(GC_suspend_handler_inner, NULL);
 # else
     /* We believe that in this case the full context is already         */
@@ -1346,15 +1345,6 @@ GC_INNER void GC_stop_init(void)
         ABORT("sem_init failed");
     GC_stop_count = THREAD_RESTARTED; /* i.e. the world is not stopped */
 
-#   ifdef SA_RESTART
-      act.sa_flags = SA_RESTART
-#   else
-      act.sa_flags = 0
-#   endif
-#   ifndef NO_SA_SIGACTION
-                     | SA_SIGINFO
-#   endif
-        ;
     if (sigfillset(&act.sa_mask) != 0) {
         ABORT("sigfillset failed");
     }
@@ -1366,17 +1356,24 @@ GC_INNER void GC_stop_init(void)
     GC_remove_allowed_signals(&act.sa_mask);
     /* GC_sig_thr_restart is set in the resulting mask. */
     /* It is unmasked by the handler when necessary.    */
-#   ifndef NO_SA_SIGACTION
-      act.sa_sigaction = GC_suspend_handler;
+
+#   ifdef SA_RESTART
+      act.sa_flags = SA_RESTART;
 #   else
+      act.sa_flags = 0;
+#   endif
+#   ifdef SUSPEND_HANDLER_NO_CONTEXT
       act.sa_handler = GC_suspend_handler;
+#   else
+      act.sa_flags |= SA_SIGINFO;
+      act.sa_sigaction = GC_suspend_sigaction;
 #   endif
     /* act.sa_restorer is deprecated and should not be initialized. */
     if (sigaction(GC_sig_suspend, &act, NULL) != 0) {
         ABORT("Cannot set SIG_SUSPEND handler");
     }
 
-#   ifndef NO_SA_SIGACTION
+#   ifndef SUSPEND_HANDLER_NO_CONTEXT
       act.sa_flags &= ~SA_SIGINFO;
 #   endif
     act.sa_handler = GC_restart_handler;
