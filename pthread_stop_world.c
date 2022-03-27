@@ -179,6 +179,7 @@ STATIC volatile AO_t GC_stop_count;
     /* a non-constant expression (e.g., in case of SIGRTMIN),   */
     /* actual signal numbers are determined by GC_stop_init()   */
     /* unless manually set (before GC initialization).          */
+    /* Might be set to the same signal number.                  */
 STATIC int GC_sig_suspend = SIGNAL_UNSET;
 STATIC int GC_sig_thr_restart = SIGNAL_UNSET;
 
@@ -318,17 +319,19 @@ GC_INLINE void GC_store_stack_ptr(GC_thread me)
 STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
                                      void * context GC_ATTR_UNUSED)
 {
-  pthread_t self = pthread_self();
+  pthread_t self;
   GC_thread me;
 # ifdef E2K
     ptr_t bs_lo;
     size_t stack_size;
 # endif
   IF_CANCEL(int cancel_state;)
-  AO_t my_stop_count = ao_load_acquire_async(&GC_stop_count)
-                                                & ~(word)THREAD_RESTARTED;
+  AO_t my_stop_count = ao_load_acquire_async(&GC_stop_count);
                         /* After the barrier, this thread should see    */
                         /* the actual content of GC_threads.            */
+
+  if ((my_stop_count & THREAD_RESTARTED) != 0)
+    return; /* Restarting the world. */
 
   DISABLE_CANCEL(cancel_state);
       /* pthread_setcancelstate is not defined to be async-signal-safe. */
@@ -339,6 +342,8 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
       /* out of it.  In fact, it looks to me like an async-signal-safe  */
       /* cancellation point is inherently a problem, unless there is    */
       /* some way to disable cancellation in the handler.               */
+
+  self = pthread_self();
 # ifdef DEBUG_THREADS
     GC_log_printf("Suspending %p\n", (void *)self);
 # endif
@@ -550,13 +555,10 @@ STATIC void GC_restart_handler(int sig)
   if (sig != GC_sig_thr_restart)
     ABORT("Bad signal in restart handler");
 
-  /*
-  ** Note: even if we don't do anything useful here,
-  ** it would still be necessary to have a signal handler,
-  ** rather than ignoring the signals, otherwise
-  ** the signals will not be delivered at all, and
-  ** will thus not interrupt the sigsuspend() above.
-  */
+  /* Note: even if we do not do anything useful here, it would still    */
+  /* be necessary to have a signal handler, rather than ignoring the    */
+  /* signals, otherwise the signals will not be delivered at all,       */
+  /* and will thus not interrupt the sigsuspend() above.                */
 # ifdef DEBUG_THREADS
     GC_log_printf("In GC_restart_handler for %p\n", (void *)pthread_self());
     errno = old_errno;
@@ -643,6 +645,7 @@ STATIC void GC_restart_handler(int sig)
 
     GC_API void GC_CALL GC_suspend_thread(GC_SUSPEND_THREAD_ID thread) {
       GC_thread t;
+      AO_t saved_stop_count;
       IF_CANCEL(int cancel_state;)
       DCL_LOCK_STATE;
 
@@ -653,10 +656,8 @@ STATIC void GC_restart_handler(int sig)
         return;
       }
 
-      /* Set the flag making the change visible to the signal handler.  */
-      AO_store_release(&t->suspended_ext, TRUE);
-
       if (THREAD_EQUAL((pthread_t)thread, pthread_self())) {
+        t -> suspended_ext = TRUE;
         UNLOCK();
         /* It is safe as "t" cannot become invalid here (no race with   */
         /* GC_unregister_my_thread).                                    */
@@ -664,6 +665,7 @@ STATIC void GC_restart_handler(int sig)
         return;
       }
       if ((t -> flags & FINISHED) != 0) {
+        t -> suspended_ext = TRUE;
         /* Terminated but not joined yet. */
         UNLOCK();
         return;
@@ -691,6 +693,13 @@ STATIC void GC_restart_handler(int sig)
       /* be trying to acquire this lock too, and the suspend handler    */
       /* execution is deferred until the write fault handler completes. */
 
+      saved_stop_count = GC_stop_count;
+      GC_ASSERT((saved_stop_count & THREAD_RESTARTED) != 0);
+      AO_store(&GC_stop_count, saved_stop_count + THREAD_RESTARTED);
+
+      /* Set the flag making the change visible to the signal handler.  */
+      AO_store_release(&t->suspended_ext, TRUE);
+
       /* TODO: Support GC_retry_signals (not needed for TSan) */
       switch (raise_signal(t, GC_sig_suspend)) {
       /* ESRCH cannot happen as terminated threads are handled above.   */
@@ -709,6 +718,8 @@ STATIC void GC_restart_handler(int sig)
       }
       if (GC_manual_vdb)
         GC_release_dirty_lock();
+      AO_store(&GC_stop_count, saved_stop_count); /* restore the counter */
+
       RESTORE_CANCEL(cancel_state);
       UNLOCK();
     }
@@ -1332,8 +1343,6 @@ GC_INNER void GC_stop_init(void)
         GC_sig_suspend = SIG_SUSPEND;
     if (SIGNAL_UNSET == GC_sig_thr_restart)
         GC_sig_thr_restart = SIG_THR_RESTART;
-    if (GC_sig_suspend == GC_sig_thr_restart)
-        ABORT("Cannot use same signal for thread suspend and resume");
 
     if (sem_init(&GC_suspend_ack_sem, GC_SEM_INIT_PSHARED, 0) != 0)
         ABORT("sem_init failed");
@@ -1367,12 +1376,15 @@ GC_INNER void GC_stop_init(void)
         ABORT("Cannot set SIG_SUSPEND handler");
     }
 
-#   ifndef SUSPEND_HANDLER_NO_CONTEXT
-      act.sa_flags &= ~SA_SIGINFO;
-#   endif
-    act.sa_handler = GC_restart_handler;
-    if (sigaction(GC_sig_thr_restart, &act, NULL) != 0) {
+    if (GC_sig_suspend != GC_sig_thr_restart) {
+#     ifndef SUSPEND_HANDLER_NO_CONTEXT
+        act.sa_flags &= ~SA_SIGINFO;
+#     endif
+      act.sa_handler = GC_restart_handler;
+      if (sigaction(GC_sig_thr_restart, &act, NULL) != 0)
         ABORT("Cannot set SIG_THR_RESTART handler");
+    } else {
+      GC_COND_LOG_PRINTF("Using same signal for suspend and restart\n");
     }
 
     /* Initialize suspend_handler_mask (excluding GC_sig_thr_restart).  */

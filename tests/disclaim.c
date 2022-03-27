@@ -227,6 +227,11 @@ int main(void)
     int i, n;
 # endif
 
+    /* Test the same signal usage for threads suspend and restart on Linux. */
+#   ifdef GC_PTHREADS
+        GC_set_suspend_signal(GC_get_thr_restart_signal());
+#   endif
+
     GC_set_all_interior_pointers(0); /* for a stricter test */
 #   ifdef TEST_MANUAL_VDB
         GC_set_manual_vdb_allowed(1);

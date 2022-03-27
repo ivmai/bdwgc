@@ -1526,6 +1526,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
 
   /* Suggest the GC to use the specific signal to resume threads.       */
   /* Has no effect after GC_init and on non-POSIX systems.              */
+  /* The same signal might be used for threads suspension and restart.  */
   GC_API void GC_CALL GC_set_thr_restart_signal(int);
 
   /* Return the signal number (constant after initialization) used by   */
