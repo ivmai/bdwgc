@@ -1717,6 +1717,14 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #       if defined(THREAD_LOCAL_ALLOC)
           GC_init_thread_local(&(me->tlfs));
 #       endif
+#       if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
+           && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
+          if (me -> suspended_ext) {
+            UNLOCK();
+            (void)GC_do_blocking(GC_suspend_self_inner, me);
+            return GC_SUCCESS;
+          }
+#       endif
         UNLOCK();
         return GC_SUCCESS;
     } else {

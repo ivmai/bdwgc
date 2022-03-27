@@ -51,10 +51,6 @@
 /* It's safe to call original pthread_sigmask() here.   */
 #undef pthread_sigmask
 
-#ifdef GC_ENABLE_SUSPEND_THREAD
-  static void *GC_CALLBACK suspend_self_inner(void *client_data);
-#endif
-
 #ifdef DEBUG_THREADS
 # ifndef NSIG
 #   if defined(MAXSIG)
@@ -280,7 +276,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
 #       endif
 #     endif
       sem_post(&GC_suspend_ack_sem);
-      suspend_self_inner(me);
+      GC_suspend_self_inner(me);
 #     ifdef DEBUG_THREADS
         GC_log_printf("Continuing %p on GC_resume_thread\n", (void *)self);
 #     endif
@@ -406,7 +402,7 @@ STATIC void GC_restart_handler(int sig)
       (void)select(0, 0, 0, 0, &tv);
     }
 
-    static void *GC_CALLBACK suspend_self_inner(void *client_data) {
+    GC_INNER void *GC_CALLBACK GC_suspend_self_inner(void *client_data) {
       GC_thread me = (GC_thread)client_data;
 
       while (AO_load_acquire(&me->suspended_ext)) {
@@ -435,7 +431,7 @@ STATIC void GC_restart_handler(int sig)
         UNLOCK();
         /* It is safe as "t" cannot become invalid here (no race with   */
         /* GC_unregister_my_thread).                                    */
-        (void)GC_do_blocking(suspend_self_inner, t);
+        (void)GC_do_blocking(GC_suspend_self_inner, t);
         return;
       }
       if ((t -> flags & FINISHED) != 0) {

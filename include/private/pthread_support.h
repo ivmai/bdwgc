@@ -141,6 +141,11 @@ GC_INNER GC_thread GC_lookup_thread(pthread_t id);
   GC_INNER void GC_unblock_gc_signals(void);
 #endif
 
+#if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
+    && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
+  GC_INNER void *GC_CALLBACK GC_suspend_self_inner(void *thread_me);
+#endif
+
 #ifdef GC_PTHREAD_START_STANDALONE
 # define GC_INNER_PTHRSTART /* empty */
 #else
