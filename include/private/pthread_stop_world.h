@@ -51,6 +51,12 @@ struct thread_stop_info {
 
 GC_INNER void GC_stop_init(void);
 
+#if defined(GC_ENABLE_SUSPEND_THREAD) \
+    && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
+    && !defined(PLATFORM_STOP_WORLD) && !defined(SN_TARGET_PSP2)
+  GC_INNER void *GC_CALLBACK suspend_self_inner(void *client_data);
+#endif
+
 EXTERN_C_END
 
 #endif

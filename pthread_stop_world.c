@@ -78,10 +78,6 @@
 /* It's safe to call original pthread_sigmask() here.   */
 #undef pthread_sigmask
 
-#ifdef GC_ENABLE_SUSPEND_THREAD
-  static void *GC_CALLBACK suspend_self_inner(void *client_data);
-#endif
-
 #ifdef DEBUG_THREADS
 # ifndef NSIG
 #   if defined(MAXSIG)
@@ -616,7 +612,7 @@ STATIC void GC_restart_handler(int sig)
       (void)select(0, 0, 0, 0, &tv);
     }
 
-    static void *GC_CALLBACK suspend_self_inner(void *client_data) {
+    GC_INNER void *GC_CALLBACK suspend_self_inner(void *client_data) {
       GC_thread me = (GC_thread)client_data;
 
       while (ao_load_acquire_async(&me->suspended_ext)) {
