@@ -24,7 +24,7 @@
 
 #if defined(GC_DARWIN_THREADS)
 # include "darwin_stop_world.h"
-#else
+#elif defined(PTHREAD_STOP_WORLD_IMPL)
 # include "pthread_stop_world.h"
 #endif
 
@@ -66,8 +66,7 @@ typedef struct GC_Thread_Rep {
     /* Extra bookkeeping information the stopping code uses */
     struct thread_stop_info stop_info;
 
-#   if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
-        && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
+#   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
       volatile AO_t suspended_ext;  /* Thread was suspended externally. */
 #   endif
 

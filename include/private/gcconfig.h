@@ -2989,10 +2989,19 @@ EXTERN_C_BEGIN
 # error Invalid config: GWW_VDB requires USE_WINALLOC
 #endif
 
-#if defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS) && !defined(NACL) \
-    && !defined(GC_OPENBSD_UTHREADS) && !defined(GC_WIN32_THREADS) \
-    && (defined(E2K) || defined(HP_PA) || defined(IA64) || defined(M68K) \
-        || defined(NO_SA_SIGACTION))
+#if defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS) \
+    && !defined(GC_WIN32_THREADS) && !defined(PLATFORM_STOP_WORLD) \
+    && !defined(SN_TARGET_PSP2)
+# define PTHREAD_STOP_WORLD_IMPL
+#endif
+
+#if defined(PTHREAD_STOP_WORLD_IMPL) && !defined(NACL) \
+    && !defined(GC_OPENBSD_UTHREADS)
+# define SIGNAL_BASED_STOP_WORLD
+#endif
+
+#if (defined(E2K) || defined(HP_PA) || defined(IA64) || defined(M68K) \
+     || defined(NO_SA_SIGACTION)) && defined(SIGNAL_BASED_STOP_WORLD)
 # define SUSPEND_HANDLER_NO_CONTEXT
 #endif
 

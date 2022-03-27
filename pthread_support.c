@@ -490,8 +490,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
       if (sigfillset(&set) != 0)
         ABORT("sigfillset failed");
 
-#     if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_UTHREADS) \
-         && !defined(NACL)
+#     ifdef SIGNAL_BASED_STOP_WORLD
         /* These are used by GC to stop and restart the world.  */
         if (sigdelset(&set, GC_get_suspend_signal()) != 0
             || sigdelset(&set, GC_get_thr_restart_signal()) != 0)
@@ -1392,9 +1391,7 @@ GC_INNER void GC_thr_init(void)
   }
   GC_COND_LOG_PRINTF("Number of processors: %d\n", GC_nprocs);
 
-# if defined(BASE_ATOMIC_OPS_EMULATED) && !defined(GC_DARWIN_THREADS) \
-     && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
-     && !defined(PLATFORM_STOP_WORLD) && !defined(SN_TARGET_PSP2)
+# if defined(BASE_ATOMIC_OPS_EMULATED) && defined(SIGNAL_BASED_STOP_WORLD)
     /* Ensure the process is running on just one CPU core.      */
     /* This is needed because the AO primitives emulated with   */
     /* locks cannot be used inside signal handlers.             */
@@ -1979,9 +1976,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #       if defined(THREAD_LOCAL_ALLOC)
           GC_init_thread_local(&(me->tlfs));
 #       endif
-#       if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
-           && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
-           && !defined(PLATFORM_STOP_WORLD) && !defined(SN_TARGET_PSP2)
+#       if defined(GC_ENABLE_SUSPEND_THREAD) \
+           && defined(SIGNAL_BASED_STOP_WORLD)
           /* Matters only if this is executed from a thread destructor. */
           if (me -> suspended_ext) {
             UNLOCK();

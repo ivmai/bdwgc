@@ -3429,8 +3429,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       act.sa_flags = SA_RESTART | SA_SIGINFO;
       act.sa_sigaction = GC_write_fault_handler;
       (void)sigemptyset(&act.sa_mask);
-#     if defined(THREADS) && !defined(GC_OPENBSD_UTHREADS) \
-         && !defined(GC_WIN32_THREADS) && !defined(NACL)
+#     ifdef SIGNAL_BASED_STOP_WORLD
         /* Arrange to postpone the signal while we are in a write fault */
         /* handler.  This effectively makes the handler atomic w.r.t.   */
         /* stopping the world for GC.                                   */

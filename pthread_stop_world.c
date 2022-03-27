@@ -18,9 +18,7 @@
 
 #include "private/pthread_support.h"
 
-#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && \
-    !defined(GC_DARWIN_THREADS) && !defined(PLATFORM_STOP_WORLD) \
-    && !defined(SN_TARGET_PSP2)
+#ifdef PTHREAD_STOP_WORLD_IMPL
 
 #ifdef NACL
 # include <unistd.h>
@@ -1404,4 +1402,4 @@ GC_INNER void GC_stop_init(void)
 # endif /* !GC_OPENBSD_UTHREADS && !NACL */
 }
 
-#endif /* GC_PTHREADS && !GC_DARWIN_THREADS && !GC_WIN32_THREADS */
+#endif /* PTHREAD_STOP_WORLD_IMPL */

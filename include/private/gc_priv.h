@@ -2963,8 +2963,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   GC_INNER void GC_start_mark_threads_inner(void);
 #endif /* PARALLEL_MARK */
 
-#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && !defined(NACL) \
-    && !defined(GC_DARWIN_THREADS) && !defined(SIG_SUSPEND)
+#if defined(SIGNAL_BASED_STOP_WORLD) && !defined(SIG_SUSPEND)
   /* We define the thread suspension signal here, so that we can refer  */
   /* to it in the dirty bit implementation, if necessary.  Ideally we   */
   /* would allocate a (real-time?) signal using the standard mechanism. */
