@@ -619,7 +619,12 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 {
   signed_word credit = HBLKSIZE;  /* Remaining credit for marking work. */
   ptr_t current_p;      /* Pointer to current candidate ptr.            */
+# if defined(__CHERI_PURE_CAPABILITY__)
+  void **current;       /* Candidate pointer.                           */
+  word has_rwx;         /* permissions on capability                    */
+# else
   word current;         /* Candidate pointer.                           */
+# endif
   ptr_t limit = 0;      /* (Incl) limit of current candidate range.     */
   word descr;
   ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
@@ -807,9 +812,10 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #     define PREF_DIST 4
 
 #     ifndef SMALL_CONFIG
-        word deferred;
 
 #       if !defined(__CHERI_PURE_CAPABILITY__)
+        word deferred;
+
         /* Try to prefetch the next pointer to be examined ASAP.        */
         /* Empirically, this also seems to help slightly without        */
         /* prefetches, at least on linux/X86.  Presumably this loop     */
@@ -839,6 +845,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           if ((word)current_p > (word)limit) goto next_object;
         }
 #       else   /* !defined(__CHERI_PURE_CAPABILITY__) */
+        void **deferred;
+
         /* Check each pointer for validity before dereferencing         */
         /* to prevent capability exceptions.                            */
         /* Utilise the pointer meta-data to speed-up the loop.          */
@@ -861,10 +869,13 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           GC_ASSERT((word)limit >= (word)current_p);
           if (cheri_getaddress(limit) < cheri_getbase(limit)) goto next_object;
 
-          if (cheri_gettag(limit) == 0) {
+          has_rwx = cheri_getperm(limit) & (CHERI_PERM_LOAD
+                                           | CHERI_PERM_STORE
+                                           | CHERI_PERM_EXECUTE);
+          if ((cheri_gettag(limit) == 0) || !has_rwx) {
             limit -= ALIGNMENT;
           } else {
-            deferred = *(word *)limit;
+            deferred = *(void **)limit;
             FIXUP_POINTER(deferred);
             limit -= ALIGNMENT;
             if (deferred >= (word)least_ha && deferred < (word)greatest_ha)
@@ -879,7 +890,19 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         /* Empirically, unrolling this loop doesn't help a lot. */
         /* Since PUSH_CONTENTS expands to a lot of code,        */
         /* we don't.                                            */
-        current = *(word *)current_p;
+#       if defined(__CHERI_PURE_CAPABILITY__)
+          current = *(void **)current_p;
+          has_rwx = cheri_getperm(current) & (CHERI_PERM_LOAD
+                                             | CHERI_PERM_STORE
+                                             | CHERI_PERM_EXECUTE);
+          if ((cheri_gettag(current) == 0) || !has_rwx) {
+            current_p += ALIGNMENT;
+            continue;
+          }
+#       else
+          current = *(word *)current_p;
+#       endif
+
         FIXUP_POINTER(current);
         PREFETCH(current_p + PREF_DIST*CACHE_LINE_SIZE);
         if (current >= (word)least_ha && current < (word)greatest_ha) {
@@ -898,6 +921,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         }
         current_p += ALIGNMENT;
       }
+
 
 #     ifndef SMALL_CONFIG
         /* We still need to mark the entry we previously prefetched.    */
@@ -1633,14 +1657,9 @@ GC_API void GC_CALL GC_print_trace(word gc_no)
 GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY GC_ATTR_NO_SANITIZE_THREAD
 GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 {
-#   if defined(__CHERI_PURE_CAPABILITY__)
-    word * b = (word *)cheri_setaddress(bottom, (((vaddr_t) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1)));
-    word * t = (word *)cheri_setaddress(top, (((vaddr_t) top) & ~(ALIGNMENT-1)));
-# else 
+# if !defined(__CHERI_PURE_CAPABILITY__)
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
-#   endif 
-
     REGISTER word *p;
     REGISTER word *lim;
     REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
@@ -1651,15 +1670,44 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
     if (top == 0) return;
 
     /* Check all pointers in range and push if they appear to be valid. */
-      lim = t - 1 /* longword */;
-      for (p = b; (word)p <= (word)lim;
-           p = (word *)(((ptr_t)p) + ALIGNMENT)) {
-        REGISTER word q = *p;
+    lim = t - 1 /* longword */;
+    for (p = b; (word)p <= (word)lim;
+         p = (word *)(((ptr_t)p) + ALIGNMENT)) {
+      REGISTER word q = *p;
 
-        GC_PUSH_ONE_STACK(q, p);
-      }
+      GC_PUSH_ONE_STACK(q, p);
+    }
+
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr
+# else /* defined(__CHERI_PURE_CAPABILITY__) */
+
+    void **b = (void **)cheri_setaddress(bottom, (((vaddr_t) bottom + ALIGNMENT-1)
+                                                 & ~(ALIGNMENT-1)));
+    void **t = (void **)cheri_setaddress(top, (((vaddr_t) top)
+                                                 & ~(ALIGNMENT-1)));
+    REGISTER void **p;
+    REGISTER void **lim;
+    REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+    REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
+#   define GC_greatest_plausible_heap_addr greatest_ha
+#   define GC_least_plausible_heap_addr least_ha
+
+    if (top == 0) return;
+
+    /* Check all pointers in range and push if they appear to be valid. */
+    lim = t - 1 /* longword */;
+    if ((intptr_t)lim >= (cheri_getbase(b) + cheri_getlength(b)))
+      lim = ((cheri_getbase(b) + cheri_getlength(b) - sizeof(ptr_t)) & ~(sizeof(ptr_t)-1));
+
+    for (p = b; (intptr_t)p <= (intptr_t)lim; p++) {
+      REGISTER void *q = *p;
+
+      GC_PUSH_ONE_STACK(q, p);
+    }
+#   undef GC_greatest_plausible_heap_addr
+#   undef GC_least_plausible_heap_addr
+# endif  /* defined(__CHERI_PURE_CAPABILITY__) */
 }
 
 GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
