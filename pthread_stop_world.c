@@ -228,6 +228,22 @@ GC_API int GC_CALL GC_get_thr_restart_signal(void)
   }
 #endif /* GC_EXPLICIT_SIGNALS_UNBLOCK */
 
+#ifdef BASE_ATOMIC_OPS_EMULATED
+ /* The AO primitives emulated with locks cannot be used inside signal  */
+ /* handlers as this could cause a deadlock or a double lock.           */
+ /* The following "async" macro definitions are correct only for        */
+ /* an uniprocessor case and are provided for a test purpose.           */
+# define ao_load_acquire_async(p) (*(p))
+# define ao_load_async(p) ao_load_acquire_async(p)
+# define ao_store_release_async(p, v) (void)(*(p) = (v))
+# define ao_store_async(p, v) ao_store_release_async(p, v)
+#else
+# define ao_load_acquire_async(p) AO_load_acquire(p)
+# define ao_load_async(p) AO_load(p)
+# define ao_store_release_async(p, v) AO_store_release(p, v)
+# define ao_store_async(p, v) AO_store(p, v)
+#endif /* !BASE_ATOMIC_OPS_EMULATED */
+
 STATIC sem_t GC_suspend_ack_sem; /* also used to acknowledge restart */
 
 STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
@@ -250,6 +266,9 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
   }
 
 # ifdef SUSPEND_HANDLER_NO_CONTEXT
+    /* A quick check if the signal is called to restart the world.      */
+    if ((ao_load_async(&GC_stop_count) & THREAD_RESTARTED) != 0)
+      return;
     GC_with_callee_saves_pushed(GC_suspend_handler_inner, NULL);
 # else
     /* We believe that in this case the full context is already         */
@@ -258,22 +277,6 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 # endif
   errno = old_errno;
 }
-
-#ifdef BASE_ATOMIC_OPS_EMULATED
- /* The AO primitives emulated with locks cannot be used inside signal  */
- /* handlers as this could cause a deadlock or a double lock.           */
- /* The following "async" macro definitions are correct only for        */
- /* an uniprocessor case and are provided for a test purpose.           */
-# define ao_load_acquire_async(p) (*(p))
-# define ao_load_async(p) ao_load_acquire_async(p)
-# define ao_store_release_async(p, v) (void)(*(p) = (v))
-# define ao_store_async(p, v) ao_store_release_async(p, v)
-#else
-# define ao_load_acquire_async(p) AO_load_acquire(p)
-# define ao_load_async(p) AO_load(p)
-# define ao_store_release_async(p, v) AO_store_release(p, v)
-# define ao_store_async(p, v) AO_store(p, v)
-#endif /* !BASE_ATOMIC_OPS_EMULATED */
 
 /* The lookup here is safe, since this is done on behalf        */
 /* of a thread which holds the allocation lock in order         */
