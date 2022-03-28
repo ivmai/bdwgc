@@ -786,10 +786,6 @@ GC_INNER void GC_push_all_stacks(void)
         ++nthreads;
         traced_stack_sect = p -> traced_stack_sect;
         if (THREAD_EQUAL(p -> id, self)) {
-#           ifdef E2K
-              size_t stack_size;
-#           endif
-
             GC_ASSERT(!p->thread_blocked);
 #           ifdef SPARC
               lo = GC_save_regs_in_stack();
@@ -800,8 +796,11 @@ GC_INNER void GC_push_all_stacks(void)
 #             elif defined(E2K)
                 GC_ASSERT(NULL == p -> backing_store_end);
                 (void)GC_save_regs_in_stack();
-                GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
-                bs_hi = bs_lo + stack_size;
+                {
+                  size_t stack_size;
+                  GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
+                  bs_hi = bs_lo + stack_size;
+                }
 #             endif
 #           endif
             found_me = TRUE;
