@@ -162,7 +162,10 @@ STATIC volatile AO_t GC_stop_count;
  * pointer(s) and acknowledge.
  */
 #ifndef SIG_THR_RESTART
-# if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) \
+# ifdef SUSPEND_HANDLER_NO_CONTEXT
+    /* Reuse the suspend signal. */
+#   define SIG_THR_RESTART SIG_SUSPEND
+# elif defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) \
      || defined(GC_NETBSD_THREADS) || defined(GC_USESIGRT_SIGNALS)
 #   if defined(_SIGRTMIN) && !defined(CPPCHECK)
 #     define SIG_THR_RESTART _SIGRTMIN + 5
@@ -172,7 +175,7 @@ STATIC volatile AO_t GC_stop_count;
 # else
 #   define SIG_THR_RESTART SIGXCPU
 # endif
-#endif
+#endif /* !SIG_THR_RESTART */
 
 #define SIGNAL_UNSET (-1)
     /* Since SIG_SUSPEND and/or SIG_THR_RESTART could represent */
