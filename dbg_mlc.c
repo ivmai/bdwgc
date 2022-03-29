@@ -3,7 +3,7 @@
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1997 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
- * Copyright (C) 2007 Free Software Foundation, Inc
+ * Copyright (c) 2007 Free Software Foundation, Inc.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -54,23 +54,20 @@
   }
 #endif /* !SHORT_DBG_HDRS */
 
-#ifdef LINT2
-  long GC_random(void)
-  {
-    static unsigned seed = 1; /* not thread-safe */
-
-    /* Linear congruential pseudo-random numbers generator.     */
-    seed = (seed * 1103515245U + 12345) & GC_RAND_MAX; /* overflow is ok */
-    return (long)seed;
-  }
-#endif
-
 #ifdef KEEP_BACK_PTRS
 
 #ifdef LINT2
-# define RANDOM() GC_random()
+  static int GC_rand(void)
+  {
+    static GC_RAND_STATE_T seed;
+
+    return GC_RAND_NEXT(&seed);
+  }
+
+# define RANDOM() (long)GC_rand()
 #else
 # include <stdlib.h>
+# undef GC_RAND_MAX
 # define GC_RAND_MAX RAND_MAX
 
 # if defined(__GLIBC__) || defined(SOLARIS) \
@@ -163,16 +160,17 @@
   GC_API void * GC_CALL GC_generate_random_heap_address(void)
   {
     size_t i;
-    word heap_offset = RANDOM();
+    word heap_offset = (word)RANDOM();
 
-    if (GC_heapsize > GC_RAND_MAX) {
+    if (GC_heapsize > (word)GC_RAND_MAX) {
         heap_offset *= GC_RAND_MAX;
-        heap_offset += RANDOM();
+        heap_offset += (word)RANDOM();
     }
     heap_offset %= GC_heapsize;
         /* This doesn't yield a uniform distribution, especially if     */
-        /* e.g. RAND_MAX = 1.5* GC_heapsize.  But for typical cases,    */
+        /* e.g. RAND_MAX is 1.5*GC_heapsize.  But for typical cases,    */
         /* it's not too bad.                                            */
+
     for (i = 0;; ++i) {
         size_t size;
 
@@ -210,6 +208,7 @@
     size_t offset;
     void *base;
 
+    GC_ASSERT(I_DONT_HOLD_LOCK());
     GC_print_heap_obj((ptr_t)GC_base(current));
 
     for (i = 0; ; ++i) {
@@ -247,24 +246,24 @@
     out:;
   }
 
-  /* Force a garbage collection and generate/print a backtrace  */
-  /* from a random heap address.                                */
-  GC_INNER void GC_generate_random_backtrace_no_gc(void)
-  {
-    void * current;
-    current = GC_generate_random_valid_address();
-    GC_printf("\n****Chosen address %p in object\n", current);
-    GC_print_backtrace(current);
-  }
-
   GC_API void GC_CALL GC_generate_random_backtrace(void)
   {
+    void *current;
+    DCL_LOCK_STATE;
+
+    GC_ASSERT(I_DONT_HOLD_LOCK());
     if (GC_try_to_collect(GC_never_stop_func) == 0) {
       GC_err_printf("Cannot generate a backtrace: "
                     "garbage collection is disabled!\n");
       return;
     }
-    GC_generate_random_backtrace_no_gc();
+
+    /* Generate/print a backtrace from a random heap address.   */
+    LOCK();
+    current = GC_generate_random_valid_address();
+    UNLOCK();
+    GC_printf("\n****Chosen address %p in object\n", current);
+    GC_print_backtrace(current);
   }
 
 #endif /* KEEP_BACK_PTRS */
@@ -414,14 +413,14 @@ STATIC void GC_print_obj(ptr_t p)
     }
 
     if (NULL != kind_str) {
-        GC_err_printf("%p (%s:%d," IF_NOT_SHORTDBG_HDRS(" sz=%lu,") " %s)\n",
+        GC_err_printf("%p (%s:%d," IF_NOT_SHORTDBG_HDRS(" sz= %lu,") " %s)\n",
                       (void *)((ptr_t)ohdr + sizeof(oh)),
                       ohdr->oh_string, GET_OH_LINENUM(ohdr) /*, */
                       COMMA_IFNOT_SHORTDBG_HDRS((unsigned long)ohdr->oh_sz),
                       kind_str);
     } else {
-        GC_err_printf("%p (%s:%d," IF_NOT_SHORTDBG_HDRS(" sz=%lu,")
-                      " kind=%d descr=0x%lx)\n",
+        GC_err_printf("%p (%s:%d," IF_NOT_SHORTDBG_HDRS(" sz= %lu,")
+                      " kind= %d, descr= 0x%lx)\n",
                       (void *)((ptr_t)ohdr + sizeof(oh)),
                       ohdr->oh_string, GET_OH_LINENUM(ohdr) /*, */
                       COMMA_IFNOT_SHORTDBG_HDRS((unsigned long)ohdr->oh_sz),
@@ -456,11 +455,11 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
     if ((word)clobbered_addr <= (word)(&ohdr->oh_sz)
         || ohdr -> oh_string == 0) {
         GC_err_printf(
-                "%s %p in or near object at %p(<smashed>, appr. sz = %lu)\n",
+                "%s %p in or near object at %p(<smashed>, appr. sz= %lu)\n",
                 msg, (void *)clobbered_addr, p,
                 (unsigned long)(GC_size((ptr_t)ohdr) - DEBUG_BYTES));
     } else {
-        GC_err_printf("%s %p in or near object at %p (%s:%d, sz=%lu)\n",
+        GC_err_printf("%s %p in or near object at %p (%s:%d, sz= %lu)\n",
                 msg, (void *)clobbered_addr, p,
                 (word)(ohdr -> oh_string) < HBLKSIZE ? "(smashed string)" :
                 ohdr -> oh_string[0] == '\0' ? "EMPTY(smashed?)" :
@@ -539,7 +538,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc(size_t lb,
     /* Note that according to malloc() specification, if size is 0 then */
     /* malloc() returns either NULL, or a unique pointer value that can */
     /* later be successfully passed to free(). We always do the latter. */
-    result = GC_malloc(SIZET_SAT_ADD(lb, DEBUG_BYTES));
+#   if defined(_FORTIFY_SOURCE) && !defined(__clang__)
+      /* Workaround to avoid "exceeds maximum object size" gcc warning. */
+      result = GC_malloc(lb < GC_SIZE_MAX - DEBUG_BYTES ? lb + DEBUG_BYTES
+                                                        : GC_SIZE_MAX >> 1);
+#   else
+      result = GC_malloc(SIZET_SAT_ADD(lb, DEBUG_BYTES));
+#   endif
 #   ifdef GC_ADD_CALLER
       if (s == NULL) {
         GC_caller_func_offset(ra, &s, &i);
@@ -1093,7 +1098,7 @@ GC_API void GC_CALL GC_debug_register_finalizer(void * obj,
                                         void * *ocd)
 {
     GC_finalization_proc my_old_fn = OFN_UNSET;
-    void * my_old_cd;
+    void * my_old_cd = NULL; /* to avoid "might be uninitialized" warning */
     ptr_t base = (ptr_t)GC_base(obj);
     if (NULL == base) {
         /* We won't collect it, hence finalizer wouldn't be run. */
@@ -1109,7 +1114,7 @@ GC_API void GC_CALL GC_debug_register_finalizer(void * obj,
       GC_register_finalizer(base, 0, 0, &my_old_fn, &my_old_cd);
     } else {
       cd = GC_make_closure(fn, cd);
-      if (cd == 0) return; /* out of memory */
+      if (cd == 0) return; /* out of memory; *ofn and *ocd are unchanged */
       GC_register_finalizer(base, GC_debug_invoke_finalizer,
                             cd, &my_old_fn, &my_old_cd);
     }
@@ -1122,7 +1127,7 @@ GC_API void GC_CALL GC_debug_register_finalizer_no_order
                                      void * *ocd)
 {
     GC_finalization_proc my_old_fn = OFN_UNSET;
-    void * my_old_cd;
+    void * my_old_cd = NULL;
     ptr_t base = (ptr_t)GC_base(obj);
     if (NULL == base) {
         /* We won't collect it, hence finalizer wouldn't be run. */
@@ -1151,7 +1156,7 @@ GC_API void GC_CALL GC_debug_register_finalizer_unreachable
                                      void * *ocd)
 {
     GC_finalization_proc my_old_fn = OFN_UNSET;
-    void * my_old_cd;
+    void * my_old_cd = NULL;
     ptr_t base = (ptr_t)GC_base(obj);
     if (NULL == base) {
         /* We won't collect it, hence finalizer wouldn't be run. */
@@ -1180,7 +1185,7 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
                                      void * *ocd)
 {
     GC_finalization_proc my_old_fn = OFN_UNSET;
-    void * my_old_cd;
+    void * my_old_cd = NULL;
     ptr_t base = (ptr_t)GC_base(obj);
     if (NULL == base) {
         /* We won't collect it, hence finalizer wouldn't be run. */

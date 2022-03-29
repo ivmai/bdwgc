@@ -2,7 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
- * Copyright (C) 2007 Free Software Foundation, Inc
+ * Copyright (c) 2007 Free Software Foundation, Inc.
  * Copyright (c) 2008-2020 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
@@ -18,7 +18,7 @@
 #include "private/gc_pmark.h"
 
 #ifndef GC_NO_FINALIZATION
-# include "javaxfc.h" /* to get GC_finalize_all() as extern "C" */
+# include "gc/javaxfc.h" /* to get GC_finalize_all() as extern "C" */
 
 /* Type of mark procedure used for marking from finalizable object.     */
 /* This procedure normally does not mark the object, only its           */
@@ -168,6 +168,9 @@ STATIC int GC_register_disappearing_link_inner(
     DCL_LOCK_STATE;
 
     if (EXPECT(GC_find_leak, FALSE)) return GC_UNIMPLEMENTED;
+#   ifdef GC_ASSERTIONS
+      GC_noop1((word)(*link)); /* check accessibility */
+#   endif
     LOCK();
     GC_ASSERT(obj != NULL && GC_base_C(obj) == obj);
     if (EXPECT(NULL == dl_hashtbl -> head, FALSE)
@@ -338,6 +341,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
   static void push_and_mark_object(void *p)
   {
+    GC_ASSERT(I_HOLD_LOCK());
     GC_normal_finalize_mark_proc((ptr_t)p);
     while (!GC_mark_stack_empty()) {
       MARK_FROM_MARK_STACK();
@@ -353,6 +357,8 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
   STATIC void GC_mark_togglerefs(void)
   {
     size_t i;
+
+    GC_ASSERT(I_HOLD_LOCK());
     if (NULL == GC_toggleref_arr)
       return;
 
@@ -517,6 +523,9 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     size_t curr_index, new_index;
     word curr_hidden_link, new_hidden_link;
 
+#   ifdef GC_ASSERTIONS
+      GC_noop1((word)(*new_link));
+#   endif
     GC_ASSERT(I_HOLD_LOCK());
     if (EXPECT(NULL == dl_hashtbl -> head, FALSE)) return GC_NOT_FOUND;
 
@@ -600,29 +609,14 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 
 /* Possible finalization_marker procedures.  Note that mark stack       */
 /* overflow is handled by the caller, and is not a disaster.            */
+#if defined(_MSC_VER) && defined(I386)
+  GC_ATTR_NOINLINE
+  /* Otherwise some optimizer bug is tickled in VC for X86 (v19, at least). */
+#endif
 STATIC void GC_normal_finalize_mark_proc(ptr_t p)
 {
-# if defined(_MSC_VER) && defined(I386)
-    hdr * hhdr = HDR(p);
-    /* This is a manually inlined variant of GC_push_obj().  Otherwise  */
-    /* some optimizer bug is tickled in VC for X86 (v19, at least).     */
-#   define mark_stack_top GC_mark_stack_top
-    mse * mark_stack_limit = GC_mark_stack + GC_mark_stack_size;
-    word descr = hhdr -> hb_descr;
-
-    if (descr != 0) {
-      mark_stack_top++;
-      if ((word)mark_stack_top >= (word)mark_stack_limit) {
-        mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top);
-      }
-      mark_stack_top -> mse_start = p;
-      mark_stack_top -> mse_descr.w = descr;
-    }
-#   undef mark_stack_top
-# else
     GC_mark_stack_top = GC_push_obj(p, HDR(p), GC_mark_stack_top,
                                     GC_mark_stack + GC_mark_stack_size);
-# endif
 }
 
 /* This only pays very partial attention to the mark descriptor.        */
@@ -632,7 +626,7 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
 {
     hdr * hhdr = HDR(p);
     word descr = hhdr -> hb_descr;
-    ptr_t q;
+    ptr_t current_p;
     ptr_t scan_limit;
     ptr_t target_limit = p + hhdr -> hb_sz - 1;
 
@@ -641,11 +635,13 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
     } else {
        scan_limit = target_limit + 1 - sizeof(word);
     }
-    for (q = p; (word)q <= (word)scan_limit; q += ALIGNMENT) {
-        word r = *(word *)q;
+    for (current_p = p; (word)current_p <= (word)scan_limit;
+         current_p += ALIGNMENT) {
+        word q;
 
-        if (r < (word)p || r > (word)target_limit) {
-            GC_PUSH_ONE_HEAP(r, q, GC_mark_stack_top);
+        LOAD_WORD_OR_CONTINUE(q, current_p);
+        if (q < (word)p || q > (word)target_limit) {
+            GC_PUSH_ONE_HEAP(q, current_p, GC_mark_stack_top);
         }
     }
 }
@@ -681,7 +677,10 @@ STATIC void GC_register_finalizer_inner(void * obj,
     hdr *hhdr = NULL; /* initialized to prevent warning. */
     DCL_LOCK_STATE;
 
-    if (EXPECT(GC_find_leak, FALSE)) return;
+    if (EXPECT(GC_find_leak, FALSE)) {
+      /* No-op.  *ocd and *ofn remain unchanged.    */
+      return;
+    }
     LOCK();
     if (EXPECT(NULL == GC_fnlz_roots.fo_head, FALSE)
         || EXPECT(GC_fo_entries > ((word)1 << GC_log_fo_table_size), FALSE)) {
@@ -777,7 +776,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
       new_fo = (struct finalizable_object *)
                 (*oom_fn)(sizeof(struct finalizable_object));
       if (0 == new_fo) {
-        /* No enough memory.  *ocd and *ofn remains unchanged.  */
+        /* No enough memory.  *ocd and *ofn remain unchanged.   */
         return;
       }
       /* It's not likely we'll make it here, but ... */
@@ -855,8 +854,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
         ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_dl->dl_hidden_obj);
         ptr_t real_link = (ptr_t)GC_REVEAL_POINTER(curr_dl->dl_hidden_link);
 
-        GC_printf("Object: %p, link: %p\n",
-                  (void *)real_ptr, (void *)real_link);
+        GC_printf("Object: %p, link value: %p, link addr: %p\n",
+                  (void *)real_ptr, *(void **)real_link, (void *)real_link);
       }
     }
   }
@@ -868,13 +867,13 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     size_t fo_size = GC_fnlz_roots.fo_head == NULL ? 0 :
                                 (size_t)1 << GC_log_fo_table_size;
 
-    GC_printf("Disappearing (short) links:\n");
+    GC_printf("\n***Disappearing (short) links:\n");
     GC_dump_finalization_links(&GC_dl_hashtbl);
 #   ifndef GC_LONG_REFS_NOT_NEEDED
-      GC_printf("Disappearing long links:\n");
+      GC_printf("\n***Disappearing long links:\n");
       GC_dump_finalization_links(&GC_ll_hashtbl);
 #   endif
-    GC_printf("Finalizers:\n");
+    GC_printf("\n***Finalizers:\n");
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = GC_fnlz_roots.fo_head[i];
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
@@ -938,6 +937,10 @@ GC_INLINE void GC_make_disappearing_links_disappear(
 
     for (curr_dl = dl_hashtbl->head[i]; curr_dl != NULL; curr_dl = next_dl) {
       next_dl = dl_next(curr_dl);
+#     if defined(GC_ASSERTIONS) && !defined(THREAD_SANITIZER)
+         /* Check accessibility of the location pointed by link. */
+        GC_noop1(*(word *)GC_REVEAL_POINTER(curr_dl->dl_hidden_link));
+#     endif
       if (is_remove_dangling) {
         ptr_t real_link = (ptr_t)GC_base(GC_REVEAL_POINTER(
                                                 curr_dl->dl_hidden_link));
@@ -1313,8 +1316,11 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
               /* which may cause occasional mysterious results.         */
               /* We need to release the GC lock, since GC_print_callers */
               /* acquires it.  It probably shouldn't.                   */
+              void *current = GC_generate_random_valid_address();
+
               UNLOCK();
-              GC_generate_random_backtrace_no_gc();
+              GC_printf("\n****Chosen address %p in object\n", current);
+              GC_print_backtrace(current);
               LOCK();
           }
           last_back_trace_gc_no = GC_gc_no;

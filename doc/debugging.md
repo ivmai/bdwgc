@@ -144,8 +144,8 @@ Growing data structures can usually be identified by:
   be identified by their allocation site,
   3. Running the application long enough so that most of the heap is composed
   of "leaked" memory, and
-  4. Then calling `GC_generate_random_backtrace` from gc_backptr.h a few times
-  to determine why some randomly sampled objects in the heap are being
+  4. Then calling `GC_generate_random_backtrace` from `gc_backptr.h` a few
+  times to determine why some randomly sampled objects in the heap are being
   retained.
 
 The same technique can often be used to identify problems with false pointers,
@@ -164,7 +164,7 @@ be resolved using one or more of the following techniques:
   pseudo-random numbers, and the like. It is also likely to improve GC
   performance, perhaps drastically so if the application is paging.
   2. If you allocate large objects containing only one or two pointers at the
-  beginning, either try the typed allocation primitives is`gc_typed.h`,
+  beginning, either try the typed allocation primitives in `gc_typed.h`,
   or separate out the pointer-free component.
   3. Consider using `GC_malloc_ignore_off_page` to allocate large objects.
   (See `gc.h` and above for details. Large means more than 100 KB in most

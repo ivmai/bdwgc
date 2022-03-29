@@ -3,6 +3,7 @@
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 2000-2004 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 2009-2021 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -148,7 +149,7 @@ EXTERN_C_BEGIN
 #    define AARCH64
 #    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD) \
         && !defined(NETBSD) && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
-        && !defined(OPENBSD)
+        && !defined(OPENBSD) && !defined(_WIN32)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -360,6 +361,10 @@ EXTERN_C_BEGIN
 # endif
 # if defined(LINUX) && (defined(__ia64__) || defined(__ia64))
 #    define IA64
+#    define mach_type_known
+# endif
+# if defined(LINUX) && defined(__e2k__)
+#    define E2K
 #    define mach_type_known
 # endif
 # if defined(LINUX) && defined(__aarch64__)
@@ -670,7 +675,8 @@ EXTERN_C_BEGIN
 #   endif
 #   define mach_type_known
 # endif
-# if defined(__riscv) && (defined(FREEBSD) || defined(LINUX))
+# if defined(__riscv) && (defined(FREEBSD) || defined(LINUX) \
+                          || defined(OPENBSD))
 #   define RISCV
 #   define mach_type_known
 # endif
@@ -737,6 +743,8 @@ EXTERN_C_BEGIN
                     /*                  running LINUX                   */
                     /*             AARCH64    ==> ARM AArch64           */
                     /*                  (LP64 and ILP32 variants)       */
+                    /*             E2K        ==> Elbrus 2000           */
+                    /*                  running LINUX                   */
                     /*             ARM32      ==> Intel StrongARM       */
                     /*                  (many variants)                 */
                     /*             IA64       ==> Intel IPF             */
@@ -888,12 +896,14 @@ EXTERN_C_BEGIN
 /* If available, we can use __builtin_unwind_init() to push the     */
 /* relevant registers onto the stack.                               */
 # if GC_GNUC_PREREQ(2, 8) \
+     && !GC_GNUC_PREREQ(11, 0) /* broken at least in 11.2.0 on cygwin64 */ \
      && !defined(__INTEL_COMPILER) && !defined(__PATHCC__) \
      && !defined(__FUJITSU) /* for FX10 system */ \
      && !(defined(POWERPC) && defined(DARWIN)) /* for MacOS X 10.3.9 */ \
-     && !defined(RTEMS) \
+     && !defined(E2K) && !defined(RTEMS) \
      && !defined(__ARMCC_VERSION) /* does not exist in armcc gnu emu */ \
-     && !defined(__clang__) /* since no-op in clang (3.0) */
+     && (!defined(__clang__) \
+         || GC_CLANG_PREREQ(8, 0) /* was no-op in clang-3 at least */)
 #   define HAVE_BUILTIN_UNWIND_INIT
 # endif
 
@@ -972,7 +982,11 @@ EXTERN_C_BEGIN
     EXTERN_C_END
 #   include <features.h> /* for __GLIBC__ */
     EXTERN_C_BEGIN
-#   define COUNT_UNMAPPED_REGIONS
+#   if defined(FORCE_MPROTECT_BEFORE_MADVISE) \
+       || defined(PREFER_MMAP_PROT_NONE)
+#     define COUNT_UNMAPPED_REGIONS
+#   endif
+#   define RETRY_TKILL_ON_EAGAIN
 #   if !defined(MIPS) && !defined(POWERPC)
 #     define LINUX_STACKBOTTOM
 #   endif
@@ -983,6 +997,15 @@ EXTERN_C_BEGIN
        && !defined(S390) && !defined(TILEGX) && !defined(TILEPRO)
       extern int _end[];
 #     define DATAEND ((ptr_t)(_end))
+#   endif
+#   if !defined(REDIRECT_MALLOC)
+      /* Requires Linux 2.3.47 or later. */
+#     define MPROTECT_VDB
+#   else
+      /* We seem to get random errors in the incremental mode,  */
+      /* possibly because the Linux threads implementation      */
+      /* itself is a malloc client and cannot deal with the     */
+      /* signals.  fread() uses malloc too.                     */
 #   endif
 # endif /* LINUX */
 
@@ -1014,8 +1037,7 @@ EXTERN_C_BEGIN
 #   define OS_TYPE "NETBSD"
 #   define HEURISTIC2
 #   ifdef __ELF__
-      extern ptr_t GC_data_start;
-#     define DATASTART GC_data_start
+#     define SEARCH_FOR_DATA_START
 #     define DYNAMIC_LOADING
 #   elif !defined(MIPS) /* TODO: probably do not exclude it */
       extern char etext[];
@@ -1032,15 +1054,18 @@ EXTERN_C_BEGIN
 
 # ifdef OPENBSD
 #   define OS_TYPE "OPENBSD"
-#   if !defined(M68K) /* TODO: probably do not exclude it */
-#     ifndef GC_OPENBSD_THREADS
-#       define HEURISTIC2
-#     endif
+#   ifndef GC_OPENBSD_THREADS
+#     define HEURISTIC2
+#   endif
+#   ifdef __ELF__
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
       extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
+#   else
+      extern char etext[];
+#     define DATASTART ((ptr_t)(etext))
 #   endif
 # endif /* OPENBSD */
 
@@ -1102,23 +1127,12 @@ EXTERN_C_BEGIN
 #   define MACH_TYPE "M68K"
 #   define ALIGNMENT 2
 #   ifdef OPENBSD
-#       define HEURISTIC2
-#       ifdef __ELF__
-          extern ptr_t GC_data_start;
-#         define DATASTART GC_data_start
-#         define DYNAMIC_LOADING
-#       else
-          extern char etext[];
-#         define DATASTART ((ptr_t)(etext))
-#       endif
+      /* Nothing specific. */
 #   endif
 #   ifdef NETBSD
       /* Nothing specific. */
 #   endif
 #   ifdef LINUX
-#       if !defined(REDIRECT_MALLOC)
-#         define MPROTECT_VDB
-#       endif
 #       ifdef __ELF__
 #         if defined(__GLIBC__) && __GLIBC__ >= 2
 #           define SEARCH_FOR_DATA_START
@@ -1180,9 +1194,6 @@ EXTERN_C_BEGIN
 #       define LINUX_STACKBOTTOM
 #     endif
 #     define SEARCH_FOR_DATA_START
-#     if !defined(REDIRECT_MALLOC)
-#       define MPROTECT_VDB
-#     endif
 #     ifndef SOFT_VDB
 #       define SOFT_VDB
 #     endif
@@ -1274,6 +1285,7 @@ EXTERN_C_BEGIN
 #     define DATASTART ((ptr_t)((ulong)_data))
 #     define DATAEND ((ptr_t)((ulong)_end))
       extern int errno;
+#     define MPROTECT_VDB
 #     define DYNAMIC_LOADING
         /* For really old versions of AIX, this may have to be removed. */
 #   endif
@@ -1389,7 +1401,7 @@ EXTERN_C_BEGIN
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
 #   endif
-# endif
+# endif /* SPARC */
 
 # ifdef I386
 #   define MACH_TYPE "I386"
@@ -1413,7 +1425,7 @@ EXTERN_C_BEGIN
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
 #     define USE_MMAP_ANON      /* avoid /dev/zero, not supported */
-#     define STACK_GROWS_DOWN
+#     undef USE_MUNMAP /* mmap(PROT_NONE) is unsupported, mprotect is no-op */
 #   endif
 #   if defined(__QNX__)
 #     define OS_TYPE "QNX"
@@ -1458,7 +1470,6 @@ EXTERN_C_BEGIN
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)(&_etext))
 #       define DATASTART_IS_FUNC
 #       define DATAEND ((ptr_t)(&_end))
-#       define STACK_GROWS_DOWN
 #       define HEURISTIC2
         EXTERN_C_END
 #       include <unistd.h>
@@ -1472,13 +1483,6 @@ EXTERN_C_BEGIN
 #       define HEAP_START (ptr_t)0x40000000
 #   endif /* DGUX */
 #   ifdef LINUX
-#       if !defined(REDIRECT_MALLOC)
-#           define MPROTECT_VDB
-#       else
-            /* We seem to get random errors in incremental mode,        */
-            /* possibly because Linux threads is itself a malloc client */
-            /* and can't deal with the signals.  fread uses malloc too. */
-#       endif
 #       define HEAP_START (ptr_t)0x1000
                 /* This encourages mmap to give us low addresses,       */
                 /* thus allowing the heap to grow to ~3 GB.             */
@@ -1551,9 +1555,6 @@ EXTERN_C_BEGIN
 #       define DATAEND   ((ptr_t)GC_DATAEND)
 #       ifndef USE_WINALLOC
 #         /* MPROTECT_VDB does not work, it leads to a spurious exit.   */
-#         ifdef USE_MMAP
-#           define NEED_FIND_LIMIT
-#         endif
 #       endif
 #   endif
 #   ifdef INTERIX
@@ -1659,7 +1660,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef HURD
 #     define OS_TYPE "HURD"
-#     define STACK_GROWS_DOWN
 #     define HEURISTIC2
 #     define SIG_SUSPEND SIGUSR1
 #     define SIG_THR_RESTART SIGUSR2
@@ -1695,12 +1695,12 @@ EXTERN_C_BEGIN
 
 # ifdef LOONGARCH
 #   define MACH_TYPE "LoongArch"
+#   define CPP_WORDSZ _LOONGARCH_SZPTR
+#   define ALIGNMENT (_LOONGARCH_SZPTR/8)
 #   ifdef LINUX
 #     pragma weak __data_start
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
-#     define CPP_WORDSZ _LOONGARCH_SZPTR
-#     define ALIGNMENT (_LOONGARCH_SZPTR/8)
 #   endif
 # endif /* LOONGARCH */
 
@@ -1815,28 +1815,28 @@ EXTERN_C_BEGIN
 # endif
 
 # ifdef NIOS2
-#   define CPP_WORDSZ 32
 #   define MACH_TYPE "NIOS2"
+#   define CPP_WORDSZ 32
+#   define ALIGNMENT 4
+#   ifndef HBLKSIZE
+#     define HBLKSIZE 4096
+#   endif
 #   ifdef LINUX
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
-#     define ALIGNMENT 4
-#     ifndef HBLKSIZE
-#       define HBLKSIZE 4096
-#     endif
 #   endif
 # endif /* NIOS2 */
 
 # ifdef OR1K
-#   define CPP_WORDSZ 32
 #   define MACH_TYPE "OR1K"
+#   define CPP_WORDSZ 32
+#   define ALIGNMENT 4
+#   ifndef HBLKSIZE
+#     define HBLKSIZE 4096
+#   endif
 #   ifdef LINUX
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
-#     define ALIGNMENT 4
-#     ifndef HBLKSIZE
-#       define HBLKSIZE 4096
-#     endif
 #   endif
 # endif /* OR1K */
 
@@ -1877,7 +1877,6 @@ EXTERN_C_BEGIN
 #     elif !defined(HEURISTIC2)
         /* This uses pst_vm_status support. */
 #       define HPUX_MAIN_STACKBOTTOM
-#       define NEED_FIND_LIMIT
 #     endif
 #     ifndef __GNUC__
 #       define PREFETCH(x)  do { \
@@ -1932,6 +1931,9 @@ EXTERN_C_BEGIN
         extern int _end[];
 #       define DATAEND ((ptr_t)(&_end))
         extern char ** environ;
+        EXTERN_C_END
+#       include <unistd.h>
+        EXTERN_C_BEGIN
         /* round up from the value of environ to the nearest page boundary */
         /* Probably breaks if putenv is called before collector            */
         /* initialization.                                                 */
@@ -1956,11 +1958,6 @@ EXTERN_C_BEGIN
 #         define DATASTART ((ptr_t)0x140000000)
           extern int _end[];
 #         define DATAEND ((ptr_t)(_end))
-#       endif
-#       if !defined(REDIRECT_MALLOC)
-#           define MPROTECT_VDB
-                /* Has only been superficially tested.  May not */
-                /* work on all versions.                        */
 #       endif
 #   endif
 # endif /* ALPHA */
@@ -1990,7 +1987,6 @@ EXTERN_C_BEGIN
         /* address minus one page.                                      */
 #       define BACKING_STORE_DISPLACEMENT 0x1000000
 #       define BACKING_STORE_ALIGNMENT 0x1000
-        extern ptr_t GC_register_stackbottom;
 #       define BACKING_STORE_BASE GC_register_stackbottom
         /* Known to be wrong for recent HP/UX versions!!!       */
 #   endif
@@ -2002,7 +1998,6 @@ EXTERN_C_BEGIN
         /* TODO: LINUX_STACKBOTTOM does not work on NUE.        */
         /* We also need the base address of the register stack  */
         /* backing store.                                       */
-        extern ptr_t GC_register_stackbottom;
 #       define BACKING_STORE_BASE GC_register_stackbottom
 #       define SEARCH_FOR_DATA_START
 #       ifdef __GNUC__
@@ -2011,10 +2006,6 @@ EXTERN_C_BEGIN
           /* In the Intel compiler environment, we seem to end up with  */
           /* statically linked executables and an undefined reference   */
           /* to _DYNAMIC                                                */
-#       endif
-#       if !defined(REDIRECT_MALLOC)
-#         define MPROTECT_VDB
-                /* Requires Linux 2.3.47 or later.      */
 #       endif
 #       ifdef __GNUC__
 #         ifndef __INTEL_COMPILER
@@ -2044,6 +2035,22 @@ EXTERN_C_BEGIN
 #     define ALIGNMENT 8
 #   endif
 # endif
+
+# ifdef E2K
+#   define MACH_TYPE "E2K"
+#   define CPP_WORDSZ 64
+#   define ALIGNMENT 8
+#   ifndef HBLKSIZE
+#     define HBLKSIZE 4096
+#   endif
+#   ifdef LINUX
+      extern int __dso_handle[];
+#     define DATASTART ((ptr_t)__dso_handle)
+#     ifdef REDIRECT_MALLOC
+#       define NO_PROC_FOR_LIBRARIES
+#     endif
+#   endif
+# endif /* E2K */
 
 # ifdef M88K
 #   define MACH_TYPE "M88K"
@@ -2100,8 +2107,8 @@ EXTERN_C_BEGIN
 #       define DATAEND ((ptr_t)(_end))
 #       define CACHE_LINE_SIZE 256
 #       define GETPAGESIZE() 4096
-#       if !defined(REDIRECT_MALLOC)
-#         define MPROTECT_VDB
+#       ifndef SOFT_VDB
+#         define SOFT_VDB
 #       endif
 #   endif
 # endif /* S390 */
@@ -2123,9 +2130,6 @@ EXTERN_C_BEGIN
 #     define HBLKSIZE 4096
 #   endif
 #   ifdef LINUX
-#     if !defined(REDIRECT_MALLOC)
-#       define MPROTECT_VDB
-#     endif
 #     if defined(HOST_ANDROID)
 #       define SEARCH_FOR_DATA_START
 #     else
@@ -2187,9 +2191,6 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef LINUX
-#       if !defined(REDIRECT_MALLOC)
-#           define MPROTECT_VDB
-#       endif
 #       if defined(__GLIBC__) && __GLIBC__ >= 2 \
                 || defined(HOST_ANDROID) || defined(HOST_TIZEN)
 #           define SEARCH_FOR_DATA_START
@@ -2300,8 +2301,8 @@ EXTERN_C_BEGIN
 # endif /* AVR32 */
 
 # ifdef M32R
-#   define CPP_WORDSZ 32
 #   define MACH_TYPE "M32R"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   ifdef LINUX
 #     define SEARCH_FOR_DATA_START
@@ -2334,13 +2335,6 @@ EXTERN_C_BEGIN
 #     define STACKBOTTOM ((ptr_t)platform_get_stack_bottom())
 #   endif
 #   ifdef LINUX
-#       if !defined(REDIRECT_MALLOC)
-#           define MPROTECT_VDB
-#       else
-            /* We seem to get random errors in incremental mode,        */
-            /* possibly because Linux threads is itself a malloc client */
-            /* and can't deal with the signals.  fread uses malloc too. */
-#       endif
 #       define SEARCH_FOR_DATA_START
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* A workaround for GCF (Google Cloud Function) which does    */
@@ -2445,17 +2439,17 @@ EXTERN_C_BEGIN
 #   ifdef MSWIN32
 #       define RETRY_GET_THREAD_CONTEXT
 #       if !defined(__GNUC__) || defined(__INTEL_COMPILER) \
-           || GC_GNUC_PREREQ(4, 7)
-          /* Older GCC has not supported SetUnhandledExceptionFilter    */
-          /* properly on x64 (e.g. SEH unwinding information missed).   */
+           || (GC_GNUC_PREREQ(4, 7) && !defined(__MINGW64__))
+          /* Older GCC and Mingw-w64 (both GCC and Clang) do not    */
+          /* support SetUnhandledExceptionFilter() properly on x64. */
 #         define MPROTECT_VDB
 #       endif
 #   endif
 # endif /* X86_64 */
 
 # ifdef ARC
-#   define CPP_WORDSZ 32
 #   define MACH_TYPE "ARC"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   define CACHE_LINE_SIZE 64
 #   ifdef LINUX
@@ -2465,13 +2459,10 @@ EXTERN_C_BEGIN
 # endif /* ARC */
 
 # ifdef HEXAGON
-#   define CPP_WORDSZ 32
 #   define MACH_TYPE "HEXAGON"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   ifdef LINUX
-#     if !defined(REDIRECT_MALLOC)
-#       define MPROTECT_VDB
-#     endif
 #     if defined(__GLIBC__)
 #       define SEARCH_FOR_DATA_START
 #     elif !defined(CPPCHECK)
@@ -2481,8 +2472,8 @@ EXTERN_C_BEGIN
 # endif /* HEXAGON */
 
 # ifdef TILEPRO
-#   define CPP_WORDSZ 32
 #   define MACH_TYPE "TILEPro"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   define PREFETCH(x) __insn_prefetch(x)
 #   define CACHE_LINE_SIZE 64
@@ -2493,8 +2484,8 @@ EXTERN_C_BEGIN
 # endif /* TILEPRO */
 
 # ifdef TILEGX
-#   define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
 #   define MACH_TYPE "TILE-Gx"
+#   define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
 #   define ALIGNMENT __SIZEOF_POINTER__
 #   if CPP_WORDSZ < 64
 #     define CLEAR_DOUBLE(x) (*(long long *)(x) = 0)
@@ -2532,6 +2523,9 @@ EXTERN_C_BEGIN
       extern int __data_start[] __attribute__((__weak__));
 #     define DATASTART ((ptr_t)__data_start)
 #   endif
+#   ifdef OPENBSD
+      /* Nothing specific. */
+#   endif
 # endif /* RISCV */
 
 #if defined(__GLIBC__) && !defined(DONT_USE_LIBC_PRIVATES)
@@ -2562,7 +2556,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC) \
-    && !defined(USE_PROC_FOR_LIBRARIES)
+    && !defined(USE_PROC_FOR_LIBRARIES) && !defined(NO_PROC_FOR_LIBRARIES)
     /* Nptl allocates thread stacks with mmap, which is fine.  But it   */
     /* keeps a cache of thread stacks.  Thread stacks contain the       */
     /* thread control blocks.  These in turn contain a pointer to       */
@@ -2626,7 +2620,7 @@ EXTERN_C_BEGIN
 #endif
 
 #ifndef GETPAGESIZE
-# if defined(SOLARIS) || defined(IRIX5) || defined(LINUX) \
+# if defined(AIX) || defined(IRIX5) || defined(LINUX) || defined(SOLARIS) \
      || defined(NETBSD) || defined(FREEBSD) || defined(HPUX)
     EXTERN_C_END
 #   include <unistd.h>
@@ -2768,7 +2762,7 @@ EXTERN_C_BEGIN
 #if defined(USE_MUNMAP) && !defined(MUNMAP_THRESHOLD) \
     && (defined(SN_TARGET_PS3) \
         || defined(SN_TARGET_PSP2) || defined(MSWIN_XBOX1))
-# define MUNMAP_THRESHOLD 2
+# define MUNMAP_THRESHOLD 3
 #endif
 
 #if defined(USE_MUNMAP) && defined(COUNT_UNMAPPED_REGIONS) \
@@ -2918,6 +2912,20 @@ EXTERN_C_BEGIN
 # endif
 #endif
 
+/* Do we need the GC_find_limit machinery to find the end of    */
+/* a data segment (or the backing store base)?                  */
+#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START) \
+    || defined(HPUX_MAIN_STACKBOTTOM) || defined(IA64) \
+    || (defined(CYGWIN32) && defined(I386) && defined(USE_MMAP) \
+        && !defined(USE_WINALLOC)) \
+    || (defined(NETBSD) && defined(__ELF__)) \
+    || (defined(OPENBSD) && !defined(GC_OPENBSD_UTHREADS)) \
+    || ((defined(SVR4) || defined(AIX) || defined(DGUX) \
+         || defined(DATASTART_USES_BSDGETDATASTART) \
+         || (defined(LINUX) && defined(SPARC))) && !defined(PCR))
+# define NEED_FIND_LIMIT
+#endif
+
 #if defined(LINUX) && (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64) \
                        || !defined(SMALL_CONFIG))
 # define NEED_PROC_MAPS
@@ -2996,6 +3004,22 @@ EXTERN_C_BEGIN
 
 #if defined(GWW_VDB) && !defined(USE_WINALLOC) && !defined(CPPCHECK)
 # error Invalid config: GWW_VDB requires USE_WINALLOC
+#endif
+
+#if defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS) \
+    && !defined(GC_WIN32_THREADS) && !defined(PLATFORM_STOP_WORLD) \
+    && !defined(SN_TARGET_PSP2)
+# define PTHREAD_STOP_WORLD_IMPL
+#endif
+
+#if defined(PTHREAD_STOP_WORLD_IMPL) && !defined(NACL) \
+    && !defined(GC_OPENBSD_UTHREADS)
+# define SIGNAL_BASED_STOP_WORLD
+#endif
+
+#if (defined(E2K) || defined(HP_PA) || defined(IA64) || defined(M68K) \
+     || defined(NO_SA_SIGACTION)) && defined(SIGNAL_BASED_STOP_WORLD)
+# define SUSPEND_HANDLER_NO_CONTEXT
 #endif
 
 #if (((defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__)) \
@@ -3085,8 +3109,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if !defined(CAN_HANDLE_FORK) && !defined(HAVE_NO_FORK) \
-    && (defined(MSWIN32) || defined(MSWINCE) || defined(DOS4GW) \
-        || defined(OS2) || defined(SYMBIAN) /* and probably others ... */)
+    && !(defined(CYGWIN32) || defined(SOLARIS) || defined(UNIX_LIKE))
 # define HAVE_NO_FORK
 #endif
 
@@ -3136,19 +3159,23 @@ EXTERN_C_BEGIN
 
 #if defined(__has_feature)
   /* __has_feature() is supported.      */
-# if __has_feature(address_sanitizer) && !defined(ADDRESS_SANITIZER)
+# if __has_feature(address_sanitizer)
 #   define ADDRESS_SANITIZER
 # endif
-# if __has_feature(memory_sanitizer) && !defined(MEMORY_SANITIZER)
+# if __has_feature(memory_sanitizer)
 #   define MEMORY_SANITIZER
 # endif
-# if __has_feature(thread_sanitizer) && !defined(THREAD_SANITIZER)
+# if __has_feature(thread_sanitizer) && defined(THREADS)
 #   define THREAD_SANITIZER
 # endif
 #else
 # ifdef __SANITIZE_ADDRESS__
     /* GCC v4.8+ */
 #   define ADDRESS_SANITIZER
+# endif
+# if defined(__SANITIZE_THREAD__) && defined(THREADS)
+    /* GCC v7.1+ */
+#   define THREAD_SANITIZER
 # endif
 #endif /* !__has_feature */
 

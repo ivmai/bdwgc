@@ -4,7 +4,7 @@
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
  * Copyright (c) 2000-2008 by Hewlett-Packard Development Company.
  * All rights reserved.
- * Copyright (c) 2008-2020 Ivan Maidanski
+ * Copyright (c) 2008-2021 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -736,7 +736,7 @@ STATIC void GC_delete_thread(DWORD id)
     GC_vthread t = GC_lookup_thread_inner(id);
 
     if (0 == t) {
-      WARN("Removing nonexistent thread, id = %" WARN_PRIdPTR "\n", id);
+      WARN("Removing nonexistent thread, id= %" WARN_PRIdPTR "\n", id);
     } else {
       GC_delete_gc_thread_no_free(t);
     }
@@ -822,6 +822,9 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   }
 }
 
+#ifdef GC_DISABLE_INCREMENTAL
+# define GC_wait_for_gc_completion(wait_for_all) (void)(wait_for_all)
+#else
 /* Similar to that in pthread_support.c.        */
 STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
@@ -845,6 +848,7 @@ STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
              && (wait_for_all || old_gc_no == GC_gc_no));
   }
 }
+#endif /* !GC_DISABLE_INCREMENTAL */
 
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
@@ -1243,7 +1247,7 @@ void GC_push_thread_structures(void)
   /* else */ {
     GC_PUSH_ALL_SYM(GC_threads);
   }
-# if defined(THREAD_LOCAL_ALLOC)
+# if defined(THREAD_LOCAL_ALLOC) && defined(USE_CUSTOM_SPECIFIC)
     GC_PUSH_ALL_SYM(GC_thread_key);
     /* Just in case we ever use our own TLS implementation.     */
 # endif
@@ -1690,7 +1694,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
                   || (word)tib->StackBase < (word)thread->stack_base)) {
             /* The coroutine stack is not within TIB stack.   */
             WARN("GetThreadContext might return stale register values"
-                 " including ESP=%p\n", sp);
+                 " including ESP= %p\n", sp);
             /* TODO: Because of WoW64 bug, there is no guarantee that   */
             /* sp really points to the stack top but, for now, we do    */
             /* our best as the TIB stack limit/base cannot be used      */
@@ -1860,9 +1864,6 @@ GC_INNER void GC_push_all_stacks(void)
 
   static ptr_t marker_sp[MAX_MARKERS - 1]; /* The cold end of the stack */
                                            /* for markers.              */
-# ifdef IA64
-    static ptr_t marker_bsp[MAX_MARKERS - 1];
-# endif
 
   static ptr_t marker_last_stack_min[MAX_MARKERS - 1];
                                 /* Last known minimum (hottest) address */
@@ -2066,9 +2067,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     if ((word)id == GC_WORD_MAX) return 0; /* to prevent a compiler warning */
     set_marker_thread_name((unsigned)(word)id);
     marker_sp[(word)id] = GC_approx_sp();
-#   ifdef IA64
-      marker_bsp[(word)id] = GC_save_regs_in_stack();
-#   endif
 #   if !defined(GC_PTHREADS_PARAMARK)
       GC_marker_Id[(word)id] = GetCurrentThreadId();
 #   endif
@@ -2085,8 +2083,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         my_mark_no = GC_mark_no;
       }
 #     ifdef DEBUG_THREADS
-        GC_log_printf("Starting mark helper for mark number %lu\n",
-                      (unsigned long)my_mark_no);
+        GC_log_printf("Starting helper for mark number %lu (thread %u)\n",
+                      (unsigned long)my_mark_no, (unsigned)(word)id);
 #     endif
       GC_help_marker(my_mark_no);
     }
@@ -2157,7 +2155,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
           ABORT("sigfillset failed");
         if (pthread_sigmask(SIG_BLOCK, &set, &oldset) < 0) {
           WARN("pthread_sigmask set failed, no markers started,"
-               " errno = %" WARN_PRIdPTR "\n", errno);
+               " errno= %" WARN_PRIdPTR "\n", errno);
           GC_markers_m1 = 0;
           (void)pthread_attr_destroy(&attr);
           return;
@@ -2172,7 +2170,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         marker_last_stack_min[i] = ADDR_LIMIT;
         if (0 != pthread_create(&new_thread, &attr,
                                 GC_mark_thread, (void *)(word)i)) {
-          WARN("Marker thread creation failed\n", 0);
+          WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
           /* Don't try to create other marker threads.    */
           GC_markers_m1 = i;
           break;
@@ -2182,7 +2180,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #     ifndef NO_MARKER_SPECIAL_SIGMASK
         /* Restore previous signal mask.        */
         if (pthread_sigmask(SIG_SETMASK, &oldset, NULL) < 0) {
-          WARN("pthread_sigmask restore failed, errno = %" WARN_PRIdPTR "\n",
+          WARN("pthread_sigmask restore failed, errno= %" WARN_PRIdPTR "\n",
                errno);
         }
 #     endif
@@ -2331,7 +2329,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                                 GC_mark_thread, (LPVOID)(word)i,
                                 0 /* fdwCreate */, &thread_id);
           if (handle == NULL) {
-            WARN("Marker thread creation failed\n", 0);
+            WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
             /* The most probable failure reason is "not enough memory". */
             /* Don't try to create other marker threads.                */
             break;
@@ -2348,7 +2346,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                                 MARK_THREAD_STACK_SIZE, GC_mark_thread,
                                 (void *)(word)i, 0 /* flags */, &thread_id);
           if (!handle || handle == (GC_uintptr_t)-1L) {
-            WARN("Marker thread creation failed\n", 0);
+            WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
             /* Don't try to create other marker threads.                */
             break;
           } else {/* We may detach the thread (if handle is of HANDLE type) */
@@ -2753,7 +2751,17 @@ GC_INNER void GC_thr_init(void)
   struct GC_stack_base sb;
 # if (!defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) && !defined(MSWINCE) \
       && defined(PARALLEL_MARK)) || defined(WOW64_THREAD_CONTEXT_WORKAROUND)
-    HMODULE hK32 = GetModuleHandle(TEXT("kernel32.dll"));
+    HMODULE hK32;
+#   ifdef MSWINRT_FLAVOR
+      MEMORY_BASIC_INFORMATION memInfo;
+
+      if (VirtualQuery((void*)(word)GetProcAddress, &memInfo, sizeof(memInfo))
+          != sizeof(memInfo))
+        ABORT("Weird VirtualQuery result");
+      hK32 = (HMODULE)memInfo.AllocationBase;
+#   else
+      hK32 = GetModuleHandle(TEXT("kernel32.dll"));
+#   endif
 # endif
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -3170,8 +3178,8 @@ GC_INNER void GC_thr_init(void)
 
        case DLL_THREAD_DETACH:
         /* We are hopefully running in the context of the exiting thread. */
-        GC_ASSERT(parallel_initialized);
         if (GC_win32_dll_threads) {
+          GC_ASSERT(parallel_initialized);
           GC_delete_thread(GetCurrentThreadId());
         }
         break;

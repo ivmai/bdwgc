@@ -11,13 +11,13 @@
  * modified is included with the above copyright notice.
  */
 
-# include "gc.h"    /* For GC_INIT() only */
-# include "cord.h"
-
 # include <stdarg.h>
 # include <string.h>
 # include <stdio.h>
 # include <stdlib.h>
+
+#include "gc.h"    /* For GC_INIT() only */
+#include "gc/cord.h"
 
 /* This is a very incomplete test of the cord package.  It knows about  */
 /* a few internals of the package (e.g. when C strings are returned)    */

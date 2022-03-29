@@ -3,6 +3,7 @@
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 2000 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 2009-2021 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -15,7 +16,7 @@
  */
 
 #include "private/gc_priv.h"
-#include "gc_inline.h" /* for GC_malloc_kind */
+#include "gc/gc_inline.h" /* for GC_malloc_kind */
 
 /*
  * These are extra allocation routines which are likely to be less
@@ -78,6 +79,12 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
     struct hblk * h;
     hdr * hhdr;
     void * result;
+#   if defined(_FORTIFY_SOURCE) && defined(__GNUC__) && !defined(__clang__)
+      volatile  /* Use cleared_p instead of p as a workaround to avoid  */
+                /* passing alloc_size(lb) attribute associated with p   */
+                /* to memset (including memset call inside GC_free).    */
+#   endif
+      word cleared_p = (word)p;
     size_t sz;      /* Current size in bytes    */
     size_t orig_sz; /* Original sz in bytes     */
     int obj_kind;
@@ -145,7 +152,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
             if (orig_sz > lb) {
               /* Clear unneeded part of object to avoid bogus pointer */
               /* tracing.                                             */
-                BZERO(((ptr_t)p) + lb, orig_sz - lb);
+                BZERO((ptr_t)cleared_p + lb, orig_sz - lb);
             }
             return(p);
         }
@@ -158,7 +165,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
       /* But this gives the client warning of imminent disaster.        */
       BCOPY(p, result, sz);
 #     ifndef IGNORE_FREE
-        GC_free(p);
+        GC_free((ptr_t)cleared_p);
 #     endif
     }
     return result;

@@ -1,0 +1,174 @@
+version: 8.3.0-{build}
+
+image:
+- Visual Studio 2019
+
+environment:
+  STUDIO_VERSION_EDITION: Studio\2019\Community
+  CMAKE_CONFIG: Debug
+  TEST_TARGET: check
+  matrix:
+  - TARGET: cmake
+    CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Werror=deprecated -Dwithout_libatomic_ops=ON
+  - TARGET: cmake
+    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_throw_bad_alloc_library=OFF -Denable_gc_assertions=ON -Denable_gc_debug=ON -Denable_threads=OFF
+  - TARGET: cmake
+    CFLAGS_EXTRA: -DNO_MSGBOX_ON_ERROR -DNO_MPROTECT_VDB
+    CMAKE_CONFIG: Release
+    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_large_config=ON -Ddisable_gc_debug=ON
+  - TARGET: cmake
+    CMAKE_CONFIG: Release
+    CMAKE_OPTIONS: -Denable_parallel_mark=OFF
+  - TARGET: cmake
+    CFLAGS_EXTRA: -DGC_DISABLE_INCREMENTAL
+    CMAKE_OPTIONS: -Denable_gc_assertions=ON -Denable_gcj_support=OFF -Denable_parallel_mark=OFF -Denable_thread_local_alloc=OFF
+  - TARGET: cmake
+    CMAKE_OPTIONS: -A Win32 -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Denable_large_config=ON
+  - TARGET: cmake
+    CMAKE_OPTIONS: -A ARM -Denable_cplusplus=ON -Denable_gc_assertions=ON
+  - TARGET: cmake
+    CMAKE_OPTIONS: -A ARM64 -Denable_cplusplus=ON
+    CMAKE_CONFIG: Release
+  - TARGET: nmake
+    ARCH: x86
+    NMAKE_OPTIONS: enable_static=1
+  - TARGET: nmake
+    ARCH: x64
+    CFLAGS_EXTRA: /J
+  - TARGET: nmake
+    ARCH: x86
+    NMAKE_OPTIONS: nodebug=1
+  - TARGET: nmake
+    ARCH: x64
+    NMAKE_OPTIONS: disable_threads=1
+  - TARGET: djgpp-no-make
+    CFLAGS_EXTRA: -O3 -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT
+  - TARGET: dmc
+    CFLAGS_EXTRA: -s
+  - TARGET: cygwin
+    CONF_OPTIONS: --enable-cplusplus
+    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
+  - TARGET: cygwin
+    CONF_OPTIONS: --enable-cplusplus --disable-munmap --enable-gc-assertions
+  - TARGET: cygwin64
+    CONF_OPTIONS: --enable-cplusplus
+    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
+  - TARGET: cygwin64
+    CFLAGS_EXTRA: -std=c11 -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB
+    CONF_OPTIONS: --enable-cplusplus --enable-gc-assertions --disable-shared
+  - TARGET: cygwin64
+    CONF_OPTIONS: --disable-threads
+    CFLAGS_EXTRA: -D USE_WINALLOC
+  - TARGET: mingw
+  - TARGET: mingw
+    CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D EMPTY_GETENV_RESULTS -D GC_GCJ_SUPPORT -D USE_MUNMAP -D LARGE_CONFIG -D NO_MSGBOX_ON_ERROR
+  - TARGET: mingw
+    CFLAGS_EXTRA: -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT -D GC_TIME_LIMIT=10 -D WINXP_USE_PERF_COUNTER -D NO_MSGBOX_ON_ERROR
+  - TARGET: mingw-shared-no-make
+    CFLAGS_EXTRA: -D GC_THREADS -D GC_ASSERTIONS -D ENABLE_DISCLAIM -D GC_GCJ_SUPPORT -D GC_PREFER_MPROTECT_VDB -D GC_CALL=__stdcall -D GC_CALLBACK=__fastcall -D CONSOLE_LOG -D NO_MSGBOX_ON_ERROR
+  - TARGET: mingw-w64
+    CFLAGS_EXTRA: -D NO_MSGBOX_ON_ERROR
+  - TARGET: mingw-w64
+    CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT -D NO_RETRY_GET_THREAD_CONTEXT
+  - TARGET: wcc
+    WCC_SYSTEM: OS2
+    CFLAGS_EXTRA: -DGC_ASSERTIONS
+    ENABLE_STATIC_OPT: "ENABLE_STATIC=1"
+    TEST_TARGET: check-deps
+    WCC_INC_SUBDIR: os2
+  - TARGET: wcc
+    WCC_SYSTEM: MSWIN32
+    CFLAGS_EXTRA: -DCONSOLE_LOG -DUSE_MMAP -DUSE_MUNMAP
+    WCC_INC_SUBDIR: nt
+
+clone_depth: 50
+
+install:
+- cmd: git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
+
+build_script:
+- cmd: if [%TARGET%]==[cmake] (
+    cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" .
+    && cmake --build . --config %CMAKE_CONFIG% )
+- cmd: if [%TARGET%]==[nmake] (
+    "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
+    && nmake /f NT_MAKEFILE %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" )
+- cmd: if [%TARGET%]==[cygwin] (
+    C:\cygwin\bin\bash -e -l -c
+      "cd /cygdrive/c/projects/bdwgc && ./autogen.sh
+       && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h
+       && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[cygwin64] (
+    C:\cygwin64\bin\bash -e -l -c
+      "cd /cygdrive/c/projects/bdwgc && ./autogen.sh
+       && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h
+       && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[djgpp-no-make] (
+    appveyor DownloadFile "https://github.com/andrewwutw/build-djgpp/releases/download/v3.1/djgpp-mingw-gcc1020-standalone.zip"
+    && 7z x -o.. djgpp-mingw-gcc1020-standalone.zip > nul
+    && ..\djgpp\setenv.bat
+    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -c extra/gc.c )
+- cmd: if [%TARGET%]==[dmc] (
+    appveyor DownloadFile "http://ftp.digitalmars.com/Digital_Mars_C++/Patch/dm857c.zip"
+    && 7z x -o.. dm857c.zip > nul && set "path=%cd%\..\dm\bin;%path%"
+    && make -f digimars.mak CFLAGS_EXTRA="-wx %CFLAGS_EXTRA%" )
+- cmd: if [%TARGET%]==[mingw] (
+    C:\MinGW\msys\1.0\bin\bash -e -l -c
+      "cd /c/projects/bdwgc
+       && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[mingw-shared-no-make] (
+    C:\MinGW\msys\1.0\bin\bash -e -l -c
+      "cd /c/projects/bdwgc
+       && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -shared -o gc.dll extra/gc.c" )
+- cmd: if [%TARGET%]==[mingw-w64] (
+    C:\msys64\usr\bin\bash -e -l -c
+      "cd /c/projects/bdwgc
+       && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[wcc] (
+    appveyor DownloadFile "https://master.dl.sourceforge.net/project/openwatcom/open-watcom-2.0-2017-11-01/ow-snapshot.7z"
+    && 7z x -o..\watcom ow-snapshot.7z > nul
+    && set "watcom=%cd%\..\watcom" && set "path=%cd%\..\watcom\binnt64"
+    && set "include=%cd%\..\watcom\h\%WCC_INC_SUBDIR%;%cd%\..\watcom\h"
+    && wmake -f WCC_MAKEFILE SYSTEM=%WCC_SYSTEM% %ENABLE_STATIC_OPT% CFLAGS_EXTRA="-we %CFLAGS_EXTRA%" )
+
+test_script:
+- cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
+- cmd: if [%TARGET%]==[nmake] (
+    "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
+    && nmake /f NT_MAKEFILE %TEST_TARGET% %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%"
+    && nmake /f NT_MAKEFILE clean )
+- cmd: if [%TARGET%]==[cygwin] (
+    C:\cygwin\bin\bash -e -l -c
+      "cd /cygdrive/c/projects/bdwgc
+       && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[cygwin64] (
+    C:\cygwin64\bin\bash -e -l -c
+      "cd /cygdrive/c/projects/bdwgc
+       && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[djgpp-no-make] (
+    ..\djgpp\setenv.bat
+    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o cordtest.exe cord/tests/cordtest.c cord/*.c gc.o
+    && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -v -o gctest.exe tests/gctest.c gc.o )
+- cmd: if [%TARGET%]==[dmc] (
+    set "path=%cd%\..\dm\bin;%path%"
+    && make -f digimars.mak %TEST_TARGET% CFLAGS_EXTRA="-wx %CFLAGS_EXTRA%"
+    && type gctest.gc.log cpptest.gc.log
+    && make -f digimars.mak clean )
+- cmd: if [%TARGET%]==[mingw] (
+    C:\MinGW\msys\1.0\bin\bash -e -l -c
+      "cd /c/projects/bdwgc
+       && make -j -f Makefile.direct %TEST_TARGET% CC=gcc CFLAGS_EXTRA='-DGC_NOT_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[mingw-shared-no-make] (
+    C:\MinGW\msys\1.0\bin\bash -e -l -c
+      "cd /c/projects/bdwgc
+       && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o gctest.exe tests/gctest.c gc.dll
+       && gctest.exe" )
+- cmd: if [%TARGET%]==[mingw-w64] (
+    C:\msys64\usr\bin\bash -e -l -c
+      "cd /c/projects/bdwgc
+       && make -j -f Makefile.direct %TEST_TARGET% CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+- cmd: if [%TARGET%]==[wcc] (
+    set "watcom=%cd%\..\watcom" && set "beginlibpath=%cd%\..\watcom\binp\dll"
+    && set "path=%cd%\..\watcom\binnt64;%cd%\..\watcom\binnt"
+    && wmake -f WCC_MAKEFILE %TEST_TARGET% SYSTEM=%WCC_SYSTEM% %ENABLE_STATIC_OPT% CFLAGS_EXTRA="-we %CFLAGS_EXTRA%"
+    && wmake -f WCC_MAKEFILE clean )

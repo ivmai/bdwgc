@@ -30,8 +30,6 @@
 
 #define MAX_IN  10      /* Maximum in-degree we handle directly */
 
-/* #include <unistd.h> */
-
 #if (!defined(DBG_HDRS_ALL) || (ALIGNMENT != CPP_WORDSZ/8) \
      /* || !defined(UNIX_LIKE) */) && !defined(CPPCHECK)
 # error The configuration does not support MAKE_BACK_GRAPH
@@ -130,6 +128,7 @@ static size_t n_in_progress = 0;
 
 static void push_in_progress(ptr_t p)
 {
+  GC_ASSERT(I_HOLD_LOCK());
   if (n_in_progress >= in_progress_size) {
     ptr_t * new_in_progress_space;
 
@@ -148,8 +147,9 @@ static void push_in_progress(ptr_t p)
         BCOPY(in_progress_space, new_in_progress_space,
               n_in_progress * sizeof(ptr_t));
     }
-    GC_add_to_our_memory((ptr_t)new_in_progress_space,
-                         in_progress_size * sizeof(ptr_t));
+    if (EXPECT(new_in_progress_space != NULL, TRUE))
+      GC_add_to_our_memory((ptr_t)new_in_progress_space,
+                           in_progress_size * sizeof(ptr_t));
 #   ifndef GWW_VDB
       GC_scratch_recycle_no_gww(in_progress_space,
                                 n_in_progress * sizeof(ptr_t));
@@ -339,14 +339,17 @@ static void reset_back_edge(ptr_t p, size_t n_bytes GC_ATTR_UNUSED,
 
 static void add_back_edges(ptr_t p, size_t n_bytes, word gc_descr)
 {
-  word *currentp = (word *)(p + sizeof(oh));
+  ptr_t current_p = p + sizeof(oh);
 
   /* For now, fix up non-length descriptors conservatively.     */
     if((gc_descr & GC_DS_TAGS) != GC_DS_LENGTH) {
       gc_descr = n_bytes;
     }
-  while ((word)currentp < (word)(p + gc_descr)) {
-    word current = *currentp++;
+
+  for (; (word)current_p < (word)(p + gc_descr); current_p += sizeof(word)) {
+    word current;
+
+    LOAD_WORD_OR_CONTINUE(current, current_p);
     FIXUP_POINTER(current);
     if (current >= (word)GC_least_plausible_heap_addr &&
         current <= (word)GC_greatest_plausible_heap_addr) {
@@ -375,6 +378,7 @@ static word backwards_height(ptr_t p)
   ptr_t pred = GET_OH_BG_PTR(p);
   back_edges *be;
 
+  GC_ASSERT(I_HOLD_LOCK());
   if (NULL == pred)
     return 1;
   if (((word)pred & FLAG_MANY) == 0) {
@@ -534,8 +538,9 @@ GC_INNER void GC_traverse_back_graph(void)
 void GC_print_back_graph_stats(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
-  GC_printf("Maximum backwards height of reachable objects at GC %lu is %lu\n",
-            (unsigned long) GC_gc_no, (unsigned long)GC_max_height);
+  GC_printf("Maximum backwards height of reachable objects"
+            " at GC #%lu is %lu\n",
+            (unsigned long)GC_gc_no, (unsigned long)GC_max_height);
   if (GC_max_height > GC_max_max_height) {
     ptr_t obj = GC_deepest_obj;
 

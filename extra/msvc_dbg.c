@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2004 Andrei Polushin
+  Copyright (c) 2004-2005 Andrei Polushin
 
   Permission is hereby granted, free of charge,  to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,16 @@
   THE SOFTWARE.
 */
 
-#if !defined(_M_X64) && defined(_MSC_VER)
+#if !defined(_M_ARM) && !defined(_M_ARM64) \
+    && !defined(_M_X64) && defined(_MSC_VER)
 
-/* X86_64 is currently missing some machine-dependent code below.  */
+/* TODO: arm[64], x86_64 currently miss some machine-dependent code below.  */
+/* See also GC_HAVE_BUILTIN_BACKTRACE in gc_config_macros.h.                */
+
+#include <stdio.h>
+#include <stdlib.h>
 
 #define GC_BUILD
-#include "private/msvc_dbg.h"
 #include "gc.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -38,8 +42,24 @@
 #include <imagehlp.h>
 #pragma pack(pop)
 
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
+/* Compatibility with <execinfo.h> */
+int backtrace(void* addresses[], int count);
+char** backtrace_symbols(void* const addresses[], int count);
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
+
 #pragma comment(lib, "dbghelp.lib")
 #pragma optimize("gy", off)
+
+/* Disable a warning that /GS can not protect parameters and local      */
+/* variables from local buffer overrun because optimizations are off.   */
+#pragma warning(disable:4748)
 
 typedef GC_word word;
 #define GC_ULONG_PTR word
@@ -48,6 +68,10 @@ typedef GC_word word;
         typedef GC_ULONG_PTR ULONG_ADDR;
 #else
         typedef ULONG        ULONG_ADDR;
+#endif
+
+#ifndef MAX_SYM_NAME
+#define MAX_SYM_NAME 2000
 #endif
 
 static HANDLE GetSymHandle(void)
@@ -113,7 +137,11 @@ static ULONG_ADDR CheckAddress(void* address)
   return dwAddress;
 }
 
-size_t GetStackFrames(size_t skip, void* frames[], size_t maxFrames)
+static size_t GetStackFramesFromContext(HANDLE hProcess, HANDLE hThread,
+                                        CONTEXT* context, size_t skip,
+                                        void* frames[], size_t maxFrames);
+
+static size_t GetStackFrames(size_t skip, void* frames[], size_t maxFrames)
 {
   HANDLE hProcess = GetSymHandle();
   HANDLE hThread = GetCurrentThread();
@@ -130,9 +158,9 @@ size_t GetStackFrames(size_t skip, void* frames[], size_t maxFrames)
                                    frames, maxFrames);
 }
 
-size_t GetStackFramesFromContext(HANDLE hProcess, HANDLE hThread,
-                                 CONTEXT* context, size_t skip,
-                                 void* frames[], size_t maxFrames)
+static size_t GetStackFramesFromContext(HANDLE hProcess, HANDLE hThread,
+                                        CONTEXT* context, size_t skip,
+                                        void* frames[], size_t maxFrames)
 {
   size_t frameIndex;
   DWORD machineType;
@@ -178,37 +206,26 @@ size_t GetStackFramesFromContext(HANDLE hProcess, HANDLE hThread,
   return frameIndex;
 }
 
-size_t GetModuleNameFromAddress(void* address, char* moduleName, size_t size)
+static size_t GetModuleNameFromAddress(void* address, char* moduleName,
+                                       size_t size)
 {
-  if (size) *moduleName = 0;
-  {
-    const char* sourceName;
-    IMAGEHLP_MODULE moduleInfo = { sizeof (moduleInfo) };
-    if (!SymGetModuleInfo(GetSymHandle(), CheckAddress(address),
-                          &moduleInfo)) {
-      return 0;
-    }
-    sourceName = strrchr(moduleInfo.ImageName, '\\');
-    if (sourceName) {
-      sourceName++;
-    } else {
-      sourceName = moduleInfo.ImageName;
-    }
-    if (size) {
-      strncpy(moduleName, sourceName, size)[size - 1] = 0;
-    }
-    return strlen(sourceName);
-  }
-}
+  const char* sourceName;
+  IMAGEHLP_MODULE moduleInfo = { sizeof(moduleInfo) };
 
-size_t GetModuleNameFromStack(size_t skip, char* moduleName, size_t size)
-{
-  void* address = NULL;
-  GetStackFrames(skip + 1, &address, 1);
-  if (address) {
-    return GetModuleNameFromAddress(address, moduleName, size);
+  if (size) *moduleName = 0;
+  if (!SymGetModuleInfo(GetSymHandle(), CheckAddress(address), &moduleInfo)) {
+    return 0;
   }
-  return 0;
+  sourceName = strrchr(moduleInfo.ImageName, '\\');
+  if (sourceName) {
+    sourceName++;
+  } else {
+    sourceName = moduleInfo.ImageName;
+  }
+  if (size) {
+    strncpy(moduleName, sourceName, size)[size - 1] = 0;
+  }
+  return strlen(sourceName);
 }
 
 union sym_namebuf_u {
@@ -216,8 +233,8 @@ union sym_namebuf_u {
   char symNameBuffer[sizeof(IMAGEHLP_SYMBOL) + MAX_SYM_NAME];
 };
 
-size_t GetSymbolNameFromAddress(void* address, char* symbolName, size_t size,
-                                size_t* offsetBytes)
+static size_t GetSymbolNameFromAddress(void* address, char* symbolName,
+                                       size_t size, size_t* offsetBytes)
 {
   if (size) *symbolName = 0;
   if (offsetBytes) *offsetBytes = 0;
@@ -254,64 +271,43 @@ size_t GetSymbolNameFromAddress(void* address, char* symbolName, size_t size,
   return 0;
 }
 
-size_t GetSymbolNameFromStack(size_t skip, char* symbolName, size_t size,
-                              size_t* offsetBytes)
+static size_t GetFileLineFromAddress(void* address, char* fileName,
+                                     size_t size, size_t* lineNumber,
+                                     size_t* offsetBytes)
 {
-  void* address = NULL;
-  GetStackFrames(skip + 1, &address, 1);
-  if (address) {
-    return GetSymbolNameFromAddress(address, symbolName, size, offsetBytes);
-  }
-  return 0;
-}
+  char* sourceName;
+  IMAGEHLP_LINE line = { sizeof (line) };
+  GC_ULONG_PTR dwOffset = 0;
 
-size_t GetFileLineFromAddress(void* address, char* fileName, size_t size,
-                              size_t* lineNumber, size_t* offsetBytes)
-{
   if (size) *fileName = 0;
   if (lineNumber) *lineNumber = 0;
   if (offsetBytes) *offsetBytes = 0;
-  {
-    char* sourceName;
-    IMAGEHLP_LINE line = { sizeof (line) };
-    GC_ULONG_PTR dwOffset = 0;
-    if (!SymGetLineFromAddr(GetSymHandle(), CheckAddress(address), &dwOffset,
-                            &line)) {
-      return 0;
-    }
-    if (lineNumber) {
-      *lineNumber = line.LineNumber;
-    }
-    if (offsetBytes) {
-      *offsetBytes = dwOffset;
-    }
-    sourceName = line.FileName;
-    /* TODO: resolve relative filenames, found in 'source directories'  */
-    /* registered with MSVC IDE.                                        */
-    if (size) {
-      strncpy(fileName, sourceName, size)[size - 1] = 0;
-    }
-    return strlen(sourceName);
+  if (!SymGetLineFromAddr(GetSymHandle(), CheckAddress(address), &dwOffset,
+                          &line)) {
+    return 0;
   }
+  if (lineNumber) {
+    *lineNumber = line.LineNumber;
+  }
+  if (offsetBytes) {
+    *offsetBytes = dwOffset;
+  }
+  sourceName = line.FileName;
+  /* TODO: resolve relative filenames, found in "source directories"    */
+  /* registered with MSVC IDE.                                          */
+  if (size) {
+    strncpy(fileName, sourceName, size)[size - 1] = 0;
+  }
+  return strlen(sourceName);
 }
 
-size_t GetFileLineFromStack(size_t skip, char* fileName, size_t size,
-                            size_t* lineNumber, size_t* offsetBytes)
-{
-  void* address = NULL;
-  GetStackFrames(skip + 1, &address, 1);
-  if (address) {
-    return GetFileLineFromAddress(address, fileName, size, lineNumber,
-                                  offsetBytes);
-  }
-  return 0;
-}
+#define GC_SNPRINTF _snprintf
 
-size_t GetDescriptionFromAddress(void* address, const char* format,
-                                 char* buffer, size_t size)
+static size_t GetDescriptionFromAddress(void* address, const char* format,
+                                        char* buffer, size_t size)
 {
-  char*const begin = buffer;
-  char*const end = buffer + size;
+  char* const begin = buffer;
+  char* const end = buffer + size;
   size_t line_number = 0;
 
   (void)format;
@@ -322,9 +318,10 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   if (line_number) {
-    char str[128];
+    char str[20];
 
-    wsprintf(str, "(%d) : ", (int)line_number);
+    (void)GC_SNPRINTF(str, sizeof(str), "(%d) : ", (int)line_number);
+    str[sizeof(str) - 1] = '\0';
     if (size) {
       strncpy(buffer, str, size)[size - 1] = 0;
     }
@@ -351,9 +348,9 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   return buffer - begin;
 }
 
-size_t GetDescriptionFromStack(void* const frames[], size_t count,
-                               const char* format, char* description[],
-                               size_t size)
+static size_t GetDescriptionFromStack(void* const frames[], size_t count,
+                                      const char* format, char* description[],
+                                      size_t size)
 {
   const GC_ULONG_PTR begin = (GC_ULONG_PTR)description;
   const GC_ULONG_PTR end = begin + size;
@@ -378,7 +375,7 @@ int backtrace(void* addresses[], int count)
   return GetStackFrames(1, addresses, count);
 }
 
-char** backtrace_symbols(void*const* addresses, int count)
+char** backtrace_symbols(void* const addresses[], int count)
 {
   size_t size = GetDescriptionFromStack(addresses, count, NULL, NULL, 0);
   char** symbols = (char**)malloc(size);

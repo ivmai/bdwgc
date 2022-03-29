@@ -30,7 +30,7 @@
 #include <stdlib.h> /* for exit() */
 
 #include "gc.h"
-#include "cord.h"
+#include "gc/cord.h"
 
 #ifdef THINK_C
 #define MACINTOSH

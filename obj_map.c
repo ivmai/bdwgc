@@ -47,28 +47,30 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
 
 #ifdef MARK_BIT_PER_GRANULE
   /* Add a heap block map for objects of size granules to obj_map.      */
-  /* Return FALSE on failure.                                           */
-  /* A size of 0 granules is used for large objects.                    */
+  /* A size of 0 is used for large objects.  Return FALSE on failure.   */
   GC_INNER GC_bool GC_add_map_entry(size_t granules)
   {
     unsigned displ;
     unsigned short * new_map;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (granules > BYTES_TO_GRANULES(MAXOBJBYTES)) granules = 0;
     if (GC_obj_map[granules] != 0) {
         return(TRUE);
     }
-    new_map = (unsigned short *)GC_scratch_alloc(MAP_LEN * sizeof(short));
-    if (new_map == 0) return(FALSE);
+
+    new_map = (unsigned short *)GC_scratch_alloc(OBJ_MAP_LEN * sizeof(short));
+    if (EXPECT(NULL == new_map, FALSE)) return FALSE;
+
     GC_COND_LOG_PRINTF(
                 "Adding block map for size of %u granules (%u bytes)\n",
                 (unsigned)granules, (unsigned)GRANULES_TO_BYTES(granules));
     if (granules == 0) {
-      for (displ = 0; displ < BYTES_TO_GRANULES(HBLKSIZE); displ++) {
+      for (displ = 0; displ < OBJ_MAP_LEN; displ++) {
         new_map[displ] = 1;  /* Nonzero to get us out of marker fast path. */
       }
     } else {
-      for (displ = 0; displ < BYTES_TO_GRANULES(HBLKSIZE); displ++) {
+      for (displ = 0; displ < OBJ_MAP_LEN; displ++) {
         new_map[displ] = (unsigned short)(displ % granules);
       }
     }

@@ -46,7 +46,7 @@
 #include "../obj_map.c"
 #include "../ptr_chck.c"
 
-#include "gc_inline.h"
+#include "gc/gc_inline.h"
 #include "../allchblk.c"
 #include "../alloc.c"
 #include "../dbg_mlc.c"
@@ -87,7 +87,7 @@
 /* (instead of linking gc).                                     */
 #ifndef GC_NO_THREAD_REDIRECTS
 # define GC_PTHREAD_REDIRECTS_ONLY
-# include "gc_pthread_redirects.h"
+# include "gc/gc_pthread_redirects.h"
 #endif
 
 /* The files from "extra" folder are not included. */

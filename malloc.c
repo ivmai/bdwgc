@@ -14,27 +14,29 @@
  */
 
 #include "private/gc_priv.h"
-#include "gc_inline.h" /* for GC_malloc_kind */
+#include "gc/gc_inline.h" /* for GC_malloc_kind */
 
 #include <stdio.h>
 #include <string.h>
 
-/* Allocate reclaim list for kind:      */
-/* Return TRUE on success               */
+/* Allocate reclaim list for the kind.  Returns TRUE on success.        */
 STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
 {
-    struct hblk ** result = (struct hblk **)
-                GC_scratch_alloc((MAXOBJGRANULES+1) * sizeof(struct hblk *));
-    if (result == 0) return(FALSE);
+    struct hblk ** result;
+
+    GC_ASSERT(I_HOLD_LOCK());
+    result = (struct hblk **)GC_scratch_alloc(
+                                (MAXOBJGRANULES+1) * sizeof(struct hblk *));
+    if (EXPECT(NULL == result, FALSE)) return FALSE;
+
     BZERO(result, (MAXOBJGRANULES+1)*sizeof(struct hblk *));
     kind -> ok_reclaim_list = result;
-    return(TRUE);
+    return TRUE;
 }
 
-/* Allocate a large block of size lb bytes.     */
-/* The block is not cleared.                    */
-/* Flags is 0 or IGNORE_OFF_PAGE.               */
-/* EXTRA_BYTES were already added to lb.        */
+/* Allocate a large block of size lb bytes.  The block is not cleared.  */
+/* flags argument should be 0 or IGNORE_OFF_PAGE.  EXTRA_BYTES value    */
+/* was already added to lb.                                             */
 GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
 {
     struct hblk * h;

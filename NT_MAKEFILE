@@ -73,6 +73,9 @@ CORDFLAG=-MDd
 CFLAGS_MT=$(cvarsmt) -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
 !ENDIF
 
+# Extra user-defined flags to pass both to C and C++ compilers.
+CFLAGS_EXTRA=
+
 CFLAGS_SPECIFIC=$(CFLAGS_DEBUG) $(CFLAGS_GCDLL) $(CFLAGS_MT)
 
 CFLAGS_DEFAULT=-DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION -DUSE_MUNMAP
@@ -100,20 +103,22 @@ COBJS= cord\cordbscs.obj cord\cordxtra.obj cord\cordprnt.obj
 
 all: gc.lib cord.lib gccpp.lib gctba.lib
 
-check: gctest.exe test_cpp.exe cordtest.exe de.exe
+check-deps: gctest.exe cpptest.exe cordtest.exe de.exe
+
+check: check-deps
 	gctest.exe
 	cordtest.exe
-	test_cpp.exe
+	cpptest.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) $(CORDFLAG) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
+	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) $(CORDFLAG) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
 # Disable crt security warnings, since unfortunately they warn about all sorts
 # of safe uses of strncpy.  It would be nice to leave the rest enabled.
 
 .cpp.obj:
-	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude $(CFLAGS_DEFAULT) $(CXXFLAGS_SPECIFIC) -D_CRT_SECURE_NO_DEPRECATE $*.cpp /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude $(CFLAGS_DEFAULT) $(CXXFLAGS_SPECIFIC) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.cpp /Fo$*.obj
 
-$(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h include\gc_disclaim.h include\private\msvc_dbg.h
+$(OBJS) tests\gctest.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc\gc_mark.h include\gc\gc_disclaim.h
 
 !IFDEF ENABLE_STATIC
 
@@ -146,15 +151,15 @@ gctba.lib: gc_badalc.obj gc.lib
 
 !ENDIF
 
-gctest.exe: gc.lib tests\test.obj
-	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:$*.exe tests\test.obj gc.lib
+gctest.exe: gc.lib tests\gctest.obj
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:$*.exe tests\gctest.obj gc.lib
 #	mapsympe -n -o gctest.sym gctest.exe
 # This produces a GUI app that opens no window and writes to gctest.gc.log.
 
 cord\tests\de_win.rbj: cord\tests\de_win.res
 	cvtres /MACHINE:$(CVTRES_CPU) /OUT:cord\tests\de_win.rbj cord\tests\de_win.res
 
-cord\tests\de.obj cord\tests\de_win.obj: include\cord.h include\cord_pos.h cord\tests\de_win.h cord\tests\de_cmds.h
+cord\tests\de.obj cord\tests\de_win.obj: include\gc\cord.h include\gc\cord_pos.h cord\tests\de_win.h cord\tests\de_cmds.h
 
 cord\tests\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cmds.h
 	$(rc) $(rcvars) -r -fo cord\tests\de_win.res cord\tests\de_win.rc
@@ -170,14 +175,14 @@ gc_badalc.obj: gc_badalc.cc include\gc_cpp.h include\gc.h
 
 gc_cpp.obj: gc_cpp.cc include\gc_cpp.h include\gc.h
 
-test_cpp.cpp: tests\test_cpp.cc
-	copy tests\test_cpp.cc test_cpp.cpp
+test_cpp.cpp: tests\cpp.cc
+	copy tests\cpp.cc test_cpp.cpp
 
 # This generates the C++ test executable.  The executable expects
 # a single numeric argument, which is the number of iterations.
-# The output appears in test_cpp.gc.log file.
-test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib gccpp.lib
-	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:test_cpp.exe test_cpp.obj gc.lib gccpp.lib
+# The output appears in cpptest.gc.log file.
+cpptest.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib gccpp.lib
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:cpptest.exe test_cpp.obj gc.lib gccpp.lib
 
 $(AO_SRC_DIR):
 	tar xvfz $(AO_SRC_DIR).tar.gz
