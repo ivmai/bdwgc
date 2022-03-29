@@ -84,7 +84,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
                 /* passing alloc_size(lb) attribute associated with p   */
                 /* to memset (including memset call inside GC_free).    */
 #   endif
-      word cleared_p = (word)p;
+    ptr_t cleared_p = (ptr_t)p;
     size_t sz;      /* Current size in bytes    */
     size_t orig_sz; /* Original sz in bytes     */
     int obj_kind;

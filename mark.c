@@ -888,7 +888,11 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
               deferred = *(void **)limit;
               FIXUP_POINTER(deferred);
               limit -= ALIGNMENT;
-              if (deferred >= (word)least_ha && deferred < (word)greatest_ha)
+              has_rwx = cheri_getperm(deferred) & (CHERI_PERM_LOAD
+                                                  | CHERI_PERM_STORE
+                                                  | CHERI_PERM_EXECUTE);
+              if (((cheri_gettag(deferred) != 0) && has_rwx)
+                    && (deferred >= (word)least_ha && deferred < (word)greatest_ha))
                 break;
             }
             if ((word)current_p > (word)limit) goto next_object;
