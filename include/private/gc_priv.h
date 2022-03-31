@@ -2407,10 +2407,20 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
   GC_INNER GC_bool GC_check_leaked(ptr_t base); /* from dbg_mlc.c */
 #endif
 
-GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
-                                  /* Call error printing routine        */
-                                  /* occasionally.  It is OK to read it */
-                                  /* without acquiring the lock.        */
+#ifdef AO_HAVE_store
+  GC_EXTERN volatile AO_t GC_have_errors;
+# define GC_SET_HAVE_ERRORS() AO_store(&GC_have_errors, (AO_t)TRUE)
+# define get_have_errors() ((GC_bool)AO_load(&GC_have_errors))
+                                /* The barriers are not needed.         */
+#else
+  GC_EXTERN GC_bool GC_have_errors;
+# define GC_SET_HAVE_ERRORS() (void)(GC_have_errors = TRUE)
+# define get_have_errors() GC_have_errors
+#endif                          /* We saw a smashed or leaked object.   */
+                                /* Call error printing routine          */
+                                /* occasionally.  It is OK to read it   */
+                                /* without acquiring the lock.          */
+                                /* If set to true, it is never cleared. */
 
 #define VERBOSE 2
 #if !defined(NO_CLOCK) || !defined(SMALL_CONFIG)

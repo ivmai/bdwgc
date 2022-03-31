@@ -211,7 +211,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     lb_rounded = GRANULES_TO_BYTES(lg);
     n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
     init = GC_obj_kinds[k].ok_init;
-    if (EXPECT(GC_have_errors, FALSE))
+    if (EXPECT(get_have_errors(), FALSE))
       GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     GC_DBG_COLLECT_AT_MALLOC(lb);
@@ -331,7 +331,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     GC_ASSERT(k < MAXOBJKINDS);
     lw = BYTES_TO_WORDS(lb);
     lg = BYTES_TO_GRANULES(lb);
-    if (EXPECT(GC_have_errors, FALSE))
+    if (EXPECT(get_have_errors(), FALSE))
       GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     GC_DBG_COLLECT_AT_MALLOC(lb);
