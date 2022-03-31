@@ -229,7 +229,7 @@ int main(void)
 
     /* Test the same signal usage for threads suspend and restart on Linux. */
 #   ifdef GC_PTHREADS
-        GC_set_suspend_signal(GC_get_thr_restart_signal());
+        GC_set_thr_restart_signal(GC_get_suspend_signal());
 #   endif
 
     GC_set_all_interior_pointers(0); /* for a stricter test */
