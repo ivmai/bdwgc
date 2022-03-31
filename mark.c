@@ -1915,6 +1915,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 /* first word.  On the other hand, a reclaimed object is a members of   */
 /* free-lists, and thus contains a word-aligned next-pointer as the     */
 /* first word.                                                          */
+ GC_ATTR_NO_SANITIZE_THREAD
  STATIC void GC_push_unconditionally(struct hblk *h, hdr *hhdr)
  {
     word sz = hhdr -> hb_sz;
