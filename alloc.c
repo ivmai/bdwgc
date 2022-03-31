@@ -1321,7 +1321,8 @@ GC_API void GC_CALL GC_gcollect(void)
     /* 0 is passed as stop_func to get GC_default_stop_func value       */
     /* while holding the allocation lock (to prevent data races).       */
     (void)GC_try_to_collect_general(0, FALSE);
-    if (GC_have_errors) GC_print_all_errors();
+    if (get_have_errors())
+      GC_print_all_errors();
 }
 
 STATIC word GC_heapsize_at_forced_unmap = 0;

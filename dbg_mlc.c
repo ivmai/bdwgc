@@ -782,7 +782,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
         ptr_t clobbered = GC_check_annotated_obj((oh *)base);
         word sz = GC_size(base);
         if (clobbered != 0) {
-          GC_have_errors = TRUE;
+          GC_SET_HAVE_ERRORS(); /* no "release" barrier is needed */
           if (((oh *)base) -> oh_sz == sz) {
             GC_print_smashed_obj(
                   "GC_debug_free: found previously deallocated (?) object at",
@@ -795,7 +795,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
         }
         /* Invalidate size (mark the object as deallocated) */
         ((oh *)base) -> oh_sz = sz;
-#     endif /* SHORT_DBG_HDRS */
+#     endif /* !SHORT_DBG_HDRS */
     }
     if (GC_find_leak
 #       ifndef SHORT_DBG_HDRS
@@ -947,7 +947,7 @@ STATIC void GC_add_smashed(ptr_t smashed)
     if (GC_n_smashed < MAX_SMASHED - 1) ++GC_n_smashed;
       /* In case of overflow, we keep the first MAX_SMASHED-1   */
       /* entries plus the last one.                             */
-    GC_have_errors = TRUE;
+    GC_SET_HAVE_ERRORS();
 }
 
 /* Print all objects on the list.  Clear the list.      */
