@@ -2882,8 +2882,16 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   /* unfortunately, there is no standard mechanism.  (There is one      */
   /* in Linux glibc, but it's not exported.)  Thus we continue to use   */
   /* the same hard-coded signals we've always used.                     */
-# if (defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)) \
-     && !defined(GC_USESIGRT_SIGNALS)
+# ifdef THREAD_SANITIZER
+    /* Unfortunately, use of an asynchronous signal to suspend threads  */
+    /* leads to the situation when the signal is not delivered (is      */
+    /* stored to pending_signals in TSan runtime actually) while the    */
+    /* destination thread is blocked in pthread_mutex_lock.  Thus, we   */
+    /* use some synchronous one instead (which is again unlikely to be  */
+    /* used by clients directly).                                       */
+#   define SIG_SUSPEND SIGSYS
+# elif (defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)) \
+       && !defined(GC_USESIGRT_SIGNALS)
 #   if defined(SPARC) && !defined(SIGPWR)
       /* SPARC/Linux doesn't properly define SIGPWR in <signal.h>.      */
       /* It is aliased to SIGLOST in asm/signal.h, though.              */
