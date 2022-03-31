@@ -484,7 +484,7 @@ static int resend_lost_signals(int n_live_threads,
                                int (*suspend_restart_all)(void))
 {
 #   define RETRY_INTERVAL 100000 /* us */
-#   define RESEND_SIGNALS_LIMIT 25
+#   define RESEND_SIGNALS_LIMIT 150
 
     if (n_live_threads > 0) {
       unsigned long wait_usecs = 0;  /* Total wait since retry. */
@@ -500,9 +500,11 @@ static int resend_lost_signals(int n_live_threads,
         if (wait_usecs > RETRY_INTERVAL) {
           int newly_sent = suspend_restart_all();
 
-          if (newly_sent == prev_sent /* no progress */
-              && ++retry >= RESEND_SIGNALS_LIMIT)
-            ABORT("Signals delivery fails constantly");
+          if (newly_sent != prev_sent) {
+            retry = 0; /* restart the counter */
+          } else if (++retry >= RESEND_SIGNALS_LIMIT) /* no progress */
+            ABORT_ARG1("Signals delivery fails constantly",
+                       " at GC #%lu", (unsigned long)GC_gc_no);
 
           GC_COND_LOG_PRINTF("Resent %d signals after timeout, retry: %d\n",
                              newly_sent, retry);
