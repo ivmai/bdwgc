@@ -417,6 +417,20 @@ STATIC void * GC_mark_thread(void * id)
 
 STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 
+#ifdef GLIBC_2_1_MUTEX_HACK
+  /* Ugly workaround for a linux threads bug in the final versions      */
+  /* of glibc2.1.  Pthread_mutex_trylock sets the mutex owner           */
+  /* field even when it fails to acquire the mutex.  This causes        */
+  /* pthread_cond_wait to die.  Remove for glibc2.2.                    */
+  /* According to the man page, we should use                           */
+  /* PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP, but that isn't actually   */
+  /* defined.                                                           */
+  static pthread_mutex_t mark_mutex =
+        {0, 0, 0, PTHREAD_MUTEX_ERRORCHECK_NP, {0, 0}};
+#else
+  static pthread_mutex_t mark_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
 #ifdef CAN_HANDLE_FORK
   static int available_markers_m1 = 0;
   static pthread_cond_t mark_cv;
@@ -1126,6 +1140,9 @@ IF_CANCEL(static int fork_cancel_state;)
 
 # ifdef PARALLEL_MARK
 #   ifdef THREAD_SANITIZER
+#     if defined(GC_ASSERTIONS) && defined(CAN_CALL_ATFORK)
+        STATIC void GC_generic_lock(pthread_mutex_t *);
+#     endif
       GC_ATTR_NO_SANITIZE_THREAD
       static void wait_for_reclaim_atfork(void);
 #   else
@@ -1156,8 +1173,16 @@ static void fork_prepare_proc(void)
 #     endif
       GC_wait_for_gc_completion(TRUE);
 #     if defined(PARALLEL_MARK)
-        if (GC_parallel)
-          GC_acquire_mark_lock();
+        if (GC_parallel) {
+#         if defined(THREAD_SANITIZER) && defined(GC_ASSERTIONS) \
+             && defined(CAN_CALL_ATFORK)
+            /* Prevent TSan false positive about the data race  */
+            /* when updating GC_mark_lock_holder.               */
+            GC_generic_lock(&mark_mutex);
+#         else
+            GC_acquire_mark_lock();
+#         endif
+        }
 #     endif
       GC_acquire_dirty_lock();
 }
@@ -1170,8 +1195,15 @@ static void fork_parent_proc(void)
 {
     GC_release_dirty_lock();
 #   if defined(PARALLEL_MARK)
-      if (GC_parallel)
-        GC_release_mark_lock();
+      if (GC_parallel) {
+#       if defined(THREAD_SANITIZER) && defined(GC_ASSERTIONS) \
+           && defined(CAN_CALL_ATFORK)
+          /* To match that in fork_prepare_proc. */
+          (void)pthread_mutex_unlock(&mark_mutex);
+#       else
+          GC_release_mark_lock();
+#       endif
+      }
 #   endif
     RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
@@ -1185,8 +1217,14 @@ static void fork_child_proc(void)
 {
     GC_release_dirty_lock();
 #   if defined(PARALLEL_MARK)
-      if (GC_parallel)
-        GC_release_mark_lock();
+      if (GC_parallel) {
+#       if defined(THREAD_SANITIZER) && defined(GC_ASSERTIONS) \
+           && defined(CAN_CALL_ATFORK)
+          (void)pthread_mutex_unlock(&mark_mutex);
+#       else
+          GC_release_mark_lock();
+#       endif
+      }
 #   endif
     /* Clean up the thread table, so that just our thread is left.      */
     GC_remove_all_threads_but_me();
@@ -2370,20 +2408,6 @@ yield:
 #   define SET_MARK_LOCK_HOLDER (void)0
 #   define UNSET_MARK_LOCK_HOLDER (void)0
 # endif /* !GC_ASSERTIONS */
-
-#ifdef GLIBC_2_1_MUTEX_HACK
-  /* Ugly workaround for a linux threads bug in the final versions      */
-  /* of glibc2.1.  Pthread_mutex_trylock sets the mutex owner           */
-  /* field even when it fails to acquire the mutex.  This causes        */
-  /* pthread_cond_wait to die.  Remove for glibc2.2.                    */
-  /* According to the man page, we should use                           */
-  /* PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP, but that isn't actually   */
-  /* defined.                                                           */
-  static pthread_mutex_t mark_mutex =
-        {0, 0, 0, PTHREAD_MUTEX_ERRORCHECK_NP, {0, 0}};
-#else
-  static pthread_mutex_t mark_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
 
 static pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
 
