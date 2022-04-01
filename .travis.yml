@@ -587,6 +587,31 @@ jobs:
     - TESTS_CUSTOM_RUN=true
     - CONF_OPTIONS="--enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
+  - addons:
+      apt:
+        packages:
+        - gcc-11
+        sources:
+        - ubuntu-toolchain-r-test
+    compiler: gcc-11
+    dist: bionic
+    env:
+    - CFLAGS_EXTRA="-fsanitize=thread -fno-omit-frame-pointer"
+    - CONF_OPTIONS="--enable-gc-assertions"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - addons:
+      apt:
+        packages:
+        - clang-12
+        sources:
+        - ubuntu-toolchain-r-test
+    compiler: clang-12
+    dist: focal
+    language: c
+    env:
+    - CFLAGS_EXTRA="-O3 -fsanitize=thread -fno-omit-frame-pointer"
+    - CONF_OPTIONS="--enable-static"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_INCREMENTAL -fno-omit-frame-pointer -D TEST_FORK_WITHOUT_ATFORK"
