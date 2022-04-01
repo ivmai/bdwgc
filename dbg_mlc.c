@@ -473,7 +473,7 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
   STATIC void GC_print_all_smashed_proc (void);
 #else
   STATIC void GC_do_nothing(void) {}
-#endif
+#endif /* SHORT_DBG_HDRS */
 
 GC_INNER void GC_start_debugging_inner(void)
 {
@@ -941,6 +941,7 @@ STATIC unsigned GC_n_smashed = 0;
 
 STATIC void GC_add_smashed(ptr_t smashed)
 {
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(GC_is_marked(GC_base(smashed)));
     /* FIXME: Prevent adding an object while printing smashed list.     */
     GC_smashed[GC_n_smashed] = smashed;
@@ -997,10 +998,11 @@ STATIC void GC_check_heap_block(struct hblk *hbp, word dummy GC_ATTR_UNUSED)
     }
 }
 
-/* This assumes that all accessible objects are marked, and that        */
-/* I hold the allocation lock.  Normally called by collector.           */
+/* This assumes that all accessible objects are marked.         */
+/* Normally called by collector.                                */
 STATIC void GC_check_heap_proc(void)
 {
+  GC_ASSERT(I_HOLD_LOCK());
   GC_STATIC_ASSERT((sizeof(oh) & (GRANULE_BYTES - 1)) == 0);
   /* FIXME: Should we check for twice that alignment?   */
   GC_apply_to_all_blocks(GC_check_heap_block, 0);

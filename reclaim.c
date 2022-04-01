@@ -57,6 +57,7 @@ STATIC unsigned GC_n_leaked = 0;
 
 GC_INLINE void GC_add_leaked(ptr_t leaked)
 {
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifndef SHORT_DBG_HDRS
       if (GC_findleak_delay_free && !GC_check_leaked(leaked))
         return;
