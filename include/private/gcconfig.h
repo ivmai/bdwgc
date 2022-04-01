@@ -2145,7 +2145,8 @@ EXTERN_C_BEGIN
 #     endif
 #   endif
 #   ifdef FREEBSD
-      /* Nothing specific. */
+#     define SIG_SUSPEND SIGUSR1
+#     define SIG_THR_RESTART SIGUSR2
 #   endif
 #   ifdef NETBSD
 #     define ELF_CLASS ELFCLASS64
