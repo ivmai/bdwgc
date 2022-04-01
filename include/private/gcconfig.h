@@ -1241,8 +1241,6 @@ EXTERN_C_BEGIN
 #       else
 #           define ALIGNMENT 4
 #       endif
-#       define SIG_SUSPEND SIGUSR1
-#       define SIG_THR_RESTART SIGUSR2
 #   endif
 #   ifdef NETBSD
 #     define ALIGNMENT 4
@@ -1387,8 +1385,6 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef FREEBSD
-#       define SIG_SUSPEND SIGUSR1
-#       define SIG_THR_RESTART SIGUSR2
         extern char etext[];
         extern char edata[];
 #       if !defined(CPPCHECK)
@@ -1616,14 +1612,8 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef FREEBSD
 #       ifdef __GLIBC__
-#           define SIG_SUSPEND          (32+6)
-#           define SIG_THR_RESTART      (32+5)
             extern int _end[];
 #           define DATAEND ((ptr_t)(_end))
-#       else
-#           define SIG_SUSPEND SIGUSR1
-#           define SIG_THR_RESTART SIGUSR2
-                /* SIGTSTP and SIGCONT could be used alternatively.     */
 #       endif
 #   endif
 #   ifdef NETBSD
@@ -1654,8 +1644,6 @@ EXTERN_C_BEGIN
 #       define InitStackBottom rtems_get_stack_bottom()
 #       define DATASTART ((ptr_t)etext)
 #       define STACKBOTTOM ((ptr_t)InitStackBottom)
-#       define SIG_SUSPEND SIGUSR1
-#       define SIG_THR_RESTART SIGUSR2
 #   endif
 #   ifdef DOS4GW
 #     define OS_TYPE "DOS4GW"
@@ -1676,8 +1664,6 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "HURD"
 #     define STACK_GROWS_DOWN
 #     define HEURISTIC2
-#     define SIG_SUSPEND SIGUSR1
-#     define SIG_THR_RESTART SIGUSR2
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
 #     define DATAEND ((ptr_t)(_end))
@@ -1815,8 +1801,6 @@ EXTERN_C_BEGIN
 #  endif
 #  ifdef FREEBSD
 #    define ALIGNMENT 4
-#    define SIG_SUSPEND SIGUSR1
-#    define SIG_THR_RESTART SIGUSR2
 #  endif
 #  ifdef NONSTOP
 #    define OS_TYPE "NONSTOP"
@@ -1923,9 +1907,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef FREEBSD
         /* MPROTECT_VDB is not yet supported at all on FreeBSD/alpha. */
-#       define SIG_SUSPEND SIGUSR1
-#       define SIG_THR_RESTART SIGUSR2
-                /* SIGTSTP and SIGCONT could be used alternatively.     */
 /* Handle unmapped hole alpha*-*-freebsd[45]* puts between etext and edata. */
         extern char etext[];
         extern char edata[];
@@ -2175,8 +2156,7 @@ EXTERN_C_BEGIN
 #     endif
 #   endif
 #   ifdef FREEBSD
-#     define SIG_SUSPEND SIGUSR1
-#     define SIG_THR_RESTART SIGUSR2
+      /* Nothing specific. */
 #   endif
 #   ifdef NETBSD
 #     define ELF_CLASS ELFCLASS64
@@ -2241,8 +2221,7 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef FREEBSD
-#     define SIG_SUSPEND SIGUSR1
-#     define SIG_THR_RESTART SIGUSR2
+      /* Nothing specific. */
 #   endif
 #   ifdef DARWIN
       /* iOS */
@@ -2411,14 +2390,8 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef FREEBSD
 #       ifdef __GLIBC__
-#           define SIG_SUSPEND          (32+6)
-#           define SIG_THR_RESTART      (32+5)
             extern int _end[];
 #           define DATAEND ((ptr_t)(_end))
-#       else
-#           define SIG_SUSPEND SIGUSR1
-#           define SIG_THR_RESTART SIGUSR2
-                /* SIGTSTP and SIGCONT could be used alternatively.     */
 #       endif
 #       if defined(__DragonFly__)
             /* DragonFly BSD still has vm.max_proc_mmap, according to   */
@@ -2544,8 +2517,7 @@ EXTERN_C_BEGIN
 #   define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
 #   define ALIGNMENT (CPP_WORDSZ/8)
 #   ifdef FREEBSD
-#     define SIG_SUSPEND SIGUSR1
-#     define SIG_THR_RESTART SIGUSR2
+      /* Nothing specific. */
 #   endif
 #   ifdef LINUX
       extern int __data_start[] __attribute__((__weak__));

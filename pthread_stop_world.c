@@ -171,6 +171,10 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
 #   else
 #     define SIG_THR_RESTART SIGRTMIN + 5
 #   endif
+# elif defined(GC_FREEBSD_THREADS) && defined(__GLIBC__)
+#   define SIG_THR_RESTART (32+5)
+# elif defined(GC_FREEBSD_THREADS) || defined(HURD) || defined(RTEMS)
+#   define SIG_THR_RESTART SIGUSR2
 # else
 #   define SIG_THR_RESTART SIGXCPU
 # endif

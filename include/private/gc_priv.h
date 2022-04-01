@@ -2910,6 +2910,13 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
       /* Linuxthreads itself uses SIGUSR1 and SIGUSR2.                  */
 #     define SIG_SUSPEND SIGPWR
 #   endif
+# elif defined(GC_FREEBSD_THREADS) && defined(__GLIBC__) \
+       && !defined(GC_USESIGRT_SIGNALS)
+#   define SIG_SUSPEND (32+6)
+# elif (defined(GC_FREEBSD_THREADS) || defined(HURD) || defined(RTEMS)) \
+       && !defined(GC_USESIGRT_SIGNALS)
+#   define SIG_SUSPEND SIGUSR1
+        /* SIGTSTP and SIGCONT could be used alternatively on FreeBSD.  */
 # elif defined(GC_OPENBSD_THREADS) && !defined(GC_USESIGRT_SIGNALS)
 #   ifndef GC_OPENBSD_UTHREADS
 #     define SIG_SUSPEND SIGXFSZ
