@@ -368,6 +368,10 @@ jobs:
     - CONF_CFLAGS="-D AO_USE_PTHREAD_DEFS"
     - CONF_OPTIONS="--with-libatomic-ops=yes --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
+  - addons:
+      apt:
+        packages:
+        - libatomic-ops-dev
     compiler: clang
     env:
     - CONF_CFLAGS="-D AO_USE_PTHREAD_DEFS"
