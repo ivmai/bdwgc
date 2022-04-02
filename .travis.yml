@@ -632,7 +632,7 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
     env:
-    - CFLAGS_EXTRA="-fsanitize=thread -D NO_INCREMENTAL -fno-omit-frame-pointer"
+    - CFLAGS_EXTRA="-fsanitize=thread -D NO_INCREMENTAL -fno-omit-frame-pointer -D NTHREADS=0"
     - CONF_OPTIONS="--disable-parallel-mark --disable-thread-local-alloc --disable-shared --enable-gc-assertions --without-libatomic-ops"
   - compiler: clang
     env:
