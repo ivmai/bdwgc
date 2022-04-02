@@ -38,19 +38,19 @@
 
 #ifdef GC_PTHREADS
 # ifndef NTHREADS
-#   define NTHREADS 8
+#   define NTHREADS 5 /* Excludes main thread, which also runs a test. */
 # endif
 # include <errno.h> /* for EAGAIN, EBUSY */
 # include <pthread.h>
 # include "private/gc_atomic_ops.h" /* for AO_t and AO_fetch_and_add1 */
 #else
 # undef NTHREADS
-# define NTHREADS 1
+# define NTHREADS 0
 # define AO_t GC_word
 #endif
 
 #define POP_SIZE 200
-#define MUTATE_CNT (700000 / NTHREADS)
+#define MUTATE_CNT (700000 / (NTHREADS+1))
 #define GROW_LIMIT (MUTATE_CNT / 10)
 
 #define WEAKMAP_CAPACITY 256
@@ -412,7 +412,7 @@ void *test(void *data)
 int main(void)
 {
   unsigned weakobj_kind;
-# ifdef GC_PTHREADS
+# if NTHREADS > 0
     int i, n;
     pthread_t th[NTHREADS];
 # endif
@@ -435,7 +435,7 @@ int main(void)
   pair_hcset = weakmap_new(WEAKMAP_CAPACITY, sizeof(struct pair_key),
                            sizeof(struct pair), weakobj_kind);
 
-# ifdef GC_PTHREADS
+# if NTHREADS > 0
     for (i = 0; i < NTHREADS; ++i) {
       int err = pthread_create(&th[i], NULL, test, NULL);
       if (err != 0) {
@@ -446,6 +446,9 @@ int main(void)
       }
     }
     n = i;
+# endif
+  (void)test(NULL);
+# if NTHREADS > 0
     for (i = 0; i < n; ++i) {
       int err = pthread_join(th[i], NULL);
       if (err != 0) {
@@ -453,8 +456,6 @@ int main(void)
         exit(69);
       }
     }
-# else
-    (void)test(NULL);
 # endif
   weakmap_destroy(pair_hcset);
   printf("%u added, %u found; %u removed, %u locked, %u marked; %u remains\n",

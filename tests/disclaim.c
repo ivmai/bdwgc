@@ -178,17 +178,17 @@ pair_check_rec(pair_t p)
 
 #ifdef GC_PTHREADS
 # ifndef NTHREADS
-#   define NTHREADS 6
+#   define NTHREADS 5 /* Excludes main thread, which also runs a test. */
 # endif
 # include <errno.h> /* for EAGAIN */
 # include <pthread.h>
 #else
 # undef NTHREADS
-# define NTHREADS 1
+# define NTHREADS 0
 #endif
 
 #define POP_SIZE 1000
-#define MUTATE_CNT (6*1000000/NTHREADS)
+#define MUTATE_CNT (6*1000000/(NTHREADS+1))
 #define GROW_LIMIT (MUTATE_CNT/10)
 
 void *test(void *data)
@@ -222,7 +222,7 @@ void *test(void *data)
 
 int main(void)
 {
-# if NTHREADS > 1
+# if NTHREADS > 0
     pthread_t th[NTHREADS];
     int i, n;
 # endif
@@ -246,7 +246,7 @@ int main(void)
 
     test_misc_sizes();
 
-# if NTHREADS > 1
+# if NTHREADS > 0
     printf("Threaded disclaim test.\n");
     for (i = 0; i < NTHREADS; ++i) {
         int err = pthread_create(&th[i], NULL, test, NULL);
@@ -258,6 +258,9 @@ int main(void)
         }
     }
     n = i;
+# endif
+  test(NULL);
+# if NTHREADS > 0
     for (i = 0; i < n; ++i) {
         int err = pthread_join(th[i], NULL);
         if (err) {
@@ -266,8 +269,6 @@ int main(void)
             exit(69);
         }
     }
-# else
-    test(NULL);
 # endif
     printf("SUCCEEDED\n");
     return 0;
