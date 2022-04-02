@@ -820,12 +820,10 @@ GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
 /* Remove all entries from the GC_threads table, except the     */
 /* one for the current thread.  We need to do this in the child */
 /* process after a fork(), since only the current thread        */
-/* survives in the child.  Returns true if at least one thread  */
-/* has been removed.                                            */
-STATIC GC_bool GC_remove_all_threads_but_me(void)
+/* survives in the child.                                       */
+STATIC void GC_remove_all_threads_but_me(void)
 {
     pthread_t self = pthread_self();
-    GC_bool removed = FALSE;
     int hv;
 
     for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
@@ -877,12 +875,10 @@ STATIC GC_bool GC_remove_all_threads_but_me(void)
 #         if !defined(THREAD_SANITIZER) || !defined(CAN_CALL_ATFORK)
             if (p != &first_thread) GC_INTERNAL_FREE(p);
 #         endif
-          removed = TRUE;
         }
       }
       store_to_threads_table(hv, me);
     }
-    return removed;
 }
 #endif /* CAN_HANDLE_FORK */
 
@@ -1230,8 +1226,6 @@ static void fork_parent_proc(void)
 #endif
 static void fork_child_proc(void)
 {
-    GC_bool threads_removed;
-
     GC_release_dirty_lock();
 #   if defined(PARALLEL_MARK)
       if (GC_parallel) {
@@ -1244,21 +1238,7 @@ static void fork_child_proc(void)
       }
 #   endif
     /* Clean up the thread table, so that just our thread is left.      */
-    threads_removed = GC_remove_all_threads_but_me();
-#   if defined(THREAD_SANITIZER) && defined(SIGNAL_BASED_STOP_WORLD)
-      /* If a multi-threaded process has been forked, then TSan (as of  */
-      /* now) cannot reasonably function in the child, e.g. usleep()    */
-      /* may hang because some internal lock is not released at fork.   */
-      if (threads_removed
-#         ifdef PARALLEL_MARK
-            || GC_parallel
-#         endif
-          ) {
-        GC_retry_signals = FALSE;
-      }
-#   else
-      (void)threads_removed;
-#   endif
+    GC_remove_all_threads_but_me();
 #   ifdef PARALLEL_MARK
       /* Turn off parallel marking in the child, since we are probably  */
       /* just going to exec, and we would have to restart mark threads. */
