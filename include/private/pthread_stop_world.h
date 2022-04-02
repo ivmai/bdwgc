@@ -54,6 +54,11 @@ GC_INNER void GC_stop_init(void);
   GC_INNER void *GC_CALLBACK suspend_self_inner(void *client_data);
 #endif
 
+#if defined(CAN_HANDLE_FORK) && defined(THREAD_SANITIZER) \
+    && defined(SIGNAL_BASED_STOP_WORLD)
+  GC_EXTERN GC_bool GC_retry_signals;
+#endif
+
 EXTERN_C_END
 
 #endif
