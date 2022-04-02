@@ -142,13 +142,7 @@ STATIC volatile AO_t GC_stop_count;
                         /* before they are expected to stop (unless     */
                         /* they have stopped voluntarily).              */
 
-#ifndef NO_RETRY_SIGNALS
-  /* Any platform could lose signals, so let's be conservative and      */
-  /* always enable signals retry logic.                                 */
-  STATIC GC_bool GC_retry_signals = TRUE;
-#else
-  STATIC GC_bool GC_retry_signals = FALSE;
-#endif
+STATIC GC_bool GC_retry_signals = FALSE;
 
 /*
  * We use signals to stop threads during GC.
@@ -1404,6 +1398,11 @@ GC_INNER void GC_stop_init(void)
     if (sigdelset(&suspend_handler_mask, GC_sig_thr_restart) != 0)
         ABORT("sigdelset failed");
 
+#   ifndef NO_RETRY_SIGNALS
+      /* Any platform could lose signals, so let's be conservative and  */
+      /* always enable signals retry logic.                             */
+      GC_retry_signals = TRUE;
+#   endif
     /* Override the default value of GC_retry_signals.  */
     str = GETENV("GC_RETRY_SIGNALS");
     if (str != NULL) {
@@ -1418,6 +1417,7 @@ GC_INNER void GC_stop_init(void)
       GC_COND_LOG_PRINTF(
                 "Will retry suspend and restart signals if necessary\n");
     }
+
 #   ifndef NO_SIGNALS_UNBLOCK_IN_MAIN
       /* Explicitly unblock the signals once before new threads creation. */
       GC_unblock_gc_signals();
