@@ -289,7 +289,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 #ifdef THREAD_SANITIZER
   /* The implementation of the function is the same as that of  */
   /* GC_lookup_thread except for the attribute added here.      */
-  GC_ATTR_NOINLINE GC_ATTR_NO_SANITIZE_THREAD
+  GC_ATTR_NO_SANITIZE_THREAD
   static GC_thread GC_lookup_thread_async(pthread_t id)
   {
     GC_thread p = GC_threads[THREAD_TABLE_INDEX(id)];
