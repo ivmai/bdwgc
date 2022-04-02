@@ -215,7 +215,10 @@ typedef int GC_bool;
 # elif GC_CLANG_PREREQ(3, 8)
 #   define GC_ATTR_NO_SANITIZE_THREAD __attribute__((no_sanitize("thread")))
 # else
-#   define GC_ATTR_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
+    /* It seems that no_sanitize_thread attribute has no effect if the  */
+    /* function is inlined (as of gcc 11.1.0, at least).                */
+#   define GC_ATTR_NO_SANITIZE_THREAD \
+                GC_ATTR_NOINLINE __attribute__((no_sanitize_thread))
 # endif
 #endif /* !GC_ATTR_NO_SANITIZE_THREAD */
 
