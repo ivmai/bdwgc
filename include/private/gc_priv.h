@@ -219,7 +219,10 @@ typedef int GC_bool;
 # elif GC_CLANG_PREREQ(3, 8)
 #   define GC_ATTR_NO_SANITIZE_THREAD __attribute__((no_sanitize("thread")))
 # else
-#   define GC_ATTR_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
+    /* It seems that no_sanitize_thread attribute has no effect if the  */
+    /* function is inlined (as of gcc 11.1.0, at least).                */
+#   define GC_ATTR_NO_SANITIZE_THREAD \
+                GC_ATTR_NOINLINE __attribute__((no_sanitize_thread))
 # endif
 #endif /* !GC_ATTR_NO_SANITIZE_THREAD */
 
@@ -2444,10 +2447,20 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
   GC_INNER GC_bool GC_check_leaked(ptr_t base); /* from dbg_mlc.c */
 #endif
 
-GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
-                                  /* Call error printing routine        */
-                                  /* occasionally.  It is OK to read it */
-                                  /* without acquiring the lock.        */
+#ifdef AO_HAVE_store
+  GC_EXTERN volatile AO_t GC_have_errors;
+# define GC_SET_HAVE_ERRORS() AO_store(&GC_have_errors, (AO_t)TRUE)
+# define get_have_errors() ((GC_bool)AO_load(&GC_have_errors))
+                                /* The barriers are not needed.         */
+#else
+  GC_EXTERN GC_bool GC_have_errors;
+# define GC_SET_HAVE_ERRORS() (void)(GC_have_errors = TRUE)
+# define get_have_errors() GC_have_errors
+#endif                          /* We saw a smashed or leaked object.   */
+                                /* Call error printing routine          */
+                                /* occasionally.  It is OK to read it   */
+                                /* without acquiring the lock.          */
+                                /* If set to true, it is never cleared. */
 
 #define VERBOSE 2
 #if !defined(NO_CLOCK) || !defined(SMALL_CONFIG)
@@ -3007,8 +3020,16 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   /* unfortunately, there is no standard mechanism.  (There is one      */
   /* in Linux glibc, but it's not exported.)  Thus we continue to use   */
   /* the same hard-coded signals we've always used.                     */
-# if (defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)) \
-     && !defined(GC_USESIGRT_SIGNALS)
+# ifdef THREAD_SANITIZER
+    /* Unfortunately, use of an asynchronous signal to suspend threads  */
+    /* leads to the situation when the signal is not delivered (is      */
+    /* stored to pending_signals in TSan runtime actually) while the    */
+    /* destination thread is blocked in pthread_mutex_lock.  Thus, we   */
+    /* use some synchronous one instead (which is again unlikely to be  */
+    /* used by clients directly).                                       */
+#   define SIG_SUSPEND SIGSYS
+# elif (defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)) \
+       && !defined(GC_USESIGRT_SIGNALS)
 #   if defined(SPARC) && !defined(SIGPWR)
       /* SPARC/Linux doesn't properly define SIGPWR in <signal.h>.      */
       /* It is aliased to SIGLOST in asm/signal.h, though.              */
@@ -3017,6 +3038,13 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
       /* Linuxthreads itself uses SIGUSR1 and SIGUSR2.                  */
 #     define SIG_SUSPEND SIGPWR
 #   endif
+# elif defined(GC_FREEBSD_THREADS) && defined(__GLIBC__) \
+       && !defined(GC_USESIGRT_SIGNALS)
+#   define SIG_SUSPEND (32+6)
+# elif (defined(GC_FREEBSD_THREADS) || defined(HURD) || defined(RTEMS)) \
+       && !defined(GC_USESIGRT_SIGNALS)
+#   define SIG_SUSPEND SIGUSR1
+        /* SIGTSTP and SIGCONT could be used alternatively on FreeBSD.  */
 # elif defined(GC_OPENBSD_THREADS) && !defined(GC_USESIGRT_SIGNALS)
 #   ifndef GC_OPENBSD_UTHREADS
 #     define SIG_SUSPEND SIGXFSZ

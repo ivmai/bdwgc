@@ -247,7 +247,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
     DCL_LOCK_STATE;
 
     GC_ASSERT(k < MAXOBJKINDS);
-    if (EXPECT(GC_have_errors, FALSE))
+    if (EXPECT(get_have_errors(), FALSE))
       GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     GC_DBG_COLLECT_AT_MALLOC(lb);

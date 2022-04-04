@@ -45,7 +45,11 @@ GC_INNER signed_word GC_bytes_found = 0;
 STATIC ptr_t GC_leaked[MAX_LEAKED] = { NULL };
 STATIC unsigned GC_n_leaked = 0;
 
-GC_INNER GC_bool GC_have_errors = FALSE;
+#ifdef AO_HAVE_store
+  GC_INNER volatile AO_t GC_have_errors = 0;
+#else
+  GC_INNER GC_bool GC_have_errors = FALSE;
+#endif
 
 #if !defined(EAGER_SWEEP) && defined(ENABLE_DISCLAIM)
   STATIC void GC_reclaim_unconditionally_marked(void);
@@ -53,12 +57,13 @@ GC_INNER GC_bool GC_have_errors = FALSE;
 
 GC_INLINE void GC_add_leaked(ptr_t leaked)
 {
-#  ifndef SHORT_DBG_HDRS
-     if (GC_findleak_delay_free && !GC_check_leaked(leaked))
-       return;
-#  endif
+    GC_ASSERT(I_HOLD_LOCK());
+#   ifndef SHORT_DBG_HDRS
+      if (GC_findleak_delay_free && !GC_check_leaked(leaked))
+        return;
+#   endif
 
-    GC_have_errors = TRUE;
+    GC_SET_HAVE_ERRORS();
     if (GC_n_leaked < MAX_LEAKED) {
       GC_leaked[GC_n_leaked++] = leaked;
       /* Make sure it's not reclaimed this cycle */
@@ -81,7 +86,7 @@ GC_INNER void GC_print_all_errors(void)
         UNLOCK();
         return;
     }
-    have_errors = GC_have_errors;
+    have_errors = get_have_errors();
     printing_errors = TRUE;
     n_leaked = GC_n_leaked;
     if (n_leaked > 0) {

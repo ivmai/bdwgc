@@ -1820,6 +1820,7 @@ STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
 
 /* Push all objects reachable from marked objects in the given block */
 /* of size 2 (granules) objects.                                     */
+GC_ATTR_NO_SANITIZE_THREAD
 STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
 {
     word * mark_word_addr = &(hhdr->hb_marks[0]);
@@ -1871,6 +1872,7 @@ STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
 /* of size 4 (granules) objects.                                     */
 /* There is a risk of mark stack overflow here.  But we handle that. */
 /* And only unmarked objects get pushed, so it's not very likely.    */
+GC_ATTR_NO_SANITIZE_THREAD
 STATIC void GC_push_marked4(struct hblk *h, hdr *hhdr)
 {
     word * mark_word_addr = &(hhdr->hb_marks[0]);
@@ -1989,6 +1991,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 /* first word.  On the other hand, a reclaimed object is a members of   */
 /* free-lists, and thus contains a word-aligned next-pointer as the     */
 /* first word.                                                          */
+ GC_ATTR_NO_SANITIZE_THREAD
  STATIC void GC_push_unconditionally(struct hblk *h, hdr *hhdr)
  {
     word sz = hhdr -> hb_sz;

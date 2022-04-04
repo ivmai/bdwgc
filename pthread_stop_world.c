@@ -142,13 +142,7 @@ STATIC volatile AO_t GC_stop_count;
                         /* before they are expected to stop (unless     */
                         /* they have stopped voluntarily).              */
 
-#ifndef NO_RETRY_SIGNALS
-  /* Any platform could lose signals, so let's be conservative and      */
-  /* always enable signals retry logic.                                 */
-  STATIC GC_bool GC_retry_signals = TRUE;
-#else
-  STATIC GC_bool GC_retry_signals = FALSE;
-#endif
+STATIC GC_bool GC_retry_signals = FALSE;
 
 /*
  * We use signals to stop threads during GC.
@@ -172,6 +166,10 @@ STATIC volatile AO_t GC_stop_count;
 #   else
 #     define SIG_THR_RESTART SIGRTMIN + 5
 #   endif
+# elif defined(GC_FREEBSD_THREADS) && defined(__GLIBC__)
+#   define SIG_THR_RESTART (32+5)
+# elif defined(GC_FREEBSD_THREADS) || defined(HURD) || defined(RTEMS)
+#   define SIG_THR_RESTART SIGUSR2
 # else
 #   define SIG_THR_RESTART SIGXCPU
 # endif
@@ -484,7 +482,7 @@ static int resend_lost_signals(int n_live_threads,
                                int (*suspend_restart_all)(void))
 {
 #   define RETRY_INTERVAL 100000 /* us */
-#   define RESEND_SIGNALS_LIMIT 25
+#   define RESEND_SIGNALS_LIMIT 150
 
     if (n_live_threads > 0) {
       unsigned long wait_usecs = 0;  /* Total wait since retry. */
@@ -500,9 +498,11 @@ static int resend_lost_signals(int n_live_threads,
         if (wait_usecs > RETRY_INTERVAL) {
           int newly_sent = suspend_restart_all();
 
-          if (newly_sent == prev_sent /* no progress */
-              && ++retry >= RESEND_SIGNALS_LIMIT)
-            ABORT("Signals delivery fails constantly");
+          if (newly_sent != prev_sent) {
+            retry = 0; /* restart the counter */
+          } else if (++retry >= RESEND_SIGNALS_LIMIT) /* no progress */
+            ABORT_ARG1("Signals delivery fails constantly",
+                       " at GC #%lu", (unsigned long)GC_gc_no);
 
           GC_COND_LOG_PRINTF("Resent %d signals after timeout, retry: %d\n",
                              newly_sent, retry);
@@ -1398,6 +1398,11 @@ GC_INNER void GC_stop_init(void)
     if (sigdelset(&suspend_handler_mask, GC_sig_thr_restart) != 0)
         ABORT("sigdelset failed");
 
+#   ifndef NO_RETRY_SIGNALS
+      /* Any platform could lose signals, so let's be conservative and  */
+      /* always enable signals retry logic.                             */
+      GC_retry_signals = TRUE;
+#   endif
     /* Override the default value of GC_retry_signals.  */
     str = GETENV("GC_RETRY_SIGNALS");
     if (str != NULL) {
@@ -1412,6 +1417,7 @@ GC_INNER void GC_stop_init(void)
       GC_COND_LOG_PRINTF(
                 "Will retry suspend and restart signals if necessary\n");
     }
+
 #   ifndef NO_SIGNALS_UNBLOCK_IN_MAIN
       /* Explicitly unblock the signals once before new threads creation. */
       GC_unblock_gc_signals();
