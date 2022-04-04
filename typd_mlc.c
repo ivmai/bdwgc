@@ -352,7 +352,11 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
     INIT_HDR_CACHE;
     for (; bm != 0; bm >>= 1, current_p += sizeof(word)) {
         if (bm & 1) {
+#         if defined(__CHERI_PURE_CAPABILITY__)
+            word *current;
+#         else
             word current;
+#         endif
 
             LOAD_WORD_OR_CONTINUE(current, current_p);
             FIXUP_POINTER(current);

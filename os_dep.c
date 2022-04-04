@@ -2062,19 +2062,19 @@ void GC_register_data_segments(void)
                                           ptr_t etext_addr)
     {
       volatile ptr_t cap_next_page = NULL;
-      vaddr_t text_end = ((vaddr_t)(cheri_getaddress(etext_addr)) + sizeof(ptr_t) - 1)
-                          & ~(vaddr_t)(sizeof(ptr_t) - 1);
+      vaddr_t text_end = (vaddr_t)cheri_align_up(etext_addr, sizeof(ptr_t));
+      /* etext rounded to word boundary       */
       volatile vaddr_t next_page = (text_end + (word)max_page_size - 1)
                                     & ~((word)max_page_size - 1);
-      /* etext rounded to word boundary       */
-      volatile ptr_t result = (ptr_t)cheri_setaddress(etext_addr, text_end);
+      volatile ptr_t result = (ptr_t)cheri_address_set(etext_addr, text_end);
       GC_setup_temporary_fault_handler();
       if (SETJMP(GC_jmp_buf) == 0) {
           /* Try reading at the address.                          */
           /* This should happen before there is another thread.   */
-          for (; next_page < (word)DATAEND; next_page += (word)max_page_size)
-  	    cap_next_page = cheri_setaddress(etext_addr, next_page);
+          for (; next_page < (word)DATAEND; next_page += (word)max_page_size) {
+              cap_next_page = cheri_address_set(etext_addr, next_page);
               *cap_next_page;
+          }
           GC_reset_fault_handler();
       } else {
           GC_reset_fault_handler();

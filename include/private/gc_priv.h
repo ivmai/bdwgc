@@ -81,6 +81,10 @@
 # endif
 #endif
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+#  include <cheriintrin.h>
+#endif
+
 #include "gc/gc_tiny_fl.h"
 #include "gc/gc_mark.h"
 
@@ -2102,6 +2106,16 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
           int tag LOCAL_VAR_INIT_OK; \
           LOAD_TAGGED_VALUE(v, tag, p); \
           if (tag != 0) continue; \
+        }
+#elif defined(__CHERI_PURE_CAPABILITY__)
+  /* Load value, check tag and permissions of the target memory.   */
+# define LOAD_WORD_OR_CONTINUE(v, p) \
+        { \
+            v = *(void **)(p);                                            \
+            size_t has_rwx = cheri_perms_get(v) & (CHERI_PERM_LOAD        \
+                                                   | CHERI_PERM_STORE     \
+                                                   | CHERI_PERM_EXECUTE); \
+            if ((cheri_tag_get(v) == 0) || !has_rwx) continue;            \
         }
 #else
 # define LOAD_WORD_OR_CONTINUE(v, p) (void)(v = *(word *)(p))

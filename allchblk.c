@@ -17,9 +17,6 @@
 #include "private/gc_priv.h"
 
 #include <stdio.h>
-#if defined(__CHERI_PURE_CAPABILITY__)
-# include <cheriintrin.h>
-#endif
 
 #ifdef GC_USE_ENTIRE_HEAP
   int GC_use_entire_heap = TRUE;

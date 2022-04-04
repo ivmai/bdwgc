@@ -28,9 +28,6 @@
 #include "private/gc_pmark.h"
 
 #include <stdio.h>
-#if defined(__CHERI_PURE_CAPABILITY__)
-#include <cheri/cheric.h>
-#endif
 
 #if defined(MSWIN32) && defined(__GNUC__)
 # include <excpt.h>
@@ -867,31 +864,31 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           /*  a. there can't possibly be a pointer at limit's pointer     */
           /*  b. reading at that location will raise a capability         */
           /*     exception                                                */
-          if (cheri_getaddress(limit) + sizeof(ptr_t) - 1
-                >= (cheri_getbase(limit) + cheri_getlength(limit))) {
+          if (cheri_address_get(limit) + sizeof(ptr_t) - 1
+                >= (cheri_base_get(limit) + cheri_length_get(limit))) {
             /* Decrement limit so that it's within current_p's bounds */
-            limit = cheri_setaddress( current_p, ((cheri_getbase(limit)
-                                      + cheri_getlength(limit) - sizeof(ptr_t))
+            limit = cheri_address_set( current_p, ((cheri_base_get(limit)
+                                      + cheri_length_get(limit) - sizeof(ptr_t))
                                       & ~(sizeof(ptr_t)-1)));
             if ((word)current_p > (word)limit) goto next_object;
           }
           for(;;) {
             GC_ASSERT((word)limit >= (word)current_p);
-            if (cheri_getaddress(limit) < cheri_getbase(limit)) goto next_object;
+            if (cheri_address_get(limit) < cheri_base_get(limit)) goto next_object;
   
-            has_rwx = cheri_getperm(limit) & (CHERI_PERM_LOAD
-                                             | CHERI_PERM_STORE
-                                             | CHERI_PERM_EXECUTE);
-            if ((cheri_gettag(limit) == 0) || !has_rwx) {
+            has_rwx = cheri_perms_get(limit) & (CHERI_PERM_LOAD
+                                                | CHERI_PERM_STORE
+                                                | CHERI_PERM_EXECUTE);
+            if ((cheri_tag_get(limit) == 0) || !has_rwx) {
               limit -= ALIGNMENT;
             } else {
               deferred = *(void **)limit;
               FIXUP_POINTER(deferred);
               limit -= ALIGNMENT;
-              has_rwx = cheri_getperm(deferred) & (CHERI_PERM_LOAD
-                                                  | CHERI_PERM_STORE
-                                                  | CHERI_PERM_EXECUTE);
-              if (((cheri_gettag(deferred) != 0) && has_rwx)
+              has_rwx = cheri_perms_get(deferred) & (CHERI_PERM_LOAD
+                                                     | CHERI_PERM_STORE
+                                                     | CHERI_PERM_EXECUTE);
+              if (((cheri_tag_get(deferred) != 0) && has_rwx)
                     && (deferred >= (word)least_ha && deferred < (word)greatest_ha))
                 break;
             }
@@ -904,15 +901,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         /* Empirically, unrolling this loop doesn't help a lot. */
         /* Since PUSH_CONTENTS expands to a lot of code,        */
         /* we don't.                                            */
-#       if defined(__CHERI_PURE_CAPABILITY__)
-          current = *(void **)current_p;
-          has_rwx = cheri_getperm(current) & (CHERI_PERM_LOAD
-                                             | CHERI_PERM_STORE
-                                             | CHERI_PERM_EXECUTE);
-          if ((cheri_gettag(current) == 0) || !has_rwx) continue;
-#       else
-          LOAD_WORD_OR_CONTINUE(current, current_p);
-#       endif
+        LOAD_WORD_OR_CONTINUE(current, current_p);
         FIXUP_POINTER(current);
         PREFETCH(current_p + PREF_DIST*CACHE_LINE_SIZE);
         if (current >= (word)least_ha && current < (word)greatest_ha) {
@@ -1378,8 +1367,8 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
     word length;
 
 # if defined(__CHERI_PURE_CAPABILITY__)
-    bottom = cheri_setaddress(bottom, (((word)cheri_getaddress(bottom) + ALIGNMENT-1) & ~(ALIGNMENT-1)));
-    top = cheri_setaddress(top, ((word)cheri_getaddress(top) & ~(ALIGNMENT-1)));
+    bottom = cheri_align_up(bottom, ALIGNMENT);
+    top = cheri_align_down(top, ALIGNMENT);
 # else
     bottom = (void *)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     top = (void *)((word)top & ~(ALIGNMENT-1));
@@ -1653,10 +1642,8 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 {
 # if defined(__CHERI_PURE_CAPABILITY__)
     REGISTER void ** current_p;
-    REGISTER void **b = (void **)cheri_setaddress(bottom, (((vaddr_t) bottom + ALIGNMENT-1)
-                                                          & ~(ALIGNMENT-1)));
-    REGISTER void ** t = (void **)cheri_setaddress(top, (((vaddr_t)top)
-                                                          & ~(ALIGNMENT-1)));
+    REGISTER void **b = (void **)cheri_align_up(bottom, ALIGNMENT);
+    REGISTER void ** t = (void **)cheri_align_down(top, ALIGNMENT);
 # else
     REGISTER ptr_t current_p;
 # endif
@@ -1671,12 +1658,13 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
     /* Check all pointers in range and push if they appear to be valid. */
 # if defined(__CHERI_PURE_CAPABILITY__)
     lim = t - 1;
-    if ((intptr_t)lim >= (cheri_getbase(b) + cheri_getlength(b)))
-      lim = ((cheri_getbase(b) + cheri_getlength(b) - sizeof(ptr_t)) & ~(sizeof(ptr_t)-1));
+    if ((intptr_t)lim >= (cheri_base_get(b) + cheri_length_get(b)))
+      lim = cheri_base_get(b) + cheri_length_get(b) - sizeof(ptr_t);
 
     for (current_p = b; (word)current_p <= (word)lim; current_p++) {
       REGISTER void *q = *current_p;
 
+      LOAD_WORD_OR_CONTINUE(q, current_p);
       GC_PUSH_ONE_STACK(q, current_p);
     }
 # else

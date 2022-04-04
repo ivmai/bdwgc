@@ -16,6 +16,10 @@
  */
 
 #include "private/gc_pmark.h"
+#if defined(__CHERI_PURE_CAPABILITY__)
+#include <cheriintrin.h>
+#endif
+
 
 #ifndef GC_NO_FINALIZATION
 # include "gc/javaxfc.h" /* to get GC_finalize_all() as extern "C" */
@@ -637,7 +641,11 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
     }
     for (current_p = p; (word)current_p <= (word)scan_limit;
          current_p += ALIGNMENT) {
+#     if defined(__CHERI_PURE_CAPABILITY__)
+        word *q;
+#     else
         word q;
+#     endif
 
         LOAD_WORD_OR_CONTINUE(q, current_p);
         if (q < (word)p || q > (word)target_limit) {
