@@ -253,6 +253,10 @@ typedef struct GC_Thread_Rep {
     word registers[PLATFORM_GC_REG_STORAGE_SIZE]; /* used externally */
 # endif
 
+# if defined(WOW64_THREAD_CONTEXT_WORKAROUND) && defined(MSWINRT_FLAVOR)
+    PNT_TIB tib;
+# endif
+
 # ifdef RETRY_GET_THREAD_CONTEXT /* && GC_WIN32_THREADS */
     ptr_t context_sp;
     word context_regs[PUSHED_REGS_COUNT];

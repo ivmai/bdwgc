@@ -257,6 +257,12 @@ GC_INNER GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                    ": errcode= 0x%X", (unsigned)GetLastError());
     }
 # endif
+# if defined(WOW64_THREAD_CONTEXT_WORKAROUND) && defined(MSWINRT_FLAVOR)
+    /* Lookup TIB value via a call to NtCurrentTeb() on thread          */
+    /* registration rather than calling GetThreadSelectorEntry() which  */
+    /* is not available on UWP.                                         */
+    me -> tib = (PNT_TIB)NtCurrentTeb();
+# endif
   me -> crtn -> last_stack_min = ADDR_LIMIT;
   GC_record_stack_base(me -> crtn, sb);
   /* Up until this point, GC_push_all_stacks considers this thread      */
@@ -375,7 +381,7 @@ GC_INLINE LONG GC_get_max_thread_index(void)
 #   define CONTEXT_EXCEPTION_REQUEST   0x40000000
 #   define CONTEXT_EXCEPTION_REPORTING 0x80000000
 # endif
-  static BOOL isWow64;  /* Is running 32-bit code on Win64?     */
+  static GC_bool isWow64; /* Is running 32-bit code on Win64?   */
 # define GET_THREAD_CONTEXT_FLAGS (isWow64 \
                         ? CONTEXT_INTEGER | CONTEXT_CONTROL \
                           | CONTEXT_EXCEPTION_REQUEST | CONTEXT_SEGMENTS \
@@ -796,19 +802,25 @@ STATIC word GC_push_stack_for(GC_thread thread, thread_id_t self_id,
       /* WoW64 workaround. */
       if (isWow64) {
         DWORD ContextFlags = (DWORD)regs[0];
-        WORD SegFs = (WORD)regs[1];
 
         if ((ContextFlags & CONTEXT_EXCEPTION_REPORTING) != 0
             && (ContextFlags & (CONTEXT_EXCEPTION_ACTIVE
                                 /* | CONTEXT_SERVICE_ACTIVE */)) != 0) {
-          LDT_ENTRY selector;
           PNT_TIB tib;
 
-          if (!GetThreadSelectorEntry(THREAD_HANDLE(thread), SegFs, &selector))
-            ABORT("GetThreadSelectorEntry failed");
-          tib = (PNT_TIB)(selector.BaseLow
-                          | (selector.HighWord.Bits.BaseMid << 16)
-                          | (selector.HighWord.Bits.BaseHi << 24));
+#         ifdef MSWINRT_FLAVOR
+            tib = thread -> tib;
+#         else
+            WORD SegFs = (WORD)regs[1];
+            LDT_ENTRY selector;
+
+            if (!GetThreadSelectorEntry(THREAD_HANDLE(thread), SegFs,
+                                        &selector))
+              ABORT("GetThreadSelectorEntry failed");
+            tib = (PNT_TIB)(selector.BaseLow
+                            | (selector.HighWord.Bits.BaseMid << 16)
+                            | (selector.HighWord.Bits.BaseHi << 24));
+#         endif
 #         ifdef DEBUG_THREADS
             GC_log_printf("TIB stack limit/base: %p .. %p\n",
                           (void *)tib->StackLimit, (void *)tib->StackBase);
@@ -1566,6 +1578,45 @@ GC_API DECLSPEC_NORETURN void WINAPI GC_ExitThread(DWORD dwExitCode)
 
 #endif /* GC_WINMAIN_REDIRECT */
 
+#ifdef WOW64_THREAD_CONTEXT_WORKAROUND
+# ifdef MSWINRT_FLAVOR
+    /* Available on WinRT but we have to declare it manually.   */
+    __declspec(dllimport) HMODULE WINAPI GetModuleHandleW(LPCWSTR);
+# endif
+
+  static GC_bool is_wow64_process(HMODULE hK32)
+  {
+    BOOL is_wow64;
+#   ifdef MSWINRT_FLAVOR
+      /* Try to use IsWow64Process2 as it handles different WoW64 cases. */
+      HMODULE hWow64 = GetModuleHandleW(L"api-ms-win-core-wow64-l1-1-1.dll");
+
+      UNUSED_ARG(hK32);
+      if (hWow64) {
+        FARPROC pfn2 = GetProcAddress(hWow64, "IsWow64Process2");
+        USHORT process_machine, native_machine;
+
+        if (pfn2
+            && (*(BOOL (WINAPI*)(HANDLE, USHORT*, USHORT*))(word)pfn2)(
+                GetCurrentProcess(), &process_machine, &native_machine))
+          return process_machine != native_machine;
+      }
+      if (IsWow64Process(GetCurrentProcess(), &is_wow64))
+        return (GC_bool)is_wow64;
+#   else
+      if (hK32) {
+        FARPROC pfn = GetProcAddress(hK32, "IsWow64Process");
+
+        if (pfn
+            && (*(BOOL (WINAPI*)(HANDLE, BOOL*))(word)pfn)(
+                         GetCurrentProcess(), &is_wow64))
+          return (GC_bool)is_wow64;
+      }
+#   endif
+    return FALSE; /* IsWow64Process failed */
+  }
+#endif /* WOW64_THREAD_CONTEXT_WORKAROUND */
+
 GC_INNER void GC_thr_init(void)
 {
   struct GC_stack_base sb;
@@ -1597,18 +1648,10 @@ GC_INNER void GC_thr_init(void)
 # ifdef CAN_HANDLE_FORK
     GC_setup_atfork();
 # endif
-
 # ifdef WOW64_THREAD_CONTEXT_WORKAROUND
     /* Set isWow64 flag. */
-      if (hK32) {
-        FARPROC pfn = GetProcAddress(hK32, "IsWow64Process");
-        if (pfn
-            && !(*(BOOL (WINAPI*)(HANDLE, BOOL*))(word)pfn)(
-                                        GetCurrentProcess(), &isWow64))
-          isWow64 = FALSE; /* IsWow64Process failed */
-      }
+    isWow64 = is_wow64_process(hK32);
 # endif
-
   /* Add the initial thread, so we can stop it. */
   sb.mem_base = GC_stackbottom;
   GC_ASSERT(sb.mem_base != NULL);
