@@ -3,7 +3,7 @@
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999 by Hewlett-Packard Company.  All rights reserved.
- * Copyright (c) 2008-2020 Ivan Maidanski
+ * Copyright (c) 2008-2021 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -235,20 +235,22 @@ GC_INNER const char * GC_get_maps(void)
             f = open("/proc/self/maps", O_RDONLY);
             if (-1 == f)
               ABORT_ARG1("Cannot open /proc/self/maps",
-                         ": errno = %d", errno);
+                         ": errno= %d", errno);
 #           ifdef THREADS
               old_maps_size = maps_size;
 #           endif
             maps_size = 0;
             do {
                 result = GC_repeat_read(f, maps_buf, maps_buf_sz-1);
-                if (result <= 0) {
+                if (result < 0) {
                   ABORT_ARG1("Failed to read /proc/self/maps",
-                             ": errno = %d", result < 0 ? errno : 0);
+                             ": errno= %d", errno);
                 }
                 maps_size += result;
             } while ((size_t)result == maps_buf_sz-1);
             close(f);
+            if (0 == maps_size)
+              ABORT("Empty /proc/self/maps");
 #           ifdef THREADS
               if (maps_size > old_maps_size) {
                 /* This might be caused by e.g. thread creation. */
@@ -285,7 +287,7 @@ GC_INNER const char * GC_get_maps(void)
 /* original buffer.                                                     */
 #if (defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES)) \
     || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
-    || defined(REDIRECT_MALLOC)
+    || (defined(REDIRECT_MALLOC) && defined(GC_LINUX_THREADS))
   GC_INNER const char *GC_parse_map_entry(const char *maps_ptr,
                                           ptr_t *start, ptr_t *end,
                                           const char **prot, unsigned *maj_dev,
@@ -363,7 +365,7 @@ GC_INNER const char * GC_get_maps(void)
   }
 #endif /* IA64 || INCLUDE_LINUX_THREAD_DESCR */
 
-#if defined(REDIRECT_MALLOC)
+#if defined(REDIRECT_MALLOC) && defined(GC_LINUX_THREADS)
   /* Find the text(code) mapping for the library whose name, after      */
   /* stripping the directory part, starts with nm.                      */
   GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp)
@@ -401,6 +403,8 @@ GC_INNER const char * GC_get_maps(void)
   static ptr_t backing_store_base_from_proc(void)
   {
     ptr_t my_start, my_end;
+
+    GC_ASSERT(I_HOLD_LOCK());
     if (!GC_enclosing_mapping(GC_save_regs_in_stack(), &my_start, &my_end)) {
         GC_COND_LOG_PRINTF("Failed to find backing store base from /proc\n");
         return 0;
@@ -428,7 +432,11 @@ GC_INNER const char * GC_get_maps(void)
 #   pragma weak data_start
     extern int __data_start[], data_start[];
     EXTERN_C_END
-# endif /* LINUX */
+# elif defined(NETBSD)
+    EXTERN_C_BEGIN
+    extern char **environ;
+    EXTERN_C_END
+# endif
 
   ptr_t GC_data_start = NULL;
 
@@ -465,7 +473,13 @@ GC_INNER const char * GC_get_maps(void)
       return;
     }
 
-    GC_data_start = (ptr_t)GC_find_limit(data_end, FALSE);
+#   ifdef NETBSD
+      /* This may need to be environ, without the underscore, for       */
+      /* some versions.                                                 */
+      GC_data_start = (ptr_t)GC_find_limit(&environ, FALSE);
+#   else
+      GC_data_start = (ptr_t)GC_find_limit(data_end, FALSE);
+#   endif
   }
 #endif /* SEARCH_FOR_DATA_START */
 
@@ -494,21 +508,6 @@ GC_INNER const char * GC_get_maps(void)
   }
 # define sbrk tiny_sbrk
 #endif /* ECOS */
-
-#if defined(NETBSD) && defined(__ELF__)
-  ptr_t GC_data_start = NULL;
-
-  EXTERN_C_BEGIN
-  extern char **environ;
-  EXTERN_C_END
-
-  GC_INNER void GC_init_netbsd_elf(void)
-  {
-        /* This may need to be environ, without the underscore, for     */
-        /* some versions.                                               */
-    GC_data_start = (ptr_t)GC_find_limit(&environ, FALSE);
-  }
-#endif /* NETBSD */
 
 #if defined(ADDRESS_SANITIZER) && (defined(UNIX_LIKE) \
                     || defined(NEED_FIND_LIMIT) || defined(MPROTECT_VDB)) \
@@ -594,10 +593,11 @@ GC_INNER const char * GC_get_maps(void)
     static volatile ptr_t result;
 
     struct sigaction act;
-    word pgsz = (word)sysconf(_SC_PAGESIZE);
+    word pgsz;
 
-    GC_ASSERT((word)bound >= pgsz);
     GC_ASSERT(I_HOLD_LOCK());
+    pgsz = (word)sysconf(_SC_PAGESIZE);
+    GC_ASSERT((word)bound >= pgsz);
 
     act.sa_handler = GC_fault_handler_openbsd;
     sigemptyset(&act.sa_mask);
@@ -874,7 +874,8 @@ GC_INNER size_t GC_page_size = 0;
 #   define GET_MAIN_STACKBASE_SPECIAL
 # endif /* AMIGA */
 
-# if defined(NEED_FIND_LIMIT) || defined(UNIX_LIKE)
+# if defined(NEED_FIND_LIMIT) || defined(UNIX_LIKE) \
+     || (defined(WRAP_MARK_SOME) && !defined(MSWIN32) && !defined(MSWINCE))
 
     typedef void (*GC_fault_handler_t)(int);
 
@@ -939,6 +940,7 @@ GC_INNER size_t GC_page_size = 0;
 # endif /* NEED_FIND_LIMIT || UNIX_LIKE */
 
 # if defined(NEED_FIND_LIMIT) \
+     || (defined(WRAP_MARK_SOME) && !defined(MSWIN32) && !defined(MSWINCE)) \
      || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
   /* Some tools to implement HEURISTIC2 */
 #   define MIN_PAGE_SIZE 256    /* Smallest conceivable page size, bytes */
@@ -975,7 +977,10 @@ GC_INNER size_t GC_page_size = 0;
 #         endif
 #       endif
     }
+# endif /* NEED_FIND_LIMIT || WRAP_MARK_SOME && !MSWIN32 */
 
+# if defined(NEED_FIND_LIMIT) \
+     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
     /* Return the first non-addressable location > p (up) or    */
     /* the smallest location q s.t. [q,p) is addressable (!up). */
     /* We assume that p (up) or p-1 (!up) is addressable.       */
@@ -1072,6 +1077,7 @@ GC_INNER size_t GC_page_size = 0;
     }
 
     /* old way to get the register stackbottom */
+    GC_ASSERT(GC_stackbottom != NULL);
     return (ptr_t)(((word)GC_stackbottom - BACKING_STORE_DISPLACEMENT - 1)
                    & ~(BACKING_STORE_ALIGNMENT - 1));
   }
@@ -1102,6 +1108,7 @@ GC_INNER size_t GC_page_size = 0;
     {
       ptr_t result;
 
+      GC_ASSERT(I_HOLD_LOCK());
 #     ifdef USE_LIBC_PRIVATES
         if (0 != &__libc_ia64_register_backing_store_base
             && 0 != __libc_ia64_register_backing_store_base) {
@@ -1159,11 +1166,11 @@ GC_INNER size_t GC_page_size = 0;
 
     f = open("/proc/self/stat", O_RDONLY);
     if (-1 == f)
-      ABORT_ARG1("Could not open /proc/self/stat", ": errno = %d", errno);
+      ABORT_ARG1("Could not open /proc/self/stat", ": errno= %d", errno);
     len = GC_repeat_read(f, stat_buf, sizeof(stat_buf));
     if (len < 0)
       ABORT_ARG1("Failed to read /proc/self/stat",
-                 ": errno = %d", errno);
+                 ": errno= %d", errno);
     close(f);
 
     /* Skip the required number of fields.  This number is hopefully    */
@@ -1414,6 +1421,8 @@ GC_INNER size_t GC_page_size = 0;
         RESTORE_CANCEL(cancel_state);
       }
       UNLOCK();
+#   elif defined(E2K)
+      b -> reg_base = NULL;
 #   endif
     return GC_SUCCESS;
   }
@@ -1529,11 +1538,13 @@ GC_INNER size_t GC_page_size = 0;
       DISABLE_CANCEL(cancel_state);  /* May be unnecessary? */
 #     ifdef STACK_GROWS_DOWN
         b -> mem_base = GC_find_limit(GC_approx_sp(), TRUE);
-#       ifdef IA64
-          b -> reg_base = GC_find_limit(GC_save_regs_in_stack(), FALSE);
-#       endif
 #     else
         b -> mem_base = GC_find_limit(GC_approx_sp(), FALSE);
+#     endif
+#     ifdef IA64
+        b -> reg_base = GC_find_limit(GC_save_regs_in_stack(), FALSE);
+#     elif defined(E2K)
+        b -> reg_base = NULL;
 #     endif
       RESTORE_CANCEL(cancel_state);
       UNLOCK();
@@ -1704,7 +1715,7 @@ void GC_register_data_segments(void)
 #     ifdef MSWINRT_FLAVOR
         {
           MEMORY_BASIC_INFORMATION memInfo;
-          SIZE_T result = VirtualQuery(GetProcAddress,
+          SIZE_T result = VirtualQuery((void*)(word)GetProcAddress,
                                        &memInfo, sizeof(memInfo));
           if (result != sizeof(memInfo))
             ABORT("Weird VirtualQuery result");
@@ -1745,13 +1756,6 @@ void GC_register_data_segments(void)
           GetWriteWatch_func = 0;
         }
       }
-#     ifndef SMALL_CONFIG
-        if (!GetWriteWatch_func) {
-          GC_COND_LOG_PRINTF("Did not find a usable GetWriteWatch()\n");
-        } else {
-          GC_COND_LOG_PRINTF("Using GetWriteWatch()\n");
-        }
-#     endif
       done = TRUE;
     }
 
@@ -1871,6 +1875,9 @@ void GC_register_data_segments(void)
     void *candidate;
 
     if (NULL == new_l) return;
+    new_l -> allocation_base = NULL;
+                        /* to suppress maybe-uninitialized gcc warning  */
+
     candidate = GC_get_allocation_base(new_l);
     if (GC_is_malloc_heap_base(candidate)) {
       /* Try a little harder to find malloc heap.                       */
@@ -1939,6 +1946,7 @@ void GC_register_data_segments(void)
       char * base;
       char * limit;
 
+      GC_ASSERT(I_HOLD_LOCK());
       if (!GC_no_win32_dlls) return;
       p = base = limit = GC_least_described_address(static_root);
       while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
@@ -2054,19 +2062,19 @@ void GC_register_data_segments(void)
                                           ptr_t etext_addr)
     {
       volatile ptr_t cap_next_page = NULL;
-      vaddr_t text_end = ((vaddr_t)(cheri_getaddress(etext_addr)) + sizeof(ptr_t) - 1)
-                          & ~(vaddr_t)(sizeof(ptr_t) - 1);
+      vaddr_t text_end = (vaddr_t)cheri_align_up(etext_addr, sizeof(ptr_t));
+      /* etext rounded to word boundary       */
       volatile vaddr_t next_page = (text_end + (word)max_page_size - 1)
                                     & ~((word)max_page_size - 1);
-      /* etext rounded to word boundary       */
-      volatile ptr_t result = (ptr_t)cheri_setaddress(etext_addr, text_end);
+      volatile ptr_t result = (ptr_t)cheri_address_set(etext_addr, text_end);
       GC_setup_temporary_fault_handler();
       if (SETJMP(GC_jmp_buf) == 0) {
           /* Try reading at the address.                          */
           /* This should happen before there is another thread.   */
-          for (; next_page < (word)DATAEND; next_page += (word)max_page_size)
-  	    cap_next_page = cheri_setaddress(etext_addr, next_page);
+          for (; next_page < (word)DATAEND; next_page += (word)max_page_size) {
+              cap_next_page = cheri_address_set(etext_addr, next_page);
               *cap_next_page;
+          }
           GC_reset_fault_handler();
       } else {
           GC_reset_fault_handler();
@@ -2093,6 +2101,7 @@ void GC_register_data_segments(void)
 {
   ptr_t region_start = DATASTART;
 
+  GC_ASSERT(I_HOLD_LOCK());
   if ((word)region_start - 1U >= (word)DATAEND)
     ABORT_ARG2("Wrong DATASTART/END pair",
                ": %p .. %p", (void *)region_start, (void *)DATAEND);
@@ -2121,6 +2130,7 @@ void GC_register_data_segments(void)
 
   void GC_register_data_segments(void)
   {
+    GC_ASSERT(I_HOLD_LOCK());
 #   if !defined(PCR) && !defined(MACOS)
 #     if defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
         /* As of Solaris 2.3, the Solaris threads implementation        */
@@ -2594,6 +2604,13 @@ void * os2_alloc(size_t bytes)
   }
 #endif /* HAIKU */
 
+#if (defined(USE_MUNMAP) || defined(MPROTECT_VDB)) && !defined(USE_WINALLOC)
+# define ABORT_ON_REMAP_FAIL(C_msg_prefix, start_addr, len) \
+        ABORT_ARG3(C_msg_prefix " failed", \
+                   " at %p (length %lu), errno= %d", \
+                   (void *)(start_addr), (unsigned long)(len), errno)
+#endif
+
 #ifdef USE_MUNMAP
 
 /* For now, this only works on Win32/WinCE and some Unix-like   */
@@ -2625,25 +2642,22 @@ STATIC ptr_t GC_unmap_start(ptr_t start, size_t bytes)
     return result;
 }
 
-/* Under Win32/WinCE we commit (map) and decommit (unmap)       */
-/* memory using VirtualAlloc and VirtualFree.  These functions  */
-/* work on individual allocations of virtual memory, made       */
-/* previously using VirtualAlloc with the MEM_RESERVE flag.     */
-/* The ranges we need to (de)commit may span several of these   */
-/* allocations; therefore we use VirtualQuery to check          */
-/* allocation lengths, and split up the range as necessary.     */
-
 /* We assume that GC_remap is called on exactly the same range  */
 /* as a previous call to GC_unmap.  It is safe to consistently  */
 /* round the endpoints in both places.                          */
-GC_INNER void GC_unmap(ptr_t start, size_t bytes)
-{
-    ptr_t start_addr = GC_unmap_start(start, bytes);
-    ptr_t end_addr = GC_unmap_end(start, bytes);
-    word len = end_addr - start_addr;
 
+static void block_unmap_inner(ptr_t start_addr, size_t len)
+{
     if (0 == start_addr) return;
+
 #   ifdef USE_WINALLOC
+      /* Under Win32/WinCE we commit (map) and decommit (unmap)         */
+      /* memory using VirtualAlloc and VirtualFree.  These functions    */
+      /* work on individual allocations of virtual memory, made         */
+      /* previously using VirtualAlloc with the MEM_RESERVE flag.       */
+      /* The ranges we need to (de)commit may span several of these     */
+      /* allocations; therefore we use VirtualQuery to check            */
+      /* allocation lengths, and split up the range as necessary.       */
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
           word free_len;
@@ -2658,42 +2672,62 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
           start_addr += free_len;
           len -= free_len;
       }
-#   elif defined(SN_TARGET_PS3)
-      ps3_free_mem(start_addr, len);
 #   else
-      /* We immediately remap it to prevent an intervening mmap from    */
-      /* accidentally grabbing the same address space.                  */
-      {
-#       if defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
-           || defined(HPUX)
+      if (len != 0) {
+#       ifdef SN_TARGET_PS3
+          ps3_free_mem(start_addr, len);
+#       elif defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
+             || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)) \
+             || defined(HPUX)
           /* On AIX, mmap(PROT_NONE) fails with ENOMEM unless the       */
           /* environment variable XPG_SUS_ENV is set to ON.             */
           /* On Cygwin, calling mmap() with the new protection flags on */
           /* an existing memory map with MAP_FIXED is broken.           */
           /* However, calling mprotect() on the given address range     */
           /* with PROT_NONE seems to work fine.                         */
-          if (mprotect(start_addr, len, PROT_NONE))
-            ABORT("mprotect(PROT_NONE) failed");
-#       elif defined(EMSCRIPTEN)
-          /* Nothing to do, mmap(PROT_NONE) is not supported and        */
-          /* mprotect() is just a no-op.                                */
+          /* On Linux, low RLIMIT_AS value may lead to mmap failure.    */
+#         if defined(LINUX) && !defined(FORCE_MPROTECT_BEFORE_MADVISE)
+            /* On Linux, at least, madvise() should be sufficient.      */
+#         else
+            if (mprotect(start_addr, len, PROT_NONE))
+              ABORT_ON_REMAP_FAIL("unmap: mprotect", start_addr, len);
+#         endif
+#         if !defined(CYGWIN32)
+            /* On Linux (and some other platforms probably),    */
+            /* mprotect(PROT_NONE) is just disabling access to  */
+            /* the pages but not returning them to OS.          */
+            if (madvise(start_addr, len, MADV_DONTNEED) == -1)
+              ABORT_ON_REMAP_FAIL("unmap: madvise", start_addr, len);
+#         endif
 #       elif defined(__CHERI_PURE_CAPABILITY__)
-          /* Nothing to do, avoid downgrading permissions on CHERI.     */
+            /* Nothing to do, avoid downgrading permissions on CHERI.     */
 #       else
+          /* We immediately remap it to prevent an intervening mmap()   */
+          /* from accidentally grabbing the same address space.         */
           void * result = mmap(start_addr, len, PROT_NONE,
                                MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
                                zero_fd, 0/* offset */);
 
+          if (EXPECT(MAP_FAILED == result, FALSE))
+            ABORT_ON_REMAP_FAIL("unmap: mmap", start_addr, len);
           if (result != (void *)start_addr)
-            ABORT("mmap(PROT_NONE) failed");
+            ABORT("unmap: mmap() result differs from start_addr");
 #         if defined(CPPCHECK) || defined(LINT2)
             /* Explicitly store the resource handle to a global variable. */
             GC_noop1((word)result);
 #         endif
-#       endif /* !CYGWIN32 */
+#       endif
+        GC_unmapped_bytes += len;
       }
-      GC_unmapped_bytes += len;
 #   endif
+}
+
+GC_INNER void GC_unmap(ptr_t start, size_t bytes)
+{
+    ptr_t start_addr = GC_unmap_start(start, bytes);
+    ptr_t end_addr = GC_unmap_end(start, bytes);
+
+    block_unmap_inner(start_addr, (size_t)(end_addr - start_addr));
 }
 
 GC_INNER void GC_remap(ptr_t start, size_t bytes)
@@ -2729,16 +2763,21 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 #         ifdef LINT2
             GC_noop1((word)result);
 #         endif
+          GC_ASSERT(GC_unmapped_bytes >= alloc_len);
           GC_unmapped_bytes -= alloc_len;
           start_addr += alloc_len;
           len -= alloc_len;
       }
+#     undef IGNORE_PAGES_EXECUTABLE
 #   elif defined(__CHERI_PURE_CAPABILITY__)
       /* Nothing to do, avoid downgrading permissions on CHERI. */
 #   else
       /* It was already remapped with PROT_NONE. */
       {
-#       if defined(NACL) || defined(NETBSD)
+#       if !defined(SN_TARGET_PS3) && !defined(FORCE_MPROTECT_BEFORE_MADVISE) \
+           && defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)
+          /* Nothing to unprotect as madvise() is just a hint.  */
+#       elif defined(NACL) || defined(NETBSD)
           /* NaCl does not expose mprotect, but mmap should work fine.  */
           /* In case of NetBSD, mprotect fails (unlike mmap) even       */
           /* without PROT_EXEC if PaX MPROTECT feature is enabled.      */
@@ -2746,21 +2785,22 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
                                     | (GC_pages_executable ? PROT_EXEC : 0),
                                    MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
                                    zero_fd, 0 /* offset */);
+          if (EXPECT(MAP_FAILED == result, FALSE))
+            ABORT_ON_REMAP_FAIL("remap: mmap", start_addr, len);
           if (result != (void *)start_addr)
-            ABORT("mmap as mprotect failed");
+            ABORT("remap: mmap() result differs from start_addr");
 #         if defined(CPPCHECK) || defined(LINT2)
             GC_noop1((word)result);
 #         endif
+#         undef IGNORE_PAGES_EXECUTABLE
 #       else
           if (mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
-                            | (GC_pages_executable ? PROT_EXEC : 0)) != 0) {
-            ABORT_ARG3("mprotect remapping failed",
-                       " at %p (length %lu), errcode= %d",
-                       (void *)start_addr, (unsigned long)len, errno);
-          }
+                            | (GC_pages_executable ? PROT_EXEC : 0)))
+            ABORT_ON_REMAP_FAIL("remap: mprotect", start_addr, len);
+#         undef IGNORE_PAGES_EXECUTABLE
 #       endif /* !NACL */
       }
-#     undef IGNORE_PAGES_EXECUTABLE
+      GC_ASSERT(GC_unmapped_bytes >= len);
       GC_unmapped_bytes -= len;
 #   endif
 }
@@ -2777,49 +2817,11 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
     ptr_t start2_addr = GC_unmap_start(start2, bytes2);
     ptr_t start_addr = end1_addr;
     ptr_t end_addr = start2_addr;
-    size_t len;
 
     GC_ASSERT(start1 + bytes1 == start2);
     if (0 == start1_addr) start_addr = GC_unmap_start(start1, bytes1 + bytes2);
     if (0 == start2_addr) end_addr = GC_unmap_end(start1, bytes1 + bytes2);
-    if (0 == start_addr) return;
-    len = end_addr - start_addr;
-#   ifdef USE_WINALLOC
-      while (len != 0) {
-          MEMORY_BASIC_INFORMATION mem_info;
-          word free_len;
-
-          if (VirtualQuery(start_addr, &mem_info, sizeof(mem_info))
-              != sizeof(mem_info))
-              ABORT("Weird VirtualQuery result");
-          free_len = (len < mem_info.RegionSize) ? len : mem_info.RegionSize;
-          if (!VirtualFree(start_addr, free_len, MEM_DECOMMIT))
-              ABORT("VirtualFree failed");
-          GC_unmapped_bytes += free_len;
-          start_addr += free_len;
-          len -= free_len;
-      }
-#   else
-      if (len != 0) {
-        /* Immediately remap as above. */
-#       if defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
-           || defined(HPUX)
-          if (mprotect(start_addr, len, PROT_NONE))
-            ABORT("mprotect(PROT_NONE) failed");
-#       else
-          void * result = mmap(start_addr, len, PROT_NONE,
-                               MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
-                               zero_fd, 0/* offset */);
-
-          if (result != (void *)start_addr)
-            ABORT("mmap(PROT_NONE) failed");
-#         if defined(CPPCHECK) || defined(LINT2)
-            GC_noop1((word)result);
-#         endif
-#       endif /* !CYGWIN32 */
-        GC_unmapped_bytes += len;
-      }
-#   endif
+    block_unmap_inner(start_addr, (size_t)(end_addr - start_addr));
 }
 
 #endif /* USE_MUNMAP */
@@ -3018,6 +3020,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
     GC_INNER GC_bool GC_gww_dirty_init(void)
     {
+      /* No assumption about the GC lock. */
       detect_GetWriteWatch();
       return GC_GWW_AVAILABLE();
     }
@@ -3026,6 +3029,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   {
     word i;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (!output_unneeded)
       BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
 
@@ -3099,6 +3103,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   }
 
 #elif defined(SOFT_VDB)
+  static int clear_refs_fd = -1;
 # define GC_GWW_AVAILABLE() (clear_refs_fd != -1)
 #else
 # define GC_GWW_AVAILABLE() FALSE
@@ -3162,37 +3167,30 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
        decrease the likelihood of some of the problems described below. */
 #   include <mach/vm_map.h>
     STATIC mach_port_t GC_task_self = 0;
-#   define PROTECT(addr,len) \
+#   define PROTECT_INNER(addr, len, allow_write, C_msg_prefix) \
         if (vm_protect(GC_task_self, (vm_address_t)(addr), (vm_size_t)(len), \
                        FALSE, VM_PROT_READ \
+                              | ((allow_write) ? VM_PROT_WRITE : 0) \
                               | (GC_pages_executable ? VM_PROT_EXECUTE : 0)) \
-                == KERN_SUCCESS) {} else ABORT("vm_protect(PROTECT) failed")
-#   define UNPROTECT(addr,len) \
-        if (vm_protect(GC_task_self, (vm_address_t)(addr), (vm_size_t)(len), \
-                       FALSE, (VM_PROT_READ | VM_PROT_WRITE) \
-                              | (GC_pages_executable ? VM_PROT_EXECUTE : 0)) \
-                == KERN_SUCCESS) {} else ABORT("vm_protect(UNPROTECT) failed")
+                == KERN_SUCCESS) {} else ABORT(C_msg_prefix \
+                                               "vm_protect() failed")
 
 # elif !defined(USE_WINALLOC)
 #   include <sys/mman.h>
 #   include <signal.h>
-#   if !defined(CYGWIN32) && !defined(HAIKU)
+#   if !defined(AIX) && !defined(CYGWIN32) && !defined(HAIKU)
 #     include <sys/syscall.h>
 #   endif
 
-#   define PROTECT(addr, len) \
+#   define PROTECT_INNER(addr, len, allow_write, C_msg_prefix) \
         if (mprotect((caddr_t)(addr), (size_t)(len), \
-                     PROT_READ \
+                     PROT_READ | ((allow_write) ? PROT_WRITE : 0) \
                      | (GC_pages_executable ? PROT_EXEC : 0)) >= 0) { \
-        } else ABORT("mprotect failed")
-#   define UNPROTECT(addr, len) \
-        if (mprotect((caddr_t)(addr), (size_t)(len), \
-                     (PROT_READ | PROT_WRITE) \
-                     | (GC_pages_executable ? PROT_EXEC : 0)) >= 0) { \
-        } else ABORT(GC_pages_executable ? \
-                                "un-mprotect executable page failed" \
-                                    " (probably disabled by OS)" : \
-                                "un-mprotect failed")
+        } else if (GC_pages_executable) { \
+            ABORT_ON_REMAP_FAIL(C_msg_prefix \
+                                    "mprotect vdb executable pages", \
+                                addr, len); \
+        } else ABORT_ON_REMAP_FAIL(C_msg_prefix "mprotect vdb", addr, len)
 #   undef IGNORE_PAGES_EXECUTABLE
 
 # else /* USE_WINALLOC */
@@ -3201,20 +3199,20 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   endif
 
     static DWORD protect_junk;
-#   define PROTECT(addr, len) \
-        if (VirtualProtect((addr), (len), \
-                           GC_pages_executable ? PAGE_EXECUTE_READ : \
+#   define PROTECT_INNER(addr, len, allow_write, C_msg_prefix) \
+        if (VirtualProtect(addr, len, \
+                           GC_pages_executable ? \
+                                ((allow_write) ? PAGE_EXECUTE_READWRITE : \
+                                                 PAGE_EXECUTE_READ) : \
+                                 (allow_write) ? PAGE_READWRITE : \
                                                  PAGE_READONLY, \
                            &protect_junk)) { \
-        } else ABORT_ARG1("VirtualProtect failed", \
+        } else ABORT_ARG1(C_msg_prefix "VirtualProtect failed", \
                           ": errcode= 0x%X", (unsigned)GetLastError())
-#   define UNPROTECT(addr, len) \
-        if (VirtualProtect((addr), (len), \
-                           GC_pages_executable ? PAGE_EXECUTE_READWRITE : \
-                                                 PAGE_READWRITE, \
-                           &protect_junk)) { \
-        } else ABORT("un-VirtualProtect failed")
 # endif /* USE_WINALLOC */
+
+# define PROTECT(addr, len) PROTECT_INNER(addr, len, FALSE, "")
+# define UNPROTECT(addr, len) PROTECT_INNER(addr, len, TRUE, "un-")
 
 # if defined(MSWIN32)
     typedef LPTOP_LEVEL_EXCEPTION_FILTER SIG_HNDLR_PTR;
@@ -3301,7 +3299,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     define CODE_OK (si -> si_code == 2 /* experimentally determined */)
 #   elif defined(IRIX5)
 #     define CODE_OK (si -> si_code == EACCES)
-#   elif defined(CYGWIN32) || defined(HAIKU) || defined(HURD)
+#   elif defined(AIX) || defined(CYGWIN32) || defined(HAIKU) || defined(HURD)
 #     define CODE_OK TRUE
 #   elif defined(LINUX)
 #     define CODE_OK TRUE
@@ -3385,7 +3383,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
             if (old_handler == (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
 #               if !defined(MSWIN32) && !defined(MSWINCE)
-                    ABORT_ARG1("Unexpected bus error or segmentation fault",
+                    ABORT_ARG1("Unexpected segmentation fault outside heap",
                                " at %p", (void *)addr);
 #               else
                     return(EXCEPTION_CONTINUE_SEARCH);
@@ -3456,11 +3454,14 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   {
 #   if !defined(MSWIN32) && !defined(MSWINCE)
       struct sigaction act, oldact;
+#   endif
+
+    GC_ASSERT(I_HOLD_LOCK());
+#   if !defined(MSWIN32) && !defined(MSWINCE)
       act.sa_flags = SA_RESTART | SA_SIGINFO;
       act.sa_sigaction = GC_write_fault_handler;
       (void)sigemptyset(&act.sa_mask);
-#     if defined(THREADS) && !defined(GC_OPENBSD_UTHREADS) \
-         && !defined(GC_WIN32_THREADS) && !defined(NACL)
+#     ifdef SIGNAL_BASED_STOP_WORLD
         /* Arrange to postpone the signal while we are in a write fault */
         /* handler.  This effectively makes the handler atomic w.r.t.   */
         /* stopping the world for GC.                                   */
@@ -3473,11 +3474,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         ABORT("Page size not multiple of HBLKSIZE");
     }
 #   ifdef GWW_VDB
-      if (GC_gww_dirty_init())
+      if (GC_gww_dirty_init()) {
+        GC_COND_LOG_PRINTF("Using GetWriteWatch()\n");
         return TRUE;
+      }
 #   elif defined(SOFT_VDB)
-      if (soft_dirty_init())
+      if (soft_dirty_init()) {
+        GC_COND_LOG_PRINTF("Using soft-dirty bit feature\n");
         return TRUE;
+      }
 #   endif
 #   ifdef MSWIN32
       GC_old_segv_handler = SetUnhandledExceptionFilter(
@@ -3548,7 +3553,11 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 GC_API int GC_CALL GC_incremental_protection_needs(void)
 {
     GC_ASSERT(GC_is_initialized);
-
+#   if defined(GWW_VDB) || defined(SOFT_VDB)
+      /* Only if the incremental mode is already switched on.   */
+      if (GC_GWW_AVAILABLE())
+        return GC_PROTECTS_NONE;
+#   endif
     if (GC_page_size == HBLKSIZE) {
         return GC_PROTECTS_POINTER_HEAP;
     } else {
@@ -3711,6 +3720,7 @@ STATIC void GC_protect_heap(void)
 
 GC_INNER GC_bool GC_dirty_init(void)
 {
+    GC_ASSERT(I_HOLD_LOCK());
     if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
       memset(GC_written_pages, 0xff, sizeof(page_hash_table));
       GC_VERBOSE_LOG_PRINTF(
@@ -3731,6 +3741,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     char * bufp = GC_proc_buf;
     int i;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifndef THREADS
       /* If the current pid differs from the saved one, then we are in  */
       /* the forked (child) process, the current /proc file should be   */
@@ -3754,7 +3765,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
         size_t new_size = 2 * GC_proc_buf_size;
         char *new_buf;
 
-        WARN("/proc read failed: GC_proc_buf_size = %" WARN_PRIdPTR "\n",
+        WARN("/proc read failed: GC_proc_buf_size= %" WARN_PRIdPTR "\n",
              (signed_word)GC_proc_buf_size);
         new_buf = GC_scratch_alloc(new_size);
         if (new_buf != 0) {
@@ -3851,8 +3862,12 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     return f;
   }
 
-  static unsigned char *soft_vdb_buf;
-  static int clear_refs_fd = -1, pagemap_fd;
+# include <stdint.h> /* for uint64_t */
+
+  typedef uint64_t pagemap_elem_t;
+
+  static pagemap_elem_t *soft_vdb_buf;
+  static int pagemap_fd;
 
   static GC_bool soft_dirty_open_files(void)
   {
@@ -3887,27 +3902,25 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 # endif /* CAN_HANDLE_FORK */
 
   /* The bit 55 of the 64-bit qword of pagemap file is the soft-dirty one. */
-# define PAGEMAP_ENTRY_SZ (64/8)
-# define PM_SOFTDIRTY_OFS (55/8)
-# define PM_SOFTDIRTY_MASK (1<<(55%8))
+# define PM_SOFTDIRTY_MASK ((pagemap_elem_t)1 << 55)
 
   static GC_bool detect_soft_dirty_supported(ptr_t vaddr)
   {
     off_t fpos;
-    char buf[PAGEMAP_ENTRY_SZ];
+    pagemap_elem_t buf[1];
 
     *vaddr = 1; /* make it dirty */
 
     /* Read the relevant PTE from the pagemap file.     */
     GC_ASSERT(GC_page_size != 0);
-    fpos = (off_t)((word)vaddr / GC_page_size * PAGEMAP_ENTRY_SZ);
+    fpos = (off_t)((word)vaddr / GC_page_size * sizeof(pagemap_elem_t));
     if (lseek(pagemap_fd, fpos, SEEK_SET) == (off_t)(-1))
       return FALSE;
     if (PROC_READ(pagemap_fd, buf, sizeof(buf)) != (int)sizeof(buf))
       return FALSE;
 
     /* Is the soft-dirty bit set? */
-    return (buf[PM_SOFTDIRTY_OFS] & PM_SOFTDIRTY_MASK) != 0;
+    return (buf[0] & PM_SOFTDIRTY_MASK) != 0;
   }
 
 # ifndef NO_SOFT_VDB_LINUX_VER_RUNTIME_CHECK
@@ -3940,6 +3953,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     GC_INNER GC_bool GC_dirty_init(void)
 # endif
   {
+    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(NULL == soft_vdb_buf);
 #   ifdef MPROTECT_VDB
       char * str = GETENV("GC_USE_GETWRITEWATCH");
 #     ifdef GC_PREFER_MPROTECT_VDB
@@ -3959,14 +3974,14 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 #   endif
     if (!soft_dirty_open_files())
       return FALSE;
-    if (NULL == soft_vdb_buf)
-      soft_vdb_buf = (unsigned char *)GC_scratch_alloc(VDB_BUF_SZ);
+    soft_vdb_buf = (pagemap_elem_t *)GC_scratch_alloc(VDB_BUF_SZ);
     if (NULL == soft_vdb_buf)
       ABORT("Insufficient space for /proc pagemap buffer");
     if (!detect_soft_dirty_supported((ptr_t)soft_vdb_buf)) {
       GC_COND_LOG_PRINTF("Soft-dirty bit is not supported by kernel\n");
       /* Release the resources. */
-      /* TODO: recycle soft_vdb_buf, add assert it is null on enter */
+      GC_scratch_recycle_no_gww(soft_vdb_buf, VDB_BUF_SZ);
+      soft_vdb_buf = NULL;
       close(clear_refs_fd);
       clear_refs_fd = -1;
       close(pagemap_fd);
@@ -3983,9 +3998,9 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
   /* bytes actually read, always bigger than 0 but never exceeds len;   */
   /* next_fpos_hint - the file position of the next bytes block to read */
   /* ahead if possible (0 means no information provided).               */
-  static const unsigned char *pagemap_buffered_read(size_t *pres,
-                                                    off_t fpos, size_t len,
-                                                    off_t next_fpos_hint)
+  static const pagemap_elem_t *pagemap_buffered_read(size_t *pres,
+                                                     off_t fpos, size_t len,
+                                                     off_t next_fpos_hint)
   {
     ssize_t res;
     size_t ofs;
@@ -4007,8 +4022,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
              || pagemap_buf_fpos + (off_t)pagemap_buf_len != aligned_pos)
             && lseek(pagemap_fd, aligned_pos, SEEK_SET) == (off_t)(-1))
           ABORT_ARG2("Failed to lseek /proc/self/pagemap",
-                     ": offset = %lu, errno = %d",
-                     (unsigned long)fpos, errno);
+                     ": offset= %lu, errno= %d", (unsigned long)fpos, errno);
 
         /* How much to read at once?    */
         ofs = (size_t)(fpos - aligned_pos);
@@ -4022,12 +4036,13 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
             count = VDB_BUF_SZ;
         }
 
+        GC_ASSERT(count % sizeof(pagemap_elem_t) == 0);
         res = PROC_READ(pagemap_fd, soft_vdb_buf, count);
         if (res > (ssize_t)ofs)
           break;
         if (res <= 0)
           ABORT_ARG1("Failed to read /proc/self/pagemap",
-                     ": errno = %d", res < 0 ? errno : 0);
+                     ": errno= %d", res < 0 ? errno : 0);
         /* Retry (once) w/o page-alignment.     */
         aligned_pos = fpos;
       }
@@ -4038,8 +4053,9 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
       res -= (ssize_t)ofs;
     }
 
+    GC_ASSERT(ofs % sizeof(pagemap_elem_t) == 0);
     *pres = (size_t)res < len ? (size_t)res : len;
-    return &soft_vdb_buf[ofs];
+    return &soft_vdb_buf[ofs / sizeof(pagemap_elem_t)];
   }
 
   static void soft_set_grungy_pages(ptr_t vaddr /* start */, ptr_t limit,
@@ -4049,14 +4065,14 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     while ((word)vaddr < (word)limit) {
       size_t res;
       word limit_buf;
-      const unsigned char *bufp = pagemap_buffered_read(&res,
-                (off_t)((word)vaddr / GC_page_size * PAGEMAP_ENTRY_SZ),
+      const pagemap_elem_t *bufp = pagemap_buffered_read(&res,
+                (off_t)((word)vaddr / GC_page_size * sizeof(pagemap_elem_t)),
                 (size_t)((((word)limit - (word)vaddr + GC_page_size-1)
-                         / GC_page_size) * PAGEMAP_ENTRY_SZ),
+                         / GC_page_size) * sizeof(pagemap_elem_t)),
                 (off_t)((word)next_start_hint / GC_page_size
-                        * PAGEMAP_ENTRY_SZ));
+                        * sizeof(pagemap_elem_t)));
 
-      if ((res % PAGEMAP_ENTRY_SZ) != 0) {
+      if (res % sizeof(pagemap_elem_t) != 0) {
         /* Punt: */
         memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
         WARN("Incomplete read of pagemap, not multiple of entry size\n", 0);
@@ -4064,10 +4080,9 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
       }
 
       limit_buf = ((word)vaddr & ~(GC_page_size-1))
-                  + (res / PAGEMAP_ENTRY_SZ) * GC_page_size;
-      for (; (word)vaddr < limit_buf;
-           vaddr += GC_page_size, bufp += PAGEMAP_ENTRY_SZ)
-        if ((bufp[PM_SOFTDIRTY_OFS] & PM_SOFTDIRTY_MASK) != 0) {
+                  + (res / sizeof(pagemap_elem_t)) * GC_page_size;
+      for (; (word)vaddr < limit_buf; vaddr += GC_page_size, bufp++)
+        if ((*bufp & PM_SOFTDIRTY_MASK) != 0) {
           struct hblk * h;
           ptr_t next_vaddr = vaddr + GC_page_size;
 
@@ -4089,6 +4104,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
   {
     ssize_t res;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifndef THREADS
       /* Similar as for GC_proc_read_dirty.     */
       if (getpid() != saved_proc_pid
@@ -4138,7 +4154,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     res = write(clear_refs_fd, "4\n", 2);
     if (res != 2)
       ABORT_ARG1("Failed to write to /proc/self/clear_refs",
-                 ": errno = %d", res < 0 ? errno : 0);
+                 ": errno= %d", res < 0 ? errno : 0);
   }
 #endif /* SOFT_VDB */
 
@@ -4192,6 +4208,7 @@ GC_INNER GC_bool GC_dirty_init(void)
   /* lose dirty bits while it's happening (as in GC_enable_incremental).*/
   GC_INNER void GC_read_dirty(GC_bool output_unneeded)
   {
+    GC_ASSERT(I_HOLD_LOCK());
     if (GC_manual_vdb
 #       if defined(MPROTECT_VDB)
           || !GC_GWW_AVAILABLE()
@@ -4684,6 +4701,7 @@ GC_INNER GC_bool GC_dirty_init(void)
   pthread_attr_t attr;
   exception_mask_t mask;
 
+  GC_ASSERT(I_HOLD_LOCK());
 # ifdef CAN_HANDLE_FORK
     if (GC_handle_fork) {
       /* To both support GC incremental mode and GC functions usage in  */
@@ -5083,11 +5101,14 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 
 #if defined(GC_HAVE_BUILTIN_BACKTRACE)
 # ifdef _MSC_VER
-#  include "private/msvc_dbg.h"
+    EXTERN_C_BEGIN
+    int backtrace(void* addresses[], int count);
+    char** backtrace_symbols(void* const addresses[], int count);
+    EXTERN_C_END
 # else
 #  include <execinfo.h>
 # endif
-#endif
+#endif /* GC_HAVE_BUILTIN_BACKTRACE */
 
 #ifdef SAVE_CALL_CHAIN
 

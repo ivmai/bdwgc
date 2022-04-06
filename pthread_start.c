@@ -22,7 +22,7 @@
 /* case at the top of the file.  FIXME: it's still unclear whether this */
 /* will actually cause the exit handler to be invoked last when         */
 /* thread_exit is called (and if -fexceptions is used).                 */
-#if defined(__GNUC__) && defined(__linux__)
+#if !defined(DONT_UNDEF_EXCEPTIONS) && defined(__GNUC__) && defined(__linux__)
   /* We undefine __EXCEPTIONS to avoid using GCC __cleanup__ attribute. */
   /* The current NPTL implementation of pthread_cleanup_push uses       */
   /* __cleanup__ attribute when __EXCEPTIONS is defined (-fexceptions). */

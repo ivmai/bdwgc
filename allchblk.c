@@ -17,9 +17,6 @@
 #include "private/gc_priv.h"
 
 #include <stdio.h>
-#if defined(__CHERI_PURE_CAPABILITY__)
-# include <cheriintrin.h>
-#endif
 
 #ifdef GC_USE_ENTIRE_HEAP
   int GC_use_entire_heap = TRUE;
@@ -231,6 +228,7 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
 {
     word descr;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef MARK_BIT_PER_GRANULE
       if (byte_sz > MAXOBJBYTES)
         flags |= LARGE_BLOCK;
@@ -403,12 +401,6 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 
 #ifdef USE_MUNMAP
 
-#   ifndef MUNMAP_THRESHOLD
-#     define MUNMAP_THRESHOLD 6
-#   endif
-
-GC_INNER int GC_unmap_threshold = MUNMAP_THRESHOLD;
-
 #ifdef COUNT_UNMAPPED_REGIONS
   /* GC_unmap_old will avoid creating more than this many unmapped regions, */
   /* but an unmapped region may be split again so exceeding the limit.      */
@@ -463,14 +455,12 @@ GC_INLINE void GC_adjust_num_unmapped(struct hblk *h GC_ATTR_UNUSED,
 # endif
 }
 
-/* Unmap blocks that haven't been recently touched.  This is the only way */
-/* way blocks are ever unmapped.                                          */
-GC_INNER void GC_unmap_old(void)
+/* Unmap blocks that haven't been recently touched.  This is the only   */
+/* way blocks are ever unmapped.                                        */
+GC_INNER void GC_unmap_old(unsigned threshold)
 {
     int i;
 
-    if (GC_unmap_threshold == 0)
-      return; /* unmapping disabled */
 # ifdef COUNT_UNMAPPED_REGIONS
     /* Skip unmapping if we have already exceeded the soft limit.       */
     /* This forgoes any opportunities to merge unmapped regions though. */
@@ -486,10 +476,10 @@ GC_INNER void GC_unmap_old(void)
         hhdr = HDR(h);
         if (!IS_MAPPED(hhdr)) continue;
 
-        /* Check that the interval is larger than the threshold (the    */
-        /* truncated counter value wrapping is handled correctly).      */
-        if ((unsigned short)(GC_gc_no - hhdr->hb_last_reclaimed) >
-                (unsigned short)GC_unmap_threshold) {
+        /* Check that the interval is not smaller than the threshold.   */
+        /* The truncated counter value wrapping is handled correctly.   */
+        if ((unsigned short)(GC_gc_no - hhdr->hb_last_reclaimed)
+            >= (unsigned short)threshold) {
 #         ifdef COUNT_UNMAPPED_REGIONS
             /* Continue with unmapping the block only if it will not    */
             /* create too many unmapped regions, or if unmapping        */
@@ -577,7 +567,7 @@ GC_INNER void GC_merge_unmapped(void)
             GC_add_to_fl(h, hhdr);
             /* Start over at beginning of list */
             h = GC_hblkfreelist[i];
-          } else /* not mergable with successor */ {
+          } else /* not mergeable with successor */ {
             h = hhdr -> hb_next;
           }
       } /* while (h != 0) ... */
@@ -598,10 +588,12 @@ GC_INNER void GC_merge_unmapped(void)
 STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
                                        size_t bytes, int index)
 {
-    word total_size = hhdr -> hb_sz;
+    word total_size;
     struct hblk * rest;
     hdr * rest_hdr;
 
+    GC_ASSERT(I_HOLD_LOCK());
+    total_size = hhdr -> hb_sz;
     GC_ASSERT((total_size & (HBLKSIZE-1)) == 0);
     GC_remove_from_fl_at(hhdr, index);
     if (total_size == bytes) return h;
@@ -757,6 +749,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
     signed_word size_needed = HBLKSIZE * OBJ_SZ_TO_BLOCKS_CHECKED(sz);
                                 /* number of bytes in requested objects */
 
+    GC_ASSERT(I_HOLD_LOCK());
     /* search for a big enough block in free list */
         for (hbp = GC_hblkfreelist[n];; hbp = hhdr -> hb_next) {
             signed_word size_avail; /* bytes available in this block */

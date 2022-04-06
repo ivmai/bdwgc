@@ -142,7 +142,7 @@
                               GC_ASSERT(0 == res); (void)res; }
 
 #    elif (!defined(THREAD_LOCAL_ALLOC) || defined(USE_SPIN_LOCK)) \
-          && !defined(USE_PTHREAD_LOCKS)
+          && !defined(USE_PTHREAD_LOCKS) && !defined(THREAD_SANITIZER)
       /* In the THREAD_LOCAL_ALLOC case, the allocation lock tends to   */
       /* be held for long periods, if it is held at all.  Thus spinning */
       /* and sleeping for fixed periods are likely to result in         */

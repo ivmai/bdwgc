@@ -155,7 +155,7 @@ typedef struct bi {
 #define MAX_JUMP (HBLKSIZE - 1)
 
 #define HDR_FROM_BI(bi, p) \
-                ((bi)->index[((word)(p) >> LOG_HBLKSIZE) & (BOTTOM_SZ - 1)])
+                (bi)->index[((word)(p) >> LOG_HBLKSIZE) & (BOTTOM_SZ - 1)]
 #ifndef HASH_TL
 # define BI(p) (GC_top_index \
               [(word)(p) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE)])
@@ -195,9 +195,10 @@ typedef struct bi {
         } while (0)
 # define SET_HDR(p, hhdr) \
         do { \
-          REGISTER hdr ** _ha; \
-          GET_HDR_ADDR(p, _ha); \
-          *_ha = (hhdr); \
+          REGISTER bottom_index * bi; \
+          GET_BI(p, bi); \
+          GC_ASSERT(bi != GC_all_nils); \
+          HDR_FROM_BI(bi, p) = (hhdr); \
         } while (0)
 # define HDR(p) GC_find_header((ptr_t)(p))
 #endif

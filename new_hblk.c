@@ -42,7 +42,7 @@
         p[1] = 0;
         p[2] = (word *)p;
         p[3] = 0;
-    };
+    }
     return((ptr_t)(p-2));
   }
 
@@ -62,7 +62,7 @@
         p[0] = (word *)(p-4);
         p[1] = 0;
         CLEAR_DOUBLE(p+2);
-    };
+    }
     return((ptr_t)(p-4));
   }
 

@@ -69,8 +69,8 @@ MinGW builds (including for x86_64) are available both directly (on a Windows
 host) and via cross-compilation, e.g.
 "./configure --host=i686-pc-mingw32; make check"
 
-To build the collector as a DLL, pass "--enable-shared --disable-static" to
-configure (this will instruct make to compile with -D GC_DLL).
+By default, configure instructs make to build the collector as a DLL (shared
+library), adding -D GC_DLL to CFLAGS.
 
 Parallel marker is enabled by default; it could be disabled by
 "--disable-parallel-mark" option.
@@ -184,9 +184,9 @@ The incremental collection is supported only if it is enabled before any
 additional threads are created.
 
 Threads are also supported in static library builds with Microsoft tools
-(e.g., NT_MAKEFILE) and with the GNU tools.  The collector must be built with
-GC_THREADS defined (this is the default in NT_MAKEFILE, ./configure and
-CMakeLists.txt).
+(e.g., NT_MAKEFILE), as well as with the CMake and GNU tools.  The collector
+must be built with GC_THREADS defined (this is the default in NT_MAKEFILE,
+CMakeLists.txt and configure).
 
 For the normal, non-dll-based thread tracking to work properly,
 threads should be created with GC_CreateThread or GC_beginthreadex,

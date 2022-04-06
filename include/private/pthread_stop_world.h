@@ -21,8 +21,7 @@
 EXTERN_C_BEGIN
 
 struct thread_stop_info {
-#   if !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
-       && !defined(PLATFORM_STOP_WORLD) && !defined(SN_TARGET_PSP2)
+#   ifdef SIGNAL_BASED_STOP_WORLD
       volatile AO_t last_stop_count;
                         /* The value of GC_stop_count when the thread   */
                         /* last successfully handled a suspend signal.  */
@@ -50,6 +49,10 @@ struct thread_stop_info {
 };
 
 GC_INNER void GC_stop_init(void);
+
+#if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
+  GC_INNER void *GC_CALLBACK suspend_self_inner(void *client_data);
+#endif
 
 EXTERN_C_END
 

@@ -123,6 +123,7 @@ GC_API void * GC_CALL GC_is_valid_displacement(void *p)
     word sz;
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
+    if (NULL == p) return NULL;
     hhdr = HDR((word)p);
     if (hhdr == 0) return(p);
     h = HBLKPTR(p);

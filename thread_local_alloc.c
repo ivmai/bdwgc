@@ -15,8 +15,8 @@
 
 #if defined(THREAD_LOCAL_ALLOC)
 
-#ifndef THREADS
-# error "invalid config - THREAD_LOCAL_ALLOC requires GC_THREADS"
+#if !defined(THREADS) && !defined(CPPCHECK)
+# error Invalid config - THREAD_LOCAL_ALLOC requires GC_THREADS
 #endif
 
 #include "private/thread_local_alloc.h"
@@ -68,10 +68,11 @@ static void return_freelists(void **fl, void **gfl)
         fl[i] = (ptr_t)HBLKSIZE;
     }
     /* The 0 granule freelist really contains 1 granule objects.        */
-#   ifdef GC_GCJ_SUPPORT
-      if (fl[0] == ERROR_FL) return;
-#   endif
-    if ((word)(fl[0]) >= HBLKSIZE) {
+    if ((word)fl[0] >= HBLKSIZE
+#       ifdef GC_GCJ_SUPPORT
+          && fl[0] != ERROR_FL
+#       endif
+       ) {
         return_single_freelist(fl[0], &gfl[1]);
     }
 }
@@ -97,7 +98,10 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
 
     GC_ASSERT(I_HOLD_LOCK());
     if (!EXPECT(keys_initialized, TRUE)) {
-        GC_ASSERT((word)&GC_thread_key % sizeof(word) == 0);
+#       ifdef USE_CUSTOM_SPECIFIC
+          /* Ensure proper alignment of a "pushed" GC symbol.   */
+          GC_ASSERT((word)&GC_thread_key % sizeof(word) == 0);
+#       endif
         res = GC_key_create(&GC_thread_key, reset_thread_key);
         if (COVERT_DATAFLOW(res) != 0) {
             ABORT("Failed to create key for local allocator");
@@ -196,7 +200,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int kind)
 
 #ifdef GC_GCJ_SUPPORT
 
-# include "gc_gcj.h"
+# include "gc/gc_gcj.h"
 
 /* Gcj-style allocation without locks is extremely tricky.  The         */
 /* fundamental issue is that we may end up marking a free list, which   */

@@ -12,7 +12,7 @@
  */
 
 /* This is a private GC header which provides an implementation of      */
-/* libatomic_ops subset primitives sufficient for GC assuming that C11  */
+/* libatomic_ops subset primitives sufficient for GC assuming that GCC  */
 /* atomic intrinsics are available (and have correct implementation).   */
 /* This is enabled by defining GC_BUILTIN_ATOMIC macro.  Otherwise,     */
 /* libatomic_ops library is used to define the primitives.              */

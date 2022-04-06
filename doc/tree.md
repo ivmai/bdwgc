@@ -122,7 +122,7 @@ contributed originally by Dave Barrett.
            |   +--------------+                      |   +-+-+-----+-+-+-+-+   |
            |   |  hash_link   |                      |   | | |     | | | | |   v
            |   +--------------+                      |   +-+-+-----+-+-+-+-+  ---
-           |                                         |   |<----MAP_LEN---->|
+           |                                         |   |<--OBJ_MAP_LEN-->|
            |                                         |   =HBLKSIZE/GRANULE_BYTES
      HDR(p)| GC_find_header(p)                       |    (1024 on Alpha)
            |                           \ from        |    (8/16 bits each)

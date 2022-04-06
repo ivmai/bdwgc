@@ -42,7 +42,7 @@
 # include "dbg_mlc.h"
 #endif
 
-#include "../gc_mark.h"
+#include "gc/gc_mark.h"
 #include "gc_priv.h"
 
 EXTERN_C_BEGIN
@@ -342,13 +342,13 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
       /* beginning of object.  If so, it is valid, and we are fine.     */
       GC_ASSERT(gran_displ <= HBLK_OBJS(hhdr -> hb_sz));
 #   endif /* MARK_BIT_PER_OBJ */
-    TRACE(source, GC_log_printf("GC #%u: passed validity tests\n",
-                                (unsigned)GC_gc_no));
+    TRACE(source, GC_log_printf("GC #%lu: passed validity tests\n",
+                                (unsigned long)GC_gc_no));
     SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ); /* contains "break" */
-    TRACE(source, GC_log_printf("GC #%u: previously unmarked\n",
-                                (unsigned)GC_gc_no));
-    TRACE_TARGET(base, GC_log_printf("GC #%u: marking %p from %p instead\n",
-                                     (unsigned)GC_gc_no, (void *)base,
+    TRACE(source, GC_log_printf("GC #%lu: previously unmarked\n",
+                                (unsigned long)GC_gc_no));
+    TRACE_TARGET(base, GC_log_printf("GC #%lu: marking %p from %p instead\n",
+                                     (unsigned long)GC_gc_no, (void *)base,
                                      (void *)source));
     INCR_MARKS(hhdr);
     GC_STORE_BACK_PTR(source, base);
@@ -432,6 +432,7 @@ GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
  */
 #define GC_MARK_FO(real_ptr, mark_proc) \
   do { \
+    GC_ASSERT(I_HOLD_LOCK()); \
     (*(mark_proc))(real_ptr); \
     while (!GC_mark_stack_empty()) MARK_FROM_MARK_STACK(); \
     if (GC_mark_state != MS_NONE) { \
@@ -439,6 +440,8 @@ GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
         while (!GC_mark_some((ptr_t)0)) { /* empty */ } \
     } \
   } while (0)
+
+                                /* Current state of marking, as follows.*/
 
                                 /* We say something is dirty if it was  */
                                 /* written since the last time we       */

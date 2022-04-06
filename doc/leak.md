@@ -70,14 +70,14 @@ distribution.
 Assume the collector has been built with `-DFIND_LEAK` or
 `GC_set_find_leak(1)` exists as the first statement in `main`.
 
-The program to be tested for leaks could look like `tests/leak_test.c` file
+The program to be tested for leaks could look like `tests/leak.c` file
 of the distribution.
 
 On an Intel X86 Linux system this produces on the stderr stream:
 
 
     Found 1 leaked objects:
-    0x806dff0 (tests/leak_test.c:19, sz=4, NORMAL)
+    0x806dff0 (tests/leak.c:19, sz=4, NORMAL)
 
 
 (On most unmentioned operating systems, the output is similar to this. If the
@@ -89,7 +89,7 @@ On Irix it reports:
 
 
     Found 1 leaked objects:
-    0x10040fe0 (tests/leak_test.c:19, sz=4, NORMAL)
+    0x10040fe0 (tests/leak.c:19, sz=4, NORMAL)
             Caller at allocation:
                     ##PC##= 0x10004910
 
@@ -98,7 +98,7 @@ and on Solaris the error report is:
 
 
     Found 1 leaked objects:
-    0xef621fc8 (tests/leak_test.c:19, sz=4, NORMAL)
+    0xef621fc8 (tests/leak.c:19, sz=4, NORMAL)
             Call chain at allocation:
                     args: 4 (0x4), 200656 (0x30FD0)
                     ##PC##= 0x14ADC

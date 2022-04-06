@@ -127,8 +127,8 @@ STATIC void GC_check_blocks(void)
 
     GC_bytes_in_used_blocks = 0;
     GC_apply_to_all_blocks(GC_add_block, (word)0);
-    GC_COND_LOG_PRINTF("GC_bytes_in_used_blocks = %lu,"
-                       " bytes_in_free_blocks = %lu, heapsize = %lu\n",
+    GC_COND_LOG_PRINTF("GC_bytes_in_used_blocks= %lu,"
+                       " bytes_in_free_blocks= %lu, heapsize= %lu\n",
                        (unsigned long)GC_bytes_in_used_blocks,
                        (unsigned long)bytes_in_free_blocks,
                        (unsigned long)GC_heapsize);

@@ -147,10 +147,10 @@ GC_FREE_SPACE_DIVISOR - Set GC_free_space_divisor to the indicated value.
                       Setting it to larger values decreases space consumption
                       and increases GC frequency.
 
-GC_UNMAP_THRESHOLD - Set the desired memory blocks unmapping threshold (the
-                   number of sequential garbage collections for which
-                   a candidate block for unmapping should remain free).  The
-                   special value "0" completely disables unmapping.
+GC_UNMAP_THRESHOLD - Set the desired threshold of memory blocks unmapping
+                   (the number of sequential garbage collections during those
+                   a candidate block for unmapping should be marked as free).
+                   The special value "0" completely disables unmapping.
 
 GC_FORCE_UNMAP_ON_GCOLLECT - Turn "unmap as much as possible on explicit GC"
                 mode on (overrides the default value).  Has no effect on

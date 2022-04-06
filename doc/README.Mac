@@ -53,8 +53,8 @@ As for target settings the major obstacles may be:
 
 What you need to do:
 1) Build the GC as a library
-2) Test that the library works with 'test.c'.
-3) Test that the C++ interface 'gc_cpp.cc/h' works with 'test_cpp.cc'.
+2) Test that the library works with 'gctest.c'.
+3) Test that the C++ interface 'gc_cpp.h' works with 'tests/cpp.cc'.
 
 == 1. The Libraries ==
 
@@ -193,38 +193,19 @@ struct gc_private_assert_intsize_{ char x[ sizeof(int)>=4 ? 1 : 0 ]; };
 
 Files to build the GC libraries:
 --------------------------------
-    allchblk.c
-    alloc.c
-    blacklst.c
-    checksums.c
-    dbg_mlc.c
-    finalize.c
-    fnlz_mlc.c
-    headers.c
-    mach_dep.c
+    extra/gc.c
     extra/MacOS.c -- contains MacOS code
-    malloc.c
-    mallocx.c
-    mark.c
-    mark_rts.c
-    misc.c
-    new_hblk.c
-    obj_map.c
-    os_dep.c   -- contains MacOS code
-    ptr_chck.c
-    reclaim.c
-    typd_mlc.c
     gc_badalc.cc
     gc_cpp.cc
 
-== 2. Test that the library works with 'test.c' ==
+== 2. Test that the library works with 'gctest.c' ==
 
 The test app is just an ordinary ANSI-C console app. Make sure settings
 match the library you're testing.
 
 Files
 -----
-    test.c
+    gctest.c
     the GC library to test        -- link order before ANSI libs
     suitable Mac+ANSI libraries
 
@@ -238,23 +219,23 @@ prefix:
 #define ALL_INTERIOR_POINTERS   /* for GC_priv.h */
 ---- ( cut here ) ----
 
-== 3. Test that the C++ interface 'gc_cpp.cc/h' works with 'test_cpp.cc' ==
+== 3. Test that the C++ interface 'gc_cpp.h' works with 'tests/cpp.cc' ==
 
 The test app is just an ordinary ANSI-C console app. Make sure settings match
 the library you're testing.
 
 Files
 -----
-    test_cpp.cc
+    tests/cpp.cc
     the GC library to test        -- link order before ANSI libs
     suitable Mac+ANSI libraries
 
 prefix:
 ------
-same as for test.c
+same as for gctest.c
 
 For convenience I used one test-project with several targets so that all
-test apps are build at once. Two for each library to test: test.c and
+test apps are build at once. Two for each library to test: gctest.c and
 gc_app.cc. When I was satisfied that the libraries were OK. I put the
 libraries + gc.h + the c++ interface-file in a folder that I then put into
 the MSL hierarchy so that I don't have to alter access-paths in projects

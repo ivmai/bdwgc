@@ -55,6 +55,7 @@ Andrew McKinlay <mckinlay@axonsoft.com>
 Andrew Pinski <pinskia@physics.uc.edu>
 Andrew Stitcher <astitcher@redhat.com>
 Andrew Stone <andrew@stone.com>
+Andrew Whatson <whatson@gmail.com>
 Andy Li <andy@onthewings.net>
 Andy Wingo <wingo@pobox.com>
 Anselm Baird-Smith <Anselm.BairdSmith@inria.fr>
@@ -129,7 +130,7 @@ David Daney <ddaney@avtrex.com>
 David Grove <groved@us.ibm.com>
 David Leonard <leonard@users.sourceforge.net>
 David Miller <davem@davemloft.net>
-David Mossberger
+David Mosberger <davidm@hpl.hp.com>
 David Peroutka <djp@volny.cz>
 David Pickens <dsp@rci.rutgers.edu>
 David Stes <stes@d5e02b1d.kabel.telenet.be>
@@ -140,6 +141,7 @@ Demyan Kimitsa <demyan.kimitsa@gmail.com>
 Dick Porter <dick@acm.org>
 Dietmar Planitzer <dave.pl@ping.at>
 Dima Pasechnik <dimpase@gmail.com>
+Dimitris Apostolou <dimitris.apostolou@icloud.com>
 Dimitris Vyzovitis <vyzo@media.mit.edu>
 Dimitry Andric <dim@freebsd.org>
 Djamel Magri <djamel.magri@googlemail.com>
@@ -186,6 +188,7 @@ Iain Sandoe <developer@sandoe-acoustics.co.uk>
 Ian Piumarta <piumarta@prof.inria.fr>
 Ian Searle <ians@eskimo.com>
 Igor Khavkine <i_khavki@alcor.concordia.ca>
+Ilya Kurdyukov <ilyakurdyukov@altlinux.org>
 Ivan Demakov <ivan@tgrad.nsk.su>
 Ivan Maidanski <ivmai@mail.ru>
 Ivan R <iarspider@gmail.com>
@@ -193,6 +196,7 @@ Jaap Boender <jaapb@netbsd.org>
 Jack Andrews <effbiae@gmail.com>
 Jacob Navia <jacob.navia@jacob.remcomp.fr>
 Jakub Jelinek <jakub@redhat.com>
+Jakub Wojciech <jakub-w@riseup.net>
 James Clark <jjc@jclark.com>
 James Dominy
 James Moran <jamesmo@unity3d.com>
@@ -210,7 +214,7 @@ Jeffrey Hsu <hsu@soda.berkeley.edu>
 Jeffrey Mark Siskind
 Jeremy Fitzhardinge <jeremy@goop.org>
 Jesper Peterson <jep@mtiame.mtia.oz.au>
-Jesse Hull
+Jesse Hull <jhull@parc.xerox.com>
 Jesse Jones <jesjones@mindspring.com>
 Jesse Rosenstock <jmr@ugcs.caltech.edu>
 Ji-Yong Chung
@@ -224,7 +228,8 @@ Johannes Totz <jtotz@ic.ac.uk>
 John Bowman <bowman@ualberta.ca>
 John Clements <clements@brinkerhoff.org>
 John David Anglin <dave.anglin@bell.net>
-John Ellis <ellis@xerox.parc.com>
+John Ellis <ellis@parc.xerox.com>
+John Ericson <git@JohnEricson.me>
 John Merryweather Cooper <jmerry@mono-cvs.ximian.com>
 Jon Moore <jonm@apache.org>
 Jonas Echterhoff <jonas@unity3d.com>
@@ -288,6 +293,7 @@ Matt Austern <austern@google.com>
 Matthew Flatt <mflatt@plt-scheme.org>
 Matthias Andree <matthias.andree@gmx.de>
 Matthias Drochner <M.Drochner@fz-juelich.de>
+Matthieu Herrb <matthieu@openbsd.org>
 Maurizio Vairani <maurizio.vairani@cloverinformatica.it>
 Max Mouratov <mmouratov@gmail.com>
 Maya Rashish <coypu@sdf.org>

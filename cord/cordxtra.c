@@ -29,8 +29,8 @@
 # include <stdlib.h>
 # include <stdarg.h>
 
-# include "cord.h"
-# include "ec.h"
+#include "gc/cord.h"
+#include "gc/ec.h"
 
 # define I_HIDE_POINTERS    /* So we get access to allocation lock. */
                 /* We use this for lazy file reading,   */

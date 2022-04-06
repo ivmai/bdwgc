@@ -5,7 +5,7 @@ an object is collected. This can be used to reclaim any system resources
 or non-garbage-collected memory associated with the object. Experience has
 shown that this can be a useful facility. It is indispensable in cases
 in which system resources are embedded in complex data structures (e.g. file
-descriptors in the `include/cord.h`).
+descriptors in the `cord.h`).
 
 Our collector provides the necessary functionality through
 `GC_register_finalizer` in `include/gc.h`, or by inheriting from `gc_cleanup`

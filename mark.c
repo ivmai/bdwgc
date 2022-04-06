@@ -2,7 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 2000 by Hewlett-Packard Company.  All rights reserved.
- * Copyright (c) 2008-2020 Ivan Maidanski
+ * Copyright (c) 2008-2021 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -28,9 +28,6 @@
 #include "private/gc_pmark.h"
 
 #include <stdio.h>
-#if defined(__CHERI_PURE_CAPABILITY__)
-#include <cheri/cheric.h>
-#endif
 
 #if defined(MSWIN32) && defined(__GNUC__)
 # include <excpt.h>
@@ -51,13 +48,22 @@ void GC_noop6(word arg1 GC_ATTR_UNUSED, word arg2 GC_ATTR_UNUSED,
 # endif
 }
 
-volatile word GC_noop_sink;
+#if defined(AO_HAVE_store) && defined(THREAD_SANITIZER)
+  volatile AO_t GC_noop_sink;
+#else
+  volatile word GC_noop_sink;
+#endif
 
-/* Single argument version, robust against whole program analysis. */
-GC_ATTR_NO_SANITIZE_THREAD
+/* Make the argument appear live to compiler.  This is similar  */
+/* to GC_noop6(), but with a single argument.  Robust against   */
+/* whole program analysis.                                      */
 GC_API void GC_CALL GC_noop1(word x)
 {
+# if defined(AO_HAVE_store) && defined(THREAD_SANITIZER)
+    AO_store(&GC_noop_sink, (AO_t)x);
+# else
     GC_noop_sink = x;
+# endif
 }
 
 /* Initialize GC_obj_kinds properly and standard free lists properly.   */
@@ -143,9 +149,14 @@ GC_INNER void GC_set_hdr_marks(hdr *hhdr)
         hhdr -> hb_marks[i] = 1;
       }
 #   else
-      for (i = 0; i < divWORDSZ(n_marks + WORDSZ); ++i) {
+      /* Note that all bits are set even in case of MARK_BIT_PER_GRANULE,   */
+      /* instead of setting every n-th bit where n is MARK_BIT_OFFSET(sz).  */
+      /* This is done for a performance reason.                             */
+      for (i = 0; i < divWORDSZ(n_marks); ++i) {
         hhdr -> hb_marks[i] = GC_WORD_MAX;
       }
+      /* Set the remaining bits near the end (plus one bit past the end).   */
+      hhdr -> hb_marks[i] = ((((word)1 << modWORDSZ(n_marks)) - 1) << 1) | 1;
 #   endif
 #   ifdef MARK_BIT_PER_OBJ
       hhdr -> hb_n_marks = n_marks;
@@ -284,6 +295,7 @@ static void alloc_mark_stack(size_t);
   GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame)
 #endif
 {
+    GC_ASSERT(I_HOLD_LOCK());
     switch(GC_mark_state) {
         case MS_NONE:
             break;
@@ -491,7 +503,7 @@ static void alloc_mark_stack(size_t);
 #     if GC_GNUC_PREREQ(4, 7) || GC_CLANG_PREREQ(3, 3)
 #       pragma GCC diagnostic push
         /* Suppress "taking the address of label is non-standard" warning. */
-#       if defined(__clang__) || GC_GNUC_PREREQ(6, 4)
+#       if defined(__clang__) || GC_GNUC_PREREQ(6, 0)
 #         pragma GCC diagnostic ignored "-Wpedantic"
 #       else
           /* GCC before ~4.8 does not accept "-Wpedantic" quietly.  */
@@ -543,7 +555,6 @@ static void alloc_mark_stack(size_t);
     rm_handler:
       GC_reset_fault_handler();
       return ret_val;
-
 #   endif /* !MSWIN32 */
 
 handle_ex:
@@ -594,7 +605,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp)
 #   else
       GC_mark_stack_too_small = TRUE;
 #   endif
-    GC_COND_LOG_PRINTF("Mark stack overflow; current size = %lu entries\n",
+    GC_COND_LOG_PRINTF("Mark stack overflow; current size: %lu entries\n",
                        (unsigned long)GC_mark_stack_size);
     return(msp - GC_MARK_STACK_DISCARDS);
 }
@@ -678,9 +689,9 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #             ifdef ENABLE_TRACE
                 if ((word)GC_trace_addr >= (word)current_p
                     && (word)GC_trace_addr < (word)(current_p + descr)) {
-                  GC_log_printf("GC #%u: large section; start %p, len %lu,"
+                  GC_log_printf("GC #%lu: large section; start %p, len %lu,"
                                 " splitting (parallel) at %p\n",
-                                (unsigned)GC_gc_no, (void *)current_p,
+                                (unsigned long)GC_gc_no, (void *)current_p,
                                 (unsigned long)descr,
                                 (void *)(current_p + new_size));
                 }
@@ -697,9 +708,9 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #         ifdef ENABLE_TRACE
             if ((word)GC_trace_addr >= (word)current_p
                 && (word)GC_trace_addr < (word)(current_p + descr)) {
-              GC_log_printf("GC #%u: large section; start %p, len %lu,"
+              GC_log_printf("GC #%lu: large section; start %p, len %lu,"
                             " splitting at %p\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (unsigned long)descr, (void *)limit);
             }
 #         endif
@@ -713,32 +724,29 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             if ((word)GC_trace_addr >= (word)current_p
                 && (word)GC_trace_addr < (word)(current_p
                                                 + WORDS_TO_BYTES(WORDSZ-2))) {
-              GC_log_printf("GC #%u: tracing from %p bitmap descr %lu\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+              GC_log_printf("GC #%lu: tracing from %p bitmap descr %lu\n",
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (unsigned long)descr);
             }
 #         endif /* ENABLE_TRACE */
           descr &= ~GC_DS_TAGS;
           credit -= WORDS_TO_BYTES(WORDSZ/2); /* guess */
-          while (descr != 0) {
-            if ((descr & SIGNB) != 0) {
-              current = *(word *)current_p;
-              FIXUP_POINTER(current);
-              if (current >= (word)least_ha && current < (word)greatest_ha) {
+          for (; descr != 0; descr <<= 1, current_p += sizeof(word)) {
+            if ((descr & SIGNB) == 0) continue;
+            LOAD_WORD_OR_CONTINUE(current, current_p);
+            FIXUP_POINTER(current);
+            if (current >= (word)least_ha && current < (word)greatest_ha) {
                 PREFETCH((ptr_t)current);
 #               ifdef ENABLE_TRACE
                   if (GC_trace_addr == current_p) {
-                    GC_log_printf("GC #%u: considering(3) %p -> %p\n",
-                                  (unsigned)GC_gc_no, (void *)current_p,
+                    GC_log_printf("GC #%lu: considering(3) %p -> %p\n",
+                                  (unsigned long)GC_gc_no, (void *)current_p,
                                   (void *)current);
                   }
 #               endif /* ENABLE_TRACE */
                 PUSH_CONTENTS((ptr_t)current, mark_stack_top,
                               mark_stack_limit, current_p);
-              }
             }
-            descr <<= 1;
-            current_p += sizeof(word);
           }
           continue;
         case GC_DS_PROC:
@@ -747,8 +755,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             if ((word)GC_trace_addr >= (word)current_p
                 && GC_base(current_p) != 0
                 && GC_base(current_p) == GC_base(GC_trace_addr)) {
-              GC_log_printf("GC #%u: tracing from %p, proc descr %lu\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+              GC_log_printf("GC #%lu: tracing from %p, proc descr %lu\n",
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (unsigned long)descr);
             }
 #         endif /* ENABLE_TRACE */
@@ -797,8 +805,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #     ifdef ENABLE_TRACE
         if ((word)GC_trace_addr >= (word)current_p
             && (word)GC_trace_addr < (word)(current_p + descr)) {
-          GC_log_printf("GC #%u: small object; start %p, len %lu\n",
-                        (unsigned)GC_gc_no, (void *)current_p,
+          GC_log_printf("GC #%lu: small object; start %p, len %lu\n",
+                        (unsigned long)GC_gc_no, (void *)current_p,
                         (unsigned long)descr);
         }
 #     endif
@@ -811,98 +819,89 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
     {
 #     define PREF_DIST 4
 
-#     ifndef SMALL_CONFIG
-
+#     if !defined(SMALL_CONFIG) && !defined(USE_PTR_HWTAG)
 #       if !defined(__CHERI_PURE_CAPABILITY__)
-        word deferred;
-
-        /* Try to prefetch the next pointer to be examined ASAP.        */
-        /* Empirically, this also seems to help slightly without        */
-        /* prefetches, at least on linux/X86.  Presumably this loop     */
-        /* ends up with less register pressure, and gcc thus ends up    */
-        /* generating slightly better code.  Overall gcc code quality   */
-        /* for this loop is still not great.                            */
-        for(;;) {
-          PREFETCH(limit - PREF_DIST*CACHE_LINE_SIZE);
-          GC_ASSERT((word)limit >= (word)current_p);
-          deferred = *(word *)limit;
-          FIXUP_POINTER(deferred);
-          limit -= ALIGNMENT;
-          if (deferred >= (word)least_ha && deferred < (word)greatest_ha) {
-            PREFETCH((ptr_t)deferred);
-            break;
-          }
-          if ((word)current_p > (word)limit) goto next_object;
-          /* Unroll once, so we don't do too many of the prefetches     */
-          /* based on limit.                                            */
-          deferred = *(word *)limit;
-          FIXUP_POINTER(deferred);
-          limit -= ALIGNMENT;
-          if (deferred >= (word)least_ha && deferred < (word)greatest_ha) {
-            PREFETCH((ptr_t)deferred);
-            break;
-          }
-          if ((word)current_p > (word)limit) goto next_object;
-        }
-#       else   /* !defined(__CHERI_PURE_CAPABILITY__) */
-        void **deferred;
-
-        /* Check each pointer for validity before dereferencing         */
-        /* to prevent capability exceptions.                            */
-        /* Utilise the pointer meta-data to speed-up the loop.          */
-        /* If the loop is below the pointer bounds, skip the rest of    */
-        /* marking for that chunk.                                      */
-        /* If the *limit* capability restricts us to reading fewer than */
-        /* sizeof(ptr_t),                                               */
-        /*  a. there can't possibly be a pointer at limit's pointer     */
-        /*  b. reading at that location will raise a capability         */
-        /*     exception                                                */
-        if (cheri_getaddress(limit) + sizeof(ptr_t) - 1
-              >= (cheri_getbase(limit) + cheri_getlength(limit))) {
-          /* Decrement limit so that it's within current_p's bounds */
-          limit = cheri_setaddress( current_p, ((cheri_getbase(limit)
-                                    + cheri_getlength(limit) - sizeof(ptr_t))
-                                    & ~(sizeof(ptr_t)-1)));
-          if ((word)current_p > (word)limit) goto next_object;
-        }
-        for(;;) {
-          GC_ASSERT((word)limit >= (word)current_p);
-          if (cheri_getaddress(limit) < cheri_getbase(limit)) goto next_object;
-
-          has_rwx = cheri_getperm(limit) & (CHERI_PERM_LOAD
-                                           | CHERI_PERM_STORE
-                                           | CHERI_PERM_EXECUTE);
-          if ((cheri_gettag(limit) == 0) || !has_rwx) {
-            limit -= ALIGNMENT;
-          } else {
-            deferred = *(void **)limit;
+          word deferred;
+  
+          /* Try to prefetch the next pointer to be examined ASAP.        */
+          /* Empirically, this also seems to help slightly without        */
+          /* prefetches, at least on linux/X86.  Presumably this loop     */
+          /* ends up with less register pressure, and gcc thus ends up    */
+          /* generating slightly better code.  Overall gcc code quality   */
+          /* for this loop is still not great.                            */
+          for(;;) {
+            PREFETCH(limit - PREF_DIST*CACHE_LINE_SIZE);
+            GC_ASSERT((word)limit >= (word)current_p);
+            deferred = *(word *)limit;
             FIXUP_POINTER(deferred);
             limit -= ALIGNMENT;
-            if (deferred >= (word)least_ha && deferred < (word)greatest_ha)
+            if (deferred >= (word)least_ha && deferred < (word)greatest_ha) {
+              PREFETCH((ptr_t)deferred);
               break;
+            }
+            if ((word)current_p > (word)limit) goto next_object;
+            /* Unroll once, so we don't do too many of the prefetches     */
+            /* based on limit.                                            */
+            deferred = *(word *)limit;
+            FIXUP_POINTER(deferred);
+            limit -= ALIGNMENT;
+            if (deferred >= (word)least_ha && deferred < (word)greatest_ha) {
+              PREFETCH((ptr_t)deferred);
+              break;
+            }
+            if ((word)current_p > (word)limit) goto next_object;
           }
-          if ((word)current_p > (word)limit) goto next_object;
-        }
+#       else   /* !defined(__CHERI_PURE_CAPABILITY__) */
+          void **deferred;
+  
+          /* Check each pointer for validity before dereferencing         */
+          /* to prevent capability exceptions.                            */
+          /* Utilise the pointer meta-data to speed-up the loop.          */
+          /* If the loop is below the pointer bounds, skip the rest of    */
+          /* marking for that chunk.                                      */
+          /* If the *limit* capability restricts us to reading fewer than */
+          /* sizeof(ptr_t),                                               */
+          /*  a. there can't possibly be a pointer at limit's pointer     */
+          /*  b. reading at that location will raise a capability         */
+          /*     exception                                                */
+          if (cheri_address_get(limit) + sizeof(ptr_t) - 1
+                >= (cheri_base_get(limit) + cheri_length_get(limit))) {
+            /* Decrement limit so that it's within current_p's bounds */
+            limit = cheri_address_set( current_p, ((cheri_base_get(limit)
+                                      + cheri_length_get(limit) - sizeof(ptr_t))
+                                      & ~(sizeof(ptr_t)-1)));
+            if ((word)current_p > (word)limit) goto next_object;
+          }
+          for(;;) {
+            GC_ASSERT((word)limit >= (word)current_p);
+            if (cheri_address_get(limit) < cheri_base_get(limit)) goto next_object;
+  
+            has_rwx = cheri_perms_get(limit) & (CHERI_PERM_LOAD
+                                                | CHERI_PERM_STORE
+                                                | CHERI_PERM_EXECUTE);
+            if ((cheri_tag_get(limit) == 0) || !has_rwx) {
+              limit -= ALIGNMENT;
+            } else {
+              deferred = *(void **)limit;
+              FIXUP_POINTER(deferred);
+              limit -= ALIGNMENT;
+              has_rwx = cheri_perms_get(deferred) & (CHERI_PERM_LOAD
+                                                     | CHERI_PERM_STORE
+                                                     | CHERI_PERM_EXECUTE);
+              if (((cheri_tag_get(deferred) != 0) && has_rwx)
+                    && (deferred >= (word)least_ha && deferred < (word)greatest_ha))
+                break;
+            }
+            if ((word)current_p > (word)limit) goto next_object;
+          }
 #       endif   // defined(__CHERI_PURE_CAPABILITY__)
 #     endif
 
-      while ((word)current_p <= (word)limit) {
+      for (; (word)current_p <= (word)limit; current_p += ALIGNMENT) {
         /* Empirically, unrolling this loop doesn't help a lot. */
         /* Since PUSH_CONTENTS expands to a lot of code,        */
         /* we don't.                                            */
-#       if defined(__CHERI_PURE_CAPABILITY__)
-          current = *(void **)current_p;
-          has_rwx = cheri_getperm(current) & (CHERI_PERM_LOAD
-                                             | CHERI_PERM_STORE
-                                             | CHERI_PERM_EXECUTE);
-          if ((cheri_gettag(current) == 0) || !has_rwx) {
-            current_p += ALIGNMENT;
-            continue;
-          }
-#       else
-          current = *(word *)current_p;
-#       endif
-
+        LOAD_WORD_OR_CONTINUE(current, current_p);
         FIXUP_POINTER(current);
         PREFETCH(current_p + PREF_DIST*CACHE_LINE_SIZE);
         if (current >= (word)least_ha && current < (word)greatest_ha) {
@@ -911,26 +910,24 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           PREFETCH((ptr_t)current);
 #         ifdef ENABLE_TRACE
             if (GC_trace_addr == current_p) {
-              GC_log_printf("GC #%u: considering(1) %p -> %p\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+              GC_log_printf("GC #%lu: considering(1) %p -> %p\n",
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (void *)current);
             }
 #         endif /* ENABLE_TRACE */
           PUSH_CONTENTS((ptr_t)current, mark_stack_top,
                         mark_stack_limit, current_p);
         }
-        current_p += ALIGNMENT;
       }
 
-
-#     ifndef SMALL_CONFIG
+#     if !defined(SMALL_CONFIG) && !defined(USE_PTR_HWTAG)
         /* We still need to mark the entry we previously prefetched.    */
         /* We already know that it passes the preliminary pointer       */
         /* validity test.                                               */
 #       ifdef ENABLE_TRACE
             if (GC_trace_addr == current_p) {
-              GC_log_printf("GC #%u: considering(2) %p -> %p\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+              GC_log_printf("GC #%lu: considering(2) %p -> %p\n",
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (void *)deferred);
             }
 #       endif /* ENABLE_TRACE */
@@ -1302,47 +1299,33 @@ GC_INNER void GC_help_marker(word my_mark_no)
 
 #endif /* PARALLEL_MARK */
 
-GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
-{
-  if (ptr != NULL) {
-    size_t page_offset = (word)ptr & (GC_page_size - 1);
-    size_t displ = 0;
-    size_t recycled_bytes;
-
-    GC_ASSERT(bytes != 0);
-    GC_ASSERT(GC_page_size != 0);
-    /* TODO: Assert correct memory flags if GWW_VDB */
-    if (page_offset != 0)
-      displ = GC_page_size - page_offset;
-    recycled_bytes = (bytes - displ) & ~(GC_page_size - 1);
-    GC_COND_LOG_PRINTF("Recycle %lu scratch-allocated bytes at %p\n",
-                       (unsigned long)recycled_bytes, ptr);
-    if (recycled_bytes > 0)
-      GC_add_to_heap((struct hblk *)((word)ptr + displ), recycled_bytes);
-  }
-}
-
 /* Allocate or reallocate space for mark stack of size n entries.  */
 /* May silently fail.                                              */
 static void alloc_mark_stack(size_t n)
 {
-    mse * new_stack = (mse *)GC_scratch_alloc(n * sizeof(struct GC_ms_entry));
+#   ifdef GWW_VDB
+      static GC_bool GC_incremental_at_stack_alloc = FALSE;
+
+      GC_bool recycle_old;
+#   endif
+    mse * new_stack;
+
+    GC_ASSERT(I_HOLD_LOCK());
+    new_stack = (mse *)GC_scratch_alloc(n * sizeof(struct GC_ms_entry));
 #   ifdef GWW_VDB
       /* Don't recycle a stack segment obtained with the wrong flags.   */
       /* Win32 GetWriteWatch requires the right kind of memory.         */
-      static GC_bool GC_incremental_at_stack_alloc = FALSE;
-      GC_bool recycle_old = !GC_auto_incremental
-                            || GC_incremental_at_stack_alloc;
-
+      recycle_old = !GC_auto_incremental || GC_incremental_at_stack_alloc;
       GC_incremental_at_stack_alloc = GC_auto_incremental;
-#   else
-#     define recycle_old TRUE
 #   endif
 
     GC_mark_stack_too_small = FALSE;
     if (GC_mark_stack != NULL) {
         if (new_stack != 0) {
-          if (recycle_old) {
+#         ifdef GWW_VDB
+            if (recycle_old)
+#         endif
+          {
             /* Recycle old space.       */
             GC_scratch_recycle_inner(GC_mark_stack,
                         GC_mark_stack_size * sizeof(struct GC_ms_entry));
@@ -1384,8 +1367,8 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
     word length;
 
 # if defined(__CHERI_PURE_CAPABILITY__)
-    bottom = cheri_setaddress(bottom, (((word)cheri_getaddress(bottom) + ALIGNMENT-1) & ~(ALIGNMENT-1)));
-    top = cheri_setaddress(top, ((word)cheri_getaddress(top) & ~(ALIGNMENT-1)));
+    bottom = cheri_align_up(bottom, ALIGNMENT);
+    top = cheri_align_down(top, ALIGNMENT);
 # else
     bottom = (void *)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     top = (void *)((word)top & ~(ALIGNMENT-1));
@@ -1657,10 +1640,13 @@ GC_API void GC_CALL GC_print_trace(word gc_no)
 GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY GC_ATTR_NO_SANITIZE_THREAD
 GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 {
-# if !defined(__CHERI_PURE_CAPABILITY__)
-    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
-    REGISTER word *p;
+# if defined(__CHERI_PURE_CAPABILITY__)
+    REGISTER void ** current_p;
+    REGISTER void **b = (void **)cheri_align_up(bottom, ALIGNMENT);
+    REGISTER void ** t = (void **)cheri_align_down(top, ALIGNMENT);
+# else
+    REGISTER ptr_t current_p;
+# endif
     REGISTER word *lim;
     REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
     REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
@@ -1670,44 +1656,29 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
     if (top == 0) return;
 
     /* Check all pointers in range and push if they appear to be valid. */
-    lim = t - 1 /* longword */;
-    for (p = b; (word)p <= (word)lim;
-         p = (word *)(((ptr_t)p) + ALIGNMENT)) {
-      REGISTER word q = *p;
+# if defined(__CHERI_PURE_CAPABILITY__)
+    lim = t - 1;
+    if ((intptr_t)lim >= (cheri_base_get(b) + cheri_length_get(b)))
+      lim = cheri_base_get(b) + cheri_length_get(b) - sizeof(ptr_t);
 
-      GC_PUSH_ONE_STACK(q, p);
+    for (current_p = b; (word)current_p <= (word)lim; current_p++) {
+      REGISTER void *q = *current_p;
+
+      LOAD_WORD_OR_CONTINUE(q, current_p);
+      GC_PUSH_ONE_STACK(q, current_p);
     }
+# else
+    lim = (word *)(((word)top) & ~(ALIGNMENT-1)) - 1;
+    for (current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
+         (word)current_p <= (word)lim; current_p += ALIGNMENT) {
+      REGISTER word q;
 
+      LOAD_WORD_OR_CONTINUE(q, current_p);
+      GC_PUSH_ONE_STACK(q, current_p);
+    }
+# endif
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr
-# else /* defined(__CHERI_PURE_CAPABILITY__) */
-
-    void **b = (void **)cheri_setaddress(bottom, (((vaddr_t) bottom + ALIGNMENT-1)
-                                                 & ~(ALIGNMENT-1)));
-    void **t = (void **)cheri_setaddress(top, (((vaddr_t) top)
-                                                 & ~(ALIGNMENT-1)));
-    REGISTER void **p;
-    REGISTER void **lim;
-    REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
-    REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
-#   define GC_greatest_plausible_heap_addr greatest_ha
-#   define GC_least_plausible_heap_addr least_ha
-
-    if (top == 0) return;
-
-    /* Check all pointers in range and push if they appear to be valid. */
-    lim = t - 1 /* longword */;
-    if ((intptr_t)lim >= (cheri_getbase(b) + cheri_getlength(b)))
-      lim = ((cheri_getbase(b) + cheri_getlength(b) - sizeof(ptr_t)) & ~(sizeof(ptr_t)-1));
-
-    for (p = b; (intptr_t)p <= (intptr_t)lim; p++) {
-      REGISTER void *q = *p;
-
-      GC_PUSH_ONE_STACK(q, p);
-    }
-#   undef GC_greatest_plausible_heap_addr
-#   undef GC_least_plausible_heap_addr
-# endif  /* defined(__CHERI_PURE_CAPABILITY__) */
 }
 
 GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
@@ -1734,9 +1705,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
   GC_INNER void GC_push_conditional_eager(void *bottom, void *top,
                                           GC_bool all)
   {
-    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
-    REGISTER word *p;
+    REGISTER ptr_t current_p;
     REGISTER word *lim;
     REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
     REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
@@ -1747,11 +1716,13 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
       return;
     (void)all; /* TODO: If !all then scan only dirty pages. */
 
-    lim = t - 1;
-    for (p = b; (word)p <= (word)lim; p = (word *)((ptr_t)p + ALIGNMENT)) {
-      REGISTER word q = *p;
+    lim = (word *)(((word)top) & ~(ALIGNMENT-1)) - 1;
+    for (current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
+         (word)current_p <= (word)lim; current_p += ALIGNMENT) {
+      REGISTER word q;
 
-      GC_PUSH_ONE_HEAP(q, p, GC_mark_stack_top);
+      LOAD_WORD_OR_CONTINUE(q, current_p);
+      GC_PUSH_ONE_HEAP(q, current_p, GC_mark_stack_top);
     }
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr
@@ -1795,6 +1766,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 #ifdef USE_PUSH_MARKED_ACCELERATORS
 /* Push all objects reachable from marked objects in the given block */
 /* containing objects of size 1 granule.                             */
+GC_ATTR_NO_SANITIZE_THREAD
 STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
 {
     word * mark_word_addr = &(hhdr->hb_marks[0]);
@@ -1848,6 +1820,7 @@ STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
 
 /* Push all objects reachable from marked objects in the given block */
 /* of size 2 (granules) objects.                                     */
+GC_ATTR_NO_SANITIZE_THREAD
 STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
 {
     word * mark_word_addr = &(hhdr->hb_marks[0]);
@@ -1899,6 +1872,7 @@ STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
 /* of size 4 (granules) objects.                                     */
 /* There is a risk of mark stack overflow here.  But we handle that. */
 /* And only unmarked objects get pushed, so it's not very likely.    */
+GC_ATTR_NO_SANITIZE_THREAD
 STATIC void GC_push_marked4(struct hblk *h, hdr *hhdr)
 {
     word * mark_word_addr = &(hhdr->hb_marks[0]);
@@ -2017,6 +1991,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 /* first word.  On the other hand, a reclaimed object is a members of   */
 /* free-lists, and thus contains a word-aligned next-pointer as the     */
 /* first word.                                                          */
+ GC_ATTR_NO_SANITIZE_THREAD
  STATIC void GC_push_unconditionally(struct hblk *h, hdr *hhdr)
  {
     word sz = hhdr -> hb_sz;
