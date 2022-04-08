@@ -1560,7 +1560,7 @@ void run_one_test(void)
           if (print_stats)
             GC_log_printf("Started a child process, pid= %ld\n",
                           (long)child_pid);
-#         ifdef THREADS
+#         if defined(THREADS) && !defined(THREAD_SANITIZER)
 #           ifdef PARALLEL_MARK
               GC_gcollect(); /* no parallel markers */
 #           endif
