@@ -362,7 +362,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
         me -> backing_store_ptr = bs_lo + stack_size;
 #     endif
       sem_post(&GC_suspend_ack_sem);
-      suspend_self_inner(me);
+      GC_suspend_self_inner(me);
 #     ifdef DEBUG_THREADS
         GC_log_printf("Continuing %p on GC_resume_thread\n", (void *)self);
 #     endif
@@ -625,8 +625,8 @@ STATIC void GC_restart_handler(int sig)
       (void)select(0, 0, 0, 0, &tv);
     }
 
-    GC_INNER void *GC_CALLBACK suspend_self_inner(void *client_data) {
-      GC_thread me = (GC_thread)client_data;
+    GC_INNER void *GC_CALLBACK GC_suspend_self_inner(void *thread_me) {
+      GC_thread me = (GC_thread)thread_me;
 
       while (ao_load_acquire_async(&me->suspended_ext)) {
         /* TODO: Use sigsuspend() instead. */
@@ -653,7 +653,7 @@ STATIC void GC_restart_handler(int sig)
         UNLOCK();
         /* It is safe as "t" cannot become invalid here (no race with   */
         /* GC_unregister_my_thread).                                    */
-        (void)GC_do_blocking(suspend_self_inner, t);
+        (void)GC_do_blocking(GC_suspend_self_inner, t);
         return;
       }
       if ((t -> flags & FINISHED) != 0) {

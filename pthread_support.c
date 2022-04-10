@@ -2016,10 +2016,9 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #       endif
 #       if defined(GC_ENABLE_SUSPEND_THREAD) \
            && defined(SIGNAL_BASED_STOP_WORLD)
-          /* Matters only if this is executed from a thread destructor. */
           if (me -> suspended_ext) {
             UNLOCK();
-            (void)GC_do_blocking(suspend_self_inner, me);
+            (void)GC_do_blocking(GC_suspend_self_inner, me);
             return GC_SUCCESS;
           }
 #       endif
