@@ -1365,6 +1365,16 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
     UNLOCK();
     d -> client_data = (d -> fn)(d -> client_data);
     LOCK();   /* This will block if the world is stopped.       */
+
+#   if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
+       && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
+      while (EXPECT(me -> suspended_ext, FALSE)) {
+        UNLOCK();
+        GC_suspend_self_inner(me);
+        LOCK();
+      }
+#   endif
+
     me -> thread_blocked = FALSE;
 #   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
         if (topOfStackUnset)
@@ -1408,6 +1418,15 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       GC_noop1((word)(&stacksect));
       return client_data; /* result */
     }
+
+#   if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
+       && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
+      while (EXPECT(me -> suspended_ext, FALSE)) {
+        UNLOCK();
+        GC_suspend_self_inner(me);
+        LOCK();
+      }
+#   endif
 
     /* Setup new "stack section".       */
     stacksect.saved_stack_ptr = me -> stop_info.stack_ptr;
