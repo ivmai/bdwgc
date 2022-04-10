@@ -1567,6 +1567,15 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
     UNLOCK();
     d -> client_data = (d -> fn)(d -> client_data);
     LOCK();   /* This will block if the world is stopped.       */
+
+#   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
+      while (EXPECT(me -> suspended_ext, FALSE)) {
+        UNLOCK();
+        GC_suspend_self_inner(me);
+        LOCK();
+      }
+#   endif
+
 #   if defined(CPPCHECK)
       GC_noop1((word)&me->thread_blocked);
 #   endif
@@ -1684,6 +1693,14 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       GC_noop1(COVERT_DATAFLOW(&stacksect));
       return client_data; /* result */
     }
+
+#   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
+      while (EXPECT(me -> suspended_ext, FALSE)) {
+        UNLOCK();
+        GC_suspend_self_inner(me);
+        LOCK();
+      }
+#   endif
 
     /* Setup new "stack section".       */
     stacksect.saved_stack_ptr = me -> stop_info.stack_ptr;

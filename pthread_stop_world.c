@@ -647,6 +647,12 @@ STATIC void GC_restart_handler(int sig)
         UNLOCK();
         return;
       }
+      if ((t -> flags & FINISHED) != 0 || t -> thread_blocked) {
+        t -> suspended_ext = TRUE;
+        /* Terminated but not joined yet, or in do-blocking state.  */
+        UNLOCK();
+        return;
+      }
 
       if (THREAD_EQUAL((pthread_t)thread, pthread_self())) {
         t -> suspended_ext = TRUE;
@@ -654,12 +660,6 @@ STATIC void GC_restart_handler(int sig)
         /* It is safe as "t" cannot become invalid here (no race with   */
         /* GC_unregister_my_thread).                                    */
         (void)GC_do_blocking(GC_suspend_self_inner, t);
-        return;
-      }
-      if ((t -> flags & FINISHED) != 0) {
-        t -> suspended_ext = TRUE;
-        /* Terminated but not joined yet. */
-        UNLOCK();
         return;
       }
 
