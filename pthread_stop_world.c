@@ -656,10 +656,8 @@ STATIC void GC_restart_handler(int sig)
 
       if (THREAD_EQUAL((pthread_t)thread, pthread_self())) {
         t -> suspended_ext = TRUE;
+        GC_with_callee_saves_pushed(GC_suspend_self_blocked, (ptr_t)t);
         UNLOCK();
-        /* It is safe as "t" cannot become invalid here (no race with   */
-        /* GC_unregister_my_thread).                                    */
-        (void)GC_do_blocking(GC_suspend_self_inner, t);
         return;
       }
 

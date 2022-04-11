@@ -167,6 +167,10 @@ GC_INNER GC_thread GC_lookup_thread(pthread_t id);
   GC_INNER void GC_unblock_gc_signals(void);
 #endif
 
+#if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
+  GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context);
+#endif
+
 #ifdef GC_PTHREAD_START_STANDALONE
 # define GC_INNER_PTHRSTART /* empty */
 #else

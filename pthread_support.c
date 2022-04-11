@@ -1520,12 +1520,10 @@ GC_INNER void GC_init_parallel(void)
 
 /* Wrapper for functions that are likely to block for an appreciable    */
 /* length of time.                                                      */
-
-GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
+static void *do_blocking_locked(GC_fn_type fn, void *client_data,
+                                GC_thread me, void *context GC_ATTR_UNUSED)
 {
-    struct blocking_data * d = (struct blocking_data *) data;
-    pthread_t self = pthread_self();
-    GC_thread me;
+    void *result;
 #   if defined(SPARC) || defined(IA64)
         ptr_t stack_ptr = GC_save_regs_in_stack();
 #   elif defined(E2K)
@@ -1539,8 +1537,6 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 #   ifdef E2K
         (void)GC_save_regs_in_stack();
 #   endif
-    LOCK();
-    me = GC_lookup_thread(self);
     GC_ASSERT(!(me -> thread_blocked));
 #   ifdef SPARC
         me -> stop_info.stack_ptr = stack_ptr;
@@ -1565,7 +1561,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
     me -> thread_blocked = (unsigned char)TRUE;
     /* Save context here if we want to support precise stack marking */
     UNLOCK();
-    d -> client_data = (d -> fn)(d -> client_data);
+    result = fn(client_data);
     LOCK();   /* This will block if the world is stopped.       */
 
 #   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
@@ -1592,8 +1588,30 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
         if (topOfStackUnset)
             me -> topOfStack = NULL; /* make topOfStack unset again */
 #   endif
+    return result;
+}
+
+GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
+{
+    struct blocking_data *d = (struct blocking_data *)data;
+    GC_thread me;
+    DCL_LOCK_STATE;
+
+    LOCK();
+    me = GC_lookup_thread(pthread_self());
+    d -> client_data = do_blocking_locked(d -> fn, d -> client_data, me,
+                                          context);
     UNLOCK();
 }
+
+#if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
+  GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context)
+  {
+    GC_ASSERT(I_HOLD_LOCK());
+    (void)do_blocking_locked(GC_suspend_self_inner /* or a no-op function */,
+                             thread_me, (GC_thread)thread_me, context);
+  }
+#endif
 
 GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
                                        const struct GC_stack_base *sb)
@@ -2034,9 +2052,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #       if defined(GC_ENABLE_SUSPEND_THREAD) \
            && defined(SIGNAL_BASED_STOP_WORLD)
           if (me -> suspended_ext) {
-            UNLOCK();
-            (void)GC_do_blocking(GC_suspend_self_inner, me);
-            return GC_SUCCESS;
+            GC_with_callee_saves_pushed(GC_suspend_self_blocked, (ptr_t)me);
           }
 #       endif
         UNLOCK();
