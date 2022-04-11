@@ -38,8 +38,9 @@
 #ifndef GC_OPENBSD_UTHREADS
   GC_INLINE void GC_usleep(unsigned us)
   {
-#   ifdef LINT2
-      /* Workaround "waiting while holding a lock" warning.     */
+#   if defined(LINT2) || defined(THREAD_SANITIZER)
+      /* Workaround "waiting while holding a lock" static analyzer warning. */
+      /* Workaround a rare hang in usleep() trying to acquire TSan Lock.    */
       while (us-- > 0)
         sched_yield(); /* pretending it takes 1us */
 #   elif defined(CPPCHECK) /* || _POSIX_C_SOURCE >= 199309L */
