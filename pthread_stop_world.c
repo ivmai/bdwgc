@@ -402,14 +402,11 @@ STATIC void GC_restart_handler(int sig)
       (void)select(0, 0, 0, 0, &tv);
     }
 
-    GC_INNER void *GC_CALLBACK GC_suspend_self_inner(void *client_data) {
-      GC_thread me = (GC_thread)client_data;
-
+    GC_INNER void GC_suspend_self_inner(GC_thread me) {
       while (AO_load_acquire(&me->suspended_ext)) {
         /* TODO: Use sigsuspend() instead. */
         GC_brief_async_signal_safe_sleep();
       }
-      return NULL;
     }
 
     GC_API void GC_CALL GC_suspend_thread(GC_SUSPEND_THREAD_ID thread) {
@@ -430,14 +427,10 @@ STATIC void GC_restart_handler(int sig)
         return;
       }
 
-      /* Set the flag making the change visible to the signal handler.  */
-      AO_store_release(&t->suspended_ext, TRUE);
-
       if ((pthread_t)thread == pthread_self()) {
+        t -> suspended_ext = TRUE;
+        GC_with_callee_saves_pushed(GC_suspend_self_blocked, (ptr_t)t);
         UNLOCK();
-        /* It is safe as "t" cannot become invalid here (no race with   */
-        /* GC_unregister_my_thread).                                    */
-        (void)GC_do_blocking(GC_suspend_self_inner, t);
         return;
       }
 
@@ -458,6 +451,9 @@ STATIC void GC_restart_handler(int sig)
         /* See the relevant comment in GC_stop_world.   */
         GC_acquire_dirty_lock();
 #     endif
+
+      /* Set the flag making the change visible to the signal handler.  */
+      AO_store_release(&t->suspended_ext, TRUE);
 
       /* TODO: Support GC_retry_signals */
       switch (RAISE_SIGNAL(t, GC_sig_suspend)) {
