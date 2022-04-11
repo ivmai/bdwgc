@@ -343,6 +343,8 @@
 /* Ensure that either registers are pushed, or callee-save registers    */
 /* are somewhere on the stack, and then call fn(arg, ctxt).             */
 /* ctxt is either a pointer to a ucontext_t we generated, or NULL.      */
+/* Could be called with or w/o the GC lock held; could be called from   */
+/* a signal handler as well.                                            */
 GC_ATTR_NO_SANITIZE_ADDR
 GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
                                           volatile ptr_t arg)
