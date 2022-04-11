@@ -52,12 +52,6 @@ struct thread_stop_info {
 
 GC_INNER void GC_stop_init(void);
 
-#if defined(GC_ENABLE_SUSPEND_THREAD) \
-    && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
-    && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
-  GC_INNER void *GC_CALLBACK GC_suspend_self_inner(void *thread_me);
-#endif
-
 EXTERN_C_END
 
 #endif
