@@ -168,6 +168,15 @@ GC_INNER GC_thread GC_lookup_thread(pthread_t id);
   GC_INNER void GC_unblock_gc_signals(void);
 #endif
 
+#if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
+    && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
+    && !defined(PLATFORM_STOP_WORLD) && !defined(SN_TARGET_PSP2)
+  GC_INNER void GC_suspend_self_inner(GC_thread me);
+
+  GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context);
+                                /* Wrapper over GC_suspend_self_inner.  */
+#endif
+
 #ifdef GC_PTHREAD_START_STANDALONE
 # define GC_INNER_PTHRSTART /* empty */
 #else

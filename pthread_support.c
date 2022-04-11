@@ -1513,27 +1513,17 @@ GC_INNER void GC_init_parallel(void)
   }
 #endif /* !GC_NO_PTHREAD_SIGMASK */
 
-/* Wrapper for functions that are likely to block for an appreciable    */
-/* length of time.                                                      */
-
-GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
+static GC_bool do_blocking_enter(GC_thread me)
 {
-    struct blocking_data * d = (struct blocking_data *) data;
-    pthread_t self = pthread_self();
-    GC_thread me;
 #   if defined(SPARC) || defined(IA64)
         ptr_t stack_ptr = GC_save_regs_in_stack();
         /* TODO: regs saving already done by GC_with_callee_saves_pushed */
 #   elif defined(E2K)
         size_t stack_size;
 #   endif
-#   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
-        GC_bool topOfStackUnset = FALSE;
-#   endif
-    DCL_LOCK_STATE;
+    GC_bool topOfStackUnset = FALSE;
 
-    LOCK();
-    me = GC_lookup_thread(self);
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(!(me -> thread_blocked));
 #   ifdef SPARC
         me -> stop_info.stack_ptr = stack_ptr;
@@ -1557,20 +1547,12 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 #   endif
     me -> thread_blocked = (unsigned char)TRUE;
     /* Save context here if we want to support precise stack marking */
-    UNLOCK();
-    d -> client_data = (d -> fn)(d -> client_data);
-    LOCK();   /* This will block if the world is stopped.       */
+    return topOfStackUnset;
+}
 
-#   if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
-       && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
-       && !defined(PLATFORM_STOP_WORLD) && !defined(SN_TARGET_PSP2)
-      while (EXPECT(me -> suspended_ext, FALSE)) {
-        UNLOCK();
-        GC_suspend_self_inner(me);
-        LOCK();
-      }
-#   endif
-
+static void do_blocking_leave(GC_thread me, GC_bool topOfStackUnset)
+{
+    GC_ASSERT(I_HOLD_LOCK());
 #   if defined(CPPCHECK)
       GC_noop1((word)&me->thread_blocked);
 #   endif
@@ -1586,9 +1568,81 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 #   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
         if (topOfStackUnset)
             me -> topOfStack = NULL; /* make topOfStack unset again */
+#   else
+        (void)topOfStackUnset;
 #   endif
+}
+
+/* Wrapper for functions that are likely to block for an appreciable    */
+/* length of time.                                                      */
+GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
+{
+    struct blocking_data *d = (struct blocking_data *)data;
+    GC_thread me;
+    GC_bool topOfStackUnset;
+    DCL_LOCK_STATE;
+
+    LOCK();
+    me = GC_lookup_thread(pthread_self());
+    topOfStackUnset = do_blocking_enter(me);
+    UNLOCK();
+
+    d -> client_data = (d -> fn)(d -> client_data);
+
+    LOCK();   /* This will block if the world is stopped.       */
+#   ifdef LINT2
+      {
+#        ifdef GC_ASSERTIONS
+           GC_thread saved_me = me;
+#        endif
+
+         /* The pointer to the GC thread descriptor should not be   */
+         /* changed while the thread is registered but a static     */
+         /* analysis tool might complain that this pointer value    */
+         /* (obtained in the first locked section) is unreliable in */
+         /* the second locked section.                              */
+         me = GC_lookup_thread(pthread_self());
+         GC_ASSERT(me == saved_me);
+      }
+#   endif
+#   if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
+       && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
+       && !defined(PLATFORM_STOP_WORLD) && !defined(SN_TARGET_PSP2)
+      /* Note: this code cannot be moved into do_blocking_leave()   */
+      /* otherwise there could be a static analysis tool warning    */
+      /* (false positive) about unlock without a matching lock.     */
+      while (EXPECT(me -> suspended_ext, FALSE)) {
+        UNLOCK();
+        GC_suspend_self_inner(me);
+        LOCK();
+      }
+#   endif
+    do_blocking_leave(me, topOfStackUnset);
     UNLOCK();
 }
+
+#if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
+    && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
+    && !defined(PLATFORM_STOP_WORLD) && !defined(SN_TARGET_PSP2)
+  /* Similar to GC_do_blocking_inner() but assuming the GC lock is held */
+  /* and fn is GC_suspend_self_inner.                                   */
+  GC_INNER void GC_suspend_self_blocked(ptr_t thread_me,
+                                        void * context GC_ATTR_UNUSED)
+  {
+    GC_thread me = (GC_thread)thread_me;
+    GC_bool topOfStackUnset;
+    DCL_LOCK_STATE;
+
+    GC_ASSERT(I_HOLD_LOCK());
+    topOfStackUnset = do_blocking_enter(me);
+    while (me -> suspended_ext) {
+      UNLOCK();
+      GC_suspend_self_inner(me);
+      LOCK();
+    }
+    do_blocking_leave(me, topOfStackUnset);
+  }
+#endif
 
 GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
                                        const struct GC_stack_base *sb)
@@ -2032,9 +2086,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
            && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
            && !defined(PLATFORM_STOP_WORLD) && !defined(SN_TARGET_PSP2)
           if (me -> suspended_ext) {
-            UNLOCK();
-            (void)GC_do_blocking(GC_suspend_self_inner, me);
-            return GC_SUCCESS;
+            GC_with_callee_saves_pushed(GC_suspend_self_blocked, (ptr_t)me);
           }
 #       endif
         UNLOCK();

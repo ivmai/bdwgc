@@ -619,14 +619,11 @@ STATIC void GC_restart_handler(int sig)
       (void)select(0, 0, 0, 0, &tv);
     }
 
-    GC_INNER void *GC_CALLBACK GC_suspend_self_inner(void *thread_me) {
-      GC_thread me = (GC_thread)thread_me;
-
+    GC_INNER void GC_suspend_self_inner(GC_thread me) {
       while (ao_load_acquire_async(&me->suspended_ext)) {
         /* TODO: Use sigsuspend() instead. */
         GC_brief_async_signal_safe_sleep();
       }
-      return NULL;
     }
 
     GC_API void GC_CALL GC_suspend_thread(GC_SUSPEND_THREAD_ID thread) {
@@ -647,14 +644,10 @@ STATIC void GC_restart_handler(int sig)
         return;
       }
 
-      /* Set the flag making the change visible to the signal handler.  */
-      AO_store_release(&t->suspended_ext, TRUE);
-
       if (THREAD_EQUAL((pthread_t)thread, pthread_self())) {
+        t -> suspended_ext = TRUE;
+        GC_with_callee_saves_pushed(GC_suspend_self_blocked, (ptr_t)t);
         UNLOCK();
-        /* It is safe as "t" cannot become invalid here (no race with   */
-        /* GC_unregister_my_thread).                                    */
-        (void)GC_do_blocking(GC_suspend_self_inner, t);
         return;
       }
 
@@ -679,6 +672,9 @@ STATIC void GC_restart_handler(int sig)
       /* Else do not acquire the lock as the write fault handler might  */
       /* be trying to acquire this lock too, and the suspend handler    */
       /* execution is deferred until the write fault handler completes. */
+
+      /* Set the flag making the change visible to the signal handler.  */
+      AO_store_release(&t->suspended_ext, TRUE);
 
       /* TODO: Support GC_retry_signals (not needed for TSan) */
       switch (raise_signal(t, GC_sig_suspend)) {
