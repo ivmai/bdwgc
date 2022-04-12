@@ -937,6 +937,7 @@ tn * mktree(int n)
 #       endif
 
         CHECK_OUT_OF_MEMORY(new_link);
+        AO_fetch_and_add1(&collectable_count);
         {
           FINALIZER_LOCK();
                 /* Losing a count here causes erroneous report of failure. */
