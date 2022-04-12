@@ -928,6 +928,7 @@ tn * mktree(int n)
           void **new_link = GC_NEW(void *);
 
           CHECK_OUT_OF_MEMORY(new_link);
+          AO_fetch_and_add1(&collectable_count);
 #       endif
         {
           FINALIZER_LOCK();
