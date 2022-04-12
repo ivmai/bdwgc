@@ -1977,7 +1977,7 @@ void enable_incremental_mode(void)
 #else
 # define CRTMEM_CHECK_INIT() (void)0
 # define CRTMEM_DUMP_LEAKS() (void)0
-#endif // !_MSC_VER
+#endif /* !_MSC_VER */
 
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
