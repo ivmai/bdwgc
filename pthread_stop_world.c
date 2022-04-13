@@ -310,10 +310,9 @@ GC_INLINE void GC_store_stack_ptr(GC_thread me)
 # ifdef SPARC
     ao_store_async((volatile AO_t *)&me->stop_info.stack_ptr,
                    (AO_t)GC_save_regs_in_stack());
+    /* TODO: regs saving already done by GC_with_callee_saves_pushed */
 # else
-#   ifdef E2K
-      (void)GC_save_regs_in_stack();
-#   elif defined(IA64)
+#   ifdef IA64
       me -> backing_store_ptr = GC_save_regs_in_stack();
 #   endif
     ao_store_async((volatile AO_t *)&me->stop_info.stack_ptr,

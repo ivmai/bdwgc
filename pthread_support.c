@@ -1522,15 +1522,13 @@ static GC_bool do_blocking_enter(GC_thread me)
 {
 #   if defined(SPARC) || defined(IA64)
         ptr_t stack_ptr = GC_save_regs_in_stack();
+        /* TODO: regs saving already done by GC_with_callee_saves_pushed */
 #   elif defined(E2K)
         size_t stack_size;
 #   endif
     GC_bool topOfStackUnset = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
-#   ifdef E2K
-        (void)GC_save_regs_in_stack();
-#   endif
     GC_ASSERT(!(me -> thread_blocked));
 #   ifdef SPARC
         me -> stop_info.stack_ptr = stack_ptr;
