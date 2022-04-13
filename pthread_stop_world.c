@@ -626,14 +626,11 @@ STATIC void GC_restart_handler(int sig)
       (void)select(0, 0, 0, 0, &tv);
     }
 
-    GC_INNER void *GC_CALLBACK GC_suspend_self_inner(void *thread_me) {
-      GC_thread me = (GC_thread)thread_me;
-
+    GC_INNER void GC_suspend_self_inner(GC_thread me) {
       while (ao_load_acquire_async(&me->suspended_ext)) {
         /* TODO: Use sigsuspend() instead. */
         GC_brief_async_signal_safe_sleep();
       }
-      return NULL;
     }
 
     GC_API void GC_CALL GC_suspend_thread(GC_SUSPEND_THREAD_ID thread) {

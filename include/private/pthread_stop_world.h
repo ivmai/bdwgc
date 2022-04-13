@@ -50,10 +50,6 @@ struct thread_stop_info {
 
 GC_INNER void GC_stop_init(void);
 
-#if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
-  GC_INNER void *GC_CALLBACK GC_suspend_self_inner(void *thread_me);
-#endif
-
 EXTERN_C_END
 
 #endif

@@ -1518,22 +1518,16 @@ GC_INNER void GC_init_parallel(void)
   }
 #endif /* !GC_NO_PTHREAD_SIGMASK */
 
-/* Wrapper for functions that are likely to block for an appreciable    */
-/* length of time.                                                      */
-static void *do_blocking_locked(GC_fn_type fn, void *client_data,
-                                GC_thread me, void *context GC_ATTR_UNUSED)
+static GC_bool do_blocking_enter(GC_thread me)
 {
-    void *result;
 #   if defined(SPARC) || defined(IA64)
         ptr_t stack_ptr = GC_save_regs_in_stack();
 #   elif defined(E2K)
         size_t stack_size;
 #   endif
-#   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
-        GC_bool topOfStackUnset = FALSE;
-#   endif
-    DCL_LOCK_STATE;
+    GC_bool topOfStackUnset = FALSE;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef E2K
         (void)GC_save_regs_in_stack();
 #   endif
@@ -1560,18 +1554,12 @@ static void *do_blocking_locked(GC_fn_type fn, void *client_data,
 #   endif
     me -> thread_blocked = (unsigned char)TRUE;
     /* Save context here if we want to support precise stack marking */
-    UNLOCK();
-    result = fn(client_data);
-    LOCK();   /* This will block if the world is stopped.       */
+    return topOfStackUnset;
+}
 
-#   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
-      while (EXPECT(me -> suspended_ext, FALSE)) {
-        UNLOCK();
-        GC_suspend_self_inner(me);
-        LOCK();
-      }
-#   endif
-
+static void do_blocking_leave(GC_thread me, GC_bool topOfStackUnset)
+{
+    GC_ASSERT(I_HOLD_LOCK());
 #   if defined(CPPCHECK)
       GC_noop1((word)&me->thread_blocked);
 #   endif
@@ -1587,29 +1575,58 @@ static void *do_blocking_locked(GC_fn_type fn, void *client_data,
 #   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
         if (topOfStackUnset)
             me -> topOfStack = NULL; /* make topOfStack unset again */
+#   else
+        (void)topOfStackUnset;
 #   endif
-    return result;
 }
 
-GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
+/* Wrapper for functions that are likely to block for an appreciable    */
+/* length of time.                                                      */
+GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 {
     struct blocking_data *d = (struct blocking_data *)data;
     GC_thread me;
+    GC_bool topOfStackUnset;
     DCL_LOCK_STATE;
 
     LOCK();
     me = GC_lookup_thread(pthread_self());
-    d -> client_data = do_blocking_locked(d -> fn, d -> client_data, me,
-                                          context);
+    topOfStackUnset = do_blocking_enter(me);
+    UNLOCK();
+
+    d -> client_data = (d -> fn)(d -> client_data);
+
+    LOCK();   /* This will block if the world is stopped.       */
+#   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
+      /* Note: this code cannot be moved into do_blocking_leave()   */
+      /* otherwise there could be a static analysis tool warning    */
+      /* (false positive) about unlock without a matching lock.     */
+      while (EXPECT(me -> suspended_ext, FALSE)) {
+        UNLOCK();
+        GC_suspend_self_inner(me);
+        LOCK();
+      }
+#   endif
+    do_blocking_leave(me, topOfStackUnset);
     UNLOCK();
 }
 
 #if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
-  GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context)
+  /* Similar to GC_do_blocking_inner() but assuming the GC lock is held */
+  /* and fn is GC_suspend_self_inner.                                   */
+  GC_INNER void GC_suspend_self_blocked(ptr_t thread_me,
+                                        void * context GC_ATTR_UNUSED)
   {
-    GC_ASSERT(I_HOLD_LOCK());
-    (void)do_blocking_locked(GC_suspend_self_inner /* or a no-op function */,
-                             thread_me, (GC_thread)thread_me, context);
+    GC_thread me = (GC_thread)thread_me;
+    GC_bool topOfStackUnset = do_blocking_enter(me);
+    DCL_LOCK_STATE;
+
+    while (me -> suspended_ext) {
+      UNLOCK();
+      GC_suspend_self_inner(me);
+      LOCK();
+    }
+    do_blocking_leave(me, topOfStackUnset);
   }
 #endif
 
