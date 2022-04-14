@@ -1387,12 +1387,8 @@ GC_INNER void GC_stop_init(void)
     /* Override the default value of GC_retry_signals.  */
     str = GETENV("GC_RETRY_SIGNALS");
     if (str != NULL) {
-        if (*str == '0' && *(str + 1) == '\0') {
+        GC_retry_signals = *str != '0' || *(str + 1) != '\0';
             /* Do not retry if the environment variable is set to "0". */
-            GC_retry_signals = FALSE;
-        } else {
-            GC_retry_signals = TRUE;
-        }
     }
     if (GC_retry_signals) {
       GC_COND_LOG_PRINTF(
