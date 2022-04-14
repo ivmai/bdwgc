@@ -82,15 +82,11 @@ typedef struct GC_Thread_Rep {
 #       define MAIN_THREAD 4    /* True for the original thread only.   */
 #       define DISABLED_GC 0x10 /* Collections are disabled while the   */
                                 /* thread is exiting.                   */
-
-    unsigned char thread_blocked;
-                                /* Protected by GC lock.                */
-                                /* Treated as a boolean value.  If set, */
-                                /* thread will acquire GC lock before   */
-                                /* doing any pointer manipulations, and */
-                                /* has set its SP value.  Thus it does  */
-                                /* not need to be sent a signal to stop */
-                                /* it.                                  */
+#       define DO_BLOCKING 0x20 /* Thread is in do-blocking state.      */
+                                /* If set, thread will acquire GC lock  */
+                                /* before any pointer manipulation, and */
+                                /* has set its SP value.  Thus, it does */
+                                /* not need a signal sent to stop it.   */
 
     unsigned short finalizer_skipped;
     unsigned char finalizer_nested;

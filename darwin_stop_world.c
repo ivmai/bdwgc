@@ -137,22 +137,18 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 /* Evaluates the stack range for a given thread.  Returns the lower     */
 /* bound and sets *phi to the upper one.                                */
 STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
-                                GC_bool thread_blocked, mach_port_t my_thread,
-                                ptr_t *paltstack_lo,
+                                mach_port_t my_thread, ptr_t *paltstack_lo,
                                 ptr_t *paltstack_hi GC_ATTR_UNUSED)
 {
   ptr_t lo;
   if (thread == my_thread) {
-    GC_ASSERT(!thread_blocked);
+    GC_ASSERT(NULL == p || (p -> flags & DO_BLOCKING) == 0);
     lo = GC_approx_sp();
 #   ifndef DARWIN_DONT_PARSE_STACK
       *phi = GC_FindTopOfStack(0);
 #   endif
 
-  } else if (thread_blocked) {
-#   if defined(CPPCHECK)
-      if (NULL == p) ABORT("Invalid GC_thread passed to GC_stack_range_for");
-#   endif
+  } else if (p != NULL && (p -> flags & DO_BLOCKING) != 0) {
     lo = p->stop_info.stack_ptr;
 #   ifndef DARWIN_DONT_PARSE_STACK
       *phi = p->topOfStack;
@@ -372,7 +368,7 @@ GC_INNER void GC_push_all_stacks(void)
 
       for (i = 0; i < (int)listcount; i++) {
         thread_act_t thread = act_list[i];
-        ptr_t lo = GC_stack_range_for(&hi, thread, NULL, FALSE, my_thread,
+        ptr_t lo = GC_stack_range_for(&hi, thread, NULL, my_thread,
                                       &altstack_lo, &altstack_hi);
 
         if (lo) {
@@ -400,10 +396,8 @@ GC_INNER void GC_push_all_stacks(void)
       for (p = GC_threads[i]; p != NULL; p = p->next)
         if ((p->flags & FINISHED) == 0) {
           thread_act_t thread = (thread_act_t)p->stop_info.mach_thread;
-          ptr_t lo = GC_stack_range_for(&hi, thread, p,
-                                        (GC_bool)p->thread_blocked,
-                                        my_thread, &altstack_lo,
-                                        &altstack_hi);
+          ptr_t lo = GC_stack_range_for(&hi, thread, p, my_thread,
+                                        &altstack_lo, &altstack_hi);
 
           if (lo) {
             GC_ASSERT((word)lo <= (word)hi);
@@ -624,8 +618,8 @@ GC_INNER void GC_stop_world(void)
       GC_thread p;
 
       for (p = GC_threads[i]; p != NULL; p = p->next) {
-        if ((p->flags & FINISHED) == 0 && !p->thread_blocked &&
-             p->stop_info.mach_thread != my_thread) {
+        if ((p -> flags & (FINISHED | DO_BLOCKING)) == 0
+            && p -> stop_info.mach_thread != my_thread) {
           GC_acquire_dirty_lock();
           do {
             kern_result = thread_suspend(p->stop_info.mach_thread);
@@ -759,8 +753,8 @@ GC_INNER void GC_start_world(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       GC_thread p;
       for (p = GC_threads[i]; p != NULL; p = p->next) {
-        if ((p->flags & FINISHED) == 0 && !p->thread_blocked &&
-             p->stop_info.mach_thread != my_thread)
+        if ((p -> flags & (FINISHED | DO_BLOCKING)) == 0
+            && p -> stop_info.mach_thread != my_thread)
           GC_thread_resume(p->stop_info.mach_thread);
       }
     }

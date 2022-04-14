@@ -627,7 +627,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
       GC_nacl_gc_thread_self = result;
       GC_nacl_initialize_gc_thread();
 #   endif
-    GC_ASSERT(result -> flags == 0 && result -> thread_blocked == 0);
+    GC_ASSERT(0 == result -> flags);
     if (EXPECT(result != &first_thread, TRUE))
       GC_dirty(result);
     return(result);
@@ -1529,7 +1529,7 @@ static GC_bool do_blocking_enter(GC_thread me)
     GC_bool topOfStackUnset = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT(!(me -> thread_blocked));
+    GC_ASSERT((me -> flags & DO_BLOCKING) == 0);
 #   ifdef SPARC
         me -> stop_info.stack_ptr = stack_ptr;
 #   else
@@ -1550,7 +1550,7 @@ static GC_bool do_blocking_enter(GC_thread me)
         stack_size = GC_alloc_and_get_procedure_stack(&me->backing_store_end);
         me->backing_store_ptr = me->backing_store_end + stack_size;
 #   endif
-    me -> thread_blocked = (unsigned char)TRUE;
+    me -> flags |= DO_BLOCKING;
     /* Save context here if we want to support precise stack marking */
     return topOfStackUnset;
 }
@@ -1558,10 +1558,7 @@ static GC_bool do_blocking_enter(GC_thread me)
 static void do_blocking_leave(GC_thread me, GC_bool topOfStackUnset)
 {
     GC_ASSERT(I_HOLD_LOCK());
-#   if defined(CPPCHECK)
-      GC_noop1((word)&me->thread_blocked);
-#   endif
-    me -> thread_blocked = FALSE;
+    me -> flags &= ~DO_BLOCKING;
 #   ifdef E2K
         GC_ASSERT(me -> backing_store_end != NULL);
          /* Note that me->backing_store_end value here may differ from  */
@@ -1641,7 +1638,7 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
         if (NULL == t) /* current thread? */
             t = GC_lookup_thread(pthread_self());
         GC_ASSERT((t -> flags & FINISHED) == 0);
-        GC_ASSERT(!(t -> thread_blocked)
+        GC_ASSERT((t -> flags & DO_BLOCKING) == 0
                   && NULL == t -> traced_stack_sect); /* for now */
 
         if ((t -> flags & MAIN_THREAD) == 0) {
@@ -1718,7 +1715,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
         GC_stackbottom = (ptr_t)COVERT_DATAFLOW(&stacksect);
     }
 
-    if (!me->thread_blocked) {
+    if ((me -> flags & DO_BLOCKING) == 0) {
       /* We are not inside GC_do_blocking() - do nothing more.  */
       UNLOCK();
       client_data = fn(client_data);
@@ -1750,12 +1747,12 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       me -> backing_store_end = NULL;
 #   endif
     stacksect.prev = me -> traced_stack_sect;
-    me -> thread_blocked = FALSE;
+    me -> flags &= ~DO_BLOCKING;
     me -> traced_stack_sect = &stacksect;
 
     UNLOCK();
     client_data = fn(client_data);
-    GC_ASSERT(me -> thread_blocked == FALSE);
+    GC_ASSERT((me -> flags & DO_BLOCKING) == 0);
     GC_ASSERT(me -> traced_stack_sect == &stacksect);
 
     /* Restore original "stack section".        */
@@ -1774,7 +1771,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       stack_size = GC_alloc_and_get_procedure_stack(&me->backing_store_end);
       me->backing_store_ptr = me->backing_store_end + stack_size;
 #   endif
-    me -> thread_blocked = (unsigned char)TRUE;
+    me -> flags |= DO_BLOCKING;
     me -> stop_info.stack_ptr = stacksect.saved_stack_ptr;
     UNLOCK();
 

@@ -644,7 +644,7 @@ STATIC void GC_restart_handler(int sig)
         UNLOCK();
         return;
       }
-      if ((t -> flags & FINISHED) != 0 || t -> thread_blocked) {
+      if ((t -> flags & (FINISHED | DO_BLOCKING)) != 0) {
         t -> suspended_ext = TRUE;
         /* Terminated but not joined yet, or in do-blocking state.  */
         UNLOCK();
@@ -770,7 +770,7 @@ GC_INNER void GC_push_all_stacks(void)
         ++nthreads;
         traced_stack_sect = p -> traced_stack_sect;
         if (THREAD_EQUAL(p -> id, self)) {
-            GC_ASSERT(!p->thread_blocked);
+            GC_ASSERT((p -> flags & DO_BLOCKING) == 0);
 #           ifdef SPARC
               lo = GC_save_regs_in_stack();
 #           else
@@ -841,7 +841,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       endif
 #       ifdef E2K
           if ((GC_stop_count & THREAD_RESTARTED) != 0
-              && !p->thread_blocked
+              && (p -> flags & DO_BLOCKING) == 0
 #             ifdef GC_ENABLE_SUSPEND_THREAD
                 && !p->suspended_ext
 #             endif
@@ -898,8 +898,7 @@ STATIC int GC_suspend_all(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (!THREAD_EQUAL(p -> id, self)) {
-            if ((p -> flags & FINISHED) != 0) continue;
-            if (p -> thread_blocked) /* Will wait */ continue;
+            if ((p -> flags & (FINISHED | DO_BLOCKING)) != 0) continue;
 #           ifndef GC_OPENBSD_UTHREADS
 #             ifdef GC_ENABLE_SUSPEND_THREAD
                 if (p -> suspended_ext) continue;
@@ -1232,8 +1231,7 @@ GC_INNER void GC_stop_world(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != NULL; p = p -> next) {
         if (!THREAD_EQUAL(p -> id, self)) {
-          if ((p -> flags & FINISHED) != 0) continue;
-          if (p -> thread_blocked) continue;
+          if ((p -> flags & (FINISHED | DO_BLOCKING)) != 0) continue;
 #         ifndef GC_OPENBSD_UTHREADS
 #           ifdef GC_ENABLE_SUSPEND_THREAD
               if (p -> suspended_ext) continue;
