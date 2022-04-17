@@ -753,6 +753,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
 # endif
 #endif
 
+#ifdef LINT2
+# include "private/gc_alloc_ptrs.h"
+#endif
+
 GC_API void GC_CALL GC_debug_free(void * p)
 {
     ptr_t base;
@@ -822,7 +826,11 @@ GC_API void GC_CALL GC_debug_free(void * p)
         /* Update the counter even though the real deallocation */
         /* is deferred.                                         */
         LOCK();
-        GC_bytes_freed += sz;
+#       ifdef LINT2
+          GC_incr_bytes_freed((size_t)sz);
+#       else
+          GC_bytes_freed += sz;
+#       endif
         UNLOCK();
       }
     } /* !GC_find_leak */
