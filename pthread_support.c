@@ -1592,6 +1592,21 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
     d -> client_data = (d -> fn)(d -> client_data);
 
     LOCK();   /* This will block if the world is stopped.       */
+#   ifdef LINT2
+      {
+#        ifdef GC_ASSERTIONS
+           GC_thread saved_me = me;
+#        endif
+
+         /* The pointer to the GC thread descriptor should not be   */
+         /* changed while the thread is registered but a static     */
+         /* analysis tool might complain that this pointer value    */
+         /* (obtained in the first locked section) is unreliable in */
+         /* the second locked section.                              */
+         me = GC_lookup_thread(pthread_self());
+         GC_ASSERT(me == saved_me);
+      }
+#   endif
 #   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
       /* Note: this code cannot be moved into do_blocking_leave()   */
       /* otherwise there could be a static analysis tool warning    */
