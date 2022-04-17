@@ -357,6 +357,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
     if (ao_load_async(&me->suspended_ext)) {
       GC_store_stack_ptr(me);
 #     ifdef E2K
+        GC_ASSERT(NULL == me -> backing_store_end);
         GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
         me -> backing_store_end = bs_lo;
         me -> backing_store_ptr = bs_lo + stack_size;
@@ -387,6 +388,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
   }
   GC_store_stack_ptr(me);
 # ifdef E2K
+    GC_ASSERT(NULL == me -> backing_store_end);
     GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
     me -> backing_store_end = bs_lo;
     me -> backing_store_ptr = bs_lo + stack_size;
