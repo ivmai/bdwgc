@@ -585,6 +585,9 @@ void check_marks_int_list(sexpr x)
  * A tiny list reversal test to check thread creation.
  */
 #ifdef THREADS
+# if defined(GC_ENABLE_SUSPEND_THREAD)
+#   include "gc/javaxfc.h"
+# endif
 
 # ifdef VERY_SMALL_CONFIG
 #   define TINY_REVERSE_UPPER_VALUE 4
@@ -593,12 +596,25 @@ void check_marks_int_list(sexpr x)
 # endif
 
 # if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-    DWORD  __stdcall tiny_reverse_test(void * arg GC_ATTR_UNUSED)
+    DWORD  __stdcall
 # else
-    void * tiny_reverse_test(void * arg GC_ATTR_UNUSED)
+    void*
 # endif
-{
+  tiny_reverse_test(void *p_resumed)
+  {
     int i;
+
+#   if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_OSF1_THREADS) \
+       && defined(SIGNAL_BASED_STOP_WORLD)
+      if (p_resumed != NULL) {
+        /* Test self-suspend.   */
+        GC_suspend_thread(pthread_self());
+        AO_store_release((volatile AO_t *)p_resumed, (AO_t)TRUE);
+      }
+#   else
+      (void)p_resumed;
+#   endif
+
     for (i = 0; i < 5; ++i) {
       check_ints(reverse(reverse(ints(1, TINY_REVERSE_UPPER_VALUE))),
                  1, TINY_REVERSE_UPPER_VALUE);
@@ -608,42 +624,63 @@ void check_marks_int_list(sexpr x)
       GC_gcollect();
 #   endif
     return 0;
-}
+  }
 
 # if defined(GC_PTHREADS)
-#   if defined(GC_ENABLE_SUSPEND_THREAD)
-#     include "gc/javaxfc.h"
-#   endif
-
     void fork_a_thread(void)
     {
       pthread_t t;
       int code;
+#     ifdef GC_ENABLE_SUSPEND_THREAD
+        static volatile AO_t forked_cnt = 0;
+        volatile AO_t *p_resumed = NULL;
 
-      code = pthread_create(&t, NULL, tiny_reverse_test, 0);
+        if ((AO_fetch_and_add1(&forked_cnt) % 2) == 0) {
+          p_resumed = GC_NEW(AO_t);
+          CHECK_OUT_OF_MEMORY(p_resumed);
+          AO_fetch_and_add1(&collectable_count);
+        }
+#     else
+#      define p_resumed NULL
+#     endif
+      code = pthread_create(&t, NULL, tiny_reverse_test, (void*)p_resumed);
       if (code != 0) {
         GC_printf("Small thread creation failed %d\n", code);
         FAIL;
       }
 #     if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_OSF1_THREADS) \
          && defined(SIGNAL_BASED_STOP_WORLD)
-        if (GC_is_thread_suspended(t)) {
+        if (GC_is_thread_suspended(t) && NULL == p_resumed) {
           GC_printf("Running thread should be not suspended\n");
           FAIL;
         }
-        /* Thread could be running or already terminated (but not joined). */
-        GC_suspend_thread(t);
+        GC_suspend_thread(t); /* might be already self-suspended */
         if (!GC_is_thread_suspended(t)) {
           GC_printf("Thread expected to be suspended\n");
           FAIL;
         }
         GC_suspend_thread(t); /* should be no-op */
-        GC_resume_thread(t);
+        for (;;) {
+          GC_resume_thread(t);
+          if (NULL == p_resumed || AO_load_acquire(p_resumed))
+            break;
+          GC_collect_a_little();
+        }
         if (GC_is_thread_suspended(t)) {
           GC_printf("Resumed thread should be not suspended\n");
           FAIL;
         }
         GC_resume_thread(t); /* should be no-op */
+        if (NULL == p_resumed)
+          GC_collect_a_little();
+        /* Thread could be running or already terminated (but not joined). */
+        GC_suspend_thread(t);
+        GC_collect_a_little();
+        if (!GC_is_thread_suspended(t)) {
+          GC_printf("Thread expected to be suspended\n");
+          FAIL;
+        }
+        GC_resume_thread(t);
 #     endif
       if ((code = pthread_join(t, 0)) != 0) {
         GC_printf("Small thread join failed, errno= %d\n", code);
