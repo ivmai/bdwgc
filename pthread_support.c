@@ -1631,16 +1631,18 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
                                         void * context GC_ATTR_UNUSED)
   {
     GC_thread me = (GC_thread)thread_me;
-    GC_bool topOfStackUnset = do_blocking_enter(me);
+    GC_bool topOfStackUnset;
     DCL_LOCK_STATE;
 
-    do {
+    GC_ASSERT(I_HOLD_LOCK());
+    topOfStackUnset = do_blocking_enter(me);
+    while ((me -> stop_info.ext_suspend_cnt & 1) != 0) {
       word suspend_cnt = (word)(me -> stop_info.ext_suspend_cnt);
 
       UNLOCK();
       GC_suspend_self_inner(me, suspend_cnt);
       LOCK();
-    } while ((me -> stop_info.ext_suspend_cnt & 1) != 0);
+    }
     do_blocking_leave(me, topOfStackUnset);
   }
 #endif
