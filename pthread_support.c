@@ -1596,9 +1596,12 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
       /* Note: this code cannot be moved into do_blocking_leave()   */
       /* otherwise there could be a static analysis tool warning    */
       /* (false positive) about unlock without a matching lock.     */
-      while (EXPECT(me -> suspended_ext, FALSE)) {
+      while (EXPECT((me -> stop_info.ext_suspend_cnt & 1) != 0, FALSE)) {
+        word suspend_cnt = (word)(me -> stop_info.ext_suspend_cnt);
+                        /* read suspend counter (number) before unlocking */
+
         UNLOCK();
-        GC_suspend_self_inner(me);
+        GC_suspend_self_inner(me, suspend_cnt);
         LOCK();
       }
 #   endif
@@ -1616,11 +1619,13 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
     GC_bool topOfStackUnset = do_blocking_enter(me);
     DCL_LOCK_STATE;
 
-    while (me -> suspended_ext) {
+    do {
+      word suspend_cnt = (word)(me -> stop_info.ext_suspend_cnt);
+
       UNLOCK();
-      GC_suspend_self_inner(me);
+      GC_suspend_self_inner(me, suspend_cnt);
       LOCK();
-    }
+    } while ((me -> stop_info.ext_suspend_cnt & 1) != 0);
     do_blocking_leave(me, topOfStackUnset);
   }
 #endif
@@ -1725,9 +1730,10 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     }
 
 #   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
-      while (EXPECT(me -> suspended_ext, FALSE)) {
+      while (EXPECT((me -> stop_info.ext_suspend_cnt & 1) != 0, FALSE)) {
+        word suspend_cnt = (word)(me -> stop_info.ext_suspend_cnt);
         UNLOCK();
-        GC_suspend_self_inner(me);
+        GC_suspend_self_inner(me, suspend_cnt);
         LOCK();
       }
 #   endif
@@ -2063,7 +2069,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #       endif
 #       if defined(GC_ENABLE_SUSPEND_THREAD) \
            && defined(SIGNAL_BASED_STOP_WORLD)
-          if (me -> suspended_ext) {
+          if ((me -> stop_info.ext_suspend_cnt & 1) != 0) {
             GC_with_callee_saves_pushed(GC_suspend_self_blocked, (ptr_t)me);
           }
 #       endif
