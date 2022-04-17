@@ -66,11 +66,6 @@ typedef struct GC_Thread_Rep {
     /* Extra bookkeeping information the stopping code uses */
     struct thread_stop_info stop_info;
 
-#   if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
-        && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
-      volatile AO_t suspended_ext;  /* Thread was suspended externally. */
-#   endif
-
     unsigned char flags;
 #       define FINISHED 1       /* Thread has exited.                   */
 #       define DETACHED 2       /* Thread is treated as detached.       */
@@ -171,7 +166,7 @@ GC_INNER GC_thread GC_lookup_thread(pthread_t id);
 #if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
     && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
     && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
-  GC_INNER void GC_suspend_self_inner(GC_thread me);
+  GC_INNER void GC_suspend_self_inner(GC_thread me, word suspend_cnt);
 
   GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context);
                                 /* Wrapper over GC_suspend_self_inner.  */
