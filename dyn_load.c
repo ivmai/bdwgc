@@ -140,29 +140,29 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
 /* Newer versions of GNU/Linux define this macro.  We
  * define it similarly for any ELF systems that don't.  */
-#  ifndef ElfW
-#    if defined(FREEBSD)
-#      if __ELF_WORD_SIZE == 32
-#        define ElfW(type) Elf32_##type
-#      else
-#        define ElfW(type) Elf64_##type
-#      endif
-#    elif defined(NETBSD) || defined(OPENBSD)
-#      if ELFSIZE == 32
-#        define ElfW(type) Elf32_##type
-#      elif ELFSIZE == 64
-#        define ElfW(type) Elf64_##type
-#      else
-#        error Missing ELFSIZE define
-#      endif
-#    else
-#      if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
-#        define ElfW(type) Elf32_##type
-#      else
-#        define ElfW(type) Elf64_##type
-#      endif
-#    endif
-#  endif
+# ifndef ElfW
+#   if defined(FREEBSD)
+#     if __ELF_WORD_SIZE == 32
+#       define ElfW(type) Elf32_##type
+#     else
+#       define ElfW(type) Elf64_##type
+#     endif
+#   elif defined(NETBSD) || defined(OPENBSD)
+#     if ELFSIZE == 32
+#       define ElfW(type) Elf32_##type
+#     elif ELFSIZE == 64
+#       define ElfW(type) Elf64_##type
+#     else
+#       error Missing ELFSIZE define
+#     endif
+#   else
+#     if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
+#       define ElfW(type) Elf32_##type
+#     else
+#       define ElfW(type) Elf64_##type
+#     endif
+#   endif
+# endif
 
 #if defined(SOLARISDL) && !defined(USE_PROC_FOR_LIBRARIES)
 
@@ -696,7 +696,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 #     define PF_W       2
 #   endif
 # elif !defined(HOST_ANDROID)
-#  include <elf.h>
+#   include <elf.h>
 # endif
 
 # ifndef HOST_ANDROID

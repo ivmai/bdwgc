@@ -45,33 +45,33 @@
 #endif
 
 #if defined(WIN32)
-#  ifndef WIN32_LEAN_AND_MEAN
-#    define WIN32_LEAN_AND_MEAN 1
-#  endif
-#  define NOSERVICE
-#  include <windows.h>
-#  include "de_win.h"
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
+# include <windows.h>
+# include "de_win.h"
 #elif defined(MACINTOSH)
-#       include <console.h>
+# include <console.h>
 /* curses emulation. */
-#       define initscr()
-#       define endwin()
-#       define nonl()
-#       define noecho() csetmode(C_NOECHO, stdout)
-#       define cbreak() csetmode(C_CBREAK, stdout)
-#       define refresh()
-#       define addch(c) putchar(c)
-#       define standout() cinverse(1, stdout)
-#       define standend() cinverse(0, stdout)
-#       define move(line,col) cgotoxy(col + 1, line + 1, stdout)
-#       define clrtoeol() ccleol(stdout)
-#       define de_error(s) { fprintf(stderr, s); getchar(); }
-#       define LINES 25
-#       define COLS 80
+# define initscr()
+# define endwin()
+# define nonl()
+# define noecho() csetmode(C_NOECHO, stdout)
+# define cbreak() csetmode(C_CBREAK, stdout)
+# define refresh()
+# define addch(c) putchar(c)
+# define standout() cinverse(1, stdout)
+# define standend() cinverse(0, stdout)
+# define move(line,col) cgotoxy(col + 1, line + 1, stdout)
+# define clrtoeol() ccleol(stdout)
+# define de_error(s) { fprintf(stderr, s); getchar(); }
+# define LINES 25
+# define COLS 80
 #else
-#  include <curses.h>
-#  include <unistd.h> /* for sleep() */
-#  define de_error(s) { fprintf(stderr, s); sleep(2); }
+# include <curses.h>
+# include <unistd.h> /* for sleep() */
+# define de_error(s) { fprintf(stderr, s); sleep(2); }
 #endif
 #include "de_cmds.h"
 
@@ -383,9 +383,9 @@ void fix_pos(void)
 }
 
 #if defined(WIN32)
-#  define beep() Beep(1000 /* Hz */, 300 /* ms */)
+# define beep() Beep(1000 /* Hz */, 300 /* ms */)
 #elif defined(MACINTOSH)
-#  define beep() SysBeep(1)
+# define beep() SysBeep(1)
 #else
 /*
  * beep() is part of some curses packages and not others.

@@ -112,12 +112,12 @@ EXTERN_C_BEGIN
 
 /* And one for NetBSD: */
 # if defined(__NetBSD__)
-#    define NETBSD
+#   define NETBSD
 # endif
 
 /* And one for OpenBSD: */
 # if defined(__OpenBSD__)
-#    define OPENBSD
+#   define OPENBSD
 # endif
 
 /* And one for FreeBSD: */
@@ -137,112 +137,112 @@ EXTERN_C_BEGIN
 
 /* Determine the machine type: */
 # if defined(__native_client__)
-#    define NACL
-#    if !defined(__portable_native_client__) && !defined(__arm__)
-#      define I386
-#      define mach_type_known
-#    else
-       /* Here we will rely upon arch-specific defines. */
-#    endif
+#   define NACL
+#   if !defined(__portable_native_client__) && !defined(__arm__)
+#     define I386
+#     define mach_type_known
+#   else
+      /* Here we will rely upon arch-specific defines. */
+#   endif
 # endif
 # if defined(__aarch64__)
-#    define AARCH64
-#    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD) \
-        && !defined(NETBSD) && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
-        && !defined(OPENBSD) && !defined(_WIN32)
-#      define NOSYS
-#      define mach_type_known
-#    endif
+#   define AARCH64
+#   if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD) \
+       && !defined(NETBSD) && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
+       && !defined(OPENBSD) && !defined(_WIN32)
+#     define NOSYS
+#     define mach_type_known
+#   endif
 # endif
 # if defined(__arm) || defined(__arm__) || defined(__thumb__)
-#    define ARM32
-#    if defined(NACL)
-#      define mach_type_known
-#    elif !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
-          && !defined(OPENBSD) && !defined(DARWIN) && !defined(_WIN32) \
-          && !defined(__CEGCC__) && !defined(NN_PLATFORM_CTR) \
-          && !defined(GC_NO_NOSYS) && !defined(SN_TARGET_PSP2) \
-          && !defined(SYMBIAN)
-#      define NOSYS
-#      define mach_type_known
-#    endif
+#   define ARM32
+#   if defined(NACL)
+#     define mach_type_known
+#   elif !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
+         && !defined(OPENBSD) && !defined(DARWIN) && !defined(_WIN32) \
+         && !defined(__CEGCC__) && !defined(NN_PLATFORM_CTR) \
+         && !defined(GC_NO_NOSYS) && !defined(SN_TARGET_PSP2) \
+         && !defined(SYMBIAN)
+#     define NOSYS
+#     define mach_type_known
+#   endif
 # endif
 # if defined(sun) && defined(mc68000) && !defined(CPPCHECK)
-#    error SUNOS4 no longer supported
+#   error SUNOS4 no longer supported
 # endif
 # if defined(hp9000s300) && !defined(CPPCHECK)
-#    error M68K based HP machines no longer supported
+#   error M68K based HP machines no longer supported
 # endif
 # if defined(OPENBSD) && defined(m68k)
-#    define M68K
-#    define mach_type_known
+#   define M68K
+#   define mach_type_known
 # endif
 # if defined(OPENBSD) && defined(__sparc__)
-#    define SPARC
-#    define mach_type_known
+#   define SPARC
+#   define mach_type_known
 # endif
 # if defined(OPENBSD) && defined(__arm__)
-#    define ARM32
-#    define mach_type_known
+#   define ARM32
+#   define mach_type_known
 # endif
 # if defined(OPENBSD) && defined(__aarch64__)
-#    define AARCH64
-#    define mach_type_known
+#   define AARCH64
+#   define mach_type_known
 # endif
 # if defined(OPENBSD) && defined(__sh__)
-#    define SH
-#    define mach_type_known
+#   define SH
+#   define mach_type_known
 # endif
 # if defined(NETBSD) && (defined(m68k) || defined(__m68k__))
-#    define M68K
-#    define mach_type_known
+#   define M68K
+#   define mach_type_known
 # endif
 # if defined(NETBSD) && defined(__powerpc__)
-#    define POWERPC
-#    define mach_type_known
+#   define POWERPC
+#   define mach_type_known
 # endif
 # if defined(NETBSD) && (defined(__arm32__) || defined(__arm__))
-#    define ARM32
-#    define mach_type_known
+#   define ARM32
+#   define mach_type_known
 # endif
 # if defined(NETBSD) && defined(__aarch64__)
-#    define AARCH64
-#    define mach_type_known
+#   define AARCH64
+#   define mach_type_known
 # endif
 # if defined(NETBSD) && defined(__sh__)
-#    define SH
-#    define mach_type_known
+#   define SH
+#   define mach_type_known
 # endif
 # if defined(vax) || defined(__vax__)
-#    define VAX
-#    ifdef ultrix
-#       define ULTRIX
-#    else
-#       define BSD
-#    endif
-#    define mach_type_known
+#   define VAX
+#   ifdef ultrix
+#     define ULTRIX
+#   else
+#     define BSD
+#   endif
+#   define mach_type_known
 # endif
 # if defined(NETBSD) && defined(__vax__)
-#    define VAX
-#    define mach_type_known
+#   define VAX
+#   define mach_type_known
 # endif
 # if defined(mips) || defined(__mips) || defined(_mips)
-#    define MIPS
-#    if defined(nec_ews) || defined(_nec_ews)
-#      define EWS4800
-#    endif
-#    if !defined(LINUX) && !defined(EWS4800) && !defined(NETBSD) \
-        && !defined(OPENBSD)
-#      if defined(ultrix) || defined(__ultrix)
-#        define ULTRIX
-#      else
-#        define IRIX5   /* or IRIX 6.X */
-#      endif
-#    endif /* !LINUX */
-#    if defined(NETBSD) && defined(__MIPSEL__)
-#      undef ULTRIX
-#    endif
-#    define mach_type_known
+#   define MIPS
+#   if defined(nec_ews) || defined(_nec_ews)
+#     define EWS4800
+#   endif
+#   if !defined(LINUX) && !defined(EWS4800) && !defined(NETBSD) \
+       && !defined(OPENBSD)
+#     if defined(ultrix) || defined(__ultrix)
+#       define ULTRIX
+#     else
+#       define IRIX5 /* or IRIX 6.X */
+#     endif
+#   endif /* !LINUX */
+#   if defined(NETBSD) && defined(__MIPSEL__)
+#     undef ULTRIX
+#   endif
+#   define mach_type_known
 # endif
 # if defined(__QNX__)
 #   define I386
@@ -253,35 +253,35 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 # if defined(__or1k__)
-#    define OR1K        /* OpenRISC/or1k */
-#    define mach_type_known
+#   define OR1K /* OpenRISC/or1k */
+#   define mach_type_known
 # endif
 # if defined(DGUX) && (defined(i386) || defined(__i386__))
-#    define I386
-#    ifndef _USING_DGUX
-#      define _USING_DGUX
-#    endif
-#    define mach_type_known
+#   define I386
+#   ifndef _USING_DGUX
+#     define _USING_DGUX
+#   endif
+#   define mach_type_known
 # endif
 # if defined(sequent) && (defined(i386) || defined(__i386__))
-#    define I386
-#    define SEQUENT
-#    define mach_type_known
+#   define I386
+#   define SEQUENT
+#   define mach_type_known
 # endif
 # if (defined(sun) || defined(__sun)) && (defined(i386) || defined(__i386__))
-#    define I386
-#    define SOLARIS
-#    define mach_type_known
+#   define I386
+#   define SOLARIS
+#   define mach_type_known
 # endif
 # if (defined(sun) || defined(__sun)) && defined(__amd64)
-#    define X86_64
-#    define SOLARIS
-#    define mach_type_known
+#   define X86_64
+#   define SOLARIS
+#   define mach_type_known
 # endif
 # if (defined(__OS2__) || defined(__EMX__)) && defined(__32BIT__)
-#    define I386
-#    define OS2
-#    define mach_type_known
+#   define I386
+#   define OS2
+#   define mach_type_known
 # endif
 # if defined(ibm032) && !defined(CPPCHECK)
 #   error IBM PC/RT no longer supported
@@ -338,77 +338,77 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 # if (defined(__BEOS__) || defined(__HAIKU__)) && defined(_X86_)
-#    define I386
-#    define HAIKU
-#    define mach_type_known
+#   define I386
+#   define HAIKU
+#   define mach_type_known
 # endif
 # if defined(__HAIKU__) && (defined(__amd64__) || defined(__x86_64__))
-#    define X86_64
-#    define HAIKU
-#    define mach_type_known
+#   define X86_64
+#   define HAIKU
+#   define mach_type_known
 # endif
 # if defined(OPENBSD) && defined(__amd64__)
-#    define X86_64
-#    define mach_type_known
+#   define X86_64
+#   define mach_type_known
 # endif
 # if defined(LINUX) && (defined(i386) || defined(__i386__))
-#    define I386
-#    define mach_type_known
+#   define I386
+#   define mach_type_known
 # endif
 # if defined(LINUX) && defined(__x86_64__)
-#    define X86_64
-#    define mach_type_known
+#   define X86_64
+#   define mach_type_known
 # endif
 # if defined(LINUX) && (defined(__ia64__) || defined(__ia64))
-#    define IA64
-#    define mach_type_known
+#   define IA64
+#   define mach_type_known
 # endif
 # if defined(LINUX) && defined(__e2k__)
-#    define E2K
-#    define mach_type_known
+#   define E2K
+#   define mach_type_known
 # endif
 # if defined(LINUX) && defined(__aarch64__)
-#    define AARCH64
-#    define mach_type_known
+#   define AARCH64
+#   define mach_type_known
 # endif
 # if defined(LINUX) && (defined(__arm) || defined(__arm__))
-#    define ARM32
-#    define mach_type_known
+#   define ARM32
+#   define mach_type_known
 # endif
 # if defined(LINUX) && defined(__cris__)
-#    ifndef CRIS
-#       define CRIS
-#    endif
-#    define mach_type_known
+#   ifndef CRIS
+#     define CRIS
+#   endif
+#   define mach_type_known
 # endif
 # if defined(LINUX) && defined(__loongarch__)
-#    define LOONGARCH
-#    define mach_type_known
+#   define LOONGARCH
+#   define mach_type_known
 # endif
 # if defined(LINUX) && (defined(powerpc) || defined(__powerpc__) \
                         || defined(powerpc64) || defined(__powerpc64__))
-#    define POWERPC
-#    define mach_type_known
+#   define POWERPC
+#   define mach_type_known
 # endif
 # if defined(LINUX) && defined(__mc68000__)
-#    define M68K
-#    define mach_type_known
+#   define M68K
+#   define mach_type_known
 # endif
 # if defined(LINUX) && (defined(sparc) || defined(__sparc__))
-#    define SPARC
-#    define mach_type_known
+#   define SPARC
+#   define mach_type_known
 # endif
 # if defined(LINUX) && defined(__sh__)
-#    define SH
-#    define mach_type_known
+#   define SH
+#   define mach_type_known
 # endif
 # if defined(LINUX) && defined(__avr32__)
-#    define AVR32
-#    define mach_type_known
+#   define AVR32
+#   define mach_type_known
 # endif
 # if defined(LINUX) && defined(__m32r__)
-#    define M32R
-#    define mach_type_known
+#   define M32R
+#   define mach_type_known
 # endif
 # if defined(__alpha) || defined(__alpha__)
 #   define ALPHA
@@ -443,20 +443,20 @@ EXTERN_C_BEGIN
 # endif
 # if defined(DARWIN)
 #   if defined(__ppc__)  || defined(__ppc64__)
-#    define POWERPC
-#    define mach_type_known
+#     define POWERPC
+#     define mach_type_known
 #   elif defined(__x86_64__) || defined(__x86_64)
-#    define X86_64
-#    define mach_type_known
+#     define X86_64
+#     define mach_type_known
 #   elif defined(__i386__)
-#    define I386
-#    define mach_type_known
+#     define I386
+#     define mach_type_known
 #   elif defined(__arm__)
-#    define ARM32
-#    define mach_type_known
+#     define ARM32
+#     define mach_type_known
 #   elif defined(__aarch64__)
-#    define AARCH64
-#    define mach_type_known
+#     define AARCH64
+#     define mach_type_known
 #   endif
 # endif
 # if defined(__rtems__) && (defined(i386) || defined(__i386__))
@@ -483,8 +483,8 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 # if defined(NETBSD) && defined(__x86_64__)
-#    define X86_64
-#    define mach_type_known
+#   define X86_64
+#   define mach_type_known
 # endif
 # if defined(FREEBSD) && (defined(i386) || defined(__i386__))
 #   define I386
@@ -515,9 +515,9 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 # if defined(bsdi) && (defined(i386) || defined(__i386__))
-#    define I386
-#    define BSDI
-#    define mach_type_known
+#   define I386
+#   define BSDI
+#   define mach_type_known
 # endif
 # if !defined(mach_type_known) && defined(__386BSD__)
 #   define I386
@@ -641,8 +641,8 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 # if defined(__s390__) && defined(LINUX)
-#    define S390
-#    define mach_type_known
+#   define S390
+#   define mach_type_known
 # endif
 # if defined(__GNU__)
 #   if defined(__i386__)
@@ -650,7 +650,7 @@ EXTERN_C_BEGIN
 #     define  HURD
 #     define  I386
 #     define  mach_type_known
-#    endif
+#   endif
 # endif
 # if defined(__TANDEM)
     /* Nonstop S-series */
@@ -664,8 +664,8 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 # if defined(__hexagon__) && defined(LINUX)
-#    define HEXAGON
-#    define mach_type_known
+#   define HEXAGON
+#   define mach_type_known
 # endif
 # if defined(__tile__) && defined(LINUX)
 #   ifdef __tilegx__
@@ -1779,24 +1779,24 @@ EXTERN_C_BEGIN
 #       define DATASTART ((ptr_t)0x10000000)
 #       define STACKBOTTOM ((ptr_t)0x7ffff000)
 #     endif
-#  endif
-#  ifdef OPENBSD
+#   endif
+#   ifdef OPENBSD
 #     define CPP_WORDSZ 64 /* all OpenBSD/mips platforms are 64-bit */
 #     define ALIGNMENT 8
-#  endif
-#  ifdef FREEBSD
-#    define ALIGNMENT 4
-#  endif
-#  ifdef NONSTOP
-#    define OS_TYPE "NONSTOP"
-#    define CPP_WORDSZ 32
-#    define ALIGNMENT 4
-#    define DATASTART ((ptr_t)0x08000000)
-     extern char **environ;
-#    define DATAEND ((ptr_t)(environ - 0x10))
-#    define STACKBOTTOM ((ptr_t)0x4fffffff)
 #   endif
-# endif
+#   ifdef FREEBSD
+#     define ALIGNMENT 4
+#   endif
+#   ifdef NONSTOP
+#     define OS_TYPE "NONSTOP"
+#     define CPP_WORDSZ 32
+#     define ALIGNMENT 4
+#     define DATASTART ((ptr_t)0x08000000)
+      extern char **environ;
+#     define DATAEND ((ptr_t)(environ - 0x10))
+#     define STACKBOTTOM ((ptr_t)0x4fffffff)
+#   endif
+# endif /* MIPS */
 
 # ifdef NIOS2
 #   define MACH_TYPE "NIOS2"
@@ -1919,7 +1919,7 @@ EXTERN_C_BEGIN
         /* Probably breaks if putenv is called before collector            */
         /* initialization.                                                 */
 #       define STACKBOTTOM ((ptr_t)(((word)(environ) | (getpagesize()-1))+1))
-/* #    define HEURISTIC2 */
+/* #define HEURISTIC2 */
         /* Normally HEURISTIC2 is too conservative, since               */
         /* the text segment immediately follows the stack.              */
         /* Hence we give an upper pound.                                */
@@ -3071,8 +3071,8 @@ EXTERN_C_BEGIN
 
 #if !defined(USE_MARK_BITS) && !defined(USE_MARK_BYTES) \
     && defined(PARALLEL_MARK)
-   /* Minimize compare-and-swap usage.  */
-#  define USE_MARK_BYTES
+  /* Minimize compare-and-swap usage.   */
+# define USE_MARK_BYTES
 #endif
 
 #if (defined(MSWINCE) && !defined(__CEGCC__) || defined(MSWINRT_FLAVOR)) \

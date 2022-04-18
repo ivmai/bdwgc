@@ -160,22 +160,22 @@ void (GC_CALLBACK *GC_is_visible_print_proc)(void * p) =
 
 #ifndef THREADS
 /* Could p be a stack address? */
-   STATIC GC_bool GC_on_stack(void *p)
-   {
-#    ifdef STACK_GROWS_DOWN
-       if ((word)p >= (word)GC_approx_sp()
+  STATIC GC_bool GC_on_stack(void *p)
+  {
+#   ifdef STACK_GROWS_DOWN
+      if ((word)p >= (word)GC_approx_sp()
            && (word)p < (word)GC_stackbottom) {
-         return(TRUE);
-       }
-#    else
-       if ((word)p <= (word)GC_approx_sp()
+        return(TRUE);
+      }
+#   else
+      if ((word)p <= (word)GC_approx_sp()
            && (word)p > (word)GC_stackbottom) {
-         return(TRUE);
-       }
-#    endif
-     return(FALSE);
-   }
-#endif
+        return(TRUE);
+      }
+#   endif
+    return(FALSE);
+  }
+#endif /* !THREADS */
 
 /* Check that p is visible                                              */
 /* to the collector as a possibly pointer containing location.          */

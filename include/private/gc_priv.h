@@ -864,13 +864,13 @@ EXTERN_C_BEGIN
 #endif
 
 #if CPP_WORDSZ == 64
-#  define WORDS_TO_BYTES(x)   ((x)<<3)
-#  define BYTES_TO_WORDS(x)   ((x)>>3)
-#  define LOGWL               ((word)6)    /* log[2] of CPP_WORDSZ */
-#  define modWORDSZ(n) ((n) & 0x3f)        /* n mod size of word            */
-#  if ALIGNMENT != 8
-#       define UNALIGNED_PTRS
-#  endif
+# define WORDS_TO_BYTES(x)   ((x)<<3)
+# define BYTES_TO_WORDS(x)   ((x)>>3)
+# define LOGWL               ((word)6)  /* log[2] of CPP_WORDSZ */
+# define modWORDSZ(n) ((n) & 0x3f)      /* n mod size of word   */
+# if ALIGNMENT != 8
+#   define UNALIGNED_PTRS
+# endif
 #endif
 
 /* The first TINY_FREELISTS free lists correspond to the first  */
@@ -995,9 +995,9 @@ EXTERN_C_BEGIN
 # define ROUNDED_UP_GRANULES(lb) /* lb should have no side-effect */ \
         BYTES_TO_GRANULES(SIZET_SAT_ADD(lb, GRANULE_BYTES - 1 + EXTRA_BYTES))
 # if MAX_EXTRA_BYTES == 0
-#  define SMALL_OBJ(bytes) EXPECT((bytes) <= (MAXOBJBYTES), TRUE)
+#   define SMALL_OBJ(bytes) EXPECT((bytes) <= (MAXOBJBYTES), TRUE)
 # else
-#  define SMALL_OBJ(bytes) \
+#   define SMALL_OBJ(bytes) \
             (EXPECT((bytes) <= (MAXOBJBYTES - MAX_EXTRA_BYTES), TRUE) \
              || (bytes) <= MAXOBJBYTES - EXTRA_BYTES)
         /* This really just tests bytes <= MAXOBJBYTES - EXTRA_BYTES.   */
@@ -1688,34 +1688,35 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 # define MAXOBJKINDS 16
 #endif
 GC_EXTERN struct obj_kind {
-   void **ok_freelist;  /* Array of free list headers for this kind of  */
+  void **ok_freelist;   /* Array of free list headers for this kind of  */
                         /* object.  Point either to GC_arrays or to     */
                         /* storage allocated with GC_scratch_alloc.     */
-   struct hblk **ok_reclaim_list;
+  struct hblk **ok_reclaim_list;
                         /* List headers for lists of blocks waiting to  */
                         /* be swept.  Indexed by object size in         */
                         /* granules.                                    */
-   word ok_descriptor;  /* Descriptor template for objects in this      */
+  word ok_descriptor;   /* Descriptor template for objects in this      */
                         /* block.                                       */
-   GC_bool ok_relocate_descr;
+  GC_bool ok_relocate_descr;
                         /* Add object size in bytes to descriptor       */
                         /* template to obtain descriptor.  Otherwise    */
                         /* template is used as is.                      */
-   GC_bool ok_init;   /* Clear objects before putting them on the free list. */
-#  ifdef ENABLE_DISCLAIM
-     GC_bool ok_mark_unconditionally;
+  GC_bool ok_init;
+                /* Clear objects before putting them on the free list.  */
+# ifdef ENABLE_DISCLAIM
+    GC_bool ok_mark_unconditionally;
                         /* Mark from all, including unmarked, objects   */
                         /* in block.  Used to protect objects reachable */
                         /* from reclaim notifiers.                      */
-     int (GC_CALLBACK *ok_disclaim_proc)(void * /*obj*/);
+    int (GC_CALLBACK *ok_disclaim_proc)(void * /*obj*/);
                         /* The disclaim procedure is called before obj  */
                         /* is reclaimed, but must also tolerate being   */
                         /* called with object from freelist.  Non-zero  */
                         /* exit prevents object from being reclaimed.   */
-#    define OK_DISCLAIM_INITZ /* comma */, FALSE, 0
-#  else
-#    define OK_DISCLAIM_INITZ /* empty */
-#  endif /* !ENABLE_DISCLAIM */
+#   define OK_DISCLAIM_INITZ /* comma */, FALSE, 0
+# else
+#   define OK_DISCLAIM_INITZ /* empty */
+# endif /* !ENABLE_DISCLAIM */
 } GC_obj_kinds[MAXOBJKINDS];
 
 #define beginGC_obj_kinds ((ptr_t)(&GC_obj_kinds))
@@ -1870,19 +1871,19 @@ struct GC_traced_stack_sect_s {
 #endif /* !USE_MARK_BYTES */
 
 #ifdef MARK_BIT_PER_OBJ
-#  define MARK_BIT_NO(offset, sz) (((word)(offset))/(sz))
+# define MARK_BIT_NO(offset, sz) (((word)(offset))/(sz))
         /* Get the mark bit index corresponding to the given byte       */
         /* offset and size (in bytes).                                  */
-#  define MARK_BIT_OFFSET(sz) 1
+# define MARK_BIT_OFFSET(sz) 1
         /* Spacing between useful mark bits.                            */
-#  define IF_PER_OBJ(x) x
-#  define FINAL_MARK_BIT(sz) ((sz) > MAXOBJBYTES? 1 : HBLK_OBJS(sz))
+# define IF_PER_OBJ(x) x
+# define FINAL_MARK_BIT(sz) ((sz) > MAXOBJBYTES? 1 : HBLK_OBJS(sz))
         /* Position of final, always set, mark bit.                     */
 #else /* MARK_BIT_PER_GRANULE */
-#  define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES((word)(offset))
-#  define MARK_BIT_OFFSET(sz) BYTES_TO_GRANULES(sz)
-#  define IF_PER_OBJ(x)
-#  define FINAL_MARK_BIT(sz) \
+# define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES((word)(offset))
+# define MARK_BIT_OFFSET(sz) BYTES_TO_GRANULES(sz)
+# define IF_PER_OBJ(x)
+# define FINAL_MARK_BIT(sz) \
                 ((sz) > MAXOBJBYTES ? MARK_BITS_PER_HBLK \
                                 : BYTES_TO_GRANULES((sz) * HBLK_OBJS(sz)))
 #endif
@@ -2335,13 +2336,13 @@ GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
   /* used by GC debug API macros) thus GC_RETURN_ADDR_PARENT (pointing  */
   /* to client caller) should be used if possible.                      */
 # ifdef GC_HAVE_RETURN_ADDR_PARENT
-#  define GC_DBG_EXTRAS GC_RETURN_ADDR_PARENT, NULL, 0
+#   define GC_DBG_EXTRAS GC_RETURN_ADDR_PARENT, NULL, 0
 # else
-#  define GC_DBG_EXTRAS GC_RETURN_ADDR, NULL, 0
+#   define GC_DBG_EXTRAS GC_RETURN_ADDR, NULL, 0
 # endif
 #else
 # define GC_DBG_EXTRAS "unknown", 0
-#endif
+#endif /* !GC_ADD_CALLER */
 
 #ifdef GC_COLLECT_AT_MALLOC
   extern size_t GC_dbg_collect_at_malloc_min_lb;
@@ -2607,14 +2608,14 @@ void GC_print_heap_sects(void);
 void GC_print_static_roots(void);
 
 #ifdef KEEP_BACK_PTRS
-   GC_INNER void GC_store_back_pointer(ptr_t source, ptr_t dest);
-   GC_INNER void GC_marked_for_finalization(ptr_t dest);
-#  define GC_STORE_BACK_PTR(source, dest) GC_store_back_pointer(source, dest)
-#  define GC_MARKED_FOR_FINALIZATION(dest) GC_marked_for_finalization(dest)
+  GC_INNER void GC_store_back_pointer(ptr_t source, ptr_t dest);
+  GC_INNER void GC_marked_for_finalization(ptr_t dest);
+# define GC_STORE_BACK_PTR(source, dest) GC_store_back_pointer(source, dest)
+# define GC_MARKED_FOR_FINALIZATION(dest) GC_marked_for_finalization(dest)
 #else
-#  define GC_STORE_BACK_PTR(source, dest) (void)(source)
-#  define GC_MARKED_FOR_FINALIZATION(dest)
-#endif
+# define GC_STORE_BACK_PTR(source, dest) (void)(source)
+# define GC_MARKED_FOR_FINALIZATION(dest)
+#endif /* !KEEP_BACK_PTRS */
 
 /* Make arguments appear live to compiler */
 void GC_noop6(word, word, word, word, word, word);

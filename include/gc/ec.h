@@ -14,9 +14,9 @@
 #ifndef EC_H
 #define EC_H
 
-# ifndef CORD_H
-#  include "cord.h"
-# endif
+#ifndef CORD_H
+# include "cord.h"
+#endif
 
 #ifdef __cplusplus
   extern "C" {

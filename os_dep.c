@@ -1924,18 +1924,18 @@ void GC_register_data_segments(void)
   /* heap sections?                                             */
   GC_INNER GC_bool GC_is_heap_base(void *p)
   {
-     int i;
+    int i;
 
-#    if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
-       if (GC_root_size > GC_max_root_size)
-         GC_max_root_size = GC_root_size;
-       if (GC_is_malloc_heap_base(p))
-         return TRUE;
-#    endif
-     for (i = 0; i < (int)GC_n_heap_bases; i++) {
-         if (GC_heap_bases[i] == p) return TRUE;
-     }
-     return FALSE;
+#   if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
+      if (GC_root_size > GC_max_root_size)
+        GC_max_root_size = GC_root_size;
+      if (GC_is_malloc_heap_base(p))
+        return TRUE;
+#   endif
+    for (i = 0; i < (int)GC_n_heap_bases; i++) {
+      if (GC_heap_bases[i] == p) return TRUE;
+    }
+    return FALSE;
   }
 
 #ifdef MSWIN32
@@ -2060,9 +2060,9 @@ void GC_register_data_segments(void)
 
 #ifdef AMIGA
 
-#  define GC_AMIGA_DS
-#  include "extra/AmigaOS.c"
-#  undef GC_AMIGA_DS
+# define GC_AMIGA_DS
+# include "extra/AmigaOS.c"
+# undef GC_AMIGA_DS
 
 #elif defined(OPENBSD)
 
@@ -4706,11 +4706,11 @@ GC_INNER GC_bool GC_dirty_init(void)
   if (r != KERN_SUCCESS)
     ABORT("mach_port_insert_right failed (exception port)");
 
-#  if defined(THREADS)
-     r = mach_port_allocate(me, MACH_PORT_RIGHT_RECEIVE, &GC_ports.reply);
-     if(r != KERN_SUCCESS)
-       ABORT("mach_port_allocate failed (reply port)");
-#  endif
+# if defined(THREADS)
+    r = mach_port_allocate(me, MACH_PORT_RIGHT_RECEIVE, &GC_ports.reply);
+    if (r != KERN_SUCCESS)
+      ABORT("mach_port_allocate failed (reply port)");
+# endif
 
   /* The exceptions we want to catch */
   mask = EXC_MASK_BAD_ACCESS;
@@ -5027,11 +5027,11 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 #endif
 
 #if defined(SPARC)
-#  if defined(LINUX)
-#    include <features.h>
+# if defined(LINUX)
+#   include <features.h>
 
 #   if defined(SAVE_CALL_CHAIN)
-     struct frame {
+      struct frame {
         long    fr_local[8];
         long    fr_arg[6];
         struct frame *fr_savfp;
@@ -5041,30 +5041,28 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 #       endif
         long    fr_argd[6];
         long    fr_argx[0];
-     };
+      };
 #   endif
-#  elif defined (DRSNX)
-#    include <sys/sparc/frame.h>
-#  elif defined(OPENBSD)
-#    include <frame.h>
-#  elif defined(FREEBSD) || defined(NETBSD)
-#    include <machine/frame.h>
-#  else
-#    include <sys/frame.h>
-#  endif
-#  if NARGS > 6
-#    error We only know how to get the first 6 arguments
-#  endif
+# elif defined (DRSNX)
+#   include <sys/sparc/frame.h>
+# elif defined(OPENBSD)
+#   include <frame.h>
+# elif defined(FREEBSD) || defined(NETBSD)
+#   include <machine/frame.h>
+# else
+#   include <sys/frame.h>
+# endif
+# if NARGS > 6
+#   error We only know how to get the first 6 arguments
+# endif
 #endif /* SPARC */
 
 #ifdef NEED_CALLINFO
 /* Fill in the pc and argument information for up to NFRAMES of my      */
 /* callers.  Ignore my frame and my callers frame.                      */
-
-#ifdef LINUX
+# ifdef LINUX
 #   include <unistd.h>
-#endif
-
+# endif
 #endif /* NEED_CALLINFO */
 
 #if defined(GC_HAVE_BUILTIN_BACKTRACE)
@@ -5074,7 +5072,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
     char** backtrace_symbols(void* const addresses[], int count);
     EXTERN_C_END
 # else
-#  include <execinfo.h>
+#   include <execinfo.h>
 # endif
 #endif /* GC_HAVE_BUILTIN_BACKTRACE */
 
@@ -5129,17 +5127,17 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
 #else /* No builtin backtrace; do it ourselves */
 
 #if (defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD)) && defined(SPARC)
-#  define FR_SAVFP fr_fp
-#  define FR_SAVPC fr_pc
+# define FR_SAVFP fr_fp
+# define FR_SAVPC fr_pc
 #else
-#  define FR_SAVFP fr_savfp
-#  define FR_SAVPC fr_savpc
+# define FR_SAVFP fr_savfp
+# define FR_SAVPC fr_savpc
 #endif
 
 #if defined(SPARC) && (defined(__arch64__) || defined(__sparcv9))
-#   define BIAS 2047
+# define BIAS 2047
 #else
-#   define BIAS 0
+# define BIAS 0
 #endif
 
 GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])

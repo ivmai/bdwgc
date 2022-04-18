@@ -75,7 +75,7 @@ EXTERN_C_BEGIN
 #     define USE_COMPILER_TLS
 #   endif
 # else
-#    define USE_CUSTOM_SPECIFIC  /* Use our own. */
+#   define USE_CUSTOM_SPECIFIC  /* Use our own. */
 # endif
 #endif
 

@@ -18,7 +18,7 @@
 #include "private/gc_priv.h"
 
 #ifdef ENABLE_DISCLAIM
-#  include "gc/gc_disclaim.h"
+# include "gc/gc_disclaim.h"
 #endif
 
 #include <stdio.h>

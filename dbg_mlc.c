@@ -892,11 +892,11 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
       case UNCOLLECTABLE:
         result = GC_debug_malloc_uncollectable(lb, OPT_RA s, i);
         break;
-#    ifdef GC_ATOMIC_UNCOLLECTABLE
-      case AUNCOLLECTABLE:
-        result = GC_debug_malloc_atomic_uncollectable(lb, OPT_RA s, i);
-        break;
-#    endif
+#     ifdef GC_ATOMIC_UNCOLLECTABLE
+        case AUNCOLLECTABLE:
+          result = GC_debug_malloc_atomic_uncollectable(lb, OPT_RA s, i);
+          break;
+#     endif
       default:
         result = NULL; /* initialized to prevent warning. */
         ABORT_RET("GC_debug_realloc: encountered bad kind");

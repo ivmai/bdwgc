@@ -428,7 +428,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
 #if defined(REDIRECT_MALLOC) && !defined(REDIRECT_MALLOC_IN_HEADER)
 
 # ifndef MSWINCE
-#  include <errno.h>
+#   include <errno.h>
 # endif
 
   /* Avoid unnecessary nested procedure calls here, by #defining some   */

@@ -27,7 +27,7 @@
 
 #if (defined(DBG_HDRS_ALL) || defined(MAKE_BACK_GRAPH)) \
     && !defined(GC_DEBUG) && !defined(CPPCHECK)
-#  define GC_DEBUG
+# define GC_DEBUG
 #endif
 
 #ifdef DEFAULT_VDB /* specified manually (e.g. passed to CFLAGS) */
@@ -169,9 +169,9 @@
 #if defined(TEST_EXPLICIT_GC_INIT) || defined(AIX) || defined(CYGWIN32) \
         || defined(DARWIN) || defined(HOST_ANDROID) \
         || (defined(MSWINCE) && !defined(GC_WINMAIN_REDIRECT))
-#  define GC_OPT_INIT GC_INIT()
+# define GC_OPT_INIT GC_INIT()
 #else
-#  define GC_OPT_INIT /* empty */
+# define GC_OPT_INIT /* empty */
 #endif
 
 #define INIT_FIND_LEAK \
@@ -641,7 +641,7 @@ void check_marks_int_list(sexpr x)
           AO_fetch_and_add1(&collectable_count);
         }
 #     else
-#      define p_resumed NULL
+#       define p_resumed NULL
 #     endif
       code = pthread_create(&t, NULL, tiny_reverse_test, (void*)p_resumed);
       if (code != 0) {
@@ -1507,11 +1507,11 @@ void run_one_test(void)
           }
         }
 #     ifndef ALL_INTERIOR_POINTERS
-#      if defined(POWERPC)
-        if (!TEST_FAIL_COUNT(1))
-#      else
-        if (!TEST_FAIL_COUNT(GC_get_all_interior_pointers() ? 1 : 2))
-#      endif
+#       if defined(POWERPC)
+          if (!TEST_FAIL_COUNT(1))
+#       else
+          if (!TEST_FAIL_COUNT(GC_get_all_interior_pointers() ? 1 : 2))
+#       endif
         {
           GC_printf(
               "GC_is_valid_displacement produced wrong failure indication\n");
@@ -2065,81 +2065,81 @@ void enable_incremental_mode(void)
 #   endif
 #   if defined(CPPCHECK)
        /* Entry points we should be testing, but aren't.        */
-#      ifndef GC_DEBUG
-         UNTESTED(GC_debug_generic_or_special_malloc);
-         UNTESTED(GC_debug_register_displacement);
-         UNTESTED(GC_post_incr);
-         UNTESTED(GC_pre_incr);
-#        ifdef GC_GCJ_SUPPORT
-           UNTESTED(GC_debug_gcj_malloc);
-#        endif
-#      endif
-#      ifdef AMIGA
-#        ifdef GC_AMIGA_FASTALLOC
-           UNTESTED(GC_amiga_get_mem);
-#        endif
-#        ifndef GC_AMIGA_ONLYFAST
-           UNTESTED(GC_amiga_set_toany);
-#        endif
-#      endif
-#      if defined(MACOS) && defined(USE_TEMPORARY_MEMORY)
-         UNTESTED(GC_MacTemporaryNewPtr);
-#      endif
-       UNTESTED(GC_abort_on_oom);
-       UNTESTED(GC_malloc_explicitly_typed_ignore_off_page);
-       UNTESTED(GC_debug_strndup);
-       UNTESTED(GC_deinit);
-       UNTESTED(GC_strndup);
-       UNTESTED(GC_posix_memalign);
-       UNTESTED(GC_new_proc);
-       UNTESTED(GC_clear_roots);
-       UNTESTED(GC_exclude_static_roots);
-       UNTESTED(GC_register_describe_type_fn);
-       UNTESTED(GC_register_has_static_roots_callback);
-#      ifdef GC_GCJ_SUPPORT
-         UNTESTED(GC_gcj_malloc_ignore_off_page);
-#      endif
-#      ifndef NO_DEBUGGING
-         UNTESTED(GC_dump);
-         UNTESTED(GC_dump_regions);
-         UNTESTED(GC_is_tmp_root);
-         UNTESTED(GC_print_free_list);
-#      endif
-#      ifdef TRACE_BUF
-         UNTESTED(GC_print_trace);
-#      endif
-#      ifndef GC_NO_FINALIZATION
-         UNTESTED(GC_debug_register_finalizer_unreachable);
-         UNTESTED(GC_register_disappearing_link);
-         UNTESTED(GC_should_invoke_finalizers);
-#        ifndef JAVA_FINALIZATION_NOT_NEEDED
-           UNTESTED(GC_finalize_all);
-#        endif
-#        ifndef GC_TOGGLE_REFS_NOT_NEEDED
-           UNTESTED(GC_toggleref_add);
-#        endif
-#      endif
-#      if !defined(OS2) && !defined(MACOS) && !defined(GC_ANDROID_LOG) \
-          && !defined(MSWIN32) && !defined(MSWINCE)
-         UNTESTED(GC_set_log_fd);
-#      endif
-#      ifndef REDIRECT_MALLOC_IN_HEADER
-#        ifdef REDIRECT_MALLOC
-#          ifndef strndup
-             UNTESTED(strndup);
-#          endif
-#          ifndef strdup
-             UNTESTED(strdup);
-#          endif
-#        endif
-#        ifdef REDIRECT_REALLOC
-           UNTESTED(realloc);
-#        endif
-#      endif /* !REDIRECT_MALLOC_IN_HEADER */
-#      ifdef GC_REQUIRE_WCSDUP
-         UNTESTED(GC_wcsdup);
-         UNTESTED(GC_debug_wcsdup);
-#      endif
+#     ifndef GC_DEBUG
+        UNTESTED(GC_debug_generic_or_special_malloc);
+        UNTESTED(GC_debug_register_displacement);
+        UNTESTED(GC_post_incr);
+        UNTESTED(GC_pre_incr);
+#       ifdef GC_GCJ_SUPPORT
+          UNTESTED(GC_debug_gcj_malloc);
+#       endif
+#     endif
+#     ifdef AMIGA
+#       ifdef GC_AMIGA_FASTALLOC
+          UNTESTED(GC_amiga_get_mem);
+#       endif
+#       ifndef GC_AMIGA_ONLYFAST
+          UNTESTED(GC_amiga_set_toany);
+#       endif
+#     endif
+#     if defined(MACOS) && defined(USE_TEMPORARY_MEMORY)
+        UNTESTED(GC_MacTemporaryNewPtr);
+#     endif
+      UNTESTED(GC_abort_on_oom);
+      UNTESTED(GC_malloc_explicitly_typed_ignore_off_page);
+      UNTESTED(GC_debug_strndup);
+      UNTESTED(GC_deinit);
+      UNTESTED(GC_strndup);
+      UNTESTED(GC_posix_memalign);
+      UNTESTED(GC_new_proc);
+      UNTESTED(GC_clear_roots);
+      UNTESTED(GC_exclude_static_roots);
+      UNTESTED(GC_register_describe_type_fn);
+      UNTESTED(GC_register_has_static_roots_callback);
+#     ifdef GC_GCJ_SUPPORT
+        UNTESTED(GC_gcj_malloc_ignore_off_page);
+#     endif
+#     ifndef NO_DEBUGGING
+        UNTESTED(GC_dump);
+        UNTESTED(GC_dump_regions);
+        UNTESTED(GC_is_tmp_root);
+        UNTESTED(GC_print_free_list);
+#     endif
+#     ifdef TRACE_BUF
+        UNTESTED(GC_print_trace);
+#     endif
+#     ifndef GC_NO_FINALIZATION
+        UNTESTED(GC_debug_register_finalizer_unreachable);
+        UNTESTED(GC_register_disappearing_link);
+        UNTESTED(GC_should_invoke_finalizers);
+#       ifndef JAVA_FINALIZATION_NOT_NEEDED
+          UNTESTED(GC_finalize_all);
+#       endif
+#       ifndef GC_TOGGLE_REFS_NOT_NEEDED
+          UNTESTED(GC_toggleref_add);
+#       endif
+#     endif
+#     if !defined(OS2) && !defined(MACOS) && !defined(GC_ANDROID_LOG) \
+         && !defined(MSWIN32) && !defined(MSWINCE)
+        UNTESTED(GC_set_log_fd);
+#     endif
+#     ifndef REDIRECT_MALLOC_IN_HEADER
+#       ifdef REDIRECT_MALLOC
+#         ifndef strndup
+            UNTESTED(strndup);
+#         endif
+#         ifndef strdup
+            UNTESTED(strdup);
+#         endif
+#       endif
+#       ifdef REDIRECT_REALLOC
+          UNTESTED(realloc);
+#       endif
+#     endif /* !REDIRECT_MALLOC_IN_HEADER */
+#     ifdef GC_REQUIRE_WCSDUP
+        UNTESTED(GC_wcsdup);
+        UNTESTED(GC_debug_wcsdup);
+#     endif
 #   endif
 #   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
       GC_win32_free_heap();
@@ -2365,7 +2365,7 @@ void * thr_run_one_test(void * arg GC_ATTR_UNUSED)
 }
 
 #ifdef GC_DEBUG
-#  define GC_free GC_debug_free
+# define GC_free GC_debug_free
 #endif
 
 int main(void)

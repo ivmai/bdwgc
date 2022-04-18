@@ -454,84 +454,83 @@ static void alloc_mark_stack(size_t);
 
   GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame)
   {
-      GC_bool ret_val;
+    GC_bool ret_val;
 
 #   if defined(MSWIN32) || defined(MSWINCE)
-#    ifndef __GNUC__
-      /* Windows 98 appears to asynchronously create and remove  */
-      /* writable memory mappings, for reasons we haven't yet    */
-      /* understood.  Since we look for writable regions to      */
-      /* determine the root set, we may try to mark from an      */
-      /* address range that disappeared since we started the     */
-      /* collection.  Thus we have to recover from faults here.  */
-      /* This code does not appear to be necessary for Windows   */
-      /* 95/NT/2000+. Note that this code should never generate  */
-      /* an incremental GC write fault.                          */
-      /* This code seems to be necessary for WinCE (at least in  */
-      /* the case we'd decide to add MEM_PRIVATE sections to     */
-      /* data roots in GC_register_dynamic_libraries()).         */
-      /* It's conceivable that this is the same issue with       */
-      /* terminating threads that we see with Linux and          */
-      /* USE_PROC_FOR_LIBRARIES.                                 */
+#     ifndef __GNUC__
+        /* Windows 98 appears to asynchronously create and remove   */
+        /* writable memory mappings, for reasons we haven't yet     */
+        /* understood.  Since we look for writable regions to       */
+        /* determine the root set, we may try to mark from an       */
+        /* address range that disappeared since we started the      */
+        /* collection.  Thus we have to recover from faults here.   */
+        /* This code does not appear to be necessary for Windows    */
+        /* 95/NT/2000+. Note that this code should never generate   */
+        /* an incremental GC write fault.                           */
+        /* This code seems to be necessary for WinCE (at least in   */
+        /* the case we'd decide to add MEM_PRIVATE sections to      */
+        /* data roots in GC_register_dynamic_libraries()).          */
+        /* It's conceivable that this is the same issue with        */
+        /* terminating threads that we see with Linux and           */
+        /* USE_PROC_FOR_LIBRARIES.                                  */
 
-      __try {
+        __try {
           ret_val = GC_mark_some_inner(cold_gc_frame);
-      } __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ?
+        } __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ?
                 EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
           goto handle_ex;
-      }
-#     if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-        /* With DllMain-based thread tracking, a thread may have        */
-        /* started while we were marking.  This is logically equivalent */
-        /* to the exception case; our results are invalid and we have   */
-        /* to start over.  This cannot be prevented since we can't      */
-        /* block in DllMain.                                            */
-        if (GC_started_thread_while_stopped())
-          goto handle_thr_start;
-#     endif
-     rm_handler:
-      return ret_val;
-
-#    else /* __GNUC__ */
-
-      /* Manually install an exception handler since GCC does    */
-      /* not yet support Structured Exception Handling (SEH) on  */
-      /* Win32.                                                  */
-
-      ext_ex_regn er;
-
-#     if GC_GNUC_PREREQ(4, 7) || GC_CLANG_PREREQ(3, 3)
-#       pragma GCC diagnostic push
-        /* Suppress "taking the address of label is non-standard" warning. */
-#       if defined(__clang__) || GC_GNUC_PREREQ(6, 0)
-#         pragma GCC diagnostic ignored "-Wpedantic"
-#       else
-          /* GCC before ~4.8 does not accept "-Wpedantic" quietly.  */
-#         pragma GCC diagnostic ignored "-pedantic"
+        }
+#       if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
+          /* With DllMain-based thread tracking, a thread may have  */
+          /* started while we were marking.  This is logically      */
+          /* equivalent to the exception case; our results are      */
+          /* invalid and we have to start over.  This cannot be     */
+          /* prevented since we can't block in DllMain.             */
+          if (GC_started_thread_while_stopped())
+            goto handle_thr_start;
 #       endif
-        er.alt_path = &&handle_ex;
-#       pragma GCC diagnostic pop
-#     elif !defined(CPPCHECK) /* pragma diagnostic is not supported */
-        er.alt_path = &&handle_ex;
-#     endif
-      er.ex_reg.handler = mark_ex_handler;
-      __asm__ __volatile__ ("movl %%fs:0, %0" : "=r" (er.ex_reg.prev));
-      __asm__ __volatile__ ("movl %0, %%fs:0" : : "r" (&er));
-      ret_val = GC_mark_some_inner(cold_gc_frame);
-      /* Prevent GCC from considering the following code unreachable */
-      /* and thus eliminating it.                                    */
+      rm_handler:
+        return ret_val;
+
+#     else /* __GNUC__ */
+
+        /* Manually install an exception handler since GCC does     */
+        /* not yet support Structured Exception Handling (SEH) on   */
+        /* Win32.                                                   */
+        ext_ex_regn er;
+
+#       if GC_GNUC_PREREQ(4, 7) || GC_CLANG_PREREQ(3, 3)
+#         pragma GCC diagnostic push
+          /* Suppress "taking the address of label is non-standard" warning. */
+#         if defined(__clang__) || GC_GNUC_PREREQ(6, 0)
+#           pragma GCC diagnostic ignored "-Wpedantic"
+#         else
+            /* GCC before ~4.8 does not accept "-Wpedantic" quietly.    */
+#           pragma GCC diagnostic ignored "-pedantic"
+#         endif
+          er.alt_path = &&handle_ex;
+#         pragma GCC diagnostic pop
+#       elif !defined(CPPCHECK) /* pragma diagnostic is not supported */
+          er.alt_path = &&handle_ex;
+#       endif
+        er.ex_reg.handler = mark_ex_handler;
+        __asm__ __volatile__ ("movl %%fs:0, %0" : "=r" (er.ex_reg.prev));
+        __asm__ __volatile__ ("movl %0, %%fs:0" : : "r" (&er));
+        ret_val = GC_mark_some_inner(cold_gc_frame);
+        /* Prevent GCC from considering the following code unreachable  */
+        /* and thus eliminating it.                                     */
         if (er.alt_path == 0)
           goto handle_ex;
-#     if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-        if (GC_started_thread_while_stopped())
-          goto handle_thr_start;
-#     endif
-    rm_handler:
-      /* Uninstall the exception handler.       */
-      __asm__ __volatile__ ("mov %0, %%fs:0" : : "r" (er.ex_reg.prev));
-      return ret_val;
+#       if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
+          if (GC_started_thread_while_stopped())
+            goto handle_thr_start;
+#       endif
+      rm_handler:
+        /* Uninstall the exception handler.       */
+        __asm__ __volatile__ ("mov %0, %%fs:0" : : "r" (er.ex_reg.prev));
+        return ret_val;
+#     endif /* __GNUC__ */
 
-#    endif /* __GNUC__ */
 #   else /* !MSWIN32 */
       /* Here we are handling the case in which /proc is used for root  */
       /* finding, and we have threads.  We may find a stack for a       */
@@ -1878,23 +1877,23 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 
     switch(BYTES_TO_GRANULES(sz)) {
 #   if defined(USE_PUSH_MARKED_ACCELERATORS)
-     case 1:
-       GC_push_marked1(h, hhdr);
-       break;
-#    if !defined(UNALIGNED_PTRS)
-       case 2:
-         GC_push_marked2(h, hhdr);
-         break;
-#     if GC_GRANULE_WORDS < 4
-       case 4:
-         GC_push_marked4(h, hhdr);
-         break;
-#     endif
-#    endif
+      case 1:
+        GC_push_marked1(h, hhdr);
+        break;
+#     if !defined(UNALIGNED_PTRS)
+        case 2:
+          GC_push_marked2(h, hhdr);
+          break;
+#       if GC_GRANULE_WORDS < 4
+          case 4:
+            GC_push_marked4(h, hhdr);
+            break;
+#       endif
+#     endif /* !UNALIGNED_PTRS */
 #   else
-     case 1: /* to suppress "switch statement contains no case" warning */
+      case 1: /* to suppress "switch statement contains no case" warning */
 #   endif
-     default:
+    default:
       GC_mark_stack_top_reg = GC_mark_stack_top;
       for (p = h -> hb_body, bit_no = 0; (word)p <= (word)lim;
            p += sz, bit_no += MARK_BIT_OFFSET(sz)) {

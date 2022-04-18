@@ -49,21 +49,21 @@ void de_error(const char *s)
 int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
                       LPSTR command_line, int nCmdShow)
 {
-   MSG         msg;
-   WNDCLASS    wndclass;
-   HACCEL      hAccel;
+    MSG         msg;
+    WNDCLASS    wndclass;
+    HACCEL      hAccel;
 
-   GC_set_find_leak(0);
-   GC_INIT();
-#  ifndef NO_INCREMENTAL
+    GC_set_find_leak(0);
+    GC_INIT();
+#   ifndef NO_INCREMENTAL
      GC_enable_incremental();
-#  endif
-#  if defined(CPPCHECK)
+#   endif
+#   if defined(CPPCHECK)
      GC_noop1((GC_word)&WinMain);
-#  endif
+#   endif
 
-   if (!hPrevInstance)
-   {
+    if (!hPrevInstance)
+    {
       wndclass.style          = CS_HREDRAW | CS_VREDRAW;
       wndclass.lpfnWndProc    = WndProc;
       wndclass.cbClsExtra     = 0;
@@ -79,28 +79,28 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
           de_error("RegisterClass error");
           return(0);
       }
-   }
+    }
 
-   /* Empirically, the command line does not include the command name ...
-   if (command_line != 0) {
+    /* Empirically, the command line does not include the command name ...
+    if (command_line != 0) {
        while (isspace(*command_line)) command_line++;
        while (*command_line != 0 && !isspace(*command_line)) command_line++;
        while (isspace(*command_line)) command_line++;
-   } */
+    } */
 
-   if (command_line == 0 || *command_line == 0) {
+    if (command_line == 0 || *command_line == 0) {
         de_error("File name argument required");
         return( 0 );
-   } else {
+    } else {
         char *p = command_line;
 
         while (*p != 0 && !isspace(*(unsigned char *)p))
             p++;
         arg_file_name = CORD_to_char_star(
                             CORD_substr(command_line, 0, p - command_line));
-   }
+    }
 
-   hwnd = CreateWindow (szAppName,
+    hwnd = CreateWindow(szAppName,
                         TEXT("Demonstration Editor"),
                         WS_OVERLAPPEDWINDOW | WS_CAPTION, /* Window style */
                         CW_USEDEFAULT, 0, /* default pos. */
@@ -108,24 +108,24 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
                         NULL,   /* No parent */
                         NULL,   /* Window class menu */
                         hInstance, NULL);
-   if (hwnd == NULL) {
+    if (hwnd == NULL) {
         de_error("CreateWindow error");
         return(0);
-   }
+    }
 
-   ShowWindow (hwnd, nCmdShow);
+    ShowWindow (hwnd, nCmdShow);
 
-   hAccel = LoadAccelerators( hInstance, szAppName );
+    hAccel = LoadAccelerators( hInstance, szAppName );
 
-   while (GetMessage (&msg, NULL, 0, 0))
-   {
+    while (GetMessage (&msg, NULL, 0, 0))
+    {
       if( !TranslateAccelerator( hwnd, hAccel, &msg ) )
       {
          TranslateMessage (&msg);
          DispatchMessage (&msg);
       }
-   }
-   return (int)msg.wParam;
+    }
+    return (int)msg.wParam;
 }
 
 /* Return the argument with all control characters replaced by blanks.  */
