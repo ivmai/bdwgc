@@ -149,6 +149,9 @@ jobs:
     compiler: clang
   - arch: ppc64le
     compiler: gcc
+    env:
+    - CONF_OPTIONS="--disable-disclaim"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
       apt:
         packages:
