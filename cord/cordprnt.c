@@ -55,7 +55,7 @@ static int ec_len(CORD_ec x)
     return(CORD_len(x[0].ec_cord) + (x[0].ec_bufptr - x[0].ec_buf));
 }
 
-/* Possible nonumeric precision values. */
+/* Possible non-numeric precision values.   */
 # define NONE -1
 # define VARIABLE -2
 /* Copy the conversion specification from CORD_pos into the buffer buf  */
