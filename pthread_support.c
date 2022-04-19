@@ -1620,9 +1620,6 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
         LOCK();
       }
 #   endif
-#   ifdef LINT2
-      GC_noop1(COVERT_DATAFLOW(&topOfStackUnset));
-#   endif
     do_blocking_leave(me, topOfStackUnset);
     UNLOCK();
 }
