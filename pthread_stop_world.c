@@ -428,8 +428,9 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
     me -> backing_store_ptr = NULL;
     me -> backing_store_end = NULL;
 # endif
+
 # ifndef GC_NETBSD_THREADS_WORKAROUND
-    if (GC_retry_signals)
+    if (GC_retry_signals || GC_sig_suspend == GC_sig_thr_restart)
 # endif
   {
     /* If the RESTART signal loss is possible (though it should be      */
@@ -437,14 +438,10 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
     /* much between the first sem_post and sigsuspend calls), more      */
     /* handshaking is provided to work around it.                       */
     sem_post(&GC_suspend_ack_sem);
-#   ifdef GC_NETBSD_THREADS_WORKAROUND
-      if (GC_retry_signals)
-#   endif
-    {
-      /* Set the flag that the thread has been restarted.       */
+    /* Set the flag that the thread has been restarted. */
+    if (GC_retry_signals)
       ao_store_release_async(&me->stop_info.last_stop_count,
                              my_stop_count | THREAD_RESTARTED);
-    }
   }
   RESTORE_CANCEL(cancel_state);
 }
@@ -1317,12 +1314,14 @@ GC_INNER void GC_start_world(void)
 #   else
       if (GC_retry_signals) {
         resend_lost_signals_retry(n_live_threads, GC_restart_all);
-      } /* else */
-#     ifdef GC_NETBSD_THREADS_WORKAROUND
-        else {
+      } else {
+#       ifndef GC_NETBSD_THREADS_WORKAROUND
+          if (GC_sig_suspend == GC_sig_thr_restart)
+#       endif
+        {
           suspend_restart_barrier(n_live_threads);
         }
-#     endif
+      }
 #   endif
 #   ifdef DEBUG_THREADS
       GC_log_printf("World started\n");
