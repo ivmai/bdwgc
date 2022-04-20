@@ -57,6 +57,10 @@
   /* GC_lock_holder variables are defined in the thread support code.   */
 #endif /* THREADS */
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+# include <cheriintrin.h>
+#endif
+
 #ifdef DYNAMIC_LOADING
   /* We need to register the main data segment.  Returns TRUE unless    */
   /* this is done implicitly as part of dynamic library registration.   */
@@ -440,7 +444,11 @@ GC_API void * GC_CALL GC_base(void * p)
         }
     if (HBLK_IS_FREE(candidate_hdr)) return(0);
     /* Make sure r points to the beginning of the object */
+#     if defined(__CHERI_PURE_CAPABILITY__)
+        r = cheri_align_down(r, WORDS_TO_BYTES(1));
+#     else
         r = (ptr_t)((word)r & ~(WORDS_TO_BYTES(1) - 1));
+#     endif
         {
             size_t offset = HBLKDISPL(r);
             word sz = candidate_hdr -> hb_sz;

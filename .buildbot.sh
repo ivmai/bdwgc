@@ -27,6 +27,15 @@ build_bdwgc()
     cmake --install ${BUILD_DIR}
 }
 
+add_bdwgc_test_suite()
+{
+    SRC_DIR=ci/tests
+    BDWGC_TEST_FILES="smash.c"
+    for src_file in ${BDWGC_TEST_FILES}; do
+        ln -fs ../../tests/${src_file} ${SRC_DIR}/${src_file}
+    done
+}
+
 build_bdwgc_clients()
 {
     SRC_DIR=ci/tests
@@ -34,6 +43,8 @@ build_bdwgc_clients()
     INSTALL_DIR=bdwgc_install
     BUILD_OPTS="-DCMAKE_BUILD_TYPE=Debug \
                 -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
+    # Link tests in the BDWGC test suite
+    add_bdwgc_test_suite
 
     echo "Building test clients for CI/CD"
     mkdir -p ${BUILD_DIR}
@@ -46,8 +57,14 @@ build_bdwgc_clients()
 clean()
 {
     rm -rf ${@}
-}
 
+    SRC_DIR=ci/tests
+    BDWGC_TEST_FILES="smash.c"
+
+    for src_file in ${BDWGC_TEST_FILES}; do
+        rm ${SRC_DIR}/${src_file}
+    done
+}
 
 if [ "$1" = "riscv64" ]; then
     echo "Checking bdwgc library builds correctly"
@@ -73,7 +90,7 @@ if [ "$1" = "riscv64" ]; then
         )
     BUILDBOT_PLATFORM=riscv64-purecap python3 ci/run_cheri_bdwgc_tests.py "${args[@]}"
 
-    echo "removing up unit-test files"
+    echo "removing unit-test files"
     clean bdwgc_build bdwgc_client_build bdwgc_install
 
 elif [ "$1" = "morello-purecap" ]; then
