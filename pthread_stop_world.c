@@ -357,31 +357,13 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
 
 # ifdef GC_ENABLE_SUSPEND_THREAD
     suspend_cnt = (word)ao_load_async(&(me -> stop_info.ext_suspend_cnt));
-    if ((suspend_cnt & 1) != 0) {
-      GC_store_stack_ptr(me);
-#     ifdef E2K
-        GC_ASSERT(NULL == me -> backing_store_end);
-        GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
-        me -> backing_store_end = bs_lo;
-        me -> backing_store_ptr = bs_lo + stack_size;
-#     endif
-      sem_post(&GC_suspend_ack_sem);
-      GC_suspend_self_inner(me, suspend_cnt);
-#     ifdef DEBUG_THREADS
-        GC_log_printf("Continuing %p on GC_resume_thread\n", (void *)self);
-#     endif
-#     ifdef E2K
-        FREE_PROCEDURE_STACK_LOCAL(bs_lo, stack_size);
-        me -> backing_store_ptr = NULL;
-        me -> backing_store_end = NULL;
-#     endif
-      RESTORE_CANCEL(cancel_state);
-      return;
-    }
 # endif
-
   if (((word)me->stop_info.last_stop_count & ~(word)THREAD_RESTARTED)
-        == (word)my_stop_count) {
+        == (word)my_stop_count
+#     ifdef GC_ENABLE_SUSPEND_THREAD
+        && (suspend_cnt & 1) == 0
+#     endif
+     ) {
       /* Duplicate signal.  OK if we are retrying.      */
       if (!GC_retry_signals) {
           WARN("Duplicate suspend signal in thread %p\n", self);
@@ -414,9 +396,16 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
   /* really safe to proceed.  Under normal circumstances,       */
   /* this code should not be executed.                          */
   do {
-      sigsuspend (&suspend_handler_mask);
-  } while (ao_load_acquire_async(&GC_world_is_stopped)
-           && ao_load_async(&GC_stop_count) == my_stop_count);
+      sigsuspend(&suspend_handler_mask);
+      /* Iterate while not restarting the world or thread is suspended. */
+  } while ((ao_load_acquire_async(&GC_world_is_stopped)
+            && ao_load_async(&GC_stop_count) == my_stop_count)
+#          ifdef GC_ENABLE_SUSPEND_THREAD
+             || ((suspend_cnt & 1) != 0
+                 && (word)ao_load_async(&(me -> stop_info.ext_suspend_cnt))
+                    == suspend_cnt)
+#          endif
+          );
 
 # ifdef DEBUG_THREADS
     GC_log_printf("Continuing %p\n", (void *)self);
@@ -624,12 +613,22 @@ STATIC void GC_restart_handler(int sig)
     }
 
     GC_INNER void GC_suspend_self_inner(GC_thread me, word suspend_cnt) {
+      IF_CANCEL(int cancel_state;)
+
       GC_ASSERT((suspend_cnt & 1) != 0);
+      DISABLE_CANCEL(cancel_state);
+#     ifdef DEBUG_THREADS
+        GC_log_printf("Suspend self: %p\n", (void *)(me -> id));
+#     endif
       while ((word)ao_load_acquire_async(&(me -> stop_info.ext_suspend_cnt))
              == suspend_cnt) {
-        /* TODO: Use sigsuspend() instead. */
+        /* TODO: Use sigsuspend() even for self-suspended threads. */
         GC_brief_async_signal_safe_sleep();
       }
+#     ifdef DEBUG_THREADS
+        GC_log_printf("Resume self: %p\n", (void *)(me -> id));
+#     endif
+      RESTORE_CANCEL(cancel_state);
     }
 
     GC_API void GC_CALL GC_suspend_thread(GC_SUSPEND_THREAD_ID thread) {
@@ -646,6 +645,7 @@ STATIC void GC_restart_handler(int sig)
       }
       suspend_cnt = (word)(t -> stop_info.ext_suspend_cnt);
       if ((suspend_cnt & 1) != 0) /* already suspended? */ {
+        GC_ASSERT(!THREAD_EQUAL((pthread_t)thread, pthread_self()));
         UNLOCK();
         return;
       }
@@ -701,10 +701,7 @@ STATIC void GC_restart_handler(int sig)
       /* Wait for the thread to complete threads table lookup and   */
       /* stack_ptr assignment.                                      */
       GC_ASSERT(GC_thr_initialized);
-      while (sem_wait(&GC_suspend_ack_sem) != 0) {
-        if (errno != EINTR)
-          ABORT("sem_wait for handler failed (suspend_self)");
-      }
+      suspend_restart_barrier(1);
       if (GC_manual_vdb)
         GC_release_dirty_lock();
       RESTORE_CANCEL(cancel_state);
@@ -723,6 +720,25 @@ STATIC void GC_restart_handler(int sig)
         if ((suspend_cnt & 1) != 0) /* is suspended? */ {
           /* Mark the thread as not suspended - it will be resumed shortly. */
           AO_store(&(t -> stop_info.ext_suspend_cnt), (AO_t)(suspend_cnt + 1));
+
+          if ((t -> flags & FINISHED) == 0 && !(t -> thread_blocked)) {
+            int result = raise_signal(t, GC_sig_thr_restart);
+
+            /* TODO: Support signal resending on GC_retry_signals */
+            if (result != 0)
+              ABORT_ARG1("pthread_kill failed in GC_resume_thread",
+                         ": errcode= %d", result);
+#           ifndef GC_NETBSD_THREADS_WORKAROUND
+              if (GC_retry_signals)
+#           endif
+            {
+              IF_CANCEL(int cancel_state;)
+
+              DISABLE_CANCEL(cancel_state);
+              suspend_restart_barrier(1);
+              RESTORE_CANCEL(cancel_state);
+            }
+          }
         }
       }
       UNLOCK();
