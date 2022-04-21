@@ -398,8 +398,8 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
   } while (ao_load_acquire_async(&GC_stop_count) == my_stop_count
 #          ifdef GC_ENABLE_SUSPEND_THREAD
              || ((suspend_cnt & 1) != 0
-                 && (word)ao_load_acquire_async(
-                        &(me -> stop_info.ext_suspend_cnt)) == suspend_cnt)
+                 && (word)ao_load_async(&(me -> stop_info.ext_suspend_cnt))
+                    == suspend_cnt)
 #          endif
           );
 
