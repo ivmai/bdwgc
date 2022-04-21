@@ -738,7 +738,8 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   elif defined(MSWINCE) || defined(RTEMS)
       /* WinCE only allows 64 KB stacks. */
 #     define BIG 500
-#   elif defined(OSF1)
+#   elif defined(EMSCRIPTEN) || defined(OSF1)
+      /* Wasm reports "Maximum call stack size exceeded" error otherwise. */
       /* OSF has limited stack space by default, and large frames. */
 #     define BIG 200
 #   elif defined(__MACH__) && defined(__ppc64__)
