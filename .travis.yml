@@ -368,7 +368,7 @@ jobs:
         - libatomic-ops-dev
     compiler: gcc
     env:
-    - CONF_CFLAGS="-D AO_USE_PTHREAD_DEFS"
+    - CONF_CFLAGS="-D AO_USE_PTHREAD_DEFS -D GC_NO_FINALIZATION"
     - CONF_OPTIONS="--with-libatomic-ops=yes --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
