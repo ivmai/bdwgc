@@ -380,12 +380,16 @@ if (MSVC)
   set(SRC ${SRC} extra/msvc_dbg.c)
 endif()
 
+# Instruct check_c_source_compiles to skip linking.
+# Alternatively, we could set CMAKE_REQUIRED_LIBRARIES properly.
+SET(CMAKE_REQUIRED_FLAGS "-c")
+
 # Instruct check_c_source_compiles and similar CMake checks not to ignore
 # compiler warnings (like "implicit declaration of function").
 if (NOT BORLAND AND NOT MSVC AND NOT WATCOM)
   check_c_compiler_flag(-Werror HAVE_FLAG_WERROR)
   if (HAVE_FLAG_WERROR)
-    SET(CMAKE_REQUIRED_FLAGS "-Werror")
+    SET(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Werror")
   endif(HAVE_FLAG_WERROR)
 endif()
 
