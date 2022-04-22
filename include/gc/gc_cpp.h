@@ -520,6 +520,9 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
       if (cleanup != 0 && obj != 0) {
         GC_REGISTER_FINALIZER_IGNORE_SELF(obj, cleanup, clientData, 0, 0);
       }
+#   else
+      (void)cleanup;
+      (void)clientData;
 #   endif
     break;
   case GC_NS_QUALIFY(PointerFreeGC):
