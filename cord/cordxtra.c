@@ -573,12 +573,14 @@ char CORD_lf_func(size_t i, void * client_data)
     return(cl -> data[MOD_LINE_SZ(i)]);
 }
 
-void CORD_lf_close_proc(void * obj, void * client_data CORD_ATTR_UNUSED)
-{
+#ifndef GC_NO_FINALIZATION
+  void CORD_lf_close_proc(void * obj, void * client_data CORD_ATTR_UNUSED)
+  {
     if (fclose(((lf_state *)obj) -> lf_file) != 0) {
         ABORT("CORD_lf_close_proc: fclose failed");
     }
-}
+  }
+#endif
 
 CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
 {
@@ -604,7 +606,9 @@ CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
         state -> lf_cache[i] = 0;
     }
     state -> lf_current = 0;
-    GC_REGISTER_FINALIZER(state, CORD_lf_close_proc, 0, 0, 0);
+#   ifndef GC_NO_FINALIZATION
+      GC_REGISTER_FINALIZER(state, CORD_lf_close_proc, 0, 0, 0);
+#   endif
     return(CORD_from_fn(CORD_lf_func, state, len));
 }
 

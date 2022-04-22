@@ -473,9 +473,11 @@ inline void gc::operator delete(void* obj) GC_NOEXCEPT
 
 inline gc_cleanup::~gc_cleanup()
 {
-  void* base = GC_base(this);
-  if (0 == base) return; // Non-heap object.
-  GC_register_finalizer_ignore_self(base, 0, 0, 0, 0);
+# ifndef GC_NO_FINALIZATION
+    void* base = GC_base(this);
+    if (0 == base) return; // Non-heap object.
+    GC_register_finalizer_ignore_self(base, 0, 0, 0, 0);
+# endif
 }
 
 inline void GC_CALLBACK gc_cleanup::cleanup(void* obj, void* displ)
@@ -485,19 +487,21 @@ inline void GC_CALLBACK gc_cleanup::cleanup(void* obj, void* displ)
 
 inline gc_cleanup::gc_cleanup()
 {
-  GC_finalization_proc oldProc = 0;
-  void* oldData = NULL; // to avoid "might be uninitialized" compiler warning
-  void* this_ptr = (void*)this;
-  void* base = GC_base(this_ptr);
-  if (base != 0) {
-    // Don't call the debug version, since this is a real base address.
-    GC_register_finalizer_ignore_self(base, (GC_finalization_proc) cleanup,
-                                      (void*)((char*)this_ptr - (char*)base),
-                                      &oldProc, &oldData);
-    if (oldProc != 0) {
-      GC_register_finalizer_ignore_self(base, oldProc, oldData, 0, 0);
+# ifndef GC_NO_FINALIZATION
+    GC_finalization_proc oldProc = 0;
+    void* oldData = NULL; // to avoid "might be uninitialized" compiler warning
+    void* this_ptr = (void*)this;
+    void* base = GC_base(this_ptr);
+    if (base != 0) {
+      // Don't call the debug version, since this is a real base address.
+      GC_register_finalizer_ignore_self(base, (GC_finalization_proc) cleanup,
+                                        (void*)((char*)this_ptr-(char*)base),
+                                        &oldProc, &oldData);
+      if (oldProc != 0) {
+        GC_register_finalizer_ignore_self(base, oldProc, oldData, 0, 0);
+      }
     }
-  }
+# endif
 }
 
 #ifdef GC_NAMESPACE
@@ -512,9 +516,11 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   switch (gcp) {
   case GC_NS_QUALIFY(UseGC):
     obj = GC_MALLOC(size);
-    if (cleanup != 0 && obj != 0) {
-      GC_REGISTER_FINALIZER_IGNORE_SELF(obj, cleanup, clientData, 0, 0);
-    }
+#   ifndef GC_NO_FINALIZATION
+      if (cleanup != 0 && obj != 0) {
+        GC_REGISTER_FINALIZER_IGNORE_SELF(obj, cleanup, clientData, 0, 0);
+      }
+#   endif
     break;
   case GC_NS_QUALIFY(PointerFreeGC):
     obj = GC_MALLOC_ATOMIC(size);

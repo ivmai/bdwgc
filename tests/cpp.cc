@@ -372,7 +372,7 @@ void* Undisguise( GC_word i ) {
                 B::Deleting( 1 );
                 GC_CHECKED_DELETE(b);
                 B::Deleting( 0 );}
-#           ifdef FINALIZE_ON_DEMAND
+#           if defined(FINALIZE_ON_DEMAND) && !defined(GC_NO_FINALIZATION)
               GC_invoke_finalizers();
 #           endif
             }
@@ -394,7 +394,7 @@ void* Undisguise( GC_word i ) {
             B::Deleting( 1 );
             GC_CHECKED_DELETE(b);
             B::Deleting( 0 );
-#           ifdef FINALIZE_ON_DEMAND
+#           if defined(FINALIZE_ON_DEMAND) && !defined(GC_NO_FINALIZATION)
                  GC_invoke_finalizers();
 #           endif
             }
