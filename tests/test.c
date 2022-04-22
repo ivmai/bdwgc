@@ -935,10 +935,10 @@ tn * mktree(int n)
 #       ifndef GC_NO_FINALIZATION
           int my_index;
           void **new_link = GC_NEW(void *);
-#       endif
 
-        CHECK_OUT_OF_MEMORY(new_link);
-        AO_fetch_and_add1(&collectable_count);
+          CHECK_OUT_OF_MEMORY(new_link);
+          AO_fetch_and_add1(&collectable_count);
+#       endif
         {
           FINALIZER_LOCK();
                 /* Losing a count here causes erroneous report of failure. */
