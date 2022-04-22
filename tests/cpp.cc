@@ -150,7 +150,9 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
           GC_gcollect();
         }
         my_assert(nFreed <= nAllocated);
-        my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
+#       ifndef GC_NO_FINALIZATION
+            my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
+#       endif
     }
 
     static int nFreed;
@@ -174,7 +176,9 @@ class D: public GC_NS_QUALIFY(gc) { public:
         nFreed++;
         my_assert( (GC_word)self->i == (GC_word)data );}
     static void Test() {
-        my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
+#       ifndef GC_NO_FINALIZATION
+            my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
+#       endif
     }
 
     int i;
@@ -213,7 +217,9 @@ class F: public E {public:
     }
 
     static void Test() {
-        my_assert(nFreedF >= (nAllocatedF / 5) * 4 || GC_get_find_leak());
+#       ifndef GC_NO_FINALIZATION
+            my_assert(nFreedF >= (nAllocatedF / 5) * 4 || GC_get_find_leak());
+#       endif
         my_assert(2 * nFreedF == nFreed);
     }
 
