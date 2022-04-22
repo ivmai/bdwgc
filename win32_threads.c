@@ -249,12 +249,14 @@ struct GC_Thread_Rep {
                                 /* GC_call_with_gc_active() of this     */
                                 /* thread.  May be NULL.                */
 
-  unsigned short finalizer_skipped;
-  unsigned char finalizer_nested;
+# ifndef GC_NO_FINALIZATION
+    unsigned short finalizer_skipped;
+    unsigned char finalizer_nested;
                                 /* Used by GC_check_finalizer_nested()  */
                                 /* to minimize the level of recursion   */
                                 /* when a client finalizer allocates    */
                                 /* memory (initially both are 0).       */
+# endif
 
   unsigned char suspended; /* really of GC_bool type */
 
@@ -577,37 +579,36 @@ STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
 # define CHECK_LOOKUP_MY_THREAD(me) /* empty */
 #endif
 
-/* Called by GC_finalize() (in case of an allocation failure observed). */
-/* GC_reset_finalizer_nested() is the same as in pthread_support.c.     */
-GC_INNER void GC_reset_finalizer_nested(void)
-{
-  GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
-  CHECK_LOOKUP_MY_THREAD(me);
-  me->finalizer_nested = 0;
-}
+#ifndef GC_NO_FINALIZATION
+  /* Called by GC_finalize() (in case of an allocation failure observed). */
+  /* GC_reset_finalizer_nested() is the same as in pthread_support.c.     */
+  GC_INNER void GC_reset_finalizer_nested(void)
+  {
+    GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
 
-/* Checks and updates the thread-local level of finalizers recursion.   */
-/* Returns NULL if GC_invoke_finalizers() should not be called by the   */
-/* collector (to minimize the risk of a deep finalizers recursion),     */
-/* otherwise returns a pointer to the thread-local finalizer_nested.    */
-/* Called by GC_notify_or_invoke_finalizers() only (the lock is held).  */
-/* GC_check_finalizer_nested() is the same as in pthread_support.c.     */
-GC_INNER unsigned char *GC_check_finalizer_nested(void)
-{
-  GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
-  unsigned nesting_level;
-  CHECK_LOOKUP_MY_THREAD(me);
-  nesting_level = me->finalizer_nested;
-  if (nesting_level) {
-    /* We are inside another GC_invoke_finalizers().            */
-    /* Skip some implicitly-called GC_invoke_finalizers()       */
-    /* depending on the nesting (recursion) level.              */
-    if (++me->finalizer_skipped < (1U << nesting_level)) return NULL;
-    me->finalizer_skipped = 0;
+    CHECK_LOOKUP_MY_THREAD(me);
+    me->finalizer_nested = 0;
   }
-  me->finalizer_nested = (unsigned char)(nesting_level + 1);
-  return &me->finalizer_nested;
-}
+
+  /* GC_check_finalizer_nested() is the same as in pthread_support.c.   */
+  GC_INNER unsigned char *GC_check_finalizer_nested(void)
+  {
+    GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
+    unsigned nesting_level;
+
+    CHECK_LOOKUP_MY_THREAD(me);
+    nesting_level = me->finalizer_nested;
+    if (nesting_level) {
+      /* We are inside another GC_invoke_finalizers().          */
+      /* Skip some implicitly-called GC_invoke_finalizers()     */
+      /* depending on the nesting (recursion) level.            */
+      if (++me->finalizer_skipped < (1U << nesting_level)) return NULL;
+      me->finalizer_skipped = 0;
+    }
+    me->finalizer_nested = (unsigned char)(nesting_level + 1);
+    return &me->finalizer_nested;
+  }
+#endif /* !GC_NO_FINALIZATION */
 
 #if defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)
   /* This is called from thread-local GC_malloc(). */

@@ -84,12 +84,14 @@ typedef struct GC_Thread_Rep {
                                 /* has set its SP value.  Thus, it does */
                                 /* not need a signal sent to stop it.   */
 
-    unsigned short finalizer_skipped;
-    unsigned char finalizer_nested;
+#   ifndef GC_NO_FINALIZATION
+      unsigned short finalizer_skipped;
+      unsigned char finalizer_nested;
                                 /* Used by GC_check_finalizer_nested()  */
                                 /* to minimize the level of recursion   */
                                 /* when a client finalizer allocates    */
                                 /* memory (initially both are 0).       */
+#   endif
 
     ptr_t stack_end;            /* Cold end of the stack (except for    */
                                 /* main thread).                        */

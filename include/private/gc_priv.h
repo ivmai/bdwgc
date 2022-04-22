@@ -2833,8 +2833,10 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #endif /* GC_WIN32_THREADS */
 
 #ifdef THREADS
-  GC_INNER void GC_reset_finalizer_nested(void);
-  GC_INNER unsigned char *GC_check_finalizer_nested(void);
+# ifndef GC_NO_FINALIZATION
+    GC_INNER void GC_reset_finalizer_nested(void);
+    GC_INNER unsigned char *GC_check_finalizer_nested(void);
+# endif
   GC_INNER void GC_do_blocking_inner(ptr_t data, void * context);
   GC_INNER void GC_push_all_stacks(void);
 # ifdef USE_PROC_FOR_LIBRARIES
