@@ -61,6 +61,10 @@
 #   include <assert.h>  /* Not normally used, but handy for debugging.  */
 # endif
 
+#if defined(GC_NO_FINALIZATION) && !defined(NO_TYPED_TEST)
+# define NO_TYPED_TEST
+#endif
+
 #ifndef NO_TYPED_TEST
 # include "gc_typed.h"
 #endif

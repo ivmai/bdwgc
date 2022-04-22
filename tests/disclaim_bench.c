@@ -61,12 +61,14 @@ testobj_t testobj_new(int model)
 {
     testobj_t obj;
     switch (model) {
+#     ifndef GC_NO_FINALIZATION
         case 0:
             obj = GC_NEW(struct testobj_s);
             if (obj != NULL)
               GC_REGISTER_FINALIZER_NO_ORDER(obj, testobj_finalize,
                                              &free_count, NULL, NULL);
             break;
+#     endif
         case 1:
             obj = (testobj_t)GC_finalized_malloc(sizeof(struct testobj_s),
                                                  &fclos);
@@ -115,9 +117,12 @@ int main(int argc, char **argv)
         model_min = model_max = (int)COVERT_DATAFLOW(atoi(argv[1]));
         if (model_min < 0 || model_max > 2)
             exit(2);
-    }
-    else {
+    } else {
+#     ifndef GC_NO_FINALIZATION
         model_min = 0;
+#     else
+        model_min = 1;
+#     endif
         model_max = 2;
     }
     if (GC_get_find_leak())
