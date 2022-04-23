@@ -501,6 +501,8 @@ inline gc_cleanup::gc_cleanup()
         GC_register_finalizer_ignore_self(base, oldProc, oldData, 0, 0);
       }
     }
+# elif defined(CPPCHECK)
+    (void)cleanup;
 # endif
 }
 
