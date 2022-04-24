@@ -554,7 +554,10 @@ Also, includes 7.4.4 changes
 
 * Eliminate 'new_l may be used uninitialized' gcc warning in os_dep (Cygwin)
 * Fix 'undeclared getpagesize' compiler warning on AIX and OSF1
+* Fix assertion violation of GC_thread_key alignment if pthread-based TLS
+* Fix SIGSEGV caused by dropped stack access from child process in gctest
 * Fix stack overflow in gctest on Alpine Linux/s390x
+* Use SIGRTMIN+6 as suspend signal if sigrt-signals on OpenBSD
 * Workaround crash in FreeBSD rand() by avoiding its concurrent usage
 
 Also, includes 7.2p changes.
@@ -1093,7 +1096,8 @@ Also, includes 7.2 changes
 * Fix nodist_libgc_la_SOURCES value in Makefile.am for Solaris/sparc
 * Fix oldProc initialization in gc_cleanup and eliminate related warnings
 * Fix parallel_initialized assertion violation in initsecondarythread (Win32)
-* Fix typos in debugging.html, in comments of allchblk.c, finalize.c, gc.h
+* Fix typo in debugging.html
+* Fix typos in comments of allchblk.c, cordprnt.c, finalize.c, gc.h
 * Refer to Makefile.direct instead of deleted Makefile file in README
 * Remove checking of RS6000 completely
 * Remove non-working check of M68K in gctest
