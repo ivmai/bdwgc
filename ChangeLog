@@ -7,15 +7,19 @@
 * Add check-deps goal to Makefiles to build the tests but not execute them
 * Add missing undef GC_NO_THREAD_REDIRECTS in threaded tests
 * Adjust comments in block_unmap_inner
+* Adjust indentation in C preprocessor directives (reformatting)
 * Adjust printing on amount of unmapped memory after GC
 * Allow disable USE_PROC_FOR_LIBRARIES even if malloc is redirected on Linux
 * Allow mprotect-based incremental GC on AIX and for all Linux targets
 * Allow testing of retry-signals functionality
 * Allow to build with forced WRAP_MARK_SOME
+* Allow to compile tests with custom NTHREADS set to zero
 * Allow to skip heap expansion in GC_init
 * Allow to unmap memory block right in GC cycle where block is freed
+* Allow to use same signal for thread suspend and restart (default on E2K)
 * Always set only one bit past end in GC_set_hdr_marks
 * Assert SET_HDR does not write to GC_all_nils
+* Assert that disappearing links are accessible during registration and GC
 * Avoid unmap of memory allocated during GC init regardless of threshold
 * Better document GC_generate_random_heap/valid_address API functions
 * Build extra/gc.c in digimars.mak
@@ -24,26 +28,33 @@
 * Check pointer tag in all mark procedures (E2K)
 * Declare GC_register_stackbottom symbol as internal on IA64 (refactoring)
 * Define GC_save_regs_ret_val variable only if used on IA64 (refactoring)
+* Define and use SIGNAL_BASED_STOP_WORLD macro internally (refactoring)
 * Define marker_[b]sp only if needed (refactoring)
 * Disable H/W tag checking in mark procedures by default (E2K)
 * Disable memory unmapping explicitly in gcconfig.h for Emscripten
 * Discard sections with pseudo-paths except heap in register_map_entries
 * Do not compile pthread_start.c on Cygwin even if build shared libs (CMake)
 * Do not compile pthread_stop_world.c on Darwin (CMake)
+* Do not define THREAD_SANITIZER if GC is built w/o threads support
 * Do not put atomic_ops[_sysdeps].o to libgc.a in Makefile.direct
 * Do not treat warnings as errors by default in digimars.mak
+* Document GC_ENABLE_SUSPEND_THREAD better in configure
+* Document GC_with_callee_saves_pushed better
 * Document argument of GC_is_marked in gc_mark.h
 * Eliminate 'checking if 1U<<12 is less than zero' cppcheck FP warning
 * Eliminate 'n obtained from untrusted source' code defect FP in test_cpp
 * Enable prefetch loop in GC_mark_from on E2K
 * Enable without_libatomic_ops for targets requiring atomic_ops.c (CMake)
+* Ensure GC lock is held in add_leaked/smashed, check_heap_proc (refactoring)
 * Ensure GC_n_set_marks() does not count extra bits in hb_marks
 * Ensure a collection occurs between adjacent heap expansions
 * Ensure every test prints a message on success
 * Fail threadkeytest on pthread_create error in main loop
 * Fix digimars.mak to build 'all' by default
+* Force pthread_mutex_lock usage for GC lock if ThreadSanitizer
 * Group NEED_FIND_LIMIT definitions in gcconfig.h (refactoring)
 * Increase number of iterations in leak and middle tests
+* Initialize GC_retry_signals to true in GC_stop_init (refactoring)
 * Make abort message unique in write_fault_handler
 * Make all functions static in msvc_dbg.c except for backtrace[_symbols]
 * Mention CMake-based build in README.md and README.QUICK
@@ -52,12 +63,14 @@
 * Move public header files to include/gc in source tree
 * Name all tests consistently (refactoring)
 * New CMake option to link with external libatomic_ops (system library)
+* Output finalization information by GC_dump
 * Pass ATOMIC_OPS_LIBS to tests using AO primitives directly (Automake)
 * Prevent requesting blocks past max_heapsize in GC_collect_or_expand
 * Print in-use heap statistic on heap growth
 * Print iteration number on thread creation or join failure in tests
 * Print objs_in_block as zero for large objects in GC_print_block_list
 * Print thread number on marker thread creation failure
+* Print value of links in GC_dump_finalization_links
 * Put gc_badalc/cpp.cpp instead of .cc ones in CMake script (MSVC/BCC/WCC)
 * Really ignore bad GC_INITIAL/MAXIMUM_HEAP_SIZE values
 * Reduce number of iterations in disclaim and cpp tests
@@ -66,6 +79,7 @@
 * Relax required dependencies for atomicopstest (CMake)
 * Remove GC_copyright symbol
 * Remove GC_min/max() and simplify heap bounds update in expand_hp_inner
+* Remove GC_world_is_stopped variable (refactoring)
 * Remove IF_IA64 macro in pthread_stop_world (refactoring)
 * Remove STACK_GROWS_DOWN explicit definitions in gcconfig.h (refactoring)
 * Remove Symbian makefile
@@ -77,6 +91,7 @@
 * Remove obsolete AC_PROG_LIBTOOL in configure.ac (refactoring)
 * Remove redundant 'private' prefix in include directives in include/private
 * Remove specific DATASTART definition for ancient OpenBSD/m68k
+* Remove thread_blocked field in GC_thread (refactoring)
 * Rename MAP_LEN internal macro to OBJ_MAP_LEN (refactoring)
 * Rename README.QUICK to LICENSE and install it by default
 * Rename README.rs6000 to README.aix
@@ -87,11 +102,18 @@
 * Roundup size passed to GC_expand_hp
 * State explicitly that license is MIT-style
 * Support CFLAGS_EXTRA in rare build scripts (NT/WCC_MAKEFILE, digimars.mak)
+* Support ThreadSanitizer (GCC)
 * Support malloc redirection on E2K
+* Test manual self-suspend in gctest
 * Treat GC_arrays as a part of internal memory when printing its size
 * Try find libatomic_ops installed by cmake if with_libatomic_ops (CMake)
+* Update next_random_no state using AO primitive
+* Use AO primitive in GC_noop1 instead of no_sanitize attribute
+* Use AO primitives in GC_RAND_NEXT instead of no_sanitize attribute
 * Use GC_printf in cpptest consistently (refactoring)
+* Use single-argument suspend_handler for E2K, HP_PA, IA64, M68K
 * Warn if heap has grown while GC was disabled
+* Workaround 'data access w/o lock' code defect FP in GC_incr_bytes_freed
 
 
 == [8.2.2] (not released yet) ==
