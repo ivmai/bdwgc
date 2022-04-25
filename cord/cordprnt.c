@@ -66,7 +66,7 @@ static int ec_len(CORD_ec x)
 /* If width or prec is *, VARIABLE is assigned.                         */
 /* Set *left to 1 if left adjustment flag is present.                   */
 /* Set *long_arg to 1 if long flag ('l' or 'L') is present, or to       */
-/* -1 if 'h' is present.                                                */
+/* -1 if 'h' is present, or to 2 if 'z' is present.                     */
 static int extract_conv_spec(CORD_pos source, char *buf,
                              int * width, int *prec, int *left, int * long_arg)
 {
@@ -119,6 +119,10 @@ static int extract_conv_spec(CORD_pos source, char *buf,
           case 'l':
           case 'L':
             *long_arg = 1;
+            current_number = 0;
+            break;
+          case 'z':
+            *long_arg = 2;
             current_number = 0;
             break;
           case 'h':
@@ -225,6 +229,9 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                             int * pos_ptr;
                             pos_ptr = va_arg(args, int *);
                             *pos_ptr = ec_len(result);
+                        } else if (long_arg == 2) {
+                            size_t * pos_ptr = va_arg(args, size_t *);
+                            *pos_ptr = (size_t)(unsigned)ec_len(result);
                         } else if (long_arg > 0) {
                             long * pos_ptr;
                             pos_ptr = va_arg(args, long *);
@@ -326,7 +333,9 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         case 'c':
                             if (long_arg <= 0) {
                               (void) va_arg(args, int);
-                            } else /* long_arg > 0 */ {
+                            } else if (long_arg == 2) {
+                              (void) va_arg(args, size_t);
+                            } else /* long_arg == 1 */ {
                               (void) va_arg(args, long);
                             }
                             break;
