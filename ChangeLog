@@ -1,8 +1,13 @@
 
 == [7.6.16] (not released yet) ==
 
+* Do not send signal to thread which is suspended manually
 * Eliminate 'old_gc_no is initialized but not referenced' MS VC false warning
 * Fix 'GC_greatest_stack_base_below is defined but not used' warning (IA64)
+* Fix context saving when GC_suspend_thread(self)
+* Fix data race in fail_proc1 of gctest
+* Fix GC_suspend_thread if called before thread destructor
+* Fix hang on sem_wait in GC_suspend_thread if thread was resumed recently
 * Fix lock assertion violation in GC_find_limit if always multi-threaded
 * Workaround Thread Sanitizer (TSan) FP warning in is_valid_displacement
 
