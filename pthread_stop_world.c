@@ -651,7 +651,7 @@ STATIC void GC_restart_handler(int sig)
           AO_store(&(t -> stop_info.ext_suspend_cnt), (AO_t)(suspend_cnt + 1));
 
           if ((t -> flags & FINISHED) == 0 && !(t -> thread_blocked)) {
-            int result = raise_signal(t, GC_sig_thr_restart);
+            int result = RAISE_SIGNAL(t, GC_sig_thr_restart);
 
             /* TODO: Support signal resending on GC_retry_signals */
             if (result != 0)
