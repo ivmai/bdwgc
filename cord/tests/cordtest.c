@@ -272,7 +272,7 @@ int wrap_vfprintf(FILE * f, CORD format, ...)
 # endif
 #endif
 
-/* no static */ /* no const */ char *zu_format = "%zu";
+/* no static */ /* no const */ char *zu_format = (char*)"%zu";
 
 void test_printf(void)
 {
