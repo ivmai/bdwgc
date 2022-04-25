@@ -385,6 +385,7 @@
 
 * Distribute gc_disclaim.h in single-obj-compilation
 * Do not name GCC intrinsics as C11 ones
+* Do not send signal to thread which is suspended manually
 * Eliminate 'buffer overflow detected' FP error in realloc_test
 * Eliminate 'function/data pointer conversion in expression' MSVC warning
 * Eliminate 'new_l may be used uninitialized' gcc warning in os_dep (Cygwin)
@@ -392,27 +393,40 @@
 * Eliminate 'value exceeds maximum object size' gcc warning in debug_malloc
 * Eliminate 'value exceeds maximum object size' gcc warnings in huge_test
 * Eliminate 'writing into region of size 0' gcc FP warning in realloc
+* Eliminate division-by-zero FP warning in GC_ASSERT in reclaim_block
 * Eliminate stringop-overflow gcc-12 warning in CORD__next
 * Fix 'GC_greatest_stack_base_below is defined but not used' warning (IA64)
 * Fix 'GC_text_mapping not used' GCC warning if redirect malloc w/o threads
 * Fix 'ISO C forbids conversion of function pointer to object' warning
 * Fix 'undeclared getpagesize' compiler warning on AIX and OSF1
 * Fix GC_allocate_ml incorrect cleanup in GC_deinit if pthreads (MinGW)
+* Fix GC_suspend_thread if called before thread destructor
 * Fix GC_unmapped_bytes update in GC_unmap for Sony PS/3
+* Fix SIGSEGV caused by dropped stack access from child process in gctest
+* Fix assertion violation of GC_thread_key alignment if pthread-based TLS
+* Fix context saving when GC_suspend_thread(self)
+* Fix data race in fail_proc1 of gctest
 * Fix get_maps failure when GC_repeat_read returns zero
 * Fix hang in GC_free if GC_PREFER_MPROTECT_VDB (Mingw64)
+* Fix hang in select() called from suspend signal handler if TSan
+* Fix hang on sem_wait in GC_suspend_thread if thread was resumed recently
 * Fix lock assertion violation in GC_find_limit if always multi-threaded
 * Fix missing lock when GC_generate_random_valid_address is called
 * Fix nodist_libgc_la_SOURCES value in Makefile.am for Solaris/sparc
 * Fix oldProc initialization in gc_cleanup and eliminate related warnings
 * Fix parallel_initialized assertion violation in initsecondarythread (Win32)
 * Fix stack overflow in gctest on Alpine Linux/s390x
-* Fix typos in debugging.md, in comments of allchblk.c, finalize.c, gc.h
+* Fix typo in debugging.html
+* Fix typos in comments of allchblk.c, cordprnt.c, finalize.c, gc.h
 * Fix undefined __stack_base__ on UWP/arm64 (llvm-mingw)
 * Refer to Makefile.direct instead of deleted Makefile file in README
+* Relax assertion of hb_n_marks in reclaim_block if more than two markers
 * Remove checking of RS6000 completely
 * Remove non-working check of M68K in gctest
 * Revert addition of msvc_dbg.h in include.am
+* Use SIGRTMIN+6 as suspend signal if sigrt-signals on OpenBSD
+* Workaround TSan FP warning in finalized_malloc, push_unconditionally
+* Workaround TSan FP warning in push_marked1/2/4, ptr_store_and_dirty
 * Workaround Thread Sanitizer (TSan) FP warning in is_valid_displacement
 * Workaround crash in FreeBSD rand() by avoiding its concurrent usage (tests)
 
