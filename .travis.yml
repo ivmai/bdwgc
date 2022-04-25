@@ -827,6 +827,7 @@ script:
     make -f $MAKEFILE_NAME $MAKEFILE_TARGETS_CHECK CC=$CC_FOR_CHECK
             CFLAGS_EXTRA="$CFLAGS_EXTRA";
   fi
+- if [ -f cordtest.log ]; then cat cordtest.log; fi
 - if [ -f disclaim_bench.log ]; then cat disclaim_bench.log; fi
 - if [ -f disclaimtest.log ]; then cat disclaimtest.log; fi
 - if [ -f gctest.log ]; then cat gctest.log; fi
