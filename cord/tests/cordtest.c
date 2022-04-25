@@ -272,6 +272,8 @@ int wrap_vfprintf(FILE * f, CORD format, ...)
 # endif
 #endif
 
+/* no static */ /* no const */ char *zu_format = "%zu";
+
 void test_printf(void)
 {
     CORD result;
@@ -305,9 +307,11 @@ void test_printf(void)
     if (CORD_cmp(result, result2) != 0) ABORT("CORD_sprintf goofed 5");
 
 #   ifdef GC_SNPRINTF
-        res = GC_SNPRINTF(result2, sizeof(result2), "%zu", (size_t)0);
+        /* Check whether "%zu" specifier is supported; pass the format  */
+        /* string via a variable to avoid a compiler warning if not.    */
+        res = GC_SNPRINTF(result2, sizeof(result2), zu_format, (size_t)0);
 #   else
-        res = sprintf(result2, "%zu", (size_t)0);
+        res = sprintf(result2, zu_format, (size_t)0);
 #   endif
     result2[sizeof(result2) - 1] = '\0';
     if (res == 1) /* is "%z" supported by printf? */ {
@@ -316,6 +320,8 @@ void test_printf(void)
             ABORT("CORD_sprintf failed 5");
         if (CORD_cmp(result, "123 4567 0x4abc") != 0)
             ABORT("CORD_sprintf goofed 5");
+    } else {
+        (void)CORD_printf("printf lacks support of 'z' modifier\n");
     }
 
     /* TODO: Better test CORD_[v][f]printf.     */
