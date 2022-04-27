@@ -81,7 +81,7 @@ word GC_gc_no = 0;
 #endif
 
 STATIC GC_bool GC_need_full_gc = FALSE;
-                           /* Need full GC do to heap growth.   */
+                           /* Need full GC due to heap growth.  */
 
 #ifdef THREAD_LOCAL_ALLOC
   GC_INNER GC_bool GC_world_stopped = FALSE;
