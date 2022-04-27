@@ -109,7 +109,7 @@ GC_API int GC_CALL GC_is_incremental_mode(void)
 #endif
 
 STATIC GC_bool GC_need_full_gc = FALSE;
-                           /* Need full GC do to heap growth.   */
+                           /* Need full GC due to heap growth.  */
 
 #ifdef THREAD_LOCAL_ALLOC
   GC_INNER GC_bool GC_world_stopped = FALSE;
