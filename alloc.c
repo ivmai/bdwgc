@@ -1219,11 +1219,11 @@ STATIC void GC_finish_collection(void)
                                + sizeof(GC_arrays)));
     GC_DBGLOG_PRINT_HEAP_IN_USE();
     if (GC_is_full_gc) {
-        GC_used_heap_size_after_full = USED_HEAP_SIZE;
+        GC_used_heap_size_after_full = GC_heapsize - GC_large_free_bytes;
         GC_need_full_gc = FALSE;
     } else {
-        GC_need_full_gc = USED_HEAP_SIZE - GC_used_heap_size_after_full
-                            > min_bytes_allocd();
+        GC_need_full_gc = GC_heapsize - GC_used_heap_size_after_full
+                          > min_bytes_allocd() + GC_large_free_bytes;
     }
 
     /* Reset or increment counters for next cycle */

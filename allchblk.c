@@ -691,7 +691,7 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
 
     may_split = TRUE;
     if (GC_use_entire_heap || GC_dont_gc
-        || USED_HEAP_SIZE < GC_requested_heapsize
+        || GC_heapsize - GC_large_free_bytes < GC_requested_heapsize
         || GC_incremental || !GC_should_collect()) {
         /* Should use more of the heap, even if it requires splitting. */
         split_limit = N_HBLK_FLS;

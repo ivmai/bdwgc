@@ -1681,7 +1681,6 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 
 #define beginGC_arrays ((ptr_t)(&GC_arrays))
 #define endGC_arrays (((ptr_t)(&GC_arrays)) + (sizeof GC_arrays))
-#define USED_HEAP_SIZE (GC_heapsize - GC_large_free_bytes)
 
 /* Object kinds: */
 #ifndef MAXOBJKINDS
