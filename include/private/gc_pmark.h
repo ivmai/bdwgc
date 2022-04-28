@@ -421,26 +421,6 @@ GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
 
 #define GC_mark_stack_empty() ((word)GC_mark_stack_top < (word)GC_mark_stack)
 
-/*
- * Mark from one finalizable object using the specified
- * mark proc. May not mark the object pointed to by
- * real_ptr. That is the job of the caller, if appropriate.
- * Note that this is called with the mutator running, but
- * with us holding the allocation lock.  This is safe only if the
- * mutator needs the allocation lock to reveal hidden pointers.
- * FIXME: Why do we need the GC_mark_state test below?
- */
-#define GC_MARK_FO(real_ptr, mark_proc) \
-  do { \
-    GC_ASSERT(I_HOLD_LOCK()); \
-    (*(mark_proc))(real_ptr); \
-    while (!GC_mark_stack_empty()) MARK_FROM_MARK_STACK(); \
-    if (GC_mark_state != MS_NONE) { \
-        GC_set_mark_bit(real_ptr); \
-        while (!GC_mark_some((ptr_t)0)) { /* empty */ } \
-    } \
-  } while (0)
-
                                 /* Current state of marking, as follows.*/
 
                                 /* We say something is dirty if it was  */

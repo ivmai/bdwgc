@@ -290,6 +290,27 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     return 1;
 }
 
+/* Mark from one finalizable object using the specified mark proc.      */
+/* May not mark the object pointed to by real_ptr (i.e, it is the job   */
+/* of the caller, if appropriate).  Note that this is called with the   */
+/* mutator running, but we hold the the GC lock.  This is safe only     */
+/* if the mutator (client) gets the GC lock to reveal hidden pointers.  */
+GC_INLINE void GC_mark_fo(ptr_t real_ptr, finalization_mark_proc mark_proc)
+{
+  GC_ASSERT(I_HOLD_LOCK());
+  mark_proc(real_ptr);
+  /* Process objects pushed by the mark procedure.      */
+  while (!GC_mark_stack_empty())
+    MARK_FROM_MARK_STACK();
+}
+
+/* Complete a collection in progress, if any.   */
+GC_INLINE void GC_complete_ongoing_collection(void) {
+  if (EXPECT(GC_collection_in_progress(), FALSE)) {
+    while (!GC_mark_some(NULL)) { /* empty */ }
+  }
+}
+
 /* Toggle-ref support.  */
 #ifndef GC_TOGGLE_REFS_NOT_NEEDED
   typedef union toggle_ref_u GCToggleRef;
@@ -339,21 +360,6 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
   STATIC void GC_normal_finalize_mark_proc(ptr_t);
 
-  static void push_and_mark_object(void *p)
-  {
-    GC_ASSERT(I_HOLD_LOCK());
-    GC_normal_finalize_mark_proc((ptr_t)p);
-    while (!GC_mark_stack_empty()) {
-      MARK_FROM_MARK_STACK();
-    }
-    GC_set_mark_bit(p);
-    if (GC_mark_state != MS_NONE) {
-      while (!GC_mark_some(0)) {
-        /* Empty. */
-      }
-    }
-  }
-
   STATIC void GC_mark_togglerefs(void)
   {
     size_t i;
@@ -366,7 +372,10 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     for (i = 0; i < GC_toggleref_array_size; ++i) {
       void *obj = GC_toggleref_arr[i].strong_ref;
       if (obj != NULL && ((word)obj & 1) == 0) {
-        push_and_mark_object(obj);
+        /* Push and mark the object.    */
+        GC_mark_fo((ptr_t)obj, GC_normal_finalize_mark_proc);
+        GC_set_mark_bit(obj);
+        GC_complete_ongoing_collection();
       }
     }
   }
@@ -1002,7 +1011,7 @@ GC_INNER void GC_finalize(void)
 
   /* Mark all objects reachable via chains of 1 or more pointers        */
   /* from finalizable objects.                                          */
-    GC_ASSERT(GC_mark_state == MS_NONE);
+    GC_ASSERT(!GC_collection_in_progress());
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = GC_fnlz_roots.fo_head[i];
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
@@ -1010,7 +1019,7 @@ GC_INNER void GC_finalize(void)
         real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
             GC_MARKED_FOR_FINALIZATION(real_ptr);
-            GC_MARK_FO(real_ptr, curr_fo -> fo_mark_proc);
+            GC_mark_fo(real_ptr, curr_fo -> fo_mark_proc);
             if (GC_is_marked(real_ptr)) {
                 WARN("Finalization cycle involving %p\n", real_ptr);
             }
@@ -1074,7 +1083,7 @@ GC_INNER void GC_finalize(void)
         real_ptr = (ptr_t)curr_fo -> fo_hidden_base;
         if (!GC_is_marked(real_ptr)) {
             if (curr_fo -> fo_mark_proc == GC_null_finalize_mark_proc) {
-                GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
+                GC_mark_fo(real_ptr, GC_normal_finalize_mark_proc);
             }
             if (curr_fo -> fo_mark_proc != GC_unreachable_finalize_mark_proc) {
                 GC_set_mark_bit(real_ptr);
@@ -1148,9 +1157,10 @@ GC_INNER void GC_finalize(void)
 #ifndef JAVA_FINALIZATION_NOT_NEEDED
 
   /* Enqueue all remaining finalizers to be run.        */
+  /* A collection in progress, if any, is completed     */
+  /* when the first finalizer is enqueued.              */
   STATIC void GC_enqueue_all_finalizers(void)
   {
-    struct finalizable_object * next_fo;
     size_t i;
     size_t fo_size = GC_fnlz_roots.fo_head == NULL ? 0 :
                                 (size_t)1 << GC_log_fo_table_size;
@@ -1162,11 +1172,12 @@ GC_INNER void GC_finalize(void)
 
       GC_fnlz_roots.fo_head[i] = NULL;
       while (curr_fo != NULL) {
+          struct finalizable_object * next_fo;
           ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
 
-          GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
+          GC_mark_fo(real_ptr, GC_normal_finalize_mark_proc);
           GC_set_mark_bit(real_ptr);
-
+          GC_complete_ongoing_collection();
           next_fo = fo_next(curr_fo);
 
           /* Add to list of objects awaiting finalization.      */
