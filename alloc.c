@@ -245,7 +245,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
 #if defined(GC_DISABLE_INCREMENTAL) || defined(NO_CLOCK)
 # define GC_timeout_stop_func GC_default_stop_func
 #else
-  STATIC int GC_CALLBACK GC_timeout_stop_func (void)
+  STATIC int GC_CALLBACK GC_timeout_stop_func(void)
   {
     CLOCK_TYPE current_time;
     static unsigned count = 0;
@@ -254,7 +254,9 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
     if ((*GC_default_stop_func)())
       return(1);
 
-    if ((count++ & 3) != 0) return(0);
+    if (GC_time_limit == GC_TIME_UNLIMITED || (count++ & 3) != 0)
+      return 0;
+
     GET_TIME(current_time);
     time_diff = MS_TIME_DIFF(current_time,GC_start_time);
     nsec_diff = NS_FRAC_TIME_DIFF(current_time, GC_start_time);
@@ -466,63 +468,53 @@ STATIC GC_bool GC_is_full_gc = FALSE;
 STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func);
 STATIC void GC_finish_collection(void);
 
-/*
- * Initiate a garbage collection if appropriate.
- * Choose judiciously
- * between partial, full, and stop-world collections.
- */
+/* Initiate a garbage collection if appropriate.  Choose judiciously    */
+/* between partial, full, and stop-world collections.                   */
 STATIC void GC_maybe_gc(void)
 {
-    GC_ASSERT(I_HOLD_LOCK());
-    ASSERT_CANCEL_DISABLED();
-    if (GC_should_collect()) {
-        static int n_partial_gcs = 0;
+  static int n_partial_gcs = 0;
 
-        if (!GC_incremental) {
-            /* TODO: If possible, GC_default_stop_func should be used here */
-            GC_try_to_collect_inner(GC_never_stop_func);
-            n_partial_gcs = 0;
-            return;
-        } else {
-#         ifdef PARALLEL_MARK
-            if (GC_parallel)
-              GC_wait_for_reclaim();
-#         endif
-          if (GC_need_full_gc || n_partial_gcs >= GC_full_freq) {
-            GC_COND_LOG_PRINTF(
+  GC_ASSERT(I_HOLD_LOCK());
+  ASSERT_CANCEL_DISABLED();
+  if (!GC_should_collect()) return;
+
+  if (!GC_incremental) {
+    GC_gcollect_inner();
+    return;
+  }
+
+# ifndef NO_CLOCK
+    if (GC_time_limit != GC_TIME_UNLIMITED) GET_TIME(GC_start_time);
+# endif
+# ifdef PARALLEL_MARK
+    if (GC_parallel)
+      GC_wait_for_reclaim();
+# endif
+  if (GC_need_full_gc || n_partial_gcs >= GC_full_freq) {
+    GC_COND_LOG_PRINTF(
                 "***>Full mark for collection #%lu after %lu allocd bytes\n",
                 (unsigned long)GC_gc_no + 1, (unsigned long)GC_bytes_allocd);
-            GC_promote_black_lists();
-            (void)GC_reclaim_all((GC_stop_func)0, TRUE);
-            GC_notify_full_gc();
-            GC_clear_marks();
-            n_partial_gcs = 0;
-            GC_is_full_gc = TRUE;
-          } else {
-            n_partial_gcs++;
-          }
-        }
-        /* We try to mark with the world stopped.       */
-        /* If we run out of time, this turns into       */
-        /* incremental marking.                         */
-#       ifndef NO_CLOCK
-          if (GC_time_limit != GC_TIME_UNLIMITED) { GET_TIME(GC_start_time); }
-#       endif
-        /* TODO: If possible, GC_default_stop_func should be    */
-        /* used instead of GC_never_stop_func here.             */
-        if (GC_stopped_mark(GC_time_limit == GC_TIME_UNLIMITED?
-                            GC_never_stop_func : GC_timeout_stop_func)) {
-#           ifdef SAVE_CALL_CHAIN
-                GC_save_callers(GC_last_stack);
-#           endif
-            GC_finish_collection();
-        } else {
-            if (!GC_is_full_gc) {
-                /* Count this as the first attempt */
-                GC_n_attempts++;
-            }
-        }
-    }
+    GC_promote_black_lists();
+    (void)GC_reclaim_all((GC_stop_func)0, TRUE);
+    GC_notify_full_gc();
+    GC_clear_marks();
+    n_partial_gcs = 0;
+    GC_is_full_gc = TRUE;
+  } else {
+    n_partial_gcs++;
+  }
+
+  /* Try to mark with the world stopped.  If we run out of      */
+  /* time, this turns into an incremental marking.              */
+  if (GC_stopped_mark(GC_timeout_stop_func)) {
+#   ifdef SAVE_CALL_CHAIN
+      GC_save_callers(GC_last_stack);
+#   endif
+    GC_finish_collection();
+  } else if (!GC_is_full_gc) {
+    /* Count this as the first attempt. */
+    GC_n_attempts++;
+  }
 }
 
 STATIC GC_on_collection_event_proc GC_on_collection_event = 0;
@@ -711,6 +703,9 @@ GC_INNER void GC_collect_a_little_inner(int n)
             if (GC_time_limit != GC_TIME_UNLIMITED)
                 GC_parallel_mark_disabled = TRUE;
 #       endif
+#       ifndef NO_CLOCK
+            if (GC_time_limit != GC_TIME_UNLIMITED) GET_TIME(GC_start_time);
+#       endif
         for (i = GC_deficit; i < max_deficit; i++) {
             if (GC_mark_some(NULL))
                 break;
@@ -728,21 +723,11 @@ GC_INNER void GC_collect_a_little_inner(int n)
                 if (GC_parallel)
                     GC_wait_for_reclaim();
 #           endif
-            if (GC_n_attempts < max_prior_attempts
-                && GC_time_limit != GC_TIME_UNLIMITED) {
-#               ifndef NO_CLOCK
-                    GET_TIME(GC_start_time);
-#               endif
-                if (GC_stopped_mark(GC_timeout_stop_func)) {
-                    GC_finish_collection();
-                } else {
-                    GC_n_attempts++;
-                }
-            } else {
-                /* TODO: If possible, GC_default_stop_func should be    */
-                /* used here.                                           */
-                (void)GC_stopped_mark(GC_never_stop_func);
+            if (GC_stopped_mark(GC_n_attempts < max_prior_attempts ?
+                                GC_timeout_stop_func : GC_never_stop_func)) {
                 GC_finish_collection();
+            } else {
+                GC_n_attempts++;
             }
         }
         if (GC_deficit > 0) {

@@ -112,7 +112,7 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
       IF_CANCEL(int cancel_state;)
 
       DISABLE_CANCEL(cancel_state);
-      (void)GC_try_to_collect_inner(GC_never_stop_func);
+      GC_gcollect_inner();
       RESTORE_CANCEL(cancel_state);
       /* GC_finalize might decrease entries value.  */
       if (*entries_ptr < ((word)1 << log_old_size) - (*entries_ptr >> 2))
