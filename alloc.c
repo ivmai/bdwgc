@@ -483,9 +483,6 @@ STATIC void GC_maybe_gc(void)
     return;
   }
 
-# ifndef NO_CLOCK
-    if (GC_time_limit != GC_TIME_UNLIMITED) GET_TIME(GC_start_time);
-# endif
 # ifdef PARALLEL_MARK
     if (GC_parallel)
       GC_wait_for_reclaim();
@@ -506,6 +503,9 @@ STATIC void GC_maybe_gc(void)
 
   /* Try to mark with the world stopped.  If we run out of      */
   /* time, this turns into an incremental marking.              */
+# ifndef NO_CLOCK
+    if (GC_time_limit != GC_TIME_UNLIMITED) GET_TIME(GC_start_time);
+# endif
   if (GC_stopped_mark(GC_timeout_stop_func)) {
 #   ifdef SAVE_CALL_CHAIN
       GC_save_callers(GC_last_stack);
@@ -703,9 +703,6 @@ GC_INNER void GC_collect_a_little_inner(int n)
             if (GC_time_limit != GC_TIME_UNLIMITED)
                 GC_parallel_mark_disabled = TRUE;
 #       endif
-#       ifndef NO_CLOCK
-            if (GC_time_limit != GC_TIME_UNLIMITED) GET_TIME(GC_start_time);
-#       endif
         for (i = GC_deficit; i < max_deficit; i++) {
             if (GC_mark_some(NULL))
                 break;
@@ -722,6 +719,11 @@ GC_INNER void GC_collect_a_little_inner(int n)
 #           ifdef PARALLEL_MARK
                 if (GC_parallel)
                     GC_wait_for_reclaim();
+#           endif
+#           ifndef NO_CLOCK
+                if (GC_time_limit != GC_TIME_UNLIMITED
+                        && GC_n_attempts < max_prior_attempts)
+                    GET_TIME(GC_start_time);
 #           endif
             if (GC_stopped_mark(GC_n_attempts < max_prior_attempts ?
                                 GC_timeout_stop_func : GC_never_stop_func)) {
