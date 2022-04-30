@@ -43,7 +43,7 @@ int getpagesize(void)
         fprintf(stderr, "DosQuerySysInfo failed\n");
         result[0] = 4096;
     }
-    return((int)(result[0]));
+    return (int)result[0];
 }
 
 #elif defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
@@ -155,10 +155,10 @@ int main(void)
       printf("Parallel marking enabled.\n");
 #   endif
     (void)g(x);
-    return(0);
+    return 0;
 }
 
 int g(int x)
 {
-    return(x);
+    return x;
 }

@@ -116,7 +116,7 @@ GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 /* mark state is now MS_INVALID.                                        */
 GC_INNER GC_bool GC_collection_in_progress(void)
 {
-    return(GC_mark_state != MS_NONE);
+    return GC_mark_state != MS_NONE;
 }
 
 /* Clear all mark bits in the header.   */
@@ -364,7 +364,7 @@ static void alloc_mark_stack(size_t);
                   }
                   if (GC_mark_state == MS_ROOTS_PUSHED) {
                     GC_mark_state = MS_NONE;
-                    return(TRUE);
+                    return TRUE;
                   }
                   break;
                 }
@@ -377,7 +377,7 @@ static void alloc_mark_stack(size_t);
                 if (GC_mark_stack_too_small) {
                     alloc_mark_stack(2*GC_mark_stack_size);
                 }
-                return(TRUE);
+                return TRUE;
             }
 
         case MS_INVALID:
@@ -411,7 +411,7 @@ static void alloc_mark_stack(size_t);
         default:
             ABORT("GC_mark_some: bad state");
     }
-    return(FALSE);
+    return FALSE;
 }
 
 #ifdef WRAP_MARK_SOME
@@ -606,7 +606,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp)
 #   endif
     GC_COND_LOG_PRINTF("Mark stack overflow; current size: %lu entries\n",
                        (unsigned long)GC_mark_stack_size);
-    return(msp - GC_MARK_STACK_DISCARDS);
+    return msp - GC_MARK_STACK_DISCARDS;
 }
 
 /*
@@ -1952,17 +1952,16 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
   STATIC GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
   {
     word sz = hhdr -> hb_sz;
+    ptr_t p;
 
     if (sz <= MAXOBJBYTES) {
-         return(GC_page_was_dirty(h));
-    } else {
-         ptr_t p = (ptr_t)h;
-         while ((word)p < (word)h + sz) {
-             if (GC_page_was_dirty((struct hblk *)p)) return(TRUE);
-             p += HBLKSIZE;
-         }
-         return(FALSE);
+      return GC_page_was_dirty(h);
     }
+
+    for (p = (ptr_t)h; (word)p < (word)h + sz; p += HBLKSIZE) {
+      if (GC_page_was_dirty((struct hblk *)p)) return TRUE;
+    }
+    return FALSE;
   }
 #endif /* GC_DISABLE_INCREMENTAL */
 
@@ -1982,7 +1981,7 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
 #     endif
     }
     GC_push_marked(h, hhdr);
-    return(h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz));
+    return h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
 }
 
 #ifndef GC_DISABLE_INCREMENTAL
@@ -2023,7 +2022,7 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
     /* else */ {
       GC_push_marked(h, hhdr);
     }
-    return(h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz));
+    return h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
   }
 #endif /* !GC_DISABLE_INCREMENTAL */
 
@@ -2057,5 +2056,5 @@ STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h)
         h += OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
         hhdr = HDR(h);
     }
-    return(h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz));
+    return h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
 }

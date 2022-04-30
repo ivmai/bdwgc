@@ -88,7 +88,7 @@ static int extract_conv_spec(CORD_pos source, char *buf,
     *width = NONE;
     buf[chars_so_far++] = '%';
     while(CORD_pos_valid(source)) {
-        if (chars_so_far >= CONV_SPEC_LEN) return(-1);
+        if (chars_so_far >= CONV_SPEC_LEN) return -1;
         current = CORD_pos_fetch(source);
         buf[chars_so_far++] = current;
         switch(current) {
@@ -166,11 +166,11 @@ static int extract_conv_spec(CORD_pos source, char *buf,
           case 'r':
             goto done;
           default:
-            return(-1);
+            return -1;
         }
         CORD_next(source);
     }
-    return(-1);
+    return -1;
   done:
     if (saw_number) {
         if (saw_period) {
@@ -183,7 +183,7 @@ static int extract_conv_spec(CORD_pos source, char *buf,
         *prec = NONE;
     }
     buf[chars_so_far] = '\0';
-    return(result);
+    return result;
 }
 
 #if defined(__DJGPP__) || defined(__STRICT_ANSI__)
@@ -213,7 +213,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
         current = CORD_pos_fetch(pos);
         if (current == '%') {
             CORD_next(pos);
-            if (!CORD_pos_valid(pos)) return(-1);
+            if (!CORD_pos_valid(pos)) return -1;
             current = CORD_pos_fetch(pos);
             if (current == '%') {
                 CORD_ec_append(result, current);
@@ -227,7 +227,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                 if (extract_conv_spec(pos, conv_spec,
                                       &width, &prec,
                                       &left_adj, &long_arg) < 0) {
-                    return(-1);
+                    return -1;
                 }
                 current = CORD_pos_fetch(pos);
                 switch(current) {
@@ -257,7 +257,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         arg = va_arg(args, CORD);
                         len = CORD_len(arg);
                         if (prec != NONE && len > (unsigned)prec) {
-                          if (prec < 0) return(-1);
+                          if (prec < 0) return -1;
                           arg = CORD_substr(arg, 0, (unsigned)prec);
                           len = (unsigned)prec;
                         }
@@ -374,7 +374,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         /* old style vsprintf */
                         len = strlen(buf);
                     } else if (res < 0) {
-                        return(-1);
+                        return -1;
                     }
                     if (buf != result[0].ec_bufptr) {
                         char c;
@@ -394,7 +394,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
     }
     count = ec_len(result);
     *out = CORD_balance(CORD_ec_to_cord(result));
-    return(count);
+    return count;
 }
 
 int CORD_sprintf(CORD * out, CORD format, ...)
@@ -405,7 +405,7 @@ int CORD_sprintf(CORD * out, CORD format, ...)
     va_start(args, format);
     result = CORD_vsprintf(out, format, args);
     va_end(args);
-    return(result);
+    return result;
 }
 
 int CORD_fprintf(FILE * f, CORD format, ...)
@@ -418,7 +418,7 @@ int CORD_fprintf(FILE * f, CORD format, ...)
     result = CORD_vsprintf(&out, format, args);
     va_end(args);
     if (result > 0) CORD_put(out, f);
-    return(result);
+    return result;
 }
 
 int CORD_vfprintf(FILE * f, CORD format, va_list args)
@@ -428,7 +428,7 @@ int CORD_vfprintf(FILE * f, CORD format, va_list args)
 
     result = CORD_vsprintf(&out, format, args);
     if (result > 0) CORD_put(out, f);
-    return(result);
+    return result;
 }
 
 int CORD_printf(CORD format, ...)
@@ -441,7 +441,7 @@ int CORD_printf(CORD format, ...)
     result = CORD_vsprintf(&out, format, args);
     va_end(args);
     if (result > 0) CORD_put(out, stdout);
-    return(result);
+    return result;
 }
 
 int CORD_vprintf(CORD format, va_list args)
@@ -451,5 +451,5 @@ int CORD_vprintf(CORD format, va_list args)
 
     result = CORD_vsprintf(&out, format, args);
     if (result > 0) CORD_put(out, stdout);
-    return(result);
+    return result;
 }

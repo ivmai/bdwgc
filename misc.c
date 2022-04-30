@@ -175,7 +175,7 @@ GC_INNER long GC_large_alloc_warn_interval = GC_LARGE_ALLOC_WARN_INTERVAL;
 STATIC void * GC_CALLBACK GC_default_oom_fn(
                                         size_t bytes_requested GC_ATTR_UNUSED)
 {
-    return(0);
+    return NULL;
 }
 
 /* All accesses to it should be synchronized to avoid data races.       */
@@ -318,7 +318,7 @@ STATIC void GC_init_size_map(void)
 #     else
         GC_noop1(COVERT_DATAFLOW(dummy));
 #     endif
-      return(arg);
+      return arg;
     }
 # endif /* !ASM_CLEAR_CODE */
 
@@ -426,11 +426,11 @@ GC_API void * GC_CALL GC_base(void * p)
     hdr *candidate_hdr;
 
     r = (ptr_t)p;
-    if (!EXPECT(GC_is_initialized, TRUE)) return 0;
+    if (!EXPECT(GC_is_initialized, TRUE)) return NULL;
     h = HBLKPTR(r);
     GET_BI(r, bi);
     candidate_hdr = HDR_FROM_BI(bi, r);
-    if (candidate_hdr == 0) return(0);
+    if (NULL == candidate_hdr) return NULL;
     /* If it's a pointer to the middle of a large object, move it       */
     /* to the beginning.                                                */
         while (IS_FORWARDING_ADDR_OR_NIL(candidate_hdr)) {
@@ -438,23 +438,20 @@ GC_API void * GC_CALL GC_base(void * p)
            r = (ptr_t)h;
            candidate_hdr = HDR(h);
         }
-    if (HBLK_IS_FREE(candidate_hdr)) return(0);
+    if (HBLK_IS_FREE(candidate_hdr)) return NULL;
     /* Make sure r points to the beginning of the object */
         r = (ptr_t)((word)r & ~(WORDS_TO_BYTES(1) - 1));
         {
-            size_t offset = HBLKDISPL(r);
             word sz = candidate_hdr -> hb_sz;
-            size_t obj_displ = offset % sz;
             ptr_t limit;
 
-            r -= obj_displ;
+            r -= HBLKDISPL(r) % sz;
             limit = r + sz;
-            if ((word)limit > (word)(h + 1) && sz <= HBLKSIZE) {
-                return(0);
-            }
-            if ((word)p >= (word)limit) return(0);
+            if (((word)limit > (word)(h + 1) && sz <= HBLKSIZE)
+                || (word)p >= (word)limit)
+              return NULL;
         }
-    return((void *)r);
+    return (void *)r;
 }
 
 /* Return TRUE if and only if p points to somewhere in GC heap. */
@@ -1800,12 +1797,12 @@ GC_API void GC_CALL GC_enable_incremental(void)
              if (EAGAIN == errno) /* Resource temporarily unavailable */
                continue;
              RESTORE_CANCEL(cancel_state);
-             return(result);
+             return result;
          }
          bytes_written += result;
       }
       RESTORE_CANCEL(cancel_state);
-      return(bytes_written);
+      return bytes_written;
 #   endif
   }
 
@@ -1969,7 +1966,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
     LOCK();
     result = GC_current_warn_proc;
     UNLOCK();
-    return(result);
+    return result;
 }
 
 #if !defined(PCR) && !defined(SMALL_CONFIG)
@@ -2163,11 +2160,11 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn, void *client_data)
 #   ifdef THREADS
       LOCK();
 #   endif
-    result = (*fn)(client_data);
+    result = fn(client_data);
 #   ifdef THREADS
       UNLOCK();
 #   endif
-    return(result);
+    return result;
 }
 
 GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)

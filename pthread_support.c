@@ -615,7 +615,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
     } else {
         result = (struct GC_Thread_Rep *)
                  GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
-        if (result == 0) return(0);
+        if (NULL == result) return NULL;
     }
     result -> id = id;
 #   ifdef USE_TKILL_ON_ANDROID
@@ -630,7 +630,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
     GC_ASSERT(0 == result -> flags);
     if (EXPECT(result != &first_thread, TRUE))
       GC_dirty(result);
-    return(result);
+    return result;
 }
 
 /* Delete a thread from GC_threads.  We assume it is there.     */
@@ -716,8 +716,9 @@ GC_INNER GC_thread GC_lookup_thread(pthread_t id)
 {
     GC_thread p = GC_threads[THREAD_TABLE_INDEX(id)];
 
-    while (p != 0 && !THREAD_EQUAL(p -> id, id)) p = p -> next;
-    return(p);
+    while (p != NULL && !THREAD_EQUAL(p -> id, id))
+        p = p -> next;
+    return p;
 }
 
 #ifndef GC_NO_FINALIZATION
@@ -1036,13 +1037,14 @@ STATIC void GC_remove_all_threads_but_me(void)
 
     status = dg_sys_info((long int *) &pm_sysinfo,
         DG_SYS_INFO_PM_INFO_TYPE, DG_SYS_INFO_PM_CURRENT_VERSION);
-    if (status < 0)
+    if (status < 0) {
        /* set -1 for error */
        numCpus = -1;
-    else
+    } else {
       /* Active CPUs */
       numCpus = pm_sysinfo.idle_vp_count;
-    return(numCpus);
+    }
+    return numCpus;
   }
 
 #elif defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS) \
@@ -1519,7 +1521,7 @@ GC_INNER void GC_init_parallel(void)
             ABORT("sigdelset failed");
         set = &fudged_set;
     }
-    return(REAL_FUNC(pthread_sigmask)(how, set, oset));
+    return REAL_FUNC(pthread_sigmask)(how, set, oset);
   }
 #endif /* !GC_NO_PTHREAD_SIGMASK */
 
@@ -2264,7 +2266,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
         RESTORE_CANCEL(cancel_state);
     }
     sem_destroy(&si.registered);
-    return(result);
+    return result;
   }
 #endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
 

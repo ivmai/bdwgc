@@ -89,7 +89,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
     size_t orig_sz; /* Original sz in bytes     */
     int obj_kind;
 
-    if (p == 0) return(GC_malloc(lb));  /* Required by ANSI */
+    if (NULL == p) return GC_malloc(lb);  /* Required by ANSI */
     if (0 == lb) /* and p != NULL */ {
 #     ifndef IGNORE_FREE
         GC_free(p);
@@ -154,7 +154,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
               /* tracing.                                             */
                 BZERO((ptr_t)cleared_p + lb, orig_sz - lb);
             }
-            return(p);
+            return p;
         }
         /* shrink */
         sz = lb;
@@ -184,7 +184,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
 # if !defined(REDIRECT_MALLOC_IN_HEADER)
     void * realloc(void * p, size_t lb)
     {
-      return(REDIRECT_REALLOC(p, lb));
+      return REDIRECT_REALLOC(p, lb);
     }
 # endif
 
@@ -240,7 +240,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     if (init && !GC_debugging_started) {
         BZERO(result, n_blocks * HBLKSIZE);
     }
-    return(result);
+    return result;
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_ignore_off_page(size_t lb)

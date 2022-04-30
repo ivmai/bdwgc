@@ -49,18 +49,18 @@ int test_fn(char c, void * client_data)
             if (c != 'a') ABORT("bad char");
         }
         count++;
-        return(0);
+        return 0;
     } else {
         if (c != 'c') ABORT("bad char");
         count++;
-        return(1);
+        return 1;
     }
 }
 
 char id_cord_fn(size_t i, void * client_data)
 {
     if (client_data != 0) ABORT("id_cord_fn: bad client data");
-    return((char)i);
+    return (char)i;
 }
 
 void test_basics(void)
@@ -345,5 +345,5 @@ int main(void)
     test_extras();
     test_printf();
     CORD_fprintf(stdout, "SUCCEEDED\n");
-    return(0);
+    return 0;
 }

@@ -380,7 +380,7 @@ struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
     mark_stack_ptr = GC_MARK_AND_PUSH(
                               (void *)(x -> sexpr_car), mark_stack_ptr,
                               mark_stack_limit, (void * *)&(x -> sexpr_car));
-    return(mark_stack_ptr);
+    return mark_stack_ptr;
 }
 
 #endif /* GC_GCJ_SUPPORT */
@@ -447,9 +447,9 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
 sexpr reverse1(sexpr x, sexpr y)
 {
     if (is_nil(x)) {
-        return(y);
+        return y;
     } else {
-        return( reverse1(cdr(x), cons(car(x), y)) );
+        return reverse1(cdr(x), cons(car(x), y));
     }
 }
 
@@ -458,13 +458,13 @@ sexpr reverse(sexpr x)
 #   ifdef TEST_WITH_SYSTEM_MALLOC
       GC_noop1(GC_HIDE_POINTER(malloc(100000)));
 #   endif
-    return( reverse1(x, nil) );
+    return reverse1(x, nil);
 }
 
 sexpr ints(int low, int up)
 {
     if (low > up) {
-        return(nil);
+        return nil;
     } else {
         return small_cons(small_cons_leaf(low), ints(low + 1, up));
     }
@@ -475,23 +475,23 @@ sexpr ints(int low, int up)
 sexpr gcj_reverse1(sexpr x, sexpr y)
 {
     if (is_nil(x)) {
-        return(y);
+        return y;
     } else {
-        return( gcj_reverse1(cdr(x), gcj_cons(car(x), y)) );
+        return gcj_reverse1(cdr(x), gcj_cons(car(x), y));
     }
 }
 
 sexpr gcj_reverse(sexpr x)
 {
-    return( gcj_reverse1(x, nil) );
+    return gcj_reverse1(x, nil);
 }
 
 sexpr gcj_ints(int low, int up)
 {
     if (low > up) {
-        return(nil);
+        return nil;
     } else {
-        return(gcj_cons(gcj_cons(INT_TO_SEXPR(low), nil), gcj_ints(low+1, up)));
+        return gcj_cons(gcj_cons(INT_TO_SEXPR(low), nil), gcj_ints(low+1, up));
     }
 }
 #endif /* GC_GCJ_SUPPORT */
@@ -501,10 +501,10 @@ sexpr gcj_ints(int low, int up)
 sexpr uncollectable_ints(int low, int up)
 {
     if (low > up) {
-        return(nil);
+        return nil;
     } else {
-        return(small_cons_uncollectable(small_cons_leaf(low),
-               uncollectable_ints(low+1, up)));
+        return small_cons_uncollectable(small_cons_leaf(low),
+                                        uncollectable_ints(low+1, up));
     }
 }
 
@@ -956,7 +956,7 @@ tn * mktree(int n)
           CHECK_OUT_OF_MEMORY(live_indicators);
         }
 #   endif
-    if (n == 0) return(0);
+    if (0 == n) return NULL;
     CHECK_OUT_OF_MEMORY(result);
     result -> level = n;
     result -> lchild = left = mktree(n - 1);
@@ -1069,7 +1069,7 @@ tn * mktree(int n)
     GC_END_STUBBORN_CHANGE(result);
     GC_reachable_here(left);
     GC_reachable_here(right);
-    return(result);
+    return result;
 }
 
 void chktree(tn *t, int n)
@@ -1104,7 +1104,7 @@ void * alloc8bytes(void)
 {
 # if defined(SMALL_CONFIG) || defined(GC_DEBUG)
     AO_fetch_and_add1(&collectable_count);
-    return(GC_MALLOC(8));
+    return GC_MALLOC(8);
 # else
     void ** my_free_list_ptr;
     void * my_free_list;
@@ -1129,7 +1129,7 @@ void * alloc8bytes(void)
     GC_PTR_STORE_AND_DIRTY(my_free_list_ptr, next);
     GC_NEXT(my_free_list) = 0;
     AO_fetch_and_add1(&collectable_count);
-    return(my_free_list);
+    return my_free_list;
 # endif
 }
 
@@ -2153,7 +2153,7 @@ void enable_incremental_mode(void)
 #   ifdef RTEMS
       exit(0);
 #   else
-      return(0);
+      return 0;
 #   endif
 }
 # endif /* !GC_WIN32_THREADS && !GC_PTHREADS */
@@ -2321,7 +2321,7 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
       UNTESTED(GC_endthreadex);
 #   endif
 # endif
-  return(0);
+  return 0;
 }
 
 #endif /* GC_WIN32_THREADS */
@@ -2356,7 +2356,7 @@ int test(void)
     }
     run_single_threaded_test();
     check_heap_stats();
-    return(0);
+    return 0;
 }
 #endif
 
@@ -2366,7 +2366,7 @@ int test(void)
 void * thr_run_one_test(void * arg GC_ATTR_UNUSED)
 {
     run_one_test();
-    return(0);
+    return 0;
 }
 
 #ifdef GC_DEBUG
@@ -2529,6 +2529,6 @@ int main(void)
         pthread_win32_thread_detach_np ();
         pthread_win32_process_detach_np ();
 #   endif
-    return(0);
+    return 0;
 }
 #endif /* GC_PTHREADS */

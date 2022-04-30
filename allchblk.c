@@ -294,7 +294,7 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
     GC_clear_hdr_marks(hhdr);
 
     hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
-    return(TRUE);
+    return TRUE;
 }
 
 /* Remove hhdr from the free list (it is assumed to specified by index). */
@@ -594,10 +594,10 @@ STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
     if (total_size == bytes) return h;
     rest = (struct hblk *)((word)h + bytes);
     rest_hdr = GC_install_header(rest);
-    if (0 == rest_hdr) {
+    if (NULL == rest_hdr) {
         /* FIXME: This is likely to be very bad news ... */
         WARN("Header allocation failed: dropping block\n", 0);
-        return(0);
+        return NULL;
     }
     rest_hdr -> hb_sz = total_size - bytes;
     rest_hdr -> hb_flags = 0;
@@ -890,16 +890,16 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
             }
         }
 
-    if (0 == hbp) return 0;
+    if (NULL == hbp) return NULL;
 
     /* Add it to map of valid blocks */
-        if (!GC_install_counts(hbp, (word)size_needed)) return(0);
+        if (!GC_install_counts(hbp, (word)size_needed)) return NULL;
         /* This leaks memory under very rare conditions. */
 
     /* Set up header */
         if (!setup_header(hhdr, hbp, sz, kind, flags)) {
             GC_remove_counts(hbp, (word)size_needed);
-            return(0); /* ditto */
+            return NULL; /* ditto */
         }
 #   ifndef GC_DISABLE_INCREMENTAL
         /* Notify virtual dirty bit implementation that we are about to */
@@ -917,7 +917,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
 
     GC_large_free_bytes -= size_needed;
     GC_ASSERT(IS_MAPPED(hhdr));
-    return( hbp );
+    return hbp;
 }
 
 /*

@@ -138,7 +138,7 @@ GC_INNER void GC_print_all_errors(void)
 /* objects.  This does not require the block to be in physical memory.  */
 GC_INNER GC_bool GC_block_empty(hdr *hhdr)
 {
-    return (hhdr -> hb_n_marks == 0);
+    return 0 == hhdr -> hb_n_marks;
 }
 
 STATIC GC_bool GC_block_nearly_full(hdr *hhdr, word sz)
@@ -236,7 +236,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
             bit_no += MARK_BIT_OFFSET(sz);
         }
     *count += n_bytes_found;
-    return(list);
+    return list;
 }
 
 #ifdef ENABLE_DISCLAIM
@@ -509,7 +509,7 @@ unsigned GC_n_set_marks(hdr *hhdr)
         result += hhdr -> hb_marks[i];
     }
     GC_ASSERT(hhdr -> hb_marks[limit]); /* the one set past the end */
-    return(result);
+    return result;
 }
 
 #else
@@ -747,7 +747,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
         for (sz = 1; sz <= MAXOBJGRANULES; sz++) {
             for (rlh = rlp + sz; (hbp = *rlh) != NULL; ) {
                 if (stop_func != (GC_stop_func)0 && (*stop_func)()) {
-                    return(FALSE);
+                    return FALSE;
                 }
                 hhdr = HDR(hbp);
                 *rlh = hhdr -> hb_next;
@@ -772,7 +772,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
                         NS_FRAC_TIME_DIFF(done_time, start_time));
       }
 #   endif
-    return(TRUE);
+    return TRUE;
 }
 
 #if !defined(EAGER_SWEEP) && defined(ENABLE_DISCLAIM)

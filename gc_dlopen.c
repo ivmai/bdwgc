@@ -82,7 +82,7 @@ GC_API void * WRAP_DLFUNC(dlopen)(const char *path, int mode)
 # ifndef USE_PROC_FOR_LIBRARIES
     GC_enable(); /* undoes disable_gc_for_dlopen */
 # endif
-  return(result);
+  return result;
 }
 
 #ifdef GC_USE_LD_WRAP

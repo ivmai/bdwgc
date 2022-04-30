@@ -83,15 +83,15 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
     if (last_root_set < n_root_sets
         && (word)p >= (word)GC_static_roots[last_root_set].r_start
         && (word)p < (word)GC_static_roots[last_root_set].r_end)
-      return(TRUE);
+      return TRUE;
     for (i = 0; i < n_root_sets; i++) {
         if ((word)p >= (word)GC_static_roots[i].r_start
             && (word)p < (word)GC_static_roots[i].r_end) {
           last_root_set = i;
-          return(TRUE);
+          return TRUE;
         }
     }
-    return(FALSE);
+    return FALSE;
   }
 #endif /* !THREADS */
 
@@ -109,6 +109,7 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
   GC_INLINE int rt_hash(ptr_t addr)
   {
     word result = (word) addr;
+
 #   if CPP_WORDSZ > 8*LOG_RT_SIZE
         result ^= result >> 8*LOG_RT_SIZE;
 #   endif
@@ -117,8 +118,7 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
 #   endif
     result ^= result >> 2*LOG_RT_SIZE;
     result ^= result >> LOG_RT_SIZE;
-    result &= (RT_SIZE-1);
-    return(result);
+    return result & (RT_SIZE-1);
   }
 
   /* Is a range starting at b already in the table? If so return a      */
@@ -126,13 +126,12 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
   GC_INNER void * GC_roots_present(ptr_t b)
   {
     int h = rt_hash(b);
-    struct roots *p = GC_root_index[h];
+    struct roots *p;
 
-    while (p != 0) {
-        if (p -> r_start == (ptr_t)b) return(p);
-        p = p -> r_next;
+    for (p = GC_root_index[h]; p != NULL; p = p -> r_next) {
+        if (p -> r_start == (ptr_t)b) break;
     }
-    return NULL;
+    return p;
   }
 
   /* Add the given root structure to the index. */
@@ -493,7 +492,7 @@ STATIC void GC_remove_tmp_roots(void)
             return GC_static_roots[i].r_tmp;
         }
     }
-    return(FALSE);
+    return FALSE;
   }
 #endif /* !NO_DEBUGGING */
 
@@ -516,7 +515,7 @@ GC_INNER ptr_t GC_approx_sp(void)
                 /* Also force stack to grow if necessary. Otherwise the */
                 /* later accesses might cause the kernel to think we're */
                 /* doing something wrong.                               */
-    return((ptr_t)sp);
+    return (ptr_t)sp;
 }
 
 /*

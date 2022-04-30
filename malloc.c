@@ -287,11 +287,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
             BZERO(result, n_blocks * HBLKSIZE);
         }
     }
-    if (0 == result) {
-        return((*GC_get_oom_fn())(lb));
-    } else {
-        return(result);
-    }
+    if (NULL == result) return (*GC_get_oom_fn())(lb);
+    return result;
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
@@ -520,9 +517,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
     {
       size_t lb = strlen(s) + 1;
       char *result = (char *)REDIRECT_MALLOC_F(lb);
-      if (result == 0) {
+
+      if (NULL == result) {
         errno = ENOMEM;
-        return 0;
+        return NULL;
       }
       BCOPY(s, result, lb);
       return result;

@@ -863,7 +863,7 @@ EXTERN_C_BEGIN
  *                  volatile int dummy;
  *
  *                  GC_stackbottom = (ptr_t)(&dummy);
- *                  return(real_main(argc, argv, envp));
+ *                  return real_main(argc, argv, envp);
  *              }
  *
  *

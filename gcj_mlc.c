@@ -165,7 +165,7 @@ static void maybe_finalize(void)
             if (0 == op) {
                 GC_oom_func oom_fn = GC_oom_fn;
                 UNLOCK();
-                return((*oom_fn)(lb));
+                return (*oom_fn)(lb);
             }
         } else {
             GC_gcjobjfreelist[lg] = (ptr_t)obj_link(op);
@@ -179,7 +179,7 @@ static void maybe_finalize(void)
         if (0 == op) {
             GC_oom_func oom_fn = GC_oom_fn;
             UNLOCK();
-            return((*oom_fn)(lb));
+            return (*oom_fn)(lb);
         }
     }
     *(void **)op = ptr_to_struct_containing_descr;
@@ -203,12 +203,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     maybe_finalize();
     result = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES),
                                      GC_gcj_debug_kind);
-    if (result == 0) {
+    if (NULL == result) {
         GC_oom_func oom_fn = GC_oom_fn;
         UNLOCK();
         GC_err_printf("GC_debug_gcj_malloc(%lu, %p) returning NULL (%s:%d)\n",
                 (unsigned long)lb, ptr_to_struct_containing_descr, s, i);
-        return((*oom_fn)(lb));
+        return (*oom_fn)(lb);
     }
     *((void **)((ptr_t)result + sizeof(oh))) = ptr_to_struct_containing_descr;
     if (!GC_debugging_started) {
@@ -242,7 +242,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
             if (0 == op) {
                 GC_oom_func oom_fn = GC_oom_fn;
                 UNLOCK();
-                return((*oom_fn)(lb));
+                return (*oom_fn)(lb);
             }
         } else {
             GC_gcjobjfreelist[lg] = (ptr_t)obj_link(op);
@@ -255,7 +255,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
         if (0 == op) {
             GC_oom_func oom_fn = GC_oom_fn;
             UNLOCK();
-            return((*oom_fn)(lb));
+            return (*oom_fn)(lb);
         }
     }
     *(void **)op = ptr_to_struct_containing_descr;

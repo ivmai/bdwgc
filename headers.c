@@ -30,9 +30,9 @@ GC_INNER hdr * GC_find_header(ptr_t h)
 #   ifdef HASH_TL
         hdr * result;
         GET_HDR(h, result);
-        return(result);
+        return result;
 #   else
-        return(HDR_INNER(h));
+        return HDR_INNER(h);
 #   endif
 }
 
@@ -174,7 +174,7 @@ static hdr * alloc_hdr(void)
         result = GC_hdr_free_list;
         GC_hdr_free_list = (hdr *) result -> hb_next;
     }
-    return(result);
+    return result;
 }
 
 GC_INLINE void free_hdr(hdr * hhdr)
@@ -221,10 +221,9 @@ static GC_bool get_index(word addr)
 #   ifdef HASH_TL
       i = TL_HASH(hi);
 
-      pi = p = GC_top_index[i];
-      while(p != GC_all_nils) {
-          if (p -> key == hi) return(TRUE);
-          p = p -> hash_link;
+      pi = GC_top_index[i];
+      for (p = pi; p != GC_all_nils; p = p -> hash_link) {
+          if (p -> key == hi) return TRUE;
       }
 #   else
       if (GC_top_index[hi] != GC_all_nils)
@@ -257,7 +256,7 @@ static GC_bool get_index(word addr)
       *prev = r;
 
       GC_top_index[i] = r;
-    return(TRUE);
+    return TRUE;
 }
 
 /* Install a header for block h.        */
@@ -277,7 +276,7 @@ GC_INNER struct hblkhdr * GC_install_header(struct hblk *h)
         result -> hb_last_reclaimed = (unsigned short)GC_gc_no;
 #     endif
     }
-    return(result);
+    return result;
 }
 
 /* Set up forwarding counts for block h of size sz */
@@ -380,9 +379,8 @@ GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free)
                 j++;
             } else {
                 if (allow_free || !HBLK_IS_FREE(hhdr)) {
-                    return ((struct hblk *)
-                              (((bi -> key << LOG_BOTTOM_SZ) + j)
-                               << LOG_HBLKSIZE));
+                    return (struct hblk *)(((bi -> key << LOG_BOTTOM_SZ)
+                                            + j) << LOG_HBLKSIZE);
                 } else {
                     j += divHBLKSZ(hhdr -> hb_sz);
                 }
@@ -391,7 +389,7 @@ GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free)
         j = 0;
         bi = bi -> asc_link;
     }
-    return(0);
+    return NULL;
 }
 
 GC_INNER struct hblk * GC_prev_block(struct hblk *h)
@@ -403,25 +401,26 @@ GC_INNER struct hblk * GC_prev_block(struct hblk *h)
     GET_BI(h, bi);
     if (bi == GC_all_nils) {
         word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
+
         bi = GC_all_bottom_indices_end;
-        while (bi != 0 && bi -> key > hi) bi = bi -> desc_link;
+        while (bi != NULL && bi -> key > hi)
+            bi = bi -> desc_link;
         j = BOTTOM_SZ - 1;
     }
-    while(bi != 0) {
+    for (; bi != NULL; bi = bi -> desc_link) {
         while (j >= 0) {
             hdr * hhdr = bi -> index[j];
-            if (0 == hhdr) {
+
+            if (NULL == hhdr) {
                 --j;
             } else if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
                 j -= (signed_word)hhdr;
             } else {
-                return((struct hblk *)
-                          (((bi -> key << LOG_BOTTOM_SZ) + j)
-                               << LOG_HBLKSIZE));
+                return (struct hblk *)(((bi -> key << LOG_BOTTOM_SZ) + j)
+                                       << LOG_HBLKSIZE);
             }
         }
         j = BOTTOM_SZ - 1;
-        bi = bi -> desc_link;
     }
-    return(0);
+    return NULL;
 }

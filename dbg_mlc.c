@@ -327,10 +327,10 @@ static void *store_debug_info(void *p, size_t lb,
     ptr_t body = (ptr_t)(ohdr + 1);
     word gc_sz = GC_size((ptr_t)ohdr);
     if (ohdr -> oh_sz + DEBUG_BYTES > gc_sz) {
-        return((ptr_t)(&(ohdr -> oh_sz)));
+        return (ptr_t)(&(ohdr -> oh_sz));
     }
     if (ohdr -> oh_sf != (START_FLAG ^ (word)body)) {
-        return((ptr_t)(&(ohdr -> oh_sf)));
+        return (ptr_t)(&(ohdr -> oh_sf));
     }
     if (((word *)ohdr)[BYTES_TO_WORDS(gc_sz)-1] != (END_FLAG ^ (word)body)) {
         return (ptr_t)(&((word *)ohdr)[BYTES_TO_WORDS(gc_sz)-1]);
@@ -339,7 +339,7 @@ static void *store_debug_info(void *p, size_t lb,
         != (END_FLAG ^ (word)body)) {
         return (ptr_t)(&((word *)body)[SIMPLE_ROUNDED_UP_WORDS(ohdr->oh_sz)]);
     }
-    return(0);
+    return NULL;
   }
 #endif /* !SHORT_DBG_HDRS */
 
@@ -594,13 +594,13 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
     if (NULL == result) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
-        return(0);
+        return NULL;
     }
     if (!GC_debugging_started) {
         GC_start_debugging_inner();
     }
     ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
-    return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0));
+    return GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0);
   }
 
   GC_INNER void * GC_debug_generic_malloc_inner_ignore_off_page(size_t lb,
@@ -614,13 +614,13 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
     if (NULL == result) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
-        return(0);
+        return NULL;
     }
     if (!GC_debugging_started) {
         GC_start_debugging_inner();
     }
     ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
-    return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0));
+    return GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0);
   }
 #endif /* DBG_HDRS_ALL */
 
@@ -879,7 +879,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
         GC_err_printf(
               "GC_debug_realloc called on pointer %p w/o debugging info\n", p);
-        return(GC_realloc(p, lb));
+        return GC_realloc(p, lb);
     }
     hhdr = HDR(base);
     switch (hhdr -> hb_obj_kind) {
@@ -913,7 +913,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
         BCOPY(p, result, old_sz < lb ? old_sz : lb);
       GC_debug_free(p);
     }
-    return(result);
+    return result;
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL
@@ -1064,7 +1064,7 @@ STATIC void * GC_make_closure(GC_finalization_proc fn, void * data)
       result -> cl_fn = fn;
       result -> cl_data = data;
     }
-    return((void *)result);
+    return (void *)result;
 }
 
 /* An auxiliary fns to make finalization work correctly with displaced  */

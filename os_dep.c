@@ -580,7 +580,7 @@ GC_INNER const char * GC_get_maps(void)
 #   endif
 
     sigaction(SIGSEGV, &old_segv_act, 0);
-    return(result);
+    return result;
   }
 # endif /* GC_OPENBSD_UTHREADS */
 
@@ -618,7 +618,7 @@ GC_INNER const char * GC_get_maps(void)
     }
 
     sigaction(SIGSEGV, &old_segv_act, 0);
-    return(result);
+    return result;
   }
 #endif /* OPENBSD */
 
@@ -779,11 +779,8 @@ GC_INNER size_t GC_page_size = 0;
       if (result != sizeof(buf)) ABORT("Weird VirtualQuery result");
       if (base != 0) *base = (ptr_t)(buf.AllocationBase);
       protect = (buf.Protect & ~(PAGE_GUARD | PAGE_NOCACHE));
-      if (!is_writable(protect)) {
-        return(0);
-      }
-      if (buf.State != MEM_COMMIT) return(0);
-      return(buf.RegionSize);
+      if (!is_writable(protect) || buf.State != MEM_COMMIT) return 0;
+      return buf.RegionSize;
     }
 
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
@@ -1027,7 +1024,7 @@ GC_INNER size_t GC_page_size = 0;
         if (!up) {
             result += MIN_PAGE_SIZE;
         }
-        return(result);
+        return result;
     }
 
     void * GC_find_limit(void * p, int up)
@@ -1349,14 +1346,14 @@ GC_INNER size_t GC_page_size = 0;
 #       error None of HEURISTIC* and *STACKBOTTOM defined!
 #     endif
 #     if defined(STACK_GROWS_DOWN) && !defined(CPPCHECK)
-        if (result == 0)
+        if (NULL == result)
           result = (ptr_t)(signed_word)(-sizeof(ptr_t));
 #     endif
 #   endif
 #   if !defined(CPPCHECK)
       GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)result);
 #   endif
-    return(result);
+    return result;
   }
 # define GET_MAIN_STACKBASE_SPECIAL
 #endif /* !AMIGA, !HAIKU, !OPENBSD, !OS2, !Windows */
@@ -2054,7 +2051,7 @@ void GC_register_data_segments(void)
         /* As above, we go to plan B    */
         result = (ptr_t)GC_find_limit(DATAEND, FALSE);
     }
-    return(result);
+    return result;
   }
 #endif /* DATASTART_USES_BSDGETDATASTART */
 
@@ -2271,7 +2268,7 @@ void GC_register_data_segments(void)
     if (((word)result % HBLKSIZE) != 0)
       ABORT(
        "GC_unix_get_mem: Memory returned by mmap is not aligned to HBLKSIZE.");
-    return((ptr_t)result);
+    return (ptr_t)result;
   }
 # endif  /* !MSWIN_XBOX1 */
 
@@ -2323,7 +2320,7 @@ STATIC ptr_t GC_unix_sbrk_get_mem(size_t bytes)
 # ifdef IRIX5
     __UNLOCK_MALLOC();
 # endif
-  return(result);
+  return result;
 }
 
 ptr_t GC_unix_get_mem(size_t bytes)
@@ -2366,12 +2363,12 @@ void * os2_alloc(size_t bytes)
     if (DosAllocMem(&result, bytes, (PAG_READ | PAG_WRITE | PAG_COMMIT)
                                     | (GC_pages_executable ? PAG_EXECUTE : 0))
                     != NO_ERROR) {
-        return(0);
+        return NULL;
     }
     /* FIXME: What's the purpose of this recursion?  (Probably, if      */
     /* DosAllocMem returns memory at 0 address then just retry once.)   */
-    if (result == 0) return(os2_alloc(bytes));
-    return(result);
+    if (NULL == result) return os2_alloc(bytes);
+    return result;
 }
 
 # endif /* OS2 */
@@ -2435,8 +2432,7 @@ void * os2_alloc(size_t bytes)
         if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
         GC_heap_lengths[i] += bytes;
     }
-
-    return(result);
+    return result;
   }
 
 #elif (defined(USE_WINALLOC) && !defined(MSWIN_XBOX1)) || defined(CYGWIN32)
@@ -2515,8 +2511,8 @@ void * os2_alloc(size_t bytes)
         /* If I read the documentation correctly, this can      */
         /* only happen if HBLKSIZE > 64 KB or not a power of 2. */
     if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
-    if (0 != result) GC_heap_bases[GC_n_heap_bases++] = result;
-    return(result);
+    if (result != NULL) GC_heap_bases[GC_n_heap_bases++] = result;
+    return result;
   }
 #endif /* USE_WINALLOC || CYGWIN32 */
 
@@ -2827,7 +2823,7 @@ PCR_ERes GC_push_thread_stack(PCR_Th_T *t, PCR_Any dummy)
     info.ti_stkLow = info.ti_stkHi = 0;
     result = PCR_ThCtl_GetInfo(t, &info);
     GC_push_all_stack((ptr_t)(info.ti_stkLow), (ptr_t)(info.ti_stkHi));
-    return(result);
+    return result;
 }
 
 /* Push the contents of an old object. We treat this as stack   */
@@ -2836,7 +2832,7 @@ PCR_ERes GC_push_thread_stack(PCR_Th_T *t, PCR_Any dummy)
 PCR_ERes GC_push_old_obj(void *p, size_t size, PCR_Any data)
 {
     GC_push_all_stack((ptr_t)p, (ptr_t)p + size);
-    return(PCR_ERes_okay);
+    return PCR_ERes_okay;
 }
 
 extern struct PCR_MM_ProcsRep * GC_old_allocator;
@@ -3354,7 +3350,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                     ABORT_ARG1("Unexpected segmentation fault outside heap",
                                " at %p", (void *)addr);
 #               else
-                    return(EXCEPTION_CONTINUE_SEARCH);
+                    return EXCEPTION_CONTINUE_SEARCH;
 #               endif
             } else {
                 /*
@@ -3363,10 +3359,10 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                  * if so call it using that style.
                  */
 #               if defined(MSWIN32) || defined(MSWINCE)
-                    return((*old_handler)(exc_info));
+                    return (*old_handler)(exc_info);
 #               else
                     if (used_si)
-                      ((SIG_HNDLR_PTR)old_handler) (sig, si, raw_sc);
+                      ((SIG_HNDLR_PTR)old_handler)(sig, si, raw_sc);
                     else
                       /* FIXME: should pass nonstandard args as well. */
                       ((PLAIN_HNDLR_PTR)(signed_word)old_handler)(sig);
@@ -3394,7 +3390,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         /* The write may not take place before dirty bits are read.     */
         /* But then we'll fault again ...                               */
 #       if defined(MSWIN32) || defined(MSWINCE)
-            return(EXCEPTION_CONTINUE_EXECUTION);
+            return EXCEPTION_CONTINUE_EXECUTION;
 #       else
             return;
 #       endif
@@ -4414,7 +4410,7 @@ catch_exception_raise_state(mach_port_name_t exception_port GC_ATTR_UNUSED,
     thread_state_t new_state GC_ATTR_UNUSED, int new_stateCnt GC_ATTR_UNUSED)
 {
   ABORT_RET("Unexpected catch_exception_raise_state invocation");
-  return(KERN_INVALID_ARGUMENT);
+  return KERN_INVALID_ARGUMENT;
 }
 
 GC_API_OSCALL kern_return_t
@@ -4427,7 +4423,7 @@ catch_exception_raise_state_identity(
     thread_state_t new_state GC_ATTR_UNUSED, int new_stateCnt GC_ATTR_UNUSED)
 {
   ABORT_RET("Unexpected catch_exception_raise_state_identity invocation");
-  return(KERN_INVALID_ARGUMENT);
+  return KERN_INVALID_ARGUMENT;
 }
 
 #define MAX_EXCEPTION_PORTS 16

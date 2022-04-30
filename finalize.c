@@ -155,7 +155,7 @@ GC_API int GC_CALL GC_register_disappearing_link(void * * link)
     base = (ptr_t)GC_base(link);
     if (base == 0)
         ABORT("Bad arg to GC_register_disappearing_link");
-    return(GC_general_register_disappearing_link(link, base));
+    return GC_general_register_disappearing_link(link, base);
 }
 
 STATIC int GC_register_disappearing_link_inner(
@@ -280,7 +280,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     struct disappearing_link *curr_dl;
     DCL_LOCK_STATE;
 
-    if (((word)link & (ALIGNMENT-1)) != 0) return(0); /* Nothing to do. */
+    if (((word)link & (ALIGNMENT-1)) != 0) return 0; /* Nothing to do. */
 
     LOCK();
     curr_dl = GC_unregister_disappearing_link_inner(&GC_dl_hashtbl, link);
@@ -510,7 +510,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     struct disappearing_link *curr_dl;
     DCL_LOCK_STATE;
 
-    if (((word)link & (ALIGNMENT-1)) != 0) return(0); /* Nothing to do. */
+    if (((word)link & (ALIGNMENT-1)) != 0) return 0; /* Nothing to do. */
 
     LOCK();
     curr_dl = GC_unregister_disappearing_link_inner(&GC_ll_hashtbl, link);

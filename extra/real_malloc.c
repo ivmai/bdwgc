@@ -27,7 +27,7 @@
 
 void * real_malloc(size_t size)
 {
-    return(malloc(size));
+    return malloc(size);
 }
 
 # else

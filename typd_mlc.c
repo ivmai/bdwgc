@@ -123,7 +123,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
         } else {
             UNLOCK();
             new_size = 2 * ed_size;
-            if (new_size > MAX_ENV) return(-1);
+            if (new_size > MAX_ENV) return -1;
         }
         newExtD = (typed_ext_descr_t*)GC_malloc_atomic(new_size
                                                 * sizeof(typed_ext_descr_t));
@@ -153,7 +153,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
     GC_ext_descriptors[result + i].ed_continued = FALSE;
     GC_avail_descr += nwords;
     UNLOCK();
-    return(result);
+    return result;
 }
 
 /* Table of bitmap descriptors for n word long all pointer objects.     */
@@ -170,7 +170,7 @@ STATIC GC_descr GC_double_descr(GC_descr descriptor, word nwords)
         descriptor = GC_bm_table[BYTES_TO_WORDS((word)descriptor)];
     }
     descriptor |= (descriptor & ~GC_DS_TAGS) >> nwords;
-    return(descriptor);
+    return descriptor;
 }
 
 STATIC complex_descriptor *
@@ -208,20 +208,20 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
     if ((descriptor & GC_DS_TAGS) == GC_DS_LENGTH) {
       if (descriptor == (GC_descr)size) {
         *simple_d = nelements * descriptor;
-        return(SIMPLE);
+        return SIMPLE;
       } else if ((word)descriptor == 0) {
         *simple_d = (GC_descr)0;
-        return(SIMPLE);
+        return SIMPLE;
       }
     }
     if (nelements <= OPT_THRESHOLD) {
       if (nelements <= 1) {
         if (nelements == 1) {
             *simple_d = descriptor;
-            return(SIMPLE);
+            return SIMPLE;
         } else {
             *simple_d = (GC_descr)0;
-            return(SIMPLE);
+            return SIMPLE;
         }
       }
     } else if (size <= BITMAP_BITS/2
@@ -233,13 +233,13 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
                                                    BYTES_TO_WORDS(size)),
                                    simple_d, complex_d, leaf);
       if ((nelements & 1) == 0) {
-          return(result);
+          return result;
       } else {
           struct LeafDescriptor * one_element =
               (struct LeafDescriptor *)
                 GC_malloc_atomic(sizeof(struct LeafDescriptor));
 
-          if (result == NO_MEM || one_element == 0) return(NO_MEM);
+          if (NO_MEM == result || NULL == one_element) return NO_MEM;
           one_element -> ld_tag = LEAF_TAG;
           one_element -> ld_size = size;
           one_element -> ld_nelements = 1;
@@ -250,7 +250,7 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
               struct LeafDescriptor * beginning =
                 (struct LeafDescriptor *)
                   GC_malloc_atomic(sizeof(struct LeafDescriptor));
-              if (beginning == 0) return(NO_MEM);
+              if (NULL == beginning) return NO_MEM;
               beginning -> ld_tag = LEAF_TAG;
               beginning -> ld_size = size;
               beginning -> ld_nelements = 1;
@@ -265,7 +265,7 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
               struct LeafDescriptor * beginning =
                 (struct LeafDescriptor *)
                   GC_malloc_atomic(sizeof(struct LeafDescriptor));
-              if (beginning == 0) return(NO_MEM);
+              if (NULL == beginning) return NO_MEM;
               beginning -> ld_tag = LEAF_TAG;
               beginning -> ld_size = leaf -> ld_size;
               beginning -> ld_nelements = leaf -> ld_nelements;
@@ -281,14 +281,14 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
                                 (complex_descriptor *)one_element);
               break;
           }
-          return(COMPLEX);
+          return COMPLEX;
       }
     }
 
     leaf -> ld_size = size;
     leaf -> ld_nelements = nelements;
     leaf -> ld_descriptor = descriptor;
-    return(LEAF);
+    return LEAF;
 }
 
 STATIC complex_descriptor *
@@ -309,7 +309,7 @@ GC_make_sequence_descriptor(complex_descriptor *first,
         REACHABLE_AFTER_DIRTY(first);
         REACHABLE_AFTER_DIRTY(second);
     }
-    return((complex_descriptor *)result);
+    return (complex_descriptor *)result;
 }
 
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
@@ -375,7 +375,7 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
         mark_stack_ptr -> mse_descr.w =
                         GC_MAKE_PROC(GC_typed_mark_proc_index, env + 1);
     }
-    return(mark_stack_ptr);
+    return mark_stack_ptr;
 }
 
 /* Return the size of the object described by d.  It would be faster to */
@@ -385,13 +385,13 @@ STATIC word GC_descr_obj_size(complex_descriptor *d)
 {
     switch(d -> TAG) {
       case LEAF_TAG:
-        return(d -> ld.ld_nelements * d -> ld.ld_size);
+        return d -> ld.ld_nelements * d -> ld.ld_size;
       case ARRAY_TAG:
-        return(d -> ad.ad_nelements
-               * GC_descr_obj_size(d -> ad.ad_element_descr));
+        return d -> ad.ad_nelements
+               * GC_descr_obj_size(d -> ad.ad_element_descr);
       case SEQUENCE_TAG:
-        return(GC_descr_obj_size(d -> sd.sd_first)
-               + GC_descr_obj_size(d -> sd.sd_second));
+        return GC_descr_obj_size(d -> sd.sd_first)
+               + GC_descr_obj_size(d -> sd.sd_second);
       default:
         ABORT_RET("Bad complex descriptor");
         return 0;
@@ -414,7 +414,7 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
           GC_descr descr = d -> ld.ld_descriptor;
 
           nelements = d -> ld.ld_nelements;
-          if (msl - msp <= (ptrdiff_t)nelements) return(0);
+          if (msl - msp <= (ptrdiff_t)nelements) return NULL;
           sz = d -> ld.ld_size;
           for (i = 0; i < nelements; i++) {
               msp++;
@@ -422,7 +422,7 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
               msp -> mse_descr.w = descr;
               current += sz;
           }
-          return(msp);
+          return msp;
         }
       case ARRAY_TAG:
         {
@@ -433,25 +433,25 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
           for (i = 0; i < nelements; i++) {
               msp = GC_push_complex_descriptor((word *)current, descr,
                                                 msp, msl);
-              if (msp == 0) return(0);
+              if (NULL == msp) return NULL;
               current += sz;
           }
-          return(msp);
+          return msp;
         }
       case SEQUENCE_TAG:
         {
           sz = GC_descr_obj_size(d -> sd.sd_first);
           msp = GC_push_complex_descriptor((word *)current, d -> sd.sd_first,
                                            msp, msl);
-          if (msp == 0) return(0);
+          if (NULL == msp) return NULL;
           current += sz;
           msp = GC_push_complex_descriptor((word *)current, d -> sd.sd_second,
                                            msp, msl);
-          return(msp);
+          return msp;
         }
       default:
         ABORT_RET("Bad complex descriptor");
-        return 0;
+        return NULL;
    }
 }
 
@@ -466,9 +466,9 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
     mse * orig_mark_stack_ptr = mark_stack_ptr;
     mse * new_mark_stack_ptr;
 
-    if (descr == 0) {
+    if (NULL == descr) {
         /* Found a reference to a free list entry.  Ignore it. */
-        return(orig_mark_stack_ptr);
+        return orig_mark_stack_ptr;
     }
     /* In use counts were already updated when array descriptor was     */
     /* pushed.  Here we only replace it by subobject descriptors, so    */
@@ -529,7 +529,7 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 
     while (last_set_bit >= 0 && !GC_get_bit(bm, last_set_bit))
       last_set_bit--;
-    if (last_set_bit < 0) return(0 /* no pointers */);
+    if (last_set_bit < 0) return 0; /* no pointers */
 
 #   if ALIGNMENT == CPP_WORDSZ/8
     {
@@ -542,7 +542,7 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
       }
       if (i == last_set_bit) {
         /* An initial section contains all pointers.  Use length descriptor. */
-        return (WORDS_TO_BYTES(last_set_bit+1) | GC_DS_LENGTH);
+        return WORDS_TO_BYTES(last_set_bit + 1) | GC_DS_LENGTH;
       }
     }
 #   endif
@@ -559,7 +559,7 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
         result |= GC_DS_BITMAP;
     } else {
         signed_word index = GC_add_ext_descriptor(bm, (word)last_set_bit + 1);
-        if (index == -1) return(WORDS_TO_BYTES(last_set_bit+1) | GC_DS_LENGTH);
+        if (index == -1) return WORDS_TO_BYTES(last_set_bit+1) | GC_DS_LENGTH;
                                 /* Out of memory: use conservative      */
                                 /* approximation.                       */
         result = GC_MAKE_PROC(GC_typed_mark_proc_index, (word)index);
@@ -650,7 +650,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
       return (*GC_get_oom_fn())(GC_SIZE_MAX); /* n*lb overflow */
     lb *= n;
     switch(descr_type) {
-        case NO_MEM: return(0);
+        case NO_MEM:
+            return NULL;
         case SIMPLE:
             return GC_malloc_explicitly_typed(lb, simple_descr);
         case LEAF:

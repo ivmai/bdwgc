@@ -412,7 +412,7 @@ void* Undisguise( GC_word i ) {
         F::Test();}
 
     x = *xptr;
-    my_assert (29 == x[0]);
-    GC_printf( "The test appears to have succeeded.\n" );
-    return( 0 );
+    my_assert(29 == x[0]);
+    GC_printf("The test appears to have succeeded.\n");
+    return 0;
 }

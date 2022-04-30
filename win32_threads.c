@@ -381,7 +381,7 @@ STATIC GC_thread GC_new_thread(DWORD id)
     GC_ASSERT(!GC_win32_dll_threads);
     result = (struct GC_Thread_Rep *)
                 GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
-    if (result == 0) return(0);
+    if (NULL == result) return NULL;
   }
   /* result -> id = id; Done by caller.       */
   result -> tm.next = GC_threads[hv];
@@ -392,7 +392,7 @@ STATIC GC_thread GC_new_thread(DWORD id)
   GC_ASSERT(result -> thread_blocked_sp == NULL);
   if (EXPECT(result != &first_thread, TRUE))
     GC_dirty(result);
-  return(result);
+  return result;
 }
 
 GC_INNER GC_bool GC_in_thread_creation = FALSE;
@@ -567,8 +567,9 @@ STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
     GC_thread p = GC_threads[THREAD_TABLE_INDEX(thread_id)];
 
     GC_ASSERT(I_HOLD_LOCK());
-    while (p != 0 && p -> id != thread_id) p = p -> tm.next;
-    return(p);
+    while (p != NULL && p -> id != thread_id)
+      p = p -> tm.next;
+    return p;
   }
 }
 
@@ -1532,7 +1533,7 @@ STATIC ptr_t GC_get_stack_min(ptr_t s)
     last_address = bottom - 1;
   } while ((last_info.Protect & PAGE_READWRITE)
            && !(last_info.Protect & PAGE_GUARD));
-  return(bottom);
+  return bottom;
 }
 
 /* Return true if the page at s has protections appropriate     */
@@ -2998,7 +2999,7 @@ GC_INNER void GC_thr_init(void)
       if (result) { /* failure */
           GC_free(si);
       }
-      return(result);
+      return result;
   }
 
   STATIC void * GC_CALLBACK GC_pthread_start_inner(struct GC_stack_base *sb,
@@ -3048,7 +3049,7 @@ GC_INNER void GC_thr_init(void)
       GC_log_printf("thread %p(0x%x) returned from start routine\n",
                     (void *)GC_PTHREAD_PTRVAL(pthread_id), (int)thread_id);
 #   endif
-    return(result);
+    return result;
   }
 
   STATIC void * GC_pthread_start(void * arg)

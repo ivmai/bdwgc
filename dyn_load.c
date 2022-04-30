@@ -193,7 +193,7 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
     if (0 == COVERT_DATAFLOW(dynStructureAddr)) {
         /* _DYNAMIC symbol not resolved. */
-        return(0);
+        return NULL;
     }
     if (cachedResult == 0) {
         int tag;
@@ -719,9 +719,9 @@ GC_FirstDLOpenedLinkMap(void)
 
     if (0 == COVERT_DATAFLOW(_DYNAMIC)) {
         /* _DYNAMIC symbol not resolved. */
-        return(0);
+        return NULL;
     }
-    if( cachedResult == 0 ) {
+    if (NULL == cachedResult) {
 #     if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
 #       if defined(CPPCHECK)
 #         define GC_RTLD_DI_LINKMAP 2

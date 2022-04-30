@@ -43,7 +43,7 @@
         p[2] = (word)p;
         p[3] = 0;
     }
-    return((ptr_t)(p-2));
+    return (ptr_t)(p-2);
   }
 
   /* The same for size 4 cleared objects.       */
@@ -63,7 +63,7 @@
         p[1] = 0;
         CLEAR_DOUBLE(p+2);
     }
-    return((ptr_t)(p-4));
+    return (ptr_t)(p-4);
   }
 
   /* The same for size 2 uncleared objects.     */
@@ -79,7 +79,7 @@
         p[0] = (word)(p-2);
         p[2] = (word)p;
     }
-    return((ptr_t)(p-2));
+    return (ptr_t)(p-2);
   }
 
   /* The same for size 4 uncleared objects.     */
@@ -96,7 +96,7 @@
         p[0] = (word)(p-4);
         p[4] = (word)p;
     }
-    return((ptr_t)(p-4));
+    return (ptr_t)(p-4);
   }
 #endif /* !SMALL_CONFIG */
 
@@ -161,7 +161,7 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
   /* Put p (which is now head of list of objects in *h) as first    */
   /* pointer in the appropriate free list for this size.            */
     *(ptr_t *)h = list;
-    return ((ptr_t)p);
+    return (ptr_t)p;
 }
 
 /* Allocate a new heapblock for small objects of size gran granules.    */

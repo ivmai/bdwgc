@@ -248,7 +248,7 @@ struct hblk * GC_is_black_listed(struct hblk *h, word len)
     if (!GC_all_interior_pointers
         && (get_pht_entry_from_index(GC_old_normal_bl, index)
             || get_pht_entry_from_index(GC_incomplete_normal_bl, index))) {
-      return (h+1);
+      return h + 1;
     }
 
     nblocks = divHBLKSZ(len);
@@ -260,14 +260,14 @@ struct hblk * GC_is_black_listed(struct hblk *h, word len)
         } else {
           if (get_pht_entry_from_index(GC_old_stack_bl, index)
               || get_pht_entry_from_index(GC_incomplete_stack_bl, index)) {
-            return(h+i+1);
+            return h + (i+1);
           }
           i++;
         }
         if (i >= nblocks) break;
-        index = PHT_HASH((word)(h+i));
+        index = PHT_HASH((word)(h + i));
     }
-    return(0);
+    return NULL;
 }
 
 /* Return the number of blacklisted blocks in a given range.    */
@@ -284,7 +284,7 @@ STATIC word GC_number_stack_black_listed(struct hblk *start,
 
         if (get_pht_entry_from_index(GC_old_stack_bl, index)) result++;
     }
-    return(result);
+    return result;
 }
 
 /* Return the total number of (stack) black-listed bytes. */
@@ -299,5 +299,5 @@ static word total_stack_black_listed(void)
 
         total += GC_number_stack_black_listed(start, endp1);
     }
-    return(total * HBLKSIZE);
+    return total * HBLKSIZE;
 }

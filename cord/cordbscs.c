@@ -162,15 +162,15 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
     size_t lenx;
     int depth;
 
-    if (x == CORD_EMPTY) return(y);
-    if (leny == 0) return(x);
+    if (x == CORD_EMPTY) return y;
+    if (leny == 0) return x;
     if (CORD_IS_STRING(x)) {
         lenx = strlen(x);
         result_len = lenx + leny;
         if (result_len <= SHORT_LIMIT) {
             char * result = (char *)GC_MALLOC_ATOMIC(result_len + 1);
 
-            if (result == 0) OUT_OF_MEMORY;
+            if (NULL == result) OUT_OF_MEMORY;
 #           ifdef LINT2
                 memcpy(result, x, lenx + 1);
 #           else
@@ -180,7 +180,7 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
 #           endif
             memcpy(result + lenx, y, leny);
             result[result_len] = '\0';
-            return((CORD) result);
+            return (CORD)result;
         } else {
             depth = 1;
         }
@@ -241,9 +241,9 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
         GC_PTR_STORE_AND_DIRTY((void *)&result->right, y);
         GC_reachable_here(x);
         if (depth >= MAX_DEPTH) {
-            return(CORD_balance((CORD)result));
+            return CORD_balance((CORD)result);
         } else {
-            return((CORD) result);
+            return (CORD)result;
         }
     }
 }
@@ -255,10 +255,10 @@ CORD CORD_cat(CORD x, CORD y)
     int depth;
     size_t lenx;
 
-    if (x == CORD_EMPTY) return(y);
-    if (y == CORD_EMPTY) return(x);
+    if (x == CORD_EMPTY) return y;
+    if (y == CORD_EMPTY) return x;
     if (CORD_IS_STRING(y)) {
-        return(CORD_cat_char_star(x, y, strlen(y)));
+        return CORD_cat_char_star(x, y, strlen(y));
     } else if (CORD_IS_STRING(x)) {
         lenx = strlen(x);
         depth = DEPTH(y) + 1;
@@ -283,9 +283,9 @@ CORD CORD_cat(CORD x, CORD y)
         GC_PTR_STORE_AND_DIRTY((void *)&result->right, y);
         GC_reachable_here(x);
         if (depth >= MAX_DEPTH) {
-            return(CORD_balance((CORD)result));
+            return CORD_balance((CORD)result);
         } else {
-            return((CORD) result);
+            return (CORD)result;
         }
     }
 }
@@ -293,7 +293,7 @@ CORD CORD_cat(CORD x, CORD y)
 
 static CordRep *CORD_from_fn_inner(CORD_fn fn, void * client_data, size_t len)
 {
-    if (len == 0) return(0);
+    if (0 == len) return NULL;
     if (len <= SHORT_LIMIT) {
         char * result;
         size_t i;
@@ -307,7 +307,7 @@ static CordRep *CORD_from_fn_inner(CORD_fn fn, void * client_data, size_t len)
         }
 
         result = (char *)GC_MALLOC_ATOMIC(len + 1);
-        if (result == 0) OUT_OF_MEMORY;
+        if (NULL == result) OUT_OF_MEMORY;
         memcpy(result, buf, len);
         result[len] = '\0';
         return (CordRep *)result;
@@ -333,11 +333,7 @@ CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len)
 
 size_t CORD_len(CORD x)
 {
-    if (x == 0) {
-        return(0);
-    } else {
-        return(GEN_LEN(x));
-    }
+    return x == 0 ? 0 : GEN_LEN(x);
 }
 
 struct substr_args {
@@ -349,7 +345,7 @@ char CORD_index_access_fn(size_t i, void * client_data)
 {
     struct substr_args *descr = (struct substr_args *)client_data;
 
-    return(((char *)(descr->sa_cord))[i + descr->sa_index]);
+    return ((char *)descr->sa_cord)[i + descr->sa_index];
 }
 
 char CORD_apply_access_fn(size_t i, void * client_data)
@@ -357,7 +353,7 @@ char CORD_apply_access_fn(size_t i, void * client_data)
     struct substr_args *descr = (struct substr_args *)client_data;
     struct Function * fn_cord = &(descr->sa_cord->function);
 
-    return((*(fn_cord->fn))(i + descr->sa_index, fn_cord->client_data));
+    return fn_cord->fn(i + descr->sa_index, fn_cord->client_data);
 }
 
 /* A version of CORD_substr that simply returns a function node, thus   */
@@ -388,14 +384,14 @@ CORD CORD_substr_checked(CORD x, size_t i, size_t n)
 {
     if (CORD_IS_STRING(x)) {
         if (n > SUBSTR_LIMIT) {
-            return(CORD_substr_closure(x, i, n, CORD_index_access_fn));
+            return CORD_substr_closure(x, i, n, CORD_index_access_fn);
         } else {
             char * result = (char *)GC_MALLOC_ATOMIC(n + 1);
 
-            if (result == 0) OUT_OF_MEMORY;
+            if (NULL == result) OUT_OF_MEMORY;
             strncpy(result, x+i, n);
             result[n] = '\0';
-            return(result);
+            return result;
         }
     } else if (IS_CONCATENATION(x)) {
         struct Concatenation * conc = &(((CordRep *)x) -> concatenation);
@@ -403,11 +399,11 @@ CORD CORD_substr_checked(CORD x, size_t i, size_t n)
         size_t right_len = conc -> len - left_len;
 
         if (i >= left_len) {
-            if (n == right_len) return(conc -> right);
-            return(CORD_substr_checked(conc -> right, i - left_len, n));
+            if (n == right_len) return conc -> right;
+            return CORD_substr_checked(conc -> right, i - left_len, n);
         } else if (i+n <= left_len) {
-            if (n == left_len) return(conc -> left);
-            return(CORD_substr_checked(conc -> left, i, n));
+            if (n == left_len) return conc -> left;
+            return CORD_substr_checked(conc -> left, i, n);
         } else {
             /* Need at least one character from each side. */
             CORD left_part;
@@ -425,7 +421,7 @@ CORD CORD_substr_checked(CORD x, size_t i, size_t n)
                  right_part = CORD_substr_checked(conc -> right, 0,
                                                   n - left_part_len);
             }
-            return(CORD_cat(left_part, right_part));
+            return CORD_cat(left_part, right_part);
         }
     } else /* function */ {
         if (n > SUBSTR_LIMIT) {
@@ -435,11 +431,10 @@ CORD CORD_substr_checked(CORD x, size_t i, size_t n)
                 struct substr_args *descr =
                                 (struct substr_args *)(f -> client_data);
 
-                return(CORD_substr_closure((CORD)descr->sa_cord,
-                                           i + descr->sa_index,
-                                           n, f -> fn));
+                return CORD_substr_closure((CORD)descr->sa_cord,
+                                           i + descr->sa_index, n, f->fn);
             } else {
-                return(CORD_substr_closure(x, i, n, CORD_apply_access_fn));
+                return CORD_substr_closure(x, i, n, CORD_apply_access_fn);
             }
         } else {
             char * result;
@@ -453,15 +448,15 @@ CORD CORD_substr_checked(CORD x, size_t i, size_t n)
                 char c = (*(f -> fn))(j, f -> client_data);
 
                 if (c == '\0') {
-                    return(CORD_substr_closure(x, i, n, CORD_apply_access_fn));
+                    return CORD_substr_closure(x, i, n, CORD_apply_access_fn);
                 }
                 *p++ = c;
             }
             result = (char *)GC_MALLOC_ATOMIC(n + 1);
-            if (result == 0) OUT_OF_MEMORY;
+            if (NULL == result) OUT_OF_MEMORY;
             memcpy(result, buf, n);
             result[n] = '\0';
-            return(result);
+            return result;
         }
     }
 }
@@ -470,28 +465,28 @@ CORD CORD_substr(CORD x, size_t i, size_t n)
 {
     size_t len = CORD_len(x);
 
-    if (i >= len || n == 0) return(0);
+    if (i >= len || 0 == n) return 0;
     if (i + n > len) n = len - i;
-    return(CORD_substr_checked(x, i, n));
+    return CORD_substr_checked(x, i, n);
 }
 
 /* See cord.h for definition.  We assume i is in range. */
 int CORD_iter5(CORD x, size_t i, CORD_iter_fn f1,
                          CORD_batched_iter_fn f2, void * client_data)
 {
-    if (x == 0) return(0);
+    if (0 == x) return 0;
     if (CORD_IS_STRING(x)) {
         const char *p = x+i;
 
         if (*p == '\0') ABORT("2nd arg to CORD_iter5 too big");
         if (f2 != CORD_NO_FN) {
-            return((*f2)(p, client_data));
+            return f2(p, client_data);
         } else {
             while (*p) {
-                if ((*f1)(*p, client_data)) return(1);
+                if (f1(*p, client_data)) return 1;
                 p++;
             }
-            return(0);
+            return 0;
         }
     } else if (IS_CONCATENATION(x)) {
         struct Concatenation * conc = &(((CordRep *)x) -> concatenation);
@@ -500,37 +495,37 @@ int CORD_iter5(CORD x, size_t i, CORD_iter_fn f1,
             size_t left_len = LEFT_LEN(conc);
 
             if (i >= left_len) {
-                return(CORD_iter5(conc -> right, i - left_len, f1, f2,
-                                  client_data));
+                return CORD_iter5(conc -> right, i - left_len, f1, f2,
+                                  client_data);
             }
         }
         if (CORD_iter5(conc -> left, i, f1, f2, client_data)) {
-            return(1);
+            return 1;
         }
-        return(CORD_iter5(conc -> right, 0, f1, f2, client_data));
+        return CORD_iter5(conc -> right, 0, f1, f2, client_data);
     } else /* function */ {
         struct Function * f = &(((CordRep *)x) -> function);
         size_t j;
         size_t lim = f -> len;
 
         for (j = i; j < lim; j++) {
-            if ((*f1)((*(f -> fn))(j, f -> client_data), client_data)) {
-                return(1);
+            if (f1(f->fn(j, f->client_data), client_data)) {
+                return 1;
             }
         }
-        return(0);
+        return 0;
     }
 }
 
 #undef CORD_iter
 int CORD_iter(CORD x, CORD_iter_fn f1, void * client_data)
 {
-    return(CORD_iter5(x, 0, f1, CORD_NO_FN, client_data));
+    return CORD_iter5(x, 0, f1, CORD_NO_FN, client_data);
 }
 
 int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data)
 {
-    if (x == 0) return(0);
+    if (0 == x) return 0;
     if (CORD_IS_STRING(x)) {
         const char *p = x + i;
 
@@ -538,11 +533,10 @@ int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data)
             char c = *p;
 
             if (c == '\0') ABORT("2nd arg to CORD_riter4 too big");
-            if ((*f1)(c, client_data)) return(1);
+            if (f1(c, client_data)) return 1;
             if (p == x) break;
             p--;
         }
-        return(0);
     } else if (IS_CONCATENATION(x)) {
         struct Concatenation * conc = &(((CordRep *)x) -> concatenation);
         CORD left_part = conc -> left;
@@ -550,30 +544,31 @@ int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data)
 
         if (i >= left_len) {
             if (CORD_riter4(conc -> right, i - left_len, f1, client_data)) {
-                return(1);
+                return 1;
             }
-            return(CORD_riter4(left_part, left_len - 1, f1, client_data));
+            return CORD_riter4(left_part, left_len - 1, f1, client_data);
         } else {
-            return(CORD_riter4(left_part, i, f1, client_data));
+            return CORD_riter4(left_part, i, f1, client_data);
         }
     } else /* function */ {
         struct Function * f = &(((CordRep *)x) -> function);
         size_t j;
 
         for (j = i; ; j--) {
-            if ((*f1)((*(f -> fn))(j, f -> client_data), client_data)) {
-                return(1);
+            if (f1(f->fn(j, f->client_data), client_data)) {
+                return 1;
             }
-            if (j == 0) return(0);
+            if (0 == j) break;
         }
     }
+    return 0;
 }
 
 int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data)
 {
     size_t len = CORD_len(x);
-    if (len == 0) return(0);
-    return(CORD_riter4(x, len - 1, f1, client_data));
+    if (0 == len) return 0;
+    return CORD_riter4(x, len - 1, f1, client_data);
 }
 
 /*
@@ -693,7 +688,7 @@ CORD CORD_concat_forest(ForestElement * forest, size_t expected_len)
         }
         i++;
     }
-    return(sum);
+    return sum;
 }
 
 /* Insert the frontier of x into forest.  Balanced subtrees are */
@@ -724,13 +719,13 @@ CORD CORD_balance(CORD x)
     Forest forest;
     size_t len;
 
-    if (x == 0) return(0);
-    if (CORD_IS_STRING(x)) return(x);
+    if (0 == x) return 0;
+    if (CORD_IS_STRING(x)) return x;
     if (!min_len_init) CORD_init_min_len();
     len = LEN(x);
     CORD_init_forest(forest, len);
     CORD_balance_insert(x, len, forest);
-    return(CORD_concat_forest(forest, len));
+    return CORD_concat_forest(forest, len);
 }
 
 
@@ -792,7 +787,7 @@ char CORD__pos_fetch(CORD_pos p)
     if (!IS_FUNCTION(leaf))
         ABORT("CORD_pos_fetch: bad leaf");
     f = &((CordRep *)leaf)->function;
-    return ((*(f -> fn))(p[0].cur_pos - pe -> pe_start_pos, f -> client_data));
+    return f->fn(p[0].cur_pos - pe->pe_start_pos, f->client_data);
 }
 
 void CORD__next(CORD_pos p)
@@ -890,9 +885,9 @@ void CORD__prev(CORD_pos p)
 char CORD_pos_fetch(CORD_pos p)
 {
     if (p[0].cur_end != 0) {
-        return(p[0].cur_leaf[p[0].cur_pos - p[0].cur_start]);
+        return p[0].cur_leaf[p[0].cur_pos - p[0].cur_start];
     } else {
-        return(CORD__pos_fetch(p));
+        return CORD__pos_fetch(p);
     }
 }
 
@@ -916,17 +911,17 @@ void CORD_prev(CORD_pos p)
 
 size_t CORD_pos_to_index(CORD_pos p)
 {
-    return(p[0].cur_pos);
+    return p[0].cur_pos;
 }
 
 CORD CORD_pos_to_cord(CORD_pos p)
 {
-    return(p[0].path[0].pe_cord);
+    return p[0].path[0].pe_cord;
 }
 
 int CORD_pos_valid(CORD_pos p)
 {
-    return(p[0].path_len != CORD_POS_INVALID);
+    return p[0].path_len != CORD_POS_INVALID;
 }
 
 void CORD_set_pos(CORD_pos p, CORD x, size_t i)

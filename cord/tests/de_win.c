@@ -77,7 +77,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
       if (RegisterClass (&wndclass) == 0) {
           de_error("RegisterClass error");
-          return(0);
+          return 0;
       }
     }
 
@@ -90,7 +90,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     if (command_line == 0 || *command_line == 0) {
         de_error("File name argument required");
-        return( 0 );
+        return 0;
     } else {
         char *p = command_line;
 
@@ -110,7 +110,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
                         hInstance, NULL);
     if (hwnd == NULL) {
         de_error("CreateWindow error");
-        return(0);
+        return 0;
     }
 
     ShowWindow (hwnd, nCmdShow);
@@ -143,7 +143,7 @@ char * plain_chars(char * text, size_t len)
        }
     }
     result[len] = '\0';
-    return(result);
+    return result;
 }
 
 /* Return the argument with all non-control-characters replaced by      */
@@ -162,7 +162,7 @@ char * control_chars(char * text, size_t len)
        }
     }
     result[len] = '\0';
-    return(result);
+    return result;
 }
 
 int char_width;
@@ -236,7 +236,7 @@ LRESULT CALLBACK WndProc (HWND hwnd_arg, UINT message,
            COLS = (client_area.right - client_area.left)/char_width;
            LINES = (client_area.bottom - client_area.top)/char_height;
            generic_init();
-           return(0);
+           return 0;
 
       case WM_CHAR:
            if (wParam == QUIT) {
@@ -244,20 +244,20 @@ LRESULT CALLBACK WndProc (HWND hwnd_arg, UINT message,
            } else {
                do_command((int)wParam);
            }
-           return(0);
+           return 0;
 
       case WM_SETFOCUS:
            CreateCaret(hwnd_arg, NULL, char_width, char_height);
            ShowCaret(hwnd_arg);
            caret_visible = 1;
            update_cursor();
-           return(0);
+           return 0;
 
       case WM_KILLFOCUS:
            HideCaret(hwnd_arg);
            DestroyCaret();
            caret_visible = 0;
-           return(0);
+           return 0;
 
       case WM_LBUTTONUP:
            {
@@ -266,7 +266,7 @@ LRESULT CALLBACK WndProc (HWND hwnd_arg, UINT message,
 
                set_position(xpos / (unsigned)char_width,
                             ypos / (unsigned)char_height);
-               return(0);
+               return 0;
            }
 
       case WM_COMMAND:
@@ -274,24 +274,24 @@ LRESULT CALLBACK WndProc (HWND hwnd_arg, UINT message,
            if (id & EDIT_CMD_FLAG) {
                if (id & REPEAT_FLAG) do_command(REPEAT);
                do_command(CHAR_CMD(id));
-               return( 0 );
+               return 0;
            } else {
              switch(id) {
                case IDM_FILEEXIT:
                   SendMessage(hwnd_arg, WM_CLOSE, 0, 0L);
-                  return( 0 );
+                  return 0;
 
                case IDM_HELPABOUT:
                   if( DialogBox( hInstance, TEXT("ABOUTBOX"),
                                  hwnd_arg, AboutBoxCallback ) )
                      InvalidateRect(hwnd_arg, NULL, TRUE);
-                  return( 0 );
+                  return 0;
                case IDM_HELPCONTENTS:
                   de_error(
                        "Cursor keys: ^B(left) ^F(right) ^P(up) ^N(down)\n"
                        "Undo: ^U    Write: ^W   Quit:^D  Repeat count: ^R[n]\n"
                        "Top: ^T   Locate (search, find): ^L text ^L\n");
-                  return( 0 );
+                  return 0;
              }
            }
            break;

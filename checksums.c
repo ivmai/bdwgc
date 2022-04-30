@@ -67,7 +67,7 @@ STATIC word GC_checksum(struct hblk *h)
     while ((word)p < (word)lim) {
         result += *p++;
     }
-    return(result | 0x80000000 /* doesn't look like pointer */);
+    return result | 0x80000000; /* does not look like pointer */
 }
 
 int GC_n_dirty_errors = 0;

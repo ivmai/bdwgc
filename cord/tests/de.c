@@ -187,7 +187,7 @@ size_t line_pos(int i, int *c)
     if (map -> line < i - 2) /* rebuild */ invalidate_map(i);
     for (j = map -> line, cur = map -> pos; j < i;) {
         cur = CORD_chr(current, cur, '\n');
-        if (cur == current_len-1) return(CORD_NOT_FOUND);
+        if (cur == current_len-1) return CORD_NOT_FOUND;
         cur++;
         if (++j > current_map -> line) add_map(j, cur);
     }
@@ -200,7 +200,7 @@ size_t line_pos(int i, int *c)
         }
         cur += *c;
     }
-    return(cur);
+    return cur;
 }
 
 void add_hist(CORD s)
@@ -284,7 +284,7 @@ CORD retrieve_line(CORD s, size_t pos, unsigned column)
     if (eol == CORD_NOT_FOUND) eol = CORD_len(candidate);
     len = (int)eol - (int)column;
     if (len < 0) len = 0;
-    return(CORD_substr(s, pos + column, len));
+    return CORD_substr(s, pos + column, len);
 }
 
 # ifdef WIN32
@@ -296,8 +296,8 @@ CORD retrieve_line(CORD s, size_t pos, unsigned column)
 
         invalidate_map(dis_line + LINES);       /* Prune search */
         pos = line_pos(dis_line + i, 0);
-        if (pos == CORD_NOT_FOUND) return(CORD_EMPTY);
-        return(retrieve_line(current, pos, dis_col));
+        if (pos == CORD_NOT_FOUND) return CORD_EMPTY;
+        return retrieve_line(current, pos, dis_col);
     }
 # endif
 
@@ -394,7 +394,7 @@ void fix_pos(void)
   int beep(void)
   {
     putc('\007', stderr);
-    return(0);
+    return 0;
   }
 #endif /* !WIN32 && !MACINTOSH */
 
