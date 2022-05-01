@@ -117,7 +117,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 
 /* Push the object obj with corresponding heap block header hhdr onto   */
 /* the mark stack.  Returns the updated mark_stack_top value.           */
-GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr,  mse * mark_stack_top,
+GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr, mse * mark_stack_top,
                             mse * mark_stack_limit)
 {
   word descr = hhdr -> hb_descr;

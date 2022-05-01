@@ -164,8 +164,7 @@ AH_TEMPLATE([USE_COMPILER_TLS],
             [Define to use of compiler-support for thread-local variables.])
 
 dnl Thread selection macros.
-AH_TEMPLATE([GC_THREADS],           [Define to support platform-specific
-                                     threads.])
+AH_TEMPLATE([GC_THREADS], [Define to support platform-specific threads.])
 AH_TEMPLATE([GC_WIN32_PTHREADS],
                 [Define to support pthreads-win32 or winpthreads.])
 
