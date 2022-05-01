@@ -105,8 +105,6 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
     size_t nwords = divWORDSZ(nbits + WORDSZ-1);
     signed_word result;
     size_t i;
-    word last_part;
-    size_t extra_bits;
     DCL_LOCK_STATE;
 
     LOCK();
@@ -144,12 +142,9 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
         GC_ext_descriptors[result + i].ed_bitmap = bm[i];
         GC_ext_descriptors[result + i].ed_continued = TRUE;
     }
-    last_part = bm[i];
-    /* Clear irrelevant bits. */
-    extra_bits = nwords * WORDSZ - nbits;
-    last_part <<= extra_bits;
-    last_part >>= extra_bits;
-    GC_ext_descriptors[result + i].ed_bitmap = last_part;
+    /* Clear irrelevant (highest) bits for the last element.    */
+    GC_ext_descriptors[result + i].ed_bitmap =
+                bm[i] & (GC_WORD_MAX >> (nwords * WORDSZ - nbits));
     GC_ext_descriptors[result + i].ed_continued = FALSE;
     GC_avail_descr += nwords;
     UNLOCK();
