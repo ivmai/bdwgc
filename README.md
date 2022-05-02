@@ -176,9 +176,9 @@ Please note that the collector source repository does not contain configure
 and similar auto-generated files, thus the full procedure of autoconf-based
 build of `master` branch of the collector could look like:
 
-    git clone git://github.com/ivmai/bdwgc.git
+    git clone https://github.com/ivmai/bdwgc
     cd bdwgc
-    git clone git://github.com/ivmai/libatomic_ops.git
+    git clone https://github.com/ivmai/libatomic_ops
     ./autogen.sh
     ./configure
     make -j
