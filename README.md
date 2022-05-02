@@ -177,9 +177,9 @@ and similar auto-generated files, thus the full procedure of autoconf-based
 build of `master` branch of the collector (using `master` branch of
 libatomic_ops source repository as well) could look like:
 
-    git clone git://github.com/ivmai/bdwgc.git
+    git clone https://github.com/ivmai/bdwgc
     cd bdwgc
-    git clone git://github.com/ivmai/libatomic_ops.git
+    git clone https://github.com/ivmai/libatomic_ops
     ./autogen.sh
     ./configure
     make -j
