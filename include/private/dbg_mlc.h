@@ -120,7 +120,11 @@ typedef struct {
 #endif
 
 /* Round bytes to words without adding extra byte at end.       */
-#define SIMPLE_ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1) - 1)
+#if defined(__CHERI_PURE_CAPABILITY__)
+#  define SIMPLE_ROUNDED_UP_WORDS(n) BYTES_TO_INTEGERS((n) + INTEGERS_TO_BYTES(1) - 1)
+#else
+#  define SIMPLE_ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1) - 1)
+#endif
 
 /* ADD_CALL_CHAIN stores a (partial) call chain into an object  */
 /* header; it should be called with the allocation lock held.   */

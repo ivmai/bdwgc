@@ -62,7 +62,7 @@ run()
         if [ $? -ne 0 ]; then 
             echo "Error copying unit-test executable ${name} to ${BUILDBOT_PLATFORM} VM"
             exit 1
-        fi 	
+        fi
 
         # These tests should trigger an "In-address space security exception"
         # So they should fail, i.e. `exit=1`
@@ -87,5 +87,7 @@ setup
 # Execute 
 run OK "bdwgc_install/bin/small_fixed_alloc.elf"  \
        "bdwgc_install/bin/random_mixed_alloc.elf" \
-       "bdwgc_install/bin/binary_tree.elf"        \
-       "bdwgc_install/bin/smash_test.elf"
+       "bdwgc_install/bin/huge.elf"               \
+       "bdwgc_install/bin/smash_test.elf"         \
+       "bdwgc_install/bin/leak.elf"               \
+       "bdwgc_install/bin/binary_tree.elf"

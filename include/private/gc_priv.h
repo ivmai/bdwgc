@@ -883,6 +883,8 @@ EXTERN_C_BEGIN
 # if defined(__CHERI_PURE_CAPABILITY__)
 #   define LOGCL             ((word)7)    /* log[2] of CPP_WORDSZ */
 #   define modCAPSZ(n)       ((n) & 0x7f) /* n mod size of capability      */
+#   define INTEGERS_TO_BYTES(x)   ((x)<<3)
+#   define BYTES_TO_INTEGERS(x)   ((x)>>3)
 # endif
 # define LOGWL               ((word)6)    /* log[2] of INTEGER_WORDSZ */
 # define modWORDSZ(n) ((n) & 0x3f)        /* n mod size of word            */

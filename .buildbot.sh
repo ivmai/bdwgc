@@ -30,7 +30,9 @@ build_bdwgc()
 add_bdwgc_test_suite()
 {
     SRC_DIR=ci/tests
-    BDWGC_TEST_FILES="smash.c"
+    BDWGC_TEST_FILES="smash.c \
+                      leak.c  \
+                      huge.c"
     for src_file in ${BDWGC_TEST_FILES}; do
         ln -fs ../../tests/${src_file} ${SRC_DIR}/${src_file}
     done
@@ -59,7 +61,9 @@ clean()
     rm -rf ${@}
 
     SRC_DIR=ci/tests
-    BDWGC_TEST_FILES="smash.c"
+    BDWGC_TEST_FILES="smash.c \
+                      leak.c  \
+                      huge.c"
 
     for src_file in ${BDWGC_TEST_FILES}; do
         rm ${SRC_DIR}/${src_file}
