@@ -339,11 +339,10 @@ STATIC void GC_remove_tmp_roots(void)
 }
 #endif
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
-  STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
+STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
 
-  GC_API void GC_CALL GC_remove_roots(void *b, void *e)
-  {
+GC_API void GC_CALL GC_remove_roots(void *b, void *e)
+{
     DCL_LOCK_STATE;
 
     /* Quick check whether has nothing to do */
@@ -354,27 +353,29 @@ STATIC void GC_remove_tmp_roots(void)
     LOCK();
     GC_remove_roots_inner((ptr_t)b, (ptr_t)e);
     UNLOCK();
-  }
+}
 
-  /* Should only be called when the lock is held */
-  STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
-  {
+/* Should only be called when the lock is held */
+STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
+{
     int i;
-    GC_bool rebuild = FALSE;
+#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+      int old_n_roots = n_root_sets;
+#   endif
 
     for (i = 0; i < n_root_sets; ) {
         if ((word)GC_static_roots[i].r_start >= (word)b
             && (word)GC_static_roots[i].r_end <= (word)e) {
             GC_remove_root_at_pos(i);
-            rebuild = TRUE;
         } else {
             i++;
         }
     }
-    if (rebuild)
+#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+      if (n_root_sets < old_n_roots)
         GC_rebuild_root_index();
-  }
-#endif /* !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) */
+#   endif
+}
 
 #ifdef USE_PROC_FOR_LIBRARIES
   /* Exchange the elements of the roots table.  Requires rebuild of     */

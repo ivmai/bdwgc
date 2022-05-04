@@ -655,13 +655,13 @@ GC_API void GC_CALL GC_clear_exclusion_table(void);
 GC_API void GC_CALL GC_clear_roots(void);
 
 /* Add a root segment.  Wizards only.                                   */
+/* May merge adjacent or overlapping segments if appropriate.           */
 /* Both segment start and end are not needed to be pointer-aligned.     */
 /* low_address must not be greater than high_address_plus_1.            */
 GC_API void GC_CALL GC_add_roots(void * /* low_address */,
                                  void * /* high_address_plus_1 */);
 
-/* Remove a root segment.  Wizards only.                                */
-/* May be unimplemented on some platforms.                              */
+/* Remove root segments located fully in the region.  Wizards only.     */
 GC_API void GC_CALL GC_remove_roots(void * /* low_address */,
                                     void * /* high_address_plus_1 */);
 
