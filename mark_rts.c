@@ -373,6 +373,9 @@ STATIC void GC_remove_tmp_roots(void)
     if (rebuild)
         GC_rebuild_root_index();
   }
+#else
+  GC_API void GC_CALL GC_remove_roots(void *, void *)
+  {}
 #endif /* !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) */
 
 #ifdef USE_PROC_FOR_LIBRARIES
