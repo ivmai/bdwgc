@@ -338,6 +338,10 @@ STATIC void GC_remove_tmp_roots(void)
 }
 #endif
 
+#if (!defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)) != ! ! GC_HAS_REMOVE_ROOTS
+# error GC_HAS_REMOVE_ROOTS has not been defined correctly.
+#endif
+
 #if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
   STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
 

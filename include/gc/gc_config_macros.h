@@ -455,4 +455,10 @@
 
 #endif /* __cplusplus */
 
+#if defined(__CYGWIN32__) || defined(__CYGWIN__) || defined(_WIN32)
+# define GC_HAS_REMOVE_ROOTS 0
+#else
+# define GC_HAS_REMOVE_ROOTS 1
+#endif
+
 #endif
