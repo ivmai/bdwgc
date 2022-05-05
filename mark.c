@@ -276,6 +276,16 @@ STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h);
 
 static void alloc_mark_stack(size_t);
 
+static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
+{
+  if (GC_scan_ptr != NULL) return; /* not ready to push */
+
+  GC_push_roots(push_all, cold_gc_frame);
+  GC_objects_are_marked = TRUE;
+  if (GC_mark_state != MS_INVALID)
+    GC_mark_state = MS_ROOTS_PUSHED;
+}
+
 /* Perform a small amount of marking.                   */
 /* We try to touch roughly a page of memory.            */
 /* Return TRUE if we just finished a mark phase.        */
@@ -296,9 +306,9 @@ static void alloc_mark_stack(size_t);
 #endif
 {
     GC_ASSERT(I_HOLD_LOCK());
-    switch(GC_mark_state) {
+    switch (GC_mark_state) {
         case MS_NONE:
-            break;
+            return TRUE;
 
         case MS_PUSH_RESCUERS:
             if ((word)GC_mark_stack_top
@@ -311,17 +321,13 @@ static void alloc_mark_stack(size_t);
                 break;
             } else {
                 GC_scan_ptr = GC_push_next_marked_dirty(GC_scan_ptr);
-                if (NULL == GC_scan_ptr) {
-#                 if !defined(GC_DISABLE_INCREMENTAL)
+#               ifndef GC_DISABLE_INCREMENTAL
+                  if (NULL == GC_scan_ptr) {
                     GC_COND_LOG_PRINTF("Marked from %lu dirty pages\n",
                                        (unsigned long)GC_n_rescuing_pages);
-#                 endif
-                    GC_push_roots(FALSE, cold_gc_frame);
-                    GC_objects_are_marked = TRUE;
-                    if (GC_mark_state != MS_INVALID) {
-                        GC_mark_state = MS_ROOTS_PUSHED;
-                    }
-                }
+                  }
+#               endif
+                push_roots_and_advance(FALSE, cold_gc_frame);
             }
             break;
 
@@ -337,13 +343,7 @@ static void alloc_mark_stack(size_t);
                 break;
             } else {
                 GC_scan_ptr = GC_push_next_marked_uncollectable(GC_scan_ptr);
-                if (NULL == GC_scan_ptr) {
-                    GC_push_roots(TRUE, cold_gc_frame);
-                    GC_objects_are_marked = TRUE;
-                    if (GC_mark_state != MS_INVALID) {
-                        GC_mark_state = MS_ROOTS_PUSHED;
-                    }
-                }
+                push_roots_and_advance(TRUE, cold_gc_frame);
             }
             break;
 
@@ -399,13 +399,8 @@ static void alloc_mark_stack(size_t);
                 GC_mark_state = MS_PARTIALLY_INVALID;
             }
             GC_scan_ptr = GC_push_next_marked(GC_scan_ptr);
-            if (NULL == GC_scan_ptr && GC_mark_state == MS_PARTIALLY_INVALID) {
-                GC_push_roots(TRUE, cold_gc_frame);
-                GC_objects_are_marked = TRUE;
-                if (GC_mark_state != MS_INVALID) {
-                    GC_mark_state = MS_ROOTS_PUSHED;
-                }
-            }
+            if (GC_mark_state == MS_PARTIALLY_INVALID)
+                push_roots_and_advance(TRUE, cold_gc_frame);
             break;
 
         default:
