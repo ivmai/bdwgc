@@ -252,9 +252,10 @@ GC_INNER void GC_initiate_gc(void)
 #   endif
     if (GC_mark_state == MS_NONE) {
         GC_mark_state = MS_PUSH_RESCUERS;
-    } else if (GC_mark_state != MS_INVALID) {
-        ABORT("Unexpected state");
-    } /* Else this is really a full collection, and mark bits are invalid. */
+    } else {
+        GC_ASSERT(GC_mark_state == MS_INVALID);
+        /* This is really a full collection, and mark bits are invalid. */
+    }
     GC_scan_ptr = NULL;
 }
 
@@ -318,7 +319,6 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
                 /* in the future.                                        */
                 GC_mark_stack_too_small = TRUE;
                 MARK_FROM_MARK_STACK();
-                break;
             } else {
                 GC_scan_ptr = GC_push_next_marked_dirty(GC_scan_ptr);
 #               ifndef GC_DISABLE_INCREMENTAL
@@ -329,6 +329,9 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
 #               endif
                 push_roots_and_advance(FALSE, cold_gc_frame);
             }
+            GC_ASSERT(GC_mark_state == MS_PUSH_RESCUERS
+                      || GC_mark_state == MS_ROOTS_PUSHED
+                      || GC_mark_state == MS_INVALID);
             break;
 
         case MS_PUSH_UNCOLLECTABLE:
@@ -340,11 +343,13 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
                   if (GC_parallel) GC_mark_stack_too_small = TRUE;
 #               endif
                 MARK_FROM_MARK_STACK();
-                break;
             } else {
                 GC_scan_ptr = GC_push_next_marked_uncollectable(GC_scan_ptr);
                 push_roots_and_advance(TRUE, cold_gc_frame);
             }
+            GC_ASSERT(GC_mark_state == MS_PUSH_UNCOLLECTABLE
+                      || GC_mark_state == MS_ROOTS_PUSHED
+                      || GC_mark_state == MS_INVALID);
             break;
 
         case MS_ROOTS_PUSHED:
@@ -366,12 +371,12 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
                     GC_mark_state = MS_NONE;
                     return TRUE;
                   }
+                  GC_ASSERT(GC_mark_state == MS_INVALID);
                   break;
                 }
 #           endif
             if ((word)GC_mark_stack_top >= (word)GC_mark_stack) {
                 MARK_FROM_MARK_STACK();
-                break;
             } else {
                 GC_mark_state = MS_NONE;
                 if (GC_mark_stack_too_small) {
@@ -379,6 +384,9 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
                 }
                 return TRUE;
             }
+            GC_ASSERT(GC_mark_state == MS_ROOTS_PUSHED
+                      || GC_mark_state == MS_INVALID);
+            break;
 
         case MS_INVALID:
         case MS_PARTIALLY_INVALID:
@@ -388,6 +396,8 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
             }
             if ((word)GC_mark_stack_top >= (word)GC_mark_stack) {
                 MARK_FROM_MARK_STACK();
+                GC_ASSERT(GC_mark_state == MS_PARTIALLY_INVALID
+                          || GC_mark_state == MS_INVALID);
                 break;
             }
             if (NULL == GC_scan_ptr && GC_mark_state == MS_INVALID) {
@@ -401,6 +411,9 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
             GC_scan_ptr = GC_push_next_marked(GC_scan_ptr);
             if (GC_mark_state == MS_PARTIALLY_INVALID)
                 push_roots_and_advance(TRUE, cold_gc_frame);
+            GC_ASSERT(GC_mark_state == MS_ROOTS_PUSHED
+                      || GC_mark_state == MS_PARTIALLY_INVALID
+                      || GC_mark_state == MS_INVALID);
             break;
 
         default:

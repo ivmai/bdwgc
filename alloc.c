@@ -712,7 +712,8 @@ GC_INNER void GC_collect_a_little_inner(int n)
 #       endif
 
         if (i < max_deficit) {
-            /* Need to finish a collection.     */
+            GC_ASSERT(!GC_collection_in_progress());
+            /* Need to follow up with a full collection.        */
 #           ifdef SAVE_CALL_CHAIN
                 GC_save_callers(GC_last_stack);
 #           endif
@@ -800,6 +801,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(GC_mark_state == MS_NONE || GC_mark_state == MS_INVALID);
 #   if !defined(REDIRECT_MALLOC) && defined(USE_WINALLOC)
         GC_add_current_malloc_heap();
 #   endif
