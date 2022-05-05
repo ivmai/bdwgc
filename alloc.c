@@ -788,14 +788,13 @@ GC_API int GC_CALL GC_collect_a_little(void)
 # define COMMA_IF_USE_MUNMAP(x) /* empty */
 #endif
 
-/*
- * We stop the world and mark from all roots.
- * If stop_func() ever returns TRUE, we may fail and return FALSE.
- * Increment GC_gc_no if we succeed.
- */
+/* We stop the world and mark from all roots.  If stop_func() ever      */
+/* returns TRUE, we may fail and return FALSE.  Increment GC_gc_no if   */
+/* we succeed.                                                          */
 STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 {
     int i;
+    ptr_t cold_gc_frame = GC_approx_sp();
 #   ifndef NO_CLOCK
       CLOCK_TYPE start_time = CLOCK_TYPE_INITIALIZER;
 #   endif
@@ -853,7 +852,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
             GC_parallel_mark_disabled = TRUE;
 #       endif
         for (i = 0; !(*stop_func)(); i++) {
-          if (GC_mark_some(GC_approx_sp())) {
+          if (GC_mark_some(cold_gc_frame)) {
 #           ifdef PARALLEL_MARK
               if (GC_parallel && GC_parallel_mark_disabled) {
                 GC_COND_LOG_PRINTF("Stopped marking done after %d iterations"
