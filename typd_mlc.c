@@ -450,6 +450,12 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
    }
 }
 
+GC_ATTR_NO_SANITIZE_THREAD
+static complex_descriptor *get_complex_descr(word *addr, word nwords)
+{
+  return (complex_descriptor *)addr[nwords - 1];
+}
+
 STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
                                 mse * mark_stack_limit,
                                 word env GC_ATTR_UNUSED)
@@ -457,7 +463,7 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
     hdr * hhdr = HDR(addr);
     word sz = hhdr -> hb_sz;
     word nwords = BYTES_TO_WORDS(sz);
-    complex_descriptor * descr = (complex_descriptor *)(addr[nwords-1]);
+    complex_descriptor *descr = get_complex_descr(addr, nwords);
     mse * orig_mark_stack_ptr = mark_stack_ptr;
     mse * new_mark_stack_ptr;
 
