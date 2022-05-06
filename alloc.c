@@ -483,6 +483,7 @@ STATIC void GC_maybe_gc(void)
     return;
   }
 
+  GC_ASSERT(!GC_collection_in_progress());
 # ifdef PARALLEL_MARK
     if (GC_parallel)
       GC_wait_for_reclaim();
