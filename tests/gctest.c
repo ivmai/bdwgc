@@ -1953,8 +1953,8 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 
 void enable_incremental_mode(void)
 {
-# if !defined(GC_DISABLE_INCREMENTAL) \
-     && (defined(TEST_DEFAULT_VDB) || !defined(DEFAULT_VDB))
+# if (defined(TEST_DEFAULT_VDB) || defined(TEST_MANUAL_VDB) \
+      || !defined(DEFAULT_VDB)) && !defined(GC_DISABLE_INCREMENTAL)
 #   if !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL) \
        && !defined(REDIRECT_MALLOC) && !defined(USE_PROC_FOR_LIBRARIES)
       GC_enable_incremental();
