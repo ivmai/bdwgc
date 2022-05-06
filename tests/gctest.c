@@ -2424,8 +2424,8 @@ int main(void)
     if (GC_get_min_bytes_allocd() != 1)
         FAIL;
     GC_set_rate(10);
-    GC_set_max_prior_attempts(1);
-    if (GC_get_rate() != 10 || GC_get_max_prior_attempts() != 1)
+    GC_set_max_prior_attempts(GC_get_max_prior_attempts());
+    if (GC_get_rate() != 10)
         FAIL;
     GC_set_warn_proc(warn_proc);
     if ((code = pthread_key_create(&fl_key, 0)) != 0) {

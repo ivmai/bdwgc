@@ -667,7 +667,7 @@ GC_API int GC_CALL GC_get_rate(void)
 
 /* The default maximum number of prior attempts at world stop marking.  */
 #ifndef MAX_PRIOR_ATTEMPTS
-# define MAX_PRIOR_ATTEMPTS 1
+# define MAX_PRIOR_ATTEMPTS 3
 #endif
 
 /* The maximum number of prior attempts at world stop marking.          */
