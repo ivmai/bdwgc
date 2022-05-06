@@ -801,7 +801,6 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT(GC_mark_state == MS_NONE || GC_mark_state == MS_INVALID);
 #   if !defined(REDIRECT_MALLOC) && defined(USE_WINALLOC)
         GC_add_current_malloc_heap();
 #   endif
