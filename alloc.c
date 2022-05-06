@@ -663,28 +663,19 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
     return(TRUE);
 }
 
-/*
- * Perform n units of garbage collection work.  A unit is intended to touch
- * roughly GC_rate pages.  Every once in a while, we do more than that.
- * This needs to be a fairly large number with our current incremental
- * GC strategy, since otherwise we allocate too much during GC, and the
- * cleanup gets expensive.
- */
+/* The number of extra calls to GC_mark_some that we have made. */
+STATIC int GC_deficit = 0;
+
+/* The default value of GC_rate.        */
 #ifndef GC_RATE
 # define GC_RATE 10
 #endif
 
-#ifndef MAX_PRIOR_ATTEMPTS
-# define MAX_PRIOR_ATTEMPTS 1
-#endif
-        /* Maximum number of prior attempts at world stop marking       */
-        /* A value of 1 means that we finish the second time, no matter */
-        /* how long it takes.  Doesn't count the initial root scan      */
-        /* for a full GC.                                               */
-
-STATIC int GC_deficit = 0;/* The number of extra calls to GC_mark_some  */
-                          /* that we have made.                         */
-
+/* When GC_collect_a_little_inner() performs n units of GC work, a unit */
+/* is intended to touch roughly GC_rate pages.  (But, every once in     */
+/* a while, we do more than that.)  This needs to be a fairly large     */
+/* number with our current incremental GC strategy, since otherwise we  */
+/* allocate too much during GC, and the cleanup gets expensive.         */
 STATIC int GC_rate = GC_RATE;
 
 GC_API void GC_CALL GC_set_rate(int value)
@@ -698,6 +689,14 @@ GC_API int GC_CALL GC_get_rate(void)
     return GC_rate;
 }
 
+/* The default maximum number of prior attempts at world stop marking.  */
+#ifndef MAX_PRIOR_ATTEMPTS
+# define MAX_PRIOR_ATTEMPTS 1
+#endif
+
+/* The maximum number of prior attempts at world stop marking.          */
+/* A value of 1 means that we finish the second time, no matter how     */
+/* long it takes.  Does not count the initial root scan for a full GC.  */
 static int max_prior_attempts = MAX_PRIOR_ATTEMPTS;
 
 GC_API void GC_CALL GC_set_max_prior_attempts(int value)
