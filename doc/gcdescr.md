@@ -400,7 +400,7 @@ of allocation have taken place. After `GC_full_freq` minor collections a major
 collection is started.
 
 All collections initially run uninterrupted until a predetermined amount
-of time (50 ms by default) has expired. If this allows the collection
+of time (15 ms by default) has expired. If this allows the collection
 to complete entirely, we can avoid correcting for data structure modifications
 during the collection. If it does not complete, we return control to the
 mutator, and perform small amounts of additional GC work during those later

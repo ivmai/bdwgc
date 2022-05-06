@@ -607,7 +607,7 @@ STATIC void GC_restart_handler(int sig)
 #     if defined(GC_TIME_LIMIT) && !defined(CPPCHECK)
         tv.tv_usec = 1000 * GC_TIME_LIMIT / 2;
 #     else
-        tv.tv_usec = 1000 * 50 / 2;
+        tv.tv_usec = 1000 * 15 / 2;
 #     endif
       (void)select(0, 0, 0, 0, &tv);
     }

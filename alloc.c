@@ -183,7 +183,7 @@ GC_INNER int GC_CALLBACK GC_never_stop_func(void)
                         /* The parallel marker cannot be interrupted for */
                         /* now, so the time limit is absent by default.  */
 #else
-  unsigned long GC_time_limit = 50;
+  unsigned long GC_time_limit = 15;
 #endif
 
 #ifndef NO_CLOCK
