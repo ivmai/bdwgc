@@ -234,7 +234,8 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
               (struct LeafDescriptor *)
                 GC_malloc_atomic(sizeof(struct LeafDescriptor));
 
-          if (NO_MEM == result || NULL == one_element) return NO_MEM;
+          if (EXPECT(NO_MEM == result || NULL == one_element, FALSE))
+            return NO_MEM;
           one_element -> ld_tag = LEAF_TAG;
           one_element -> ld_size = size;
           one_element -> ld_nelements = 1;
@@ -245,7 +246,7 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
               struct LeafDescriptor * beginning =
                 (struct LeafDescriptor *)
                   GC_malloc_atomic(sizeof(struct LeafDescriptor));
-              if (NULL == beginning) return NO_MEM;
+              if (EXPECT(NULL == beginning, FALSE)) return NO_MEM;
               beginning -> ld_tag = LEAF_TAG;
               beginning -> ld_size = size;
               beginning -> ld_nelements = 1;
@@ -260,7 +261,7 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
               struct LeafDescriptor * beginning =
                 (struct LeafDescriptor *)
                   GC_malloc_atomic(sizeof(struct LeafDescriptor));
-              if (NULL == beginning) return NO_MEM;
+              if (EXPECT(NULL == beginning, FALSE)) return NO_MEM;
               beginning -> ld_tag = LEAF_TAG;
               beginning -> ld_size = leaf -> ld_size;
               beginning -> ld_nelements = leaf -> ld_nelements;
@@ -624,7 +625,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
         }
     } else {
         op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
-        if (NULL == op) return NULL;
+        if (EXPECT(NULL == op, FALSE)) return NULL;
         lg = BYTES_TO_GRANULES(GC_size(op));
     }
     ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
