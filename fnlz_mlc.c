@@ -31,7 +31,11 @@ STATIC int GC_finalized_kind = 0;
 
 STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
 {
-    word fc_word = *(word *)obj;
+#   ifdef AO_HAVE_load
+        word fc_word = (word)AO_load((volatile AO_t *)obj);
+#   else
+        word fc_word = *(word *)obj;
+#   endif
 
     if ((fc_word & FINALIZER_CLOSURE_FLAG) != 0) {
        /* The disclaim function may be passed fragments from the        */
@@ -96,19 +100,22 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
                                 const struct GC_finalizer_closure *fclos)
 {
-    word *op;
+    void *op;
 
     GC_ASSERT(GC_finalized_kind != 0);
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fclos));
     GC_ASSERT(((word)fclos & FINALIZER_CLOSURE_FLAG) == 0);
-    op = (word *)GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)),
-                                GC_finalized_kind);
+    op = GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)), GC_finalized_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
-    *op = (word)fclos | FINALIZER_CLOSURE_FLAG;
+#   ifdef AO_HAVE_store
+        AO_store((volatile AO_t *)op, (AO_t)fclos | FINALIZER_CLOSURE_FLAG);
+#   else
+        *(word *)op = (word)fclos | FINALIZER_CLOSURE_FLAG;
+#   endif
     GC_dirty(op);
     REACHABLE_AFTER_DIRTY(fclos);
-    return op + 1;
+    return (word *)op + 1;
 }
 
 #endif /* ENABLE_DISCLAIM */
