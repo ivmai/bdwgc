@@ -239,7 +239,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                             *pos_ptr = ec_len(result);
                         } else if (long_arg == 2) {
                             size_t * pos_ptr = va_arg(args, size_t *);
-                            *pos_ptr = (size_t)ec_len(result);
+                            *pos_ptr = (size_t)(unsigned)ec_len(result);
                         } else if (long_arg > 0) {
                             long * pos_ptr;
                             pos_ptr = va_arg(args, long *);
