@@ -221,7 +221,7 @@ STATIC int GC_n_attempts = 0;   /* Number of attempts at finishing      */
                                 /* collection within GC_time_limit.     */
 
 STATIC GC_stop_func GC_default_stop_func = GC_never_stop_func;
-                                /* accessed holding the lock.           */
+                                /* Accessed holding the allocator lock. */
 
 GC_API void GC_CALL GC_set_stop_func(GC_stop_func stop_func)
 {
@@ -1092,8 +1092,8 @@ GC_INLINE int GC_compute_heap_usage_percent(void)
                    TO_KiB_UL(GC_composite_in_use), \
                    TO_KiB_UL(GC_atomic_in_use))
 
-/* Finish up a collection.  Assumes mark bits are consistent, lock is   */
-/* held, but the world is otherwise running.                            */
+/* Finish up a collection.  Assumes mark bits are consistent, but the   */
+/* world is otherwise running.                                          */
 STATIC void GC_finish_collection(void)
 {
 #   ifndef NO_CLOCK

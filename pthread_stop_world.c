@@ -772,8 +772,8 @@ STATIC void GC_restart_handler(int sig)
 # undef ao_store_release_async
 #endif /* !GC_OPENBSD_UTHREADS && !NACL */
 
-/* We hold allocation lock.  Should do exactly the right thing if the   */
-/* world is stopped.  Should not fail if it isn't.                      */
+/* Should do exactly the right thing if the world is stopped; should    */
+/* not fail if it is not.                                               */
 GC_INNER void GC_push_all_stacks(void)
 {
     GC_bool found_me = FALSE;
@@ -789,6 +789,7 @@ GC_INNER void GC_push_all_stacks(void)
     pthread_t self = pthread_self();
     word total_size = 0;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (!EXPECT(GC_thr_initialized, TRUE))
       GC_thr_init();
 #   ifdef DEBUG_THREADS
@@ -910,9 +911,8 @@ GC_INNER void GC_push_all_stacks(void)
   int GC_stopping_pid = 0;
 #endif
 
-/* We hold the allocation lock.  Suspend all threads that might */
-/* still be running.  Return the number of suspend signals that */
-/* were sent.                                                   */
+/* Suspend all threads that might still be running.  Return the number  */
+/* of suspend signals that were sent.                                   */
 STATIC int GC_suspend_all(void)
 {
   int n_live_threads = 0;
@@ -925,6 +925,7 @@ STATIC int GC_suspend_all(void)
 
       GC_ASSERT((GC_stop_count & THREAD_RESTARTED) == 0);
 #   endif
+    GC_ASSERT(I_HOLD_LOCK());
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (!THREAD_EQUAL(p -> id, self)) {
@@ -989,6 +990,7 @@ STATIC int GC_suspend_all(void)
 #   endif
     unsigned long num_sleeps = 0;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef DEBUG_THREADS
       GC_log_printf("pthread_stop_world: number of threads: %d\n",
                     GC_nacl_num_gc_threads - 1);
@@ -1303,14 +1305,12 @@ GC_INNER void GC_stop_world(void)
   }
 #endif /* !NACL */
 
-/* Caller holds allocation lock, and has held it continuously since     */
-/* the world stopped.                                                   */
 GC_INNER void GC_start_world(void)
 {
 # ifndef NACL
     int n_live_threads;
 
-    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(I_HOLD_LOCK()); /* held continuously since the world stopped */
 #   ifdef DEBUG_THREADS
       GC_log_printf("World starting\n");
 #   endif

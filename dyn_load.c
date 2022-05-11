@@ -1322,7 +1322,6 @@ STATIC const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
     return NULL;
 }
 
-/* This should never be called by a thread holding the lock.    */
 STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
                               intptr_t slide)
 {
@@ -1333,6 +1332,7 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
   GC_has_static_roots_func callback = GC_has_static_roots;
   DCL_LOCK_STATE;
 
+  GC_ASSERT(I_DONT_HOLD_LOCK());
   if (GC_no_dls) return;
 # ifdef DARWIN_DEBUG
     name = GC_dyld_name_for_hdr(hdr);
@@ -1392,7 +1392,6 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
 # endif
 }
 
-/* This should never be called by a thread holding the lock.    */
 STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
                                  intptr_t slide)
 {
@@ -1403,6 +1402,7 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
     DCL_LOCK_STATE;
 # endif
 
+  GC_ASSERT(I_DONT_HOLD_LOCK());
   for (i = 0; i < sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]); i++) {
     sec = GC_GETSECTBYNAME(hdr, GC_dyld_sections[i].seg,
                            GC_dyld_sections[i].sect);
@@ -1466,6 +1466,7 @@ GC_INNER void GC_init_dyld(void)
 {
   static GC_bool initialized = FALSE;
 
+  GC_ASSERT(I_DONT_HOLD_LOCK());
   if (initialized) return;
 
 # ifdef DARWIN_DEBUG

@@ -96,10 +96,8 @@ STATIC void GC_push_typed_structures_proc(void)
   GC_PUSH_ALL_SYM(GC_ext_descriptors);
 }
 
-/* Add a multiword bitmap to GC_ext_descriptors arrays.  Return */
-/* starting index.                                              */
-/* Returns -1 on failure.                                       */
-/* Caller does not hold allocation lock.                        */
+/* Add a multiword bitmap to GC_ext_descriptors arrays.         */
+/* Returns starting index on success, -1 otherwise.             */
 STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
 {
     size_t nwords = divWORDSZ(nbits + WORDSZ-1);

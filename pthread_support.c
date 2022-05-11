@@ -589,13 +589,13 @@ void GC_push_thread_structures(void)
 #endif /* DEBUG_THREADS */
 
 /* Add a thread to GC_threads.  We assume it wasn't already there.      */
-/* Caller holds allocation lock.                                        */
 STATIC GC_thread GC_new_thread(pthread_t id)
 {
     int hv = THREAD_TABLE_INDEX(id);
     GC_thread result;
     static GC_bool first_thread_used = FALSE;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef DEBUG_THREADS
         GC_log_printf("Creating thread %p\n", (void *)id);
         for (result = GC_threads[hv]; result != NULL; result = result->next)
@@ -604,7 +604,6 @@ STATIC GC_thread GC_new_thread(pthread_t id)
             break;
           }
 #   endif
-    GC_ASSERT(I_HOLD_LOCK());
     if (!EXPECT(first_thread_used, TRUE)) {
         result = &first_thread;
         first_thread_used = TRUE;
@@ -708,8 +707,7 @@ STATIC void GC_delete_gc_thread(GC_thread t)
 
 /* Return a GC_thread corresponding to a given pthread_t.       */
 /* Returns 0 if it's not there.                                 */
-/* Caller holds allocation lock or otherwise inhibits           */
-/* updates.                                                     */
+/* Caller holds allocation lock or otherwise inhibits updates.  */
 /* If there is more than one thread with the given id we        */
 /* return the most recent one.                                  */
 GC_INNER GC_thread GC_lookup_thread(pthread_t id)
@@ -734,13 +732,15 @@ GC_INNER GC_thread GC_lookup_thread(pthread_t id)
   /* Returns NULL if GC_invoke_finalizers() should not be called by the */
   /* collector (to minimize the risk of a deep finalizers recursion),   */
   /* otherwise returns a pointer to the thread-local finalizer_nested.  */
-  /* Called by GC_notify_or_invoke_finalizers() only (the GC lock is    */
-  /* held).                                                             */
+  /* Called by GC_notify_or_invoke_finalizers() only.                   */
   GC_INNER unsigned char *GC_check_finalizer_nested(void)
   {
-    GC_thread me = GC_lookup_thread(pthread_self());
-    unsigned nesting_level = me->finalizer_nested;
+    GC_thread me;
+    unsigned nesting_level;
 
+    GC_ASSERT(I_HOLD_LOCK());
+    me = GC_lookup_thread(pthread_self());
+    nesting_level = me->finalizer_nested;
     if (nesting_level) {
       /* We are inside another GC_invoke_finalizers().          */
       /* Skip some implicitly-called GC_invoke_finalizers()     */
@@ -1484,14 +1484,14 @@ GC_INNER void GC_thr_init(void)
 
 /* Perform all initializations, including those that    */
 /* may require allocation.                              */
-/* Called without allocation lock.                      */
 /* Must be called before a second thread is created.    */
-/* Did we say it's called without the allocation lock?  */
 GC_INNER void GC_init_parallel(void)
 {
 #   if defined(THREAD_LOCAL_ALLOC)
       DCL_LOCK_STATE;
 #   endif
+
+    GC_ASSERT(I_DONT_HOLD_LOCK());
     if (parallel_initialized) return;
     parallel_initialized = TRUE;
 

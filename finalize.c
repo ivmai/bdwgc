@@ -88,9 +88,8 @@ GC_API void GC_CALL GC_push_finalizer_structures(void)
 #endif
 
 /* Double the size of a hash table. *log_size_ptr is the log of its     */
-/* current size.  May be a no-op.                                       */
-/* *table is a pointer to an array of hash headers.  If we succeed, we  */
-/* update both *table and *log_size_ptr.  Lock is held.                 */
+/* current size.  May be a no-op.  *table is a pointer to an array of   */
+/* hash headers.  We update both *table and *log_size_ptr on success.   */
 STATIC void GC_grow_table(struct hash_chain_entry ***table,
                           unsigned *log_size_ptr, word *entries_ptr)
 {
@@ -293,8 +292,8 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 /* Mark from one finalizable object using the specified mark proc.      */
 /* May not mark the object pointed to by real_ptr (i.e, it is the job   */
 /* of the caller, if appropriate).  Note that this is called with the   */
-/* mutator running, but we hold the GC lock.  This is safe only         */
-/* if the mutator (client) gets the GC lock to reveal hidden pointers.  */
+/* mutator running.  This is safe only if the mutator (client) gets     */
+/* the allocation lock to reveal hidden pointers.                       */
 GC_INLINE void GC_mark_fo(ptr_t real_ptr, finalization_mark_proc mark_proc)
 {
   GC_ASSERT(I_HOLD_LOCK());
@@ -522,7 +521,6 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 #endif /* !GC_LONG_REFS_NOT_NEEDED */
 
 #ifndef GC_MOVE_DISAPPEARING_LINK_NOT_NEEDED
-  /* Moves a link.  Assume the lock is held.    */
   STATIC int GC_move_disappearing_link_inner(
                                 struct dl_hashtbl_s *dl_hashtbl,
                                 void **link, void **new_link)
@@ -698,7 +696,6 @@ STATIC void GC_register_finalizer_inner(void * obj,
         GC_COND_LOG_PRINTF("Grew fo table to %u entries\n",
                            1U << GC_log_fo_table_size);
     }
-    /* in the THREADS case we hold allocation lock.             */
     for (;;) {
       struct finalizable_object *prev_fo = NULL;
       GC_oom_func oom_fn;
@@ -927,7 +924,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     *(char *)&GC_finalizer_nested = (char)(nesting_level + 1);
     return (unsigned char *)&GC_finalizer_nested;
   }
-#endif /* THREADS */
+#endif /* !THREADS */
 
 GC_INLINE void GC_make_disappearing_links_disappear(
                                         struct dl_hashtbl_s* dl_hashtbl,
@@ -983,9 +980,8 @@ GC_INLINE void GC_make_disappearing_links_disappear(
     GC_dirty(dl_hashtbl -> head); /* entire object */
 }
 
-/* Called with held lock (but the world is running).                    */
 /* Cause disappearing links to disappear and unreachable objects to be  */
-/* enqueued for finalization.                                           */
+/* enqueued for finalization.  Called with the world running.           */
 GC_INNER void GC_finalize(void)
 {
     struct finalizable_object * curr_fo, * prev_fo, * next_fo;
@@ -1208,8 +1204,6 @@ GC_INNER void GC_finalize(void)
    * may have been finalized when these finalizers are run.
    * Finalizers run at this point must be prepared to deal with a
    * mostly broken world.
-   * This routine is externally callable, so is called without
-   * the allocation lock.
    */
   GC_API void GC_CALL GC_finalize_all(void)
   {
@@ -1244,13 +1238,13 @@ GC_API int GC_CALL GC_should_invoke_finalizers(void)
 }
 
 /* Invoke finalizers for all objects that are ready to be finalized.    */
-/* Should be called without allocation lock.                            */
 GC_API int GC_CALL GC_invoke_finalizers(void)
 {
     int count = 0;
     word bytes_freed_before = 0; /* initialized to prevent warning. */
     DCL_LOCK_STATE;
 
+    GC_ASSERT(I_DONT_HOLD_LOCK());
     while (GC_should_invoke_finalizers()) {
         struct finalizable_object * curr_fo;
 

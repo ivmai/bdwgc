@@ -53,8 +53,7 @@ static void return_single_freelist(void *fl, void **gfl)
     }
 }
 
-/* Recover the contents of the freelist array fl into the global one gfl.*/
-/* We hold the allocator lock.                                          */
+/* Recover the contents of the freelist array fl into the global one gfl. */
 static void return_freelists(void **fl, void **gfl)
 {
     int i;
@@ -128,11 +127,11 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
 #   endif
 }
 
-/* We hold the allocator lock.  */
 GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 {
     int k;
 
+    GC_ASSERT(I_HOLD_LOCK());
     /* We currently only do this from the thread itself.        */
     GC_STATIC_ASSERT(THREAD_FREELISTS_KINDS <= MAXOBJKINDS);
     for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {

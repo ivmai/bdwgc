@@ -352,6 +352,8 @@ GC_INNER void GC_push_all_stacks(void)
   int nthreads = 0;
   word total_size = 0;
   mach_msg_type_number_t listcount = (mach_msg_type_number_t)THREAD_TABLE_SZ;
+
+  GC_ASSERT(I_HOLD_LOCK());
   if (!EXPECT(GC_thr_initialized, TRUE))
     GC_thr_init();
 
@@ -539,13 +541,13 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
 
 #endif /* !GC_NO_THREADS_DISCOVERY */
 
-/* Caller holds allocation lock.        */
 GC_INNER void GC_stop_world(void)
 {
   task_t my_task = current_task();
   mach_port_t my_thread = mach_thread_self();
   kern_return_t kern_result;
 
+  GC_ASSERT(I_HOLD_LOCK());
 # ifdef DEBUG_THREADS
     GC_log_printf("Stopping the world from thread %p\n",
                   (void *)(word)my_thread);
@@ -679,11 +681,11 @@ GC_INLINE void GC_thread_resume(thread_act_t thread)
   }
 }
 
-/* Caller holds allocation lock, and has held it continuously since     */
-/* the world stopped.                                                   */
 GC_INNER void GC_start_world(void)
 {
   task_t my_task = current_task();
+
+  GC_ASSERT(I_HOLD_LOCK()); /* held continuously since the world stopped */
 # ifdef DEBUG_THREADS
     GC_log_printf("World starting\n");
 # endif

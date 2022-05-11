@@ -288,9 +288,9 @@ GC_API void GC_CALL GC_clear_roots(void)
     UNLOCK();
 }
 
-/* Internal use only; lock held.        */
 STATIC void GC_remove_root_at_pos(int i)
 {
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef DEBUG_ADD_DEL_ROOTS
       GC_log_printf("Remove data root section at %d: %p .. %p%s\n",
                     i, (void *)GC_static_roots[i].r_start,
@@ -354,7 +354,6 @@ GC_API void GC_CALL GC_remove_roots(void *b, void *e)
     UNLOCK();
 }
 
-/* Should only be called when the lock is held */
 STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
 {
     int i;
@@ -362,6 +361,7 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
       int old_n_roots = n_root_sets;
 #   endif
 
+    GC_ASSERT(I_HOLD_LOCK());
     for (i = 0; i < n_root_sets; ) {
         if ((word)GC_static_roots[i].r_start >= (word)b
             && (word)GC_static_roots[i].r_end <= (word)e) {
@@ -562,13 +562,13 @@ STATIC struct exclusion * GC_next_exclusion(ptr_t start_addr)
     return GC_excl_table + low;
 }
 
-/* Should only be called when the lock is held.  The range boundaries   */
-/* should be properly aligned and valid.                                */
+/* The range boundaries should be properly aligned and valid.   */
 GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
 {
     struct exclusion * next;
     size_t next_index;
 
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((word)start % sizeof(word) == 0);
     GC_ASSERT((word)start < (word)finish);
 

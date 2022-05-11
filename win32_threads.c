@@ -360,19 +360,18 @@ static struct GC_Thread_Rep first_thread;
 static GC_bool first_thread_used = FALSE;
 
 /* Add a thread to GC_threads.  We assume it wasn't already there.      */
-/* Caller holds allocation lock.                                        */
 /* Unlike the pthreads version, the id field is set by the caller.      */
 STATIC GC_thread GC_new_thread(DWORD id)
 {
   int hv = THREAD_TABLE_INDEX(id);
   GC_thread result;
 
+  GC_ASSERT(I_HOLD_LOCK());
 # ifdef DEBUG_THREADS
     GC_log_printf("Creating thread 0x%lx\n", (long)id);
     if (GC_threads[hv] != NULL)
       GC_log_printf("Hash collision at GC_threads[%d]\n", hv);
 # endif
-  GC_ASSERT(I_HOLD_LOCK());
   if (!EXPECT(first_thread_used, TRUE)) {
     result = &first_thread;
     first_thread_used = TRUE;
@@ -543,8 +542,6 @@ GC_INLINE LONG GC_get_max_thread_index(void)
 /* without a lock, but should be called in contexts in which the        */
 /* requested thread cannot be asynchronously deleted, e.g. from the     */
 /* thread itself.                                                       */
-/* This version assumes that either GC_win32_dll_threads is set, or     */
-/* we hold the allocator lock.                                          */
 /* Also used (for assertion checking only) from thread_local_alloc.c.   */
 STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
 {
@@ -564,9 +561,10 @@ STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
     } else
 # endif
   /* else */ {
-    GC_thread p = GC_threads[THREAD_TABLE_INDEX(thread_id)];
+    GC_thread p;
 
     GC_ASSERT(I_HOLD_LOCK());
+    p = GC_threads[THREAD_TABLE_INDEX(thread_id)];
     while (p != NULL && p -> id != thread_id)
       p = p -> tm.next;
     return p;
@@ -594,9 +592,11 @@ STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
   /* GC_check_finalizer_nested() is the same as in pthread_support.c.   */
   GC_INNER unsigned char *GC_check_finalizer_nested(void)
   {
-    GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
+    GC_thread me;
     unsigned nesting_level;
 
+    GC_ASSERT(I_HOLD_LOCK());
+    me = GC_lookup_thread_inner(GetCurrentThreadId());
     CHECK_LOOKUP_MY_THREAD(me);
     nesting_level = me->finalizer_nested;
     if (nesting_level) {
@@ -677,9 +677,7 @@ GC_API void GC_CALL GC_register_altstack(void *stack GC_ATTR_UNUSED,
 /* been notified, then there may be more than one thread        */
 /* in the table with the same win32 id.                         */
 /* This is OK, but we need a way to delete a specific one.      */
-/* Assumes we hold the allocation lock unless                   */
-/* GC_win32_dll_threads is set.  Does not actually free         */
-/* GC_thread entry (only unlinks it).                           */
+/* Does not actually free GC_thread entry, only unlinks it.     */
 /* If GC_win32_dll_threads is set it should be called from the  */
 /* thread being deleted.                                        */
 STATIC void GC_delete_gc_thread_no_free(GC_vthread t)
@@ -727,8 +725,7 @@ STATIC void GC_delete_gc_thread_no_free(GC_vthread t)
 }
 
 /* Delete a thread from GC_threads.  We assume it is there.     */
-/* (The code intentionally traps if it wasn't.)  Assumes we     */
-/* hold the allocation lock unless GC_win32_dll_threads is set. */
+/* (The code intentionally traps if it wasn't.)                 */
 /* If GC_win32_dll_threads is set then it should be called from */
 /* the thread being deleted.  It is also safe to delete the     */
 /* main thread (unless GC_win32_dll_threads).                   */
@@ -1068,9 +1065,9 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
   /* We assume that this is only called for pthread ids that    */
   /* have not yet terminated or are still joinable, and         */
   /* cannot be concurrently terminated.                         */
-  /* Assumes we do NOT hold the allocation lock.                */
   STATIC GC_thread GC_lookup_pthread(pthread_t id)
   {
+    GC_ASSERT(I_DONT_HOLD_LOCK());
 #   ifndef GC_NO_THREADS_DISCOVERY
       if (GC_win32_dll_threads) {
         int i;
@@ -1806,8 +1803,8 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
   return thread->stack_base - sp; /* stack grows down */
 }
 
-/* We hold allocation lock.  Should do exactly the right thing if the   */
-/* world is stopped.  Should not fail if it isn't.                      */
+/* Should do exactly the right thing if the world is stopped; should    */
+/* not fail if it is not.                                               */
 GC_INNER void GC_push_all_stacks(void)
 {
   DWORD thread_id = GetCurrentThreadId();
@@ -1816,6 +1813,8 @@ GC_INNER void GC_push_all_stacks(void)
     unsigned nthreads = 0;
 # endif
   word total_size = 0;
+
+  GC_ASSERT(I_HOLD_LOCK());
 # ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
       int i;
@@ -3205,7 +3204,6 @@ GC_INNER void GC_thr_init(void)
 
 /* Perform all initializations, including those that    */
 /* may require allocation.                              */
-/* Called without allocation lock.                      */
 /* Must be called before a second thread is created.    */
 GC_INNER void GC_init_parallel(void)
 {
@@ -3214,6 +3212,7 @@ GC_INNER void GC_init_parallel(void)
     DCL_LOCK_STATE;
 # endif
 
+  GC_ASSERT(I_DONT_HOLD_LOCK());
   if (parallel_initialized) return;
   parallel_initialized = TRUE;
   /* GC_init() calls us back, so set flag first.      */

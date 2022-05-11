@@ -638,6 +638,7 @@ GC_API void GC_CALL GC_free(void * p)
     int knd;
     struct obj_kind * ok;
 
+    GC_ASSERT(I_HOLD_LOCK());
     h = HBLKPTR(p);
     hhdr = HDR(h);
     knd = hhdr -> hb_obj_kind;

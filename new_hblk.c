@@ -103,7 +103,7 @@
 /* Build a free list for objects of size sz inside heap block h.        */
 /* Clear objects inside h if clear is set.  Add list to the end of      */
 /* the free list we build.  Return the new free list.                   */
-/* This could be called without the main GC lock, if we ensure that     */
+/* This could be called without the allocation lock, if we ensure that  */
 /* there is no concurrent collection which might reclaim objects that   */
 /* we have not yet allocated.                                           */
 GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,

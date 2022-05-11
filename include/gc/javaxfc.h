@@ -40,6 +40,7 @@
  *    finalizers which create new finalizable objects, though that's
  *    probably unlikely.
  * Thus this is not recommended for general use.
+ * Acquire the allocation lock (to enqueue all finalizers).
  */
 GC_API void GC_CALL GC_finalize_all(void);
 

@@ -293,14 +293,12 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
 /* Cold_gc_frame is an address inside a GC frame that   */
 /* remains valid until all marking is complete.         */
 /* A zero value indicates that it's OK to miss some     */
-/* register values.                                     */
-/* We hold the allocation lock.  In the case of         */
-/* incremental collection, the world may not be stopped.*/
+/* register values.  In the case of an incremental      */
+/* collection, the world may be running.                */
 #ifdef WRAP_MARK_SOME
   /* For win32, this is called after we establish a structured  */
   /* exception handler, in case Windows unmaps one of our root  */
-  /* segments.  See below.  In either case, we acquire the      */
-  /* allocator lock long before we get here.                    */
+  /* segments.                                                  */
   STATIC GC_bool GC_mark_some_inner(ptr_t cold_gc_frame)
 #else
   GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame)
@@ -1192,14 +1190,13 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
     }
 }
 
-/* Perform Parallel mark.                       */
-/* We hold the GC lock, not the mark lock.      */
-/* Currently runs until the mark stack is       */
-/* empty.                                       */
+/* Perform parallel mark.  We hold the GC lock, not the mark lock.      */
+/* Currently runs until the mark stack is empty.                        */
 STATIC void GC_do_parallel_mark(void)
 {
     GC_acquire_mark_lock();
     GC_ASSERT(I_HOLD_LOCK());
+
     /* This could be a GC_ASSERT, but it seems safer to keep it on      */
     /* all the time, especially since it's cheap.                       */
     if (GC_help_wanted || GC_active_count != 0 || GC_helper_count != 0)
@@ -1226,10 +1223,8 @@ STATIC void GC_do_parallel_mark(void)
     GC_notify_all_marker();
 }
 
-
-/* Try to help out the marker, if it's running.         */
-/* We do not hold the GC lock, but the requestor does.  */
-/* And we hold the mark lock.                           */
+/* Try to help out the marker, if it's running.  We hold the mark lock  */
+/* only, the initiating thread holds the allocation lock.               */
 GC_INNER void GC_help_marker(word my_mark_no)
 {
 #   define my_id my_id_mse.mse_descr.w
@@ -1237,6 +1232,7 @@ GC_INNER void GC_help_marker(word my_mark_no)
     mse local_mark_stack[LOCAL_MARK_STACK_SIZE];
                 /* Note: local_mark_stack is quite big (up to 128 KiB). */
 
+    GC_ASSERT(I_DONT_HOLD_LOCK());
     GC_ASSERT(GC_parallel);
     while (GC_mark_no < my_mark_no
            || (!GC_help_wanted && GC_mark_no == my_mark_no)) {

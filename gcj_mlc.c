@@ -54,7 +54,6 @@ STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr GC_ATTR_UNUSED,
     return mark_stack_ptr;
 }
 
-/* Caller does not hold allocation lock. */
 GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
                                        void * /* really GC_mark_proc */mp)
 {
@@ -130,6 +129,7 @@ static void maybe_finalize(void)
    static word last_finalized_no = 0;
    DCL_LOCK_STATE;
 
+   GC_ASSERT(I_HOLD_LOCK());
    if (GC_gc_no == last_finalized_no ||
        !EXPECT(GC_is_initialized, TRUE)) return;
    UNLOCK();

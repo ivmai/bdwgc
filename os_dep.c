@@ -541,7 +541,6 @@ GC_INNER const char * GC_get_maps(void)
   /* works-around the issues.                                           */
 
   /* Return the first non-addressable location > p or bound.    */
-  /* Requires the allocation lock.                              */
   STATIC ptr_t GC_find_limit_openbsd(ptr_t p, ptr_t bound)
   {
     static volatile ptr_t result;
@@ -587,7 +586,6 @@ GC_INNER const char * GC_get_maps(void)
   static volatile int firstpass;
 
   /* Return first addressable location > p or bound.    */
-  /* Requires the allocation lock.                      */
   STATIC ptr_t GC_skip_hole_openbsd(ptr_t p, ptr_t bound)
   {
     static volatile ptr_t result;
@@ -981,15 +979,11 @@ GC_INNER size_t GC_page_size = 0;
     /* Return the first non-addressable location > p (up) or    */
     /* the smallest location q s.t. [q,p) is addressable (!up). */
     /* We assume that p (up) or p-1 (!up) is addressable.       */
-    /* Requires allocation lock.                                */
     GC_ATTR_NO_SANITIZE_ADDR
     STATIC ptr_t GC_find_limit_with_bound(ptr_t p, GC_bool up, ptr_t bound)
     {
         static volatile ptr_t result;
-                /* Safer if static, since otherwise it may not be       */
-                /* preserved across the longjmp.  Can safely be         */
-                /* static since it's only called with the               */
-                /* allocation lock held.                                */
+                /* Safer if static, see that in GC_find_limit_openbsd.  */
 
         GC_ASSERT(up ? (word)bound >= MIN_PAGE_SIZE
                      : (word)bound <= ~(word)MIN_PAGE_SIZE);
@@ -1578,7 +1572,7 @@ GC_INNER size_t GC_page_size = 0;
 /* Register static data segment(s) as roots.  If more data segments are */
 /* added later then they need to be registered at that point (as we do  */
 /* with SunOS dynamic loading), or GC_mark_roots needs to check for     */
-/* them (as we do with PCR).  Called with allocator lock held.          */
+/* them (as we do with PCR).                                            */
 # ifdef OS2
 
 void GC_register_data_segments(void)
@@ -3074,8 +3068,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #endif /* !GWW_VDB && !SOFT_VDB */
 
 #ifdef DEFAULT_VDB
-  /* All of the following assume the allocation lock is held.   */
-
   /* The client asserts that unallocated pages in the heap are never    */
   /* written.                                                           */
 
@@ -5178,7 +5170,7 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
 
 #ifdef NEED_CALLINFO
 
-/* Print info to stderr.  We do NOT hold the allocation lock */
+/* Print info to stderr.  We do NOT hold the allocation lock.   */
 GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
 {
     int i;
