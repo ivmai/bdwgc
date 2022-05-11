@@ -1191,6 +1191,9 @@ GC_API void GC_CALL GC_init(void)
         }
       }
 #   endif
+#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+      LOCK(); /* just to set GC_lock_holder */
+#   endif
 #   if !defined(NO_DEBUGGING) && !defined(NO_CLOCK)
       GET_TIME(GC_init_time);
 #   endif
@@ -1211,9 +1214,6 @@ GC_API void GC_CALL GC_init(void)
         /* If thread stacks are cached, they tend to be scanned in      */
         /* entirety as part of the root set.  This will grow them to    */
         /* maximum size, and is generally not desirable.                */
-#   endif
-#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-        LOCK(); /* just to set GC_lock_holder */
 #   endif
 #   if !defined(THREADS) || defined(GC_PTHREADS) \
         || defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
