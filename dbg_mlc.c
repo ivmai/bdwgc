@@ -290,8 +290,13 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz GC_ATTR_UNUSED,
 #   ifndef SHORT_DBG_HDRS
       ((oh *)p) -> oh_sz = sz;
       ((oh *)p) -> oh_sf = START_FLAG ^ (word)result;
-      ((word *)p)[BYTES_TO_WORDS(GC_size(p))-1] =
-         result[SIMPLE_ROUNDED_UP_WORDS(sz)] = END_FLAG ^ (word)result;
+#     if defined(__CHERI_PURE_CAPABILITY__)
+        ((word *)p)[BYTES_TO_INTEGERS(GC_size(p))-1] =
+           result[SIMPLE_ROUNDED_UP_WORDS(sz)] = END_FLAG ^ (word)result;
+#     else
+        ((word *)p)[BYTES_TO_WORDS(GC_size(p))-1] =
+           result[SIMPLE_ROUNDED_UP_WORDS(sz)] = END_FLAG ^ (word)result;
+#     endif
 #   endif
     return result;
 }

@@ -457,8 +457,14 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
           GC_ASSERT(sz * hhdr -> hb_n_marks <= HBLKSIZE);
 #       endif
         if (report_if_found) {
-          GC_reclaim_small_nonempty_block(hbp, sz,
-                                          TRUE /* report_if_found */);
+          struct hblk *hblk_ptr;
+#         if defined(__CHERI_PURE_CAPABILITY__)
+            hblk_ptr = hhdr->hb_block;
+#         else
+            hblk_ptr = hbp;
+#         endif
+            GC_reclaim_small_nonempty_block(hblk_ptr, sz,
+                                            TRUE /* report_if_found */);
         } else if (empty) {
 #       ifdef ENABLE_DISCLAIM
           if ((hhdr -> hb_flags & HAS_DISCLAIM) != 0) {
