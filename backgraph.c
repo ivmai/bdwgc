@@ -84,6 +84,7 @@ static back_edges *avail_back_edges = 0;
 
 static back_edges * new_back_edges(void)
 {
+  GC_ASSERT(I_HOLD_LOCK());
   if (0 == back_edge_space) {
     size_t bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(MAX_BACK_EDGE_STRUCTS
                                                    * sizeof(back_edges));

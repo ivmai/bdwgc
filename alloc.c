@@ -1315,6 +1315,7 @@ GC_API void GC_CALL GC_gcollect_and_unmap(void)
   /* Add HBLKSIZE aligned, GET_MEM-generated block to GC_our_memory. */
   GC_INNER void GC_add_to_our_memory(ptr_t p, size_t bytes)
   {
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(p != NULL);
     if (GC_n_memory >= MAX_HEAP_SECTS)
       ABORT("Too many GC-allocated memory sections: Increase MAX_HEAP_SECTS");

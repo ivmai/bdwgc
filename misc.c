@@ -674,6 +674,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
       TCHAR path[_MAX_PATH + 0x10]; /* buffer for path + ext */
       size_t bytes_to_get;
 
+      GC_ASSERT(I_HOLD_LOCK());
       len = (unsigned)GetModuleFileName(NULL /* hModule */, path,
                                         _MAX_PATH + 1);
       /* If GetModuleFileName() has failed then len is 0. */
@@ -991,6 +992,9 @@ GC_API void GC_CALL GC_init(void)
        && ((defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE))
       InitializeCriticalSection(&GC_write_cs);
 #   endif
+#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+      LOCK(); /* just to set GC_lock_holder */
+#   endif
     GC_setpagesize();
 #   ifdef MSWIN32
       GC_init_win32();
@@ -1078,7 +1082,8 @@ GC_API void GC_CALL GC_init(void)
       GC_all_interior_pointers = 1;
     }
     if (0 != GETENV("GC_DONT_GC")) {
-#     ifdef LINT2
+#     if defined(LINT2) \
+         && !(defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED))
         GC_disable();
 #     else
         GC_dont_gc = 1;
@@ -1190,9 +1195,6 @@ GC_API void GC_CALL GC_init(void)
           }
         }
       }
-#   endif
-#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-      LOCK(); /* just to set GC_lock_holder */
 #   endif
 #   if !defined(NO_DEBUGGING) && !defined(NO_CLOCK)
       GET_TIME(GC_init_time);
