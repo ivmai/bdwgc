@@ -1348,13 +1348,7 @@ GC_API void GC_CALL GC_init(void)
 #       endif
 #       ifdef PARALLEL_MARK
           /* Actually start helper threads.     */
-#         if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-            UNLOCK();
-#         endif
           GC_start_mark_threads_inner();
-#         if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-            LOCK();
-#         endif
 #       endif
 #   endif
     COND_DUMP;
@@ -1458,9 +1452,12 @@ GC_API void GC_CALL GC_enable_incremental(void)
        && !defined(THREAD_SANITIZER)
       /* TSan does not support threads creation in the child process.   */
       IF_CANCEL(int cancel_state;)
+      DCL_LOCK_STATE;
 
       DISABLE_CANCEL(cancel_state);
+      LOCK();
       GC_start_mark_threads_inner();
+      UNLOCK();
       RESTORE_CANCEL(cancel_state);
 #   else
       /* No action since parallel markers are disabled (or no POSIX fork). */

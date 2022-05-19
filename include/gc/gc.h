@@ -1540,6 +1540,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
 
   /* Restart marker threads after POSIX fork in child.  Meaningless in  */
   /* other situations.  Should not be called if fork followed by exec.  */
+  /* Acquires the GC lock to avoid a data race.                         */
   GC_API void GC_CALL GC_start_mark_threads(void);
 
   /* Explicitly enable GC_register_my_thread() invocation.              */

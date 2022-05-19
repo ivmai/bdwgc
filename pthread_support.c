@@ -457,7 +457,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
       sigset_t set, oldset;
 #   endif
 
-    GC_ASSERT(I_DONT_HOLD_LOCK());
+    GC_ASSERT(I_HOLD_LOCK());
     if (available_markers_m1 <= 0) return;
                 /* Skip if parallel markers disabled or already started. */
 #   ifdef CAN_HANDLE_FORK

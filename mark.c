@@ -924,7 +924,7 @@ GC_INNER void GC_wait_for_markers_init(void)
 {
   signed_word count;
 
-  GC_ASSERT(I_DONT_HOLD_LOCK());
+  GC_ASSERT(I_HOLD_LOCK());
   if (GC_markers_m1 == 0)
     return;
 
@@ -937,15 +937,12 @@ GC_INNER void GC_wait_for_markers_init(void)
   {
     size_t bytes_to_get =
                 ROUNDUP_PAGESIZE_IF_MMAP(LOCAL_MARK_STACK_SIZE * sizeof(mse));
-    DCL_LOCK_STATE;
 
     GC_ASSERT(GC_page_size != 0);
     GC_main_local_mark_stack = (mse *)GET_MEM(bytes_to_get);
     if (NULL == GC_main_local_mark_stack)
       ABORT("Insufficient memory for main local_mark_stack");
-    LOCK();
     GC_add_to_our_memory((ptr_t)GC_main_local_mark_stack, bytes_to_get);
-    UNLOCK();
   }
 
   /* Reuse marker lock and builders count to synchronize        */

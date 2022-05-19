@@ -2131,7 +2131,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         sigset_t set, oldset;
 #     endif
 
-      GC_ASSERT(I_DONT_HOLD_LOCK());
+      GC_ASSERT(I_HOLD_LOCK());
       if (available_markers_m1 <= 0) return;
                 /* Skip if parallel markers disabled or already started. */
 #     ifdef CAN_HANDLE_FORK
@@ -2304,7 +2304,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     {
       int i;
 
-      GC_ASSERT(I_DONT_HOLD_LOCK());
+      GC_ASSERT(I_HOLD_LOCK());
       if (available_markers_m1 <= 0) return;
 
       GC_ASSERT(GC_fl_builder_count == 0);
