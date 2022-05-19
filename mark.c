@@ -905,6 +905,7 @@ GC_INNER void GC_wait_for_markers_init(void)
 {
   signed_word count;
 
+  GC_ASSERT(I_HOLD_LOCK());
   if (GC_markers_m1 == 0)
     return;
 
