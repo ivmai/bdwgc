@@ -7,6 +7,7 @@
 [![Coverity Scan build status](https://scan.coverity.com/projects/10813/badge.svg)](https://scan.coverity.com/projects/ivmai-bdwgc)
 [![LGTM Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/context:cpp)
 [![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/alerts)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fivmai%2Fbdwgc.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fivmai%2Fbdwgc?ref=badge_shield)
 
 [![Hits-of-Code](https://hitsofcode.com/github/ivmai/bdwgc?branch=master)](https://hitsofcode.com/github/ivmai/bdwgc/view)
 [![Lines of code](https://img.shields.io/tokei/lines/github/ivmai/bdwgc)](https://shields.io/category/size)
@@ -583,3 +584,7 @@ spirit to an MIT-style one.
 The exact licensing information is provided in [LICENSE](LICENSE) file.
 
 All the contributors are listed in [AUTHORS](AUTHORS) file.
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fivmai%2Fbdwgc.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fivmai%2Fbdwgc?ref=badge_large)
