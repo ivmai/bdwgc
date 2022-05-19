@@ -435,6 +435,7 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
   static int available_markers_m1 = 0;
   static pthread_cond_t mark_cv;
                         /* initialized by GC_start_mark_threads_inner   */
+  STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all);
 #else
 # define available_markers_m1 GC_markers_m1
   static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
@@ -449,10 +450,12 @@ GC_INNER void GC_start_mark_threads_inner(void)
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
+    ASSERT_CANCEL_DISABLED();
     if (available_markers_m1 <= 0) return;
                 /* Skip if parallel markers disabled or already started. */
 #   ifdef CAN_HANDLE_FORK
       if (GC_parallel) return;
+      GC_wait_for_gc_completion(TRUE);
 
       /* Initialize mark_cv (for the first time), or cleanup its value  */
       /* after forking in the child process.  All the marker threads in */

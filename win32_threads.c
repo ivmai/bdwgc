@@ -2138,10 +2138,12 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #     endif
 
       GC_ASSERT(I_HOLD_LOCK());
+      ASSERT_CANCEL_DISABLED();
       if (available_markers_m1 <= 0) return;
                 /* Skip if parallel markers disabled or already started. */
 #     ifdef CAN_HANDLE_FORK
         if (GC_parallel) return;
+        GC_wait_for_gc_completion(TRUE);
 
         /* Reset mark_cv state after forking (as in pthread_support.c). */
         {
@@ -2311,6 +2313,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       int i;
 
       GC_ASSERT(I_HOLD_LOCK());
+      ASSERT_CANCEL_DISABLED();
       if (available_markers_m1 <= 0) return;
 
       GC_ASSERT(GC_fl_builder_count == 0);
