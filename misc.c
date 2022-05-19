@@ -1271,13 +1271,7 @@ GC_API void GC_CALL GC_init(void)
         GC_thr_init();
 #       ifdef PARALLEL_MARK
           /* Actually start helper threads.     */
-#         if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-            UNLOCK();
-#         endif
           GC_start_mark_threads_inner();
-#         if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-            LOCK();
-#         endif
 #       endif
 #   endif
     COND_DUMP;
@@ -1371,9 +1365,12 @@ GC_API void GC_CALL GC_enable_incremental(void)
   {
 #   if defined(PARALLEL_MARK) && defined(CAN_HANDLE_FORK)
       IF_CANCEL(int cancel_state;)
+      DCL_LOCK_STATE;
 
       DISABLE_CANCEL(cancel_state);
+      LOCK();
       GC_start_mark_threads_inner();
+      UNLOCK();
       RESTORE_CANCEL(cancel_state);
 #   else
       /* No action since parallel markers are disabled (or no POSIX fork). */
