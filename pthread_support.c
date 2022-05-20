@@ -1318,14 +1318,12 @@ static void fork_child_proc(void)
   static unsigned required_markers_cnt = 0;
                         /* The default value (0) means the number of    */
                         /* markers should be selected automatically.    */
-#endif /* PARALLEL_MARK */
 
-GC_API void GC_CALL GC_set_markers_count(unsigned markers GC_ATTR_UNUSED)
-{
-# ifdef PARALLEL_MARK
+  GC_API void GC_CALL GC_set_markers_count(unsigned markers)
+  {
     required_markers_cnt = markers < MAX_MARKERS ? markers : MAX_MARKERS;
-# endif
-}
+  }
+#endif /* PARALLEL_MARK */
 
 GC_INNER void GC_thr_init(void)
 {

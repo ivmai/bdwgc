@@ -96,23 +96,21 @@ GC_API GC_word GC_CALL GC_get_gc_no(void);
                         /* variable is set to > 1, or multiple cores    */
                         /* (processors) are available, or the client    */
                         /* calls GC_set_markers_count() before the GC   */
-                        /* initialization.  The getter does             */
-                        /* not use or need synchronization (i.e.        */
-                        /* acquiring the GC lock).  GC_parallel value   */
-                        /* is equal to the number of marker threads     */
-                        /* minus one (i.e. number of existing parallel  */
-                        /* marker threads excluding the initiating one).*/
-  GC_API int GC_CALL GC_get_parallel(void);
-
-  /* Set the number of marker threads (including the initiating one)    */
-  /* to the desired value at start-up.  Zero value means the collector  */
-  /* is to decide.  Has no effect if called after GC initialization.    */
-  /* If the correct non-zero value is passed, then GC_parallel should   */
-  /* be set to the value minus one.  The function does not use any      */
-  /* synchronization.                                                   */
-  GC_API void GC_CALL GC_set_markers_count(unsigned);
+                        /* initialization.  GC_parallel value is equal  */
+                        /* to the number of marker threads minus one    */
+                        /* (i.e. the number of existing parallel marker */
+                        /* threads excluding the initiating one).       */
 #endif
 
+/* Return value of GC_parallel.  Does not acquire the GC lock.          */
+GC_API int GC_CALL GC_get_parallel(void);
+
+/* Set the number of marker threads (including the initiating one)      */
+/* to the desired value at start-up.  Zero value means the collector    */
+/* is to decide.  Has no effect if called after GC initialization.      */
+/* If the correct non-zero value is passed, then GC_parallel should     */
+/* be set to the value minus one.  Does not use any synchronization.    */
+GC_API void GC_CALL GC_set_markers_count(unsigned);
 
 /* Public R/W variables */
 /* The supplied setter and getter functions are preferred for new code. */

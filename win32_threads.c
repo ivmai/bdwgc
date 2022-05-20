@@ -2505,6 +2505,12 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
   static unsigned required_markers_cnt = 0;
                         /* The default value (0) means the number of    */
                         /* markers should be selected automatically.    */
+
+  GC_API void GC_CALL GC_set_markers_count(unsigned markers)
+  {
+    /* The same implementation as in pthread_support.c. */
+    required_markers_cnt = markers < MAX_MARKERS ? markers : MAX_MARKERS;
+  }
 #endif /* PARALLEL_MARK */
 
   /* We have no DllMain to take care of new threads.  Thus we   */
@@ -2741,14 +2747,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
   }
 
 #endif /* GC_WINMAIN_REDIRECT */
-
-GC_API void GC_CALL GC_set_markers_count(unsigned markers GC_ATTR_UNUSED)
-{
-  /* The same implementation as in pthread_support.c.   */
-# ifdef PARALLEL_MARK
-    required_markers_cnt = markers < MAX_MARKERS ? markers : MAX_MARKERS;
-# endif
-}
 
 GC_INNER void GC_thr_init(void)
 {

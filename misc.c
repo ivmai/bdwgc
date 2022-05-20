@@ -2383,13 +2383,24 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
     return GC_gc_no;
 }
 
-#ifdef THREADS
-  GC_API int GC_CALL GC_get_parallel(void)
+#ifndef PARALLEL_MARK
+  GC_API void GC_CALL GC_set_markers_count(unsigned markers GC_ATTR_UNUSED)
   {
+    /* Nothing to do. */
+  }
+#endif
+
+GC_API int GC_CALL GC_get_parallel(void)
+{
+# ifdef THREADS
     /* GC_parallel is initialized at start-up.  */
     return GC_parallel;
-  }
+# else
+    return 0;
+# endif
+}
 
+#ifdef THREADS
   GC_API void GC_CALL GC_alloc_lock(void)
   {
     DCL_LOCK_STATE;
