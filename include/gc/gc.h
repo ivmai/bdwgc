@@ -512,7 +512,7 @@ GC_API void GC_CALL GC_set_handle_fork(int);
 /* before fork(); GC_atfork_parent should be invoked just after fork in */
 /* the branch that corresponds to parent process (i.e., fork result is  */
 /* non-zero); GC_atfork_child is to be called immediately in the child  */
-/* branch (i.e., fork result is 0). Note that GC_atfork_child() call    */
+/* branch (i.e., fork result is 0).  Note that GC_atfork_child() call   */
 /* should, of course, precede GC_start_mark_threads call (if any).      */
 GC_API void GC_CALL GC_atfork_prepare(void);
 GC_API void GC_CALL GC_atfork_parent(void);
@@ -1510,6 +1510,11 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
 #define GC_NOT_FOUND 4          /* Requested link not found (returned   */
                                 /* by GC_move_disappearing_link).       */
 
+/* Restart marker threads after POSIX fork in child.  Meaningless in    */
+/* other situations.  Should not be called if fork followed by exec.    */
+/* Acquires the GC lock to avoid a data race.                           */
+GC_API void GC_CALL GC_start_mark_threads(void);
+
 #if defined(GC_DARWIN_THREADS) || defined(GC_WIN32_THREADS)
   /* Use implicit thread registration and processing (via Win32 DllMain */
   /* or Darwin task_threads).  Deprecated.  Must be called before       */
@@ -1537,11 +1542,6 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* the garbage collector to restart (resume) threads on POSIX         */
   /* systems.  Return -1 otherwise.                                     */
   GC_API int GC_CALL GC_get_thr_restart_signal(void);
-
-  /* Restart marker threads after POSIX fork in child.  Meaningless in  */
-  /* other situations.  Should not be called if fork followed by exec.  */
-  /* Acquires the GC lock to avoid a data race.                         */
-  GC_API void GC_CALL GC_start_mark_threads(void);
 
   /* Explicitly enable GC_register_my_thread() invocation.              */
   /* Done implicitly if a GC thread-creation function is called (or     */
