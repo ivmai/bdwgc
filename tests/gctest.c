@@ -2501,7 +2501,6 @@ int main(void)
 #     endif
 #   endif
 #   if defined(CPPCHECK)
-      UNTESTED(GC_allow_register_threads);
       UNTESTED(GC_register_altstack);
       UNTESTED(GC_stop_world_external);
       UNTESTED(GC_start_world_external);
