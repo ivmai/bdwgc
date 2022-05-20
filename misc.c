@@ -1449,9 +1449,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
   GC_init();
 }
 
-#if defined(THREADS)
-  GC_API void GC_CALL GC_start_mark_threads(void)
-  {
+GC_API void GC_CALL GC_start_mark_threads(void)
+{
 #   if defined(PARALLEL_MARK) && defined(CAN_HANDLE_FORK) \
        && !defined(THREAD_SANITIZER)
       /* TSan does not support threads creation in the child process.   */
@@ -1467,8 +1466,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
       /* No action since parallel markers are disabled (or no POSIX fork). */
       GC_ASSERT(I_DONT_HOLD_LOCK());
 #   endif
-  }
-#endif
+}
 
   GC_API void GC_CALL GC_deinit(void)
   {
