@@ -728,8 +728,10 @@ GC_INNER GC_thread GC_lookup_thread(pthread_t id)
   /* Called by GC_finalize() (in case of an allocation failure observed). */
   GC_INNER void GC_reset_finalizer_nested(void)
   {
-    GC_thread me = GC_lookup_thread(pthread_self());
+    GC_thread me;
 
+    GC_ASSERT(I_HOLD_LOCK());
+    me = GC_lookup_thread(pthread_self());
     me->finalizer_nested = 0;
   }
 
