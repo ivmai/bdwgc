@@ -719,7 +719,8 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
   {
     char *p;
     char *end_of_content;
-    unsigned namelen;
+    size_t namelen;
+
 #   ifndef NO_GETENV
       p = getenv(name); /* try the standard getenv() first */
       if (p != NULL)
