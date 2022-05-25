@@ -769,8 +769,14 @@ STATIC void GC_delete_thread(DWORD id)
 
 GC_API void GC_CALL GC_allow_register_threads(void)
 {
-  /* Check GC is initialized and the current thread is registered. */
-  GC_ASSERT(GC_lookup_thread_inner(GetCurrentThreadId()) != 0);
+# ifdef GC_ASSERTIONS
+    DCL_LOCK_STATE;
+
+    /* Check GC is initialized and the current thread is registered. */
+    LOCK();
+    GC_ASSERT(GC_lookup_thread_inner(GetCurrentThreadId()) != 0);
+    UNLOCK();
+# endif
 # if !defined(GC_ALWAYS_MULTITHREADED) && !defined(PARALLEL_MARK) \
      && !defined(GC_NO_THREADS_DISCOVERY)
       /* GC_init() does not call GC_init_parallel() in this case.   */

@@ -2049,9 +2049,15 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
 
 GC_API void GC_CALL GC_allow_register_threads(void)
 {
+# ifdef GC_ASSERTIONS
+    DCL_LOCK_STATE;
+
     /* Check GC is initialized and the current thread is registered. */
+    LOCK(); /* just to match that in win32_threads.c */
     GC_ASSERT(GC_lookup_thread(pthread_self()) != 0);
-    set_need_to_lock();
+    UNLOCK();
+# endif
+  set_need_to_lock();
 }
 
 GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
