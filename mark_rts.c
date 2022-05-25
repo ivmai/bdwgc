@@ -886,6 +886,7 @@ GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame GC_ATTR_UNUSED)
     unsigned kind;
 
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(GC_is_initialized); /* needed for GC_push_all_stacks */
 
     /* Next push static data.  This must happen early on, since it is   */
     /* not robust against mark stack overflow.                          */

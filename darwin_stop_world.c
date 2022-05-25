@@ -354,8 +354,7 @@ GC_INNER void GC_push_all_stacks(void)
   mach_msg_type_number_t listcount = (mach_msg_type_number_t)THREAD_TABLE_SZ;
 
   GC_ASSERT(I_HOLD_LOCK());
-  if (!EXPECT(GC_thr_initialized, TRUE))
-    GC_thr_init();
+  GC_ASSERT(GC_thr_initialized);
 
 # ifndef DARWIN_DONT_PARSE_STACK
     if (GC_query_task_threads) {
@@ -548,6 +547,7 @@ GC_INNER void GC_stop_world(void)
   kern_return_t kern_result;
 
   GC_ASSERT(I_HOLD_LOCK());
+  GC_ASSERT(GC_thr_initialized);
 # ifdef DEBUG_THREADS
     GC_log_printf("Stopping the world from thread %p\n",
                   (void *)(word)my_thread);

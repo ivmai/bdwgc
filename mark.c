@@ -228,6 +228,7 @@ GC_API int GC_CALL GC_is_marked(const void *p)
 /* implicitly starts marking to reestablish the invariant.)             */
 GC_INNER void GC_clear_marks(void)
 {
+    GC_ASSERT(GC_is_initialized); /* needed for GC_push_roots */
     GC_apply_to_all_blocks(clear_marks_for_block, (word)0);
     GC_objects_are_marked = FALSE;
     GC_mark_state = MS_INVALID;
@@ -239,6 +240,7 @@ GC_INNER void GC_clear_marks(void)
 GC_INNER void GC_initiate_gc(void)
 {
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(GC_is_initialized);
 #   ifndef GC_DISABLE_INCREMENTAL
         if (GC_incremental) {
 #         ifdef CHECKSUMS

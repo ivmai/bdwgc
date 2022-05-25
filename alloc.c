@@ -551,6 +551,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 
     ASSERT_CANCEL_DISABLED();
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(GC_is_initialized);
     if (GC_dont_gc || (*stop_func)()) return FALSE;
     if (GC_on_collection_event)
       GC_on_collection_event(GC_EVENT_START);
@@ -692,6 +693,7 @@ GC_INNER void GC_collect_a_little_inner(int n)
     IF_CANCEL(int cancel_state;)
 
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(GC_is_initialized);
     if (GC_dont_gc) return;
 
     DISABLE_CANCEL(cancel_state);
@@ -752,6 +754,7 @@ GC_API int GC_CALL GC_collect_a_little(void)
     int result;
     DCL_LOCK_STATE;
 
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
     ENTER_GC();
     GC_collect_a_little_inner(1);
@@ -801,6 +804,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(GC_is_initialized);
 #   if !defined(REDIRECT_MALLOC) && defined(USE_WINALLOC)
         GC_add_current_malloc_heap();
 #   endif
@@ -1562,7 +1566,6 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
 }
 
 /* Really returns a bool, but it's externally visible, so that's clumsy. */
-/* The argument is in bytes.  Includes GC_init() call.                   */
 GC_API int GC_CALL GC_expand_hp(size_t bytes)
 {
     word n_blocks = OBJ_SZ_TO_BLOCKS_CHECKED(bytes);
@@ -1626,6 +1629,7 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
     IF_CANCEL(int cancel_state;)
 
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(GC_is_initialized);
     DISABLE_CANCEL(cancel_state);
     if (!GC_incremental && !GC_dont_gc &&
         ((GC_dont_expand && GC_bytes_allocd > 0)
@@ -1727,6 +1731,7 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
     GC_bool retry = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(GC_is_initialized);
     if (0 == gran) return NULL;
 
     while (NULL == *flh) {

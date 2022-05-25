@@ -153,7 +153,9 @@ static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext);
 /* this better.                                                 */
 typedef LONG * IE_t;
 
-STATIC GC_bool GC_thr_initialized = FALSE;
+#ifdef GC_ASSERTIONS
+  STATIC GC_bool GC_thr_initialized = FALSE;
+#endif
 
 #ifndef GC_ALWAYS_MULTITHREADED
   GC_INNER GC_bool GC_need_to_lock = FALSE;
@@ -1366,9 +1368,8 @@ GC_INNER void GC_stop_world(void)
 {
   DWORD thread_id = GetCurrentThreadId();
 
-  if (!GC_thr_initialized)
-    ABORT("GC_stop_world() called before GC_thr_init()");
   GC_ASSERT(I_HOLD_LOCK());
+  GC_ASSERT(GC_thr_initialized);
 
   /* This code is the same as in pthread_stop_world.c */
 # ifdef PARALLEL_MARK
@@ -1815,6 +1816,7 @@ GC_INNER void GC_push_all_stacks(void)
   word total_size = 0;
 
   GC_ASSERT(I_HOLD_LOCK());
+  GC_ASSERT(GC_thr_initialized);
 # ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
       int i;
@@ -2572,8 +2574,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
   {
     if (!EXPECT(parallel_initialized, TRUE))
       GC_init_parallel();
-                /* make sure GC is initialized (i.e. main thread is     */
-                /* attached, tls initialized).                          */
+    GC_ASSERT(GC_thr_initialized);
+                /* Make sure GC is initialized (i.e. main thread is     */
+                /* attached, tls is initialized).                       */
 
 #   ifdef DEBUG_THREADS
       GC_log_printf("About to create a thread from 0x%lx\n",
@@ -2623,8 +2626,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     {
       if (!EXPECT(parallel_initialized, TRUE))
         GC_init_parallel();
-                /* make sure GC is initialized (i.e. main thread is     */
-                /* attached, tls initialized).                          */
+      GC_ASSERT(GC_thr_initialized);
 #     ifdef DEBUG_THREADS
         GC_log_printf("About to create a thread from 0x%lx\n",
                       (long)GetCurrentThreadId());
@@ -2765,15 +2767,16 @@ GC_INNER void GC_thr_init(void)
 # endif
 
   GC_ASSERT(I_HOLD_LOCK());
-  if (GC_thr_initialized) return;
-
+  GC_ASSERT(!GC_thr_initialized);
   GC_ASSERT((word)&GC_threads % sizeof(word) == 0);
+# ifdef GC_ASSERTIONS
+    GC_thr_initialized = TRUE;
+# endif
 # ifdef GC_NO_THREADS_DISCOVERY
 #   define GC_main_thread GetCurrentThreadId()
 # else
     GC_main_thread = GetCurrentThreadId();
 # endif
-  GC_thr_initialized = TRUE;
 
 # ifdef CAN_HANDLE_FORK
     /* Prepare for forks if requested.  */
@@ -2966,7 +2969,7 @@ GC_INNER void GC_thr_init(void)
 
     if (!EXPECT(parallel_initialized, TRUE))
       GC_init_parallel();
-             /* make sure GC is initialized (i.e. main thread is attached) */
+    GC_ASSERT(GC_thr_initialized);
     GC_ASSERT(!GC_win32_dll_threads);
 
       /* This is otherwise saved only in an area mmapped by the thread  */

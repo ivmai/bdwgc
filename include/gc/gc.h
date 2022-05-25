@@ -626,8 +626,8 @@ GC_API void * GC_CALL GC_realloc(void * /* old_object */,
                                  size_t /* new_size_in_bytes */)
                         /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);
 
-/* Explicitly increase the heap size.   */
-/* Returns 0 on failure, 1 on success.  */
+/* Increase the heap size explicitly.  Includes a GC_init() call.       */
+/* Returns 0 on failure, 1 on success.                                  */
 GC_API int GC_CALL GC_expand_hp(size_t /* number_of_bytes */);
 
 /* Limit the heap size to n bytes.  Useful when you're debugging,       */
@@ -879,7 +879,7 @@ GC_API int GC_CALL GC_get_manual_vdb_allowed(void);
 /* allocation.  Must be called before any such GC_gcj_malloc() calls.   */
 /* For best performance, should be called as early as possible.         */
 /* On some platforms, calling it later may have adverse effects.        */
-/* Safe to call before GC_INIT().  Includes a  GC_init() call.          */
+/* Safe to call before GC_INIT().  Includes a GC_init() call.           */
 GC_API void GC_CALL GC_enable_incremental(void);
 
 /* Return non-zero (TRUE) if and only if the incremental mode is on.    */

@@ -552,7 +552,9 @@ GC_INNER void GC_start_mark_threads_inner(void)
 
 #endif /* PARALLEL_MARK */
 
-GC_INNER GC_bool GC_thr_initialized = FALSE;
+#ifdef GC_ASSERTIONS
+  GC_INNER GC_bool GC_thr_initialized = FALSE;
+#endif
 
 GC_INNER volatile GC_thread GC_threads[THREAD_TABLE_SZ] = {0};
 
@@ -1328,10 +1330,11 @@ static void fork_child_proc(void)
 GC_INNER void GC_thr_init(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
-  if (GC_thr_initialized) return;
-  GC_thr_initialized = TRUE;
-
+  GC_ASSERT(!GC_thr_initialized);
   GC_ASSERT((word)&GC_threads % sizeof(word) == 0);
+# ifdef GC_ASSERTIONS
+    GC_thr_initialized = TRUE;
+# endif
 # ifdef CAN_HANDLE_FORK
     /* Prepare for forks if requested.  */
     if (GC_handle_fork) {
@@ -2191,14 +2194,12 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     INIT_REAL_SYMS();
     if (!EXPECT(parallel_initialized, TRUE))
       GC_init_parallel();
+    GC_ASSERT(GC_thr_initialized);
     if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) != 0)
       ABORT("sem_init failed");
 
     si.start_routine = start_routine;
     si.arg = arg;
-    LOCK();
-    if (!EXPECT(GC_thr_initialized, TRUE))
-      GC_thr_init();
 #   ifdef GC_ASSERTIONS
       {
         size_t stack_size = 0;
@@ -2236,7 +2237,6 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     }
     if (PTHREAD_CREATE_DETACHED == detachstate) my_flags |= DETACHED;
     si.flags = my_flags;
-    UNLOCK();
 #   ifdef DEBUG_THREADS
       GC_log_printf("About to start new thread from thread %p\n",
                     (void *)pthread_self());

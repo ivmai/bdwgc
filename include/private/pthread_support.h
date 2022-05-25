@@ -147,7 +147,9 @@ typedef struct GC_Thread_Rep {
 
 GC_EXTERN volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 
-GC_EXTERN GC_bool GC_thr_initialized;
+#ifdef GC_ASSERTIONS
+  GC_EXTERN GC_bool GC_thr_initialized;
+#endif
 
 GC_INNER GC_thread GC_lookup_thread(pthread_t id);
 

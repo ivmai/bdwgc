@@ -790,8 +790,7 @@ GC_INNER void GC_push_all_stacks(void)
     word total_size = 0;
 
     GC_ASSERT(I_HOLD_LOCK());
-    if (!EXPECT(GC_thr_initialized, TRUE))
-      GC_thr_init();
+    GC_ASSERT(GC_thr_initialized);
 #   ifdef DEBUG_THREADS
       GC_log_printf("Pushing stacks from thread %p\n", (void *)self);
 #   endif
@@ -1043,6 +1042,7 @@ GC_INNER void GC_stop_world(void)
     int n_live_threads;
 # endif
   GC_ASSERT(I_HOLD_LOCK());
+  GC_ASSERT(GC_thr_initialized);
 # ifdef DEBUG_THREADS
     GC_stopping_thread = pthread_self();
     GC_stopping_pid = getpid();

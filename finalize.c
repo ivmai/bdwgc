@@ -166,6 +166,7 @@ STATIC int GC_register_disappearing_link_inner(
     struct disappearing_link * new_dl;
     DCL_LOCK_STATE;
 
+    GC_ASSERT(GC_is_initialized);
     if (EXPECT(GC_find_leak, FALSE)) return GC_UNIMPLEMENTED;
 #   ifdef GC_ASSERTIONS
       GC_noop1((word)(*link)); /* check accessibility */
@@ -684,11 +685,13 @@ STATIC void GC_register_finalizer_inner(void * obj,
     hdr *hhdr = NULL; /* initialized to prevent warning. */
     DCL_LOCK_STATE;
 
+    GC_ASSERT(GC_is_initialized);
     if (EXPECT(GC_find_leak, FALSE)) {
       /* No-op.  *ocd and *ofn remain unchanged.    */
       return;
     }
     LOCK();
+    GC_ASSERT(obj != NULL && GC_base_C(obj) == obj);
     if (EXPECT(NULL == GC_fnlz_roots.fo_head, FALSE)
         || EXPECT(GC_fo_entries > ((word)1 << GC_log_fo_table_size), FALSE)) {
         GC_grow_table((struct hash_chain_entry ***)&GC_fnlz_roots.fo_head,
