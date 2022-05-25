@@ -1608,6 +1608,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
     GC_ASSERT(GC_lookup_thread(pthread_self()) != 0);
     UNLOCK();
 # endif
+  INIT_REAL_SYMS(); /* to initialize symbols while single-threaded */
   GC_need_to_lock = TRUE; /* We are multi-threaded now. */
 }
 
