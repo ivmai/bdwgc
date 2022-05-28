@@ -216,15 +216,15 @@
   {
     void *dl_handle;
 
-    if (GC_syms_initialized) return;
+    GC_ASSERT(!GC_syms_initialized);
 #   ifdef RTLD_NEXT
       dl_handle = RTLD_NEXT;
 #   else
       dl_handle = dlopen("libpthread.so.0", RTLD_LAZY);
       if (NULL == dl_handle) {
         dl_handle = dlopen("libpthread.so", RTLD_LAZY); /* without ".0" */
+        if (NULL == dl_handle) ABORT("Couldn't open libpthread");
       }
-      if (NULL == dl_handle) ABORT("Couldn't open libpthread");
 #   endif
     REAL_FUNC(pthread_create) = (GC_pthread_create_t)(word)
                                 dlsym(dl_handle, "pthread_create");
@@ -346,7 +346,7 @@ STATIC int GC_nprocs = 1;
   {
     int err = pthread_setname_np(pthread_self(), "GC-marker-%zu",
                                  (void*)(size_t)id);
-    if (err != 0)
+    if (EXPECT(err != 0, FALSE))
       WARN("pthread_setname_np failed, errno= %" WARN_PRIdPTR "\n", err);
   }
 #elif defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) \
@@ -367,7 +367,7 @@ STATIC int GC_nprocs = 1;
 #   ifdef HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID /* iOS, OS X */
       (void)pthread_setname_np(name_buf);
 #   else /* Linux, Solaris, etc. */
-      if (pthread_setname_np(pthread_self(), name_buf) != 0)
+      if (EXPECT(pthread_setname_np(pthread_self(), name_buf) != 0, FALSE))
         WARN("pthread_setname_np failed\n", 0);
 #   endif
   }
@@ -607,7 +607,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
             break;
           }
 #   endif
-    if (!EXPECT(first_thread_used, TRUE)) {
+    if (EXPECT(!first_thread_used, FALSE)) {
         result = &first_thread;
         first_thread_used = TRUE;
         GC_ASSERT(NULL == GC_threads[hv]);
@@ -617,7 +617,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
     } else {
         result = (struct GC_Thread_Rep *)
                  GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
-        if (NULL == result) return NULL;
+        if (EXPECT(NULL == result, FALSE)) return NULL;
     }
     result -> id = id;
 #   ifdef USE_TKILL_ON_ANDROID
@@ -666,7 +666,7 @@ STATIC void GC_delete_thread(pthread_t id)
         prev -> next = p -> next;
         GC_dirty(prev);
     }
-    if (p != &first_thread) {
+    if (EXPECT(p != &first_thread, TRUE)) {
 #     ifdef GC_DARWIN_THREADS
         mach_port_deallocate(mach_task_self(), p->stop_info.mach_thread);
 #     endif
@@ -799,7 +799,7 @@ GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
 
   LOCK();
   me = GC_lookup_thread(self);
-  if (me != NULL) {
+  if (EXPECT(me != NULL, TRUE)) {
     me->stack = (ptr_t)stack;
     me->stack_size = stack_size;
     me->altstack = (ptr_t)altstack;
@@ -1516,7 +1516,8 @@ GC_INNER void GC_init_parallel(void)
     sigset_t fudged_set;
 
     INIT_REAL_SYMS();
-    if (set != NULL && (how == SIG_BLOCK || how == SIG_SETMASK)) {
+    if (EXPECT(set != NULL, TRUE)
+          && (how == SIG_BLOCK || how == SIG_SETMASK)) {
         int sig_suspend = GC_get_suspend_signal();
 
         fudged_set = *set;
@@ -1915,7 +1916,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
        spurious return value properly conditionalized on GC_FREEBSD_THREADS. */
     if (result == EINTR) result = 0;
 # endif
-    if (result == 0) {
+    if (EXPECT(0 == result, TRUE)) {
         LOCK();
         /* Here the pthread thread id may have been recycled.           */
         /* Delete the thread from GC_threads (unless it has been        */
@@ -1938,7 +1939,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
     t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
     UNLOCK();
     result = REAL_FUNC(pthread_detach)(thread);
-    if (result == 0) {
+    if (EXPECT(0 == result, TRUE)) {
       LOCK();
       t -> flags |= DETACHED;
       /* Here the pthread thread id may have been recycled. */
@@ -2071,7 +2072,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
     LOCK();
     me = GC_lookup_thread(self);
-    if (0 == me) {
+    if (EXPECT(NULL == me, TRUE)) {
         me = GC_register_my_thread_inner(sb, self);
 #       if defined(CPPCHECK)
           GC_noop1(me->flags);
@@ -2082,8 +2083,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #       if defined(THREAD_LOCAL_ALLOC)
           GC_init_thread_local(&(me->tlfs));
 #       endif
-        UNLOCK();
-        return GC_SUCCESS;
     } else if ((me -> flags & FINISHED) != 0) {
         /* This code is executed when a thread is registered from the   */
         /* client thread key destructor.                                */
@@ -2108,12 +2107,12 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
             GC_with_callee_saves_pushed(GC_suspend_self_blocked, (ptr_t)me);
           }
 #       endif
-        UNLOCK();
-        return GC_SUCCESS;
     } else {
         UNLOCK();
         return GC_DUPLICATE;
     }
+    UNLOCK();
+    return GC_SUCCESS;
 }
 
 struct start_info {
@@ -2225,7 +2224,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
         }
         /* On Solaris 10, with default attr initialization,     */
         /* stack_size remains 0.  Fudge it.                     */
-        if (0 == stack_size) {
+        if (EXPECT(0 == stack_size, FALSE)) {
 #           ifndef SOLARIS
               WARN("Failed to get stack size for assertion checking\n", 0);
 #           endif
@@ -2255,7 +2254,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     /* Wait until child has been added to the thread table.             */
     /* This also ensures that we hold onto the stack-allocated si until */
     /* the child is done with it.                                       */
-    if (0 == result) {
+    if (EXPECT(0 == result, TRUE)) {
         IF_CANCEL(int cancel_state;)
 
 #       ifdef DEBUG_THREADS
@@ -2340,7 +2339,7 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
     unsigned pause_length = 1;
     unsigned i;
 
-    if (0 == pthread_mutex_trylock(lock)) {
+    if (EXPECT(0 == pthread_mutex_trylock(lock), TRUE)) {
 #       ifdef LOCK_STATS
             (void)AO_fetch_and_add1(&GC_unlocked_count);
 #       endif
@@ -2405,7 +2404,8 @@ GC_INNER void GC_lock(void)
     unsigned my_last_spins;
     unsigned i;
 
-    if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {
+    if (EXPECT(AO_test_and_set_acquire(&GC_allocate_lock)
+                == AO_TS_CLEAR, TRUE)) {
         return;
     }
     my_spin_max = (unsigned)AO_load(&spin_max);
