@@ -1517,8 +1517,9 @@ GC_API void GC_CALL GC_start_mark_threads(void);
   /* Use implicit thread registration and processing (via Win32 DllMain */
   /* or Darwin task_threads).  Deprecated.  Must be called before       */
   /* GC_INIT() and other GC routines.  Should be avoided if             */
-  /* GC_pthread_create, GC_beginthreadex (or GC_CreateThread) could be  */
-  /* called instead.  Disables parallelized GC on Win32.                */
+  /* GC_pthread_create, GC_beginthreadex (or GC_CreateThread), or       */
+  /* GC_register_my_thread could be called instead.                     */
+  /* Includes a GC_init() call.  Disables parallelized GC on Win32.     */
   GC_API void GC_CALL GC_use_threads_discovery(void);
 #endif
 

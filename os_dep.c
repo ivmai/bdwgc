@@ -781,6 +781,7 @@ GC_INNER size_t GC_page_size = 0;
       return buf.RegionSize;
     }
 
+    /* Should not acquire the GC lock as it is used by GC_DllMain.      */
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
     {
       ptr_t trunc_sp;

@@ -2580,8 +2580,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     if (!EXPECT(parallel_initialized, TRUE))
       GC_init_parallel();
     GC_ASSERT(GC_thr_initialized);
-                /* Make sure GC is initialized (i.e. main thread is     */
-                /* attached, tls is initialized).                       */
+        /* Make sure GC is initialized (i.e. main thread is attached,   */
+        /* tls is initialized).  This is redundant when                 */
+        /* GC_win32_dll_threads is set by GC_use_threads_discovery().   */
 
 #   ifdef DEBUG_THREADS
       GC_log_printf("About to create a thread from 0x%lx\n",
@@ -3150,11 +3151,12 @@ GC_INNER void GC_thr_init(void)
       if (!GC_win32_dll_threads && parallel_initialized) return TRUE;
 
       switch (reason) {
-       case DLL_THREAD_ATTACH:
+       case DLL_THREAD_ATTACH: /* invoked for threads other than main */
 #       ifdef PARALLEL_MARK
           /* Don't register marker threads. */
           if (GC_parallel) {
             /* We could reach here only if parallel_initialized == FALSE. */
+            /* Because GC_thr_init() sets GC_parallel to off.             */
             break;
           }
 #       endif
