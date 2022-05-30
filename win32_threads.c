@@ -2933,7 +2933,6 @@ GC_INNER void GC_thr_init(void)
        case DLL_THREAD_DETACH:
         /* We are hopefully running in the context of the exiting thread. */
         if (GC_win32_dll_threads) {
-          GC_ASSERT(parallel_initialized);
           GC_delete_thread(GetCurrentThreadId());
         }
         break;
