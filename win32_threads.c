@@ -2984,9 +2984,6 @@ GC_INNER void GC_thr_init(void)
         /* This may run with the collector uninitialized. */
         thread_id = GetCurrentThreadId();
         if (parallel_initialized && GC_main_thread != thread_id) {
-#         ifdef PARALLEL_MARK
-            ABORT("Cannot initialize parallel marker from DllMain");
-#         else
             struct GC_stack_base sb;
             /* Don't lock here. */
 #           ifdef GC_ASSERTIONS
@@ -2995,7 +2992,6 @@ GC_INNER void GC_thr_init(void)
                         GC_get_stack_base(&sb);
             GC_ASSERT(sb_result == GC_SUCCESS);
             GC_register_my_thread_inner(&sb, thread_id);
-#         endif
         } /* o.w. we already did it during GC_thr_init, called by GC_init */
         break;
 
