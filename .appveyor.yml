@@ -20,6 +20,8 @@ environment:
     CMAKE_CONFIG: Release
     CMAKE_OPTIONS: -Denable_parallel_mark=OFF
   - TARGET: cmake
+    CMAKE_OPTIONS: -Denable_gc_assertions=ON -Denable_thread_local_alloc=OFF
+  - TARGET: cmake
     CFLAGS_EXTRA: -DGC_DISABLE_INCREMENTAL
     CMAKE_OPTIONS: -Denable_gc_assertions=ON -Denable_gcj_support=OFF -Denable_parallel_mark=OFF -Denable_thread_local_alloc=OFF
   - TARGET: cmake
