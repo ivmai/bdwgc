@@ -2183,8 +2183,7 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
     GC_noop1((GC_word)&WinMain);
 # endif
 # if defined(GC_DLL) && !defined(GC_NO_THREADS_DISCOVERY) \
-        && !defined(MSWINCE) && !defined(THREAD_LOCAL_ALLOC) \
-        && !defined(PARALLEL_MARK)
+        && !defined(MSWINCE) && !defined(THREAD_LOCAL_ALLOC)
     GC_use_threads_discovery();
                 /* Test with implicit thread registration if possible. */
     GC_printf("Using DllMain to track threads\n");
