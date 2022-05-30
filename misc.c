@@ -1309,9 +1309,8 @@ GC_API void GC_CALL GC_init(void)
 #   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC) \
        || (defined(GC_ALWAYS_MULTITHREADED) && defined(GC_WIN32_THREADS) \
            && !defined(GC_NO_THREADS_DISCOVERY))
-        /* Make sure marker threads are started and thread local */
-        /* allocation is initialized, in case we didn't get      */
-        /* called from GC_init_parallel.                         */
+        /* Make sure thread local allocation is initialized, in */
+        /* case we did not get called from GC_init_parallel().  */
         GC_init_parallel();
 #   endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
 
