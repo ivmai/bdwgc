@@ -2181,7 +2181,6 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     int detachstate;
     word my_flags = 0;
     struct start_info si;
-    DCL_LOCK_STATE;
         /* This is otherwise saved only in an area mmapped by the thread */
         /* library, which isn't visible to the collector.                */
 
@@ -2189,6 +2188,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     /* even if the default is unreasonably small.  That's the client's  */
     /* responsibility.                                                  */
 
+    GC_ASSERT(I_DONT_HOLD_LOCK());
     INIT_REAL_SYMS();
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     GC_ASSERT(GC_thr_initialized);
