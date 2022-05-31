@@ -258,8 +258,6 @@
 # define INIT_REAL_SYMS() (void)0
 #endif
 
-static GC_bool parallel_initialized = FALSE;
-
 #ifndef GC_ALWAYS_MULTITHREADED
   GC_INNER GC_bool GC_need_to_lock = FALSE;
 #endif
@@ -1486,25 +1484,19 @@ GC_INNER void GC_thr_init(void)
 # endif
 }
 
-/* Perform all initializations, including those that    */
-/* may require allocation.                              */
+/* Initialize thread local free lists if used.          */
+/* May perform allocations itself.                      */
 /* Must be called before a second thread is created.    */
 GC_INNER void GC_init_parallel(void)
 {
-#   if defined(THREAD_LOCAL_ALLOC)
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_thread me;
       DCL_LOCK_STATE;
-#   endif
 
-    GC_ASSERT(I_DONT_HOLD_LOCK());
-    if (parallel_initialized) return;
-    parallel_initialized = TRUE;
-
-    /* GC_init() calls us back, so set flag first.      */
-    if (!GC_is_initialized) GC_init();
-    /* Initialize thread local free lists if used.      */
-#   if defined(THREAD_LOCAL_ALLOC)
+      GC_ASSERT(GC_is_initialized);
       LOCK();
-      GC_init_thread_local(&(GC_lookup_thread(pthread_self())->tlfs));
+      me = GC_lookup_thread(pthread_self());
+      GC_init_thread_local(&me->tlfs);
       UNLOCK();
 #   endif
 }
@@ -2080,8 +2072,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
         me -> flags |= DETACHED;
           /* Treat as detached, since we do not need to worry about     */
           /* pointer results.                                           */
-#       if defined(THREAD_LOCAL_ALLOC)
-          GC_init_thread_local(&(me->tlfs));
+#       ifdef THREAD_LOCAL_ALLOC
+          GC_init_thread_local(&me->tlfs);
 #       endif
     } else if ((me -> flags & FINISHED) != 0) {
         /* This code is executed when a thread is registered from the   */
@@ -2098,8 +2090,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
           /* our signals might be blocked.                              */
           GC_unblock_gc_signals();
 #       endif
-#       if defined(THREAD_LOCAL_ALLOC)
-          GC_init_thread_local(&(me->tlfs));
+#       ifdef THREAD_LOCAL_ALLOC
+          GC_init_thread_local(&me->tlfs);
 #       endif
 #       if defined(GC_ENABLE_SUSPEND_THREAD) \
            && defined(SIGNAL_BASED_STOP_WORLD)
@@ -2143,8 +2135,8 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     LOCK();
     me = GC_register_my_thread_inner(sb, self);
     me -> flags = si -> flags;
-#   if defined(THREAD_LOCAL_ALLOC)
-      GC_init_thread_local(&(me->tlfs));
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_init_thread_local(&me->tlfs);
 #   endif
     UNLOCK();
     *pstart = si -> start_routine;
@@ -2198,8 +2190,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     /* responsibility.                                                  */
 
     INIT_REAL_SYMS();
-    if (!EXPECT(parallel_initialized, TRUE))
-      GC_init_parallel();
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     GC_ASSERT(GC_thr_initialized);
     if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) != 0)
       ABORT("sem_init failed");

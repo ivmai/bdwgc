@@ -1338,7 +1338,7 @@ GC_API void GC_CALL GC_init(void)
       GC_pcr_install();
 #   endif
     GC_is_initialized = TRUE;
-#   if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
+#   ifdef THREADS
 #       if defined(LINT2) \
            && !(defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED))
           LOCK();
@@ -1375,13 +1375,11 @@ GC_API void GC_CALL GC_init(void)
 
     /* The rest of this again assumes we don't really hold      */
     /* the allocation lock.                                     */
-#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC) \
-       || (defined(GC_ALWAYS_MULTITHREADED) && defined(GC_WIN32_THREADS) \
-           && !defined(GC_NO_THREADS_DISCOVERY))
-        /* Make sure thread local allocation is initialized, in */
-        /* case we did not get called from GC_init_parallel().  */
-        GC_init_parallel();
-#   endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
+
+#   ifdef THREADS
+      /* Initialize thread-local allocation.    */
+      GC_init_parallel();
+#   endif
 
 #   if defined(DYNAMIC_LOADING) && defined(DARWIN)
         /* This must be called WITHOUT the allocation lock held */

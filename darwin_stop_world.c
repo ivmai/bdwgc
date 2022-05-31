@@ -127,7 +127,7 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 #   ifndef GC_DISCOVER_TASK_THREADS
       GC_query_task_threads = TRUE;
 #   endif
-    GC_init_parallel(); /* just to be consistent with Win32 one */
+    GC_init();
 # endif
 }
 

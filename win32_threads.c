@@ -161,8 +161,6 @@ typedef LONG * IE_t;
   GC_INNER GC_bool GC_need_to_lock = FALSE;
 #endif
 
-static GC_bool parallel_initialized = FALSE;
-
 /* GC_use_threads_discovery() is currently incompatible with pthreads   */
 /* and WinCE.  It might be possible to get DllMain-based thread         */
 /* registration to work with Cygwin, but if you try it then you are on  */
@@ -173,13 +171,13 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
     ABORT("GC DllMain-based thread registration unsupported");
 # else
     /* Turn on GC_win32_dll_threads. */
-    GC_ASSERT(!parallel_initialized);
+    GC_ASSERT(!GC_is_initialized);
     /* Note that GC_use_threads_discovery is expected to be called by   */
     /* the client application (not from DllMain) at start-up.           */
 #   ifndef GC_DISCOVER_TASK_THREADS
       GC_win32_dll_threads = TRUE;
 #   endif
-    GC_init_parallel();
+    GC_init();
 # endif
 }
 
@@ -507,8 +505,8 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
   /* Up until this point, this entry is viewed as reserved but invalid  */
   /* by GC_delete_thread.                                               */
   me -> id = thread_id;
-# if defined(THREAD_LOCAL_ALLOC)
-    GC_init_thread_local((GC_tlfs)(&(me->tlfs)));
+# ifdef THREAD_LOCAL_ALLOC
+    GC_init_thread_local((/* no volatile */ GC_tlfs)&me->tlfs);
 # endif
 # ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
@@ -777,11 +775,6 @@ GC_API void GC_CALL GC_allow_register_threads(void)
     GC_ASSERT(GC_lookup_thread_inner(GetCurrentThreadId()) != 0);
     UNLOCK();
 # endif
-# if !defined(GC_ALWAYS_MULTITHREADED) && !defined(PARALLEL_MARK) \
-     && !defined(GC_NO_THREADS_DISCOVERY)
-      /* GC_init() does not call GC_init_parallel() in this case.   */
-    parallel_initialized = TRUE;
-# endif
   set_need_to_lock();
 }
 
@@ -815,7 +808,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
         GC_record_stack_base(me, sb);
         me -> flags &= ~FINISHED; /* but not DETACHED */
 #       ifdef THREAD_LOCAL_ALLOC
-          GC_init_thread_local((GC_tlfs)(&me->tlfs));
+          GC_init_thread_local(&me->tlfs);
 #       endif
       } else
 #   endif
@@ -2577,8 +2570,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                         LPVOID lpParameter, DWORD dwCreationFlags,
                         LPDWORD lpThreadId)
   {
-    if (!EXPECT(parallel_initialized, TRUE))
-      GC_init_parallel();
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     GC_ASSERT(GC_thr_initialized);
         /* Make sure GC is initialized (i.e. main thread is attached,   */
         /* tls is initialized).  This is redundant when                 */
@@ -2630,8 +2622,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                                   void *arglist, unsigned initflag,
                                   unsigned *thrdaddr)
     {
-      if (!EXPECT(parallel_initialized, TRUE))
-        GC_init_parallel();
+      if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
       GC_ASSERT(GC_thr_initialized);
 #     ifdef DEBUG_THREADS
         GC_log_printf("About to create a thread from 0x%lx\n",
@@ -2971,8 +2962,7 @@ GC_INNER void GC_thr_init(void)
     int result;
     struct start_info * si;
 
-    if (!EXPECT(parallel_initialized, TRUE))
-      GC_init_parallel();
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     GC_ASSERT(GC_thr_initialized);
     GC_ASSERT(!GC_win32_dll_threads);
 
@@ -3148,15 +3138,15 @@ GC_INNER void GC_thr_init(void)
       /* registration (it is the default GC behavior);                  */
       /* to always have automatic thread registration turned on, the GC */
       /* should be compiled with -D GC_DISCOVER_TASK_THREADS.           */
-      if (!GC_win32_dll_threads && parallel_initialized) return TRUE;
+      if (!GC_win32_dll_threads && GC_is_initialized) return TRUE;
 
       switch (reason) {
        case DLL_THREAD_ATTACH: /* invoked for threads other than main */
 #       ifdef PARALLEL_MARK
           /* Don't register marker threads. */
           if (GC_parallel) {
-            /* We could reach here only if parallel_initialized == FALSE. */
-            /* Because GC_thr_init() sets GC_parallel to off.             */
+            /* We could reach here only if GC is not initialized.       */
+            /* Because GC_thr_init() sets GC_parallel to off.           */
             break;
           }
 #       endif
@@ -3164,7 +3154,7 @@ GC_INNER void GC_thr_init(void)
        case DLL_PROCESS_ATTACH:
         /* This may run with the collector uninitialized. */
         thread_id = GetCurrentThreadId();
-        if (parallel_initialized && GC_main_thread != thread_id) {
+        if (GC_is_initialized && GC_main_thread != thread_id) {
             struct GC_stack_base sb;
             /* Don't lock here. */
 #           ifdef GC_ASSERTIONS
@@ -3200,22 +3190,21 @@ GC_INNER void GC_thr_init(void)
   }
 #endif /* !GC_NO_THREADS_DISCOVERY && !GC_PTHREADS */
 
-/* Perform all initializations, including those that    */
-/* may require allocation.                              */
-/* Must be called before a second thread is created.    */
+/* Perform all initializations, including those that may require        */
+/* allocation, e.g. initialize thread local free lists if used.         */
 GC_INNER void GC_init_parallel(void)
 {
-# if defined(THREAD_LOCAL_ALLOC)
+# ifdef THREAD_LOCAL_ALLOC
     GC_thread me;
     DCL_LOCK_STATE;
+
+    GC_ASSERT(GC_is_initialized);
+    LOCK();
+    me = GC_lookup_thread_inner(GetCurrentThreadId());
+    CHECK_LOOKUP_MY_THREAD(me);
+    GC_init_thread_local(&me->tlfs);
+    UNLOCK();
 # endif
-
-  GC_ASSERT(I_DONT_HOLD_LOCK());
-  if (parallel_initialized) return;
-  parallel_initialized = TRUE;
-  /* GC_init() calls us back, so set flag first.      */
-
-  if (!GC_is_initialized) GC_init();
 # if defined(CPPCHECK) && !defined(GC_NO_THREADS_DISCOVERY)
     GC_noop1((word)&GC_DllMain);
 # endif
@@ -3226,14 +3215,6 @@ GC_INNER void GC_init_parallel(void)
         /* create other threads before collector initialization.        */
         /* Thus it's OK not to lock before this.                        */
   }
-  /* Initialize thread local free lists if used.        */
-# if defined(THREAD_LOCAL_ALLOC)
-    LOCK();
-    me = GC_lookup_thread_inner(GetCurrentThreadId());
-    CHECK_LOOKUP_MY_THREAD(me);
-    GC_init_thread_local(&me->tlfs);
-    UNLOCK();
-# endif
 }
 
 #if defined(USE_PTHREAD_LOCKS)

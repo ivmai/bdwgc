@@ -2145,6 +2145,7 @@ ptr_t GC_get_main_stack_base(void);     /* Cold end of stack.           */
 void GC_register_data_segments(void);
 
 #ifdef THREADS
+  /* Both are invoked from GC_init only.        */
   GC_INNER void GC_thr_init(void);
   GC_INNER void GC_init_parallel(void);
 #else
