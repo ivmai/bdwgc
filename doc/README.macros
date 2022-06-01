@@ -417,7 +417,6 @@ GC_BUILTIN_ATOMIC       Use GCC atomic intrinsics instead of libatomic_ops
   primitives.
 
 GC_ALWAYS_MULTITHREADED     Force multi-threaded mode at GC initialization.
-  (Turns GC_allow_register_threads into a no-op routine.)
 
 GC_ENABLE_SUSPEND_THREAD (Linux only)   Turn on thread suspend/resume API
 support.
