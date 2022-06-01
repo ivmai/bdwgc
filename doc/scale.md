@@ -38,8 +38,10 @@ to be used together.
   itself, though not the allocation process. Currently the marking
   is performed by the thread that triggered the collection, together with
   _N_ - 1 dedicated threads, where _N_ is the number of processors detected
-  by the collector. The dedicated threads are created once at initialization
-  time (and optionally recreated in child processes after forking).
+  by the collector. The dedicated threads are created when the
+  client calls `GC_start_mark_threads()` or when the client starts the first
+  non-main thread after the GC initialization (or after fork operation in
+  a child process).
   A second effect of this flag is to switch to a more concurrent
   implementation of `GC_malloc_many`, so that free lists can be built, and
   memory can be cleared, by more than one thread concurrently.

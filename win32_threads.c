@@ -784,6 +784,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
       /* GC_init() does not call GC_init_parallel() in this case.   */
     parallel_initialized = TRUE;
 # endif
+  GC_start_mark_threads();
   set_need_to_lock();
 }
 
@@ -1980,11 +1981,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
   /* GC_mark_threads[] is unused here unlike that in pthread_support.c  */
 
-# ifdef CAN_HANDLE_FORK
-    static int available_markers_m1 = 0;
-# else
-#   define available_markers_m1 GC_markers_m1
-# endif
+  static int available_markers_m1 = 0;
 
 # ifdef GC_PTHREADS_PARAMARK
 #   include <pthread.h>
@@ -2015,12 +2012,11 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
       GC_ASSERT(I_HOLD_LOCK());
       ASSERT_CANCEL_DISABLED();
-      if (available_markers_m1 <= 0) return;
+      if (available_markers_m1 <= 0 || GC_parallel) return;
                 /* Skip if parallel markers disabled or already started. */
-#     ifdef CAN_HANDLE_FORK
-        if (GC_parallel) return;
-        GC_wait_for_gc_completion(TRUE);
+      GC_wait_for_gc_completion(TRUE);
 
+#     ifdef CAN_HANDLE_FORK
         /* Reset mark_cv state after forking (as in pthread_support.c). */
         {
           pthread_cond_t mark_cv_local = PTHREAD_COND_INITIALIZER;
@@ -2047,10 +2043,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         }
 #     endif /* !NO_MARKER_SPECIAL_SIGMASK */
 
-#     ifdef CAN_HANDLE_FORK
-        /* To have proper GC_parallel value in GC_help_marker.  */
-        GC_markers_m1 = available_markers_m1;
-#     endif
+      /* To have proper GC_parallel value in GC_help_marker.  */
+      GC_markers_m1 = available_markers_m1;
+
       for (i = 0; i < available_markers_m1; ++i) {
         marker_last_stack_min[i] = ADDR_LIMIT;
         if (0 != pthread_create(&new_thread, &attr,
@@ -2190,11 +2185,13 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
       GC_ASSERT(I_HOLD_LOCK());
       ASSERT_CANCEL_DISABLED();
-      if (available_markers_m1 <= 0) return;
+      if (available_markers_m1 <= 0 || GC_parallel) return;
+      GC_wait_for_gc_completion(TRUE);
 
       GC_ASSERT(GC_fl_builder_count == 0);
       /* Initialize GC_marker_cv[] fully before starting the    */
       /* first helper thread.                                   */
+      GC_markers_m1 = available_markers_m1;
       for (i = 0; i < GC_markers_m1; ++i) {
         if ((GC_marker_cv[i] = CreateEvent(NULL /* attrs */,
                                         TRUE /* isManualReset */,
@@ -2382,7 +2379,13 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
 # endif /* ! GC_PTHREADS_PARAMARK */
 
-#endif /* PARALLEL_MARK */
+# define START_MARK_THREADS() \
+        if (EXPECT(GC_parallel || available_markers_m1 <= 0, TRUE)) {} \
+        else GC_start_mark_threads()
+#else
+
+# define START_MARK_THREADS() (void)0
+#endif /* !PARALLEL_MARK */
 
   /* We have no DllMain to take care of new threads.  Thus we   */
   /* must properly intercept thread creation.                   */
@@ -2472,6 +2475,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       GC_dirty(args);
       REACHABLE_AFTER_DIRTY(lpParameter);
 
+      START_MARK_THREADS();
       set_need_to_lock();
       thread_h = CreateThread(lpThreadAttributes, dwStackSize, GC_win32_start,
                               args, dwCreationFlags, lpThreadId);
@@ -2526,6 +2530,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         GC_dirty(args);
         REACHABLE_AFTER_DIRTY(arglist);
 
+        START_MARK_THREADS();
         set_need_to_lock();
         thread_h = _beginthreadex(security, stack_size,
                         (unsigned (__stdcall *)(void *))GC_win32_start,
@@ -2843,6 +2848,7 @@ GC_INNER void GC_thr_init(void)
                       (void *)GC_PTHREAD_PTRVAL(pthread_self()),
                       (long)GetCurrentThreadId());
 #     endif
+      START_MARK_THREADS();
       set_need_to_lock();
       result = pthread_create(new_thread, attr, GC_pthread_start, si);
 

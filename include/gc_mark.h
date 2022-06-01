@@ -33,6 +33,14 @@
   extern "C" {
 #endif
 
+#define GC_PROC_BYTES 100
+
+#ifdef GC_BUILD
+  struct GC_ms_entry;
+#else
+  struct GC_ms_entry { void *opaque; };
+#endif
+
 /* A client supplied mark procedure.  Returns new mark stack pointer.   */
 /* Primary effect should be to push new entries on the mark stack.      */
 /* Mark stack pointer values are passed and returned explicitly.        */
@@ -54,14 +62,10 @@
 /* residing on a free list.  Such objects are cleared, except for a     */
 /* free list link field in the first word.  Thus mark procedures may    */
 /* not count on the presence of a type descriptor, and must handle this */
-/* case correctly somehow.                                              */
-#define GC_PROC_BYTES 100
-
-#ifdef GC_BUILD
-  struct GC_ms_entry;
-#else
-  struct GC_ms_entry { void *opaque; };
-#endif
+/* case correctly somehow.  Also, a mark procedure should be prepared   */
+/* to be executed concurrently from the marker threads (the later ones  */
+/* are created only if the client has called GC_start_mark_threads()    */
+/* or started a user thread previously).                                */
 typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
                                 struct GC_ms_entry * /* mark_stack_ptr */,
                                 struct GC_ms_entry * /* mark_stack_limit */,

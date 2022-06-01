@@ -18,6 +18,10 @@ int main (void)
     (void)GC_malloc_atomic(4096);
     (void)GC_malloc(4096);
   }
+
+  /* Test delayed start of marker threads, if they are enabled. */
+  GC_start_mark_threads();
+
   for (i = 0; i < 20000; ++i) {
     (void)GC_malloc_atomic(2048);
     (void)GC_malloc(2048);

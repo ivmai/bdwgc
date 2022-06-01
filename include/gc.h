@@ -87,23 +87,20 @@ GC_API GC_word GC_CALL GC_get_gc_no(void);
                         /* avoid data races on multiprocessors.         */
 
 #ifdef GC_THREADS
+  /* GC is parallelized for performance on multiprocessors.  Set to     */
+  /* a non-zero value when client calls GC_start_mark_threads()         */
+  /* directly or starts the first non-main thread, provided the         */
+  /* collector is built with PARALLEL_MARK defined, and either          */
+  /* GC_MARKERS (or GC_NPROCS) environment variable is set to a value   */
+  /* bigger than 1, or multiple cores (processors) are available.       */
+  /* If GC_parallel is on (non-zero), incremental collection is only    */
+  /* partially functional, and may not be desirable.  Starting from     */
+  /* GC v7.3, after setting, GC_parallel value is equal to the number   */
+  /* of marker threads minus one (i.e. the number of existing parallel  */
+  /* marker threads excluding the initiating one).                      */
   GC_API GC_ATTR_DEPRECATED int GC_parallel;
-                        /* GC is parallelized for performance on        */
-                        /* multiprocessors.  Set to a non-zero value    */
-                        /* only implicitly if collector is built with   */
-                        /* PARALLEL_MARK defined, and if either         */
-                        /* GC_MARKERS (or GC_NPROCS) environment        */
-                        /* variable is set to > 1, or multiple cores    */
-                        /* (processors) are available.                  */
-                        /* If GC_parallel is on (non-zero), incremental */
-                        /* collection is only partially functional,     */
-                        /* and may not be desirable.  The getter does   */
-                        /* not use or need synchronization (i.e.        */
-                        /* acquiring the GC lock).  Starting from       */
-                        /* GC v7.3, GC_parallel value is equal to the   */
-                        /* number of marker threads minus one (i.e.     */
-                        /* number of existing parallel marker threads   */
-                        /* excluding the initiating one).               */
+
+  /* Return value of GC_parallel.  Does not acquire the GC lock.        */
   GC_API int GC_CALL GC_get_parallel(void);
 #endif
 
@@ -1459,9 +1456,11 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* systems.  Return -1 otherwise.                                     */
   GC_API int GC_CALL GC_get_thr_restart_signal(void);
 
-  /* Restart marker threads after POSIX fork in child.  Meaningless in  */
-  /* other situations.  Should not be called if fork followed by exec.  */
-  /* Acquires the GC lock to avoid a data race.                         */
+  /* Start the parallel marker threads, if available.  Useful, e.g.,    */
+  /* after POSIX fork in a child process (provided not followed by      */
+  /* exec) or in single-threaded clients (provided it is OK for the     */
+  /* client to perform marking in parallel).  Acquires the GC lock to   */
+  /* avoid a data race.                                                 */
   GC_API void GC_CALL GC_start_mark_threads(void);
 
   /* Explicitly enable GC_register_my_thread() invocation.              */
@@ -1471,6 +1470,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* must be called from the main (or any previously registered) thread */
   /* between the collector initialization and the first explicit        */
   /* registering of a thread (it should be called as late as possible). */
+  /* Includes a GC_start_mark_threads() call.                           */
   GC_API void GC_CALL GC_allow_register_threads(void);
 
   /* Register the current thread, with the indicated stack base, as     */
