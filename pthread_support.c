@@ -436,15 +436,16 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
   static pthread_mutex_t mark_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
+static int available_markers_m1 = 0;
+
 #ifdef CAN_HANDLE_FORK
-  static int available_markers_m1 = 0;
   static pthread_cond_t mark_cv;
                         /* initialized by GC_start_mark_threads_inner   */
-  STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all);
 #else
-# define available_markers_m1 GC_markers_m1
   static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
 #endif
+
+STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all);
 
 GC_INNER void GC_start_mark_threads_inner(void)
 {
@@ -456,12 +457,11 @@ GC_INNER void GC_start_mark_threads_inner(void)
 
     GC_ASSERT(I_HOLD_LOCK());
     ASSERT_CANCEL_DISABLED();
-    if (available_markers_m1 <= 0) return;
+    if (available_markers_m1 <= 0 || GC_parallel) return;
                 /* Skip if parallel markers disabled or already started. */
-#   ifdef CAN_HANDLE_FORK
-      if (GC_parallel) return;
-      GC_wait_for_gc_completion(TRUE);
+    GC_wait_for_gc_completion(TRUE);
 
+#   ifdef CAN_HANDLE_FORK
       /* Initialize mark_cv (for the first time), or cleanup its value  */
       /* after forking in the child process.  All the marker threads in */
       /* the parent process were blocked on this variable at fork, so   */
@@ -519,10 +519,9 @@ GC_INNER void GC_start_mark_threads_inner(void)
       }
 #   endif /* !NO_MARKER_SPECIAL_SIGMASK */
 
-#   ifdef CAN_HANDLE_FORK
-      /* To have proper GC_parallel value in GC_help_marker.    */
-      GC_markers_m1 = available_markers_m1;
-#   endif
+    /* To have proper GC_parallel value in GC_help_marker.      */
+    GC_markers_m1 = available_markers_m1;
+
     for (i = 0; i < available_markers_m1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
@@ -1237,7 +1236,7 @@ static void fork_parent_proc(void)
 static void fork_child_proc(void)
 {
     GC_release_dirty_lock();
-#   if defined(PARALLEL_MARK)
+#   ifdef PARALLEL_MARK
       if (GC_parallel) {
 #       if defined(THREAD_SANITIZER) && defined(GC_ASSERTIONS) \
            && defined(CAN_CALL_ATFORK)
@@ -1245,15 +1244,17 @@ static void fork_child_proc(void)
 #       else
           GC_release_mark_lock();
 #       endif
+        /* Turn off parallel marking in the child, since we are probably  */
+        /* just going to exec, and we would have to restart mark threads. */
+        GC_parallel = FALSE;
       }
+#     ifdef THREAD_SANITIZER
+        /* TSan does not support threads creation in the child process. */
+        available_markers_m1 = 0;
+#     endif
 #   endif
     /* Clean up the thread table, so that just our thread is left.      */
     GC_remove_all_threads_but_me();
-#   ifdef PARALLEL_MARK
-      /* Turn off parallel marking in the child, since we are probably  */
-      /* just going to exec, and we would have to restart mark threads. */
-        GC_parallel = FALSE;
-#   endif
 #   ifndef GC_DISABLE_INCREMENTAL
       GC_dirty_update_child();
 #   endif
@@ -2050,6 +2051,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
     UNLOCK();
 # endif
   INIT_REAL_SYMS(); /* to initialize symbols while single-threaded */
+  GC_start_mark_threads();
   set_need_to_lock();
 }
 
@@ -2237,6 +2239,10 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
 #   ifdef DEBUG_THREADS
       GC_log_printf("About to start new thread from thread %p\n",
                     (void *)pthread_self());
+#   endif
+#   ifdef PARALLEL_MARK
+      if (EXPECT(!GC_parallel && available_markers_m1 > 0, FALSE))
+        GC_start_mark_threads();
 #   endif
     set_need_to_lock();
     result = REAL_FUNC(pthread_create)(new_thread, attr, GC_start_routine,

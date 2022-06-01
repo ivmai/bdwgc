@@ -1347,10 +1347,6 @@ GC_API void GC_CALL GC_init(void)
 #       else
           GC_thr_init();
 #       endif
-#       ifdef PARALLEL_MARK
-          /* Actually start helper threads.     */
-          GC_start_mark_threads_inner();
-#       endif
 #   endif
     COND_DUMP;
     /* Get black list set up and/or incremental GC started */
@@ -1445,9 +1441,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
 GC_API void GC_CALL GC_start_mark_threads(void)
 {
-#   if defined(PARALLEL_MARK) && defined(CAN_HANDLE_FORK) \
-       && !defined(THREAD_SANITIZER)
-      /* TSan does not support threads creation in the child process.   */
+#   ifdef PARALLEL_MARK
       IF_CANCEL(int cancel_state;)
       DCL_LOCK_STATE;
 
@@ -2391,7 +2385,6 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
 GC_API int GC_CALL GC_get_parallel(void)
 {
 # ifdef THREADS
-    /* GC_parallel is initialized at start-up.  */
     return GC_parallel;
 # else
     return 0;
