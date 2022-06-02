@@ -57,6 +57,8 @@ int memeq(void *s, int c, size_t len)
     return 1;
 }
 
+#define MEM_FILL_BYTE 0x56
+
 void GC_CALLBACK misc_sizes_dct(void *obj, void *cd)
 {
     unsigned log_size = *(unsigned char *)obj;
@@ -65,7 +67,7 @@ void GC_CALLBACK misc_sizes_dct(void *obj, void *cd)
     my_assert(log_size < sizeof(size_t) * 8);
     my_assert(cd == NULL);
     size = (size_t)1 << log_size;
-    my_assert(memeq((char *)obj + 1, 0x56, size - 1));
+    my_assert(memeq((char *)obj + 1, MEM_FILL_BYTE, size - 1));
 }
 
 void test_misc_sizes(void)
@@ -79,7 +81,7 @@ void test_misc_sizes(void)
             exit(3);
         }
         my_assert(memeq(p, 0, (size_t)1 << i));
-        memset(p, 0x56, (size_t)1 << i);
+        memset(p, MEM_FILL_BYTE, (size_t)1 << i);
         *(unsigned char *)p = (unsigned char)i;
     }
 }
@@ -100,12 +102,13 @@ int is_pair(pair_t p)
     return memcmp(p->magic, pair_magic, sizeof(p->magic)) == 0;
 }
 
+#define CSUM_SEED 782
 #define PTR_HASH(p) (GC_HIDE_POINTER(p) >> 4)
 
 void GC_CALLBACK pair_dct(void *obj, void *cd)
 {
     pair_t p = (pair_t)obj;
-    int checksum;
+    int checksum = CSUM_SEED;
 
     my_assert(cd == (void *)PTR_HASH(p));
     /* Check that obj and its car and cdr are not trashed. */
@@ -117,7 +120,6 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     my_assert(is_pair(p));
     my_assert(!p->car || is_pair(p->car));
     my_assert(!p->cdr || is_pair(p->cdr));
-    checksum = 782;
     if (p->car) checksum += p->car->checksum;
     if (p->cdr) checksum += p->cdr->checksum;
     my_assert(p->checksum == checksum);
@@ -129,8 +131,7 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     p->cdr = NULL;
 }
 
-pair_t
-pair_new(pair_t car, pair_t cdr)
+pair_t pair_new(pair_t car, pair_t cdr)
 {
     pair_t p;
     struct GC_finalizer_closure *pfc =
@@ -150,7 +151,8 @@ pair_new(pair_t car, pair_t cdr)
     my_assert(!is_pair(p));
     my_assert(memeq(p, 0, sizeof(struct pair_s)));
     memcpy(p->magic, pair_magic, sizeof(p->magic));
-    p->checksum = 782 + (car? car->checksum : 0) + (cdr? cdr->checksum : 0);
+    p->checksum = CSUM_SEED + (car != NULL ? car->checksum : 0)
+                    + (cdr != NULL ? cdr->checksum : 0);
     p->car = car;
     GC_ptr_store_and_dirty(&p->cdr, cdr);
     GC_reachable_here(car);
@@ -161,18 +163,15 @@ pair_new(pair_t car, pair_t cdr)
     return p;
 }
 
-void
-pair_check_rec(pair_t p)
+void pair_check_rec(pair_t p)
 {
     while (p) {
-        int checksum = 782;
+        int checksum = CSUM_SEED;
+
         if (p->car) checksum += p->car->checksum;
         if (p->cdr) checksum += p->cdr->checksum;
         my_assert(p->checksum == checksum);
-        if (rand() % 2)
-            p = p->car;
-        else
-            p = p->cdr;
+        p = (rand() & 1) != 0 ? p->cdr : p->car;
     }
 }
 
@@ -200,7 +199,7 @@ void *test(void *data)
         int t = rand() % POP_SIZE;
         int j;
 
-        switch (rand() % (i > GROW_LIMIT? 5 : 3)) {
+        switch (rand() % (i > GROW_LIMIT ? 5 : 3)) {
         case 0: case 3:
             if (pop[t])
                 pop[t] = pop[t]->car;

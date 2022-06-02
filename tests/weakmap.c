@@ -338,6 +338,8 @@ struct pair {
 
 static const char * const pair_magic = "PAIR_MAGIC_BYTES";
 
+#define CSUM_SEED 782
+
 struct pair *pair_new(struct pair *car, struct pair *cdr)
 {
   struct pair tmpl;
@@ -347,14 +349,15 @@ struct pair *pair_new(struct pair *car, struct pair *cdr)
   tmpl.car = car;
   tmpl.cdr = cdr;
   memcpy(tmpl.magic, pair_magic, PAIR_MAGIC_SIZE);
-  tmpl.checksum = 782 + (car? car->checksum : 0) + (cdr? cdr->checksum : 0);
+  tmpl.checksum = CSUM_SEED + (car != NULL ? car->checksum : 0)
+                        + (cdr != NULL ? cdr->checksum : 0);
   return (struct pair *)weakmap_add(pair_hcset, &tmpl, sizeof(tmpl));
 }
 
 void pair_check_rec(struct pair *p, int line)
 {
   while (p != NULL) {
-    int checksum = 782;
+    int checksum = CSUM_SEED;
 
     if (memcmp(p->magic, pair_magic, PAIR_MAGIC_SIZE) != 0) {
       fprintf(stderr, "Magic bytes wrong for %p at %d\n", (void *)p, line);
