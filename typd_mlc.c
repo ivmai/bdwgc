@@ -160,6 +160,7 @@ STATIC GC_descr GC_bm_table[WORDSZ/2];
 /* Descriptor is a GC_DS_LENGTH or GC_DS_BITMAP descriptor.             */
 STATIC GC_descr GC_double_descr(GC_descr descriptor, word nwords)
 {
+    GC_ASSERT(GC_bm_table[0] == GC_DS_BITMAP); /* bm table is initialized */
     if ((descriptor & GC_DS_TAGS) == GC_DS_LENGTH) {
         descriptor = GC_bm_table[BYTES_TO_WORDS((word)descriptor)];
     }
