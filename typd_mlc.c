@@ -507,7 +507,7 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
 
 GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 {
-    signed_word last_set_bit = len - 1;
+    signed_word last_set_bit = (signed_word)len - 1;
     GC_descr result;
     DCL_LOCK_STATE;
 
