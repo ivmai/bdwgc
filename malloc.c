@@ -226,8 +226,9 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
     GC_ASSERT(k < MAXOBJKINDS);
     lb_adjusted = ADD_SLOP(lb);
     op = GC_alloc_large_and_clear(lb_adjusted, k, IGNORE_OFF_PAGE);
-    if (op != NULL)
+    if (EXPECT(op != NULL, TRUE)) {
         GC_bytes_allocd += lb_adjusted;
+    }
     return op;
   }
 #endif
@@ -288,7 +289,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
             BZERO(result, n_blocks * HBLKSIZE);
         }
     }
-    if (NULL == result) return (*GC_get_oom_fn())(lb);
+    if (EXPECT(NULL == result, FALSE)) return (*GC_get_oom_fn())(lb);
     return result;
 }
 
@@ -486,7 +487,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
 
   void * calloc(size_t n, size_t lb)
   {
-    if ((lb | n) > GC_SQRT_SIZE_MAX /* fast initial test */
+    if (EXPECT((lb | n) > GC_SQRT_SIZE_MAX, FALSE) /* fast initial test */
         && lb && n > GC_SIZE_MAX / lb)
       return (*GC_get_oom_fn())(GC_SIZE_MAX); /* n*lb overflow */
 #   if defined(GC_LINUX_THREADS)
@@ -519,7 +520,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
       size_t lb = strlen(s) + 1;
       char *result = (char *)REDIRECT_MALLOC_F(lb);
 
-      if (NULL == result) {
+      if (EXPECT(NULL == result, FALSE)) {
         errno = ENOMEM;
         return NULL;
       }
@@ -537,10 +538,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
     {
       char *copy;
       size_t len = strlen(str);
-      if (len > size)
+      if (EXPECT(len > size, FALSE))
         len = size;
       copy = (char *)REDIRECT_MALLOC_F(len + 1);
-      if (copy == NULL) {
+      if (EXPECT(NULL == copy, FALSE)) {
         errno = ENOMEM;
         return NULL;
       }

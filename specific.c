@@ -59,7 +59,7 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
     GC_dont_gc++; /* disable GC */
     entry = (volatile tse *)MALLOC_CLEAR(sizeof(tse));
     GC_dont_gc--;
-    if (0 == entry) return ENOMEM;
+    if (EXPECT(NULL == entry, FALSE)) return ENOMEM;
 
     pthread_mutex_lock(&(key -> lock));
     /* Could easily check for an existing entry here.   */

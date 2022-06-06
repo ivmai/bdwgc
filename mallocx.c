@@ -160,7 +160,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
         sz = lb;
     }
     result = GC_generic_or_special_malloc((word)lb, obj_kind);
-    if (result != NULL) {
+    if (EXPECT(result != NULL, TRUE)) {
       /* In case of shrink, it could also return original object.       */
       /* But this gives the client warning of imminent disaster.        */
       BCOPY(p, result, sz);
@@ -507,7 +507,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
 
     if (align <= GRANULE_BYTES) return GC_malloc(lb);
     if (align >= HBLKSIZE/2 || lb >= HBLKSIZE/2) {
-        if (align > HBLKSIZE) {
+        if (EXPECT(align > HBLKSIZE, FALSE)) {
           return (*GC_get_oom_fn())(LONG_MAX-1024); /* Fail */
         }
         return GC_malloc(lb <= HBLKSIZE? HBLKSIZE : lb);
@@ -565,7 +565,7 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strdup(const char *s)
   if (s == NULL) return NULL;
   lb = strlen(s) + 1;
   copy = (char *)GC_malloc_atomic(lb);
-  if (NULL == copy) {
+  if (EXPECT(NULL == copy, FALSE)) {
 #   ifndef MSWINCE
       errno = ENOMEM;
 #   endif
@@ -579,10 +579,10 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
 {
   char *copy;
   size_t len = strlen(str); /* str is expected to be non-NULL  */
-  if (len > size)
+  if (EXPECT(len > size, FALSE))
     len = size;
   copy = (char *)GC_malloc_atomic(len + 1);
-  if (copy == NULL) {
+  if (EXPECT(NULL == copy, FALSE)) {
 #   ifndef MSWINCE
       errno = ENOMEM;
 #   endif
@@ -602,7 +602,7 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
     size_t lb = (wcslen(str) + 1) * sizeof(wchar_t);
     wchar_t *copy = (wchar_t *)GC_malloc_atomic(lb);
 
-    if (copy == NULL) {
+    if (EXPECT(NULL == copy, FALSE)) {
 #     ifndef MSWINCE
         errno = ENOMEM;
 #     endif

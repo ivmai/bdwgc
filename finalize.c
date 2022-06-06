@@ -192,7 +192,7 @@ STATIC int GC_register_disappearing_link_inner(
     }
     new_dl = (struct disappearing_link *)
         GC_INTERNAL_MALLOC(sizeof(struct disappearing_link),NORMAL);
-    if (0 == new_dl) {
+    if (EXPECT(NULL == new_dl, FALSE)) {
       GC_oom_func oom_fn = GC_oom_fn;
       UNLOCK();
       new_dl = (struct disappearing_link *)

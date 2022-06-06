@@ -107,7 +107,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
     DCL_LOCK_STATE;
 
     LOCK();
-    while (GC_avail_descr + nwords >= GC_ed_size) {
+    while (EXPECT(GC_avail_descr + nwords >= GC_ed_size, FALSE)) {
         typed_ext_descr_t *newExtD;
         size_t new_size;
         word ed_size = GC_ed_size;
@@ -293,17 +293,17 @@ GC_make_sequence_descriptor(complex_descriptor *first,
     struct SequenceDescriptor * result =
         (struct SequenceDescriptor *)
                 GC_malloc(sizeof(struct SequenceDescriptor));
+
+    if (EXPECT(NULL == result, FALSE)) return NULL;
+
     /* Can't result in overly conservative marking, since tags are      */
-    /* very small integers. Probably faster than maintaining type       */
-    /* info.                                                            */
-    if (result != 0) {
-        result -> sd_tag = SEQUENCE_TAG;
-        result -> sd_first = first;
-        result -> sd_second = second;
-        GC_dirty(result);
-        REACHABLE_AFTER_DIRTY(first);
-        REACHABLE_AFTER_DIRTY(second);
-    }
+    /* very small integers. Probably faster than maintaining type info. */
+    result -> sd_tag = SEQUENCE_TAG;
+    result -> sd_first = first;
+    result -> sd_second = second;
+    GC_dirty(result);
+    REACHABLE_AFTER_DIRTY(first);
+    REACHABLE_AFTER_DIRTY(second);
     return (complex_descriptor *)result;
 }
 
@@ -560,9 +560,11 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
         result |= GC_DS_BITMAP;
     } else {
         signed_word index = GC_add_ext_descriptor(bm, (word)last_set_bit + 1);
-        if (index == -1) return WORDS_TO_BYTES(last_set_bit+1) | GC_DS_LENGTH;
-                                /* Out of memory: use conservative      */
-                                /* approximation.                       */
+
+        if (EXPECT(index == -1, FALSE)) {
+            /* Out of memory: use a conservative approximation. */
+            return WORDS_TO_BYTES(last_set_bit + 1) | GC_DS_LENGTH;
+        }
         result = GC_MAKE_PROC(GC_typed_mark_proc_index, (word)index);
     }
     return result;
@@ -644,11 +646,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     struct LeafDescriptor leaf;
 
     GC_ASSERT(GC_explicit_typing_initialized);
-    descr_type = GC_make_array_descriptor((word)n, (word)lb, d, &simple_descr,
-                                          &complex_descr, &leaf);
-    if ((lb | n) > GC_SQRT_SIZE_MAX /* fast initial check */
+    if (EXPECT((lb | n) > GC_SQRT_SIZE_MAX, FALSE) /* fast initial check */
         && lb > 0 && n > GC_SIZE_MAX / lb)
       return (*GC_get_oom_fn())(GC_SIZE_MAX); /* n*lb overflow */
+
+    descr_type = GC_make_array_descriptor((word)n, (word)lb, d, &simple_descr,
+                                          &complex_descr, &leaf);
     lb *= n;
     switch(descr_type) {
         case NO_MEM:
