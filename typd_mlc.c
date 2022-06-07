@@ -630,7 +630,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
             op = (ptr_t)GENERAL_MALLOC((word)lb, GC_explicit_kind);
             if (0 == op) return 0;
             /* It is not safe to use GC_size_map[lb] to compute lg here */
-            /* as the the former might be updated asynchronously.       */
+            /* as the former might be updated asynchronously.           */
             lg = BYTES_TO_GRANULES(GC_size(op));
         } else {
             *opp = obj_link(op);
