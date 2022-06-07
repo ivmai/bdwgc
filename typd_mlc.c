@@ -158,7 +158,7 @@ STATIC GC_descr GC_bm_table[WORDSZ/2];
 /* The result is known to be short enough to fit into a bitmap          */
 /* descriptor.                                                          */
 /* Descriptor is a GC_DS_LENGTH or GC_DS_BITMAP descriptor.             */
-STATIC GC_descr GC_double_descr(GC_descr descriptor, word nwords)
+STATIC GC_descr GC_double_descr(GC_descr descriptor, size_t nwords)
 {
     GC_ASSERT(GC_bm_table[0] == GC_DS_BITMAP); /* bm table is initialized */
     if ((descriptor & GC_DS_TAGS) == GC_DS_LENGTH) {
@@ -427,7 +427,7 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
 }
 
 GC_ATTR_NO_SANITIZE_THREAD
-static complex_descriptor *get_complex_descr(word *addr, word nwords)
+static complex_descriptor *get_complex_descr(word *addr, size_t nwords)
 {
   return (complex_descriptor *)addr[nwords - 1];
 }
@@ -438,7 +438,7 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
 {
     hdr * hhdr = HDR(addr);
     word sz = hhdr -> hb_sz;
-    word nwords = BYTES_TO_WORDS(sz);
+    size_t nwords = (size_t)BYTES_TO_WORDS(sz);
     complex_descriptor *descr = get_complex_descr(addr, nwords);
     mse * orig_mark_stack_ptr = mark_stack_ptr;
     mse * new_mark_stack_ptr;
@@ -549,19 +549,19 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
                                                                 GC_descr d)
 {
-    word *op;
-    size_t lg;
+    void *op;
+    size_t nwords;
 
     GC_ASSERT(GC_explicit_typing_initialized);
     lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
-    op = (word *)GC_malloc_kind(lb, GC_explicit_kind);
+    op = GC_malloc_kind(lb, GC_explicit_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
-    /* It is not safe to use GC_size_map[lb] to compute lg here as      */
+    /* It is not safe to use GC_size_map[lb] to compute nwords here as  */
     /* the former might be updated asynchronously.                      */
-    lg = BYTES_TO_GRANULES(GC_size(op));
-    op[GRANULES_TO_WORDS(lg) - 1] = d;
-    GC_dirty(op + GRANULES_TO_WORDS(lg) - 1);
+    nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));
+    ((word *)op)[nwords - 1] = d;
+    GC_dirty((word *)op + nwords - 1);
     REACHABLE_AFTER_DIRTY(d);
     return op;
 }
@@ -574,7 +574,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
 GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_malloc_explicitly_typed_ignore_off_page(size_t lb, GC_descr d)
 {
-    ptr_t op;
+    void *op;
     size_t lg;
     DCL_LOCK_STATE;
 
@@ -587,11 +587,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
         LOCK();
         lg = GC_size_map[lb];
         opp = &GC_obj_kinds[GC_explicit_kind].ok_freelist[lg];
-        op = (ptr_t)(*opp);
-        if (EXPECT(0 == op, FALSE)) {
+        op = *opp;
+        if (EXPECT(NULL == op, FALSE)) {
             UNLOCK();
-            op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
-            if (0 == op) return 0;
+            op = GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
+            if (NULL == op) return NULL;
             /* See the comment in GC_malloc_explicitly_typed.   */
             lg = BYTES_TO_GRANULES(GC_size(op));
         } else {
@@ -601,7 +601,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
             UNLOCK();
         }
     } else {
-        op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
+        op = GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
         if (EXPECT(NULL == op, FALSE)) return NULL;
         lg = BYTES_TO_GRANULES(GC_size(op));
     }
@@ -614,8 +614,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
                                                         size_t lb, GC_descr d)
 {
-    word *op;
-    size_t lg;
+    void *op;
+    size_t nwords;
     GC_descr simple_descr;
     complex_descriptor *complex_descr;
     int descr_type;
@@ -642,35 +642,31 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
             lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
             break;
     }
-    op = (word *)GC_malloc_kind(lb, GC_array_kind);
+    op = GC_malloc_kind(lb, GC_array_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
-    lg = BYTES_TO_GRANULES(GC_size(op));
+    nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));
     if (descr_type == LEAF) {
         /* Set up the descriptor inside the object itself.      */
         volatile struct LeafDescriptor * lp =
-            (struct LeafDescriptor *)
-                (op + GRANULES_TO_WORDS(lg)
-                    - (BYTES_TO_WORDS(sizeof(struct LeafDescriptor)) + 1));
+                (struct LeafDescriptor *)((word *)op + nwords -
+                        (BYTES_TO_WORDS(sizeof(struct LeafDescriptor)) + 1));
 
         lp -> ld_tag = LEAF_TAG;
         lp -> ld_size = leaf.ld_size;
         lp -> ld_nelements = leaf.ld_nelements;
         lp -> ld_descriptor = leaf.ld_descriptor;
-        ((volatile word *)op)[GRANULES_TO_WORDS(lg) - 1] = (word)lp;
+        ((volatile word *)op)[nwords - 1] = (word)lp;
     } else {
 #     ifndef GC_NO_FINALIZATION
-        size_t lw = GRANULES_TO_WORDS(lg);
-
-        op[lw - 1] = (word)complex_descr;
-        GC_dirty(op + lw - 1);
+        ((word *)op)[nwords - 1] = (word)complex_descr;
+        GC_dirty((word *)op + nwords - 1);
         REACHABLE_AFTER_DIRTY(complex_descr);
 
         /* Make sure the descriptor is cleared once there is any danger */
         /* it may have been collected.                                  */
         if (EXPECT(GC_general_register_disappearing_link(
-                                                (void **)(op + lw - 1), op)
-                  == GC_NO_MEMORY, FALSE))
+                        (void **)op + nwords - 1, op) == GC_NO_MEMORY, FALSE))
 #     endif
         {
             /* Couldn't register it due to lack of memory.  Punt.       */
