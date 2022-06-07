@@ -168,29 +168,57 @@ STATIC GC_descr GC_double_descr(GC_descr descriptor, word nwords)
     return descriptor;
 }
 
-STATIC complex_descriptor *
-GC_make_sequence_descriptor(complex_descriptor *first,
-                            complex_descriptor *second);
+STATIC complex_descriptor *GC_make_leaf_descriptor(size_t size,
+                                                   size_t nelements,
+                                                   GC_descr descriptor)
+{
+    complex_descriptor *result = (complex_descriptor *)
+                GC_malloc_atomic(sizeof(struct LeafDescriptor));
 
-/* Build a descriptor for an array with nelements elements,     */
-/* each of which can be described by a simple descriptor.       */
-/* We try to optimize some common cases.                        */
-/* If the result is COMPLEX, then a complex_descr* is returned  */
-/* in *complex_d.                                               */
-/* If the result is LEAF, then we built a LeafDescriptor in     */
-/* the structure pointed to by leaf.                            */
-/* The tag in the leaf structure is not set.                    */
-/* If the result is SIMPLE, then a GC_descr                     */
-/* is returned in *simple_d.                                    */
-/* If the result is NO_MEM, then                                */
-/* we failed to allocate the descriptor.                        */
-/* The implementation knows that GC_DS_LENGTH is 0.             */
-/* *leaf, *complex_d, and *simple_d may be used as temporaries  */
-/* during the construction.                                     */
-#define COMPLEX 2
-#define LEAF    1
+    if (EXPECT(NULL == result, FALSE)) return NULL;
+
+    result -> ld.ld_tag = LEAF_TAG;
+    result -> ld.ld_size = size;
+    result -> ld.ld_nelements = nelements;
+    result -> ld.ld_descriptor = descriptor;
+    return result;
+}
+
+STATIC complex_descriptor *GC_make_sequence_descriptor(
+                                                complex_descriptor *first,
+                                                complex_descriptor *second)
+{
+    complex_descriptor *result = (complex_descriptor *)
+                GC_malloc(sizeof(struct SequenceDescriptor));
+
+    if (EXPECT(NULL == result, FALSE)) return NULL;
+
+    /* Can't result in overly conservative marking, since tags are      */
+    /* very small integers. Probably faster than maintaining type info. */
+    result -> sd.sd_tag = SEQUENCE_TAG;
+    result -> sd.sd_first = first;
+    result -> sd.sd_second = second;
+    GC_dirty(result);
+    REACHABLE_AFTER_DIRTY(first);
+    REACHABLE_AFTER_DIRTY(second);
+    return result;
+}
+
 #define SIMPLE  0
+#define LEAF    1
+#define COMPLEX 2
 #define NO_MEM  (-1)
+
+/* Build a descriptor for an array with nelements elements, each of     */
+/* which can be described by a simple descriptor.  We try to optimize   */
+/* some common cases.  If the result is COMPLEX, then a complex_descr*  */
+/* value is returned in *complex_d.  If the result is LEAF, then        */
+/* a LeafDescriptor value is built in the structure pointed to by leaf. */
+/* The tag in the leaf structure is not set.  If the result is SIMPLE,  */
+/* then a GC_descr value is returned in *simple_d.  If the result is    */
+/* NO_MEM, then we failed to allocate the descriptor.                   */
+/* The implementation knows that GC_DS_LENGTH is 0.  *leaf, *complex_d  */
+/* and *simple_d may be used as temporaries during the construction.    */
 STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
                                     GC_descr descriptor, GC_descr *simple_d,
                                     complex_descriptor **complex_d,
@@ -200,114 +228,55 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
         /* For larger arrays, we try to combine descriptors of adjacent */
         /* descriptors to speed up marking, and to reduce the amount    */
         /* of space needed on the mark stack.                           */
+
     if ((descriptor & GC_DS_TAGS) == GC_DS_LENGTH) {
       if (descriptor == (GC_descr)size) {
         *simple_d = nelements * descriptor;
         return SIMPLE;
-      } else if ((word)descriptor == 0) {
-        *simple_d = (GC_descr)0;
+      } else if (0 == descriptor) {
+        *simple_d = 0;
         return SIMPLE;
       }
     }
     if (nelements <= OPT_THRESHOLD) {
       if (nelements <= 1) {
-        if (nelements == 1) {
-            *simple_d = descriptor;
-            return SIMPLE;
-        } else {
-            *simple_d = (GC_descr)0;
-            return SIMPLE;
-        }
+        *simple_d = nelements == 1 ? descriptor : 0;
+        return SIMPLE;
       }
     } else if (size <= BITMAP_BITS/2
                && (descriptor & GC_DS_TAGS) != GC_DS_PROC
                && (size & (sizeof(word)-1)) == 0) {
-      int result =
-          GC_make_array_descriptor(nelements/2, 2*size,
-                                   GC_double_descr(descriptor,
-                                                   BYTES_TO_WORDS(size)),
-                                   simple_d, complex_d, leaf);
-      if ((nelements & 1) == 0) {
-          return result;
-      } else {
-          struct LeafDescriptor * one_element =
-              (struct LeafDescriptor *)
-                GC_malloc_atomic(sizeof(struct LeafDescriptor));
+      complex_descriptor *one_element, *beginning;
+      int result = GC_make_array_descriptor(nelements / 2, 2 * size,
+                                            GC_double_descr(descriptor,
+                                                    BYTES_TO_WORDS(size)),
+                                            simple_d, complex_d, leaf);
 
-          if (EXPECT(NO_MEM == result || NULL == one_element, FALSE))
-            return NO_MEM;
-          one_element -> ld_tag = LEAF_TAG;
-          one_element -> ld_size = size;
-          one_element -> ld_nelements = 1;
-          one_element -> ld_descriptor = descriptor;
-          switch(result) {
-            case SIMPLE:
-            {
-              struct LeafDescriptor * beginning =
-                (struct LeafDescriptor *)
-                  GC_malloc_atomic(sizeof(struct LeafDescriptor));
-              if (EXPECT(NULL == beginning, FALSE)) return NO_MEM;
-              beginning -> ld_tag = LEAF_TAG;
-              beginning -> ld_size = size;
-              beginning -> ld_nelements = 1;
-              beginning -> ld_descriptor = *simple_d;
-              *complex_d = GC_make_sequence_descriptor(
-                                (complex_descriptor *)beginning,
-                                (complex_descriptor *)one_element);
-              break;
-            }
-            case LEAF:
-            {
-              struct LeafDescriptor * beginning =
-                (struct LeafDescriptor *)
-                  GC_malloc_atomic(sizeof(struct LeafDescriptor));
-              if (EXPECT(NULL == beginning, FALSE)) return NO_MEM;
-              beginning -> ld_tag = LEAF_TAG;
-              beginning -> ld_size = leaf -> ld_size;
-              beginning -> ld_nelements = leaf -> ld_nelements;
-              beginning -> ld_descriptor = leaf -> ld_descriptor;
-              *complex_d = GC_make_sequence_descriptor(
-                                (complex_descriptor *)beginning,
-                                (complex_descriptor *)one_element);
-              break;
-            }
-            case COMPLEX:
-              *complex_d = GC_make_sequence_descriptor(
-                                *complex_d,
-                                (complex_descriptor *)one_element);
-              break;
-          }
-          if (EXPECT(NULL == *complex_d, FALSE)) return NO_MEM;
+      if ((nelements & 1) == 0 || EXPECT(NO_MEM == result, FALSE))
+        return result;
 
-          return COMPLEX;
+      one_element = GC_make_leaf_descriptor(size, 1, descriptor);
+      if (EXPECT(NULL == one_element, FALSE)) return NO_MEM;
+
+      beginning = *complex_d;
+      if (result != COMPLEX) {
+        beginning = SIMPLE == result ?
+                        GC_make_leaf_descriptor(size, 1, *simple_d) :
+                        GC_make_leaf_descriptor(leaf -> ld_size,
+                                                leaf -> ld_nelements,
+                                                leaf -> ld_descriptor);
+        if (EXPECT(NULL == beginning, FALSE)) return NO_MEM;
       }
+      *complex_d = GC_make_sequence_descriptor(beginning, one_element);
+      if (EXPECT(NULL == *complex_d, FALSE)) return NO_MEM;
+
+      return COMPLEX;
     }
 
     leaf -> ld_size = size;
     leaf -> ld_nelements = nelements;
     leaf -> ld_descriptor = descriptor;
     return LEAF;
-}
-
-STATIC complex_descriptor *
-GC_make_sequence_descriptor(complex_descriptor *first,
-                            complex_descriptor *second)
-{
-    struct SequenceDescriptor * result =
-        (struct SequenceDescriptor *)
-                GC_malloc(sizeof(struct SequenceDescriptor));
-
-    if (EXPECT(NULL == result, FALSE)) return NULL;
-
-    /* Can't result in overly conservative marking, since tags are      */
-    /* very small integers. Probably faster than maintaining type info. */
-    result -> sd_tag = SEQUENCE_TAG;
-    result -> sd_first = first;
-    result -> sd_second = second;
-    GC_dirty(result);
-    REACHABLE_AFTER_DIRTY(first);
-    REACHABLE_AFTER_DIRTY(second);
-    return (complex_descriptor *)result;
 }
 
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
