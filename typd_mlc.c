@@ -557,7 +557,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     op = (word *)GC_malloc_kind(lb, GC_explicit_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
-    /* It is not safe to use GC_size_map[lb] to compute lg here as the  */
+    /* It is not safe to use GC_size_map[lb] to compute lg here as      */
     /* the former might be updated asynchronously.                      */
     lg = BYTES_TO_GRANULES(GC_size(op));
     op[GRANULES_TO_WORDS(lg) - 1] = d;
