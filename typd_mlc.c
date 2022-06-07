@@ -649,7 +649,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
         lg = BYTES_TO_GRANULES(GC_size(op));
     }
     ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
-    GC_dirty(op + GRANULES_TO_WORDS(lg) - 1);
+    GC_dirty((word *)op + GRANULES_TO_WORDS(lg) - 1);
     REACHABLE_AFTER_DIRTY(d);
     return op;
 }
