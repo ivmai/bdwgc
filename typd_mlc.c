@@ -310,11 +310,15 @@ STATIC void GC_init_explicit_typing(void)
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
                                 mse * mark_stack_limit, word env)
 {
-    word bm = GC_ext_descriptors[env].ed_bitmap;
+    word bm;
     ptr_t current_p = (ptr_t)addr;
     ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
     ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
     DECLARE_HDR_CACHE;
+
+    /* The allocation lock is held by the collection initiating thread. */
+    GC_ASSERT(GC_get_parallel() || I_HOLD_LOCK());
+    bm = GC_ext_descriptors[env].ed_bitmap;
 
     INIT_HDR_CACHE;
     for (; bm != 0; bm >>= 1, current_p += sizeof(word)) {
