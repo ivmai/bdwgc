@@ -301,6 +301,8 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
                                 (complex_descriptor *)one_element);
               break;
           }
+          if (EXPECT(NULL == *complex_d, FALSE)) return NO_MEM;
+
           return(COMPLEX);
       }
     }
