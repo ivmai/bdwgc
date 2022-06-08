@@ -429,8 +429,20 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
 GC_ATTR_NO_SANITIZE_THREAD
 static complex_descriptor *get_complex_descr(word *addr, size_t nwords)
 {
+  /* TODO: Do we need AO_load_acquire here?  This is normally called    */
+  /* with the world stopped, and at least in case of the signal-based   */
+  /* thread suspension there should be a barrier in sem_post() called   */
+  /* from GC_suspend_handler_inner.                                     */
   return (complex_descriptor *)addr[nwords - 1];
 }
+
+#ifdef AO_HAVE_store_release
+# define set_complex_descr(op, nwords, d) \
+        AO_store_release((volatile AO_t *)(op) + (nwords) - 1, (AO_t)(d))
+#else
+# define set_complex_descr(op, nwords, d) \
+        (void)(((word *)(op))[(nwords) - 1] = (word)(d))
+#endif
 
 STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
                                 mse * mark_stack_limit,
@@ -560,7 +572,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     /* It is not safe to use GC_size_map[lb] to compute nwords here as  */
     /* the former might be updated asynchronously.                      */
     nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));
-    ((word *)op)[nwords - 1] = d;
+    set_complex_descr(op, nwords, d);
     GC_dirty((word *)op + nwords - 1);
     REACHABLE_AFTER_DIRTY(d);
     return op;
@@ -605,7 +617,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
         if (EXPECT(NULL == op, FALSE)) return NULL;
         lg = BYTES_TO_GRANULES(GC_size(op));
     }
-    ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
+    set_complex_descr(op, GRANULES_TO_WORDS(lg), d);
     GC_dirty((word *)op + GRANULES_TO_WORDS(lg) - 1);
     REACHABLE_AFTER_DIRTY(d);
     return op;
@@ -656,10 +668,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
         lp -> ld_size = leaf.ld_size;
         lp -> ld_nelements = leaf.ld_nelements;
         lp -> ld_descriptor = leaf.ld_descriptor;
-        ((volatile word *)op)[nwords - 1] = (word)lp;
+        set_complex_descr(op, nwords, lp);
     } else {
 #     ifndef GC_NO_FINALIZATION
-        ((word *)op)[nwords - 1] = (word)complex_descr;
+        set_complex_descr(op, nwords, complex_descr);
         GC_dirty((word *)op + nwords - 1);
         REACHABLE_AFTER_DIRTY(complex_descr);
 
