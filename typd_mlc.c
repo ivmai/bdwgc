@@ -495,6 +495,14 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
    }
 }
 
+#ifdef AO_HAVE_store_release
+# define set_obj_descr(op, nwords, d) \
+        AO_store_release((volatile AO_t *)(op) + (nwords) - 1, (AO_t)(d))
+#else
+# define set_obj_descr(op, nwords, d) \
+        (void)(((word *)(op))[(nwords) - 1] = (word)(d))
+#endif
+
 /*ARGSUSED*/
 STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
                                 mse * mark_stack_limit, word env)
@@ -633,12 +641,12 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t lb, GC_descr d)
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             UNLOCK();
         }
-        ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
+        set_obj_descr(op, GRANULES_TO_WORDS(lg), d);
    } else {
        op = (ptr_t)GENERAL_MALLOC((word)lb, GC_explicit_kind);
        if (op != NULL) {
             lg = BYTES_TO_GRANULES(GC_size(op));
-            ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
+            set_obj_descr(op, GRANULES_TO_WORDS(lg), d);
        }
    }
    return((void *) op);
@@ -670,12 +678,12 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(size_t lb,
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             UNLOCK();
         }
-        ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
+        set_obj_descr(op, GRANULES_TO_WORDS(lg), d);
    } else {
        op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
        if (op != NULL) {
          lg = BYTES_TO_GRANULES(GC_size(op));
-         ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
+         set_obj_descr(op, GRANULES_TO_WORDS(lg), d);
        }
    }
    return((void *) op);
@@ -734,7 +742,7 @@ GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
    }
    if (descr_type == LEAF) {
        /* Set up the descriptor inside the object itself. */
-       volatile struct LeafDescriptor * lp =
+       struct LeafDescriptor * lp =
            (struct LeafDescriptor *)
                ((word *)op
                 + GRANULES_TO_WORDS(lg)
@@ -744,11 +752,24 @@ GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
        lp -> ld_size = leaf.ld_size;
        lp -> ld_nelements = leaf.ld_nelements;
        lp -> ld_descriptor = leaf.ld_descriptor;
-       ((volatile word *)op)[GRANULES_TO_WORDS(lg) - 1] = (word)lp;
+
+        /* Hold the allocation lock while writing the descriptor word   */
+        /* to the object to ensure that the descriptor contents are     */
+        /* seen by GC_array_mark_proc as expected.                      */
+        /* TODO: It should be possible to replace locking with the      */
+        /* atomic operations (with the release barrier here) but, in    */
+        /* this case, avoiding the acquire barrier in                   */
+        /* GC_array_mark_proc seems to be tricky as GC_mark_some might  */
+        /* be invoked with the world running.                           */
+        LOCK();
+        ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = (word)lp;
+        UNLOCK();
    } else {
        size_t lw = GRANULES_TO_WORDS(lg);
 
-       ((word *)op)[lw - 1] = (word)complex_descr;
+        LOCK();
+        ((word *)op)[lw - 1] = (word)complex_descr;
+        UNLOCK();
        /* Make sure the descriptor is cleared once there is any danger  */
        /* it may have been collected.                                   */
        if (GC_general_register_disappearing_link((void * *)((word *)op+lw-1),
