@@ -486,6 +486,14 @@ static complex_descriptor *get_complex_descr(word *addr, word nwords)
   return (complex_descriptor *)addr[nwords - 1];
 }
 
+#ifdef AO_HAVE_store_release
+# define set_obj_descr(op, nwords, d) \
+        AO_store_release((volatile AO_t *)(op) + (nwords) - 1, (AO_t)(d))
+#else
+# define set_obj_descr(op, nwords, d) \
+        (void)(((word *)(op))[(nwords) - 1] = (word)(d))
+#endif
+
 STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
                                 mse * mark_stack_limit,
                                 word env GC_ATTR_UNUSED)
@@ -612,7 +620,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     /* It is not safe to use GC_size_map[lb] to compute lg here as      */
     /* the former might be updated asynchronously.                      */
     lg = BYTES_TO_GRANULES(GC_size(op));
-    op[GRANULES_TO_WORDS(lg) - 1] = d;
+    set_obj_descr(op, GRANULES_TO_WORDS(lg), d);
     GC_dirty(op + GRANULES_TO_WORDS(lg) - 1);
     REACHABLE_AFTER_DIRTY(d);
     return op;
@@ -654,7 +662,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
         if (NULL == op) return NULL;
         lg = BYTES_TO_GRANULES(GC_size(op));
     }
-    ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
+    set_obj_descr(op, GRANULES_TO_WORDS(lg), d);
     GC_dirty((word *)op + GRANULES_TO_WORDS(lg) - 1);
     REACHABLE_AFTER_DIRTY(d);
     return op;
@@ -669,6 +677,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     complex_descriptor *complex_descr;
     int descr_type;
     struct LeafDescriptor leaf;
+    DCL_LOCK_STATE;
 
     GC_ASSERT(GC_explicit_typing_initialized);
     descr_type = GC_make_array_descriptor((word)n, (word)lb, d, &simple_descr,
@@ -695,7 +704,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     lg = BYTES_TO_GRANULES(GC_size(op));
     if (descr_type == LEAF) {
         /* Set up the descriptor inside the object itself.      */
-        volatile struct LeafDescriptor * lp =
+        struct LeafDescriptor * lp =
             (struct LeafDescriptor *)
                 (op + GRANULES_TO_WORDS(lg)
                     - (BYTES_TO_WORDS(sizeof(struct LeafDescriptor)) + 1));
@@ -704,12 +713,25 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
         lp -> ld_size = leaf.ld_size;
         lp -> ld_nelements = leaf.ld_nelements;
         lp -> ld_descriptor = leaf.ld_descriptor;
-        ((volatile word *)op)[GRANULES_TO_WORDS(lg) - 1] = (word)lp;
+        /* Hold the allocation lock while writing the descriptor word   */
+        /* to the object to ensure that the descriptor contents are     */
+        /* seen by GC_array_mark_proc as expected.                      */
+        /* TODO: It should be possible to replace locking with the      */
+        /* atomic operations (with the release barrier here) but, in    */
+        /* this case, avoiding the acquire barrier in                   */
+        /* GC_array_mark_proc seems to be tricky as GC_mark_some might  */
+        /* be invoked with the world running.                           */
+        LOCK();
+        op[GRANULES_TO_WORDS(lg) - 1] = (word)lp;
+        UNLOCK();
     } else {
 #     ifndef GC_NO_FINALIZATION
         size_t lw = GRANULES_TO_WORDS(lg);
 
+        LOCK();
         op[lw - 1] = (word)complex_descr;
+        UNLOCK();
+
         GC_dirty(op + lw - 1);
         REACHABLE_AFTER_DIRTY(complex_descr);
 
