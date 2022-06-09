@@ -59,9 +59,9 @@ STATIC int GC_array_kind = 0;
 struct LeafDescriptor {         /* Describes simple array.      */
         word ld_tag;
 #       define LEAF_TAG 1
-        size_t ld_size;         /* bytes per element            */
+        word ld_size;           /* Bytes per element;           */
                                 /* multiple of ALIGNMENT.       */
-        size_t ld_nelements;    /* Number of elements.          */
+        word ld_nelements;      /* Number of elements.          */
         GC_descr ld_descriptor; /* A simple length, bitmap,     */
                                 /* or procedure descriptor.     */
 };
@@ -69,7 +69,7 @@ struct LeafDescriptor {         /* Describes simple array.      */
 struct ComplexArrayDescriptor {
         word ad_tag;
 #       define ARRAY_TAG 2
-        size_t ad_nelements;
+        word ad_nelements;
         union ComplexDescriptor * ad_element_descr;
 };
 
@@ -168,8 +168,8 @@ STATIC GC_descr GC_double_descr(GC_descr descriptor, size_t nwords)
     return descriptor;
 }
 
-STATIC complex_descriptor *GC_make_leaf_descriptor(size_t size,
-                                                   size_t nelements,
+STATIC complex_descriptor *GC_make_leaf_descriptor(word size,
+                                                   word nelements,
                                                    GC_descr descriptor)
 {
     complex_descriptor *result = (complex_descriptor *)
@@ -662,16 +662,25 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
         return NULL;
     nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));
     if (descr_type == LEAF) {
-        /* Set up the descriptor inside the object itself.      */
-        volatile struct LeafDescriptor * lp =
+      /* Set up the descriptor inside the object itself.        */
+      volatile struct LeafDescriptor * lp =
                 (struct LeafDescriptor *)((word *)op + nwords -
                         (BYTES_TO_WORDS(sizeof(struct LeafDescriptor)) + 1));
 
+#     ifdef AO_HAVE_store
+        AO_store((volatile AO_t *)&(lp -> ld_tag), LEAF_TAG);
+        AO_store((volatile AO_t *)&(lp -> ld_size), (AO_t)leaf.ld_size);
+        AO_store((volatile AO_t *)&(lp -> ld_nelements),
+                 (AO_t)leaf.ld_nelements);
+        AO_store((volatile AO_t *)&(lp -> ld_descriptor),
+                 (AO_t)leaf.ld_descriptor);
+#     else
         lp -> ld_tag = LEAF_TAG;
         lp -> ld_size = leaf.ld_size;
         lp -> ld_nelements = leaf.ld_nelements;
         lp -> ld_descriptor = leaf.ld_descriptor;
-        set_complex_descr(op, nwords, lp);
+#     endif
+      set_complex_descr(op, nwords, lp);
     } else {
 #     ifndef GC_NO_FINALIZATION
         set_complex_descr(op, nwords, complex_descr);
