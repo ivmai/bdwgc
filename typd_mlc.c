@@ -188,20 +188,23 @@ STATIC complex_descriptor *GC_make_sequence_descriptor(
                                                 complex_descriptor *first,
                                                 complex_descriptor *second)
 {
-    complex_descriptor *result = (complex_descriptor *)
+    struct SequenceDescriptor *result = (struct SequenceDescriptor *)
                 GC_malloc(sizeof(struct SequenceDescriptor));
+                /* Note: for a reason, the sanitizer runtime complains  */
+                /* of insufficient space for complex_descriptor if the  */
+                /* pointer type of result variable is changed to.       */
 
     if (EXPECT(NULL == result, FALSE)) return NULL;
 
     /* Can't result in overly conservative marking, since tags are      */
     /* very small integers. Probably faster than maintaining type info. */
-    result -> sd.sd_tag = SEQUENCE_TAG;
-    result -> sd.sd_first = first;
-    result -> sd.sd_second = second;
+    result -> sd_tag = SEQUENCE_TAG;
+    result -> sd_first = first;
+    result -> sd_second = second;
     GC_dirty(result);
     REACHABLE_AFTER_DIRTY(first);
     REACHABLE_AFTER_DIRTY(second);
-    return result;
+    return (complex_descriptor *)result;
 }
 
 #define SIMPLE  0
