@@ -51,42 +51,6 @@ STATIC int GC_array_kind = 0;
                         /* Object kind for objects with complex         */
                         /* descriptors and GC_array_mark_proc.          */
 
-/* Array descriptors.  GC_array_mark_proc understands these.    */
-/* We may eventually need to add provisions for headers and     */
-/* trailers.  Hence we provide for tree structured descriptors, */
-/* though we don't really use them currently.                   */
-
-struct LeafDescriptor {         /* Describes simple array.      */
-        word ld_tag;
-#       define LEAF_TAG 1
-        word ld_size;           /* Bytes per element;           */
-                                /* multiple of ALIGNMENT.       */
-        word ld_nelements;      /* Number of elements.          */
-        GC_descr ld_descriptor; /* A simple length, bitmap,     */
-                                /* or procedure descriptor.     */
-};
-
-struct ComplexArrayDescriptor {
-        word ad_tag;
-#       define ARRAY_TAG 2
-        word ad_nelements;
-        union ComplexDescriptor * ad_element_descr;
-};
-
-struct SequenceDescriptor {
-        word sd_tag;
-#       define SEQUENCE_TAG 3
-        union ComplexDescriptor * sd_first;
-        union ComplexDescriptor * sd_second;
-};
-
-typedef union ComplexDescriptor {
-    struct LeafDescriptor ld;
-    struct ComplexArrayDescriptor ad;
-    struct SequenceDescriptor sd;
-} complex_descriptor;
-#define TAG ad.ad_tag
-
 #define ED_INITIAL_SIZE 100
 
 STATIC int GC_typed_mark_proc_index = 0; /* Indices of my mark          */
@@ -168,120 +132,6 @@ STATIC GC_descr GC_double_descr(GC_descr descriptor, size_t nwords)
     return descriptor;
 }
 
-STATIC complex_descriptor *GC_make_leaf_descriptor(word size,
-                                                   word nelements,
-                                                   GC_descr descriptor)
-{
-    complex_descriptor *result = (complex_descriptor *)
-                GC_malloc_atomic(sizeof(struct LeafDescriptor));
-
-    if (EXPECT(NULL == result, FALSE)) return NULL;
-
-    result -> ld.ld_tag = LEAF_TAG;
-    result -> ld.ld_size = size;
-    result -> ld.ld_nelements = nelements;
-    result -> ld.ld_descriptor = descriptor;
-    return result;
-}
-
-STATIC complex_descriptor *GC_make_sequence_descriptor(
-                                                complex_descriptor *first,
-                                                complex_descriptor *second)
-{
-    struct SequenceDescriptor *result = (struct SequenceDescriptor *)
-                GC_malloc(sizeof(struct SequenceDescriptor));
-                /* Note: for a reason, the sanitizer runtime complains  */
-                /* of insufficient space for complex_descriptor if the  */
-                /* pointer type of result variable is changed to.       */
-
-    if (EXPECT(NULL == result, FALSE)) return NULL;
-
-    /* Can't result in overly conservative marking, since tags are      */
-    /* very small integers. Probably faster than maintaining type info. */
-    result -> sd_tag = SEQUENCE_TAG;
-    result -> sd_first = first;
-    result -> sd_second = second;
-    GC_dirty(result);
-    REACHABLE_AFTER_DIRTY(first);
-    REACHABLE_AFTER_DIRTY(second);
-    return (complex_descriptor *)result;
-}
-
-#define SIMPLE  0
-#define LEAF    1
-#define COMPLEX 2
-#define NO_MEM  (-1)
-
-/* Build a descriptor for an array with nelements elements, each of     */
-/* which can be described by a simple descriptor.  We try to optimize   */
-/* some common cases.  If the result is COMPLEX, then a complex_descr*  */
-/* value is returned in *complex_d.  If the result is LEAF, then        */
-/* a LeafDescriptor value is built in the structure pointed to by leaf. */
-/* The tag in the leaf structure is not set.  If the result is SIMPLE,  */
-/* then a GC_descr value is returned in *simple_d.  If the result is    */
-/* NO_MEM, then we failed to allocate the descriptor.                   */
-/* The implementation knows that GC_DS_LENGTH is 0.  *leaf, *complex_d  */
-/* and *simple_d may be used as temporaries during the construction.    */
-STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
-                                    GC_descr descriptor, GC_descr *simple_d,
-                                    complex_descriptor **complex_d,
-                                    struct LeafDescriptor * leaf)
-{
-#   define OPT_THRESHOLD 50
-        /* For larger arrays, we try to combine descriptors of adjacent */
-        /* descriptors to speed up marking, and to reduce the amount    */
-        /* of space needed on the mark stack.                           */
-
-    if ((descriptor & GC_DS_TAGS) == GC_DS_LENGTH) {
-      if (descriptor == (GC_descr)size) {
-        *simple_d = nelements * descriptor;
-        return SIMPLE;
-      } else if (0 == descriptor) {
-        *simple_d = 0;
-        return SIMPLE;
-      }
-    }
-    if (nelements <= OPT_THRESHOLD) {
-      if (nelements <= 1) {
-        *simple_d = nelements == 1 ? descriptor : 0;
-        return SIMPLE;
-      }
-    } else if (size <= BITMAP_BITS/2
-               && (descriptor & GC_DS_TAGS) != GC_DS_PROC
-               && (size & (sizeof(word)-1)) == 0) {
-      complex_descriptor *one_element, *beginning;
-      int result = GC_make_array_descriptor(nelements / 2, 2 * size,
-                                            GC_double_descr(descriptor,
-                                                    BYTES_TO_WORDS(size)),
-                                            simple_d, complex_d, leaf);
-
-      if ((nelements & 1) == 0 || EXPECT(NO_MEM == result, FALSE))
-        return result;
-
-      one_element = GC_make_leaf_descriptor(size, 1, descriptor);
-      if (EXPECT(NULL == one_element, FALSE)) return NO_MEM;
-
-      beginning = *complex_d;
-      if (result != COMPLEX) {
-        beginning = SIMPLE == result ?
-                        GC_make_leaf_descriptor(size, 1, *simple_d) :
-                        GC_make_leaf_descriptor(leaf -> ld_size,
-                                                leaf -> ld_nelements,
-                                                leaf -> ld_descriptor);
-        if (EXPECT(NULL == beginning, FALSE)) return NO_MEM;
-      }
-      *complex_d = GC_make_sequence_descriptor(beginning, one_element);
-      if (EXPECT(NULL == *complex_d, FALSE)) return NO_MEM;
-
-      return COMPLEX;
-    }
-
-    leaf -> ld_size = size;
-    leaf -> ld_nelements = nelements;
-    leaf -> ld_descriptor = descriptor;
-    return LEAF;
-}
-
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
                                 mse * mark_stack_limit, word env);
 
@@ -292,22 +142,23 @@ STATIC void GC_init_explicit_typing(void)
 {
     unsigned i;
 
-    GC_STATIC_ASSERT(sizeof(struct LeafDescriptor) % sizeof(word) == 0);
-    /* Set up object kind with simple indirect descriptor. */
-      GC_explicit_kind = GC_new_kind_inner(GC_new_free_list_inner(),
+    /* Set up object kind with simple indirect descriptor.      */
+    /* Descriptor is in the last word of the object.            */
+    GC_typed_mark_proc_index = GC_new_proc_inner(GC_typed_mark_proc);
+    GC_explicit_kind = GC_new_kind_inner(GC_new_free_list_inner(),
                             (WORDS_TO_BYTES((word)-1) | GC_DS_PER_OBJECT),
                             TRUE, TRUE);
-                /* Descriptors are in the last word of the object. */
-      GC_typed_mark_proc_index = GC_new_proc_inner(GC_typed_mark_proc);
+
     /* Set up object kind with array descriptor. */
-      GC_array_mark_proc_index = GC_new_proc_inner(GC_array_mark_proc);
-      GC_array_kind = GC_new_kind_inner(GC_new_free_list_inner(),
+    GC_array_mark_proc_index = GC_new_proc_inner(GC_array_mark_proc);
+    GC_array_kind = GC_new_kind_inner(GC_new_free_list_inner(),
                             GC_MAKE_PROC(GC_array_mark_proc_index, 0),
                             FALSE, TRUE);
-      GC_bm_table[0] = GC_DS_BITMAP;
-      for (i = 1; i < WORDSZ/2; i++) {
-          GC_bm_table[i] = (((word)-1) << (WORDSZ - i)) | GC_DS_BITMAP;
-      }
+
+    GC_bm_table[0] = GC_DS_BITMAP;
+    for (i = 1; i < WORDSZ/2; i++) {
+      GC_bm_table[i] = (((word)-1) << (WORDSZ - i)) | GC_DS_BITMAP;
+    }
 }
 
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
@@ -350,149 +201,6 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
                         GC_MAKE_PROC(GC_typed_mark_proc_index, env + 1);
     }
     return mark_stack_ptr;
-}
-
-/* Return the size of the object described by d.  It would be faster to */
-/* store this directly, or to compute it as part of                     */
-/* GC_push_complex_descriptor, but hopefully it doesn't matter.         */
-STATIC word GC_descr_obj_size(complex_descriptor *d)
-{
-    switch(d -> TAG) {
-      case LEAF_TAG:
-        return d -> ld.ld_nelements * d -> ld.ld_size;
-      case ARRAY_TAG:
-        return d -> ad.ad_nelements
-               * GC_descr_obj_size(d -> ad.ad_element_descr);
-      case SEQUENCE_TAG:
-        return GC_descr_obj_size(d -> sd.sd_first)
-               + GC_descr_obj_size(d -> sd.sd_second);
-      default:
-        ABORT_RET("Bad complex descriptor");
-        return 0;
-    }
-}
-
-/* Push descriptors for the object at addr with complex descriptor d    */
-/* onto the mark stack.  Return 0 if the mark stack overflowed.         */
-STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
-                                        mse *msp, mse *msl)
-{
-    ptr_t current = (ptr_t)addr;
-    word nelements;
-    word sz;
-    word i;
-
-    switch(d -> TAG) {
-      case LEAF_TAG:
-        {
-          GC_descr descr = d -> ld.ld_descriptor;
-
-          nelements = d -> ld.ld_nelements;
-          if (msl - msp <= (ptrdiff_t)nelements) return NULL;
-          sz = d -> ld.ld_size;
-          for (i = 0; i < nelements; i++) {
-              msp++;
-              msp -> mse_start = current;
-              msp -> mse_descr.w = descr;
-              current += sz;
-          }
-          return msp;
-        }
-      case ARRAY_TAG:
-        {
-          complex_descriptor *descr = d -> ad.ad_element_descr;
-
-          nelements = d -> ad.ad_nelements;
-          sz = GC_descr_obj_size(descr);
-          for (i = 0; i < nelements; i++) {
-              msp = GC_push_complex_descriptor((word *)current, descr,
-                                                msp, msl);
-              if (NULL == msp) return NULL;
-              current += sz;
-          }
-          return msp;
-        }
-      case SEQUENCE_TAG:
-        {
-          sz = GC_descr_obj_size(d -> sd.sd_first);
-          msp = GC_push_complex_descriptor((word *)current, d -> sd.sd_first,
-                                           msp, msl);
-          if (NULL == msp) return NULL;
-          current += sz;
-          msp = GC_push_complex_descriptor((word *)current, d -> sd.sd_second,
-                                           msp, msl);
-          return msp;
-        }
-      default:
-        ABORT_RET("Bad complex descriptor");
-        return NULL;
-   }
-}
-
-GC_ATTR_NO_SANITIZE_THREAD
-static complex_descriptor *get_complex_descr(word *addr, size_t nwords)
-{
-  /* TODO: Do we need AO_load_acquire here?  This is normally called    */
-  /* with the world stopped, and at least in case of the signal-based   */
-  /* thread suspension there should be a barrier in sem_post() called   */
-  /* from GC_suspend_handler_inner.                                     */
-  return (complex_descriptor *)addr[nwords - 1];
-}
-
-#ifdef AO_HAVE_store_release
-# define set_complex_descr(op, nwords, d) \
-        AO_store_release((volatile AO_t *)(op) + (nwords) - 1, (AO_t)(d))
-#else
-# define set_complex_descr(op, nwords, d) \
-        (void)(((word *)(op))[(nwords) - 1] = (word)(d))
-#endif
-
-STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
-                                mse * mark_stack_limit,
-                                word env GC_ATTR_UNUSED)
-{
-    hdr * hhdr = HDR(addr);
-    word sz = hhdr -> hb_sz;
-    size_t nwords = (size_t)BYTES_TO_WORDS(sz);
-    complex_descriptor *descr = get_complex_descr(addr, nwords);
-    mse * orig_mark_stack_ptr = mark_stack_ptr;
-    mse * new_mark_stack_ptr;
-
-    if (NULL == descr) {
-        /* Found a reference to a free list entry.  Ignore it. */
-        return orig_mark_stack_ptr;
-    }
-    /* In use counts were already updated when array descriptor was     */
-    /* pushed.  Here we only replace it by subobject descriptors, so    */
-    /* no update is necessary.                                          */
-    new_mark_stack_ptr = GC_push_complex_descriptor(addr, descr,
-                                                    mark_stack_ptr,
-                                                    mark_stack_limit-1);
-    if (new_mark_stack_ptr == 0) {
-        /* Explicitly instruct Clang Static Analyzer that ptr is non-null. */
-        if (NULL == mark_stack_ptr) ABORT("Bad mark_stack_ptr");
-
-        /* Doesn't fit.  Conservatively push the whole array as a unit  */
-        /* and request a mark stack expansion.                          */
-        /* This cannot cause a mark stack overflow, since it replaces   */
-        /* the original array entry.                                    */
-#       ifdef PARALLEL_MARK
-            /* We might be using a local_mark_stack in parallel mode.   */
-            if (GC_mark_stack + GC_mark_stack_size == mark_stack_limit)
-#       endif
-        {
-            GC_mark_stack_too_small = TRUE;
-        }
-        new_mark_stack_ptr = orig_mark_stack_ptr + 1;
-        new_mark_stack_ptr -> mse_start = (ptr_t)addr;
-        new_mark_stack_ptr -> mse_descr.w = sz | GC_DS_LENGTH;
-    } else {
-        /* Push descriptor itself */
-        new_mark_stack_ptr++;
-        new_mark_stack_ptr -> mse_start = (ptr_t)(addr + nwords - 1);
-        new_mark_stack_ptr -> mse_descr.w = sizeof(word) | GC_DS_LENGTH;
-    }
-    return new_mark_stack_ptr;
 }
 
 GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
@@ -561,6 +269,14 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
     return result;
 }
 
+#ifdef AO_HAVE_store_release
+# define set_complex_descr(op, nwords, d) \
+        AO_store_release((volatile AO_t *)(op) + (nwords) - 1, (AO_t)(d))
+#else
+# define set_complex_descr(op, nwords, d) \
+        (void)(((word *)(op))[(nwords) - 1] = (word)(d))
+#endif
+
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
                                                                 GC_descr d)
 {
@@ -626,6 +342,155 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     return op;
 }
 
+/* Array descriptors.  GC_array_mark_proc understands these.    */
+/* We may eventually need to add provisions for headers and     */
+/* trailers.  Hence we provide for tree structured descriptors, */
+/* though we don't really use them currently.                   */
+
+struct LeafDescriptor {         /* Describes simple array.      */
+  word ld_tag;
+# define LEAF_TAG 1
+  word ld_size;                 /* Bytes per element;           */
+                                /* multiple of ALIGNMENT.       */
+  word ld_nelements;            /* Number of elements.          */
+  GC_descr ld_descriptor;       /* A simple length, bitmap,     */
+                                /* or procedure descriptor.     */
+};
+
+struct ComplexArrayDescriptor {
+  word ad_tag;
+# define ARRAY_TAG 2
+  word ad_nelements;
+  union ComplexDescriptor *ad_element_descr;
+};
+
+struct SequenceDescriptor {
+  word sd_tag;
+# define SEQUENCE_TAG 3
+  union ComplexDescriptor *sd_first;
+  union ComplexDescriptor *sd_second;
+};
+
+typedef union ComplexDescriptor {
+  struct LeafDescriptor ld;
+  struct ComplexArrayDescriptor ad;
+  struct SequenceDescriptor sd;
+} complex_descriptor;
+
+STATIC complex_descriptor *GC_make_leaf_descriptor(word size, word nelements,
+                                                   GC_descr descriptor)
+{
+  complex_descriptor *result = (complex_descriptor *)
+                GC_malloc_atomic(sizeof(struct LeafDescriptor));
+
+  if (EXPECT(NULL == result, FALSE)) return NULL;
+
+  result -> ld.ld_tag = LEAF_TAG;
+  result -> ld.ld_size = size;
+  result -> ld.ld_nelements = nelements;
+  result -> ld.ld_descriptor = descriptor;
+  return result;
+}
+
+STATIC complex_descriptor *GC_make_sequence_descriptor(
+                                                complex_descriptor *first,
+                                                complex_descriptor *second)
+{
+  struct SequenceDescriptor *result = (struct SequenceDescriptor *)
+                GC_malloc(sizeof(struct SequenceDescriptor));
+                /* Note: for a reason, the sanitizer runtime complains  */
+                /* of insufficient space for complex_descriptor if the  */
+                /* pointer type of result variable is changed to.       */
+
+  if (EXPECT(NULL == result, FALSE)) return NULL;
+
+  /* Can't result in overly conservative marking, since tags are        */
+  /* very small integers. Probably faster than maintaining type info.   */
+  result -> sd_tag = SEQUENCE_TAG;
+  result -> sd_first = first;
+  result -> sd_second = second;
+  GC_dirty(result);
+  REACHABLE_AFTER_DIRTY(first);
+  REACHABLE_AFTER_DIRTY(second);
+  return (complex_descriptor *)result;
+}
+
+#define NO_MEM  (-1)
+#define SIMPLE  0
+#define LEAF    1
+#define COMPLEX 2
+
+/* Build a descriptor for an array with nelements elements, each of     */
+/* which can be described by a simple descriptor.  We try to optimize   */
+/* some common cases.  If the result is COMPLEX, then a complex_descr*  */
+/* value is returned in *complex_d.  If the result is LEAF, then        */
+/* a LeafDescriptor value is built in the structure pointed to by leaf. */
+/* The tag in the leaf structure is not set.  If the result is SIMPLE,  */
+/* then a GC_descr value is returned in *simple_d.  If the result is    */
+/* NO_MEM, then we failed to allocate the descriptor.                   */
+/* The implementation knows that GC_DS_LENGTH is 0.  *leaf, *complex_d  */
+/* and *simple_d may be used as temporaries during the construction.    */
+STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
+                                    GC_descr descriptor, GC_descr *simple_d,
+                                    complex_descriptor **complex_d,
+                                    struct LeafDescriptor *leaf)
+{
+# define OPT_THRESHOLD 50
+        /* For larger arrays, we try to combine descriptors of adjacent */
+        /* descriptors to speed up marking, and to reduce the amount    */
+        /* of space needed on the mark stack.                           */
+
+  if ((descriptor & GC_DS_TAGS) == GC_DS_LENGTH) {
+    if (descriptor == (GC_descr)size) {
+      *simple_d = nelements * descriptor;
+      return SIMPLE;
+    } else if (0 == descriptor) {
+      *simple_d = 0;
+      return SIMPLE;
+    }
+  }
+
+  if (nelements <= OPT_THRESHOLD) {
+    if (nelements <= 1) {
+      *simple_d = nelements == 1 ? descriptor : 0;
+      return SIMPLE;
+    }
+  } else if (size <= BITMAP_BITS/2
+             && (descriptor & GC_DS_TAGS) != GC_DS_PROC
+             && (size & (sizeof(word)-1)) == 0) {
+    complex_descriptor *one_element, *beginning;
+    int result = GC_make_array_descriptor(nelements / 2, 2 * size,
+                                          GC_double_descr(descriptor,
+                                                  BYTES_TO_WORDS(size)),
+                                          simple_d, complex_d, leaf);
+
+    if ((nelements & 1) == 0 || EXPECT(NO_MEM == result, FALSE))
+      return result;
+
+    one_element = GC_make_leaf_descriptor(size, 1, descriptor);
+    if (EXPECT(NULL == one_element, FALSE)) return NO_MEM;
+
+    beginning = *complex_d;
+    if (result != COMPLEX) {
+      beginning = SIMPLE == result ?
+                        GC_make_leaf_descriptor(size, 1, *simple_d) :
+                        GC_make_leaf_descriptor(leaf -> ld_size,
+                                                leaf -> ld_nelements,
+                                                leaf -> ld_descriptor);
+      if (EXPECT(NULL == beginning, FALSE)) return NO_MEM;
+    }
+    *complex_d = GC_make_sequence_descriptor(beginning, one_element);
+    if (EXPECT(NULL == *complex_d, FALSE)) return NO_MEM;
+
+    return COMPLEX;
+  }
+
+  leaf -> ld_size = size;
+  leaf -> ld_nelements = nelements;
+  leaf -> ld_descriptor = descriptor;
+  return LEAF;
+}
+
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
                                                         size_t lb, GC_descr d)
 {
@@ -636,6 +501,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     int descr_type;
     struct LeafDescriptor leaf;
 
+    GC_STATIC_ASSERT(sizeof(struct LeafDescriptor) % sizeof(word) == 0);
     GC_ASSERT(GC_explicit_typing_initialized);
     if (EXPECT((lb | n) > GC_SQRT_SIZE_MAX, FALSE) /* fast initial check */
         && lb > 0 && n > GC_SIZE_MAX / lb)
@@ -698,4 +564,136 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
         }
     }
     return op;
+}
+
+/* Return the size of the object described by d.  It would be faster to */
+/* store this directly, or to compute it as part of                     */
+/* GC_push_complex_descriptor, but hopefully it does not matter.        */
+STATIC word GC_descr_obj_size(complex_descriptor *d)
+{
+  switch(d -> ad.ad_tag) {
+  case LEAF_TAG:
+    return d -> ld.ld_nelements * d -> ld.ld_size;
+  case ARRAY_TAG:
+    return d -> ad.ad_nelements
+           * GC_descr_obj_size(d -> ad.ad_element_descr);
+  case SEQUENCE_TAG:
+    return GC_descr_obj_size(d -> sd.sd_first)
+           + GC_descr_obj_size(d -> sd.sd_second);
+  default:
+    ABORT_RET("Bad complex descriptor");
+    return 0;
+  }
+}
+
+/* Push descriptors for the object at addr with complex descriptor d    */
+/* onto the mark stack.  Return NULL if the mark stack overflowed.      */
+STATIC mse *GC_push_complex_descriptor(word *addr,
+                                       complex_descriptor *d,
+                                       mse *msp, mse *msl)
+{
+  ptr_t current = (ptr_t)addr;
+  word nelements;
+  word sz;
+  word i;
+
+  switch(d -> ad.ad_tag) {
+  case LEAF_TAG:
+  {
+    GC_descr descr = d -> ld.ld_descriptor;
+
+    nelements = d -> ld.ld_nelements;
+    if (msl - msp <= (ptrdiff_t)nelements) return NULL;
+    sz = d -> ld.ld_size;
+    for (i = 0; i < nelements; i++) {
+      msp++;
+      msp -> mse_start = current;
+      msp -> mse_descr.w = descr;
+      current += sz;
+    }
+    break;
+  }
+  case ARRAY_TAG:
+  {
+    complex_descriptor *descr = d -> ad.ad_element_descr;
+
+    nelements = d -> ad.ad_nelements;
+    sz = GC_descr_obj_size(descr);
+    for (i = 0; i < nelements; i++) {
+      msp = GC_push_complex_descriptor((word *)current, descr, msp, msl);
+      if (NULL == msp) return NULL;
+      current += sz;
+    }
+    break;
+  }
+  case SEQUENCE_TAG:
+    sz = GC_descr_obj_size(d -> sd.sd_first);
+    msp = GC_push_complex_descriptor((word *)current,
+                                     d -> sd.sd_first, msp, msl);
+    if (NULL == msp) return NULL;
+    current += sz;
+    msp = GC_push_complex_descriptor((word *)current,
+                                     d -> sd.sd_second, msp, msl);
+    break;
+  default:
+    ABORT("Bad complex descriptor");
+  }
+  return msp;
+}
+
+GC_ATTR_NO_SANITIZE_THREAD
+static complex_descriptor *get_complex_descr(word *addr, size_t nwords)
+{
+  /* TODO: Do we need AO_load_acquire here?  This is normally called    */
+  /* with the world stopped, and at least in case of the signal-based   */
+  /* thread suspension there should be a barrier in sem_post() called   */
+  /* from GC_suspend_handler_inner.                                     */
+  return (complex_descriptor *)addr[nwords - 1];
+}
+
+/* Used by GC_calloc_explicitly_typed via GC_array_kind.        */
+STATIC mse *GC_array_mark_proc(word *addr, mse *mark_stack_ptr,
+                               mse *mark_stack_limit, word env GC_ATTR_UNUSED)
+{
+  hdr *hhdr = HDR(addr);
+  word sz = hhdr -> hb_sz;
+  size_t nwords = (size_t)BYTES_TO_WORDS(sz);
+  complex_descriptor *descr = get_complex_descr(addr, nwords);
+  mse *orig_mark_stack_ptr = mark_stack_ptr;
+  mse *new_mark_stack_ptr;
+
+  if (NULL == descr) {
+    /* Found a reference to a free list entry.  Ignore it. */
+    return orig_mark_stack_ptr;
+  }
+  /* In use counts were already updated when array descriptor was       */
+  /* pushed.  Here we only replace it by subobject descriptors, so      */
+  /* no update is necessary.                                            */
+  new_mark_stack_ptr = GC_push_complex_descriptor(addr, descr,
+                                                  mark_stack_ptr,
+                                                  mark_stack_limit-1);
+  if (new_mark_stack_ptr == 0) {
+    /* Explicitly instruct Clang Static Analyzer that ptr is non-null.  */
+    if (NULL == mark_stack_ptr) ABORT("Bad mark_stack_ptr");
+
+    /* Does not fit.  Conservatively push the whole array as a unit and */
+    /* request a mark stack expansion.  This cannot cause a mark stack  */
+    /* overflow, since it replaces the original array entry.            */
+#   ifdef PARALLEL_MARK
+      /* We might be using a local_mark_stack in parallel mode. */
+      if (GC_mark_stack + GC_mark_stack_size == mark_stack_limit)
+#   endif
+    {
+      GC_mark_stack_too_small = TRUE;
+    }
+    new_mark_stack_ptr = orig_mark_stack_ptr + 1;
+    new_mark_stack_ptr -> mse_start = (ptr_t)addr;
+    new_mark_stack_ptr -> mse_descr.w = sz | GC_DS_LENGTH;
+  } else {
+    /* Push descriptor itself.  */
+    new_mark_stack_ptr++;
+    new_mark_stack_ptr -> mse_start = (ptr_t)(addr + nwords - 1);
+    new_mark_stack_ptr -> mse_descr.w = sizeof(word) | GC_DS_LENGTH;
+  }
+  return new_mark_stack_ptr;
 }
