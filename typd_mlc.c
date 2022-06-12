@@ -118,18 +118,17 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
 STATIC GC_descr GC_bm_table[WORDSZ/2];
 
 /* Return a descriptor for the concatenation of 2 nwords long objects,  */
-/* each of which is described by descriptor.                            */
-/* The result is known to be short enough to fit into a bitmap          */
-/* descriptor.                                                          */
-/* Descriptor is a GC_DS_LENGTH or GC_DS_BITMAP descriptor.             */
-STATIC GC_descr GC_double_descr(GC_descr descriptor, size_t nwords)
+/* each of which is described by descriptor d.  The result is known     */
+/* to be short enough to fit into a bitmap descriptor.                  */
+/* d is a GC_DS_LENGTH or GC_DS_BITMAP descriptor.                      */
+STATIC GC_descr GC_double_descr(GC_descr d, size_t nwords)
 {
     GC_ASSERT(GC_bm_table[0] == GC_DS_BITMAP); /* bm table is initialized */
-    if ((descriptor & GC_DS_TAGS) == GC_DS_LENGTH) {
-        descriptor = GC_bm_table[BYTES_TO_WORDS((word)descriptor)];
+    if ((d & GC_DS_TAGS) == GC_DS_LENGTH) {
+        d = GC_bm_table[BYTES_TO_WORDS((word)d)];
     }
-    descriptor |= (descriptor & ~GC_DS_TAGS) >> nwords;
-    return descriptor;
+    d |= (d & ~GC_DS_TAGS) >> nwords;
+    return d;
 }
 
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
@@ -206,7 +205,7 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
 GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 {
     signed_word last_set_bit = (signed_word)len - 1;
-    GC_descr result;
+    GC_descr d;
     DCL_LOCK_STATE;
 
 #   if defined(AO_HAVE_load_acquire) && defined(AO_HAVE_store_release)
@@ -251,12 +250,12 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 
         /* Hopefully the common case.                   */
         /* Build bitmap descriptor (with bits reversed) */
-        result = SIGNB;
+        d = SIGNB;
         for (i = last_set_bit - 1; i >= 0; i--) {
-            result >>= 1;
-            if (GC_get_bit(bm, i)) result |= SIGNB;
+            d >>= 1;
+            if (GC_get_bit(bm, i)) d |= SIGNB;
         }
-        result |= GC_DS_BITMAP;
+        d |= GC_DS_BITMAP;
     } else {
         signed_word index = GC_add_ext_descriptor(bm, (word)last_set_bit + 1);
 
@@ -264,16 +263,16 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
             /* Out of memory: use a conservative approximation. */
             return WORDS_TO_BYTES(last_set_bit + 1) | GC_DS_LENGTH;
         }
-        result = GC_MAKE_PROC(GC_typed_mark_proc_index, (word)index);
+        d = GC_MAKE_PROC(GC_typed_mark_proc_index, (word)index);
     }
-    return result;
+    return d;
 }
 
 #ifdef AO_HAVE_store_release
-# define set_complex_descr(op, nwords, d) \
+# define set_obj_descr(op, nwords, d) \
         AO_store_release((volatile AO_t *)(op) + (nwords) - 1, (AO_t)(d))
 #else
-# define set_complex_descr(op, nwords, d) \
+# define set_obj_descr(op, nwords, d) \
         (void)(((word *)(op))[(nwords) - 1] = (word)(d))
 #endif
 
@@ -291,7 +290,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     /* It is not safe to use GC_size_map[lb] to compute nwords here as  */
     /* the former might be updated asynchronously.                      */
     nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));
-    set_complex_descr(op, nwords, d);
+    set_obj_descr(op, nwords, d);
     GC_dirty((word *)op + nwords - 1);
     REACHABLE_AFTER_DIRTY(d);
     return op;
@@ -336,7 +335,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
         if (EXPECT(NULL == op, FALSE)) return NULL;
         lg = BYTES_TO_GRANULES(GC_size(op));
     }
-    set_complex_descr(op, GRANULES_TO_WORDS(lg), d);
+    set_obj_descr(op, GRANULES_TO_WORDS(lg), d);
     GC_dirty((word *)op + GRANULES_TO_WORDS(lg) - 1);
     REACHABLE_AFTER_DIRTY(d);
     return op;
@@ -378,7 +377,7 @@ typedef union ComplexDescriptor {
 } complex_descriptor;
 
 STATIC complex_descriptor *GC_make_leaf_descriptor(word size, word nelements,
-                                                   GC_descr descriptor)
+                                                   GC_descr d)
 {
   complex_descriptor *result = (complex_descriptor *)
                 GC_malloc_atomic(sizeof(struct LeafDescriptor));
@@ -388,7 +387,7 @@ STATIC complex_descriptor *GC_make_leaf_descriptor(word size, word nelements,
   result -> ld.ld_tag = LEAF_TAG;
   result -> ld.ld_size = size;
   result -> ld.ld_nelements = nelements;
-  result -> ld.ld_descriptor = descriptor;
+  result -> ld.ld_descriptor = d;
   return result;
 }
 
@@ -421,73 +420,72 @@ STATIC complex_descriptor *GC_make_sequence_descriptor(
 #define COMPLEX 2
 
 /* Build a descriptor for an array with nelements elements, each of     */
-/* which can be described by a simple descriptor.  We try to optimize   */
-/* some common cases.  If the result is COMPLEX, then a complex_descr*  */
-/* value is returned in *complex_d.  If the result is LEAF, then        */
-/* a LeafDescriptor value is built in the structure pointed to by leaf. */
-/* The tag in the leaf structure is not set.  If the result is SIMPLE,  */
-/* then a GC_descr value is returned in *simple_d.  If the result is    */
-/* NO_MEM, then we failed to allocate the descriptor.                   */
-/* The implementation knows that GC_DS_LENGTH is 0.  *leaf, *complex_d  */
-/* and *simple_d may be used as temporaries during the construction.    */
+/* which can be described by a simple descriptor d.  We try to optimize */
+/* some common cases.  If the result is COMPLEX, a complex_descriptor*  */
+/* value is returned in *pcomplex_d.  If the result is LEAF, then a     */
+/* LeafDescriptor value is built in the structure pointed to by pleaf.  */
+/* The tag in the *pleaf structure is not set.  If the result is        */
+/* SIMPLE, then a GC_descr value is returned in *psimple_d.  If the     */
+/* result is NO_MEM, then we failed to allocate the descriptor.         */
+/* The implementation assumes GC_DS_LENGTH is 0.  *pleaf, *pcomplex_d   */
+/* and *psimple_d may be used as temporaries during the construction.   */
 STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
-                                    GC_descr descriptor, GC_descr *simple_d,
-                                    complex_descriptor **complex_d,
-                                    struct LeafDescriptor *leaf)
+                                    GC_descr d, GC_descr *psimple_d,
+                                    complex_descriptor **pcomplex_d,
+                                    struct LeafDescriptor *pleaf)
 {
 # define OPT_THRESHOLD 50
         /* For larger arrays, we try to combine descriptors of adjacent */
         /* descriptors to speed up marking, and to reduce the amount    */
         /* of space needed on the mark stack.                           */
 
-  if ((descriptor & GC_DS_TAGS) == GC_DS_LENGTH) {
-    if (descriptor == (GC_descr)size) {
-      *simple_d = nelements * descriptor;
+  if ((d & GC_DS_TAGS) == GC_DS_LENGTH) {
+    if (d == (GC_descr)size) {
+      *psimple_d = nelements * d; /* no overflow guaranteed by caller */
       return SIMPLE;
-    } else if (0 == descriptor) {
-      *simple_d = 0;
+    } else if (0 == d) {
+      *psimple_d = 0;
       return SIMPLE;
     }
   }
 
   if (nelements <= OPT_THRESHOLD) {
     if (nelements <= 1) {
-      *simple_d = nelements == 1 ? descriptor : 0;
+      *psimple_d = nelements == 1 ? d : 0;
       return SIMPLE;
     }
   } else if (size <= BITMAP_BITS/2
-             && (descriptor & GC_DS_TAGS) != GC_DS_PROC
+             && (d & GC_DS_TAGS) != GC_DS_PROC
              && (size & (sizeof(word)-1)) == 0) {
     complex_descriptor *one_element, *beginning;
     int result = GC_make_array_descriptor(nelements / 2, 2 * size,
-                                          GC_double_descr(descriptor,
-                                                  BYTES_TO_WORDS(size)),
-                                          simple_d, complex_d, leaf);
+                                GC_double_descr(d, BYTES_TO_WORDS(size)),
+                                psimple_d, pcomplex_d, pleaf);
 
     if ((nelements & 1) == 0 || EXPECT(NO_MEM == result, FALSE))
       return result;
 
-    one_element = GC_make_leaf_descriptor(size, 1, descriptor);
+    one_element = GC_make_leaf_descriptor(size, 1, d);
     if (EXPECT(NULL == one_element, FALSE)) return NO_MEM;
 
-    beginning = *complex_d;
+    beginning = *pcomplex_d;
     if (result != COMPLEX) {
       beginning = SIMPLE == result ?
-                        GC_make_leaf_descriptor(size, 1, *simple_d) :
-                        GC_make_leaf_descriptor(leaf -> ld_size,
-                                                leaf -> ld_nelements,
-                                                leaf -> ld_descriptor);
+                        GC_make_leaf_descriptor(size, 1, *psimple_d) :
+                        GC_make_leaf_descriptor(pleaf -> ld_size,
+                                                pleaf -> ld_nelements,
+                                                pleaf -> ld_descriptor);
       if (EXPECT(NULL == beginning, FALSE)) return NO_MEM;
     }
-    *complex_d = GC_make_sequence_descriptor(beginning, one_element);
-    if (EXPECT(NULL == *complex_d, FALSE)) return NO_MEM;
+    *pcomplex_d = GC_make_sequence_descriptor(beginning, one_element);
+    if (EXPECT(NULL == *pcomplex_d, FALSE)) return NO_MEM;
 
     return COMPLEX;
   }
 
-  leaf -> ld_size = size;
-  leaf -> ld_nelements = nelements;
-  leaf -> ld_descriptor = descriptor;
+  pleaf -> ld_size = size;
+  pleaf -> ld_nelements = nelements;
+  pleaf -> ld_descriptor = d;
   return LEAF;
 }
 
@@ -496,8 +494,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
 {
     void *op;
     size_t nwords;
-    GC_descr simple_descr;
-    complex_descriptor *complex_descr;
+    GC_descr simple_d;
+    complex_descriptor *complex_d;
     int descr_type;
     struct LeafDescriptor leaf;
 
@@ -507,14 +505,14 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
         && lb > 0 && n > GC_SIZE_MAX / lb)
       return (*GC_get_oom_fn())(GC_SIZE_MAX); /* n*lb overflow */
 
-    descr_type = GC_make_array_descriptor((word)n, (word)lb, d, &simple_descr,
-                                          &complex_descr, &leaf);
+    descr_type = GC_make_array_descriptor((word)n, (word)lb, d,
+                                          &simple_d, &complex_d, &leaf);
     lb *= n;
     switch(descr_type) {
         case NO_MEM:
             return NULL;
         case SIMPLE:
-            return GC_malloc_explicitly_typed(lb, simple_descr);
+            return GC_malloc_explicitly_typed(lb, simple_d);
         case LEAF:
             lb = SIZET_SAT_ADD(lb,
                         sizeof(struct LeafDescriptor) + TYPD_EXTRA_BYTES);
@@ -546,12 +544,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
         lp -> ld_nelements = leaf.ld_nelements;
         lp -> ld_descriptor = leaf.ld_descriptor;
 #     endif
-      set_complex_descr(op, nwords, lp);
+      set_obj_descr(op, nwords, lp);
     } else {
 #     ifndef GC_NO_FINALIZATION
-        set_complex_descr(op, nwords, complex_descr);
+        set_obj_descr(op, nwords, complex_d);
         GC_dirty((word *)op + nwords - 1);
-        REACHABLE_AFTER_DIRTY(complex_descr);
+        REACHABLE_AFTER_DIRTY(complex_d);
 
         /* Make sure the descriptor is cleared once there is any danger */
         /* it may have been collected.                                  */
@@ -566,74 +564,72 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     return op;
 }
 
-/* Return the size of the object described by d.  It would be faster to */
-/* store this directly, or to compute it as part of                     */
+/* Return the size of the object described by complex_d.  It would be   */
+/* faster to store this directly, or to compute it as part of           */
 /* GC_push_complex_descriptor, but hopefully it does not matter.        */
-STATIC word GC_descr_obj_size(complex_descriptor *d)
+STATIC word GC_descr_obj_size(complex_descriptor *complex_d)
 {
-  switch(d -> ad.ad_tag) {
+  switch(complex_d -> ad.ad_tag) {
   case LEAF_TAG:
-    return d -> ld.ld_nelements * d -> ld.ld_size;
+    return complex_d -> ld.ld_nelements * complex_d -> ld.ld_size;
   case ARRAY_TAG:
-    return d -> ad.ad_nelements
-           * GC_descr_obj_size(d -> ad.ad_element_descr);
+    return complex_d -> ad.ad_nelements
+           * GC_descr_obj_size(complex_d -> ad.ad_element_descr);
   case SEQUENCE_TAG:
-    return GC_descr_obj_size(d -> sd.sd_first)
-           + GC_descr_obj_size(d -> sd.sd_second);
+    return GC_descr_obj_size(complex_d -> sd.sd_first)
+           + GC_descr_obj_size(complex_d -> sd.sd_second);
   default:
     ABORT_RET("Bad complex descriptor");
     return 0;
   }
 }
 
-/* Push descriptors for the object at addr with complex descriptor d    */
+/* Push descriptors for the object at addr with complex descriptor      */
 /* onto the mark stack.  Return NULL if the mark stack overflowed.      */
 STATIC mse *GC_push_complex_descriptor(word *addr,
-                                       complex_descriptor *d,
+                                       complex_descriptor *complex_d,
                                        mse *msp, mse *msl)
 {
   ptr_t current = (ptr_t)addr;
   word nelements;
   word sz;
   word i;
+  GC_descr d;
+  complex_descriptor *element_descr;
 
-  switch(d -> ad.ad_tag) {
+  switch(complex_d -> ad.ad_tag) {
   case LEAF_TAG:
-  {
-    GC_descr descr = d -> ld.ld_descriptor;
+    d = complex_d -> ld.ld_descriptor;
+    nelements = complex_d -> ld.ld_nelements;
+    sz = complex_d -> ld.ld_size;
 
-    nelements = d -> ld.ld_nelements;
-    if (msl - msp <= (ptrdiff_t)nelements) return NULL;
-    sz = d -> ld.ld_size;
+    if (EXPECT(msl - msp <= (ptrdiff_t)nelements, FALSE)) return NULL;
     for (i = 0; i < nelements; i++) {
       msp++;
       msp -> mse_start = current;
-      msp -> mse_descr.w = descr;
+      msp -> mse_descr.w = d;
       current += sz;
     }
     break;
-  }
   case ARRAY_TAG:
-  {
-    complex_descriptor *descr = d -> ad.ad_element_descr;
-
-    nelements = d -> ad.ad_nelements;
-    sz = GC_descr_obj_size(descr);
+    element_descr = complex_d -> ad.ad_element_descr;
+    nelements = complex_d -> ad.ad_nelements;
+    sz = GC_descr_obj_size(element_descr);
     for (i = 0; i < nelements; i++) {
-      msp = GC_push_complex_descriptor((word *)current, descr, msp, msl);
-      if (NULL == msp) return NULL;
+      msp = GC_push_complex_descriptor((word *)current, element_descr,
+                                       msp, msl);
+      if (EXPECT(NULL == msp, FALSE)) return NULL;
       current += sz;
     }
     break;
-  }
   case SEQUENCE_TAG:
-    sz = GC_descr_obj_size(d -> sd.sd_first);
+    sz = GC_descr_obj_size(complex_d -> sd.sd_first);
     msp = GC_push_complex_descriptor((word *)current,
-                                     d -> sd.sd_first, msp, msl);
-    if (NULL == msp) return NULL;
+                                     complex_d -> sd.sd_first, msp, msl);
+    if (EXPECT(NULL == msp, FALSE)) return NULL;
     current += sz;
     msp = GC_push_complex_descriptor((word *)current,
-                                     d -> sd.sd_second, msp, msl);
+                                     complex_d -> sd.sd_second, msp, msl);
     break;
   default:
     ABORT("Bad complex descriptor");
@@ -658,18 +654,18 @@ STATIC mse *GC_array_mark_proc(word *addr, mse *mark_stack_ptr,
   hdr *hhdr = HDR(addr);
   word sz = hhdr -> hb_sz;
   size_t nwords = (size_t)BYTES_TO_WORDS(sz);
-  complex_descriptor *descr = get_complex_descr(addr, nwords);
+  complex_descriptor *complex_d = get_complex_descr(addr, nwords);
   mse *orig_mark_stack_ptr = mark_stack_ptr;
   mse *new_mark_stack_ptr;
 
-  if (NULL == descr) {
+  if (NULL == complex_d) {
     /* Found a reference to a free list entry.  Ignore it. */
     return orig_mark_stack_ptr;
   }
   /* In use counts were already updated when array descriptor was       */
   /* pushed.  Here we only replace it by subobject descriptors, so      */
   /* no update is necessary.                                            */
-  new_mark_stack_ptr = GC_push_complex_descriptor(addr, descr,
+  new_mark_stack_ptr = GC_push_complex_descriptor(addr, complex_d,
                                                   mark_stack_ptr,
                                                   mark_stack_limit-1);
   if (new_mark_stack_ptr == 0) {
