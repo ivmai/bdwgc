@@ -351,7 +351,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 struct LeafDescriptor {         /* Describes simple array.      */
   word ld_tag;
 # define LEAF_TAG 1
-  word ld_size;                 /* Bytes per element;           */
+  word ld_size;                 /* Bytes per element; non-zero, */
                                 /* multiple of ALIGNMENT.       */
   word ld_nelements;            /* Number of elements.          */
   GC_descr ld_descriptor;       /* A simple length, bitmap,     */
@@ -384,6 +384,7 @@ STATIC complex_descriptor *GC_make_leaf_descriptor(word size, word nelements,
   complex_descriptor *result = (complex_descriptor *)
                 GC_malloc_atomic(sizeof(struct LeafDescriptor));
 
+  GC_ASSERT(size != 0);
   if (EXPECT(NULL == result, FALSE)) return NULL;
 
   result -> ld.ld_tag = LEAF_TAG;
@@ -441,6 +442,7 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
         /* descriptors to speed up marking, and to reduce the amount    */
         /* of space needed on the mark stack.                           */
 
+  GC_ASSERT(size != 0);
   if ((d & GC_DS_TAGS) == GC_DS_LENGTH) {
     if (d == (GC_descr)size) {
       *psimple_d = nelements * d; /* no overflow guaranteed by caller */
@@ -607,6 +609,7 @@ STATIC mse *GC_push_complex_descriptor(word *addr,
     sz = complex_d -> ld.ld_size;
 
     if (EXPECT(msl - msp <= (ptrdiff_t)nelements, FALSE)) return NULL;
+    GC_ASSERT(sz != 0);
     for (i = 0; i < nelements; i++) {
       msp++;
       msp -> mse_start = current;
@@ -618,6 +621,7 @@ STATIC mse *GC_push_complex_descriptor(word *addr,
     element_descr = complex_d -> ad.ad_element_descr;
     nelements = complex_d -> ad.ad_nelements;
     sz = GC_descr_obj_size(element_descr);
+    GC_ASSERT(sz != 0 || 0 == nelements);
     for (i = 0; i < nelements; i++) {
       msp = GC_push_complex_descriptor((word *)current, element_descr,
                                        msp, msl);
@@ -630,6 +634,7 @@ STATIC mse *GC_push_complex_descriptor(word *addr,
     msp = GC_push_complex_descriptor((word *)current,
                                      complex_d -> sd.sd_first, msp, msl);
     if (EXPECT(NULL == msp, FALSE)) return NULL;
+    GC_ASSERT(sz != 0);
     current += sz;
     msp = GC_push_complex_descriptor((word *)current,
                                      complex_d -> sd.sd_second, msp, msl);
