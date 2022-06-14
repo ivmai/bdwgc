@@ -537,19 +537,19 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
                 (struct LeafDescriptor *)((word *)op + nwords -
                         (BYTES_TO_WORDS(sizeof(struct LeafDescriptor)) + 1));
 
-      /* Hold the allocation lock while writing a complex descriptor    */
-      /* to the object to ensure that the descriptor is seen by         */
-      /* GC_array_mark_proc as expected.                                */
-      /* TODO: It should be possible to replace locking with the atomic */
-      /* operations (with the release barrier here) but, in this case,  */
-      /* avoiding the acquire barrier in GC_array_mark_proc and its     */
-      /* callee seems to be tricky as GC_mark_some might be invoked     */
-      /* with the world running.                                        */
-      LOCK();
       lp -> ld_tag = LEAF_TAG;
       lp -> ld_size = leaf.ld_size;
       lp -> ld_nelements = leaf.ld_nelements;
       lp -> ld_descriptor = leaf.ld_descriptor;
+      /* Hold the allocation lock while writing the descriptor word     */
+      /* to the object to ensure that the descriptor contents are seen  */
+      /* by GC_array_mark_proc as expected.                             */
+      /* TODO: It should be possible to replace locking with the atomic */
+      /* operations (with the release barrier here) but, in this case,  */
+      /* avoiding the acquire barrier in GC_array_mark_proc seems to    */
+      /* be tricky as GC_mark_some might be invoked with the world      */
+      /* running.                                                       */
+      LOCK();
       ((word *)op)[nwords - 1] = (word)lp;
       UNLOCK();
     } else {
