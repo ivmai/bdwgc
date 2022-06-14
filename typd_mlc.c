@@ -502,6 +502,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     complex_descriptor *complex_d;
     int descr_type;
     struct LeafDescriptor leaf;
+    DCL_LOCK_STATE;
 
     GC_STATIC_ASSERT(sizeof(struct LeafDescriptor) % sizeof(word) == 0);
     GC_ASSERT(GC_explicit_typing_initialized);
@@ -532,27 +533,31 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));
     if (descr_type == LEAF) {
       /* Set up the descriptor inside the object itself.        */
-      volatile struct LeafDescriptor * lp =
+      struct LeafDescriptor *lp =
                 (struct LeafDescriptor *)((word *)op + nwords -
                         (BYTES_TO_WORDS(sizeof(struct LeafDescriptor)) + 1));
 
-#     ifdef AO_HAVE_store
-        AO_store((volatile AO_t *)&(lp -> ld_tag), LEAF_TAG);
-        AO_store((volatile AO_t *)&(lp -> ld_size), (AO_t)leaf.ld_size);
-        AO_store((volatile AO_t *)&(lp -> ld_nelements),
-                 (AO_t)leaf.ld_nelements);
-        AO_store((volatile AO_t *)&(lp -> ld_descriptor),
-                 (AO_t)leaf.ld_descriptor);
-#     else
-        lp -> ld_tag = LEAF_TAG;
-        lp -> ld_size = leaf.ld_size;
-        lp -> ld_nelements = leaf.ld_nelements;
-        lp -> ld_descriptor = leaf.ld_descriptor;
-#     endif
-      set_obj_descr(op, nwords, lp);
+      /* Hold the allocation lock while writing a complex descriptor    */
+      /* to the object to ensure that the descriptor is seen by         */
+      /* GC_array_mark_proc as expected.                                */
+      /* TODO: It should be possible to replace locking with the atomic */
+      /* operations (with the release barrier here) but, in this case,  */
+      /* avoiding the acquire barrier in GC_array_mark_proc and its     */
+      /* callee seems to be tricky as GC_mark_some might be invoked     */
+      /* with the world running.                                        */
+      LOCK();
+      lp -> ld_tag = LEAF_TAG;
+      lp -> ld_size = leaf.ld_size;
+      lp -> ld_nelements = leaf.ld_nelements;
+      lp -> ld_descriptor = leaf.ld_descriptor;
+      ((word *)op)[nwords - 1] = (word)lp;
+      UNLOCK();
     } else {
 #     ifndef GC_NO_FINALIZATION
-        set_obj_descr(op, nwords, complex_d);
+        LOCK();
+        ((word *)op)[nwords - 1] = (word)complex_d;
+        UNLOCK();
+
         GC_dirty((word *)op + nwords - 1);
         REACHABLE_AFTER_DIRTY(complex_d);
 
@@ -648,10 +653,6 @@ STATIC mse *GC_push_complex_descriptor(word *addr,
 GC_ATTR_NO_SANITIZE_THREAD
 static complex_descriptor *get_complex_descr(word *addr, size_t nwords)
 {
-  /* TODO: Do we need AO_load_acquire here?  This is normally called    */
-  /* with the world stopped, and at least in case of the signal-based   */
-  /* thread suspension there should be a barrier in sem_post() called   */
-  /* from GC_suspend_handler_inner.                                     */
   return (complex_descriptor *)addr[nwords - 1];
 }
 
