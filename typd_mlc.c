@@ -223,7 +223,7 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
         /* of space needed on the mark stack.                           */
     if ((descriptor & GC_DS_TAGS) == GC_DS_LENGTH) {
       if (descriptor == (GC_descr)size) {
-        *simple_d = nelements * descriptor;
+        *simple_d = nelements * descriptor; /* no overflow */
         return(SIMPLE);
       } else if ((word)descriptor == 0) {
         *simple_d = (GC_descr)0;
@@ -604,6 +604,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     size_t lg;
 
     GC_ASSERT(GC_explicit_typing_initialized);
+    if (EXPECT(0 == lb, FALSE)) lb = 1; /* ensure nwords > 1 */
     lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
     op = GC_malloc_kind(lb, GC_explicit_kind);
     if (EXPECT(NULL == op, FALSE))
@@ -625,6 +626,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     DCL_LOCK_STATE;
 
     GC_ASSERT(GC_explicit_typing_initialized);
+    if (EXPECT(0 == lb, FALSE)) lb = 1;
     lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
     if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
@@ -666,11 +668,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     DCL_LOCK_STATE;
 
     GC_ASSERT(GC_explicit_typing_initialized);
+    if (EXPECT(0 == lb || 0 == n, FALSE)) lb = n = 1;
+    if ((lb | n) > GC_SQRT_SIZE_MAX /* fast initial check */
+        && n > GC_SIZE_MAX / lb)
+      return (*GC_get_oom_fn())(GC_SIZE_MAX); /* n*lb overflow */
+
     descr_type = GC_make_array_descriptor((word)n, (word)lb, d, &simple_descr,
                                           &complex_descr, &leaf);
-    if ((lb | n) > GC_SQRT_SIZE_MAX /* fast initial check */
-        && lb > 0 && n > GC_SIZE_MAX / lb)
-      return (*GC_get_oom_fn())(GC_SIZE_MAX); /* n*lb overflow */
     lb *= n;
     switch(descr_type) {
         case NO_MEM: return(0);
