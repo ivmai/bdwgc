@@ -2,11 +2,6 @@
  * Test at the boundary between small and large objects.
  * Inspired by a test case from Zoltan Varga.
  */
-
-#ifndef GC_THREADS
-# define GC_THREADS /* for GC_start_mark_threads */
-#endif
-
 #include "gc.h"
 #include <stdio.h>
 
@@ -23,10 +18,6 @@ int main (void)
     (void)GC_malloc_atomic(4096);
     (void)GC_malloc(4096);
   }
-
-  /* Test delayed start of marker threads, if they are enabled. */
-  GC_start_mark_threads();
-
   for (i = 0; i < 20000; ++i) {
     (void)GC_malloc_atomic(2048);
     (void)GC_malloc(2048);
