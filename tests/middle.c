@@ -2,6 +2,11 @@
  * Test at the boundary between small and large objects.
  * Inspired by a test case from Zoltan Varga.
  */
+
+#ifndef GC_THREADS
+# define GC_THREADS /* for GC_start_mark_threads */
+#endif
+
 #include "gc.h"
 #include <stdio.h>
 
