@@ -1,26 +1,34 @@
 
 == [8.0.8] (not released yet) ==
 
+* Avoid potential race in GC_init_real_syms after GC_allow_register_threads
 * Distribute gc_disclaim.h in single-obj-compilation
+* Do not assert that GC is initialized at DLL_THREAD_DETACH (Win32)
 * Do not name GCC intrinsics as C11 ones
 * Do not send signal to thread which is suspended manually
 * Eliminate 'buffer overflow detected' FP error in realloc_test
 * Eliminate 'function/data pointer conversion in expression' MSVC warning
+* Eliminate 'implicit decl of _setjmp' gcc warning if -std=c11 on Cygwin
 * Eliminate 'new_l may be used uninitialized' gcc warning in os_dep (Cygwin)
 * Eliminate 'old_gc_no is initialized but not referenced' MS VC false warning
-* Eliminate 'value exceeds maximum object size' gcc warning in debug_malloc
-* Eliminate 'value exceeds maximum object size' gcc warnings in huge_test
+* Eliminate 'possible loss of data' compiler warning in GC_envfile_getenv
+* Eliminate 'value exceeds maximum size' warnings in debug_malloc, huge_test
 * Eliminate 'writing into region of size 0' gcc FP warning in realloc
 * Eliminate division-by-zero FP warning in GC_ASSERT in reclaim_block
 * Eliminate stringop-overflow gcc-12 warning in CORD__next
+* Ensure typed objects descriptor is never located in the first word
 * Fix 'GC_greatest_stack_base_below is defined but not used' warning (IA64)
 * Fix 'GC_text_mapping not used' GCC warning if redirect malloc w/o threads
 * Fix 'ISO C forbids conversion of function pointer to object' warning
 * Fix 'undeclared getpagesize' compiler warning on AIX and OSF1
 * Fix GC_allocate_ml incorrect cleanup in GC_deinit if pthreads (MinGW)
+* Fix GC_dirty() argument in GC_malloc_explicitly_typed_ignore_off_page
+* Fix GC_make_descriptor for zero length argument
 * Fix GC_suspend_thread if called before thread destructor
 * Fix GC_unmapped_bytes update in GC_unmap for Sony PS/3
 * Fix SIGSEGV caused by dropped stack access from child process in gctest
+* Fix abort in Win32 DllMain if PARALLEL_MARK
+* Fix assertion violation in GC_allow_register_threads on Windows
 * Fix assertion violation of GC_thread_key alignment if pthread-based TLS
 * Fix context saving when GC_suspend_thread(self)
 * Fix data race in fail_proc1 of gctest
@@ -28,21 +36,33 @@
 * Fix hang in GC_free if GC_PREFER_MPROTECT_VDB (Mingw64)
 * Fix hang in select() called from suspend signal handler if TSan
 * Fix hang on sem_wait in GC_suspend_thread if thread was resumed recently
+* Fix incremental mode enabling in gctest if TEST_MANUAL_VDB
 * Fix lock assertion violation in GC_find_limit if always multi-threaded
 * Fix missing lock when GC_generate_random_valid_address is called
 * Fix nodist_libgc_la_SOURCES value in Makefile.am for Solaris/sparc
 * Fix oldProc initialization in gc_cleanup and eliminate related warnings
 * Fix parallel_initialized assertion violation in initsecondarythread (Win32)
+* Fix potential race if start_mark_threads called from threads in child
+* Fix propagation of out-of-memory occurred in GC_make_sequence_descriptor
+* Fix race between calloc_explicitly_typed and push_complex_descriptor
 * Fix stack overflow in gctest on Alpine Linux/s390x
 * Fix typo in debugging.html
-* Fix typos in comments of allchblk.c, cordprnt.c, finalize.c, gc.h
+* Fix typos in comments of .c files and gc.h
 * Fix undefined __stack_base__ on UWP/arm64 (llvm-mingw)
+* Make finalizer_closure pointer read/write atomic in malloc and callback
+* Prevent (fix) parallel custom mark procs run in single-threaded clients
+* Prevent changing of GC_markers_m1 value while collection in progress
 * Refer to Makefile.direct instead of deleted Makefile file in README
 * Relax assertion of hb_n_marks in reclaim_block if more than two markers
 * Remove checking of RS6000 completely
 * Remove non-working check of M68K in gctest
+* Remove useless TSan W/A about read of mark_lock_holder for Windows
+* Replace SSH cloning with HTTPS one in README
 * Revert addition of msvc_dbg.h in include.am
+* Support 'z' format modifier by CORD_vsprintf
+* Update documentation of GC_RATE and MAX_PRIOR_ATTEMPTS
 * Use SIGRTMIN+6 as suspend signal if sigrt-signals on OpenBSD
+* Workaround TSan FP about race between generic_malloc and array_mark_proc
 * Workaround TSan FP warning in finalized_malloc, push_unconditionally
 * Workaround TSan FP warning in push_marked1/2/4, ptr_store_and_dirty
 * Workaround Thread Sanitizer (TSan) FP warning in is_valid_displacement
