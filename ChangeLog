@@ -1024,8 +1024,12 @@ Also, includes 7.4.4 changes
 == [7.4.22] (not released yet) ==
 
 * Eliminate 'new_l may be used uninitialized' gcc warning in os_dep (Cygwin)
+* Eliminate 'possible loss of data' compiler warning in GC_envfile_getenv
 * Fix 'undeclared getpagesize' compiler warning on AIX and OSF1
+* Fix abort in Win32 DllMain if PARALLEL_MARK
 * Fix assertion violation of GC_thread_key alignment if pthread-based TLS
+* Fix comment in GC_init regarding GC_init_parallel call
+* Fix GC_dirty() argument in GC_malloc_explicitly_typed_ignore_off_page
 * Fix SIGSEGV caused by dropped stack access from child process in gctest
 * Fix stack overflow in gctest on Alpine Linux/s390x
 * Use SIGRTMIN+6 as suspend signal if sigrt-signals on OpenBSD
@@ -1562,13 +1566,19 @@ Also, includes 7.2 changes
 
 == [7.2p] (not released yet) ==
 
+* Avoid potential race in GC_init_real_syms after GC_allow_register_threads
+* Do not assert that GC is initialized at DLL_THREAD_DETACH (Win32)
+* Ensure typed objects descriptor is never located in the first word
+* Fix GC_make_descriptor for zero length argument
+* Fix assertion violation in GC_allow_register_threads on Windows
 * Fix get_maps failure when GC_repeat_read returns zero
 * Fix missing lock when GC_generate_random_valid_address is called
 * Fix nodist_libgc_la_SOURCES value in Makefile.am for Solaris/sparc
 * Fix oldProc initialization in gc_cleanup and eliminate related warnings
 * Fix parallel_initialized assertion violation in initsecondarythread (Win32)
-* Fix typo in debugging.html
-* Fix typos in comments of allchblk.c, cordprnt.c, finalize.c, gc.h
+* Fix propagation of out-of-memory occurred in GC_make_sequence_descriptor
+* Fix race between calloc_explicitly_typed and push_complex_descriptor
+* Fix typos in comments of .c files, gc.h and a typo in debugging.html
 * Refer to Makefile.direct instead of deleted Makefile file in README
 * Remove checking of RS6000 completely
 * Remove non-working check of M68K in gctest
