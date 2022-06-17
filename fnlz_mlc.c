@@ -20,6 +20,10 @@
 #include "gc_inline.h" /* for GC_malloc_kind */
 #include "private/dbg_mlc.h" /* for oh type */
 
+#if !defined(AO_HAVE_load) && defined(GC_FORCE_INCLUDE_ATOMIC_OPS)
+# include "atomic_ops.h"
+#endif
+
 STATIC int GC_finalized_kind = 0;
 
 #if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
