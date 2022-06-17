@@ -1,3 +1,59 @@
+2022-06-14  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c (GC_make_array_descriptor): Add comment that no overflow
+	guaranteed by caller.
+	* typd_mlc.c (GC_malloc_explicitly_typed,
+	GC_malloc_explicitly_typed_ignore_off_page): If lb is zero, then assume
+	lb is 1 (byte).
+	* typd_mlc.c (GC_calloc_explicitly_typed): If lb or n is zero, then
+	assume that lb*n is 1; check that lb*n does not overflow before
+	GC_make_array_descriptor() call.
+
+2022-06-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c (set_obj_descr): Define macro (using AO_store_release
+	if available).
+	* typd_mlc.c (GC_malloc_explicitly_typed,
+	GC_malloc_explicitly_typed_ignore_off_page): Use set_complex_descr()
+	instead of direct write to *op.
+	* typd_mlc.c (GC_calloc_explicitly_typed): Remove volatile for lp
+	local variable; add comment; wrap writing to op[lw-1] into LOCK/UNLOCK.
+
+2022-06-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c (GC_malloc_explicitly_typed): Fix typo (remove duplicate
+	"the") in comment.
+
+2022-06-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c (GC_make_array_descriptor): If *complex_d (set to the
+	result of GC_make_sequence_descriptor()) is null then return NO_MEM.
+
+2022-06-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c (GC_make_descriptor): Cast len variable to signed_word.
+
+2022-05-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [!GC_NO_THREADS_DISCOVERY && !GC_PTHREADS]
+	(GC_DllMain): Remove assertion that parallel_initialized is set (i.e.
+	for the case when GC_win32_dll_threads is set).
+
+2022-05-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (GC_allow_register_threads): Call INIT_REAL_SYMS().
+
+2022-05-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c [GC_ASSERTIONS] (GC_allow_register_threads): Wrap
+	GC_lookup_thread() call into LOCK/UNLOCK.
+	* win32_threads.c [GC_ASSERTIONS] (GC_allow_register_threads): Wrap
+	GC_lookup_thread_inner() call into LOCK/UNLOCK.
+
+2022-04-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_need_full_gc): Fix typo in comment ("due to").
+
 2022-04-19  Ivan Maidanski <ivmai@mail.ru>
 
 	* cord/cordprnt.c (NONE): Fix a typo in comment ("non-numeric").
