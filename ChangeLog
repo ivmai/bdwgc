@@ -3,8 +3,11 @@
 
 * Add 'lib' prefix to build artifact names in Makefile.direct
 * Add I_HOLD_LOCK assertion to scratch_alloc/recycle and their callers
+* Add assertion to GC_maybe_gc that GC is not in progress
 * Add assertion to ensure GC_unmapped_bytes cannot underflow
+* Add assertions about GC_mark_state to alloc.c and mark.c
 * Add check-deps goal to Makefiles to build the tests but not execute them
+* Add minimal testing of GC_allow_register_threads
 * Add missing undef GC_NO_THREAD_REDIRECTS in threaded tests
 * Adjust comments in block_unmap_inner
 * Adjust indentation in C preprocessor directives (reformatting)
@@ -19,23 +22,35 @@
 * Allow to use same signal for thread suspend and restart (default on E2K)
 * Always set only one bit past end in GC_set_hdr_marks
 * Assert SET_HDR does not write to GC_all_nils
+* Assert in GC_typed_mark_proc that GC lock is held by some collecting thread
+* Assert that bm_table is already initialized when GC_double_descr used
 * Assert that disappearing links are accessible during registration and GC
+* Assert that size of element of a typed object is non-zero (refactoring)
+* Avoid code duplication in GC_make_array_descriptor (refactoring)
+* Avoid code duplication regarding GC_push_roots in GC_mark_some_inner
+* Avoid duplication of magic numbers in disclaim.c, weakmap.c (refactoring)
 * Avoid unmap of memory allocated during GC init regardless of threshold
 * Better document GC_generate_random_heap/valid_address API functions
 * Build extra/gc.c in digimars.mak
+* Call GC_init_parallel only from GC_init (refactoring)
+* Change default GC_time_limit value from 50 to 15 ms
+* Change default value of max_prior_attempts to 3
 * Change minimum heap growth to one block if requested explicitly
 * Change p local variable to current_p in push_all/conditional_eager
 * Check pointer tag in all mark procedures (E2K)
 * Declare GC_register_stackbottom symbol as internal on IA64 (refactoring)
+* Define GC_get_parallel and GC_set_markers_count in single-threaded GC
 * Define GC_save_regs_ret_val variable only if used on IA64 (refactoring)
 * Define and use SIGNAL_BASED_STOP_WORLD macro internally (refactoring)
 * Define marker_[b]sp only if needed (refactoring)
+* Define op and nwords local variables consistently across typd_mlc.c
 * Disable H/W tag checking in mark procedures by default (E2K)
 * Disable memory unmapping explicitly in gcconfig.h for Emscripten
 * Discard sections with pseudo-paths except heap in register_map_entries
 * Do not compile pthread_start.c on Cygwin even if build shared libs (CMake)
 * Do not compile pthread_stop_world.c on Darwin (CMake)
 * Do not define THREAD_SANITIZER if GC is built w/o threads support
+* Do not invoke GC_approx_sp() repeatedly in GC_stopped_mark (refactoring)
 * Do not put atomic_ops[_sysdeps].o to libgc.a in Makefile.direct
 * Do not treat warnings as errors by default in digimars.mak
 * Document GC_ENABLE_SUSPEND_THREAD better in configure
@@ -45,14 +60,18 @@
 * Eliminate 'n obtained from untrusted source' code defect FP in test_cpp
 * Enable prefetch loop in GC_mark_from on E2K
 * Enable without_libatomic_ops for targets requiring atomic_ops.c (CMake)
+* Ensure GC is initialized when GC_push_all_stacks() is called (refactoring)
+* Ensure GC lock is held in GC_reset_finalizer_nested (refactoring)
 * Ensure GC lock is held in add_leaked/smashed, check_heap_proc (refactoring)
 * Ensure GC_n_set_marks() does not count extra bits in hb_marks
+* Ensure GC_our_memory is updated while holding GC lock (refactoring)
 * Ensure a collection occurs between adjacent heap expansions
 * Ensure every test prints a message on success
 * Fail threadkeytest on pthread_create error in main loop
 * Fix digimars.mak to build 'all' by default
 * Force pthread_mutex_lock usage for GC lock if ThreadSanitizer
 * Group NEED_FIND_LIMIT definitions in gcconfig.h (refactoring)
+* Group functions related to GC_calloc_explicitly_typed (refactoring)
 * Increase number of iterations in leak and middle tests
 * Initialize GC_retry_signals to true in GC_stop_init (refactoring)
 * Make abort message unique in write_fault_handler
@@ -76,6 +95,7 @@
 * Reduce number of iterations in disclaim and cpp tests
 * Refactoring of GC_n_set_marks and GC_print_block_descr
 * Refine column names output by GC_print_block_list
+* Refine comments in code regarding DllMain-based threads registration
 * Relax required dependencies for atomicopstest (CMake)
 * Remove GC_copyright symbol
 * Remove GC_min/max() and simplify heap bounds update in expand_hp_inner
@@ -83,10 +103,12 @@
 * Remove IF_IA64 macro in pthread_stop_world (refactoring)
 * Remove STACK_GROWS_DOWN explicit definitions in gcconfig.h (refactoring)
 * Remove Symbian makefile
+* Remove USED_HEAP_SIZE macro (refactoring)
 * Remove ancient OS2_MAKEFILE, PCR-Makefile, SMakefile.amiga
 * Remove comment from gc_cpp.h about bugs in ancient compilers
 * Remove doc.am, and move gc.man to base folder (refactoring)
 * Remove duplication of random numbers generator formula (refactoring)
+* Remove extra parentheses in return statement (refactoring)
 * Remove msvc_dbg.h file (refactoring)
 * Remove obsolete AC_PROG_LIBTOOL in configure.ac (refactoring)
 * Remove redundant 'private' prefix in include directives in include/private
@@ -96,13 +118,20 @@
 * Rename README.QUICK to LICENSE and install it by default
 * Rename README.rs6000 to README.aix
 * Reorder macro definitions for rare architectures in gcconfig.h
+* Replace GC_MARK_FO macro with inline functions (refactoring)
+* Replace comments about GC is held or not with relevant assertions
 * Replace init_netbsd_elf with init_linux_data_start on NetBSD (refactoring)
 * Replace obsolete AC_TRY_COMPILE/LINK/RUN in configure.ac (refactoring)
 * Return free memory to OS explicitly before getting new memory from OS
 * Roundup size passed to GC_expand_hp
+* Simplify expression to clear extra bits in add_ext_descriptor (refactoring)
+* Specify that error conditions are unlikely to be true in threads code
+* Specify that internal allocations failure is unlikely (refactoring)
+* Specify that out-of-memory is unlikely in typed alloc and make descriptor
 * State explicitly that license is MIT-style
 * Support CFLAGS_EXTRA in rare build scripts (NT/WCC_MAKEFILE, digimars.mak)
 * Support ThreadSanitizer (GCC)
+* Support client stop function properly in maybe_gc and collect_a_little
 * Support malloc redirection on E2K
 * Test manual self-suspend in gctest
 * Treat GC_arrays as a part of internal memory when printing its size
@@ -111,6 +140,7 @@
 * Use AO primitive in GC_noop1 instead of no_sanitize attribute
 * Use AO primitives in GC_RAND_NEXT instead of no_sanitize attribute
 * Use GC_printf in cpptest consistently (refactoring)
+* Use consistent variables naming in typd_mlc.c (refactoring)
 * Use single-argument suspend_handler for E2K, HP_PA, IA64, M68K
 * Warn if heap has grown while GC was disabled
 * Workaround 'data access w/o lock' code defect FP in GC_incr_bytes_freed
