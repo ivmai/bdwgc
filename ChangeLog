@@ -9,6 +9,10 @@
 * Fix GC_suspend_thread if called before thread destructor
 * Fix hang on sem_wait in GC_suspend_thread if thread was resumed recently
 * Fix lock assertion violation in GC_find_limit if always multi-threaded
+* Fix potential race if start_mark_threads called from threads in child
+* Make finalizer_closure pointer read/write atomic in malloc and callback
+* Prevent changing of GC_markers_m1 value while collection in progress
+* Replace SSH cloning with HTTPS one in README
 * Workaround Thread Sanitizer (TSan) FP warning in is_valid_displacement
 
 Also, includes 7.4.22 changes
