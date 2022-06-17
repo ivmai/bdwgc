@@ -122,8 +122,11 @@
 * Add CMake option to force libatomic_ops headers usage
 * Add _PROP suffix to CORD/GC[CPP]_VERSION variables in CMake script
 * Allow not to bypass pthread_cancel hardening in pthread_start
+* Allow to start marker threads in child of single-threaded client
+* Avoid potential race in GC_init_real_syms after GC_allow_register_threads
 * Avoid potential signal loss before sigsuspend in suspend_handler if TSan
 * Distribute gc_gcj.h and some other headers in single-obj-compilation
+* Do not assert that GC is initialized at DLL_THREAD_DETACH (Win32)
 * Do not call SET_HDR() to remove forwarding counts if none exists in hblk
 * Do not call mprotect/mmap to GC_unmap/remap (Linux)
 * Do not count unmapped regions if GC_unmap is madvise-based (Linux)
@@ -132,24 +135,25 @@
 * Do not name GCC intrinsics as C11 ones
 * Do not probe to find main data root start if dl_iterate_phdr exists
 * Do not send signal to thread which is suspended manually
-* Do not start threads in gctest child process if ThreadSanitizer
 * Do not use usleep between signals resend if ThreadSanitizer
 * Eliminate '-pedantic is not option that controls warnings' GCC-6.3 message
 * Eliminate '/GS can not protect parameters' MS VC warning in msvc_dbg
 * Eliminate 'buffer overflow detected' FP error in realloc_test
 * Eliminate 'function/data pointer conversion in expression' MSVC warning
+* Eliminate 'implicit decl of _setjmp' gcc warning if -std=c11 on Cygwin
 * Eliminate 'layout of aggregates has changed in GCC 5' warning in test_cpp
 * Eliminate 'new_l may be used uninitialized' gcc warning in os_dep (Cygwin)
 * Eliminate 'old_gc_no is initialized but not referenced' MS VC false warning
+* Eliminate 'possible loss of data' compiler warning in GC_envfile_getenv
 * Eliminate 'potentially uninitialized local variable tc' warning (MSVC)
 * Eliminate 'skipping config since MAX_HEAP_SECTS is unknown' cppcheck FP
-* Eliminate 'value exceeds maximum object size' gcc warning in debug_malloc
-* Eliminate 'value exceeds maximum object size' gcc warnings in huge_test
+* Eliminate 'value exceeds maximum size' warnings in debug_malloc, huge_test
 * Eliminate 'writing into region of size 0' gcc FP warning in realloc
 * Eliminate code defect about incorrect size of allocated object (leaktest)
 * Eliminate data race reported by TSan in GC_have_errors
 * Eliminate division-by-zero FP warning in GC_ASSERT in reclaim_block
 * Eliminate stringop-overflow gcc-12 warning in CORD__next
+* Ensure typed objects descriptor is never located in the first word
 * Fix 'GC_greatest_stack_base_below is defined but not used' warning (IA64)
 * Fix 'GC_text_mapping not used' GCC warning if redirect malloc w/o threads
 * Fix 'ISO C forbids conversion of function pointer to object' warning
@@ -159,16 +163,22 @@
 * Fix (workaround) stack overflow in gctest on Alpine Linux/s390x
 * Fix GC_ATTR_NO_SANITIZE_THREAD definition for GCC
 * Fix GC_allocate_ml incorrect cleanup in GC_deinit if pthreads (MinGW)
+* Fix GC_dirty() argument in GC_malloc_explicitly_typed_ignore_off_page
+* Fix GC_make_descriptor for zero length argument
 * Fix GC_suspend_thread if called before thread destructor
 * Fix GC_unmapped_bytes update in GC_unmap for Sony PS/3
 * Fix SIGSEGV caused by dropped stack access from child process in gctest
+* Fix abort in Win32 DllMain if PARALLEL_MARK
 * Fix abort when GC_repeat_read returns zero
+* Fix assertion violation in GC_allow_register_threads on Windows
 * Fix assertion violation of GC_thread_key alignment if pthread-based TLS
+* Fix comment in GC_init regarding GC_init_parallel call
 * Fix context saving when GC_suspend_thread(self)
 * Fix data race in fail_proc1 of gctest
 * Fix hang in GC_free if GC_PREFER_MPROTECT_VDB (Mingw64)
 * Fix hang in select() called from suspend signal handler if TSan
 * Fix hang on sem_wait in GC_suspend_thread if thread was resumed recently
+* Fix incremental mode enabling in gctest if TEST_MANUAL_VDB
 * Fix linking of tests in case of finalization is off
 * Fix lock assertion violation in GC_find_limit if always multi-threaded
 * Fix memory return to OS in GC_unmap
@@ -177,30 +187,43 @@
 * Fix nodist_libgc_la_SOURCES value in Makefile.am for Solaris/sparc
 * Fix oldProc initialization in gc_cleanup and eliminate related warnings
 * Fix parallel_initialized assertion violation in initsecondarythread (Win32)
+* Fix potential race if start_mark_threads called from threads in child
+* Fix propagation of out-of-memory occurred in GC_make_sequence_descriptor
 * Fix pthread_setname_np and dladdr detection by CMake
+* Fix race between calloc_explicitly_typed and push_complex_descriptor
 * Fix typos in comments and debugging.md
 * Fix undefined __stack_base__ on UWP/arm64 (llvm-mingw)
 * Force GC_with_callee_saves_pushed in suspend_handler if NO_SA_SIGACTION
+* Make finalizer_closure pointer read/write atomic in malloc and callback
 * Move platform-specific sleep call to GC_usleep (refactoring)
+* Prevent (fix) parallel custom mark procs run in single-threaded clients
+* Prevent changing of GC_markers_m1 value while collection in progress
 * Refer to Makefile.direct instead of deleted Makefile file in README
 * Relax assertion of hb_n_marks in reclaim_block if more than two markers
 * Remove IF_IA64 macro in pthread_stop_world (refactoring)
 * Remove checking of RS6000 completely
 * Remove duplicate include gc_tiny_fl.h in gc_priv.h
 * Remove non-working check of M68K in gctest
+* Remove useless TSan W/A about read of mark_lock_holder for Windows
 * Replace RAISE_SIGNAL macro with a static function (refactoring)
+* Replace SSH cloning with HTTPS one in README
 * Retry pthread_kill if EAGAIN (Linux)
+* Revert "Check real-symbols are already initialized in pthread_join/detach"
 * Revert addition of msvc_dbg.h in include.am
 * Start configure help messages with a lower case letter
+* Support 'z' format modifier by CORD_vsprintf
 * Support Elbrus 2000 (Linux/e2k)
 * Support GCC MCF thread model (mcfgthreads) in configure (MinGW)
+* Support GC_remove_roots on Win32
 * Support OpenBSD/riscv64
 * Support space-separated flags in CFLAGS_EXTRA passed to CMake
 * Update README.win32 about default build configuration (configure, cmake)
+* Update documentation of GC_RATE and MAX_PRIOR_ATTEMPTS
 * Use SIGRTMIN+6 as suspend signal if sigrt-signals on OpenBSD
 * Use SIGUSR1/2 on FreeBSD/arm64
 * Workaround 'info is not assigned' cppcheck FP if assertions on (OS X)
 * Workaround SIG_SUSPEND delivery to thread inside mutex_lock fail if TSan
+* Workaround TSan FP about race between generic_malloc and array_mark_proc
 * Workaround TSan FP in acquire_mark_lock called from fork_prepare_proc
 * Workaround TSan FP warning in finalized_malloc, push_unconditionally
 * Workaround TSan FP warning in fork_prepare_proc
