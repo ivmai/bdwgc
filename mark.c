@@ -875,7 +875,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           for(;;) {
             GC_ASSERT((word)limit >= (word)current_p);
             if (cheri_address_get(limit) < cheri_base_get(limit)) goto next_object;
-  
+
             has_rwx = cheri_perms_get(limit) & (CHERI_PERM_LOAD
                                                 | CHERI_PERM_STORE
                                                 | CHERI_PERM_EXECUTE);
