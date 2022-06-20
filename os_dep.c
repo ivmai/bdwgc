@@ -1075,8 +1075,15 @@ GC_find_limit_with_bound(ptr_t p, GC_bool up, ptr_t bound)
 void *
 GC_find_limit(void *p, int up)
 {
-  return GC_find_limit_with_bound((ptr_t)p, (GC_bool)up,
-                                  up ? MAKE_CPTR(GC_WORD_MAX) : 0);
+  ptr_t bound;
+
+#  ifdef CHERI_PURECAP
+  bound = (ptr_t)cheri_address_set(p, cheri_base_get(p)
+                                          + (up ? cheri_length_get(p) : 0));
+#  else
+  bound = up ? MAKE_CPTR(GC_WORD_MAX) : NULL;
+#  endif
+  return GC_find_limit_with_bound((ptr_t)p, (GC_bool)up, bound);
 }
 #endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES */
 
@@ -2000,6 +2007,64 @@ GC_register_data_segments(void)
 #endif /* ANY_MSWIN */
 
 #ifdef DATASTART_USES_XGETDATASTART
+#  ifdef CHERI_PURECAP
+#    include <link.h>
+
+/* The CheriBSD LLVM compiler declares etext, edata and end as typeless */
+/* variables.  If libgc is statically linked with the executable, these */
+/* capabilities are compiled with the read-only permissions and bounds  */
+/* that span the .data and .bss sections.  If libgc is compiled as      */
+/* a shared library, these symbols are compiled with zero bounds and    */
+/* cannot be dereferenced; instead, the read-only capability returned   */
+/* by the loader is used.                                               */
+
+struct scan_bounds_s {
+  word start_addr;
+  word end_addr;
+  ptr_t ld_cap;
+};
+
+static int
+ld_cap_search(struct dl_phdr_info *info, size_t size, void *cd)
+{
+  struct scan_bounds_s *region = (struct scan_bounds_s *)cd;
+  ptr_t load_ptr = (ptr_t)info->dlpi_addr;
+
+  UNUSED_ARG(size);
+  if (!SPANNING_CAPABILITY(load_ptr, region->start_addr, region->end_addr))
+    return 0;
+
+  region->ld_cap
+      = cheri_bounds_set(cheri_address_set(load_ptr, region->start_addr),
+                         region->end_addr - region->start_addr);
+  return 1; /* stop */
+}
+
+static ptr_t
+derive_cap_from_ldr(ptr_t range_start, ptr_t range_end)
+{
+  word scan_start = ADDR(range_start);
+  word scan_end = ADDR(range_end);
+  struct scan_bounds_s region;
+
+  /* If symbols already span the required range, return one of them.    */
+  if (SPANNING_CAPABILITY(range_start, scan_start, scan_end))
+    return range_start;
+  if (SPANNING_CAPABILITY(range_end, scan_start, scan_end))
+    return range_end;
+
+  /* Fall-back option: derive .data plus .bss end pointer from the      */
+  /* read-only capability provided by loader.                           */
+  region.start_addr = scan_start;
+  region.end_addr = scan_end;
+  region.ld_cap = NULL; /* prevent compiler warning */
+  if (!dl_iterate_phdr(ld_cap_search, &region))
+    ABORT("Cannot find static roots for capability system");
+  GC_ASSERT(region.ld_cap != NULL);
+  return region.ld_cap;
+}
+#  endif /* CHERI_PURECAP */
+
 GC_INNER ptr_t
 GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_ptr)
 {
@@ -2007,6 +2072,9 @@ GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_ptr)
 
   GC_ASSERT(max_page_size % sizeof(ptr_t) == 0);
   result = PTR_ALIGN_UP(etext_ptr, sizeof(ptr_t));
+#  ifdef CHERI_PURECAP
+  result = derive_cap_from_ldr(result, DATAEND);
+#  endif
 
   GC_setup_temporary_fault_handler();
   if (SETJMP(GC_jmp_buf) == 0) {
@@ -2055,7 +2123,12 @@ GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_ptr)
     /* etext.  Use plan B.  Note that we now know there is a gap  */
     /* between text and data segments, so plan A brought us       */
     /* something.                                                 */
+#  ifdef CHERI_PURECAP
+    result = (ptr_t)GC_find_limit(cheri_address_set(result, ADDR(DATAEND)),
+                                  FALSE);
+#  else
     result = (ptr_t)GC_find_limit(DATAEND, FALSE);
+#  endif
   }
   return (ptr_t)CAST_AWAY_VOLATILE_PVOID(result);
 }

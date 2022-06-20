@@ -190,6 +190,10 @@ typedef char *ptr_t;
 #  define GC_ATTR_PTRT_ALIGNED /* empty */
 #endif
 
+#ifdef CHERI_PURECAP
+#  include <cheriintrin.h>
+#endif
+
 typedef GC_uintptr_t GC_funcptr_uint;
 #define FUNCPTR_IS_DATAPTR
 
@@ -334,7 +338,11 @@ typedef struct hblkhdr hdr;
 #define GC_WORD_MAX (~(word)0)
 
 /* Convert given pointer to its address.  Result is of word type.   */
-#define ADDR(p) ((word)(GC_uintptr_t)(p))
+#ifdef CHERI_PURECAP
+#  define ADDR(p) cheri_address_get(p)
+#else
+#  define ADDR(p) ((word)(GC_uintptr_t)(p))
+#endif
 
 #define ADDR_LT(p, q) GC_ADDR_LT(p, q)
 #define ADDR_GE(p, q) (!ADDR_LT(p, q))
@@ -2168,6 +2176,14 @@ ptr_t GC_save_regs_in_stack(void);
 #else
 #  define LOAD_PTR_OR_CONTINUE(v, p) (void)(v = *(ptr_t *)(p))
 #endif /* !E2K */
+
+#ifdef CHERI_PURECAP
+#  define SPANNING_CAPABILITY(cap, b_addr, e_addr)                       \
+    (cheri_tag_get(cap) && cheri_base_get(cap) <= (b_addr)               \
+     && cheri_base_get(cap) + cheri_length_get(cap) >= (e_addr)          \
+     && (cheri_perms_get(cap) & (CHERI_PERM_LOAD | CHERI_PERM_LOAD_CAP)) \
+            != 0)
+#endif
 
 #if defined(DARWIN) && defined(THREADS)
 /* If p points to an object, mark it and push contents on the     */
