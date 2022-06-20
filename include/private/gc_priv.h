@@ -2116,11 +2116,15 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
   /* Load value, check tag and permissions of the target memory.   */
 # define LOAD_WORD_OR_CONTINUE(v, p) \
         { \
-            v = *(void **)(p);                                            \
-            size_t has_rwx = cheri_perms_get(v) & (CHERI_PERM_LOAD        \
-                                                   | CHERI_PERM_STORE     \
-                                                   | CHERI_PERM_EXECUTE); \
-            if ((cheri_tag_get(v) == 0) || !has_rwx) continue;            \
+            v = *(void **)(p);                                               \
+            if (!cheri_tag_get(v)) continue;                                 \
+            size_t in_bounds = (v >= (word)cheri_base_get(v))                \
+                                && (v < (word)cheri_base_get(v)              \
+                                        + (word)cheri_length_get(v));        \
+            size_t has_rwx = cheri_perms_get(v) & (CHERI_PERM_LOAD           \
+                                                   | CHERI_PERM_STORE        \
+                                                   | CHERI_PERM_EXECUTE);    \
+            if (!in_bounds || !has_rwx) continue;                            \
         }
 #else
 # define LOAD_WORD_OR_CONTINUE(v, p) (void)(v = *(word *)(p))

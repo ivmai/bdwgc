@@ -167,10 +167,18 @@ GC_API void GC_CALL GC_add_roots(void *b, void *e)
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 {
     GC_ASSERT((word)b <= (word)e);
+# if defined(__CHERI_PURE_CAPABILITY__)
+    b = (ptr_t)cheri_align_up(b, WORDS_TO_BYTES(1));
+                                        /* round b up to word boundary */
+    e = (ptr_t)cheri_align_down(e, WORDS_TO_BYTES(1));
+                                        /* round e down to word boundary */
+# else
     b = (ptr_t)(((word)b + (sizeof(word) - 1)) & ~(word)(sizeof(word) - 1));
                                         /* round b up to word boundary */
     e = (ptr_t)((word)e & ~(word)(sizeof(word) - 1));
                                         /* round e down to word boundary */
+# endif
+
     if ((word)b >= (word)e) return; /* nothing to do */
 
 #   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
