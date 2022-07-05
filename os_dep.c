@@ -3197,11 +3197,9 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #ifndef DARWIN
   STATIC SIG_HNDLR_PTR GC_old_segv_handler = 0;
                         /* Also old MSWIN32 ACCESS_VIOLATION filter */
-# if defined(FREEBSD) || defined(HPUX) || defined(HURD) || defined(LINUX)
+# if defined(FREEBSD) || defined(HPUX) || defined(HURD)
     STATIC SIG_HNDLR_PTR GC_old_bus_handler = 0;
-#   ifndef LINUX
-      STATIC GC_bool GC_old_bus_handler_used_si = FALSE;
-#   endif
+    STATIC GC_bool GC_old_bus_handler_used_si = FALSE;
 # endif
 # if !defined(MSWIN32) && !defined(MSWINCE)
     STATIC GC_bool GC_old_segv_handler_used_si = FALSE;
@@ -3479,28 +3477,22 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       if (GC_old_segv_handler != (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
         GC_VERBOSE_LOG_PRINTF("Replaced other SIGSEGV handler\n");
       }
-#   if defined(HPUX) || defined(LINUX) || defined(HURD) \
+#   if defined(HPUX) || defined(HURD) \
        || (defined(FREEBSD) && (defined(__GLIBC__) || defined(SUNOS5SIGS)))
       sigaction(SIGBUS, &act, &oldact);
       if ((oldact.sa_flags & SA_SIGINFO) != 0) {
         GC_old_bus_handler = oldact.sa_sigaction;
-#       if !defined(LINUX)
-          GC_old_bus_handler_used_si = TRUE;
-#       endif
+        GC_old_bus_handler_used_si = TRUE;
       } else {
         GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)oldact.sa_handler;
       }
       if (GC_old_bus_handler == (SIG_HNDLR_PTR)(signed_word)SIG_IGN) {
         WARN("Previously ignored bus error!?\n", 0);
-#       if !defined(LINUX)
-          GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)SIG_DFL;
-#       else
-          /* GC_old_bus_handler is not used by GC_write_fault_handler.  */
-#       endif
+        GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)SIG_DFL;
       } else if (GC_old_bus_handler != (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
           GC_VERBOSE_LOG_PRINTF("Replaced other SIGBUS handler\n");
       }
-#   endif /* HPUX || LINUX || HURD || (FREEBSD && SUNOS5SIGS) */
+#   endif /* HPUX || HURD || (FREEBSD && SUNOS5SIGS) */
 #   endif /* ! MS windows */
 #   if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
       GC_noop1((word)&__asan_default_options);
