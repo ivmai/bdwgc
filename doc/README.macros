@@ -114,8 +114,7 @@ GC_ABORT_ON_LEAK        Causes the application to be terminated once leaked or
 
 SUNOS5SIGS      Solaris-like signal handling.  This is probably misnamed,
   since it really doesn't guarantee much more than POSIX.  Currently set only
-  for Solaris2.X, HPUX, and DRSNX.  Should probably be set for some other
-  platforms.
+  for DRSNX, FreeBSD, HP/UX and Solaris.
 
 PCR     Set if the collector is being built as part of the Xerox Portable
   Common Runtime.
