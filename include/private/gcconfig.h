@@ -998,7 +998,8 @@ EXTERN_C_BEGIN
       extern int _end[];
 #     define DATAEND ((ptr_t)(_end))
 #   endif
-#   if !defined(REDIRECT_MALLOC)
+#   if !defined(REDIRECT_MALLOC) \
+       && !(defined(E2K) && defined(__OPTIMIZE__))
       /* Requires Linux 2.3.47 or later. */
 #     define MPROTECT_VDB
 #   else
@@ -1006,6 +1007,9 @@ EXTERN_C_BEGIN
       /* possibly because the Linux threads implementation      */
       /* itself is a malloc client and cannot deal with the     */
       /* signals.  fread() uses malloc too.                     */
+      /* In case of e2k, unless -fsemi-spec-ld option is passed */
+      /* to gcc, a semi-speculative optimization may lead to    */
+      /* SIGILL (with ILL_ILLOPN si_code) instead of SIGSEGV.   */
 #   endif
 # endif /* LINUX */
 
