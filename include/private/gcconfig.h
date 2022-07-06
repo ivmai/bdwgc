@@ -3016,6 +3016,11 @@ EXTERN_C_BEGIN
 # define SVR4
 #endif
 
+#if defined(MPROTECT_VDB) && defined(__GLIBC__) \
+    && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 2))
+# error glibc too old?
+#endif
+
 #if defined(SOLARIS) || defined(DRSNX)
         /* OS has SOLARIS style semi-undocumented interface     */
         /* to dynamic loader.                                   */
@@ -3029,7 +3034,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(FREEBSD) && (defined(__DragonFly__) || __FreeBSD__ >= 4 \
-                         || (__FreeBSD_kernel__ >= 4))
+                         || __FreeBSD_kernel__ >= 4 || defined(__GLIBC__))
 # define SUNOS5SIGS
 #endif
 
