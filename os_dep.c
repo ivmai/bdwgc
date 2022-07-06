@@ -875,26 +875,23 @@ GC_INNER size_t GC_page_size = 0;
 
     typedef void (*GC_fault_handler_t)(int);
 
-#   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
-       || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
-       || defined(NETBSD)
+#   ifdef USE_SEGV_SIGACT
+#     ifndef OPENBSD
         static struct sigaction old_segv_act;
-#       if defined(_sigargs) /* !Irix6.x */ || defined(HPUX) \
-           || defined(HURD) || defined(NETBSD) || defined(FREEBSD)
-            static struct sigaction old_bus_act;
-#       endif
-#   else
-      static GC_fault_handler_t old_segv_handler;
-#     ifdef HAVE_SIGBUS
-        static GC_fault_handler_t old_bus_handler;
 #     endif
-#   endif
+#     ifdef USE_BUS_SIGACT
+        static struct sigaction old_bus_act;
+#     endif
+#   else
+      static GC_fault_handler_t old_segv_hand;
+#     ifdef HAVE_SIGBUS
+        static GC_fault_handler_t old_bus_hand;
+#     endif
+#   endif /* !USE_SEGV_SIGACT */
 
     GC_INNER void GC_set_and_save_fault_handler(GC_fault_handler_t h)
     {
-#       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
-           || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
-           || defined(NETBSD) || defined(OPENBSD)
+#       ifdef USE_SEGV_SIGACT
           struct sigaction act;
 
           act.sa_handler = h;
@@ -906,30 +903,27 @@ GC_INNER size_t GC_page_size = 0;
             act.sa_flags = SA_RESTART;
 #         endif
 
-          (void) sigemptyset(&act.sa_mask);
+          (void)sigemptyset(&act.sa_mask);
           /* act.sa_restorer is deprecated and should not be initialized. */
 #         ifdef GC_IRIX_THREADS
             /* Older versions have a bug related to retrieving and      */
             /* and setting a handler at the same time.                  */
-            (void) sigaction(SIGSEGV, 0, &old_segv_act);
-            (void) sigaction(SIGSEGV, &act, 0);
+            (void)sigaction(SIGSEGV, 0, &old_segv_act);
+            (void)sigaction(SIGSEGV, &act, 0);
 #         else
-            (void) sigaction(SIGSEGV, &act, &old_segv_act);
-#           if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
-               || defined(HPUX) || defined(HURD) || defined(NETBSD) \
-               || defined(FREEBSD)
-              /* Under Irix 5.x or HP/UX, we may get SIGBUS.    */
+            (void)sigaction(SIGSEGV, &act, &old_segv_act);
+#           ifdef USE_BUS_SIGACT
               /* Pthreads doesn't exist under Irix 5.x, so we   */
               /* don't have to worry in the threads case.       */
-              (void) sigaction(SIGBUS, &act, &old_bus_act);
+              (void)sigaction(SIGBUS, &act, &old_bus_act);
 #           endif
 #         endif /* !GC_IRIX_THREADS */
 #       else
-          old_segv_handler = signal(SIGSEGV, h);
+          old_segv_hand = signal(SIGSEGV, h);
 #         ifdef HAVE_SIGBUS
-            old_bus_handler = signal(SIGBUS, h);
+            old_bus_hand = signal(SIGBUS, h);
 #         endif
-#       endif
+#       endif /* !USE_SEGV_SIGACT */
 #       if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
           GC_noop1((word)&__asan_default_options);
 #       endif
@@ -959,19 +953,15 @@ GC_INNER size_t GC_page_size = 0;
 
     GC_INNER void GC_reset_fault_handler(void)
     {
-#       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
-           || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
-           || defined(NETBSD) || defined(OPENBSD)
-          (void) sigaction(SIGSEGV, &old_segv_act, 0);
-#         if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
-             || defined(HPUX) || defined(HURD) || defined(NETBSD) \
-             || defined(FREEBSD)
-              (void) sigaction(SIGBUS, &old_bus_act, 0);
+#       ifdef USE_SEGV_SIGACT
+          (void)sigaction(SIGSEGV, &old_segv_act, 0);
+#         ifdef USE_BUS_SIGACT
+            (void)sigaction(SIGBUS, &old_bus_act, 0);
 #         endif
 #       else
-          (void) signal(SIGSEGV, old_segv_handler);
+          (void)signal(SIGSEGV, old_segv_hand);
 #         ifdef HAVE_SIGBUS
-            (void) signal(SIGBUS, old_bus_handler);
+            (void)signal(SIGBUS, old_bus_hand);
 #         endif
 #       endif
     }
@@ -1353,7 +1343,7 @@ GC_INNER size_t GC_page_size = 0;
     return result;
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#endif /* !AMIGA, !HAIKU, !OPENBSD, !OS2, !Windows */
+#endif /* !AMIGA && !HAIKU && !GC_OPENBSD_THREADS && !OS2 && !Windows */
 
 #if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
     && defined(THREADS) && !defined(HAVE_GET_STACK_BASE)
@@ -3191,7 +3181,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #ifndef DARWIN
   STATIC SIG_HNDLR_PTR GC_old_segv_handler = 0;
                         /* Also old MSWIN32 ACCESS_VIOLATION filter */
-# if defined(FREEBSD) || defined(HPUX) || defined(HURD)
+# ifdef USE_BUS_SIGACT
     STATIC SIG_HNDLR_PTR GC_old_bus_handler = 0;
     STATIC GC_bool GC_old_bus_handler_used_si = FALSE;
 # endif
@@ -3224,7 +3214,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
 # if !defined(MSWIN32) && !defined(MSWINCE)
 #   include <errno.h>
-#   if defined(FREEBSD) || defined(HURD) || defined(HPUX)
+#   ifdef USE_BUS_SIGACT
 #     define SIG_OK (sig == SIGBUS || sig == SIGSEGV)
 #   else
 #     define SIG_OK (sig == SIGSEGV)
@@ -3320,7 +3310,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #           else
                 GC_bool used_si;
 
-#             if defined(FREEBSD) || defined(HURD) || defined(HPUX)
+#             ifdef USE_BUS_SIGACT
                 if (sig == SIGBUS) {
                    old_handler = GC_old_bus_handler;
                    used_si = GC_old_bus_handler_used_si;
@@ -3471,22 +3461,21 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       if (GC_old_segv_handler != (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
         GC_VERBOSE_LOG_PRINTF("Replaced other SIGSEGV handler\n");
       }
-#   if defined(HPUX) || defined(HURD) \
-       || (defined(FREEBSD) && defined(SUNOS5SIGS))
-      sigaction(SIGBUS, &act, &oldact);
-      if ((oldact.sa_flags & SA_SIGINFO) != 0) {
-        GC_old_bus_handler = oldact.sa_sigaction;
-        GC_old_bus_handler_used_si = TRUE;
-      } else {
-        GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)oldact.sa_handler;
-      }
-      if (GC_old_bus_handler == (SIG_HNDLR_PTR)(signed_word)SIG_IGN) {
-        WARN("Previously ignored bus error!?\n", 0);
-        GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)SIG_DFL;
-      } else if (GC_old_bus_handler != (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
+#     ifdef USE_BUS_SIGACT
+        sigaction(SIGBUS, &act, &oldact);
+        if ((oldact.sa_flags & SA_SIGINFO) != 0) {
+          GC_old_bus_handler = oldact.sa_sigaction;
+          GC_old_bus_handler_used_si = TRUE;
+        } else {
+          GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)oldact.sa_handler;
+        }
+        if (GC_old_bus_handler == (SIG_HNDLR_PTR)(signed_word)SIG_IGN) {
+          WARN("Previously ignored bus error!?\n", 0);
+          GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)SIG_DFL;
+        } else if (GC_old_bus_handler != (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
           GC_VERBOSE_LOG_PRINTF("Replaced other SIGBUS handler\n");
-      }
-#   endif /* HPUX || HURD || (FREEBSD && SUNOS5SIGS) */
+        }
+#     endif
 #   endif /* ! MS windows */
 #   if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
       GC_noop1((word)&__asan_default_options);
