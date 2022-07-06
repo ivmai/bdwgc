@@ -3191,12 +3191,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     typedef void (* PLAIN_HNDLR_PTR)(int);
 # endif
 
-# if defined(__GLIBC__)
-#   if __GLIBC__ < 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ < 2
-#       error glibc too old?
-#   endif
-# endif
-
 #ifndef DARWIN
   STATIC SIG_HNDLR_PTR GC_old_segv_handler = 0;
                         /* Also old MSWIN32 ACCESS_VIOLATION filter */
@@ -3480,7 +3474,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         GC_VERBOSE_LOG_PRINTF("Replaced other SIGSEGV handler\n");
       }
 #   if defined(HPUX) || defined(LINUX) || defined(HURD) \
-       || (defined(FREEBSD) && (defined(__GLIBC__) || defined(SUNOS5SIGS)))
+       || (defined(FREEBSD) && defined(SUNOS5SIGS))
       sigaction(SIGBUS, &act, &oldact);
       if ((oldact.sa_flags & SA_SIGINFO) != 0) {
         GC_old_bus_handler = oldact.sa_sigaction;
