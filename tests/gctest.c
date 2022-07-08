@@ -463,7 +463,10 @@ sexpr reverse(sexpr x)
 
 sexpr ints(int low, int up)
 {
-    if (low > up) {
+    if (up < 0 ? low > -up : low > up) {
+        if (up < 0) {
+            GC_gcollect_and_unmap();
+        }
         return nil;
     } else {
         return small_cons(small_cons_leaf(low), ints(low + 1, up));
@@ -790,7 +793,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 
     a_set(ints(1, 49));
     b = ints(1, 50);
-    c = ints(1, BIG);
+    c = ints(1, -BIG); /* force garbage collection inside */
     d = uncollectable_ints(1, 100);
     test_generic_malloc_or_special(d);
     e = uncollectable_ints(1, 1);
