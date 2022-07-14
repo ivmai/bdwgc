@@ -807,7 +807,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   if defined(MACOS) \
        || (defined(UNIX_LIKE) && defined(NO_GETCONTEXT)) /* e.g. musl */
       /* Assume 128 KB stacks at least. */
-#     if defined(__s390x__)
+#     if defined(__aarch64__) || defined(__s390x__)
 #       define BIG 600
 #     else
 #       define BIG 1000
