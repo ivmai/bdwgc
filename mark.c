@@ -1466,10 +1466,12 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
 /* test, but we do not definitely know whether it is valid.     */
 /* Mark bits are NOT atomically updated.  Thus this must be the */
 /* only thread setting them.                                    */
+GC_ATTR_NO_SANITIZE_ADDR
+GC_INNER void
 # if defined(PRINT_BLACK_LIST) || defined(KEEP_BACK_PTRS)
-    GC_INNER void GC_mark_and_push_stack(ptr_t p, ptr_t source)
+    GC_mark_and_push_stack(ptr_t p, ptr_t source)
 # else
-    GC_INNER void GC_mark_and_push_stack(ptr_t p)
+    GC_mark_and_push_stack(ptr_t p)
 #   define source ((ptr_t)0)
 # endif
 {
