@@ -37,27 +37,28 @@
     word new_sz;
 
     GC_ASSERT(0 == buf_sz || buf != NULL);
-    GC_ASSERT(buf_sz % sizeof(word) == 0);
     for (;;) {
-      if (NULL == buf) {
-        new_sz = 0;
-        if (syscall(__NR_access_hw_stacks, E2K_GET_PROCEDURE_STACK_SIZE,
-                    NULL, NULL, 0, &new_sz) != -1) {
-          GC_ASSERT(new_sz > 0 && new_sz % sizeof(word) == 0);
-          break;
-        }
-      } else {
-        word stack_ofs = 0;
+      word stack_ofs;
 
-        if (syscall(__NR_access_hw_stacks, E2K_READ_PROCEDURE_STACK_EX,
-                    &stack_ofs, buf, buf_sz, NULL) != -1) {
-          new_sz = buf_sz;
-          break;
-        }
+      new_sz = 0;
+      if (syscall(__NR_access_hw_stacks, E2K_GET_PROCEDURE_STACK_SIZE,
+                  NULL, NULL, 0, &new_sz) == -1) {
+        if (errno != EAGAIN)
+          ABORT_ARG1("Cannot get size of procedure stack",
+                     ": errno= %d", errno);
+        continue;
       }
+      GC_ASSERT(new_sz > 0 && new_sz % sizeof(word) == 0);
+      if (new_sz > buf_sz)
+        break;
+      /* Immediately read the stack right after checking its size. */
+      stack_ofs = 0;
+      if (syscall(__NR_access_hw_stacks, E2K_READ_PROCEDURE_STACK_EX,
+                  &stack_ofs, buf, new_sz, NULL) != -1)
+        break;
       if (errno != EAGAIN)
         ABORT_ARG2("Cannot read procedure stack",
-                   ": buf_sz= %lu, errno= %d", (unsigned long)buf_sz, errno);
+                   ": new_sz= %lu, errno= %d", (unsigned long)new_sz, errno);
     }
     return (size_t)new_sz;
   }
