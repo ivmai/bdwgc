@@ -2023,8 +2023,13 @@ EXTERN_C_BEGIN
 
 # ifdef E2K
 #   define MACH_TYPE "E2K"
-#   define CPP_WORDSZ 64
-#   define ALIGNMENT 8
+#   ifdef __LP64__
+#     define CPP_WORDSZ 64
+#     define ALIGNMENT 8
+#   else
+#     define CPP_WORDSZ 32
+#     define ALIGNMENT 4
+#   endif
 #   ifndef HBLKSIZE
 #     define HBLKSIZE 4096
 #   endif

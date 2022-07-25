@@ -34,11 +34,11 @@
 # include <sys/syscall.h>
 
   GC_INNER size_t GC_get_procedure_stack(ptr_t buf, size_t buf_sz) {
-    word new_sz;
+    unsigned long long new_sz;
 
     GC_ASSERT(0 == buf_sz || buf != NULL);
     for (;;) {
-      word stack_ofs;
+      unsigned long long stack_ofs;
 
       new_sz = 0;
       if (syscall(__NR_access_hw_stacks, E2K_GET_PROCEDURE_STACK_SIZE,
