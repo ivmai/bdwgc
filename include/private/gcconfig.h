@@ -1122,7 +1122,6 @@ EXTERN_C_BEGIN
 #   define MACH_TYPE "SYMBIAN"
 #   define OS_TYPE "SYMBIAN"
 #   define CPP_WORDSZ 32
-#   define ALIGNMENT 4
 #   define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
 #   define DATAEND (ptr_t)ALIGNMENT
 # endif
@@ -1179,7 +1178,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef LINUX
 #     if defined(__powerpc64__)
-#       define ALIGNMENT 8
 #       define CPP_WORDSZ 64
 #       ifndef HBLKSIZE
 #         define HBLKSIZE 4096
@@ -1204,7 +1202,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef DARWIN
 #     if defined(__ppc64__)
-#       define ALIGNMENT 8
 #       define CPP_WORDSZ 64
 #       define STACKBOTTOM ((ptr_t)0x7fff5fc00000)
 #       define CACHE_LINE_SIZE 64
@@ -1226,7 +1223,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef OPENBSD
 #     if defined(__powerpc64__)
-#       define ALIGNMENT 8
 #       define CPP_WORDSZ 64
 #     else
 #       define ALIGNMENT 4
@@ -1234,7 +1230,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef FREEBSD
 #       if defined(__powerpc64__)
-#           define ALIGNMENT 8
 #           define CPP_WORDSZ 64
 #           ifndef HBLKSIZE
 #               define HBLKSIZE 4096
@@ -1250,7 +1245,6 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "SN_TARGET_PS3"
 #     define NO_GETENV
 #     define CPP_WORDSZ 32
-#     define ALIGNMENT 4
       extern int _end[];
       extern int __bss_start;
 #     define DATASTART ((ptr_t)(__bss_start))
@@ -1267,11 +1261,9 @@ EXTERN_C_BEGIN
       /* DOB: some AIX installs stupidly define IA64 in */
       /* /usr/include/sys/systemcfg.h                   */
 #     ifdef __64BIT__
-#       define ALIGNMENT 8
 #       define CPP_WORDSZ 64
 #       define STACKBOTTOM ((ptr_t)0x1000000000000000)
 #     else
-#       define ALIGNMENT 4
 #       define CPP_WORDSZ 32
 #       define STACKBOTTOM ((ptr_t)((ulong)&errno))
 #     endif
@@ -1340,7 +1332,6 @@ EXTERN_C_BEGIN
 # ifdef SPARC
 #   define MACH_TYPE "SPARC"
 #   if defined(__arch64__) || defined(__sparcv9)
-#     define ALIGNMENT 8
 #     define CPP_WORDSZ 64
 #     define ELF_CLASS ELFCLASS64
 #   else
@@ -1686,7 +1677,6 @@ EXTERN_C_BEGIN
 # ifdef LOONGARCH
 #   define MACH_TYPE "LoongArch"
 #   define CPP_WORDSZ _LOONGARCH_SZPTR
-#   define ALIGNMENT (_LOONGARCH_SZPTR/8)
 #   ifdef LINUX
 #     pragma weak __data_start
       extern int __data_start[];
@@ -1702,7 +1692,6 @@ EXTERN_C_BEGIN
 #     define DATASTART ((ptr_t)(__data_start))
 #     ifdef _MIPS_SZPTR
 #       define CPP_WORDSZ _MIPS_SZPTR
-#       define ALIGNMENT (_MIPS_SZPTR/8)
 #     else
 #       define ALIGNMENT 4
 #     endif
@@ -1723,7 +1712,6 @@ EXTERN_C_BEGIN
 #       define DATASTART ((ptr_t)_fdata)
 #       define DATAEND ((ptr_t)_end)
 #       define CPP_WORDSZ _MIPS_SZPTR
-#       define ALIGNMENT (_MIPS_SZPTR/8)
 #     else
         extern int etext[], edata[];
 #       if !defined(CPPCHECK)
@@ -1768,7 +1756,6 @@ EXTERN_C_BEGIN
 /*              of recent breakage.                                        */
 #       ifdef _MIPS_SZPTR
 #         define CPP_WORDSZ _MIPS_SZPTR
-#         define ALIGNMENT (_MIPS_SZPTR/8)
 #       else
 #         define ALIGNMENT 4
 #       endif
@@ -1786,7 +1773,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef OPENBSD
 #     define CPP_WORDSZ 64 /* all OpenBSD/mips platforms are 64-bit */
-#     define ALIGNMENT 8
 #   endif
 #   ifdef FREEBSD
 #     define ALIGNMENT 4
@@ -1794,7 +1780,6 @@ EXTERN_C_BEGIN
 #   ifdef NONSTOP
 #     define OS_TYPE "NONSTOP"
 #     define CPP_WORDSZ 32
-#     define ALIGNMENT 4
 #     define DATASTART ((ptr_t)0x08000000)
       extern char **environ;
 #     define DATAEND ((ptr_t)(environ - 0x10))
@@ -1805,7 +1790,6 @@ EXTERN_C_BEGIN
 # ifdef NIOS2
 #   define MACH_TYPE "NIOS2"
 #   define CPP_WORDSZ 32
-#   define ALIGNMENT 4
 #   ifndef HBLKSIZE
 #     define HBLKSIZE 4096
 #   endif
@@ -1818,7 +1802,6 @@ EXTERN_C_BEGIN
 # ifdef OR1K
 #   define MACH_TYPE "OR1K"
 #   define CPP_WORDSZ 32
-#   define ALIGNMENT 4
 #   ifndef HBLKSIZE
 #     define HBLKSIZE 4096
 #   endif
@@ -1832,10 +1815,8 @@ EXTERN_C_BEGIN
 #   define MACH_TYPE "HP_PA"
 #   ifdef __LP64__
 #     define CPP_WORDSZ 64
-#     define ALIGNMENT 8
 #   else
 #     define CPP_WORDSZ 32
-#     define ALIGNMENT 4
 #   endif
 #   define STACK_GROWS_UP
 #   ifdef HPUX
@@ -1883,7 +1864,6 @@ EXTERN_C_BEGIN
 
 # ifdef ALPHA
 #   define MACH_TYPE "ALPHA"
-#   define ALIGNMENT 8
 #   define CPP_WORDSZ 64
 #   ifdef NETBSD
 #       define ELFCLASS32 32
@@ -1977,7 +1957,6 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef LINUX
 #       define CPP_WORDSZ 64
-#       define ALIGNMENT 8
         /* The following works on NUE and older kernels:        */
         /* define STACKBOTTOM ((ptr_t)0xa000000000000000l)      */
         /* TODO: LINUX_STACKBOTTOM does not work on NUE.        */
@@ -2016,8 +1995,8 @@ EXTERN_C_BEGIN
 #       define CPP_WORDSZ 64
 #     else
 #       define CPP_WORDSZ 32   /* Is this possible?     */
+#       define ALIGNMENT 8
 #     endif
-#     define ALIGNMENT 8
 #   endif
 # endif
 
@@ -2025,10 +2004,8 @@ EXTERN_C_BEGIN
 #   define MACH_TYPE "E2K"
 #   ifdef __LP64__
 #     define CPP_WORDSZ 64
-#     define ALIGNMENT 8
 #   else
 #     define CPP_WORDSZ 32
-#     define ALIGNMENT 4
 #   endif
 #   ifndef HBLKSIZE
 #     define HBLKSIZE 4096
@@ -2081,10 +2058,8 @@ EXTERN_C_BEGIN
 # ifdef S390
 #   define MACH_TYPE "S390"
 #   ifndef __s390x__
-#     define ALIGNMENT 4
 #     define CPP_WORDSZ 32
 #   else
-#     define ALIGNMENT 8
 #     define CPP_WORDSZ 64
 #     ifndef HBLKSIZE
 #       define HBLKSIZE 4096
@@ -2107,10 +2082,8 @@ EXTERN_C_BEGIN
 #   define MACH_TYPE "AARCH64"
 #   ifdef __ILP32__
 #     define CPP_WORDSZ 32
-#     define ALIGNMENT 4
 #   else
 #     define CPP_WORDSZ 64
-#     define ALIGNMENT 8
 #   endif
 #   ifndef HBLKSIZE
 #     define HBLKSIZE 4096
@@ -2172,7 +2145,6 @@ EXTERN_C_BEGIN
 #     define MACH_TYPE "ARM32"
 #   endif
 #   define CPP_WORDSZ 32
-#   define ALIGNMENT 4
 #   ifdef NETBSD
       /* Nothing specific. */
 #   endif
@@ -2279,7 +2251,6 @@ EXTERN_C_BEGIN
 # ifdef AVR32
 #   define MACH_TYPE "AVR32"
 #   define CPP_WORDSZ 32
-#   define ALIGNMENT 4
 #   ifdef LINUX
 #     define SEARCH_FOR_DATA_START
 #   endif
@@ -2288,7 +2259,6 @@ EXTERN_C_BEGIN
 # ifdef M32R
 #   define MACH_TYPE "M32R"
 #   define CPP_WORDSZ 32
-#   define ALIGNMENT 4
 #   ifdef LINUX
 #     define SEARCH_FOR_DATA_START
 #   endif
@@ -2297,10 +2267,8 @@ EXTERN_C_BEGIN
 # ifdef X86_64
 #   define MACH_TYPE "X86_64"
 #   ifdef __ILP32__
-#     define ALIGNMENT 4
 #     define CPP_WORDSZ 32
 #   else
-#     define ALIGNMENT 8
 #     define CPP_WORDSZ 64
 #   endif
 #   ifndef HBLKSIZE
@@ -2429,7 +2397,6 @@ EXTERN_C_BEGIN
 # ifdef ARC
 #   define MACH_TYPE "ARC"
 #   define CPP_WORDSZ 32
-#   define ALIGNMENT 4
 #   define CACHE_LINE_SIZE 64
 #   ifdef LINUX
       extern int __data_start[] __attribute__((__weak__));
@@ -2440,7 +2407,6 @@ EXTERN_C_BEGIN
 # ifdef HEXAGON
 #   define MACH_TYPE "HEXAGON"
 #   define CPP_WORDSZ 32
-#   define ALIGNMENT 4
 #   ifdef LINUX
 #     if defined(__GLIBC__)
 #       define SEARCH_FOR_DATA_START
@@ -2453,7 +2419,6 @@ EXTERN_C_BEGIN
 # ifdef TILEPRO
 #   define MACH_TYPE "TILEPro"
 #   define CPP_WORDSZ 32
-#   define ALIGNMENT 4
 #   define PREFETCH(x) __insn_prefetch(x)
 #   define CACHE_LINE_SIZE 64
 #   ifdef LINUX
@@ -2465,7 +2430,6 @@ EXTERN_C_BEGIN
 # ifdef TILEGX
 #   define MACH_TYPE "TILE-Gx"
 #   define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
-#   define ALIGNMENT __SIZEOF_POINTER__
 #   if CPP_WORDSZ < 64
 #     define CLEAR_DOUBLE(x) (*(long long *)(x) = 0)
 #   endif
@@ -2480,7 +2444,6 @@ EXTERN_C_BEGIN
 # ifdef RISCV
 #   define MACH_TYPE "RISC-V"
 #   define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
-#   define ALIGNMENT (CPP_WORDSZ/8)
 #   ifdef FREEBSD
       /* Nothing specific. */
 #   endif
@@ -2691,9 +2654,12 @@ EXTERN_C_BEGIN
 #   error Bad word size
 #endif
 
-#if !defined(ALIGNMENT) && !defined(CPPCHECK)
-# error Undefined ALIGNMENT
-#endif
+#ifndef ALIGNMENT
+# if !defined(CPP_WORDSZ) && !defined(CPPCHECK)
+#   error Undefined both ALIGNMENT and CPP_WORDSZ
+# endif
+# define ALIGNMENT (CPP_WORDSZ >> 3)
+#endif /* !ALIGNMENT */
 
 #ifdef PCR
 # undef DYNAMIC_LOADING
