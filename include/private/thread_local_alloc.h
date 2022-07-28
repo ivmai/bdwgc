@@ -54,7 +54,8 @@ EXTERN_C_BEGIN
 #   endif /* !GNU */
 # elif (defined(LINUX) && !defined(ARM32) && !defined(AVR32) \
          && GC_GNUC_PREREQ(3, 3) \
-         && !(defined(__clang__) && defined(HOST_ANDROID))) \
+         && !(defined(__clang__) && (defined(HOST_ANDROID) \
+                        || (defined(AARCH64) && !GC_CLANG_PREREQ(8, 0))))) \
        || ((defined(NETBSD) && __NetBSD_Version__ >= 600000000 /* 6.0 */ \
                 || defined(FREEBSD)) \
             && (GC_GNUC_PREREQ(4, 4) || GC_CLANG_PREREQ(3, 9))) \
