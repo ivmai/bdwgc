@@ -45,7 +45,8 @@
 #   define AO_TS_SET (AO_TS_t)1 /* true */
 # endif
 # define AO_CLEAR(p) __atomic_clear(p, __ATOMIC_RELEASE)
-# define AO_test_and_set_acquire(p) __atomic_test_and_set(p, __ATOMIC_ACQUIRE)
+# define AO_test_and_set_acquire(p) \
+        (__atomic_test_and_set(p, __ATOMIC_ACQUIRE) ? AO_TS_SET : AO_TS_CLEAR)
 # define AO_HAVE_test_and_set_acquire
 
 # define AO_compiler_barrier() __atomic_signal_fence(__ATOMIC_SEQ_CST)
