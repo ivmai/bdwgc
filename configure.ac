@@ -186,6 +186,7 @@ CFLAGS="$old_CFLAGS"
 
 THREADDLLIBS=
 need_atomic_ops_asm=false
+compile_asm=false
 use_parallel_mark=no
 use_thread_local_alloc=no
 # Libraries needed to support dynamic loading and/or threads.
@@ -582,17 +583,21 @@ case "$host" in
     ;;
  sparc-*-netbsd*)
     machdep="sparc_netbsd_mach_dep.lo"
+    compile_asm=true
     ;;
  sparc*-*-linux* | sparc*-*-openbsd* | sparc64-*-freebsd* | sparc64-*-netbsd*)
     machdep="sparc_mach_dep.lo"
+    compile_asm=true
     ;;
  sparc-sun-solaris2.3)
     machdep="sparc_mach_dep.lo"
+    compile_asm=true
     AC_DEFINE(SUNOS53_SHARED_LIB, 1,
               [Define to work around a Solaris 5.3 bug (see dyn_load.c).])
     ;;
  sparc*-sun-solaris2*)
     machdep="sparc_mach_dep.lo"
+    compile_asm=true
     ;;
  ia64-*-*)
     machdep="ia64_save_regs_in_stack.lo"
@@ -607,6 +612,19 @@ AC_SUBST(addobjs)
 AC_SUBST(addlibs)
 
 AC_PROG_LIBTOOL
+
+# Suppress "extension used" clang warning (when compiling .S files).
+if test x$compile_asm = xtrue -a "$GCC" = yes; then
+  AC_MSG_CHECKING([whether compiler supports -Wno-language-extension-token])
+  old_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS -Werror -Wno-language-extension-token"
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])],
+                    [ac_cv_lang_ext_token=yes], [ac_cv_lang_ext_token=no])
+  CFLAGS="$old_CFLAGS"
+  AS_IF([test "$ac_cv_lang_ext_token" = yes],
+        [CFLAGS="$CFLAGS -Wno-language-extension-token"])
+  AC_MSG_RESULT($ac_cv_lang_ext_token)
+fi
 
 dnl We use these options to decide which functions to include.
 AC_ARG_WITH(target-subdir,
