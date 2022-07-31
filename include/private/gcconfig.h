@@ -2275,7 +2275,7 @@ EXTERN_C_BEGIN
 #     if defined(HOST_ANDROID)
 #       define SEARCH_FOR_DATA_START
 #     else
-        extern int __data_start[];
+        extern int __data_start[] __attribute__((__weak__));
 #       define DATASTART ((ptr_t)__data_start)
 #     endif
       extern int _end[];
