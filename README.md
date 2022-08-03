@@ -8,6 +8,7 @@
 [![LGTM Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/context:cpp)
 [![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/alerts)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fivmai%2Fbdwgc.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fivmai%2Fbdwgc?ref=badge_shield)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/6332/badge)](https://bestpractices.coreinfrastructure.org/projects/6332)
 [![Hits-of-Code](https://hitsofcode.com/github/ivmai/bdwgc?branch=master)](https://hitsofcode.com/github/ivmai/bdwgc/view)
 [![Lines of code](https://img.shields.io/tokei/lines/github/ivmai/bdwgc)](https://shields.io/category/size)
 [![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/ivmai/bdwgc)](https://shields.io/category/size)
