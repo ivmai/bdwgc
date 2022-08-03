@@ -106,7 +106,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
         /* Round it up to the next whole heap block */
         word descr = GC_obj_kinds[obj_kind].ok_descriptor;
 
-        sz = (sz + HBLKSIZE-1) & ~HBLKMASK;
+        sz = (sz + HBLKSIZE-1) & ~(HBLKSIZE-1);
         if (GC_obj_kinds[obj_kind].ok_relocate_descr)
           descr += sz;
         /* GC_realloc might be changing the block size while            */

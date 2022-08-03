@@ -389,7 +389,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
       if (op /* != NULL */) { /* CPPCHECK */
         hdr * hhdr = HDR(op);
 
-        GC_ASSERT(((word)op & (HBLKSIZE - 1)) == 0); /* large block */
+        GC_ASSERT(HBLKDISPL(op) == 0); /* large block */
         /* We don't need the lock here, since we have an undisguised    */
         /* pointer.  We do need to hold the lock while we adjust        */
         /* mark bits.                                                   */

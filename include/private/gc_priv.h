@@ -984,7 +984,7 @@ EXTERN_C_BEGIN
 
 # define HBLKPTR(objptr) ((struct hblk *)(((word)(objptr)) \
                                           & ~(word)(HBLKSIZE-1)))
-# define HBLKDISPL(objptr) (((size_t) (objptr)) & (HBLKSIZE-1))
+# define HBLKDISPL(objptr) modHBLKSZ((size_t)(objptr))
 
 /* Round up allocation size (in bytes) to a multiple of a granule.      */
 #define ROUNDUP_GRANULE_SIZE(lb) /* lb should have no side-effect */ \
@@ -1072,9 +1072,6 @@ typedef word page_hash_table[PHT_SIZE];
 /*    H e a p   B l o c k s                 */
 /*                                          */
 /********************************************/
-
-/*  heap block header */
-#define HBLKMASK   (HBLKSIZE-1)
 
 #define MARK_BITS_PER_HBLK (HBLKSIZE/GRANULE_BYTES)
            /* upper bound                                    */
@@ -1222,12 +1219,12 @@ struct hblk {
 
 # define OBJ_SZ_TO_BLOCKS(lb) divHBLKSZ((lb) + HBLKSIZE-1)
 # define OBJ_SZ_TO_BLOCKS_CHECKED(lb) /* lb should have no side-effect */ \
-                                divHBLKSZ(SIZET_SAT_ADD(lb, HBLKSIZE - 1))
+                                divHBLKSZ(SIZET_SAT_ADD(lb, HBLKSIZE-1))
     /* Size of block (in units of HBLKSIZE) needed to hold objects of   */
     /* given lb (in bytes).  The checked variant prevents wrap around.  */
 
 /* Object free list link */
-# define obj_link(p) (*(void  **)(p))
+# define obj_link(p) (*(void **)(p))
 
 # define LOG_MAX_MARK_PROCS 6
 # define MAX_MARK_PROCS (1 << LOG_MAX_MARK_PROCS)

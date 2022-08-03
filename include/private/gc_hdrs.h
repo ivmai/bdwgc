@@ -152,7 +152,7 @@ typedef struct bi {
                                 /* GC_all_nils.                         */
 
 
-#define MAX_JUMP (HBLKSIZE - 1)
+#define MAX_JUMP (HBLKSIZE-1)
 
 #define HDR_FROM_BI(bi, p) \
                 (bi)->index[((word)(p) >> LOG_HBLKSIZE) & (BOTTOM_SZ - 1)]

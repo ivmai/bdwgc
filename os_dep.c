@@ -2454,8 +2454,8 @@ void * os2_alloc(size_t bytes)
         /* problems, so we dodge the issue.                     */
         result = (ptr_t)GlobalAlloc(0, SIZET_SAT_ADD(bytes, HBLKSIZE));
         /* Align it at HBLKSIZE boundary.       */
-        result = (ptr_t)(((word)result + HBLKSIZE - 1)
-                         & ~(word)(HBLKSIZE - 1));
+        result = (ptr_t)(((word)result + HBLKSIZE-1)
+                         & ~(word)(HBLKSIZE-1));
       } else
 #   endif
     /* else */ {

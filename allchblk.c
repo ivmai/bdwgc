@@ -301,7 +301,7 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
 /* Remove hhdr from the free list (it is assumed to specified by index). */
 STATIC void GC_remove_from_fl_at(hdr *hhdr, int index)
 {
-    GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
+    GC_ASSERT(modHBLKSZ(hhdr -> hb_sz) == 0);
     if (hhdr -> hb_prev == 0) {
         GC_ASSERT(HDR(GC_hblkfreelist[index]) == hhdr);
         GC_hblkfreelist[index] = hhdr -> hb_next;
@@ -385,7 +385,7 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
       GC_ASSERT(prev == 0 || !HBLK_IS_FREE(prevhdr)
                 || (GC_heapsize & SIGNB) != 0);
 #   endif
-    GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
+    GC_ASSERT(modHBLKSZ(hhdr -> hb_sz) == 0);
     GC_hblkfreelist[index] = h;
     GC_free_bytes[index] += hhdr -> hb_sz;
     GC_ASSERT(GC_free_bytes[index] <= GC_large_free_bytes);
@@ -590,7 +590,7 @@ STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
 
     GC_ASSERT(I_HOLD_LOCK());
     total_size = hhdr -> hb_sz;
-    GC_ASSERT((total_size & (HBLKSIZE-1)) == 0);
+    GC_ASSERT(modHBLKSZ(total_size) == 0);
     GC_remove_from_fl_at(hhdr, index);
     if (total_size == bytes) return h;
     rest = (struct hblk *)((word)h + bytes);
@@ -908,7 +908,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
         /* if it is avoidable.  This also ensures that newly allocated  */
         /* blocks are treated as dirty.  Necessary since we don't       */
         /* protect free blocks.                                         */
-        GC_ASSERT((size_needed & (HBLKSIZE-1)) == 0);
+        GC_ASSERT(modHBLKSZ(size_needed) == 0);
         GC_remove_protection(hbp, divHBLKSZ(size_needed),
                              (hhdr -> hb_descr == 0) /* pointer-free */);
 #   endif
