@@ -2659,6 +2659,11 @@ GC_API void GC_CALL GC_abort_on_oom(void)
     EXIT();
 }
 
+GC_API size_t GC_CALL GC_get_hblk_size(void)
+{
+    return (size_t)HBLKSIZE;
+}
+
 #ifdef THREADS
   GC_API void GC_CALL GC_stop_world_external(void)
   {

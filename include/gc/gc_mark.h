@@ -175,6 +175,10 @@ GC_API GC_ATTR_DEPRECATED
 # endif
   size_t GC_debug_header_size;
 
+/* Return the heap block size.  Each heap block is devoted to a single  */
+/* size and kind of object.                                             */
+GC_API GC_ATTR_CONST size_t GC_CALL GC_get_hblk_size(void);
+
 /* And some routines to support creation of new "kinds", e.g. with      */
 /* custom mark procedures, by language runtimes.                        */
 /* The _inner versions assume the caller holds the allocation lock.     */

@@ -2503,6 +2503,7 @@ int main(void)
     (void)GC_get_pages_executable();
     (void)GC_get_warn_proc();
     (void)GC_is_disabled();
+    (void)GC_get_hblk_size();
     GC_set_allocd_bytes_per_finalizer(GC_get_allocd_bytes_per_finalizer());
     GC_set_disable_automatic_collection(GC_get_disable_automatic_collection());
     GC_set_dont_expand(GC_get_dont_expand());
