@@ -136,7 +136,9 @@ of GC v3.7, Apr 21, 1994). This was contributed by Dave Barrett.
               +----------------------+              |
               | char * hb_map        |>-------------+
               +----------------------+
-              | ushort hb_obj_kind   |
+              |   uchar hb_obj_kind  |
+              +----------------------+
+              |    uchar hb_flags    |
               +----------------------+
               |   hb_last_reclaimed  |
      ---      +----------------------+
