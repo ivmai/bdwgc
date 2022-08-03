@@ -136,7 +136,9 @@ contributed originally by Dave Barrett.
                 +----------------------+             |
                 | char * hb_map        |>------------+
                 +----------------------+
-                | ushort hb_obj_kind   |
+                |   uchar hb_obj_kind  |
+                +----------------------+
+                |    uchar hb_flags    |
                 +----------------------+
                 |   hb_last_reclaimed  |
        ---      +----------------------+
