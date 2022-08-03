@@ -1,6 +1,6 @@
 # Boehm-Demers-Weiser Garbage Collector
 
-[![Travis-CI build status](https://travis-ci.com/ivmai/bdwgc.svg?branch=master)](https://travis-ci.com/ivmai/bdwgc)
+[![Travis-CI build status](https://app.travis-ci.com/ivmai/bdwgc.svg?branch=master)](https://app.travis-ci.com/github/ivmai/bdwgc)
 [![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/ivmai/bdwgc?branch=master&svg=true)](https://ci.appveyor.com/project/ivmai/bdwgc)
 [![Codecov.io](https://codecov.io/github/ivmai/bdwgc/coverage.svg?branch=master)](https://codecov.io/github/ivmai/bdwgc?branch=master)
 [![Coveralls test coverage status](https://coveralls.io/repos/github/ivmai/bdwgc/badge.png?branch=master)](https://coveralls.io/github/ivmai/bdwgc)
