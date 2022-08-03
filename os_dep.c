@@ -2433,7 +2433,7 @@ void * os2_alloc(size_t bytes)
     return(result);
   }
 
-#elif (defined(USE_WINALLOC) && !defined(MSWIN_XBOX1)) || defined(CYGWIN32)
+#elif defined(USE_WINALLOC) /* && !MSWIN_XBOX1 */ || defined(CYGWIN32)
 
 # ifdef USE_GLOBAL_ALLOC
 #   define GLOBAL_ALLOC_TEST 1
