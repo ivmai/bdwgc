@@ -198,6 +198,11 @@ GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn,
 GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *,
                                                     GC_word /* len */);
 
+/* Return the number of set mark bits for the heap block where object   */
+/* p is located.  Defined only if the library has been compiled         */
+/* without NO_DEBUGGING.                                                */
+GC_API unsigned GC_CALL GC_count_set_marks_in_hblk(const void * /* p */);
+
 /* And some routines to support creation of new "kinds", e.g. with      */
 /* custom mark procedures, by language runtimes.                        */
 /* The _inner versions assume the caller holds the allocation lock.     */

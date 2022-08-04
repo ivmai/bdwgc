@@ -2144,6 +2144,7 @@ void enable_incremental_mode(void)
         UNTESTED(GC_gcj_malloc_ignore_off_page);
 #     endif
 #     ifndef NO_DEBUGGING
+        UNTESTED(GC_count_set_marks_in_hblk);
         UNTESTED(GC_dump);
         UNTESTED(GC_dump_regions);
         UNTESTED(GC_is_tmp_root);
