@@ -3243,7 +3243,8 @@ EXTERN_C_BEGIN
         /* GET_MEM is currently not assumed to retrieve 0 filled space, */
         /* though we should perhaps take advantage of the case in which */
         /* does.                                                        */
-        struct hblk;    /* See gc_priv.h.       */
+# define hblk GC_hblk_s
+  struct hblk;  /* See gc_priv.h. */
 # if defined(PCR)
     char * real_malloc(size_t bytes);
 #   define GET_MEM(bytes) HBLKPTR(real_malloc(SIZET_SAT_ADD(bytes, \

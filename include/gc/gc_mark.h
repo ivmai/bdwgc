@@ -38,8 +38,10 @@
 
 #if defined(GC_BUILD) || defined(NOT_GCBUILD)
   struct GC_ms_entry;
+  struct GC_hblk_s;
 #else
   struct GC_ms_entry { void *opaque; };
+  struct GC_hblk_s { void *opaque; };
 #endif
 
 /* A client supplied mark procedure.  Returns new mark stack pointer.   */
@@ -178,6 +180,15 @@ GC_API GC_ATTR_DEPRECATED
 /* Return the heap block size.  Each heap block is devoted to a single  */
 /* size and kind of object.                                             */
 GC_API GC_ATTR_CONST size_t GC_CALL GC_get_hblk_size(void);
+
+typedef void (GC_CALLBACK *GC_walk_hblk_fn)(struct GC_hblk_s *,
+                                            GC_word /* client_data */);
+
+/* Apply fn to each allocated heap block.  It is the responsibility     */
+/* of the caller to avoid data race during the function execution (e.g. */
+/* by holding the allocation lock).                                     */
+GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn,
+                                           GC_word /* client_data */);
 
 /* And some routines to support creation of new "kinds", e.g. with      */
 /* custom mark procedures, by language runtimes.                        */

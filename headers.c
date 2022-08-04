@@ -329,11 +329,8 @@ GC_INNER void GC_remove_counts(struct hblk *h, size_t sz/* bytes */)
     }
 }
 
-/* Apply fn to all allocated blocks.  It is the caller responsibility   */
-/* to avoid data race during the function execution (e.g. by holding    */
-/* the allocation lock).                                                */
-void GC_apply_to_all_blocks(void (*fn)(struct hblk *h, word client_data),
-                            word client_data)
+GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn fn,
+                                           GC_word client_data)
 {
     signed_word j;
     bottom_index * index_p;

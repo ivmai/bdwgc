@@ -1889,10 +1889,6 @@ GC_INNER ptr_t GC_approx_sp(void);
 
 GC_INNER GC_bool GC_should_collect(void);
 
-void GC_apply_to_all_blocks(void (*fn)(struct hblk *h, word client_data),
-                            word client_data);
-                        /* Invoke fn(hbp, client_data) for each         */
-                        /* allocated heap block.                        */
 GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free);
                         /* Get the next block whose address is at least */
                         /* h.  Returned block is managed by GC.  The    */
