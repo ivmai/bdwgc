@@ -166,7 +166,8 @@ GC_INNER void GC_set_hdr_marks(hdr *hhdr)
 }
 
 /* Clear all mark bits associated with block h. */
-static void clear_marks_for_block(struct hblk *h, word dummy GC_ATTR_UNUSED)
+static void GC_CALLBACK clear_marks_for_block(struct hblk *h,
+                                              GC_word dummy GC_ATTR_UNUSED)
 {
     hdr * hhdr = HDR(h);
 

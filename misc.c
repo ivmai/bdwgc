@@ -2347,7 +2347,7 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
   }
 #endif /* !NO_DEBUGGING */
 
-static void block_add_size(struct hblk *h, word pbytes)
+static void GC_CALLBACK block_add_size(struct hblk *h, GC_word pbytes)
 {
   hdr *hhdr = HDR(h);
   *(word *)pbytes += (WORDS_TO_BYTES(hhdr->hb_sz) + HBLKSIZE-1)

@@ -188,7 +188,7 @@ typedef void (GC_CALLBACK *GC_walk_hblk_fn)(struct GC_hblk_s *,
 /* of the caller to avoid data race during the function execution (e.g. */
 /* by holding the allocation lock).                                     */
 GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn,
-                                           GC_word /* client_data */);
+                                GC_word /* client_data */) GC_ATTR_NONNULL(1);
 
 /* And some routines to support creation of new "kinds", e.g. with      */
 /* custom mark procedures, by language runtimes.                        */

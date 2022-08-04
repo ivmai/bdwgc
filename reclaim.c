@@ -385,7 +385,8 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp, word sz,
  * If report_if_found is TRUE, then process any block immediately, and
  * simply report free objects; do not actually reclaim them.
  */
-STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
+STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
+                                         GC_word report_if_found)
 {
     hdr * hhdr = HDR(hbp);
     word sz;    /* size of objects in current block */
@@ -560,8 +561,8 @@ unsigned GC_n_set_marks(hdr *hhdr)
 
 #endif /* !USE_MARK_BYTES  */
 
-STATIC void GC_print_block_descr(struct hblk *h,
-                                 word /* struct PrintStats */ raw_ps)
+STATIC void GC_CALLBACK GC_print_block_descr(struct hblk *h,
+                                GC_word /* struct PrintStats */ raw_ps)
 {
     hdr *hhdr = HDR(h);
     word sz = hhdr -> hb_sz;
@@ -814,7 +815,8 @@ struct enumerate_reachable_s {
   void *client_data;
 };
 
-STATIC void GC_do_enumerate_reachable_objects(struct hblk *hbp, word ped)
+STATIC void GC_CALLBACK GC_do_enumerate_reachable_objects(struct hblk *hbp,
+                                                          GC_word ped)
 {
   struct hblkhdr *hhdr = HDR(hbp);
   size_t sz = (size_t)hhdr->hb_sz;

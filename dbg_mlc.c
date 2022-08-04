@@ -983,7 +983,8 @@ STATIC void GC_print_all_smashed_proc(void)
 
 /* Check all marked objects in the given block for validity     */
 /* Avoid GC_apply_to_each_object for performance reasons.       */
-STATIC void GC_check_heap_block(struct hblk *hbp, word dummy GC_ATTR_UNUSED)
+STATIC void GC_CALLBACK GC_check_heap_block(struct hblk *hbp,
+                                            GC_word dummy GC_ATTR_UNUSED)
 {
     struct hblkhdr * hhdr = HDR(hbp);
     word sz = hhdr -> hb_sz;

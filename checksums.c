@@ -114,7 +114,8 @@ STATIC void GC_update_check_page(struct hblk *h, int index)
 
 word GC_bytes_in_used_blocks = 0;
 
-STATIC void GC_add_block(struct hblk *h, word dummy GC_ATTR_UNUSED)
+STATIC void GC_CALLBACK GC_add_block(struct hblk *h,
+                                     GC_word dummy GC_ATTR_UNUSED)
 {
    hdr * hhdr = HDR(h);
 
@@ -126,7 +127,7 @@ STATIC void GC_check_blocks(void)
     word bytes_in_free_blocks = GC_large_free_bytes;
 
     GC_bytes_in_used_blocks = 0;
-    GC_apply_to_all_blocks(GC_add_block, (word)0);
+    GC_apply_to_all_blocks(GC_add_block, 0);
     GC_COND_LOG_PRINTF("GC_bytes_in_used_blocks= %lu,"
                        " bytes_in_free_blocks= %lu, heapsize= %lu\n",
                        (unsigned long)GC_bytes_in_used_blocks,

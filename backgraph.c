@@ -283,7 +283,7 @@ static void add_edge(ptr_t p, ptr_t q)
 
 typedef void (*per_object_func)(ptr_t p, size_t n_bytes, word gc_descr);
 
-static void per_object_helper(struct hblk *h, word fn)
+static GC_CALLBACK void per_object_helper(struct hblk *h, GC_word fn)
 {
   hdr * hhdr = HDR(h);
   size_t sz = (size_t)hhdr->hb_sz;
