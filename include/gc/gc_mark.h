@@ -190,6 +190,14 @@ typedef void (GC_CALLBACK *GC_walk_hblk_fn)(struct GC_hblk_s *,
 GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn,
                                 GC_word /* client_data */) GC_ATTR_NONNULL(1);
 
+/* If there are likely to be false references to a block starting at h  */
+/* of the indicated length, then return the next plausible starting     */
+/* location for h that might avoid these false references.  Otherwise   */
+/* NULL is returned.  Assumes the allocation lock is held but no        */
+/* assertion about it by design.                                        */
+GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *,
+                                                    GC_word /* len */);
+
 /* And some routines to support creation of new "kinds", e.g. with      */
 /* custom mark procedures, by language runtimes.                        */
 /* The _inner versions assume the caller holds the allocation lock.     */

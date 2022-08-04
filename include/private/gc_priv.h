@@ -2175,14 +2175,6 @@ void GC_register_data_segments(void);
             GC_add_to_black_list_stack((word)(bits))
 #endif /* PRINT_BLACK_LIST */
 
-struct hblk * GC_is_black_listed(struct hblk * h, word len);
-                        /* If there are likely to be false references   */
-                        /* to a block starting at h of the indicated    */
-                        /* length, then return the next plausible       */
-                        /* starting location for h that might avoid     */
-                        /* these false references.  Remains externally  */
-                        /* visible as used by GNU GCJ currently.        */
-
 GC_INNER void GC_promote_black_lists(void);
                         /* Declare an end to a black listing phase.     */
 GC_INNER void GC_unpromote_black_lists(void);

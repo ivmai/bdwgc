@@ -27,8 +27,7 @@
 /* Externally callable routines are:    */
 /* - GC_add_to_black_list_normal,       */
 /* - GC_add_to_black_list_stack,        */
-/* - GC_promote_black_lists,            */
-/* - GC_is_black_listed.                */
+/* - GC_promote_black_lists.            */
 
 /* Pointers to individual tables.  We replace one table by another by   */
 /* switching these pointers.                                            */
@@ -242,7 +241,8 @@ GC_INNER void GC_unpromote_black_lists(void)
  * Knows about the structure of the black list hash tables.
  * Assumes the allocation lock is held but no assertion about it by design.
  */
-struct hblk * GC_is_black_listed(struct hblk *h, word len)
+GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *h,
+                                                    GC_word len)
 {
     word index = PHT_HASH((word)h);
     word i;
