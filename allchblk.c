@@ -59,6 +59,20 @@
                                 /* block.  Remains externally visible   */
                                 /* as used by GNU GCJ currently.        */
 
+GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_hblk_fn fn,
+                                          GC_word client_data)
+{
+  int i;
+
+  for (i = 0; i <= N_HBLK_FLS; ++i) {
+    struct hblk *h;
+
+    for (h = GC_hblkfreelist[i]; h != NULL; h = HDR(h) -> hb_next) {
+      (*fn)(h, client_data);
+    }
+  }
+}
+
 #ifndef GC_GCJ_SUPPORT
   STATIC
 #endif
@@ -101,21 +115,17 @@ STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
 # endif /* !USE_MUNMAP */
 
 #if !defined(NO_DEBUGGING) || defined(GC_ASSERTIONS)
+  static void GC_CALLBACK add_hb_sz(struct hblk *h, GC_word client_data)
+  {
+      *(word *)client_data += HDR(h) -> hb_sz;
+  }
+
   /* Should return the same value as GC_large_free_bytes.       */
   GC_INNER word GC_compute_large_free_bytes(void)
   {
       word total_free = 0;
-      unsigned i;
 
-      for (i = 0; i <= N_HBLK_FLS; ++i) {
-        struct hblk * h;
-        hdr * hhdr;
-
-        for (h = GC_hblkfreelist[i]; h != 0; h = hhdr->hb_next) {
-          hhdr = HDR(h);
-          total_free += hhdr->hb_sz;
-        }
-      }
+      GC_iterate_free_hblks(add_hb_sz, (word)&total_free);
       return total_free;
   }
 #endif /* !NO_DEBUGGING || GC_ASSERTIONS */
