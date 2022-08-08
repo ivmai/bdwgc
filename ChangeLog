@@ -1,3 +1,8 @@
+2022-08-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/tree.html (A picture): Change type of hb_obj_kind (of hblkhdr)
+	from ushort to uchar; add hb_flags field right after hb_obj_kind.
+
 2022-07-06  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/private/gcconfig.h [MPROTECT_VDB && (__GLIBC__<2
