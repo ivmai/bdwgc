@@ -181,14 +181,19 @@ GC_API GC_ATTR_DEPRECATED
 /* size and kind of object.                                             */
 GC_API GC_ATTR_CONST size_t GC_CALL GC_get_hblk_size(void);
 
-typedef void (GC_CALLBACK *GC_walk_hblk_fn)(struct GC_hblk_s *,
-                                            GC_word /* client_data */);
+/* Same as GC_walk_hblk_fn but with index of the free list.             */
+typedef void (GC_CALLBACK *GC_walk_free_blk_fn)(struct GC_hblk_s *,
+                                                int /* index */,
+                                                GC_word /* client_data */);
 
 /* Apply fn to each completely empty heap block.  It is the             */
 /* responsibility of the caller to avoid data race during the function  */
 /* execution (e.g. by holding the allocation lock).                     */
-GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_hblk_fn,
+GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn,
                                 GC_word /* client_data */) GC_ATTR_NONNULL(1);
+
+typedef void (GC_CALLBACK *GC_walk_hblk_fn)(struct GC_hblk_s *,
+                                            GC_word /* client_data */);
 
 /* Apply fn to each allocated heap block.  It is the responsibility     */
 /* of the caller to avoid data race during the function execution (e.g. */

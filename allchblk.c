@@ -59,7 +59,7 @@
                                 /* block.  Remains externally visible   */
                                 /* as used by GNU GCJ currently.        */
 
-GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_hblk_fn fn,
+GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn fn,
                                           GC_word client_data)
 {
   int i;
@@ -68,7 +68,7 @@ GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_hblk_fn fn,
     struct hblk *h;
 
     for (h = GC_hblkfreelist[i]; h != NULL; h = HDR(h) -> hb_next) {
-      (*fn)(h, client_data);
+      (*fn)(h, i, client_data);
     }
   }
 }
@@ -115,7 +115,8 @@ STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
 # endif /* !USE_MUNMAP */
 
 #if !defined(NO_DEBUGGING) || defined(GC_ASSERTIONS)
-  static void GC_CALLBACK add_hb_sz(struct hblk *h, GC_word client_data)
+  static void GC_CALLBACK add_hb_sz(struct hblk *h, int i GC_ATTR_UNUSED,
+                                    GC_word client_data)
   {
       *(word *)client_data += HDR(h) -> hb_sz;
   }
@@ -131,34 +132,37 @@ STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
 #endif /* !NO_DEBUGGING || GC_ASSERTIONS */
 
 # if !defined(NO_DEBUGGING)
-void GC_print_hblkfreelist(void)
-{
-    unsigned i;
-    word total;
+  static void GC_CALLBACK print_hblkfreelist_item(struct hblk *h, int i,
+                                                  GC_word prev_index_ptr)
+  {
+    hdr *hhdr = HDR(h);
 
-    for (i = 0; i <= N_HBLK_FLS; ++i) {
-      struct hblk * h = GC_hblkfreelist[i];
-
-      if (0 != h) GC_printf("Free list %u (total size %lu):\n",
-                            i, (unsigned long)GC_free_bytes[i]);
-      while (h /* != NULL */) { /* CPPCHECK */
-        hdr * hhdr = HDR(h);
-
-        GC_printf("\t%p size %lu %s black listed\n",
-                (void *)h, (unsigned long) hhdr -> hb_sz,
-                GC_is_black_listed(h, HBLKSIZE) != 0 ? "start" :
-                GC_is_black_listed(h, hhdr -> hb_sz) != 0 ? "partially" :
-                                                        "not");
-        h = hhdr -> hb_next;
-      }
+    if (i != *(int *)prev_index_ptr) {
+      GC_printf("Free list %d (total size %lu):\n",
+                i, (unsigned long)GC_free_bytes[i]);
+      *(int *)prev_index_ptr = i;
     }
+
+    GC_printf("\t%p size %lu %s black listed\n",
+              (void *)h, (unsigned long)(hhdr -> hb_sz),
+              GC_is_black_listed(h, HBLKSIZE) != NULL ? "start"
+                : GC_is_black_listed(h, hhdr -> hb_sz) != NULL ? "partially"
+                : "not");
+  }
+
+  void GC_print_hblkfreelist(void)
+  {
+    word total;
+    int prev_index = -1;
+
+    GC_iterate_free_hblks(print_hblkfreelist_item, (word)&prev_index);
     GC_printf("GC_large_free_bytes: %lu\n",
               (unsigned long)GC_large_free_bytes);
-
-    if ((total = GC_compute_large_free_bytes()) != GC_large_free_bytes)
-          GC_err_printf("GC_large_free_bytes INCONSISTENT!! Should be: %lu\n",
-                        (unsigned long)total);
-}
+    total = GC_compute_large_free_bytes();
+    if (total != GC_large_free_bytes)
+      GC_err_printf("GC_large_free_bytes INCONSISTENT!! Should be: %lu\n",
+                    (unsigned long)total);
+  }
 
 /* Return the free list index on which the block described by the header */
 /* appears, or -1 if it appears nowhere.                                 */
