@@ -321,7 +321,7 @@ void* Undisguise( GC_word i ) {
     int *x = gc_allocator<int>().allocate(1);
     int *xio;
     xio = gc_allocator_ignore_off_page<int>().allocate(1);
-    (void)xio;
+    GC_reachable_here(xio);
     int **xptr = traceable_allocator<int *>().allocate(1);
     *x = 29;
     if (!xptr) {
@@ -357,7 +357,7 @@ void* Undisguise( GC_word i ) {
             D* d;
             F* f;
             d = ::new (USE_GC, D::CleanUp, (void*)(GC_word)i) D( i );
-            (void)d;
+            GC_reachable_here(d);
             f = new F;
             F** fa = new F*[1];
             fa[0] = f;
@@ -373,7 +373,7 @@ void* Undisguise( GC_word i ) {
         for (i = 0; i < 1000000; i++) {
             A* a;
             a = new (USE_GC) A( i );
-            (void)a;
+            GC_reachable_here(a);
             B* b;
             b = new B( i );
             (void)b;
