@@ -2124,6 +2124,9 @@ EXTERN_C_BEGIN
 #     define DATAEND (ptr_t)(&__bss_end)
       void *switch_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
+#     ifndef HAVE_CLOCK_GETTIME
+#       define HAVE_CLOCK_GETTIME 1
+#     endif
 #   endif
 #   ifdef MSWIN32   /* UWP */
       /* TODO: Enable MPROTECT_VDB */
@@ -3014,6 +3017,11 @@ EXTERN_C_BEGIN
       && !defined(NO_PTHREAD_ATTR_GET_NP)
 # define HAVE_PTHREAD_NP_H 1 /* requires include pthread_np.h */
 # define HAVE_PTHREAD_ATTR_GET_NP 1
+#endif
+
+#if !defined(HAVE_CLOCK_GETTIME) && defined(_POSIX_TIMERS) \
+    && (defined(CYGWIN32) || (defined(LINUX) && defined(__USE_POSIX199309)))
+# define HAVE_CLOCK_GETTIME 1
 #endif
 
 #if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE) \

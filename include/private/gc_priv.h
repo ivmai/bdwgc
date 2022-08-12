@@ -513,11 +513,8 @@ EXTERN_C_END
 # define MS_TIME_DIFF(a,b) ((unsigned long)n3ds_convert_tick_to_ms((a)-(b)))
 # define NS_FRAC_TIME_DIFF(a, b) 0UL /* TODO: implement it */
 
-#elif defined(NINTENDO_SWITCH) \
-      || (((defined(LINUX) && defined(__USE_POSIX199309)) \
-           || defined(CYGWIN32)) && defined(_POSIX_TIMERS))
+#elif defined(HAVE_CLOCK_GETTIME)
 # include <time.h>
-# define HAVE_CLOCK_GETTIME 1
 # define CLOCK_TYPE struct timespec
 # define CLOCK_TYPE_INITIALIZER { 0, 0 }
 # if defined(_POSIX_MONOTONIC_CLOCK) && !defined(NINTENDO_SWITCH)
