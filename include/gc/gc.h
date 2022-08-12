@@ -1388,15 +1388,16 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 #   define GC_reachable_here(ptr) \
                 __asm__ __volatile__ (" " : : "X"(ptr) : "memory")
 # endif
-#else
-  GC_API void GC_CALL GC_noop1(GC_word);
-# ifdef LINT2
-#   define GC_reachable_here(ptr) GC_noop1(~(GC_word)(ptr)^(~(GC_word)0))
+#elif defined(LINT2)
+# define GC_reachable_here(ptr) GC_noop1(~(GC_word)(ptr)^(~(GC_word)0))
                 /* The expression matches the one of COVERT_DATAFLOW(). */
-# else
-#   define GC_reachable_here(ptr) GC_noop1((GC_word)(ptr))
-# endif
+#else
+# define GC_reachable_here(ptr) GC_noop1((GC_word)(ptr))
 #endif
+
+/* Make the argument appear live to compiler.  Should be robust against */
+/* the whole program analysis.                                          */
+GC_API void GC_CALL GC_noop1(GC_word);
 
 /* GC_set_warn_proc can be used to redirect or filter warning messages. */
 /* p may not be a NULL pointer.  msg is printf format string (arg must  */
