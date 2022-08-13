@@ -141,6 +141,7 @@ set(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
         new_hblk.c dbg_mlc.c malloc.c dyn_load.c typd_mlc.c ptr_chck.c
         mallocx.c)
 set(THREADDLLIBS_LIST)
+set(NEED_LIB_RT)
 
 set(_HOST ${CMAKE_SYSTEM_PROCESSOR}-unknown-${CMAKE_SYSTEM})
 string(TOLOWER ${_HOST} HOST)
@@ -193,9 +194,11 @@ if (CMAKE_USE_PTHREADS_INIT)
   if (HOST MATCHES .*-.*-hpux11.*)
     message("Only HP/UX 11 POSIX threads are supported.")
     add_definitions("-D_POSIX_C_SOURCE=199506L")
+    set(NEED_LIB_RT ON)
   elseif (HOST MATCHES .*-.*-netbsd.*)
     message("Only on NetBSD 2.0 or later.")
     add_definitions("-D_PTHREADS")
+    set(NEED_LIB_RT ON)
   endif()
   if (MSYS)
     # Does not provide process fork functionality.
@@ -224,6 +227,14 @@ elseif (CMAKE_USE_WIN32_THREADS_INIT)
 elseif (CMAKE_HP_PTHREADS_INIT OR CMAKE_USE_SPROC_INIT)
   message(FATAL_ERROR "Unsupported thread package")
 endif()
+
+# Some targets need -lrt linker option.
+if (NEED_LIB_RT)
+  find_library(LIBRT rt)
+  if (LIBRT)
+    set(THREADDLLIBS_LIST ${THREADDLLIBS_LIST} ${LIBRT})
+  endif()
+endif(NEED_LIB_RT)
 
 if (disable_handle_fork)
   add_definitions("-DNO_HANDLE_FORK")
