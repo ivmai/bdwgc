@@ -191,6 +191,7 @@ CFLAGS="$old_CFLAGS"
 
 THREADDLLIBS=
 need_atomic_ops_asm=false
+need_lib_rt=false
 compile_asm=false
 use_parallel_mark=no
 use_thread_local_alloc=no
@@ -222,8 +223,9 @@ case "$THREADS" in
       *-*-hpux11*)
         AC_MSG_WARN("Only HP/UX 11 POSIX threads are supported.")
         AC_DEFINE(_POSIX_C_SOURCE,199506L)
-        THREADDLLIBS="-lpthread -lrt"
+        THREADDLLIBS="-lpthread"
         # HPUX needs REENTRANT for the _r calls.
+        need_lib_rt=true
         ;;
       *-*-openbsd*)
         AM_CFLAGS="$AM_CFLAGS -pthread"
@@ -242,10 +244,12 @@ case "$THREADS" in
       *-*-netbsd*)
         AC_MSG_WARN("Only on NetBSD 2.0 or later.")
         AC_DEFINE(_PTHREADS)
-        THREADDLLIBS="-lpthread -lrt"
+        THREADDLLIBS="-lpthread"
+        need_lib_rt=true
         ;;
       *-*-solaris*)
-        THREADDLLIBS="-lpthread -lrt"
+        THREADDLLIBS="-lpthread"
+        need_lib_rt=true
         ;;
       *-*-cygwin* | *-*-msys*)
         # Cygwin doesn't have a real libpthread, so Libtool can't link
@@ -266,7 +270,8 @@ case "$THREADS" in
         ;;
       *-*-osf*)
         AM_CFLAGS="$AM_CFLAGS -pthread"
-        THREADDLLIBS="-lpthread -lrt"
+        THREADDLLIBS="-lpthread"
+        need_lib_rt=true
         ;;
       *)
         AS_IF([test x$default_threadlibs != xtrue],
@@ -329,7 +334,22 @@ case "$THREADS" in
     AC_MSG_ERROR($THREADS is an unknown thread package)
     ;;
 esac
+
+# Check whether -lrt linker option is needed to use clock_gettime.
+if test "x$need_lib_rt" != xtrue; then
+  AC_MSG_CHECKING(for clock_gettime without additional libraries)
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <time.h>],
+                    [struct timespec t; clock_gettime(CLOCK_REALTIME, &t)])],
+    [AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)
+     AC_CHECK_LIB(rt, clock_gettime, [need_lib_rt=true])])
+fi
+
+if test "x$need_lib_rt" = xtrue; then
+  THREADDLLIBS="$THREADDLLIBS -lrt"
+fi
 AC_SUBST(THREADDLLIBS)
+
 AM_CONDITIONAL(THREADS, test x$THREADS != xnone)
 AM_CONDITIONAL(PTHREADS, test x$THREADS = xposix)
 AM_CONDITIONAL(DARWIN_THREADS, test x$darwin_threads = xtrue)

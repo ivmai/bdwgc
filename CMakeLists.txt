@@ -228,7 +228,16 @@ elseif (CMAKE_HP_PTHREADS_INIT OR CMAKE_USE_SPROC_INIT)
   message(FATAL_ERROR "Unsupported thread package")
 endif()
 
-# Some targets need -lrt linker option.
+# Check whether -lrt linker option is needed to use clock_gettime.
+if (NOT NEED_LIB_RT)
+  check_function_exists(clock_gettime HAVE_CLOCK_GETTIME_DIRECTLY)
+  if (NOT HAVE_CLOCK_GETTIME_DIRECTLY)
+    # Use of clock_gettime() probably requires linking with "rt" library.
+    set(NEED_LIB_RT ON)
+  endif()
+endif()
+
+# Locate and use "rt" library if needed (and the library is available).
 if (NEED_LIB_RT)
   find_library(LIBRT rt)
   if (LIBRT)
@@ -476,9 +485,7 @@ if (HAVE_DLADDR)
 endif()
 
 add_library(gc ${SRC})
-if (enable_threads)
-  target_link_libraries(gc PRIVATE ${THREADDLLIBS_LIST} ${ATOMIC_OPS_LIBS})
-endif()
+target_link_libraries(gc PRIVATE ${THREADDLLIBS_LIST} ${ATOMIC_OPS_LIBS})
 target_include_directories(gc INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include>")

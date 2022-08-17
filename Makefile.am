@@ -134,7 +134,7 @@ endif
 endif
 
 # Include THREADDLLIBS here to ensure that the correct versions of
-# linuxthread semaphore functions get linked:
+# linuxthread semaphore (and clock_gettime) functions get linked:
 libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS) $(ATOMIC_OPS_LIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info $(LIBGC_VER_INFO) \
