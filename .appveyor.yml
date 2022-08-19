@@ -90,7 +90,8 @@ install:
 
 build_script:
 - cmd: if [%TARGET%]==[cmake] (
-    cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" .
+    mkdir out && cd out
+    && cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
     && cmake --build . --config %CMAKE_CONFIG% --verbose )
 - cmd: if [%TARGET%]==[nmake] (
     "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
