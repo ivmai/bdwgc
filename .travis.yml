@@ -821,7 +821,7 @@ script:
     cmake --build . --config $CMAKE_CONFIG;
   fi
 - if [[ "$CMAKE_CONFIG" != "" ]]; then
-    ctest --build-config $CMAKE_CONFIG -V;
+    ctest --build-config $CMAKE_CONFIG -j4 -V;
   fi
 - if [[ "$CC_FOR_CHECK" != "" ]]; then
     make -f $MAKEFILE_NAME $MAKEFILE_TARGETS_CHECK CC=$CC_FOR_CHECK
