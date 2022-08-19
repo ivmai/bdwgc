@@ -9,16 +9,16 @@ environment:
   TEST_TARGET: check
   matrix:
   - TARGET: cmake
-    CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Werror=deprecated -Dwithout_libatomic_ops=ON
+    CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Werror=deprecated -Dwithout_libatomic_ops=ON
   - TARGET: cmake
     CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_throw_bad_alloc_library=OFF -Denable_gc_assertions=ON -Denable_gc_debug=ON -Denable_threads=OFF
   - TARGET: cmake
     CFLAGS_EXTRA: -DNO_MSGBOX_ON_ERROR -DNO_MPROTECT_VDB -DGC_READ_ENV_FILE
     CMAKE_CONFIG: Release
-    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_large_config=ON -Ddisable_gc_debug=ON
+    CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Release -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_large_config=ON -Ddisable_gc_debug=ON
   - TARGET: cmake
     CMAKE_CONFIG: Release
-    CMAKE_OPTIONS: -Denable_parallel_mark=OFF
+    CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=MinSizeRel -Denable_parallel_mark=OFF
   - TARGET: cmake
     CMAKE_OPTIONS: -Denable_gc_assertions=ON -Denable_thread_local_alloc=OFF
   - TARGET: cmake
@@ -29,7 +29,7 @@ environment:
   - TARGET: cmake
     CMAKE_OPTIONS: -A ARM -Denable_cplusplus=ON -Denable_gc_assertions=ON
   - TARGET: cmake
-    CMAKE_OPTIONS: -A ARM64 -Denable_cplusplus=ON
+    CMAKE_OPTIONS: -A ARM64 -DCMAKE_BUILD_TYPE=Release -Denable_cplusplus=ON
     CMAKE_CONFIG: Release
   - TARGET: nmake
     ARCH: x86
