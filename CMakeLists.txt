@@ -82,6 +82,15 @@ option(disable_handle_fork "Prohibit installation of pthread_atfork() handlers" 
 option(install_headers "Install header and pkg-config metadata files" ON)
 option(without_libatomic_ops "Use atomic_ops.h in libatomic_ops/src" OFF)
 
+# Override the default build type to RelWithDebInfo (this instructs cmake to
+# pass -O2 -g -DNDEBUG options to the compiler by default).
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE
+      STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY
+               STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
+endif()
+
 # Convert VER_INFO values to [SO]VERSION ones.
 if (BUILD_SHARED_LIBS)
   # cord:
