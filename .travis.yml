@@ -263,6 +263,7 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: freebsd
     env:
+    - CMAKE_BUILD_OPTIONS="--verbose"
     - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -Denable_cplusplus=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: freebsd
@@ -523,10 +524,12 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
+    - CMAKE_BUILD_OPTIONS="--verbose"
     - CMAKE_OPTIONS="-Denable_cplusplus=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
+    - CMAKE_BUILD_OPTIONS="--verbose"
     - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -Denable_cplusplus=ON -Denable_gc_assertions=ON -Denable_large_config=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
@@ -810,7 +813,7 @@ script:
   fi
 - if [[ "$CMAKE_OPTIONS" != "" ]]; then
     cmake $CMAKE_OPTIONS -Dbuild_tests=ON -Denable_werror=ON -Werror=dev .
-    && cmake --build .;
+    && cmake --build . $CMAKE_BUILD_OPTIONS;
   fi
 - if [[ "$CMAKE_OPTIONS" != "" ]]; then
     ctest -j4 -V;
