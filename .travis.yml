@@ -779,6 +779,9 @@ before_install:
     m4 --version;
     libtool --version || true;
   fi
+- if [[ "$CMAKE_OPTIONS" != "" ]]; then
+    cmake --version;
+  fi
 - if [[ "$CONF_CFLAGS" == "" ]]; then CONF_CFLAGS="-g -O2"; fi
 - if [[ "$MAKEFILE_NAME" == "" ]]; then MAKEFILE_NAME=Makefile; fi
 - if [[ "$MAKEFILE_TARGETS" == "" ]]; then MAKEFILE_TARGETS="check"; fi
