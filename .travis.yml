@@ -816,9 +816,8 @@ script:
          CFLAGS_EXTRA="$CFLAGS_EXTRA" LDFLAGS="$LDFLAGS";
   fi
 - if [[ "$CMAKE_CONFIG" != "" ]]; then
-    cmake $CMAKE_OPTIONS -Dbuild_tests=ON -Denable_werror=ON
-          -Werror=deprecated . &&
-    cmake --build . --config $CMAKE_CONFIG;
+    cmake $CMAKE_OPTIONS -Dbuild_tests=ON -Denable_werror=ON -Werror=dev .
+    && cmake --build . --config $CMAKE_CONFIG;
   fi
 - if [[ "$CMAKE_CONFIG" != "" ]]; then
     ctest --build-config $CMAKE_CONFIG -j4 -V;
