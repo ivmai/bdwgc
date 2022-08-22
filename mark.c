@@ -57,7 +57,7 @@ void GC_noop6(word arg1 GC_ATTR_UNUSED, word arg2 GC_ATTR_UNUSED,
 /* Make the argument appear live to compiler.  This is similar  */
 /* to GC_noop6(), but with a single argument.  Robust against   */
 /* whole program analysis.                                      */
-GC_API void GC_CALL GC_noop1(word x)
+GC_API void GC_CALL GC_noop1(GC_word x)
 {
 # if defined(AO_HAVE_store) && defined(THREAD_SANITIZER)
     AO_store(&GC_noop_sink, (AO_t)x);

@@ -2601,8 +2601,6 @@ void GC_print_static_roots(void);
 /* Make arguments appear live to compiler */
 void GC_noop6(word, word, word, word, word, word);
 
-GC_API void GC_CALL GC_noop1(word);
-
 #ifndef GC_ATTR_FORMAT_PRINTF
 # if GC_GNUC_PREREQ(3, 0)
 #   define GC_ATTR_FORMAT_PRINTF(spec_argnum, first_checked) \
