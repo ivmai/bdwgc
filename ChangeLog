@@ -1926,7 +1926,7 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 Also, includes 7.2 changes
 
 
-== [7.2p] (not released yet) ==
+== [7.2p] 2022-08-25 ==
 
 * Avoid potential race in GC_init_real_syms after GC_allow_register_threads
 * Define SUNOS5SIGS macro for kFreeBSD
