@@ -103,8 +103,8 @@ jobs:
         - libatomic-ops-dev
     env:
     - MAKEFILE_TARGETS="distcheck"
-    - GC_REAL_VERSION=7.2o
-    - AO_SRC_VER=v7.2j
+    - GC_REAL_VERSION=7.2p
+    - AO_SRC_VER=v7.2k
 
 before_install:
 - if [[ "$MAKEFILE_TARGETS" == *"dist"* ]]; then
