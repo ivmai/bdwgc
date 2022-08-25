@@ -822,7 +822,7 @@
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
 
-== [7.6.16] (not released yet) ==
+== [7.6.16] 2022-08-26 ==
 
 * Do not send signal to thread which is suspended manually
 * Eliminate 'old_gc_no is initialized but not referenced' MS VC false warning
