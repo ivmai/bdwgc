@@ -30,8 +30,8 @@ set(PACKAGE_VERSION 8.3.0)
 
 # Info (current:revision:age) for the Libtool versioning system.
 # These values should match those in cord/cord.am and Makefile.am.
-set(LIBCORD_VER_INFO    5:0:4)
-set(LIBGC_VER_INFO      6:0:5)
+set(LIBCORD_VER_INFO    6:0:5)
+set(LIBGC_VER_INFO      6:1:5)
 set(LIBGCCPP_VER_INFO   6:0:5)
 
 option(enable_cplusplus "C++ support" OFF)
