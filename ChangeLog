@@ -1,5 +1,5 @@
 
-== [8.0.8] (not released yet) ==
+== [8.0.8] 2022-08-26 ==
 
 * Avoid potential race in GC_init_real_syms after GC_allow_register_threads
 * Define SUNOS5SIGS macro for kFreeBSD
