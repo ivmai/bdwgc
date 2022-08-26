@@ -146,7 +146,7 @@
 * Workaround 'data access w/o lock' code defect FP in GC_incr_bytes_freed
 
 
-== [8.2.2] (not released yet) ==
+== [8.2.2] 2022-08-26 ==
 
 * Abort if no progress with thread suspend/resume signals resending
 * Add CMake option to force libatomic_ops headers usage
