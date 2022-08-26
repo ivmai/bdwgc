@@ -2,11 +2,13 @@
 == [8.0.8] (not released yet) ==
 
 * Avoid potential race in GC_init_real_syms after GC_allow_register_threads
+* Define SUNOS5SIGS macro for kFreeBSD
 * Distribute gc_disclaim.h in single-obj-compilation
 * Do not assert that GC is initialized at DLL_THREAD_DETACH (Win32)
 * Do not name GCC intrinsics as C11 ones
 * Do not send signal to thread which is suspended manually
 * Eliminate 'buffer overflow detected' FP error in realloc_test
+* Eliminate 'extension used' clang warning in sparc_mach_dep.S (configure)
 * Eliminate 'function/data pointer conversion in expression' MSVC warning
 * Eliminate 'implicit decl of _setjmp' gcc warning if -std=c11 on Cygwin
 * Eliminate 'new_l may be used uninitialized' gcc warning in os_dep (Cygwin)
@@ -21,13 +23,16 @@
 * Fix 'GC_text_mapping not used' GCC warning if redirect malloc w/o threads
 * Fix 'ISO C forbids conversion of function pointer to object' warning
 * Fix 'undeclared getpagesize' compiler warning on AIX and OSF1
+* Fix 'undefined reference to __data_start' linker error on Linux/aarch64
 * Fix GC_allocate_ml incorrect cleanup in GC_deinit if pthreads (MinGW)
 * Fix GC_dirty() argument in GC_malloc_explicitly_typed_ignore_off_page
 * Fix GC_make_descriptor for zero length argument
 * Fix GC_suspend_thread if called before thread destructor
 * Fix GC_unmapped_bytes update in GC_unmap for Sony PS/3
 * Fix SIGSEGV caused by dropped stack access from child process in gctest
+* Fix SUNOS5SIGS documentation to match macro definition in gcconfig.h
 * Fix abort in Win32 DllMain if PARALLEL_MARK
+* Fix assertion about built-in AO_test_and_set_acquire on sparc64 (gcc-12)
 * Fix assertion violation in GC_allow_register_threads on Windows
 * Fix assertion violation of GC_thread_key alignment if pthread-based TLS
 * Fix context saving when GC_suspend_thread(self)
@@ -36,6 +41,7 @@
 * Fix hang in GC_free if GC_PREFER_MPROTECT_VDB (Mingw64)
 * Fix hang in select() called from suspend signal handler if TSan
 * Fix hang on sem_wait in GC_suspend_thread if thread was resumed recently
+* Fix hb_obj_kind type in documentation (ASCII diagram) describing hblkhdr
 * Fix incremental mode enabling in gctest if TEST_MANUAL_VDB
 * Fix lock assertion violation in GC_find_limit if always multi-threaded
 * Fix missing lock when GC_generate_random_valid_address is called
@@ -55,9 +61,11 @@
 * Refer to Makefile.direct instead of deleted Makefile file in README
 * Relax assertion of hb_n_marks in reclaim_block if more than two markers
 * Remove checking of RS6000 completely
+* Remove duplicate check of MSWIN_XBOX1 in os_dep.c
 * Remove non-working check of M68K in gctest
 * Remove useless TSan W/A about read of mark_lock_holder for Windows
 * Replace SSH cloning with HTTPS one in README
+* Revert "Remove nested always-false ifdef for HPUX and FREEBSD"
 * Revert addition of msvc_dbg.h in include.am
 * Support 'z' format modifier by CORD_vsprintf
 * Update documentation of GC_RATE and MAX_PRIOR_ATTEMPTS
