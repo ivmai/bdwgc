@@ -38,10 +38,13 @@
 * Change minimum heap growth to one block if requested explicitly
 * Change p local variable to current_p in push_all/conditional_eager
 * Check pointer tag in all mark procedures (E2K)
+* Declare GC_noop1 as public function unconditionally
 * Declare GC_register_stackbottom symbol as internal on IA64 (refactoring)
+* Define ALIGNMENT macro based on CPP_WORDSZ value by default (refactoring)
 * Define GC_get_parallel and GC_set_markers_count in single-threaded GC
 * Define GC_save_regs_ret_val variable only if used on IA64 (refactoring)
 * Define and use SIGNAL_BASED_STOP_WORLD macro internally (refactoring)
+* Define macros in gcconfig.h to use sigaction for SIGSEGV and SIGBUS
 * Define marker_[b]sp only if needed (refactoring)
 * Define op and nwords local variables consistently across typd_mlc.c
 * Disable H/W tag checking in mark procedures by default (E2K)
@@ -52,6 +55,7 @@
 * Do not define THREAD_SANITIZER if GC is built w/o threads support
 * Do not invoke GC_approx_sp() repeatedly in GC_stopped_mark (refactoring)
 * Do not put atomic_ops[_sysdeps].o to libgc.a in Makefile.direct
+* Do not set SIGBUS handler to catch write faults on Linux
 * Do not treat warnings as errors by default in digimars.mak
 * Document GC_ENABLE_SUSPEND_THREAD better in configure
 * Document GC_with_callee_saves_pushed better
@@ -67,6 +71,7 @@
 * Ensure GC_our_memory is updated while holding GC lock (refactoring)
 * Ensure a collection occurs between adjacent heap expansions
 * Ensure every test prints a message on success
+* Export GC_apply_to_all_blocks() and GC_is_black_listed() as public API
 * Fail threadkeytest on pthread_create error in main loop
 * Fix digimars.mak to build 'all' by default
 * Force pthread_mutex_lock usage for GC lock if ThreadSanitizer
@@ -77,11 +82,14 @@
 * Make abort message unique in write_fault_handler
 * Make all functions static in msvc_dbg.c except for backtrace[_symbols]
 * Mention CMake-based build in README.md and README.QUICK
+* Move HAVE_CLOCK_GETTIME definition from gc_priv.h to gcconfig.h
 * Move non-cord [pkg]include_HEADERS assignments to include.am (refactoring)
 * Move non-license info from LICENSE file to README and vice versa
 * Move public header files to include/gc in source tree
 * Name all tests consistently (refactoring)
+* New API function (GC_get_hblk_size) to get HBLKSIZE value
 * New CMake option to link with external libatomic_ops (system library)
+* New GC_count_set_marks_in_hblk and GC_iterate_free_hblks API functions
 * Output finalization information by GC_dump
 * Pass ATOMIC_OPS_LIBS to tests using AO primitives directly (Automake)
 * Prevent requesting blocks past max_heapsize in GC_collect_or_expand
@@ -124,23 +132,29 @@
 * Replace obsolete AC_TRY_COMPILE/LINK/RUN in configure.ac (refactoring)
 * Return free memory to OS explicitly before getting new memory from OS
 * Roundup size passed to GC_expand_hp
+* Simplify code to define USE_x_SPECIFIC macros in thread_local_alloc.h
 * Simplify expression to clear extra bits in add_ext_descriptor (refactoring)
 * Specify that error conditions are unlikely to be true in threads code
 * Specify that internal allocations failure is unlikely (refactoring)
 * Specify that out-of-memory is unlikely in typed alloc and make descriptor
 * State explicitly that license is MIT-style
+* Support 32-bit mode on E2K
 * Support CFLAGS_EXTRA in rare build scripts (NT/WCC_MAKEFILE, digimars.mak)
 * Support ThreadSanitizer (GCC)
 * Support client stop function properly in maybe_gc and collect_a_little
 * Support malloc redirection on E2K
+* Test garbage collection from a deep recursion in gctest
 * Test manual self-suspend in gctest
+* Test world stop while other thread in deep recursion in gctest (pthreads)
 * Treat GC_arrays as a part of internal memory when printing its size
+* Treat warnings as errors in C++ code if configure --enable-werror
 * Try find libatomic_ops installed by cmake if with_libatomic_ops (CMake)
 * Update next_random_no state using AO primitive
 * Use AO primitive in GC_noop1 instead of no_sanitize attribute
 * Use AO primitives in GC_RAND_NEXT instead of no_sanitize attribute
 * Use GC_printf in cpptest consistently (refactoring)
 * Use consistent variables naming in typd_mlc.c (refactoring)
+* Use modHBLKSZ where possible (refactoring)
 * Use single-argument suspend_handler for E2K, HP_PA, IA64, M68K
 * Warn if heap has grown while GC was disabled
 * Workaround 'data access w/o lock' code defect FP in GC_incr_bytes_freed
