@@ -1,5 +1,5 @@
 
-== [8.2.2] (not released yet) ==
+== [8.2.2] 2022-08-26 ==
 
 * Abort if no progress with thread suspend/resume signals resending
 * Add CMake option to force libatomic_ops headers usage
