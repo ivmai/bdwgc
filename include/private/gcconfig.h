@@ -232,7 +232,8 @@ EXTERN_C_BEGIN
 #      define EWS4800
 #    endif
 #    if !defined(LINUX) && !defined(EWS4800) && !defined(NETBSD) \
-        && !defined(OPENBSD) && !defined(FREEBSD)
+        && !defined(OPENBSD) && !defined(FREEBSD) && !defined(_WIN32_WCE) \
+        && !defined(__CEGCC__) && !defined(__MINGW32CE__)
 #      if defined(ultrix) || defined(__ultrix)
 #        define ULTRIX
 #      else
