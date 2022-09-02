@@ -238,7 +238,7 @@ EXTERN_C_BEGIN
 #    define VAX
 #    define mach_type_known
 # endif
-# if defined(mips) || defined(__mips) || defined(_mips)
+# if (defined(mips) || defined(__mips) || defined(_mips)) && !defined(__TANDEM)
 #    define MIPS
 #    if defined(nec_ews) || defined(_nec_ews)
 #      define EWS4800
