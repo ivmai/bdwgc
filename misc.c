@@ -1200,7 +1200,8 @@ GC_API void GC_CALL GC_init(void)
 #   if ALIGNMENT > GC_DS_TAGS
       /* Adjust normal object descriptor for extra allocation.  */
       if (EXTRA_BYTES != 0)
-        GC_obj_kinds[NORMAL].ok_descriptor = (word)(-ALIGNMENT) | GC_DS_LENGTH;
+        GC_obj_kinds[NORMAL].ok_descriptor =
+                        ((~(word)ALIGNMENT) + 1) | GC_DS_LENGTH;
 #   endif
     GC_exclude_static_roots_inner(beginGC_arrays, endGC_arrays);
     GC_exclude_static_roots_inner(beginGC_obj_kinds, endGC_obj_kinds);
