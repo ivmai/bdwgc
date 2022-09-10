@@ -3556,7 +3556,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(POINTER_SHIFT) && !defined(POINTER_MASK)
-# define POINTER_MASK ((word)(-1))
+# define POINTER_MASK ((word)(signed_word)(-1))
 #endif
 
 #if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
