@@ -450,6 +450,7 @@ endif()
 # pthread_setname_np, if available, may have 1, 2 or 3 arguments.
 if (CMAKE_USE_PTHREADS_INIT)
   check_c_source_compiles("
+#define _GNU_SOURCE 1\n
 #include <pthread.h>\n
 int main(void) { (void)pthread_setname_np(\"thread-name\"); return 0; }"
     HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
@@ -458,6 +459,7 @@ int main(void) { (void)pthread_setname_np(\"thread-name\"); return 0; }"
     add_definitions("-DHAVE_PTHREAD_SETNAME_NP_WITHOUT_TID")
   else()
     check_c_source_compiles("
+#define _GNU_SOURCE 1\n
 #include <pthread.h>\n
 int main(void) {\n
   (void)pthread_setname_np(pthread_self(), \"thread-name-%u\", 0); return 0; }"
@@ -467,9 +469,7 @@ int main(void) {\n
       add_definitions("-DHAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG")
     else()
       check_c_source_compiles("
-#if defined(__linux__) || defined(__GLIBC__) || defined(__GNU__) || defined(__CYGWIN__)\n
 #define _GNU_SOURCE 1\n
-#endif\n
 #include <pthread.h>\n
 int main(void) {\n
   (void)pthread_setname_np(pthread_self(), \"thread-name\"); return 0; }"
