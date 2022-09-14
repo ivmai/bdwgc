@@ -387,7 +387,9 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 {
     int index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr -> hb_sz));
     struct hblk *second = GC_hblkfreelist[index];
+
 #   if defined(GC_ASSERTIONS) && !defined(USE_MUNMAP)
+    {
       struct hblk *next = (struct hblk *)((word)h + hhdr -> hb_sz);
       hdr * nexthdr = HDR(next);
       struct hblk *prev = GC_free_block_ending_at(h);
@@ -396,8 +398,9 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
       GC_ASSERT(nexthdr == 0 || !HBLK_IS_FREE(nexthdr)
                 || (GC_heapsize & SIGNB) != 0);
                 /* In the last case, blocks may be too large to merge. */
-      GC_ASSERT(prev == 0 || !HBLK_IS_FREE(prevhdr)
+      GC_ASSERT(NULL == prev || !HBLK_IS_FREE(prevhdr)
                 || (GC_heapsize & SIGNB) != 0);
+    }
 #   endif
     GC_ASSERT(modHBLKSZ(hhdr -> hb_sz) == 0);
     GC_hblkfreelist[index] = h;
