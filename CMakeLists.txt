@@ -77,6 +77,7 @@ option(enable_register_main_static_data "Perform the initial guess of data root 
 option(enable_checksums "Report erroneously cleared dirty bits" OFF)
 option(enable_werror "Pass -Werror to the C compiler (treat warnings as errors)" OFF)
 option(enable_single_obj_compilation "Compile all libgc source files into single .o" OFF)
+option(disable_single_obj_compilation "Compile each libgc source file independently" OFF)
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 option(disable_handle_fork "Prohibit installation of pthread_atfork() handlers" OFF)
 option(install_headers "Install header and pkg-config metadata files" ON)
@@ -395,7 +396,7 @@ if (enable_werror)
   endif()
 endif(enable_werror)
 
-if (enable_single_obj_compilation OR BUILD_SHARED_LIBS)
+if (enable_single_obj_compilation OR (BUILD_SHARED_LIBS AND NOT disable_single_obj_compilation))
   set(SRC extra/gc.c) # override SRC
   if (CMAKE_USE_PTHREADS_INIT AND NOT (APPLE OR CYGWIN OR MSYS))
     add_definitions("-DGC_PTHREAD_START_STANDALONE")
