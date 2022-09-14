@@ -17,7 +17,7 @@
 #ifndef GC_ALLOC_PTRS_H
 #define GC_ALLOC_PTRS_H
 
-#include "gc.h"
+#include "gc/gc.h"
 
 #ifdef __cplusplus
   extern "C" {

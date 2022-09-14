@@ -30,7 +30,7 @@
 #include <stdlib.h>
 
 #define GC_BUILD
-#include "gc.h"
+#include "gc/gc.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 # define WIN32_LEAN_AND_MEAN 1

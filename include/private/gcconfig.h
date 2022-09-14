@@ -851,7 +851,7 @@ EXTERN_C_BEGIN
  *    the original main program.  The new main program would read something
  *    like (provided real_main() is not inlined by the compiler):
  *
- *              #include "gc.h"
+ *              #include "gc/gc.h"
  *
  *              main(argc, argv, envp)
  *              int argc;

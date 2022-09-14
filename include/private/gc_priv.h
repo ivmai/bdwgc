@@ -53,7 +53,7 @@
 # endif
 
 #ifndef GC_H
-# include "gc.h"
+# include "gc/gc.h"
 #endif
 
 #include <stdlib.h>

@@ -31,11 +31,11 @@ built-in "new" and "delete".
 #endif
 
 #define GC_DONT_INCL_WINDOWS_H
-#include "gc.h"
+#include "gc/gc.h"
 
 #include <new> // for bad_alloc, precedes include of gc_cpp.h
 
-#include "gc_cpp.h" // for GC_OPERATOR_NEW_ARRAY
+#include "gc/gc_cpp.h" // for GC_OPERATOR_NEW_ARRAY
 
 #if !(defined(_MSC_VER) || defined(__DMC__)) || defined(GC_NO_INLINE_STD_NEW)
 

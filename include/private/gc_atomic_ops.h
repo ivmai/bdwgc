@@ -22,7 +22,7 @@
 
 #ifdef GC_BUILTIN_ATOMIC
 
-# include "gc.h" /* for GC_word */
+# include "gc/gc.h" /* for GC_word */
 
 # ifdef __cplusplus
     extern "C" {
