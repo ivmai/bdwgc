@@ -1078,7 +1078,7 @@ GC_on_heap_resize_proc GC_on_heap_resize = 0;
 /* Used for logging only. */
 GC_INLINE int GC_compute_heap_usage_percent(void)
 {
-  word used = GC_composite_in_use + GC_atomic_in_use;
+  word used = GC_composite_in_use + GC_atomic_in_use + GC_bytes_allocd;
   word heap_sz = GC_heapsize - GC_unmapped_bytes;
 # if defined(CPPCHECK)
     word limit = (GC_WORD_MAX >> 1) / 50; /* to avoid a false positive */
@@ -1094,7 +1094,7 @@ GC_INLINE int GC_compute_heap_usage_percent(void)
   GC_DBGLOG_PRINTF("In-use heap: %d%% (%lu KiB pointers + %lu KiB other)\n", \
                    GC_compute_heap_usage_percent(), \
                    TO_KiB_UL(GC_composite_in_use), \
-                   TO_KiB_UL(GC_atomic_in_use))
+                   TO_KiB_UL(GC_atomic_in_use + GC_bytes_allocd))
 
 /* Finish up a collection.  Assumes mark bits are consistent, but the   */
 /* world is otherwise running.                                          */
