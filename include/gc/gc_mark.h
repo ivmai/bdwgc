@@ -327,7 +327,7 @@ GC_API void GC_CALL GC_set_start_callback(GC_start_callback_proc);
 GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void);
 
 /* Slow/general mark bit manipulation.  The caller should hold the      */
-/* allocation lock.  GC_is_marked returns 1 (TRUE) or 0.  The argument  */
+/* allocation lock.  GC_is_marked returns 1 (true) or 0.  The argument  */
 /* should be the real address of an object (i.e. the address of the     */
 /* debug header if there is one).                                       */
 GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);

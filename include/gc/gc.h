@@ -519,8 +519,8 @@ GC_API void GC_CALL GC_atfork_child(void);
 /* from the main program instead.                                       */
 GC_API void GC_CALL GC_init(void);
 
-/* Returns non-zero (TRUE) if and only if the collector is initialized  */
-/* (or, at least, the initialization is in progress).                   */
+/* Return 1 (true) if the collector is initialized (or, at least, the   */
+/* initialization is in progress), 0 otherwise.                         */
 GC_API int GC_CALL GC_is_init_called(void);
 
 /* Perform the collector shutdown.  (E.g. dispose critical sections on  */
@@ -590,10 +590,10 @@ GC_API void GC_CALL GC_end_stubborn_change(const void *) GC_ATTR_NONNULL(1);
 /* GC_free.                                                             */
 GC_API void * GC_CALL GC_base(void * /* displaced_pointer */);
 
-/* Return non-zero (TRUE) if and only if the argument points to         */
-/* somewhere in GC heap.  Primary use is as a fast alternative to       */
-/* GC_base to check whether the pointed object is allocated by GC       */
-/* or not.  It is assumed that the collector is already initialized.    */
+/* Return 1 (true) if the argument points to somewhere in the GC heap,  */
+/* 0 otherwise.  Primary use is as a fast alternative to GC_base() to   */
+/* check whether the given object is allocated by the collector or not. */
+/* It is assumed that the collector is already initialized.             */
 GC_API int GC_CALL GC_is_heap_ptr(const void *);
 
 /* Given a pointer to the base of an object, return its size in bytes.  */
@@ -848,8 +848,9 @@ GC_API size_t GC_CALL GC_get_memory_use(void);
 /* ineffective.                                                         */
 GC_API void GC_CALL GC_disable(void);
 
-/* Return non-zero (TRUE) if and only if garbage collection is disabled */
-/* (i.e., GC_dont_gc value is non-zero).  Does not acquire the lock.    */
+/* Return 1 (true) if the garbage collection is disabled (i.e., the     */
+/* value of GC_dont_gc is non-zero), 0 otherwise.  Does not acquire     */
+/* the lock.                                                            */
 GC_API int GC_CALL GC_is_disabled(void);
 
 /* Try to re-enable garbage collection.  GC_disable() and GC_enable()   */
@@ -881,7 +882,7 @@ GC_API int GC_CALL GC_get_manual_vdb_allowed(void);
 /* Safe to call before GC_INIT().  Includes a GC_init() call.           */
 GC_API void GC_CALL GC_enable_incremental(void);
 
-/* Return non-zero (TRUE) if and only if the incremental mode is on.    */
+/* Return 1 (true) if the incremental mode is on, 0 otherwise.          */
 /* Does not acquire the lock.                                           */
 GC_API int GC_CALL GC_is_incremental_mode(void);
 
@@ -1577,8 +1578,8 @@ GC_API void GC_CALL GC_start_mark_threads(void);
   GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *)
                                                         GC_ATTR_NONNULL(1);
 
-  /* Return non-zero (TRUE) if and only if the calling thread is        */
-  /* registered with the garbage collector.                             */
+  /* Return 1 (true) if the calling (current) thread is registered with */
+  /* the garbage collector, 0 otherwise.  Acquires the allocator lock.  */
   GC_API int GC_CALL GC_thread_is_registered(void);
 
   /* Notify the collector about the stack and the alt-stack of the      */
@@ -2022,7 +2023,7 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 #endif
 
 #ifdef GC_DONT_EXPAND
-  /* Set GC_dont_expand to TRUE at start-up */
+  /* Set GC_dont_expand to true at start-up.    */
 # define GC_INIT_CONF_DONT_EXPAND GC_set_dont_expand(1)
 #else
 # define GC_INIT_CONF_DONT_EXPAND /* empty */
