@@ -762,7 +762,7 @@ GC_INNER GC_bool GC_is_initialized = FALSE;
 
 GC_API int GC_CALL GC_is_init_called(void)
 {
-  return GC_is_initialized;
+  return (int)GC_is_initialized;
 }
 
 #if defined(GC_WIN32_THREADS) \
