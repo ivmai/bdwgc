@@ -230,7 +230,7 @@ typedef int GC_bool;
 # define GC_INLINE static inline
 #elif defined(_MSC_VER) || defined(__INTEL_COMPILER) || defined(__DMC__) \
         || (GC_GNUC_PREREQ(3, 0) && defined(__STRICT_ANSI__)) \
-        || defined(__WATCOMC__)
+        || defined(__BORLANDC__) || defined(__WATCOMC__)
 # define GC_INLINE static __inline
 #elif GC_GNUC_PREREQ(3, 0) || defined(__sun)
 # define GC_INLINE static inline
