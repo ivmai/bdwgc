@@ -638,12 +638,14 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     return me != NULL;
 }
 
-GC_API void GC_CALL GC_register_altstack(void *stack GC_ATTR_UNUSED,
-                                         GC_word stack_size GC_ATTR_UNUSED,
-                                         void *altstack GC_ATTR_UNUSED,
-                                         GC_word altstack_size GC_ATTR_UNUSED)
+GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
+                                         void *altstack, GC_word altstack_size)
 {
   /* TODO: Implement */
+  UNUSED_ARG(stack);
+  UNUSED_ARG(stack_size);
+  UNUSED_ARG(altstack);
+  UNUSED_ARG(altstack_size);
 }
 
 /* Make sure thread descriptor t is not protected by the VDB            */
@@ -903,9 +905,9 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 /* length of time.                                                      */
 
 /* GC_do_blocking_inner() is nearly the same as in pthread_support.c    */
-GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
+GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
 {
-  struct blocking_data * d = (struct blocking_data *) data;
+  struct blocking_data * d = (struct blocking_data *)data;
   DWORD thread_id = GetCurrentThreadId();
   GC_thread me;
 # ifdef IA64
@@ -913,6 +915,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 # endif
   DCL_LOCK_STATE;
 
+  UNUSED_ARG(context);
   LOCK();
   me = GC_lookup_thread_inner(thread_id);
   CHECK_LOOKUP_MY_THREAD(me);
@@ -3135,11 +3138,12 @@ GC_INNER void GC_thr_init(void)
 # else
 #   define GC_DllMain DllMain
 # endif
-  BOOL WINAPI GC_DllMain(HINSTANCE inst GC_ATTR_UNUSED, ULONG reason,
-                         LPVOID reserved GC_ATTR_UNUSED)
+  BOOL WINAPI GC_DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
   {
       DWORD thread_id;
 
+      UNUSED_ARG(inst);
+      UNUSED_ARG(reserved);
       /* Note that GC_use_threads_discovery should be called by the     */
       /* client application at start-up to activate automatic thread    */
       /* registration (it is the default GC behavior);                  */

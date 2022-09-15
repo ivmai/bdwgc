@@ -1253,7 +1253,7 @@ STATIC void GC_finish_collection(void)
 
 /* If stop_func == 0 then GC_default_stop_func is used instead.         */
 STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
-                                         GC_bool force_unmap GC_ATTR_UNUSED)
+                                         GC_bool force_unmap)
 {
     GC_bool result;
     IF_USE_MUNMAP(int old_unmap_threshold;)
@@ -1270,6 +1270,8 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
       if (force_unmap ||
           (GC_force_unmap_on_gcollect && old_unmap_threshold > 0))
         GC_unmap_threshold = 1; /* unmap as much as possible */
+#   else
+      UNUSED_ARG(force_unmap);
 #   endif
     ENTER_GC();
     /* Minimize junk left in my registers */

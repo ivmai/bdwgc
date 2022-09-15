@@ -63,12 +63,6 @@ typedef void (* oom_fn)(void);
                          ABORT("Out of memory"); }
 # define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
 
-#if GC_GNUC_PREREQ(3, 4)
-# define CORD_ATTR_UNUSED __attribute__((__unused__))
-#else
-# define CORD_ATTR_UNUSED /* empty */
-#endif
-
 CORD CORD_cat_char(CORD x, char c)
 {
     char * string;
@@ -427,8 +421,9 @@ void CORD_ec_append_cord(CORD_ec x, CORD s)
     x[0].ec_cord = CORD_cat(x[0].ec_cord, s);
 }
 
-char CORD_nul_func(size_t i CORD_ATTR_UNUSED, void * client_data)
+char CORD_nul_func(size_t i, void * client_data)
 {
+    (void)i;
     return (char)(GC_word)client_data;
 }
 
@@ -552,8 +547,9 @@ char CORD_lf_func(size_t i, void * client_data)
 }
 
 #ifndef GC_NO_FINALIZATION
-  void CORD_lf_close_proc(void * obj, void * client_data CORD_ATTR_UNUSED)
+  void CORD_lf_close_proc(void * obj, void * client_data)
   {
+    (void)client_data;
     if (fclose(((lf_state *)obj) -> lf_file) != 0)
         ABORT("CORD_lf_close_proc: fclose failed");
   }

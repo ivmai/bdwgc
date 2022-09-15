@@ -36,10 +36,14 @@
 /* Make arguments appear live to compiler.  Put here to minimize the    */
 /* risk of inlining.  Used to minimize junk left in registers.          */
 GC_ATTR_NOINLINE
-void GC_noop6(word arg1 GC_ATTR_UNUSED, word arg2 GC_ATTR_UNUSED,
-              word arg3 GC_ATTR_UNUSED, word arg4 GC_ATTR_UNUSED,
-              word arg5 GC_ATTR_UNUSED, word arg6 GC_ATTR_UNUSED)
+void GC_noop6(word arg1, word arg2, word arg3, word arg4, word arg5, word arg6)
 {
+  UNUSED_ARG(arg1);
+  UNUSED_ARG(arg2);
+  UNUSED_ARG(arg3);
+  UNUSED_ARG(arg4);
+  UNUSED_ARG(arg5);
+  UNUSED_ARG(arg6);
   /* Avoid GC_noop6 calls to be optimized away. */
 # if defined(AO_HAVE_compiler_barrier) && !defined(BASE_ATOMIC_OPS_EMULATED)
     AO_compiler_barrier(); /* to serve as a special side-effect */
@@ -166,11 +170,11 @@ GC_INNER void GC_set_hdr_marks(hdr *hhdr)
 }
 
 /* Clear all mark bits associated with block h. */
-static void GC_CALLBACK clear_marks_for_block(struct hblk *h,
-                                              GC_word dummy GC_ATTR_UNUSED)
+static void GC_CALLBACK clear_marks_for_block(struct hblk *h, GC_word dummy)
 {
     hdr * hhdr = HDR(h);
 
+    UNUSED_ARG(dummy);
     if (IS_UNCOLLECTABLE(hhdr -> hb_obj_kind)) return;
         /* Mark bit for these is cleared only once the object is        */
         /* explicitly deallocated.  This either frees the block, or     */
@@ -433,11 +437,10 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
     } ext_ex_regn;
 
     static EXCEPTION_DISPOSITION mark_ex_handler(
-        struct _EXCEPTION_RECORD *ex_rec,
-        void *est_frame,
-        struct _CONTEXT *context,
-        void *disp_ctxt GC_ATTR_UNUSED)
+                        struct _EXCEPTION_RECORD *ex_rec, void *est_frame,
+                        struct _CONTEXT *context, void *disp_ctxt)
     {
+        UNUSED_ARG(disp_ctxt);
         if (ex_rec->ExceptionCode == STATUS_ACCESS_VIOLATION) {
           ext_ex_regn *xer = (ext_ex_regn *)est_frame;
 
@@ -1442,9 +1445,9 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 # endif /* !NO_VDB_FOR_STATIC_ROOTS */
 
 #else
-  GC_API void GC_CALL GC_push_conditional(void *bottom, void *top,
-                                          int all GC_ATTR_UNUSED)
+  GC_API void GC_CALL GC_push_conditional(void *bottom, void *top, int all)
   {
+    UNUSED_ARG(all);
     GC_push_all(bottom, top);
   }
 #endif /* GC_DISABLE_INCREMENTAL */

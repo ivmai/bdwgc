@@ -272,7 +272,7 @@
 # define CROSSES_HBLK(p, sz) \
         (((word)((p) + sizeof(oh) + (sz) - 1) ^ (word)(p)) >= HBLKSIZE)
 
-GC_INNER void *GC_store_debug_info_inner(void *p, word sz GC_ATTR_UNUSED,
+GC_INNER void *GC_store_debug_info_inner(void *p, word sz,
                                          const char *string, int linenum)
 {
     word * result = (word *)((oh *)p + 1);
@@ -288,7 +288,9 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz GC_ATTR_UNUSED,
 #   endif
     ((oh *)p) -> oh_string = string;
     ((oh *)p) -> oh_int = linenum;
-#   ifndef SHORT_DBG_HDRS
+#   ifdef SHORT_DBG_HDRS
+      UNUSED_ARG(sz);
+#   else
       ((oh *)p) -> oh_sz = sz;
       ((oh *)p) -> oh_sf = START_FLAG ^ (word)result;
       ((word *)p)[BYTES_TO_WORDS(GC_size(p))-1] =
@@ -631,8 +633,10 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
     return GC_debug_malloc(lb, OPT_RA s, i);
   }
 
-  GC_API void GC_CALL GC_debug_change_stubborn(
-                                const void * p GC_ATTR_UNUSED) {}
+  GC_API void GC_CALL GC_debug_change_stubborn(const void *p)
+  {
+    UNUSED_ARG(p);
+  }
 #endif /* !CPPCHECK */
 
 GC_API void GC_CALL GC_debug_end_stubborn_change(const void *p)
@@ -983,14 +987,14 @@ STATIC void GC_print_all_smashed_proc(void)
 
 /* Check all marked objects in the given block for validity     */
 /* Avoid GC_apply_to_each_object for performance reasons.       */
-STATIC void GC_CALLBACK GC_check_heap_block(struct hblk *hbp,
-                                            GC_word dummy GC_ATTR_UNUSED)
+STATIC void GC_CALLBACK GC_check_heap_block(struct hblk *hbp, GC_word dummy)
 {
     struct hblkhdr * hhdr = HDR(hbp);
     word sz = hhdr -> hb_sz;
     word bit_no;
     char *p, *plim;
 
+    UNUSED_ARG(dummy);
     p = hbp->hb_body;
     if (sz > MAXOBJBYTES) {
       plim = p;

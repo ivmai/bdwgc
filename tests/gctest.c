@@ -1364,8 +1364,9 @@ void typed_test(void)
 #else
   volatile AO_t fail_count = 0;
 
-  void GC_CALLBACK fail_proc1(void *x GC_ATTR_UNUSED)
+  void GC_CALLBACK fail_proc1(void *arg)
   {
+    UNUSED_ARG(arg);
     AO_fetch_and_add1(&fail_count);
   }
 
@@ -2056,10 +2057,8 @@ void enable_incremental_mode(void)
 
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
-  int APIENTRY WinMain(HINSTANCE instance GC_ATTR_UNUSED,
-                       HINSTANCE prev GC_ATTR_UNUSED,
-                       WINMAIN_LPTSTR cmd GC_ATTR_UNUSED,
-                       int n GC_ATTR_UNUSED)
+  int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, WINMAIN_LPTSTR cmd,
+                       int n)
 #elif defined(RTEMS)
 # include <bsp.h>
 # define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
@@ -2075,11 +2074,20 @@ void enable_incremental_mode(void)
 #endif
 {
     CRTMEM_CHECK_INIT();
-#   if defined(CPPCHECK) && !defined(NO_WINMAIN_ENTRY) \
-       && ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE))
-      GC_noop1((GC_word)&WinMain);
-#   elif defined(CPPCHECK) && defined(RTEMS)
-      GC_noop1((GC_word)&Init);
+#   if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
+       && !defined(NO_WINMAIN_ENTRY)
+      UNUSED_ARG(instance);
+      UNUSED_ARG(prev);
+      UNUSED_ARG(cmd);
+      UNUSED_ARG(n);
+#     if defined(CPPCHECK)
+        GC_noop1((GC_word)&WinMain);
+#     endif
+#   elif defined(RTEMS)
+      UNUSED_ARG(ignord);
+#     if defined(CPPCHECK)
+        GC_noop1((GC_word)&Init);
+#     endif
 #   endif
     n_tests = 0;
     GC_clear_exclusion_table(); /* no-op as called before GC init */
@@ -2200,8 +2208,9 @@ void enable_incremental_mode(void)
 
 #if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
 
-DWORD __stdcall thr_run_one_test(void * arg GC_ATTR_UNUSED)
+DWORD __stdcall thr_run_one_test(void *arg)
 {
+  UNUSED_ARG(arg);
   run_one_test();
   return 0;
 }
@@ -2234,7 +2243,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT uMsg, WPARAM wParam,
   return ret;
 }
 
-DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
+DWORD __stdcall thr_window(void *arg)
 {
   WNDCLASS win_class = {
     CS_NOCLOSE,
@@ -2250,6 +2259,7 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
   };
   MSG msg;
 
+  UNUSED_ARG(arg);
   if (!RegisterClass(&win_class))
     FAIL;
 
@@ -2282,10 +2292,8 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
 #endif
 
 #if !defined(NO_WINMAIN_ENTRY)
-  int APIENTRY WinMain(HINSTANCE instance GC_ATTR_UNUSED,
-                       HINSTANCE prev GC_ATTR_UNUSED,
-                       WINMAIN_LPTSTR cmd GC_ATTR_UNUSED,
-                       int n GC_ATTR_UNUSED)
+  int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, WINMAIN_LPTSTR cmd,
+                       int n)
 #else
   int main(void)
 #endif
@@ -2299,8 +2307,14 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
 # endif
   DWORD thread_id;
 
-# if defined(CPPCHECK) && !defined(NO_WINMAIN_ENTRY)
-    GC_noop1((GC_word)&WinMain);
+# if !defined(NO_WINMAIN_ENTRY)
+    UNUSED_ARG(instance);
+    UNUSED_ARG(prev);
+    UNUSED_ARG(cmd);
+    UNUSED_ARG(n);
+#   if defined(CPPCHECK)
+      GC_noop1((GC_word)&WinMain);
+#   endif
 # endif
 # if defined(GC_DLL) && !defined(GC_NO_THREADS_DISCOVERY) \
         && !defined(MSWINCE) && !defined(THREAD_LOCAL_ALLOC)
@@ -2402,8 +2416,9 @@ int test(void)
 #if defined(GC_PTHREADS)
 # include <errno.h> /* for EAGAIN */
 
-void * thr_run_one_test(void * arg GC_ATTR_UNUSED)
+void * thr_run_one_test(void *arg)
 {
+    UNUSED_ARG(arg);
     run_one_test();
     return 0;
 }

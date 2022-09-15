@@ -658,7 +658,7 @@ static complex_descriptor *get_complex_descr(word *addr, size_t nwords)
 
 /* Used by GC_calloc_explicitly_typed via GC_array_kind.        */
 STATIC mse *GC_array_mark_proc(word *addr, mse *mark_stack_ptr,
-                               mse *mark_stack_limit, word env GC_ATTR_UNUSED)
+                               mse *mark_stack_limit, word env)
 {
   hdr *hhdr = HDR(addr);
   word sz = hhdr -> hb_sz;
@@ -667,6 +667,7 @@ STATIC mse *GC_array_mark_proc(word *addr, mse *mark_stack_ptr,
   mse *orig_mark_stack_ptr = mark_stack_ptr;
   mse *new_mark_stack_ptr;
 
+  UNUSED_ARG(env);
   if (NULL == complex_d) {
     /* Found a reference to a free list entry.  Ignore it. */
     return orig_mark_stack_ptr;

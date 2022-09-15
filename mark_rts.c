@@ -790,9 +790,9 @@ STATIC void GC_push_all_stack_part_eager_sections(ptr_t lo, ptr_t hi,
 /* enough of the current stack to ensure that callee-save registers     */
 /* saved in collector frames have been seen.                            */
 /* TODO: Merge it with per-thread stuff. */
-STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
-                                  void * context GC_ATTR_UNUSED)
+STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void *context)
 {
+    UNUSED_ARG(context);
 #   if defined(THREADS)
         /* cold_gc_frame is non-NULL.   */
 #       ifdef STACK_GROWS_DOWN
@@ -880,7 +880,7 @@ STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
 /* altered values.  Cold_gc_frame is an address inside a GC frame that  */
 /* remains valid until all marking is complete; a NULL value indicates  */
 /* that it is OK to miss some register values.                          */
-GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame GC_ATTR_UNUSED)
+GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
 {
     int i;
     unsigned kind;
@@ -945,7 +945,9 @@ GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame GC_ATTR_UNUSED)
     /* overflow the mark stack.  This is usually done by saving */
     /* the current context on the stack, and then just tracing  */
     /* from the stack.                                          */
-#   ifndef STACK_NOT_SCANNED
+#   ifdef STACK_NOT_SCANNED
+        UNUSED_ARG(cold_gc_frame);
+#   else
         GC_push_regs_and_stack(cold_gc_frame);
 #   endif
 

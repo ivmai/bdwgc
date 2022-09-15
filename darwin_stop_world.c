@@ -139,7 +139,7 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 /* bound and sets *phi to the upper one.                                */
 STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
                                 mach_port_t my_thread, ptr_t *paltstack_lo,
-                                ptr_t *paltstack_hi GC_ATTR_UNUSED)
+                                ptr_t *paltstack_hi)
 {
   ptr_t lo;
   if (thread == my_thread) {
@@ -319,20 +319,20 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #   endif
   } /* thread != my_thread */
 
-# ifdef DARWIN_DONT_PARSE_STACK
+# ifndef DARWIN_DONT_PARSE_STACK
+    /* TODO: Determine p and handle altstack if !DARWIN_DONT_PARSE_STACK */
+    UNUSED_ARG(paltstack_hi);
+# else
     /* p is guaranteed to be non-NULL regardless of GC_query_task_threads. */
     *phi = (p->flags & MAIN_THREAD) != 0 ? GC_stackbottom : p->stack_end;
-# endif
 
-  /* TODO: Determine p and handle altstack if !DARWIN_DONT_PARSE_STACK */
-# ifdef DARWIN_DONT_PARSE_STACK
-  if (p->altstack != NULL && (word)p->altstack <= (word)lo
-      && (word)lo <= (word)p->altstack + p->altstack_size) {
-    *paltstack_lo = lo;
-    *paltstack_hi = p->altstack + p->altstack_size;
-    lo = p->stack;
-    *phi = p->stack + p->stack_size;
-  } else
+    if (p->altstack != NULL && (word)p->altstack <= (word)lo
+        && (word)lo <= (word)p->altstack + p->altstack_size) {
+      *paltstack_lo = lo;
+      *paltstack_hi = p->altstack + p->altstack_size;
+      lo = p->stack;
+      *phi = p->stack + p->stack_size;
+    } else
 # endif
   /* else */ {
     *paltstack_lo = NULL;

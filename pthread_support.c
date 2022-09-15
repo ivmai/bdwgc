@@ -1582,13 +1582,14 @@ static void do_blocking_leave(GC_thread me, GC_bool topOfStackUnset)
 
 /* Wrapper for functions that are likely to block for an appreciable    */
 /* length of time.                                                      */
-GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
+GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
 {
     struct blocking_data *d = (struct blocking_data *)data;
     GC_thread me;
     GC_bool topOfStackUnset;
     DCL_LOCK_STATE;
 
+    UNUSED_ARG(context);
     LOCK();
     me = GC_lookup_thread(pthread_self());
     topOfStackUnset = do_blocking_enter(me);
@@ -1632,13 +1633,13 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 #if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
   /* Similar to GC_do_blocking_inner() but assuming the GC lock is held */
   /* and fn is GC_suspend_self_inner.                                   */
-  GC_INNER void GC_suspend_self_blocked(ptr_t thread_me,
-                                        void * context GC_ATTR_UNUSED)
+  GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context)
   {
     GC_thread me = (GC_thread)thread_me;
     GC_bool topOfStackUnset;
     DCL_LOCK_STATE;
 
+    UNUSED_ARG(context);
     GC_ASSERT(I_HOLD_LOCK());
     topOfStackUnset = do_blocking_enter(me);
     while ((me -> stop_info.ext_suspend_cnt & 1) != 0) {

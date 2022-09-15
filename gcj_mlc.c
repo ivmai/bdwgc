@@ -46,11 +46,13 @@ int GC_gcj_debug_kind = 0;
                         /* The kind of objects that is always marked    */
                         /* with a mark proc call.                       */
 
-STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr GC_ATTR_UNUSED,
+STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr,
                         struct GC_ms_entry *mark_stack_ptr,
-                        struct GC_ms_entry * mark_stack_limit GC_ATTR_UNUSED,
-                        word env GC_ATTR_UNUSED)
+                        struct GC_ms_entry * mark_stack_limit, word env)
 {
+    UNUSED_ARG(addr);
+    UNUSED_ARG(mark_stack_limit);
+    UNUSED_ARG(env);
     ABORT_RET("No client gcj mark proc is specified");
     return mark_stack_ptr;
 }

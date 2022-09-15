@@ -172,9 +172,9 @@ GC_finalizer_notifier_proc GC_finalizer_notifier =
 GC_INNER long GC_large_alloc_warn_interval = GC_LARGE_ALLOC_WARN_INTERVAL;
                         /* Interval between unsuppressed warnings.      */
 
-STATIC void * GC_CALLBACK GC_default_oom_fn(
-                                        size_t bytes_requested GC_ATTR_UNUSED)
+STATIC void * GC_CALLBACK GC_default_oom_fn(size_t bytes_requested)
 {
+    UNUSED_ARG(bytes_requested);
     return NULL;
 }
 
@@ -210,7 +210,7 @@ GC_oom_func GC_oom_fn = GC_default_oom_fn;
 
 /* Overrides the default automatic handle-fork mode.  Has effect only   */
 /* if called before GC_INIT.                                            */
-GC_API void GC_CALL GC_set_handle_fork(int value GC_ATTR_UNUSED)
+GC_API void GC_CALL GC_set_handle_fork(int value)
 {
 # ifdef CAN_HANDLE_FORK
     if (!GC_is_initialized)
@@ -229,6 +229,7 @@ GC_API void GC_CALL GC_set_handle_fork(int value GC_ATTR_UNUSED)
     }
 # else
     /* No at-fork handler is needed in the single-threaded mode.        */
+    UNUSED_ARG(value);
 # endif
 }
 
@@ -620,14 +621,14 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
 
 #if defined(THREADS) && !defined(SIGNAL_BASED_STOP_WORLD)
   /* GC does not use signals to suspend and restart threads.    */
-  GC_API void GC_CALL GC_set_suspend_signal(int sig GC_ATTR_UNUSED)
+  GC_API void GC_CALL GC_set_suspend_signal(int sig)
   {
-    /* empty */
+    UNUSED_ARG(sig);
   }
 
-  GC_API void GC_CALL GC_set_thr_restart_signal(int sig GC_ATTR_UNUSED)
+  GC_API void GC_CALL GC_set_thr_restart_signal(int sig)
   {
-    /* empty */
+    UNUSED_ARG(sig);
   }
 
   GC_API int GC_CALL GC_get_suspend_signal(void)
@@ -860,8 +861,11 @@ GC_API int GC_CALL GC_is_init_called(void)
 #endif /* MSGBOX_ON_ERROR */
 
 #if defined(THREADS) && defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
-  static void callee_saves_pushed_dummy_fn(ptr_t data GC_ATTR_UNUSED,
-                                           void * context GC_ATTR_UNUSED) {}
+  static void callee_saves_pushed_dummy_fn(ptr_t data, void *context)
+  {
+    UNUSED_ARG(data);
+    UNUSED_ARG(context);
+  }
 #endif
 
 #ifndef SMALL_CONFIG
@@ -2239,9 +2243,11 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 }
 
 /* This is nearly the same as in win32_threads.c        */
-STATIC void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
+STATIC void GC_do_blocking_inner(ptr_t data, void *context)
 {
-    struct blocking_data * d = (struct blocking_data *) data;
+    struct blocking_data * d = (struct blocking_data *)data;
+
+    UNUSED_ARG(context);
     GC_ASSERT(GC_is_initialized);
     GC_ASSERT(GC_blocked_sp == NULL);
 #   ifdef SPARC
@@ -2377,9 +2383,9 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
 }
 
 #ifndef PARALLEL_MARK
-  GC_API void GC_CALL GC_set_markers_count(unsigned markers GC_ATTR_UNUSED)
+  GC_API void GC_CALL GC_set_markers_count(unsigned markers)
   {
-    /* Nothing to do. */
+    UNUSED_ARG(markers);
   }
 #endif
 

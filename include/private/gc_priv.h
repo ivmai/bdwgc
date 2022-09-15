@@ -221,13 +221,9 @@ typedef int GC_bool;
 # endif
 #endif /* !GC_ATTR_NO_SANITIZE_THREAD */
 
-#ifndef GC_ATTR_UNUSED
-# if GC_GNUC_PREREQ(3, 4)
-#   define GC_ATTR_UNUSED __attribute__((__unused__))
-# else
-#   define GC_ATTR_UNUSED /* empty */
-# endif
-#endif /* !GC_ATTR_UNUSED */
+#ifndef UNUSED_ARG
+# define UNUSED_ARG(arg) ((void)(arg))
+#endif
 
 #ifdef HAVE_CONFIG_H
   /* The "inline" keyword is determined by Autoconf AC_C_INLINE.    */

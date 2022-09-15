@@ -251,8 +251,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 #ifdef SUSPEND_HANDLER_NO_CONTEXT
   STATIC void GC_suspend_handler(int sig)
 #else
-  STATIC void GC_suspend_sigaction(int sig, siginfo_t * info GC_ATTR_UNUSED,
-                                   void * context)
+  STATIC void GC_suspend_sigaction(int sig, siginfo_t *info, void *context)
 #endif
 {
   int old_errno = errno;
@@ -271,9 +270,10 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
       return;
     GC_with_callee_saves_pushed(GC_suspend_handler_inner, NULL);
 # else
+    UNUSED_ARG(info);
     /* We believe that in this case the full context is already         */
     /* in the signal handler frame.                                     */
-      GC_suspend_handler_inner(NULL, context);
+    GC_suspend_handler_inner(NULL, context);
 # endif
   errno = old_errno;
 }
@@ -321,8 +321,7 @@ GC_INLINE void GC_store_stack_ptr(GC_thread me)
 # endif
 }
 
-STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
-                                     void * context GC_ATTR_UNUSED)
+STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
 {
   pthread_t self;
   GC_thread me;
@@ -338,6 +337,8 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
                         /* After the barrier, this thread should see    */
                         /* the actual content of GC_threads.            */
 
+  UNUSED_ARG(dummy);
+  UNUSED_ARG(context);
   if ((my_stop_count & THREAD_RESTARTED) != 0)
     return; /* Restarting the world. */
 

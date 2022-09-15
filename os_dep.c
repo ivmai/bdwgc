@@ -524,8 +524,9 @@ GC_INNER const char * GC_get_maps(void)
   static struct sigaction old_segv_act;
   STATIC JMP_BUF GC_jmp_buf_openbsd;
 
-  STATIC void GC_fault_handler_openbsd(int sig GC_ATTR_UNUSED)
+  STATIC void GC_fault_handler_openbsd(int sig)
   {
+     UNUSED_ARG(sig);
      LONGJMP(GC_jmp_buf_openbsd, 1);
   }
 
@@ -938,8 +939,9 @@ GC_INNER size_t GC_page_size = 0;
 
     GC_INNER JMP_BUF GC_jmp_buf;
 
-    STATIC void GC_fault_handler(int sig GC_ATTR_UNUSED)
+    STATIC void GC_fault_handler(int sig)
     {
+        UNUSED_ARG(sig);
         LONGJMP(GC_jmp_buf, 1);
     }
 
@@ -1535,14 +1537,14 @@ GC_INNER size_t GC_page_size = 0;
       return GC_SUCCESS;
     }
 # else
-    GC_API int GC_CALL GC_get_stack_base(
-                                struct GC_stack_base *b GC_ATTR_UNUSED)
+    GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
     {
 #     if defined(GET_MAIN_STACKBASE_SPECIAL) && !defined(THREADS) \
          && !defined(IA64)
         b->mem_base = GC_get_main_stack_base();
         return GC_SUCCESS;
 #     else
+        UNUSED_ARG(b);
         return GC_UNIMPLEMENTED;
 #     endif
     }
@@ -4373,25 +4375,46 @@ EXTERN_C_END
 
 /* These should never be called, but just in case...  */
 GC_API_OSCALL kern_return_t
-catch_exception_raise_state(mach_port_name_t exception_port GC_ATTR_UNUSED,
-    int exception GC_ATTR_UNUSED, exception_data_t code GC_ATTR_UNUSED,
-    mach_msg_type_number_t codeCnt GC_ATTR_UNUSED, int flavor GC_ATTR_UNUSED,
-    thread_state_t old_state GC_ATTR_UNUSED, int old_stateCnt GC_ATTR_UNUSED,
-    thread_state_t new_state GC_ATTR_UNUSED, int new_stateCnt GC_ATTR_UNUSED)
+catch_exception_raise_state(mach_port_name_t exception_port, int exception,
+                            exception_data_t code,
+                            mach_msg_type_number_t codeCnt, int flavor,
+                            thread_state_t old_state, int old_stateCnt,
+                            thread_state_t new_state, int new_stateCnt)
 {
+  UNUSED_ARG(exception_port);
+  UNUSED_ARG(exception);
+  UNUSED_ARG(code);
+  UNUSED_ARG(codeCnt);
+  UNUSED_ARG(flavor);
+  UNUSED_ARG(old_state);
+  UNUSED_ARG(old_stateCnt);
+  UNUSED_ARG(new_state);
+  UNUSED_ARG(new_stateCnt);
   ABORT_RET("Unexpected catch_exception_raise_state invocation");
   return KERN_INVALID_ARGUMENT;
 }
 
 GC_API_OSCALL kern_return_t
-catch_exception_raise_state_identity(
-    mach_port_name_t exception_port GC_ATTR_UNUSED,
-    mach_port_t thread GC_ATTR_UNUSED, mach_port_t task GC_ATTR_UNUSED,
-    int exception GC_ATTR_UNUSED, exception_data_t code GC_ATTR_UNUSED,
-    mach_msg_type_number_t codeCnt GC_ATTR_UNUSED, int flavor GC_ATTR_UNUSED,
-    thread_state_t old_state GC_ATTR_UNUSED, int old_stateCnt GC_ATTR_UNUSED,
-    thread_state_t new_state GC_ATTR_UNUSED, int new_stateCnt GC_ATTR_UNUSED)
+catch_exception_raise_state_identity(mach_port_name_t exception_port,
+                                     mach_port_t thread, mach_port_t task,
+                                     int exception, exception_data_t code,
+                                     mach_msg_type_number_t codeCnt,
+                                     int flavor, thread_state_t old_state,
+                                     int old_stateCnt,
+                                     thread_state_t new_state,
+                                     int new_stateCnt)
 {
+  UNUSED_ARG(exception_port);
+  UNUSED_ARG(thread);
+  UNUSED_ARG(task);
+  UNUSED_ARG(exception);
+  UNUSED_ARG(code);
+  UNUSED_ARG(codeCnt);
+  UNUSED_ARG(flavor);
+  UNUSED_ARG(old_state);
+  UNUSED_ARG(old_stateCnt);
+  UNUSED_ARG(new_state);
+  UNUSED_ARG(new_stateCnt);
   ABORT_RET("Unexpected catch_exception_raise_state_identity invocation");
   return KERN_INVALID_ARGUMENT;
 }
@@ -4833,10 +4856,9 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 /* call this.  catch_exception_raise, catch_exception_raise_state and   */
 /* and catch_exception_raise_state_identity are called from OS.         */
 GC_API_OSCALL kern_return_t
-catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
-                      mach_port_t thread, mach_port_t task GC_ATTR_UNUSED,
-                      exception_type_t exception, exception_data_t code,
-                      mach_msg_type_number_t code_count GC_ATTR_UNUSED)
+catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
+                      mach_port_t task, exception_type_t exception,
+                      exception_data_t code, mach_msg_type_number_t code_count)
 {
   kern_return_t r;
   char *addr;
@@ -4844,12 +4866,16 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
   mach_msg_type_number_t exc_state_count = DARWIN_EXC_STATE_COUNT;
   DARWIN_EXC_STATE_T exc_state;
 
+  UNUSED_ARG(exception_port);
+  UNUSED_ARG(task);
   if (exception != EXC_BAD_ACCESS || code[0] != KERN_PROTECTION_FAILURE) {
 #   ifdef DEBUG_EXCEPTION_HANDLING
       /* We aren't interested, pass it on to the old handler */
       GC_log_printf("Exception: 0x%x Code: 0x%x 0x%x in catch...\n",
                     exception, code_count > 0 ? code[0] : -1,
                     code_count > 1 ? code[1] : -1);
+#   else
+      UNUSED_ARG(code_count);
 #   endif
     return FWD();
   }
@@ -4868,7 +4894,7 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
   }
 
   /* This is the address that caused the fault */
-  addr = (char*) exc_state.DARWIN_EXC_STATE_DAR;
+  addr = (char*)exc_state.DARWIN_EXC_STATE_DAR;
   if (!is_header_found_async(addr)) {
     /* Ugh... just like the SIGBUS problem above, it seems we get       */
     /* a bogus KERN_PROTECTION_FAILURE every once and a while.  We wait */

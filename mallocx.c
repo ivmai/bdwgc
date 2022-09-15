@@ -619,9 +619,9 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
     return GC_malloc(lb);
   }
 
-  GC_API void GC_CALL GC_change_stubborn(const void *p GC_ATTR_UNUSED)
+  GC_API void GC_CALL GC_change_stubborn(const void *p)
   {
-    /* Empty. */
+    UNUSED_ARG(p);
   }
 #endif /* !CPPCHECK */
 

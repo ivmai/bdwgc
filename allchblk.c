@@ -115,9 +115,9 @@ STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
 # endif /* !USE_MUNMAP */
 
 #if !defined(NO_DEBUGGING) || defined(GC_ASSERTIONS)
-  static void GC_CALLBACK add_hb_sz(struct hblk *h, int i GC_ATTR_UNUSED,
-                                    GC_word client_data)
+  static void GC_CALLBACK add_hb_sz(struct hblk *h, int i, GC_word client_data)
   {
+      UNUSED_ARG(i);
       *(word *)client_data += HDR(h) -> hb_sz;
   }
 
@@ -465,11 +465,13 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 
 /* Update GC_num_unmapped_regions assuming the block h changes      */
 /* from its current state of mapped/unmapped to the opposite state. */
-GC_INLINE void GC_adjust_num_unmapped(struct hblk *h GC_ATTR_UNUSED,
-                                      hdr *hhdr GC_ATTR_UNUSED)
+GC_INLINE void GC_adjust_num_unmapped(struct hblk *h, hdr *hhdr)
 {
 # ifdef COUNT_UNMAPPED_REGIONS
     GC_num_unmapped_regions += calc_num_unmapped_regions_delta(h, hhdr);
+# else
+    UNUSED_ARG(h);
+    UNUSED_ARG(hhdr);
 # endif
 }
 

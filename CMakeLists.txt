@@ -130,11 +130,10 @@ endif()
 # Output all warnings.
 if (BORLAND)
   # All warnings except for particular ones.
-  add_compile_options(/w /w-pro /w-aus /w-par /w-ccc /w-inl /w-rch)
+  add_compile_options(/w /w-aus /w-ccc /w-inl /w-pro /w-rch)
 elseif (MSVC)
-  # All warnings but ignoring "unreferenced formal parameter" and
-  # "conditional expression is constant" ones.
-  add_compile_options(/W4 /wd4100 /wd4127)
+  # All warnings but ignoring "conditional expression is constant" one.
+  add_compile_options(/W4 /wd4127)
   # Disable crt security warnings, since unfortunately they warn about all
   # sorts of safe uses of strncpy.
   add_definitions("-D_CRT_SECURE_NO_DEPRECATE")

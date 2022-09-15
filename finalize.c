@@ -654,7 +654,10 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
     }
 }
 
-STATIC void GC_null_finalize_mark_proc(ptr_t p GC_ATTR_UNUSED) {}
+STATIC void GC_null_finalize_mark_proc(ptr_t p)
+{
+    UNUSED_ARG(p);
+}
 
 /* Possible finalization_marker procedures.  Note that mark stack       */
 /* overflow is handled by the caller, and is not a disaster.            */
