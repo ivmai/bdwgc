@@ -1458,9 +1458,7 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 }
 
 GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
-                                                mse *mark_stack_ptr,
-                                                mse *mark_stack_limit,
-                                                void ** src GC_ATTR_UNUSED)
+                        mse *mark_stack_ptr, mse *mark_stack_limit, void **src)
 {
     hdr * hhdr;
 
