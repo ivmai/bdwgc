@@ -2485,11 +2485,13 @@ GC_EXTERN GC_bool GC_print_back_height;
   GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
                              size_t bytes2);
 
-  /* Compute end address for an unmap operation on the indicated block. */
-  GC_INLINE ptr_t GC_unmap_end(ptr_t start, size_t bytes)
-  {
-     return (ptr_t)((word)(start + bytes) & ~(GC_page_size - 1));
-  }
+# ifndef NOT_GCBUILD
+    /* Compute end address for an unmap operation on the indicated block. */
+    GC_INLINE ptr_t GC_unmap_end(ptr_t start, size_t bytes)
+    {
+      return (ptr_t)((word)(start + bytes) & ~(GC_page_size - 1));
+    }
+# endif
 #endif /* USE_MUNMAP */
 
 #ifdef CAN_HANDLE_FORK
