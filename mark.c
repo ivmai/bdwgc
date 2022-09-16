@@ -1955,8 +1955,14 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
   /* Test whether any page in the given block is dirty.   */
   STATIC GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
   {
-    word sz = hhdr -> hb_sz;
+    word sz;
 
+#   ifdef AO_HAVE_load
+      /* Atomic access is used to avoid racing with GC_realloc. */
+      sz = (word)AO_load((volatile AO_t *)&(hhdr -> hb_sz));
+#   else
+      sz = hhdr -> hb_sz;
+#   endif
     if (sz <= MAXOBJBYTES) {
          return(GC_page_was_dirty(h));
     } else {
