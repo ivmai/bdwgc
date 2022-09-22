@@ -1070,24 +1070,10 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
   /* cannot be concurrently terminated.                         */
   STATIC GC_thread GC_lookup_pthread(pthread_t id)
   {
-    GC_ASSERT(I_DONT_HOLD_LOCK());
-#   ifndef GC_NO_THREADS_DISCOVERY
-      if (GC_win32_dll_threads) {
-        int i;
-        LONG my_max = GC_get_max_thread_index();
+      /* TODO: search in dll_thread_table instead when DllMain-based    */
+      /* thread registration is made compatible with pthreads (and      */
+      /* turned on).                                                    */
 
-        for (i = 0; i <= my_max &&
-                    (!AO_load_acquire(&dll_thread_table[i].tm.in_use)
-                     || !THREAD_EQUAL(dll_thread_table[i].pthread_id, id));
-                    /* Must still be in_use, since nobody else can      */
-                    /* store our thread_id.                             */
-             i++) {
-          /* empty */
-        }
-        return i <= my_max ? (GC_thread)(dll_thread_table + i) : NULL;
-      } else
-#   endif
-    /* else */ {
       /* We first try the cache.  If that fails, we use a very slow     */
       /* approach.                                                      */
       DWORD win32_id = GET_PTHREAD_MAP_CACHE(id);
@@ -1111,7 +1097,6 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
      foundit:
       UNLOCK();
       return p;
-    }
   }
 
 #endif /* GC_PTHREADS */
