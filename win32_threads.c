@@ -1018,7 +1018,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
         for (i = 0; i <= my_max &&
                     (!AO_load_acquire(&dll_thread_table[i].tm.in_use)
-                    || THREAD_EQUAL(dll_thread_table[i].pthread_id, id));
+                     || !THREAD_EQUAL(dll_thread_table[i].pthread_id, id));
                     /* Must still be in_use, since nobody else can      */
                     /* store our thread_id.                             */
              i++) {
