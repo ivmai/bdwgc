@@ -923,7 +923,7 @@ EXTERN_C_BEGIN
 /* Incremental GC with MPROTECT_VDB currently requires the      */
 /* page size to be a multiple of HBLKSIZE.  Since most modern   */
 /* architectures support variable page sizes down to 4 KB, and  */
-/* X86 is generally 4 KB, we now default to 4 KB, except for    */
+/* x86 is generally 4 KB, we now default to 4 KB, except for    */
 /*   Alpha: Seems to be used with 8 KB pages.                   */
 /*   SMALL_CONFIG: Want less block-level fragmentation.         */
 #ifndef HBLKSIZE

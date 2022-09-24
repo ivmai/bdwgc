@@ -414,7 +414,7 @@ GC_INNER const char * GC_get_maps(void)
 #endif /* NEED_PROC_MAPS */
 
 #if defined(SEARCH_FOR_DATA_START)
-  /* The I386 case can be handled without a search.  The Alpha case     */
+  /* The x86 case can be handled without a search.  The Alpha case      */
   /* used to be handled differently as well, but the rules changed      */
   /* for recent Linux versions.  This seems to be the easiest way to    */
   /* cover all versions.                                                */
@@ -730,7 +730,7 @@ GC_INNER size_t GC_page_size = 0;
     GetSystemInfo(&GC_sysinfo);
 #   if defined(CYGWIN32) && (defined(MPROTECT_VDB) || defined(USE_MUNMAP))
       /* Allocations made with mmap() are aligned to the allocation     */
-      /* granularity, which (at least on 64-bit Windows OS) is not the  */
+      /* granularity, which (at least on Win64) is not the              */
       /* same as the page size.  Probably a separate variable could     */
       /* be added to distinguish the allocation granularity from the    */
       /* actual page size, but in practice there is no good reason to   */
@@ -2042,7 +2042,7 @@ void GC_register_data_segments(void)
 
 #ifdef DATASTART_USES_BSDGETDATASTART
 /* It's unclear whether this should be identical to the above, or       */
-/* whether it should apply to non-X86 architectures.                    */
+/* whether it should apply to non-x86 architectures.                    */
 /* For now we don't assume that there is always an empty page after     */
 /* etext.  But in some cases there actually seems to be slightly more.  */
 /* This also deals with holes between read-only data and writable data. */
@@ -2996,7 +2996,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
 #ifdef GWW_VDB
 
-# define GC_GWW_BUF_LEN (MAXHINCR * HBLKSIZE / 4096 /* X86 page size */)
+# define GC_GWW_BUF_LEN (MAXHINCR * HBLKSIZE / 4096 /* x86 page size */)
   /* Still susceptible to overflow, if there are very large allocations, */
   /* and everything is dirty.                                            */
   static PVOID gww_buf[GC_GWW_BUF_LEN];
@@ -3518,7 +3518,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
           GC_VERBOSE_LOG_PRINTF("Replaced other SIGBUS handler\n");
       }
 #   endif /* HPUX || LINUX || HURD || (FREEBSD && SUNOS5SIGS) */
-#   endif /* ! MS windows */
+#   endif /* !MSWIN32 && !MSWINCE */
 #   if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
       GC_noop1((word)&__asan_default_options);
 #   endif
@@ -5030,7 +5030,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 /* Call stack save code for debugging.  Should probably be in           */
 /* mach_dep.c, but that requires reorganization.                        */
 
-/* I suspect the following works for most X86 *nix variants, so         */
+/* I suspect the following works for most *nix x86 variants, so         */
 /* long as the frame pointer is explicitly stored.  In the case of gcc, */
 /* compiler flags (e.g. -fomit-frame-pointer) determine whether it is.  */
 #if defined(I386) && defined(LINUX) && defined(SAVE_CALL_CHAIN)

@@ -1,4 +1,4 @@
-# Makefile for Windows NT.  Assumes Microsoft compiler.
+# Makefile for Windows (Win32/64).  Assumes Microsoft compiler.
 # Should be invoked as "nmake -f NT_MAKEFILE [<args>]"; the optional arguments
 # are: "cpu=AMD64" - to target x64, "cpu=i386" - to target x86,
 # "enable_static=1" - to build it as a static library, "nodebug=1" - to produce
@@ -84,7 +84,7 @@ CXXFLAGS_SPECIFIC=/EHsc
 .SUFFIXES:
 .SUFFIXES: .obj .cpp .c
 
-# Atomic_ops installation directory.  For win32, the source directory
+# Atomic_ops installation directory.  For Win32, the source directory
 # should do, since we only need the headers.
 # We assume this was manually unpacked.
 AO_SRC_DIR=libatomic_ops/src
@@ -159,7 +159,7 @@ cord\tests\de.obj cord\tests\de_win.obj: include\cord.h include\cord_pos.h cord\
 cord\tests\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cmds.h
 	$(rc) $(rcvars) -r -fo cord\tests\de_win.res cord\tests\de_win.rc
 
-# Cord/de is a real win32 GUI app.
+# Cord/de is a real Windows GUI app.
 de.exe: cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib cord.lib
 	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:de.exe cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib cord.lib gdi32.lib user32.lib
 

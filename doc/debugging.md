@@ -21,7 +21,7 @@ there was not other handler previously installed.
 
 We recommend debugging without incremental collection if possible. (This
 applies directly to UNIX systems. Debugging with incremental collection under
-win32 is worse. See README.win32.)
+Win32 is worse. See README.win32.)
 
 If the application generates an unhandled SIGSEGV or equivalent, it may often
 be easiest to set the environment variable `GC_LOOP_ON_ABORT`. On many

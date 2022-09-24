@@ -1,5 +1,5 @@
-64-bit Windows on AMD64/Intel EM64T is supported.  A collector can be built
-with Microsoft Visual C++ 2005 or with mingw-w64 gcc.
+64-bit Windows on AMD64/Intel EM64T (x64) is supported.  A collector can be
+built with Microsoft Visual C++ 2005 or with mingw-w64 gcc.
 
 NT_MAKEFILE has been used in this environment.  Type
 "nmake -f NT_MAKEFILE cpu=AMD64 nodebug=1" in a Visual C++ command line

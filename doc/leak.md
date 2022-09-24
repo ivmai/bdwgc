@@ -57,7 +57,7 @@ The same is generally true of thread support. However, the correct leak
 reports should be generated with linuxthreads, at least.
 
 On a few platforms (currently Solaris/SPARC, Irix, and, with
-`-DSAVE_CALL_CHAIN`, Linux/X86), `GC_MALLOC` also causes some more information
+`-DSAVE_CALL_CHAIN`, Linux/x86), `GC_MALLOC` also causes some more information
 about its call stack to be saved in the object. Such information is reproduced
 in the error reports in very non-symbolic form, but it can be very useful with
 the aid of a debugger.
@@ -73,7 +73,7 @@ Assume the collector has been built with `-DFIND_LEAK` or
 The program to be tested for leaks could look like `tests/leak_test.c` file
 of the distribution.
 
-On an Intel X86 Linux system this produces on the stderr stream:
+On a Linux/x86 system this produces on the stderr stream:
 
 
     Found 1 leaked objects:
@@ -81,7 +81,7 @@ On an Intel X86 Linux system this produces on the stderr stream:
 
 
 (On most unmentioned operating systems, the output is similar to this. If the
-collector had been built on Linux/X86 with `-DSAVE_CALL_CHAIN`, the output
+collector had been built on Linux/x86 with `-DSAVE_CALL_CHAIN`, the output
 would be closer to the Solaris example. For this to work, the program should
 not be compiled with `-fomit_frame_pointer`.)
 
@@ -118,12 +118,12 @@ In many cases, a debugger is needed to interpret the additional information.
 On systems supporting the `adb` debugger, the `tools/callprocs.sh` script can
 be used to replace program counter values with symbolic names. The collector
 tries to generate symbolic names for call stacks if it knows how to do so on
-the platform. This is true on Linux/X86, but not on most other platforms.
+the platform. This is true on Linux/x86, but not on most other platforms.
 
 ## Simplified leak detection under Linux
 
 It should be possible to run the collector in the leak detection mode on
-a program a.out under Linux/X86 as follows:
+a program a.out under Linux/x86 as follows:
 
   1. If possible, ensure that a.out is a single-threaded executable. On some
   platforms this does not work at all for the multi-threaded programs.

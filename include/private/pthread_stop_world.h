@@ -43,7 +43,7 @@ struct thread_stop_info {
       /* going into a syscall.  20 is more than we need, but it's an    */
       /* overestimate in case the instrumented function uses any callee */
       /* saved registers, they may be pushed to the stack much earlier. */
-      /* Also, on amd64 'push' puts 8 bytes on the stack even though    */
+      /* Also, on x64 'push' puts 8 bytes on the stack even though      */
       /* our pointers are 4 bytes.                                      */
 #     ifdef ARM32
         /* Space for r4-r8, r10-r12, r14.       */

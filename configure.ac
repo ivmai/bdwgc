@@ -1053,7 +1053,7 @@ AC_ARG_ENABLE(gcov,
 if test "$enable_gcov" = "yes"; then
   CFLAGS="-D NTHREADS=20 $CFLAGS --coverage"
   if test "${enable_shared}" = no; then
-    # FIXME: As of g++-4.8.4/x86_64, in case of shared library build, test_cpp
+    # FIXME: As of g++-4.8.4/x64, in case of shared library build, test_cpp
     # linkage fails with "hidden symbol atexit is referenced by DSO" message.
     CXXFLAGS="$CXXFLAGS --coverage"
   fi

@@ -248,7 +248,7 @@ STATIC void GC_init_size_map(void)
         GC_size_map[i] = ROUNDED_UP_GRANULES(i);
 #       ifndef _MSC_VER
           GC_ASSERT(GC_size_map[i] < TINY_FREELISTS);
-          /* Seems to tickle bug in VC++ 2008 for AMD64 */
+          /* Seems to tickle bug in VC++ 2008 for x64 */
 #       endif
     }
     /* We leave the rest of the array to be filled in on demand. */
@@ -1409,7 +1409,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
       LOCK();
       if (!GC_incremental) {
         GC_setpagesize();
-        /* if (GC_no_win32_dlls) goto out; Should be win32S test? */
+        /* TODO: Should we skip enabling incremental if win32s? */
         maybe_install_looping_handler(); /* Before write fault handler! */
         if (!GC_is_initialized) {
           UNLOCK();

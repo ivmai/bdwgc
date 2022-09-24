@@ -258,7 +258,7 @@ static void alloc_mark_stack(size_t);
 /* We hold the allocation lock.  In the case of         */
 /* incremental collection, the world may not be stopped.*/
 #ifdef WRAP_MARK_SOME
-  /* For win32, this is called after we establish a structured  */
+  /* For Win32, this is called after we establish a structured  */
   /* exception (or signal) handler, in case Windows unmaps one  */
   /* of our root segments.  See below.  In either case, we      */
   /* acquire the allocator lock long before we get here.        */
@@ -709,7 +709,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 
         /* Try to prefetch the next pointer to be examined ASAP.        */
         /* Empirically, this also seems to help slightly without        */
-        /* prefetches, at least on linux/X86.  Presumably this loop     */
+        /* prefetches, at least on linux/x86.  Presumably this loop     */
         /* ends up with less register pressure, and gcc thus ends up    */
         /* generating slightly better code.  Overall gcc code quality   */
         /* for this loop is still not great.                            */

@@ -283,7 +283,7 @@ CORD_API CORD CORD_chars(char c, size_t i);
 /* The file f must be such that ftell reflects the actual character     */
 /* position in the file, i.e. the number of characters that can be      */
 /* or were read with fread.  On UNIX systems this is always true.       */
-/* On MS Windows systems, f must be opened in binary mode.              */
+/* On Windows systems, f must be opened in binary mode.                 */
 CORD_API CORD CORD_from_file(FILE * f);
 
 /* Equivalent to the above, except that the entire file will be read    */

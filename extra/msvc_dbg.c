@@ -23,7 +23,7 @@
 #if !defined(_M_ARM) && !defined(_M_ARM64) \
     && !defined(_M_X64) && defined(_MSC_VER)
 
-/* TODO: arm[64], x86_64 currently miss some machine-dependent code below.  */
+/* TODO: arm[64], x64 currently miss some machine-dependent code below.     */
 /* See also GC_HAVE_BUILTIN_BACKTRACE in gc_config_macros.h.                */
 
 #define GC_BUILD
@@ -382,7 +382,7 @@ size_t GetDescriptionFromStack(void* const frames[], size_t count,
   return buffer - begin;
 }
 
-/* Compatibility with <execinfo.h> */
+/* Compatibility with execinfo.h:       */
 
 int backtrace(void* addresses[], int count)
 {

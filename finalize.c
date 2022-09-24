@@ -602,7 +602,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 /* overflow is handled by the caller, and is not a disaster.            */
 #if defined(_MSC_VER) && defined(I386)
   GC_ATTR_NOINLINE
-  /* Otherwise some optimizer bug is tickled in VC for X86 (v19, at least). */
+  /* Otherwise some optimizer bug is tickled in VC for x86 (v19, at least). */
 #endif
 STATIC void GC_normal_finalize_mark_proc(ptr_t p)
 {

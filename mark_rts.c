@@ -890,7 +890,7 @@ GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame GC_ATTR_UNUSED)
     /* not robust against mark stack overflow.                          */
     /* Re-register dynamic libraries, in case one got added.            */
     /* There is some argument for doing this as late as possible,       */
-    /* especially on win32, where it can change asynchronously.         */
+    /* especially on Win32, where it can change asynchronously.         */
     /* In those cases, we do it here.  But on other platforms, it's     */
     /* not safe with the world stopped, so we do it earlier.            */
 #   if !defined(REGISTER_LIBRARIES_EARLY)
