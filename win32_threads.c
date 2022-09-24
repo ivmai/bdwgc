@@ -420,7 +420,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
 {
   GC_vthread me;
 
-  /* The following should be a no-op according to the win32     */
+  /* The following should be a no-op according to the Win32     */
   /* documentation.  There is empirical evidence that it        */
   /* isn't.             - HB                                    */
 # if defined(MPROTECT_VDB) && !defined(CYGWIN32)
@@ -444,7 +444,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
       /* It has been claimed that DllMain is really only executed with  */
       /* a particular system lock held, and thus careful use of locking */
       /* around code that doesn't call back into the system libraries   */
-      /* might be OK.  But this hasn't been tested across all win32     */
+      /* might be OK.  But this has not been tested across all Win32    */
       /* variants.                                                      */
       for (i = 0;
            InterlockedExchange(&dll_thread_table[i].tm.long_in_use, 1) != 0;
@@ -454,8 +454,8 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
         /* InterlockedExchange is supposed to be replaced by            */
         /* InterlockedExchangePointer, but that's not really what I     */
         /* want here.                                                   */
-        /* FIXME: We should eventually declare Win95 dead and use AO_   */
-        /* primitives here.                                             */
+        /* FIXME: We should eventually declare Windows 95 dead and use  */
+        /* AO_ primitives here.                                         */
         if (i == MAX_THREADS - 1)
           ABORT("Too many threads");
       }
@@ -677,7 +677,7 @@ GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
 
 /* If a thread has been joined, but we have not yet             */
 /* been notified, then there may be more than one thread        */
-/* in the table with the same win32 id.                         */
+/* in the table with the same Win32 thread id.                  */
 /* This is OK, but we need a way to delete a specific one.      */
 /* Does not actually free GC_thread entry, only unlinks it.     */
 /* If GC_win32_dll_threads is set it should be called from the  */
@@ -1052,7 +1052,7 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
 #ifdef GC_PTHREADS
 
   /* A quick-and-dirty cache of the mapping between pthread_t   */
-  /* and win32 thread id.                                       */
+  /* and Win32 thread id.                                       */
 # define PTHREAD_MAP_SIZE 512
   DWORD GC_pthread_map_cache[PTHREAD_MAP_SIZE] = {0};
 # define PTHREAD_MAP_INDEX(pthread_id) \
@@ -1690,7 +1690,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
             /* so we scan the entire stack region (down to the stack    */
             /* limit).  There is no 100% guarantee that all the         */
             /* registers are pushed but we do our best (the proper      */
-            /* solution would be to fix it inside Windows OS).          */
+            /* solution would be to fix it inside Windows).             */
             sp = (ptr_t)tib->StackLimit;
           }
         } /* else */
@@ -3075,7 +3075,7 @@ GC_INNER void GC_thr_init(void)
   }
 
 # ifndef GC_NO_PTHREAD_SIGMASK
-    /* Win32 pthread does not support sigmask.  */
+    /* pthreads-win32 does not support sigmask. */
     /* So, nothing required here...             */
     GC_API int GC_pthread_sigmask(int how, const sigset_t *set,
                                   sigset_t *oset)

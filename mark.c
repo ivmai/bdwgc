@@ -303,7 +303,7 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
 /* register values.  In the case of an incremental      */
 /* collection, the world may be running.                */
 #ifdef WRAP_MARK_SOME
-  /* For win32, this is called after we establish a structured  */
+  /* For Win32, this is called after we establish a structured  */
   /* exception handler, in case Windows unmaps one of our root  */
   /* segments.                                                  */
   STATIC GC_bool GC_mark_some_inner(ptr_t cold_gc_frame)
@@ -830,7 +830,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 
         /* Try to prefetch the next pointer to be examined ASAP.        */
         /* Empirically, this also seems to help slightly without        */
-        /* prefetches, at least on linux/X86.  Presumably this loop     */
+        /* prefetches, at least on linux/x86.  Presumably this loop     */
         /* ends up with less register pressure, and gcc thus ends up    */
         /* generating slightly better code.  Overall gcc code quality   */
         /* for this loop is still not great.                            */

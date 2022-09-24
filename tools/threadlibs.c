@@ -64,7 +64,7 @@ int main(void)
 #   endif
 #   if defined(GC_WIN32_PTHREADS)
 #     ifdef PTW32_STATIC_LIB
-        /* assume suffix s for static version of the win32 pthread library */
+        /* assume suffix s for static version of the pthreads-win32 library */
         printf("-lpthreadGC2s -lws2_32\n");
 #     else
         printf("-lpthreadGC2\n");

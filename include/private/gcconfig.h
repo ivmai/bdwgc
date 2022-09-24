@@ -571,7 +571,7 @@ EXTERN_C_BEGIN
 #   endif
 #   if defined(_MSC_VER) && defined(_M_IA64)
 #     define IA64
-#     define MSWIN32    /* Really win64, but we don't treat 64-bit      */
+#     define MSWIN32    /* Really Win64, but we do not treat 64-bit     */
                         /* variants as a different platform.            */
 #   endif
 # endif
@@ -866,7 +866,7 @@ EXTERN_C_BEGIN
  *
  * Each architecture may also define the style of virtual dirty bit
  * implementation to be used:
- *   GWW_VDB: Use win32 GetWriteWatch primitive.
+ *   GWW_VDB: Use Win32 GetWriteWatch primitive.
  *   MPROTECT_VDB: Write protect the heap and catch faults.
  *   PROC_VDB: Use the SVR4 /proc primitives to read dirty bits.
  *   SOFT_VDB: Use the Linux /proc primitives to track dirty bits.
@@ -2885,7 +2885,7 @@ EXTERN_C_BEGIN
   /* lock.  This isn't safe after the world has stopped.  So we must    */
   /* call GC_register_dynamic_libraries before stopping the world.      */
   /* For performance reasons, this may be beneficial on other           */
-  /* platforms as well, though it should be avoided in win32.           */
+  /* platforms as well, though it should be avoided on Windows.         */
 #endif /* LINUX */
 
 #if defined(SEARCH_FOR_DATA_START)
@@ -3084,7 +3084,7 @@ EXTERN_C_BEGIN
 #if !defined(MSGBOX_ON_ERROR) && !defined(NO_MSGBOX_ON_ERROR) \
     && !defined(SMALL_CONFIG) && defined(MSWIN32) \
     && !defined(MSWINRT_FLAVOR) && !defined(MSWIN_XBOX1)
-  /* Show Windows message box with "OK" button on a GC fatal error.     */
+  /* Show a Windows message box with "OK" button on a GC fatal error.   */
   /* Client application is terminated once the user clicks the button.  */
 # define MSGBOX_ON_ERROR
 #endif

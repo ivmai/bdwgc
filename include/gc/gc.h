@@ -926,7 +926,7 @@ GC_API int GC_CALL GC_collect_a_little(void);
 /* integer that happens to be an address inside the array.  (Actually,  */
 /* it reduces the chance of the allocator not finding space for such    */
 /* an array, since it will try hard to avoid introducing such a false   */
-/* reference.)  On a SunOS 4.X or MS Windows system this is recommended */
+/* reference.)  On a SunOS 4.X or Windows system this is recommended    */
 /* for arrays likely to be larger than 100 KB or so.  For other systems,*/
 /* or if the collector is not configured to recognize all interior      */
 /* pointers, the threshold is normally much higher.                     */
@@ -2146,7 +2146,7 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
                     GC_INIT_CONF_IGNORE_WARN; \
                     GC_INIT_CONF_INITIAL_HEAP_SIZE; }
 
-/* win32S may not free all resources on process exit.                   */
+/* win32s may not free all resources on process exit.                   */
 /* This explicitly deallocates the heap.  Defined only for Windows.     */
 GC_API void GC_CALL GC_win32_free_heap(void);
 
