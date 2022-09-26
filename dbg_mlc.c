@@ -67,7 +67,6 @@
 
 # define RANDOM() (long)GC_rand()
 #else
-# include <stdlib.h>
 # undef GC_RAND_MAX
 # define GC_RAND_MAX RAND_MAX
 

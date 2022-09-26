@@ -18,7 +18,6 @@
 
 #include "private/gc_priv.h"
 
-#include <stdio.h>
 #if !defined(MACOS) && !defined(MSWINCE)
 # include <signal.h>
 # if !defined(GC_NO_TYPES) && !defined(SN_TARGET_PSP2) \

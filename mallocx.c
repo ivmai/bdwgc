@@ -25,7 +25,6 @@
  * executables.  We should probably break this up further.
  */
 
-#include <stdio.h>
 #include <string.h>
 
 #ifndef MSWINCE

@@ -17,7 +17,6 @@
 #include "private/gc_priv.h"
 #include "gc/gc_inline.h" /* for GC_malloc_kind */
 
-#include <stdio.h>
 #include <string.h>
 
 /* Allocate reclaim list for the kind.  Returns TRUE on success.        */

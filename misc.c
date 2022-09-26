@@ -16,7 +16,6 @@
 
 #include "private/gc_pmark.h"
 
-#include <stdio.h>
 #include <limits.h>
 #include <stdarg.h>
 

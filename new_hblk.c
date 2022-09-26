@@ -21,8 +21,6 @@
  *      void GC_new_hblk(size, kind)
  */
 
-#include <stdio.h>
-
 #ifndef SMALL_CONFIG
   /* Build a free list for size 2 (words) cleared objects inside        */
   /* hblk h.  Set the last link to be ofl.  Return a pointer to the     */

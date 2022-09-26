@@ -12,8 +12,6 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 #ifdef HAVE_CONFIG_H

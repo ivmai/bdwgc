@@ -15,8 +15,6 @@
 
 #include "private/gc_priv.h"
 
-#include <stdio.h>
-
 /* Data structure for list of root sets.                                */
 /* We keep a hash table, so that we can filter out duplicate additions. */
 /* Under Win32, we need to do a better job of filtering overlaps, so    */

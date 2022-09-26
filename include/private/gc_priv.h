@@ -835,6 +835,8 @@ EXTERN_C_END
 
 #include <setjmp.h>
 
+#include <stdio.h>
+
 #if __STDC_VERSION__ >= 201112L
 # include <assert.h> /* for static_assert */
 #endif

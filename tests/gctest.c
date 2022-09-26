@@ -47,12 +47,6 @@
         /* In the single-threaded case, the number of times to rerun it. */
 #endif
 
-# if defined(mips) && defined(SYSTYPE_BSD43)
-    /* MIPS RISCOS 4 */
-# else
-#   include <stdlib.h>
-# endif
-# include <stdio.h>
 # if defined(_WIN32_WCE) && !defined(__GNUC__)
 #   include <winbase.h>
 /* #   define assert ASSERT */

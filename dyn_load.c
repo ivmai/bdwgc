@@ -68,7 +68,6 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 # error Additional SVR4 variants might not be too hard to add.
 #endif
 
-#include <stdio.h>
 #ifdef SOLARISDL
 #   include <sys/elf.h>
 #   include <dlfcn.h>
@@ -936,8 +935,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
 # endif /* USE_PROC || IRIX5 */
 
 # if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-
-# include <stdlib.h>
 
   /* We traverse the entire address space and register all segments     */
   /* that could possibly have been written to.                          */

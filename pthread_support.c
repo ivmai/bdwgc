@@ -30,7 +30,6 @@
 
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
-# include <stdlib.h>
 # include <pthread.h>
 # include <sched.h>
 # include <time.h>

@@ -26,7 +26,6 @@
 # endif
 #endif
 
-#include <stdio.h>
 #if defined(MSWINCE) || defined(SN_TARGET_PS3)
 # define SIGSEGV 0 /* value is irrelevant */
 #else
@@ -2549,7 +2548,6 @@ void * os2_alloc(size_t bytes)
 #endif
 
 #if defined(HAIKU)
-# include <stdlib.h>
   ptr_t GC_haiku_get_mem(size_t bytes)
   {
     void* mem;

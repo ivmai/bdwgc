@@ -21,8 +21,6 @@
 # include "gc/gc_disclaim.h"
 #endif
 
-#include <stdio.h>
-
 GC_INNER signed_word GC_bytes_found = 0;
                         /* Number of bytes of memory reclaimed     */
                         /* minus the number of bytes originally    */

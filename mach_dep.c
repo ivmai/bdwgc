@@ -17,8 +17,6 @@
 
 #if !defined(PLATFORM_MACH_DEP) && !defined(SN_TARGET_PSP2)
 
-#include <stdio.h>
-
 #ifdef AMIGA
 # ifndef __GNUC__
 #   include <dos.h>

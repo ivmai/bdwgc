@@ -22,8 +22,6 @@
 
 #include "private/thread_local_alloc.h"
 
-#include <stdlib.h>
-
 #if defined(USE_COMPILER_TLS)
   __thread GC_ATTR_TLS_FAST
 #elif defined(USE_WIN32_COMPILER_TLS)

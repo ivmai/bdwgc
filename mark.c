@@ -27,8 +27,6 @@
 
 #include "private/gc_pmark.h"
 
-#include <stdio.h>
-
 #if defined(MSWIN32) && defined(__GNUC__)
 # include <excpt.h>
 #endif
