@@ -1,4 +1,4 @@
-status = ["buildbot/capablevms-test-script"]
+status = ["buildbot/ci-builder"]
 
 timeout_sec = 1800 # 30 minutes
 

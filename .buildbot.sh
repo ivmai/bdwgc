@@ -1,11 +1,16 @@
 #!/bin/bash
 set -e
 
-CHERIBUILD=~/build
+set ${CHERIBUILD:="/home/buildbot/build"}
+set ${CHERI_DIR:="/home/buildbot/cheri/output"}
+set ${SSHPORT:=10021}
+set ${SSHHOST:=localhost}
+set ${PYTHONPATH:=${CHERIBUILD}/test-scripts}
 
-export SSHPORT=10021
-export SSHHOST=localhost
-export PYTHONPATH="$CHERIBUILD"/test-scripts
+
+export SSHPORT
+export SSHHOST
+export PYTHONPATH
 
 # arg-1 : platform to build. Toolchain file is expected to have the same name
 build_bdwgc()
@@ -70,57 +75,57 @@ clean()
     done
 }
 
-if [ "$1" = "riscv64" ]; then
-    echo "Checking bdwgc library builds correctly"
-    build_bdwgc 'riscv64-purecap'
+# Run test suite for riscv64-purecap
+echo "Checking bdwgc library builds correctly"
+build_bdwgc 'riscv64-purecap'
 
-    echo "Checking cheri bdwgc clients build correctly"
-    build_bdwgc_clients 'riscv64-purecap'
+echo "Checking cheri bdwgc clients build correctly"
+build_bdwgc_clients 'riscv64-purecap'
 
-    echo "Running tests for riscv64-purecap"
-    args=(
-        --architecture riscv64-purecap
-        # Qemu System to use
-        --qemu-cmd $HOME/cheri/output/sdk/bin/qemu-system-riscv64cheri
-        # Kernel (to avoid the default one)
-        --kernel $HOME/cheri/output/rootfs-riscv64-purecap/boot/kernel/kernel
-        # Bios (to avoid the default one)
-        --bios bbl-riscv64cheri-virt-fw_jump.bin
-        --disk-image $HOME/cheri/output/cheribsd-riscv64-purecap.img
-        # Required build-dir in CheriBSD
-        --build-dir .
-        --ssh-port $SSHPORT
-        --ssh-key $HOME/.ssh/id_ed25519.pub
-        )
-    BUILDBOT_PLATFORM=riscv64-purecap python3 ci/run_cheri_bdwgc_tests.py "${args[@]}"
+echo "Running tests for riscv64-purecap"
+args=(
+      --architecture riscv64-purecap
+      # Qemu System to use
+      --qemu-cmd ${CHERI_DIR}/sdk/bin/qemu-system-riscv64cheri
+      # Kernel (to avoid the default one)
+      --kernel ${CHERI_DIR}/rootfs-riscv64-purecap/boot/kernel/kernel
+      # Bios (to avoid the default one)
+      --bios bbl-riscv64cheri-virt-fw_jump.bin
+      --disk-image ${CHERI_DIR}/cheribsd-riscv64-purecap.img
+      # Required build-dir in CheriBSD
+      --build-dir .
+      --ssh-port $SSHPORT
+      --ssh-key $HOME/.ssh/id_ed25519.pub
+    )
+BUILDBOT_PLATFORM=riscv64-purecap python3 ci/run_cheri_bdwgc_tests.py "${args[@]}"
 
-    echo "removing unit-test files"
-    clean bdwgc_build bdwgc_client_build bdwgc_install
+echo "removing riscv64-purecap unit-test files"
+clean bdwgc_build bdwgc_client_build bdwgc_install
 
-elif [ "$1" = "morello-purecap" ]; then
-    echo "Checking bdwgc library builds correctly"
-    build_bdwgc 'morello-purecap'
 
-    echo "Checking cheri bdwgc clients build correctly"
-    build_bdwgc_clients 'morello-purecap'
+# Run test suite for morello-purecap
+echo "Checking bdwgc library builds correctly"
+build_bdwgc 'morello-purecap'
 
-    echo "Running tests for morello-purecap"
-    args=(
-        --architecture morello-purecap
-        # Qemu System to use
-        --qemu-cmd $HOME/cheri/output/morello-sdk/bin/qemu-system-morello
-        # Kernel (to avoid the default one)
-        --kernel $HOME/cheri/output/rootfs-morello-purecap/boot/kernel/kernel
-        # Bios (to avoid the default one)
-        --bios edk2-aarch64-code.fd
-        --disk-image $HOME/cheri/output/cheribsd-morello-purecap.img
-        # Required build-dir in CheriBSD
-        --build-dir .
-        --ssh-port $SSHPORT
-        --ssh-key $HOME/.ssh/id_ed25519.pub
-        )
-    BUILDBOT_PLATFORM=morello-purecap python3 ci/run_cheri_bdwgc_tests.py "${args[@]}"
+echo "Checking cheri bdwgc clients build correctly"
+build_bdwgc_clients 'morello-purecap'
 
-    echo "removing up unit-test files"
-    clean bdwgc_build bdwgc_client_build bdwgc_install
-fi
+echo "Running tests for morello-purecap"
+args=(
+      --architecture morello-purecap
+      # Qemu System to use
+      --qemu-cmd ${CHERI_DIR}/sdk/bin/qemu-system-morello
+      # Kernel (to avoid the default one)
+      --kernel ${CHERI_DIR}/rootfs-morello-purecap/boot/kernel/kernel
+      # Bios (to avoid the default one)
+      --bios edk2-aarch64-code.fd
+      --disk-image ${CHERI_DIR}/cheribsd-morello-purecap.img
+      # Required build-dir in CheriBSD
+      --build-dir .
+      --ssh-port $SSHPORT
+      --ssh-key $HOME/.ssh/id_ed25519.pub
+      )
+BUILDBOT_PLATFORM=morello-purecap python3 ci/run_cheri_bdwgc_tests.py "${args[@]}"
+
+echo "removing morello-purecap unit-test files"
+clean bdwgc_build bdwgc_client_build bdwgc_install
