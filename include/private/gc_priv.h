@@ -3042,7 +3042,8 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #endif /* DATASTART_USES_BSDGETDATASTART */
 
 #if defined(NEED_FIND_LIMIT) \
-     || (defined(WRAP_MARK_SOME) && !defined(MSWIN32) && !defined(MSWINCE)) \
+     || (defined(WRAP_MARK_SOME) && (!defined(MSWIN32) && !defined(MSWINCE) \
+                                     || defined(__GNUC__))) \
      || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
   GC_EXTERN JMP_BUF GC_jmp_buf;
 
