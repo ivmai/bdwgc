@@ -15,23 +15,9 @@
  *
  */
 
-#if defined(__MINGW32__) && !defined(__MINGW_EXCPT_DEFINE_PSDK) \
-    && defined(__i386__) /* cannot use macros from gcconfig.h */
-  /* Otherwise EXCEPTION_REGISTRATION type declaration from winnt.h     */
-  /* might be used.  That declaration has "handler" callback with NTAPI */
-  /* attribute.  The proper type (with "handler" field compatible with  */
-  /* GC mark_ex_handler) is declared in excpt.h.  The given macro is    */
-  /* defined before any system header include.                          */
-# define __MINGW_EXCPT_DEFINE_PSDK 1
-#endif
-
 #include "private/gc_pmark.h"
 
 #include <stdio.h>
-
-#if defined(MSWIN32) && defined(__GNUC__)
-# include <excpt.h>
-#endif
 
 /* Make arguments appear live to compiler.  Put here to minimize the    */
 /* risk of inlining.  Used to minimize junk left in registers.          */
@@ -273,9 +259,11 @@ static void alloc_mark_stack(size_t);
 /* incremental collection, the world may not be stopped.*/
 #ifdef WRAP_MARK_SOME
   /* For win32, this is called after we establish a structured  */
-  /* exception handler, in case Windows unmaps one of our root  */
-  /* segments.  See below.  In either case, we acquire the      */
-  /* allocator lock long before we get here.                    */
+  /* exception (or signal) handler, in case Windows unmaps one  */
+  /* of our root segments.  See below.  In either case, we      */
+  /* acquire the allocator lock long before we get here.        */
+  /* Note that this code should never generate an incremental   */
+  /* GC write fault.                                            */
   STATIC GC_bool GC_mark_some_inner(ptr_t cold_gc_frame)
 #else
   GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame)
@@ -401,129 +389,36 @@ static void alloc_mark_stack(size_t);
 
 #ifdef WRAP_MARK_SOME
 
-# if (defined(MSWIN32) || defined(MSWINCE)) && defined(__GNUC__)
-
-    typedef struct {
-      EXCEPTION_REGISTRATION ex_reg;
-      void *alt_path;
-    } ext_ex_regn;
-
-    static EXCEPTION_DISPOSITION mark_ex_handler(
-        struct _EXCEPTION_RECORD *ex_rec,
-        void *est_frame,
-        struct _CONTEXT *context,
-        void *disp_ctxt GC_ATTR_UNUSED)
-    {
-        if (ex_rec->ExceptionCode == STATUS_ACCESS_VIOLATION) {
-          ext_ex_regn *xer = (ext_ex_regn *)est_frame;
-
-          /* Unwind from the inner function assuming the standard */
-          /* function prologue.                                   */
-          /* Assumes code has not been compiled with              */
-          /* -fomit-frame-pointer.                                */
-          context->Esp = context->Ebp;
-          context->Ebp = *((DWORD *)context->Esp);
-          context->Esp = context->Esp - 8;
-
-          /* Resume execution at the "real" handler within the    */
-          /* wrapper function.                                    */
-          context->Eip = (DWORD )(xer->alt_path);
-
-          return ExceptionContinueExecution;
-
-        } else {
-            return ExceptionContinueSearch;
-        }
-    }
-# endif /* __GNUC__ && MSWIN32 */
-
   GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame)
   {
       GC_bool ret_val;
 
-#   if defined(MSWIN32) || defined(MSWINCE)
-#    ifndef __GNUC__
-      /* Windows 98 appears to asynchronously create and remove  */
+      /* Windows appears to asynchronously create and remove     */
       /* writable memory mappings, for reasons we haven't yet    */
       /* understood.  Since we look for writable regions to      */
       /* determine the root set, we may try to mark from an      */
       /* address range that disappeared since we started the     */
       /* collection.  Thus we have to recover from faults here.  */
-      /* This code does not appear to be necessary for Windows   */
-      /* 95/NT/2000+. Note that this code should never generate  */
-      /* an incremental GC write fault.                          */
       /* This code seems to be necessary for WinCE (at least in  */
       /* the case we'd decide to add MEM_PRIVATE sections to     */
       /* data roots in GC_register_dynamic_libraries()).         */
       /* It's conceivable that this is the same issue with       */
       /* terminating threads that we see with Linux and          */
       /* USE_PROC_FOR_LIBRARIES.                                 */
-
+#   if (defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__)
       __try {
           ret_val = GC_mark_some_inner(cold_gc_frame);
       } __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ?
                 EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
           goto handle_ex;
       }
-#     if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-        /* With DllMain-based thread tracking, a thread may have        */
-        /* started while we were marking.  This is logically equivalent */
-        /* to the exception case; our results are invalid and we have   */
-        /* to start over.  This cannot be prevented since we can't      */
-        /* block in DllMain.                                            */
-        if (GC_started_thread_while_stopped())
-          goto handle_thr_start;
-#     endif
-     rm_handler:
-      return ret_val;
-
-#    else /* __GNUC__ */
-
-      /* Manually install an exception handler since GCC does    */
-      /* not yet support Structured Exception Handling (SEH) on  */
-      /* Win32.                                                  */
-
-      ext_ex_regn er;
-
-#     if GC_GNUC_PREREQ(4, 7) || GC_CLANG_PREREQ(3, 3)
-#       pragma GCC diagnostic push
-        /* Suppress "taking the address of label is non-standard" warning. */
-#       if defined(__clang__) || GC_GNUC_PREREQ(6, 0)
-#         pragma GCC diagnostic ignored "-Wpedantic"
-#       else
-          /* GCC before ~4.8 does not accept "-Wpedantic" quietly.  */
-#         pragma GCC diagnostic ignored "-pedantic"
-#       endif
-        er.alt_path = &&handle_ex;
-#       pragma GCC diagnostic pop
-#     elif !defined(CPPCHECK) /* pragma diagnostic is not supported */
-        er.alt_path = &&handle_ex;
-#     endif
-      er.ex_reg.handler = mark_ex_handler;
-      __asm__ __volatile__ ("movl %%fs:0, %0" : "=r" (er.ex_reg.prev));
-      __asm__ __volatile__ ("movl %0, %%fs:0" : : "r" (&er));
-      ret_val = GC_mark_some_inner(cold_gc_frame);
-      /* Prevent GCC from considering the following code unreachable */
-      /* and thus eliminating it.                                    */
-        if (er.alt_path == 0)
-          goto handle_ex;
-#     if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-        if (GC_started_thread_while_stopped())
-          goto handle_thr_start;
-#     endif
-    rm_handler:
-      /* Uninstall the exception handler.       */
-      __asm__ __volatile__ ("mov %0, %%fs:0" : : "r" (er.ex_reg.prev));
-      return ret_val;
-
-#    endif /* __GNUC__ */
-#   else /* !MSWIN32 */
+#   else
       /* Here we are handling the case in which /proc is used for root  */
       /* finding, and we have threads.  We may find a stack for a       */
       /* thread that is in the process of exiting, and disappears       */
       /* while we are marking it.  This seems extremely difficult to    */
       /* avoid otherwise.                                               */
-#     ifndef DEFAULT_VDB
+#     if defined(USE_PROC_FOR_LIBRARIES) && !defined(DEFAULT_VDB)
         if (GC_auto_incremental) {
           static GC_bool is_warned = FALSE;
 
@@ -537,14 +432,25 @@ static void alloc_mark_stack(size_t);
       GC_setup_temporary_fault_handler();
       if(SETJMP(GC_jmp_buf) != 0) goto handle_ex;
       ret_val = GC_mark_some_inner(cold_gc_frame);
-    rm_handler:
       GC_reset_fault_handler();
-      return ret_val;
+#   endif
 
-#   endif /* !MSWIN32 */
+#     if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
+        /* With DllMain-based thread tracking, a thread may have        */
+        /* started while we were marking.  This is logically equivalent */
+        /* to the exception case; our results are invalid and we have   */
+        /* to start over.  This cannot be prevented since we can't      */
+        /* block in DllMain.                                            */
+        if (GC_started_thread_while_stopped())
+          goto handle_thr_start;
+#     endif
+      return ret_val;
 
 handle_ex:
     /* Exception handler starts here for all cases. */
+#     if !defined(MSWIN32) && !defined(MSWINCE) || defined(__GNUC__)
+        GC_reset_fault_handler();
+#     endif
       {
         static word warned_gc_no;
 
@@ -555,8 +461,7 @@ handle_ex:
           warned_gc_no = GC_gc_no;
         }
       }
-#   if (defined(MSWIN32) || defined(MSWINCE)) && defined(GC_WIN32_THREADS) \
-       && !defined(GC_PTHREADS)
+#   if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
       handle_thr_start:
 #   endif
       /* We have bad roots on the stack.  Discard mark stack.   */
@@ -568,8 +473,7 @@ handle_ex:
 #     endif
       GC_invalidate_mark_state();
       GC_scan_ptr = NULL;
-      ret_val = FALSE;
-      goto rm_handler;  /* Back to platform-specific code. */
+      return FALSE;
   }
 #endif /* WRAP_MARK_SOME */
 

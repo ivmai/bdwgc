@@ -2998,18 +2998,13 @@ EXTERN_C_BEGIN
 # error Invalid config: GWW_VDB requires USE_WINALLOC
 #endif
 
-#if (((defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__)) \
-        || (defined(MSWIN32) && defined(I386)) /* for Win98 */ \
+#if (defined(MSWIN32) || defined(MSWINCE) \
         || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))) \
     && !defined(NO_CRT) && !defined(NO_WRAP_MARK_SOME)
   /* Under rare conditions, we may end up marking from nonexistent      */
   /* memory.  Hence we need to be prepared to recover by running        */
   /* GC_mark_some with a suitable handler in place.                     */
-  /* TODO: Probably replace __GNUC__ above with ndef GC_PTHREADS.       */
-  /* FIXME: Should we really need it for WinCE?  If yes then            */
-  /* WRAP_MARK_SOME should be also defined for CeGCC which requires     */
-  /* CPU/OS-specific code in mark_ex_handler and GC_mark_some (for      */
-  /* manual stack unwinding and exception handler installation).        */
+  /* TODO: Should we also define it for Cygwin?                         */
 # define WRAP_MARK_SOME
 #endif
 

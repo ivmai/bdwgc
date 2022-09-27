@@ -876,7 +876,8 @@ GC_INNER size_t GC_page_size = 0;
 #   define GET_MAIN_STACKBASE_SPECIAL
 # endif /* AMIGA */
 
-# if defined(NEED_FIND_LIMIT) || defined(UNIX_LIKE)
+# if defined(NEED_FIND_LIMIT) || defined(UNIX_LIKE) \
+     || (defined(WRAP_MARK_SOME) && defined(__GNUC__))
 
     typedef void (*GC_fault_handler_t)(int);
 
@@ -942,6 +943,7 @@ GC_INNER size_t GC_page_size = 0;
 # endif /* NEED_FIND_LIMIT || UNIX_LIKE */
 
 # if defined(NEED_FIND_LIMIT) \
+     || (defined(WRAP_MARK_SOME) && defined(__GNUC__)) \
      || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
   /* Some tools to implement HEURISTIC2 */
 #   define MIN_PAGE_SIZE 256    /* Smallest conceivable page size, bytes */
