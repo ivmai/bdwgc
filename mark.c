@@ -415,8 +415,11 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
 #ifdef WRAP_MARK_SOME
   GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame)
   {
-    GC_bool ret_val;
+      GC_bool ret_val;
 
+      if (GC_no_dls) {
+        ret_val = GC_mark_some_inner(cold_gc_frame);
+      } else {
         /* Windows appears to asynchronously create and remove      */
         /* writable memory mappings, for reasons we haven't yet     */
         /* understood.  Since we look for writable regions to       */
@@ -429,35 +432,36 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
         /* It's conceivable that this is the same issue as with     */
         /* terminating threads that we see with Linux and           */
         /* USE_PROC_FOR_LIBRARIES.                                  */
-#   ifndef NO_SEH_AVAILABLE
-        __try {
-          ret_val = GC_mark_some_inner(cold_gc_frame);
-        } __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ?
-                EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
-          goto handle_ex;
-        }
-#   else
-#     if defined(USE_PROC_FOR_LIBRARIES) && !defined(DEFAULT_VDB)
-        if (GC_auto_incremental) {
-          static GC_bool is_warned = FALSE;
-
-          if (!is_warned) {
-            is_warned = TRUE;
-            WARN("Incremental GC incompatible with /proc roots\n", 0);
+#       ifndef NO_SEH_AVAILABLE
+          __try {
+            ret_val = GC_mark_some_inner(cold_gc_frame);
+          } __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ?
+                  EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
+            goto handle_ex;
           }
-          /* I'm not sure if this could still work ...  */
-        }
-#     endif
+#       else
+#         if defined(USE_PROC_FOR_LIBRARIES) && !defined(DEFAULT_VDB)
+            if (GC_auto_incremental) {
+              static GC_bool is_warned = FALSE;
+
+              if (!is_warned) {
+                is_warned = TRUE;
+                WARN("Incremental GC incompatible with /proc roots\n", 0);
+              }
+              /* I'm not sure if this could still work ...  */
+            }
+#         endif
           /* If USE_PROC_FOR_LIBRARIES, we are handling the case in     */
           /* which /proc is used for root finding, and we have threads. */
           /* We may find a stack for a thread that is in the process of */
           /* exiting, and disappears while we are marking it.           */
           /* This seems extremely difficult to avoid otherwise.         */
-      GC_setup_temporary_fault_handler();
-      if(SETJMP(GC_jmp_buf) != 0) goto handle_ex;
-      ret_val = GC_mark_some_inner(cold_gc_frame);
-      GC_reset_fault_handler();
-#   endif
+          GC_setup_temporary_fault_handler();
+          if (SETJMP(GC_jmp_buf) != 0) goto handle_ex;
+          ret_val = GC_mark_some_inner(cold_gc_frame);
+          GC_reset_fault_handler();
+#       endif
+      }
 
 #     if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
         /* With DllMain-based thread tracking, a thread may have        */
