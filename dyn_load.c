@@ -226,7 +226,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
     }
 }
 
-# endif /* !USE_PROC ... */
+# endif /* !USE_PROC_FOR_LIBRARIES */
 # endif /* SOLARISDL */
 
 #if defined(SCO_ELF) || defined(DGUX) || defined(HURD) \
@@ -862,7 +862,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
         fd = -1;
 }
 
-# endif /* USE_PROC || IRIX5 */
+# endif /* USE_PROC_FOR_LIBRARIES || IRIX5 */
 
 # if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 
