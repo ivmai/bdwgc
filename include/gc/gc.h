@@ -303,14 +303,17 @@ GC_API void GC_CALL GC_set_non_gc_bytes(GC_word);
 GC_API GC_word GC_CALL GC_get_non_gc_bytes(void);
 
 GC_API GC_ATTR_DEPRECATED int GC_no_dls;
-                        /* Don't register dynamic library data segments. */
-                        /* Wizards only.  Should be used only if the     */
-                        /* application explicitly registers all roots.   */
-                        /* (In some environments like Microsoft Windows  */
-                        /* and Apple's Darwin, this may also prevent     */
-                        /* registration of the main data segment as part */
-                        /* of the root set.)                             */
-                        /* The setter and getter are unsynchronized.     */
+                        /* Do not register dynamic library data         */
+                        /* segments automatically.  Also, if set by the */
+                        /* collector itself (during GC), this means     */
+                        /* that such a registration is not supported.   */
+                        /* Wizards only.  Should be set only if the     */
+                        /* application explicitly registers all roots.  */
+                        /* (In some environments like Microsoft Windows */
+                        /* and Apple's Darwin, this may also prevent    */
+                        /* registration of the main data segment as a   */
+                        /* part of the root set.)                       */
+                        /* The setter and getter are unsynchronized.    */
 GC_API void GC_CALL GC_set_no_dls(int);
 GC_API int GC_CALL GC_get_no_dls(void);
 
