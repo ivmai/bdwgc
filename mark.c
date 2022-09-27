@@ -426,10 +426,10 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
         /* This code seems to be necessary for WinCE (at least in   */
         /* the case we'd decide to add MEM_PRIVATE sections to      */
         /* data roots in GC_register_dynamic_libraries()).          */
-        /* It's conceivable that this is the same issue with        */
+        /* It's conceivable that this is the same issue as with     */
         /* terminating threads that we see with Linux and           */
         /* USE_PROC_FOR_LIBRARIES.                                  */
-#   if (defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__)
+#   ifndef NO_SEH_AVAILABLE
         __try {
           ret_val = GC_mark_some_inner(cold_gc_frame);
         } __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ?
@@ -437,11 +437,6 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
           goto handle_ex;
         }
 #   else
-      /* Here we are handling the case in which /proc is used for root  */
-      /* finding, and we have threads.  We may find a stack for a       */
-      /* thread that is in the process of exiting, and disappears       */
-      /* while we are marking it.  This seems extremely difficult to    */
-      /* avoid otherwise.                                               */
 #     if defined(USE_PROC_FOR_LIBRARIES) && !defined(DEFAULT_VDB)
         if (GC_auto_incremental) {
           static GC_bool is_warned = FALSE;
@@ -453,6 +448,11 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
           /* I'm not sure if this could still work ...  */
         }
 #     endif
+          /* If USE_PROC_FOR_LIBRARIES, we are handling the case in     */
+          /* which /proc is used for root finding, and we have threads. */
+          /* We may find a stack for a thread that is in the process of */
+          /* exiting, and disappears while we are marking it.           */
+          /* This seems extremely difficult to avoid otherwise.         */
       GC_setup_temporary_fault_handler();
       if(SETJMP(GC_jmp_buf) != 0) goto handle_ex;
       ret_val = GC_mark_some_inner(cold_gc_frame);
@@ -470,9 +470,9 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
 #     endif
       return ret_val;
 
-handle_ex:
+    handle_ex:
     /* Exception handler starts here for all cases. */
-#     if !defined(MSWIN32) && !defined(MSWINCE) || defined(__GNUC__)
+#     if defined(NO_SEH_AVAILABLE)
         GC_reset_fault_handler();
 #     endif
       {
@@ -488,7 +488,7 @@ handle_ex:
 #   if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
       handle_thr_start:
 #   endif
-      /* We have bad roots on the stack.  Discard mark stack.   */
+      /* We have bad roots on the mark stack - discard it.      */
       /* Rescan from marked objects.  Redetermine roots.        */
 #     ifdef REGISTER_LIBRARIES_EARLY
         START_WORLD();

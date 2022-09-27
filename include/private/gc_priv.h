@@ -3042,8 +3042,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #endif /* DATASTART_USES_BSDGETDATASTART */
 
 #if defined(NEED_FIND_LIMIT) \
-     || (defined(WRAP_MARK_SOME) && (!defined(MSWIN32) && !defined(MSWINCE) \
-                                     || defined(__GNUC__))) \
+     || (defined(WRAP_MARK_SOME) && defined(NO_SEH_AVAILABLE)) \
      || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
   GC_EXTERN JMP_BUF GC_jmp_buf;
 
@@ -3052,7 +3051,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   GC_INNER void GC_setup_temporary_fault_handler(void);
   /* Undo the effect of GC_setup_temporary_fault_handler.       */
   GC_INNER void GC_reset_fault_handler(void);
-#endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES */
+#endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES || WRAP_MARK_SOME */
 
 /* Some convenience macros for cancellation support. */
 #if defined(CANCEL_SAFE)

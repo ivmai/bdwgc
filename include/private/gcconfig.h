@@ -2980,6 +2980,11 @@ EXTERN_C_BEGIN
 # define WRAP_MARK_SOME
 #endif
 
+#if !defined(MSWIN32) && !defined(MSWINCE) || defined(__GNUC__) \
+    || defined(NO_CRT)
+# define NO_SEH_AVAILABLE
+#endif
+
 #if defined(PARALLEL_MARK) && !defined(DEFAULT_STACK_MAYBE_SMALL) \
     && (defined(HPUX) || defined(GC_DGUX386_THREADS) \
         || defined(NO_GETCONTEXT) /* e.g. musl */)
