@@ -2711,7 +2711,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                              args->lpCmdLine, args->nShowCmd);
   }
 
-  STATIC void * GC_waitForSingleObjectInfinite(void * handle)
+  STATIC void *GC_CALLBACK GC_waitForSingleObjectInfinite(void *handle)
   {
     return (void *)(word)WaitForSingleObject((HANDLE)handle, INFINITE);
   }
