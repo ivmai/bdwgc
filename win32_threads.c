@@ -147,7 +147,7 @@ static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext);
 #endif /* GC_NO_THREADS_DISCOVERY */
 
 /* We have two versions of the thread table.  Which one */
-/* we us depends on whether or not GC_win32_dll_threads */
+/* we use depends on whether GC_win32_dll_threads       */
 /* is set.  Note that before initialization, we don't   */
 /* add any entries to either table, even if DllMain is  */
 /* called.  The main thread will be added on            */
