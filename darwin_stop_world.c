@@ -136,19 +136,21 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 #endif
 
 /* Evaluates the stack range for a given thread.  Returns the lower     */
-/* bound and sets *phi to the upper one.                                */
+/* bound and sets *phi to the upper one.  Sets *pfound_me to TRUE if    */
+/* this is current thread, otherwise the value is not changed.          */
 STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
                                 mach_port_t my_thread, ptr_t *paltstack_lo,
-                                ptr_t *paltstack_hi)
+                                ptr_t *paltstack_hi, GC_bool *pfound_me)
 {
   ptr_t lo;
+
   if (thread == my_thread) {
     GC_ASSERT(NULL == p || (p -> flags & DO_BLOCKING) == 0);
     lo = GC_approx_sp();
 #   ifndef DARWIN_DONT_PARSE_STACK
       *phi = GC_FindTopOfStack(0);
 #   endif
-
+    *pfound_me = TRUE;
   } else if (p != NULL && (p -> flags & DO_BLOCKING) != 0) {
     lo = p->stop_info.stack_ptr;
 #   ifndef DARWIN_DONT_PARSE_STACK
@@ -352,7 +354,6 @@ GC_INNER void GC_push_all_stacks(void)
   GC_bool found_me = FALSE;
   int nthreads = 0;
   word total_size = 0;
-  mach_msg_type_number_t listcount = (mach_msg_type_number_t)THREAD_TABLE_SZ;
 
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(GC_thr_initialized);
@@ -361,7 +362,8 @@ GC_INNER void GC_push_all_stacks(void)
     if (GC_query_task_threads) {
       int i;
       kern_return_t kern_result;
-      thread_act_array_t act_list = 0;
+      thread_act_array_t act_list;
+      mach_msg_type_number_t listcount;
 
       /* Obtain the list of the threads from the kernel.  */
       kern_result = task_threads(my_task, &act_list, &listcount);
@@ -371,7 +373,7 @@ GC_INNER void GC_push_all_stacks(void)
       for (i = 0; i < (int)listcount; i++) {
         thread_act_t thread = act_list[i];
         ptr_t lo = GC_stack_range_for(&hi, thread, NULL, my_thread,
-                                      &altstack_lo, &altstack_hi);
+                                      &altstack_lo, &altstack_hi, &found_me);
 
         if (lo) {
           GC_ASSERT((word)lo <= (word)hi);
@@ -380,8 +382,6 @@ GC_INNER void GC_push_all_stacks(void)
         }
         /* TODO: Handle altstack */
         nthreads++;
-        if (thread == my_thread)
-          found_me = TRUE;
         mach_port_deallocate(my_task, thread);
       } /* for (i=0; ...) */
 
@@ -392,14 +392,14 @@ GC_INNER void GC_push_all_stacks(void)
   /* else */ {
     int i;
 
-    for (i = 0; i < (int)listcount; i++) {
+    for (i = 0; i < THREAD_TABLE_SZ; i++) {
       GC_thread p;
 
-      for (p = GC_threads[i]; p != NULL; p = p->next)
-        if ((p->flags & FINISHED) == 0) {
+      for (p = GC_threads[i]; p != NULL; p = p -> next)
+        if ((p -> flags & FINISHED) == 0) {
           thread_act_t thread = (thread_act_t)p->stop_info.mach_thread;
           ptr_t lo = GC_stack_range_for(&hi, thread, p, my_thread,
-                                        &altstack_lo, &altstack_hi);
+                                        &altstack_lo, &altstack_hi, &found_me);
 
           if (lo) {
             GC_ASSERT((word)lo <= (word)hi);
@@ -411,8 +411,6 @@ GC_INNER void GC_push_all_stacks(void)
             GC_push_all_stack(altstack_lo, altstack_hi);
           }
           nthreads++;
-          if (thread == my_thread)
-            found_me = TRUE;
         }
     } /* for (i=0; ...) */
   }
@@ -620,7 +618,7 @@ GC_INNER void GC_stop_world(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       GC_thread p;
 
-      for (p = GC_threads[i]; p != NULL; p = p->next) {
+      for (p = GC_threads[i]; p != NULL; p = p -> next) {
         if ((p -> flags & (FINISHED | DO_BLOCKING)) == 0
             && p -> stop_info.mach_thread != my_thread) {
           GC_acquire_dirty_lock();
@@ -755,7 +753,8 @@ GC_INNER void GC_start_world(void)
 
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       GC_thread p;
-      for (p = GC_threads[i]; p != NULL; p = p->next) {
+
+      for (p = GC_threads[i]; p != NULL; p = p -> next) {
         if ((p -> flags & (FINISHED | DO_BLOCKING)) == 0
             && p -> stop_info.mach_thread != my_thread)
           GC_thread_resume(p->stop_info.mach_thread);

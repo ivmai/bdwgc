@@ -277,7 +277,7 @@ STATIC int GC_nprocs = 1;
     GC_thread p;
 
     for (i = 0; i < THREAD_TABLE_SZ; ++i) {
-      for (p = GC_threads[i]; 0 != p; p = p -> next) {
+      for (p = GC_threads[i]; p != NULL; p = p -> next) {
         if (!(p -> flags & FINISHED))
           GC_mark_thread_local_fls_for(&(p->tlfs));
       }
@@ -574,13 +574,14 @@ void GC_push_thread_structures(void)
   {
     int i;
     int count = 0;
+
     GC_ASSERT(I_HOLD_LOCK());
     for (i = 0; i < THREAD_TABLE_SZ; ++i) {
-        GC_thread th = GC_threads[i];
-        while (th) {
-            if (!(th->flags & FINISHED))
+        GC_thread p;
+
+        for (p = GC_threads[i]; p != NULL; p = p -> next) {
+            if ((p -> flags & FINISHED) == 0)
                 ++count;
-            th = th->next;
         }
     }
     return count;
@@ -637,7 +638,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
 STATIC void GC_delete_thread(pthread_t id)
 {
     int hv = THREAD_TABLE_INDEX(id);
-    GC_thread p = GC_threads[hv];
+    GC_thread p;
     GC_thread prev = NULL;
 
 #   ifdef DEBUG_THREADS
@@ -651,11 +652,11 @@ STATIC void GC_delete_thread(pthread_t id)
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
-    while (!THREAD_EQUAL(p -> id, id)) {
-        prev = p;
-        p = p -> next;
+    for (p = GC_threads[hv]; ; p = p -> next) {
+      if (THREAD_EQUAL(p -> id, id)) break;
+      prev = p;
     }
-    if (prev == 0) {
+    if (NULL == prev) {
         GC_threads[hv] = p -> next;
     } else {
         GC_ASSERT(prev != &first_thread);
@@ -713,8 +714,9 @@ GC_INNER GC_thread GC_lookup_thread(pthread_t id)
 {
     GC_thread p = GC_threads[THREAD_TABLE_INDEX(id)];
 
-    while (p != NULL && !THREAD_EQUAL(p -> id, id))
-        p = p -> next;
+    for (; p != NULL; p = p -> next) {
+      if (THREAD_EQUAL(p -> id, id)) break;
+    }
     return p;
 }
 
@@ -837,7 +839,7 @@ STATIC void GC_remove_all_threads_but_me(void)
       GC_thread p, next;
       GC_thread me = NULL;
 
-      for (p = GC_threads[hv]; 0 != p; p = next) {
+      for (p = GC_threads[hv]; p != NULL; p = next) {
         next = p -> next;
         if (THREAD_EQUAL(p -> id, self)
             && me == NULL) { /* ignore dead threads with the same id */
@@ -908,7 +910,7 @@ STATIC void GC_remove_all_threads_but_me(void)
       }
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
-      for (p = GC_threads[i]; p != 0; p = p -> next) {
+      for (p = GC_threads[i]; p != NULL; p = p -> next) {
         if (0 != p -> stack_end) {
 #         ifdef STACK_GROWS_UP
             if ((word)p->stack_end >= (word)lo

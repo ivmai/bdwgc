@@ -291,8 +291,9 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
   {
     GC_thread p = GC_threads[THREAD_TABLE_INDEX(id)];
 
-    while (p != NULL && !THREAD_EQUAL(p->id, id))
-      p = p->next;
+    for (; p != NULL; p = p -> next) {
+      if (THREAD_EQUAL(p -> id, id)) break;
+    }
     return p;
   }
 #else
@@ -797,6 +798,8 @@ GC_INNER void GC_push_all_stacks(void)
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
+        GC_bool is_self = FALSE;
+
         if (p -> flags & FINISHED) continue;
         ++nthreads;
         traced_stack_sect = p -> traced_stack_sect;
@@ -818,6 +821,7 @@ GC_INNER void GC_push_all_stacks(void)
                 }
 #             endif
 #           endif
+            is_self = TRUE;
             found_me = TRUE;
         } else {
             lo = (ptr_t)AO_load((volatile AO_t *)&p->stop_info.stack_ptr);
@@ -872,11 +876,10 @@ GC_INNER void GC_push_all_stacks(void)
 #       endif
 #       ifdef E2K
           if ((GC_stop_count & THREAD_RESTARTED) != 0
-              && (p -> flags & DO_BLOCKING) == 0
 #             ifdef GC_ENABLE_SUSPEND_THREAD
                 && (p -> stop_info.ext_suspend_cnt & 1) == 0
 #             endif
-              && !THREAD_EQUAL(p -> id, self))
+              && !is_self && (p -> flags & DO_BLOCKING) == 0)
             continue; /* procedure stack buffer has already been freed */
 #       endif
 #       if defined(E2K) || defined(IA64)
@@ -885,15 +888,14 @@ GC_INNER void GC_push_all_stacks(void)
                           (void *)p->id, (void *)bs_lo, (void *)bs_hi);
 #         endif
           GC_ASSERT(bs_lo != NULL && bs_hi != NULL);
-          /* FIXME: This (if p->id==self) may add an unbounded number of */
-          /* entries, and hence overflow the mark stack, which is bad.   */
-          GC_push_all_register_sections(bs_lo, bs_hi,
-                                        THREAD_EQUAL(p -> id, self),
+          /* FIXME: This (if is_self) may add an unbounded number of    */
+          /* entries, and hence overflow the mark stack, which is bad.  */
+          GC_push_all_register_sections(bs_lo, bs_hi, is_self,
                                         traced_stack_sect);
           total_size += bs_hi - bs_lo; /* bs_lo <= bs_hi */
 #       endif
 #       ifdef E2K
-          if (THREAD_EQUAL(p -> id, self))
+          if (is_self)
             FREE_PROCEDURE_STACK_LOCAL(bs_lo, (size_t)(bs_hi - bs_lo));
 #       endif
       }
