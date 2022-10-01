@@ -332,8 +332,8 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
         && (word)lo <= (word)p->altstack + p->altstack_size) {
       *paltstack_lo = lo;
       *paltstack_hi = p->altstack + p->altstack_size;
-      lo = p->stack;
-      *phi = p->stack + p->stack_size;
+      lo = p->normstack;
+      *phi = lo + p->normstack_size;
     } else
 # endif
   /* else */ {

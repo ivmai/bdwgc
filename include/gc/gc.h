@@ -1586,11 +1586,12 @@ GC_API void GC_CALL GC_start_mark_threads(void);
   GC_API int GC_CALL GC_thread_is_registered(void);
 
   /* Notify the collector about the stack and the alt-stack of the      */
-  /* current thread.  stack_start/size is used to determine the stack   */
-  /* boundaries when a thread is suspended while it is on an alt-stack. */
-  GC_API void GC_CALL GC_register_altstack(void * /* stack_start */,
-                                           GC_word /* stack_size */,
-                                           void * /* altstack_base */,
+  /* current thread.  normstack and normstack_size are used to          */
+  /* determine the "normal" stack boundaries when a thread is suspended */
+  /* while it is on an alt-stack.                                       */
+  GC_API void GC_CALL GC_register_altstack(void * /* normstack */,
+                                           GC_word /* normstack_size */,
+                                           void * /* altstack */,
                                            GC_word /* altstack_size */);
 
   /* Unregister the current thread.  Only an explicitly registered      */

@@ -784,12 +784,11 @@ GC_API int GC_CALL GC_thread_is_registered(void)
 }
 
 static pthread_t main_pthread_id;
-static void *main_stack, *main_altstack;
-static word main_stack_size, main_altstack_size;
+static void *main_normstack, *main_altstack;
+static word main_normstack_size, main_altstack_size;
 
-GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
-                                         void *altstack,
-                                         GC_word altstack_size)
+GC_API void GC_CALL GC_register_altstack(void *normstack,
+                GC_word normstack_size, void *altstack, GC_word altstack_size)
 {
   GC_thread me;
   pthread_t self = pthread_self();
@@ -798,15 +797,15 @@ GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
   LOCK();
   me = GC_lookup_thread(self);
   if (EXPECT(me != NULL, TRUE)) {
-    me->stack = (ptr_t)stack;
-    me->stack_size = stack_size;
-    me->altstack = (ptr_t)altstack;
-    me->altstack_size = altstack_size;
+    me -> normstack = (ptr_t)normstack;
+    me -> normstack_size = normstack_size;
+    me -> altstack = (ptr_t)altstack;
+    me -> altstack_size = altstack_size;
   } else {
     /* This happens if we are called before GC_thr_init.    */
     main_pthread_id = self;
-    main_stack = stack;
-    main_stack_size = stack_size;
+    main_normstack = normstack;
+    main_normstack_size = normstack_size;
     main_altstack = altstack;
     main_altstack_size = altstack_size;
   }
@@ -930,7 +929,7 @@ STATIC void GC_remove_all_threads_but_me(void)
 
 #if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
     && defined(IA64)
-  /* Find the largest stack_base smaller than bound.  May be used       */
+  /* Find the largest stack base smaller than bound.  May be used       */
   /* to find the boundary between a register stack and adjacent         */
   /* immediately preceding memory stack.                                */
   GC_INNER ptr_t GC_greatest_stack_base_below(ptr_t bound)
@@ -1380,8 +1379,8 @@ GC_INNER void GC_thr_init(void)
 #   endif
     t -> flags = DETACHED | MAIN_THREAD;
     if (THREAD_EQUAL(self, main_pthread_id)) {
-      t -> stack = (ptr_t)main_stack;
-      t -> stack_size = main_stack_size;
+      t -> normstack = (ptr_t)main_normstack;
+      t -> normstack_size = main_normstack_size;
       t -> altstack = (ptr_t)main_altstack;
       t -> altstack_size = main_altstack_size;
     }

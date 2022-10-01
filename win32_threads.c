@@ -638,12 +638,12 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     return me != NULL;
 }
 
-GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
-                                         void *altstack, GC_word altstack_size)
+GC_API void GC_CALL GC_register_altstack(void *normstack,
+                GC_word normstack_size, void *altstack, GC_word altstack_size)
 {
   /* TODO: Implement */
-  UNUSED_ARG(stack);
-  UNUSED_ARG(stack_size);
+  UNUSED_ARG(normstack);
+  UNUSED_ARG(normstack_size);
   UNUSED_ARG(altstack);
   UNUSED_ARG(altstack_size);
 }
