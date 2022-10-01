@@ -1077,7 +1077,6 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
       /* We first try the cache.  If that fails, we use a very slow     */
       /* approach.                                                      */
       int hv_guess = THREAD_TABLE_INDEX(GET_PTHREAD_MAP_CACHE(id));
-      int hv;
       GC_thread p;
       DCL_LOCK_STATE;
 
@@ -1088,6 +1087,8 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
       }
 
       if (EXPECT(NULL == p, FALSE)) {
+        int hv;
+
         for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
           for (p = GC_threads[hv]; p != NULL; p = p -> tm.next) {
             if (THREAD_EQUAL(p -> pthread_id, id))
