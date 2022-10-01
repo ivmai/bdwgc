@@ -798,7 +798,9 @@ GC_INNER void GC_push_all_stacks(void)
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
-        GC_bool is_self = FALSE;
+#       if defined(E2K) || defined(IA64)
+          GC_bool is_self = FALSE;
+#       endif
 
         if (p -> flags & FINISHED) continue;
         ++nthreads;
@@ -821,8 +823,10 @@ GC_INNER void GC_push_all_stacks(void)
                 }
 #             endif
 #           endif
-            is_self = TRUE;
             found_me = TRUE;
+#           if defined(E2K) || defined(IA64)
+              is_self = TRUE;
+#           endif
         } else {
             lo = (ptr_t)AO_load((volatile AO_t *)&p->stop_info.stack_ptr);
 #           ifdef IA64
