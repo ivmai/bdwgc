@@ -51,7 +51,7 @@ typedef struct GC_Thread_Rep {
                                   /* positive about the race between    */
                                   /* GC_has_other_debug_info and        */
                                   /* GC_suspend_handler_inner (which    */
-                                  /* sets store_stop.stack_ptr).        */
+                                  /* sets stop_info.stack_ptr).         */
 #   endif
 
     struct GC_Thread_Rep * next;  /* More recently allocated threads    */
