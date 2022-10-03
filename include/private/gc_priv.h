@@ -2813,6 +2813,14 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 # endif
 #endif /* GC_WIN32_THREADS */
 
+#if defined(GC_DARWIN_THREADS) && defined(MPROTECT_VDB)
+  GC_INNER void GC_mprotect_stop(void);
+  GC_INNER void GC_mprotect_resume(void);
+# ifndef GC_NO_THREADS_DISCOVERY
+    GC_INNER void GC_darwin_register_self_mach_handler(void);
+# endif
+#endif
+
 #ifdef THREADS
 # ifndef GC_NO_FINALIZATION
     GC_INNER void GC_reset_finalizer_nested(void);

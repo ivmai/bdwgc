@@ -119,8 +119,7 @@ SRCS= $(CSRCS) \
   include/private/specific.h include/gc/leak_detector.h \
   include/gc/gc_pthread_redirects.h include/private/gc_atomic_ops.h \
   include/gc/gc_config_macros.h include/private/pthread_support.h \
-  include/private/pthread_stop_world.h include/private/darwin_semaphore.h \
-  include/private/darwin_stop_world.h include/private/thread_local_alloc.h \
+  include/private/darwin_semaphore.h include/private/thread_local_alloc.h \
   ia64_save_regs_in_stack.s sparc_mach_dep.S \
   sparc_netbsd_mach_dep.s $(CORD_SRCS)
 

@@ -90,11 +90,6 @@
 # include "mm/PCR_MM.h"
 #endif
 
-#if defined(GC_DARWIN_THREADS) && defined(MPROTECT_VDB)
-  /* Declare GC_mprotect_stop and GC_mprotect_resume as extern "C".     */
-# include "private/darwin_stop_world.h"
-#endif
-
 #if !defined(NO_EXECUTE_PERMISSION)
   STATIC GC_bool GC_pages_executable = TRUE;
 #else
@@ -4556,7 +4551,7 @@ STATIC void *GC_mprotect_thread(void *arg)
     (void)pthread_setname_np("GC-mprotect");
 # endif
 # if defined(THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
-    GC_darwin_register_mach_handler_thread(mach_thread_self());
+    GC_darwin_register_self_mach_handler();
 # endif
 
   for(;;) {

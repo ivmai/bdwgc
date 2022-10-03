@@ -23,10 +23,9 @@
 
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
-#if defined(GC_DARWIN_THREADS)
-# include "darwin_stop_world.h"
-#elif defined(PTHREAD_STOP_WORLD_IMPL)
-# include "pthread_stop_world.h"
+#ifdef GC_DARWIN_THREADS
+# include <mach/mach.h>
+# include <mach/thread_act.h>
 #endif
 
 #ifdef THREAD_LOCAL_ALLOC
@@ -38,6 +37,63 @@
 #endif
 
 EXTERN_C_BEGIN
+
+#ifdef GC_DARWIN_THREADS
+
+  struct thread_stop_info {
+    mach_port_t mach_thread;
+    ptr_t stack_ptr; /* Valid only when thread is in do-blocking state. */
+  };
+
+# ifndef DARWIN_DONT_PARSE_STACK
+    GC_INNER ptr_t GC_FindTopOfStack(unsigned long);
+# endif
+
+# if defined(PARALLEL_MARK) && !defined(GC_NO_THREADS_DISCOVERY)
+    GC_INNER GC_bool GC_is_mach_marker(thread_act_t);
+# endif
+
+#elif defined(PTHREAD_STOP_WORLD_IMPL)
+
+  struct thread_stop_info {
+#   ifdef SIGNAL_BASED_STOP_WORLD
+      volatile AO_t last_stop_count;
+                        /* The value of GC_stop_count when the thread   */
+                        /* last successfully handled a suspend signal.  */
+#     ifdef GC_ENABLE_SUSPEND_THREAD
+        volatile AO_t ext_suspend_cnt;
+                        /* An odd value means thread was suspended      */
+                        /* externally.  Incremented on every call of    */
+                        /* GC_suspend_thread() and GC_resume_thread().  */
+                        /* Updated with the GC lock held, but could be  */
+                        /* read from a signal handler.                  */
+#     endif
+#   endif
+
+    ptr_t stack_ptr;    /* Valid only when stopped.     */
+
+#   ifdef NACL
+      /* Grab NACL_GC_REG_STORAGE_SIZE pointers off the stack when      */
+      /* going into a syscall.  20 is more than we need, but it's an    */
+      /* overestimate in case the instrumented function uses any callee */
+      /* saved registers, they may be pushed to the stack much earlier. */
+      /* Also, on x64 'push' puts 8 bytes on the stack even though      */
+      /* our pointers are 4 bytes.                                      */
+#     ifdef ARM32
+        /* Space for r4-r8, r10-r12, r14.       */
+#       define NACL_GC_REG_STORAGE_SIZE 9
+#     else
+#       define NACL_GC_REG_STORAGE_SIZE 20
+#     endif
+      ptr_t reg_storage[NACL_GC_REG_STORAGE_SIZE];
+#   elif defined(PLATFORM_HAVE_GC_REG_STORAGE_SIZE)
+      word registers[PLATFORM_GC_REG_STORAGE_SIZE]; /* used externally */
+#   endif
+  };
+
+  GC_INNER void GC_stop_init(void);
+
+#endif /* PTHREAD_STOP_WORLD_IMPL */
 
 /* We use the allocation lock to protect thread-related data structures. */
 

@@ -428,9 +428,9 @@ GC_INNER void GC_push_all_stacks(void)
     STATIC mach_port_t GC_mach_handler_thread = 0;
     STATIC GC_bool GC_use_mach_handler_thread = FALSE;
 
-    GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread)
+    GC_INNER void GC_darwin_register_self_mach_handler(void)
     {
-      GC_mach_handler_thread = thread;
+      GC_mach_handler_thread = mach_thread_self();
       GC_use_mach_handler_thread = TRUE;
     }
 # endif /* MPROTECT_VDB */
