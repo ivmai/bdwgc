@@ -782,11 +782,19 @@ GC_API int GC_CALL GC_is_init_called(void)
   {
     if (GC_find_leak && !skip_gc_atexit) {
 #     ifdef THREADS
+        DCL_LOCK_STATE;
+
+        /* GC_in_thread_creation should always be updated holding the   */
+        /* lock even if we are about to exit.                           */
+        LOCK();
         GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
-        GC_gcollect();
+        UNLOCK();
+#     endif
+      GC_gcollect();
+#     ifdef THREADS
+        LOCK();
         GC_in_thread_creation = FALSE;
-#     else
-        GC_gcollect();
+        UNLOCK();
 #     endif
     }
   }
