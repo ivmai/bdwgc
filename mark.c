@@ -482,10 +482,10 @@ static void push_roots_and_advance(GC_bool push_all, ptr_t cold_gc_frame)
       {
         static word warned_gc_no;
 
-        /* Warn about it at most once per collection. */
+        /* Report caught ACCESS_VIOLATION, once per collection. */
         if (warned_gc_no != GC_gc_no) {
-          WARN("Caught ACCESS_VIOLATION in marker;"
-               " memory mapping disappeared\n", 0);
+          GC_COND_LOG_PRINTF("Memory mapping disappeared at collection #%lu\n",
+                             (unsigned long)GC_gc_no + 1);
           warned_gc_no = GC_gc_no;
         }
       }
