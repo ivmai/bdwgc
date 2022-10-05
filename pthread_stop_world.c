@@ -287,11 +287,11 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
   /* The implementation of the function is the same as that of  */
   /* GC_lookup_thread except for the attribute added here.      */
   GC_ATTR_NO_SANITIZE_THREAD
-  static GC_thread GC_lookup_thread_async(pthread_t id)
+  static GC_thread GC_lookup_thread_async(thread_id_t id)
   {
     GC_thread p = GC_threads[THREAD_TABLE_INDEX(id)];
 
-    for (; p != NULL; p = p -> next) {
+    for (; p != NULL; p = p -> tm.next) {
       if (THREAD_EQUAL(p -> id, id)) break;
     }
     return p;
@@ -310,15 +310,14 @@ GC_INLINE void GC_store_stack_ptr(GC_thread me)
   /* and fetched (by GC_push_all_stacks) using the atomic primitives to */
   /* avoid the related TSan warning.                                    */
 # ifdef SPARC
-    ao_store_async((volatile AO_t *)&me->stop_info.stack_ptr,
+    ao_store_async((volatile AO_t *)&(me -> stack_ptr),
                    (AO_t)GC_save_regs_in_stack());
     /* TODO: regs saving already done by GC_with_callee_saves_pushed */
 # else
 #   ifdef IA64
       me -> backing_store_ptr = GC_save_regs_in_stack();
 #   endif
-    ao_store_async((volatile AO_t *)&me->stop_info.stack_ptr,
-                   (AO_t)GC_approx_sp());
+    ao_store_async((volatile AO_t *)&(me -> stack_ptr), (AO_t)GC_approx_sp());
 # endif
 }
 
@@ -358,8 +357,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
     GC_log_printf("Suspending %p\n", (void *)self);
 # endif
   me = GC_lookup_thread_async(self);
-  if ((me->stop_info.last_stop_count & ~(word)THREAD_RESTARTED)
-        == my_stop_count) {
+  if ((me -> last_stop_count & ~(word)THREAD_RESTARTED) == my_stop_count) {
       /* Duplicate signal.  OK if we are retrying.      */
       if (!GC_retry_signals) {
           WARN("Duplicate suspend signal in thread %p\n", self);
@@ -375,14 +373,14 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
     me -> backing_store_ptr = bs_lo + stack_size;
 # endif
 # ifdef GC_ENABLE_SUSPEND_THREAD
-    suspend_cnt = (word)ao_load_async(&(me -> stop_info.ext_suspend_cnt));
+    suspend_cnt = (word)ao_load_async(&(me -> ext_suspend_cnt));
 # endif
 
   /* Tell the thread that wants to stop the world that this     */
   /* thread has been stopped.  Note that sem_post() is          */
   /* the only async-signal-safe primitive in LinuxThreads.      */
   sem_post(&GC_suspend_ack_sem);
-  ao_store_release_async(&me->stop_info.last_stop_count, my_stop_count);
+  ao_store_release_async(&(me -> last_stop_count), my_stop_count);
 
   /* Wait until that thread tells us to restart by sending      */
   /* this thread a GC_sig_thr_restart signal (should be masked  */
@@ -400,7 +398,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
   } while (ao_load_acquire_async(&GC_stop_count) == my_stop_count
 #          ifdef GC_ENABLE_SUSPEND_THREAD
              || ((suspend_cnt & 1) != 0
-                 && (word)ao_load_async(&(me -> stop_info.ext_suspend_cnt))
+                 && (word)ao_load_async(&(me -> ext_suspend_cnt))
                     == suspend_cnt)
 #          endif
           );
@@ -426,7 +424,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
     sem_post(&GC_suspend_ack_sem);
     /* Set the flag that the thread has been restarted. */
     if (GC_retry_signals)
-      ao_store_release_async(&me->stop_info.last_stop_count,
+      ao_store_release_async(&(me -> last_stop_count),
                              my_stop_count | THREAD_RESTARTED);
   }
   RESTORE_CANCEL(cancel_state);
@@ -622,7 +620,7 @@ STATIC void GC_restart_handler(int sig)
 #     ifdef DEBUG_THREADS
         GC_log_printf("Suspend self: %p\n", (void *)(me -> id));
 #     endif
-      while ((word)ao_load_acquire_async(&(me -> stop_info.ext_suspend_cnt))
+      while ((word)ao_load_acquire_async(&(me -> ext_suspend_cnt))
              == suspend_cnt) {
         /* TODO: Use sigsuspend() even for self-suspended threads. */
         GC_brief_async_signal_safe_sleep();
@@ -646,21 +644,21 @@ STATIC void GC_restart_handler(int sig)
         UNLOCK();
         return;
       }
-      suspend_cnt = (word)(t -> stop_info.ext_suspend_cnt);
+      suspend_cnt = (word)(t -> ext_suspend_cnt);
       if ((suspend_cnt & 1) != 0) /* already suspended? */ {
         GC_ASSERT(!THREAD_EQUAL((pthread_t)thread, pthread_self()));
         UNLOCK();
         return;
       }
       if ((t -> flags & (FINISHED | DO_BLOCKING)) != 0) {
-        t -> stop_info.ext_suspend_cnt = (AO_t)(suspend_cnt | 1); /* suspend */
+        t -> ext_suspend_cnt = (AO_t)(suspend_cnt | 1); /* suspend */
         /* Terminated but not joined yet, or in do-blocking state.  */
         UNLOCK();
         return;
       }
 
       if (THREAD_EQUAL((pthread_t)thread, pthread_self())) {
-        t -> stop_info.ext_suspend_cnt = (AO_t)(suspend_cnt | 1);
+        t -> ext_suspend_cnt = (AO_t)(suspend_cnt | 1);
         GC_with_callee_saves_pushed(GC_suspend_self_blocked, (ptr_t)t);
         UNLOCK();
         return;
@@ -693,8 +691,7 @@ STATIC void GC_restart_handler(int sig)
       AO_store(&GC_stop_count, next_stop_count);
 
       /* Set the flag making the change visible to the signal handler.  */
-      AO_store_release(&(t -> stop_info.ext_suspend_cnt),
-                       (AO_t)(suspend_cnt | 1));
+      AO_store_release(&(t -> ext_suspend_cnt), (AO_t)(suspend_cnt | 1));
 
       /* TODO: Support GC_retry_signals (not needed for TSan) */
       switch (raise_signal(t, GC_sig_suspend)) {
@@ -724,12 +721,12 @@ STATIC void GC_restart_handler(int sig)
       LOCK();
       t = GC_lookup_thread((pthread_t)thread);
       if (t != NULL) {
-        word suspend_cnt = (word)(t -> stop_info.ext_suspend_cnt);
+        word suspend_cnt = (word)(t -> ext_suspend_cnt);
 
         if ((suspend_cnt & 1) != 0) /* is suspended? */ {
           GC_ASSERT((GC_stop_count & THREAD_RESTARTED) != 0);
           /* Mark the thread as not suspended - it will be resumed shortly. */
-          AO_store(&(t -> stop_info.ext_suspend_cnt), (AO_t)(suspend_cnt + 1));
+          AO_store(&(t -> ext_suspend_cnt), (AO_t)(suspend_cnt + 1));
 
           if ((t -> flags & (FINISHED | DO_BLOCKING)) == 0) {
             int result = raise_signal(t, GC_sig_thr_restart);
@@ -761,7 +758,7 @@ STATIC void GC_restart_handler(int sig)
 
       LOCK();
       t = GC_lookup_thread((pthread_t)thread);
-      if (t != NULL && (t -> stop_info.ext_suspend_cnt & 1) != 0)
+      if (t != NULL && (t -> ext_suspend_cnt & 1) != 0)
         is_suspended = (int)TRUE;
       UNLOCK();
       return is_suspended;
@@ -797,12 +794,12 @@ GC_INNER void GC_push_all_stacks(void)
       GC_log_printf("Pushing stacks from thread %p\n", (void *)self);
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
-      for (p = GC_threads[i]; p != 0; p = p -> next) {
+      for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
 #       if defined(E2K) || defined(IA64)
           GC_bool is_self = FALSE;
 #       endif
 
-        if (p -> flags & FINISHED) continue;
+        if (KNOWN_FINISHED(p)) continue;
         ++nthreads;
         traced_stack_sect = p -> traced_stack_sect;
         if (THREAD_EQUAL(p -> id, self)) {
@@ -828,7 +825,7 @@ GC_INNER void GC_push_all_stacks(void)
               is_self = TRUE;
 #           endif
         } else {
-            lo = (ptr_t)AO_load((volatile AO_t *)&p->stop_info.stack_ptr);
+            lo = (ptr_t)AO_load((volatile AO_t *)&(p -> stack_ptr));
 #           ifdef IA64
               bs_hi = p -> backing_store_ptr;
 #           elif defined(E2K)
@@ -874,14 +871,14 @@ GC_INNER void GC_push_all_stacks(void)
 #       endif
 #       ifdef NACL
           /* Push reg_storage as roots, this will cover the reg context. */
-          GC_push_all_stack((ptr_t)p -> stop_info.reg_storage,
-              (ptr_t)(p -> stop_info.reg_storage + NACL_GC_REG_STORAGE_SIZE));
+          GC_push_all_stack((ptr_t)p -> reg_storage,
+                        (ptr_t)(p -> reg_storage + NACL_GC_REG_STORAGE_SIZE));
           total_size += NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t);
 #       endif
 #       ifdef E2K
           if ((GC_stop_count & THREAD_RESTARTED) != 0
 #             ifdef GC_ENABLE_SUSPEND_THREAD
-                && (p -> stop_info.ext_suspend_cnt & 1) == 0
+                && (p -> ext_suspend_cnt & 1) == 0
 #             endif
               && !is_self && (p -> flags & DO_BLOCKING) == 0)
             continue; /* procedure stack buffer has already been freed */
@@ -933,14 +930,14 @@ STATIC int GC_suspend_all(void)
 #   endif
     GC_ASSERT(I_HOLD_LOCK());
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
-      for (p = GC_threads[i]; p != 0; p = p -> next) {
+      for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
         if (!THREAD_EQUAL(p -> id, self)) {
             if ((p -> flags & (FINISHED | DO_BLOCKING)) != 0) continue;
 #           ifndef GC_OPENBSD_UTHREADS
 #             ifdef GC_ENABLE_SUSPEND_THREAD
-                if ((p -> stop_info.ext_suspend_cnt & 1) != 0) continue;
+                if ((p -> ext_suspend_cnt & 1) != 0) continue;
 #             endif
-              if (AO_load(&p->stop_info.last_stop_count) == GC_stop_count)
+              if (AO_load(&(p -> last_stop_count)) == GC_stop_count)
                 continue; /* matters only if GC_retry_signals */
               n_live_threads++;
 #           endif
@@ -958,7 +955,7 @@ STATIC int GC_suspend_all(void)
                 GC_release_dirty_lock();
                 if (pthread_stackseg_np(p->id, &stack))
                   ABORT("pthread_stackseg_np failed");
-                p -> stop_info.stack_ptr = (ptr_t)stack.ss_sp - stack.ss_size;
+                p -> stack_ptr = (ptr_t)stack.ss_sp - stack.ss_size;
                 if (GC_on_thread_event)
                   GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
                                      (void *)p->id);
@@ -1110,9 +1107,9 @@ GC_INNER void GC_stop_world(void)
           __asm__ __volatile__ ("push %r14"); \
           __asm__ __volatile__ ("push %r15"); \
           __asm__ __volatile__ ("mov %%esp, %0" \
-                    : "=m" (GC_nacl_gc_thread_self->stop_info.stack_ptr)); \
-          BCOPY(GC_nacl_gc_thread_self->stop_info.stack_ptr, \
-                GC_nacl_gc_thread_self->stop_info.reg_storage, \
+                    : "=m" (GC_nacl_gc_thread_self -> stack_ptr)); \
+          BCOPY(GC_nacl_gc_thread_self -> stack_ptr, \
+                GC_nacl_gc_thread_self -> reg_storage, \
                 NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t)); \
           __asm__ __volatile__ ("naclasp $48, %r15"); \
         } while (0)
@@ -1124,9 +1121,9 @@ GC_INNER void GC_stop_world(void)
           __asm__ __volatile__ ("push %esi"); \
           __asm__ __volatile__ ("push %edi"); \
           __asm__ __volatile__ ("mov %%esp, %0" \
-                    : "=m" (GC_nacl_gc_thread_self->stop_info.stack_ptr)); \
-          BCOPY(GC_nacl_gc_thread_self->stop_info.stack_ptr, \
-                GC_nacl_gc_thread_self->stop_info.reg_storage, \
+                    : "=m" (GC_nacl_gc_thread_self -> stack_ptr)); \
+          BCOPY(GC_nacl_gc_thread_self -> stack_ptr, \
+                GC_nacl_gc_thread_self -> reg_storage, \
                 NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t));\
           __asm__ __volatile__ ("add $16, %esp"); \
         } while (0)
@@ -1135,11 +1132,11 @@ GC_INNER void GC_stop_world(void)
         do { \
           __asm__ __volatile__ ("push {r4-r8,r10-r12,lr}"); \
           __asm__ __volatile__ ("mov r0, %0" \
-                : : "r" (&GC_nacl_gc_thread_self->stop_info.stack_ptr)); \
+                : : "r" (&GC_nacl_gc_thread_self -> stack_ptr)); \
           __asm__ __volatile__ ("bic r0, r0, #0xc0000000"); \
           __asm__ __volatile__ ("str sp, [r0]"); \
-          BCOPY(GC_nacl_gc_thread_self->stop_info.stack_ptr, \
-                GC_nacl_gc_thread_self->stop_info.reg_storage, \
+          BCOPY(GC_nacl_gc_thread_self -> stack_ptr, \
+                GC_nacl_gc_thread_self -> reg_storage, \
                 NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t)); \
           __asm__ __volatile__ ("add sp, sp, #40"); \
           __asm__ __volatile__ ("bic sp, sp, #0xc0000000"); \
@@ -1152,7 +1149,7 @@ GC_INNER void GC_stop_world(void)
   {
     if (GC_nacl_thread_idx != -1) {
       NACL_STORE_REGS();
-      GC_nacl_gc_thread_self->stop_info.stack_ptr = GC_approx_sp();
+      GC_nacl_gc_thread_self -> stack_ptr = GC_approx_sp();
       GC_nacl_thread_parked[GC_nacl_thread_idx] = 1;
     }
   }
@@ -1175,7 +1172,7 @@ GC_INNER void GC_stop_world(void)
       /* so don't bother storing registers again, the GC has a set.     */
       if (!GC_nacl_thread_parked[GC_nacl_thread_idx]) {
         NACL_STORE_REGS();
-        GC_nacl_gc_thread_self->stop_info.stack_ptr = GC_approx_sp();
+        GC_nacl_gc_thread_self -> stack_ptr = GC_approx_sp();
       }
       GC_nacl_thread_parked[GC_nacl_thread_idx] = 1;
       while (GC_nacl_park_threads_now) {
@@ -1184,7 +1181,7 @@ GC_INNER void GC_stop_world(void)
       GC_nacl_thread_parked[GC_nacl_thread_idx] = 0;
 
       /* Clear out the reg storage for next suspend.    */
-      BZERO(GC_nacl_gc_thread_self->stop_info.reg_storage,
+      BZERO(GC_nacl_gc_thread_self -> reg_storage,
             NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t));
     }
   }
@@ -1268,15 +1265,15 @@ GC_INNER void GC_stop_world(void)
       GC_ASSERT((GC_stop_count & THREAD_RESTARTED) != 0);
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
-      for (p = GC_threads[i]; p != NULL; p = p -> next) {
+      for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
         if (!THREAD_EQUAL(p -> id, self)) {
           if ((p -> flags & (FINISHED | DO_BLOCKING)) != 0) continue;
 #         ifndef GC_OPENBSD_UTHREADS
 #           ifdef GC_ENABLE_SUSPEND_THREAD
-              if ((p -> stop_info.ext_suspend_cnt & 1) != 0) continue;
+              if ((p -> ext_suspend_cnt & 1) != 0) continue;
 #           endif
             if (GC_retry_signals
-                && AO_load(&p->stop_info.last_stop_count) == GC_stop_count)
+                && AO_load(&(p -> last_stop_count)) == GC_stop_count)
               continue; /* The thread has been restarted. */
             n_live_threads++;
 #         endif

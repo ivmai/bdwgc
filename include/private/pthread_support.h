@@ -38,24 +38,50 @@
 
 EXTERN_C_BEGIN
 
-#ifdef GC_DARWIN_THREADS
+typedef pthread_t thread_id_t;
 
-  struct thread_stop_info {
-    mach_port_t mach_thread;
-    ptr_t stack_ptr; /* Valid only when thread is in do-blocking state. */
-  };
+/* We use the allocation lock to protect thread-related data structures. */
 
-# ifndef DARWIN_DONT_PARSE_STACK
-    GC_INNER ptr_t GC_FindTopOfStack(unsigned long);
-# endif
+/* The set of all known threads.  We intercept thread creation and      */
+/* join.  Protected by the GC lock.                                     */
+/* Some of this should be declared volatile, but that's inconsistent    */
+/* with some library routine declarations.                              */
+typedef struct GC_Thread_Rep {
+#   ifdef THREAD_SANITIZER
+      char dummy[sizeof(oh)];     /* A dummy field to avoid TSan false  */
+                                  /* positive about the race between    */
+                                  /* GC_has_other_debug_info and        */
+                                  /* GC_suspend_handler_inner (which    */
+                                  /* sets stack_ptr).                   */
+#   endif
 
-# if defined(PARALLEL_MARK) && !defined(GC_NO_THREADS_DISCOVERY)
-    GC_INNER GC_bool GC_is_mach_marker(thread_act_t);
-# endif
+    union {
+      struct GC_Thread_Rep *next; /* More recently allocated threads    */
+                                  /* with a given pthread id come       */
+                                  /* first.  (All but the first are     */
+                                  /* guaranteed to be dead, but we may  */
+                                  /* not yet have registered the join.) */
+    } tm; /* table_management */
 
-#elif defined(PTHREAD_STOP_WORLD_IMPL)
+    thread_id_t id;
+#   ifdef USE_TKILL_ON_ANDROID
+      pid_t kernel_id;
+#   endif
 
-  struct thread_stop_info {
+    ptr_t stack_end;            /* Cold end of the stack (except for    */
+                                /* main thread).                        */
+
+    ptr_t stack_ptr; /* Valid only in some platform-specific states.    */
+
+    /* Extra bookkeeping information the stopping code uses.    */
+#   ifdef GC_DARWIN_THREADS
+      mach_port_t mach_thread;
+#     ifndef DARWIN_DONT_PARSE_STACK
+        ptr_t topOfStack;       /* Result of GC_FindTopOfStack(0);      */
+                                /* valid only if the thread is blocked; */
+                                /* non-NULL value means already set.    */
+#     endif
+#   endif
 #   ifdef SIGNAL_BASED_STOP_WORLD
       volatile AO_t last_stop_count;
                         /* The value of GC_stop_count when the thread   */
@@ -70,58 +96,14 @@ EXTERN_C_BEGIN
 #     endif
 #   endif
 
-    ptr_t stack_ptr;    /* Valid only when stopped.     */
-
-#   ifdef NACL
-      /* Grab NACL_GC_REG_STORAGE_SIZE pointers off the stack when      */
-      /* going into a syscall.  20 is more than we need, but it's an    */
-      /* overestimate in case the instrumented function uses any callee */
-      /* saved registers, they may be pushed to the stack much earlier. */
-      /* Also, on x64 'push' puts 8 bytes on the stack even though      */
-      /* our pointers are 4 bytes.                                      */
-#     ifdef ARM32
-        /* Space for r4-r8, r10-r12, r14.       */
-#       define NACL_GC_REG_STORAGE_SIZE 9
-#     else
-#       define NACL_GC_REG_STORAGE_SIZE 20
-#     endif
-      ptr_t reg_storage[NACL_GC_REG_STORAGE_SIZE];
-#   elif defined(PLATFORM_HAVE_GC_REG_STORAGE_SIZE)
-      word registers[PLATFORM_GC_REG_STORAGE_SIZE]; /* used externally */
+#   ifndef GC_NO_FINALIZATION
+      unsigned short finalizer_skipped;
+      unsigned char finalizer_nested; /* followed by flags field */
+                                /* Used by GC_check_finalizer_nested()  */
+                                /* to minimize the level of recursion   */
+                                /* when a client finalizer allocates    */
+                                /* memory (initially both are 0).       */
 #   endif
-  };
-
-  GC_INNER void GC_stop_init(void);
-
-#endif /* PTHREAD_STOP_WORLD_IMPL */
-
-/* We use the allocation lock to protect thread-related data structures. */
-
-/* The set of all known threads.  We intercept thread creation and      */
-/* joins.                                                               */
-/* Protected by allocation/GC lock.                                     */
-/* Some of this should be declared volatile, but that's inconsistent    */
-/* with some library routine declarations.                              */
-typedef struct GC_Thread_Rep {
-#   ifdef THREAD_SANITIZER
-      char dummy[sizeof(oh)];     /* A dummy field to avoid TSan false  */
-                                  /* positive about the race between    */
-                                  /* GC_has_other_debug_info and        */
-                                  /* GC_suspend_handler_inner (which    */
-                                  /* sets stop_info.stack_ptr).         */
-#   endif
-
-    struct GC_Thread_Rep * next;  /* More recently allocated threads    */
-                                  /* with a given pthread id come       */
-                                  /* first.  (All but the first are     */
-                                  /* guaranteed to be dead, but we may  */
-                                  /* not yet have registered the join.) */
-    pthread_t id;
-#   ifdef USE_TKILL_ON_ANDROID
-      pid_t kernel_id;
-#   endif
-    /* Extra bookkeeping information the stopping code uses */
-    struct thread_stop_info stop_info;
 
     unsigned char flags;        /* Protected by GC lock.                */
 #       define FINISHED 1       /* Thread has exited.                   */
@@ -140,18 +122,7 @@ typedef struct GC_Thread_Rep {
                                 /* before any pointer manipulation, and */
                                 /* has set its SP value.  Thus, it does */
                                 /* not need a signal sent to stop it.   */
-
-#   ifndef GC_NO_FINALIZATION
-      unsigned short finalizer_skipped;
-      unsigned char finalizer_nested;
-                                /* Used by GC_check_finalizer_nested()  */
-                                /* to minimize the level of recursion   */
-                                /* when a client finalizer allocates    */
-                                /* memory (initially both are 0).       */
-#   endif
-
-    ptr_t stack_end;            /* Cold end of the stack (except for    */
-                                /* main thread).                        */
+#   define KNOWN_FINISHED(p) (((p) -> flags & FINISHED) != 0)
 
     ptr_t altstack;             /* The start of the alt-stack if there  */
                                 /* is one, NULL otherwise.              */
@@ -160,11 +131,6 @@ typedef struct GC_Thread_Rep {
                                 /* stack (set by GC_register_altstack). */
     word normstack_size;
 
-#   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
-      ptr_t topOfStack;         /* Result of GC_FindTopOfStack(0);      */
-                                /* valid only if the thread is blocked; */
-                                /* non-NULL value means already set.    */
-#   endif
 #   if defined(E2K) || defined(IA64)
         ptr_t backing_store_end; /* Note: may reference data in GC heap */
         ptr_t backing_store_ptr;
@@ -184,7 +150,25 @@ typedef struct GC_Thread_Rep {
                                 /* and detach.                          */
 
 #   ifdef THREAD_LOCAL_ALLOC
-        struct thread_local_freelists tlfs GC_ATTR_WORD_ALIGNED;
+      struct thread_local_freelists tlfs GC_ATTR_WORD_ALIGNED;
+#   endif
+
+#   ifdef NACL
+      /* Grab NACL_GC_REG_STORAGE_SIZE pointers off the stack when      */
+      /* going into a syscall.  20 is more than we need, but it's an    */
+      /* overestimate in case the instrumented function uses any callee */
+      /* saved registers, they may be pushed to the stack much earlier. */
+      /* Also, on x64 'push' puts 8 bytes on the stack even though      */
+      /* our pointers are 4 bytes.                                      */
+#     ifdef ARM32
+        /* Space for r4-r8, r10-r12, r14.       */
+#       define NACL_GC_REG_STORAGE_SIZE 9
+#     else
+#       define NACL_GC_REG_STORAGE_SIZE 20
+#     endif
+      ptr_t reg_storage[NACL_GC_REG_STORAGE_SIZE];
+#   elif defined(PLATFORM_HAVE_GC_REG_STORAGE_SIZE)
+      word registers[PLATFORM_GC_REG_STORAGE_SIZE]; /* used externally */
 #   endif
 } * GC_thread;
 
@@ -210,7 +194,7 @@ GC_EXTERN volatile GC_thread GC_threads[THREAD_TABLE_SZ];
   GC_EXTERN GC_bool GC_thr_initialized;
 #endif
 
-GC_INNER GC_thread GC_lookup_thread(pthread_t id);
+GC_INNER GC_thread GC_lookup_thread(thread_id_t);
 
 #ifdef NACL
   GC_EXTERN __thread GC_thread GC_nacl_gc_thread_self;
@@ -243,6 +227,19 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg);
 GC_INNER_PTHRSTART void GC_thread_exit_proc(void *);
+
+#ifdef GC_DARWIN_THREADS
+# ifndef DARWIN_DONT_PARSE_STACK
+    GC_INNER ptr_t GC_FindTopOfStack(unsigned long);
+# endif
+# if defined(PARALLEL_MARK) && !defined(GC_NO_THREADS_DISCOVERY)
+    GC_INNER GC_bool GC_is_mach_marker(thread_act_t);
+# endif
+#endif /* GC_DARWIN_THREADS */
+
+#ifdef PTHREAD_STOP_WORLD_IMPL
+  GC_INNER void GC_stop_init(void);
+#endif
 
 EXTERN_C_END
 

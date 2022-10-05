@@ -152,9 +152,9 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #   endif
     *pfound_me = TRUE;
   } else if (p != NULL && (p -> flags & DO_BLOCKING) != 0) {
-    lo = p->stop_info.stack_ptr;
+    lo = p -> stack_ptr;
 #   ifndef DARWIN_DONT_PARSE_STACK
-      *phi = p->topOfStack;
+      *phi = p -> topOfStack;
 #   endif
 
   } else {
@@ -395,9 +395,9 @@ GC_INNER void GC_push_all_stacks(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       GC_thread p;
 
-      for (p = GC_threads[i]; p != NULL; p = p -> next)
-        if ((p -> flags & FINISHED) == 0) {
-          thread_act_t thread = (thread_act_t)p->stop_info.mach_thread;
+      for (p = GC_threads[i]; p != NULL; p = p -> tm.next)
+        if (!KNOWN_FINISHED(p)) {
+          thread_act_t thread = (thread_act_t)(p -> mach_thread);
           ptr_t lo = GC_stack_range_for(&hi, thread, p, my_thread,
                                         &altstack_lo, &altstack_hi, &found_me);
 
@@ -618,19 +618,19 @@ GC_INNER void GC_stop_world(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       GC_thread p;
 
-      for (p = GC_threads[i]; p != NULL; p = p -> next) {
+      for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
         if ((p -> flags & (FINISHED | DO_BLOCKING)) == 0
-            && p -> stop_info.mach_thread != my_thread) {
+            && p -> mach_thread != my_thread) {
           GC_acquire_dirty_lock();
           do {
-            kern_result = thread_suspend(p->stop_info.mach_thread);
+            kern_result = thread_suspend(p -> mach_thread);
           } while (kern_result == KERN_ABORTED);
           GC_release_dirty_lock();
           if (kern_result != KERN_SUCCESS)
             ABORT("thread_suspend failed");
           if (GC_on_thread_event)
             GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
-                               (void *)(word)p->stop_info.mach_thread);
+                               (void *)(word)(p -> mach_thread));
         }
       }
     }
@@ -754,10 +754,10 @@ GC_INNER void GC_start_world(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       GC_thread p;
 
-      for (p = GC_threads[i]; p != NULL; p = p -> next) {
+      for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
         if ((p -> flags & (FINISHED | DO_BLOCKING)) == 0
-            && p -> stop_info.mach_thread != my_thread)
-          GC_thread_resume(p->stop_info.mach_thread);
+            && p -> mach_thread != my_thread)
+          GC_thread_resume(p -> mach_thread);
       }
     }
 

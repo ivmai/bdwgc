@@ -277,9 +277,9 @@ STATIC int GC_nprocs = 1;
     GC_thread p;
 
     for (i = 0; i < THREAD_TABLE_SZ; ++i) {
-      for (p = GC_threads[i]; p != NULL; p = p -> next) {
-        if (!(p -> flags & FINISHED))
-          GC_mark_thread_local_fls_for(&(p->tlfs));
+      for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
+        if (!KNOWN_FINISHED(p))
+          GC_mark_thread_local_fls_for(&p->tlfs);
       }
     }
   }
@@ -293,9 +293,9 @@ STATIC int GC_nprocs = 1;
         GC_thread p;
 
         for (i = 0; i < THREAD_TABLE_SZ; ++i) {
-          for (p = GC_threads[i]; 0 != p; p = p -> next) {
-            if (!(p -> flags & FINISHED))
-              GC_check_tls_for(&(p->tlfs));
+          for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
+            if (!KNOWN_FINISHED(p))
+              GC_check_tls_for(&p->tlfs);
           }
         }
 #       if defined(USE_CUSTOM_SPECIFIC)
@@ -579,8 +579,8 @@ void GC_push_thread_structures(void)
     for (i = 0; i < THREAD_TABLE_SZ; ++i) {
         GC_thread p;
 
-        for (p = GC_threads[i]; p != NULL; p = p -> next) {
-            if ((p -> flags & FINISHED) == 0)
+        for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
+            if (!KNOWN_FINISHED(p))
                 ++count;
         }
     }
@@ -589,7 +589,8 @@ void GC_push_thread_structures(void)
 #endif /* DEBUG_THREADS */
 
 /* Add a thread to GC_threads.  We assume it wasn't already there.      */
-STATIC GC_thread GC_new_thread(pthread_t id)
+/* The id field is set by the caller.                                   */
+STATIC GC_thread GC_new_thread(thread_id_t id)
 {
     int hv = THREAD_TABLE_INDEX(id);
     GC_thread result;
@@ -598,8 +599,9 @@ STATIC GC_thread GC_new_thread(pthread_t id)
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef DEBUG_THREADS
         GC_log_printf("Creating thread %p\n", (void *)id);
-        for (result = GC_threads[hv]; result != NULL; result = result->next)
-          if (!THREAD_EQUAL(result->id, id)) {
+        for (result = GC_threads[hv];
+             result != NULL; result = result -> tm.next)
+          if (!THREAD_EQUAL(result -> id, id)) {
             GC_log_printf("Hash collision at GC_threads[%d]\n", hv);
             break;
           }
@@ -616,11 +618,11 @@ STATIC GC_thread GC_new_thread(pthread_t id)
                  GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
         if (EXPECT(NULL == result, FALSE)) return NULL;
     }
-    result -> id = id;
+    /* The id field is not set here. */
 #   ifdef USE_TKILL_ON_ANDROID
       result -> kernel_id = gettid();
 #   endif
-    result -> next = GC_threads[hv];
+    result -> tm.next = GC_threads[hv];
     GC_threads[hv] = result;
 #   ifdef NACL
       GC_nacl_gc_thread_self = result;
@@ -635,7 +637,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
 /* Delete a thread from GC_threads.  We assume it is there.     */
 /* (The code intentionally traps if it wasn't.)                 */
 /* It is safe to delete the main thread.                        */
-STATIC void GC_delete_thread(pthread_t id)
+STATIC void GC_delete_thread(thread_id_t id)
 {
     int hv = THREAD_TABLE_INDEX(id);
     GC_thread p;
@@ -652,20 +654,20 @@ STATIC void GC_delete_thread(pthread_t id)
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
-    for (p = GC_threads[hv]; ; p = p -> next) {
+    for (p = GC_threads[hv]; ; p = p -> tm.next) {
       if (THREAD_EQUAL(p -> id, id)) break;
       prev = p;
     }
     if (NULL == prev) {
-        GC_threads[hv] = p -> next;
+        GC_threads[hv] = p -> tm.next;
     } else {
         GC_ASSERT(prev != &first_thread);
-        prev -> next = p -> next;
+        prev -> tm.next = p -> tm.next;
         GC_dirty(prev);
     }
     if (EXPECT(p != &first_thread, TRUE)) {
 #     ifdef GC_DARWIN_THREADS
-        mach_port_deallocate(mach_task_self(), p->stop_info.mach_thread);
+        mach_port_deallocate(mach_task_self(), p -> mach_thread);
 #     endif
       GC_INTERNAL_FREE(p);
     }
@@ -677,7 +679,7 @@ STATIC void GC_delete_thread(pthread_t id)
 /* This is OK, but we need a way to delete a specific one.      */
 STATIC void GC_delete_gc_thread(GC_thread t)
 {
-    pthread_t id = t -> id;
+    thread_id_t id = t -> id;
     int hv = THREAD_TABLE_INDEX(id);
     GC_thread p = GC_threads[hv];
     GC_thread prev = NULL;
@@ -685,17 +687,17 @@ STATIC void GC_delete_gc_thread(GC_thread t)
     GC_ASSERT(I_HOLD_LOCK());
     while (p != t) {
         prev = p;
-        p = p -> next;
+        p = p -> tm.next;
     }
     if (prev == 0) {
-        GC_threads[hv] = p -> next;
+        GC_threads[hv] = p -> tm.next;
     } else {
         GC_ASSERT(prev != &first_thread);
-        prev -> next = p -> next;
+        prev -> tm.next = p -> tm.next;
         GC_dirty(prev);
     }
 #   ifdef GC_DARWIN_THREADS
-        mach_port_deallocate(mach_task_self(), p->stop_info.mach_thread);
+        mach_port_deallocate(mach_task_self(), p -> mach_thread);
 #   endif
     GC_INTERNAL_FREE(p);
 
@@ -705,16 +707,16 @@ STATIC void GC_delete_gc_thread(GC_thread t)
 #   endif
 }
 
-/* Return a GC_thread corresponding to a given pthread_t.       */
-/* Returns 0 if it's not there.                                 */
+/* Return a GC_thread corresponding to a given thread id, or    */
+/* NULL if it is not there.                                     */
 /* Caller holds allocation lock or otherwise inhibits updates.  */
 /* If there is more than one thread with the given id we        */
 /* return the most recent one.                                  */
-GC_INNER GC_thread GC_lookup_thread(pthread_t id)
+GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
 {
     GC_thread p = GC_threads[THREAD_TABLE_INDEX(id)];
 
-    for (; p != NULL; p = p -> next) {
+    for (; p != NULL; p = p -> tm.next) {
       if (THREAD_EQUAL(p -> id, id)) break;
     }
     return p;
@@ -773,7 +775,7 @@ GC_INNER GC_thread GC_lookup_thread(pthread_t id)
 
 GC_API int GC_CALL GC_thread_is_registered(void)
 {
-    pthread_t self = pthread_self();
+    thread_id_t self = pthread_self();
     GC_thread me;
     DCL_LOCK_STATE;
 
@@ -783,7 +785,7 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     return me != NULL;
 }
 
-static pthread_t main_pthread_id;
+static thread_id_t main_pthread_id;
 static void *main_normstack, *main_altstack;
 static word main_normstack_size, main_altstack_size;
 
@@ -791,7 +793,7 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
                 GC_word normstack_size, void *altstack, GC_word altstack_size)
 {
   GC_thread me;
-  pthread_t self = pthread_self();
+  thread_id_t self = pthread_self();
   DCL_LOCK_STATE;
 
   LOCK();
@@ -831,7 +833,7 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
 /* survives in the child.                                       */
 STATIC void GC_remove_all_threads_but_me(void)
 {
-    pthread_t self = pthread_self();
+    thread_id_t self = pthread_self();
     int hv;
 
     for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
@@ -839,16 +841,16 @@ STATIC void GC_remove_all_threads_but_me(void)
       GC_thread me = NULL;
 
       for (p = GC_threads[hv]; p != NULL; p = next) {
-        next = p -> next;
+        next = p -> tm.next;
         if (THREAD_EQUAL(p -> id, self)
             && me == NULL) { /* ignore dead threads with the same id */
           me = p;
-          p -> next = 0;
+          p -> tm.next = NULL;
 #         ifdef GC_DARWIN_THREADS
             /* Update thread Id after fork (it is OK to call    */
             /* GC_destroy_thread_local and GC_free_internal     */
             /* before update).                                  */
-            me -> stop_info.mach_thread = mach_thread_self();
+            me -> mach_thread = mach_thread_self();
 #         endif
 #         ifdef USE_TKILL_ON_ANDROID
             me -> kernel_id = gettid();
@@ -868,7 +870,7 @@ STATIC void GC_remove_all_threads_but_me(void)
 #         endif
         } else {
 #         ifdef THREAD_LOCAL_ALLOC
-            if (!(p -> flags & FINISHED)) {
+            if (!KNOWN_FINISHED(p)) {
               /* Cannot call GC_destroy_thread_local here.  The free    */
               /* lists may be in an inconsistent state (as thread p may */
               /* be updating one of the lists by GC_generic_malloc_many */
@@ -909,8 +911,8 @@ STATIC void GC_remove_all_threads_but_me(void)
       }
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
-      for (p = GC_threads[i]; p != NULL; p = p -> next) {
-        if (0 != p -> stack_end) {
+      for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
+        if (p -> stack_end != NULL) {
 #         ifdef STACK_GROWS_UP
             if ((word)p->stack_end >= (word)lo
                 && (word)p->stack_end < (word)hi)
@@ -947,7 +949,7 @@ STATIC void GC_remove_all_threads_but_me(void)
       }
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
-      for (p = GC_threads[i]; p != 0; p = p -> next) {
+      for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
         if ((word)p->stack_end > (word)result
             && (word)p->stack_end < (word)bound) {
           result = p -> stack_end;
@@ -1367,15 +1369,16 @@ GC_INNER void GC_thr_init(void)
 # endif
   /* Add the initial thread, so we can stop it. */
   {
-    pthread_t self = pthread_self();
+    thread_id_t self = pthread_self();
     GC_thread t = GC_new_thread(self);
 
     if (t == NULL)
       ABORT("Failed to allocate memory for the initial thread");
+    t -> id = self;
 #   ifdef GC_DARWIN_THREADS
-      t -> stop_info.mach_thread = mach_thread_self();
+      t -> mach_thread = mach_thread_self();
 #   else
-      t -> stop_info.stack_ptr = GC_approx_sp();
+      t -> stack_ptr = GC_approx_sp();
 #   endif
     t -> flags = DETACHED | MAIN_THREAD;
     if (THREAD_EQUAL(self, main_pthread_id)) {
@@ -1526,7 +1529,7 @@ GC_INNER void GC_init_parallel(void)
 static GC_bool do_blocking_enter(GC_thread me)
 {
 #   if defined(SPARC) || defined(IA64)
-        ptr_t stack_ptr = GC_save_regs_in_stack();
+        ptr_t bs_hi = GC_save_regs_in_stack();
         /* TODO: regs saving already done by GC_with_callee_saves_pushed */
 #   elif defined(E2K)
         size_t stack_size;
@@ -1536,9 +1539,9 @@ static GC_bool do_blocking_enter(GC_thread me)
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((me -> flags & DO_BLOCKING) == 0);
 #   ifdef SPARC
-        me -> stop_info.stack_ptr = stack_ptr;
+        me -> stack_ptr = bs_hi;
 #   else
-        me -> stop_info.stack_ptr = GC_approx_sp();
+        me -> stack_ptr = GC_approx_sp();
 #   endif
 #   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
         if (me -> topOfStack == NULL) {
@@ -1549,7 +1552,7 @@ static GC_bool do_blocking_enter(GC_thread me)
         }
 #   endif
 #   ifdef IA64
-        me -> backing_store_ptr = stack_ptr;
+        me -> backing_store_ptr = bs_hi;
 #   elif defined(E2K)
         GC_ASSERT(NULL == me -> backing_store_end);
         stack_size = GC_alloc_and_get_procedure_stack(&me->backing_store_end);
@@ -1617,8 +1620,8 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
       /* Note: this code cannot be moved into do_blocking_leave()   */
       /* otherwise there could be a static analysis tool warning    */
       /* (false positive) about unlock without a matching lock.     */
-      while (EXPECT((me -> stop_info.ext_suspend_cnt & 1) != 0, FALSE)) {
-        word suspend_cnt = (word)(me -> stop_info.ext_suspend_cnt);
+      while (EXPECT((me -> ext_suspend_cnt & 1) != 0, FALSE)) {
+        word suspend_cnt = (word)(me -> ext_suspend_cnt);
                         /* read suspend counter (number) before unlocking */
 
         UNLOCK();
@@ -1642,8 +1645,8 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
     UNUSED_ARG(context);
     GC_ASSERT(I_HOLD_LOCK());
     topOfStackUnset = do_blocking_enter(me);
-    while ((me -> stop_info.ext_suspend_cnt & 1) != 0) {
-      word suspend_cnt = (word)(me -> stop_info.ext_suspend_cnt);
+    while ((me -> ext_suspend_cnt & 1) != 0) {
+      word suspend_cnt = (word)(me -> ext_suspend_cnt);
 
       UNLOCK();
       GC_suspend_self_inner(me, suspend_cnt);
@@ -1665,7 +1668,7 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
         GC_ASSERT(I_HOLD_LOCK());
         if (NULL == t) /* current thread? */
             t = GC_lookup_thread(pthread_self());
-        GC_ASSERT((t -> flags & FINISHED) == 0);
+        GC_ASSERT(!KNOWN_FINISHED(t));
         GC_ASSERT((t -> flags & DO_BLOCKING) == 0
                   && NULL == t -> traced_stack_sect); /* for now */
 
@@ -1687,7 +1690,7 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
 
 GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
 {
-    pthread_t self = pthread_self();
+    thread_id_t self = pthread_self();
     GC_thread me;
     DCL_LOCK_STATE;
 
@@ -1721,7 +1724,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
                                              void * client_data)
 {
     struct GC_traced_stack_sect_s stacksect;
-    pthread_t self = pthread_self();
+    thread_id_t self = pthread_self();
     GC_thread me;
 #   ifdef E2K
       size_t stack_size;
@@ -1753,8 +1756,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     }
 
 #   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
-      while (EXPECT((me -> stop_info.ext_suspend_cnt & 1) != 0, FALSE)) {
-        word suspend_cnt = (word)(me -> stop_info.ext_suspend_cnt);
+      while (EXPECT((me -> ext_suspend_cnt & 1) != 0, FALSE)) {
+        word suspend_cnt = (word)(me -> ext_suspend_cnt);
         UNLOCK();
         GC_suspend_self_inner(me, suspend_cnt);
         LOCK();
@@ -1762,7 +1765,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 #   endif
 
     /* Setup new "stack section".       */
-    stacksect.saved_stack_ptr = me -> stop_info.stack_ptr;
+    stacksect.saved_stack_ptr = me -> stack_ptr;
 #   ifdef IA64
       /* This is the same as in GC_call_with_stack_base().      */
       stacksect.backing_store_end = GC_save_regs_in_stack();
@@ -1801,7 +1804,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       me->backing_store_ptr = me->backing_store_end + stack_size;
 #   endif
     me -> flags |= DO_BLOCKING;
-    me -> stop_info.stack_ptr = stacksect.saved_stack_ptr;
+    me -> stack_ptr = stacksect.saved_stack_ptr;
     UNLOCK();
 
     return client_data; /* result */
@@ -1815,10 +1818,10 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
                 "Unregistering thread %p, gc_thread= %p, n_threads= %d\n",
                 (void *)me->id, (void *)me, GC_count_threads());
 #   endif
-    GC_ASSERT(!(me -> flags & FINISHED));
+    GC_ASSERT(!KNOWN_FINISHED(me));
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_ASSERT(GC_getspecific(GC_thread_key) == &me->tlfs);
-      GC_destroy_thread_local(&(me->tlfs));
+      GC_destroy_thread_local(&me->tlfs);
 #   endif
 #   if defined(GC_HAVE_PTHREAD_EXIT) || !defined(GC_NO_PTHREAD_CANCEL)
       /* Handle DISABLED_GC flag which is set by the    */
@@ -1840,7 +1843,7 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
 
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
-    pthread_t self = pthread_self();
+    thread_id_t self = pthread_self();
     GC_thread me;
     IF_CANCEL(int cancel_state;)
     DCL_LOCK_STATE;
@@ -1915,7 +1918,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
         /* Here the pthread thread id may have been recycled.           */
         /* Delete the thread from GC_threads (unless it has been        */
         /* registered again from the client thread key destructor).     */
-        if ((t -> flags & FINISHED) != 0)
+        if (KNOWN_FINISHED(t))
           GC_delete_gc_thread(t);
         UNLOCK();
     }
@@ -1937,7 +1940,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
       LOCK();
       t -> flags |= DETACHED;
       /* Here the pthread thread id may have been recycled. */
-      if ((t -> flags & FINISHED) != 0) {
+      if (KNOWN_FINISHED(t)) {
         GC_delete_gc_thread(t);
       }
       UNLOCK();
@@ -2009,7 +2012,7 @@ GC_INLINE void GC_record_stack_base(GC_thread me,
                                     const struct GC_stack_base *sb)
 {
 #   ifndef GC_DARWIN_THREADS
-      me -> stop_info.stack_ptr = (ptr_t)sb->mem_base;
+      me -> stack_ptr = (ptr_t)sb->mem_base;
 #   endif
     me -> stack_end = (ptr_t)sb->mem_base;
     if (me -> stack_end == NULL)
@@ -2020,18 +2023,20 @@ GC_INLINE void GC_record_stack_base(GC_thread me,
 }
 
 STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
-                                             pthread_t my_pthread)
+                                             thread_id_t self)
 {
     GC_thread me;
 
+    GC_ASSERT(I_HOLD_LOCK());
     GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
-    me = GC_new_thread(my_pthread);
-    GC_in_thread_creation = FALSE;
-    if (me == 0)
+    me = GC_new_thread(self);
+    if (NULL == me)
       ABORT("Failed to allocate memory for thread registering");
+    me -> id = self;
 #   ifdef GC_DARWIN_THREADS
-      me -> stop_info.mach_thread = mach_thread_self();
+      me -> mach_thread = mach_thread_self();
 #   endif
+    GC_in_thread_creation = FALSE;
     GC_record_stack_base(me, sb);
 #   ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
       /* Since this could be executed from a detached thread    */
@@ -2058,7 +2063,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
 
 GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 {
-    pthread_t self = pthread_self();
+    thread_id_t self = pthread_self();
     GC_thread me;
     DCL_LOCK_STATE;
 
@@ -2078,13 +2083,13 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #       ifdef THREAD_LOCAL_ALLOC
           GC_init_thread_local(&me->tlfs);
 #       endif
-    } else if ((me -> flags & FINISHED) != 0) {
+    } else if (KNOWN_FINISHED(me)) {
         /* This code is executed when a thread is registered from the   */
         /* client thread key destructor.                                */
 #       ifdef GC_DARWIN_THREADS
           /* Reinitialize mach_thread to avoid thread_suspend fail      */
           /* with MACH_SEND_INVALID_DEST error.                         */
-          me -> stop_info.mach_thread = mach_thread_self();
+          me -> mach_thread = mach_thread_self();
 #       endif
         GC_record_stack_base(me, sb);
         me -> flags &= ~FINISHED; /* but not DETACHED */
@@ -2098,7 +2103,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #       endif
 #       if defined(GC_ENABLE_SUSPEND_THREAD) \
            && defined(SIGNAL_BASED_STOP_WORLD)
-          if ((me -> stop_info.ext_suspend_cnt & 1) != 0) {
+          if ((me -> ext_suspend_cnt & 1) != 0) {
             GC_with_callee_saves_pushed(GC_suspend_self_blocked, (ptr_t)me);
           }
 #       endif
