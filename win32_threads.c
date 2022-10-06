@@ -1936,8 +1936,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #   define UNSET_MARK_LOCK_HOLDER (void)0
 # endif
 
-  /* GC_mark_threads[] is unused here unlike that in pthread_support.c  */
-
   static int available_markers_m1 = 0;
 
 # ifdef GC_PTHREADS_PARAMARK

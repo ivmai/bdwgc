@@ -418,8 +418,6 @@ STATIC void * GC_mark_thread(void * id)
   }
 }
 
-STATIC pthread_t GC_mark_threads[MAX_MARKERS];
-
 #ifdef GLIBC_2_1_MUTEX_HACK
   /* Ugly workaround for a linux threads bug in the final versions      */
   /* of glibc2.1.  Pthread_mutex_trylock sets the mutex owner           */
@@ -521,8 +519,10 @@ GC_INNER void GC_start_mark_threads_inner(void)
     GC_markers_m1 = available_markers_m1;
 
     for (i = 0; i < available_markers_m1; ++i) {
-      if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
-                              GC_mark_thread, (void *)(word)i)) {
+      pthread_t new_thread;
+
+      if (REAL_FUNC(pthread_create)(&new_thread, &attr, GC_mark_thread,
+                                    (void *)(word)i) != 0) {
         WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
         /* Don't try to create other marker threads.    */
         GC_markers_m1 = i;
