@@ -2985,6 +2985,35 @@ EXTERN_C_BEGIN
 # define NO_SEH_AVAILABLE
 #endif
 
+#ifdef GC_WIN32_THREADS
+  /* The number of copied registers in copy_ptr_regs.   */
+# if defined(I386)
+#   ifdef WOW64_THREAD_CONTEXT_WORKAROUND
+#     define PUSHED_REGS_COUNT 9
+#   else
+#     define PUSHED_REGS_COUNT 7
+#   endif
+# elif defined(X86_64) || defined(SHx)
+#   define PUSHED_REGS_COUNT 15
+# elif defined(ARM32)
+#   define PUSHED_REGS_COUNT 13
+# elif defined(AARCH64)
+#   define PUSHED_REGS_COUNT 30
+# elif defined(MIPS) || defined(ALPHA)
+#   define PUSHED_REGS_COUNT 28
+# elif defined(PPC)
+#   define PUSHED_REGS_COUNT 29
+# endif
+#endif /* GC_WIN32_THREADS */
+
+#if defined(GC_PTHREADS) && !defined(GC_PTHREADS_PARAMARK) \
+    && !defined(__MINGW32__)
+  /* Use pthread-based parallel mark implementation.    */
+  /* Except for MinGW 32/64 to workaround a deadlock in */
+  /* winpthreads-3.0b internals.                        */
+# define GC_PTHREADS_PARAMARK
+#endif
+
 #ifndef GC_NO_THREADS_DISCOVERY
 # ifdef GC_DARWIN_THREADS
     /* Task-based thread registration requires stack-frame-walking code. */

@@ -38,7 +38,6 @@
 
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
-#include <pthread.h>
 #include <sched.h>
 
 /* Invoked from GC_start_routine(). */
