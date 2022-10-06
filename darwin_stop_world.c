@@ -118,7 +118,7 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
 /* GC_INIT() (or, at least, before going multi-threaded).  Deprecated.  */
 GC_API void GC_CALL GC_use_threads_discovery(void)
 {
-# if defined(GC_NO_THREADS_DISCOVERY) || defined(DARWIN_DONT_PARSE_STACK)
+# ifdef GC_NO_THREADS_DISCOVERY
     ABORT("Darwin task-threads-based stop and push unsupported");
 # else
 #   ifndef GC_ALWAYS_MULTITHREADED

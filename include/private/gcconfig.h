@@ -2985,6 +2985,29 @@ EXTERN_C_BEGIN
 # define NO_SEH_AVAILABLE
 #endif
 
+#ifndef GC_NO_THREADS_DISCOVERY
+# ifdef GC_DARWIN_THREADS
+    /* Task-based thread registration requires stack-frame-walking code. */
+#   if defined(DARWIN_DONT_PARSE_STACK)
+#     define GC_NO_THREADS_DISCOVERY
+#   endif
+# elif defined(GC_WIN32_THREADS)
+    /* DllMain-based thread registration is currently incompatible      */
+    /* with thread-local allocation, pthreads and WinCE.                */
+#   if (!defined(GC_DLL) && !defined(GC_INSIDE_DLL)) || defined(GC_PTHREADS) \
+       || defined(MSWINCE) || defined(NO_CRT) || defined(THREAD_LOCAL_ALLOC)
+#     define GC_NO_THREADS_DISCOVERY
+#   endif
+# else
+#   define GC_NO_THREADS_DISCOVERY
+# endif
+#endif /* !GC_NO_THREADS_DISCOVERY */
+
+#if defined(GC_DISCOVER_TASK_THREADS) && defined(GC_NO_THREADS_DISCOVERY) \
+    && !defined(CPPCHECK)
+# error Defined both GC_DISCOVER_TASK_THREADS and GC_NO_THREADS_DISCOVERY
+#endif
+
 #if defined(PARALLEL_MARK) && !defined(DEFAULT_STACK_MAYBE_SMALL) \
     && (defined(HPUX) || defined(GC_DGUX386_THREADS) \
         || defined(NO_GETCONTEXT) /* e.g. musl */)

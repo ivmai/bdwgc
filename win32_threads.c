@@ -89,12 +89,7 @@ static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext);
 # define PUSHED_REGS_COUNT 29
 #endif
 
-/* DllMain-based thread registration is currently incompatible  */
-/* with thread-local allocation, pthreads and WinCE.            */
-#if (defined(GC_DLL) || defined(GC_INSIDE_DLL)) && !defined(NO_CRT) \
-        && !defined(GC_NO_THREADS_DISCOVERY) && !defined(MSWINCE) \
-        && !defined(THREAD_LOCAL_ALLOC) && !defined(GC_PTHREADS)
-
+#ifndef GC_NO_THREADS_DISCOVERY
   /* This code operates in two distinct modes, depending on     */
   /* the setting of GC_win32_dll_threads.                       */
   /* If GC_win32_dll_threads is set, all threads in the process */
@@ -133,9 +128,6 @@ static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext);
   /* the basic collector rely on such facilities, but an        */
   /* optional package that intercepts thread calls this way     */
   /* would probably be nice.                                    */
-# ifndef GC_NO_THREADS_DISCOVERY
-#   define GC_NO_THREADS_DISCOVERY
-# endif
 # define GC_win32_dll_threads FALSE
 # undef MAX_THREADS
 # define MAX_THREADS 1 /* dll_thread_table[] is always empty.   */
