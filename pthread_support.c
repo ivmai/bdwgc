@@ -550,7 +550,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
   GC_INNER GC_bool GC_thr_initialized = FALSE;
 #endif
 
-GC_INNER volatile GC_thread GC_threads[THREAD_TABLE_SZ] = {0};
+GC_INNER GC_thread GC_threads[THREAD_TABLE_SZ] = {0};
 
 /* It may not be safe to allocate when we register the first thread.    */
 /* As "next" and "status" fields are unused, no need to push this       */
