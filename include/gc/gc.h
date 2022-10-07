@@ -1948,9 +1948,8 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 # endif /* !GC_NO_THREAD_DECLS */
 
 # ifdef GC_WINMAIN_REDIRECT
-    /* win32_threads.c implements the real WinMain(), which will start  */
-    /* a new thread to call GC_WinMain() after initializing the garbage */
-    /* collector.                                                       */
+    /* The collector provides the real WinMain(), which starts a new    */
+    /* thread to call GC_WinMain() after initializing the GC.           */
 #   define WinMain GC_WinMain
 # endif
 

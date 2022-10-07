@@ -238,7 +238,7 @@ extern void (* CORD_oom_fn)(void);
 CORD_API void CORD_dump(CORD x);
 
 /* The following could easily be implemented by the client.  They are   */
-/* provided in cordxtra.c for convenience.                              */
+/* provided by the cord library for convenience.                        */
 
 /* Concatenate a character to the end of a cord.        */
 CORD_API CORD CORD_cat_char(CORD x, char c);
@@ -329,8 +329,7 @@ CORD_API size_t CORD_rchr(CORD x, size_t i, int c);
   } /* extern "C" */
 #endif
 
-/* The following are also not primitive, but are implemented in         */
-/* cordprnt.c.  They provide functionality similar to the ANSI C        */
+/* The following ones provide functionality similar to the ANSI C       */
 /* functions with corresponding names, but with the following           */
 /* additions and changes:                                               */
 /* 1. A %r conversion specification specifies a CORD argument.  Field   */

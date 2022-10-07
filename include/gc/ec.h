@@ -61,8 +61,6 @@ typedef struct CORD_ec_struct {
 /* ec_buf[0 ... (ec_bufptr-ec_buf-1)]                           */
 
 /* Flush the buffer part of the extended cord into ec_cord.     */
-/* Note that this is almost the only real function, and it is   */
-/* implemented in 6 lines in cordxtra.c                         */
 void CORD_ec_flush_buf(CORD_ec x);
 
 /* Convert an extensible cord to a cord. */

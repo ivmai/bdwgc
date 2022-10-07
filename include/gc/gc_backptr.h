@@ -81,8 +81,7 @@ GC_API void * GC_CALL GC_generate_random_valid_address(void);
 /* Force a garbage collection and generate a backtrace from a   */
 /* random heap address.                                         */
 /* This uses the GC logging mechanism (GC_printf) to produce    */
-/* output.  It can often be called from a debugger.  The        */
-/* source in dbg_mlc.c also serves as a sample client.          */
+/* output.  It can often be called from a debugger.             */
 GC_API void GC_CALL GC_generate_random_backtrace(void);
 
 /* Print a backtrace from a specific address.  Used by the      */

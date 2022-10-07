@@ -15,7 +15,7 @@
 #ifndef GC_LEAK_DETECTOR_H
 #define GC_LEAK_DETECTOR_H
 
-/* Include leak_detector.h (e.g., via GCC --include directive)  */
+/* Include this header file (e.g., via gcc --include directive) */
 /* to turn libgc into a leak detector.                          */
 
 #ifndef GC_DEBUG

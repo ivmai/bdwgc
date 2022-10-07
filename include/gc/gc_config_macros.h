@@ -20,7 +20,7 @@
 /* We separate it only to make gc.h more suitable as documentation.       */
 #if defined(GC_H)
 
-/* Convenient internal macro to test version of GCC.    */
+/* Convenient internal macro to test version of gcc.    */
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
 # define GC_GNUC_PREREQ(major, minor) \
             ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((major) << 16) + (minor))
