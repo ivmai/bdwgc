@@ -26,8 +26,6 @@
 
 #ifdef THREAD_LOCAL_ALLOC
 
-#include "gc/gc_inline.h"
-
 #if defined(USE_HPUX_TLS)
 # error USE_HPUX_TLS macro was replaced by USE_COMPILER_TLS
 #endif

@@ -309,6 +309,19 @@ typedef int GC_bool;
 #   define GC_FAR
 #endif
 
+#ifdef GC_ASSERTIONS
+# define GC_ASSERT(expr) \
+        do { \
+          if (EXPECT(!(expr), FALSE)) { \
+            GC_err_printf("Assertion failure: %s:%d\n", __FILE__, __LINE__); \
+            ABORT("assertion failure"); \
+          } \
+        } while (0)
+#else
+# define GC_ASSERT(expr)
+#endif
+
+#include "gc/gc_inline.h"
 
 /*********************************/
 /*                               */
@@ -1734,8 +1747,8 @@ GC_EXTERN struct obj_kind {
 #endif /* SEPARATE_GLOBALS */
 
 /* Predefined kinds: */
-#define PTRFREE 0
-#define NORMAL  1
+#define PTRFREE GC_I_PTRFREE
+#define NORMAL  GC_I_NORMAL
 #define UNCOLLECTABLE 2
 #ifdef GC_ATOMIC_UNCOLLECTABLE
 # define AUNCOLLECTABLE 3
@@ -2869,18 +2882,8 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #endif /* NEED_PROC_MAPS */
 
 #ifdef GC_ASSERTIONS
-# define GC_ASSERT(expr) \
-              do { \
-                if (!(expr)) { \
-                  GC_err_printf("Assertion failure: %s:%d\n", \
-                                __FILE__, __LINE__); \
-                  ABORT("assertion failure"); \
-                } \
-              } while (0)
   GC_INNER word GC_compute_large_free_bytes(void);
   GC_INNER word GC_compute_root_size(void);
-#else
-# define GC_ASSERT(expr)
 #endif
 
 /* Check a compile time assertion at compile time.      */

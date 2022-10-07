@@ -17,7 +17,6 @@
 #ifdef ENABLE_DISCLAIM
 
 #include "gc/gc_disclaim.h"
-#include "gc/gc_inline.h" /* for GC_malloc_kind */
 #include "private/dbg_mlc.h" /* for oh type */
 
 #if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)

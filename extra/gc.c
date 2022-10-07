@@ -46,7 +46,6 @@
 #include "../obj_map.c"
 #include "../ptr_chck.c"
 
-#include "gc/gc_inline.h"
 #include "../allchblk.c"
 #include "../alloc.c"
 #include "../dbg_mlc.c"

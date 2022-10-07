@@ -15,7 +15,6 @@
  */
 
 #include "private/gc_priv.h"
-#include "gc/gc_inline.h" /* for GC_malloc_kind */
 
 #include <string.h>
 

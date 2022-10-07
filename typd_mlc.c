@@ -15,7 +15,6 @@
  */
 
 #include "private/gc_pmark.h"
-#include "gc/gc_inline.h" /* for GC_malloc_kind */
 
 /*
  * Some simple primitives for allocation with explicit type information.

@@ -595,8 +595,6 @@ void GC_print_block_list(void)
               (unsigned long)pstats.total_bytes);
 }
 
-#include "gc/gc_inline.h" /* for GC_print_free_list prototype */
-
 /* Currently for debugger use only: */
 GC_API void GC_CALL GC_print_free_list(int kind, size_t sz_in_granules)
 {
