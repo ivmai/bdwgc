@@ -2235,7 +2235,8 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     if (NULL == attr) {
         detachstate = PTHREAD_CREATE_JOINABLE;
     } else {
-        pthread_attr_getdetachstate(attr, &detachstate);
+        if (pthread_attr_getdetachstate(attr, &detachstate) != 0)
+            ABORT("pthread_attr_getdetachstate failed");
     }
     if (PTHREAD_CREATE_DETACHED == detachstate) my_flags |= DETACHED;
     si.flags = my_flags;
