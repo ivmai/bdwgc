@@ -2668,7 +2668,7 @@ GC_INNER void GC_thr_init(void)
   struct start_info {
     void *(*start_routine)(void *);
     void *arg;
-    GC_bool detached;
+    int detached;
   };
 
   GC_API int GC_pthread_join(pthread_t pthread_id, void **retval)
@@ -2740,12 +2740,9 @@ GC_INNER void GC_thr_init(void)
       si -> arg = arg;
       GC_dirty(si);
       REACHABLE_AFTER_DIRTY(arg);
-      if (attr != 0 &&
-          pthread_attr_getdetachstate(attr, &si->detached)
-          == PTHREAD_CREATE_DETACHED) {
-        si->detached = TRUE;
-      }
-
+      if (attr != NULL
+          && pthread_attr_getdetachstate(attr, &(si -> detached)) != 0)
+        ABORT("pthread_attr_getdetachstate failed");
 #     ifdef DEBUG_THREADS
         GC_log_printf("About to create a thread from %p(0x%lx)\n",
                       GC_PTHREAD_PTRVAL(pthread_self()),
