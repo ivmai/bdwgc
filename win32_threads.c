@@ -276,6 +276,7 @@ GC_INLINE void GC_record_stack_base(GC_thread me,
 /* GC_win32_dll_threads is set.  Always called from the thread being    */
 /* added.  If GC_win32_dll_threads is not set, we already hold the      */
 /* allocation lock except possibly during single-threaded startup code. */
+/* Does not initialize thread local free lists.                         */
 STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                                              thread_id_t id)
 {
@@ -365,9 +366,6 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
   /* Up until this point, this entry is viewed as reserved but invalid  */
   /* by GC_delete_thread.                                               */
   me -> id = id;
-# ifdef THREAD_LOCAL_ALLOC
-    GC_init_thread_local((/* no volatile */ GC_tlfs)&me->tlfs);
-# endif
 # ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
       if (GC_please_stop) {
@@ -651,8 +649,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   LOCK();
   me = GC_lookup_thread(self_id);
   if (EXPECT(NULL == me, TRUE)) {
+    me = GC_register_my_thread_inner(sb, self_id);
 #   ifdef GC_PTHREADS
-      me = GC_register_my_thread_inner(sb, self_id);
 #     if defined(CPPCHECK)
         GC_noop1(me->flags);
 #     endif
@@ -660,22 +658,23 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
           /* Treat as detached, since we do not need to worry about     */
           /* pointer results.                                           */
 #   else
-      GC_register_my_thread_inner(sb, self_id);
+      (void)me;
 #   endif
   } else
 #   ifdef GC_PTHREADS
       /* else */ if (KNOWN_FINISHED(me)) {
         GC_record_stack_base(me, sb);
         me -> flags &= ~FINISHED; /* but not DETACHED */
-#       ifdef THREAD_LOCAL_ALLOC
-          GC_init_thread_local(&me->tlfs);
-#       endif
       } else
 #   endif
   /* else */ {
     UNLOCK();
     return GC_DUPLICATE;
   }
+
+# ifdef THREAD_LOCAL_ALLOC
+    GC_init_thread_local(&me->tlfs);
+# endif
   UNLOCK();
   return GC_SUCCESS;
 }
@@ -2864,6 +2863,9 @@ GC_INNER void GC_thr_init(void)
     GC_ASSERT(me != &first_thread);
     me -> pthread_id = self;
     if (si->detached) me -> flags |= DETACHED;
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_init_thread_local(&me->tlfs);
+#   endif
     UNLOCK();
 
     start = si -> start_routine;
