@@ -1667,7 +1667,8 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
         GC_ASSERT((t -> flags & DO_BLOCKING) == 0
                   && NULL == t -> traced_stack_sect); /* for now */
 
-        if ((t -> flags & MAIN_THREAD) == 0) {
+        if (EXPECT((t -> flags & MAIN_THREAD) == 0, TRUE))
+        {
             t -> stack_end = (ptr_t)sb->mem_base;
 #           ifdef IA64
                 t -> backing_store_end = (ptr_t)sb->reg_base;
@@ -1692,21 +1693,20 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
     LOCK();
     me = GC_lookup_thread(self);
     /* The thread is assumed to be registered.  */
-    if ((me -> flags & MAIN_THREAD) == 0) {
-        sb -> mem_base = me -> stack_end;
-#       ifdef IA64
-            sb -> reg_base = me -> backing_store_end;
-#       elif defined(E2K)
-            sb -> reg_base = NULL;
-#       endif
-    } else {
+    if (EXPECT((me -> flags & MAIN_THREAD) != 0, FALSE)) {
         sb -> mem_base = GC_stackbottom;
 #       ifdef IA64
             sb -> reg_base = GC_register_stackbottom;
-#       elif defined(E2K)
-            sb -> reg_base = NULL;
+#       endif
+    } else {
+        sb -> mem_base = me -> stack_end;
+#       ifdef IA64
+            sb -> reg_base = me -> backing_store_end;
 #       endif
     }
+#   ifdef E2K
+        sb -> reg_base = NULL;
+#   endif
     UNLOCK();
     return (void *)me; /* gc_thread_handle */
 }
@@ -1731,14 +1731,14 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
     /* Adjust our stack bottom value (this could happen unless  */
     /* GC_get_stack_base() was used which returned GC_SUCCESS). */
-    if ((me -> flags & MAIN_THREAD) == 0) {
-      GC_ASSERT(me -> stack_end != NULL);
-      if ((word)me->stack_end HOTTER_THAN (word)(&stacksect))
-        me -> stack_end = (ptr_t)(&stacksect);
-    } else {
+    if (EXPECT((me -> flags & MAIN_THREAD) != 0, FALSE)) {
       /* The original stack. */
       if ((word)GC_stackbottom HOTTER_THAN (word)(&stacksect))
         GC_stackbottom = (ptr_t)COVERT_DATAFLOW(&stacksect);
+    } else {
+      GC_ASSERT(me -> stack_end != NULL);
+      if ((word)(me -> stack_end) HOTTER_THAN (word)(&stacksect))
+        me -> stack_end = (ptr_t)(&stacksect);
     }
 
     if ((me -> flags & DO_BLOCKING) == 0) {

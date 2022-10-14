@@ -326,8 +326,8 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     UNUSED_ARG(paltstack_hi);
 # else
     /* p is guaranteed to be non-NULL regardless of GC_query_task_threads. */
-    *phi = (p->flags & MAIN_THREAD) != 0 ? GC_stackbottom : p->stack_end;
-
+    *phi = EXPECT((p->flags & MAIN_THREAD) == 0, TRUE) ? p->stack_end
+            : GC_stackbottom;
     if (p->altstack != NULL && (word)p->altstack <= (word)lo
         && (word)lo <= (word)p->altstack + p->altstack_size) {
       *paltstack_lo = lo;

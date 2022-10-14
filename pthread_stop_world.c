@@ -840,7 +840,7 @@ GC_INNER void GC_push_all_stacks(void)
               traced_stack_sect = traced_stack_sect->prev;
             }
         }
-        if ((p -> flags & MAIN_THREAD) == 0) {
+        if (EXPECT((p -> flags & MAIN_THREAD) == 0, TRUE)) {
             hi = p -> stack_end;
 #           ifdef IA64
               bs_lo = p -> backing_store_end;
