@@ -1323,6 +1323,42 @@ static void fork_child_proc(void)
   }
 #endif /* PARALLEL_MARK */
 
+GC_INNER GC_bool GC_in_thread_creation = FALSE;
+                                /* Protected by allocation lock. */
+
+GC_INLINE void GC_record_stack_base(GC_thread me,
+                                    const struct GC_stack_base *sb)
+{
+# ifndef GC_DARWIN_THREADS
+    me -> stack_ptr = (ptr_t)sb->mem_base;
+# endif
+  me -> stack_end = (ptr_t)sb->mem_base;
+  if (NULL == me -> stack_end)
+    ABORT("Bad stack base in GC_register_my_thread");
+# ifdef IA64
+    me -> backing_store_end = (ptr_t)sb->reg_base;
+# endif
+}
+
+STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
+                                             thread_id_t self)
+{
+  GC_thread me;
+
+  GC_ASSERT(I_HOLD_LOCK());
+  GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
+  me = GC_new_thread(self);
+  if (NULL == me)
+    ABORT("Failed to allocate memory for thread registering");
+  me -> id = self;
+# ifdef GC_DARWIN_THREADS
+    me -> mach_thread = mach_thread_self();
+# endif
+  GC_in_thread_creation = FALSE;
+  GC_record_stack_base(me, sb);
+  return me;
+}
+
 GC_INNER void GC_thr_init(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
@@ -1362,27 +1398,6 @@ GC_INNER void GC_thr_init(void)
       }
     }
 # endif
-  /* Add the initial thread, so we can stop it. */
-  {
-    thread_id_t self = pthread_self();
-    GC_thread t = GC_new_thread(self);
-
-    if (t == NULL)
-      ABORT("Failed to allocate memory for the initial thread");
-    t -> id = self;
-#   ifdef GC_DARWIN_THREADS
-      t -> mach_thread = mach_thread_self();
-#   else
-      t -> stack_ptr = GC_approx_sp();
-#   endif
-    t -> flags = DETACHED | MAIN_THREAD;
-
-    /* Copy the alt-stack information if set.   */
-      t -> normstack = (ptr_t)main_normstack;
-      t -> normstack_size = main_normstack_size;
-      t -> altstack = (ptr_t)main_altstack;
-      t -> altstack_size = main_altstack_size;
-  }
 
   /* Set GC_nprocs and available_markers_m1.    */
   {
@@ -1481,6 +1496,30 @@ GC_INNER void GC_thr_init(void)
       setup_mark_lock();
     }
 # endif
+
+  /* Add the initial thread, so we can stop it. */
+  {
+    thread_id_t self = pthread_self();
+    struct GC_stack_base sb;
+    GC_thread me;
+
+    sb.mem_base = GC_stackbottom;
+    GC_ASSERT(sb.mem_base != NULL);
+#   ifdef IA64
+      sb.reg_base = GC_register_stackbottom;
+#   elif defined(E2K)
+      sb.reg_base = NULL;
+#   endif
+    GC_ASSERT(NULL == GC_lookup_thread(self));
+    me = GC_register_my_thread_inner(&sb, self);
+    me -> flags = DETACHED | MAIN_THREAD;
+
+    /* Copy the alt-stack information if set.   */
+    me -> normstack = (ptr_t)main_normstack;
+    me -> normstack_size = main_normstack_size;
+    me -> altstack = (ptr_t)main_altstack;
+    me -> altstack_size = main_altstack_size;
+  }
 }
 
 /* Initialize thread local free lists if used.          */
@@ -2000,47 +2039,6 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
   }
 #endif /* GC_HAVE_PTHREAD_EXIT */
 
-GC_INNER GC_bool GC_in_thread_creation = FALSE;
-                                /* Protected by allocation lock. */
-
-GC_INLINE void GC_record_stack_base(GC_thread me,
-                                    const struct GC_stack_base *sb)
-{
-#   ifndef GC_DARWIN_THREADS
-      me -> stack_ptr = (ptr_t)sb->mem_base;
-#   endif
-    me -> stack_end = (ptr_t)sb->mem_base;
-    if (me -> stack_end == NULL)
-      ABORT("Bad stack base in GC_register_my_thread");
-#   ifdef IA64
-      me -> backing_store_end = (ptr_t)sb->reg_base;
-#   endif
-}
-
-STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
-                                             thread_id_t self)
-{
-    GC_thread me;
-
-    GC_ASSERT(I_HOLD_LOCK());
-    GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
-    me = GC_new_thread(self);
-    if (NULL == me)
-      ABORT("Failed to allocate memory for thread registering");
-    me -> id = self;
-#   ifdef GC_DARWIN_THREADS
-      me -> mach_thread = mach_thread_self();
-#   endif
-    GC_in_thread_creation = FALSE;
-    GC_record_stack_base(me, sb);
-#   ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
-      /* Since this could be executed from a detached thread    */
-      /* destructor, our signals might already be blocked.      */
-      GC_unblock_gc_signals();
-#   endif
-    return me;
-}
-
 GC_API void GC_CALL GC_allow_register_threads(void)
 {
 # ifdef GC_ASSERTIONS
@@ -2075,9 +2073,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
         me -> flags |= DETACHED;
           /* Treat as detached, since we do not need to worry about     */
           /* pointer results.                                           */
-#       ifdef THREAD_LOCAL_ALLOC
-          GC_init_thread_local(&me->tlfs);
-#       endif
     } else if (KNOWN_FINISHED(me)) {
         /* This code is executed when a thread is registered from the   */
         /* client thread key destructor.                                */
@@ -2088,24 +2083,24 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #       endif
         GC_record_stack_base(me, sb);
         me -> flags &= ~FINISHED; /* but not DETACHED */
-#       ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
-          /* Since this could be executed from a thread destructor,     */
-          /* our signals might be blocked.                              */
-          GC_unblock_gc_signals();
-#       endif
-#       ifdef THREAD_LOCAL_ALLOC
-          GC_init_thread_local(&me->tlfs);
-#       endif
-#       if defined(GC_ENABLE_SUSPEND_THREAD) \
-           && defined(SIGNAL_BASED_STOP_WORLD)
-          if ((me -> ext_suspend_cnt & 1) != 0) {
-            GC_with_callee_saves_pushed(GC_suspend_self_blocked, (ptr_t)me);
-          }
-#       endif
     } else {
         UNLOCK();
         return GC_DUPLICATE;
     }
+
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_init_thread_local(&me->tlfs);
+#   endif
+#   ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
+      /* Since this could be executed from a thread destructor, */
+      /* our signals might already be blocked.                  */
+      GC_unblock_gc_signals();
+#   endif
+#   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
+      if (EXPECT((me -> ext_suspend_cnt & 1) != 0, FALSE)) {
+        GC_with_callee_saves_pushed(GC_suspend_self_blocked, (ptr_t)me);
+      }
+#   endif
     UNLOCK();
     return GC_SUCCESS;
 }
