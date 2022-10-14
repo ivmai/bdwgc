@@ -782,7 +782,6 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     return me != NULL;
 }
 
-static thread_id_t main_pthread_id;
 static void *main_normstack, *main_altstack;
 static word main_normstack_size, main_altstack_size;
 
@@ -802,7 +801,6 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
     me -> altstack_size = altstack_size;
   } else {
     /* This happens if we are called before GC_thr_init.    */
-    main_pthread_id = self;
     main_normstack = normstack;
     main_normstack_size = normstack_size;
     main_altstack = altstack;
@@ -1378,12 +1376,12 @@ GC_INNER void GC_thr_init(void)
       t -> stack_ptr = GC_approx_sp();
 #   endif
     t -> flags = DETACHED | MAIN_THREAD;
-    if (THREAD_EQUAL(self, main_pthread_id)) {
+
+    /* Copy the alt-stack information if set.   */
       t -> normstack = (ptr_t)main_normstack;
       t -> normstack_size = main_normstack_size;
       t -> altstack = (ptr_t)main_altstack;
       t -> altstack_size = main_altstack_size;
-    }
   }
 
   /* Set GC_nprocs and available_markers_m1.    */
