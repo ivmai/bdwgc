@@ -2296,11 +2296,6 @@ STATIC void GC_pause(void)
                         /* give up.                                     */
 #endif
 
-GC_INNER volatile GC_bool GC_collecting = FALSE;
-                        /* A hint that we're in the collector and       */
-                        /* holding the allocation lock for an           */
-                        /* extended period.                             */
-
 #if (!defined(USE_SPIN_LOCK) && !defined(NO_PTHREAD_TRYLOCK)) \
         || defined(PARALLEL_MARK)
 /* If we don't want to use the below spinlock implementation, either    */
@@ -2364,13 +2359,17 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
 
 #endif /* !USE_SPIN_LOCK || ... */
 
+GC_INNER volatile unsigned char GC_collecting = FALSE;
+                        /* A hint that we are in the collector and      */
+                        /* holding the allocation lock for an           */
+                        /* extended period.                             */
+
 #if defined(AO_HAVE_char_load) && !defined(BASE_ATOMIC_OPS_EMULATED)
-# define is_collecting() \
-                ((GC_bool)AO_char_load((unsigned char *)&GC_collecting))
+# define is_collecting() ((GC_bool)AO_char_load(&GC_collecting))
 #else
   /* GC_collecting is a hint, a potential data race between     */
   /* GC_lock() and ENTER/EXIT_GC() is OK to ignore.             */
-# define is_collecting() GC_collecting
+# define is_collecting() ((GC_bool)GC_collecting)
 #endif
 
 #if defined(USE_SPIN_LOCK)
