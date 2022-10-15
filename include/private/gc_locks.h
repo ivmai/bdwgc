@@ -63,20 +63,27 @@
 #   endif
 # endif
 
+# if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS) \
+     || defined(GC_PTHREADS)
+#   define NO_THREAD ((unsigned long)(-1L))
+                /* != NUMERIC_THREAD_ID(pthread_self()) for any thread */
+#   ifdef GC_ASSERTIONS
+      GC_EXTERN unsigned long GC_lock_holder;
+#     define UNSET_LOCK_HOLDER() (void)(GC_lock_holder = NO_THREAD)
+#   endif
+# endif /* GC_WIN32_THREADS || GC_PTHREADS */
+
 # if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS)
-#   define NO_THREAD (DWORD)(-1)
     GC_EXTERN CRITICAL_SECTION GC_allocate_ml;
 #   ifdef GC_ASSERTIONS
-      GC_EXTERN DWORD GC_lock_holder;
-#     define SET_LOCK_HOLDER() GC_lock_holder = GetCurrentThreadId()
-#     define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
+#     define SET_LOCK_HOLDER() (void)(GC_lock_holder = GetCurrentThreadId())
 #     define I_HOLD_LOCK() (!GC_need_to_lock \
-                           || GC_lock_holder == GetCurrentThreadId())
+                            || GC_lock_holder == GetCurrentThreadId())
 #     ifdef THREAD_SANITIZER
 #       define I_DONT_HOLD_LOCK() TRUE /* Conservatively say yes */
 #     else
 #       define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
-                           || GC_lock_holder != GetCurrentThreadId())
+                            || GC_lock_holder != GetCurrentThreadId())
 #     endif
 #     define UNCOND_LOCK() \
                 { GC_ASSERT(I_DONT_HOLD_LOCK()); \
@@ -124,8 +131,6 @@
       /* will result in poor performance (as NUMERIC_THREAD_ID is       */
       /* defined to just a constant) and weak assertion checking.       */
 #   endif
-#   define NO_THREAD ((unsigned long)(-1l))
-                /* != NUMERIC_THREAD_ID(pthread_self()) for any thread */
 
 #   ifdef SN_TARGET_PSP2
       EXTERN_C_END
@@ -198,10 +203,8 @@
 #     endif /* !GC_ASSERTIONS */
 #   endif /* USE_PTHREAD_LOCKS */
 #   ifdef GC_ASSERTIONS
-      GC_EXTERN unsigned long GC_lock_holder;
 #     define SET_LOCK_HOLDER() \
-                GC_lock_holder = NUMERIC_THREAD_ID(pthread_self())
-#     define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
+                (void)(GC_lock_holder = NUMERIC_THREAD_ID(pthread_self()))
 #     define I_HOLD_LOCK() \
                 (!GC_need_to_lock \
                  || GC_lock_holder == NUMERIC_THREAD_ID(pthread_self()))

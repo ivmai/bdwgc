@@ -23,15 +23,13 @@
 /* Allocation lock declarations.        */
 #if !defined(USE_PTHREAD_LOCKS)
   GC_INNER CRITICAL_SECTION GC_allocate_ml;
-# ifdef GC_ASSERTIONS
-    GC_INNER DWORD GC_lock_holder = NO_THREAD;
-        /* Thread id for current holder of allocation lock */
-# endif
 #else
   GC_INNER pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
-# ifdef GC_ASSERTIONS
+#endif
+
+#ifdef GC_ASSERTIONS
     GC_INNER unsigned long GC_lock_holder = NO_THREAD;
-# endif
+        /* Thread id for current holder of allocation lock */
 #endif
 
 #undef CreateThread
@@ -2205,7 +2203,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     }
 
 #   ifdef GC_ASSERTIONS
-      STATIC DWORD GC_mark_lock_holder = NO_THREAD;
+      STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
 #     define SET_MARK_LOCK_HOLDER \
                 (void)(GC_mark_lock_holder = GetCurrentThreadId())
 #     define UNSET_MARK_LOCK_HOLDER \
