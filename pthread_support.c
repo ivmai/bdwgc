@@ -2113,7 +2113,7 @@ struct start_info {
                                 /* parent hasn't yet noticed.           */
 };
 
-/* Called from GC_inner_start_routine().  Defined in this file to       */
+/* Called from GC_pthread_start_inner().  Defined in this file to       */
 /* minimize the number of include files in pthread_start.c (because     */
 /* sem_t and sem_post() are not used that file directly).               */
 GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
@@ -2148,7 +2148,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
 }
 
 #if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
-  STATIC void * GC_start_routine(void * arg)
+  STATIC void * GC_pthread_start(void * arg)
   {
 #   ifdef INCLUDE_LINUX_THREAD_DESCR
       struct GC_stack_base sb;
@@ -2165,9 +2165,9 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
 #     ifdef REDIRECT_MALLOC
         GC_enable();
 #     endif
-      return GC_inner_start_routine(&sb, arg);
+      return GC_pthread_start_inner(&sb, arg);
 #   else
-      return GC_call_with_stack_base(GC_inner_start_routine, arg);
+      return GC_call_with_stack_base(GC_pthread_start_inner, arg);
 #   endif
   }
 
@@ -2242,8 +2242,8 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
         GC_start_mark_threads();
 #   endif
     set_need_to_lock();
-    result = REAL_FUNC(pthread_create)(new_thread, attr, GC_start_routine,
-                                       &si);
+    result = REAL_FUNC(pthread_create)(new_thread, attr,
+                                       GC_pthread_start, &si);
 
     /* Wait until child has been added to the thread table.             */
     /* This also ensures that we hold onto the stack-allocated si until */

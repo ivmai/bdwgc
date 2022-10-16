@@ -304,7 +304,7 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t);
 #endif
 
 #ifndef GC_WIN32_THREADS
-  GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
+  GC_INNER_PTHRSTART void *GC_CALLBACK GC_pthread_start_inner(
                                         struct GC_stack_base *sb, void *arg);
   GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
                                         void *(**pstart)(void *),
