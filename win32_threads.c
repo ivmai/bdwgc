@@ -153,7 +153,7 @@ typedef struct GC_Thread_Rep * GC_thread;
 typedef volatile struct GC_Thread_Rep * GC_vthread;
 
 #ifndef GC_NO_THREADS_DISCOVERY
-  STATIC thread_id_t GC_main_thread = 0;
+  static thread_id_t main_thread_id;
 
   /* We track thread attachments while the world is supposed to be      */
   /* stopped.  Unfortunately, we cannot stop them from starting, since  */
@@ -2349,27 +2349,26 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 # define START_MARK_THREADS() (void)0
 #endif /* !PARALLEL_MARK */
 
-  /* We have no DllMain to take care of new threads.  Thus we   */
+  /* We have no DllMain to take care of new threads.  Thus, we  */
   /* must properly intercept thread creation.                   */
 
-  typedef struct {
-    LPTHREAD_START_ROUTINE start;
-    LPVOID param;
-  } thread_args;
+  struct win32_start_info {
+    LPTHREAD_START_ROUTINE start_routine;
+    LPVOID arg;
+  };
 
   STATIC void * GC_CALLBACK GC_win32_start_inner(struct GC_stack_base *sb,
                                                  void *arg)
   {
     void * ret;
-    LPTHREAD_START_ROUTINE start = ((thread_args *)arg)->start;
-    LPVOID param = ((thread_args *)arg)->param;
+    LPTHREAD_START_ROUTINE start_routine =
+                        ((struct win32_start_info *)arg) -> start_routine;
+    LPVOID start_arg = ((struct win32_start_info *)arg) -> arg;
 
     GC_register_my_thread(sb); /* This waits for an in-progress GC.     */
-
 #   ifdef DEBUG_THREADS
       GC_log_printf("thread 0x%lx starting...\n", (long)GetCurrentThreadId());
 #   endif
-
     GC_free(arg);
 
     /* Clear the thread entry even if we exit with an exception.        */
@@ -2380,7 +2379,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       __try
 #   endif
     {
-      ret = (void *)(word)(*start)(param);
+      ret = (void *)(word)(*start_routine)(start_arg);
     }
 #   ifndef NO_SEH_AVAILABLE
       __finally
@@ -2422,27 +2421,28 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       return CreateThread(lpThreadAttributes, dwStackSize, lpStartAddress,
                           lpParameter, dwCreationFlags, lpThreadId);
     } else {
-      thread_args *args =
-                (thread_args *)GC_malloc_uncollectable(sizeof(thread_args));
+      struct win32_start_info *psi =
+                (struct win32_start_info *)GC_malloc_uncollectable(
+                                        sizeof(struct win32_start_info));
                 /* Handed off to and deallocated by child thread.       */
       HANDLE thread_h;
 
-      if (EXPECT(NULL == args, FALSE)) {
+      if (EXPECT(NULL == psi, FALSE)) {
         SetLastError(ERROR_NOT_ENOUGH_MEMORY);
         return NULL;
       }
 
       /* set up thread arguments */
-      args -> start = lpStartAddress;
-      args -> param = lpParameter;
-      GC_dirty(args);
+      psi -> start_routine = lpStartAddress;
+      psi -> arg = lpParameter;
+      GC_dirty(psi);
       REACHABLE_AFTER_DIRTY(lpParameter);
 
       START_MARK_THREADS();
       set_need_to_lock();
       thread_h = CreateThread(lpThreadAttributes, dwStackSize, GC_win32_start,
-                              args, dwCreationFlags, lpThreadId);
-      if (EXPECT(0 == thread_h, FALSE)) GC_free(args);
+                              psi, dwCreationFlags, lpThreadId);
+      if (EXPECT(0 == thread_h, FALSE)) GC_free(psi);
       return thread_h;
     }
   }
@@ -2473,11 +2473,12 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                               arglist, initflag, thrdaddr);
       } else {
         GC_uintptr_t thread_h;
-        thread_args *args =
-                (thread_args *)GC_malloc_uncollectable(sizeof(thread_args));
+        struct win32_start_info *psi =
+                (struct win32_start_info *)GC_malloc_uncollectable(
+                                        sizeof(struct win32_start_info));
                 /* Handed off to and deallocated by child thread.       */
 
-        if (EXPECT(NULL == args, FALSE)) {
+        if (EXPECT(NULL == psi, FALSE)) {
           /* MSDN docs say _beginthreadex() returns 0 on error and sets */
           /* errno to either EAGAIN (too many threads) or EINVAL (the   */
           /* argument is invalid or the stack size is incorrect), so we */
@@ -2487,17 +2488,17 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         }
 
         /* set up thread arguments */
-        args -> start = (LPTHREAD_START_ROUTINE)start_address;
-        args -> param = arglist;
-        GC_dirty(args);
+        psi -> start_routine = (LPTHREAD_START_ROUTINE)start_address;
+        psi -> arg = arglist;
+        GC_dirty(psi);
         REACHABLE_AFTER_DIRTY(arglist);
 
         START_MARK_THREADS();
         set_need_to_lock();
         thread_h = _beginthreadex(security, stack_size,
                         (unsigned (__stdcall *)(void *))GC_win32_start,
-                        args, initflag, thrdaddr);
-        if (EXPECT(0 == thread_h, FALSE)) GC_free(args);
+                        psi, initflag, thrdaddr);
+        if (EXPECT(0 == thread_h, FALSE)) GC_free(psi);
         return thread_h;
       }
     }
@@ -2533,9 +2534,10 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
   static DWORD WINAPI main_thread_start(LPVOID arg)
   {
-    main_thread_args * args = (main_thread_args *) arg;
-    return (DWORD)GC_WinMain(args->hInstance, args->hPrevInstance,
-                             args->lpCmdLine, args->nShowCmd);
+    main_thread_args *main_args = (main_thread_args *)arg;
+    return (DWORD)GC_WinMain(main_args -> hInstance,
+                             main_args -> hPrevInstance,
+                             main_args -> lpCmdLine, main_args -> nShowCmd);
   }
 
   STATIC void *GC_CALLBACK GC_waitForSingleObjectInfinite(void *handle)
@@ -2608,9 +2610,9 @@ GC_INNER void GC_thr_init(void)
     GC_thr_initialized = TRUE;
 # endif
 # ifdef GC_NO_THREADS_DISCOVERY
-#   define GC_main_thread GetCurrentThreadId()
+#   define main_thread_id GetCurrentThreadId()
 # else
-    GC_main_thread = GetCurrentThreadId();
+    main_thread_id = GetCurrentThreadId();
 # endif
 
 # ifdef CAN_HANDLE_FORK
@@ -2730,9 +2732,9 @@ GC_INNER void GC_thr_init(void)
       }
 # endif /* PARALLEL_MARK */
 
-  GC_ASSERT(0 == GC_lookup_thread(GC_main_thread));
-  GC_register_my_thread_inner(&sb, GC_main_thread);
-# undef GC_main_thread
+  GC_ASSERT(NULL == GC_lookup_thread(main_thread_id));
+  GC_register_my_thread_inner(&sb, main_thread_id);
+# undef main_thread_id
 }
 
 #ifdef GC_PTHREADS
@@ -2996,7 +2998,7 @@ GC_INNER void GC_thr_init(void)
        case DLL_PROCESS_ATTACH:
         /* This may run with the collector uninitialized. */
         self_id = GetCurrentThreadId();
-        if (GC_is_initialized && GC_main_thread != self_id) {
+        if (GC_is_initialized && main_thread_id != self_id) {
             struct GC_stack_base sb;
             /* Don't lock here. */
 #           ifdef GC_ASSERTIONS
