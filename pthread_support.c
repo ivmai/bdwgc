@@ -809,84 +809,6 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
   UNLOCK();
 }
 
-#ifdef CAN_HANDLE_FORK
-
-  /* Prevent TSan false positive about the race during items removal    */
-  /* from GC_threads.  (The race cannot happen since only one thread    */
-  /* survives in the child.)                                            */
-# ifdef CAN_CALL_ATFORK
-    GC_ATTR_NO_SANITIZE_THREAD
-# endif
-  static void store_to_threads_table(int hv, GC_thread me)
-  {
-    GC_threads[hv] = me;
-  }
-
-/* Remove all entries from the GC_threads table, except the     */
-/* one for the current thread.  We need to do this in the child */
-/* process after a fork(), since only the current thread        */
-/* survives in the child.                                       */
-STATIC void GC_remove_all_threads_but_me(void)
-{
-    thread_id_t self = pthread_self();
-    int hv;
-
-    for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
-      GC_thread p, next;
-      GC_thread me = NULL;
-
-      for (p = GC_threads[hv]; p != NULL; p = next) {
-        next = p -> tm.next;
-        if (THREAD_EQUAL(p -> id, self)
-            && me == NULL) { /* ignore dead threads with the same id */
-          me = p;
-          p -> tm.next = NULL;
-#         ifdef GC_DARWIN_THREADS
-            /* Update thread Id after fork (it is OK to call    */
-            /* GC_destroy_thread_local and GC_free_internal     */
-            /* before update).                                  */
-            me -> mach_thread = mach_thread_self();
-#         endif
-#         ifdef USE_TKILL_ON_ANDROID
-            me -> kernel_id = gettid();
-#         endif
-#         if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
-          {
-            int res;
-
-            /* Some TLS implementations might be not fork-friendly, so  */
-            /* we re-assign thread-local pointer to 'tlfs' for safety   */
-            /* instead of the assertion check (again, it is OK to call  */
-            /* GC_destroy_thread_local and GC_free_internal before).    */
-            res = GC_setspecific(GC_thread_key, &me->tlfs);
-            if (COVERT_DATAFLOW(res) != 0)
-              ABORT("GC_setspecific failed (in child)");
-          }
-#         endif
-        } else {
-#         ifdef THREAD_LOCAL_ALLOC
-            if (!KNOWN_FINISHED(p)) {
-              /* Cannot call GC_destroy_thread_local here.  The free    */
-              /* lists may be in an inconsistent state (as thread p may */
-              /* be updating one of the lists by GC_generic_malloc_many */
-              /* or GC_FAST_MALLOC_GRANS when fork is invoked).         */
-              /* This should not be a problem because the lost elements */
-              /* of the free lists will be collected during GC.         */
-              GC_remove_specific_after_fork(GC_thread_key, p -> id);
-            }
-#         endif
-          /* TODO: To avoid TSan hang (when updating GC_bytes_freed),   */
-          /* we just skip explicit freeing of GC_threads entries.       */
-#         if !defined(THREAD_SANITIZER) || !defined(CAN_CALL_ATFORK)
-            if (p != &first_thread) GC_INTERNAL_FREE(p);
-#         endif
-        }
-      }
-      store_to_threads_table(hv, me);
-    }
-}
-#endif /* CAN_HANDLE_FORK */
-
 #ifdef USE_PROC_FOR_LIBRARIES
   GC_INNER GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
   {
@@ -1111,7 +1033,7 @@ STATIC void GC_remove_all_threads_but_me(void)
 #endif
 
 /* We hold the GC lock.  Wait until an in-progress GC has finished.     */
-/* Repeatedly RELEASES GC LOCK in order to wait.                        */
+/* Repeatedly releases the GC lock in order to wait.                    */
 /* If wait_for_all is true, then we exit with the GC lock held and no   */
 /* collection in progress; otherwise we just wait for the current GC    */
 /* to finish.                                                           */
@@ -1144,16 +1066,16 @@ STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
 }
 
 #ifdef CAN_HANDLE_FORK
-/* Procedures called before and after a fork.  The goal here is to make */
-/* it safe to call GC_malloc() in a forked child.  It's unclear that is */
-/* attainable, since the single UNIX spec seems to imply that one       */
-/* should only call async-signal-safe functions, and we probably can't  */
-/* quite guarantee that.  But we give it our best shot.  (That same     */
-/* spec also implies that it's not safe to call the system malloc       */
-/* between fork() and exec().  Thus we're doing no worse than it.)      */
 
-IF_CANCEL(static int fork_cancel_state;)
-                                /* protected by allocation lock.        */
+  /* Procedures called before and after a fork.  The goal here is to    */
+  /* make it safe to call GC_malloc() in a forked child.  It is unclear */
+  /* that is attainable, since the single UNIX spec seems to imply that */
+  /* one should only call async-signal-safe functions, and we probably  */
+  /* cannot quite guarantee that.  But we give it our best shot.  (That */
+  /* same spec also implies that it is not safe to call the system      */
+  /* malloc between fork and exec.  Thus we're doing no worse than it.) */
+
+  IF_CANCEL(static int fork_cancel_state;) /* protected by allocation lock */
 
 # ifdef PARALLEL_MARK
 #   ifdef THREAD_SANITIZER
@@ -1167,13 +1089,87 @@ IF_CANCEL(static int fork_cancel_state;)
 #   endif
 # endif /* PARALLEL_MARK */
 
-/* Called before a fork()               */
-#if defined(GC_ASSERTIONS) && defined(CAN_CALL_ATFORK)
-  /* GC_lock_holder is updated safely (no data race actually).  */
-  GC_ATTR_NO_SANITIZE_THREAD
-#endif
-static void fork_prepare_proc(void)
-{
+  /* Prevent TSan false positive about the race during items removal    */
+  /* from GC_threads.  (The race cannot happen since only one thread    */
+  /* survives in the child.)                                            */
+# ifdef CAN_CALL_ATFORK
+    GC_ATTR_NO_SANITIZE_THREAD
+# endif
+  static void store_to_threads_table(int hv, GC_thread me)
+  {
+    GC_threads[hv] = me;
+  }
+
+  /* Remove all entries from the GC_threads table, except the one for   */
+  /* the current thread.  We need to do this in the child process after */
+  /* a fork(), since only the current thread survives in the child.     */
+  STATIC void GC_remove_all_threads_but_me(void)
+  {
+    thread_id_t self = pthread_self();
+    int hv;
+
+    for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
+      GC_thread p, next;
+      GC_thread me = NULL;
+
+      for (p = GC_threads[hv]; p != NULL; p = next) {
+        next = p -> tm.next;
+        if (THREAD_EQUAL(p -> id, self)
+            && me == NULL) { /* ignore dead threads with the same id */
+          me = p;
+          p -> tm.next = NULL;
+#         ifdef GC_DARWIN_THREADS
+            /* Update thread Id after fork (it is OK to call    */
+            /* GC_destroy_thread_local and GC_free_internal     */
+            /* before update).                                  */
+            me -> mach_thread = mach_thread_self();
+#         endif
+#         ifdef USE_TKILL_ON_ANDROID
+            me -> kernel_id = gettid();
+#         endif
+#         if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
+          {
+            int res;
+
+            /* Some TLS implementations might be not fork-friendly, so  */
+            /* we re-assign thread-local pointer to 'tlfs' for safety   */
+            /* instead of the assertion check (again, it is OK to call  */
+            /* GC_destroy_thread_local and GC_free_internal before).    */
+            res = GC_setspecific(GC_thread_key, &me->tlfs);
+            if (COVERT_DATAFLOW(res) != 0)
+              ABORT("GC_setspecific failed (in child)");
+          }
+#         endif
+        } else {
+#         ifdef THREAD_LOCAL_ALLOC
+            if (!KNOWN_FINISHED(p)) {
+              /* Cannot call GC_destroy_thread_local here.  The free    */
+              /* lists may be in an inconsistent state (as thread p may */
+              /* be updating one of the lists by GC_generic_malloc_many */
+              /* or GC_FAST_MALLOC_GRANS when fork is invoked).         */
+              /* This should not be a problem because the lost elements */
+              /* of the free lists will be collected during GC.         */
+              GC_remove_specific_after_fork(GC_thread_key, p -> id);
+            }
+#         endif
+          /* TODO: To avoid TSan hang (when updating GC_bytes_freed),   */
+          /* we just skip explicit freeing of GC_threads entries.       */
+#         if !defined(THREAD_SANITIZER) || !defined(CAN_CALL_ATFORK)
+            if (p != &first_thread) GC_INTERNAL_FREE(p);
+#         endif
+        }
+      }
+      store_to_threads_table(hv, me);
+    }
+  }
+
+  /* Called before a fork().    */
+# if defined(GC_ASSERTIONS) && defined(CAN_CALL_ATFORK)
+    /* GC_lock_holder is updated safely (no data race actually).        */
+    GC_ATTR_NO_SANITIZE_THREAD
+# endif
+  static void fork_prepare_proc(void)
+  {
     /* Acquire all relevant locks, so that after releasing the locks    */
     /* the child will see a consistent state in which monitor           */
     /* invariants hold.  Unfortunately, we can't acquire libc locks     */
@@ -1181,37 +1177,37 @@ static void fork_prepare_proc(void)
     /* must install a suitable fork handler.                            */
     /* Wait for an ongoing GC to finish, since we can't finish it in    */
     /* the (one remaining thread in) the child.                         */
-      LOCK();
-      DISABLE_CANCEL(fork_cancel_state);
+    LOCK();
+    DISABLE_CANCEL(fork_cancel_state);
                 /* Following waits may include cancellation points. */
-#     if defined(PARALLEL_MARK)
-        if (GC_parallel)
-          wait_for_reclaim_atfork();
-#     endif
-      GC_wait_for_gc_completion(TRUE);
-#     if defined(PARALLEL_MARK)
-        if (GC_parallel) {
-#         if defined(THREAD_SANITIZER) && defined(GC_ASSERTIONS) \
-             && defined(CAN_CALL_ATFORK)
-            /* Prevent TSan false positive about the data race  */
-            /* when updating GC_mark_lock_holder.               */
-            GC_generic_lock(&mark_mutex);
-#         else
-            GC_acquire_mark_lock();
-#         endif
-        }
-#     endif
-      GC_acquire_dirty_lock();
-}
+#   ifdef PARALLEL_MARK
+      if (GC_parallel)
+        wait_for_reclaim_atfork();
+#   endif
+    GC_wait_for_gc_completion(TRUE);
+#   ifdef PARALLEL_MARK
+      if (GC_parallel) {
+#       if defined(THREAD_SANITIZER) && defined(GC_ASSERTIONS) \
+           && defined(CAN_CALL_ATFORK)
+          /* Prevent TSan false positive about the data race    */
+          /* when updating GC_mark_lock_holder.                 */
+          GC_generic_lock(&mark_mutex);
+#       else
+          GC_acquire_mark_lock();
+#       endif
+      }
+#   endif
+    GC_acquire_dirty_lock();
+  }
 
-/* Called in parent after a fork() (even if the latter failed). */
-#if defined(GC_ASSERTIONS) && defined(CAN_CALL_ATFORK)
-  GC_ATTR_NO_SANITIZE_THREAD
-#endif
-static void fork_parent_proc(void)
-{
+  /* Called in parent after a fork() (even if the latter failed).       */
+# if defined(GC_ASSERTIONS) && defined(CAN_CALL_ATFORK)
+    GC_ATTR_NO_SANITIZE_THREAD
+# endif
+  static void fork_parent_proc(void)
+  {
     GC_release_dirty_lock();
-#   if defined(PARALLEL_MARK)
+#   ifdef PARALLEL_MARK
       if (GC_parallel) {
 #       if defined(THREAD_SANITIZER) && defined(GC_ASSERTIONS) \
            && defined(CAN_CALL_ATFORK)
@@ -1224,14 +1220,14 @@ static void fork_parent_proc(void)
 #   endif
     RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
-}
+  }
 
-/* Called in child after a fork()       */
-#if defined(GC_ASSERTIONS) && defined(CAN_CALL_ATFORK)
-  GC_ATTR_NO_SANITIZE_THREAD
-#endif
-static void fork_child_proc(void)
-{
+  /* Called in child after a fork().    */
+# if defined(GC_ASSERTIONS) && defined(CAN_CALL_ATFORK)
+    GC_ATTR_NO_SANITIZE_THREAD
+# endif
+  static void fork_child_proc(void)
+  {
     GC_release_dirty_lock();
 #   ifdef PARALLEL_MARK
       if (GC_parallel) {
@@ -1277,7 +1273,7 @@ static void fork_child_proc(void)
       if (0 != pthread_mutex_init(&GC_allocate_ml, NULL))
         ABORT("pthread_mutex_init failed (in child)");
 #   endif
-}
+  }
 
   /* Routines for fork handling by client (no-op if pthread_atfork works). */
   GC_API void GC_CALL GC_atfork_prepare(void)
@@ -1304,6 +1300,23 @@ static void fork_child_proc(void)
     if (GC_handle_fork <= 0)
       fork_child_proc();
   }
+
+  /* Prepare for forks if requested.    */
+  STATIC void GC_setup_atfork(void)
+  {
+    if (GC_handle_fork) {
+#     ifdef CAN_CALL_ATFORK
+        if (pthread_atfork(fork_prepare_proc, fork_parent_proc,
+                           fork_child_proc) == 0) {
+          /* Handlers successfully registered.  */
+          GC_handle_fork = 1;
+        } else
+#     endif
+      /* else */ if (GC_handle_fork != -1)
+        ABORT("pthread_atfork failed");
+    }
+  }
+
 #endif /* CAN_HANDLE_FORK */
 
 #ifdef INCLUDE_LINUX_THREAD_DESCR
@@ -1368,19 +1381,9 @@ GC_INNER void GC_thr_init(void)
     GC_thr_initialized = TRUE;
 # endif
 # ifdef CAN_HANDLE_FORK
-    /* Prepare for forks if requested.  */
-    if (GC_handle_fork) {
-#     ifdef CAN_CALL_ATFORK
-        if (pthread_atfork(fork_prepare_proc, fork_parent_proc,
-                           fork_child_proc) == 0) {
-          /* Handlers successfully registered.  */
-          GC_handle_fork = 1;
-        } else
-#     endif
-      /* else */ if (GC_handle_fork != -1)
-        ABORT("pthread_atfork failed");
-    }
+    GC_setup_atfork();
 # endif
+
 # ifdef INCLUDE_LINUX_THREAD_DESCR
     /* Explicitly register the region including the address     */
     /* of a thread local variable.  This should include thread  */

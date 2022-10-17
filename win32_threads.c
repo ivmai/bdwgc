@@ -1072,6 +1072,22 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
     if (GC_handle_fork <= 0)
       fork_child_proc();
   }
+
+  /* Prepare for forks if requested.    */
+  STATIC void GC_setup_atfork(void)
+  {
+    if (GC_handle_fork) {
+#     ifdef CAN_CALL_ATFORK
+        if (pthread_atfork(fork_prepare_proc, fork_parent_proc,
+                           fork_child_proc) == 0) {
+          /* Handlers successfully registered.  */
+          GC_handle_fork = 1;
+        } else
+#     endif
+      /* else */ if (GC_handle_fork != -1)
+        ABORT("pthread_atfork failed");
+    }
+  }
 #endif /* CAN_HANDLE_FORK */
 
 void GC_push_thread_structures(void)
@@ -2614,20 +2630,8 @@ GC_INNER void GC_thr_init(void)
 # else
     main_thread_id = GetCurrentThreadId();
 # endif
-
 # ifdef CAN_HANDLE_FORK
-    /* Prepare for forks if requested.  */
-    if (GC_handle_fork) {
-#     ifdef CAN_CALL_ATFORK
-        if (pthread_atfork(fork_prepare_proc, fork_parent_proc,
-                           fork_child_proc) == 0) {
-          /* Handlers successfully registered.  */
-          GC_handle_fork = 1;
-        } else
-#     endif
-      /* else */ if (GC_handle_fork != -1)
-        ABORT("pthread_atfork failed");
-    }
+    GC_setup_atfork();
 # endif
 
 # ifdef WOW64_THREAD_CONTEXT_WORKAROUND
