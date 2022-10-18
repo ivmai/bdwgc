@@ -297,24 +297,27 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t);
                                 /* Wrapper over GC_suspend_self_inner.  */
 #endif
 
-#ifdef GC_PTHREAD_START_STANDALONE
-# define GC_INNER_PTHRSTART /* empty */
-#else
-# define GC_INNER_PTHRSTART GC_INNER
-#endif
+#if defined(GC_PTHREADS) \
+    && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
 
-#ifndef GC_WIN32_THREADS
-  GC_INNER_PTHRSTART void *GC_CALLBACK GC_pthread_start_inner(
+# ifdef GC_PTHREAD_START_STANDALONE
+#   define GC_INNER_PTHRSTART /* empty */
+# else
+#   define GC_INNER_PTHRSTART GC_INNER
+# endif
+
+# ifndef GC_WIN32_THREADS
+    GC_INNER_PTHRSTART void *GC_CALLBACK GC_pthread_start_inner(
                                         struct GC_stack_base *sb, void *arg);
-  GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
+    GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
                                         void *(**pstart)(void *),
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg);
-#endif
+# endif
 
-#ifdef GC_PTHREADS
   GC_INNER_PTHRSTART void GC_thread_exit_proc(void *);
-#endif
+
+#endif /* GC_PTHREADS */
 
 #ifdef GC_DARWIN_THREADS
 # ifndef DARWIN_DONT_PARSE_STACK

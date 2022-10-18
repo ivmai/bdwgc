@@ -670,12 +670,13 @@ STATIC void GC_delete_thread(thread_id_t id)
     }
 }
 
-/* If a thread has been joined, but we have not yet             */
-/* been notified, then there may be more than one thread        */
-/* in the table with the same pthread id.                       */
-/* This is OK, but we need a way to delete a specific one.      */
-STATIC void GC_delete_gc_thread(GC_thread t)
-{
+#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+  /* If a thread has been joined, but we have not yet           */
+  /* been notified, then there may be more than one thread      */
+  /* in the table with the same thread id.                      */
+  /* This is OK, but we need a way to delete a specific one.    */
+  STATIC void GC_delete_gc_thread(GC_thread t)
+  {
     thread_id_t id = t -> id;
     int hv = THREAD_TABLE_INDEX(id);
     GC_thread p = GC_threads[hv];
@@ -702,7 +703,8 @@ STATIC void GC_delete_gc_thread(GC_thread t)
       GC_log_printf("Deleted thread %p, n_threads= %d\n",
                     (void *)id, GC_count_threads());
 #   endif
-}
+  }
+#endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
 
 /* Return a GC_thread corresponding to a given thread id, or    */
 /* NULL if it is not there.                                     */
@@ -1903,89 +1905,6 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     return GC_SUCCESS;
 }
 
-/* Called at thread exit.                               */
-/* Never called for main thread.  That's OK, since it   */
-/* results in at most a tiny one-time leak.  And        */
-/* linuxthreads doesn't reclaim the main threads        */
-/* resources or id anyway.                              */
-GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
-{
-    IF_CANCEL(int cancel_state;)
-    DCL_LOCK_STATE;
-
-#   ifdef DEBUG_THREADS
-        GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread= %p\n",
-                      (void *)((GC_thread)arg)->id, arg);
-#   endif
-    LOCK();
-    DISABLE_CANCEL(cancel_state);
-    GC_wait_for_gc_completion(FALSE);
-    GC_unregister_my_thread_inner((GC_thread)arg);
-    RESTORE_CANCEL(cancel_state);
-    UNLOCK();
-}
-
-#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
-  GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
-  {
-    int result;
-    GC_thread t;
-    DCL_LOCK_STATE;
-
-    INIT_REAL_SYMS();
-    LOCK();
-    t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
-    /* This is guaranteed to be the intended one, since the thread id   */
-    /* can't have been recycled by pthreads.                            */
-    UNLOCK();
-    result = REAL_FUNC(pthread_join)(thread, retval);
-# if defined(GC_FREEBSD_THREADS)
-    /* On FreeBSD, the wrapped pthread_join() sometimes returns (what
-       appears to be) a spurious EINTR which caused the test and real code
-       to gratuitously fail.  Having looked at system pthread library source
-       code, I see how this return code may be generated.  In one path of
-       code, pthread_join() just returns the errno setting of the thread
-       being joined.  This does not match the POSIX specification or the
-       local man pages thus I have taken the liberty to catch this one
-       spurious return value properly conditionalized on GC_FREEBSD_THREADS. */
-    if (result == EINTR) result = 0;
-# endif
-    if (EXPECT(0 == result, TRUE)) {
-        LOCK();
-        /* Here the pthread thread id may have been recycled.           */
-        /* Delete the thread from GC_threads (unless it has been        */
-        /* registered again from the client thread key destructor).     */
-        if (KNOWN_FINISHED(t))
-          GC_delete_gc_thread(t);
-        UNLOCK();
-    }
-    return result;
-  }
-
-  GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
-  {
-    int result;
-    GC_thread t;
-    DCL_LOCK_STATE;
-
-    INIT_REAL_SYMS();
-    LOCK();
-    t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
-    UNLOCK();
-    result = REAL_FUNC(pthread_detach)(thread);
-    if (EXPECT(0 == result, TRUE)) {
-      LOCK();
-      t -> flags |= DETACHED;
-      /* Here the pthread thread id may have been recycled. */
-      if (KNOWN_FINISHED(t)) {
-        GC_delete_gc_thread(t);
-      }
-      UNLOCK();
-    }
-    return result;
-  }
-#endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
-
 #ifndef GC_NO_PTHREAD_CANCEL
   /* We should deal with the fact that apparently on Solaris and,       */
   /* probably, on some Linux we can't collect while a thread is         */
@@ -2108,22 +2027,106 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     return GC_SUCCESS;
 }
 
-struct start_info {
+#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+
+  /* Called at thread exit.  Never called for main thread.      */
+  /* That is OK, since it results in at most a tiny one-time    */
+  /* leak.  And linuxthreads implementation does not reclaim    */
+  /* the primordial (main) thread resources or id anyway.       */
+  GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
+  {
+    GC_thread me = (GC_thread)arg;
+    IF_CANCEL(int cancel_state;)
+    DCL_LOCK_STATE;
+
+#   ifdef DEBUG_THREADS
+      GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread= %p\n",
+                    (void *)(me -> id), (void *)me);
+#   endif
+    LOCK();
+    DISABLE_CANCEL(cancel_state);
+    GC_wait_for_gc_completion(FALSE);
+    GC_unregister_my_thread_inner(me);
+    RESTORE_CANCEL(cancel_state);
+    UNLOCK();
+  }
+
+  GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
+  {
+    int result;
+    GC_thread t;
+    DCL_LOCK_STATE;
+
+    INIT_REAL_SYMS();
+    LOCK();
+    t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
+    /* This is guaranteed to be the intended one, since the thread id   */
+    /* cannot have been recycled by pthreads.                           */
+    UNLOCK();
+    result = REAL_FUNC(pthread_join)(thread, retval);
+#   ifdef GC_FREEBSD_THREADS
+      /* On FreeBSD, the wrapped pthread_join() sometimes returns       */
+      /* (what appears to be) a spurious EINTR which caused the test    */
+      /* and real code to fail gratuitously.  Having looked at system   */
+      /* pthread library source code, I see how such return code value  */
+      /* may be generated.  In one path of the code, pthread_join just  */
+      /* returns the errno setting of the thread being joined - this    */
+      /* does not match the POSIX specification or the local man pages. */
+      /* Thus, I have taken the liberty to catch this one spurious      */
+      /* return value.                                                  */
+      if (EXPECT(result == EINTR, FALSE)) result = 0;
+#   endif
+    if (EXPECT(0 == result, TRUE)) {
+      LOCK();
+      /* Here the pthread id may have been recycled.  Delete the thread */
+      /* from GC_threads (unless it has been registered again from the  */
+      /* client thread key destructor).                                 */
+      if (KNOWN_FINISHED(t))
+        GC_delete_gc_thread(t);
+      UNLOCK();
+    }
+    return result;
+  }
+
+  GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
+  {
+    int result;
+    GC_thread t;
+    DCL_LOCK_STATE;
+
+    INIT_REAL_SYMS();
+    LOCK();
+    t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
+    UNLOCK();
+    result = REAL_FUNC(pthread_detach)(thread);
+    if (EXPECT(0 == result, TRUE)) {
+      LOCK();
+      t -> flags |= DETACHED;
+      /* Here the pthread id may have been recycled.    */
+      if (KNOWN_FINISHED(t)) {
+        GC_delete_gc_thread(t);
+      }
+      UNLOCK();
+    }
+    return result;
+  }
+
+  struct start_info {
     void *(*start_routine)(void *);
     void *arg;
-    word flags;
     sem_t registered;           /* 1 ==> in our thread table, but       */
                                 /* parent hasn't yet noticed.           */
-};
+    unsigned char flags;
+  };
 
-/* Called from GC_pthread_start_inner().  Defined in this file to       */
-/* minimize the number of include files in pthread_start.c (because     */
-/* sem_t and sem_post() are not used that file directly).               */
-GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
+  /* Called from GC_pthread_start_inner().  Defined in this file to     */
+  /* minimize the number of include files in pthread_start.c (because   */
+  /* sem_t and sem_post() are not used that file directly).             */
+  GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
                                         void *(**pstart)(void *),
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg)
-{
+  {
     struct start_info * si = (struct start_info *)arg;
     pthread_t self = pthread_self();
     GC_thread me;
@@ -2148,9 +2151,8 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     sem_post(&(si -> registered));      /* Last action on si.   */
                                         /* OK to deallocate.    */
     return me;
-}
+  }
 
-#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
   STATIC void * GC_pthread_start(void * arg)
   {
 #   ifdef INCLUDE_LINUX_THREAD_DESCR
@@ -2179,15 +2181,10 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
                        void *(*start_routine)(void *), void *arg)
   {
     int result;
-    int detachstate;
-    word my_flags = 0;
     struct start_info si;
+#     define psi (&si)
         /* This is otherwise saved only in an area mmapped by the thread */
         /* library, which isn't visible to the collector.                */
-
-    /* We resist the temptation to muck with the stack size here,       */
-    /* even if the default is unreasonably small.  That's the client's  */
-    /* responsibility.                                                  */
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
     INIT_REAL_SYMS();
@@ -2195,9 +2192,13 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     GC_ASSERT(GC_thr_initialized);
     if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) != 0)
       ABORT("sem_init failed");
+    si.flags = 0;
+    psi -> start_routine = start_routine;
+    psi -> arg = arg;
 
-    si.start_routine = start_routine;
-    si.arg = arg;
+    /* We resist the temptation to muck with the stack size here,       */
+    /* even if the default is unreasonably small.  That is the client's */
+    /* responsibility.                                                  */
 #   ifdef GC_ASSERTIONS
       {
         size_t stack_size = 0;
@@ -2228,14 +2229,16 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
         /* probably wouldn't work anyway.                       */
       }
 #   endif
-    if (NULL == attr) {
-        detachstate = PTHREAD_CREATE_JOINABLE;
-    } else {
+
+    if (attr != NULL) {
+        int detachstate;
+
         if (pthread_attr_getdetachstate(attr, &detachstate) != 0)
             ABORT("pthread_attr_getdetachstate failed");
+        if (PTHREAD_CREATE_DETACHED == detachstate)
+          psi -> flags |= DETACHED;
     }
-    if (PTHREAD_CREATE_DETACHED == detachstate) my_flags |= DETACHED;
-    si.flags = my_flags;
+
 #   ifdef DEBUG_THREADS
       GC_log_printf("About to start new thread from thread %p\n",
                     (void *)pthread_self());
@@ -2246,7 +2249,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
 #   endif
     set_need_to_lock();
     result = REAL_FUNC(pthread_create)(new_thread, attr,
-                                       GC_pthread_start, &si);
+                                       GC_pthread_start, psi);
 
     /* Wait until child has been added to the thread table.             */
     /* This also ensures that we hold onto the stack-allocated si until */
@@ -2259,10 +2262,10 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
             GC_log_printf("Started thread %p\n", (void *)(*new_thread));
 #       endif
         DISABLE_CANCEL(cancel_state);
-                /* pthread_create is not a cancellation point. */
+                /* pthread_create is not a cancellation point.  */
         while (0 != sem_wait(&si.registered)) {
 #           if defined(GC_HAIKU_THREADS)
-              /* To workaround some bug in Haiku semaphores. */
+              /* To workaround some bug in Haiku semaphores.    */
               if (EACCES == errno) continue;
 #           endif
             if (EINTR != errno) ABORT("sem_wait failed");
@@ -2270,8 +2273,10 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
         RESTORE_CANCEL(cancel_state);
     }
     sem_destroy(&si.registered);
+#     undef psi
     return result;
   }
+
 #endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
 
 #if defined(USE_SPIN_LOCK) || !defined(NO_PTHREAD_TRYLOCK)
