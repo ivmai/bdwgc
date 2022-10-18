@@ -675,7 +675,8 @@ STATIC void GC_delete_thread(thread_id_t id)
   /* been notified, then there may be more than one thread      */
   /* in the table with the same thread id.                      */
   /* This is OK, but we need a way to delete a specific one.    */
-  STATIC void GC_delete_gc_thread(GC_thread t)
+  /* Does not actually free GC_thread entry, only unlinks it.   */
+  STATIC void GC_delete_gc_thread_no_free(GC_thread t)
   {
     thread_id_t id = t -> id;
     int hv = THREAD_TABLE_INDEX(id);
@@ -687,7 +688,7 @@ STATIC void GC_delete_thread(thread_id_t id)
         prev = p;
         p = p -> tm.next;
     }
-    if (prev == 0) {
+    if (NULL == prev) {
         GC_threads[hv] = p -> tm.next;
     } else {
         GC_ASSERT(prev != &first_thread);
@@ -697,8 +698,6 @@ STATIC void GC_delete_thread(thread_id_t id)
 #   ifdef GC_DARWIN_THREADS
         mach_port_deallocate(mach_task_self(), p -> mach_thread);
 #   endif
-    GC_INTERNAL_FREE(p);
-
 #   ifdef DEBUG_THREADS
       GC_log_printf("Deleted thread %p, n_threads= %d\n",
                     (void *)id, GC_count_threads());
@@ -2081,8 +2080,10 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
       /* Here the pthread id may have been recycled.  Delete the thread */
       /* from GC_threads (unless it has been registered again from the  */
       /* client thread key destructor).                                 */
-      if (KNOWN_FINISHED(t))
-        GC_delete_gc_thread(t);
+      if (KNOWN_FINISHED(t)) {
+        GC_delete_gc_thread_no_free(t);
+        GC_INTERNAL_FREE(t);
+      }
       UNLOCK();
     }
     return result;
@@ -2104,7 +2105,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
       t -> flags |= DETACHED;
       /* Here the pthread id may have been recycled.    */
       if (KNOWN_FINISHED(t)) {
-        GC_delete_gc_thread(t);
+        GC_delete_gc_thread_no_free(t);
+        GC_INTERNAL_FREE(t);
       }
       UNLOCK();
     }
