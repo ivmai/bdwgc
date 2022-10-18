@@ -1091,7 +1091,7 @@ GC_INNER size_t GC_page_size = 0;
 #     ifdef USE_LIBC_PRIVATES
         if (0 != &__libc_ia64_register_backing_store_base
             && 0 != __libc_ia64_register_backing_store_base) {
-          /* Glibc 2.2.4 has a bug such that for dynamically linked     */
+          /* glibc 2.2.4 has a bug such that for dynamically linked     */
           /* executables __libc_ia64_register_backing_store_base is     */
           /* defined but uninitialized during constructor calls.        */
           /* Hence we check for both nonzero address and value.         */
@@ -1118,7 +1118,7 @@ GC_INNER size_t GC_page_size = 0;
     word result;
     ssize_t i, buf_offset = 0, len;
 
-    /* First try the easy way.  This should work for glibc 2.2  */
+    /* First try the easy way.  This should work for glibc 2.2. */
     /* This fails in a prelinked ("prelink" command) executable */
     /* since the correct value of __libc_stack_end never        */
     /* becomes visible to us.  The second test works around     */

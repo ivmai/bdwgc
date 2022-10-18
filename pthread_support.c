@@ -418,9 +418,9 @@ STATIC void * GC_mark_thread(void * id)
 
 #ifdef GLIBC_2_1_MUTEX_HACK
   /* Ugly workaround for a linux threads bug in the final versions      */
-  /* of glibc2.1.  Pthread_mutex_trylock sets the mutex owner           */
+  /* of glibc 2.1.  Pthread_mutex_trylock sets the mutex owner          */
   /* field even when it fails to acquire the mutex.  This causes        */
-  /* pthread_cond_wait to die.  Remove for glibc2.2.                    */
+  /* pthread_cond_wait to die.  Should not be needed for glibc 2.2.     */
   /* According to the man page, we should use                           */
   /* PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP, but that isn't actually   */
   /* defined.                                                           */
