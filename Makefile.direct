@@ -13,13 +13,13 @@
 # check-cpp-deps - same as check-cpp but do not run the test
 # cord/de - builds dumb editor based on cords.
 
-ABI_FLAG=
+ABI_FLAG?=
 # ABI_FLAG should be the cc flag that specifies the ABI.  On most
 # platforms this will be the empty string.  Possible values:
 # +DD64 for 64-bit executable on HP/UX.
 # -n32, -n64, -o32 for SGI/MIPS ABIs.
 
-AS_ABI_FLAG=$(ABI_FLAG)
+AS_ABI_FLAG?=$(ABI_FLAG)
 # ABI flag for assembler.  On HP/UX this is +A64 for 64 bit
 # executables.
 
@@ -45,9 +45,9 @@ VPATH= $(srcdir)
 # Path to atomic_ops source.
 AO_SRC_DIR=$(srcdir)/libatomic_ops
 
-CFLAGS_EXTRA=
+CFLAGS_EXTRA?=
 # We need CFLAGS_FOR_PIC because we might be building a shared library.
-CFLAGS= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
+CFLAGS?= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
   -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE \
   -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION \
   -DUSE_MMAP -DUSE_MUNMAP $(CFLAGS_FOR_PIC) $(CFLAGS_EXTRA)
@@ -77,7 +77,7 @@ HOSTCFLAGS=$(CFLAGS)
 # Look into doc/README.macros for the description of the "define arguments"
 # influencing the collector configuration.
 
-CXXFLAGS= $(CFLAGS)
+CXXFLAGS?= $(CFLAGS)
 AR= ar
 
 RANLIB= ranlib
