@@ -96,6 +96,10 @@
 # include "private/darwin_stop_world.h"
 #endif
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+# include <link.h>
+#endif
+
 #if !defined(NO_EXECUTE_PERMISSION)
   STATIC GC_bool GC_pages_executable = TRUE;
 #else
@@ -999,8 +1003,12 @@ GC_INNER size_t GC_page_size = 0;
         GC_ASSERT(I_HOLD_LOCK());
         GC_setup_temporary_fault_handler();
         if (SETJMP(GC_jmp_buf) == 0) {
+#         if defined(__CHERI_PURE_CAPABILITY__)
+            result = cheri_align_down(p, MIN_PAGE_SIZE);
+#         else
             result = (ptr_t)(((word)(p))
                               & ~(MIN_PAGE_SIZE-1));
+#         endif
             for (;;) {
                 if (up) {
                     if ((word)result >= (word)bound - MIN_PAGE_SIZE) {
@@ -1032,8 +1040,15 @@ GC_INNER size_t GC_page_size = 0;
 
     void * GC_find_limit(void * p, int up)
     {
+#     if defined(__CHERI_PURE_CAPABILITY__)
+        vaddr_t bound = up ? cheri_base_get(p) + cheri_length_get(p)
+                             : cheri_address_set(p, cheri_base_get(p));
+        return GC_find_limit_with_bound((ptr_t)p, (GC_bool)up,
+                                        cheri_address_set(p, bound));
+#     else  /* defined(__CHERI_PURE_CAPABILITY__) */
         return GC_find_limit_with_bound((ptr_t)p, (GC_bool)up,
                                         up ? (ptr_t)GC_WORD_MAX : 0);
+#     endif
     }
 # endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES */
 
@@ -2058,28 +2073,86 @@ void GC_register_data_segments(void)
       return(result);
     }
 # else  /* !defined(__CHERI_PURE_CAPABILITY__) */
+    /* The CheriBSD LLVM compiler declares `etext`, `edata` and `end` as */
+    /* typeless variables. If bdwgc is statically linked with the main   */
+    /* executable, these capabilities are compiled with read-only        */
+    /* permissions and bounds that span the .data and .bss sections.     */
+    /*                                                                   */
+    /* If bdwgc is compiled as a shared library, these symbols are       */
+    /* compiled with zero bounds and cannot be dereferenced. Instead,    */
+    /* read-only capability returned by the loader is utilised           */
+    struct scan_bounds {
+        vaddr_t start;
+        vaddr_t end;
+        ptr_t  ld_cap;
+    };
+#   define SPANNING_CAPABILITY(cap, start, end) \
+      (cheri_tag_get((cap)) \
+        && cheri_base_get((cap)) <= (start)    \
+        && (cheri_base_get((cap)) + cheri_length_get((cap))) >= (end) \
+        && (cheri_perms_get((cap)) & (CHERI_PERM_LOAD|CHERI_PERM_LOAD_CAP)) != 0)
+
+    STATIC int GC_ld_cap_search(struct dl_phdr_info *info, size_t size, void *data)
+    {
+      struct scan_bounds *region = (struct scan_bounds *)data;
+      ptr_t load_addr = info->dlpi_addr;
+
+      if (!region || !SPANNING_CAPABILITY(load_addr,
+             region->start, region->end)) {
+        return 0;
+      }
+
+      region->ld_cap = cheri_bounds_set(
+                                    cheri_address_set(load_addr, region->start),
+                                    (size_t)(region->end - region->start));
+      return 1;
+
+    }
+
+    GC_INNER ptr_t GC_derive_cap_from_ldr(ptr_t range_start, ptr_t range_end)
+    {
+      vaddr_t scan_start = cheri_address_get(range_start);
+      vaddr_t scan_end = cheri_address_get(range_end);
+      /* If symbols already span required range, return it. */
+      if (SPANNING_CAPABILITY(range_start, scan_start, scan_end)) {
+        return range_start;
+      } else if (SPANNING_CAPABILITY(range_end, scan_start, scan_end)) {
+        return range_end;
+      }
+
+      /* Fall-back option : derive .data + .bss end pointer from */
+      /* read-only capability provided by loader */
+      struct scan_bounds region = { .start = scan_start,
+                                    .end = scan_end,
+                                    .ld_cap = NULL };
+      if (!dl_iterate_phdr(GC_ld_cap_search, (void *)&region)) {
+        ABORT("Cannot find static roots for capability system");
+      }
+      return region.ld_cap;
+    }
+
     GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t max_page_size,
                                           ptr_t etext_addr)
     {
       volatile ptr_t cap_next_page = NULL;
-      vaddr_t text_end = (vaddr_t)cheri_align_up(etext_addr, sizeof(ptr_t));
+      ptr_t text_end = cheri_align_up(etext_addr, sizeof(ptr_t));
+      text_end = GC_derive_cap_from_ldr(text_end, DATAEND);
       /* etext rounded to word boundary       */
-      volatile vaddr_t next_page = (text_end + (word)max_page_size - 1)
-                                    & ~((word)max_page_size - 1);
-      volatile ptr_t result = (ptr_t)cheri_address_set(etext_addr, text_end);
+      volatile vaddr_t next_page = cheri_align_up(text_end, max_page_size);
+      volatile ptr_t result = text_end;
       GC_setup_temporary_fault_handler();
       if (SETJMP(GC_jmp_buf) == 0) {
           /* Try reading at the address.                          */
           /* This should happen before there is another thread.   */
           for (; next_page < (word)DATAEND; next_page += (word)max_page_size) {
-              cap_next_page = cheri_address_set(etext_addr, next_page);
-              *cap_next_page;
+              cap_next_page = cheri_address_set(text_end, next_page);
+              GC_noop1((word)(*cap_next_page));
           }
           GC_reset_fault_handler();
       } else {
           GC_reset_fault_handler();
           /* As above, we go to plan B    */
-          result = (ptr_t)GC_find_limit(DATAEND, FALSE);
+          result = (ptr_t)GC_find_limit(cheri_address_set(text_end,DATAEND), FALSE);
       }
       return(result);
     }

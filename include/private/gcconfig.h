@@ -943,7 +943,7 @@ EXTERN_C_BEGIN
 #   ifdef __ELF__
 #     define DYNAMIC_LOADING
 #   endif
-#   if !defined(ALPHA) && !defined(SPARC)
+#   if !defined(ALPHA) && !defined(SPARC) && !defined(RISCV)
       extern char etext[];
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #     define DATASTART_USES_BSDGETDATASTART
@@ -2131,6 +2131,10 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef FREEBSD
       /* Nothing specific. */
+#     ifdef __CHERI_PURE_CAPABILITY__
+        extern char end[];
+#       define DATAEND ((ptr_t)end)
+#     endif
 #   endif
 #   ifdef NETBSD
 #     define ELF_CLASS ELFCLASS64
@@ -2489,9 +2493,10 @@ EXTERN_C_BEGIN
 #     if 0  //FIXME CHERI  - commented to simplify initial port
 #     define DYNAMIC_LOADING   
 #     endif 
-      extern char etext[];
-#     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
+      extern char etext, edata, end;
+#     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)&etext)
 #     define DATASTART_USES_BSDGETDATASTART
+#     define DATAEND ((ptr_t)(&end))
 #   endif
 #   ifdef LINUX
       extern int __data_start[] __attribute__((__weak__));
