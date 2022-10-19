@@ -164,7 +164,7 @@ STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
 
 /* Return the free list index on which the block described by the header */
 /* appears, or -1 if it appears nowhere.                                 */
-static int free_list_index_of(hdr *wanted)
+static int free_list_index_of(const hdr *wanted)
 {
     int i;
 

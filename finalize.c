@@ -91,7 +91,7 @@ GC_API void GC_CALL GC_push_finalizer_structures(void)
 /* current size.  May be a no-op.  *table is a pointer to an array of   */
 /* hash headers.  We update both *table and *log_size_ptr on success.   */
 STATIC void GC_grow_table(struct hash_chain_entry ***table,
-                          unsigned *log_size_ptr, word *entries_ptr)
+                          unsigned *log_size_ptr, const word *entries_ptr)
 {
     word i;
     struct hash_chain_entry *p;

@@ -166,7 +166,7 @@ static void push_in_progress(ptr_t p)
   in_progress_space[n_in_progress++] = p;
 }
 
-static GC_bool is_in_progress(ptr_t p)
+static GC_bool is_in_progress(const char *p)
 {
   size_t i;
   for (i = 0; i < n_in_progress; ++i) {

@@ -1777,7 +1777,7 @@ GC_EXTERN size_t GC_page_size;
 
 #if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
   GC_EXTERN SYSTEM_INFO GC_sysinfo;
-  GC_INNER GC_bool GC_is_heap_base(void *p);
+  GC_INNER GC_bool GC_is_heap_base(const void *p);
 #endif
 
 GC_EXTERN word GC_black_list_spacing;

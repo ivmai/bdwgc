@@ -1826,13 +1826,12 @@ void GC_register_data_segments(void)
 
   /* Is p the base of one of the malloc heap sections we already know   */
   /* about?                                                             */
-  STATIC GC_bool GC_is_malloc_heap_base(void *p)
+  STATIC GC_bool GC_is_malloc_heap_base(const void *p)
   {
-    struct GC_malloc_heap_list *q = GC_malloc_heap_l;
+    struct GC_malloc_heap_list *q;
 
-    while (0 != q) {
+    for (q = GC_malloc_heap_l; q != NULL; q = q -> next) {
       if (q -> allocation_base == p) return TRUE;
-      q = q -> next;
     }
     return FALSE;
   }
@@ -1901,7 +1900,7 @@ void GC_register_data_segments(void)
 
   /* Is p the start of either the malloc heap, or of one of our */
   /* heap sections?                                             */
-  GC_INNER GC_bool GC_is_heap_base(void *p)
+  GC_INNER GC_bool GC_is_heap_base(const void *p)
   {
     int i;
 
@@ -2946,7 +2945,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #if (defined(CHECKSUMS) && (defined(GWW_VDB) || defined(SOFT_VDB))) \
     || defined(PROC_VDB)
     /* Add all pages in pht2 to pht1.   */
-    STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
+    STATIC void GC_or_pages(page_hash_table pht1, const word *pht2)
     {
       unsigned i;
       for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
