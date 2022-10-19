@@ -45,9 +45,9 @@ VPATH= $(srcdir)
 # Path to atomic_ops source.
 AO_SRC_DIR=$(srcdir)/libatomic_ops
 
-CFLAGS_EXTRA=
+CFLAGS_EXTRA+=
 # We need CFLAGS_FOR_PIC because we might be building a shared library.
-CFLAGS= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
+CFLAGS?= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
   -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE \
   -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION \
   -DUSE_MMAP -DUSE_MUNMAP $(CFLAGS_FOR_PIC) $(CFLAGS_EXTRA)
