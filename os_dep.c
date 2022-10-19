@@ -2244,7 +2244,8 @@ void GC_register_data_segments(void)
 #   undef IGNORE_PAGES_EXECUTABLE
 
     if (EXPECT(MAP_FAILED == result, FALSE)) {
-      if (HEAP_START == last_addr && GC_pages_executable && EACCES == errno)
+      if (HEAP_START == last_addr && GC_pages_executable
+          && (EACCES == errno || EPERM == errno))
         ABORT("Cannot allocate executable pages");
       return NULL;
     }
