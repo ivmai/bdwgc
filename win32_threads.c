@@ -1953,7 +1953,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
 # ifdef GC_PTHREADS_PARAMARK
 
-#   if defined(GC_ASSERTIONS) && !defined(NUMERIC_THREAD_ID)
+#   if defined(GC_ASSERTIONS) && !defined(USE_PTHREAD_LOCKS)
 #     define NUMERIC_THREAD_ID(id) (unsigned long)(word)GC_PTHREAD_PTRVAL(id)
       /* Id not guaranteed to be unique. */
 #   endif
