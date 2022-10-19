@@ -465,7 +465,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
     {
       IF_CANCEL(int cancel_state;)
 
-      if (GC_libpthread_start != 0) return;
       DISABLE_CANCEL(cancel_state);
       GC_init(); /* if not called yet */
       if (!GC_text_mapping("libpthread-",
@@ -473,8 +472,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
           WARN("Failed to find libpthread.so text mapping: Expect crash\n", 0);
           /* This might still work with some versions of libpthread,      */
           /* so we don't abort.  Perhaps we should.                       */
-          /* Generate message only once:                                  */
-            GC_libpthread_start = (ptr_t)1;
       }
       if (!GC_text_mapping("ld-", &GC_libld_start, &GC_libld_end)) {
           WARN("Failed to find ld.so text mapping: Expect crash\n", 0);
