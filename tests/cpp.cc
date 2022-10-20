@@ -72,7 +72,7 @@ extern "C" {
 class A {public:
     /* An uncollectible class. */
 
-    GC_ATTR_EXPLICIT A( int iArg ): i((A_I_TYPE)iArg) {}
+    GC_ATTR_EXPLICIT A(int iArg): i(static_cast<A_I_TYPE>(iArg)) {}
     void Test( int iArg ) {
         my_assert( i == iArg );}
     virtual ~A() {}
@@ -174,7 +174,9 @@ class D: public GC_NS_QUALIFY(gc) { public:
     static void CleanUp( void* obj, void* data ) {
         D* self = static_cast<D*>(obj);
         nFreed++;
-        my_assert( (GC_word)self->i == (GC_word)data );}
+        my_assert(static_cast<GC_word>(self->i)
+                    == reinterpret_cast<GC_word>(data));
+    }
     static void Test() {
 #       ifndef GC_NO_FINALIZATION
             my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
@@ -233,10 +235,12 @@ int F::nAllocatedF = 0;
 
 
 GC_word Disguise( void* p ) {
-    return ~ (GC_word) p;}
+    return GC_HIDE_POINTER(p);
+}
 
 void* Undisguise( GC_word i ) {
-    return (void*) ~ i;}
+    return GC_REVEAL_POINTER(i);
+}
 
 #define GC_CHECKED_DELETE(p) \
     { \
@@ -257,10 +261,11 @@ void* Undisguise( GC_word i ) {
     char* argv[ 3 ];
 
 #   if defined(CPPCHECK)
-      GC_noop1((GC_word)&WinMain);
+      GC_noop1(reinterpret_cast<GC_word>(&WinMain));
 #   endif
     if (cmd != 0)
-      for (argc = 1; argc < (int)(sizeof(argv) / sizeof(argv[0])); argc++) {
+      for (argc = 1; argc < static_cast<int>(sizeof(argv) / sizeof(argv[0]));
+           argc++) {
         // Parse the command-line string.  Non-reentrant strtok() is not used
         // to avoid complains of static analysis tools.  (And, strtok_r() is
         // not available on some platforms.)  The code is equivalent to:
@@ -292,7 +297,7 @@ void* Undisguise( GC_word i ) {
   int main() {
     char* argv_[] = {"cpptest", "7"}; // MacOS doesn't have a command line
     argv = argv_;
-    argc = sizeof(argv_)/sizeof(argv_[0]);
+    argc = sizeof(argv_) / sizeof(argv_[0]);
 #else
   int main( int argc, char* argv[] ) {
 #endif
@@ -352,7 +357,8 @@ void* Undisguise( GC_word i ) {
             C c1( 2 );           /* stack allocation should work too */
             D* d;
             F* f;
-            d = ::new (USE_GC, D::CleanUp, (void*)(GC_word)i) D( i );
+            d = ::new (USE_GC, D::CleanUp,
+                       reinterpret_cast<void*>(static_cast<GC_word>(i))) D(i);
             GC_reachable_here(d);
             f = new F;
             F** fa = new F*[1];
