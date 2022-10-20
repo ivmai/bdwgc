@@ -2890,9 +2890,10 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #if _MSC_VER >= 1700
 # define GC_STATIC_ASSERT(expr) \
                 static_assert(expr, "static assertion failed: " #expr)
-#elif defined(static_assert) && __STDC_VERSION__ >= 201112L
+#elif defined(static_assert) && !defined(CPPCHECK) \
+      && (__STDC_VERSION__ >= 201112L)
 # define GC_STATIC_ASSERT(expr) static_assert(expr, #expr)
-#elif defined(mips) && !defined(__GNUC__)
+#elif defined(mips) && !defined(__GNUC__) && !defined(CPPCHECK)
 /* DOB: MIPSPro C gets an internal error taking the sizeof an array type.
    This code works correctly (ugliness is to avoid "unused var" warnings) */
 # define GC_STATIC_ASSERT(expr) \
