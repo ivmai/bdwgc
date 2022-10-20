@@ -617,6 +617,16 @@ EXTERN_C_END
 
 EXTERN_C_BEGIN
 
+#if defined(CPPCHECK) \
+    && (defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32))
+# undef TEXT
+# ifdef UNICODE
+#   define TEXT(s) L##s
+# else
+#   define TEXT(s) s
+# endif
+#endif /* CPPCHECK */
+
 /*
  * Stop and restart mutator threads.
  */
