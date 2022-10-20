@@ -929,7 +929,8 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         /* Compute new world-stop delay total time */
         total_time = world_stopped_total_time;
         divisor = world_stopped_total_divisor;
-        if ((int)total_time < 0 || divisor >= MAX_TOTAL_TIME_DIVISOR) {
+        if (total_time > (((unsigned)-1) >> 1)
+            || divisor >= MAX_TOTAL_TIME_DIVISOR) {
           /* Halve values if overflow occurs */
           total_time >>= 1;
           divisor >>= 1;
