@@ -236,7 +236,6 @@ int screen_size = 0;
 /* terribly appropriate for tabs.                                                                       */
 void replace_line(int i, CORD s)
 {
-    CORD_pos p;
 #   if !defined(MACINTOSH)
         size_t len = CORD_len(s);
 #   endif
@@ -253,6 +252,8 @@ void replace_line(int i, CORD s)
         }
 #   endif
     if (CORD_cmp(screen[i], s) != 0) {
+        CORD_pos p;
+
         move(i, 0); clrtoeol(); move(i,0);
 
         CORD_FOR (p, s) {
