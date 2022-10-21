@@ -424,9 +424,8 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 /* for glibc 2.2.4+.  Unfortunately, it doesn't work for older  */
 /* versions.  Thanks to Jakub Jelinek for most of the code.     */
 
-#if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
-    || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)) \
-    || defined(HOST_ANDROID) /* Are others OK here, too? */
+#if GC_GLIBC_PREREQ(2, 3) || defined(HOST_ANDROID)
+                        /* Are others OK here, too? */
 # ifndef HAVE_DL_ITERATE_PHDR
 #   define HAVE_DL_ITERATE_PHDR
 # endif

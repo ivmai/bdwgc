@@ -4999,8 +4999,6 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 /* long as the frame pointer is explicitly stored.  In the case of gcc, */
 /* compiler flags (e.g. -fomit-frame-pointer) determine whether it is.  */
 #if defined(I386) && defined(LINUX) && defined(SAVE_CALL_CHAIN)
-#   include <features.h>
-
     struct frame {
         struct frame *fr_savfp;
         long    fr_savpc;
@@ -5012,8 +5010,6 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 
 #if defined(SPARC)
 # if defined(LINUX)
-#   include <features.h>
-
 #   if defined(SAVE_CALL_CHAIN)
       struct frame {
         long    fr_local[8];

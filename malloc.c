@@ -476,8 +476,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
         /* handling on the libgc side.  Checking glibc version at       */
         /* compile time to turn off the warning seems to be fine.       */
         /* TODO: Remove GC_text_mapping() call for this case.           */
-#       if defined(__GLIBC__) \
-           && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 34))
+#       if defined(__GLIBC__) && !GC_GLIBC_PREREQ(2, 34)
           WARN("Failed to find libpthread.so text mapping: Expect crash\n", 0);
           /* This might still work with some versions of libpthread,    */
           /* so we do not abort.                                        */

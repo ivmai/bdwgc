@@ -890,6 +890,20 @@ EXTERN_C_BEGIN
  * allocation.
  */
 
+# ifdef LINUX /* TODO: FreeBSD too? */
+    EXTERN_C_END
+#   include <features.h> /* for __GLIBC__ and __GLIBC_MINOR__, at least */
+    EXTERN_C_BEGIN
+# endif
+
+/* Convenient internal macro to test glibc version (if compiled against). */
+#if defined(__GLIBC__) && defined(__GLIBC_MINOR__)
+# define GC_GLIBC_PREREQ(major, minor) \
+            ((__GLIBC__ << 16) + __GLIBC_MINOR__ >= ((major) << 16) + (minor))
+#else
+# define GC_GLIBC_PREREQ(major, minor) 0 /* FALSE */
+#endif
+
 /* If available, we can use __builtin_unwind_init() to push the     */
 /* relevant registers onto the stack.                               */
 # if GC_GNUC_PREREQ(2, 8) \
@@ -976,9 +990,6 @@ EXTERN_C_BEGIN
 
 # ifdef LINUX
 #   define OS_TYPE "LINUX"
-    EXTERN_C_END
-#   include <features.h> /* for __GLIBC__ */
-    EXTERN_C_BEGIN
 #   if defined(FORCE_MPROTECT_BEFORE_MADVISE) \
        || defined(PREFER_MMAP_PROT_NONE)
 #     define COUNT_UNMAPPED_REGIONS
@@ -1134,9 +1145,9 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef LINUX
 #       ifdef __ELF__
-#         if defined(__GLIBC__) && __GLIBC__ >= 2
+#         if GC_GLIBC_PREREQ(2, 0)
 #           define SEARCH_FOR_DATA_START
-#         else /* !GLIBC2 */
+#         else
             extern char **__environ;
 #           define DATASTART ((ptr_t)(&__environ))
                              /* hideous kludge: __environ is the first */
@@ -1147,7 +1158,7 @@ EXTERN_C_BEGIN
                              /* would include .rodata, which may       */
                              /* contain large read-only data tables    */
                              /* that we'd rather not scan.             */
-#         endif /* !GLIBC2 */
+#         endif
 #       else
           extern int etext[];
 #         define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
@@ -1475,7 +1486,7 @@ EXTERN_C_BEGIN
                 /* This encourages mmap to give us low addresses,       */
                 /* thus allowing the heap to grow to ~3 GB.             */
 #       ifdef __ELF__
-#            if defined(__GLIBC__) && __GLIBC__ >= 2 \
+#            if GC_GLIBC_PREREQ(2, 0) \
                 || defined(HOST_ANDROID) || defined(HOST_TIZEN)
 #                define SEARCH_FOR_DATA_START
 #            else
@@ -1589,7 +1600,7 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef FREEBSD
-#       ifdef __GLIBC__
+#       if defined(__GLIBC__)
             extern int _end[];
 #           define DATAEND ((ptr_t)(_end))
 #       endif
@@ -1695,7 +1706,7 @@ EXTERN_C_BEGIN
 #     ifndef HBLKSIZE
 #       define HBLKSIZE 4096
 #     endif
-#     if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 2 || __GLIBC__ > 2
+#     if GC_GLIBC_PREREQ(2, 2)
 #       define LINUX_STACKBOTTOM
 #     else
 #       define STACKBOTTOM ((ptr_t)0x7fff8000)
@@ -2149,8 +2160,8 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef LINUX
-#       if defined(__GLIBC__) && __GLIBC__ >= 2 \
-                || defined(HOST_ANDROID) || defined(HOST_TIZEN)
+#       if GC_GLIBC_PREREQ(2, 0) \
+           || defined(HOST_ANDROID) || defined(HOST_TIZEN)
 #           define SEARCH_FOR_DATA_START
 #       else
             extern char **__environ;
@@ -2325,7 +2336,7 @@ EXTERN_C_BEGIN
 #     endif
 #   endif
 #   ifdef FREEBSD
-#       ifdef __GLIBC__
+#       if defined(__GLIBC__)
             extern int _end[];
 #           define DATAEND ((ptr_t)(_end))
 #       endif
@@ -2571,8 +2582,7 @@ EXTERN_C_BEGIN
 # define SVR4
 #endif
 
-#if defined(MPROTECT_VDB) && defined(__GLIBC__) \
-    && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 2))
+#if defined(MPROTECT_VDB) && defined(__GLIBC__) && !GC_GLIBC_PREREQ(2, 2)
 # error glibc too old?
 #endif
 
