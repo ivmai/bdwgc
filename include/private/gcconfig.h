@@ -1486,8 +1486,7 @@ EXTERN_C_BEGIN
                 /* This encourages mmap to give us low addresses,       */
                 /* thus allowing the heap to grow to ~3 GB.             */
 #       ifdef __ELF__
-#            if GC_GLIBC_PREREQ(2, 0) \
-                || defined(HOST_ANDROID) || defined(HOST_TIZEN)
+#            if GC_GLIBC_PREREQ(2, 0) || defined(HOST_ANDROID)
 #                define SEARCH_FOR_DATA_START
 #            else
                  extern char **__environ;
@@ -2160,8 +2159,7 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef LINUX
-#       if GC_GLIBC_PREREQ(2, 0) \
-           || defined(HOST_ANDROID) || defined(HOST_TIZEN)
+#       if GC_GLIBC_PREREQ(2, 0) || defined(HOST_ANDROID)
 #           define SEARCH_FOR_DATA_START
 #       else
             extern char **__environ;
