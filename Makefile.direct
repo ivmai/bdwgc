@@ -43,7 +43,7 @@ srcdir= .
 VPATH= $(srcdir)
 
 # Path to atomic_ops source.
-AO_SRC_DIR=$(srcdir)/libatomic_ops
+AO_SRC_DIR?= $(srcdir)/libatomic_ops
 
 CFLAGS_EXTRA?=
 # We need CFLAGS_FOR_PIC because we might be building a shared library.
@@ -65,8 +65,8 @@ CFLAGS?= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
 # part of the build process, i.e. on the build machine.  These will usually
 # be the same as CC and CFLAGS, except in a cross-compilation environment.
 # Note that HOSTCFLAGS should include any -D flags that affect thread support.
-HOSTCC=$(CC)
-HOSTCFLAGS=$(CFLAGS)
+HOSTCC?= $(CC)
+HOSTCFLAGS?= $(CFLAGS)
 
 # For dynamic library builds, it may be necessary to add flags to generate
 # PIC code, e.g. -fPIC on Linux.
@@ -127,13 +127,13 @@ CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/gc/cord.h \
   $(srcdir)/include/gc/ec.h $(srcdir)/include/gc/cord_pos.h
 
 # Executable file name extension.  For EMX, specify ".exe".
-EXEEXT=
+EXEEXT?=
 
 UTILS= if_mach$(EXEEXT) if_not_there$(EXEEXT) threadlibs$(EXEEXT)
 
 # Libraries needed for curses applications.  Only needed for de.
 # It might also require -ltermlib on some targets.
-CURSES= -lcurses
+CURSES?= -lcurses
 
 # The following is irrelevant on most systems.  But a few
 # versions of make otherwise fork the shell specified in
