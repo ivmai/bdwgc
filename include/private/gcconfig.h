@@ -2909,6 +2909,18 @@ EXTERN_C_BEGIN
 # define CLEAR_DOUBLE(x) (((word*)(x))[0] = 0, ((word*)(x))[1] = 0)
 #endif
 
+/* Some libc implementations like bionic, musl and glibc 2.34   */
+/* do not have libpthread.so because the pthreads-related code  */
+/* is located in libc.so, thus potential calloc calls from such */
+/* code are forwarded to real (libc) calloc without any special */
+/* handling on the libgc side.  Checking glibc version at       */
+/* compile time for the purpose seems to be fine.               */
+#if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC) \
+    && defined(__GLIBC__) && !GC_GLIBC_PREREQ(2, 34) \
+    && !defined(HAVE_LIBPTHREAD_SO)
+# define HAVE_LIBPTHREAD_SO
+#endif
+
 #if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC) \
     && !defined(INCLUDE_LINUX_THREAD_DESCR)
   /* Will not work, since libc and the dynamic loader use thread        */

@@ -456,10 +456,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
   }
 
 # if defined(GC_LINUX_THREADS)
-    STATIC ptr_t GC_libpthread_start = 0;
-    STATIC ptr_t GC_libpthread_end = 0;
-    STATIC ptr_t GC_libld_start = 0;
-    STATIC ptr_t GC_libld_end = 0;
+#   ifdef HAVE_LIBPTHREAD_SO
+      STATIC ptr_t GC_libpthread_start = NULL;
+      STATIC ptr_t GC_libpthread_end = NULL;
+#   endif
+    STATIC ptr_t GC_libld_start = NULL;
+    STATIC ptr_t GC_libld_end = NULL;
 
     STATIC void GC_init_lib_bounds(void)
     {
@@ -467,21 +469,14 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
 
       DISABLE_CANCEL(cancel_state);
       GC_init(); /* if not called yet */
-      if (!GC_text_mapping("libpthread-",
-                           &GC_libpthread_start, &GC_libpthread_end)) {
-        /* Some libc implementations like bionic, musl and glibc 2.34   */
-        /* do not have libpthread.so because the pthreads-related code  */
-        /* is located in libc.so, thus potential calloc calls from such */
-        /* code are forwarded to real (libc) calloc without any special */
-        /* handling on the libgc side.  Checking glibc version at       */
-        /* compile time to turn off the warning seems to be fine.       */
-        /* TODO: Remove GC_text_mapping() call for this case.           */
-#       if defined(__GLIBC__) && !GC_GLIBC_PREREQ(2, 34)
+#     ifdef HAVE_LIBPTHREAD_SO
+        if (!GC_text_mapping("libpthread-",
+                             &GC_libpthread_start, &GC_libpthread_end)) {
           WARN("Failed to find libpthread.so text mapping: Expect crash\n", 0);
           /* This might still work with some versions of libpthread,    */
           /* so we do not abort.                                        */
-#       endif
-      }
+        }
+#     endif
       if (!GC_text_mapping("ld-", &GC_libld_start, &GC_libld_end)) {
           WARN("Failed to find ld.so text mapping: Expect crash\n", 0);
       }
@@ -495,24 +490,29 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
         && lb && n > GC_SIZE_MAX / lb)
       return (*GC_get_oom_fn())(GC_SIZE_MAX); /* n*lb overflow */
 #   if defined(GC_LINUX_THREADS)
-      /* libpthread allocated some memory that is only pointed to by    */
+      /* The linker may allocate some memory that is only pointed to by */
       /* mmapped thread stacks.  Make sure it is not collectible.       */
       {
         static GC_bool lib_bounds_set = FALSE;
         ptr_t caller = (ptr_t)__builtin_return_address(0);
+
         /* This test does not need to ensure memory visibility, since   */
         /* the bounds will be set when/if we create another thread.     */
         if (!EXPECT(lib_bounds_set, TRUE)) {
           GC_init_lib_bounds();
           lib_bounds_set = TRUE;
         }
-        if (((word)caller >= (word)GC_libpthread_start
-             && (word)caller < (word)GC_libpthread_end)
-            || ((word)caller >= (word)GC_libld_start
-                && (word)caller < (word)GC_libld_end))
+        if (((word)caller >= (word)GC_libld_start
+             && (word)caller < (word)GC_libld_end)
+#           ifdef HAVE_LIBPTHREAD_SO
+              || ((word)caller >= (word)GC_libpthread_start
+                  && (word)caller < (word)GC_libpthread_end)
+                    /* The two ranges are actually usually adjacent,    */
+                    /* so there may be a way to speed this up.          */
+#           endif
+           ) {
           return GC_generic_malloc_uncollectable(n * lb, UNCOLLECTABLE);
-        /* The two ranges are actually usually adjacent, so there may   */
-        /* be a way to speed this up.                                   */
+        }
       }
 #   endif
     return (void *)REDIRECT_MALLOC_F(n * lb);
@@ -696,10 +696,13 @@ GC_API void GC_CALL GC_free(void * p)
         ptr_t caller = (ptr_t)__builtin_return_address(0);
         /* This test does not need to ensure memory visibility, since   */
         /* the bounds will be set when/if we create another thread.     */
-        if (((word)caller >= (word)GC_libpthread_start
-             && (word)caller < (word)GC_libpthread_end)
-            || ((word)caller >= (word)GC_libld_start
-                && (word)caller < (word)GC_libld_end)) {
+        if (((word)caller >= (word)GC_libld_start
+             && (word)caller < (word)GC_libld_end)
+#           ifdef HAVE_LIBPTHREAD_SO
+              || ((word)caller >= (word)GC_libpthread_start
+                  && (word)caller < (word)GC_libpthread_end)
+#           endif
+           ) {
           GC_free(p);
           return;
         }
