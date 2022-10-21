@@ -398,7 +398,7 @@ test: check
 # Currently works only under SunOS5.  Requires GC_INIT call from statically
 # loaded client code.
 ABSDIR= `pwd`
-gctest_dyn_link: tests/gcgctest.o libgc.so
+gctest_dyn_link: tests/gctest.o libgc.so
 	$(CC) -L$(ABSDIR) -R$(ABSDIR) -o gctest_dyn_link tests/gctest.o -lgc -ldl -lthread
 
 gctest_irix_dyn_link: tests/gctest.o libirixgc.so
