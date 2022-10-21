@@ -39,8 +39,6 @@
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
     && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
 
-#include <sched.h>
-
 /* Invoked from GC_pthread_start. */
 GC_INNER_PTHRSTART void *GC_CALLBACK GC_pthread_start_inner(
                                         struct GC_stack_base *sb, void *arg)
