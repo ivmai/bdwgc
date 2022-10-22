@@ -81,7 +81,7 @@ CXXFLAGS= $(CFLAGS)
 AR= ar
 RANLIB= ranlib
 
-
+# All .o files of libgc.a except for dyn_load.o.
 OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o \
   headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o  \
   malloc.o stubborn.o checksums.o pthread_support.o pthread_stop_world.o \
@@ -293,7 +293,7 @@ sunos5gc.so: $(OBJS) dyn_load_sunos53.o
 	ln sunos5gc.so libgc.so
 
 # Alpha/OSF shared library version of the collector
-libalphagc.so: $(OBJS)
+libalphagc.so: $(OBJS) dyn_load.o
 	$(LD) -shared -o libalphagc.so $(OBJS) dyn_load.o -lc
 	ln libalphagc.so libgc.so
 
