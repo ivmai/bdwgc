@@ -148,11 +148,11 @@ SPECIALCFLAGS= -I$(srcdir)/include -I$(AO_SRC_DIR)/src $(CFLAGS_FOR_PIC)
 all: base_lib cords c++
 
 atomic_ops.o: $(AO_SRC_DIR)/src/atomic_ops.c
-	$(CC) $(CFLAGS) -c -o $@ $(AO_SRC_DIR)/src/atomic_ops.c
+	$(CC) $(CFLAGS) -c $(AO_SRC_DIR)/src/atomic_ops.c
 # For some reason, Solaris make does not handle "$<" properly.
 
 atomic_ops_sysdeps.o: $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S
-	$(CC) $(CFLAGS) -c -o $@ $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S
+	$(CC) $(CFLAGS) -c $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S
 
 LEAK_CFLAGS= $(CFLAGS) -DFIND_LEAK
 
