@@ -46,11 +46,22 @@ VPATH= $(srcdir)
 AO_SRC_DIR?= $(srcdir)/libatomic_ops
 
 CFLAGS_EXTRA?=
+
 # We need CFLAGS_FOR_PIC because we might be building a shared library.
-CFLAGS?= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
+CFLAGS_FOR_PIC?=
+
+# The default libgc configuration, OK to customize it by client.
+CFLAGS_DEFAULT_MACROS?= \
   -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE \
   -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION \
-  -DUSE_MMAP -DUSE_MUNMAP $(CFLAGS_FOR_PIC) $(CFLAGS_EXTRA)
+  -DUSE_MMAP -DUSE_MUNMAP
+
+# The client or host might provide the default optimizations flags (e.g. -O2).
+CFLAGS?= -O
+
+# Add the required options to CFLAGS like -I option.
+CFLAGS+= -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
+  $(CFLAGS_DEFAULT_MACROS) $(CFLAGS_FOR_PIC) $(CFLAGS_EXTRA)
 
 # To build the collector with threads support, add to CFLAGS_EXTRA:
 # -DGC_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
