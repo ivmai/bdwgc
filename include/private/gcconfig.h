@@ -234,12 +234,13 @@ EXTERN_C_BEGIN
 #   elif defined(ultrix) || defined(__ultrix)
 #     define ULTRIX
 #     define mach_type_known
-#   elif !defined(LINUX) && !defined(NETBSD) && !defined(OPENBSD) \
-         && !defined(FREEBSD) && !defined(_WIN32_WCE) \
+#   elif defined(LINUX) || defined(NETBSD) || defined(OPENBSD)
+#     define mach_type_known
+#   elif !defined(FREEBSD) && !defined(_WIN32_WCE) \
          && !defined(__CEGCC__) && !defined(__MINGW32CE__)
 #     define IRIX5 /* or IRIX 6.X */
 #     define mach_type_known
-#   endif /* !LINUX && !xBSD && !MSWINCE */
+#   endif /* !FREEBSD && !MSWINCE */
 # endif
 # if defined(__QNX__)
 #   define I386
