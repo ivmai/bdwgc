@@ -2542,6 +2542,9 @@ void * os2_alloc(size_t bytes)
 #endif
 
 #if defined(HAIKU)
+# ifdef GC_LEAK_DETECTOR_H
+#   undef posix_memalign /* to use the real one */
+# endif
   ptr_t GC_haiku_get_mem(size_t bytes)
   {
     void* mem;
