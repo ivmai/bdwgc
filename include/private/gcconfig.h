@@ -808,10 +808,6 @@ EXTERN_C_BEGIN
 #   define DATASTART ((ptr_t)get_etext())
 #   define DATAEND   ((ptr_t)get_end())
 #   define USE_MMAP_ANON
-    EXTERN_C_END
-#   include <unistd.h>
-    EXTERN_C_BEGIN
-#   define GETPAGESIZE() (unsigned)getpagesize()
     /* There seems to be some issues with trylock hanging on darwin.    */
     /* TODO: This should be looked into some more.                      */
 #   define NO_PTHREAD_TRYLOCK
@@ -2417,23 +2413,20 @@ EXTERN_C_BEGIN
 # define DATAEND (__end__ != 0 ? (ptr_t)__end__ : (ptr_t)_end)
 #endif
 
-#if (defined(SVR4) || defined(HOST_ANDROID) || defined(HOST_TIZEN)) \
+#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
     && !defined(GETPAGESIZE)
-  EXTERN_C_END
-# include <unistd.h>
-  EXTERN_C_BEGIN
-# define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
-#endif
-
-#ifndef GETPAGESIZE
-# if defined(AIX) || defined(IRIX5) || defined(LINUX) || defined(SOLARIS) \
-     || defined(NETBSD) || defined(FREEBSD) || defined(HPUX)
+# if defined(AIX) || defined(DARWIN) || defined(IRIX5) || defined(LINUX) \
+     || defined(FREEBSD) || defined(NETBSD) || defined(SOLARIS)
     EXTERN_C_END
 #   include <unistd.h>
     EXTERN_C_BEGIN
 # endif
-# define GETPAGESIZE() (unsigned)getpagesize()
-#endif
+# if defined(HOST_ANDROID) || defined(HOST_TIZEN) || defined(SVR4)
+#   define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
+# else
+#   define GETPAGESIZE() (unsigned)getpagesize()
+# endif
+#endif /* !MSWIN32 && !GETPAGESIZE */
 
 #if defined(HOST_ANDROID) && !(__ANDROID_API__ >= 23) \
     && ((defined(MIPS) && (CPP_WORDSZ == 32)) \
