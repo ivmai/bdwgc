@@ -551,11 +551,19 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_malloc_uncollectable(size_t /* size_in_bytes */);
 GC_API GC_ATTR_DEPRECATED void * GC_CALL GC_malloc_stubborn(size_t);
 
-/* GC_memalign() is not well tested.                                    */
+/* The routines that guarantee the requested alignment of the allocated */
+/* memory object.  Note that GC_base() and GC_size() might return the   */
+/* value which is not the expected one (due to the alignment).          */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
         GC_memalign(size_t /* align */, size_t /* lb */);
 GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,
                         size_t /* lb */) GC_ATTR_NONNULL(1);
+#ifndef GC_NO_VALLOC
+  GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_valloc(size_t /* lb */);
+  GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_pvalloc(size_t /* lb */);
+#endif /* !GC_NO_VALLOC */
 
 /* Explicitly deallocate an object.  Dangerous if used incorrectly.     */
 /* Requires a pointer to the base of an object.                         */

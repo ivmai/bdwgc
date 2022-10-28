@@ -1772,6 +1772,13 @@ GC_EXTERN struct obj_kind {
 GC_EXTERN unsigned GC_n_kinds;
 
 GC_EXTERN size_t GC_page_size;
+                /* May mean the allocation granularity size, not page size. */
+
+#ifdef REAL_PAGESIZE_NEEDED
+  GC_EXTERN size_t GC_real_page_size;
+#else
+# define GC_real_page_size GC_page_size
+#endif
 
 /* Round up allocation size to a multiple of a page size.       */
 /* GC_setpagesize() is assumed to be already invoked.           */

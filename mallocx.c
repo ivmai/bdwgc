@@ -513,6 +513,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
     }
     /* We could also try to make sure that the real rounded-up object size */
     /* is a multiple of align.  That would be correct up to HBLKSIZE.      */
+    /* TODO: Not space efficient for big align values. */
     new_lb = SIZET_SAT_ADD(lb, align - 1);
     result = (ptr_t)GC_malloc(new_lb);
             /* It is OK not to check result for NULL as in that case    */
@@ -554,8 +555,25 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
   return 0;
 }
 
-/* provide a version of strdup() that uses the collector to allocate the
-   copy of the string */
+#ifndef GC_NO_VALLOC
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_valloc(size_t lb)
+  {
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
+    GC_ASSERT(GC_real_page_size != 0);
+    return GC_memalign(GC_real_page_size, lb);
+  }
+
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_pvalloc(size_t lb)
+  {
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
+    GC_ASSERT(GC_real_page_size != 0);
+    lb = SIZET_SAT_ADD(lb, GC_real_page_size - 1) & ~(GC_real_page_size - 1);
+    return GC_memalign(GC_real_page_size, lb);
+  }
+#endif /* !GC_NO_VALLOC */
+
+/* Provide a version of strdup() that uses the collector to allocate    */
+/* the copy of the string.                                              */
 GC_API GC_ATTR_MALLOC char * GC_CALL GC_strdup(const char *s)
 {
   char *copy;

@@ -698,8 +698,11 @@ struct o32_obj {
 
 # endif /* OS/2 */
 
-/* Find the page size */
+/* Find the page size.  */
 GC_INNER size_t GC_page_size = 0;
+#ifdef REAL_PAGESIZE_NEEDED
+  GC_INNER size_t GC_real_page_size = 0;
+#endif
 
 #if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 # ifndef VER_PLATFORM_WIN32_CE
@@ -715,17 +718,19 @@ GC_INNER size_t GC_page_size = 0;
   GC_INNER void GC_setpagesize(void)
   {
     GetSystemInfo(&GC_sysinfo);
-#   if defined(CYGWIN32) && (defined(MPROTECT_VDB) || defined(USE_MUNMAP))
+#   ifdef ALT_PAGESIZE_USED
       /* Allocations made with mmap() are aligned to the allocation     */
-      /* granularity, which (at least on Win64) is not the              */
-      /* same as the page size.  Probably a separate variable could     */
-      /* be added to distinguish the allocation granularity from the    */
-      /* actual page size, but in practice there is no good reason to   */
-      /* make allocations smaller than dwAllocationGranularity, so we   */
-      /* just use it instead of the actual page size here (as Cygwin    */
-      /* itself does in many cases).                                    */
+      /* granularity, which (at least on Win64) is not the same as the  */
+      /* page size.  Probably we could distinguish the allocation       */
+      /* granularity from the actual page size, but in practice there   */
+      /* is no good reason to make allocations smaller than             */
+      /* dwAllocationGranularity, so we just use it instead of the      */
+      /* actual page size here (as Cygwin itself does in many cases).   */
       GC_page_size = (size_t)GC_sysinfo.dwAllocationGranularity;
-      GC_ASSERT(GC_page_size >= (size_t)GC_sysinfo.dwPageSize);
+#     ifdef REAL_PAGESIZE_NEEDED
+        GC_real_page_size = (size_t)GC_sysinfo.dwPageSize;
+        GC_ASSERT(GC_page_size >= GC_real_page_size);
+#     endif
 #   else
       GC_page_size = (size_t)GC_sysinfo.dwPageSize;
 #   endif
@@ -816,16 +821,18 @@ GC_INNER size_t GC_page_size = 0;
 #else /* !MSWIN32 */
   GC_INNER void GC_setpagesize(void)
   {
-#   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(SOFT_VDB) \
-       || defined(USE_MMAP)
+#   ifdef ALT_PAGESIZE_USED
+#     ifdef REAL_PAGESIZE_NEEDED
+        GC_real_page_size = (size_t)GETPAGESIZE();
+#     endif
+      /* It's acceptable to fake it.    */
+      GC_page_size = HBLKSIZE;
+#   else
       GC_page_size = (size_t)GETPAGESIZE();
 #     if !defined(CPPCHECK)
         if (0 == GC_page_size)
           ABORT("getpagesize failed");
 #     endif
-#   else
-      /* It's acceptable to fake it.    */
-      GC_page_size = HBLKSIZE;
 #   endif
   }
 #endif /* !MSWIN32 */

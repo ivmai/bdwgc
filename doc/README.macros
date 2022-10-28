@@ -98,6 +98,9 @@ GC_REQUIRE_WCSDUP       Force GC to export GC_wcsdup() (the Unicode version
   of GC_strdup); could be useful in the leak-finding mode.  Clients should
   define it before including gc.h if the function is needed.
 
+GC_NO_VALLOC    Do not provide GC_valloc() and GC_pvalloc(), and do not
+  redirect the corresponding glibc functions in leak_detector.h.
+
 FIND_LEAK       Causes GC_find_leak to be initially set.  This causes the
   collector to assume that all inaccessible objects should have been
   explicitly deallocated, and reports exceptions.  Finalization and the test

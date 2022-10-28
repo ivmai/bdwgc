@@ -1542,11 +1542,25 @@ void run_one_test(void)
 
           (void)GC_malloc(17);
           AO_fetch_and_add1(&collectable_count);
+          /* TODO: GC_memalign and friends are not tested well. */
           for (i = sizeof(GC_word); i < 512; i *= 2) {
             GC_word result = (GC_word) GC_memalign(i, 17);
             if (result % i != 0 || result == 0 || *(int *)result != 0) FAIL;
           }
         }
+#     ifndef GC_NO_VALLOC
+        {
+          void *p = GC_valloc(78);
+
+          if (NULL == p || ((GC_word)p & 0x1ff /* at least */) != 0
+              || *(int *)p != 0)
+            FAIL;
+          p = GC_pvalloc(123);
+          /* Note: cannot check GC_size() result. */
+          if (NULL == p || ((GC_word)p & 0x1ff) != 0 || *(int *)p != 0)
+            FAIL;
+        }
+#     endif
 #     ifndef ALL_INTERIOR_POINTERS
 #       if defined(POWERPC)
           if (!TEST_FAIL_COUNT(1))

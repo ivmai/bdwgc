@@ -57,6 +57,13 @@
 #undef posix_memalign
 #define posix_memalign(p,a,n) GC_posix_memalign(p,a,n)
 
+#ifndef GC_NO_VALLOC
+# undef valloc
+# define valloc(n) GC_valloc(n)
+# undef pvalloc
+# define pvalloc(n) GC_pvalloc(n) /* obsolete */
+#endif /* !GC_NO_VALLOC */
+
 #ifndef CHECK_LEAKS
 # define CHECK_LEAKS() GC_gcollect()
   /* Note 1: CHECK_LEAKS does not have GC prefix (preserved for */

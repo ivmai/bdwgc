@@ -1182,7 +1182,7 @@ EXTERN_C_BEGIN
 #   define HEURISTIC1
 #   define NO_PTHREAD_GETATTR_NP
 #   define USE_MMAP_ANON
-#   define GETPAGESIZE() 65536
+#   define GETPAGESIZE() 65536 /* FIXME: Not real page size */
 #   define MAX_NACL_GC_THREADS 1024
 # endif
 
@@ -2834,6 +2834,20 @@ EXTERN_C_BEGIN
 
 #if defined(GWW_VDB) && !defined(USE_WINALLOC) && !defined(CPPCHECK)
 # error Invalid config: GWW_VDB requires USE_WINALLOC
+#endif
+
+/* Whether GC_page_size is to be set to a value other than page size.   */
+#if defined(CYGWIN32) && (defined(MPROTECT_VDB) || defined(USE_MUNMAP)) \
+    || (!defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
+        && (defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB)) \
+        && !defined(USE_MMAP))
+  /* Cygwin: use the allocation granularity instead.                    */
+  /* Other than Windows: use HBLKSIZE instead (unless mmap() is used).  */
+# define ALT_PAGESIZE_USED
+# ifndef GC_NO_VALLOC
+    /* Nonetheless, we need the real page size is some extra functions. */
+#   define REAL_PAGESIZE_NEEDED
+# endif
 #endif
 
 #if defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS) \
