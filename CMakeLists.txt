@@ -494,6 +494,12 @@ if (NOT HAVE_SIGSETJMP)
   add_definitions("-DGC_NO_SIGSETJMP")
 endif()
 
+# Build with GC_wcsdup() support if possible.
+check_symbol_exists(wcslen wchar.h HAVE_WCSLEN)
+if (HAVE_WCSLEN)
+  add_definitions("-DGC_REQUIRE_WCSDUP")
+endif()
+
 # pthread_setname_np, if available, may have 1, 2 or 3 arguments.
 if (CMAKE_USE_PTHREADS_INIT)
   check_c_source_compiles("

@@ -72,6 +72,10 @@ CFLAGS+= -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
 # To build the collector with fork() support by default, add to the above:
 # -DHANDLE_FORK
 
+# To build the collector with GC_wcsdup support, provided libc has wcslen(),
+# add to the above:
+# -DGC_REQUIRE_WCSDUP
+
 # HOSTCC and HOSTCFLAGS are used to build executables that will be run as
 # part of the build process, i.e. on the build machine.  These will usually
 # be the same as CC and CFLAGS, except in a cross-compilation environment.

@@ -828,6 +828,18 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <setjmp.h>],
    AC_DEFINE([GC_NO_SIGSETJMP], [1], [Missing sigsetjmp function.])])
 CFLAGS="$old_CFLAGS"
 
+# Build with GC_wcsdup() support if possible.
+AC_MSG_CHECKING(for wcslen)
+old_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $CFLAGS_EXTRA"
+AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <wchar.h>],
+                                [wchar_t ws[] = {0}; (void)wcslen(&ws)])],
+  [AC_MSG_RESULT(yes)
+   AC_DEFINE([GC_REQUIRE_WCSDUP], [1],
+             [Define and export GC_wcsdup function.])],
+  [AC_MSG_RESULT(no)])
+CFLAGS="$old_CFLAGS"
+
 # pthread_setname_np, if available, may have 1, 2 or 3 arguments.
 AS_IF([test "$THREADS" = posix],
   [AC_MSG_CHECKING(for pthread_setname_np)
