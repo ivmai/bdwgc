@@ -255,7 +255,7 @@ GC_INNER const char * GC_get_maps(void)
               if (maps_size > old_maps_size) {
                 /* This might be caused by e.g. thread creation. */
                 WARN("Unexpected asynchronous /proc/self/maps growth"
-                     " (to %" WARN_PRIdPTR " bytes)\n", maps_size);
+                     " (to %" WARN_PRIuPTR " bytes)\n", maps_size);
               }
 #           endif
         } while (maps_size >= maps_buf_sz
@@ -3719,8 +3719,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
         size_t new_size = 2 * GC_proc_buf_size;
         char *new_buf;
 
-        WARN("/proc read failed: GC_proc_buf_size= %" WARN_PRIdPTR "\n",
-             (signed_word)GC_proc_buf_size);
+        WARN("/proc read failed: GC_proc_buf_size= %" WARN_PRIuPTR "\n",
+             GC_proc_buf_size);
         new_buf = GC_scratch_alloc(new_size);
         if (new_buf != 0) {
             GC_scratch_recycle_no_gww(bufp, GC_proc_buf_size);

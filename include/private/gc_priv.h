@@ -718,7 +718,7 @@ EXTERN_C_BEGIN
 
 /* Print warning message, e.g. almost out of memory.    */
 /* The argument (if any) format specifier should be:    */
-/* "%s", "%p" or "%"WARN_PRIdPTR.                       */
+/* "%s", "%p", "%"WARN_PRIdPTR or "%"WARN_PRIuPTR.      */
 #define WARN(msg, arg) \
     (*GC_current_warn_proc)((/* no const */ char *)("GC Warning: " msg), \
                             (word)(arg))
@@ -730,8 +730,9 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 /* client side, so non-standard print type modifiers (like MS "I64d")   */
 /* should be avoided here if possible.                                  */
 #ifndef WARN_PRIdPTR
-  /* Assume sizeof(void *) == sizeof(long) (or a little-endian machine) */
+  /* Assume sizeof(void *) == sizeof(long) or a little-endian machine.  */
 # define WARN_PRIdPTR "ld"
+# define WARN_PRIuPTR "lu"
 #endif
 
 /* A tagging macro (for a code static analyzer) to indicate that the    */

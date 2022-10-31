@@ -138,7 +138,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
         result = (ptr_t)GET_MEM(bytes_to_get);
         if (EXPECT(NULL == result, FALSE)) {
             WARN("Out of memory - trying to allocate requested amount"
-                 " (%" WARN_PRIdPTR " bytes)...\n", (word)bytes);
+                 " (%" WARN_PRIuPTR " bytes)...\n", bytes);
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = (ptr_t)GET_MEM(bytes_to_get);
             if (result != NULL) {
