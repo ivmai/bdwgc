@@ -590,7 +590,7 @@ STATIC void GC_delete_thread(thread_id_t id)
     GC_vthread t = GC_lookup_thread(id);
 
     if (EXPECT(NULL == t, FALSE)) {
-      WARN("Removing nonexistent thread, id= %" WARN_PRIdPTR "\n", id);
+      WARN("Removing nonexistent thread, id= %" WARN_PRIuPTR "\n", id);
     } else {
       GC_delete_gc_thread_no_free(t);
     }

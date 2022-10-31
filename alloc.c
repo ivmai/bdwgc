@@ -1529,14 +1529,13 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     }
     space = GET_MEM(bytes);
     if (EXPECT(NULL == space, FALSE)) {
-        WARN("Failed to expand heap by %" WARN_PRIdPTR " bytes\n",
-             (word)bytes);
+        WARN("Failed to expand heap by %" WARN_PRIuPTR " KiB\n", bytes >> 10);
         return FALSE;
     }
     GC_add_to_our_memory((ptr_t)space, bytes);
     GC_last_heap_growth_gc_no = GC_gc_no;
     GC_INFOLOG_PRINTF("Grow heap to %lu KiB after %lu bytes allocated\n",
-                      TO_KiB_UL(GC_heapsize + (word)bytes),
+                      TO_KiB_UL(GC_heapsize + bytes),
                       (unsigned long)GC_bytes_allocd);
 
     /* Adjust heap limits generously for blacklisting to work better.   */
@@ -1708,7 +1707,10 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
         GC_gcollect_inner();
       } else {
 #       if !defined(AMIGA) || !defined(GC_AMIGA_FASTALLOC)
-          WARN("Out of Memory! Heap size: %" WARN_PRIdPTR " MiB."
+#         ifdef USE_MUNMAP
+            GC_ASSERT(GC_heapsize >= GC_unmapped_bytes);
+#         endif
+          WARN("Out of Memory! Heap size: %" WARN_PRIuPTR " MiB."
                " Returning NULL!\n", (GC_heapsize - GC_unmapped_bytes) >> 20);
 #       endif
         RESTORE_CANCEL(cancel_state);
