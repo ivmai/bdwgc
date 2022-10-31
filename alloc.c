@@ -1251,6 +1251,9 @@ STATIC void GC_finish_collection(void)
 #   endif
 }
 
+STATIC word GC_heapsize_at_forced_unmap = 0;
+                                /* accessed with the allocation lock held */
+
 /* If stop_func == 0 then GC_default_stop_func is used instead.         */
 STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
                                          GC_bool force_unmap)
@@ -1264,14 +1267,17 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
     if (GC_debugging_started) GC_print_all_smashed();
     GC_INVOKE_FINALIZERS();
     LOCK();
+    if (force_unmap) {
+      /* Record current heap size to make heap growth more conservative */
+      /* afterwards (as if the heap is growing from zero size again).   */
+      GC_heapsize_at_forced_unmap = GC_heapsize;
+    }
     DISABLE_CANCEL(cancel_state);
 #   ifdef USE_MUNMAP
       old_unmap_threshold = GC_unmap_threshold;
       if (force_unmap ||
           (GC_force_unmap_on_gcollect && old_unmap_threshold > 0))
         GC_unmap_threshold = 1; /* unmap as much as possible */
-#   else
-      UNUSED_ARG(force_unmap);
 #   endif
     ENTER_GC();
     /* Minimize junk left in my registers */
@@ -1306,13 +1312,8 @@ GC_API void GC_CALL GC_gcollect(void)
       GC_print_all_errors();
 }
 
-STATIC word GC_heapsize_at_forced_unmap = 0;
-
 GC_API void GC_CALL GC_gcollect_and_unmap(void)
 {
-    /* Record current heap size to make heap growth more conservative   */
-    /* afterwards (as if the heap is growing from zero size again).     */
-    GC_heapsize_at_forced_unmap = GC_heapsize;
     /* Collect and force memory unmapping to OS. */
     (void)GC_try_to_collect_general(GC_never_stop_func, TRUE);
 }
