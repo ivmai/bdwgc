@@ -1264,7 +1264,8 @@ GC_INNER void GC_thr_init(void)
     GC_nprocs = GC_get_nprocs();
   }
   if (GC_nprocs <= 0) {
-    WARN("GC_get_nprocs() returned %" WARN_PRIdPTR "\n", GC_nprocs);
+    WARN("GC_get_nprocs() returned %" WARN_PRIdPTR "\n",
+         (signed_word)GC_nprocs);
     GC_nprocs = 2; /* assume dual-core */
 #   ifdef PARALLEL_MARK
       available_markers_m1 = 0; /* but use only one marker */
