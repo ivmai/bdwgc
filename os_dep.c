@@ -3703,7 +3703,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
         size_t new_size = 2 * GC_proc_buf_size;
         char *new_buf;
 
-        WARN("/proc read failed: GC_proc_buf_size= %" WARN_PRIuPTR "\n",
+        WARN("/proc read failed (buffer size is %" WARN_PRIuPTR " bytes)\n",
              GC_proc_buf_size);
         new_buf = GC_scratch_alloc(new_size);
         if (new_buf != 0) {
