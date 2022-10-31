@@ -341,7 +341,8 @@ STATIC int GC_nprocs = 1;
     int err = pthread_setname_np(pthread_self(), "GC-marker-%zu",
                                  (void*)(size_t)id);
     if (EXPECT(err != 0, FALSE))
-      WARN("pthread_setname_np failed, errno= %" WARN_PRIdPTR "\n", err);
+      WARN("pthread_setname_np failed, errno= %" WARN_PRIdPTR "\n",
+           (signed_word)err);
   }
 #elif defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) \
       || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
@@ -506,7 +507,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
 
       if (REAL_FUNC(pthread_sigmask)(SIG_BLOCK, &set, &oldset) < 0) {
         WARN("pthread_sigmask set failed, no markers started,"
-             " errno= %" WARN_PRIdPTR "\n", errno);
+             " errno= %" WARN_PRIdPTR "\n", (signed_word)errno);
         GC_markers_m1 = 0;
         (void)pthread_attr_destroy(&attr);
         return;
@@ -521,7 +522,8 @@ GC_INNER void GC_start_mark_threads_inner(void)
 
       if (REAL_FUNC(pthread_create)(&new_thread, &attr, GC_mark_thread,
                                     (void *)(word)i) != 0) {
-        WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
+        WARN("Marker thread %" WARN_PRIdPTR " creation failed\n",
+             (signed_word)i);
         /* Don't try to create other marker threads.    */
         GC_markers_m1 = i;
         break;
@@ -532,7 +534,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
       /* Restore previous signal mask.  */
       if (REAL_FUNC(pthread_sigmask)(SIG_SETMASK, &oldset, NULL) < 0) {
         WARN("pthread_sigmask restore failed, errno= %" WARN_PRIdPTR "\n",
-             errno);
+             (signed_word)errno);
       }
 #   endif
 
@@ -926,7 +928,8 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
     len = STAT_READ(f, stat_buf, sizeof(stat_buf)-1);
     /* Unlikely that we need to retry because of an incomplete read here. */
     if (len < 0) {
-      WARN("Failed to read /proc/stat, errno= %" WARN_PRIdPTR "\n", errno);
+      WARN("Failed to read /proc/stat, errno= %" WARN_PRIdPTR "\n",
+           (signed_word)errno);
       close(f);
       return 1;
     }
@@ -1419,7 +1422,8 @@ GC_INNER void GC_thr_init(void)
     GC_nprocs = GC_get_nprocs();
   }
   if (GC_nprocs <= 0) {
-    WARN("GC_get_nprocs() returned %" WARN_PRIdPTR "\n", GC_nprocs);
+    WARN("GC_get_nprocs() returned %" WARN_PRIdPTR "\n",
+         (signed_word)GC_nprocs);
     GC_nprocs = 2; /* assume dual-core */
 #   ifdef PARALLEL_MARK
       available_markers_m1 = 0; /* but use only one marker */

@@ -2003,7 +2003,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
           ABORT("sigfillset failed");
         if (EXPECT(pthread_sigmask(SIG_BLOCK, &set, &oldset) < 0, FALSE)) {
           WARN("pthread_sigmask set failed, no markers started,"
-               " errno= %" WARN_PRIdPTR "\n", errno);
+               " errno= %" WARN_PRIdPTR "\n", (signed_word)errno);
           GC_markers_m1 = 0;
           (void)pthread_attr_destroy(&attr);
           return;
@@ -2017,7 +2017,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         marker_last_stack_min[i] = ADDR_LIMIT;
         if (EXPECT(0 != pthread_create(&new_thread, &attr, GC_mark_thread,
                                        (void *)(word)i), FALSE)) {
-          WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
+          WARN("Marker thread %" WARN_PRIdPTR " creation failed\n",
+               (signed_word)i);
           /* Don't try to create other marker threads.    */
           GC_markers_m1 = i;
           break;
@@ -2028,7 +2029,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         /* Restore previous signal mask.        */
         if (EXPECT(pthread_sigmask(SIG_SETMASK, &oldset, NULL) < 0, FALSE)) {
           WARN("pthread_sigmask restore failed, errno= %" WARN_PRIdPTR "\n",
-               errno);
+               (signed_word)errno);
         }
 #     endif
 
@@ -2179,7 +2180,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                                 GC_mark_thread, (LPVOID)(word)i,
                                 0 /* fdwCreate */, &thread_id);
           if (EXPECT(NULL == handle, FALSE)) {
-            WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
+            WARN("Marker thread %" WARN_PRIdPTR " creation failed\n",
+                 (signed_word)i);
             /* The most probable failure reason is "not enough memory". */
             /* Don't try to create other marker threads.                */
             break;
@@ -2195,7 +2197,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                                 MARK_THREAD_STACK_SIZE, GC_mark_thread,
                                 (void *)(word)i, 0 /* flags */, &thread_id);
           if (EXPECT(!handle || handle == (GC_uintptr_t)-1L, FALSE)) {
-            WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
+            WARN("Marker thread %" WARN_PRIdPTR " creation failed\n",
+                 (signed_word)i);
             /* Don't try to create other marker threads.                */
             break;
           } else {/* We may detach the thread (if handle is of HANDLE type) */
