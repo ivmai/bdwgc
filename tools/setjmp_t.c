@@ -21,21 +21,23 @@
 /* has no callee-save registers, then the generic code is    */
 /* safe, but this will not be noticed by this piece of       */
 /* code.)  This test appears to be far from perfect.         */
+
 #include <stdio.h>
 #include <setjmp.h>
 #include <string.h>
+
 #include "private/gc_priv.h"
 
 #ifdef OS2
-/* GETPAGESIZE() is set to getpagesize() by default, but that   */
-/* doesn't really exist, and the collector doesn't need it.     */
-#define INCL_DOSFILEMGR
-#define INCL_DOSMISC
-#define INCL_DOSERRORS
-#include <os2.h>
+# define INCL_DOSERRORS
+# define INCL_DOSFILEMGR
+# define INCL_DOSMISC
+# include <os2.h>
 
-int getpagesize(void)
-{
+  /* Similar to that in os_dep.c but use fprintf() to report a failure. */
+  /* GETPAGESIZE() macro is defined to os2_getpagesize().               */
+  static int os2_getpagesize(void)
+  {
     ULONG result[1];
 
     if (DosQuerySysInfo(QSV_PAGE_SIZE, QSV_PAGE_SIZE,
@@ -44,7 +46,7 @@ int getpagesize(void)
         result[0] = 4096;
     }
     return (int)result[0];
-}
+  }
 
 #elif defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
   static int win32_getpagesize(void)

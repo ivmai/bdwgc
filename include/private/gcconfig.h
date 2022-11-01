@@ -1438,6 +1438,7 @@ EXTERN_C_BEGIN
                 /* os_dep.c. OS2 actually has the right                 */
                 /* system call!                                         */
 #       define DATAEND  /* not needed */
+#       define GETPAGESIZE() os2_getpagesize()
 #   endif
 #   ifdef MSWIN32
 #       define WOW64_THREAD_CONTEXT_WORKAROUND

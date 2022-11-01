@@ -689,11 +689,13 @@ struct o32_obj {
 
 # endif  /* __IBMC__ */
 
-# define INCL_DOSEXCEPTIONS
-# define INCL_DOSPROCESS
 # define INCL_DOSERRORS
-# define INCL_DOSMODULEMGR
+# define INCL_DOSEXCEPTIONS
+# define INCL_DOSFILEMGR
 # define INCL_DOSMEMMGR
+# define INCL_DOSMISC
+# define INCL_DOSMODULEMGR
+# define INCL_DOSPROCESS
 # include <os2.h>
 
 # endif /* OS/2 */
@@ -819,6 +821,21 @@ GC_INNER size_t GC_page_size = 0;
 # define HAVE_GET_STACK_BASE
 
 #else /* !MSWIN32 */
+
+# ifdef OS2
+    static int os2_getpagesize(void)
+    {
+      ULONG result[1];
+
+      if (DosQuerySysInfo(QSV_PAGE_SIZE, QSV_PAGE_SIZE,
+                          (void *)result, sizeof(ULONG)) != NO_ERROR) {
+        WARN("DosQuerySysInfo failed\n", 0);
+        result[0] = 4096;
+      }
+      return (int)result[0];
+    }
+# endif /* OS2 */
+
   GC_INNER void GC_setpagesize(void)
   {
 #   ifdef ALT_PAGESIZE_USED
