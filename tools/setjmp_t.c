@@ -47,12 +47,13 @@ int getpagesize(void)
 }
 
 #elif defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-  int getpagesize(void)
+  static int win32_getpagesize(void)
   {
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);
     return sysinfo.dwPageSize;
   }
+# define GETPAGESIZE() win32_getpagesize()
 #endif
 
 struct a_s {
