@@ -3022,8 +3022,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
           if (i != 0 && last_warned != start && warn_count++ < 5) {
             last_warned = start;
-            WARN("GC_gww_read_dirty unexpectedly failed at %p: "
-                 "Falling back to marking all pages dirty\n", start);
+            WARN("GC_gww_read_dirty unexpectedly failed at %p:"
+                 " Falling back to marking all pages dirty\n", start);
           }
           if (!output_unneeded) {
             unsigned j;
@@ -4678,8 +4678,8 @@ GC_INNER GC_bool GC_dirty_init(void)
   GC_VERBOSE_LOG_PRINTF("Initializing mach/darwin mprotect"
                         " virtual dirty bit implementation\n");
 # ifdef BROKEN_EXCEPTION_HANDLING
-    WARN("Enabling workarounds for various darwin "
-         "exception handling bugs\n", 0);
+    WARN("Enabling workarounds for various darwin exception handling bugs\n",
+         0);
 # endif
   if (GC_page_size % HBLKSIZE != 0) {
     ABORT("Page size not multiple of HBLKSIZE");

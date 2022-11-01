@@ -840,8 +840,8 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
                 /* Punt, since anything else risks unreasonable heap growth. */
                 if (++GC_large_alloc_warn_suppressed
                     >= GC_large_alloc_warn_interval) {
-                  WARN("Repeated allocation of very large block "
-                       "(appr. size %" WARN_PRIuPTR " KiB):\n"
+                  WARN("Repeated allocation of very large block"
+                       " (appr. size %" WARN_PRIuPTR " KiB):\n"
                        "\tMay lead to memory leak and poor performance\n",
                        (word)size_needed >> 10);
                   GC_large_alloc_warn_suppressed = 0;

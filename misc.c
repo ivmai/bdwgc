@@ -1156,8 +1156,8 @@ GC_API void GC_CALL GC_init(void)
       if (0 != interval_string) {
         long interval = atol(interval_string);
         if (interval <= 0) {
-          WARN("GC_LARGE_ALLOC_WARN_INTERVAL environment variable has "
-               "bad value: Ignoring\n", 0);
+          WARN("GC_LARGE_ALLOC_WARN_INTERVAL environment variable has"
+               " bad value - ignoring\n", 0);
         } else {
           GC_large_alloc_warn_interval = interval;
         }
@@ -1225,7 +1225,7 @@ GC_API void GC_CALL GC_init(void)
       GC_exclude_static_roots_inner(beginGC_aobjfreelist, endGC_aobjfreelist);
 #   endif
 #   if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
-        WARN("USE_PROC_FOR_LIBRARIES + GC_LINUX_THREADS performs poorly.\n", 0);
+        WARN("USE_PROC_FOR_LIBRARIES + GC_LINUX_THREADS performs poorly\n", 0);
         /* If thread stacks are cached, they tend to be scanned in      */
         /* entirety as part of the root set.  This will grow them to    */
         /* maximum size, and is generally not desirable.                */
@@ -1241,7 +1241,8 @@ GC_API void GC_CALL GC_init(void)
       } else {
 #       if (defined(LINUX) || defined(HPUX)) && defined(IA64)
           if (GC_register_stackbottom == 0) {
-            WARN("GC_register_stackbottom should be set with GC_stackbottom\n", 0);
+            WARN("GC_register_stackbottom should be set with GC_stackbottom\n",
+                 0);
             /* The following may fail, since we may rely on             */
             /* alignment properties that may not hold with a user set   */
             /* GC_stackbottom.                                          */
@@ -1303,7 +1304,7 @@ GC_API void GC_CALL GC_init(void)
         if (sz_str != NULL) {
           word value = GC_parse_mem_size_arg(sz_str);
           if (GC_WORD_MAX == value) {
-            WARN("Bad initial heap size %s - ignoring it.\n", sz_str);
+            WARN("Bad initial heap size %s - ignoring\n", sz_str);
           } else {
             initial_heap_sz = value;
           }
@@ -1314,7 +1315,7 @@ GC_API void GC_CALL GC_init(void)
         if (sz_str != NULL) {
           word max_heap_sz = GC_parse_mem_size_arg(sz_str);
           if (max_heap_sz < initial_heap_sz || GC_WORD_MAX == max_heap_sz) {
-            WARN("Bad maximum heap size %s - ignoring it.\n", sz_str);
+            WARN("Bad maximum heap size %s - ignoring\n", sz_str);
           } else {
             if (0 == GC_max_retries) GC_max_retries = 2;
             GC_set_max_heap_size(max_heap_sz);
