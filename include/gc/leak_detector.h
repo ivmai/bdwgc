@@ -54,6 +54,8 @@
 # define wcsdup(s) GC_WCSDUP(s)
 #endif
 
+#undef aligned_alloc
+#define aligned_alloc(a,n) GC_memalign(a,n) /* identical to memalign */
 #undef memalign
 #define memalign(a,n) GC_memalign(a,n)
 #undef posix_memalign
