@@ -244,7 +244,7 @@ REDIRECT_MALLOC=<X>     Causes malloc to be defined as alias for X.
   you should only use GC_debug_malloc_replacement as a malloc
   replacement.
 
-REDIRECT_REALLOC=<X>    Causes GC_realloc to be redirected to X.
+REDIRECT_REALLOC=<X>    Causes realloc to be redirected to X.
   The canonical use is REDIRECT_REALLOC=GC_debug_realloc_replacement,
   together with REDIRECT_MALLOC=GC_debug_malloc_replacement to
   generate leak reports with call stacks for both malloc and realloc.
