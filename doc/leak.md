@@ -35,9 +35,9 @@ To use the collector as a leak detector, do the following steps:
 
 The second step can usually be accomplished with the
 `-DREDIRECT_MALLOC=GC_malloc` option when the collector is built, or by
-defining `malloc`, `calloc`, `realloc`, `free` (as well as `strdup`,
-`strndup`, `wcsdup`, `posix_memalign`, BSD `memalign`, GNU `valloc`, GNU
-`pvalloc`) to call the corresponding garbage collector functions. But this,
+defining `malloc`, `calloc`, `realloc`, `free` (as well as `posix_memalign`,
+`reallocarray`, `strdup`, `strndup`, `wcsdup`, BSD `memalign`, GNU `valloc`,
+GNU `pvalloc`) to call the corresponding garbage collector function. But this,
 by itself, will not yield very informative diagnostics, since the collector
 does not keep track of the information about how objects were allocated. The
 error reports will include only object addresses.

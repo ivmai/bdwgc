@@ -19,7 +19,8 @@ int main(void) {
     }
     CHECK_LEAKS();
     for (i = 1; i < N_TESTS / 2; ++i) {
-        p[i] = (char*)realloc(p[i], i * 16 + 1);
+        p[i] = (char*)((i & 1) != 0 ? reallocarray(p[i], i, 43)
+                                    : realloc(p[i], i * 16 + 1));
     }
     CHECK_LEAKS();
     for (i = 1; i < N_TESTS; ++i) {
