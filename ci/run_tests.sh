@@ -87,7 +87,8 @@ setup
 # Execute 
 run OK "bdwgc_install/bin/small_fixed_alloc.elf"  \
        "bdwgc_install/bin/random_mixed_alloc.elf" \
-       "bdwgc_install/bin/huge.elf"               \
        "bdwgc_install/bin/smash_test.elf"         \
        "bdwgc_install/bin/leak.elf"               \
-       "bdwgc_install/bin/binary_tree.elf"
+       "bdwgc_install/bin/binary_tree.elf"        \
+       "bdwgc_install/bin/huge.elf"               \
+       "bdwgc_install/bin/richards.elf"           \

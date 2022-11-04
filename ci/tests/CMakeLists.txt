@@ -12,12 +12,14 @@ add_executable(binary_tree.elf binary_tree.c)
 add_executable(smash_test.elf smash.c)
 add_executable(huge.elf huge.c)
 add_executable(leak.elf leak.c)
+add_executable(richards.elf richards.c)
 target_link_libraries(random_mixed_alloc.elf libpthread.so ${CMAKE_INSTALL_PREFIX}/lib/libgc.so)
 target_link_libraries(small_fixed_alloc.elf libpthread.so ${CMAKE_INSTALL_PREFIX}/lib/libgc.so)
 target_link_libraries(binary_tree.elf libm.so libpthread.so ${CMAKE_INSTALL_PREFIX}/lib/libgc.so)
 target_link_libraries(huge.elf libpthread.so ${CMAKE_INSTALL_PREFIX}/lib/libgc.so)
 target_link_libraries(smash_test.elf libpthread.so ${CMAKE_INSTALL_PREFIX}/lib/libgc.so)
 target_link_libraries(leak.elf libpthread.so ${CMAKE_INSTALL_PREFIX}/lib/libgc.so)
+target_link_libraries(richards.elf libpthread.so ${CMAKE_INSTALL_PREFIX}/lib/libgc.so)
 
 install(TARGETS random_mixed_alloc.elf
                 small_fixed_alloc.elf
@@ -25,4 +27,5 @@ install(TARGETS random_mixed_alloc.elf
                 huge.elf
                 smash_test.elf
                 leak.elf
+                richards.elf
                 RUNTIME DESTINATION bin)
