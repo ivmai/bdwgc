@@ -444,8 +444,7 @@ start_mark_threads(void)
     for (i = 0; i < available_markers_m1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
-        WARN("Marker thread creation failed, errno = %" WARN_PRIdPTR "\n",
-             errno);
+        WARN("Marker thread creation failed\n", 0);
         /* Don't try to create other marker threads.    */
         GC_markers_m1 = i;
         break;
