@@ -2002,8 +2002,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         if (sigfillset(&set) != 0)
           ABORT("sigfillset failed");
         if (EXPECT(pthread_sigmask(SIG_BLOCK, &set, &oldset) < 0, FALSE)) {
-          WARN("pthread_sigmask set failed, no markers started,"
-               " errno= %" WARN_PRIdPTR "\n", (signed_word)errno);
+          WARN("pthread_sigmask set failed, no markers started\n", 0);
           GC_markers_m1 = 0;
           (void)pthread_attr_destroy(&attr);
           return;
@@ -2028,8 +2027,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #     ifndef NO_MARKER_SPECIAL_SIGMASK
         /* Restore previous signal mask.        */
         if (EXPECT(pthread_sigmask(SIG_SETMASK, &oldset, NULL) < 0, FALSE)) {
-          WARN("pthread_sigmask restore failed, errno= %" WARN_PRIdPTR "\n",
-               (signed_word)errno);
+          WARN("pthread_sigmask restore failed\n", 0);
         }
 #     endif
 
