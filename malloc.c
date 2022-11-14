@@ -611,7 +611,11 @@ GC_API void GC_CALL GC_free(void * p)
                 /* object is reallocated, it doesn't matter.  O.w. the  */
                 /* collector will do it, since it's on a free list.     */
         if (ok -> ok_init && EXPECT(sz > sizeof(word), TRUE)) {
+#         if defined(__CHERI_PURE_CAPABILITY__)
+            BZERO((void **)p + 1, sz-sizeof(void *));
+#         else
             BZERO((word *)p + 1, sz-sizeof(word));
+#         endif
         }
         flh = &(ok -> ok_freelist[ngranules]);
         obj_link(p) = *flh;
@@ -626,7 +630,11 @@ GC_API void GC_CALL GC_free(void * p)
         if (nblocks > 1) {
           GC_large_allocd_bytes -= nblocks * HBLKSIZE;
         }
-        GC_freehblk(h);
+#       if defined(__CHERI_PURE_CAPABILITY__)
+          GC_freehblk(hhdr->hb_block);
+#       else
+          GC_freehblk(h);
+#       endif
         UNLOCK();
     }
 }

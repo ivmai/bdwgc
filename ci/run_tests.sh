@@ -37,16 +37,16 @@ $ERROR && exit 1
 setup() 
 {
     # Copy library files to target VM
-    scp -o "StrictHostKeyChecking no" -P ${SSHPORT} bdwgc_install/lib/libgc.so.1.5.0 bdwgc_install/lib/libcord.so.1.4.0 root@${SSHHOST}:/root
+    scp -o "StrictHostKeyChecking no" -P ${SSHPORT} bdwgc_install/lib/libgc.so.1.5.1 bdwgc_install/lib/libcord.so.1.5.0 root@${SSHHOST}:/root
     if [ $? -ne 0 ]; then 
         echo "Error copying bdwgc library to ${BUILDBOT_PLATFORM} VM"
         exit 1
     fi 	
     # Ensure linker in the VM can find the copied bdwgc libraries 
     ssh -o "StrictHostKeyChecking no" -p ${SSHPORT} root@${SSHHOST} -t 'ln -fs libgc.so.1 libgc.so \
-                                                     && ln -fs libgc.so.1.5.0 libgc.so.1 \
+                                                     && ln -fs libgc.so.1.5.1 libgc.so.1 \
 						     && ln -fs libcord.so.1 libcord.so \
-						     && ln -fs libcord.so.1.4.0 libcord.so.1'
+						     && ln -fs libcord.so.1.5.0 libcord.so.1'
     if [ $? -ne 0 ]; then 
         echo "Error creating links for bdwgc library within ${BUILDBOT_PLATFORM} VM execution environment"
         exit 1
