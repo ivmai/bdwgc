@@ -1276,7 +1276,7 @@ STATIC word GC_heapsize_at_forced_unmap = 0;
 
 /* If stop_func == 0 then GC_default_stop_func is used instead.         */
 STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
-                                         GC_bool force_unmap GC_ATTR_UNUSED)
+                                         GC_bool force_unmap)
 {
     GC_bool result;
     IF_USE_MUNMAP(int old_unmap_threshold;)
