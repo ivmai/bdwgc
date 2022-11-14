@@ -5,7 +5,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -31,11 +31,11 @@ built-in "new" and "delete".
 #endif
 
 #define GC_DONT_INCL_WINDOWS_H
-#include "gc.h"
+#include "gc/gc.h"
 
 #include <new> // for bad_alloc, precedes include of gc_cpp.h
 
-#include "gc_cpp.h" // for GC_OPERATOR_NEW_ARRAY
+#include "gc/gc_cpp.h" // for GC_OPERATOR_NEW_ARRAY
 
 #if !(defined(_MSC_VER) || defined(__DMC__)) || defined(GC_NO_INLINE_STD_NEW)
 

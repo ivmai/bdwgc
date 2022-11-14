@@ -1,9 +1,9 @@
 /*
   Copyright (c) 2004-2005 Andrei Polushin
 
-  Permission is hereby granted, free of charge,  to any person obtaining a copy
+  Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction,  including without limitation the rights
+  in the Software without restriction, including without limitation the rights
   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
   copies of the Software, and to permit persons to whom the Software is
   furnished to do so, subject to the following conditions:
@@ -23,14 +23,14 @@
 #if !defined(_M_ARM) && !defined(_M_ARM64) \
     && !defined(_M_X64) && defined(_MSC_VER)
 
-/* TODO: arm[64], x86_64 currently miss some machine-dependent code below.  */
+/* TODO: arm[64], x64 currently miss some machine-dependent code below.     */
 /* See also GC_HAVE_BUILTIN_BACKTRACE in gc_config_macros.h.                */
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #define GC_BUILD
-#include "gc.h"
+#include "gc/gc.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 # define WIN32_LEAN_AND_MEAN 1
@@ -368,7 +368,7 @@ static size_t GetDescriptionFromStack(void* const frames[], size_t count,
   return buffer - begin;
 }
 
-/* Compatibility with <execinfo.h> */
+/* Compatibility with execinfo.h:       */
 
 int backtrace(void* addresses[], int count)
 {

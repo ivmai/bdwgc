@@ -6,7 +6,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -152,7 +152,7 @@ typedef struct bi {
                                 /* GC_all_nils.                         */
 
 
-#define MAX_JUMP (HBLKSIZE - 1)
+#define MAX_JUMP (HBLKSIZE-1)
 
 #define HDR_FROM_BI(bi, p) \
                 (bi)->index[((word)(p) >> LOG_HBLKSIZE) & (BOTTOM_SZ - 1)]

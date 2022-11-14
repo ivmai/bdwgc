@@ -5,18 +5,16 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
 
 /*
- * The MS Windows specific part of de.
+ * The Windows specific part of de.
  * This started as the generic Windows application template
  * but significant parts didn't survive to the final version.
- *
- * This was written by a nonexpert windows programmer.
  */
 #if defined(__BORLANDC__) || defined(__CYGWIN__) || defined(__MINGW32__) \
     || defined(__NT__) || defined(_WIN32) || defined(WIN32)
@@ -49,21 +47,21 @@ void de_error(const char *s)
 int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
                       LPSTR command_line, int nCmdShow)
 {
-   MSG         msg;
-   WNDCLASS    wndclass;
-   HACCEL      hAccel;
+    MSG         msg;
+    WNDCLASS    wndclass;
+    HACCEL      hAccel;
 
-   GC_set_find_leak(0);
-   GC_INIT();
-#  ifndef NO_INCREMENTAL
+    GC_set_find_leak(0);
+    GC_INIT();
+#   ifndef NO_INCREMENTAL
      GC_enable_incremental();
-#  endif
-#  if defined(CPPCHECK)
+#   endif
+#   if defined(CPPCHECK)
      GC_noop1((GC_word)&WinMain);
-#  endif
+#   endif
 
-   if (!hPrevInstance)
-   {
+    if (!hPrevInstance)
+    {
       wndclass.style          = CS_HREDRAW | CS_VREDRAW;
       wndclass.lpfnWndProc    = WndProc;
       wndclass.cbClsExtra     = 0;
@@ -77,30 +75,30 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
       if (RegisterClass (&wndclass) == 0) {
           de_error("RegisterClass error");
-          return(0);
+          return 0;
       }
-   }
+    }
 
-   /* Empirically, the command line does not include the command name ...
-   if (command_line != 0) {
+    /* Empirically, the command line does not include the command name ...
+    if (command_line != 0) {
        while (isspace(*command_line)) command_line++;
        while (*command_line != 0 && !isspace(*command_line)) command_line++;
        while (isspace(*command_line)) command_line++;
-   } */
+    } */
 
-   if (command_line == 0 || *command_line == 0) {
+    if (command_line == 0 || *command_line == 0) {
         de_error("File name argument required");
-        return( 0 );
-   } else {
+        return 0;
+    } else {
         char *p = command_line;
 
         while (*p != 0 && !isspace(*(unsigned char *)p))
             p++;
         arg_file_name = CORD_to_char_star(
                             CORD_substr(command_line, 0, p - command_line));
-   }
+    }
 
-   hwnd = CreateWindow (szAppName,
+    hwnd = CreateWindow(szAppName,
                         TEXT("Demonstration Editor"),
                         WS_OVERLAPPEDWINDOW | WS_CAPTION, /* Window style */
                         CW_USEDEFAULT, 0, /* default pos. */
@@ -108,24 +106,24 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
                         NULL,   /* No parent */
                         NULL,   /* Window class menu */
                         hInstance, NULL);
-   if (hwnd == NULL) {
+    if (hwnd == NULL) {
         de_error("CreateWindow error");
-        return(0);
-   }
+        return 0;
+    }
 
-   ShowWindow (hwnd, nCmdShow);
+    ShowWindow (hwnd, nCmdShow);
 
-   hAccel = LoadAccelerators( hInstance, szAppName );
+    hAccel = LoadAccelerators( hInstance, szAppName );
 
-   while (GetMessage (&msg, NULL, 0, 0))
-   {
+    while (GetMessage (&msg, NULL, 0, 0))
+    {
       if( !TranslateAccelerator( hwnd, hAccel, &msg ) )
       {
          TranslateMessage (&msg);
          DispatchMessage (&msg);
       }
-   }
-   return (int)msg.wParam;
+    }
+    return (int)msg.wParam;
 }
 
 /* Return the argument with all control characters replaced by blanks.  */
@@ -143,7 +141,7 @@ char * plain_chars(char * text, size_t len)
        }
     }
     result[len] = '\0';
-    return(result);
+    return result;
 }
 
 /* Return the argument with all non-control-characters replaced by      */
@@ -162,7 +160,7 @@ char * control_chars(char * text, size_t len)
        }
     }
     result[len] = '\0';
-    return(result);
+    return result;
 }
 
 int char_width;
@@ -236,7 +234,7 @@ LRESULT CALLBACK WndProc (HWND hwnd_arg, UINT message,
            COLS = (client_area.right - client_area.left)/char_width;
            LINES = (client_area.bottom - client_area.top)/char_height;
            generic_init();
-           return(0);
+           return 0;
 
       case WM_CHAR:
            if (wParam == QUIT) {
@@ -244,20 +242,20 @@ LRESULT CALLBACK WndProc (HWND hwnd_arg, UINT message,
            } else {
                do_command((int)wParam);
            }
-           return(0);
+           return 0;
 
       case WM_SETFOCUS:
            CreateCaret(hwnd_arg, NULL, char_width, char_height);
            ShowCaret(hwnd_arg);
            caret_visible = 1;
            update_cursor();
-           return(0);
+           return 0;
 
       case WM_KILLFOCUS:
            HideCaret(hwnd_arg);
            DestroyCaret();
            caret_visible = 0;
-           return(0);
+           return 0;
 
       case WM_LBUTTONUP:
            {
@@ -266,7 +264,7 @@ LRESULT CALLBACK WndProc (HWND hwnd_arg, UINT message,
 
                set_position(xpos / (unsigned)char_width,
                             ypos / (unsigned)char_height);
-               return(0);
+               return 0;
            }
 
       case WM_COMMAND:
@@ -274,24 +272,24 @@ LRESULT CALLBACK WndProc (HWND hwnd_arg, UINT message,
            if (id & EDIT_CMD_FLAG) {
                if (id & REPEAT_FLAG) do_command(REPEAT);
                do_command(CHAR_CMD(id));
-               return( 0 );
+               return 0;
            } else {
              switch(id) {
                case IDM_FILEEXIT:
                   SendMessage(hwnd_arg, WM_CLOSE, 0, 0L);
-                  return( 0 );
+                  return 0;
 
                case IDM_HELPABOUT:
                   if( DialogBox( hInstance, TEXT("ABOUTBOX"),
                                  hwnd_arg, AboutBoxCallback ) )
                      InvalidateRect(hwnd_arg, NULL, TRUE);
-                  return( 0 );
+                  return 0;
                case IDM_HELPCONTENTS:
                   de_error(
                        "Cursor keys: ^B(left) ^F(right) ^P(up) ^N(down)\n"
                        "Undo: ^U    Write: ^W   Quit:^D  Repeat count: ^R[n]\n"
                        "Top: ^T   Locate (search, find): ^L text ^L\n");
-                  return( 0 );
+                  return 0;
              }
            }
            break;

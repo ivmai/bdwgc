@@ -1,12 +1,13 @@
 /*
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 2001 by Hewlett-Packard Company. All rights reserved.
+ * Copyright (c) 2009-2022 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -33,6 +34,16 @@
   extern "C" {
 #endif
 
+#define GC_PROC_BYTES 100
+
+#if defined(GC_BUILD) || defined(NOT_GCBUILD)
+  struct GC_ms_entry;
+  struct GC_hblk_s;
+#else
+  struct GC_ms_entry { void *opaque; };
+  struct GC_hblk_s { void *opaque; };
+#endif
+
 /* A client supplied mark procedure.  Returns new mark stack pointer.   */
 /* Primary effect should be to push new entries on the mark stack.      */
 /* Mark stack pointer values are passed and returned explicitly.        */
@@ -54,14 +65,10 @@
 /* residing on a free list.  Such objects are cleared, except for a     */
 /* free list link field in the first word.  Thus mark procedures may    */
 /* not count on the presence of a type descriptor, and must handle this */
-/* case correctly somehow.                                              */
-#define GC_PROC_BYTES 100
-
-#if defined(GC_BUILD) || defined(NOT_GCBUILD)
-  struct GC_ms_entry;
-#else
-  struct GC_ms_entry { void *opaque; };
-#endif
+/* case correctly somehow.  Also, a mark procedure should be prepared   */
+/* to be executed concurrently from the marker threads (the later ones  */
+/* are created only if the client has called GC_start_mark_threads()    */
+/* or started a user thread previously).                                */
 typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
                                 struct GC_ms_entry * /* mark_stack_ptr */,
                                 struct GC_ms_entry * /* mark_stack_limit */,
@@ -169,6 +176,43 @@ GC_API GC_ATTR_DEPRECATED
     const
 # endif
   size_t GC_debug_header_size;
+
+/* Return the heap block size.  Each heap block is devoted to a single  */
+/* size and kind of object.                                             */
+GC_API GC_ATTR_CONST size_t GC_CALL GC_get_hblk_size(void);
+
+/* Same as GC_walk_hblk_fn but with index of the free list.             */
+typedef void (GC_CALLBACK *GC_walk_free_blk_fn)(struct GC_hblk_s *,
+                                                int /* index */,
+                                                GC_word /* client_data */);
+
+/* Apply fn to each completely empty heap block.  It is the             */
+/* responsibility of the caller to avoid data race during the function  */
+/* execution (e.g. by holding the allocation lock).                     */
+GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn,
+                                GC_word /* client_data */) GC_ATTR_NONNULL(1);
+
+typedef void (GC_CALLBACK *GC_walk_hblk_fn)(struct GC_hblk_s *,
+                                            GC_word /* client_data */);
+
+/* Apply fn to each allocated heap block.  It is the responsibility     */
+/* of the caller to avoid data race during the function execution (e.g. */
+/* by holding the allocation lock).                                     */
+GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn,
+                                GC_word /* client_data */) GC_ATTR_NONNULL(1);
+
+/* If there are likely to be false references to a block starting at h  */
+/* of the indicated length, then return the next plausible starting     */
+/* location for h that might avoid these false references.  Otherwise   */
+/* NULL is returned.  Assumes the allocation lock is held but no        */
+/* assertion about it by design.                                        */
+GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *,
+                                                    GC_word /* len */);
+
+/* Return the number of set mark bits for the heap block where object   */
+/* p is located.  Defined only if the library has been compiled         */
+/* without NO_DEBUGGING.                                                */
+GC_API unsigned GC_CALL GC_count_set_marks_in_hblk(const void * /* p */);
 
 /* And some routines to support creation of new "kinds", e.g. with      */
 /* custom mark procedures, by language runtimes.                        */
@@ -283,7 +327,7 @@ GC_API void GC_CALL GC_set_start_callback(GC_start_callback_proc);
 GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void);
 
 /* Slow/general mark bit manipulation.  The caller should hold the      */
-/* allocation lock.  GC_is_marked returns 1 (TRUE) or 0.  The argument  */
+/* allocation lock.  GC_is_marked returns 1 (true) or 0.  The argument  */
 /* should be the real address of an object (i.e. the address of the     */
 /* debug header if there is one).                                       */
 GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);

@@ -6,7 +6,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -15,7 +15,7 @@
 #ifndef GC_LEAK_DETECTOR_H
 #define GC_LEAK_DETECTOR_H
 
-/* Include leak_detector.h (e.g., via GCC --include directive)  */
+/* Include this header file (e.g., via gcc --include directive) */
 /* to turn libgc into a leak detector.                          */
 
 #ifndef GC_DEBUG
@@ -38,6 +38,8 @@
 #define free(p) GC_FREE(p)
 #undef realloc
 #define realloc(p,n) GC_REALLOC(p,n)
+#undef reallocarray
+#define reallocarray(p,m,n) GC_REALLOC(p,(m)*(n))
 
 #undef strdup
 #define strdup(s) GC_STRDUP(s)
@@ -52,10 +54,19 @@
 # define wcsdup(s) GC_WCSDUP(s)
 #endif
 
+#undef aligned_alloc
+#define aligned_alloc(a,n) GC_memalign(a,n) /* identical to memalign */
 #undef memalign
 #define memalign(a,n) GC_memalign(a,n)
 #undef posix_memalign
 #define posix_memalign(p,a,n) GC_posix_memalign(p,a,n)
+
+#ifndef GC_NO_VALLOC
+# undef valloc
+# define valloc(n) GC_valloc(n)
+# undef pvalloc
+# define pvalloc(n) GC_pvalloc(n) /* obsolete */
+#endif /* !GC_NO_VALLOC */
 
 #ifndef CHECK_LEAKS
 # define CHECK_LEAKS() GC_gcollect()

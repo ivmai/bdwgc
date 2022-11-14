@@ -41,7 +41,7 @@ Unless USE_PROC_FOR_LIBRARIES is defined, dlopen disables collection
 temporarily.  In some unlikely cases, this can result in unpleasant heap
 growth.  But it seems better than the race/deadlock issues we had before.
 
-If threads are used on an X86 processor with malloc redirected to
+If threads are used on an x86 processor with malloc redirected to
 GC_malloc, it is necessary to call GC_INIT explicitly before forking the
 first thread.  (This avoids a deadlock arising from calling GC_thr_init
 with the allocation lock held.)

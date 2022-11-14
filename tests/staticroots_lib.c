@@ -68,5 +68,9 @@ static struct treenode *root_nz[10] = { (struct treenode *)(GC_word)2 };
 
 GC_TEST_EXPORT_API struct treenode ** libsrl_getpelem(int i, int j)
 {
+# if defined(CPPCHECK)
+    struct treenode node = { 0, 0 };
+    GC_noop1((GC_word)node.x | (GC_word)node.y);
+# endif
   return &((j & 1) != 0 ? root_nz : root)[i];
 }

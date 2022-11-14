@@ -13,8 +13,14 @@ int main(void) {
 
     GC_INIT();  /* Needed if thread-local allocation is enabled.        */
                 /* FIXME: This is not ideal.                            */
+
     for (i = 0; i < N_TESTS; ++i) {
         p[i] = (char*)malloc(sizeof(int)+i);
+    }
+    CHECK_LEAKS();
+    for (i = 1; i < N_TESTS / 2; ++i) {
+        p[i] = (char*)((i & 1) != 0 ? reallocarray(p[i], i, 43)
+                                    : realloc(p[i], i * 16 + 1));
     }
     CHECK_LEAKS();
     for (i = 1; i < N_TESTS; ++i) {

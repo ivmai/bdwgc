@@ -72,7 +72,7 @@ ptr_t GC_get_main_stack_base(void)
      BPTR myseglist;
      ULONG *data;
 
-#    ifdef __GNUC__
+#     ifdef __GNUC__
         ULONG dataSegSize;
         GC_bool found_segment = FALSE;
         extern char __data_size[];

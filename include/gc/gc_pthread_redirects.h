@@ -9,7 +9,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -92,7 +92,7 @@
 
 #if !defined(GC_NO_THREAD_REDIRECTS) && !defined(GC_USE_LD_WRAP)
   /* Unless the compiler supports #pragma extern_prefix, the Tru64      */
-  /* UNIX <pthread.h> redefines some POSIX thread functions to use      */
+  /* UNIX pthread.h redefines some POSIX thread functions to use        */
   /* mangled names.  Anyway, it's safe to undef them before redefining. */
 # undef pthread_create
 # undef pthread_join

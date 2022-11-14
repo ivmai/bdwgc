@@ -66,6 +66,8 @@ int main(void) {
                          /* with -DFIND_LEAK.                           */
     GC_INIT();
 
+    GC_allow_register_threads(); /* optional if pthread_create redirected */
+
 # if NTHREADS > 0
     for (i = 0; i < NTHREADS; ++i) {
 #       ifdef GC_PTHREADS

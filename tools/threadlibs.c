@@ -9,7 +9,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -63,12 +63,12 @@ int main(void)
         printf("-lpthread\n");
 #   endif
 #   if defined(GC_WIN32_PTHREADS)
-#      ifdef PTW32_STATIC_LIB
-         /* assume suffix s for static version of the win32 pthread library */
-         printf("-lpthreadGC2s -lws2_32\n");
-#      else
-         printf("-lpthreadGC2\n");
-#      endif
+#     ifdef PTW32_STATIC_LIB
+        /* assume suffix s for static version of the pthreads-win32 library */
+        printf("-lpthreadGC2s -lws2_32\n");
+#     else
+        printf("-lpthreadGC2\n");
+#     endif
 #   endif
 #   if defined(GC_OSF1_THREADS)
         printf("-pthread -lrt\n"); /* DOB: must be -pthread, not -lpthread */

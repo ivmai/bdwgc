@@ -5,7 +5,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -26,8 +26,6 @@
 
 #ifdef THREAD_LOCAL_ALLOC
 
-#include "gc/gc_inline.h"
-
 #if defined(USE_HPUX_TLS)
 # error USE_HPUX_TLS macro was replaced by USE_COMPILER_TLS
 #endif
@@ -39,7 +37,7 @@ EXTERN_C_BEGIN
 #if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_WIN32_SPECIFIC) \
     && !defined(USE_WIN32_COMPILER_TLS) && !defined(USE_COMPILER_TLS) \
     && !defined(USE_CUSTOM_SPECIFIC)
-# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+# if defined(GC_WIN32_THREADS)
 #   if defined(CYGWIN32) && GC_GNUC_PREREQ(4, 0)
 #     if defined(__clang__)
         /* As of Cygwin clang3.5.2, thread-local storage is unsupported.    */
@@ -52,21 +50,34 @@ EXTERN_C_BEGIN
 #   else
 #     define USE_WIN32_COMPILER_TLS
 #   endif /* !GNU */
-# elif (defined(LINUX) && !defined(ARM32) && !defined(AVR32) \
-         && GC_GNUC_PREREQ(3, 3) \
-         && !(defined(__clang__) && defined(HOST_ANDROID))) \
-       || (defined(FREEBSD) \
-           || (defined(NETBSD) && __NetBSD_Version__ >= 600000000 /* 6.0 */) \
-            && (GC_GNUC_PREREQ(4, 4) || GC_CLANG_PREREQ(3, 9))) \
-       || (defined(HOST_ANDROID) && defined(ARM32) \
-            && (GC_GNUC_PREREQ(4, 6) || GC_CLANG_PREREQ_FULL(3, 8, 256229)))
+
+# elif defined(HOST_ANDROID)
+#   if defined(ARM32) && (GC_GNUC_PREREQ(4, 6) \
+                          || GC_CLANG_PREREQ_FULL(3, 8, 256229))
+#     define USE_COMPILER_TLS
+#   elif !defined(__clang__) && !defined(ARM32)
+      /* TODO: Support clang/arm64 */
+#     define USE_COMPILER_TLS
+#   else
+#     define USE_PTHREAD_SPECIFIC
+#   endif
+
+# elif defined(LINUX) && GC_GNUC_PREREQ(3, 3) /* && !HOST_ANDROID */
+#   if defined(ARM32) || defined(AVR32)
+      /* TODO: support Linux/arm */
+#     define USE_PTHREAD_SPECIFIC
+#   elif defined(AARCH64) && defined(__clang__) && !GC_CLANG_PREREQ(8, 0)
+      /* To avoid "R_AARCH64_ABS64 used with TLS symbol" linker warnings. */
+#     define USE_PTHREAD_SPECIFIC
+#   else
+#     define USE_COMPILER_TLS
+#   endif
+
+# elif (defined(FREEBSD) \
+        || (defined(NETBSD) && __NetBSD_Version__ >= 600000000 /* 6.0 */)) \
+       && (GC_GNUC_PREREQ(4, 4) || GC_CLANG_PREREQ(3, 9))
 #   define USE_COMPILER_TLS
-# elif defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) \
-       || defined(GC_AIX_THREADS) || defined(GC_DARWIN_THREADS) \
-       || defined(GC_FREEBSD_THREADS) || defined(GC_NETBSD_THREADS) \
-       || defined(GC_LINUX_THREADS) || defined(GC_HAIKU_THREADS) \
-       || defined(GC_RTEMS_PTHREADS)
-#   define USE_PTHREAD_SPECIFIC
+
 # elif defined(GC_HPUX_THREADS)
 #   ifdef __GNUC__
 #     define USE_PTHREAD_SPECIFIC
@@ -74,10 +85,16 @@ EXTERN_C_BEGIN
 #   else
 #     define USE_COMPILER_TLS
 #   endif
+
+# elif defined(GC_IRIX_THREADS) || defined(GC_OPENBSD_THREADS) \
+       || defined(GC_SOLARIS_THREADS) \
+       || defined(NN_PLATFORM_CTR) || defined(NN_BUILD_TARGET_PLATFORM_NX)
+#   define USE_CUSTOM_SPECIFIC  /* Use our own. */
+
 # else
-#    define USE_CUSTOM_SPECIFIC  /* Use our own. */
+#   define USE_PTHREAD_SPECIFIC
 # endif
-#endif
+#endif /* !USE_x_SPECIFIC */
 
 #ifndef THREAD_FREELISTS_KINDS
 # ifdef ENABLE_DISCLAIM

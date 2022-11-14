@@ -1,11 +1,12 @@
 /*
  * Copyright (c) 2000-2005 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 2008-2022 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -20,8 +21,6 @@
 #endif
 
 #include "private/thread_local_alloc.h"
-
-#include <stdlib.h>
 
 #if defined(USE_COMPILER_TLS)
   __thread GC_ATTR_TLS_FAST
@@ -53,8 +52,7 @@ static void return_single_freelist(void *fl, void **gfl)
     }
 }
 
-/* Recover the contents of the freelist array fl into the global one gfl.*/
-/* We hold the allocator lock.                                          */
+/* Recover the contents of the freelist array fl into the global one gfl. */
 static void return_freelists(void **fl, void **gfl)
 {
     int i;
@@ -100,7 +98,7 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
     if (!EXPECT(keys_initialized, TRUE)) {
 #       ifdef USE_CUSTOM_SPECIFIC
           /* Ensure proper alignment of a "pushed" GC symbol.   */
-          GC_ASSERT((word)&GC_thread_key % sizeof(word) == 0);
+          GC_ASSERT((word)(&GC_thread_key) % sizeof(word) == 0);
 #       endif
         res = GC_key_create(&GC_thread_key, reset_thread_key);
         if (COVERT_DATAFLOW(res) != 0) {
@@ -128,11 +126,11 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
 #   endif
 }
 
-/* We hold the allocator lock.  */
 GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 {
     int k;
 
+    GC_ASSERT(I_HOLD_LOCK());
     /* We currently only do this from the thread itself.        */
     GC_STATIC_ASSERT(THREAD_FREELISTS_KINDS <= MAXOBJKINDS);
     for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
