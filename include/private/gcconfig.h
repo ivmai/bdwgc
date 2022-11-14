@@ -567,6 +567,9 @@ EXTERN_C_BEGIN
             || defined(OPENBSD))
 #   define SPARC
 #   define mach_type_known
+# elif defined(__sw_64__) && defined(LINUX)
+#   define SW_64
+#   define mach_type_known
 # elif (defined(__x86_64) || defined(__x86_64__) || defined(__amd64__)) \
        && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
             || defined(NETBSD) || defined(OPENBSD))
@@ -621,6 +624,8 @@ EXTERN_C_BEGIN
                     /*                  (LINUX and HPUX)                */
                     /*             SH         ==> Hitachi SuperH        */
                     /*                  (LINUX & MSWINCE)               */
+                    /*             SW_64      ==> Sunway (Shenwei)      */
+                    /*                  running LINUX                   */
                     /*             X86_64     ==> AMD x86-64            */
                     /*             POWERPC    ==> IBM/Apple PowerPC     */
                     /*                  (MACOS(<=9),DARWIN(incl.MACOSX),*/
@@ -1571,6 +1576,14 @@ EXTERN_C_BEGIN
 #     define DATASTART ((ptr_t)(__data_start))
 #   endif
 # endif /* LOONGARCH */
+
+# ifdef SW_64
+#   define MACH_TYPE "SW_64"
+#   define CPP_WORDSZ 64
+#   ifdef LINUX
+      /* Nothing specific. */
+#   endif
+# endif /* SW_64 */
 
 # ifdef MIPS
 #   define MACH_TYPE "MIPS"
