@@ -1,3 +1,77 @@
+2022-11-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c [PARALLEL_MARK]
+	(GC_start_mark_threads_inner): Do not pass errno value to WARN() call
+	(because pthread_create does not set errno).
+
+2022-11-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.macros (REDIRECT_REALLOC): Fix typo ("realloc" w/o GC_
+	prefix).
+
+2022-10-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.direct (OBJS): Add comment.
+	* Makefile.direct (libalphagc.so): Add dependency on dyn_load.o.
+
+2022-10-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [THREAD_LOCAL_ALLOC] (GC_register_my_thread_inner):
+	Update comment; do not call GC_init_thread_local().
+	* win32_threads.c [THREAD_LOCAL_ALLOC] (GC_register_my_thread): Call
+	GC_init_thread_local() both after GC_register_my_thread_inner() and
+	GC_record_stack_base() calls (in case of return GC_SUCCESS).
+	* win32_threads.c [GC_PTHREADS && THREAD_LOCAL_ALLOC]
+	(GC_pthread_start_inner): Call GC_init_thread_local().
+
+2022-10-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (pthread_create): Call ABORT() if
+	pthread_attr_getdetachstate() has failed.
+	* win32_threads.c [GC_PTHREADS] (GC_pthread_create): Likewise.
+	* win32_threads.c [GC_PTHREADS] (start_info.detached): Change type from
+	GC_bool to int (to match the type of the 2nd argument of
+	pthread_attr_getdetachstate).
+
+2022-09-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c (dll_thread_table): Fix a typo ("use") in comment.
+
+2022-09-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [GC_WINMAIN_REDIRECT]
+	(GC_waitForSingleObjectInfinite): Add GC_CALLBACK.
+
+2022-09-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* ptr_chck.c [!THREADS && (DYNAMIC_LOADING || MSWIN32 || MSWINCE
+	|| CYGWIN32 || PCR)] (GC_is_visible): Do not call
+	GC_register_dynamic_libraries() followed by GC_is_static_root()
+	if GC_no_dls.
+
+2022-09-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* dyn_load.c [SOLARISDL || !LINUX]: Rename USE_PROC to
+	USE_PROC_FOR_LIBRARIES in comment.
+
+2022-09-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [GC_PTHREADS && !GC_NO_THREADS_DISCOVERY]
+	(GC_lookup_pthread): Inverse THREAD_EQUAL() condition in for statement.
+
+2022-09-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h [(mips || __mips || _mips) && !__TANDEM
+	&& !LINUX && !EWS4800 && !NETBSD && !OPENBSD] (IRIX5): Do
+	not define if _WIN32_WCE or __CEGCC__ or __MINGW32CE__.
+
+2022-09-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h [mips || __mips || _mips] (MIPS): Do not
+	redefine if __TANDEM.
+	* include/private/gcconfig.h [(mips || __mips || _mips) && !LINUX
+	&& !EWS4800 && !NETBSD && !OPENBSD] (IRIX5): Do not define if __TANDEM.
+
 [7.2p]
 
 2022-08-25  Ivan Maidanski <ivmai@mail.ru>
