@@ -352,6 +352,18 @@
 * Workaround various cppcheck false positives
 
 
+== [8.0.10] (not released yet) ==
+
+* Abort with appropriate message if first call of mmap fails with EPERM
+* Avoid potential race between realloc and GC_block_was_dirty
+* Fix 'overflow in conversion from word' g++ warning in GC_init
+* Fix typo in comment of GC_Thread_Rep.dummy
+* Fix use of unset errno after pthread_sigmask calls
+* Remove redundant GC_ATTR_UNUSED for GC_mark_and_push
+
+Also, includes 7.6.18 changes
+
+
 == [8.0.8] 2022-08-26 ==
 
 * Avoid potential race in GC_init_real_syms after GC_allow_register_threads
