@@ -23,10 +23,10 @@ AS_ABI_FLAG?= $(ABI_FLAG)
 # ABI flag for assembler.  On HP/UX this is +A64 for 64 bit
 # executables.
 
-CC= cc $(ABI_FLAG)
+CC?= cc $(ABI_FLAG)
 # Compiler executable name.  For EMX, replace to "gcc".
 
-CXX= g++ $(ABI_FLAG)
+CXX?= g++ $(ABI_FLAG)
 # Needed only for "make c++", which builds the C++ interface.
 
 AS= as $(AS_ABI_FLAG)
