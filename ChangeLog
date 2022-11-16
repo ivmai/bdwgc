@@ -1,4 +1,12 @@
 
+== [7.6.18] (not released yet) ==
+
+* Fix IRIX5 defined wrongly on FreeBSD/mips
+* Fix data race in GC_heapsize_at_forced_unmap variable
+
+Also, includes 7.4.24 changes
+
+
 == [7.6.16] 2022-08-26 ==
 
 * Do not send signal to thread which is suspended manually
