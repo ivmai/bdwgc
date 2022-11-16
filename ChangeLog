@@ -1567,6 +1567,14 @@ Also, includes 7.4.6 changes
 Also, includes 7.4.4 changes
 
 
+== [7.4.24] (not released yet) ==
+
+* Eliminate 'cast signed to bigger unsigned' CSA warning in WARN calls
+* Fix missing lock while updating GC_in_thread_creation in GC_exit_check
+
+Also, includes 7.2q changes.
+
+
 == [7.4.22] 2022-08-26 ==
 
 * Eliminate 'new_l may be used uninitialized' gcc warning in os_dep (Cygwin)
@@ -2109,6 +2117,20 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 * Use pthread_key for thread-local storage on FreeBSD
 * Use union of AO_t and word to favor strict-aliasing compiler optimization
 Also, includes 7.2 changes
+
+
+== [7.2q] (not released yet) ==
+
+* Fix IRIX5 defined wrongly on Tandem S-Series and WinCE/mips
+* Fix disabling of automatic dynamic libraries registration
+* Fix double initialization of main thread local free lists on Win32
+* Fix loop condition over dll_thread_table in GC_lookup_pthread (Win32)
+* Fix missing GC_CALLBACK for GC_waitForSingleObjectInfinite
+* Fix missing libalphagc.so dependency in Makefile.direct
+* Fix missing result check of pthread_attr_getdetachstate in pthread_create
+* Fix mistyped function name in documentation of REDIRECT_REALLOC
+* Fix typo in comment belonging to dll_thread_table
+* Fix use of unset errno after pthread_create call
 
 
 == [7.2p] 2022-08-25 ==
