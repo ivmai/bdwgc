@@ -3243,7 +3243,11 @@ EXTERN_C_BEGIN
 # endif
 # if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \
      && !defined(REDIRECT_MALLOC_IN_HEADER)
-#   error REDIRECT_MALLOC with THREADS works at most on Linux
+    /* May work on other platforms (e.g. Darwin) provided the client    */
+    /* ensures all the client threads are registered with the GC,       */
+    /* e.g. by using the preprocessor-based interception of the thread  */
+    /* primitives (i.e., define GC_THREADS and include gc.h from all    */
+    /* the client files those are using pthread_create and friends).    */
 # endif
 #endif /* !CPPCHECK */
 
