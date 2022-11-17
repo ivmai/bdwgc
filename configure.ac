@@ -412,8 +412,10 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
   ]])], [compiler_xlc=yes], [compiler_xlc=no])
 AC_MSG_RESULT($compiler_xlc)
 if test $compiler_xlc = yes -a "$powerpc_darwin" = true; then
-  # the darwin stack-frame-walking code is completely broken on xlc
-  AC_DEFINE([DARWIN_DONT_PARSE_STACK], 1, [See doc/README.macros.])
+  # The darwin stack-frame-walking code is completely broken on xlc.
+  AC_DEFINE([DARWIN_DONT_PARSE_STACK], 1,
+            [Define to discover thread stack bounds on Darwin without trying
+             to walk the frames on the stack.])
 fi
 
 # XLC neither requires nor tolerates the unnecessary assembler goop.
@@ -741,7 +743,10 @@ dnl ---------
 
 AH_TEMPLATE([GC_HAVE_BUILTIN_BACKTRACE],
             [Define if backtrace information is supported.])
-AH_TEMPLATE([MAKE_BACK_GRAPH], [See doc/README.macros.])
+AH_TEMPLATE([MAKE_BACK_GRAPH],
+            [Define to build the collector with the support of the
+             functionality to print max length of chain through unreachable
+             objects ending in a reachable one.])
 AH_TEMPLATE([SAVE_CALL_COUNT],
             [The number of caller frames saved when allocating with the
              debugging API.])
@@ -758,7 +763,7 @@ AC_ARG_ENABLE(gc-debug,
               [Define to force debug headers on all objects.])
     AH_TEMPLATE([SHORT_DBG_HDRS],
                 [Shorten the headers to minimize object size at the expense
-                 of checking for writes past the end (see doc/README.macros).])
+                 of checking for writes past the end.])
 
     case $host in
       ia64-*-linux* )
@@ -893,7 +898,10 @@ AC_ARG_ENABLE(java-finalization,
     [AS_HELP_STRING([--disable-java-finalization],
                     [disable support for java finalization])])
 if test x"$enable_java_finalization" != xno; then
-    AC_DEFINE([JAVA_FINALIZATION], 1, [See doc/README.macros.])
+    AC_DEFINE([JAVA_FINALIZATION], 1,
+              [Define to make it somewhat safer by default to finalize objects
+               out of order by specifying a nonstandard finalization mark
+               procedure.])
 fi
 
 AC_ARG_ENABLE(atomic-uncollectable,
@@ -919,7 +927,10 @@ if test "${enable_redirect_malloc}" = yes; then
     else
         AC_DEFINE(REDIRECT_MALLOC, GC_malloc)
     fi
-    AC_DEFINE([GC_USE_DLOPEN_WRAP], 1, [See doc/README.macros.])
+    AC_DEFINE([GC_USE_DLOPEN_WRAP], 1,
+              [Define to cause the collector to redefine malloc and
+               intercepted pthread routines with their real names while using
+               dlsym to refer to the orignal routines.])
 fi
 
 AC_ARG_ENABLE(disclaim,
@@ -981,8 +992,7 @@ if test x$enable_munmap != xno; then
                   [Define to use Win32 VirtualAlloc (instead of sbrk or
                    mmap) to expand the heap.])
     AC_DEFINE([USE_MUNMAP], 1,
-              [Define to return memory to OS with munmap calls
-               (see doc/README.macros).])
+              [Define to return memory to OS with munmap calls.])
     if test x$MUNMAP_THRESHOLD = x -o x$MUNMAP_THRESHOLD = xyes; then
       MUNMAP_THRESHOLD=7
     fi
