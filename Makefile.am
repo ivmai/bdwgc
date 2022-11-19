@@ -4,7 +4,7 @@
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
 #
 # Permission is hereby granted to use or copy this program
-# for any purpose,  provided the above notices are retained on all copies.
+# for any purpose, provided the above notices are retained on all copies.
 # Permission to modify the code and to distribute modified code is granted,
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
@@ -14,7 +14,7 @@
 # Info (current:revision:age) for the Libtool versioning system.
 # These numbers should be updated at most once just before the release,
 # and, optionally, at most once during the development (after the release).
-LIBGC_VER_INFO = 6:0:5
+LIBGC_VER_INFO = 6:1:5
 LIBGCCPP_VER_INFO = 6:0:5
 
 ## FIXME: `make distcheck' in this directory will not currently work.
@@ -115,7 +115,7 @@ endif
 endif
 
 # Include THREADDLLIBS here to ensure that the correct versions of
-# linuxthread semaphore functions get linked:
+# linuxthread semaphore (and clock_gettime) functions get linked:
 libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS) $(ATOMIC_OPS_LIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info $(LIBGC_VER_INFO) \
@@ -147,7 +147,7 @@ EXTRA_DIST += gc_badalc.cpp gc_cpp.cpp
 # Misc
 # ----
 
-AM_CXXFLAGS = @GC_CFLAGS@
+AM_CXXFLAGS = $(WERROR_CFLAGS) @GC_CFLAGS@
 AM_CFLAGS = $(WERROR_CFLAGS) @GC_CFLAGS@
 
 CFLAGS += $(CFLAGS_EXTRA)

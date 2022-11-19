@@ -40,10 +40,10 @@ GC_NO_THREAD_REDIRECTS  Tested by gc.h.  Prevents redirection of thread
                 creation routines etc. to GC_ versions.  Requires the
                 programmer to explicitly handle thread registration.
 
-GC_NO_THREAD_DECLS      Tested by gc.h.  MS Windows only.  Do not declare
+GC_NO_THREAD_DECLS      Tested by gc.h.  Windows only.  Do not declare
                 Windows thread creation routines and do not include windows.h.
 
-GC_DONT_INCLUDE_WINDOWS_H   Tested by gc.h.  MS Windows only.  Do not include
+GC_DONT_INCLUDE_WINDOWS_H   Tested by gc.h.  Windows only.  Do not include
                 windows.h from gc.h (but Windows-specific thread creation
                 routines are declared).
 
@@ -57,7 +57,7 @@ _ENABLE_ARRAYNEW
                 operator new[] and delete[] are separately
                 overloadable. Used in gc_cpp.h.
 
-GC_NO_INLINE_STD_NEW    Tested by gc_cpp.cc and gc_cpp.h.  MS Windows only.
+GC_NO_INLINE_STD_NEW    Tested by gc_cpp.cc and gc_cpp.h.  Windows only.
                 Define the system-wide new and delete operators in gccpp.dll
                 instead of providing an inline version of the operators.
 
@@ -79,7 +79,7 @@ GC_DLL          Defined by user if dynamic libraries are being built
                 GC resides in a different DLL, its entry points should
                 be referenced accordingly, and precautions may need to
                 be taken to properly deal with statically allocated
-                variables in the main program.  Used for MS Windows.
+                variables in the main program.  Used for Windows.
                 Also used by GCC v4+ (only when the dynamic shared library
                 is being built) to hide internally used symbols.
 
@@ -98,6 +98,9 @@ GC_REQUIRE_WCSDUP       Force GC to export GC_wcsdup() (the Unicode version
   of GC_strdup); could be useful in the leak-finding mode.  Clients should
   define it before including gc.h if the function is needed.
 
+GC_NO_VALLOC    Do not provide GC_valloc() and GC_pvalloc(), and do not
+  redirect the corresponding glibc functions in leak_detector.h.
+
 FIND_LEAK       Causes GC_find_leak to be initially set.  This causes the
   collector to assume that all inaccessible objects should have been
   explicitly deallocated, and reports exceptions.  Finalization and the test
@@ -114,8 +117,7 @@ GC_ABORT_ON_LEAK        Causes the application to be terminated once leaked or
 
 SUNOS5SIGS      Solaris-like signal handling.  This is probably misnamed,
   since it really doesn't guarantee much more than POSIX.  Currently set only
-  for Solaris2.X, HPUX, and DRSNX.  Should probably be set for some other
-  platforms.
+  for DRSNX, FreeBSD, HP/UX and Solaris.
 
 PCR     Set if the collector is being built as part of the Xerox Portable
   Common Runtime.  The client might need to define PCR_NO_RENAME and
@@ -161,7 +163,7 @@ GC_DARWIN_THREADS       Enables support for Mac OS X pthreads.  Deprecated,
 GC_AIX_THREADS  Enables support for IBM AIX threads.  Deprecated, use
   GC_THREADS instead.
 
-GC_DGUX386_THREADS      Enables support for DB/UX on I386 threads.
+GC_DGUX386_THREADS      Enables support for DB/UX x86 threads.
   See README.DGUX386.  (Probably has not been tested recently.)  Deprecated,
   use GC_THREADS instead.
 
@@ -232,7 +234,7 @@ REDIRECT_MALLOC=<X>     Causes malloc to be defined as alias for X.
   be either GC_malloc or GC_malloc_uncollectable, or
   GC_debug_malloc_replacement.  (The latter invokes GC_debug_malloc
   with dummy source location information, but still results in
-  properly remembered call stacks on Linux/X86 and Solaris/SPARC.
+  properly remembered call stacks on Linux/x86 and Solaris/SPARC.
   It requires that the following two macros also be used.)
   The former is occasionally useful for working around leaks in code
   you don't want to (or can't) look at.  It may not work for
@@ -242,7 +244,7 @@ REDIRECT_MALLOC=<X>     Causes malloc to be defined as alias for X.
   you should only use GC_debug_malloc_replacement as a malloc
   replacement.
 
-REDIRECT_REALLOC=<X>    Causes GC_realloc to be redirected to X.
+REDIRECT_REALLOC=<X>    Causes realloc to be redirected to X.
   The canonical use is REDIRECT_REALLOC=GC_debug_realloc_replacement,
   together with REDIRECT_MALLOC=GC_debug_malloc_replacement to
   generate leak reports with call stacks for both malloc and realloc.
@@ -358,9 +360,9 @@ SHORT_DBG_HDRS  Assume that all objects have debug headers.  Shorten
 SAVE_CALL_COUNT=<n>     Set the number of call frames saved with objects
   allocated through the debugging interface.  Affects the amount of
   information generated in leak reports.  Only matters on platforms
-  on which we can quickly generate call stacks, currently Linux/X86,
+  on which we can quickly generate call stacks, currently Linux/x86,
   Linux/SPARC, Solaris/SPARC, and platforms that provide execinfo.h.
-  Default is zero.  On X86, client code should NOT be compiled with
+  Default is zero.  On x86, client code should NOT be compiled with
   -fomit-frame-pointer.
 
 SAVE_CALL_NARGS=<n>     Set the number of functions arguments to be saved
@@ -375,10 +377,10 @@ GC_GCJ_SUPPORT  Includes support for gcj (and possibly other systems
   that include a pointer to a type descriptor in each allocated object).
 
 USE_I686_PREFETCH       Causes the collector to issue Pentium III style
-  prefetch instructions.  No effect except on Linux/X86 platforms.
+  prefetch instructions.  No effect except on Linux/x86 platforms.
   Empirically the code appears to still run correctly on Pentium II
   processors, though with no performance benefit.  May not run on other
-  X86 processors probably.  In some cases this improves performance by 15%
+  x86 processors probably.  In some cases this improves performance by 15%
   or so.
 
 USE_3DNOW_PREFETCH      Causes the collector to issue AMD 3DNow style
@@ -419,7 +421,6 @@ GC_BUILTIN_ATOMIC       Use GCC atomic intrinsics instead of libatomic_ops
   primitives.
 
 GC_ALWAYS_MULTITHREADED     Force multi-threaded mode at GC initialization.
-  (Turns GC_allow_register_threads into a no-op routine.)
 
 GC_ENABLE_SUSPEND_THREAD (Linux only)   Turn on thread suspend/resume API
 support.

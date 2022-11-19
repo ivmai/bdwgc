@@ -3,7 +3,7 @@
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
 #
 # Permission is hereby granted to use or copy this program
-# for any purpose,  provided the above notices are retained on all copies.
+# for any purpose, provided the above notices are retained on all copies.
 # Permission to modify the code and to distribute modified code is granted,
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
@@ -48,7 +48,6 @@ endif
 #
 dist_noinst_HEADERS += \
         include/private/darwin_semaphore.h \
-        include/private/darwin_stop_world.h \
         include/private/dbg_mlc.h \
         include/private/gc_alloc_ptrs.h \
         include/private/gc_atomic_ops.h \
@@ -57,7 +56,6 @@ dist_noinst_HEADERS += \
         include/private/gc_pmark.h \
         include/private/gc_priv.h \
         include/private/gcconfig.h \
-        include/private/pthread_stop_world.h \
         include/private/pthread_support.h \
         include/private/specific.h \
         include/private/thread_local_alloc.h

@@ -473,31 +473,40 @@ inline void gc::operator delete(void* obj) GC_NOEXCEPT
 
 inline gc_cleanup::~gc_cleanup()
 {
-  void* base = GC_base(this);
-  if (0 == base) return; // Non-heap object.
-  GC_register_finalizer_ignore_self(base, 0, 0, 0, 0);
+# ifndef GC_NO_FINALIZATION
+    void* base = GC_base(this);
+    if (0 == base) return; // Non-heap object.
+    GC_register_finalizer_ignore_self(base, 0, 0, 0, 0);
+# endif
 }
 
 inline void GC_CALLBACK gc_cleanup::cleanup(void* obj, void* displ)
 {
-  ((gc_cleanup*) ((char*) obj + (ptrdiff_t) displ))->~gc_cleanup();
+  reinterpret_cast<gc_cleanup*>(reinterpret_cast<char*>(obj)
+                        + reinterpret_cast<ptrdiff_t>(displ))->~gc_cleanup();
 }
 
 inline gc_cleanup::gc_cleanup()
 {
-  GC_finalization_proc oldProc = 0;
-  void* oldData = NULL; // to avoid "might be uninitialized" compiler warning
-  void* this_ptr = (void*)this;
-  void* base = GC_base(this_ptr);
-  if (base != 0) {
-    // Don't call the debug version, since this is a real base address.
-    GC_register_finalizer_ignore_self(base, (GC_finalization_proc) cleanup,
-                                      (void*)((char*)this_ptr - (char*)base),
-                                      &oldProc, &oldData);
-    if (oldProc != 0) {
-      GC_register_finalizer_ignore_self(base, oldProc, oldData, 0, 0);
+# ifndef GC_NO_FINALIZATION
+    GC_finalization_proc oldProc = 0;
+    void* oldData = 0; // to avoid "might be uninitialized" compiler warning
+    void* this_ptr = reinterpret_cast<void*>(this);
+    void* base = GC_base(this_ptr);
+    if (base != 0) {
+      // Don't call the debug version, since this is a real base address.
+      GC_register_finalizer_ignore_self(base,
+                reinterpret_cast<GC_finalization_proc>(cleanup),
+                reinterpret_cast<void*>(reinterpret_cast<char*>(this_ptr) -
+                                        reinterpret_cast<char*>(base)),
+                &oldProc, &oldData);
+      if (oldProc != 0) {
+        GC_register_finalizer_ignore_self(base, oldProc, oldData, 0, 0);
+      }
     }
-  }
+# elif defined(CPPCHECK)
+    (void)cleanup;
+# endif
 }
 
 #ifdef GC_NAMESPACE
@@ -512,9 +521,14 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   switch (gcp) {
   case GC_NS_QUALIFY(UseGC):
     obj = GC_MALLOC(size);
-    if (cleanup != 0 && obj != 0) {
-      GC_REGISTER_FINALIZER_IGNORE_SELF(obj, cleanup, clientData, 0, 0);
-    }
+#   ifndef GC_NO_FINALIZATION
+      if (cleanup != 0 && obj != 0) {
+        GC_REGISTER_FINALIZER_IGNORE_SELF(obj, cleanup, clientData, 0, 0);
+      }
+#   else
+      (void)cleanup;
+      (void)clientData;
+#   endif
     break;
   case GC_NS_QUALIFY(PointerFreeGC):
     obj = GC_MALLOC_ATOMIC(size);

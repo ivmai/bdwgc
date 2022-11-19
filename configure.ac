@@ -1,12 +1,12 @@
 # Copyright (c) 1999-2001 by Red Hat, Inc. All rights reserved.
 # Copyright (c) 2005-2009 Hewlett-Packard Development Company, L.P.
-# Copyright (c) 2009-2021 Ivan Maidanski
+# Copyright (c) 2009-2022 Ivan Maidanski
 #
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
 #
 # Permission is hereby granted to use or copy this program
-# for any purpose,  provided the above notices are retained on all copies.
+# for any purpose, provided the above notices are retained on all copies.
 # Permission to modify the code and to distribute modified code is granted,
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
@@ -164,8 +164,7 @@ AH_TEMPLATE([USE_COMPILER_TLS],
             [Define to use of compiler-support for thread-local variables.])
 
 dnl Thread selection macros.
-AH_TEMPLATE([GC_THREADS],           [Define to support platform-specific
-                                     threads.])
+AH_TEMPLATE([GC_THREADS], [Define to support platform-specific threads.])
 AH_TEMPLATE([GC_WIN32_PTHREADS],
                 [Define to support pthreads-win32 or winpthreads.])
 
@@ -191,6 +190,8 @@ CFLAGS="$old_CFLAGS"
 
 THREADDLLIBS=
 need_atomic_ops_asm=false
+need_lib_rt=false
+compile_asm=false
 use_parallel_mark=no
 use_thread_local_alloc=no
 # Libraries needed to support dynamic loading and/or threads.
@@ -221,8 +222,9 @@ case "$THREADS" in
       *-*-hpux11*)
         AC_MSG_WARN("Only HP/UX 11 POSIX threads are supported.")
         AC_DEFINE(_POSIX_C_SOURCE,199506L)
-        THREADDLLIBS="-lpthread -lrt"
+        THREADDLLIBS="-lpthread"
         # HPUX needs REENTRANT for the _r calls.
+        need_lib_rt=true
         ;;
       *-*-openbsd*)
         AM_CFLAGS="$AM_CFLAGS -pthread"
@@ -241,10 +243,12 @@ case "$THREADS" in
       *-*-netbsd*)
         AC_MSG_WARN("Only on NetBSD 2.0 or later.")
         AC_DEFINE(_PTHREADS)
-        THREADDLLIBS="-lpthread -lrt"
+        THREADDLLIBS="-lpthread"
+        need_lib_rt=true
         ;;
       *-*-solaris*)
-        THREADDLLIBS="-lpthread -lrt"
+        THREADDLLIBS="-lpthread"
+        need_lib_rt=true
         ;;
       *-*-cygwin* | *-*-msys*)
         # Cygwin doesn't have a real libpthread, so Libtool can't link
@@ -265,7 +269,8 @@ case "$THREADS" in
         ;;
       *-*-osf*)
         AM_CFLAGS="$AM_CFLAGS -pthread"
-        THREADDLLIBS="-lpthread -lrt"
+        THREADDLLIBS="-lpthread"
+        need_lib_rt=true
         ;;
       *)
         AS_IF([test x$default_threadlibs != xtrue],
@@ -328,7 +333,22 @@ case "$THREADS" in
     AC_MSG_ERROR($THREADS is an unknown thread package)
     ;;
 esac
+
+# Check whether -lrt linker option is needed to use clock_gettime.
+if test "x$need_lib_rt" != xtrue; then
+  AC_MSG_CHECKING(for clock_gettime without additional libraries)
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <time.h>],
+                    [struct timespec t; clock_gettime(CLOCK_REALTIME, &t)])],
+    [AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)
+     AC_CHECK_LIB(rt, clock_gettime, [need_lib_rt=true])])
+fi
+
+if test "x$need_lib_rt" = xtrue; then
+  THREADDLLIBS="$THREADDLLIBS -lrt"
+fi
 AC_SUBST(THREADDLLIBS)
+
 AM_CONDITIONAL(THREADS, test x$THREADS != xnone)
 AM_CONDITIONAL(PTHREADS, test x$THREADS = xposix)
 AM_CONDITIONAL(DARWIN_THREADS, test x$darwin_threads = xtrue)
@@ -591,17 +611,21 @@ case "$host" in
     ;;
  sparc-*-netbsd*)
     machdep="sparc_netbsd_mach_dep.lo"
+    compile_asm=true
     ;;
  sparc*-*-linux* | sparc*-*-openbsd* | sparc64-*-freebsd* | sparc64-*-netbsd*)
     machdep="sparc_mach_dep.lo"
+    compile_asm=true
     ;;
  sparc-sun-solaris2.3)
     machdep="sparc_mach_dep.lo"
+    compile_asm=true
     AC_DEFINE(SUNOS53_SHARED_LIB, 1,
               [Define to work around a Solaris 5.3 bug (see dyn_load.c).])
     ;;
  sparc*-sun-solaris2*)
     machdep="sparc_mach_dep.lo"
+    compile_asm=true
     ;;
  ia64-*-*)
     machdep="ia64_save_regs_in_stack.lo"
@@ -611,6 +635,19 @@ AC_MSG_RESULT($machdep)
 addobjs="$addobjs $machdep"
 AC_SUBST(addobjs)
 AC_SUBST(addlibs)
+
+# Suppress "extension used" clang warning (when compiling .S files).
+if test x$compile_asm = xtrue -a "$GCC" = yes; then
+  AC_MSG_CHECKING([whether compiler supports -Wno-language-extension-token])
+  old_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS -Werror -Wno-language-extension-token"
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])],
+                    [ac_cv_lang_ext_token=yes], [ac_cv_lang_ext_token=no])
+  CFLAGS="$old_CFLAGS"
+  AS_IF([test "$ac_cv_lang_ext_token" = yes],
+        [CFLAGS="$CFLAGS -Wno-language-extension-token"])
+  AC_MSG_RESULT($ac_cv_lang_ext_token)
+fi
 
 dnl We use these options to decide which functions to include.
 AC_ARG_WITH(target-subdir,
@@ -791,30 +828,42 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <setjmp.h>],
    AC_DEFINE([GC_NO_SIGSETJMP], [1], [Missing sigsetjmp function.])])
 CFLAGS="$old_CFLAGS"
 
+# Build with GC_wcsdup() support if possible.
+AC_MSG_CHECKING(for wcslen)
+old_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $CFLAGS_EXTRA"
+AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <wchar.h>],
+                                [wchar_t ws[] = {0}; (void)wcslen(&ws)])],
+  [AC_MSG_RESULT(yes)
+   AC_DEFINE([GC_REQUIRE_WCSDUP], [1],
+             [Define and export GC_wcsdup function.])],
+  [AC_MSG_RESULT(no)])
+CFLAGS="$old_CFLAGS"
+
 # pthread_setname_np, if available, may have 1, 2 or 3 arguments.
 AS_IF([test "$THREADS" = posix],
   [AC_MSG_CHECKING(for pthread_setname_np)
    old_CFLAGS="$CFLAGS"
    CFLAGS="$CFLAGS $CFLAGS_EXTRA -Werror"
-   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <pthread.h>],
-                                      [pthread_setname_np("thread-name")])],
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#         define _GNU_SOURCE 1
+#         include <pthread.h>
+        ], [pthread_setname_np("thread-name")])],
      [AC_MSG_RESULT([yes (w/o tid)])
       AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID], [1],
                 [Define to use 'pthread_setname_np(const char*)' function.])],
-     [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <pthread.h>],
-                [pthread_setname_np(pthread_self(), "thread-name-%u", 0)])],
+     [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#         define _GNU_SOURCE 1
+#         include <pthread.h>
+        ], [pthread_setname_np(pthread_self(), "thread-name-%u", 0)])],
        [AC_MSG_RESULT([yes (with tid and arg)])
         AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG], [1],
          [Define to use 'pthread_setname_np(pthread_t, const char*, void *)'
           function.])],
        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
-#         ifdef __CYGWIN__
-#           define _GNU_SOURCE 1
-#         elif defined(__linux__) || defined(__GLIBC__) || defined(__GNU__)
-#           define _GNU_SOURCE 1
-#         endif
-#         include <pthread.h>
-         ], [pthread_setname_np(pthread_self(), "thread-name")])],
+#             define _GNU_SOURCE 1
+#             include <pthread.h>
+            ], [pthread_setname_np(pthread_self(), "thread-name")])],
          [AC_MSG_RESULT([yes (with tid)])
           AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_WITH_TID], [1],
                     [Define to use 'pthread_setname_np(pthread_t, const char*)'
@@ -1010,7 +1059,7 @@ AC_ARG_ENABLE(gcov,
 if test "$enable_gcov" = "yes"; then
   CFLAGS="-D NTHREADS=20 $CFLAGS --coverage"
   if test "${enable_shared}" = no; then
-    # FIXME: As of g++-4.8.4/x86_64, in case of shared library build, cpptest
+    # FIXME: As of g++-4.8.4/x64, in case of shared library build, cpptest
     # linkage fails with "hidden symbol atexit is referenced by DSO" message.
     CXXFLAGS="$CXXFLAGS --coverage"
   fi

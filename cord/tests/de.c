@@ -5,7 +5,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -40,38 +40,37 @@
 #if (defined(__BORLANDC__) || defined(__CYGWIN__) || defined(__MINGW32__) \
      || defined(__NT__) || defined(_WIN32)) && !defined(WIN32)
     /* If this is DOS or win16, we'll fail anyway.      */
-    /* Might as well assume win32.                      */
 #   define WIN32
 #endif
 
 #if defined(WIN32)
-#  ifndef WIN32_LEAN_AND_MEAN
-#    define WIN32_LEAN_AND_MEAN 1
-#  endif
-#  define NOSERVICE
-#  include <windows.h>
-#  include "de_win.h"
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
+# include <windows.h>
+# include "de_win.h"
 #elif defined(MACINTOSH)
-#       include <console.h>
+# include <console.h>
 /* curses emulation. */
-#       define initscr()
-#       define endwin()
-#       define nonl()
-#       define noecho() csetmode(C_NOECHO, stdout)
-#       define cbreak() csetmode(C_CBREAK, stdout)
-#       define refresh()
-#       define addch(c) putchar(c)
-#       define standout() cinverse(1, stdout)
-#       define standend() cinverse(0, stdout)
-#       define move(line,col) cgotoxy(col + 1, line + 1, stdout)
-#       define clrtoeol() ccleol(stdout)
-#       define de_error(s) { fprintf(stderr, s); getchar(); }
-#       define LINES 25
-#       define COLS 80
+# define initscr()
+# define endwin()
+# define nonl()
+# define noecho() csetmode(C_NOECHO, stdout)
+# define cbreak() csetmode(C_CBREAK, stdout)
+# define refresh()
+# define addch(c) putchar(c)
+# define standout() cinverse(1, stdout)
+# define standend() cinverse(0, stdout)
+# define move(line,col) cgotoxy(col + 1, line + 1, stdout)
+# define clrtoeol() ccleol(stdout)
+# define de_error(s) { fprintf(stderr, s); getchar(); }
+# define LINES 25
+# define COLS 80
 #else
-#  include <curses.h>
-#  include <unistd.h> /* for sleep() */
-#  define de_error(s) { fprintf(stderr, s); sleep(2); }
+# include <curses.h>
+# include <unistd.h> /* for sleep() */
+# define de_error(s) { fprintf(stderr, s); sleep(2); }
 #endif
 #include "de_cmds.h"
 
@@ -187,7 +186,7 @@ size_t line_pos(int i, int *c)
     if (map -> line < i - 2) /* rebuild */ invalidate_map(i);
     for (j = map -> line, cur = map -> pos; j < i;) {
         cur = CORD_chr(current, cur, '\n');
-        if (cur == current_len-1) return(CORD_NOT_FOUND);
+        if (cur == current_len-1) return CORD_NOT_FOUND;
         cur++;
         if (++j > current_map -> line) add_map(j, cur);
     }
@@ -200,7 +199,7 @@ size_t line_pos(int i, int *c)
         }
         cur += *c;
     }
-    return(cur);
+    return cur;
 }
 
 void add_hist(CORD s)
@@ -237,7 +236,6 @@ int screen_size = 0;
 /* terribly appropriate for tabs.                                                                       */
 void replace_line(int i, CORD s)
 {
-    CORD_pos p;
 #   if !defined(MACINTOSH)
         size_t len = CORD_len(s);
 #   endif
@@ -254,6 +252,8 @@ void replace_line(int i, CORD s)
         }
 #   endif
     if (CORD_cmp(screen[i], s) != 0) {
+        CORD_pos p;
+
         move(i, 0); clrtoeol(); move(i,0);
 
         CORD_FOR (p, s) {
@@ -284,7 +284,7 @@ CORD retrieve_line(CORD s, size_t pos, unsigned column)
     if (eol == CORD_NOT_FOUND) eol = CORD_len(candidate);
     len = (int)eol - (int)column;
     if (len < 0) len = 0;
-    return(CORD_substr(s, pos + column, len));
+    return CORD_substr(s, pos + column, len);
 }
 
 # ifdef WIN32
@@ -296,8 +296,8 @@ CORD retrieve_line(CORD s, size_t pos, unsigned column)
 
         invalidate_map(dis_line + LINES);       /* Prune search */
         pos = line_pos(dis_line + i, 0);
-        if (pos == CORD_NOT_FOUND) return(CORD_EMPTY);
-        return(retrieve_line(current, pos, dis_col));
+        if (pos == CORD_NOT_FOUND) return CORD_EMPTY;
+        return retrieve_line(current, pos, dis_col);
     }
 # endif
 
@@ -383,9 +383,9 @@ void fix_pos(void)
 }
 
 #if defined(WIN32)
-#  define beep() Beep(1000 /* Hz */, 300 /* ms */)
+# define beep() Beep(1000 /* Hz */, 300 /* ms */)
 #elif defined(MACINTOSH)
-#  define beep() SysBeep(1)
+# define beep() SysBeep(1)
 #else
 /*
  * beep() is part of some curses packages and not others.
@@ -394,7 +394,7 @@ void fix_pos(void)
   int beep(void)
   {
     putc('\007', stderr);
-    return(0);
+    return 0;
   }
 #endif /* !WIN32 && !MACINTOSH */
 

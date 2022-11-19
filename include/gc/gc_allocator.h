@@ -148,7 +148,7 @@ public:
     { GC_FREE(__p); }
 
   size_type max_size() const GC_NOEXCEPT
-    { return size_t(-1) / sizeof(GC_Tp); }
+    { return static_cast<size_t>(-1) / sizeof(GC_Tp); }
 
   void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
   void destroy(pointer __p) { __p->~GC_Tp(); }
@@ -225,7 +225,7 @@ public:
     { GC_FREE(__p); }
 
   size_type max_size() const GC_NOEXCEPT
-    { return size_t(-1) / sizeof(GC_Tp); }
+    { return static_cast<size_t>(-1) / sizeof(GC_Tp); }
 
   void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
   void destroy(pointer __p) { __p->~GC_Tp(); }
@@ -304,7 +304,7 @@ public:
     { GC_FREE(__p); }
 
   size_type max_size() const GC_NOEXCEPT
-    { return size_t(-1) / sizeof(GC_Tp); }
+    { return static_cast<size_t>(-1) / sizeof(GC_Tp); }
 
   void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
   void destroy(pointer __p) { __p->~GC_Tp(); }

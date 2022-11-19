@@ -10,7 +10,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -20,7 +20,7 @@
 /* We separate it only to make gc.h more suitable as documentation.       */
 #if defined(GC_H)
 
-/* Convenient internal macro to test version of GCC.    */
+/* Convenient internal macro to test version of gcc.    */
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
 # define GC_GNUC_PREREQ(major, minor) \
             ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((major) << 16) + (minor))

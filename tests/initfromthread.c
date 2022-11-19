@@ -85,7 +85,7 @@ int main(void)
     /* GC_INIT() must be called from main thread only. */
     GC_INIT();
 # endif
-  (void)GC_get_parallel(); /* linking fails if no threads support */
+  (void)GC_get_suspend_signal(); /* linking fails if no threads support */
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
 # ifdef GC_PTHREADS

@@ -2,12 +2,13 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 2005 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 2008-2022 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -27,12 +28,13 @@
 /* This interface is most useful for compilers that generate C.         */
 /* It is also used internally for thread-local allocation.              */
 /* Manual use is hereby discouraged.                                    */
+/* Clients should include atomic_ops.h (or similar) before this header. */
 
 #include "gc.h"
 #include "gc_tiny_fl.h"
 
 #if GC_GNUC_PREREQ(3, 0)
-# define GC_EXPECT(expr, outcome) __builtin_expect(expr,outcome)
+# define GC_EXPECT(expr, outcome) __builtin_expect(expr, outcome)
   /* Equivalent to (expr), but predict that usually (expr)==outcome. */
 #else
 # define GC_EXPECT(expr, outcome) (expr)
@@ -59,9 +61,9 @@
 # endif
 #endif
 
-/* Object kinds; must match PTRFREE, NORMAL in gc_priv.h.       */
+/* Object kinds (exposed to public).    */
 #define GC_I_PTRFREE 0
-#define GC_I_NORMAL 1
+#define GC_I_NORMAL  1
 
 /* Store a pointer to a list of newly allocated objects of kind k and   */
 /* size lb in *result.  The caller must make sure that *result is       */
@@ -113,11 +115,11 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 # define GC_FAST_MALLOC_GRANS(result,granules,tiny_fl,num_direct, \
                               kind,default_expr,init) \
   do { \
-    if (GC_EXPECT((granules) >= GC_TINY_FREELISTS,0)) { \
+    if (GC_EXPECT((granules) >= GC_TINY_FREELISTS, 0)) { \
         result = (default_expr); \
     } else { \
         void **my_fl = (tiny_fl) + (granules); \
-        void *my_entry=*my_fl; \
+        void *my_entry = *my_fl; \
         void *next; \
     \
         for (;;) { \

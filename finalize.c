@@ -3,13 +3,13 @@
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 2007 Free Software Foundation, Inc.
- * Copyright (c) 2008-2020 Ivan Maidanski
+ * Copyright (c) 2008-2022 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -92,11 +92,10 @@ GC_API void GC_CALL GC_push_finalizer_structures(void)
 #endif
 
 /* Double the size of a hash table. *log_size_ptr is the log of its     */
-/* current size.  May be a no-op.                                       */
-/* *table is a pointer to an array of hash headers.  If we succeed, we  */
-/* update both *table and *log_size_ptr.  Lock is held.                 */
+/* current size.  May be a no-op.  *table is a pointer to an array of   */
+/* hash headers.  We update both *table and *log_size_ptr on success.   */
 STATIC void GC_grow_table(struct hash_chain_entry ***table,
-                          unsigned *log_size_ptr, word *entries_ptr)
+                          unsigned *log_size_ptr, const word *entries_ptr)
 {
     word i;
     struct hash_chain_entry *p;
@@ -116,7 +115,7 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
       IF_CANCEL(int cancel_state;)
 
       DISABLE_CANCEL(cancel_state);
-      (void)GC_try_to_collect_inner(GC_never_stop_func);
+      GC_gcollect_inner();
       RESTORE_CANCEL(cancel_state);
       /* GC_finalize might decrease entries value.  */
       if (*entries_ptr < ((word)1 << log_old_size) - (*entries_ptr >> 2))
@@ -159,7 +158,7 @@ GC_API int GC_CALL GC_register_disappearing_link(void * * link)
     base = (ptr_t)GC_base(link);
     if (base == 0)
         ABORT("Bad arg to GC_register_disappearing_link");
-    return(GC_general_register_disappearing_link(link, base));
+    return GC_general_register_disappearing_link(link, base);
 }
 
 STATIC int GC_register_disappearing_link_inner(
@@ -171,6 +170,7 @@ STATIC int GC_register_disappearing_link_inner(
     struct disappearing_link * new_dl;
     DCL_LOCK_STATE;
 
+    GC_ASSERT(GC_is_initialized);
     if (EXPECT(GC_find_leak, FALSE)) return GC_UNIMPLEMENTED;
 #   ifdef GC_ASSERTIONS
       GC_noop1((word)(*link)); /* check accessibility */
@@ -196,7 +196,7 @@ STATIC int GC_register_disappearing_link_inner(
     }
     new_dl = (struct disappearing_link *)
         GC_INTERNAL_MALLOC(sizeof(struct disappearing_link),NORMAL);
-    if (0 == new_dl) {
+    if (EXPECT(NULL == new_dl, FALSE)) {
       GC_oom_func oom_fn = GC_oom_fn;
       UNLOCK();
       new_dl = (struct disappearing_link *)
@@ -284,7 +284,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     struct disappearing_link *curr_dl;
     DCL_LOCK_STATE;
 
-    if (((word)link & (ALIGNMENT-1)) != 0) return(0); /* Nothing to do. */
+    if (((word)link & (ALIGNMENT-1)) != 0) return 0; /* Nothing to do. */
 
     LOCK();
     curr_dl = GC_unregister_disappearing_link_inner(&GC_dl_hashtbl, link);
@@ -292,6 +292,27 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     if (NULL == curr_dl) return 0;
     FREE_DL_ENTRY(curr_dl);
     return 1;
+}
+
+/* Mark from one finalizable object using the specified mark proc.      */
+/* May not mark the object pointed to by real_ptr (i.e, it is the job   */
+/* of the caller, if appropriate).  Note that this is called with the   */
+/* mutator running.  This is safe only if the mutator (client) gets     */
+/* the allocation lock to reveal hidden pointers.                       */
+GC_INLINE void GC_mark_fo(ptr_t real_ptr, finalization_mark_proc mark_proc)
+{
+  GC_ASSERT(I_HOLD_LOCK());
+  mark_proc(real_ptr);
+  /* Process objects pushed by the mark procedure.      */
+  while (!GC_mark_stack_empty())
+    MARK_FROM_MARK_STACK();
+}
+
+/* Complete a collection in progress, if any.   */
+GC_INLINE void GC_complete_ongoing_collection(void) {
+  if (EXPECT(GC_collection_in_progress(), FALSE)) {
+    while (!GC_mark_some(NULL)) { /* empty */ }
+  }
 }
 
 /* Toggle-ref support.  */
@@ -343,21 +364,6 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
   STATIC void GC_normal_finalize_mark_proc(ptr_t);
 
-  static void push_and_mark_object(void *p)
-  {
-    GC_ASSERT(I_HOLD_LOCK());
-    GC_normal_finalize_mark_proc((ptr_t)p);
-    while (!GC_mark_stack_empty()) {
-      MARK_FROM_MARK_STACK();
-    }
-    GC_set_mark_bit(p);
-    if (GC_mark_state != MS_NONE) {
-      while (!GC_mark_some(0)) {
-        /* Empty. */
-      }
-    }
-  }
-
   STATIC void GC_mark_togglerefs(void)
   {
     size_t i;
@@ -370,7 +376,10 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     for (i = 0; i < GC_toggleref_array_size; ++i) {
       void *obj = GC_toggleref_arr[i].strong_ref;
       if (obj != NULL && ((word)obj & 1) == 0) {
-        push_and_mark_object(obj);
+        /* Push and mark the object.    */
+        GC_mark_fo((ptr_t)obj, GC_normal_finalize_mark_proc);
+        GC_set_mark_bit(obj);
+        GC_complete_ongoing_collection();
       }
     }
   }
@@ -505,7 +514,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     struct disappearing_link *curr_dl;
     DCL_LOCK_STATE;
 
-    if (((word)link & (ALIGNMENT-1)) != 0) return(0); /* Nothing to do. */
+    if (((word)link & (ALIGNMENT-1)) != 0) return 0; /* Nothing to do. */
 
     LOCK();
     curr_dl = GC_unregister_disappearing_link_inner(&GC_ll_hashtbl, link);
@@ -517,7 +526,6 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 #endif /* !GC_LONG_REFS_NOT_NEEDED */
 
 #ifndef GC_MOVE_DISAPPEARING_LINK_NOT_NEEDED
-  /* Moves a link.  Assume the lock is held.    */
   STATIC int GC_move_disappearing_link_inner(
                                 struct dl_hashtbl_s *dl_hashtbl,
                                 void **link, void **new_link)
@@ -615,7 +623,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 /* overflow is handled by the caller, and is not a disaster.            */
 #if defined(_MSC_VER) && defined(I386)
   GC_ATTR_NOINLINE
-  /* Otherwise some optimizer bug is tickled in VC for X86 (v19, at least). */
+  /* Otherwise some optimizer bug is tickled in VC for x86 (v19, at least). */
 #endif
 STATIC void GC_normal_finalize_mark_proc(ptr_t p)
 {
@@ -654,7 +662,10 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
     }
 }
 
-STATIC void GC_null_finalize_mark_proc(ptr_t p GC_ATTR_UNUSED) {}
+STATIC void GC_null_finalize_mark_proc(ptr_t p)
+{
+    UNUSED_ARG(p);
+}
 
 /* Possible finalization_marker procedures.  Note that mark stack       */
 /* overflow is handled by the caller, and is not a disaster.            */
@@ -685,11 +696,13 @@ STATIC void GC_register_finalizer_inner(void * obj,
     hdr *hhdr = NULL; /* initialized to prevent warning. */
     DCL_LOCK_STATE;
 
+    GC_ASSERT(GC_is_initialized);
     if (EXPECT(GC_find_leak, FALSE)) {
       /* No-op.  *ocd and *ofn remain unchanged.    */
       return;
     }
     LOCK();
+    GC_ASSERT(obj != NULL && GC_base_C(obj) == obj);
     if (EXPECT(NULL == GC_fnlz_roots.fo_head, FALSE)
         || EXPECT(GC_fo_entries > ((word)1 << GC_log_fo_table_size), FALSE)) {
         GC_grow_table((struct hash_chain_entry ***)&GC_fnlz_roots.fo_head,
@@ -697,7 +710,6 @@ STATIC void GC_register_finalizer_inner(void * obj,
         GC_COND_LOG_PRINTF("Grew fo table to %u entries\n",
                            1U << GC_log_fo_table_size);
     }
-    /* in the THREADS case we hold allocation lock.             */
     for (;;) {
       struct finalizable_object *prev_fo = NULL;
       GC_oom_func oom_fn;
@@ -926,7 +938,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     *(char *)&GC_finalizer_nested = (char)(nesting_level + 1);
     return (unsigned char *)&GC_finalizer_nested;
   }
-#endif /* THREADS */
+#endif /* !THREADS */
 
 GC_INLINE void GC_make_disappearing_links_disappear(
                                         struct dl_hashtbl_s* dl_hashtbl,
@@ -982,9 +994,8 @@ GC_INLINE void GC_make_disappearing_links_disappear(
     GC_dirty(dl_hashtbl -> head); /* entire object */
 }
 
-/* Called with held lock (but the world is running).                    */
 /* Cause disappearing links to disappear and unreachable objects to be  */
-/* enqueued for finalization.                                           */
+/* enqueued for finalization.  Called with the world running.           */
 GC_INNER void GC_finalize(void)
 {
     struct finalizable_object * curr_fo, * prev_fo, * next_fo;
@@ -1010,7 +1021,7 @@ GC_INNER void GC_finalize(void)
 
   /* Mark all objects reachable via chains of 1 or more pointers        */
   /* from finalizable objects.                                          */
-    GC_ASSERT(GC_mark_state == MS_NONE);
+    GC_ASSERT(!GC_collection_in_progress());
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = GC_fnlz_roots.fo_head[i];
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
@@ -1018,7 +1029,7 @@ GC_INNER void GC_finalize(void)
         real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
             GC_MARKED_FOR_FINALIZATION(real_ptr);
-            GC_MARK_FO(real_ptr, curr_fo -> fo_mark_proc);
+            GC_mark_fo(real_ptr, curr_fo -> fo_mark_proc);
             if (GC_is_marked(real_ptr)) {
                 WARN("Finalization cycle involving %p\n", real_ptr);
             }
@@ -1082,7 +1093,7 @@ GC_INNER void GC_finalize(void)
         real_ptr = (ptr_t)curr_fo -> fo_hidden_base;
         if (!GC_is_marked(real_ptr)) {
             if (curr_fo -> fo_mark_proc == GC_null_finalize_mark_proc) {
-                GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
+                GC_mark_fo(real_ptr, GC_normal_finalize_mark_proc);
             }
             if (curr_fo -> fo_mark_proc != GC_unreachable_finalize_mark_proc) {
                 GC_set_mark_bit(real_ptr);
@@ -1156,9 +1167,10 @@ GC_INNER void GC_finalize(void)
 #ifndef JAVA_FINALIZATION_NOT_NEEDED
 
   /* Enqueue all remaining finalizers to be run.        */
+  /* A collection in progress, if any, is completed     */
+  /* when the first finalizer is enqueued.              */
   STATIC void GC_enqueue_all_finalizers(void)
   {
-    struct finalizable_object * next_fo;
     size_t i;
     size_t fo_size = GC_fnlz_roots.fo_head == NULL ? 0 :
                                 (size_t)1 << GC_log_fo_table_size;
@@ -1170,11 +1182,12 @@ GC_INNER void GC_finalize(void)
 
       GC_fnlz_roots.fo_head[i] = NULL;
       while (curr_fo != NULL) {
+          struct finalizable_object * next_fo;
           ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
 
-          GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
+          GC_mark_fo(real_ptr, GC_normal_finalize_mark_proc);
           GC_set_mark_bit(real_ptr);
-
+          GC_complete_ongoing_collection();
           next_fo = fo_next(curr_fo);
 
           /* Add to list of objects awaiting finalization.      */
@@ -1205,8 +1218,6 @@ GC_INNER void GC_finalize(void)
    * may have been finalized when these finalizers are run.
    * Finalizers run at this point must be prepared to deal with a
    * mostly broken world.
-   * This routine is externally callable, so is called without
-   * the allocation lock.
    */
   GC_API void GC_CALL GC_finalize_all(void)
   {
@@ -1241,13 +1252,13 @@ GC_API int GC_CALL GC_should_invoke_finalizers(void)
 }
 
 /* Invoke finalizers for all objects that are ready to be finalized.    */
-/* Should be called without allocation lock.                            */
 GC_API int GC_CALL GC_invoke_finalizers(void)
 {
     int count = 0;
     word bytes_freed_before = 0; /* initialized to prevent warning. */
     DCL_LOCK_STATE;
 
+    GC_ASSERT(I_DONT_HOLD_LOCK());
     while (GC_should_invoke_finalizers()) {
         struct finalizable_object * curr_fo;
 

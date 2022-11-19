@@ -3,13 +3,13 @@
 # Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
 # Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
 # Copyright (c) 2000-2010 by Hewlett-Packard Company.  All rights reserved.
-# Copyright (c) 2010-2021 Ivan Maidanski
+# Copyright (c) 2010-2022 Ivan Maidanski
 ##
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
 ##
 # Permission is hereby granted to use or copy this program
-# for any purpose,  provided the above notices are retained on all copies.
+# for any purpose, provided the above notices are retained on all copies.
 # Permission to modify the code and to distribute modified code is granted,
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
@@ -30,8 +30,8 @@ set(PACKAGE_VERSION 8.3.0)
 
 # Info (current:revision:age) for the Libtool versioning system.
 # These values should match those in cord/cord.am and Makefile.am.
-set(LIBCORD_VER_INFO    5:0:4)
-set(LIBGC_VER_INFO      6:0:5)
+set(LIBCORD_VER_INFO    6:0:5)
+set(LIBGC_VER_INFO      6:1:5)
 set(LIBGCCPP_VER_INFO   6:0:5)
 
 option(enable_cplusplus "C++ support" OFF)
@@ -39,6 +39,11 @@ if (enable_cplusplus)
   project(gc)
 else()
   project(gc C)
+endif()
+
+if (POLICY CMP0057)
+  # Required for CheckLinkerFlag, at least.
+  cmake_policy(SET CMP0057 NEW)
 endif()
 
 include(CheckCCompilerFlag)
@@ -49,6 +54,10 @@ include(CheckSymbolExists)
 include(CMakePackageConfigHelpers)
 include(CTest)
 include(GNUInstallDirs)
+
+if (NOT (${CMAKE_VERSION} VERSION_LESS "3.18.0"))
+  include(CheckLinkerFlag)
+endif()
 
 # Customize the build by passing "-D<option_name>=ON|OFF" in the command line.
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
@@ -77,11 +86,21 @@ option(enable_register_main_static_data "Perform the initial guess of data root 
 option(enable_checksums "Report erroneously cleared dirty bits" OFF)
 option(enable_werror "Pass -Werror to the C compiler (treat warnings as errors)" OFF)
 option(enable_single_obj_compilation "Compile all libgc source files into single .o" OFF)
+option(disable_single_obj_compilation "Compile each libgc source file independently" OFF)
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 option(disable_handle_fork "Prohibit installation of pthread_atfork() handlers" OFF)
 option(install_headers "Install header and pkg-config metadata files" ON)
 option(with_libatomic_ops "Use an external libatomic_ops" OFF)
 option(without_libatomic_ops "Use atomic_ops.h in libatomic_ops/src" OFF)
+
+# Override the default build type to RelWithDebInfo (this instructs cmake to
+# pass -O2 -g -DNDEBUG options to the compiler by default).
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE
+      STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY
+               STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
+endif()
 
 # Convert VER_INFO values to [SO]VERSION ones.
 if (BUILD_SHARED_LIBS)
@@ -120,11 +139,10 @@ endif()
 # Output all warnings.
 if (BORLAND)
   # All warnings except for particular ones.
-  add_compile_options(/w /w-pro /w-aus /w-par /w-ccc /w-inl /w-rch)
+  add_compile_options(/w /w-aus /w-ccc /w-inl /w-pro /w-rch)
 elseif (MSVC)
-  # All warnings but ignoring "unreferenced formal parameter" and
-  # "conditional expression is constant" ones.
-  add_compile_options(/W4 /wd4100 /wd4127)
+  # All warnings but ignoring "conditional expression is constant" one.
+  add_compile_options(/W4 /wd4127)
   # Disable crt security warnings, since unfortunately they warn about all
   # sorts of safe uses of strncpy.
   add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
@@ -145,6 +163,7 @@ set(NODIST_SRC)
 set(ATOMIC_OPS_LIBS)
 set(ATOMIC_OPS_LIBS_CMAKE)
 set(THREADDLLIBS_LIST)
+set(NEED_LIB_RT)
 
 set(_HOST ${CMAKE_SYSTEM_PROCESSOR}-unknown-${CMAKE_SYSTEM})
 string(TOLOWER ${_HOST} HOST)
@@ -224,9 +243,13 @@ if (CMAKE_USE_PTHREADS_INIT)
   if (HOST MATCHES .*-.*-hpux11.*)
     message("Only HP/UX 11 POSIX threads are supported.")
     add_definitions("-D_POSIX_C_SOURCE=199506L")
+    set(NEED_LIB_RT ON)
   elseif (HOST MATCHES .*-.*-netbsd.*)
     message("Only on NetBSD 2.0 or later.")
     add_definitions("-D_PTHREADS")
+    set(NEED_LIB_RT ON)
+  elseif (CMAKE_C_COMPILER_ID STREQUAL "SunPro")
+    set(NEED_LIB_RT ON)
   endif()
   if (MSYS)
     # Does not provide process fork functionality.
@@ -254,6 +277,23 @@ elseif (CMAKE_USE_WIN32_THREADS_INIT)
 elseif (CMAKE_HP_PTHREADS_INIT OR CMAKE_USE_SPROC_INIT)
   message(FATAL_ERROR "Unsupported thread package")
 endif()
+
+# Check whether -lrt linker option is needed to use clock_gettime.
+if (NOT NEED_LIB_RT)
+  check_function_exists(clock_gettime HAVE_CLOCK_GETTIME_DIRECTLY)
+  if (NOT HAVE_CLOCK_GETTIME_DIRECTLY)
+    # Use of clock_gettime() probably requires linking with "rt" library.
+    set(NEED_LIB_RT ON)
+  endif()
+endif()
+
+# Locate and use "rt" library if needed (and the library is available).
+if (NEED_LIB_RT)
+  find_library(LIBRT rt)
+  if (LIBRT)
+    set(THREADDLLIBS_LIST ${THREADDLLIBS_LIST} ${LIBRT})
+  endif()
+endif(NEED_LIB_RT)
 
 if (disable_handle_fork)
   add_definitions("-DNO_HANDLE_FORK")
@@ -364,7 +404,7 @@ if (enable_werror)
   endif()
 endif(enable_werror)
 
-if (enable_single_obj_compilation OR BUILD_SHARED_LIBS)
+if (enable_single_obj_compilation OR (BUILD_SHARED_LIBS AND NOT disable_single_obj_compilation))
   set(SRC extra/gc.c) # override SRC
   if (CMAKE_USE_PTHREADS_INIT AND NOT (APPLE OR CYGWIN OR MSYS))
     add_definitions("-DGC_PTHREAD_START_STANDALONE")
@@ -380,12 +420,16 @@ if (MSVC)
   set(SRC ${SRC} extra/msvc_dbg.c)
 endif()
 
+# Instruct check_c_source_compiles to skip linking.
+# Alternatively, we could set CMAKE_REQUIRED_LIBRARIES properly.
+SET(CMAKE_REQUIRED_FLAGS "-c")
+
 # Instruct check_c_source_compiles and similar CMake checks not to ignore
 # compiler warnings (like "implicit declaration of function").
 if (NOT BORLAND AND NOT MSVC AND NOT WATCOM)
   check_c_compiler_flag(-Werror HAVE_FLAG_WERROR)
   if (HAVE_FLAG_WERROR)
-    SET(CMAKE_REQUIRED_FLAGS "-Werror")
+    SET(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Werror")
   endif(HAVE_FLAG_WERROR)
 endif()
 
@@ -399,7 +443,13 @@ if (BUILD_SHARED_LIBS)
   else()
     add_definitions("-DGC_NO_VISIBILITY")
   endif()
-  check_c_compiler_flag(-Wl,--no-undefined HAVE_FLAG_WL_NO_UNDEFINED)
+  if (${CMAKE_VERSION} VERSION_LESS "3.18.0")
+    set(WL_NO_UNDEFINED_OPT "-Wl,--no-undefined")
+    check_c_compiler_flag(${WL_NO_UNDEFINED_OPT} HAVE_FLAG_WL_NO_UNDEFINED)
+  else()
+    set(WL_NO_UNDEFINED_OPT "LINKER:--no-undefined")
+    check_linker_flag(C "${WL_NO_UNDEFINED_OPT}" HAVE_FLAG_WL_NO_UNDEFINED)
+  endif()
 else()
   add_definitions("-DGC_NOT_DLL")
   if (WIN32)
@@ -444,9 +494,16 @@ if (NOT HAVE_SIGSETJMP)
   add_definitions("-DGC_NO_SIGSETJMP")
 endif()
 
+# Build with GC_wcsdup() support if possible.
+check_symbol_exists(wcslen wchar.h HAVE_WCSLEN)
+if (HAVE_WCSLEN)
+  add_definitions("-DGC_REQUIRE_WCSDUP")
+endif()
+
 # pthread_setname_np, if available, may have 1, 2 or 3 arguments.
 if (CMAKE_USE_PTHREADS_INIT)
   check_c_source_compiles("
+#define _GNU_SOURCE 1\n
 #include <pthread.h>\n
 int main(void) { (void)pthread_setname_np(\"thread-name\"); return 0; }"
     HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
@@ -455,6 +512,7 @@ int main(void) { (void)pthread_setname_np(\"thread-name\"); return 0; }"
     add_definitions("-DHAVE_PTHREAD_SETNAME_NP_WITHOUT_TID")
   else()
     check_c_source_compiles("
+#define _GNU_SOURCE 1\n
 #include <pthread.h>\n
 int main(void) {\n
   (void)pthread_setname_np(pthread_self(), \"thread-name-%u\", 0); return 0; }"
@@ -464,9 +522,7 @@ int main(void) {\n
       add_definitions("-DHAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG")
     else()
       check_c_source_compiles("
-#if defined(__linux__) || defined(__GLIBC__) || defined(__GNU__) || defined(__CYGWIN__)\n
 #define _GNU_SOURCE 1\n
-#endif\n
 #include <pthread.h>\n
 int main(void) {\n
   (void)pthread_setname_np(pthread_self(), \"thread-name\"); return 0; }"
@@ -491,10 +547,8 @@ if (HAVE_DLADDR)
 endif()
 
 add_library(gc ${SRC})
-if (enable_threads)
-  target_link_libraries(gc
+target_link_libraries(gc
                 PRIVATE ${ATOMIC_OPS_LIBS_CMAKE} ${THREADDLLIBS_LIST})
-endif()
 target_include_directories(gc INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include>")
@@ -543,17 +597,29 @@ endif(build_cord)
 
 if (BUILD_SHARED_LIBS AND HAVE_FLAG_WL_NO_UNDEFINED)
   # Declare that the libraries do not refer to external symbols.
-  # TODO: use add_link_options() when cmake_minimum_required > 3.13
-  target_link_libraries(gc PRIVATE -Wl,--no-undefined)
-  if (enable_cplusplus)
-    target_link_libraries(gccpp PRIVATE -Wl,--no-undefined)
-    if (enable_throw_bad_alloc_library)
-      target_link_libraries(gctba PRIVATE -Wl,--no-undefined)
-    endif(enable_throw_bad_alloc_library)
-  endif(enable_cplusplus)
-  if (build_cord)
-    target_link_libraries(cord PRIVATE -Wl,--no-undefined)
-  endif(build_cord)
+  if (${CMAKE_VERSION} VERSION_LESS "3.13.0")
+    target_link_libraries(gc PRIVATE ${WL_NO_UNDEFINED_OPT})
+    if (enable_cplusplus)
+      target_link_libraries(gccpp PRIVATE ${WL_NO_UNDEFINED_OPT})
+      if (enable_throw_bad_alloc_library)
+        target_link_libraries(gctba PRIVATE ${WL_NO_UNDEFINED_OPT})
+      endif(enable_throw_bad_alloc_library)
+    endif(enable_cplusplus)
+    if (build_cord)
+      target_link_libraries(cord PRIVATE ${WL_NO_UNDEFINED_OPT})
+    endif(build_cord)
+  else()
+    target_link_options(gc PRIVATE ${WL_NO_UNDEFINED_OPT})
+    if (enable_cplusplus)
+      target_link_options(gccpp PRIVATE ${WL_NO_UNDEFINED_OPT})
+      if (enable_throw_bad_alloc_library)
+        target_link_options(gctba PRIVATE ${WL_NO_UNDEFINED_OPT})
+      endif(enable_throw_bad_alloc_library)
+    endif(enable_cplusplus)
+    if (build_cord)
+      target_link_options(cord PRIVATE ${WL_NO_UNDEFINED_OPT})
+    endif(build_cord)
+  endif()
 endif()
 
 if (BUILD_SHARED_LIBS)

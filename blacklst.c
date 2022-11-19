@@ -6,7 +6,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -24,16 +24,10 @@
  * block, even though it does not start on the dangerous block.
  */
 
-/*
- * Externally callable routines are:
-
- * GC_add_to_black_list_normal
- * GC_add_to_black_list_stack
- * GC_promote_black_lists
- * GC_is_black_listed
- *
- * All require that the allocator lock is held.
- */
+/* Externally callable routines are:    */
+/* - GC_add_to_black_list_normal,       */
+/* - GC_add_to_black_list_stack,        */
+/* - GC_promote_black_lists.            */
 
 /* Pointers to individual tables.  We replace one table by another by   */
 /* switching these pointers.                                            */
@@ -141,6 +135,7 @@ GC_INNER void GC_promote_black_lists(void)
     word * very_old_normal_bl = GC_old_normal_bl;
     word * very_old_stack_bl = GC_old_stack_bl;
 
+    GC_ASSERT(I_HOLD_LOCK());
     GC_old_normal_bl = GC_incomplete_normal_bl;
     GC_old_stack_bl = GC_incomplete_stack_bl;
     if (!GC_all_interior_pointers) {
@@ -197,6 +192,9 @@ GC_INNER void GC_unpromote_black_lists(void)
   GC_INNER void GC_add_to_black_list_normal(word p)
 #endif
 {
+# ifndef PARALLEL_MARK
+    GC_ASSERT(I_HOLD_LOCK());
+# endif
   if (GC_modws_valid_offsets[p & (sizeof(word)-1)]) {
     word index = PHT_HASH((word)p);
 
@@ -221,6 +219,9 @@ GC_INNER void GC_unpromote_black_lists(void)
 {
   word index = PHT_HASH((word)p);
 
+# ifndef PARALLEL_MARK
+    GC_ASSERT(I_HOLD_LOCK());
+# endif
   if (HDR(p) == 0 || get_pht_entry_from_index(GC_old_stack_bl, index)) {
 #   ifdef PRINT_BLACK_LIST
       if (!get_pht_entry_from_index(GC_incomplete_stack_bl, index)) {
@@ -238,8 +239,10 @@ GC_INNER void GC_unpromote_black_lists(void)
  * that every smaller value of r after h is also black listed.)
  * If (h,len) is not black listed, return 0.
  * Knows about the structure of the black list hash tables.
+ * Assumes the allocation lock is held but no assertion about it by design.
  */
-struct hblk * GC_is_black_listed(struct hblk *h, word len)
+GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *h,
+                                                    GC_word len)
 {
     word index = PHT_HASH((word)h);
     word i;
@@ -248,7 +251,7 @@ struct hblk * GC_is_black_listed(struct hblk *h, word len)
     if (!GC_all_interior_pointers
         && (get_pht_entry_from_index(GC_old_normal_bl, index)
             || get_pht_entry_from_index(GC_incomplete_normal_bl, index))) {
-      return (h+1);
+      return h + 1;
     }
 
     nblocks = divHBLKSZ(len);
@@ -260,14 +263,14 @@ struct hblk * GC_is_black_listed(struct hblk *h, word len)
         } else {
           if (get_pht_entry_from_index(GC_old_stack_bl, index)
               || get_pht_entry_from_index(GC_incomplete_stack_bl, index)) {
-            return(h+i+1);
+            return h + (i+1);
           }
           i++;
         }
         if (i >= nblocks) break;
-        index = PHT_HASH((word)(h+i));
+        index = PHT_HASH((word)(h + i));
     }
-    return(0);
+    return NULL;
 }
 
 /* Return the number of blacklisted blocks in a given range.    */
@@ -284,7 +287,7 @@ STATIC word GC_number_stack_black_listed(struct hblk *start,
 
         if (get_pht_entry_from_index(GC_old_stack_bl, index)) result++;
     }
-    return(result);
+    return result;
 }
 
 /* Return the total number of (stack) black-listed bytes. */
@@ -299,5 +302,5 @@ static word total_stack_black_listed(void)
 
         total += GC_number_stack_black_listed(start, endp1);
     }
-    return(total * HBLKSIZE);
+    return total * HBLKSIZE;
 }

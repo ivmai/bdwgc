@@ -1,6 +1,6 @@
 The collector has at various times been compiled under Windows 95 and later,
 NT, and XP, with the original Microsoft SDK, with Visual C++ 2.0, 4.0, and 6,
-with the GNU win32 tools, with Borland C++ Builder, with Watcom C, with EMX,
+with the GNU Win32 tools, with Borland C++ Builder, with Watcom C, with EMX,
 and with the Digital Mars compiler (DMC).
 
 For historical reasons,
@@ -15,7 +15,7 @@ message.
 
 A toy editor (de.exe) based on cords (heavyweight
 strings represented as trees) has been ported and is included.
-It runs fine under either win32 or win32S.  It serves as an example
+It runs fine under either Win32 or win32s.  It serves as an example
 of a true Windows application, except that it was written by a
 nonexpert Windows programmer.  (There are some peculiarities
 in the way files are displayed.  The <cr> is displayed explicitly
@@ -65,7 +65,7 @@ GNU Tools
 The collector should be buildable under Cygwin with the
 "./configure; make check" machinery.
 
-MinGW builds (including for x86_64) are available both directly (on a Windows
+MinGW builds (including for x64) are available both directly (on a Windows
 host) and via cross-compilation, e.g.
 "./configure --host=i686-pc-mingw32; make check"
 
@@ -104,9 +104,9 @@ Watcom compiler
 Ivan V. Demakov's README for the Watcom port:
 
 The collector has been tested with Watcom C 10.6, 11.0 and OpenWatcom 2.0.
-It runs under win32, win32s, and even under msdos with dos4gw
+It runs under Win32 and win32s, and even under DOS with dos4gw
 dos-extender. It should also run under OS/2, though this isn't
-tested. Under win32 the collector can be built either as dll
+tested. Under Win32 the collector can be built either as dll
 or as static library.
 
 Note that all compilations were done under Windows 95 or NT.
@@ -201,7 +201,7 @@ equivalent of _beginthread, and it should not be used.
 
 GC_INIT should be called from the main thread before other GC calls.
 
-We strongly advise against using the TerminateThread() win32 API call,
+We strongly advise against using the TerminateThread() Windows API call,
 especially with the garbage collector.  Any use is likely to provoke a
 crash in the GC, since it makes it impossible for the collector to
 correctly track threads.

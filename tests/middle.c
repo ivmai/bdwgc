@@ -21,6 +21,10 @@ int main (void)
     (void)GC_malloc_atomic(ALLOC_SZ);
     (void)GC_malloc(ALLOC_SZ);
   }
+
+  /* Test delayed start of marker threads, if they are enabled. */
+  GC_start_mark_threads();
+
   for (i = 0; i < N_TESTS; ++i) {
     (void)GC_malloc_atomic(ALLOC_SZ/2);
     (void)GC_malloc(ALLOC_SZ/2);

@@ -3,13 +3,13 @@
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
- * Copyright (c) 2009-2021 Ivan Maidanski
+ * Copyright (c) 2009-2022 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -18,10 +18,8 @@
 #include "private/gc_priv.h"
 
 #ifdef ENABLE_DISCLAIM
-#  include "gc/gc_disclaim.h"
+# include "gc/gc_disclaim.h"
 #endif
-
-#include <stdio.h>
 
 GC_INNER signed_word GC_bytes_found = 0;
                         /* Number of bytes of memory reclaimed     */
@@ -138,7 +136,7 @@ GC_INNER void GC_print_all_errors(void)
 /* objects.  This does not require the block to be in physical memory.  */
 GC_INNER GC_bool GC_block_empty(hdr *hhdr)
 {
-    return (hhdr -> hb_n_marks == 0);
+    return 0 == hhdr -> hb_n_marks;
 }
 
 STATIC GC_bool GC_block_nearly_full(hdr *hhdr, word sz)
@@ -236,7 +234,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
             bit_no += MARK_BIT_OFFSET(sz);
         }
     *count += n_bytes_found;
-    return(list);
+    return list;
 }
 
 #ifdef ENABLE_DISCLAIM
@@ -385,7 +383,8 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp, word sz,
  * If report_if_found is TRUE, then process any block immediately, and
  * simply report free objects; do not actually reclaim them.
  */
-STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
+STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
+                                         GC_word report_if_found)
 {
     hdr * hhdr = HDR(hbp);
     word sz;    /* size of objects in current block */
@@ -535,7 +534,7 @@ unsigned GC_n_set_marks(hdr *hhdr)
         result += hhdr -> hb_marks[i];
     }
     GC_ASSERT(hhdr -> hb_marks[limit]); /* the one set past the end */
-    return(result);
+    return result;
 }
 
 #else
@@ -586,8 +585,12 @@ unsigned GC_n_set_marks(hdr *hhdr)
 
 #endif /* !USE_MARK_BYTES  */
 
-STATIC void GC_print_block_descr(struct hblk *h,
-                                 word /* struct PrintStats */ raw_ps)
+GC_API unsigned GC_CALL GC_count_set_marks_in_hblk(const void *p) {
+    return GC_n_set_marks(HDR(p));
+}
+
+STATIC void GC_CALLBACK GC_print_block_descr(struct hblk *h,
+                                GC_word /* struct PrintStats */ raw_ps)
 {
     hdr *hhdr = HDR(h);
     word sz = hhdr -> hb_sz;
@@ -617,8 +620,6 @@ void GC_print_block_list(void)
               (unsigned long)pstats.number_of_blocks,
               (unsigned long)pstats.total_bytes);
 }
-
-#include "gc/gc_inline.h" /* for GC_print_free_list prototype */
 
 /* Currently for debugger use only: */
 GC_API void GC_CALL GC_print_free_list(int kind, size_t sz_in_granules)
@@ -773,7 +774,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
         for (sz = 1; sz <= MAXOBJGRANULES; sz++) {
             for (rlh = rlp + sz; (hbp = *rlh) != NULL; ) {
                 if (stop_func != (GC_stop_func)0 && (*stop_func)()) {
-                    return(FALSE);
+                    return FALSE;
                 }
                 hhdr = HDR(hbp);
                 *rlh = hhdr -> hb_next;
@@ -798,7 +799,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
                         NS_FRAC_TIME_DIFF(done_time, start_time));
       }
 #   endif
-    return(TRUE);
+    return TRUE;
 }
 
 #if !defined(EAGER_SWEEP) && defined(ENABLE_DISCLAIM)
@@ -840,7 +841,8 @@ struct enumerate_reachable_s {
   void *client_data;
 };
 
-STATIC void GC_do_enumerate_reachable_objects(struct hblk *hbp, word ped)
+STATIC void GC_CALLBACK GC_do_enumerate_reachable_objects(struct hblk *hbp,
+                                                          GC_word ped)
 {
   struct hblkhdr *hhdr = HDR(hbp);
   size_t sz = (size_t)hhdr->hb_sz;

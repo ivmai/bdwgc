@@ -1,21 +1,19 @@
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
- * Copyright (c) 2009-2021 Ivan Maidanski
+ * Copyright (c) 2009-2022 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
 
 #include "private/gc_priv.h"
-
-#include <stdio.h>
 
 /* Data structure for list of root sets.                                */
 /* We keep a hash table, so that we can filter out duplicate additions. */
@@ -83,15 +81,15 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
     if (last_root_set < n_root_sets
         && (word)p >= (word)GC_static_roots[last_root_set].r_start
         && (word)p < (word)GC_static_roots[last_root_set].r_end)
-      return(TRUE);
+      return TRUE;
     for (i = 0; i < n_root_sets; i++) {
         if ((word)p >= (word)GC_static_roots[i].r_start
             && (word)p < (word)GC_static_roots[i].r_end) {
           last_root_set = i;
-          return(TRUE);
+          return TRUE;
         }
     }
-    return(FALSE);
+    return FALSE;
   }
 #endif /* !THREADS */
 
@@ -109,6 +107,7 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
   GC_INLINE int rt_hash(ptr_t addr)
   {
     word result = (word) addr;
+
 #   if CPP_WORDSZ > 8*LOG_RT_SIZE
         result ^= result >> 8*LOG_RT_SIZE;
 #   endif
@@ -117,8 +116,7 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
 #   endif
     result ^= result >> 2*LOG_RT_SIZE;
     result ^= result >> LOG_RT_SIZE;
-    result &= (RT_SIZE-1);
-    return(result);
+    return result & (RT_SIZE-1);
   }
 
   /* Is a range starting at b already in the table? If so return a      */
@@ -126,13 +124,12 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
   GC_INNER void * GC_roots_present(ptr_t b)
   {
     int h = rt_hash(b);
-    struct roots *p = GC_root_index[h];
+    struct roots *p;
 
-    while (p != 0) {
-        if (p -> r_start == (ptr_t)b) return(p);
-        p = p -> r_next;
+    for (p = GC_root_index[h]; p != NULL; p = p -> r_next) {
+        if (p -> r_start == (ptr_t)b) break;
     }
-    return NULL;
+    return p;
   }
 
   /* Add the given root structure to the index. */
@@ -297,9 +294,9 @@ GC_API void GC_CALL GC_clear_roots(void)
     UNLOCK();
 }
 
-/* Internal use only; lock held.        */
 STATIC void GC_remove_root_at_pos(int i)
 {
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef DEBUG_ADD_DEL_ROOTS
       GC_log_printf("Remove data root section at %d: %p .. %p%s\n",
                     i, (void *)GC_static_roots[i].r_start,
@@ -347,11 +344,10 @@ STATIC void GC_remove_tmp_roots(void)
 }
 #endif
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
-  STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
+STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
 
-  GC_API void GC_CALL GC_remove_roots(void *b, void *e)
-  {
+GC_API void GC_CALL GC_remove_roots(void *b, void *e)
+{
     DCL_LOCK_STATE;
 
     /* Quick check whether has nothing to do */
@@ -362,27 +358,29 @@ STATIC void GC_remove_tmp_roots(void)
     LOCK();
     GC_remove_roots_inner((ptr_t)b, (ptr_t)e);
     UNLOCK();
-  }
+}
 
-  /* Should only be called when the lock is held */
-  STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
-  {
+STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
+{
     int i;
-    GC_bool rebuild = FALSE;
+#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+      int old_n_roots = n_root_sets;
+#   endif
 
+    GC_ASSERT(I_HOLD_LOCK());
     for (i = 0; i < n_root_sets; ) {
         if ((word)GC_static_roots[i].r_start >= (word)b
             && (word)GC_static_roots[i].r_end <= (word)e) {
             GC_remove_root_at_pos(i);
-            rebuild = TRUE;
         } else {
             i++;
         }
     }
-    if (rebuild)
+#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+      if (n_root_sets < old_n_roots)
         GC_rebuild_root_index();
-  }
-#endif /* !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) */
+#   endif
+}
 
 #ifdef USE_PROC_FOR_LIBRARIES
   /* Exchange the elements of the roots table.  Requires rebuild of     */
@@ -501,7 +499,7 @@ STATIC void GC_remove_tmp_roots(void)
             return GC_static_roots[i].r_tmp;
         }
     }
-    return(FALSE);
+    return FALSE;
   }
 #endif /* !NO_DEBUGGING */
 
@@ -528,7 +526,7 @@ GC_INNER ptr_t GC_approx_sp(void)
                 /* Also force stack to grow if necessary. Otherwise the */
                 /* later accesses might cause the kernel to think we're */
                 /* doing something wrong.                               */
-    return((ptr_t)sp);
+    return (ptr_t)sp;
 }
 
 /*
@@ -574,13 +572,13 @@ STATIC struct exclusion * GC_next_exclusion(ptr_t start_addr)
     return GC_excl_table + low;
 }
 
-/* Should only be called when the lock is held.  The range boundaries   */
-/* should be properly aligned and valid.                                */
+/* The range boundaries should be properly aligned and valid.   */
 GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
 {
     struct exclusion * next;
     size_t next_index;
 
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((word)start % sizeof(word) == 0);
     GC_ASSERT((word)start < (word)finish);
 
@@ -802,9 +800,9 @@ STATIC void GC_push_all_stack_part_eager_sections(ptr_t lo, ptr_t hi,
 /* enough of the current stack to ensure that callee-save registers     */
 /* saved in collector frames have been seen.                            */
 /* TODO: Merge it with per-thread stuff. */
-STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
-                                  void * context GC_ATTR_UNUSED)
+STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void *context)
 {
+    UNUSED_ARG(context);
 #   if defined(THREADS)
         /* cold_gc_frame is non-NULL.   */
 #       ifdef STACK_GROWS_DOWN
@@ -892,18 +890,19 @@ STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
 /* altered values.  Cold_gc_frame is an address inside a GC frame that  */
 /* remains valid until all marking is complete; a NULL value indicates  */
 /* that it is OK to miss some register values.                          */
-GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame GC_ATTR_UNUSED)
+GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
 {
     int i;
     unsigned kind;
 
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(GC_is_initialized); /* needed for GC_push_all_stacks */
 
     /* Next push static data.  This must happen early on, since it is   */
     /* not robust against mark stack overflow.                          */
     /* Re-register dynamic libraries, in case one got added.            */
     /* There is some argument for doing this as late as possible,       */
-    /* especially on win32, where it can change asynchronously.         */
+    /* especially on Win32, where it can change asynchronously.         */
     /* In those cases, we do it here.  But on other platforms, it's     */
     /* not safe with the world stopped, so we do it earlier.            */
 #   if !defined(REGISTER_LIBRARIES_EARLY)
@@ -956,7 +955,9 @@ GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame GC_ATTR_UNUSED)
     /* overflow the mark stack.  This is usually done by saving */
     /* the current context on the stack, and then just tracing  */
     /* from the stack.                                          */
-#   ifndef STACK_NOT_SCANNED
+#   ifdef STACK_NOT_SCANNED
+        UNUSED_ARG(cold_gc_frame);
+#   else
         GC_push_regs_and_stack(cold_gc_frame);
 #   endif
 

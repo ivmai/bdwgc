@@ -5,7 +5,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -14,9 +14,9 @@
 #ifndef EC_H
 #define EC_H
 
-# ifndef CORD_H
-#  include "cord.h"
-# endif
+#ifndef CORD_H
+# include "cord.h"
+#endif
 
 #ifdef __cplusplus
   extern "C" {
@@ -61,8 +61,6 @@ typedef struct CORD_ec_struct {
 /* ec_buf[0 ... (ec_bufptr-ec_buf-1)]                           */
 
 /* Flush the buffer part of the extended cord into ec_cord.     */
-/* Note that this is almost the only real function, and it is   */
-/* implemented in 6 lines in cordxtra.c                         */
 void CORD_ec_flush_buf(CORD_ec x);
 
 /* Convert an extensible cord to a cord. */

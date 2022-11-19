@@ -78,7 +78,7 @@ operating system:
   * `ALIGNMENT` - Defined to be the largest _N_ such that all pointer
   are guaranteed to be aligned on _N_-byte boundaries. Defining it to be _1_
   will always work, but perform poorly. For all modern 32-bit platforms, this
-  is 4. For all modern 64-bit platforms, this is 8. Whether or not X86
+  is 4. For all modern 64-bit platforms, this is 8. Whether or not x86
   qualifies as a modern architecture here is compiler- and OS-dependent.
   * `DATASTART` - The beginning of the main data segment. The collector will
   trace all memory between `DATASTART` and `DATAEND` for root pointers.

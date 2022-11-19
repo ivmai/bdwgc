@@ -1,12 +1,13 @@
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 2008-2022 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -15,8 +16,6 @@
 #include "private/gc_priv.h"
 
 #if !defined(PLATFORM_MACH_DEP) && !defined(SN_TARGET_PSP2)
-
-#include <stdio.h>
 
 #ifdef AMIGA
 # ifndef __GNUC__
@@ -32,69 +31,33 @@
 # include <sys/mman.h>
 # include <sys/syscall.h>
 
-# define VA_SIZE 48
-# define E2K_PSHTP_SIZE 12
-
-# if defined(__clang__)
-#   define VLIW_CMD_BRACES_PREFIX "%" /* a workaround for clang-9 */
-# else
-#   define VLIW_CMD_BRACES_PREFIX /* empty */
-# endif
-
-# define get_stack_index(ps_ptr)                    \
-        do {                                        \
-          word psp_lo, psp_hi;                      \
-          signed_word pshtp;                        \
-          char tmp = 0, val;                        \
-                                                    \
-          __asm__ __volatile__ (                    \
-            "1:\n\t"                                \
-            "ldb %4, 0, %0, mas = 7\n\t"            \
-            "rrd %%pshtp,  %1\n\t"                  \
-            "rrd %%psp.lo, %2\n\t"                  \
-            "rrd %%psp.hi, %3\n\t"                  \
-            VLIW_CMD_BRACES_PREFIX "{\n\t"          \
-            "  stb %4, 0, %0, mas = 2\n\t"          \
-            "  rbranch 1b\n\t"                      \
-            VLIW_CMD_BRACES_PREFIX "}"              \
-            : "=&r" (val), "=&r" (pshtp),           \
-              "=&r" (psp_lo), "=&r" (psp_hi)        \
-            : "r" (&tmp));                          \
-          *(ps_ptr) = (psp_lo & ((1UL<<VA_SIZE)-1)) \
-            + (unsigned)psp_hi                      \
-            + (word)((pshtp << (64-E2K_PSHTP_SIZE)) \
-                     >> (63-E2K_PSHTP_SIZE));       \
-        } while (0)
-
   GC_INNER size_t GC_get_procedure_stack(ptr_t buf, size_t buf_sz) {
-    word ps;
-    word new_sz = 0;
+    unsigned long long new_sz;
 
     GC_ASSERT(0 == buf_sz || buf != NULL);
     for (;;) {
-      get_stack_index(&ps);
-      if (syscall(__NR_access_hw_stacks, E2K_READ_PROCEDURE_STACK,
-                  &ps, buf, buf_sz, &new_sz) != -1)
-        break;
+      unsigned long long stack_ofs;
 
-      if (ENOMEM == errno && (word)buf_sz < new_sz) {
-#       ifdef LOG_E2K_ALLOCS
-          if (buf_sz > 0) /* probably may happen */
-            GC_log_printf("GC_get_procedure_stack():"
-                          " buffer size/requested %lu/%lu bytes, GC #%lu\n",
-                          (unsigned long)buf_sz, (unsigned long)new_sz,
-                          (unsigned long)GC_gc_no);
-#       endif
-        return (size_t)new_sz; /* buffer not enough */
-      } else if (errno != EAGAIN) {
-        ABORT_ARG1("Cannot read procedure stack", ": errno= %d", errno);
+      new_sz = 0;
+      if (syscall(__NR_access_hw_stacks, E2K_GET_PROCEDURE_STACK_SIZE,
+                  NULL, NULL, 0, &new_sz) == -1) {
+        if (errno != EAGAIN)
+          ABORT_ARG1("Cannot get size of procedure stack",
+                     ": errno= %d", errno);
+        continue;
       }
+      GC_ASSERT(new_sz > 0 && new_sz % sizeof(word) == 0);
+      if (new_sz > buf_sz)
+        break;
+      /* Immediately read the stack right after checking its size. */
+      stack_ofs = 0;
+      if (syscall(__NR_access_hw_stacks, E2K_READ_PROCEDURE_STACK_EX,
+                  &stack_ofs, buf, new_sz, NULL) != -1)
+        break;
+      if (errno != EAGAIN)
+        ABORT_ARG2("Cannot read procedure stack",
+                   ": new_sz= %lu, errno= %d", (unsigned long)new_sz, errno);
     }
-
-    if ((word)buf_sz < new_sz)
-      ABORT_ARG2("Buffer overflow while reading procedure stack",
-                 ": buf_sz= %lu, new_sz= %lu",
-                 (unsigned long)buf_sz, (unsigned long)new_sz);
     return (size_t)new_sz;
   }
 
@@ -124,6 +87,7 @@
 # ifdef THREADS
     GC_INNER size_t GC_alloc_and_get_procedure_stack(ptr_t *pbuf)
     {
+      /* TODO: support saving from non-zero ofs in stack */
       ptr_t buf = NULL;
       size_t new_sz, buf_sz;
 
@@ -142,9 +106,6 @@
       return new_sz;
     }
 # endif /* THREADS */
-
-# undef VLIW_CMD_BRACES_PREFIX
-# undef get_stack_index
 #endif /* E2K */
 
 #if defined(MACOS) && defined(__MWERKS__)
@@ -343,6 +304,8 @@
 /* Ensure that either registers are pushed, or callee-save registers    */
 /* are somewhere on the stack, and then call fn(arg, ctxt).             */
 /* ctxt is either a pointer to a ucontext_t we generated, or NULL.      */
+/* Could be called with or w/o the GC lock held; could be called from   */
+/* a signal handler as well.                                            */
 GC_ATTR_NO_SANITIZE_ADDR
 GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
                                           volatile ptr_t arg)
@@ -363,7 +326,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
       ucontext_t ctxt;
 #     ifdef GETCONTEXT_FPU_EXCMASK_BUG
         /* Workaround a bug (clearing the FPU exception mask) in        */
-        /* getcontext on Linux/x86_64.                                  */
+        /* getcontext on Linux/x64.                                     */
 #       ifdef X86_64
           /* We manipulate FPU control word here just not to force the  */
           /* client application to use -lm linker option.               */

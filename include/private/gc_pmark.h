@@ -1,12 +1,13 @@
 /*
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 2001 by Hewlett-Packard Company. All rights reserved.
+ * Copyright (c) 2008-2022 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -117,7 +118,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 
 /* Push the object obj with corresponding heap block header hhdr onto   */
 /* the mark stack.  Returns the updated mark_stack_top value.           */
-GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr,  mse * mark_stack_top,
+GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr, mse * mark_stack_top,
                             mse * mark_stack_limit)
 {
   word descr = hhdr -> hb_descr;
@@ -420,26 +421,6 @@ GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
                                          GC_mark_stack + GC_mark_stack_size);
 
 #define GC_mark_stack_empty() ((word)GC_mark_stack_top < (word)GC_mark_stack)
-
-/*
- * Mark from one finalizable object using the specified
- * mark proc. May not mark the object pointed to by
- * real_ptr. That is the job of the caller, if appropriate.
- * Note that this is called with the mutator running, but
- * with us holding the allocation lock.  This is safe only if the
- * mutator needs the allocation lock to reveal hidden pointers.
- * FIXME: Why do we need the GC_mark_state test below?
- */
-#define GC_MARK_FO(real_ptr, mark_proc) \
-  do { \
-    GC_ASSERT(I_HOLD_LOCK()); \
-    (*(mark_proc))(real_ptr); \
-    while (!GC_mark_stack_empty()) MARK_FROM_MARK_STACK(); \
-    if (GC_mark_state != MS_NONE) { \
-        GC_set_mark_bit(real_ptr); \
-        while (!GC_mark_some((ptr_t)0)) { /* empty */ } \
-    } \
-  } while (0)
 
                                 /* Current state of marking, as follows.*/
 

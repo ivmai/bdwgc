@@ -5,7 +5,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -63,7 +63,7 @@ static int ec_len(CORD_ec x)
     return (int)(CORD_len(x[0].ec_cord) + (x[0].ec_bufptr - x[0].ec_buf));
 }
 
-/* Possible nonumeric precision values. */
+/* Possible non-numeric precision values.   */
 # define NONE -1
 # define VARIABLE -2
 /* Copy the conversion specification from CORD_pos into the buffer buf  */
@@ -74,7 +74,7 @@ static int ec_len(CORD_ec x)
 /* If width or prec is *, VARIABLE is assigned.                         */
 /* Set *left to 1 if left adjustment flag is present.                   */
 /* Set *long_arg to 1 if long flag ('l' or 'L') is present, or to       */
-/* -1 if 'h' is present.                                                */
+/* -1 if 'h' is present, or to 2 if 'z' is present.                     */
 static int extract_conv_spec(CORD_pos source, char *buf,
                              int * width, int *prec, int *left, int * long_arg)
 {
@@ -88,7 +88,7 @@ static int extract_conv_spec(CORD_pos source, char *buf,
     *width = NONE;
     buf[chars_so_far++] = '%';
     while(CORD_pos_valid(source)) {
-        if (chars_so_far >= CONV_SPEC_LEN) return(-1);
+        if (chars_so_far >= CONV_SPEC_LEN) return -1;
         current = CORD_pos_fetch(source);
         buf[chars_so_far++] = current;
         switch(current) {
@@ -129,6 +129,10 @@ static int extract_conv_spec(CORD_pos source, char *buf,
             *long_arg = 1;
             current_number = 0;
             break;
+          case 'z':
+            *long_arg = 2;
+            current_number = 0;
+            break;
           case 'h':
             *long_arg = -1;
             current_number = 0;
@@ -162,11 +166,11 @@ static int extract_conv_spec(CORD_pos source, char *buf,
           case 'r':
             goto done;
           default:
-            return(-1);
+            return -1;
         }
         CORD_next(source);
     }
-    return(-1);
+    return -1;
   done:
     if (saw_number) {
         if (saw_period) {
@@ -179,7 +183,7 @@ static int extract_conv_spec(CORD_pos source, char *buf,
         *prec = NONE;
     }
     buf[chars_so_far] = '\0';
-    return(result);
+    return result;
 }
 
 #if defined(__DJGPP__) || defined(__STRICT_ANSI__)
@@ -209,7 +213,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
         current = CORD_pos_fetch(pos);
         if (current == '%') {
             CORD_next(pos);
-            if (!CORD_pos_valid(pos)) return(-1);
+            if (!CORD_pos_valid(pos)) return -1;
             current = CORD_pos_fetch(pos);
             if (current == '%') {
                 CORD_ec_append(result, current);
@@ -223,7 +227,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                 if (extract_conv_spec(pos, conv_spec,
                                       &width, &prec,
                                       &left_adj, &long_arg) < 0) {
-                    return(-1);
+                    return -1;
                 }
                 current = CORD_pos_fetch(pos);
                 switch(current) {
@@ -233,6 +237,9 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                             int * pos_ptr;
                             pos_ptr = va_arg(args, int *);
                             *pos_ptr = ec_len(result);
+                        } else if (long_arg == 2) {
+                            size_t * pos_ptr = va_arg(args, size_t *);
+                            *pos_ptr = (size_t)(unsigned)ec_len(result);
                         } else if (long_arg > 0) {
                             long * pos_ptr;
                             pos_ptr = va_arg(args, long *);
@@ -250,7 +257,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         arg = va_arg(args, CORD);
                         len = CORD_len(arg);
                         if (prec != NONE && len > (unsigned)prec) {
-                          if (prec < 0) return(-1);
+                          if (prec < 0) return -1;
                           arg = CORD_substr(arg, 0, (unsigned)prec);
                           len = (unsigned)prec;
                         }
@@ -334,7 +341,9 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         case 'c':
                             if (long_arg <= 0) {
                               (void) va_arg(args, int);
-                            } else /* long_arg > 0 */ {
+                            } else if (long_arg == 2) {
+                              (void) va_arg(args, size_t);
+                            } else /* long_arg == 1 */ {
                               (void) va_arg(args, long);
                             }
                             break;
@@ -365,7 +374,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         /* old style vsprintf */
                         len = strlen(buf);
                     } else if (res < 0) {
-                        return(-1);
+                        return -1;
                     }
                     if (buf != result[0].ec_bufptr) {
                         char c;
@@ -385,7 +394,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
     }
     count = ec_len(result);
     *out = CORD_balance(CORD_ec_to_cord(result));
-    return(count);
+    return count;
 }
 
 int CORD_sprintf(CORD * out, CORD format, ...)
@@ -396,7 +405,7 @@ int CORD_sprintf(CORD * out, CORD format, ...)
     va_start(args, format);
     result = CORD_vsprintf(out, format, args);
     va_end(args);
-    return(result);
+    return result;
 }
 
 int CORD_fprintf(FILE * f, CORD format, ...)
@@ -409,7 +418,7 @@ int CORD_fprintf(FILE * f, CORD format, ...)
     result = CORD_vsprintf(&out, format, args);
     va_end(args);
     if (result > 0) CORD_put(out, f);
-    return(result);
+    return result;
 }
 
 int CORD_vfprintf(FILE * f, CORD format, va_list args)
@@ -419,7 +428,7 @@ int CORD_vfprintf(FILE * f, CORD format, va_list args)
 
     result = CORD_vsprintf(&out, format, args);
     if (result > 0) CORD_put(out, f);
-    return(result);
+    return result;
 }
 
 int CORD_printf(CORD format, ...)
@@ -432,7 +441,7 @@ int CORD_printf(CORD format, ...)
     result = CORD_vsprintf(&out, format, args);
     va_end(args);
     if (result > 0) CORD_put(out, stdout);
-    return(result);
+    return result;
 }
 
 int CORD_vprintf(CORD format, va_list args)
@@ -442,5 +451,5 @@ int CORD_vprintf(CORD format, va_list args)
 
     result = CORD_vsprintf(&out, format, args);
     if (result > 0) CORD_put(out, stdout);
-    return(result);
+    return result;
 }

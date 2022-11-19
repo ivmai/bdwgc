@@ -9,7 +9,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -17,7 +17,7 @@
 
 /* We want to make sure that GC_thread_exit_proc() is unconditionally   */
 /* invoked, even if the client is not compiled with -fexceptions, but   */
-/* the GC is.  The workaround is to put GC_inner_start_routine() in its */
+/* the GC is.  The workaround is to put GC_pthread_start_inner() in its */
 /* own file (pthread_start.c), and undefine __EXCEPTIONS in the GCC     */
 /* case at the top of the file.  FIXME: it's still unclear whether this */
 /* will actually cause the exit handler to be invoked last when         */
@@ -36,13 +36,11 @@
 
 #include "private/pthread_support.h"
 
-#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
+    && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
 
-#include <pthread.h>
-#include <sched.h>
-
-/* Invoked from GC_start_routine(). */
-GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
+/* Invoked from GC_pthread_start. */
+GC_INNER_PTHRSTART void *GC_CALLBACK GC_pthread_start_inner(
                                         struct GC_stack_base *sb, void *arg)
 {
   void * (*start)(void *);

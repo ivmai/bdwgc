@@ -31,28 +31,28 @@ int main(int argc, char **argv)
     f = fopen(fname, "rb");
     if (f != NULL) {
         fclose(f);
-        return(0);
+        return 0;
     }
     f = fopen(fname, "r");
     if (f != NULL) {
         fclose(f);
-        return(0);
+        return 0;
     }
 #ifdef __DJGPP__
     if ((d = opendir(fname)) != 0) {
             closedir(d);
-            return(0);
+            return 0;
     }
 #endif
     printf("^^^^Starting command^^^^\n");
     fflush(stdout);
     if (argc == 2)
-        return(2); /* the file does not exist but no command is given */
+        return 2; /* the file does not exist but no command is given */
 
     execvp(TRUSTED_STRING(argv[2]), (EXECV_ARGV_T)(argv + 2));
     exit(1);
 
 Usage:
     fprintf(stderr, "Usage: %s file_name [command]\n", argv[0]);
-    return(1);
+    return 1;
 }

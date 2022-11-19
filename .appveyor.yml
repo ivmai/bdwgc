@@ -9,16 +9,18 @@ environment:
   TEST_TARGET: check
   matrix:
   - TARGET: cmake
-    CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Werror=deprecated -Dwithout_libatomic_ops=ON
+    CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Werror=deprecated -Dwithout_libatomic_ops=ON
   - TARGET: cmake
     CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_throw_bad_alloc_library=OFF -Denable_gc_assertions=ON -Denable_gc_debug=ON -Denable_threads=OFF
   - TARGET: cmake
-    CFLAGS_EXTRA: -DNO_MSGBOX_ON_ERROR -DNO_MPROTECT_VDB
+    CFLAGS_EXTRA: -DNO_MSGBOX_ON_ERROR -DNO_MPROTECT_VDB -DGC_READ_ENV_FILE
     CMAKE_CONFIG: Release
-    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_large_config=ON -Ddisable_gc_debug=ON
+    CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Release -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_large_config=ON -Ddisable_gc_debug=ON
   - TARGET: cmake
     CMAKE_CONFIG: Release
-    CMAKE_OPTIONS: -Denable_parallel_mark=OFF
+    CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=MinSizeRel -Denable_parallel_mark=OFF
+  - TARGET: cmake
+    CMAKE_OPTIONS: -Denable_gc_assertions=ON -Denable_thread_local_alloc=OFF -Ddisable_single_obj_compilation=ON
   - TARGET: cmake
     CFLAGS_EXTRA: -DGC_DISABLE_INCREMENTAL
     CMAKE_OPTIONS: -Denable_gc_assertions=ON -Denable_gcj_support=OFF -Denable_parallel_mark=OFF -Denable_thread_local_alloc=OFF
@@ -27,7 +29,7 @@ environment:
   - TARGET: cmake
     CMAKE_OPTIONS: -A ARM -Denable_cplusplus=ON -Denable_gc_assertions=ON
   - TARGET: cmake
-    CMAKE_OPTIONS: -A ARM64 -Denable_cplusplus=ON
+    CMAKE_OPTIONS: -A ARM64 -DCMAKE_BUILD_TYPE=Release -Denable_cplusplus=ON
     CMAKE_CONFIG: Release
   - TARGET: nmake
     ARCH: x86
@@ -45,20 +47,6 @@ environment:
     CFLAGS_EXTRA: -O3 -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT
   - TARGET: dmc
     CFLAGS_EXTRA: -s
-  - TARGET: cygwin
-    CONF_OPTIONS: --enable-cplusplus
-    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
-  - TARGET: cygwin
-    CONF_OPTIONS: --enable-cplusplus --disable-munmap --enable-gc-assertions
-  - TARGET: cygwin64
-    CONF_OPTIONS: --enable-cplusplus
-    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
-  - TARGET: cygwin64
-    CFLAGS_EXTRA: -std=c11 -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB
-    CONF_OPTIONS: --enable-cplusplus --enable-gc-assertions --disable-shared
-  - TARGET: cygwin64
-    CONF_OPTIONS: --disable-threads
-    CFLAGS_EXTRA: -D USE_WINALLOC
   - TARGET: mingw
   - TARGET: mingw
     CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D EMPTY_GETENV_RESULTS -D GC_GCJ_SUPPORT -D USE_MUNMAP -D LARGE_CONFIG -D NO_MSGBOX_ON_ERROR
@@ -66,10 +54,6 @@ environment:
     CFLAGS_EXTRA: -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT -D GC_TIME_LIMIT=10 -D WINXP_USE_PERF_COUNTER -D NO_MSGBOX_ON_ERROR
   - TARGET: mingw-shared-no-make
     CFLAGS_EXTRA: -D GC_THREADS -D GC_ASSERTIONS -D ENABLE_DISCLAIM -D GC_GCJ_SUPPORT -D GC_PREFER_MPROTECT_VDB -D GC_CALL=__stdcall -D GC_CALLBACK=__fastcall -D CONSOLE_LOG -D NO_MSGBOX_ON_ERROR
-  - TARGET: mingw-w64
-    CFLAGS_EXTRA: -D NO_MSGBOX_ON_ERROR
-  - TARGET: mingw-w64
-    CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT -D NO_RETRY_GET_THREAD_CONTEXT
   - TARGET: wcc
     WCC_SYSTEM: OS2
     CFLAGS_EXTRA: -DGC_ASSERTIONS
@@ -80,6 +64,24 @@ environment:
     WCC_SYSTEM: MSWIN32
     CFLAGS_EXTRA: -DCONSOLE_LOG -DUSE_MMAP -DUSE_MUNMAP
     WCC_INC_SUBDIR: nt
+  - TARGET: mingw-w64
+    CFLAGS_EXTRA: -D NO_MSGBOX_ON_ERROR
+  - TARGET: mingw-w64
+    CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT -D NO_RETRY_GET_THREAD_CONTEXT
+  - TARGET: cygwin
+    CONF_OPTIONS: --enable-cplusplus
+    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
+  - TARGET: cygwin64
+    CONF_OPTIONS: --disable-threads
+    CFLAGS_EXTRA: -std=c11 -D USE_WINALLOC
+  - TARGET: cygwin64
+    CONF_OPTIONS: --enable-cplusplus
+    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
+  - TARGET: cygwin
+    CONF_OPTIONS: --enable-cplusplus --disable-munmap --enable-gc-assertions
+  - TARGET: cygwin64
+    CFLAGS_EXTRA: -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB
+    CONF_OPTIONS: --enable-cplusplus --enable-gc-assertions --disable-shared
 
 clone_depth: 50
 
@@ -88,8 +90,9 @@ install:
 
 build_script:
 - cmd: if [%TARGET%]==[cmake] (
-    cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" .
-    && cmake --build . --config %CMAKE_CONFIG% )
+    mkdir out && cd out
+    && cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
+    && cmake --build . --config %CMAKE_CONFIG% --verbose )
 - cmd: if [%TARGET%]==[nmake] (
     "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
     && nmake /f NT_MAKEFILE %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" )
@@ -132,7 +135,7 @@ build_script:
     && wmake -f WCC_MAKEFILE SYSTEM=%WCC_SYSTEM% %ENABLE_STATIC_OPT% CFLAGS_EXTRA="-we %CFLAGS_EXTRA%" )
 
 test_script:
-- cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -V )
+- cmd: if [%TARGET%]==[cmake] ( ctest --build-config %CMAKE_CONFIG% -j4 -V )
 - cmd: if [%TARGET%]==[nmake] (
     "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
     && nmake /f NT_MAKEFILE %TEST_TARGET% %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%"

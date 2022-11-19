@@ -137,8 +137,7 @@ jobs:
   - arch: arm64
     compiler: clang
     env:
-    - CMAKE_CONFIG="Release"
-    - CMAKE_OPTIONS="-Dbuild_tests=ON -DBUILD_SHARED_LIBS=OFF -Denable_cplusplus=ON -Denable_gc_assertions=ON"
+    - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=MinSizeRel -Dbuild_tests=ON -DBUILD_SHARED_LIBS=OFF -Denable_cplusplus=ON -Denable_gc_assertions=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: arm64
     compiler: gcc
@@ -149,6 +148,9 @@ jobs:
     compiler: clang
   - arch: ppc64le
     compiler: gcc
+    env:
+    - CONF_OPTIONS="--disable-disclaim"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
       apt:
         packages:
@@ -197,8 +199,7 @@ jobs:
   - arch: ppc64le
     compiler: clang
     env:
-    - CMAKE_CONFIG="Release"
-    - CMAKE_OPTIONS="-Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON"
+    - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: ppc64le
     compiler: clang
@@ -262,8 +263,8 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: freebsd
     env:
-    - CMAKE_CONFIG="Release"
-    - CMAKE_OPTIONS="-Denable_cplusplus=ON"
+    - CMAKE_BUILD_OPTIONS="--verbose"
+    - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -Denable_cplusplus=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: freebsd
     compiler: clang
@@ -367,6 +368,7 @@ jobs:
     env:
     - CONF_CFLAGS="-D AO_USE_PTHREAD_DEFS"
     - CONF_OPTIONS="--with-libatomic-ops=yes --enable-cplusplus"
+    - CFLAGS_EXTRA="-D GC_NO_FINALIZATION"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
       apt:
@@ -379,7 +381,7 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: gcc
     env:
-    - CFLAGS_EXTRA="-funsigned-char -D _FORTIFY_SOURCE=2 -D DONT_ADD_BYTE_AT_END -D GC_TIME_LIMIT=10"
+    - CFLAGS_EXTRA="-funsigned-char -D _FORTIFY_SOURCE=2 -D DONT_ADD_BYTE_AT_END -D GC_TIME_LIMIT=3"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
   - addons:
       apt:
@@ -500,7 +502,6 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
     env:
-    - CMAKE_CONFIG="Debug"
     - CMAKE_OPTIONS="-Denable_cplusplus=ON -Denable_gc_assertions=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
@@ -509,31 +510,27 @@ jobs:
         - libatomic-ops-dev
     compiler: clang
     env:
-    - CMAKE_CONFIG="Debug"
     - CMAKE_OPTIONS="-Denable_cplusplus=ON -Denable_munmap=OFF -Dwith_libatomic_ops=ON"
   - compiler: gcc
     env:
-    - CMAKE_CONFIG="Release"
-    - CMAKE_OPTIONS="-Denable_cplusplus=ON -Denable_large_config=ON"
+    - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -Denable_cplusplus=ON -Denable_large_config=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: gcc
     env:
-    - CMAKE_CONFIG="Debug"
-    - CMAKE_OPTIONS="-DBUILD_SHARED_LIBS=OFF -Denable_gc_debug=ON -Dwithout_libatomic_ops=ON"
+    - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -Denable_gc_debug=ON -Dwithout_libatomic_ops=ON"
   - compiler: gcc
     env:
-    - CMAKE_CONFIG="Release"
-    - CMAKE_OPTIONS="-DBUILD_SHARED_LIBS=OFF -Denable_threads=OFF"
+    - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -Denable_threads=OFF"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
-    - CMAKE_CONFIG="Debug"
+    - CMAKE_BUILD_OPTIONS="--verbose"
     - CMAKE_OPTIONS="-Denable_cplusplus=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
-    - CMAKE_CONFIG="Release"
-    - CMAKE_OPTIONS="-DBUILD_SHARED_LIBS=OFF -Denable_cplusplus=ON -Denable_gc_assertions=ON -Denable_large_config=ON"
+    - CMAKE_BUILD_OPTIONS="--verbose"
+    - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -Denable_cplusplus=ON -Denable_gc_assertions=ON -Denable_large_config=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
     env:
@@ -785,6 +782,9 @@ before_install:
     m4 --version;
     libtool --version || true;
   fi
+- if [[ "$CMAKE_OPTIONS" != "" ]]; then
+    cmake --version;
+  fi
 - if [[ "$CONF_CFLAGS" == "" ]]; then CONF_CFLAGS="-g -O2"; fi
 - if [[ "$MAKEFILE_NAME" == "" ]]; then MAKEFILE_NAME=Makefile; fi
 - if [[ "$MAKEFILE_TARGETS" == "" ]]; then MAKEFILE_TARGETS="check"; fi
@@ -793,36 +793,36 @@ install:
 - if [[ "$NO_CLONE_LIBATOMIC_OPS" != true ]]; then
     git clone --depth=50 https://github.com/ivmai/libatomic_ops.git;
   fi
-- if [[ "$CMAKE_CONFIG" == "" ]]; then
+- if [[ "$CMAKE_OPTIONS" == "" ]]; then
     ./autogen.sh;
   fi
 - if [[ "$GNUTOOLS_ROOT" != "" ]]; then mv $GNUTOOLS_ROOT $GNUTOOLS_ROOT-x; fi
 - if [[ "$REPORT_COVERAGE" == true ]]; then gem install coveralls-lcov; fi
 
 script:
-- if [[ "$CSA_CHECK" != true && "$CMAKE_CONFIG" == ""
+- if [[ "$CSA_CHECK" != true && "$CMAKE_OPTIONS" == ""
         && "$CPPCHECK_ENABLE" == "" && "$MAKEFILE_NAME" != "Makefile.direct"
         && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
     CFLAGS="$CONF_CFLAGS" ./configure $CONF_OPTIONS --enable-werror &&
     cat include/config.h;
   fi
-- if [[ "$CSA_CHECK" != true && "$CMAKE_CONFIG" == ""
+- if [[ "$CSA_CHECK" != true && "$CMAKE_OPTIONS" == ""
         && "$CPPCHECK_ENABLE" == "" && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
     make -j$MAKE_NPROC -f $MAKEFILE_NAME $MAKEFILE_TARGETS
          CFLAGS_EXTRA="$CFLAGS_EXTRA" LDFLAGS="$LDFLAGS";
   fi
-- if [[ "$CMAKE_CONFIG" != "" ]]; then
-    cmake $CMAKE_OPTIONS -Dbuild_tests=ON -Denable_werror=ON
-          -Werror=deprecated . &&
-    cmake --build . --config $CMAKE_CONFIG;
+- if [[ "$CMAKE_OPTIONS" != "" ]]; then
+    cmake $CMAKE_OPTIONS -Dbuild_tests=ON -Denable_werror=ON -Werror=dev .
+    && cmake --build . $CMAKE_BUILD_OPTIONS;
   fi
-- if [[ "$CMAKE_CONFIG" != "" ]]; then
-    ctest --build-config $CMAKE_CONFIG -V;
+- if [[ "$CMAKE_OPTIONS" != "" ]]; then
+    ctest -j4 -V;
   fi
 - if [[ "$CC_FOR_CHECK" != "" ]]; then
     make -f $MAKEFILE_NAME $MAKEFILE_TARGETS_CHECK CC=$CC_FOR_CHECK
             CFLAGS_EXTRA="$CFLAGS_EXTRA";
   fi
+- if [ -f cordtest.log ]; then cat cordtest.log; fi
 - if [ -f disclaim_bench.log ]; then cat disclaim_bench.log; fi
 - if [ -f disclaimtest.log ]; then cat disclaimtest.log; fi
 - if [ -f gctest.log ]; then cat gctest.log; fi
