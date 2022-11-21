@@ -210,7 +210,7 @@ this:
 
     mkdir out
     cd out
-    cmake ..
+    cmake -Dbuild_tests=ON ..
     cmake --build .
     ctest
 

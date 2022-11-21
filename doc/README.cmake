@@ -37,7 +37,7 @@ BUILD PROCESS
    e.g.,
       > mkdir out
       > cd out
-      > cmake -G "Visual Studio 9 2008" ..
+      > cmake -G "Visual Studio 9 2008" -Dbuild_tests=ON ..
       > cmake --build . --config Release
       > ctest --build-config Release -V
 
