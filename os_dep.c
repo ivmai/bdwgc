@@ -1241,20 +1241,31 @@ GC_INNER size_t GC_page_size = 0;
   }
 # define GET_MAIN_STACKBASE_SPECIAL
 #elif defined(EMSCRIPTEN)
-# include <emscripten.h>
 
-  static void* emscripten_stack_base;
+# ifdef USE_EMSCRIPTEN_SCAN_STACK
+    /* According to the documentation, emscripten_scan_stack() is only  */
+    /* guaranteed to be available when building with ASYNCIFY.          */
+#   include <emscripten.h>
 
-  static void scan_stack_cb(void *begin, void *end)
-  {
-    (void)begin;
-    emscripten_stack_base = end;
-  }
+    static void *emscripten_stack_base;
+
+    static void scan_stack_cb(void *begin, void *end)
+    {
+      (void)begin;
+      emscripten_stack_base = end;
+    }
+# else
+#   include <emscripten/stack.h>
+# endif
 
   ptr_t GC_get_main_stack_base(void)
   {
-    emscripten_scan_stack(scan_stack_cb);
-    return (ptr_t)emscripten_stack_base;
+#   ifdef USE_EMSCRIPTEN_SCAN_STACK
+      emscripten_scan_stack(scan_stack_cb);
+      return (ptr_t)emscripten_stack_base;
+#   else
+      return (ptr_t)emscripten_stack_get_base();
+#   endif
   }
 # define GET_MAIN_STACKBASE_SPECIAL
 #elif !defined(AMIGA) && !defined(HAIKU) && !defined(OS2) \
