@@ -213,4 +213,4 @@ an underlying garbage-collected large block allocator, since the collector has
 to view all objects accessible from the user's free list as reachable. This
 is likely to cause problems if `GC_MALLOC` is used with something like the
 original HP version of STL. This approach works well with the SGI versions
-of the STL only if the `malloc_alloc` allocator is used.
+of the STL only if the STL "malloc_alloc" allocator is used.
