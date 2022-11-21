@@ -1292,6 +1292,9 @@ EXTERN_C_BEGIN
 #     define DATAEND (ptr_t)ALIGNMENT
 #     define USE_MMAP_ANON      /* avoid /dev/zero, not supported */
 #     undef USE_MUNMAP /* mmap(PROT_NONE) is unsupported, mprotect is no-op */
+#     if defined(GC_THREADS) && !defined(CPPCHECK)
+#       error No threads support yet
+#     endif
 #   endif
 #   if defined(__QNX__)
 #     define OS_TYPE "QNX"
