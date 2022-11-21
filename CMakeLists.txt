@@ -102,6 +102,10 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
                STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
 endif()
 
+if (enable_threads AND EMSCRIPTEN)
+  message(FATAL_ERROR "Multithreaded Bdwgc is not supported when targeting Emscripten, since WebAssembly does not currently support stopping the world synchronously. (see https://github.com/WebAssembly/design/issues/1459 about GC in WebAssembly). Please pass -Denable_threads=OFF to CMake to target singlethreaded WebAssembly.")
+endif()
+
 # Convert VER_INFO values to [SO]VERSION ones.
 if (BUILD_SHARED_LIBS)
   # cord:
