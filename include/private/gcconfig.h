@@ -478,8 +478,10 @@ EXTERN_C_BEGIN
 # if defined(SYMBIAN)
 #   define mach_type_known
 # endif
-# if defined(__EMSCRIPTEN__)
-#   define EMSCRIPTEN
+# if defined(__EMSCRIPTEN__) || defined(EMSCRIPTEN)
+#   ifndef EMSCRIPTEN
+#     define EMSCRIPTEN
+#   endif
 #   define I386
 #   define mach_type_known
 # endif
