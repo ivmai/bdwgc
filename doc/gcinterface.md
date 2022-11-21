@@ -187,12 +187,12 @@ Users may include `gc_cpp.h` and then cause members of classes to be allocated
 in garbage collectible memory by having those classes inherit from class `gc`.
 For details see `gc_cpp.h` file.
 
-Linking against `libgccpp` in addition to the `gc` library overrides `::new`
+Linking against `gccpp` in addition to the `gc` library overrides `::new`
 (and friends) to allocate traceable but uncollectible memory, making
 it safe to refer to collectible objects from the resulting memory.
 
 If the user includes `gc_cpp.h` but `::new` should not be overridden then
-`libgctba` (in addition to the `gc`) library should be linked with to provide
+`gctba` (in addition to the `gc`) library should be linked with to provide
 the definition of `GC_throw_bad_alloc` C++ function used by operator `new` of
 class `gc`. Alternatively, the client may define `GC_NEW_ABORTS_ON_OOM` macro
 before include of `gc_cpp.h` (this instructs `::new` to issue an abort instead
@@ -206,7 +206,7 @@ It is also possible to use the C interface from `gc.h` directly. On platforms
 which use `malloc` to implement `::new`, it should usually be possible to use
 a version of the collector that has been compiled as a `malloc` replacement.
 It is also possible to replace `::new` and other allocation functions
-suitably, as is done by `libgccpp`.
+suitably, as is done by `gccpp`.
 
 Note that user-implemented small-block allocation often works poorly with
 an underlying garbage-collected large block allocator, since the collector has
