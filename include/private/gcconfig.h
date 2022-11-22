@@ -1290,8 +1290,12 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "EMSCRIPTEN"
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
-#     define USE_MMAP_ANON      /* avoid /dev/zero, not supported */
-#     undef USE_MUNMAP /* mmap(PROT_NONE) is unsupported, mprotect is no-op */
+      /* Emscripten does emulate mmap() and munmap(), but those     */
+      /* should never be used in bdwgc, since WebAssembly does not  */
+      /* natively support mmapping. sbrk() is always available, so  */
+      /* prefer to always use that instead.                         */
+#     undef USE_MMAP
+#     undef USE_MUNMAP
 #     if defined(GC_THREADS) && !defined(CPPCHECK)
 #       error No threads support yet
 #     endif
