@@ -92,6 +92,12 @@ option(disable_handle_fork "Prohibit installation of pthread_atfork() handlers" 
 option(install_headers "Install header and pkg-config metadata files" ON)
 option(with_libatomic_ops "Use an external libatomic_ops" OFF)
 option(without_libatomic_ops "Use atomic_ops.h in libatomic_ops/src" OFF)
+option(emscripten_asyncify "Use Emscripten's asyncify feature. Enable this if your program is targeting -sASYNCIFY, and disable otherwise" OFF)
+
+if (emscripten_asyncify)
+  add_definitions(-DEMSCRIPTEN_ASYNCIFY)
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sASYNCIFY -sASYNCIFY_STACK_SIZE=128000")
+endif()
 
 # Override the default build type to RelWithDebInfo (this instructs cmake to
 # pass -O2 -g -DNDEBUG options to the compiler by default).
