@@ -86,16 +86,22 @@ esac
 
 AC_MSG_CHECKING([for emscripten])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-#ifdef __EMSCRIPTEN__
-#error "this is emscripten"
-#endif
-]])], [emscripten=no], [emscripten=yes])
-# Note -s ASYNCIFY is required to scan the stack, ASYNCIFY_STACK_SIZE is
-# probably needed for gctest only.
-AS_IF([test "x$emscripten" = "xyes"],
-      [gc_cflags="${gc_cflags} -s ASYNCIFY -s ASYNCIFY_STACK_SIZE=128000"])
+#   ifndef __EMSCRIPTEN__
+#     error This is not Emscripten
+#   endif
+  ]])], [emscripten=yes], [emscripten=no])
 AM_CONDITIONAL(EMSCRIPTEN, test x$emscripten = xyes)
 AC_MSG_RESULT([$emscripten])
+
+AC_ARG_ENABLE(emscripten-asyncify,
+    [AS_HELP_STRING([--enable-emscripten-asyncify],
+                    [use Emscripten asyncify feature])])
+# Use this option if your program is targeting -sASYNCIFY.  The latter is
+# required to scan the stack, ASYNCIFY_STACK_SIZE is probably needed for
+# gctest only.
+AS_IF([test "${emscripten}" = yes -a "${enable_emscripten_asyncify}" = yes],
+      [gc_cflags="${gc_cflags} -DEMSCRIPTEN_ASYNCIFY"
+       gc_cflags="${gc_cflags} -sASYNCIFY -sASYNCIFY_STACK_SIZE=128000"])
 
 GC_CFLAGS=${gc_cflags}
 AC_SUBST(GC_CFLAGS)

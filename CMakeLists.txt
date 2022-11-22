@@ -88,6 +88,7 @@ option(enable_werror "Pass -Werror to the C compiler (treat warnings as errors)"
 option(enable_single_obj_compilation "Compile all libgc source files into single .o" OFF)
 option(enable_handle_fork "Attempt to ensure a usable collector after fork()" ON)
 option(disable_handle_fork "Prohibit installation of pthread_atfork() handlers" OFF)
+option(enable_emscripten_asyncify "Use Emscripten asyncify feature" OFF)
 option(install_headers "Install header and pkg-config metadata files" ON)
 option(without_libatomic_ops "Use atomic_ops.h in libatomic_ops/src" OFF)
 
@@ -506,6 +507,22 @@ int main(void) { Dl_info info; (void)dladdr(\"\", &info); return 0; }"
 if (HAVE_DLADDR)
   # Define to use 'dladdr' function.
   add_definitions("-DHAVE_DLADDR")
+endif()
+
+# Check for emscripten; use asyncify feature if requested.
+check_c_source_compiles("
+#ifndef __EMSCRIPTEN__\n
+# error This is not Emscripten\n
+#endif\n
+int main(void) { return 0; }"
+  EMSCRIPTEN)
+if (EMSCRIPTEN AND enable_emscripten_asyncify)
+  # Use this option if your program is targeting -sASYNCIFY.  The latter is
+  # required to scan the stack, ASYNCIFY_STACK_SIZE is probably needed for
+  # gctest only.
+  add_definitions("-DEMSCRIPTEN_ASYNCIFY")
+  set(CMAKE_EXE_LINKER_FLAGS
+        "${CMAKE_EXE_LINKER_FLAGS} -sASYNCIFY -sASYNCIFY_STACK_SIZE=128000")
 endif()
 
 add_library(gc ${SRC})
