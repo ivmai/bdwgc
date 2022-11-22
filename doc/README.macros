@@ -606,3 +606,9 @@ USE_GET_STACKBASE_FOR_MAIN (Linux only)  Use pthread_attr_getstack() instead
   of __libc_stack_end (or instead of any hard-coded value) for getting the
   primordial thread stack bottom (useful if the client modifies the program's
   address space).
+
+EMSCRIPTEN_ASYNCIFY (Emscripten only)   Use Asyncify feature.  Note this is
+  a relatively rarely used feature of Emscripten, most developers do not use
+  it, and it does not scale well to moderate-to-large code bases.  But the
+  feature is needed to pass gctest, at least.  Requires -sASYNCIFY linker
+  flag.

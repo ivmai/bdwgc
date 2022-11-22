@@ -1242,7 +1242,7 @@ GC_INNER size_t GC_page_size = 0;
 # define GET_MAIN_STACKBASE_SPECIAL
 #elif defined(EMSCRIPTEN)
 
-# ifdef USE_EMSCRIPTEN_SCAN_STACK
+# if defined(USE_EMSCRIPTEN_SCAN_STACK) && defined(EMSCRIPTEN_ASYNCIFY)
     /* According to the documentation, emscripten_scan_stack() is only  */
     /* guaranteed to be available when building with ASYNCIFY.          */
 #   include <emscripten.h>
@@ -1260,7 +1260,7 @@ GC_INNER size_t GC_page_size = 0;
 
   ptr_t GC_get_main_stack_base(void)
   {
-#   ifdef USE_EMSCRIPTEN_SCAN_STACK
+#   if defined(USE_EMSCRIPTEN_SCAN_STACK) && defined(EMSCRIPTEN_ASYNCIFY)
       emscripten_scan_stack(scan_stack_cb);
       return (ptr_t)emscripten_stack_base;
 #   else
@@ -2814,7 +2814,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 /* thread stacks.                                               */
 #ifndef THREADS
 
-# ifdef EMSCRIPTEN
+# if defined(EMSCRIPTEN) && defined(EMSCRIPTEN_ASYNCIFY)
 #   include <emscripten.h>
 
     static void scan_regs_cb(void *begin, void *end)
@@ -2824,8 +2824,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 
     STATIC void GC_CALLBACK GC_default_push_other_roots(void)
     {
-      /* This needs "-s ASYNCIFY -s ASYNCIFY_STACK_SIZE=128000" */
-      /* but hopefully the latter is only required for gctest.  */
+      /* Note: this needs -sASYNCIFY linker flag. */
       emscripten_scan_registers(scan_regs_cb);
     }
 
