@@ -2815,6 +2815,8 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 #ifndef THREADS
 
 # ifdef EMSCRIPTEN
+#   include <emscripten.h>
+
     static void scan_regs_cb(void *begin, void *end)
     {
       GC_push_all_stack((ptr_t)begin, (ptr_t)end);
