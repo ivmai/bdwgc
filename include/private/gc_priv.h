@@ -3023,9 +3023,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #   define SIG_SUSPEND SIGUSR1
         /* SIGTSTP and SIGCONT could be used alternatively on FreeBSD.  */
 # elif defined(GC_OPENBSD_THREADS) && !defined(GC_USESIGRT_SIGNALS)
-#   ifndef GC_OPENBSD_UTHREADS
 #     define SIG_SUSPEND SIGXFSZ
-#   endif
 # elif defined(_SIGRTMIN) && !defined(CPPCHECK)
 #   define SIG_SUSPEND _SIGRTMIN + 6
 # else

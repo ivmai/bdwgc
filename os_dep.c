@@ -524,60 +524,6 @@ GC_INNER const char * GC_get_maps(void)
      LONGJMP(GC_jmp_buf_openbsd, 1);
   }
 
-# ifdef GC_OPENBSD_UTHREADS
-#   include <sys/syscall.h>
-    EXTERN_C_BEGIN
-    extern sigset_t __syscall(quad_t, ...);
-    EXTERN_C_END
-
-  /* Don't use GC_find_limit() because siglongjmp() outside of the      */
-  /* signal handler by-passes our userland pthreads lib, leaving        */
-  /* SIGSEGV and SIGPROF masked.  Instead, use this custom one that     */
-  /* works-around the issues.                                           */
-
-  /* Return the first non-addressable location > p or bound.    */
-  STATIC ptr_t GC_find_limit_openbsd(ptr_t p, ptr_t bound)
-  {
-    static volatile ptr_t result;
-             /* Safer if static, since otherwise it may not be  */
-             /* preserved across the longjmp.  Can safely be    */
-             /* static since it's only called with the          */
-             /* allocation lock held.                           */
-
-    struct sigaction act;
-    word pgsz = (word)sysconf(_SC_PAGESIZE);
-
-    GC_ASSERT((word)bound >= pgsz);
-    GC_ASSERT(I_HOLD_LOCK());
-
-    act.sa_handler = GC_fault_handler_openbsd;
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = SA_NODEFER | SA_RESTART;
-    /* act.sa_restorer is deprecated and should not be initialized. */
-    sigaction(SIGSEGV, &act, &old_segv_act);
-
-    if (SETJMP(GC_jmp_buf_openbsd) == 0) {
-      result = (ptr_t)((word)p & ~(pgsz-1));
-      for (;;) {
-        if ((word)result >= (word)bound - pgsz) {
-          result = bound;
-          break;
-        }
-        result += pgsz; /* no overflow expected */
-        GC_noop1((word)(*result));
-      }
-    }
-
-#   ifdef THREADS
-      /* Due to the siglongjump we need to manually unmask SIGPROF.     */
-      __syscall(SYS_sigprocmask, SIG_UNBLOCK, sigmask(SIGPROF));
-#   endif
-
-    sigaction(SIGSEGV, &old_segv_act, 0);
-    return result;
-  }
-# endif /* GC_OPENBSD_UTHREADS */
-
   static volatile int firstpass;
 
   /* Return first addressable location > p or bound.    */
@@ -2091,11 +2037,7 @@ void GC_register_data_segments(void)
     ABORT_ARG2("Wrong DATASTART/END pair",
                ": %p .. %p", (void *)region_start, (void *)DATAEND);
   for (;;) {
-#   ifdef GC_OPENBSD_UTHREADS
-      ptr_t region_end = GC_find_limit_openbsd(region_start, DATAEND);
-#   else
-      ptr_t region_end = GC_find_limit_with_bound(region_start, TRUE, DATAEND);
-#   endif
+    ptr_t region_end = GC_find_limit_with_bound(region_start, TRUE, DATAEND);
 
     GC_add_roots_inner(region_start, region_end, FALSE);
     if ((word)region_end >= (word)DATAEND)

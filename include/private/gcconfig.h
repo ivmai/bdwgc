@@ -2512,11 +2512,6 @@ EXTERN_C_BEGIN
   EXTERN_C_END
 # include <sys/param.h>
   EXTERN_C_BEGIN
-  /* Prior to 5.2 release, OpenBSD had user threads and required        */
-  /* special handling.                                                  */
-# if OpenBSD < 201211
-#   define GC_OPENBSD_UTHREADS 1
-# endif
 #endif /* GC_OPENBSD_THREADS */
 
 #if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
@@ -2746,7 +2741,7 @@ EXTERN_C_BEGIN
     || (defined(CYGWIN32) && defined(I386) && defined(USE_MMAP) \
         && !defined(USE_WINALLOC)) \
     || (defined(NETBSD) && defined(__ELF__)) \
-    || (defined(OPENBSD) && !defined(GC_OPENBSD_UTHREADS)) \
+    || defined(OPENBSD) \
     || ((defined(SVR4) || defined(AIX) || defined(DGUX) \
          || defined(DATASTART_USES_BSDGETDATASTART) \
          || (defined(LINUX) && defined(SPARC))) && !defined(PCR))
@@ -2865,8 +2860,7 @@ EXTERN_C_BEGIN
 # define PTHREAD_STOP_WORLD_IMPL
 #endif
 
-#if defined(PTHREAD_STOP_WORLD_IMPL) && !defined(NACL) \
-    && !defined(GC_OPENBSD_UTHREADS)
+#if defined(PTHREAD_STOP_WORLD_IMPL) && !defined(NACL)
 # define SIGNAL_BASED_STOP_WORLD
 #endif
 
