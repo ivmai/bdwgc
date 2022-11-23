@@ -27,8 +27,8 @@ if EMSCRIPTEN
 check_PROGRAMS += gctest.html
 gctest_html_SOURCES = $(gctest_SOURCES)
 gctest_html_LDADD = $(gctest_LDADD)
-# Bug in the linker not being able to determine that _memalign and
-# _memalign is needed? it's part of mmap.
+# Bug in the linker not being able to determine that _memalign and _memset
+# are needed? it's part of mmap.
 gctest_html_LDFLAGS = -s "EXPORTED_FUNCTIONS=['_memalign', '_main', '_memset']"
 endif
 
