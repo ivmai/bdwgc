@@ -1185,6 +1185,9 @@ EXTERN_C_BEGIN
 #   define NO_PTHREAD_GETATTR_NP
 #   define USE_MMAP_ANON
 #   define GETPAGESIZE() 65536 /* FIXME: Not real page size */
+#   if !defined(HBLKSIZE) && !defined(GC_NO_VALLOC)
+#     define HBLKSIZE GETPAGESIZE() /* TODO: workaround for GC_valloc */
+#   endif
 #   define MAX_NACL_GC_THREADS 1024
 # endif
 
@@ -1295,6 +1298,10 @@ EXTERN_C_BEGIN
       /* native support of memory mapping.  Use sbrk() instead.     */
 #     undef USE_MMAP
 #     undef USE_MUNMAP
+      /* The real page size in WebAssembly is 64 KB.    */
+#     if !defined(HBLKSIZE) && !defined(GC_NO_VALLOC)
+#       define HBLKSIZE 65536 /* TODO: workaround for GC_valloc */
+#     endif
 #     if defined(GC_THREADS) && !defined(CPPCHECK)
 #       error No threads support yet
 #     endif
