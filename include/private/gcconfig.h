@@ -2069,6 +2069,9 @@ EXTERN_C_BEGIN
 #   ifdef SN_TARGET_PSP2
 #     define OS_TYPE "SN_TARGET_PSP2"
 #     define NO_HANDLE_FORK 1
+#     ifndef HBLKSIZE
+#       define HBLKSIZE 65536 /* page size is 64 KB */
+#     endif
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
       void *psp2_get_stack_bottom(void);

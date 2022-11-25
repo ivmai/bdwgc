@@ -299,7 +299,7 @@ MARK_BIT_PER_OBJ        Requests that a mark bit be allocated for each
   MARK_BIT_PER_GRANULE.
 
 HBLKSIZE=<ddd>  Explicitly sets the heap block size (where ddd is a power of
-  2 between 512 and 16384).  Each heap block is devoted to a single size and
+  2 between 512 and 65536).  Each heap block is devoted to a single size and
   kind of object.  For the incremental collector it makes sense to match
   the most likely page size.  Otherwise large values result in more
   fragmentation, but generally better performance for large heaps.
