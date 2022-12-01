@@ -58,10 +58,12 @@ void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb, void *arg)
     GC_log_printf("Finishing thread 0x%x\n", (unsigned)pthread_self());
 # endif
   me -> status = result;
-# ifndef NACL
+  /* Cleanup acquires lock, ensuring that we can't exit while   */
+  /* a collection that thinks we're alive is trying to stop us. */
+# ifdef NACL
+    GC_thread_exit_proc((void *)me);
+# else
     pthread_cleanup_pop(1);
-    /* Cleanup acquires lock, ensuring that we can't exit while         */
-    /* a collection that thinks we're alive is trying to stop us.       */
 # endif
   return result;
 }
