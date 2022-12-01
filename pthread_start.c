@@ -60,10 +60,12 @@ GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
 # endif
   me -> status = result;
   GC_end_stubborn_change(me); /* cannot use GC_dirty */
-# ifndef NACL
+  /* Cleanup acquires lock, ensuring that we can't exit while   */
+  /* a collection that thinks we're alive is trying to stop us. */
+# ifdef NACL
+    GC_thread_exit_proc((void *)me);
+# else
     pthread_cleanup_pop(1);
-    /* Cleanup acquires lock, ensuring that we can't exit while         */
-    /* a collection that thinks we're alive is trying to stop us.       */
 # endif
   return result;
 }
