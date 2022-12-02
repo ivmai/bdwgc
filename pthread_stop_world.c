@@ -502,10 +502,11 @@ static void resend_lost_signals_retry(int n_live_threads,
 {
 # if defined(HAVE_CLOCK_GETTIME) && !defined(DONT_TIMEDWAIT_ACK_SEM)
 #   define TIMEOUT_BEFORE_RESEND 10000 /* us */
-    int i;
     struct timespec ts;
 
     if (n_live_threads > 0 && clock_gettime(CLOCK_REALTIME, &ts) == 0) {
+      int i;
+
       TS_NSEC_ADD(ts, TIMEOUT_BEFORE_RESEND * 1000);
       /* First, try to wait for the semaphore with some timeout.            */
       /* On failure, fallback to WAIT_UNIT pause and resend of the signal.  */
