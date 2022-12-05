@@ -471,8 +471,9 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
     one_element = GC_make_leaf_descriptor(size, 1, d);
     if (EXPECT(NULL == one_element, FALSE)) return NO_MEM;
 
-    beginning = *pcomplex_d;
-    if (result != COMPLEX) {
+    if (COMPLEX == result) {
+      beginning = *pcomplex_d;
+    } else {
       beginning = SIMPLE == result ?
                         GC_make_leaf_descriptor(size, 1, *psimple_d) :
                         GC_make_leaf_descriptor(pleaf -> ld_size,
