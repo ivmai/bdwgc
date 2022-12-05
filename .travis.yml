@@ -830,11 +830,12 @@ script:
 - if [ -f threadleaktest.log ]; then cat threadleaktest.log; fi
 - if [ -f weakmaptest.log ]; then cat weakmaptest.log; fi
 - if [[ "$CSA_CHECK" == true ]]; then
-    ${CC} --analyze -Xanalyzer -analyzer-output=text -Werror
+    set -o pipefail; ${CC} --analyze -Xanalyzer -analyzer-output=text -Werror
         -I include -I libatomic_ops/src $CFLAGS_EXTRA
         *.c *.cc cord/*.c cord/tests/cordtest.c cord/tests/de.c extra/gc.c
         extra/msvc_dbg.c extra/pcr_interface.c extra/real_malloc.c
-        tests/*.c tests/*.cc tools/*.c;
+        tests/*.c tests/*.cc tools/*.c 2>&1 | tee clang-analyzer-output.log;
+    if [ -s clang-analyzer-output.log ]; then exit 1; fi;
   fi
 - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
     if [[ "$CPPCHECK_OUT_FILTER" == "" ]]; then CPPCHECK_OUT_FILTER="c "; fi;
