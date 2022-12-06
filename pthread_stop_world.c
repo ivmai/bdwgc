@@ -75,7 +75,9 @@ GC_INLINE void GC_usleep(unsigned us)
 
 #ifdef DEBUG_THREADS
 # ifndef NSIG
-#   if defined(MAXSIG)
+#   ifdef CPPCHECK
+#     define NSIG 32
+#   elif defined(MAXSIG)
 #     define NSIG (MAXSIG+1)
 #   elif defined(_NSIG)
 #     define NSIG _NSIG
@@ -84,7 +86,7 @@ GC_INLINE void GC_usleep(unsigned us)
 #   else
 #     error define NSIG
 #   endif
-# endif /* NSIG */
+# endif /* !NSIG */
 
   void GC_print_sig_mask(void)
   {
