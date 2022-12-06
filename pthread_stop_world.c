@@ -81,7 +81,9 @@
 
 #ifdef DEBUG_THREADS
 # ifndef NSIG
-#   if defined(MAXSIG)
+#   ifdef CPPCHECK
+#     define NSIG 32
+#   elif defined(MAXSIG)
 #     define NSIG (MAXSIG+1)
 #   elif defined(_NSIG)
 #     define NSIG _NSIG
@@ -90,7 +92,7 @@
 #   else
 #     error define NSIG
 #   endif
-# endif /* NSIG */
+# endif /* !NSIG */
 
   void GC_print_sig_mask(void)
   {
