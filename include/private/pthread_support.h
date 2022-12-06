@@ -46,8 +46,12 @@ EXTERN_C_BEGIN
 
 #ifdef GC_WIN32_THREADS
   typedef DWORD thread_id_t;
+# define thread_id_self() GetCurrentThreadId()
+# define THREAD_ID_EQUAL(id1, id2) ((id1) == (id2))
 #else
   typedef pthread_t thread_id_t;
+# define thread_id_self() pthread_self()
+# define THREAD_ID_EQUAL(id1, id2) THREAD_EQUAL(id1, id2)
 #endif
 
 /* We use the allocation lock to protect thread-related data structures. */
@@ -106,6 +110,9 @@ typedef struct GC_Thread_Rep {
 # endif
 # ifndef GC_WIN32_THREADS
 #   define MAIN_THREAD  0x4     /* True for the original thread only.   */
+# endif
+# if (defined(GC_HAVE_PTHREAD_EXIT) || !defined(GC_NO_PTHREAD_CANCEL)) \
+     && defined(GC_PTHREADS)
 #   define DISABLED_GC 0x10     /* Collections are disabled while the   */
                                 /* thread is exiting.                   */
 # endif
@@ -140,6 +147,7 @@ typedef struct GC_Thread_Rep {
   ptr_t stack_ptr;      /* Valid only in some platform-specific states. */
 
 # ifdef GC_WIN32_THREADS
+#   define ADDR_LIMIT ((ptr_t)GC_WORD_MAX)
     ptr_t last_stack_min;       /* Last known minimum (hottest) address */
                                 /* in stack or ADDR_LIMIT if unset.     */
 #   ifdef I386
@@ -274,11 +282,95 @@ typedef struct GC_Thread_Rep {
 
 GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
 
+#ifndef MAX_MARKERS
+# define MAX_MARKERS 16
+#endif
+
 #ifdef GC_ASSERTIONS
   GC_EXTERN GC_bool GC_thr_initialized;
 #endif
 
+#ifdef GC_WIN32_THREADS
+
+# ifdef GC_NO_THREADS_DISCOVERY
+#   define GC_win32_dll_threads FALSE
+# elif defined(GC_DISCOVER_TASK_THREADS)
+#   define GC_win32_dll_threads TRUE
+# else
+    GC_EXTERN GC_bool GC_win32_dll_threads;
+# endif
+
+  GC_EXTERN int GC_available_markers_m1;
+
+# ifdef PARALLEL_MARK
+    GC_EXTERN unsigned GC_required_markers_cnt;
+    GC_EXTERN ptr_t GC_marker_sp[MAX_MARKERS - 1];
+    GC_EXTERN ptr_t GC_marker_last_stack_min[MAX_MARKERS - 1];
+#   ifndef GC_PTHREADS_PARAMARK
+      GC_EXTERN thread_id_t GC_marker_Id[MAX_MARKERS - 1];
+#   endif
+#   if !defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) && !defined(MSWINCE)
+      GC_INNER void GC_init_win32_thread_naming(HMODULE hK32);
+#   endif
+#   ifdef GC_PTHREADS_PARAMARK
+      GC_INNER void *GC_mark_thread(void *);
+#   elif defined(MSWINCE)
+      GC_INNER DWORD WINAPI GC_mark_thread(LPVOID);
+#   else
+      GC_INNER unsigned __stdcall GC_mark_thread(void *);
+#   endif
+# endif /* PARALLEL_MARK */
+
+  GC_INNER GC_thread GC_new_thread(thread_id_t);
+  GC_INNER void GC_record_stack_base(GC_thread me,
+                                     const struct GC_stack_base *sb);
+  GC_INNER GC_thread GC_register_my_thread_inner(
+                                        const struct GC_stack_base *sb,
+                                        thread_id_t self_id);
+
+# ifdef GC_PTHREADS
+    GC_INNER GC_thread GC_lookup_by_pthread(pthread_t);
+    GC_INNER void GC_win32_cache_self_pthread(thread_id_t);
+# else
+    GC_INNER void GC_delete_gc_thread_no_free(GC_thread);
+# endif
+
+# ifdef CAN_HANDLE_FORK
+    GC_INNER void GC_setup_atfork(void);
+# endif
+
+# ifndef GC_NO_THREADS_DISCOVERY
+    GC_INNER GC_thread GC_win32_dll_lookup_thread(thread_id_t);
+    GC_INNER void GC_delete_thread(thread_id_t);
+# endif
+
+# ifdef MPROTECT_VDB
+    /* Make sure given thread descriptor is not protected by the VDB    */
+    /* implementation.  Used to prevent write faults when the world     */
+    /* is (partially) stopped, since it may have been stopped with      */
+    /* a system lock held, and that lock may be required for fault      */
+    /* handling.                                                        */
+    GC_INNER void GC_win32_unprotect_thread(GC_thread);
+# else
+#   define GC_win32_unprotect_thread(t) (void)(t)
+# endif /* !MPROTECT_VDB */
+
+#else
+# define GC_win32_dll_threads FALSE
+#endif /* !GC_WIN32_THREADS */
+
+#ifdef GC_PTHREADS
+# if defined(GC_WIN32_THREADS) && !defined(CYGWIN32) \
+     && (defined(GC_WIN32_PTHREADS) || defined(GC_PTHREADS_PARAMARK)) \
+     && !defined(__WINPTHREADS_VERSION_MAJOR)
+#   define GC_PTHREAD_PTRVAL(pthread_id) pthread_id.p
+# else
+#   define GC_PTHREAD_PTRVAL(pthread_id) pthread_id
+# endif
+#endif /* GC_PTHREADS */
+
 GC_INNER GC_thread GC_lookup_thread(thread_id_t);
+GC_INNER void GC_wait_for_gc_completion(GC_bool);
 
 #ifdef NACL
   GC_EXTERN __thread GC_thread GC_nacl_gc_thread_self;
@@ -306,17 +398,13 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t);
 #   define GC_INNER_PTHRSTART GC_INNER
 # endif
 
-# ifndef GC_WIN32_THREADS
-    GC_INNER_PTHRSTART void *GC_CALLBACK GC_pthread_start_inner(
+  GC_INNER_PTHRSTART void *GC_CALLBACK GC_pthread_start_inner(
                                         struct GC_stack_base *sb, void *arg);
-    GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
+  GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
                                         void *(**pstart)(void *),
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg);
-# endif
-
   GC_INNER_PTHRSTART void GC_thread_exit_proc(void *);
-
 #endif /* GC_PTHREADS */
 
 #ifdef GC_DARWIN_THREADS

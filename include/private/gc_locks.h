@@ -58,7 +58,10 @@
        || defined(LINT2)) && defined(GC_PTHREADS)
 #   define USE_PTHREAD_LOCKS
 #   undef USE_SPIN_LOCK
-#   if defined(LINT2) && !defined(NO_PTHREAD_TRYLOCK)
+#   if (defined(LINT2) || defined(GC_WIN32_THREADS)) \
+       && !defined(NO_PTHREAD_TRYLOCK)
+      /* pthread_mutex_trylock may not win in GC_lock on Win32, */
+      /* due to builtin support for spinning first?             */
 #     define NO_PTHREAD_TRYLOCK
 #   endif
 # endif

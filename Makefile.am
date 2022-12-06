@@ -70,22 +70,24 @@ libgc_la_SOURCES = \
 # C Library: Architecture Dependent
 # ---------------------------------
 
+if THREADS
+
+libgc_la_SOURCES += pthread_start.c pthread_support.c
+
+if THREAD_LOCAL_ALLOC
+libgc_la_SOURCES += thread_local_alloc.c
+endif
+
 if WIN32_THREADS
 libgc_la_SOURCES += win32_threads.c
 else
-if PTHREADS
-# Not Cygwin or MinGW.
-libgc_la_SOURCES += pthread_start.c pthread_support.c
 if DARWIN_THREADS
 libgc_la_SOURCES += darwin_stop_world.c
 else
 libgc_la_SOURCES += pthread_stop_world.c
 endif
 endif
-endif
 
-if THREAD_LOCAL_ALLOC
-libgc_la_SOURCES += thread_local_alloc.c
 endif
 
 if MAKE_BACK_GRAPH

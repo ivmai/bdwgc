@@ -94,7 +94,8 @@ AO_SRC_DIR=libatomic_ops/src
 AO_INCLUDE_DIR=$(AO_SRC_DIR)
 
 !IFDEF ENABLE_STATIC
-OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gcj_mlc.obj mallocx.obj extra\msvc_dbg.obj thread_local_alloc.obj
+# pthread_start.obj is needed just in case client defines GC_WIN32_PTHREADS.
+OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gcj_mlc.obj mallocx.obj extra\msvc_dbg.obj pthread_start.obj pthread_support.obj thread_local_alloc.obj
 !ELSE
 OBJS= extra\gc.obj extra\msvc_dbg.obj
 !ENDIF

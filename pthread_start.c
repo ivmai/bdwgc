@@ -36,7 +36,7 @@
 
 #include "private/pthread_support.h"
 
-#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
+#if defined(GC_PTHREADS) \
     && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
 
 /* Invoked from GC_pthread_start. */
@@ -50,11 +50,12 @@ GC_INNER_PTHRSTART void *GC_CALLBACK GC_pthread_start_inner(
                 GC_start_rtn_prepare_thread(&start, &start_arg, sb, arg);
 
 # ifndef NACL
-    pthread_cleanup_push(GC_thread_exit_proc, me);
+    pthread_cleanup_push(GC_thread_exit_proc, (void *)me);
 # endif
   result = (*start)(start_arg);
 # if defined(DEBUG_THREADS) && !defined(GC_PTHREAD_START_STANDALONE)
-    GC_log_printf("Finishing thread %p\n", (void *)pthread_self());
+    GC_log_printf("Finishing thread %p\n",
+                  (void *)GC_PTHREAD_PTRVAL(pthread_self()));
 # endif
   me -> status = result;
   GC_end_stubborn_change(me); /* cannot use GC_dirty */

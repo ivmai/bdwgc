@@ -2199,7 +2199,7 @@ GC_INNER ptr_t GC_blocked_sp = NULL;
 
 GC_INNER struct GC_traced_stack_sect_s *GC_traced_stack_sect = NULL;
 
-/* This is nearly the same as in win32_threads.c        */
+/* This is nearly the same as in pthread_support.c.     */
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
                                              void * client_data)
 {
@@ -2250,7 +2250,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     return client_data; /* result */
 }
 
-/* This is nearly the same as in win32_threads.c        */
+/* This is nearly the same as in pthread_support.c.     */
 STATIC void GC_do_blocking_inner(ptr_t data, void *context)
 {
     struct blocking_data * d = (struct blocking_data *)data;
