@@ -216,28 +216,28 @@ dist_doc_DATA = \
     AUTHORS \
     LICENSE \
     README.md \
-    doc/README.DGUX386 \
-    doc/README.Mac \
-    doc/README.OS2 \
-    doc/README.aix \
-    doc/README.amiga \
-    doc/README.arm.cross \
+    doc/platforms/README.DGUX386 \
+    doc/platforms/README.Mac \
+    doc/platforms/README.OS2 \
+    doc/platforms/README.aix \
+    doc/platforms/README.amiga \
+    doc/platforms/README.arm.cross \
+    doc/platforms/README.darwin \
+    doc/platforms/README.emscripten \
+    doc/platforms/README.ews4800 \
+    doc/platforms/README.hp \
+    doc/platforms/README.linux \
+    doc/platforms/README.sgi \
+    doc/platforms/README.solaris2 \
+    doc/platforms/README.symbian \
+    doc/platforms/README.uts \
+    doc/platforms/README.win32 \
+    doc/platforms/README.win64 \
     doc/README.autoconf \
     doc/README.cmake \
     doc/README.cords \
-    doc/README.darwin \
-    doc/README.emscripten \
     doc/README.environment \
-    doc/README.ews4800 \
-    doc/README.hp \
-    doc/README.linux \
     doc/README.macros \
-    doc/README.sgi \
-    doc/README.solaris2 \
-    doc/README.symbian \
-    doc/README.uts \
-    doc/README.win32 \
-    doc/README.win64 \
     doc/debugging.md \
     doc/finalization.md \
     doc/gcdescr.md \

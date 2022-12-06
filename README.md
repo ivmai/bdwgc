@@ -144,12 +144,12 @@ areas that are associated with dynamic libraries.  This is easy to remedy
 if you know how to find those data areas on your operating system (see
 `GC_add_roots`).  Code for doing this under SunOS, IRIX 5.X and 6.X, HP/UX,
 Alpha OSF/1, Linux, and Win32 is included and used by default.
-(See [README.win32](doc/README.win32) and [README.win64](doc/README.win64)
-for Windows details.)  On other systems, pointers from dynamic library data
-areas may not be considered by the collector.  If you're writing a program
-that depends on the collector scanning dynamic library data areas, it may
-be a good idea to include at least one call to `GC_is_visible` to ensure
-that those areas are visible to the collector.
+(See [README.win32](doc/platforms/README.win32) and
+[README.win64](doc/platforms/README.win64) for Windows details.)  On other
+systems, pointers from dynamic library data areas may not be considered by the
+collector.  If you're writing a program that depends on the collector scanning
+dynamic library data areas, it may be a good idea to include at least one call
+to `GC_is_visible` to ensure that those areas are visible to the collector.
 
 Note that the garbage collector does not need to be informed of shared
 read-only data.  However, if the shared library mechanism can introduce
@@ -223,8 +223,8 @@ with a single compiler invocation, like this:
 
 On Windows, CMake could be used to build the library as described above or
 by typing `nmake -f NT_MAKEFILE`, this assumes you have Microsoft command-line
-tools installed and suitably configured.  See [README.win32](doc/README.win32)
-for details.
+tools installed and suitably configured.  See
+[README.win32](doc/platforms/README.win32) for details.
 
 The library is built with threads support on (i.e. for thread-safe operation)
 by default, unless `--disable-threads` is passed to `./configure` (or
@@ -262,8 +262,8 @@ The collector currently is designed to run essentially unmodified on
 machines that use a flat 32-bit or 64-bit address space.
 That includes the vast majority of Workstations and x86 (i386 or later) PCs.
 
-In a few cases (OS/2, Win32) a separate makefile is supplied; these have
-a separate host-specific doc/README.* file.
+In a few cases (e.g., OS/2, Win32) a separate makefile is supplied; these have
+a separate host-specific doc/platforms/README.* file.
 
 Dynamic libraries are completely supported only under SunOS/Solaris,
 (and even that support is not functional on the last Sun 3 release),

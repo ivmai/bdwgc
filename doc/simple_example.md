@@ -31,8 +31,8 @@ a basic correctness test which usually takes well under a minute.
 ### Other platforms
 
 On non-Unix, non-Linux platforms, the collector is usually built by copying
-the appropriate makefile (see the platform-specific README in doc/README.xxx
-in the distribution) to the file "Makefile", and then typing `make` (or
+the appropriate makefile (see the platform-specific README in `doc/platforms`
+folder in the distribution) to the file `Makefile`, and then typing `make` (or
 `nmake` or ...). This builds the library in the source tree. You may want
 to move it and the files in the include directory to a more convenient place.
 
@@ -179,4 +179,4 @@ The executable can of course be run normally, e.g. by typing:
 
 The operation of the collector is affected by a number of environment
 variables. For example, setting `GC_PRINT_STATS` produces some GC statistics
-on stdout. See `README.environment` in the distribution for details.
+on stdout. See `README.environment` file in the distribution for details.
