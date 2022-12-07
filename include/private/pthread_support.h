@@ -90,9 +90,25 @@ typedef struct GC_Thread_Rep {
   } tm; /* table_management */
 
   thread_id_t id; /* hash table key */
-# if defined(GC_WIN32_THREADS) && defined(GC_PTHREADS)
+# ifdef GC_DARWIN_THREADS
+    mach_port_t mach_thread;
+# elif defined(GC_WIN32_THREADS) && defined(GC_PTHREADS)
     pthread_t pthread_id;
+# elif defined(USE_TKILL_ON_ANDROID)
+    pid_t kernel_id;
 # endif
+
+# ifdef MSWINCE
+    /* According to MSDN specs for WinCE targets:                       */
+    /* - DuplicateHandle() is not applicable to thread handles; and     */
+    /* - the value returned by GetCurrentThreadId() could be used as    */
+    /* a "real" thread handle (for SuspendThread(), ResumeThread()      */
+    /* and GetThreadContext()).                                         */
+#   define THREAD_HANDLE(p) ((HANDLE)(word)(p) -> id)
+# elif defined(GC_WIN32_THREADS)
+    HANDLE handle;
+#   define THREAD_HANDLE(p) ((p) -> handle)
+# endif /* GC_WIN32_THREADS && !MSWINCE */
 
   unsigned char flags;          /* Protected by GC lock.                */
 # define FINISHED       0x1     /* Thread has exited (pthreads only).   */
@@ -157,29 +173,10 @@ typedef struct GC_Thread_Rep {
 #   endif
 # endif
 
-# ifdef USE_TKILL_ON_ANDROID
-    pid_t kernel_id;
-# endif
-
-# ifdef MSWINCE
-    /* According to MSDN specs for WinCE targets:                       */
-    /* - DuplicateHandle() is not applicable to thread handles; and     */
-    /* - the value returned by GetCurrentThreadId() could be used as    */
-    /* a "real" thread handle (for SuspendThread(), ResumeThread()      */
-    /* and GetThreadContext()).                                         */
-#   define THREAD_HANDLE(p) ((HANDLE)(word)(p) -> id)
-# elif defined(GC_WIN32_THREADS)
-    HANDLE handle;
-#   define THREAD_HANDLE(p) ((p) -> handle)
-# endif /* GC_WIN32_THREADS && !MSWINCE */
-
-# ifdef GC_DARWIN_THREADS
-    mach_port_t mach_thread;
-#   ifndef DARWIN_DONT_PARSE_STACK
-      ptr_t topOfStack;         /* Result of GC_FindTopOfStack(0);      */
+# if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
+    ptr_t topOfStack;           /* Result of GC_FindTopOfStack(0);      */
                                 /* valid only if the thread is blocked; */
                                 /* non-NULL value means already set.    */
-#   endif
 # endif
 
 # ifdef SIGNAL_BASED_STOP_WORLD
