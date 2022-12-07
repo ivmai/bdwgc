@@ -224,8 +224,8 @@ with a single compiler invocation, like this:
 
 On Windows, CMake could be used to build the library as described above or
 by typing `nmake -f NT_MAKEFILE`, this assumes you have Microsoft command-line
-tools installed and suitably configured.  See [README.win32](doc/platforms/README.win32)
-for details.
+tools installed and suitably configured.  See
+[README.win32](doc/platforms/README.win32) for details.
 
 The library is built with threads support on (i.e. for thread-safe operation)
 by default, unless `--disable-threads` is passed to `./configure` (or
