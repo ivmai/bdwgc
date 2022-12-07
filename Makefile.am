@@ -231,7 +231,7 @@ dist_doc_DATA = \
     doc/platforms/README.uts \
     doc/platforms/README.win32 \
     doc/platforms/README.win64 \
-    doc/platforms/porting.md \
+    doc/porting.md \
     doc/README.autoconf \
     doc/README.cmake \
     doc/README.cords \

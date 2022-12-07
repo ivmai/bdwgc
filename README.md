@@ -144,8 +144,9 @@ areas that are associated with dynamic libraries.  This is easy to remedy
 if you know how to find those data areas on your operating system (see
 `GC_add_roots`).  Code for doing this under SunOS, IRIX 5.X and 6.X, HP/UX,
 Alpha OSF/1, Linux, and Win32 is included and used by default.
-(See [README.win32](doc/platforms/README.win32) and [README.win64](doc/platforms/README.win64)
-for Windows details.)  On other systems, pointers from dynamic library data
+(See [README.win32](doc/platforms/README.win32)
+and [README.win64](doc/platforms/README.win64) for Windows details.)
+On other systems, pointers from dynamic library data
 areas may not be considered by the collector.  If you're writing a program
 that depends on the collector scanning dynamic library data areas, it may
 be a good idea to include at least one call to `GC_is_visible` to ensure
@@ -291,7 +292,7 @@ or 64 bit addresses will require a major effort.  A port to plain MSDOS
 or win16 is hard.
 
 For machines not already mentioned, or for nonstandard compilers,
-some porting suggestions are provided [here](doc/platforms/porting.md).
+some porting suggestions are provided [here](doc/porting.md).
 
 
 ## The C Interface to the Allocator
