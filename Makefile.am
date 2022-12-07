@@ -216,17 +216,17 @@ dist_doc_DATA = \
     AUTHORS \
     LICENSE \
     README.md \
-    doc/platforms/README.DGUX386 \
-    doc/platforms/README.Mac \
-    doc/platforms/README.OS2 \
     doc/platforms/README.aix \
     doc/platforms/README.amiga \
-    doc/platforms/README.arm.cross \
+    doc/platforms/README.arm_cross \
     doc/platforms/README.darwin \
+    doc/platforms/README.dgux386 \
     doc/platforms/README.emscripten \
     doc/platforms/README.ews4800 \
     doc/platforms/README.hp \
     doc/platforms/README.linux \
+    doc/platforms/README.mac \
+    doc/platforms/README.os2 \
     doc/platforms/README.sgi \
     doc/platforms/README.solaris2 \
     doc/platforms/README.symbian \

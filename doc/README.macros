@@ -164,7 +164,7 @@ GC_AIX_THREADS  Enables support for IBM AIX threads.  Deprecated, use
   GC_THREADS instead.
 
 GC_DGUX386_THREADS      Enables support for DB/UX x86 threads.
-  See README.DGUX386.  (Probably has not been tested recently.)  Deprecated,
+  See README.dgux386.  (Probably has not been tested recently.)  Deprecated,
   use GC_THREADS instead.
 
 GC_WIN32_THREADS        Enables support for Win32 threads.  Deprecated,
