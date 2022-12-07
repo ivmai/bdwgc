@@ -917,11 +917,6 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     return me != NULL;
 }
 
-#ifndef GC_WIN32_THREADS
-  static void *main_normstack, *main_altstack;
-  static word main_normstack_size, main_altstack_size;
-#endif
-
 GC_API void GC_CALL GC_register_altstack(void *normstack,
                 GC_word normstack_size, void *altstack, GC_word altstack_size)
 {
@@ -938,18 +933,14 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
 
   LOCK();
   me = GC_lookup_thread(self_id);
-  if (EXPECT(me != NULL, TRUE)) {
-    me -> normstack = (ptr_t)normstack;
-    me -> normstack_size = normstack_size;
-    me -> altstack = (ptr_t)altstack;
-    me -> altstack_size = altstack_size;
-  } else {
-    /* This happens if we are called before GC_thr_init.    */
-    main_normstack = normstack;
-    main_normstack_size = normstack_size;
-    main_altstack = altstack;
-    main_altstack_size = altstack_size;
+  if (EXPECT(NULL == me, FALSE)) {
+    /* We are called before GC_thr_init. */
+    me = &first_thread;
   }
+  me -> normstack = (ptr_t)normstack;
+  me -> normstack_size = normstack_size;
+  me -> altstack = (ptr_t)altstack;
+  me -> altstack_size = altstack_size;
   UNLOCK();
 #endif
 }
@@ -1708,12 +1699,6 @@ GC_INNER void GC_thr_init(void)
     GC_ASSERT(NULL == GC_lookup_thread(self_id));
     me = GC_register_my_thread_inner(&sb, self_id);
     me -> flags = DETACHED | MAIN_THREAD;
-
-    /* Copy the alt-stack information if set.   */
-    me -> normstack = (ptr_t)main_normstack;
-    me -> normstack_size = main_normstack_size;
-    me -> altstack = (ptr_t)main_altstack;
-    me -> altstack_size = main_altstack_size;
   }
 }
 
