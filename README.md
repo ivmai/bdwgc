@@ -406,7 +406,7 @@ distribution.  If you intend to use this, type
 This creates libgccpp.a and libgctba.a files, or their shared library
 equivalents (libgccpp.so and libgctba.so).  You should link with either the
 first (gccpp) or the second one (gctba), but not both.  See gc_cpp.h and
-[gcinterface.md](doc/gcinterface.md) for the definition of the interface.
+[here](doc/gcinterface.md) for the definition of the interface.
 This interface tries to approximate the Ellis-Detlefs C++ garbage collection
 proposal without compiler changes.
 

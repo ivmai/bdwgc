@@ -179,4 +179,4 @@ The executable can of course be run normally, e.g. by typing:
 
 The operation of the collector is affected by a number of environment
 variables. For example, setting `GC_PRINT_STATS` produces some GC statistics
-on stdout. See `README.environment` file in the distribution for details.
+on stdout. See [README.environment](README.environment) file for the details.

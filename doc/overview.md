@@ -7,6 +7,7 @@
   * Some collector details
   * Further reading
   * Information provided on the BDWGC site
+  * Documentation files
   * More background information
   * Contacts and new release announcements
 
@@ -43,9 +44,7 @@ The development version (snapshot) is available in the master branch of
 [bdwgc git](https://github.com/ivmai/bdwgc) repository on GitHub.
 
 The arguments for and against conservative garbage collection in C and C++ are
-briefly discussed [here](http://www.hboehm.info/gc/issues.html). The
-beginnings of a frequently-asked-questions list are
-[here](http://www.hboehm.info/gc/faq.html).
+briefly discussed [here](http://www.hboehm.info/gc/issues.html).
 
 The garbage collector code is copyrighted by
 [Hans-J. Boehm](http://www.hboehm.info), Alan J. Demers,
@@ -74,6 +73,9 @@ platforms are more polished (better supported) than others.
 Irix pthreads, Linux threads, Windows threads, Solaris threads (pthreads
 only), HP/UX 11 pthreads, Tru64 pthreads, and MacOS X threads are supported.
 
+See also [here](porting.md) for the instructions on how to port the library to
+new platforms.
+
 ## Some Collector Details
 
 The collector uses a [mark-sweep](http://www.hboehm.info/gc/complexity.html)
@@ -91,7 +93,8 @@ For an overview of the implementation, see [here](gcdescr.md).
 The garbage collector distribution includes a C string (`cord.h`) package that
 provides for fast concatenation and substring operations on long strings.
 A simple curses- and Windows-based editor that represents the entire file as
-a cord is included as a sample application.
+a cord is included as a sample application.  See [README.cords](README.cords)
+file for the details.
 
 Performance of the non-incremental collector is typically competitive with
 `malloc`/`free` implementations. Both space and time overhead are likely to be
@@ -109,9 +112,6 @@ compensated for by e.g. decreased copying if programs are written and tuned
 for garbage collection.
 
 ## Further reading
-
-**The beginnings of a frequently asked questions list for this collector are
-[here](http://www.hboehm.info/gc/faq.html).**
 
 **The following provide information on garbage collection in general:**
 
@@ -223,13 +223,21 @@ Slides for Hans Boehm's
 
 [Current users](https://github.com/ivmai/bdwgc/wiki/Known-clients) list.
 
-[A simple illustration of how to build and use the collector](simple_example.md).
-
-[Description of alternate interfaces to the garbage collector](gcinterface.md).
-
 [Slides from an ISMM 2004 tutorial about the GC](http://www.hboehm.info/gc/04tutorial.pdf).
 
 [A FAQ (frequently asked questions) list](http://www.hboehm.info/gc/faq.html).
+
+[Directory](http://www.hboehm.info/gc/gc_source/) containing the distribution
+files of all garbage collector releases.  It duplicates
+[Download](https://github.com/ivmai/bdwgc/wiki/Download) page on GitHub.
+
+## Documentation files
+
+The following documents are not platform-specific in general.
+
+[A simple illustration of how to build and use the collector](simple_example.md).
+
+[Description of alternate interfaces to the garbage collector](gcinterface.md).
 
 [How to use the garbage collector as a leak detector](leak.md).
 
@@ -241,9 +249,19 @@ Slides for Hans Boehm's
 
 [Scalability of the collector to multiprocessors](scale.md).
 
-[Directory](http://www.hboehm.info/gc/gc_source/) containing the distribution
-files of all garbage collector releases. It duplicates
-[Download](https://github.com/ivmai/bdwgc/wiki/Download) page on GitHub.
+[Instructions on building the library using autoconf/configure](README.autoconf).
+
+[Instructions on building the library using cmake](README.cmake).
+
+[List of environment variables that affect the collector operation at runtime](README.environment).
+
+[List of compile time macros that affect the library when built](README.macros).
+
+[Details on the finalization facility](finalization.md).
+
+[Instructions on how to port the library to new platforms](porting.md).
+
+[Description of the cord library built on top of GC](README.cords).
 
 ## More background information
 
