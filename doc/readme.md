@@ -75,6 +75,8 @@ platforms are more polished (better supported) than others.
 Irix pthreads, Linux threads, Windows threads, Solaris threads (pthreads
 only), HP/UX 11 pthreads, Tru64 pthreads, and MacOS X threads are supported.
 
+See also [instructions on how to port the library to new platforms.](porting.md)
+
 ## Some Collector Details
 
 The collector uses a [mark-sweep](http://www.hboehm.info/gc/complexity.html)
@@ -92,7 +94,7 @@ For an overview of the implementation, see [here](gcdescr.md).
 The garbage collector distribution includes a C string (`cord.h`) package that
 provides for fast concatenation and substring operations on long strings.
 A simple curses- and Windows-based editor that represents the entire file as
-a cord is included as a sample application.
+a cord is included as a sample application.  See [here](README.cords).
 
 Performance of the non-incremental collector is typically competitive with
 `malloc`/`free` implementations. Both space and time overhead are likely to be
@@ -220,7 +222,7 @@ Henry Baker's [paper collection](http://home.pipeline.com/%7Ehbaker1/).
 Slides for Hans Boehm's
 [Allocation and GC Myths](http://www.hboehm.info/gc/myths.ps) talk.
 
-## Information provided in this repository:
+## Information provided in repository:
 
 [Current users](https://github.com/ivmai/bdwgc/wiki/Known-clients) list.
 
@@ -237,6 +239,14 @@ Slides for Hans Boehm's
 [The data structure used for fast pointer lookups](tree.md).
 
 [Scalability of the collector to multiprocessors](scale.md).
+
+[Instructions on building the library using autoconf/configure](README.autoconf).
+
+[Instructions on building the library using cmake](README.cmake).
+
+[List of environment variables that affect the collector operation at runtime](README.environment).
+
+[List of compile time macros that affect the library when built](README.macros).
 
 ## Information provided on the BDWGC site:
 
