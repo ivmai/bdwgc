@@ -691,10 +691,10 @@ GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t id)
         GC_ASSERT(NULL == GC_threads[hv]);
 #       ifdef CPPCHECK
 #         ifdef THREAD_SANITIZER
-            GC_noop1(result -> dummy[0]);
+            GC_noop1((unsigned char)(result -> dummy[0]));
 #         endif
 #         ifdef GC_NO_FINALIZATION
-            GC_noop1(result -> no_fnlz_pad[0]);
+            GC_noop1((unsigned char)(result -> no_fnlz_pad[0]));
 #         endif
 #       endif
     } else {
