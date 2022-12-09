@@ -220,17 +220,13 @@ Henry Baker's [paper collection](http://home.pipeline.com/%7Ehbaker1/).
 Slides for Hans Boehm's
 [Allocation and GC Myths](http://www.hboehm.info/gc/myths.ps) talk.
 
-## Information provided on the BDWGC site
+## Information provided in this repository:
 
 [Current users](https://github.com/ivmai/bdwgc/wiki/Known-clients) list.
 
 [A simple illustration of how to build and use the collector](simple_example.md).
 
 [Description of alternate interfaces to the garbage collector](gcinterface.md).
-
-[Slides from an ISMM 2004 tutorial about the GC](http://www.hboehm.info/gc/04tutorial.pdf).
-
-[A FAQ (frequently asked questions) list](http://www.hboehm.info/gc/faq.html).
 
 [How to use the garbage collector as a leak detector](leak.md).
 
@@ -241,6 +237,12 @@ Slides for Hans Boehm's
 [The data structure used for fast pointer lookups](tree.md).
 
 [Scalability of the collector to multiprocessors](scale.md).
+
+## Information provided on the BDWGC site:
+
+[Slides from an ISMM 2004 tutorial about the GC](http://www.hboehm.info/gc/04tutorial.pdf).
+
+[A FAQ (frequently asked questions) list](http://www.hboehm.info/gc/faq.html).
 
 [Directory](http://www.hboehm.info/gc/gc_source/) containing the distribution
 files of all garbage collector releases. It duplicates
