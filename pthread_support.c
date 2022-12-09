@@ -601,7 +601,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
         first_thread_used = TRUE;
         GC_ASSERT(NULL == GC_threads[hv]);
 #       if defined(THREAD_SANITIZER) && defined(CPPCHECK)
-          GC_noop1(result->dummy[0]);
+          GC_noop1((unsigned char)result->dummy[0]);
 #       endif
     } else {
         result = (struct GC_Thread_Rep *)
