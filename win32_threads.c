@@ -396,7 +396,8 @@ STATIC void GC_suspend(GC_thread t)
 #   endif
 # endif
 
-# ifdef DEBUG_THREADS
+# if defined(DEBUG_THREADS) && !defined(MSWINCE) \
+     && (!defined(MSWIN32) || defined(CONSOLE_LOG))
     GC_log_printf("Suspending 0x%x\n", (int)t->id);
 # endif
   GC_win32_unprotect_thread(t);

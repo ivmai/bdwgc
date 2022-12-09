@@ -742,7 +742,8 @@ GC_INNER_WIN32THREAD void GC_delete_thread(thread_id_t id)
     GC_thread p;
     GC_thread prev = NULL;
 
-#   ifdef DEBUG_THREADS
+#   if defined(DEBUG_THREADS) && !defined(MSWINCE) \
+       && (!defined(MSWIN32) || defined(CONSOLE_LOG))
       GC_log_printf("Deleting thread %p, n_threads= %d\n",
                     (void *)(signed_word)id, GC_count_threads());
 #   endif
@@ -826,7 +827,8 @@ GC_INNER_WIN32THREAD void GC_delete_thread(thread_id_t id)
 #     ifdef GC_DARWIN_THREADS
         mach_port_deallocate(mach_task_self(), p -> mach_thread);
 #     endif
-#     ifdef DEBUG_THREADS
+#     if defined(DEBUG_THREADS) && !defined(MSWINCE) \
+         && (!defined(MSWIN32) || defined(CONSOLE_LOG))
         GC_log_printf("Deleted thread %p, n_threads= %d\n",
                       (void *)(signed_word)id, GC_count_threads());
 #     endif
