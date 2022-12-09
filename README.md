@@ -84,7 +84,7 @@ This is very similar to the "rope" package in Xerox Cedar, or the "rope"
 package in the SGI STL or the g++ distribution.)
 
 Further collector documentation can be found in the
-[overview](doc/overview.md).
+[doc](doc/readme.md) folder.
 
 Some of the known uses of the collector are listed on the GitHub
 [Known-clients](https://github.com/ivmai/bdwgc/wiki/Known-clients) page.

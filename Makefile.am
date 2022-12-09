@@ -243,7 +243,7 @@ dist_doc_DATA = \
     doc/gcdescr.md \
     doc/gcinterface.md \
     doc/leak.md \
-    doc/overview.md \
+    doc/readme.md \
     doc/porting.md \
     doc/scale.md \
     doc/simple_example.md \
