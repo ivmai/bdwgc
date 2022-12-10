@@ -50,16 +50,22 @@
 # endif
 #endif
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
-
 #ifndef GC_PREFETCH_FOR_WRITE
 # if GC_GNUC_PREREQ(3, 0) && !defined(GC_NO_PREFETCH_FOR_WRITE)
-#   define GC_PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
+#   define GC_PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1 /* write */)
+# elif defined(_MSC_VER) && !defined(GC_NO_PREFETCH_FOR_WRITE) \
+       && (defined(_M_IX86) || defined(_M_X64)) && !defined(_CHPE_ONLY_) \
+       && (_MSC_VER >= 1900) /* VS 2015+ */
+#   include <intrin.h>
+#   define GC_PREFETCH_FOR_WRITE(x) \
+                        _mm_prefetch((const char *)(x), _MM_HINT_T0)
 # else
 #   define GC_PREFETCH_FOR_WRITE(x) (void)0
 # endif
+#endif
+
+#ifdef __cplusplus
+  extern "C" {
 #endif
 
 /* Object kinds (exposed to public).    */

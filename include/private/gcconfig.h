@@ -2875,10 +2875,18 @@ EXTERN_C_BEGIN
 #ifndef PREFETCH
 # if GC_GNUC_PREREQ(3, 0) && !defined(NO_PREFETCH)
 #   define PREFETCH(x) __builtin_prefetch((x), 0, 0)
+# elif defined(_MSC_VER) && !defined(NO_PREFETCH) \
+       && (defined(_M_IX86) || defined(_M_X64)) && !defined(_CHPE_ONLY_) \
+       && (_MSC_VER >= 1900) /* VS 2015+ */
+    EXTERN_C_END
+#   include <intrin.h>
+    EXTERN_C_BEGIN
+#   define PREFETCH(x) _mm_prefetch((const char *)(x), _MM_HINT_T0)
+    /* TODO: Support also _M_ARM and _M_ARM64 (__prefetch).     */
 # else
 #   define PREFETCH(x) (void)0
 # endif
-#endif
+#endif /* !PREFETCH */
 
 #ifndef GC_PREFETCH_FOR_WRITE
   /* The default GC_PREFETCH_FOR_WRITE(x) is defined in gc_inline.h,    */
