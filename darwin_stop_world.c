@@ -142,6 +142,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
                                 mach_port_t my_thread, ptr_t *paltstack_lo,
                                 ptr_t *paltstack_hi, GC_bool *pfound_me)
 {
+  GC_stack_context_t crtn = p -> crtn;
   ptr_t lo;
 
   if (thread == my_thread) {
@@ -152,9 +153,9 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #   endif
     *pfound_me = TRUE;
   } else if (p != NULL && (p -> flags & DO_BLOCKING) != 0) {
-    lo = p -> stack_ptr;
+    lo = crtn -> stack_ptr;
 #   ifndef DARWIN_DONT_PARSE_STACK
-      *phi = p -> topOfStack;
+      *phi = crtn -> topOfStack;
 #   endif
 
   } else {
@@ -326,14 +327,14 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     UNUSED_ARG(paltstack_hi);
 # else
     /* p is guaranteed to be non-NULL regardless of GC_query_task_threads. */
-    *phi = EXPECT((p->flags & MAIN_THREAD) == 0, TRUE) ? p->stack_end
+    *phi = EXPECT((p -> flags & MAIN_THREAD) == 0, TRUE) ? crtn -> stack_end
             : GC_stackbottom;
-    if (p->altstack != NULL && (word)p->altstack <= (word)lo
-        && (word)lo <= (word)p->altstack + p->altstack_size) {
+    if (crtn -> altstack != NULL && (word)(crtn -> altstack) <= (word)lo
+        && (word)lo <= (word)(crtn -> altstack) + crtn -> altstack_size) {
       *paltstack_lo = lo;
-      *paltstack_hi = p->altstack + p->altstack_size;
-      lo = p->normstack;
-      *phi = lo + p->normstack_size;
+      *paltstack_hi = crtn -> altstack + crtn -> altstack_size;
+      lo = crtn -> normstack;
+      *phi = lo + crtn -> normstack_size;
     } else
 # endif
   /* else */ {
@@ -404,7 +405,7 @@ GC_INNER void GC_push_all_stacks(void)
           if (lo) {
             GC_ASSERT((word)lo <= (word)hi);
             total_size += hi - lo;
-            GC_push_all_stack_sections(lo, hi, p->traced_stack_sect);
+            GC_push_all_stack_sections(lo, hi, p -> crtn -> traced_stack_sect);
           }
           if (altstack_lo) {
             total_size += altstack_hi - altstack_lo;

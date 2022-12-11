@@ -44,6 +44,76 @@
 
 EXTERN_C_BEGIN
 
+typedef struct GC_StackContext_Rep {
+# if defined(THREAD_SANITIZER) && defined(SIGNAL_BASED_STOP_WORLD)
+    char dummy[sizeof(oh)];     /* A dummy field to avoid TSan false    */
+                                /* positive about the race between      */
+                                /* GC_has_other_debug_info and          */
+                                /* GC_suspend_handler_inner (which      */
+                                /* sets stack_ptr).                     */
+# endif
+
+# if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
+    volatile
+# endif
+  ptr_t stack_end;              /* Cold end of the stack (except for    */
+                                /* main thread on non-Windows).         */
+                                /* On Windows: 0 means entry invalid;   */
+                                /* not in_use implies stack_end is 0.   */
+
+  ptr_t stack_ptr;      /* Valid only in some platform-specific states. */
+
+# ifdef GC_WIN32_THREADS
+#   define ADDR_LIMIT ((ptr_t)GC_WORD_MAX)
+    ptr_t last_stack_min;       /* Last known minimum (hottest) address */
+                                /* in stack or ADDR_LIMIT if unset.     */
+#   ifdef I386
+      ptr_t initial_stack_base; /* The cold end of the stack saved by   */
+                                /* GC_record_stack_base (never modified */
+                                /* by GC_set_stackbottom); used for the */
+                                /* old way of the coroutines support.   */
+#   endif
+# elif defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
+    ptr_t topOfStack;           /* Result of GC_FindTopOfStack(0);      */
+                                /* valid only if the thread is blocked; */
+                                /* non-NULL value means already set.    */
+# endif
+
+# if defined(E2K) || defined(IA64)
+    ptr_t backing_store_end;    /* Note: may reference data in GC heap. */
+    ptr_t backing_store_ptr;
+# endif
+
+# ifdef GC_WIN32_THREADS
+    /* For now, alt-stack is not implemented for Win32. */
+# else
+    ptr_t altstack;             /* The start of the alt-stack if there  */
+                                /* is one, NULL otherwise.              */
+    word altstack_size;         /* The size of the alt-stack if exists. */
+    ptr_t normstack;            /* The start and size of the "normal"   */
+                                /* stack (set by GC_register_altstack). */
+    word normstack_size;
+# endif
+
+# ifndef GC_NO_FINALIZATION
+    unsigned char finalizer_nested;
+    char fnlz_pad[1];           /* Explicit alignment (for some rare    */
+                                /* compilers such as bcc32 and wcc32).  */
+    unsigned short finalizer_skipped;
+                                /* Used by GC_check_finalizer_nested()  */
+                                /* to minimize the level of recursion   */
+                                /* when a client finalizer allocates    */
+                                /* memory (initially both are 0).       */
+# endif
+
+  struct GC_traced_stack_sect_s *traced_stack_sect;
+                                /* Points to the "frame" data held in   */
+                                /* stack by the innermost               */
+                                /* GC_call_with_gc_active() of this     */
+                                /* stack (thread); may be NULL.         */
+
+} *GC_stack_context_t;
+
 #ifdef GC_WIN32_THREADS
   typedef DWORD thread_id_t;
 # define thread_id_self() GetCurrentThreadId()
@@ -54,19 +124,7 @@ EXTERN_C_BEGIN
 # define THREAD_ID_EQUAL(id1, id2) THREAD_EQUAL(id1, id2)
 #endif
 
-/* We use the allocation lock to protect thread-related data structures. */
-
-/* The set of all known threads.  We intercept thread creation and      */
-/* join.  Protected by the GC lock.                                     */
 typedef struct GC_Thread_Rep {
-# ifdef THREAD_SANITIZER
-    char dummy[sizeof(oh)];     /* A dummy field to avoid TSan false    */
-                                /* positive about the race between      */
-                                /* GC_has_other_debug_info and          */
-                                /* GC_suspend_handler_inner (which      */
-                                /* sets stack_ptr).                     */
-# endif
-
   union {
 #   if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
       volatile AO_t in_use;     /* Updated without lock.  We assert     */
@@ -88,6 +146,8 @@ typedef struct GC_Thread_Rep {
                                 /* guaranteed to be dead, but we may    */
                                 /* not yet have registered the join.)   */
   } tm; /* table_management */
+
+  GC_stack_context_t crtn;
 
   thread_id_t id; /* hash table key */
 # ifdef GC_DARWIN_THREADS
@@ -129,10 +189,10 @@ typedef struct GC_Thread_Rep {
 # endif
 # if (defined(GC_HAVE_PTHREAD_EXIT) || !defined(GC_NO_PTHREAD_CANCEL)) \
      && defined(GC_PTHREADS)
-#   define DISABLED_GC 0x10     /* Collections are disabled while the   */
+#   define DISABLED_GC  0x10    /* Collections are disabled while the   */
                                 /* thread is exiting.                   */
 # endif
-# define DO_BLOCKING   0x20     /* Thread is in do-blocking state.      */
+# define DO_BLOCKING    0x20    /* Thread is in the do-blocking state.  */
                                 /* If set, thread will acquire GC lock  */
                                 /* before any pointer manipulation, and */
                                 /* has set its SP value.  Thus, it does */
@@ -141,43 +201,9 @@ typedef struct GC_Thread_Rep {
 #   define IS_SUSPENDED 0x40    /* Thread is suspended by SuspendThread. */
 # endif
 
-# ifndef GC_NO_FINALIZATION
-    unsigned char finalizer_nested;
-                                /* Placed right after flags field for   */
-                                /* the alignment purpose.               */
-    unsigned short finalizer_skipped;
-                                /* Used by GC_check_finalizer_nested()  */
-                                /* to minimize the level of recursion   */
-                                /* when a client finalizer allocates    */
-                                /* memory (initially both are 0).       */
-# else
-    char no_fnlz_pad[3];        /* Explicit alignment (for some rare    */
+  char flags_pad[sizeof(word) - 1 /* sizeof(flags) */];
+                                /* Explicit alignment (for some rare    */
                                 /* compilers such as bcc32 and wcc32).  */
-# endif
-
-  ptr_t stack_end;              /* Cold end of the stack (except for    */
-                                /* main thread).                        */
-                                /* On Windows: 0 means entry invalid;   */
-                                /* not in_use implies stack_end is 0.   */
-
-  ptr_t stack_ptr;      /* Valid only in some platform-specific states. */
-
-# ifdef GC_WIN32_THREADS
-#   define ADDR_LIMIT ((ptr_t)GC_WORD_MAX)
-    ptr_t last_stack_min;       /* Last known minimum (hottest) address */
-                                /* in stack or ADDR_LIMIT if unset.     */
-#   ifdef I386
-      ptr_t initial_stack_base; /* The cold end of the stack saved by   */
-                                /* GC_record_stack_base (never modified */
-                                /* by GC_set_stackbottom).              */
-#   endif
-# endif
-
-# if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
-    ptr_t topOfStack;           /* Result of GC_FindTopOfStack(0);      */
-                                /* valid only if the thread is blocked; */
-                                /* non-NULL value means already set.    */
-# endif
 
 # ifdef SIGNAL_BASED_STOP_WORLD
     volatile AO_t last_stop_count;
@@ -194,28 +220,6 @@ typedef struct GC_Thread_Rep {
                                 /* from a signal handler.               */
 #   endif
 # endif
-
-# ifdef GC_WIN32_THREADS
-    /* For now, alt-stack is not implemented for Win32. */
-# else
-    ptr_t altstack;             /* The start of the alt-stack if there  */
-                                /* is one, NULL otherwise.              */
-    word altstack_size;         /* The size of the alt-stack if exists. */
-    ptr_t normstack;            /* The start and size of the "normal"   */
-                                /* stack (set by GC_register_altstack). */
-    word normstack_size;
-# endif
-
-# if defined(E2K) || defined(IA64)
-    ptr_t backing_store_end;    /* Note: may reference data in GC heap. */
-    ptr_t backing_store_ptr;
-# endif
-
-  struct GC_traced_stack_sect_s *traced_stack_sect;
-                                /* Points to the "frame" data held in   */
-                                /* stack by the innermost               */
-                                /* GC_call_with_gc_active() of this     */
-                                /* thread.  May be NULL.                */
 
 # ifdef GC_PTHREADS
     void *status;               /* The value returned from the thread.  */
@@ -277,6 +281,8 @@ typedef struct GC_Thread_Rep {
                        ^ NUMERIC_THREAD_ID(id)) % THREAD_TABLE_SZ)
 #endif
 
+/* The set of all known threads.  We intercept thread creation and      */
+/* join/detach.  Protected by the allocation lock.                      */
 GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
 
 #ifndef MAX_MARKERS
@@ -319,7 +325,7 @@ GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
 # endif /* PARALLEL_MARK */
 
   GC_INNER GC_thread GC_new_thread(thread_id_t);
-  GC_INNER void GC_record_stack_base(GC_thread me,
+  GC_INNER void GC_record_stack_base(GC_stack_context_t crtn,
                                      const struct GC_stack_base *sb);
   GC_INNER GC_thread GC_register_my_thread_inner(
                                         const struct GC_stack_base *sb,

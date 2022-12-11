@@ -298,7 +298,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 # define GC_lookup_thread_async GC_lookup_thread
 #endif
 
-GC_INLINE void GC_store_stack_ptr(GC_thread me)
+GC_INLINE void GC_store_stack_ptr(GC_stack_context_t crtn)
 {
   /* There is no data race between the suspend handler (storing         */
   /* stack_ptr) and GC_push_all_stacks (fetching stack_ptr) because     */
@@ -308,14 +308,15 @@ GC_INLINE void GC_store_stack_ptr(GC_thread me)
   /* and fetched (by GC_push_all_stacks) using the atomic primitives to */
   /* avoid the related TSan warning.                                    */
 # ifdef SPARC
-    ao_store_async((volatile AO_t *)&(me -> stack_ptr),
+    ao_store_async((volatile AO_t *)&(crtn -> stack_ptr),
                    (AO_t)GC_save_regs_in_stack());
     /* TODO: regs saving already done by GC_with_callee_saves_pushed */
 # else
 #   ifdef IA64
-      me -> backing_store_ptr = GC_save_regs_in_stack();
+      crtn -> backing_store_ptr = GC_save_regs_in_stack();
 #   endif
-    ao_store_async((volatile AO_t *)&(me -> stack_ptr), (AO_t)GC_approx_sp());
+    ao_store_async((volatile AO_t *)&(crtn -> stack_ptr),
+                   (AO_t)GC_approx_sp());
 # endif
 }
 
@@ -323,6 +324,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
 {
   pthread_t self;
   GC_thread me;
+  GC_stack_context_t crtn;
 # ifdef E2K
     ptr_t bs_lo;
     size_t stack_size;
@@ -363,12 +365,13 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
       RESTORE_CANCEL(cancel_state);
       return;
   }
-  GC_store_stack_ptr(me);
+  crtn = me -> crtn;
+  GC_store_stack_ptr(crtn);
 # ifdef E2K
-    GC_ASSERT(NULL == me -> backing_store_end);
+    GC_ASSERT(NULL == crtn -> backing_store_end);
     GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
-    me -> backing_store_end = bs_lo;
-    me -> backing_store_ptr = bs_lo + stack_size;
+    crtn -> backing_store_end = bs_lo;
+    crtn -> backing_store_ptr = bs_lo + stack_size;
 # endif
 # ifdef GC_ENABLE_SUSPEND_THREAD
     suspend_cnt = (word)ao_load_async(&(me -> ext_suspend_cnt));
@@ -405,10 +408,10 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
     GC_log_printf("Continuing %p\n", (void *)self);
 # endif
 # ifdef E2K
-    GC_ASSERT(me -> backing_store_end == bs_lo);
+    GC_ASSERT(crtn -> backing_store_end == bs_lo);
     FREE_PROCEDURE_STACK_LOCAL(bs_lo, stack_size);
-    me -> backing_store_ptr = NULL;
-    me -> backing_store_end = NULL;
+    crtn -> backing_store_ptr = NULL;
+    crtn -> backing_store_end = NULL;
 # endif
 
 # ifndef GC_NETBSD_THREADS_WORKAROUND
@@ -797,10 +800,11 @@ GC_INNER void GC_push_all_stacks(void)
 #       if defined(E2K) || defined(IA64)
           GC_bool is_self = FALSE;
 #       endif
+        GC_stack_context_t crtn = p -> crtn;
 
         if (KNOWN_FINISHED(p)) continue;
         ++nthreads;
-        traced_stack_sect = p -> traced_stack_sect;
+        traced_stack_sect = crtn -> traced_stack_sect;
         if (THREAD_EQUAL(p -> id, self)) {
             GC_ASSERT((p -> flags & DO_BLOCKING) == 0);
 #           ifdef SPARC
@@ -810,7 +814,7 @@ GC_INNER void GC_push_all_stacks(void)
 #             ifdef IA64
                 bs_hi = GC_save_regs_in_stack();
 #             elif defined(E2K)
-                GC_ASSERT(NULL == p -> backing_store_end);
+                GC_ASSERT(NULL == crtn -> backing_store_end);
                 (void)GC_save_regs_in_stack();
                 {
                   size_t stack_size;
@@ -824,25 +828,25 @@ GC_INNER void GC_push_all_stacks(void)
               is_self = TRUE;
 #           endif
         } else {
-            lo = (ptr_t)AO_load((volatile AO_t *)&(p -> stack_ptr));
+            lo = (ptr_t)AO_load((volatile AO_t *)&(crtn -> stack_ptr));
 #           ifdef IA64
-              bs_hi = p -> backing_store_ptr;
+              bs_hi = crtn -> backing_store_ptr;
 #           elif defined(E2K)
-              bs_lo = p -> backing_store_end;
-              bs_hi = p -> backing_store_ptr;
+              bs_lo = crtn -> backing_store_end;
+              bs_hi = crtn -> backing_store_ptr;
 #           endif
             if (traced_stack_sect != NULL
-                    && traced_stack_sect->saved_stack_ptr == lo) {
+                    && traced_stack_sect -> saved_stack_ptr == lo) {
               /* If the thread has never been stopped since the recent  */
               /* GC_call_with_gc_active invocation then skip the top    */
               /* "stack section" as stack_ptr already points to.        */
-              traced_stack_sect = traced_stack_sect->prev;
+              traced_stack_sect = traced_stack_sect -> prev;
             }
         }
         if (EXPECT((p -> flags & MAIN_THREAD) == 0, TRUE)) {
-            hi = p -> stack_end;
+            hi = crtn -> stack_end;
 #           ifdef IA64
-              bs_lo = p -> backing_store_end;
+              bs_lo = crtn -> backing_store_end;
 #           endif
         } else {
             /* The original stack. */
@@ -855,10 +859,10 @@ GC_INNER void GC_push_all_stacks(void)
           GC_log_printf("Stack for thread %p is [%p,%p)\n",
                         (void *)p->id, (void *)lo, (void *)hi);
 #       endif
-        if (0 == lo) ABORT("GC_push_all_stacks: sp not set!");
-        if (p->altstack != NULL && (word)p->altstack <= (word)lo
-            && (word)lo <= (word)p->altstack + p->altstack_size) {
-          hi = p->altstack + p->altstack_size;
+        if (NULL == lo) ABORT("GC_push_all_stacks: sp not set!");
+        if (crtn -> altstack != NULL && (word)(crtn -> altstack) <= (word)lo
+            && (word)lo <= (word)(crtn -> altstack) + crtn -> altstack_size) {
+          hi = crtn -> altstack + crtn -> altstack_size;
           /* FIXME: Need to scan the normal stack too, but how ? */
           /* FIXME: Assume stack grows down */
         }
@@ -1085,8 +1089,8 @@ GC_INNER void GC_stop_world(void)
           __asm__ __volatile__ ("push %r14"); \
           __asm__ __volatile__ ("push %r15"); \
           __asm__ __volatile__ ("mov %%esp, %0" \
-                    : "=m" (GC_nacl_gc_thread_self -> stack_ptr)); \
-          BCOPY(GC_nacl_gc_thread_self -> stack_ptr, \
+                    : "=m" (GC_nacl_gc_thread_self -> crtn -> stack_ptr)); \
+          BCOPY(GC_nacl_gc_thread_self -> crtn -> stack_ptr, \
                 GC_nacl_gc_thread_self -> reg_storage, \
                 NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t)); \
           __asm__ __volatile__ ("naclasp $48, %r15"); \
@@ -1099,8 +1103,8 @@ GC_INNER void GC_stop_world(void)
           __asm__ __volatile__ ("push %esi"); \
           __asm__ __volatile__ ("push %edi"); \
           __asm__ __volatile__ ("mov %%esp, %0" \
-                    : "=m" (GC_nacl_gc_thread_self -> stack_ptr)); \
-          BCOPY(GC_nacl_gc_thread_self -> stack_ptr, \
+                    : "=m" (GC_nacl_gc_thread_self -> crtn -> stack_ptr)); \
+          BCOPY(GC_nacl_gc_thread_self -> crtn -> stack_ptr, \
                 GC_nacl_gc_thread_self -> reg_storage, \
                 NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t));\
           __asm__ __volatile__ ("add $16, %esp"); \
@@ -1110,10 +1114,10 @@ GC_INNER void GC_stop_world(void)
         do { \
           __asm__ __volatile__ ("push {r4-r8,r10-r12,lr}"); \
           __asm__ __volatile__ ("mov r0, %0" \
-                : : "r" (&GC_nacl_gc_thread_self -> stack_ptr)); \
+                : : "r" (&GC_nacl_gc_thread_self -> crtn -> stack_ptr)); \
           __asm__ __volatile__ ("bic r0, r0, #0xc0000000"); \
           __asm__ __volatile__ ("str sp, [r0]"); \
-          BCOPY(GC_nacl_gc_thread_self -> stack_ptr, \
+          BCOPY(GC_nacl_gc_thread_self -> crtn -> stack_ptr, \
                 GC_nacl_gc_thread_self -> reg_storage, \
                 NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t)); \
           __asm__ __volatile__ ("add sp, sp, #40"); \
@@ -1127,7 +1131,7 @@ GC_INNER void GC_stop_world(void)
   {
     if (GC_nacl_thread_idx != -1) {
       NACL_STORE_REGS();
-      GC_nacl_gc_thread_self -> stack_ptr = GC_approx_sp();
+      GC_nacl_gc_thread_self -> crtn -> stack_ptr = GC_approx_sp();
       GC_nacl_thread_parked[GC_nacl_thread_idx] = 1;
     }
   }
@@ -1150,7 +1154,7 @@ GC_INNER void GC_stop_world(void)
       /* so don't bother storing registers again, the GC has a set.     */
       if (!GC_nacl_thread_parked[GC_nacl_thread_idx]) {
         NACL_STORE_REGS();
-        GC_nacl_gc_thread_self -> stack_ptr = GC_approx_sp();
+        GC_nacl_gc_thread_self -> crtn -> stack_ptr = GC_approx_sp();
       }
       GC_nacl_thread_parked[GC_nacl_thread_idx] = 1;
       while (GC_nacl_park_threads_now) {

@@ -604,10 +604,10 @@
 GC_INNER GC_thread GC_threads[THREAD_TABLE_SZ] = {0};
 
 /* It may not be safe to allocate when we register the first thread.    */
-/* As "next" and "status" fields are unused, no need to push this       */
-/* (but "backing_store_end" field should be pushed on E2K).             */
+/* Note that next and status fields are unused, but there might be some */
+/* other fields (crtn and backing_store_end) to be pushed.              */
+static struct GC_StackContext_Rep first_crtn;
 static struct GC_Thread_Rep first_thread;
-static GC_bool first_thread_used = FALSE;
 
 #ifdef GC_ASSERTIONS
   GC_INNER GC_bool GC_thr_initialized = FALSE;
@@ -628,8 +628,9 @@ void GC_push_thread_structures(void)
   /* else */ {
     GC_PUSH_ALL_SYM(GC_threads);
 #   ifdef E2K
-      GC_PUSH_ALL_SYM(first_thread.backing_store_end);
+      GC_PUSH_ALL_SYM(first_crtn.backing_store_end);
 #   endif
+    GC_PUSH_ALL_SYM(first_thread.crtn);
   }
 # if defined(THREAD_LOCAL_ALLOC) && defined(USE_CUSTOM_SPECIFIC)
     GC_PUSH_ALL_SYM(GC_thread_key);
@@ -639,9 +640,17 @@ void GC_push_thread_structures(void)
 #if defined(MPROTECT_VDB) && defined(GC_WIN32_THREADS)
   GC_INNER void GC_win32_unprotect_thread(GC_thread t)
   {
-    if (!GC_win32_dll_threads && GC_auto_incremental && t != &first_thread) {
-      GC_ASSERT(SMALL_OBJ(GC_size(t)));
-      GC_remove_protection(HBLKPTR(t), 1, FALSE);
+    if (!GC_win32_dll_threads && GC_auto_incremental) {
+      GC_stack_context_t crtn = t -> crtn;
+
+      if (crtn != &first_crtn) {
+        GC_ASSERT(SMALL_OBJ(GC_size(crtn)));
+        GC_remove_protection(HBLKPTR(crtn), 1, FALSE);
+      }
+      if (t != &first_thread) {
+        GC_ASSERT(SMALL_OBJ(GC_size(t)));
+        GC_remove_protection(HBLKPTR(t), 1, FALSE);
+      }
     }
   }
 #endif /* MPROTECT_VDB && GC_WIN32_THREADS */
@@ -685,23 +694,33 @@ GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t id)
             break;
           }
 #   endif
-    if (EXPECT(!first_thread_used, FALSE)) {
+    if (EXPECT(NULL == first_thread.crtn, FALSE)) {
         result = &first_thread;
-        first_thread_used = TRUE;
+        first_thread.crtn = &first_crtn;
         GC_ASSERT(NULL == GC_threads[hv]);
 #       ifdef CPPCHECK
-#         ifdef THREAD_SANITIZER
-            GC_noop1((unsigned char)(result -> dummy[0]));
+          GC_noop1((unsigned char)first_thread.flags_pad[0]);
+#         if defined(THREAD_SANITIZER) && defined(SIGNAL_BASED_STOP_WORLD)
+            GC_noop1((unsigned char)first_crtn.dummy[0]);
 #         endif
-#         ifdef GC_NO_FINALIZATION
-            GC_noop1((unsigned char)(result -> no_fnlz_pad[0]));
+#         ifndef GC_NO_FINALIZATION
+            GC_noop1((unsigned char)first_crtn.fnlz_pad[0]);
 #         endif
 #       endif
     } else {
+        GC_stack_context_t crtn;
+
         GC_ASSERT(!GC_win32_dll_threads);
-        result = (struct GC_Thread_Rep *)
-                 GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
-        if (EXPECT(NULL == result, FALSE)) return NULL;
+        crtn = (GC_stack_context_t)GC_INTERNAL_MALLOC(
+                        sizeof(struct GC_StackContext_Rep), NORMAL);
+        if (EXPECT(NULL == crtn, FALSE)) return NULL;
+        result = (GC_thread)GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep),
+                                               NORMAL);
+        if (EXPECT(NULL == result, FALSE)) {
+          GC_INTERNAL_FREE(crtn);
+          return NULL;
+        }
+        result -> crtn = crtn;
     }
     /* The id field is not set here. */
 #   ifdef USE_TKILL_ON_ANDROID
@@ -771,6 +790,8 @@ GC_INNER_WIN32THREAD void GC_delete_thread(thread_id_t id)
 #     ifdef GC_DARWIN_THREADS
         mach_port_deallocate(mach_task_self(), p -> mach_thread);
 #     endif
+      GC_ASSERT(p -> crtn != &first_crtn);
+      GC_INTERNAL_FREE(p -> crtn);
       GC_INTERNAL_FREE(p);
     }
   }
@@ -802,7 +823,7 @@ GC_INNER_WIN32THREAD void GC_delete_thread(thread_id_t id)
         /* In this branch asynchronous changes to (*t) are possible.    */
         /* It's not allowed to call GC_printf (and the friends) here,   */
         /* see GC_stop_world() in win32_threads.c for the information.  */
-        t -> stack_end = NULL;
+        t -> crtn -> stack_end = NULL;
         t -> id = 0;
         t -> flags = 0; /* !IS_SUSPENDED */
 #       ifdef RETRY_GET_THREAD_CONTEXT
@@ -864,7 +885,7 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
 
     GC_ASSERT(I_HOLD_LOCK());
     me = GC_lookup_thread(thread_id_self());
-    me -> finalizer_nested = 0;
+    me -> crtn -> finalizer_nested = 0;
   }
 
   /* Checks and updates the thread-local level of finalizers recursion. */
@@ -874,21 +895,22 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
   /* Called by GC_notify_or_invoke_finalizers() only.                   */
   GC_INNER unsigned char *GC_check_finalizer_nested(void)
   {
-    GC_thread me;
+    GC_stack_context_t crtn;
     unsigned nesting_level;
 
     GC_ASSERT(I_HOLD_LOCK());
-    me = GC_lookup_thread(thread_id_self());
-    nesting_level = me -> finalizer_nested;
+    crtn = GC_lookup_thread(thread_id_self()) -> crtn;
+    nesting_level = crtn -> finalizer_nested;
     if (nesting_level) {
       /* We are inside another GC_invoke_finalizers().          */
       /* Skip some implicitly-called GC_invoke_finalizers()     */
       /* depending on the nesting (recursion) level.            */
-      if (++me->finalizer_skipped < (1U << nesting_level)) return NULL;
-      me -> finalizer_skipped = 0;
+      if (++(crtn -> finalizer_skipped) < (1U << nesting_level))
+        return NULL;
+      crtn -> finalizer_skipped = 0;
     }
-    me -> finalizer_nested = (unsigned char)(nesting_level + 1);
-    return &(me -> finalizer_nested);
+    crtn -> finalizer_nested = (unsigned char)(nesting_level + 1);
+    return &(crtn -> finalizer_nested);
   }
 #endif /* !GC_NO_FINALIZATION */
 
@@ -930,6 +952,7 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
   UNUSED_ARG(altstack_size);
 #else
   GC_thread me;
+  GC_stack_context_t crtn;
   thread_id_t self_id = thread_id_self();
   DCL_LOCK_STATE;
 
@@ -939,10 +962,11 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
     /* We are called before GC_thr_init. */
     me = &first_thread;
   }
-  me -> normstack = (ptr_t)normstack;
-  me -> normstack_size = normstack_size;
-  me -> altstack = (ptr_t)altstack;
-  me -> altstack_size = altstack_size;
+  crtn = me -> crtn;
+  crtn -> normstack = (ptr_t)normstack;
+  crtn -> normstack_size = normstack_size;
+  crtn -> altstack = (ptr_t)altstack;
+  crtn -> altstack_size = altstack_size;
   UNLOCK();
 #endif
 }
@@ -968,14 +992,16 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
-        if (p -> stack_end != NULL) {
+        GC_stack_context_t crtn = p -> crtn;
+
+        if (crtn -> stack_end != NULL) {
 #         ifdef STACK_GROWS_UP
-            if ((word)p->stack_end >= (word)lo
-                && (word)p->stack_end < (word)hi)
+            if ((word)crtn -> stack_end >= (word)lo
+                && (word)crtn -> stack_end < (word)hi)
               return TRUE;
 #         else /* STACK_GROWS_DOWN */
-            if ((word)p->stack_end > (word)lo
-                && (word)p->stack_end <= (word)hi)
+            if ((word)crtn -> stack_end > (word)lo
+                && (word)crtn -> stack_end <= (word)hi)
               return TRUE;
 #         endif
         }
@@ -1006,9 +1032,11 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
-        if ((word)(p -> stack_end) > (word)result
-            && (word)(p -> stack_end) < (word)bound) {
-          result = p -> stack_end;
+        GC_stack_context_t crtn = p -> crtn;
+
+        if ((word)(crtn -> stack_end) > (word)result
+            && (word)(crtn -> stack_end) < (word)bound) {
+          result = crtn -> stack_end;
         }
       }
     }
@@ -1287,7 +1315,11 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
           /* TODO: To avoid TSan hang (when updating GC_bytes_freed),   */
           /* we just skip explicit freeing of GC_threads entries.       */
 #         if !defined(THREAD_SANITIZER) || !defined(CAN_CALL_ATFORK)
-            if (p != &first_thread) GC_INTERNAL_FREE(p);
+            if (p != &first_thread) {
+              GC_ASSERT(p -> crtn != &first_crtn);
+              GC_INTERNAL_FREE(p -> crtn);
+              GC_INTERNAL_FREE(p);
+            }
 #         endif
         }
       }
@@ -1514,19 +1546,18 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
 GC_INNER GC_bool GC_in_thread_creation = FALSE;
                                 /* Protected by allocation lock. */
 
-GC_INNER_WIN32THREAD void GC_record_stack_base(GC_thread me,
+GC_INNER_WIN32THREAD void GC_record_stack_base(GC_stack_context_t crtn,
                                                const struct GC_stack_base *sb)
 {
 # if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_THREADS)
-    me -> stack_ptr = (ptr_t)sb->mem_base;
+    crtn -> stack_ptr = (ptr_t)sb->mem_base;
 # endif
-  me -> stack_end = (ptr_t)sb->mem_base;
-  if (NULL == me -> stack_end)
+  if ((crtn -> stack_end = (ptr_t)sb->mem_base) == NULL)
     ABORT("Bad stack base in GC_register_my_thread");
 # ifdef IA64
-    me -> backing_store_end = (ptr_t)sb->reg_base;
+    crtn -> backing_store_end = (ptr_t)sb->reg_base;
 # elif defined(I386) && defined(GC_WIN32_THREADS)
-    me -> initial_stack_base = (ptr_t)sb->mem_base;
+    crtn -> initial_stack_base = (ptr_t)sb->mem_base;
 # endif
 }
 
@@ -1547,7 +1578,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
     me -> mach_thread = mach_thread_self();
 # endif
   GC_in_thread_creation = FALSE;
-  GC_record_stack_base(me, sb);
+  GC_record_stack_base(me -> crtn, sb);
   return me;
 }
 
@@ -1769,29 +1800,31 @@ static GC_bool do_blocking_enter(GC_thread me)
 #   elif defined(E2K)
         size_t stack_size;
 #   endif
+    GC_stack_context_t crtn = me -> crtn;
     GC_bool topOfStackUnset = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((me -> flags & DO_BLOCKING) == 0);
 #   ifdef SPARC
-        me -> stack_ptr = bs_hi;
+        crtn -> stack_ptr = bs_hi;
 #   else
-        me -> stack_ptr = GC_approx_sp();
+        crtn -> stack_ptr = GC_approx_sp();
 #   endif
 #   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
-        if (me -> topOfStack == NULL) {
+        if (NULL == crtn -> topOfStack) {
             /* GC_do_blocking_inner is not called recursively,  */
             /* so topOfStack should be computed now.            */
             topOfStackUnset = TRUE;
-            me -> topOfStack = GC_FindTopOfStack(0);
+            crtn -> topOfStack = GC_FindTopOfStack(0);
         }
 #   endif
 #   ifdef IA64
-        me -> backing_store_ptr = bs_hi;
+        crtn -> backing_store_ptr = bs_hi;
 #   elif defined(E2K)
-        GC_ASSERT(NULL == me -> backing_store_end);
-        stack_size = GC_alloc_and_get_procedure_stack(&me->backing_store_end);
-        me->backing_store_ptr = me->backing_store_end + stack_size;
+        GC_ASSERT(NULL == crtn -> backing_store_end);
+        stack_size = GC_alloc_and_get_procedure_stack(
+                                        &(crtn -> backing_store_end));
+        crtn -> backing_store_ptr = crtn -> backing_store_end + stack_size;
 #   endif
     me -> flags |= DO_BLOCKING;
     /* Save context here if we want to support precise stack marking.   */
@@ -1803,16 +1836,20 @@ static void do_blocking_leave(GC_thread me, GC_bool topOfStackUnset)
     GC_ASSERT(I_HOLD_LOCK());
     me -> flags &= ~DO_BLOCKING;
 #   ifdef E2K
-        GC_ASSERT(me -> backing_store_end != NULL);
-         /* Note that me->backing_store_end value here may differ from  */
-         /* the one stored in this function previously.                 */
-        GC_INTERNAL_FREE(me -> backing_store_end);
-        me -> backing_store_ptr = NULL;
-        me -> backing_store_end = NULL;
+      {
+        GC_stack_context_t crtn = me -> crtn;
+
+        GC_ASSERT(crtn -> backing_store_end != NULL);
+        /* Note that value of backing_store_end here may differ from    */
+        /* the one stored in this function previously.                  */
+        GC_INTERNAL_FREE(crtn -> backing_store_end);
+        crtn -> backing_store_ptr = NULL;
+        crtn -> backing_store_end = NULL;
+      }
 #   endif
 #   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
         if (topOfStackUnset)
-            me -> topOfStack = NULL; /* make topOfStack unset again */
+          me -> crtn -> topOfStack = NULL; /* make it unset again */
 #   else
         (void)topOfStackUnset;
 #   endif
@@ -1898,23 +1935,27 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
     if (!EXPECT(GC_is_initialized, TRUE)) {
         GC_ASSERT(NULL == t);
     } else {
+        GC_stack_context_t crtn;
+
         GC_ASSERT(I_HOLD_LOCK());
         if (NULL == t) /* current thread? */
             t = GC_lookup_thread(thread_id_self());
         GC_ASSERT(!KNOWN_FINISHED(t));
+        crtn = t -> crtn;
         GC_ASSERT((t -> flags & DO_BLOCKING) == 0
-                  && NULL == t -> traced_stack_sect); /* for now */
+                  && NULL == crtn -> traced_stack_sect); /* for now */
 
 #       ifndef GC_WIN32_THREADS
           if (EXPECT((t -> flags & MAIN_THREAD) == 0, TRUE))
 #       endif
         {
-            t -> stack_end = (ptr_t)sb->mem_base;
+            crtn -> stack_end = (ptr_t)sb->mem_base;
 #           ifdef IA64
-              t -> backing_store_end = (ptr_t)sb->reg_base;
+              crtn -> backing_store_end = (ptr_t)sb->reg_base;
 #           endif
 #           ifdef GC_WIN32_THREADS
-              t -> last_stack_min = ADDR_LIMIT; /* reset the known minimum */
+              /* Reset the known minimum (hottest address in the stack). */
+              crtn -> last_stack_min = ADDR_LIMIT;
 #           endif
             return;
         }
@@ -1945,13 +1986,15 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
       } else
 #   endif
     /* else */ {
-        sb -> mem_base = me -> stack_end;
-#       ifdef IA64
-            sb -> reg_base = me -> backing_store_end;
-#       endif
+      GC_stack_context_t crtn = me -> crtn;
+
+      sb -> mem_base = crtn -> stack_end;
+#     ifdef IA64
+        sb -> reg_base = crtn -> backing_store_end;
+#     endif
     }
 #   ifdef E2K
-        sb -> reg_base = NULL;
+      sb -> reg_base = NULL;
 #   endif
     UNLOCK();
     return (void *)me; /* gc_thread_handle */
@@ -1967,6 +2010,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     struct GC_traced_stack_sect_s stacksect;
     thread_id_t self_id = thread_id_self();
     GC_thread me;
+    GC_stack_context_t crtn;
 #   ifdef E2K
       size_t stack_size;
 #   endif
@@ -1974,6 +2018,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
     LOCK();   /* This will block if the world is stopped.       */
     me = GC_lookup_thread(self_id);
+    crtn = me -> crtn;
 
     /* Adjust our stack bottom value (this could happen unless  */
     /* GC_get_stack_base() was used which returned GC_SUCCESS). */
@@ -1985,11 +2030,13 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       } else
 #   endif
     /* else */ {
-      GC_ASSERT(me -> stack_end != NULL);
-      if ((word)(me -> stack_end) HOTTER_THAN (word)(&stacksect)) {
-        me -> stack_end = (ptr_t)(&stacksect);
+      ptr_t stack_end = crtn -> stack_end; /* read of a volatile field */
+
+      GC_ASSERT(stack_end != NULL);
+      if ((word)stack_end HOTTER_THAN (word)(&stacksect)) {
+        crtn -> stack_end = (ptr_t)(&stacksect);
 #       if defined(I386) && defined(GC_WIN32_THREADS)
-          me -> initial_stack_base = me -> stack_end;
+          crtn -> initial_stack_base = (ptr_t)(&stacksect);
 #       endif
       }
     }
@@ -2009,50 +2056,53 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
         UNLOCK();
         GC_suspend_self_inner(me, suspend_cnt);
         LOCK();
+        GC_ASSERT(me -> crtn == crtn);
       }
 #   endif
 
     /* Setup new "stack section".       */
-    stacksect.saved_stack_ptr = me -> stack_ptr;
+    stacksect.saved_stack_ptr = crtn -> stack_ptr;
 #   ifdef IA64
       /* This is the same as in GC_call_with_stack_base().      */
       stacksect.backing_store_end = GC_save_regs_in_stack();
       /* Unnecessarily flushes register stack,          */
       /* but that probably doesn't hurt.                */
-      stacksect.saved_backing_store_ptr = me -> backing_store_ptr;
+      stacksect.saved_backing_store_ptr = crtn -> backing_store_ptr;
 #   elif defined(E2K)
-      GC_ASSERT(me -> backing_store_end != NULL);
-      GC_INTERNAL_FREE(me -> backing_store_end);
-      me -> backing_store_ptr = NULL;
-      me -> backing_store_end = NULL;
+      GC_ASSERT(crtn -> backing_store_end != NULL);
+      GC_INTERNAL_FREE(crtn -> backing_store_end);
+      crtn -> backing_store_ptr = NULL;
+      crtn -> backing_store_end = NULL;
 #   endif
-    stacksect.prev = me -> traced_stack_sect;
+    stacksect.prev = crtn -> traced_stack_sect;
     me -> flags &= ~DO_BLOCKING;
-    me -> traced_stack_sect = &stacksect;
+    crtn -> traced_stack_sect = &stacksect;
 
     UNLOCK();
     client_data = fn(client_data);
     GC_ASSERT((me -> flags & DO_BLOCKING) == 0);
-    GC_ASSERT(me -> traced_stack_sect == &stacksect);
 
     /* Restore original "stack section".        */
-#   ifdef CPPCHECK
-      GC_noop1((word)me->traced_stack_sect);
-#   endif
 #   ifdef E2K
       (void)GC_save_regs_in_stack();
 #   endif
     LOCK();
-    me -> traced_stack_sect = stacksect.prev;
+    GC_ASSERT(me -> crtn == crtn);
+    GC_ASSERT(crtn -> traced_stack_sect == &stacksect);
+#   ifdef CPPCHECK
+      GC_noop1((word)(crtn -> traced_stack_sect));
+#   endif
+    crtn -> traced_stack_sect = stacksect.prev;
 #   ifdef IA64
-      me -> backing_store_ptr = stacksect.saved_backing_store_ptr;
+      crtn -> backing_store_ptr = stacksect.saved_backing_store_ptr;
 #   elif defined(E2K)
-      GC_ASSERT(NULL == me -> backing_store_end);
-      stack_size = GC_alloc_and_get_procedure_stack(&me->backing_store_end);
-      me->backing_store_ptr = me->backing_store_end + stack_size;
+      GC_ASSERT(NULL == crtn -> backing_store_end);
+      stack_size = GC_alloc_and_get_procedure_stack(
+                                        &(crtn -> backing_store_end));
+      crtn -> backing_store_ptr = crtn -> backing_store_end + stack_size;
 #   endif
     me -> flags |= DO_BLOCKING;
-    me -> stack_ptr = stacksect.saved_stack_ptr;
+    crtn -> stack_ptr = stacksect.saved_stack_ptr;
     UNLOCK();
 
     return client_data; /* result */
@@ -2237,7 +2287,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
           /* with MACH_SEND_INVALID_DEST error.                         */
           me -> mach_thread = mach_thread_self();
 #       endif
-        GC_record_stack_base(me, sb);
+        GC_record_stack_base(me -> crtn, sb);
         me -> flags &= ~FINISHED; /* but not DETACHED */
       } else
 #   endif
@@ -2348,6 +2398,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
       /* client thread key destructor).                                 */
       if (KNOWN_FINISHED(t)) {
         GC_delete_gc_thread_no_free(t);
+        GC_INTERNAL_FREE(t -> crtn);
         GC_INTERNAL_FREE(t);
       }
       UNLOCK();
@@ -2387,6 +2438,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
       /* Here the pthread id may have been recycled.    */
       if (KNOWN_FINISHED(t)) {
         GC_delete_gc_thread_no_free(t);
+        GC_INTERNAL_FREE(t -> crtn);
         GC_INTERNAL_FREE(t);
       }
       UNLOCK();
