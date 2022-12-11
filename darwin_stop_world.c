@@ -142,7 +142,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
                                 mach_port_t my_thread, ptr_t *paltstack_lo,
                                 ptr_t *paltstack_hi, GC_bool *pfound_me)
 {
-  GC_stack_context_t crtn = p -> crtn;
+  GC_stack_context_t crtn;
   ptr_t lo;
 
   if (thread == my_thread) {
@@ -153,9 +153,9 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #   endif
     *pfound_me = TRUE;
   } else if (p != NULL && (p -> flags & DO_BLOCKING) != 0) {
-    lo = crtn -> stack_ptr;
+    lo = p -> crtn -> stack_ptr;
 #   ifndef DARWIN_DONT_PARSE_STACK
-      *phi = crtn -> topOfStack;
+      *phi = p -> crtn -> topOfStack;
 #   endif
 
   } else {
@@ -327,6 +327,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     UNUSED_ARG(paltstack_hi);
 # else
     /* p is guaranteed to be non-NULL regardless of GC_query_task_threads. */
+    crtn = p -> crtn;
     *phi = EXPECT((p -> flags & MAIN_THREAD) == 0, TRUE) ? crtn -> stack_end
             : GC_stackbottom;
     if (crtn -> altstack != NULL && (word)(crtn -> altstack) <= (word)lo
