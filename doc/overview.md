@@ -1,5 +1,5 @@
-[Interface Overview](gcinterface.md) | [Tutorial Slides](http://www.hboehm.info/gc/04tutorial.pdf) | [FAQ](http://www.hboehm.info/gc/faq.html) | [Example](simple_example.md) | [Download](https://github.com/ivmai/bdwgc/wiki/Download) | [License](http://www.hboehm.info/gc/license.txt)
----|---|---|---|---|---
+[Interface Overview](gcinterface.md) | [Tutorial Slides](http://www.hboehm.info/gc/04tutorial.pdf) | [FAQ](http://www.hboehm.info/gc/faq.html) | [Example](simple_example.md) | [Download](https://github.com/ivmai/bdwgc/wiki/Download)
+---|---|---|---|---
 
 # A garbage collector for C and C++
 
@@ -54,8 +54,7 @@ The garbage collector code is copyrighted by
 [Hewlett-Packard Company](http://www.hp.com/),
 [Ivan Maidanski](https://github.com/ivmai), and partially by some others.
 It may be used and copied without payment of a fee under minimal restrictions.
-See the LICENSE file in the distribution or the
-[license](http://www.hboehm.info/gc/license.txt) for more details.
+See the LICENSE file in the distribution for more details.
 **IT IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED OR IMPLIED.
 ANY USE IS AT YOUR OWN RISK.**
 
