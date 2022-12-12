@@ -575,7 +575,8 @@ GC_INNER void GC_start_world(void)
 #       ifdef DEBUG_THREADS
           GC_log_printf("Resuming 0x%x\n", (int)p->id);
 #       endif
-        GC_ASSERT(p -> crtn -> stack_end != NULL && p -> id != self_id);
+        GC_ASSERT(p -> id != self_id
+            && *(/* no volatile */ ptr_t *)&(p -> crtn -> stack_end) != NULL);
         if (ResumeThread(THREAD_HANDLE(p)) == (DWORD)-1)
           ABORT("ResumeThread failed");
         p -> flags &= ~IS_SUSPENDED;
@@ -594,7 +595,8 @@ GC_INNER void GC_start_world(void)
 #         ifdef DEBUG_THREADS
             GC_log_printf("Resuming 0x%x\n", (int)p->id);
 #         endif
-          GC_ASSERT(p -> crtn -> stack_end != NULL && p -> id != self_id);
+          GC_ASSERT(p -> id != self_id
+                    && *(ptr_t *)&(p -> crtn -> stack_end) != NULL);
           if (ResumeThread(THREAD_HANDLE(p)) == (DWORD)-1)
             ABORT("ResumeThread failed");
           GC_win32_unprotect_thread(p);
