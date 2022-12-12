@@ -303,9 +303,8 @@ GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
     GC_EXTERN GC_bool GC_win32_dll_threads;
 # endif
 
-  GC_EXTERN int GC_available_markers_m1;
-
 # ifdef PARALLEL_MARK
+    GC_EXTERN int GC_available_markers_m1;
     GC_EXTERN unsigned GC_required_markers_cnt;
     GC_EXTERN ptr_t GC_marker_sp[MAX_MARKERS - 1];
     GC_EXTERN ptr_t GC_marker_last_stack_min[MAX_MARKERS - 1];
