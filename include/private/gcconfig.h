@@ -484,6 +484,15 @@ EXTERN_C_BEGIN
 #   endif
 #   define I386
 #   define mach_type_known
+#   define WASM
+# endif
+# if defined(__wasi__) || defined(WASI)
+#   ifndef WASI
+#     define WASI
+#   endif
+#   define I386
+#   define mach_type_known
+#   define WASM
 # endif
 
 # if defined(__aarch64__) \
@@ -1294,11 +1303,8 @@ EXTERN_C_BEGIN
 #       define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       define STACKBOTTOM ((ptr_t)0x3ffff000)
 #   endif
-#   ifdef EMSCRIPTEN
-#     define OS_TYPE "EMSCRIPTEN"
-#     define DATASTART (ptr_t)ALIGNMENT
-#     define DATAEND (ptr_t)ALIGNMENT
-      /* Emscripten does emulate mmap and munmap, but those should  */
+#   ifdef WASM
+      /* Wasm does emulate mmap and munmap, but those should  */
       /* not be used in the collector, since WebAssembly lacks the  */
       /* native support of memory mapping.  Use sbrk() instead.     */
 #     undef USE_MMAP
@@ -1309,6 +1315,23 @@ EXTERN_C_BEGIN
 #     endif
 #     if defined(GC_THREADS) && !defined(CPPCHECK)
 #       error No threads support yet
+#     endif
+#     ifdef EMSCRIPTEN
+#       define OS_TYPE "EMSCRIPTEN"
+#       define DATASTART (ptr_t)ALIGNMENT
+#       define DATAEND (ptr_t)ALIGNMENT
+#     endif
+#     ifdef WASI
+        extern unsigned char __global_base;
+        extern unsigned char __heap_base;
+#       define OS_TYPE "WASI"
+#       define GETPAGESIZE() 65536
+#       define DATASTART ((ptr_t)&__global_base)
+#       define DATAEND ((ptr_t)&__heap_base)
+#       define STACKBOTTOM ((ptr_t)&__global_base)
+        /* wasi does not support signals or clock */
+#       define GC_NO_SIGSETJMP 1
+#       define NO_CLOCK 1
 #     endif
 #   endif
 #   if defined(__QNX__)

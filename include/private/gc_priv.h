@@ -857,7 +857,9 @@ EXTERN_C_END
 # endif
 #endif /* DARWIN */
 
-#include <setjmp.h>
+#ifndef GC_NO_SIGSETJMP
+#  include <setjmp.h>
+#endif
 
 #include <stdio.h>
 
