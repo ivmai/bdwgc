@@ -485,6 +485,11 @@ EXTERN_C_BEGIN
 #   define I386
 #   define mach_type_known
 # endif
+# if defined(__wasi__)
+#   define WASI
+#   define I386
+#   define mach_type_known
+# endif
 
 # if defined(__aarch64__) \
        && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
@@ -1306,6 +1311,29 @@ EXTERN_C_BEGIN
       /* The real page size in WebAssembly is 64 KB.    */
 #     if !defined(HBLKSIZE) && !defined(GC_NO_VALLOC)
 #       define HBLKSIZE 65536 /* TODO: workaround for GC_valloc */
+#     endif
+#     if defined(GC_THREADS) && !defined(CPPCHECK)
+#       error No threads support yet
+#     endif
+#   endif
+#   ifdef WASI
+#     define OS_TYPE "WASI"
+      extern char __global_base, __heap_base;
+#     define DATASTART ((ptr_t)&__global_base)
+#     define DATAEND ((ptr_t)&__heap_base)
+#     define STACKBOTTOM ((ptr_t)&__global_base)
+#     ifndef GC_NO_SIGSETJMP
+#       define GC_NO_SIGSETJMP 1 /* no support of signals */
+#     endif
+#     ifndef NO_CLOCK
+#       define NO_CLOCK 1 /* no support of clock */
+#     endif
+#     undef USE_MMAP /* similar to Emscripten */
+#     undef USE_MUNMAP
+      /* The real page size in WebAssembly is 64 KB.    */
+#     define GETPAGESIZE() 65536
+#     if !defined(HBLKSIZE) && !defined(GC_NO_VALLOC)
+#       define HBLKSIZE GETPAGESIZE() /* TODO: workaround for GC_valloc */
 #     endif
 #     if defined(GC_THREADS) && !defined(CPPCHECK)
 #       error No threads support yet
