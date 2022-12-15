@@ -90,9 +90,11 @@ GC_NOT_DLL      User-settable macro that overrides _DLL, e.g. if runtime
 GC_MARKERS=<n>  Set the desired number of marker threads.  If not defined or
                 defined to zero, then the collector decides based on the
                 number of CPU cores.  Only if compiled with PARALLEL_MARK.
+                Tested by gc.h.
 
-
-These define arguments influence the collector configuration:
+The following #define arguments influence the collector build configuration.
+Some provide default configuration values, others become hardcoded values
+for the library.
 
 GC_REQUIRE_WCSDUP       Force GC to export GC_wcsdup() (the Unicode version
   of GC_strdup); could be useful in the leak-finding mode.  Clients should
