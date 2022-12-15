@@ -857,7 +857,7 @@ EXTERN_C_END
 # endif
 #endif /* DARWIN */
 
-#ifndef GC_NO_SIGSETJMP
+#ifndef WASI
 #  include <setjmp.h>
 #endif
 
