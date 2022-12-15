@@ -1319,9 +1319,9 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef WASI
 #     define OS_TYPE "WASI"
-      extern unsigned char __global_base;
+      extern char __global_base;
 #     define DATASTART ((ptr_t)&__global_base)
-      extern unsigned char __heap_base;
+      extern char __heap_base;
 #     define DATAEND ((ptr_t)&__heap_base)
       /* The real page size in WebAssembly is 64 KB.    */
 #     define GETPAGESIZE() 65536
