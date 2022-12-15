@@ -484,7 +484,6 @@ EXTERN_C_BEGIN
 #   endif
 #   define I386
 #   define mach_type_known
-#   define WASM
 # endif
 # if defined(__wasi__)
 #   define WASI
