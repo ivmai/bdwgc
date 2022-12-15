@@ -40,7 +40,13 @@ BUILD PROCESS
       > cmake -G "Visual Studio 9 2008" -Dbuild_tests=ON ..
       > cmake --build . --config Release
       > ctest --build-config Release -V
-
+ . Linux example:
+      > mkdir out
+      > cd out
+      > cmake -Dbuild_tests=ON ..
+      > cmake --build .
+      > ctest
+      > make install
 
 INPUT
 -----
