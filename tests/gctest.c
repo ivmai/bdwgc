@@ -1961,7 +1961,7 @@ void check_heap_stats(void)
 #   endif
 
 #   ifdef THREADS
-      GC_unregister_my_thread(); /* just to check it works (for main) */
+      (void)GC_unregister_my_thread(); /* just to check it works (for main) */
 #   endif
 #   ifdef NO_CLOCK
       GC_printf("Completed %u collections\n", (unsigned)GC_get_gc_no());

@@ -1366,7 +1366,7 @@ STATIC void *GC_CALLBACK GC_win32_start_inner(struct GC_stack_base *sb,
       __finally
 #   endif
     {
-      GC_unregister_my_thread();
+      (void)GC_unregister_my_thread();
     }
 
 #   ifdef DEBUG_THREADS
@@ -1433,7 +1433,7 @@ GC_API HANDLE WINAPI GC_CreateThread(
 
 GC_API DECLSPEC_NORETURN void WINAPI GC_ExitThread(DWORD dwExitCode)
 {
-    GC_unregister_my_thread();
+    (void)GC_unregister_my_thread();
     ExitThread(dwExitCode);
 }
 
@@ -1492,7 +1492,7 @@ GC_API DECLSPEC_NORETURN void WINAPI GC_ExitThread(DWORD dwExitCode)
 
     GC_API void GC_CALL GC_endthreadex(unsigned retval)
     {
-      GC_unregister_my_thread();
+      (void)GC_unregister_my_thread();
       _endthreadex(retval);
     }
 #endif /* !CYGWIN32 && !MSWINCE && !MSWIN_XBOX1 && !NO_CRT */

@@ -1613,7 +1613,7 @@ GC_API void GC_CALL GC_start_mark_threads(void);
   /* thread, it must do this before calling GC_unregister_my_thread,    */
   /* most probably by saving it in a global data structure.  Must not   */
   /* be called inside a GC callback function (except for                */
-  /* GC_call_with_stack_base() one).                                    */
+  /* GC_call_with_stack_base() one).  Always returns GC_SUCCESS.        */
   GC_API int GC_CALL GC_unregister_my_thread(void);
 
   /* Stop/start the world explicitly.  Not recommended for general use. */
