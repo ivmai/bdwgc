@@ -342,8 +342,10 @@ GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
 # endif
 
 # ifndef GC_NO_THREADS_DISCOVERY
+#   ifdef GC_ASSERTIONS
+      GC_EXTERN thread_id_t GC_main_thread_id;
+#   endif
     GC_INNER GC_thread GC_win32_dll_lookup_thread(thread_id_t);
-    GC_INNER void GC_delete_thread(thread_id_t);
 # endif
 
 # ifdef MPROTECT_VDB

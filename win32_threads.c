@@ -109,7 +109,12 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 }
 
 #ifndef GC_NO_THREADS_DISCOVERY
-  static thread_id_t main_thread_id;
+# ifdef GC_ASSERTIONS
+    GC_INNER
+# else
+    STATIC
+# endif
+  thread_id_t GC_main_thread_id;
 
   /* We track thread attachments while the world is supposed to be      */
   /* stopped.  Unfortunately, we cannot stop them from starting, since  */
@@ -262,7 +267,7 @@ GC_INNER GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
   /* Up until this point, GC_push_all_stacks considers this thread      */
   /* invalid.                                                           */
   /* Up until this point, this entry is viewed as reserved but invalid  */
-  /* by GC_delete_thread.                                               */
+  /* by GC_win32_dll_lookup_thread.                                     */
   ((volatile struct GC_Thread_Rep *)me) -> id = self_id;
 # ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
@@ -1576,6 +1581,7 @@ GC_API DECLSPEC_NORETURN void WINAPI GC_ExitThread(DWORD dwExitCode)
 GC_INNER void GC_thr_init(void)
 {
   struct GC_stack_base sb;
+  thread_id_t self_id = GetCurrentThreadId();
 # if (!defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) && !defined(MSWINCE) \
       && defined(PARALLEL_MARK)) || defined(WOW64_THREAD_CONTEXT_WORKAROUND)
     HMODULE hK32;
@@ -1597,10 +1603,8 @@ GC_INNER void GC_thr_init(void)
 # ifdef GC_ASSERTIONS
     GC_thr_initialized = TRUE;
 # endif
-# ifdef GC_NO_THREADS_DISCOVERY
-#   define main_thread_id GetCurrentThreadId()
-# else
-    main_thread_id = GetCurrentThreadId();
+# ifndef GC_NO_THREADS_DISCOVERY
+    GC_main_thread_id = self_id;
 # endif
 # ifdef CAN_HANDLE_FORK
     GC_setup_atfork();
@@ -1706,9 +1710,8 @@ GC_INNER void GC_thr_init(void)
       }
 # endif /* PARALLEL_MARK */
 
-  GC_ASSERT(NULL == GC_lookup_thread(main_thread_id));
-  GC_register_my_thread_inner(&sb, main_thread_id);
-# undef main_thread_id
+  GC_ASSERT(NULL == GC_lookup_thread(self_id));
+  GC_register_my_thread_inner(&sb, self_id);
 }
 
 #ifndef GC_NO_THREADS_DISCOVERY
@@ -1752,7 +1755,7 @@ GC_INNER void GC_thr_init(void)
        case DLL_PROCESS_ATTACH:
         /* This may run with the collector uninitialized. */
         self_id = GetCurrentThreadId();
-        if (GC_is_initialized && main_thread_id != self_id) {
+        if (GC_is_initialized && GC_main_thread_id != self_id) {
             struct GC_stack_base sb;
             /* Don't lock here. */
 #           ifdef GC_ASSERTIONS
@@ -1767,7 +1770,9 @@ GC_INNER void GC_thr_init(void)
        case DLL_THREAD_DETACH:
         /* We are hopefully running in the context of the exiting thread. */
         if (GC_win32_dll_threads) {
-          GC_delete_thread(GetCurrentThreadId());
+          GC_thread t = GC_win32_dll_lookup_thread(GetCurrentThreadId());
+
+          if (EXPECT(t != NULL, TRUE)) GC_delete_gc_thread_no_free(t);
         }
         break;
 

@@ -743,17 +743,13 @@ GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t id)
 /* If GC_win32_dll_threads is set then it should be called from */
 /* the thread being deleted.  It is also safe to delete the     */
 /* main thread (unless GC_win32_dll_threads).                   */
-GC_INNER_WIN32THREAD void GC_delete_thread(thread_id_t id)
+STATIC void GC_delete_thread(thread_id_t id)
 {
 # if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
     if (GC_win32_dll_threads) {
-      GC_thread t = GC_lookup_thread(id);
+      GC_thread t = GC_win32_dll_lookup_thread(id);
 
-      if (EXPECT(NULL == t, FALSE)) {
-        WARN("Removing nonexistent thread, id= %" WARN_PRIuPTR "\n", id);
-      } else {
-        GC_delete_gc_thread_no_free(t);
-      }
+      GC_delete_gc_thread_no_free(t);
     } else
 # endif
   /* else */ {
@@ -2146,22 +2142,16 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
 
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
-# if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
-    if (GC_win32_dll_threads) {
-#     ifdef THREAD_LOCAL_ALLOC
-        /* Can't happen: see GC_use_threads_discovery().        */
-        GC_ASSERT(FALSE);
-#     else
-        /* FIXME: Should we just ignore this? */
-        GC_delete_thread(thread_id_self());
-#     endif
-    } else
-# endif
-  /* else */ {
     thread_id_t self_id = thread_id_self();
     GC_thread me;
     IF_CANCEL(int cancel_state;)
     DCL_LOCK_STATE;
+
+    /* Client should not unregister the thread explicitly if it */
+    /* is registered by DllMain, except for the main thread.    */
+#   if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
+      GC_ASSERT(!GC_win32_dll_threads || GC_main_thread_id == self_id);
+#   endif
 
     LOCK();
     DISABLE_CANCEL(cancel_state);
@@ -2178,8 +2168,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     GC_unregister_my_thread_inner(me);
     RESTORE_CANCEL(cancel_state);
     UNLOCK();
-  }
-  return GC_SUCCESS;
+    return GC_SUCCESS;
 }
 
 #if !defined(GC_NO_PTHREAD_CANCEL) && defined(GC_PTHREADS)
