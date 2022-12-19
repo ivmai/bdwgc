@@ -1346,6 +1346,7 @@ STATIC void *GC_CALLBACK GC_win32_start_inner(struct GC_stack_base *sb,
                         ((struct win32_start_info *)arg) -> start_routine;
     LPVOID start_arg = ((struct win32_start_info *)arg) -> arg;
 
+    GC_ASSERT(!GC_win32_dll_threads);
     GC_register_my_thread(sb); /* This waits for an in-progress GC.     */
 #   ifdef DEBUG_THREADS
       GC_log_printf("thread 0x%lx starting...\n", (long)GetCurrentThreadId());
@@ -1433,7 +1434,7 @@ GC_API HANDLE WINAPI GC_CreateThread(
 
 GC_API DECLSPEC_NORETURN void WINAPI GC_ExitThread(DWORD dwExitCode)
 {
-    (void)GC_unregister_my_thread();
+    if (!GC_win32_dll_threads) (void)GC_unregister_my_thread();
     ExitThread(dwExitCode);
 }
 
@@ -1492,7 +1493,7 @@ GC_API DECLSPEC_NORETURN void WINAPI GC_ExitThread(DWORD dwExitCode)
 
     GC_API void GC_CALL GC_endthreadex(unsigned retval)
     {
-      (void)GC_unregister_my_thread();
+      if (!GC_win32_dll_threads) (void)GC_unregister_my_thread();
       _endthreadex(retval);
     }
 #endif /* !CYGWIN32 && !MSWINCE && !MSWIN_XBOX1 && !NO_CRT */
