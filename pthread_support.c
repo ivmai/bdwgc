@@ -35,6 +35,11 @@
 # ifndef GC_WIN32_PTHREADS
 #   include <unistd.h>
 # endif
+# ifdef GC_DARWIN_THREADS
+#   include "private/darwin_semaphore.h"
+# else
+#   include <semaphore.h>
+# endif
 #endif /* GC_PTHREADS */
 
 #ifndef GC_WIN32_THREADS
@@ -50,11 +55,6 @@
 #   include <fcntl.h>
 # endif
 # include <signal.h>
-# ifdef GC_DARWIN_THREADS
-#   include "private/darwin_semaphore.h"
-# else
-#   include <semaphore.h>
-# endif
 #endif /* !GC_WIN32_THREADS */
 
 #if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS)
@@ -2331,9 +2331,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
   {
     int result;
-#   ifndef GC_WIN32_PTHREADS
-      GC_thread t;
-#   endif
+    GC_thread t;
     DCL_LOCK_STATE;
 
     INIT_REAL_SYMS();
@@ -2344,14 +2342,9 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
                     (void *)GC_PTHREAD_PTRVAL(thread));
 #   endif
 
+    /* After the join, thread id may have been recycled.                */
 #   ifdef GC_WIN32_THREADS
-      /* Thread being joined might not have registered itself yet.      */
-      /* After the join, thread id may have been recycled.              */
-      /* FIXME: It would be better to be as in non-Windows case.        */
-#     ifndef GC_WIN32_PTHREADS
-        while ((t = GC_lookup_by_pthread(thread)) == 0)
-          Sleep(10);
-#     endif
+      t = GC_lookup_by_pthread(thread);
 #   else
       LOCK();
       t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
@@ -2375,12 +2368,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #   endif
 
     if (EXPECT(0 == result, TRUE)) {
-#     ifdef GC_WIN32_PTHREADS
-        /* pthreads-win32 and winpthreads id are unique (not recycled). */
-        GC_thread t = GC_lookup_by_pthread(thread);
-
-        if (NULL == t) ABORT("Thread not registered");
-#     endif
       LOCK();
       /* Here the pthread id may have been recycled.  Delete the thread */
       /* from GC_threads (unless it has been registered again from the  */
@@ -2411,10 +2398,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     GC_ASSERT(!GC_win32_dll_threads);
     INIT_REAL_SYMS();
 #   ifdef GC_WIN32_THREADS
-      /* The thread might not have registered itself yet. */
-      /* TODO: Wait for registration of the created thread in pthread_create */
-      while ((t = GC_lookup_by_pthread(thread)) == NULL)
-        Sleep(10);
+      t = GC_lookup_by_pthread(thread);
 #   else
       LOCK();
       t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
@@ -2438,10 +2422,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   struct start_info {
     void *(*start_routine)(void *);
     void *arg;
-#   ifndef GC_WIN32_THREADS
-      sem_t registered;         /* 1 ==> in our thread table, but       */
+    sem_t registered;           /* 1 ==> in our thread table, but       */
                                 /* parent hasn't yet noticed.           */
-#   endif
     unsigned char flags;
   };
 
@@ -2486,12 +2468,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #   ifdef DEBUG_THREADS
       GC_log_printf("start_routine= %p\n", (void *)(signed_word)(*pstart));
 #   endif
-#   ifdef GC_WIN32_THREADS
-      GC_free(si); /* was allocated uncollectible */
-#   else
-      sem_post(&(si -> registered));    /* Last action on si.   */
+    sem_post(&(si -> registered));      /* Last action on si.   */
                                         /* OK to deallocate.    */
-#   endif
     return me;
   }
 
@@ -2523,12 +2501,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
                        void *(*start_routine)(void *), void *arg)
   {
     int result;
-#   ifdef GC_WIN32_THREADS
-      struct start_info *psi;
-#   else
-      struct start_info si;
-#     define psi (&si)
-#   endif
+    struct start_info si;
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
     INIT_REAL_SYMS();
@@ -2536,23 +2509,11 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     GC_ASSERT(GC_thr_initialized);
     GC_ASSERT(!GC_win32_dll_threads);
 
-#   ifdef GC_WIN32_THREADS
-      psi = (struct start_info *)GC_malloc_uncollectable(
-                                                sizeof(struct start_info));
-            /* This is otherwise saved only in an area mmapped by the   */
-            /* thread library, which isn't visible to the collector.    */
-      if (EXPECT(NULL == psi, FALSE)) return EAGAIN;
-#   else
-      if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) != 0)
+    if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) != 0)
         ABORT("sem_init failed");
-      si.flags = 0;
-#   endif
-    psi -> start_routine = start_routine;
-    psi -> arg = arg;
-#   ifdef GC_WIN32_THREADS
-      GC_dirty(psi);
-      REACHABLE_AFTER_DIRTY(arg);
-#   endif
+    si.flags = 0;
+    si.start_routine = start_routine;
+    si.arg = arg;
 
     /* We resist the temptation to muck with the stack size here,       */
     /* even if the default is unreasonably small.  That is the client's */
@@ -2594,7 +2555,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
         if (pthread_attr_getdetachstate(attr, &detachstate) != 0)
             ABORT("pthread_attr_getdetachstate failed");
         if (PTHREAD_CREATE_DETACHED == detachstate)
-          psi -> flags |= DETACHED;
+          si.flags |= DETACHED;
     }
 
 #   ifdef PARALLEL_MARK
@@ -2607,15 +2568,12 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #   endif
     set_need_to_lock();
     result = REAL_FUNC(pthread_create)(new_thread, attr,
-                                       GC_pthread_start, psi);
+                                       GC_pthread_start, &si);
 
-#   ifdef GC_WIN32_THREADS
-      if (EXPECT(result != 0, FALSE)) GC_free(psi); /* failure */
-#   else
-      /* Wait until child has been added to the thread table.           */
-      /* This also ensures that we hold onto the stack-allocated si     */
-      /* until the child is done with it.                               */
-      if (EXPECT(0 == result, TRUE)) {
+    /* Wait until child has been added to the thread table.             */
+    /* This also ensures that we hold onto the stack-allocated si       */
+    /* until the child is done with it.                                 */
+    if (EXPECT(0 == result, TRUE)) {
         IF_CANCEL(int cancel_state;)
 
         DISABLE_CANCEL(cancel_state);
@@ -2628,10 +2586,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
             if (EINTR != errno) ABORT("sem_wait failed");
         }
         RESTORE_CANCEL(cancel_state);
-      }
-      sem_destroy(&si.registered);
-#     undef psi
-#   endif
+    }
+    sem_destroy(&si.registered);
     return result;
   }
 
