@@ -2534,10 +2534,10 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
             ABORT("pthread_attr_getstacksize failed");
           (void)pthread_attr_destroy(&my_attr);
         }
-        /* On Solaris 10, with default attr initialization,     */
-        /* stack_size remains 0.  Fudge it.                     */
+        /* On Solaris 10 and on Win32 with winpthreads, with the        */
+        /* default attr initialization, stack_size remains 0; fudge it. */
         if (EXPECT(0 == stack_size, FALSE)) {
-#           ifndef SOLARIS
+#           if !defined(SOLARIS) && !defined(GC_WIN32_PTHREADS)
               WARN("Failed to get stack size for assertion checking\n", 0);
 #           endif
             stack_size = 1000000;
