@@ -44,7 +44,7 @@
 #undef _endthreadex
 
 #ifdef GC_PTHREADS
-# include <errno.h> /* for EAGAIN */
+# include <errno.h> /* for EINTR */
 
  /* Cygwin-specific forward decls */
 # undef pthread_create
@@ -62,6 +62,7 @@
 # ifdef CAN_CALL_ATFORK
 #   include <unistd.h>
 # endif
+# include <semaphore.h>
 
 #elif !defined(MSWINCE)
 # include <process.h>  /* For _beginthreadex, _endthreadex */
@@ -2917,15 +2918,15 @@ GC_INNER void GC_thr_init(void)
   struct start_info {
     void *(*start_routine)(void *);
     void *arg;
+    sem_t registered;           /* 1 ==> in our thread table, but       */
+                                /* parent hasn't yet noticed.           */
     int detached;
   };
 
   GC_API int GC_pthread_join(pthread_t pthread_id, void **retval)
   {
     int result;
-#   ifndef GC_WIN32_PTHREADS
-      GC_thread t;
-#   endif
+    GC_thread t;
     DCL_LOCK_STATE;
 
     GC_ASSERT(!GC_win32_dll_threads);
@@ -2936,22 +2937,10 @@ GC_INNER void GC_thr_init(void)
                     (void *)GC_PTHREAD_PTRVAL(pthread_id));
 #   endif
 
-    /* Thread being joined might not have registered itself yet. */
-    /* After the join, thread id may have been recycled.         */
-    /* FIXME: It would be better if this worked more like        */
-    /* pthread_support.c.                                        */
-#   ifndef GC_WIN32_PTHREADS
-      while ((t = GC_lookup_pthread(pthread_id)) == 0)
-        Sleep(10);
-#   endif
+    /* After the join, thread id may have been recycled.        */
+    t = GC_lookup_pthread(pthread_id);
     result = pthread_join(pthread_id, retval);
     if (0 == result) {
-#     ifdef GC_WIN32_PTHREADS
-        /* pthreads-win32 and winpthreads id are unique (not recycled). */
-        GC_thread t = GC_lookup_pthread(pthread_id);
-        if (NULL == t) ABORT("Thread not registered");
-#     endif
-
       LOCK();
       if ((t -> flags & FINISHED) != 0) {
         GC_delete_gc_thread_no_free(t);
@@ -2977,26 +2966,21 @@ GC_INNER void GC_thr_init(void)
                                void *(*start_routine)(void *), void *arg)
   {
     int result;
-    struct start_info * si;
+    struct start_info si;
 
     if (!EXPECT(parallel_initialized, TRUE))
       GC_init_parallel();
              /* make sure GC is initialized (i.e. main thread is attached) */
     GC_ASSERT(!GC_win32_dll_threads);
 
-      /* This is otherwise saved only in an area mmapped by the thread  */
-      /* library, which isn't visible to the collector.                 */
-      si = (struct start_info *)GC_malloc_uncollectable(
-                                                sizeof(struct start_info));
-      if (NULL == si)
-        return EAGAIN;
+      if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) != 0)
+        ABORT("sem_init failed");
 
-      si -> start_routine = start_routine;
-      si -> arg = arg;
-      GC_dirty(si);
-      REACHABLE_AFTER_DIRTY(arg);
+      si.start_routine = start_routine;
+      si.arg = arg;
+      si.detached = 0;
       if (attr != NULL
-          && pthread_attr_getdetachstate(attr, &(si -> detached)) != 0)
+          && pthread_attr_getdetachstate(attr, &si.detached) != 0)
         ABORT("pthread_attr_getdetachstate failed");
 #     ifdef DEBUG_THREADS
         GC_log_printf("About to create a thread from %p(0x%lx)\n",
@@ -3005,11 +2989,17 @@ GC_INNER void GC_thr_init(void)
 #     endif
       START_MARK_THREADS();
       set_need_to_lock();
-      result = pthread_create(new_thread, attr, GC_pthread_start, si);
+      result = pthread_create(new_thread, attr, GC_pthread_start, &si);
 
-      if (result) { /* failure */
-          GC_free(si);
+      /* Wait until child has been added to the thread table.       */
+      /* This also ensures that we hold onto the stack-allocated si */
+      /* until the child is done with it.                           */
+      if (0 == result) {
+        while (0 != sem_wait(&si.registered)) {
+          if (EINTR != errno) ABORT("sem_wait failed");
+        }
       }
+      sem_destroy(&si.registered);
       return(result);
   }
 
@@ -3050,8 +3040,8 @@ GC_INNER void GC_thr_init(void)
 
     start = si -> start_routine;
     start_arg = si -> arg;
-
-    GC_free(si); /* was allocated uncollectible */
+    sem_post(&(si -> registered));      /* Last action on si.   */
+                                        /* OK to deallocate.    */
 
     pthread_cleanup_push(GC_thread_exit_proc, (void *)me);
     result = (*start)(start_arg);
@@ -3119,10 +3109,7 @@ GC_INNER void GC_thr_init(void)
     DCL_LOCK_STATE;
 
     GC_ASSERT(!GC_win32_dll_threads);
-    /* The thread might not have registered itself yet. */
-    /* TODO: Wait for registration of the created thread in pthread_create. */
-    while ((t = GC_lookup_pthread(thread)) == NULL)
-      Sleep(10);
+    t = GC_lookup_pthread(thread);
     result = pthread_detach(thread);
     if (result == 0) {
       LOCK();
