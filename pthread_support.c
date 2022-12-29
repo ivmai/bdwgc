@@ -609,6 +609,10 @@ GC_INNER GC_thread GC_threads[THREAD_TABLE_SZ] = {0};
 static struct GC_StackContext_Rep first_crtn;
 static struct GC_Thread_Rep first_thread;
 
+/* A place to retain a pointer to an allocated object while a thread    */
+/* registration is ongoing.  Protected by the GC lock.                  */
+static GC_stack_context_t saved_crtn = NULL;
+
 #ifdef GC_ASSERTIONS
   GC_INNER GC_bool GC_thr_initialized = FALSE;
 #endif
@@ -631,6 +635,7 @@ void GC_push_thread_structures(void)
       GC_PUSH_ALL_SYM(first_crtn.backing_store_end);
 #   endif
     GC_PUSH_ALL_SYM(first_thread.crtn);
+    GC_PUSH_ALL_SYM(saved_crtn);
   }
 # if defined(THREAD_LOCAL_ALLOC) && defined(USE_CUSTOM_SPECIFIC)
     GC_PUSH_ALL_SYM(GC_thread_key);
@@ -714,8 +719,17 @@ GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t id)
         crtn = (GC_stack_context_t)GC_INTERNAL_MALLOC(
                         sizeof(struct GC_StackContext_Rep), NORMAL);
         if (EXPECT(NULL == crtn, FALSE)) return NULL;
+
+        /* The current stack is not scanned until the thread is         */
+        /* registered, thus crtn pointer is to be retained in the       */
+        /* global data roots for a while (and pushed explicitly if      */
+        /* a collection occurs here).                                   */
+        GC_ASSERT(NULL == saved_crtn);
+        saved_crtn = crtn;
         result = (GC_thread)GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep),
                                                NORMAL);
+        saved_crtn = NULL; /* no more collections till thread is registered */
+
         if (EXPECT(NULL == result, FALSE)) {
           GC_INTERNAL_FREE(crtn);
           return NULL;
