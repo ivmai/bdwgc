@@ -778,10 +778,6 @@ STATIC void GC_delete_thread(thread_id_t id)
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
-#   ifdef NACL
-      GC_nacl_shutdown_gc_thread();
-      GC_nacl_gc_thread_self = NULL;
-#   endif
     for (p = GC_threads[hv]; ; p = p -> tm.next) {
       if (THREAD_ID_EQUAL(p -> id, id)) break;
       prev = p;
@@ -2133,6 +2129,10 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
 #   else
       (void)me;
 #   endif
+#   ifdef NACL
+      GC_nacl_shutdown_gc_thread();
+      GC_nacl_gc_thread_self = NULL;
+#   endif
 #   ifdef GC_PTHREADS
 #     if defined(GC_HAVE_PTHREAD_EXIT) || !defined(GC_NO_PTHREAD_CANCEL)
         /* Handle DISABLED_GC flag which is set by the  */
@@ -2285,6 +2285,10 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
       /* else */ if (KNOWN_FINISHED(me)) {
         /* This code is executed when a thread is registered from the   */
         /* client thread key destructor.                                */
+#       ifdef NACL
+          GC_nacl_gc_thread_self = me;
+          GC_nacl_initialize_gc_thread();
+#       endif
 #       ifdef GC_DARWIN_THREADS
           /* Reinitialize mach_thread to avoid thread_suspend fail      */
           /* with MACH_SEND_INVALID_DEST error.                         */
