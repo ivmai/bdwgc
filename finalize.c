@@ -1349,7 +1349,15 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
     }
 
     if (!GC_finalize_on_demand) {
-      unsigned char *pnested = GC_check_finalizer_nested();
+      unsigned char *pnested;
+
+#     ifdef THREADS
+        if (EXPECT(GC_in_thread_creation, FALSE)) {
+          UNLOCK();
+          return;
+        }
+#     endif
+      pnested = GC_check_finalizer_nested();
       UNLOCK();
       /* Skip GC_invoke_finalizers() if nested */
       if (pnested != NULL) {
