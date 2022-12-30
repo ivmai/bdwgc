@@ -743,8 +743,7 @@ GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t id)
     result -> tm.next = GC_threads[hv];
     GC_threads[hv] = result;
 #   ifdef NACL
-      GC_nacl_gc_thread_self = result;
-      GC_nacl_initialize_gc_thread();
+      GC_nacl_initialize_gc_thread(result);
 #   endif
     GC_ASSERT(0 == result -> flags);
     if (EXPECT(result != &first_thread, TRUE))
@@ -2131,7 +2130,6 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
 #   endif
 #   ifdef NACL
       GC_nacl_shutdown_gc_thread();
-      GC_nacl_gc_thread_self = NULL;
 #   endif
 #   ifdef GC_PTHREADS
 #     if defined(GC_HAVE_PTHREAD_EXIT) || !defined(GC_NO_PTHREAD_CANCEL)
@@ -2286,8 +2284,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
         /* This code is executed when a thread is registered from the   */
         /* client thread key destructor.                                */
 #       ifdef NACL
-          GC_nacl_gc_thread_self = me;
-          GC_nacl_initialize_gc_thread();
+          GC_nacl_initialize_gc_thread(me);
 #       endif
 #       ifdef GC_DARWIN_THREADS
           /* Reinitialize mach_thread to avoid thread_suspend fail      */

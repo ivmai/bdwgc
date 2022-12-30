@@ -53,11 +53,11 @@ GC_INLINE void GC_usleep(unsigned us)
 #ifdef NACL
 
   STATIC int GC_nacl_num_gc_threads = 0;
-  STATIC __thread int GC_nacl_thread_idx = -1;
   STATIC volatile int GC_nacl_park_threads_now = 0;
   STATIC volatile pthread_t GC_nacl_thread_parker = -1;
 
-  GC_INNER __thread GC_thread GC_nacl_gc_thread_self = NULL;
+  STATIC __thread int GC_nacl_thread_idx = -1;
+  STATIC __thread GC_thread GC_nacl_gc_thread_self = NULL;
 
   volatile int GC_nacl_thread_parked[MAX_NACL_GC_THREADS];
   int GC_nacl_thread_used[MAX_NACL_GC_THREADS];
@@ -1190,11 +1190,13 @@ GC_INNER void GC_stop_world(void)
                                      void *table, size_t tablesize);
   EXTERN_C_END
 
-  GC_INNER void GC_nacl_initialize_gc_thread(void)
+  GC_INNER void GC_nacl_initialize_gc_thread(GC_thread me)
   {
     int i;
     static struct nacl_irt_blockhook gc_hook;
 
+    GC_ASSERT(NULL == GC_nacl_gc_thread_self);
+    GC_nacl_gc_thread_self = me;
     pthread_mutex_lock(&GC_nacl_thread_alloc_lock);
     if (!EXPECT(GC_nacl_thread_parking_inited, TRUE)) {
       BZERO(GC_nacl_thread_parked, sizeof(GC_nacl_thread_parked));
@@ -1221,6 +1223,8 @@ GC_INNER void GC_stop_world(void)
 
   GC_INNER void GC_nacl_shutdown_gc_thread(void)
   {
+    GC_ASSERT(GC_nacl_gc_thread_self != NULL
+              && GC_lookup_thread(pthread_self()) == GC_nacl_gc_thread_self);
     pthread_mutex_lock(&GC_nacl_thread_alloc_lock);
     GC_ASSERT(GC_nacl_thread_idx >= 0);
     GC_ASSERT(GC_nacl_thread_idx < MAX_NACL_GC_THREADS);
@@ -1229,6 +1233,7 @@ GC_INNER void GC_stop_world(void)
     GC_nacl_thread_idx = -1;
     GC_nacl_num_gc_threads--;
     pthread_mutex_unlock(&GC_nacl_thread_alloc_lock);
+    GC_nacl_gc_thread_self = NULL;
   }
 
 #else /* !NACL */

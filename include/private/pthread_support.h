@@ -377,8 +377,7 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t);
 GC_INNER void GC_wait_for_gc_completion(GC_bool);
 
 #ifdef NACL
-  GC_EXTERN __thread GC_thread GC_nacl_gc_thread_self;
-  GC_INNER void GC_nacl_initialize_gc_thread(void);
+  GC_INNER void GC_nacl_initialize_gc_thread(GC_thread);
   GC_INNER void GC_nacl_shutdown_gc_thread(void);
 #endif
 
