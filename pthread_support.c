@@ -37,7 +37,7 @@
 # endif
 # ifdef GC_DARWIN_THREADS
 #   include "private/darwin_semaphore.h"
-# else
+# elif !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
 #   include <semaphore.h>
 # endif
 #endif /* GC_PTHREADS */
