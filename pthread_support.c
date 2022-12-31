@@ -1247,7 +1247,6 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
 #     define pthread_id id
 #   endif
 
-    GC_ASSERT(!GC_win32_dll_threads);
     for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
       GC_thread p, next;
 
@@ -2277,7 +2276,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     IF_CANCEL(int cancel_state;)
     DCL_LOCK_STATE;
 
-    GC_ASSERT(!GC_win32_dll_threads);
 #   ifdef DEBUG_THREADS
         GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread= %p\n",
                       (void *)(signed_word)(me -> id), (void *)me);
@@ -2297,7 +2295,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     DCL_LOCK_STATE;
 
     INIT_REAL_SYMS();
-    GC_ASSERT(!GC_win32_dll_threads);
 #   ifdef DEBUG_THREADS
       GC_log_printf("thread %p is joining thread %p\n",
                     (void *)GC_PTHREAD_PTRVAL(pthread_self()),
@@ -2355,7 +2352,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     GC_thread t;
     DCL_LOCK_STATE;
 
-    GC_ASSERT(!GC_win32_dll_threads);
     INIT_REAL_SYMS();
 #   ifdef GC_WIN32_THREADS
       t = GC_lookup_by_pthread(thread);
@@ -2394,7 +2390,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg)
   {
-    struct start_info * si = (struct start_info *)arg;
+    struct start_info *psi = (struct start_info *)arg;
     thread_id_t self_id = thread_id_self();
     GC_thread me;
     DCL_LOCK_STATE;
@@ -2403,7 +2399,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
       GC_log_printf("Starting thread %p, sp= %p\n",
                     (void *)GC_PTHREAD_PTRVAL(pthread_self()), (void *)&arg);
 #   endif
-    GC_ASSERT(!GC_win32_dll_threads);
     /* If a GC occurs before the thread is registered, that GC will     */
     /* ignore this thread.  That's fine, since it will block trying to  */
     /* acquire the allocation lock, and won't yet hold interesting      */
@@ -2413,7 +2408,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     /* we don't need to hold the allocation lock during pthread_create. */
     me = GC_register_my_thread_inner(sb, self_id);
     GC_ASSERT(me != &first_thread);
-    me -> flags = si -> flags;
+    me -> flags = psi -> flags;
 #   ifdef GC_WIN32_THREADS
       GC_win32_cache_self_pthread(self_id);
 #   endif
@@ -2422,12 +2417,12 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #   endif
     UNLOCK();
 
-    *pstart = si -> start_routine;
-    *pstart_arg = si -> arg;
+    *pstart = psi -> start_routine;
+    *pstart_arg = psi -> arg;
 #   ifdef DEBUG_THREADS
       GC_log_printf("start_routine= %p\n", (void *)(signed_word)(*pstart));
 #   endif
-    sem_post(&(si -> registered));      /* Last action on si.   */
+    sem_post(&(psi -> registered));     /* Last action on *psi; */
                                         /* OK to deallocate.    */
     return me;
   }
@@ -2466,7 +2461,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     INIT_REAL_SYMS();
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     GC_ASSERT(GC_thr_initialized);
-    GC_ASSERT(!GC_win32_dll_threads);
 
     if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) != 0)
         ABORT("sem_init failed");
