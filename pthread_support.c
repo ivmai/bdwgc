@@ -2167,13 +2167,13 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 #ifdef GC_HAVE_PTHREAD_EXIT
   GC_API GC_PTHREAD_EXIT_ATTRIBUTE void WRAP_FUNC(pthread_exit)(void *retval)
   {
-    pthread_t self = pthread_self();
+    thread_id_t self_id = thread_id_self();
     GC_thread me;
     DCL_LOCK_STATE;
 
     INIT_REAL_SYMS();
     LOCK();
-    me = GC_lookup_thread(self);
+    me = GC_lookup_thread(self_id);
     /* We test DISABLED_GC because someone else could call    */
     /* pthread_cancel at the same time.                       */
     if (me != 0 && (me -> flags & DISABLED_GC) == 0) {
