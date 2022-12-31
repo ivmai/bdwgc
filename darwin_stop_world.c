@@ -142,7 +142,9 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
                                 mach_port_t my_thread, ptr_t *paltstack_lo,
                                 ptr_t *paltstack_hi, GC_bool *pfound_me)
 {
-  GC_stack_context_t crtn;
+# ifdef DARWIN_DONT_PARSE_STACK
+    GC_stack_context_t crtn;
+# endif
   ptr_t lo;
 
   if (thread == my_thread) {
@@ -327,6 +329,9 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     UNUSED_ARG(paltstack_hi);
 # else
     /* p is guaranteed to be non-NULL regardless of GC_query_task_threads. */
+#   ifdef CPPCHECK
+      if (NULL == p) ABORT("Bad GC_stack_range_for call");
+#   endif
     crtn = p -> crtn;
     *phi = EXPECT((p -> flags & MAIN_THREAD) == 0, TRUE) ? crtn -> stack_end
             : GC_stackbottom;
