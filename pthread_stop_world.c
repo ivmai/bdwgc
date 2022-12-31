@@ -641,7 +641,7 @@ STATIC void GC_restart_handler(int sig)
       DCL_LOCK_STATE;
 
       LOCK();
-      t = GC_lookup_thread((pthread_t)thread);
+      t = GC_lookup_by_pthread((pthread_t)thread);
       if (NULL == t) {
         UNLOCK();
         return;
@@ -721,7 +721,7 @@ STATIC void GC_restart_handler(int sig)
       DCL_LOCK_STATE;
 
       LOCK();
-      t = GC_lookup_thread((pthread_t)thread);
+      t = GC_lookup_by_pthread((pthread_t)thread);
       if (t != NULL) {
         word suspend_cnt = (word)(t -> ext_suspend_cnt);
 
@@ -759,7 +759,7 @@ STATIC void GC_restart_handler(int sig)
       DCL_LOCK_STATE;
 
       LOCK();
-      t = GC_lookup_thread((pthread_t)thread);
+      t = GC_lookup_by_pthread((pthread_t)thread);
       if (t != NULL && (t -> ext_suspend_cnt & 1) != 0)
         is_suspended = (int)TRUE;
       UNLOCK();

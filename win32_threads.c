@@ -346,31 +346,26 @@ GC_INLINE LONG GC_get_max_thread_index(void)
       /* thread registration is made compatible with pthreads (and      */
       /* turned on).                                                    */
 
-      /* We first try the cache.  If that fails, we use a very slow     */
-      /* approach.                                                      */
-      int hv_guess = THREAD_TABLE_INDEX(GET_PTHREAD_MAP_CACHE(thread));
+      thread_id_t id = GET_PTHREAD_MAP_CACHE(thread);
       GC_thread p;
-      DCL_LOCK_STATE;
+      int hv;
 
-      LOCK();
-      for (p = GC_threads[hv_guess]; p != NULL; p = p -> tm.next) {
+      GC_ASSERT(I_HOLD_LOCK());
+      /* We first try the cache.        */
+      for (p = GC_threads[THREAD_TABLE_INDEX(id)];
+           p != NULL; p = p -> tm.next) {
         if (THREAD_EQUAL(p -> pthread_id, thread))
-          break;
+          return p;
       }
 
-      if (EXPECT(NULL == p, FALSE)) {
-        int hv;
-
-        for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
-          for (p = GC_threads[hv]; p != NULL; p = p -> tm.next) {
-            if (THREAD_EQUAL(p -> pthread_id, thread))
-              break;
-          }
-          if (p != NULL) break;
+      /* If that fails, we use a very slow approach.    */
+      for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
+        for (p = GC_threads[hv]; p != NULL; p = p -> tm.next) {
+          if (THREAD_EQUAL(p -> pthread_id, thread))
+            return p;
         }
       }
-      UNLOCK();
-      return p;
+      return NULL;
   }
 #endif /* GC_PTHREADS */
 

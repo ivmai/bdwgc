@@ -331,7 +331,6 @@ GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
                                         thread_id_t self_id);
 
 # ifdef GC_PTHREADS
-    GC_INNER GC_thread GC_lookup_by_pthread(pthread_t);
     GC_INNER void GC_win32_cache_self_pthread(thread_id_t);
 # else
     GC_INNER void GC_delete_thread(GC_thread);
@@ -370,6 +369,11 @@ GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
 #   define GC_PTHREAD_PTRVAL(pthread_id) pthread_id.p
 # else
 #   define GC_PTHREAD_PTRVAL(pthread_id) pthread_id
+# endif /* !GC_WIN32_THREADS || CYGWIN32 */
+# ifdef GC_WIN32_THREADS
+    GC_INNER GC_thread GC_lookup_by_pthread(pthread_t);
+# else
+#   define GC_lookup_by_pthread(t) GC_lookup_thread(t)
 # endif
 #endif /* GC_PTHREADS */
 

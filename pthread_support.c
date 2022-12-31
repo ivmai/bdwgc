@@ -2149,7 +2149,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     INIT_REAL_SYMS();
 #   ifdef CANCEL_SAFE
       LOCK();
-      t = GC_lookup_thread(thread);
+      t = GC_lookup_by_pthread(thread);
       /* We test DISABLED_GC because pthread_exit could be called at    */
       /* the same time.  (If t is NULL then pthread_cancel should       */
       /* return ESRCH.)                                                 */
@@ -2302,15 +2302,11 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #   endif
 
     /* After the join, thread id may have been recycled.                */
-#   ifdef GC_WIN32_THREADS
-      t = GC_lookup_by_pthread(thread);
-#   else
-      LOCK();
-      t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
+    LOCK();
+    t = (GC_thread)COVERT_DATAFLOW(GC_lookup_by_pthread(thread));
       /* This is guaranteed to be the intended one, since the thread id */
       /* cannot have been recycled by pthreads.                         */
-      UNLOCK();
-#   endif
+    UNLOCK();
 
     result = REAL_FUNC(pthread_join)(thread, retval);
 #   if defined(GC_FREEBSD_THREADS)
@@ -2353,13 +2349,9 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     DCL_LOCK_STATE;
 
     INIT_REAL_SYMS();
-#   ifdef GC_WIN32_THREADS
-      t = GC_lookup_by_pthread(thread);
-#   else
-      LOCK();
-      t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
-      UNLOCK();
-#   endif
+    LOCK();
+    t = (GC_thread)COVERT_DATAFLOW(GC_lookup_by_pthread(thread));
+    UNLOCK();
     result = REAL_FUNC(pthread_detach)(thread);
     if (EXPECT(0 == result, TRUE)) {
       LOCK();
