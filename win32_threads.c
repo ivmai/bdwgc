@@ -434,8 +434,7 @@ STATIC void GC_suspend(GC_thread t)
 #       else
           /* This breaks pthread_join on Cygwin, which is guaranteed to */
           /* only see user threads.                                     */
-          GC_ASSERT(GC_win32_dll_threads);
-          GC_delete_gc_thread_no_free(t);
+          GC_delete_thread(t);
 #       endif
         return;
       }
@@ -470,8 +469,7 @@ STATIC void GC_suspend(GC_thread t)
 #     ifdef GC_PTHREADS
         t -> crtn -> stack_end = NULL; /* prevent stack from being pushed */
 #     else
-        GC_ASSERT(GC_win32_dll_threads);
-        GC_delete_gc_thread_no_free(t);
+        GC_delete_thread(t);
 #     endif
       return;
     }
@@ -514,8 +512,8 @@ GC_INNER void GC_stop_world(void)
     EnterCriticalSection(&GC_write_cs);
     /* It's not allowed to call GC_printf() (and friends) here down to  */
     /* LeaveCriticalSection (same applies recursively to GC_suspend,    */
-    /* GC_delete_gc_thread_no_free, GC_get_max_thread_index, GC_size    */
-    /* and GC_remove_protection).                                       */
+    /* GC_delete_thread, GC_get_max_thread_index, GC_size and           */
+    /* GC_remove_protection).                                           */
 #   ifdef GC_ASSERTIONS
       GC_write_disabled = TRUE;
 #   endif
@@ -1772,7 +1770,7 @@ GC_INNER void GC_thr_init(void)
         if (GC_win32_dll_threads) {
           GC_thread t = GC_win32_dll_lookup_thread(GetCurrentThreadId());
 
-          if (EXPECT(t != NULL, TRUE)) GC_delete_gc_thread_no_free(t);
+          if (EXPECT(t != NULL, TRUE)) GC_delete_thread(t);
         }
         break;
 
@@ -1783,7 +1781,7 @@ GC_INNER void GC_thr_init(void)
 
           for (i = 0; i <= my_max; ++i) {
            if (AO_load(&(dll_thread_table[i].tm.in_use)))
-             GC_delete_gc_thread_no_free((GC_thread)&dll_thread_table[i]);
+             GC_delete_thread((GC_thread)&dll_thread_table[i]);
           }
           GC_deinit();
         }

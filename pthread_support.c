@@ -751,39 +751,50 @@ GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t id)
     return result;
 }
 
-/* Delete a thread from GC_threads.  We assume it is there.     */
-/* (The code intentionally traps if it wasn't.)                 */
-/* If GC_win32_dll_threads is set then it should be called from */
-/* the thread being deleted.  It is also safe to delete the     */
-/* main thread (unless GC_win32_dll_threads).                   */
-STATIC void GC_delete_thread(thread_id_t id)
+/* Delete a thread from GC_threads.  We assume it is there.  (The code  */
+/* intentionally traps if it was not.)  It is also safe to delete the   */
+/* main thread.  If GC_win32_dll_threads is set, it should be called    */
+/* only from the thread being deleted.  If a thread has been joined,    */
+/* but we have not yet been notified, then there may be more than one   */
+/* thread in the table with the same thread id - this is OK because we  */
+/* delete a specific one.                                               */
+GC_INNER_WIN32THREAD void GC_delete_thread(GC_thread t)
 {
+# if defined(GC_WIN32_THREADS) && !defined(MSWINCE)
+    CloseHandle(t -> handle);
+# endif
 # if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
     if (GC_win32_dll_threads) {
-      GC_thread t = GC_win32_dll_lookup_thread(id);
-
-      GC_delete_gc_thread_no_free(t);
+      /* This is intended to be lock-free.  It is either called         */
+      /* synchronously from the thread being deleted, or by the joining */
+      /* thread.  In this branch asynchronous changes to (*t) are       */
+      /* possible.  Note that it is not allowed to call GC_printf (and  */
+      /* the friends) here, see GC_stop_world() in win32_threads.c for  */
+      /* the information.                                               */
+      t -> crtn -> stack_end = NULL;
+      t -> id = 0;
+      t -> flags = 0; /* !IS_SUSPENDED */
+#     ifdef RETRY_GET_THREAD_CONTEXT
+        t -> context_sp = NULL;
+#     endif
+      AO_store_release(&(t -> tm.in_use), FALSE);
     } else
 # endif
   /* else */ {
+    thread_id_t id = t -> id;
     int hv = THREAD_TABLE_INDEX(id);
     GC_thread p;
     GC_thread prev = NULL;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   if defined(DEBUG_THREADS) && !defined(MSWINCE) \
        && (!defined(MSWIN32) || defined(CONSOLE_LOG))
       GC_log_printf("Deleting thread %p, n_threads= %d\n",
                     (void *)(signed_word)id, GC_count_threads());
 #   endif
-
-    GC_ASSERT(I_HOLD_LOCK());
-    for (p = GC_threads[hv]; ; p = p -> tm.next) {
-      if (THREAD_ID_EQUAL(p -> id, id)) break;
+    for (p = GC_threads[hv]; p != t; p = p -> tm.next) {
       prev = p;
     }
-#   if defined(GC_WIN32_THREADS) && !defined(MSWINCE)
-      CloseHandle(p -> handle);
-#   endif
     if (NULL == prev) {
         GC_threads[hv] = p -> tm.next;
     } else {
@@ -801,66 +812,6 @@ STATIC void GC_delete_thread(thread_id_t id)
     }
   }
 }
-
-#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
-  /* If a thread has been joined, but we have not yet           */
-  /* been notified, then there may be more than one thread      */
-  /* in the table with the same thread id.                      */
-  /* This is OK, but we need a way to delete a specific one.    */
-  /* Does not actually free GC_thread entry, only unlinks it.   */
-  /* If GC_win32_dll_threads is set it should be called from    */
-  /* the thread being deleted.                                  */
-  GC_INNER_WIN32THREAD void GC_delete_gc_thread_no_free(GC_thread t)
-  {
-    thread_id_t id = t -> id;
-    int hv = THREAD_TABLE_INDEX(id);
-    GC_thread p = GC_threads[hv];
-    GC_thread prev = NULL;
-
-#   if defined(GC_WIN32_THREADS) && !defined(MSWINCE)
-      CloseHandle(t -> handle);
-#   endif
-#   if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
-      if (GC_win32_dll_threads) {
-        /* This is intended to be lock-free.                            */
-        /* It is either called synchronously from the thread being      */
-        /* deleted, or by the joining thread.                           */
-        /* In this branch asynchronous changes to (*t) are possible.    */
-        /* It's not allowed to call GC_printf (and the friends) here,   */
-        /* see GC_stop_world() in win32_threads.c for the information.  */
-        t -> crtn -> stack_end = NULL;
-        t -> id = 0;
-        t -> flags = 0; /* !IS_SUSPENDED */
-#       ifdef RETRY_GET_THREAD_CONTEXT
-          t -> context_sp = NULL;
-#       endif
-        AO_store_release(&t->tm.in_use, FALSE);
-      } else
-#   endif
-    /* else */ {
-      GC_ASSERT(I_HOLD_LOCK());
-      while (p != t) {
-        prev = p;
-        p = p -> tm.next;
-      }
-      if (NULL == prev) {
-        GC_threads[hv] = p -> tm.next;
-      } else {
-        GC_ASSERT(prev != &first_thread);
-        prev -> tm.next = p -> tm.next;
-        GC_dirty(prev);
-      }
-#     ifdef GC_DARWIN_THREADS
-        mach_port_deallocate(mach_task_self(), p -> mach_thread);
-#     endif
-#     if defined(DEBUG_THREADS) && !defined(MSWINCE) \
-         && (!defined(MSWIN32) || defined(CONSOLE_LOG))
-        GC_log_printf("Deleted thread %p, n_threads= %d\n",
-                      (void *)(signed_word)id, GC_count_threads());
-#     endif
-    }
-  }
-#endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
 
 /* Return a GC_thread corresponding to a given thread id, or    */
 /* NULL if it is not there.                                     */
@@ -1321,6 +1272,7 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
           /* we just skip explicit freeing of GC_threads entries.       */
 #         if !defined(THREAD_SANITIZER) || !defined(CAN_CALL_ATFORK)
             if (p != &first_thread) {
+              /* TODO: Should call mach_port_deallocate? */
               GC_ASSERT(p -> crtn != &first_crtn);
               GC_INTERNAL_FREE(p -> crtn);
               GC_INTERNAL_FREE(p);
@@ -2125,8 +2077,6 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_ASSERT(GC_getspecific(GC_thread_key) == &me->tlfs);
       GC_destroy_thread_local(&me->tlfs);
-#   else
-      (void)me;
 #   endif
 #   ifdef NACL
       GC_nacl_shutdown_gc_thread();
@@ -2144,7 +2094,7 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
       } else
 #   endif
     /* else */ {
-      GC_delete_thread(thread_id_self());
+      GC_delete_thread(me);
     }
 #   if defined(THREAD_LOCAL_ALLOC)
       /* It is required to call remove_specific defined in specific.c. */
@@ -2388,9 +2338,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
       /* from GC_threads (unless it has been registered again from the  */
       /* client thread key destructor).                                 */
       if (KNOWN_FINISHED(t)) {
-        GC_delete_gc_thread_no_free(t);
-        GC_INTERNAL_FREE(t -> crtn);
-        GC_INTERNAL_FREE(t);
+        GC_delete_thread(t);
       }
       UNLOCK();
     }
@@ -2422,12 +2370,11 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     result = REAL_FUNC(pthread_detach)(thread);
     if (EXPECT(0 == result, TRUE)) {
       LOCK();
-      t -> flags |= DETACHED;
       /* Here the pthread id may have been recycled.    */
       if (KNOWN_FINISHED(t)) {
-        GC_delete_gc_thread_no_free(t);
-        GC_INTERNAL_FREE(t -> crtn);
-        GC_INTERNAL_FREE(t);
+        GC_delete_thread(t);
+      } else {
+        t -> flags |= DETACHED;
       }
       UNLOCK();
     }

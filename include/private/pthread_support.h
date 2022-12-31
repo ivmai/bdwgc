@@ -334,7 +334,7 @@ GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
     GC_INNER GC_thread GC_lookup_by_pthread(pthread_t);
     GC_INNER void GC_win32_cache_self_pthread(thread_id_t);
 # else
-    GC_INNER void GC_delete_gc_thread_no_free(GC_thread);
+    GC_INNER void GC_delete_thread(GC_thread);
 # endif
 
 # ifdef CAN_HANDLE_FORK
