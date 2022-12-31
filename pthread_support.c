@@ -634,6 +634,7 @@ void GC_push_thread_structures(void)
 #   ifdef E2K
       GC_PUSH_ALL_SYM(first_crtn.backing_store_end);
 #   endif
+    GC_ASSERT(NULL == first_thread.tm.next && NULL == first_thread.status);
     GC_PUSH_ALL_SYM(first_thread.crtn);
     GC_PUSH_ALL_SYM(saved_crtn);
   }
@@ -684,17 +685,17 @@ void GC_push_thread_structures(void)
 
 /* Add a thread to GC_threads.  We assume it wasn't already there.      */
 /* The id field is set by the caller.                                   */
-GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t id)
+GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t self_id)
 {
-    int hv = THREAD_TABLE_INDEX(id);
+    int hv = THREAD_TABLE_INDEX(self_id);
     GC_thread result;
 
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef DEBUG_THREADS
-        GC_log_printf("Creating thread %p\n", (void *)(signed_word)id);
+        GC_log_printf("Creating thread %p\n", (void *)(signed_word)self_id);
         for (result = GC_threads[hv];
              result != NULL; result = result -> tm.next)
-          if (!THREAD_ID_EQUAL(result -> id, id)) {
+          if (!THREAD_ID_EQUAL(result -> id, self_id)) {
             GC_log_printf("Hash collision at GC_threads[%d]\n", hv);
             break;
           }
@@ -716,9 +717,10 @@ GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t id)
         GC_stack_context_t crtn;
 
         GC_ASSERT(!GC_win32_dll_threads);
+        GC_ASSERT(!GC_in_thread_creation);
+        GC_in_thread_creation = TRUE; /* OK to collect from unknown thread */
         crtn = (GC_stack_context_t)GC_INTERNAL_MALLOC(
                         sizeof(struct GC_StackContext_Rep), NORMAL);
-        if (EXPECT(NULL == crtn, FALSE)) return NULL;
 
         /* The current stack is not scanned until the thread is         */
         /* registered, thus crtn pointer is to be retained in the       */
@@ -729,11 +731,9 @@ GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t id)
         result = (GC_thread)GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep),
                                                NORMAL);
         saved_crtn = NULL; /* no more collections till thread is registered */
-
-        if (EXPECT(NULL == result, FALSE)) {
-          GC_INTERNAL_FREE(crtn);
-          return NULL;
-        }
+        GC_in_thread_creation = FALSE;
+        if (NULL == crtn || NULL == result)
+          ABORT("Failed to allocate memory for thread registering");
         result -> crtn = crtn;
     }
     /* The id field is not set here. */
@@ -1181,6 +1181,7 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
             DCL_LOCK_STATE;
 
             ENTER_GC();
+            GC_ASSERT(!GC_in_thread_creation);
             GC_in_thread_creation = TRUE;
             GC_collect_a_little_inner(1);
             GC_in_thread_creation = FALSE;
@@ -1526,15 +1527,11 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
   GC_thread me;
 
   GC_ASSERT(I_HOLD_LOCK());
-  GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
   me = GC_new_thread(self_id);
-  if (NULL == me)
-    ABORT("Failed to allocate memory for thread registering");
   me -> id = self_id;
 # ifdef GC_DARWIN_THREADS
     me -> mach_thread = mach_thread_self();
 # endif
-  GC_in_thread_creation = FALSE;
   GC_record_stack_base(me -> crtn, sb);
   return me;
 }

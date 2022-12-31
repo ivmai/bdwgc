@@ -241,12 +241,7 @@ GC_INNER GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
     } else
 # endif
   /* else */ /* Not using DllMain */ {
-    GC_ASSERT(I_HOLD_LOCK());
-    GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
     me = GC_new_thread(self_id);
-    GC_in_thread_creation = FALSE;
-    if (NULL == me)
-      ABORT("Failed to allocate memory for thread registering");
   }
 # ifdef GC_PTHREADS
     me -> pthread_id = pthread_self();
