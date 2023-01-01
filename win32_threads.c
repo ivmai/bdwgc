@@ -62,7 +62,12 @@
 # ifdef CAN_CALL_ATFORK
 #   include <unistd.h>
 # endif
-# include <semaphore.h>
+
+# ifdef EMULATE_PTHREAD_SEMAPHORE
+#   include "private/darwin_semaphore.h"
+# else
+#   include <semaphore.h>
+# endif
 
 #elif !defined(MSWINCE)
 # include <process.h>  /* For _beginthreadex, _endthreadex */
