@@ -634,7 +634,10 @@ void GC_push_thread_structures(void)
 #   ifdef E2K
       GC_PUSH_ALL_SYM(first_crtn.backing_store_end);
 #   endif
-    GC_ASSERT(NULL == first_thread.tm.next && NULL == first_thread.status);
+    GC_ASSERT(NULL == first_thread.tm.next);
+#   ifdef GC_PTHREADS
+      GC_ASSERT(NULL == first_thread.status);
+#   endif
     GC_PUSH_ALL_SYM(first_thread.crtn);
     GC_PUSH_ALL_SYM(saved_crtn);
   }
