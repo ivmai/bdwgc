@@ -80,8 +80,8 @@ CFLAGS+= -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
 # part of the build process, i.e. on the build machine.  These will usually
 # be the same as CC and CFLAGS, except in a cross-compilation environment.
 # Note that HOSTCFLAGS should include any -D flags that affect thread support.
-HOSTCC?= $(CC)
-HOSTCFLAGS?= $(CFLAGS)
+HOSTCC= $(CC)
+HOSTCFLAGS= $(CFLAGS)
 
 # For dynamic library builds, it may be necessary to add flags to generate
 # PIC code, e.g. -fPIC on Linux.
