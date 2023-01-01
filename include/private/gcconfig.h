@@ -3057,6 +3057,14 @@ EXTERN_C_BEGIN
 # define CAN_HANDLE_FORK
 #endif
 
+/* Workaround "failed to create new win32 semaphore" Cygwin fatal error */
+/* during semaphores fixup-after-fork.                                  */
+#if defined(CYGWIN32) && defined(GC_WIN32_THREADS) \
+    && defined(CAN_HANDLE_FORK) && !defined(EMULATE_PTHREAD_SEMAPHORE) \
+    && !defined(CYGWIN_SEM_FIXUP_AFTER_FORK_BUG_FIXED)
+# define EMULATE_PTHREAD_SEMAPHORE
+#endif
+
 #if defined(CAN_HANDLE_FORK) && !defined(CAN_CALL_ATFORK) \
     && !defined(GC_NO_CAN_CALL_ATFORK) && !defined(HOST_TIZEN) \
     && !defined(HURD) && (!defined(HOST_ANDROID) || __ANDROID_API__ >= 21)
