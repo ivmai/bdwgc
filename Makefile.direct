@@ -92,7 +92,13 @@ HOSTCFLAGS= $(CFLAGS)
 # Look into doc/README.macros for the description of the "define arguments"
 # influencing the collector configuration.
 
-CXXFLAGS?= $(CFLAGS)
+# Flags for the C++ files.
+# Note: non-GNU make might not recognize "?=" properly, so just duplicate
+# the flags of CFLAGS as a workaround.
+CXXFLAGS?=
+CXXFLAGS+= -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
+  $(CFLAGS_DEFAULT_MACROS) $(CFLAGS_FOR_PIC) $(CFLAGS_EXTRA)
+
 AR= ar
 
 RANLIB= ranlib
