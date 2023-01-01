@@ -3865,8 +3865,6 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     GC_INNER GC_bool GC_dirty_init(void)
 # endif
   {
-    GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT(NULL == soft_vdb_buf);
 #   ifdef MPROTECT_VDB
       char * str = GETENV("GC_USE_GETWRITEWATCH");
 #     ifdef GC_PREFER_MPROTECT_VDB
@@ -3877,6 +3875,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
           return FALSE; /* the environment variable is set "0" */
 #     endif
 #   endif
+    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(NULL == soft_vdb_buf);
 #   ifndef NO_SOFT_VDB_LINUX_VER_RUNTIME_CHECK
       if (!ensure_min_linux_ver(3, 18)) {
         GC_COND_LOG_PRINTF(
