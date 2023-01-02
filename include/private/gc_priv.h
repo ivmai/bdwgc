@@ -1881,7 +1881,7 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags);
                         /* Allocate a large block of size lb bytes.     */
                         /* The block is not cleared.                    */
                         /* Flags is 0 or IGNORE_OFF_PAGE.               */
-                        /* Calls GC_allchblk to do the actual           */
+                        /* Calls GC_allochblk to do the actual          */
                         /* allocation, but also triggers GC and/or      */
                         /* heap expansion as appropriate.               */
                         /* Does not update GC_bytes_allocd, but does    */
