@@ -1545,7 +1545,12 @@ void run_one_test(void)
           /* TODO: GC_memalign and friends are not tested well. */
           for (i = sizeof(GC_word); i < 512; i *= 2) {
             GC_word result = (GC_word) GC_memalign(i, 17);
-            if (result % i != 0 || result == 0 || *(int *)result != 0) FAIL;
+
+            if (result % i != 0 || result == 0 || *(int *)result != 0) {
+              GC_printf("GC_memalign(%u,17) produced incorrect result: %p\n",
+                        (unsigned)i, (void *)result);
+              FAIL;
+            }
           }
         }
 #     ifndef GC_NO_VALLOC
@@ -1553,12 +1558,17 @@ void run_one_test(void)
           void *p = GC_valloc(78);
 
           if (NULL == p || ((GC_word)p & 0x1ff /* at least */) != 0
-              || *(int *)p != 0)
+              || *(int *)p != 0) {
+            GC_printf("GC_valloc() produced incorrect result: %p\n", p);
             FAIL;
+          }
+
           p = GC_pvalloc(123);
           /* Note: cannot check GC_size() result. */
-          if (NULL == p || ((GC_word)p & 0x1ff) != 0 || *(int *)p != 0)
+          if (NULL == p || ((GC_word)p & 0x1ff) != 0 || *(int *)p != 0) {
+            GC_printf("GC_pvalloc() produced incorrect result: %p\n", p);
             FAIL;
+          }
         }
 #     endif
 #     ifndef ALL_INTERIOR_POINTERS
@@ -2268,8 +2278,10 @@ DWORD __stdcall thr_window(void *arg)
   MSG msg;
 
   UNUSED_ARG(arg);
-  if (!RegisterClass(&win_class))
+  if (!RegisterClass(&win_class)) {
+    GC_printf("RegisterClass failed\n");
     FAIL;
+  }
 
   win_handle = CreateWindowEx(
     0,
@@ -2282,8 +2294,10 @@ DWORD __stdcall thr_window(void *arg)
     GetModuleHandle(NULL),
     NULL);
 
-  if (win_handle == NULL)
+  if (NULL == win_handle) {
+    GC_printf("CreateWindow failed\n");
     FAIL;
+  }
 
   SetEvent(win_created_h);
 
@@ -2345,8 +2359,10 @@ DWORD __stdcall thr_window(void *arg)
       GC_printf("Thread creation failed, errcode= %d\n", (int)GetLastError());
       FAIL;
     }
-    if (WaitForSingleObject(win_created_h, INFINITE) != WAIT_OBJECT_0)
+    if (WaitForSingleObject(win_created_h, INFINITE) != WAIT_OBJECT_0) {
+      GC_printf("WaitForSingleObject failed 1\n");
       FAIL;
+    }
     CloseHandle(win_created_h);
 # endif
   set_print_procs();
@@ -2370,8 +2386,10 @@ DWORD __stdcall thr_window(void *arg)
 # endif /* NTHREADS > 0 */
 # ifdef MSWINCE
     PostMessage(win_handle, WM_CLOSE, 0, 0);
-    if (WaitForSingleObject(win_thr_h, INFINITE) != WAIT_OBJECT_0)
+    if (WaitForSingleObject(win_thr_h, INFINITE) != WAIT_OBJECT_0) {
+      GC_printf("WaitForSingleObject failed 2\n");
       FAIL;
+    }
 # endif
   run_single_threaded_test();
   check_heap_stats();
@@ -2483,12 +2501,16 @@ int main(void)
     n_tests = 0;
     enable_incremental_mode();
     GC_set_min_bytes_allocd(1);
-    if (GC_get_min_bytes_allocd() != 1)
+    if (GC_get_min_bytes_allocd() != 1) {
+        GC_printf("GC_get_min_bytes_allocd() wrong result\n");
         FAIL;
+    }
     GC_set_rate(10);
     GC_set_max_prior_attempts(GC_get_max_prior_attempts());
-    if (GC_get_rate() != 10)
+    if (GC_get_rate() != 10) {
+        GC_printf("GC_get_rate() wrong result\n");
         FAIL;
+    }
     GC_set_warn_proc(warn_proc);
     if ((code = pthread_key_create(&fl_key, 0)) != 0) {
         GC_printf("Key creation failed, errno= %d\n", code);
