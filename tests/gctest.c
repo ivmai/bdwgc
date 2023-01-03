@@ -1551,16 +1551,20 @@ void run_one_test(void)
       }
         {
           size_t i;
+          void *p;
 
-          (void)GC_malloc(17);
+          p = GC_malloc(17);
+          CHECK_OUT_OF_MEMORY(p);
           AO_fetch_and_add1(&collectable_count);
+
           /* TODO: GC_memalign and friends are not tested well. */
           for (i = sizeof(GC_word); i < 512; i *= 2) {
-            GC_word result = (GC_word) GC_memalign(i, 17);
-
-            if (result % i != 0 || result == 0 || *(int *)result != 0) {
+            p = GC_memalign(i, 17);
+            CHECK_OUT_OF_MEMORY(p);
+            AO_fetch_and_add1(&collectable_count);
+            if ((word)p % i != 0 || *(int *)p != 0) {
               GC_printf("GC_memalign(%u,17) produced incorrect result: %p\n",
-                        (unsigned)i, (void *)result);
+                        (unsigned)i, p);
               FAIL;
             }
           }
