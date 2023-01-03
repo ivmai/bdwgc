@@ -1063,13 +1063,16 @@ void chktree(tn *t, int n)
     chktree(t -> rchild, n-1);
 }
 
-
 #if defined(GC_PTHREADS)
-pthread_key_t fl_key;
+  pthread_key_t fl_key;
+#endif
 
 void * alloc8bytes(void)
 {
-# if defined(SMALL_CONFIG) || defined(GC_DEBUG)
+# ifndef GC_PTHREADS
+    AO_fetch_and_add1(&atomic_count);
+    return GC_MALLOC_ATOMIC(8);
+# elif defined(SMALL_CONFIG) || defined(GC_DEBUG)
     AO_fetch_and_add1(&collectable_count);
     return(GC_MALLOC(8));
 # else
@@ -1080,7 +1083,7 @@ void * alloc8bytes(void)
     my_free_list_ptr = (void **)pthread_getspecific(fl_key);
     if (my_free_list_ptr == 0) {
         my_free_list_ptr = GC_NEW_UNCOLLECTABLE(void *);
-        CHECK_OUT_OF_MEMORY(my_free_list_ptr);
+        if (NULL == my_free_list_ptr) return NULL;
         AO_fetch_and_add1(&uncollectable_count);
         if (pthread_setspecific(fl_key, my_free_list_ptr) != 0) {
             GC_printf("pthread_setspecific failed\n");
@@ -1090,7 +1093,7 @@ void * alloc8bytes(void)
     my_free_list = *my_free_list_ptr;
     if (my_free_list == 0) {
         my_free_list = GC_malloc_many(8);
-        CHECK_OUT_OF_MEMORY(my_free_list);
+        if (NULL == my_free_list) return NULL;
     }
     next = GC_NEXT(my_free_list);
     GC_PTR_STORE_AND_DIRTY(my_free_list_ptr, next);
@@ -1099,10 +1102,6 @@ void * alloc8bytes(void)
     return(my_free_list);
 # endif
 }
-
-#else
-#   define alloc8bytes() GC_MALLOC_ATOMIC(8)
-#endif
 
 #include "gc_inline.h"
 
@@ -1126,11 +1125,9 @@ void alloc_small(int n)
     int i;
 
     for (i = 0; i < n; i += 8) {
-        if (alloc8bytes() == 0) {
-            GC_printf("Out of memory\n");
-            FAIL;
-        }
-        AO_fetch_and_add1(&atomic_count);
+        void *p = alloc8bytes();
+
+        CHECK_OUT_OF_MEMORY(p);
     }
 }
 
