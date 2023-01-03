@@ -1572,15 +1572,18 @@ void run_one_test(void)
         {
           void *p = GC_valloc(78);
 
-          if (NULL == p || ((GC_word)p & 0x1ff /* at least */) != 0
-              || *(int *)p != 0) {
+          CHECK_OUT_OF_MEMORY(p);
+          AO_fetch_and_add1(&collectable_count);
+          if (((GC_word)p & 0x1ff /* at least */) != 0 || *(int *)p != 0) {
             GC_printf("GC_valloc() produced incorrect result: %p\n", p);
             FAIL;
           }
 
           p = GC_pvalloc(123);
+          CHECK_OUT_OF_MEMORY(p);
+          AO_fetch_and_add1(&collectable_count);
           /* Note: cannot check GC_size() result. */
-          if (NULL == p || ((GC_word)p & 0x1ff) != 0 || *(int *)p != 0) {
+          if (((GC_word)p & 0x1ff) != 0 || *(int *)p != 0) {
             GC_printf("GC_pvalloc() produced incorrect result: %p\n", p);
             FAIL;
           }
@@ -1602,6 +1605,7 @@ void run_one_test(void)
     /* Test floating point alignment */
         {
           double *dp = GC_NEW(double);
+
           CHECK_OUT_OF_MEMORY(dp);
           AO_fetch_and_add1(&collectable_count);
           *dp = 1.0;
