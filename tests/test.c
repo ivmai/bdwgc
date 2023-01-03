@@ -1199,13 +1199,8 @@ void * GC_CALLBACK inc_int_counter(void *pcounter)
 void run_one_test(void)
 {
 #   ifndef DBG_HDRS_ALL
-        char *x;
+        char *x, *y;
         char **z;
-#       ifdef LINT
-            char *y = 0;
-#       else
-            char *y = (char *)(GC_word)fail_proc1;
-#       endif
         CLOCK_TYPE typed_time;
 #   endif
     CLOCK_TYPE start_time;
@@ -1225,21 +1220,35 @@ void run_one_test(void)
       }
 #   endif
 #   ifndef DBG_HDRS_ALL
-      collectable_count += 3;
-      if ((GC_size(GC_malloc(7)) != 8 &&
-           GC_size(GC_malloc(7)) != MIN_WORDS * sizeof(GC_word))
-           || GC_size(GC_malloc(15)) != 16) {
+      collectable_count++;
+      x = (char*)GC_malloc(7);
+      CHECK_OUT_OF_MEMORY(x);
+      collectable_count++;
+      y = (char*)GC_malloc(7);
+      CHECK_OUT_OF_MEMORY(y);
+      if (GC_size(x) != 8 && GC_size(y) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_size produced unexpected results\n");
         FAIL;
       }
+      collectable_count++;
+      x = (char*)GC_malloc(15);
+      CHECK_OUT_OF_MEMORY(x);
+      if (GC_size(x) != 16) {
+        GC_printf("GC_size produced unexpected results 2\n");
+        FAIL;
+      }
       collectable_count += 1;
-      if (GC_size(GC_malloc(0)) != MIN_WORDS * sizeof(GC_word)) {
+      x = (char*)GC_malloc(0);
+      CHECK_OUT_OF_MEMORY(x);
+      if (GC_size(x) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_malloc(0) failed: GC_size returns %lu\n",
                       (unsigned long)GC_size(GC_malloc(0)));
         FAIL;
       }
       uncollectable_count++;
-      if (GC_size(GC_malloc_uncollectable(0)) != MIN_WORDS * sizeof(GC_word)) {
+      x = (char*)GC_malloc_uncollectable(0);
+      CHECK_OUT_OF_MEMORY(x);
+      if (GC_size(x) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_malloc_uncollectable(0) failed\n");
         FAIL;
       }
@@ -1247,6 +1256,7 @@ void run_one_test(void)
       GC_is_visible_print_proc = fail_proc1;
       collectable_count += 1;
       x = GC_malloc(16);
+      CHECK_OUT_OF_MEMORY(x);
       if (GC_base(GC_PTR_ADD(x, 13)) != x) {
         GC_printf("GC_base(heap ptr) produced incorrect result\n");
         FAIL;
@@ -1270,6 +1280,7 @@ void run_one_test(void)
         GC_printf("Bad INCR/DECR result\n");
         FAIL;
       }
+      y = (char *)(GC_word)fail_proc1;
 #     ifndef PCR
         if (GC_base(y) != 0) {
           GC_printf("GC_base(fn_ptr) produced incorrect result\n");
