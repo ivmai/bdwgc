@@ -112,7 +112,7 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
   word *p, *prev;
   word *last_object;            /* points to last object in new hblk    */
 
-  /* Do a few prefetches here, just because its cheap.          */
+  /* Do a few prefetches here, just because it's cheap.         */
   /* If we were more serious about it, these should go inside   */
   /* the loops.  But write prefetches usually don't seem to     */
   /* matter much.                                               */

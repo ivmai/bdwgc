@@ -356,7 +356,7 @@ void *GC_amiga_rec_alloc(size_t size,void *(*AllocFunction)(size_t size2),const 
 void *GC_amiga_allocwrapper_any(size_t size,void *(*AllocFunction)(size_t size2)){
         void *ret;
 
-        GC_amiga_dontalloc=TRUE; /* Pretty tough thing to do, but its indeed necessary. */
+        GC_amiga_dontalloc=TRUE; /* Pretty tough thing to do, but it's indeed necessary. */
         latestsize=size;
 
         ret=(*AllocFunction)(size);
