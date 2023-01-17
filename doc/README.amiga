@@ -49,7 +49,7 @@ WHATS NEW:
                  GC from returning chip-mem. Beware that it slows down a lot
                  when a program is rapidly allocating/deallocating when
                  there's either very little fast-memory left or very little
-                 chip-memory left. Its not a very common situation, but gctest
+                 chip-memory left. It's not a very common situation, but gctest
                  sometimes (very rare) use many minutes because of this.
 
    GC_AMIGA_RETRY - If gc succeed allocating memory, but it is chip-mem,
