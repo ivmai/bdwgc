@@ -1301,7 +1301,7 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
 #   endif
 #   ifdef GC_DARWIN_THREADS
       /* Update thread Id after fork (it is OK to call  */
-      /* GC_destroy_thread_local and GC_free_internal   */
+      /* GC_destroy_thread_local and GC_free_inner      */
       /* before update).                                */
       me -> mach_thread = mach_thread_self();
 #   endif
@@ -1316,7 +1316,7 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
       /* Some TLS implementations (e.g., on Cygwin) might be not        */
       /* fork-friendly, so we re-assign thread-local pointer to 'tlfs'  */
       /* for safety instead of the assertion check (again, it is OK to  */
-      /* call GC_destroy_thread_local and GC_free_internal before).     */
+      /* call GC_destroy_thread_local and GC_free_inner before).        */
       {
         int res = GC_setspecific(GC_thread_key, &me->tlfs);
 
