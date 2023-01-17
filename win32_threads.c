@@ -1029,7 +1029,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 #     if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
         /* For Cygwin, we need to re-assign thread-local pointer to     */
         /* 'tlfs' (it is OK to call GC_destroy_thread_local and         */
-        /* GC_free_internal before this action).                        */
+        /* GC_free_inner before this action).                           */
         if (GC_setspecific(GC_thread_key, &me->tlfs) != 0)
           ABORT("GC_setspecific failed (in child)");
 #     endif
