@@ -645,7 +645,7 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
               }
             }
         } /* otherwise free list objects are marked,    */
-          /* and its safe to leave them                 */
+          /* and it's safe to leave them.               */
         BZERO(rlist, (MAXOBJGRANULES + 1) * sizeof(void *));
       }
 
