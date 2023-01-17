@@ -1990,7 +1990,7 @@ void GC_register_data_segments(void)
 # endif
 
 #ifdef DATASTART_USES_BSDGETDATASTART
-/* Its unclear whether this should be identical to the above, or        */
+/* It's unclear whether this should be identical to the above, or       */
 /* whether it should apply to non-x86 architectures.                    */
 /* For now we don't assume that there is always an empty page after     */
 /* etext.  But in some cases there actually seems to be slightly more.  */
