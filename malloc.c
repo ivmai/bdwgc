@@ -479,7 +479,7 @@ GC_API void GC_CALL GC_free(void * p)
         LOCK();
         GC_bytes_freed += sz;
         if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
-                /* Its unnecessary to clear the mark bit.  If the       */
+                /* It's unnecessary to clear the mark bit.  If the      */
                 /* object is reallocated, it doesn't matter.  O.w. the  */
                 /* collector will do it, since it's on a free list.     */
         if (ok -> ok_init) {

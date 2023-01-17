@@ -371,7 +371,7 @@ the change in the definition of accessibility.
 
 * I added support for operator new[].  Since most (all?) compilers
 don't yet support operator new[], it is conditionalized on
--DOPERATOR_NEW_ARRAY.  The code is untested, but its trivial and looks
+-DOPERATOR_NEW_ARRAY.  The code is untested, but it's trivial and looks
 correct.
 
 * The test program test_gc_c++ (later renamed test_cpp.cc)
