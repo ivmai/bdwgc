@@ -2486,6 +2486,8 @@ GC_EXTERN GC_bool GC_print_back_height;
 #endif
 
 #ifdef THREADS
+  /* Explicitly deallocate the object when we already hold lock.        */
+  /* Only used for internally allocated objects.                        */
   GC_INNER void GC_free_inner(void * p);
 #endif
 

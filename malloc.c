@@ -560,15 +560,40 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
 
 #endif /* REDIRECT_MALLOC */
 
-/* Explicitly deallocate an object p.                           */
+/* Explicitly deallocate the object.  hhdr should correspond to p.      */
+static void free_internal(void *p, hdr *hhdr)
+{
+  size_t sz = (size_t)(hhdr -> hb_sz); /* in bytes */
+  size_t ngranules = BYTES_TO_GRANULES(sz); /* size in granules */
+  int knd = hhdr -> hb_obj_kind;
+
+  GC_bytes_freed += sz;
+  if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
+  if (EXPECT(ngranules <= MAXOBJGRANULES, TRUE)) {
+    struct obj_kind *ok = &GC_obj_kinds[knd];
+    void **flh;
+
+    /* It is unnecessary to clear the mark bit.  If the object is       */
+    /* reallocated, it does not matter.  Otherwise, the collector will  */
+    /* do it, since it is on a free list.                               */
+    if (ok -> ok_init && EXPECT(sz > sizeof(word), TRUE)) {
+      BZERO((word *)p + 1, sz - sizeof(word));
+    }
+
+    flh = &(ok -> ok_freelist[ngranules]);
+    obj_link(p) = *flh;
+    *flh = (ptr_t)p;
+  } else {
+    if (sz > HBLKSIZE) {
+      GC_large_allocd_bytes -= HBLKSIZE * OBJ_SZ_TO_BLOCKS(sz);
+    }
+    GC_freehblk(HBLKPTR(p));
+  }
+}
+
 GC_API void GC_CALL GC_free(void * p)
 {
-    struct hblk *h;
     hdr *hhdr;
-    size_t sz; /* In bytes */
-    size_t ngranules;   /* sz in granules */
-    int knd;
-    struct obj_kind * ok;
     DCL_LOCK_STATE;
 
     if (p /* != NULL */) {
@@ -582,8 +607,7 @@ GC_API void GC_CALL GC_free(void * p)
       GC_log_printf("GC_free(%p) after GC #%lu\n",
                     p, (unsigned long)GC_gc_no);
 #   endif
-    h = HBLKPTR(p);
-    hhdr = HDR(h);
+    hhdr = HDR(p);
 #   if defined(REDIRECT_MALLOC) && \
         ((defined(NEED_CALLINFO) && defined(GC_HAVE_BUILTIN_BACKTRACE)) \
          || defined(GC_SOLARIS_THREADS) || defined(GC_LINUX_THREADS) \
@@ -594,83 +618,19 @@ GC_API void GC_CALL GC_free(void * p)
         /* initialization.  For the others, this seems to happen        */
         /* implicitly.                                                  */
         /* Don't try to deallocate that memory.                         */
-        if (0 == hhdr) return;
+        if (EXPECT(NULL == hhdr, FALSE)) return;
 #   endif
     GC_ASSERT(GC_base(p) == p);
-    sz = (size_t)hhdr->hb_sz;
-    ngranules = BYTES_TO_GRANULES(sz);
-    knd = hhdr -> hb_obj_kind;
-    ok = &GC_obj_kinds[knd];
-    if (EXPECT(ngranules <= MAXOBJGRANULES, TRUE)) {
-        void **flh;
-
-        LOCK();
-        GC_bytes_freed += sz;
-        if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
-                /* It's unnecessary to clear the mark bit.  If the      */
-                /* object is reallocated, it doesn't matter.  O.w. the  */
-                /* collector will do it, since it's on a free list.     */
-        if (ok -> ok_init && EXPECT(sz > sizeof(word), TRUE)) {
-            BZERO((word *)p + 1, sz-sizeof(word));
-        }
-        flh = &(ok -> ok_freelist[ngranules]);
-        obj_link(p) = *flh;
-        *flh = (ptr_t)p;
-        UNLOCK();
-    } else {
-        size_t nblocks = OBJ_SZ_TO_BLOCKS(sz);
-
-        LOCK();
-        GC_bytes_freed += sz;
-        if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
-        if (nblocks > 1) {
-          GC_large_allocd_bytes -= nblocks * HBLKSIZE;
-        }
-        GC_freehblk(h);
-        UNLOCK();
-    }
+    LOCK();
+    free_internal(p, hhdr);
+    UNLOCK();
 }
 
-/* Explicitly deallocate an object p when we already hold lock.         */
-/* Only used for internally allocated objects, so we can take some      */
-/* shortcuts.                                                           */
 #ifdef THREADS
   GC_INNER void GC_free_inner(void * p)
   {
-    struct hblk *h;
-    hdr *hhdr;
-    size_t sz; /* bytes */
-    size_t ngranules;  /* sz in granules */
-    int knd;
-    struct obj_kind * ok;
-
     GC_ASSERT(I_HOLD_LOCK());
-    h = HBLKPTR(p);
-    hhdr = HDR(h);
-    knd = hhdr -> hb_obj_kind;
-    sz = (size_t)hhdr->hb_sz;
-    ngranules = BYTES_TO_GRANULES(sz);
-    ok = &GC_obj_kinds[knd];
-    if (ngranules <= MAXOBJGRANULES) {
-        void ** flh;
-
-        GC_bytes_freed += sz;
-        if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
-        if (ok -> ok_init && EXPECT(sz > sizeof(word), TRUE)) {
-            BZERO((word *)p + 1, sz-sizeof(word));
-        }
-        flh = &(ok -> ok_freelist[ngranules]);
-        obj_link(p) = *flh;
-        *flh = (ptr_t)p;
-    } else {
-        size_t nblocks = OBJ_SZ_TO_BLOCKS(sz);
-        GC_bytes_freed += sz;
-        if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
-        if (nblocks > 1) {
-          GC_large_allocd_bytes -= nblocks * HBLKSIZE;
-        }
-        GC_freehblk(h);
-    }
+    free_internal(p, HDR(p));
   }
 #endif /* THREADS */
 
