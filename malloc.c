@@ -94,10 +94,8 @@ STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
     result = GC_alloc_large(lb, k, flags);
     if (result != NULL
           && (GC_debugging_started || GC_obj_kinds[k].ok_init)) {
-        word n_blocks = OBJ_SZ_TO_BLOCKS(lb);
-
         /* Clear the whole block, in case of GC_realloc call. */
-        BZERO(result, n_blocks * HBLKSIZE);
+        BZERO(result, HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb));
     }
     return result;
 }
@@ -258,18 +256,16 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
     } else {
         size_t lg;
         size_t lb_rounded;
-        word n_blocks;
         GC_bool init;
 
         lg = ROUNDED_UP_GRANULES(lb);
         lb_rounded = GRANULES_TO_BYTES(lg);
-        n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
         init = GC_obj_kinds[k].ok_init;
         LOCK();
         result = (ptr_t)GC_alloc_large(lb_rounded, k, 0);
         if (0 != result) {
           if (GC_debugging_started) {
-            BZERO(result, n_blocks * HBLKSIZE);
+            BZERO(result, HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_rounded));
           } else {
 #           ifdef THREADS
               /* Clear any memory that might be used for GC descriptors */
@@ -284,7 +280,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
         }
         UNLOCK();
         if (init && !GC_debugging_started && 0 != result) {
-            BZERO(result, n_blocks * HBLKSIZE);
+            BZERO(result, HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_rounded));
         }
     }
     if (EXPECT(NULL == result, FALSE)) return (*GC_get_oom_fn())(lb);

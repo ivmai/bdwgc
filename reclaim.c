@@ -245,8 +245,8 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
   {
     word bit_no = 0;
     ptr_t p, plim;
-    struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
-    int (GC_CALLBACK *disclaim)(void *) = ok->ok_disclaim_proc;
+    struct obj_kind *ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
+    int (GC_CALLBACK *disclaim)(void *) = ok -> ok_disclaim_proc;
 
 #   ifndef THREADS
       GC_ASSERT(sz == hhdr -> hb_sz);
@@ -257,7 +257,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
     for (; (word)p <= (word)plim; bit_no += MARK_BIT_OFFSET(sz)) {
         if (mark_bit_from_hdr(hhdr, bit_no)) {
             p += sz;
-        } else if ((*disclaim)(p)) {
+        } else if (disclaim(p)) {
             set_mark_bit_from_hdr(hhdr, bit_no);
             hhdr -> hb_n_marks++;
             p += sz;
@@ -392,33 +392,27 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
 
 #   ifdef AO_HAVE_load
         /* Atomic access is used to avoid racing with GC_realloc.       */
-        sz = (word)AO_load((volatile AO_t *)&hhdr->hb_sz);
+        sz = (word)AO_load((volatile AO_t *)&(hhdr -> hb_sz));
 #   else
         /* No race as GC_realloc holds the lock while updating hb_sz.   */
         sz = hhdr -> hb_sz;
 #   endif
-    if( sz > MAXOBJBYTES ) {  /* 1 big object */
-        if( !mark_bit_from_hdr(hhdr, 0) ) {
+    if (sz > MAXOBJBYTES) { /* 1 big object */
+        if (!mark_bit_from_hdr(hhdr, 0)) {
             if (report_if_found) {
               GC_add_leaked((ptr_t)hbp);
             } else {
-              word blocks;
-
 #             ifdef ENABLE_DISCLAIM
-                if (EXPECT(hhdr->hb_flags & HAS_DISCLAIM, 0)) {
-                  if ((*ok->ok_disclaim_proc)(hbp)) {
+                if (EXPECT(hhdr -> hb_flags & HAS_DISCLAIM, 0)) {
+                  if (ok -> ok_disclaim_proc(hbp)) {
                     /* Not disclaimed => resurrect the object. */
                     set_mark_bit_from_hdr(hhdr, 0);
                     goto in_use;
                   }
                 }
 #             endif
-              blocks = OBJ_SZ_TO_BLOCKS(sz);
-#             if defined(CPPCHECK)
-                GC_noop1((word)&blocks);
-#             endif
-              if (blocks > 1) {
-                GC_large_allocd_bytes -= blocks * HBLKSIZE;
+              if (sz > HBLKSIZE) {
+                GC_large_allocd_bytes -= HBLKSIZE * OBJ_SZ_TO_BLOCKS(sz);
               }
               GC_bytes_found += sz;
               GC_freehblk(hbp);
