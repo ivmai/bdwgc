@@ -1395,7 +1395,7 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
         endp -= HBLKSIZE;
     }
     phdr = GC_install_header(p);
-    if (0 == phdr) {
+    if (EXPECT(NULL == phdr, FALSE)) {
         /* This is extremely unlikely. Can't add it.  This will         */
         /* almost certainly result in a 0 return from the allocator,    */
         /* which is entirely appropriate.                               */

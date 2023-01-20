@@ -33,14 +33,11 @@ STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
     return TRUE;
 }
 
-/* Allocate a large block of size lb bytes.  The block is not cleared.  */
-/* flags argument should be 0 or IGNORE_OFF_PAGE.  EXTRA_BYTES value    */
-/* was already added to lb.                                             */
 GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
 {
     struct hblk * h;
-    word n_blocks;
-    ptr_t result;
+    size_t n_blocks;
+    ptr_t result = NULL;
     GC_bool retry = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -52,15 +49,16 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
       GC_init();
       LOCK();
     }
-    /* Do our share of marking work */
-        if (GC_incremental && !GC_dont_gc) {
+    /* Do our share of marking work.    */
+    if (GC_incremental && !GC_dont_gc) {
             ENTER_GC();
             GC_collect_a_little_inner((int)n_blocks);
             EXIT_GC();
-        }
+    }
+
     h = GC_allochblk(lb, k, flags);
 #   ifdef USE_MUNMAP
-        if (0 == h) {
+        if (NULL == h) {
             GC_merge_unmapped();
             h = GC_allochblk(lb, k, flags);
         }
@@ -69,12 +67,9 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
         h = GC_allochblk(lb, k, flags);
         retry = TRUE;
     }
-    if (h == 0) {
-        result = 0;
-    } else {
-        size_t total_bytes = n_blocks * HBLKSIZE;
+    if (EXPECT(h != NULL, TRUE)) {
         if (n_blocks > 1) {
-            GC_large_allocd_bytes += total_bytes;
+            GC_large_allocd_bytes += HBLKSIZE * n_blocks;
             if (GC_large_allocd_bytes > GC_max_large_allocd_bytes)
                 GC_max_large_allocd_bytes = GC_large_allocd_bytes;
         }
@@ -92,7 +87,7 @@ STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
 
     GC_ASSERT(I_HOLD_LOCK());
     result = GC_alloc_large(lb, k, flags);
-    if (result != NULL
+    if (EXPECT(result != NULL, TRUE)
           && (GC_debugging_started || GC_obj_kinds[k].ok_init)) {
         /* Clear the whole block, in case of GC_realloc call. */
         BZERO(result, HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb));
@@ -263,7 +258,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
         init = GC_obj_kinds[k].ok_init;
         LOCK();
         result = (ptr_t)GC_alloc_large(lb_rounded, k, 0);
-        if (0 != result) {
+        if (EXPECT(result != NULL, TRUE)) {
           if (GC_debugging_started) {
             BZERO(result, HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_rounded));
           } else {

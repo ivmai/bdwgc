@@ -2255,19 +2255,29 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t words, GC_bool clear,
 
 GC_INNER struct hblk * GC_allochblk(size_t size_in_bytes, int kind,
                                     unsigned flags);
-                                /* Allocate a heap block, inform        */
-                                /* the marker that block is valid       */
-                                /* for objects of indicated size.       */
+                                /* Allocate (and return pointer to)     */
+                                /* a heap block for objects of the      */
+                                /* given size (in bytes),               */
+                                /* searching over the appropriate free  */
+                                /* block lists; inform the marker       */
+                                /* that the found block is valid for    */
+                                /* objects of the indicated size.       */
+                                /* The client is responsible for        */
+                                /* clearing the block, if necessary.    */
+                                /* Note: we set obj_map field in the    */
+                                /* header correctly; the caller is      */
+                                /* responsible for building an object   */
+                                /* freelist in the block.               */
 
 GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags);
                         /* Allocate a large block of size lb bytes.     */
-                        /* The block is not cleared.  flags argument    */
-                        /* should be 0 or IGNORE_OFF_PAGE.              */
-                        /* Calls GC_allochblk to do the actual          */
-                        /* allocation, but also triggers GC and/or      */
-                        /* heap expansion as appropriate.               */
-                        /* Does not update GC_bytes_allocd, but does    */
-                        /* other accounting.                            */
+                        /* The block is not cleared.  Assumes that      */
+                        /* EXTRA_BYTES value is already added to lb.    */
+                        /* The flags argument should be IGNORE_OFF_PAGE */
+                        /* or 0.  Calls GC_allochblk() to do the actual */
+                        /* allocation, but also triggers GC and/or heap */
+                        /* expansion as appropriate.  Does not update   */
+                        /* GC_bytes_allocd, but does other accounting.  */
 
 GC_INNER void GC_freehblk(struct hblk * p);
                                 /* Deallocate a heap block and mark it  */
@@ -2284,8 +2294,8 @@ GC_INNER void GC_start_reclaim(GC_bool abort_if_found);
 GC_INNER void GC_continue_reclaim(word sz, int kind);
                                 /* Sweep pages of the given size and    */
                                 /* kind, as long as possible, and       */
-                                /* as long as the corr. free list is    */
-                                /* empty.  Sz is in granules.           */
+                                /* as long as the corresponding free    */
+                                /* list is empty.  sz is in granules.   */
 
 GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old);
                                 /* Reclaim all blocks.  Abort (in a     */
