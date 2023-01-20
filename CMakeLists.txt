@@ -848,7 +848,7 @@ if (build_tests)
 endif(build_tests)
 
 if (enable_docs)
-  install(FILES AUTHORS LICENSE README.md
+  install(FILES AUTHORS ChangeLog LICENSE README.md
           DESTINATION "${CMAKE_INSTALL_DOCDIR}")
   install(DIRECTORY doc/ DESTINATION "${CMAKE_INSTALL_DOCDIR}"
           FILES_MATCHING

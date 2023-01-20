@@ -214,6 +214,7 @@ include tests/tests.am
 if ENABLE_DOCS
 dist_doc_DATA = \
     AUTHORS \
+    ChangeLog \
     LICENSE \
     README.md \
     doc/platforms/README.aix \
