@@ -2254,10 +2254,10 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t words, GC_bool clear,
                                 /* called explicitly without GC lock.   */
 
 GC_INNER struct hblk * GC_allochblk(size_t size_in_bytes, int kind,
-                                    unsigned flags);
+                                    unsigned flags, size_t align_m1);
                                 /* Allocate (and return pointer to)     */
                                 /* a heap block for objects of the      */
-                                /* given size (in bytes),               */
+                                /* given size and alignment (in bytes), */
                                 /* searching over the appropriate free  */
                                 /* block lists; inform the marker       */
                                 /* that the found block is valid for    */
@@ -2269,8 +2269,10 @@ GC_INNER struct hblk * GC_allochblk(size_t size_in_bytes, int kind,
                                 /* responsible for building an object   */
                                 /* freelist in the block.               */
 
-GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags);
-                        /* Allocate a large block of size lb bytes.     */
+GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags,
+                              size_t align_m1);
+                        /* Allocate a large block of size lb bytes with */
+                        /* the requested alignment (align_m1 plus one). */
                         /* The block is not cleared.  Assumes that      */
                         /* EXTRA_BYTES value is already added to lb.    */
                         /* The flags argument should be IGNORE_OFF_PAGE */
@@ -2335,6 +2337,8 @@ GC_INNER void GC_collect_a_little_inner(int n);
                                 /* collection work, if appropriate.     */
                                 /* A unit is an amount appropriate for  */
                                 /* HBLKSIZE bytes of allocation.        */
+
+GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, size_t align_m1);
 
 GC_INNER void * GC_generic_malloc_inner(size_t lb, int k);
                                 /* Allocate an object of the given      */

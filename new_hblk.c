@@ -177,8 +177,8 @@ GC_INNER void GC_new_hblk(size_t gran, int kind)
   if (GC_debugging_started) clear = TRUE;
 
   /* Allocate a new heap block */
-    h = GC_allochblk(GRANULES_TO_BYTES(gran), kind, 0);
-    if (h == 0) return;
+    h = GC_allochblk(GRANULES_TO_BYTES(gran), kind, 0 /* flags */, 0);
+    if (EXPECT(NULL == h, FALSE)) return;
 
   /* Mark all objects if appropriate. */
       if (IS_UNCOLLECTABLE(kind)) GC_set_hdr_marks(HDR(h));

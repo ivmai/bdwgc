@@ -674,14 +674,16 @@ STATIC void GC_split_block(struct hblk *h, hdr *hhdr, struct hblk *n,
 }
 
 STATIC struct hblk *GC_allochblk_nth(size_t sz /* bytes */, int kind,
-                                     unsigned flags, int n, int may_split);
+                                     unsigned flags, int n, int may_split,
+                                     size_t align_m1);
 
 #ifdef USE_MUNMAP
 # define AVOID_SPLIT_REMAPPED 2
 #endif
 
 GC_INNER struct hblk *GC_allochblk(size_t sz, int kind,
-                                   unsigned flags /* IGNORE_OFF_PAGE or 0 */)
+                                   unsigned flags /* IGNORE_OFF_PAGE or 0 */,
+                                   size_t align_m1)
 {
     size_t blocks;
     int start_list;
@@ -692,12 +694,13 @@ GC_INNER struct hblk *GC_allochblk(size_t sz, int kind,
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((sz & (GRANULE_BYTES - 1)) == 0);
     blocks = OBJ_SZ_TO_BLOCKS_CHECKED(sz);
-    if (EXPECT(blocks >= (GC_SIZE_MAX >> 1) / HBLKSIZE, FALSE))
+    if (EXPECT(SIZET_SAT_ADD(blocks * HBLKSIZE, align_m1)
+                >= (GC_SIZE_MAX >> 1), FALSE))
       return NULL; /* overflow */
 
     start_list = GC_hblk_fl_from_blocks(blocks);
     /* Try for an exact match first. */
-    result = GC_allochblk_nth(sz, kind, flags, start_list, FALSE);
+    result = GC_allochblk_nth(sz, kind, flags, start_list, FALSE, align_m1);
     if (result != NULL) return result;
 
     may_split = TRUE;
@@ -723,13 +726,14 @@ GC_INNER struct hblk *GC_allochblk(size_t sz, int kind,
               may_split = AVOID_SPLIT_REMAPPED;
 #         endif
     }
-    if (start_list < UNIQUE_THRESHOLD) {
+    if (start_list < UNIQUE_THRESHOLD && 0 == align_m1) {
       /* No reason to try start_list again, since all blocks are exact  */
       /* matches.                                                       */
       ++start_list;
     }
     for (; start_list <= split_limit; ++start_list) {
-      result = GC_allochblk_nth(sz, kind, flags, start_list, may_split);
+      result = GC_allochblk_nth(sz, kind, flags, start_list, may_split,
+                                align_m1);
       if (result != NULL) break;
     }
     return result;
@@ -742,11 +746,15 @@ STATIC unsigned GC_drop_blacklisted_count = 0;
                         /* Counter of the cases when found block by     */
                         /* GC_allochblk_nth is blacklisted completely.  */
 
+#define ALIGN_PAD_SZ(p, align_m1) \
+               (((align_m1) + 1 - (size_t)(word)(p)) & (align_m1))
+
 static GC_bool next_hblk_fits_better(hdr *hhdr, word size_avail,
-                                     word size_needed)
+                                     word size_needed, size_t align_m1)
 {
   hdr *next_hdr;
   word next_size;
+  size_t next_ofs;
   struct hblk *next_hbp = hhdr -> hb_next;
 
   if (NULL == next_hbp) return FALSE; /* no next block */
@@ -754,18 +762,20 @@ static GC_bool next_hblk_fits_better(hdr *hhdr, word size_avail,
   next_size = next_hdr -> hb_sz;
   if (size_avail <= next_size) return FALSE; /* not enough size */
 
-  return next_size >= size_needed
-         && !GC_is_black_listed(next_hbp, size_needed);
+  next_ofs = ALIGN_PAD_SZ(next_hbp, align_m1);
+  return next_size >= size_needed + next_ofs
+         && !GC_is_black_listed(next_hbp + divHBLKSZ(next_ofs), size_needed);
 }
 
 static struct hblk *find_nonbl_hblk(struct hblk *last_hbp, word size_remain,
-                                    word eff_size_needed)
+                                    word eff_size_needed, size_t align_m1)
 {
-  word search_end = (word)last_hbp + size_remain;
+  word search_end = ((word)last_hbp + size_remain) & ~(word)align_m1;
 
   do {
     struct hblk *next_hbp;
 
+    last_hbp += divHBLKSZ(ALIGN_PAD_SZ(last_hbp, align_m1));
     next_hbp = GC_is_black_listed(last_hbp, eff_size_needed);
     if (NULL == next_hbp) return last_hbp; /* not black-listed */
     last_hbp = next_hbp;
@@ -801,7 +811,7 @@ static void drop_hblk_in_chunks(int n, struct hblk *hbp, hdr *hhdr)
 /* followed by splitting should be generally avoided.  Rounded-up sz    */
 /* plus align_m1 value should be less than GC_SIZE_MAX/2.               */
 STATIC struct hblk *GC_allochblk_nth(size_t sz, int kind, unsigned flags,
-                                     int n, int may_split)
+                                     int n, int may_split, size_t align_m1)
 {
     struct hblk *hbp, *last_hbp;
     hdr *hhdr; /* header corresponding to hbp */
@@ -809,11 +819,13 @@ STATIC struct hblk *GC_allochblk_nth(size_t sz, int kind, unsigned flags,
                                 /* number of bytes in requested objects */
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT(sz > 0);
+    GC_ASSERT(((align_m1 + 1) & align_m1) == 0 && sz > 0);
+    GC_ASSERT(0 == align_m1 || modHBLKSZ(align_m1 + 1) == 0);
   retry:
     /* Search for a big enough block in free list.      */
     for (hbp = GC_hblkfreelist[n];; hbp = hhdr -> hb_next) {
       word size_avail; /* bytes available in this block */
+      size_t align_ofs;
 
       if (hbp /* != NULL */) {
         /* CPPCHECK */
@@ -822,27 +834,29 @@ STATIC struct hblk *GC_allochblk_nth(size_t sz, int kind, unsigned flags,
       }
       GET_HDR(hbp, hhdr); /* set hhdr value */
       size_avail = hhdr -> hb_sz;
+      if (!may_split && size_avail != size_needed) continue;
 
-      if (size_avail < size_needed)
+      align_ofs = ALIGN_PAD_SZ(hbp, align_m1);
+      if (size_avail < size_needed + align_ofs)
         continue; /* the block is too small */
 
       if (size_avail != size_needed) {
-        if (!may_split) continue;
         /* If the next heap block is obviously better, go on.   */
         /* This prevents us from disassembling a single large   */
         /* block to get tiny blocks.                            */
-        if (next_hblk_fits_better(hhdr, size_avail, size_needed))
+        if (next_hblk_fits_better(hhdr, size_avail, size_needed, align_m1))
           continue;
       }
 
       if (IS_UNCOLLECTABLE(kind)
           || (kind == PTRFREE && size_needed <= MAX_BLACK_LIST_ALLOC)) {
-        last_hbp = hbp;
+        last_hbp = hbp + divHBLKSZ(align_ofs);
         break;
       }
 
       last_hbp = find_nonbl_hblk(hbp, size_avail - size_needed,
-                    (flags & IGNORE_OFF_PAGE) != 0 ? HBLKSIZE : size_needed);
+                    (flags & IGNORE_OFF_PAGE) != 0 ? HBLKSIZE : size_needed,
+                    align_m1);
       /* Is non-blacklisted part of enough size?        */
       if (last_hbp != NULL) {
 #       ifdef USE_MUNMAP
@@ -858,7 +872,7 @@ STATIC struct hblk *GC_allochblk_nth(size_t sz, int kind, unsigned flags,
       /* drop some such blocks, since otherwise we spend all our        */
       /* time traversing them if pointer-free blocks are unpopular.     */
       /* A dropped block will be reconsidered at next GC.               */
-      if (size_needed == HBLKSIZE
+      if (size_needed == HBLKSIZE && 0 == align_m1
           && !GC_find_leak && IS_MAPPED(hhdr)
           && (++GC_drop_blacklisted_count & 3) == 0) {
         struct hblk *prev = hhdr -> hb_prev;
@@ -880,11 +894,12 @@ STATIC struct hblk *GC_allochblk_nth(size_t sz, int kind, unsigned flags,
                size_needed >> 10);
           GC_large_alloc_warn_suppressed = 0;
         }
-        last_hbp = hbp;
+        last_hbp = hbp + divHBLKSZ(align_ofs);
         break;
       }
     }
 
+    GC_ASSERT(((word)last_hbp & align_m1) == 0);
     if (last_hbp != hbp) {
       hdr *last_hdr = GC_install_header(last_hbp);
 

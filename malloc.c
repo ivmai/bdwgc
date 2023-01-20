@@ -33,16 +33,17 @@ STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
     return TRUE;
 }
 
-GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
+GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags,
+                              size_t align_m1)
 {
     struct hblk * h;
-    size_t n_blocks;
+    size_t n_blocks; /* includes alignment */
     ptr_t result = NULL;
     GC_bool retry = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
     lb = ROUNDUP_GRANULE_SIZE(lb);
-    n_blocks = OBJ_SZ_TO_BLOCKS_CHECKED(lb);
+    n_blocks = OBJ_SZ_TO_BLOCKS_CHECKED(SIZET_SAT_ADD(lb, align_m1));
     if (!EXPECT(GC_is_initialized, TRUE)) {
       DCL_LOCK_STATE;
       UNLOCK(); /* just to unset GC_lock_holder */
@@ -56,25 +57,26 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
             EXIT_GC();
     }
 
-    h = GC_allochblk(lb, k, flags);
+    h = GC_allochblk(lb, k, flags, align_m1);
 #   ifdef USE_MUNMAP
         if (NULL == h) {
             GC_merge_unmapped();
-            h = GC_allochblk(lb, k, flags);
+            h = GC_allochblk(lb, k, flags, align_m1);
         }
 #   endif
     while (0 == h && GC_collect_or_expand(n_blocks, flags != 0, retry)) {
-        h = GC_allochblk(lb, k, flags);
+        h = GC_allochblk(lb, k, flags, align_m1);
         retry = TRUE;
     }
     if (EXPECT(h != NULL, TRUE)) {
-        if (n_blocks > 1) {
-            GC_large_allocd_bytes += HBLKSIZE * n_blocks;
+        if (lb > HBLKSIZE) {
+            GC_large_allocd_bytes += HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb);
             if (GC_large_allocd_bytes > GC_max_large_allocd_bytes)
                 GC_max_large_allocd_bytes = GC_large_allocd_bytes;
         }
         /* FIXME: Do we need some way to reset GC_max_large_allocd_bytes? */
         result = h -> hb_body;
+        GC_ASSERT(((word)result & align_m1) == 0);
     }
     return result;
 }
@@ -86,7 +88,7 @@ STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
     ptr_t result;
 
     GC_ASSERT(I_HOLD_LOCK());
-    result = GC_alloc_large(lb, k, flags);
+    result = GC_alloc_large(lb, k, flags, 0 /* align_m1 */);
     if (EXPECT(result != NULL, TRUE)
           && (GC_debugging_started || GC_obj_kinds[k].ok_init)) {
         /* Clear the whole block, in case of GC_realloc call. */
@@ -234,7 +236,7 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 # endif
 #endif
 
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
+GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, size_t align_m1)
 {
     void * result;
     DCL_LOCK_STATE;
@@ -244,7 +246,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
       GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     GC_DBG_COLLECT_AT_MALLOC(lb);
-    if (SMALL_OBJ(lb)) {
+    if (SMALL_OBJ(lb) && EXPECT(align_m1 < GRANULE_BYTES, TRUE)) {
         LOCK();
         result = GC_generic_malloc_inner(lb, k);
         UNLOCK();
@@ -256,8 +258,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
         lg = ROUNDED_UP_GRANULES(lb);
         lb_rounded = GRANULES_TO_BYTES(lg);
         init = GC_obj_kinds[k].ok_init;
+        if (EXPECT(align_m1 < GRANULE_BYTES, TRUE)) {
+          align_m1 = 0;
+        } else if (align_m1 < HBLKSIZE) {
+          align_m1 = HBLKSIZE - 1;
+        }
         LOCK();
-        result = (ptr_t)GC_alloc_large(lb_rounded, k, 0);
+        result = (ptr_t)GC_alloc_large(lb_rounded, k, 0 /* flags */, align_m1);
         if (EXPECT(result != NULL, TRUE)) {
           if (GC_debugging_started) {
             BZERO(result, HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_rounded));
@@ -278,8 +285,14 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
             BZERO(result, HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_rounded));
         }
     }
-    if (EXPECT(NULL == result, FALSE)) return (*GC_get_oom_fn())(lb);
+    if (EXPECT(NULL == result, FALSE))
+      result = (*GC_get_oom_fn())(lb); /* might be misaligned */
     return result;
+}
+
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
+{
+    return GC_generic_malloc_aligned(lb, k, 0 /* align_m1 */);
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)

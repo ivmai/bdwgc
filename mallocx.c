@@ -214,8 +214,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_INVOKE_FINALIZERS();
     GC_DBG_COLLECT_AT_MALLOC(lb);
     LOCK();
-    result = (ptr_t)GC_alloc_large(ADD_SLOP(lb), k, IGNORE_OFF_PAGE);
-    if (NULL == result) {
+    result = (ptr_t)GC_alloc_large(ADD_SLOP(lb), k, IGNORE_OFF_PAGE, 0);
+    if (EXPECT(NULL == result, FALSE)) {
         GC_oom_func oom_fn = GC_oom_fn;
         UNLOCK();
         return (*oom_fn)(lb);
@@ -441,7 +441,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
       }
     /* Next try to allocate a new block worth of objects of this size.  */
     {
-        struct hblk *h = GC_allochblk(lb, k, 0);
+        struct hblk *h = GC_allochblk(lb, k, 0 /* flags */, 0 /* align_m1 */);
+
         if (h /* != NULL */) { /* CPPCHECK */
           if (IS_UNCOLLECTABLE(k)) GC_set_hdr_marks(HDR(h));
           GC_bytes_allocd += HBLKSIZE - HBLKSIZE % lb;
@@ -494,31 +495,29 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_many(size_t lb)
     return result;
 }
 
-#include <limits.h>
-
 /* Debug version is tricky and currently missing.       */
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
 {
-    size_t new_lb;
     size_t offset;
     ptr_t result;
+    size_t align_m1 = align - 1;
+
+    /* Check the alignment argument.    */
+    if (align < sizeof(void *) || (align & align_m1) != 0) return NULL;
 
     if (align <= GRANULE_BYTES) return GC_malloc(lb);
+
     if (align >= HBLKSIZE/2 || lb >= HBLKSIZE/2) {
-        if (EXPECT(align > HBLKSIZE, FALSE)) {
-          return (*GC_get_oom_fn())(LONG_MAX-1024); /* Fail */
-        }
-        return GC_malloc(lb <= HBLKSIZE? HBLKSIZE : lb);
-            /* Will be HBLKSIZE aligned.        */
+      return GC_clear_stack(GC_generic_malloc_aligned(lb, NORMAL, align_m1));
     }
+
     /* We could also try to make sure that the real rounded-up object size */
     /* is a multiple of align.  That would be correct up to HBLKSIZE.      */
     /* TODO: Not space efficient for big align values. */
-    new_lb = SIZET_SAT_ADD(lb, align - 1);
-    result = (ptr_t)GC_malloc(new_lb);
+    result = (ptr_t)GC_malloc(SIZET_SAT_ADD(lb, align_m1));
             /* It is OK not to check result for NULL as in that case    */
             /* GC_memalign returns NULL too since (0 + 0 % align) is 0. */
-    offset = (word)result % align;
+    offset = (size_t)(word)result & align_m1;
     if (offset != 0) {
         offset = align - offset;
         if (!GC_all_interior_pointers) {
@@ -526,9 +525,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
             GC_ASSERT(offset < VALID_OFFSET_SZ);
             GC_register_displacement(offset);
         }
+        result += offset;
     }
-    result += offset;
-    GC_ASSERT((word)result % align == 0);
+    GC_ASSERT(((word)result & align_m1) == 0);
     return result;
 }
 

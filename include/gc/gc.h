@@ -552,8 +552,9 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 GC_API GC_ATTR_DEPRECATED void * GC_CALL GC_malloc_stubborn(size_t);
 
 /* The routines that guarantee the requested alignment of the allocated */
-/* memory object.  Note that GC_base() and GC_size() might return the   */
-/* value which is not the expected one (due to the alignment).          */
+/* memory object.  The align argument should be a power of two and not  */
+/* less than size of a pointer.  Note: GC_base() and GC_size() might    */
+/* return the value which is not the expected one due to the alignment. */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
         GC_memalign(size_t /* align */, size_t /* lb */);
 GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,
