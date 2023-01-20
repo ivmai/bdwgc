@@ -537,9 +537,9 @@ GC_INNER void GC_merge_unmapped(void)
         next = (struct hblk *)((word)h + size);
         GET_HDR(next, nexthdr);
         /* Coalesce with successor, if possible */
-          if (0 != nexthdr && HBLK_IS_FREE(nexthdr)
-              && (signed_word) (size + (nextsize = nexthdr->hb_sz)) > 0
-                 /* no pot. overflow */) {
+          if (nexthdr != NULL && HBLK_IS_FREE(nexthdr)
+              && !((size + (nextsize = nexthdr -> hb_sz)) & SIGNB)
+                 /* no overflow */) {
             /* Note that we usually try to avoid adjacent free blocks   */
             /* that are either both mapped or both unmapped.  But that  */
             /* isn't guaranteed to hold since we remap blocks when we   */
@@ -990,8 +990,7 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
     prev = GC_free_block_ending_at(hbp);
     /* Coalesce with successor, if possible */
       if (nexthdr != NULL && HBLK_IS_FREE(nexthdr) && IS_MAPPED(nexthdr)
-          && (signed_word)(hhdr -> hb_sz + nexthdr -> hb_sz) > 0
-             /* no overflow */) {
+          && !((hhdr -> hb_sz + nexthdr -> hb_sz) & SIGNB) /* no overflow */) {
         GC_remove_from_fl(nexthdr);
         hhdr -> hb_sz += nexthdr -> hb_sz;
         GC_remove_header(next);
@@ -1000,7 +999,7 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
       if (prev /* != NULL */) { /* CPPCHECK */
         prevhdr = HDR(prev);
         if (IS_MAPPED(prevhdr)
-            && (signed_word)(hhdr -> hb_sz + prevhdr -> hb_sz) > 0) {
+            && !((hhdr -> hb_sz + prevhdr -> hb_sz) & SIGNB)) {
           GC_remove_from_fl(prevhdr);
           prevhdr -> hb_sz += hhdr -> hb_sz;
 #         ifdef USE_MUNMAP

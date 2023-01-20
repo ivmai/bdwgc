@@ -240,7 +240,7 @@ GC_API void * GC_CALL GC_is_visible(void *p)
                     /* For now we just punt.                            */
                     break;
                 case GC_DS_PER_OBJECT:
-                    if ((signed_word)descr >= 0) {
+                    if (!(descr & SIGNB)) {
                       descr = *(word *)((ptr_t)base + (descr & ~GC_DS_TAGS));
                     } else {
                       ptr_t type_descr = *(ptr_t *)base;

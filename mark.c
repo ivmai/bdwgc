@@ -678,7 +678,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                                           mark_stack_limit, ENV(descr));
           continue;
         case GC_DS_PER_OBJECT:
-          if ((signed_word)descr >= 0) {
+          if (!(descr & SIGNB)) {
             /* Descriptor is in the object.     */
             descr = *(word *)(current_p + descr - GC_DS_PER_OBJECT);
           } else {
