@@ -692,7 +692,7 @@ GC_INNER struct hblk *GC_allochblk(size_t sz, int kind,
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((sz & (GRANULE_BYTES - 1)) == 0);
     blocks = OBJ_SZ_TO_BLOCKS_CHECKED(sz);
-    if (EXPECT(blocks >= GC_SIZE_MAX / (2 * HBLKSIZE), FALSE))
+    if (EXPECT(blocks >= (GC_SIZE_MAX >> 1) / HBLKSIZE, FALSE))
       return NULL; /* overflow */
 
     start_list = GC_hblk_fl_from_blocks(blocks);
@@ -763,7 +763,6 @@ static struct hblk *find_nonbl_hblk(struct hblk *last_hbp, word size_remain,
 {
   word search_end = (word)last_hbp + size_remain;
 
-  GC_ASSERT((word)last_hbp <= search_end);
   do {
     struct hblk *next_hbp;
 
@@ -823,20 +822,18 @@ STATIC struct hblk *GC_allochblk_nth(size_t sz, int kind, unsigned flags,
       }
       GET_HDR(hbp, hhdr); /* set hhdr value */
       size_avail = hhdr -> hb_sz;
-      if (size_avail == size_needed) {
-        last_hbp = hbp;
-        break; /* exact match */
-      }
 
-      if (!may_split) continue;
       if (size_avail < size_needed)
         continue; /* the block is too small */
 
-      /* If the next heap block is obviously better, go on.     */
-      /* This prevents us from disassembling a single large     */
-      /* block to get tiny blocks.                              */
-      if (next_hblk_fits_better(hhdr, size_avail, size_needed))
-        continue;
+      if (size_avail != size_needed) {
+        if (!may_split) continue;
+        /* If the next heap block is obviously better, go on.   */
+        /* This prevents us from disassembling a single large   */
+        /* block to get tiny blocks.                            */
+        if (next_hblk_fits_better(hhdr, size_avail, size_needed))
+          continue;
+      }
 
       if (IS_UNCOLLECTABLE(kind)
           || (kind == PTRFREE && size_needed <= MAX_BLACK_LIST_ALLOC)) {
