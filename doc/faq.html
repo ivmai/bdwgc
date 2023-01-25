@@ -39,13 +39,13 @@ almost always continue to grow over time.
 <P>
 For (a lot) more details see:
 <P>
-``Bounding Space Usage of Conservative Garbage Collectors'',
+"Bounding Space Usage of Conservative Garbage Collectors",
 <I>Proceedings of the 2002 ACM SIGPLAN-SIGACT Symposium on Principles of
 Programming Languages</i>, Jan. 2002, pp. 93-100.
-<A HREF="http://portal.acm.org/citation.cfm?doid=503272.503282">
-Official version.</a>
+(<A HREF="http://portal.acm.org/citation.cfm?doid=503272.503282">
+official version</a>,
 <A HREF="http://www.hpl.hp.com/techreports/2001/HPL-2001-251.html">
-Technical report version.</a>
+technical report</a>)
 <P>
 <B>How can I get more of the finalizers to run to convince myself that
 the GC is working?</b>
@@ -68,15 +68,14 @@ You do sometimes want to ensure that certain particular resources are
 explicitly reclaimed before process exit, whether or not they become
 unreachable.  Programming techniques for ensuring this are discussed in
 <P>
-``Destructors, Finalizers, and Synchronization'',
-<I>Proceeedings of the 2003 ACM SIGPLAN-SIGACT Symposium on Principles of
+"Destructors, Finalizers, and Synchronization",
+<I>Proceedings of the 2003 ACM SIGPLAN-SIGACT Symposium on Principles of
 Programming Languages</i>, Jan. 2003, pp. 262-272.
-<A HREF="http://portal.acm.org/citation.cfm?doid=604131.604153">
-Official version.</a>
+(<A HREF="http://portal.acm.org/citation.cfm?doid=604131.604153">
+official version</a>,
 <A HREF="http://www.hpl.hp.com/techreports/2002/HPL-2002-335.html">
-Technical report version.</a>
-<A HREF="../popl03/web/index.html">HTML slides.</a>
-<A HREF="../popl03/slides.pdf">PDF slides.</a>
+technical report</a>,
+<A HREF="http://www.hboehm.info/popl03/slides.pdf">slides</a>)
 <P>
 <B>I wrote a memory allocation loop, and it runs <I>much</i> slower
 with the garbage collector than when I use <TT>malloc</tt>/<TT>free</tt>
@@ -92,10 +91,9 @@ and they generally initialize objects, even if you don't.
 Here are some hints:
 <UL>
 <LI> Use <TT>GC_MALLOC_ATOMIC</tt> where possible.
-<LI> For a multithreaded application, take advantage of
-<TT>gc_local_alloc.h</tt> to avoid locking on each allocation.
-<LI> For a single-threaded application, use a GC library without
-thread support.  If this is inconvenient, use <TT>gc_local_alloc.h</tt>.
+<LI> For a multi-threaded application, ensure the GC library is compiled
+with THREAD_LOCAL_ALLOC macro defined (this is the default behavior)
+to avoid locking on each allocation.
 <LI> If you use large statically allocated arrays or mapped files,
 consider <TT>GC_exclude_static_roots</tt>.
 </ul>
@@ -124,15 +122,10 @@ The collector can be told to ignore some or all pointers to object
 interiors.
 <P>
 <B>I have a different question that isn't answered here, nor in
-<A HREF="http://hboehm.info/gc">the other GC
-documentation</a>.  Where else can I go?</b>
+the other GC documentation like the
+<A HREF="overview.md">GC overview</a>.  Where else can I go?</b>
 <P>
-You may want to check
-<A HREF="https://lists.opendylan.org/pipermail/bdwgc/">
-the GC mailing list archives</a>.
-If you can't find the answer there, please post your question to
-<A HREF="mailto:bdwgc@lists.opendylan.org">the GC mailing list</a>.
-If you are not subscribed to the mailing lists, your posting may
-take a while to appear, since such postings are moderated.
+Please see "Feedback, Contribution, Questions and Notifications"
+section of the main <A HREF="../README.md">README</a>.
 </body>
 </html>
