@@ -1,4 +1,4 @@
-[Interface Overview](gcinterface.md) | [Tutorial Slides](http://www.hboehm.info/gc/04tutorial.pdf) | [FAQ](http://www.hboehm.info/gc/faq.html) | [Example](simple_example.md) | [Download](https://github.com/ivmai/bdwgc/wiki/Download)
+[Interface Overview](gcinterface.md) | [Tutorial Slides](http://www.hboehm.info/gc/04tutorial.pdf) | [FAQ](faq.html) | [Example](simple_example.md) | [Download](https://github.com/ivmai/bdwgc/wiki/Download)
 ---|---|---|---|---
 
 # A garbage collector for C and C++
@@ -225,7 +225,7 @@ Slides for Hans Boehm's
 
 [Slides from an ISMM 2004 tutorial about the GC](http://www.hboehm.info/gc/04tutorial.pdf).
 
-[A FAQ (frequently asked questions) list](http://www.hboehm.info/gc/faq.html).
+[A FAQ (frequently asked questions) list](faq.html).
 
 [Directory](http://www.hboehm.info/gc/gc_source/) containing the distribution
 files of all garbage collector releases.  It duplicates

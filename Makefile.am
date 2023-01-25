@@ -240,6 +240,7 @@ dist_doc_DATA = \
     doc/README.environment \
     doc/README.macros \
     doc/debugging.md \
+    doc/faq.html \
     doc/finalization.md \
     doc/gcdescr.md \
     doc/gcinterface.md \
