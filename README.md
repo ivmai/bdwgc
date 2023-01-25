@@ -5,8 +5,6 @@
 [![Codecov.io](https://codecov.io/github/ivmai/bdwgc/coverage.svg?branch=master)](https://codecov.io/github/ivmai/bdwgc?branch=master)
 [![Coveralls test coverage status](https://coveralls.io/repos/github/ivmai/bdwgc/badge.png?branch=master)](https://coveralls.io/github/ivmai/bdwgc)
 [![Coverity Scan build status](https://scan.coverity.com/projects/10813/badge.svg)](https://scan.coverity.com/projects/ivmai-bdwgc)
-[![LGTM Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/context:cpp)
-[![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/alerts)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fivmai%2Fbdwgc.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fivmai%2Fbdwgc?ref=badge_shield)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/6332/badge)](https://bestpractices.coreinfrastructure.org/projects/6332)
 [![Hits-of-Code](https://hitsofcode.com/github/ivmai/bdwgc?branch=master)](https://hitsofcode.com/github/ivmai/bdwgc/view)
