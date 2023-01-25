@@ -432,7 +432,7 @@ We keep track of modified pages using one of several distinct mechanisms:
 ## Black-listing
 
 The collector implements _black-listing_ of pages, as described in
-["Space Efficient Conservative Collection", PLDI'93](http://dl.acm.org/citation.cfm?doid=155090.155109)
+["Space Efficient Conservative Collection", PLDI'93](https://dl.acm.org/doi/10.1145/173262.155109)
 by Boehm, also available
 [here](https://www.cs.rice.edu/~javaplt/311/Readings/pldi93.pdf).
 

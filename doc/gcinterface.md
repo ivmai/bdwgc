@@ -111,7 +111,7 @@ interface. See also [here](finalization.md) for a more detailed discussion
 of the design. Note that an object may become inaccessible before client code
 is done operating on objects referenced by its fields. Suitable
 synchronization is usually required. See
-[here](http://portal.acm.org/citation.cfm?doid=604131.604153) or
+[here](https://dl.acm.org/doi/10.1145/604131.604153) or
 [here](http://www.hpl.hp.com/techreports/2002/HPL-2002-335.html) for details.
 
 If you are concerned with multiprocessor performance and scalability, you

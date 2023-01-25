@@ -158,7 +158,7 @@ and Implementation, _SIGPLAN Notices 28_, 6 (June 1993), pp. 197-206.
 
 Boehm, H., Reducing Garbage Collector Cache Misses,
 _Proceedings of the 2000 International Symposium on Memory Management_.
-[Official version](http://portal.acm.org/citation.cfm?doid=362422.362438).
+[Official version](https://dl.acm.org/doi/10.1145/362422.362438).
 [Technical report](http://www.hpl.hp.com/techreports/2000/HPL-2000-99.html)
 version. Describes the prefetch strategy incorporated into the collector for
 some platforms. Explains why the sweep phase of a _mark-sweep_ collector
@@ -167,7 +167,7 @@ should not really be a distinct phase.
 M. Serrano, H. Boehm, Understanding Memory Allocation of Scheme Programs,
 _Proceedings of the Fifth ACM SIGPLAN International Conference on Functional
 Programming_, 2000, Montreal, Canada, pp. 245-256.
-[Official version](http://dl.acm.org/citation.cfm?id=351264). Earlier
+[Official version](https://dl.acm.org/doi/10.1145/357766.351264). Earlier
 [Technical Report](http://www.hpl.hp.com/techreports/2000/HPL-2000-62.html)
 version. Includes some discussion of the collector debugging facilities for
 identifying causes of memory retention.
@@ -180,7 +180,7 @@ results.
 Boehm, H., Bounding Space Usage of Conservative Garbage Collectors,
 _Proceedings of the 2002 ACM SIGPLAN-SIGACT Symposium on Principles
 of Programming Languages_, Jan. 2002, pp. 93-100.
-[Official version](http://portal.acm.org/citation.cfm?doid=503272.503282).
+[Official version](https://dl.acm.org/doi/10.1145/565816.503282).
 [Technical report](http://www.hpl.hp.com/techreports/2001/HPL-2001-251.html)
 version. Includes a discussion of a collector facility to much more reliably
 test for the potential of unbounded heap growth.
@@ -211,7 +211,7 @@ Joel Bartlett's
 [mostly copying conservative garbage collector for C++](ftp://gatekeeper.dec.com/pub/compaq/WRL/research-reports/WRL-TN-12.ps).
 
 John Ellis and David Detlef's
-[Safe Efficient Garbage Collection for C++](http://dl.acm.org/citation.cfm?id=1267983)
+[Safe Efficient Garbage Collection for C++](https://dl.acm.org/doi/10.5555/1267974.1267983)
 proposal.
 
 Henry Baker's [paper collection](http://home.pipeline.com/%7Ehbaker1/).
@@ -279,7 +279,7 @@ The following documents are not platform-specific in general.
 
 [Slide set discussing _Destructors, Finalizers, and Synchronization_, POPL 2003](http://www.hboehm.info/popl03/web/).
 
-[Paper corresponding to above slide set](http://portal.acm.org/citation.cfm?doid=604131.604153)
+[Paper corresponding to above slide set](https://dl.acm.org/doi/10.1145/604131.604153)
 ([Technical Report](http://www.hpl.hp.com/techreports/2002/HPL-2002-335.html)
 version).
 
