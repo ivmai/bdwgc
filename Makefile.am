@@ -216,24 +216,10 @@ dist_doc_DATA = \
     AUTHORS \
     ChangeLog \
     LICENSE \
-    README.md \
-    doc/platforms/README.aix \
-    doc/platforms/README.amiga \
-    doc/platforms/README.arm_cross \
-    doc/platforms/README.darwin \
-    doc/platforms/README.dgux386 \
-    doc/platforms/README.emscripten \
-    doc/platforms/README.ews4800 \
-    doc/platforms/README.hp \
-    doc/platforms/README.linux \
-    doc/platforms/README.mac \
-    doc/platforms/README.os2 \
-    doc/platforms/README.sgi \
-    doc/platforms/README.solaris2 \
-    doc/platforms/README.symbian \
-    doc/platforms/README.uts \
-    doc/platforms/README.win32 \
-    doc/platforms/README.win64 \
+    README.md
+
+docdocdir = $(docdir)/doc
+dist_docdoc_DATA = \
     doc/README.autoconf \
     doc/README.cmake \
     doc/README.cords \
@@ -250,6 +236,26 @@ dist_doc_DATA = \
     doc/scale.md \
     doc/simple_example.md \
     doc/tree.md
+
+docdocplatformsdir = $(docdocdir)/platforms
+dist_docdocplatforms_DATA = \
+    doc/platforms/README.aix \
+    doc/platforms/README.amiga \
+    doc/platforms/README.arm_cross \
+    doc/platforms/README.darwin \
+    doc/platforms/README.dgux386 \
+    doc/platforms/README.emscripten \
+    doc/platforms/README.ews4800 \
+    doc/platforms/README.hp \
+    doc/platforms/README.linux \
+    doc/platforms/README.mac \
+    doc/platforms/README.os2 \
+    doc/platforms/README.sgi \
+    doc/platforms/README.solaris2 \
+    doc/platforms/README.symbian \
+    doc/platforms/README.uts \
+    doc/platforms/README.win32 \
+    doc/platforms/README.win64
 
 dist_man3_MANS = gc.man
 endif

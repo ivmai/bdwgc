@@ -850,10 +850,43 @@ endif(build_tests)
 if (enable_docs)
   install(FILES AUTHORS ChangeLog LICENSE README.md
           DESTINATION "${CMAKE_INSTALL_DOCDIR}")
-  install(DIRECTORY doc/ DESTINATION "${CMAKE_INSTALL_DOCDIR}"
-          FILES_MATCHING
-            PATTERN "README.*"
-            PATTERN "*.md")
+  install(FILES
+            doc/README.autoconf
+            doc/README.cmake
+            doc/README.cords
+            doc/README.environment
+            doc/README.macros
+            doc/debugging.md
+            doc/faq.md
+            doc/finalization.md
+            doc/gcdescr.md
+            doc/gcinterface.md
+            doc/leak.md
+            doc/overview.md
+            doc/porting.md
+            doc/scale.md
+            doc/simple_example.md
+            doc/tree.md
+          DESTINATION "${CMAKE_INSTALL_DOCDIR}/doc")
+  install(FILES
+            doc/platforms/README.aix
+            doc/platforms/README.amiga
+            doc/platforms/README.arm_cross
+            doc/platforms/README.darwin
+            doc/platforms/README.dgux386
+            doc/platforms/README.emscripten
+            doc/platforms/README.ews4800
+            doc/platforms/README.hp
+            doc/platforms/README.linux
+            doc/platforms/README.mac
+            doc/platforms/README.os2
+            doc/platforms/README.sgi
+            doc/platforms/README.solaris2
+            doc/platforms/README.symbian
+            doc/platforms/README.uts
+            doc/platforms/README.win32
+            doc/platforms/README.win64
+          DESTINATION "${CMAKE_INSTALL_DOCDIR}/doc/platforms")
 
   install(FILES gc.man DESTINATION "${CMAKE_INSTALL_MANDIR}/man3" RENAME gc.3)
 endif(enable_docs)
