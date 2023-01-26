@@ -851,42 +851,42 @@ if (enable_docs)
   install(FILES AUTHORS ChangeLog LICENSE README.md
           DESTINATION "${CMAKE_INSTALL_DOCDIR}")
   install(FILES
-            doc/README.autoconf
-            doc/README.cmake
-            doc/README.cords
-            doc/README.environment
-            doc/README.macros
-            doc/debugging.md
-            doc/faq.md
-            doc/finalization.md
-            doc/gcdescr.md
-            doc/gcinterface.md
-            doc/leak.md
-            doc/overview.md
-            doc/porting.md
-            doc/scale.md
-            doc/simple_example.md
-            doc/tree.md
-          DESTINATION "${CMAKE_INSTALL_DOCDIR}/doc")
+            docs/README.autoconf
+            docs/README.cmake
+            docs/README.cords
+            docs/README.environment
+            docs/README.macros
+            docs/debugging.md
+            docs/faq.md
+            docs/finalization.md
+            docs/gcdescr.md
+            docs/gcinterface.md
+            docs/leak.md
+            docs/overview.md
+            docs/porting.md
+            docs/scale.md
+            docs/simple_example.md
+            docs/tree.md
+          DESTINATION "${CMAKE_INSTALL_DOCDIR}/docs")
   install(FILES
-            doc/platforms/README.aix
-            doc/platforms/README.amiga
-            doc/platforms/README.arm_cross
-            doc/platforms/README.darwin
-            doc/platforms/README.dgux386
-            doc/platforms/README.emscripten
-            doc/platforms/README.ews4800
-            doc/platforms/README.hp
-            doc/platforms/README.linux
-            doc/platforms/README.mac
-            doc/platforms/README.os2
-            doc/platforms/README.sgi
-            doc/platforms/README.solaris2
-            doc/platforms/README.symbian
-            doc/platforms/README.uts
-            doc/platforms/README.win32
-            doc/platforms/README.win64
-          DESTINATION "${CMAKE_INSTALL_DOCDIR}/doc/platforms")
+            docs/platforms/README.aix
+            docs/platforms/README.amiga
+            docs/platforms/README.arm_cross
+            docs/platforms/README.darwin
+            docs/platforms/README.dgux386
+            docs/platforms/README.emscripten
+            docs/platforms/README.ews4800
+            docs/platforms/README.hp
+            docs/platforms/README.linux
+            docs/platforms/README.mac
+            docs/platforms/README.os2
+            docs/platforms/README.sgi
+            docs/platforms/README.solaris2
+            docs/platforms/README.symbian
+            docs/platforms/README.uts
+            docs/platforms/README.win32
+            docs/platforms/README.win64
+          DESTINATION "${CMAKE_INSTALL_DOCDIR}/docs/platforms")
 
   install(FILES gc.man DESTINATION "${CMAKE_INSTALL_MANDIR}/man3" RENAME gc.3)
 endif(enable_docs)

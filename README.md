@@ -73,16 +73,16 @@ CSL 84-7).  Doug McIlroy wrote a simpler fully conservative collector that
 was part of version 8 UNIX (tm), but appears to not have received
 widespread use.
 
-Rudimentary tools for use of the collector as a [leak detector](doc/leak.md)
+Rudimentary tools for use of the collector as a [leak detector](docs/leak.md)
 are included, as is a fairly sophisticated string package "cord" that
-makes use of the collector.  (See [README.cords](doc/README.cords) and
+makes use of the collector.  (See [README.cords](docs/README.cords) and
 H.-J. Boehm, R. Atkinson, and M. Plass, "Ropes: An Alternative to Strings",
 Software Practice and Experience 25, 12 (December 1995), pp. 1315-1330.
 This is very similar to the "rope" package in Xerox Cedar, or the "rope"
 package in the SGI STL or the g++ distribution.)
 
 Further collector documentation can be found in the
-[overview](doc/overview.md).
+[overview](docs/overview.md).
 
 Some of the known uses of the collector are listed on the GitHub
 [Known-clients](https://github.com/ivmai/bdwgc/wiki/Known-clients) page.
@@ -125,7 +125,7 @@ large objects to be disregarded, greatly reducing the probability of
 accidental retention of large objects.  For most purposes it seems
 best to compile with `ALL_INTERIOR_POINTERS` and to use
 `GC_malloc_ignore_off_page` if you get collector warnings from
-allocations of very large objects.  See [here](doc/debugging.md) for details.
+allocations of very large objects.  See [here](docs/debugging.md) for details.
 
 _WARNING_: pointers inside memory allocated by the standard (system) `malloc`
 are not seen by the garbage collector.  Thus objects pointed to only from such
@@ -142,8 +142,8 @@ areas that are associated with dynamic libraries.  This is easy to remedy
 if you know how to find those data areas on your operating system (see
 `GC_add_roots`).  Code for doing this under SunOS, IRIX 5.X and 6.X, HP/UX,
 Alpha OSF/1, Linux, and Win32 is included and used by default.
-(See [README.win32](doc/platforms/README.win32) and
-[README.win64](doc/platforms/README.win64) for Windows details.)  On other
+(See [README.win32](docs/platforms/README.win32) and
+[README.win64](docs/platforms/README.win64) for Windows details.)  On other
 systems, pointers from dynamic library data areas may not be considered by the
 collector.  If you're writing a program that depends on the collector scanning
 dynamic library data areas, it may be a good idea to include at least one call
@@ -201,7 +201,7 @@ build of `master` branch of the collector could look like:
     make check
 
 Cloning of `libatomic_ops` is now optional provided the compiler supports
-atomic intrinsics.  See [README.autoconf](doc/README.autoconf) for details.
+atomic intrinsics.  See [README.autoconf](docs/README.autoconf) for details.
 
 As noted above, alternatively, the collector could be built with CMake, like
 this:
@@ -212,7 +212,7 @@ this:
     cmake --build .
     ctest
 
-See [README.cmake](doc/README.cmake) for details.
+See [README.cmake](docs/README.cmake) for details.
 
 Finally, on most targets, the collector could be built and tested directly
 with a single compiler invocation, like this:
@@ -222,14 +222,14 @@ with a single compiler invocation, like this:
 On Windows, CMake could be used to build the library as described above or
 by typing `nmake -f NT_MAKEFILE`, this assumes you have Microsoft command-line
 tools installed and suitably configured.  See
-[README.win32](doc/platforms/README.win32) for details.
+[README.win32](docs/platforms/README.win32) for details.
 
 The library is built with threads support on (i.e. for thread-safe operation)
 by default, unless `--disable-threads` is passed to `./configure` (or
 `-Denable_threads=OFF` is passed to `cmake` tool).
 
 The library could be configured more precisely during the build by defining
-the macros listed in [README.macros](doc/README.macros) file.
+the macros listed in [README.macros](docs/README.macros) file.
 
 Below we focus on the collector build using classic makefile.  For the
 Makefile.direct-based process, typing `make check` instead of `make` will
@@ -261,7 +261,7 @@ machines that use a flat 32-bit or 64-bit address space.
 That includes the vast majority of Workstations and x86 (i386 or later) PCs.
 
 In a few cases (e.g., OS/2, Win32) a separate makefile is supplied; these have
-a separate host-specific doc/platforms/README.* file.
+a separate host-specific docs/platforms/README.* file.
 
 Dynamic libraries are completely supported only under SunOS/Solaris,
 (and even that support is not functional on the last Sun 3 release),
@@ -289,7 +289,7 @@ or 64 bit addresses will require a major effort.  A port to plain MSDOS
 or win16 is hard.
 
 For machines not already mentioned, or for nonstandard compilers,
-some porting suggestions are provided [here](doc/porting.md).
+some porting suggestions are provided [here](docs/porting.md).
 
 
 ## The C Interface to the Allocator
@@ -404,7 +404,7 @@ distribution.  If you intend to use this, type
 This creates libgccpp.a and libgctba.a files, or their shared library
 equivalents (libgccpp.so and libgctba.so).  You should link with either the
 first (gccpp) or the second one (gctba), but not both.  See gc_cpp.h and
-[here](doc/gcinterface.md) for the definition of the interface.
+[here](docs/gcinterface.md) for the definition of the interface.
 This interface tries to approximate the Ellis-Detlefs C++ garbage collection
 proposal without compiler changes.
 
