@@ -422,14 +422,15 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
   sexpr gcj_cons(sexpr x, sexpr y)
   {
     sexpr result;
-    GC_word * r = (GC_word *)GC_GCJ_MALLOC(
-                        sizeof(struct SEXPR) + sizeof(struct fake_vtable*),
-                        (AO_fetch_and_add1(&extra_count) & 1) != 0
-                                                ? &gcj_class_struct1
-                                                : &gcj_class_struct2);
+    GC_word cnt = (GC_word)AO_fetch_and_add1(&extra_count);
+    void *d = (cnt & 1) != 0 ? &gcj_class_struct1 : &gcj_class_struct2;
+    size_t lb = sizeof(struct SEXPR) + sizeof(struct fake_vtable*);
+    void *r = (cnt & 2) != 0 ? GC_gcj_malloc_ignore_off_page(lb
+                                        + (cnt <= HBLKSIZE / 2 ? cnt : 0), d)
+                             : GC_GCJ_MALLOC(lb, d);
 
     CHECK_OUT_OF_MEMORY(r);
-    result = (sexpr)(r + 1);
+    result = (sexpr)((GC_word *)r + 1);
     result -> sexpr_car = x;
     GC_PTR_STORE_AND_DIRTY(&result->sexpr_cdr, y);
     GC_reachable_here(x);
@@ -2186,9 +2187,6 @@ void enable_incremental_mode(void)
       UNTESTED(GC_exclude_static_roots);
       UNTESTED(GC_register_describe_type_fn);
       UNTESTED(GC_register_has_static_roots_callback);
-#     ifdef GC_GCJ_SUPPORT
-        UNTESTED(GC_gcj_malloc_ignore_off_page);
-#     endif
 #     ifndef NO_DEBUGGING
         UNTESTED(GC_count_set_marks_in_hblk);
         UNTESTED(GC_dump);
