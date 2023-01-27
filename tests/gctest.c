@@ -1292,7 +1292,12 @@ void typed_test(void)
     d2 = GC_make_descriptor(bm2, 2);
     old = 0;
     for (i = 0; i < 4000; i++) {
-        newP = (GC_word *)GC_MALLOC_EXPLICITLY_TYPED(4 * sizeof(GC_word), d1);
+        if ((i & 0xff) != 0) {
+          newP = (GC_word*)GC_MALLOC_EXPLICITLY_TYPED(4 * sizeof(GC_word), d1);
+        } else {
+          newP = (GC_word*)GC_malloc_explicitly_typed_ignore_off_page(
+                                                      4 * sizeof(GC_word), d1);
+        }
         CHECK_OUT_OF_MEMORY(newP);
         AO_fetch_and_add1(&collectable_count);
         if (newP[0] != 0 || newP[1] != 0) {
@@ -1330,7 +1335,7 @@ void typed_test(void)
                                                        3 * sizeof(GC_word),
                                                        d2);
           if (newP != NULL && (newP[0] != 0 || newP[1] != 0)) {
-            GC_printf("Bad initialization by GC_malloc_explicitly_typed\n");
+            GC_printf("Bad initialization by GC_calloc_explicitly_typed\n");
             FAIL;
           }
         }
@@ -2177,7 +2182,6 @@ void enable_incremental_mode(void)
         UNTESTED(GC_MacTemporaryNewPtr);
 #     endif
       UNTESTED(GC_abort_on_oom);
-      UNTESTED(GC_malloc_explicitly_typed_ignore_off_page);
       UNTESTED(GC_debug_strndup);
       UNTESTED(GC_deinit);
       UNTESTED(GC_strndup);
