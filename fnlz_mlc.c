@@ -54,8 +54,6 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
 
 GC_API void GC_CALL GC_init_finalized_malloc(void)
 {
-    DCL_LOCK_STATE;
-
     GC_init();  /* In case it's not already done.       */
     LOCK();
     if (GC_finalized_kind != 0) {

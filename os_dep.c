@@ -1335,9 +1335,6 @@ GC_INNER size_t GC_page_size = 0;
   {
     pthread_attr_t attr;
     size_t size;
-#   ifdef IA64
-      DCL_LOCK_STATE;
-#   endif
 
 #   ifdef HAVE_PTHREAD_ATTR_GET_NP
       if (pthread_attr_init(&attr) != 0)
@@ -1495,7 +1492,6 @@ GC_INNER size_t GC_page_size = 0;
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
     {
       IF_CANCEL(int cancel_state;)
-      DCL_LOCK_STATE;
 
       LOCK();
       DISABLE_CANCEL(cancel_state);  /* May be unnecessary? */
@@ -5151,7 +5147,6 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
 {
     int i;
     static int reentry_count = 0;
-    DCL_LOCK_STATE;
 
     /* FIXME: This should probably use a different lock, so that we     */
     /* become callable with or without the allocation lock.             */

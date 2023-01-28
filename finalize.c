@@ -164,7 +164,6 @@ STATIC int GC_register_disappearing_link_inner(
     struct disappearing_link *curr_dl;
     size_t index;
     struct disappearing_link * new_dl;
-    DCL_LOCK_STATE;
 
     GC_ASSERT(GC_is_initialized);
     if (EXPECT(GC_find_leak, FALSE)) return GC_UNIMPLEMENTED;
@@ -278,7 +277,6 @@ GC_INLINE struct disappearing_link *GC_unregister_disappearing_link_inner(
 GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 {
     struct disappearing_link *curr_dl;
-    DCL_LOCK_STATE;
 
     if (((word)link & (ALIGNMENT-1)) != 0) return 0; /* Nothing to do. */
 
@@ -396,8 +394,6 @@ GC_INLINE void GC_complete_ongoing_collection(void) {
 
   GC_API void GC_CALL GC_set_toggleref_func(GC_toggleref_func fn)
   {
-    DCL_LOCK_STATE;
-
     LOCK();
     GC_toggleref_callback = fn;
     UNLOCK();
@@ -406,7 +402,6 @@ GC_INLINE void GC_complete_ongoing_collection(void) {
   GC_API GC_toggleref_func GC_CALL GC_get_toggleref_func(void)
   {
     GC_toggleref_func fn;
-    DCL_LOCK_STATE;
 
     LOCK();
     fn = GC_toggleref_callback;
@@ -453,7 +448,6 @@ GC_INLINE void GC_complete_ongoing_collection(void) {
   GC_API int GC_CALL GC_toggleref_add(void *obj, int is_strong_ref)
   {
     int res = GC_SUCCESS;
-    DCL_LOCK_STATE;
 
     GC_ASSERT(NONNULL_ARG_NOT_NULL(obj));
     LOCK();
@@ -478,8 +472,6 @@ STATIC GC_await_finalize_proc GC_object_finalized_proc = 0;
 
 GC_API void GC_CALL GC_set_await_finalize_proc(GC_await_finalize_proc fn)
 {
-  DCL_LOCK_STATE;
-
   LOCK();
   GC_object_finalized_proc = fn;
   UNLOCK();
@@ -488,7 +480,6 @@ GC_API void GC_CALL GC_set_await_finalize_proc(GC_await_finalize_proc fn)
 GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 {
   GC_await_finalize_proc fn;
-  DCL_LOCK_STATE;
 
   LOCK();
   fn = GC_object_finalized_proc;
@@ -508,7 +499,6 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
   GC_API int GC_CALL GC_unregister_long_link(void * * link)
   {
     struct disappearing_link *curr_dl;
-    DCL_LOCK_STATE;
 
     if (((word)link & (ALIGNMENT-1)) != 0) return 0; /* Nothing to do. */
 
@@ -581,7 +571,6 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
   GC_API int GC_CALL GC_move_disappearing_link(void **link, void **new_link)
   {
     int result;
-    DCL_LOCK_STATE;
 
     if (((word)new_link & (ALIGNMENT-1)) != 0
         || !NONNULL_ARG_NOT_NULL(new_link))
@@ -599,7 +588,6 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     GC_API int GC_CALL GC_move_long_link(void **link, void **new_link)
     {
       int result;
-      DCL_LOCK_STATE;
 
       if (((word)new_link & (ALIGNMENT-1)) != 0
           || !NONNULL_ARG_NOT_NULL(new_link))
@@ -686,7 +674,6 @@ STATIC void GC_register_finalizer_inner(void * obj,
     size_t index;
     struct finalizable_object *new_fo = 0;
     hdr *hhdr = NULL; /* initialized to prevent warning. */
-    DCL_LOCK_STATE;
 
     GC_ASSERT(GC_is_initialized);
     if (EXPECT(GC_find_leak, FALSE)) {
@@ -1213,8 +1200,6 @@ GC_INNER void GC_finalize(void)
    */
   GC_API void GC_CALL GC_finalize_all(void)
   {
-    DCL_LOCK_STATE;
-
     LOCK();
     while (GC_fo_entries > 0) {
       GC_enqueue_all_finalizers();
@@ -1248,7 +1233,6 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
 {
     int count = 0;
     word bytes_freed_before = 0; /* initialized to prevent warning. */
-    DCL_LOCK_STATE;
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
     while (GC_should_invoke_finalizers()) {
@@ -1304,7 +1288,6 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
 #   if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
       static word last_back_trace_gc_no = 1;    /* Skip first one. */
 #   endif
-    DCL_LOCK_STATE;
 
 #   if defined(THREADS) && !defined(KEEP_BACK_PTRS) \
        && !defined(MAKE_BACK_GRAPH)

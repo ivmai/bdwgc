@@ -249,7 +249,6 @@
   GC_API void GC_CALL GC_generate_random_backtrace(void)
   {
     void *current;
-    DCL_LOCK_STATE;
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
     if (GC_try_to_collect(GC_never_stop_func) == 0) {
@@ -304,7 +303,6 @@ static void *store_debug_info(void *p, size_t lb,
                               const char *fn, GC_EXTRA_PARAMS)
 {
     void *result;
-    DCL_LOCK_STATE;
 
     if (NULL == p) {
         GC_err_printf("%s(%lu) returning NULL (%s:%d)\n",
@@ -503,8 +501,6 @@ GC_API size_t GC_CALL GC_get_debug_header_size(void) {
 
 GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
 {
-  DCL_LOCK_STATE;
-
   LOCK();
   GC_register_displacement_inner(offset);
   GC_register_displacement_inner((word)sizeof(oh) + offset);

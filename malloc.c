@@ -45,7 +45,6 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags,
     lb = ROUNDUP_GRANULE_SIZE(lb);
     n_blocks = OBJ_SZ_TO_BLOCKS_CHECKED(SIZET_SAT_ADD(lb, align_m1));
     if (!EXPECT(GC_is_initialized, TRUE)) {
-      DCL_LOCK_STATE;
       UNLOCK(); /* just to unset GC_lock_holder */
       GC_init();
       LOCK();
@@ -168,7 +167,6 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
         if (EXPECT(0 == op, FALSE)) {
           if (lg == 0) {
             if (!EXPECT(GC_is_initialized, TRUE)) {
-              DCL_LOCK_STATE;
               UNLOCK(); /* just to unset GC_lock_holder */
               GC_init();
               LOCK();
@@ -239,7 +237,6 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, size_t align_m1)
 {
     void * result;
-    DCL_LOCK_STATE;
 
     GC_ASSERT(k < MAXOBJKINDS);
     if (EXPECT(get_have_errors(), FALSE))
@@ -302,7 +299,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
         void *op;
         void **opp;
         size_t lg;
-        DCL_LOCK_STATE;
 
         GC_DBG_COLLECT_AT_MALLOC(lb);
         LOCK();
@@ -356,7 +352,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
                                                         size_t lb, int k)
 {
     void *op;
-    DCL_LOCK_STATE;
 
     GC_ASSERT(k < MAXOBJKINDS);
     if (SMALL_OBJ(lb)) {
@@ -598,7 +593,6 @@ static void free_internal(void *p, hdr *hhdr)
 GC_API void GC_CALL GC_free(void * p)
 {
     hdr *hhdr;
-    DCL_LOCK_STATE;
 
     if (p /* != NULL */) {
         /* CPPCHECK */

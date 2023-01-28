@@ -61,7 +61,6 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
 #   ifndef GC_IGNORE_GCJ_INFO
       GC_bool ignore_gcj_info;
 #   endif
-    DCL_LOCK_STATE;
 
     if (mp == 0)        /* In case GC_DS_PROC is unused.        */
       mp = (void *)(word)GC_gcj_fake_mark_proc;
@@ -128,7 +127,6 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
 static void maybe_finalize(void)
 {
    static word last_finalized_no = 0;
-   DCL_LOCK_STATE;
 
    GC_ASSERT(I_HOLD_LOCK());
    if (GC_gc_no == last_finalized_no ||
@@ -151,7 +149,6 @@ static void maybe_finalize(void)
 #endif
 {
     ptr_t op;
-    DCL_LOCK_STATE;
 
     GC_DBG_COLLECT_AT_MALLOC(lb);
     if(SMALL_OBJ(lb)) {
@@ -196,7 +193,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
                 void * ptr_to_struct_containing_descr, GC_EXTRA_PARAMS)
 {
     void * result;
-    DCL_LOCK_STATE;
 
     /* We're careful to avoid extra calls, which could          */
     /* confuse the backtrace.                                   */
@@ -228,7 +224,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
                                      void * ptr_to_struct_containing_descr)
 {
     ptr_t op;
-    DCL_LOCK_STATE;
 
     GC_DBG_COLLECT_AT_MALLOC(lb);
     if(SMALL_OBJ(lb)) {

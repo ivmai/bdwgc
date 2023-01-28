@@ -21,7 +21,6 @@
 /*
  * Mutual exclusion between allocator/collector routines.
  * Needed if there is more than one allocator thread.
- * DCL_LOCK_STATE declares any local variables needed by LOCK and UNLOCK.
  *
  * Note that I_HOLD_LOCK and I_DONT_HOLD_LOCK are used only positively
  * in assertions, and may return TRUE in the "don't know" case.
@@ -279,10 +278,6 @@
 # ifndef ENTER_GC
 #   define ENTER_GC()
 #   define EXIT_GC()
-# endif
-
-# ifndef DCL_LOCK_STATE
-#   define DCL_LOCK_STATE
 # endif
 
 #endif /* GC_LOCKS_H */

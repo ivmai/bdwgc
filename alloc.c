@@ -118,8 +118,6 @@ STATIC GC_bool GC_disable_automatic_collection = FALSE;
 
 GC_API void GC_CALL GC_set_disable_automatic_collection(int value)
 {
-  DCL_LOCK_STATE;
-
   LOCK();
   GC_disable_automatic_collection = (GC_bool)value;
   UNLOCK();
@@ -128,7 +126,6 @@ GC_API void GC_CALL GC_set_disable_automatic_collection(int value)
 GC_API int GC_CALL GC_get_disable_automatic_collection(void)
 {
   int value;
-  DCL_LOCK_STATE;
 
   LOCK();
   value = (int)GC_disable_automatic_collection;
@@ -224,7 +221,6 @@ STATIC GC_stop_func GC_default_stop_func = GC_never_stop_func;
 
 GC_API void GC_CALL GC_set_stop_func(GC_stop_func stop_func)
 {
-  DCL_LOCK_STATE;
   GC_ASSERT(NONNULL_ARG_NOT_NULL(stop_func));
   LOCK();
   GC_default_stop_func = stop_func;
@@ -234,7 +230,7 @@ GC_API void GC_CALL GC_set_stop_func(GC_stop_func stop_func)
 GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
 {
   GC_stop_func stop_func;
-  DCL_LOCK_STATE;
+
   LOCK();
   stop_func = GC_default_stop_func;
   UNLOCK();
@@ -395,9 +391,8 @@ STATIC void GC_clear_a_few_frames(void)
 GC_API void GC_CALL GC_start_incremental_collection(void)
 {
 # ifndef GC_DISABLE_INCREMENTAL
-    DCL_LOCK_STATE;
-
     if (!GC_incremental) return;
+
     LOCK();
     GC_should_start_incremental_collection = TRUE;
     ENTER_GC();
@@ -439,7 +434,6 @@ GC_INNER GC_bool GC_should_collect(void)
 
 GC_API void GC_CALL GC_set_start_callback(GC_start_callback_proc fn)
 {
-    DCL_LOCK_STATE;
     LOCK();
     GC_start_call_back = fn;
     UNLOCK();
@@ -448,7 +442,7 @@ GC_API void GC_CALL GC_set_start_callback(GC_start_callback_proc fn)
 GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void)
 {
     GC_start_callback_proc fn;
-    DCL_LOCK_STATE;
+
     LOCK();
     fn = GC_start_call_back;
     UNLOCK();
@@ -522,7 +516,6 @@ STATIC GC_on_collection_event_proc GC_on_collection_event = 0;
 GC_API void GC_CALL GC_set_on_collection_event(GC_on_collection_event_proc fn)
 {
     /* fn may be 0 (means no event notifier). */
-    DCL_LOCK_STATE;
     LOCK();
     GC_on_collection_event = fn;
     UNLOCK();
@@ -531,7 +524,7 @@ GC_API void GC_CALL GC_set_on_collection_event(GC_on_collection_event_proc fn)
 GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void)
 {
     GC_on_collection_event_proc fn;
-    DCL_LOCK_STATE;
+
     LOCK();
     fn = GC_on_collection_event;
     UNLOCK();
@@ -751,7 +744,6 @@ GC_INNER void (*GC_print_all_smashed)(void) = 0;
 GC_API int GC_CALL GC_collect_a_little(void)
 {
     int result;
-    DCL_LOCK_STATE;
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
@@ -1261,7 +1253,6 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
     GC_bool result;
     IF_USE_MUNMAP(int old_unmap_threshold;)
     IF_CANCEL(int cancel_state;)
-    DCL_LOCK_STATE;
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     if (GC_debugging_started) GC_print_all_smashed();
@@ -1482,7 +1473,7 @@ GC_API void GC_CALL GC_set_max_heap_size(GC_word n)
     GC_max_heapsize = n;
 }
 
-GC_word GC_max_retries = 0;
+word GC_max_retries = 0;
 
 GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
 {
@@ -1573,7 +1564,6 @@ GC_API int GC_CALL GC_expand_hp(size_t bytes)
     word n_blocks = OBJ_SZ_TO_BLOCKS_CHECKED(bytes);
     word old_heapsize;
     GC_bool result;
-    DCL_LOCK_STATE;
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();

@@ -77,7 +77,6 @@ GC_INNER void GC_print_all_errors(void)
     GC_bool have_errors;
     unsigned i, n_leaked;
     ptr_t leaked[MAX_LEAKED];
-    DCL_LOCK_STATE;
 
     LOCK();
     if (printing_errors) {

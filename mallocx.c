@@ -126,8 +126,6 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
           AO_store((volatile AO_t *)&hhdr->hb_descr, (AO_t)descr);
 #       else
           {
-            DCL_LOCK_STATE;
-
             LOCK();
             hhdr -> hb_sz = sz;
             hhdr -> hb_descr = descr;
@@ -200,7 +198,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     size_t lb_rounded;
     word n_blocks;
     GC_bool init;
-    DCL_LOCK_STATE;
 
     if (SMALL_OBJ(lb))
         return GC_generic_malloc(lb, k);
@@ -307,7 +304,6 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     signed_word my_bytes_allocd = 0;
     struct obj_kind * ok = &(GC_obj_kinds[k]);
     struct hblk ** rlh;
-    DCL_LOCK_STATE;
 
     GC_ASSERT(lb != 0 && (lb & (GRANULE_BYTES-1)) == 0);
     /* Currently a single object is always allocated if manual VDB. */

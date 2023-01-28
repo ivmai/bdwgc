@@ -1326,7 +1326,6 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
   const struct GC_MACH_SECTION *sec;
   const char *name;
   GC_has_static_roots_func callback = GC_has_static_roots;
-  DCL_LOCK_STATE;
 
   GC_ASSERT(I_DONT_HOLD_LOCK());
   if (GC_no_dls) return;
@@ -1394,9 +1393,6 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
   unsigned long start, end;
   unsigned i, j;
   const struct GC_MACH_SECTION *sec;
-# if defined(DARWIN_DEBUG) && !defined(NO_DEBUGGING)
-    DCL_LOCK_STATE;
-# endif
 
   GC_ASSERT(I_DONT_HOLD_LOCK());
   for (i = 0; i < sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]); i++) {

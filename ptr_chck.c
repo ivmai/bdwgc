@@ -261,8 +261,6 @@ GC_API void * GC_CALL GC_post_incr(void **p, ptrdiff_t how_much)
 
 GC_API void GC_CALL GC_set_same_obj_print_proc(GC_same_obj_print_proc_t fn)
 {
-    DCL_LOCK_STATE;
-
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
     LOCK();
     GC_same_obj_print_proc = fn;
@@ -272,7 +270,6 @@ GC_API void GC_CALL GC_set_same_obj_print_proc(GC_same_obj_print_proc_t fn)
 GC_API GC_same_obj_print_proc_t GC_CALL GC_get_same_obj_print_proc(void)
 {
     GC_same_obj_print_proc_t fn;
-    DCL_LOCK_STATE;
 
     LOCK();
     fn = GC_same_obj_print_proc;
@@ -283,8 +280,6 @@ GC_API GC_same_obj_print_proc_t GC_CALL GC_get_same_obj_print_proc(void)
 GC_API void GC_CALL GC_set_is_valid_displacement_print_proc(
                                         GC_valid_ptr_print_proc_t fn)
 {
-    DCL_LOCK_STATE;
-
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
     LOCK();
     GC_is_valid_displacement_print_proc = fn;
@@ -295,7 +290,6 @@ GC_API GC_valid_ptr_print_proc_t GC_CALL
 GC_get_is_valid_displacement_print_proc(void)
 {
     GC_valid_ptr_print_proc_t fn;
-    DCL_LOCK_STATE;
 
     LOCK();
     fn = GC_is_valid_displacement_print_proc;
@@ -305,8 +299,6 @@ GC_get_is_valid_displacement_print_proc(void)
 
 GC_API void GC_CALL GC_set_is_visible_print_proc(GC_valid_ptr_print_proc_t fn)
 {
-    DCL_LOCK_STATE;
-
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
     LOCK();
     GC_is_visible_print_proc = fn;
@@ -316,7 +308,6 @@ GC_API void GC_CALL GC_set_is_visible_print_proc(GC_valid_ptr_print_proc_t fn)
 GC_API GC_valid_ptr_print_proc_t GC_CALL GC_get_is_visible_print_proc(void)
 {
     GC_valid_ptr_print_proc_t fn;
-    DCL_LOCK_STATE;
 
     LOCK();
     fn = GC_is_visible_print_proc;

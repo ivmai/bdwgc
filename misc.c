@@ -527,8 +527,6 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
                         GC_word *pfree_bytes, GC_word *punmapped_bytes,
                         GC_word *pbytes_since_gc, GC_word *ptotal_bytes)
 {
-  DCL_LOCK_STATE;
-
   LOCK();
   if (pheap_size != NULL)
     *pheap_size = GC_heapsize - GC_unmapped_bytes;
@@ -573,7 +571,6 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
                                           size_t stats_sz)
   {
     struct GC_prof_stats_s stats;
-    DCL_LOCK_STATE;
 
     LOCK();
     fill_prof_stats(stats_sz >= sizeof(stats) ? pstats : &stats);
@@ -785,8 +782,6 @@ GC_API int GC_CALL GC_is_init_called(void)
   {
     if (GC_find_leak && !skip_gc_atexit) {
 #     ifdef THREADS
-        DCL_LOCK_STATE;
-
         /* GC_in_thread_creation should always be updated holding the   */
         /* lock even if we are about to exit.                           */
         LOCK();
@@ -932,9 +927,6 @@ GC_API void GC_CALL GC_init(void)
     /* LOCK(); -- no longer does anything this early. */
     word initial_heap_sz;
     IF_CANCEL(int cancel_state;)
-#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-      DCL_LOCK_STATE;
-#   endif
 
     if (EXPECT(GC_is_initialized, TRUE)) return;
 #   ifdef REDIRECT_MALLOC
@@ -1401,7 +1393,6 @@ GC_API void GC_CALL GC_init(void)
 GC_API void GC_CALL GC_enable_incremental(void)
 {
 # if !defined(GC_DISABLE_INCREMENTAL) && !defined(KEEP_BACK_PTRS)
-    DCL_LOCK_STATE;
     /* If we are keeping back pointers, the GC itself dirties all */
     /* pages on which objects have been marked, making            */
     /* incremental GC pointless.                                  */
@@ -1456,7 +1447,6 @@ GC_API void GC_CALL GC_start_mark_threads(void)
 {
 #   ifdef PARALLEL_MARK
       IF_CANCEL(int cancel_state;)
-      DCL_LOCK_STATE;
 
       DISABLE_CANCEL(cancel_state);
       LOCK();
@@ -1946,7 +1936,6 @@ GC_API void GC_CALLBACK GC_ignore_warn_proc(char *msg, GC_word arg)
 
 GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc p)
 {
-    DCL_LOCK_STATE;
     GC_ASSERT(NONNULL_ARG_NOT_NULL(p));
 #   ifdef GC_WIN32_THREADS
 #     ifdef CYGWIN32
@@ -1964,7 +1953,7 @@ GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc p)
 GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 {
     GC_warn_proc result;
-    DCL_LOCK_STATE;
+
     LOCK();
     result = GC_current_warn_proc;
     UNLOCK();
@@ -2021,7 +2010,6 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 
   GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
   {
-      DCL_LOCK_STATE;
       GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
       LOCK();
       GC_on_abort = fn;
@@ -2031,7 +2019,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
   GC_API GC_abort_func GC_CALL GC_get_abort_func(void)
   {
       GC_abort_func fn;
-      DCL_LOCK_STATE;
+
       LOCK();
       fn = GC_on_abort;
       UNLOCK();
@@ -2041,8 +2029,6 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 
 GC_API void GC_CALL GC_enable(void)
 {
-    DCL_LOCK_STATE;
-
     LOCK();
     GC_ASSERT(GC_dont_gc != 0); /* ensure no counter underflow */
     GC_dont_gc--;
@@ -2054,7 +2040,6 @@ GC_API void GC_CALL GC_enable(void)
 
 GC_API void GC_CALL GC_disable(void)
 {
-    DCL_LOCK_STATE;
     LOCK();
     if (!GC_dont_gc)
       GC_heapsize_on_gc_disable = GC_heapsize;
@@ -2082,7 +2067,7 @@ GC_API void ** GC_CALL GC_new_free_list_inner(void)
 GC_API void ** GC_CALL GC_new_free_list(void)
 {
     void ** result;
-    DCL_LOCK_STATE;
+
     LOCK();
     result = GC_new_free_list_inner();
     UNLOCK();
@@ -2124,7 +2109,7 @@ GC_API unsigned GC_CALL GC_new_kind(void **fl, GC_word descr, int adjust,
                                     int clear)
 {
     unsigned result;
-    DCL_LOCK_STATE;
+
     LOCK();
     result = GC_new_kind_inner(fl, descr, adjust, clear);
     UNLOCK();
@@ -2147,7 +2132,7 @@ GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc proc)
 GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc proc)
 {
     unsigned result;
-    DCL_LOCK_STATE;
+
     LOCK();
     result = GC_new_proc_inner(proc);
     UNLOCK();
@@ -2157,7 +2142,6 @@ GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc proc)
 GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn, void *client_data)
 {
     void * result;
-    DCL_LOCK_STATE;
 
 #   ifdef THREADS
       LOCK();
@@ -2323,8 +2307,6 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 #if !defined(NO_DEBUGGING)
   GC_API void GC_CALL GC_dump(void)
   {
-    DCL_LOCK_STATE;
-
     LOCK();
     GC_dump_named(NULL);
     UNLOCK();
@@ -2372,7 +2354,6 @@ static void GC_CALLBACK block_add_size(struct hblk *h, GC_word pbytes)
 GC_API size_t GC_CALL GC_get_memory_use(void)
 {
   word bytes = 0;
-  DCL_LOCK_STATE;
 
   LOCK();
   GC_apply_to_all_blocks(block_add_size, (word)(&bytes));
@@ -2409,13 +2390,11 @@ GC_API int GC_CALL GC_get_parallel(void)
 #ifdef THREADS
   GC_API void GC_CALL GC_alloc_lock(void)
   {
-    DCL_LOCK_STATE;
     LOCK();
   }
 
   GC_API void GC_CALL GC_alloc_unlock(void)
   {
-    /* no DCL_LOCK_STATE */
     UNLOCK();
   }
 
@@ -2424,7 +2403,6 @@ GC_API int GC_CALL GC_get_parallel(void)
   GC_API void GC_CALL GC_set_on_thread_event(GC_on_thread_event_proc fn)
   {
     /* fn may be 0 (means no event notifier). */
-    DCL_LOCK_STATE;
     LOCK();
     GC_on_thread_event = fn;
     UNLOCK();
@@ -2433,7 +2411,7 @@ GC_API int GC_CALL GC_get_parallel(void)
   GC_API GC_on_thread_event_proc GC_CALL GC_get_on_thread_event(void)
   {
     GC_on_thread_event_proc fn;
-    DCL_LOCK_STATE;
+
     LOCK();
     fn = GC_on_thread_event;
     UNLOCK();
@@ -2447,8 +2425,6 @@ GC_API int GC_CALL GC_get_parallel(void)
 
 GC_API void GC_CALL GC_set_oom_fn(GC_oom_func fn)
 {
-    DCL_LOCK_STATE;
-
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
     LOCK();
     GC_oom_fn = fn;
@@ -2458,7 +2434,7 @@ GC_API void GC_CALL GC_set_oom_fn(GC_oom_func fn)
 GC_API GC_oom_func GC_CALL GC_get_oom_fn(void)
 {
     GC_oom_func fn;
-    DCL_LOCK_STATE;
+
     LOCK();
     fn = GC_oom_fn;
     UNLOCK();
@@ -2468,7 +2444,6 @@ GC_API GC_oom_func GC_CALL GC_get_oom_fn(void)
 GC_API void GC_CALL GC_set_on_heap_resize(GC_on_heap_resize_proc fn)
 {
     /* fn may be 0 (means no event notifier). */
-    DCL_LOCK_STATE;
     LOCK();
     GC_on_heap_resize = fn;
     UNLOCK();
@@ -2477,7 +2452,7 @@ GC_API void GC_CALL GC_set_on_heap_resize(GC_on_heap_resize_proc fn)
 GC_API GC_on_heap_resize_proc GC_CALL GC_get_on_heap_resize(void)
 {
     GC_on_heap_resize_proc fn;
-    DCL_LOCK_STATE;
+
     LOCK();
     fn = GC_on_heap_resize;
     UNLOCK();
@@ -2487,7 +2462,6 @@ GC_API GC_on_heap_resize_proc GC_CALL GC_get_on_heap_resize(void)
 GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc fn)
 {
     /* fn may be 0 (means no finalizer notifier). */
-    DCL_LOCK_STATE;
     LOCK();
     GC_finalizer_notifier = fn;
     UNLOCK();
@@ -2496,7 +2470,7 @@ GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc fn)
 GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void)
 {
     GC_finalizer_notifier_proc fn;
-    DCL_LOCK_STATE;
+
     LOCK();
     fn = GC_finalizer_notifier;
     UNLOCK();
@@ -2523,8 +2497,6 @@ GC_API int GC_CALL GC_get_find_leak(void)
 
 GC_API void GC_CALL GC_set_all_interior_pointers(int value)
 {
-    DCL_LOCK_STATE;
-
     GC_all_interior_pointers = value ? 1 : 0;
     if (GC_is_initialized) {
       /* It is not recommended to change GC_all_interior_pointers value */

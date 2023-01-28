@@ -67,7 +67,6 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
     size_t nwords = divWORDSZ(nbits + WORDSZ-1);
     signed_word result;
     size_t i;
-    DCL_LOCK_STATE;
 
     LOCK();
     while (EXPECT(GC_avail_descr + nwords >= GC_ed_size, FALSE)) {
@@ -205,7 +204,6 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 {
     signed_word last_set_bit = (signed_word)len - 1;
     GC_descr d;
-    DCL_LOCK_STATE;
 
 #   if defined(AO_HAVE_load_acquire) && defined(AO_HAVE_store_release)
       if (!EXPECT(AO_load_acquire(&GC_explicit_typing_initialized), TRUE)) {
@@ -306,7 +304,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 {
     void *op;
     size_t lg;
-    DCL_LOCK_STATE;
 
     GC_ASSERT(GC_explicit_typing_initialized);
     if (EXPECT(0 == lb, FALSE)) lb = 1;
@@ -502,7 +499,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     complex_descriptor *complex_d;
     int descr_type;
     struct LeafDescriptor leaf;
-    DCL_LOCK_STATE;
 
     GC_STATIC_ASSERT(sizeof(struct LeafDescriptor) % sizeof(word) == 0);
     GC_ASSERT(GC_explicit_typing_initialized);

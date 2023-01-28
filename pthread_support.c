@@ -879,7 +879,6 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
   GC_bool GC_is_thread_tsd_valid(void *tsd)
   {
     GC_thread me;
-    DCL_LOCK_STATE;
 
     LOCK();
     me = GC_lookup_thread(thread_id_self());
@@ -893,7 +892,6 @@ GC_API int GC_CALL GC_thread_is_registered(void)
 {
     thread_id_t self_id = thread_id_self();
     GC_thread me;
-    DCL_LOCK_STATE;
 
     LOCK();
     me = GC_lookup_thread(self_id);
@@ -914,7 +912,6 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
   GC_thread me;
   GC_stack_context_t crtn;
   thread_id_t self_id = thread_id_self();
-  DCL_LOCK_STATE;
 
   LOCK();
   me = GC_lookup_thread(self_id);
@@ -1182,8 +1179,6 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
         /* Make sure that no part of our stack is still on the mark     */
         /* stack, since it's about to be unmapped.                      */
         do {
-            DCL_LOCK_STATE;
-
             ENTER_GC();
             GC_ASSERT(!GC_in_thread_creation);
             GC_in_thread_creation = TRUE;
@@ -1701,7 +1696,6 @@ GC_INNER void GC_init_parallel(void)
 {
 # ifdef THREAD_LOCAL_ALLOC
     GC_thread me;
-    DCL_LOCK_STATE;
 
     GC_ASSERT(GC_is_initialized);
     LOCK();
@@ -1817,7 +1811,6 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
     struct blocking_data *d = (struct blocking_data *)data;
     GC_thread me;
     GC_bool topOfStackUnset;
-    DCL_LOCK_STATE;
 
     UNUSED_ARG(context);
     LOCK();
@@ -1867,7 +1860,6 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
   {
     GC_thread me = (GC_thread)thread_me;
     GC_bool topOfStackUnset;
-    DCL_LOCK_STATE;
 
     UNUSED_ARG(context);
     GC_ASSERT(I_HOLD_LOCK());
@@ -1929,7 +1921,6 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
 {
     thread_id_t self_id = thread_id_self();
     GC_thread me;
-    DCL_LOCK_STATE;
 
     LOCK();
     me = GC_lookup_thread(self_id);
@@ -1971,7 +1962,6 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 #   ifdef E2K
       size_t stack_size;
 #   endif
-    DCL_LOCK_STATE;
 
     LOCK();   /* This will block if the world is stopped.       */
     me = GC_lookup_thread(self_id);
@@ -2107,7 +2097,6 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     thread_id_t self_id = thread_id_self();
     GC_thread me;
     IF_CANCEL(int cancel_state;)
-    DCL_LOCK_STATE;
 
     /* Client should not unregister the thread explicitly if it */
     /* is registered by DllMain, except for the main thread.    */
@@ -2147,7 +2136,6 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
   {
 #   ifdef CANCEL_SAFE
       GC_thread t;
-      DCL_LOCK_STATE;
 #   endif
 
     INIT_REAL_SYMS();
@@ -2172,7 +2160,6 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
   {
     thread_id_t self_id = thread_id_self();
     GC_thread me;
-    DCL_LOCK_STATE;
 
     INIT_REAL_SYMS();
     LOCK();
@@ -2192,8 +2179,6 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 GC_API void GC_CALL GC_allow_register_threads(void)
 {
 # ifdef GC_ASSERTIONS
-    DCL_LOCK_STATE;
-
     /* Check GC is initialized and the current thread is registered. */
     LOCK(); /* needed for Win32 */
     GC_ASSERT(GC_lookup_thread(thread_id_self()) != 0);
@@ -2208,7 +2193,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 {
     thread_id_t self_id = thread_id_self();
     GC_thread me;
-    DCL_LOCK_STATE;
 
     if (GC_need_to_lock == FALSE)
         ABORT("Threads explicit registering is not previously enabled");
@@ -2278,7 +2262,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   {
     GC_thread me = (GC_thread)arg;
     IF_CANCEL(int cancel_state;)
-    DCL_LOCK_STATE;
 
 #   ifdef DEBUG_THREADS
         GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread= %p\n",
@@ -2296,7 +2279,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   {
     int result;
     GC_thread t;
-    DCL_LOCK_STATE;
 
     INIT_REAL_SYMS();
 #   ifdef DEBUG_THREADS
@@ -2350,7 +2332,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   {
     int result;
     GC_thread t;
-    DCL_LOCK_STATE;
 
     INIT_REAL_SYMS();
     LOCK();
@@ -2389,7 +2370,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     struct start_info *psi = (struct start_info *)arg;
     thread_id_t self_id = thread_id_self();
     GC_thread me;
-    DCL_LOCK_STATE;
 
 #   ifdef DEBUG_THREADS
       GC_log_printf("Starting thread %p, sp= %p\n",

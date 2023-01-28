@@ -146,8 +146,6 @@ GC_INNER word GC_root_size = 0;
 
 GC_API void GC_CALL GC_add_roots(void *b, void *e)
 {
-    DCL_LOCK_STATE;
-
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
     GC_add_roots_inner((ptr_t)b, (ptr_t)e, FALSE);
@@ -268,8 +266,6 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 
 GC_API void GC_CALL GC_clear_roots(void)
 {
-    DCL_LOCK_STATE;
-
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
 #   ifdef THREADS
@@ -340,8 +336,6 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
 
 GC_API void GC_CALL GC_remove_roots(void *b, void *e)
 {
-    DCL_LOCK_STATE;
-
     /* Quick check whether has nothing to do */
     if ((((word)b + (sizeof(word) - 1)) & ~(word)(sizeof(word) - 1)) >=
         ((word)e & ~(word)(sizeof(word) - 1)))
@@ -602,8 +596,6 @@ GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
 
 GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
 {
-    DCL_LOCK_STATE;
-
     if (b == e) return;  /* nothing to exclude? */
 
     /* Round boundaries (in direction reverse to that of GC_add_roots). */

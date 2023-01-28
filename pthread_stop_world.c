@@ -638,7 +638,6 @@ STATIC void GC_restart_handler(int sig)
       AO_t next_stop_count;
       word suspend_cnt;
       IF_CANCEL(int cancel_state;)
-      DCL_LOCK_STATE;
 
       LOCK();
       t = GC_lookup_by_pthread((pthread_t)thread);
@@ -718,7 +717,6 @@ STATIC void GC_restart_handler(int sig)
 
     GC_API void GC_CALL GC_resume_thread(GC_SUSPEND_THREAD_ID thread) {
       GC_thread t;
-      DCL_LOCK_STATE;
 
       LOCK();
       t = GC_lookup_by_pthread((pthread_t)thread);
@@ -756,7 +754,6 @@ STATIC void GC_restart_handler(int sig)
     GC_API int GC_CALL GC_is_thread_suspended(GC_SUSPEND_THREAD_ID thread) {
       GC_thread t;
       int is_suspended = 0;
-      DCL_LOCK_STATE;
 
       LOCK();
       t = GC_lookup_by_pthread((pthread_t)thread);

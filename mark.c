@@ -1488,8 +1488,6 @@ GC_API void GC_CALL GC_print_trace_inner(word gc_no)
 
 GC_API void GC_CALL GC_print_trace(word gc_no)
 {
-    DCL_LOCK_STATE;
-
     LOCK();
     GC_print_trace_inner(gc_no);
     UNLOCK();

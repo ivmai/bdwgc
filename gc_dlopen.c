@@ -43,7 +43,6 @@
 #ifndef USE_PROC_FOR_LIBRARIES
   static void disable_gc_for_dlopen(void)
   {
-    DCL_LOCK_STATE;
     LOCK();
     while (GC_incremental && GC_collection_in_progress()) {
       ENTER_GC();
