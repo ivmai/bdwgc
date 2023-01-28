@@ -1726,8 +1726,9 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
 
 GC_API void GC_CALL GC_set_oom_fn(GC_oom_func fn)
 {
-    GC_ASSERT(fn != 0);
     DCL_LOCK_STATE;
+
+    GC_ASSERT(fn != 0);
     LOCK();
     GC_oom_fn = fn;
     UNLOCK();
