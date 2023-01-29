@@ -41,7 +41,7 @@
 #      define DCL_LOCK_STATE /* empty */
 #    else
 #      define DCL_LOCK_STATE \
-         PCR_ERes GC_fastLockRes; PCR_sigset_t GC_old_sig_mask
+                PCR_sigset_t GC_old_sig_mask
 #    endif
 #    define UNCOND_LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml)
 #    define UNCOND_UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)

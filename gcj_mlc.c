@@ -31,9 +31,7 @@
  * possibly with some tuning of the constants.  But the immediate goal
  * is to get better gcj performance.
  *
- * We assume:
- *  1) Counting on explicit initialization of this interface is OK;
- *  2) FASTLOCK is not a significant win.
+ * We assume: counting on explicit initialization of this interface is OK.
  */
 
 #include "gc_gcj.h"
