@@ -1373,8 +1373,8 @@ void typed_test(void)
   {
     /* Set these global variables just once to avoid TSan false positives. */
     A.dummy = 17;
-    GC_is_valid_displacement_print_proc = fail_proc1;
-    GC_is_visible_print_proc = fail_proc1;
+    GC_set_is_valid_displacement_print_proc(fail_proc1);
+    GC_set_is_visible_print_proc(fail_proc1);
   }
 
 # ifdef THREADS
@@ -2568,10 +2568,12 @@ int main(void)
     /* Dummy checking of various getters and setters. */
     (void)GC_get_bytes_since_gc();
     (void)GC_get_free_bytes();
+    (void)GC_get_hblk_size();
+    (void)GC_get_is_valid_displacement_print_proc();
+    (void)GC_get_is_visible_print_proc();
     (void)GC_get_pages_executable();
     (void)GC_get_warn_proc();
     (void)GC_is_disabled();
-    (void)GC_get_hblk_size();
     GC_set_allocd_bytes_per_finalizer(GC_get_allocd_bytes_per_finalizer());
     GC_set_disable_automatic_collection(GC_get_disable_automatic_collection());
     GC_set_dont_expand(GC_get_dont_expand());
@@ -2590,6 +2592,7 @@ int main(void)
     GC_set_on_thread_event(GC_get_on_thread_event());
     GC_set_oom_fn(GC_get_oom_fn());
     GC_set_push_other_roots(GC_get_push_other_roots());
+    GC_set_same_obj_print_proc(GC_get_same_obj_print_proc());
     GC_set_start_callback(GC_get_start_callback());
     GC_set_stop_func(GC_get_stop_func());
     GC_set_suspend_signal(GC_get_suspend_signal());

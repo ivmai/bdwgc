@@ -24,8 +24,8 @@ STATIC void GC_CALLBACK GC_default_same_obj_print_proc(void * p, void * q)
                ": %p and %p are not in the same object", p, q);
 }
 
-void (GC_CALLBACK *GC_same_obj_print_proc) (void *, void *)
-                = GC_default_same_obj_print_proc;
+GC_same_obj_print_proc_t GC_same_obj_print_proc =
+                GC_default_same_obj_print_proc;
 
 GC_API void * GC_CALL GC_same_obj(void *p, void *q)
 {
@@ -96,8 +96,8 @@ STATIC void GC_CALLBACK GC_default_is_valid_displacement_print_proc(void *p)
     ABORT_ARG1("GC_is_valid_displacement test failed", ": %p not valid", p);
 }
 
-void (GC_CALLBACK *GC_is_valid_displacement_print_proc)(void *) =
-        GC_default_is_valid_displacement_print_proc;
+GC_valid_ptr_print_proc_t GC_is_valid_displacement_print_proc =
+                GC_default_is_valid_displacement_print_proc;
 
 GC_API void * GC_CALL GC_is_valid_displacement(void *p)
 {
@@ -140,7 +140,7 @@ STATIC void GC_CALLBACK GC_default_is_visible_print_proc(void * p)
     ABORT_ARG1("GC_is_visible test failed", ": %p not GC-visible", p);
 }
 
-void (GC_CALLBACK *GC_is_visible_print_proc)(void * p) =
+GC_valid_ptr_print_proc_t GC_is_visible_print_proc =
                 GC_default_is_visible_print_proc;
 
 #ifndef THREADS
@@ -257,4 +257,69 @@ GC_API void * GC_CALL GC_post_incr(void **p, ptrdiff_t how_much)
     }
     *p = result;
     return initial; /* original *p */
+}
+
+GC_API void GC_CALL GC_set_same_obj_print_proc(GC_same_obj_print_proc_t fn)
+{
+    DCL_LOCK_STATE;
+
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
+    LOCK();
+    GC_same_obj_print_proc = fn;
+    UNLOCK();
+}
+
+GC_API GC_same_obj_print_proc_t GC_CALL GC_get_same_obj_print_proc(void)
+{
+    GC_same_obj_print_proc_t fn;
+    DCL_LOCK_STATE;
+
+    LOCK();
+    fn = GC_same_obj_print_proc;
+    UNLOCK();
+    return fn;
+}
+
+GC_API void GC_CALL GC_set_is_valid_displacement_print_proc(
+                                        GC_valid_ptr_print_proc_t fn)
+{
+    DCL_LOCK_STATE;
+
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
+    LOCK();
+    GC_is_valid_displacement_print_proc = fn;
+    UNLOCK();
+}
+
+GC_API GC_valid_ptr_print_proc_t GC_CALL
+GC_get_is_valid_displacement_print_proc(void)
+{
+    GC_valid_ptr_print_proc_t fn;
+    DCL_LOCK_STATE;
+
+    LOCK();
+    fn = GC_is_valid_displacement_print_proc;
+    UNLOCK();
+    return fn;
+}
+
+GC_API void GC_CALL GC_set_is_visible_print_proc(GC_valid_ptr_print_proc_t fn)
+{
+    DCL_LOCK_STATE;
+
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
+    LOCK();
+    GC_is_visible_print_proc = fn;
+    UNLOCK();
+}
+
+GC_API GC_valid_ptr_print_proc_t GC_CALL GC_get_is_visible_print_proc(void)
+{
+    GC_valid_ptr_print_proc_t fn;
+    DCL_LOCK_STATE;
+
+    LOCK();
+    fn = GC_is_visible_print_proc;
+    UNLOCK();
+    return fn;
 }

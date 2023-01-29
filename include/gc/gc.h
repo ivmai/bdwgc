@@ -241,6 +241,29 @@ GC_API GC_ATTR_DEPRECATED GC_finalizer_notifier_proc GC_finalizer_notifier;
 GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc);
 GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void);
 
+/* The functions called to report pointer checking errors.  Called      */
+/* without the GC lock held.  The default behavior is to fail with      */
+/* the appropriate message which includes the pointers.  The functions  */
+/* (variables) must not be 0.  Both the setters and getters acquire     */
+/* the GC lock (to avoid data races).                                   */
+typedef void (GC_CALLBACK *GC_valid_ptr_print_proc_t)(void *);
+typedef void (GC_CALLBACK *GC_same_obj_print_proc_t)(void * /* p */,
+                                                     void * /* q */);
+GC_API GC_ATTR_DEPRECATED GC_same_obj_print_proc_t GC_same_obj_print_proc;
+GC_API GC_ATTR_DEPRECATED GC_valid_ptr_print_proc_t
+                                GC_is_valid_displacement_print_proc;
+GC_API GC_ATTR_DEPRECATED GC_valid_ptr_print_proc_t GC_is_visible_print_proc;
+GC_API void GC_CALL GC_set_same_obj_print_proc(GC_same_obj_print_proc_t)
+                                                        GC_ATTR_NONNULL(1);
+GC_API GC_same_obj_print_proc_t GC_CALL GC_get_same_obj_print_proc(void);
+GC_API void GC_CALL GC_set_is_valid_displacement_print_proc(
+                                GC_valid_ptr_print_proc_t) GC_ATTR_NONNULL(1);
+GC_API GC_valid_ptr_print_proc_t GC_CALL
+        GC_get_is_valid_displacement_print_proc(void);
+GC_API void GC_CALL GC_set_is_visible_print_proc(GC_valid_ptr_print_proc_t)
+                                                        GC_ATTR_NONNULL(1);
+GC_API GC_valid_ptr_print_proc_t GC_CALL GC_get_is_visible_print_proc(void);
+
 GC_API
 # ifndef GC_DONT_GC
     GC_ATTR_DEPRECATED
@@ -1794,12 +1817,6 @@ GC_API void GC_CALL GC_ptr_store_and_dirty(void * /* p */,
                                            const void * /* q */);
 GC_API void GC_CALL GC_debug_ptr_store_and_dirty(void * /* p */,
                                                  const void * /* q */);
-
-/* Functions called to report pointer checking errors */
-GC_API void (GC_CALLBACK * GC_same_obj_print_proc)(void * /* p */,
-                                                   void * /* q */);
-GC_API void (GC_CALLBACK * GC_is_valid_displacement_print_proc)(void *);
-GC_API void (GC_CALLBACK * GC_is_visible_print_proc)(void *);
 
 #ifdef GC_PTHREADS
   /* For pthread support, we generally need to intercept a number of    */
