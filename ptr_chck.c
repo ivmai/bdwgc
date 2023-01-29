@@ -27,15 +27,6 @@ STATIC void GC_CALLBACK GC_default_same_obj_print_proc(void * p, void * q)
 void (GC_CALLBACK *GC_same_obj_print_proc) (void *, void *)
                 = GC_default_same_obj_print_proc;
 
-/* Check that p and q point to the same object.  Call           */
-/* *GC_same_obj_print_proc if they don't.                       */
-/* Returns the first argument.  (Return value may be hard       */
-/* to use due to typing issues.  But if we had a suitable       */
-/* preprocessor...)                                             */
-/* Succeeds if neither p nor q points to the heap.              */
-/* We assume this is performance critical.  (It shouldn't       */
-/* be called by production code, but this can easily make       */
-/* debugging intolerably slow.)                                 */
 GC_API void * GC_CALL GC_same_obj(void *p, void *q)
 {
     struct hblk *h;
@@ -100,7 +91,7 @@ fail:
     return p;
 }
 
-STATIC void GC_CALLBACK GC_default_is_valid_displacement_print_proc (void *p)
+STATIC void GC_CALLBACK GC_default_is_valid_displacement_print_proc(void *p)
 {
     ABORT_ARG1("GC_is_valid_displacement test failed", ": %p not valid", p);
 }
@@ -108,12 +99,6 @@ STATIC void GC_CALLBACK GC_default_is_valid_displacement_print_proc (void *p)
 void (GC_CALLBACK *GC_is_valid_displacement_print_proc)(void *) =
         GC_default_is_valid_displacement_print_proc;
 
-/* Check that if p is a pointer to a heap page, then it points to       */
-/* a valid displacement within a heap object.                           */
-/* Uninteresting with GC_all_interior_pointers.                         */
-/* Always returns its argument.                                         */
-/* Note that we don't lock, since nothing relevant about the header     */
-/* should change while we have a valid object pointer to the block.     */
 GC_API void * GC_CALL GC_is_valid_displacement(void *p)
 {
     hdr *hhdr;
@@ -177,14 +162,6 @@ void (GC_CALLBACK *GC_is_visible_print_proc)(void * p) =
   }
 #endif /* !THREADS */
 
-/* Check that p is visible                                              */
-/* to the collector as a possibly pointer containing location.          */
-/* If it isn't, invoke *GC_is_visible_print_proc.                       */
-/* Returns the argument in all cases.  May erroneously succeed          */
-/* in hard cases.  (This is intended for debugging use with             */
-/* untyped allocations.  The idea is that it should be possible, though */
-/* slow, to add such a call to all indirect pointer stores.)            */
-/* Currently useless for the multi-threaded worlds.                     */
 GC_API void * GC_CALL GC_is_visible(void *p)
 {
     hdr *hhdr;

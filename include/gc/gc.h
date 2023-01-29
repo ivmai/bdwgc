@@ -118,13 +118,13 @@ typedef void * (GC_CALLBACK * GC_oom_func)(size_t /* bytes_requested */);
 GC_API GC_ATTR_DEPRECATED GC_oom_func GC_oom_fn;
                         /* When there is insufficient memory to satisfy */
                         /* an allocation request, we return             */
-                        /* (*GC_oom_fn)(size).  By default this just    */
-                        /* returns NULL.                                */
-                        /* If it returns, it must return 0 or a valid   */
-                        /* pointer to a previously allocated heap       */
-                        /* object.  GC_oom_fn must not be 0.            */
-                        /* Both the supplied setter and the getter      */
-                        /* acquire the GC lock (to avoid data races).   */
+                        /* (*GC_oom_fn)(size).  If it returns, it must  */
+                        /* return either NULL or a valid pointer to     */
+                        /* a previously allocated heap object.          */
+                        /* By default, this just returns NULL.          */
+                        /* GC_oom_fn must not be 0.  Both the supplied  */
+                        /* setter and the getter acquire the GC lock    */
+                        /* (to avoid data races).                       */
 GC_API void GC_CALL GC_set_oom_fn(GC_oom_func) GC_ATTR_NONNULL(1);
 GC_API GC_oom_func GC_CALL GC_get_oom_fn(void);
 
@@ -1689,13 +1689,6 @@ GC_API void GC_CALL GC_set_stackbottom(void * /* gc_thread_handle */,
 /* preprocessor which inserts calls to check C pointer arithmetic.      */
 /* They indicate failure by invoking the corresponding _print_proc.     */
 
-/* Check that p and q point to the same object.                 */
-/* Fail conspicuously if they don't.                            */
-/* Returns the first argument.                                  */
-/* Succeeds if neither p nor q points to the heap.              */
-/* May succeed if both p and q point to between heap objects.   */
-GC_API void * GC_CALL GC_same_obj(void * /* p */, void * /* q */);
-
 /* Checked pointer pre- and post- increment operations.  Note that      */
 /* the second argument is in units of bytes, not multiples of the       */
 /* object size.  This should either be invoked from a macro, or the     */
@@ -1705,21 +1698,31 @@ GC_API void * GC_CALL GC_pre_incr(void **, ptrdiff_t /* how_much */)
 GC_API void * GC_CALL GC_post_incr(void **, ptrdiff_t /* how_much */)
                                                         GC_ATTR_NONNULL(1);
 
-/* Check that p is visible                                              */
-/* to the collector as a possibly pointer containing location.          */
-/* If it isn't fail conspicuously.                                      */
-/* Returns the argument in all cases.  May erroneously succeed          */
-/* in hard cases.  (This is intended for debugging use with             */
-/* untyped allocations.  The idea is that it should be possible, though */
-/* slow, to add such a call to all indirect pointer stores.)            */
-/* Currently useless for multi-threaded worlds.                         */
+/* Check that p and q point to the same object.  GC_same_obj_print_proc */
+/* is called (fail by default) if they do not.  Succeeds, as well, if   */
+/* neither p nor q points to the heap.  (May succeed also if both p and */
+/* q point to between heap objects.)  Returns the first argument.       */
+/* (The returned value may be hard to use due to typing issues.  But if */
+/* we had a suitable preprocessor...)  We assume this is somewhat       */
+/* performance critical (it should not be called by production code,    */
+/* of course, but it can easily make even debugging intolerably slow).  */
+GC_API void * GC_CALL GC_same_obj(void * /* p */, void * /* q */);
+
+/* Check that p is visible to the collector as a possibly pointer       */
+/* containing location.  If it is not, invoke GC_is_visible_print_proc  */
+/* (fail by default).  Always returns the argument.  May erroneously    */
+/* succeed in hard cases.  The function is intended for debugging use   */
+/* with untyped allocations.  (The idea is that it should be possible,  */
+/* though slow, to add such a call to all indirect pointer stores.)     */
+/* Currently useless for the multi-threaded worlds.                     */
 GC_API void * GC_CALL GC_is_visible(void * /* p */);
 
 /* Check that if p is a pointer to a heap page, then it points to       */
-/* a valid displacement within a heap object.                           */
-/* Fail conspicuously if this property does not hold.                   */
-/* Uninteresting with GC_all_interior_pointers.                         */
-/* Always returns its argument.                                         */
+/* a valid displacement within a heap object.  If it is not, invoke     */
+/* GC_is_valid_displacement_print_proc (fail by default).  Always       */
+/* returns the argument.  Uninteresting with all-interior-pointers on.  */
+/* Note that we do not lock, since nothing relevant about the header    */
+/* should change while we have a valid object pointer to the block.     */
 GC_API void * GC_CALL GC_is_valid_displacement(void * /* p */);
 
 /* Explicitly dump the GC state.  This is most often called from the    */
