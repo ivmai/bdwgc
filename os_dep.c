@@ -2099,7 +2099,11 @@ void GC_register_data_segments(void)
 
   void GC_register_data_segments(void)
   {
-#   if !defined(PCR) && !defined(MACOS)
+#   if !defined(DYNAMIC_LOADING) && defined(GC_DONT_REGISTER_MAIN_STATIC_DATA)
+      /* Avoid even referencing DATASTART and DATAEND as they are       */
+      /* unnecessary and cause linker errors when bitcode is enabled.   */
+      /* GC_register_data_segments() is not called anyway.              */
+#   elif !defined(PCR) && !defined(MACOS)
 #     if defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
         /* As of Solaris 2.3, the Solaris threads implementation        */
         /* allocates the data structure for the initial thread with     */
