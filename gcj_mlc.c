@@ -114,9 +114,6 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
 #define GENERAL_MALLOC_INNER(lb,k) \
     GC_clear_stack(GC_generic_malloc_inner(lb, k))
 
-#define GENERAL_MALLOC_INNER_IOP(lb,k) \
-    GC_clear_stack(GC_generic_malloc_inner_ignore_off_page(lb, k))
-
 /* We need a mechanism to release the lock and invoke finalizers.       */
 /* We don't really have an opportunity to do this on a rarely executed  */
 /* path on which the lock is not held.  Thus we check at a              */
@@ -159,7 +156,7 @@ static void maybe_finalize(void)
         op = GC_gcjobjfreelist[lg];
         if(EXPECT(0 == op, FALSE)) {
             maybe_finalize();
-            op = (ptr_t)GENERAL_MALLOC_INNER((word)lb, GC_gcj_kind);
+            op = (ptr_t)GENERAL_MALLOC_INNER(lb, GC_gcj_kind);
             if (0 == op) {
                 GC_oom_func oom_fn = GC_oom_fn;
                 UNLOCK();
@@ -173,7 +170,7 @@ static void maybe_finalize(void)
     } else {
         LOCK();
         maybe_finalize();
-        op = (ptr_t)GENERAL_MALLOC_INNER((word)lb, GC_gcj_kind);
+        op = (ptr_t)GENERAL_MALLOC_INNER(lb, GC_gcj_kind);
         if (0 == op) {
             GC_oom_func oom_fn = GC_oom_fn;
             UNLOCK();
@@ -219,40 +216,25 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     return result;
 }
 
-/* There is no THREAD_LOCAL_ALLOC for GC_gcj_malloc_ignore_off_page().  */
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
                                      void * ptr_to_struct_containing_descr)
 {
     ptr_t op;
 
-    GC_DBG_COLLECT_AT_MALLOC(lb);
-    if(SMALL_OBJ(lb)) {
-        word lg;
+    /* For small objects, the ignore_off_page variant of                */
+    /* GC_generic_malloc_inner does not differ from the ordinary one.   */
+    if (SMALL_OBJ(lb))
+      return GC_gcj_malloc(lb, ptr_to_struct_containing_descr);
 
-        LOCK();
-        lg = GC_size_map[lb];
-        op = GC_gcjobjfreelist[lg];
-        if (EXPECT(0 == op, FALSE)) {
-            maybe_finalize();
-            op = (ptr_t)GENERAL_MALLOC_INNER_IOP(lb, GC_gcj_kind);
-            if (0 == op) {
-                GC_oom_func oom_fn = GC_oom_fn;
-                UNLOCK();
-                return (*oom_fn)(lb);
-            }
-        } else {
-            GC_gcjobjfreelist[lg] = (ptr_t)obj_link(op);
-            GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
-        }
-    } else {
-        LOCK();
-        maybe_finalize();
-        op = (ptr_t)GENERAL_MALLOC_INNER_IOP(lb, GC_gcj_kind);
-        if (0 == op) {
-            GC_oom_func oom_fn = GC_oom_fn;
-            UNLOCK();
-            return (*oom_fn)(lb);
-        }
+    GC_DBG_COLLECT_AT_MALLOC(lb);
+    LOCK();
+    maybe_finalize();
+    op = (ptr_t)GC_clear_stack(GC_generic_malloc_inner_ignore_off_page(lb,
+                                                        GC_gcj_kind));
+    if (NULL == op) {
+        GC_oom_func oom_fn = GC_oom_fn;
+        UNLOCK();
+        return (*oom_fn)(lb);
     }
     *(void **)op = ptr_to_struct_containing_descr;
     UNLOCK();
