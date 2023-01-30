@@ -281,11 +281,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
 
     GC_ASSERT(GC_explicit_typing_initialized);
     if (EXPECT(0 == lb, FALSE)) lb = 1; /* ensure nwords > 1 */
-    lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
-    op = GC_malloc_kind(lb, GC_explicit_kind);
-    if (EXPECT(NULL == op, FALSE))
-        return NULL;
-    /* It is not safe to use GC_size_map[lb] to compute nwords here as  */
+    op = GC_malloc_kind(SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES), GC_explicit_kind);
+    if (EXPECT(NULL == op, FALSE)) return NULL;
+
+    /* It is not safe to use GC_size_map to compute nwords here as      */
     /* the former might be updated asynchronously.                      */
     nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));
     set_obj_descr(op, nwords, d);
@@ -294,47 +293,24 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     return op;
 }
 
-/* We make the GC_clear_stack() call a tail one, hoping to get more of  */
-/* the stack.                                                           */
-#define GENERAL_MALLOC_IOP(lb, k) \
-                GC_clear_stack(GC_generic_malloc_ignore_off_page(lb, k))
-
 GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_malloc_explicitly_typed_ignore_off_page(size_t lb, GC_descr d)
 {
     void *op;
-    size_t lg;
+    size_t lb_adjusted = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
+    size_t nwords;
+
+    if (SMALL_OBJ(lb_adjusted))
+      return GC_malloc_explicitly_typed(lb, d);
 
     GC_ASSERT(GC_explicit_typing_initialized);
-    if (EXPECT(0 == lb, FALSE)) lb = 1;
-    lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
-    if (SMALL_OBJ(lb)) {
-        void **opp;
+    op = GC_clear_stack(GC_generic_malloc_ignore_off_page(lb_adjusted,
+                                                          GC_explicit_kind));
+    if (EXPECT(NULL == op, FALSE)) return NULL;
 
-        GC_DBG_COLLECT_AT_MALLOC(lb);
-        LOCK();
-        lg = GC_size_map[lb];
-        opp = &GC_obj_kinds[GC_explicit_kind].ok_freelist[lg];
-        op = *opp;
-        if (EXPECT(NULL == op, FALSE)) {
-            UNLOCK();
-            op = GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
-            if (NULL == op) return NULL;
-            /* See the comment in GC_malloc_explicitly_typed.   */
-            lg = BYTES_TO_GRANULES(GC_size(op));
-        } else {
-            *opp = obj_link(op);
-            obj_link(op) = 0;
-            GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
-            UNLOCK();
-        }
-    } else {
-        op = GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
-        if (EXPECT(NULL == op, FALSE)) return NULL;
-        lg = BYTES_TO_GRANULES(GC_size(op));
-    }
-    set_obj_descr(op, GRANULES_TO_WORDS(lg), d);
-    GC_dirty((word *)op + GRANULES_TO_WORDS(lg) - 1);
+    nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));
+    set_obj_descr(op, nwords, d);
+    GC_dirty((word *)op + nwords - 1);
     REACHABLE_AFTER_DIRTY(d);
     return op;
 }
