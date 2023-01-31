@@ -27,6 +27,7 @@
 /* This interface is most useful for compilers that generate C.         */
 /* It is also used internally for thread-local allocation.              */
 /* Manual use is hereby discouraged.                                    */
+/* There is no debugging version of this allocation API.                */
 
 #include "gc.h"
 #include "gc_tiny_fl.h"
@@ -193,7 +194,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
       GC_MALLOC_WORDS_KIND(result, 2, tiny_fl, GC_I_NORMAL, (void)0); \
       if ((result) != 0 /* NULL */) { \
         *(void **)(result) = l; \
-        GC_PTR_STORE_AND_DIRTY((void **)(result) + 1, r); \
+        GC_ptr_store_and_dirty((void **)(result) + 1, r); \
         GC_reachable_here(l); \
       } \
     } while (0)
