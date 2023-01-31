@@ -208,13 +208,13 @@ void *weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
   GC_end_stubborn_change(new_base);
 
   /* Add the object to the map. */
-  new_link = GC_NEW(struct weakmap_link);
+  new_link = (struct weakmap_link *)GC_malloc(sizeof(struct weakmap_link));
   CHECK_OOM(new_link);
   new_link->obj = GC_get_find_leak() ? (GC_word)new_obj
                         : GC_HIDE_POINTER(new_obj);
   new_link->next = *first;
   GC_END_STUBBORN_CHANGE(new_link);
-  GC_PTR_STORE_AND_DIRTY(first, new_link);
+  GC_ptr_store_and_dirty(first, new_link);
   weakmap_unlock(wm, h);
   AO_fetch_and_add1(&stat_added);
 # ifdef DEBUG_DISCLAIM_WEAKMAP
@@ -279,7 +279,7 @@ int GC_CALLBACK weakmap_disclaim(void *obj_base)
       break;
     my_assert(memcmp(old_obj, obj, wm->key_size) != 0);
   }
-  GC_PTR_STORE_AND_DIRTY(link, (*link)->next);
+  GC_ptr_store_and_dirty(link, (*link)->next);
   weakmap_unlock(wm, h);
   return 0;
 }
@@ -287,7 +287,7 @@ int GC_CALLBACK weakmap_disclaim(void *obj_base)
 struct weakmap *weakmap_new(size_t capacity, size_t key_size, size_t obj_size,
                             unsigned weakobj_kind)
 {
-  struct weakmap *wm = GC_NEW(struct weakmap);
+  struct weakmap *wm = (struct weakmap *)GC_malloc(sizeof(struct weakmap));
 
   CHECK_OOM(wm);
 # ifdef GC_PTHREADS
@@ -303,8 +303,8 @@ struct weakmap *weakmap_new(size_t capacity, size_t key_size, size_t obj_size,
   wm->obj_size = obj_size;
   wm->capacity = capacity;
   wm->weakobj_kind = weakobj_kind;
-  GC_PTR_STORE_AND_DIRTY(&wm->links,
-                         GC_MALLOC(sizeof(struct weakmap_link *) * capacity));
+  GC_ptr_store_and_dirty(&wm->links,
+                         GC_malloc(sizeof(struct weakmap_link *) * capacity));
   CHECK_OOM(wm->links);
   return wm;
 }
