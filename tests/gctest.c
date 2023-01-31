@@ -1295,7 +1295,7 @@ void typed_test(void)
         if ((i & 0xff) != 0) {
           newP = (GC_word*)GC_MALLOC_EXPLICITLY_TYPED(4 * sizeof(GC_word), d1);
         } else {
-          newP = (GC_word*)GC_malloc_explicitly_typed_ignore_off_page(
+          newP = (GC_word*)GC_MALLOC_EXPLICITLY_TYPED_IGNORE_OFF_PAGE(
                                                       4 * sizeof(GC_word), d1);
         }
         CHECK_OUT_OF_MEMORY(newP);
