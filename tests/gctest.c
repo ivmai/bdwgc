@@ -425,7 +425,7 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
     GC_word cnt = (GC_word)AO_fetch_and_add1(&extra_count);
     void *d = (cnt & 1) != 0 ? &gcj_class_struct1 : &gcj_class_struct2;
     size_t lb = sizeof(struct SEXPR) + sizeof(struct fake_vtable*);
-    void *r = (cnt & 2) != 0 ? GC_gcj_malloc_ignore_off_page(lb
+    void *r = (cnt & 2) != 0 ? GC_GCJ_MALLOC_IGNORE_OFF_PAGE(lb
                                         + (cnt <= HBLKSIZE / 2 ? cnt : 0), d)
                              : GC_GCJ_MALLOC(lb, d);
 
