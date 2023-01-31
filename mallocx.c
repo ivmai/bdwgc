@@ -491,7 +491,15 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_many(size_t lb)
     return result;
 }
 
-/* Debug version is tricky and currently missing.       */
+/* TODO: The debugging version of GC_memalign and friends is tricky     */
+/* and currently missing.  There are 2 major difficulties:              */
+/* - GC_base() should always point to the beginning of the allocated    */
+/* block (thus, for small objects allocation we should probably         */
+/* iterate over the list of free objects to find the one with the       */
+/* suitable alignment);                                                 */
+/* - store_debug_info() should return the pointer of the object with    */
+/* the requested alignment (unlike the object header).                  */
+
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
 {
     size_t offset;

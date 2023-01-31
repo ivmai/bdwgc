@@ -54,6 +54,11 @@
 # define wcsdup(s) GC_WCSDUP(s)
 #endif
 
+/* The following routines for the aligned objects allocation    */
+/* (aligned_alloc, valloc, etc.) do not have their debugging    */
+/* counterparts.  Note that free() called for such objects      */
+/* may output a warning that the pointer has no debugging info. */
+
 #undef aligned_alloc
 #define aligned_alloc(a,n) GC_memalign(a,n) /* identical to memalign */
 #undef memalign

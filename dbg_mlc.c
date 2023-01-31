@@ -779,6 +779,9 @@ GC_API void GC_CALL GC_debug_free(void * p)
         /* TODO: Suppress the warning if free() caller is in libpthread */
         /* or libdl.                                                    */
 #     endif
+      /* TODO: Suppress the warning for objects allocated by            */
+      /* GC_memalign and friends (these ones do not have the debugging  */
+      /* counterpart).                                                  */
       GC_err_printf(
                "GC_debug_free called on pointer %p w/o debugging info\n", p);
     } else {
