@@ -106,11 +106,15 @@ GC_API GC_ATTR_MALLOC GC_ATTR_CALLOC_SIZE(1, 2) void * GC_CALL
 
 #ifdef GC_DEBUG
 # define GC_MALLOC_EXPLICITLY_TYPED(bytes, d) ((void)(d), GC_MALLOC(bytes))
+# define GC_MALLOC_EXPLICITLY_TYPED_IGNORE_OFF_PAGE(bytes, d) \
+                        GC_MALLOC_EXPLICITLY_TYPED(bytes, d)
 # define GC_CALLOC_EXPLICITLY_TYPED(n, bytes, d) \
                         ((void)(d), GC_MALLOC((n) * (bytes)))
 #else
 # define GC_MALLOC_EXPLICITLY_TYPED(bytes, d) \
                         GC_malloc_explicitly_typed(bytes, d)
+# define GC_MALLOC_EXPLICITLY_TYPED_IGNORE_OFF_PAGE(bytes, d) \
+                        GC_malloc_explicitly_typed_ignore_off_page(bytes, d)
 # define GC_CALLOC_EXPLICITLY_TYPED(n, bytes, d) \
                         GC_calloc_explicitly_typed(n, bytes, d)
 #endif
