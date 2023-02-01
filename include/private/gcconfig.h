@@ -127,6 +127,10 @@ EXTERN_C_BEGIN
 #   define FREEBSD
 # endif
 
+# if defined(__QNX__) && !defined(QNX)
+#   define QNX
+# endif
+
 /* And one for Darwin: */
 # if defined(macosx) || (defined(__APPLE__) && defined(__MACH__))
 #   define DARWIN
@@ -521,7 +525,7 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # elif (defined(__i386__) || defined(i386)) \
        && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
-            || defined(NETBSD) || defined(OPENBSD) || defined(__QNX__))
+            || defined(NETBSD) || defined(OPENBSD) || defined(QNX))
 #   define I386
 #   define mach_type_known
 # elif (defined(__ia64) || defined(__ia64__)) && defined(LINUX)
@@ -958,6 +962,16 @@ EXTERN_C_BEGIN
 #   endif
 # endif /* OPENBSD */
 
+# ifdef QNX
+#   define OS_TYPE "QNX"
+#   define SA_RESTART 0
+#   define HEURISTIC1
+    extern char etext[];
+#   define DATASTART ((ptr_t)etext)
+    extern int _end[];
+#   define DATAEND ((ptr_t)_end)
+# endif /* QNX */
+
 # ifdef SOLARIS
 #   define OS_TYPE "SOLARIS"
     extern int _etext[], _end[];
@@ -1330,18 +1344,12 @@ EXTERN_C_BEGIN
 #       error No threads support yet
 #     endif
 #   endif
-#   if defined(__QNX__)
-#     define OS_TYPE "QNX"
-#     define SA_RESTART 0
-#     define HEURISTIC1
-      extern char etext[];
-      extern int _end[];
-#     define DATASTART ((ptr_t)etext)
-#     define DATAEND ((ptr_t)_end)
-#   endif
 #   ifdef HAIKU
       extern int etext[];
 #     define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
+#   endif
+#   ifdef QNX
+      /* Nothing specific. */
 #   endif
 #   ifdef SOLARIS
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
