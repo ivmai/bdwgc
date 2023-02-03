@@ -1967,7 +1967,7 @@ void GC_register_data_segments(void)
                              (ptr_t)LMGetCurrentA5(), FALSE);
           /* MATTHEW: Handle Far Globals */
 #         if __option(far_data)
-      /* Far globals follow he QD globals: */
+      /* Far globals follow the QD globals: */
           GC_add_roots_inner((ptr_t)LMGetCurrentA5(),
                              (ptr_t)GC_MacGetDataEnd(), FALSE);
 #         endif
