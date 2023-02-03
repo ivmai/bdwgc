@@ -2072,8 +2072,36 @@ void GC_register_data_segments(void)
       /* Avoid even referencing DATASTART and DATAEND as they are       */
       /* unnecessary and cause linker errors when bitcode is enabled.   */
       /* GC_register_data_segments() is not called anyway.              */
-#   elif !defined(PCR) && !defined(MACOS)
-#     if defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
+#   elif defined(PCR)
+      /* No-op. */
+#   elif defined(MACOS)
+      {
+#       if defined(THINK_C)
+          extern void *GC_MacGetDataStart(void);
+
+          /* Globals begin above stack and end at a5.   */
+          GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
+                             (ptr_t)LMGetCurrentA5(), FALSE);
+#       elif defined(__MWERKS__) && defined(M68K)
+          extern void *GC_MacGetDataStart(void);
+#         if __option(far_data)
+            extern void *GC_MacGetDataEnd(void);
+
+            /* Handle Far Globals (CW Pro 3) located after the QD globals. */
+            GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
+                               (ptr_t)GC_MacGetDataEnd(), FALSE);
+#         else
+            GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
+                               (ptr_t)LMGetCurrentA5(), FALSE);
+#         endif
+#       elif defined(__MWERKS__) && defined(POWERPC)
+          extern char __data_start__[], __data_end__[];
+
+          GC_add_roots_inner((ptr_t)&__data_start__,
+                             (ptr_t)&__data_end__, FALSE);
+#       endif
+      }
+#   elif defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
         /* As of Solaris 2.3, the Solaris threads implementation        */
         /* allocates the data structure for the initial thread with     */
         /* sbrk at process startup.  It needs to be scanned, so that    */
@@ -2085,7 +2113,7 @@ void GC_register_data_segments(void)
           if ((word)DATASTART < (word)p)
             GC_add_roots_inner(DATASTART, p, FALSE);
         }
-#     else
+#   else
         if ((word)DATASTART - 1U >= (word)DATAEND) {
                                 /* Subtract one to check also for NULL  */
                                 /* without a compiler warning.          */
@@ -2099,42 +2127,7 @@ void GC_register_data_segments(void)
                        ": %p .. %p", (void *)DATASTART2, (void *)DATAEND2);
           GC_add_roots_inner(DATASTART2, DATAEND2, FALSE);
 #       endif
-#     endif
 #   endif
-#   if defined(MACOS)
-    {
-#   if defined(THINK_C)
-        extern void* GC_MacGetDataStart(void);
-        /* globals begin above stack and end at a5. */
-        GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
-                           (ptr_t)LMGetCurrentA5(), FALSE);
-#   else
-#     if defined(__MWERKS__)
-#       if !__POWERPC__
-          extern void* GC_MacGetDataStart(void);
-          /* MATTHEW: Function to handle Far Globals (CW Pro 3) */
-#         if __option(far_data)
-          extern void* GC_MacGetDataEnd(void);
-#         endif
-          /* globals begin above stack and end at a5. */
-          GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
-                             (ptr_t)LMGetCurrentA5(), FALSE);
-          /* MATTHEW: Handle Far Globals */
-#         if __option(far_data)
-      /* Far globals follow the QD globals: */
-          GC_add_roots_inner((ptr_t)LMGetCurrentA5(),
-                             (ptr_t)GC_MacGetDataEnd(), FALSE);
-#         endif
-#       else
-          extern char __data_start__[], __data_end__[];
-          GC_add_roots_inner((ptr_t)&__data_start__,
-                             (ptr_t)&__data_end__, FALSE);
-#       endif /* __POWERPC__ */
-#     endif /* __MWERKS__ */
-#   endif /* !THINK_C */
-    }
-#   endif /* MACOS */
-
     /* Dynamic libraries are added at every collection, since they may  */
     /* change.                                                          */
   }
