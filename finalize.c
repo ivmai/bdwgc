@@ -1245,22 +1245,20 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
     while (GC_should_invoke_finalizers() && !GC_interrupt_finalizers) {
         struct finalizable_object * curr_fo;
 
-#       ifdef THREADS
-            LOCK();
-#       endif
+        LOCK();
         if (count == 0) {
             bytes_freed_before = GC_bytes_freed;
             /* Don't do this outside, since we need the lock. */
         }
         curr_fo = GC_fnlz_roots.finalize_now;
 #       ifdef THREADS
-            if (curr_fo != NULL)
-                SET_FINALIZE_NOW(fo_next(curr_fo));
-            UNLOCK();
-            if (curr_fo == 0) break;
-#       else
-            GC_fnlz_roots.finalize_now = fo_next(curr_fo);
+            if (EXPECT(NULL == curr_fo, FALSE)) {
+                UNLOCK();
+                break;
+            }
 #       endif
+        SET_FINALIZE_NOW(fo_next(curr_fo));
+        UNLOCK();
         fo_set_next(curr_fo, 0);
         (*(curr_fo -> fo_fn))((ptr_t)(curr_fo -> fo_hidden_base),
                               curr_fo -> fo_client_data);
