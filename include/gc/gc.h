@@ -1399,9 +1399,12 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void);
 /* Does not use any synchronization.                            */
 GC_API int GC_CALL GC_should_invoke_finalizers(void);
 
-/* Set a flag to signal GC_invoke_finalizers to break.          */
-/* Does not use any synchronization.                            */
-GC_API void GC_CALL GC_set_interrupt_finalizers(void);
+/* Set maximum amount of finalizers to run during a single      */
+/* invocation of GC_invoke_finalizers.  Zero means no limit.    */
+/* Both the setter and getter acquire the GC lock.  Note that   */
+/* invocation of GC_finalize_all resets the maximum amount.     */
+GC_API void GC_CALL GC_set_interrupt_finalizers(unsigned);
+GC_API unsigned GC_CALL GC_get_interrupt_finalizers(void);
 
 GC_API int GC_CALL GC_invoke_finalizers(void);
         /* Run finalizers for all objects that are ready to     */

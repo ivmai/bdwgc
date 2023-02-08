@@ -2606,6 +2606,7 @@ int main(void)
 #   endif
 #   ifndef GC_NO_FINALIZATION
       GC_set_await_finalize_proc(GC_get_await_finalize_proc());
+      GC_set_interrupt_finalizers(GC_get_interrupt_finalizers());
 #     ifndef GC_TOGGLE_REFS_NOT_NEEDED
         GC_set_toggleref_func(GC_get_toggleref_func());
 #     endif

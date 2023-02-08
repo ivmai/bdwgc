@@ -1143,6 +1143,11 @@ GC_INNER void GC_finalize(void)
   }
 }
 
+/* Count of finalizers to run, at most, during a single invocation      */
+/* of GC_invoke_finalizers(); zero means no limit.  Accessed with the   */
+/* allocation lock held.                                                */
+STATIC unsigned GC_interrupt_finalizers = 0;
+
 #ifndef JAVA_FINALIZATION_NOT_NEEDED
 
   /* Enqueue all remaining finalizers to be run.        */
@@ -1203,6 +1208,7 @@ GC_INNER void GC_finalize(void)
     LOCK();
     while (GC_fo_entries > 0) {
       GC_enqueue_all_finalizers();
+      GC_interrupt_finalizers = 0; /* reset */
       UNLOCK();
       GC_invoke_finalizers();
       /* Running the finalizers in this thread is arguably not a good   */
@@ -1216,11 +1222,21 @@ GC_INNER void GC_finalize(void)
 
 #endif /* !JAVA_FINALIZATION_NOT_NEEDED */
 
-STATIC GC_bool GC_interrupt_finalizers = FALSE;
-
-GC_API void GC_CALL GC_set_interrupt_finalizers(void)
+GC_API void GC_CALL GC_set_interrupt_finalizers(unsigned value)
 {
-  GC_interrupt_finalizers = TRUE;
+  LOCK();
+  GC_interrupt_finalizers = value;
+  UNLOCK();
+}
+
+GC_API unsigned GC_CALL GC_get_interrupt_finalizers(void)
+{
+  unsigned value;
+
+  LOCK();
+  value = GC_interrupt_finalizers;
+  UNLOCK();
+  return value;
 }
 
 /* Returns true if it is worth calling GC_invoke_finalizers. (Useful if */
@@ -1242,13 +1258,17 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
     word bytes_freed_before = 0; /* initialized to prevent warning. */
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
-    while (GC_should_invoke_finalizers() && !GC_interrupt_finalizers) {
+    while (GC_should_invoke_finalizers()) {
         struct finalizable_object * curr_fo;
 
         LOCK();
         if (count == 0) {
             bytes_freed_before = GC_bytes_freed;
             /* Don't do this outside, since we need the lock. */
+        } else if (EXPECT(GC_interrupt_finalizers != 0, FALSE)
+                   && (unsigned)count >= GC_interrupt_finalizers) {
+            UNLOCK();
+            break;
         }
         curr_fo = GC_fnlz_roots.finalize_now;
 #       ifdef THREADS
@@ -1347,12 +1367,13 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
 #     endif
       pnested = GC_check_finalizer_nested();
       UNLOCK();
-      /* Skip GC_invoke_finalizers() if nested */
+      /* Skip GC_invoke_finalizers() if nested. */
       if (pnested != NULL) {
-        (void) GC_invoke_finalizers();
-        *pnested = 0; /* Reset since no more finalizers. */
+        (void)GC_invoke_finalizers();
+        *pnested = 0; /* Reset since no more finalizers or interrupted. */
 #       ifndef THREADS
-          GC_ASSERT(NULL == GC_fnlz_roots.finalize_now);
+          GC_ASSERT(NULL == GC_fnlz_roots.finalize_now
+                    || GC_interrupt_finalizers > 0);
 #       endif   /* Otherwise GC can run concurrently and add more */
       }
       return;
