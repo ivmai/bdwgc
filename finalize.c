@@ -657,6 +657,11 @@ STATIC void GC_null_finalize_mark_proc(ptr_t p)
 /* other objects specify no ordering.                                   */
 STATIC void GC_unreachable_finalize_mark_proc(ptr_t p)
 {
+    /* A dummy comparison to ensure the compiler not to optimize two    */
+    /* identical functions into a single one (thus, to ensure a unique  */
+    /* address of each).  Alternatively, GC_noop1(p) could be used.     */
+    if (EXPECT(NULL == p, FALSE)) return;
+
     GC_normal_finalize_mark_proc(p);
 }
 
