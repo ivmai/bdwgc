@@ -655,6 +655,10 @@ STATIC void GC_unreachable_finalize_mark_proc(ptr_t p)
     GC_normal_finalize_mark_proc(p);
 }
 
+static GC_bool need_unreachable_finalization = FALSE;
+        /* Avoid the work if this is not used.  */
+        /* TODO: turn need_unreachable_finalization into a counter */
+
 /* Register a finalization function.  See gc.h for details.     */
 /* The last parameter is a procedure that determines            */
 /* marking for finalization ordering.  Any objects marked       */
@@ -676,6 +680,8 @@ STATIC void GC_register_finalizer_inner(void * obj,
       return;
     }
     LOCK();
+    if (mp == GC_unreachable_finalize_mark_proc)
+        need_unreachable_finalization = TRUE;
     if (EXPECT(NULL == GC_fnlz_roots.fo_head, FALSE)
         || EXPECT(GC_fo_entries > ((word)1 << GC_log_fo_table_size), FALSE)) {
         GC_grow_table((struct hash_chain_entry ***)&GC_fnlz_roots.fo_head,
@@ -818,14 +824,10 @@ GC_API void GC_CALL GC_register_finalizer_no_order(void * obj,
                                 ocd, GC_null_finalize_mark_proc);
 }
 
-static GC_bool need_unreachable_finalization = FALSE;
-        /* Avoid the work if this isn't used.   */
-
 GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
                                GC_finalization_proc fn, void * cd,
                                GC_finalization_proc *ofn, void ** ocd)
 {
-    need_unreachable_finalization = TRUE;
     GC_ASSERT(GC_java_finalization);
     GC_register_finalizer_inner(obj, fn, cd, ofn,
                                 ocd, GC_unreachable_finalize_mark_proc);
