@@ -10893,7 +10893,7 @@
 
 2007-05-15  Hans Boehm <Hans.Boehm@hp.com>
 
-	* Makefile.am: Include NT_STSTIC_THREADS_MAKEFILE in dist.
+	* Makefile.am: Include NT_STATIC_THREADS_MAKEFILE in dist.
 	* Makefile.in: Regenerate.
 	* include/private/gc_locks.h: GC_compare_and_exchange, GC_atomic_add:
 	remove. NUMERIC_THREAD_ID, THREAD_EQUAL: New.  GC_lock_holder: now
