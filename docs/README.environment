@@ -29,7 +29,7 @@ GC_ONLY_LOG_TO_FILE - Turns off redirection of GC stdout and stderr to the log
 GC_PRINT_VERBOSE_STATS - Turn on even more logging.  Not functional with
                          SMALL_CONFIG.
 
-GC_DUMP_REGULARLY - Generate a GC debugging dump GC_dump() on startup
+GC_DUMP_REGULARLY - Generate a GC debugging dump (by GC_dump_named) on startup
                     and during every collection.  Very verbose.  Useful
                     if you have a bug to report, but please include only the
                     last complete dump.
