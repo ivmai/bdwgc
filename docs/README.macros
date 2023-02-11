@@ -268,7 +268,8 @@ REDIRECT_FREE=<X>       Causes free to be redirected to X.  The canonical use
 IGNORE_FREE     Turns calls to free into a no-op.  Only useful with
   REDIRECT_MALLOC.
 
-NO_DEBUGGING    Removes GC_dump and the debugging routines it calls.
+NO_DEBUGGING    Do not provide GC_count_set_marks_in_hblk, GC_dump[_named],
+  GC_dump_finalization, GC_dump_regions, GC_print_free_list functions.
   Reduces code size slightly at the expense of debuggability.
 
 GC_DUMP_REGULARLY       Generate regular debugging dumps.
