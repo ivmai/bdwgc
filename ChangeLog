@@ -6942,7 +6942,7 @@ Peter Wang).
 Allan Hsu, several contributors at Apple, and probably others).
 * Added some casts to powerpc.h in libatomic_ops to silence warnings.
 
-* Makefile.am: Include NT_STSTIC_THREADS_MAKEFILE in dist.
+* Makefile.am: Include NT_STATIC_THREADS_MAKEFILE in dist.
 * include/private/gc_locks.h: GC_compare_and_exchange, GC_atomic_add:
 remove. NUMERIC_THREAD_ID, THREAD_EQUAL: New.  GC_lock_holder: now
 unsigned long.  I_DONT_HOLD_LOCK, I_HOLD_LOCK: Update.
