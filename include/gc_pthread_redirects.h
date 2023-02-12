@@ -49,6 +49,8 @@
         || (_POSIX_C_SOURCE >= 199506L) || (_XOPEN_SOURCE >= 500)
       GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
                                     sigset_t * /* oset */);
+#   else
+#     define GC_NO_PTHREAD_SIGMASK
 #   endif
 # endif /* !GC_NO_PTHREAD_SIGMASK */
 
