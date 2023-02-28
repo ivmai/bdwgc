@@ -1544,7 +1544,7 @@ struct start_info {
 
 /* Called from GC_inner_start_routine().  Defined in this file to       */
 /* minimize the number of include files in pthread_start.c (because     */
-/* sem_t and sem_post() are not used that file directly).               */
+/* sem_t and sem_post() are not used in that file directly).            */
 GC_INNER GC_thread GC_start_rtn_prepare_thread(void *(**pstart)(void *),
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg)
