@@ -934,7 +934,7 @@ if test "${enable_redirect_malloc}" = yes; then
     AC_DEFINE([GC_USE_DLOPEN_WRAP], 1,
               [Define to cause the collector to redefine malloc and
                intercepted pthread routines with their real names while using
-               dlsym to refer to the orignal routines.])
+               dlsym to refer to the original routines.])
 fi
 
 AC_ARG_ENABLE(disclaim,
