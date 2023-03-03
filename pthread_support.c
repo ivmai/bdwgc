@@ -837,15 +837,22 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
   return p;
 }
 
+/* Same as GC_self_thread_inner() but acquires the GC lock.     */
+STATIC GC_thread GC_self_thread(void) {
+  GC_thread p;
+
+  LOCK();
+  p = GC_self_thread_inner();
+  UNLOCK();
+  return p;
+}
+
 #ifndef GC_NO_FINALIZATION
   /* Called by GC_finalize() (in case of an allocation failure observed). */
   GC_INNER void GC_reset_finalizer_nested(void)
   {
-    GC_thread me;
-
     GC_ASSERT(I_HOLD_LOCK());
-    me = GC_lookup_thread(thread_id_self());
-    me -> crtn -> finalizer_nested = 0;
+    GC_self_thread_inner() -> crtn -> finalizer_nested = 0;
   }
 
   /* Checks and updates the thread-local level of finalizers recursion. */
@@ -859,7 +866,7 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
     unsigned nesting_level;
 
     GC_ASSERT(I_HOLD_LOCK());
-    crtn = GC_lookup_thread(thread_id_self()) -> crtn;
+    crtn = GC_self_thread_inner() -> crtn;
     nesting_level = crtn -> finalizer_nested;
     if (nesting_level) {
       /* We are inside another GC_invoke_finalizers().          */
@@ -878,11 +885,8 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
   /* This is called from thread-local GC_malloc(). */
   GC_bool GC_is_thread_tsd_valid(void *tsd)
   {
-    GC_thread me;
+    GC_thread me = GC_self_thread();
 
-    LOCK();
-    me = GC_lookup_thread(thread_id_self());
-    UNLOCK();
     return (word)tsd >= (word)(&me->tlfs)
             && (word)tsd < (word)(&me->tlfs) + sizeof(me->tlfs);
   }
@@ -890,13 +894,7 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
 
 GC_API int GC_CALL GC_thread_is_registered(void)
 {
-    thread_id_t self_id = thread_id_self();
-    GC_thread me;
-
-    LOCK();
-    me = GC_lookup_thread(self_id);
-    UNLOCK();
-    return me != NULL;
+  return GC_self_thread() != NULL;
 }
 
 GC_API void GC_CALL GC_register_altstack(void *normstack,
@@ -911,10 +909,9 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
 #else
   GC_thread me;
   GC_stack_context_t crtn;
-  thread_id_t self_id = thread_id_self();
 
   LOCK();
-  me = GC_lookup_thread(self_id);
+  me = GC_self_thread_inner();
   if (EXPECT(NULL == me, FALSE)) {
     /* We are called before GC_thr_init. */
     me = &first_thread;
@@ -1670,7 +1667,6 @@ GC_INNER void GC_thr_init(void)
 
   /* Add the initial thread, so we can stop it. */
   {
-    thread_id_t self_id = thread_id_self();
     struct GC_stack_base sb;
     GC_thread me;
 
@@ -1681,8 +1677,8 @@ GC_INNER void GC_thr_init(void)
 #   elif defined(E2K)
       sb.reg_base = NULL;
 #   endif
-    GC_ASSERT(NULL == GC_lookup_thread(self_id));
-    me = GC_register_my_thread_inner(&sb, self_id);
+    GC_ASSERT(NULL == GC_self_thread_inner());
+    me = GC_register_my_thread_inner(&sb, thread_id_self());
     me -> flags = DETACHED | MAIN_THREAD;
   }
 }
@@ -1699,7 +1695,7 @@ GC_INNER void GC_init_parallel(void)
 
     GC_ASSERT(GC_is_initialized);
     LOCK();
-    me = GC_lookup_thread(thread_id_self());
+    me = GC_self_thread_inner();
     GC_init_thread_local(&me->tlfs);
     UNLOCK();
 # endif
@@ -1814,7 +1810,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
 
     UNUSED_ARG(context);
     LOCK();
-    me = GC_lookup_thread(thread_id_self());
+    me = GC_self_thread_inner();
     topOfStackUnset = do_blocking_enter(me);
     UNLOCK();
 
@@ -1832,7 +1828,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
          /* analysis tool might complain that this pointer value    */
          /* (obtained in the first locked section) is unreliable in */
          /* the second locked section.                              */
-         me = GC_lookup_thread(thread_id_self());
+         me = GC_self_thread_inner();
          GC_ASSERT(me == saved_me);
       }
 #   endif
@@ -1888,7 +1884,7 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
 
         GC_ASSERT(I_HOLD_LOCK());
         if (NULL == t) /* current thread? */
-            t = GC_lookup_thread(thread_id_self());
+            t = GC_self_thread_inner();
         GC_ASSERT(!KNOWN_FINISHED(t));
         crtn = t -> crtn;
         GC_ASSERT((t -> flags & DO_BLOCKING) == 0
@@ -1919,11 +1915,10 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
 
 GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
 {
-    thread_id_t self_id = thread_id_self();
     GC_thread me;
 
     LOCK();
-    me = GC_lookup_thread(self_id);
+    me = GC_self_thread_inner();
     /* The thread is assumed to be registered.  */
 #   ifndef GC_WIN32_THREADS
       if (EXPECT((me -> flags & MAIN_THREAD) != 0, FALSE)) {
@@ -1956,7 +1951,6 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
                                              void * client_data)
 {
     struct GC_traced_stack_sect_s stacksect;
-    thread_id_t self_id = thread_id_self();
     GC_thread me;
     GC_stack_context_t crtn;
 #   ifdef E2K
@@ -1964,7 +1958,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 #   endif
 
     LOCK();   /* This will block if the world is stopped.       */
-    me = GC_lookup_thread(self_id);
+    me = GC_self_thread_inner();
     crtn = me -> crtn;
 
     /* Adjust our stack bottom value (this could happen unless  */
@@ -2094,14 +2088,14 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
 
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
-    thread_id_t self_id = thread_id_self();
     GC_thread me;
     IF_CANCEL(int cancel_state;)
 
     /* Client should not unregister the thread explicitly if it */
     /* is registered by DllMain, except for the main thread.    */
 #   if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
-      GC_ASSERT(!GC_win32_dll_threads || GC_main_thread_id == self_id);
+      GC_ASSERT(!GC_win32_dll_threads
+                || GC_main_thread_id == thread_id_self());
 #   endif
 
     LOCK();
@@ -2109,13 +2103,13 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     /* Wait for any GC that may be marking from our stack to    */
     /* complete before we remove this thread.                   */
     GC_wait_for_gc_completion(FALSE);
-    me = GC_lookup_thread(self_id);
+    me = GC_self_thread_inner();
 #   ifdef DEBUG_THREADS
         GC_log_printf(
                 "Called GC_unregister_my_thread on %p, gc_thread= %p\n",
-                (void *)(signed_word)self_id, (void *)me);
+                (void *)(signed_word)thread_id_self(), (void *)me);
 #   endif
-    GC_ASSERT(THREAD_ID_EQUAL(me -> id, self_id));
+    GC_ASSERT(THREAD_ID_EQUAL(me -> id, thread_id_self()));
     GC_unregister_my_thread_inner(me);
     RESTORE_CANCEL(cancel_state);
     UNLOCK();
@@ -2158,15 +2152,14 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 #ifdef GC_HAVE_PTHREAD_EXIT
   GC_API GC_PTHREAD_EXIT_ATTRIBUTE void WRAP_FUNC(pthread_exit)(void *retval)
   {
-    thread_id_t self_id = thread_id_self();
     GC_thread me;
 
     INIT_REAL_SYMS();
     LOCK();
-    me = GC_lookup_thread(self_id);
+    me = GC_self_thread_inner();
     /* We test DISABLED_GC because someone else could call    */
     /* pthread_cancel at the same time.                       */
-    if (me != 0 && (me -> flags & DISABLED_GC) == 0) {
+    if (me != NULL && (me -> flags & DISABLED_GC) == 0) {
       me -> flags |= DISABLED_GC;
       GC_dont_gc++;
     }
@@ -2178,12 +2171,9 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 
 GC_API void GC_CALL GC_allow_register_threads(void)
 {
-# ifdef GC_ASSERTIONS
-    /* Check GC is initialized and the current thread is registered. */
-    LOCK(); /* needed for Win32 */
-    GC_ASSERT(GC_lookup_thread(thread_id_self()) != 0);
-    UNLOCK();
-# endif
+  /* Check GC is initialized and the current thread is registered.  */
+  GC_ASSERT(GC_self_thread() != NULL);
+
   INIT_REAL_SYMS(); /* to initialize symbols while single-threaded */
   GC_start_mark_threads();
   set_need_to_lock();
@@ -2191,7 +2181,6 @@ GC_API void GC_CALL GC_allow_register_threads(void)
 
 GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 {
-    thread_id_t self_id = thread_id_self();
     GC_thread me;
 
     if (GC_need_to_lock == FALSE)
@@ -2199,9 +2188,9 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
     /* We lock here, since we want to wait for an ongoing GC.   */
     LOCK();
-    me = GC_lookup_thread(self_id);
+    me = GC_self_thread_inner();
     if (EXPECT(NULL == me, TRUE)) {
-      me = GC_register_my_thread_inner(sb, self_id);
+      me = GC_register_my_thread_inner(sb, thread_id_self());
 #     ifdef GC_PTHREADS
 #       ifdef CPPCHECK
           GC_noop1(me -> flags);

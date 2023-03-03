@@ -1741,7 +1741,6 @@ GC_INNER void GC_thr_init(void)
       }
 # endif /* PARALLEL_MARK */
 
-  GC_ASSERT(NULL == GC_lookup_thread(self_id));
   GC_register_my_thread_inner(&sb, self_id);
 }
 

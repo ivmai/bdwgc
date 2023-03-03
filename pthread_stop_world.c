@@ -282,20 +282,21 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 /* data structure is impossible.  Unfortunately, we have to     */
 /* instruct TSan that the lookup is safe.                       */
 #ifdef THREAD_SANITIZER
-  /* The implementation of the function is the same as that of  */
-  /* GC_lookup_thread except for the attribute added here.      */
+  /* Almost same as GC_self_thread_inner() except for the       */
+  /* no-sanitize attribute added and the result is never NULL.  */
   GC_ATTR_NO_SANITIZE_THREAD
-  static GC_thread GC_lookup_thread_async(thread_id_t id)
+  static GC_thread GC_lookup_self_thread_async(void)
   {
-    GC_thread p = GC_threads[THREAD_TABLE_INDEX(id)];
+    thread_id_t self_id = thread_id_self();
+    GC_thread p = GC_threads[THREAD_TABLE_INDEX(self_id)];
 
-    for (; p != NULL; p = p -> tm.next) {
-      if (THREAD_EQUAL(p -> id, id)) break;
+    for (;; p = p -> tm.next) {
+      if (THREAD_EQUAL(p -> id, self_id)) break;
     }
     return p;
   }
 #else
-# define GC_lookup_thread_async GC_lookup_thread
+# define GC_lookup_self_thread_async() GC_self_thread_inner()
 #endif
 
 GC_INLINE void GC_store_stack_ptr(GC_stack_context_t crtn)
@@ -322,7 +323,6 @@ GC_INLINE void GC_store_stack_ptr(GC_stack_context_t crtn)
 
 STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
 {
-  pthread_t self;
   GC_thread me;
   GC_stack_context_t crtn;
 # ifdef E2K
@@ -352,15 +352,14 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
       /* cancellation point is inherently a problem, unless there is    */
       /* some way to disable cancellation in the handler.               */
 
-  self = pthread_self();
 # ifdef DEBUG_THREADS
-    GC_log_printf("Suspending %p\n", (void *)self);
+    GC_log_printf("Suspending %p\n", (void *)pthread_self());
 # endif
-  me = GC_lookup_thread_async(self);
+  me = GC_lookup_self_thread_async();
   if ((me -> last_stop_count & ~(word)THREAD_RESTARTED) == my_stop_count) {
       /* Duplicate signal.  OK if we are retrying.      */
       if (!GC_retry_signals) {
-          WARN("Duplicate suspend signal in thread %p\n", self);
+          WARN("Duplicate suspend signal in thread %p\n", pthread_self());
       }
       RESTORE_CANCEL(cancel_state);
       return;
@@ -405,7 +404,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
           );
 
 # ifdef DEBUG_THREADS
-    GC_log_printf("Continuing %p\n", (void *)self);
+    GC_log_printf("Continuing %p\n", (void *)pthread_self());
 # endif
 # ifdef E2K
     GC_ASSERT(crtn -> backing_store_end == bs_lo);
@@ -1135,17 +1134,14 @@ GC_INNER void GC_stop_world(void)
 
   GC_API_OSCALL void __nacl_suspend_thread_if_needed(void)
   {
-    if (GC_nacl_park_threads_now) {
-      pthread_t self = pthread_self();
+      if (!GC_nacl_park_threads_now) return;
 
       /* Don't try to park the thread parker.   */
-      if (GC_nacl_thread_parker == self)
-        return;
+      if (GC_nacl_thread_parker == pthread_self()) return;
 
       /* This can happen when a thread is created outside of the GC     */
       /* system (wthread mostly).                                       */
-      if (GC_nacl_thread_idx < 0)
-        return;
+      if (GC_nacl_thread_idx < 0) return;
 
       /* If it was already 'parked', we're returning from a syscall,    */
       /* so don't bother storing registers again, the GC has a set.     */
@@ -1162,7 +1158,6 @@ GC_INNER void GC_stop_world(void)
       /* Clear out the reg storage for next suspend.    */
       BZERO(GC_nacl_gc_thread_self -> reg_storage,
             NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t));
-    }
   }
 
   GC_API_OSCALL void nacl_post_syscall_hook(void)
@@ -1220,8 +1215,7 @@ GC_INNER void GC_stop_world(void)
 
   GC_INNER void GC_nacl_shutdown_gc_thread(void)
   {
-    GC_ASSERT(GC_nacl_gc_thread_self != NULL
-              && GC_lookup_thread(pthread_self()) == GC_nacl_gc_thread_self);
+    GC_ASSERT(GC_nacl_gc_thread_self != NULL);
     pthread_mutex_lock(&GC_nacl_thread_alloc_lock);
     GC_ASSERT(GC_nacl_thread_idx >= 0);
     GC_ASSERT(GC_nacl_thread_idx < MAX_NACL_GC_THREADS);

@@ -382,6 +382,8 @@ GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
 #endif /* GC_PTHREADS */
 
 GC_INNER GC_thread GC_lookup_thread(thread_id_t);
+#define GC_self_thread_inner() GC_lookup_thread(thread_id_self())
+
 GC_INNER void GC_wait_for_gc_completion(GC_bool);
 
 #ifdef NACL
