@@ -484,15 +484,15 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 # if defined(__EMSCRIPTEN__) || defined(EMSCRIPTEN)
+#   define WEBASSEMBLY
 #   ifndef EMSCRIPTEN
 #     define EMSCRIPTEN
 #   endif
-#   define I386
 #   define mach_type_known
 # endif
 # if defined(__wasi__)
+#   define WEBASSEMBLY
 #   define WASI
-#   define I386
 #   define mach_type_known
 # endif
 
@@ -1314,40 +1314,6 @@ EXTERN_C_BEGIN
         extern int etext[];
 #       define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       define STACKBOTTOM ((ptr_t)0x3ffff000)
-#   endif
-#   ifdef EMSCRIPTEN
-#     define OS_TYPE "EMSCRIPTEN"
-#     define DATASTART (ptr_t)ALIGNMENT
-#     define DATAEND (ptr_t)ALIGNMENT
-      /* Emscripten does emulate mmap and munmap, but those should  */
-      /* not be used in the collector, since WebAssembly lacks the  */
-      /* native support of memory mapping.  Use sbrk() instead.     */
-#     undef USE_MMAP
-#     undef USE_MUNMAP
-      /* The real page size in WebAssembly is 64 KB.    */
-#     if defined(GC_THREADS) && !defined(CPPCHECK)
-#       error No threads support yet
-#     endif
-#   endif
-#   ifdef WASI
-#     define OS_TYPE "WASI"
-      extern char __global_base, __heap_base;
-#     define DATASTART ((ptr_t)&__global_base)
-#     define DATAEND ((ptr_t)&__heap_base)
-#     define STACKBOTTOM ((ptr_t)&__global_base)
-#     ifndef GC_NO_SIGSETJMP
-#       define GC_NO_SIGSETJMP 1 /* no support of signals */
-#     endif
-#     ifndef NO_CLOCK
-#       define NO_CLOCK 1 /* no support of clock */
-#     endif
-#     undef USE_MMAP /* similar to Emscripten */
-#     undef USE_MUNMAP
-      /* The real page size in WebAssembly is 64 KB.    */
-#     define GETPAGESIZE() 65536
-#     if defined(GC_THREADS) && !defined(CPPCHECK)
-#       error No threads support yet
-#     endif
 #   endif
 #   ifdef HAIKU
       extern int etext[];
@@ -2402,6 +2368,48 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 # endif /* RISCV */
+
+# ifdef WEBASSEMBLY
+#   define MACH_TYPE "WebAssembly"
+#   if defined(__wasm64__) && !defined(CPPCHECK)
+#     error 64-bit WebAssembly is not yet supported
+#   endif
+#   define ALIGNMENT 4
+#   ifdef EMSCRIPTEN
+#     define OS_TYPE "EMSCRIPTEN"
+#     define DATASTART (ptr_t)ALIGNMENT
+#     define DATAEND (ptr_t)ALIGNMENT
+      /* Emscripten does emulate mmap and munmap, but those should  */
+      /* not be used in the collector, since WebAssembly lacks the  */
+      /* native support of memory mapping.  Use sbrk() instead.     */
+#     undef USE_MMAP
+#     undef USE_MUNMAP
+      /* The real page size in WebAssembly is 64 KB.    */
+#     if defined(GC_THREADS) && !defined(CPPCHECK)
+#       error No threads support yet
+#     endif
+#   endif
+#   ifdef WASI
+#     define OS_TYPE "WASI"
+      extern char __global_base, __heap_base;
+#     define STACKBOTTOM ((ptr_t)&__global_base)
+#     define DATASTART   ((ptr_t)&__global_base)
+#     define DATAEND     ((ptr_t)&__heap_base)
+#     ifndef GC_NO_SIGSETJMP
+#       define GC_NO_SIGSETJMP 1 /* no support of signals */
+#     endif
+#     ifndef NO_CLOCK
+#       define NO_CLOCK 1 /* no support of clock */
+#     endif
+#     undef USE_MMAP /* similar to Emscripten */
+#     undef USE_MUNMAP
+      /* The real page size in WebAssembly is 64 KB.    */
+#     define GETPAGESIZE() 65536
+#     if defined(GC_THREADS) && !defined(CPPCHECK)
+#       error No threads support yet
+#     endif
+#   endif
+# endif /* WEBASSEMBLY */
 
 #if defined(__GLIBC__) && !defined(DONT_USE_LIBC_PRIVATES)
   /* Use glibc's stack-end marker. */
