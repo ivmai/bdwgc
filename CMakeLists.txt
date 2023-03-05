@@ -59,12 +59,17 @@ if (NOT (${CMAKE_VERSION} VERSION_LESS "3.18.0"))
   include(CheckLinkerFlag)
 endif()
 
+set(default_enable_threads ON)
+if(EMSCRIPTEN OR WASI)
+  set(default_enable_threads OFF)
+endif()
+
 # Customize the build by passing "-D<option_name>=ON|OFF" in the command line.
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(build_cord "Build cord library" ON)
 option(build_tests "Build tests" OFF)
 option(enable_docs "Build and install documentation" ON)
-option(enable_threads "Support threads" ON)
+option(enable_threads "Support threads" ${default_enable_threads})
 option(enable_parallel_mark "Parallelize marking and free list construction" ON)
 option(enable_thread_local_alloc "Turn on thread-local allocation optimization" ON)
 option(enable_threads_discovery "Enable threads discovery in GC" ON)
