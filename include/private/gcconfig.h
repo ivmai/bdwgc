@@ -2384,7 +2384,6 @@ EXTERN_C_BEGIN
       /* native support of memory mapping.  Use sbrk() instead.     */
 #     undef USE_MMAP
 #     undef USE_MUNMAP
-      /* The real page size in WebAssembly is 64 KB.    */
 #     if defined(GC_THREADS) && !defined(CPPCHECK)
 #       error No threads support yet
 #     endif
@@ -2403,8 +2402,6 @@ EXTERN_C_BEGIN
 #     endif
 #     undef USE_MMAP /* similar to Emscripten */
 #     undef USE_MUNMAP
-      /* The real page size in WebAssembly is 64 KB.    */
-#     define GETPAGESIZE() 65536
 #     if defined(GC_THREADS) && !defined(CPPCHECK)
 #       error No threads support yet
 #     endif
