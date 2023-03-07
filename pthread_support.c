@@ -604,12 +604,6 @@
 /* Not used if GC_win32_dll_threads is set.                             */
 GC_INNER GC_thread GC_threads[THREAD_TABLE_SZ] = {0};
 
-/* It may not be safe to allocate when we register the first thread.    */
-/* Note that next and status fields are unused, but there might be some */
-/* other fields (crtn and backing_store_end) to be pushed.              */
-static struct GC_StackContext_Rep first_crtn;
-static struct GC_Thread_Rep first_thread;
-
 /* A place to retain a pointer to an allocated object while a thread    */
 /* registration is ongoing.  Protected by the GC lock.                  */
 static GC_stack_context_t saved_crtn = NULL;
@@ -632,14 +626,6 @@ void GC_push_thread_structures(void)
 # endif
   /* else */ {
     GC_PUSH_ALL_SYM(GC_threads);
-#   ifdef E2K
-      GC_PUSH_ALL_SYM(first_crtn.backing_store_end);
-#   endif
-    GC_ASSERT(NULL == first_thread.tm.next);
-#   ifdef GC_PTHREADS
-      GC_ASSERT(NULL == first_thread.status);
-#   endif
-    GC_PUSH_ALL_SYM(first_thread.crtn);
     GC_PUSH_ALL_SYM(saved_crtn);
   }
 # if defined(THREAD_LOCAL_ALLOC) && defined(USE_CUSTOM_SPECIFIC)
@@ -653,14 +639,10 @@ void GC_push_thread_structures(void)
     if (!GC_win32_dll_threads && GC_auto_incremental) {
       GC_stack_context_t crtn = t -> crtn;
 
-      if (crtn != &first_crtn) {
-        GC_ASSERT(SMALL_OBJ(GC_size(crtn)));
-        GC_remove_protection(HBLKPTR(crtn), 1, FALSE);
-      }
-      if (t != &first_thread) {
-        GC_ASSERT(SMALL_OBJ(GC_size(t)));
-        GC_remove_protection(HBLKPTR(t), 1, FALSE);
-      }
+      GC_ASSERT(SMALL_OBJ(GC_size(crtn)));
+      GC_remove_protection(HBLKPTR(crtn), 1, FALSE);
+      GC_ASSERT(SMALL_OBJ(GC_size(t)));
+      GC_remove_protection(HBLKPTR(t), 1, FALSE);
     }
   }
 #endif /* MPROTECT_VDB && GC_WIN32_THREADS */
@@ -693,6 +675,7 @@ GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t self_id)
 {
     int hv = THREAD_TABLE_INDEX(self_id);
     GC_thread result;
+    GC_stack_context_t crtn;
 
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef DEBUG_THREADS
@@ -704,42 +687,26 @@ GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t self_id)
             break;
           }
 #   endif
-    if (EXPECT(NULL == first_thread.crtn, FALSE)) {
-        result = &first_thread;
-        first_thread.crtn = &first_crtn;
-        GC_ASSERT(NULL == GC_threads[hv]);
-#       ifdef CPPCHECK
-          GC_noop1((unsigned char)first_thread.flags_pad[0]);
-#         if defined(THREAD_SANITIZER) && defined(SIGNAL_BASED_STOP_WORLD)
-            GC_noop1((unsigned char)first_crtn.dummy[0]);
-#         endif
-#         ifndef GC_NO_FINALIZATION
-            GC_noop1((unsigned char)first_crtn.fnlz_pad[0]);
-#         endif
-#       endif
-    } else {
-        GC_stack_context_t crtn;
-
-        GC_ASSERT(!GC_win32_dll_threads);
-        GC_ASSERT(!GC_in_thread_creation);
-        GC_in_thread_creation = TRUE; /* OK to collect from unknown thread */
-        crtn = (GC_stack_context_t)GC_INTERNAL_MALLOC(
+    GC_ASSERT(!GC_win32_dll_threads);
+    GC_ASSERT(!GC_in_thread_creation);
+    GC_in_thread_creation = TRUE; /* OK to collect from unknown thread */
+    crtn = (GC_stack_context_t)GC_INTERNAL_MALLOC(
                         sizeof(struct GC_StackContext_Rep), NORMAL);
 
-        /* The current stack is not scanned until the thread is         */
-        /* registered, thus crtn pointer is to be retained in the       */
-        /* global data roots for a while (and pushed explicitly if      */
-        /* a collection occurs here).                                   */
-        GC_ASSERT(NULL == saved_crtn);
-        saved_crtn = crtn;
-        result = (GC_thread)GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep),
-                                               NORMAL);
-        saved_crtn = NULL; /* no more collections till thread is registered */
-        GC_in_thread_creation = FALSE;
-        if (NULL == crtn || NULL == result)
-          ABORT("Failed to allocate memory for thread registering");
-        result -> crtn = crtn;
-    }
+    /* The current stack is not scanned until the thread is     */
+    /* registered, thus crtn pointer is to be retained in the   */
+    /* global data roots for a while (and pushed explicitly if  */
+    /* a collection occurs here).                               */
+    GC_ASSERT(NULL == saved_crtn);
+    saved_crtn = crtn;
+    result = (GC_thread)GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep),
+                                           NORMAL);
+    saved_crtn = NULL; /* no more collections till thread is registered */
+    GC_in_thread_creation = FALSE;
+    if (NULL == crtn || NULL == result)
+      ABORT("Failed to allocate memory for thread registering");
+    result -> crtn = crtn;
+
     /* The id field is not set here. */
 #   ifdef USE_TKILL_ON_ANDROID
       result -> kernel_id = gettid();
@@ -750,8 +717,7 @@ GC_INNER_WIN32THREAD GC_thread GC_new_thread(thread_id_t self_id)
       GC_nacl_initialize_gc_thread(result);
 #   endif
     GC_ASSERT(0 == result -> flags);
-    if (EXPECT(result != &first_thread, TRUE))
-      GC_dirty(result);
+    GC_dirty(result);
     return result;
 }
 
@@ -802,18 +768,14 @@ GC_INNER_WIN32THREAD void GC_delete_thread(GC_thread t)
     if (NULL == prev) {
         GC_threads[hv] = p -> tm.next;
     } else {
-        GC_ASSERT(prev != &first_thread);
         prev -> tm.next = p -> tm.next;
         GC_dirty(prev);
     }
-    if (EXPECT(p != &first_thread, TRUE)) {
-#     ifdef GC_DARWIN_THREADS
-        mach_port_deallocate(mach_task_self(), p -> mach_thread);
-#     endif
-      GC_ASSERT(p -> crtn != &first_crtn);
-      GC_INTERNAL_FREE(p -> crtn);
-      GC_INTERNAL_FREE(p);
-    }
+#   ifdef GC_DARWIN_THREADS
+      mach_port_deallocate(mach_task_self(), p -> mach_thread);
+#   endif
+    GC_INTERNAL_FREE(p -> crtn);
+    GC_INTERNAL_FREE(p);
   }
 }
 
@@ -897,6 +859,11 @@ GC_API int GC_CALL GC_thread_is_registered(void)
   return GC_self_thread() != NULL;
 }
 
+#ifndef GC_WIN32_THREADS
+  static void *main_normstack, *main_altstack;
+  static word main_normstack_size, main_altstack_size;
+#endif
+
 GC_API void GC_CALL GC_register_altstack(void *normstack,
                 GC_word normstack_size, void *altstack, GC_word altstack_size)
 {
@@ -908,19 +875,23 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
   UNUSED_ARG(altstack_size);
 #else
   GC_thread me;
-  GC_stack_context_t crtn;
 
   LOCK();
   me = GC_self_thread_inner();
-  if (EXPECT(NULL == me, FALSE)) {
+  if (EXPECT(me != NULL, TRUE)) {
+    GC_stack_context_t crtn = me -> crtn;
+
+    crtn -> normstack = (ptr_t)normstack;
+    crtn -> normstack_size = normstack_size;
+    crtn -> altstack = (ptr_t)altstack;
+    crtn -> altstack_size = altstack_size;
+  } else {
     /* We are called before GC_thr_init. */
-    me = &first_thread;
+    main_normstack = normstack;
+    main_normstack_size = normstack_size;
+    main_altstack = altstack;
+    main_altstack_size = altstack_size;
   }
-  crtn = me -> crtn;
-  crtn -> normstack = (ptr_t)normstack;
-  crtn -> normstack_size = normstack_size;
-  crtn -> altstack = (ptr_t)altstack;
-  crtn -> altstack_size = altstack_size;
   UNLOCK();
 #endif
 }
@@ -1267,12 +1238,9 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
           /* TODO: To avoid TSan hang (when updating GC_bytes_freed),   */
           /* we just skip explicit freeing of GC_threads entries.       */
 #         if !defined(THREAD_SANITIZER) || !defined(CAN_CALL_ATFORK)
-            if (p != &first_thread) {
               /* TODO: Should call mach_port_deallocate? */
-              GC_ASSERT(p -> crtn != &first_crtn);
               GC_INTERNAL_FREE(p -> crtn);
               GC_INTERNAL_FREE(p);
-            }
 #         endif
         }
       }
@@ -1669,6 +1637,7 @@ GC_INNER void GC_thr_init(void)
   {
     struct GC_stack_base sb;
     GC_thread me;
+    GC_stack_context_t crtn;
 
     sb.mem_base = GC_stackbottom;
     GC_ASSERT(sb.mem_base != NULL);
@@ -1680,6 +1649,22 @@ GC_INNER void GC_thr_init(void)
     GC_ASSERT(NULL == GC_self_thread_inner());
     me = GC_register_my_thread_inner(&sb, thread_id_self());
     me -> flags = DETACHED | MAIN_THREAD;
+    /* Copy the alt-stack information if set. */
+    crtn = me -> crtn;
+    crtn -> normstack = (ptr_t)main_normstack;
+    crtn -> normstack_size = main_normstack_size;
+    crtn -> altstack = (ptr_t)main_altstack;
+    crtn -> altstack_size = main_altstack_size;
+
+#   ifdef CPPCHECK
+      GC_noop1((unsigned char)(me -> flags_pad[0]));
+#     if defined(THREAD_SANITIZER) && defined(SIGNAL_BASED_STOP_WORLD)
+        GC_noop1((unsigned char)(me -> dummy[0]));
+#     endif
+#     ifndef GC_NO_FINALIZATION
+        GC_noop1((unsigned char)(me -> fnlz_pad[0]));
+#     endif
+#   endif
   }
 }
 
@@ -2372,7 +2357,6 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     /* We register the thread here instead of in the parent, so that    */
     /* we don't need to hold the allocation lock during pthread_create. */
     me = GC_register_my_thread_inner(sb, self_id);
-    GC_ASSERT(me != &first_thread);
     me -> flags = psi -> flags;
 #   ifdef GC_WIN32_THREADS
       GC_win32_cache_self_pthread(self_id);
