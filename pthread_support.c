@@ -1659,10 +1659,10 @@ GC_INNER void GC_thr_init(void)
 #   ifdef CPPCHECK
       GC_noop1((unsigned char)(me -> flags_pad[0]));
 #     if defined(THREAD_SANITIZER) && defined(SIGNAL_BASED_STOP_WORLD)
-        GC_noop1((unsigned char)(me -> dummy[0]));
+        GC_noop1((unsigned char)(crtn -> dummy[0]));
 #     endif
 #     ifndef GC_NO_FINALIZATION
-        GC_noop1((unsigned char)(me -> fnlz_pad[0]));
+        GC_noop1((unsigned char)(crtn -> fnlz_pad[0]));
 #     endif
 #   endif
   }
