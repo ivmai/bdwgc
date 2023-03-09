@@ -328,11 +328,13 @@ STATIC void GC_register_map_entries(const char *maps)
             /* This is a writable mapping.  Add it to           */
             /* the root set unless it is already otherwise      */
             /* accounted for.                                   */
-            if ((word)start <= (word)GC_stackbottom
-                && (word)end >= (word)GC_stackbottom) {
+#           ifndef THREADS
+              if ((word)start <= (word)GC_stackbottom
+                  && (word)end >= (word)GC_stackbottom) {
                 /* Stack mapping; discard       */
                 continue;
-            }
+              }
+#           endif
 #           if defined(E2K) && defined(__ptr64__)
               /* TODO: avoid hard-coded addresses */
               if ((word)start == 0xc2fffffff000UL

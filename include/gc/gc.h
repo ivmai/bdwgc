@@ -382,11 +382,15 @@ GC_API GC_ATTR_DEPRECATED char *GC_stackbottom;
                                 /* potentially some signals that can    */
                                 /* confuse debuggers.  Otherwise the    */
                                 /* collector attempts to set it         */
-                                /* automatically.                       */
-                                /* For multi-threaded code, this is the */
-                                /* cold end of the stack for the        */
-                                /* primordial thread.  Portable clients */
-                                /* should use GC_get_stack_base(),      */
+                                /* automatically.  For multi-threaded   */
+                                /* code, this is the cold end of the    */
+                                /* stack for the primordial thread.     */
+                                /* For multi-threaded code, altering    */
+                                /* GC_stackbottom value directly after  */
+                                /* GC initialization has no effect.     */
+                                /* Portable clients should use          */
+                                /* GC_set_stackbottom(),                */
+                                /* GC_get_stack_base(),                 */
                                 /* GC_call_with_gc_active() and         */
                                 /* GC_register_my_thread() instead.     */
 

@@ -804,8 +804,8 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void *context)
             {
                 ptr_t bsp = GC_save_regs_ret_val;
                 ptr_t cold_gc_bs_pointer = bsp - 2048;
-                if (GC_all_interior_pointers
-                    && (word)cold_gc_bs_pointer > (word)BACKING_STORE_BASE) {
+                if (GC_all_interior_pointers && (word)cold_gc_bs_pointer
+                                        > (word)GC_register_stackbottom) {
                   /* Adjust cold_gc_bs_pointer if below our innermost   */
                   /* "traced stack section" in backing store.           */
                   if (GC_traced_stack_sect != NULL
@@ -813,11 +813,11 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void *context)
                           < (word)GC_traced_stack_sect->backing_store_end)
                     cold_gc_bs_pointer =
                                 GC_traced_stack_sect->backing_store_end;
-                  GC_push_all_register_sections(BACKING_STORE_BASE,
+                  GC_push_all_register_sections(GC_register_stackbottom,
                         cold_gc_bs_pointer, FALSE, GC_traced_stack_sect);
                   GC_push_all_eager(cold_gc_bs_pointer, bsp);
                 } else {
-                  GC_push_all_register_sections(BACKING_STORE_BASE, bsp,
+                  GC_push_all_register_sections(GC_register_stackbottom, bsp,
                                 TRUE /* eager */, GC_traced_stack_sect);
                 }
                 /* All values should be sufficiently aligned that we    */

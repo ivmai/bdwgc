@@ -184,9 +184,6 @@ typedef struct GC_Thread_Rep {
                                 /* it unregisters itself, since it      */
                                 /* may not return a GC pointer.         */
 # endif
-# ifndef GC_WIN32_THREADS
-#   define MAIN_THREAD  0x4     /* True for the original thread only.   */
-# endif
 # if (defined(GC_HAVE_PTHREAD_EXIT) || !defined(GC_NO_PTHREAD_CANCEL)) \
      && defined(GC_PTHREADS)
 #   define DISABLED_GC  0x10    /* Collections are disabled while the   */

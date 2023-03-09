@@ -1648,7 +1648,7 @@ GC_INNER void GC_thr_init(void)
 #   endif
     GC_ASSERT(NULL == GC_self_thread_inner());
     me = GC_register_my_thread_inner(&sb, thread_id_self());
-    me -> flags = DETACHED | MAIN_THREAD;
+    me -> flags = DETACHED;
     /* Copy the alt-stack information if set. */
     crtn = me -> crtn;
     crtn -> normstack = (ptr_t)main_normstack;
@@ -1860,67 +1860,50 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
                                        const struct GC_stack_base *sb)
 {
     GC_thread t = (GC_thread)gc_thread_handle;
+    GC_stack_context_t crtn;
 
     GC_ASSERT(sb -> mem_base != NULL);
     if (!EXPECT(GC_is_initialized, TRUE)) {
-        GC_ASSERT(NULL == t);
-    } else {
-        GC_stack_context_t crtn;
-
-        GC_ASSERT(I_HOLD_LOCK());
-        if (NULL == t) /* current thread? */
-            t = GC_self_thread_inner();
-        GC_ASSERT(!KNOWN_FINISHED(t));
-        crtn = t -> crtn;
-        GC_ASSERT((t -> flags & DO_BLOCKING) == 0
-                  && NULL == crtn -> traced_stack_sect); /* for now */
-
-#       ifndef GC_WIN32_THREADS
-          if (EXPECT((t -> flags & MAIN_THREAD) == 0, TRUE))
-#       endif
-        {
-            crtn -> stack_end = (ptr_t)sb->mem_base;
-#           ifdef IA64
-              crtn -> backing_store_end = (ptr_t)sb->reg_base;
-#           endif
-#           ifdef GC_WIN32_THREADS
-              /* Reset the known minimum (hottest address in the stack). */
-              crtn -> last_stack_min = ADDR_LIMIT;
-#           endif
-            return;
-        }
-        /* Otherwise alter the stack bottom of the primordial thread.   */
+      GC_ASSERT(NULL == t);
+      /* Alter the stack bottom of the primordial thread.       */
+      GC_stackbottom = (char*)(sb -> mem_base);
+#     ifdef IA64
+        GC_register_stackbottom = (ptr_t)(sb -> reg_base);
+#     endif
+      return;
     }
 
-    GC_stackbottom = (char*)sb->mem_base;
+    GC_ASSERT(I_HOLD_LOCK());
+    if (NULL == t) /* current thread? */
+      t = GC_self_thread_inner();
+    GC_ASSERT(!KNOWN_FINISHED(t));
+    crtn = t -> crtn;
+    GC_ASSERT((t -> flags & DO_BLOCKING) == 0
+              && NULL == crtn -> traced_stack_sect); /* for now */
+
+    crtn -> stack_end = (ptr_t)(sb -> mem_base);
 #   ifdef IA64
-        GC_register_stackbottom = (ptr_t)sb->reg_base;
+      crtn -> backing_store_end = (ptr_t)(sb -> reg_base);
+#   endif
+#   ifdef GC_WIN32_THREADS
+      /* Reset the known minimum (hottest address in the stack). */
+      crtn -> last_stack_min = ADDR_LIMIT;
 #   endif
 }
 
 GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
 {
     GC_thread me;
+    GC_stack_context_t crtn;
 
     LOCK();
     me = GC_self_thread_inner();
     /* The thread is assumed to be registered.  */
-#   ifndef GC_WIN32_THREADS
-      if (EXPECT((me -> flags & MAIN_THREAD) != 0, FALSE)) {
-        sb -> mem_base = GC_stackbottom;
-#       ifdef IA64
-            sb -> reg_base = GC_register_stackbottom;
-#       endif
-      } else
+    crtn = me -> crtn;
+    sb -> mem_base = crtn -> stack_end;
+#   ifdef IA64
+      sb -> reg_base = crtn -> backing_store_end;
 #   endif
-    /* else */ {
-      GC_stack_context_t crtn = me -> crtn;
-
-      sb -> mem_base = crtn -> stack_end;
-#     ifdef IA64
-        sb -> reg_base = crtn -> backing_store_end;
-#     endif
-    }
 #   ifdef E2K
       sb -> reg_base = NULL;
 #   endif
@@ -1938,6 +1921,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     struct GC_traced_stack_sect_s stacksect;
     GC_thread me;
     GC_stack_context_t crtn;
+    ptr_t stack_end;
 #   ifdef E2K
       size_t stack_size;
 #   endif
@@ -1948,23 +1932,13 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
     /* Adjust our stack bottom value (this could happen unless  */
     /* GC_get_stack_base() was used which returned GC_SUCCESS). */
-#   ifndef GC_WIN32_THREADS
-      if (EXPECT((me -> flags & MAIN_THREAD) != 0, FALSE)) {
-        /* The original stack. */
-        if ((word)GC_stackbottom HOTTER_THAN (word)(&stacksect))
-          GC_stackbottom = (ptr_t)COVERT_DATAFLOW(&stacksect);
-      } else
-#   endif
-    /* else */ {
-      ptr_t stack_end = crtn -> stack_end; /* read of a volatile field */
-
-      GC_ASSERT(stack_end != NULL);
-      if ((word)stack_end HOTTER_THAN (word)(&stacksect)) {
-        crtn -> stack_end = (ptr_t)(&stacksect);
-#       if defined(I386) && defined(GC_WIN32_THREADS)
-          crtn -> initial_stack_base = (ptr_t)(&stacksect);
-#       endif
-      }
+    stack_end = crtn -> stack_end; /* read of a volatile field */
+    GC_ASSERT(stack_end != NULL);
+    if ((word)stack_end HOTTER_THAN (word)(&stacksect)) {
+      crtn -> stack_end = (ptr_t)(&stacksect);
+#     if defined(I386) && defined(GC_WIN32_THREADS)
+        crtn -> initial_stack_base = (ptr_t)(&stacksect);
+#     endif
     }
 
     if ((me -> flags & DO_BLOCKING) == 0) {

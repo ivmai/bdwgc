@@ -839,18 +839,10 @@ GC_INNER void GC_push_all_stacks(void)
               traced_stack_sect = traced_stack_sect -> prev;
             }
         }
-        if (EXPECT((p -> flags & MAIN_THREAD) == 0, TRUE)) {
-            hi = crtn -> stack_end;
-#           ifdef IA64
-              bs_lo = crtn -> backing_store_end;
-#           endif
-        } else {
-            /* The original stack. */
-            hi = GC_stackbottom;
-#           ifdef IA64
-              bs_lo = BACKING_STORE_BASE;
-#           endif
-        }
+        hi = crtn -> stack_end;
+#       ifdef IA64
+          bs_lo = crtn -> backing_store_end;
+#       endif
 #       ifdef DEBUG_THREADS
           GC_log_printf("Stack for thread %p is [%p,%p)\n",
                         (void *)p->id, (void *)lo, (void *)hi);

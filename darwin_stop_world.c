@@ -333,8 +333,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       if (NULL == p) ABORT("Bad GC_stack_range_for call");
 #   endif
     crtn = p -> crtn;
-    *phi = EXPECT((p -> flags & MAIN_THREAD) == 0, TRUE) ? crtn -> stack_end
-            : GC_stackbottom;
+    *phi = crtn -> stack_end;
     if (crtn -> altstack != NULL && (word)(crtn -> altstack) <= (word)lo
         && (word)lo <= (word)(crtn -> altstack) + crtn -> altstack_size) {
       *paltstack_lo = lo;
