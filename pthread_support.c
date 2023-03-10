@@ -856,6 +856,7 @@ STATIC GC_thread GC_self_thread(void) {
 
 GC_API int GC_CALL GC_thread_is_registered(void)
 {
+  /* TODO: Use GC_get_tlfs() instead. */
   GC_thread me = GC_self_thread();
 
   return me != NULL && !KNOWN_FINISHED(me);

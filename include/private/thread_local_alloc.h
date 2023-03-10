@@ -15,7 +15,7 @@
 /* This is the interface for thread-local allocation, whose     */
 /* implementation is mostly thread-library-independent.         */
 /* Here we describe only the interface that needs to be known   */
-/* and invoked from the thread support layer;  the actual       */
+/* and invoked from the thread support layer; the actual        */
 /* implementation also exports GC_malloc and friends, which     */
 /* are declared in gc.h.                                        */
 

@@ -57,7 +57,9 @@ GC_INLINE void GC_usleep(unsigned us)
   STATIC volatile pthread_t GC_nacl_thread_parker = -1;
 
   STATIC __thread int GC_nacl_thread_idx = -1;
+
   STATIC __thread GC_thread GC_nacl_gc_thread_self = NULL;
+                                /* TODO: Use GC_get_tlfs() instead. */
 
   volatile int GC_nacl_thread_parked[MAX_NACL_GC_THREADS];
   int GC_nacl_thread_used[MAX_NACL_GC_THREADS];

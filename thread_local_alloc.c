@@ -143,6 +143,24 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 #   endif
 }
 
+STATIC void *GC_get_tlfs(void)
+{
+# if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_WIN32_SPECIFIC)
+    GC_key_t k = GC_thread_key;
+
+    if (EXPECT(0 == k, FALSE)) {
+      /* We have not yet run GC_init_parallel.  That means we also  */
+      /* are not locking, so GC_malloc_kind_global is fairly cheap. */
+      return NULL;
+    }
+    return GC_getspecific(k);
+# else
+    if (EXPECT(!keys_initialized, FALSE)) return NULL;
+
+    return GC_getspecific(GC_thread_key);
+# endif
+}
+
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int kind)
 {
     size_t granules;
@@ -154,27 +172,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int kind)
         return GC_malloc_kind_global(bytes, kind);
       }
 #   endif
-#   if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_WIN32_SPECIFIC)
-    {
-      GC_key_t k = GC_thread_key;
-
-      if (EXPECT(0 == k, FALSE)) {
-        /* We haven't yet run GC_init_parallel.  That means     */
-        /* we also aren't locking, so this is fairly cheap.     */
+    tsd = GC_get_tlfs();
+    if (EXPECT(NULL == tsd, FALSE)) {
         return GC_malloc_kind_global(bytes, kind);
-      }
-      tsd = GC_getspecific(k);
     }
-#   else
-      if (!EXPECT(keys_initialized, TRUE))
-        return GC_malloc_kind_global(bytes, kind);
-      tsd = GC_getspecific(GC_thread_key);
-#   endif
-#   if !defined(USE_COMPILER_TLS) && !defined(USE_WIN32_COMPILER_TLS)
-      if (EXPECT(0 == tsd, FALSE)) {
-        return GC_malloc_kind_global(bytes, kind);
-      }
-#   endif
     GC_ASSERT(GC_is_initialized);
     GC_ASSERT(GC_is_thread_tsd_valid(tsd));
     granules = ROUNDED_UP_GRANULES(bytes);
