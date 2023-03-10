@@ -1499,6 +1499,8 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
 
   /* Return non-zero (TRUE) if and only if the calling thread is        */
   /* registered with the garbage collector.                             */
+  /* If the thread is finished (e.g. running in a destructor and not    */
+  /* registered manually again), it is considered as not registered.    */
   GC_API int GC_CALL GC_thread_is_registered(void);
 
   /* Notify the collector about the stack and the alt-stack of the      */
