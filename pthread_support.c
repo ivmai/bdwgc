@@ -698,7 +698,7 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     LOCK();
     me = GC_lookup_thread(self);
     UNLOCK();
-    return me != NULL;
+    return me != NULL && !(me -> flags & FINISHED);
 }
 
 static pthread_t main_pthread_id;

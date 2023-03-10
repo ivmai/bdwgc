@@ -624,7 +624,7 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     LOCK();
     me = GC_lookup_thread_inner(thread_id);
     UNLOCK();
-    return me != NULL;
+    return me != NULL && !KNOWN_FINISHED(me);
 }
 
 GC_API void GC_CALL GC_register_altstack(void *stack GC_ATTR_UNUSED,
