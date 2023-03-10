@@ -663,7 +663,7 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     LOCK();
     me = GC_lookup_thread(self);
     UNLOCK();
-    return me != NULL;
+    return me != NULL && !(me -> flags & FINISHED);
 }
 
 #ifdef CAN_HANDLE_FORK

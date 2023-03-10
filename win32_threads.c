@@ -620,7 +620,7 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     LOCK();
     me = GC_lookup_thread_inner(thread_id);
     UNLOCK();
-    return me != NULL;
+    return me != NULL && !KNOWN_FINISHED(me);
 }
 
 /* Make sure thread descriptor t is not protected by the VDB            */
