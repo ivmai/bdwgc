@@ -856,7 +856,9 @@ STATIC GC_thread GC_self_thread(void) {
 
 GC_API int GC_CALL GC_thread_is_registered(void)
 {
-  return GC_self_thread() != NULL;
+  GC_thread me = GC_self_thread();
+
+  return me != NULL && !KNOWN_FINISHED(me);
 }
 
 #ifndef GC_WIN32_THREADS

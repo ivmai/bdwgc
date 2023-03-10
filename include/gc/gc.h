@@ -1626,6 +1626,8 @@ GC_API void GC_CALL GC_start_mark_threads(void);
 
   /* Return 1 (true) if the calling (current) thread is registered with */
   /* the garbage collector, 0 otherwise.  Acquires the allocator lock.  */
+  /* If the thread is finished (e.g. running in a destructor and not    */
+  /* registered manually again), it is considered as not registered.    */
   GC_API int GC_CALL GC_thread_is_registered(void);
 
   /* Notify the collector about the stack and the alt-stack of the      */
