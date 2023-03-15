@@ -1383,7 +1383,7 @@ void run_one_test(void)
       CHECK_OUT_OF_MEMORY(x);
       if (GC_size(x) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_malloc(0) failed: GC_size returns %lu\n",
-                      (unsigned long)GC_size(GC_malloc(0)));
+                      (unsigned long)GC_size(x));
         FAIL;
       }
       AO_fetch_and_add1(&uncollectable_count);
