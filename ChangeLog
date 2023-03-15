@@ -384,7 +384,9 @@
 
 * Abort with appropriate message if first call of mmap fails with EPERM
 * Avoid potential race between realloc and GC_block_was_dirty
+* Eliminate 'cast signed to bigger unsigned' CSA warning in GC_new_thread
 * Fix 'overflow in conversion from word' g++ warning in GC_init
+* Fix store-and-dirty call in GC_CONS
 * Fix typo in comment of GC_Thread_Rep.dummy
 * Fix use of unset errno after pthread_sigmask calls
 * Remove redundant GC_ATTR_UNUSED for GC_mark_and_push
