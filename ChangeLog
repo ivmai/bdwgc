@@ -1075,7 +1075,10 @@ Also, includes 7.4.4 changes
 
 == [7.4.24] (not released yet) ==
 
+* Do not mix debug and non-debug allocations in disclaim tests
 * Eliminate 'cast signed to bigger unsigned' CSA warning in WARN calls
+* Ensure GC_NO_PTHREAD_SIGMASK defined if no GC_pthread_sigmask prototype
+* Fix GC_thread_is_registered for finished threads
 * Fix missing lock while updating GC_in_thread_creation in GC_exit_check
 
 Also, includes 7.2q changes.
@@ -1627,15 +1630,18 @@ Also, includes 7.2 changes
 
 == [7.2q] (not released yet) ==
 
+* Fix DCL_LOCK_STATE placement in GC_set_oom_fn
 * Fix IRIX5 defined wrongly on Tandem S-Series and WinCE/mips
 * Fix disabling of automatic dynamic libraries registration
 * Fix double initialization of main thread local free lists on Win32
+* Fix joinable threads shutdown on NaCl
 * Fix loop condition over dll_thread_table in GC_lookup_pthread (Win32)
 * Fix missing GC_CALLBACK for GC_waitForSingleObjectInfinite
 * Fix missing libalphagc.so dependency in Makefile.direct
 * Fix missing result check of pthread_attr_getdetachstate in pthread_create
-* Fix mistyped function name in documentation of REDIRECT_REALLOC
-* Fix typo in comment belonging to dll_thread_table
+* Fix potential SIGSEGV on out-of-memory in gctest
+* Fix typos in comments and documentation
+* Fix unregistering of thread created by intercepted pthread_create on NaCl
 * Fix use of unset errno after pthread_create call
 
 
