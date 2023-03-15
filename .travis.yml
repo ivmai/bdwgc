@@ -211,7 +211,7 @@ jobs:
         - ubuntu-toolchain-r-test
     arch: s390x
     compiler: gcc-11
-    dist: bionic
+    dist: focal
     env:
     - CFLAGS_EXTRA="-O3"
     - CONF_OPTIONS="--enable-cplusplus --disable-shared"
