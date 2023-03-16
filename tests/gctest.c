@@ -225,12 +225,13 @@
 #endif
 
 /* Allocation Statistics.  Synchronization is not strictly necessary.   */
-volatile AO_t uncollectable_count = 0;
-volatile AO_t collectable_count = 0;
-volatile AO_t atomic_count = 0;
-volatile AO_t realloc_count = 0;
+static volatile AO_t uncollectable_count = 0;
+static volatile AO_t collectable_count = 0;
+static volatile AO_t atomic_count = 0;
+static volatile AO_t realloc_count = 0;
 
-volatile AO_t extra_count = 0;  /* Amount of space wasted in cons node; */
+static volatile AO_t extra_count = 0;
+                                /* Amount of space wasted in cons node; */
                                 /* also used in gcj_cons, mktree and    */
                                 /* chktree (for other purposes).        */
 
@@ -484,7 +485,7 @@ sexpr reverse(sexpr x)
   }
 
 # define MAX_GCOLLECT_THREADS ((NTHREADS+2)/3)
-  volatile AO_t gcollect_threads_cnt = 0;
+  static volatile AO_t gcollect_threads_cnt = 0;
 #endif /* GC_PTHREADS */
 
 sexpr ints(int low, int up)
@@ -1414,7 +1415,7 @@ void typed_test(void)
 #ifdef DBG_HDRS_ALL
 # define set_print_procs() (void)(A.dummy = 17)
 #else
-  volatile AO_t fail_count = 0;
+  static volatile AO_t fail_count = 0;
 
   void GC_CALLBACK fail_proc1(void *arg)
   {
