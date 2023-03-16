@@ -92,7 +92,7 @@ void test_basics(void)
     CORD_set_pos(p, x, 64*1024-1);
     while(CORD_pos_valid(p)) {
         (void)test_fn(CORD_pos_fetch(p), (void *)(GC_word)13);
-    CORD_next(p);
+        CORD_next(p);
     }
     if (count != 64*1024 + 2) ABORT("Position based iteration failed");
 
