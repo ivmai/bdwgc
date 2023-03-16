@@ -1250,7 +1250,11 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
       store_to_threads_table(hv, NULL);
     }
 
-    GC_ASSERT(me != NULL);
+#   ifdef LINT2
+      if (NULL == me) ABORT("Current thread is not found after fork");
+#   else
+      GC_ASSERT(me != NULL);
+#   endif
 #   ifdef GC_WIN32_THREADS
       /* Update Win32 thread id and handle.     */
       me -> id = thread_id_self(); /* differs from that in parent */
