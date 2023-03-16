@@ -206,11 +206,11 @@ jobs:
   - addons:
       apt:
         packages:
-        - gcc-11
+        - gcc-10
         sources:
         - ubuntu-toolchain-r-test
     arch: s390x
-    compiler: gcc-11
+    compiler: gcc-10
     dist: focal
     env:
     - CFLAGS_EXTRA="-O3"
