@@ -94,7 +94,7 @@ int GC_dont_precollect = FALSE;
 GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 
 #if !defined(NO_CLOCK) || !defined(SMALL_CONFIG)
-  int GC_print_stats = 0;
+  GC_INNER int GC_print_stats = 0;
 #endif
 
 #ifdef GC_PRINT_BACK_HEIGHT

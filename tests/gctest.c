@@ -71,7 +71,7 @@
 # define print_stats VERBOSE
 # define INIT_PRINT_STATS /* empty */
 #else
-  /* Use own variable as GC_print_stats might not be exported.  */
+  /* Use own variable as GC_print_stats might not be visible.   */
   static int print_stats = 0;
 # ifdef GC_READ_ENV_FILE
     /* GETENV uses GC internal function in this case.   */

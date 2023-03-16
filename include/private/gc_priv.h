@@ -2458,9 +2458,9 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
 
 #define VERBOSE 2
 #if !defined(NO_CLOCK) || !defined(SMALL_CONFIG)
-  /* GC_print_stats should be visible to extra/MacOS.c. */
-  extern int GC_print_stats;    /* Nonzero generates basic GC log.      */
-                                /* VERBOSE generates add'l messages.    */
+  GC_EXTERN int GC_print_stats;
+                        /* Value 1 generates basic GC log;              */
+                        /* VERBOSE generates additional messages.       */
 #else /* SMALL_CONFIG */
 # define GC_print_stats 0
   /* Will this remove the message character strings from the executable? */
