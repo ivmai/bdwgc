@@ -227,15 +227,15 @@ jobs:
   - addons:
       apt:
         packages:
-        - g++-11
+        - g++-10
         sources:
         - ubuntu-toolchain-r-test
     arch: s390x
-    compiler: g++-11
-    dist: bionic
+    compiler: g++-10
+    dist: focal
     env:
-    - CC=gcc-11
-    - CXX=g++-11
+    - CC=gcc-10
+    - CXX=g++-10
     - CFLAGS_EXTRA="-O3 -flto=auto -D _FORTIFY_SOURCE=2 -D PREFER_MMAP_PROT_NONE"
     - CONF_OPTIONS="--enable-cplusplus --disable-shared"
     - NO_CLONE_LIBATOMIC_OPS=true
