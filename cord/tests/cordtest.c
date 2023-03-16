@@ -36,7 +36,7 @@
 # undef CORD_prev
 #endif
 
-int count;
+static int count;
 
 int test_fn(char c, void * client_data)
 {
@@ -63,40 +63,28 @@ char id_cord_fn(size_t i, void * client_data)
     return (char)i;
 }
 
-void test_basics(void)
+static void test_cord_x1(CORD x)
 {
-    CORD x = CORD_from_char_star("ab");
-    size_t i;
     CORD y;
     CORD_pos p;
-
-    x = CORD_cat(x,x);
-    if (x == CORD_EMPTY) ABORT("CORD_cat(x,x) returned empty cord");
-    if (!CORD_IS_STRING(x)) ABORT("short cord should usually be a string");
-    if (strcmp(x, "abab") != 0) ABORT("bad CORD_cat result");
-
-    for (i = 1; i < 16; i++) {
-        x = CORD_cat(x,x);
-    }
-    x = CORD_cat(x,"c");
-    if (CORD_len(x) != 128*1024+1) ABORT("bad length");
 
     count = 0;
     if (CORD_iter5(x, 64*1024-1, test_fn, CORD_NO_FN,
                    (void *)(GC_word)13) == 0) {
         ABORT("CORD_iter5 failed");
     }
-    if (count != 64*1024 + 2) ABORT("CORD_iter5 failed");
+    if (count != 64*1024+2) ABORT("CORD_iter5 failed");
 
     count = 0;
     CORD_set_pos(p, x, 64*1024-1);
-    while(CORD_pos_valid(p)) {
+    while (CORD_pos_valid(p)) {
         (void)test_fn(CORD_pos_fetch(p), (void *)(GC_word)13);
         CORD_next(p);
     }
-    if (count != 64*1024 + 2) ABORT("Position based iteration failed");
+    if (count != 64*1024+2) ABORT("Position based iteration failed");
 
     y = CORD_substr(x, 1023, 5);
+
     if (!y) ABORT("CORD_substr returned NULL");
     if (!CORD_IS_STRING(y)) ABORT("short cord should usually be a string");
     if (strcmp(y, "babab") != 0) ABORT("bad CORD_substr result");
@@ -110,9 +98,13 @@ void test_basics(void)
     if (!y) ABORT("CORD_substr returned NULL");
     if (!CORD_IS_STRING(y)) ABORT("short cord should usually be a string");
     if (strcmp(y, "bc") != 0) ABORT("bad CORD_substr result");
+}
 
-    x = CORD_balance(x);
-    if (CORD_len(x) != 128*1024+1) ABORT("bad length");
+static void test_cord_x2(CORD x)
+{
+    size_t i;
+    CORD y;
+    CORD_pos p;
 
     count = 0;
     if (CORD_iter5(x, 64*1024-1, test_fn, CORD_NO_FN,
@@ -125,10 +117,11 @@ void test_basics(void)
     if (!y) ABORT("CORD_substr returned NULL");
     if (!CORD_IS_STRING(y)) ABORT("short cord should usually be a string");
     if (strcmp(y, "babab") != 0) ABORT("bad CORD_substr result");
+
     y = CORD_from_fn(id_cord_fn, 0, 13);
     i = 0;
     CORD_set_pos(p, y, i);
-    while(CORD_pos_valid(p)) {
+    while (CORD_pos_valid(p)) {
         char c = CORD_pos_fetch(p);
 
         if ((size_t)(unsigned char)c != i)
@@ -142,25 +135,44 @@ void test_basics(void)
         CORD_prev(p);
         (void)CORD_pos_to_cord(p);
         (void)CORD_pos_to_index(p);
-        (void)CORD_iter(CORD_EMPTY, test_fn, NULL);
-        (void)CORD_riter(CORD_EMPTY, test_fn, NULL);
         CORD_dump(y);
 #   endif
 }
 
-void test_extras(void)
+void test_basics(void)
 {
-#   define FNAME1 "cordtst1.tmp" /* short name (8+3) for portability */
-#   define FNAME2 "cordtst2.tmp"
-    int i;
-    CORD y = "abcdefghijklmnopqrstuvwxyz0123456789";
-    CORD x = "{}";
-    CORD u, w, z;
-    FILE *f;
-    FILE *f1a, *f1b, *f2;
+    CORD x = CORD_from_char_star("ab");
+    size_t i;
 
-    w = CORD_cat(CORD_cat(y,y),y);
-    z = CORD_catn(3,y,y,y);
+    x = CORD_cat(x,x);
+    if (x == CORD_EMPTY) ABORT("CORD_cat(x,x) returned empty cord");
+    if (!CORD_IS_STRING(x)) ABORT("short cord should usually be a string");
+    if (strcmp(x, "abab") != 0) ABORT("bad CORD_cat result");
+    for (i = 1; i < 16; i++) {
+        x = CORD_cat(x,x);
+    }
+    x = CORD_cat(x,"c");
+    if (CORD_len(x) != 128*1024+1) ABORT("bad length");
+    test_cord_x1(x);
+
+    x = CORD_balance(x);
+    if (CORD_len(x) != 128*1024+1) ABORT("bad length 2");
+    test_cord_x2(x);
+
+#   if defined(CPPCHECK)
+        /* TODO: Actually test these functions. */
+        (void)CORD_iter(CORD_EMPTY, test_fn, NULL);
+        (void)CORD_riter(CORD_EMPTY, test_fn, NULL);
+#   endif
+}
+
+static CORD prepare_cord_f1(CORD y)
+{
+    CORD w = CORD_cat(CORD_cat(y,y),y);
+    CORD x = "{}";
+    CORD z = CORD_catn(3,y,y,y);
+    int i;
+
     if (CORD_cmp(w,z) != 0) ABORT("CORD_catn comparison wrong");
     for (i = 1; i < 100; i++) {
         x = CORD_cat(x, y);
@@ -170,37 +182,21 @@ void test_extras(void)
     if (CORD_cmp(x,CORD_cat(z, CORD_nul(13))) >= 0) ABORT("comparison 2");
     if (CORD_cmp(CORD_cat(x, CORD_nul(13)), z) <= 0) ABORT("comparison 3");
     if (CORD_cmp(x,CORD_cat(z, "13")) >= 0) ABORT("comparison 4");
-    if ((f = fopen(FNAME1, "w")) == 0) ABORT("open failed");
-    if (CORD_put(z,f) == EOF) ABORT("CORD_put failed");
-    if (fclose(f) == EOF) ABORT("fclose failed");
-    f1a = fopen(FNAME1, "rb");
-    if (!f1a) ABORT("Unable to open " FNAME1);
-    w = CORD_from_file(f1a);
-    if (CORD_len(w) != CORD_len(z)) ABORT("file length wrong");
-    if (CORD_cmp(w,z) != 0) ABORT("file comparison wrong");
-    if (CORD_cmp(CORD_substr(w, 50*36+2, 36), y) != 0)
-        ABORT("file substr wrong");
-    f1b = fopen(FNAME1, "rb");
-    if (!f1b) ABORT("2nd open failed: " FNAME1);
-    z = CORD_from_file_lazy(f1b);
+    return z;
+}
+
+static void test_cords_f1b(CORD w, CORD z)
+{
     if (CORD_cmp(w,z) != 0) ABORT("File conversions differ");
     if (CORD_chr(w, 0, '9') != 37) ABORT("CORD_chr failed 1");
     if (CORD_chr(w, 3, 'a') != 38) ABORT("CORD_chr failed 2");
     if (CORD_rchr(w, CORD_len(w) - 1, '}') != 1) ABORT("CORD_rchr failed");
-    x = y;
-    for (i = 1; i < 14; i++) {
-        x = CORD_cat(x,x);
-    }
-    if ((f = fopen(FNAME2, "w")) == 0) ABORT("2nd open failed");
-#   ifdef __DJGPP__
-      /* FIXME: DJGPP workaround.  Why does this help? */
-      if (fflush(f) != 0) ABORT("fflush failed");
-#   endif
-    if (CORD_put(x,f) == EOF) ABORT("CORD_put failed");
-    if (fclose(f) == EOF) ABORT("fclose failed");
-    f2 = fopen(FNAME2, "rb");
-    if (!f2) ABORT("Unable to open " FNAME2);
-    w = CORD_from_file(f2);
+}
+
+static void test_cords_f2(CORD w, CORD x, CORD y)
+{
+    CORD u;
+
     if (CORD_len(w) != CORD_len(x)) ABORT("file length wrong");
     if (CORD_cmp(w,x) != 0) ABORT("file comparison wrong");
     if (CORD_cmp(CORD_substr(w, 1000*36, 36), y) != 0)
@@ -209,13 +205,59 @@ void test_extras(void)
         ABORT("char * file substr wrong");
     u = CORD_substr(w, 1000*36, 2);
     if (!u) ABORT("CORD_substr returned NULL");
-    if (strcmp(u, "ab") != 0)
-        ABORT("short file substr wrong");
+    if (strcmp(u, "ab") != 0) ABORT("short file substr wrong");
     if (CORD_str(x,1,"9a") != 35) ABORT("CORD_str failed 1");
     if (CORD_str(x,0,"9abcdefghijk") != 35) ABORT("CORD_str failed 2");
     if (CORD_str(x,0,"9abcdefghijx") != CORD_NOT_FOUND)
         ABORT("CORD_str failed 3");
     if (CORD_str(x,0,"9>") != CORD_NOT_FOUND) ABORT("CORD_str failed 4");
+}
+
+void test_extras(void)
+{
+#   define FNAME1 "cordtst1.tmp" /* short name (8+3) for portability */
+#   define FNAME2 "cordtst2.tmp"
+    int i;
+    CORD y = "abcdefghijklmnopqrstuvwxyz0123456789";
+    CORD w, x, z;
+    FILE *f, *f1a, *f1b, *f2;
+
+    f = fopen(FNAME1, "w");
+    if (!f) ABORT("open 1 failed");
+    z = prepare_cord_f1(y);
+    if (CORD_put(z,f) == EOF) ABORT("CORD_put failed");
+    if (fclose(f) == EOF) ABORT("fclose failed");
+
+    f1a = fopen(FNAME1, "rb");
+    if (!f1a) ABORT("open 1a failed");
+    w = CORD_from_file(f1a);
+    if (CORD_len(w) != CORD_len(z)) ABORT("file length wrong");
+    if (CORD_cmp(w,z) != 0) ABORT("file comparison wrong");
+    if (CORD_cmp(CORD_substr(w, 50*36+2, 36), y) != 0)
+        ABORT("file substr wrong");
+
+    f1b = fopen(FNAME1, "rb");
+    if (!f1b) ABORT("open 1b failed");
+    test_cords_f1b(w, CORD_from_file_lazy(f1b));
+
+    f = fopen(FNAME2, "w");
+    if (!f) ABORT("open 2 failed");
+#   ifdef __DJGPP__
+      /* FIXME: DJGPP workaround.  Why does this help? */
+      if (fflush(f) != 0) ABORT("fflush failed");
+#   endif
+    x = y;
+    for (i = 1; i < 14; i++) {
+        x = CORD_cat(x,x);
+    }
+    if (CORD_put(x,f) == EOF) ABORT("CORD_put failed");
+    if (fclose(f) == EOF) ABORT("fclose failed");
+
+    f2 = fopen(FNAME2, "rb");
+    if (!f2) ABORT("open 2a failed");
+    w = CORD_from_file(f2);
+    test_cords_f2(w, x, y);
+
     /* Note: f1a, f1b, f2 handles are closed lazily by CORD library.    */
     /* TODO: Propose and use CORD_fclose. */
     *(CORD volatile *)&w = CORD_EMPTY;
