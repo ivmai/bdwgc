@@ -215,7 +215,7 @@ GC_API GC_ATTR_DEPRECATED int GC_java_finalization;
                         /* it a bit safer to use non-topologically-     */
                         /* ordered finalization.  Default value is      */
                         /* determined by JAVA_FINALIZATION macro.       */
-                        /* Enables register_finalizer_unreachable to    */
+                        /* Enables GC_register_finalizer_unreachable to */
                         /* work correctly.                              */
                         /* The setter and getter are unsynchronized.    */
 GC_API void GC_CALL GC_set_java_finalization(int);
