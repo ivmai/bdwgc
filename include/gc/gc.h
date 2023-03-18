@@ -1276,12 +1276,13 @@ GC_API int GC_CALL GC_register_disappearing_link(void ** /* link */)
 GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
                                                     const void * /* obj */)
                         GC_ATTR_NONNULL(1) GC_ATTR_NONNULL(2);
-        /* A slight generalization of the above. *link is       */
+        /* A slight generalization of the above.  *link is      */
         /* cleared when obj first becomes inaccessible.  This   */
         /* can be used to implement weak pointers easily and    */
-        /* safely. Typically link will point to a location      */
-        /* holding a disguised pointer to obj.  (A pointer      */
-        /* inside an "atomic" object is effectively disguised.) */
+        /* safely.  Typically link will point to a location     */
+        /* (in a GC-allocated object or not) holding            */
+        /* a disguised pointer to obj.  (A pointer inside       */
+        /* an "atomic" object is effectively disguised.)        */
         /* In this way, weak pointers are broken before any     */
         /* object reachable from them gets finalized.           */
         /* Each link may be registered only with one obj value, */
