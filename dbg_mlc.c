@@ -1084,7 +1084,7 @@ static void store_old(void *obj, GC_finalization_proc my_old_fn,
 {
     if (0 != my_old_fn) {
       if (my_old_fn == OFN_UNSET) {
-        /* register_finalizer() failed; (*ofn) and (*ocd) are unchanged. */
+        /* GC_register_finalizer() failed; (*ofn) and (*ocd) are unchanged. */
         return;
       }
       if (my_old_fn != GC_debug_invoke_finalizer) {
