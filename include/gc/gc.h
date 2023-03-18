@@ -1037,6 +1037,15 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
         GC_debug_realloc_replacement(void * /* object_addr */,
                                      size_t /* size_in_bytes */);
 
+/* Convenient macros for disappearing links registration working both   */
+/* for debug and non-debug allocated objects, and accepting interior    */
+/* pointers to object.                                                  */
+#define GC_GENERAL_REGISTER_DISAPPEARING_LINK_SAFE(link, obj) \
+      GC_general_register_disappearing_link(link, \
+                                        GC_base((/* no const */ void *)(obj)))
+#define GC_REGISTER_LONG_LINK_SAFE(link, obj) \
+      GC_register_long_link(link, GC_base((/* no const */ void *)(obj)))
+
 #ifdef GC_DEBUG_REPLACEMENT
 # define GC_MALLOC(sz) GC_debug_malloc_replacement(sz)
 # define GC_REALLOC(old, sz) GC_debug_realloc_replacement(old, sz)
@@ -1072,10 +1081,9 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
 # define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
 # define GC_PTR_STORE_AND_DIRTY(p, q) GC_debug_ptr_store_and_dirty(p, q)
 # define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
-      GC_general_register_disappearing_link(link, \
-                                        GC_base((/* no const */ void *)(obj)))
+      GC_GENERAL_REGISTER_DISAPPEARING_LINK_SAFE(link, obj)
 # define GC_REGISTER_LONG_LINK(link, obj) \
-      GC_register_long_link(link, GC_base((/* no const */ void *)(obj)))
+      GC_REGISTER_LONG_LINK_SAFE(link, obj)
 # define GC_REGISTER_DISPLACEMENT(n) GC_debug_register_displacement(n)
 #else
 # define GC_MALLOC_ATOMIC(sz) GC_malloc_atomic(sz)
