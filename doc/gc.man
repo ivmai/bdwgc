@@ -63,7 +63,7 @@ GC_malloc_ignore_off_page
 and
 .I
 GC_malloc_atomic_ignore_off_page
-inform the collector that the client code will always maintain a pointer to near the beginning of the object (within the first 512 bytes), and that pointers beyond that can be ignored by the collector.  This makes it much easier for the collector to place large objects.  These are recommended for large object allocation.  (Objects expected to be larger than about 100KBytes should be allocated this way.)
+inform the collector that the client code will always maintain a pointer to near the beginning (i.e. within the first heap block) of the object, and that pointers beyond that can be ignored by the collector.  This makes it much easier for the collector to place large objects.  These are recommended for large object allocation.  (Objects expected to be larger than about 100KBytes should be allocated this way.)
 .LP
 It is also possible to use the collector to find storage leaks in programs destined to be run with standard malloc/free.  The collector can be compiled for thread-safe operation.  Unlike standard malloc, it is safe to call malloc after a previous malloc call was interrupted by a signal, provided the original malloc call is not resumed.
 .LP

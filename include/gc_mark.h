@@ -205,7 +205,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                                         GC_generic_malloc_ignore_off_page(
                                             size_t /* lb */, int /* knd */);
                                 /* As above, but pointers to past the   */
-                                /* first page of the resulting object   */
+                                /* first hblk of the resulting object   */
                                 /* are ignored.                         */
 
 /* Generalized version of GC_malloc_[atomic_]uncollectable.     */

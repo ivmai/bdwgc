@@ -316,8 +316,9 @@ all of the following, plus many others.
 
  6) `GC_malloc_ignore_off_page(bytes)`
      - Identical to `GC_malloc`, but the client promises to keep a pointer to
-       the somewhere within the first 256 bytes of the object while it is
-       live.  (This pointer should normally be declared volatile to prevent
+       the somewhere within the first GC heap block (512 .. 4096 bytes or even
+       more, depending on the configuration) of the object while it is live.
+       (This pointer should normally be declared volatile to prevent
        interference from compiler optimizations.)  This is the recommended
        way to allocate anything that is likely to be larger than 100 Kbytes
        or so.  (`GC_malloc` may result in failure to reclaim such objects.)

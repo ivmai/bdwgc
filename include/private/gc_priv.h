@@ -1032,7 +1032,7 @@ struct hblkhdr {
                          /* list headers.  Sometimes called regions.    */
     unsigned char hb_flags;
 #       define IGNORE_OFF_PAGE  1       /* Ignore pointers that do not  */
-                                        /* point to the first page of   */
+                                        /* point to the first hblk of   */
                                         /* this object.                 */
 #       define WAS_UNMAPPED 2   /* This is a free block, which has      */
                                 /* been unmapped from the address       */
@@ -1986,11 +1986,11 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k);
 #if defined(DBG_HDRS_ALL) || defined(GC_GCJ_SUPPORT) \
     || !defined(GC_NO_FINALIZATION)
   GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k);
-                                /* Allocate an object, where            */
-                                /* the client guarantees that there     */
-                                /* will always be a pointer to the      */
-                                /* beginning of the object while the    */
-                                /* object is live.                      */
+                                /* Allocate an object, where the client */
+                                /* guarantees that there will always be */
+                                /* a pointer to the beginning (i.e.     */
+                                /* within the first hblk) of the object */
+                                /* while it is live.                    */
 #endif
 
 GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
