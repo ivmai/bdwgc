@@ -212,7 +212,7 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 #if defined(DBG_HDRS_ALL) || defined(GC_GCJ_SUPPORT) \
     || !defined(GC_NO_FINALIZATION)
   /* Allocate a composite object of size n bytes.  The caller           */
-  /* guarantees that pointers past the first page are not relevant.     */
+  /* guarantees that pointers past the first hblk are not relevant.     */
   GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
   {
     size_t lb_adjusted;
