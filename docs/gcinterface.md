@@ -70,8 +70,8 @@ Typically not useful for small collectible objects.
 `void * GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(size_t _bytes_)` - Analogous
 to `GC_MALLOC` and `GC_MALLOC_ATOMIC`, respectively, except that the client
 guarantees that as long as the resulting object is of use, a pointer
-is maintained to someplace inside the first 512 bytes of the object. This
-pointer should be declared volatile to avoid interference from compiler
+is maintained to someplace inside the first heap block (hblk) of the object.
+This pointer should be declared volatile to avoid interference from compiler
 optimizations. (Other nonvolatile pointers to the object may exist as well.)
 This is the preferred way to allocate objects that are likely to be
 more than 100 KB in size. It greatly reduces the risk that such objects will

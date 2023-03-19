@@ -90,7 +90,7 @@ and
 .I
 GC_malloc_atomic_ignore_off_page
 inform the collector that the client code will always maintain a pointer to
-near the beginning of the object (within the first 512 bytes), and that
+near the beginning (i.e. within the first heap block) of the object, and that
 pointers beyond that can be ignored by the collector.  This makes it much
 easier for the collector to place large objects.  These are recommended for
 large object allocation.  (Objects expected to be > ~100 KB should be

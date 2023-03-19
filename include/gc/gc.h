@@ -955,13 +955,13 @@ GC_API void GC_CALL GC_start_incremental_collection(void);
 /* until it returns 0.                                          */
 GC_API int GC_CALL GC_collect_a_little(void);
 
-/* Allocate an object of size lb bytes.  The client guarantees that     */
-/* as long as the object is live, it will be referenced by a pointer    */
-/* that points to somewhere within the first 256 bytes of the object.   */
-/* (This should normally be declared volatile to prevent the compiler   */
-/* from invalidating this assertion.)  This routine is only useful      */
-/* if a large array is being allocated.  It reduces the chance of       */
-/* accidentally retaining such an array as a result of scanning an      */
+/* Allocate an object of size lb bytes.  The client guarantees that as  */
+/* long as the object is live, it will be referenced by a pointer that  */
+/* points to somewhere within the first GC heap block (hblk) of the     */
+/* object.  (This should normally be declared volatile to prevent the   */
+/* compiler from invalidating this assertion.)  This routine is only    */
+/* useful if a large array is being allocated.  It reduces the chance   */
+/* of accidentally retaining such an array as a result of scanning an   */
 /* integer that happens to be an address inside the array.  (Actually,  */
 /* it reduces the chance of the allocator not finding space for such    */
 /* an array, since it will try hard to avoid introducing such a false   */

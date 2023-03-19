@@ -84,7 +84,8 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                             GC_EXTRA_PARAMS);
 
 /* Similar to GC_gcj_malloc, but assumes that a pointer to near the     */
-/* beginning of the resulting object is always maintained.              */
+/* beginning (i.e. within the first heap block) of the allocated object */
+/* is always maintained.                                                */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_gcj_malloc_ignore_off_page(size_t /* lb */,
                                 void * /* ptr_to_struct_containing_descr */);
