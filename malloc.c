@@ -194,9 +194,11 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
         obj_link(op) = 0;
         GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
     } else {
-        op = (ptr_t)GC_alloc_large_and_clear(ADD_SLOP(lb), k, 0);
+        size_t lb_adjusted = ADD_SLOP(lb);
+
+        op = (ptr_t)GC_alloc_large_and_clear(lb_adjusted, k, 0 /* flags */);
         if (op != NULL)
-            GC_bytes_allocd += lb;
+            GC_bytes_allocd += lb_adjusted;
     }
 
     return op;
@@ -208,7 +210,7 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
   /* guarantees that pointers past the first page are not relevant.     */
   GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
   {
-    word lb_adjusted;
+    size_t lb_adjusted;
     void * op;
 
     GC_ASSERT(I_HOLD_LOCK());
