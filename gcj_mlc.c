@@ -111,9 +111,6 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
 #   undef ignore_gcj_info
 }
 
-#define GENERAL_MALLOC_INNER(lb,k) \
-    GC_clear_stack(GC_generic_malloc_inner(lb, k))
-
 /* We need a mechanism to release the lock and invoke finalizers.       */
 /* We don't really have an opportunity to do this on a rarely executed  */
 /* path on which the lock is not held.  Thus we check at a              */
@@ -146,32 +143,19 @@ static void maybe_finalize(void)
 #endif
 {
     ptr_t op;
+    size_t lg;
 
     GC_DBG_COLLECT_AT_MALLOC(lb);
-    if(SMALL_OBJ(lb)) {
-        word lg;
-
-        LOCK();
-        lg = GC_size_map[lb];
-        op = GC_gcjobjfreelist[lg];
-        if(EXPECT(0 == op, FALSE)) {
-            maybe_finalize();
-            op = (ptr_t)GENERAL_MALLOC_INNER(lb, GC_gcj_kind);
-            if (0 == op) {
-                GC_oom_func oom_fn = GC_oom_fn;
-                UNLOCK();
-                return (*oom_fn)(lb);
-            }
-        } else {
-            GC_gcjobjfreelist[lg] = (ptr_t)obj_link(op);
-            GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
-        }
-        GC_ASSERT(((void **)op)[1] == 0);
+    LOCK();
+    if (SMALL_OBJ(lb) && (op = GC_gcjobjfreelist[lg = GC_size_map[lb]],
+                          EXPECT(op != NULL, TRUE))) {
+        GC_gcjobjfreelist[lg] = (ptr_t)obj_link(op);
+        GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
+        GC_ASSERT(NULL == ((void **)op)[1]);
     } else {
-        LOCK();
         maybe_finalize();
-        op = (ptr_t)GENERAL_MALLOC_INNER(lb, GC_gcj_kind);
-        if (0 == op) {
+        op = (ptr_t)GC_clear_stack(GC_generic_malloc_inner(lb, GC_gcj_kind));
+        if (NULL == op) {
             GC_oom_func oom_fn = GC_oom_fn;
             UNLOCK();
             return (*oom_fn)(lb);
