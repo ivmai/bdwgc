@@ -195,7 +195,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 {
     void *result;
     size_t lg;
-    size_t lb_rounded;
     word n_blocks;
     GC_bool init;
 
@@ -203,8 +202,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
         return GC_generic_malloc(lb, k);
     GC_ASSERT(k < MAXOBJKINDS);
     lg = ROUNDED_UP_GRANULES(lb);
-    lb_rounded = GRANULES_TO_BYTES(lg);
-    n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
+    n_blocks = OBJ_SZ_TO_BLOCKS(GRANULES_TO_BYTES(lg));
     init = GC_obj_kinds[k].ok_init;
     if (EXPECT(get_have_errors(), FALSE))
       GC_print_all_errors();
@@ -230,7 +228,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
             ((word *)result)[GRANULES_TO_WORDS(lg)-2] = 0;
 #       endif
     }
-    GC_bytes_allocd += lb_rounded;
     UNLOCK();
     if (init && !GC_debugging_started) {
         BZERO(result, n_blocks * HBLKSIZE);

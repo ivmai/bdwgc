@@ -2278,8 +2278,8 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags,
                         /* The flags argument should be IGNORE_OFF_PAGE */
                         /* or 0.  Calls GC_allochblk() to do the actual */
                         /* allocation, but also triggers GC and/or heap */
-                        /* expansion as appropriate.  Does not update   */
-                        /* GC_bytes_allocd, but does other accounting.  */
+                        /* expansion as appropriate.  Updates value of  */
+                        /* GC_bytes_allocd; does also other accounting. */
 
 GC_INNER void GC_freehblk(struct hblk * p);
                                 /* Deallocate a heap block and mark it  */
@@ -2356,10 +2356,10 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k);
 GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
                                       GC_bool ignore_off_page, GC_bool retry);
 
-GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
-                                /* Make the indicated                   */
-                                /* free list nonempty, and return its   */
-                                /* head.  Sz is in granules.            */
+GC_INNER ptr_t GC_allocobj(size_t gran, int kind);
+                                /* Make the indicated free list     */
+                                /* nonempty, and return its head.   */
+                                /* The size (gran) is in granules.  */
 
 #ifdef GC_ADD_CALLER
   /* GC_DBG_EXTRAS is used by GC debug API functions (unlike GC_EXTRAS  */
