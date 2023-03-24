@@ -241,7 +241,11 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
         LOCK();
         result = GC_alloc_large(lb_rounded, k, flags, align_m1);
         if (EXPECT(result != NULL, TRUE)) {
-          if (GC_debugging_started) {
+          if (GC_debugging_started
+#             ifndef THREADS
+                || init
+#             endif
+             ) {
             BZERO(result, HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_rounded));
           } else {
 #           ifdef THREADS
@@ -256,9 +260,13 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
           }
         }
         UNLOCK();
-        if (init && !GC_debugging_started && 0 != result) {
-            BZERO(result, HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_rounded));
-        }
+#       ifdef THREADS
+          if (init && !GC_debugging_started && result != NULL) {
+            /* Clear the rest (i.e. excluding the initial 2 words). */
+            BZERO((word *)result + 2,
+                  HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_rounded) - 2 * sizeof(word));
+          }
+#       endif
     }
     if (EXPECT(NULL == result, FALSE))
       result = (*GC_get_oom_fn())(lb); /* might be misaligned */
