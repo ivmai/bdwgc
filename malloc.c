@@ -267,7 +267,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
         LOCK();
         result = (ptr_t)GC_alloc_large(lb_rounded, k, 0);
         if (0 != result) {
-          if (GC_debugging_started) {
+          if (GC_debugging_started
+#             ifndef THREADS
+                || init
+#             endif
+             ) {
             BZERO(result, n_blocks * HBLKSIZE);
           } else {
 #           ifdef THREADS
@@ -282,9 +286,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
           GC_bytes_allocd += lb_rounded;
         }
         UNLOCK();
-        if (init && !GC_debugging_started && 0 != result) {
-            BZERO(result, n_blocks * HBLKSIZE);
-        }
+#       ifdef THREADS
+          if (init && !GC_debugging_started && result != NULL) {
+            /* Clear the rest (i.e. excluding the initial 2 words). */
+            BZERO((word *)result + 2,
+                  n_blocks * HBLKSIZE - 2 * sizeof(word));
+          }
+#       endif
     }
     if (0 == result) {
         return((*GC_get_oom_fn())(lb));
