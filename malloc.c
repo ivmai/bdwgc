@@ -338,8 +338,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
                                                         size_t lb, int k)
 {
     void *op;
+    size_t lb_orig = lb;
 
     GC_ASSERT(k < MAXOBJKINDS);
+    if (EXTRA_BYTES != 0 && EXPECT(lb != 0, TRUE)) lb--;
+                /* We do not need the extra byte, since this will   */
+                /* not be collected anyway.                         */
+
     if (SMALL_OBJ(lb)) {
         void **opp;
         size_t lg;
@@ -347,10 +352,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
         if (EXPECT(get_have_errors(), FALSE))
           GC_print_all_errors();
         GC_INVOKE_FINALIZERS();
-        GC_DBG_COLLECT_AT_MALLOC(lb);
-        if (EXTRA_BYTES != 0 && lb != 0) lb--;
-                  /* We don't need the extra byte, since this won't be  */
-                  /* collected anyway.                                  */
+        GC_DBG_COLLECT_AT_MALLOC(lb_orig);
         LOCK();
         lg = GC_size_map[lb];
         opp = &GC_obj_kinds[k].ok_freelist[lg];
@@ -368,7 +370,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
             if (NULL == op) {
               GC_oom_func oom_fn = GC_oom_fn;
               UNLOCK();
-              return (*oom_fn)(lb);
+              return (*oom_fn)(lb_orig);
             }
             /* For small objects, the free lists are completely marked. */
         }

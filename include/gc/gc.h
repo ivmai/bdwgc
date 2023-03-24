@@ -201,7 +201,8 @@ GC_API GC_ATTR_DEPRECATED int GC_all_interior_pointers;
                         /* Unless DONT_ADD_BYTE_AT_END is defined, this */
                         /* also affects whether sizes are increased by  */
                         /* at least a byte to allow "off the end"       */
-                        /* pointer recognition.  Must be only 0 or 1.   */
+                        /* pointer recognition (uncollectible objects   */
+                        /* are the exception).  Must be only 0 or 1.    */
 GC_API void GC_CALL GC_set_all_interior_pointers(int);
 GC_API int GC_CALL GC_get_all_interior_pointers(void);
 
