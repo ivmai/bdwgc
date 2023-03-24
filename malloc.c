@@ -96,7 +96,7 @@ STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
 }
 
 /* allocate lb bytes for an object of kind k.   */
-/* Should not be used to directly to allocate   */
+/* Should not be used to directly allocate      */
 /* objects such as STUBBORN objects that        */
 /* require special handling on allocation.      */
 /* First a version that assumes we already      */
