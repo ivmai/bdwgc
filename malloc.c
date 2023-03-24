@@ -334,6 +334,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
         void **opp;
         size_t lg;
 
+        if (EXPECT(get_have_errors(), FALSE))
+          GC_print_all_errors();
+        GC_INVOKE_FINALIZERS();
         GC_DBG_COLLECT_AT_MALLOC(lb);
         if (EXTRA_BYTES != 0 && lb != 0) lb--;
                   /* We don't need the extra byte, since this won't be  */
@@ -350,13 +353,17 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
             /* cleared only temporarily during a collection, as a       */
             /* result of the normal free list mark bit clearing.        */
             GC_non_gc_bytes += GRANULES_TO_BYTES((word)lg);
-            UNLOCK();
         } else {
-            UNLOCK();
-            op = GC_generic_malloc_aligned(lb, k, 0, 0 /* align_m1 */);
+            op = GC_generic_malloc_inner_small(lb, k);
+            if (NULL == op) {
+              GC_oom_func oom_fn = GC_oom_fn;
+              UNLOCK();
+              return (*oom_fn)(lb);
+            }
             /* For small objects, the free lists are completely marked. */
         }
-        GC_ASSERT(0 == op || GC_is_marked(op));
+        GC_ASSERT(GC_is_marked(op));
+        UNLOCK();
     } else {
       op = GC_generic_malloc_aligned(lb, k, 0 /* flags */, 0 /* align_m1 */);
       if (op /* != NULL */) { /* CPPCHECK */
