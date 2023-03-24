@@ -178,7 +178,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int kind)
     }
     GC_ASSERT(GC_is_initialized);
     GC_ASSERT(GC_is_thread_tsd_valid(tsd));
-    granules = ROUNDED_UP_GRANULES(bytes);
+    granules = ALLOC_REQUEST_GRANS(bytes);
 #   if defined(CPPCHECK)
 #     define MALLOC_KIND_PTRFREE_INIT (void*)1
 #   else
@@ -227,7 +227,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t bytes,
   if (EXPECT(GC_incremental, FALSE)) {
     return GC_core_gcj_malloc(bytes, ptr_to_struct_containing_descr, 0);
   } else {
-    size_t granules = ROUNDED_UP_GRANULES(bytes);
+    size_t granules = ALLOC_REQUEST_GRANS(bytes);
     void *result;
     void **tiny_fl;
 

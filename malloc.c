@@ -102,7 +102,7 @@ STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
 /* has the length of at least n/4.                                      */
 STATIC void GC_extend_size_map(size_t i)
 {
-  size_t orig_granule_sz = ROUNDED_UP_GRANULES(i);
+  size_t orig_granule_sz = ALLOC_REQUEST_GRANS(i);
   size_t granule_sz;
   size_t byte_sz = GRANULES_TO_BYTES(orig_granule_sz);
                         /* The size we try to preserve.         */
@@ -124,7 +124,7 @@ STATIC void GC_extend_size_map(size_t i)
     while (GC_size_map[low_limit] != 0)
       low_limit++;
 
-    granule_sz = ROUNDED_UP_GRANULES(low_limit);
+    granule_sz = ALLOC_REQUEST_GRANS(low_limit);
     granule_sz += granule_sz >> 3;
     if (granule_sz < orig_granule_sz)
       granule_sz = orig_granule_sz;
@@ -197,7 +197,7 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k, unsigned flags)
         return GC_generic_malloc_inner_small(lb, k);
     }
 
-    return GC_alloc_large_and_clear(ADD_SLOP(lb), k, flags);
+    return GC_alloc_large_and_clear(ADD_EXTRA_BYTES(lb), k, flags);
 }
 
 #ifdef GC_COLLECT_AT_MALLOC
@@ -229,7 +229,7 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
         size_t lb_rounded;
         GC_bool init;
 
-        lg = ROUNDED_UP_GRANULES(lb);
+        lg = ALLOC_REQUEST_GRANS(lb);
         lb_rounded = GRANULES_TO_BYTES(lg);
         init = GC_obj_kinds[k].ok_init;
         if (EXPECT(align_m1 < GRANULE_BYTES, TRUE)) {

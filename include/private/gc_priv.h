@@ -1015,20 +1015,23 @@ EXTERN_C_BEGIN
 #define ROUNDUP_GRANULE_SIZE(lb) /* lb should have no side-effect */ \
             (SIZET_SAT_ADD(lb, GRANULE_BYTES - 1) & ~(GRANULE_BYTES - 1))
 
-/* Round up byte allocation requests to integral number of words, etc. */
-# define ROUNDED_UP_GRANULES(lb) /* lb should have no side-effect */ \
+#define ADD_EXTRA_BYTES(lb) /* lb should have no side-effect */ \
+            SIZET_SAT_ADD(lb, EXTRA_BYTES)
+
+/* Round up byte allocation request (after adding EXTRA_BYTES) to   */
+/* a multiple of a granule, then convert it to granules.            */
+#define ALLOC_REQUEST_GRANS(lb) /* lb should have no side-effect */ \
         BYTES_TO_GRANULES(SIZET_SAT_ADD(lb, GRANULE_BYTES - 1 + EXTRA_BYTES))
-# if MAX_EXTRA_BYTES == 0
-#   define SMALL_OBJ(bytes) EXPECT((bytes) <= (MAXOBJBYTES), TRUE)
-# else
-#   define SMALL_OBJ(bytes) \
-            (EXPECT((bytes) <= (MAXOBJBYTES - MAX_EXTRA_BYTES), TRUE) \
+
+#if MAX_EXTRA_BYTES == 0
+# define SMALL_OBJ(bytes) EXPECT((bytes) <= MAXOBJBYTES, TRUE)
+#else
+# define SMALL_OBJ(bytes) /* bytes argument should have no side-effect */ \
+            (EXPECT((bytes) <= MAXOBJBYTES - MAX_EXTRA_BYTES, TRUE) \
              || (bytes) <= MAXOBJBYTES - EXTRA_BYTES)
         /* This really just tests bytes <= MAXOBJBYTES - EXTRA_BYTES.   */
         /* But we try to avoid looking up EXTRA_BYTES.                  */
-# endif
-# define ADD_SLOP(lb) /* lb should have no side-effect */ \
-                SIZET_SAT_ADD(lb, EXTRA_BYTES)
+#endif
 
 /*
  * Hash table representation of sets of pages.
@@ -1607,8 +1610,8 @@ struct _GC_arrays {
 # endif
   size_t _size_map[MAXOBJBYTES+1];
         /* Number of granules to allocate when asked for a certain      */
-        /* number of bytes.  Should be accessed with the allocation     */
-        /* lock held.                                                   */
+        /* number of bytes (plus EXTRA_BYTES).  Should be accessed with */
+        /* the allocation lock held.                                    */
 # ifdef MARK_BIT_PER_GRANULE
 #   define GC_obj_map GC_arrays._obj_map
     unsigned short * _obj_map[MAXOBJGRANULES + 1];

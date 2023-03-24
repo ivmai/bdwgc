@@ -143,7 +143,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
           if (IS_UNCOLLECTABLE(obj_kind)) GC_non_gc_bytes += (sz - orig_sz);
           /* Extra area is already cleared by GC_alloc_large_and_clear. */
     }
-    if (ADD_SLOP(lb) <= sz) {
+    if (ADD_EXTRA_BYTES(lb) <= sz) {
         if (lb >= (sz >> 1)) {
             if (orig_sz > lb) {
               /* Clear unneeded part of object to avoid bogus pointer */
@@ -440,12 +440,9 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_many(size_t lb)
 {
     void *result;
+    size_t lg = ALLOC_REQUEST_GRANS(lb);
 
-    /* Add EXTRA_BYTES and round up to a multiple of a granule. */
-    lb = SIZET_SAT_ADD(lb, EXTRA_BYTES + GRANULE_BYTES - 1)
-            & ~(GRANULE_BYTES - 1);
-
-    GC_generic_malloc_many(lb, NORMAL, &result);
+    GC_generic_malloc_many(GRANULES_TO_BYTES(lg), NORMAL, &result);
     return result;
 }
 

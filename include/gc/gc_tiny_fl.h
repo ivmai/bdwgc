@@ -79,7 +79,7 @@
 
 /* The ith free list corresponds to size i*GC_GRANULE_BYTES     */
 /* Internally to the collector, the index can be computed with  */
-/* ROUNDED_UP_GRANULES.  Externally, we don't know whether      */
+/* ALLOC_REQUEST_GRANS().  Externally, we don't know whether    */
 /* DONT_ADD_BYTE_AT_END is set, but the client should know.     */
 
 /* Convert a free list index to the actual size of objects      */
