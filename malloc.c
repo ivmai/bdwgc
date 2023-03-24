@@ -229,6 +229,7 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
         size_t lb_rounded;
         GC_bool init;
 
+        if (EXPECT(0 == lb, FALSE)) lb = 1;
         lg = ALLOC_REQUEST_GRANS(lb);
         lb_rounded = GRANULES_TO_BYTES(lg);
         init = GC_obj_kinds[k].ok_init;
@@ -244,6 +245,7 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
             BZERO(result, HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_rounded));
           } else {
 #           ifdef THREADS
+              GC_ASSERT(GRANULES_TO_WORDS(lg) >= 2);
               /* Clear any memory that might be used for GC descriptors */
               /* before we release the lock.                            */
                 ((word *)result)[0] = 0;
