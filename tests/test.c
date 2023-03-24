@@ -436,6 +436,7 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
                                                 : &gcj_class_struct2);
 
     CHECK_OUT_OF_MEMORY(r);
+    AO_fetch_and_add1(&collectable_count);
     result = (sexpr)(r + 1);
     result -> sexpr_car = x;
     GC_PTR_STORE_AND_DIRTY(&result->sexpr_cdr, y);
