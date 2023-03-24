@@ -152,7 +152,7 @@ STATIC void GC_extend_size_map(size_t i)
 }
 
 /* Allocate lb bytes for an object of kind k.           */
-/* Should not be used to directly to allocate objects   */
+/* Should not be used to directly allocate objects      */
 /* that require special handling on allocation.         */
 GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 {
