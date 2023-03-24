@@ -304,8 +304,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
       return GC_malloc_explicitly_typed(lb, d);
 
     GC_ASSERT(GC_explicit_typing_initialized);
-    op = GC_clear_stack(GC_generic_malloc_ignore_off_page(lb_adjusted,
-                                                          GC_explicit_kind));
+    op = GC_clear_stack(GC_generic_malloc_aligned(lb_adjusted,
+                                                  GC_explicit_kind,
+                                                  IGNORE_OFF_PAGE, 0));
     if (EXPECT(NULL == op, FALSE)) return NULL;
 
     nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));

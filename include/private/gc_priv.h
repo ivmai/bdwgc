@@ -2286,6 +2286,7 @@ GC_INNER void GC_freehblk(struct hblk * p);
                                 /* as invalid.                          */
 
 /*  Miscellaneous GC routines.  */
+
 GC_INNER GC_bool GC_expand_hp_inner(word n);
 GC_INNER void GC_start_reclaim(GC_bool abort_if_found);
                                 /* Restore unmarked objects to free     */
@@ -2338,23 +2339,24 @@ GC_INNER void GC_collect_a_little_inner(int n);
                                 /* A unit is an amount appropriate for  */
                                 /* HBLKSIZE bytes of allocation.        */
 
-GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, size_t align_m1);
+GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
+                                          size_t align_m1);
 
-GC_INNER void * GC_generic_malloc_inner(size_t lb, int k);
+GC_INNER void * GC_generic_malloc_inner(size_t lb, int k, unsigned flags);
                                 /* Allocate an object of the given      */
                                 /* kind but assuming lock already held. */
-#if defined(DBG_HDRS_ALL) || defined(GC_GCJ_SUPPORT) \
-    || !defined(GC_NO_FINALIZATION)
-  GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k);
-                                /* Allocate an object, where the client */
+                                /* Should not be used to directly       */
+                                /* allocate objects requiring special   */
+                                /* handling on allocation.  The flags   */
+                                /* argument should be IGNORE_OFF_PAGE   */
+                                /* or 0.  In the first case the client  */
                                 /* guarantees that there will always be */
                                 /* a pointer to the beginning (i.e.     */
                                 /* within the first hblk) of the object */
                                 /* while it is live.                    */
-#endif
 
-GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
-                                      GC_bool ignore_off_page, GC_bool retry);
+GC_INNER GC_bool GC_collect_or_expand(word needed_blocks, unsigned flags,
+                                      GC_bool retry);
 
 GC_INNER ptr_t GC_allocobj(size_t gran, int kind);
                                 /* Make the indicated free list     */
@@ -2386,7 +2388,7 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind);
 
 /* Allocation routines that bypass the thread local cache.      */
 #if defined(THREAD_LOCAL_ALLOC) && defined(GC_GCJ_SUPPORT)
-    GC_INNER void * GC_core_gcj_malloc(size_t, void *);
+  GC_INNER void *GC_core_gcj_malloc(size_t lb, void *, unsigned flags);
 #endif
 
 GC_INNER void GC_init_headers(void);
@@ -2508,12 +2510,11 @@ GC_EXTERN GC_bool GC_print_back_height;
 /* Macros used for collector internal allocation.       */
 /* These assume the collector lock is held.             */
 #ifdef DBG_HDRS_ALL
-  GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k);
-  GC_INNER void * GC_debug_generic_malloc_inner_ignore_off_page(size_t lb,
-                                                                int k);
-# define GC_INTERNAL_MALLOC GC_debug_generic_malloc_inner
-# define GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE \
-               GC_debug_generic_malloc_inner_ignore_off_page
+  GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k,
+                                                unsigned flags);
+# define GC_INTERNAL_MALLOC(lb, k) GC_debug_generic_malloc_inner(lb, k, 0)
+# define GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(lb, k) \
+               GC_debug_generic_malloc_inner(lb, k, IGNORE_OFF_PAGE)
 # ifdef THREADS
     GC_INNER void GC_debug_free_inner(void * p);
 #   define GC_INTERNAL_FREE GC_debug_free_inner
@@ -2521,9 +2522,9 @@ GC_EXTERN GC_bool GC_print_back_height;
 #   define GC_INTERNAL_FREE GC_debug_free
 # endif
 #else
-# define GC_INTERNAL_MALLOC GC_generic_malloc_inner
-# define GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE \
-               GC_generic_malloc_inner_ignore_off_page
+# define GC_INTERNAL_MALLOC(lb, k) GC_generic_malloc_inner(lb, k, 0)
+# define GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(lb, k) \
+               GC_generic_malloc_inner(lb, k, IGNORE_OFF_PAGE)
 # ifdef THREADS
 #   define GC_INTERNAL_FREE GC_free_inner
 # else

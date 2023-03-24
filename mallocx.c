@@ -52,19 +52,19 @@ GC_API int GC_CALL GC_get_kind_and_size(const void * p, size_t * psize)
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_or_special_malloc(size_t lb,
-                                                                  int knd)
+                                                                  int k)
 {
-    switch(knd) {
+    switch (k) {
         case PTRFREE:
         case NORMAL:
-            return GC_malloc_kind(lb, knd);
+            return GC_malloc_kind(lb, k);
         case UNCOLLECTABLE:
 #       ifdef GC_ATOMIC_UNCOLLECTABLE
           case AUNCOLLECTABLE:
 #       endif
-            return GC_generic_malloc_uncollectable(lb, knd);
+            return GC_generic_malloc_uncollectable(lb, k);
         default:
-            return GC_generic_malloc(lb, knd);
+            return GC_generic_malloc_aligned(lb, k, 0 /* flags */, 0);
     }
 }
 
@@ -193,57 +193,18 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
 GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_generic_malloc_ignore_off_page(size_t lb, int k)
 {
-    void *result;
-    size_t lg;
-    word n_blocks;
-    GC_bool init;
-
-    if (SMALL_OBJ(lb))
-        return GC_generic_malloc(lb, k);
-    GC_ASSERT(k < MAXOBJKINDS);
-    lg = ROUNDED_UP_GRANULES(lb);
-    n_blocks = OBJ_SZ_TO_BLOCKS(GRANULES_TO_BYTES(lg));
-    init = GC_obj_kinds[k].ok_init;
-    if (EXPECT(get_have_errors(), FALSE))
-      GC_print_all_errors();
-    GC_INVOKE_FINALIZERS();
-    GC_DBG_COLLECT_AT_MALLOC(lb);
-    LOCK();
-    result = (ptr_t)GC_alloc_large(ADD_SLOP(lb), k, IGNORE_OFF_PAGE, 0);
-    if (EXPECT(NULL == result, FALSE)) {
-        GC_oom_func oom_fn = GC_oom_fn;
-        UNLOCK();
-        return (*oom_fn)(lb);
-    }
-
-    if (GC_debugging_started) {
-        BZERO(result, n_blocks * HBLKSIZE);
-    } else {
-#       ifdef THREADS
-            /* Clear any memory that might be used for GC descriptors   */
-            /* before we release the lock.                              */
-            ((word *)result)[0] = 0;
-            ((word *)result)[1] = 0;
-            ((word *)result)[GRANULES_TO_WORDS(lg)-1] = 0;
-            ((word *)result)[GRANULES_TO_WORDS(lg)-2] = 0;
-#       endif
-    }
-    UNLOCK();
-    if (init && !GC_debugging_started) {
-        BZERO(result, n_blocks * HBLKSIZE);
-    }
-    return result;
+  return GC_generic_malloc_aligned(lb, k, IGNORE_OFF_PAGE, 0 /* align_m1 */);
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_ignore_off_page(size_t lb)
 {
-    return GC_generic_malloc_ignore_off_page(lb, NORMAL);
+    return GC_generic_malloc_aligned(lb, NORMAL, IGNORE_OFF_PAGE, 0);
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_malloc_atomic_ignore_off_page(size_t lb)
 {
-    return GC_generic_malloc_ignore_off_page(lb, PTRFREE);
+    return GC_generic_malloc_aligned(lb, PTRFREE, IGNORE_OFF_PAGE, 0);
 }
 
 /* Increment GC_bytes_allocd from code that doesn't have direct access  */
@@ -307,7 +268,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     /* TODO: GC_dirty should be called for each linked object (but  */
     /* the last one) to support multiple objects allocation.        */
     if (!SMALL_OBJ(lb) || GC_manual_vdb) {
-        op = GC_generic_malloc(lb, k);
+        op = GC_generic_malloc_aligned(lb, k, 0 /* flags */, 0 /* align_m1 */);
         if (EXPECT(0 != op, TRUE))
             obj_link(op) = 0;
         *result = op;
@@ -465,8 +426,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
 
     /* As a last attempt, try allocating a single object.  Note that    */
     /* this may trigger a collection or expand the heap.                */
-      op = GC_generic_malloc_inner(lb, k);
-      if (0 != op) obj_link(op) = 0;
+      op = GC_generic_malloc_inner(lb, k, 0 /* flags */);
+      if (op != NULL) obj_link(op) = NULL;
 
   out:
     *result = op;
@@ -509,7 +470,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
     if (align <= GRANULE_BYTES) return GC_malloc(lb);
 
     if (align >= HBLKSIZE/2 || lb >= HBLKSIZE/2) {
-      return GC_clear_stack(GC_generic_malloc_aligned(lb, NORMAL, align_m1));
+      return GC_clear_stack(GC_generic_malloc_aligned(lb, NORMAL,
+                                        0 /* flags */, align_m1));
     }
 
     /* We could also try to make sure that the real rounded-up object size */

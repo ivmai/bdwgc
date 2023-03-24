@@ -572,9 +572,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
                             OPT_RA s, i);
 }
 
-STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
+STATIC void * GC_debug_generic_malloc(size_t lb, int k, GC_EXTRA_PARAMS)
 {
-    void * result = GC_generic_malloc(SIZET_SAT_ADD(lb, DEBUG_BYTES), knd);
+    void * result = GC_generic_malloc_aligned(SIZET_SAT_ADD(lb, DEBUG_BYTES),
+                                              k, 0 /* flags */,
+                                              0 /* align_m1 */);
 
     return store_debug_info(result, lb, "GC_debug_generic_malloc",
                             OPT_RA s, i);
@@ -584,32 +586,13 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   /* An allocation function for internal use.  Normally internally      */
   /* allocated objects do not have debug information.  But in this      */
   /* case, we need to make sure that all objects have debug headers.    */
-  GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k)
+  GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k,
+                                                unsigned flags)
   {
     void * result;
 
     GC_ASSERT(I_HOLD_LOCK());
-    result = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
-    if (NULL == result) {
-        GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
-                       (unsigned long) lb);
-        return NULL;
-    }
-    if (!GC_debugging_started) {
-        GC_start_debugging_inner();
-    }
-    ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
-    return GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0);
-  }
-
-  GC_INNER void * GC_debug_generic_malloc_inner_ignore_off_page(size_t lb,
-                                                                int k)
-  {
-    void * result;
-
-    GC_ASSERT(I_HOLD_LOCK());
-    result = GC_generic_malloc_inner_ignore_off_page(
-                                SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    result = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES), k, flags);
     if (NULL == result) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
@@ -921,9 +904,9 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL
-    GC_debug_generic_or_special_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
+    GC_debug_generic_or_special_malloc(size_t lb, int k, GC_EXTRA_PARAMS)
 {
-    switch (knd) {
+    switch (k) {
         case PTRFREE:
             return GC_debug_malloc_atomic(lb, OPT_RA s, i);
         case NORMAL:
@@ -935,7 +918,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
             return GC_debug_malloc_atomic_uncollectable(lb, OPT_RA s, i);
 #     endif
         default:
-            return GC_debug_generic_malloc(lb, knd, OPT_RA s, i);
+            return GC_debug_generic_malloc(lb, k, OPT_RA s, i);
     }
 }
 

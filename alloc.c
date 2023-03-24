@@ -40,7 +40,7 @@
  *   lg = GC_size_map[lb];
  *   op = GC_objfreelist[lg];
  *   if (NULL == op) {
- *     op = GC_generic_malloc_inner(lb, NORMAL);
+ *     op = GC_generic_malloc_inner(lb, NORMAL, 0);
  *   } else {
  *     GC_objfreelist[lg] = obj_link(op);
  *     GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
@@ -1611,9 +1611,10 @@ static word last_bytes_finalized = 0;
 /* Collect or expand heap in an attempt make the indicated number of    */
 /* free blocks available.  Should be called until the blocks are        */
 /* available (setting retry value to TRUE unless this is the first call */
-/* in a loop) or until it fails by returning FALSE.                     */
+/* in a loop) or until it fails by returning FALSE.  The flags argument */
+/* should be IGNORE_OFF_PAGE or 0.                                      */
 GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
-                                      GC_bool ignore_off_page,
+                                      unsigned flags,
                                       GC_bool retry)
 {
     GC_bool gc_not_stopped = TRUE;
@@ -1655,7 +1656,7 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
       /* Get the minimum required to make it likely that we can satisfy */
       /* the current request in the presence of black-listing.          */
       /* This will probably be more than MAXHINCR.                      */
-      if (ignore_off_page) {
+      if ((flags & IGNORE_OFF_PAGE) != 0) {
         slop = 4;
       } else {
         slop = 2 * divHBLKSZ(BL_LIMIT);
@@ -1759,7 +1760,7 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
             GC_collect_a_little_inner(1);
             tried_minor = TRUE;
           } else {
-            if (!GC_collect_or_expand(1, FALSE, retry)) {
+            if (!GC_collect_or_expand(1, 0 /* flags */, retry)) {
               EXIT_GC();
               return NULL;
             }

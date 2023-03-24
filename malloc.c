@@ -63,7 +63,7 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags,
             h = GC_allochblk(lb, k, flags, align_m1);
         }
 #   endif
-    while (0 == h && GC_collect_or_expand(n_blocks, flags != 0, retry)) {
+    while (0 == h && GC_collect_or_expand(n_blocks, flags, retry)) {
         h = GC_allochblk(lb, k, flags, align_m1);
         retry = TRUE;
     }
@@ -150,69 +150,55 @@ STATIC void GC_extend_size_map(size_t i)
     GC_size_map[low_limit] = granule_sz;
 }
 
-/* Allocate lb bytes for an object of kind k.           */
-/* Should not be used to directly allocate objects      */
-/* that require special handling on allocation.         */
-GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
+STATIC void * GC_generic_malloc_inner_small(size_t lb, int k)
 {
-    void *op;
+  struct obj_kind * kind = GC_obj_kinds + k;
+  size_t lg = GC_size_map[lb];
+  void ** opp = &(kind -> ok_freelist[lg]);
+  void *op = *opp;
 
+  GC_ASSERT(I_HOLD_LOCK());
+  if (EXPECT(NULL == op, FALSE)) {
+    if (lg == 0) {
+      if (!EXPECT(GC_is_initialized, TRUE)) {
+        UNLOCK(); /* just to unset GC_lock_holder */
+        GC_init();
+        LOCK();
+        lg = GC_size_map[lb];
+      }
+      if (0 == lg) {
+        GC_extend_size_map(lb);
+        lg = GC_size_map[lb];
+        GC_ASSERT(lg != 0);
+      }
+      /* Retry */
+      opp = &(kind -> ok_freelist[lg]);
+      op = *opp;
+    }
+    if (NULL == op) {
+      if (NULL == kind -> ok_reclaim_list
+          && !GC_alloc_reclaim_list(kind))
+        return NULL;
+      op = GC_allocobj(lg, k);
+      if (NULL == op) return NULL;
+    }
+  }
+  *opp = obj_link(op);
+  obj_link(op) = NULL;
+  GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
+  return op;
+}
+
+GC_INNER void * GC_generic_malloc_inner(size_t lb, int k, unsigned flags)
+{
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(k < MAXOBJKINDS);
     if (SMALL_OBJ(lb)) {
-        struct obj_kind * kind = GC_obj_kinds + k;
-        size_t lg = GC_size_map[lb];
-        void ** opp = &(kind -> ok_freelist[lg]);
-
-        op = *opp;
-        if (EXPECT(0 == op, FALSE)) {
-          if (lg == 0) {
-            if (!EXPECT(GC_is_initialized, TRUE)) {
-              UNLOCK(); /* just to unset GC_lock_holder */
-              GC_init();
-              LOCK();
-              lg = GC_size_map[lb];
-            }
-            if (0 == lg) {
-              GC_extend_size_map(lb);
-              lg = GC_size_map[lb];
-              GC_ASSERT(lg != 0);
-            }
-            /* Retry */
-            opp = &(kind -> ok_freelist[lg]);
-            op = *opp;
-          }
-          if (0 == op) {
-            if (0 == kind -> ok_reclaim_list
-                && !GC_alloc_reclaim_list(kind))
-              return NULL;
-            op = GC_allocobj(lg, k);
-            if (0 == op)
-              return NULL;
-          }
-        }
-        *opp = obj_link(op);
-        obj_link(op) = 0;
-        GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
-    } else {
-        op = (ptr_t)GC_alloc_large_and_clear(ADD_SLOP(lb), k, 0 /* flags */);
+        return GC_generic_malloc_inner_small(lb, k);
     }
-    return op;
-}
 
-#if defined(DBG_HDRS_ALL) || defined(GC_GCJ_SUPPORT) \
-    || !defined(GC_NO_FINALIZATION)
-  /* Allocate a composite object of size n bytes.  The caller           */
-  /* guarantees that pointers past the first hblk are not relevant.     */
-  GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
-  {
-    GC_ASSERT(I_HOLD_LOCK());
-    if (lb <= HBLKSIZE)
-        return GC_generic_malloc_inner(lb, k);
-    GC_ASSERT(k < MAXOBJKINDS);
-    return GC_alloc_large_and_clear(ADD_SLOP(lb), k, IGNORE_OFF_PAGE);
-  }
-#endif
+    return GC_alloc_large_and_clear(ADD_SLOP(lb), k, flags);
+}
 
 #ifdef GC_COLLECT_AT_MALLOC
   /* Parameter to force GC at every malloc of size greater or equal to  */
@@ -224,7 +210,8 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 # endif
 #endif
 
-GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, size_t align_m1)
+GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
+                                          size_t align_m1)
 {
     void * result;
 
@@ -235,7 +222,7 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, size_t align_m1)
     GC_DBG_COLLECT_AT_MALLOC(lb);
     if (SMALL_OBJ(lb) && EXPECT(align_m1 < GRANULE_BYTES, TRUE)) {
         LOCK();
-        result = GC_generic_malloc_inner(lb, k);
+        result = GC_generic_malloc_inner_small(lb, k);
         UNLOCK();
     } else {
         size_t lg;
@@ -251,7 +238,7 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, size_t align_m1)
           align_m1 = HBLKSIZE - 1;
         }
         LOCK();
-        result = (ptr_t)GC_alloc_large(lb_rounded, k, 0 /* flags */, align_m1);
+        result = GC_alloc_large(lb_rounded, k, flags, align_m1);
         if (EXPECT(result != NULL, TRUE)) {
           if (GC_debugging_started) {
             BZERO(result, HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_rounded));
@@ -278,7 +265,7 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, size_t align_m1)
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
 {
-    return GC_generic_malloc_aligned(lb, k, 0 /* align_m1 */);
+    return GC_generic_malloc_aligned(lb, k, 0 /* flags */, 0 /* align_m1 */);
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
@@ -315,7 +302,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
 
     /* We make the GC_clear_stack() call a tail one, hoping to get more */
     /* of the stack.                                                    */
-    return GC_clear_stack(GC_generic_malloc(lb, k));
+    return GC_clear_stack(GC_generic_malloc_aligned(lb, k, 0 /* flags */, 0));
 }
 
 #if defined(THREADS) && !defined(THREAD_LOCAL_ALLOC)
@@ -366,12 +353,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
             UNLOCK();
         } else {
             UNLOCK();
-            op = GC_generic_malloc(lb, k);
+            op = GC_generic_malloc_aligned(lb, k, 0, 0 /* align_m1 */);
             /* For small objects, the free lists are completely marked. */
         }
         GC_ASSERT(0 == op || GC_is_marked(op));
     } else {
-      op = GC_generic_malloc(lb, k);
+      op = GC_generic_malloc_aligned(lb, k, 0 /* flags */, 0 /* align_m1 */);
       if (op /* != NULL */) { /* CPPCHECK */
         hdr * hhdr = HDR(op);
 
@@ -553,12 +540,12 @@ static void free_internal(void *p, hdr *hhdr)
 {
   size_t sz = (size_t)(hhdr -> hb_sz); /* in bytes */
   size_t ngranules = BYTES_TO_GRANULES(sz); /* size in granules */
-  int knd = hhdr -> hb_obj_kind;
+  int k = hhdr -> hb_obj_kind;
 
   GC_bytes_freed += sz;
-  if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
+  if (IS_UNCOLLECTABLE(k)) GC_non_gc_bytes -= sz;
   if (EXPECT(ngranules <= MAXOBJGRANULES, TRUE)) {
-    struct obj_kind *ok = &GC_obj_kinds[knd];
+    struct obj_kind *ok = &GC_obj_kinds[k];
     void **flh;
 
     /* It is unnecessary to clear the mark bit.  If the object is       */

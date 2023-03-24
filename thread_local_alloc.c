@@ -225,7 +225,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t bytes,
                                     void * ptr_to_struct_containing_descr)
 {
   if (EXPECT(GC_incremental, FALSE)) {
-    return GC_core_gcj_malloc(bytes, ptr_to_struct_containing_descr);
+    return GC_core_gcj_malloc(bytes, ptr_to_struct_containing_descr, 0);
   } else {
     size_t granules = ROUNDED_UP_GRANULES(bytes);
     void *result;
@@ -236,7 +236,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t bytes,
     GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES,
                          GC_gcj_kind,
                          GC_core_gcj_malloc(bytes,
-                                            ptr_to_struct_containing_descr),
+                                            ptr_to_struct_containing_descr,
+                                            0 /* flags */),
                          {AO_compiler_barrier();
                           *(void **)result = ptr_to_struct_containing_descr;});
         /* This forces the initialization of the "method ptr".          */

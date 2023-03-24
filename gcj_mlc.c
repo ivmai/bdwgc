@@ -132,15 +132,15 @@ static void maybe_finalize(void)
 }
 
 /* Allocate an object, clear it, and store the pointer to the   */
-/* type structure (vtable in gcj).                              */
-/* This adds a byte at the end of the object if GC_malloc would.*/
+/* type structure (vtable in gcj).  This adds a byte at the     */
+/* end of the object if GC_malloc would.                        */
 #ifdef THREAD_LOCAL_ALLOC
-  GC_INNER void * GC_core_gcj_malloc(size_t lb,
-                                     void * ptr_to_struct_containing_descr)
+  GC_INNER
 #else
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t lb,
-                                      void * ptr_to_struct_containing_descr)
+  STATIC
 #endif
+void * GC_core_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr,
+                          unsigned flags)
 {
     ptr_t op;
     size_t lg;
@@ -154,7 +154,8 @@ static void maybe_finalize(void)
         GC_ASSERT(NULL == ((void **)op)[1]);
     } else {
         maybe_finalize();
-        op = (ptr_t)GC_clear_stack(GC_generic_malloc_inner(lb, GC_gcj_kind));
+        op = (ptr_t)GC_clear_stack(GC_generic_malloc_inner(lb, GC_gcj_kind,
+                                                           flags));
         if (NULL == op) {
             GC_oom_func oom_fn = GC_oom_fn;
             UNLOCK();
@@ -166,6 +167,21 @@ static void maybe_finalize(void)
     GC_dirty(op);
     REACHABLE_AFTER_DIRTY(ptr_to_struct_containing_descr);
     return (void *)op;
+}
+
+#ifndef THREAD_LOCAL_ALLOC
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t lb,
+                                      void * ptr_to_struct_containing_descr)
+  {
+    return GC_core_gcj_malloc(lb, ptr_to_struct_containing_descr, 0);
+  }
+#endif /* !THREAD_LOCAL_ALLOC */
+
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
+                                        void * ptr_to_struct_containing_descr)
+{
+    return GC_core_gcj_malloc(lb, ptr_to_struct_containing_descr,
+                              IGNORE_OFF_PAGE);
 }
 
 /* Similar to GC_gcj_malloc, but add debug info.  This is allocated     */
@@ -180,7 +196,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     LOCK();
     maybe_finalize();
     result = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES),
-                                     GC_gcj_debug_kind);
+                                     GC_gcj_debug_kind, 0 /* flags */);
     if (NULL == result) {
         GC_oom_func oom_fn = GC_oom_fn;
         UNLOCK();
@@ -198,33 +214,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     GC_dirty(result);
     REACHABLE_AFTER_DIRTY(ptr_to_struct_containing_descr);
     return result;
-}
-
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
-                                     void * ptr_to_struct_containing_descr)
-{
-    ptr_t op;
-
-    /* For small objects, the ignore_off_page variant of                */
-    /* GC_generic_malloc_inner does not differ from the ordinary one.   */
-    if (SMALL_OBJ(lb))
-      return GC_gcj_malloc(lb, ptr_to_struct_containing_descr);
-
-    GC_DBG_COLLECT_AT_MALLOC(lb);
-    LOCK();
-    maybe_finalize();
-    op = (ptr_t)GC_clear_stack(GC_generic_malloc_inner_ignore_off_page(lb,
-                                                        GC_gcj_kind));
-    if (NULL == op) {
-        GC_oom_func oom_fn = GC_oom_fn;
-        UNLOCK();
-        return (*oom_fn)(lb);
-    }
-    *(void **)op = ptr_to_struct_containing_descr;
-    UNLOCK();
-    GC_dirty(op);
-    REACHABLE_AFTER_DIRTY(ptr_to_struct_containing_descr);
-    return (void *)op;
 }
 
 #endif  /* GC_GCJ_SUPPORT */

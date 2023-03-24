@@ -1739,6 +1739,8 @@ void run_one_test(void)
              AO_fetch_and_add1(&atomic_count);
              GC_FREE(GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(1));
              GC_FREE(GC_MALLOC_IGNORE_OFF_PAGE(2));
+             (void)GC_generic_malloc_ignore_off_page(2 * HBLKSIZE, NORMAL);
+             AO_fetch_and_add1(&collectable_count);
            }
          }
     thr_hndl_sb.gc_thread_handle = GC_get_my_stackbottom(&thr_hndl_sb.sb);
