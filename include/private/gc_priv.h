@@ -1015,17 +1015,17 @@ EXTERN_C_BEGIN
 #define ROUNDUP_GRANULE_SIZE(lb) /* lb should have no side-effect */ \
             (SIZET_SAT_ADD(lb, GRANULE_BYTES - 1) & ~(GRANULE_BYTES - 1))
 
-#define ADD_EXTRA_BYTES(lb) /* lb should have no side-effect */ \
-            SIZET_SAT_ADD(lb, EXTRA_BYTES)
-
 /* Round up byte allocation request (after adding EXTRA_BYTES) to   */
 /* a multiple of a granule, then convert it to granules.            */
 #define ALLOC_REQUEST_GRANS(lb) /* lb should have no side-effect */ \
         BYTES_TO_GRANULES(SIZET_SAT_ADD(lb, GRANULE_BYTES - 1 + EXTRA_BYTES))
 
 #if MAX_EXTRA_BYTES == 0
+# define ADD_EXTRA_BYTES(lb) (lb)
 # define SMALL_OBJ(bytes) EXPECT((bytes) <= MAXOBJBYTES, TRUE)
 #else
+# define ADD_EXTRA_BYTES(lb) /* lb should have no side-effect */ \
+            SIZET_SAT_ADD(lb, EXTRA_BYTES)
 # define SMALL_OBJ(bytes) /* bytes argument should have no side-effect */ \
             (EXPECT((bytes) <= MAXOBJBYTES - MAX_EXTRA_BYTES, TRUE) \
              || (bytes) <= MAXOBJBYTES - EXTRA_BYTES)

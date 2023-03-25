@@ -101,11 +101,20 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
     orig_sz = sz;
 
     if (sz > MAXOBJBYTES) {
-        /* Round it up to the next whole heap block */
-        word descr = GC_obj_kinds[obj_kind].ok_descriptor;
+        struct obj_kind * ok = &GC_obj_kinds[obj_kind];
+        word descr = ok -> ok_descriptor;
 
+        /* Round it up to the next whole heap block.    */
         sz = (sz + HBLKSIZE-1) & ~(HBLKSIZE-1);
-        if (GC_obj_kinds[obj_kind].ok_relocate_descr)
+#       if ALIGNMENT > GC_DS_TAGS
+          /* An extra byte is not added in case of ignore-off-page  */
+          /* allocated objects not smaller than HBLKSIZE.           */
+          GC_ASSERT(sz >= HBLKSIZE);
+          if (EXTRA_BYTES != 0 && (hhdr -> hb_flags & IGNORE_OFF_PAGE) != 0
+              && obj_kind == NORMAL)
+            descr += ALIGNMENT; /* or set to 0 */
+#       endif
+        if (ok -> ok_relocate_descr)
           descr += sz;
         /* GC_realloc might be changing the block size while            */
         /* GC_reclaim_block or GC_clear_hdr_marks is examining it.      */

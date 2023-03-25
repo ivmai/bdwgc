@@ -191,13 +191,24 @@ STATIC void * GC_generic_malloc_inner_small(size_t lb, int k)
 
 GC_INNER void * GC_generic_malloc_inner(size_t lb, int k, unsigned flags)
 {
+    size_t lb_adjusted;
+
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(k < MAXOBJKINDS);
     if (SMALL_OBJ(lb)) {
         return GC_generic_malloc_inner_small(lb, k);
     }
 
-    return GC_alloc_large_and_clear(ADD_EXTRA_BYTES(lb), k, flags);
+#   if MAX_EXTRA_BYTES > 0
+      if ((flags & IGNORE_OFF_PAGE) != 0 && lb >= HBLKSIZE) {
+        /* No need to add EXTRA_BYTES.  */
+        lb_adjusted = lb;
+      } else
+#   endif
+    /* else */ {
+      lb_adjusted = ADD_EXTRA_BYTES(lb);
+    }
+    return GC_alloc_large_and_clear(lb_adjusted, k, flags);
 }
 
 #ifdef GC_COLLECT_AT_MALLOC
@@ -229,9 +240,21 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
         size_t lb_rounded;
         GC_bool init;
 
-        if (EXPECT(0 == lb, FALSE)) lb = 1;
-        lg = ALLOC_REQUEST_GRANS(lb);
-        lb_rounded = GRANULES_TO_BYTES(lg);
+#       if MAX_EXTRA_BYTES > 0
+          if ((flags & IGNORE_OFF_PAGE) != 0 && lb >= HBLKSIZE) {
+            /* No need to add EXTRA_BYTES.      */
+            lb_rounded = ROUNDUP_GRANULE_SIZE(lb);
+#           ifdef THREADS
+              lg = BYTES_TO_GRANULES(lb_rounded);
+#           endif
+          } else
+#       endif
+        /* else */ {
+          if (EXPECT(0 == lb, FALSE)) lb = 1;
+          lg = ALLOC_REQUEST_GRANS(lb);
+          lb_rounded = GRANULES_TO_BYTES(lg);
+        }
+
         init = GC_obj_kinds[k].ok_init;
         if (EXPECT(align_m1 < GRANULE_BYTES, TRUE)) {
           align_m1 = 0;

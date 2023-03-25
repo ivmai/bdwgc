@@ -297,16 +297,18 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_malloc_explicitly_typed_ignore_off_page(size_t lb, GC_descr d)
 {
     void *op;
-    size_t lb_adjusted = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
     size_t nwords;
 
-    if (SMALL_OBJ(lb_adjusted))
+    if (lb < HBLKSIZE - sizeof(word))
       return GC_malloc_explicitly_typed(lb, d);
 
     GC_ASSERT(GC_explicit_typing_initialized);
-    op = GC_clear_stack(GC_generic_malloc_aligned(lb_adjusted,
-                                                  GC_explicit_kind,
-                                                  IGNORE_OFF_PAGE, 0));
+    /* TYPD_EXTRA_BYTES is not used here because ignore-off-page    */
+    /* objects with the requested size of at least HBLKSIZE do not  */
+    /* have EXTRA_BYTES added by GC_generic_malloc_aligned().       */
+    op = GC_clear_stack(GC_generic_malloc_aligned(
+                                SIZET_SAT_ADD(lb, sizeof(word)),
+                                GC_explicit_kind, IGNORE_OFF_PAGE, 0));
     if (EXPECT(NULL == op, FALSE)) return NULL;
 
     nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));

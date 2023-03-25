@@ -241,6 +241,7 @@ static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
     word descr;
 
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(byte_sz >= ALIGNMENT);
 #   ifdef MARK_BIT_PER_GRANULE
       if (byte_sz > MAXOBJBYTES)
         flags |= LARGE_BLOCK;
@@ -259,6 +260,13 @@ static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
     hhdr -> hb_flags = (unsigned char)flags;
     hhdr -> hb_block = block;
     descr = ok -> ok_descriptor;
+#   if ALIGNMENT > GC_DS_TAGS
+      /* An extra byte is not added in case of ignore-off-page  */
+      /* allocated objects not smaller than HBLKSIZE.           */
+      if (EXTRA_BYTES != 0 && (flags & IGNORE_OFF_PAGE) != 0
+          && kind == NORMAL && byte_sz >= HBLKSIZE)
+        descr += ALIGNMENT; /* or set to 0 */
+#   endif
     if (ok -> ok_relocate_descr) descr += byte_sz;
     hhdr -> hb_descr = descr;
 
