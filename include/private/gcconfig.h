@@ -143,6 +143,10 @@ EXTERN_C_BEGIN
 #  define QNX
 #endif
 
+#if defined(__serenity__)
+#  define SERENITY
+#endif
+
 /* And one for Darwin: */
 #if defined(macosx) || (defined(__APPLE__) && defined(__MACH__))
 #  define DARWIN
@@ -517,7 +521,7 @@ EXTERN_C_BEGIN
 #  define mach_type_known
 #elif (defined(__i386__) || defined(i386) || defined(__X86__)) \
     && (defined(ANY_BSD) || defined(DARWIN) || defined(EMBOX)  \
-        || defined(LINUX) || defined(QNX))
+        || defined(LINUX) || defined(QNX) || defined(SERENITY))
 #  define I386
 #  define mach_type_known
 #elif (defined(__ia64) || defined(__ia64__)) && defined(LINUX)
@@ -570,7 +574,7 @@ EXTERN_C_BEGIN
 #elif (defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) \
        || defined(__X86_64__))                                        \
     && (defined(ANY_BSD) || defined(COSMO) || defined(DARWIN)         \
-        || defined(LINUX) || defined(QNX))
+        || defined(LINUX) || defined(QNX) || defined(SERENITY))
 #  define X86_64
 #  define mach_type_known
 #endif
@@ -1071,6 +1075,16 @@ extern int _end[];
 #  define DATAEND ((ptr_t)_end)
 #endif /* QNX */
 
+#ifdef SERENITY
+#  define OS_TYPE "SERENITY"
+extern int etext[], _end[];
+#  define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
+#  define DATAEND ((ptr_t)_end)
+#  define DYNAMIC_LOADING
+#  define MPROTECT_VDB
+#  define USE_MMAP_ANON
+#endif /* SERENITY */
+
 #ifdef SOLARIS
 #  define OS_TYPE "SOLARIS"
 extern int _end[];
@@ -1387,6 +1401,9 @@ extern int etext[];
 /* Nothing specific. */
 #  endif
 #  ifdef QNX
+/* Nothing specific. */
+#  endif
+#  ifdef SERENITY
 /* Nothing specific. */
 #  endif
 #  ifdef SOLARIS
@@ -2292,6 +2309,9 @@ extern int _end[];
 #  ifdef QNX
 /* Nothing specific. */
 #  endif
+#  ifdef SERENITY
+/* Nothing specific. */
+#  endif
 #  ifdef SOLARIS
 #    define ELF_CLASS ELFCLASS64
 extern int _etext[];
@@ -2579,10 +2599,10 @@ EXTERN_C_END
 EXTERN_C_BEGIN
 #endif /* HAVE_SYS_TYPES_H */
 
-#if defined(HAVE_UNISTD_H)                                            \
-    || !(defined(GC_NO_TYPES) || defined(MSWIN32) || defined(MSWINCE) \
-         || defined(MSWIN_XBOX1) || defined(NINTENDO_SWITCH)          \
-         || defined(NN_PLATFORM_CTR) || defined(OS2)                  \
+#if defined(HAVE_UNISTD_H)                                                \
+    || !(defined(GC_NO_TYPES) || defined(MSWIN32) || defined(MSWINCE)     \
+         || defined(MSWIN_XBOX1) || defined(NINTENDO_SWITCH)              \
+         || defined(NN_PLATFORM_CTR) || defined(OS2) || defined(SERENITY) \
          || defined(SN_TARGET_PSP2) || defined(__CC_ARM))
 EXTERN_C_END
 #  include <unistd.h>
@@ -2591,7 +2611,8 @@ EXTERN_C_BEGIN
 
 #if !defined(ANY_MSWIN) && !defined(GETPAGESIZE)
 #  if defined(DGUX) || defined(HOST_ANDROID) || defined(HOST_TIZEN) \
-      || defined(KOS) || (defined(LINUX) && defined(SPARC))
+      || defined(KOS) || defined(SERENITY)                          \
+      || (defined(LINUX) && defined(SPARC))
 #    define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 #  else
 #    define GETPAGESIZE() (unsigned)getpagesize()
@@ -2625,7 +2646,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(COSMO) || defined(HPUX) || defined(HURD) || defined(NETBSD) \
-    || (defined(FREEBSD) && defined(SUNOS5SIGS))                        \
+    || defined(SERENITY) || (defined(FREEBSD) && defined(SUNOS5SIGS))   \
     || (defined(IRIX5) && defined(_sigargs)) /* Irix 5.x, not 6.x */
 #  define USE_SEGV_SIGACT
 /* We may also get SIGBUS. */
@@ -2680,7 +2701,7 @@ EXTERN_C_BEGIN
 #if defined(AIX) || defined(ANY_BSD) || defined(BSD) || defined(COSMO)     \
     || defined(DARWIN) || defined(DGUX) || defined(HAIKU) || defined(HPUX) \
     || defined(HURD) || defined(IRIX5) || defined(LINUX) || defined(OSF1)  \
-    || defined(QNX) || defined(SVR4)
+    || defined(QNX) || defined(SERENITY) || defined(SVR4)
 #  define UNIX_LIKE /* Basic Unix-like system calls work.   */
 #endif
 
@@ -2736,7 +2757,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(ANY_BSD) || defined(DARWIN) || defined(IRIX5) || defined(LINUX) \
-    || defined(SOLARIS)                                                     \
+    || defined(SERENITY) || defined(SOLARIS)                                \
     || ((defined(CYGWIN32) || defined(USE_MMAP) || defined(USE_MUNMAP))     \
         && !defined(USE_WINALLOC))
 /* Try both sbrk and mmap, in that order.     */
@@ -2877,12 +2898,13 @@ EXTERN_C_BEGIN
 #  endif
 #endif
 
-#if (((defined(ARM32) || defined(AVR32) || defined(MIPS) || defined(NIOS2)    \
-       || defined(OR1K))                                                      \
-      && defined(UNIX_LIKE))                                                  \
-     || defined(DARWIN) || defined(HAIKU) || defined(HURD)                    \
-     || defined(OPENBSD) || defined(QNX) || defined(RTEMS)                    \
-     || defined(HOST_ANDROID) || (defined(LINUX) && !defined(__gnu_linux__))) \
+#if (((defined(ARM32) || defined(AVR32) || defined(MIPS) || defined(NIOS2) \
+       || defined(OR1K))                                                   \
+      && defined(UNIX_LIKE))                                               \
+     || defined(DARWIN) || defined(HAIKU) || defined(HURD)                 \
+     || defined(OPENBSD) || defined(QNX) || defined(RTEMS)                 \
+     || defined(SERENITY) || defined(HOST_ANDROID)                         \
+     || (defined(LINUX) && !defined(__gnu_linux__)))                       \
     && !defined(NO_GETCONTEXT)
 #  define NO_GETCONTEXT 1
 #endif

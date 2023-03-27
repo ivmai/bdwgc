@@ -3278,7 +3278,8 @@ GC_INNER void GC_start_mark_threads_inner(void);
       && !defined(GC_USESIGRT_SIGNALS)
 #    define SIG_SUSPEND SIGUSR1
 /* SIGTSTP and SIGCONT could be used alternatively on FreeBSD.  */
-#  elif defined(OPENBSD) && !defined(GC_USESIGRT_SIGNALS)
+#  elif (defined(OPENBSD) && !defined(GC_USESIGRT_SIGNALS)) \
+      || defined(SERENITY)
 #    define SIG_SUSPEND SIGXFSZ
 #  elif defined(_SIGRTMIN) && !defined(CPPCHECK)
 #    define SIG_SUSPEND _SIGRTMIN + 6

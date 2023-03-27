@@ -908,6 +908,25 @@ GC_get_stack_base(struct GC_stack_base *sb)
 #  define HAVE_GET_STACK_BASE
 #endif /* OS2 */
 
+#ifdef SERENITY
+#  include <serenity.h>
+
+GC_API int GC_CALL
+GC_get_stack_base(struct GC_stack_base *sb)
+{
+  uintptr_t base;
+  size_t size;
+
+  if (get_stack_bounds(&base, &size) < 0) {
+    WARN("get_stack_bounds failed\n", 0);
+    return GC_UNIMPLEMENTED;
+  }
+  sb->mem_base = base + size;
+  return GC_SUCCESS;
+}
+#  define HAVE_GET_STACK_BASE
+#endif /* SERENITY */
+
 #if defined(NEED_FIND_LIMIT)                                 \
     || (defined(UNIX_LIKE) && !defined(NO_DEBUGGING))        \
     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)) \
@@ -1317,8 +1336,8 @@ GC_get_main_stack_base(void)
 }
 #  define GET_MAIN_STACKBASE_SPECIAL
 
-#elif !defined(ANY_MSWIN) && !defined(EMBOX) && !defined(OS2) \
-    && !(defined(OPENBSD) && defined(THREADS))                \
+#elif !defined(ANY_MSWIN) && !defined(EMBOX) && !defined(OS2)        \
+    && !(defined(OPENBSD) && defined(THREADS)) && !defined(SERENITY) \
     && (!(defined(SOLARIS) && defined(THREADS)) || defined(_STRICT_STDC))
 
 #  if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
@@ -1412,7 +1431,7 @@ GC_get_main_stack_base(void)
   return result;
 }
 #  define GET_MAIN_STACKBASE_SPECIAL
-#endif /* !ANY_MSWIN && !EMBOX && !OS2 */
+#endif /* !ANY_MSWIN && !EMBOX && !OS2 && !SERENITY */
 
 #if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
     && defined(THREADS) && !defined(HAVE_GET_STACK_BASE)
@@ -2751,7 +2770,7 @@ block_unmap_inner(ptr_t start_addr, size_t len)
 #    ifdef SN_TARGET_PS3
     ps3_free_mem(start_addr, len);
 #    elif defined(AIX) || defined(COSMO) || defined(CYGWIN32) \
-        || defined(HPUX)                                      \
+        || defined(HPUX) || defined(SERENITY)                 \
         || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE))
     /* On AIX, mmap(PROT_NONE) fails with ENOMEM unless the       */
     /* environment variable XPG_SUS_ENV is set to ON.             */
@@ -3240,7 +3259,8 @@ STATIC mach_port_t GC_task_self = 0;
 
 #  elif !defined(USE_WINALLOC)
 #    include <sys/mman.h>
-#    if !defined(AIX) && !defined(CYGWIN32) && !defined(HAIKU)
+#    if !defined(AIX) && !defined(CYGWIN32) && !defined(HAIKU) \
+        && !defined(SERENITY)
 #      include <sys/syscall.h>
 #    endif
 
@@ -3357,7 +3377,8 @@ is_header_found_async(const void *p)
 #      elif defined(IRIX5)
 #        define CODE_OK (si->si_code == EACCES)
 #      elif defined(AIX) || defined(COSMO) || defined(CYGWIN32) \
-          || defined(HAIKU) || defined(HURD) || defined(LINUX)
+          || defined(HAIKU) || defined(HURD) || defined(LINUX)  \
+          || defined(SERENITY)
 /* Linux: Empirically c.trapno == 14, on IA32, but is that useful?      */
 /* Should probably consider alignment issues on other architectures.    */
 #        define CODE_OK TRUE

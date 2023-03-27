@@ -195,7 +195,7 @@ GC_register_dynamic_libraries(void)
 #  if !(defined(CPPCHECK) || defined(AIX) || defined(DARWIN) || defined(DGUX) \
         || defined(IRIX5) || defined(HAIKU) || defined(HPUX) || defined(HURD) \
         || defined(NACL) || defined(OSF1) || defined(SCO_ELF)                 \
-        || defined(SOLARISDL)                                                 \
+        || defined(SERENITY) || defined(SOLARISDL)                            \
         || ((defined(ANY_BSD) || defined(LINUX)) && defined(__ELF__))         \
         || (defined(OPENBSD) && defined(M68K)))
 #    error Finding data segments of dynamic libraries is unsupported on target
@@ -227,6 +227,7 @@ GC_register_dynamic_libraries(void)
 #  endif /* OPENBSD */
 
 #  if defined(DGUX) || defined(HURD) || defined(NACL) || defined(SCO_ELF) \
+      || defined(SERENITY)                                                \
       || ((defined(ANY_BSD) || defined(LINUX)) && defined(__ELF__))
 #    include <stddef.h>
 #    if !defined(OPENBSD) && !defined(HOST_ANDROID)
@@ -247,7 +248,10 @@ GC_register_dynamic_libraries(void)
 #        undef EM_ALPHA
 #      endif
 #      include <link.h>
-#      if !defined(GC_DONT_DEFINE_LINK_MAP) && !(__ANDROID_API__ >= 21)
+#    endif /* HOST_ANDROID */
+#    if (defined(HOST_ANDROID) && !defined(GC_DONT_DEFINE_LINK_MAP) \
+         && !(__ANDROID_API__ >= 21))                               \
+        || defined(SERENITY)
 /* link_map and r_debug are defined in link.h of NDK r10+.        */
 /* bionic/linker/linker.h defines them too but the header         */
 /* itself is a C++ one starting from Android 4.3.                 */
@@ -265,8 +269,8 @@ struct r_debug {
   /* int32_t r_state; */
   /* uintptr_t r_ldbase; */
 };
-#      endif
-#    else
+#    endif /* __ANDROID_API__ >= 21 || SERENITY */
+#    ifndef HOST_ANDROID
 /* Workaround missing extern "C" around _DYNAMIC symbol in link.h   */
 /* of some Linux hosts.                                             */
 EXTERN_C_BEGIN
@@ -388,6 +392,7 @@ GC_register_dynamic_libraries(void)
 #  endif /* SOLARISDL && !USE_PROC_FOR_LIBRARIES */
 
 #  if defined(DGUX) || defined(HURD) || defined(NACL) || defined(SCO_ELF) \
+      || defined(SERENITY)                                                \
       || ((defined(ANY_BSD) || defined(LINUX)) && defined(__ELF__))
 
 #    ifdef USE_PROC_FOR_LIBRARIES
