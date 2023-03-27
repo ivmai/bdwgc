@@ -213,7 +213,7 @@ case "$THREADS" in
       *-*-aix* | *-*-android* | *-*-cygwin* | *-*-darwin* | *-*-dragonfly* | \
       *-*-freebsd* | *-*-haiku* | *-*-hpux11* | *-*-irix* | \
       *-*-kfreebsd*-gnu | *-*-gnu* | *-*-*linux* | *-*-msys* | *-*-nacl* | \
-      *-*-netbsd* | *-*-openbsd* | *-*-osf* | *-*-solaris*)
+      *-*-netbsd* | *-*-openbsd* | *-*-osf* | *-*-serenity* | *-*-solaris*)
         AC_DEFINE(GC_THREADS)
         AC_DEFINE([_REENTRANT], [1],
                   [Required define if using POSIX threads.])
