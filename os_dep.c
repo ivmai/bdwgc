@@ -860,6 +860,25 @@ GC_INNER size_t GC_page_size = 0;
 # define HAVE_GET_STACK_BASE
 #endif /* OS2 */
 
+#ifdef SERENITY
+# include <serenity.h>
+
+GC_API int GC_CALL
+GC_get_stack_base(struct GC_stack_base *sb)
+{
+  uintptr_t base;
+  size_t size;
+
+  if (get_stack_bounds(&base, &size) < 0) {
+    WARN("get_stack_bounds failed\n", 0);
+    return GC_UNIMPLEMENTED;
+  }
+  sb->mem_base = base + size;
+  return GC_SUCCESS;
+}
+# define HAVE_GET_STACK_BASE
+#endif /* SERENITY */
+
 # ifdef AMIGA
 #   define GC_AMIGA_SB
 #   include "extra/AmigaOS.c"
@@ -876,10 +895,11 @@ GC_INNER size_t GC_page_size = 0;
 
 #   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
        || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
-       || defined(NETBSD)
+       || defined(NETBSD) || defined(SERENITY)
         static struct sigaction old_segv_act;
 #       if defined(_sigargs) /* !Irix6.x */ || defined(HPUX) \
-           || defined(HURD) || defined(NETBSD) || defined(FREEBSD)
+           || defined(HURD) || defined(NETBSD) || defined(FREEBSD) \
+           || defined(SERENITY)
             static struct sigaction old_bus_act;
 #       endif
 #   elif !defined(OPENBSD)
@@ -893,7 +913,7 @@ GC_INNER size_t GC_page_size = 0;
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
            || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
-           || defined(NETBSD) || defined(OPENBSD)
+           || defined(NETBSD) || defined(OPENBSD) || defined(SERENITY)
           struct sigaction act;
 
           act.sa_handler = h;
@@ -916,7 +936,7 @@ GC_INNER size_t GC_page_size = 0;
             (void) sigaction(SIGSEGV, &act, &old_segv_act);
 #           if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
                || defined(HPUX) || defined(HURD) || defined(NETBSD) \
-               || defined(FREEBSD)
+               || defined(FREEBSD) || defined(SERENITY)
               /* Under Irix 5.x or HP/UX, we may get SIGBUS.    */
               /* Pthreads doesn't exist under Irix 5.x, so we   */
               /* don't have to worry in the threads case.       */
@@ -960,11 +980,11 @@ GC_INNER size_t GC_page_size = 0;
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
            || defined(HAIKU) || defined(HURD) || defined(FREEBSD) \
-           || defined(NETBSD) || defined(OPENBSD)
+           || defined(NETBSD) || defined(OPENBSD) || defined(SERENITY)
           (void) sigaction(SIGSEGV, &old_segv_act, 0);
 #         if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
              || defined(HPUX) || defined(HURD) || defined(NETBSD) \
-             || defined(FREEBSD)
+             || defined(FREEBSD) || defined(SERENITY)
               (void) sigaction(SIGBUS, &old_bus_act, 0);
 #         endif
 #       else
@@ -1258,7 +1278,7 @@ GC_INNER size_t GC_page_size = 0;
 # define GET_MAIN_STACKBASE_SPECIAL
 #elif !defined(AMIGA) && !defined(OS2) && !defined(MSWIN32) \
       && !defined(MSWINCE) && !defined(CYGWIN32) \
-      && !defined(GC_OPENBSD_THREADS) \
+      && !defined(GC_OPENBSD_THREADS) && !defined(SERENITY) \
       && (!defined(GC_SOLARIS_THREADS) || defined(_STRICT_STDC))
 
 # if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
@@ -1362,7 +1382,7 @@ GC_INNER size_t GC_page_size = 0;
     return(result);
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#endif /* !AMIGA, !OPENBSD, !OS2, !Windows */
+#endif /* !AMIGA, !OPENBSD, !OS2, !SERENITY, !Windows */
 
 #if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
     && defined(THREADS) && !defined(HAVE_GET_STACK_BASE)

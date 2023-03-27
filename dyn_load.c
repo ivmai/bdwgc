@@ -63,7 +63,7 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
     && !(defined(NETBSD) && defined(__ELF__)) \
     && !(defined(OPENBSD) && (defined(__ELF__) || defined(M68K))) \
     && !defined(HAIKU) && !defined(HURD) && !defined(NACL) \
-    && !defined(CPPCHECK)
+    && !defined(SERENITY) && !defined(CPPCHECK)
 # error We only know how to find data segments of dynamic libraries for above.
 # error Additional SVR4 variants might not be too hard to add.
 #endif
@@ -90,6 +90,7 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #endif /* OPENBSD */
 
 #if defined(SCO_ELF) || defined(DGUX) || defined(HURD) || defined(NACL) \
+    || defined(SERENITY) \
     || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
                              || defined(NETBSD) || defined(OPENBSD)))
 # include <stddef.h>
@@ -111,7 +112,9 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #     undef EM_ALPHA
 #   endif
 #   include <link.h>
-#   if !defined(GC_DONT_DEFINE_LINK_MAP) && !(__ANDROID_API__ >= 21)
+# endif /* HOST_ANDROID */
+# if (defined(HOST_ANDROID) && !defined(GC_DONT_DEFINE_LINK_MAP) \
+      && !(__ANDROID_API__ >= 21)) || defined(SERENITY)
       /* link_map and r_debug are defined in link.h of NDK r10+.        */
       /* bionic/linker/linker.h defines them too but the header         */
       /* itself is a C++ one starting from Android 4.3.                 */
@@ -129,8 +132,8 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
         int32_t r_state;
         uintptr_t r_ldbase;
       };
-#   endif
-# else
+# endif /* __ANDROID_API__ >= 21 || SERENITY */
+# ifndef HOST_ANDROID
     EXTERN_C_BEGIN      /* Workaround missing extern "C" around _DYNAMIC */
                         /* symbol in link.h of some Linux hosts.         */
 #   include <link.h>
@@ -262,6 +265,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 # endif /* SOLARISDL */
 
 #if defined(SCO_ELF) || defined(DGUX) || defined(HURD) || defined(NACL) \
+    || defined(SERENITY) \
     || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
                              || defined(NETBSD) || defined(OPENBSD)))
 

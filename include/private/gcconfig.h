@@ -134,6 +134,10 @@ EXTERN_C_BEGIN
 #   define FREEBSD
 # endif
 
+# if defined(__serenity__)
+#   define SERENITY
+# endif
+
 /* And one for Darwin: */
 # if defined(macosx) || (defined(__APPLE__) && defined(__MACH__))
 #   define DARWIN
@@ -355,6 +359,14 @@ EXTERN_C_BEGIN
 #    define mach_type_known
 # endif
 # if defined(OPENBSD) && defined(__amd64__)
+#    define X86_64
+#    define mach_type_known
+# endif
+# if defined(SERENITY) && defined(__i386__)
+#    define I386
+#    define mach_type_known
+# endif
+# if defined(SERENITY) && defined(__x86_64__)
 #    define X86_64
 #    define mach_type_known
 # endif
@@ -1090,6 +1102,16 @@ EXTERN_C_BEGIN
 #   endif
 # endif /* OPENBSD */
 
+# ifdef SERENITY
+#   define OS_TYPE "SERENITY"
+    extern int etext[], _end[];
+#   define DATASTART ((ptr_t)(((word)(etext) + 0xfff) & ~(word)0xfff))
+#   define DATAEND ((ptr_t)_end)
+#   define DYNAMIC_LOADING
+    /* TODO: enable mprotect-based VDB */
+#   define USE_MMAP_ANON
+# endif /* SERENITY */
+
 # ifdef SOLARIS
 #   define OS_TYPE "SOLARIS"
     extern int _etext[], _end[];
@@ -1475,6 +1497,9 @@ EXTERN_C_BEGIN
 #     define DATAEND ((ptr_t)_end)
 #   endif
 #   ifdef HAIKU
+      /* Nothing specific. */
+#   endif
+#   ifdef SERENITY
       /* Nothing specific. */
 #   endif
 #   ifdef SOLARIS
@@ -2464,6 +2489,9 @@ EXTERN_C_BEGIN
 #   ifdef HAIKU
       /* Nothing specific. */
 #   endif
+#   ifdef SERENITY
+      /* Nothing specific. */
+#   endif
 #   ifdef SOLARIS
 #     define ELF_CLASS ELFCLASS64
 #     define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
@@ -2684,7 +2712,7 @@ EXTERN_C_BEGIN
 # define SVR4
 #endif
 
-#if (defined(HOST_ANDROID) || defined(HOST_TIZEN) \
+#if (defined(HOST_ANDROID) || defined(HOST_TIZEN) || defined(SERENITY) \
      || (defined(LINUX) && defined(SPARC))) \
     && !defined(GETPAGESIZE)
   EXTERN_C_END
@@ -2782,7 +2810,7 @@ EXTERN_C_BEGIN
 #if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
     || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
     || defined(DGUX) || defined(BSD) || defined(HAIKU) || defined(HURD) \
-    || defined(AIX) || defined(DARWIN) || defined(OSF1)
+    || defined(AIX) || defined(DARWIN) || defined(OSF1) || defined(SERENITY)
 # define UNIX_LIKE      /* Basic Unix-like system calls work.   */
 #endif
 
@@ -2831,7 +2859,8 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(DARWIN) || defined(FREEBSD) || defined(IRIX5) || defined(LINUX) \
-    || defined(NETBSD) || defined(OPENBSD) || defined(SOLARIS) \
+    || defined(NETBSD) || defined(OPENBSD) || defined(SERENITY) \
+    || defined(SOLARIS) \
     || ((defined(CYGWIN32) || defined(USE_MMAP) || defined(USE_MUNMAP)) \
         && !defined(USE_WINALLOC))
   /* Try both sbrk and mmap, in that order.     */
@@ -2967,7 +2996,7 @@ EXTERN_C_BEGIN
 
 #if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HAIKU) \
                              || defined(HURD) || defined(OPENBSD) \
-                             || defined(ARM32) \
+                             || defined(SERENITY) || defined(ARM32) \
                              || defined(AVR32) || defined(MIPS) \
                              || defined(NIOS2) || defined(OR1K))) \
      || (defined(LINUX) && !defined(__gnu_linux__)) \
