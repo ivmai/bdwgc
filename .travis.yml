@@ -46,6 +46,7 @@ jobs:
     - CSA_CHECK=true
     - CFLAGS_EXTRA="-m32"
   - compiler: clang
+    dist: jammy
     language: c
     env:
     - CSA_CHECK=true
@@ -272,17 +273,9 @@ jobs:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check cord/de"
     - MAKE_NPROC=8
-  - addons:
-      apt:
-        packages:
-        - g++-11
-        sources:
-        - ubuntu-toolchain-r-test
-    compiler: g++-11
-    dist: bionic
+  - compiler: gcc
+    dist: jammy
     env:
-    - CC=gcc-11
-    - CXX=g++-11
     - CFLAGS_EXTRA="-O3 -march=native"
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -305,6 +298,7 @@ jobs:
         packages:
         - gcc-multilib
     compiler: gcc
+    dist: jammy
     env:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2"
     - CONF_OPTIONS="--enable-gc-assertions --enable-mmap"
@@ -344,6 +338,7 @@ jobs:
         packages:
         - libatomic-ops-dev
     compiler: gcc
+    dist: jammy
     env:
     - CFLAGS_EXTRA="-D _FORTIFY_SOURCE=2 -D TEST_PAGES_EXECUTABLE"
     - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus --disable-throw-bad-alloc-library"
@@ -412,6 +407,7 @@ jobs:
     - CFLAGS_EXTRA="-D TEST_MANUAL_VDB"
     - CONF_OPTIONS="--enable-gc-assertions --disable-munmap"
   - compiler: gcc
+    dist: jammy
     env:
     - CFLAGS_EXTRA="-D _FORTIFY_SOURCE=2 -D FIND_LEAK -D SKIP_LEAKED_OBJECTS_PRINTING"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
@@ -472,6 +468,7 @@ jobs:
         packages:
         - gcc-multilib
     compiler: clang
+    dist: jammy
     env:
     - CONF_OPTIONS="--enable-redirect-malloc --enable-static --disable-threads"
     - CFLAGS_EXTRA="-m32"
@@ -501,6 +498,7 @@ jobs:
     - CFLAGS_EXTRA="-O3 -march=native"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
+    dist: jammy
     env:
     - CMAKE_OPTIONS="-Denable_cplusplus=ON -Denable_gc_assertions=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -519,6 +517,7 @@ jobs:
     env:
     - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -Denable_gc_debug=ON -Dwithout_libatomic_ops=ON"
   - compiler: gcc
+    dist: jammy
     env:
     - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -Denable_threads=OFF"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -537,6 +536,7 @@ jobs:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check cord/de"
   - compiler: gcc
+    dist: jammy
     env:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check cord/de"
@@ -549,6 +549,7 @@ jobs:
         packages:
         - musl-tools
     compiler: musl-gcc
+    dist: jammy
     language: c
     env:
     - CONF_OPTIONS="--disable-parallel-mark --enable-gc-assertions"
@@ -576,6 +577,7 @@ jobs:
     - CONF_OPTIONS="--disable-shared --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
+    dist: jammy
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer -std=gnu11"
@@ -583,19 +585,14 @@ jobs:
     - TESTS_CUSTOM_RUN=true
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
+    dist: jammy
     env:
     - CFLAGS_EXTRA="-fsanitize=undefined -fno-common -fno-omit-frame-pointer"
     - TESTS_CUSTOM_RUN=true
     - CONF_OPTIONS="--enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - addons:
-      apt:
-        packages:
-        - gcc-11
-        sources:
-        - ubuntu-toolchain-r-test
-    compiler: gcc-11
-    dist: bionic
+  - compiler: gcc
+    dist: jammy
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-gc-assertions"
@@ -603,31 +600,33 @@ jobs:
   - addons:
       apt:
         packages:
-        - clang-12
-        sources:
-        - ubuntu-toolchain-r-test
-    compiler: clang-12
-    dist: focal
+        - clang-14
+    compiler: clang-14
+    dist: jammy
     language: c
     env:
     - CFLAGS_EXTRA="-O3 -fsanitize=thread -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
+    dist: jammy
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_INCREMENTAL -fno-omit-frame-pointer -D TEST_FORK_WITHOUT_ATFORK"
     - CONF_OPTIONS="--enable-gc-assertions --enable-handle-fork=manual"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
+    dist: jammy
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_INCREMENTAL -fno-omit-frame-pointer -D TEST_FORK_WITHOUT_ATFORK"
     - CONF_OPTIONS="--enable-gc-assertions --enable-gc-debug --enable-handle-fork=manual --enable-large-config --without-libatomic-ops"
   - compiler: clang
+    dist: jammy
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -fno-omit-frame-pointer -D NTHREADS=10"
     - CONF_OPTIONS="--disable-parallel-mark"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
+    dist: jammy
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_INCREMENTAL -fno-omit-frame-pointer -D NTHREADS=0"
     - CONF_OPTIONS="--disable-parallel-mark --disable-thread-local-alloc --disable-shared --enable-gc-assertions --without-libatomic-ops"
@@ -641,6 +640,7 @@ jobs:
         packages:
         - gcc-multilib
     compiler: clang
+    dist: jammy
     env:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D GC_DISABLE_INCREMENTAL -std=gnu11"
     - CONF_OPTIONS="--enable-gc-assertions --enable-gc-debug"
@@ -687,12 +687,14 @@ jobs:
     - CONF_OPTIONS="--enable-large-config --enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
+    dist: jammy
     env:
     - CFLAGS_EXTRA="-x c++"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-gc-debug --disable-shared"
     - MAKEFILE_TARGETS="all"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: gcc
+    dist: jammy
     env:
     - CC_FOR_CHECK=g++
     - CONF_OPTIONS="--enable-gc-assertions"
@@ -700,11 +702,13 @@ jobs:
     - MAKEFILE_TARGETS_CHECK="check"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
+    dist: jammy
     env:
     - CFLAGS_EXTRA="-O3 -Wall -Wextra -Werror -x c++"
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="cords"
   - compiler: gcc
+    dist: jammy
     env:
     - CC_FOR_CHECK=g++
     - CFLAGS_EXTRA="-O3 -Wall -Wextra -Werror -D TEST_MANUAL_VDB"
@@ -717,6 +721,7 @@ jobs:
         - g++-mingw-w64
         - gcc-mingw-w64
     compiler: x86_64-w64-mingw32-gcc
+    dist: jammy
     language: c
     env:
     - CXX=x86_64-w64-mingw32-g++
@@ -727,6 +732,7 @@ jobs:
         packages:
         - gcc-mingw-w64
     compiler: x86_64-w64-mingw32-gcc
+    dist: jammy
     language: c
     env:
     - CONF_OPTIONS="--host=x86_64-w64-mingw32 --enable-gc-assertions --enable-gc-debug --enable-threads=pthreads"
@@ -736,6 +742,7 @@ jobs:
         packages:
         - gcc-mingw-w64
     compiler: i686-w64-mingw32-gcc
+    dist: jammy
     language: c
     env:
     - CONF_OPTIONS="--host=i686-w64-mingw32"
