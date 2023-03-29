@@ -751,8 +751,10 @@ jobs:
   - dist: focal
     env:
     - MAKEFILE_TARGETS="distcheck"
+    - AUTOCONF_VER=2.71
     - AUTOMAKE_VER=1.16.5
-    - LIBTOOL_VER=2.4.6
+    - LIBTOOL_VER=2.4.7
+    - M4_VER=1.4.19
     - NO_CLONE_LIBATOMIC_OPS=true
 
 before_install:
@@ -762,8 +764,8 @@ before_install:
             ~/cppcheck -b $CPPCHECK_VER;
     make --directory ~/cppcheck -j8 CXXFLAGS="-O3 -march=native -D NDEBUG";
   fi
-- if [[ "$AUTOMAKE_VER" != "" || "$LIBTOOL_VER" != ""
-        || "$M4_VER" != "" ]]; then
+- if [[ "$AUTOCONF_VER" != "" || "$AUTOMAKE_VER" != ""
+        || "$LIBTOOL_VER" != "" || "$M4_VER" != "" ]]; then
     GNUTOOLS_ROOT=`pwd`/../gnu-tools;
     export PATH=$GNUTOOLS_ROOT/bin:$PATH;
     GNU_DOWNLOAD_SITE=https://ftp.gnu.org/gnu;
@@ -771,12 +773,17 @@ before_install:
 - if [[ "$M4_VER" != "" ]]; then
     M4_XZ_URL=$GNU_DOWNLOAD_SITE/m4/m4-$M4_VER.tar.xz;
     wget -O - $M4_XZ_URL | tar xf - --xz --directory ~;
-    (cd ~/m4-$M4_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j check && make install);
+    (cd ~/m4-$M4_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
   fi
 - if [[ "$LIBTOOL_VER" != "" ]]; then
     LIBTOOL_XZ_URL=$GNU_DOWNLOAD_SITE/libtool/libtool-$LIBTOOL_VER.tar.xz;
     wget -O - $LIBTOOL_XZ_URL | tar xf - --xz --directory ~;
     (cd ~/libtool-$LIBTOOL_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
+  fi
+- if [[ "$AUTOCONF_VER" != "" ]]; then
+    AUTOCONF_XZ_URL=$GNU_DOWNLOAD_SITE/autoconf/autoconf-$AUTOCONF_VER.tar.xz;
+    wget -O - $AUTOCONF_XZ_URL | tar xf - --xz --directory ~;
+    (cd ~/autoconf-$AUTOCONF_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
   fi
 - if [[ "$AUTOMAKE_VER" != "" ]]; then
     AUTOMAKE_XZ_URL=$GNU_DOWNLOAD_SITE/automake/automake-$AUTOMAKE_VER.tar.xz;
