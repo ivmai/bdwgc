@@ -90,7 +90,10 @@ int main(void)
     volatile word sp;
     unsigned ps = GETPAGESIZE();
     JMP_BUF b;
-    register int x = (int)strlen(a_str); /* 1, slightly disguised */
+#   if !defined(__cplusplus) || __cplusplus < 201703L /* before c++17 */
+      register
+#   endif
+      int x = (int)strlen(a_str); /* 1, slightly disguised */
     static volatile int y = 0;
 
     sp = (word)(&sp);
