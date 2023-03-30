@@ -36,6 +36,17 @@
 #   define AO_INLINE static __inline
 # endif
 
+# if !defined(THREAD_SANITIZER) && !defined(GC_PRIVATE_H)
+    /* Similar to that in gcconfig.h.   */
+#   if defined(__has_feature)
+#     if __has_feature(thread_sanitizer)
+#       define THREAD_SANITIZER
+#     endif
+#   elif defined(__SANITIZE_THREAD__)
+#     define THREAD_SANITIZER
+#   endif
+# endif /* !THREAD_SANITIZER && !GC_PRIVATE_H */
+
   typedef unsigned char AO_TS_t;
 # define AO_TS_CLEAR 0
 # define AO_TS_INITIALIZER (AO_TS_t)AO_TS_CLEAR
@@ -50,7 +61,19 @@
 # define AO_HAVE_test_and_set_acquire
 
 # define AO_compiler_barrier() __atomic_signal_fence(__ATOMIC_SEQ_CST)
-# define AO_nop_full() __atomic_thread_fence(__ATOMIC_SEQ_CST)
+
+# if defined(THREAD_SANITIZER) && !defined(AO_USE_ATOMIC_THREAD_FENCE)
+    /* Workaround a compiler warning (reported by gcc-11, at least)     */
+    /* that atomic_thread_fence is unsupported with thread sanitizer.   */
+    AO_INLINE void
+    AO_nop_full(void)
+    {
+      volatile AO_TS_t dummy = AO_TS_INITIALIZER;
+      (void)__atomic_test_and_set(&dummy, __ATOMIC_SEQ_CST);
+    }
+# else
+#   define AO_nop_full() __atomic_thread_fence(__ATOMIC_SEQ_CST)
+# endif
 # define AO_HAVE_nop_full
 
 # define AO_fetch_and_add(p, v) __atomic_fetch_add(p, v, __ATOMIC_RELAXED)
