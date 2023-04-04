@@ -109,13 +109,6 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 }
 
 #ifndef GC_NO_THREADS_DISCOVERY
-# ifdef GC_ASSERTIONS
-    GC_INNER
-# else
-    STATIC
-# endif
-  thread_id_t GC_main_thread_id;
-
   /* We track thread attachments while the world is supposed to be      */
   /* stopped.  Unfortunately, we cannot stop them from starting, since  */
   /* blocking in DllMain seems to cause the world to deadlock.  Thus,   */
@@ -1642,7 +1635,7 @@ GC_INNER void GC_thr_init(void)
 # ifdef GC_ASSERTIONS
     GC_thr_initialized = TRUE;
 # endif
-# ifndef GC_NO_THREADS_DISCOVERY
+# if !defined(DONT_USE_ATEXIT) || !defined(GC_NO_THREADS_DISCOVERY)
     GC_main_thread_id = self_id;
 # endif
 # ifdef CAN_HANDLE_FORK

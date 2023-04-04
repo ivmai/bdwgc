@@ -1489,6 +1489,19 @@ GC_INNER_WIN32THREAD void GC_record_stack_base(GC_stack_context_t crtn,
 # endif
 }
 
+#if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS) \
+    || !defined(DONT_USE_ATEXIT)
+  GC_INNER_WIN32THREAD thread_id_t GC_main_thread_id;
+#endif
+
+#ifndef DONT_USE_ATEXIT
+  GC_INNER GC_bool GC_is_main_thread(void)
+  {
+    GC_ASSERT(GC_thr_initialized);
+    return thread_id_self() == GC_main_thread_id;
+  }
+#endif /* !DONT_USE_ATEXIT */
+
 #ifndef GC_WIN32_THREADS
 
 STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
@@ -1645,6 +1658,7 @@ GC_INNER void GC_thr_init(void)
     struct GC_stack_base sb;
     GC_thread me;
     GC_stack_context_t crtn;
+    thread_id_t self_id = thread_id_self();
 
     sb.mem_base = GC_stackbottom;
     GC_ASSERT(sb.mem_base != NULL);
@@ -1654,7 +1668,10 @@ GC_INNER void GC_thr_init(void)
       sb.reg_base = NULL;
 #   endif
     GC_ASSERT(NULL == GC_self_thread_inner());
-    me = GC_register_my_thread_inner(&sb, thread_id_self());
+    me = GC_register_my_thread_inner(&sb, self_id);
+#   ifndef DONT_USE_ATEXIT
+      GC_main_thread_id = self_id;
+#   endif
     me -> flags = DETACHED;
     /* Copy the alt-stack information if set. */
     crtn = me -> crtn;
