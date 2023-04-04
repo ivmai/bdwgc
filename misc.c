@@ -782,20 +782,18 @@ GC_API int GC_CALL GC_is_init_called(void)
   {
     if (GC_find_leak && !skip_gc_atexit) {
 #     ifdef THREADS
-        DCL_LOCK_STATE;
-
-        /* GC_in_thread_creation should always be updated holding the   */
-        /* lock even if we are about to exit.                           */
-        LOCK();
-        GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
-        UNLOCK();
+        /* Check that the thread executing at-exit functions is     */
+        /* the same as the one performed the GC initialization,     */
+        /* otherwise the latter thread might already be dead but    */
+        /* still registered and this, as a consequence, might       */
+        /* cause a signal delivery fail when suspending the threads */
+        /* on platforms that do not guarantee ESRCH returned if     */
+        /* the signal is not delivered.                             */
+        /* It should also prevent "Collecting from unknown thread"  */
+        /* abort in GC_push_all_stacks().                           */
+        if (!GC_is_main_thread() || !GC_thread_is_registered()) return;
 #     endif
       GC_gcollect();
-#     ifdef THREADS
-        LOCK();
-        GC_in_thread_creation = FALSE;
-        UNLOCK();
-#     endif
     }
   }
 #endif

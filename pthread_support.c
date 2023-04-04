@@ -1310,6 +1310,16 @@ GC_API void GC_CALL GC_set_markers_count(unsigned markers GC_ATTR_UNUSED)
 # endif
 }
 
+#ifndef DONT_USE_ATEXIT
+  STATIC pthread_t GC_main_thread_id;
+
+  GC_INNER GC_bool GC_is_main_thread(void)
+  {
+    GC_ASSERT(GC_thr_initialized);
+    return THREAD_EQUAL(GC_main_thread_id, pthread_self());
+  }
+#endif /* !DONT_USE_ATEXIT */
+
 GC_INNER void GC_thr_init(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
@@ -1359,6 +1369,9 @@ GC_INNER void GC_thr_init(void)
       t -> stop_info.mach_thread = mach_thread_self();
 #   else
       t -> stop_info.stack_ptr = GC_approx_sp();
+#   endif
+#   ifndef DONT_USE_ATEXIT
+      GC_main_thread_id = self;
 #   endif
     t -> flags = DETACHED | MAIN_THREAD;
     if (THREAD_EQUAL(self, main_pthread_id)) {

@@ -297,9 +297,9 @@ struct GC_Thread_Rep {
 typedef struct GC_Thread_Rep * GC_thread;
 typedef volatile struct GC_Thread_Rep * GC_vthread;
 
-#ifndef GC_NO_THREADS_DISCOVERY
-  STATIC DWORD GC_main_thread = 0;
+STATIC DWORD GC_main_thread;
 
+#ifndef GC_NO_THREADS_DISCOVERY
   /* We track thread attachments while the world is supposed to be      */
   /* stopped.  Unfortunately, we cannot stop them from starting, since  */
   /* blocking in DllMain seems to cause the world to deadlock.  Thus,   */
@@ -2821,6 +2821,14 @@ GC_API void GC_CALL GC_set_markers_count(unsigned markers GC_ATTR_UNUSED)
   }
 #endif /* WOW64_THREAD_CONTEXT_WORKAROUND */
 
+#ifndef DONT_USE_ATEXIT
+  GC_INNER GC_bool GC_is_main_thread(void)
+  {
+    GC_ASSERT(GC_thr_initialized);
+    return GC_main_thread == GetCurrentThreadId();
+  }
+#endif /* !DONT_USE_ATEXIT */
+
 GC_INNER void GC_thr_init(void)
 {
   struct GC_stack_base sb;
@@ -2843,11 +2851,7 @@ GC_INNER void GC_thr_init(void)
   if (GC_thr_initialized) return;
 
   GC_ASSERT((word)&GC_threads % sizeof(word) == 0);
-# ifdef GC_NO_THREADS_DISCOVERY
-#   define GC_main_thread GetCurrentThreadId()
-# else
-    GC_main_thread = GetCurrentThreadId();
-# endif
+  GC_main_thread = GetCurrentThreadId();
   GC_thr_initialized = TRUE;
 
 # ifdef CAN_HANDLE_FORK
@@ -2961,7 +2965,6 @@ GC_INNER void GC_thr_init(void)
 
   GC_ASSERT(0 == GC_lookup_thread_inner(GC_main_thread));
   GC_register_my_thread_inner(&sb, GC_main_thread);
-# undef GC_main_thread
 }
 
 #ifdef GC_PTHREADS
