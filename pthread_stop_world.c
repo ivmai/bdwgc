@@ -406,7 +406,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
           );
 
 # ifdef DEBUG_THREADS
-    GC_log_printf("Continuing %p\n", (void *)pthread_self());
+    GC_log_printf("Resuming %p\n", (void *)pthread_self());
 # endif
 # ifdef E2K
     GC_ASSERT(crtn -> backing_store_end == bs_lo);
