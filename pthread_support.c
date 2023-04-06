@@ -832,7 +832,7 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
 # endif
   for (p = GC_threads[THREAD_TABLE_INDEX(id)];
        p != NULL; p = p -> tm.next) {
-    if (THREAD_ID_EQUAL(p -> id, id)) break;
+    if (EXPECT(THREAD_ID_EQUAL(p -> id, id), TRUE)) break;
   }
   return p;
 }

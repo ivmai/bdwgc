@@ -353,7 +353,7 @@ GC_INLINE LONG GC_get_max_thread_index(void)
       /* We first try the cache.        */
       for (p = GC_threads[THREAD_TABLE_INDEX(id)];
            p != NULL; p = p -> tm.next) {
-        if (THREAD_EQUAL(p -> pthread_id, thread))
+        if (EXPECT(THREAD_EQUAL(p -> pthread_id, thread), TRUE))
           return p;
       }
 
