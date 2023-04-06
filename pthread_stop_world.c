@@ -800,6 +800,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       endif
         GC_stack_context_t crtn = p -> crtn;
 
+        GC_ASSERT(THREAD_TABLE_INDEX(p -> id) == i);
         if (KNOWN_FINISHED(p)) continue;
         ++nthreads;
         traced_stack_sect = crtn -> traced_stack_sect;

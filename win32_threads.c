@@ -966,13 +966,15 @@ GC_INNER void GC_push_all_stacks(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       GC_thread p;
 
-      for (p = GC_threads[i]; p != NULL; p = p -> tm.next)
+      for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
+        GC_ASSERT(THREAD_TABLE_INDEX(p -> id) == i);
         if (!KNOWN_FINISHED(p)) {
 #         ifndef SMALL_CONFIG
             ++nthreads;
 #         endif
           total_size += GC_push_stack_for(p, self_id, &found_me);
         }
+      }
     }
   }
 # ifndef SMALL_CONFIG
