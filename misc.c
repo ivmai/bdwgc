@@ -1356,6 +1356,9 @@ GC_API void GC_CALL GC_init(void)
     COND_DUMP;
     /* Get black list set up and/or incremental GC started */
     if (!GC_dont_precollect || GC_incremental) {
+#       if defined(DYNAMIC_LOADING) && defined(DARWIN)
+          GC_ASSERT(0 == GC_bytes_allocd);
+#       endif
         GC_gcollect_inner();
     }
 #   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
@@ -1388,6 +1391,12 @@ GC_API void GC_CALL GC_init(void)
         GC_init_dyld();
 #   endif
     RESTORE_CANCEL(cancel_state);
+    /* It is not safe to allocate any object till completion of GC_init */
+    /* (in particular by GC_thr_init), i.e. before GC_init_dyld() call  */
+    /* and initialization of the incremental mode (if any).             */
+#   if defined(GWW_VDB) && !defined(KEEP_BACK_PTRS)
+      GC_ASSERT(GC_bytes_allocd + GC_bytes_allocd_before_gc == 0);
+#   endif
 }
 
 GC_API void GC_CALL GC_enable_incremental(void)
@@ -1464,6 +1473,8 @@ GC_API void GC_CALL GC_start_mark_threads(void)
     if (GC_is_initialized) {
       /* Prevent duplicate resource close.  */
       GC_is_initialized = FALSE;
+      GC_bytes_allocd = 0;
+      GC_bytes_allocd_before_gc = 0;
 #     if defined(GC_WIN32_THREADS) && (defined(MSWIN32) || defined(MSWINCE))
 #       if !defined(CONSOLE_LOG) || defined(MSWINCE)
           DeleteCriticalSection(&GC_write_cs);
