@@ -725,7 +725,7 @@ jobs:
     language: c
     env:
     - CXX=x86_64-w64-mingw32-g++
-    - CONF_OPTIONS="--host=x86_64-w64-mingw32 --enable-cplusplus --enable-static"
+    - CONF_OPTIONS="--host=x86_64-w64-mingw32 --enable-cplusplus --disable-shared"
     - MAKEFILE_TARGETS="all"
   - addons:
       apt:
