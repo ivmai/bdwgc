@@ -568,7 +568,7 @@ STATIC void GC_restart_handler(int sig)
 #   endif
 #   if defined(SIMULATE_LOST_SIGNALS) && !defined(GC_ENABLE_SUSPEND_THREAD)
 #     ifndef LOST_SIGNALS_RATIO
-#       define LOST_SIGNALS_RATIO 5
+#       define LOST_SIGNALS_RATIO 25
 #     endif
       static int signal_cnt; /* race is OK, it is for test purpose only */
 
