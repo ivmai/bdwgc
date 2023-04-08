@@ -200,7 +200,8 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 # define TRACE(source, cmd) \
         if (GC_trace_addr != 0 && (ptr_t)(source) == GC_trace_addr) cmd
 # define TRACE_TARGET(target, cmd) \
-        if (GC_trace_addr != 0 && (target) == *(ptr_t *)GC_trace_addr) cmd
+        if (GC_trace_addr != NULL && GC_is_heap_ptr(GC_trace_addr) \
+            && (target) == *(ptr_t *)GC_trace_addr) cmd
 #else
 # define TRACE(source, cmd)
 # define TRACE_TARGET(source, cmd)
