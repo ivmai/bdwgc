@@ -612,15 +612,15 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
       word tag = descr & GC_DS_TAGS;
 
       GC_STATIC_ASSERT(GC_DS_TAGS == 0x3);
-      switch(tag) {
+      switch (tag) {
         case GC_DS_LENGTH:
           /* Large length.                                              */
           /* Process part of the range to avoid pushing too much on the */
           /* stack.                                                     */
-          GC_ASSERT(descr < (word)GC_greatest_plausible_heap_addr
+          GC_ASSERT(descr <= (word)GC_greatest_plausible_heap_addr
                             - (word)GC_least_plausible_heap_addr
                 || (word)(current_p + descr)
-                            <= (word)GC_least_plausible_heap_addr
+                            < (word)GC_least_plausible_heap_addr
                 || (word)current_p >= (word)GC_greatest_plausible_heap_addr);
 #         ifdef PARALLEL_MARK
 #           define SHARE_BYTES 2048
@@ -928,15 +928,14 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
             ++top;
             top -> mse_descr.w = descr;
             top -> mse_start = p -> mse_start;
-            GC_ASSERT((descr & GC_DS_TAGS) != GC_DS_LENGTH
-                      || descr < (word)GC_greatest_plausible_heap_addr
+            GC_ASSERT((descr & GC_DS_TAGS) != GC_DS_LENGTH /* 0 */
+                      || descr <= (word)GC_greatest_plausible_heap_addr
                                         - (word)GC_least_plausible_heap_addr
-                      || (word)(p->mse_start + descr)
-                            <= (word)GC_least_plausible_heap_addr
-                      || (word)p->mse_start
+                      || (word)(p -> mse_start + descr)
+                            < (word)GC_least_plausible_heap_addr
+                      || (word)p -> mse_start
                             >= (word)GC_greatest_plausible_heap_addr);
-            /* If this is a big object, count it as                     */
-            /* size/256 + 1 objects.                                    */
+            /* If this is a big object, count it as size/256 + 1 objects. */
             ++i;
             if ((descr & GC_DS_TAGS) == GC_DS_LENGTH) i += (int)(descr >> 8);
         }

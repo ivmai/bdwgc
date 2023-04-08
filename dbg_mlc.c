@@ -134,9 +134,9 @@
         ptr_t alternate_target = *(ptr_t *)alternate_ptr;
 
         if ((word)alternate_target >= (word)GC_least_plausible_heap_addr
-            && (word)alternate_target <= (word)GC_greatest_plausible_heap_addr
+            && (word)alternate_target < (word)GC_greatest_plausible_heap_addr
             && ((word)target < (word)GC_least_plausible_heap_addr
-                || (word)target > (word)GC_greatest_plausible_heap_addr)) {
+                || (word)target >= (word)GC_greatest_plausible_heap_addr)) {
             bp = alternate_ptr;
         }
       }

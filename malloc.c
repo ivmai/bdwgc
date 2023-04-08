@@ -297,7 +297,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
             } else {
                 GC_ASSERT(0 == obj_link(op)
                           || ((word)obj_link(op)
-                                <= (word)GC_greatest_plausible_heap_addr
+                                < (word)GC_greatest_plausible_heap_addr
                               && (word)obj_link(op)
                                 >= (word)GC_least_plausible_heap_addr));
                 *opp = obj_link(op);

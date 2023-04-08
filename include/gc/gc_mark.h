@@ -125,10 +125,11 @@ typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
 
 GC_API void * GC_least_plausible_heap_addr;
 GC_API void * GC_greatest_plausible_heap_addr;
-                        /* Bounds on the heap.  Guaranteed valid        */
+                        /* Bounds on the heap.  Guaranteed to be valid. */
                         /* Likely to include future heap expansion.     */
                         /* Hence usually includes not-yet-mapped        */
-                        /* memory.                                      */
+                        /* memory.  The address of any heap object is   */
+                        /* less than GC_greatest_plausible_heap_addr.   */
 
 /* Handle nested references in a custom mark procedure.                 */
 /* Check if obj is a valid object. If so, ensure that it is marked.     */
@@ -155,8 +156,8 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void * /* obj */,
                                 void ** /* src */);
 
 #define GC_MARK_AND_PUSH(obj, msp, lim, src) \
-          ((GC_word)(obj) >= (GC_word)GC_least_plausible_heap_addr && \
-           (GC_word)(obj) <= (GC_word)GC_greatest_plausible_heap_addr ? \
+          ((GC_word)(obj) >= (GC_word)GC_least_plausible_heap_addr \
+           && (GC_word)(obj) < (GC_word)GC_greatest_plausible_heap_addr ? \
            GC_mark_and_push(obj, msp, lim, src) : (msp))
 
 /* The size of the header added to objects allocated through the        */
