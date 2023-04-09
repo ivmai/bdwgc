@@ -1808,23 +1808,18 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     ptr_t p;
     word bit_no;
     ptr_t lim;
-    mse * GC_mark_stack_top_reg;
+    mse * mark_stack_top;
     mse * mark_stack_limit = GC_mark_stack_limit;
 
     /* Some quick shortcuts: */
-        if ((/* 0 | */ GC_DS_LENGTH) == descr) return;
-        if (GC_block_empty(hhdr)/* nothing marked */) return;
+    if ((/* 0 | */ GC_DS_LENGTH) == descr) return;
+    if (GC_block_empty(hhdr)/* nothing marked */) return;
+
 #   if !defined(GC_DISABLE_INCREMENTAL)
       GC_n_rescuing_pages++;
 #   endif
     GC_objects_are_marked = TRUE;
-    if (sz > MAXOBJBYTES) {
-        lim = h -> hb_body;
-    } else {
-        lim = (ptr_t)((word)(h + 1)->hb_body - sz);
-    }
-
-    switch(BYTES_TO_GRANULES(sz)) {
+    switch (BYTES_TO_GRANULES(sz)) {
 #   if defined(USE_PUSH_MARKED_ACCELERATORS)
       case 1:
         GC_push_marked1(h, hhdr);
@@ -1843,16 +1838,18 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
       case 1: /* to suppress "switch statement contains no case" warning */
 #   endif
     default:
-      GC_mark_stack_top_reg = GC_mark_stack_top;
+      lim = sz > MAXOBJBYTES ? h -> hb_body
+                        : (ptr_t)((word)(h + 1) -> hb_body - sz);
+      mark_stack_top = GC_mark_stack_top;
       for (p = h -> hb_body, bit_no = 0; (word)p <= (word)lim;
            p += sz, bit_no += MARK_BIT_OFFSET(sz)) {
+        /* Mark from fields inside the object.  */
         if (mark_bit_from_hdr(hhdr, bit_no)) {
-          /* Mark from fields inside the object. */
-          GC_mark_stack_top_reg = GC_push_obj(p, hhdr, GC_mark_stack_top_reg,
-                                              mark_stack_limit);
+          mark_stack_top = GC_push_obj(p, hhdr, mark_stack_top,
+                                       mark_stack_limit);
         }
       }
-      GC_mark_stack_top = GC_mark_stack_top_reg;
+      GC_mark_stack_top = mark_stack_top;
     }
 }
 
@@ -1872,27 +1869,25 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     word descr = hhdr -> hb_descr;
     ptr_t p;
     ptr_t lim;
-    mse * GC_mark_stack_top_reg;
+    mse * mark_stack_top;
     mse * mark_stack_limit = GC_mark_stack_limit;
 
-    if ((/* 0 | */ GC_DS_LENGTH) == descr)
-        return;
+    if ((/* 0 | */ GC_DS_LENGTH) == descr) return;
 
 #   if !defined(GC_DISABLE_INCREMENTAL)
       GC_n_rescuing_pages++;
 #   endif
     GC_objects_are_marked = TRUE;
-    if (sz > MAXOBJBYTES)
-        lim = h -> hb_body;
-    else
-        lim = (ptr_t)((word)(h + 1)->hb_body - sz);
-
-    GC_mark_stack_top_reg = GC_mark_stack_top;
-    for (p = h -> hb_body; (word)p <= (word)lim; p += sz)
-      if ((*(word *)p & 0x3) != 0)
-        GC_mark_stack_top_reg = GC_push_obj(p, hhdr, GC_mark_stack_top_reg,
-                                            mark_stack_limit);
-    GC_mark_stack_top = GC_mark_stack_top_reg;
+    lim = sz > MAXOBJBYTES ? h -> hb_body
+                        : (ptr_t)((word)(h + 1) -> hb_body - sz);
+    mark_stack_top = GC_mark_stack_top;
+    for (p = h -> hb_body; (word)p <= (word)lim; p += sz) {
+      if ((*(word *)p & 0x3) != 0) {
+        mark_stack_top = GC_push_obj(p, hhdr, mark_stack_top,
+                                     mark_stack_limit);
+      }
+    }
+    GC_mark_stack_top = mark_stack_top;
   }
 #endif /* ENABLE_DISCLAIM */
 
