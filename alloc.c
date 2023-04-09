@@ -1342,7 +1342,7 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
     GC_ASSERT(bytes > 0);
     GC_ASSERT(GC_all_nils != NULL);
 
-    if (GC_n_heap_sects == GC_capacity_heap_sects) {
+    if (EXPECT(GC_n_heap_sects == GC_capacity_heap_sects, FALSE)) {
       /* Allocate new GC_heap_sects with sufficient capacity.   */
 #     ifndef INITIAL_HEAP_SECTS
 #       define INITIAL_HEAP_SECTS 32
@@ -1352,7 +1352,7 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
       void *new_heap_sects =
                 GC_scratch_alloc(new_capacity * sizeof(struct HeapSect));
 
-      if (EXPECT(NULL == new_heap_sects, FALSE)) {
+      if (NULL == new_heap_sects) {
         /* Retry with smaller yet sufficient capacity.  */
         new_capacity = (size_t)GC_n_heap_sects + INITIAL_HEAP_SECTS;
         new_heap_sects =
@@ -1372,14 +1372,14 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
                          (unsigned long)new_capacity);
     }
 
-    while ((word)p <= HBLKSIZE) {
+    while (EXPECT((word)p <= HBLKSIZE, FALSE)) {
         /* Can't handle memory near address zero. */
         ++p;
         bytes -= HBLKSIZE;
         if (0 == bytes) return;
     }
     endp = (word)p + bytes;
-    if (endp <= (word)p) {
+    if (EXPECT(endp <= (word)p, FALSE)) {
         /* Address wrapped. */
         bytes -= HBLKSIZE;
         if (0 == bytes) return;
@@ -1398,11 +1398,10 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
       for (i = 0; i < GC_n_heap_sects; i++) {
         word hs_start = (word)GC_heap_sects[i].hs_start;
         word hs_end = hs_start + GC_heap_sects[i].hs_bytes;
-        word p_e = (word)p + bytes;
 
         GC_ASSERT(!((hs_start <= (word)p && (word)p < hs_end)
-                    || (hs_start < p_e && p_e <= hs_end)
-                    || ((word)p < hs_start && hs_end < p_e)));
+                    || (hs_start < endp && endp <= hs_end)
+                    || ((word)p < hs_start && hs_end < endp)));
       }
 #   endif
     GC_heap_sects[GC_n_heap_sects].hs_start = (ptr_t)p;
@@ -1414,18 +1413,18 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
     GC_heapsize += bytes;
 
     if ((word)p <= (word)GC_least_plausible_heap_addr
-        || GC_least_plausible_heap_addr == 0) {
+        || EXPECT(NULL == GC_least_plausible_heap_addr, FALSE)) {
         GC_least_plausible_heap_addr = (void *)((ptr_t)p - sizeof(word));
                 /* Making it a little smaller than necessary prevents   */
                 /* us from getting a false hit from the variable        */
                 /* itself.  There's some unintentional reflection       */
                 /* here.                                                */
     }
-    if ((word)p + bytes >= (word)GC_greatest_plausible_heap_addr) {
+    if (endp > (word)GC_greatest_plausible_heap_addr) {
         GC_greatest_plausible_heap_addr = (void *)endp;
     }
 
-    if (old_capacity > 0) {
+    if (EXPECT(old_capacity > 0, FALSE)) {
 #     ifndef GWW_VDB
         /* Recycling may call GC_add_to_heap() again but should not     */
         /* cause resizing of GC_heap_sects.                             */
@@ -1722,7 +1721,7 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
  */
 GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
 {
-    void ** flh = &(GC_obj_kinds[kind].ok_freelist[gran]);
+    void ** flh = &GC_obj_kinds[kind].ok_freelist[gran];
     GC_bool tried_minor = FALSE;
     GC_bool retry = FALSE;
 
