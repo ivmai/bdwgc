@@ -237,6 +237,7 @@ GC_API void GC_CALL GC_dump_regions(void)
 static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
                             int kind, unsigned flags)
 {
+    struct obj_kind *ok;
     word descr;
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -244,21 +245,22 @@ static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
       if (byte_sz > MAXOBJBYTES)
         flags |= LARGE_BLOCK;
 #   endif
+    ok = &GC_obj_kinds[kind];
 #   ifdef ENABLE_DISCLAIM
-      if (GC_obj_kinds[kind].ok_disclaim_proc)
+      if (ok -> ok_disclaim_proc)
         flags |= HAS_DISCLAIM;
-      if (GC_obj_kinds[kind].ok_mark_unconditionally)
+      if (ok -> ok_mark_unconditionally)
         flags |= MARK_UNCONDITIONALLY;
 #   endif
 
-    /* Set size, kind and mark proc fields */
-      hhdr -> hb_sz = byte_sz;
-      hhdr -> hb_obj_kind = (unsigned char)kind;
-      hhdr -> hb_flags = (unsigned char)flags;
-      hhdr -> hb_block = block;
-      descr = GC_obj_kinds[kind].ok_descriptor;
-      if (GC_obj_kinds[kind].ok_relocate_descr) descr += byte_sz;
-      hhdr -> hb_descr = descr;
+    /* Set size, kind and mark proc fields.     */
+    hhdr -> hb_sz = byte_sz;
+    hhdr -> hb_obj_kind = (unsigned char)kind;
+    hhdr -> hb_flags = (unsigned char)flags;
+    hhdr -> hb_block = block;
+    descr = ok -> ok_descriptor;
+    if (ok -> ok_relocate_descr) descr += byte_sz;
+    hhdr -> hb_descr = descr;
 
 #   ifdef MARK_BIT_PER_OBJ
      /* Set hb_inv_sz as portably as possible.                          */

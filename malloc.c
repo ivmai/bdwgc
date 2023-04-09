@@ -19,7 +19,7 @@
 #include <string.h>
 
 /* Allocate reclaim list for the kind.  Returns TRUE on success.        */
-STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
+STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *ok)
 {
     struct hblk ** result;
 
@@ -29,7 +29,7 @@ STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
     if (EXPECT(NULL == result, FALSE)) return FALSE;
 
     BZERO(result, (MAXOBJGRANULES+1)*sizeof(struct hblk *));
-    kind -> ok_reclaim_list = result;
+    ok -> ok_reclaim_list = result;
     return TRUE;
 }
 
@@ -152,9 +152,9 @@ STATIC void GC_extend_size_map(size_t i)
 
 STATIC void * GC_generic_malloc_inner_small(size_t lb, int k)
 {
-  struct obj_kind * kind = GC_obj_kinds + k;
+  struct obj_kind *ok = &GC_obj_kinds[k];
   size_t lg = GC_size_map[lb];
-  void ** opp = &(kind -> ok_freelist[lg]);
+  void ** opp = &(ok -> ok_freelist[lg]);
   void *op = *opp;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -172,12 +172,12 @@ STATIC void * GC_generic_malloc_inner_small(size_t lb, int k)
         GC_ASSERT(lg != 0);
       }
       /* Retry */
-      opp = &(kind -> ok_freelist[lg]);
+      opp = &(ok -> ok_freelist[lg]);
       op = *opp;
     }
     if (NULL == op) {
-      if (NULL == kind -> ok_reclaim_list
-          && !GC_alloc_reclaim_list(kind))
+      if (NULL == ok -> ok_reclaim_list
+          && !GC_alloc_reclaim_list(ok))
         return NULL;
       op = GC_allocobj(lg, k);
       if (NULL == op) return NULL;

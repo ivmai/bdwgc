@@ -244,13 +244,13 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
   {
     word bit_no = 0;
     ptr_t p, plim;
-    struct obj_kind *ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
-    int (GC_CALLBACK *disclaim)(void *) = ok -> ok_disclaim_proc;
+    int (GC_CALLBACK *disclaim)(void *) =
+                GC_obj_kinds[hhdr -> hb_obj_kind].ok_disclaim_proc;
 
 #   ifndef THREADS
       GC_ASSERT(sz == hhdr -> hb_sz);
 #   endif
-    p = hbp->hb_body;
+    p = hbp -> hb_body;
     plim = p + HBLKSIZE - sz;
 
     for (; (word)p <= (word)plim; bit_no += MARK_BIT_OFFSET(sz)) {
@@ -646,7 +646,7 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
         if (rlist == 0) continue;       /* This kind not used.  */
         if (!report_if_found) {
             void **fop;
-            void **lim = &(GC_obj_kinds[kind].ok_freelist[MAXOBJGRANULES+1]);
+            void **lim = &GC_obj_kinds[kind].ok_freelist[MAXOBJGRANULES+1];
 
             for (fop = GC_obj_kinds[kind].ok_freelist;
                  (word)fop < (word)lim; (*(word **)&fop)++) {
@@ -691,9 +691,8 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
  */
 GC_INNER void GC_continue_reclaim(word sz /* granules */, int kind)
 {
-    hdr * hhdr;
     struct hblk * hbp;
-    struct obj_kind * ok = &(GC_obj_kinds[kind]);
+    struct obj_kind * ok = &GC_obj_kinds[kind];
     struct hblk ** rlh = ok -> ok_reclaim_list;
     void **flh = &(ok -> ok_freelist[sz]);
 
@@ -701,11 +700,12 @@ GC_INNER void GC_continue_reclaim(word sz /* granules */, int kind)
         return; /* No blocks of this kind.      */
 
     for (rlh += sz; (hbp = *rlh) != NULL; ) {
-        hhdr = HDR(hbp);
+        hdr *hhdr = HDR(hbp);
+
         *rlh = hhdr -> hb_next;
         GC_reclaim_small_nonempty_block(hbp, hhdr -> hb_sz, FALSE);
-        if (*flh != 0)
-            break;
+        if (*flh != NULL)
+            break; /* the appropriate free list is nonempty */
     }
 }
 
@@ -724,7 +724,6 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
     unsigned kind;
     hdr * hhdr;
     struct hblk * hbp;
-    struct obj_kind * ok;
     struct hblk ** rlp;
     struct hblk ** rlh;
 #   ifndef NO_CLOCK
@@ -735,8 +734,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
 #   endif
 
     for (kind = 0; kind < GC_n_kinds; kind++) {
-        ok = &(GC_obj_kinds[kind]);
-        rlp = ok -> ok_reclaim_list;
+        rlp = GC_obj_kinds[kind].ok_reclaim_list;
         if (rlp == 0) continue;
         for (sz = 1; sz <= MAXOBJGRANULES; sz++) {
             for (rlh = rlp + sz; (hbp = *rlh) != NULL; ) {
@@ -776,27 +774,24 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
 /* restricted to kinds where ok_mark_unconditionally is true.           */
   STATIC void GC_reclaim_unconditionally_marked(void)
   {
-    word sz;
     unsigned kind;
-    hdr * hhdr;
-    struct hblk * hbp;
-    struct obj_kind * ok;
-    struct hblk ** rlp;
-    struct hblk ** rlh;
 
     for (kind = 0; kind < GC_n_kinds; kind++) {
-        ok = &(GC_obj_kinds[kind]);
-        if (!ok->ok_mark_unconditionally)
-          continue;
-        rlp = ok->ok_reclaim_list;
-        if (rlp == 0)
-          continue;
+        word sz;
+        struct obj_kind *ok = &GC_obj_kinds[kind];
+        struct hblk **rlp = ok -> ok_reclaim_list;
+
+        if (NULL == rlp || !(ok -> ok_mark_unconditionally)) continue;
+
         for (sz = 1; sz <= MAXOBJGRANULES; sz++) {
-            rlh = rlp + sz;
-            while ((hbp = *rlh) != 0) {
-                hhdr = HDR(hbp);
-                *rlh = hhdr->hb_next;
-                GC_reclaim_small_nonempty_block(hbp, hhdr->hb_sz, FALSE);
+            struct hblk **rlh = rlp + sz;
+            struct hblk *hbp;
+
+            while ((hbp = *rlh) != NULL) {
+                hdr *hhdr = HDR(hbp);
+
+                *rlh = hhdr -> hb_next;
+                GC_reclaim_small_nonempty_block(hbp, hhdr -> hb_sz, FALSE);
             }
         }
     }
