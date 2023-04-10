@@ -40,7 +40,7 @@ typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /*obj*/);
 /* collection if "mark_from_all" is non-zero, but at the expense that   */
 /* long chains of objects will take many cycles to reclaim.             */
 /* Calls to GC_free() will free its argument without inquiring "proc".  */
-/* No-op in the leak-finding mode.                                      */
+/* Acquires the allocation lock.  No-op in the leak-finding mode.       */
 GC_API void GC_CALL GC_register_disclaim_proc(int /*kind*/,
                                 GC_disclaim_proc /*proc*/,
                                 int /*mark_from_all*/) GC_ATTR_NONNULL(2);

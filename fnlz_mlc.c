@@ -85,11 +85,13 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
 {
     GC_ASSERT((unsigned)kind < MAXOBJKINDS);
     GC_ASSERT(NONNULL_ARG_NOT_NULL(proc));
+    LOCK();
     if (!EXPECT(GC_find_leak, FALSE)) {
         GC_obj_kinds[kind].ok_disclaim_proc = proc;
         GC_obj_kinds[kind].ok_mark_unconditionally =
                                         (GC_bool)mark_unconditionally;
     }
+    UNLOCK();
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
