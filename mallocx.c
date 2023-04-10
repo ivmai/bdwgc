@@ -260,7 +260,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     size_t lw;      /* Length in words.     */
     size_t lg;      /* Length in granules.  */
     signed_word my_bytes_allocd = 0;
-    struct obj_kind * ok = &(GC_obj_kinds[k]);
+    struct obj_kind * ok;
     struct hblk ** rlh;
 
     GC_ASSERT(lb != 0 && (lb & (GRANULE_BYTES-1)) == 0);
@@ -297,6 +297,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
       }
     /* First see if we can reclaim a page of objects waiting to be */
     /* reclaimed.                                                  */
+    ok = &GC_obj_kinds[k];
     rlh = ok -> ok_reclaim_list;
     if (rlh != NULL) {
         struct hblk * hbp;
@@ -378,8 +379,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     /* Next try to use prefix of global free list if there is one.      */
     /* We don't refill it, but we need to use it up before allocating   */
     /* a new block ourselves.                                           */
-      opp = &(GC_obj_kinds[k].ok_freelist[lg]);
-      if ( (op = *opp) != 0 ) {
+      opp = &(ok -> ok_freelist[lg]);
+      if ((op = *opp) != NULL) {
         *opp = 0;
         my_bytes_allocd = 0;
         for (p = op; p != 0; p = obj_link(p)) {
