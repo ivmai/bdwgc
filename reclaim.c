@@ -301,12 +301,9 @@ STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
 # define IS_PTRFREE_SAFE(hhdr) ((hhdr)->hb_descr == 0)
 #endif
 
-/*
- * Generic procedure to rebuild a free list in hbp.
- * Also called directly from GC_malloc_many.
- * Sz is now in bytes.
- */
-GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
+/* Generic procedure to rebuild a free list in hbp.  Also called    */
+/* directly from GC_malloc_many.  sz is in bytes.                   */
+GC_INNER ptr_t GC_reclaim_generic(struct hblk *hbp, hdr *hhdr, size_t sz,
                                   GC_bool init, ptr_t list,
                                   signed_word *count)
 {
@@ -634,6 +631,7 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
 {
     unsigned kind;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   if defined(PARALLEL_MARK)
       GC_ASSERT(0 == GC_fl_builder_count);
 #   endif
@@ -683,14 +681,11 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
 # if defined(PARALLEL_MARK)
     GC_ASSERT(0 == GC_fl_builder_count);
 # endif
-
 }
 
-/*
- * Sweep blocks of the indicated object size and kind until either the
- * appropriate free list is nonempty, or there are no more blocks to
- * sweep.
- */
+/* Sweep blocks of the indicated object size and kind until either  */
+/* the appropriate free list is nonempty, or there are no more      */
+/* blocks to sweep.                                                 */
 GC_INNER void GC_continue_reclaim(word sz /* granules */, int kind)
 {
     struct hblk * hbp;
@@ -698,6 +693,7 @@ GC_INNER void GC_continue_reclaim(word sz /* granules */, int kind)
     struct hblk ** rlh = ok -> ok_reclaim_list;
     void **flh = &(ok -> ok_freelist[sz]);
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (NULL == rlh)
         return; /* No blocks of this kind.      */
 
@@ -734,6 +730,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
       if (GC_print_stats == VERBOSE)
         GET_TIME(start_time);
 #   endif
+    GC_ASSERT(I_HOLD_LOCK());
 
     for (kind = 0; kind < GC_n_kinds; kind++) {
         rlp = GC_obj_kinds[kind].ok_reclaim_list;
