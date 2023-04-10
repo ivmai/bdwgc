@@ -52,6 +52,16 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
     return 0;
 }
 
+STATIC void GC_register_disclaim_proc_inner(int kind, GC_disclaim_proc proc,
+                                            GC_bool mark_unconditionally)
+{
+    GC_ASSERT((unsigned)kind < MAXOBJKINDS);
+    if (EXPECT(GC_find_leak, FALSE)) return;
+
+    GC_obj_kinds[kind].ok_disclaim_proc = proc;
+    GC_obj_kinds[kind].ok_mark_unconditionally = mark_unconditionally;
+}
+
 GC_API void GC_CALL GC_init_finalized_malloc(void)
 {
     GC_init();  /* In case it's not already done.       */
@@ -76,20 +86,16 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
     GC_finalized_kind = GC_new_kind_inner(GC_new_free_list_inner(),
                                           GC_DS_LENGTH, TRUE, TRUE);
     GC_ASSERT(GC_finalized_kind != 0);
-    GC_register_disclaim_proc(GC_finalized_kind, GC_finalized_disclaim, TRUE);
+    GC_register_disclaim_proc_inner(GC_finalized_kind, GC_finalized_disclaim,
+                                    TRUE);
     UNLOCK();
 }
 
 GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
                                               int mark_unconditionally)
 {
-    GC_ASSERT((unsigned)kind < MAXOBJKINDS);
     LOCK();
-    if (!EXPECT(GC_find_leak, FALSE)) {
-        GC_obj_kinds[kind].ok_disclaim_proc = proc;
-        GC_obj_kinds[kind].ok_mark_unconditionally =
-                                        (GC_bool)mark_unconditionally;
-    }
+    GC_register_disclaim_proc_inner(kind, proc, (GC_bool)mark_unconditionally);
     UNLOCK();
 }
 
