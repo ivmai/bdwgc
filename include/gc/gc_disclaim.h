@@ -43,7 +43,7 @@ typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /*obj*/);
 /* Acquires the allocation lock.  No-op in the leak-finding mode.       */
 GC_API void GC_CALL GC_register_disclaim_proc(int /*kind*/,
                                 GC_disclaim_proc /*proc*/,
-                                int /*mark_from_all*/) GC_ATTR_NONNULL(2);
+                                int /*mark_from_all*/);
 
 /* The finalizer closure used by GC_finalized_malloc.                   */
 struct GC_finalizer_closure {
