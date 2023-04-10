@@ -589,7 +589,8 @@ void GC_print_block_list(void)
               (unsigned long)pstats.total_bytes);
 }
 
-/* Currently for debugger use only: */
+/* Currently for debugger use only.  Assumes the allocation lock is */
+/* held but no assertion about it by design.                        */
 GC_API void GC_CALL GC_print_free_list(int kind, size_t sz_in_granules)
 {
     void *flh_next;

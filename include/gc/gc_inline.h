@@ -201,8 +201,9 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
       } \
     } while (0)
 
-/* Print address of each object in the free list.                       */
-/* Defined only if the library has been compiled without NO_DEBUGGING.  */
+/* Print address of each object in the free list.  The caller should    */
+/* hold the GC lock.  Defined only if the library has been compiled     */
+/* without NO_DEBUGGING.                                                */
 GC_API void GC_CALL GC_print_free_list(int /* kind */,
                                        size_t /* sz_in_granules */);
 
