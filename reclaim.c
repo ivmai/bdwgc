@@ -239,6 +239,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
     struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
     int (GC_CALLBACK *disclaim)(void *) = ok->ok_disclaim_proc;
 
+    GC_ASSERT(disclaim != 0);
 #   ifndef THREADS
       GC_ASSERT(sz == hhdr -> hb_sz);
 #   endif
