@@ -363,6 +363,8 @@ GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
                                 GC_reachable_object_proc,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
 
+/* Is the given address in one of the temporary static root sections?   */
+/* Acquires the GC lock.                                                */
 GC_API int GC_CALL GC_is_tmp_root(void *);
 
 GC_API void GC_CALL GC_print_trace(GC_word /* gc_no */);

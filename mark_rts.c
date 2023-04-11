@@ -469,23 +469,32 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
   /* For the debugging purpose only.                                    */
   /* Workaround for the OS mapping and unmapping behind our back:       */
   /* Is the address p in one of the temporary static root sections?     */
+  /* Acquires the GC lock.                                              */
   GC_API int GC_CALL GC_is_tmp_root(void *p)
   {
     static int last_root_set = MAX_ROOT_SETS;
-    int i;
+    int res;
 
+    LOCK();
     if (last_root_set < n_root_sets
         && (word)p >= (word)GC_static_roots[last_root_set].r_start
-        && (word)p < (word)GC_static_roots[last_root_set].r_end)
-        return GC_static_roots[last_root_set].r_tmp;
-    for (i = 0; i < n_root_sets; i++) {
+        && (word)p < (word)GC_static_roots[last_root_set].r_end) {
+      res = (int)GC_static_roots[last_root_set].r_tmp;
+    } else {
+      int i;
+
+      res = 0;
+      for (i = 0; i < n_root_sets; i++) {
         if ((word)p >= (word)GC_static_roots[i].r_start
             && (word)p < (word)GC_static_roots[i].r_end) {
-            last_root_set = i;
-            return GC_static_roots[i].r_tmp;
+          res = (int)GC_static_roots[i].r_tmp;
+          last_root_set = i;
+          break;
         }
+      }
     }
-    return FALSE;
+    UNLOCK();
+    return res;
   }
 #endif /* !NO_DEBUGGING */
 
