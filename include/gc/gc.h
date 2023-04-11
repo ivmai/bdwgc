@@ -686,6 +686,7 @@ GC_API void GC_CALL GC_exclude_static_roots(void * /* low_address */,
                                             void * /* high_address_plus_1 */);
 
 /* Clear the number of entries in the exclusion table.  Wizards only.   */
+/* Should be called typically with the GC lock held.                    */
 GC_API void GC_CALL GC_clear_exclusion_table(void);
 
 /* Clear the set of root segments.  Wizards only.                       */

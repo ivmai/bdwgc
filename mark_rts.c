@@ -525,6 +525,9 @@ struct exclusion GC_excl_table[MAX_EXCLUSIONS];
                                         -- address order.
 */
 
+/* Clear the number of entries in the exclusion table.  The caller  */
+/* should acquire the GC lock (to avoid data race) but no assertion */
+/* about it by design.                                              */
 GC_API void GC_CALL GC_clear_exclusion_table(void)
 {
     GC_excl_table_entries = 0;
