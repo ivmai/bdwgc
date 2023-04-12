@@ -236,7 +236,9 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
         result = GC_generic_malloc_inner_small(lb, k);
         UNLOCK();
     } else {
-        size_t lg;
+#       ifdef THREADS
+          size_t lg;
+#       endif
         size_t lb_rounded;
         GC_bool init;
 
@@ -250,6 +252,10 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
           } else
 #       endif
         /* else */ {
+#         ifndef THREADS
+            size_t lg; /* CPPCHECK */
+#         endif
+
           if (EXPECT(0 == lb, FALSE)) lb = 1;
           lg = ALLOC_REQUEST_GRANS(lb);
           lb_rounded = GRANULES_TO_BYTES(lg);
