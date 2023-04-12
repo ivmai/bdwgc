@@ -2958,6 +2958,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 
 #define COND_DUMP_CHECKS \
           do { \
+            GC_ASSERT(I_HOLD_LOCK()); \
             GC_ASSERT(GC_compute_large_free_bytes() == GC_large_free_bytes); \
             GC_ASSERT(GC_compute_root_size() == GC_root_size); \
           } while (0)

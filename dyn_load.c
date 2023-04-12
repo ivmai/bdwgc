@@ -490,6 +490,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
   ptr_t start, end;
   int i;
 
+  GC_ASSERT(I_HOLD_LOCK());
   /* Make sure struct dl_phdr_info is at least as big as we need.  */
   if (size < offsetof (struct dl_phdr_info, dlpi_phnum)
       + sizeof (info->dlpi_phnum))
@@ -594,6 +595,8 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 {
   int did_something;
+
+  GC_ASSERT(I_HOLD_LOCK());
   if (GC_register_main_static_data())
     return FALSE;
 
@@ -941,12 +944,17 @@ GC_INNER void GC_register_dynamic_libraries(void)
   /* that could possibly have been written to.                          */
   STATIC void GC_cond_add_roots(char *base, char * limit)
   {
-#   ifdef GC_WIN32_THREADS
+#   ifdef THREADS
       char * curr_base = base;
       char * next_stack_lo;
       char * next_stack_hi;
+#   else
+      char * stack_top;
+#   endif
 
-      if (base == limit) return;
+    GC_ASSERT(I_HOLD_LOCK());
+    if (base == limit) return;
+#   ifdef THREADS
       for(;;) {
           GC_get_next_stack(curr_base, limit, &next_stack_lo, &next_stack_hi);
           if ((word)next_stack_lo >= (word)limit) break;
@@ -957,11 +965,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
       if ((word)curr_base < (word)limit)
         GC_add_roots_inner(curr_base, limit, TRUE);
 #   else
-      char * stack_top
-         = (char *)((word)GC_approx_sp() &
-                    ~(word)(GC_sysinfo.dwAllocationGranularity - 1));
-
-      if (base == limit) return;
+      stack_top = (char *)((word)GC_approx_sp() &
+                            ~(word)(GC_sysinfo.dwAllocationGranularity - 1));
       if ((word)limit > (word)stack_top
           && (word)base < (word)GC_stackbottom) {
           /* Part of the stack; ignore it. */
@@ -1075,22 +1080,24 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #endif /* MSWIN32 || MSWINCE || CYGWIN32 */
 
 #if defined(ALPHA) && defined(OSF1)
+# include <loader.h>
 
-#include <loader.h>
+  EXTERN_C_BEGIN
+  extern char *sys_errlist[];
+  extern int sys_nerr;
+  extern int errno;
+  EXTERN_C_END
 
-EXTERN_C_BEGIN
-extern char *sys_errlist[];
-extern int sys_nerr;
-extern int errno;
-EXTERN_C_END
+  GC_INNER void GC_register_dynamic_libraries(void)
+  {
+    ldr_module_t moduleid = LDR_NULL_MODULE;
+    ldr_process_t mypid;
 
-GC_INNER void GC_register_dynamic_libraries(void)
-{
-  ldr_module_t moduleid = LDR_NULL_MODULE;
-  ldr_process_t mypid = ldr_my_process(); /* obtain id of this process */
+    GC_ASSERT(I_HOLD_LOCK());
+    mypid = ldr_my_process(); /* obtain id of this process */
 
-  /* For each module */
-    while (TRUE) {
+    /* For each module. */
+    for (;;) {
       ldr_module_info_t moduleinfo;
       size_t modulereturnsize;
       ldr_region_t region;
@@ -1099,9 +1106,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
       int status = ldr_next_module(mypid, &moduleid);
                                 /* Get the next (first) module */
 
-      /* Any more modules? */
-        if (moduleid == LDR_NULL_MODULE)
-            break;    /* No more modules */
+      if (moduleid == LDR_NULL_MODULE)
+        break;  /* no more modules */
 
       /* Check status AFTER checking moduleid because       */
       /* of a bug in the non-shared ldr_next_module stub.   */
@@ -1129,7 +1135,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
         GC_log_printf("Module pathname: \"%s\"\n", moduleinfo.lmi_name);
 #     endif
 
-      /* For each region in this module */
+      /* For each region in this module. */
         for (region = 0; region < moduleinfo.lmi_nregion; region++) {
           /* Get the region information */
             status = ldr_inq_region(mypid, moduleid, region, &regioninfo,
@@ -1158,11 +1164,10 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
         }
     }
-}
-#endif
+  }
+#endif /* ALPHA && OSF1 */
 
 #if defined(HPUX)
-
 #include <errno.h>
 #include <dl.h>
 
@@ -1175,8 +1180,9 @@ GC_INNER void GC_register_dynamic_libraries(void)
 {
   int index = 1; /* Ordinal position in shared library search list */
 
-  /* For each dynamic library loaded */
-    while (TRUE) {
+  GC_ASSERT(I_HOLD_LOCK());
+  /* For each dynamic library loaded. */
+  for (;;) {
       struct shl_descriptor *shl_desc; /* Shared library info, see dl.h */
       int status = shl_get(index, &shl_desc);
                                 /* Get info about next shared library   */
@@ -1215,7 +1221,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
                            (char *) shl_desc->dend, TRUE);
 
         index++;
-    }
+  }
 }
 #endif /* HPUX */
 
@@ -1223,10 +1229,12 @@ GC_INNER void GC_register_dynamic_libraries(void)
 # include <alloca.h>
 # include <sys/ldr.h>
 # include <sys/errno.h>
+
   GC_INNER void GC_register_dynamic_libraries(void)
   {
       int ldibuflen = 8192;
 
+      GC_ASSERT(I_HOLD_LOCK());
       for (;;) {
         int len;
         struct ld_info *ldi;
@@ -1527,6 +1535,7 @@ GC_INNER GC_bool GC_register_main_static_data(void)
     image_info info;
     int32 cookie = 0;
 
+    GC_ASSERT(I_HOLD_LOCK());
     while (get_next_image_info(0, &cookie, &info) == B_OK) {
       ptr_t data = (ptr_t)info.data;
       GC_add_roots_inner(data, data + info.data_size, TRUE);
