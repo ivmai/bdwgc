@@ -2149,7 +2149,12 @@ GC_INNER void GC_set_fl_marks(ptr_t p);
                                     /* associated with a free list are  */
                                     /* set.  Abort if not.              */
 #endif
+
+#ifndef AMIGA
+  GC_INNER
+#endif
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp);
+
 #ifdef USE_PROC_FOR_LIBRARIES
   GC_INNER void GC_remove_roots_subregion(ptr_t b, ptr_t e);
 #endif
