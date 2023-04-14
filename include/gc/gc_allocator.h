@@ -41,6 +41,7 @@
 #define GC_ALLOCATOR_H
 
 #include "gc.h"
+
 #include <new> // for placement new and bad_alloc
 
 #if !defined(GC_NO_MEMBER_TEMPLATES) && defined(_MSC_VER) && _MSC_VER <= 1200
@@ -54,11 +55,9 @@
 # define GC_ALLOCATOR_THROW_OR_ABORT() throw std::bad_alloc()
 #endif
 
-/* First some helpers to allow us to dispatch on whether or not a type
- * is known to be pointer-free.
- * These are private, except that the client may invoke the
- * GC_DECLARE_PTRFREE macro.
- */
+// First some helpers to allow us to dispatch on whether or not a type
+// is known to be pointer-free.  These are private, except that the client
+// may invoke the GC_DECLARE_PTRFREE macro.
 
 struct GC_true_type {};
 struct GC_false_type {};
@@ -68,8 +67,8 @@ struct GC_type_traits {
   GC_false_type GC_is_ptr_free;
 };
 
-# define GC_DECLARE_PTRFREE(T) \
-template<> struct GC_type_traits<T> { GC_true_type GC_is_ptr_free; }
+#define GC_DECLARE_PTRFREE(T) \
+    template<> struct GC_type_traits<T> { GC_true_type GC_is_ptr_free; }
 
 GC_DECLARE_PTRFREE(char);
 GC_DECLARE_PTRFREE(signed char);
@@ -83,10 +82,10 @@ GC_DECLARE_PTRFREE(unsigned long);
 GC_DECLARE_PTRFREE(float);
 GC_DECLARE_PTRFREE(double);
 GC_DECLARE_PTRFREE(long double);
-/* The client may want to add others.   */
+// The client may want to add others.
 
-// In the following GC_Tp is GC_true_type if we are allocating a
-// pointer-free object.
+// In the following GC_Tp is GC_true_type if we are allocating a pointer-free
+// object.
 template <class GC_Tp>
 inline void * GC_selective_alloc(size_t n, GC_Tp, bool ignore_off_page) {
     void *obj = ignore_off_page ? GC_MALLOC_IGNORE_OFF_PAGE(n) : GC_MALLOC(n);
@@ -96,11 +95,11 @@ inline void * GC_selective_alloc(size_t n, GC_Tp, bool ignore_off_page) {
 }
 
 #if !defined(__WATCOMC__)
-  /* Note: template-id not supported in this context by Watcom compiler. */
+  // Note: template-id not supported in this context by Watcom compiler.
   template <>
   inline void * GC_selective_alloc<GC_true_type>(size_t n, GC_true_type,
                                                  bool ignore_off_page) {
-    void * obj = ignore_off_page ? GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(n)
+    void *obj = ignore_off_page ? GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(n)
                                  : GC_MALLOC_ATOMIC(n);
     if (0 == obj)
       GC_ALLOCATOR_THROW_OR_ABORT();
@@ -167,7 +166,6 @@ class gc_allocator<void> {
   };
 };
 
-
 template <class GC_T1, class GC_T2>
 inline bool operator==(const gc_allocator<GC_T1>&,
                        const gc_allocator<GC_T2>&) GC_NOEXCEPT
@@ -181,7 +179,6 @@ inline bool operator!=(const gc_allocator<GC_T1>&,
 {
   return false;
 }
-
 
 // Now the public gc_allocator_ignore_off_page<T> class.
 template <class GC_Tp>
@@ -260,10 +257,9 @@ inline bool operator!=(const gc_allocator_ignore_off_page<GC_T1>&,
 
 // And the public traceable_allocator class.
 
-/* Note that we currently don't specialize the pointer-free case, since a
- * pointer-free traceable container doesn't make that much sense,
- * though it could become an issue due to abstraction boundaries.
- */
+// Note that we currently do not specialize the pointer-free case,
+// since a pointer-free traceable container does not make that much sense,
+// though it could become an issue due to abstraction boundaries.
 
 template <class GC_Tp>
 class traceable_allocator {
@@ -322,7 +318,6 @@ class traceable_allocator<void> {
     typedef traceable_allocator<GC_Tp1> other;
   };
 };
-
 
 template <class GC_T1, class GC_T2>
 inline bool operator==(const traceable_allocator<GC_T1>&,
