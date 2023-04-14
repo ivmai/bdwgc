@@ -44,6 +44,11 @@
 
 #include <new> // for placement new and bad_alloc
 
+#ifdef GC_NAMESPACE_ALLOCATOR
+namespace boehmgc
+{
+#endif
+
 #if !defined(GC_NO_MEMBER_TEMPLATES) && defined(_MSC_VER) && _MSC_VER <= 1200
   // MSVC++ 6.0 do not support member templates.
 # define GC_NO_MEMBER_TEMPLATES
@@ -332,5 +337,9 @@ inline bool operator!=(const traceable_allocator<GC_T1>&,
 {
   return false;
 }
+
+#ifdef GC_NAMESPACE_ALLOCATOR
+}
+#endif
 
 #endif /* GC_ALLOCATOR_H */

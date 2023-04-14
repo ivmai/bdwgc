@@ -27,7 +27,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define GC_NAMESPACE_ALLOCATOR
 #include "gc/gc_allocator.h"
+using boehmgc::gc_allocator;
+using boehmgc::gc_allocator_ignore_off_page;
+using boehmgc::traceable_allocator;
 
 # include "private/gcconfig.h"
 

@@ -37,6 +37,9 @@ GC_DEBUG        Tested by gc.h (and by gc_cpp.cc).  Causes all-upper-case
 GC_NAMESPACE    Tested by gc_cpp.h. Causes gc_cpp symbols to be defined
                 in "boehmgc" namespace.
 
+GC_NAMESPACE_ALLOCATOR  Tested by gc_allocator.h. Causes gc_allocator<T> and
+                similar symbols to be defined in "boehmgc" namespace.
+
 GC_DEBUG_REPLACEMENT    Tested by gc.h. Causes GC_MALLOC/REALLOC() to be
                 defined as GC_debug_malloc/realloc_replacement().
 
