@@ -582,9 +582,10 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 GC_API GC_ATTR_DEPRECATED void * GC_CALL GC_malloc_stubborn(size_t);
 
 /* The routines that guarantee the requested alignment of the allocated */
-/* memory object.  The align argument should be a power of two and not  */
-/* less than size of a pointer.  Note: GC_base() and GC_size() might    */
-/* return the value which is not the expected one due to the alignment. */
+/* memory object.  The align argument should be non-zero and a power    */
+/* of two; GC_posix_memalign() also requires it to be not less than     */
+/* size of a pointer.  Note: GC_base() and GC_size() might return the   */
+/* values which are not the expected ones due to the alignment.         */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
         GC_memalign(size_t /* align */, size_t /* lb */);
 GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,
@@ -1488,7 +1489,8 @@ typedef void (GC_CALLBACK * GC_abort_func)(const char * /* msg */);
 GC_API void GC_CALL GC_set_abort_func(GC_abort_func) GC_ATTR_NONNULL(1);
 GC_API GC_abort_func GC_CALL GC_get_abort_func(void);
 
-/* A portable way to abort the application because of not enough memory.*/
+/* A portable way to abort the application because of not enough        */
+/* memory.                                                              */
 GC_API void GC_CALL GC_abort_on_oom(void);
 
 /* The following is intended to be used by a higher level       */

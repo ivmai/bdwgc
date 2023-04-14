@@ -472,8 +472,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
     size_t align_m1 = align - 1;
 
     /* Check the alignment argument.    */
-    if (align < sizeof(void *) || (align & align_m1) != 0) return NULL;
-
+    if (EXPECT(0 == align || (align & align_m1) != 0, FALSE)) return NULL;
     if (align <= GRANULE_BYTES) return GC_malloc(lb);
 
     if (align >= HBLKSIZE/2 || lb >= HBLKSIZE/2) {
@@ -504,9 +503,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
 /* This one exists largely to redirect posix_memalign for leaks finding. */
 GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
 {
-  /* Check alignment properly.  */
   size_t align_minus_one = align - 1; /* to workaround a cppcheck warning */
-  if (align < sizeof(void *) || (align_minus_one & align) != 0) {
+
+  /* Check alignment properly.  */
+  if (EXPECT(align < sizeof(void *)
+             || (align_minus_one & align) != 0, FALSE)) {
 #   ifdef MSWINCE
       return ERROR_INVALID_PARAMETER;
 #   else
