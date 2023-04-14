@@ -66,6 +66,11 @@
 #undef posix_memalign
 #define posix_memalign(p,a,n) GC_posix_memalign(p,a,n)
 
+#undef _aligned_malloc
+#define _aligned_malloc(n,a) GC_memalign(a,n) /* reverse args order */
+#undef _aligned_free
+#define _aligned_free(p) GC_free(GC_base(p)) /* non-debug */
+
 #ifndef GC_NO_VALLOC
 # undef valloc
 # define valloc(n) GC_valloc(n)

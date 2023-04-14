@@ -15,6 +15,13 @@ int main(void) {
     GC_INIT();  /* Needed if thread-local allocation is enabled.        */
                 /* FIXME: This is not ideal.                            */
 
+    p[0] = (char *)_aligned_malloc(70 /* size */, 16);
+    if (!p[0]) {
+      fprintf(stderr, "Aligned allocation failed\n");
+      return 1;
+    }
+    _aligned_free(p[0]);
+
     for (i = 0; i < N_TESTS; ++i) {
         p[i] = i > 0 ? (char*)malloc(sizeof(int)+i)
                      : strdup("abc");
