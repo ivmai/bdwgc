@@ -166,6 +166,12 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 # define GC_PLACEMENT_DELETE
 #endif
 
+#if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
+    && !defined(GC_NEW_DELETE_NEED_THROW) && GC_GNUC_PREREQ(4, 2) \
+    && (__cplusplus < 201103L || defined(__clang__))
+# define GC_NEW_DELETE_NEED_THROW
+#endif
+
 #if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 # define GC_OP_NEW_OOM_CHECK(obj) \
                 do { if (!(obj)) GC_abort_on_oom(); } while (0)
@@ -292,8 +298,14 @@ inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
     // Inlining done to avoid mix up of new and delete operators by VC++ 9
     // (due to arbitrary ordering during linking).
 
+#   if defined(GC_NEW_DELETE_NEED_THROW) && defined(GC_INCLUDE_NEW)
+#     define GC_DECL_INLINE_NEW_THROW throw(std::bad_alloc)
+#   else
+#     define GC_DECL_INLINE_NEW_THROW /* empty */
+#   endif
+
 #   ifdef GC_OPERATOR_NEW_ARRAY
-      inline void* operator new[](GC_SIZE_T size)
+      inline void* operator new[](GC_SIZE_T size) GC_DECL_INLINE_NEW_THROW
       {
         void* obj = GC_MALLOC_UNCOLLECTABLE(size);
         GC_OP_NEW_OOM_CHECK(obj);
@@ -306,7 +318,7 @@ inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
       }
 #   endif // GC_OPERATOR_NEW_ARRAY
 
-    inline void* operator new(GC_SIZE_T size)
+    inline void* operator new(GC_SIZE_T size) GC_DECL_INLINE_NEW_THROW
     {
       void* obj = GC_MALLOC_UNCOLLECTABLE(size);
       GC_OP_NEW_OOM_CHECK(obj);

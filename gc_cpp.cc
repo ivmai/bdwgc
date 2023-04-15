@@ -35,7 +35,7 @@ built-in "new" and "delete".
 
 #include <new> // for std, bad_alloc; precedes include of gc_cpp.h
 
-#include "gc/gc_cpp.h" // for GC_OPERATOR_NEW_ARRAY
+#include "gc/gc_cpp.h"
 
 #if !(defined(_MSC_VER) || defined(__DMC__)) || defined(GC_NO_INLINE_STD_NEW)
 
@@ -44,12 +44,6 @@ built-in "new" and "delete".
 # else
     // Use bad_alloc() directly instead of GC_throw_bad_alloc() call.
 #   define GC_ALLOCATOR_THROW_OR_ABORT() throw std::bad_alloc()
-# endif
-
-# if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
-    && !defined(GC_NEW_DELETE_NEED_THROW) && GC_GNUC_PREREQ(4, 2) \
-    && (__cplusplus < 201103L || defined(__clang__))
-#   define GC_NEW_DELETE_NEED_THROW
 # endif
 
 # ifndef GC_NEW_DELETE_NEED_THROW
