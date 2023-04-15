@@ -33,9 +33,10 @@ built-in "new" and "delete".
 #define GC_DONT_INCL_WINDOWS_H
 #include "gc.h"
 
-#include <new> // for bad_alloc, precedes include of gc_cpp.h
-
-#include "gc_cpp.h" // for GC_OPERATOR_NEW_ARRAY
+#ifndef GC_INCLUDE_NEW
+# define GC_INCLUDE_NEW
+#endif
+#include "gc_cpp.h"
 
 #if !(defined(_MSC_VER) || defined(__DMC__)) || defined(GC_NO_INLINE_STD_NEW)
 
@@ -45,24 +46,6 @@ built-in "new" and "delete".
 // Use bad_alloc() directly instead of GC_throw_bad_alloc() call.
 # define GC_ALLOCATOR_THROW_OR_ABORT() throw std::bad_alloc()
 #endif
-
-# if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
-    && !defined(GC_NEW_DELETE_NEED_THROW) && GC_GNUC_PREREQ(4, 2) \
-    && (__cplusplus < 201103L || defined(__clang__))
-#   define GC_NEW_DELETE_NEED_THROW
-# endif
-
-# ifdef GC_NEW_DELETE_NEED_THROW
-#   if __cplusplus >= 201703L || _MSVC_LANG >= 201703L
-      // The "dynamic exception" syntax had been deprecated in C++11
-      // and was removed in C++17.
-#     define GC_DECL_NEW_THROW noexcept(false)
-#   else
-#     define GC_DECL_NEW_THROW throw(std::bad_alloc)
-#   endif
-# else
-#   define GC_DECL_NEW_THROW /* empty */
-# endif
 
   void* operator new(size_t size) GC_DECL_NEW_THROW {
     void* obj = GC_MALLOC_UNCOLLECTABLE(size);
