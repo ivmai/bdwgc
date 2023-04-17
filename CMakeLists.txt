@@ -394,6 +394,11 @@ endif(enable_checksums)
 if (enable_werror)
   if (BORLAND)
     add_compile_options(/w!)
+    if (enable_threads)
+      # Workaround "function should return a value" warning for several
+      # asm functions in atomic_ops/sysdeps/msftc/x86.h.
+      add_compile_options(/w-rvl)
+    endif(enable_threads)
   elseif (MSVC)
     add_compile_options(/WX)
     # Workaround "typedef ignored on left of ..." warning reported in
