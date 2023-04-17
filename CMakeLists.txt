@@ -484,15 +484,19 @@ if (NOT HAVE_EXECINFO_H)
 endif()
 
 # Check for getcontext (uClibc can be configured without it, for example).
-check_function_exists(getcontext HAVE_GETCONTEXT)
-if (NOT HAVE_GETCONTEXT)
-  add_definitions("-DNO_GETCONTEXT")
+if (NOT (BORLAND OR MSVC))
+  check_function_exists(getcontext HAVE_GETCONTEXT)
+  if (NOT HAVE_GETCONTEXT)
+    add_definitions("-DNO_GETCONTEXT")
+  endif()
 endif()
 
 # Check whether dl_iterate_phdr exists (as a strong symbol).
-check_function_exists(dl_iterate_phdr HAVE_DL_ITERATE_PHDR)
-if (HAVE_DL_ITERATE_PHDR)
-  add_definitions("-DHAVE_DL_ITERATE_PHDR")
+if (NOT WIN32)
+  check_function_exists(dl_iterate_phdr HAVE_DL_ITERATE_PHDR)
+  if (HAVE_DL_ITERATE_PHDR)
+    add_definitions("-DHAVE_DL_ITERATE_PHDR")
+  endif(HAVE_DL_ITERATE_PHDR)
 endif()
 
 check_symbol_exists(sigsetjmp setjmp.h HAVE_SIGSETJMP)
