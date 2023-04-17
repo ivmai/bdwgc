@@ -128,6 +128,9 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 
 #ifdef GC_INCLUDE_NEW
 # include <new> // for std, bad_alloc
+#endif
+
+#if defined(GC_INCLUDE_NEW) && (__cplusplus >= 201103L)
 # define GC_PTRDIFF_T std::ptrdiff_t
 # define GC_SIZE_T std::size_t
 #else

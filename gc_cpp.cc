@@ -56,7 +56,7 @@ built-in "new" and "delete".
 #   define GC_DECL_NEW_THROW throw(std::bad_alloc)
 # endif // GC_NEW_DELETE_NEED_THROW
 
-  void* operator new(std::size_t size) GC_DECL_NEW_THROW {
+  void* operator new(GC_SIZE_T size) GC_DECL_NEW_THROW {
     void* obj = GC_MALLOC_UNCOLLECTABLE(size);
     if (0 == obj)
       GC_ALLOCATOR_THROW_OR_ABORT();
@@ -65,7 +65,7 @@ built-in "new" and "delete".
 
 # ifdef _MSC_VER
     // This new operator is used by VC++ in case of Debug builds.
-    void* operator new(std::size_t size, int /* nBlockUse */,
+    void* operator new(GC_SIZE_T size, int /* nBlockUse */,
                        const char* szFileName, int nLine)
     {
 #     ifdef GC_DEBUG
@@ -85,7 +85,7 @@ built-in "new" and "delete".
   }
 
 # if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
-    void* operator new[](std::size_t size) GC_DECL_NEW_THROW {
+    void* operator new[](GC_SIZE_T size) GC_DECL_NEW_THROW {
       void* obj = GC_MALLOC_UNCOLLECTABLE(size);
       if (0 == obj)
         GC_ALLOCATOR_THROW_OR_ABORT();
@@ -94,7 +94,7 @@ built-in "new" and "delete".
 
 #   ifdef _MSC_VER
       // This new operator is used by VC++ 7+ in Debug builds.
-      void* operator new[](std::size_t size, int nBlockUse,
+      void* operator new[](GC_SIZE_T size, int nBlockUse,
                            const char* szFileName, int nLine)
       {
         return operator new(size, nBlockUse, szFileName, nLine);
@@ -107,12 +107,12 @@ built-in "new" and "delete".
 # endif // GC_OPERATOR_NEW_ARRAY
 
 # if __cplusplus >= 201402L || _MSVC_LANG >= 201402L // C++14
-    void operator delete(void* obj, std::size_t) GC_NOEXCEPT {
+    void operator delete(void* obj, GC_SIZE_T) GC_NOEXCEPT {
       GC_FREE(obj);
     }
 
 #   if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
-      void operator delete[](void* obj, std::size_t) GC_NOEXCEPT {
+      void operator delete[](void* obj, GC_SIZE_T) GC_NOEXCEPT {
         GC_FREE(obj);
       }
 #   endif

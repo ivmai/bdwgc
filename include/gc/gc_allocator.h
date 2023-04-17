@@ -60,6 +60,14 @@ namespace boehmgc
 # define GC_ALLOCATOR_THROW_OR_ABORT() throw std::bad_alloc()
 #endif
 
+#if __cplusplus >= 201103L
+# define GC_ALCTR_PTRDIFF_T std::ptrdiff_t
+# define GC_ALCTR_SIZE_T std::size_t
+#else
+# define GC_ALCTR_PTRDIFF_T ptrdiff_t
+# define GC_ALCTR_SIZE_T size_t
+#endif
+
 // First some helpers to allow us to dispatch on whether or not a type
 // is known to be pointer-free.  These are private, except that the client
 // may invoke the GC_DECLARE_PTRFREE macro.
@@ -92,7 +100,8 @@ GC_DECLARE_PTRFREE(long double);
 // In the following GC_Tp is GC_true_type if we are allocating a pointer-free
 // object.
 template <class GC_Tp>
-inline void * GC_selective_alloc(std::size_t n, GC_Tp, bool ignore_off_page) {
+inline void * GC_selective_alloc(GC_ALCTR_SIZE_T n, GC_Tp,
+                                 bool ignore_off_page) {
     void *obj = ignore_off_page ? GC_MALLOC_IGNORE_OFF_PAGE(n) : GC_MALLOC(n);
     if (0 == obj)
       GC_ALLOCATOR_THROW_OR_ABORT();
@@ -102,7 +111,8 @@ inline void * GC_selective_alloc(std::size_t n, GC_Tp, bool ignore_off_page) {
 #if !defined(__WATCOMC__)
   // Note: template-id not supported in this context by Watcom compiler.
   template <>
-  inline void * GC_selective_alloc<GC_true_type>(std::size_t n, GC_true_type,
+  inline void * GC_selective_alloc<GC_true_type>(GC_ALCTR_SIZE_T n,
+                                                 GC_true_type,
                                                  bool ignore_off_page) {
     void *obj = ignore_off_page ? GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(n)
                                  : GC_MALLOC_ATOMIC(n);
@@ -116,8 +126,8 @@ inline void * GC_selective_alloc(std::size_t n, GC_Tp, bool ignore_off_page) {
 template <class GC_Tp>
 class gc_allocator {
 public:
-  typedef std::size_t  size_type;
-  typedef std::ptrdiff_t difference_type;
+  typedef GC_ALCTR_SIZE_T    size_type;
+  typedef GC_ALCTR_PTRDIFF_T difference_type;
   typedef GC_Tp*       pointer;
   typedef const GC_Tp* const_pointer;
   typedef GC_Tp&       reference;
@@ -152,7 +162,7 @@ public:
     { GC_FREE(__p); }
 
   size_type max_size() const GC_NOEXCEPT
-    { return static_cast<std::size_t>(-1) / sizeof(GC_Tp); }
+    { return static_cast<GC_ALCTR_SIZE_T>(-1) / sizeof(GC_Tp); }
 
   void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
   void destroy(pointer __p) { __p->~GC_Tp(); }
@@ -160,8 +170,8 @@ public:
 
 template<>
 class gc_allocator<void> {
-  typedef std::size_t size_type;
-  typedef std::ptrdiff_t difference_type;
+  typedef GC_ALCTR_SIZE_T    size_type;
+  typedef GC_ALCTR_PTRDIFF_T difference_type;
   typedef void*       pointer;
   typedef const void* const_pointer;
   typedef void        value_type;
@@ -189,8 +199,8 @@ inline bool operator!=(const gc_allocator<GC_T1>&,
 template <class GC_Tp>
 class gc_allocator_ignore_off_page {
 public:
-  typedef std::size_t  size_type;
-  typedef std::ptrdiff_t difference_type;
+  typedef GC_ALCTR_SIZE_T    size_type;
+  typedef GC_ALCTR_PTRDIFF_T difference_type;
   typedef GC_Tp*       pointer;
   typedef const GC_Tp* const_pointer;
   typedef GC_Tp&       reference;
@@ -227,7 +237,7 @@ public:
     { GC_FREE(__p); }
 
   size_type max_size() const GC_NOEXCEPT
-    { return static_cast<std::size_t>(-1) / sizeof(GC_Tp); }
+    { return static_cast<GC_ALCTR_SIZE_T>(-1) / sizeof(GC_Tp); }
 
   void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
   void destroy(pointer __p) { __p->~GC_Tp(); }
@@ -235,8 +245,8 @@ public:
 
 template<>
 class gc_allocator_ignore_off_page<void> {
-  typedef std::size_t size_type;
-  typedef std::ptrdiff_t difference_type;
+  typedef GC_ALCTR_SIZE_T    size_type;
+  typedef GC_ALCTR_PTRDIFF_T difference_type;
   typedef void*       pointer;
   typedef const void* const_pointer;
   typedef void        value_type;
@@ -269,8 +279,8 @@ inline bool operator!=(const gc_allocator_ignore_off_page<GC_T1>&,
 template <class GC_Tp>
 class traceable_allocator {
 public:
-  typedef std::size_t  size_type;
-  typedef std::ptrdiff_t difference_type;
+  typedef GC_ALCTR_SIZE_T    size_type;
+  typedef GC_ALCTR_PTRDIFF_T difference_type;
   typedef GC_Tp*       pointer;
   typedef const GC_Tp* const_pointer;
   typedef GC_Tp&       reference;
@@ -305,7 +315,7 @@ public:
     { GC_FREE(__p); }
 
   size_type max_size() const GC_NOEXCEPT
-    { return static_cast<std::size_t>(-1) / sizeof(GC_Tp); }
+    { return static_cast<GC_ALCTR_SIZE_T>(-1) / sizeof(GC_Tp); }
 
   void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
   void destroy(pointer __p) { __p->~GC_Tp(); }
@@ -313,8 +323,8 @@ public:
 
 template<>
 class traceable_allocator<void> {
-  typedef std::size_t size_type;
-  typedef std::ptrdiff_t difference_type;
+  typedef GC_ALCTR_SIZE_T    size_type;
+  typedef GC_ALCTR_PTRDIFF_T difference_type;
   typedef void*       pointer;
   typedef const void* const_pointer;
   typedef void        value_type;
@@ -337,6 +347,9 @@ inline bool operator!=(const traceable_allocator<GC_T1>&,
 {
   return false;
 }
+
+#undef GC_ALCTR_PTRDIFF_T
+#undef GC_ALCTR_SIZE_T
 
 #ifdef GC_NAMESPACE_ALLOCATOR
 }
