@@ -38,7 +38,8 @@ built-in "new" and "delete".
 #endif
 #include "gc/gc_cpp.h"
 
-#if !(defined(_MSC_VER) || defined(__DMC__)) || defined(GC_NO_INLINE_STD_NEW)
+#if (!defined(_MSC_VER) && !defined(__DMC__) \
+     || defined(GC_NO_INLINE_STD_NEW)) && !defined(GC_INLINE_STD_NEW)
 
 # if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 #   define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()
@@ -47,7 +48,8 @@ built-in "new" and "delete".
 #   define GC_ALLOCATOR_THROW_OR_ABORT() throw std::bad_alloc()
 # endif
 
-  void* operator new(GC_SIZE_T size) GC_DECL_NEW_THROW {
+  void* operator new(GC_SIZE_T size) GC_DECL_NEW_THROW
+  {
     void* obj = GC_MALLOC_UNCOLLECTABLE(size);
     if (0 == obj)
       GC_ALLOCATOR_THROW_OR_ABORT();
@@ -71,12 +73,14 @@ built-in "new" and "delete".
     }
 # endif // _MSC_VER
 
-  void operator delete(void* obj) GC_NOEXCEPT {
+  void operator delete(void* obj) GC_NOEXCEPT
+  {
     GC_FREE(obj);
   }
 
 # if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
-    void* operator new[](GC_SIZE_T size) GC_DECL_NEW_THROW {
+    void* operator new[](GC_SIZE_T size) GC_DECL_NEW_THROW
+    {
       void* obj = GC_MALLOC_UNCOLLECTABLE(size);
       if (0 == obj)
         GC_ALLOCATOR_THROW_OR_ABORT();
@@ -92,21 +96,24 @@ built-in "new" and "delete".
       }
 #   endif // _MSC_VER
 
-    void operator delete[](void* obj) GC_NOEXCEPT {
+    void operator delete[](void* obj) GC_NOEXCEPT
+    {
       GC_FREE(obj);
     }
 # endif // GC_OPERATOR_NEW_ARRAY
 
-# if __cplusplus >= 201402L || _MSVC_LANG >= 201402L // C++14
-    void operator delete(void* obj, GC_SIZE_T) GC_NOEXCEPT {
+# ifdef GC_OPERATOR_SIZED_DELETE
+    void operator delete(void* obj, GC_SIZE_T) GC_NOEXCEPT
+    {
       GC_FREE(obj);
     }
 
 #   if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
-      void operator delete[](void* obj, GC_SIZE_T) GC_NOEXCEPT {
+      void operator delete[](void* obj, GC_SIZE_T) GC_NOEXCEPT
+      {
         GC_FREE(obj);
       }
 #   endif
-# endif // C++14
+# endif // GC_OPERATOR_SIZED_DELETE
 
 #endif // !_MSC_VER && !__DMC__ || GC_NO_INLINE_STD_NEW

@@ -163,10 +163,27 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 # define GC_OPERATOR_NEW_ARRAY
 #endif
 
+#if !defined(GC_NO_INLINE_STD_NEW) && !defined(GC_INLINE_STD_NEW) \
+    && (defined(_MSC_VER) || defined(__DMC__) \
+        || ((defined(__BORLANDC__) || defined(__CYGWIN__) \
+             || defined(__CYGWIN32__) || defined(__MINGW32__) \
+             || defined(__WATCOMC__)) \
+            && !defined(GC_BUILD) && !defined(GC_NOT_DLL)))
+  // Inlining done to avoid mix up of new and delete operators by VC++ 9
+  // (due to arbitrary ordering during linking).
+# define GC_INLINE_STD_NEW
+#endif
+
 #if (!defined(__BORLANDC__) || __BORLANDC__ > 0x0620) \
     && !defined(__sgi) && !defined(__WATCOMC__) \
     && (!defined(_MSC_VER) || _MSC_VER > 1020)
 # define GC_PLACEMENT_DELETE
+#endif
+
+#if !defined(GC_OPERATOR_SIZED_DELETE) \
+    && !defined(GC_NO_OPERATOR_SIZED_DELETE) \
+    && (__cplusplus >= 201402L || _MSVC_LANG >= 201402L) // C++14
+# define GC_OPERATOR_SIZED_DELETE
 #endif
 
 #if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
@@ -229,6 +246,9 @@ public:
     // Must be redefined here, since the other overloadings hide
     // the global definition.
   inline void operator delete(void*) GC_NOEXCEPT;
+# ifdef GC_OPERATOR_SIZED_DELETE
+    inline void operator delete(void*, GC_SIZE_T) GC_NOEXCEPT;
+# endif
 
 # ifdef GC_PLACEMENT_DELETE
     inline void operator delete(void*, GCPlacement) GC_NOEXCEPT;
@@ -241,6 +261,9 @@ public:
     inline void* operator new[](GC_SIZE_T, GCPlacement);
     inline void* operator new[](GC_SIZE_T, void*) GC_NOEXCEPT;
     inline void operator delete[](void*) GC_NOEXCEPT;
+#   ifdef GC_OPERATOR_SIZED_DELETE
+      inline void operator delete[](void*, GC_SIZE_T) GC_NOEXCEPT;
+#   endif
 #   ifdef GC_PLACEMENT_DELETE
       inline void operator delete[](void*, GCPlacement) GC_NOEXCEPT;
       inline void operator delete[](void*, void*) GC_NOEXCEPT;
@@ -303,54 +326,47 @@ inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
                               void*) GC_NOEXCEPT;
 #endif
 
-#ifndef GC_NO_INLINE_STD_NEW
+#ifdef GC_INLINE_STD_NEW
 
-# if defined(_MSC_VER) || defined(__DMC__) \
-     || ((defined(__BORLANDC__) || defined(__CYGWIN__) \
-          || defined(__CYGWIN32__) || defined(__MINGW32__) \
-          || defined(__WATCOMC__)) \
-         && !defined(GC_BUILD) && !defined(GC_NOT_DLL))
-    // Inlining done to avoid mix up of new and delete operators by VC++ 9
-    // (due to arbitrary ordering during linking).
-
-#   ifdef GC_OPERATOR_NEW_ARRAY
-      inline void* operator new[](GC_SIZE_T size) GC_DECL_NEW_THROW
-      {
-        void* obj = GC_MALLOC_UNCOLLECTABLE(size);
-        GC_OP_NEW_OOM_CHECK(obj);
-        return obj;
-      }
-
-      inline void operator delete[](void* obj) GC_NOEXCEPT
-      {
-        GC_FREE(obj);
-      }
-#   endif // GC_OPERATOR_NEW_ARRAY
-
-    inline void* operator new(GC_SIZE_T size) GC_DECL_NEW_THROW
+# ifdef GC_OPERATOR_NEW_ARRAY
+    inline void* operator new[](GC_SIZE_T size) GC_DECL_NEW_THROW
     {
       void* obj = GC_MALLOC_UNCOLLECTABLE(size);
       GC_OP_NEW_OOM_CHECK(obj);
       return obj;
     }
 
-    inline void operator delete(void* obj) GC_NOEXCEPT
+    inline void operator delete[](void* obj) GC_NOEXCEPT
+    {
+      GC_FREE(obj);
+    }
+# endif // GC_OPERATOR_NEW_ARRAY
+
+  inline void* operator new(GC_SIZE_T size) GC_DECL_NEW_THROW
+  {
+    void* obj = GC_MALLOC_UNCOLLECTABLE(size);
+    GC_OP_NEW_OOM_CHECK(obj);
+    return obj;
+  }
+
+  inline void operator delete(void* obj) GC_NOEXCEPT
+  {
+    GC_FREE(obj);
+  }
+
+# ifdef GC_OPERATOR_SIZED_DELETE
+    inline void operator delete(void* obj, GC_SIZE_T) GC_NOEXCEPT
     {
       GC_FREE(obj);
     }
 
-#   if __cplusplus >= 201402L || _MSVC_LANG >= 201402L // C++14
-      inline void operator delete(void* obj, GC_SIZE_T) GC_NOEXCEPT {
+#   ifdef GC_OPERATOR_NEW_ARRAY
+      inline void operator delete[](void* obj, GC_SIZE_T) GC_NOEXCEPT
+      {
         GC_FREE(obj);
       }
-
-#     if defined(GC_OPERATOR_NEW_ARRAY)
-        inline void operator delete[](void* obj, GC_SIZE_T) GC_NOEXCEPT {
-          GC_FREE(obj);
-        }
-#     endif
-#   endif // C++14
-# endif // _MSC_VER || __CYGWIN__ && !GC_BUILD && !GC_NOT_DLL
+#   endif
+# endif // GC_OPERATOR_SIZED_DELETE
 
 # ifdef _MSC_VER
     // This new operator is used by VC++ in case of Debug builds.
@@ -377,7 +393,8 @@ inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
 #   endif
 # endif // _MSC_VER
 
-#elif defined(_MSC_VER) /* && GC_NO_INLINE_STD_NEW */
+#elif defined(GC_NO_INLINE_STD_NEW) && defined(_MSC_VER)
+
   // The following ensures that the system default operator new[] does not
   // get undefined, which is what seems to happen on VC++ 6 for some reason
   // if we define a multi-argument operator new[].
@@ -386,6 +403,9 @@ inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
 # ifdef GC_OPERATOR_NEW_ARRAY
     void* operator new[](GC_SIZE_T) GC_DECL_NEW_THROW;
     void operator delete[](void*) GC_NOEXCEPT;
+#   ifdef GC_OPERATOR_SIZED_DELETE
+      void operator delete[](void*, GC_SIZE_T) GC_NOEXCEPT;
+#   endif
 
     void* operator new[](GC_SIZE_T, int /* nBlockUse */,
                          const char* /* szFileName */, int /* nLine */);
@@ -393,9 +413,13 @@ inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
 
   void* operator new(GC_SIZE_T) GC_DECL_NEW_THROW;
   void operator delete(void*) GC_NOEXCEPT;
+# ifdef GC_OPERATOR_SIZED_DELETE
+    void operator delete(void*, GC_SIZE_T) GC_NOEXCEPT;
+# endif
 
   void* operator new(GC_SIZE_T, int /* nBlockUse */,
                      const char* /* szFileName */, int /* nLine */);
+
 #endif // GC_NO_INLINE_STD_NEW && _MSC_VER
 
 #ifdef GC_OPERATOR_NEW_ARRAY
@@ -452,6 +476,13 @@ inline void gc::operator delete(void* obj) GC_NOEXCEPT
   GC_FREE(obj);
 }
 
+#ifdef GC_OPERATOR_SIZED_DELETE
+  inline void gc::operator delete(void* obj, GC_SIZE_T) GC_NOEXCEPT
+  {
+    GC_FREE(obj);
+  }
+#endif
+
 #ifdef GC_PLACEMENT_DELETE
   inline void gc::operator delete(void*, void*) GC_NOEXCEPT {}
 
@@ -481,6 +512,13 @@ inline void gc::operator delete(void* obj) GC_NOEXCEPT
   {
     gc::operator delete(obj);
   }
+
+# ifdef GC_OPERATOR_SIZED_DELETE
+    inline void gc::operator delete[](void* obj, GC_SIZE_T size) GC_NOEXCEPT
+    {
+      gc::operator delete(obj, size);
+    }
+# endif
 
 # ifdef GC_PLACEMENT_DELETE
     inline void gc::operator delete[](void*, void*) GC_NOEXCEPT {}
