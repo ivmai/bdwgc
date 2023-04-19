@@ -384,12 +384,15 @@ inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
   // There seems to be no way to redirect new in this environment without
   // including this everywhere.
 # ifdef GC_OPERATOR_NEW_ARRAY
-    void* operator new[](GC_SIZE_T);
-    void operator delete[](void*);
-# endif
+    void* operator new[](GC_SIZE_T) GC_DECL_NEW_THROW;
+    void operator delete[](void*) GC_NOEXCEPT;
 
-  void* operator new(GC_SIZE_T);
-  void operator delete(void*);
+    void* operator new[](GC_SIZE_T, int /* nBlockUse */,
+                         const char* /* szFileName */, int /* nLine */);
+# endif // GC_OPERATOR_NEW_ARRAY
+
+  void* operator new(GC_SIZE_T) GC_DECL_NEW_THROW;
+  void operator delete(void*) GC_NOEXCEPT;
 
   void* operator new(GC_SIZE_T, int /* nBlockUse */,
                      const char* /* szFileName */, int /* nLine */);
