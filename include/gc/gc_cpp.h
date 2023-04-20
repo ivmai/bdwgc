@@ -186,6 +186,16 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 # define GC_OPERATOR_SIZED_DELETE
 #endif
 
+#if !defined(GC_OPERATOR_NEW_NOTHROW) \
+    && !defined(GC_NO_OPERATOR_NEW_NOTHROW) \
+    && ((defined(GC_INCLUDE_NEW) \
+         && (__cplusplus >= 201103L || _MSVC_LANG >= 201103L)) \
+        || defined(__NOTHROW_T_DEFINED))
+  // Note: this might require defining GC_INCLUDE_NEW by client
+  // before include gc_cpp.h (on Windows).
+# define GC_OPERATOR_NEW_NOTHROW
+#endif
+
 #if !defined(GC_NEW_DELETE_THROW_NOT_NEEDED) \
     && !defined(GC_NEW_DELETE_NEED_THROW) && GC_GNUC_PREREQ(4, 2) \
     && (__cplusplus < 201103L || defined(__clang__))
@@ -340,6 +350,20 @@ inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
     {
       GC_FREE(obj);
     }
+
+#   ifdef GC_OPERATOR_NEW_NOTHROW
+      inline /* GC_ATTR_MALLOC */ void* operator new[](GC_SIZE_T size,
+                                            const std::nothrow_t&) GC_NOEXCEPT
+      {
+        return GC_MALLOC_UNCOLLECTABLE(size);
+      }
+
+      inline void operator delete[](void* obj,
+                                    const std::nothrow_t&) GC_NOEXCEPT
+      {
+        GC_FREE(obj);
+      }
+#   endif // GC_OPERATOR_NEW_NOTHROW
 # endif // GC_OPERATOR_NEW_ARRAY
 
   inline void* operator new(GC_SIZE_T size) GC_DECL_NEW_THROW
@@ -353,6 +377,19 @@ inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
   {
     GC_FREE(obj);
   }
+
+# ifdef GC_OPERATOR_NEW_NOTHROW
+    inline /* GC_ATTR_MALLOC */ void* operator new(GC_SIZE_T size,
+                                        const std::nothrow_t&) GC_NOEXCEPT
+    {
+      return GC_MALLOC_UNCOLLECTABLE(size);
+    }
+
+    inline void operator delete(void* obj, const std::nothrow_t&) GC_NOEXCEPT
+    {
+      GC_FREE(obj);
+    }
+# endif // GC_OPERATOR_NEW_NOTHROW
 
 # ifdef GC_OPERATOR_SIZED_DELETE
     inline void operator delete(void* obj, GC_SIZE_T) GC_NOEXCEPT
@@ -403,6 +440,11 @@ inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
 # ifdef GC_OPERATOR_NEW_ARRAY
     void* operator new[](GC_SIZE_T) GC_DECL_NEW_THROW;
     void operator delete[](void*) GC_NOEXCEPT;
+#   ifdef GC_OPERATOR_NEW_NOTHROW
+      /* GC_ATTR_MALLOC */ void* operator new[](GC_SIZE_T,
+                                    const std::nothrow_t&) GC_NOEXCEPT;
+      void operator delete[](void*, const std::nothrow_t&) GC_NOEXCEPT;
+#   endif
 #   ifdef GC_OPERATOR_SIZED_DELETE
       void operator delete[](void*, GC_SIZE_T) GC_NOEXCEPT;
 #   endif
@@ -413,6 +455,11 @@ inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
 
   void* operator new(GC_SIZE_T) GC_DECL_NEW_THROW;
   void operator delete(void*) GC_NOEXCEPT;
+# ifdef GC_OPERATOR_NEW_NOTHROW
+    /* GC_ATTR_MALLOC */ void* operator new(GC_SIZE_T,
+                                    const std::nothrow_t&) GC_NOEXCEPT;
+    void operator delete(void*, const std::nothrow_t&) GC_NOEXCEPT;
+# endif
 # ifdef GC_OPERATOR_SIZED_DELETE
     void operator delete(void*, GC_SIZE_T) GC_NOEXCEPT;
 # endif

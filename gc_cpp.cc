@@ -78,6 +78,18 @@ built-in "new" and "delete".
     GC_FREE(obj);
   }
 
+# ifdef GC_OPERATOR_NEW_NOTHROW
+    void* operator new(GC_SIZE_T size, const std::nothrow_t&) GC_NOEXCEPT
+    {
+      return GC_MALLOC_UNCOLLECTABLE(size);
+    }
+
+    void operator delete(void* obj, const std::nothrow_t&) GC_NOEXCEPT
+    {
+      GC_FREE(obj);
+    }
+# endif // GC_OPERATOR_NEW_NOTHROW
+
 # if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
     void* operator new[](GC_SIZE_T size) GC_DECL_NEW_THROW
     {
@@ -100,6 +112,18 @@ built-in "new" and "delete".
     {
       GC_FREE(obj);
     }
+
+#   ifdef GC_OPERATOR_NEW_NOTHROW
+      void* operator new[](GC_SIZE_T size, const std::nothrow_t&) GC_NOEXCEPT
+      {
+        return GC_MALLOC_UNCOLLECTABLE(size);
+      }
+
+      void operator delete[](void* obj, const std::nothrow_t&) GC_NOEXCEPT
+      {
+        GC_FREE(obj);
+      }
+#   endif // GC_OPERATOR_NEW_NOTHROW
 # endif // GC_OPERATOR_NEW_ARRAY
 
 # ifdef GC_OPERATOR_SIZED_DELETE
