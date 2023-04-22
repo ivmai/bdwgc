@@ -44,7 +44,7 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
        /* on such fragments is always multiple of 4 (a link to the next */
        /* fragment, or NULL).  If it is desirable to have a finalizer   */
        /* which does not use the first word for storing finalization    */
-       /* info, GC_reclaim_with_finalization must be extended to clear  */
+       /* info, GC_disclaim_and_reclaim() must be extended to clear     */
        /* fragments so that the assumption holds for the selected word. */
         const struct GC_finalizer_closure *fc
                         = (struct GC_finalizer_closure *)(fc_word
