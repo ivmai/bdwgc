@@ -491,7 +491,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     lb *= n;
     switch(descr_type) {
         case NO_MEM:
-            return NULL;
+            return (*GC_get_oom_fn())(lb);
         case SIMPLE:
             return GC_malloc_explicitly_typed(lb, simple_d);
         case LEAF:
