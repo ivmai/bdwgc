@@ -349,7 +349,7 @@ jobs:
     - CONF_OPTIONS="--without-libatomic-ops --enable-munmap --enable-cplusplus --enable-static"
   - compiler: gcc
     env:
-    - CONF_CFLAGS="-D _FORTIFY_SOURCE=2 -D AO_USE_PTHREAD_DEFS"
+    - CONF_CFLAGS="-O3 -D _FORTIFY_SOURCE=2 -D AO_USE_PTHREAD_DEFS -D RANDOM_ONE_CPU_CORE"
     - CONF_OPTIONS="--without-libatomic-ops --enable-gc-assertions --enable-cplusplus --enable-static"
   - compiler: clang
     env:
@@ -361,7 +361,7 @@ jobs:
         - libatomic-ops-dev
     compiler: gcc
     env:
-    - CONF_CFLAGS="-D AO_USE_PTHREAD_DEFS"
+    - CONF_CFLAGS="-O3 -D AO_USE_PTHREAD_DEFS -D RANDOM_ONE_CPU_CORE"
     - CONF_OPTIONS="--with-libatomic-ops=yes --enable-cplusplus"
     - CFLAGS_EXTRA="-D GC_NO_FINALIZATION"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -371,7 +371,7 @@ jobs:
         - libatomic-ops-dev
     compiler: clang
     env:
-    - CONF_CFLAGS="-D AO_USE_PTHREAD_DEFS"
+    - CONF_CFLAGS="-O3 -D AO_USE_PTHREAD_DEFS -D RANDOM_ONE_CPU_CORE"
     - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus --disable-shared --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: gcc
