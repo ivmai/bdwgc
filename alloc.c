@@ -621,8 +621,6 @@ GC_INNER void GC_collect_a_little_inner(int n)
     IF_CANCEL(int cancel_state;)
 
     GC_ASSERT(I_HOLD_LOCK());
-    if (GC_dont_gc) return;
-
     DISABLE_CANCEL(cancel_state);
     if (GC_incremental && GC_collection_in_progress()) {
         int i;
@@ -630,6 +628,7 @@ GC_INNER void GC_collect_a_little_inner(int n)
 
         for (i = GC_deficit; i < max_deficit; i++) {
             if (GC_mark_some((ptr_t)0)) {
+                if (GC_dont_gc) break;
                 /* Need to finish a collection */
 #               ifdef SAVE_CALL_CHAIN
                     GC_save_callers(GC_last_stack);
@@ -661,7 +660,7 @@ GC_INNER void GC_collect_a_little_inner(int n)
             if (GC_deficit < 0)
                 GC_deficit = 0;
         }
-    } else {
+    } else if (!GC_dont_gc) {
         GC_maybe_gc();
     }
     RESTORE_CANCEL(cancel_state);
@@ -676,7 +675,9 @@ GC_API int GC_CALL GC_collect_a_little(void)
     DCL_LOCK_STATE;
 
     LOCK();
-    GC_collect_a_little_inner(1);
+    if (!GC_dont_gc) {
+      GC_collect_a_little_inner(1);
+    }
     result = (int)GC_collection_in_progress();
     UNLOCK();
     if (!result && GC_debugging_started) GC_print_all_smashed();
@@ -1521,7 +1522,8 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
     while (*flh == 0) {
       ENTER_GC();
 #     ifndef GC_DISABLE_INCREMENTAL
-        if (GC_incremental && GC_time_limit != GC_TIME_UNLIMITED) {
+        if (GC_incremental && GC_time_limit != GC_TIME_UNLIMITED
+            && !GC_dont_gc) {
           /* True incremental mode, not just generational.      */
           /* Do our share of marking work.                      */
           GC_collect_a_little_inner(1);
@@ -1538,7 +1540,7 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
         if (*flh == 0) {
           ENTER_GC();
           if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED
-              && !tried_minor) {
+              && !tried_minor && !GC_dont_gc) {
             GC_collect_a_little_inner(1);
             tried_minor = TRUE;
           } else {

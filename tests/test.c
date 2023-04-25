@@ -1710,7 +1710,8 @@ void check_heap_stats(void)
 #   endif
     /* Garbage collect repeatedly so that all inaccessible objects      */
     /* can be finalized.                                                */
-      while (GC_collect_a_little()) { }
+      if (!GC_is_disabled())
+        while (GC_collect_a_little()) { }
       for (i = 0; i < 16; i++) {
         GC_gcollect();
 #       ifndef GC_NO_FINALIZATION
