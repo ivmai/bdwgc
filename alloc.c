@@ -553,7 +553,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
       GC_COND_LOG_PRINTF(
             "GC_try_to_collect_inner: finishing collection in progress\n");
       /* Just finish collection already in progress.    */
-        while(GC_collection_in_progress()) {
+        do {
             if ((*stop_func)()) {
               /* TODO: Notify GC_EVENT_ABANDON */
               return FALSE;
@@ -561,7 +561,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
             ENTER_GC();
             GC_collect_a_little_inner(1);
             EXIT_GC();
-        }
+        } while (GC_collection_in_progress());
     }
     GC_notify_full_gc();
 #   ifndef NO_CLOCK
@@ -747,11 +747,11 @@ GC_API int GC_CALL GC_collect_a_little(void)
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
-    if (!GC_dont_gc) {
-      ENTER_GC();
-      GC_collect_a_little_inner(1);
-      EXIT_GC();
-    }
+    ENTER_GC();
+    /* Note: if the collection is in progress, this may do marking (not */
+    /* stopping the world) even in case of disabled GC.                 */
+    GC_collect_a_little_inner(1);
+    EXIT_GC();
     result = (int)GC_collection_in_progress();
     UNLOCK();
     if (!result && GC_debugging_started) GC_print_all_smashed();

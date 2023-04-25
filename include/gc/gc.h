@@ -957,7 +957,9 @@ GC_API void GC_CALL GC_start_incremental_collection(void);
 /* to marking from one page.  May do more work if further       */
 /* progress requires it, e.g. if incremental collection is      */
 /* disabled.  It is reasonable to call this in a wait loop      */
-/* until it returns 0.                                          */
+/* until it returns 0.  If GC is disabled but the incremental   */
+/* collection is already ongoing, then perform marking anyway   */
+/* but not stopping the world (and without the reclaim phase).  */
 GC_API int GC_CALL GC_collect_a_little(void);
 
 /* Allocate an object of size lb bytes.  The client guarantees that as  */
