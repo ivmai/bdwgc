@@ -395,9 +395,11 @@ GC_API void GC_CALL GC_start_incremental_collection(void)
 
     LOCK();
     GC_should_start_incremental_collection = TRUE;
-    ENTER_GC();
-    GC_collect_a_little_inner(1);
-    EXIT_GC();
+    if (!GC_dont_gc) {
+      ENTER_GC();
+      GC_collect_a_little_inner(1);
+      EXIT_GC();
+    }
     UNLOCK();
 # endif
 }
@@ -686,8 +688,6 @@ GC_INNER void GC_collect_a_little_inner(int n)
 
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(GC_is_initialized);
-    if (GC_dont_gc) return;
-
     DISABLE_CANCEL(cancel_state);
     if (GC_incremental && GC_collection_in_progress()) {
         int i;
@@ -705,7 +705,7 @@ GC_INNER void GC_collect_a_little_inner(int n)
             GC_parallel_mark_disabled = FALSE;
 #       endif
 
-        if (i < max_deficit) {
+        if (i < max_deficit && !GC_dont_gc) {
             GC_ASSERT(!GC_collection_in_progress());
             /* Need to follow up with a full collection.        */
 #           ifdef SAVE_CALL_CHAIN
@@ -732,7 +732,7 @@ GC_INNER void GC_collect_a_little_inner(int n)
             if (GC_deficit < 0)
                 GC_deficit = 0;
         }
-    } else {
+    } else if (!GC_dont_gc) {
         GC_maybe_gc();
     }
     RESTORE_CANCEL(cancel_state);
@@ -747,9 +747,11 @@ GC_API int GC_CALL GC_collect_a_little(void)
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
-    ENTER_GC();
-    GC_collect_a_little_inner(1);
-    EXIT_GC();
+    if (!GC_dont_gc) {
+      ENTER_GC();
+      GC_collect_a_little_inner(1);
+      EXIT_GC();
+    }
     result = (int)GC_collection_in_progress();
     UNLOCK();
     if (!result && GC_debugging_started) GC_print_all_smashed();
@@ -1732,7 +1734,8 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
     while (NULL == *flh) {
       ENTER_GC();
 #     ifndef GC_DISABLE_INCREMENTAL
-        if (GC_incremental && GC_time_limit != GC_TIME_UNLIMITED) {
+        if (GC_incremental && GC_time_limit != GC_TIME_UNLIMITED
+            && !GC_dont_gc) {
           /* True incremental mode, not just generational.      */
           /* Do our share of marking work.                      */
           GC_collect_a_little_inner(1);
@@ -1755,7 +1758,7 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
         if (NULL == *flh) {
           ENTER_GC();
           if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED
-              && !tried_minor) {
+              && !tried_minor && !GC_dont_gc) {
             GC_collect_a_little_inner(1);
             tried_minor = TRUE;
           } else {
