@@ -1648,6 +1648,9 @@ GC_INNER void GC_thr_init(void)
       cpu_set_t mask;
       int cpu_set_cnt = 0;
       int cpu_lowest_set = 0;
+#     ifdef RANDOM_ONE_CPU_CORE
+        int cpu_highest_set = 0;
+#     endif
       int i = GC_nprocs > 1 ? GC_nprocs : 2; /* check at least 2 cores */
 
       if (sched_getaffinity(0 /* current process */,
@@ -1655,12 +1658,22 @@ GC_INNER void GC_thr_init(void)
         ABORT_ARG1("sched_getaffinity failed", ": errno= %d", errno);
       while (i-- > 0)
         if (CPU_ISSET(i, &mask)) {
+#         ifdef RANDOM_ONE_CPU_CORE
+            if (i + 1 != cpu_lowest_set) cpu_highest_set = i;
+#         endif
           cpu_lowest_set = i;
           cpu_set_cnt++;
         }
       if (0 == cpu_set_cnt)
         ABORT("sched_getaffinity returned empty mask");
       if (cpu_set_cnt > 1) {
+#       ifdef RANDOM_ONE_CPU_CORE
+          if (cpu_lowest_set < cpu_highest_set) {
+            /* Pseudo-randomly adjust the bit to set among valid ones.  */
+            cpu_lowest_set += (unsigned)getpid() %
+                                (cpu_highest_set - cpu_lowest_set + 1);
+          }
+#       endif
         CPU_ZERO(&mask);
         CPU_SET(cpu_lowest_set, &mask); /* select just one CPU */
         if (sched_setaffinity(0, sizeof(mask), &mask) == -1)
