@@ -469,53 +469,77 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
   return LEAF;
 }
 
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
-                                                        size_t lb, GC_descr d)
-{
-    void *op;
-    size_t nwords;
-    GC_descr simple_d;
-    complex_descriptor *complex_d;
-    int descr_type;
-    struct LeafDescriptor leaf;
+struct GC_calloc_typed_descr_s {
+  struct LeafDescriptor leaf;
+  GC_descr simple_d;
+  complex_descriptor *complex_d;
+  size_t alloc_lb;
+  int descr_type;
+};
 
+STATIC void GC_calloc_prepare_explicitly_typed(
+                                struct GC_calloc_typed_descr_s *pctd,
+                                size_t n, size_t lb, GC_descr d)
+{
     GC_STATIC_ASSERT(sizeof(struct LeafDescriptor) % sizeof(word) == 0);
     GC_ASSERT(GC_explicit_typing_initialized);
     if (EXPECT(0 == lb || 0 == n, FALSE)) lb = n = 1;
     if (EXPECT((lb | n) > GC_SQRT_SIZE_MAX, FALSE) /* fast initial check */
-        && n > GC_SIZE_MAX / lb)
-      return (*GC_get_oom_fn())(GC_SIZE_MAX); /* n*lb overflow */
-
-    descr_type = GC_make_array_descriptor((word)n, (word)lb, d,
-                                          &simple_d, &complex_d, &leaf);
-    lb *= n;
-    switch(descr_type) {
-        case NO_MEM:
-            return (*GC_get_oom_fn())(lb);
-        case SIMPLE:
-            return GC_malloc_explicitly_typed(lb, simple_d);
-        case LEAF:
-            lb = SIZET_SAT_ADD(lb,
-                        sizeof(struct LeafDescriptor) + TYPD_EXTRA_BYTES);
-            break;
-        case COMPLEX:
-            lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
-            break;
+        && n > GC_SIZE_MAX / lb) {
+      pctd -> alloc_lb = GC_SIZE_MAX; /* n*lb overflow */
+      pctd -> descr_type = NO_MEM;
+      /* The rest of the fields are unset. */
+      return;
     }
-    op = GC_malloc_kind(lb, GC_array_kind);
+
+    pctd -> descr_type = GC_make_array_descriptor((word)n, (word)lb, d,
+                                &(pctd -> simple_d), &(pctd -> complex_d),
+                                &(pctd -> leaf));
+    switch (pctd -> descr_type) {
+    case NO_MEM:
+    case SIMPLE:
+      pctd -> alloc_lb = lb * n;
+      break;
+    case LEAF:
+      pctd -> alloc_lb = SIZET_SAT_ADD(lb * n,
+                        sizeof(struct LeafDescriptor) + TYPD_EXTRA_BYTES);
+      break;
+    case COMPLEX:
+      pctd -> alloc_lb = SIZET_SAT_ADD(lb * n, TYPD_EXTRA_BYTES);
+      break;
+    }
+}
+
+STATIC GC_ATTR_MALLOC void * GC_calloc_do_explicitly_typed(
+                                const struct GC_calloc_typed_descr_s *pctd)
+{
+    void *op;
+    size_t nwords;
+
+    switch (pctd -> descr_type) {
+    case NO_MEM:
+      return (*GC_get_oom_fn())(pctd -> alloc_lb);
+    case SIMPLE:
+      return GC_malloc_explicitly_typed(pctd -> alloc_lb, pctd -> simple_d);
+    case LEAF:
+    case COMPLEX:
+      break;
+    }
+    op = GC_malloc_kind(pctd -> alloc_lb, GC_array_kind);
     if (EXPECT(NULL == op, FALSE))
-        return NULL;
+      return NULL;
+
     nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));
-    if (descr_type == LEAF) {
+    if (pctd -> descr_type == LEAF) {
       /* Set up the descriptor inside the object itself.        */
       struct LeafDescriptor *lp =
                 (struct LeafDescriptor *)((word *)op + nwords -
                         (BYTES_TO_WORDS(sizeof(struct LeafDescriptor)) + 1));
 
       lp -> ld_tag = LEAF_TAG;
-      lp -> ld_size = leaf.ld_size;
-      lp -> ld_nelements = leaf.ld_nelements;
-      lp -> ld_descriptor = leaf.ld_descriptor;
+      lp -> ld_size = pctd -> leaf.ld_size;
+      lp -> ld_nelements = pctd -> leaf.ld_nelements;
+      lp -> ld_descriptor = pctd -> leaf.ld_descriptor;
       /* Hold the allocation lock while writing the descriptor word     */
       /* to the object to ensure that the descriptor contents are seen  */
       /* by GC_array_mark_proc as expected.                             */
@@ -530,11 +554,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     } else {
 #     ifndef GC_NO_FINALIZATION
         LOCK();
-        ((word *)op)[nwords - 1] = (word)complex_d;
+        ((word *)op)[nwords - 1] = (word)(pctd -> complex_d);
         UNLOCK();
 
         GC_dirty((word *)op + nwords - 1);
-        REACHABLE_AFTER_DIRTY(complex_d);
+        REACHABLE_AFTER_DIRTY(pctd -> complex_d);
 
         /* Make sure the descriptor is cleared once there is any danger */
         /* it may have been collected.                                  */
@@ -543,10 +567,20 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
 #     endif
         {
             /* Couldn't register it due to lack of memory.  Punt.       */
-            return (*GC_get_oom_fn())(lb);
+            return (*GC_get_oom_fn())(pctd -> alloc_lb);
         }
     }
     return op;
+}
+
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
+                                                                size_t lb,
+                                                                GC_descr d)
+{
+  struct GC_calloc_typed_descr_s ctd;
+
+  GC_calloc_prepare_explicitly_typed(&ctd, n, lb, d);
+  return GC_calloc_do_explicitly_typed(&ctd);
 }
 
 /* Return the size of the object described by complex_d.  It would be   */
@@ -631,7 +665,7 @@ static complex_descriptor *get_complex_descr(word *addr, size_t nwords)
   return (complex_descriptor *)addr[nwords - 1];
 }
 
-/* Used by GC_calloc_explicitly_typed via GC_array_kind.        */
+/* Used by GC_calloc_do_explicitly_typed via GC_array_kind.     */
 STATIC mse *GC_array_mark_proc(word *addr, mse *mark_stack_ptr,
                                mse *mark_stack_limit, word env)
 {
