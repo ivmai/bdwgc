@@ -1331,6 +1331,9 @@ void typed_test(void)
     GC_descr d4 = GC_make_descriptor(bm_huge, 320);
     GC_word * x = (GC_word *)GC_MALLOC_EXPLICITLY_TYPED(
                                 320 * sizeof(GC_word) + 123, d4);
+#   ifndef GC_DEBUG
+      struct GC_calloc_typed_descr_s ctd_l;
+#   endif
     int i;
 
     AO_fetch_and_add1(&collectable_count);
@@ -1345,6 +1348,13 @@ void typed_test(void)
     d1 = GC_make_descriptor(bm3, 2);
     GC_set_bit(bm2, 1);
     d2 = GC_make_descriptor(bm2, 2);
+#   ifndef GC_DEBUG
+      if (GC_calloc_prepare_explicitly_typed(&ctd_l, sizeof(ctd_l), 1001,
+                                             3 * sizeof(GC_word), d2) != 1) {
+        GC_printf("Out of memory in calloc typed prepare\n");
+        exit(1);
+      }
+#   endif
     old = 0;
     for (i = 0; i < 4000; i++) {
         if ((i & 0xff) != 0) {
@@ -1386,9 +1396,12 @@ void typed_test(void)
           newP = (GC_word *)GC_CALLOC_EXPLICITLY_TYPED(7, 3 * sizeof(GC_word),
                                                        d2);
         } else {
-          newP = (GC_word *)GC_CALLOC_EXPLICITLY_TYPED(1001,
-                                                       3 * sizeof(GC_word),
-                                                       d2);
+#         ifdef GC_DEBUG
+            newP = (GC_word *)GC_CALLOC_EXPLICITLY_TYPED(1001,
+                                                3 * sizeof(GC_word), d2);
+#         else
+            newP = GC_calloc_do_explicitly_typed(&ctd_l, sizeof(ctd_l));
+#         endif
           if (newP != NULL && (newP[0] != 0 || newP[1] != 0)) {
             GC_printf("Bad initialization by GC_calloc_explicitly_typed\n");
             FAIL;

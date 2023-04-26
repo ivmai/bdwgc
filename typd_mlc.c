@@ -473,23 +473,28 @@ struct GC_calloc_typed_descr_s {
   struct LeafDescriptor leaf;
   GC_descr simple_d;
   complex_descriptor *complex_d;
-  size_t alloc_lb;
-  int descr_type;
+  word alloc_lb; /* size_t actually */
+  signed_word descr_type; /* int actually */
 };
 
-STATIC void GC_calloc_prepare_explicitly_typed(
+GC_API int GC_CALL GC_calloc_prepare_explicitly_typed(
                                 struct GC_calloc_typed_descr_s *pctd,
+                                size_t ctd_sz,
                                 size_t n, size_t lb, GC_descr d)
 {
     GC_STATIC_ASSERT(sizeof(struct LeafDescriptor) % sizeof(word) == 0);
+    GC_STATIC_ASSERT(sizeof(struct GC_calloc_typed_descr_s)
+                        == GC_CALLOC_TYPED_DESCR_WORDS * sizeof(word));
     GC_ASSERT(GC_explicit_typing_initialized);
+    GC_ASSERT(sizeof(struct GC_calloc_typed_descr_s) == ctd_sz);
+    (void)ctd_sz; /* unused currently */
     if (EXPECT(0 == lb || 0 == n, FALSE)) lb = n = 1;
     if (EXPECT((lb | n) > GC_SQRT_SIZE_MAX, FALSE) /* fast initial check */
         && n > GC_SIZE_MAX / lb) {
       pctd -> alloc_lb = GC_SIZE_MAX; /* n*lb overflow */
       pctd -> descr_type = NO_MEM;
       /* The rest of the fields are unset. */
-      return;
+      return 0; /* failure */
     }
 
     pctd -> descr_type = GC_make_array_descriptor((word)n, (word)lb, d,
@@ -498,34 +503,42 @@ STATIC void GC_calloc_prepare_explicitly_typed(
     switch (pctd -> descr_type) {
     case NO_MEM:
     case SIMPLE:
-      pctd -> alloc_lb = lb * n;
+      pctd -> alloc_lb = (word)lb * n;
       break;
     case LEAF:
-      pctd -> alloc_lb = SIZET_SAT_ADD(lb * n,
+      pctd -> alloc_lb = (word)SIZET_SAT_ADD(lb * n,
                         sizeof(struct LeafDescriptor) + TYPD_EXTRA_BYTES);
       break;
     case COMPLEX:
-      pctd -> alloc_lb = SIZET_SAT_ADD(lb * n, TYPD_EXTRA_BYTES);
+      pctd -> alloc_lb = (word)SIZET_SAT_ADD(lb * n, TYPD_EXTRA_BYTES);
       break;
     }
+    return 1; /* success */
 }
 
-STATIC GC_ATTR_MALLOC void * GC_calloc_do_explicitly_typed(
-                                const struct GC_calloc_typed_descr_s *pctd)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_do_explicitly_typed(
+                                const struct GC_calloc_typed_descr_s *pctd,
+                                size_t ctd_sz)
 {
     void *op;
     size_t nwords;
 
+    GC_ASSERT(sizeof(struct GC_calloc_typed_descr_s) == ctd_sz);
+    (void)ctd_sz; /* unused currently */
     switch (pctd -> descr_type) {
     case NO_MEM:
-      return (*GC_get_oom_fn())(pctd -> alloc_lb);
+      return (*GC_get_oom_fn())((size_t)(pctd -> alloc_lb));
     case SIMPLE:
-      return GC_malloc_explicitly_typed(pctd -> alloc_lb, pctd -> simple_d);
+      return GC_malloc_explicitly_typed((size_t)(pctd -> alloc_lb),
+                                        pctd -> simple_d);
     case LEAF:
     case COMPLEX:
       break;
+    default:
+      ABORT_RET("Bad descriptor type");
+      return NULL;
     }
-    op = GC_malloc_kind(pctd -> alloc_lb, GC_array_kind);
+    op = GC_malloc_kind((size_t)(pctd -> alloc_lb), GC_array_kind);
     if (EXPECT(NULL == op, FALSE))
       return NULL;
 
@@ -567,7 +580,7 @@ STATIC GC_ATTR_MALLOC void * GC_calloc_do_explicitly_typed(
 #     endif
         {
             /* Couldn't register it due to lack of memory.  Punt.       */
-            return (*GC_get_oom_fn())(pctd -> alloc_lb);
+            return (*GC_get_oom_fn())((size_t)(pctd -> alloc_lb));
         }
     }
     return op;
@@ -579,8 +592,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
 {
   struct GC_calloc_typed_descr_s ctd;
 
-  GC_calloc_prepare_explicitly_typed(&ctd, n, lb, d);
-  return GC_calloc_do_explicitly_typed(&ctd);
+  (void)GC_calloc_prepare_explicitly_typed(&ctd, sizeof(ctd), n, lb, d);
+  return GC_calloc_do_explicitly_typed(&ctd, sizeof(ctd));
 }
 
 /* Return the size of the object described by complex_d.  It would be   */
