@@ -2799,7 +2799,7 @@ GC_EXTERN signed_word GC_bytes_found;
   GC_INNER void GC_mark_thread_local_free_lists(void);
 #endif
 
-#if defined(GLIBC_2_19_TSX_BUG) && defined(THREADS)
+#if defined(GLIBC_2_19_TSX_BUG) && defined(GC_PTHREADS_PARAMARK)
   /* Parse string like <major>[.<minor>[<tail>]] and return major value. */
   GC_INNER int GC_parse_version(int *pminor, const char *pverstr);
 #endif
