@@ -2906,7 +2906,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 }
 
 #if defined(SOFT_VDB) && !defined(NO_SOFT_VDB_LINUX_VER_RUNTIME_CHECK) \
-    || (defined(GLIBC_2_19_TSX_BUG) && defined(THREADS))
+    || (defined(GLIBC_2_19_TSX_BUG) && defined(PARALLEL_MARK))
   GC_INNER int GC_parse_version(int *pminor, const char *pverstr) {
     char *endp;
     unsigned long value = strtoul(pverstr, &endp, 10);
