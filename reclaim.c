@@ -488,6 +488,9 @@ struct Print_stats
 
 /* Return the number of set mark bits in the given header.      */
 /* Remains externally visible as used by GNU GCJ currently.     */
+/* There could be a race between GC_clear_hdr_marks and this    */
+/* function but the latter is for a debug purpose.              */
+GC_ATTR_NO_SANITIZE_THREAD
 unsigned GC_n_set_marks(hdr *hhdr)
 {
     unsigned result = 0;
