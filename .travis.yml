@@ -600,9 +600,11 @@ jobs:
   - addons:
       apt:
         packages:
-        - clang-14
-    compiler: clang-14
-    dist: jammy
+        - clang-12
+        sources:
+        - ubuntu-toolchain-r-test
+    compiler: clang-12
+    dist: focal
     language: c
     env:
     - CFLAGS_EXTRA="-O3 -fsanitize=thread -fno-omit-frame-pointer"
@@ -620,7 +622,6 @@ jobs:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_INCREMENTAL -fno-omit-frame-pointer -D TEST_FORK_WITHOUT_ATFORK"
     - CONF_OPTIONS="--enable-gc-assertions --enable-gc-debug --enable-handle-fork=manual --enable-large-config --without-libatomic-ops"
   - compiler: clang
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -fno-omit-frame-pointer -D NTHREADS=10"
     - CONF_OPTIONS="--disable-parallel-mark"
