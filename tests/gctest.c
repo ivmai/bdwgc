@@ -1400,7 +1400,8 @@ void typed_test(void)
             newP = (GC_word *)GC_CALLOC_EXPLICITLY_TYPED(1001,
                                                 3 * sizeof(GC_word), d2);
 #         else
-            newP = GC_calloc_do_explicitly_typed(&ctd_l, sizeof(ctd_l));
+            newP = (GC_word *)GC_calloc_do_explicitly_typed(&ctd_l,
+                                                            sizeof(ctd_l));
 #         endif
           if (newP != NULL && (newP[0] != 0 || newP[1] != 0)) {
             GC_printf("Bad initialization by GC_calloc_explicitly_typed\n");
