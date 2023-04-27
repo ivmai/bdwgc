@@ -3610,6 +3610,22 @@ STATIC void GC_protect_heap(void)
  * happens to work.
  */
 
+# ifdef THREAD_SANITIZER
+    /* Used by GC_remove_protection only.  Potential data race between  */
+    /* this function and GC_write_fault_handler should not be harmful   */
+    /* because it would only result in a double call of UNPROTECT() for */
+    /* a region.                                                        */
+    GC_ATTR_NO_SANITIZE_THREAD
+    static GC_bool get_pht_entry_from_index_async(volatile page_hash_table db,
+                                                  size_t index)
+    {
+      return (GC_bool)get_pht_entry_from_index(db, index);
+    }
+# else
+#   define get_pht_entry_from_index_async(bl, index) \
+                        get_pht_entry_from_index(bl, index)
+# endif
+
 /* We no longer wrap read by default, since that was causing too many   */
 /* problems.  It is preferred that the client instead avoids writing    */
 /* to the write-protected heap with a system call.                      */
@@ -4317,7 +4333,7 @@ GC_INNER GC_bool GC_dirty_init(void)
       h_end = (struct hblk *)(((word)(h + nblocks) + GC_page_size - 1)
                               & ~(GC_page_size - 1));
       if (h_end == h_trunc + 1 &&
-        get_pht_entry_from_index(GC_dirty_pages, PHT_HASH(h_trunc))) {
+        get_pht_entry_from_index_async(GC_dirty_pages, PHT_HASH(h_trunc))) {
         /* already marked dirty, and hence unprotected. */
         return;
       }
