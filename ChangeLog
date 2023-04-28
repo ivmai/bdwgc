@@ -1,3 +1,24 @@
+2023-04-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c (GC_calloc_explicitly_typed): If descr_type is NO_MEM then
+	return the result of GC_get_oom_fn()(lb) instead of NULL.
+
+2023-03-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* malloc.c (GC_generic_malloc_inner): Fix a typo
+	("to directly allocate") in comment.
+
+2023-03-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* dbg_mlc.c (store_old): Fix name in comment ("GC_register_finalizer").
+	* include/gc.h (GC_java_finalization): Fix name in comment
+	("GC_register_finalizer_unreachable").
+
+2023-03-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/tests/cordtest.c (test_basics): Adjust indentation of
+	CORD_next() call inside while loop.
+
 2023-02-28  Ivan Maidanski <ivmai@mail.ru>
 
 	* pthread_support.c (GC_start_rtn_prepare_thread): Fix a typo in
