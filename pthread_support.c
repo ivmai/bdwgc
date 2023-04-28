@@ -1530,7 +1530,7 @@ GC_INNER_WIN32THREAD void GC_record_stack_base(GC_stack_context_t crtn,
   GC_INNER GC_bool GC_is_main_thread(void)
   {
     GC_ASSERT(GC_thr_initialized);
-    return thread_id_self() == GC_main_thread_id;
+    return THREAD_ID_EQUAL(GC_main_thread_id, thread_id_self());
   }
 #endif /* !DONT_USE_ATEXIT */
 
@@ -2106,7 +2106,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     /* is registered by DllMain, except for the main thread.    */
 #   if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
       GC_ASSERT(!GC_win32_dll_threads
-                || GC_main_thread_id == thread_id_self());
+                || THREAD_ID_EQUAL(GC_main_thread_id, thread_id_self()));
 #   endif
 
     LOCK();
