@@ -3,11 +3,17 @@
 
 * Abort with appropriate message if first call of mmap fails with EPERM
 * Avoid potential race between realloc and GC_block_was_dirty
+* Do not prohibit zero proc argument in GC_register_disclaim_proc
 * Eliminate 'cast signed to bigger unsigned' CSA warning in GC_new_thread
+* Ensure 'new' system header is included by gc_cpp.h if GC_INCLUDE_NEW
 * Fix 'overflow in conversion from word' g++ warning in GC_init
+* Fix description of client promise for IGNORE_OFF_PAGE allocated objects
+* Fix infinite loop in disable_gc_for_dlopen and GC_wait_for_gc_completion
+* Fix missing extern C for __asan_default_options
 * Fix store-and-dirty call in GC_CONS
 * Fix typo in comment of GC_Thread_Rep.dummy
 * Fix use of unset errno after pthread_sigmask calls
+* Increment allocated objects count after GC_GCJ_MALLOC() in gctest
 * Remove redundant GC_ATTR_UNUSED for GC_mark_and_push
 
 Also, includes 7.6.18 changes
