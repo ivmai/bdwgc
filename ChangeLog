@@ -4,53 +4,73 @@
 * Abort with appropriate message if first call of mmap fails with EPERM
 * Adjust WoW64 workaround to work on UWP/WinRT
 * Avoid potential race between realloc and GC_block_was_dirty
+* Do not double-clear first two words of object in GC_generic_malloc_aligned
 * Do not mention FASTLOCK in comment
 * Do not mix debug and non-debug allocations in disclaim tests
 * Do not prohibit threaded builds with malloc redirection on non-Linux
+* Do not prohibit zero proc argument in GC_register_disclaim_proc
 * Eliminate 'GC_unmap_end declared but unused' bcc warning in disclaim_bench
+* Eliminate 'ISO C++17 does not allow register specifier' gcc warning
 * Eliminate 'cast signed to bigger unsigned' CSA warning in WARNs, new_thread
+* Eliminate 'n obtained from untrusted source' code defect FP in test_cpp
 * Eliminate 'skipping config since MAXSIG/_NSIG is unknown' cppcheck FP
+* Eliminate data race FP between remove_protection and write_fault_handler
 * Eliminate data race FP reported in need_unreachable_finalization by TSan
+* Ensure 'new' system header is included by gc_cpp.h if GC_INCLUDE_NEW
 * Ensure GC_NO_PTHREAD_SIGMASK defined if no GC_pthread_sigmask prototype
 * Fix 'EMSCRIPTEN macro redefined' compile error
 * Fix 'ISO C90 forbids mixed decl and code' warning in SOFT_VDB dirty_init
 * Fix 'call to undeclared pthread_setname_np' errors in configure and cmake
 * Fix 'failed to create new win32 semaphore' Cygwin fatal error at fork
+* Fix 'operator new is missing throw(bad_alloc)' clang warning in gc_cpp.h
 * Fix 'overflow in conversion from word' g++ warning in GC_init
 * Fix 'unknown option --no-undefined' linker error in cmake script (OS X)
 * Fix 'unresolved _end' linker error when targeting Android bitcode
+* Fix CORD_next() indent inside loop in test_basics() of cordtest
 * Fix DCL_LOCK_STATE placement in GC_set_oom_fn
 * Fix GC_thread_is_registered for finished threads
 * Fix GC_unreachable_finalize_mark_proc to ensure its unique address
 * Fix IRIX5 defined wrongly on FreeBSD/mips, WinCE/mips, Tandem S-Series
 * Fix allocated objects count increment in alloc8bytes of gctest
 * Fix data race in GC_heapsize_at_forced_unmap variable
+* Fix description of client promise for IGNORE_OFF_PAGE allocated objects
 * Fix disabling of automatic dynamic libraries registration
 * Fix double initialization of main thread local free lists on Win32
 * Fix gccpp and gctba library names in gcinterface.md
+* Fix infinite loop in disable_gc_for_dlopen and GC_wait_for_gc_completion
 * Fix infinite wait in pthread_join/detach if thread already finished (Win32)
 * Fix joinable threads shutdown on NaCl
 * Fix loop condition over dll_thread_table in GC_lookup_pthread (Win32)
 * Fix missing GC_CALLBACK for GC_waitForSingleObjectInfinite
+* Fix missing extern C for __asan_default_options
 * Fix missing libalphagc.so dependency in Makefile.direct
 * Fix missing lock while updating GC_in_thread_creation in GC_exit_check
 * Fix missing recovery from faults in GC_mark_some on Win64 if MinGW
 * Fix missing result check of pthread_attr_getdetachstate in pthread_create
 * Fix mistyped function name in documentation of REDIRECT_REALLOC
 * Fix negative heap size values reported in WARN
+* Fix null pointer dereference in TRACE_TARGET
+* Fix of GC_bytes_allocd increment in GC_generic_malloc_inner
 * Fix potential SIGSEGV on out-of-memory in gctest
+* Fix signals delivery fail in find-leak mode if init from non-main thread
 * Fix store-and-dirty call in GC_CONS
 * Fix unregistering of thread created by intercepted pthread_create on NaCl
+* Fix unused GC_parse_version if no SOFT_VDB and no parallel mark on Linux
 * Fix use of unset errno after pthread_create/sigmask calls
 * Fix various typos in comments and documentation
+* Increment allocated objects count after GC_GCJ_MALLOC() in gctest
+* Invoke GC_oom_fn if GC_make_array_descriptor failed because of no memory
 * Make Emscripten Asyncify feature optional
 * Mention gctba library in README.cmake
+* Prevent 'function should return a value' BCC error in CMake script
 * Provide meaningful error message in case of Emscripten threaded build
 * Reduce local variable scope in resend_lost_signals_retry for cppcheck
 * Remove false warning of missing libpthread.so on Linux
 * Remove redundant GC_ATTR_UNUSED for GC_mark_and_push
 * Remove unused GC_old_sig_mask from gc_locks.h
 * Replace WARN in GC_mark_some wrapper back to GC_COND_LOG_PRINTF
+* Specify throw and noexcept for operator new/delete in gc_cpp.h for MS VC
+* Update autotools for release preparation (ac-2.71, am-1.16.5, m4-1.14.19)
 * Update dump function name in GC_DUMP_REGULARLY variable documentation
 * Use emscripten_stack_get_base instead of emscripten_scan_stack
 * Use sbrk() to get OS memory on Emscripten
