@@ -574,6 +574,8 @@ Also, includes 7.4.4 changes
 * Ensure GC_NO_PTHREAD_SIGMASK defined if no GC_pthread_sigmask prototype
 * Fix GC_thread_is_registered for finished threads
 * Fix missing lock while updating GC_in_thread_creation in GC_exit_check
+* Fix null pointer dereference in TRACE_TARGET
+* Fix of GC_bytes_allocd increment in GC_generic_malloc_inner
 
 Also, includes 7.2q changes.
 
@@ -1124,6 +1126,7 @@ Also, includes 7.2 changes
 
 == [7.2q] (not released yet) ==
 
+* Fix CORD_next() indent inside loop in test_basics() of cordtest
 * Fix DCL_LOCK_STATE placement in GC_set_oom_fn
 * Fix IRIX5 defined wrongly on Tandem S-Series and WinCE/mips
 * Fix disabling of automatic dynamic libraries registration
@@ -1137,6 +1140,7 @@ Also, includes 7.2 changes
 * Fix typos in comments and documentation
 * Fix unregistering of thread created by intercepted pthread_create on NaCl
 * Fix use of unset errno after pthread_create call
+* Invoke GC_oom_fn if GC_make_array_descriptor failed because of no memory
 
 
 == [7.2p] 2022-08-25 ==
