@@ -253,7 +253,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
       return FALSE;
 
     GET_TIME(current_time);
-    time_diff = MS_TIME_DIFF(current_time,GC_start_time);
+    time_diff = MS_TIME_DIFF(current_time, GC_start_time);
     nsec_diff = NS_FRAC_TIME_DIFF(current_time, GC_start_time);
 #   if defined(CPPCHECK)
       GC_noop1((word)&nsec_diff);
@@ -790,7 +790,7 @@ GC_API int GC_CALL GC_collect_a_little(void)
 /* we succeed.                                                          */
 STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 {
-    int i;
+    int abandoned_at;
     ptr_t cold_gc_frame = GC_approx_sp();
 #   ifndef NO_CLOCK
       CLOCK_TYPE start_time = CLOCK_TYPE_INITIALIZER;
@@ -822,14 +822,14 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
       if (GC_on_collection_event)
         GC_on_collection_event(GC_EVENT_POST_STOP_WORLD);
 #   endif
-
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = TRUE;
 #   endif
-        /* Output blank line for convenience here */
+        /* Output blank line for convenience here.      */
     GC_COND_LOG_PRINTF(
               "\n--> Marking for collection #%lu after %lu allocated bytes\n",
               (unsigned long)GC_gc_no + 1, (unsigned long) GC_bytes_allocd);
+
 #   ifdef MAKE_BACK_GRAPH
       if (GC_print_back_height) {
         GC_build_back_graph();
@@ -840,7 +840,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         if (GC_on_collection_event)
           GC_on_collection_event(GC_EVENT_MARK_START);
 
-        /* Minimize junk left in my registers and on the stack */
+    /* Minimize junk left in my registers and on the stack.     */
             GC_clear_a_few_frames();
             GC_noop6(0,0,0,0,0,0);
 
@@ -849,15 +849,16 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
           if (stop_func != GC_never_stop_func)
             GC_parallel_mark_disabled = TRUE;
 #       endif
-        for (i = 0; !(*stop_func)(); i++) {
+        for (abandoned_at = 0; !(*stop_func)(); abandoned_at++) {
           if (GC_mark_some(cold_gc_frame)) {
 #           ifdef PARALLEL_MARK
               if (GC_parallel && GC_parallel_mark_disabled) {
                 GC_COND_LOG_PRINTF("Stopped marking done after %d iterations"
-                                   " with disabled parallel marker\n", i);
+                                   " with disabled parallel marker\n",
+                                   abandoned_at);
               }
 #           endif
-            i = -1;
+            abandoned_at = -1;
             break;
           }
         }
@@ -865,47 +866,27 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
           GC_parallel_mark_disabled = FALSE;
 #       endif
 
-        if (i >= 0) {
-          GC_COND_LOG_PRINTF("Abandoned stopped marking after"
-                             " %d iterations\n", i);
-          GC_deficit = i;       /* Give the mutator a chance.   */
-#         ifdef THREAD_LOCAL_ALLOC
-            GC_world_stopped = FALSE;
-#         endif
-
-#         ifdef THREADS
-            if (GC_on_collection_event)
-              GC_on_collection_event(GC_EVENT_PRE_START_WORLD);
-#         endif
-
-          START_WORLD();
-
-#         ifdef THREADS
-            if (GC_on_collection_event)
-              GC_on_collection_event(GC_EVENT_POST_START_WORLD);
-#         endif
-
-          /* TODO: Notify GC_EVENT_MARK_ABANDON */
-          return FALSE;
-        }
-
-    GC_gc_no++;
-    /* Check all debugged objects for consistency */
-    if (GC_debugging_started) {
-      (*GC_check_heap)();
+    if (abandoned_at >= 0) {
+      GC_deficit = abandoned_at; /* Give the mutator a chance. */
+      /* TODO: Notify GC_EVENT_MARK_ABANDON */
+    } else {
+      GC_gc_no++;
+      /* Check all debugged objects for consistency.    */
+      if (GC_debugging_started) {
+        (*GC_check_heap)();
+      }
+      if (GC_on_collection_event)
+        GC_on_collection_event(GC_EVENT_MARK_END);
     }
-    if (GC_on_collection_event) {
-      GC_on_collection_event(GC_EVENT_MARK_END);
-#     ifdef THREADS
+
+#   ifdef THREADS
+      if (GC_on_collection_event)
         GC_on_collection_event(GC_EVENT_PRE_START_WORLD);
-#     endif
-    }
+#   endif
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = FALSE;
 #   endif
-
     START_WORLD();
-
 #   ifdef THREADS
       if (GC_on_collection_event)
         GC_on_collection_event(GC_EVENT_POST_START_WORLD);
@@ -918,30 +899,37 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         CLOCK_TYPE current_time;
 
         GET_TIME(current_time);
-        time_diff = MS_TIME_DIFF(current_time,start_time);
+        time_diff = MS_TIME_DIFF(current_time, start_time);
 
-        /* Compute new world-stop delay total time */
+        /* Compute new world-stop delay total time.     */
         total_time = world_stopped_total_time;
         divisor = world_stopped_total_divisor;
         if (total_time > (((unsigned)-1) >> 1)
             || divisor >= MAX_TOTAL_TIME_DIVISOR) {
-          /* Halve values if overflow occurs */
+          /* Halve values if overflow occurs.   */
           total_time >>= 1;
           divisor >>= 1;
         }
         total_time += time_diff < (((unsigned)-1) >> 1) ?
                         (unsigned)time_diff : ((unsigned)-1) >> 1;
-        /* Update old world_stopped_total_time and its divisor */
+        /* Update old world_stopped_total_time and its divisor. */
         world_stopped_total_time = total_time;
         world_stopped_total_divisor = ++divisor;
-
-        GC_ASSERT(divisor != 0);
-        GC_log_printf("World-stopped marking took %lu ms %lu ns"
-                      " (%u ms in average)\n",
-                      time_diff, NS_FRAC_TIME_DIFF(current_time, start_time),
-                      total_time / divisor);
+        if (abandoned_at < 0) {
+          GC_ASSERT(divisor != 0);
+          GC_log_printf("World-stopped marking took %lu ms %lu ns"
+                        " (%u ms in average)\n", time_diff,
+                        NS_FRAC_TIME_DIFF(current_time, start_time),
+                        total_time / divisor);
+        }
       }
 #   endif
+
+    if (abandoned_at >= 0) {
+      GC_COND_LOG_PRINTF("Abandoned stopped marking after %d iterations\n",
+                         abandoned_at);
+      return FALSE;
+    }
     return TRUE;
 }
 
