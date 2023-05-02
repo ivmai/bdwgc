@@ -656,6 +656,10 @@ GC_INNER size_t GC_page_size = 0;
   GC_INNER size_t GC_real_page_size = 0;
 #endif
 
+#ifdef SOFT_VDB
+  STATIC unsigned GC_log_pagesize = 0;
+#endif
+
 #if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 # ifndef VER_PLATFORM_WIN32_CE
 #   define VER_PLATFORM_WIN32_CE 3
@@ -666,49 +670,6 @@ GC_INNER size_t GC_page_size = 0;
 # endif
 
   GC_INNER SYSTEM_INFO GC_sysinfo;
-
-  GC_INNER void GC_setpagesize(void)
-  {
-    GetSystemInfo(&GC_sysinfo);
-#   ifdef ALT_PAGESIZE_USED
-      /* Allocations made with mmap() are aligned to the allocation     */
-      /* granularity, which (at least on Win64) is not the same as the  */
-      /* page size.  Probably we could distinguish the allocation       */
-      /* granularity from the actual page size, but in practice there   */
-      /* is no good reason to make allocations smaller than             */
-      /* dwAllocationGranularity, so we just use it instead of the      */
-      /* actual page size here (as Cygwin itself does in many cases).   */
-      GC_page_size = (size_t)GC_sysinfo.dwAllocationGranularity;
-#     ifdef REAL_PAGESIZE_NEEDED
-        GC_real_page_size = (size_t)GC_sysinfo.dwPageSize;
-        GC_ASSERT(GC_page_size >= GC_real_page_size);
-#     endif
-#   else
-      GC_page_size = (size_t)GC_sysinfo.dwPageSize;
-#   endif
-#   if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
-      {
-        OSVERSIONINFO verInfo;
-        /* Check the current WinCE version.     */
-        verInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-        if (!GetVersionEx(&verInfo))
-          ABORT("GetVersionEx failed");
-        if (verInfo.dwPlatformId == VER_PLATFORM_WIN32_CE &&
-            verInfo.dwMajorVersion < 6) {
-          /* Only the first 32 MB of address space belongs to the       */
-          /* current process (unless WinCE 6.0+ or emulation).          */
-          GC_sysinfo.lpMaximumApplicationAddress = (LPVOID)((word)32 << 20);
-#         ifdef THREADS
-            /* On some old WinCE versions, it's observed that           */
-            /* VirtualQuery calls don't work properly when used to      */
-            /* get thread current stack committed minimum.              */
-            if (verInfo.dwMajorVersion < 5)
-              GC_dont_query_stack_min = TRUE;
-#         endif
-        }
-      }
-#   endif
-  }
 
 # ifndef CYGWIN32
 #   define is_writable(prot) ((prot) == PAGE_READWRITE \
@@ -770,11 +731,10 @@ GC_INNER size_t GC_page_size = 0;
 # endif /* CYGWIN32 */
 # define HAVE_GET_STACK_BASE
 
-#else /* !MSWIN32 */
+#elif defined(OS2)
 
-# ifdef OS2
-    static int os2_getpagesize(void)
-    {
+  static int os2_getpagesize(void)
+  {
       ULONG result[1];
 
       if (DosQuerySysInfo(QSV_PAGE_SIZE, QSV_PAGE_SIZE,
@@ -783,11 +743,53 @@ GC_INNER size_t GC_page_size = 0;
         result[0] = 4096;
       }
       return (int)result[0];
-    }
-# endif /* OS2 */
+  }
 
-  GC_INNER void GC_setpagesize(void)
-  {
+#endif /* !MSWIN32 && OS2 */
+
+GC_INNER void GC_setpagesize(void)
+{
+# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+    GetSystemInfo(&GC_sysinfo);
+#   ifdef ALT_PAGESIZE_USED
+      /* Allocations made with mmap() are aligned to the allocation     */
+      /* granularity, which (at least on Win64) is not the same as the  */
+      /* page size.  Probably we could distinguish the allocation       */
+      /* granularity from the actual page size, but in practice there   */
+      /* is no good reason to make allocations smaller than             */
+      /* dwAllocationGranularity, so we just use it instead of the      */
+      /* actual page size here (as Cygwin itself does in many cases).   */
+      GC_page_size = (size_t)GC_sysinfo.dwAllocationGranularity;
+#     ifdef REAL_PAGESIZE_NEEDED
+        GC_real_page_size = (size_t)GC_sysinfo.dwPageSize;
+        GC_ASSERT(GC_page_size >= GC_real_page_size);
+#     endif
+#   else
+      GC_page_size = (size_t)GC_sysinfo.dwPageSize;
+#   endif
+#   if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
+      {
+        OSVERSIONINFO verInfo;
+        /* Check the current WinCE version.     */
+        verInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+        if (!GetVersionEx(&verInfo))
+          ABORT("GetVersionEx failed");
+        if (verInfo.dwPlatformId == VER_PLATFORM_WIN32_CE &&
+            verInfo.dwMajorVersion < 6) {
+          /* Only the first 32 MB of address space belongs to the       */
+          /* current process (unless WinCE 6.0+ or emulation).          */
+          GC_sysinfo.lpMaximumApplicationAddress = (LPVOID)((word)32 << 20);
+#         ifdef THREADS
+            /* On some old WinCE versions, it's observed that           */
+            /* VirtualQuery calls don't work properly when used to      */
+            /* get thread current stack committed minimum.              */
+            if (verInfo.dwMajorVersion < 5)
+              GC_dont_query_stack_min = TRUE;
+#         endif
+        }
+      }
+#   endif
+# else /* !MSWIN32 */
 #   ifdef ALT_PAGESIZE_USED
 #     ifdef REAL_PAGESIZE_NEEDED
         GC_real_page_size = (size_t)GETPAGESIZE();
@@ -801,8 +803,20 @@ GC_INNER size_t GC_page_size = 0;
           ABORT("getpagesize failed");
 #     endif
 #   endif
-  }
-#endif /* !MSWIN32 */
+# endif /* !MSWIN32 */
+# ifdef SOFT_VDB
+    {
+      size_t pgsize;
+      unsigned log_pgsize = 0;
+
+      if (((GC_page_size - 1) & GC_page_size) != 0)
+        ABORT("Invalid page size"); /* not a power of two */
+      for (pgsize = GC_page_size; pgsize > 1; pgsize >>= 1)
+        log_pgsize++;
+      GC_log_pagesize = log_pgsize;
+    }
+# endif
+}
 
 #ifdef HAIKU
 # include <kernel/OS.h>
@@ -3828,8 +3842,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     *vaddr = 1; /* make it dirty */
 
     /* Read the relevant PTE from the pagemap file.     */
-    GC_ASSERT(GC_page_size != 0);
-    fpos = (off_t)((word)vaddr / GC_page_size * sizeof(pagemap_elem_t));
+    GC_ASSERT(GC_log_pagesize != 0);
+    fpos = (off_t)(((word)vaddr >> GC_log_pagesize) * sizeof(pagemap_elem_t));
     if (lseek(pagemap_fd, fpos, SEEK_SET) == (off_t)(-1))
       return FALSE;
     if (PROC_READ(pagemap_fd, buf, sizeof(buf)) != (int)sizeof(buf))
@@ -3921,6 +3935,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     ssize_t res;
     size_t ofs;
 
+    GC_ASSERT(GC_page_size != 0);
     GC_ASSERT(len > 0);
     if (pagemap_buf_fpos <= fpos
         && fpos < pagemap_buf_fpos + (off_t)pagemap_buf_len) {
@@ -3977,15 +3992,17 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
   static void soft_set_grungy_pages(ptr_t vaddr /* start */, ptr_t limit,
                                     ptr_t next_start_hint)
   {
-    GC_ASSERT(GC_page_size != 0);
+    GC_ASSERT(GC_log_pagesize != 0);
     while ((word)vaddr < (word)limit) {
       size_t res;
       word limit_buf;
       const pagemap_elem_t *bufp = pagemap_buffered_read(&res,
-                (off_t)((word)vaddr / GC_page_size * sizeof(pagemap_elem_t)),
-                (size_t)((((word)limit - (word)vaddr + GC_page_size-1)
-                         / GC_page_size) * sizeof(pagemap_elem_t)),
-                (off_t)((word)next_start_hint / GC_page_size
+                (off_t)(((word)vaddr >> GC_log_pagesize)
+                        * sizeof(pagemap_elem_t)),
+                (size_t)((((word)limit - (word)vaddr
+                           + GC_page_size - 1) >> GC_log_pagesize)
+                         * sizeof(pagemap_elem_t)),
+                (off_t)(((word)next_start_hint >> GC_log_pagesize)
                         * sizeof(pagemap_elem_t)));
 
       if (res % sizeof(pagemap_elem_t) != 0) {
@@ -3996,7 +4013,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
       }
 
       limit_buf = ((word)vaddr & ~(GC_page_size-1))
-                  + (res / sizeof(pagemap_elem_t)) * GC_page_size;
+                  + ((res / sizeof(pagemap_elem_t)) << GC_log_pagesize);
       for (; (word)vaddr < limit_buf; vaddr += GC_page_size, bufp++)
         if ((*bufp & PM_SOFTDIRTY_MASK) != 0) {
           struct hblk * h;
