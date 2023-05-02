@@ -805,13 +805,13 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         GC_cond_register_dynamic_libraries();
 #   endif
 
+#   if !defined(GC_NO_FINALIZATION) && !defined(GC_TOGGLE_REFS_NOT_NEEDED)
+      GC_process_togglerefs();
+#   endif
+
 #   ifndef NO_CLOCK
       if (GC_PRINT_STATS_FLAG)
         GET_TIME(start_time);
-#   endif
-
-#   if !defined(GC_NO_FINALIZATION) && !defined(GC_TOGGLE_REFS_NOT_NEEDED)
-      GC_process_togglerefs();
 #   endif
 #   ifdef THREADS
       if (GC_on_collection_event)
