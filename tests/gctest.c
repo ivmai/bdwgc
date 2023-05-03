@@ -2123,16 +2123,15 @@ void check_heap_stats(void)
 #   ifdef THREADS
       (void)GC_unregister_my_thread(); /* just to check it works (for main) */
 #   endif
-#   ifdef NO_CLOCK
-      GC_printf("Completed %u collections\n", (unsigned)GC_get_gc_no());
-#   elif !defined(PARALLEL_MARK)
-      GC_printf("Completed %u collections in %lu ms\n",
-                (unsigned)GC_get_gc_no(), GC_get_full_gc_total_time());
+
+#   ifndef NO_CLOCK
+      GC_printf("Full collections took %lu ms\n", GC_get_full_gc_total_time());
+#   endif
+#   ifdef PARALLEL_MARK
+      GC_printf("Completed %u collections (using %d marker threads)\n",
+                (unsigned)GC_get_gc_no(), GC_get_parallel() + 1);
 #   else
-      GC_printf("Completed %u collections in %lu ms"
-                " (using %d marker threads)\n",
-                (unsigned)GC_get_gc_no(), GC_get_full_gc_total_time(),
-                GC_get_parallel() + 1);
+      GC_printf("Completed %u collections\n", (unsigned)GC_get_gc_no());
 #   endif
     GC_printf("Collector appears to work\n");
 }
