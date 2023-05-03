@@ -809,8 +809,10 @@ GC_INNER void GC_setpagesize(void)
       size_t pgsize;
       unsigned log_pgsize = 0;
 
-      if (((GC_page_size - 1) & GC_page_size) != 0)
-        ABORT("Invalid page size"); /* not a power of two */
+#     if !defined(CPPCHECK)
+        if (((GC_page_size - 1) & GC_page_size) != 0)
+          ABORT("Invalid page size"); /* not a power of two */
+#     endif
       for (pgsize = GC_page_size; pgsize > 1; pgsize >>= 1)
         log_pgsize++;
       GC_log_pagesize = log_pgsize;
