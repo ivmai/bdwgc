@@ -1437,11 +1437,16 @@ GC_API void GC_CALL GC_enable_incremental(void)
           if (GC_bytes_allocd > 0) {
             /* There may be unmarked reachable objects. */
             GC_gcollect_inner();
-          }
-            /* else we're OK in assuming everything's   */
+          } else {
+            /* We are OK in assuming everything is      */
             /* clean since nothing can point to an      */
             /* unmarked object.                         */
-          GC_read_dirty(FALSE);
+#           ifdef CHECKSUMS
+              GC_read_dirty(FALSE);
+#           else
+              GC_read_dirty(TRUE);
+#           endif
+          }
           RESTORE_CANCEL(cancel_state);
         }
       }
