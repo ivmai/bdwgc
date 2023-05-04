@@ -2125,7 +2125,8 @@ void check_heap_stats(void)
 #   endif
 
 #   ifndef NO_CLOCK
-      GC_printf("Full collections took %lu ms\n", GC_get_full_gc_total_time());
+      GC_printf("Full/world-stopped collections took %lu/%lu ms\n",
+                GC_get_full_gc_total_time(), GC_get_stopped_mark_total_time());
 #   endif
 #   ifdef PARALLEL_MARK
       GC_printf("Completed %u collections (using %d marker threads)\n",

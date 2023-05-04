@@ -69,7 +69,9 @@ word GC_gc_no = 0;
 
 #ifndef NO_CLOCK
   static unsigned long full_gc_total_time = 0; /* in ms, may wrap */
+  static unsigned long stopped_mark_total_time = 0;
   static unsigned full_gc_total_ns_frac = 0; /* fraction of 1 ms */
+  static unsigned stopped_mark_total_ns_frac = 0;
   static GC_bool measure_performance = FALSE;
                 /* Do performance measurements if set to true (e.g.,    */
                 /* accumulation of the total time of full collections). */
@@ -82,6 +84,11 @@ word GC_gc_no = 0;
   GC_API unsigned long GC_CALL GC_get_full_gc_total_time(void)
   {
     return full_gc_total_time;
+  }
+
+  GC_API unsigned long GC_CALL GC_get_stopped_mark_total_time(void)
+  {
+    return stopped_mark_total_time;
   }
 #endif /* !NO_CLOCK */
 
@@ -794,6 +801,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
     ptr_t cold_gc_frame = GC_approx_sp();
 #   ifndef NO_CLOCK
       CLOCK_TYPE start_time = CLOCK_TYPE_INITIALIZER;
+      GC_bool start_time_valid = FALSE;
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -809,9 +817,15 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
       GC_process_togglerefs();
 #   endif
 
+        /* Output blank line for convenience here.      */
+    GC_COND_LOG_PRINTF(
+              "\n--> Marking for collection #%lu after %lu allocated bytes\n",
+              (unsigned long)GC_gc_no + 1, (unsigned long)GC_bytes_allocd);
 #   ifndef NO_CLOCK
-      if (GC_PRINT_STATS_FLAG)
+      if (GC_PRINT_STATS_FLAG || measure_performance) {
         GET_TIME(start_time);
+        start_time_valid = TRUE;
+      }
 #   endif
 #   ifdef THREADS
       if (GC_on_collection_event)
@@ -825,10 +839,6 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = TRUE;
 #   endif
-        /* Output blank line for convenience here.      */
-    GC_COND_LOG_PRINTF(
-              "\n--> Marking for collection #%lu after %lu allocated bytes\n",
-              (unsigned long)GC_gc_no + 1, (unsigned long) GC_bytes_allocd);
 
 #   ifdef MAKE_BACK_GRAPH
       if (GC_print_back_height) {
@@ -836,7 +846,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
       }
 #   endif
 
-    /* Mark from all roots.  */
+    /* Notify about marking from all roots.     */
         if (GC_on_collection_event)
           GC_on_collection_event(GC_EVENT_MARK_START);
 
@@ -893,34 +903,45 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   endif
 
 #   ifndef NO_CLOCK
-      if (GC_PRINT_STATS_FLAG) {
-        unsigned long time_diff;
-        unsigned total_time, divisor;
+      if (start_time_valid) {
         CLOCK_TYPE current_time;
+        unsigned long time_diff, ns_frac_diff;
+        unsigned total_time, divisor;
 
+        /* TODO: Avoid code duplication from GC_try_to_collect_inner */
         GET_TIME(current_time);
         time_diff = MS_TIME_DIFF(current_time, start_time);
-
-        /* Compute new world-stop delay total time.     */
-        total_time = world_stopped_total_time;
-        divisor = world_stopped_total_divisor;
-        if (total_time > (((unsigned)-1) >> 1)
-            || divisor >= MAX_TOTAL_TIME_DIVISOR) {
-          /* Halve values if overflow occurs.   */
-          total_time >>= 1;
-          divisor >>= 1;
+        ns_frac_diff = NS_FRAC_TIME_DIFF(current_time, start_time);
+        if (measure_performance) {
+          stopped_mark_total_time += time_diff; /* may wrap */
+          stopped_mark_total_ns_frac += (unsigned)ns_frac_diff;
+          if (stopped_mark_total_ns_frac >= 1000000U) {
+            stopped_mark_total_ns_frac -= 1000000U;
+            stopped_mark_total_time++;
+          }
         }
-        total_time += time_diff < (((unsigned)-1) >> 1) ?
+
+        if (GC_PRINT_STATS_FLAG) {
+          /* Compute new world-stop delay total time.   */
+          total_time = world_stopped_total_time;
+          divisor = world_stopped_total_divisor;
+          if (total_time > (((unsigned)-1) >> 1)
+              || divisor >= MAX_TOTAL_TIME_DIVISOR) {
+            /* Halve values if overflow occurs. */
+            total_time >>= 1;
+            divisor >>= 1;
+          }
+          total_time += time_diff < (((unsigned)-1) >> 1) ?
                         (unsigned)time_diff : ((unsigned)-1) >> 1;
-        /* Update old world_stopped_total_time and its divisor. */
-        world_stopped_total_time = total_time;
-        world_stopped_total_divisor = ++divisor;
-        if (abandoned_at < 0) {
-          GC_ASSERT(divisor != 0);
-          GC_log_printf("World-stopped marking took %lu ms %lu ns"
-                        " (%u ms in average)\n", time_diff,
-                        NS_FRAC_TIME_DIFF(current_time, start_time),
-                        total_time / divisor);
+          /* Update old world_stopped_total_time and its divisor.   */
+          world_stopped_total_time = total_time;
+          world_stopped_total_divisor = ++divisor;
+          if (abandoned_at < 0) {
+            GC_ASSERT(divisor != 0);
+            GC_log_printf("World-stopped marking took %lu ms %lu ns"
+                          " (%u ms in average)\n", time_diff, ns_frac_diff,
+                          total_time / divisor);
+          }
         }
       }
 #   endif

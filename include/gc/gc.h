@@ -479,11 +479,17 @@ GC_API GC_word GC_CALL GC_get_allocd_bytes_per_finalizer(void);
 GC_API void GC_CALL GC_start_performance_measurement(void);
 
 /* Get the total time of all full collections since the start of the    */
-/* performance measurements.  The measurement unit is one millisecond.  */
-/* Note that the returned value wraps around on overflow.               */
+/* performance measurements.  Includes time spent in the supplementary  */
+/* actions like blacklists promotion, marks clearing, free lists        */
+/* reconstruction and objects finalization.  The measurement unit is a  */
+/* millisecond.  Note that the returned value wraps around on overflow. */
 /* The function does not use any synchronization.  Defined only if the  */
 /* library has been compiled without NO_CLOCK.                          */
 GC_API unsigned long GC_CALL GC_get_full_gc_total_time(void);
+
+/* Same as GC_get_full_gc_total_time but takes into account all mark    */
+/* phases with the world stopped and nothing else.                      */
+GC_API unsigned long GC_CALL GC_get_stopped_mark_total_time(void);
 
 /* Set whether the GC will allocate executable memory pages or not.     */
 /* A non-zero argument instructs the collector to allocate memory with  */
