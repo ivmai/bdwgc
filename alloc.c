@@ -906,7 +906,6 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
       if (start_time_valid) {
         CLOCK_TYPE current_time;
         unsigned long time_diff, ns_frac_diff;
-        unsigned total_time, divisor;
 
         /* TODO: Avoid code duplication from GC_try_to_collect_inner */
         GET_TIME(current_time);
@@ -922,9 +921,10 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         }
 
         if (GC_PRINT_STATS_FLAG) {
+          unsigned total_time = world_stopped_total_time;
+          unsigned divisor = world_stopped_total_divisor;
+
           /* Compute new world-stop delay total time.   */
-          total_time = world_stopped_total_time;
-          divisor = world_stopped_total_divisor;
           if (total_time > (((unsigned)-1) >> 1)
               || divisor >= MAX_TOTAL_TIME_DIVISOR) {
             /* Halve values if overflow occurs. */
