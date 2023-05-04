@@ -3891,6 +3891,16 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     }
 # endif /* CAN_HANDLE_FORK */
 
+  /* Clear soft-dirty bits from the task's PTEs.        */
+  static void clear_soft_dirty_bits(void)
+  {
+    ssize_t res = write(clear_refs_fd, "4\n", 2);
+
+    if (res != 2)
+      ABORT_ARG1("Failed to write to /proc/self/clear_refs",
+                 ": errno= %d", res < 0 ? errno : 0);
+  }
+
   /* The bit 55 of the 64-bit qword of pagemap file is the soft-dirty one. */
 # define PM_SOFTDIRTY_MASK ((pagemap_elem_t)1 << 55)
 
@@ -3899,18 +3909,28 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     off_t fpos;
     pagemap_elem_t buf[1];
 
-    *vaddr = 1; /* make it dirty */
-
-    /* Read the relevant PTE from the pagemap file.     */
     GC_ASSERT(GC_page_size != 0);
+    *vaddr = 1; /* make it dirty */
     fpos = (off_t)((word)vaddr / GC_page_size * sizeof(pagemap_elem_t));
-    if (lseek(pagemap_fd, fpos, SEEK_SET) == (off_t)(-1))
-      return FALSE;
-    if (PROC_READ(pagemap_fd, buf, sizeof(buf)) != (int)sizeof(buf))
-      return FALSE;
 
-    /* Is the soft-dirty bit set? */
-    return (buf[0] & PM_SOFTDIRTY_MASK) != 0;
+    for (;;) {
+      /* Read the relevant PTE from the pagemap file.   */
+      if (lseek(pagemap_fd, fpos, SEEK_SET) == (off_t)(-1))
+        return FALSE;
+      if (PROC_READ(pagemap_fd, buf, sizeof(buf)) != (int)sizeof(buf))
+        return FALSE;
+
+      /* Is the soft-dirty bit unset?   */
+      if ((buf[0] & PM_SOFTDIRTY_MASK) == 0) return FALSE;
+
+      if (0 == *vaddr) break;
+      /* Retry to check that writing to clear_refs works as expected.   */
+      /* This malfunction of the soft-dirty bits implementation is      */
+      /* observed on some Linux kernels on Power9 (e.g. in Fedora 36).  */
+      clear_soft_dirty_bits();
+      *vaddr = 0;
+    }
+    return TRUE; /* success */
   }
 
 # ifndef NO_SOFT_VDB_LINUX_VER_RUNTIME_CHECK
@@ -4092,8 +4112,6 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 
   GC_INLINE void GC_soft_read_dirty(GC_bool output_unneeded)
   {
-    ssize_t res;
-
 #   ifndef THREADS
       /* Similar as for GC_proc_read_dirty.     */
       if (getpid() != saved_proc_pid
@@ -4139,11 +4157,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 #     endif
     }
 
-    /* Clear soft-dirty bits from the task's PTEs. */
-    res = write(clear_refs_fd, "4\n", 2);
-    if (res != 2)
-      ABORT_ARG1("Failed to write to /proc/self/clear_refs",
-                 ": errno= %d", res < 0 ? errno : 0);
+    clear_soft_dirty_bits();
   }
 #endif /* SOFT_VDB */
 
