@@ -460,6 +460,12 @@ EXTERN_C_BEGIN
 #   define I386
 #   define mach_type_known
 # endif
+# if defined(__x86_64__) && defined(__GNU__)
+    /* The Debian Hurd running on generic PC */
+#   define HURD
+#   define X86_64
+#   define mach_type_known
+# endif
 # if defined(__TANDEM)
     /* Nonstop S-series */
     /* FIXME: Should recognize Integrity series? */
@@ -2262,6 +2268,16 @@ EXTERN_C_BEGIN
 #     ifdef SOLARIS25_PROC_VDB_BUG_FIXED
 #       define PROC_VDB
 #     endif
+#   endif
+#   ifdef HURD
+#     define OS_TYPE "HURD"
+#     define HEURISTIC2
+#     define SEARCH_FOR_DATA_START
+      extern int _end[];
+#     define DATAEND ((ptr_t)(_end))
+/* #     define MPROTECT_VDB  Not quite working yet? */
+#     define DYNAMIC_LOADING
+#     define USE_MMAP_ANON
 #   endif
 #   ifdef CYGWIN32
 #     ifndef USE_WINALLOC
