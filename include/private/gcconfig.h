@@ -454,13 +454,13 @@ EXTERN_C_BEGIN
 #   endif
 #   define mach_type_known
 # endif /* __WATCOMC__ */
-# if defined(__i386__) && defined(__GNU__)
+# if defined(__GNU__) && defined(__i386__)
     /* The Debian Hurd running on generic PC */
 #   define HURD
 #   define I386
 #   define mach_type_known
 # endif
-# if defined(__x86_64__) && defined(__GNU__)
+# if defined(__GNU__) && defined(__x86_64__)
 #   define HURD
 #   define X86_64
 #   define mach_type_known
@@ -876,6 +876,17 @@ EXTERN_C_BEGIN
     EXTERN_C_BEGIN
 #   define GETPAGESIZE() (unsigned)sysconf(_SC_PAGE_SIZE)
 # endif /* HPUX */
+
+# ifdef HURD
+#   define OS_TYPE "HURD"
+#   define HEURISTIC2
+#   define SEARCH_FOR_DATA_START
+    extern int _end[];
+#   define DATAEND ((ptr_t)(_end))
+    /* TODO: MPROTECT_VDB is not quite working yet? */
+#   define DYNAMIC_LOADING
+#   define USE_MMAP_ANON
+# endif /* HURD */
 
 # ifdef LINUX
 #   define OS_TYPE "LINUX"
@@ -1324,6 +1335,9 @@ EXTERN_C_BEGIN
       extern int etext[];
 #     define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #   endif
+#   ifdef HURD
+      /* Nothing specific. */
+#   endif
 #   ifdef QNX
       /* Nothing specific. */
 #   endif
@@ -1537,16 +1551,6 @@ EXTERN_C_BEGIN
 #     define DATASTART ((ptr_t)(&__nullarea))
 #     define DATAEND ((ptr_t)(&_end))
 #   endif
-#   ifdef HURD
-#     define OS_TYPE "HURD"
-#     define HEURISTIC2
-#     define SEARCH_FOR_DATA_START
-      extern int _end[];
-#     define DATAEND ((ptr_t)(_end))
-/* #     define MPROTECT_VDB  Not quite working yet? */
-#     define DYNAMIC_LOADING
-#     define USE_MMAP_ANON
-#   endif
 #   ifdef DARWIN
 #     define DARWIN_DONT_PARSE_STACK 1
 #     define STACKBOTTOM ((ptr_t)0xc0000000)
@@ -1555,8 +1559,8 @@ EXTERN_C_BEGIN
         /* iPhone/iPad simulator */
 #       define NO_DYLD_BIND_FULLY_IMAGE
 #     endif
-#   endif /* DARWIN */
-# endif
+#   endif
+# endif /* I386 */
 
 # ifdef NS32K
 #   define MACH_TYPE "NS32K"
@@ -2258,6 +2262,9 @@ EXTERN_C_BEGIN
 #     define HEURISTIC2
 #     define SEARCH_FOR_DATA_START
 #   endif
+#   ifdef HURD
+      /* Nothing specific. */
+#   endif
 #   ifdef QNX
       /* Nothing specific. */
 #   endif
@@ -2267,15 +2274,6 @@ EXTERN_C_BEGIN
 #     ifdef SOLARIS25_PROC_VDB_BUG_FIXED
 #       define PROC_VDB
 #     endif
-#   endif
-#   ifdef HURD
-#     define OS_TYPE "HURD"
-#     define HEURISTIC2
-#     define SEARCH_FOR_DATA_START
-      extern int _end[];
-#     define DATAEND ((ptr_t)(_end))
-#     define DYNAMIC_LOADING
-#     define USE_MMAP_ANON
 #   endif
 #   ifdef CYGWIN32
 #     ifndef USE_WINALLOC
