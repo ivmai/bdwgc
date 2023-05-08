@@ -936,13 +936,17 @@ EXTERN_C_BEGIN
 # ifdef MSWIN32
 #   define OS_TYPE "MSWIN32"
     /* STACKBOTTOM and DATASTART are handled specially in os_dep.c.     */
-#   define DATAEND /* not needed */
+#   if !defined(CPPCHECK)
+#     define DATAEND /* not needed */
+#   endif
 #   define GWW_VDB
 # endif
 
 # ifdef MSWINCE
 #   define OS_TYPE "MSWINCE"
-#   define DATAEND /* not needed */
+#   if !defined(CPPCHECK)
+#     define DATAEND /* not needed */
+#   endif
 # endif
 
 # ifdef NETBSD
