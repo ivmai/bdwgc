@@ -2587,6 +2587,11 @@ int main(void)
       GC_printf("Using Darwin task-threads-based world stop and push\n");
 #   endif
     GC_set_markers_count(0);
+#   ifdef TEST_REUSE_SIG_SUSPEND
+      GC_set_suspend_signal(GC_get_thr_restart_signal());
+#   else
+      GC_set_suspend_signal(GC_get_suspend_signal());
+#   endif
     GC_COND_INIT();
 
     if ((code = pthread_attr_init(&attr)) != 0) {
@@ -2690,7 +2695,6 @@ int main(void)
     GC_set_same_obj_print_proc(GC_get_same_obj_print_proc());
     GC_set_start_callback(GC_get_start_callback());
     GC_set_stop_func(GC_get_stop_func());
-    GC_set_suspend_signal(GC_get_suspend_signal());
     GC_set_thr_restart_signal(GC_get_thr_restart_signal());
     GC_set_time_limit(GC_get_time_limit());
 #   if !defined(PCR) && !defined(SMALL_CONFIG)
