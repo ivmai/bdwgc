@@ -457,7 +457,7 @@ jobs:
   - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus --enable-gc-assertions --enable-static"
-    - CFLAGS_EXTRA="-D LINT2 -D NO_VDB_FOR_STATIC_ROOTS"
+    - CFLAGS_EXTRA="-D LINT2 -D NO_VDB_FOR_STATIC_ROOTS -D TEST_REUSE_SIG_SUSPEND"
   - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-large-config --enable-redirect-malloc --disable-threads"
