@@ -4654,12 +4654,10 @@ STATIC void *GC_mprotect_thread(void *arg)
     /* Ugh... some seem safe to ignore, but too many in a row probably means
        trouble. GC_sigbus_count is reset for each mach exception that is
        handled */
-    if (GC_sigbus_count >= 8) {
-      ABORT("Got more than 8 SIGBUSs in a row!");
-    } else {
-      GC_sigbus_count++;
-      WARN("Ignoring SIGBUS\n", 0);
-    }
+    if (GC_sigbus_count >= 8)
+      ABORT("Got many SIGBUS signals in a row!");
+    GC_sigbus_count++;
+    WARN("Ignoring SIGBUS\n", 0);
   }
 #endif /* BROKEN_EXCEPTION_HANDLING */
 
@@ -4739,7 +4737,7 @@ GC_INNER GC_bool GC_dirty_init(void)
     ABORT("pthread_create failed");
   (void)pthread_attr_destroy(&attr);
 
-  /* Setup the sigbus handler for ignoring the meaningless SIGBUSs */
+  /* Setup the sigbus handler for ignoring the meaningless SIGBUS signals. */
 # ifdef BROKEN_EXCEPTION_HANDLING
     {
       struct sigaction sa, oldsa;
@@ -4942,7 +4940,7 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
   }
 
 # ifdef BROKEN_EXCEPTION_HANDLING
-    /* Reset the number of consecutive SIGBUSs */
+    /* Reset the number of consecutive SIGBUS signals.  */
     GC_sigbus_count = 0;
 # endif
 
