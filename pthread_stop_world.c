@@ -358,6 +358,11 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
   me = GC_lookup_thread_async(self);
 
 # ifdef GC_ENABLE_SUSPEND_THREAD
+#   if defined(__GNUC__) && !defined(__clang__)
+      /* Workaround "writing 8 bytes into a region of size 0" bogus */
+      /* gcc warning (produced by gcc-12.2.0/aarch64, at least).    */
+      if (NULL == me) ABORT("Lookup self failed");
+#   endif
     suspend_cnt = (word)ao_load_async(&(me -> stop_info.ext_suspend_cnt));
 # endif
   if (((word)me->stop_info.last_stop_count & ~(word)THREAD_RESTARTED)
