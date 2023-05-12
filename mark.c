@@ -614,13 +614,14 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
       GC_STATIC_ASSERT(GC_DS_TAGS == 0x3);
       switch (tag) {
         case GC_DS_LENGTH:
-          /* Large length.                                              */
-          /* Process part of the range to avoid pushing too much on the */
-          /* stack.                                                     */
+          /* Large length.  Process part of the range to avoid pushing  */
+          /* too much on the stack.                                     */
+
+          /* Either it is a heap object or a region outside the heap.   */
           GC_ASSERT(descr <= (word)GC_greatest_plausible_heap_addr
                             - (word)GC_least_plausible_heap_addr
                 || (word)(current_p + descr)
-                            < (word)GC_least_plausible_heap_addr
+                            <= (word)GC_least_plausible_heap_addr
                 || (word)current_p >= (word)GC_greatest_plausible_heap_addr);
 #         ifdef PARALLEL_MARK
 #           define SHARE_BYTES 2048
@@ -932,7 +933,7 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
                       || descr <= (word)GC_greatest_plausible_heap_addr
                                         - (word)GC_least_plausible_heap_addr
                       || (word)(p -> mse_start + descr)
-                            < (word)GC_least_plausible_heap_addr
+                            <= (word)GC_least_plausible_heap_addr
                       || (word)p -> mse_start
                             >= (word)GC_greatest_plausible_heap_addr);
             /* If this is a big object, count it as size/256 + 1 objects. */
