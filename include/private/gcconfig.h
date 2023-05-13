@@ -83,7 +83,7 @@ EXTERN_C_BEGIN
 #endif
 
 /* Machine dependent parameters.  Some tuning parameters can be found   */
-/* near the top of gc_private.h.                                        */
+/* near the top of gc_priv.h.                                           */
 
 /* Machine specific parts contributed by various people.  See README file. */
 

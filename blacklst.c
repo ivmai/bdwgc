@@ -18,7 +18,7 @@
  * We maintain several hash tables of hblks that have had false hits.
  * Each contains one bit per hash bucket;  If any page in the bucket
  * has had a false hit, we assume that all of them have.
- * See the definition of page_hash_table in gc_private.h.
+ * See the definition of page_hash_table in gc_priv.h.
  * False hits from the stack(s) are much more dangerous than false hits
  * from elsewhere, since the former can pin a large object that spans the
  * block, even though it does not start on the dangerous block.
@@ -230,7 +230,7 @@ GC_INNER void GC_unpromote_black_lists(void)
 }
 
 /*
- * Is the block starting at h of size len bytes black listed?   If so,
+ * Is the block starting at h of size len bytes black listed?  If so,
  * return the address of the next plausible r such that (r, len) might not
  * be black listed.  (R may not actually be in the heap.  We guarantee only
  * that every smaller value of r after h is also black listed.)
