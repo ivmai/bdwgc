@@ -115,10 +115,10 @@
         ptr_t target = *(ptr_t *)bp;
         ptr_t alternate_target = *(ptr_t *)alternate_ptr;
 
-        if (alternate_target >= GC_least_plausible_heap_addr
-            && alternate_target <= GC_greatest_plausible_heap_addr
-            && (target < GC_least_plausible_heap_addr
-                || target > GC_greatest_plausible_heap_addr)) {
+        if ((word)alternate_target > GC_least_real_heap_addr
+            && (word)alternate_target < GC_greatest_real_heap_addr
+            && ((word)target <= GC_least_real_heap_addr
+                || (word)target >= GC_greatest_real_heap_addr)) {
             bp = alternate_ptr;
         }
       }

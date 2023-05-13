@@ -1096,6 +1096,13 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
     if ((ptr_t)p + bytes >= (ptr_t)GC_greatest_plausible_heap_addr) {
         GC_greatest_plausible_heap_addr = (void *)endp;
     }
+#   ifdef SET_REAL_HEAP_BOUNDS
+      if ((word)p < GC_least_real_heap_addr
+          || EXPECT(0 == GC_least_real_heap_addr, FALSE))
+        GC_least_real_heap_addr = (word)p - sizeof(word);
+      if (endp > GC_greatest_real_heap_addr)
+        GC_greatest_real_heap_addr = endp;
+#   endif
 }
 
 #if !defined(NO_DEBUGGING)
