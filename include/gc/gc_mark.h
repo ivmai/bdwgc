@@ -128,7 +128,9 @@ GC_API void * GC_greatest_plausible_heap_addr;
                         /* Bounds on the heap.  Guaranteed to be valid. */
                         /* Likely to include future heap expansion.     */
                         /* Hence usually includes not-yet-mapped        */
-                        /* memory.  The address of any heap object is   */
+                        /* memory, or might overlap with other data     */
+                        /* roots.  The address of any heap object is    */
+                        /* larger than GC_least_plausible_heap_addr and */
                         /* less than GC_greatest_plausible_heap_addr.   */
 
 /* Handle nested references in a custom mark procedure.                 */

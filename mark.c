@@ -618,11 +618,10 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           /* too much on the stack.                                     */
 
           /* Either it is a heap object or a region outside the heap.   */
-          GC_ASSERT(descr <= (word)GC_greatest_plausible_heap_addr
-                            - (word)GC_least_plausible_heap_addr
-                || (word)(current_p + descr)
-                            <= (word)GC_least_plausible_heap_addr
-                || (word)current_p >= (word)GC_greatest_plausible_heap_addr);
+          GC_ASSERT(descr < GC_greatest_real_heap_addr-GC_least_real_heap_addr
+                || (word)current_p + descr
+                        <= GC_least_real_heap_addr + sizeof(word)
+                || (word)current_p >= GC_greatest_real_heap_addr);
 #         ifdef PARALLEL_MARK
 #           define SHARE_BYTES 2048
             if (descr > SHARE_BYTES && GC_parallel
@@ -930,12 +929,10 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
             top -> mse_descr.w = descr;
             top -> mse_start = p -> mse_start;
             GC_ASSERT((descr & GC_DS_TAGS) != GC_DS_LENGTH /* 0 */
-                      || descr <= (word)GC_greatest_plausible_heap_addr
-                                        - (word)GC_least_plausible_heap_addr
-                      || (word)(p -> mse_start + descr)
-                            <= (word)GC_least_plausible_heap_addr
-                      || (word)p -> mse_start
-                            >= (word)GC_greatest_plausible_heap_addr);
+                || descr < GC_greatest_real_heap_addr-GC_least_real_heap_addr
+                || (word)(p -> mse_start + descr)
+                        <= GC_least_real_heap_addr + sizeof(word)
+                || (word)(p -> mse_start) >= GC_greatest_real_heap_addr);
             /* If this is a big object, count it as size/256 + 1 objects. */
             ++i;
             if ((descr & GC_DS_TAGS) == GC_DS_LENGTH) i += (int)(descr >> 8);
