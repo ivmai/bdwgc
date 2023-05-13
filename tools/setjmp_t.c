@@ -104,7 +104,7 @@ int main(void)
              ((unsigned long)sp + ps) & ~(ps-1));
     } else {
       printf("Stack appears to grow up.\n");
-      printf("Define STACK_GROWS_UP in gc_private.h\n");
+      printf("Define STACK_GROWS_UP in gc_priv.h\n");
       printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
              ((unsigned long)sp + ps) & ~(ps-1));
     }
