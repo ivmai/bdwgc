@@ -1560,7 +1560,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
           GC_greatest_plausible_heap_addr = (void *)new_limit;
     } else {
         /* Heap is growing down. */
-        word new_limit = (word)space - expansion_slop;
+        word new_limit = (word)space - expansion_slop - sizeof(word);
         if (new_limit < (word)space
             && (word)GC_least_plausible_heap_addr > new_limit)
           GC_least_plausible_heap_addr = (void *)new_limit;

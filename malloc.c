@@ -324,11 +324,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
             if (k == PTRFREE) {
                 *opp = obj_link(op);
             } else {
-                GC_ASSERT(0 == obj_link(op)
-                          || ((word)obj_link(op)
-                                < (word)GC_greatest_plausible_heap_addr
-                              && (word)obj_link(op)
-                                >= (word)GC_least_plausible_heap_addr));
+                GC_ASSERT(NULL == obj_link(op)
+                          || ((word)obj_link(op) < GC_greatest_real_heap_addr
+                             && (word)obj_link(op) > GC_least_real_heap_addr));
                 *opp = obj_link(op);
                 obj_link(op) = 0;
             }

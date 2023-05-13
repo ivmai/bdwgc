@@ -629,7 +629,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
               word new_size = (descr/2) & ~(word)(sizeof(word)-1);
 
               mark_stack_top -> mse_start = current_p;
-              mark_stack_top -> mse_descr.w = new_size + sizeof(word);
+              mark_stack_top -> mse_descr.w =
+                                (new_size + sizeof(word)) | GC_DS_LENGTH;
                                         /* Makes sure we handle         */
                                         /* misaligned pointers.         */
               mark_stack_top++;
@@ -682,7 +683,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             if ((descr & SIGNB) == 0) continue;
             LOAD_WORD_OR_CONTINUE(current, current_p);
             FIXUP_POINTER(current);
-            if (current >= (word)least_ha && current < (word)greatest_ha) {
+            if (current > (word)least_ha && current < (word)greatest_ha) {
                 PREFETCH((ptr_t)current);
 #               ifdef ENABLE_TRACE
                   if (GC_trace_addr == current_p) {
@@ -781,7 +782,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           deferred = *(word *)limit;
           FIXUP_POINTER(deferred);
           limit -= ALIGNMENT;
-          if (deferred >= (word)least_ha && deferred < (word)greatest_ha) {
+          if (deferred > (word)least_ha && deferred < (word)greatest_ha) {
             PREFETCH((ptr_t)deferred);
             break;
           }
@@ -791,7 +792,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           deferred = *(word *)limit;
           FIXUP_POINTER(deferred);
           limit -= ALIGNMENT;
-          if (deferred >= (word)least_ha && deferred < (word)greatest_ha) {
+          if (deferred > (word)least_ha && deferred < (word)greatest_ha) {
             PREFETCH((ptr_t)deferred);
             break;
           }
@@ -806,7 +807,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         LOAD_WORD_OR_CONTINUE(current, current_p);
         FIXUP_POINTER(current);
         PREFETCH(current_p + PREF_DIST*CACHE_LINE_SIZE);
-        if (current >= (word)least_ha && current < (word)greatest_ha) {
+        if (current > (word)least_ha && current < (word)greatest_ha) {
           /* Prefetch the contents of the object we just pushed.  It's  */
           /* likely we will need them soon.                             */
           PREFETCH((ptr_t)current);
@@ -1274,11 +1275,10 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
     }
     length = (word)top - (word)bottom;
 #   if GC_DS_TAGS > ALIGNMENT - 1
-        length += GC_DS_TAGS;
-        length &= ~GC_DS_TAGS;
+        length = (length + GC_DS_TAGS) & ~GC_DS_TAGS; /* round up */
 #   endif
     GC_mark_stack_top -> mse_start = (ptr_t)bottom;
-    GC_mark_stack_top -> mse_descr.w = length;
+    GC_mark_stack_top -> mse_descr.w = length | GC_DS_LENGTH;
 }
 
 #ifndef GC_DISABLE_INCREMENTAL
