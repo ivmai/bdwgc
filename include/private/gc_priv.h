@@ -1288,6 +1288,16 @@ struct _GC_arrays {
   ptr_t _scratch_last_end_ptr;
         /* Used by headers.c, and can easily appear to point to */
         /* heap.  Also used by GC_register_dynamic_libraries(). */
+# if defined(GC_ASSERTIONS) || (defined(KEEP_BACK_PTRS) && ALIGNMENT == 1)
+#   define SET_REAL_HEAP_BOUNDS
+#   define GC_least_real_heap_addr GC_arrays._least_real_heap_addr
+#   define GC_greatest_real_heap_addr GC_arrays._greatest_real_heap_addr
+    word _least_real_heap_addr;
+    word _greatest_real_heap_addr;
+        /* Similar to GC_least/greatest_plausible_heap_addr but */
+        /* do not include future (potential) heap expansion.    */
+        /* Both variables are zero initially.                   */
+# endif
   mse *_mark_stack;
         /* Limits of stack for GC_mark routine.  All ranges     */
         /* between GC_mark_stack (incl.) and GC_mark_stack_top  */
