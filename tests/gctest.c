@@ -2120,10 +2120,6 @@ void check_heap_stats(void)
       (void)GC_get_size_map_at(1);
 #   endif
 
-#   ifdef THREADS
-      (void)GC_unregister_my_thread(); /* just to check it works (for main) */
-#   endif
-
 #   ifndef NO_CLOCK
       GC_printf("Full/world-stopped collections took %lu/%lu ms\n",
                 GC_get_full_gc_total_time(), GC_get_stopped_mark_total_time());
@@ -2488,6 +2484,7 @@ DWORD __stdcall thr_window(void *arg)
 # endif
   run_single_threaded_test();
   check_heap_stats();
+  (void)GC_unregister_my_thread(); /* just to check it works (for main) */
   return 0;
 }
 
@@ -2717,7 +2714,7 @@ int main(void)
 #   if !defined(GC_NO_DLOPEN) && !defined(DARWIN) \
        && !defined(GC_WIN32_THREADS)
       {
-        void *h = GC_dlopen("libc.so", 0);
+        void *h = GC_dlopen("libc.so", 0 /* some value (maybe invalid) */);
         if (h != NULL) dlclose(h);
       }
 #   endif
@@ -2742,6 +2739,8 @@ int main(void)
 #   ifdef PTW32_STATIC_LIB
         pthread_win32_thread_detach_np();
         pthread_win32_process_detach_np();
+#   else
+        (void)GC_unregister_my_thread();
 #   endif
     return 0;
 }
