@@ -1813,9 +1813,6 @@ void check_heap_stats(void)
       }
 #   endif
 
-#   ifdef THREADS
-      GC_unregister_my_thread(); /* just to check it works (for main) */
-#   endif
     GC_printf("Completed %u collections", (unsigned)GC_get_gc_no());
 #   ifdef PARALLEL_MARK
       GC_printf(" (using %d marker threads)", GC_get_parallel() + 1);
@@ -2224,6 +2221,7 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
       UNTESTED(GC_endthreadex);
 #   endif
 # endif
+  (void)GC_unregister_my_thread(); /* just to check it works (for main) */
   return(0);
 }
 
@@ -2385,6 +2383,8 @@ int main(void)
 #   ifdef PTW32_STATIC_LIB
         pthread_win32_thread_detach_np ();
         pthread_win32_process_detach_np ();
+#   else
+        (void)GC_unregister_my_thread();
 #   endif
     return(0);
 }
