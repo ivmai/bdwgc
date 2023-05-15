@@ -131,6 +131,7 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
     int k;
 
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(GC_getspecific(GC_thread_key) == p);
     /* We currently only do this from the thread itself.        */
     GC_STATIC_ASSERT(THREAD_FREELISTS_KINDS <= MAXOBJKINDS);
     for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
@@ -141,6 +142,8 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 #   ifdef GC_GCJ_SUPPORT
         return_freelists(p -> gcj_freelists, (void **)GC_gcjobjfreelist);
 #   endif
+    /* Clear the pointer to tlfs.       */
+    (void)GC_setspecific(GC_thread_key, NULL);
 }
 
 STATIC void *GC_get_tlfs(void)
