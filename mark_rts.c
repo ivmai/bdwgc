@@ -545,6 +545,10 @@ struct exclusion GC_excl_table[MAX_EXCLUSIONS];
 /* about it by design.                                              */
 GC_API void GC_CALL GC_clear_exclusion_table(void)
 {
+#   ifdef DEBUG_ADD_DEL_ROOTS
+      GC_log_printf("Clear static root exclusions (%u elements)\n",
+                    (unsigned)GC_excl_table_entries);
+#   endif
     GC_excl_table_entries = 0;
 }
 
@@ -590,6 +594,10 @@ GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
       if ((word)(next -> e_start) == (word)finish) {
         /* Extend old range backwards.  */
         next -> e_start = (ptr_t)start;
+#       ifdef DEBUG_ADD_DEL_ROOTS
+          GC_log_printf("Updating static root exclusion to %p .. %p\n",
+                        start, (void *)(next -> e_end));
+#       endif
         return;
       }
     }
@@ -604,6 +612,10 @@ GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
         GC_excl_table[i] = GC_excl_table[i-1];
       }
     }
+#   ifdef DEBUG_ADD_DEL_ROOTS
+      GC_log_printf("Adding static root exclusion at %u: %p .. %p\n",
+                    (unsigned)next_index, start, finish);
+#   endif
     GC_excl_table[next_index].e_start = (ptr_t)start;
     GC_excl_table[next_index].e_end = (ptr_t)finish;
     ++GC_excl_table_entries;
