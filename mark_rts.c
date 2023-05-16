@@ -578,9 +578,7 @@ GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
     } else {
         next = GC_next_exclusion((ptr_t)start);
     }
-    if (0 != next) {
-      size_t i;
-
+    if (next != NULL) {
       if ((word)(next -> e_start) < (word) finish) {
         /* incomplete error check. */
         ABORT("Exclusion ranges overlap");
@@ -590,14 +588,18 @@ GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
           next -> e_start = (ptr_t)start;
           return;
       }
-      next_index = next - GC_excl_table;
+    }
+
+    next_index = GC_excl_table_entries;
+    if (next_index >= MAX_EXCLUSIONS) ABORT("Too many exclusions");
+    if (next != NULL) {
+      size_t i;
+
+      next_index = (size_t)(next - GC_excl_table);
       for (i = GC_excl_table_entries; i > next_index; --i) {
         GC_excl_table[i] = GC_excl_table[i-1];
       }
-    } else {
-      next_index = GC_excl_table_entries;
     }
-    if (GC_excl_table_entries == MAX_EXCLUSIONS) ABORT("Too many exclusions");
     GC_excl_table[next_index].e_start = (ptr_t)start;
     GC_excl_table[next_index].e_end = (ptr_t)finish;
     ++GC_excl_table_entries;
