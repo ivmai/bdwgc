@@ -1246,7 +1246,8 @@ struct _GC_arrays {
   ptr_t _scratch_last_end_ptr;
         /* Used by headers.c, and can easily appear to point to */
         /* heap.  Also used by GC_register_dynamic_libraries(). */
-# if defined(GC_ASSERTIONS) || (defined(KEEP_BACK_PTRS) && ALIGNMENT == 1)
+# if defined(GC_ASSERTIONS) || defined(INCLUDE_LINUX_THREAD_DESCR) \
+     || (defined(KEEP_BACK_PTRS) && ALIGNMENT == 1)
 #   define SET_REAL_HEAP_BOUNDS
 #   define GC_least_real_heap_addr GC_arrays._least_real_heap_addr
 #   define GC_greatest_real_heap_addr GC_arrays._greatest_real_heap_addr
