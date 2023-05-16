@@ -1100,8 +1100,13 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
       if ((word)p < GC_least_real_heap_addr
           || EXPECT(0 == GC_least_real_heap_addr, FALSE))
         GC_least_real_heap_addr = (word)p - sizeof(word);
-      if (endp > GC_greatest_real_heap_addr)
+      if (endp > GC_greatest_real_heap_addr) {
+#       ifdef INCLUDE_LINUX_THREAD_DESCR
+          /* Avoid heap intersection with the static data roots. */
+          GC_exclude_static_roots_inner((void *)p, (void *)endp);
+#       endif
         GC_greatest_real_heap_addr = endp;
+      }
 #   endif
 }
 
