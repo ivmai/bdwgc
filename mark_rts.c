@@ -548,27 +548,26 @@ GC_API void GC_CALL GC_clear_exclusion_table(void)
     GC_excl_table_entries = 0;
 }
 
-/* Return the first exclusion range that includes an address >= start_addr */
-/* Assumes the exclusion table contains at least one entry (namely the     */
-/* GC data structures).                                                    */
+/* Return the first exclusion range that includes an address not    */
+/* lower than start_addr.                                           */
 STATIC struct exclusion * GC_next_exclusion(ptr_t start_addr)
 {
     size_t low = 0;
     size_t high;
 
-    GC_ASSERT(GC_excl_table_entries > 0);
+    if (EXPECT(0 == GC_excl_table_entries, FALSE)) return NULL;
     high = GC_excl_table_entries - 1;
     while (high > low) {
         size_t mid = (low + high) >> 1;
 
         /* low <= mid < high    */
-        if ((word) GC_excl_table[mid].e_end <= (word) start_addr) {
+        if ((word)GC_excl_table[mid].e_end <= (word)start_addr) {
             low = mid + 1;
         } else {
             high = mid;
         }
     }
-    if ((word) GC_excl_table[low].e_end <= (word) start_addr) return 0;
+    if ((word)GC_excl_table[low].e_end <= (word)start_addr) return NULL;
     return GC_excl_table + low;
 }
 
@@ -582,20 +581,16 @@ GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
     GC_ASSERT((word)start % sizeof(word) == 0);
     GC_ASSERT((word)start < (word)finish);
 
-    if (0 == GC_excl_table_entries) {
-        next = 0;
-    } else {
-        next = GC_next_exclusion((ptr_t)start);
-    }
+    next = GC_next_exclusion((ptr_t)start);
     if (next != NULL) {
-      if ((word)(next -> e_start) < (word) finish) {
-        /* incomplete error check. */
+      if ((word)(next -> e_start) < (word)finish) {
+        /* Incomplete error check.      */
         ABORT("Exclusion ranges overlap");
       }
-      if ((word)(next -> e_start) == (word) finish) {
-        /* extend old range backwards   */
-          next -> e_start = (ptr_t)start;
-          return;
+      if ((word)(next -> e_start) == (word)finish) {
+        /* Extend old range backwards.  */
+        next -> e_start = (ptr_t)start;
+        return;
       }
     }
 
@@ -646,13 +641,14 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
         struct exclusion *next = GC_next_exclusion(bottom);
         ptr_t excl_start;
 
-        if (0 == next
+        if (NULL == next
             || (word)(excl_start = next -> e_start) >= (word)top) {
-          GC_PUSH_CONDITIONAL(bottom, top, all);
-          break;
+          next = NULL;
+          excl_start = top;
         }
-        if ((word)excl_start > (word)bottom)
+        if ((word)bottom < (word)excl_start)
           GC_PUSH_CONDITIONAL(bottom, excl_start, all);
+        if (NULL == next) break;
         bottom = next -> e_end;
     }
 }
