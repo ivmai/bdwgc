@@ -1449,6 +1449,7 @@ struct _GC_arrays {
         /* Used by GC_register_dynamic_libraries().             */
 # endif
 # if defined(GC_ASSERTIONS) || defined(MAKE_BACK_GRAPH) \
+     || defined(INCLUDE_LINUX_THREAD_DESCR) \
      || (defined(KEEP_BACK_PTRS) && ALIGNMENT == 1)
 #   define SET_REAL_HEAP_BOUNDS
 #   define GC_least_real_heap_addr GC_arrays._least_real_heap_addr
