@@ -48,6 +48,8 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
     return 0;
 }
 
+/* Set the thread-local value associated with the key.  Should not  */
+/* be used to overwrite a previously set value.                     */
 GC_INNER int GC_setspecific(tsd * key, void * value)
 {
     pthread_t self = pthread_self();
@@ -62,8 +64,17 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
     if (EXPECT(NULL == entry, FALSE)) return ENOMEM;
 
     pthread_mutex_lock(&(key -> lock));
-    /* Could easily check for an existing entry here.   */
     entry -> next = key->hash[hash_val].p;
+#   ifdef GC_ASSERTIONS
+      {
+        tse *p;
+
+        /* Ensure no existing entry.    */
+        for (p = entry -> next; p != NULL; p = p -> next) {
+          GC_ASSERT(!THREAD_EQUAL(p -> thread, self));
+        }
+      }
+#   endif
     entry -> thread = self;
     entry -> value = TS_HIDE_VALUE(value);
     GC_ASSERT(entry -> qtid == INVALID_QTID);
