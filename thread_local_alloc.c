@@ -142,8 +142,6 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 #   ifdef GC_GCJ_SUPPORT
         return_freelists(p -> gcj_freelists, (void **)GC_gcjobjfreelist);
 #   endif
-    /* Clear the pointer to tlfs.       */
-    (void)GC_setspecific(GC_thread_key, NULL);
 }
 
 STATIC void *GC_get_tlfs(void)
