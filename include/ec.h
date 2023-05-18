@@ -36,7 +36,7 @@
  *
  *          ...
  *          CORD_ec_init(x);
- *          while(...) {
+ *          while (...) {
  *              c = getc(f);
  *              ...
  *              CORD_ec_append(x, c);
@@ -51,14 +51,13 @@
 #   define CORD_BUFSZ 128
 # endif
 
+/* This structure represents the concatenation of ec_cord with  */
+/* ec_buf[0 .. ec_bufptr-ec_buf-1].                             */
 typedef struct CORD_ec_struct {
     CORD ec_cord;
     char * ec_bufptr;
     char ec_buf[CORD_BUFSZ+1];
 } CORD_ec[1];
-
-/* This structure represents the concatenation of ec_cord with  */
-/* ec_buf[0 ... (ec_bufptr-ec_buf-1)]                           */
 
 /* Flush the buffer part of the extended cord into ec_cord.     */
 /* Note that this is almost the only real function, and it is   */
