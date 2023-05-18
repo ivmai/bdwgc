@@ -79,13 +79,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
       }
     }
 
-    /* Empirically, the command line does not include the command name ...
-    if (command_line != 0) {
-       while (isspace(*command_line)) command_line++;
-       while (*command_line != 0 && !isspace(*command_line)) command_line++;
-       while (isspace(*command_line)) command_line++;
-    } */
-
+    /* Empirically, the command line does not include the command name... */
     if (command_line == 0 || *command_line == 0) {
         de_error("File name argument required");
         return 0;
