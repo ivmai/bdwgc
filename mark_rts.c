@@ -681,7 +681,8 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
 
 #ifdef THREADS
 
-GC_INNER void GC_push_all_stack_sections(ptr_t lo, ptr_t hi,
+GC_INNER void GC_push_all_stack_sections(
+                        ptr_t lo /* top */, ptr_t hi /* bottom */,
                         struct GC_traced_stack_sect_s *traced_stack_sect)
 {
     while (traced_stack_sect != NULL) {
@@ -753,8 +754,9 @@ STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
 }
 
 /* Similar to GC_push_all_stack_sections() but also uses cold_gc_frame. */
-STATIC void GC_push_all_stack_part_eager_sections(ptr_t lo, ptr_t hi,
-        ptr_t cold_gc_frame, struct GC_traced_stack_sect_s *traced_stack_sect)
+STATIC void GC_push_all_stack_part_eager_sections(
+        ptr_t lo /* top */, ptr_t hi /* bottom */, ptr_t cold_gc_frame,
+        struct GC_traced_stack_sect_s *traced_stack_sect)
 {
     GC_ASSERT(traced_stack_sect == NULL || cold_gc_frame == NULL ||
               (word)cold_gc_frame HOTTER_THAN (word)traced_stack_sect);

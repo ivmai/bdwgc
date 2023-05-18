@@ -780,7 +780,8 @@ GC_INNER void GC_push_all_stacks(void)
     size_t nthreads = 0;
     int i;
     GC_thread p;
-    ptr_t lo, hi;
+    ptr_t lo; /* stack top (sp) */
+    ptr_t hi; /* bottom */
 #   if defined(E2K) || defined(IA64)
       /* We also need to scan the register backing store.   */
       ptr_t bs_lo, bs_hi;
@@ -850,8 +851,13 @@ GC_INNER void GC_push_all_stacks(void)
 #           endif
         }
 #       ifdef DEBUG_THREADS
-          GC_log_printf("Stack for thread %p is [%p,%p)\n",
-                        (void *)p->id, (void *)lo, (void *)hi);
+#         ifdef STACK_GROWS_UP
+            GC_log_printf("Stack for thread %p is (%p,%p]\n",
+                          (void *)(p -> id), (void *)hi, (void *)lo);
+#         else
+            GC_log_printf("Stack for thread %p is [%p,%p)\n",
+                          (void *)(p -> id), (void *)lo, (void *)hi);
+#         endif
 #       endif
         if (0 == lo) ABORT("GC_push_all_stacks: sp not set!");
         if (p->altstack != NULL && (word)p->altstack <= (word)lo
@@ -883,7 +889,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       if defined(E2K) || defined(IA64)
 #         ifdef DEBUG_THREADS
             GC_log_printf("Reg stack for thread %p is [%p,%p)\n",
-                          (void *)p->id, (void *)bs_lo, (void *)bs_hi);
+                          (void *)(p -> id), (void *)bs_lo, (void *)bs_hi);
 #         endif
           GC_ASSERT(bs_lo != NULL && bs_hi != NULL);
           /* FIXME: This (if p->id==self) may add an unbounded number of */
