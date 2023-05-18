@@ -859,9 +859,12 @@ GC_INNER void GC_push_all_stacks(void)
         if (NULL == lo) ABORT("GC_push_all_stacks: sp not set!");
         if (crtn -> altstack != NULL && (word)(crtn -> altstack) <= (word)lo
             && (word)lo <= (word)(crtn -> altstack) + crtn -> altstack_size) {
-          hi = crtn -> altstack + crtn -> altstack_size;
+#         ifdef STACK_GROWS_UP
+            hi = crtn -> altstack;
+#         else
+            hi = crtn -> altstack + crtn -> altstack_size;
+#         endif
           /* FIXME: Need to scan the normal stack too, but how ? */
-          /* FIXME: Assume stack grows down */
         }
         GC_push_all_stack_sections(lo, hi, traced_stack_sect);
 #       ifdef STACK_GROWS_UP
