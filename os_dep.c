@@ -1267,7 +1267,7 @@ GC_INNER void GC_setpagesize(void)
         if (pthread_attr_getstack(&attr, &stackaddr, &size) == 0
             && stackaddr != NULL) {
           (void)pthread_attr_destroy(&attr);
-#         ifdef STACK_GROWS_DOWN
+#         ifndef STACK_GROWS_UP
             stackaddr = (char *)stackaddr + size;
 #         endif
           return (ptr_t)stackaddr;
@@ -1282,11 +1282,11 @@ GC_INNER void GC_setpagesize(void)
 #   else
 #     ifdef HEURISTIC1
 #       define STACKBOTTOM_ALIGNMENT_M1 ((word)STACK_GRAN - 1)
-#       ifdef STACK_GROWS_DOWN
+#       ifdef STACK_GROWS_UP
+          result = (ptr_t)((word)GC_approx_sp() & ~STACKBOTTOM_ALIGNMENT_M1);
+#       else
           result = (ptr_t)(((word)GC_approx_sp() + STACKBOTTOM_ALIGNMENT_M1)
                            & ~STACKBOTTOM_ALIGNMENT_M1);
-#       else
-          result = (ptr_t)((word)GC_approx_sp() & ~STACKBOTTOM_ALIGNMENT_M1);
 #       endif
 #     elif defined(HPUX_MAIN_STACKBOTTOM)
         result = GC_hpux_main_stack_base();
@@ -1299,22 +1299,16 @@ GC_INNER void GC_setpagesize(void)
 #     elif defined(HEURISTIC2)
         {
           ptr_t sp = GC_approx_sp();
-#         ifdef STACK_GROWS_DOWN
-            result = (ptr_t)GC_find_limit(sp, TRUE);
-#           if defined(HEURISTIC2_LIMIT) && !defined(CPPCHECK)
-              if ((word)result > (word)HEURISTIC2_LIMIT
-                  && (word)sp < (word)HEURISTIC2_LIMIT) {
-                result = HEURISTIC2_LIMIT;
-              }
-#           endif
+
+#         ifdef STACK_GROWS_UP
+            result = (ptr_t)GC_find_limit(sp, /* up= */ FALSE);
 #         else
-            result = (ptr_t)GC_find_limit(sp, FALSE);
-#           if defined(HEURISTIC2_LIMIT) && !defined(CPPCHECK)
-              if ((word)result < (word)HEURISTIC2_LIMIT
-                  && (word)sp > (word)HEURISTIC2_LIMIT) {
-                result = HEURISTIC2_LIMIT;
-              }
-#           endif
+            result = (ptr_t)GC_find_limit(sp, TRUE);
+#         endif
+#         if defined(HEURISTIC2_LIMIT) && !defined(CPPCHECK)
+            if ((word)result COOLER_THAN (word)HEURISTIC2_LIMIT
+                && (word)sp HOTTER_THAN (word)HEURISTIC2_LIMIT)
+              result = HEURISTIC2_LIMIT;
 #         endif
         }
 #     elif defined(STACK_NOT_SCANNED) || defined(CPPCHECK)
@@ -1322,7 +1316,7 @@ GC_INNER void GC_setpagesize(void)
 #     else
 #       error None of HEURISTIC* and *STACKBOTTOM defined!
 #     endif
-#     if defined(STACK_GROWS_DOWN) && !defined(CPPCHECK)
+#     if !defined(STACK_GROWS_UP) && !defined(CPPCHECK)
         if (NULL == result)
           result = (ptr_t)(signed_word)(-sizeof(ptr_t));
 #     endif
@@ -1365,7 +1359,7 @@ GC_INNER void GC_setpagesize(void)
         ABORT("pthread_attr_getstack failed");
     }
     (void)pthread_attr_destroy(&attr);
-#   ifdef STACK_GROWS_DOWN
+#   ifndef STACK_GROWS_UP
         b -> mem_base = (char *)(b -> mem_base) + size;
 #   endif
 #   ifdef IA64
@@ -1506,10 +1500,10 @@ GC_INNER void GC_setpagesize(void)
 
       LOCK();
       DISABLE_CANCEL(cancel_state);  /* May be unnecessary? */
-#     ifdef STACK_GROWS_DOWN
-        b -> mem_base = GC_find_limit(GC_approx_sp(), TRUE);
+#     ifdef STACK_GROWS_UP
+        b -> mem_base = GC_find_limit(GC_approx_sp(), /* up= */ FALSE);
 #     else
-        b -> mem_base = GC_find_limit(GC_approx_sp(), FALSE);
+        b -> mem_base = GC_find_limit(GC_approx_sp(), TRUE);
 #     endif
 #     ifdef IA64
         b -> reg_base = GC_find_limit(GC_save_regs_in_stack(), FALSE);

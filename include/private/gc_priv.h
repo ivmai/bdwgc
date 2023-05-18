@@ -289,19 +289,19 @@ typedef int GC_bool;
 
 #define GC_WORD_MAX (~(word)0)
 
-# ifdef STACK_GROWS_DOWN
-#   define COOLER_THAN >
-#   define HOTTER_THAN <
-#   define MAKE_COOLER(x,y) if ((word)((x) + (y)) > (word)(x)) {(x) += (y);} \
-                            else (x) = (ptr_t)GC_WORD_MAX
-#   define MAKE_HOTTER(x,y) (x) -= (y)
-# else
+#ifdef STACK_GROWS_UP
 #   define COOLER_THAN <
 #   define HOTTER_THAN >
 #   define MAKE_COOLER(x,y) if ((word)((x) - (y)) < (word)(x)) {(x) -= (y);} \
                             else (x) = 0
-#   define MAKE_HOTTER(x,y) (x) += (y)
-# endif
+#   define MAKE_HOTTER(x,y) (void)((x) += (y))
+#else
+#   define COOLER_THAN >
+#   define HOTTER_THAN <
+#   define MAKE_COOLER(x,y) if ((word)((x) + (y)) > (word)(x)) {(x) += (y);} \
+                            else (x) = (ptr_t)GC_WORD_MAX
+#   define MAKE_HOTTER(x,y) (void)((x) -= (y))
+#endif
 
 #if defined(AMIGA) && defined(__SASC)
 #   define GC_FAR __far

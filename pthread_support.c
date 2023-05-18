@@ -956,7 +956,7 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
             if ((word)crtn -> stack_end >= (word)lo
                 && (word)crtn -> stack_end < (word)hi)
               return TRUE;
-#         else /* STACK_GROWS_DOWN */
+#         else
             if ((word)crtn -> stack_end > (word)lo
                 && (word)crtn -> stack_end <= (word)hi)
               return TRUE;

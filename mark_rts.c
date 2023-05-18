@@ -703,7 +703,7 @@ GC_INNER void GC_push_all_stack_sections(ptr_t lo, ptr_t hi,
         GC_ASSERT((word)lo HOTTER_THAN (word)traced_stack_sect);
 #       ifdef STACK_GROWS_UP
             GC_push_all_stack((ptr_t)traced_stack_sect, lo);
-#       else /* STACK_GROWS_DOWN */
+#       else
             GC_push_all_stack(lo, (ptr_t)traced_stack_sect);
 #       endif
         lo = traced_stack_sect -> saved_stack_ptr;
@@ -714,7 +714,7 @@ GC_INNER void GC_push_all_stack_sections(ptr_t lo, ptr_t hi,
 #   ifdef STACK_GROWS_UP
         /* We got them backwards! */
         GC_push_all_stack(hi, lo);
-#   else /* STACK_GROWS_DOWN */
+#   else
         GC_push_all_stack(lo, hi);
 #   endif
 }
@@ -750,13 +750,13 @@ STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
     }
     GC_ASSERT((word)bottom <= (word)cold_gc_frame
               && (word)cold_gc_frame <= (word)top);
-#   ifdef STACK_GROWS_DOWN
-        GC_push_all(cold_gc_frame - sizeof(ptr_t), top);
-        GC_push_all_eager(bottom, cold_gc_frame);
-#   else /* STACK_GROWS_UP */
+#   ifdef STACK_GROWS_UP
         GC_push_all(bottom, cold_gc_frame + sizeof(ptr_t));
         GC_push_all_eager(cold_gc_frame, top);
-#   endif /* STACK_GROWS_UP */
+#   else
+        GC_push_all(cold_gc_frame - sizeof(ptr_t), top);
+        GC_push_all_eager(bottom, cold_gc_frame);
+#   endif
   } else
 #endif
   /* else */ {
@@ -779,7 +779,7 @@ STATIC void GC_push_all_stack_part_eager_sections(ptr_t lo, ptr_t hi,
 #       ifdef STACK_GROWS_UP
             GC_push_all_stack_partially_eager((ptr_t)traced_stack_sect, lo,
                                               cold_gc_frame);
-#       else /* STACK_GROWS_DOWN */
+#       else
             GC_push_all_stack_partially_eager(lo, (ptr_t)traced_stack_sect,
                                               cold_gc_frame);
 #       endif
@@ -793,7 +793,7 @@ STATIC void GC_push_all_stack_part_eager_sections(ptr_t lo, ptr_t hi,
 #   ifdef STACK_GROWS_UP
         /* We got them backwards! */
         GC_push_all_stack_partially_eager(hi, lo, cold_gc_frame);
-#   else /* STACK_GROWS_DOWN */
+#   else
         GC_push_all_stack_partially_eager(lo, hi, cold_gc_frame);
 #   endif
 }
@@ -813,12 +813,12 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void *context)
     UNUSED_ARG(context);
 #   if defined(THREADS)
         /* cold_gc_frame is non-NULL.   */
-#       ifdef STACK_GROWS_DOWN
+#       ifdef STACK_GROWS_UP
+          GC_push_all_eager(cold_gc_frame, GC_approx_sp());
+#       else
           GC_push_all_eager(GC_approx_sp(), cold_gc_frame);
           /* For IA64, the register stack backing store is handled      */
           /* in the thread-specific code.                               */
-#       else
-          GC_push_all_eager(cold_gc_frame, GC_approx_sp());
 #       endif
 #   else
         GC_push_all_stack_part_eager_sections(GC_approx_sp(), GC_stackbottom,

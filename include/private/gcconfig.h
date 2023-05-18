@@ -2475,10 +2475,6 @@ EXTERN_C_BEGIN
 #   define USE_PROC_FOR_LIBRARIES
 #endif
 
-#ifndef STACK_GROWS_UP
-# define STACK_GROWS_DOWN
-#endif
-
 #ifndef CPP_WORDSZ
 # define CPP_WORDSZ 32
 #endif
@@ -3261,12 +3257,6 @@ EXTERN_C_BEGIN
 #if !defined(CPPCHECK)
 # if defined(MARK_BIT_PER_GRANULE) && defined(MARK_BIT_PER_OBJ)
 #   error Define only one of MARK_BIT_PER_GRANULE and MARK_BIT_PER_OBJ
-# endif
-# if defined(STACK_GROWS_UP) && defined(STACK_GROWS_DOWN)
-#   error Only one of STACK_GROWS_UP and STACK_GROWS_DOWN should be defined
-# endif
-# if !defined(STACK_GROWS_UP) && !defined(STACK_GROWS_DOWN)
-#   error One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defined
 # endif
 # if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \
      && !defined(REDIRECT_MALLOC_IN_HEADER)
