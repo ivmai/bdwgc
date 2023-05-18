@@ -3122,12 +3122,13 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   /* Set up a handler for address faults which will longjmp to  */
   /* GC_jmp_buf.                                                */
   GC_INNER void GC_setup_temporary_fault_handler(void);
+
   /* Undo the effect of GC_setup_temporary_fault_handler.       */
   GC_INNER void GC_reset_fault_handler(void);
 #endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES || WRAP_MARK_SOME */
 
 /* Some convenience macros for cancellation support. */
-#if defined(CANCEL_SAFE)
+#ifdef CANCEL_SAFE
 # if defined(GC_ASSERTIONS) \
      && (defined(USE_COMPILER_TLS) \
          || (defined(LINUX) && !defined(ARM32) && GC_GNUC_PREREQ(3, 3) \
@@ -3141,7 +3142,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #   define INCR_CANCEL_DISABLE()
 #   define DECR_CANCEL_DISABLE()
 #   define ASSERT_CANCEL_DISABLED() (void)0
-# endif /* GC_ASSERTIONS & ... */
+# endif /* !GC_ASSERTIONS */
 # define DISABLE_CANCEL(state) \
         do { pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &state); \
           INCR_CANCEL_DISABLE(); } while (0)
@@ -3149,7 +3150,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
         do { ASSERT_CANCEL_DISABLED(); \
           pthread_setcancelstate(state, NULL); \
           DECR_CANCEL_DISABLE(); } while (0)
-#else /* !CANCEL_SAFE */
+#else
 # define DISABLE_CANCEL(state) (void)0
 # define RESTORE_CANCEL(state) (void)0
 # define ASSERT_CANCEL_DISABLED() (void)0
