@@ -1,3 +1,47 @@
+2023-05-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark_rts.c (GC_exclude_static_roots_inner): Move check of
+	GC_excl_table_entries upper to be before first access to GC_excl_table;
+	move i local variable down to be near place of usage; cast result of
+	next-GC_excl_table to size_t.
+
+2023-05-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c [SET_REAL_HEAP_BOUNDS && INCLUDE_LINUX_THREAD_DESCR]
+	(GC_add_to_heap): If endp is greater than GC_greatest_real_heap_addr
+	then add [p,endp) region to the data roots exclusions; add comment.
+	* include/private/gc_priv.h [INCLUDE_LINUX_THREAD_DESCR]
+	(SET_REAL_HEAP_BOUNDS, GC_least_real_heap_addr,
+	GC_greatest_real_heap_addr): Define.
+
+2023-05-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c [SET_REAL_HEAP_BOUNDS] (GC_add_to_heap): Update
+	GC_least_real_heap_addr and GC_greatest_real_heap_addr variables.
+	* dbg_mlc.c [KEEP_BACK_PTRS && ALIGNMENT == 1] (GC_get_back_ptr_info):
+	Compare alternate_target and target to GC_least_real_heap_addr
+	and GC_greatest_real_heap_addr (instead of GC_least_plausible_heap_addr
+	and GC_greatest_plausible_heap_addr).
+	* include/gc_mark.h (GC_greatest_plausible_heap_addr): Refine
+	comment.
+	* include/private/gc_priv.h [GC_ASSERTIONS || KEEP_BACK_PTRS
+	&& ALIGNMENT == 1] (SET_REAL_HEAP_BOUNDS): Define macro.
+	* include/private/gc_priv.h [GC_ASSERTIONS || KEEP_BACK_PTRS
+	&& ALIGNMENT == 1] (GC_least_real_heap_addr,
+	GC_greatest_real_heap_addr): Define (as macro).
+	* include/private/gc_priv.h [GC_ASSERTIONS || KEEP_BACK_PTRS
+	&& ALIGNMENT == 1] (_GC_arrays._least_real_heap_addr,
+	_GC_arrays._greatest_real_heap_addr): New field; add comment.
+	* mark.c (GC_mark_from): Use GC_greatest_real_heap_addr and
+	GC_least_real_heap_addr instead of GC_least_plausible_heap_addr and
+	GC_greatest_plausible_heap_addr, respectively, in assertions.
+
+2023-05-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* blacklst.c: Fix old file name in comment ("gc_priv.h").
+	* include/private/gcconfig.h: Likewise.
+	* tools/setjmp_t.c (main): Fix old file name in message ("gc_priv.h").
+
 2023-04-25  Ivan Maidanski <ivmai@mail.ru>
 
 	* typd_mlc.c (GC_calloc_explicitly_typed): If descr_type is NO_MEM then
