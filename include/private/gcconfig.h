@@ -3052,6 +3052,15 @@ EXTERN_C_BEGIN
 # define HAVE_CLOCK_GETTIME 1
 #endif
 
+#if defined(GC_PTHREADS) && !defined(E2K) && !defined(IA64) \
+    && (!defined(DARWIN) || defined(DARWIN_DONT_PARSE_STACK)) \
+    && !defined(SN_TARGET_PSP2) && !defined(REDIRECT_MALLOC)
+  /* Note: unimplemented in case of redirection of malloc() because     */
+  /* the client-provided function might call some pthreads primitive    */
+  /* which, in turn, may use malloc() internally.                       */
+# define STACKPTR_CORRECTOR_AVAILABLE
+#endif
+
 #if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE) \
     && !defined(HOST_ANDROID)
   /* Make the code cancellation-safe.  This basically means that we     */

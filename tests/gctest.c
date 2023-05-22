@@ -2690,6 +2690,7 @@ int main(void)
     GC_set_oom_fn(GC_get_oom_fn());
     GC_set_push_other_roots(GC_get_push_other_roots());
     GC_set_same_obj_print_proc(GC_get_same_obj_print_proc());
+    GC_set_sp_corrector(GC_get_sp_corrector());
     GC_set_start_callback(GC_get_start_callback());
     GC_set_stop_func(GC_get_stop_func());
     GC_set_thr_restart_signal(GC_get_thr_restart_signal());

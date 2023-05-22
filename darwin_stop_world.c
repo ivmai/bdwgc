@@ -345,6 +345,10 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
   /* else */ {
     *paltstack_lo = NULL;
   }
+# if defined(STACKPTR_CORRECTOR_AVAILABLE) && defined(DARWIN_DONT_PARSE_STACK)
+    if (GC_sp_corrector != 0)
+      GC_sp_corrector((void **)&lo, (void *)(p -> id));
+# endif
 # ifdef DEBUG_THREADS
     GC_log_printf("Darwin: Stack for thread %p is [%p,%p)\n",
                   (void *)(word)thread, (void *)lo, (void *)(*phi));

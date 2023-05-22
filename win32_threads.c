@@ -852,6 +852,10 @@ STATIC word GC_push_stack_for(GC_thread thread, thread_id_t self_id,
       }
 #   endif /* WOW64_THREAD_CONTEXT_WORKAROUND */
   } /* not current thread */
+# ifdef STACKPTR_CORRECTOR_AVAILABLE
+    if (GC_sp_corrector != 0)
+      GC_sp_corrector((void **)&sp, (void *)(thread -> pthread_id));
+# endif
 
   /* Set stack_min to the lowest address in the thread stack,   */
   /* or to an address in the thread stack no larger than sp,    */
