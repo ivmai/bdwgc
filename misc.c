@@ -2418,6 +2418,38 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
     UNLOCK();
     return fn;
   }
+
+# ifdef STACKPTR_CORRECTOR_AVAILABLE
+    GC_INNER GC_sp_corrector_proc GC_sp_corrector = 0;
+# endif
+
+  GC_API void GC_CALL GC_set_sp_corrector(GC_sp_corrector_proc fn)
+  {
+#   ifdef STACKPTR_CORRECTOR_AVAILABLE
+      DCL_LOCK_STATE;
+
+      LOCK();
+      GC_sp_corrector = fn;
+      UNLOCK();
+#   else
+      UNUSED_ARG(fn);
+#   endif
+  }
+
+  GC_API GC_sp_corrector_proc GC_CALL GC_get_sp_corrector(void)
+  {
+#   ifdef STACKPTR_CORRECTOR_AVAILABLE
+      GC_sp_corrector_proc fn;
+      DCL_LOCK_STATE;
+
+      LOCK();
+      fn = GC_sp_corrector;
+      UNLOCK();
+      return fn;
+#   else
+      return 0; /* unsupported */
+#   endif
+  }
 #endif /* THREADS */
 
 /* Setter and getter functions for the public R/W function variables.   */

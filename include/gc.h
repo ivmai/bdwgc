@@ -1606,6 +1606,20 @@ GC_API void GC_CALL GC_start_mark_threads(void);
   /* Stop/start the world explicitly.  Not recommended for general use. */
   GC_API void GC_CALL GC_stop_world_external(void);
   GC_API void GC_CALL GC_start_world_external(void);
+
+  /* Provide a verifier/modifier of the stack pointer when pushing the  */
+  /* thread stacks.  This might be useful for a crude integration       */
+  /* with certain coroutine implementations.  (*sp_ptr) is the captured */
+  /* stack pointer of the suspended thread with pthread_id (the latter  */
+  /* is actually of pthread_t type).  The functionality is unsupported  */
+  /* on some targets (the getter always returns 0 in such a case).      */
+  /* Both the setter and the getter acquire the GC lock.  The client    */
+  /* function (if provided) is called with the GC lock acquired, and    */
+  /* might be with the world stopped.                                   */
+  typedef void (GC_CALLBACK * GC_sp_corrector_proc)(void ** /* sp_ptr */,
+                                                    void * /* pthread_id */);
+  GC_API void GC_CALL GC_set_sp_corrector(GC_sp_corrector_proc);
+  GC_API GC_sp_corrector_proc GC_CALL GC_get_sp_corrector(void);
 #endif /* GC_THREADS */
 
 /* Wrapper for functions that are likely to block (or, at least, do not */

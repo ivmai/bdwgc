@@ -1748,6 +1748,10 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       }
 #   endif /* WOW64_THREAD_CONTEXT_WORKAROUND */
   } /* ! current thread */
+# ifdef STACKPTR_CORRECTOR_AVAILABLE
+    if (GC_sp_corrector != 0)
+      GC_sp_corrector((void **)&sp, (void *)(thread -> pthread_id));
+# endif
 
   /* Set stack_min to the lowest address in the thread stack,   */
   /* or to an address in the thread stack no larger than sp,    */
