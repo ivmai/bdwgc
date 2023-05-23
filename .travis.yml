@@ -1,5 +1,6 @@
 language: cpp
 os: linux
+dist: jammy
 
 jobs:
   include:
@@ -46,52 +47,37 @@ jobs:
     - CSA_CHECK=true
     - CFLAGS_EXTRA="-m32"
   - compiler: clang
-    dist: jammy
     language: c
     env:
     - CSA_CHECK=true
     - CFLAGS_EXTRA="-D ALL_INTERIOR_POINTERS -D CHECKSUMS -D DBG_HDRS_ALL -D DEBUG_THREADS -D ENABLE_TRACE -D GC_ALWAYS_MULTITHREADED -D GC_ASSERTIONS -D GC_ATOMIC_UNCOLLECTABLE -D GC_ENABLE_SUSPEND_THREAD -D GC_GCJ_SUPPORT -D GC_PRINT_BACK_HEIGHT -D GC_THREADS -D HANDLE_FORK -D JAVA_FINALIZATION -D KEEP_BACK_PTRS -D MAKE_BACK_GRAPH -D PARALLEL_MARK -D PRINT_BLACK_LIST -D THREAD_LOCAL_ALLOC -D USE_MMAP -D USE_MUNMAP"
-  - env:
+  - dist: xenial
+    env:
     - CPPCHECK_ENABLE="--enable=unusedFunction -I libatomic_ops/src extra/gc.c tests/*.c"
-  - env:
+  - dist: xenial
+    env:
     - CPPCHECK_ENABLE="--enable=unusedFunction --force -D GC_BUILTIN_ATOMIC *.cc cord/*.c cord/tests/*.c tests/*.c tests/*.cc"
     - CPPCHECK_OUT_FILTER="Z"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - env:
+  - dist: xenial
+    env:
     - CPPCHECK_ENABLE="-j4 --enable=information,performance,portability,style,warning --force -U GC_PRIVATE_H -I libatomic_ops/src *.c"
-  - env:
+  - dist: xenial
+    env:
     - CPPCHECK_ENABLE="-j4 --enable=information,performance,portability,style,warning --force -U GC_PRIVATE_H -I libatomic_ops/src *.cc cord/*.c cord/tests/*.c extra/AmigaOS.c extra/MacOS.c extra/msvc_dbg.c extra/symbian.cpp tests/*.c tests/*.cc tools/*.c"
   - arch: arm64
     compiler: clang
   - arch: arm64
     compiler: gcc
-  - addons:
-      apt:
-        packages:
-        - clang-12
-        sources:
-        - ubuntu-toolchain-r-test
-    arch: arm64
-    compiler: clang-12
-    dist: focal
+  - arch: arm64
+    compiler: clang
     env:
-    - CC=clang-12
-    - CXX=clang++-12
     - CFLAGS_EXTRA="-O3"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --disable-shared"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - addons:
-      apt:
-        packages:
-        - g++-11
-        sources:
-        - ubuntu-toolchain-r-test
-    arch: arm64
-    compiler: g++-11
-    dist: bionic
+  - arch: arm64
+    compiler: gcc
     env:
-    - CC=gcc-11
-    - CXX=g++-11
     - CFLAGS_EXTRA="-O3 -D SIMULATE_LOST_SIGNALS -D TRACE_BUF"
     - CONF_OPTIONS="--enable-cplusplus --disable-gcj-support"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -101,6 +87,7 @@ jobs:
         - musl-tools
     arch: arm64
     compiler: musl-gcc
+    dist: focal
     language: c
     env:
     - CFLAGS_EXTRA="-O3 -D SOFT_VDB"
@@ -120,15 +107,8 @@ jobs:
     env:
     - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus --disable-munmap"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - addons:
-      apt:
-        packages:
-        - clang-12
-        sources:
-        - ubuntu-toolchain-r-test
-    arch: arm64
-    compiler: clang-12
-    dist: focal
+  - arch: arm64
+    compiler: clang
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory,undefined -fno-omit-frame-pointer"
@@ -152,45 +132,20 @@ jobs:
     env:
     - CONF_OPTIONS="--disable-disclaim"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - addons:
-      apt:
-        packages:
-        - clang-12
-        sources:
-        - ubuntu-toolchain-r-test
-    arch: ppc64le
-    compiler: clang-12
-    dist: focal
+  - arch: ppc64le
+    compiler: clang
     env:
-    - CC=clang-12
-    - CXX=clang++-12
     - CFLAGS_EXTRA="-O3 -D _FORTIFY_SOURCE=2 -D FORCE_MPROTECT_BEFORE_MADVISE"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - addons:
-      apt:
-        packages:
-        - g++-11
-        sources:
-        - ubuntu-toolchain-r-test
-    arch: ppc64le
-    compiler: g++-11
-    dist: bionic
+  - arch: ppc64le
+    compiler: gcc
     env:
-    - CC=gcc-11
-    - CXX=g++-11
     - CFLAGS_EXTRA="-O3 -D NO_MPROTECT_VDB"
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - addons:
-      apt:
-        packages:
-        - clang-12
-        sources:
-        - ubuntu-toolchain-r-test
-    arch: ppc64le
-    compiler: clang-12
-    dist: focal
+  - arch: ppc64le
+    compiler: clang
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory,undefined -fno-omit-frame-pointer"
@@ -209,14 +164,14 @@ jobs:
     - MAKEFILE_TARGETS="check cord/de"
   - arch: s390x
     compiler: clang
+    dist: focal
   - arch: s390x
     compiler: gcc
+    dist: focal
   - addons:
       apt:
         packages:
         - clang-12
-        sources:
-        - ubuntu-toolchain-r-test
     arch: s390x
     compiler: clang-12
     dist: focal
@@ -229,8 +184,6 @@ jobs:
       apt:
         packages:
         - g++-10
-        sources:
-        - ubuntu-toolchain-r-test
     arch: s390x
     compiler: g++-10
     dist: focal
@@ -242,6 +195,7 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: s390x
     compiler: gcc
+    dist: focal
     env:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check cord/de"
@@ -274,7 +228,6 @@ jobs:
     - MAKEFILE_TARGETS="check cord/de"
     - MAKE_NPROC=8
   - compiler: gcc
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-O3 -march=native"
     - CONF_OPTIONS="--enable-cplusplus"
@@ -298,7 +251,6 @@ jobs:
         packages:
         - gcc-multilib
     compiler: gcc
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2"
     - CONF_OPTIONS="--enable-gc-assertions --enable-mmap"
@@ -338,7 +290,6 @@ jobs:
         packages:
         - libatomic-ops-dev
     compiler: gcc
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-D _FORTIFY_SOURCE=2 -D TEST_PAGES_EXECUTABLE"
     - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus --disable-throw-bad-alloc-library"
@@ -407,7 +358,6 @@ jobs:
     - CFLAGS_EXTRA="-D TEST_MANUAL_VDB"
     - CONF_OPTIONS="--enable-gc-assertions --disable-munmap"
   - compiler: gcc
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-D _FORTIFY_SOURCE=2 -D FIND_LEAK -D SKIP_LEAKED_OBJECTS_PRINTING"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
@@ -468,7 +418,6 @@ jobs:
         packages:
         - gcc-multilib
     compiler: clang
-    dist: jammy
     env:
     - CONF_OPTIONS="--enable-redirect-malloc --enable-static --disable-threads"
     - CFLAGS_EXTRA="-m32"
@@ -498,7 +447,6 @@ jobs:
     - CFLAGS_EXTRA="-O3 -march=native"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
-    dist: jammy
     env:
     - CMAKE_OPTIONS="-Denable_cplusplus=ON -Denable_gc_assertions=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -517,7 +465,6 @@ jobs:
     env:
     - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -Denable_gc_debug=ON -Dwithout_libatomic_ops=ON"
   - compiler: gcc
-    dist: jammy
     env:
     - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -Denable_threads=OFF"
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -536,7 +483,6 @@ jobs:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check cord/de"
   - compiler: gcc
-    dist: jammy
     env:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check cord/de"
@@ -549,11 +495,11 @@ jobs:
         packages:
         - musl-tools
     compiler: musl-gcc
-    dist: jammy
     language: c
     env:
     - CONF_OPTIONS="--disable-parallel-mark --enable-gc-assertions"
   - compiler: clang
+    dist: xenial
     env:
     - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-cplusplus --enable-static"
@@ -566,6 +512,7 @@ jobs:
         sources:
         - ubuntu-toolchain-r-test
     compiler: gcc-5
+    dist: xenial
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=address -O0"
@@ -577,7 +524,6 @@ jobs:
     - CONF_OPTIONS="--disable-shared --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
-    dist: jammy
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer -std=gnu11"
@@ -585,14 +531,12 @@ jobs:
     - TESTS_CUSTOM_RUN=true
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-fsanitize=undefined -fno-common -fno-omit-frame-pointer"
     - TESTS_CUSTOM_RUN=true
     - CONF_OPTIONS="--enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: gcc
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-gc-assertions"
@@ -601,8 +545,6 @@ jobs:
       apt:
         packages:
         - clang-12
-        sources:
-        - ubuntu-toolchain-r-test
     compiler: clang-12
     dist: focal
     language: c
@@ -611,23 +553,21 @@ jobs:
     - CONF_OPTIONS="--enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_INCREMENTAL -fno-omit-frame-pointer -D TEST_FORK_WITHOUT_ATFORK"
     - CONF_OPTIONS="--enable-gc-assertions --enable-handle-fork=manual"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_INCREMENTAL -fno-omit-frame-pointer -D TEST_FORK_WITHOUT_ATFORK"
     - CONF_OPTIONS="--enable-gc-assertions --enable-gc-debug --enable-handle-fork=manual --enable-large-config --without-libatomic-ops"
   - compiler: clang
+    dist: xenial
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -fno-omit-frame-pointer -D NTHREADS=10"
     - CONF_OPTIONS="--disable-parallel-mark"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -D NO_INCREMENTAL -fno-omit-frame-pointer -D NTHREADS=0"
     - CONF_OPTIONS="--disable-parallel-mark --disable-thread-local-alloc --disable-shared --enable-gc-assertions --without-libatomic-ops"
@@ -641,34 +581,19 @@ jobs:
         packages:
         - gcc-multilib
     compiler: clang
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D GC_DISABLE_INCREMENTAL -std=gnu11"
     - CONF_OPTIONS="--enable-gc-assertions --enable-gc-debug"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - addons:
-      apt:
-        packages:
-        - gcc-8
-        - g++-8
-        sources:
-        - ubuntu-toolchain-r-test
-    compiler: gcc-8
-    language: c
+  - compiler: gcc
     env:
-    - CXX=g++-8
     - CONF_OPTIONS="--enable-cplusplus --enable-gc-assertions --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
       apt:
         packages:
-        - gcc-8
-        - gcc-8-multilib
         - gcc-multilib
-        sources:
-        - ubuntu-toolchain-r-test
-    compiler: gcc-8
-    language: c
+    compiler: gcc
     env:
     - CFLAGS_EXTRA="-m32 -O3 -std=gnu11"
     - CONF_OPTIONS="--disable-shared --enable-static --enable-single-obj-compilation"
@@ -679,23 +604,20 @@ jobs:
         - gcc-8
         - gcc-8-multilib
         - gcc-multilib
-        sources:
-        - ubuntu-toolchain-r-test
     compiler: gcc-8
+    dist: focal
     language: c
     env:
     - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2"
     - CONF_OPTIONS="--enable-large-config --enable-gc-assertions"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-x c++"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-gc-debug --disable-shared"
     - MAKEFILE_TARGETS="all"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: gcc
-    dist: jammy
     env:
     - CC_FOR_CHECK=g++
     - CONF_OPTIONS="--enable-gc-assertions"
@@ -703,13 +625,11 @@ jobs:
     - MAKEFILE_TARGETS_CHECK="check"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
-    dist: jammy
     env:
     - CFLAGS_EXTRA="-O3 -Wall -Wextra -Werror -x c++"
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="cords"
   - compiler: gcc
-    dist: jammy
     env:
     - CC_FOR_CHECK=g++
     - CFLAGS_EXTRA="-O3 -Wall -Wextra -Werror -D TEST_MANUAL_VDB"
@@ -722,7 +642,6 @@ jobs:
         - g++-mingw-w64
         - gcc-mingw-w64
     compiler: x86_64-w64-mingw32-gcc
-    dist: jammy
     language: c
     env:
     - CXX=x86_64-w64-mingw32-g++
@@ -733,7 +652,6 @@ jobs:
         packages:
         - gcc-mingw-w64
     compiler: x86_64-w64-mingw32-gcc
-    dist: jammy
     language: c
     env:
     - CONF_OPTIONS="--host=x86_64-w64-mingw32 --enable-gc-assertions --enable-gc-debug --enable-threads=pthreads"
@@ -743,7 +661,6 @@ jobs:
         packages:
         - gcc-mingw-w64
     compiler: i686-w64-mingw32-gcc
-    dist: jammy
     language: c
     env:
     - CONF_OPTIONS="--host=i686-w64-mingw32"
