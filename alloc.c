@@ -765,6 +765,33 @@ GC_API int GC_CALL GC_collect_a_little(void)
     return result;
 }
 
+#ifdef THREADS
+  GC_API void GC_CALL GC_stop_world_external(void)
+  {
+    GC_ASSERT(GC_is_initialized);
+    LOCK();
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_ASSERT(!GC_world_stopped);
+#   endif
+    STOP_WORLD();
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_world_stopped = TRUE;
+#   endif
+  }
+
+  GC_API void GC_CALL GC_start_world_external(void)
+  {
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_ASSERT(GC_world_stopped);
+      GC_world_stopped = FALSE;
+#   else
+      GC_ASSERT(GC_is_initialized);
+#   endif
+    START_WORLD();
+    UNLOCK();
+  }
+#endif /* THREADS */
+
 #ifndef NO_CLOCK
   /* Variables for world-stop average delay time statistic computation. */
   /* "divisor" is incremented every world-stop and halved when reached  */

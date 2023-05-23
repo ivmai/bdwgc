@@ -294,6 +294,12 @@ GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
   GC_EXTERN GC_bool GC_thr_initialized;
 #endif
 
+#ifdef STACKPTR_CORRECTOR_AVAILABLE
+  GC_EXTERN GC_sp_corrector_proc GC_sp_corrector;
+#endif
+
+GC_EXTERN GC_on_thread_event_proc GC_on_thread_event;
+
 #ifdef GC_WIN32_THREADS
 
 # ifdef GC_NO_THREADS_DISCOVERY

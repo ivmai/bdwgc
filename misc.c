@@ -2169,6 +2169,18 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn, void *client_data)
     return result;
 }
 
+#ifdef THREADS
+  GC_API void GC_CALL GC_alloc_lock(void)
+  {
+    LOCK();
+  }
+
+  GC_API void GC_CALL GC_alloc_unlock(void)
+  {
+    UNLOCK();
+  }
+#endif /* THREADS */
+
 GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 {
     struct GC_stack_base base;
@@ -2403,67 +2415,6 @@ GC_API int GC_CALL GC_get_parallel(void)
 # endif
 }
 
-#ifdef THREADS
-  GC_API void GC_CALL GC_alloc_lock(void)
-  {
-    LOCK();
-  }
-
-  GC_API void GC_CALL GC_alloc_unlock(void)
-  {
-    UNLOCK();
-  }
-
-  GC_INNER GC_on_thread_event_proc GC_on_thread_event = 0;
-
-  GC_API void GC_CALL GC_set_on_thread_event(GC_on_thread_event_proc fn)
-  {
-    /* fn may be 0 (means no event notifier). */
-    LOCK();
-    GC_on_thread_event = fn;
-    UNLOCK();
-  }
-
-  GC_API GC_on_thread_event_proc GC_CALL GC_get_on_thread_event(void)
-  {
-    GC_on_thread_event_proc fn;
-
-    LOCK();
-    fn = GC_on_thread_event;
-    UNLOCK();
-    return fn;
-  }
-
-# ifdef STACKPTR_CORRECTOR_AVAILABLE
-    GC_INNER GC_sp_corrector_proc GC_sp_corrector = 0;
-# endif
-
-  GC_API void GC_CALL GC_set_sp_corrector(GC_sp_corrector_proc fn)
-  {
-#   ifdef STACKPTR_CORRECTOR_AVAILABLE
-      LOCK();
-      GC_sp_corrector = fn;
-      UNLOCK();
-#   else
-      UNUSED_ARG(fn);
-#   endif
-  }
-
-  GC_API GC_sp_corrector_proc GC_CALL GC_get_sp_corrector(void)
-  {
-#   ifdef STACKPTR_CORRECTOR_AVAILABLE
-      GC_sp_corrector_proc fn;
-
-      LOCK();
-      fn = GC_sp_corrector;
-      UNLOCK();
-      return fn;
-#   else
-      return 0; /* unsupported */
-#   endif
-  }
-#endif /* THREADS */
-
 /* Setter and getter functions for the public R/W function variables.   */
 /* These functions are synchronized (like GC_set_warn_proc() and        */
 /* GC_get_warn_proc()).                                                 */
@@ -2696,30 +2647,3 @@ GC_API size_t GC_CALL GC_get_hblk_size(void)
 {
     return (size_t)HBLKSIZE;
 }
-
-#ifdef THREADS
-  GC_API void GC_CALL GC_stop_world_external(void)
-  {
-    GC_ASSERT(GC_is_initialized);
-    LOCK();
-#   ifdef THREAD_LOCAL_ALLOC
-      GC_ASSERT(!GC_world_stopped);
-#   endif
-    STOP_WORLD();
-#   ifdef THREAD_LOCAL_ALLOC
-      GC_world_stopped = TRUE;
-#   endif
-  }
-
-  GC_API void GC_CALL GC_start_world_external(void)
-  {
-#   ifdef THREAD_LOCAL_ALLOC
-      GC_ASSERT(GC_world_stopped);
-      GC_world_stopped = FALSE;
-#   else
-      GC_ASSERT(GC_is_initialized);
-#   endif
-    START_WORLD();
-    UNLOCK();
-  }
-#endif /* THREADS */

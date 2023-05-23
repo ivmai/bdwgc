@@ -653,10 +653,6 @@ EXTERN_C_BEGIN
 #   endif
 # endif
 
-#ifdef THREADS
-  GC_EXTERN GC_on_thread_event_proc GC_on_thread_event;
-#endif
-
 /* Abandon ship */
 # if defined(SMALL_CONFIG) || defined(PCR)
 #   define GC_on_abort(msg) (void)0 /* be silent on abort */
@@ -1856,9 +1852,6 @@ struct GC_traced_stack_sect_s {
   GC_INNER void GC_push_all_stack_sections(ptr_t lo, ptr_t hi,
                         struct GC_traced_stack_sect_s *traced_stack_sect);
   GC_EXTERN word GC_total_stacksize; /* updated on every push_all_stacks */
-# ifdef STACKPTR_CORRECTOR_AVAILABLE
-    GC_EXTERN GC_sp_corrector_proc GC_sp_corrector;
-# endif
 #else
   GC_EXTERN ptr_t GC_blocked_sp;
   GC_EXTERN struct GC_traced_stack_sect_s *GC_traced_stack_sect;
