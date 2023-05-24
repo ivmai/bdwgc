@@ -564,6 +564,10 @@ GC_PREFER_MPROTECT_VDB  Choose MPROTECT_VDB manually in case of multiple
   Solaris and Linux to force MPROTECT_VDB strategy instead of the default
   GWW_VDB, PROC_VDB or SOFT_VDB ones, respectively).
 
+CHECK_SOFT_VDB  Turn on both MPROTECT_VDB and SOFT_VDB virtual dirty bit
+  strategies to check whether they are consistent.  Use only for debugging of
+  the incremental collector.
+
 GC_IGNORE_GCJ_INFO      Disable GCJ-style type information (useful for
   debugging on WinCE).
 

@@ -3396,10 +3396,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         return TRUE;
       }
 #   elif defined(SOFT_VDB)
-      if (soft_dirty_init()) {
-        GC_COND_LOG_PRINTF("Using soft-dirty bit feature\n");
-        return TRUE;
-      }
+#     ifdef CHECK_SOFT_VDB
+        if (!soft_dirty_init())
+          ABORT("Soft-dirty bit support is missing");
+#     else
+        if (soft_dirty_init()) {
+          GC_COND_LOG_PRINTF("Using soft-dirty bit feature\n");
+          return TRUE;
+        }
+#     endif
 #   endif
 #   ifdef MSWIN32
       GC_old_segv_handler = SetUnhandledExceptionFilter(
@@ -3463,7 +3468,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 GC_API int GC_CALL GC_incremental_protection_needs(void)
 {
     GC_ASSERT(GC_is_initialized);
-#   if defined(GWW_VDB) || defined(SOFT_VDB)
+#   if defined(GWW_VDB) || (defined(SOFT_VDB) && !defined(CHECK_SOFT_VDB))
       /* Only if the incremental mode is already switched on.   */
       if (GC_GWW_AVAILABLE())
         return GC_PROTECTS_NONE;
@@ -3899,7 +3904,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     GC_INNER GC_bool GC_dirty_init(void)
 # endif
   {
-#   ifdef MPROTECT_VDB
+#   if defined(MPROTECT_VDB) && !defined(CHECK_SOFT_VDB)
       char * str = GETENV("GC_USE_GETWRITEWATCH");
 #     ifdef GC_PREFER_MPROTECT_VDB
         if (str == NULL || (*str == '0' && *(str + 1) == '\0'))
@@ -4044,6 +4049,14 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
             word index = PHT_HASH(h);
             set_pht_entry_from_index(GC_grungy_pages, index);
           }
+        } else {
+#         if defined(CHECK_SOFT_VDB) /* && MPROTECT_VDB */
+            /* Ensure that each clean page according to the soft-dirty  */
+            /* VDB is also identified such by the mprotect-based one.   */
+            if (get_pht_entry_from_index(GC_dirty_pages, PHT_HASH(vaddr))) {
+              ABORT("Inconsistent soft-dirty against mprotect dirty bits");
+            }
+#         endif
         }
       /* Read the next portion of pagemap file if incomplete.   */
     }
@@ -4148,10 +4161,15 @@ GC_INNER GC_bool GC_dirty_init(void)
   /* Retrieve system dirty bits for the heap to a local buffer (unless  */
   /* output_unneeded).  Restore the systems notion of which pages are   */
   /* dirty.  We assume that either the world is stopped or it is OK to  */
-  /* lose dirty bits while it's happening (as in GC_enable_incremental).*/
+  /* lose dirty bits while it is happening (GC_enable_incremental is    */
+  /* the caller and output_unneeded is TRUE at least if multi-threading */
+  /* support is on).                                                    */
   GC_INNER void GC_read_dirty(GC_bool output_unneeded)
   {
     GC_ASSERT(I_HOLD_LOCK());
+#   ifdef DEBUG_DIRTY_BITS
+      GC_log_printf("read dirty begin\n");
+#   endif
     if (GC_manual_vdb
 #       if defined(MPROTECT_VDB)
           || !GC_GWW_AVAILABLE()
@@ -4190,6 +4208,10 @@ GC_INNER GC_bool GC_dirty_init(void)
           != PCR_ERes_okay) {
         ABORT("Dirty bit read failed");
       }
+#   endif
+#   if defined(CHECK_SOFT_VDB) /* && MPROTECT_VDB */
+      BZERO((/* no volatile */ void *)GC_dirty_pages, sizeof(GC_dirty_pages));
+      GC_protect_heap();
 #   endif
   }
 

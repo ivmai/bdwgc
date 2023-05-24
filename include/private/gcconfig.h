@@ -2768,6 +2768,12 @@ EXTERN_C_BEGIN
 # define DEFAULT_VDB
 #endif
 
+#if defined(CHECK_SOFT_VDB) && !defined(CPPCHECK) \
+    && (defined(GC_PREFER_MPROTECT_VDB) \
+        || !defined(SOFT_VDB) || !defined(MPROTECT_VDB))
+# error Invalid config for CHECK_SOFT_VDB
+#endif
+
 #if !defined(PROC_VDB) && !defined(SOFT_VDB) \
     && !defined(NO_VDB_FOR_STATIC_ROOTS)
   /* Cannot determine whether a static root page is dirty?      */
