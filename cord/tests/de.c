@@ -121,7 +121,9 @@ size_t file_pos = 0;    /* Character position corresponding to cursor.  */
 /* Invalidate line map for lines > i */
 void invalidate_map(int i)
 {
-    while(current_map -> line > i) {
+    for (;;) {
+        if (NULL == current_map) exit(4); /* for CSA, should not happen */
+        if (current_map -> line <= i) break;
         current_map = current_map -> previous;
         current_map_size--;
     }
@@ -161,8 +163,6 @@ void add_map(int line_arg, size_t pos)
     current_map = new_map;
     current_map_size++;
 }
-
-
 
 /* Return position of column *c of ith line in   */
 /* current file. Adjust *c to be within the line.*/
@@ -226,7 +226,7 @@ int screen_size = 0;
 # ifndef WIN32
 /* Replace a line in the curses stdscr. All control characters are      */
 /* displayed as upper case characters in standout mode.  This isn't     */
-/* terribly appropriate for tabs.                                                                       */
+/* terribly appropriate for tabs.                                       */
 void replace_line(int i, CORD s)
 {
     CORD_pos p;
