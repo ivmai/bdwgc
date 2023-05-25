@@ -1083,13 +1083,16 @@ Also, includes 7.4.4 changes
 
 == [7.4.24] (not released yet) ==
 
+* Adjust CORD_ec comment placement in ec.h
 * Do not mix debug and non-debug allocations in disclaim tests
 * Eliminate 'cast signed to bigger unsigned' CSA warning in WARN calls
 * Ensure GC_NO_PTHREAD_SIGMASK defined if no GC_pthread_sigmask prototype
 * Fix GC_thread_is_registered for finished threads
+* Fix GC_unregister_my_thread call before GC functions usage in gctest
 * Fix missing lock while updating GC_in_thread_creation in GC_exit_check
 * Fix null pointer dereference in TRACE_TARGET
 * Fix of GC_bytes_allocd increment in GC_generic_malloc_inner
+* Remove redundant 'ifdef THREADS' around LOCK/UNLOCK in call_with_alloc_lock
 
 Also, includes 7.2q changes.
 
@@ -1642,7 +1645,9 @@ Also, includes 7.2 changes
 
 * Fix CORD_next() indent inside loop in test_basics() of cordtest
 * Fix DCL_LOCK_STATE placement in GC_set_oom_fn
+* Fix GC_excl_table overrun on overflow in GC_exclude_static_roots
 * Fix IRIX5 defined wrongly on Tandem S-Series and WinCE/mips
+* Fix comparisons to heap boundary in GC_get_back_ptr_info and GC_mark_from
 * Fix disabling of automatic dynamic libraries registration
 * Fix double initialization of main thread local free lists on Win32
 * Fix joinable threads shutdown on NaCl
@@ -1650,6 +1655,7 @@ Also, includes 7.2 changes
 * Fix missing GC_CALLBACK for GC_waitForSingleObjectInfinite
 * Fix missing libalphagc.so dependency in Makefile.direct
 * Fix missing result check of pthread_attr_getdetachstate in pthread_create
+* Fix overlapping region assertion in mark_some if malloc redirect on Linux
 * Fix potential SIGSEGV on out-of-memory in gctest
 * Fix typos in comments and documentation
 * Fix unregistering of thread created by intercepted pthread_create on NaCl
