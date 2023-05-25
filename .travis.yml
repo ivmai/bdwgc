@@ -146,6 +146,12 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: ppc64le
     compiler: clang
+    env:
+    - CFLAGS_EXTRA="-D CHECK_SOFT_VDB"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-static --disable-thread-local-alloc"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - arch: ppc64le
+    compiler: clang
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory,undefined -fno-omit-frame-pointer"
