@@ -2419,7 +2419,8 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
     GC_INNER GC_sp_corrector_proc GC_sp_corrector = 0;
 # endif
 
-  GC_API void GC_CALL GC_set_sp_corrector(GC_sp_corrector_proc fn)
+  GC_API void GC_CALL GC_set_sp_corrector(
+                                GC_sp_corrector_proc fn GC_ATTR_UNUSED)
   {
 #   ifdef STACKPTR_CORRECTOR_AVAILABLE
       DCL_LOCK_STATE;
@@ -2427,8 +2428,6 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
       LOCK();
       GC_sp_corrector = fn;
       UNLOCK();
-#   else
-      UNUSED_ARG(fn);
 #   endif
   }
 
