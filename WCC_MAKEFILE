@@ -263,7 +263,7 @@ gc_cpp.obj: gc_cpp.cc .AUTODEPEND
         $(CXX) $(TEST_CXXFLAGS) $*.cc
 
 gctest.obj: tests\gctest.c .AUTODEPEND
-        $(CC) $(TEST_CFLAGS) /wcd=13 /wcd=201 /wcd=367 /wcd=368 tests\gctest.c
+        $(CC) $(TEST_CFLAGS) /wcd=201 tests\gctest.c
 cordtest.obj: cord\tests\cordtest.c .AUTODEPEND
         $(CC) $(TEST_CFLAGS) $(CORDFLAG) cord\tests\cordtest.c
 cpptest.obj: tests\cpp.cc .AUTODEPEND
