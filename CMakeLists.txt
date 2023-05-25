@@ -155,6 +155,10 @@ elseif (MSVC)
   add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 elseif (WATCOM)
   add_compile_options(/wx)
+  if (NOT enable_threads)
+    # Suppress "unreachable code" warning in GC_ASSERT(I_HOLD_LOCK()).
+    add_compile_options(/wcd=201)
+  endif()
 else()
   # TODO add -[W]pedantic -Wno-long-long
   add_compile_options(-Wall -Wextra)
