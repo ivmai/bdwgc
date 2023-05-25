@@ -1042,13 +1042,12 @@ struct closure {
 STATIC void * GC_make_closure(GC_finalization_proc fn, void * data)
 {
     struct closure * result =
-#   ifdef DBG_HDRS_ALL
-      (struct closure *) GC_debug_malloc(sizeof (struct closure),
-                                         GC_EXTRAS);
-#   else
-      (struct closure *) GC_malloc(sizeof (struct closure));
-#   endif
-    if (result != 0) {
+#     ifdef DBG_HDRS_ALL
+        (struct closure *)GC_debug_malloc(sizeof(struct closure), GC_EXTRAS);
+#     else
+        (struct closure *)GC_malloc(sizeof(struct closure));
+#     endif
+    if (result != NULL) {
       result -> cl_fn = fn;
       result -> cl_data = data;
     }

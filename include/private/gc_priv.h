@@ -902,7 +902,7 @@ EXTERN_C_BEGIN
 
 #define WORDSZ ((word)CPP_WORDSZ)
 #define SIGNB  ((word)1 << (WORDSZ-1))
-#define BYTES_PER_WORD      ((word)(sizeof (word)))
+#define BYTES_PER_WORD ((word)sizeof(word))
 #define divWORDSZ(n) ((n) >> LOGWL)     /* divide n by size of word */
 
 #if GRANULE_BYTES == 8
@@ -1712,7 +1712,7 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define GC_valid_offsets GC_arrays._valid_offsets
 
 #define beginGC_arrays ((ptr_t)(&GC_arrays))
-#define endGC_arrays (((ptr_t)(&GC_arrays)) + (sizeof GC_arrays))
+#define endGC_arrays ((ptr_t)(&GC_arrays) + sizeof(GC_arrays))
 
 /* Object kinds: */
 #ifndef MAXOBJKINDS

@@ -492,8 +492,8 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
 
   GC_ASSERT(I_HOLD_LOCK());
   /* Make sure struct dl_phdr_info is at least as big as we need.  */
-  if (size < offsetof (struct dl_phdr_info, dlpi_phnum)
-      + sizeof (info->dlpi_phnum))
+  if (size < offsetof(struct dl_phdr_info, dlpi_phnum)
+                + sizeof(info->dlpi_phnum))
     return -1;
 
   p = info->dlpi_phdr;

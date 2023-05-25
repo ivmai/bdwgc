@@ -2454,7 +2454,7 @@ EXTERN_C_BEGIN
     /* Nptl allocates thread stacks with mmap, which is fine.  But it   */
     /* keeps a cache of thread stacks.  Thread stacks contain the       */
     /* thread control blocks.  These in turn contain a pointer to       */
-    /* (sizeof (void *) from the beginning of) the dtv for thread-local */
+    /* (sizeof(void*) from the beginning of) the dtv for thread-local   */
     /* storage, which is calloc allocated.  If we don't scan the cached */
     /* thread stacks, we appear to lose the dtv.  This tends to         */
     /* result in something that looks like a bogus dtv count, which     */

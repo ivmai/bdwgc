@@ -3708,7 +3708,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
             WARN("Insufficient space for /proc read\n", 0);
             /* Punt:        */
             if (!output_unneeded)
-              memset(GC_grungy_pages, 0xff, sizeof (page_hash_table));
+              memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
             memset(GC_written_pages, 0xff, sizeof(page_hash_table));
             return;
         }

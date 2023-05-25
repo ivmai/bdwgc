@@ -171,7 +171,7 @@ GC_INNER void GC_new_hblk(size_t gran, int k)
 {
   struct hblk *h;       /* the new heap block */
 
-  GC_STATIC_ASSERT((sizeof (struct hblk)) == HBLKSIZE);
+  GC_STATIC_ASSERT(sizeof(struct hblk) == HBLKSIZE);
   GC_ASSERT(I_HOLD_LOCK());
   /* Allocate a new heap block. */
   h = GC_allochblk(GRANULES_TO_BYTES(gran), k, 0 /* flags */, 0);

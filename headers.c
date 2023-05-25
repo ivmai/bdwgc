@@ -180,7 +180,7 @@ static hdr * alloc_hdr(void)
 
 GC_INLINE void free_hdr(hdr * hhdr)
 {
-    hhdr -> hb_next = (struct hblk *) GC_hdr_free_list;
+    hhdr -> hb_next = (struct hblk *)GC_hdr_free_list;
     GC_hdr_free_list = hhdr;
 }
 
