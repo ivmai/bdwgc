@@ -1127,7 +1127,7 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 Also, includes 7.2 changes
 
 
-== [7.2q] (not released yet) ==
+== [7.2q] 2023-05-25 ==
 
 * Fix CORD_next() indent inside loop in test_basics() of cordtest
 * Fix DCL_LOCK_STATE placement in GC_set_oom_fn
