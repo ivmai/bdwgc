@@ -1,5 +1,5 @@
 
-== [7.4.24] (not released yet) ==
+== [7.4.24] 2023-05-25 ==
 
 * Adjust CORD_ec comment placement in ec.h
 * Do not mix debug and non-debug allocations in disclaim tests
