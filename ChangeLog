@@ -946,6 +946,7 @@ Also, includes 7.6.18 changes
 == [7.6.18] (not released yet) ==
 
 * Fix IRIX5 defined wrongly on FreeBSD/mips
+* Fix alt-stack handling in GC_push_all_stacks if stack grows up
 * Fix data race in GC_heapsize_at_forced_unmap variable
 
 Also, includes 7.4.24 changes
