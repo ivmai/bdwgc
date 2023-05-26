@@ -17,12 +17,6 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - env:
     - MAKEFILE_TARGETS="dist"
-  - env:
-    - CPPCHECK_ENABLE="--enable=unusedFunction -D GC_BUILTIN_ATOMIC extra/gc.c"
-    - CPPCHECK_OUT_FILTER="Z"
-    - NO_CLONE_LIBATOMIC_OPS=true
-  - env:
-    - CPPCHECK_ENABLE="-j4 --enable=information,performance,portability,style,warning -I libatomic_ops/src extra/AmigaOS.c extra/MacOS.c extra/msvc_dbg.c extra/real_malloc.c extra/symbian.cpp *.c tools/*.c"
   - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-static"
@@ -393,12 +387,6 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
 
 before_install:
-- if [[ "$CPPCHECK_ENABLE" != "" ]]; then
-    CPPCHECK_VER=1.85;
-    git clone --depth=3 https://github.com/danmar/cppcheck.git
-            ~/cppcheck -b $CPPCHECK_VER;
-    make --directory ~/cppcheck -j8 CXXFLAGS="-O3 -march=native -D NDEBUG";
-  fi
 - if [[ "$AUTOMAKE_VER" != "" || "$LIBTOOL_VER" != ""
         || "$M4_VER" != "" ]]; then
     GNUTOOLS_ROOT=`pwd`/../gnu-tools;
@@ -440,13 +428,13 @@ install:
 - if [[ "$REPORT_COVERAGE" == true ]]; then gem install coveralls-lcov; fi
 
 script:
-- if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == ""
+- if [[ "$CSA_CHECK" != true
         && "$MAKEFILE_NAME" != "Makefile.direct"
         && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
     CFLAGS="$CONF_CFLAGS" ./configure $CONF_OPTIONS --enable-werror &&
     cat include/config.h;
   fi
-- if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == ""
+- if [[ "$CSA_CHECK" != true
         && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
     make -j -f $MAKEFILE_NAME $MAKEFILE_TARGETS CFLAGS_EXTRA="$CFLAGS_EXTRA"
             LDFLAGS="$LDFLAGS";
@@ -464,13 +452,6 @@ script:
         *.c *.cc cord/*.c cord/tests/cordtest.c cord/tests/de.c extra/gc.c
         extra/msvc_dbg.c extra/pcr_interface.c extra/real_malloc.c
         tests/*.c tests/*.cc tools/*.c;
-  fi
-- if [[ "$CPPCHECK_ENABLE" != "" ]]; then
-    if [[ "$CPPCHECK_OUT_FILTER" == "" ]]; then CPPCHECK_OUT_FILTER="c "; fi;
-    set -o pipefail; ~/cppcheck/cppcheck --force --error-exitcode=2
-        -U GC_API -D CPPCHECK -I include $CPPCHECK_ENABLE
-        *.cc cord/*.c cord/tests/*.c tests/*.c tests/*.cc |
-        grep --line-buffered "$CPPCHECK_OUT_FILTER";
   fi
 - if [[ "$TESTS_CUSTOM_RUN" == true ]]; then
     ASAN_OPTIONS="detect_leaks=1" UBSAN_OPTIONS="halt_on_error=1"
