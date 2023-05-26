@@ -761,6 +761,7 @@
 * Abort with appropriate message if first call of mmap fails with EPERM
 * Avoid potential race between realloc and GC_block_was_dirty
 * Do not prohibit zero proc argument in GC_register_disclaim_proc
+* Eliminate '&array may not produce intended result' wcc warnings
 * Eliminate 'cast signed to bigger unsigned' CSA warning in GC_new_thread
 * Ensure 'new' system header is included by gc_cpp.h if GC_INCLUDE_NEW
 * Fix 'overflow in conversion from word' g++ warning in GC_init
@@ -772,6 +773,7 @@
 * Fix use of unset errno after pthread_sigmask calls
 * Increment allocated objects count after GC_GCJ_MALLOC() in gctest
 * Remove redundant GC_ATTR_UNUSED for GC_mark_and_push
+* Workaround CSA null pointer dereference FP in invalidate_map of cord/de
 
 Also, includes 7.6.18 changes
 
