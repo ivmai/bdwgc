@@ -329,13 +329,16 @@
 == [8.2.4] (not released yet) ==
 
 * Abort with appropriate message if first call of mmap fails with EPERM
+* Adjust CORD_ec comment placement in ec.h
 * Adjust WoW64 workaround to work on UWP/WinRT
+* Adjust naming of Win32/64 and x86/64 words in comments and documentation
 * Avoid potential race between realloc and GC_block_was_dirty
 * Do not double-clear first two words of object in GC_generic_malloc_aligned
 * Do not mention FASTLOCK in comment
 * Do not mix debug and non-debug allocations in disclaim tests
 * Do not prohibit threaded builds with malloc redirection on non-Linux
 * Do not prohibit zero proc argument in GC_register_disclaim_proc
+* Eliminate '&array may not produce intended result' wcc warnings
 * Eliminate 'GC_unmap_end declared but unused' bcc warning in disclaim_bench
 * Eliminate 'ISO C++17 does not allow register specifier' gcc warning
 * Eliminate 'cast signed to bigger unsigned' CSA warning in WARNs, new_thread
@@ -355,10 +358,14 @@
 * Fix 'unresolved _end' linker error when targeting Android bitcode
 * Fix CORD_next() indent inside loop in test_basics() of cordtest
 * Fix DCL_LOCK_STATE placement in GC_set_oom_fn
+* Fix GC_excl_table overrun on overflow in GC_exclude_static_roots
 * Fix GC_thread_is_registered for finished threads
 * Fix GC_unreachable_finalize_mark_proc to ensure its unique address
+* Fix GC_unregister_my_thread call before GC functions usage in gctest
 * Fix IRIX5 defined wrongly on FreeBSD/mips, WinCE/mips, Tandem S-Series
 * Fix allocated objects count increment in alloc8bytes of gctest
+* Fix alt-stack handling in GC_push_all_stacks if stack grows up
+* Fix comparisons to heap boundary in GC_get_back_ptr_info and GC_mark_from
 * Fix data race in GC_heapsize_at_forced_unmap variable
 * Fix description of client promise for IGNORE_OFF_PAGE allocated objects
 * Fix disabling of automatic dynamic libraries registration
@@ -378,8 +385,10 @@
 * Fix negative heap size values reported in WARN
 * Fix null pointer dereference in TRACE_TARGET
 * Fix of GC_bytes_allocd increment in GC_generic_malloc_inner
+* Fix overlapping region assertion in mark_some if malloc redirect on Linux
 * Fix potential SIGSEGV on out-of-memory in gctest
 * Fix signals delivery fail in find-leak mode if init from non-main thread
+* Fix stack top/bottom print order in GC_push_all_stacks if stack grows up
 * Fix store-and-dirty call in GC_CONS
 * Fix unregistering of thread created by intercepted pthread_create on NaCl
 * Fix unused GC_parse_version if no SOFT_VDB and no parallel mark on Linux
@@ -392,15 +401,23 @@
 * Prevent 'function should return a value' BCC error in CMake script
 * Provide meaningful error message in case of Emscripten threaded build
 * Reduce local variable scope in resend_lost_signals_retry for cppcheck
+* Remove disable-warning options from WCC_MAKEFILE unrecognized by wcc v2.0
 * Remove false warning of missing libpthread.so on Linux
+* Remove redundant 'ifdef THREADS' around LOCK/UNLOCK in call_with_alloc_lock
 * Remove redundant GC_ATTR_UNUSED for GC_mark_and_push
 * Remove unused GC_old_sig_mask from gc_locks.h
 * Replace WARN in GC_mark_some wrapper back to GC_COND_LOG_PRINTF
 * Specify throw and noexcept for operator new/delete in gc_cpp.h for MS VC
+* Support Hurd/x86_64
+* Support client-defined stack pointer adjustment before thread stack push
+* Suppress 'unreachable code' wcc warning in I_HOLD_LOCK assertion (CMake)
 * Update autotools for release preparation (ac-2.71, am-1.16.5, m4-1.14.19)
 * Update dump function name in GC_DUMP_REGULARLY variable documentation
 * Use emscripten_stack_get_base instead of emscripten_scan_stack
 * Use sbrk() to get OS memory on Emscripten
+* Workaround 'writing into region of size 0' gcc warning in suspend_handler
+* Workaround CSA null pointer dereference FP in invalidate_map of cord/de
+* Workaround a malfunction of soft-dirty bits clearing on Power9
 
 
 == [8.2.2] 2022-08-26 ==
