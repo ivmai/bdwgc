@@ -1,5 +1,5 @@
 
-== [8.2.4] (not released yet) ==
+== [8.2.4] 2023-05-26 ==
 
 * Abort with appropriate message if first call of mmap fails with EPERM
 * Adjust CORD_ec comment placement in ec.h
