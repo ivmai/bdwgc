@@ -1,5 +1,5 @@
 
-== [8.0.10] (not released yet) ==
+== [8.0.10] 2023-05-26 ==
 
 * Abort with appropriate message if first call of mmap fails with EPERM
 * Avoid potential race between realloc and GC_block_was_dirty
