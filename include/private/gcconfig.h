@@ -568,7 +568,8 @@ EXTERN_C_BEGIN
 #   define POWERPC
 #   define mach_type_known
 # elif defined(__riscv) \
-       && (defined(LINUX) || defined(FREEBSD) || defined(OPENBSD))
+       && (defined(LINUX) || defined(FREEBSD) || defined(NETBSD) \
+           || defined(OPENBSD))
 #   define RISCV
 #   define mach_type_known
 # elif defined(__s390__) && defined(LINUX)
@@ -2377,6 +2378,9 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
       extern int __data_start[] __attribute__((__weak__));
 #     define DATASTART ((ptr_t)__data_start)
+#   endif
+#   ifdef NETBSD
+      /* Nothing specific. */
 #   endif
 #   ifdef OPENBSD
       /* Nothing specific. */
