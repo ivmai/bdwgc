@@ -2088,11 +2088,6 @@ void GC_register_data_segments(void)
         vaddr_t end;
         ptr_t  ld_cap;
     };
-#   define SPANNING_CAPABILITY(cap, start, end) \
-      (cheri_tag_get((cap)) \
-        && cheri_base_get((cap)) <= (start)    \
-        && (cheri_base_get((cap)) + cheri_length_get((cap))) >= (end) \
-        && (cheri_perms_get((cap)) & (CHERI_PERM_LOAD|CHERI_PERM_LOAD_CAP)) != 0)
 
     STATIC int GC_ld_cap_search(struct dl_phdr_info *info, size_t size, void *data)
     {

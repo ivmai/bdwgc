@@ -421,7 +421,12 @@ int inner_loop(int inner) {
     return r;
 }
 
+#if !defined(BENCHLIB)
 int main(int argc, char* argv[])
+#else
+int bench_main(int argc, char* argv[])
+#endif
+
 {
     int iterations = DEFAULT_ITER;
     int warmup     = 0;
