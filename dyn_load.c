@@ -631,10 +631,18 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
 
       my_start = MAKE_CPTR(p->p_vaddr) + info->dlpi_addr;
       my_end = my_start + p->p_memsz;
+#        ifdef CHERI_PURECAP
+      my_start = PTR_ALIGN_UP(my_start, sizeof(ptr_t));
+      my_end = PTR_ALIGN_DOWN(my_end, sizeof(ptr_t));
+      if (!SPANNING_CAPABILITY(info->dlpi_addr, ADDR(my_start), ADDR(my_end)))
+        continue;
+      my_start = cheri_bounds_set(my_start, (word)(my_end - my_start));
+#        endif
+
       if (callback != 0 && !callback(info->dlpi_name, my_start, p->p_memsz))
         continue;
 #        ifdef PT_GNU_RELRO
-#          if CPP_PTRSZ >= 64
+#          if CPP_PTRSZ >= 64 && !defined(CHERI_PURECAP)
       /* TODO: GC_push_all eventually does the correct          */
       /* rounding to the next multiple of ALIGNMENT, so, most   */
       /* probably, we should remove the corresponding assertion */
