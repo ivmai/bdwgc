@@ -1,0 +1,52 @@
+# This workflow is for zig-basd build/test running on multiple platforms.
+# TODO: move from nightly to zig 0.12 once it is released
+name: zig build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: ${{ matrix.os }} thr:${{ matrix.enable_threads }} rwlock::${{ matrix.enable_rwlock }} redir:${{ matrix.redirect_malloc }} dll:${{ matrix.shared_libs }} cpp::${{ matrix.enable_cplusplus }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # Deliver the feedback for all matrix combinations.
+      fail-fast: false
+
+      matrix:
+        os: [ ubuntu-latest ]
+        #os: [ macos-latest, ubuntu-latest, windows-latest ]
+        enable_cplusplus: [ false, true ]
+        build_type: [ Release ]
+        gc_assertions: [ true ]
+        large_config: [ true ]
+        enable_threads: [ false, true ]
+        enable_rwlock: [ false, true ]
+        redirect_malloc: [ false, true ]
+        shared_libs: [ false, true ]
+        exclude:
+        - enable_threads: false
+          enable_rwlock: true
+        - os: macos-latest
+          enable_cplusplus: false
+        - os: ubuntu-latest
+          enable_cplusplus: false
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Install zig"
+      run: |
+        mkdir zig && cd zig && curl https://ziglang.org/builds/zig-linux-x86_64-0.12.0-dev.1814+5c0d58b71.tar.xz | tar Jx --strip-components=1 && cd ..
+    - name: Build
+      run: >
+        zig/zig build
+        -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
+        -Dbuild_tests=true
+        -Denable_cplusplus=${{ matrix.enable_cplusplus }}
+        -Denable_gc_assertions=${{ matrix.gc_assertions }}
+        -Denable_large_config=${{ matrix.large_config }}
+        -Denable_redirect_malloc=${{ matrix.redirect_malloc }}
+        -Denable_rwlock=${{ matrix.enable_rwlock }}
+        -Denable_threads=${{ matrix.enable_threads }}
+        -Denable_werror=true
+        test

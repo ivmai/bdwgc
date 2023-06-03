@@ -172,7 +172,29 @@ stored on the thread's stack for the duration of their lifetime.
 (This is arguably a longstanding bug, but it hasn't been fixed yet.)
 
 
-## Installation and Portability
+## Building and Installing
+
+There are multiple ways to build the collector:
+
+- CMake
+- GNU autoconf
+- Zig
+  - somewhat experimental support for using the Zig build system
+  - Zig is excellent at cross-compilation
+- Makefile
+  - a static Makefile that offers a subset of configurable options
+- Manual C compilation
+  
+### Configurable Macros
+
+The library can be configured more precisely during the build by defining
+the macros listed in [README.macros](docs/README.macros) file.
+
+The library is built with threads support enabled (i.e. for thread-safe
+operation) by default, unless explicitly disabled:
+- `--disable-threads` is passed to `./configure`
+- `-Denable_threads=OFF` is passed to `cmake`
+- `-Denable_threads=false` is passed to `zig build`
 
 The collector operates silently in the default configuration.
 In the event of issues, this can usually be changed by defining the
@@ -183,53 +205,56 @@ Things don't appear to add up for a variety of reasons, most notably
 fragmentation losses.  These are probably much more significant for the
 contrived program `gctest` than for your application.)
 
-On most Unix-like platforms, the collector can be built either using a
-GNU autoconf-based build infrastructure (type `./configure; make` in the
-simplest case), or using CMake (see the sample below), or with a classic
-makefile by itself (type `make -f Makefile.direct`).
+### GNU Autoconf
 
-Please note that the collector source repository does not contain configure
+Please note that the collector source repository does not contain `configure`
 and similar auto-generated files, thus the full procedure of autoconf-based
 build of `master` branch of the collector could look like:
 
-    git clone https://github.com/ivmai/bdwgc
-    cd bdwgc
-    git clone https://github.com/ivmai/libatomic_ops
-    ./autogen.sh
-    ./configure
-    make -j
-    make check
+``` sh
+git clone https://github.com/ivmai/bdwgc
+cd bdwgc
+./autogen.sh
+./configure
+make -j
+make check
+```
 
 Cloning of `libatomic_ops` is now optional provided the compiler supports
 atomic intrinsics.  See [README.autoconf](docs/README.autoconf) for details.
 
-As noted above, alternatively, the collector could be built with CMake, like
-this:
+### CMake
 
-    mkdir out
-    cd out
-    cmake -Dbuild_tests=ON ..
-    cmake --build .
-    ctest
+```sh
+mkdir out && cd out
+cmake -Dbuild_tests=ON ..
+cmake --build .
+ctest
+```
 
 See [README.cmake](docs/README.cmake) for details.
 
-Finally, on most targets, the collector could be built and tested directly
-with a single compiler invocation, like this:
+### Zig
 
-    gcc -I include -o gctest tests/gctest.c extra/gc.c && ./gctest
+Building using zig is in its simplest form straight forward:
 
-On Windows, CMake could be used to build the library as described above or
-by typing `nmake -f NT_MAKEFILE`, this assumes you have Microsoft command-line
-tools installed and suitably configured.  See
-[README.win32](docs/platforms/README.win32) for details.
+```sh
+zig build
+```
 
-The library is built with threads support on (i.e. for thread-safe operation)
-by default, unless `--disable-threads` is passed to `./configure` (or
-`-Denable_threads=OFF` is passed to `cmake` tool).
+It is possible to configure the build through the use of variables, for example
+`zig build -Denable_redirect_malloc -Denable_threads=false`. Zig offers
+excellent cross-compilation functionality, for example to compile the collector
+for MacOS on Apple Silicon (M1 / M2 / M3):
 
-The library could be configured more precisely during the build by defining
-the macros listed in [README.macros](docs/README.macros) file.
+```sh
+zig build -Dtarget=aarch64-macos-gnu
+```
+
+Currently, a nightly version of zig 0.12 is required, which can be downloaded
+from https://ziglang.org/download/
+
+### Makefile
 
 Below we focus on the collector build using classic makefile.  For the
 Makefile.direct-based process, typing `make check` instead of `make` will
@@ -243,18 +268,43 @@ desktops.  It may use up to about 30 MB of memory.  (The multi-threaded
 version will use more.  64-bit versions may use more.) `make check` will also,
 as its last step, attempt to build and test the "cord" string library.)
 
-Makefile.direct will generate a library libgc.a which you should link against.
-Typing `make -f Makefile.direct cords` will build the cord library (libcord.a)
-as well.
-
 The GNU style build process understands the usual targets.  `make check`
 runs a number of tests.  `make install` installs at least libgc, and libcord.
 Try `./configure --help` to see the configuration options.  It is currently
 not possible to exercise all combinations of build options this way.
 
+Makefile.direct will generate a library libgc.a which you should link against.
+Typing `make -f Makefile.direct cords` will build the cord library (libcord.a)
+as well.
+
+
+### Manual C compilation
+
+Finally, on most targets, the collector could be built and tested directly
+with a single compiler invocation, like this:
+
+``` sh
+cc -I include -o gctest tests/gctest.c extra/gc.c && ./gctest
+```
+
+### Windows nmake
+
+On Windows, CMake could be used to build the library as described above or
+by typing `nmake -f NT_MAKEFILE`, this assumes you have Microsoft command-line
+tools installed and suitably configured.  See
+[README.win32](docs/platforms/README.win32) for details.
+
 All include files that need to be used by clients will be put in the
 include subdirectory.  (Normally this is just gc.h.  `make cords` adds
 "cord.h" and "ec.h".)
+
+### Atomic ops
+
+The GC requires atomic ops. Most modern compilers offer builtin atomics. In case
+your compiler does not, you can download and use `libatomic_ops` from
+https://github.com/ivmai/libatomic_ops
+
+## Portability
 
 The collector currently is designed to run essentially unmodified on
 machines that use a flat 32-bit or 64-bit address space.
