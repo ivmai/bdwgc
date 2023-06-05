@@ -403,10 +403,8 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
         for (; (word)i < (word)lim; i++) {
             *i = 0;
         }
-#       if defined(MSWIN32) || defined(MSWINCE) || defined(UTS4) \
-           || defined(OS2) || defined(CX_UX) || defined(__CC_ARM) \
-           || defined(LINUX) || defined(EWS4800) || defined(RTEMS)
-          (void) setjmp(regs);
+#       ifdef NO_UNDERSCORE_SETJMP
+          (void)setjmp(regs);
 #       else
           (void) _setjmp(regs);
           /* We don't want to mess with signals. According to   */

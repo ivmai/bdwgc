@@ -152,12 +152,20 @@ int main(int argc, char **argv)
             t = MS_TIME_DIFF(tF, tI)*1e-3;
 #       endif
 
-        if (model < 2 && free_count > 0)
-            printf("%20s: %12.4f %12g %12g\n", model_str[model],
-                   free_count/(double)ALLOC_CNT, t, t/free_count);
-        else
-            printf("%20s: %12.4f %12g %12s\n",
+#       ifdef EMBOX
+            /* Workaround some issue with %g processing in Embox libc.  */
+#           define PRINTF_SPEC_12g "%12f"
+#       else
+#           define PRINTF_SPEC_12g "%12g"
+#       endif
+        if (model < 2 && free_count > 0) {
+            printf("%20s: %12.4f " PRINTF_SPEC_12g " " PRINTF_SPEC_12g "\n",
+                   model_str[model], free_count / (double)ALLOC_CNT,
+                   t, t / free_count);
+        } else {
+            printf("%20s: %12.4f " PRINTF_SPEC_12g " %12s\n",
                    model_str[model], 0.0, t, "N/A");
+        }
     }
     return 0;
 }

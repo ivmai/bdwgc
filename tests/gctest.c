@@ -859,7 +859,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   elif defined(PCR)
       /* PCR default stack is 100 KB.  Stack frames are up to 120 bytes. */
 #     define BIG 700
-#   elif defined(MSWINCE) || defined(RTEMS)
+#   elif defined(MSWINCE) || defined(EMBOX) || defined(RTEMS)
       /* WinCE only allows 64 KB stacks. */
 #     define BIG 500
 #   elif defined(EMSCRIPTEN) || defined(OSF1)

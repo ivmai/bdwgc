@@ -820,6 +820,26 @@ GC_INNER void GC_setpagesize(void)
 # endif
 }
 
+#ifdef EMBOX
+# include <kernel/thread/thread_stack.h>
+# include <pthread.h>
+
+  GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
+  {
+    pthread_t self = pthread_self();
+    void *stack_addr = thread_stack_get(self);
+
+    /* TODO: use pthread_getattr_np, pthread_attr_getstack alternatively */
+#   ifdef STACK_GROWS_UP
+      sb -> mem_base = stack_addr;
+#   else
+      sb -> mem_base = stack_addr + thread_stack_get_size(self);
+#   endif
+    return GC_SUCCESS;
+  }
+# define HAVE_GET_STACK_BASE
+#endif /* EMBOX */
+
 #ifdef HAIKU
 # include <kernel/OS.h>
 
@@ -1226,9 +1246,9 @@ GC_INNER void GC_setpagesize(void)
     return (ptr_t)emscripten_stack_get_base();
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#elif !defined(AMIGA) && !defined(HAIKU) && !defined(OS2) \
+#elif !defined(AMIGA) && !defined(EMBOX) && !defined(HAIKU) \
       && !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
-      && !defined(GC_OPENBSD_THREADS) \
+      && !defined(OS2) && !defined(GC_OPENBSD_THREADS) \
       && (!defined(GC_SOLARIS_THREADS) || defined(_STRICT_STDC))
 
 # if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
@@ -2136,7 +2156,7 @@ void GC_register_data_segments(void)
 
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
      && !defined(USE_WINALLOC) && !defined(MACOS) && !defined(DOS4GW) \
-     && !defined(NINTENDO_SWITCH) && !defined(NONSTOP) \
+     && !defined(EMBOX) && !defined(NINTENDO_SWITCH) && !defined(NONSTOP) \
      && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PS3) \
      && !defined(SN_TARGET_PSP2) && !defined(RTEMS) && !defined(__CC_ARM)
 

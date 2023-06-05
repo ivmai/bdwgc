@@ -127,6 +127,10 @@ EXTERN_C_BEGIN
 #   define FREEBSD
 # endif
 
+# if defined(__EMBOX__)
+#   define EMBOX
+# endif
+
 # if defined(__QNX__) && !defined(QNX)
 #   define QNX
 # endif
@@ -531,8 +535,9 @@ EXTERN_C_BEGIN
 #   define HEXAGON
 #   define mach_type_known
 # elif (defined(__i386__) || defined(i386) || defined(__X86__)) \
-       && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
-            || defined(NETBSD) || defined(OPENBSD) || defined(QNX))
+       && (defined(DARWIN) || defined(LINUX) \
+           || defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD) \
+           || defined(EMBOX) || defined(QNX))
 #   define I386
 #   define mach_type_known
 # elif (defined(__ia64) || defined(__ia64__)) && defined(LINUX)
@@ -812,6 +817,13 @@ EXTERN_C_BEGIN
 #   define HAVE_BUILTIN_UNWIND_INIT
 # endif
 
+#if (defined(__CC_ARM) || defined(CX_UX) || defined(EMBOX) \
+     || defined(EWS4800) || defined(LINUX) || defined(OS2) \
+     || defined(RTEMS) || defined(UTS4) || defined(MSWIN32) \
+     || defined(MSWINCE)) && !defined(NO_UNDERSCORE_SETJMP)
+# define NO_UNDERSCORE_SETJMP
+#endif
+
 /* The common OS-specific definitions (should be applicable to  */
 /* all (or most, at least) supported architectures).            */
 
@@ -837,6 +849,17 @@ EXTERN_C_BEGIN
     /* TODO: This should be looked into some more.                      */
 #   define NO_PTHREAD_TRYLOCK
 # endif /* DARWIN */
+
+# ifdef EMBOX
+#   define OS_TYPE "EMBOX"
+    extern int _modules_data_start[];
+    extern int _apps_bss_end[];
+#   define DATASTART ((ptr_t)_modules_data_start)
+#   define DATAEND ((ptr_t)_apps_bss_end)
+    /* Note: the designated area might be quite large (several  */
+    /* dozens of MBs) as it includes data and bss of all apps   */
+    /* and modules of the built binary image.                   */
+# endif /* EMBOX */
 
 # ifdef FREEBSD
 #   define OS_TYPE "FREEBSD"
@@ -1341,6 +1364,9 @@ EXTERN_C_BEGIN
 #     define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #   endif
 #   ifdef HURD
+      /* Nothing specific. */
+#   endif
+#   ifdef EMBOX
       /* Nothing specific. */
 #   endif
 #   ifdef QNX
@@ -3320,7 +3346,11 @@ EXTERN_C_BEGIN
 # elif defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) \
         || (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) \
         || (defined(SOLARIS) && !defined(USE_MMAP)) || defined(RTEMS) \
-        || defined(__CC_ARM)
+        || defined(EMBOX) || defined(__CC_ARM)
+    /* TODO: Use page_alloc() directly on Embox.    */
+#   if defined(REDIRECT_MALLOC) && !defined(CPPCHECK)
+#     error Malloc redirection is unsupported
+#   endif
 #   define GET_MEM(bytes) HBLKPTR((size_t)calloc(1, \
                                             SIZET_SAT_ADD(bytes, \
                                                           GC_page_size)) \

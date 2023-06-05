@@ -2945,7 +2945,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #endif
 
 /* Check a compile time assertion at compile time.      */
-#if _MSC_VER >= 1700
+#if defined(_MSC_VER) && (_MSC_VER >= 1700)
 # define GC_STATIC_ASSERT(expr) \
                 static_assert(expr, "static assertion failed: " #expr)
 #elif defined(static_assert) && !defined(CPPCHECK) \
