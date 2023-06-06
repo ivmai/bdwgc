@@ -833,7 +833,7 @@ GC_INNER void GC_setpagesize(void)
 #   ifdef STACK_GROWS_UP
       sb -> mem_base = stack_addr;
 #   else
-      sb -> mem_base = stack_addr + thread_stack_get_size(self);
+      sb -> mem_base = (ptr_t)stack_addr + thread_stack_get_size(self);
 #   endif
     return GC_SUCCESS;
   }
