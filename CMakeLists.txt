@@ -160,7 +160,7 @@ elseif (WATCOM)
     add_compile_options(/wcd=201)
   endif()
 else()
-  # TODO add -[W]pedantic -Wno-long-long
+  # TODO: add -[W]pedantic -Wno-long-long
   add_compile_options(-Wall -Wextra)
 endif()
 
@@ -381,6 +381,8 @@ endif()
 
 if (enable_gc_assertions)
   add_definitions("-DGC_ASSERTIONS")
+  # TODO: pass -Wno-missing-prototypes (if supported) to turn off the clang
+  # warning for STATIC functions.
 endif()
 
 if (NOT enable_threads_discovery)

@@ -484,6 +484,10 @@ struct Print_stats
         size_t total_bytes;
 };
 
+EXTERN_C_BEGIN /* to avoid "no previous prototype" clang warning */
+unsigned GC_n_set_marks(hdr *);
+EXTERN_C_END
+
 #ifdef USE_MARK_BYTES
 
 /* Return the number of set mark bits in the given header.      */

@@ -292,17 +292,22 @@ STATIC void GC_init_size_map(void)
 #   define DEGRADE_RATE 50
 # endif
 
-# if defined(ASM_CLEAR_CODE)
-    void *GC_clear_stack_inner(void *, ptr_t);
+# if defined(__APPLE_CC__) && !GC_CLANG_PREREQ(6, 0)
+#   define CLEARSTACK_LIMIT_MODIFIER volatile /* to workaround some bug */
 # else
+#   define CLEARSTACK_LIMIT_MODIFIER /* empty */
+# endif
+
+  EXTERN_C_BEGIN
+  void *GC_clear_stack_inner(void *, CLEARSTACK_LIMIT_MODIFIER ptr_t);
+  EXTERN_C_END
+
+# ifndef ASM_CLEAR_CODE
     /* Clear the stack up to about limit.  Return arg.  This function   */
     /* is not static because it could also be erroneously defined in .S */
     /* file, so this error would be caught by the linker.               */
     void *GC_clear_stack_inner(void *arg,
-#                           if defined(__APPLE_CC__) && !GC_CLANG_PREREQ(6, 0)
-                               volatile /* to workaround some bug */
-#                           endif
-                               ptr_t limit)
+                               CLEARSTACK_LIMIT_MODIFIER ptr_t limit)
     {
 #     define CLEAR_SIZE 213 /* granularity */
       volatile word dummy[CLEAR_SIZE];
