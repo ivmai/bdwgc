@@ -321,7 +321,7 @@ sexpr cons (sexpr x, sexpr y)
     CHECK_OUT_OF_MEMORY(r);
     AO_fetch_and_add1(&collectable_count);
     for (p = (int *)r;
-         (word)p < (word)r + my_extra + sizeof(struct SEXPR); p++) {
+         (GC_word)p < (GC_word)r + my_extra + sizeof(struct SEXPR); p++) {
         if (*p) {
             GC_printf("Found nonzero at %p - allocator is broken\n",
                       (void *)p);
@@ -359,15 +359,15 @@ struct fake_vtable gcj_class_struct2 =
                         { 0, ((GC_word)3 << (CPP_WORDSZ - 3)) | GC_DS_BITMAP};
                         /* Bitmap based descriptor.     */
 
-struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
+struct GC_ms_entry * fake_gcj_mark_proc(GC_word * addr,
                                         struct GC_ms_entry *mark_stack_ptr,
                                         struct GC_ms_entry *mark_stack_limit,
-                                        word env)
+                                        GC_word env)
 {
     sexpr x;
     if (1 == env) {
         /* Object allocated with debug allocator.       */
-        addr = (word *)GC_USR_PTR_FROM_BASE(addr);
+        addr = (GC_word *)GC_USR_PTR_FROM_BASE(addr);
     }
     x = (sexpr)(addr + 1); /* Skip the vtable pointer. */
     mark_stack_ptr = GC_MARK_AND_PUSH(
@@ -567,7 +567,7 @@ void check_ints(sexpr list, int low, int up)
     }
 }
 
-# define UNCOLLECTABLE_CDR(x) (sexpr)(~(GC_word)(cdr(x)))
+# define UNCOLLECTABLE_CDR(x) (sexpr)(~(GC_word)cdr(x))
 
 void check_uncollectable_ints(sexpr list, int low, int up)
 {
@@ -779,7 +779,7 @@ void check_marks_int_list(sexpr x)
 #       else
           DWORD thread_id;
 
-          h = CreateThread((SECURITY_ATTRIBUTES *)NULL, (word)0,
+          h = CreateThread((SECURITY_ATTRIBUTES *)NULL, (GC_word)0,
                            tiny_reverse_test, NULL, (DWORD)0, &thread_id);
                                 /* Explicitly specify types of the      */
                                 /* arguments to test the prototype.     */
@@ -844,7 +844,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 
     if (data == 0) {
       /* This stack frame is not guaranteed to be scanned. */
-      return GC_call_with_gc_active(reverse_test_inner, (void*)(word)1);
+      return GC_call_with_gc_active(reverse_test_inner, (void*)(GC_word)1);
     }
 
 # ifndef BIG
@@ -1423,7 +1423,7 @@ void typed_test(void)
         newP = (GC_word *)old[1];
     }
     GC_gcollect();
-    GC_noop1((word)x);
+    GC_noop1((GC_word)x);
 }
 #endif /* !NO_TYPED_TEST */
 
@@ -1639,7 +1639,7 @@ void run_one_test(void)
             p = GC_memalign(i, 17);
             CHECK_OUT_OF_MEMORY(p);
             AO_fetch_and_add1(&collectable_count);
-            if ((word)p % i != 0 || *(int *)p != 0) {
+            if ((GC_word)p % i != 0 || *(int *)p != 0) {
               GC_printf("GC_memalign(%u,17) produced incorrect result: %p\n",
                         (unsigned)i, p);
               FAIL;
@@ -2186,7 +2186,7 @@ void enable_incremental_mode(void)
 }
 
 #if defined(CPPCHECK)
-# define UNTESTED(sym) GC_noop1((word)&sym)
+# define UNTESTED(sym) GC_noop1((GC_word)&sym)
 #endif
 
 #if defined(MSWINCE) && defined(UNDER_CE)
@@ -2499,9 +2499,9 @@ int test(void)
     int code;
 
 #   if defined(CPPCHECK)
-      GC_noop1((word)&PCR_GC_Run);
-      GC_noop1((word)&PCR_GC_Setup);
-      GC_noop1((word)&test);
+      GC_noop1((GC_word)&PCR_GC_Run);
+      GC_noop1((GC_word)&PCR_GC_Setup);
+      GC_noop1((GC_word)&test);
 #   endif
     n_tests = 0;
     /* GC_enable_incremental(); */
@@ -2625,7 +2625,7 @@ int main(void)
 
     /* Minimal testing of some API functions.   */
     GC_exclude_static_roots((void *)&atomic_count,
-                        (void *)((word)&atomic_count + sizeof(atomic_count)));
+                (void *)((GC_word)&atomic_count + sizeof(atomic_count)));
     GC_register_has_static_roots_callback(has_static_roots);
     GC_register_describe_type_fn(GC_I_NORMAL, describe_norm_type);
 #   ifdef GC_GCJ_SUPPORT
