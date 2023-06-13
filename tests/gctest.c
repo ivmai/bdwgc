@@ -585,9 +585,11 @@ void check_uncollectable_ints(sexpr list, int low, int up)
     }
 }
 
-/* Not used, but useful for debugging: */
-void print_int_list(sexpr x)
-{
+#ifdef PRINT_AND_CHECK_INT_LIST
+  /* The following might be useful for debugging. */
+
+  static void print_int_list(sexpr x)
+  {
     if (is_nil(x)) {
         GC_printf("NIL\n");
     } else {
@@ -599,15 +601,15 @@ void print_int_list(sexpr x)
             GC_printf("\n");
         }
     }
-}
+  }
 
-/* ditto: */
-void check_marks_int_list(sexpr x)
-{
-    if (!GC_is_marked(x))
+  static void check_marks_int_list(sexpr x)
+  {
+    if (!GC_is_marked(x)) {
         GC_printf("[unm:%p]", (void *)x);
-    else
+    } else {
         GC_printf("[mkd:%p]", (void *)x);
+    }
     if (is_nil(x)) {
         GC_printf("NIL\n");
     } else {
@@ -621,11 +623,10 @@ void check_marks_int_list(sexpr x)
             GC_printf("\n");
         }
     }
-}
+  }
+#endif /* PRINT_AND_CHECK_INT_LIST */
 
-/*
- * A tiny list reversal test to check thread creation.
- */
+/* A tiny list reversal test to check thread creation.  */
 #ifdef THREADS
 # if defined(GC_ENABLE_SUSPEND_THREAD)
 #   include "gc/javaxfc.h"
@@ -918,6 +919,10 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     GC_FREE((void *)e);
 
     check_ints(b,1,50);
+# ifdef PRINT_AND_CHECK_INT_LIST
+    print_int_list(b);
+    check_marks_int_list(b);
+# endif
 # ifndef EMSCRIPTEN
     check_ints(a_get(),1,49);
 # else
