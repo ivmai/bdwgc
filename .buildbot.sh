@@ -13,16 +13,24 @@ export SSHHOST
 export PYTHONPATH
 
 # arg-1 : platform to build. Toolchain file is expected to have the same name
+# arg-2 : build with dynamic-loading ON
 build_bdwgc()
 {
-    BUILD_DIR=bdwgc_build
-    INSTALL_DIR=bdwgc_install
+    DYNAMIC_LIBTEST=${2:-"OFF"}
+    if [ ${DYNAMIC_LIBTEST} == "OFF" ]; then
+        BUILD_DIR=bdwgc_build
+        INSTALL_DIR=bdwgc_install
+    else
+        BUILD_DIR=bdwgc_build_dynlib
+        INSTALL_DIR=bdwgc_install_dynlib
+    fi
+
     BUILD_OPTS="-DCMAKE_BUILD_TYPE=Debug \
                 -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
                 -Denable_gcj_support=OFF \
                 -Denable_parallel_mark=OFF \
                 -Denable_threads=OFF \
-                -Denable_dynamic_loading=OFF"
+                -Denable_dynamic_loading=${DYNAMIC_LIBTEST}"
 
 
     echo "Building bdwgc library for CI/CD"
@@ -46,12 +54,20 @@ add_bdwgc_test_suite()
 build_bdwgc_clients()
 {
     SRC_DIR=ci/tests
-    BUILD_DIR=bdwgc_client_build
-    INSTALL_DIR=bdwgc_install
-    BUILD_OPTS="-DCMAKE_BUILD_TYPE=Debug \
-                -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
-    # Link tests in the BDWGC test suite
-    add_bdwgc_test_suite
+    DYNAMIC_LIBTEST=${2:-"OFF"}
+    if [ ${DYNAMIC_LIBTEST} == "OFF" ]; then
+        BUILD_DIR=bdwgc_client_build
+        INSTALL_DIR=bdwgc_install
+        BUILD_OPTS="-DCMAKE_BUILD_TYPE=Debug \
+                    -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
+        add_bdwgc_test_suite
+    else
+        BUILD_DIR=bdwgc_client_build_dynlib
+        INSTALL_DIR=bdwgc_install_dynlib
+        BUILD_OPTS="-DCMAKE_BUILD_TYPE=Debug \
+                    -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+                    -DBENCHLIB=1"
+    fi
 
     echo "Building test clients for CI/CD"
     mkdir -p ${BUILD_DIR}
@@ -77,10 +93,12 @@ clean()
 
 # Run test suite for riscv64-purecap
 echo "Checking bdwgc library builds correctly"
-build_bdwgc 'riscv64-purecap'
+build_bdwgc 'riscv64-purecap' 'OFF'
+build_bdwgc 'riscv64-purecap' 'ON'
 
 echo "Checking cheri bdwgc clients build correctly"
-build_bdwgc_clients 'riscv64-purecap'
+build_bdwgc_clients 'riscv64-purecap' 'OFF'
+build_bdwgc_clients 'riscv64-purecap' 'ON'
 
 echo "Running tests for riscv64-purecap"
 args=(
@@ -100,15 +118,19 @@ args=(
 BUILDBOT_PLATFORM=riscv64-purecap python3 ci/run_cheri_bdwgc_tests.py "${args[@]}"
 
 echo "removing riscv64-purecap unit-test files"
-clean bdwgc_build bdwgc_client_build bdwgc_install
+clean bdwgc_build bdwgc_client_build bdwgc_install \
+      bdwgc_build_dynlib bdwgc_client_build_dynlib bdwgc_install_dynlib
+
 
 
 # Run test suite for morello-purecap
 echo "Checking bdwgc library builds correctly"
-build_bdwgc 'morello-purecap'
+build_bdwgc 'morello-purecap' 'OFF'
+build_bdwgc 'morello-purecap' 'ON'
 
 echo "Checking cheri bdwgc clients build correctly"
-build_bdwgc_clients 'morello-purecap'
+build_bdwgc_clients 'morello-purecap' 'OFF'
+build_bdwgc_clients 'morello-purecap' 'ON'
 
 echo "Running tests for morello-purecap"
 args=(

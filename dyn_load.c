@@ -457,6 +457,9 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 #endif
 
 #if defined(HAVE_DL_ITERATE_PHDR)
+# if defined(__CHERI_PURE_CAPABILITY__)
+#   include <cheriintrin.h>
+# endif
 
 # ifdef PT_GNU_RELRO
 /* Instead of registering PT_LOAD sections directly, we keep them       */
@@ -499,8 +502,17 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
       GC_has_static_roots_func callback = GC_has_static_roots;
       if ((p->p_flags & PF_W) == 0) continue;
 
-      start = (ptr_t)p->p_vaddr + info->dlpi_addr;
-      end = start + p->p_memsz;
+#     if !defined(__CHERI_PURE_CAPABILITY__)
+        start = (ptr_t)p->p_vaddr + info->dlpi_addr;
+        end = start + p->p_memsz;
+#     else
+        start = cheri_align_up(info->dlpi_addr + (vaddr_t)p->p_vaddr, sizeof(ptr_t));
+        end = cheri_align_down(start + p->p_memsz, sizeof(ptr_t));
+        if (!SPANNING_CAPABILITY( info->dlpi_addr, start, end)) continue;
+
+	start = cheri_bounds_set( start, (size_t)(end - start));
+#     endif /* __CHERI_PURE_CAPABILITY__  */
+
       if (callback != 0 && !callback(info->dlpi_name, start, p->p_memsz))
         continue;
 #     ifdef PT_GNU_RELRO

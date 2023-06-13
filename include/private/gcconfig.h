@@ -2338,9 +2338,7 @@ EXTERN_C_BEGIN
 #     define SIG_SUSPEND SIGUSR1
 #     define SIG_THR_RESTART SIGUSR2
 #     define FREEBSD_STACKBOTTOM
-#     if 0  //FIXME CHERI  - commented to simplify initial port
 #     define DYNAMIC_LOADING   
-#     endif 
       extern char etext, edata, end;
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)&etext)
 #     define DATASTART_USES_BSDGETDATASTART

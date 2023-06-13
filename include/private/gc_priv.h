@@ -2146,6 +2146,12 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
                                                    | CHERI_PERM_EXECUTE);    \
             if (!in_bounds || !has_rwx) continue;                            \
         }
+
+# define SPANNING_CAPABILITY(cap, start, end) \
+      (cheri_tag_get((cap)) \
+        && cheri_base_get((cap)) <= (start)    \
+        && (cheri_base_get((cap)) + cheri_length_get((cap))) >= (end) \
+        && (cheri_perms_get((cap)) & (CHERI_PERM_LOAD|CHERI_PERM_LOAD_CAP)) != 0)
 #else
 # define LOAD_WORD_OR_CONTINUE(v, p) (void)(v = *(word *)(p))
 #endif /* !E2K */
