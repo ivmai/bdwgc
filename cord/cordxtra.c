@@ -96,7 +96,7 @@ typedef struct {
     char * buf;
 } CORD_fill_data;
 
-int CORD_fill_proc(char c, void * client_data)
+static int CORD_fill_proc(char c, void * client_data)
 {
     CORD_fill_data * d = (CORD_fill_data *)client_data;
     size_t count = d -> count;
@@ -106,7 +106,7 @@ int CORD_fill_proc(char c, void * client_data)
     return count >= d -> len ? 1 : 0;
 }
 
-int CORD_batched_fill_proc(const char * s, void * client_data)
+static int CORD_batched_fill_proc(const char * s, void * client_data)
 {
     CORD_fill_data * d = (CORD_fill_data *)client_data;
     size_t count = d -> count;
@@ -129,7 +129,7 @@ int CORD_batched_fill_proc(const char * s, void * client_data)
 /* Assumes len characters are available in buf. */
 /* Return 1 if buf is filled fully (and len is  */
 /* non-zero), 0 otherwise.                      */
-int CORD_fill_buf(CORD x, size_t i, size_t len, char * buf)
+static int CORD_fill_buf(CORD x, size_t i, size_t len, char * buf)
 {
     CORD_fill_data fd;
 
@@ -261,20 +261,19 @@ char CORD_fetch(CORD x, size_t i)
 }
 
 
-int CORD_put_proc(char c, void * client_data)
+static int CORD_put_proc(char c, void * client_data)
 {
     FILE * f = (FILE *)client_data;
 
     return putc(c, f) == EOF;
 }
 
-int CORD_batched_put_proc(const char * s, void * client_data)
+static int CORD_batched_put_proc(const char * s, void * client_data)
 {
     FILE * f = (FILE *)client_data;
 
     return fputs(s, f) == EOF;
 }
-
 
 int CORD_put(CORD x, FILE * f)
 {
@@ -288,7 +287,7 @@ typedef struct {
     char target;    /* Character we're looking for  */
 } chr_data;
 
-int CORD_chr_proc(char c, void * client_data)
+static int CORD_chr_proc(char c, void * client_data)
 {
     chr_data * d = (chr_data *)client_data;
 
@@ -297,7 +296,7 @@ int CORD_chr_proc(char c, void * client_data)
     return 0;
 }
 
-int CORD_rchr_proc(char c, void * client_data)
+static int CORD_rchr_proc(char c, void * client_data)
 {
     chr_data * d = (chr_data *)client_data;
 
@@ -306,7 +305,7 @@ int CORD_rchr_proc(char c, void * client_data)
     return 0;
 }
 
-int CORD_batched_chr_proc(const char *s, void * client_data)
+static int CORD_batched_chr_proc(const char * s, void * client_data)
 {
     chr_data * d = (chr_data *)client_data;
     const char * occ = strchr(s, d -> target);
@@ -421,7 +420,7 @@ void CORD_ec_append_cord(CORD_ec x, CORD s)
     x[0].ec_cord = CORD_cat(x[0].ec_cord, s);
 }
 
-char CORD_nul_func(size_t i, void * client_data)
+static char CORD_nul_func(size_t i, void * client_data)
 {
     (void)i;
     return (char)(GC_word)client_data;
@@ -526,7 +525,7 @@ static void * GC_CALLBACK refill_cache(void * client_data)
     return (void *)((GC_word)new_cache->data[MOD_LINE_SZ(file_pos)]);
 }
 
-char CORD_lf_func(size_t i, void * client_data)
+static char CORD_lf_func(size_t i, void * client_data)
 {
     lf_state * state = (lf_state *)client_data;
     cache_line * volatile * cl_addr =
@@ -547,7 +546,7 @@ char CORD_lf_func(size_t i, void * client_data)
 }
 
 #ifndef GC_NO_FINALIZATION
-  void CORD_lf_close_proc(void * obj, void * client_data)
+  static void CORD_lf_close_proc(void * obj, void * client_data)
   {
     (void)client_data;
     if (fclose(((lf_state *)obj) -> lf_file) != 0)
@@ -555,7 +554,7 @@ char CORD_lf_func(size_t i, void * client_data)
   }
 #endif
 
-CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
+static CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
 {
     lf_state * state = GC_NEW(lf_state);
     int i;

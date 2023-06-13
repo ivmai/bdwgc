@@ -105,7 +105,7 @@ typedef struct {
 
 /* Dump the internal representation of x to stdout, with initial        */
 /* indentation level n.                                                 */
-void CORD_dump_inner(CORD x, unsigned n)
+static void CORD_dump_inner(CORD x, unsigned n)
 {
     size_t i;
 
@@ -333,14 +333,14 @@ struct substr_args {
     size_t sa_index;
 };
 
-char CORD_index_access_fn(size_t i, void * client_data)
+static char CORD_index_access_fn(size_t i, void * client_data)
 {
     struct substr_args *descr = (struct substr_args *)client_data;
 
     return ((char *)descr->sa_cord)[i + descr->sa_index];
 }
 
-char CORD_apply_access_fn(size_t i, void * client_data)
+static char CORD_apply_access_fn(size_t i, void * client_data)
 {
     struct substr_args *descr = (struct substr_args *)client_data;
     struct Function * fn_cord = &(descr -> sa_cord -> data.function);
@@ -352,7 +352,7 @@ char CORD_apply_access_fn(size_t i, void * client_data)
 /* postponing its work. The fourth argument is a function that may      */
 /* be used for efficient access to the ith character.                   */
 /* Assumes i >= 0 and i + n < length(x).                                */
-CORD CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
+static CORD CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
 {
     struct substr_args * sa = GC_NEW(struct substr_args);
     CordRep * result;
@@ -372,7 +372,7 @@ CORD CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
         /* representation, which is significantly slower to access.     */
 
 /* A version of CORD_substr that assumes i >= 0, n > 0, i + n < length(x). */
-CORD CORD_substr_checked(CORD x, size_t i, size_t n)
+static CORD CORD_substr_checked(CORD x, size_t i, size_t n)
 {
     if (CORD_IS_STRING(x)) {
         if (n > SUBSTR_LIMIT) {
@@ -596,7 +596,7 @@ typedef ForestElement Forest [ MAX_DEPTH ];
                         /* of the forest in order of DECREASING */
                         /* indices.                             */
 
-void CORD_init_min_len(void)
+static void CORD_init_min_len(void)
 {
     int i;
     size_t last, previous;
@@ -615,7 +615,7 @@ void CORD_init_min_len(void)
     min_len_init = 1;
 }
 
-void CORD_init_forest(ForestElement * forest, size_t max_len)
+static void CORD_init_forest(ForestElement * forest, size_t max_len)
 {
     int i;
 
@@ -631,7 +631,7 @@ void CORD_init_forest(ForestElement * forest, size_t max_len)
 /* Also works if x is a balanced tree of concatenations; however        */
 /* in this case an extra concatenation node may be inserted above x;    */
 /* This node should not be counted in the statement of the invariants.  */
-void CORD_add_forest(ForestElement * forest, CORD x, size_t len)
+static void CORD_add_forest(ForestElement * forest, CORD x, size_t len)
 {
     int i = 0;
     CORD sum = CORD_EMPTY;
@@ -667,7 +667,7 @@ void CORD_add_forest(ForestElement * forest, CORD x, size_t len)
     forest[i].len = sum_len;
 }
 
-CORD CORD_concat_forest(ForestElement * forest, size_t expected_len)
+static CORD CORD_concat_forest(ForestElement * forest, size_t expected_len)
 {
     int i = 0;
     CORD sum = 0;
@@ -686,7 +686,7 @@ CORD CORD_concat_forest(ForestElement * forest, size_t expected_len)
 /* Insert the frontier of x into forest.  Balanced subtrees are */
 /* treated as leaves.  This potentially adds one to the depth   */
 /* of the final tree.                                           */
-void CORD_balance_insert(CORD x, size_t len, ForestElement * forest)
+static void CORD_balance_insert(CORD x, size_t len, ForestElement * forest)
 {
     int depth;
 
@@ -727,7 +727,7 @@ CORD CORD_balance(CORD x)
 /* P contains a prefix of the  path to cur_pos. Extend it to a full     */
 /* path and set up leaf info.                                           */
 /* Return 0 if past the end of cord, 1 o.w.                             */
-void CORD__extend_path(CORD_pos p)
+static void CORD__extend_path(CORD_pos p)
 {
      struct CORD_pe * current_pe = &(p[0].path[p[0].path_len]);
      CORD top = current_pe -> pe_cord;
