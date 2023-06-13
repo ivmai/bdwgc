@@ -23,7 +23,7 @@ AS_ABI_FLAG=$(ABI_FLAG)
 
 CC=cc $(ABI_FLAG)
 
-CXX=g++ $(ABI_FLAG)
+CXX= c++ $(ABI_FLAG)
 # Needed only for "make c++", which adds the c++ interface.
 
 AS=as $(AS_ABI_FLAG)
