@@ -24,7 +24,7 @@ AS_ABI_FLAG=$(ABI_FLAG)
 CC=cc $(ABI_FLAG)
 # Compiler executable name.  For EMX, replace to "gcc".
 
-CXX=g++ $(ABI_FLAG)
+CXX= c++ $(ABI_FLAG)
 # Needed only for "make c++", which adds the c++ interface.
 
 AS=as $(AS_ABI_FLAG)
