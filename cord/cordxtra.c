@@ -519,8 +519,8 @@ static void * GC_CALLBACK refill_cache(void * client_data)
     new_cache -> tag = DIV_LINE_SZ(file_pos);
     /* Store barrier goes here. */
     ATOMIC_WRITE(state -> lf_cache[line_no], new_cache);
-    GC_END_STUBBORN_CHANGE((/* no volatile */ void *)(state -> lf_cache
-                                                      + line_no));
+    GC_END_STUBBORN_CHANGE((/* no volatile */ void *)
+                                (GC_word)(state -> lf_cache + line_no));
     state -> lf_current = line_start + LINE_SZ;
     return (void *)((GC_word)new_cache->data[MOD_LINE_SZ(file_pos)]);
 }
