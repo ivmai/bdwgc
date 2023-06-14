@@ -7,7 +7,7 @@
 
 int main(void) {
     char *p[N_TESTS];
-    int i;
+    unsigned i;
 
     GC_set_find_leak(1); /* for new collect versions not compiled       */
                          /* with -DFIND_LEAK.                           */
@@ -23,7 +23,7 @@ int main(void) {
     _aligned_free(p[0]);
 
     for (i = 0; i < N_TESTS; ++i) {
-        p[i] = i > 0 ? (char*)malloc(sizeof(int)+i)
+        p[i] = i > 0 ? (char*)malloc(sizeof(int) + i)
                      : strdup("abc");
     }
     CHECK_LEAKS();
@@ -36,8 +36,8 @@ int main(void) {
         free(p[i]);
     }
     for (i = 0; i < N_TESTS / 8; ++i) {
-        p[i] = i < 3 || i > 6 ? (char*)malloc(sizeof(int)+i)
-                      : strndup("abcd", (unsigned)i);
+        p[i] = i < 3 || i > 6 ? (char*)malloc(sizeof(int) + i)
+                      : strndup("abcd", i);
     }
     CHECK_LEAKS();
     CHECK_LEAKS();

@@ -330,7 +330,7 @@ static sexpr cons(sexpr x, sexpr y)
         *p = (int)((13 << 12) + ((p - (int *)r) & 0xfff));
     }
 #   ifdef AT_END
-        r = (sexpr)((char *)r + (my_extra & ~7));
+        r = (sexpr)((char *)r + (my_extra & ~7U));
 #   endif
     r -> sexpr_car = x;
     GC_PTR_STORE_AND_DIRTY(&r->sexpr_cdr, y);

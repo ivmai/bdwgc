@@ -200,7 +200,7 @@ static void *weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
 
   /* Create new object. */
   new_base = (GC_word *)GC_generic_malloc(sizeof(GC_word) + wm->obj_size,
-                                          wm->weakobj_kind);
+                                          (int)wm->weakobj_kind);
   CHECK_OOM(new_base);
   *new_base = (GC_word)wm | FINALIZER_CLOSURE_FLAG;
   new_obj = (void *)(new_base + 1);
@@ -433,7 +433,7 @@ int main(void)
     printf("This test program is not designed for leak detection mode\n");
   weakobj_kind = GC_new_kind(GC_new_free_list(), /* 0 | */ GC_DS_LENGTH,
                              1 /* adjust */, 1 /* clear */);
-  GC_register_disclaim_proc(weakobj_kind, weakmap_disclaim,
+  GC_register_disclaim_proc((int)weakobj_kind, weakmap_disclaim,
                             1 /* mark_unconditionally */);
   pair_hcset = weakmap_new(WEAKMAP_CAPACITY, sizeof(struct pair_key),
                            sizeof(struct pair), weakobj_kind);

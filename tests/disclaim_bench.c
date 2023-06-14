@@ -149,7 +149,7 @@ int main(int argc, char **argv)
         GC_gcollect();
 #       ifndef NO_CLOCK
             GET_TIME(tF);
-            t = MS_TIME_DIFF(tF, tI)*1e-3;
+            t = (double)MS_TIME_DIFF(tF, tI) * 1e-3;
 #       endif
 
 #       ifdef EMBOX
