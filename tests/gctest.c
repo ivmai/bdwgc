@@ -973,8 +973,8 @@ static void *GC_CALLBACK reverse_test_inner(void *data)
 #   ifndef THREADS
       a_set(NULL);
 #   endif
-    *(sexpr volatile *)&b = 0;
-    *(sexpr volatile *)&c = 0;
+    *(sexpr volatile *)(GC_word)&b = 0;
+    *(sexpr volatile *)(GC_word)&c = 0;
     return 0;
 }
 
@@ -1580,7 +1580,8 @@ static void run_one_test(void)
         GC_printf("GC_is_heap_ptr(&local_var) produced incorrect result\n");
         FAIL;
       }
-      if (GC_is_heap_ptr((void *)&fail_count) || GC_is_heap_ptr(NULL)) {
+      if (GC_is_heap_ptr((void *)(GC_word)&fail_count)
+          || GC_is_heap_ptr(NULL)) {
         GC_printf("GC_is_heap_ptr(&global_var) produced incorrect result\n");
         FAIL;
       }
@@ -1888,7 +1889,7 @@ static void run_one_test(void)
     /* Run reverse_test a second time, so we hopefully notice corruption. */
     reverse_test();
 #   ifndef NO_DEBUGGING
-      (void)GC_is_tmp_root((/* no volatile */ void *)&atomic_count);
+      (void)GC_is_tmp_root((/* no volatile */ void *)(GC_word)&atomic_count);
 #   endif
 #   ifndef NO_CLOCK
       if (print_stats) {
@@ -2630,7 +2631,7 @@ int main(void)
     set_print_procs();
 
     /* Minimal testing of some API functions.   */
-    GC_exclude_static_roots((void *)&atomic_count,
+    GC_exclude_static_roots((/* no volatile */ void *)(GC_word)&atomic_count,
                 (void *)((GC_word)&atomic_count + sizeof(atomic_count)));
     GC_register_has_static_roots_callback(has_static_roots);
     GC_register_describe_type_fn(GC_I_NORMAL, describe_norm_type);
