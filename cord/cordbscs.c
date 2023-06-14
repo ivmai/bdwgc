@@ -81,24 +81,25 @@ typedef struct {
         /* or CORD_index_access_fn.                                     */
 
 /* The following may be applied only to function and concatenation nodes: */
-#define IS_CONCATENATION(s)  (((CordRep *)s)->generic.header == CONCAT_HDR)
+#define IS_CONCATENATION(s) \
+                (((const CordRep *)s) -> generic.header == CONCAT_HDR)
 
-#define IS_FUNCTION(s)  ((((CordRep *)s)->generic.header & FN_HDR) != 0)
+#define IS_FUNCTION(s) ((((const CordRep *)s) -> generic.header & FN_HDR) != 0)
 
-#define IS_SUBSTR(s) (((CordRep *)s)->generic.header == SUBSTR_HDR)
+#define IS_SUBSTR(s) (((const CordRep *)s) -> generic.header == SUBSTR_HDR)
 
-#define LEN(s) (((CordRep *)s) -> generic.len)
-#define DEPTH(s) (((CordRep *)s) -> generic.depth)
+#define LEN(s) (((const CordRep *)s) -> generic.len)
+#define DEPTH(s) (((const CordRep *)s) -> generic.depth)
 #define GEN_LEN(s) (CORD_IS_STRING(s) ? strlen(s) : LEN(s))
 
 #define MAX_LEFT_LEN 255
 
-#define LEFT_LEN(s) (((CordRep *)s) -> generic.left_len != 0 ? \
-                ((CordRep *)s) -> generic.left_len \
-                : (CORD_IS_STRING(((CordRep *)s) -> data.concat.left) ? \
-                        ((CordRep *)s) -> generic.len - \
-                            GEN_LEN(((CordRep *)s) -> data.concat.right) \
-                        : LEN(((CordRep *)s) -> data.concat.left)))
+#define LEFT_LEN(s) (((const CordRep *)s) -> generic.left_len != 0 ? \
+                ((const CordRep *)s) -> generic.left_len \
+                : (CORD_IS_STRING(((const CordRep *)s) -> data.concat.left) ? \
+                        ((const CordRep *)s) -> generic.len - \
+                           GEN_LEN(((const CordRep *)s) -> data.concat.right) \
+                        : LEN(((const CordRep *)s) -> data.concat.left)))
 
 #define SHORT_LIMIT (sizeof(CordRep) - 1)
         /* Cords shorter than this are C strings */
@@ -122,18 +123,19 @@ static void CORD_dump_inner(CORD x, unsigned n)
         if (x[i] != '\0') fputs("...", stdout);
         putchar('\n');
     } else if (IS_CONCATENATION(x)) {
-        struct Concatenation * conc = &(((CordRep *)x) -> data.concat);
+        const struct Concatenation *conc =
+                                &(((const CordRep *)x) -> data.concat);
 
         printf("Concatenation: %p (len: %d, depth: %d)\n",
-               (void *)x, (int)LEN(x), (int)DEPTH(x));
+               (const void *)x, (int)LEN(x), (int)DEPTH(x));
         CORD_dump_inner(conc -> left, n+1);
         CORD_dump_inner(conc -> right, n+1);
     } else /* function */ {
-        struct Function * f = &(((CordRep *)x) -> data.function);
+        const struct Function *f = &(((const CordRep *)x) -> data.function);
         size_t lim = (size_t)LEN(x);
 
         if (IS_SUBSTR(x)) printf("(Substring) ");
-        printf("Function: %p (len: %d): ", (void *)x, (int)lim);
+        printf("Function: %p (len: %d): ", (const void *)x, (int)lim);
         for (i = 0; i < 20 && i < lim; i++) {
             putchar((*(f -> fn))(i, f -> client_data));
         }
@@ -184,16 +186,17 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
 
         lenx = LEN(x);
 
-        if (leny <= SHORT_LIMIT/2
-            && IS_CONCATENATION(x)
-            && CORD_IS_STRING(right = ((CordRep *)x) -> data.concat.right)) {
+        if (leny <= SHORT_LIMIT/2 && IS_CONCATENATION(x)
+            && CORD_IS_STRING(right =
+                        ((const CordRep *)x) -> data.concat.right)) {
             size_t right_len;
 
             /* Merge y into right part of x. */
-            if (!CORD_IS_STRING(left = ((CordRep *)x) -> data.concat.left)) {
+            left = ((const CordRep *)x) -> data.concat.left;
+            if (!CORD_IS_STRING(left)) {
                 right_len = lenx - LEN(left);
-            } else if (((CordRep *)x) -> generic.left_len != 0) {
-                right_len = lenx - ((CordRep *)x) -> generic.left_len;
+            } else if (((const CordRep *)x) -> generic.left_len != 0) {
+                right_len = lenx - ((const CordRep *)x) -> generic.left_len;
             } else {
                 right_len = strlen(right);
             }
@@ -386,7 +389,8 @@ static CORD CORD_substr_checked(CORD x, size_t i, size_t n)
             return result;
         }
     } else if (IS_CONCATENATION(x)) {
-        struct Concatenation * conc = &(((CordRep *)x) -> data.concat);
+        const struct Concatenation *conc =
+                                &(((const CordRep *)x) -> data.concat);
         size_t left_len = LEFT_LEN(x);
         size_t right_len = (size_t)LEN(x) - left_len;
 
@@ -420,7 +424,8 @@ static CORD CORD_substr_checked(CORD x, size_t i, size_t n)
         if (n > SUBSTR_LIMIT) {
             if (IS_SUBSTR(x)) {
                 /* Avoid nesting substring nodes.       */
-                struct Function * f = &(((CordRep *)x) -> data.function);
+                const struct Function *f =
+                                &(((const CordRep *)x) -> data.function);
                 struct substr_args *descr =
                                 (struct substr_args *)(f -> client_data);
 
@@ -431,7 +436,8 @@ static CORD CORD_substr_checked(CORD x, size_t i, size_t n)
             }
         } else {
             char * result;
-            struct Function * f = &(((CordRep *)x) -> data.function);
+            const struct Function *f =
+                                &(((const CordRep *)x) -> data.function);
             char buf[SUBSTR_LIMIT+1];
             char * p = buf;
             size_t j;
@@ -482,7 +488,8 @@ int CORD_iter5(CORD x, size_t i, CORD_iter_fn f1,
             return 0;
         }
     } else if (IS_CONCATENATION(x)) {
-        struct Concatenation * conc = &(((CordRep *)x) -> data.concat);
+        const struct Concatenation *conc =
+                                &(((const CordRep *)x) -> data.concat);
 
         if (i > 0) {
             size_t left_len = LEFT_LEN(x);
@@ -497,7 +504,7 @@ int CORD_iter5(CORD x, size_t i, CORD_iter_fn f1,
         }
         return CORD_iter5(conc -> right, 0, f1, f2, client_data);
     } else /* function */ {
-        struct Function * f = &(((CordRep *)x) -> data.function);
+        const struct Function *f = &(((const CordRep *)x) -> data.function);
         size_t j;
         size_t lim = (size_t)LEN(x);
 
@@ -531,7 +538,8 @@ int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data)
             p--;
         }
     } else if (IS_CONCATENATION(x)) {
-        struct Concatenation * conc = &(((CordRep *)x) -> data.concat);
+        const struct Concatenation *conc =
+                                &(((const CordRep *)x) -> data.concat);
         CORD left_part = conc -> left;
         size_t left_len = LEFT_LEN(x);
 
@@ -544,7 +552,7 @@ int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data)
             return CORD_riter4(left_part, i, f1, client_data);
         }
     } else /* function */ {
-        struct Function * f = &(((CordRep *)x) -> data.function);
+        const struct Function *f = &(((const CordRep *)x) -> data.function);
         size_t j;
 
         for (j = i; ; j--) {
@@ -695,7 +703,8 @@ static void CORD_balance_insert(CORD x, size_t len, ForestElement * forest)
     } else if (IS_CONCATENATION(x)
                && ((depth = DEPTH(x)) >= MAX_DEPTH
                    || len < min_len[depth])) {
-        struct Concatenation * conc = &(((CordRep *)x) -> data.concat);
+        const struct Concatenation *conc =
+                                &(((const CordRep *)x) -> data.concat);
         size_t left_len = LEFT_LEN(x);
 
         CORD_balance_insert(conc -> left, left_len, forest);
@@ -737,7 +746,8 @@ static void CORD__extend_path(CORD_pos p)
 
      /* Fill in the rest of the path. */
        while (!CORD_IS_STRING(top) && IS_CONCATENATION(top)) {
-         struct Concatenation * conc = &(((CordRep *)top) -> data.concat);
+         const struct Concatenation *conc =
+                                &(((const CordRep *)top) -> data.concat);
          size_t left_len;
 
          left_len = LEFT_LEN(top);
@@ -769,7 +779,7 @@ char CORD__pos_fetch(CORD_pos p)
     /* Leaf is a function node */
     struct CORD_pe * pe;
     CORD leaf;
-    struct Function * f;
+    const struct Function * f;
 
     if (!CORD_pos_valid(p))
         ABORT("CORD_pos_fetch: invalid argument");
@@ -777,7 +787,7 @@ char CORD__pos_fetch(CORD_pos p)
     leaf = pe -> pe_cord;
     if (!IS_FUNCTION(leaf))
         ABORT("CORD_pos_fetch: bad leaf");
-    f = &((CordRep *)leaf) -> data.function;
+    f = &((const CordRep *)leaf) -> data.function;
     return f -> fn(p[0].cur_pos - pe -> pe_start_pos, f -> client_data);
 }
 
@@ -795,8 +805,8 @@ void CORD__next(CORD_pos p)
     /* Leaf is not a string or we're at end of leaf */
     p[0].cur_pos = cur_pos;
     if (!CORD_IS_STRING(leaf)) {
-        /* Function leaf        */
-        struct Function * f = &(((CordRep *)leaf) -> data.function);
+        /* Function leaf.       */
+        const struct Function *f = &(((const CordRep *)leaf) -> data.function);
         size_t start_pos = current_pe -> pe_start_pos;
         size_t end_pos = start_pos + (size_t)LEN(leaf);
 
