@@ -81,9 +81,7 @@ static HANDLE GetSymHandle(void)
     BOOL bRet = SymInitialize(symHandle = GetCurrentProcess(), NULL, FALSE);
     if (bRet) {
       DWORD dwOptions = SymGetOptions();
-      dwOptions &= ~SYMOPT_UNDNAME;
-      dwOptions |= SYMOPT_LOAD_LINES;
-      SymSetOptions(dwOptions);
+      SymSetOptions((dwOptions & ~(DWORD)SYMOPT_UNDNAME) | SYMOPT_LOAD_LINES);
     }
   }
   return symHandle;
