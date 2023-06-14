@@ -112,7 +112,7 @@ void CORD__prev(CORD_pos);
 	/* 0 < n < CORD_pos_chars_left(p)	*/
 
 #define CORD_pos_cur_char_addr(p) \
-	(p)[0].cur_leaf + ((p)[0].cur_pos - (p)[0].cur_start)
+	((p)[0].cur_leaf + ((p)[0].cur_pos - (p)[0].cur_start))
 	/* address of current character in cache.	*/
 
 #endif
