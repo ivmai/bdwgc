@@ -85,7 +85,7 @@
                 /* This is used only to update counters.        */
 #endif
 
-unsigned memhash(void *src, size_t len)
+static unsigned memhash(void *src, size_t len)
 {
   unsigned acc = 0;
   size_t i;
@@ -119,7 +119,7 @@ struct weakmap {
   struct weakmap_link **links; /* NULL means weakmap is destroyed */
 };
 
-void weakmap_lock(struct weakmap *wm, unsigned h)
+static void weakmap_lock(struct weakmap *wm, unsigned h)
 {
 # ifdef GC_PTHREADS
     int err = pthread_mutex_lock(&wm->mutex[h % WEAKMAP_MUTEX_COUNT]);
@@ -129,7 +129,7 @@ void weakmap_lock(struct weakmap *wm, unsigned h)
 # endif
 }
 
-int weakmap_trylock(struct weakmap *wm, unsigned h)
+static int weakmap_trylock(struct weakmap *wm, unsigned h)
 {
 # ifdef GC_PTHREADS
     int err = pthread_mutex_trylock(&wm->mutex[h % WEAKMAP_MUTEX_COUNT]);
@@ -144,7 +144,7 @@ int weakmap_trylock(struct weakmap *wm, unsigned h)
 # endif
 }
 
-void weakmap_unlock(struct weakmap *wm, unsigned h)
+static void weakmap_unlock(struct weakmap *wm, unsigned h)
 {
 # ifdef GC_PTHREADS
     int err = pthread_mutex_unlock(&wm->mutex[h % WEAKMAP_MUTEX_COUNT]);
@@ -154,13 +154,13 @@ void weakmap_unlock(struct weakmap *wm, unsigned h)
 # endif
 }
 
-void *GC_CALLBACK set_mark_bit(void *obj)
+static void *GC_CALLBACK set_mark_bit(void *obj)
 {
   GC_set_mark_bit(obj);
   return NULL;
 }
 
-void *weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
+static void *weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
 {
   struct weakmap_link *link, *new_link, **first;
   GC_word *new_base;
@@ -223,7 +223,7 @@ void *weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
   return new_obj;
 }
 
-int GC_CALLBACK weakmap_disclaim(void *obj_base)
+static int GC_CALLBACK weakmap_disclaim(void *obj_base)
 {
   struct weakmap *wm;
   struct weakmap_link **link;
@@ -284,8 +284,8 @@ int GC_CALLBACK weakmap_disclaim(void *obj_base)
   return 0;
 }
 
-struct weakmap *weakmap_new(size_t capacity, size_t key_size, size_t obj_size,
-                            unsigned weakobj_kind)
+static struct weakmap *weakmap_new(size_t capacity, size_t key_size,
+                                   size_t obj_size, unsigned weakobj_kind)
 {
   struct weakmap *wm = (struct weakmap *)GC_malloc(sizeof(struct weakmap));
 
@@ -309,7 +309,7 @@ struct weakmap *weakmap_new(size_t capacity, size_t key_size, size_t obj_size,
   return wm;
 }
 
-void weakmap_destroy(struct weakmap *wm)
+static void weakmap_destroy(struct weakmap *wm)
 {
 # ifdef GC_PTHREADS
     int i;
@@ -340,7 +340,7 @@ static const char * const pair_magic = "PAIR_MAGIC_BYTES";
 
 #define CSUM_SEED 782
 
-struct pair *pair_new(struct pair *car, struct pair *cdr)
+static struct pair *pair_new(struct pair *car, struct pair *cdr)
 {
   struct pair tmpl;
 
@@ -354,7 +354,7 @@ struct pair *pair_new(struct pair *car, struct pair *cdr)
   return (struct pair *)weakmap_add(pair_hcset, &tmpl, sizeof(tmpl));
 }
 
-void pair_check_rec(struct pair *p, int line)
+static void pair_check_rec(struct pair *p, int line)
 {
   while (p != NULL) {
     int checksum = CSUM_SEED;
@@ -376,7 +376,7 @@ void pair_check_rec(struct pair *p, int line)
   }
 }
 
-void *test(void *data)
+static void *test(void *data)
 {
   int i;
   struct pair *p0, *p1;

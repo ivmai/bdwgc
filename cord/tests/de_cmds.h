@@ -28,4 +28,12 @@
 # define LOCATE 12      /* ^L */
 # define TOP    20      /* ^T */
 
+void do_command(int);
+                        /* Execute an editor command.           */
+                        /* The argument is a command character  */
+                        /* or one of the IDM_ commands.         */
+
+void generic_init(void);
+                        /* OS independent initialization.       */
+
 #endif

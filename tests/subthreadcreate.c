@@ -57,9 +57,9 @@ volatile AO_t thread_created_cnt = 0;
 volatile AO_t thread_ended_cnt = 0;
 
 #ifdef GC_PTHREADS
-  void *entry(void *arg)
+  static void *entry(void *arg)
 #else
-  DWORD WINAPI entry(LPVOID arg)
+  static DWORD WINAPI entry(LPVOID arg)
 #endif
 {
     int thread_num = (int)AO_fetch_and_add1(&thread_created_cnt);

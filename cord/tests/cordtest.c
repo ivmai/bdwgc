@@ -38,7 +38,7 @@
 
 static int count;
 
-int test_fn(char c, void * client_data)
+static int test_fn(char c, void * client_data)
 {
     if (client_data != (void *)(GC_word)13)
         ABORT("bad client data");
@@ -57,7 +57,7 @@ int test_fn(char c, void * client_data)
     }
 }
 
-char id_cord_fn(size_t i, void * client_data)
+static char id_cord_fn(size_t i, void * client_data)
 {
     if (client_data != 0) ABORT("id_cord_fn: bad client data");
     return (char)i;
@@ -139,7 +139,7 @@ static void test_cord_x2(CORD x)
 #   endif
 }
 
-void test_basics(void)
+static void test_basics(void)
 {
     CORD x = CORD_from_char_star("ab");
     size_t i;
@@ -213,7 +213,7 @@ static void test_cords_f2(CORD w, CORD x, CORD y)
     if (CORD_str(x,0,"9>") != CORD_NOT_FOUND) ABORT("CORD_str failed 4");
 }
 
-void test_extras(void)
+static void test_extras(void)
 {
 #   define FNAME1 "cordtst1.tmp" /* short name (8+3) for portability */
 #   define FNAME2 "cordtst2.tmp"
@@ -277,7 +277,7 @@ void test_extras(void)
     }
 }
 
-int wrap_vprintf(CORD format, ...)
+static int wrap_vprintf(CORD format, ...)
 {
     va_list args;
     int result;
@@ -288,7 +288,7 @@ int wrap_vprintf(CORD format, ...)
     return result;
 }
 
-int wrap_vfprintf(FILE * f, CORD format, ...)
+static int wrap_vfprintf(FILE * f, CORD format, ...)
 {
     va_list args;
     int result;
@@ -316,7 +316,7 @@ int wrap_vfprintf(FILE * f, CORD format, ...)
 
 /* no static */ /* no const */ char *zu_format = (char*)"%zu";
 
-void test_printf(void)
+static void test_printf(void)
 {
     CORD result;
     char result2[200];

@@ -44,14 +44,15 @@ pthread_key_t key;
   pthread_once_t key_once = PTHREAD_ONCE_INIT;
 #endif
 
-void * entry (void *arg)
+static void * entry(void *arg)
 {
   pthread_setspecific(key,
                       (void *)GC_HIDE_POINTER(GC_STRDUP("hello, world")));
   return arg;
 }
 
-void * GC_CALLBACK on_thread_exit_inner (struct GC_stack_base * sb, void * arg)
+static void * GC_CALLBACK on_thread_exit_inner(struct GC_stack_base * sb,
+                                               void * arg)
 {
   int res = GC_register_my_thread (sb);
   pthread_t t;
@@ -72,12 +73,12 @@ void * GC_CALLBACK on_thread_exit_inner (struct GC_stack_base * sb, void * arg)
   return arg ? (void*)(GC_word)creation_res : 0;
 }
 
-void on_thread_exit (void *v)
+static void on_thread_exit(void *v)
 {
   GC_call_with_stack_base (on_thread_exit_inner, v);
 }
 
-void make_key (void)
+static void make_key(void)
 {
   pthread_key_create (&key, on_thread_exit);
 }

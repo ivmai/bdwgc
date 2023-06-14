@@ -47,7 +47,7 @@
         exit(-1); \
     }
 
-int memeq(void *s, int c, size_t len)
+static int memeq(void *s, int c, size_t len)
 {
     while (len--) {
         if (*(char *)s != c)
@@ -59,7 +59,7 @@ int memeq(void *s, int c, size_t len)
 
 #define MEM_FILL_BYTE 0x56
 
-void GC_CALLBACK misc_sizes_dct(void *obj, void *cd)
+static void GC_CALLBACK misc_sizes_dct(void *obj, void *cd)
 {
     unsigned log_size = *(unsigned char *)obj;
     size_t size;
@@ -70,7 +70,7 @@ void GC_CALLBACK misc_sizes_dct(void *obj, void *cd)
     my_assert(memeq((char *)obj + 1, MEM_FILL_BYTE, size - 1));
 }
 
-void test_misc_sizes(void)
+static void test_misc_sizes(void)
 {
     static const struct GC_finalizer_closure fc = { misc_sizes_dct, NULL };
     int i;
@@ -97,7 +97,7 @@ struct pair_s {
 
 static const char * const pair_magic = "PAIR_MAGIC_BYTES";
 
-int is_pair(pair_t p)
+static int is_pair(pair_t p)
 {
     return memcmp(p->magic, pair_magic, sizeof(p->magic)) == 0;
 }
@@ -105,7 +105,7 @@ int is_pair(pair_t p)
 #define CSUM_SEED 782
 #define PTR_HASH(p) (GC_HIDE_POINTER(p) >> 4)
 
-void GC_CALLBACK pair_dct(void *obj, void *cd)
+static void GC_CALLBACK pair_dct(void *obj, void *cd)
 {
     pair_t p = (pair_t)obj;
     int checksum = CSUM_SEED;
@@ -131,7 +131,7 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     p->cdr = NULL;
 }
 
-pair_t pair_new(pair_t car, pair_t cdr)
+static pair_t pair_new(pair_t car, pair_t cdr)
 {
     pair_t p;
     struct GC_finalizer_closure *pfc =
@@ -163,7 +163,7 @@ pair_t pair_new(pair_t car, pair_t cdr)
     return p;
 }
 
-void pair_check_rec(pair_t p)
+static void pair_check_rec(pair_t p)
 {
     while (p) {
         int checksum = CSUM_SEED;
@@ -190,7 +190,7 @@ void pair_check_rec(pair_t p)
 #define MUTATE_CNT (6*1000000/(NTHREADS+1))
 #define GROW_LIMIT (MUTATE_CNT/10)
 
-void *test(void *data)
+static void *test(void *data)
 {
     int i;
     pair_t pop[POP_SIZE];

@@ -33,7 +33,7 @@ GC_TEST_IMPORT_API struct treenode ** libsrl_getpelem(int i, int j);
 
 GC_TEST_IMPORT_API struct treenode ** libsrl_getpelem2(int i, int j);
 
-void init_staticroot(void)
+static void init_staticroot(void)
 {
   /* Intentionally put staticroot initialization in a function other    */
   /* than main to prevent CSA warning that staticroot variable can be   */

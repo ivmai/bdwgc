@@ -44,6 +44,9 @@ void de_error(const char *s)
     InvalidateRect(hwnd, NULL, TRUE);
 }
 
+static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
+                                WPARAM wParam, LPARAM lParam);
+
 int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
                       LPSTR command_line, int nCmdShow)
 {
@@ -121,7 +124,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
 }
 
 /* Return the argument with all control characters replaced by blanks.  */
-char * plain_chars(char * text, size_t len)
+static char * plain_chars(char * text, size_t len)
 {
     char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
     size_t i;
@@ -140,7 +143,7 @@ char * plain_chars(char * text, size_t len)
 
 /* Return the argument with all non-control-characters replaced by      */
 /* blank, and all control characters c replaced by c + 64.              */
-char * control_chars(char * text, size_t len)
+static char * control_chars(char * text, size_t len)
 {
     char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
     size_t i;
@@ -160,7 +163,7 @@ char * control_chars(char * text, size_t len)
 int char_width;
 int char_height;
 
-void get_line_rect(int line_arg, int win_width, RECT * rectp)
+static void get_line_rect(int line_arg, int win_width, RECT * rectp)
 {
     rectp -> top = line_arg * (LONG)char_height;
     rectp -> bottom = rectp->top + char_height;
@@ -172,10 +175,10 @@ int caret_visible = 0;  /* Caret is currently visible.  */
 
 int screen_was_painted = 0;/* Screen has been painted at least once.    */
 
-void update_cursor(void);
+static void update_cursor(void);
 
-INT_PTR CALLBACK AboutBoxCallback( HWND hDlg, UINT message,
-                           WPARAM wParam, LPARAM lParam )
+static INT_PTR CALLBACK AboutBoxCallback(HWND hDlg, UINT message,
+                                         WPARAM wParam, LPARAM lParam)
 {
    (void)lParam;
    switch( message )
@@ -201,8 +204,8 @@ INT_PTR CALLBACK AboutBoxCallback( HWND hDlg, UINT message,
    return FALSE;
 }
 
-LRESULT CALLBACK WndProc (HWND hwnd_arg, UINT message,
-                          WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK WndProc(HWND hwnd_arg, UINT message,
+                                WPARAM wParam, LPARAM lParam)
 {
    static HINSTANCE hInstance;
    HDC dc;
@@ -353,7 +356,7 @@ void move_cursor(int c, int l)
     if (caret_visible) update_cursor();
 }
 
-void update_cursor(void)
+static void update_cursor(void)
 {
     SetCaretPos(last_col * char_width, last_line * char_height);
     ShowCaret(hwnd);

@@ -306,12 +306,12 @@ typedef struct SEXPR * sexpr;
 # define cdr(x) ((x) -> sexpr_cdr)
 # define is_nil(x) ((x) == nil)
 
-/* Silly implementation of Lisp cons. Intentionally wastes lots of space */
-/* to test collector.                                                    */
+/* Silly implementation of Lisp cons.  Intentionally wastes lots of     */
+/* space to test collector.                                             */
 # ifdef VERY_SMALL_CONFIG
 #   define cons small_cons
 # else
-sexpr cons (sexpr x, sexpr y)
+static sexpr cons(sexpr x, sexpr y)
 {
     sexpr r;
     int *p;
@@ -359,12 +359,13 @@ struct fake_vtable gcj_class_struct2 =
                         { 0, ((GC_word)3 << (CPP_WORDSZ - 3)) | GC_DS_BITMAP};
                         /* Bitmap based descriptor.     */
 
-struct GC_ms_entry * fake_gcj_mark_proc(GC_word * addr,
+static struct GC_ms_entry *fake_gcj_mark_proc(GC_word *addr,
                                         struct GC_ms_entry *mark_stack_ptr,
                                         struct GC_ms_entry *mark_stack_limit,
                                         GC_word env)
 {
     sexpr x;
+
     if (1 == env) {
         /* Object allocated with debug allocator.       */
         addr = (GC_word *)GC_USR_PTR_FROM_BASE(addr);
@@ -381,7 +382,7 @@ struct GC_ms_entry * fake_gcj_mark_proc(GC_word * addr,
 
 #endif /* GC_GCJ_SUPPORT */
 
-sexpr small_cons (sexpr x, sexpr y)
+static sexpr small_cons(sexpr x, sexpr y)
 {
     sexpr r = GC_NEW(struct SEXPR);
 
@@ -396,7 +397,7 @@ sexpr small_cons (sexpr x, sexpr y)
 #ifdef NO_CONS_ATOMIC_LEAF
 # define small_cons_leaf(x) small_cons(INT_TO_SEXPR(x), nil)
 #else
-  sexpr small_cons_leaf(int x)
+  static sexpr small_cons_leaf(int x)
   {
     sexpr r = (sexpr)GC_MALLOC_ATOMIC(sizeof(struct SEXPR));
 
@@ -408,7 +409,7 @@ sexpr small_cons (sexpr x, sexpr y)
   }
 #endif
 
-sexpr small_cons_uncollectable (sexpr x, sexpr y)
+static sexpr small_cons_uncollectable(sexpr x, sexpr y)
 {
     sexpr r = (sexpr)GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR));
 
@@ -420,7 +421,7 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
 }
 
 #ifdef GC_GCJ_SUPPORT
-  sexpr gcj_cons(sexpr x, sexpr y)
+  static sexpr gcj_cons(sexpr x, sexpr y)
   {
     sexpr result;
     GC_word cnt = (GC_word)AO_fetch_and_add1(&extra_count);
@@ -441,7 +442,7 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
 #endif /* GC_GCJ_SUPPORT */
 
 /* Return reverse(x) concatenated with y */
-sexpr reverse1(sexpr x, sexpr y)
+static sexpr reverse1(sexpr x, sexpr y)
 {
     if (is_nil(x)) {
         return y;
@@ -450,7 +451,7 @@ sexpr reverse1(sexpr x, sexpr y)
     }
 }
 
-sexpr reverse(sexpr x)
+static sexpr reverse(sexpr x)
 {
 #   ifdef TEST_WITH_SYSTEM_MALLOC
       GC_noop1(GC_HIDE_POINTER(malloc(100000)));
@@ -461,7 +462,7 @@ sexpr reverse(sexpr x)
 #ifdef GC_PTHREADS
   /* TODO: Implement for Win32 */
 
-  void *do_gcollect(void *arg)
+  static void *do_gcollect(void *arg)
   {
     if (print_stats)
       GC_log_printf("Collect from a standalone thread\n");
@@ -469,7 +470,7 @@ sexpr reverse(sexpr x)
     return arg;
   }
 
-  void collect_from_other_thread(void)
+  static void collect_from_other_thread(void)
   {
     pthread_t t;
     int code = pthread_create(&t, NULL, do_gcollect, NULL /* arg */);
@@ -489,7 +490,7 @@ sexpr reverse(sexpr x)
   static volatile AO_t gcollect_threads_cnt = 0;
 #endif /* GC_PTHREADS */
 
-sexpr ints(int low, int up)
+static sexpr ints(int low, int up)
 {
     if (up < 0 ? low > -up : low > up) {
         if (up < 0) {
@@ -510,7 +511,7 @@ sexpr ints(int low, int up)
 
 #ifdef GC_GCJ_SUPPORT
 /* Return reverse(x) concatenated with y */
-sexpr gcj_reverse1(sexpr x, sexpr y)
+static sexpr gcj_reverse1(sexpr x, sexpr y)
 {
     if (is_nil(x)) {
         return y;
@@ -519,12 +520,12 @@ sexpr gcj_reverse1(sexpr x, sexpr y)
     }
 }
 
-sexpr gcj_reverse(sexpr x)
+static sexpr gcj_reverse(sexpr x)
 {
     return gcj_reverse1(x, nil);
 }
 
-sexpr gcj_ints(int low, int up)
+static sexpr gcj_ints(int low, int up)
 {
     if (low > up) {
         return nil;
@@ -536,7 +537,7 @@ sexpr gcj_ints(int low, int up)
 
 /* To check uncollectible allocation we build lists with disguised cdr  */
 /* pointers, and make sure they don't go away.                          */
-sexpr uncollectable_ints(int low, int up)
+static sexpr uncollectable_ints(int low, int up)
 {
     if (low > up) {
         return nil;
@@ -546,7 +547,7 @@ sexpr uncollectable_ints(int low, int up)
     }
 }
 
-void check_ints(sexpr list, int low, int up)
+static void check_ints(sexpr list, int low, int up)
 {
     if (is_nil(list)) {
         GC_printf("list is nil\n");
@@ -569,7 +570,7 @@ void check_ints(sexpr list, int low, int up)
 
 # define UNCOLLECTABLE_CDR(x) (sexpr)(~(GC_word)cdr(x))
 
-void check_uncollectable_ints(sexpr list, int low, int up)
+static void check_uncollectable_ints(sexpr list, int low, int up)
 {
     if (SEXPR_TO_INT(car(car(list))) != low) {
         GC_printf("Uncollectable list corrupted - collector is broken\n");
@@ -638,7 +639,7 @@ void check_uncollectable_ints(sexpr list, int low, int up)
 #   define TINY_REVERSE_UPPER_VALUE 10
 # endif
 
-  void tiny_reverse_test_inner(void)
+  static void tiny_reverse_test_inner(void)
   {
     int i;
 
@@ -649,13 +650,13 @@ void check_uncollectable_ints(sexpr list, int low, int up)
   }
 
 # if defined(GC_PTHREADS)
-    void*
+    static void*
 # elif !defined(MSWINCE) && !defined(MSWIN_XBOX1) && !defined(NO_CRT) \
        && !defined(NO_TEST_ENDTHREADEX)
 #   define TEST_ENDTHREADEX
-    unsigned __stdcall
+    static unsigned __stdcall
 # else
-    DWORD __stdcall
+    static DWORD __stdcall
 # endif
   tiny_reverse_test(void *p_resumed)
   {
@@ -705,7 +706,7 @@ void check_uncollectable_ints(sexpr list, int low, int up)
   }
 
 # if defined(GC_PTHREADS)
-    void fork_a_thread(void)
+    static void fork_a_thread(void)
     {
       pthread_t t;
       int code;
@@ -767,7 +768,7 @@ void check_uncollectable_ints(sexpr list, int low, int up)
     }
 
 # elif defined(GC_WIN32_THREADS)
-    void fork_a_thread(void)
+    static void fork_a_thread(void)
     {
         HANDLE h;
 #       ifdef TEST_ENDTHREADEX
@@ -796,12 +797,11 @@ void check_uncollectable_ints(sexpr list, int low, int up)
             FAIL;
         }
     }
-
 # endif
 
 #endif
 
-void test_generic_malloc_or_special(void *p) {
+static void test_generic_malloc_or_special(void *p) {
   size_t size;
   int kind;
   void *p2;
@@ -834,7 +834,7 @@ volatile struct A_s {
  * Repeatedly reverse lists built out of very different sized cons cells.
  * Check that we didn't lose anything.
  */
-void *GC_CALLBACK reverse_test_inner(void *data)
+static void *GC_CALLBACK reverse_test_inner(void *data)
 {
     int i;
     sexpr b;
@@ -978,7 +978,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     return 0;
 }
 
-void reverse_test(void)
+static void reverse_test(void)
 {
     /* Test GC_do_blocking/GC_call_with_gc_active. */
     (void)GC_do_blocking(reverse_test_inner, 0);
@@ -1002,7 +1002,7 @@ int finalized_count = 0;
 int dropped_something = 0;
 
 #ifndef GC_NO_FINALIZATION
-  void GC_CALLBACK finalizer(void *obj, void *client_data)
+  static void GC_CALLBACK finalizer(void *obj, void *client_data)
   {
     tn *t = (tn *)obj;
 
@@ -1016,7 +1016,7 @@ int dropped_something = 0;
     FINALIZER_UNLOCK();
   }
 
-  void GC_CALLBACK dummy_finalizer(void *obj, void *client_data)
+  static void GC_CALLBACK dummy_finalizer(void *obj, void *client_data)
   {
     UNUSED_ARG(obj);
     UNUSED_ARG(client_data);
@@ -1040,7 +1040,7 @@ int dropped_something = 0;
 
 int live_indicators_count = 0;
 
-tn * mktree(int n)
+static tn * mktree(int n)
 {
     tn * result = GC_NEW(tn);
     tn * left, * right;
@@ -1170,7 +1170,7 @@ tn * mktree(int n)
     return result;
 }
 
-void chktree(tn *t, int n)
+static void chktree(tn *t, int n)
 {
     if (0 == n) {
         if (NULL == t) /* is a leaf? */
@@ -1198,7 +1198,7 @@ void chktree(tn *t, int n)
   pthread_key_t fl_key;
 #endif
 
-void * alloc8bytes(void)
+static void * alloc8bytes(void)
 {
 # ifndef GC_PTHREADS
     AO_fetch_and_add1(&atomic_count);
@@ -1236,7 +1236,7 @@ void * alloc8bytes(void)
 
 #include "gc/gc_inline.h"
 
-void test_tinyfl(void)
+static void test_tinyfl(void)
 {
   void *results[3];
   void *tfls[3][GC_TINY_FREELISTS];
@@ -1251,7 +1251,7 @@ void test_tinyfl(void)
   GC_CONS(results[2], results[0], results[1], tfls[2]);
 }
 
-void alloc_small(int n)
+static void alloc_small(int n)
 {
     int i;
 
@@ -1275,7 +1275,7 @@ void alloc_small(int n)
 #     define TREE_HEIGHT 16
 #   endif
 # endif
-void tree_test(void)
+static void tree_test(void)
 {
     tn * root;
     int i;
@@ -1324,7 +1324,7 @@ const GC_word bm_huge[320 / CPP_WORDSZ] = {
 };
 
 /* A very simple test of explicitly typed allocation    */
-void typed_test(void)
+static void typed_test(void)
 {
     GC_word * old, * newP;
     GC_word bm3[1] = {0};
@@ -1437,13 +1437,13 @@ void typed_test(void)
 #else
   static volatile AO_t fail_count = 0;
 
-  void GC_CALLBACK fail_proc1(void *arg)
+  static void GC_CALLBACK fail_proc1(void *arg)
   {
     UNUSED_ARG(arg);
     AO_fetch_and_add1(&fail_count);
   }
 
-  void set_print_procs(void)
+  static void set_print_procs(void)
   {
     /* Set these global variables just once to avoid TSan false positives. */
     A.dummy = 17;
@@ -1479,7 +1479,7 @@ static void uniq(void *p, ...) {
 
 #include "private/gc_alloc_ptrs.h"
 
-void * GC_CALLBACK inc_int_counter(void *pcounter)
+static void * GC_CALLBACK inc_int_counter(void *pcounter)
 {
   ++(*(int *)pcounter);
 
@@ -1495,7 +1495,7 @@ struct thr_hndl_sb_s {
   struct GC_stack_base sb;
 };
 
-void * GC_CALLBACK set_stackbottom(void *cd)
+static void * GC_CALLBACK set_stackbottom(void *cd)
 {
   GC_set_stackbottom(((struct thr_hndl_sb_s *)cd)->gc_thread_handle,
                      &((struct thr_hndl_sb_s *)cd)->sb);
@@ -1506,7 +1506,7 @@ void * GC_CALLBACK set_stackbottom(void *cd)
 # define MIN_WORDS 2
 #endif
 
-void run_one_test(void)
+static void run_one_test(void)
 {
     char *x;
 #   ifndef DBG_HDRS_ALL
@@ -1908,15 +1908,15 @@ void run_one_test(void)
 }
 
 /* Execute some tests after termination of other test threads (if any). */
-void run_single_threaded_test(void) {
+static void run_single_threaded_test(void) {
     GC_disable();
     GC_FREE(GC_MALLOC(100));
     GC_expand_hp(0); /* add a block to heap */
     GC_enable();
 }
 
-void GC_CALLBACK reachable_objs_counter(void *obj, size_t size,
-                                        void *pcounter)
+static void GC_CALLBACK reachable_objs_counter(void *obj, size_t size,
+                                               void *pcounter)
 {
   if (0 == size) {
     GC_printf("Reachable object has zero size\n");
@@ -1937,7 +1937,7 @@ void GC_CALLBACK reachable_objs_counter(void *obj, size_t size,
 
 #define NUMBER_ROUND_UP(v, bound) ((((v) + (bound) - 1) / (bound)) * (bound))
 
-void check_heap_stats(void)
+static void check_heap_stats(void)
 {
     size_t max_heap_sz;
     int i;
@@ -2154,13 +2154,13 @@ void SetMinimumStack(long minSize)
 
 #endif
 
-void GC_CALLBACK warn_proc(char *msg, GC_word p)
+static void GC_CALLBACK warn_proc(char *msg, GC_word p)
 {
     GC_printf(msg, (unsigned long)p);
     /*FAIL;*/
 }
 
-void enable_incremental_mode(void)
+static void enable_incremental_mode(void)
 {
 # if (defined(TEST_DEFAULT_VDB) || defined(TEST_MANUAL_VDB) \
       || !defined(DEFAULT_VDB)) && !defined(GC_DISABLE_INCREMENTAL)
@@ -2322,7 +2322,7 @@ void enable_incremental_mode(void)
 
 #if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
 
-DWORD __stdcall thr_run_one_test(void *arg)
+static DWORD __stdcall thr_run_one_test(void *arg)
 {
   UNUSED_ARG(arg);
   run_one_test();
@@ -2333,8 +2333,8 @@ DWORD __stdcall thr_run_one_test(void *arg)
 HANDLE win_created_h;
 HWND win_handle;
 
-LRESULT CALLBACK window_proc(HWND hwnd, UINT uMsg, WPARAM wParam,
-                             LPARAM lParam)
+static LRESULT CALLBACK window_proc(HWND hwnd, UINT uMsg, WPARAM wParam,
+                                    LPARAM lParam)
 {
   LRESULT ret = 0;
   switch (uMsg) {
@@ -2357,7 +2357,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT uMsg, WPARAM wParam,
   return ret;
 }
 
-DWORD __stdcall thr_window(void *arg)
+static DWORD __stdcall thr_window(void *arg)
 {
   WNDCLASS win_class = {
     CS_NOCLOSE,
@@ -2532,21 +2532,22 @@ int test(void)
 #if defined(GC_PTHREADS)
 # include <errno.h> /* for EAGAIN */
 
-void * thr_run_one_test(void *arg)
+static void * thr_run_one_test(void *arg)
 {
     UNUSED_ARG(arg);
     run_one_test();
     return 0;
 }
 
-void GC_CALLBACK describe_norm_type(void *p, char *out_buf)
+static void GC_CALLBACK describe_norm_type(void *p, char *out_buf)
 {
   UNUSED_ARG(p);
   BCOPY("NORMAL", out_buf, sizeof("NORMAL"));
 }
 
-int GC_CALLBACK has_static_roots(const char *dlpi_name,
-                                 void *section_start, size_t section_size)
+static int GC_CALLBACK has_static_roots(const char *dlpi_name,
+                                        void *section_start,
+                                        size_t section_size)
 {
   UNUSED_ARG(dlpi_name);
   UNUSED_ARG(section_start);

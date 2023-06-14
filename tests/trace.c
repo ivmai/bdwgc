@@ -14,7 +14,7 @@ struct treenode {
     struct treenode *y;
 } * root[10];
 
-struct treenode * mktree(int i) {
+static struct treenode * mktree(int i) {
   struct treenode * r = GC_NEW(struct treenode);
   struct treenode *x, *y;
   if (0 == i)
