@@ -136,14 +136,14 @@ STATIC void GC_extend_size_map(size_t i)
   /* For these larger sizes, we use an even number of granules.         */
   /* This makes it easier to, e.g., construct a 16-byte-aligned         */
   /* allocator even if GRANULE_BYTES is 8.                              */
-  granule_sz = (granule_sz + 1) & ~1;
+  granule_sz = (granule_sz + 1) & ~(size_t)1;
   if (granule_sz > MAXOBJGRANULES)
     granule_sz = MAXOBJGRANULES;
 
   /* If we can fit the same number of larger objects in a block, do so. */
   number_of_objs = HBLK_GRANULES / granule_sz;
   GC_ASSERT(number_of_objs != 0);
-  granule_sz = (HBLK_GRANULES / number_of_objs) & ~1;
+  granule_sz = (HBLK_GRANULES / number_of_objs) & ~(size_t)1;
 
   byte_sz = GRANULES_TO_BYTES(granule_sz) - EXTRA_BYTES;
                         /* We may need one extra byte; do not always    */

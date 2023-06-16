@@ -80,7 +80,7 @@ typedef struct {
     /* We're careful never to overwrite a value with lsb 0.     */
 #   if ALIGNMENT == 1
       /* Fudge back pointer to be even. */
-#     define HIDE_BACK_PTR(p) GC_HIDE_POINTER(~1 & (word)(p))
+#     define HIDE_BACK_PTR(p) GC_HIDE_POINTER(~(word)1 & (word)(p))
 #   else
 #     define HIDE_BACK_PTR(p) GC_HIDE_POINTER(p)
 #   endif

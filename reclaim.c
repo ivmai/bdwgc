@@ -574,7 +574,8 @@ STATIC void GC_print_block_descr(struct hblk *h,
     }
 
     ps = (struct Print_stats *)raw_ps;
-    ps->total_bytes += (bytes + (HBLKSIZE-1)) & ~(HBLKSIZE-1); /* round up */
+    ps->total_bytes +=
+                (bytes + HBLKSIZE-1) & ~(word)(HBLKSIZE-1); /* round up */
     ps->number_of_blocks++;
 }
 

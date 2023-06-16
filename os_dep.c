@@ -784,7 +784,7 @@ GC_INNER size_t GC_page_size = 0;
       result = VirtualQuery(p, &buf, sizeof(buf));
       if (result != sizeof(buf)) ABORT("Weird VirtualQuery result");
       if (base != 0) *base = (ptr_t)(buf.AllocationBase);
-      protect = (buf.Protect & ~(PAGE_GUARD | PAGE_NOCACHE));
+      protect = buf.Protect & ~(word)(PAGE_GUARD | PAGE_NOCACHE);
       if (!is_writable(protect)) {
         return(0);
       }
@@ -801,7 +801,7 @@ GC_INNER size_t GC_page_size = 0;
       /* function even before GC is initialized).                       */
       if (!GC_page_size) GC_setpagesize();
 
-      trunc_sp = (ptr_t)((word)GC_approx_sp() & ~(GC_page_size - 1));
+      trunc_sp = (ptr_t)((word)GC_approx_sp() & ~(word)(GC_page_size-1));
       /* FIXME: This won't work if called from a deeply recursive       */
       /* client code (and the committed stack space has grown).         */
       size = GC_get_writable_length(trunc_sp, 0);
@@ -1004,8 +1004,7 @@ GC_INNER size_t GC_page_size = 0;
         GC_ASSERT(I_HOLD_LOCK());
         GC_setup_temporary_fault_handler();
         if (SETJMP(GC_jmp_buf) == 0) {
-            result = (ptr_t)(((word)(p))
-                              & ~(MIN_PAGE_SIZE-1));
+            result = (ptr_t)((word)p & ~(word)(MIN_PAGE_SIZE-1));
             for (;;) {
                 if (up) {
                     if ((word)result >= (word)bound - MIN_PAGE_SIZE) {
@@ -1083,7 +1082,7 @@ GC_INNER size_t GC_page_size = 0;
 
     /* old way to get the register stackbottom */
     return (ptr_t)(((word)GC_stackbottom - BACKING_STORE_DISPLACEMENT - 1)
-                   & ~(BACKING_STORE_ALIGNMENT - 1));
+                   & ~(word)(BACKING_STORE_ALIGNMENT-1));
   }
 
 #endif /* HPUX_STACK_BOTTOM */
@@ -1326,9 +1325,10 @@ GC_INNER size_t GC_page_size = 0;
 #       define STACKBOTTOM_ALIGNMENT_M1 ((word)STACK_GRAN - 1)
 #       ifdef STACK_GROWS_DOWN
           result = (ptr_t)(((word)GC_approx_sp() + STACKBOTTOM_ALIGNMENT_M1)
-                           & ~STACKBOTTOM_ALIGNMENT_M1);
+                           & ~(word)STACKBOTTOM_ALIGNMENT_M1);
 #       else
-          result = (ptr_t)((word)GC_approx_sp() & ~STACKBOTTOM_ALIGNMENT_M1);
+          result = (ptr_t)((word)GC_approx_sp()
+                           & ~(word)STACKBOTTOM_ALIGNMENT_M1);
 #       endif
 #     elif defined(HPUX_MAIN_STACKBOTTOM)
         result = GC_hpux_main_stack_base();
@@ -1825,7 +1825,7 @@ void GC_register_data_segments(void)
   {
     MEMORY_BASIC_INFORMATION buf;
     LPVOID limit = GC_sysinfo.lpMinimumApplicationAddress;
-    ptr_t p = (ptr_t)((word)start & ~(GC_page_size - 1));
+    ptr_t p = (ptr_t)((word)start & ~(word)(GC_page_size-1));
 
     GC_ASSERT(GC_page_size != 0);
     for (;;) {
@@ -2271,7 +2271,7 @@ void GC_register_data_segments(void)
       return NULL;
     }
     last_addr = (ptr_t)(((word)result + bytes + GC_page_size - 1)
-                        & ~(GC_page_size - 1));
+                        & ~(word)(GC_page_size - 1));
 #   if !defined(LINUX)
       if (last_addr == 0) {
         /* Oops.  We got the end of the address space.  This isn't      */
@@ -2623,7 +2623,7 @@ void * os2_alloc(size_t bytes)
 STATIC ptr_t GC_unmap_start(ptr_t start, size_t bytes)
 {
     ptr_t result = (ptr_t)(((word)start + GC_page_size - 1)
-                            & ~(GC_page_size - 1));
+                            & ~(word)(GC_page_size - 1));
 
     GC_ASSERT(GC_page_size != 0);
     if ((word)(result + GC_page_size) > (word)(start + bytes)) return 0;
@@ -3315,7 +3315,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   endif
 
     if (SIG_OK && CODE_OK) {
-        struct hblk * h = (struct hblk *)((word)addr & ~(GC_page_size-1));
+        struct hblk * h = (struct hblk *)((word)addr
+                                & ~(word)(GC_page_size-1));
         GC_bool in_allocd_block;
         size_t i;
 
@@ -4022,8 +4023,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
       ofs = (size_t)(fpos - pagemap_buf_fpos);
       res = (ssize_t)(pagemap_buf_fpos + pagemap_buf_len - fpos);
     } else {
-      off_t aligned_pos = fpos & ~(GC_page_size < VDB_BUF_SZ
-                                    ? GC_page_size-1 : VDB_BUF_SZ-1);
+      off_t aligned_pos = fpos & ~(off_t)(GC_page_size < VDB_BUF_SZ
+                                            ? GC_page_size-1 : VDB_BUF_SZ-1);
 
       for (;;) {
         size_t count;
@@ -4089,7 +4090,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
         break;
       }
 
-      limit_buf = ((word)vaddr & ~(GC_page_size-1))
+      limit_buf = ((word)vaddr & ~(word)(GC_page_size-1))
                   + (res / sizeof(pagemap_elem_t)) * GC_page_size;
       for (; (word)vaddr < limit_buf; vaddr += GC_page_size, bufp++)
         if ((*bufp & PM_SOFTDIRTY_MASK) != 0) {
@@ -4347,9 +4348,9 @@ GC_INNER GC_bool GC_dirty_init(void)
       if (!GC_auto_incremental || GC_GWW_AVAILABLE())
         return;
       GC_ASSERT(GC_page_size != 0);
-      h_trunc = (struct hblk *)((word)h & ~(GC_page_size-1));
+      h_trunc = (struct hblk *)((word)h & ~(word)(GC_page_size-1));
       h_end = (struct hblk *)(((word)(h + nblocks) + GC_page_size - 1)
-                              & ~(GC_page_size - 1));
+                              & ~(word)(GC_page_size - 1));
       if (h_end == h_trunc + 1 &&
         get_pht_entry_from_index_async(GC_dirty_pages, PHT_HASH(h_trunc))) {
         /* already marked dirty, and hence unprotected. */
@@ -4976,7 +4977,7 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
 
   GC_ASSERT(GC_page_size != 0);
   if (GC_mprotect_state == GC_MP_NORMAL) { /* common case */
-    struct hblk * h = (struct hblk*)((word)addr & ~(GC_page_size-1));
+    struct hblk * h = (struct hblk *)((word)addr & ~(word)(GC_page_size-1));
     size_t i;
 
     UNPROTECT(h, GC_page_size);

@@ -236,7 +236,7 @@ static void add_edge(ptr_t p, ptr_t q)
 
     /* Check whether it was already in the list of predecessors. */
     {
-      back_edges *e = (back_edges *)((word)pred & ~FLAG_MANY);
+      back_edges *e = (back_edges *)((word)pred & ~(word)FLAG_MANY);
       word n_edges;
       word total;
       int local = 0;
@@ -263,7 +263,7 @@ static void add_edge(ptr_t p, ptr_t q)
     }
 
     ensure_struct(q);
-    be = (back_edges *)((word)GET_OH_BG_PTR(q) & ~FLAG_MANY);
+    be = (back_edges *)((word)GET_OH_BG_PTR(q) & ~(word)FLAG_MANY);
     for (i = be -> n_edges, be_cont = be; i > MAX_IN; i -= MAX_IN)
         be_cont = be_cont -> cont;
     if (i == MAX_IN) {
@@ -309,7 +309,7 @@ static void reset_back_edge(ptr_t p, size_t n_bytes GC_ATTR_UNUSED,
   if (GC_HAS_DEBUG_INFO(p)) {
     ptr_t old_back_ptr = GET_OH_BG_PTR(p);
     if ((word)old_back_ptr & FLAG_MANY) {
-      back_edges *be = (back_edges *)((word)old_back_ptr & ~FLAG_MANY);
+      back_edges *be = (back_edges *)((word)old_back_ptr & ~(word)FLAG_MANY);
       if (!(be -> flags & RETAIN)) {
         deallocate_back_edges(be);
         SET_OH_BG_PTR(p, 0);
@@ -387,7 +387,7 @@ static word backwards_height(ptr_t p)
     pop_in_progress(p);
     return result;
   }
-  be = (back_edges *)((word)pred & ~FLAG_MANY);
+  be = (back_edges *)((word)pred & ~(word)FLAG_MANY);
   if (be -> height >= 0 && be -> height_gc_no == (unsigned short)GC_gc_no)
       return be -> height;
   /* Ignore back edges in DFS */
@@ -463,13 +463,13 @@ static void update_max_height(ptr_t p, size_t n_bytes GC_ATTR_UNUSED,
     /* to p, but it can't have decreased.                               */
     back_ptr = GET_OH_BG_PTR(p);
     if (0 != back_ptr && ((word)back_ptr & FLAG_MANY)) {
-      be = (back_edges *)((word)back_ptr & ~FLAG_MANY);
+      be = (back_edges *)((word)back_ptr & ~(word)FLAG_MANY);
       if (be -> height != HEIGHT_UNKNOWN) p_height = be -> height;
     }
 
     {
       ptr_t pred = GET_OH_BG_PTR(p);
-      back_edges *e = (back_edges *)((word)pred & ~FLAG_MANY);
+      back_edges *e = (back_edges *)((word)pred & ~(word)FLAG_MANY);
       word n_edges;
       word total;
       int local = 0;
@@ -508,7 +508,7 @@ static void update_max_height(ptr_t p, size_t n_bytes GC_ATTR_UNUSED,
         if (be == 0) {
           ensure_struct(p);
           back_ptr = GET_OH_BG_PTR(p);
-          be = (back_edges *)((word)back_ptr & ~FLAG_MANY);
+          be = (back_edges *)((word)back_ptr & ~(word)FLAG_MANY);
         }
         be -> flags |= RETAIN;
         be -> height = p_height;

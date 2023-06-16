@@ -518,7 +518,7 @@ typedef struct {
 # define DIV_CACHE_SZ(n) ((n) >> LOG_CACHE_SZ)
 # define MOD_LINE_SZ(n) ((n) & (LINE_SZ - 1))
 # define DIV_LINE_SZ(n) ((n) >> LOG_LINE_SZ)
-# define LINE_START(n) ((n) & ~(LINE_SZ - 1))
+# define LINE_START(n) ((n) & ~(size_t)(LINE_SZ - 1))
 
 typedef struct {
     lf_state * state;
