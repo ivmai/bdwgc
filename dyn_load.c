@@ -555,7 +555,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
             } else {
               GC_ASSERT((word)end <=
                             (((word)load_segs[j].end + GC_page_size - 1) &
-                             ~(GC_page_size - 1)));
+                             ~(word)(GC_page_size - 1)));
               /* Remove from the existing load segment */
               load_segs[j].end2 = load_segs[j].end;
               load_segs[j].end = start;

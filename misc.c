@@ -374,7 +374,7 @@ STATIC void GC_init_size_map(void)
         ptr_t limit = sp;
 
         MAKE_HOTTER(limit, BIG_CLEAR_SIZE*sizeof(word));
-        limit = (ptr_t)((word)limit & ~0xf);
+        limit = (ptr_t)((word)limit & ~(word)0xf);
                         /* Make it sufficiently aligned for assembly    */
                         /* implementations of GC_clear_stack_inner.     */
         return GC_clear_stack_inner(arg, limit);
@@ -400,7 +400,7 @@ STATIC void GC_init_size_map(void)
 
         MAKE_HOTTER(limit, SLOP);
         if ((word)sp COOLER_THAN (word)limit) {
-          limit = (ptr_t)((word)limit & ~0xf);
+          limit = (ptr_t)((word)limit & ~(word)0xf);
                           /* Make it sufficiently aligned for assembly  */
                           /* implementations of GC_clear_stack_inner.   */
           GC_min_sp = sp;
@@ -445,7 +445,7 @@ GC_API void * GC_CALL GC_base(void * p)
         }
     if (HBLK_IS_FREE(candidate_hdr)) return NULL;
     /* Make sure r points to the beginning of the object */
-        r = (ptr_t)((word)r & ~(WORDS_TO_BYTES(1) - 1));
+        r = (ptr_t)((word)r & ~(word)(WORDS_TO_BYTES(1)-1));
         {
             word sz = candidate_hdr -> hb_sz;
             ptr_t limit;

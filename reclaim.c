@@ -577,7 +577,8 @@ STATIC void GC_CALLBACK GC_print_block_descr(struct hblk *h,
     GC_printf("%u,%u,%u,%u\n",
               hhdr -> hb_obj_kind, (unsigned)sz, n_marks, n_objs);
     ps -> number_of_blocks++;
-    ps -> total_bytes += (sz + (HBLKSIZE-1)) & ~(HBLKSIZE-1); /* round up */
+    ps -> total_bytes +=
+                (sz + HBLKSIZE-1) & ~(word)(HBLKSIZE-1); /* round up */
 }
 
 void GC_print_block_list(void)

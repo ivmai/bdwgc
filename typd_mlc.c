@@ -125,7 +125,7 @@ STATIC GC_descr GC_double_descr(GC_descr d, size_t nwords)
     if ((d & GC_DS_TAGS) == GC_DS_LENGTH) {
         d = GC_bm_table[BYTES_TO_WORDS((word)d)];
     }
-    d |= (d & ~GC_DS_TAGS) >> nwords;
+    d |= (d & ~(GC_descr)GC_DS_TAGS) >> nwords;
     return d;
 }
 

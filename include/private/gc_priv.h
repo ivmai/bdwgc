@@ -1009,7 +1009,7 @@ EXTERN_C_BEGIN
 
 /* Round up allocation size (in bytes) to a multiple of a granule.      */
 #define ROUNDUP_GRANULE_SIZE(lb) /* lb should have no side-effect */ \
-            (SIZET_SAT_ADD(lb, GRANULE_BYTES - 1) & ~(GRANULE_BYTES - 1))
+        (SIZET_SAT_ADD(lb, GRANULE_BYTES-1) & ~(size_t)(GRANULE_BYTES-1))
 
 /* Round up byte allocation request (after adding EXTRA_BYTES) to   */
 /* a multiple of a granule, then convert it to granules.            */
@@ -2564,7 +2564,7 @@ GC_EXTERN GC_bool GC_print_back_height;
     /* Compute end address for an unmap operation on the indicated block. */
     GC_INLINE ptr_t GC_unmap_end(ptr_t start, size_t bytes)
     {
-      return (ptr_t)((word)(start + bytes) & ~(GC_page_size - 1));
+      return (ptr_t)((word)(start + bytes) & ~(word)(GC_page_size-1));
     }
 # endif
 #endif /* USE_MUNMAP */

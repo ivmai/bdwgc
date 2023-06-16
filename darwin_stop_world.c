@@ -84,15 +84,16 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
 # ifdef DEBUG_THREADS_EXTRA
     GC_log_printf("FindTopOfStack start at sp= %p\n", (void *)frame);
 # endif
-  while (frame->savedSP != 0) {
-    /* if there are no more stack frames, stop */
+  while (frame->savedSP != 0) { /* stop if no more stack frames */
+    unsigned long maskedLR;
 
     frame = (StackFrame*)frame->savedSP;
 
     /* we do these next two checks after going to the next frame
        because the LR for the first stack frame in the loop
        is not set up on purpose, so we shouldn't check it. */
-    if ((frame->savedLR & ~0x3) == 0 || (frame->savedLR & ~0x3) == ~0x3UL)
+    maskedLR = frame -> savedLR & ~0x3UL;
+    if (0 == maskedLR || ~0x3UL == maskedLR)
       break; /* if the next LR is bogus, stop */
   }
 # ifdef DEBUG_THREADS_EXTRA

@@ -608,7 +608,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
     /* The following is 0 only for small objects described by a simple  */
     /* length descriptor.  For many applications this is the common     */
     /* case, so we try to detect it quickly.                            */
-    if (descr & ((~(WORDS_TO_BYTES(SPLIT_RANGE_WORDS) - 1)) | GC_DS_TAGS)) {
+    if (descr & (~(word)(WORDS_TO_BYTES(SPLIT_RANGE_WORDS)-1) | GC_DS_TAGS)) {
       word tag = descr & GC_DS_TAGS;
 
       GC_STATIC_ASSERT(GC_DS_TAGS == 0x3);
@@ -677,7 +677,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                             (unsigned long)descr);
             }
 #         endif /* ENABLE_TRACE */
-          descr &= ~GC_DS_TAGS;
+          descr &= ~(word)GC_DS_TAGS;
           credit -= WORDS_TO_BYTES(WORDSZ/2); /* guess */
           for (; descr != 0; descr <<= 1, current_p += sizeof(word)) {
             if ((descr & SIGNB) == 0) continue;
@@ -1265,8 +1265,8 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 {
     word length;
 
-    bottom = (void *)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    top = (void *)((word)top & ~(ALIGNMENT-1));
+    bottom = (void *)(((word)bottom + ALIGNMENT-1) & ~(word)(ALIGNMENT-1));
+    top = (void *)((word)top & ~(word)(ALIGNMENT-1));
     if ((word)bottom >= (word)top) return;
 
     GC_mark_stack_top++;
@@ -1275,7 +1275,7 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
     }
     length = (word)top - (word)bottom;
 #   if GC_DS_TAGS > ALIGNMENT - 1
-        length = (length + GC_DS_TAGS) & ~GC_DS_TAGS; /* round up */
+        length = (length + GC_DS_TAGS) & ~(word)GC_DS_TAGS; /* round up */
 #   endif
     GC_mark_stack_top -> mse_start = (ptr_t)bottom;
     GC_mark_stack_top -> mse_descr.w = length | GC_DS_LENGTH;
@@ -1296,8 +1296,8 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
   {
     struct hblk * h;
 
-    bottom = (ptr_t)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    top = (ptr_t)(((word) top) & ~(ALIGNMENT-1));
+    bottom = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(word)(ALIGNMENT-1));
+    top = (ptr_t)((word)top & ~(word)(ALIGNMENT-1));
     if ((word)bottom >= (word)top) return;
 
     h = HBLKPTR(bottom + HBLKSIZE);
@@ -1541,9 +1541,9 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
     if (top == 0) return;
 
     /* Check all pointers in range and push if they appear to be valid. */
-    lim = (word *)(((word)top) & ~(ALIGNMENT-1)) - 1;
-    for (current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-         (word)current_p <= (word)lim; current_p += ALIGNMENT) {
+    current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(word)(ALIGNMENT-1));
+    lim = (word *)((word)top & ~(word)(ALIGNMENT-1)) - 1;
+    for (; (word)current_p <= (word)lim; current_p += ALIGNMENT) {
       REGISTER word q;
 
       LOAD_WORD_OR_CONTINUE(q, current_p);
@@ -1588,9 +1588,9 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
       return;
     (void)all; /* TODO: If !all then scan only dirty pages. */
 
-    lim = (word *)(((word)top) & ~(ALIGNMENT-1)) - 1;
-    for (current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-         (word)current_p <= (word)lim; current_p += ALIGNMENT) {
+    current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(word)(ALIGNMENT-1));
+    lim = (word *)((word)top & ~(word)(ALIGNMENT-1)) - 1;
+    for (; (word)current_p <= (word)lim; current_p += ALIGNMENT) {
       REGISTER word q;
 
       LOAD_WORD_OR_CONTINUE(q, current_p);

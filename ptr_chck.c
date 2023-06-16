@@ -208,7 +208,8 @@ GC_API void * GC_CALL GC_is_visible(void *p)
                     break;
                 case GC_DS_PER_OBJECT:
                     if (!(descr & SIGNB)) {
-                      descr = *(word *)((ptr_t)base + (descr & ~GC_DS_TAGS));
+                      descr = *(word *)((ptr_t)base
+                                        + (descr & ~(word)GC_DS_TAGS));
                     } else {
                       ptr_t type_descr = *(ptr_t *)base;
                       descr = *(word *)(type_descr
