@@ -612,7 +612,7 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
         if (index == -1) return(WORDS_TO_BYTES(last_set_bit+1) | GC_DS_LENGTH);
                                 /* Out of memory: use conservative      */
                                 /* approximation.                       */
-        result = GC_MAKE_PROC(GC_typed_mark_proc_index, (word)index);
+        result = GC_MAKE_PROC(GC_typed_mark_proc_index, index);
         return result;
     }
 }
