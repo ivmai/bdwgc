@@ -260,7 +260,7 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
             /* Out of memory: use a conservative approximation. */
             return WORDS_TO_BYTES(last_set_bit + 1) | GC_DS_LENGTH;
         }
-        d = GC_MAKE_PROC(GC_typed_mark_proc_index, (word)index);
+        d = GC_MAKE_PROC(GC_typed_mark_proc_index, index);
     }
     return d;
 }
