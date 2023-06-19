@@ -55,7 +55,8 @@
 #   include <assert.h>  /* Not normally used, but handy for debugging.  */
 # endif
 
-#if defined(GC_NO_FINALIZATION) && !defined(NO_TYPED_TEST)
+#if (defined(GC_NO_FINALIZATION) || defined(DBG_HDRS_ALL)) \
+    && !defined(NO_TYPED_TEST)
 # define NO_TYPED_TEST
 #endif
 
@@ -1827,7 +1828,7 @@ static void run_one_test(void)
             dropped_something = 1;
 #         endif
           tree_test();
-#         if !defined(DBG_HDRS_ALL) && !defined(NO_TYPED_TEST)
+#         ifndef NO_TYPED_TEST
             typed_test();
 #         endif
 #         ifdef THREADS
@@ -1858,7 +1859,7 @@ static void run_one_test(void)
                         (unsigned) time_diff, (void *)&start_time);
         }
 #   endif
-#   if !defined(DBG_HDRS_ALL) && !defined(NO_TYPED_TEST)
+#   ifndef NO_TYPED_TEST
       typed_test();
 #     ifndef NO_CLOCK
         if (print_stats) {
@@ -1870,7 +1871,7 @@ static void run_one_test(void)
                         (unsigned) time_diff, (void *)&start_time);
         }
 #     endif
-#   endif /* DBG_HDRS_ALL */
+#   endif /* !NO_TYPED_TEST */
     tree_test();
 #   ifdef TEST_WITH_SYSTEM_MALLOC
       free(calloc(1,1));
