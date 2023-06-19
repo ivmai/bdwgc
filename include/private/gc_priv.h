@@ -732,7 +732,8 @@ EXTERN_C_BEGIN
 /* The argument (if any) format specifier should be:    */
 /* "%s", "%p", "%"WARN_PRIdPTR or "%"WARN_PRIuPTR.      */
 #define WARN(msg, arg) \
-    (*GC_current_warn_proc)((/* no const */ char *)("GC Warning: " msg), \
+    (*GC_current_warn_proc)((/* no const */ char *) \
+                                (word)("GC Warning: " msg), \
                             (word)(arg))
 GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
@@ -1965,8 +1966,8 @@ GC_INNER GC_bool GC_collection_in_progress(void);
                         /* Collection is in progress, or was abandoned. */
 
 #define GC_PUSH_ALL_SYM(sym) \
-                GC_push_all((/* no volatile */ void *)&(sym), \
-                            (/* no volatile */ void *)(&(sym) + 1))
+                GC_push_all((/* no volatile */ void *)(word)(&(sym)), \
+                            (/* no volatile */ void *)(word)(&(sym) + 1))
 
 GC_INNER void GC_push_all_stack(ptr_t b, ptr_t t);
                                     /* As GC_push_all but consider      */
@@ -2652,7 +2653,7 @@ GC_EXTERN GC_bool GC_print_back_height;
 #endif /* !GC_DISABLE_INCREMENTAL */
 
 /* Same as GC_base but excepts and returns a pointer to const object.   */
-#define GC_base_C(p) ((const void *)GC_base((/* no const */ void *)(p)))
+#define GC_base_C(p) ((const void *)GC_base((/* no const */ void *)(word)(p)))
 
 /* Debugging print routines: */
 void GC_print_block_list(void);
@@ -2963,7 +2964,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 /* Runtime check for an argument declared as non-null is actually not null. */
 #if GC_GNUC_PREREQ(4, 0)
   /* Workaround tautological-pointer-compare Clang warning.     */
-# define NONNULL_ARG_NOT_NULL(arg) (*(volatile void **)&(arg) != NULL)
+# define NONNULL_ARG_NOT_NULL(arg) (*(volatile void **)(word)(&(arg)) != NULL)
 #else
 # define NONNULL_ARG_NOT_NULL(arg) (NULL != (arg))
 #endif

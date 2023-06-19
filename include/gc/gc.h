@@ -1055,9 +1055,10 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
 /* pointers to object.                                                  */
 #define GC_GENERAL_REGISTER_DISAPPEARING_LINK_SAFE(link, obj) \
       GC_general_register_disappearing_link(link, \
-                                        GC_base((/* no const */ void *)(obj)))
+                        GC_base((/* no const */ void *)(GC_word)(obj)))
 #define GC_REGISTER_LONG_LINK_SAFE(link, obj) \
-      GC_register_long_link(link, GC_base((/* no const */ void *)(obj)))
+      GC_register_long_link(link, \
+                            GC_base((/* no const */ void *)(GC_word)(obj)))
 
 #ifdef GC_DEBUG_REPLACEMENT
 # define GC_MALLOC(sz) GC_debug_malloc_replacement(sz)

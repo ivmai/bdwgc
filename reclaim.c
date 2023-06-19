@@ -557,7 +557,7 @@ unsigned GC_n_set_marks(hdr *hhdr)
 #endif /* !USE_MARK_BYTES  */
 
 GC_API unsigned GC_CALL GC_count_set_marks_in_hblk(const void *p) {
-    return GC_n_set_marks(HDR(p));
+    return GC_n_set_marks(HDR((/* no const */ void *)(word)p));
 }
 
 STATIC void GC_CALLBACK GC_print_block_descr(struct hblk *h,

@@ -43,10 +43,10 @@ void ** const GC_uobjfreelist_ptr = GC_uobjfreelist;
 
 GC_API int GC_CALL GC_get_kind_and_size(const void * p, size_t * psize)
 {
-    hdr * hhdr = HDR(p);
+    hdr * hhdr = HDR((/* no const */ void *)(word)p);
 
     if (psize != NULL) {
-        *psize = (size_t)hhdr->hb_sz;
+        *psize = (size_t)(hhdr -> hb_sz);
     }
     return hhdr -> hb_obj_kind;
 }

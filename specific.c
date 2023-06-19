@@ -37,7 +37,7 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
     ret = pthread_mutex_init(&result->lock, NULL);
     if (ret != 0) return ret;
     for (i = 0; i < TS_CACHE_SIZE; ++i) {
-      result -> cache[i] = (/* no const */ tse *)&invalid_tse;
+      result -> cache[i] = (/* no const */ tse *)(word)(&invalid_tse);
     }
 #   ifdef GC_ASSERTIONS
       for (i = 0; i < TS_HASH_SIZE; ++i) {
@@ -81,7 +81,7 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
     /* There can only be one writer at a time, but this needs to be     */
     /* atomic with respect to concurrent readers.                       */
     AO_store_release(&key->hash[hash_val].ao, (AO_t)entry);
-    GC_dirty((/* no volatile */ void *)entry);
+    GC_dirty((/* no volatile */ void *)(word)entry);
     GC_dirty(key->hash + hash_val);
     if (pthread_mutex_unlock(&key->lock) != 0)
       ABORT("pthread_mutex_unlock failed (setspecific)");

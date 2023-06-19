@@ -2006,7 +2006,7 @@ void GC_register_data_segments(void)
         /* text and data segments, so plan A brought us something.      */
         result = (char *)GC_find_limit(DATAEND, FALSE);
     }
-    return (/* no volatile */ ptr_t)result;
+    return (/* no volatile */ ptr_t)(word)result;
   }
 # endif
 
@@ -4197,9 +4197,9 @@ GC_INNER GC_bool GC_dirty_init(void)
 #       endif
         ) {
       if (!output_unneeded)
-        BCOPY((/* no volatile */ void *)GC_dirty_pages, GC_grungy_pages,
-              sizeof(GC_dirty_pages));
-      BZERO((/* no volatile */ void *)GC_dirty_pages,
+        BCOPY((/* no volatile */ void *)(word)GC_dirty_pages,
+              GC_grungy_pages, sizeof(GC_dirty_pages));
+      BZERO((/* no volatile */ void *)(word)GC_dirty_pages,
             sizeof(GC_dirty_pages));
 #     ifdef MPROTECT_VDB
         if (!GC_manual_vdb)
@@ -4231,7 +4231,8 @@ GC_INNER GC_bool GC_dirty_init(void)
       }
 #   endif
 #   if defined(CHECK_SOFT_VDB) /* && MPROTECT_VDB */
-      BZERO((/* no volatile */ void *)GC_dirty_pages, sizeof(GC_dirty_pages));
+      BZERO((/* no volatile */ void *)(word)GC_dirty_pages,
+            sizeof(GC_dirty_pages));
       GC_protect_heap();
 #   endif
   }

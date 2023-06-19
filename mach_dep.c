@@ -416,7 +416,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 # endif /* !HAVE_PUSH_REGS */
   /* TODO: context here is sometimes just zero.  At the moment, the     */
   /* callees don't really need it.                                      */
-  fn(arg, (/* no volatile */ void *)context);
+  fn(arg, (/* no volatile */ void *)(word)context);
   /* Strongly discourage the compiler from treating the above   */
   /* as a tail-call, since that would pop the register          */
   /* contents before we get a chance to look at them.           */

@@ -272,7 +272,7 @@ STATIC void GC_init_size_map(void)
   {
 #   ifndef STACK_NOT_SCANNED
       word volatile dummy[SMALL_CLEAR_SIZE];
-      BZERO((/* no volatile */ void *)dummy, sizeof(dummy));
+      BZERO((/* no volatile */ word *)((word)dummy), sizeof(dummy));
 #   endif
     return arg;
   }
@@ -312,7 +312,7 @@ STATIC void GC_init_size_map(void)
 #     define CLEAR_SIZE 213 /* granularity */
       volatile word dummy[CLEAR_SIZE];
 
-      BZERO((/* no volatile */ void *)dummy, sizeof(dummy));
+      BZERO((/* no volatile */ word *)((word)dummy), sizeof(dummy));
       if ((word)GC_approx_sp() COOLER_THAN (word)limit) {
         (void)GC_clear_stack_inner(arg, limit);
       }
@@ -474,9 +474,9 @@ GC_API int GC_CALL GC_is_heap_ptr(const void *p)
 /* but that shouldn't be relied upon.)                                  */
 GC_API size_t GC_CALL GC_size(const void * p)
 {
-    hdr * hhdr = HDR(p);
+    hdr * hhdr = HDR((/* no const */ void *)(word)p);
 
-    return (size_t)hhdr->hb_sz;
+    return (size_t)(hhdr -> hb_sz);
 }
 
 
