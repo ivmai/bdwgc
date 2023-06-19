@@ -2862,8 +2862,7 @@ EXTERN_C_BEGIN
         && !defined(USE_WINALLOC)) \
     || (defined(NETBSD) && defined(__ELF__)) || defined(OPENBSD) \
     || ((defined(SVR4) || defined(AIX) || defined(DGUX) \
-         || defined(DATASTART_USES_BSDGETDATASTART) \
-         || (defined(LINUX) && defined(SPARC))) && !defined(PCR))
+         || defined(DATASTART_USES_BSDGETDATASTART)) && !defined(PCR))
 # define NEED_FIND_LIMIT
 #endif
 
