@@ -2995,7 +2995,8 @@ EXTERN_C_BEGIN
 
 #ifndef GETPAGESIZE
 # if defined(AIX) || defined(IRIX5) || defined(LINUX) || defined(SOLARIS) \
-     || defined(NETBSD) || defined(FREEBSD) || defined(HPUX)
+     || defined(NETBSD) || defined(FREEBSD) || defined(OPENBSD) \
+     || defined(HPUX)
     EXTERN_C_END
 #   include <unistd.h>
     EXTERN_C_BEGIN
