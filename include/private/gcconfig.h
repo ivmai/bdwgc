@@ -2515,7 +2515,14 @@
 # define DATAEND (__end__ != 0 ? (ptr_t)__end__ : (ptr_t)_end)
 #endif
 
-#if (defined(SVR4) || defined(PLATFORM_ANDROID)) && !defined(GETPAGESIZE)
+#if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
+        /* OS has SVR4 generic features.        */
+        /* Probably others also qualify.        */
+# define SVR4
+#endif
+
+#if (defined(LINUX) && defined(SPARC) || defined(PLATFORM_ANDROID)) \
+    && !defined(GETPAGESIZE)
 # include <unistd.h>
 # define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 #endif
@@ -2527,12 +2534,6 @@
 #   include <unistd.h>
 # endif
 # define GETPAGESIZE() (unsigned)getpagesize()
-#endif
-
-#if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
-        /* OS has SVR4 generic features.        */
-        /* Probably others also qualify.        */
-# define SVR4
 #endif
 
 #if defined(MPROTECT_VDB) && defined(__GLIBC__)
