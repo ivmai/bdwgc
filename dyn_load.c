@@ -1033,8 +1033,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #       ifdef MSWINCE
           if (result == 0) {
             /* Page is free; advance to the next possible allocation base */
-            new_limit = (char *)
-                (((DWORD) p + GC_sysinfo.dwAllocationGranularity)
+            new_limit = (char *)(((word)p + GC_sysinfo.dwAllocationGranularity)
                  & ~(GC_sysinfo.dwAllocationGranularity-1));
           } else
 #       endif
