@@ -2307,7 +2307,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   /* the same hard-coded signals we've always used.                     */
 # if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
 #   if defined(SPARC) && !defined(SIGPWR)
-      /* SPARC/Linux doesn't properly define SIGPWR in <signal.h>.      */
+      /* Linux/SPARC doesn't properly define SIGPWR in <signal.h>.      */
       /* It is aliased to SIGLOST in asm/signal.h, though.              */
 #     define SIG_SUSPEND SIGLOST
 #   else
