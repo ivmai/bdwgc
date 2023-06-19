@@ -2396,7 +2396,8 @@
 
 #ifndef GETPAGESIZE
 # if defined(SOLARIS) || defined(IRIX5) || defined(LINUX) \
-     || defined(NETBSD) || defined(FREEBSD) || defined(HPUX)
+     || defined(NETBSD) || defined(FREEBSD) || defined(OPENBSD) \
+     || defined(HPUX)
 #   include <unistd.h>
 # endif
 # define GETPAGESIZE() getpagesize()
