@@ -2985,7 +2985,14 @@ EXTERN_C_BEGIN
 # define DATAEND (__end__ != 0 ? (ptr_t)__end__ : (ptr_t)_end)
 #endif
 
-#if (defined(SVR4) || defined(HOST_ANDROID) || defined(HOST_TIZEN)) \
+#if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
+        /* OS has SVR4 generic features.        */
+        /* Probably others also qualify.        */
+# define SVR4
+#endif
+
+#if (defined(HOST_ANDROID) || defined(HOST_TIZEN) \
+     || (defined(LINUX) && defined(SPARC))) \
     && !defined(GETPAGESIZE)
   EXTERN_C_END
 # include <unistd.h>
@@ -3010,12 +3017,6 @@ EXTERN_C_BEGIN
   /* tkill() exists only on arm32/mips(32)/x86. */
   /* NDK r11+ deprecates tkill() but keeps it for Mono clients. */
 # define USE_TKILL_ON_ANDROID
-#endif
-
-#if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
-        /* OS has SVR4 generic features.        */
-        /* Probably others also qualify.        */
-# define SVR4
 #endif
 
 #if defined(MPROTECT_VDB) && defined(__GLIBC__) \
