@@ -52,10 +52,11 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
     return 0;
 }
 
-STATIC void GC_register_disclaim_proc_inner(int kind, GC_disclaim_proc proc,
+STATIC void GC_register_disclaim_proc_inner(unsigned kind,
+                                            GC_disclaim_proc proc,
                                             GC_bool mark_unconditionally)
 {
-    GC_ASSERT((unsigned)kind < MAXOBJKINDS);
+    GC_ASSERT(kind < MAXOBJKINDS);
     if (EXPECT(GC_find_leak, FALSE)) return;
 
     GC_obj_kinds[kind].ok_disclaim_proc = proc;
@@ -95,7 +96,8 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
                                               int mark_unconditionally)
 {
     LOCK();
-    GC_register_disclaim_proc_inner(kind, proc, (GC_bool)mark_unconditionally);
+    GC_register_disclaim_proc_inner((unsigned)kind, proc,
+                                    (GC_bool)mark_unconditionally);
     UNLOCK();
 }
 
@@ -107,7 +109,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
     GC_ASSERT(GC_finalized_kind != 0);
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fclos));
     GC_ASSERT(((word)fclos & FINALIZER_CLOSURE_FLAG) == 0);
-    op = GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)), GC_finalized_kind);
+    op = GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)),
+                        (int)GC_finalized_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
 #   ifdef AO_HAVE_store

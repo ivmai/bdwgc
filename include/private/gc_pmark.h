@@ -294,7 +294,7 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
         size_t obj_displ;
 
         base = (ptr_t)hhdr->hb_block;
-        obj_displ = current - base;
+        obj_displ = (size_t)(current - base);
         if (obj_displ != displ) {
           GC_ASSERT(obj_displ < hhdr -> hb_sz);
           /* Must be in all_interior_pointer case, not first block      */

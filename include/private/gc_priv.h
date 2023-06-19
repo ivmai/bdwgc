@@ -1555,7 +1555,7 @@ struct _GC_arrays {
 # endif
 # ifdef ENABLE_DISCLAIM
 #   define GC_finalized_kind GC_arrays._finalized_kind
-    int _finalized_kind;
+    unsigned _finalized_kind;
 # endif
 # define n_root_sets GC_arrays._n_root_sets
 # define GC_excl_table_entries GC_arrays._excl_table_entries
@@ -2323,13 +2323,12 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old);
                                 /* Reclaim all blocks.  Abort (in a     */
                                 /* consistent state) if f returns TRUE. */
 GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
-                                  GC_bool init, ptr_t list,
-                                  signed_word *count);
+                                  GC_bool init, ptr_t list, word *pcount);
                                 /* Rebuild free list in hbp with        */
                                 /* header hhdr, with objects of size sz */
                                 /* bytes.  Add list to the end of the   */
                                 /* free list.  Add the number of        */
-                                /* reclaimed bytes to *count.           */
+                                /* reclaimed bytes to *pcount.          */
 GC_INNER GC_bool GC_block_empty(hdr * hhdr);
                                 /* Block completely unmarked?   */
 GC_INNER int GC_CALLBACK GC_never_stop_func(void);

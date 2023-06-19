@@ -322,9 +322,9 @@ static word min_bytes_allocd(void)
 #     ifdef STACK_NOT_SCANNED
         stack_size = 0;
 #     elif defined(STACK_GROWS_UP)
-        stack_size = GC_approx_sp() - GC_stackbottom;
+        stack_size = (word)(GC_approx_sp() - GC_stackbottom);
 #     else
-        stack_size = GC_stackbottom - GC_approx_sp();
+        stack_size = (word)(GC_stackbottom - GC_approx_sp());
 #     endif
     }
 
@@ -362,10 +362,10 @@ STATIC word GC_adj_bytes_allocd(void)
              + (signed_word)GC_finalizer_bytes_freed
              - expl_managed;
     if (result > (signed_word)GC_bytes_allocd) {
-        result = GC_bytes_allocd;
+        result = (signed_word)GC_bytes_allocd;
         /* probably client bug or unfortunate scheduling */
     }
-    result += GC_bytes_finalized;
+    result += (signed_word)GC_bytes_finalized;
         /* We count objects enqueued for finalization as though they    */
         /* had been reallocated this round. Finalization is user        */
         /* visible progress.  And if we don't count this, we have       */
@@ -1084,7 +1084,7 @@ STATIC void GC_clear_fl_marks(ptr_t q)
             hhdr -> hb_n_marks = n_marks;
 #         endif
         }
-        GC_bytes_found -= sz;
+        GC_bytes_found -= (signed_word)sz;
 
         q = (ptr_t)obj_link(q);
         if (q == NULL)
@@ -1289,7 +1289,7 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
                                          GC_bool force_unmap)
 {
     GC_bool result;
-    IF_USE_MUNMAP(int old_unmap_threshold;)
+    IF_USE_MUNMAP(unsigned old_unmap_threshold;)
     IF_CANCEL(int cancel_state;)
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();

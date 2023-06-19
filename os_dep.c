@@ -2682,7 +2682,7 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 {
     ptr_t start_addr = GC_unmap_start(start, bytes);
     ptr_t end_addr = GC_unmap_end(start, bytes);
-    word len = end_addr - start_addr;
+    word len = (word)(end_addr - start_addr);
     if (0 == start_addr) return;
 
     /* FIXME: Handle out-of-memory correctly (at least for Win32)       */

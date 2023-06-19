@@ -574,7 +574,7 @@ GC_INNER void GC_merge_unmapped(void)
               } else {
                 GC_adjust_num_unmapped(h, hhdr);
                 GC_remap((ptr_t)h, size);
-                hhdr -> hb_flags &= ~WAS_UNMAPPED;
+                hhdr -> hb_flags &= (unsigned char)~WAS_UNMAPPED;
                 hhdr -> hb_last_reclaimed = nexthdr -> hb_last_reclaimed;
               }
             } else if (!IS_MAPPED(hhdr) && !IS_MAPPED(nexthdr)) {
@@ -632,7 +632,7 @@ STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
     rest_hdr -> hb_flags = 0;
 #   ifdef GC_ASSERTIONS
       /* Mark h not free, to avoid assertion about adjacent free blocks. */
-        hhdr -> hb_flags &= ~FREE_BLK;
+        hhdr -> hb_flags &= (unsigned char)~FREE_BLK;
 #   endif
     GC_add_to_fl(rest, rest_hdr);
     return h;
@@ -919,7 +919,7 @@ STATIC struct hblk *GC_allochblk_nth(size_t sz, int kind, unsigned flags,
         if (!IS_MAPPED(hhdr)) {
           GC_adjust_num_unmapped(hbp, hhdr);
           GC_remap((ptr_t)hbp, (size_t)(hhdr -> hb_sz));
-          hhdr -> hb_flags &= ~WAS_UNMAPPED;
+          hhdr -> hb_flags &= (unsigned char)~WAS_UNMAPPED;
         }
 #     endif
       /* Split the block at last_hbp. */
@@ -935,7 +935,7 @@ STATIC struct hblk *GC_allochblk_nth(size_t sz, int kind, unsigned flags,
       if (!IS_MAPPED(hhdr)) {
         GC_adjust_num_unmapped(hbp, hhdr);
         GC_remap((ptr_t)hbp, (size_t)(hhdr -> hb_sz));
-        hhdr -> hb_flags &= ~WAS_UNMAPPED;
+        hhdr -> hb_flags &= (unsigned char)~WAS_UNMAPPED;
         /* Note: This may leave adjacent, mapped free blocks. */
       }
 #   endif

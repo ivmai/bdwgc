@@ -43,7 +43,7 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
     word size = 0;
 
     for (i = 0; i < n_root_sets; i++) {
-      size += GC_static_roots[i].r_end - GC_static_roots[i].r_start;
+      size += (word)(GC_static_roots[i].r_end - GC_static_roots[i].r_start);
     }
     return size;
   }
@@ -190,11 +190,11 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
             if ((word)b <= (word)old->r_end
                  && (word)e >= (word)old->r_start) {
                 if ((word)b < (word)old->r_start) {
-                    GC_root_size += old->r_start - b;
+                    GC_root_size += (word)(old -> r_start - b);
                     old -> r_start = b;
                 }
                 if ((word)e > (word)old->r_end) {
-                    GC_root_size += e - old->r_end;
+                    GC_root_size += (word)(e - old -> r_end);
                     old -> r_end = e;
                 }
                 old -> r_tmp &= tmp;
@@ -212,16 +212,16 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
               if ((word)b <= (word)old->r_end
                   && (word)e >= (word)old->r_start) {
                 if ((word)b < (word)old->r_start) {
-                    GC_root_size += old->r_start - b;
+                    GC_root_size += (word)(old -> r_start - b);
                     old -> r_start = b;
                 }
                 if ((word)e > (word)old->r_end) {
-                    GC_root_size += e - old->r_end;
+                    GC_root_size += (word)(e - old -> r_end);
                     old -> r_end = e;
                 }
                 old -> r_tmp &= other -> r_tmp;
                 /* Delete this entry. */
-                  GC_root_size -= (other -> r_end - other -> r_start);
+                  GC_root_size -= (word)(other -> r_end - other -> r_start);
                   other -> r_start = GC_static_roots[n_root_sets-1].r_start;
                   other -> r_end = GC_static_roots[n_root_sets-1].r_end;
                   n_root_sets--;
@@ -241,7 +241,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
           }
           if (old -> r_tmp == tmp || !tmp) {
             /* Extend the existing root. */
-            GC_root_size += e - old -> r_end;
+            GC_root_size += (word)(e - old -> r_end);
             old -> r_end = e;
             old -> r_tmp = tmp;
             return;
@@ -266,7 +266,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
       GC_static_roots[n_root_sets].r_next = 0;
       add_roots_to_index(GC_static_roots + n_root_sets);
 #   endif
-    GC_root_size += e - b;
+    GC_root_size += (word)(e - b);
     n_root_sets++;
 }
 
@@ -297,7 +297,8 @@ STATIC void GC_remove_root_at_pos(int i)
                     (void *)GC_static_roots[i].r_end,
                     GC_static_roots[i].r_tmp ? " (temporary)" : "");
 #   endif
-    GC_root_size -= (GC_static_roots[i].r_end - GC_static_roots[i].r_start);
+    GC_root_size -= (word)(GC_static_roots[i].r_end -
+                            GC_static_roots[i].r_start);
     GC_static_roots[i].r_start = GC_static_roots[n_root_sets-1].r_start;
     GC_static_roots[i].r_end = GC_static_roots[n_root_sets-1].r_end;
     GC_static_roots[i].r_tmp = GC_static_roots[n_root_sets-1].r_tmp;
@@ -424,7 +425,7 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
                         i, (void *)r_start, (void *)r_end);
 #       endif
         if ((word)r_start < (word)b) {
-          GC_root_size -= r_end - b;
+          GC_root_size -= (word)(r_end - b);
           GC_static_roots[i].r_end = b;
           /* No need to rebuild as hash does not use r_end value. */
           if ((word)e < (word)r_end) {
@@ -446,7 +447,7 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
           }
         } else {
           if ((word)e < (word)r_end) {
-            GC_root_size -= e - r_start;
+            GC_root_size -= (word)(e - r_start);
             GC_static_roots[i].r_start = e;
           } else {
             GC_remove_root_at_pos(i);

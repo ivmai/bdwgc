@@ -149,7 +149,7 @@
     } else {
       if (GC_HAS_DEBUG_INFO(bp_base)) bp_base += sizeof(oh);
       *base_p = bp_base;
-      *offset_p = bp - bp_base;
+      *offset_p = (size_t)(bp - bp_base);
       return GC_REFD_FROM_HEAP;
     }
   }
@@ -758,7 +758,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
 #     endif
       ABORT_ARG1("Invalid pointer passed to free()", ": %p", p);
     }
-    if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
+    if ((word)p - (word)base != sizeof(oh)) {
 #     if defined(REDIRECT_FREE) && defined(USE_PROC_FOR_LIBRARIES)
         /* TODO: Suppress the warning if free() caller is in libpthread */
         /* or libdl.                                                    */
@@ -790,7 +790,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
     }
     if (GC_find_leak
 #       ifndef SHORT_DBG_HDRS
-          && ((ptr_t)p - (ptr_t)base != sizeof(oh) || !GC_findleak_delay_free)
+          && ((word)p - (word)base != sizeof(oh) || !GC_findleak_delay_free)
 #       endif
         ) {
       GC_free(base);
@@ -828,7 +828,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
   GC_INNER void GC_debug_free_inner(void * p)
   {
     ptr_t base = (ptr_t)GC_base(p);
-    GC_ASSERT((ptr_t)p - (ptr_t)base == sizeof(oh));
+    GC_ASSERT((word)p - (word)base == sizeof(oh));
 #   ifdef LINT2
       if (!base) ABORT("Invalid GC_debug_free_inner argument");
 #   endif
@@ -863,7 +863,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
     if (base == 0) {
         ABORT_ARG1("Invalid pointer passed to realloc()", ": %p", p);
     }
-    if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
+    if ((word)p - (word)base != sizeof(oh)) {
         GC_err_printf(
               "GC_debug_realloc called on pointer %p w/o debugging info\n", p);
         return GC_realloc(p, lb);

@@ -333,7 +333,7 @@ static void reset_back_edge(ptr_t p, size_t n_bytes, word gc_descr)
         GC_ASSERT(GC_is_marked(p));
 
         /* We only retain things for one GC cycle at a time.            */
-          be -> flags &= ~RETAIN;
+          be -> flags &= (unsigned short)~RETAIN;
       }
     } else /* Simple back pointer */ {
       /* Clear to avoid dangling pointer. */
@@ -397,10 +397,10 @@ static word backwards_height(ptr_t p)
   }
   be = (back_edges *)((word)pred & ~(word)FLAG_MANY);
   if (be -> height >= 0 && be -> height_gc_no == (unsigned short)GC_gc_no)
-      return be -> height;
+      return (word)(be -> height);
   /* Ignore back edges in DFS */
     if (be -> height == HEIGHT_IN_PROGRESS) return 0;
-  result = (be -> height > 0? be -> height : 1);
+  result = be -> height > 0 ? (word)(be -> height) : 1U;
   be -> height = HEIGHT_IN_PROGRESS;
 
   {
@@ -443,7 +443,7 @@ static word backwards_height(ptr_t p)
       }
   }
 
-  be -> height = result;
+  be -> height = (signed_word)result;
   be -> height_gc_no = (unsigned short)GC_gc_no;
   return result;
 }
@@ -473,7 +473,8 @@ static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
     back_ptr = GET_OH_BG_PTR(p);
     if (0 != back_ptr && ((word)back_ptr & FLAG_MANY)) {
       be = (back_edges *)((word)back_ptr & ~(word)FLAG_MANY);
-      if (be -> height != HEIGHT_UNKNOWN) p_height = be -> height;
+      if (be -> height != HEIGHT_UNKNOWN)
+        p_height = (word)(be -> height);
     }
 
     {
@@ -520,7 +521,7 @@ static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
           be = (back_edges *)((word)back_ptr & ~(word)FLAG_MANY);
         }
         be -> flags |= RETAIN;
-        be -> height = p_height;
+        be -> height = (signed_word)p_height;
         be -> height_gc_no = (unsigned short)GC_gc_no;
     }
     if (p_height > GC_max_height) {

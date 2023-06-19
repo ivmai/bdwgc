@@ -87,7 +87,7 @@ typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
 /* bits are tags distinguishing among the following 4 possibilities     */
 /* for the high order 30 bits.                                          */
 #define GC_DS_TAG_BITS 2
-#define GC_DS_TAGS   ((1 << GC_DS_TAG_BITS) - 1)
+#define GC_DS_TAGS   ((1U << GC_DS_TAG_BITS) - 1)
 #define GC_DS_LENGTH 0  /* The entire word is a length in bytes that    */
                         /* must be a multiple of 4.                     */
 #define GC_DS_BITMAP 1  /* 30 (62) bits are a bitmap describing pointer */
@@ -105,7 +105,8 @@ typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
                         /* last argument.                               */
 #define GC_MAKE_PROC(proc_index, env) \
             ((((((GC_word)(env)) << GC_LOG_MAX_MARK_PROCS) \
-               | (proc_index)) << GC_DS_TAG_BITS) | GC_DS_PROC)
+               | (unsigned)(proc_index)) << GC_DS_TAG_BITS) \
+             | (GC_word)GC_DS_PROC)
 #define GC_DS_PER_OBJECT 3  /* The real descriptor is at the            */
                         /* byte displacement from the beginning of the  */
                         /* object given by descr & ~GC_DS_TAGS.         */

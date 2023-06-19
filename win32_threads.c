@@ -571,7 +571,7 @@ GC_INNER void GC_start_world(void)
             && *(/* no volatile */ ptr_t *)&(p -> crtn -> stack_end) != NULL);
         if (ResumeThread(THREAD_HANDLE(p)) == (DWORD)-1)
           ABORT("ResumeThread failed");
-        p -> flags &= ~IS_SUSPENDED;
+        p -> flags &= (unsigned char)~IS_SUSPENDED;
         if (GC_on_thread_event)
           GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, THREAD_HANDLE(p));
       }
@@ -592,7 +592,7 @@ GC_INNER void GC_start_world(void)
           if (ResumeThread(THREAD_HANDLE(p)) == (DWORD)-1)
             ABORT("ResumeThread failed");
           GC_win32_unprotect_thread(p);
-          p -> flags &= ~IS_SUSPENDED;
+          p -> flags &= (unsigned char)~IS_SUSPENDED;
           if (GC_on_thread_event)
             GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, THREAD_HANDLE(p));
         } else {

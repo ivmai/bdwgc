@@ -90,21 +90,21 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
     if (ignore_gcj_info) {
         /* Use a simple length-based descriptor, thus forcing a fully   */
         /* conservative scan.                                           */
-        GC_gcj_kind = GC_new_kind_inner((void **)GC_gcjobjfreelist,
-                                        /* 0 | */ GC_DS_LENGTH,
-                                        TRUE, TRUE);
+        GC_gcj_kind = (int)GC_new_kind_inner((void **)GC_gcjobjfreelist,
+                                             /* 0 | */ GC_DS_LENGTH,
+                                             TRUE, TRUE);
         GC_gcj_debug_kind = GC_gcj_kind;
     } else {
-        GC_gcj_kind = GC_new_kind_inner(
+        GC_gcj_kind = (int)GC_new_kind_inner(
                         (void **)GC_gcjobjfreelist,
                         (((word)(-(signed_word)MARK_DESCR_OFFSET
                                  - GC_INDIR_PER_OBJ_BIAS))
                          | GC_DS_PER_OBJECT),
                         FALSE, TRUE);
         /* Set up object kind for objects that require mark proc call.  */
-        GC_gcj_debug_kind = GC_new_kind_inner(GC_new_free_list_inner(),
+        GC_gcj_debug_kind = (int)GC_new_kind_inner(GC_new_free_list_inner(),
                                 GC_MAKE_PROC(mp_index,
-                                             1 /* allocated with debug info */),
+                                        1 /* allocated with debug info */),
                                 FALSE, TRUE);
     }
     UNLOCK();

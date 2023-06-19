@@ -268,7 +268,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     void **opp;
     size_t lw;      /* Length in words.     */
     size_t lg;      /* Length in granules.  */
-    signed_word my_bytes_allocd = 0;
+    word my_bytes_allocd = 0;
     struct obj_kind * ok;
     struct hblk ** rlh;
 
@@ -329,7 +329,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
                   if (my_bytes_allocd_tmp != 0) {
                     (void)AO_fetch_and_add(&GC_bytes_allocd_tmp,
                                            (AO_t)(-my_bytes_allocd_tmp));
-                    GC_bytes_allocd += my_bytes_allocd_tmp;
+                    GC_bytes_allocd += (word)my_bytes_allocd_tmp;
                   }
                   GC_acquire_mark_lock();
                   ++ GC_fl_builder_count;
@@ -351,10 +351,10 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
 #                 ifdef THREAD_SANITIZER
                     GC_release_mark_lock();
                     LOCK();
-                    GC_bytes_found += my_bytes_allocd;
+                    GC_bytes_found += (signed_word)my_bytes_allocd;
                     UNLOCK();
 #                 else
-                    GC_bytes_found += my_bytes_allocd;
+                    GC_bytes_found += (signed_word)my_bytes_allocd;
                                         /* The result may be inaccurate. */
                     GC_release_mark_lock();
 #                 endif
@@ -364,7 +364,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
 #             endif
               /* We also reclaimed memory, so we need to adjust       */
               /* that count.                                          */
-              GC_bytes_found += my_bytes_allocd;
+              GC_bytes_found += (signed_word)my_bytes_allocd;
               GC_bytes_allocd += my_bytes_allocd;
               goto out;
             }

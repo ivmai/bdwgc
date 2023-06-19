@@ -39,9 +39,9 @@ typedef GC_word * GC_bitmap;
         /* the first word in the object may be a pointer.               */
 
 #define GC_WORDSZ (8 * sizeof(GC_word))
-#define GC_get_bit(bm, index) \
+#define GC_get_bit(bm, index) /* index should be of unsigned type */ \
             (((bm)[(index) / GC_WORDSZ] >> ((index) % GC_WORDSZ)) & 1)
-#define GC_set_bit(bm, index) \
+#define GC_set_bit(bm, index) /* index should be of unsigned type */ \
             ((bm)[(index) / GC_WORDSZ] |= (GC_word)1 << ((index) % GC_WORDSZ))
 #define GC_WORD_OFFSET(t, f) (offsetof(t,f) / sizeof(GC_word))
 #define GC_WORD_LEN(t) (sizeof(t) / sizeof(GC_word))

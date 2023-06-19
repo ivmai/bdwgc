@@ -1133,7 +1133,7 @@ GC_API void GC_CALL GC_init(void)
         if (0 != time_limit_string) {
           long time_limit = atol(time_limit_string);
           if (time_limit > 0) {
-            GC_time_limit = time_limit;
+            GC_time_limit = (unsigned long)time_limit;
           }
         }
       }
@@ -1178,7 +1178,7 @@ GC_API void GC_CALL GC_init(void)
           } else {
             int unmap_threshold = atoi(string);
             if (unmap_threshold > 0)
-              GC_unmap_threshold = unmap_threshold;
+              GC_unmap_threshold = (unsigned)unmap_threshold;
           }
         }
       }
@@ -1789,7 +1789,7 @@ GC_API void GC_CALL GC_start_mark_threads(void)
 #     else
         /* No writing.  */
 #     endif
-      return len;
+      return (int)len;
 #   else
       int bytes_written = 0;
       IF_CANCEL(int cancel_state;)
@@ -1803,7 +1803,8 @@ GC_API void GC_CALL GC_start_mark_threads(void)
              int result = _write(fd, buf + bytes_written,
                                  (unsigned)(len - bytes_written));
 #        else
-             int result = write(fd, buf + bytes_written, len - bytes_written);
+             int result = (int)write(fd, buf + bytes_written,
+                                     len - (size_t)bytes_written);
 #        endif
 
          if (-1 == result) {

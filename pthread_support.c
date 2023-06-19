@@ -1818,7 +1818,7 @@ static GC_bool do_blocking_enter(GC_thread me)
 static void do_blocking_leave(GC_thread me, GC_bool topOfStackUnset)
 {
     GC_ASSERT(I_HOLD_LOCK());
-    me -> flags &= ~DO_BLOCKING;
+    me -> flags &= (unsigned char)~DO_BLOCKING;
 #   ifdef E2K
       {
         GC_stack_context_t crtn = me -> crtn;
@@ -2027,7 +2027,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       crtn -> backing_store_end = NULL;
 #   endif
     stacksect.prev = crtn -> traced_stack_sect;
-    me -> flags &= ~DO_BLOCKING;
+    me -> flags &= (unsigned char)~DO_BLOCKING;
     crtn -> traced_stack_sect = &stacksect;
 
     UNLOCK();
@@ -2225,7 +2225,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
           me -> mach_thread = mach_thread_self();
 #       endif
         GC_record_stack_base(me -> crtn, sb);
-        me -> flags &= ~FINISHED; /* but not DETACHED */
+        me -> flags &= (unsigned char)~FINISHED; /* but not DETACHED */
       } else
 #   endif
     /* else */ {

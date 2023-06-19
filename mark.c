@@ -171,7 +171,7 @@ GC_API void GC_CALL GC_set_mark_bit(const void *p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
-    word bit_no = MARK_BIT_NO((ptr_t)p - (ptr_t)h, hhdr -> hb_sz);
+    word bit_no = MARK_BIT_NO((word)p - (word)h, hhdr -> hb_sz);
 
     if (!mark_bit_from_hdr(hhdr, bit_no)) {
       set_mark_bit_from_hdr(hhdr, bit_no);
@@ -183,7 +183,7 @@ GC_API void GC_CALL GC_clear_mark_bit(const void *p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
-    word bit_no = MARK_BIT_NO((ptr_t)p - (ptr_t)h, hhdr -> hb_sz);
+    word bit_no = MARK_BIT_NO((word)p - (word)h, hhdr -> hb_sz);
 
     if (mark_bit_from_hdr(hhdr, bit_no)) {
       size_t n_marks = hhdr -> hb_n_marks;
@@ -207,7 +207,7 @@ GC_API int GC_CALL GC_is_marked(const void *p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
-    word bit_no = MARK_BIT_NO((ptr_t)p - (ptr_t)h, hhdr -> hb_sz);
+    word bit_no = MARK_BIT_NO((word)p - (word)h, hhdr -> hb_sz);
 
     return (int)mark_bit_from_hdr(hhdr, bit_no); /* 0 or 1 */
 }
@@ -678,7 +678,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             }
 #         endif /* ENABLE_TRACE */
           descr &= ~(word)GC_DS_TAGS;
-          credit -= WORDS_TO_BYTES(WORDSZ/2); /* guess */
+          credit -= (signed_word)WORDS_TO_BYTES(WORDSZ/2); /* guess */
           for (; descr != 0; descr <<= 1, current_p += sizeof(word)) {
             if ((descr & SIGNB) == 0) continue;
             LOAD_WORD_OR_CONTINUE(current, current_p);

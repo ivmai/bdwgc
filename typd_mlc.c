@@ -52,8 +52,8 @@ STATIC int GC_array_kind = 0;
 
 #define ED_INITIAL_SIZE 100
 
-STATIC int GC_typed_mark_proc_index = 0; /* Indices of my mark          */
-STATIC int GC_array_mark_proc_index = 0; /* procedures.                 */
+STATIC unsigned GC_typed_mark_proc_index = 0;   /* Indices of the typed */
+STATIC unsigned GC_array_mark_proc_index = 0;   /* mark procedures.     */
 
 STATIC void GC_push_typed_structures_proc(void)
 {
@@ -98,16 +98,17 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
             GC_ext_descriptors = newExtD;
         }  /* else another thread already resized it in the meantime */
     }
-    result = GC_avail_descr;
+    result = (signed_word)GC_avail_descr;
     for (i = 0; i < nwords-1; i++) {
-        GC_ext_descriptors[result + i].ed_bitmap = bm[i];
-        GC_ext_descriptors[result + i].ed_continued = TRUE;
+        GC_ext_descriptors[(size_t)result + i].ed_bitmap = bm[i];
+        GC_ext_descriptors[(size_t)result + i].ed_continued = TRUE;
     }
     /* Clear irrelevant (highest) bits for the last element.    */
-    GC_ext_descriptors[result + i].ed_bitmap =
+    GC_ext_descriptors[(size_t)result + i].ed_bitmap =
                 bm[i] & (GC_WORD_MAX >> (nwords * WORDSZ - nbits));
-    GC_ext_descriptors[result + i].ed_continued = FALSE;
+    GC_ext_descriptors[(size_t)result + i].ed_continued = FALSE;
     GC_avail_descr += nwords;
+    GC_ASSERT(result >= 0);
     UNLOCK();
     return result;
 }
@@ -142,13 +143,13 @@ STATIC void GC_init_explicit_typing(void)
     /* Set up object kind with simple indirect descriptor.      */
     /* Descriptor is in the last word of the object.            */
     GC_typed_mark_proc_index = GC_new_proc_inner(GC_typed_mark_proc);
-    GC_explicit_kind = GC_new_kind_inner(GC_new_free_list_inner(),
+    GC_explicit_kind = (int)GC_new_kind_inner(GC_new_free_list_inner(),
                             (WORDS_TO_BYTES((word)-1) | GC_DS_PER_OBJECT),
                             TRUE, TRUE);
 
     /* Set up object kind with array descriptor. */
     GC_array_mark_proc_index = GC_new_proc_inner(GC_array_mark_proc);
-    GC_array_kind = GC_new_kind_inner(GC_new_free_list_inner(),
+    GC_array_kind = (int)GC_new_kind_inner(GC_new_free_list_inner(),
                             GC_MAKE_PROC(GC_array_mark_proc_index, 0),
                             FALSE, TRUE);
 
@@ -223,7 +224,7 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
       UNLOCK();
 #   endif
 
-    while (last_set_bit >= 0 && !GC_get_bit(bm, last_set_bit))
+    while (last_set_bit >= 0 && !GC_get_bit(bm, (word)last_set_bit))
       last_set_bit--;
     if (last_set_bit < 0) return 0; /* no pointers */
 
@@ -232,13 +233,13 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
       signed_word i;
 
       for (i = 0; i < last_set_bit; i++) {
-        if (!GC_get_bit(bm, i)) {
+        if (!GC_get_bit(bm, (word)i)) {
           break;
         }
       }
       if (i == last_set_bit) {
         /* An initial section contains all pointers.  Use length descriptor. */
-        return WORDS_TO_BYTES(last_set_bit + 1) | GC_DS_LENGTH;
+        return WORDS_TO_BYTES((word)last_set_bit + 1) | GC_DS_LENGTH;
       }
     }
 #   endif
@@ -250,7 +251,7 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
         d = SIGNB;
         for (i = last_set_bit - 1; i >= 0; i--) {
             d >>= 1;
-            if (GC_get_bit(bm, i)) d |= SIGNB;
+            if (GC_get_bit(bm, (word)i)) d |= SIGNB;
         }
         d |= GC_DS_BITMAP;
     } else {
@@ -258,7 +259,7 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 
         if (EXPECT(index == -1, FALSE)) {
             /* Out of memory: use a conservative approximation. */
-            return WORDS_TO_BYTES(last_set_bit + 1) | GC_DS_LENGTH;
+            return WORDS_TO_BYTES((word)last_set_bit + 1) | GC_DS_LENGTH;
         }
         d = GC_MAKE_PROC(GC_typed_mark_proc_index, index);
     }
