@@ -166,6 +166,8 @@ int main(void)
         CloseHandle(th[i]);
 #     endif
     }
+#else
+    (void)entry(NULL);
 #endif
   printf("Created %d threads (%d ended)\n",
          (int)AO_load(&thread_created_cnt), (int)AO_load(&thread_ended_cnt));

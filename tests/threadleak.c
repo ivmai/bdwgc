@@ -106,6 +106,8 @@ int main(void) {
             exit(2);
         }
     }
+# else
+    (void)test(NULL);
 # endif
 
     CHECK_LEAKS();

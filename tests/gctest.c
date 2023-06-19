@@ -938,9 +938,12 @@ static void *GC_CALLBACK reverse_test_inner(void *data)
     check_ints(a_get(),1,49);
 # endif
     for (i = 0; i < 10 * (NTHREADS+1); i++) {
-#       if (defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)) \
-           && (NTHREADS > 0)
+#       if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
+#         if NTHREADS > 0
             if (i % 10 == 0) fork_a_thread();
+#         else
+            GC_noop1((GC_word)&fork_a_thread);
+#         endif
 #       endif
         /* This maintains the invariant that a always points to a list  */
         /* of 49 integers.  Thus, this is thread safe without locks,    */
@@ -2465,22 +2468,25 @@ static DWORD __stdcall thr_window(void *arg)
 # endif
   set_print_procs();
 # if NTHREADS > 0
-   for (i = 0; i < NTHREADS; i++) {
-    h[i] = CreateThread(NULL, 0, thr_run_one_test, 0, 0, &thread_id);
-    if (h[i] == (HANDLE)NULL) {
-      GC_printf("Thread creation failed, errcode= %d\n", (int)GetLastError());
-      FAIL;
+    for (i = 0; i < NTHREADS; i++) {
+      h[i] = CreateThread(NULL, 0, thr_run_one_test, 0, 0, &thread_id);
+      if (h[i] == (HANDLE)NULL) {
+        GC_printf("Thread creation failed, errcode= %d\n",
+                  (int)GetLastError());
+        FAIL;
+      }
     }
-   }
-# endif /* NTHREADS > 0 */
+# else
+    GC_noop1((GC_word)&thr_run_one_test);
+# endif
   run_one_test();
 # if NTHREADS > 0
-   for (i = 0; i < NTHREADS; i++) {
-    if (WaitForSingleObject(h[i], INFINITE) != WAIT_OBJECT_0) {
-      GC_printf("Thread wait failed, errcode= %d\n", (int)GetLastError());
-      FAIL;
+    for (i = 0; i < NTHREADS; i++) {
+      if (WaitForSingleObject(h[i], INFINITE) != WAIT_OBJECT_0) {
+        GC_printf("Thread wait failed, errcode= %d\n", (int)GetLastError());
+        FAIL;
+      }
     }
-   }
 # endif /* NTHREADS > 0 */
 # ifdef MSWINCE
     PostMessage(win_handle, WM_CLOSE, 0, 0);
