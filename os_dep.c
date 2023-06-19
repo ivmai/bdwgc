@@ -2060,7 +2060,7 @@ void GC_register_data_segments(void)
         /* Try reading at the address.                          */
         /* This should happen before there is another thread.   */
         for (; next_page < (word)DATAEND; next_page += (word)max_page_size)
-            *(volatile char *)next_page;
+            GC_noop1((word)(*(volatile unsigned char *)next_page));
         GC_reset_fault_handler();
     } else {
         GC_reset_fault_handler();
