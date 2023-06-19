@@ -2538,7 +2538,8 @@ EXTERN_C_BEGIN
 #if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
     && !defined(GETPAGESIZE)
 # if defined(AIX) || defined(DARWIN) || defined(IRIX5) || defined(LINUX) \
-     || defined(FREEBSD) || defined(NETBSD) || defined(SOLARIS)
+     || defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD) \
+     || defined(SOLARIS)
     EXTERN_C_END
 #   include <unistd.h>
     EXTERN_C_BEGIN
