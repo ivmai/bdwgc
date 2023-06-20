@@ -660,7 +660,8 @@ GC_INNER size_t GC_page_size = 0;
   STATIC unsigned GC_log_pagesize = 0;
 #endif
 
-#if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+#ifdef ANY_MSWIN
+
 # ifndef VER_PLATFORM_WIN32_CE
 #   define VER_PLATFORM_WIN32_CE 3
 # endif
@@ -745,11 +746,11 @@ GC_INNER size_t GC_page_size = 0;
       return (int)result[0];
   }
 
-#endif /* !MSWIN32 && OS2 */
+#endif /* !ANY_MSWIN && OS2 */
 
 GC_INNER void GC_setpagesize(void)
 {
-# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+# ifdef ANY_MSWIN
     GetSystemInfo(&GC_sysinfo);
 #   ifdef ALT_PAGESIZE_USED
       /* Allocations made with mmap() are aligned to the allocation     */
@@ -789,7 +790,7 @@ GC_INNER void GC_setpagesize(void)
         }
       }
 #   endif
-# else /* !MSWIN32 */
+# else
 #   ifdef ALT_PAGESIZE_USED
 #     ifdef REAL_PAGESIZE_NEEDED
         GC_real_page_size = (size_t)GETPAGESIZE();
@@ -803,7 +804,7 @@ GC_INNER void GC_setpagesize(void)
           ABORT("getpagesize failed");
 #     endif
 #   endif
-# endif /* !MSWIN32 */
+# endif /* !ANY_MSWIN */
 # ifdef SOFT_VDB
     {
       size_t pgsize;
@@ -1245,9 +1246,8 @@ GC_INNER void GC_setpagesize(void)
     return (ptr_t)emscripten_stack_get_base();
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#elif !defined(AMIGA) && !defined(EMBOX) && !defined(HAIKU) \
-      && !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
-      && !defined(OS2) && !defined(GC_OPENBSD_THREADS) \
+#elif !defined(AMIGA) && !defined(EMBOX) && !defined(HAIKU) && !defined(OS2) \
+      && !defined(ANY_MSWIN) && !defined(GC_OPENBSD_THREADS) \
       && (!defined(GC_SOLARIS_THREADS) || defined(_STRICT_STDC))
 
 # if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
@@ -1347,7 +1347,7 @@ GC_INNER void GC_setpagesize(void)
     return result;
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#endif /* !AMIGA && !HAIKU && !GC_OPENBSD_THREADS && !OS2 && !Windows */
+#endif /* !AMIGA && !ANY_MSWIN && !HAIKU && !GC_OPENBSD_THREADS && !OS2 */
 
 #if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
     && defined(THREADS) && !defined(HAVE_GET_STACK_BASE)
@@ -1747,7 +1747,7 @@ void GC_register_data_segments(void)
 #   define GetWriteWatch_alloc_flag 0
 # endif /* !GWW_VDB */
 
-# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+# ifdef ANY_MSWIN
 
 # ifdef MSWIN32
   /* Unfortunately, we have to handle win32s very differently from NT,  */
@@ -1966,7 +1966,7 @@ void GC_register_data_segments(void)
 #   endif
   }
 
-# else /* !OS2 && !Windows */
+# else /* !ANY_MSWIN */
 
 # if (defined(SVR4) || defined(AIX) || defined(DGUX)) && !defined(PCR)
   ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
@@ -2066,7 +2066,7 @@ void GC_register_data_segments(void)
   }
 }
 
-# else /* !OS2 && !Windows && !AMIGA && !OPENBSD */
+# else /* !AMIGA && !OPENBSD */
 
 # if !defined(PCR) && !defined(MACOS) && defined(REDIRECT_MALLOC) \
      && defined(GC_SOLARIS_THREADS)
@@ -2142,8 +2142,8 @@ void GC_register_data_segments(void)
     /* change.                                                          */
   }
 
-# endif /* !AMIGA */
-# endif /* !MSWIN32 && !MSWINCE */
+# endif /* !AMIGA && !OPENBSD */
+# endif /* !ANY_MSWIN */
 # endif /* !OS2 */
 
 /*
@@ -2486,8 +2486,7 @@ void * os2_alloc(size_t bytes)
   }
 #endif /* USE_WINALLOC || CYGWIN32 */
 
-#if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32) \
-    || defined(MSWIN_XBOX1)
+#if defined(ANY_MSWIN) || defined(MSWIN_XBOX1)
   GC_API void GC_CALL GC_win32_free_heap(void)
   {
 #   if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC) \
@@ -2521,7 +2520,7 @@ void * os2_alloc(size_t bytes)
 #     endif
 #   endif /* USE_WINALLOC || CYGWIN32 */
   }
-#endif /* Windows */
+#endif /* ANY_MSWIN || MSWIN_XBOX1 */
 
 #ifdef AMIGA
 # define GC_AMIGA_AM

@@ -136,8 +136,7 @@ typedef int GC_bool;
   /* used in gcconfig.h.  Shouldn't be used for the debugging-only      */
   /* functions.  Currently, not used for the functions declared in or   */
   /* called from the "dated" source files (located in "extra" folder).  */
-# if defined(GC_DLL) && defined(__GNUC__) && !defined(MSWIN32) \
-        && !defined(MSWINCE) && !defined(CYGWIN32)
+# if defined(GC_DLL) && defined(__GNUC__) && !defined(ANY_MSWIN)
 #   if GC_GNUC_PREREQ(4, 0) && !defined(GC_NO_VISIBILITY)
       /* See the corresponding GC_API definition. */
 #     define GC_INNER __attribute__((__visibility__("hidden")))
@@ -276,14 +275,14 @@ typedef int GC_bool;
 # endif
 #endif
 
-#if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+#ifdef ANY_MSWIN
 # ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN 1
 # endif
 # define NOSERVICE
 # include <windows.h>
 # include <winbase.h>
-#endif
+#endif /* ANY_MSWIN */
 
 #include "gc_locks.h"
 
@@ -617,15 +616,14 @@ EXTERN_C_END
 
 EXTERN_C_BEGIN
 
-#if defined(CPPCHECK) \
-    && (defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32))
+#if defined(CPPCHECK) && defined(ANY_MSWIN)
 # undef TEXT
 # ifdef UNICODE
 #   define TEXT(s) L##s
 # else
 #   define TEXT(s) s
 # endif
-#endif /* CPPCHECK */
+#endif /* CPPCHECK && ANY_MSWIN */
 
 /*
  * Stop and restart mutator threads.
@@ -1284,22 +1282,21 @@ struct exclusion {
 struct roots {
         ptr_t r_start;/* multiple of word size */
         ptr_t r_end;  /* multiple of word size and greater than r_start */
-#       if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#       ifndef ANY_MSWIN
           struct roots * r_next;
 #       endif
         GC_bool r_tmp;
                 /* Delete before registering new dynamic libraries */
 };
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#ifndef ANY_MSWIN
     /* Size of hash table index to roots.       */
 #   define LOG_RT_SIZE 6
 #   define RT_SIZE (1 << LOG_RT_SIZE) /* Power of 2, may be != MAX_ROOT_SETS */
-#endif
+#endif /* !ANY_MSWIN */
 
 #if (!defined(MAX_HEAP_SECTS) || defined(CPPCHECK)) \
-    && (defined(CYGWIN32) || defined(MSWIN32) || defined(MSWINCE) \
-        || defined(USE_PROC_FOR_LIBRARIES))
+    && (defined(ANY_MSWIN) || defined(USE_PROC_FOR_LIBRARIES))
 # ifdef LARGE_CONFIG
 #   if CPP_WORDSZ > 32
 #     define MAX_HEAP_SECTS 81920
@@ -1516,7 +1513,7 @@ struct _GC_arrays {
   size_t _capacity_heap_sects;
 # define GC_n_heap_sects GC_arrays._n_heap_sects
   word _n_heap_sects;   /* Number of separately added heap sections.    */
-# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+# ifdef ANY_MSWIN
 #   define GC_n_heap_bases GC_arrays._n_heap_bases
     word _n_heap_bases; /* See GC_heap_bases.   */
 # endif
@@ -1587,7 +1584,7 @@ struct _GC_arrays {
   char _modws_valid_offsets[sizeof(word)];
                                 /* GC_valid_offsets[i] ==>                */
                                 /* GC_modws_valid_offsets[i%sizeof(word)] */
-# if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+# ifndef ANY_MSWIN
 #   define GC_root_index GC_arrays._root_index
     struct roots * _root_index[RT_SIZE];
 # endif
@@ -1663,7 +1660,7 @@ struct _GC_arrays {
                                         /* memory.  Includes block      */
                                         /* headers and the like.        */
 # endif
-# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+# ifdef ANY_MSWIN
 #   define GC_heap_bases GC_arrays._heap_bases
     ptr_t _heap_bases[MAX_HEAP_SECTS];
                 /* Start address of memory regions obtained from kernel. */
@@ -1809,7 +1806,7 @@ GC_EXTERN size_t GC_page_size;
 # define ROUNDUP_PAGESIZE_IF_MMAP(lb) (lb)
 #endif
 
-#if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+#ifdef ANY_MSWIN
   GC_EXTERN SYSTEM_INFO GC_sysinfo;
   GC_INNER GC_bool GC_is_heap_base(const void *p);
 #endif
@@ -2168,8 +2165,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp);
   GC_INNER void GC_remove_roots_subregion(ptr_t b, ptr_t e);
 #endif
 GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish);
-#if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
-    || defined(CYGWIN32) || defined(PCR)
+#if defined(DYNAMIC_LOADING) || defined(ANY_MSWIN) || defined(PCR)
   GC_INNER void GC_register_dynamic_libraries(void);
                 /* Add dynamic library data sections to the root set. */
 #endif
@@ -2866,7 +2862,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   GC_INNER void GC_init_win32(void);
 #endif
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#ifndef ANY_MSWIN
   GC_INNER void * GC_roots_present(ptr_t);
         /* The type is a lie, since the real type doesn't make sense here, */
         /* and we only test for NULL.                                      */

@@ -2313,7 +2313,7 @@ static void enable_incremental_mode(void)
        && !defined(MSWIN32) && !defined(MSWINCE)
       GC_set_log_fd(2);
 #   endif
-#   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+#   ifdef ANY_MSWIN
       GC_win32_free_heap();
 #   endif
     CRTMEM_DUMP_LEAKS();

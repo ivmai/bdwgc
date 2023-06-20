@@ -51,19 +51,17 @@
 /* FIXME: Add filter support for more platforms.                        */
 STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
-#if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
-    || defined(CYGWIN32)) && !defined(PCR)
+#if defined(DYNAMIC_LOADING) && !defined(PCR) || defined(ANY_MSWIN)
 
 #if !defined(DARWIN) && !defined(SCO_ELF) && !defined(SOLARISDL) \
     && !defined(AIX) && !defined(DGUX) && !defined(IRIX5) && !defined(HPUX) \
-    && !defined(CYGWIN32) && !defined(MSWIN32) && !defined(MSWINCE) \
     && !(defined(ALPHA) && defined(OSF1)) \
     && !(defined(FREEBSD) && defined(__ELF__)) \
     && !(defined(LINUX) && defined(__ELF__)) \
     && !(defined(NETBSD) && defined(__ELF__)) \
     && !(defined(OPENBSD) && (defined(__ELF__) || defined(M68K))) \
-    && !defined(HAIKU) && !defined(HURD) && !defined(NACL) \
-    && !defined(CPPCHECK)
+    && !defined(ANY_MSWIN) && !defined(HAIKU) && !defined(HURD) \
+    && !defined(NACL) && !defined(CPPCHECK)
 # error We only know how to find data segments of dynamic libraries for above.
 # error Additional SVR4 variants might not be too hard to add.
 #endif
@@ -937,8 +935,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 # endif /* USE_PROC_FOR_LIBRARIES || IRIX5 */
 
-# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-
+#ifdef ANY_MSWIN
   /* We traverse the entire address space and register all segments     */
   /* that could possibly have been written to.                          */
   STATIC void GC_cond_add_roots(char *base, char * limit)
@@ -1074,8 +1071,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
     }
     GC_cond_add_roots(base, limit);
   }
-
-#endif /* MSWIN32 || MSWINCE || CYGWIN32 */
+#endif /* ANY_MSWIN */
 
 #if defined(ALPHA) && defined(OSF1)
 # include <loader.h>

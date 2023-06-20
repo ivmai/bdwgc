@@ -23,7 +23,7 @@
 struct roots {
         ptr_t r_start;
         ptr_t r_end;
-#       if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#       ifndef ANY_MSWIN
           struct roots * r_next;
 #       endif
         GC_bool r_tmp;
@@ -93,7 +93,7 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
   }
 #endif /* !THREADS */
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#ifndef ANY_MSWIN
 /*
 #   define LOG_RT_SIZE 6
 #   define RT_SIZE (1 << LOG_RT_SIZE)  -- Power of 2, may be != MAX_ROOT_SETS
@@ -142,7 +142,7 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
     p -> r_next = GC_root_index[h];
     GC_root_index[h] = p;
   }
-#endif /* !MSWIN32 && !MSWINCE && !CYGWIN32 */
+#endif /* !ANY_MSWIN */
 
 GC_INNER word GC_root_size = 0;
 
@@ -173,7 +173,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
                                         /* round e down to word boundary */
     if ((word)b >= (word)e) return; /* nothing to do */
 
-#   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+#   ifdef ANY_MSWIN
       /* Spend the time to ensure that there are no overlapping */
       /* or adjacent intervals.                                 */
       /* This could be done faster with e.g. a                  */
@@ -261,7 +261,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
     GC_static_roots[n_root_sets].r_start = (ptr_t)b;
     GC_static_roots[n_root_sets].r_end = (ptr_t)e;
     GC_static_roots[n_root_sets].r_tmp = tmp;
-#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#   ifndef ANY_MSWIN
       GC_static_roots[n_root_sets].r_next = 0;
       add_roots_to_index(GC_static_roots + n_root_sets);
 #   endif
@@ -278,7 +278,7 @@ GC_API void GC_CALL GC_clear_roots(void)
 #   endif
     n_root_sets = 0;
     GC_root_size = 0;
-#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#   ifndef ANY_MSWIN
       BZERO(GC_root_index, RT_SIZE * sizeof(void *));
 #   endif
 #   ifdef DEBUG_ADD_DEL_ROOTS
@@ -304,7 +304,7 @@ STATIC void GC_remove_root_at_pos(int i)
     n_root_sets--;
 }
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#ifndef ANY_MSWIN
   STATIC void GC_rebuild_root_index(void)
   {
     int i;
@@ -312,12 +312,11 @@ STATIC void GC_remove_root_at_pos(int i)
     for (i = 0; i < n_root_sets; i++)
         add_roots_to_index(GC_static_roots + i);
   }
-#endif
+#endif /* !ANY_MSWIN */
 
-#if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
-     || defined(PCR) || defined(CYGWIN32)
-STATIC void GC_remove_tmp_roots(void)
-{
+#if defined(DYNAMIC_LOADING) || defined(ANY_MSWIN) || defined(PCR)
+  STATIC void GC_remove_tmp_roots(void)
+  {
     int i;
 #   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
       int old_n_roots = n_root_sets;
@@ -335,8 +334,8 @@ STATIC void GC_remove_tmp_roots(void)
       if (n_root_sets < old_n_roots)
         GC_rebuild_root_index();
 #   endif
-}
-#endif
+  }
+#endif /* DYNAMIC_LOADING || ANY_MSWIN || PCR */
 
 STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
 
@@ -355,7 +354,7 @@ GC_API void GC_CALL GC_remove_roots(void *b, void *e)
 STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
 {
     int i;
-#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#   ifndef ANY_MSWIN
       int old_n_roots = n_root_sets;
 #   endif
 
@@ -368,7 +367,7 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
             i++;
         }
     }
-#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#   ifndef ANY_MSWIN
       if (n_root_sets < old_n_roots)
         GC_rebuild_root_index();
 #   endif
@@ -875,9 +874,8 @@ GC_INNER void (*GC_push_typed_structures)(void) = 0;
 GC_INNER void GC_cond_register_dynamic_libraries(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
-# if (defined(DYNAMIC_LOADING) && !defined(MSWIN_XBOX1)) \
-     || defined(CYGWIN32) || defined(MSWIN32) || defined(MSWINCE) \
-     || defined(PCR)
+# if defined(DYNAMIC_LOADING) && !defined(MSWIN_XBOX1) \
+     || defined(ANY_MSWIN) || defined(PCR)
     GC_remove_tmp_roots();
     if (!GC_no_dls) GC_register_dynamic_libraries();
 # else

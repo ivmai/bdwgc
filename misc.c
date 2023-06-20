@@ -643,8 +643,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
   }
 #endif /* THREADS && !SIGNAL_BASED_STOP_WORLD */
 
-#if !defined(_MAX_PATH) && (defined(MSWIN32) || defined(MSWINCE) \
-                            || defined(CYGWIN32))
+#if !defined(_MAX_PATH) && defined(ANY_MSWIN)
 # define _MAX_PATH MAX_PATH
 #endif
 
@@ -667,7 +666,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
   /* The routine initializes GC_envfile_content from the GC "env" file. */
   STATIC void GC_envfile_init(void)
   {
-#   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+#   ifdef ANY_MSWIN
       HANDLE hFile;
       char *content;
       unsigned ofs;

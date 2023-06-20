@@ -48,7 +48,7 @@
     return (int)result[0];
   }
 
-#elif defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+#elif defined(ANY_MSWIN)
   static int win32_getpagesize(void)
   {
     SYSTEM_INFO sysinfo;

@@ -73,8 +73,7 @@ int main(void)
     HANDLE t;
     DWORD thread_id;
 # endif
-# if !(defined(BEOS) || defined(MSWIN32) || defined(MSWINCE) \
-       || defined(CYGWIN32) \
+# if !(defined(BEOS) || defined(ANY_MSWIN) \
        || (defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP)) \
        || ((defined(FREEBSD) || defined(LINUX) || defined(NETBSD) \
             || defined(HOST_ANDROID)) && !defined(NO_PTHREAD_GETATTR_NP) \

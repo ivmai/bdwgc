@@ -2554,8 +2554,11 @@ EXTERN_C_BEGIN
 # define SVR4
 #endif
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
-    && !defined(GETPAGESIZE)
+#if defined(CYGWIN32) || defined(MSWIN32) || defined(MSWINCE)
+# define ANY_MSWIN
+#endif
+
+#if !defined(ANY_MSWIN) && !defined(GETPAGESIZE)
 # if defined(AIX) || defined(DARWIN) || defined(IRIX5) || defined(LINUX) \
      || defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD) \
      || defined(KOS) || defined(SOLARIS)
@@ -2569,7 +2572,7 @@ EXTERN_C_BEGIN
 # else
 #   define GETPAGESIZE() (unsigned)getpagesize()
 # endif
-#endif /* !MSWIN32 && !GETPAGESIZE */
+#endif /* !ANY_MSWIN && !GETPAGESIZE */
 
 #if defined(HOST_ANDROID) && !(__ANDROID_API__ >= 23) \
     && ((defined(MIPS) && (CPP_WORDSZ == 32)) \
@@ -2956,8 +2959,7 @@ EXTERN_C_BEGIN
 # if defined(GC_AIX_THREADS) && !defined(_AIX)
 #   error Inconsistent configuration
 # endif
-# if defined(GC_WIN32_THREADS) && !defined(CYGWIN32) && !defined(MSWIN32) \
-     && !defined(MSWINCE) && !defined(MSWIN_XBOX1)
+# if defined(GC_WIN32_THREADS) && !defined(ANY_MSWIN) && !defined(MSWIN_XBOX1)
 #   error Inconsistent configuration
 # endif
 # if defined(GC_WIN32_PTHREADS) && defined(CYGWIN32)
@@ -2982,9 +2984,8 @@ EXTERN_C_BEGIN
 
 /* Whether GC_page_size is to be set to a value other than page size.   */
 #if defined(CYGWIN32) && (defined(MPROTECT_VDB) || defined(USE_MUNMAP)) \
-    || (!defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
-        && (defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB)) \
-        && !defined(USE_MMAP))
+    || (!defined(ANY_MSWIN) && !defined(USE_MMAP) \
+        && (defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB)))
   /* Cygwin: use the allocation granularity instead.                    */
   /* Other than Windows: use HBLKSIZE instead (unless mmap() is used).  */
 # define ALT_PAGESIZE_USED
