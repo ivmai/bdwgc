@@ -1265,7 +1265,7 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 {
     word length;
 
-    bottom = (void *)(((word)bottom + ALIGNMENT-1) & ~(word)(ALIGNMENT-1));
+    bottom = PTRT_ROUNDUP_BY_MASK(bottom, ALIGNMENT-1);
     top = (void *)((word)top & ~(word)(ALIGNMENT-1));
     if ((word)bottom >= (word)top) return;
 
@@ -1296,7 +1296,7 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
   {
     struct hblk * h;
 
-    bottom = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(word)(ALIGNMENT-1));
+    bottom = PTRT_ROUNDUP_BY_MASK(bottom, ALIGNMENT-1);
     top = (ptr_t)((word)top & ~(word)(ALIGNMENT-1));
     if ((word)bottom >= (word)top) return;
 
@@ -1541,7 +1541,7 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
     if (top == 0) return;
 
     /* Check all pointers in range and push if they appear to be valid. */
-    current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(word)(ALIGNMENT-1));
+    current_p = PTRT_ROUNDUP_BY_MASK(bottom, ALIGNMENT-1);
     lim = (word *)((word)top & ~(word)(ALIGNMENT-1)) - 1;
     for (; (word)current_p <= (word)lim; current_p += ALIGNMENT) {
       REGISTER word q;
@@ -1588,7 +1588,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
       return;
     (void)all; /* TODO: If !all then scan only dirty pages. */
 
-    current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(word)(ALIGNMENT-1));
+    current_p = PTRT_ROUNDUP_BY_MASK(bottom, ALIGNMENT-1);
     lim = (word *)((word)top & ~(word)(ALIGNMENT-1)) - 1;
     for (; (word)current_p <= (word)lim; current_p += ALIGNMENT) {
       REGISTER word q;

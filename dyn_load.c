@@ -513,7 +513,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
           /* probably, we should remove the corresponding assertion */
           /* check in GC_add_roots_inner along with this code line. */
           /* start pointer value may require aligning.              */
-          start = (ptr_t)((word)start & ~(word)(sizeof(word) - 1));
+          start = (ptr_t)((word)start & ~(word)(sizeof(word)-1));
 #       endif
         if (n_load_segs >= MAX_LOAD_SEGS) {
           if (!load_segs_overflow) {
@@ -554,9 +554,8 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
               WARN("More than one GNU_RELRO segment per load one\n",0);
             } else {
               GC_ASSERT((word)end <=
-                            (((word)load_segs[j].end + GC_page_size - 1) &
-                             ~(word)(GC_page_size - 1)));
-              /* Remove from the existing load segment */
+                (word)PTRT_ROUNDUP_BY_MASK(load_segs[j].end, GC_page_size-1));
+              /* Remove from the existing load segment. */
               load_segs[j].end2 = load_segs[j].end;
               load_segs[j].end = start;
               load_segs[j].start2 = end;

@@ -1305,8 +1305,8 @@ GC_INNER void GC_setpagesize(void)
           result = (ptr_t)((word)GC_approx_sp()
                            & ~(word)STACKBOTTOM_ALIGNMENT_M1);
 #       else
-          result = (ptr_t)(((word)GC_approx_sp() + STACKBOTTOM_ALIGNMENT_M1)
-                           & ~(word)STACKBOTTOM_ALIGNMENT_M1);
+          result = PTRT_ROUNDUP_BY_MASK(GC_approx_sp(),
+                                        STACKBOTTOM_ALIGNMENT_M1);
 #       endif
 #     elif defined(HPUX_MAIN_STACKBOTTOM)
         result = GC_hpux_main_stack_base();
@@ -1971,16 +1971,14 @@ void GC_register_data_segments(void)
 # if (defined(SVR4) || defined(AIX) || defined(DGUX)) && !defined(PCR)
   ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
   {
-    word text_end = ((word)(etext_addr) + sizeof(word) - 1)
-                    & ~(word)(sizeof(word) - 1);
-        /* etext rounded to word boundary       */
-    word next_page = ((text_end + (word)max_page_size - 1)
-                      & ~((word)max_page_size - 1));
-    word page_offset = (text_end & ((word)max_page_size - 1));
-    volatile ptr_t result = (char *)(next_page + page_offset);
+    word page_offset = (word)PTRT_ROUNDUP_BY_MASK(etext_addr, sizeof(word)-1)
+                        & ((word)max_page_size - 1);
+    volatile ptr_t result = PTRT_ROUNDUP_BY_MASK(etext_addr, max_page_size-1)
+                        + page_offset;
     /* Note that this isn't equivalent to just adding           */
-    /* max_page_size to &etext if &etext is at a page boundary  */
+    /* max_page_size to &etext if etext is at a page boundary.  */
 
+    GC_ASSERT(max_page_size % sizeof(word) == 0);
     GC_setup_temporary_fault_handler();
     if (SETJMP(GC_jmp_buf) == 0) {
         /* Try writing to the address.  */
@@ -2018,17 +2016,16 @@ void GC_register_data_segments(void)
   GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t max_page_size,
                                         ptr_t etext_addr)
   {
-    word text_end = ((word)(etext_addr) + sizeof(word) - 1)
-                     & ~(word)(sizeof(word) - 1);
-        /* etext rounded to word boundary       */
-    volatile word next_page = (text_end + (word)max_page_size - 1)
-                              & ~((word)max_page_size - 1);
-    volatile ptr_t result = (ptr_t)text_end;
+    volatile ptr_t result = PTRT_ROUNDUP_BY_MASK(etext_addr, sizeof(word)-1);
+    volatile ptr_t next_page = PTRT_ROUNDUP_BY_MASK(etext_addr,
+                                                    max_page_size-1);
+
+    GC_ASSERT(max_page_size % sizeof(word) == 0);
     GC_setup_temporary_fault_handler();
     if (SETJMP(GC_jmp_buf) == 0) {
         /* Try reading at the address.                          */
         /* This should happen before there is another thread.   */
-        for (; next_page < (word)DATAEND; next_page += (word)max_page_size)
+        for (; (word)next_page < (word)DATAEND; next_page += max_page_size)
             GC_noop1((word)(*(volatile unsigned char *)next_page));
         GC_reset_fault_handler();
     } else {
@@ -2230,8 +2227,7 @@ void GC_register_data_segments(void)
         ABORT("Cannot allocate executable pages");
       return NULL;
     }
-    last_addr = (ptr_t)(((word)result + bytes + GC_page_size - 1)
-                        & ~(word)(GC_page_size - 1));
+    last_addr = PTRT_ROUNDUP_BY_MASK((ptr_t)result + bytes, GC_page_size-1);
 #   if !defined(LINUX)
       if (last_addr == 0) {
         /* Oops.  We got the end of the address space.  This isn't      */
@@ -2445,9 +2441,8 @@ void * os2_alloc(size_t bytes)
         /* There are also unconfirmed rumors of other           */
         /* problems, so we dodge the issue.                     */
         result = (ptr_t)GlobalAlloc(0, SIZET_SAT_ADD(bytes, HBLKSIZE));
-        /* Align it at HBLKSIZE boundary.       */
-        result = (ptr_t)(((word)result + HBLKSIZE-1)
-                         & ~(word)(HBLKSIZE-1));
+        /* Align it at HBLKSIZE boundary (NULL value remains unchanged). */
+        result = PTRT_ROUNDUP_BY_MASK(result, HBLKSIZE-1);
       } else
 #   endif
     /* else */ {
@@ -2583,10 +2578,10 @@ void * os2_alloc(size_t bytes)
 /* Return 0 if the block is too small to make this feasible.    */
 STATIC ptr_t GC_unmap_start(ptr_t start, size_t bytes)
 {
-    ptr_t result = (ptr_t)(((word)start + GC_page_size - 1)
-                            & ~(word)(GC_page_size - 1));
+    ptr_t result;
 
     GC_ASSERT(GC_page_size != 0);
+    result = PTRT_ROUNDUP_BY_MASK(start, GC_page_size-1);
     if ((word)(result + GC_page_size) > (word)(start + bytes)) return 0;
     return result;
 }
@@ -3777,8 +3772,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
                 }
             }
         }
-        bufp = (char *)(((word)bufp + (sizeof(long)-1))
-                        & ~(word)(sizeof(long)-1));
+        bufp = PTRT_ROUNDUP_BY_MASK(bufp, sizeof(long)-1);
     }
 #   ifdef DEBUG_DIRTY_BITS
       GC_log_printf("Proc VDB read done\n");
@@ -4332,8 +4326,7 @@ GC_INNER GC_bool GC_dirty_init(void)
         return;
       GC_ASSERT(GC_page_size != 0);
       h_trunc = (struct hblk *)((word)h & ~(word)(GC_page_size-1));
-      h_end = (struct hblk *)(((word)(h + nblocks) + GC_page_size - 1)
-                              & ~(word)(GC_page_size - 1));
+      h_end = (struct hblk *)PTRT_ROUNDUP_BY_MASK(h + nblocks, GC_page_size-1);
       if (h_end == h_trunc + 1 &&
         get_pht_entry_from_index_async(GC_dirty_pages, PHT_HASH(h_trunc))) {
         /* already marked dirty, and hence unprotected. */
