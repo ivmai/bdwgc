@@ -131,6 +131,10 @@ EXTERN_C_BEGIN
 #   define EMBOX
 # endif
 
+# if defined(__KOS__)
+#   define KOS
+# endif
+
 # if defined(__QNX__) && !defined(QNX)
 #   define QNX
 # endif
@@ -155,8 +159,8 @@ EXTERN_C_BEGIN
 # endif
 # if defined(__aarch64__) && !defined(DARWIN) && !defined(LINUX) \
      && !defined(FREEBSD) && !defined(NETBSD) && !defined(OPENBSD) \
-     && !defined(QNX) && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
-     && !defined(_WIN32)
+     && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
+     && !defined(KOS) && !defined(QNX) && !defined(_WIN32)
 #   define AARCH64
 #   define NOSYS
 #   define mach_type_known
@@ -507,7 +511,8 @@ EXTERN_C_BEGIN
 
 # if defined(__aarch64__) \
        && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
-            || defined(NETBSD) || defined(OPENBSD) || defined(QNX))
+            || defined(NETBSD) || defined(OPENBSD) || defined(KOS) \
+            || defined(QNX))
 #   define AARCH64
 #   define mach_type_known
 # elif defined(__arc__) && defined(LINUX)
@@ -947,6 +952,12 @@ EXTERN_C_BEGIN
       /* SIGILL (with ILL_ILLOPN si_code) instead of SIGSEGV.   */
 #   endif
 # endif /* LINUX */
+
+# ifdef KOS
+#   define HEURISTIC1 /* relies on pthread_attr_getstack actually */
+    extern int __data_start[];
+#   define DATASTART ((ptr_t)(__data_start))
+# endif /* KOS */
 
 # ifdef MACOS
 #   define OS_TYPE "MACOS"
@@ -2068,6 +2079,9 @@ EXTERN_C_BEGIN
 #       define HAVE_CLOCK_GETTIME 1
 #     endif
 #   endif
+#   ifdef KOS
+      /* Nothing specific. */
+#   endif
 #   ifdef QNX
       /* Nothing specific. */
 #   endif
@@ -2544,12 +2558,12 @@ EXTERN_C_BEGIN
     && !defined(GETPAGESIZE)
 # if defined(AIX) || defined(DARWIN) || defined(IRIX5) || defined(LINUX) \
      || defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD) \
-     || defined(SOLARIS)
+     || defined(KOS) || defined(SOLARIS)
     EXTERN_C_END
 #   include <unistd.h>
     EXTERN_C_BEGIN
 # endif
-# if defined(HOST_ANDROID) || defined(HOST_TIZEN) \
+# if defined(HOST_ANDROID) || defined(HOST_TIZEN) || defined(KOS) \
      || (defined(LINUX) && defined(SPARC))
 #   define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 # else
@@ -2854,6 +2868,14 @@ EXTERN_C_BEGIN
 # endif
 #endif
 
+#if defined(AMIGA) || defined(DOS4GW) || defined(EMBOX) || defined(KOS) \
+    || defined(MACOS) || defined(NINTENDO_SWITCH) || defined(NONSTOP) \
+    || defined(OS2) || defined(PCR) || defined(RTEMS) \
+    || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
+    || defined(SN_TARGET_PSP2) || defined(USE_WINALLOC) || defined(__CC_ARM)
+# define NO_UNIX_GET_MEM
+#endif
+
 /* Do we need the GC_find_limit machinery to find the end of    */
 /* a data segment (or the backing store base)?                  */
 #if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START) \
@@ -3068,7 +3090,7 @@ EXTERN_C_BEGIN
 # define MIN_STACK_SIZE (8 * HBLKSIZE * sizeof(word))
 #endif
 
-#if defined(HOST_ANDROID) && !defined(THREADS) \
+#if (defined(HOST_ANDROID) || defined(KOS)) && !defined(THREADS) \
     && !defined(USE_GET_STACKBASE_FOR_MAIN)
   /* Always use pthread_attr_getstack on Android ("-lpthread" option is  */
   /* not needed to be specified manually) since GC_linux_main_stack_base */
@@ -3350,7 +3372,7 @@ EXTERN_C_BEGIN
 # elif defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) \
         || (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) \
         || (defined(SOLARIS) && !defined(USE_MMAP)) || defined(RTEMS) \
-        || defined(EMBOX) || defined(__CC_ARM)
+        || defined(EMBOX) || defined(KOS) || defined(__CC_ARM)
     /* TODO: Use page_alloc() directly on Embox.    */
 #   if defined(REDIRECT_MALLOC) && !defined(CPPCHECK)
 #     error Malloc redirection is unsupported

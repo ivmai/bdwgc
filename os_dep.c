@@ -2150,11 +2150,7 @@ void GC_register_data_segments(void)
  * Auxiliary routines for obtaining memory from OS.
  */
 
-# if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
-     && !defined(USE_WINALLOC) && !defined(MACOS) && !defined(DOS4GW) \
-     && !defined(EMBOX) && !defined(NINTENDO_SWITCH) && !defined(NONSTOP) \
-     && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PS3) \
-     && !defined(SN_TARGET_PSP2) && !defined(RTEMS) && !defined(__CC_ARM)
+#ifndef NO_UNIX_GET_MEM
 
 # define SBRK_ARG_T ptrdiff_t
 
@@ -2327,7 +2323,7 @@ ptr_t GC_unix_get_mem(size_t bytes)
 
 #endif /* !USE_MMAP */
 
-# endif /* UN*X */
+#endif /* !NO_UNIX_GET_MEM */
 
 # ifdef OS2
 
