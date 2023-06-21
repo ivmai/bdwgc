@@ -398,6 +398,18 @@ if (MSVC)
   set(SRC ${SRC} extra/msvc_dbg.c)
 endif()
 
+# Declare that the libraries do not refer to external symbols.
+if (BUILD_SHARED_LIBS AND NOT (APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD"))
+  # Note: performed before CMAKE_REQUIRED_FLAGS is updated with "-c".
+  if (${CMAKE_VERSION} VERSION_LESS "3.18.0")
+    set(WL_NO_UNDEFINED_OPT "-Wl,--no-undefined")
+    check_c_compiler_flag(${WL_NO_UNDEFINED_OPT} HAVE_FLAG_WL_NO_UNDEFINED)
+  else()
+    set(WL_NO_UNDEFINED_OPT "LINKER:--no-undefined")
+    check_linker_flag(C "${WL_NO_UNDEFINED_OPT}" HAVE_FLAG_WL_NO_UNDEFINED)
+  endif()
+endif()
+
 # Instruct check_c_source_compiles to skip linking.
 # Alternatively, we could set CMAKE_REQUIRED_LIBRARIES properly.
 SET(CMAKE_REQUIRED_FLAGS "-c")
@@ -407,7 +419,14 @@ SET(CMAKE_REQUIRED_FLAGS "-c")
 if (NOT BORLAND AND NOT MSVC AND NOT WATCOM)
   check_c_compiler_flag(-Werror HAVE_FLAG_WERROR)
   if (HAVE_FLAG_WERROR)
+    check_c_compiler_flag(-Wno-unused-command-line-argument
+                          HAVE_FLAG_WNO_UNUSED_CMDLINE_ARG)
     SET(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Werror")
+    # Prevent "linker input unused" error in further check_c_compiler_flag.
+    if (HAVE_FLAG_WNO_UNUSED_CMDLINE_ARG)
+      SET(CMAKE_REQUIRED_FLAGS
+          "${CMAKE_REQUIRED_FLAGS} -Wno-unused-command-line-argument")
+    endif()
   endif(HAVE_FLAG_WERROR)
 endif()
 
@@ -420,15 +439,6 @@ if (BUILD_SHARED_LIBS)
     add_compile_options(-fvisibility=hidden)
   else()
     add_definitions("-DGC_NO_VISIBILITY")
-  endif()
-  if (NOT (${CMAKE_SYSTEM_NAME} MATCHES "BSD"))
-    if (${CMAKE_VERSION} VERSION_LESS "3.18.0")
-      set(WL_NO_UNDEFINED_OPT "-Wl,--no-undefined")
-      check_c_compiler_flag(${WL_NO_UNDEFINED_OPT} HAVE_FLAG_WL_NO_UNDEFINED)
-    else()
-      set(WL_NO_UNDEFINED_OPT "LINKER:--no-undefined")
-      check_linker_flag(C "${WL_NO_UNDEFINED_OPT}" HAVE_FLAG_WL_NO_UNDEFINED)
-    endif()
   endif()
 else()
   add_definitions("-DGC_NOT_DLL")
