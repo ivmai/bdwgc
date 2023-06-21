@@ -446,7 +446,14 @@ SET(CMAKE_REQUIRED_FLAGS "-c")
 if (NOT BORLAND AND NOT MSVC AND NOT WATCOM)
   check_c_compiler_flag(-Werror HAVE_FLAG_WERROR)
   if (HAVE_FLAG_WERROR)
+    check_c_compiler_flag(-Wno-unused-command-line-argument
+                          HAVE_FLAG_WNO_UNUSED_CMDLINE_ARG)
     SET(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Werror")
+    # Prevent "linker input unused" error in further check_c_compiler_flag.
+    if (HAVE_FLAG_WNO_UNUSED_CMDLINE_ARG)
+      SET(CMAKE_REQUIRED_FLAGS
+          "${CMAKE_REQUIRED_FLAGS} -Wno-unused-command-line-argument")
+    endif()
   endif(HAVE_FLAG_WERROR)
 endif()
 
