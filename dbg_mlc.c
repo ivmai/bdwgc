@@ -57,7 +57,9 @@
 
 #ifdef KEEP_BACK_PTRS
 
-#ifdef LINT2
+  /* Use a custom trivial random() implementation as the standard   */
+  /* one might lead to crashes (if used from a multi-threaded code) */
+  /* or to a compiler warning about the deterministic result.       */
   static int GC_rand(void)
   {
     static GC_RAND_STATE_T seed;
@@ -66,17 +68,6 @@
   }
 
 # define RANDOM() (long)GC_rand()
-#else
-# undef GC_RAND_MAX
-# define GC_RAND_MAX RAND_MAX
-
-# if defined(__GLIBC__) || defined(SOLARIS) \
-     || defined(HPUX) || defined(IRIX5) || defined(OSF1)
-#   define RANDOM() random()
-# else
-#   define RANDOM() (long)rand()
-# endif
-#endif /* !LINT2 */
 
   /* Store back pointer to source in dest, if that appears to be possible. */
   /* This is not completely safe, since we may mistakenly conclude that    */
