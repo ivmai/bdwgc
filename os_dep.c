@@ -5150,7 +5150,7 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
 
 #else /* No builtin backtrace; do it ourselves */
 
-#if (defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD)) && defined(SPARC)
+#if defined(ANY_BSD) && defined(SPARC)
 # define FR_SAVFP fr_fp
 # define FR_SAVPC fr_pc
 #else

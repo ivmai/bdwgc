@@ -53,15 +53,13 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
 #if defined(DYNAMIC_LOADING) && !defined(PCR) || defined(ANY_MSWIN)
 
-#if !defined(DARWIN) && !defined(SCO_ELF) && !defined(SOLARISDL) \
-    && !defined(AIX) && !defined(DGUX) && !defined(IRIX5) && !defined(HPUX) \
-    && !(defined(ALPHA) && defined(OSF1)) \
-    && !(defined(FREEBSD) && defined(__ELF__)) \
-    && !(defined(LINUX) && defined(__ELF__)) \
-    && !(defined(NETBSD) && defined(__ELF__)) \
-    && !(defined(OPENBSD) && (defined(__ELF__) || defined(M68K))) \
-    && !defined(ANY_MSWIN) && !defined(HAIKU) && !defined(HURD) \
-    && !defined(NACL) && !defined(CPPCHECK)
+#if !(defined(CPPCHECK) || defined(AIX) || defined(ANY_MSWIN) \
+      || defined(DARWIN) || defined(DGUX) || defined(IRIX5) \
+      || defined(HAIKU) || defined(HPUX) || defined(HURD) \
+      || defined(NACL) || defined(SCO_ELF) || defined(SOLARISDL) \
+      || ((defined(ANY_BSD) || defined(LINUX)) && defined(__ELF__)) \
+      || (defined(ALPHA) && defined(OSF1)) \
+      || (defined(OPENBSD) && defined(M68K)))
 # error We only know how to find data segments of dynamic libraries for above.
 # error Additional SVR4 variants might not be too hard to add.
 #endif
@@ -86,9 +84,8 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 # endif
 #endif /* OPENBSD */
 
-#if defined(SCO_ELF) || defined(DGUX) || defined(HURD) || defined(NACL) \
-    || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
-                             || defined(NETBSD) || defined(OPENBSD)))
+#if defined(DGUX) || defined(HURD) || defined(NACL) || defined(SCO_ELF) \
+    || ((defined(ANY_BSD) || defined(LINUX)) && defined(__ELF__))
 # include <stddef.h>
 # if !defined(OPENBSD) && !defined(HOST_ANDROID)
     /* OpenBSD does not have elf.h file; link.h below is sufficient.    */
@@ -259,9 +256,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
 # endif /* !USE_PROC_FOR_LIBRARIES */
 # endif /* SOLARISDL */
 
-#if defined(SCO_ELF) || defined(DGUX) || defined(HURD) || defined(NACL) \
-    || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
-                             || defined(NETBSD) || defined(OPENBSD)))
+#if defined(DGUX) || defined(HURD) || defined(NACL) || defined(SCO_ELF) \
+    || ((defined(ANY_BSD) || defined(LINUX)) && defined(__ELF__))
 
 #ifdef USE_PROC_FOR_LIBRARIES
 

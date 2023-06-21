@@ -127,6 +127,10 @@ EXTERN_C_BEGIN
 #   define FREEBSD
 # endif
 
+#if defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD)
+# define ANY_BSD
+#endif
+
 # if defined(__EMBOX__)
 #   define EMBOX
 # endif
@@ -157,10 +161,9 @@ EXTERN_C_BEGIN
       /* Here we will rely upon arch-specific defines. */
 #   endif
 # endif
-# if defined(__aarch64__) && !defined(DARWIN) && !defined(LINUX) \
-     && !defined(FREEBSD) && !defined(NETBSD) && !defined(OPENBSD) \
-     && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
-     && !defined(KOS) && !defined(QNX) && !defined(_WIN32)
+# if defined(__aarch64__) && !defined(ANY_BSD) && !defined(DARWIN) \
+     && !defined(LINUX) && !defined(KOS) && !defined(QNX) \
+     && !defined(NN_BUILD_TARGET_PLATFORM_NX) && !defined(_WIN32)
 #   define AARCH64
 #   define NOSYS
 #   define mach_type_known
@@ -169,11 +172,10 @@ EXTERN_C_BEGIN
 #   define ARM32
 #   if defined(NACL)
 #     define mach_type_known
-#   elif !defined(DARWIN) && !defined(LINUX) && !defined(FREEBSD) \
-         && !defined(NETBSD) && !defined(OPENBSD) && !defined(QNX) \
-         && !defined(NN_PLATFORM_CTR) && !defined(SN_TARGET_PSP2) \
-         && !defined(SYMBIAN) && !defined(_WIN32) && !defined(__CEGCC__) \
-         && !defined(GC_NO_NOSYS)
+#   elif !defined(ANY_BSD) && !defined(DARWIN) && !defined(LINUX) \
+         && !defined(QNX) && !defined(NN_PLATFORM_CTR) \
+         && !defined(SN_TARGET_PSP2) && !defined(SYMBIAN) \
+         && !defined(_WIN32) && !defined(__CEGCC__) && !defined(GC_NO_NOSYS)
 #     define NOSYS
 #     define mach_type_known
 #   endif
@@ -198,8 +200,7 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 # if (defined(mips) || defined(__mips) || defined(_mips)) \
-     && !defined(__TANDEM) && !defined(LINUX) && !defined(FREEBSD) \
-     && !defined(NETBSD) && !defined(OPENBSD)
+     && !defined(__TANDEM) && !defined(ANY_BSD) && !defined(LINUX)
 #   define MIPS
 #   if defined(nec_ews) || defined(_nec_ews)
 #     define EWS4800
@@ -251,7 +252,7 @@ EXTERN_C_BEGIN
 #   define SOLARIS
 #   define mach_type_known
 # elif defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
-       && !defined(FREEBSD) && !defined(NETBSD) && !defined(OPENBSD)
+       && !defined(ANY_BSD)
 #   define SPARC
 #   define DRSNX
 #   define mach_type_known
@@ -301,8 +302,7 @@ EXTERN_C_BEGIN
 # endif
 # if defined(__alpha) || defined(__alpha__)
 #   define ALPHA
-#   if !defined(LINUX) && !defined(NETBSD) && !defined(OPENBSD) \
-       && !defined(FREEBSD)
+#   if !defined(ANY_BSD) && !defined(LINUX)
 #     define OSF1       /* a.k.a Digital Unix */
 #   endif
 #   define mach_type_known
@@ -510,9 +510,8 @@ EXTERN_C_BEGIN
 # endif
 
 # if defined(__aarch64__) \
-       && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
-            || defined(NETBSD) || defined(OPENBSD) || defined(KOS) \
-            || defined(QNX))
+       && (defined(ANY_BSD) || defined(DARWIN) || defined(LINUX) \
+           || defined(KOS) || defined(QNX))
 #   define AARCH64
 #   define mach_type_known
 # elif defined(__arc__) && defined(LINUX)
@@ -520,9 +519,9 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # elif (defined(__arm) || defined(__arm__) || defined(__arm32__) \
         || defined(__ARM__)) \
-       && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
-            || defined(NETBSD) || defined(OPENBSD) || defined(QNX) \
-            || defined(NN_PLATFORM_CTR) || defined(SN_TARGET_PSP2))
+       && (defined(ANY_BSD) || defined(DARWIN) || defined(LINUX) \
+           || defined(QNX) || defined(NN_PLATFORM_CTR) \
+           || defined(SN_TARGET_PSP2))
 #   define ARM32
 #   define mach_type_known
 # elif defined(__avr32__) && defined(LINUX)
@@ -540,9 +539,8 @@ EXTERN_C_BEGIN
 #   define HEXAGON
 #   define mach_type_known
 # elif (defined(__i386__) || defined(i386) || defined(__X86__)) \
-       && (defined(DARWIN) || defined(LINUX) \
-           || defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD) \
-           || defined(EMBOX) || defined(QNX))
+       && (defined(ANY_BSD) || defined(DARWIN) || defined(EMBOX) \
+           || defined(LINUX) || defined(QNX))
 #   define I386
 #   define mach_type_known
 # elif (defined(__ia64) || defined(__ia64__)) && defined(LINUX)
@@ -560,8 +558,7 @@ EXTERN_C_BEGIN
 #   define M68K
 #   define mach_type_known
 # elif (defined(__mips) || defined(_mips) || defined(mips)) \
-       && (defined(LINUX) || defined(FREEBSD) || defined(NETBSD) \
-            || defined(OPENBSD))
+       && (defined(ANY_BSD) || defined(LINUX))
 #   define MIPS
 #   define mach_type_known
 # elif (defined(__NIOS2__) || defined(__NIOS2) || defined(__nios2__)) \
@@ -573,13 +570,10 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # elif (defined(__powerpc__) || defined(__powerpc64__) || defined(__ppc__) \
             || defined(__ppc64__) || defined(powerpc) || defined(powerpc64)) \
-       && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
-            || defined(NETBSD) || defined(OPENBSD))
+       && (defined(ANY_BSD) || defined(DARWIN) || defined(LINUX))
 #   define POWERPC
 #   define mach_type_known
-# elif defined(__riscv) \
-       && (defined(LINUX) || defined(FREEBSD) || defined(NETBSD) \
-           || defined(OPENBSD))
+# elif defined(__riscv) && (defined(ANY_BSD) || defined(LINUX))
 #   define RISCV
 #   define mach_type_known
 # elif defined(__s390__) && defined(LINUX)
@@ -590,8 +584,7 @@ EXTERN_C_BEGIN
 #   define SH
 #   define mach_type_known
 # elif (defined(__sparc__) || defined(sparc)) \
-       && (defined(LINUX) || defined(FREEBSD) || defined(NETBSD) \
-            || defined(OPENBSD))
+       && (defined(ANY_BSD) || defined(LINUX))
 #   define SPARC
 #   define mach_type_known
 # elif defined(__sw_64__) && defined(LINUX)
@@ -599,8 +592,8 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # elif (defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) \
         || defined(__X86_64__)) \
-       && (defined(DARWIN) || defined(LINUX) || defined(FREEBSD) \
-            || defined(NETBSD) || defined(OPENBSD) || defined(QNX))
+       && (defined(ANY_BSD) || defined(DARWIN) || defined(LINUX) \
+           || defined(QNX))
 #   define X86_64
 #   define mach_type_known
 # endif
@@ -2559,9 +2552,8 @@ EXTERN_C_BEGIN
 #endif
 
 #if !defined(ANY_MSWIN) && !defined(GETPAGESIZE)
-# if defined(AIX) || defined(DARWIN) || defined(IRIX5) || defined(LINUX) \
-     || defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD) \
-     || defined(KOS) || defined(SOLARIS)
+# if defined(AIX) || defined(ANY_BSD) || defined(DARWIN) || defined(IRIX5) \
+     || defined(LINUX) || defined(KOS) || defined(SOLARIS)
     EXTERN_C_END
 #   include <unistd.h>
     EXTERN_C_BEGIN
@@ -2603,9 +2595,8 @@ EXTERN_C_BEGIN
 # define SUNOS5SIGS
 #endif
 
-#if defined(FREEBSD) || defined(HAIKU) || defined(HURD) || defined(IRIX5) \
-    || defined(NETBSD) || defined(OPENBSD) || defined(OSF1) \
-    || defined(SUNOS5SIGS)
+#if defined(ANY_BSD) || defined(HAIKU) || defined(HURD) || defined(IRIX5) \
+    || defined(OSF1) || defined(SUNOS5SIGS)
 # define USE_SEGV_SIGACT
 # if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
      || (defined(FREEBSD) && defined(SUNOS5SIGS)) \
@@ -2645,10 +2636,10 @@ EXTERN_C_BEGIN
   EXTERN_C_BEGIN
 #endif /* GC_OPENBSD_THREADS */
 
-#if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
-    || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
-    || defined(DGUX) || defined(BSD) || defined(HAIKU) || defined(HURD) \
-    || defined(AIX) || defined(DARWIN) || defined(OSF1) || defined(QNX)
+#if defined(AIX) || defined(ANY_BSD) || defined(BSD) || defined(DARWIN) \
+    || defined(DGUX) || defined(HAIKU) || defined(HPUX) || defined(HURD) \
+    || defined(IRIX5) || defined(LINUX) || defined(OSF1) || defined(QNX) \
+    || defined(SVR4)
 # define UNIX_LIKE      /* Basic Unix-like system calls work.   */
 #endif
 
@@ -2699,9 +2690,8 @@ EXTERN_C_BEGIN
 # undef USE_MMAP
 #endif
 
-#if defined(DARWIN) || defined(FREEBSD) || defined(HAIKU) \
-    || defined(IRIX5) || defined(LINUX) || defined(NETBSD) \
-    || defined(OPENBSD) || defined(SOLARIS) \
+#if defined(ANY_BSD) || defined(DARWIN) || defined(HAIKU) \
+    || defined(IRIX5) || defined(LINUX) || defined(SOLARIS) \
     || ((defined(CYGWIN32) || defined(USE_MMAP) || defined(USE_MUNMAP)) \
         && !defined(USE_WINALLOC))
   /* Try both sbrk and mmap, in that order.     */
