@@ -25,11 +25,9 @@
 #define NOT_GCBUILD
 #include "private/gc_priv.h"
 
-#ifdef LINT2
-# undef rand
-  static GC_RAND_STATE_T seed;
-# define rand() GC_RAND_NEXT(&seed)
-#endif
+#undef rand
+static GC_RAND_STATE_T seed;
+#define rand() GC_RAND_NEXT(&seed)
 
 #define my_assert(e) \
     if (!(e)) { \
