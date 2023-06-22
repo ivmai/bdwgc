@@ -506,6 +506,17 @@ endif()
 # Check for getcontext (uClibc can be configured without it, for example).
 if (NOT (BORLAND OR MSVC))
   check_function_exists(getcontext HAVE_GETCONTEXT)
+  if (HAVE_GETCONTEXT AND NOT APPLE)
+    # Double check getcontext() is available (needed at least on OpenBSD 7.3).
+    # Note: OS X is excluded here because the header filename differs.
+    check_c_source_compiles("
+#include <ucontext.h>\n
+int main(void) { ucontext_t ctxt; (void)getcontext(&ctxt); return 0; }"
+      HAVE_GETCONTEXT_FUNC)
+    if (NOT HAVE_GETCONTEXT_FUNC)
+      set(HAVE_GETCONTEXT OFF)
+    endif()
+  endif()
   if (NOT HAVE_GETCONTEXT)
     add_definitions("-DNO_GETCONTEXT")
   endif()
