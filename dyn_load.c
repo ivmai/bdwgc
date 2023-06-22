@@ -575,7 +575,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
 /* Do we need to separately register the main static data segment? */
 GC_INNER GC_bool GC_register_main_static_data(void)
 {
-# ifdef DL_ITERATE_PHDR_STRONG
+# if defined(DL_ITERATE_PHDR_STRONG) && !defined(CPPCHECK)
     /* If dl_iterate_phdr is not a weak symbol then don't test against  */
     /* zero (otherwise a compiler might issue a warning).               */
     return FALSE;
