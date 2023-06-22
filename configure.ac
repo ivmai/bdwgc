@@ -78,10 +78,10 @@ esac
 # Set any host dependent compiler flags.
 case "${host}" in
   mips-tx39-*|mipstx39-unknown-*)
-        gc_cflags="${gc_cflags} -G 0"
-        ;;
+    gc_cflags="${gc_cflags} -G 0"
+    ;;
   *)
-        ;;
+    ;;
 esac
 
 AC_MSG_CHECKING([for emscripten])
@@ -200,10 +200,10 @@ use_parallel_mark=no
 use_thread_local_alloc=no
 # Libraries needed to support dynamic loading and/or threads.
 case "$THREADS" in
- no | none | single)
+  no | none | single)
     THREADS=none
     ;;
- posix | pthreads)
+  posix | pthreads)
     THREADS=posix
     default_threadlibs=false
     # Common defines for most POSIX platforms.
@@ -291,7 +291,7 @@ case "$THREADS" in
         ;;
     esac
     ;;
- mcf | win32)
+  mcf | win32)
     AC_DEFINE(GC_THREADS)
     use_parallel_mark=$enable_parallel_mark
     if test "${enable_parallel_mark}" != no \
@@ -307,7 +307,7 @@ case "$THREADS" in
     AC_DEFINE([EMPTY_GETENV_RESULTS], [1],
               [Wine getenv may not return NULL for missing entry.])
     ;;
- dgux386)
+  dgux386)
     AC_DEFINE(GC_THREADS)
     # Use pthread GCC switch
     THREADDLLIBS=-pthread
@@ -316,7 +316,7 @@ case "$THREADS" in
     AC_MSG_WARN("Explicit GC_INIT() calls may be required.")
     AM_CFLAGS="-pthread $AM_CFLAGS"
     ;;
- aix)
+  aix)
     THREADS=posix
     THREADDLLIBS=-lpthread
     AC_DEFINE(GC_THREADS)
@@ -324,16 +324,16 @@ case "$THREADS" in
     use_parallel_mark=$enable_parallel_mark
     use_thread_local_alloc=$enable_thread_local_alloc
     ;;
- rtems)
+  rtems)
     THREADS=posix
     AC_DEFINE(GC_THREADS)
     use_parallel_mark=$enable_parallel_mark
     use_thread_local_alloc=$enable_thread_local_alloc
     ;;
- decosf1 | irix | mach | os2 | solaris | dce | vxworks)
+  decosf1 | irix | mach | os2 | solaris | dce | vxworks)
     AC_MSG_ERROR(thread package $THREADS not yet supported)
     ;;
- *)
+  *)
     AC_MSG_ERROR($THREADS is an unknown thread package)
     ;;
 esac
@@ -362,25 +362,25 @@ compiler_suncc=no
 pthread_start_standalone=no
 case "$host" in
   *-*-*linux*)
-      # Turn on the workaround described in pthread_start.c.
-      AS_IF([test "$THREADS" = posix], [pthread_start_standalone=yes])
-      ;;
+    # Turn on the workaround described in pthread_start.c.
+    AS_IF([test "$THREADS" = posix], [pthread_start_standalone=yes])
+    ;;
   powerpc-*-darwin*)
-      powerpc_darwin=true
-      ;;
+    powerpc_darwin=true
+    ;;
   *-*-solaris*)
-      if test "$GCC" != yes; then
-        # Solaris SunCC
-        compiler_suncc=yes
-        CFLAGS="-O $CFLAGS"
-      fi
-      ;;
+    if test "$GCC" != yes; then
+      # Solaris SunCC
+      compiler_suncc=yes
+      CFLAGS="-O $CFLAGS"
+    fi
+    ;;
   *-*-wince*)
-      if test "$enable_gc_debug" != "no"; then
-        AC_DEFINE([GC_READ_ENV_FILE], 1,
-                  [Read environment variables from the GC 'env' file.])
-      fi
-      ;;
+    if test "$enable_gc_debug" != "no"; then
+      AC_DEFINE([GC_READ_ENV_FILE], 1,
+                [Read environment variables from the GC 'env' file.])
+    fi
+    ;;
 esac
 AM_CONDITIONAL(PTHREAD_START_STANDALONE,
                test x$pthread_start_standalone = xyes)
@@ -462,7 +462,8 @@ AC_CHECK_FUNCS([dl_iterate_phdr])
 case "$host" in
 # While IRIX 6 has libdl for the O32 and N32 ABIs, it's missing for N64
 # and unnecessary everywhere.
-  mips-sgi-irix6*) ;;
+  mips-sgi-irix6*)
+    ;;
 # We never want libdl on darwin. It is a fake libdl that just ends up making
 # dyld calls anyway.  The same applies to Cygwin.
   *-*-cygwin* | *-*-darwin* | *-*-msys*)
@@ -513,9 +514,9 @@ addlibs=
 CXXLIBS=
 
 case "$TARGET_ECOS" in
-   no)
+  no)
       ;;
-   *)
+  *)
       AC_DEFINE([ECOS], 1, [Define to enable eCos target support.])
       AM_CPPFLAGS="-I${TARGET_ECOS}/include $AM_CPPFLAGS"
       addobjs="$addobjs ecos.lo"
@@ -559,10 +560,10 @@ AC_MSG_CHECKING(whether to build shared libraries)
 AC_ENABLE_SHARED
 
 case "$host" in
- alpha-*-openbsd*)
+  alpha-*-openbsd*)
      enable_shared=no
      ;;
- *)
+  *)
      ;;
 esac
 
@@ -604,36 +605,36 @@ fi
 AC_MSG_CHECKING(which machine-dependent code should be used)
 machdep=
 case "$host" in
- alpha-*-openbsd*)
+  alpha-*-openbsd*)
     if test x"${ac_cv_lib_dl_dlopen}" != xyes ; then
-       AC_MSG_WARN(
+      AC_MSG_WARN(
          "OpenBSD/Alpha without dlopen(). Shared library support is disabled.")
     fi
     ;;
- i?86-*-solaris2.[[89]])
+  i?86-*-solaris2.[[89]])
     # PROC_VDB appears to work in 2.8 and 2.9 but not in 2.10+ (for now).
     AC_DEFINE([SOLARIS25_PROC_VDB_BUG_FIXED], 1,
               [See the comment in gcconfig.h.])
     ;;
- sparc-*-netbsd*)
+  sparc-*-netbsd*)
     machdep="sparc_netbsd_mach_dep.lo"
     compile_asm=true
     ;;
- sparc*-*-linux* | sparc*-*-openbsd* | sparc64-*-freebsd* | sparc64-*-netbsd*)
+  sparc*-*-linux* | sparc*-*-openbsd* | sparc64-*-freebsd* | sparc64-*-netbsd*)
     machdep="sparc_mach_dep.lo"
     compile_asm=true
     ;;
- sparc-sun-solaris2.3)
+  sparc-sun-solaris2.3)
     machdep="sparc_mach_dep.lo"
     compile_asm=true
     AC_DEFINE(SUNOS53_SHARED_LIB, 1,
               [Define to work around a Solaris 5.3 bug (see dyn_load.c).])
     ;;
- sparc*-sun-solaris2*)
+  sparc*-sun-solaris2*)
     machdep="sparc_mach_dep.lo"
     compile_asm=true
     ;;
- ia64-*-*)
+  ia64-*-*)
     machdep="ia64_save_regs_in_stack.lo"
     ;;
 esac
@@ -677,25 +678,27 @@ dnl The collector might not properly work on IBM AIX when
 dnl built with gcc and -O.  So we remove -O in the appropriate case.
 AC_MSG_CHECKING(whether AIX gcc optimization fix is necessary)
 case "$host" in
- *aix*)
+  *aix*)
     if test "$GCC" = yes; then
-       AC_MSG_RESULT(yes)
-       new_CFLAGS=
-       for i in $CFLAGS; do
-          case "$i" in
-           -O*)
-              ;;
-           *)
-              new_CFLAGS="$new_CFLAGS $i"
-              ;;
-          esac
-       done
-       CFLAGS="$new_CFLAGS"
+      AC_MSG_RESULT(yes)
+      new_CFLAGS=
+      for i in $CFLAGS; do
+        case "$i" in
+          -O*)
+            ;;
+          *)
+            new_CFLAGS="$new_CFLAGS $i"
+            ;;
+         esac
+      done
+      CFLAGS="$new_CFLAGS"
     else
-       AC_MSG_RESULT(no)
+      AC_MSG_RESULT(no)
     fi
     ;;
- *) AC_MSG_RESULT(no) ;;
+  *)
+    AC_MSG_RESULT(no)
+    ;;
 esac
 
 dnl Include defines that have become de facto standard.
@@ -969,7 +972,8 @@ dnl This is something of a hack.  When cross-compiling we turn off
 dnl some functionality.  We also enable the "small" configuration.
 dnl These is only correct when targeting an embedded system.  FIXME.
 if test -n "${with_cross_host}"; then
-   AC_DEFINE([NO_CLOCK], 1, [Define to not use system clock (cross compiling).])
+   AC_DEFINE([NO_CLOCK], 1,
+             [Define to not use system clock (cross compiling).])
    AC_DEFINE([SMALL_CONFIG], 1,
              [Define to tune the collector for small heap sizes.])
 fi
@@ -1208,8 +1212,7 @@ AS_IF([test x$with_libatomic_ops != xnone -a x$need_atomic_ops_asm != xtrue],
       AS_IF([test x$use_parallel_mark != xno],
         [ AC_MSG_CHECKING(
                 [for lock-free compare-and-swap and fetch-and-add primitives])
-          AC_LINK_IFELSE([AC_LANG_PROGRAM(
-            [
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([
 #             define AO_REQUIRE_CAS
 #             include "atomic_ops.h"
             ],
