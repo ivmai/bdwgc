@@ -523,7 +523,7 @@ int main(void) { ucontext_t ctxt; (void)getcontext(&ctxt); return 0; }"
 endif()
 
 # Check whether dl_iterate_phdr exists (as a strong symbol).
-if (NOT WIN32)
+if (NOT (APPLE OR WIN32))
   check_function_exists(dl_iterate_phdr HAVE_DL_ITERATE_PHDR)
   if (HAVE_DL_ITERATE_PHDR)
     add_definitions("-DHAVE_DL_ITERATE_PHDR")

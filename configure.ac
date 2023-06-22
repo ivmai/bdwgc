@@ -457,7 +457,13 @@ AC_CHECK_FUNC([getcontext], [],
     [ AC_DEFINE([NO_GETCONTEXT], [1], [Missing getcontext function.]) ])
 
 # Check whether dl_iterate_phdr exists (as a strong symbol).
-AC_CHECK_FUNCS([dl_iterate_phdr])
+case "$host" in
+  *-*-cygwin* | *-*-darwin* | *-*-msys*)
+    ;;
+  *)
+    AC_CHECK_FUNCS([dl_iterate_phdr])
+    ;;
+esac
 
 case "$host" in
 # While IRIX 6 has libdl for the O32 and N32 ABIs, it's missing for N64
