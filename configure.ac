@@ -877,7 +877,17 @@ AS_IF([test "$THREADS" = posix],
           AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_WITH_TID], [1],
                     [Define to use 'pthread_setname_np(pthread_t, const char*)'
                      function.])],
-         [AC_MSG_RESULT(no)])])])
+         [AC_MSG_RESULT(no)
+          AC_MSG_CHECKING(for pthread_set_name_np)
+          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#               include <pthread.h>
+#               include <pthread_np.h>
+              ], [pthread_set_name_np(pthread_self(), "thread-name")])],
+           [AC_MSG_RESULT(yes)
+            AC_DEFINE([HAVE_PTHREAD_SET_NAME_NP], [1],
+                [Define to use 'pthread_set_name_np(pthread_t, const char*)'
+                 function.])],
+           [AC_MSG_RESULT(no)])])])])
    CFLAGS="$old_CFLAGS"])
 
 # Check for AViiON Machines running DGUX

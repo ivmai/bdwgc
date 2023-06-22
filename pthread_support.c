@@ -351,8 +351,13 @@
         WARN("pthread_setname_np failed, errno= %" WARN_PRIdPTR "\n",
              (signed_word)err);
     }
+
 # elif defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) \
-       || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
+       || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID) \
+       || defined(HAVE_PTHREAD_SET_NAME_NP)
+#   ifdef HAVE_PTHREAD_SET_NAME_NP
+#     include <pthread_np.h>
+#   endif
     static void set_marker_thread_name(unsigned id)
     {
       char name_buf[16]; /* pthread_setname_np may fail for longer names */
@@ -368,11 +373,14 @@
 
 #     ifdef HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID /* iOS, OS X */
         (void)pthread_setname_np(name_buf);
+#     elif defined(HAVE_PTHREAD_SET_NAME_NP) /* OpenBSD */
+        pthread_set_name_np(pthread_self(), name_buf);
 #     else /* Linux, Solaris, etc. */
         if (EXPECT(pthread_setname_np(pthread_self(), name_buf) != 0, FALSE))
           WARN("pthread_setname_np failed\n", 0);
 #     endif
     }
+
 # elif defined(GC_WIN32_THREADS) && !defined(MSWINCE)
     /* A pointer to SetThreadDescription() which is available since     */
     /* Windows 10.  The function prototype is in processthreadsapi.h.   */

@@ -560,7 +560,18 @@ int main(void) {\n
       if (HAVE_PTHREAD_SETNAME_NP_WITH_TID)
         # Define to use 'pthread_setname_np(pthread_t, const char*)' function.
         add_definitions("-DHAVE_PTHREAD_SETNAME_NP_WITH_TID")
-      endif()
+      else()
+        check_c_source_compiles("
+#include <pthread.h>\n
+#include <pthread_np.h>\n
+int main(void) {\n
+  pthread_set_name_np(pthread_self(), \"thread-name\"); return 0; }"
+          HAVE_PTHREAD_SET_NAME_NP)
+        if (HAVE_PTHREAD_SET_NAME_NP)
+          # Define to use 'pthread_set_name_np(pthread_t, const char*)'.
+          add_definitions("-DHAVE_PTHREAD_SET_NAME_NP")
+        endif()
+      endif(HAVE_PTHREAD_SETNAME_NP_WITH_TID)
     endif(HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG)
   endif (HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
 endif()
