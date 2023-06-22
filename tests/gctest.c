@@ -2665,7 +2665,7 @@ int main(void)
         }
       }
 #   else
-      run_one_test();
+      (void)thr_run_one_test(NULL);
 #   endif
     run_single_threaded_test();
 #   ifdef TRACE_BUF
