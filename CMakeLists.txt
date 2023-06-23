@@ -438,7 +438,7 @@ if (MSVC)
 endif()
 
 # Declare that the libraries do not refer to external symbols.
-if (BUILD_SHARED_LIBS AND NOT (${CMAKE_SYSTEM_NAME} MATCHES "BSD"))
+if (BUILD_SHARED_LIBS AND NOT (APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD"))
   # Note: performed before CMAKE_REQUIRED_FLAGS is updated with "-c".
   if (${CMAKE_VERSION} VERSION_LESS "3.18.0")
     set(WL_NO_UNDEFINED_OPT "-Wl,--no-undefined")
