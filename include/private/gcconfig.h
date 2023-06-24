@@ -1011,6 +1011,7 @@ EXTERN_C_BEGIN
       extern char etext[];
 #     define DATASTART ((ptr_t)(etext))
 #   endif
+#   define MPROTECT_VDB
 # endif /* OPENBSD */
 
 # ifdef QNX
