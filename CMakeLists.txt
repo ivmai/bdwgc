@@ -506,6 +506,18 @@ if (NOT HAVE_EXECINFO_H)
   add_definitions("-DGC_MISSING_EXECINFO_H")
 endif()
 
+check_include_file(sys/types.h HAVE_SYS_TYPES_H)
+if (HAVE_SYS_TYPES_H)
+  add_definitions("-DHAVE_SYS_TYPES_H")
+endif()
+
+if (NOT WIN32)
+  check_include_file(unistd.h HAVE_UNISTD_H)
+  if (HAVE_UNISTD_H)
+    add_definitions("-DHAVE_UNISTD_H")
+  endif()
+endif()
+
 # Check for getcontext (uClibc can be configured without it, for example).
 if (NOT (BORLAND OR MSVC))
   check_function_exists(getcontext HAVE_GETCONTEXT)

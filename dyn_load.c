@@ -27,11 +27,6 @@
  * But then not much of anything is safe in the presence of dlclose.
  */
 
-#if !defined(MACOS) && !defined(GC_NO_TYPES) && !defined(SN_TARGET_PSP2) \
-    && !defined(_WIN32_WCE) && !defined(__CC_ARM)
-# include <sys/types.h>
-#endif
-
 /* BTL: avoid circular redefinition of dlopen if GC_SOLARIS_THREADS defined */
 #undef GC_MUST_RESTORE_REDEFINED_DLOPEN
 #if defined(GC_PTHREADS) && !defined(GC_NO_DLOPEN) \
@@ -265,7 +260,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 
 #define MAPS_BUF_SIZE (32*1024)
 

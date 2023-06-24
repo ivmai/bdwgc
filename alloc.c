@@ -20,10 +20,6 @@
 
 #if !defined(MACOS) && !defined(MSWINCE)
 # include <signal.h>
-# if !defined(GC_NO_TYPES) && !defined(SN_TARGET_PSP2) \
-     && !defined(__CC_ARM)
-#   include <sys/types.h>
-# endif
 #endif
 
 /*

@@ -896,9 +896,6 @@ EXTERN_C_BEGIN
 #     define USE_MMAP_ANON
 #   endif
 #   define DYNAMIC_LOADING
-    EXTERN_C_END
-#   include <unistd.h>
-    EXTERN_C_BEGIN
 #   define GETPAGESIZE() (unsigned)sysconf(_SC_PAGE_SIZE)
 # endif /* HPUX */
 
@@ -1061,7 +1058,6 @@ EXTERN_C_BEGIN
     /* gross hack:                                                  */
     EXTERN_C_END
 #   include <sys/vmparam.h>
-#   include <unistd.h>
     EXTERN_C_BEGIN
 #   ifdef USERLIMIT
       /* This should work everywhere, but doesn't.  */
@@ -1410,10 +1406,6 @@ EXTERN_C_BEGIN
 #       define DATASTART_IS_FUNC
 #       define DATAEND ((ptr_t)(&_end))
 #       define HEURISTIC2
-        EXTERN_C_END
-#       include <unistd.h>
-        EXTERN_C_BEGIN
-#       define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 #       define DYNAMIC_LOADING
 #       ifndef USE_MMAP
 #         define USE_MMAP 1
@@ -1842,9 +1834,6 @@ EXTERN_C_BEGIN
         extern int _end[];
 #       define DATAEND ((ptr_t)(&_end))
         extern char ** environ;
-        EXTERN_C_END
-#       include <unistd.h>
-        EXTERN_C_BEGIN
         /* round up from the value of environ to the nearest page boundary */
         /* Probably breaks if putenv is called before collector            */
         /* initialization.                                                 */
@@ -2551,15 +2540,29 @@ EXTERN_C_BEGIN
 # define ANY_MSWIN
 #endif
 
+#if defined(HAVE_SYS_TYPES_H) \
+    || !(defined(AMIGA) || defined(MACOS) || defined(MSWINCE) \
+         || defined(OS2) || defined(PCR) || defined(SN_TARGET_ORBIS) \
+         || defined(SN_TARGET_PSP2) || defined(__CC_ARM))
+  EXTERN_C_END
+# include <sys/types.h>
+  EXTERN_C_BEGIN
+#endif /* HAVE_SYS_TYPES_H */
+
+#if defined(HAVE_UNISTD_H) \
+    || !(defined(AMIGA) || defined(MACOS) \
+         || defined(MSWIN32) || defined(MSWINCE) || defined(MSWIN_XBOX1) \
+         || defined(NINTENDO_SWITCH) || defined(NN_PLATFORM_CTR) \
+         || defined(OS2) || defined(PCR) || defined(SN_TARGET_ORBIS) \
+         || defined(SN_TARGET_PSP2) || defined(__CC_ARM))
+  EXTERN_C_END
+# include <unistd.h>
+  EXTERN_C_BEGIN
+#endif /* HAVE_UNISTD_H */
+
 #if !defined(ANY_MSWIN) && !defined(GETPAGESIZE)
-# if defined(AIX) || defined(ANY_BSD) || defined(DARWIN) || defined(IRIX5) \
-     || defined(LINUX) || defined(KOS) || defined(SOLARIS)
-    EXTERN_C_END
-#   include <unistd.h>
-    EXTERN_C_BEGIN
-# endif
-# if defined(HOST_ANDROID) || defined(HOST_TIZEN) || defined(KOS) \
-     || (defined(LINUX) && defined(SPARC))
+# if defined(DGUX) || defined(HOST_ANDROID) || defined(HOST_TIZEN) \
+     || defined(KOS) || (defined(LINUX) && defined(SPARC))
 #   define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 # else
 #   define GETPAGESIZE() (unsigned)getpagesize()

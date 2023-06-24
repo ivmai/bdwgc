@@ -64,13 +64,11 @@
 #endif
 
 #ifdef DGUX
-# include <sys/types.h>
 # include <sys/time.h>
 # include <sys/resource.h>
 #endif /* DGUX */
 
 #ifdef BSD_TIME
-# include <sys/types.h>
 # include <sys/time.h>
 # include <sys/resource.h>
 #endif /* BSD_TIME */

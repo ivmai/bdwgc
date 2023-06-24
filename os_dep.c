@@ -17,15 +17,6 @@
 
 #include "private/gc_priv.h"
 
-#if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS) \
-    && !defined(MSWINCE) && !defined(SN_TARGET_ORBIS) \
-    && !defined(SN_TARGET_PSP2) && !defined(__CC_ARM)
-# include <sys/types.h>
-# if !defined(MSWIN32) && !defined(MSWIN_XBOX1)
-#   include <unistd.h>
-# endif
-#endif
-
 #if defined(MSWINCE) || defined(SN_TARGET_PS3)
 # define SIGSEGV 0 /* value is irrelevant */
 #else
@@ -63,7 +54,6 @@
 # if defined(USE_MUNMAP) && !defined(USE_MMAP) && !defined(CPPCHECK)
 #   error Invalid config: USE_MUNMAP requires USE_MMAP
 # endif
-# include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
 #endif
@@ -1078,7 +1068,6 @@ GC_INNER void GC_setpagesize(void)
 
 #ifdef LINUX_STACKBOTTOM
 
-# include <sys/types.h>
 # include <sys/stat.h>
 
 # define STAT_SKIP 27   /* Number of fields preceding startstack        */
@@ -1207,8 +1196,6 @@ GC_INNER void GC_setpagesize(void)
   /* This uses an undocumented sysctl call, but at least one expert     */
   /* believes it will stay.                                             */
 
-# include <unistd.h>
-# include <sys/types.h>
 # include <sys/sysctl.h>
 
   STATIC ptr_t GC_freebsd_main_stack_base(void)
@@ -2558,14 +2545,12 @@ void * os2_alloc(size_t bytes)
 
 #if !defined(NN_PLATFORM_CTR) && !defined(MSWIN32) && !defined(MSWINCE) \
     && !defined(MSWIN_XBOX1)
-# include <unistd.h>
 # ifdef SN_TARGET_PS3
 #   include <sys/memory.h>
 # else
 #   include <sys/mman.h>
 # endif
 # include <sys/stat.h>
-# include <sys/types.h>
 #endif
 
 /* Compute a page aligned starting address for the unmap        */
@@ -3596,7 +3581,6 @@ STATIC void GC_protect_heap(void)
 /* calls.                                                               */
 
 # include <errno.h>
-# include <sys/types.h>
 # include <sys/signal.h>
 # include <sys/syscall.h>
 # include <sys/stat.h>
@@ -5081,13 +5065,8 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 # endif
 #endif /* SPARC */
 
-#ifdef NEED_CALLINFO
 /* Fill in the pc and argument information for up to NFRAMES of my      */
 /* callers.  Ignore my frame and my callers frame.                      */
-# ifdef LINUX
-#   include <unistd.h>
-# endif
-#endif /* NEED_CALLINFO */
 
 #if defined(GC_HAVE_BUILTIN_BACKTRACE)
 # ifdef _MSC_VER

@@ -21,14 +21,12 @@
 #ifdef PTHREAD_STOP_WORLD_IMPL
 
 #ifdef NACL
-# include <unistd.h>
 # include <sys/time.h>
 #else
 # include <signal.h>
 # include <semaphore.h>
 # include <errno.h>
 # include <time.h> /* for nanosleep() */
-# include <unistd.h>
 #endif /* !NACL */
 
 GC_INLINE void GC_usleep(unsigned us)

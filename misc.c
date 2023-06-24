@@ -30,7 +30,6 @@
 #if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN) \
     || (defined(CONSOLE_LOG) && defined(MSWIN32))
 # include <fcntl.h>
-# include <sys/types.h>
 # include <sys/stat.h>
 #endif
 
@@ -1768,15 +1767,10 @@ GC_API void GC_CALL GC_start_mark_threads(void)
 
 #else
 
-# if !defined(GC_NO_TYPES) && !defined(SN_TARGET_PSP2)
-#   if !defined(AMIGA) && !defined(MSWIN32) && !defined(MSWIN_XBOX1) \
-       && !defined(__CC_ARM)
-#     include <unistd.h>
-#   endif
-#   if !defined(ECOS) && !defined(NOSYS)
-#     include <errno.h>
-#   endif
-# endif /* !GC_NO_TYPES && !SN_TARGET_PSP2 */
+# if !defined(ECOS) && !defined(NOSYS) && !defined(PLATFORM_WRITE) \
+     && !defined(SN_TARGET_PSP2)
+#   include <errno.h>
+# endif
 
   STATIC int GC_write(int fd, const char *buf, size_t len)
   {

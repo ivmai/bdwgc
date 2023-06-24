@@ -32,9 +32,6 @@
 
 #ifdef GC_PTHREADS
 # include <errno.h>
-# ifndef GC_WIN32_PTHREADS
-#   include <unistd.h>
-# endif
 # if defined(GC_DARWIN_THREADS) \
      || (defined(GC_WIN32_THREADS) && defined(EMULATE_PTHREAD_SEMAPHORE))
 #   include "private/darwin_semaphore.h"
@@ -51,7 +48,6 @@
 #     include <sys/mman.h>
 #   endif
 #   include <sys/time.h>
-#   include <sys/types.h>
 #   include <sys/stat.h>
 #   include <fcntl.h>
 # endif
