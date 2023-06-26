@@ -100,11 +100,12 @@
   /* up, or we encounter EOF or an error.                       */
   STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
   {
-    size_t num_read = 0;
+    ssize_t num_read = 0;
 
     ASSERT_CANCEL_DISABLED();
     while (num_read < count) {
-        ssize_t result = PROC_READ(fd, buf + num_read, count - num_read);
+        ssize_t result = PROC_READ(fd, buf + num_read,
+                                   count - (size_t)num_read);
 
         if (result < 0) return result;
         if (result == 0) break;
@@ -134,7 +135,7 @@
     do {
         result = PROC_READ(f, buf, sizeof(buf));
         if (result == -1) return 0;
-        total += result;
+        total += (size_t)result;
     } while (result > 0);
     return total;
   }
@@ -230,7 +231,7 @@ GC_INNER const char * GC_get_maps(void)
                   ABORT_ARG1("Failed to read /proc/self/maps",
                              ": errno= %d", errno);
                 }
-                maps_size += result;
+                maps_size += (size_t)result;
             } while ((size_t)result == maps_buf_sz-1);
             close(f);
             if (0 == maps_size)
@@ -1115,7 +1116,7 @@ GC_INNER void GC_setpagesize(void)
     /* using direct I/O system calls in order to avoid calling malloc   */
     /* in case REDIRECT_MALLOC is defined.                              */
 #     define STAT_BUF_SIZE 4096
-    char stat_buf[STAT_BUF_SIZE];
+    unsigned char stat_buf[STAT_BUF_SIZE];
     int f;
     word result;
     ssize_t i, buf_offset = 0, len;
@@ -1148,7 +1149,7 @@ GC_INNER void GC_setpagesize(void)
     f = open("/proc/self/stat", O_RDONLY);
     if (-1 == f)
       ABORT_ARG1("Could not open /proc/self/stat", ": errno= %d", errno);
-    len = GC_repeat_read(f, stat_buf, sizeof(stat_buf));
+    len = GC_repeat_read(f, (char*)stat_buf, sizeof(stat_buf));
     if (len < 0)
       ABORT_ARG1("Failed to read /proc/self/stat",
                  ": errno= %d", errno);
@@ -1175,7 +1176,7 @@ GC_INNER void GC_setpagesize(void)
     if (buf_offset + i >= len) ABORT("Could not parse /proc/self/stat");
     stat_buf[buf_offset + i] = '\0';
 
-    result = (word)STRTOULL(&stat_buf[buf_offset], NULL, 10);
+    result = (word)STRTOULL((char*)stat_buf + buf_offset, NULL, 10);
     if (result < 0x100000 || (result & (sizeof(word) - 1)) != 0)
       ABORT_ARG1("Absurd stack bottom value",
                  ": 0x%lx", (unsigned long)result);
