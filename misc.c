@@ -826,8 +826,12 @@ GC_API int GC_CALL GC_is_init_called(void)
 # define maybe_install_looping_handler()
 #endif
 
-#define GC_DEFAULT_STDOUT_FD 1
 #define GC_DEFAULT_STDERR_FD 2
+#ifdef KOS
+# define GC_DEFAULT_STDOUT_FD GC_DEFAULT_STDERR_FD
+#else
+# define GC_DEFAULT_STDOUT_FD 1
+#endif
 
 #if !defined(OS2) && !defined(MACOS) && !defined(GC_ANDROID_LOG) \
     && !defined(NN_PLATFORM_CTR) && !defined(NINTENDO_SWITCH) \

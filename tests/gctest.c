@@ -2309,8 +2309,8 @@ static void enable_incremental_mode(void)
         UNTESTED(GC_print_free_list);
 #     endif
 #   endif
-#   if !defined(GC_ANDROID_LOG) && !defined(MACOS) && !defined(OS2) \
-       && !defined(MSWIN32) && !defined(MSWINCE)
+#   if !defined(GC_ANDROID_LOG) && !defined(KOS) && !defined(MACOS) \
+       && !defined(OS2) && !defined(MSWIN32) && !defined(MSWINCE)
       GC_set_log_fd(2);
 #   endif
 #   ifdef ANY_MSWIN
