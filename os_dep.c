@@ -893,7 +893,7 @@ GC_INNER size_t GC_page_size = 0;
            || defined(HURD) || defined(NETBSD) || defined(FREEBSD)
             static struct sigaction old_bus_act;
 #       endif
-#   else
+#   elif !defined(OPENBSD)
       static GC_fault_handler_t old_segv_handler;
 #     ifdef HAVE_SIGBUS
         static GC_fault_handler_t old_bus_handler;
