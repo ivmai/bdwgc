@@ -944,7 +944,12 @@ EXTERN_C_BEGIN
 # endif /* LINUX */
 
 # ifdef KOS
+#   define OS_TYPE "KOS"
 #   define HEURISTIC1 /* relies on pthread_attr_getstack actually */
+#   ifndef USE_GET_STACKBASE_FOR_MAIN
+      /* Note: this requires -lpthread option. */
+#     define USE_GET_STACKBASE_FOR_MAIN
+#   endif
     extern int __data_start[];
 #   define DATASTART ((ptr_t)(__data_start))
 # endif /* KOS */
@@ -3085,7 +3090,7 @@ EXTERN_C_BEGIN
 # define MIN_STACK_SIZE (8 * HBLKSIZE * sizeof(word))
 #endif
 
-#if (defined(HOST_ANDROID) || defined(KOS)) && !defined(THREADS) \
+#if defined(HOST_ANDROID) && !defined(THREADS) \
     && !defined(USE_GET_STACKBASE_FOR_MAIN)
   /* Always use pthread_attr_getstack on Android ("-lpthread" option is  */
   /* not needed to be specified manually) since GC_linux_main_stack_base */
@@ -3095,7 +3100,7 @@ EXTERN_C_BEGIN
 
 /* Outline pthread primitives to use in GC_get_[main_]stack_base.       */
 #if ((defined(FREEBSD) && defined(__GLIBC__)) /* kFreeBSD */ \
-     || defined(LINUX) || defined(NETBSD)) \
+     || defined(LINUX) || defined(KOS) || defined(NETBSD)) \
     && !defined(NO_PTHREAD_GETATTR_NP)
 # define HAVE_PTHREAD_GETATTR_NP 1
 #elif defined(FREEBSD) && !defined(__GLIBC__) \
