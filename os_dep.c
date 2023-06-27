@@ -103,7 +103,7 @@
     ssize_t num_read = 0;
 
     ASSERT_CANCEL_DISABLED();
-    while (num_read < count) {
+    while ((size_t)num_read < count) {
         ssize_t result = PROC_READ(fd, buf + num_read,
                                    count - (size_t)num_read);
 
