@@ -107,8 +107,8 @@ build_script:
        && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h
        && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[djgpp-no-make] (
-    appveyor DownloadFile "https://github.com/andrewwutw/build-djgpp/releases/download/v3.1/djgpp-mingw-gcc1020-standalone.zip"
-    && 7z x -o.. djgpp-mingw-gcc1020-standalone.zip > nul
+    appveyor DownloadFile "https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-mingw-gcc1220-standalone.zip"
+    && 7z x -o.. djgpp-mingw-gcc1220-standalone.zip > nul
     && ..\djgpp\setenv.bat
     && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -c extra/gc.c )
 - cmd: if [%TARGET%]==[dmc] (
