@@ -818,7 +818,7 @@ EXTERN_C_BEGIN
 #   define HAVE_BUILTIN_UNWIND_INIT
 # endif
 
-#if (defined(__CC_ARM) || defined(CX_UX) || defined(EMBOX) \
+#if (defined(__CC_ARM) || defined(CX_UX) || defined(DJGPP) || defined(EMBOX) \
      || defined(EWS4800) || defined(LINUX) || defined(OS2) \
      || defined(RTEMS) || defined(UTS4) || defined(MSWIN32) \
      || defined(MSWINCE)) && !defined(NO_UNDERSCORE_SETJMP)
