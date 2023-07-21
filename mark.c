@@ -137,7 +137,7 @@ GC_INNER void GC_set_hdr_marks(hdr *hhdr)
         hhdr -> hb_marks[i] = 1;
       }
 #   else
-      /* Note that all bits are set even in case of MARK_BIT_PER_GRANULE,   */
+      /* Note that all bits are set even in case of not MARK_BIT_PER_OBJ,   */
       /* instead of setting every n-th bit where n is MARK_BIT_OFFSET(sz).  */
       /* This is done for a performance reason.                             */
       for (i = 0; i < divWORDSZ(n_marks); ++i) {
@@ -1601,8 +1601,8 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
   }
 #endif /* WRAP_MARK_SOME && PARALLEL_MARK */
 
-#if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES) && \
-    defined(MARK_BIT_PER_GRANULE)
+#if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES) \
+    && !defined(MARK_BIT_PER_OBJ)
 # if GC_GRANULE_WORDS == 1
 #   define USE_PUSH_MARKED_ACCELERATORS
 #   define PUSH_GRANULE(q) \
@@ -1633,7 +1633,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
                   GC_PUSH_ONE_HEAP(qcontents, (q)+3, GC_mark_stack_top); \
                 } while (0)
 # endif
-#endif /* !USE_MARK_BYTES && MARK_BIT_PER_GRANULE */
+#endif /* !USE_MARK_BYTES && !MARK_BIT_PER_OBJ && !SMALL_CONFIG */
 
 #ifdef USE_PUSH_MARKED_ACCELERATORS
 /* Push all objects reachable from marked objects in the given block */

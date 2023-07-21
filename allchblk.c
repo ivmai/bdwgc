@@ -242,7 +242,7 @@ static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
 
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(byte_sz >= ALIGNMENT);
-#   ifdef MARK_BIT_PER_GRANULE
+#   ifndef MARK_BIT_PER_OBJ
       if (byte_sz > MAXOBJBYTES)
         flags |= LARGE_BLOCK;
 #   endif
@@ -271,11 +271,11 @@ static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
     hhdr -> hb_descr = descr;
 
 #   ifdef MARK_BIT_PER_OBJ
-     /* Set hb_inv_sz as portably as possible.                          */
-     /* We set it to the smallest value such that sz * inv_sz >= 2**32  */
-     /* This may be more precision than necessary.                      */
+      /* Set hb_inv_sz as portably as possible.                         */
+      /* We set it to the smallest value such that sz*inv_sz >= 2**32.  */
+      /* This may be more precision than necessary.                     */
       if (byte_sz > MAXOBJBYTES) {
-         hhdr -> hb_inv_sz = LARGE_INV_SZ;
+        hhdr -> hb_inv_sz = LARGE_INV_SZ;
       } else {
         word inv_sz;
 
@@ -293,23 +293,22 @@ static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
 #       endif
         hhdr -> hb_inv_sz = inv_sz;
       }
-#   endif
-#   ifdef MARK_BIT_PER_GRANULE
-    {
-      size_t granules = BYTES_TO_GRANULES(byte_sz);
+#   else
+      {
+        size_t granules = BYTES_TO_GRANULES(byte_sz);
 
-      if (EXPECT(!GC_add_map_entry(granules), FALSE)) {
-        /* Make it look like a valid block. */
-        hhdr -> hb_sz = HBLKSIZE;
-        hhdr -> hb_descr = 0;
-        hhdr -> hb_flags |= LARGE_BLOCK;
-        hhdr -> hb_map = 0;
-        return FALSE;
-      }
-      hhdr -> hb_map = GC_obj_map[(hhdr -> hb_flags & LARGE_BLOCK) != 0 ?
+        if (EXPECT(!GC_add_map_entry(granules), FALSE)) {
+          /* Make it look like a valid block.   */
+          hhdr -> hb_sz = HBLKSIZE;
+          hhdr -> hb_descr = 0;
+          hhdr -> hb_flags |= LARGE_BLOCK;
+          hhdr -> hb_map = 0;
+          return FALSE;
+        }
+        hhdr -> hb_map = GC_obj_map[(hhdr -> hb_flags & LARGE_BLOCK) != 0 ?
                                     0 : granules];
-    }
-#   endif /* MARK_BIT_PER_GRANULE */
+      }
+#   endif
 
     /* Clear mark bits */
     GC_clear_hdr_marks(hhdr);

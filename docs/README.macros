@@ -304,15 +304,9 @@ GC_ATOMIC_UNCOLLECTABLE Includes code for GC_malloc_atomic_uncollectable.
   This is useful if either the vendor malloc implementation is poor,
   or if REDIRECT_MALLOC is used.
 
-MARK_BIT_PER_GRANULE    Requests that a mark bit (or often byte)
-  be allocated for each allocation granule, as opposed to each object.
-  This often improves speed, possibly at some cost in space and/or
-  cache footprint.  Normally it is best to let this decision be
-  made automatically depending on platform.
-
-MARK_BIT_PER_OBJ        Requests that a mark bit be allocated for each
-  object instead of allocation granule.  The opposite of
-  MARK_BIT_PER_GRANULE.
+MARK_BIT_PER_OBJ        Requests that a mark bit (or a byte) be allocated for
+  each object.  By default, a mark bit/byte is allocated per a granule - this
+  often improves speed, possibly at some cost in space and/or cache footprint.
 
 HBLKSIZE=<ddd>  Explicitly sets the heap block size (where ddd is a power of
   2 between 512 and 65536).  Each heap block is devoted to a single size and

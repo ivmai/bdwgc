@@ -143,16 +143,15 @@ int main(void)
     printf("\tWORDSZ = %lu, ALIGNMENT = %d, GC_GRANULE_BYTES = %d\n",
            (unsigned long)WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);
     printf("\tUsing one mark ");
-#   if defined(USE_MARK_BYTES)
+#   ifdef USE_MARK_BYTES
       printf("byte");
 #   else
       printf("bit");
 #   endif
-    printf(" per ");
-#   if defined(MARK_BIT_PER_OBJ)
-      printf("object.\n");
-#   elif defined(MARK_BIT_PER_GRANULE)
-      printf("granule.\n");
+#   ifdef MARK_BIT_PER_OBJ
+      printf(" per object.\n");
+#   else
+      printf(" per granule.\n");
 #   endif
 #   ifdef THREAD_LOCAL_ALLOC
       printf("Thread local allocation enabled.\n");

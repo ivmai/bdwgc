@@ -43,7 +43,7 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
     }
 }
 
-#ifdef MARK_BIT_PER_GRANULE
+#ifndef MARK_BIT_PER_OBJ
   /* Add a heap block map for objects of size granules to obj_map.      */
   /* A size of 0 is used for large objects.  Return FALSE on failure.   */
   GC_INNER GC_bool GC_add_map_entry(size_t granules)
@@ -73,7 +73,7 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
     GC_obj_map[granules] = new_map;
     return TRUE;
   }
-#endif /* MARK_BIT_PER_GRANULE */
+#endif /* !MARK_BIT_PER_OBJ */
 
 GC_INNER void GC_initialize_offsets(void)
 {

@@ -271,24 +271,24 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
     /* first block, then we are in the all_interior_pointers case, and  */
     /* it is safe to use any displacement value.                        */
     ptr_t base = current;
-#   ifdef MARK_BIT_PER_GRANULE
+#   ifdef MARK_BIT_PER_OBJ
+      unsigned32 gran_displ; /* high_prod */
+      unsigned32 inv_sz = hhdr -> hb_inv_sz;
+
+#   else
       size_t gran_displ = BYTES_TO_GRANULES(displ);
       size_t gran_offset = hhdr -> hb_map[gran_displ];
       size_t byte_offset = displ & (GRANULE_BYTES - 1);
 
       /* The following always fails for large block references.         */
       if (EXPECT((gran_offset | byte_offset) != 0, FALSE))
-#   else
-      unsigned32 gran_displ; /* high_prod */
-      unsigned32 inv_sz = hhdr -> hb_inv_sz;
-#   endif /* MARK_BIT_PER_OBJ */
-
+#   endif
     {
-#     ifdef MARK_BIT_PER_GRANULE
-        if ((hhdr -> hb_flags & LARGE_BLOCK) != 0)
-#     else
+#     ifdef MARK_BIT_PER_OBJ
         if (EXPECT(inv_sz == LARGE_INV_SZ, FALSE))
-#     endif /* MARK_BIT_PER_OBJ */
+#     else
+        if ((hhdr -> hb_flags & LARGE_BLOCK) != 0)
+#     endif
       {
         /* gran_offset is bogus.        */
         size_t obj_displ;
@@ -308,17 +308,17 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
         GC_ASSERT((word)hhdr->hb_block <= (word)current);
         gran_displ = 0;
       } else {
-#       ifdef MARK_BIT_PER_GRANULE
+#       ifndef MARK_BIT_PER_OBJ
           size_t obj_displ = GRANULES_TO_BYTES(gran_offset) + byte_offset;
+
 #       else
           unsigned32 low_prod;
 
           LONG_MULT(gran_displ, low_prod, (unsigned32)displ, inv_sz);
           if ((low_prod >> 16) != 0)
-#       endif /* MARK_BIT_PER_OBJ */
+#       endif
         {
-#         if defined(MARK_BIT_PER_OBJ) \
-             && !defined(MARK_BIT_PER_GRANULE) /* for cppcheck */
+#         ifdef MARK_BIT_PER_OBJ
             size_t obj_displ;
 
             /* Accurate enough if HBLKSIZE <= 2**15.    */
@@ -329,21 +329,21 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
             GC_ADD_TO_BLACK_LIST_NORMAL(current, source);
             break;
           }
-#         ifdef MARK_BIT_PER_GRANULE
+#         ifndef MARK_BIT_PER_OBJ
             gran_displ -= gran_offset;
 #         endif
           base -= obj_displ;
         }
       }
     }
-#   ifdef MARK_BIT_PER_GRANULE
-      GC_ASSERT(hhdr == GC_find_header(base));
-      GC_ASSERT(gran_displ % BYTES_TO_GRANULES(hhdr -> hb_sz) == 0);
-#   else
+#   ifdef MARK_BIT_PER_OBJ
       /* May get here for pointer to start of block not at the          */
       /* beginning of object.  If so, it is valid, and we are fine.     */
       GC_ASSERT(gran_displ <= HBLK_OBJS(hhdr -> hb_sz));
-#   endif /* MARK_BIT_PER_OBJ */
+#   else
+      GC_ASSERT(hhdr == GC_find_header(base));
+      GC_ASSERT(gran_displ % BYTES_TO_GRANULES(hhdr -> hb_sz) == 0);
+#   endif
     TRACE(source, GC_log_printf("GC #%lu: passed validity tests\n",
                                 (unsigned long)GC_gc_no));
     SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ); /* contains "break" */

@@ -533,7 +533,7 @@ unsigned GC_n_set_marks(hdr *hhdr)
       for (i = 0; i <= n_mark_words; i++) {
           result += count_ones(hhdr -> hb_marks[i]);
       }
-#   else /* MARK_BIT_PER_GRANULE */
+#   else
 
       for (i = 0; i < MARK_BITS_SZ; i++) {
           result += count_ones(hhdr -> hb_marks[i]);

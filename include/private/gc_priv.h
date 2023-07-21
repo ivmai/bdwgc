@@ -1095,14 +1095,12 @@ typedef word page_hash_table[PHT_SIZE];
 /********************************************/
 
 #define MARK_BITS_PER_HBLK (HBLKSIZE/GRANULE_BYTES)
-           /* upper bound                                    */
-           /* We allocate 1 bit per allocation granule.      */
-           /* If MARK_BIT_PER_GRANULE is defined, we use     */
-           /* every nth bit, where n is the number of        */
-           /* allocation granules per object.  If            */
-           /* MARK_BIT_PER_OBJ is defined, we only use the   */
-           /* initial group of mark bits, and it is safe     */
-           /* to allocate smaller header for large objects.  */
+                /* The upper bound.  We allocate 1 bit per allocation   */
+                /* granule.  If MARK_BIT_PER_OBJ is not defined, we use */
+                /* every n-th bit, where n is the number of allocation  */
+                /* granules per object.  Otherwise, we only use the     */
+                /* initial group of mark bits, and it is safe to        */
+                /* allocate smaller header for large objects.           */
 
 union word_ptr_ao_u {
   word w;
@@ -1145,7 +1143,7 @@ struct hblkhdr {
                                 /* not.  Used to mark objects needed by */
                                 /* reclaim notifier.                    */
 #       endif
-#       ifdef MARK_BIT_PER_GRANULE
+#       ifndef MARK_BIT_PER_OBJ
 #         define LARGE_BLOCK 0x20
 #       endif
     unsigned short hb_last_reclaimed;
@@ -1169,7 +1167,7 @@ struct hblkhdr {
                 /* generating free blocks larger than that.             */
     word hb_descr;              /* object descriptor for marking.  See  */
                                 /* gc_mark.h.                           */
-#   ifdef MARK_BIT_PER_GRANULE
+#   ifndef MARK_BIT_PER_OBJ
       unsigned short * hb_map;  /* Essentially a table of remainders    */
                                 /* mod BYTES_TO_GRANULES(hb_sz), except */
                                 /* for large blocks.  See GC_obj_map.   */
@@ -1616,7 +1614,7 @@ struct _GC_arrays {
         /* Number of granules to allocate when asked for a certain      */
         /* number of bytes (plus EXTRA_BYTES).  Should be accessed with */
         /* the allocation lock held.                                    */
-# ifdef MARK_BIT_PER_GRANULE
+# ifndef MARK_BIT_PER_OBJ
 #   define GC_obj_map GC_arrays._obj_map
     unsigned short * _obj_map[MAXOBJGRANULES + 1];
                        /* If not NULL, then a pointer to a map of valid */
@@ -1913,14 +1911,14 @@ struct GC_traced_stack_sect_s {
 # define IF_PER_OBJ(x) x
 # define FINAL_MARK_BIT(sz) ((sz) > MAXOBJBYTES? 1 : HBLK_OBJS(sz))
         /* Position of final, always set, mark bit.                     */
-#else /* MARK_BIT_PER_GRANULE */
+#else
 # define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES((word)(offset))
 # define MARK_BIT_OFFSET(sz) BYTES_TO_GRANULES(sz)
 # define IF_PER_OBJ(x)
 # define FINAL_MARK_BIT(sz) \
                 ((sz) > MAXOBJBYTES ? MARK_BITS_PER_HBLK \
                                 : BYTES_TO_GRANULES((sz) * HBLK_OBJS(sz)))
-#endif
+#endif /* !MARK_BIT_PER_OBJ */
 
 /* Important internal collector routines */
 
@@ -2242,7 +2240,7 @@ GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes);
                                 /* Reuse the memory region by the heap. */
 
 /* Heap block layout maps: */
-#ifdef MARK_BIT_PER_GRANULE
+#ifndef MARK_BIT_PER_OBJ
   GC_INNER GC_bool GC_add_map_entry(size_t sz);
                                 /* Add a heap block map for objects of  */
                                 /* size sz to obj_map.                  */

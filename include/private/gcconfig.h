@@ -3320,24 +3320,14 @@ EXTERN_C_BEGIN
 # define FIXUP_POINTER(p)
 #endif
 
-#if !defined(MARK_BIT_PER_GRANULE) && !defined(MARK_BIT_PER_OBJ)
-# define MARK_BIT_PER_GRANULE   /* Usually faster       */
-#endif
-
-/* Some static sanity tests.    */
-#if !defined(CPPCHECK)
-# if defined(MARK_BIT_PER_GRANULE) && defined(MARK_BIT_PER_OBJ)
-#   error Define only one of MARK_BIT_PER_GRANULE and MARK_BIT_PER_OBJ
-# endif
-# if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \
-     && !defined(REDIRECT_MALLOC_IN_HEADER)
+#if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \
+    && !defined(REDIRECT_MALLOC_IN_HEADER)
     /* May work on other platforms (e.g. Darwin) provided the client    */
     /* ensures all the client threads are registered with the GC,       */
     /* e.g. by using the preprocessor-based interception of the thread  */
     /* primitives (i.e., define GC_THREADS and include gc.h from all    */
     /* the client files those are using pthread_create and friends).    */
-# endif
-#endif /* !CPPCHECK */
+#endif
 
 #ifdef GC_PRIVATE_H
         /* This relies on some type definitions from gc_priv.h, from    */
