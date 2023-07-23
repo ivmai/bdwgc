@@ -888,21 +888,12 @@ EXTERN_C_BEGIN
 # endif
 #endif
 
-/* The first TINY_FREELISTS free lists correspond to the first  */
-/* TINY_FREELISTS multiples of GRANULE_BYTES, i.e. we keep      */
-/* separate free lists for each multiple of GRANULE_BYTES       */
-/* up to (TINY_FREELISTS-1) * GRANULE_BYTES.  After that they   */
-/* may be spread out further.                                   */
+#define divWORDSZ(n) ((n) >> LOGWL) /* divide n by size of word */
 
-#define GRANULE_BYTES GC_GRANULE_BYTES
-#define TINY_FREELISTS GC_TINY_FREELISTS
-
-#define WORDSZ ((word)CPP_WORDSZ)
-#define SIGNB  ((word)1 << (WORDSZ-1))
+#define SIGNB ((word)1 << (CPP_WORDSZ-1))
 #define BYTES_PER_WORD ((word)sizeof(word))
-#define divWORDSZ(n) ((n) >> LOGWL)     /* divide n by size of word */
 
-#if GRANULE_BYTES == 8
+#if GC_GRANULE_BYTES == 8
 # define BYTES_TO_GRANULES(n) ((n)>>3)
 # define GRANULES_TO_BYTES(n) ((n)<<3)
 # if CPP_WORDSZ == 64
@@ -912,7 +903,7 @@ EXTERN_C_BEGIN
 # else
 #   define GRANULES_TO_WORDS(n) BYTES_TO_WORDS(GRANULES_TO_BYTES(n))
 # endif
-#elif GRANULE_BYTES == 16
+#elif GC_GRANULE_BYTES == 16
 # define BYTES_TO_GRANULES(n) ((n)>>4)
 # define GRANULES_TO_BYTES(n) ((n)<<4)
 # if CPP_WORDSZ == 64
@@ -923,7 +914,7 @@ EXTERN_C_BEGIN
 #   define GRANULES_TO_WORDS(n) BYTES_TO_WORDS(GRANULES_TO_BYTES(n))
 # endif
 #else
-# error Bad GRANULE_BYTES value
+# error Bad GC_GRANULE_BYTES value
 #endif
 
 /*********************/
@@ -973,10 +964,10 @@ EXTERN_C_BEGIN
 #endif
 
 # define CPP_HBLKSIZE (1 << CPP_LOG_HBLKSIZE)
-# define LOG_HBLKSIZE   ((size_t)CPP_LOG_HBLKSIZE)
+# define LOG_HBLKSIZE ((size_t)CPP_LOG_HBLKSIZE)
 # define HBLKSIZE ((size_t)CPP_HBLKSIZE)
 
-#define GC_SQRT_SIZE_MAX ((((size_t)1) << (WORDSZ / 2)) - 1)
+#define GC_SQRT_SIZE_MAX ((((size_t)1) << (CPP_WORDSZ / 2)) - 1)
 
 /*  Max size objects supported by freelist (larger objects are  */
 /*  allocated directly with allchblk(), by rounding to the next */
@@ -1006,12 +997,13 @@ EXTERN_C_BEGIN
 
 /* Round up allocation size (in bytes) to a multiple of a granule.      */
 #define ROUNDUP_GRANULE_SIZE(lb) /* lb should have no side-effect */ \
-        (SIZET_SAT_ADD(lb, GRANULE_BYTES-1) & ~(size_t)(GRANULE_BYTES-1))
+        (SIZET_SAT_ADD(lb, GC_GRANULE_BYTES-1) \
+         & ~(size_t)(GC_GRANULE_BYTES-1))
 
 /* Round up byte allocation request (after adding EXTRA_BYTES) to   */
 /* a multiple of a granule, then convert it to granules.            */
 #define ALLOC_REQUEST_GRANS(lb) /* lb should have no side-effect */ \
-        BYTES_TO_GRANULES(SIZET_SAT_ADD(lb, GRANULE_BYTES - 1 + EXTRA_BYTES))
+        BYTES_TO_GRANULES(SIZET_SAT_ADD(lb, GC_GRANULE_BYTES-1 + EXTRA_BYTES))
 
 #if MAX_EXTRA_BYTES == 0
 # define ADD_EXTRA_BYTES(lb) (lb)
@@ -1094,7 +1086,7 @@ typedef word page_hash_table[PHT_SIZE];
 /*                                          */
 /********************************************/
 
-#define MARK_BITS_PER_HBLK (HBLKSIZE/GRANULE_BYTES)
+#define MARK_BITS_PER_HBLK (HBLKSIZE/GC_GRANULE_BYTES)
                 /* The upper bound.  We allocate 1 bit per allocation   */
                 /* granule.  If MARK_BIT_PER_OBJ is not defined, we use */
                 /* every n-th bit, where n is the number of allocation  */
@@ -1224,7 +1216,7 @@ struct hblkhdr {
 /*  heap block body */
 
 # define HBLK_WORDS (HBLKSIZE/sizeof(word))
-# define HBLK_GRANULES (HBLKSIZE/GRANULE_BYTES)
+# define HBLK_GRANULES (HBLKSIZE/GC_GRANULE_BYTES)
 
 /* The number of objects in a block dedicated to a certain size.        */
 /* may erroneously yield zero (instead of one) for large objects.       */

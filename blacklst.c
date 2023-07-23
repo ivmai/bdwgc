@@ -258,8 +258,8 @@ GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *h,
     for (i = 0;;) {
         if (GC_old_stack_bl[divWORDSZ(index)] == 0
             && GC_incomplete_stack_bl[divWORDSZ(index)] == 0) {
-            /* An easy case */
-          i += WORDSZ - modWORDSZ(index);
+          /* An easy case. */
+          i += (word)CPP_WORDSZ - modWORDSZ(index);
         } else {
           if (get_pht_entry_from_index(GC_old_stack_bl, index)
               || get_pht_entry_from_index(GC_incomplete_stack_bl, index)) {

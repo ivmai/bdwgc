@@ -196,9 +196,9 @@ GC_API void * GC_CALL GC_is_visible(void *p)
                     if ((word)p - (word)base > descr) goto fail;
                     break;
                 case GC_DS_BITMAP:
-                    if ((word)p - (word)base >= WORDS_TO_BYTES(BITMAP_BITS)
-                        || ((word)p & (sizeof(word) - 1))) goto fail;
-                    if (!(((word)1 << (WORDSZ - ((word)p - (word)base) - 1))
+                    if ((ptr_t)p - base >= WORDS_TO_BYTES(BITMAP_BITS)
+                        || ((word)p & (sizeof(word)-1)) != 0) goto fail;
+                    if (!(((word)1 << (CPP_WORDSZ-1 - ((word)p - (word)base)))
                           & descr)) goto fail;
                     break;
                 case GC_DS_PROC:

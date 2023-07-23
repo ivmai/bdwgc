@@ -123,7 +123,7 @@ contributed originally by Dave Barrett.
            |   |  hash_link   |                      |   | | |     | | | | |   v
            |   +--------------+                      |   +-+-+-----+-+-+-+-+  ---
            |                                         |   |<--OBJ_MAP_LEN-->|
-           |                                         |   =HBLKSIZE/GRANULE_BYTES
+           |                                         |   =HBLKSIZE/GC_GRANULE_BYTES
      HDR(p)| GC_find_header(p)                       |    (1024 on Alpha)
            |                           \ from        |    (8/16 bits each)
            |    (hdr) (struct hblkhdr) / alloc_hdr() |
@@ -157,9 +157,9 @@ collected.
 
                  (struct hblk)
       ---    +----------------------+ < HBLKSIZE  ---
-       ^     +-----hb_body----------+ (and WORDSZ) ^         ---   ---
-       |     |                      |   aligned    |          ^     ^
-       |     |                      |              |        hb_sz   |
+       ^     +-----hb_body----------+ (and         ^         ---   ---
+       |     |                      |  CPP_WORDSZ- |          ^     ^
+       |     |                      |  aligned)    |        hb_sz   |
        |     |                      |              |       (words)  |
        |     |      Object 0        |              |          |     |
        |     |                      |            i |(word-    v     |
@@ -173,5 +173,5 @@ collected.
        |     |                      | !ALL_INTERIOR_POINTERS  ^     |
        |     |                      | sets j only for       hb_sz   |
        |     |      Object N        | valid object offsets.   |     |
-       v     |                      | All objects WORDSZ-     v     v
+       v     |                      | All objects CPP_WORDSZ- v     v
       ---    +----------------------+ aligned.               ---   ---

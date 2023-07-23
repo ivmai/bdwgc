@@ -254,7 +254,7 @@ GC_API size_t GC_CALL GC_get_expl_freed_bytes_since_gc(void)
 /* GC_malloc_many or friends to replenish it.  (We do not round up      */
 /* object sizes, since a call indicates the intention to consume many   */
 /* objects of exactly this size.)                                       */
-/* We assume that the size is a multiple of GRANULE_BYTES.              */
+/* We assume that the size is a multiple of GC_GRANULE_BYTES.           */
 /* We return the free-list by assigning it to *result, since it is      */
 /* not safe to return, e.g. a linked list of pointer-free objects,      */
 /* since the collector would not retain the entire list if it were      */
@@ -271,7 +271,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     struct obj_kind * ok;
     struct hblk ** rlh;
 
-    GC_ASSERT(lb != 0 && (lb & (GRANULE_BYTES-1)) == 0);
+    GC_ASSERT(lb != 0 && (lb & (GC_GRANULE_BYTES-1)) == 0);
     /* Currently a single object is always allocated if manual VDB. */
     /* TODO: GC_dirty should be called for each linked object (but  */
     /* the last one) to support multiple objects allocation.        */
@@ -472,7 +472,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
 
     /* Check the alignment argument.    */
     if (EXPECT(0 == align || (align & align_m1) != 0, FALSE)) return NULL;
-    if (align <= GRANULE_BYTES) return GC_malloc(lb);
+    if (align <= GC_GRANULE_BYTES) return GC_malloc(lb);
 
     if (align >= HBLKSIZE/2 || lb >= HBLKSIZE/2) {
       return GC_clear_stack(GC_generic_malloc_aligned(lb, NORMAL,

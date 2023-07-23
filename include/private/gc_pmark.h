@@ -58,17 +58,14 @@ mark_proc GC_mark_procs[MAX_MARK_PROCS];
 # define MARK_DESCR_OFFSET sizeof(word)
 #endif
 
-/*
- * Mark descriptor stuff that should remain private for now, mostly
- * because it's hard to export WORDSZ without including gcconfig.h.
- */
-#define BITMAP_BITS (WORDSZ - GC_DS_TAG_BITS)
+/* Mark descriptor stuff that should remain private for now, mostly     */
+/* because it's hard to export CPP_WORDSZ without including gcconfig.h. */
+#define BITMAP_BITS (CPP_WORDSZ - GC_DS_TAG_BITS)
 #define PROC(descr) \
       (GC_mark_procs[((descr) >> GC_DS_TAG_BITS) & (GC_MAX_MARK_PROCS-1)])
 #define ENV(descr) \
       ((descr) >> (GC_DS_TAG_BITS + GC_LOG_MAX_MARK_PROCS))
-#define MAX_ENV \
-      (((word)1 << (WORDSZ - GC_DS_TAG_BITS - GC_LOG_MAX_MARK_PROCS)) - 1)
+#define MAX_ENV (((word)1 << (BITMAP_BITS - GC_LOG_MAX_MARK_PROCS)) - 1)
 
 GC_EXTERN unsigned GC_n_mark_procs;
 
@@ -278,7 +275,7 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
 #   else
       size_t gran_displ = BYTES_TO_GRANULES(displ);
       size_t gran_offset = hhdr -> hb_map[gran_displ];
-      size_t byte_offset = displ & (GRANULE_BYTES - 1);
+      size_t byte_offset = displ & (GC_GRANULE_BYTES-1);
 
       /* The following always fails for large block references.         */
       if (EXPECT((gran_offset | byte_offset) != 0, FALSE))

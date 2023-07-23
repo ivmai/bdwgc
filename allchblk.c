@@ -701,7 +701,7 @@ GC_INNER struct hblk *GC_allochblk(size_t sz, int kind,
     int split_limit; /* highest index of free list whose blocks we split */
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT((sz & (GRANULE_BYTES - 1)) == 0);
+    GC_ASSERT((sz & (GC_GRANULE_BYTES-1)) == 0);
     blocks = OBJ_SZ_TO_BLOCKS_CHECKED(sz);
     if (EXPECT(SIZET_SAT_ADD(blocks * HBLKSIZE, align_m1)
                 >= (GC_SIZE_MAX >> 1), FALSE))

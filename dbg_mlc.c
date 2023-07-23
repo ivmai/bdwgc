@@ -991,7 +991,7 @@ STATIC void GC_CALLBACK GC_check_heap_block(struct hblk *hbp, GC_word dummy)
 STATIC void GC_check_heap_proc(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
-  GC_STATIC_ASSERT((sizeof(oh) & (GRANULE_BYTES - 1)) == 0);
+  GC_STATIC_ASSERT((sizeof(oh) & (GC_GRANULE_BYTES-1)) == 0);
   /* FIXME: Should we check for twice that alignment?   */
   GC_apply_to_all_blocks(GC_check_heap_block, 0);
 }

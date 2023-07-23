@@ -670,15 +670,15 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           mark_stack_top--;
 #         ifdef ENABLE_TRACE
             if ((word)GC_trace_addr >= (word)current_p
-                && (word)GC_trace_addr < (word)(current_p
-                                                + WORDS_TO_BYTES(WORDSZ-2))) {
+                && (word)GC_trace_addr
+                    < (word)(current_p + WORDS_TO_BYTES(CPP_WORDSZ-2))) {
               GC_log_printf("GC #%lu: tracing from %p bitmap descr %lu\n",
                             (unsigned long)GC_gc_no, (void *)current_p,
                             (unsigned long)descr);
             }
 #         endif /* ENABLE_TRACE */
           descr &= ~(word)GC_DS_TAGS;
-          credit -= (signed_word)WORDS_TO_BYTES(WORDSZ/2); /* guess */
+          credit -= (signed_word)WORDS_TO_BYTES(CPP_WORDSZ / 2); /* guess */
           for (; descr != 0; descr <<= 1, current_p += sizeof(word)) {
             if ((descr & SIGNB) == 0) continue;
             LOAD_WORD_OR_CONTINUE(current, current_p);
@@ -1675,7 +1675,7 @@ STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
               q += GC_GRANULE_WORDS;
               mark_word >>= 1;
             }
-            p += WORDSZ*GC_GRANULE_WORDS;
+            p += CPP_WORDSZ * GC_GRANULE_WORDS;
         }
 
 #   undef GC_greatest_plausible_heap_addr
@@ -1727,7 +1727,7 @@ STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
               q += 2 * GC_GRANULE_WORDS;
               mark_word >>= 2;
             }
-            p += WORDSZ*GC_GRANULE_WORDS;
+            p += CPP_WORDSZ * GC_GRANULE_WORDS;
         }
 
 #   undef GC_greatest_plausible_heap_addr
@@ -1781,7 +1781,7 @@ STATIC void GC_push_marked4(struct hblk *h, hdr *hhdr)
               q += 4 * GC_GRANULE_WORDS;
               mark_word >>= 4;
             }
-            p += WORDSZ*GC_GRANULE_WORDS;
+            p += CPP_WORDSZ * GC_GRANULE_WORDS;
         }
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr

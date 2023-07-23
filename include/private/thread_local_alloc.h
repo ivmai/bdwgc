@@ -104,15 +104,21 @@ EXTERN_C_BEGIN
 # endif
 #endif /* !THREAD_FREELISTS_KINDS */
 
+/* The first GC_TINY_FREELISTS free lists correspond to the first   */
+/* GC_TINY_FREELISTS multiples of GC_GRANULE_BYTES, i.e. we keep    */
+/* separate free lists for each multiple of GC_GRANULE_BYTES up to  */
+/* (GC_TINY_FREELISTS-1) * GC_GRANULE_BYTES.  After that they may   */
+/* be spread out further.                                           */
+
 /* One of these should be declared as the tlfs field in the     */
 /* structure pointed to by a GC_thread.                         */
 typedef struct thread_local_freelists {
-  void * _freelists[THREAD_FREELISTS_KINDS][TINY_FREELISTS];
+  void * _freelists[THREAD_FREELISTS_KINDS][GC_TINY_FREELISTS];
 # define ptrfree_freelists _freelists[PTRFREE]
 # define normal_freelists _freelists[NORMAL]
         /* Note: Preserve *_freelists names for some clients.   */
 # ifdef GC_GCJ_SUPPORT
-    void * gcj_freelists[TINY_FREELISTS];
+    void * gcj_freelists[GC_TINY_FREELISTS];
 #   define ERROR_FL ((void *)GC_WORD_MAX)
         /* Value used for gcj_freelists[-1]; allocation is      */
         /* erroneous.                                           */
@@ -128,7 +134,7 @@ typedef struct thread_local_freelists {
   /* >= HBLKSIZE  => pointer to nonempty free list.             */
   /* > DIRECT_GRANULES, < HBLKSIZE ==> transition to            */
   /*    local alloc, equivalent to 0.                           */
-# define DIRECT_GRANULES (HBLKSIZE/GRANULE_BYTES)
+# define DIRECT_GRANULES (HBLKSIZE/GC_GRANULE_BYTES)
         /* Don't use local free lists for up to this much       */
         /* allocation.                                          */
 } *GC_tlfs;

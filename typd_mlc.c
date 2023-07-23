@@ -64,7 +64,7 @@ STATIC void GC_push_typed_structures_proc(void)
 /* Returns starting index on success, -1 otherwise.             */
 STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
 {
-    size_t nwords = divWORDSZ(nbits + WORDSZ-1);
+    size_t nwords = divWORDSZ(nbits + CPP_WORDSZ-1);
     signed_word result;
     size_t i;
 
@@ -105,7 +105,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
     }
     /* Clear irrelevant (highest) bits for the last element.    */
     GC_ext_descriptors[(size_t)result + i].ed_bitmap =
-                bm[i] & (GC_WORD_MAX >> (nwords * WORDSZ - nbits));
+                bm[i] & (GC_WORD_MAX >> (nwords * CPP_WORDSZ - nbits));
     GC_ext_descriptors[(size_t)result + i].ed_continued = FALSE;
     GC_avail_descr += nwords;
     GC_ASSERT(result >= 0);
@@ -114,7 +114,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
 }
 
 /* Table of bitmap descriptors for n word long all pointer objects.     */
-STATIC GC_descr GC_bm_table[WORDSZ/2];
+STATIC GC_descr GC_bm_table[CPP_WORDSZ / 2];
 
 /* Return a descriptor for the concatenation of 2 nwords long objects,  */
 /* each of which is described by descriptor d.  The result is known     */
@@ -154,8 +154,8 @@ STATIC void GC_init_explicit_typing(void)
                             FALSE, TRUE);
 
     GC_bm_table[0] = GC_DS_BITMAP;
-    for (i = 1; i < WORDSZ/2; i++) {
-      GC_bm_table[i] = (((word)-1) << (WORDSZ - i)) | GC_DS_BITMAP;
+    for (i = 1; i < CPP_WORDSZ / 2; i++) {
+      GC_bm_table[i] = (((word)-1) << (CPP_WORDSZ - i)) | GC_DS_BITMAP;
     }
 }
 
@@ -194,7 +194,7 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
         if ((word)mark_stack_ptr >= (word)mark_stack_limit) {
             mark_stack_ptr = GC_signal_mark_stack_overflow(mark_stack_ptr);
         }
-        mark_stack_ptr -> mse_start = (ptr_t)(addr + WORDSZ);
+        mark_stack_ptr -> mse_start = (ptr_t)(addr + CPP_WORDSZ);
         mark_stack_ptr -> mse_descr.w =
                         GC_MAKE_PROC(GC_typed_mark_proc_index, env + 1);
     }
@@ -243,7 +243,7 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
       }
     }
 #   endif
-    if ((word)last_set_bit < BITMAP_BITS) {
+    if (last_set_bit < BITMAP_BITS) {
         signed_word i;
 
         /* Hopefully the common case.                   */

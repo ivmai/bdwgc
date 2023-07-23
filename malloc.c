@@ -132,7 +132,7 @@ STATIC void GC_extend_size_map(size_t i)
 
   /* For these larger sizes, we use an even number of granules.         */
   /* This makes it easier to, e.g., construct a 16-byte-aligned         */
-  /* allocator even if GRANULE_BYTES is 8.                              */
+  /* allocator even if GC_GRANULE_BYTES is 8.                           */
   granule_sz = (granule_sz + 1) & ~(size_t)1;
   if (granule_sz > MAXOBJGRANULES)
     granule_sz = MAXOBJGRANULES;
@@ -231,7 +231,7 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
       GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     GC_DBG_COLLECT_AT_MALLOC(lb);
-    if (SMALL_OBJ(lb) && EXPECT(align_m1 < GRANULE_BYTES, TRUE)) {
+    if (SMALL_OBJ(lb) && EXPECT(align_m1 < GC_GRANULE_BYTES, TRUE)) {
         LOCK();
         result = GC_generic_malloc_inner_small(lb, k);
         UNLOCK();
@@ -262,7 +262,7 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
         }
 
         init = GC_obj_kinds[k].ok_init;
-        if (EXPECT(align_m1 < GRANULE_BYTES, TRUE)) {
+        if (EXPECT(align_m1 < GC_GRANULE_BYTES, TRUE)) {
           align_m1 = 0;
         } else if (align_m1 < HBLKSIZE) {
           align_m1 = HBLKSIZE - 1;

@@ -65,8 +65,8 @@
 # define GC_WORDS_TO_GRANULES(n) ((n)*sizeof(void *)/GC_GRANULE_BYTES)
 #endif
 
-/* A "tiny" free list header contains TINY_FREELISTS pointers to        */
-/* singly linked lists of objects of different sizes, the ith one       */
+/* A "tiny" free list header contains GC_TINY_FREELISTS pointers to     */
+/* singly linked lists of objects of different sizes, the i-th one      */
 /* containing objects i granules in size.  Note that there is a list    */
 /* of size zero objects.                                                */
 #ifndef GC_TINY_FREELISTS
@@ -77,7 +77,7 @@
 # endif
 #endif /* !GC_TINY_FREELISTS */
 
-/* The ith free list corresponds to size i*GC_GRANULE_BYTES     */
+/* The i-th free list corresponds to size i*GC_GRANULE_BYTES    */
 /* Internally to the collector, the index can be computed with  */
 /* ALLOC_REQUEST_GRANS().  Externally, we don't know whether    */
 /* DONT_ADD_BYTE_AT_END is set, but the client should know.     */

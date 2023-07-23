@@ -52,7 +52,7 @@ typedef struct hblkhdr hdr;
 #define BOTTOM_SZ (1 << LOG_BOTTOM_SZ)
 
 #ifndef HASH_TL
-# define LOG_TOP_SZ (WORDSZ - LOG_BOTTOM_SZ - LOG_HBLKSIZE)
+# define LOG_TOP_SZ (CPP_WORDSZ - LOG_BOTTOM_SZ - LOG_HBLKSIZE)
 #else
 # define LOG_TOP_SZ 11
 #endif

@@ -238,15 +238,16 @@ GC_API void GC_CALL GC_set_handle_fork(int value)
 /* quantization algorithm (but we precompute it).                       */
 STATIC void GC_init_size_map(void)
 {
-    size_t i;
+    size_t i = 1;
 
     /* Map size 0 to something bigger.                  */
     /* This avoids problems at lower levels.            */
       GC_size_map[0] = 1;
-    for (i = 1; i <= GRANULES_TO_BYTES(TINY_FREELISTS-1) - EXTRA_BYTES; i++) {
+
+    for (; i <= GRANULES_TO_BYTES(GC_TINY_FREELISTS-1) - EXTRA_BYTES; i++) {
         GC_size_map[i] = ALLOC_REQUEST_GRANS(i);
 #       ifndef _MSC_VER
-          GC_ASSERT(GC_size_map[i] < TINY_FREELISTS);
+          GC_ASSERT(GC_size_map[i] < GC_TINY_FREELISTS);
           /* Seems to tickle bug in VC++ 2008 for x64 */
 #       endif
     }
@@ -357,9 +358,11 @@ STATIC void GC_init_size_map(void)
         /* Extra bytes we clear every time.  This clears our own        */
         /* activation record, and should cause more frequent            */
         /* clearing near the cold end of the stack, a good thing.       */
+
 #   define GC_SLOP 4000
         /* We make GC_high_water this much hotter than we really saw    */
         /* it, to cover for GC noise etc. above our current frame.      */
+
 #   define CLEAR_THRESHOLD 100000
         /* We restart the clearing process after this many bytes of     */
         /* allocation.  Otherwise very heavily recursive programs       */
@@ -368,6 +371,7 @@ STATIC void GC_init_size_map(void)
         /* frequency decreases, thus clearing frequency would decrease, */
         /* thus more junk remains accessible, thus the heap gets        */
         /* larger ...                                                   */
+
 #   ifdef THREADS
       if (next_random_no() == 0) {
         ptr_t limit = sp;

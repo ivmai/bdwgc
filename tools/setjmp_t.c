@@ -141,7 +141,7 @@ int main(void)
     if (y == 1) LONGJMP(b, 1);
     printf("Some GC internal configuration stuff: \n");
     printf("\tWORDSZ = %lu, ALIGNMENT = %d, GC_GRANULE_BYTES = %d\n",
-           (unsigned long)WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);
+           (unsigned long)CPP_WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);
     printf("\tUsing one mark ");
 #   ifdef USE_MARK_BYTES
       printf("byte");

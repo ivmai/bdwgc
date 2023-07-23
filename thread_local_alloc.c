@@ -57,7 +57,7 @@ static void return_freelists(void **fl, void **gfl)
 {
     int i;
 
-    for (i = 1; i < TINY_FREELISTS; ++i) {
+    for (i = 1; i < GC_TINY_FREELISTS; ++i) {
         if ((word)(fl[i]) >= HBLKSIZE) {
           return_single_freelist(fl[i], &gfl[i]);
         }
@@ -110,7 +110,7 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
     if (COVERT_DATAFLOW(res) != 0) {
         ABORT("Failed to set thread specific allocation pointers");
     }
-    for (j = 0; j < TINY_FREELISTS; ++j) {
+    for (j = 0; j < GC_TINY_FREELISTS; ++j) {
         for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
             p -> _freelists[i][j] = (void *)(word)1;
         }
@@ -274,7 +274,7 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
     ptr_t q;
     int i, j;
 
-    for (j = 0; j < TINY_FREELISTS; ++j) {
+    for (j = 0; j < GC_TINY_FREELISTS; ++j) {
       for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
         /* Load the pointer atomically as it might be updated   */
         /* concurrently by GC_FAST_MALLOC_GRANS.                */
@@ -298,7 +298,7 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
     {
         int i, j;
 
-        for (j = 1; j < TINY_FREELISTS; ++j) {
+        for (j = 1; j < GC_TINY_FREELISTS; ++j) {
           for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
             GC_check_fl_marks(&p->_freelists[i][j]);
           }
