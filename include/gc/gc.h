@@ -73,7 +73,7 @@ typedef void * GC_PTR;  /* preserved only for backward compatibility    */
 
 /* Get the GC library version. The returned value is a constant in the  */
 /* form: ((version_major<<16) | (version_minor<<8) | version_micro).    */
-GC_API unsigned GC_CALL GC_get_version(void);
+GC_API GC_VERSION_VAL_T GC_CALL GC_get_version(void);
 
 /* Public read-only variables */
 /* The supplied getter functions are preferred for new code.            */
@@ -249,9 +249,9 @@ GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void);
 /* the appropriate message which includes the pointers.  The functions  */
 /* (variables) must not be 0.  Both the setters and getters acquire     */
 /* the GC lock (to avoid data races).                                   */
-typedef void (GC_CALLBACK *GC_valid_ptr_print_proc_t)(void *);
-typedef void (GC_CALLBACK *GC_same_obj_print_proc_t)(void * /* p */,
-                                                     void * /* q */);
+typedef void (GC_CALLBACK * GC_valid_ptr_print_proc_t)(void *);
+typedef void (GC_CALLBACK * GC_same_obj_print_proc_t)(void * /* p */,
+                                                      void * /* q */);
 GC_API GC_ATTR_DEPRECATED GC_same_obj_print_proc_t GC_same_obj_print_proc;
 GC_API GC_ATTR_DEPRECATED GC_valid_ptr_print_proc_t
                                 GC_is_valid_displacement_print_proc;
@@ -1392,7 +1392,7 @@ typedef enum {
 /* object.  Invoked by the collector for all objects registered */
 /* for toggle-ref processing.  Invoked with the allocation lock */
 /* held (but the "world" is running).                           */
-typedef GC_ToggleRefStatus (GC_CALLBACK *GC_toggleref_func)(void * /* obj */);
+typedef GC_ToggleRefStatus (GC_CALLBACK * GC_toggleref_func)(void * /* obj */);
 
 /* Set (register) a callback that decides the state of a given  */
 /* object (by, probably, inspecting its native state).          */

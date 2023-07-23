@@ -157,12 +157,11 @@
 #endif
 
 #define CHECK_GCLIB_VERSION \
-            if (GC_get_version() != ((GC_VERSION_MAJOR<<16) \
-                                    | (GC_VERSION_MINOR<<8) \
-                                    | GC_VERSION_MICRO)) { \
-              GC_printf("libgc version mismatch\n"); \
-              exit(1); \
-            }
+    if (GC_get_version() != (((GC_VERSION_VAL_T)GC_VERSION_MAJOR << 16) \
+                             | (GC_VERSION_MINOR << 8) | GC_VERSION_MICRO)) { \
+      GC_printf("libgc version mismatch\n"); \
+      exit(1); \
+    }
 
 /* Call GC_INIT only on platforms on which we think we really need it,  */
 /* so that we can test automatic initialization on the rest.            */

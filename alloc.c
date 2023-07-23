@@ -142,16 +142,18 @@ STATIC word GC_used_heap_size_after_full = 0;
 /* gc.h, which is included by gc_priv.h.                                */
 #ifndef GC_NO_VERSION_VAR
   EXTERN_C_BEGIN
-  extern const unsigned GC_version;
+  extern const GC_VERSION_VAL_T GC_version;
   EXTERN_C_END
-  const unsigned GC_version = ((GC_VERSION_MAJOR << 16) |
-                        (GC_VERSION_MINOR << 8) | GC_VERSION_MICRO);
+
+  const GC_VERSION_VAL_T GC_version =
+                ((GC_VERSION_VAL_T)GC_VERSION_MAJOR << 16)
+                | (GC_VERSION_MINOR << 8) | GC_VERSION_MICRO;
 #endif
 
-GC_API unsigned GC_CALL GC_get_version(void)
+GC_API GC_VERSION_VAL_T GC_CALL GC_get_version(void)
 {
-  return (GC_VERSION_MAJOR << 16) | (GC_VERSION_MINOR << 8) |
-          GC_VERSION_MICRO;
+  return ((GC_VERSION_VAL_T)GC_VERSION_MAJOR << 16)
+         | (GC_VERSION_MINOR << 8) | GC_VERSION_MICRO;
 }
 
 /* some more variables */
