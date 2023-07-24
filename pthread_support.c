@@ -109,7 +109,7 @@
 #   define REAL_FUNC(f) __real_##f
     int REAL_FUNC(pthread_create)(pthread_t *,
                                   GC_PTHREAD_CREATE_CONST pthread_attr_t *,
-                                  void *(*start_routine)(void *), void *);
+                                  void * (*start_routine)(void *), void *);
     int REAL_FUNC(pthread_join)(pthread_t, void **);
     int REAL_FUNC(pthread_detach)(pthread_t);
 #   ifndef GC_NO_PTHREAD_SIGMASK
@@ -129,24 +129,24 @@
     /* In that way plain calls work, as do calls from files that    */
     /* included gc.h, which redefined f to GC_f.                    */
     /* FIXME: Needs work for DARWIN and True64 (OSF1) */
-    typedef int (* GC_pthread_create_t)(pthread_t *,
+    typedef int (*GC_pthread_create_t)(pthread_t *,
                                 GC_PTHREAD_CREATE_CONST pthread_attr_t *,
-                                void *(*)(void *), void *);
+                                void * (*)(void *), void *);
     static GC_pthread_create_t REAL_FUNC(pthread_create);
 #   ifndef GC_NO_PTHREAD_SIGMASK
-      typedef int (* GC_pthread_sigmask_t)(int, const sigset_t *, sigset_t *);
+      typedef int (*GC_pthread_sigmask_t)(int, const sigset_t *, sigset_t *);
       static GC_pthread_sigmask_t REAL_FUNC(pthread_sigmask);
 #   endif
-    typedef int (* GC_pthread_join_t)(pthread_t, void **);
+    typedef int (*GC_pthread_join_t)(pthread_t, void **);
     static GC_pthread_join_t REAL_FUNC(pthread_join);
-    typedef int (* GC_pthread_detach_t)(pthread_t);
+    typedef int (*GC_pthread_detach_t)(pthread_t);
     static GC_pthread_detach_t REAL_FUNC(pthread_detach);
 #   ifndef GC_NO_PTHREAD_CANCEL
-      typedef int (* GC_pthread_cancel_t)(pthread_t);
+      typedef int (*GC_pthread_cancel_t)(pthread_t);
       static GC_pthread_cancel_t REAL_FUNC(pthread_cancel);
 #   endif
 #   ifdef GC_HAVE_PTHREAD_EXIT
-      typedef void (* GC_pthread_exit_t)(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
+      typedef void (*GC_pthread_exit_t)(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
       static GC_pthread_exit_t REAL_FUNC(pthread_exit);
 #   endif
 # else
@@ -2702,8 +2702,9 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
             if (i > 24) i = 24;
                         /* Don't wait for more than about 15 ms,        */
                         /* even under extreme contention.               */
+
             ts.tv_sec = 0;
-            ts.tv_nsec = 1 << i;
+            ts.tv_nsec = (unsigned32)1 << i;
             nanosleep(&ts, 0);
         }
     }

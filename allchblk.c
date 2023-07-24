@@ -277,16 +277,16 @@ static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
       if (byte_sz > MAXOBJBYTES) {
         hhdr -> hb_inv_sz = LARGE_INV_SZ;
       } else {
-        word inv_sz;
+        unsigned32 inv_sz;
 
-#       if CPP_WORDSZ == 64
-          inv_sz = ((word)1 << 32)/byte_sz;
-          if (((inv_sz*byte_sz) >> 32) == 0) ++inv_sz;
-#       else  /* 32 bit words */
-          GC_ASSERT(byte_sz >= 4);
-          inv_sz = ((unsigned)1 << 31)/byte_sz;
-          inv_sz *= 2;
-          while (inv_sz*byte_sz > byte_sz) ++inv_sz;
+        GC_ASSERT(byte_sz > 1);
+#       if CPP_WORDSZ > 32
+          inv_sz = (unsigned32)(((word)1 << 32) / byte_sz);
+          if (((inv_sz * (word)byte_sz) >> 32) == 0) ++inv_sz;
+#       else
+          inv_sz = (((unsigned32)1 << 31) / byte_sz) << 1;
+          while ((inv_sz * byte_sz) > byte_sz)
+            inv_sz++;
 #       endif
 #       ifdef INV_SZ_COMPUTATION_CHECK
           GC_ASSERT(((1ULL << 32) + byte_sz - 1) / byte_sz == inv_sz);

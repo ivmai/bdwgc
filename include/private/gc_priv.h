@@ -85,7 +85,6 @@
 
 typedef GC_word word;
 typedef GC_signed_word signed_word;
-typedef unsigned int unsigned32;
 
 typedef int GC_bool;
 #define TRUE 1
@@ -182,6 +181,8 @@ typedef int GC_bool;
 #else
 # define GC_ATTR_WORD_ALIGNED /* empty */
 #endif
+
+typedef unsigned int unsigned32;
 
 #ifndef HEADERS_H
 # include "gc_hdrs.h"
@@ -1150,7 +1151,7 @@ struct hblkhdr {
       unsigned32 hb_inv_sz;     /* A good upper bound for 2**32/hb_sz.  */
                                 /* For large objects, we use            */
                                 /* LARGE_INV_SZ.                        */
-#     define LARGE_INV_SZ (1 << 16)
+#     define LARGE_INV_SZ ((unsigned32)1 << 16)
 #   endif
     word hb_sz; /* If in use, size in bytes, of objects in the block.   */
                 /* if free, the size in bytes of the whole block.       */
@@ -2484,16 +2485,16 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
 #   define GC_RAND_NEXT(pseed) GC_rand_next(pseed)
     GC_INLINE int GC_rand_next(GC_RAND_STATE_T *pseed)
     {
-      AO_t next = (AO_t)((AO_load(pseed) * 1103515245U + 12345)
-                         & (unsigned)GC_RAND_MAX);
+      AO_t next = (AO_t)((AO_load(pseed) * (unsigned32)1103515245UL + 12345)
+                         & (unsigned32)((unsigned)GC_RAND_MAX));
       AO_store(pseed, next);
       return (int)next;
     }
 #else
-#   define GC_RAND_STATE_T unsigned
+#   define GC_RAND_STATE_T unsigned32
 #   define GC_RAND_NEXT(pseed) /* overflow and race are OK */ \
-                (int)(*(pseed) = (*(pseed) * 1103515245U + 12345) \
-                                 & (unsigned)GC_RAND_MAX)
+        (int)(*(pseed) = (*(pseed) * (unsigned32)1103515245UL + 12345) \
+                         & (unsigned32)((unsigned)GC_RAND_MAX))
 #endif
 
 GC_EXTERN GC_bool GC_print_back_height;

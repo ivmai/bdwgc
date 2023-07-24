@@ -40,7 +40,7 @@ GC_INLINE void GC_usleep(unsigned us)
       struct timespec ts;
 
       ts.tv_sec = 0;
-      ts.tv_nsec = us * 1000;
+      ts.tv_nsec = (unsigned32)us * 1000;
       /* This requires _POSIX_TIMERS feature. */
       (void)nanosleep(&ts, NULL);
 #   else
@@ -511,7 +511,7 @@ static void resend_lost_signals_retry(int n_live_threads,
     if (n_live_threads > 0 && clock_gettime(CLOCK_REALTIME, &ts) == 0) {
       int i;
 
-      TS_NSEC_ADD(ts, TIMEOUT_BEFORE_RESEND * 1000);
+      TS_NSEC_ADD(ts, TIMEOUT_BEFORE_RESEND * (unsigned32)1000);
       /* First, try to wait for the semaphore with some timeout.            */
       /* On failure, fallback to WAIT_UNIT pause and resend of the signal.  */
       for (i = 0; i < n_live_threads; i++) {

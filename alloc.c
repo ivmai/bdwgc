@@ -66,8 +66,8 @@ word GC_gc_no = 0;
 #ifndef NO_CLOCK
   static unsigned long full_gc_total_time = 0; /* in ms, may wrap */
   static unsigned long stopped_mark_total_time = 0;
-  static unsigned full_gc_total_ns_frac = 0; /* fraction of 1 ms */
-  static unsigned stopped_mark_total_ns_frac = 0;
+  static unsigned32 full_gc_total_ns_frac = 0; /* fraction of 1 ms */
+  static unsigned32 stopped_mark_total_ns_frac = 0;
   static GC_bool measure_performance = FALSE;
                 /* Do performance measurements if set to true (e.g.,    */
                 /* accumulation of the total time of full collections). */
@@ -624,10 +624,10 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
         ns_frac_diff = NS_FRAC_TIME_DIFF(current_time, start_time);
         if (measure_performance) {
           full_gc_total_time += time_diff; /* may wrap */
-          full_gc_total_ns_frac += (unsigned)ns_frac_diff;
-          if (full_gc_total_ns_frac >= 1000000U) {
+          full_gc_total_ns_frac += (unsigned32)ns_frac_diff;
+          if (full_gc_total_ns_frac >= (unsigned32)1000000UL) {
             /* Overflow of the nanoseconds part. */
-            full_gc_total_ns_frac -= 1000000U;
+            full_gc_total_ns_frac -= (unsigned32)1000000UL;
             full_gc_total_time++;
           }
         }
@@ -939,9 +939,9 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         ns_frac_diff = NS_FRAC_TIME_DIFF(current_time, start_time);
         if (measure_performance) {
           stopped_mark_total_time += time_diff; /* may wrap */
-          stopped_mark_total_ns_frac += (unsigned)ns_frac_diff;
-          if (stopped_mark_total_ns_frac >= 1000000U) {
-            stopped_mark_total_ns_frac -= 1000000U;
+          stopped_mark_total_ns_frac += (unsigned32)ns_frac_diff;
+          if (stopped_mark_total_ns_frac >= (unsigned32)1000000UL) {
+            stopped_mark_total_ns_frac -= (unsigned32)1000000UL;
             stopped_mark_total_time++;
           }
         }
