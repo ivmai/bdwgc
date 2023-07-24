@@ -33,12 +33,11 @@
 /* programmed defensively enough that this does not result in memory    */
 /* smashes.                                                             */
 
-typedef void (* oom_fn)(void);
+void (*CORD_oom_fn)(void) = 0;
 
-oom_fn CORD_oom_fn = (oom_fn) 0;
+# define OUT_OF_MEMORY { if (CORD_oom_fn != 0) (*CORD_oom_fn)(); \
+                         ABORT("Out of memory"); }
 
-# define OUT_OF_MEMORY {  if (CORD_oom_fn != (oom_fn) 0) (*CORD_oom_fn)(); \
-                          ABORT("Out of memory"); }
 # define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
 
     struct Concatenation {
@@ -323,7 +322,7 @@ static CordRep *CORD_from_fn_inner(CORD_fn fn, void * client_data, size_t len)
 
 CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len)
 {
-    return (/* const */ CORD) CORD_from_fn_inner(fn, client_data, len);
+    return (/* const */ CORD)CORD_from_fn_inner(fn, client_data, len);
 }
 
 size_t CORD_len(CORD x)
@@ -353,7 +352,7 @@ static char CORD_apply_access_fn(size_t i, void * client_data)
 
 /* A version of CORD_substr that simply returns a function node, thus   */
 /* postponing its work. The fourth argument is a function that may      */
-/* be used for efficient access to the ith character.                   */
+/* be used for efficient access to the i-th character.                  */
 /* Assumes i >= 0 and i + n < length(x).                                */
 static CORD CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
 {

@@ -57,10 +57,9 @@
 # define BUFSZ 2048     /* Size of stack allocated buffers when */
                         /* we want large buffers.               */
 
-typedef void (* oom_fn)(void);
-
-# define OUT_OF_MEMORY { if (CORD_oom_fn != (oom_fn) 0) (*CORD_oom_fn)(); \
+# define OUT_OF_MEMORY { if (CORD_oom_fn != 0) (*CORD_oom_fn)(); \
                          ABORT("Out of memory"); }
+
 # define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
 
 CORD CORD_cat_char(CORD x, char c)
@@ -477,7 +476,7 @@ CORD CORD_from_file_eager(FILE * f)
 typedef struct {
     size_t tag;
     char data[LINE_SZ];
-        /* data[i%LINE_SZ] = ith char in file if tag = i/LINE_SZ    */
+        /* data[i%LINE_SZ] is i-th char in file if tag is i/LINE_SZ */
 } cache_line;
 
 typedef struct {
