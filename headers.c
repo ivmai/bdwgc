@@ -121,9 +121,8 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
         GC_ASSERT(GC_page_size != 0);
         if (bytes >= MINHINCR * HBLKSIZE) {
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
-            result = (ptr_t)GET_MEM(bytes_to_get);
+            result = GC_os_get_mem(bytes_to_get);
             if (result != NULL) {
-              GC_add_to_our_memory(result, bytes_to_get);
               /* No update of scratch free area pointer;        */
               /* get memory directly.                           */
 #             ifdef USE_SCRATCH_LAST_END_PTR
@@ -137,14 +136,13 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
 
         bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(MINHINCR * HBLKSIZE);
                                                 /* round up for safety */
-        result = (ptr_t)GET_MEM(bytes_to_get);
+        result = GC_os_get_mem(bytes_to_get);
         if (EXPECT(NULL == result, FALSE)) {
             WARN("Out of memory - trying to allocate requested amount"
                  " (%" WARN_PRIuPTR " bytes)...\n", bytes);
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
-            result = (ptr_t)GET_MEM(bytes_to_get);
+            result = GC_os_get_mem(bytes_to_get);
             if (result != NULL) {
-              GC_add_to_our_memory(result, bytes_to_get);
 #             ifdef USE_SCRATCH_LAST_END_PTR
                 GC_scratch_last_end_ptr = result + bytes;
 #             endif
@@ -152,7 +150,6 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             return result;
         }
 
-        GC_add_to_our_memory(result, bytes_to_get);
         /* TODO: some amount of unallocated space may remain unused forever */
         /* Update scratch area pointers and retry.      */
         GC_scratch_free_ptr = result;

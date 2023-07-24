@@ -887,10 +887,9 @@ GC_INNER void GC_wait_for_markers_init(void)
                 ROUNDUP_PAGESIZE_IF_MMAP(LOCAL_MARK_STACK_SIZE * sizeof(mse));
 
     GC_ASSERT(GC_page_size != 0);
-    GC_main_local_mark_stack = (mse *)GET_MEM(bytes_to_get);
+    GC_main_local_mark_stack = (mse *)GC_os_get_mem(bytes_to_get);
     if (NULL == GC_main_local_mark_stack)
       ABORT("Insufficient memory for main local_mark_stack");
-    GC_add_to_our_memory((ptr_t)GC_main_local_mark_stack, bytes_to_get);
   }
 
   /* Reuse marker lock and builders count to synchronize        */

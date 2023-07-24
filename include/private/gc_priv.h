@@ -2410,13 +2410,10 @@ GC_INNER void GC_remove_counts(struct hblk * h, size_t sz);
                                 /* Remove forwarding counts for h.      */
 GC_INNER hdr * GC_find_header(ptr_t h);
 
-#ifdef USE_PROC_FOR_LIBRARIES
-  GC_INNER void GC_add_to_our_memory(ptr_t p, size_t bytes);
-                        /* Add a chunk to GC_our_memory.        */
-#else
-# define GC_add_to_our_memory(p, bytes) \
-                (GC_our_mem_bytes += (bytes), (void)(p))
-#endif
+GC_INNER ptr_t GC_os_get_mem(size_t bytes);
+                        /* Get HBLKSIZE-aligned heap memory chunk from  */
+                        /* the OS and add the chunk to GC_our_memory.   */
+                        /* Return NULL if out of memory.                */
 
 GC_INNER void GC_print_all_errors(void);
                         /* Print smashed and leaked objects, if any.    */

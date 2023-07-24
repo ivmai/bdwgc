@@ -1346,20 +1346,24 @@ GC_API void GC_CALL GC_gcollect_and_unmap(void)
     (void)GC_try_to_collect_general(GC_never_stop_func, TRUE);
 }
 
-#ifdef USE_PROC_FOR_LIBRARIES
-  /* Add HBLKSIZE aligned, GET_MEM-generated block to GC_our_memory. */
-  GC_INNER void GC_add_to_our_memory(ptr_t p, size_t bytes)
-  {
-    GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT(p != NULL);
+GC_INNER ptr_t GC_os_get_mem(size_t bytes)
+{
+  struct hblk *space = GET_MEM(bytes); /* HBLKSIZE-aligned */
+
+  GC_ASSERT(I_HOLD_LOCK());
+  if (EXPECT(NULL == space, FALSE)) return NULL;
+# ifdef USE_PROC_FOR_LIBRARIES
+    /* Add HBLKSIZE aligned, GET_MEM-generated block to GC_our_memory. */
     if (GC_n_memory >= MAX_HEAP_SECTS)
       ABORT("Too many GC-allocated memory sections: Increase MAX_HEAP_SECTS");
-    GC_our_memory[GC_n_memory].hs_start = p;
+    GC_our_memory[GC_n_memory].hs_start = (ptr_t)space;
     GC_our_memory[GC_n_memory].hs_bytes = bytes;
     GC_n_memory++;
-    GC_our_mem_bytes += bytes;
-  }
-#endif
+# endif
+  GC_our_mem_bytes += bytes;
+  GC_VERBOSE_LOG_PRINTF("Got %lu bytes from OS\n", (unsigned long)bytes);
+  return (ptr_t)space;
+}
 
 /* Use the chunk of memory starting at p of size bytes as part of the heap. */
 /* Assumes p is HBLKSIZE aligned, bytes argument is a multiple of HBLKSIZE. */
@@ -1566,12 +1570,11 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
         /* Exceeded self-imposed limit */
         return FALSE;
     }
-    space = GET_MEM(bytes);
+    space = (struct hblk *)GC_os_get_mem(bytes);
     if (EXPECT(NULL == space, FALSE)) {
         WARN("Failed to expand heap by %" WARN_PRIuPTR " KiB\n", bytes >> 10);
         return FALSE;
     }
-    GC_add_to_our_memory((ptr_t)space, bytes);
     GC_last_heap_growth_gc_no = GC_gc_no;
     GC_INFOLOG_PRINTF("Grow heap to %lu KiB after %lu bytes allocated\n",
                       TO_KiB_UL(GC_heapsize + bytes),

@@ -90,10 +90,9 @@ static back_edges * new_back_edges(void)
                                                    * sizeof(back_edges));
 
     GC_ASSERT(GC_page_size != 0);
-    back_edge_space = (back_edges *)GET_MEM(bytes_to_get);
+    back_edge_space = (back_edges *)GC_os_get_mem(bytes_to_get);
     if (NULL == back_edge_space)
       ABORT("Insufficient memory for back edges");
-    GC_add_to_our_memory((ptr_t)back_edge_space, bytes_to_get);
   }
   if (0 != avail_back_edges) {
     back_edges * result = avail_back_edges;
@@ -139,18 +138,15 @@ static void push_in_progress(ptr_t p)
                                                         * sizeof(ptr_t))
                                 / sizeof(ptr_t);
       new_in_progress_space =
-                        (ptr_t *)GET_MEM(in_progress_size * sizeof(ptr_t));
+                (ptr_t *)GC_os_get_mem(in_progress_size * sizeof(ptr_t));
     } else {
       in_progress_size *= 2;
-      new_in_progress_space = (ptr_t *)
-                                GET_MEM(in_progress_size * sizeof(ptr_t));
+      new_in_progress_space =
+                (ptr_t *)GC_os_get_mem(in_progress_size * sizeof(ptr_t));
       if (new_in_progress_space != NULL)
         BCOPY(in_progress_space, new_in_progress_space,
               n_in_progress * sizeof(ptr_t));
     }
-    if (EXPECT(new_in_progress_space != NULL, TRUE))
-      GC_add_to_our_memory((ptr_t)new_in_progress_space,
-                           in_progress_size * sizeof(ptr_t));
 #   ifndef GWW_VDB
       GC_scratch_recycle_no_gww(in_progress_space,
                                 n_in_progress * sizeof(ptr_t));
