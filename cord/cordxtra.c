@@ -469,8 +469,10 @@ CORD CORD_from_file_eager(FILE * f)
 /* place.                                                               */
 
 # define LOG_CACHE_SZ 14
-# define CACHE_SZ (1 << LOG_CACHE_SZ)
 # define LOG_LINE_SZ 9
+# define LAZY_THRESHOLD (128*1024L+1)
+
+# define CACHE_SZ (1 << LOG_CACHE_SZ)
 # define LINE_SZ (1 << LOG_LINE_SZ)
 
 typedef struct {
@@ -594,8 +596,6 @@ CORD CORD_from_file_lazy(FILE * f)
     }
     return CORD_from_file_lazy_inner(f, (size_t)len);
 }
-
-# define LAZY_THRESHOLD (128*1024 + 1)
 
 CORD CORD_from_file(FILE * f)
 {
