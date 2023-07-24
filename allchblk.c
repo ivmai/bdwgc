@@ -288,7 +288,7 @@ static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
           while ((inv_sz * byte_sz) > byte_sz)
             inv_sz++;
 #       endif
-#       ifdef INV_SZ_COMPUTATION_CHECK
+#       if (CPP_WORDSZ == 32) && defined(__GNUC__)
           GC_ASSERT(((1ULL << 32) + byte_sz - 1) / byte_sz == inv_sz);
 #       endif
         hhdr -> hb_inv_sz = inv_sz;
