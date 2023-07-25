@@ -16,8 +16,9 @@
  * This started as the generic Windows application template
  * but significant parts didn't survive to the final version.
  */
-#if defined(__BORLANDC__) || defined(__CYGWIN__) || defined(__MINGW32__) \
-    || defined(__NT__) || defined(_WIN32) || defined(WIN32)
+#if defined(__CYGWIN__) || defined(__MINGW32__) \
+    || (defined(__NT__) && defined(__386__)) || defined(_WIN32) \
+    || defined(WIN32)
 
 #ifndef WIN32_LEAN_AND_MEAN
 # define WIN32_LEAN_AND_MEAN 1

@@ -377,7 +377,8 @@ EXTERN_C_BEGIN
 # else
 #   if ((defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300)) \
        || (defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__) \
-           && !defined(__INTERIX) && !defined(SYMBIAN))
+           && !defined(__INTERIX) && !defined(SYMBIAN)) \
+       || defined(__MINGW32__)
 #     if defined(__LP64__) || defined(_M_X64)
 #       define X86_64
 #     elif defined(_M_ARM)
@@ -426,12 +427,6 @@ EXTERN_C_BEGIN
 #   define INTERIX
 #   define mach_type_known
 # endif
-# if (defined(__BORLANDC__) || defined(__MINGW32__)) \
-     && !defined(mach_type_known)
-#   define I386
-#   define MSWIN32
-#   define mach_type_known
-# endif
 # if defined(_UTS) && !defined(mach_type_known)
 #   define S370
 #   define UTS4
@@ -452,16 +447,14 @@ EXTERN_C_BEGIN
 #   if !defined(OS2) && !defined(MSWIN32) && !defined(DOS4GW)
 #     if defined(__OS2__)
 #       define OS2
+#     elif defined(__WINDOWS_386__) || defined(__NT__)
+#       define MSWIN32
 #     else
-#       if defined(__WINDOWS_386__) || defined(__NT__)
-#         define MSWIN32
-#       else
-#         define DOS4GW
-#       endif
+#       define DOS4GW
 #     endif
 #   endif
 #   define mach_type_known
-# endif /* __WATCOMC__ */
+# endif /* __WATCOMC__ && __386__ */
 # if defined(__GNU__) && defined(__i386__)
     /* The Debian Hurd running on generic PC */
 #   define HURD
