@@ -12,7 +12,6 @@
  */
 
 #include "windows.h"
-#include "de_cmds.h"
 #include "de_win.h"
 
 ABOUTBOX DIALOG 19, 21, 163, 47

@@ -33,7 +33,7 @@
 #include "gc/cord.h"
 
 #ifdef THINK_C
-#define MACINTOSH
+# define MACINTOSH
 #endif
 #include <ctype.h>
 
@@ -171,11 +171,11 @@ static void add_map(int line_arg, size_t pos)
     current_map_size++;
 }
 
-/* Return position of column *c of ith line in   */
-/* current file. Adjust *c to be within the line.*/
-/* A 0 pointer is taken as 0 column.             */
-/* Returns CORD_NOT_FOUND if i is too big.       */
-/* Assumes i > dis_line.                         */
+/* Return position of column *c of i-th line in */
+/* the current file.  Adjust *c to be within    */
+/* the line.  A 0 pointer is taken as 0 column. */
+/* Returns CORD_NOT_FOUND if i is too big.      */
+/* Assumes i > dis_line.                        */
 static size_t line_pos(int i, int *c)
 {
     int j;
@@ -230,12 +230,12 @@ static void del_hist(void)
 CORD * screen = 0;
 int screen_size = 0;
 
-# ifndef WIN32
-/* Replace a line in the curses stdscr. All control characters are      */
-/* displayed as upper case characters in standout mode.  This isn't     */
-/* terribly appropriate for tabs.                                       */
-static void replace_line(int i, CORD s)
-{
+#ifndef WIN32
+  /* Replace a line in the curses stdscr.  All control characters are   */
+  /* displayed as upper case characters in standout mode.  This is not  */
+  /* terribly appropriate for tabs.                                     */
+  static void replace_line(int i, CORD s)
+  {
 #   if !defined(MACINTOSH)
         size_t len = CORD_len(s);
 #   endif
@@ -267,7 +267,7 @@ static void replace_line(int i, CORD s)
         }
         GC_PTR_STORE_AND_DIRTY(screen + i, s);
     }
-}
+  }
 #else
 # define replace_line(i,s) invalidate_line(i)
 #endif
@@ -290,7 +290,7 @@ static CORD retrieve_line(CORD s, size_t pos, unsigned column)
 # ifdef WIN32
 #   define refresh() /* Empty */
 
-    CORD retrieve_screen_line(int i)
+    const void *retrieve_screen_line(int i)
     {
         size_t pos;
 
@@ -342,12 +342,13 @@ static void normalize_display(void)
     }
 }
 
-# if defined(WIN32)
-# elif defined(MACINTOSH)
-#               define move_cursor(x,y) cgotoxy(x + 1, y + 1, stdout)
-# else
-#               define move_cursor(x,y) move(y,x)
-# endif
+#if defined(WIN32)
+    /* Defined in de_win.c. */
+#elif defined(MACINTOSH)
+#   define move_cursor(x, y) cgotoxy(x + 1, y + 1, stdout)
+#else
+#   define move_cursor(x, y) move(y, x)
+#endif
 
 /* Adjust display so that cursor is visible; move cursor into position  */
 /* Update screen if necessary.                                          */
@@ -358,7 +359,7 @@ static void fix_cursor(void)
     move_cursor(col - dis_col, line - dis_line);
     refresh();
 #   ifndef WIN32
-      fflush(stdout);
+        fflush(stdout);
 #   endif
 }
 
@@ -462,12 +463,15 @@ void do_command(int c)
         return;
     }
     if (c == REPEAT) {
-        repeat_count = BARE_PREFIX; return;
-    } else if (c < 0x100 && isdigit(c)){
+        repeat_count = BARE_PREFIX;
+        return;
+    } else if (c < 0x100 && isdigit(c)) {
         if (repeat_count == BARE_PREFIX) {
-          repeat_count = c - '0'; return;
+            repeat_count = c - '0';
+            return;
         } else if (repeat_count != NO_PREFIX) {
-          repeat_count = 10 * repeat_count + c - '0'; return;
+            repeat_count = 10 * repeat_count + c - '0';
+            return;
         }
     }
     if (repeat_count == NO_PREFIX) repeat_count = 1;

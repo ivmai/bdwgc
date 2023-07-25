@@ -12,8 +12,7 @@
  */
 
 #ifndef DE_CMDS_H
-
-# define DE_CMDS_H
+#define DE_CMDS_H
 
 # define UP     16      /* ^P */
 # define DOWN   14      /* ^N */
@@ -36,4 +35,4 @@ void do_command(int);
 void generic_init(void);
                         /* OS independent initialization.       */
 
-#endif
+#endif /* DE_CMDS_H */

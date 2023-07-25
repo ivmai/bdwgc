@@ -11,13 +11,16 @@
  * modified is included with the above copyright notice.
  */
 
-/* cord.h, de_cmds.h, and windows.h should be included before this. */
+#ifndef DE_WIN_H
+#define DE_WIN_H
 
-# define OTHER_FLAG     0x100
-# define EDIT_CMD_FLAG  0x200
-# define REPEAT_FLAG    0x400
+#include "de_cmds.h"
 
-# define CHAR_CMD(i) ((i) & 0xff)
+#define OTHER_FLAG      0x100
+#define EDIT_CMD_FLAG   0x200
+#define REPEAT_FLAG     0x400
+
+#define CHAR_CMD(i) ((i) & 0xff)
 
 /* MENU: DE */
 #define IDM_FILESAVE            (EDIT_CMD_FLAG + WRITE)
@@ -45,12 +48,10 @@ extern int COLS;
 /* File being edited.   */
 extern char * arg_file_name;
 
-/*
- *  Calls from de_win.c to de.c
- */
+/* Calls from de_win.c to de.c. */
 
-CORD retrieve_screen_line(int i);
-                        /* Get the contents of i'th screen line.        */
+const void *retrieve_screen_line(int i);
+                        /* Get the contents (CORD) of i-th screen line. */
                         /* Relies on COLS.                              */
 
 void set_position(int x, int y);
@@ -69,3 +70,5 @@ void invalidate_line(int line);
 
 void de_error(const char *s);
                         /* Display error message.       */
+
+#endif /* DE_WIN_H */

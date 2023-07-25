@@ -27,7 +27,7 @@
 
 #include "gc.h"
 #include "gc/cord.h"
-#include "de_cmds.h"
+
 #include "de_win.h"
 
 int LINES = 0;
@@ -47,8 +47,8 @@ void de_error(const char *s)
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
                                 WPARAM wParam, LPARAM lParam);
 
-int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                      LPSTR command_line, int nCmdShow)
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+                     LPSTR command_line, int nCmdShow)
 {
     MSG         msg;
     WNDCLASS    wndclass;
@@ -57,10 +57,10 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
     GC_set_find_leak(0);
     GC_INIT();
 #   ifndef NO_INCREMENTAL
-     GC_enable_incremental();
+        GC_enable_incremental();
 #   endif
 #   if defined(CPPCHECK)
-     GC_noop1((GC_word)&WinMain);
+        GC_noop1((GC_word)&WinMain);
 #   endif
 
     if (!hPrevInstance)
@@ -108,17 +108,15 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
         return 0;
     }
 
-    ShowWindow (hwnd, nCmdShow);
+    ShowWindow(hwnd, nCmdShow);
 
-    hAccel = LoadAccelerators( hInstance, szAppName );
+    hAccel = LoadAccelerators(hInstance, szAppName);
 
-    while (GetMessage (&msg, NULL, 0, 0))
-    {
-      if( !TranslateAccelerator( hwnd, hAccel, &msg ) )
-      {
-         TranslateMessage (&msg);
-         DispatchMessage (&msg);
-      }
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        if (!TranslateAccelerator(hwnd, hAccel, &msg)) {
+            TranslateMessage(&msg);
+            DispatchMessage (&msg);
+        }
     }
     return (int)msg.wParam;
 }
@@ -180,167 +178,160 @@ static void update_cursor(void);
 static INT_PTR CALLBACK AboutBoxCallback(HWND hDlg, UINT message,
                                          WPARAM wParam, LPARAM lParam)
 {
-   (void)lParam;
-   switch( message )
-   {
-      case WM_INITDIALOG:
-           SetFocus( GetDlgItem( hDlg, IDOK ) );
-           break;
+    (void)lParam;
+    switch (message) {
+    case WM_INITDIALOG:
+        SetFocus(GetDlgItem(hDlg, IDOK));
+        break;
 
-      case WM_COMMAND:
-           switch( wParam )
-           {
-              case IDOK:
-                   EndDialog( hDlg, TRUE );
-                   break;
-           }
-           break;
+    case WM_COMMAND:
+        switch (wParam) {
+        case IDOK:
+            EndDialog(hDlg, TRUE);
+            break;
+        }
+        break;
 
-      case WM_CLOSE:
-           EndDialog( hDlg, TRUE );
-           return TRUE;
-
-   }
-   return FALSE;
+    case WM_CLOSE:
+        EndDialog(hDlg, TRUE);
+        return TRUE;
+    }
+    return FALSE;
 }
 
 static LRESULT CALLBACK WndProc(HWND hwnd_arg, UINT message,
                                 WPARAM wParam, LPARAM lParam)
 {
-   static HINSTANCE hInstance;
-   HDC dc;
-   PAINTSTRUCT ps;
-   RECT client_area;
-   RECT this_line;
-   RECT dummy;
-   TEXTMETRIC tm;
-   int i;
-   int id;
+    static HINSTANCE hInstance;
+    HDC dc;
+    PAINTSTRUCT ps;
+    RECT client_area;
+    RECT this_line;
+    RECT dummy;
+    TEXTMETRIC tm;
+    int i;
+    int id;
 
-   switch (message)
-   {
-      case WM_CREATE:
-           hInstance = ( (LPCREATESTRUCT) lParam)->hInstance;
-           dc = GetDC(hwnd_arg);
-           SelectObject(dc, GetStockObject(SYSTEM_FIXED_FONT));
-           GetTextMetrics(dc, &tm);
-           ReleaseDC(hwnd_arg, dc);
-           char_width = tm.tmAveCharWidth;
-           char_height = tm.tmHeight + tm.tmExternalLeading;
-           GetClientRect(hwnd_arg, &client_area);
-           COLS = (client_area.right - client_area.left)/char_width;
-           LINES = (client_area.bottom - client_area.top)/char_height;
-           generic_init();
-           return 0;
+    switch (message) {
+    case WM_CREATE:
+        hInstance = ((LPCREATESTRUCT)lParam)->hInstance;
+        dc = GetDC(hwnd_arg);
+        SelectObject(dc, GetStockObject(SYSTEM_FIXED_FONT));
+        GetTextMetrics(dc, &tm);
+        ReleaseDC(hwnd_arg, dc);
+        char_width = tm.tmAveCharWidth;
+        char_height = tm.tmHeight + tm.tmExternalLeading;
+        GetClientRect(hwnd_arg, &client_area);
+        COLS = (client_area.right - client_area.left)/char_width;
+        LINES = (client_area.bottom - client_area.top)/char_height;
+        generic_init();
+        return 0;
 
-      case WM_CHAR:
-           if (wParam == QUIT) {
-               SendMessage(hwnd_arg, WM_CLOSE, 0, 0L);
-           } else {
-               do_command((int)wParam);
-           }
-           return 0;
+    case WM_CHAR:
+        if (wParam == QUIT) {
+            SendMessage(hwnd_arg, WM_CLOSE, 0, 0L);
+        } else {
+            do_command((int)wParam);
+        }
+        return 0;
 
-      case WM_SETFOCUS:
-           CreateCaret(hwnd_arg, NULL, char_width, char_height);
-           ShowCaret(hwnd_arg);
-           caret_visible = 1;
-           update_cursor();
-           return 0;
+    case WM_SETFOCUS:
+        CreateCaret(hwnd_arg, NULL, char_width, char_height);
+        ShowCaret(hwnd_arg);
+        caret_visible = 1;
+        update_cursor();
+        return 0;
 
-      case WM_KILLFOCUS:
-           HideCaret(hwnd_arg);
-           DestroyCaret();
-           caret_visible = 0;
-           return 0;
+    case WM_KILLFOCUS:
+        HideCaret(hwnd_arg);
+        DestroyCaret();
+        caret_visible = 0;
+        return 0;
 
-      case WM_LBUTTONUP:
-           {
-               unsigned xpos = LOWORD(lParam);  /* From left    */
-               unsigned ypos = HIWORD(lParam);  /* from top */
+    case WM_LBUTTONUP:
+        {
+            unsigned xpos = LOWORD(lParam); /* from left */
+            unsigned ypos = HIWORD(lParam); /* from top */
 
-               set_position(xpos / (unsigned)char_width,
-                            ypos / (unsigned)char_height);
-               return 0;
-           }
+            set_position(xpos / (unsigned)char_width,
+                         ypos / (unsigned)char_height);
+        }
+        return 0;
 
-      case WM_COMMAND:
-           id = LOWORD(wParam);
-           if (id & EDIT_CMD_FLAG) {
-               if (id & REPEAT_FLAG) do_command(REPEAT);
-               do_command(CHAR_CMD(id));
-               return 0;
-           } else {
-             switch(id) {
-               case IDM_FILEEXIT:
-                  SendMessage(hwnd_arg, WM_CLOSE, 0, 0L);
-                  return 0;
+    case WM_COMMAND:
+        id = LOWORD(wParam);
+        if (id & EDIT_CMD_FLAG) {
+            if (id & REPEAT_FLAG) do_command(REPEAT);
+            do_command(CHAR_CMD(id));
+            return 0;
+        }
+        switch (id) {
+        case IDM_FILEEXIT:
+            SendMessage(hwnd_arg, WM_CLOSE, 0, 0L);
+            return 0;
+        case IDM_HELPABOUT:
+            if (DialogBox(hInstance, TEXT("ABOUTBOX"),
+                          hwnd_arg, AboutBoxCallback)) {
+                InvalidateRect(hwnd_arg, NULL, TRUE);
+            }
+            return 0;
+        case IDM_HELPCONTENTS:
+            de_error("Cursor keys: ^B(left) ^F(right) ^P(up) ^N(down)\n"
+                     "Undo: ^U    Write: ^W   Quit:^D  Repeat count: ^R[n]\n"
+                     "Top: ^T   Locate (search, find): ^L text ^L\n");
+            return 0;
+        }
+        break;
 
-               case IDM_HELPABOUT:
-                  if( DialogBox( hInstance, TEXT("ABOUTBOX"),
-                                 hwnd_arg, AboutBoxCallback ) )
-                     InvalidateRect(hwnd_arg, NULL, TRUE);
-                  return 0;
-               case IDM_HELPCONTENTS:
-                  de_error(
-                       "Cursor keys: ^B(left) ^F(right) ^P(up) ^N(down)\n"
-                       "Undo: ^U    Write: ^W   Quit:^D  Repeat count: ^R[n]\n"
-                       "Top: ^T   Locate (search, find): ^L text ^L\n");
-                  return 0;
-             }
-           }
-           break;
+    case WM_CLOSE:
+        DestroyWindow(hwnd_arg);
+        return 0;
 
-      case WM_CLOSE:
-           DestroyWindow(hwnd_arg);
-           return 0;
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        GC_win32_free_heap();
+        return 0;
 
-      case WM_DESTROY:
-           PostQuitMessage (0);
-           GC_win32_free_heap();
-           return 0;
+    case WM_PAINT:
+        dc = BeginPaint(hwnd_arg, &ps);
+        GetClientRect(hwnd_arg, &client_area);
+        COLS = (client_area.right - client_area.left) / char_width;
+        LINES = (client_area.bottom - client_area.top) / char_height;
+        SelectObject(dc, GetStockObject(SYSTEM_FIXED_FONT));
+        for (i = 0; i < LINES; i++) {
+            get_line_rect(i, client_area.right, &this_line);
+            if (IntersectRect(&dummy, &this_line, &ps.rcPaint)) {
+                CORD raw_line = (CORD)retrieve_screen_line(i);
+                size_t len = CORD_len(raw_line);
+                char * text = CORD_to_char_star(raw_line);
+                             /* May contain embedded NULLs   */
+                char * plain = plain_chars(text, len);
+                char * blanks = CORD_to_char_star(CORD_chars(' ',
+                                                             COLS - len));
+                char * control = control_chars(text, len);
+                if (NULL == plain || NULL == control)
+                    de_error("Out of memory!");
 
-      case WM_PAINT:
-           dc = BeginPaint(hwnd_arg, &ps);
-           GetClientRect(hwnd_arg, &client_area);
-           COLS = (client_area.right - client_area.left)/char_width;
-           LINES = (client_area.bottom - client_area.top)/char_height;
-           SelectObject(dc, GetStockObject(SYSTEM_FIXED_FONT));
-           for (i = 0; i < LINES; i++) {
-               get_line_rect(i, client_area.right, &this_line);
-               if (IntersectRect(&dummy, &this_line, &ps.rcPaint)) {
-                   CORD raw_line = retrieve_screen_line(i);
-                   size_t len = CORD_len(raw_line);
-                   char * text = CORD_to_char_star(raw_line);
-                                /* May contain embedded NULLs   */
-                   char * plain = plain_chars(text, len);
-                   char * blanks = CORD_to_char_star(CORD_chars(' ',
-                                                                COLS - len));
-                   char * control = control_chars(text, len);
-                   if (NULL == plain || NULL == control)
-                       de_error("Out of memory!");
+#               define RED RGB(255,0,0)
 
-#                  define RED RGB(255,0,0)
+                SetBkMode(dc, OPAQUE);
+                SetTextColor(dc, GetSysColor(COLOR_WINDOWTEXT));
 
-                   SetBkMode(dc, OPAQUE);
-                   SetTextColor(dc, GetSysColor(COLOR_WINDOWTEXT));
-
-                   if (plain != NULL)
-                       TextOutA(dc, this_line.left, this_line.top,
-                                plain, (int)len);
-                   TextOutA(dc, this_line.left + (int)len * char_width,
-                            this_line.top,
-                            blanks, (int)(COLS - len));
-                   SetBkMode(dc, TRANSPARENT);
-                   SetTextColor(dc, RED);
-                   if (control != NULL)
-                       TextOutA(dc, this_line.left, this_line.top,
-                                control, (int)strlen(control));
-               }
-           }
-           EndPaint(hwnd_arg, &ps);
-           screen_was_painted = 1;
-           return 0;
+                if (plain != NULL)
+                    TextOutA(dc, this_line.left, this_line.top,
+                             plain, (int)len);
+                TextOutA(dc, this_line.left + (int)len * char_width,
+                         this_line.top, blanks, (int)(COLS - len));
+                SetBkMode(dc, TRANSPARENT);
+                SetTextColor(dc, RED);
+                if (control != NULL)
+                    TextOutA(dc, this_line.left, this_line.top,
+                             control, (int)strlen(control));
+            }
+        }
+        EndPaint(hwnd_arg, &ps);
+        screen_was_painted = 1;
+        return 0;
    }
    return DefWindowProc(hwnd_arg, message, wParam, lParam);
 }
