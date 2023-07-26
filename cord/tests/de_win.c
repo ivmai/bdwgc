@@ -26,6 +26,8 @@
 #define NOSERVICE
 #include <windows.h>
 
+#include <ctype.h>
+
 #include "gc.h"
 #include "gc/cord.h"
 
