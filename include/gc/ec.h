@@ -60,7 +60,7 @@ typedef struct CORD_ec_struct {
 } CORD_ec[1];
 
 /* Flush the buffer part of the extended cord into ec_cord.     */
-void CORD_ec_flush_buf(CORD_ec);
+CORD_API void CORD_ec_flush_buf(CORD_ec);
 
 /* Convert an extensible cord to a cord. */
 #define CORD_ec_to_cord(x) (CORD_ec_flush_buf(x), (x)[0].ec_cord)
@@ -77,7 +77,7 @@ void CORD_ec_flush_buf(CORD_ec);
 
 /* Append a cord to an extensible cord.  Structure remains shared with  */
 /* original.                                                            */
-void CORD_ec_append_cord(CORD_ec, CORD);
+CORD_API void CORD_ec_append_cord(CORD_ec, CORD);
 
 #ifdef __cplusplus
   } /* extern "C" */
