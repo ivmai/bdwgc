@@ -38,11 +38,19 @@
 
 static int count;
 
+# define LOG_CORD_ITER_CNT 16
+# define SUBSTR_POS_BASE 1000
+# define PREPARE_CAT_COUNT 100
+
+#define CORD_ITER_CNT (1 << LOG_CORD_ITER_CNT)
+#define SMALL_SUBSTR_POS (1 << (LOG_CORD_ITER_CNT-6))
+#define BIG_SUBSTR_POS (SUBSTR_POS_BASE * 36)
+
 static int test_fn(char c, void * client_data)
 {
     if (client_data != (void *)(GC_word)13)
         ABORT("bad client data");
-    if (count < 64*1024+1) {
+    if (count < CORD_ITER_CNT + 1) {
         if ((count & 1) == 0) {
             if (c != 'b') ABORT("bad char");
         } else {
@@ -69,35 +77,35 @@ static void test_cord_x1(CORD x)
     CORD_pos p;
 
     count = 0;
-    if (CORD_iter5(x, 64*1024-1, test_fn, CORD_NO_FN,
+    if (CORD_iter5(x, CORD_ITER_CNT - 1, test_fn, CORD_NO_FN,
                    (void *)(GC_word)13) == 0) {
         ABORT("CORD_iter5 failed");
     }
-    if (count != 64*1024+2) ABORT("CORD_iter5 failed");
+    if (count != CORD_ITER_CNT + 2) ABORT("CORD_iter5 failed");
 
     count = 0;
-    CORD_set_pos(p, x, 64*1024-1);
+    CORD_set_pos(p, x, CORD_ITER_CNT - 1);
     while (CORD_pos_valid(p)) {
         (void)test_fn(CORD_pos_fetch(p), (void *)(GC_word)13);
         CORD_next(p);
     }
-    if (count != 64*1024+2) ABORT("Position based iteration failed");
+    if (count != CORD_ITER_CNT + 2) ABORT("Position based iteration failed");
 
-    y = CORD_substr(x, 1023, 5);
+    y = CORD_substr(x, SMALL_SUBSTR_POS - 1, 5);
 
     if (!y) ABORT("CORD_substr returned NULL");
     if (!CORD_IS_STRING(y)) ABORT("short cord should usually be a string");
     if (strcmp(y, "babab") != 0) ABORT("bad CORD_substr result");
 
-    y = CORD_substr(x, 1024, 8);
+    y = CORD_substr(x, SMALL_SUBSTR_POS, 8);
     if (!y) ABORT("CORD_substr returned NULL");
     if (!CORD_IS_STRING(y)) ABORT("short cord should usually be a string");
-    if (strcmp(y, "abababab") != 0) ABORT("bad CORD_substr result");
+    if (strcmp(y, "abababab") != 0) ABORT("bad CORD_substr result (2)");
 
-    y = CORD_substr(x, 128*1024-1, 8);
+    y = CORD_substr(x, 2 * CORD_ITER_CNT - 1, 8);
     if (!y) ABORT("CORD_substr returned NULL");
     if (!CORD_IS_STRING(y)) ABORT("short cord should usually be a string");
-    if (strcmp(y, "bc") != 0) ABORT("bad CORD_substr result");
+    if (strcmp(y, "bc") != 0) ABORT("bad CORD_substr result (3)");
 }
 
 static void test_cord_x2(CORD x)
@@ -107,16 +115,16 @@ static void test_cord_x2(CORD x)
     CORD_pos p;
 
     count = 0;
-    if (CORD_iter5(x, 64*1024-1, test_fn, CORD_NO_FN,
+    if (CORD_iter5(x, CORD_ITER_CNT - 1, test_fn, CORD_NO_FN,
                    (void *)(GC_word)13) == 0) {
         ABORT("CORD_iter5 failed");
     }
-    if (count != 64*1024 + 2) ABORT("CORD_iter5 failed");
+    if (count != CORD_ITER_CNT + 2) ABORT("CORD_iter5 failed");
 
-    y = CORD_substr(x, 1023, 5);
+    y = CORD_substr(x, SMALL_SUBSTR_POS - 1, 5);
     if (!y) ABORT("CORD_substr returned NULL");
     if (!CORD_IS_STRING(y)) ABORT("short cord should usually be a string");
-    if (strcmp(y, "babab") != 0) ABORT("bad CORD_substr result");
+    if (strcmp(y, "babab") != 0) ABORT("bad CORD_substr result (4)");
 
     y = CORD_from_fn(id_cord_fn, 0, 13);
     i = 0;
@@ -144,19 +152,19 @@ static void test_basics(void)
     CORD x = CORD_from_char_star("ab");
     size_t i;
 
-    x = CORD_cat(x,x);
+    x = CORD_cat(x, x);
     if (x == CORD_EMPTY) ABORT("CORD_cat(x,x) returned empty cord");
     if (!CORD_IS_STRING(x)) ABORT("short cord should usually be a string");
     if (strcmp(x, "abab") != 0) ABORT("bad CORD_cat result");
-    for (i = 1; i < 16; i++) {
-        x = CORD_cat(x,x);
+    for (i = 1; i < LOG_CORD_ITER_CNT; i++) {
+        x = CORD_cat(x, x);
     }
-    x = CORD_cat(x,"c");
-    if (CORD_len(x) != 128*1024+1) ABORT("bad length");
+    x = CORD_cat(x, "c");
+    if (CORD_len(x) != 2 * CORD_ITER_CNT + 1) ABORT("bad length");
     test_cord_x1(x);
 
     x = CORD_balance(x);
-    if (CORD_len(x) != 128*1024+1) ABORT("bad length 2");
+    if (CORD_len(x) != 2 * CORD_ITER_CNT + 1) ABORT("bad length 2");
     test_cord_x2(x);
 
 #   if defined(CPPCHECK)
@@ -168,26 +176,26 @@ static void test_basics(void)
 
 static CORD prepare_cord_f1(CORD y)
 {
-    CORD w = CORD_cat(CORD_cat(y,y),y);
+    CORD w = CORD_cat(CORD_cat(y, y), y);
     CORD x = "{}";
-    CORD z = CORD_catn(3,y,y,y);
+    CORD z = CORD_catn(3, y, y, y);
     int i;
 
-    if (CORD_cmp(w,z) != 0) ABORT("CORD_catn comparison wrong");
-    for (i = 1; i < 100; i++) {
+    if (CORD_cmp(w, z) != 0) ABORT("CORD_catn comparison wrong");
+    for (i = 1; i < PREPARE_CAT_COUNT; i++) {
         x = CORD_cat(x, y);
     }
     z = CORD_balance(x);
-    if (CORD_cmp(x,z) != 0) ABORT("balanced string comparison wrong");
-    if (CORD_cmp(x,CORD_cat(z, CORD_nul(13))) >= 0) ABORT("comparison 2");
+    if (CORD_cmp(x, z) != 0) ABORT("balanced string comparison wrong");
+    if (CORD_cmp(x, CORD_cat(z, CORD_nul(13))) >= 0) ABORT("comparison 2");
     if (CORD_cmp(CORD_cat(x, CORD_nul(13)), z) <= 0) ABORT("comparison 3");
-    if (CORD_cmp(x,CORD_cat(z, "13")) >= 0) ABORT("comparison 4");
+    if (CORD_cmp(x, CORD_cat(z, "13")) >= 0) ABORT("comparison 4");
     return z;
 }
 
 static void test_cords_f1b(CORD w, CORD z)
 {
-    if (CORD_cmp(w,z) != 0) ABORT("File conversions differ");
+    if (CORD_cmp(w, z) != 0) ABORT("File conversions differ");
     if (CORD_chr(w, 0, '9') != 37) ABORT("CORD_chr failed 1");
     if (CORD_chr(w, 3, 'a') != 38) ABORT("CORD_chr failed 2");
     if (CORD_rchr(w, CORD_len(w) - 1, '}') != 1) ABORT("CORD_rchr failed");
@@ -198,19 +206,19 @@ static void test_cords_f2(CORD w, CORD x, CORD y)
     CORD u;
 
     if (CORD_len(w) != CORD_len(x)) ABORT("file length wrong");
-    if (CORD_cmp(w,x) != 0) ABORT("file comparison wrong");
-    if (CORD_cmp(CORD_substr(w, 1000*36, 36), y) != 0)
+    if (CORD_cmp(w, x) != 0) ABORT("file comparison wrong");
+    if (CORD_cmp(CORD_substr(w, BIG_SUBSTR_POS, 36), y) != 0)
         ABORT("file substr wrong");
-    if (strcmp(CORD_to_char_star(CORD_substr(w, 1000*36, 36)), y) != 0)
+    if (strcmp(CORD_to_char_star(CORD_substr(w, BIG_SUBSTR_POS, 36)), y) != 0)
         ABORT("char * file substr wrong");
-    u = CORD_substr(w, 1000*36, 2);
+    u = CORD_substr(w, BIG_SUBSTR_POS, 2);
     if (!u) ABORT("CORD_substr returned NULL");
     if (strcmp(u, "ab") != 0) ABORT("short file substr wrong");
-    if (CORD_str(x,1,"9a") != 35) ABORT("CORD_str failed 1");
-    if (CORD_str(x,0,"9abcdefghijk") != 35) ABORT("CORD_str failed 2");
-    if (CORD_str(x,0,"9abcdefghijx") != CORD_NOT_FOUND)
+    if (CORD_str(x, 1, "9a") != 35) ABORT("CORD_str failed 1");
+    if (CORD_str(x, 0, "9abcdefghijk") != 35) ABORT("CORD_str failed 2");
+    if (CORD_str(x, 0, "9abcdefghijx") != CORD_NOT_FOUND)
         ABORT("CORD_str failed 3");
-    if (CORD_str(x,0,"9>") != CORD_NOT_FOUND) ABORT("CORD_str failed 4");
+    if (CORD_str(x, 0, "9>") != CORD_NOT_FOUND) ABORT("CORD_str failed 4");
 }
 
 static void test_extras(void)
@@ -225,16 +233,16 @@ static void test_extras(void)
     f = fopen(FNAME1, "w");
     if (!f) ABORT("open 1 failed");
     z = prepare_cord_f1(y);
-    if (CORD_put(z,f) == EOF) ABORT("CORD_put failed");
+    if (CORD_put(z, f) == EOF) ABORT("CORD_put failed");
     if (fclose(f) == EOF) ABORT("fclose failed");
 
     f1a = fopen(FNAME1, "rb");
     if (!f1a) ABORT("open 1a failed");
     w = CORD_from_file(f1a);
     if (CORD_len(w) != CORD_len(z)) ABORT("file length wrong");
-    if (CORD_cmp(w,z) != 0) ABORT("file comparison wrong");
-    if (CORD_cmp(CORD_substr(w, 50*36+2, 36), y) != 0)
-        ABORT("file substr wrong");
+    if (CORD_cmp(w, z) != 0) ABORT("file comparison wrong");
+    if (CORD_cmp(CORD_substr(w, (PREPARE_CAT_COUNT/2) * 36 + 2, 36), y) != 0)
+        ABORT("file substr wrong (2)");
 
     f1b = fopen(FNAME1, "rb");
     if (!f1b) ABORT("open 1b failed");
@@ -247,10 +255,11 @@ static void test_extras(void)
       if (fflush(f) != 0) ABORT("fflush failed");
 #   endif
     x = y;
-    for (i = 1; i < 14; i++) {
-        x = CORD_cat(x,x);
+    for (i = 3; i < LOG_CORD_ITER_CNT; i++) {
+        x = CORD_cat(x, x);
     }
-    if (CORD_put(x,f) == EOF) ABORT("CORD_put failed");
+
+    if (CORD_put(x, f) == EOF) ABORT("CORD_put failed");
     if (fclose(f) == EOF) ABORT("fclose failed");
 
     f2 = fopen(FNAME2, "rb");
@@ -334,9 +343,9 @@ static void test_printf(void)
     if (CORD_cmp(result, "ab     xyz") != 0) ABORT("CORD_sprintf goofed 3");
     if (s != 7) ABORT("CORD_sprintf goofed 4");
     x = "abcdefghij";
-    x = CORD_cat(x,x);
-    x = CORD_cat(x,x);
-    x = CORD_cat(x,x);
+    x = CORD_cat(x, x);
+    x = CORD_cat(x, x);
+    x = CORD_cat(x, x);
     if (CORD_sprintf(&result, "->%-120.78r!\n", x) != 124)
         ABORT("CORD_sprintf failed 3");
 #   ifdef GC_SNPRINTF
