@@ -19,6 +19,8 @@
  * This was written by a nonexpert windows programmer.
  */
 
+#include <ctype.h>
+
 #include "windows.h"
 #include "gc.h"
 #include "cord.h"
