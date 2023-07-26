@@ -37,9 +37,11 @@ struct CORD_pe {
 /* to current position.                                         */
 typedef struct CORD_Pos {
     size_t cur_pos;
+
     int path_len;
-#       define CORD_POS_INVALID (0x55555555)
-                /* path_len == INVALID <==> position invalid */
+#       define CORD_POS_INVALID 0x55555555
+                /* path_len == CORD_POS_INVALID <==> position invalid   */
+
     const char *cur_leaf;       /* Current leaf, if it is a string.     */
                                 /* If the current leaf is a function,   */
                                 /* then this may point to function_buf  */
@@ -58,31 +60,31 @@ typedef struct CORD_Pos {
                                         /* from function node.          */
 } CORD_pos[1];
 
-/* Extract the cord from a position:    */
-CORD_API CORD CORD_pos_to_cord(CORD_pos p);
+/* Extract the cord from a position.    */
+CORD_API CORD CORD_pos_to_cord(CORD_pos);
 
-/* Extract the current index from a position:   */
-CORD_API size_t CORD_pos_to_index(CORD_pos p);
+/* Extract the current index from a position.   */
+CORD_API size_t CORD_pos_to_index(CORD_pos);
 
-/* Fetch the character located at the given position:   */
-CORD_API char CORD_pos_fetch(CORD_pos p);
+/* Fetch the character located at the given position.   */
+CORD_API char CORD_pos_fetch(CORD_pos);
 
 /* Initialize the position to refer to the given cord and index.    */
 /* Note that this is the most expensive function on positions.      */
-CORD_API void CORD_set_pos(CORD_pos p, CORD x, size_t i);
+CORD_API void CORD_set_pos(CORD_pos, CORD, size_t /* index */);
 
 /* Advance the position to the next character.  */
-/* P must be initialized and valid.             */
-/* Invalidates p if past end:                   */
-CORD_API void CORD_next(CORD_pos p);
+/* p must be initialized and valid.             */
+/* Invalidates p if past end.                   */
+CORD_API void CORD_next(CORD_pos /* p */);
 
 /* Move the position to the preceding character.        */
-/* P must be initialized and valid.                     */
-/* Invalidates p if past beginning:                     */
-CORD_API void CORD_prev(CORD_pos p);
+/* p must be initialized and valid.                     */
+/* Invalidates p if past beginning.                     */
+CORD_API void CORD_prev(CORD_pos /* p */);
 
 /* Is the position valid, i.e. inside the cord?         */
-CORD_API int CORD_pos_valid(CORD_pos p);
+CORD_API int CORD_pos_valid(CORD_pos);
 
 CORD_API char CORD__pos_fetch(CORD_pos);
 CORD_API void CORD__next(CORD_pos);
@@ -110,6 +112,7 @@ CORD_API void CORD__prev(CORD_pos);
 #define CORD_pos_valid(p) ((p)[0].path_len != CORD_POS_INVALID)
 
 /* Some grubby stuff for performance-critical friends:  */
+
 #define CORD_pos_chars_left(p) ((long)(p)[0].cur_end - (long)(p)[0].cur_pos)
         /* Number of characters in cache.  <= 0 ==> none        */
 

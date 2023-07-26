@@ -47,9 +47,9 @@
  * may be replaced by a call to CORD_to_char_star.
  */
 
-# ifndef CORD_BUFSZ
+#ifndef CORD_BUFSZ
 #   define CORD_BUFSZ 128
-# endif
+#endif
 
 /* This structure represents the concatenation of ec_cord with  */
 /* ec_buf[0 .. ec_bufptr-ec_buf-1].                             */
@@ -60,10 +60,10 @@ typedef struct CORD_ec_struct {
 } CORD_ec[1];
 
 /* Flush the buffer part of the extended cord into ec_cord.     */
-void CORD_ec_flush_buf(CORD_ec x);
+void CORD_ec_flush_buf(CORD_ec);
 
 /* Convert an extensible cord to a cord. */
-# define CORD_ec_to_cord(x) (CORD_ec_flush_buf(x), (x)[0].ec_cord)
+#define CORD_ec_to_cord(x) (CORD_ec_flush_buf(x), (x)[0].ec_cord)
 
 /* Initialize an extensible cord. */
 #define CORD_ec_init(x) \
@@ -77,7 +77,7 @@ void CORD_ec_flush_buf(CORD_ec x);
 
 /* Append a cord to an extensible cord.  Structure remains shared with  */
 /* original.                                                            */
-void CORD_ec_append_cord(CORD_ec x, CORD s);
+void CORD_ec_append_cord(CORD_ec, CORD);
 
 #ifdef __cplusplus
   } /* extern "C" */
