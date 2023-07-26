@@ -27,6 +27,8 @@
 #define NOSERVICE
 #include <windows.h>
 
+#include <ctype.h>
+
 #include "gc.h"
 #include "cord.h"
 #include "de_cmds.h"
