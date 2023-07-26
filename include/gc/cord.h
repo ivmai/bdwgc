@@ -118,8 +118,8 @@ CORD_API CORD CORD_cat_char_star(CORD x, const char * y, size_t leny);
 /* Compute the length of a cord. */
 CORD_API size_t CORD_len(CORD x);
 
-/* Cords may be represented by functions defining the ith character.    */
-typedef char (* CORD_fn)(size_t i, void * client_data);
+/* Cords may be represented by functions defining the i-th character.   */
+typedef char (*CORD_fn)(size_t i, void * client_data);
 
 /* Turn a functional description into a cord.   */
 CORD_API CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len);
@@ -145,11 +145,11 @@ CORD_API CORD CORD_balance(CORD x);
 /* the functions that operate on cord positions instead.                */
 
 /* Function to iteratively apply to individual characters in cord.      */
-typedef int (* CORD_iter_fn)(char c, void * client_data);
+typedef int (*CORD_iter_fn)(char c, void * client_data);
 
 /* Function to apply to substrings of a cord.  Each substring is a      */
 /* a C character string, not a general cord.                            */
-typedef int (* CORD_batched_iter_fn)(const char * s, void * client_data);
+typedef int (*CORD_batched_iter_fn)(const char * s, void * client_data);
 #define CORD_NO_FN ((CORD_batched_iter_fn)0)
 
 /* Apply f1 to each character in the cord, in ascending order,          */
@@ -228,10 +228,9 @@ CORD_API int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 #define CORD_FOR(pos, cord) \
     for (CORD_set_pos(pos, cord, 0); CORD_pos_valid(pos); CORD_next(pos))
 
-
-/* An out of memory handler to call.  May be supplied by client.        */
-/* Must not return.                                                     */
-extern void (* CORD_oom_fn)(void);
+/* An out-of-memory handler to call.  Zero value means do nothing       */
+/* special, just abort.                                                 */
+CORD_API void (*CORD_oom_fn)(void);
 
 /* Dump the representation of x to stdout in an implementation defined  */
 /* manner.  Intended for debugging only.                                */
