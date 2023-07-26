@@ -235,7 +235,7 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
         result -> data.concat.left = x;
         GC_PTR_STORE_AND_DIRTY((void *)(&result -> data.concat.right), y);
         GC_reachable_here(x);
-        if (depth >= MAX_DEPTH) {
+        if (depth >= CORD_MAX_DEPTH) {
             return CORD_balance((CORD)result);
         } else {
             return (CORD)result;
@@ -276,7 +276,7 @@ CORD CORD_cat(CORD x, CORD y)
         result -> data.concat.left = x;
         GC_PTR_STORE_AND_DIRTY((void *)&(result -> data.concat.right), y);
         GC_reachable_here(x);
-        if (depth >= MAX_DEPTH) {
+        if (depth >= CORD_MAX_DEPTH) {
             return CORD_balance((CORD)result);
         } else {
             return (CORD)result;
@@ -591,13 +591,13 @@ typedef struct {
     size_t len;         /* Actual length of c   */
 } ForestElement;
 
-static size_t min_len [ MAX_DEPTH ];
+static size_t min_len[CORD_MAX_DEPTH];
 
 static int min_len_init = 0;
 
 int CORD_max_len;
 
-typedef ForestElement Forest [ MAX_DEPTH ];
+typedef ForestElement Forest[CORD_MAX_DEPTH];
                         /* forest[i].len >= fib(i+1)            */
                         /* The string is the concatenation      */
                         /* of the forest in order of DECREASING */
@@ -610,7 +610,7 @@ static void CORD_init_min_len(void)
 
     min_len[0] = previous = 1;
     min_len[1] = last = 2;
-    for (i = 2; i < MAX_DEPTH; i++) {
+    for (i = 2; i < CORD_MAX_DEPTH; i++) {
         size_t current = last + previous;
 
         if (current < last) /* overflow */ current = last;
@@ -626,7 +626,7 @@ static void CORD_init_forest(ForestElement * forest, size_t max_len)
 {
     int i;
 
-    for (i = 0; i < MAX_DEPTH; i++) {
+    for (i = 0; i < CORD_MAX_DEPTH; i++) {
         forest[i].c = 0;
         if (min_len[i] > max_len) return;
     }
@@ -700,7 +700,7 @@ static void CORD_balance_insert(CORD x, size_t len, ForestElement * forest)
     if (CORD_IS_STRING(x)) {
         CORD_add_forest(forest, x, len);
     } else if (IS_CONCATENATION(x)
-               && ((depth = DEPTH(x)) >= MAX_DEPTH
+               && ((depth = DEPTH(x)) >= CORD_MAX_DEPTH
                    || len < min_len[depth])) {
         const struct Concatenation *conc =
                                 &(((const CordRep *)x) -> data.concat);
@@ -812,11 +812,11 @@ void CORD__next(CORD_pos p)
         if (cur_pos < end_pos) {
           /* Fill cache and return. */
             size_t i;
-            size_t limit = FUNCTION_BUF_SZ;
+            size_t limit = CORD_FUNCTION_BUF_SZ;
             CORD_fn fn = f -> fn;
             void * client_data = f -> client_data;
 
-            if (end_pos - cur_pos < FUNCTION_BUF_SZ) {
+            if (end_pos - cur_pos < CORD_FUNCTION_BUF_SZ) {
                 limit = end_pos - cur_pos;
             }
             for (i = 0; i < limit; i++) {

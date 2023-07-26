@@ -24,9 +24,9 @@
 /* the implementation of some exported macros relies on it.     */
 /* Don't use anything defined here and not in cord.h.           */
 
-# define MAX_DEPTH 48
+#define CORD_MAX_DEPTH 48
         /* The maximum depth of a balanced cord + 1.            */
-        /* We don't let cords get deeper than MAX_DEPTH.        */
+        /* We do not let cords get deeper than this maximum.    */
 
 struct CORD_pe {
     CORD pe_cord;
@@ -52,12 +52,13 @@ typedef struct CORD_Pos {
     size_t cur_start;   /* Start position of cur_leaf.  */
     size_t cur_end;     /* Ending position of cur_leaf; */
                         /* 0 if cur_leaf is invalid.    */
-    struct CORD_pe path[MAX_DEPTH + 1];
+    struct CORD_pe path[CORD_MAX_DEPTH + 1];
         /* path[path_len] is the leaf corresponding to cur_pos  */
         /* path[0].pe_cord is the cord we point to.             */
-#   define FUNCTION_BUF_SZ 8
-    char function_buf[FUNCTION_BUF_SZ]; /* Space for next few chars     */
-                                        /* from function node.          */
+#   define CORD_FUNCTION_BUF_SZ 8
+    char function_buf[CORD_FUNCTION_BUF_SZ];
+                                        /* Space for next few chars */
+                                        /* from function node.      */
 } CORD_pos[1];
 
 /* Extract the cord from a position.    */
