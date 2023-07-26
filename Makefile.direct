@@ -154,6 +154,7 @@ UTILS= if_mach$(EXEEXT) if_not_there$(EXEEXT) threadlibs$(EXEEXT)
 
 # Libraries needed for curses applications.  Only needed for de.
 # It might also require -ltermlib on some targets.
+# For Win32, it should be set to: -lgdi32
 CURSES?= -lcurses
 
 # The following is irrelevant on most systems.  But a few
