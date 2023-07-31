@@ -85,14 +85,14 @@ typedef struct GC_ms_entry * (GC_CALLBACK * GC_mark_proc)(GC_word * /* addr */,
 
 /* Object descriptors on mark stack or in objects.  Low order two       */
 /* bits are tags distinguishing among the following 4 possibilities     */
-/* for the high order 30 bits.                                          */
+/* for the rest (high order) bits.                                      */
 #define GC_DS_TAG_BITS 2
 #define GC_DS_TAGS   ((1U << GC_DS_TAG_BITS) - 1)
 #define GC_DS_LENGTH 0  /* The entire word is a length in bytes that    */
                         /* must be a multiple of 4.                     */
-#define GC_DS_BITMAP 1  /* 30 (62) bits are a bitmap describing pointer */
-                        /* fields.  The msb is 1 if the first word      */
-                        /* is a pointer.                                */
+#define GC_DS_BITMAP 1  /* The high order bits are describing pointer   */
+                        /* fields.  The most significant bit is set if  */
+                        /* the first word is a pointer.                 */
                         /* (This unconventional ordering sometimes      */
                         /* makes the marker slightly faster.)           */
                         /* Zeroes indicate definite nonpointers.  Ones  */
