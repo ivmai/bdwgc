@@ -51,19 +51,26 @@ STATIC struct GC_ms_entry *GC_CALLBACK GC_gcj_fake_mark_proc(word *addr,
     UNUSED_ARG(addr);
     UNUSED_ARG(mark_stack_limit);
     UNUSED_ARG(env);
+#   if defined(CPPCHECK)
+        GC_noop1((word)&GC_init_gcj_malloc);
+#   endif
     ABORT_RET("No client gcj mark proc is specified");
     return mark_stack_ptr;
 }
 
-GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
-                                       void * /* really GC_mark_proc */mp)
+  GC_API void GC_CALL GC_init_gcj_malloc(int mp_index, void *mp)
+  {
+    GC_init_gcj_malloc_mp((unsigned)mp_index, (GC_mark_proc)(word)mp);
+  }
+
+GC_API void GC_CALL GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp)
 {
 #   ifndef GC_IGNORE_GCJ_INFO
       GC_bool ignore_gcj_info;
 #   endif
 
     if (mp == 0)        /* In case GC_DS_PROC is unused.        */
-      mp = (void *)(word)GC_gcj_fake_mark_proc;
+      mp = GC_gcj_fake_mark_proc;
 
     GC_init();  /* In case it's not already done.       */
     LOCK();
@@ -82,9 +89,9 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
       GC_COND_LOG_PRINTF("Gcj-style type information is disabled!\n");
     }
     GC_ASSERT(GC_mark_procs[mp_index] == (GC_mark_proc)0); /* unused */
-    GC_mark_procs[mp_index] = (GC_mark_proc)(word)mp;
-    if ((unsigned)mp_index >= GC_n_mark_procs)
-        ABORT("GC_init_gcj_malloc: bad index");
+    GC_mark_procs[mp_index] = mp;
+    if (mp_index >= GC_n_mark_procs)
+        ABORT("GC_init_gcj_malloc_mp: bad index");
     /* Set up object kind gcj-style indirect descriptor. */
     GC_gcjobjfreelist = (ptr_t *)GC_new_free_list_inner();
     if (ignore_gcj_info) {

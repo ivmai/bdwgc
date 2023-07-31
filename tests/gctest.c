@@ -1770,7 +1770,7 @@ static void run_one_test(void)
     thr_hndl_sb.gc_thread_handle = GC_get_my_stackbottom(&thr_hndl_sb.sb);
 #   ifdef GC_GCJ_SUPPORT
       GC_REGISTER_DISPLACEMENT(sizeof(struct fake_vtable *));
-      GC_init_gcj_malloc(0, (void *)(GC_word)fake_gcj_mark_proc);
+      GC_init_gcj_malloc_mp(0U, fake_gcj_mark_proc);
 #   endif
     /* Make sure that fn arguments are visible to the collector.        */
       uniq(

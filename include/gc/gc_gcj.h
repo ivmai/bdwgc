@@ -20,7 +20,7 @@
  * We allocate objects whose first word contains a pointer to a struct
  * describing the object type.  This struct contains a garbage collector mark
  * descriptor at offset MARK_DESCR_OFFSET.  Alternatively, the objects
- * may be marked by the mark procedure passed to GC_init_gcj_malloc.
+ * may be marked by the mark procedure passed to GC_init_gcj_malloc_mp.
  */
 
 #ifndef GC_GCJ_H
@@ -62,8 +62,10 @@
 /* does not collide with indices allocated by GC_new_proc.  If the      */
 /* application needs no other reserved indices, zero                    */
 /* (GC_GCJ_RESERVED_MARK_PROC_INDEX in gc_mark.h) is an obvious choice. */
-GC_API void GC_CALL GC_init_gcj_malloc(int /* mp_index */,
-                                void * /* really mark_proc */ /* mp */);
+/* Deprecated, portable clients should include gc_mark.h and use        */
+/* GC_init_gcj_malloc_mp() instead.                                     */
+GC_API GC_ATTR_DEPRECATED void GC_CALL GC_init_gcj_malloc(int /* mp_index */,
+                                                          void * /* mp */);
 
 /* Allocate an object, clear it, and store the pointer to the type      */
 /* structure (vtable in gcj).  This adds a byte at the end of the       */
