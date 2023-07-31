@@ -43,40 +43,37 @@
   extern "C" {
 #endif
 
-/* The following allocators signal an out of memory condition with      */
-/* return GC_oom_fn(bytes);                                             */
-
-/* The following function must be called before the gcj allocators      */
-/* can be invoked.                                                      */
-/* mp_index and mp are the index and mark_proc (see gc_mark.h)          */
-/* respectively for the allocated objects.  Mark_proc will be           */
-/* used to build the descriptor for objects allocated through the       */
-/* debugging interface.  The mark_proc will be invoked on all such      */
-/* objects with an "environment" value of 1.  The client may choose     */
-/* to use the same mark_proc for some of its generated mark descriptors.*/
+/* This function must be called before the gcj allocators are invoked.  */
+/* mp_index and mp are the index and mark proc (see gc_mark.h),         */
+/* respectively, for the allocated objects.  mp will be used to build   */
+/* the descriptor for objects allocated through the debugging           */
+/* interface; it will be invoked on all such objects with an            */
+/* "environment" value of 1.  The client may choose to use the same     */
+/* mark proc for some of its generated mark descriptors.                */
 /* In that case, it should use a different "environment" value to       */
 /* detect the presence or absence of the debug header.                  */
-/* Mp is really of type mark_proc, as defined in gc_mark.h.  We don't   */
-/* want to include that here for namespace pollution reasons.           */
+/* mp is really of type GC_mark_proc, as defined in gc_mark.h; we do    */
+/* not want to include that here for namespace pollution reasons.       */
 /* Passing in mp_index here instead of having GC_init_gcj_malloc()      */
 /* internally call GC_new_proc() is quite ugly, but in typical usage    */
 /* scenarios a compiler also has to know about mp_index, so             */
-/* generating it dynamically is not acceptable.  Mp_index will          */
-/* typically be an integer < RESERVED_MARK_PROCS, so that it doesn't    */
-/* collide with GC_new_proc allocated indices.  If the application      */
-/* needs no other reserved indices, zero                                */
+/* generating it dynamically is not acceptable.  The mp_index will      */
+/* typically be an integer less than RESERVED_MARK_PROCS, so that it    */
+/* does not collide with indices allocated by GC_new_proc.  If the      */
+/* application needs no other reserved indices, zero                    */
 /* (GC_GCJ_RESERVED_MARK_PROC_INDEX in gc_mark.h) is an obvious choice. */
 GC_API void GC_CALL GC_init_gcj_malloc(int /* mp_index */,
                                 void * /* really mark_proc */ /* mp */);
 
-/* Allocate an object, clear it, and store the pointer to the   */
-/* type structure (vtable in gcj).                              */
-/* This adds a byte at the end of the object if GC_malloc would.*/
+/* Allocate an object, clear it, and store the pointer to the type      */
+/* structure (vtable in gcj).  This adds a byte at the end of the       */
+/* object if GC_malloc() would.  In case of out of memory, GC_oom_fn()  */
+/* is called and its result is returned.                                */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_gcj_malloc(size_t /* lb */,
                       void * /* ptr_to_struct_containing_descr */);
 
-/* The debug versions allocate such that the specified mark_proc        */
+/* The debug versions allocate such that the specified mark proc        */
 /* is always invoked.                                                   */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_debug_gcj_malloc(size_t /* lb */,
