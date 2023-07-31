@@ -130,11 +130,11 @@ STATIC GC_descr GC_double_descr(GC_descr d, size_t nwords)
     return d;
 }
 
-STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
-                                mse * mark_stack_limit, word env);
+STATIC mse *GC_CALLBACK GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
+                                           mse * mark_stack_limit, word env);
 
-STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
-                                mse * mark_stack_limit, word env);
+STATIC mse *GC_CALLBACK GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
+                                           mse * mark_stack_limit, word env);
 
 STATIC void GC_init_explicit_typing(void)
 {
@@ -159,8 +159,8 @@ STATIC void GC_init_explicit_typing(void)
     }
 }
 
-STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
-                                mse * mark_stack_limit, word env)
+STATIC mse *GC_CALLBACK GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
+                                           mse * mark_stack_limit, word env)
 {
     word bm;
     ptr_t current_p = (ptr_t)addr;
@@ -680,8 +680,8 @@ static complex_descriptor *get_complex_descr(word *addr, size_t nwords)
 }
 
 /* Used by GC_calloc_do_explicitly_typed via GC_array_kind.     */
-STATIC mse *GC_array_mark_proc(word *addr, mse *mark_stack_ptr,
-                               mse *mark_stack_limit, word env)
+STATIC mse *GC_CALLBACK GC_array_mark_proc(word *addr, mse *mark_stack_ptr,
+                                           mse *mark_stack_limit, word env)
 {
   hdr *hhdr = HDR(addr);
   word sz = hhdr -> hb_sz;

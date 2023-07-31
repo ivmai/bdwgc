@@ -359,7 +359,7 @@ struct fake_vtable gcj_class_struct2 =
                         { 0, ((GC_word)3 << (CPP_WORDSZ - 3)) | GC_DS_BITMAP};
                         /* Bitmap based descriptor.     */
 
-static struct GC_ms_entry *fake_gcj_mark_proc(GC_word *addr,
+static struct GC_ms_entry *GC_CALLBACK fake_gcj_mark_proc(GC_word *addr,
                                         struct GC_ms_entry *mark_stack_ptr,
                                         struct GC_ms_entry *mark_stack_limit,
                                         GC_word env)

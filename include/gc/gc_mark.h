@@ -69,7 +69,7 @@
 /* to be executed concurrently from the marker threads (the later ones  */
 /* are created only if the client has called GC_start_mark_threads()    */
 /* or started a user thread previously).                                */
-typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
+typedef struct GC_ms_entry * (GC_CALLBACK * GC_mark_proc)(GC_word * /* addr */,
                                 struct GC_ms_entry * /* mark_stack_ptr */,
                                 struct GC_ms_entry * /* mark_stack_limit */,
                                 GC_word /* env */);
@@ -186,9 +186,9 @@ GC_API GC_ATTR_DEPRECATED
 GC_API GC_ATTR_CONST size_t GC_CALL GC_get_hblk_size(void);
 
 /* Same as GC_walk_hblk_fn but with index of the free list.             */
-typedef void (GC_CALLBACK *GC_walk_free_blk_fn)(struct GC_hblk_s *,
-                                                int /* index */,
-                                                GC_word /* client_data */);
+typedef void (GC_CALLBACK * GC_walk_free_blk_fn)(struct GC_hblk_s *,
+                                                 int /* index */,
+                                                 GC_word /* client_data */);
 
 /* Apply fn to each completely empty heap block.  It is the             */
 /* responsibility of the caller to avoid data race during the function  */
@@ -196,8 +196,8 @@ typedef void (GC_CALLBACK *GC_walk_free_blk_fn)(struct GC_hblk_s *,
 GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn,
                                 GC_word /* client_data */) GC_ATTR_NONNULL(1);
 
-typedef void (GC_CALLBACK *GC_walk_hblk_fn)(struct GC_hblk_s *,
-                                            GC_word /* client_data */);
+typedef void (GC_CALLBACK * GC_walk_hblk_fn)(struct GC_hblk_s *,
+                                             GC_word /* client_data */);
 
 /* Apply fn to each allocated heap block.  It is the responsibility     */
 /* of the caller to avoid data race during the function execution (e.g. */
@@ -359,7 +359,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void);
 /* Walk the GC heap visiting all reachable objects.  Assume the caller  */
 /* holds the allocation lock.  Object base pointer, object size and     */
 /* client custom data are passed to the callback (holding the lock).    */
-typedef void (GC_CALLBACK *GC_reachable_object_proc)(void * /* obj */,
+typedef void (GC_CALLBACK * GC_reachable_object_proc)(void * /* obj */,
                                                 size_t /* bytes */,
                                                 void * /* client_data */);
 GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
@@ -377,9 +377,9 @@ GC_API void GC_CALL GC_print_trace_inner(GC_word /* gc_no */);
 /* this callback to process (un)marked objects and push additional      */
 /* work onto the stack.  Useful for implementing ephemerons.            */
 /* Both the setter and getter acquire the GC lock.                      */
-typedef struct GC_ms_entry *(GC_CALLBACK *GC_on_mark_stack_empty_proc)(
-                                struct GC_ms_entry* /* mark_stack_ptr */,
-                                struct GC_ms_entry* /* mark_stack_limit */);
+typedef struct GC_ms_entry * (GC_CALLBACK * GC_on_mark_stack_empty_proc)(
+                                struct GC_ms_entry * /* mark_stack_ptr */,
+                                struct GC_ms_entry * /* mark_stack_limit */);
 GC_API void GC_CALL GC_set_on_mark_stack_empty(GC_on_mark_stack_empty_proc);
 GC_API GC_on_mark_stack_empty_proc GC_CALL GC_get_on_mark_stack_empty(void);
 

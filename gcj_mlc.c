@@ -44,7 +44,7 @@ int GC_gcj_debug_kind = 0;
                         /* The kind of objects that is always marked    */
                         /* with a mark proc call.                       */
 
-STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr,
+STATIC struct GC_ms_entry *GC_CALLBACK GC_gcj_fake_mark_proc(word *addr,
                         struct GC_ms_entry *mark_stack_ptr,
                         struct GC_ms_entry * mark_stack_limit, word env)
 {
