@@ -103,7 +103,7 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 #   endif
     GC_init();
 #   ifdef CPPCHECK
-      GC_noop1((word)&GC_DllMain);
+      GC_noop1((word)(GC_funcptr_uint)&GC_DllMain);
 #   endif
 # endif
 }
@@ -1366,7 +1366,7 @@ STATIC void *GC_CALLBACK GC_win32_start_inner(struct GC_stack_base *sb,
       __try
 #   endif
     {
-      ret = (void *)(word)(*start_routine)(start_arg);
+      ret = (void *)(word)((*start_routine)(start_arg));
     }
 #   ifndef NO_SEH_AVAILABLE
       __finally
@@ -1597,8 +1597,9 @@ GC_API DECLSPEC_NORETURN void WINAPI GC_ExitThread(DWORD dwExitCode)
         USHORT process_machine, native_machine;
 
         if (pfn2
-            && (*(BOOL (WINAPI*)(HANDLE, USHORT*, USHORT*))(word)pfn2)(
-                GetCurrentProcess(), &process_machine, &native_machine))
+            && (*(BOOL (WINAPI *)(HANDLE, USHORT *, USHORT *))
+                (GC_funcptr_uint)pfn2)(GetCurrentProcess(), &process_machine,
+                                       &native_machine))
           return process_machine != native_machine;
       }
       if (IsWow64Process(GetCurrentProcess(), &is_wow64))
@@ -1608,8 +1609,8 @@ GC_API DECLSPEC_NORETURN void WINAPI GC_ExitThread(DWORD dwExitCode)
         FARPROC pfn = GetProcAddress(hK32, "IsWow64Process");
 
         if (pfn
-            && (*(BOOL (WINAPI*)(HANDLE, BOOL*))(word)pfn)(
-                         GetCurrentProcess(), &is_wow64))
+            && (*(BOOL (WINAPI *)(HANDLE, BOOL *))
+                (GC_funcptr_uint)pfn)(GetCurrentProcess(), &is_wow64))
           return (GC_bool)is_wow64;
       }
 #   endif

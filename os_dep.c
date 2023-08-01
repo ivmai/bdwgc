@@ -1708,12 +1708,12 @@ void GC_register_data_segments(void)
                             PAGE_READWRITE);
         if (page != NULL) {
           PVOID pages[16];
-          GC_ULONG_PTR count = 16;
+          GC_ULONG_PTR count = sizeof(pages) / sizeof(PVOID);
           DWORD page_size;
           /* Check that it actually works.  In spite of some            */
           /* documentation it actually seems to exist on Win2K.         */
           /* This test may be unnecessary, but ...                      */
-          if ((*(GetWriteWatch_type)(word)GetWriteWatch_func)(
+          if ((*(GetWriteWatch_type)(GC_funcptr_uint)GetWriteWatch_func)(
                                         WRITE_WATCH_FLAG_RESET, page,
                                         GC_page_size, pages, &count,
                                         &page_size) != 0) {
@@ -1764,7 +1764,7 @@ void GC_register_data_segments(void)
       /* DLLs will be loaded.  I doubt anyone still runs win32s, but... */
       DWORD v = GetVersion();
 
-      GC_wnt = !(v & 0x80000000);
+      GC_wnt = !(v & (DWORD)0x80000000UL);
       GC_no_win32_dlls |= ((!GC_wnt) && (v & 0xff) <= 3);
 #   endif
 #   ifdef USE_MUNMAP
@@ -2977,7 +2977,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         /* loop condition. Since each partial call will reset the       */
         /* status of some pages, this should eventually terminate even  */
         /* in the overflow case.                                        */
-        if ((*(GetWriteWatch_type)(word)GetWriteWatch_func)(
+        if ((*(GetWriteWatch_type)(GC_funcptr_uint)GetWriteWatch_func)(
                                         WRITE_WATCH_FLAG_RESET,
                                         GC_heap_sects[i].hs_start,
                                         GC_heap_sects[i].hs_bytes,
@@ -3137,16 +3137,16 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # if defined(MSWIN32)
     typedef LPTOP_LEVEL_EXCEPTION_FILTER SIG_HNDLR_PTR;
 #   undef SIG_DFL
-#   define SIG_DFL (LPTOP_LEVEL_EXCEPTION_FILTER)((signed_word)-1)
+#   define SIG_DFL ((LPTOP_LEVEL_EXCEPTION_FILTER)~(GC_funcptr_uint)0)
 # elif defined(MSWINCE)
     typedef LONG (WINAPI *SIG_HNDLR_PTR)(struct _EXCEPTION_POINTERS *);
 #   undef SIG_DFL
-#   define SIG_DFL (SIG_HNDLR_PTR) (-1)
+#   define SIG_DFL ((SIG_HNDLR_PTR)~(GC_funcptr_uint)0)
 # elif defined(DARWIN)
-    typedef void (* SIG_HNDLR_PTR)();
+    typedef void (*SIG_HNDLR_PTR)();
 # else
-    typedef void (* SIG_HNDLR_PTR)(int, siginfo_t *, void *);
-    typedef void (* PLAIN_HNDLR_PTR)(int);
+    typedef void (*SIG_HNDLR_PTR)(int, siginfo_t *, void *);
+    typedef void (*PLAIN_HNDLR_PTR)(int);
 # endif
 
 #ifndef DARWIN
@@ -3294,7 +3294,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                 }
 #           endif
 
-            if (old_handler == (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
+            if ((GC_funcptr_uint)old_handler == (GC_funcptr_uint)SIG_DFL) {
 #               if !defined(MSWIN32) && !defined(MSWINCE)
                     ABORT_ARG1("Unexpected segmentation fault outside heap",
                                " at %p", (void *)addr);
@@ -3314,7 +3314,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                       ((SIG_HNDLR_PTR)old_handler)(sig, si, raw_sc);
                     else
                       /* FIXME: should pass nonstandard args as well. */
-                      ((PLAIN_HNDLR_PTR)(signed_word)old_handler)(sig);
+                      ((PLAIN_HNDLR_PTR)(GC_funcptr_uint)old_handler)(sig);
                     return;
 #               endif
             }
@@ -3428,14 +3428,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         GC_old_segv_handler = oldact.sa_sigaction;
         GC_old_segv_handler_used_si = TRUE;
       } else {
-        GC_old_segv_handler = (SIG_HNDLR_PTR)(signed_word)oldact.sa_handler;
+        GC_old_segv_handler =
+                        (SIG_HNDLR_PTR)(GC_funcptr_uint)oldact.sa_handler;
         GC_old_segv_handler_used_si = FALSE;
       }
-      if (GC_old_segv_handler == (SIG_HNDLR_PTR)(signed_word)SIG_IGN) {
+      if ((GC_funcptr_uint)GC_old_segv_handler == (GC_funcptr_uint)SIG_IGN) {
         WARN("Previously ignored segmentation violation!?\n", 0);
-        GC_old_segv_handler = (SIG_HNDLR_PTR)(signed_word)SIG_DFL;
+        GC_old_segv_handler = (SIG_HNDLR_PTR)(GC_funcptr_uint)SIG_DFL;
       }
-      if (GC_old_segv_handler != (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
+      if ((GC_funcptr_uint)GC_old_segv_handler != (GC_funcptr_uint)SIG_DFL) {
         GC_VERBOSE_LOG_PRINTF("Replaced other SIGSEGV handler\n");
       }
 #     ifdef USE_BUS_SIGACT
@@ -3444,12 +3445,14 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
           GC_old_bus_handler = oldact.sa_sigaction;
           GC_old_bus_handler_used_si = TRUE;
         } else {
-          GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)oldact.sa_handler;
+          GC_old_bus_handler =
+                        (SIG_HNDLR_PTR)(GC_funcptr_uint)oldact.sa_handler;
         }
-        if (GC_old_bus_handler == (SIG_HNDLR_PTR)(signed_word)SIG_IGN) {
+        if ((GC_funcptr_uint)GC_old_bus_handler == (GC_funcptr_uint)SIG_IGN) {
           WARN("Previously ignored bus error!?\n", 0);
-          GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)SIG_DFL;
-        } else if (GC_old_bus_handler != (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
+          GC_old_bus_handler = (SIG_HNDLR_PTR)(GC_funcptr_uint)SIG_DFL;
+        } else if ((GC_funcptr_uint)GC_old_bus_handler
+                   != (GC_funcptr_uint)SIG_DFL) {
           GC_VERBOSE_LOG_PRINTF("Replaced other SIGBUS handler\n");
         }
 #     endif
@@ -4753,11 +4756,11 @@ GC_INNER GC_bool GC_dirty_init(void)
       struct sigaction sa, oldsa;
       sa.sa_handler = (SIG_HNDLR_PTR)GC_darwin_sigbus;
       sigemptyset(&sa.sa_mask);
-      sa.sa_flags = SA_RESTART|SA_SIGINFO;
+      sa.sa_flags = SA_RESTART | SA_SIGINFO;
       /* sa.sa_restorer is deprecated and should not be initialized. */
       if (sigaction(SIGBUS, &sa, &oldsa) < 0)
         ABORT("sigaction failed");
-      if (oldsa.sa_handler != (SIG_HNDLR_PTR)(signed_word)SIG_DFL) {
+      if ((GC_funcptr_uint)oldsa.sa_handler != (GC_funcptr_uint)SIG_DFL) {
         GC_VERBOSE_LOG_PRINTF("Replaced other SIGBUS handler\n");
       }
     }

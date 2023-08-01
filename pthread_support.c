@@ -406,7 +406,8 @@
       /* Invoke SetThreadDescription().  Cast the function pointer to word  */
       /* first to avoid "incompatible function types" compiler warning.     */
       hr = (*(HRESULT (WINAPI *)(HANDLE, const WCHAR *))
-            (word)setThreadDescription_fn)(GetCurrentThread(), name_buf);
+            (GC_funcptr_uint)setThreadDescription_fn)(GetCurrentThread(),
+                                                      name_buf);
       if (hr < 0)
         WARN("SetThreadDescription failed\n", 0);
     }
@@ -2398,8 +2399,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
     *pstart = psi -> start_routine;
     *pstart_arg = psi -> arg;
-#   ifdef DEBUG_THREADS
-      GC_log_printf("start_routine= %p\n", (void *)(signed_word)(*pstart));
+#   if defined(DEBUG_THREADS) && defined(FUNCPTR_IS_WORD)
+      GC_log_printf("start_routine= %p\n", (void *)(word)(*pstart));
 #   endif
     sem_post(&(psi -> registered));     /* Last action on *psi; */
                                         /* OK to deallocate.    */

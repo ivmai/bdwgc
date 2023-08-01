@@ -13,6 +13,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
+
 /* An incomplete test for the garbage collector.                */
 /* Some more obscure entry points are not tested at all.        */
 /* This must be compiled with the same flags used to build the  */
@@ -941,7 +942,7 @@ static void *GC_CALLBACK reverse_test_inner(void *data)
 #         if NTHREADS > 0
             if (i % 10 == 0) fork_a_thread();
 #         else
-            GC_noop1((GC_word)&fork_a_thread);
+            GC_noop1((GC_word)(GC_funcptr_uint)&fork_a_thread);
 #         endif
 #       endif
         /* This maintains the invariant that a always points to a list  */
@@ -1993,6 +1994,7 @@ static void check_heap_stats(void)
 #   if defined(USE_MMAP) || defined(MSWIN32)
       max_heap_sz = NUMBER_ROUND_UP(max_heap_sz, 4 * 1024 * 1024);
 #   endif
+
     /* Garbage collect repeatedly so that all inaccessible objects      */
     /* can be finalized.                                                */
       while (GC_collect_a_little()) { } /* should work even if disabled GC */
@@ -2195,7 +2197,7 @@ static void enable_incremental_mode(void)
 }
 
 #if defined(CPPCHECK)
-# define UNTESTED(sym) GC_noop1((GC_word)&sym)
+# define UNTESTED(sym) GC_noop1((GC_word)(GC_funcptr_uint)&sym)
 #endif
 
 #if defined(MSWINCE) && defined(UNDER_CE)
@@ -2253,12 +2255,12 @@ static void enable_incremental_mode(void)
       UNUSED_ARG(cmd);
       UNUSED_ARG(n);
 #     if defined(CPPCHECK)
-        GC_noop1((GC_word)&WinMain);
+        GC_noop1((GC_word)(GC_funcptr_uint)&WinMain);
 #     endif
 #   elif defined(RTEMS)
       UNUSED_ARG(ignord);
 #     if defined(CPPCHECK)
-        GC_noop1((GC_word)&Init);
+        GC_noop1((GC_word)(GC_funcptr_uint)&Init);
 #     endif
 #   endif
     n_tests = 0;
@@ -2435,7 +2437,7 @@ static DWORD __stdcall thr_window(void *arg)
     UNUSED_ARG(cmd);
     UNUSED_ARG(n);
 #   if defined(CPPCHECK)
-      GC_noop1((GC_word)&WinMain);
+      GC_noop1((GC_word)(GC_funcptr_uint)&WinMain);
 #   endif
 # endif
 # if defined(GC_DLL) && !defined(GC_NO_THREADS_DISCOVERY) \
@@ -2476,7 +2478,7 @@ static DWORD __stdcall thr_window(void *arg)
       }
     }
 # else
-    GC_noop1((GC_word)&thr_run_one_test);
+    GC_noop1((GC_word)(GC_funcptr_uint)&thr_run_one_test);
 # endif
   run_one_test();
 # if NTHREADS > 0
@@ -2511,9 +2513,9 @@ int test(void)
     int code;
 
 #   if defined(CPPCHECK)
-      GC_noop1((GC_word)&PCR_GC_Run);
-      GC_noop1((GC_word)&PCR_GC_Setup);
-      GC_noop1((GC_word)&test);
+      GC_noop1((GC_word)(GC_funcptr_uint)&PCR_GC_Run);
+      GC_noop1((GC_word)(GC_funcptr_uint)&PCR_GC_Setup);
+      GC_noop1((GC_word)(GC_funcptr_uint)&test);
 #   endif
     n_tests = 0;
     /* GC_enable_incremental(); */

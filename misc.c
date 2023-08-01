@@ -864,8 +864,8 @@ GC_API int GC_CALL GC_is_init_called(void)
       if (hU32) {
         FARPROC pfn = GetProcAddress(hU32, "MessageBoxA");
         if (pfn)
-          (void)(*(int (WINAPI *)(HWND, LPCSTR, LPCSTR, UINT))(word)pfn)(
-                              NULL /* hWnd */, msg, caption, flags);
+          (void)(*(int (WINAPI *)(HWND, LPCSTR, LPCSTR, UINT))
+                 (GC_funcptr_uint)pfn)(NULL /* hWnd */, msg, caption, flags);
         (void)FreeLibrary(hU32);
       }
 #   endif
@@ -994,8 +994,8 @@ GC_API void GC_CALL GC_init(void)
               pfn = GetProcAddress(hK32,
                                    "InitializeCriticalSectionAndSpinCount");
             if (pfn) {
-              (*(BOOL (WINAPI *)(LPCRITICAL_SECTION, DWORD))(word)pfn)(
-                                &GC_allocate_ml, SPIN_COUNT);
+              (*(BOOL (WINAPI *)(LPCRITICAL_SECTION, DWORD))
+               (GC_funcptr_uint)pfn)(&GC_allocate_ml, SPIN_COUNT);
             } else
 #         endif /* !MSWINCE */
           /* else */ InitializeCriticalSection(&GC_allocate_ml);
@@ -1256,6 +1256,10 @@ GC_API void GC_CALL GC_init(void)
 #   if !defined(CPPCHECK)
       GC_STATIC_ASSERT(sizeof(ptr_t) == sizeof(word));
       GC_STATIC_ASSERT(sizeof(signed_word) == sizeof(word));
+      GC_STATIC_ASSERT(sizeof(GC_oom_func) == sizeof(GC_funcptr_uint));
+#     ifdef FUNCPTR_IS_WORD
+        GC_STATIC_ASSERT(sizeof(word) == sizeof(GC_funcptr_uint));
+#     endif
 #     if !defined(_AUX_SOURCE) || defined(__GNUC__)
         GC_STATIC_ASSERT((word)(-1) > (word)0);
         /* word should be unsigned */

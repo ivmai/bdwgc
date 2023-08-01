@@ -182,6 +182,9 @@ typedef int GC_bool;
 # define GC_ATTR_WORD_ALIGNED /* empty */
 #endif
 
+  typedef GC_word GC_funcptr_uint;
+# define FUNCPTR_IS_WORD
+
 typedef unsigned int unsigned32;
 
 #ifndef HEADERS_H
@@ -716,7 +719,8 @@ EXTERN_C_BEGIN
 /* Same as ABORT but does not have 'no-return' attribute.       */
 /* ABORT on a dummy condition (which is always true).           */
 #define ABORT_RET(msg) \
-              if ((signed_word)GC_current_warn_proc == -1) {} else ABORT(msg)
+    if ((GC_funcptr_uint)GC_current_warn_proc == ~(GC_funcptr_uint)0) {} \
+    else ABORT(msg)
 
 /* Exit abnormally, but without making a mess (e.g. out of memory) */
 # ifdef PCR

@@ -282,23 +282,23 @@ static void add_edge(ptr_t p, ptr_t q)
 
 typedef void (*per_object_func)(ptr_t p, size_t n_bytes, word gc_descr);
 
-static GC_CALLBACK void per_object_helper(struct hblk *h, GC_word fn)
+static GC_CALLBACK void per_object_helper(struct hblk *h, GC_word fn_ptr)
 {
   hdr * hhdr = HDR(h);
   size_t sz = (size_t)hhdr->hb_sz;
   word descr = hhdr -> hb_descr;
-  per_object_func f = (per_object_func)fn;
+  per_object_func fn = *(per_object_func *)fn_ptr;
   size_t i = 0;
 
   do {
-    f((ptr_t)(h -> hb_body + i), sz, descr);
+    fn((ptr_t)(h -> hb_body + i), sz, descr);
     i += sz;
   } while (i + sz <= BYTES_TO_WORDS(HBLKSIZE));
 }
 
-GC_INLINE void GC_apply_to_each_object(per_object_func f)
+GC_INLINE void GC_apply_to_each_object(per_object_func fn)
 {
-  GC_apply_to_all_blocks(per_object_helper, (word)f);
+  GC_apply_to_all_blocks(per_object_helper, (word)(&fn));
 }
 
 static void reset_back_edge(ptr_t p, size_t n_bytes, word gc_descr)
