@@ -106,17 +106,16 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
 
   GC_INLINE int rt_hash(ptr_t addr)
   {
-    word result = (word) addr;
+    word val = (word)addr;
 
-#   if CPP_WORDSZ > 8*LOG_RT_SIZE
-        result ^= result >> 8*LOG_RT_SIZE;
-#   endif
 #   if CPP_WORDSZ > 4*LOG_RT_SIZE
-        result ^= result >> 4*LOG_RT_SIZE;
+#     if CPP_WORDSZ > 8*LOG_RT_SIZE
+        val ^= val >> (8*LOG_RT_SIZE);
+#     endif
+      val ^= val >> (4*LOG_RT_SIZE);
 #   endif
-    result ^= result >> 2*LOG_RT_SIZE;
-    result ^= result >> LOG_RT_SIZE;
-    return result & (RT_SIZE-1);
+    val ^= val >> (2*LOG_RT_SIZE);
+    return ((val >> LOG_RT_SIZE) ^ val) & (RT_SIZE-1);
   }
 
   /* Is a range starting at b already in the table? If so return a      */
