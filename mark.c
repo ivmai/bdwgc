@@ -78,7 +78,7 @@ GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 # endif
 };
 
-# ifndef INITIAL_MARK_STACK_SIZE
+#ifndef INITIAL_MARK_STACK_SIZE
 #   define INITIAL_MARK_STACK_SIZE (1*HBLKSIZE)
                 /* INITIAL_MARK_STACK_SIZE * sizeof(mse) should be a    */
                 /* multiple of HBLKSIZE.                                */
@@ -86,7 +86,7 @@ GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
                 /* size, since it wants to push all marked dirty        */
                 /* objects before marking anything new.  Currently we   */
                 /* let it grow dynamically.                             */
-# endif
+#endif /* !INITIAL_MARK_STACK_SIZE */
 
 #if !defined(GC_DISABLE_INCREMENTAL)
   STATIC word GC_n_rescuing_pages = 0;
@@ -1490,8 +1490,8 @@ void GC_add_trace_entry(char *kind, word arg1, word arg2)
     GC_trace_buf[GC_trace_buf_ptr].kind = kind;
     GC_trace_buf[GC_trace_buf_ptr].gc_no = GC_gc_no;
     GC_trace_buf[GC_trace_buf_ptr].bytes_allocd = GC_bytes_allocd;
-    GC_trace_buf[GC_trace_buf_ptr].arg1 = arg1 ^ 0x80000000;
-    GC_trace_buf[GC_trace_buf_ptr].arg2 = arg2 ^ 0x80000000;
+    GC_trace_buf[GC_trace_buf_ptr].arg1 = arg1 ^ SIGNB;
+    GC_trace_buf[GC_trace_buf_ptr].arg2 = arg2 ^ SIGNB;
     GC_trace_buf_ptr++;
     if (GC_trace_buf_ptr >= TRACE_ENTRIES) GC_trace_buf_ptr = 0;
 }
@@ -1508,10 +1508,10 @@ GC_API void GC_CALL GC_print_trace_inner(word gc_no)
         if (p -> gc_no < gc_no || p -> kind == 0) {
             return;
         }
-        GC_printf("Trace:%s (gc:%u, bytes:%lu) 0x%lX, 0x%lX\n",
+        GC_printf("Trace:%s (gc:%u, bytes:%lu) %p, %p\n",
                   p -> kind, (unsigned)p -> gc_no,
                   (unsigned long)p -> bytes_allocd,
-                  (long)p->arg1 ^ 0x80000000L, (long)p->arg2 ^ 0x80000000L);
+                  (void *)(p -> arg1 ^ SIGNB), (void *)(p -> arg2 ^ SIGNB));
     }
     GC_printf("Trace incomplete\n");
 }

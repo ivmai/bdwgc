@@ -16,10 +16,9 @@
 #ifdef CHECKSUMS
 
 /* This is debugging code intended to verify the results of dirty bit   */
-/* computations. Works only in a single threaded environment.           */
-#define NSUMS 10000
-
-#define OFFSET 0x10000
+/* computations.  Works only in a single threaded environment.          */
+# define NSUMS 10000
+# define OFFSET 0x10000
 
 typedef struct {
         GC_bool new_valid;
@@ -67,7 +66,7 @@ STATIC word GC_checksum(struct hblk *h)
     while ((word)p < (word)lim) {
         result += *p++;
     }
-    return result | 0x80000000; /* does not look like pointer */
+    return result | SIGNB; /* does not look like pointer */
 }
 
 int GC_n_dirty_errors = 0;
@@ -85,7 +84,7 @@ STATIC void GC_update_check_page(struct hblk *h, int index)
     pe -> old_sum = pe -> new_sum;
     pe -> new_sum = GC_checksum(h);
 #   if !defined(MSWIN32) && !defined(MSWINCE)
-        if (pe -> new_sum != 0x80000000 && !GC_page_was_ever_dirty(h)) {
+        if (pe -> new_sum != SIGNB && !GC_page_was_ever_dirty(h)) {
             GC_err_printf("GC_page_was_ever_dirty(%p) is wrong\n", (void *)h);
         }
 #   endif
