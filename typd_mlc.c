@@ -636,7 +636,7 @@ STATIC mse *GC_push_complex_descriptor(word *addr,
     nelements = complex_d -> ld.ld_nelements;
     sz = complex_d -> ld.ld_size;
 
-    if (EXPECT(msl - msp <= (ptrdiff_t)nelements, FALSE)) return NULL;
+    if (EXPECT(msl - msp <= (signed_word)nelements, FALSE)) return NULL;
     GC_ASSERT(sz != 0);
     for (i = 0; i < nelements; i++) {
       msp++;

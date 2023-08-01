@@ -61,14 +61,14 @@ GC_INNER hdr *
 
         current = (ptr_t)HBLKPTR(current);
         do {
-            current = current - HBLKSIZE*(word)hhdr;
+            current = current - HBLKSIZE * (word)hhdr;
             hhdr = HDR(current);
         } while(IS_FORWARDING_ADDR_OR_NIL(hhdr));
         /* current points to near the start of the large object */
         if (hhdr -> hb_flags & IGNORE_OFF_PAGE)
             return 0;
         if (HBLK_IS_FREE(hhdr)
-            || p - current >= (ptrdiff_t)(hhdr -> hb_sz)) {
+            || p - current >= (signed_word)(hhdr -> hb_sz)) {
             GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
             /* Pointer past the end of the block */
             return 0;
