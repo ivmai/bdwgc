@@ -71,10 +71,9 @@ operating system:
   Usually just the macro name used to identify the operating system, but
   enclosed in quotes.
   * `CPP_WORDSZ` - The word size in bits as a constant suitable for
-  preprocessor tests, i.e. without casts or `sizeof` expressions. Currently
-  always defined as either 64 or 32. For platforms supporting both 32- and
-  64-bit ABIs, this should be conditionally defined depending on the current
-  ABI. There is a default of 32.
+  preprocessor tests, i.e. without casts or `sizeof` expressions. For
+  platforms supporting both 32- and 64-bit ABIs, this should be conditionally
+  defined depending on the current ABI.
   * `ALIGNMENT` - Defined to be the largest _N_ such that all pointer
   are guaranteed to be aligned on _N_-byte boundaries. Defining it to be _1_
   will always work, but perform poorly. For all modern 32-bit platforms, this

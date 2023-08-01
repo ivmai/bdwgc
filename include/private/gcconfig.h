@@ -660,12 +660,12 @@ EXTERN_C_BEGIN
 /*
  * For each architecture and OS, the following need to be defined:
  *
- * CPP_WORDSZ is a simple integer constant representing the word size.
+ * CPP_WORDSZ is a simple integer constant representing the word size
  * in bits.  We assume byte addressability, where a byte has 8 bits.
  * We also assume CPP_WORDSZ is either 32 or 64.
  * (We care about the length of pointers, not hardware
- * bus widths.  Thus a 64 bit processor with a C compiler that uses
- * 32 bit pointers should use CPP_WORDSZ of 32, not 64. Default is 32.)
+ * bus widths.  Thus a 64-bit processor with a C compiler that uses
+ * 32-bit pointers should use CPP_WORDSZ of 32, not 64.)
  *
  * MACH_TYPE is a string representation of the machine type.
  * OS_TYPE is analogous for the OS.
@@ -817,6 +817,8 @@ EXTERN_C_BEGIN
      || defined(MSWINCE)) && !defined(NO_UNDERSCORE_SETJMP)
 # define NO_UNDERSCORE_SETJMP
 #endif
+
+#define STACK_GRAN 0x1000000
 
 /* The common OS-specific definitions (should be applicable to  */
 /* all (or most, at least) supported architectures).            */
@@ -975,6 +977,23 @@ EXTERN_C_BEGIN
 #   endif
 # endif
 
+# ifdef NACL
+#   define OS_TYPE "NACL"
+#   if defined(__GLIBC__)
+#     define DYNAMIC_LOADING
+#   endif
+#   define DATASTART ((ptr_t)0x10020000)
+    extern int _end[];
+#   define DATAEND ((ptr_t)_end)
+#   undef STACK_GRAN
+#   define STACK_GRAN 0x10000
+#   define HEURISTIC1
+#   define NO_PTHREAD_GETATTR_NP
+#   define USE_MMAP_ANON
+#   define GETPAGESIZE() 65536 /* FIXME: Not real page size */
+#   define MAX_NACL_GC_THREADS 1024
+# endif /* NACL */
+
 # ifdef NETBSD
 #   define OS_TYPE "NETBSD"
 #   define HEURISTIC2
@@ -1066,8 +1085,6 @@ EXTERN_C_BEGIN
 #   endif
 # endif /* SOLARIS */
 
-# define STACK_GRAN 0x1000000
-
 # ifdef SYMBIAN
 #   define MACH_TYPE "SYMBIAN"
 #   define OS_TYPE "SYMBIAN"
@@ -1078,6 +1095,7 @@ EXTERN_C_BEGIN
 
 # ifdef M68K
 #   define MACH_TYPE "M68K"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 2
 #   ifdef OPENBSD
       /* Nothing specific. */
@@ -1124,6 +1142,7 @@ EXTERN_C_BEGIN
 # ifdef POWERPC
 #   define MACH_TYPE "POWERPC"
 #   ifdef MACOS
+#     define CPP_WORDSZ 32
 #     define ALIGNMENT 2  /* Still necessary?  Could it be 4?   */
 #   endif
 #   ifdef LINUX
@@ -1133,10 +1152,11 @@ EXTERN_C_BEGIN
 #         define HBLKSIZE 4096
 #       endif
 #     else
+#       define CPP_WORDSZ 32
 #       define ALIGNMENT 4
 #     endif
       /* HEURISTIC1 has been reliably reported to fail for a 32-bit     */
-      /* executable on a 64 bit kernel.                                 */
+      /* executable on a 64-bit kernel.                                 */
 #     if defined(__bg__)
         /* The Linux Compute Node Kernel (used on BlueGene systems)     */
         /* does not support LINUX_STACKBOTTOM way.                      */
@@ -1159,6 +1179,7 @@ EXTERN_C_BEGIN
 #         define HBLKSIZE 4096
 #       endif
 #     else
+#       define CPP_WORDSZ 32
 #       define ALIGNMENT 4
 #       define STACKBOTTOM ((ptr_t)0xc0000000)
 #     endif
@@ -1175,26 +1196,29 @@ EXTERN_C_BEGIN
 #     if defined(__powerpc64__)
 #       define CPP_WORDSZ 64
 #     else
+#       define CPP_WORDSZ 32
 #       define ALIGNMENT 4
 #     endif
 #   endif
 #   ifdef FREEBSD
-#       if defined(__powerpc64__)
-#           define CPP_WORDSZ 64
-#           ifndef HBLKSIZE
-#               define HBLKSIZE 4096
-#           endif
-#       else
-#           define ALIGNMENT 4
+#     if defined(__powerpc64__)
+#       define CPP_WORDSZ 64
+#       ifndef HBLKSIZE
+#         define HBLKSIZE 4096
 #       endif
+#     else
+#       define CPP_WORDSZ 32
+#       define ALIGNMENT 4
+#     endif
 #   endif
 #   ifdef NETBSD
+#     define CPP_WORDSZ 32
 #     define ALIGNMENT 4
 #   endif
 #   ifdef SN_TARGET_PS3
 #     define OS_TYPE "SN_TARGET_PS3"
-#     define NO_GETENV
 #     define CPP_WORDSZ 32
+#     define NO_GETENV
       extern int _end[];
       extern int __bss_start;
 #     define DATASTART ((ptr_t)(__bss_start))
@@ -1235,6 +1259,7 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef NOSYS
 #     define OS_TYPE "NOSYS"
+#     define CPP_WORDSZ 32
 #     define ALIGNMENT 4
       extern void __end[], __dso_handle[];
 #     define DATASTART ((ptr_t)__dso_handle) /* OK, that's ugly.    */
@@ -1244,27 +1269,11 @@ EXTERN_C_BEGIN
 #     define STACK_GRAN 0x10000000
 #     define HEURISTIC1
 #   endif
-# endif
-
-# ifdef NACL
-#   define OS_TYPE "NACL"
-#   if defined(__GLIBC__)
-#     define DYNAMIC_LOADING
-#   endif
-#   define DATASTART ((ptr_t)0x10020000)
-    extern int _end[];
-#   define DATAEND ((ptr_t)_end)
-#   undef STACK_GRAN
-#   define STACK_GRAN 0x10000
-#   define HEURISTIC1
-#   define NO_PTHREAD_GETATTR_NP
-#   define USE_MMAP_ANON
-#   define GETPAGESIZE() 65536 /* FIXME: Not real page size */
-#   define MAX_NACL_GC_THREADS 1024
-# endif
+# endif /* POWERPC */
 
 # ifdef VAX
 #   define MACH_TYPE "VAX"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4  /* Pointers are longword aligned by 4.2 C compiler */
     extern char etext[];
 #   define DATASTART ((ptr_t)(etext))
@@ -1277,7 +1286,7 @@ EXTERN_C_BEGIN
 #       define OS_TYPE "ULTRIX"
 #       define STACKBOTTOM ((ptr_t)0x7fffc800)
 #   endif
-# endif
+# endif /* VAX */
 
 # ifdef SPARC
 #   define MACH_TYPE "SPARC"
@@ -1285,8 +1294,8 @@ EXTERN_C_BEGIN
 #     define CPP_WORDSZ 64
 #     define ELF_CLASS ELFCLASS64
 #   else
-#     define ALIGNMENT 4        /* Required by hardware */
 #     define CPP_WORDSZ 32
+#     define ALIGNMENT 4        /* Required by hardware */
 #   endif
     /* Don't define USE_ASM_PUSH_REGS.  We do use an asm helper, but    */
     /* not to push the registers on the mark stack.                     */
@@ -1369,6 +1378,9 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef EMBOX
+      /* Nothing specific. */
+#   endif
+#   ifdef NACL
       /* Nothing specific. */
 #   endif
 #   ifdef QNX
@@ -1573,8 +1585,8 @@ EXTERN_C_BEGIN
       /* Depending on calling conventions Watcom C either precedes      */
       /* or does not precedes with underscore names of C-variables.     */
       /* Make sure startup code variables always have the same names.   */
-      #pragma aux __nullarea "*";
-      #pragma aux _end "*";
+#     pragma aux __nullarea "*";
+#     pragma aux _end "*";
 #     define STACKBOTTOM ((ptr_t)_STACKTOP)
                          /* confused? me too. */
 #     define DATASTART ((ptr_t)(&__nullarea))
@@ -1593,6 +1605,7 @@ EXTERN_C_BEGIN
 
 # ifdef NS32K
 #   define MACH_TYPE "NS32K"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
     extern char **environ;
 #   define DATASTART ((ptr_t)(&environ))
@@ -1601,7 +1614,7 @@ EXTERN_C_BEGIN
                               /* of the data segment, no matter which   */
                               /* ld options were passed through.        */
 #   define STACKBOTTOM ((ptr_t)0xfffff000) /* for Encore */
-# endif
+# endif /* NS32K */
 
 # ifdef LOONGARCH
 #   define MACH_TYPE "LoongArch"
@@ -1624,14 +1637,15 @@ EXTERN_C_BEGIN
 # ifdef MIPS
 #   define MACH_TYPE "MIPS"
 #   ifdef LINUX
-#     pragma weak __data_start
-      extern int __data_start[];
-#     define DATASTART ((ptr_t)(__data_start))
 #     ifdef _MIPS_SZPTR
 #       define CPP_WORDSZ _MIPS_SZPTR
 #     else
+#       define CPP_WORDSZ 32
 #       define ALIGNMENT 4
 #     endif
+#     pragma weak __data_start
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)(__data_start))
 #     ifndef HBLKSIZE
 #       define HBLKSIZE 4096
 #     endif
@@ -1640,16 +1654,18 @@ EXTERN_C_BEGIN
 #     else
 #       define STACKBOTTOM ((ptr_t)0x7fff8000)
 #     endif
-#   endif /* Linux */
+#   endif
 #   ifdef EWS4800
 #     define OS_TYPE "EWS4800"
 #     define HEURISTIC2
 #     if defined(_MIPS_SZPTR) && (_MIPS_SZPTR == 64)
+#       define CPP_WORDSZ _MIPS_SZPTR
         extern int _fdata[], _end[];
 #       define DATASTART ((ptr_t)_fdata)
 #       define DATAEND ((ptr_t)_end)
-#       define CPP_WORDSZ _MIPS_SZPTR
 #     else
+#       define CPP_WORDSZ 32
+#       define ALIGNMENT 4
         extern int etext[], edata[];
 #       if !defined(CPPCHECK)
           extern int end[];
@@ -1663,27 +1679,33 @@ EXTERN_C_BEGIN
                 ? PTRT_ROUNDUP_BY_MASK((word)_gp + 0x8000, 0x3ffff) \
                 : (ptr_t)edata)
 #       define DATAEND2 ((ptr_t)(end))
-#       define ALIGNMENT 4
 #     endif
 #   endif
 #   ifdef ULTRIX
-#       define OS_TYPE "ULTRIX"
-#       define HEURISTIC2
-#       define DATASTART ((ptr_t)0x10000000)
+#     define OS_TYPE "ULTRIX"
+#     define CPP_WORDSZ 32
+#     define ALIGNMENT 4
+#     define HEURISTIC2
+#     define DATASTART ((ptr_t)0x10000000)
                               /* Could probably be slightly higher since */
                               /* startup code allocates lots of stuff.   */
-#       define ALIGNMENT 4
 #   endif
 #   ifdef IRIX5
-#       define OS_TYPE "IRIX5"
-#       define HEURISTIC2
-        extern int _fdata[];
-#       define DATASTART ((ptr_t)(_fdata))
-#       ifdef USE_MMAP
-#         define HEAP_START (ptr_t)0x30000000
-#       else
-#         define HEAP_START DATASTART
-#       endif
+#     define OS_TYPE "IRIX5"
+#     ifdef _MIPS_SZPTR
+#       define CPP_WORDSZ _MIPS_SZPTR
+#     else
+#       define CPP_WORDSZ 32
+#       define ALIGNMENT 4
+#     endif
+#     define HEURISTIC2
+      extern int _fdata[];
+#     define DATASTART ((ptr_t)(_fdata))
+#     ifdef USE_MMAP
+#       define HEAP_START (ptr_t)0x30000000
+#     else
+#       define HEAP_START DATASTART
+#     endif
                               /* Lowest plausible heap address.         */
                               /* In the MMAP case, we map there.        */
                               /* In either case it is used to identify  */
@@ -1691,17 +1713,14 @@ EXTERN_C_BEGIN
                               /* considered as roots.                   */
 /*#       define MPROTECT_VDB DOB: this should work, but there is evidence */
 /*              of recent breakage.                                        */
-#       ifdef _MIPS_SZPTR
-#         define CPP_WORDSZ _MIPS_SZPTR
-#       else
-#         define ALIGNMENT 4
-#       endif
-#       define DYNAMIC_LOADING
+#     define DYNAMIC_LOADING
 #   endif
 #   ifdef MSWINCE
-#       define ALIGNMENT 4
+#     define CPP_WORDSZ 32
+#     define ALIGNMENT 4
 #   endif
 #   ifdef NETBSD
+#     define CPP_WORDSZ 32
 #     define ALIGNMENT 4
 #     ifndef __ELF__
 #       define DATASTART ((ptr_t)0x10000000)
@@ -1712,6 +1731,7 @@ EXTERN_C_BEGIN
 #     define CPP_WORDSZ 64 /* all OpenBSD/mips platforms are 64-bit */
 #   endif
 #   ifdef FREEBSD
+#     define CPP_WORDSZ 32
 #     define ALIGNMENT 4
 #   endif
 #   ifdef NONSTOP
@@ -1931,7 +1951,7 @@ EXTERN_C_BEGIN
 #       define ALIGNMENT 8
 #     endif
 #   endif
-# endif
+# endif /* IA64 */
 
 # ifdef E2K
 #   define MACH_TYPE "E2K"
@@ -1954,6 +1974,7 @@ EXTERN_C_BEGIN
 
 # ifdef M88K
 #   define MACH_TYPE "M88K"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   define STACKBOTTOM ((char*)0xf0000000) /* determined empirically */
     extern int etext[];
@@ -1967,16 +1988,16 @@ EXTERN_C_BEGIN
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)etext)
 #       define DATASTART_IS_FUNC
 #   endif
-# endif
+# endif /* M88K */
 
 # ifdef S370
     /* If this still works, and if anyone cares, this should probably   */
     /* be moved to the S390 category.                                   */
 #   define MACH_TYPE "S370"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4  /* Required by hardware */
 #   ifdef UTS4
 #       define OS_TYPE "UTS4"
-        extern int etext[];
         extern int _etext[];
         extern int _end[];
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
@@ -1985,7 +2006,7 @@ EXTERN_C_BEGIN
 #       define DATAEND ((ptr_t)(_end))
 #       define HEURISTIC2
 #   endif
-# endif
+# endif /* S370 */
 
 # ifdef S390
 #   define MACH_TYPE "S390"
@@ -2077,7 +2098,7 @@ EXTERN_C_BEGIN
       extern void *__stack_base__;
 #     define STACKBOTTOM ((ptr_t)__stack_base__)
 #   endif
-# endif
+# endif /* AARCH64 */
 
 # ifdef ARM32
 #   if defined(NACL)
@@ -2086,9 +2107,6 @@ EXTERN_C_BEGIN
 #     define MACH_TYPE "ARM32"
 #   endif
 #   define CPP_WORDSZ 32
-#   ifdef NETBSD
-      /* Nothing specific. */
-#   endif
 #   ifdef LINUX
 #       if GC_GLIBC_PREREQ(2, 0) || defined(HOST_ANDROID)
 #           define SEARCH_FOR_DATA_START
@@ -2119,6 +2137,12 @@ EXTERN_C_BEGIN
 #     if TARGET_OS_IPHONE && !defined(NO_DYLD_BIND_FULLY_IMAGE)
 #       define NO_DYLD_BIND_FULLY_IMAGE
 #     endif
+#   endif
+#   ifdef NACL
+      /* Nothing specific. */
+#   endif
+#   ifdef NETBSD
+      /* Nothing specific. */
 #   endif
 #   ifdef OPENBSD
       /* Nothing specific. */
@@ -2158,7 +2182,7 @@ EXTERN_C_BEGIN
       extern void *__stack_base__;
 #     define STACKBOTTOM ((ptr_t)(__stack_base__))
 #   endif
-#endif
+#endif /* ARM32 */
 
 # ifdef CRIS
 #   define MACH_TYPE "CRIS"
@@ -2171,6 +2195,7 @@ EXTERN_C_BEGIN
 
 # if defined(SH) && !defined(SH4)
 #   define MACH_TYPE "SH"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   ifdef LINUX
 #     define SEARCH_FOR_DATA_START
@@ -2188,11 +2213,12 @@ EXTERN_C_BEGIN
 
 # ifdef SH4
 #   define MACH_TYPE "SH4"
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   ifdef MSWINCE
       /* Nothing specific. */
 #   endif
-# endif
+# endif /* SH4 */
 
 # ifdef AVR32
 #   define MACH_TYPE "AVR32"
@@ -2416,6 +2442,7 @@ EXTERN_C_BEGIN
 #   if defined(__wasm64__) && !defined(CPPCHECK)
 #     error 64-bit WebAssembly is not yet supported
 #   endif
+#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   ifdef EMSCRIPTEN
 #     define OS_TYPE "EMSCRIPTEN"
@@ -2501,10 +2528,6 @@ EXTERN_C_BEGIN
     /* segments that appear to be out of bounds.  Thus we actually      */
     /* do both, which seems to yield the best results.                  */
 #   define USE_PROC_FOR_LIBRARIES
-#endif
-
-#ifndef CPP_WORDSZ
-# define CPP_WORDSZ 32
 #endif
 
 #ifndef OS_TYPE
