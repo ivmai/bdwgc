@@ -23,7 +23,7 @@
 /* Convenient internal macro to test version of gcc.    */
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
 # define GC_GNUC_PREREQ(major, minor) \
-            ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((major) << 16) + (minor))
+            ((__GNUC__ << 8) + __GNUC_MINOR__ >= ((major) << 8) + (minor))
 #else
 # define GC_GNUC_PREREQ(major, minor) 0 /* FALSE */
 #endif

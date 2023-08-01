@@ -61,7 +61,7 @@ EXTERN_C_BEGIN
 /* Convenient internal macro to test version of Clang.  */
 #if defined(__clang__) && defined(__clang_major__)
 # define GC_CLANG_PREREQ(major, minor) \
-    ((__clang_major__ << 16) + __clang_minor__ >= ((major) << 16) + (minor))
+    ((__clang_major__ << 8) + __clang_minor__ >= ((major) << 8) + (minor))
 # define GC_CLANG_PREREQ_FULL(major, minor, patchlevel) \
             (GC_CLANG_PREREQ(major, (minor) + 1) \
                 || (__clang_major__ == (major) && __clang_minor__ == (minor) \
@@ -789,7 +789,7 @@ EXTERN_C_BEGIN
 /* Convenient internal macro to test glibc version (if compiled against). */
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__)
 # define GC_GLIBC_PREREQ(major, minor) \
-            ((__GLIBC__ << 16) + __GLIBC_MINOR__ >= ((major) << 16) + (minor))
+            ((__GLIBC__ << 8) + __GLIBC_MINOR__ >= ((major) << 8) + (minor))
 #else
 # define GC_GLIBC_PREREQ(major, minor) 0 /* FALSE */
 #endif
