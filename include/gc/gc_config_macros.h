@@ -28,6 +28,23 @@
 # define GC_GNUC_PREREQ(major, minor) 0 /* FALSE */
 #endif
 
+/* A macro to define integer types of a pointer size.  There seems to   */
+/* be no way to do this even semi-portably.  The following is probably  */
+/* no better/worse than almost anything else.                           */
+/* The ANSI standard suggests that size_t and ptrdiff_t might be        */
+/* better choices.  But those had incorrect definitions on some older   */
+/* systems; notably "typedef int size_t" is wrong.                      */
+#ifdef _WIN64
+# if defined(__int64) && !defined(CPPCHECK)
+#   define GC_SIGNEDWORD __int64
+# else
+#   define GC_SIGNEDWORD long long
+# endif
+#else
+# define GC_SIGNEDWORD long
+#endif
+#define GC_UNSIGNEDWORD unsigned GC_SIGNEDWORD
+
 /* The return type of GC_get_version().  A 32-bit unsigned integer  */
 /* or longer.                                                       */
 # define GC_VERSION_VAL_T unsigned

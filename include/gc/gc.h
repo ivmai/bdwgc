@@ -51,25 +51,12 @@
 
 typedef void * GC_PTR;  /* preserved only for backward compatibility    */
 
-/* Define word and signed_word to be unsigned and signed types of the   */
-/* size as char * or void *.  There seems to be no way to do this       */
-/* even semi-portably.  The following is probably no better/worse       */
-/* than almost anything else.                                           */
-/* The ANSI standard suggests that size_t and ptrdiff_t might be        */
-/* better choices.  But those had incorrect definitions on some older   */
-/* systems.  Notably "typedef int size_t" is WRONG.                     */
-#ifdef _WIN64
-# if defined(__int64) && !defined(CPPCHECK)
-    typedef unsigned __int64 GC_word;
-    typedef __int64 GC_signed_word;
-# else
-    typedef unsigned long long GC_word;
-    typedef long long GC_signed_word;
-# endif
-#else
-  typedef unsigned long GC_word;
-  typedef long GC_signed_word;
-#endif
+/* Define word and signed word to be unsigned and signed types of the   */
+/* size as char* or void*.                                              */
+typedef GC_UNSIGNEDWORD GC_word;
+typedef GC_SIGNEDWORD GC_signed_word;
+#undef GC_SIGNEDWORD
+#undef GC_UNSIGNEDWORD
 
 /* Get the GC library version. The returned value is a constant in the  */
 /* form: ((version_major<<16) | (version_minor<<8) | version_micro).    */
