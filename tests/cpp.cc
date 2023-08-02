@@ -61,10 +61,10 @@ extern "C" {
 #endif
 
 #define my_assert( e ) \
-    if (! (e)) { \
+    if (!(e)) { \
         GC_printf( "Assertion failure in " __FILE__ ", line %d: " #e "\n", \
                     __LINE__ ); \
-        exit( 1 ); }
+        exit(1); }
 
 #if defined(__powerpc64__) && !defined(__clang__) && GC_GNUC_PREREQ(10, 0)
   /* Suppress "layout of aggregates ... has changed" GCC note. */
@@ -328,7 +328,7 @@ void* Undisguise( GC_word i ) {
     *x = 29;
     if (!xptr) {
       GC_printf("Out of memory!\n");
-      exit(3);
+      exit(69);
     }
     GC_PTR_STORE_AND_DIRTY(xptr, x);
     x = 0;

@@ -190,9 +190,9 @@
     INIT_PRINT_STATS; INIT_FIND_LEAK; INIT_PERF_MEASUREMENT
 
 #define CHECK_OUT_OF_MEMORY(p) \
-            if ((p) == NULL) { \
+            if (NULL == (p)) { \
               GC_printf("Out of memory\n"); \
-              exit(1); \
+              exit(69); \
             }
 
 static void *checkOOM(void *p)
@@ -324,8 +324,7 @@ static sexpr cons(sexpr x, sexpr y)
     int *p;
     unsigned my_extra = (unsigned)AO_fetch_and_add1(&extra_count) % 5000;
 
-    r = (sexpr)GC_MALLOC(sizeof(struct SEXPR) + my_extra);
-    CHECK_OUT_OF_MEMORY(r);
+    r = (sexpr)checkOOM(GC_MALLOC(sizeof(struct SEXPR) + my_extra));
     AO_fetch_and_add1(&collectable_count);
     for (p = (int *)r;
          (GC_word)p < (GC_word)r + my_extra + sizeof(struct SEXPR); p++) {
@@ -406,9 +405,8 @@ static sexpr small_cons(sexpr x, sexpr y)
 #else
   static sexpr small_cons_leaf(int x)
   {
-    sexpr r = (sexpr)GC_MALLOC_ATOMIC(sizeof(struct SEXPR));
+    sexpr r = (sexpr)checkOOM(GC_MALLOC_ATOMIC(sizeof(struct SEXPR)));
 
-    CHECK_OUT_OF_MEMORY(r);
     AO_fetch_and_add1(&atomic_count);
     r -> sexpr_car = INT_TO_SEXPR(x);
     r -> sexpr_cdr = nil;
@@ -418,9 +416,8 @@ static sexpr small_cons(sexpr x, sexpr y)
 
 static sexpr small_cons_uncollectable(sexpr x, sexpr y)
 {
-    sexpr r = (sexpr)GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR));
+    sexpr r = (sexpr)checkOOM(GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR)));
 
-    CHECK_OUT_OF_MEMORY(r);
     AO_fetch_and_add1(&uncollectable_count);
     r -> sexpr_cdr = (sexpr)(~(GC_word)y);
     GC_PTR_STORE_AND_DIRTY(&r->sexpr_car, x);
@@ -813,14 +810,12 @@ static void test_generic_malloc_or_special(void *p) {
   int kind;
   void *p2;
 
-  CHECK_OUT_OF_MEMORY(p);
   kind = GC_get_kind_and_size(p, &size);
   if (size != GC_size(p)) {
     GC_printf("GC_get_kind_and_size returned size not matching GC_size\n");
     FAIL;
   }
-  p2 = GC_GENERIC_OR_SPECIAL_MALLOC(10, kind);
-  CHECK_OUT_OF_MEMORY(p2);
+  p2 = checkOOM(GC_GENERIC_OR_SPECIAL_MALLOC(10, kind));
   if (GC_get_kind_and_size(p2, NULL) != kind) {
     GC_printf("GC_generic_or_special_malloc:"
               " unexpected kind of returned object\n");
@@ -888,23 +883,20 @@ static void *GC_CALLBACK reverse_test_inner(void *data)
     test_generic_malloc_or_special(d);
     e = uncollectable_ints(1, 1);
     /* Check that realloc updates object descriptors correctly */
-    AO_fetch_and_add1(&collectable_count);
     f = (sexpr *)checkOOM(GC_MALLOC(4 * sizeof(sexpr)));
-    f = (sexpr *)GC_REALLOC((void *)f, 6 * sizeof(sexpr));
-    CHECK_OUT_OF_MEMORY(f);
+    AO_fetch_and_add1(&collectable_count);
+    f = (sexpr *)checkOOM(GC_REALLOC((void *)f, 6 * sizeof(sexpr)));
     AO_fetch_and_add1(&realloc_count);
     GC_PTR_STORE_AND_DIRTY(f + 5, ints(1, 17));
+    g = (sexpr *)checkOOM(GC_MALLOC(513 * sizeof(sexpr)));
     AO_fetch_and_add1(&collectable_count);
-    g = (sexpr *)GC_MALLOC(513 * sizeof(sexpr));
     test_generic_malloc_or_special(g);
-    g = (sexpr *)GC_REALLOC((void *)g, 800 * sizeof(sexpr));
-    CHECK_OUT_OF_MEMORY(g);
+    g = (sexpr *)checkOOM(GC_REALLOC((void *)g, 800 * sizeof(sexpr)));
     AO_fetch_and_add1(&realloc_count);
     GC_PTR_STORE_AND_DIRTY(g + 799, ints(1, 18));
-    AO_fetch_and_add1(&collectable_count);
     h = (sexpr *)checkOOM(GC_MALLOC(1025 * sizeof(sexpr)));
-    h = (sexpr *)GC_REALLOC((void *)h, 2000 * sizeof(sexpr));
-    CHECK_OUT_OF_MEMORY(h);
+    AO_fetch_and_add1(&collectable_count);
+    h = (sexpr *)checkOOM(GC_REALLOC((void *)h, 2000 * sizeof(sexpr)));
     AO_fetch_and_add1(&realloc_count);
 #   ifdef GC_GCJ_SUPPORT
       GC_PTR_STORE_AND_DIRTY(h + 1999, gcj_ints(1, 200));
@@ -1033,9 +1025,11 @@ int dropped_something = 0;
   }
 #endif /* !GC_NO_FINALIZATION */
 
-# define MAX_FINALIZED ((NTHREADS+1)*4000)
+# define MAX_FINALIZED_PER_THREAD 4000
 
-# if !defined(MACOS)
+#define MAX_FINALIZED ((NTHREADS+1) * MAX_FINALIZED_PER_THREAD)
+
+#if !defined(MACOS)
   GC_FAR GC_word live_indicators[MAX_FINALIZED] = {0};
 # ifndef GC_LONG_REFS_NOT_NEEDED
     GC_FAR void *live_long_refs[MAX_FINALIZED] = { NULL };
@@ -1338,7 +1332,7 @@ const GC_word bm_huge[320 / CPP_WORDSZ] = {
     ((GC_word)((GC_signed_word)-1)) >> 8 /* highest byte is zero */
 };
 
-/* A very simple test of explicitly typed allocation    */
+/* A very simple test of explicitly typed allocation.   */
 static void typed_test(void)
 {
     GC_word * old, * newP;
@@ -1372,7 +1366,7 @@ static void typed_test(void)
       if (GC_calloc_prepare_explicitly_typed(&ctd_l, sizeof(ctd_l), 1001,
                                              3 * sizeof(GC_word), d2) != 1) {
         GC_printf("Out of memory in calloc typed prepare\n");
-        exit(1);
+        exit(69);
       }
 #   endif
     old = 0;
@@ -1548,41 +1542,35 @@ static void run_one_test(void)
 #   endif
     test_tinyfl();
 #   ifndef DBG_HDRS_ALL
+      x = (char *)checkOOM(GC_malloc(7));
       AO_fetch_and_add1(&collectable_count);
-      x = (char*)GC_malloc(7);
-      CHECK_OUT_OF_MEMORY(x);
+      y = (char *)checkOOM(GC_malloc(7));
       AO_fetch_and_add1(&collectable_count);
-      y = (char*)GC_malloc(7);
-      CHECK_OUT_OF_MEMORY(y);
       if (GC_size(x) != 8 && GC_size(y) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_size produced unexpected results\n");
         FAIL;
       }
+      x = (char *)checkOOM(GC_malloc(15));
       AO_fetch_and_add1(&collectable_count);
-      x = (char*)GC_malloc(15);
-      CHECK_OUT_OF_MEMORY(x);
       if (GC_size(x) != 16) {
         GC_printf("GC_size produced unexpected results 2\n");
         FAIL;
       }
+      x = (char *)checkOOM(GC_malloc(0));
       AO_fetch_and_add1(&collectable_count);
-      x = (char*)GC_malloc(0);
-      CHECK_OUT_OF_MEMORY(x);
       if (GC_size(x) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_malloc(0) failed: GC_size returns %lu\n",
                       (unsigned long)GC_size(x));
         FAIL;
       }
+      x = (char *)checkOOM(GC_malloc_uncollectable(0));
       AO_fetch_and_add1(&uncollectable_count);
-      x = (char*)GC_malloc_uncollectable(0);
-      CHECK_OUT_OF_MEMORY(x);
       if (GC_size(x) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_malloc_uncollectable(0) failed\n");
         FAIL;
       }
+      x = (char *)checkOOM(GC_malloc(16));
       AO_fetch_and_add1(&collectable_count);
-      x = (char*)GC_malloc(16);
-      CHECK_OUT_OF_MEMORY(x);
       if (GC_base(GC_PTR_ADD(x, 13)) != x) {
         GC_printf("GC_base(heap ptr) produced incorrect result\n");
         FAIL;
@@ -1622,8 +1610,7 @@ static void run_one_test(void)
         GC_printf("GC_is_visible produced incorrect result\n");
         FAIL;
       }
-      z = (char**)GC_malloc(8);
-      CHECK_OUT_OF_MEMORY(z);
+      z = (char **)checkOOM(GC_malloc(8));
       AO_fetch_and_add1(&collectable_count);
       GC_PTR_STORE(z, x);
       GC_end_stubborn_change(z);
@@ -1657,8 +1644,7 @@ static void run_one_test(void)
 
           /* TODO: GC_memalign and friends are not tested well. */
           for (i = sizeof(GC_word); i <= HBLKSIZE * 4; i *= 2) {
-            p = GC_memalign(i, 17);
-            CHECK_OUT_OF_MEMORY(p);
+            p = checkOOM(GC_memalign(i, 17));
             AO_fetch_and_add1(&collectable_count);
             if ((GC_word)p % i != 0 || *(int *)p != 0) {
               GC_printf("GC_memalign(%u,17) produced incorrect result: %p\n",
@@ -1672,17 +1658,15 @@ static void run_one_test(void)
       }
 #     ifndef GC_NO_VALLOC
         {
-          void *p = GC_valloc(78);
+          void *p = checkOOM(GC_valloc(78));
 
-          CHECK_OUT_OF_MEMORY(p);
           AO_fetch_and_add1(&collectable_count);
           if (((GC_word)p & 0x1ff /* at least */) != 0 || *(int *)p != 0) {
             GC_printf("GC_valloc() produced incorrect result: %p\n", p);
             FAIL;
           }
 
-          p = GC_pvalloc(123);
-          CHECK_OUT_OF_MEMORY(p);
+          p = checkOOM(GC_pvalloc(123));
           AO_fetch_and_add1(&collectable_count);
           /* Note: cannot check GC_size() result. */
           if (((GC_word)p & 0x1ff) != 0 || *(int *)p != 0) {
@@ -1722,9 +1706,8 @@ static void run_one_test(void)
 #   endif
 #   ifndef GC_NO_FINALIZATION
       if (!GC_get_find_leak()) {
-        void **p = (void **)GC_MALLOC_ATOMIC(sizeof(void*));
+        void **p = (void **)checkOOM(GC_MALLOC_ATOMIC(sizeof(void*)));
 
-        CHECK_OUT_OF_MEMORY(p);
         AO_fetch_and_add1(&atomic_count);
         *p = x;
         if (GC_register_disappearing_link(p) != 0) {
@@ -1745,7 +1728,7 @@ static void run_one_test(void)
 #       ifndef GC_TOGGLE_REFS_NOT_NEEDED
           if (GC_toggleref_add(p, 1) == GC_NO_MEMORY) {
             GC_printf("Out of memory in GC_toggleref_add\n");
-            exit(1);
+            exit(69);
           }
 #       endif
       }
@@ -1775,7 +1758,7 @@ static void run_one_test(void)
              (void)checkOOM(GC_MALLOC_ATOMIC(0));
              AO_fetch_and_add1(&atomic_count);
              GC_FREE(checkOOM(GC_MALLOC_ATOMIC(0)));
-             test_generic_malloc_or_special(GC_malloc_atomic(1));
+             test_generic_malloc_or_special(checkOOM(GC_malloc_atomic(1)));
              AO_fetch_and_add1(&atomic_count);
              GC_FREE(checkOOM(GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(1)));
              GC_FREE(checkOOM(GC_MALLOC_IGNORE_OFF_PAGE(2)));
@@ -1893,7 +1876,7 @@ static void run_one_test(void)
 #   endif /* !NO_TYPED_TEST */
     tree_test();
 #   ifdef TEST_WITH_SYSTEM_MALLOC
-      free(checkOOM(calloc(1,1)));
+      free(checkOOM(calloc(1, 1)));
       free(checkOOM(realloc(NULL, 64)));
 #   endif
 #   ifndef NO_CLOCK

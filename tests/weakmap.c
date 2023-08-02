@@ -48,8 +48,10 @@ static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
 # endif
 #endif
 
-#define POP_SIZE 200
-#define MUTATE_CNT (700000 / (NTHREADS+1))
+# define POP_SIZE 200
+# define MUTATE_CNT_BASE 700000
+
+#define MUTATE_CNT (MUTATE_CNT_BASE / (NTHREADS+1))
 #define GROW_LIMIT (MUTATE_CNT / 10)
 
 #define WEAKMAP_CAPACITY 256
@@ -71,7 +73,7 @@ static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
       exit(70); \
     }
 
-#define CHECK_OOM(p) \
+#define CHECK_OUT_OF_MEMORY(p) \
     do { \
         if (NULL == (p)) { \
             fprintf(stderr, "Out of memory\n"); \
@@ -200,7 +202,7 @@ static void *weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
   /* Create new object. */
   new_base = (GC_word *)GC_generic_malloc(sizeof(GC_word) + wm->obj_size,
                                           (int)wm->weakobj_kind);
-  CHECK_OOM(new_base);
+  CHECK_OUT_OF_MEMORY(new_base);
   *new_base = (GC_word)wm | FINALIZER_CLOSURE_FLAG;
   new_obj = (void *)(new_base + 1);
   memcpy(new_obj, obj, wm->obj_size);
@@ -208,7 +210,7 @@ static void *weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
 
   /* Add the object to the map. */
   new_link = (struct weakmap_link *)GC_malloc(sizeof(struct weakmap_link));
-  CHECK_OOM(new_link);
+  CHECK_OUT_OF_MEMORY(new_link);
   new_link->obj = GC_get_find_leak() ? (GC_word)new_obj
                         : GC_HIDE_POINTER(new_obj);
   new_link->next = *first;
@@ -288,7 +290,7 @@ static struct weakmap *weakmap_new(size_t capacity, size_t key_size,
 {
   struct weakmap *wm = (struct weakmap *)GC_malloc(sizeof(struct weakmap));
 
-  CHECK_OOM(wm);
+  CHECK_OUT_OF_MEMORY(wm);
 # ifdef GC_PTHREADS
     {
       int i;
@@ -304,7 +306,7 @@ static struct weakmap *weakmap_new(size_t capacity, size_t key_size,
   wm->weakobj_kind = weakobj_kind;
   GC_ptr_store_and_dirty(&wm->links,
                          GC_malloc(sizeof(struct weakmap_link *) * capacity));
-  CHECK_OOM(wm->links);
+  CHECK_OUT_OF_MEMORY(wm->links);
   return wm;
 }
 

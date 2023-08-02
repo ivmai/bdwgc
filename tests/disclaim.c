@@ -38,12 +38,24 @@
 static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
 #define rand() GC_RAND_NEXT(&seed)
 
+# define MAX_LOG_MISC_SIZES 20 /* up to 1 MB */
+# define POP_SIZE 1000
+# define MUTATE_CNT_BASE (6*1000000)
+
 #define my_assert(e) \
     if (!(e)) { \
         fflush(stdout); \
         fprintf(stderr, "Assertion failure, line %d: " #e "\n", __LINE__); \
         exit(-1); \
     }
+
+#define CHECK_OUT_OF_MEMORY(p) \
+    do { \
+        if (NULL == (p)) { \
+            fprintf(stderr, "Out of memory\n"); \
+            exit(69); \
+        } \
+    } while (0)
 
 static int memeq(void *s, int c, size_t len)
 {
@@ -72,12 +84,10 @@ static void test_misc_sizes(void)
 {
     static const struct GC_finalizer_closure fc = { misc_sizes_dct, NULL };
     int i;
-    for (i = 1; i <= 20; ++i) { /* Up to 1 MiB. */
+    for (i = 1; i <= MAX_LOG_MISC_SIZES; ++i) {
         void *p = GC_finalized_malloc((size_t)1 << i, &fc);
-        if (p == NULL) {
-            fprintf(stderr, "Out of memory!\n");
-            exit(3);
-        }
+
+        CHECK_OUT_OF_MEMORY(p);
         my_assert(memeq(p, 0, (size_t)1 << i));
         memset(p, MEM_FILL_BYTE, (size_t)1 << i);
         *(unsigned char *)p = (unsigned char)i;
@@ -135,16 +145,10 @@ static pair_t pair_new(pair_t car, pair_t cdr)
     struct GC_finalizer_closure *pfc =
                         GC_NEW_ATOMIC(struct GC_finalizer_closure);
 
-    if (NULL == pfc) {
-        fprintf(stderr, "Out of memory!\n");
-        exit(3);
-    }
+    CHECK_OUT_OF_MEMORY(pfc);
     pfc->proc = pair_dct;
     p = (pair_t)GC_finalized_malloc(sizeof(struct pair_s), pfc);
-    if (p == NULL) {
-        fprintf(stderr, "Out of memory!\n");
-        exit(3);
-    }
+    CHECK_OUT_OF_MEMORY(p);
     pfc->cd = (void *)PTR_HASH(p);
     my_assert(!is_pair(p));
     my_assert(memeq(p, 0, sizeof(struct pair_s)));
@@ -184,8 +188,7 @@ static void pair_check_rec(pair_t p)
 # define NTHREADS 0
 #endif
 
-#define POP_SIZE 1000
-#define MUTATE_CNT (6*1000000/(NTHREADS+1))
+#define MUTATE_CNT (MUTATE_CNT_BASE/(NTHREADS+1))
 #define GROW_LIMIT (MUTATE_CNT/10)
 
 static void *test(void *data)

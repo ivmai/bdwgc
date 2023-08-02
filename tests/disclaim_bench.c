@@ -32,6 +32,14 @@ static GC_RAND_STATE_T seed;
         exit(-1); \
     }
 
+#define CHECK_OUT_OF_MEMORY(p) \
+    do { \
+        if (NULL == (p)) { \
+            fprintf(stderr, "Out of memory\n"); \
+            exit(69); \
+        } \
+    } while (0)
+
 static int free_count = 0;
 
 struct testobj_s {
@@ -75,10 +83,7 @@ static testobj_t testobj_new(int model)
         default:
             exit(-1);
     }
-    if (obj == NULL) {
-        fprintf(stderr, "Out of memory!\n");
-        exit(3);
-    }
+    CHECK_OUT_OF_MEMORY(obj);
     my_assert(obj->i == 0 && obj->keep_link == NULL);
     obj->i = 109;
     return obj;
@@ -125,11 +130,7 @@ int main(int argc, char **argv)
         printf("This test program is not designed for leak detection mode\n");
 
     keep_arr = (testobj_t *)GC_malloc(sizeof(void *) * KEEP_CNT);
-    if (NULL == keep_arr) {
-        fprintf(stderr, "Out of memory!\n");
-        exit(3);
-    }
-
+    CHECK_OUT_OF_MEMORY(keep_arr);
     printf("\t\t\tfin. ratio       time/s    time/fin.\n");
     for (model = model_min; model <= model_max; ++model) {
         double t = 0.0;
