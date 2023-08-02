@@ -9,21 +9,29 @@
 #include "gc.h"
 #include "gc/gc_backptr.h"
 
+#define CHECK_OUT_OF_MEMORY(p) \
+    do { \
+        if (NULL == (p)) { \
+            fprintf(stderr, "Out of memory\n"); \
+            exit(69); \
+        } \
+    } while (0)
+
 struct treenode {
     struct treenode *x;
     struct treenode *y;
-} * root[10];
+} *root[10];
 
-static struct treenode * mktree(int i) {
-  struct treenode * r = GC_NEW(struct treenode);
+static struct treenode *mktree(int i) {
+  struct treenode *r = GC_NEW(struct treenode);
   struct treenode *x, *y;
+
+  CHECK_OUT_OF_MEMORY(r);
   if (0 == i)
-    return 0;
-  if (1 == i)
+    return NULL;
+  if (1 == i) {
     r = (struct treenode *)GC_MALLOC_ATOMIC(sizeof(struct treenode));
-  if (r == NULL) {
-    fprintf(stderr, "Out of memory\n");
-    exit(1);
+    CHECK_OUT_OF_MEMORY(r);
   }
   x = mktree(i - 1);
   y = mktree(i - 1);

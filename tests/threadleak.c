@@ -23,11 +23,20 @@
 #endif /* !GC_PTHREADS */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define N_TESTS 100
 
+#define CHECK_OUT_OF_MEMORY(p) \
+    do { \
+        if (NULL == (p)) { \
+            fprintf(stderr, "Out of memory\n"); \
+            exit(69); \
+        } \
+    } while (0)
+
 #ifdef GC_PTHREADS
-  static void * test(void * arg)
+  static void *test(void *arg)
 #else
   static DWORD WINAPI test(LPVOID arg)
 #endif
@@ -36,6 +45,7 @@
     int i;
     for (i = 0; i < N_TESTS; ++i) {
         p[i] = (int *)malloc(sizeof(int) + i);
+        CHECK_OUT_OF_MEMORY(p[i]);
     }
     CHECK_LEAKS();
     for (i = 1; i < N_TESTS; ++i) {

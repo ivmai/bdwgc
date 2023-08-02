@@ -42,6 +42,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define CHECK_OUT_OF_MEMORY(p) \
+    do { \
+        if (NULL == (p)) { \
+            fprintf(stderr, "Out of memory\n"); \
+            exit(69); \
+        } \
+    } while (0)
+
 #ifdef GC_PTHREADS
   static void *thread(void *arg)
 #else
@@ -49,8 +57,8 @@
 #endif
 {
   GC_INIT();
-  (void)GC_MALLOC(123);
-  (void)GC_MALLOC(12345);
+  CHECK_OUT_OF_MEMORY(GC_MALLOC(123));
+  CHECK_OUT_OF_MEMORY(GC_MALLOC(12345));
 # ifdef GC_PTHREADS
     return arg;
 # else
@@ -88,11 +96,11 @@ int main(void)
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
 # ifdef GC_PTHREADS
-    if ((code = pthread_create (&t, NULL, thread, NULL)) != 0) {
+    if ((code = pthread_create(&t, NULL, thread, NULL)) != 0) {
       fprintf(stderr, "Thread #0 creation failed: %s\n", strerror(code));
       return 1;
     }
-    if ((code = pthread_join (t, NULL)) != 0) {
+    if ((code = pthread_join(t, NULL)) != 0) {
       fprintf(stderr, "Thread #0 join failed: %s\n", strerror(code));
       return 1;
     }
