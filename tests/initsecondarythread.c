@@ -41,6 +41,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define CHECK_OUT_OF_MEMORY(p) \
+    do { \
+        if (NULL == (p)) { \
+            fprintf(stderr, "Out of memory\n"); \
+            exit(69); \
+        } \
+    } while (0)
+
 #ifdef GC_PTHREADS
   static void *thread(void *arg)
 #else
@@ -48,8 +56,8 @@
 #endif
 {
   GC_INIT();
-  (void)GC_MALLOC(123);
-  (void)GC_MALLOC(12345);
+  CHECK_OUT_OF_MEMORY(GC_MALLOC(123));
+  CHECK_OUT_OF_MEMORY(GC_MALLOC(12345));
 # ifdef GC_PTHREADS
     return arg;
 # else

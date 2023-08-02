@@ -200,6 +200,12 @@
               exit(1); \
             }
 
+static void *checkOOM(void *p)
+{
+  CHECK_OUT_OF_MEMORY(p);
+  return p;
+}
+
 /* Define AO primitives for a single-threaded mode. */
 #ifndef AO_HAVE_compiler_barrier
   /* AO_t not defined. */
@@ -458,7 +464,7 @@ sexpr reverse1(sexpr x, sexpr y)
 sexpr reverse(sexpr x)
 {
 #   ifdef TEST_WITH_SYSTEM_MALLOC
-      GC_noop1(GC_HIDE_POINTER(malloc(100000)));
+      GC_noop1(GC_HIDE_POINTER(checkOOM(malloc(100000))));
 #   endif
     return( reverse1(x, nil) );
 }
@@ -764,7 +770,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     e = uncollectable_ints(1, 1);
     /* Check that realloc updates object descriptors correctly */
     AO_fetch_and_add1(&collectable_count);
-    f = (sexpr *)GC_MALLOC(4 * sizeof(sexpr));
+    f = (sexpr *)checkOOM(GC_MALLOC(4 * sizeof(sexpr)));
     f = (sexpr *)GC_REALLOC((void *)f, 6 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(f);
     AO_fetch_and_add1(&realloc_count);
@@ -777,7 +783,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     AO_fetch_and_add1(&realloc_count);
     GC_PTR_STORE_AND_DIRTY(g + 799, ints(1, 18));
     AO_fetch_and_add1(&collectable_count);
-    h = (sexpr *)GC_MALLOC(1025 * sizeof(sexpr));
+    h = (sexpr *)checkOOM(GC_MALLOC(1025 * sizeof(sexpr)));
     h = (sexpr *)GC_REALLOC((void *)h, 2000 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(h);
     AO_fetch_and_add1(&realloc_count);
@@ -827,7 +833,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
         a_set(reverse(reverse(a_get())));
 #       if !defined(AT_END) && !defined(THREADS)
           /* This is not thread safe, since realloc explicitly deallocates */
-          a_set(GC_REALLOC(a_get(), (i & 1) != 0 ? 500 : 8200));
+          a_set(checkOOM(GC_REALLOC(a_get(), (i & 1) != 0 ? 500 : 8200)));
           AO_fetch_and_add1(&realloc_count);
 #       endif
     }
@@ -915,6 +921,7 @@ tn * mktree(int n)
     tn * result = GC_NEW(tn);
     tn * left, * right;
 
+    CHECK_OUT_OF_MEMORY(result);
     AO_fetch_and_add1(&collectable_count);
 #   if defined(MACOS)
         /* get around static data limitations. */
@@ -925,7 +932,6 @@ tn * mktree(int n)
         }
 #   endif
     if (n == 0) return(0);
-    CHECK_OUT_OF_MEMORY(result);
     result -> level = n;
     result -> lchild = left = mktree(n - 1);
     result -> rchild = right = mktree(n - 1);
@@ -1053,12 +1059,14 @@ void chktree(tn *t, int n)
         FAIL;
     }
     if (AO_fetch_and_add1(&extra_count) % 373 == 0) {
-        (void)GC_MALLOC((unsigned)AO_fetch_and_add1(&extra_count) % 5001);
+        (void)checkOOM(GC_MALLOC(
+                        (unsigned)AO_fetch_and_add1(&extra_count) % 5001));
         AO_fetch_and_add1(&collectable_count);
     }
     chktree(t -> lchild, n-1);
     if (AO_fetch_and_add1(&extra_count) % 73 == 0) {
-        (void)GC_MALLOC((unsigned)AO_fetch_and_add1(&extra_count) % 373);
+        (void)checkOOM(GC_MALLOC(
+                        (unsigned)AO_fetch_and_add1(&extra_count) % 373));
         AO_fetch_and_add1(&collectable_count);
     }
     chktree(t -> rchild, n-1);
@@ -1117,8 +1125,11 @@ void test_tinyfl(void)
   BZERO(tfls, sizeof(tfls));
   /* TODO: Improve testing of FAST_MALLOC functionality. */
   GC_MALLOC_WORDS(results[0], 11, tfls[0]);
+  CHECK_OUT_OF_MEMORY(results[0]);
   GC_MALLOC_ATOMIC_WORDS(results[1], 20, tfls[1]);
+  CHECK_OUT_OF_MEMORY(results[1]);
   GC_CONS(results[2], results[0], results[1], tfls[2]);
+  CHECK_OUT_OF_MEMORY(results[2]);
 }
 
 void alloc_small(int n)
@@ -1204,8 +1215,8 @@ void typed_test(void)
     GC_descr d2;
     GC_descr d3 = GC_make_descriptor(bm_large, 32);
     GC_descr d4 = GC_make_descriptor(bm_huge, 320);
-    GC_word * x = (GC_word *)GC_MALLOC_EXPLICITLY_TYPED(
-                                320 * sizeof(GC_word) + 123, d4);
+    GC_word * x = (GC_word *)checkOOM(GC_MALLOC_EXPLICITLY_TYPED(
+                                        320 * sizeof(GC_word) + 123, d4));
     int i;
 
     AO_fetch_and_add1(&collectable_count);
@@ -1517,16 +1528,16 @@ void run_one_test(void)
         {
            size_t i;
            for (i = 0; i < 10000; ++i) {
-             (void)GC_MALLOC(0);
+             (void)checkOOM(GC_MALLOC(0));
              AO_fetch_and_add1(&collectable_count);
-             GC_FREE(GC_MALLOC(0));
-             (void)GC_MALLOC_ATOMIC(0);
+             GC_FREE(checkOOM(GC_MALLOC(0)));
+             (void)checkOOM(GC_MALLOC_ATOMIC(0));
              AO_fetch_and_add1(&atomic_count);
-             GC_FREE(GC_MALLOC_ATOMIC(0));
+             GC_FREE(checkOOM(GC_MALLOC_ATOMIC(0)));
              test_generic_malloc_or_special(GC_malloc_atomic(1));
              AO_fetch_and_add1(&atomic_count);
-             GC_FREE(GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(1));
-             GC_FREE(GC_MALLOC_IGNORE_OFF_PAGE(2));
+             GC_FREE(checkOOM(GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(1)));
+             GC_FREE(checkOOM(GC_MALLOC_IGNORE_OFF_PAGE(2)));
            }
          }
     thr_hndl_sb.gc_thread_handle = GC_get_my_stackbottom(&thr_hndl_sb.sb);
@@ -1548,10 +1559,10 @@ void run_one_test(void)
         (GC_gcollect(),GC_malloc(12)),
         (void *)0);
     /* GC_malloc(0) must return NULL or something we can deallocate. */
-        GC_free(GC_malloc(0));
-        GC_free(GC_malloc_atomic(0));
-        GC_free(GC_malloc(0));
-        GC_free(GC_malloc_atomic(0));
+        GC_free(checkOOM(GC_malloc(0)));
+        GC_free(checkOOM(GC_malloc_atomic(0)));
+        GC_free(checkOOM(GC_malloc(0)));
+        GC_free(checkOOM(GC_malloc_atomic(0)));
 #   ifndef NO_TEST_HANDLE_FORK
         GC_atfork_prepare();
         pid = fork();
@@ -1638,8 +1649,8 @@ void run_one_test(void)
 #   endif /* DBG_HDRS_ALL */
     tree_test();
 #   ifdef TEST_WITH_SYSTEM_MALLOC
-      free(calloc(1,1));
-      free(realloc(NULL, 64));
+      free(checkOOM(calloc(1,1)));
+      free(checkOOM(realloc(NULL, 64)));
 #   endif
 #   ifndef NO_CLOCK
       if (print_stats) {
@@ -1673,7 +1684,7 @@ void run_one_test(void)
 /* Execute some tests after termination of other test threads (if any). */
 void run_single_threaded_test(void) {
     GC_disable();
-    GC_FREE(GC_MALLOC(100));
+    GC_FREE(checkOOM(GC_MALLOC(100)));
     GC_enable();
 }
 

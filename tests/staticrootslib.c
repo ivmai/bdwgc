@@ -1,6 +1,9 @@
 
 /* This test file is intended to be compiled into a DLL. */
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #ifndef GC_DEBUG
 # define GC_DEBUG
 #endif
@@ -17,6 +20,14 @@
 # endif
 #endif
 
+#define CHECK_OUT_OF_MEMORY(p) \
+    do { \
+        if (NULL == (p)) { \
+            fprintf(stderr, "Out of memory\n"); \
+            exit(69); \
+        } \
+    } while (0)
+
 struct treenode {
     struct treenode *x;
     struct treenode *y;
@@ -31,21 +42,24 @@ static struct treenode *root_nz[10] = { (struct treenode *)(GC_word)2 };
 
   GC_TEST_EXPORT_API struct treenode * libsrl_mktree(int i)
   {
-    struct treenode * r = GC_NEW(struct treenode);
+    struct treenode *r = GC_NEW(struct treenode);
+    struct treenode *x, *y;
+
+    CHECK_OUT_OF_MEMORY(r);
     if (0 == i)
       return 0;
-    if (1 == i)
+    if (1 == i) {
       r = (struct treenode *)GC_MALLOC_ATOMIC(sizeof(struct treenode));
-    if (r) {
-      struct treenode *x = libsrl_mktree(i - 1);
-      struct treenode *y = libsrl_mktree(i - 1);
-      r -> x = x;
-      r -> y = y;
-      if (i != 1) {
-        GC_END_STUBBORN_CHANGE(r);
-        GC_reachable_here(x);
-        GC_reachable_here(y);
-      }
+      CHECK_OUT_OF_MEMORY(r);
+    }
+    x = libsrl_mktree(i - 1);
+    y = libsrl_mktree(i - 1);
+    r -> x = x;
+    r -> y = y;
+    if (i != 1) {
+      GC_END_STUBBORN_CHANGE(r);
+      GC_reachable_here(x);
+      GC_reachable_here(y);
     }
     return r;
   }

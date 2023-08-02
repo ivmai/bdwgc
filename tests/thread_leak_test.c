@@ -22,6 +22,15 @@
 #endif /* !GC_PTHREADS */
 
 #include <stdio.h>
+#include <stdlib.h>
+
+#define CHECK_OUT_OF_MEMORY(p) \
+    do { \
+        if (NULL == (p)) { \
+            fprintf(stderr, "Out of memory\n"); \
+            exit(69); \
+        } \
+    } while (0)
 
 #ifdef GC_PTHREADS
   void * test(void * arg)
@@ -33,6 +42,7 @@
     int i;
     for (i = 0; i < 10; ++i) {
         p[i] = (int *)malloc(sizeof(int) + i);
+        CHECK_OUT_OF_MEMORY(p[i]);
     }
     CHECK_LEAKS();
     for (i = 1; i < 10; ++i) {
