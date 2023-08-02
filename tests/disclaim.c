@@ -9,16 +9,11 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
  */
 
 /* Test that objects reachable from an object allocated with            */
 /* GC_malloc_with_finalizer is not reclaimable before the finalizer     */
 /* is called.                                                           */
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 #ifdef HAVE_CONFIG_H
   /* For GC_[P]THREADS */
@@ -30,6 +25,9 @@
 
 #define NOT_GCBUILD
 #include "private/gc_priv.h"
+
+#include <string.h>
+
   /* Redefine the standard rand() with a trivial (yet sufficient for    */
   /* the test purpose) implementation to avoid crashes inside rand()    */
   /* on some hosts (e.g. FreeBSD 13.0) when used concurrently.          */

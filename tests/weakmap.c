@@ -14,10 +14,6 @@
 /* This tests a case where disclaim notifiers sometimes return non-zero */
 /* in order to protect objects from collection.                         */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #ifdef HAVE_CONFIG_H
   /* For GC_[P]THREADS */
 # include "config.h"
@@ -28,6 +24,9 @@
 
 #define NOT_GCBUILD
 #include "private/gc_priv.h"
+
+#include <string.h>
+
 #undef rand
 static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
 #define rand() GC_RAND_NEXT(&seed)

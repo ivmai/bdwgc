@@ -9,10 +9,7 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
  */
-
-#include <string.h>
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -22,6 +19,8 @@
 
 #define NOT_GCBUILD
 #include "private/gc_priv.h"
+
+#include <string.h>
 
 #undef rand
 static GC_RAND_STATE_T seed;

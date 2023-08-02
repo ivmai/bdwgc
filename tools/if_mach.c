@@ -1,9 +1,9 @@
 /* Conditionally execute a command based on machine and OS from gcconfig.h */
 
-# include "private/gc_priv.h"
-# include <stdio.h>
-# include <string.h>
-# include <unistd.h>
+#include "private/gc_priv.h"
+
+#include <string.h>
+#include <unistd.h>
 
 #ifdef __cplusplus
 # define EXECV_ARGV_T char**

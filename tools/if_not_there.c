@@ -2,13 +2,13 @@
 /* does not exist.  If the command is omitted (and the file does not    */
 /* exist) then just exit with a non-zero code.                          */
 
-# include "private/gc_priv.h"
-# include <stdio.h>
-# include <stdlib.h>
-# include <unistd.h>
+#include "private/gc_priv.h"
+
+#include <unistd.h>
+
 #ifdef __DJGPP__
-#include <dirent.h>
-#endif /* __DJGPP__ */
+# include <dirent.h>
+#endif
 
 #ifdef __cplusplus
 # define EXECV_ARGV_T char**

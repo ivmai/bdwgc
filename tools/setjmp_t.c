@@ -22,11 +22,9 @@
 /* safe, but this will not be noticed by this piece of       */
 /* code.)  This test appears to be far from perfect.         */
 
-#include <stdio.h>
-#include <setjmp.h>
-#include <string.h>
-
 #include "private/gc_priv.h"
+
+#include <string.h>
 
 #ifdef OS2
 # define INCL_DOSERRORS
@@ -89,12 +87,14 @@ int main(void)
 {
     volatile word sp;
     unsigned ps = GETPAGESIZE();
+# ifndef WASI
     JMP_BUF b;
 #   if !defined(__cplusplus) || __cplusplus < 201703L /* before c++17 */
       register
 #   endif
       int x = (int)strlen(a_str); /* 1, slightly disguised */
     static volatile int y = 0;
+# endif
 
     sp = (word)(&sp);
     printf("This appears to be a %s running %s\n", MACH_TYPE, OS_TYPE);
@@ -116,7 +116,7 @@ int main(void)
     printf("On many machines the value is not fixed.\n");
     printf("A good guess for ALIGNMENT on this machine is %lu.\n",
            (unsigned long)((word)(&(a.a_b)) - (word)(&a)));
-
+# ifndef WASI
     printf("The following is a very dubious test of one root marking"
            " strategy.\n");
     printf("Results may not be accurate/useful:\n");
@@ -139,6 +139,7 @@ int main(void)
     y++;
     x = 2;
     if (y == 1) LONGJMP(b, 1);
+# endif
     printf("Some GC internal configuration stuff: \n");
     printf("\tWORDSZ = %lu, ALIGNMENT = %d, GC_GRANULE_BYTES = %d\n",
            (unsigned long)CPP_WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);
@@ -159,7 +160,11 @@ int main(void)
 #   ifdef PARALLEL_MARK
       printf("Parallel marking enabled.\n");
 #   endif
-    (void)g(x);
+#   ifdef WASI
+      (void)g(0);
+#   else
+      (void)g(x);
+#   endif
     return 0;
 }
 

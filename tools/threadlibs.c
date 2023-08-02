@@ -15,9 +15,7 @@
  * modified is included with the above copyright notice.
  */
 
-# include "private/gc_priv.h"
-
-# include <stdio.h>
+#include "private/gc_priv.h"
 
 int main(void)
 {
