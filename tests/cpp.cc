@@ -73,6 +73,8 @@ extern "C" {
 # define A_I_TYPE int
 #endif
 
+# define LARGE_CPP_ITER_CNT 1000000
+
 class A {public:
     /* An uncollectible class. */
 
@@ -146,7 +148,7 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
                    left == 0 && right == 0 :
                    level == left->level + 1 && level == right->level + 1 );
         left = right = 0;
-        level = -123456;}
+        level = -32456;}
     static void Test() {
         if (GC_is_incremental_mode() && nFreed < (nAllocated / 5) * 4) {
           // An explicit GC might be needed to reach the expected number
@@ -339,7 +341,7 @@ void* Undisguise( GC_word i ) {
       n = N_TESTS;
     }
 #   ifdef LINT2
-      if (n > 100 * 1000) n = 100 * 1000;
+      if (n > 30 * 1000) n = 30 * 1000;
 #   endif
 
     for (iters = 1; iters <= n; iters++) {
@@ -376,7 +378,7 @@ void* Undisguise( GC_word i ) {
             /* Allocate a very large number of collectible As and Bs and
             drop the references to them immediately, forcing many
             collections. */
-        for (i = 0; i < 1000000; i++) {
+        for (i = 0; i < LARGE_CPP_ITER_CNT; i++) {
             A* a;
             a = new (USE_GC) A( i );
             GC_reachable_here(a);

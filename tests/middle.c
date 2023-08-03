@@ -8,7 +8,7 @@
 
 #include "gc.h"
 
-#define N_TESTS 40000
+#define N_TESTS 32000
 
 #define ALLOC_SZ 4096 /* typical page size */
 

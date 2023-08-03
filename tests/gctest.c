@@ -333,7 +333,7 @@ static sexpr cons(sexpr x, sexpr y)
                       (void *)p);
             FAIL;
         }
-        *p = (int)((13 << 12) + ((p - (int *)r) & 0xfff));
+        *p = (int)((13 << 11) + ((p - (int *)r) & 0xfff));
     }
 #   ifdef AT_END
         r = (sexpr)((char *)r + (my_extra & ~7U));
