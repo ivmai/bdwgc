@@ -408,15 +408,14 @@ EXTERN_C_BEGIN
 # define MAX_EXTRA_BYTES 0
 #endif
 
-
-# ifndef LARGE_CONFIG
-#   define MINHINCR 16   /* Minimum heap increment, in blocks of HBLKSIZE  */
-                         /* Must be multiple of largest page size.         */
-#   define MAXHINCR 2048 /* Maximum heap increment, in blocks              */
-# else
+# ifdef LARGE_CONFIG
 #   define MINHINCR 64
 #   define MAXHINCR 4096
-# endif
+# else
+#   define MINHINCR 16   /* Minimum heap increment, in blocks of HBLKSIZE.  */
+                         /* Note: must be multiple of largest page size.    */
+#   define MAXHINCR 2048 /* Maximum heap increment, in blocks.  */
+# endif /* !LARGE_CONFIG */
 
 # define BL_LIMIT GC_black_list_spacing
                            /* If we need a block of N bytes, and we have */
@@ -873,32 +872,30 @@ EXTERN_C_BEGIN
 /*                               */
 /*********************************/
 
+/* log[2] of CPP_WORDSZ.        */
 #if CPP_WORDSZ == 32
-# define WORDS_TO_BYTES(x) ((x)<<2)
-# define BYTES_TO_WORDS(x) ((x)>>2)
-# define LOGWL             ((word)5) /* log[2] of CPP_WORDSZ    */
-# define modWORDSZ(n) ((n) & 0x1f) /* n mod size of word        */
-# if ALIGNMENT != 4
-#   define UNALIGNED_PTRS
-# endif
+# define LOGWL 5
+#elif CPP_WORDSZ == 64
+# define LOGWL 6
 #endif
 
-#if CPP_WORDSZ == 64
-# define WORDS_TO_BYTES(x)   ((x)<<3)
-# define BYTES_TO_WORDS(x)   ((x)>>3)
-# define LOGWL               ((word)6)  /* log[2] of CPP_WORDSZ */
-# define modWORDSZ(n) ((n) & 0x3f)      /* n mod size of word   */
-# if ALIGNMENT != 8
-#   define UNALIGNED_PTRS
-# endif
-#endif
-
+#define WORDS_TO_BYTES(x) ((x) << (LOGWL-3))
+#define BYTES_TO_WORDS(x) ((x) >> (LOGWL-3))
+#define modWORDSZ(n) ((n) & (CPP_WORDSZ-1)) /* n mod size of word */
 #define divWORDSZ(n) ((n) >> LOGWL) /* divide n by size of word */
 
 #define SIGNB ((word)1 << (CPP_WORDSZ-1))
 #define BYTES_PER_WORD ((word)sizeof(word))
 
-#if GC_GRANULE_BYTES == 8
+#if CPP_WORDSZ / 8 != ALIGNMENT
+# define UNALIGNED_PTRS
+#endif
+
+#if GC_GRANULE_BYTES == 4
+# define BYTES_TO_GRANULES(n) ((n)>>2)
+# define GRANULES_TO_BYTES(n) ((n)<<2)
+# define GRANULES_TO_WORDS(n) BYTES_TO_WORDS(GRANULES_TO_BYTES(n))
+#elif GC_GRANULE_BYTES == 8
 # define BYTES_TO_GRANULES(n) ((n)>>3)
 # define GRANULES_TO_BYTES(n) ((n)<<3)
 # if CPP_WORDSZ == 64
@@ -936,14 +933,12 @@ EXTERN_C_BEGIN
 /*   Alpha: Seems to be used with 8 KB pages.                   */
 /*   SMALL_CONFIG: Want less block-level fragmentation.         */
 #ifndef HBLKSIZE
-# if defined(LARGE_CONFIG) || !defined(SMALL_CONFIG)
-#   ifdef ALPHA
-#     define CPP_LOG_HBLKSIZE 13
-#   else
-#     define CPP_LOG_HBLKSIZE 12
-#   endif
-# else
+# if defined(SMALL_CONFIG) && !defined(LARGE_CONFIG)
 #   define CPP_LOG_HBLKSIZE 10
+# elif defined(ALPHA)
+#   define CPP_LOG_HBLKSIZE 13
+# else
+#   define CPP_LOG_HBLKSIZE 12
 # endif
 #else
 # if HBLKSIZE == 512
@@ -1023,15 +1018,11 @@ EXTERN_C_BEGIN
         /* But we try to avoid looking up EXTRA_BYTES.                  */
 #endif
 
-/*
- * Hash table representation of sets of pages.
- * Implements a map from aligned HBLKSIZE chunks of the address space to one
- * bit each.
- * This assumes it is OK to spuriously set bits, e.g. because multiple
- * addresses are represented by a single location.
- * Used by black-listing code, and perhaps by dirty bit maintenance code.
- */
-
+/* Hash table representation of sets of pages.  Implements a map from   */
+/* aligned HBLKSIZE chunks of the address space to one bit each.        */
+/* This assumes it is OK to spuriously set bits, e.g. because multiple  */
+/* addresses are represented by a single location.  Used by             */
+/* black-listing code, and perhaps by dirty bit maintenance code.       */
 #ifndef LOG_PHT_ENTRIES
 # ifdef LARGE_CONFIG
 #   if CPP_WORDSZ == 32
@@ -1061,7 +1052,7 @@ EXTERN_C_BEGIN
 #endif /* !LOG_PHT_ENTRIES */
 
 # define PHT_ENTRIES ((word)1 << LOG_PHT_ENTRIES)
-# define PHT_SIZE (PHT_ENTRIES >> LOGWL)
+# define PHT_SIZE (LOG_PHT_ENTRIES > LOGWL ? PHT_ENTRIES >> LOGWL : 1)
 typedef word page_hash_table[PHT_SIZE];
 
 # define PHT_HASH(addr) ((((word)(addr)) >> LOG_HBLKSIZE) & (PHT_ENTRIES - 1))
@@ -2311,7 +2302,8 @@ GC_INNER void GC_continue_reclaim(word sz, int kind);
 
 GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old);
                                 /* Reclaim all blocks.  Abort (in a     */
-                                /* consistent state) if f returns TRUE. */
+                                /* consistent state) if stop_func()     */
+                                /* returns TRUE.                        */
 GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
                                   GC_bool init, ptr_t list, word *pcount);
                                 /* Rebuild free list in hbp with        */
@@ -2323,12 +2315,11 @@ GC_INNER GC_bool GC_block_empty(hdr * hhdr);
                                 /* Block completely unmarked?   */
 GC_INNER int GC_CALLBACK GC_never_stop_func(void);
                                 /* Always returns 0 (FALSE).            */
-GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func f);
-
+GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func);
                                 /* Collect; caller must have acquired   */
-                                /* lock.  Collection is aborted if f    */
-                                /* returns TRUE.  Returns TRUE if it    */
-                                /* completes successfully.              */
+                                /* lock.  Collection is aborted if      */
+                                /* stop_func() returns TRUE.  Returns   */
+                                /* TRUE if it completes successfully.   */
 #define GC_gcollect_inner() \
                 (void)GC_try_to_collect_inner(GC_never_stop_func)
 
