@@ -1752,15 +1752,18 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
 #         ifdef USE_MUNMAP
             GC_ASSERT(GC_heapsize >= GC_unmapped_bytes);
 #         endif
+#         if !defined(SMALL_CONFIG) && (CPP_WORDSZ >= 32)
 #           define MAX_HEAPSIZE_WARNED_IN_BYTES (5 << 20) /* 5 MB */
             if (GC_heapsize > (word)MAX_HEAPSIZE_WARNED_IN_BYTES) {
               WARN("Out of Memory! Heap size: %" WARN_PRIuPTR " MiB."
                    " Returning NULL!\n",
                    (GC_heapsize - GC_unmapped_bytes) >> 20);
-            } else {
+            } else
+#         endif
+          /* else */ {
               WARN("Out of Memory! Heap size: %" WARN_PRIuPTR " bytes."
                    " Returning NULL!\n", GC_heapsize - GC_unmapped_bytes);
-            }
+          }
 #       endif
         RESTORE_CANCEL(cancel_state);
         return FALSE;

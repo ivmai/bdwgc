@@ -915,6 +915,7 @@ STATIC word GC_parse_mem_size_arg(const char *str)
     case 'k':
       result <<= 10;
       break;
+# if CPP_WORDSZ >= 32
     case 'M':
     case 'm':
       result <<= 20;
@@ -923,6 +924,7 @@ STATIC word GC_parse_mem_size_arg(const char *str)
     case 'g':
       result <<= 30;
       break;
+# endif
     default:
       result = GC_WORD_MAX;
     }
