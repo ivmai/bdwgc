@@ -1200,45 +1200,58 @@ static void chktree(tn *t, int n)
     chktree(t -> rchild, n-1);
 }
 
-#if defined(GC_PTHREADS)
-  pthread_key_t fl_key;
-#endif
+#ifndef VERY_SMALL_CONFIG
+# if defined(GC_PTHREADS)
+    pthread_key_t fl_key;
+# endif
 
-static void * alloc8bytes(void)
-{
-# ifndef GC_PTHREADS
-    AO_fetch_and_add1(&atomic_count);
-    return GC_MALLOC_ATOMIC(8);
-# elif defined(SMALL_CONFIG) || defined(GC_DEBUG)
-    AO_fetch_and_add1(&collectable_count);
-    return GC_MALLOC(8);
-# else
-    void ** my_free_list_ptr;
-    void * my_free_list;
-    void * next;
+  static void * alloc8bytes(void)
+  {
+#   ifndef GC_PTHREADS
+      AO_fetch_and_add1(&atomic_count);
+      return GC_MALLOC_ATOMIC(8);
+#   elif defined(SMALL_CONFIG) || defined(GC_DEBUG)
+      AO_fetch_and_add1(&collectable_count);
+      return GC_MALLOC(8);
+#   else
+      void ** my_free_list_ptr;
+      void * my_free_list;
+      void * next;
 
-    my_free_list_ptr = (void **)pthread_getspecific(fl_key);
-    if (my_free_list_ptr == 0) {
+      my_free_list_ptr = (void **)pthread_getspecific(fl_key);
+      if (NULL == my_free_list_ptr) {
         my_free_list_ptr = GC_NEW_UNCOLLECTABLE(void *);
         if (NULL == my_free_list_ptr) return NULL;
         AO_fetch_and_add1(&uncollectable_count);
         if (pthread_setspecific(fl_key, my_free_list_ptr) != 0) {
-            GC_printf("pthread_setspecific failed\n");
-            FAIL;
+          GC_printf("pthread_setspecific failed\n");
+          FAIL;
         }
-    }
-    my_free_list = *my_free_list_ptr;
-    if (my_free_list == 0) {
+      }
+      my_free_list = *my_free_list_ptr;
+      if (NULL == my_free_list) {
         my_free_list = GC_malloc_many(8);
         if (NULL == my_free_list) return NULL;
+      }
+      next = GC_NEXT(my_free_list);
+      GC_PTR_STORE_AND_DIRTY(my_free_list_ptr, next);
+      GC_NEXT(my_free_list) = NULL;
+      AO_fetch_and_add1(&collectable_count);
+      return my_free_list;
+#   endif
+  }
+
+  static void alloc_small(int n)
+  {
+    int i;
+
+    for (i = 0; i < n; i += 8) {
+      void *p = alloc8bytes();
+
+      CHECK_OUT_OF_MEMORY(p);
     }
-    next = GC_NEXT(my_free_list);
-    GC_PTR_STORE_AND_DIRTY(my_free_list_ptr, next);
-    GC_NEXT(my_free_list) = 0;
-    AO_fetch_and_add1(&collectable_count);
-    return my_free_list;
-# endif
-}
+  }
+#endif /* !VERY_SMALL_CONFIG */
 
 #include "gc/gc_inline.h"
 
@@ -1258,17 +1271,6 @@ static void test_tinyfl(void)
   CHECK_OUT_OF_MEMORY(results[1]);
   GC_CONS(results[2], results[0], results[1], tfls[2]);
   CHECK_OUT_OF_MEMORY(results[2]);
-}
-
-static void alloc_small(int n)
-{
-    int i;
-
-    for (i = 0; i < n; i += 8) {
-        void *p = alloc8bytes();
-
-        CHECK_OUT_OF_MEMORY(p);
-    }
 }
 
 # if defined(THREADS) && defined(GC_DEBUG)
@@ -1956,12 +1958,13 @@ static void check_heap_stats(void)
       GC_printf("GC should be initialized!\n");
       FAIL;
     }
-#   ifdef VERY_SMALL_CONFIG
+
     /* The upper bounds are a guess, which has been empirically */
-    /* adjusted.  On low end uniprocessors with incremental GC  */
+    /* adjusted.  On low-end uniprocessors with incremental GC  */
     /* these may be particularly dubious, since empirically the */
     /* heap tends to grow largely as a result of the GC not     */
     /* getting enough cycles.                                   */
+#   ifdef VERY_SMALL_CONFIG
 #     if CPP_WORDSZ == 64
         max_heap_sz = 4500000;
 #     else
@@ -2631,10 +2634,12 @@ int main(void)
         FAIL;
     }
     GC_set_warn_proc(warn_proc);
-    if ((code = pthread_key_create(&fl_key, 0)) != 0) {
+#   ifndef VERY_SMALL_CONFIG
+      if ((code = pthread_key_create(&fl_key, 0)) != 0) {
         GC_printf("Key creation failed, errno= %d\n", code);
         FAIL;
-    }
+      }
+#   endif
     set_print_procs();
 
     /* Minimal testing of some API functions.   */
