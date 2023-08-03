@@ -11,8 +11,8 @@
 #endif
 
 #ifndef GC_MAXIMUM_HEAP_SIZE
-# define GC_MAXIMUM_HEAP_SIZE 100 * 1024 * 1024
-# define GC_INITIAL_HEAP_SIZE GC_MAXIMUM_HEAP_SIZE / 20
+# define GC_MAXIMUM_HEAP_SIZE (100 * 1024 * 1024)
+# define GC_INITIAL_HEAP_SIZE (GC_MAXIMUM_HEAP_SIZE / 20)
     /* Otherwise heap expansion aborts when deallocating large block.   */
     /* That's OK.  We test this corner case mostly to make sure that    */
     /* it fails predictably.                                            */
