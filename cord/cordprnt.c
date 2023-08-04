@@ -25,10 +25,14 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
 #ifndef CORD_BUILD
 # define CORD_BUILD
 #endif
-
+#ifndef CORD_DONT_DECLARE_OOM_FN
+  /* Avoid CORD_oom_fn symbol redefinition on MinGW.    */
+# define CORD_DONT_DECLARE_OOM_FN
+#endif
 #include "gc/cord.h"
 #include "gc/ec.h"
 
@@ -53,7 +57,7 @@
 #endif
 
 #define OUT_OF_MEMORY MACRO_BLKSTMT_BEGIN \
-                        if (CORD_oom_fn != 0) (*CORD_oom_fn)(); \
+                        CORD__call_oom_fn(); \
                         fprintf(stderr, "Out of memory\n"); \
                         abort(); \
                       MACRO_BLKSTMT_END

@@ -29,6 +29,9 @@
 # include <stdlib.h>
 # include <stdarg.h>
 
+#ifndef CORD_DONT_DECLARE_OOM_FN
+# define CORD_DONT_DECLARE_OOM_FN
+#endif
 #include "gc/cord.h"
 #include "gc/ec.h"
 
@@ -57,8 +60,7 @@
 # define BUFSZ 2048     /* Size of stack allocated buffers when */
                         /* we want large buffers.               */
 
-# define OUT_OF_MEMORY { if (CORD_oom_fn != 0) (*CORD_oom_fn)(); \
-                         ABORT("Out of memory"); }
+# define OUT_OF_MEMORY { CORD__call_oom_fn(); ABORT("Out of memory"); }
 
 # define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
 

@@ -35,8 +35,12 @@
 
 void (*CORD_oom_fn)(void) = 0;
 
-# define OUT_OF_MEMORY { if (CORD_oom_fn != 0) (*CORD_oom_fn)(); \
-                         ABORT("Out of memory"); }
+void CORD__call_oom_fn(void)
+{
+  if (CORD_oom_fn != 0) (*CORD_oom_fn)();
+}
+
+# define OUT_OF_MEMORY { CORD__call_oom_fn(); ABORT("Out of memory"); }
 
 # define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
 

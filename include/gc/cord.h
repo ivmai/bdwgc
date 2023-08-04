@@ -231,7 +231,12 @@ CORD_API int CORD_riter(CORD, CORD_iter_fn /* f1 */, void * /* client_data */);
 
 /* An out-of-memory handler to call.  Zero value means do nothing       */
 /* special, just abort.                                                 */
-CORD_API void (*CORD_oom_fn)(void);
+#ifndef CORD_DONT_DECLARE_OOM_FN
+  CORD_API void (*CORD_oom_fn)(void);
+#endif
+#ifdef CORD_BUILD
+  /* no export */ void CORD__call_oom_fn(void);
+#endif
 
 /* Dump the representation of x to stdout in an implementation defined  */
 /* manner.  Intended for debugging only.                                */
