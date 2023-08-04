@@ -392,6 +392,7 @@ int main(void)
 #   endif
     if (GC_get_find_leak())
         printf("This test program is not designed for leak detection mode\n");
+    CORD_oom_fn = 0; /* just test it is accessible */
     test_basics();
     test_extras();
     test_printf();
