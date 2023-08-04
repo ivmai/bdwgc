@@ -1965,18 +1965,13 @@ static void check_heap_stats(void)
     /* these may be particularly dubious, since empirically the */
     /* heap tends to grow largely as a result of the GC not     */
     /* getting enough cycles.                                   */
-#   ifdef VERY_SMALL_CONFIG
-#     if CPP_WORDSZ == 64
-        max_heap_sz = 4500000;
-#     else
-        max_heap_sz = 2800000;
-#     endif
+#   if CPP_WORDSZ == 64
+      max_heap_sz = 26000000;
 #   else
-#     if CPP_WORDSZ == 64
-        max_heap_sz = 26000000;
-#     else
-        max_heap_sz = 16000000;
-#     endif
+      max_heap_sz = 16000000;
+#   endif
+#   ifdef VERY_SMALL_CONFIG
+      max_heap_sz /= 4;
 #   endif
 #   ifdef GC_DEBUG
         max_heap_sz *= 2;
