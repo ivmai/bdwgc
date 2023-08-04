@@ -1708,8 +1708,9 @@ static void run_one_test(void)
 #   endif
 #   ifndef GC_NO_FINALIZATION
       if (!GC_get_find_leak()) {
-        void **p = (void **)checkOOM(GC_MALLOC_ATOMIC(sizeof(void*)));
+        void **p = (void **)GC_MALLOC_ATOMIC(sizeof(void *));
 
+        CHECK_OUT_OF_MEMORY(p); /* LINT2: do not use checkOOM() */
         AO_fetch_and_add1(&atomic_count);
         *p = x;
         if (GC_register_disappearing_link(p) != 0) {
