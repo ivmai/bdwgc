@@ -599,8 +599,6 @@ static size_t min_len[CORD_MAX_DEPTH];
 
 static int min_len_init = 0;
 
-int CORD_max_len;
-
 typedef ForestElement Forest[CORD_MAX_DEPTH];
                         /* forest[i].len >= fib(i+1)            */
                         /* The string is the concatenation      */
@@ -622,7 +620,6 @@ static void CORD_init_min_len(void)
         previous = last;
         last = current;
     }
-    CORD_max_len = (int)last - 1;
     min_len_init = 1;
 }
 
