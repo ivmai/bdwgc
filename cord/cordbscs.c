@@ -18,15 +18,15 @@
 # define CORD_BUILD
 #endif
 
-# include <stdlib.h>
-# include <stdio.h>
-# include <string.h>
+#include "gc/gc.h"
 
-#include "gc.h"
+#include <stdlib.h>
+#include <string.h>
+
 #include "gc/cord.h"
 
 /* An implementation of the cord primitives.  These are the only        */
-/* Functions that understand the representation.  We perform only       */
+/* functions that understand the representation.  We perform only       */
 /* minimal checks on arguments to these functions.  Out of bounds       */
 /* arguments to the iteration functions may result in client functions  */
 /* invoked on garbage data.  In most cases, client functions should be  */
@@ -736,7 +736,7 @@ CORD CORD_balance(CORD x)
 /* P contains a prefix of the  path to cur_pos. Extend it to a full     */
 /* path and set up leaf info.                                           */
 /* Return 0 if past the end of cord, 1 o.w.                             */
-static void CORD__extend_path(CORD_pos p)
+static void CORD_extend_path(CORD_pos p)
 {
      struct CORD_pe * current_pe = &(p[0].path[p[0].path_len]);
      CORD top = current_pe -> pe_cord;
@@ -845,7 +845,7 @@ void CORD__next(CORD_pos p)
         }
     }
     p[0].path_len--;
-    CORD__extend_path(p);
+    CORD_extend_path(p);
 }
 
 void CORD__prev(CORD_pos p)
@@ -873,7 +873,7 @@ void CORD__prev(CORD_pos p)
         }
     }
     p[0].path_len--;
-    CORD__extend_path(p);
+    CORD_extend_path(p);
 }
 
 #undef CORD_pos_fetch
@@ -935,5 +935,5 @@ void CORD_set_pos(CORD_pos p, CORD x, size_t i)
     p[0].path[0].pe_start_pos = 0;
     p[0].path_len = 0;
     p[0].cur_pos = i;
-    CORD__extend_path(p);
+    CORD_extend_path(p);
 }

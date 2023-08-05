@@ -11,35 +11,28 @@
  * modified is included with the above copyright notice.
  */
 
-/*
- * These are functions on cords that do not need to understand their
- * implementation.  They serve also serve as example client code for
- * cord_basics.
- */
+/* These are functions on cords that do not need to understand their    */
+/* implementation.  They serve also serve as example client code for    */
+/* the cord basic primitives.                                           */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+#include "gc/gc.h"
+
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+
 #ifndef CORD_BUILD
 # define CORD_BUILD
 #endif
-
-# include <stdio.h>
-# include <string.h>
-# include <stdlib.h>
-# include <stdarg.h>
-
 #ifndef CORD_DONT_DECLARE_OOM_FN
 # define CORD_DONT_DECLARE_OOM_FN
 #endif
 #include "gc/cord.h"
 #include "gc/ec.h"
-
-# define I_HIDE_POINTERS    /* So we get access to allocation lock. */
-                /* We use this for lazy file reading,   */
-                /* so that we remain independent        */
-                /* of the threads primitives.           */
-# include "gc.h"
 
 /* For now we assume that pointer reads and writes are atomic,  */
 /* i.e. another thread always sees the state before or after    */

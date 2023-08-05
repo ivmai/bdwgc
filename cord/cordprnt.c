@@ -18,13 +18,19 @@
 /* could be avoided at some performance cost.                           */
 /* We also assume that unsigned and signed integers of various kinds    */
 /* have the same sizes, and can be cast back and forth.                 */
-/* We assume that void * and char * have the same size.                 */
+/* We assume that void* and char* have the same size.                   */
 /* All this cruft is needed because we want to rely on the underlying   */
 /* sprintf implementation whenever possible.                            */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+#include "gc/gc.h"
+
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifndef CORD_BUILD
 # define CORD_BUILD
@@ -35,13 +41,6 @@
 #endif
 #include "gc/cord.h"
 #include "gc/ec.h"
-
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "gc.h"
 
 #define CONV_SPEC_LEN 50        /* Maximum length of a single   */
                                 /* conversion specification.    */
