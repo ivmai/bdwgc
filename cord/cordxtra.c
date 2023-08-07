@@ -38,13 +38,17 @@
                 /* of the threads primitives.           */
 # include "gc.h"
 
-/* For now we assume that pointer reads and writes are atomic,  */
-/* i.e. another thread always sees the state before or after    */
-/* a write.  This might be false on a Motorola M68K with        */
-/* pointers that are not 32-bit aligned.  But there probably    */
-/* aren't too many threads packages running on those.           */
-# define ATOMIC_WRITE(x,y) (x) = (y)
-# define ATOMIC_READ(x) (*(x))
+/* If available, use GCC built-in atomic load-acquire and store-release */
+/* primitives to access the cache lines safely.  Otherwise, fall back   */
+/* to using the GC allocation lock even during the cache lines reading. */
+/* Note: for simplicity of libcord building, do not rely on GC_THREADS  */
+/* macro, libatomic_ops package presence and private/gc_atomic_ops.h.   */
+#if !defined(AO_DISABLE_GCC_ATOMICS) \
+    && ((defined(__clang__) && __clang_major__ >= 8) /* clang 8.0+ */ \
+        || (defined(__GNUC__) /* gcc 5.4+ */ \
+            && (__GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ >= 4))))
+# define CORD_USE_GCC_ATOMIC
+#endif
 
 /* The standard says these are in stdio.h, but they aren't always: */
 # ifndef SEEK_SET
@@ -545,20 +549,35 @@ static void * GC_CALLBACK refill_cache(void * client_data)
         ABORT("fread failed");
     }
     new_cache -> tag = DIV_LINE_SZ(file_pos);
-    /* Store barrier goes here. */
-    ATOMIC_WRITE(state -> lf_cache[line_no], new_cache);
+#   ifdef CORD_USE_GCC_ATOMIC
+        __atomic_store_n(&(state -> lf_cache[line_no]), new_cache,
+                         __ATOMIC_RELEASE);
+#   endif
     GC_END_STUBBORN_CHANGE((/* no volatile */ void *)(state -> lf_cache
                                                       + line_no));
     state -> lf_current = line_start + LINE_SZ;
     return (void *)((GC_word)new_cache->data[MOD_LINE_SZ(file_pos)]);
 }
 
+#ifndef CORD_USE_GCC_ATOMIC
+  static void * GC_CALLBACK get_cache_line(void * client_data)
+  {
+    return (void *)(*(cache_line **)client_data);
+  }
+#endif
+
 char CORD_lf_func(size_t i, void * client_data)
 {
     lf_state * state = (lf_state *)client_data;
     cache_line * volatile * cl_addr =
                         &(state -> lf_cache[DIV_LINE_SZ(MOD_CACHE_SZ(i))]);
-    cache_line * cl = (cache_line *)ATOMIC_READ(cl_addr);
+#   ifdef CORD_USE_GCC_ATOMIC
+        cache_line * cl = (cache_line *)__atomic_load_n(cl_addr,
+                                                        __ATOMIC_ACQUIRE);
+#   else
+        cache_line * cl = (cache_line *)GC_call_with_alloc_lock(
+                                            get_cache_line, (void *)cl_addr);
+#   endif
 
     if (cl == 0 || cl -> tag != DIV_LINE_SZ(i)) {
         /* Cache miss */
