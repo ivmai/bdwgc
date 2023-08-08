@@ -168,13 +168,12 @@ EXTERN_C_BEGIN
 # endif
 # if defined(__arm) || defined(__arm__) || defined(__thumb__)
 #    define ARM32
-#    if defined(NACL)
+#    if defined(NACL) || defined(SYMBIAN)
 #      define mach_type_known
 #    elif !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
           && !defined(OPENBSD) && !defined(DARWIN) && !defined(_WIN32) \
           && !defined(__CEGCC__) && !defined(NN_PLATFORM_CTR) \
-          && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2) \
-          && !defined(SYMBIAN)
+          && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -694,10 +693,6 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 
-# if defined(SYMBIAN)
-#   define mach_type_known
-# endif
-
 # if defined(__EMSCRIPTEN__)
 #   define I386
 #   define mach_type_known
@@ -892,15 +887,6 @@ EXTERN_C_BEGIN
      && (!defined(__clang__) \
          || (GC_CLANG_PREREQ(8, 0) && defined(HOST_ANDROID)))
 #   define HAVE_BUILTIN_UNWIND_INIT
-# endif
-
-# ifdef SYMBIAN
-#   define MACH_TYPE "SYMBIAN"
-#   define OS_TYPE "SYMBIAN"
-#   define CPP_WORDSZ 32
-#   define ALIGNMENT 4
-#   define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
-#   define DATAEND (ptr_t)ALIGNMENT
 # endif
 
 # ifdef __EMSCRIPTEN__
@@ -2489,6 +2475,12 @@ EXTERN_C_BEGIN
 #       define DATAEND  /* not needed */
 #     endif
 #   endif
+#   ifdef SYMBIAN
+#     define OS_TYPE "SYMBIAN"
+#     define ALIGNMENT 4
+#     define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
+#     define DATAEND (ptr_t)ALIGNMENT
+#   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
       extern int __data_start[];
@@ -2497,7 +2489,7 @@ EXTERN_C_BEGIN
       extern void *__stack_base__;
 #     define STACKBOTTOM ((ptr_t)(__stack_base__))
 #   endif
-#endif
+# endif /* ARM32 */
 
 # ifdef CRIS
 #   define MACH_TYPE "CRIS"
