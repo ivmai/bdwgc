@@ -122,11 +122,11 @@
 # endif
 # if defined(__arm) || defined(__arm__) || defined(__thumb__)
 #    define ARM32
-#    if defined(NACL)
+#    if defined(NACL) || defined(SYMBIAN)
 #      define mach_type_known
 #    elif !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
         && !defined(OPENBSD) && !defined(DARWIN) \
-        && !defined(_WIN32) && !defined(__CEGCC__) && !defined(SYMBIAN)
+        && !defined(_WIN32) && !defined(__CEGCC__)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -615,10 +615,6 @@
 #   define mach_type_known
 # endif
 
-# if defined(SYMBIAN)
-#   define mach_type_known
-# endif
-
 # if defined(__EMSCRIPTEN__)
 #   define I386
 #   define mach_type_known
@@ -813,15 +809,6 @@
      && !defined(__ARMCC_VERSION) /* does not exist in armcc gnu emu */ \
      && !defined(__clang__) /* since no-op in clang (3.0) */
 #   define HAVE_BUILTIN_UNWIND_INIT
-# endif
-
-# ifdef SYMBIAN
-#   define MACH_TYPE "SYMBIAN"
-#   define OS_TYPE "SYMBIAN"
-#   define CPP_WORDSZ 32
-#   define ALIGNMENT 4
-#   define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
-#   define DATAEND (ptr_t)ALIGNMENT
 # endif
 
 # ifdef __EMSCRIPTEN__
@@ -2375,6 +2362,12 @@
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
 #   endif
+#   ifdef SYMBIAN
+#     define OS_TYPE "SYMBIAN"
+#     define ALIGNMENT 4
+#     define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
+#     define DATAEND (ptr_t)ALIGNMENT
+#   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
       extern int __data_start[];
@@ -2383,7 +2376,7 @@
       extern void *__stack_base__;
 #     define STACKBOTTOM ((ptr_t)(__stack_base__))
 #   endif
-#endif
+# endif /* ARM32 */
 
 # ifdef CRIS
 #   define MACH_TYPE "CRIS"
