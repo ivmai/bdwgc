@@ -82,7 +82,11 @@ COBJS= cordbscs.obj cordxtra.obj cordprnt.obj
 
 all: gc.lib gccpp.lib gctba.lib cord.lib
 
+!ifdef MSWIN32
+check-deps: gctest.exe cpptest.exe cordtest.exe de.exe .SYMBOLIC
+!else
 check-deps: gctest.exe cpptest.exe cordtest.exe .SYMBOLIC
+!endif
 
 check: check-deps .SYMBOLIC
         *gctest.exe
@@ -233,6 +237,32 @@ cordtest.exe: cordtest.obj gc.lib cord.lib
         @%append $*.lnk library cord.lib
         *wlink @$*.lnk
 
+!ifdef MSWIN32
+de.exe: de.obj de_win.obj de_win.rbj gc.lib cord.lib
+        %create $*.lnk
+        @%append $*.lnk sys nt
+        @%append $*.lnk op case
+        @%append $*.lnk op stack=256K
+        @%append $*.lnk name $*
+        @%append $*.lnk file de.obj
+        @%append $*.lnk file de_win.obj
+        @%append $*.lnk resource de_win.rbj
+        @%append $*.lnk library gc.lib
+        @%append $*.lnk library cord.lib
+        @%append $*.lnk library gdi32.lib
+        *wlink @$*.lnk
+
+de.obj: cord\tests\de.c .AUTODEPEND
+        $(CC) $(TEST_CFLAGS) $(CORDFLAG) cord\tests\de.c
+de_win.obj: cord\tests\de_win.c .AUTODEPEND
+        $(CC) $(TEST_CFLAGS) $(CORDFLAG) cord\tests\de_win.c
+
+de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cmds.h
+        rc -fo $@ cord\tests\de_win.rc
+de_win.rbj: de_win.res
+        cvtres -out:$@ de_win.res
+!endif
+
 cpptest.exe: cpptest.obj gc.lib gccpp.lib
         %create $*.lnk
 !ifdef DOS4GW
@@ -276,15 +306,17 @@ cpptest.obj: tests\cpp.cc .AUTODEPEND
         $(CXX) $(CXXFLAGS) $*.cc
 
 clean: .SYMBOLIC
-    @if exist *.obj del *.obj
-    @if exist *.map del *.map
-    @if exist *.lnk del *.lnk
-    @if exist *.lb1 del *.lb1
-    @if exist *.sym del *.sym
-    @if exist *.err del *.err
-    @if exist *.tmp del *.tmp
-    @if exist *.lst del *.lst
-    @if exist *.exe del *.exe
-    @if exist *.log del *.log
-    @if exist *.lib del *.lib
-    @if exist *.dll del *.dll
+        @if exist *.obj del *.obj
+        @if exist *.map del *.map
+        @if exist *.lnk del *.lnk
+        @if exist *.lb1 del *.lb1
+        @if exist *.sym del *.sym
+        @if exist *.err del *.err
+        @if exist *.tmp del *.tmp
+        @if exist *.lst del *.lst
+        @if exist *.exe del *.exe
+        @if exist *.log del *.log
+        @if exist *.lib del *.lib
+        @if exist *.dll del *.dll
+        @if exist *.rbj del *.rbj
+        @if exist *.res del *.res
