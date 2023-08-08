@@ -170,12 +170,12 @@ EXTERN_C_BEGIN
 # endif
 # if defined(__arm) || defined(__arm__) || defined(__thumb__)
 #   define ARM32
-#   if defined(NACL)
+#   if defined(NACL) || defined(SYMBIAN)
 #     define mach_type_known
 #   elif !defined(ANY_BSD) && !defined(DARWIN) && !defined(LINUX) \
          && !defined(QNX) && !defined(NN_PLATFORM_CTR) \
-         && !defined(SN_TARGET_PSP2) && !defined(SYMBIAN) \
-         && !defined(_WIN32) && !defined(__CEGCC__) && !defined(GC_NO_NOSYS)
+         && !defined(SN_TARGET_PSP2) && !defined(_WIN32) \
+         && !defined(__CEGCC__) && !defined(GC_NO_NOSYS)
 #     define NOSYS
 #     define mach_type_known
 #   endif
@@ -484,9 +484,6 @@ EXTERN_C_BEGIN
 # if defined(NN_BUILD_TARGET_PLATFORM_NX)
 #   define AARCH64
 #   define NINTENDO_SWITCH
-#   define mach_type_known
-# endif
-# if defined(SYMBIAN)
 #   define mach_type_known
 # endif
 # if defined(__EMSCRIPTEN__) || defined(EMSCRIPTEN)
@@ -1086,12 +1083,10 @@ EXTERN_C_BEGIN
 # endif /* SOLARIS */
 
 # ifdef SYMBIAN
-#   define MACH_TYPE "SYMBIAN"
 #   define OS_TYPE "SYMBIAN"
-#   define CPP_WORDSZ 32
 #   define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
 #   define DATAEND (ptr_t)ALIGNMENT
-# endif
+# endif /* SYMBIAN */
 
 # ifdef M68K
 #   define MACH_TYPE "M68K"
@@ -2181,6 +2176,9 @@ EXTERN_C_BEGIN
       /* __stack_base__ is set in newlib/libc/sys/arm/crt0.S  */
       extern void *__stack_base__;
 #     define STACKBOTTOM ((ptr_t)(__stack_base__))
+#   endif
+#   ifdef SYMBIAN
+      /* Nothing specific. */
 #   endif
 #endif /* ARM32 */
 
