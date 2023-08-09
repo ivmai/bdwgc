@@ -208,7 +208,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 # define LONG_MULT(hprod, lprod, x, y) \
     do { \
         __asm__ __volatile__("mull %2" : "=a"(lprod), "=d"(hprod) \
-                             : "g"(y), "0"(x)); \
+                             : "r"(y), "0"(x)); \
     } while (0)
 #else
 # define LONG_MULT(hprod, lprod, x, y) \
