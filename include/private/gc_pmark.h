@@ -232,7 +232,7 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr, mse * mark_stack_top,
 # define LONG_MULT(hprod, lprod, x, y) \
     do { \
         __asm__ __volatile__("mull %2" : "=a"(lprod), "=d"(hprod) \
-                             : "g"(y), "0"(x)); \
+                             : "r"(y), "0"(x)); \
     } while (0)
 #else
 # if defined(__int64) && !defined(__GNUC__) && !defined(CPPCHECK)
