@@ -203,7 +203,7 @@ exit_label: ; \
 #if defined(I386) && defined(__GNUC__)
 # define LONG_MULT(hprod, lprod, x, y) { \
         __asm__ __volatile__("mull %2" : "=a"(lprod), "=d"(hprod) \
-                             : "g"(y), "0"(x)); \
+                             : "r"(y), "0"(x)); \
   }
 #else
 # define LONG_MULT(hprod, lprod, x, y) { \
