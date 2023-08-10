@@ -3127,6 +3127,43 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 # define ASSERT_CANCEL_DISABLED() (void)0
 #endif /* !CANCEL_SAFE */
 
+/* Multiply 32-bit unsigned values (used by GC_push_contents_hdr).  */
+#ifdef NO_LONGLONG64
+# define LONG_MULT(hprod, lprod, x, y) \
+    do { \
+      unsigned32 lx = (x) & 0xffffU; \
+      unsigned32 ly = (y) & 0xffffU; \
+      unsigned32 hx = (x) >> 16; \
+      unsigned32 hy = (y) >> 16; \
+      unsigned32 lxhy = lx * hy; \
+      unsigned32 mid = hx * ly + lxhy; /* may overflow */ \
+      unsigned32 lxly = lx * ly; \
+      \
+      lprod = (mid << 16) + lxly; /* may overflow */ \
+      hprod = hx * hy + ((lprod) < lxly ? 1U : 0) \
+              + (mid < lxhy ? (unsigned32)0x10000UL : 0) + (mid >> 16); \
+    } while (0)
+#elif defined(I386) && defined(__GNUC__) && !defined(NACL)
+# define LONG_MULT(hprod, lprod, x, y) \
+    __asm__ __volatile__ ("mull %2" \
+                          : "=a" (lprod), "=d" (hprod) \
+                          : "r" (y), "0" (x))
+#else
+# if defined(__int64) && !defined(__GNUC__) && !defined(CPPCHECK)
+#   define ULONG_MULT_T unsigned __int64
+# else
+#   define ULONG_MULT_T unsigned long long
+# endif
+# define LONG_MULT(hprod, lprod, x, y) \
+    do { \
+        ULONG_MULT_T prod = (ULONG_MULT_T)(x) * (ULONG_MULT_T)(y); \
+        \
+        GC_STATIC_ASSERT(sizeof(x) + sizeof(y) <= sizeof(prod)); \
+        hprod = prod >> 32; \
+        lprod = (unsigned32)prod; \
+    } while (0)
+#endif /* !I386 && !NO_LONGLONG64 */
+
 EXTERN_C_END
 
 #endif /* GC_PRIVATE_H */

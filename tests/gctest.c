@@ -1942,6 +1942,23 @@ static void GC_CALLBACK reachable_objs_counter(void *obj, size_t size,
   (*(unsigned *)pcounter)++;
 }
 
+/* A minimal testing of LONG_MULT().    */
+static void test_long_mult(void)
+{
+  unsigned32 hp, lp;
+
+  LONG_MULT(hp, lp, (unsigned32)0x1234567UL, (unsigned32)0xfedcba98UL);
+  if (hp != (unsigned32)0x121fa00UL || lp != (unsigned32)0x23e20b28UL) {
+    GC_printf("LONG_MULT gives wrong result\n");
+    FAIL;
+  }
+  LONG_MULT(hp, lp, (unsigned32)0xdeadbeefUL, (unsigned32)0xefcdab12UL);
+  if (hp != (unsigned32)0xd0971b30UL || lp != (unsigned32)0xbd2411ceUL) {
+    GC_printf("LONG_MULT gives wrong result (2)\n");
+    FAIL;
+  }
+}
+
 #define NUMBER_ROUND_UP(v, bound) ((((v) + (bound) - 1) / (bound)) * (bound))
 
 static void check_heap_stats(void)
@@ -2128,6 +2145,7 @@ static void check_heap_stats(void)
       (void)GC_get_size_map_at(-1);
       (void)GC_get_size_map_at(1);
 #   endif
+    test_long_mult();
 
 #   ifndef NO_CLOCK
       GC_printf("Full/world-stopped collections took %lu/%lu ms\n",

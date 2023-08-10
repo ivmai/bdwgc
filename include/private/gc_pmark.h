@@ -49,10 +49,7 @@
 EXTERN_C_BEGIN
 
 /* The real declarations of the following is in gc_priv.h, so that      */
-/* we can avoid scanning the following table.                           */
-/*
-mark_proc GC_mark_procs[MAX_MARK_PROCS];
-*/
+/* we can avoid scanning GC_mark_procs table.                           */
 
 #ifndef MARK_DESCR_OFFSET
 # define MARK_DESCR_OFFSET sizeof(word)
@@ -227,27 +224,6 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr, mse * mark_stack_top,
 # define TRACE(source, cmd)
 # define TRACE_TARGET(source, cmd)
 #endif
-
-#if defined(I386) && defined(__GNUC__) && !defined(NACL)
-# define LONG_MULT(hprod, lprod, x, y) \
-    do { \
-        __asm__ __volatile__("mull %2" : "=a"(lprod), "=d"(hprod) \
-                             : "r"(y), "0"(x)); \
-    } while (0)
-#else
-# if defined(__int64) && !defined(__GNUC__) && !defined(CPPCHECK)
-#   define ULONG_MULT_T unsigned __int64
-# else
-#   define ULONG_MULT_T unsigned long long
-# endif
-# define LONG_MULT(hprod, lprod, x, y) \
-    do { \
-        ULONG_MULT_T prod = (ULONG_MULT_T)(x) * (ULONG_MULT_T)(y); \
-        GC_STATIC_ASSERT(sizeof(x) + sizeof(y) <= sizeof(prod)); \
-        hprod = prod >> 32; \
-        lprod = (unsigned32)prod; \
-    } while (0)
-#endif /* !I386 */
 
 /* If the mark bit corresponding to current is not set, set it, and     */
 /* push the contents of the object on the mark stack.  Current points   */
