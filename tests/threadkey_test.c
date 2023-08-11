@@ -94,7 +94,7 @@ int main(void)
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
 # ifdef GC_SOLARIS_THREADS
-    pthread_key_create (&key, on_thread_exit);
+    make_key();
 # else
     pthread_once (&key_once, make_key);
 # endif
