@@ -132,7 +132,7 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
     for (i = 0; i < old_size; i++) {
       p = (*table)[i];
       while (p != 0) {
-        ptr_t real_key = (ptr_t)GC_REVEAL_POINTER(p->hidden_key);
+        ptr_t real_key = (ptr_t)GC_REVEAL_POINTER(p -> hidden_key);
         struct hash_chain_entry *next = p -> next;
         size_t new_hash = HASH3(real_key, new_size, log_new_size);
 
@@ -190,7 +190,7 @@ STATIC int GC_register_disappearing_link_inner(
         }
     }
     new_dl = (struct disappearing_link *)
-        GC_INTERNAL_MALLOC(sizeof(struct disappearing_link),NORMAL);
+        GC_INTERNAL_MALLOC(sizeof(struct disappearing_link), NORMAL);
     if (EXPECT(NULL == new_dl, FALSE)) {
       GC_oom_func oom_fn = GC_oom_fn;
       UNLOCK();
@@ -293,10 +293,10 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 /* of the caller, if appropriate).  Note that this is called with the   */
 /* mutator running.  This is safe only if the mutator (client) gets     */
 /* the allocation lock to reveal hidden pointers.                       */
-GC_INLINE void GC_mark_fo(ptr_t real_ptr, finalization_mark_proc mark_proc)
+GC_INLINE void GC_mark_fo(ptr_t real_ptr, finalization_mark_proc fo_mark_proc)
 {
   GC_ASSERT(I_HOLD_LOCK());
-  mark_proc(real_ptr);
+  fo_mark_proc(real_ptr);
   /* Process objects pushed by the mark procedure.      */
   while (!GC_mark_stack_empty())
     MARK_FROM_MARK_STACK();
@@ -323,15 +323,15 @@ GC_INLINE void GC_complete_ongoing_collection(void) {
 
     GC_ASSERT(I_HOLD_LOCK());
     for (i = 0; i < GC_toggleref_array_size; ++i) {
-      GCToggleRef r = GC_toggleref_arr[i];
-      void *obj = r.strong_ref;
+      GCToggleRef *r = &GC_toggleref_arr[i];
+      void *obj = r -> strong_ref;
 
       if (((word)obj & 1) != 0) {
-        obj = GC_REVEAL_POINTER(r.weak_ref);
+        obj = GC_REVEAL_POINTER(r -> weak_ref);
+        GC_ASSERT(((word)obj & 1) == 0);
       }
-      if (NULL == obj) {
-        continue;
-      }
+      if (NULL == obj) continue;
+
       switch (GC_toggleref_callback(obj)) {
       case GC_TOGGLE_REF_DROP:
         break;
@@ -382,9 +382,11 @@ GC_INLINE void GC_complete_ongoing_collection(void) {
   {
     size_t i;
     for (i = 0; i < GC_toggleref_array_size; ++i) {
-      if ((GC_toggleref_arr[i].weak_ref & 1) != 0) {
-        if (!GC_is_marked(GC_REVEAL_POINTER(GC_toggleref_arr[i].weak_ref))) {
-          GC_toggleref_arr[i].weak_ref = 0;
+      GCToggleRef *r = &GC_toggleref_arr[i];
+
+      if (((word)(r -> strong_ref) & 1) != 0) {
+        if (!GC_is_marked(GC_REVEAL_POINTER(r -> weak_ref))) {
+          r -> weak_ref = 0;
         } else {
           /* No need to copy, BDWGC is a non-moving collector.    */
         }
@@ -451,14 +453,20 @@ GC_INLINE void GC_complete_ongoing_collection(void) {
 
     GC_ASSERT(NONNULL_ARG_NOT_NULL(obj));
     LOCK();
+    GC_ASSERT(((word)obj & 1) == 0 && obj == GC_base(obj));
     if (GC_toggleref_callback != 0) {
       if (!ensure_toggleref_capacity(1)) {
         res = GC_NO_MEMORY;
       } else {
-        GC_toggleref_arr[GC_toggleref_array_size].strong_ref =
-                        is_strong_ref ? obj : (void *)GC_HIDE_POINTER(obj);
-        if (is_strong_ref)
+        GCToggleRef *r = &GC_toggleref_arr[GC_toggleref_array_size];
+
+        if (is_strong_ref) {
+          r -> strong_ref = obj;
           GC_dirty(GC_toggleref_arr + GC_toggleref_array_size);
+        } else {
+          r -> weak_ref = GC_HIDE_POINTER(obj);
+          GC_ASSERT((r -> weak_ref & 1) != 0);
+        }
         GC_toggleref_array_size++;
       }
     }
@@ -712,7 +720,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
           /* Interruption by a signal in the middle of this     */
           /* should be safe.  The client may see only *ocd      */
           /* updated, but we'll declare that to be his problem. */
-          if (ocd) *ocd = (void *) (curr_fo -> fo_client_data);
+          if (ocd) *ocd = (void *)(curr_fo -> fo_client_data);
           if (ofn) *ofn = curr_fo -> fo_fn;
           /* Delete the structure for obj.      */
           if (prev_fo == 0) {
@@ -778,7 +786,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
         return;
       }
       new_fo = (struct finalizable_object *)
-        GC_INTERNAL_MALLOC(sizeof(struct finalizable_object),NORMAL);
+        GC_INTERNAL_MALLOC(sizeof(struct finalizable_object), NORMAL);
       if (EXPECT(new_fo != 0, TRUE))
         break;
       oom_fn = GC_oom_fn;
@@ -857,8 +865,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 
       for (curr_dl = dl_hashtbl -> head[i]; curr_dl != 0;
            curr_dl = dl_next(curr_dl)) {
-        ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_dl->dl_hidden_obj);
-        ptr_t real_link = (ptr_t)GC_REVEAL_POINTER(curr_dl->dl_hidden_link);
+        ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_dl -> dl_hidden_obj);
+        ptr_t real_link = (ptr_t)GC_REVEAL_POINTER(curr_dl -> dl_hidden_link);
 
         GC_printf("Object: %p, link value: %p, link addr: %p\n",
                   (void *)real_ptr, *(void **)real_link, (void *)real_link);
@@ -883,7 +891,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = GC_fnlz_roots.fo_head[i];
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
-        ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
+        ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
 
         GC_printf("Finalizable object: %p\n", (void *)real_ptr);
       }
@@ -945,11 +953,11 @@ GC_INLINE void GC_make_disappearing_links_disappear(
       next_dl = dl_next(curr_dl);
 #     if defined(GC_ASSERTIONS) && !defined(THREAD_SANITIZER)
          /* Check accessibility of the location pointed by link. */
-        GC_noop1(*(word *)GC_REVEAL_POINTER(curr_dl->dl_hidden_link));
+        GC_noop1(*(word *)GC_REVEAL_POINTER(curr_dl -> dl_hidden_link));
 #     endif
       if (is_remove_dangling) {
         ptr_t real_link = (ptr_t)GC_base(GC_REVEAL_POINTER(
-                                                curr_dl->dl_hidden_link));
+                                                curr_dl -> dl_hidden_link));
 
         if (NULL == real_link || EXPECT(GC_is_marked(real_link), TRUE)) {
           prev_dl = curr_dl;
@@ -957,11 +965,11 @@ GC_INLINE void GC_make_disappearing_links_disappear(
         }
       } else {
         if (EXPECT(GC_is_marked((ptr_t)GC_REVEAL_POINTER(
-                                        curr_dl->dl_hidden_obj)), TRUE)) {
+                                        curr_dl -> dl_hidden_obj)), TRUE)) {
           prev_dl = curr_dl;
           continue;
         }
-        *(ptr_t *)GC_REVEAL_POINTER(curr_dl->dl_hidden_link) = NULL;
+        *(ptr_t *)GC_REVEAL_POINTER(curr_dl -> dl_hidden_link) = NULL;
       }
 
       /* Delete curr_dl entry from dl_hashtbl.  */
@@ -1012,7 +1020,7 @@ GC_INNER void GC_finalize(void)
       for (curr_fo = GC_fnlz_roots.fo_head[i];
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
         GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
-        real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
+        real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
             GC_MARKED_FOR_FINALIZATION(real_ptr);
             GC_mark_fo(real_ptr, curr_fo -> fo_mark_proc);
@@ -1027,14 +1035,14 @@ GC_INNER void GC_finalize(void)
     GC_bytes_finalized = 0;
     for (i = 0; i < fo_size; i++) {
       curr_fo = GC_fnlz_roots.fo_head[i];
-      prev_fo = 0;
-      while (curr_fo != 0) {
-        real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
+      prev_fo = NULL;
+      while (curr_fo != NULL) {
+        real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
             if (!GC_java_finalization) {
               GC_set_mark_bit(real_ptr);
             }
-            /* Delete from hash table */
+            /* Delete from hash table.  */
               next_fo = fo_next(curr_fo);
               if (NULL == prev_fo) {
                 GC_fnlz_roots.fo_head[i] = next_fo;
@@ -1055,8 +1063,8 @@ GC_INNER void GC_finalize(void)
               fo_set_next(curr_fo, GC_fnlz_roots.finalize_now);
               GC_dirty(curr_fo);
               SET_FINALIZE_NOW(curr_fo);
-              /* unhide object pointer so any future collections will   */
-              /* see it.                                                */
+            /* Unhide object pointer so any future collections will   */
+            /* see it.                                                */
               curr_fo -> fo_hidden_base =
                         (word)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
               GC_bytes_finalized +=
@@ -1072,11 +1080,11 @@ GC_INNER void GC_finalize(void)
     }
 
   if (GC_java_finalization) {
-    /* make sure we mark everything reachable from objects finalized
-       using the no_order mark_proc */
+    /* Make sure we mark everything reachable from objects finalized    */
+    /* using the no-order fo_mark_proc.                                 */
       for (curr_fo = GC_fnlz_roots.finalize_now;
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
-        real_ptr = (ptr_t)curr_fo -> fo_hidden_base;
+        real_ptr = (ptr_t)(curr_fo -> fo_hidden_base); /* revealed */
         if (!GC_is_marked(real_ptr)) {
             if (curr_fo -> fo_mark_proc == GC_null_finalize_mark_proc) {
                 GC_mark_fo(real_ptr, GC_normal_finalize_mark_proc);
@@ -1087,41 +1095,39 @@ GC_INNER void GC_finalize(void)
         }
       }
 
-    /* now revive finalize-when-unreachable objects reachable from
-       other finalizable objects */
+    /* Now revive finalize-when-unreachable objects reachable from      */
+    /* other finalizable objects.                                       */
       if (need_unreachable_finalization) {
         curr_fo = GC_fnlz_roots.finalize_now;
         GC_ASSERT(NULL == curr_fo || GC_fnlz_roots.fo_head != NULL);
-        prev_fo = NULL;
-        while (curr_fo != NULL) {
+        for (prev_fo = NULL; curr_fo != NULL;
+             prev_fo = curr_fo, curr_fo = next_fo) {
           next_fo = fo_next(curr_fo);
-          if (curr_fo -> fo_mark_proc == GC_unreachable_finalize_mark_proc) {
-            real_ptr = (ptr_t)curr_fo -> fo_hidden_base;
-            if (!GC_is_marked(real_ptr)) {
-              GC_set_mark_bit(real_ptr);
-            } else {
-              if (NULL == prev_fo) {
-                SET_FINALIZE_NOW(next_fo);
-              } else {
-                fo_set_next(prev_fo, next_fo);
-                GC_dirty(prev_fo);
-              }
-              curr_fo -> fo_hidden_base =
-                                GC_HIDE_POINTER(curr_fo -> fo_hidden_base);
-              GC_bytes_finalized -=
-                  curr_fo->fo_object_size + sizeof(struct finalizable_object);
+          if (curr_fo -> fo_mark_proc != GC_unreachable_finalize_mark_proc)
+            continue;
 
-              i = HASH2(real_ptr, GC_log_fo_table_size);
-              fo_set_next(curr_fo, GC_fnlz_roots.fo_head[i]);
-              GC_dirty(curr_fo);
-              GC_fo_entries++;
-              GC_fnlz_roots.fo_head[i] = curr_fo;
-              curr_fo = prev_fo;
-              needs_barrier = TRUE;
-            }
+          real_ptr = (ptr_t)(curr_fo -> fo_hidden_base); /* revealed */
+          if (!GC_is_marked(real_ptr)) {
+            GC_set_mark_bit(real_ptr);
+            continue;
           }
-          prev_fo = curr_fo;
-          curr_fo = next_fo;
+          if (NULL == prev_fo) {
+            SET_FINALIZE_NOW(next_fo);
+          } else {
+            fo_set_next(prev_fo, next_fo);
+            GC_dirty(prev_fo);
+          }
+          curr_fo -> fo_hidden_base = GC_HIDE_POINTER(real_ptr);
+          GC_bytes_finalized -=
+              (curr_fo -> fo_object_size) + sizeof(struct finalizable_object);
+
+          i = HASH2(real_ptr, GC_log_fo_table_size);
+          fo_set_next(curr_fo, GC_fnlz_roots.fo_head[i]);
+          GC_dirty(curr_fo);
+          GC_fo_entries++;
+          GC_fnlz_roots.fo_head[i] = curr_fo;
+          curr_fo = prev_fo;
+          needs_barrier = TRUE;
         }
       }
   }
@@ -1174,7 +1180,7 @@ STATIC unsigned GC_interrupt_finalizers = 0;
       GC_fnlz_roots.fo_head[i] = NULL;
       while (curr_fo != NULL) {
           struct finalizable_object * next_fo;
-          ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
+          ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
 
           GC_mark_fo(real_ptr, GC_normal_finalize_mark_proc);
           GC_set_mark_bit(real_ptr);
@@ -1186,7 +1192,7 @@ STATIC unsigned GC_interrupt_finalizers = 0;
           GC_dirty(curr_fo);
           SET_FINALIZE_NOW(curr_fo);
 
-          /* unhide object pointer so any future collections will       */
+          /* Unhide object pointer so any future collections will       */
           /* see it.                                                    */
           curr_fo -> fo_hidden_base =
                         (word)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
@@ -1267,6 +1273,7 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
     GC_ASSERT(I_DONT_HOLD_LOCK());
     while (GC_should_invoke_finalizers()) {
         struct finalizable_object * curr_fo;
+        ptr_t real_ptr;
 
         LOCK();
         if (count == 0) {
@@ -1287,8 +1294,8 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
         SET_FINALIZE_NOW(fo_next(curr_fo));
         UNLOCK();
         fo_set_next(curr_fo, 0);
-        (*(curr_fo -> fo_fn))((ptr_t)(curr_fo -> fo_hidden_base),
-                              curr_fo -> fo_client_data);
+        real_ptr = (ptr_t)(curr_fo -> fo_hidden_base); /* revealed */
+        (*(curr_fo -> fo_fn))(real_ptr, curr_fo -> fo_client_data);
         curr_fo -> fo_client_data = 0;
         ++count;
         /* Explicit freeing of curr_fo is probably a bad idea.  */

@@ -1327,7 +1327,7 @@ struct fnlz_roots_s {
 };
 
 union toggle_ref_u {
-  /* The lowest bit is used to distinguish between choices.     */
+  /* The least significant bit is used to distinguish between choices.  */
   void *strong_ref;
   GC_hidden_pointer weak_ref;
 };
@@ -1336,7 +1336,7 @@ union toggle_ref_u {
 /* These are used for simple objects that are larger than what  */
 /* can be described by a BITMAP_BITS sized bitmap.              */
 typedef struct {
-    word ed_bitmap;     /* lsb corresponds to first word.       */
+    word ed_bitmap; /* the least significant bit corresponds to first word. */
     GC_bool ed_continued;       /* next entry is continuation.  */
 } typed_ext_descr_t;
 
