@@ -18,6 +18,8 @@
 #ifndef GC_DARWIN_SEMAPHORE_H
 #define GC_DARWIN_SEMAPHORE_H
 
+#include "gc_priv.h"
+
 #if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_THREADS)
 # error darwin_semaphore.h included for improper target
 #endif

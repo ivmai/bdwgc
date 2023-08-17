@@ -18,6 +18,10 @@
 #ifndef GC_LOCKS_H
 #define GC_LOCKS_H
 
+#if !defined(GC_PRIVATE_H)
+# error gc_locks.h should be included from gc_priv.h
+#endif
+
 /*
  * Mutual exclusion between allocator/collector routines.
  * Needed if there is more than one allocator thread.

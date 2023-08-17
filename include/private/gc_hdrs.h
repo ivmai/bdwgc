@@ -15,6 +15,10 @@
 #ifndef GC_HEADERS_H
 #define GC_HEADERS_H
 
+#if !defined(GC_PRIVATE_H)
+# error gc_hdrs.h should be included from gc_priv.h
+#endif
+
 #if CPP_WORDSZ != 32 && CPP_WORDSZ < 36 && !defined(CPPCHECK)
 # error Get a real machine
 #endif

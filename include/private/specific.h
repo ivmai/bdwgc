@@ -12,7 +12,7 @@
  */
 
 /*
- * This is a reimplementation of a subset of the pthread_getspecific/setspecific
+ * This is a reimplementation of a subset of the pthread_get/setspecific
  * interface. This appears to outperform the standard linuxthreads one
  * by a significant margin.
  * The major restriction is that each thread may only make a single
@@ -27,6 +27,10 @@
 
 #ifndef GC_SPECIFIC_H
 #define GC_SPECIFIC_H
+
+#if !defined(GC_THREAD_LOCAL_ALLOC_H)
+# error specific.h should be included from thread_local_alloc.h
+#endif
 
 #include <errno.h>
 
@@ -113,7 +117,6 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t);
 GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
                                     tse * volatile * cache_entry);
 
-/* GC_INLINE is defined in gc_priv.h. */
 GC_INLINE void * GC_getspecific(tsd * key)
 {
     word qtid = quick_thread_id();
