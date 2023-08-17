@@ -187,9 +187,7 @@ typedef int GC_bool;
 
 typedef unsigned int unsigned32;
 
-#ifndef HEADERS_H
-# include "gc_hdrs.h"
-#endif
+#include "gc_hdrs.h"
 
 #ifndef GC_ATTR_NO_SANITIZE_ADDR
 # ifndef ADDRESS_SANITIZER
