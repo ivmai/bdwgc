@@ -154,9 +154,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define GC_ATTR_WORD_ALIGNED /* empty */
 #endif
 
-#ifndef HEADERS_H
-# include "gc_hdrs.h"
-#endif
+#include "gc_hdrs.h"
 
 #ifndef GC_ATTR_UNUSED
 # if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
