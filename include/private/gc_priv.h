@@ -174,9 +174,7 @@ typedef int GC_bool;
 # define GC_ATTR_WORD_ALIGNED /* empty */
 #endif
 
-#ifndef HEADERS_H
-# include "gc_hdrs.h"
-#endif
+#include "gc_hdrs.h"
 
 #ifndef GC_ATTR_NO_SANITIZE_ADDR
 # ifndef ADDRESS_SANITIZER
