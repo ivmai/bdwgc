@@ -16,6 +16,9 @@
 
 #include "private/gc_priv.h"
 
+#if defined(KEEP_BACK_PTRS) && defined(GC_ASSERTIONS)
+# include "private/dbg_mlc.h" /* for NOT_MARKED */
+#endif
 /*
  * This implements:
  * 1. allocation of heap block headers
@@ -123,6 +126,9 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = GC_os_get_mem(bytes_to_get);
             if (result != NULL) {
+#             if defined(KEEP_BACK_PTRS) && (GC_GRANULE_BYTES < 0x10)
+                GC_ASSERT((word)result > (word)NOT_MARKED);
+#             endif
               /* No update of scratch free area pointer;        */
               /* get memory directly.                           */
 #             ifdef USE_SCRATCH_LAST_END_PTR
