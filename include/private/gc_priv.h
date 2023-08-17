@@ -148,9 +148,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define GC_ATTR_WORD_ALIGNED /* empty */
 #endif
 
-#ifndef HEADERS_H
-# include "gc_hdrs.h"
-#endif
+#include "gc_hdrs.h"
 
 #if __GNUC__ >= 3 && !defined(LINT2)
 # define EXPECT(expr, outcome) __builtin_expect(expr,outcome)
