@@ -15,23 +15,20 @@
  * modified is included with the above copyright notice.
  */
 
+/* This is a simple API to implement pointer back tracing, i.e. */
+/* to answer questions such as "who is pointing to this" or     */
+/* "why is this object being retained by the collector".        */
+/* Most of these calls yield useful information on only after   */
+/* a garbage collection.  Usually the client will first force   */
+/* a full collection and then gather information, preferably    */
+/* before much intervening allocation.                          */
+/* The implementation of the interface is only about 99.9999%   */
+/* correct.  It is intended to be good enough for profiling,    */
+/* but is not intended to be used with production code.         */
+/* Results are likely to be much more useful if all allocation  */
+/* is accomplished through the debugging allocators.            */
+
 /*
- * This is a simple API to implement pointer back tracing, i.e.
- * to answer questions such as "who is pointing to this" or
- * "why is this object being retained by the collector"
- *
- * Most of these calls yield useful information on only after
- * a garbage collection.  Usually the client will first force
- * a full collection and then gather information, preferably
- * before much intervening allocation.
- *
- * The implementation of the interface is only about 99.9999%
- * correct.  It is intended to be good enough for profiling,
- * but is not intended to be used with production code.
- *
- * Results are likely to be much more useful if all allocation is
- * accomplished through the debugging allocators.
- *
  * The implementation idea is due to A. Demers.
  */
 
@@ -46,14 +43,6 @@
   extern "C" {
 #endif
 
-/* Store information about the object referencing dest in *base_p     */
-/* and *offset_p.                                                     */
-/* If multiple objects or roots point to dest, the one reported       */
-/* will be the last one used by the garbage collector to trace the    */
-/* object.                                                            */
-/*   source is root ==> *base_p = address, *offset_p = 0              */
-/*   source is heap object ==> *base_p != 0, *offset_p = offset       */
-/* Dest can be any address within a heap object.                      */
 typedef enum {
     GC_UNREFERENCED,    /* No reference info available.         */
     GC_NO_SPACE,        /* Dest not allocated with debug alloc. */
@@ -64,6 +53,14 @@ typedef enum {
     GC_FINALIZER_REFD   /* Finalizable and hence accessible.    */
 } GC_ref_kind;
 
+/* Store information about the object referencing dest in *base_p   */
+/* and *offset_p.                                                   */
+/* If multiple objects or roots point to dest, then the one         */
+/* reported will be the last one used by the garbage collector to   */
+/* trace the object.                                                */
+/* If source is root, then *base_p = address and *offset_p = 0.     */
+/* If source is heap object, then *base_p != 0, *offset_p = offset. */
+/* Dest can be any address within a heap object.                    */
 GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void * /* dest */,
                                 void ** /* base_p */, size_t * /* offset_p */)
                                 GC_ATTR_NONNULL(1);
