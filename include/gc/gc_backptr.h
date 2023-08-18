@@ -49,11 +49,10 @@
 /* Store information about the object referencing dest in *base_p     */
 /* and *offset_p.                                                     */
 /* If multiple objects or roots point to dest, the one reported       */
-/* will be the last on used by the garbage collector to trace the     */
+/* will be the last one used by the garbage collector to trace the    */
 /* object.                                                            */
 /*   source is root ==> *base_p = address, *offset_p = 0              */
 /*   source is heap object ==> *base_p != 0, *offset_p = offset       */
-/*   Returns 1 on success, 0 if source couldn't be determined.        */
 /* Dest can be any address within a heap object.                      */
 typedef enum {
     GC_UNREFERENCED,    /* No reference info available.         */
