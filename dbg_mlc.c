@@ -95,7 +95,6 @@
   /* and *offset_p.                                                     */
   /*   source is root ==> *base_p = address, *offset_p = 0              */
   /*   source is heap object ==> *base_p != 0, *offset_p = offset       */
-  /*   Returns 1 on success, 0 if source couldn't be determined.        */
   /* Dest can be any address within a heap object.                      */
   GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void *dest, void **base_p,
                                                   size_t *offset_p)
