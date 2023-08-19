@@ -219,7 +219,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
         unsigned long long prod = (unsigned long long)(x) \
                                   * (unsigned long long)(y); \
         GC_STATIC_ASSERT(sizeof(x) + sizeof(y) <= sizeof(prod)); \
-        hprod = prod >> 32; \
+        hprod = (unsigned32)(prod >> 32); \
         lprod = (unsigned32)prod; \
     } while (0)
 #endif /* !I386 */
