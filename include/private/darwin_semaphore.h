@@ -24,6 +24,8 @@
 # error darwin_semaphore.h included for improper target
 #endif
 
+#include <errno.h>
+
 #ifdef __cplusplus
   extern "C" {
 #endif
