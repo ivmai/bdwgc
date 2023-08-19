@@ -3157,7 +3157,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
         ULONG_MULT_T prod = (ULONG_MULT_T)(x) * (ULONG_MULT_T)(y); \
         \
         GC_STATIC_ASSERT(sizeof(x) + sizeof(y) <= sizeof(prod)); \
-        hprod = prod >> 32; \
+        hprod = (unsigned32)(prod >> 32); \
         lprod = (unsigned32)prod; \
     } while (0)
 #endif /* !I386 && !NO_LONGLONG64 */
