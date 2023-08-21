@@ -18,7 +18,7 @@
 #ifndef GC_LOCKS_H
 #define GC_LOCKS_H
 
-#if !defined(GC_PRIVATE_H)
+#if !defined(GC_PRIVATE_H) && !defined(CPPCHECK)
 # error gc_locks.h should be included from gc_priv.h
 #endif
 

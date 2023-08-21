@@ -15,7 +15,7 @@
 #ifndef GC_HEADERS_H
 #define GC_HEADERS_H
 
-#if !defined(GC_PRIVATE_H)
+#if !defined(GC_PRIVATE_H) && !defined(CPPCHECK)
 # error gc_hdrs.h should be included from gc_priv.h
 #endif
 
