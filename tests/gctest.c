@@ -1728,8 +1728,8 @@ static void run_one_test(void)
             FAIL;
           }
         }
-#       if !defined(GC_TOGGLE_REFS_NOT_NEEDED) && !defined(GC_DEBUG)
-          if (GC_toggleref_add(p, 1) == GC_NO_MEMORY) {
+#       ifndef GC_TOGGLE_REFS_NOT_NEEDED
+          if (GC_TOGGLEREF_ADD(p, 1) == GC_NO_MEMORY) {
             GC_printf("Out of memory in GC_toggleref_add\n");
             exit(69);
           }

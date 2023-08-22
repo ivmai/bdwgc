@@ -1079,6 +1079,7 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
       GC_debug_register_finalizer_no_order(p, f, d, of, od)
 # define GC_REGISTER_FINALIZER_UNREACHABLE(p, f, d, of, od) \
       GC_debug_register_finalizer_unreachable(p, f, d, of, od)
+# define GC_TOGGLEREF_ADD(p, is_strong) GC_debug_toggleref_add(p, is_strong)
 # define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
 # define GC_PTR_STORE_AND_DIRTY(p, q) GC_debug_ptr_store_and_dirty(p, q)
 # define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
@@ -1105,6 +1106,7 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
       GC_register_finalizer_no_order(p, f, d, of, od)
 # define GC_REGISTER_FINALIZER_UNREACHABLE(p, f, d, of, od) \
       GC_register_finalizer_unreachable(p, f, d, of, od)
+# define GC_TOGGLEREF_ADD(p, is_strong) GC_toggleref_add(p, is_strong)
 # define GC_END_STUBBORN_CHANGE(p) GC_end_stubborn_change(p)
 # define GC_PTR_STORE_AND_DIRTY(p, q) GC_ptr_store_and_dirty(p, q)
 # define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
@@ -1393,12 +1395,16 @@ GC_API GC_toggleref_func GC_CALL GC_get_toggleref_func(void);
 /* be stored internally and the toggle-ref callback will be     */
 /* invoked on the object until the callback returns             */
 /* GC_TOGGLE_REF_DROP or the object is collected.  If is_strong */
-/* is true then the object is registered with a strong ref,     */
-/* a weak one otherwise.  Returns GC_SUCCESS if registration    */
-/* succeeded (or no callback registered yet), GC_NO_MEMORY if   */
-/* it failed for lack of memory.                                */
+/* is true, then the object is registered with a strong ref,    */
+/* a weak one otherwise.  Obj should be the starting address    */
+/* of an object allocated by GC_malloc (GC_debug_malloc) or     */
+/* friends.  Returns GC_SUCCESS if registration succeeded (or   */
+/* no callback is registered yet), GC_NO_MEMORY if it failed    */
+/* for a lack of memory reason.                                 */
 GC_API int GC_CALL GC_toggleref_add(void * /* obj */, int /* is_strong */)
                                                 GC_ATTR_NONNULL(1);
+GC_API int GC_CALL GC_debug_toggleref_add(void * /* obj */,
+                                int /* is_strong */) GC_ATTR_NONNULL(1);
 
 /* Finalizer callback support.  Invoked by the collector (with  */
 /* the allocation lock held) for each unreachable object        */

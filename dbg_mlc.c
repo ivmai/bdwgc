@@ -1196,6 +1196,19 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
     store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
 }
 
+# ifndef GC_TOGGLE_REFS_NOT_NEEDED
+    GC_API int GC_CALL GC_debug_toggleref_add(void *obj, int is_strong_ref)
+    {
+      ptr_t base = (ptr_t)GC_base(obj);
+
+      if (NULL == base || (ptr_t)obj - base != sizeof(oh)) {
+        GC_err_printf("GC_debug_toggleref_add called with"
+                      " non-base-pointer %p\n", obj);
+      }
+      return GC_toggleref_add(base, is_strong_ref);
+    }
+# endif /* !GC_TOGGLE_REFS_NOT_NEEDED */
+
 #endif /* !GC_NO_FINALIZATION */
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_replacement(size_t lb)
