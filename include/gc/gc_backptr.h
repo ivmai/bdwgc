@@ -61,6 +61,9 @@ typedef enum {
 /* If source is root, then *base_p = address and *offset_p = 0.     */
 /* If source is heap object, then *base_p != 0, *offset_p = offset. */
 /* Dest can be any address within a heap object.                    */
+/* The allocation lock is not acquired by design (despite of        */
+/* the possibility of a race); anyway the function should not be    */
+/* used in production code.                                         */
 GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void * /* dest */,
                                 void ** /* base_p */, size_t * /* offset_p */)
                                 GC_ATTR_NONNULL(1);

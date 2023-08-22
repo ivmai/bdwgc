@@ -92,11 +92,6 @@
     GC_store_back_pointer(MARKED_FOR_FINALIZATION, dest);
   }
 
-  /* Store information about the object referencing dest in *base_p     */
-  /* and *offset_p.                                                     */
-  /*   source is root ==> *base_p = address, *offset_p = 0              */
-  /*   source is heap object ==> *base_p != 0, *offset_p = offset       */
-  /* Dest can be any address within a heap object.                      */
   GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void *dest, void **base_p,
                                                   size_t *offset_p)
   {
@@ -110,13 +105,13 @@
       /* incorrect "dest" value.                                        */
       if (!hdr) ABORT("Invalid GC_get_back_ptr_info argument");
 #   endif
-    if (!GC_HAS_DEBUG_INFO((ptr_t) hdr)) return GC_NO_SPACE;
+    if (!GC_HAS_DEBUG_INFO((ptr_t)hdr)) return GC_NO_SPACE;
     bp = (ptr_t)GC_REVEAL_POINTER(hdr -> oh_back_ptr);
     if (MARKED_FOR_FINALIZATION == bp) return GC_FINALIZER_REFD;
     if (MARKED_FROM_REGISTER == bp) return GC_REFD_FROM_REG;
     if (NOT_MARKED == bp) return GC_UNREFERENCED;
 #   if ALIGNMENT == 1
-      /* Heuristically try to fix off by 1 errors we introduced by      */
+      /* Heuristically try to fix off-by-one errors we introduced by    */
       /* insisting on even addresses.                                   */
       {
         ptr_t alternate_ptr = bp + 1;
