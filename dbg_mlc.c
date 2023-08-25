@@ -1196,7 +1196,7 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
     {
       ptr_t base = (ptr_t)GC_base(obj);
 
-      if (NULL == base || (ptr_t)obj - base != sizeof(oh)) {
+      if ((ptr_t)obj - base != sizeof(oh)) {
         GC_err_printf("GC_debug_toggleref_add called with"
                       " non-base-pointer %p\n", obj);
       }
