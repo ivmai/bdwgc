@@ -47,7 +47,7 @@ pthread_key_t key;
 static void * entry(void *arg)
 {
   pthread_setspecific(key,
-                      (void *)GC_HIDE_POINTER(GC_STRDUP("hello, world")));
+                      (void *)GC_HIDE_NZ_POINTER(GC_STRDUP("hello, world")));
   return arg;
 }
 

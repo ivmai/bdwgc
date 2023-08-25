@@ -111,7 +111,7 @@ static int is_pair(pair_t p)
 }
 
 #define CSUM_SEED 782
-#define PTR_HASH(p) (GC_HIDE_POINTER(p) >> 4)
+#define PTR_HASH(p) (GC_HIDE_NZ_POINTER(p) >> 4)
 
 static void GC_CALLBACK pair_dct(void *obj, void *cd)
 {

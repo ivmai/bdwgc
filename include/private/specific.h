@@ -54,8 +54,8 @@ EXTERN_C_BEGIN
   /* Thread-local storage is not guaranteed to be scanned by GC.        */
   /* We hide values stored in "specific" entries for a test purpose.    */
   typedef GC_hidden_pointer ts_entry_value_t;
-# define TS_HIDE_VALUE(p) GC_HIDE_POINTER(p)
-# define TS_REVEAL_PTR(p) GC_REVEAL_POINTER(p)
+# define TS_HIDE_VALUE(p) GC_HIDE_NZ_POINTER(p)
+# define TS_REVEAL_PTR(p) GC_REVEAL_NZ_POINTER(p)
 #else
   typedef void * ts_entry_value_t;
 # define TS_HIDE_VALUE(p) (p)
@@ -120,7 +120,7 @@ GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
 GC_INLINE void * GC_getspecific(tsd * key)
 {
     word qtid = quick_thread_id();
-    tse * volatile * entry_ptr = &key->cache[CACHE_HASH(qtid)];
+    tse * volatile * entry_ptr = &(key -> cache[CACHE_HASH(qtid)]);
     tse * entry = *entry_ptr;   /* Must be loaded only once.    */
 
     GC_ASSERT(qtid != INVALID_QTID);

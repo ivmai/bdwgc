@@ -1521,6 +1521,14 @@ typedef GC_word GC_hidden_pointer;
 # define REVEAL_POINTER(p) GC_REVEAL_POINTER(p)
 #endif
 
+/* A slightly modified version of GC_HIDE_POINTER which guarantees not  */
+/* to "hide" NULL (i.e. passing zero argument gives zero result).  This */
+/* might be useful in conjunction with GC_register_disappearing_link.   */
+/* Note that unlike GC_HIDE_POINTER, inversion of the least significant */
+/* bit of the argument is not guaranteed.                               */
+#define GC_HIDE_NZ_POINTER(p) ((GC_hidden_pointer)(-(GC_signed_word)(p)))
+#define GC_REVEAL_NZ_POINTER(p) ((void *)GC_HIDE_NZ_POINTER(p))
+
 /* The routines to acquire/release the allocator lock.                  */
 /* The lock is not reentrant.  GC_alloc_unlock() should not be called   */
 /* unless the lock is acquired by the current thread.                   */

@@ -184,6 +184,7 @@ STATIC int GC_register_disappearing_link_inner(
     for (curr_dl = dl_hashtbl -> head[index]; curr_dl != 0;
          curr_dl = dl_next(curr_dl)) {
         if (curr_dl -> dl_hidden_link == GC_HIDE_POINTER(link)) {
+            /* Alternatively, GC_HIDE_NZ_POINTER() could be used instead. */
             curr_dl -> dl_hidden_obj = GC_HIDE_POINTER(obj);
             UNLOCK();
             return GC_DUPLICATE;

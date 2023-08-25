@@ -241,11 +241,11 @@ int F::nAllocatedF = 0;
 
 
 GC_word Disguise( void* p ) {
-    return GC_HIDE_POINTER(p);
+    return GC_HIDE_NZ_POINTER(p);
 }
 
 void* Undisguise( GC_word i ) {
-    return GC_REVEAL_POINTER(i);
+    return GC_REVEAL_NZ_POINTER(i);
 }
 
 #define GC_CHECKED_DELETE(p) \
@@ -260,7 +260,7 @@ void* Undisguise( GC_word i ) {
 
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
-  int APIENTRY WinMain( HINSTANCE /* instance */, HINSTANCE /* prev */,
+  int APIENTRY WinMain(HINSTANCE /* instance */, HINSTANCE /* prev */,
                        LPSTR cmd, int /* cmdShow */)
   {
     int argc = 0;
@@ -305,7 +305,7 @@ void* Undisguise( GC_word i ) {
     argv = argv_;
     argc = sizeof(argv_) / sizeof(argv_[0]);
 #else
-  int main( int argc, char* argv[] ) {
+  int main(int argc, char* argv[]) {
 #endif
 
     GC_set_all_interior_pointers(1);
