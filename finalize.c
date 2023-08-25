@@ -381,6 +381,8 @@ GC_INLINE void GC_complete_ongoing_collection(void) {
   STATIC void GC_clear_togglerefs(void)
   {
     size_t i;
+
+    GC_ASSERT(I_HOLD_LOCK());
     for (i = 0; i < GC_toggleref_array_size; ++i) {
       GCToggleRef *r = &GC_toggleref_arr[i];
 

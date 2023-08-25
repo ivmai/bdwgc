@@ -189,6 +189,7 @@ static void ensure_struct(ptr_t p)
 {
   ptr_t old_back_ptr = GET_OH_BG_PTR(p);
 
+  GC_ASSERT(I_HOLD_LOCK());
   if (!((word)old_back_ptr & FLAG_MANY)) {
     back_edges *be = new_back_edges();
     be -> flags = 0;
@@ -214,6 +215,7 @@ static void add_edge(ptr_t p, ptr_t q)
     word i;
 
     GC_ASSERT(p == GC_base(p) && q == GC_base(q));
+    GC_ASSERT(I_HOLD_LOCK());
     if (!GC_HAS_DEBUG_INFO(q) || !GC_HAS_DEBUG_INFO(p)) {
       /* This is really a misinterpreted free list link, since we saw   */
       /* a pointer to a free list.  Don't overwrite it!                 */
@@ -305,6 +307,7 @@ static void reset_back_edge(ptr_t p, size_t n_bytes, word gc_descr)
 {
   UNUSED_ARG(n_bytes);
   UNUSED_ARG(gc_descr);
+  GC_ASSERT(I_HOLD_LOCK());
   /* Skip any free list links, or dropped blocks */
   if (GC_HAS_DEBUG_INFO(p)) {
     ptr_t old_back_ptr = GET_OH_BG_PTR(p);
@@ -457,6 +460,7 @@ static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
 {
   UNUSED_ARG(n_bytes);
   UNUSED_ARG(gc_descr);
+  GC_ASSERT(I_HOLD_LOCK());
   if (GC_is_marked(p) && GC_HAS_DEBUG_INFO(p)) {
     word p_height = 0;
     ptr_t p_deepest_obj = 0;
