@@ -1495,20 +1495,23 @@ GC_API GC_abort_func GC_CALL GC_get_abort_func(void);
 /* memory.                                                              */
 GC_API void GC_CALL GC_abort_on_oom(void);
 
-/* The following is intended to be used by a higher level       */
-/* (e.g. Java-like) finalization facility.  It is expected      */
-/* that finalization code will arrange for hidden pointers to   */
-/* disappear.  Otherwise objects can be accessed after they     */
-/* have been collected.                                         */
-/* Should not be used in the leak-finding mode.                 */
-/* Note that putting pointers in atomic objects or in           */
-/* non-pointer slots of "typed" objects is equivalent to        */
-/* disguising them in this way, and may have other advantages.  */
+/* The following is intended to be used by a higher level (e.g.         */
+/* Java-like) finalization facility.  It is expected that finalization  */
+/* code will arrange for hidden pointers to disappear.  Otherwise,      */
+/* objects can be accessed after they have been collected.  Should not  */
+/* be used in the leak-finding mode.                                    */
+/* Note that putting pointers in atomic objects or in non-pointer slots */
+/* of "typed" objects is equivalent to disguising them in this way, and */
+/* may have other advantages.  Note also that some code relies on that  */
+/* the least significant bit of the argument (including for NULL) is    */
+/* inverted by these primitives.                                        */
+/* Important: converting a hidden pointer to a real pointer requires    */
+/* verifying that the object still exists; this involves acquiring the  */
+/* allocator lock to avoid a race with the collector (e.g., one thread  */
+/* might fetch hidden link value, while another thread might collect    */
+/* the relevant object and reuse the free space for another object).    */
 typedef GC_word GC_hidden_pointer;
 #define GC_HIDE_POINTER(p) (~(GC_hidden_pointer)(p))
-/* Converting a hidden pointer to a real pointer requires verifying     */
-/* that the object still exists.  This involves acquiring the           */
-/* allocator lock to avoid a race with the collector.                   */
 #define GC_REVEAL_POINTER(p) ((void *)GC_HIDE_POINTER(p))
 
 #if defined(I_HIDE_POINTERS) || defined(GC_I_HIDE_POINTERS)
