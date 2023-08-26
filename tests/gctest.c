@@ -1945,6 +1945,7 @@ static void GC_CALLBACK reachable_objs_counter(void *obj, size_t size,
 /* A minimal testing of LONG_MULT().    */
 static void test_long_mult(void)
 {
+#if !defined(CPPCHECK) || !defined(NO_LONGLONG64)
   unsigned32 hp, lp;
 
   LONG_MULT(hp, lp, (unsigned32)0x1234567UL, (unsigned32)0xfedcba98UL);
@@ -1957,6 +1958,7 @@ static void test_long_mult(void)
     GC_printf("LONG_MULT gives wrong result (2)\n");
     FAIL;
   }
+#endif
 }
 
 #define NUMBER_ROUND_UP(v, bound) ((((v) + (bound) - 1) / (bound)) * (bound))
