@@ -3057,7 +3057,16 @@ EXTERN_C_BEGIN
 #   else
 #     define PUSHED_REGS_COUNT 7
 #   endif
-# elif defined(X86_64) || defined(SHx)
+# elif defined(X86_64)
+#   ifdef XMM_CANT_STORE_PTRS
+      /* If pointers can't be located in Xmm registers. */
+#     define PUSHED_REGS_COUNT 15
+#   else
+      /* gcc-13 may store pointers into SIMD registers when     */
+      /* certain compiler optimizations are enabled.            */
+#     define PUSHED_REGS_COUNT (15+32)
+#   endif
+# elif defined(SHx)
 #   define PUSHED_REGS_COUNT 15
 # elif defined(ARM32)
 #   define PUSHED_REGS_COUNT 13
