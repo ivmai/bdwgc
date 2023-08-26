@@ -3046,8 +3046,10 @@ EXTERN_C_BEGIN
 #   else
 #     define PUSHED_REGS_COUNT 7
 #   endif
-# elif defined(X86_64) || defined(SHx)
+# elif defined(SHx)
 #   define PUSHED_REGS_COUNT 15
+# elif defined(X86_64)
+#   define PUSHED_REGS_COUNT 47
 # elif defined(ARM32)
 #   define PUSHED_REGS_COUNT 13
 # elif defined(AARCH64)

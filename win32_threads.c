@@ -379,6 +379,8 @@ GC_INLINE LONG GC_get_max_thread_index(void)
                         ? CONTEXT_INTEGER | CONTEXT_CONTROL \
                           | CONTEXT_EXCEPTION_REQUEST | CONTEXT_SEGMENTS \
                         : CONTEXT_INTEGER | CONTEXT_CONTROL)
+#elif defined(X86_64)
+# define GET_THREAD_CONTEXT_FLAGS (CONTEXT_INTEGER | CONTEXT_CONTROL | CONTEXT_FLOATING_POINT)
 #else
 # define GET_THREAD_CONTEXT_FLAGS (CONTEXT_INTEGER | CONTEXT_CONTROL)
 #endif /* !WOW64_THREAD_CONTEXT_WORKAROUND */
@@ -685,6 +687,14 @@ static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext) {
 #   elif defined(X86_64)
       PUSH4(Rax,Rcx,Rdx,Rbx); PUSH2(Rbp, Rsi); PUSH1(Rdi);
       PUSH4(R8, R9, R10, R11); PUSH4(R12, R13, R14, R15);
+      PUSH4(Xmm0.Low, Xmm0.High, Xmm1.Low, Xmm1.High);
+      PUSH4(Xmm2.Low, Xmm2.High, Xmm3.Low, Xmm3.High);
+      PUSH4(Xmm4.Low, Xmm4.High, Xmm5.Low, Xmm5.High);
+      PUSH4(Xmm6.Low, Xmm6.High, Xmm7.Low, Xmm7.High);
+      PUSH4(Xmm8.Low, Xmm8.High, Xmm9.Low, Xmm9.High);
+      PUSH4(Xmm10.Low, Xmm10.High, Xmm11.Low, Xmm11.High);
+      PUSH4(Xmm12.Low, Xmm12.High, Xmm13.Low, Xmm13.High);
+      PUSH4(Xmm14.Low, Xmm14.High, Xmm15.Low, Xmm15.High);
       sp = (ptr_t)context.Rsp;
 #   elif defined(ARM32)
       PUSH4(R0,R1,R2,R3),PUSH4(R4,R5,R6,R7),PUSH4(R8,R9,R10,R11);
