@@ -2367,6 +2367,10 @@
 #     define ALIGNMENT 4
 #     define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
 #     define DATAEND (ptr_t)ALIGNMENT
+#     ifndef USE_MMAP
+        /* sbrk() is not available. */
+#       define USE_MMAP 1
+#     endif
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
