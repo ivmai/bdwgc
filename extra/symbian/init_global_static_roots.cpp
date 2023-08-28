@@ -10,8 +10,8 @@ extern "C" {
 
 void GC_init_global_static_roots()
 {
-    ptr_t dataStart = NULL;
-    ptr_t dataEnd = NULL;
+    ptr_t dataStart;
+    ptr_t dataEnd;
 #   if defined (__WINS__)
         extern int winscw_data_start, winscw_data_end;
         dataStart = ((ptr_t)&winscw_data_start);
