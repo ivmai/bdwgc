@@ -724,6 +724,9 @@ static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext) {
 #     error Architecture is not supported
 #   endif
 #   undef context
+#   undef PUSH1
+#   undef PUSH2
+#   undef PUSH4
     GC_ASSERT(cnt == PUSHED_REGS_COUNT);
     return sp;
 }
