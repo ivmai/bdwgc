@@ -25,6 +25,13 @@
 #ifndef GCCONFIG_H
 #define GCCONFIG_H
 
+#ifndef GC_H
+# ifdef HAVE_CONFIG_H
+#   include "config.h"
+# endif
+# include "../gc.h"
+#endif
+
 #ifdef CPPCHECK
 # undef CLOCKS_PER_SEC
 # undef FIXUP_POINTER
