@@ -15,6 +15,10 @@
 
 #include "private/gc_priv.h"
 
+#if defined(E2K) && !defined(THREADS)
+# include <alloca.h>
+#endif
+
 /* Data structure for list of root sets.                                */
 /* We keep a hash table, so that we can filter out duplicate additions. */
 /* Under Win32, we need to do a better job of filtering overlaps, so    */
@@ -663,16 +667,14 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
     }
 }
 
-#if defined(E2K) || defined(IA64)
+#ifdef IA64
   /* Similar to GC_push_all_stack_sections() but for IA-64 registers store. */
   GC_INNER void GC_push_all_register_sections(ptr_t bs_lo, ptr_t bs_hi,
                   int eager, struct GC_traced_stack_sect_s *traced_stack_sect)
   {
-#   ifdef E2K
-      (void)traced_stack_sect; /* TODO: Not implemented yet */
-#   else
-      while (traced_stack_sect != NULL) {
+    while (traced_stack_sect != NULL) {
         ptr_t frame_bs_lo = traced_stack_sect -> backing_store_end;
+
         GC_ASSERT((word)frame_bs_lo <= (word)bs_hi);
         if (eager) {
             GC_push_all_eager(frame_bs_lo, bs_hi);
@@ -681,8 +683,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
         }
         bs_hi = traced_stack_sect -> saved_backing_store_ptr;
         traced_stack_sect = traced_stack_sect -> prev;
-      }
-#   endif
+    }
     GC_ASSERT((word)bs_lo <= (word)bs_hi);
     if (eager) {
         GC_push_all_eager(bs_lo, bs_hi);
@@ -690,7 +691,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
         GC_push_all_stack(bs_lo, bs_hi);
     }
   }
-#endif /* E2K || IA64 */
+#endif /* IA64 */
 
 #ifdef THREADS
 
@@ -838,9 +839,9 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void *context)
                   /* "traced stack section" in backing store.           */
                   if (GC_traced_stack_sect != NULL
                       && (word)cold_gc_bs_pointer
-                          < (word)GC_traced_stack_sect->backing_store_end)
+                          < (word)(GC_traced_stack_sect -> backing_store_end))
                     cold_gc_bs_pointer =
-                                GC_traced_stack_sect->backing_store_end;
+                                GC_traced_stack_sect -> backing_store_end;
                   GC_push_all_register_sections(GC_register_stackbottom,
                         cold_gc_bs_pointer, FALSE, GC_traced_stack_sect);
                   GC_push_all_eager(cold_gc_bs_pointer, bsp);
@@ -859,10 +860,7 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void *context)
             size_t stack_size;
 
             GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
-            GC_push_all_register_sections(bs_lo, bs_lo + stack_size,
-                                          TRUE /* eager */,
-                                          GC_traced_stack_sect);
-            FREE_PROCEDURE_STACK_LOCAL(bs_lo, stack_size);
+            GC_push_all_eager(bs_lo, bs_lo + stack_size);
           }
 #       endif
 #   endif /* !THREADS */

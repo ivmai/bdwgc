@@ -29,6 +29,10 @@
 # include <time.h> /* for nanosleep() */
 #endif /* !NACL */
 
+#ifdef E2K
+# include <alloca.h>
+#endif
+
 GC_INLINE void GC_usleep(unsigned us)
 {
 #   if defined(LINT2) || defined(THREAD_SANITIZER)
@@ -408,7 +412,6 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
 # endif
 # ifdef E2K
     GC_ASSERT(crtn -> backing_store_end == bs_lo);
-    FREE_PROCEDURE_STACK_LOCAL(bs_lo, stack_size);
     crtn -> backing_store_ptr = NULL;
     crtn -> backing_store_end = NULL;
 # endif
@@ -896,13 +899,17 @@ GC_INNER void GC_push_all_stacks(void)
           GC_ASSERT(bs_lo != NULL && bs_hi != NULL);
           /* FIXME: This (if is_self) may add an unbounded number of    */
           /* entries, and hence overflow the mark stack, which is bad.  */
-          GC_push_all_register_sections(bs_lo, bs_hi, is_self,
-                                        traced_stack_sect);
+#         ifdef IA64
+            GC_push_all_register_sections(bs_lo, bs_hi, is_self,
+                                          traced_stack_sect);
+#         else
+            if (is_self) {
+              GC_push_all_eager(bs_lo, bs_hi);
+            } else {
+              GC_push_all_stack(bs_lo, bs_hi);
+            }
+#         endif
           total_size += bs_hi - bs_lo; /* bs_lo <= bs_hi */
-#       endif
-#       ifdef E2K
-          if (is_self)
-            FREE_PROCEDURE_STACK_LOCAL(bs_lo, (size_t)(bs_hi - bs_lo));
 #       endif
       }
     }
