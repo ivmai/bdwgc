@@ -80,7 +80,7 @@ typedef struct GC_StackContext_Rep {
 # endif
 
 # if defined(E2K) || defined(IA64)
-    ptr_t backing_store_end;    /* Note: may reference data in GC heap. */
+    ptr_t backing_store_end;
     ptr_t backing_store_ptr;
 # endif
 

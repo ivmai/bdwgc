@@ -2029,17 +2029,6 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
             *(pbuf) = PS_ALLOCA_BUF(*(psz));                        \
           }                                                         \
         } while (0)
-
-# ifdef THREADS
-    /* Allocate a buffer in the GC heap (as an atomic object) and copy  */
-    /* procedure stack there.  Assumes the GC allocation lock is held.  */
-    /* May trigger a collection (thus, cannot be used in GC_push_roots  */
-    /* or in a signal handler).  The buffer should be freed with        */
-    /* GC_INTERNAL_FREE later when not needed (or, alternatively, it    */
-    /* could be just garbage-collected).                                */
-    /* Similar to GET_PROCEDURE_STACK_LOCAL in other aspects.           */
-    GC_INNER size_t GC_alloc_and_get_procedure_stack(ptr_t *pbuf);
-# endif
 #endif /* E2K */
 
 #if defined(E2K) && defined(USE_PTR_HWTAG)

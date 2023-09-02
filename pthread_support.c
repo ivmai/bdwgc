@@ -54,6 +54,10 @@
 # include <signal.h>
 #endif /* !GC_WIN32_THREADS */
 
+#ifdef E2K
+# include <alloca.h>
+#endif
+
 #if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS)
 # include <sys/sysctl.h>
 #endif
@@ -611,7 +615,7 @@ GC_INNER GC_thread GC_threads[THREAD_TABLE_SZ] = {0};
 
 /* It may not be safe to allocate when we register the first thread.    */
 /* Note that next and status fields are unused, but there might be some */
-/* other fields (crtn and backing_store_end) to be pushed.              */
+/* other fields (crtn) to be pushed.                                    */
 static struct GC_StackContext_Rep first_crtn;
 static struct GC_Thread_Rep first_thread;
 
@@ -637,9 +641,6 @@ void GC_push_thread_structures(void)
 # endif
   /* else */ {
     GC_PUSH_ALL_SYM(GC_threads);
-#   ifdef E2K
-      GC_PUSH_ALL_SYM(first_crtn.backing_store_end);
-#   endif
     GC_ASSERT(NULL == first_thread.tm.next);
 #   ifdef GC_PTHREADS
       GC_ASSERT(NULL == first_thread.status);
@@ -1781,19 +1782,37 @@ GC_INNER void GC_init_parallel(void)
 /* Wrapper for functions that are likely to block for an appreciable    */
 /* length of time.                                                      */
 
-static GC_bool do_blocking_enter(GC_thread me)
-{
+#ifdef E2K
+  /* Cannot be defined as a function because the stack-allocated buffer */
+  /* (pointed to by bs_lo) should be preserved till completion of       */
+  /* GC_do_blocking_inner (or GC_suspend_self_blocked).                 */
+# define do_blocking_enter(pTopOfStackUnset, me)            \
+        do {                                                \
+          ptr_t bs_lo;                                      \
+          size_t stack_size;                                \
+          GC_stack_context_t crtn = (me) -> crtn;           \
+                                                            \
+          *(pTopOfStackUnset) = FALSE;                      \
+          crtn -> stack_ptr = GC_approx_sp();               \
+          GC_ASSERT(NULL == crtn -> backing_store_end);     \
+          GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);   \
+          crtn -> backing_store_end = bs_lo;                \
+          crtn -> backing_store_ptr = bs_lo + stack_size;   \
+          (me) -> flags |= DO_BLOCKING;                     \
+        } while (0)
+
+#else /* !E2K */
+  static void do_blocking_enter(GC_bool *pTopOfStackUnset, GC_thread me)
+  {
 #   if defined(SPARC) || defined(IA64)
         ptr_t bs_hi = GC_save_regs_in_stack();
         /* TODO: regs saving already done by GC_with_callee_saves_pushed */
-#   elif defined(E2K)
-        size_t stack_size;
 #   endif
     GC_stack_context_t crtn = me -> crtn;
-    GC_bool topOfStackUnset = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((me -> flags & DO_BLOCKING) == 0);
+    *pTopOfStackUnset = FALSE;
 #   ifdef SPARC
         crtn -> stack_ptr = bs_hi;
 #   else
@@ -1803,22 +1822,17 @@ static GC_bool do_blocking_enter(GC_thread me)
         if (NULL == crtn -> topOfStack) {
             /* GC_do_blocking_inner is not called recursively,  */
             /* so topOfStack should be computed now.            */
-            topOfStackUnset = TRUE;
+            *pTopOfStackUnset = TRUE;
             crtn -> topOfStack = GC_FindTopOfStack(0);
         }
 #   endif
 #   ifdef IA64
         crtn -> backing_store_ptr = bs_hi;
-#   elif defined(E2K)
-        GC_ASSERT(NULL == crtn -> backing_store_end);
-        stack_size = GC_alloc_and_get_procedure_stack(
-                                        &(crtn -> backing_store_end));
-        crtn -> backing_store_ptr = crtn -> backing_store_end + stack_size;
 #   endif
     me -> flags |= DO_BLOCKING;
     /* Save context here if we want to support precise stack marking.   */
-    return topOfStackUnset;
-}
+  }
+#endif /* !E2K */
 
 static void do_blocking_leave(GC_thread me, GC_bool topOfStackUnset)
 {
@@ -1829,9 +1843,6 @@ static void do_blocking_leave(GC_thread me, GC_bool topOfStackUnset)
         GC_stack_context_t crtn = me -> crtn;
 
         GC_ASSERT(crtn -> backing_store_end != NULL);
-        /* Note that value of backing_store_end here may differ from    */
-        /* the one stored in this function previously.                  */
-        GC_INTERNAL_FREE(crtn -> backing_store_end);
         crtn -> backing_store_ptr = NULL;
         crtn -> backing_store_end = NULL;
       }
@@ -1853,7 +1864,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
     UNUSED_ARG(context);
     LOCK();
     me = GC_self_thread_inner();
-    topOfStackUnset = do_blocking_enter(me);
+    do_blocking_enter(&topOfStackUnset, me);
     UNLOCK();
 
     d -> client_data = (d -> fn)(d -> client_data);
@@ -1901,7 +1912,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
 
     UNUSED_ARG(context);
     GC_ASSERT(I_HOLD_LOCK());
-    topOfStackUnset = do_blocking_enter(me);
+    do_blocking_enter(&topOfStackUnset, me);
     while ((me -> ext_suspend_cnt & 1) != 0) {
       word suspend_cnt = (word)(me -> ext_suspend_cnt);
 
@@ -1958,11 +1969,10 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
     /* The thread is assumed to be registered.  */
     crtn = me -> crtn;
     sb -> mem_base = crtn -> stack_end;
-#   ifdef IA64
-      sb -> reg_base = crtn -> backing_store_end;
-#   endif
 #   ifdef E2K
       sb -> reg_base = NULL;
+#   elif defined(IA64)
+      sb -> reg_base = crtn -> backing_store_end;
 #   endif
     UNLOCK();
     return (void *)me; /* gc_thread_handle */
@@ -1980,7 +1990,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     GC_stack_context_t crtn;
     ptr_t stack_end;
 #   ifdef E2K
-      size_t stack_size;
+      ptr_t saved_bs_ptr, saved_bs_end;
 #   endif
 
     LOCK();   /* This will block if the world is stopped.       */
@@ -2027,7 +2037,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       stacksect.saved_backing_store_ptr = crtn -> backing_store_ptr;
 #   elif defined(E2K)
       GC_ASSERT(crtn -> backing_store_end != NULL);
-      GC_INTERNAL_FREE(crtn -> backing_store_end);
+      saved_bs_end = crtn -> backing_store_end;
+      saved_bs_ptr = crtn -> backing_store_ptr;
       crtn -> backing_store_ptr = NULL;
       crtn -> backing_store_end = NULL;
 #   endif
@@ -2054,14 +2065,12 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       crtn -> backing_store_ptr = stacksect.saved_backing_store_ptr;
 #   elif defined(E2K)
       GC_ASSERT(NULL == crtn -> backing_store_end);
-      stack_size = GC_alloc_and_get_procedure_stack(
-                                        &(crtn -> backing_store_end));
-      crtn -> backing_store_ptr = crtn -> backing_store_end + stack_size;
+      crtn -> backing_store_end = saved_bs_end;
+      crtn -> backing_store_ptr = saved_bs_ptr;
 #   endif
     me -> flags |= DO_BLOCKING;
     crtn -> stack_ptr = stacksect.saved_stack_ptr;
     UNLOCK();
-
     return client_data; /* result */
 }
 
@@ -2929,5 +2938,7 @@ GC_API GC_sp_corrector_proc GC_CALL GC_get_sp_corrector(void)
   void __pthread_register_cancel(void) {}
   void __pthread_unregister_cancel(void) {}
 #endif
+
+#undef do_blocking_enter
 
 #endif /* THREADS */

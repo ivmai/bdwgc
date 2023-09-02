@@ -64,29 +64,6 @@
     __asm__ __volatile__ ("flushr");
     return NULL;
   }
-
-# ifdef THREADS
-    GC_INNER size_t GC_alloc_and_get_procedure_stack(ptr_t *pbuf)
-    {
-      /* TODO: support saving from non-zero ofs in stack */
-      ptr_t buf = NULL;
-      size_t new_sz, buf_sz;
-
-      GC_ASSERT(I_HOLD_LOCK());
-      for (buf_sz = 0; ; buf_sz = new_sz) {
-        new_sz = GC_get_procedure_stack(buf, buf_sz);
-        if (new_sz <= buf_sz) break;
-
-        if (EXPECT(buf != NULL, FALSE))
-          GC_INTERNAL_FREE(buf);
-        buf = (ptr_t)GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(new_sz, PTRFREE);
-        if (NULL == buf)
-          ABORT("Could not allocate memory for procedure stack");
-      }
-      *pbuf = buf;
-      return new_sz;
-    }
-# endif /* THREADS */
 #endif /* E2K */
 
 #if defined(MACOS) && defined(__MWERKS__)
