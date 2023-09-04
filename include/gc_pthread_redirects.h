@@ -46,7 +46,8 @@
 #   include <signal.h>  /* needed anyway for proper redirection */
 #   if defined(GC_PTHREAD_SIGMASK_NEEDED) \
         || defined(_BSD_SOURCE) || defined(_GNU_SOURCE) \
-        || (_POSIX_C_SOURCE >= 199506L) || (_XOPEN_SOURCE >= 500)
+        || (_POSIX_C_SOURCE >= 199506L) || (_XOPEN_SOURCE >= 500) \
+        || (__POSIX_VISIBLE >= 199506) /* xBSD internal macro */
       GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
                                     sigset_t * /* oset */);
 #   else
