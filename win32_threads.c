@@ -1275,7 +1275,7 @@ void GC_push_thread_structures(void)
     } else
 # endif
   /* else */ {
-    GC_PUSH_ALL_SYM(GC_threads);
+    GC_push_all(&GC_threads, (ptr_t)(&GC_threads) + sizeof(GC_threads));
   }
 # if defined(THREAD_LOCAL_ALLOC) && defined(USE_CUSTOM_SPECIFIC)
     GC_PUSH_ALL_SYM(GC_thread_key);

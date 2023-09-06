@@ -552,7 +552,8 @@ static struct GC_Thread_Rep first_thread;
 void GC_push_thread_structures(void)
 {
     GC_ASSERT(I_HOLD_LOCK());
-    GC_PUSH_ALL_SYM(GC_threads);
+    GC_push_all((/* no volatile */ void *)&GC_threads,
+                (ptr_t)(&GC_threads) + sizeof(GC_threads));
 #   ifdef E2K
       GC_PUSH_ALL_SYM(first_thread.backing_store_end);
 #   endif
