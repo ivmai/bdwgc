@@ -1,4 +1,16 @@
 
+== [7.4.26] (not released yet) ==
+
+* Eliminate 'unused value' gcc warnings in init_global_static_roots (Symbian)
+* Fix 'implicit declaration of function sbrk' gcc error on Symbian
+* Fix GC_push_stack_for() to push also Xmm registers on Windows/x64
+* Fix MACH_TYPE macro redefinition on Symbian/arm
+* Fix missing GC_pthread_sigmask on Free/NetBSD
+* Fix missing redirect and implementation of pthread_sigmask() on OpenBSD
+
+Also, includes 7.2r changes.
+
+
 == [7.4.24] 2023-05-25 ==
 
 * Adjust CORD_ec comment placement in ec.h
@@ -557,6 +569,20 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 * Use pthread_key for thread-local storage on FreeBSD
 * Use union of AO_t and word to favor strict-aliasing compiler optimization
 Also, includes 7.2 changes
+
+
+== [7.2r] (not released yet) ==
+
+* Fix 'g++ not found' error on OpenBSD (Makefile.direct)
+* Fix 'implicit declaration of iscntrl()' warning in cord/de_win (MinGW)
+* Fix 'missing sysconf() prototype' gcc error in setjmp_t tool (OpenBSD)
+* Fix SVR4 macro definition order
+* Fix asm constraint in LONG_MULT for gcc/x86
+* Fix bitwise negation and rounding direction in setjmp_t tool
+* Fix missing outermost parentheses in CORD_pos_cur_char_addr
+* Fix missing type widening before left shift in GC_MAKE_PROC
+* Fix misspelled GC_HEADERS_H macro in gc_priv.h
+* Fix typos in comments
 
 
 == [7.2q] 2023-05-25 ==
