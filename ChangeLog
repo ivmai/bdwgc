@@ -446,6 +446,14 @@
 * Workaround various cppcheck false positives
 
 
+== [8.0.12] (not released yet) ==
+
+* Eliminate 'make_key is defined but unused' gcc warning in threadkeytest
+* Fix 'missing binary operator before token' gcc error in gcconfig.h
+
+Also, includes 7.6.20 changes
+
+
 == [8.0.10] 2023-05-26 ==
 
 * Abort with appropriate message if first call of mmap fails with EPERM
