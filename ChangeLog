@@ -1,3 +1,73 @@
+2023-08-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* dbg_mlc.c (GC_get_back_ptr_info): Remove wrong statement in comment
+	that only 1 or 0 is returned.
+	* include/gc_backptr.h (GC_get_back_ptr_info): Likewise.
+	* include/gc_backptr.h (GC_ref_kind, GC_get_back_ptr_info): Fix
+	typo ("last one") in comment.
+
+2023-08-17  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h: Include gc_hdrs.h unconditionally (i.e.
+	do not check HEADERS_H macro which does not have GC_ prefix).
+
+2023-08-09  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_pmark.h [I386 && __GNUC__] (LONG_MULT):
+	Change "g"(y) simple constraint to "r"(y).
+
+2023-07-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/tests/de_win.c: Include ctype.h.
+
+2023-07-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/cord_pos.h (CORD_set_pos): Fix a typo ("given") in
+	comment.
+
+2023-06-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h [SOLARIS || DRSNX || UTS4] (SVR4): Move
+	definition up (to be before GETPAGESIZE one).
+	* include/private/gcconfig.h [!GETPAGESIZE && !PLATFORM_ANDROID]:
+	Check LINUX && SPARC instead of SVR4 (to retain old
+	behavior).
+
+2023-06-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h [(GC_LINUX_THREADS || GC_DGUX386_THREADS)
+	&& !GC_USESIGRT_SIGNALS && SPARC && !SIGPWR] (SIG_SUSPEND): Fix a typo
+	("Linux/SPARC") in comment.
+
+2023-06-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h [!GETPAGESIZE && OPENBSD]: Include
+	unistd.h.
+
+2023-06-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_mark.h (GC_MAKE_PROC): Cast env argument to GC_word.
+	* typd_mlc.c (GC_make_descriptor): Remove cast of the 2nd argument of
+	GC_MAKE_PROC() call.
+
+2023-06-14  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/cord_pos.h (CORD_pos_cur_char_addr): Add outermost
+	parentheses.
+
+2023-06-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/de_win.h (do_command): Fix typo ("argument") in comment.
+
+2023-06-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.direct (CXX): Use c++ instead of g++.
+
+2023-06-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* tools/setjmp_t.c (main): Cast ps-1 to unsigned long type before "~"
+	operation; do not add ps to sp if stack grows up (i.e. round sp down).
+
 [7.2q]
 
 2023-05-25  Ivan Maidanski <ivmai@mail.ru>
