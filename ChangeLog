@@ -1,4 +1,12 @@
 
+== [7.6.20] (not released yet) ==
+
+* Eliminate compiler warning of missing cast in LONG_MULT after shift
+* Fix missing outermost parentheses in macro definitions in huge test
+
+Also, includes 7.4.26 changes
+
+
 == [7.6.18] 2023-05-26 ==
 
 * Fix IRIX5 defined wrongly on FreeBSD/mips
