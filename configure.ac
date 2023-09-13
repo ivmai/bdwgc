@@ -644,8 +644,12 @@ case "$host" in
     machdep="ia64_save_regs_in_stack.lo"
     ;;
 esac
-AC_MSG_RESULT($machdep)
-addobjs="$addobjs $machdep"
+if test "x$machdep" = x; then
+  AC_MSG_RESULT(none)
+else
+  AC_MSG_RESULT($machdep)
+  addobjs="$addobjs $machdep"
+fi
 AC_SUBST(addobjs)
 AC_SUBST(addlibs)
 
