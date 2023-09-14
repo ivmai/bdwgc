@@ -56,7 +56,8 @@
 # endif /* !GC_NO_DLOPEN */
 
 # ifndef GC_NO_PTHREAD_SIGMASK
-#   if defined(GC_PTHREAD_SIGMASK_NEEDED) || defined(_BSD_SOURCE) \
+#   if defined(GC_PTHREAD_SIGMASK_NEEDED) \
+        || defined(GC_HAVE_PTHREAD_SIGMASK) || defined(_BSD_SOURCE) \
         || defined(_GNU_SOURCE) || defined(_NETBSD_SOURCE) \
         || (_POSIX_C_SOURCE >= 199506L) || (_XOPEN_SOURCE >= 500) \
         || (__POSIX_VISIBLE >= 199506) /* xBSD internal macro */

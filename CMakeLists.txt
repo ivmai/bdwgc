@@ -545,6 +545,22 @@ if (NOT (APPLE OR CYGWIN OR WIN32))
   endif(HAVE_DL_ITERATE_PHDR)
 endif()
 
+# Check for pthread_sigmask and sigset_t.
+if (enable_threads AND CMAKE_USE_PTHREADS_INIT)
+  if (NOT (APPLE OR CYGWIN OR MSYS))
+    check_c_source_compiles("
+#define _GNU_SOURCE 1\n
+#include <pthread.h>\n
+#include <signal.h>\n
+int main(void) { sigset_t t; (void)pthread_sigmask(SIG_BLOCK, 0, &t); return 0; }"
+      HAVE_PTHREAD_SIGMASK)
+    if (HAVE_PTHREAD_SIGMASK)
+      # Define to use 'pthread_sigmask' function if needed.
+      add_definitions("-DGC_HAVE_PTHREAD_SIGMASK")
+    endif(HAVE_PTHREAD_SIGMASK)
+  endif()
+endif()
+
 check_symbol_exists(sigsetjmp setjmp.h HAVE_SIGSETJMP)
 if (NOT HAVE_SIGSETJMP)
   add_definitions("-DGC_NO_SIGSETJMP")

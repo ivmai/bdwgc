@@ -839,6 +839,23 @@ if test x"$have_dladdr" = xyes; then
   AC_DEFINE([HAVE_DLADDR], 1, [Define to use 'dladdr' function.])
 fi
 
+# Check for pthread_sigmask and sigset_t.
+AS_IF([test "$THREADS" = posix],
+  [AS_IF([test x$darwin_threads != xtrue -a x$win32_threads != xtrue],
+    [AC_MSG_CHECKING(for pthread_sigmask)
+     old_CFLAGS="$CFLAGS"
+     CFLAGS="$CFLAGS $CFLAGS_EXTRA"
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#           define _GNU_SOURCE 1
+#           include <pthread.h>
+#           include <signal.h>
+         ], [sigset_t t; (void)pthread_sigmask(SIG_BLOCK, 0, &t)])],
+       [AC_MSG_RESULT(yes)
+        AC_DEFINE([GC_HAVE_PTHREAD_SIGMASK], [1],
+                  [Define to use 'pthread_sigmask' function if needed.])],
+       [AC_MSG_RESULT(no)])
+     CFLAGS="$old_CFLAGS"])])
+
 # sigsetjmp could be a macro (thus AC_CHECK_FUNCS cannot be used).
 AC_MSG_CHECKING(for sigsetjmp)
 old_CFLAGS="$CFLAGS"
