@@ -27,7 +27,8 @@
 #endif
 
 #if (defined(__linux__) || defined(__GLIBC__) || defined(__GNU__) \
-     || defined(__CYGWIN__) || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID) \
+     || defined(__CYGWIN__) || defined(HAVE_DLADDR) \
+     || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID) \
      || defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG) \
      || defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID)) && !defined(_GNU_SOURCE)
   /* Can't test LINUX, since this must be defined before other includes. */
