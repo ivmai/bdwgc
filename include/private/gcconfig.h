@@ -3212,7 +3212,9 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(MPROTECT_VDB) && !defined(MSWIN32) && !defined(MSWINCE)
+  EXTERN_C_END
 # include <signal.h> /* for SA_SIGINFO, SIGBUS */
+  EXTERN_C_BEGIN
 #endif
 
 #if defined(SIGBUS) && !defined(HAVE_SIGBUS) && !defined(CPPCHECK)
