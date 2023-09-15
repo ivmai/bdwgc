@@ -3011,10 +3011,10 @@ EXTERN_C_BEGIN
 
 /* Whether GC_page_size is to be set to a value other than page size.   */
 #if defined(CYGWIN32) && (defined(MPROTECT_VDB) || defined(USE_MUNMAP)) \
-    || (!defined(ANY_MSWIN) && !defined(USE_MMAP) \
+    || (!defined(ANY_MSWIN) && !defined(WASI) && !defined(USE_MMAP) \
         && (defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB)))
-  /* Cygwin: use the allocation granularity instead.                    */
-  /* Other than Windows: use HBLKSIZE instead (unless mmap() is used).  */
+  /* Cygwin: use the allocation granularity instead.  Other than WASI   */
+  /* or Windows: use HBLKSIZE instead (unless mmap() is used).          */
 # define ALT_PAGESIZE_USED
 # ifndef GC_NO_VALLOC
     /* Nonetheless, we need the real page size is some extra functions. */
