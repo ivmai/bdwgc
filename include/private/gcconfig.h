@@ -2881,11 +2881,8 @@ EXTERN_C_BEGIN
 #endif
 
 #ifndef GC_PREFETCH_FOR_WRITE
-# if GC_GNUC_PREREQ(3, 0) && !defined(GC_NO_PREFETCH_FOR_WRITE)
-#   define GC_PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
-# else
-#   define GC_PREFETCH_FOR_WRITE(x) (void)0
-# endif
+  /* The default GC_PREFETCH_FOR_WRITE(x) is defined in gc_inline.h,    */
+  /* the later one is included from gc_priv.h.                          */
 #endif
 
 #ifndef CACHE_LINE_SIZE
