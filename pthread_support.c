@@ -1184,6 +1184,12 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
 
         /* Make sure that no part of our stack is still on the mark     */
         /* stack, since it's about to be unmapped.                      */
+#       ifdef LINT2
+          /* Note: do not transform this if-do-while construction into  */
+          /* a single while statement because it might cause some       */
+          /* static code analyzers to report a false positive (FP)      */
+          /* code defect about missing unlock after lock.               */
+#       endif
         do {
             ENTER_GC();
             GC_ASSERT(!GC_in_thread_creation);
