@@ -1170,10 +1170,6 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
 /* to finish.                                                           */
 GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
-# ifndef GC_DISABLE_INCREMENTAL
-    word old_gc_no = GC_gc_no;
-# endif
-
 # if !defined(THREAD_SANITIZER) || !defined(CAN_CALL_ATFORK)
     /* GC_lock_holder is accessed with the lock held, so there is no    */
     /* data race actually (unlike what is reported by TSan).            */
@@ -1183,24 +1179,28 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
 # ifdef GC_DISABLE_INCREMENTAL
     (void)wait_for_all;
 # else
-    /* Make sure that no part of our stack is still on the mark */
-    /* stack, since it's about to be unmapped.                  */
-    while (GC_incremental && collection_in_progress()
-           && (wait_for_all || old_gc_no == GC_gc_no)) {
-      ENTER_GC();
-      GC_ASSERT(!GC_in_thread_creation);
-      GC_in_thread_creation = TRUE;
-      GC_collect_a_little_inner(1);
-      GC_in_thread_creation = FALSE;
-      EXIT_GC();
+    if (GC_incremental && collection_in_progress()) {
+        word old_gc_no = GC_gc_no;
 
-      UNLOCK();
-#     ifdef GC_WIN32_THREADS
-        Sleep(0);
-#     else
-        sched_yield();
-#     endif
-      LOCK();
+        /* Make sure that no part of our stack is still on the mark     */
+        /* stack, since it's about to be unmapped.                      */
+        do {
+            ENTER_GC();
+            GC_ASSERT(!GC_in_thread_creation);
+            GC_in_thread_creation = TRUE;
+            GC_collect_a_little_inner(1);
+            GC_in_thread_creation = FALSE;
+            EXIT_GC();
+
+            UNLOCK();
+#           ifdef GC_WIN32_THREADS
+              Sleep(0);
+#           else
+              sched_yield();
+#           endif
+            LOCK();
+        } while (GC_incremental && collection_in_progress()
+                 && (wait_for_all || old_gc_no == GC_gc_no));
     }
 # endif
 }
