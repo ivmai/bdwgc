@@ -57,8 +57,8 @@
        && (defined(_M_IX86) || defined(_M_X64)) && !defined(_CHPE_ONLY_) \
        && (_MSC_VER >= 1900) /* VS 2015+ */
 #   include <intrin.h>
-#   define GC_PREFETCH_FOR_WRITE(x) \
-                        _mm_prefetch((const char *)(x), _MM_HINT_T0)
+#   define GC_PREFETCH_FOR_WRITE(x) _m_prefetchw(x)
+    /* TODO: Support also _M_ARM (__prefetchw). */
 # else
 #   define GC_PREFETCH_FOR_WRITE(x) (void)0
 # endif
