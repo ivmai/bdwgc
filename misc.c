@@ -1509,10 +1509,6 @@ GC_API void GC_CALL GC_start_mark_threads(void)
 
 #if (defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE)
 
-# if defined(_MSC_VER) && defined(_DEBUG) && !defined(MSWINCE)
-#   include <crtdbg.h>
-# endif
-
   STATIC HANDLE GC_log = 0;
 
 # ifdef THREADS

@@ -56,6 +56,16 @@
 #   include <assert.h>  /* Not normally used, but handy for debugging.  */
 # endif
 
+#if !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS) \
+    && defined(_DEBUG) && (_MSC_VER >= 1900) /* VS 2015+ */
+# ifndef _CRTDBG_MAP_ALLOC
+#   define _CRTDBG_MAP_ALLOC
+# endif
+  /* This should be included before gc_priv.h (see the note about   */
+  /* _malloca redefinition bug in gcconfig.h).                      */
+# include <crtdbg.h> /* for _CrtDumpMemoryLeaks, _CrtSetDbgFlag */
+#endif
+
 #if (defined(GC_NO_FINALIZATION) || defined(DBG_HDRS_ALL)) \
     && !defined(NO_TYPED_TEST)
 # define NO_TYPED_TEST
@@ -2227,10 +2237,6 @@ static void enable_incremental_mode(void)
 #if !defined(PCR) && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
 
 #if defined(_DEBUG) && (_MSC_VER >= 1900) /* VS 2015+ */
-# ifndef _CRTDBG_MAP_ALLOC
-#   define _CRTDBG_MAP_ALLOC
-# endif
-# include <crtdbg.h>
   /* Ensure that there is no system-malloc-allocated objects at normal  */
   /* exit (i.e. no such memory leaked).                                 */
 # define CRTMEM_CHECK_INIT() \
@@ -2245,7 +2251,7 @@ static void enable_incremental_mode(void)
 #else
 # define CRTMEM_CHECK_INIT() (void)0
 # define CRTMEM_DUMP_LEAKS() (void)0
-#endif /* !_MSC_VER */
+#endif /* !_MSC_VER || !_DEBUG */
 
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)

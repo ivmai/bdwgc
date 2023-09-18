@@ -2872,6 +2872,16 @@ EXTERN_C_BEGIN
 # define NO_GETCONTEXT 1
 #endif
 
+#if defined(MSWIN32) && !defined(CONSOLE_LOG) && defined(_MSC_VER) \
+    && defined(_DEBUG) && !defined(NO_CRT)
+  /* This should be included before intrin.h to workaround some bug */
+  /* in Windows Kit (as of 10.0.17763) headers causing redefinition */
+  /* of _malloca macro.                                             */
+  EXTERN_C_END
+# include <crtdbg.h> /* for _CrtDbgReport */
+  EXTERN_C_BEGIN
+#endif
+
 #ifndef PREFETCH
 # if GC_GNUC_PREREQ(3, 0) && !defined(NO_PREFETCH)
 #   define PREFETCH(x) __builtin_prefetch((x), 0, 0)
