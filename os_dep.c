@@ -5026,6 +5026,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 
 /* Call stack save code for debugging.  Should probably be in           */
 /* mach_dep.c, but that requires reorganization.                        */
+#ifdef NEED_CALLINFO
 
 /* I suspect the following works for most *nix x86 variants, so         */
 /* long as the frame pointer is explicitly stored.  In the case of gcc, */
@@ -5131,7 +5132,7 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
 # endif
 }
 
-#else /* No builtin backtrace; do it ourselves */
+#else /* !GC_HAVE_BUILTIN_BACKTRACE */
 
 #if defined(ANY_BSD) && defined(SPARC)
 # define FR_SAVFP fr_fp
@@ -5183,15 +5184,13 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
   if (nframes < NFRAMES) info[nframes].ci_pc = 0;
 }
 
-#endif /* No builtin backtrace */
+#endif /* !GC_HAVE_BUILTIN_BACKTRACE */
 
 #endif /* SAVE_CALL_CHAIN */
 
-#ifdef NEED_CALLINFO
-
-/* Print info to stderr.  We do NOT hold the allocation lock.   */
-GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
-{
+  /* Print info to stderr.  We do NOT hold the allocation lock. */
+  GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
+  {
     int i;
     static int reentry_count = 0;
 
@@ -5364,7 +5363,7 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
     LOCK();
       --reentry_count;
     UNLOCK();
-}
+  }
 
 #endif /* NEED_CALLINFO */
 

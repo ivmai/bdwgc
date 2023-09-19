@@ -436,7 +436,7 @@ EXTERN_C_BEGIN
 /*********************************/
 
 #ifdef NEED_CALLINFO
-    struct callinfo {
+  struct callinfo {
         word ci_pc;     /* Caller, not callee, pc       */
 #       if NARGS > 0
             word ci_arg[NARGS]; /* bit-wise complement to avoid retention */
@@ -445,15 +445,16 @@ EXTERN_C_BEGIN
             /* Likely alignment problem. */
             word ci_dummy;
 #       endif
-    };
-#endif
+  };
 
-#ifdef SAVE_CALL_CHAIN
-  /* Fill in the pc and argument information for up to NFRAMES of my    */
-  /* callers.  Ignore my frame and my callers frame.                    */
-  GC_INNER void GC_save_callers(struct callinfo info[NFRAMES]);
+# ifdef SAVE_CALL_CHAIN
+    /* Fill in the pc and argument information for up to NFRAMES of my  */
+    /* callers.  Ignore my frame and my callers frame.                  */
+    GC_INNER void GC_save_callers(struct callinfo info[NFRAMES]);
+# endif
+
   GC_INNER void GC_print_callers(struct callinfo info[NFRAMES]);
-#endif
+#endif /* NEED_CALLINFO */
 
 EXTERN_C_END
 

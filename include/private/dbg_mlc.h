@@ -125,14 +125,9 @@ typedef struct {
 /* PRINT_CALL_CHAIN prints the call chain stored in an object   */
 /* to stderr.  It requires that we do not hold the lock.        */
 #if defined(SAVE_CALL_CHAIN)
-  struct callinfo;
-  GC_INNER void GC_save_callers(struct callinfo info[NFRAMES]);
-  GC_INNER void GC_print_callers(struct callinfo info[NFRAMES]);
 # define ADD_CALL_CHAIN(base, ra) GC_save_callers(((oh *)(base)) -> oh_ci)
 # define PRINT_CALL_CHAIN(base) GC_print_callers(((oh *)(base)) -> oh_ci)
 #elif defined(GC_ADD_CALLER)
-  struct callinfo;
-  GC_INNER void GC_print_callers(struct callinfo info[NFRAMES]);
 # define ADD_CALL_CHAIN(base, ra) ((oh *)(base)) -> oh_ci[0].ci_pc = (ra)
 # define PRINT_CALL_CHAIN(base) GC_print_callers(((oh *)(base)) -> oh_ci)
 #else
