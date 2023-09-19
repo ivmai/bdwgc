@@ -83,7 +83,7 @@ GC_EXTERN unsigned GC_n_mark_procs;
      *  The initiating threads holds the GC lock, and sets GC_help_wanted.
      *
      *  Other threads:
-     *     1) update helper_count (while holding mark_lock.)
+     *     1) update helper_count (while holding the mark lock).
      *     2) allocate a local mark stack
      *     repeatedly:
      *          3) Steal a global mark stack entry by atomically replacing
@@ -94,7 +94,7 @@ GC_EXTERN unsigned GC_n_mark_procs;
      *          6) If necessary, copy local stack to global one,
      *             holding mark lock.
      *    7) Stop when the global mark stack is empty.
-     *    8) decrement helper_count (holding mark_lock).
+     *    8) decrement helper_count (holding the mark lock).
      *
      * This is an experiment to see if we can do something along the lines
      * of the University of Tokyo SGC in a less intrusive, though probably
