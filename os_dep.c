@@ -5159,7 +5159,7 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
     fp = frame;
 # else
     frame = (struct frame *)GC_save_regs_in_stack();
-    fp = (struct frame *)((long) frame -> FR_SAVFP + BIAS);
+    fp = (struct frame *)((long)(frame -> FR_SAVFP) + BIAS);
 #endif
 
    for (; !((word)fp HOTTER_THAN (word)frame)
@@ -5169,15 +5169,16 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
             && fp != NULL
 #         endif
           && nframes < NFRAMES;
-        fp = (struct frame *)((long) fp -> FR_SAVFP + BIAS), nframes++) {
+        fp = (struct frame *)((long)(fp -> FR_SAVFP) + BIAS), nframes++) {
 #     if NARGS > 0
         int i;
 #     endif
 
-      info[nframes].ci_pc = fp->FR_SAVPC;
+      info[nframes].ci_pc = fp -> FR_SAVPC;
 #     if NARGS > 0
         for (i = 0; i < NARGS; i++) {
-          info[nframes].ci_arg[i] = ~(fp->fr_arg[i]);
+          info[nframes].ci_arg[i] = GC_HIDE_NZ_POINTER(
+                                      (void *)(signed_word)(fp -> fr_arg[i]));
         }
 #     endif /* NARGS > 0 */
   }
@@ -5213,17 +5214,18 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
         if (0 == info[i].ci_pc)
           break;
 #       if NARGS > 0
-        {
-          int j;
+          {
+            int j;
 
-          GC_err_printf("\t\targs: ");
-          for (j = 0; j < NARGS; j++) {
-            if (j != 0) GC_err_printf(", ");
-            GC_err_printf("%d (0x%X)", ~(info[i].ci_arg[j]),
-                                        ~(info[i].ci_arg[j]));
+            GC_err_printf("\t\targs: ");
+            for (j = 0; j < NARGS; j++) {
+              void *p = GC_REVEAL_NZ_POINTER(info[i].ci_arg[j]);
+
+              if (j != 0) GC_err_printf(", ");
+              GC_err_printf("%ld (%p)", (long)(signed_word)p, p);
+            }
+            GC_err_printf("\n");
           }
-          GC_err_printf("\n");
-        }
 #       endif
         if (reentry_count > 1) {
             /* We were called during an allocation during       */
@@ -5232,6 +5234,7 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
                           (unsigned long)info[i].ci_pc);
             continue;
         }
+
         {
           char buf[40];
           char *name;
@@ -5296,11 +5299,11 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
                     break;
                   }
                   BCOPY(old_preload, preload_buf, old_len + 1);
-                  unsetenv ("LD_PRELOAD");
+                  unsetenv("LD_PRELOAD");
                 }
                 pipe = popen(cmd_buf, "r");
                 if (0 != old_preload
-                    && 0 != setenv ("LD_PRELOAD", preload_buf, 0)) {
+                    && 0 != setenv("LD_PRELOAD", preload_buf, 0)) {
                   WARN("Failed to reset LD_PRELOAD\n", 0);
                 }
                 if (NULL == pipe) {

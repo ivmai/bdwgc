@@ -437,14 +437,14 @@ EXTERN_C_BEGIN
 
 #ifdef NEED_CALLINFO
   struct callinfo {
-        word ci_pc;     /* Caller, not callee, pc       */
-#       if NARGS > 0
-            word ci_arg[NARGS]; /* bit-wise complement to avoid retention */
-#       endif
-#       if (NFRAMES * (NARGS + 1)) % 2 == 1
-            /* Likely alignment problem. */
-            word ci_dummy;
-#       endif
+    word ci_pc; /* pc of caller, not callee */
+#   if NARGS > 0
+      GC_hidden_pointer ci_arg[NARGS]; /* hide to avoid retention */
+#   endif
+#   if (NFRAMES * (NARGS + 1)) % 2 == 1
+      /* Likely alignment problem. */
+      word ci_dummy;
+#   endif
   };
 
 # ifdef SAVE_CALL_CHAIN
