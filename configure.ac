@@ -70,8 +70,7 @@ AC_ARG_ENABLE(parallel-mark,
       no | none | single)
         AC_MSG_ERROR([Parallel mark requires --enable-threads=x spec])
         ;;
-    esac ]
-)
+    esac])
 
 AC_ARG_ENABLE(cplusplus,
     [AC_HELP_STRING([--enable-cplusplus], [install C++ support])])
@@ -639,8 +638,8 @@ AC_ARG_ENABLE(gc-debug,
       i[3456]86-*-dgux*)
         AC_DEFINE(MAKE_BACK_GRAPH)
       ;;
-    esac ]
-  fi)
+    esac
+  fi ])
 AM_CONDITIONAL([KEEP_BACK_PTRS], [test x"$keep_back_ptrs" = xtrue])
 
 # Check for AViiON Machines running DGUX
