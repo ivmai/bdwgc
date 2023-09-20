@@ -52,7 +52,7 @@ if test :"$GCC": = :yes: ; then
     gc_cflags="${gc_cflags} -fexceptions"
 else
     case "$host" in
-      hppa*-*-hpux* )
+      hppa*-*-hpux*)
         if test :$GCC: != :"yes": ; then
             gc_cflags="${gc_cflags} +ESdbgasm"
         fi
@@ -77,10 +77,8 @@ esac
 
 # Set any host dependent compiler flags.
 case "${host}" in
-  mips-tx39-*|mipstx39-unknown-*)
+  mips-tx39-* | mipstx39-unknown-*)
     gc_cflags="${gc_cflags} -G 0"
-    ;;
-  *)
     ;;
 esac
 
@@ -112,7 +110,7 @@ AC_SUBST([CFLAGS_EXTRA])
 AC_ARG_ENABLE(threads,
   [AS_HELP_STRING([--enable-threads=TYPE], [choose threading package])],
   THREADS=$enableval,
-  [ AC_MSG_CHECKING([for thread model used by GCC])
+   [AC_MSG_CHECKING([for thread model used by GCC])
     THREADS=`$CC -v 2>&1 | sed -n 's/^Thread model: //p'`
     if test -z "$THREADS" -o "x$emscripten" = "xyes"; then
       THREADS=no
@@ -125,7 +123,7 @@ AC_ARG_ENABLE(threads,
           ;;
       esac
     fi
-    AC_MSG_RESULT([$THREADS]) ])
+    AC_MSG_RESULT([$THREADS])])
 
 AC_ARG_ENABLE(parallel-mark,
     [AS_HELP_STRING([--disable-parallel-mark],
@@ -277,8 +275,8 @@ case "$THREADS" in
         ;;
       *)
         AS_IF([test x$default_threadlibs != xtrue],
-              [ AC_MSG_ERROR(
-                    [Pthreads not supported by the GC on this platform]) ])
+              [AC_MSG_ERROR(
+                    [Pthreads not supported by the GC on this platform])])
         # The default THREADDLLIBS.
         ;;
     esac
@@ -453,7 +451,7 @@ fi
 
 # Check for getcontext (uClibc can be configured without it, for example)
 AC_CHECK_FUNC([getcontext], [],
-    [ AC_DEFINE([NO_GETCONTEXT], [1], [Missing getcontext function.]) ])
+    [AC_DEFINE([NO_GETCONTEXT], [1], [Missing getcontext function.])])
 
 # Check whether dl_iterate_phdr exists (as a strong symbol).
 case "$host" in
@@ -478,18 +476,17 @@ case "$host" in
     ;;
 esac
 
+avoid_cpp_lib=no
 case "$host" in
   *-*-hpux*)
-    avoid_cpp_lib=yes;;
-  *)
-    avoid_cpp_lib=no;
+    avoid_cpp_lib=yes
     ;;
 esac
 AM_CONDITIONAL(AVOID_CPP_LIB,test $avoid_cpp_lib = yes)
 
 # Check for various headers.
 AC_CHECK_HEADER([execinfo.h], [],
-    [ AC_DEFINE([GC_MISSING_EXECINFO_H], [1], [Missing execinfo.h header.]) ])
+    [AC_DEFINE([GC_MISSING_EXECINFO_H], [1], [Missing execinfo.h header.])])
 
 # extra LD Flags which are required for targets
 case "${host}" in
@@ -520,12 +517,12 @@ CXXLIBS=
 
 case "$TARGET_ECOS" in
   no)
-      ;;
+    ;;
   *)
-      AC_DEFINE([ECOS], 1, [Define to enable eCos target support.])
-      AM_CPPFLAGS="-I${TARGET_ECOS}/include $AM_CPPFLAGS"
-      addobjs="$addobjs ecos.lo"
-      ;;
+    AC_DEFINE([ECOS], 1, [Define to enable eCos target support.])
+    AM_CPPFLAGS="-I${TARGET_ECOS}/include $AM_CPPFLAGS"
+    addobjs="$addobjs ecos.lo"
+    ;;
 esac
 
 AM_CONDITIONAL(CPLUSPLUS, test "${enable_cplusplus}" = yes)
@@ -566,10 +563,8 @@ AC_ENABLE_SHARED
 
 case "$host" in
   alpha-*-openbsd*)
-     enable_shared=no
-     ;;
-  *)
-     ;;
+    enable_shared=no
+    ;;
 esac
 
 AC_MSG_RESULT($enable_shared)
@@ -698,7 +693,7 @@ case "$host" in
           *)
             new_CFLAGS="$new_CFLAGS $i"
             ;;
-         esac
+        esac
       done
       CFLAGS="$new_CFLAGS"
     else
@@ -770,7 +765,7 @@ UNWINDLIBS=
 AC_ARG_ENABLE(gc-debug,
               [AS_HELP_STRING([--enable-gc-debug],
                     [include full support for pointer backtracing etc.])],
-[ if test "$enable_gc_debug" = "yes"; then
+ [if test "$enable_gc_debug" = "yes"; then
     AC_MSG_WARN("Should define GC_DEBUG and use debug alloc in clients.")
     AC_DEFINE([KEEP_BACK_PTRS], 1,
               [Define to save back-pointers in debugging headers.])
@@ -782,7 +777,7 @@ AC_ARG_ENABLE(gc-debug,
                  of checking for writes past the end.])
 
     case $host in
-      ia64-*-linux* )
+      ia64-*-linux*)
         AC_DEFINE(MAKE_BACK_GRAPH)
         AC_DEFINE(SAVE_CALL_COUNT, 8)
         AC_CHECK_LIB(unwind, backtrace, [
@@ -790,17 +785,17 @@ AC_ARG_ENABLE(gc-debug,
           UNWINDLIBS=-lunwind
           AC_MSG_WARN("Client code may need to link against libunwind.")
         ])
-      ;;
-      x86-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux* )
+        ;;
+      x86-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux*)
         AC_DEFINE(MAKE_BACK_GRAPH)
         AC_MSG_WARN("Client must not use -fomit-frame-pointer.")
         AC_DEFINE(SAVE_CALL_COUNT, 8)
-      ;;
+        ;;
       i[3456]86-*-dgux*)
         AC_DEFINE(MAKE_BACK_GRAPH)
-      ;;
+        ;;
     esac
-  fi ])
+  fi])
 AM_CONDITIONAL([MAKE_BACK_GRAPH], [test x"$enable_gc_debug" = xyes])
 AM_CONDITIONAL([KEEP_BACK_PTRS], [test x"$keep_back_ptrs" = xtrue])
 
@@ -1103,8 +1098,8 @@ AC_ARG_ENABLE(single-obj-compilation,
     [AS_HELP_STRING([--enable-single-obj-compilation],
                     [compile all libgc source files into single .o
                      (default: yes if static libraries are disabled)])],
-    [], [ AS_IF([test x"$enable_static" = xno],
-                [enable_single_obj_compilation=yes]) ])
+    [], [AS_IF([test x"$enable_static" = xno],
+               [enable_single_obj_compilation=yes])])
 AM_CONDITIONAL([SINGLE_GC_OBJ],
                [test x"$enable_single_obj_compilation" = xyes])
 
@@ -1138,8 +1133,8 @@ AC_ARG_WITH([libatomic-ops],
     [AS_HELP_STRING([--with-libatomic-ops[=yes|no|check|none]],
                     [use an external libatomic_ops? (default: check;
                      none: use compiler intrinsics or no thread support)])],
-    [], [ AS_IF([test x"$THREADS" != xnone],
-                [with_libatomic_ops=check], [with_libatomic_ops=none]) ])
+    [], [AS_IF([test x"$THREADS" != xnone],
+               [with_libatomic_ops=check], [with_libatomic_ops=none])])
 
 # Check whether compiler atomic intrinsics can be used.
 if test x"$with_libatomic_ops" = xcheck; then
@@ -1159,50 +1154,50 @@ fi
 # First, check that libatomic_ops usage is not disabled explicitly.
 missing_libatomic_ops=false
 AS_IF([test x"$with_libatomic_ops" != xno -a x"$with_libatomic_ops" != xnone],
-  [ missing_libatomic_ops=true ])
+  [missing_libatomic_ops=true])
 
 dnl To avoid "syntax error near unexpected token ATOMIC_OPS" configure error
 dnl observed by some clients, the following 3 code lines are commented out:
 dnl
 dnl AS_IF([test x$missing_libatomic_ops = xtrue],
-dnl  [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops],
-dnl    [ missing_libatomic_ops=false ], [ [] ]) ])
+dnl  [PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops],
+dnl    [missing_libatomic_ops=false], [[]])])
 
 dnl Retry with AC_CHECK_HEADER if PKG_CHECK_MODULES failed.
 AS_IF([test x$missing_libatomic_ops = xtrue],
-      [ AC_CHECK_HEADER([atomic_ops.h], [missing_libatomic_ops=false]) ])
+      [AC_CHECK_HEADER([atomic_ops.h], [missing_libatomic_ops=false])])
 AS_IF([test x$missing_libatomic_ops = xtrue],
-      [ AS_IF([test x"$with_libatomic_ops" != xcheck],
-              [ AC_MSG_ERROR([An external libatomic_ops was not found]) ])
-        with_libatomic_ops=no ])
+      [AS_IF([test x"$with_libatomic_ops" != xcheck],
+             [AC_MSG_ERROR([An external libatomic_ops was not found])])
+        with_libatomic_ops=no])
 
 # If we have neither an external or an internal version, offer a useful hint
 # and exit.
 AS_IF([test x"$with_libatomic_ops" = xno \
             -a ! -e "$srcdir/libatomic_ops/src/atomic_ops.h"],
-  [ AC_MSG_ERROR([libatomic_ops is required.  You can either install it on
-                  your system, or fetch and unpack a recent version into the
-                  source directory and link or rename it to libatomic_ops.]) ])
+  [AC_MSG_ERROR([libatomic_ops is required.  You can either install it on
+                 your system, or fetch and unpack a recent version into the
+                 source directory and link or rename it to libatomic_ops.])])
 
 # Finally, emit the definitions for bundled or external AO.
 AC_MSG_CHECKING([which libatomic_ops to use])
 AS_IF([test x"$with_libatomic_ops" != xno],
-  [ AS_IF([test x"$with_libatomic_ops" != xnone -a x"$THREADS" != xnone],
-          [ AC_MSG_RESULT([external])
-            ATOMIC_OPS_LIBS="-latomic_ops"
-            AC_SUBST([ATOMIC_OPS_LIBS]) ],
-          [ AC_MSG_RESULT([none])
-            AS_IF([test x"$THREADS" != xnone],
-                  [ AC_DEFINE([GC_BUILTIN_ATOMIC], [1],
-                              [Use GCC atomic intrinsics instead of
-                               libatomic_ops primitives.]) ]) ])
-    AO_TRYLINK_CFLAGS="" ],
-  [ AC_MSG_RESULT([internal])
-    AO_TRYLINK_CFLAGS="-I${srcdir}/libatomic_ops/src"
-    ATOMIC_OPS_CFLAGS='-I$(top_builddir)/libatomic_ops/src -I$(top_srcdir)/libatomic_ops/src'
-    ATOMIC_OPS_LIBS=""
-    AC_SUBST([ATOMIC_OPS_CFLAGS])
-    AC_CONFIG_SUBDIRS([libatomic_ops])
+  [AS_IF([test x"$with_libatomic_ops" != xnone -a x"$THREADS" != xnone],
+         [AC_MSG_RESULT([external])
+          ATOMIC_OPS_LIBS="-latomic_ops"
+          AC_SUBST([ATOMIC_OPS_LIBS])],
+         [AC_MSG_RESULT([none])
+          AS_IF([test x"$THREADS" != xnone],
+                [AC_DEFINE([GC_BUILTIN_ATOMIC], [1],
+                           [Use GCC atomic intrinsics instead of
+                            libatomic_ops primitives.])])])
+    AO_TRYLINK_CFLAGS=""],
+  [AC_MSG_RESULT([internal])
+   AO_TRYLINK_CFLAGS="-I${srcdir}/libatomic_ops/src"
+   ATOMIC_OPS_CFLAGS='-I$(top_builddir)/libatomic_ops/src -I$(top_srcdir)/libatomic_ops/src'
+   ATOMIC_OPS_LIBS=""
+   AC_SUBST([ATOMIC_OPS_CFLAGS])
+   AC_CONFIG_SUBDIRS([libatomic_ops])
   ])
 AM_CONDITIONAL([USE_INTERNAL_LIBATOMIC_OPS],
     [test x$with_libatomic_ops = xno -a x"$THREADS" != xnone])
@@ -1214,44 +1209,44 @@ AM_CONDITIONAL([NEED_ATOMIC_OPS_ASM],
 # binary file is not needed in case of absence of the emulation (except for
 # Solaris SPARC).
 AS_IF([test x$with_libatomic_ops != xnone -a x$need_atomic_ops_asm != xtrue],
-    [ old_CFLAGS="$CFLAGS"
-      CFLAGS="$CFLAGS $AO_TRYLINK_CFLAGS $CFLAGS_EXTRA"
-      AC_MSG_CHECKING([for lock-free AO_or primitive])
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([#include "atomic_ops.h"],
-                                      [AO_t x=0; AO_or(&x,1)])],
-        [ AC_MSG_RESULT(yes)
-          AC_DEFINE([HAVE_LOCKFREE_AO_OR], [1],
-            [libatomic_ops AO_or primitive implementation is lock-free.]) ],
-        [ AC_MSG_RESULT(no) ])
-      AC_MSG_CHECKING([for lock-free AO load/store, test-and-set primitives])
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([#include "atomic_ops.h"],
+    [old_CFLAGS="$CFLAGS"
+     CFLAGS="$CFLAGS $AO_TRYLINK_CFLAGS $CFLAGS_EXTRA"
+     AC_MSG_CHECKING([for lock-free AO_or primitive])
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([#include "atomic_ops.h"],
+                                     [AO_t x=0; AO_or(&x,1)])],
+       [AC_MSG_RESULT(yes)
+        AC_DEFINE([HAVE_LOCKFREE_AO_OR], [1],
+          [libatomic_ops AO_or primitive implementation is lock-free.])],
+       [AC_MSG_RESULT(no)])
+     AC_MSG_CHECKING([for lock-free AO load/store, test-and-set primitives])
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([#include "atomic_ops.h"],
  [AO_t x=0;unsigned char c=0;AO_TS_t z=AO_TS_INITIALIZER;
   (void)AO_test_and_set_acquire(&z);AO_CLEAR(&z);AO_compiler_barrier();
   AO_store(&x,AO_load(&x)+1);AO_char_store(&c,AO_char_load(&c)+1);
   AO_store_release(&x,AO_load_acquire(&x)+1)])],
-        [ AC_MSG_RESULT(yes) ],
-        [ AC_MSG_RESULT(no)
-          use_thread_local_alloc=no
-          AC_DEFINE([BASE_ATOMIC_OPS_EMULATED], [1],
-                    [AO load, store and/or test-and-set primitives are
-                     implemented in libatomic_ops using locks.]) ])
+        [AC_MSG_RESULT(yes)],
+        [AC_MSG_RESULT(no)
+         use_thread_local_alloc=no
+         AC_DEFINE([BASE_ATOMIC_OPS_EMULATED], [1],
+                   [AO load, store and/or test-and-set primitives are
+                    implemented in libatomic_ops using locks.])])
       AS_IF([test x$use_parallel_mark != xno],
-        [ AC_MSG_CHECKING(
-                [for lock-free compare-and-swap and fetch-and-add primitives])
-          AC_LINK_IFELSE([AC_LANG_PROGRAM([
+        [AC_MSG_CHECKING(
+            [for lock-free compare-and-swap and fetch-and-add primitives])
+         AC_LINK_IFELSE([AC_LANG_PROGRAM([
 #             define AO_REQUIRE_CAS
 #             include "atomic_ops.h"
             ],
  [AO_t x=0;(void)AO_fetch_and_add(&x,1);(void)AO_compare_and_swap(&x,1,2)])],
-                    [ AC_MSG_RESULT(yes) ],
-                    [ AC_MSG_RESULT(no)
-                      use_parallel_mark=no ]) ])
-      CFLAGS="$old_CFLAGS" ])
+                    [AC_MSG_RESULT(yes)],
+                    [AC_MSG_RESULT(no)
+                     use_parallel_mark=no ])])
+      CFLAGS="$old_CFLAGS"])
 
 AS_IF([test x$use_parallel_mark != xno],
-      [ AC_DEFINE(PARALLEL_MARK) ])
+      [AC_DEFINE(PARALLEL_MARK)])
 AS_IF([test x$use_thread_local_alloc != xno],
-      [ AC_DEFINE(THREAD_LOCAL_ALLOC) ])
+      [AC_DEFINE(THREAD_LOCAL_ALLOC)])
 AM_CONDITIONAL(THREAD_LOCAL_ALLOC, test x$use_thread_local_alloc != xno)
 
 AC_ARG_ENABLE(handle-fork,
@@ -1287,10 +1282,10 @@ dnl -----------------
 AC_CONFIG_FILES([Makefile bdw-gc.pc])
 
 AC_CONFIG_COMMANDS([default],,
-  [ srcdir="${srcdir}"
+   [srcdir="${srcdir}"
     host=${host}
     CONFIG_SHELL=${CONFIG_SHELL-/bin/sh}
     CC="${CC}"
-    DEFS="$DEFS" ])
+    DEFS="$DEFS"])
 
 AC_OUTPUT
