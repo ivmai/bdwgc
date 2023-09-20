@@ -506,10 +506,9 @@ dnl I/O routines.
 dnl FIXME: this should not be a local option but a global target
 dnl system; at present there is no eCos target.
 TARGET_ECOS="no"
-AC_ARG_WITH(ecos,
-[  --with-ecos             enable runtime eCos target support],
-TARGET_ECOS="$with_ecos"
-)
+AC_ARG_WITH([ecos],
+    [AS_HELP_STRING([--with-ecos], [enable runtime eCos target support])],
+    [TARGET_ECOS="$with_ecos"])
 
 addobjs=
 addlibs=
@@ -661,11 +660,12 @@ if test x$compile_asm = xtrue -a "$GCC" = yes; then
 fi
 
 dnl We use these options to decide which functions to include.
-AC_ARG_WITH(target-subdir,
-[  --with-target-subdir=SUBDIR
-                          configuring with a cross compiler])
-AC_ARG_WITH(cross-host,
-[  --with-cross-host=HOST  configuring with a cross compiler])
+AC_ARG_WITH([target-subdir],
+    [AS_HELP_STRING([--with-target-subdir=SUBDIR],
+                    [configuring target with a cross compiler])])
+AC_ARG_WITH([cross-host],
+    [AS_HELP_STRING([--with-cross-host=HOST],
+                    [configuring host with a cross compiler])])
 
 dnl automake wants to see AC_EXEEXT.  But we don't need it.  And having
 dnl it is actually a problem, because the compiler we're passed can't
