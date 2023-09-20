@@ -5192,15 +5192,24 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
   /* Print info to stderr.  We do NOT hold the allocation lock. */
   GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
   {
-    int i;
-    static int reentry_count = 0;
+    int i, reent_cnt;
+#   if defined(AO_HAVE_fetch_and_add1) && defined(AO_HAVE_fetch_and_sub1)
+      static volatile AO_t reentry_count = 0;
 
-    /* FIXME: This should probably use a different lock, so that we     */
-    /* become callable with or without the allocation lock.             */
-    LOCK();
-      ++reentry_count;
-    UNLOCK();
+      /* Note: alternatively, if available, we may use a thread-local   */
+      /* storage, thus, enabling concurrent usage of GC_print_callers;  */
+      /* but practically this has little sense because printing is done */
+      /* into a single output stream.                                   */
+      GC_ASSERT(I_DONT_HOLD_LOCK());
+      reent_cnt = (int)(signed_word)AO_fetch_and_add1(&reentry_count);
+#   else
+      static int reentry_count = 0;
 
+      /* Note: this could use a different lock. */
+      LOCK();
+      reent_cnt = reentry_count++;
+      UNLOCK();
+#   endif
 #   if NFRAMES == 1
       GC_err_printf("\tCaller at allocation:\n");
 #   else
@@ -5227,12 +5236,12 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
             GC_err_printf("\n");
           }
 #       endif
-        if (reentry_count > 1) {
-            /* We were called during an allocation during       */
-            /* a previous GC_print_callers call; punt.          */
-            GC_err_printf("\t\t##PC##= 0x%lx\n",
-                          (unsigned long)info[i].ci_pc);
-            continue;
+        if (reent_cnt > 0) {
+          /* We were called either concurrently or during an allocation */
+          /* by backtrace_symbols() called from GC_print_callers; punt. */
+          GC_err_printf("\t\t##PC##= 0x%lx\n",
+                        (unsigned long)info[i].ci_pc);
+          continue;
         }
 
         {
@@ -5363,9 +5372,13 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
             break;
 #       endif
     }
-    LOCK();
+#   if defined(AO_HAVE_fetch_and_add1) && defined(AO_HAVE_fetch_and_sub1)
+      (void)AO_fetch_and_sub1(&reentry_count);
+#   else
+      LOCK();
       --reentry_count;
-    UNLOCK();
+      UNLOCK();
+#   endif
   }
 
 #endif /* NEED_CALLINFO */

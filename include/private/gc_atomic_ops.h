@@ -22,7 +22,7 @@
 
 #ifdef GC_BUILTIN_ATOMIC
 
-# include "gc/gc.h" /* for GC_word */
+# include "gc/gc.h" /* for GC_[signed_]word */
 
 # ifdef __cplusplus
     extern "C" {
@@ -80,6 +80,8 @@
 # define AO_HAVE_fetch_and_add
 # define AO_fetch_and_add1(p) AO_fetch_and_add(p, 1)
 # define AO_HAVE_fetch_and_add1
+# define AO_fetch_and_sub1(p) AO_fetch_and_add(p, (AO_t)(GC_signed_word)-1)
+# define AO_HAVE_fetch_and_sub1
 
 # define AO_or(p, v) (void)__atomic_or_fetch(p, v, __ATOMIC_RELAXED)
 # define AO_HAVE_or
