@@ -5128,10 +5128,7 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
 {
   void * tmp_info[NFRAMES + 1];
   int npcs, i;
-# define IGNORE_FRAMES 1
 
-  /* We retrieve NFRAMES+1 pc values, but discard the first, since it   */
-  /* points to our own frame.                                           */
 # ifdef REDIRECT_MALLOC
     if (GC_in_save_callers) {
       info[0].ci_pc = (word)(&GC_save_callers);
@@ -5146,12 +5143,16 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
                 /* used by GC_register_dynamic_libraries, and           */
                 /* dl_iterate_phdr is not guaranteed to be reentrant.   */
 
+  /* We retrieve NFRAMES+1 pc values, but discard the first one, since  */
+  /* it points to our own frame.                                        */
   GC_STATIC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
-  npcs = backtrace((void **)tmp_info, NFRAMES + IGNORE_FRAMES);
-  if (npcs > IGNORE_FRAMES)
-    BCOPY(&tmp_info[IGNORE_FRAMES], info,
-          (npcs - IGNORE_FRAMES) * sizeof(void *));
-  for (i = npcs - IGNORE_FRAMES; i < NFRAMES; ++i) info[i].ci_pc = 0;
+  npcs = backtrace((void **)tmp_info, NFRAMES + 1);
+  i = 0;
+  if (npcs > 1) {
+    i = npcs - 1;
+    BCOPY(&tmp_info[1], info, (unsigned)i * sizeof(void *));
+  }
+  for (; i < NFRAMES; ++i) info[i].ci_pc = 0;
 # ifdef REDIRECT_MALLOC
     GC_in_save_callers = FALSE;
 # endif
