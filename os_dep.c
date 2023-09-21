@@ -5092,11 +5092,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 #ifdef REDIRECT_MALLOC
   /* Deal with possible malloc calls in backtrace by omitting   */
   /* the infinitely recursing backtrace.                        */
-# ifdef THREADS
-    __thread    /* If your compiler doesn't understand this             */
-                /* you could use something like pthread_getspecific.    */
-# endif
-    GC_bool GC_in_save_callers = FALSE;
+  STATIC GC_bool GC_in_save_callers = FALSE;
 #endif
 
 GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
@@ -5104,30 +5100,30 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
   void * tmp_info[NFRAMES + 1];
   int npcs, i;
 
+  GC_ASSERT(I_HOLD_LOCK());
+                /* backtrace() may call dl_iterate_phdr which is also   */
+                /* used by GC_register_dynamic_libraries(), and         */
+                /* dl_iterate_phdr is not guaranteed to be reentrant.   */
+
+  GC_STATIC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
 # ifdef REDIRECT_MALLOC
     if (GC_in_save_callers) {
       info[0].ci_pc = (word)(&GC_save_callers);
-      for (i = 1; i < NFRAMES; ++i) info[i].ci_pc = 0;
+      BZERO(&info[1], sizeof(void *) * (NFRAMES - 1));
       return;
     }
     GC_in_save_callers = TRUE;
 # endif
 
-  GC_ASSERT(I_HOLD_LOCK());
-                /* backtrace may call dl_iterate_phdr which is also     */
-                /* used by GC_register_dynamic_libraries, and           */
-                /* dl_iterate_phdr is not guaranteed to be reentrant.   */
-
   /* We retrieve NFRAMES+1 pc values, but discard the first one, since  */
   /* it points to our own frame.                                        */
-  GC_STATIC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
   npcs = backtrace((void **)tmp_info, NFRAMES + 1);
   i = 0;
   if (npcs > 1) {
     i = npcs - 1;
     BCOPY(&tmp_info[1], info, (unsigned)i * sizeof(void *));
   }
-  for (; i < NFRAMES; ++i) info[i].ci_pc = 0;
+  BZERO(&info[i], sizeof(void *) * (unsigned)(NFRAMES - i));
 # ifdef REDIRECT_MALLOC
     GC_in_save_callers = FALSE;
 # endif

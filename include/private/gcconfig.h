@@ -3323,14 +3323,13 @@ EXTERN_C_BEGIN
     && defined(GC_CAN_SAVE_CALL_STACKS)
 # define SAVE_CALL_CHAIN
 #endif
+
 #ifdef SAVE_CALL_CHAIN
 # if defined(SAVE_CALL_NARGS) && defined(CAN_SAVE_CALL_ARGS)
 #   define NARGS SAVE_CALL_NARGS
 # else
 #   define NARGS 0      /* Number of arguments to save for each call.   */
 # endif
-#endif
-#ifdef SAVE_CALL_CHAIN
 # if !defined(SAVE_CALL_COUNT) || defined(CPPCHECK)
 #   define NFRAMES 6    /* Number of frames to save. Even for   */
                         /* alignment reasons.                   */
@@ -3338,8 +3337,7 @@ EXTERN_C_BEGIN
 #   define NFRAMES ((SAVE_CALL_COUNT + 1) & ~1)
 # endif
 # define NEED_CALLINFO
-#endif /* SAVE_CALL_CHAIN */
-#ifdef GC_ADD_CALLER
+#elif defined(GC_ADD_CALLER)
 # define NFRAMES 1
 # define NARGS 0
 # define NEED_CALLINFO
