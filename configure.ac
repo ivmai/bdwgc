@@ -775,24 +775,26 @@ AC_ARG_ENABLE(gc-debug,
     AH_TEMPLATE([SHORT_DBG_HDRS],
                 [Shorten the headers to minimize object size at the expense
                  of checking for writes past the end.])
-
     case $host in
       ia64-*-linux*)
-        AC_DEFINE(MAKE_BACK_GRAPH)
-        AC_DEFINE(SAVE_CALL_COUNT, 8)
-        AC_CHECK_LIB(unwind, backtrace, [
-          AC_DEFINE(GC_HAVE_BUILTIN_BACKTRACE)
-          UNWINDLIBS=-lunwind
-          AC_MSG_WARN("Client code may need to link against libunwind.")
-        ])
+        AC_CHECK_LIB(unwind, backtrace,
+           [AC_DEFINE(GC_HAVE_BUILTIN_BACKTRACE)
+            UNWINDLIBS=-lunwind
+            AC_MSG_WARN("Client code may need to link against libunwind.")])
         ;;
-      x86-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux*)
+    esac
+    case $host in
+      i[3456]86-*-dgux* | *-*-*linux*)
         AC_DEFINE(MAKE_BACK_GRAPH)
+        ;;
+    esac
+    case $host in
+      e2k-*-linux*)
+        # Some bug exists in backtrace().
+        ;;
+      *-*-*linux*)
         AC_MSG_WARN("Client must not use -fomit-frame-pointer.")
         AC_DEFINE(SAVE_CALL_COUNT, 8)
-        ;;
-      i[3456]86-*-dgux*)
-        AC_DEFINE(MAKE_BACK_GRAPH)
         ;;
     esac
   fi])
