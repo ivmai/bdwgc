@@ -618,6 +618,7 @@ GC_INNER GC_thread GC_threads[THREAD_TABLE_SZ] = {0};
 /* other fields (crtn) to be pushed.                                    */
 static struct GC_StackContext_Rep first_crtn;
 static struct GC_Thread_Rep first_thread;
+static GC_bool first_thread_used = FALSE;
 
 /* A place to retain a pointer to an allocated object while a thread    */
 /* registration is ongoing.  Protected by the GC lock.                  */
