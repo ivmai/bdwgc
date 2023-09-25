@@ -341,44 +341,42 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
         GC_mark_and_push_stack((ptr_t)(p))
 #endif
 
-/*
- * Push a single value onto mark stack. Mark from the object pointed to by p.
- * Invoke FIXUP_POINTER(p) before any further processing.
- * P is considered valid even if it is an interior pointer.
- * Previously marked objects are not pushed.  Hence we make progress even
- * if the mark stack overflows.
- */
-
+/* Push a single value onto mark stack. Mark from the object        */
+/* pointed to by p.  The argument should be of word type.           */
+/* Invoke FIXUP_POINTER(p) before any further processing.  p is     */
+/* considered valid even if it is an interior pointer.  Previously  */
+/* marked objects are not pushed.  Hence we make progress even      */
+/* if the mark stack overflows.                                     */
 #ifdef NEED_FIXUP_POINTER
     /* Try both the raw version and the fixed up one.   */
 # define GC_PUSH_ONE_STACK(p, source) \
     do { \
-      if ((word)(p) > (word)GC_least_plausible_heap_addr \
-          && (word)(p) < (word)GC_greatest_plausible_heap_addr) { \
-         PUSH_ONE_CHECKED_STACK(p, source); \
+      if ((p) > (word)GC_least_plausible_heap_addr \
+          && (p) < (word)GC_greatest_plausible_heap_addr) { \
+        PUSH_ONE_CHECKED_STACK(p, source); \
       } \
       FIXUP_POINTER(p); \
-      if ((word)(p) > (word)GC_least_plausible_heap_addr \
-          && (word)(p) < (word)GC_greatest_plausible_heap_addr) { \
-         PUSH_ONE_CHECKED_STACK(p, source); \
+      if ((p) > (word)GC_least_plausible_heap_addr \
+          && (p) < (word)GC_greatest_plausible_heap_addr) { \
+        PUSH_ONE_CHECKED_STACK(p, source); \
       } \
     } while (0)
 #else /* !NEED_FIXUP_POINTER */
 # define GC_PUSH_ONE_STACK(p, source) \
     do { \
-      if ((word)(p) > (word)GC_least_plausible_heap_addr \
-          && (word)(p) < (word)GC_greatest_plausible_heap_addr) { \
-         PUSH_ONE_CHECKED_STACK(p, source); \
+      if ((p) > (word)GC_least_plausible_heap_addr \
+          && (p) < (word)GC_greatest_plausible_heap_addr) { \
+        PUSH_ONE_CHECKED_STACK(p, source); \
       } \
     } while (0)
 #endif
 
 /* As above, but interior pointer recognition as for normal heap pointers. */
-#define GC_PUSH_ONE_HEAP(p,source,mark_stack_top) \
+#define GC_PUSH_ONE_HEAP(p, source, mark_stack_top) \
     do { \
       FIXUP_POINTER(p); \
-      if ((word)(p) > (word)GC_least_plausible_heap_addr \
-          && (word)(p) < (word)GC_greatest_plausible_heap_addr) \
+      if ((p) > (word)GC_least_plausible_heap_addr \
+          && (p) < (word)GC_greatest_plausible_heap_addr) \
         mark_stack_top = GC_mark_and_push((void *)(p), mark_stack_top, \
                                 GC_mark_stack_limit, (void * *)(source)); \
     } while (0)
