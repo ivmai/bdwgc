@@ -99,6 +99,69 @@ GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
   GC_INNER GC_bool GC_parallel_mark_disabled = FALSE;
 #endif
 
+GC_API void GC_CALL GC_set_pointer_mask(GC_word value)
+{
+# ifdef DYNAMIC_POINTER_MASK
+    GC_ASSERT(value >= 0xff); /* a simple sanity check */
+    GC_pointer_mask = value;
+# else
+    if (value
+#       ifdef POINTER_MASK
+          != POINTER_MASK
+#       else
+          != GC_WORD_MAX
+#       endif
+       ) {
+      ABORT("Dynamic pointer mask/shift is unsupported");
+    }
+# endif
+}
+
+GC_API GC_word GC_CALL GC_get_pointer_mask(void)
+{
+# ifdef DYNAMIC_POINTER_MASK
+    GC_word value = GC_pointer_mask;
+
+    if (0 == value) {
+      GC_ASSERT(!GC_is_initialized);
+      value = GC_WORD_MAX;
+    }
+    return value;
+# elif defined(POINTER_MASK)
+    return POINTER_MASK;
+# else
+    return GC_WORD_MAX;
+# endif
+}
+
+GC_API void GC_CALL GC_set_pointer_shift(unsigned value)
+{
+# ifdef DYNAMIC_POINTER_MASK
+    GC_ASSERT(value < CPP_WORDSZ);
+    GC_pointer_shift = (unsigned char)value;
+# else
+    if (value
+#       ifdef POINTER_SHIFT
+          != POINTER_SHIFT
+#       endif /* else is not zero */
+       ) {
+      ABORT("Dynamic pointer mask/shift is unsupported");
+    }
+# endif
+}
+
+GC_API unsigned GC_CALL GC_get_pointer_shift(void)
+{
+# ifdef DYNAMIC_POINTER_MASK
+    return GC_pointer_shift;
+# elif defined(POINTER_SHIFT)
+    GC_STATIC_ASSERT(POINTER_SHIFT < CPP_WORDSZ);
+    return POINTER_SHIFT;
+# else
+    return 0;
+# endif
+}
+
 /* Is a collection in progress?  Note that this can return true in the  */
 /* non-incremental case, if a collection has been abandoned and the     */
 /* mark state is now MS_INVALID.                                        */

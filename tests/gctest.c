@@ -2628,6 +2628,8 @@ int main(void)
 #   else
       GC_set_suspend_signal(GC_get_suspend_signal());
 #   endif
+    GC_set_pointer_mask(GC_get_pointer_mask());
+    GC_set_pointer_shift(GC_get_pointer_shift());
     GC_COND_INIT();
 
     if ((code = pthread_attr_init(&attr)) != 0) {

@@ -3356,20 +3356,23 @@ EXTERN_C_BEGIN
 
 #if defined(POINTER_MASK) && !defined(POINTER_SHIFT)
 # define POINTER_SHIFT 0
-#endif
-
-#if defined(POINTER_SHIFT) && !defined(POINTER_MASK)
-# define POINTER_MASK ((word)(signed_word)(-1))
-#endif
-
-#if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
-# define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
+#elif !defined(POINTER_MASK) && defined(POINTER_SHIFT)
+# define POINTER_MASK GC_WORD_MAX
 #endif
 
 #if defined(FIXUP_POINTER)
+  /* Custom FIXUP_POINTER(p).   */
+# define NEED_FIXUP_POINTER
+#elif defined(DYNAMIC_POINTER_MASK)
+# define FIXUP_POINTER(p) (p = ((p) & GC_pointer_mask) << GC_pointer_shift)
+# undef POINTER_MASK
+# undef POINTER_SHIFT
+# define NEED_FIXUP_POINTER
+#elif defined(POINTER_MASK)
+# define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
 # define NEED_FIXUP_POINTER
 #else
-# define FIXUP_POINTER(p)
+# define FIXUP_POINTER(p) (void)(p)
 #endif
 
 #if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \

@@ -1011,6 +1011,9 @@ GC_API void GC_CALL GC_init(void)
 #   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
       LOCK(); /* just to set GC_lock_holder */
 #   endif
+#   ifdef DYNAMIC_POINTER_MASK
+      if (0 == GC_pointer_mask) GC_pointer_mask = GC_WORD_MAX;
+#   endif
     GC_setpagesize();
 #   ifdef MSWIN32
       GC_init_win32();

@@ -983,6 +983,14 @@ fi
 AM_CONDITIONAL(ENABLE_DISCLAIM,
     [test x"$enable_disclaim" != xno])
 
+AC_ARG_ENABLE(dynamic-pointer-mask,
+    [AS_HELP_STRING([--enable-dynamic-pointer-mask],
+        [support pointer mask/shift set at runtime])])
+if test "${enable_dynamic_pointer_mask}" = yes; then
+    AC_DEFINE(DYNAMIC_POINTER_MASK, 1,
+              [Define to support pointer mask/shift set at runtime.])
+fi
+
 AC_ARG_ENABLE(large-config,
     [AS_HELP_STRING([--enable-large-config],
         [optimize for large (> 100 MB) heap or root set])])

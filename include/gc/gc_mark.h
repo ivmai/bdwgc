@@ -134,6 +134,21 @@ GC_API void * GC_greatest_plausible_heap_addr;
                         /* larger than GC_least_plausible_heap_addr and */
                         /* less than GC_greatest_plausible_heap_addr.   */
 
+/* Specify the pointer mask.  Works only if the collector is built with */
+/* DYNAMIC_POINTER_MASK macro defined.  These primitives are normally   */
+/* needed only to support systems that use high-order pointer tags.     */
+/* The setter is expected to be called, if needed, before the GC        */
+/* initialization or, at least, before the first object is allocated.   */
+/* Both the setter and getter are unsynchronized.                       */
+GC_API void GC_CALL GC_set_pointer_mask(GC_word);
+GC_API GC_word GC_CALL GC_get_pointer_mask(void);
+
+/* Similar to GC_set/get_pointer_mask but for the pointer shift.        */
+/* The value should be less than the size of word, in bits.  Applied    */
+/* after the mask.                                                      */
+GC_API void GC_CALL GC_set_pointer_shift(unsigned);
+GC_API unsigned GC_CALL GC_get_pointer_shift(void);
+
 /* Handle nested references in a custom mark procedure.                 */
 /* Check if obj is a valid object. If so, ensure that it is marked.     */
 /* If it was not previously marked, push its contents onto the mark     */

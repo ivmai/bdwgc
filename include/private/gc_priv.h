@@ -1451,6 +1451,14 @@ struct _GC_arrays {
 # else
     mse *_mark_stack_top;
 # endif
+# ifdef DYNAMIC_POINTER_MASK
+#   define GC_pointer_mask GC_arrays._pointer_mask
+#   define GC_pointer_shift GC_arrays._pointer_shift
+    word _pointer_mask; /* Both mask and shift are zeros by default;    */
+                        /* if mask is zero then correct it to ~0 at GC  */
+                        /* initialization.                              */
+    unsigned char _pointer_shift;
+# endif
   word _composite_in_use; /* Number of bytes in the accessible  */
                           /* composite objects.                 */
   word _atomic_in_use;    /* Number of bytes in the accessible  */

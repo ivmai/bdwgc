@@ -484,15 +484,21 @@ TEST_WITH_SYSTEM_MALLOC         Causes gctest to allocate (and leak) large
   library; it only affects the test.
 
 POINTER_MASK=<0x...>    Causes candidate pointers to be AND'ed with the given
-  mask before being considered.  If either this or the following macro is
+  mask before being considered.  If either this or POINTER_SHIFT macro is
   defined, it will be assumed that all pointers stored in the heap need to be
   processed this way.  Stack and register pointers will be considered both
   with and without processing.  These macros are normally needed only to
-  support systems that use high-order pointer tags.  EXPERIMENTAL.
+  support systems that use high-order pointer tags.  Have no effect if
+  DYNAMIC_POINTER_MASK is defined.
 
 POINTER_SHIFT=<n>       Causes the collector to left shift candidate pointers
   by the indicated amount before trying to interpret them.  Applied after
-  POINTER_MASK. EXPERIMENTAL.  See also the preceding macro.
+  POINTER_MASK; see also the description of the latter macro.
+
+DYNAMIC_POINTER_MASK    Allow to set pointer mask and shift at runtime,
+  typically before GC_INIT.  Overrides (undefines) POINTER_MASK and
+  POINTER_SHIFT macros (i.e. the default mask and shift are zeros regardless
+  of the latter macros).
 
 ENABLE_TRACE    Enables the GC_TRACE=addr environment setting to do its job.
   By default this is not supported in order to keep the marker as fast as
