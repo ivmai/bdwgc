@@ -15,7 +15,7 @@ environment:
   - TARGET: cmake
     CFLAGS_EXTRA: -DNO_MSGBOX_ON_ERROR -DNO_MPROTECT_VDB -DGC_READ_ENV_FILE
     CMAKE_CONFIG: Release
-    CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Release -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_large_config=ON -Ddisable_gc_debug=ON
+    CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Release -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_large_config=ON -Ddisable_gc_debug=ON -Denable_dynamic_pointer_mask=ON
   - TARGET: cmake
     CMAKE_CONFIG: Release
     CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=MinSizeRel -Denable_parallel_mark=OFF
