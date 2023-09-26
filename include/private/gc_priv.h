@@ -1459,13 +1459,30 @@ struct _GC_arrays {
                         /* initialization.                              */
     unsigned char _pointer_shift;
 # endif
-  word _composite_in_use; /* Number of bytes in the accessible  */
-                          /* composite objects.                 */
-  word _atomic_in_use;    /* Number of bytes in the accessible  */
-                          /* atomic objects.                    */
+# define GC_mark_stack_too_small GC_arrays._mark_stack_too_small
+  GC_bool _mark_stack_too_small;
+                /* We need a larger mark stack.  May be set by          */
+                /* client-supplied mark routines.                       */
+# define GC_objects_are_marked GC_arrays._objects_are_marked
+  GC_bool _objects_are_marked;
+                /* Are there collectible marked objects in the heap?    */
+# ifdef THREADS
+#   define GC_roots_were_cleared GC_arrays._roots_were_cleared
+    GC_bool _roots_were_cleared;
+# endif
+# define GC_explicit_typing_initialized GC_arrays._explicit_typing_initialized
+# ifdef AO_HAVE_load_acquire
+    volatile AO_t _explicit_typing_initialized;
+# else
+    GC_bool _explicit_typing_initialized;
+# endif
+  word _composite_in_use;
+                /* Number of bytes in the accessible composite objects. */
+  word _atomic_in_use;
+                /* Number of bytes in the accessible atomic objects.    */
 # define GC_last_heap_growth_gc_no GC_arrays._last_heap_growth_gc_no
   word _last_heap_growth_gc_no;
-                /* GC number of latest successful GC_expand_hp_inner call */
+                /* GC number of latest successful GC_expand_hp_inner call. */
 # ifdef USE_MUNMAP
 #   define GC_unmapped_bytes GC_arrays._unmapped_bytes
     word _unmapped_bytes;
@@ -1491,13 +1508,6 @@ struct _GC_arrays {
   size_t _mark_stack_size;
 # define GC_mark_state GC_arrays._mark_state
   mark_state_t _mark_state; /* Initialized to MS_NONE (0). */
-# define GC_mark_stack_too_small GC_arrays._mark_stack_too_small
-  GC_bool _mark_stack_too_small;
-                        /* We need a larger mark stack.  May be set by  */
-                        /* client supplied mark routines.               */
-# define GC_objects_are_marked GC_arrays._objects_are_marked
-  GC_bool _objects_are_marked;
-                /* Are there collectible marked objects in the heap?    */
 # ifdef ENABLE_TRACE
 #   define GC_trace_addr GC_arrays._trace_addr
     ptr_t _trace_addr;
@@ -1553,19 +1563,9 @@ struct _GC_arrays {
   int _n_root_sets;     /* GC_static_roots[0..n_root_sets) contains the */
                         /* valid root sets.                             */
   size_t _excl_table_entries;   /* Number of entries in use.    */
-# ifdef THREADS
-#   define GC_roots_were_cleared GC_arrays._roots_were_cleared
-    GC_bool _roots_were_cleared;
-# endif
-# define GC_explicit_typing_initialized GC_arrays._explicit_typing_initialized
 # define GC_ed_size GC_arrays._ed_size
 # define GC_avail_descr GC_arrays._avail_descr
 # define GC_ext_descriptors GC_arrays._ext_descriptors
-# ifdef AO_HAVE_load_acquire
-    volatile AO_t _explicit_typing_initialized;
-# else
-    GC_bool _explicit_typing_initialized;
-# endif
   size_t _ed_size;      /* Current size of above arrays.        */
   size_t _avail_descr;  /* Next available slot.                 */
   typed_ext_descr_t *_ext_descriptors;  /* Points to array of extended  */
