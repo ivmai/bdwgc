@@ -185,7 +185,7 @@ jobs:
     - CC=clang-12
     - CXX=clang++-12
     - CFLAGS_EXTRA="-O3 -flto -D _FORTIFY_SOURCE=2 -D NO_RETRY_SIGNALS"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-dynamic-pointer-mask"
   - addons:
       apt:
         packages:
