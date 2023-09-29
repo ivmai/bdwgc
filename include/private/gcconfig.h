@@ -3369,7 +3369,8 @@ EXTERN_C_BEGIN
 # undef POINTER_SHIFT
 # define NEED_FIXUP_POINTER
 #elif defined(POINTER_MASK)
-# define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
+# define FIXUP_POINTER(p) (p = ((p) & (POINTER_MASK)) << (POINTER_SHIFT))
+            /* Extra parentheses around custom-defined POINTER_MASK/SHIFT. */
 # define NEED_FIXUP_POINTER
 #else
 # define FIXUP_POINTER(p) (void)(p)

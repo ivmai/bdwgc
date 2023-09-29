@@ -107,7 +107,7 @@ GC_API void GC_CALL GC_set_pointer_mask(GC_word value)
 # else
     if (value
 #       ifdef POINTER_MASK
-          != POINTER_MASK
+          != (word)(POINTER_MASK)
 #       else
           != GC_WORD_MAX
 #       endif
@@ -142,7 +142,7 @@ GC_API void GC_CALL GC_set_pointer_shift(unsigned value)
 # else
     if (value
 #       ifdef POINTER_SHIFT
-          != POINTER_SHIFT
+          != (unsigned)(POINTER_SHIFT)
 #       endif /* else is not zero */
        ) {
       ABORT("Dynamic pointer mask/shift is unsupported");
@@ -155,7 +155,7 @@ GC_API unsigned GC_CALL GC_get_pointer_shift(void)
 # ifdef DYNAMIC_POINTER_MASK
     return GC_pointer_shift;
 # elif defined(POINTER_SHIFT)
-    GC_STATIC_ASSERT(POINTER_SHIFT < CPP_WORDSZ);
+    GC_STATIC_ASSERT((unsigned)(POINTER_SHIFT) < CPP_WORDSZ);
     return POINTER_SHIFT;
 # else
     return 0;
