@@ -1391,7 +1391,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 /* The _dyld_* functions have an internal lock so no _dyld functions
    can be called while the world is stopped without the risk of a deadlock.
    Because of this we MUST setup callbacks BEFORE we ever stop the world.
-   This should be called BEFORE any thread in created and WITHOUT the
+   This should be called BEFORE any thread is created and WITHOUT the
    allocation lock held. */
 
 GC_INNER void GC_init_dyld(void)
