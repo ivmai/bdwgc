@@ -547,12 +547,13 @@ GC_INNER void GC_stop_world(void)
     GC_log_printf("Stopping the world from thread %p\n",
                   (void *)(word)my_thread);
 # endif
-# ifdef PARALLEL_MARK
-    if (GC_parallel) {
       /* Make sure all free list construction has stopped before we     */
       /* start.  No new construction can start, since free list         */
       /* construction is required to acquire and release the GC lock    */
       /* before it starts, and we have the lock.                        */
+
+# ifdef PARALLEL_MARK
+    if (GC_parallel) {
       GC_acquire_mark_lock();
       GC_ASSERT(GC_fl_builder_count == 0);
       /* We should have previously waited for it to become zero. */
