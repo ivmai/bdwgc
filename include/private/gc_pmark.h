@@ -343,7 +343,7 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
 
 /* Push a single value onto mark stack. Mark from the object        */
 /* pointed to by p.  The argument should be of word type.           */
-/* Invoke FIXUP_POINTER(p) before any further processing.  p is     */
+/* Invoke FIXUP_POINTER() before any further processing.  p is      */
 /* considered valid even if it is an interior pointer.  Previously  */
 /* marked objects are not pushed.  Hence we make progress even      */
 /* if the mark stack overflows.                                     */
@@ -351,14 +351,16 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
     /* Try both the raw version and the fixed up one.   */
 # define GC_PUSH_ONE_STACK(p, source) \
     do { \
+      word pp = (p); \
+      \
       if ((p) > (word)GC_least_plausible_heap_addr \
           && (p) < (word)GC_greatest_plausible_heap_addr) { \
         PUSH_ONE_CHECKED_STACK(p, source); \
       } \
-      FIXUP_POINTER(p); \
-      if ((p) > (word)GC_least_plausible_heap_addr \
-          && (p) < (word)GC_greatest_plausible_heap_addr) { \
-        PUSH_ONE_CHECKED_STACK(p, source); \
+      FIXUP_POINTER(pp); \
+      if (pp > (word)GC_least_plausible_heap_addr \
+          && pp < (word)GC_greatest_plausible_heap_addr) { \
+        PUSH_ONE_CHECKED_STACK(pp, source); \
       } \
     } while (0)
 #else /* !NEED_FIXUP_POINTER */
