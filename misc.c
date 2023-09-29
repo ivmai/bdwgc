@@ -51,7 +51,7 @@
 #   include <pthread.h>
     GC_INNER pthread_mutex_t GC_allocate_ml;
 # endif
-  /* For other platforms with threads, the lock and possibly            */
+  /* For other platforms with threads, the allocator lock and possibly  */
   /* GC_lock_holder variables are defined in the thread support code.   */
 #endif /* THREADS */
 
@@ -152,7 +152,7 @@ GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
   int GC_java_finalization = 0;
 #endif
 
-/* All accesses to it should be synchronized to avoid data races.       */
+/* All accesses to it should be synchronized to avoid data race.    */
 GC_finalizer_notifier_proc GC_finalizer_notifier =
                                         (GC_finalizer_notifier_proc)0;
 
@@ -176,7 +176,7 @@ STATIC void * GC_CALLBACK GC_default_oom_fn(size_t bytes_requested)
     return NULL;
 }
 
-/* All accesses to it should be synchronized to avoid data races.       */
+/* All accesses to it should be synchronized to avoid data race.    */
 GC_oom_func GC_oom_fn = GC_default_oom_fn;
 
 #ifdef CAN_HANDLE_FORK
@@ -598,7 +598,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
   }
 
 # ifdef THREADS
-    /* The _unsafe version assumes the caller holds the allocation lock. */
+    /* The _unsafe version assumes the caller holds the allocator lock. */
     GC_API size_t GC_CALL GC_get_prof_stats_unsafe(
                                             struct GC_prof_stats_s *pstats,
                                             size_t stats_sz)
@@ -957,12 +957,11 @@ GC_API void GC_CALL GC_init(void)
 #   endif
 
     DISABLE_CANCEL(cancel_state);
-    /* Note that although we are nominally called with the */
-    /* allocation lock held, the allocation lock is now    */
-    /* only really acquired once a second thread is forked.*/
-    /* And the initialization code needs to run before     */
-    /* then.  Thus we really don't hold any locks, and can */
-    /* in fact safely initialize them here.                */
+    /* Note that although we are nominally called with the allocator    */
+    /* lock held, now it is only really acquired once a second thread   */
+    /* is forked.  And the initialization code needs to run before      */
+    /* then.  Thus we really don't hold any locks, and can in fact      */
+    /* safely initialize them here.                                     */
 #   ifdef THREADS
 #     ifndef GC_ALWAYS_MULTITHREADED
         GC_ASSERT(!GC_need_to_lock);
@@ -1396,8 +1395,8 @@ GC_API void GC_CALL GC_init(void)
       }
 #   endif
 
-    /* The rest of this again assumes we don't really hold      */
-    /* the allocation lock.                                     */
+    /* The rest of this again assumes we do not really hold     */
+    /* the allocator lock.                                      */
 
 #   ifdef THREADS
       /* Initialize thread-local allocation.    */
@@ -1405,7 +1404,7 @@ GC_API void GC_CALL GC_init(void)
 #   endif
 
 #   if defined(DYNAMIC_LOADING) && defined(DARWIN)
-        /* This must be called WITHOUT the allocation lock held */
+        /* This must be called WITHOUT the allocator lock held  */
         /* and before any threads are created.                  */
         GC_init_dyld();
 #   endif
@@ -2398,9 +2397,6 @@ GC_API size_t GC_CALL GC_get_memory_use(void)
 
 /* Getter functions for the public Read-only variables.                 */
 
-/* GC_get_gc_no() is unsynchronized and should be typically called      */
-/* inside the context of GC_call_with_alloc_lock() to prevent data      */
-/* races (on multiprocessors).                                          */
 GC_API GC_word GC_CALL GC_get_gc_no(void)
 {
     return GC_gc_no;
@@ -2484,7 +2480,7 @@ GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void)
 /* It is safe to call these functions even before GC_INIT().            */
 /* These functions are unsynchronized and should be typically called    */
 /* inside the context of GC_call_with_alloc_lock() (if called after     */
-/* GC_INIT()) to prevent data races (unless it is guaranteed the        */
+/* GC_INIT()) to prevent data race (unless it is guaranteed the         */
 /* collector is not multi-threaded at that execution point).            */
 
 GC_API void GC_CALL GC_set_find_leak(int value)

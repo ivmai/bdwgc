@@ -34,7 +34,7 @@
 
 /* Make sure we're not in the middle of a collection, and make sure we  */
 /* don't start any.  This is invoked prior to a dlopen call to avoid    */
-/* synchronization issues.  We can't just acquire the allocation lock,  */
+/* synchronization issues.  We cannot just acquire the allocator lock,  */
 /* since startup code in dlopen may try to allocate.  This solution     */
 /* risks heap growth (or, even, heap overflow) in the presence of many  */
 /* dlopen calls in either a multi-threaded environment, or if the       */

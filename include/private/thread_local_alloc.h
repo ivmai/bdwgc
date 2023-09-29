@@ -181,11 +181,11 @@ typedef struct thread_local_freelists {
 
 /* Each thread structure must be initialized.   */
 /* This call must be made from the new thread.  */
-/* Caller holds allocation lock.                */
+/* Caller should hold the allocator lock.       */
 GC_INNER void GC_init_thread_local(GC_tlfs p);
 
 /* Called when a thread is unregistered, or exits.      */
-/* We hold the allocator lock.                          */
+/* Caller should hold the allocator lock.               */
 GC_INNER void GC_destroy_thread_local(GC_tlfs p);
 
 /* The thread support layer must arrange to mark thread-local   */

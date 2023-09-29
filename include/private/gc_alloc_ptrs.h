@@ -49,7 +49,7 @@ GC_API_PRIV void ** GC_APIVAR_CONST GC_uobjfreelist_ptr;
 /* collection cycle and the number of explicitly deallocated bytes of   */
 /* memory since the last collection, respectively.  Both functions are  */
 /* unsynchronized, GC_call_with_alloc_lock() should be used to avoid    */
-/* data races.                                                          */
+/* data race.                                                           */
 GC_API_PRIV void GC_CALL GC_incr_bytes_allocd(size_t /* bytes */);
 GC_API_PRIV void GC_CALL GC_incr_bytes_freed(size_t /* bytes */);
 

@@ -458,13 +458,13 @@
 
     /* GC_mark_no is passed only to allow GC_help_marker to terminate   */
     /* promptly.  This is important if it were called from the signal   */
-    /* handler or from the GC lock acquisition code.  Under Linux, it's */
-    /* not safe to call it from a signal handler, since it uses mutexes */
-    /* and condition variables.  Since it is called only here, the      */
-    /* argument is unnecessary.                                         */
+    /* handler or from the allocator lock acquisition code.  Under      */
+    /* Linux, it is not safe to call it from a signal handler, since it */
+    /* uses mutexes and condition variables.  Since it is called only   */
+    /* here, the argument is unnecessary.                               */
     for (;; ++my_mark_no) {
       if (my_mark_no - GC_mark_no > (word)2) {
-        /* resynchronize if we get far off, e.g. because GC_mark_no     */
+        /* Resynchronize if we get far off, e.g. because GC_mark_no     */
         /* wrapped.                                                     */
         my_mark_no = GC_mark_no;
       }
@@ -620,7 +620,7 @@ static struct GC_StackContext_Rep first_crtn;
 static struct GC_Thread_Rep first_thread;
 
 /* A place to retain a pointer to an allocated object while a thread    */
-/* registration is ongoing.  Protected by the GC lock.                  */
+/* registration is ongoing.  Protected by the allocator lock.           */
 static GC_stack_context_t saved_crtn = NULL;
 
 #ifdef GC_ASSERTIONS
@@ -824,10 +824,9 @@ GC_INNER_WIN32THREAD void GC_delete_thread(GC_thread t)
 }
 
 /* Return a GC_thread corresponding to a given thread id, or    */
-/* NULL if it is not there.                                     */
-/* Caller holds allocation lock or otherwise inhibits updates.  */
-/* If there is more than one thread with the given id we        */
-/* return the most recent one.                                  */
+/* NULL if it is not there.  Caller holds the allocator lock or */
+/* otherwise inhibits updates.  If there is more than one       */
+/* thread with the given id, we return the most recent one.     */
 GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
 {
   GC_thread p;
@@ -843,7 +842,7 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
   return p;
 }
 
-/* Same as GC_self_thread_inner() but acquires the GC lock.     */
+/* Same as GC_self_thread_inner() but acquires the allocator lock.  */
 STATIC GC_thread GC_self_thread(void) {
   GC_thread p;
 
@@ -1152,8 +1151,8 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
 #if defined(CAN_HANDLE_FORK) && defined(THREAD_SANITIZER)
 # include "private/gc_pmark.h" /* for MS_NONE */
 
-  /* Workaround for TSan which does not notice that the GC lock */
-  /* is acquired in fork_prepare_proc().                        */
+  /* Workaround for TSan which does not notice that the allocator lock  */
+  /* is acquired in fork_prepare_proc().                                */
   GC_ATTR_NO_SANITIZE_THREAD
   static GC_bool collection_in_progress(void)
   {
@@ -1163,16 +1162,16 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
 # define collection_in_progress() GC_collection_in_progress()
 #endif
 
-/* We hold the GC lock.  Wait until an in-progress GC has finished.     */
-/* Repeatedly releases the GC lock in order to wait.                    */
-/* If wait_for_all is true, then we exit with the GC lock held and no   */
-/* collection in progress; otherwise we just wait for the current GC    */
-/* to finish.                                                           */
+/* We hold the allocator lock.  Wait until an in-progress GC has        */
+/* finished.  Repeatedly releases the allocator lock in order to wait.  */
+/* If wait_for_all is true, then we exit with the allocator lock held   */
+/* and no collection is in progress; otherwise we just wait for the     */
+/* current collection to finish.                                        */
 GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
 # if !defined(THREAD_SANITIZER) || !defined(CAN_CALL_ATFORK)
-    /* GC_lock_holder is accessed with the lock held, so there is no    */
-    /* data race actually (unlike what is reported by TSan).            */
+    /* GC_lock_holder is accessed with the allocator lock held, so      */
+    /* there is no data race actually (unlike what's reported by TSan). */
     GC_ASSERT(I_HOLD_LOCK());
 # endif
   ASSERT_CANCEL_DISABLED();
@@ -1221,7 +1220,8 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
   /* same spec also implies that it is not safe to call the system      */
   /* malloc between fork and exec.  Thus we're doing no worse than it.) */
 
-  IF_CANCEL(static int fork_cancel_state;) /* protected by allocation lock */
+  IF_CANCEL(static int fork_cancel_state;)
+                                /* protected by the allocator lock */
 
 # ifdef PARALLEL_MARK
 #   ifdef THREAD_SANITIZER
@@ -1516,7 +1516,7 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
 #endif /* PARALLEL_MARK */
 
 GC_INNER GC_bool GC_in_thread_creation = FALSE;
-                                /* Protected by allocation lock. */
+                                /* protected by the allocator lock */
 
 GC_INNER_WIN32THREAD void GC_record_stack_base(GC_stack_context_t crtn,
                                                const struct GC_stack_base *sb)
@@ -1909,8 +1909,8 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
 }
 
 #if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
-  /* Similar to GC_do_blocking_inner() but assuming the GC lock is held */
-  /* and fn is GC_suspend_self_inner.                                   */
+  /* Similar to GC_do_blocking_inner() but assuming the allocator lock  */
+  /* is held and fn is GC_suspend_self_inner.                           */
   GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context)
   {
     GC_thread me = (GC_thread)thread_me;
@@ -2396,11 +2396,11 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #   endif
     /* If a GC occurs before the thread is registered, that GC will     */
     /* ignore this thread.  That's fine, since it will block trying to  */
-    /* acquire the allocation lock, and won't yet hold interesting      */
+    /* acquire the allocator lock, and won't yet hold interesting       */
     /* pointers.                                                        */
     LOCK();
     /* We register the thread here instead of in the parent, so that    */
-    /* we don't need to hold the allocation lock during pthread_create. */
+    /* we don't need to hold the allocator lock during pthread_create.  */
     me = GC_register_my_thread_inner(sb, self_id);
     GC_ASSERT(me != &first_thread);
     me -> flags = psi -> flags;
@@ -2631,8 +2631,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
   GC_INNER volatile unsigned char GC_collecting = FALSE;
                         /* A hint that we are in the collector and      */
-                        /* holding the allocation lock for an           */
-                        /* extended period.                             */
+                        /* holding the allocator lock for an extended   */
+                        /* period.                                      */
 
 # if defined(AO_HAVE_char_load) && !defined(BASE_ATOMIC_OPS_EMULATED)
 #   define is_collecting() ((GC_bool)AO_char_load(&GC_collecting))
@@ -2844,7 +2844,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 # if defined(CAN_HANDLE_FORK) && defined(THREAD_SANITIZER)
     /* Identical to GC_wait_for_reclaim() but with the no_sanitize      */
     /* attribute as a workaround for TSan which does not notice that    */
-    /* the GC lock is acquired in fork_prepare_proc().                  */
+    /* the allocator lock is acquired in fork_prepare_proc().           */
     GC_ATTR_NO_SANITIZE_THREAD
     static void wait_for_reclaim_atfork(void)
     {

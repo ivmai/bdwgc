@@ -73,8 +73,8 @@ GC_INNER void (*GC_print_heap_obj)(ptr_t p) = GC_default_print_heap_obj_proc;
                       NULL != source ? "root set" : "register");
     } else {
         /* FIXME: We can't call the debug version of GC_print_heap_obj  */
-        /* (with PRINT_CALL_CHAIN) here because the lock is held and    */
-        /* the world is stopped.                                        */
+        /* (with PRINT_CALL_CHAIN) here because the allocator lock is   */
+        /* held and the world is stopped.                               */
         GC_err_printf("Black listing (%s) %p referenced from %p in"
                       " object at %p of appr. %lu bytes\n",
                       kind_str, (void *)p, (void *)source,
@@ -232,15 +232,13 @@ GC_INNER void GC_unpromote_black_lists(void)
   }
 }
 
-/*
- * Is the block starting at h of size len bytes black listed?  If so,
- * return the address of the next plausible r such that (r, len) might not
- * be black listed.  (R may not actually be in the heap.  We guarantee only
- * that every smaller value of r after h is also black listed.)
- * If (h,len) is not black listed, return 0.
- * Knows about the structure of the black list hash tables.
- * Assumes the allocation lock is held but no assertion about it by design.
- */
+/* Is the block starting at h of size len bytes black-listed?  If so,   */
+/* return the address of the next plausible r such that (r,len) might   */
+/* not be black-listed.  (Pointer r may not actually be in the heap.    */
+/* We guarantee only that every smaller value of r after h is also      */
+/* black-listed.)  If (h,len) is not, then return NULL.  Knows about    */
+/* the structure of the black list hash tables.  Assumes the allocator  */
+/* lock is held but no assertion about it by design.                    */
 GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *h,
                                                     GC_word len)
 {

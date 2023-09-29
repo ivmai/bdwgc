@@ -477,7 +477,6 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
   /* For the debugging purpose only.                                    */
   /* Workaround for the OS mapping and unmapping behind our back:       */
   /* Is the address p in one of the temporary static root sections?     */
-  /* Acquires the GC lock.                                              */
   GC_API int GC_CALL GC_is_tmp_root(void *p)
   {
     static int last_root_set = MAX_ROOT_SETS;
@@ -543,8 +542,8 @@ struct exclusion GC_excl_table[MAX_EXCLUSIONS];
 */
 
 /* Clear the number of entries in the exclusion table.  The caller  */
-/* should acquire the GC lock (to avoid data race) but no assertion */
-/* about it by design.                                              */
+/* should acquire the allocator lock (to avoid data race) but no    */
+/* assertion about it by design.                                    */
 GC_API void GC_CALL GC_clear_exclusion_table(void)
 {
 #   ifdef DEBUG_ADD_DEL_ROOTS

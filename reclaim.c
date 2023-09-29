@@ -29,14 +29,14 @@ GC_INNER signed_word GC_bytes_found = 0;
 #if defined(PARALLEL_MARK)
   GC_INNER signed_word GC_fl_builder_count = 0;
         /* Number of threads currently building free lists without      */
-        /* holding GC lock.  It is not safe to collect if this is       */
-        /* nonzero.  Also, together with the mark lock, it is used as   */
-        /* a semaphore during marker threads startup.                   */
+        /* holding the allocator lock.  It is not safe to collect if    */
+        /* this is nonzero.  Also, together with the mark lock, it is   */
+        /* used as a semaphore during marker threads startup.           */
 #endif /* PARALLEL_MARK */
 
 /* We defer printing of leaked objects until we're done with the GC     */
 /* cycle, since the routine for printing objects needs to run outside   */
-/* the collector, e.g. without the allocation lock.                     */
+/* the collector, e.g. without the allocator lock.                      */
 #ifndef MAX_LEAKED
 # define MAX_LEAKED 40
 #endif
@@ -70,7 +70,7 @@ GC_INLINE void GC_add_leaked(ptr_t leaked)
 }
 
 /* Print all objects on the list after printing any smashed objects.    */
-/* Clear both lists.  Called without the allocation lock held.          */
+/* Clear both lists.  Called without the allocator lock held.           */
 GC_INNER void GC_print_all_errors(void)
 {
     static GC_bool printing_errors = FALSE;
@@ -297,7 +297,7 @@ STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
 # define IS_PTRFREE_SAFE(hhdr) \
                 (AO_load((volatile AO_t *)&(hhdr)->hb_descr) == 0)
 #else
-  /* No race as GC_realloc holds the lock while updating hb_descr.      */
+  /* No race as GC_realloc holds the allocator lock when updating hb_descr. */
 # define IS_PTRFREE_SAFE(hhdr) ((hhdr)->hb_descr == 0)
 #endif
 
@@ -390,7 +390,8 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
         /* Atomic access is used to avoid racing with GC_realloc.       */
         sz = (word)AO_load((volatile AO_t *)&(hhdr -> hb_sz));
 #   else
-        /* No race as GC_realloc holds the lock while updating hb_sz.   */
+        /* No race as GC_realloc holds the allocator lock while */
+        /* updating hb_sz.                                      */
         sz = hhdr -> hb_sz;
 #   endif
     if (sz > MAXOBJBYTES) { /* 1 big object */
@@ -475,7 +476,7 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
 #if !defined(NO_DEBUGGING)
 /* Routines to gather and print heap block info         */
 /* intended for debugging.  Otherwise should be called  */
-/* with lock.                                           */
+/* with the allocator lock held.                        */
 
 struct Print_stats
 {
@@ -593,7 +594,7 @@ void GC_print_block_list(void)
               (unsigned long)pstats.total_bytes);
 }
 
-/* Currently for debugger use only.  Assumes the allocation lock is */
+/* Currently for debugger use only.  Assumes the allocator lock is  */
 /* held but no assertion about it by design.                        */
 GC_API void GC_CALL GC_print_free_list(int kind, size_t sz_in_granules)
 {

@@ -120,7 +120,7 @@ typedef struct GC_ms_entry * (GC_CALLBACK * GC_mark_proc)(GC_word * /* addr */,
                         /* per-object descriptors must be located in    */
                         /* either the first two or last two words of    */
                         /* the object, since only those are guaranteed  */
-                        /* to be cleared while the allocation lock is   */
+                        /* to be cleared while the allocator lock is    */
                         /* held.                                        */
 #define GC_INDIR_PER_OBJ_BIAS 0x10
 
@@ -139,7 +139,7 @@ GC_API void * GC_greatest_plausible_heap_addr;
 /* needed only to support systems that use high-order pointer tags.     */
 /* The setter is expected to be called, if needed, before the GC        */
 /* initialization or, at least, before the first object is allocated.   */
-/* Both the setter and getter are unsynchronized.                       */
+/* Both the setter and the getter are unsynchronized.                   */
 GC_API void GC_CALL GC_set_pointer_mask(GC_word);
 GC_API GC_word GC_CALL GC_get_pointer_mask(void);
 
@@ -207,7 +207,7 @@ typedef void (GC_CALLBACK * GC_walk_free_blk_fn)(struct GC_hblk_s *,
 
 /* Apply fn to each completely empty heap block.  It is the             */
 /* responsibility of the caller to avoid data race during the function  */
-/* execution (e.g. by holding the allocation lock).                     */
+/* execution (e.g. by acquiring the allocator lock).                    */
 GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn,
                                 GC_word /* client_data */) GC_ATTR_NONNULL(1);
 
@@ -216,14 +216,14 @@ typedef void (GC_CALLBACK * GC_walk_hblk_fn)(struct GC_hblk_s *,
 
 /* Apply fn to each allocated heap block.  It is the responsibility     */
 /* of the caller to avoid data race during the function execution (e.g. */
-/* by holding the allocation lock).                                     */
+/* by acquiring the allocator lock).                                    */
 GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn,
                                 GC_word /* client_data */) GC_ATTR_NONNULL(1);
 
 /* If there are likely to be false references to a block starting at h  */
 /* of the indicated length, then return the next plausible starting     */
 /* location for h that might avoid these false references.  Otherwise   */
-/* NULL is returned.  Assumes the allocation lock is held but no        */
+/* NULL is returned.  Assumes the allocator lock is held but no         */
 /* assertion about it by design.                                        */
 GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *,
                                                     GC_word /* len */);
@@ -235,7 +235,7 @@ GC_API unsigned GC_CALL GC_count_set_marks_in_hblk(const void * /* p */);
 
 /* And some routines to support creation of new "kinds", e.g. with      */
 /* custom mark procedures, by language runtimes.                        */
-/* The _inner versions assume the caller holds the allocation lock.     */
+/* The _inner versions assume the caller holds the allocator lock.      */
 
 /* Return a new free list array.        */
 GC_API void ** GC_CALL GC_new_free_list(void);
@@ -340,19 +340,20 @@ GC_API void GC_CALL GC_register_describe_type_fn(int /* kind */,
 GC_API void * GC_CALL GC_clear_stack(void *);
 
 /* Set and get the client notifier on collections.  The client function */
-/* is called at the start of every full GC (called with the allocation  */
+/* is called at the start of every full GC (called with the allocator   */
 /* lock held).  May be 0.  This is a really tricky interface to use     */
 /* correctly.  Unless you really understand the collector internals,    */
 /* the callback should not, directly or indirectly, make any GC_ or     */
 /* potentially blocking calls.  In particular, it is not safe to        */
 /* allocate memory using the garbage collector from within the callback */
-/* function.  Both the setter and getter acquire the GC lock.           */
+/* function.  Both the setter and the getter acquire the allocator      */
+/* lock.                                                                */
 typedef void (GC_CALLBACK * GC_start_callback_proc)(void);
 GC_API void GC_CALL GC_set_start_callback(GC_start_callback_proc);
 GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void);
 
 /* Slow/general mark bit manipulation.  The caller should hold the      */
-/* allocation lock.  GC_is_marked returns 1 (true) or 0.  The argument  */
+/* allocator lock.  GC_is_marked returns 1 (true) or 0.  The argument   */
 /* should be the real address of an object (i.e. the address of the     */
 /* debug header if there is one).                                       */
 GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);
@@ -371,15 +372,16 @@ GC_API void GC_CALL GC_push_finalizer_structures(void);
 
 /* Set and get the client push-other-roots procedure.  A client         */
 /* supplied procedure should also call the original procedure.          */
-/* Note that both the setter and getter require some external           */
+/* Note that both the setter and the getter require some external       */
 /* synchronization to avoid data race.                                  */
 typedef void (GC_CALLBACK * GC_push_other_roots_proc)(void);
 GC_API void GC_CALL GC_set_push_other_roots(GC_push_other_roots_proc);
 GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void);
 
 /* Walk the GC heap visiting all reachable objects.  Assume the caller  */
-/* holds the allocation lock.  Object base pointer, object size and     */
-/* client custom data are passed to the callback (holding the lock).    */
+/* holds the allocator lock.  Object base pointer, object size and      */
+/* client custom data are passed to the callback (holding the allocator */
+/* lock).                                                               */
 typedef void (GC_CALLBACK * GC_reachable_object_proc)(void * /* obj */,
                                                 size_t /* bytes */,
                                                 void * /* client_data */);
@@ -388,7 +390,7 @@ GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
 
 /* Is the given address in one of the temporary static root sections?   */
-/* Acquires the GC lock.                                                */
+/* Acquires the allocator lock.                                         */
 GC_API int GC_CALL GC_is_tmp_root(void *);
 
 GC_API void GC_CALL GC_print_trace(GC_word /* gc_no */);
@@ -396,8 +398,8 @@ GC_API void GC_CALL GC_print_trace_inner(GC_word /* gc_no */);
 
 /* Set the client for when mark stack is empty.  A client can use       */
 /* this callback to process (un)marked objects and push additional      */
-/* work onto the stack.  Useful for implementing ephemerons.            */
-/* Both the setter and getter acquire the GC lock.                      */
+/* work onto the stack.  Useful for implementing ephemerons.  Both the  */
+/* setter and the getter acquire the allocator lock.                    */
 typedef struct GC_ms_entry * (GC_CALLBACK * GC_on_mark_stack_empty_proc)(
                                 struct GC_ms_entry * /* mark_stack_ptr */,
                                 struct GC_ms_entry * /* mark_stack_limit */);

@@ -686,7 +686,9 @@ GC_INNER size_t GC_page_size = 0;
       return buf.RegionSize;
     }
 
-    /* Should not acquire the GC lock as it is used by GC_DllMain.      */
+    /* Fill in the GC_stack_base structure with the stack bottom for    */
+    /* this thread.  Should not acquire the allocator lock as the       */
+    /* function is used by GC_DllMain.                                  */
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
     {
       ptr_t trunc_sp;
@@ -975,8 +977,8 @@ GC_INNER void GC_setpagesize(void)
         static volatile ptr_t result;
                 /* Safer if static, since otherwise it may not be   */
                 /* preserved across the longjmp.  Can safely be     */
-                /* static since it's only called with the           */
-                /* allocation lock held.                            */
+                /* static since it's only called with the allocator */
+                /* lock held.                                       */
 
         GC_ASSERT(up ? (word)bound >= MIN_PAGE_SIZE
                      : (word)bound <= ~(word)MIN_PAGE_SIZE);
@@ -2942,7 +2944,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
     GC_INNER GC_bool GC_gww_dirty_init(void)
     {
-      /* No assumption about the GC lock. */
+      /* No assumption about the allocator lock. */
       detect_GetWriteWatch();
       return GC_GWW_AVAILABLE();
     }
@@ -3546,7 +3548,7 @@ STATIC void GC_protect_heap(void)
 }
 
 /*
- * Acquiring the allocation lock here is dangerous, since this
+ * Acquiring the allocator lock here is dangerous, since this
  * can be called from within GC_call_with_alloc_lock, and the cord
  * package does so.  On systems that allow nested lock acquisition, this
  * happens to work.
@@ -5186,7 +5188,7 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
 
 #endif /* SAVE_CALL_CHAIN */
 
-  /* Print info to stderr.  We do NOT hold the allocation lock. */
+  /* Print info to stderr.  We do not hold the allocator lock.  */
   GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
   {
     int i, reent_cnt;

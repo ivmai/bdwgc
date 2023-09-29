@@ -99,7 +99,7 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
 
 #   ifdef CAN_HANDLE_FORK
       /* Both GC_setspecific and GC_remove_specific should be called    */
-      /* with the allocation lock held to ensure the consistency of     */
+      /* with the allocator lock held to ensure the consistency of      */
       /* the hash table in the forked child.                            */
       GC_ASSERT(I_HOLD_LOCK());
 #   endif

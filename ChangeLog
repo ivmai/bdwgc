@@ -1,15 +1,11 @@
 
 == [8.3.0] (development) ==
 
-* Acquire GC lock in GC_is_tmp_root and GC_register_disclaim_proc
+* Acquire allocator lock in GC_is_tmp_root and GC_register_disclaim_proc
 * Add 'lib' prefix to build artifact names in Makefile.direct
 * Add API to get total stopped-world marking time
-* Add I_HOLD_LOCK assertion to scratch_alloc/recycle and their callers
-* Add I_HOLD_LOCK assertions to ensure no race on reveal hidden pointers
 * Add Linux example to README.cmake
-* Add assertion about GC lock to GC_add_roots_inner and its callers
 * Add assertion about kind argument range in GC_register_describe_type_fn
-* Add assertion that GC lock is held in start/continue_reclaim, reclaim_all
 * Add assertion that custom setspecific is not called to overwrite value
 * Add assertion to GC_maybe_gc that GC is not in progress
 * Add assertion to ensure GC_unmapped_bytes cannot underflow
@@ -55,7 +51,14 @@
 * Always print error details message when gctest fails
 * Always set only one bit past end in GC_set_hdr_marks
 * Assert SET_HDR does not write to GC_all_nils
-* Assert in GC_typed_mark_proc that GC lock is held by some collecting thread
+* Assert allocator lock held in GC_add_roots_inner and its callers
+* Assert allocator lock held in GC_reset_finalizer_nested
+* Assert allocator lock held in add_leaked/smashed, check_heap_proc
+* Assert allocator lock held in scratch_alloc/recycle and their callers
+* Assert allocator lock held in start/continue_reclaim and reclaim_all
+* Assert allocator lock held to ensure no race on reveal hidden pointers
+* Assert allocator lock held while GC_our_memory is updated
+* Assert in typed_mark_proc that allocator lock held by some collecting thread
 * Assert that bm_table is already initialized when GC_double_descr used
 * Assert that disappearing links are accessible during registration and GC
 * Assert that size of element of a typed object is non-zero (refactoring)
@@ -68,10 +71,11 @@
 * Avoid unmap of memory allocated during GC init regardless of threshold
 * Better document GC_generate_random_heap/valid_address API functions
 * Better document GC_no_dls and NO_DEBUGGING macro
+* Better document GC_print_free_list regarding allocator lock
 * Better document link argument of GC_general_register_disappearing_link
 * Better document missing debugging version for aligned allocation routines
 * Better document preprocessor-related pointer checking routines in gc.h
-* Better document why GC_REVEAL_POINTER should be used with GC lock held
+* Better document why REVEAL_POINTER should be used with allocator lock held
 * Better separate libgc build- and use-time macro descriptions in README
 * Build cord/de test by WCC_MAKEFILE on Win32
 * Build extra/gc.c in digimars.mak
@@ -154,7 +158,7 @@
 * Document GC_print_free_list shortly in gc_inline.h
 * Document GC_with_callee_saves_pushed better
 * Document argument of GC_is_marked in gc_mark.h
-* Document assumption about GC lock for GC_clear_exclusion_table
+* Document assumption about allocator lock for GC_clear_exclusion_table
 * Document macros in config.h not referring to README (configure)
 * Document that GC_is_X API functions may return only zero or one
 * Document that GC_unregister_my_thread result value is dummy
@@ -178,10 +182,7 @@
 * Enable prefetch loop in GC_mark_from on E2K
 * Enable without_libatomic_ops for targets requiring atomic_ops.c (CMake)
 * Ensure GC is initialized when GC_push_all_stacks() is called (refactoring)
-* Ensure GC lock is held in GC_reset_finalizer_nested (refactoring)
-* Ensure GC lock is held in add_leaked/smashed, check_heap_proc (refactoring)
 * Ensure GC_n_set_marks() does not count extra bits in hb_marks
-* Ensure GC_our_memory is updated while holding GC lock (refactoring)
 * Ensure a collection occurs between adjacent heap expansions
 * Ensure all macros defined in public cord_pos.h have 'CORD_' prefix
 * Ensure const value has proper type before negation operation in msvc_dbg
@@ -195,7 +196,7 @@
 * Fail threadkeytest on pthread_create error in main loop
 * Fix digimars.mak to build 'all' by default
 * Fix double call of unregister_my_thread if thread registered by DllMain
-* Force pthread_mutex_lock usage for GC lock if ThreadSanitizer
+* Force pthread_mutex_lock usage for allocator lock if ThreadSanitizer
 * Get libpthread.so '.text' mapping only for glibc prior to v2.34 (Linux)
 * Group NEED_FIND_LIMIT definitions in gcconfig.h (refactoring)
 * Group all thread id fields together in GC_thread (refactoring)
@@ -275,7 +276,6 @@
 * Refactoring of rt_hash()
 * Refine WARN message in GC_proc_read_dirty regarding buffer size
 * Refine column names output by GC_print_block_list
-* Refine comment of GC_print_free_list regarding GC lock
 * Refine comments in code regarding DllMain-based threads registration
 * Refine comparisons to GC_greatest_plausible_heap_addr
 * Refine debug message in GC_suspend_handler_inner

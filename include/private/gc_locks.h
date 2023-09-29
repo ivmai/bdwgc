@@ -148,7 +148,7 @@
 
 #   elif (!defined(THREAD_LOCAL_ALLOC) || defined(USE_SPIN_LOCK)) \
          && !defined(USE_PTHREAD_LOCKS) && !defined(THREAD_SANITIZER)
-      /* In the THREAD_LOCAL_ALLOC case, the allocation lock tends to   */
+      /* In the THREAD_LOCAL_ALLOC case, the allocator lock tends to    */
       /* be held for long periods, if it is held at all.  Thus spinning */
       /* and sleeping for fixed periods are likely to result in         */
       /* significant wasted time.  We thus rely mostly on queued locks. */
@@ -156,8 +156,8 @@
 #     define USE_SPIN_LOCK
       GC_EXTERN volatile AO_TS_t GC_allocate_lock;
       GC_INNER void GC_lock(void);
-        /* Allocation lock holder.  Only set if acquired by client through */
-        /* GC_call_with_alloc_lock.                                        */
+        /* Allocator lock holder.  Only set if acquired by client       */
+        /* through GC_call_with_alloc_lock.                             */
 #     ifdef GC_ASSERTIONS
 #       define UNCOND_LOCK() \
               { GC_ASSERT(I_DONT_HOLD_LOCK()); \
@@ -233,7 +233,7 @@
 #   define set_need_to_lock() (void)0
 # else
 #   if defined(GC_ALWAYS_MULTITHREADED) && !defined(CPPCHECK)
-#     error Runtime initialization of GC lock is needed!
+#     error Runtime initialization of the allocator lock is needed!
 #   endif
 #   undef GC_ALWAYS_MULTITHREADED
     GC_EXTERN GC_bool GC_need_to_lock;
@@ -260,8 +260,8 @@
 #     define I_HOLD_LOCK() TRUE
 #     define I_DONT_HOLD_LOCK() TRUE
                 /* Used only in positive assertions or to test whether  */
-                /* we still need to acquire the lock.  TRUE works in    */
-                /* either case.                                         */
+                /* we still need to acquire the allocator lock.         */
+                /* TRUE works in either case.                           */
 #   endif
 #endif /* !THREADS */
 

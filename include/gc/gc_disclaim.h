@@ -28,7 +28,7 @@
 /* finalized allocations.  The function is thread-safe.                 */
 GC_API void GC_CALL GC_init_finalized_malloc(void);
 
-/* Type of a disclaim call-back.  Called with the allocation lock held. */
+/* Type of a disclaim callback.  Called with the allocator lock held.   */
 typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /* obj */);
 
 /* Register proc to be called on each object (of given kind) ready to   */
@@ -39,8 +39,8 @@ typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /* obj */);
 /* collection if mark_from_all is non-zero, but at the expense that     */
 /* long chains of objects will take many cycles to reclaim.  Any call   */
 /* to GC_free() deallocates the object (pointed by the argument)        */
-/* without inquiring proc().  Acquires the allocation lock.             */
-/* No-op in the leak-finding mode.                                      */
+/* without inquiring proc().  Acquires the allocator lock.  No-op in    */
+/* the leak-finding mode.                                               */
 GC_API void GC_CALL GC_register_disclaim_proc(int /* kind */,
                                               GC_disclaim_proc /* proc */,
                                               int /* mark_from_all */);

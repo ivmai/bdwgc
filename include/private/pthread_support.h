@@ -127,7 +127,7 @@ typedef struct GC_StackContext_Rep {
 typedef struct GC_Thread_Rep {
   union {
 #   if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
-      volatile AO_t in_use;     /* Updated without lock.  We assert     */
+      volatile AO_t in_use;     /* Updated without a lock.  We assert   */
                                 /* that each unused entry has invalid   */
                                 /* id of zero and zero stack_end.       */
                                 /* Used only with GC_win32_dll_threads. */
@@ -170,7 +170,7 @@ typedef struct GC_Thread_Rep {
 #   define THREAD_HANDLE(p) ((p) -> handle)
 # endif /* GC_WIN32_THREADS && !MSWINCE */
 
-  unsigned char flags;          /* Protected by GC lock.                */
+  unsigned char flags;          /* Protected by the allocator lock.     */
 # define FINISHED       0x1     /* Thread has exited (pthreads only).   */
 # ifndef GC_PTHREADS
 #   define KNOWN_FINISHED(p) FALSE
@@ -190,10 +190,11 @@ typedef struct GC_Thread_Rep {
                                 /* thread is exiting.                   */
 # endif
 # define DO_BLOCKING    0x20    /* Thread is in the do-blocking state.  */
-                                /* If set, thread will acquire GC lock  */
-                                /* before any pointer manipulation, and */
-                                /* has set its SP value.  Thus, it does */
-                                /* not need a signal sent to stop it.   */
+                                /* If set, the thread will acquire the  */
+                                /* allocator lock before any pointer    */
+                                /* manipulation, and has set its SP     */
+                                /* value.  Thus, it does not need       */
+                                /* a signal sent to stop it.            */
 # ifdef GC_WIN32_THREADS
 #   define IS_SUSPENDED 0x40    /* Thread is suspended by SuspendThread. */
 # endif
@@ -213,8 +214,8 @@ typedef struct GC_Thread_Rep {
                                 /* suspended externally; incremented on */
                                 /* every call of GC_suspend_thread()    */
                                 /* and GC_resume_thread(); updated with */
-                                /* the GC lock held, but could be read  */
-                                /* from a signal handler.               */
+                                /* the allocator lock held, but could   */
+                                /* be read from a signal handler.       */
 #   endif
 # endif
 
@@ -283,7 +284,7 @@ typedef struct GC_Thread_Rep {
 #endif
 
 /* The set of all known threads.  We intercept thread creation and      */
-/* join/detach.  Protected by the allocation lock.                      */
+/* join/detach.  Protected by the allocator lock.                       */
 GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
 
 #ifndef MAX_MARKERS

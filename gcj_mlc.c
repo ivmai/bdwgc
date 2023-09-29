@@ -120,12 +120,12 @@ GC_API void GC_CALL GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp)
 #   undef ignore_gcj_info
 }
 
-/* We need a mechanism to release the lock and invoke finalizers.       */
+/* A mechanism to release the allocator lock and invoke finalizers.     */
 /* We don't really have an opportunity to do this on a rarely executed  */
-/* path on which the lock is not held.  Thus we check at a              */
-/* rarely executed point at which it is safe to release the lock.       */
-/* We do this even where we could just call GC_INVOKE_FINALIZERS,       */
-/* since it's probably cheaper and certainly more uniform.              */
+/* path on which the allocator lock is not held.  Thus we check at      */
+/* a rarely executed point at which it is safe to release the allocator */
+/* lock; we do this even where we could just call GC_INVOKE_FINALIZERS, */
+/* since it is probably cheaper and certainly more uniform.             */
 /* TODO: Consider doing the same elsewhere? */
 static void maybe_finalize(void)
 {

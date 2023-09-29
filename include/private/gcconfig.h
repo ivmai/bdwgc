@@ -1231,7 +1231,7 @@ EXTERN_C_BEGIN
 #     define DATAEND ((ptr_t)(_end))
 #     define STACKBOTTOM ((ptr_t)ps3_get_stack_bottom())
 #     define NO_PTHREAD_TRYLOCK
-                /* Current GC LOCK() implementation for PS3 explicitly  */
+                /* Current LOCK() implementation for PS3 explicitly     */
                 /* use pthread_mutex_lock for some reason.              */
 #   endif
 #   ifdef AIX

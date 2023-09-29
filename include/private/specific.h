@@ -37,7 +37,7 @@
 EXTERN_C_BEGIN
 
 /* Called during key creation or setspecific.           */
-/* For the GC we already hold lock.                     */
+/* For the GC we already hold the allocator lock.       */
 /* Currently allocated objects leak on thread exit.     */
 /* That's hard to fix, but OK if we allocate garbage    */
 /* collected memory.                                    */

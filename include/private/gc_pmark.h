@@ -75,7 +75,7 @@ GC_EXTERN unsigned GC_n_mark_procs;
      * This works roughly as follows:
      *  The main mark stack never shrinks, but it can grow.
      *
-     *  The initiating threads holds the GC lock, and sets GC_help_wanted.
+     *  The initiating threads holds the allocator lock, sets GC_help_wanted.
      *
      *  Other threads:
      *     1) update helper_count (while holding the mark lock).
@@ -87,7 +87,7 @@ GC_EXTERN unsigned GC_n_mark_procs;
      *          5) Mark on the local stack until it is empty, or
      *             it may be profitable to copy it back.
      *          6) If necessary, copy local stack to global one,
-     *             holding mark lock.
+     *             holding the mark lock.
      *    7) Stop when the global mark stack is empty.
      *    8) decrement helper_count (holding the mark lock).
      *
@@ -96,7 +96,7 @@ GC_EXTERN unsigned GC_n_mark_procs;
      * also less performant, way.
      */
 
-    /* GC_mark_stack_top is protected by mark lock.     */
+    /* GC_mark_stack_top is protected by the mark lock. */
 
     /*
      * GC_notify_all_marker() is used when GC_help_wanted is first set,

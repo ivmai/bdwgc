@@ -281,7 +281,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 }
 
 /* The lookup here is safe, since this is done on behalf        */
-/* of a thread which holds the allocation lock in order         */
+/* of a thread which holds the allocator lock in order          */
 /* to stop the world.  Thus concurrent modification of the      */
 /* data structure is impossible.  Unfortunately, we have to     */
 /* instruct TSan that the lookup is safe.                       */
@@ -671,12 +671,12 @@ STATIC void GC_restart_handler(int sig)
                 /* GC_suspend_thread is not a cancellation point.   */
 #     ifdef PARALLEL_MARK
         /* Ensure we do not suspend a thread while it is rebuilding */
-        /* a free list, otherwise such a dead-lock is possible:     */
+        /* a free list, otherwise such a deadlock is possible:      */
         /* thread 1 is blocked in GC_wait_for_reclaim holding       */
-        /* the allocation lock, thread 2 is suspended in            */
+        /* the allocator lock, thread 2 is suspended in             */
         /* GC_reclaim_generic invoked from GC_generic_malloc_many   */
         /* (with GC_fl_builder_count > 0), and thread 3 is blocked  */
-        /* acquiring the allocation lock in GC_resume_thread.       */
+        /* acquiring the allocator lock in GC_resume_thread.        */
         if (GC_parallel)
           GC_wait_for_reclaim();
 #     endif
@@ -685,8 +685,8 @@ STATIC void GC_restart_handler(int sig)
         /* See the relevant comment in GC_stop_world.   */
         GC_acquire_dirty_lock();
       }
-      /* Else do not acquire the lock as the write fault handler might  */
-      /* be trying to acquire this lock too, and the suspend handler    */
+      /* Else do not acquire the dirty lock as the write fault handler  */
+      /* might be trying to acquire it too, and the suspend handler     */
       /* execution is deferred until the write fault handler completes. */
 
       next_stop_count = GC_stop_count + THREAD_RESTARTED;
@@ -1037,17 +1037,16 @@ GC_INNER void GC_stop_world(void)
     int n_live_threads;
 # endif
   GC_ASSERT(I_HOLD_LOCK());
+  /* Make sure all free list construction has stopped before we start.  */
+  /* No new construction can start, since a free list construction is   */
+  /* required to acquire and release the allocator lock before start.   */
+
   GC_ASSERT(GC_thr_initialized);
 # ifdef DEBUG_THREADS
     GC_stopping_thread = pthread_self();
     GC_stopping_pid = getpid();
     GC_log_printf("Stopping the world from %p\n", (void *)GC_stopping_thread);
 # endif
-
-  /* Make sure all free list construction has stopped before we start.  */
-  /* No new construction can start, since free list construction is     */
-  /* required to acquire and release the GC lock before it starts,      */
-  /* and we have the lock.                                              */
 # ifdef PARALLEL_MARK
     if (GC_parallel) {
       GC_acquire_mark_lock();

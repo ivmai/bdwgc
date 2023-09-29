@@ -9,13 +9,13 @@ flag. This has primarily the following effects:
   to see a consistent memory state. It intercepts thread creation and
   termination events to maintain a list of client threads to be stopped when
   needed.
-  2. It causes the collector to acquire a lock around essentially all
-  allocation and garbage collection activity.  Since a single lock is used for
+  2. It causes the collector to acquire the allocator lock around essentially
+  all allocation and garbage collection activity.  Since this lock is used for
   all allocation-related activity, only one thread can be allocating
   or collecting at one point. This inherently limits performance
   of multi-threaded applications on multiprocessors.
 
-On most platforms, the allocator/collector lock is implemented as a spin lock
+On most platforms, the allocator lock is implemented as a spin lock
 with exponential back-off. Longer wait times are implemented by yielding
 and/or sleeping. If a collection is in progress, the pure spinning stage
 is skipped. This has the uncontested advantage that most uniprocessor lock
@@ -135,11 +135,11 @@ is better tuned to less frequent lock acquisition. The standard allocation
 primitives thus perform slightly worse than without `-DTHREAD_LOCAL_ALLOC`,
 and should be avoided in time-critical code.
 
-(The results using `pthread_mutex_lock` directly for allocation locking would
-have been worse still, at least for older versions of linuxthreads. With
-`-DTHREAD_LOCAL_ALLOC`, we first repeatedly try to acquire the lock with
-`pthread_mutex_try_lock`, busy-waiting between attempts. After a fixed number
-of attempts, we use `pthread_mutex_lock`.)
+(The results using `pthread_mutex_lock` directly for acquiring the allocator
+lock would have been worse still, at least for older versions of linuxthreads.
+With `-DTHREAD_LOCAL_ALLOC`, we first repeatedly try to acquire the allocator
+lock with `pthread_mutex_try_lock`, busy-waiting between attempts. After
+a fixed number of attempts, we use `pthread_mutex_lock`.)
 
 These measurements do not use incremental collection, nor was prefetching
 enabled in the marker. We used the C version of the benchmark. All

@@ -168,7 +168,7 @@ STATIC mse *GC_CALLBACK GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
     ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
     DECLARE_HDR_CACHE;
 
-    /* The allocation lock is held by the collection initiating thread. */
+    /* The allocator lock is held by the collection initiating thread.  */
     GC_ASSERT(GC_get_parallel() || I_HOLD_LOCK());
     bm = GC_ext_descriptors[env].ed_bitmap;
 
@@ -554,7 +554,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_do_explicitly_typed(
       lp -> ld_size = pctd -> leaf.ld_size;
       lp -> ld_nelements = pctd -> leaf.ld_nelements;
       lp -> ld_descriptor = pctd -> leaf.ld_descriptor;
-      /* Hold the allocation lock while writing the descriptor word     */
+      /* Hold the allocator lock while writing the descriptor word      */
       /* to the object to ensure that the descriptor contents are seen  */
       /* by GC_array_mark_proc as expected.                             */
       /* TODO: It should be possible to replace locking with the atomic */

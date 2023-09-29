@@ -381,7 +381,7 @@ EXTERN_C_BEGIN
                         /* on unmarked objects.                         */
                         /* Unreachable finalizable objects are enqueued */
                         /* for processing by GC_invoke_finalizers.      */
-                        /* Invoked with lock.                           */
+                        /* Invoked with the allocator lock.             */
 
 # ifndef GC_TOGGLE_REFS_NOT_NEEDED
     GC_INNER void GC_process_togglerefs(void);
@@ -1411,10 +1411,10 @@ struct _GC_arrays {
         /* explicitly deallocated by finalizers.                */
   bottom_index *_all_bottom_indices;
         /* Pointer to the first (lowest address) bottom_index;  */
-        /* assumes the lock is held.                            */
+        /* assumes the allocator lock is held.                  */
   bottom_index *_all_bottom_indices_end;
         /* Pointer to the last (highest address) bottom_index;  */
-        /* assumes the lock is held.                            */
+        /* assumes the allocator lock is held.                  */
   ptr_t _scratch_free_ptr;
   hdr *_hdr_free_list;
   ptr_t _scratch_end_ptr;
@@ -1446,7 +1446,7 @@ struct _GC_arrays {
   mse *_mark_stack_limit;
 # ifdef PARALLEL_MARK
     mse *volatile _mark_stack_top;
-        /* Updated only with mark lock held, but read asynchronously.   */
+        /* Updated only with the mark lock held, but read asynchronously. */
         /* TODO: Use union to avoid casts to AO_t */
 # else
     mse *_mark_stack_top;
@@ -1610,7 +1610,7 @@ struct _GC_arrays {
   size_t _size_map[MAXOBJBYTES+1];
         /* Number of granules to allocate when asked for a certain      */
         /* number of bytes (plus EXTRA_BYTES).  Should be accessed with */
-        /* the allocation lock held.                                    */
+        /* the allocator lock held.                                     */
 # ifndef MARK_BIT_PER_OBJ
 #   define GC_obj_map GC_arrays._obj_map
     unsigned short * _obj_map[MAXOBJGRANULES + 1];
@@ -2205,7 +2205,8 @@ GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes);
 
 GC_INNER void GC_register_displacement_inner(size_t offset);
                                 /* Version of GC_register_displacement  */
-                                /* that assumes lock is already held.   */
+                                /* that assumes the allocator lock is   */
+                                /* already held.                        */
 
 /*  hblk allocation: */
 GC_INNER void GC_new_hblk(size_t size_in_granules, int kind);
@@ -2219,7 +2220,8 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t words, GC_bool clear,
                                 /* end of the free lists.  Possibly     */
                                 /* clear objects on the list.  Normally */
                                 /* called by GC_new_hblk, but also      */
-                                /* called explicitly without GC lock.   */
+                                /* called explicitly without the        */
+                                /* allocator lock held.                 */
 
 GC_INNER struct hblk * GC_allochblk(size_t size_in_bytes, int kind,
                                     unsigned flags, size_t align_m1);
@@ -2285,16 +2287,17 @@ GC_INNER int GC_CALLBACK GC_never_stop_func(void);
                                 /* Always returns 0 (FALSE).            */
 GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func);
                                 /* Collect; caller must have acquired   */
-                                /* lock.  Collection is aborted if      */
-                                /* stop_func() returns TRUE.  Returns   */
-                                /* TRUE if it completes successfully.   */
+                                /* the allocator lock.  Collection is   */
+                                /* aborted if stop_func() returns TRUE. */
+                                /* Returns TRUE if it completes         */
+                                /* successfully.   */
 #define GC_gcollect_inner() \
                 (void)GC_try_to_collect_inner(GC_never_stop_func)
 
 #ifdef THREADS
   GC_EXTERN GC_bool GC_in_thread_creation;
         /* We may currently be in thread creation or destruction.       */
-        /* Only set to TRUE while allocation lock is held.              */
+        /* Only set to TRUE while the allocator lock is held.           */
         /* When set, it is OK to run GC from unknown thread.            */
 #endif
 
@@ -2310,17 +2313,17 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
                                           size_t align_m1);
 
 GC_INNER void * GC_generic_malloc_inner(size_t lb, int k, unsigned flags);
-                                /* Allocate an object of the given      */
-                                /* kind but assuming lock already held. */
-                                /* Should not be used to directly       */
-                                /* allocate objects requiring special   */
-                                /* handling on allocation.  The flags   */
-                                /* argument should be IGNORE_OFF_PAGE   */
-                                /* or 0.  In the first case the client  */
-                                /* guarantees that there will always be */
-                                /* a pointer to the beginning (i.e.     */
-                                /* within the first hblk) of the object */
-                                /* while it is live.                    */
+                                /* Allocate an object of the given kind */
+                                /* but assuming the allocator lock is   */
+                                /* already held.  Should not be used to */
+                                /* directly allocate objects requiring  */
+                                /* special handling on allocation.      */
+                                /* The flags argument should be 0 or    */
+                                /* IGNORE_OFF_PAGE.  In the latter case */
+                                /* the client guarantees there will     */
+                                /* always be a pointer to the beginning */
+                                /* (i.e. within the first hblk) of the  */
+                                /* object while it is live.             */
 
 GC_INNER GC_bool GC_collect_or_expand(word needed_blocks, unsigned flags,
                                       GC_bool retry);
@@ -2419,7 +2422,7 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
 #endif                          /* We saw a smashed or leaked object.   */
                                 /* Call error printing routine          */
                                 /* occasionally.  It is OK to read it   */
-                                /* without acquiring the lock.          */
+                                /* not acquiring the allocator lock.    */
                                 /* If set to true, it is never cleared. */
 
 #define VERBOSE 2
@@ -2464,13 +2467,13 @@ GC_EXTERN GC_bool GC_print_back_height;
 #endif
 
 #ifdef THREADS
-  /* Explicitly deallocate the object when we already hold lock.        */
-  /* Only used for internally allocated objects.                        */
+  /* Explicitly deallocate the object when we already hold the      */
+  /* allocator lock.  Only used for internally allocated objects.   */
   GC_INNER void GC_free_inner(void * p);
 #endif
 
 /* Macros used for collector internal allocation.       */
-/* These assume the collector lock is held.             */
+/* These assume the allocator lock is held.             */
 #ifdef DBG_HDRS_ALL
   GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k,
                                                 unsigned flags);
@@ -2693,7 +2696,7 @@ GC_EXTERN long GC_large_alloc_warn_interval; /* defined in misc.c */
 
 GC_EXTERN signed_word GC_bytes_found;
                 /* Number of reclaimed bytes after garbage collection;  */
-                /* protected by GC lock; defined in reclaim.c.          */
+                /* protected by the allocator lock.                     */
 
 #ifndef GC_GET_HEAP_USAGE_NOT_NEEDED
   GC_EXTERN word GC_reclaimed_bytes_before_gc;
@@ -2759,7 +2762,7 @@ GC_EXTERN signed_word GC_bytes_found;
     GC_INNER GC_bool GC_gww_dirty_init(void);
                         /* Returns TRUE if GetWriteWatch is available.  */
                         /* May be called repeatedly.  May be called     */
-                        /* with or without the GC lock held.            */
+                        /* with or without the allocator lock held.     */
 #endif
 
 #if defined(CHECKSUMS) || defined(PROC_VDB)
@@ -2787,7 +2790,7 @@ GC_INNER void GC_start_debugging_inner(void);   /* defined in dbg_mlc.c. */
                         /* Should not be called if GC_debugging_started. */
 
 /* Store debugging info into p.  Return displaced pointer.      */
-/* Assumes we hold the allocation lock.                         */
+/* Assume we hold the allocator lock.                           */
 GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
                                          int linenum);
 
@@ -2798,7 +2801,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 # endif
 #elif defined(USE_WINALLOC)
   GC_INNER void GC_add_current_malloc_heap(void);
-#endif /* !REDIRECT_MALLOC */
+#endif /* USE_WINALLOC && !REDIRECT_MALLOC */
 
 #ifdef MAKE_BACK_GRAPH
   GC_INNER void GC_build_back_graph(void);
@@ -2931,9 +2934,9 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 
 #if defined(PARALLEL_MARK)
   /* We need additional synchronization facilities from the thread      */
-  /* support.  We believe these are less performance critical           */
-  /* than the main garbage collector lock; standard pthreads-based      */
-  /* implementations should be sufficient.                              */
+  /* support.  We believe these are less performance critical than      */
+  /* the allocator lock; standard pthreads-based implementations        */
+  /* should be sufficient.                                              */
 
 # define GC_markers_m1 GC_parallel
                         /* Number of mark threads we would like to have */
@@ -2942,14 +2945,13 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   GC_EXTERN GC_bool GC_parallel_mark_disabled;
                         /* A flag to temporarily avoid parallel marking.*/
 
-  /* The mark lock and condition variable.  If the GC lock is also      */
-  /* acquired, the GC lock must be acquired first.  The mark lock is    */
-  /* used to both protect some variables used by the parallel           */
-  /* marker, and to protect GC_fl_builder_count, below.                 */
-  /* GC_notify_all_marker() is called when                              */
-  /* the state of the parallel marker changes                           */
-  /* in some significant way (see gc_mark.h for details).  The          */
-  /* latter set of events includes incrementing GC_mark_no.             */
+  /* The mark lock and condition variable.  If the allocator lock is    */
+  /* also acquired, it must be done first.  The mark lock is used to    */
+  /* both protect some variables used by the parallel marker, and to    */
+  /* protect GC_fl_builder_count, below.  GC_notify_all_marker() is     */
+  /* called when the state of the parallel marker changes in some       */
+  /* significant way (see gc_mark.h for details).  The latter set of    */
+  /* events includes incrementing GC_mark_no.                           */
   /* GC_notify_all_builder() is called when GC_fl_builder_count         */
   /* reaches 0.                                                         */
 
@@ -2959,11 +2961,12 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   GC_INNER void GC_notify_all_builder(void);
   GC_INNER void GC_wait_for_reclaim(void);
 
-  GC_EXTERN signed_word GC_fl_builder_count; /* Protected by mark lock. */
+  GC_EXTERN signed_word GC_fl_builder_count; /* protected by the mark lock */
 
   GC_INNER void GC_notify_all_marker(void);
   GC_INNER void GC_wait_marker(void);
-  GC_EXTERN word GC_mark_no;            /* Protected by mark lock.      */
+
+  GC_EXTERN word GC_mark_no; /* protected by the mark lock */
 
   GC_INNER void GC_help_marker(word my_mark_no);
               /* Try to help out parallel marker for mark cycle         */

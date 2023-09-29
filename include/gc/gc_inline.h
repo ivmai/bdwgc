@@ -176,8 +176,8 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 /* Allocate n words (NOT BYTES).  X is made to point to the result.     */
 /* This should really only be used if GC_all_interior_pointers is       */
 /* not set, or DONT_ADD_BYTE_AT_END is set.  See above.                 */
-/* Does not acquire lock.  The caller is responsible for supplying      */
-/* a cleared tiny_fl free list array.  For single-threaded              */
+/* Does not acquire the allocator lock.  The caller is responsible for  */
+/* supplying a cleared tiny_fl free list array.  For single-threaded    */
 /* applications, this may be a global array.                            */
 # define GC_MALLOC_WORDS_KIND(result,n,tiny_fl,kind,init) \
     do { \
@@ -208,8 +208,8 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
     } while (0)
 
 /* Print address of each object in the free list.  The caller should    */
-/* hold the GC lock.  Defined only if the library has been compiled     */
-/* without NO_DEBUGGING.                                                */
+/* hold the allocator lock.  Defined only if the library has been       */
+/* compiled without NO_DEBUGGING.                                       */
 GC_API void GC_CALL GC_print_free_list(int /* kind */,
                                        size_t /* sz_in_granules */);
 

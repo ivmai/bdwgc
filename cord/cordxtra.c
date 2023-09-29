@@ -36,7 +36,7 @@
 
 /* If available, use GCC built-in atomic load-acquire and store-release */
 /* primitives to access the cache lines safely.  Otherwise, fall back   */
-/* to using the GC allocation lock even during the cache lines reading. */
+/* to using the allocator lock even during the cache lines reading.     */
 /* Note: for simplicity of libcord building, do not rely on GC_THREADS  */
 /* macro, libatomic_ops package presence and private/gc_atomic_ops.h.   */
 #if !defined(AO_DISABLE_GCC_ATOMICS) \
@@ -498,7 +498,7 @@ typedef struct {
     cache_line * new_cache;
 } refill_data;
 
-/* Executed with allocation lock. */
+/* Refill the cache.  Executed with the allocator lock. */
 static void * GC_CALLBACK refill_cache(void * client_data)
 {
     lf_state * state = ((refill_data *)client_data) -> state;

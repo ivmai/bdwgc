@@ -61,7 +61,7 @@ struct finalizable_object {
 
 #ifdef AO_HAVE_store
   /* Update finalize_now atomically as GC_should_invoke_finalizers does */
-  /* not acquire the allocation lock.                                   */
+  /* not acquire the allocator lock.                                    */
 # define SET_FINALIZE_NOW(fo) \
             AO_store((volatile AO_t *)&GC_fnlz_roots.finalize_now, (AO_t)(fo))
 #else
@@ -293,7 +293,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 /* May not mark the object pointed to by real_ptr (i.e, it is the job   */
 /* of the caller, if appropriate).  Note that this is called with the   */
 /* mutator running.  This is safe only if the mutator (client) gets     */
-/* the allocation lock to reveal hidden pointers.                       */
+/* the allocator lock to reveal hidden pointers.                        */
 GC_INLINE void GC_mark_fo(ptr_t real_ptr, finalization_mark_proc fo_mark_proc)
 {
   GC_ASSERT(I_HOLD_LOCK());
@@ -1161,7 +1161,7 @@ GC_INNER void GC_finalize(void)
 
 /* Count of finalizers to run, at most, during a single invocation      */
 /* of GC_invoke_finalizers(); zero means no limit.  Accessed with the   */
-/* allocation lock held.                                                */
+/* allocator lock held.                                                 */
 STATIC unsigned GC_interrupt_finalizers = 0;
 
 #ifndef JAVA_FINALIZATION_NOT_NEEDED
@@ -1281,7 +1281,7 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
         LOCK();
         if (count == 0) {
             bytes_freed_before = GC_bytes_freed;
-            /* Don't do this outside, since we need the lock. */
+            /* Note: we hold the allocator lock here.   */
         } else if (EXPECT(GC_interrupt_finalizers != 0, FALSE)
                    && (unsigned)count >= GC_interrupt_finalizers) {
             UNLOCK();
@@ -1340,7 +1340,7 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
     LOCK();
 
     /* This is a convenient place to generate backtraces if appropriate, */
-    /* since that code is not callable with the allocation lock.         */
+    /* since that code is not callable with the allocator lock.          */
 #   if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
       if (GC_gc_no > last_back_trace_gc_no) {
 #       ifdef KEEP_BACK_PTRS
@@ -1348,9 +1348,9 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
           /* Stops when GC_gc_no wraps; that's OK.      */
           last_back_trace_gc_no = GC_WORD_MAX;  /* disable others. */
           for (i = 0; i < GC_backtraces; ++i) {
-              /* FIXME: This tolerates concurrent heap mutation,        */
-              /* which may cause occasional mysterious results.         */
-              /* We need to release the GC lock, since GC_print_callers */
+              /* FIXME: This tolerates concurrent heap mutation, which  */
+              /* may cause occasional mysterious results.  We need to   */
+              /* release the allocator lock, since GC_print_callers()   */
               /* acquires it.  It probably shouldn't.                   */
               void *current = GC_generate_random_valid_address();
 
@@ -1396,7 +1396,7 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
       return;
     }
 
-    /* These variables require synchronization to avoid data races.     */
+    /* These variables require synchronization to avoid data race.  */
     if (last_finalizer_notification != GC_gc_no) {
         notifier_fn = GC_finalizer_notifier;
         last_finalizer_notification = GC_gc_no;

@@ -1504,7 +1504,7 @@ static void * GC_CALLBACK inc_int_counter(void *pcounter)
 {
   ++(*(int *)pcounter);
 
-  /* Dummy checking of API functions while GC lock is held.     */
+  /* Dummy checking of API functions while the allocator lock is held.  */
   GC_incr_bytes_allocd(0);
   GC_incr_bytes_freed(0);
 

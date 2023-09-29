@@ -525,7 +525,7 @@ unpopular objects sizes or kinds.
 Once the counter passes a threshold, `GC_malloc_many` is called to allocate
 roughly `HBLKSIZE` space and put it on the corresponding local free list.
 Further allocations of that size and kind then use this free list, and no
-longer need to acquire the allocation lock. The allocation procedure
+longer need to acquire the allocator lock. The allocation procedure
 is otherwise similar to the global free lists. The local free lists are also
 linked using the first word in the object. In most cases this means they
 require considerably less time.

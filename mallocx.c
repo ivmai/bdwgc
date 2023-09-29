@@ -195,9 +195,9 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
 # undef GC_debug_realloc_replacement
 # endif /* REDIRECT_REALLOC */
 
-/* Allocate memory such that only pointers to near the          */
-/* beginning of the object are considered.                      */
-/* We avoid holding allocation lock while we clear the memory.  */
+/* Allocate memory such that only pointers to near the beginning of */
+/* the object are considered.  We avoid holding the allocator lock  */
+/* while we clear the memory.                                       */
 GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_generic_malloc_ignore_off_page(size_t lb, int k)
 {
@@ -234,21 +234,19 @@ GC_API size_t GC_CALL GC_get_expl_freed_bytes_since_gc(void)
 }
 
 # ifdef PARALLEL_MARK
+    /* Number of bytes of memory allocated since we released the        */
+    /* allocator lock.  Instead of reacquiring the allocator lock just  */
+    /* to add this in, we add it in the next time we reacquire the      */
+    /* allocator lock.  (Atomically adding it does not work, since we   */
+    /* would have to atomically update it in GC_malloc, which is too    */
+    /* expensive.)                                                      */
     STATIC volatile AO_t GC_bytes_allocd_tmp = 0;
-                        /* Number of bytes of memory allocated since    */
-                        /* we released the GC lock.  Instead of         */
-                        /* reacquiring the GC lock just to add this in, */
-                        /* we add it in the next time we reacquire      */
-                        /* the lock.  (Atomically adding it doesn't     */
-                        /* work, since we would have to atomically      */
-                        /* update it in GC_malloc, which is too         */
-                        /* expensive.)                                  */
 # endif /* PARALLEL_MARK */
 
 /* Return a list of 1 or more objects of the indicated size, linked     */
 /* through the first word in the object.  This has the advantage that   */
-/* it acquires the allocation lock only once, and may greatly reduce    */
-/* time wasted contending for the allocation lock.  Typical usage would */
+/* it acquires the allocator lock only once, and may greatly reduce     */
+/* time wasted contending for the allocator lock.  Typical usage would  */
 /* be in a thread that requires many items of the same size.  It would  */
 /* keep its own free list in thread-local storage, and call             */
 /* GC_malloc_many or friends to replenish it.  (We do not round up      */
@@ -321,10 +319,9 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
                   signed_word my_bytes_allocd_tmp =
                                 (signed_word)AO_load(&GC_bytes_allocd_tmp);
                   GC_ASSERT(my_bytes_allocd_tmp >= 0);
-                  /* We only decrement it while holding the GC lock.    */
-                  /* Thus we can't accidentally adjust it down in more  */
-                  /* than one thread simultaneously.                    */
-
+                  /* We only decrement it while holding the allocator   */
+                  /* lock.  Thus, we cannot accidentally adjust it down */
+                  /* in more than one thread simultaneously.            */
                   if (my_bytes_allocd_tmp != 0) {
                     (void)AO_fetch_and_add(&GC_bytes_allocd_tmp,
                                            (AO_t)(-my_bytes_allocd_tmp));
@@ -374,9 +371,10 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
                 if (GC_fl_builder_count == 0) GC_notify_all_builder();
                 GC_release_mark_lock();
                 LOCK();
-                /* The GC lock is needed for reclaim list access.  We   */
-                /* must decrement fl_builder_count before reacquiring   */
-                /* the lock.  Hopefully this path is rare.              */
+                /* The allocator lock is needed for access to the       */
+                /* reclaim list.  We must decrement fl_builder_count    */
+                /* before reacquiring the allocator lock.  Hopefully    */
+                /* this path is rare.                                   */
 
                 rlh = ok -> ok_reclaim_list; /* reload rlh after locking */
                 if (NULL == rlh) break;

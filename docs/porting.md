@@ -199,7 +199,7 @@ stopped with signals. In this case, the changes involve:
   cases.
   2. Ensuring that the `atomic_ops` package at least minimally
   supports the platform. If incremental GC is needed, or if pthread locks
-  do not perform adequately as the allocation lock, you will probably need
+  do not perform adequately as the allocator lock, you will probably need
   to ensure that a sufficient `atomic_ops` port exists for the platform
   to provided an atomic test and set operation. The latest GC code can use
   GCC atomic intrinsics instead of `atomic_ops` package (see

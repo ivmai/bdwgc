@@ -20,7 +20,7 @@
 
 #if defined(GC_WIN32_THREADS)
 
-/* Allocation lock declarations.        */
+/* The allocator lock definition.       */
 #ifndef USE_PTHREAD_LOCKS
   GC_INNER CRITICAL_SECTION GC_allocate_ml;
 #endif
@@ -169,7 +169,7 @@ STATIC volatile LONG GC_max_thread_index = 0;
 /* constraints.  In particular, it must be lock-free if                 */
 /* GC_win32_dll_threads is set.  Always called from the thread being    */
 /* added.  If GC_win32_dll_threads is not set, we already hold the      */
-/* allocation lock except possibly during single-threaded startup code. */
+/* allocator lock except possibly during single-threaded startup code.  */
 /* Does not initialize thread local free lists.                         */
 GC_INNER GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                                                thread_id_t self_id)
@@ -277,7 +277,7 @@ GC_INNER GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
   /* else */ {
     GC_ASSERT(!GC_please_stop);
         /* Otherwise both we and the thread stopping code would be      */
-        /* holding the allocation lock.                                 */
+        /* holding the allocator lock.                                  */
   }
   return me;
 }
@@ -627,7 +627,7 @@ GC_INNER void GC_start_world(void)
 #endif
 
 /* A cache holding the results of the recent VirtualQuery call. */
-/* Protected by the allocation lock.                            */
+/* Protected by the allocator lock.                             */
 static ptr_t last_address = 0;
 static MEMORY_BASIC_INFORMATION last_info;
 
@@ -1252,7 +1252,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #       ifdef LOCK_STATS
           (void)AO_fetch_and_add1(&GC_block_count);
 #       endif
-        /* Repeatedly reset the state and wait until acquire the lock.  */
+        /* Repeatedly reset the state and wait until we acquire the */
+        /* mark lock.                                               */
         while (InterlockedExchange(&GC_mark_mutex_state,
                                    -1 /* locked_and_has_waiters */) != 0) {
           if (WaitForSingleObject(mark_mutex_event, INFINITE) == WAIT_FAILED)
@@ -1280,12 +1281,12 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       }
     }
 
-    /* In GC_wait_for_reclaim/GC_notify_all_builder() we emulate POSIX    */
-    /* cond_wait/cond_broadcast() primitives with WinAPI Event object     */
-    /* (working in "manual reset" mode).  This works here because         */
-    /* GC_notify_all_builder() is always called holding lock on           */
-    /* mark_mutex and the checked condition (GC_fl_builder_count == 0)    */
-    /* is the only one for which broadcasting on builder_cv is performed. */
+    /* In GC_wait_for_reclaim/GC_notify_all_builder() we emulate POSIX  */
+    /* cond_wait/cond_broadcast() primitives with WinAPI Event object   */
+    /* (working in "manual reset" mode).  This works here because       */
+    /* GC_notify_all_builder() is always called holding the mark lock   */
+    /* and the checked condition (GC_fl_builder_count == 0) is the only */
+    /* one for which broadcasting on builder_cv is performed.           */
 
     GC_INNER void GC_wait_for_reclaim(void)
     {

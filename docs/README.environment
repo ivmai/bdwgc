@@ -55,13 +55,14 @@ GC_NPROCS=<n> - Linux w/threads only.  Explicitly sets the number of processors
                 that the GC should expect to use.  Note that setting this to 1
                 when multiple processors are available will preserve
                 correctness, but may lead to really horrible performance,
-                since the lock implementation will immediately yield without
-                first spinning.
+                since the allocator lock implementation will immediately yield
+                without first spinning.
 
 GC_MARKERS=<n> - Only if compiled with PARALLEL_MARK.  Set the number
                 of marker threads.  This is normally set to the number of
                 processors.  It is safer to adjust GC_MARKERS than GC_NPROCS,
-                since GC_MARKERS has no impact on the lock implementation.
+                since GC_MARKERS has no impact on the allocator lock
+                implementation.
 
 GC_NO_BLACKLIST_WARNING - Prevents the collector from issuing
                 warnings about allocations of very large blocks.

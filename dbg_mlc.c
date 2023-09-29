@@ -911,7 +911,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 #ifndef SHORT_DBG_HDRS
 
 /* List of smashed (clobbered) locations.  We defer printing these,     */
-/* since we can't always print them nicely with the allocation lock     */
+/* since we cannot always print them nicely with the allocator lock     */
 /* held.  We put them here instead of in GC_arrays, since it may be     */
 /* useful to be able to look at them with the debugger.                 */
 #ifndef MAX_SMASHED

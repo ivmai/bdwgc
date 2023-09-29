@@ -437,7 +437,7 @@ GC_INNER GC_bool GC_should_collect(void)
 
 /* STATIC */ GC_start_callback_proc GC_start_call_back = 0;
                         /* Called at start of full collections.         */
-                        /* Not called if 0.  Called with the allocation */
+                        /* Not called if 0.  Called with the allocator  */
                         /* lock held.  Not used by GC itself.           */
 
 GC_API void GC_CALL GC_set_start_callback(GC_start_callback_proc fn)
@@ -1281,7 +1281,7 @@ STATIC void GC_finish_collection(void)
 }
 
 STATIC word GC_heapsize_at_forced_unmap = 0;
-                                /* accessed with the allocation lock held */
+                                /* accessed with the allocator lock held */
 
 /* If stop_func == 0 then GC_default_stop_func is used instead.         */
 STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
@@ -1333,8 +1333,8 @@ GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
 
 GC_API void GC_CALL GC_gcollect(void)
 {
-    /* 0 is passed as stop_func to get GC_default_stop_func value       */
-    /* while holding the allocation lock (to prevent data races).       */
+    /* Zero is passed as stop_func to get GC_default_stop_func value    */
+    /* while holding the allocator lock (to prevent data race).         */
     (void)GC_try_to_collect_general(0, FALSE);
     if (get_have_errors())
       GC_print_all_errors();

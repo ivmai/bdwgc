@@ -40,7 +40,7 @@
  *    finalizers which create new finalizable objects, though that's
  *    probably unlikely.
  * Thus this is not recommended for general use.
- * Acquire the allocation lock (to enqueue all finalizers).
+ * Acquire the allocator lock (to enqueue all finalizers).
  */
 GC_API void GC_CALL GC_finalize_all(void);
 
@@ -48,7 +48,7 @@ GC_API void GC_CALL GC_finalize_all(void);
   /* External thread suspension support.  No thread suspension count    */
   /* (so a thread which has been suspended numerous times will be       */
   /* resumed with the very first call to GC_resume_thread).             */
-  /* Acquire the allocation lock.  Thread should be registered in GC    */
+  /* Acquire the allocator lock.  Thread should be registered in GC     */
   /* (otherwise no-op, GC_is_thread_suspended returns false).           */
   /* Unimplemented on some platforms.  Not recommended for general use. */
 # ifndef GC_SUSPEND_THREAD_ID

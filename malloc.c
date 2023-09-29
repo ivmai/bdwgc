@@ -280,7 +280,7 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
 #           ifdef THREADS
               GC_ASSERT(GRANULES_TO_WORDS(lg) >= 2);
               /* Clear any memory that might be used for GC descriptors */
-              /* before we release the lock.                            */
+              /* before we release the allocator lock.                  */
                 ((word *)result)[0] = 0;
                 ((word *)result)[1] = 0;
                 ((word *)result)[GRANULES_TO_WORDS(lg)-1] = 0;
@@ -409,9 +409,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
         hdr * hhdr = HDR(op);
 
         GC_ASSERT(HBLKDISPL(op) == 0); /* large block */
-        /* We don't need the lock here, since we have an undisguised    */
-        /* pointer.  We do need to hold the lock while we adjust        */
-        /* mark bits.                                                   */
+        /* We do not need to acquire the allocator lock before HDR(op), */
+        /* since we have an undisguised pointer, but we need it while   */
+        /* we adjust the mark bits.                                     */
         LOCK();
         set_mark_bit_from_hdr(hhdr, 0); /* Only object. */
 #       ifndef THREADS

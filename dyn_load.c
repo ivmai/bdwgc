@@ -1336,7 +1336,7 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
     start = slide + sec->addr;
     end = start + sec->size;
     LOCK();
-    /* The user callback is called holding the lock.    */
+    /* The user callback is invoked holding the allocator lock. */
     if (callback == 0 || callback(name, (void*)start, (size_t)sec->size)) {
 #     ifdef DARWIN_DEBUG
         GC_log_printf(
@@ -1442,11 +1442,11 @@ GC_INNER void GC_register_dynamic_libraries(void)
     The dyld library takes it from there. */
 }
 
-/* The _dyld_* functions have an internal lock so no _dyld functions
-   can be called while the world is stopped without the risk of a deadlock.
-   Because of this we MUST setup callbacks BEFORE we ever stop the world.
-   This should be called BEFORE any thread is created and WITHOUT the
-   allocation lock held. */
+/* The _dyld_* functions have an internal lock, so none of them can be  */
+/* called while the world is stopped without the risk of a deadlock.    */
+/* Because of this we MUST setup callbacks BEFORE we ever stop the      */
+/* world.  This should be called BEFORE any thread is created and       */
+/* WITHOUT the allocator lock held.                                     */
 
 GC_INNER void GC_init_dyld(void)
 {

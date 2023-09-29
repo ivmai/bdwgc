@@ -179,7 +179,7 @@ GC_INNER void GC_clear_hdr_marks(hdr *hhdr)
     /* Atomic access is used to avoid racing with GC_realloc.   */
     last_bit = FINAL_MARK_BIT((size_t)AO_load((volatile AO_t *)&hhdr->hb_sz));
 # else
-    /* No race as GC_realloc holds the lock while updating hb_sz.   */
+    /* No race as GC_realloc holds the allocator lock while updating hb_sz. */
     last_bit = FINAL_MARK_BIT((size_t)hhdr->hb_sz);
 # endif
 
@@ -427,8 +427,8 @@ GC_API GC_on_mark_stack_empty_proc GC_CALL GC_get_on_mark_stack_empty(void)
         case MS_ROOTS_PUSHED:
 #           ifdef PARALLEL_MARK
               /* Eventually, incremental marking should run             */
-              /* asynchronously in multiple threads, without grabbing   */
-              /* the allocation lock.                                   */
+              /* asynchronously in multiple threads, without acquiring  */
+              /* the allocator lock.                                    */
               /* For now, parallel marker is disabled if there is       */
               /* a chance that marking could be interrupted by          */
               /* a client-supplied time limit or custom stop function.  */
@@ -908,11 +908,11 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 
 #ifdef PARALLEL_MARK
 
-STATIC GC_bool GC_help_wanted = FALSE;  /* Protected by mark lock.      */
+STATIC GC_bool GC_help_wanted = FALSE;  /* Protected by the mark lock.  */
 STATIC unsigned GC_helper_count = 0;    /* Number of running helpers.   */
-                                        /* Protected by mark lock.      */
+                                        /* Protected by the mark lock.  */
 STATIC unsigned GC_active_count = 0;    /* Number of active helpers.    */
-                                        /* Protected by mark lock.      */
+                                        /* Protected by the mark lock.  */
                                         /* May increase and decrease    */
                                         /* within each mark cycle.  But */
                                         /* once it returns to 0, it     */
@@ -939,7 +939,8 @@ GC_INNER void GC_wait_for_markers_init(void)
   if (GC_markers_m1 == 0)
     return;
 
-  /* Allocate the local mark stack for the thread that holds GC lock.   */
+  /* Allocate the local mark stack for the thread that holds    */
+  /* the allocator lock.                                        */
 # ifndef CAN_HANDLE_FORK
     GC_ASSERT(NULL == GC_main_local_mark_stack);
 # else
@@ -955,7 +956,7 @@ GC_INNER void GC_wait_for_markers_init(void)
       ABORT("Insufficient memory for main local_mark_stack");
   }
 
-  /* Reuse marker lock and builders count to synchronize        */
+  /* Reuse the mark lock and builders count to synchronize      */
   /* marker threads startup.                                    */
   GC_acquire_mark_lock();
   GC_fl_builder_count += GC_markers_m1;
@@ -1141,7 +1142,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
             GC_acquire_mark_lock();
             my_top = GC_mark_stack_top;
                 /* Asynchronous modification impossible here,   */
-                /* since we hold mark lock.                     */
+                /* since we hold the mark lock.                 */
             n_on_stack = my_top - my_first_nonempty + 1;
             if (0 == n_on_stack) {
                 GC_active_count--;
@@ -1198,8 +1199,8 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
     }
 }
 
-/* Perform parallel mark.  We hold the GC lock, not the mark lock.      */
-/* Currently runs until the mark stack is empty.                        */
+/* Perform parallel mark.  We hold the allocator lock, but not the mark */
+/* lock.  Currently runs until the mark stack is empty.                 */
 STATIC void GC_do_parallel_mark(void)
 {
     GC_ASSERT(I_HOLD_LOCK());
@@ -1232,7 +1233,7 @@ STATIC void GC_do_parallel_mark(void)
 }
 
 /* Try to help out the marker, if it's running.  We hold the mark lock  */
-/* only, the initiating thread holds the allocation lock.               */
+/* only, the initiating thread holds the allocator lock.                */
 GC_INNER void GC_help_marker(word my_mark_no)
 {
 #   define my_id my_id_mse.mse_descr.w
