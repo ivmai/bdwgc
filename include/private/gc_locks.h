@@ -22,13 +22,11 @@
 # error gc_locks.h should be included from gc_priv.h
 #endif
 
-/*
- * Mutual exclusion between allocator/collector routines.
- * Needed if there is more than one allocator thread.
- *
- * Note that I_HOLD_LOCK and I_DONT_HOLD_LOCK are used only positively
- * in assertions, and may return TRUE in the "don't know" case.
- */
+/* Mutual exclusion between allocator/collector routines.  Needed if    */
+/* there is more than one allocator thread.  Note that I_HOLD_LOCK,     */
+/* I_DONT_HOLD_LOCK and I_HOLD_READER_LOCK are used only positively in  */
+/* assertions, and may return TRUE in the "don't know" case.            */
+
 #ifdef THREADS
 
 # ifdef PCR
@@ -278,6 +276,16 @@
 #   define UNLOCK() do { if (GC_need_to_lock) UNCOND_UNLOCK(); } while (0)
 # endif
 #endif
+
+#ifndef READER_LOCK
+# define READER_LOCK() LOCK()
+# define READER_UNLOCK() UNLOCK()
+# ifdef GC_ASSERTIONS
+    /* A macro to check that the allocator lock is held at least in the */
+    /* reader mode.                                                     */
+#   define I_HOLD_READER_LOCK() I_HOLD_LOCK()
+# endif
+#endif /* !READER_LOCK */
 
 # ifndef ENTER_GC
 #   define ENTER_GC()

@@ -363,7 +363,7 @@ GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free)
     REGISTER bottom_index * bi;
     REGISTER word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
 
-    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(I_HOLD_READER_LOCK());
     GET_BI(h, bi);
     if (bi == GC_all_nils) {
         REGISTER word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
@@ -398,7 +398,7 @@ GC_INNER struct hblk * GC_prev_block(struct hblk *h)
     bottom_index * bi;
     signed_word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
 
-    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(I_HOLD_READER_LOCK());
     GET_BI(h, bi);
     if (bi == GC_all_nils) {
         word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);

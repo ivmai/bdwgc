@@ -130,9 +130,9 @@ GC_API int GC_CALL GC_get_disable_automatic_collection(void)
 {
   int value;
 
-  LOCK();
+  READER_LOCK();
   value = (int)GC_disable_automatic_collection;
-  UNLOCK();
+  READER_UNLOCK();
   return value;
 }
 
@@ -236,9 +236,9 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
 {
   GC_stop_func stop_func;
 
-  LOCK();
+  READER_LOCK();
   stop_func = GC_default_stop_func;
-  UNLOCK();
+  READER_UNLOCK();
   return stop_func;
 }
 
@@ -451,9 +451,9 @@ GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void)
 {
     GC_start_callback_proc fn;
 
-    LOCK();
+    READER_LOCK();
     fn = GC_start_call_back;
-    UNLOCK();
+    READER_UNLOCK();
     return fn;
 }
 
@@ -533,9 +533,9 @@ GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void)
 {
     GC_on_collection_event_proc fn;
 
-    LOCK();
+    READER_LOCK();
     fn = GC_on_collection_event;
-    UNLOCK();
+    READER_UNLOCK();
     return fn;
 }
 

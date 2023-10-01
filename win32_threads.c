@@ -332,6 +332,7 @@ GC_INLINE LONG GC_get_max_thread_index(void)
   {
     pthread_t self = pthread_self();
 
+    GC_ASSERT(I_HOLD_LOCK());
     SET_PTHREAD_MAP_CACHE(self, self_id);
   }
 
@@ -345,11 +346,12 @@ GC_INLINE LONG GC_get_max_thread_index(void)
       /* thread registration is made compatible with pthreads (and      */
       /* turned on).                                                    */
 
-      thread_id_t id = GET_PTHREAD_MAP_CACHE(thread);
+      thread_id_t id;
       GC_thread p;
       int hv;
 
-      GC_ASSERT(I_HOLD_LOCK());
+      GC_ASSERT(I_HOLD_READER_LOCK());
+      id = GET_PTHREAD_MAP_CACHE(thread);
       /* We first try the cache.        */
       for (p = GC_threads[THREAD_TABLE_INDEX(id)];
            p != NULL; p = p -> tm.next) {
@@ -1032,6 +1034,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                                     /* thread's hash table entry      */
                                     /* containing *plast_stack_min.   */
 
+  GC_ASSERT(I_HOLD_LOCK());
   /* First set current_min, ignoring limit. */
   if (GC_win32_dll_threads) {
     LONG my_max = GC_get_max_thread_index();

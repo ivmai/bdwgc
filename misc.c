@@ -535,7 +535,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
                         GC_word *pfree_bytes, GC_word *punmapped_bytes,
                         GC_word *pbytes_since_gc, GC_word *ptotal_bytes)
 {
-  LOCK();
+  READER_LOCK();
   if (pheap_size != NULL)
     *pheap_size = GC_heapsize - GC_unmapped_bytes;
   if (pfree_bytes != NULL)
@@ -546,7 +546,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
     *pbytes_since_gc = GC_bytes_allocd;
   if (ptotal_bytes != NULL)
     *ptotal_bytes = GC_bytes_allocd + GC_bytes_allocd_before_gc;
-  UNLOCK();
+  READER_UNLOCK();
 }
 
   GC_INNER word GC_reclaimed_bytes_before_gc = 0;
@@ -580,9 +580,9 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
   {
     struct GC_prof_stats_s stats;
 
-    LOCK();
+    READER_LOCK();
     fill_prof_stats(stats_sz >= sizeof(stats) ? pstats : &stats);
-    UNLOCK();
+    READER_UNLOCK();
 
     if (stats_sz == sizeof(stats)) {
       return sizeof(stats);
@@ -598,7 +598,8 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
   }
 
 # ifdef THREADS
-    /* The _unsafe version assumes the caller holds the allocator lock. */
+    /* The _unsafe version assumes the caller holds the allocator lock, */
+    /* at least in the reader mode.                                     */
     GC_API size_t GC_CALL GC_get_prof_stats_unsafe(
                                             struct GC_prof_stats_s *pstats,
                                             size_t stats_sz)
@@ -1980,9 +1981,9 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 {
     GC_warn_proc result;
 
-    LOCK();
+    READER_LOCK();
     result = GC_current_warn_proc;
-    UNLOCK();
+    READER_UNLOCK();
     return result;
 }
 
@@ -2046,9 +2047,9 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
   {
       GC_abort_func fn;
 
-      LOCK();
+      READER_LOCK();
       fn = GC_on_abort;
-      UNLOCK();
+      READER_UNLOCK();
       return fn;
   }
 #endif /* !SMALL_CONFIG */
@@ -2307,7 +2308,7 @@ STATIC void GC_do_blocking_inner(ptr_t data, void *context)
     GC_ASSERT(NULL == gc_thread_handle || &GC_stackbottom == gc_thread_handle);
     GC_ASSERT(NULL == GC_blocked_sp
               && NULL == GC_traced_stack_sect); /* for now */
-    (void)gc_thread_handle;
+    UNUSED_ARG(gc_thread_handle);
 
     GC_stackbottom = (char *)sb->mem_base;
 #   ifdef IA64
@@ -2341,9 +2342,9 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 #if !defined(NO_DEBUGGING)
   GC_API void GC_CALL GC_dump(void)
   {
-    LOCK();
+    READER_LOCK();
     GC_dump_named(NULL);
-    UNLOCK();
+    READER_UNLOCK();
   }
 
   GC_API void GC_CALL GC_dump_named(const char *name)
@@ -2389,9 +2390,9 @@ GC_API size_t GC_CALL GC_get_memory_use(void)
 {
   word bytes = 0;
 
-  LOCK();
+  READER_LOCK();
   GC_apply_to_all_blocks(block_add_size, (word)(&bytes));
-  UNLOCK();
+  READER_UNLOCK();
   return (size_t)bytes;
 }
 
@@ -2434,9 +2435,9 @@ GC_API GC_oom_func GC_CALL GC_get_oom_fn(void)
 {
     GC_oom_func fn;
 
-    LOCK();
+    READER_LOCK();
     fn = GC_oom_fn;
-    UNLOCK();
+    READER_UNLOCK();
     return fn;
 }
 
@@ -2452,9 +2453,9 @@ GC_API GC_on_heap_resize_proc GC_CALL GC_get_on_heap_resize(void)
 {
     GC_on_heap_resize_proc fn;
 
-    LOCK();
+    READER_LOCK();
     fn = GC_on_heap_resize;
-    UNLOCK();
+    READER_UNLOCK();
     return fn;
 }
 
@@ -2470,9 +2471,9 @@ GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void)
 {
     GC_finalizer_notifier_proc fn;
 
-    LOCK();
+    READER_LOCK();
     fn = GC_finalizer_notifier;
-    UNLOCK();
+    READER_UNLOCK();
     return fn;
 }
 

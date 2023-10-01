@@ -122,14 +122,14 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
     return ((val >> LOG_RT_SIZE) ^ val) & (RT_SIZE-1);
   }
 
-  /* Is a range starting at b already in the table? If so return a      */
+  /* Is a range starting at b already in the table? If so, return a     */
   /* pointer to it, else NULL.                                          */
   GC_INNER void * GC_roots_present(ptr_t b)
   {
     int h;
     struct roots *p;
 
-    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(I_HOLD_READER_LOCK());
     h = rt_hash(b);
     for (p = GC_root_index[h]; p != NULL; p = p -> r_next) {
         if (p -> r_start == (ptr_t)b) break;

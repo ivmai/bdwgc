@@ -40,7 +40,7 @@
  *    finalizers which create new finalizable objects, though that's
  *    probably unlikely.
  * Thus this is not recommended for general use.
- * Acquire the allocator lock (to enqueue all finalizers).
+ * Acquires the allocator lock (to enqueue all finalizers).
  */
 GC_API void GC_CALL GC_finalize_all(void);
 
@@ -48,14 +48,18 @@ GC_API void GC_CALL GC_finalize_all(void);
   /* External thread suspension support.  No thread suspension count    */
   /* (so a thread which has been suspended numerous times will be       */
   /* resumed with the very first call to GC_resume_thread).             */
-  /* Acquire the allocator lock.  Thread should be registered in GC     */
-  /* (otherwise no-op, GC_is_thread_suspended returns false).           */
+  /* Acquires the allocator lock.  Thread should be registered in GC.   */
   /* Unimplemented on some platforms.  Not recommended for general use. */
 # ifndef GC_SUSPEND_THREAD_ID
 #   define GC_SUSPEND_THREAD_ID void*
 # endif
   GC_API void GC_CALL GC_suspend_thread(GC_SUSPEND_THREAD_ID);
   GC_API void GC_CALL GC_resume_thread(GC_SUSPEND_THREAD_ID);
+
+  /* Is the given thread suspended externally?  The result is either    */
+  /* 1 (true) or 0.  Acquires the allocator lock in the reader mode.    */
+  /* Note: returns false if the thread is not registered in GC.         */
+  /* Unimplemented on some platforms (same as GC_suspend_thread).       */
   GC_API int GC_CALL GC_is_thread_suspended(GC_SUSPEND_THREAD_ID);
 #endif /* GC_THREADS */
 

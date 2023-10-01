@@ -757,11 +757,11 @@ STATIC void GC_restart_handler(int sig)
       GC_thread t;
       int is_suspended = 0;
 
-      LOCK();
+      READER_LOCK();
       t = GC_lookup_by_pthread((pthread_t)thread);
       if (t != NULL && (t -> ext_suspend_cnt & 1) != 0)
         is_suspended = (int)TRUE;
-      UNLOCK();
+      READER_UNLOCK();
       return is_suspended;
     }
 # endif /* GC_ENABLE_SUSPEND_THREAD */

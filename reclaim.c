@@ -340,7 +340,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp, word sz,
     struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
     void **flh = &(ok -> ok_freelist[BYTES_TO_GRANULES(sz)]);
 
-    hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
+    hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
 
     if (report_if_found) {
         GC_reclaim_check(hbp, hhdr, sz);
@@ -359,7 +359,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp, word sz,
     void **flh = &(ok -> ok_freelist[BYTES_TO_GRANULES(sz)]);
     void *flh_next;
 
-    hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
+    hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
     flh_next = GC_reclaim_generic(hbp, hhdr, sz, ok -> ok_init,
                                   (ptr_t)(*flh), (word *)&GC_bytes_found);
     if (hhdr -> hb_n_marks)
@@ -594,8 +594,8 @@ void GC_print_block_list(void)
               (unsigned long)pstats.total_bytes);
 }
 
-/* Currently for debugger use only.  Assumes the allocator lock is  */
-/* held but no assertion about it by design.                        */
+/* Currently for debugger use only.  Assumes the allocator lock is held */
+/* at least in the reader mode but no assertion about it by design.     */
 GC_API void GC_CALL GC_print_free_list(int kind, size_t sz_in_granules)
 {
     void *flh_next;
@@ -843,7 +843,7 @@ GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
 {
   struct enumerate_reachable_s ed;
 
-  GC_ASSERT(I_HOLD_LOCK());
+  GC_ASSERT(I_HOLD_READER_LOCK());
   ed.proc = proc;
   ed.client_data = client_data;
   GC_apply_to_all_blocks(GC_do_enumerate_reachable_objects, (word)&ed);

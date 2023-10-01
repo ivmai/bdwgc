@@ -1375,9 +1375,9 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
   }
 
 # if defined(DARWIN_DEBUG) && !defined(NO_DEBUGGING)
-    LOCK();
+    READER_LOCK();
     GC_print_static_roots();
-    UNLOCK();
+    READER_UNLOCK();
 # endif
 }
 
@@ -1430,9 +1430,9 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
   }
 
 # if defined(DARWIN_DEBUG) && !defined(NO_DEBUGGING)
-    LOCK();
+    READER_LOCK();
     GC_print_static_roots();
-    UNLOCK();
+    READER_UNLOCK();
 # endif
 }
 

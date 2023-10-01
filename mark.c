@@ -354,9 +354,9 @@ GC_API GC_on_mark_stack_empty_proc GC_CALL GC_get_on_mark_stack_empty(void)
 {
   GC_on_mark_stack_empty_proc fn;
 
-  LOCK();
+  READER_LOCK();
   fn = GC_on_mark_stack_empty;
-  UNLOCK();
+  READER_UNLOCK();
   return fn;
 }
 
@@ -1582,9 +1582,9 @@ GC_API void GC_CALL GC_print_trace_inner(word gc_no)
 
 GC_API void GC_CALL GC_print_trace(word gc_no)
 {
-    LOCK();
+    READER_LOCK();
     GC_print_trace_inner(gc_no);
-    UNLOCK();
+    READER_UNLOCK();
 }
 
 #endif /* TRACE_BUF */

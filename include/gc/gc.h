@@ -110,8 +110,9 @@ GC_API GC_ATTR_DEPRECATED GC_oom_func GC_oom_fn;
                         /* a previously allocated heap object.          */
                         /* By default, this just returns NULL.          */
                         /* GC_oom_fn must not be 0.  Both the setter    */
-                        /* and the getter acquire the allocator lock to */
-                        /* avoid data race.                             */
+                        /* and the getter acquire the allocator lock    */
+                        /* (in the reader mode in case of the getter)   */
+                        /* to avoid data race.                          */
 GC_API void GC_CALL GC_set_oom_fn(GC_oom_func) GC_ATTR_NONNULL(1);
 GC_API GC_oom_func GC_CALL GC_get_oom_fn(void);
 
@@ -123,7 +124,8 @@ GC_API GC_ATTR_DEPRECATED GC_on_heap_resize_proc GC_on_heap_resize;
 GC_API void GC_CALL GC_set_on_heap_resize(GC_on_heap_resize_proc);
 GC_API GC_on_heap_resize_proc GC_CALL GC_get_on_heap_resize(void);
                         /* Both the setter and the getter acquire the   */
-                        /* allocator lock.                              */
+                        /* allocator lock (in the reader mode in case   */
+                        /* of the getter).                              */
 
 typedef enum {
     GC_EVENT_START /* COLLECTION */,
@@ -149,7 +151,8 @@ typedef void (GC_CALLBACK * GC_on_collection_event_proc)(GC_EventType);
 GC_API void GC_CALL GC_set_on_collection_event(GC_on_collection_event_proc);
 GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void);
                         /* Both the setter and the getter acquire the   */
-                        /* allocator lock.                              */
+                        /* allocator lock (in the reader mode in case   */
+                        /* of the getter).                              */
 
 #if defined(GC_THREADS) || (defined(GC_BUILD) && defined(NN_PLATFORM_CTR))
   typedef void (GC_CALLBACK * GC_on_thread_event_proc)(GC_EventType,
@@ -161,7 +164,8 @@ GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void);
   GC_API void GC_CALL GC_set_on_thread_event(GC_on_thread_event_proc);
   GC_API GC_on_thread_event_proc GC_CALL GC_get_on_thread_event(void);
                         /* Both the setter and the getter acquire the   */
-                        /* allocator lock.                              */
+                        /* allocator lock (in the reader mode in case   */
+                        /* of the getter).                              */
 #endif
 
 GC_API GC_ATTR_DEPRECATED int GC_find_leak;
@@ -227,7 +231,8 @@ GC_API GC_ATTR_DEPRECATED GC_finalizer_notifier_proc GC_finalizer_notifier;
                         /* thread, which will call GC_invoke_finalizers */
                         /* in response.  May be 0 (means no notifier).  */
                         /* Both the setter and the getter acquire the   */
-                        /* allocator lock.                              */
+                        /* allocator lock (in the reader mode in case   */
+                        /* of the getter).                              */
 GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc);
 GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void);
 
@@ -235,7 +240,8 @@ GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void);
 /* without the allocator lock held.  The default behavior is to fail    */
 /* with the appropriate message which includes the pointers.  The       */
 /* functions (variables) must not be 0.  Both the setters and the       */
-/* getters acquire the allocator lock to avoid data race.               */
+/* getters acquire the allocator lock (in the reader mode in case of    */
+/* the getters) to avoid data race.                                     */
 typedef void (GC_CALLBACK * GC_valid_ptr_print_proc_t)(void *);
 typedef void (GC_CALLBACK * GC_same_obj_print_proc_t)(void * /* p */,
                                                       void * /* q */);
@@ -508,7 +514,8 @@ GC_API int GC_CALL GC_get_max_prior_attempts(void);
 
 /* Control whether to disable algorithm deciding if a collection should */
 /* be started when we allocated enough to amortize GC.  Both the setter */
-/* and the getter acquire the allocator lock to avoid data race.        */
+/* and the getter acquire the allocator lock (in the reader mode in     */
+/* case of the getter) to avoid data race.                              */
 GC_API void GC_CALL GC_set_disable_automatic_collection(int);
 GC_API int GC_CALL GC_get_disable_automatic_collection(void);
 
@@ -743,7 +750,8 @@ GC_API int GC_CALL GC_try_to_collect(GC_stop_func /* stop_func */)
 /* Set and get the default stop_func.  The default stop_func is used by */
 /* GC_gcollect() and by implicitly triggered collections (except for    */
 /* the case when handling out of memory).  Must not be 0.  Both the     */
-/* setter and the getter acquire the allocator lock to avoid data race. */
+/* setter and the getter acquire the allocator lock (in the reader mode */
+/* in case of the getter) to avoid data race.                           */
 GC_API void GC_CALL GC_set_stop_func(GC_stop_func /* stop_func */)
                                                         GC_ATTR_NONNULL(1);
 GC_API GC_stop_func GC_CALL GC_get_stop_func(void);
@@ -751,11 +759,11 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void);
 /* Return the number of bytes in the heap.  Excludes collector private  */
 /* data structures.  Excludes the unmapped memory (returned to the OS). */
 /* Includes empty blocks and fragmentation loss.  Includes some pages   */
-/* that were allocated but never written.                               */
-/* This is an unsynchronized getter, so it should be called typically   */
-/* with the allocator lock held to avoid data race on multiprocessors   */
-/* (the alternative way is to use GC_get_heap_usage_safe or             */
-/* GC_get_prof_stats API calls instead).                                */
+/* that were allocated but never written.  This is an unsynchronized    */
+/* getter, so it should be called typically with the allocator lock     */
+/* held, at least in the reader mode, to avoid data race on             */
+/* multiprocessors (the alternative way is to use GC_get_prof_stats or  */
+/* GC_get_heap_usage_safe API calls instead).                           */
 /* This getter remains lock-free (unsynchronized) for compatibility     */
 /* reason since some existing clients call it from a GC callback        */
 /* holding the allocator lock.  (This API function and the following    */
@@ -794,9 +802,9 @@ GC_API size_t GC_CALL GC_get_obtained_from_os_bytes(void);
 
 /* Return the heap usage information.  This is a thread-safe (atomic)   */
 /* alternative for the five above getters.   (This function acquires    */
-/* the allocator lock thus preventing data racing and returning the     */
-/* consistent result.)  Passing NULL pointer is allowed for any         */
-/* argument.  Returned (filled in) values are of word type.             */
+/* the allocator lock in the reader mode, thus preventing data race and */
+/* returning the consistent result.)  Passing NULL pointer is allowed   */
+/* for any argument.  Returned (filled in) values are of word type.     */
 GC_API void GC_CALL GC_get_heap_usage_safe(GC_word * /* pheap_size */,
                                            GC_word * /* pfree_bytes */,
                                            GC_word * /* punmapped_bytes */,
@@ -873,8 +881,8 @@ GC_API size_t GC_CALL GC_get_prof_stats(struct GC_prof_stats_s *,
 /* to avoid data race on multiprocessors.                               */
 GC_API size_t GC_CALL GC_get_size_map_at(int i);
 
-/* Count total memory use in bytes by all allocated blocks.  Acquires   */
-/* the allocator lock.                                                  */
+/* Count total memory use (in bytes) by all allocated blocks.  Acquires */
+/* the allocator lock in the reader mode.                               */
 GC_API size_t GC_CALL GC_get_memory_use(void);
 
 /* Disable garbage collection.  Even GC_gcollect calls will be          */
@@ -1178,9 +1186,9 @@ GC_API void GC_CALL GC_debug_register_finalizer(void * /* obj */,
         /* new finalizer), *ofn and *ocd remain unchanged.)     */
         /* Fn is never invoked on an accessible object,         */
         /* provided hidden pointers are converted to real       */
-        /* pointers only if the allocator lock is held, and     */
-        /* such conversions are not performed by finalization   */
-        /* routines.                                            */
+        /* pointers only if the allocator lock is held, at      */
+        /* least in the reader mode, and such conversions are   */
+        /* not performed by finalization routines.              */
         /* If GC_register_finalizer is aborted as a result of   */
         /* a signal, the object may be left with no             */
         /* finalization, even if neither the old nor new        */
@@ -1304,12 +1312,12 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
         /* this link is garbage collected.  It is unsafe to     */
         /* explicitly deallocate the object containing link.    */
         /* Explicit deallocation of obj may or may not cause    */
-        /* link to eventually be cleared.                       */
-        /* No-op in the leak-finding mode.                      */
-        /* This function can be used to implement certain types */
-        /* of weak pointers.  Note, however, this generally     */
-        /* requires that the allocator lock is held (see        */
-        /* GC_call_with_alloc_lock() below) when the disguised  */
+        /* link to eventually be cleared.  No-op in the         */
+        /* leak-finding mode.  This function can be used to     */
+        /* implement certain types of weak pointers.  Note,     */
+        /* however, this generally requires that the allocator  */
+        /* lock is held, at least in the reader mode (see       */
+        /* GC_call_with_alloc_lock() below), when the disguised */
         /* pointer is accessed.  Otherwise a strong pointer     */
         /* could be recreated between the time the collector    */
         /* decides to reclaim the object and the link is        */
@@ -1382,7 +1390,8 @@ typedef GC_ToggleRefStatus (GC_CALLBACK * GC_toggleref_func)(void * /* obj */);
 /* Set (register) a callback that decides the state of a given  */
 /* object (by, probably, inspecting its native state).          */
 /* The argument may be 0 (means no callback).  Both the setter  */
-/* and the getter acquire the allocator lock.                   */
+/* and the getter acquire the allocator lock (in the reader     */
+/* mode in case of the getter).                                 */
 GC_API void GC_CALL GC_set_toggleref_func(GC_toggleref_func);
 GC_API GC_toggleref_func GC_CALL GC_get_toggleref_func(void);
 
@@ -1409,7 +1418,8 @@ GC_API void GC_CALL GC_set_await_finalize_proc(GC_await_finalize_proc);
 GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void);
                         /* Zero means no callback.  The setter  */
                         /* and the getter acquire the allocator */
-                        /* lock too.                            */
+                        /* lock too (in the reader mode in case */
+                        /* of the getter).                      */
 
 /* Returns !=0 if GC_invoke_finalizers has something to do.     */
 /* Does not use any synchronization.                            */
@@ -1417,9 +1427,10 @@ GC_API int GC_CALL GC_should_invoke_finalizers(void);
 
 /* Set maximum amount of finalizers to run during a single      */
 /* invocation of GC_invoke_finalizers.  Zero means no limit.    */
-/* Both the setter and the getter acquire the allocator lock.   */
-/* Note that invocation of GC_finalize_all resets the maximum   */
-/* amount value.                                                */
+/* Both the setter and the getter acquire the allocator lock    */
+/* (in the reader mode in case of the getter).  Note that       */
+/* invocation of GC_finalize_all resets the maximum amount      */
+/* value.                                                       */
 GC_API void GC_CALL GC_set_interrupt_finalizers(unsigned);
 GC_API unsigned GC_CALL GC_get_interrupt_finalizers(void);
 
@@ -1462,8 +1473,9 @@ GC_API void GC_CALL GC_noop1(GC_word);
 /* GC_set_warn_proc can be used to redirect or filter warning messages. */
 /* p may not be a NULL pointer.  msg is printf format string (arg must  */
 /* match the format).  Both the setter and the getter acquire the       */
-/* allocator lock to avoid data race.  In GC v7.1 and before, the       */
-/* setter returned the old warn_proc value.                             */
+/* allocator lock (in the reader mode in case of the getter) to avoid   */
+/* data race.  In GC v7.1 and before, the setter returned the old       */
+/* warn_proc value.                                                     */
 typedef void (GC_CALLBACK * GC_warn_proc)(char * /* msg */,
                                           GC_word /* arg */);
 GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc /* p */) GC_ATTR_NONNULL(1);
@@ -1482,8 +1494,8 @@ GC_API void GC_CALL GC_set_log_fd(int);
 /* outputs msg to stderr provided msg is non-NULL.  msg is NULL if      */
 /* invoked before exit(1) otherwise msg is non-NULL (i.e., if invoked   */
 /* before abort).  Both the setter and the getter acquire the allocator */
-/* lock, and are defined only if the library has been compiled without  */
-/* SMALL_CONFIG macro defined.                                          */
+/* lock (in the reader mode in case of the getter), and are defined     */
+/* only if the library has been compiled without SMALL_CONFIG defined.  */
 typedef void (GC_CALLBACK * GC_abort_func)(const char * /* msg */);
 GC_API void GC_CALL GC_set_abort_func(GC_abort_func) GC_ATTR_NONNULL(1);
 GC_API GC_abort_func GC_CALL GC_get_abort_func(void);
@@ -1503,10 +1515,11 @@ GC_API void GC_CALL GC_abort_on_oom(void);
 /* the least significant bit of the argument (including for NULL) is    */
 /* inverted by these primitives.                                        */
 /* Important: converting a hidden pointer to a real pointer requires    */
-/* verifying that the object still exists; this involves acquiring the  */
-/* allocator lock to avoid a race with the collector (e.g., one thread  */
-/* might fetch hidden link value, while another thread might collect    */
-/* the relevant object and reuse the free space for another object).    */
+/* verifying that the object still exists; this should involve          */
+/* acquiring the allocator lock, at least in the reader mode, to avoid  */
+/* a race with the collector (e.g., one thread might fetch hidden link  */
+/* value, while another thread might collect the relevant object and    */
+/* reuse the free space for another object).                            */
 typedef GC_word GC_hidden_pointer;
 #define GC_HIDE_POINTER(p) (~(GC_hidden_pointer)(p))
 #define GC_REVEAL_POINTER(p) ((void *)GC_HIDE_POINTER(p))
@@ -1526,7 +1539,7 @@ typedef GC_word GC_hidden_pointer;
 #define GC_HIDE_NZ_POINTER(p) ((GC_hidden_pointer)(-(GC_signed_word)(p)))
 #define GC_REVEAL_NZ_POINTER(p) ((void *)GC_HIDE_NZ_POINTER(p))
 
-/* The routines to acquire/release the allocator lock.                  */
+/* The routines to acquire/release the GC (allocator) lock.             */
 /* The lock is not reentrant.  GC_alloc_unlock() should not be called   */
 /* unless the allocator lock is acquired by the current thread.         */
 #ifdef GC_THREADS
@@ -1651,9 +1664,10 @@ GC_API void GC_CALL GC_start_mark_threads(void);
                                                         GC_ATTR_NONNULL(1);
 
   /* Return 1 (true) if the calling (current) thread is registered with */
-  /* the garbage collector, 0 otherwise.  Acquires the allocator lock.  */
-  /* If the thread is finished (e.g. running in a destructor and not    */
-  /* registered manually again), it is considered as not registered.    */
+  /* the garbage collector, 0 otherwise.  Acquires the allocator lock   */
+  /* in the reader mode.  If the thread is finished (e.g. running in    */
+  /* a destructor and not registered manually again), it is considered  */
+  /* as not registered.                                                 */
   GC_API int GC_CALL GC_thread_is_registered(void);
 
   /* Notify the collector about the stack and the alt-stack of the      */
@@ -1689,9 +1703,10 @@ GC_API void GC_CALL GC_start_mark_threads(void);
   /* stack pointer of the suspended thread with pthread_id (the latter  */
   /* is actually of pthread_t type).  The functionality is unsupported  */
   /* on some targets (the getter always returns 0 in such a case).      */
-  /* Both the setter and the getter acquire the allocator lock.  The    */
-  /* client function (if provided) is called with the allocator lock    */
-  /* held and, might be, with the world stopped.                        */
+  /* Both the setter and the getter acquire the allocator lock (in the  */
+  /* reader mode in case of the getter).  The client function (if       */
+  /* provided) is called with the allocator lock held and, might be,    */
+  /* with the world stopped.                                            */
   typedef void (GC_CALLBACK * GC_sp_corrector_proc)(void ** /* sp_ptr */,
                                                     void * /* pthread_id */);
   GC_API void GC_CALL GC_set_sp_corrector(GC_sp_corrector_proc);
@@ -1745,7 +1760,8 @@ GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *)
 /* client using GC_set_stackbottom).  Returns the GC-internal non-NULL  */
 /* handle of the thread which could be passed to GC_set_stackbottom     */
 /* later.  It is assumed that the collector is already initialized and  */
-/* the thread is registered.  Acquires the allocator lock.              */
+/* the thread is registered.  Acquires the allocator lock in the reader */
+/* mode.                                                                */
 GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *)
                                                         GC_ATTR_NONNULL(1);
 
@@ -1797,15 +1813,16 @@ GC_API void * GC_CALL GC_is_visible(void * /* p */);
 /* a valid displacement within a heap object.  If it is not, invoke     */
 /* GC_is_valid_displacement_print_proc (fail by default).  Always       */
 /* returns the argument.  Uninteresting with all-interior-pointers on.  */
-/* Note that we do not lock, since nothing relevant about the header    */
-/* should change while we have a valid object pointer to the block.     */
+/* Note that we do not acquire the allocator lock, since nothing        */
+/* relevant about the header should change while we have a valid object */
+/* pointer to the block.                                                */
 GC_API void * GC_CALL GC_is_valid_displacement(void * /* p */);
 
 /* Explicitly dump the GC state.  This is most often called from the    */
 /* debugger, or by setting the GC_DUMP_REGULARLY environment variable,  */
 /* but it may be useful to call it from client code during debugging.   */
 /* The current collection number is printed in the header of the dump.  */
-/* Acquires the allocator lock to avoid data race.                      */
+/* Acquires the allocator lock in the reader mode to avoid data race.   */
 /* Defined only if the library has been compiled without NO_DEBUGGING.  */
 GC_API void GC_CALL GC_dump(void);
 

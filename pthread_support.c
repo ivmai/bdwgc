@@ -680,7 +680,7 @@ void GC_push_thread_structures(void)
 #   if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
       if (GC_win32_dll_threads) return -1; /* not implemented */
 #   endif
-    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(I_HOLD_READER_LOCK());
     for (i = 0; i < THREAD_TABLE_SZ; ++i) {
         GC_thread p;
 
@@ -824,9 +824,10 @@ GC_INNER_WIN32THREAD void GC_delete_thread(GC_thread t)
 }
 
 /* Return a GC_thread corresponding to a given thread id, or    */
-/* NULL if it is not there.  Caller holds the allocator lock or */
-/* otherwise inhibits updates.  If there is more than one       */
-/* thread with the given id, we return the most recent one.     */
+/* NULL if it is not there.  Caller holds the allocator lock    */
+/* at least in the reader mode or otherwise inhibits updates.   */
+/* If there is more than one thread with the given id, we       */
+/* return the most recent one.                                  */
 GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
 {
   GC_thread p;
@@ -842,13 +843,14 @@ GC_INNER GC_thread GC_lookup_thread(thread_id_t id)
   return p;
 }
 
-/* Same as GC_self_thread_inner() but acquires the allocator lock.  */
+/* Same as GC_self_thread_inner() but acquires the allocator lock (in   */
+/* the reader mode).                                                    */
 STATIC GC_thread GC_self_thread(void) {
   GC_thread p;
 
-  LOCK();
+  READER_LOCK();
   p = GC_self_thread_inner();
-  UNLOCK();
+  READER_UNLOCK();
   return p;
 }
 
@@ -939,7 +941,7 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
     int i;
     GC_thread p;
 
-    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(I_HOLD_READER_LOCK());
 #   ifdef PARALLEL_MARK
       for (i = 0; i < GC_markers_m1; ++i) {
         if ((word)GC_marker_sp[i] > (word)lo
@@ -984,7 +986,7 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
     GC_thread p;
     ptr_t result = 0;
 
-    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(I_HOLD_READER_LOCK());
 #   ifdef PARALLEL_MARK
       for (i = 0; i < GC_markers_m1; ++i) {
         if ((word)GC_marker_sp[i] > (word)result
@@ -1970,7 +1972,7 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
     GC_thread me;
     GC_stack_context_t crtn;
 
-    LOCK();
+    READER_LOCK();
     me = GC_self_thread_inner();
     /* The thread is assumed to be registered.  */
     crtn = me -> crtn;
@@ -1980,7 +1982,7 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
 #   elif defined(IA64)
       sb -> reg_base = crtn -> backing_store_end;
 #   endif
-    UNLOCK();
+    READER_UNLOCK();
     return (void *)me; /* gc_thread_handle */
 }
 
@@ -2307,11 +2309,11 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #   endif
 
     /* After the join, thread id may have been recycled.                */
-    LOCK();
+    READER_LOCK();
     t = (GC_thread)COVERT_DATAFLOW(GC_lookup_by_pthread(thread));
       /* This is guaranteed to be the intended one, since the thread id */
       /* cannot have been recycled by pthreads.                         */
-    UNLOCK();
+    READER_UNLOCK();
 
     result = REAL_FUNC(pthread_join)(thread, retval);
 #   if defined(GC_FREEBSD_THREADS)
@@ -2353,9 +2355,9 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     GC_thread t;
 
     INIT_REAL_SYMS();
-    LOCK();
+    READER_LOCK();
     t = (GC_thread)COVERT_DATAFLOW(GC_lookup_by_pthread(thread));
-    UNLOCK();
+    READER_UNLOCK();
     result = REAL_FUNC(pthread_detach)(thread);
     if (EXPECT(0 == result, TRUE)) {
       LOCK();
@@ -2899,9 +2901,9 @@ GC_API GC_on_thread_event_proc GC_CALL GC_get_on_thread_event(void)
 {
   GC_on_thread_event_proc fn;
 
-  LOCK();
+  READER_LOCK();
   fn = GC_on_thread_event;
-  UNLOCK();
+  READER_UNLOCK();
   return fn;
 }
 
@@ -2925,9 +2927,9 @@ GC_API GC_sp_corrector_proc GC_CALL GC_get_sp_corrector(void)
 # ifdef STACKPTR_CORRECTOR_AVAILABLE
     GC_sp_corrector_proc fn;
 
-    LOCK();
+    READER_LOCK();
     fn = GC_sp_corrector;
-    UNLOCK();
+    READER_UNLOCK();
     return fn;
 # else
     return 0; /* unsupported */

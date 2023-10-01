@@ -408,9 +408,9 @@ GC_INLINE void GC_complete_ongoing_collection(void) {
   {
     GC_toggleref_func fn;
 
-    LOCK();
+    READER_LOCK();
     fn = GC_toggleref_callback;
-    UNLOCK();
+    READER_UNLOCK();
     return fn;
   }
 
@@ -492,9 +492,9 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 {
   GC_await_finalize_proc fn;
 
-  LOCK();
+  READER_LOCK();
   fn = GC_object_finalized_proc;
-  UNLOCK();
+  READER_UNLOCK();
   return fn;
 }
 
@@ -1249,9 +1249,9 @@ GC_API unsigned GC_CALL GC_get_interrupt_finalizers(void)
 {
   unsigned value;
 
-  LOCK();
+  READER_LOCK();
   value = GC_interrupt_finalizers;
-  UNLOCK();
+  READER_UNLOCK();
   return value;
 }
 

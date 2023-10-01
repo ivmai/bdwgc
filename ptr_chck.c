@@ -261,9 +261,9 @@ GC_API GC_same_obj_print_proc_t GC_CALL GC_get_same_obj_print_proc(void)
 {
     GC_same_obj_print_proc_t fn;
 
-    LOCK();
+    READER_LOCK();
     fn = GC_same_obj_print_proc;
-    UNLOCK();
+    READER_UNLOCK();
     return fn;
 }
 
@@ -281,9 +281,9 @@ GC_get_is_valid_displacement_print_proc(void)
 {
     GC_valid_ptr_print_proc_t fn;
 
-    LOCK();
+    READER_LOCK();
     fn = GC_is_valid_displacement_print_proc;
-    UNLOCK();
+    READER_UNLOCK();
     return fn;
 }
 
@@ -299,8 +299,8 @@ GC_API GC_valid_ptr_print_proc_t GC_CALL GC_get_is_visible_print_proc(void)
 {
     GC_valid_ptr_print_proc_t fn;
 
-    LOCK();
+    READER_LOCK();
     fn = GC_is_visible_print_proc;
-    UNLOCK();
+    READER_UNLOCK();
     return fn;
 }
