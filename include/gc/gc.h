@@ -70,7 +70,7 @@ GC_API GC_ATTR_DEPRECATED GC_word GC_gc_no;
                         /* Includes empty GCs at startup.               */
 GC_API GC_word GC_CALL GC_get_gc_no(void);
                         /* GC_get_gc_no() is unsynchronized, so         */
-                        /* it requires GC_call_with_alloc_lock() to     */
+                        /* it requires GC_call_with_reader_lock() to    */
                         /* avoid data race on multiprocessors.          */
 
 #ifdef GC_THREADS
@@ -301,9 +301,10 @@ GC_API GC_ATTR_DEPRECATED int GC_full_freq;
                         /* now perfectly reasonable, unlike for earlier */
                         /* GC versions.  The setter and the getter are  */
                         /* unsynchronized, so GC_call_with_alloc_lock() */
-                        /* is required to avoid data race (if the value */
-                        /* is modified after the GC is put into the     */
-                        /* multi-threaded mode).                        */
+                        /* (GC_call_with_reader_lock() in case of the   */
+                        /* getter) is required to avoid data race (if   */
+                        /* the value is modified after the GC is put    */
+                        /* into the multi-threaded mode).               */
 GC_API void GC_CALL GC_set_full_freq(int);
 GC_API int GC_CALL GC_get_full_freq(void);
 
@@ -314,9 +315,10 @@ GC_API GC_ATTR_DEPRECATED GC_word GC_non_gc_bytes;
                         /* GC_malloc_uncollectable and GC_free.         */
                         /* Wizards only.  The setter and the getter are */
                         /* unsynchronized, so GC_call_with_alloc_lock() */
-                        /* is required to avoid data race (if the value */
-                        /* is modified after the GC is put into the     */
-                        /* multi-threaded mode).                        */
+                        /* (GC_call_with_reader_lock() in case of the   */
+                        /* getter) is required to avoid data race (if   */
+                        /* the value is modified after the GC is put    */
+                        /* into the multi-threaded mode).               */
 GC_API void GC_CALL GC_set_non_gc_bytes(GC_word);
 GC_API GC_word GC_CALL GC_get_non_gc_bytes(void);
 
@@ -347,28 +349,30 @@ GC_API GC_ATTR_DEPRECATED GC_word GC_free_space_divisor;
                         /* Increasing its value will use less space     */
                         /* but more collection time.  Decreasing it     */
                         /* will appreciably decrease collection time    */
-                        /* at the expense of space.  The setter and the */
-                        /* getter are unsynchronized, so                */
-                        /* GC_call_with_alloc_lock() is required to     */
-                        /* avoid data race (if the value is modified    */
-                        /* after the GC is put into the                 */
-                        /* multi-threaded mode).  In GC v7.1 and        */
-                        /* before, the setter returned the old value.   */
+                        /* at the expense of space.                     */
+                        /* The setter and the getter are                */
+                        /* unsynchronized, so GC_call_with_alloc_lock() */
+                        /* (GC_call_with_reader_lock() in case of the   */
+                        /* getter) is required to avoid data race (if   */
+                        /* the value is modified after the GC is put    */
+                        /* into the multi-threaded mode).  In GC v7.1   */
+                        /* and before, the setter returned the old      */
+                        /* value.                                       */
 GC_API void GC_CALL GC_set_free_space_divisor(GC_word);
 GC_API GC_word GC_CALL GC_get_free_space_divisor(void);
 
 GC_API GC_ATTR_DEPRECATED GC_word GC_max_retries;
                         /* The maximum number of GCs attempted before   */
                         /* reporting out of memory after heap           */
-                        /* expansion fails.  Initially 0.  The setter   */
-                        /* and getter are unsynchronized, so            */
-                        /* GC_call_with_alloc_lock() is required to     */
-                        /* avoid data race (if the value is modified    */
-                        /* after the GC is put into the multi-threaded  */
-                        /* mode).                                       */
+                        /* expansion fails.                             */
+                        /* Initially 0.  The setter and getter are      */
+                        /* unsynchronized, so GC_call_with_alloc_lock() */
+                        /* (GC_call_with_reader_lock() in case of the   */
+                        /* getter) is required to avoid data race (if   */
+                        /* the value is modified after the GC is put    */
+                        /* into the multi-threaded mode).               */
 GC_API void GC_CALL GC_set_max_retries(GC_word);
 GC_API GC_word GC_CALL GC_get_max_retries(void);
-
 
 GC_API GC_ATTR_DEPRECATED char *GC_stackbottom;
                                 /* The cold end (bottom) of user stack. */
@@ -418,12 +422,13 @@ GC_API GC_ATTR_DEPRECATED unsigned long GC_time_limit;
                         /* tests) while leaving generational collection */
                         /* enabled.  The setter and the getter are      */
                         /* unsynchronized, so GC_call_with_alloc_lock() */
-                        /* is required to avoid data race (if the value */
-                        /* is modified after the GC is put into the     */
-                        /* multi-threaded mode).  The setter does not   */
-                        /* update the value of the nanosecond part of   */
-                        /* the time limit (it is zero unless ever set   */
-                        /* by GC_set_time_limit_tv call).               */
+                        /* (GC_call_with_reader_lock() in case of the   */
+                        /* getter) is required to avoid data race (if   */
+                        /* the value is modified after the GC is put    */
+                        /* into the multi-threaded mode).  The setter   */
+                        /* does not update the value of the nanosecond  */
+                        /* part of the time limit (it is zero unless    */
+                        /* ever set by GC_set_time_limit_tv call).      */
 GC_API void GC_CALL GC_set_time_limit(unsigned long);
 GC_API unsigned long GC_CALL GC_get_time_limit(void);
 
@@ -867,7 +872,7 @@ GC_API size_t GC_CALL GC_get_prof_stats(struct GC_prof_stats_s *,
                                         size_t /* stats_sz */);
 #ifdef GC_THREADS
   /* Same as above but unsynchronized (i.e., not holding the allocator  */
-  /* lock).  Clients should call it using GC_call_with_alloc_lock to    */
+  /* lock).  Clients should call it using GC_call_with_reader_lock() to */
   /* avoid data race on multiprocessors.                                */
   GC_API size_t GC_CALL GC_get_prof_stats_unsafe(struct GC_prof_stats_s *,
                                                  size_t /* stats_sz */);
@@ -877,8 +882,8 @@ GC_API size_t GC_CALL GC_get_prof_stats(struct GC_prof_stats_s *,
 /* size_map table which provides requested-to-actual allocation size    */
 /* mapping.  Assumes the collector is initialized.  Returns -1 if the   */
 /* index is out of size_map table bounds. Does not use synchronization, */
-/* thus clients should call it using GC_call_with_alloc_lock typically  */
-/* to avoid data race on multiprocessors.                               */
+/* thus clients should call it using GC_call_with_reader_lock()         */
+/* typically to avoid data race on multiprocessors.                     */
 GC_API size_t GC_CALL GC_get_size_map_at(int i);
 
 /* Count total memory use (in bytes) by all allocated blocks.  Acquires */
@@ -1316,8 +1321,8 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
         /* leak-finding mode.  This function can be used to     */
         /* implement certain types of weak pointers.  Note,     */
         /* however, this generally requires that the allocator  */
-        /* lock is held, at least in the reader mode (see       */
-        /* GC_call_with_alloc_lock() below), when the disguised */
+        /* lock is held, at least in the reader mode (e.g.      */
+        /* using GC_call_with_reader_lock), when the disguised  */
         /* pointer is accessed.  Otherwise a strong pointer     */
         /* could be recreated between the time the collector    */
         /* decides to reclaim the object and the link is        */
@@ -1552,8 +1557,17 @@ typedef GC_word GC_hidden_pointer;
 #endif /* !GC_THREADS */
 
 typedef void * (GC_CALLBACK * GC_fn_type)(void * /* client_data */);
+
+/* Execute given function with the allocator lock held (in the          */
+/* exclusive mode).                                                     */
 GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type /* fn */,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
+
+/* Execute given function with the allocator lock held in the reader    */
+/* (shared) mode.  The 3rd argument should be zero.                     */
+GC_API void * GC_CALL GC_call_with_reader_lock(GC_fn_type /* fn */,
+                                void * /* client_data */,
+                                int /* unused */) GC_ATTR_NONNULL(1);
 
 /* These routines are intended to explicitly notify the collector       */
 /* of new threads.  Often this is unnecessary because thread creation   */

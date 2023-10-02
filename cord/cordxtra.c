@@ -539,15 +539,19 @@ static char CORD_lf_func(size_t i, void * client_data)
     lf_state * state = (lf_state *)client_data;
     cache_line * volatile * cl_addr =
                         &(state -> lf_cache[DIV_LINE_SZ(MOD_CACHE_SZ(i))]);
-#   ifdef CORD_USE_GCC_ATOMIC
-        cache_line * cl = (cache_line *)__atomic_load_n(cl_addr,
-                                                        __ATOMIC_ACQUIRE);
-#   else
-        cache_line * cl = (cache_line *)GC_call_with_alloc_lock(
-                                            get_cache_line, (void *)cl_addr);
-#   endif
+    cache_line * cl;
 
-    if (cl == 0 || cl -> tag != DIV_LINE_SZ(i)) {
+#   ifdef CORD_USE_GCC_ATOMIC
+        cl = (cache_line *)__atomic_load_n(cl_addr, __ATOMIC_ACQUIRE);
+#   elif defined(CORD_DONT_USE_CALL_WITH_READER_LOCK)
+        /* Just for compatibility with older libgc API. */
+        cl = (cache_line *)GC_call_with_alloc_lock(
+                                            get_cache_line, (void *)cl_addr);
+#   else
+        cl = (cache_line *)GC_call_with_reader_lock(get_cache_line,
+                                                    (void *)cl_addr, 0);
+#   endif
+    if (NULL == cl || cl -> tag != DIV_LINE_SZ(i)) {
         /* Cache miss */
         refill_data rd;
 

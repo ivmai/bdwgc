@@ -2166,6 +2166,18 @@ GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc proc)
     return result;
 }
 
+GC_API void *GC_CALL GC_call_with_reader_lock(GC_fn_type fn,
+                                              void *client_data, int release)
+{
+    void *result;
+
+    UNUSED_ARG(release);
+    READER_LOCK();
+    result = fn(client_data);
+    READER_UNLOCK();
+    return result;
+}
+
 GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn, void *client_data)
 {
     void * result;
@@ -2479,9 +2491,10 @@ GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void)
 
 /* Setter and getter functions for the public numeric R/W variables.    */
 /* It is safe to call these functions even before GC_INIT().            */
-/* These functions are unsynchronized and should be typically called    */
-/* inside the context of GC_call_with_alloc_lock() (if called after     */
-/* GC_INIT()) to prevent data race (unless it is guaranteed the         */
+/* These functions are unsynchronized and, if called after GC_INIT(),   */
+/* should be typically invoked inside the context of                    */
+/* GC_call_with_alloc_lock() (or GC_call_with_reader_lock() in case of  */
+/* the getters) to prevent data race (unless it is guaranteed the       */
 /* collector is not multi-threaded at that execution point).            */
 
 GC_API void GC_CALL GC_set_find_leak(int value)

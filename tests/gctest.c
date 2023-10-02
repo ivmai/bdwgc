@@ -1503,11 +1503,6 @@ static void uniq(void *p, ...) {
 static void * GC_CALLBACK inc_int_counter(void *pcounter)
 {
   ++(*(int *)pcounter);
-
-  /* Dummy checking of API functions while the allocator lock is held.  */
-  GC_incr_bytes_allocd(0);
-  GC_incr_bytes_freed(0);
-
   return NULL;
 }
 
@@ -1918,6 +1913,13 @@ static void run_one_test(void)
     /* GC_allocate_ml and GC_need_to_lock are no longer exported, and   */
     /* AO_fetch_and_add1() may be unavailable to update a counter.      */
     (void)GC_call_with_alloc_lock(inc_int_counter, &n_tests);
+
+    /* Dummy checking of API functions while the allocator lock is held. */
+    GC_alloc_lock();
+    GC_incr_bytes_allocd(0);
+    GC_incr_bytes_freed(0);
+    GC_alloc_unlock();
+
 #   ifndef NO_CLOCK
       if (print_stats)
         GC_log_printf("Finished %p\n", (void *)&start_time);
@@ -1933,7 +1935,7 @@ static void run_single_threaded_test(void) {
 }
 
 static void GC_CALLBACK reachable_objs_counter(void *obj, size_t size,
-                                               void *pcounter)
+                                               void *plocalcnt)
 {
   if (0 == size) {
     GC_printf("Reachable object has zero size\n");
@@ -1949,7 +1951,13 @@ static void GC_CALLBACK reachable_objs_counter(void *obj, size_t size,
               (unsigned long)size);
     FAIL;
   }
-  (*(unsigned *)pcounter)++;
+  (*(unsigned *)plocalcnt)++;
+}
+
+static void * GC_CALLBACK count_reachable_objs(void *plocalcnt)
+{
+  GC_enumerate_reachable_objects_inner(reachable_objs_counter, plocalcnt);
+  return NULL;
 }
 
 /* A minimal testing of LONG_MULT().    */
@@ -1982,7 +1990,7 @@ static void check_heap_stats(void)
         int late_finalize_count = 0;
 #     endif
 #   endif
-    unsigned obj_count = 0;
+    unsigned obj_count;
 
     if (!GC_is_init_called()) {
       GC_printf("GC should be initialized!\n");
@@ -2047,9 +2055,8 @@ static void check_heap_stats(void)
           FAIL;
         }
       }
-    GC_alloc_lock();
-    GC_enumerate_reachable_objects_inner(reachable_objs_counter, &obj_count);
-    GC_alloc_unlock();
+    obj_count = 0;
+    (void)GC_call_with_reader_lock(count_reachable_objs, &obj_count, 0);
     GC_printf("Completed %u tests\n", n_tests);
     GC_printf("Allocated %d collectable objects\n", (int)collectable_count);
     GC_printf("Allocated %d uncollectable objects\n",
