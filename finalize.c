@@ -1359,8 +1359,8 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
               GC_print_backtrace(current);
               LOCK();
           }
-          last_back_trace_gc_no = GC_gc_no;
 #       endif
+        last_back_trace_gc_no = GC_gc_no;
 #       ifdef MAKE_BACK_GRAPH
           if (GC_print_back_height) {
             GC_print_back_graph_stats();
