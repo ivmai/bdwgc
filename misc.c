@@ -306,7 +306,8 @@ GC_INNER void GC_extend_size_map(size_t i)
 #   define BIG_CLEAR_SIZE 2048  /* Clear this much now and then.        */
 #   define SMALL_CLEAR_SIZE 256 /* Clear this much every time.          */
 # else
-  STATIC word GC_stack_last_cleared = 0; /* GC_no when we last did this */
+  STATIC word GC_stack_last_cleared = 0;
+                        /* GC_gc_no value when we last did this.        */
   STATIC ptr_t GC_min_sp = NULL;
                         /* Coolest stack pointer value from which       */
                         /* we've already cleared the stack.             */
