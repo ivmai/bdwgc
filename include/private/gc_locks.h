@@ -154,8 +154,6 @@
 #     define USE_SPIN_LOCK
       GC_EXTERN volatile AO_TS_t GC_allocate_lock;
       GC_INNER void GC_lock(void);
-        /* Allocator lock holder.  Only set if acquired by client       */
-        /* through GC_call_with_alloc_lock.                             */
 #     ifdef GC_ASSERTIONS
 #       define UNCOND_LOCK() \
               { GC_ASSERT(I_DONT_HOLD_LOCK()); \
@@ -201,6 +199,7 @@
 #     endif /* !GC_ASSERTIONS */
 #   endif /* USE_PTHREAD_LOCKS */
 #   ifdef GC_ASSERTIONS
+      /* The allocator lock holder.     */
 #     define SET_LOCK_HOLDER() \
                 (void)(GC_lock_holder = NUMERIC_THREAD_ID(pthread_self()))
 #     define I_HOLD_LOCK() \
