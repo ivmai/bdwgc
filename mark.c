@@ -1431,7 +1431,7 @@ void GC_add_trace_entry(char *kind, word arg1, word arg2)
     if (GC_trace_buf_ptr >= TRACE_ENTRIES) GC_trace_buf_ptr = 0;
 }
 
-GC_API void GC_CALL GC_print_trace_inner(word gc_no)
+GC_API void GC_CALL GC_print_trace_inner(GC_word gc_no)
 {
     int i;
 
@@ -1440,18 +1440,20 @@ GC_API void GC_CALL GC_print_trace_inner(word gc_no)
 
         if (i < 0) i = TRACE_ENTRIES-1;
         p = GC_trace_buf + i;
-        if (p -> gc_no < gc_no || p -> kind == 0) {
+        /* Compare gc_no values (p->gc_no is less than given gc_no) */
+        /* taking into account that the counter may overflow.       */
+        if ((((p -> gc_no) - gc_no) & SIGNB) != 0 || p -> kind == 0) {
             return;
         }
         GC_printf("Trace:%s (gc:%u, bytes:%lu) 0x%lX, 0x%lX\n",
-                  p -> kind, (unsigned)p -> gc_no,
-                  (unsigned long)p -> bytes_allocd,
+                  p -> kind, (unsigned)(p -> gc_no),
+                  (unsigned long)(p -> bytes_allocd),
                   (long)p->arg1 ^ 0x80000000L, (long)p->arg2 ^ 0x80000000L);
     }
     GC_printf("Trace incomplete\n");
 }
 
-GC_API void GC_CALL GC_print_trace(word gc_no)
+GC_API void GC_CALL GC_print_trace(GC_word gc_no)
 {
     DCL_LOCK_STATE;
 
