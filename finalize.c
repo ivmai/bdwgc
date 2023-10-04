@@ -1298,12 +1298,15 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
     /* This is a convenient place to generate backtraces if appropriate, */
     /* since that code is not callable with the allocation lock.         */
 #   if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
-      if (GC_gc_no > last_back_trace_gc_no) {
+      if (GC_gc_no != last_back_trace_gc_no) {
 #       ifdef KEEP_BACK_PTRS
-          long i;
-          /* Stops when GC_gc_no wraps; that's OK.      */
-          last_back_trace_gc_no = GC_WORD_MAX;  /* disable others. */
-          for (i = 0; i < GC_backtraces; ++i) {
+          static GC_bool bt_in_progress = FALSE;
+
+          if (!bt_in_progress) {
+            long i;
+
+            bt_in_progress = TRUE; /* prevent recursion or parallel usage */
+            for (i = 0; i < GC_backtraces; ++i) {
               /* FIXME: This tolerates concurrent heap mutation,        */
               /* which may cause occasional mysterious results.         */
               /* We need to release the GC lock, since GC_print_callers */
@@ -1314,6 +1317,8 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
               GC_printf("\n****Chosen address %p in object\n", current);
               GC_print_backtrace(current);
               LOCK();
+            }
+            bt_in_progress = FALSE;
           }
 #       endif
         last_back_trace_gc_no = GC_gc_no;
