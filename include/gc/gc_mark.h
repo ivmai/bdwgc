@@ -393,7 +393,7 @@ GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
 
 /* Is the given address in one of the temporary static root sections?   */
-/* Acquires the allocator lock.                                         */
+/* Acquires the allocator lock in the reader mode.                      */
 GC_API int GC_CALL GC_is_tmp_root(void *);
 
 GC_API void GC_CALL GC_print_trace(GC_word /* gc_no */);

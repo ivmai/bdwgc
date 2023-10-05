@@ -276,7 +276,9 @@
 # endif
 #endif
 
-#ifndef READER_LOCK
+#ifdef READER_LOCK
+# define HAS_REAL_READER_LOCK
+#else
 # define READER_LOCK() LOCK()
 # define READER_UNLOCK() UNLOCK()
 # ifdef GC_ASSERTIONS

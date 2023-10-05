@@ -479,28 +479,44 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
   /* Is the address p in one of the temporary static root sections?     */
   GC_API int GC_CALL GC_is_tmp_root(void *p)
   {
-    static int last_root_set = MAX_ROOT_SETS;
+#   ifndef HAS_REAL_READER_LOCK
+      static int last_root_set; /* initialized to 0; no shared access */
+#   elif defined(AO_HAVE_load) || defined(AO_HAVE_store)
+      static volatile AO_t last_root_set;
+#   else
+      static volatile int last_root_set;
+                        /* A race is acceptable, it's just a cached index. */
+#   endif
+    int i;
     int res;
 
-    LOCK();
-    if (last_root_set < n_root_sets
-        && (word)p >= (word)GC_static_roots[last_root_set].r_start
-        && (word)p < (word)GC_static_roots[last_root_set].r_end) {
-      res = (int)GC_static_roots[last_root_set].r_tmp;
+    READER_LOCK();
+    /* First try the cached root. */
+#   if defined(AO_HAVE_load) && defined(HAS_REAL_READER_LOCK)
+      i = (int)(unsigned)AO_load(&last_root_set);
+#   else
+      i = last_root_set;
+#   endif
+    if (i < n_root_sets
+        && (word)p >= (word)GC_static_roots[i].r_start
+        && (word)p < (word)GC_static_roots[i].r_end) {
+      res = (int)GC_static_roots[i].r_tmp;
     } else {
-      int i;
-
       res = 0;
       for (i = 0; i < n_root_sets; i++) {
         if ((word)p >= (word)GC_static_roots[i].r_start
             && (word)p < (word)GC_static_roots[i].r_end) {
           res = (int)GC_static_roots[i].r_tmp;
-          last_root_set = i;
+#         if defined(AO_HAVE_store) && defined(HAS_REAL_READER_LOCK)
+            AO_store(&last_root_set, (AO_t)(unsigned)i);
+#         else
+            last_root_set = i;
+#         endif
           break;
         }
       }
     }
-    UNLOCK();
+    READER_UNLOCK();
     return res;
   }
 #endif /* !NO_DEBUGGING */
