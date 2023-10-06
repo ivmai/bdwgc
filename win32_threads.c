@@ -22,8 +22,12 @@
 
 /* The allocator lock definition.       */
 #ifndef USE_PTHREAD_LOCKS
-  GC_INNER CRITICAL_SECTION GC_allocate_ml;
-#endif
+# ifdef USE_RWLOCK
+    GC_INNER SRWLOCK GC_allocate_ml;
+# else
+    GC_INNER CRITICAL_SECTION GC_allocate_ml;
+# endif
+#endif /* !USE_PTHREAD_LOCKS */
 
 #undef CreateThread
 #undef ExitThread

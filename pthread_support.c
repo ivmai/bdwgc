@@ -1446,11 +1446,17 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
       /* mutex_destroy() may return EBUSY, which makes no sense, but    */
       /* that is the reason for the need of the reinitialization.       */
       /* Note: excluded for Cygwin as does not seem to be needed.       */
-      (void)pthread_mutex_destroy(&GC_allocate_ml);
-      /* TODO: Probably some targets might need the default mutex       */
-      /* attribute to be passed instead of NULL.                        */
-      if (0 != pthread_mutex_init(&GC_allocate_ml, NULL))
-        ABORT("pthread_mutex_init failed (in child)");
+#     ifdef USE_RWLOCK
+        (void)pthread_rwlock_destroy(&GC_allocate_ml);
+        if (pthread_rwlock_init(&GC_allocate_ml, NULL) != 0)
+          ABORT("pthread_rwlock_init failed (in child)");
+#     else
+        (void)pthread_mutex_destroy(&GC_allocate_ml);
+        /* TODO: Probably some targets might need the default mutex     */
+        /* attribute to be passed instead of NULL.                      */
+        if (0 != pthread_mutex_init(&GC_allocate_ml, NULL))
+          ABORT("pthread_mutex_init failed (in child)");
+#     endif
 #   endif
   }
 
@@ -2729,7 +2735,11 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   }
 
 #elif defined(USE_PTHREAD_LOCKS)
-  GC_INNER pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
+# ifdef USE_RWLOCK
+    GC_INNER pthread_rwlock_t GC_allocate_ml = PTHREAD_RWLOCK_INITIALIZER;
+# else
+    GC_INNER pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
+# endif
 
 # ifndef NO_PTHREAD_TRYLOCK
     GC_INNER void GC_lock(void)
@@ -2743,9 +2753,13 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 # elif defined(GC_ASSERTIONS)
     GC_INNER void GC_lock(void)
     {
-      pthread_mutex_lock(&GC_allocate_ml);
+#     ifdef USE_RWLOCK
+        (void)pthread_rwlock_wrlock(&GC_allocate_ml); /* exclusive */
+#     else
+        pthread_mutex_lock(&GC_allocate_ml);
+#     endif
     }
-# endif
+# endif /* NO_PTHREAD_TRYLOCK && GC_ASSERTIONS */
 
 #endif /* !USE_SPIN_LOCK && USE_PTHREAD_LOCKS */
 

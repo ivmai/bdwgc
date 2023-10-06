@@ -47,7 +47,8 @@
     GC_INNER PCR_Th_ML GC_allocate_ml;
 # elif defined(SN_TARGET_PSP2)
     GC_INNER WapiMutex GC_allocate_ml_PSP2 = { 0, NULL };
-# elif defined(GC_DEFN_ALLOCATE_ML) || defined(SN_TARGET_PS3)
+# elif defined(GC_DEFN_ALLOCATE_ML) && !defined(USE_RWLOCK) \
+       || defined(SN_TARGET_PS3)
 #   include <pthread.h>
     GC_INNER pthread_mutex_t GC_allocate_ml;
 # endif
@@ -986,7 +987,10 @@ GC_API void GC_CALL GC_init(void)
 #     ifndef SPIN_COUNT
 #       define SPIN_COUNT 4000
 #     endif
-#     ifdef MSWINRT_FLAVOR
+#     ifdef USE_RWLOCK
+        /* TODO: probably use SRWLOCK_INIT instead */
+        InitializeSRWLock(&GC_allocate_ml);
+#     elif defined(MSWINRT_FLAVOR)
         InitializeCriticalSectionAndSpinCount(&GC_allocate_ml, SPIN_COUNT);
 #     else
         {
@@ -1002,6 +1006,7 @@ GC_API void GC_CALL GC_init(void)
             } else
 #         endif /* !MSWINCE */
           /* else */ InitializeCriticalSection(&GC_allocate_ml);
+
         }
 #     endif
 #   endif /* GC_WIN32_THREADS && !GC_PTHREADS */
@@ -1504,7 +1509,7 @@ GC_API void GC_CALL GC_start_mark_threads(void)
 #       if !defined(CONSOLE_LOG) || defined(MSWINCE)
           DeleteCriticalSection(&GC_write_cs);
 #       endif
-#       ifndef GC_PTHREADS
+#       if !defined(GC_PTHREADS) && !defined(USE_RWLOCK)
           DeleteCriticalSection(&GC_allocate_ml);
 #       endif
 #     endif

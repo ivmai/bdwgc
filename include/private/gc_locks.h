@@ -50,10 +50,10 @@
 # if (!defined(AO_HAVE_test_and_set_acquire) || defined(GC_RTEMS_PTHREADS) \
        || defined(SN_TARGET_PS3) \
        || defined(GC_WIN32_THREADS) || defined(BASE_ATOMIC_OPS_EMULATED) \
-       || defined(LINT2)) && defined(GC_PTHREADS)
+       || defined(LINT2) || defined(USE_RWLOCK)) && defined(GC_PTHREADS)
 #   define USE_PTHREAD_LOCKS
 #   undef USE_SPIN_LOCK
-#   if (defined(LINT2) || defined(GC_WIN32_THREADS)) \
+#   if (defined(LINT2) || defined(GC_WIN32_THREADS) || defined(USE_RWLOCK)) \
        && !defined(NO_PTHREAD_TRYLOCK)
       /* pthread_mutex_trylock may not win in GC_lock on Win32, */
       /* due to builtin support for spinning first?             */
@@ -72,7 +72,11 @@
 # endif /* GC_WIN32_THREADS || GC_PTHREADS */
 
 # if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS)
-    GC_EXTERN CRITICAL_SECTION GC_allocate_ml;
+#   ifdef USE_RWLOCK
+      GC_EXTERN SRWLOCK GC_allocate_ml;
+#   else
+      GC_EXTERN CRITICAL_SECTION GC_allocate_ml;
+#   endif
 #   ifdef GC_ASSERTIONS
 #     define SET_LOCK_HOLDER() (void)(GC_lock_holder = GetCurrentThreadId())
 #     define I_HOLD_LOCK() (!GC_need_to_lock \
@@ -83,16 +87,40 @@
 #       define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
                             || GC_lock_holder != GetCurrentThreadId())
 #     endif
-#     define UNCOND_LOCK() \
+#     ifdef USE_RWLOCK
+#       define UNCOND_READER_LOCK() \
+                { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                  AcquireSRWLockShared(&GC_allocate_ml); }
+#       define UNCOND_READER_UNLOCK() \
+                { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                  ReleaseSRWLockShared(&GC_allocate_ml); }
+#       define UNCOND_LOCK() \
+                { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                  AcquireSRWLockExclusive(&GC_allocate_ml); \
+                  SET_LOCK_HOLDER(); }
+#       define UNCOND_UNLOCK() \
+                { GC_ASSERT(I_HOLD_LOCK()); \
+                  UNSET_LOCK_HOLDER(); \
+                  ReleaseSRWLockExclusive(&GC_allocate_ml); }
+#     else
+#       define UNCOND_LOCK() \
                 { GC_ASSERT(I_DONT_HOLD_LOCK()); \
                   EnterCriticalSection(&GC_allocate_ml); \
                   SET_LOCK_HOLDER(); }
-#     define UNCOND_UNLOCK() \
+#       define UNCOND_UNLOCK() \
                 { GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
                   LeaveCriticalSection(&GC_allocate_ml); }
+#     endif
 #   else
-#     define UNCOND_LOCK() EnterCriticalSection(&GC_allocate_ml)
-#     define UNCOND_UNLOCK() LeaveCriticalSection(&GC_allocate_ml)
+#     ifdef USE_RWLOCK
+#       define UNCOND_READER_LOCK() AcquireSRWLockShared(&GC_allocate_ml)
+#       define UNCOND_READER_UNLOCK() ReleaseSRWLockShared(&GC_allocate_ml)
+#       define UNCOND_LOCK() AcquireSRWLockExclusive(&GC_allocate_ml)
+#       define UNCOND_UNLOCK() ReleaseSRWLockExclusive(&GC_allocate_ml)
+#     else
+#       define UNCOND_LOCK() EnterCriticalSection(&GC_allocate_ml)
+#       define UNCOND_UNLOCK() LeaveCriticalSection(&GC_allocate_ml)
+#     endif
 #   endif /* !GC_ASSERTIONS */
 # elif defined(GC_PTHREADS)
     EXTERN_C_END
@@ -121,7 +149,7 @@
 #   else /* pthreads-win32 */
 #     define NUMERIC_THREAD_ID(id) ((unsigned long)(word)(id.p))
       /* Using documented internal details of pthreads-win32 library.   */
-      /* Faster than pthread_equal(). Should not change with            */
+      /* Faster than pthread_equal().  Should not change with           */
       /* future versions of pthreads-win32 library.                     */
 #     define THREAD_EQUAL(id1, id2) ((id1.p == id2.p) && (id1.x == id2.x))
 #     undef NUMERIC_THREAD_ID_UNIQUE
@@ -145,7 +173,8 @@
                               GC_ASSERT(0 == res); (void)res; }
 
 #   elif (!defined(THREAD_LOCAL_ALLOC) || defined(USE_SPIN_LOCK)) \
-         && !defined(USE_PTHREAD_LOCKS) && !defined(THREAD_SANITIZER)
+         && !defined(USE_PTHREAD_LOCKS) && !defined(THREAD_SANITIZER) \
+         && !defined(USE_RWLOCK)
       /* In the THREAD_LOCAL_ALLOC case, the allocator lock tends to    */
       /* be held for long periods, if it is held at all.  Thus spinning */
       /* and sleeping for fixed periods are likely to result in         */
@@ -178,25 +207,48 @@
       EXTERN_C_END
 #     include <pthread.h>
       EXTERN_C_BEGIN
-      GC_EXTERN pthread_mutex_t GC_allocate_ml;
 #     ifdef GC_ASSERTIONS
         GC_INNER void GC_lock(void);
 #       define UNCOND_LOCK() { GC_ASSERT(I_DONT_HOLD_LOCK()); \
                                 GC_lock(); SET_LOCK_HOLDER(); }
-#       define UNCOND_UNLOCK() \
-                { GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
-                  pthread_mutex_unlock(&GC_allocate_ml); }
-#     else /* !GC_ASSERTIONS */
-#       if defined(NO_PTHREAD_TRYLOCK)
-#         define UNCOND_LOCK() pthread_mutex_lock(&GC_allocate_ml)
+#     endif
+#     ifdef USE_RWLOCK
+        GC_EXTERN pthread_rwlock_t GC_allocate_ml;
+#       ifdef GC_ASSERTIONS
+#         define UNCOND_READER_LOCK() \
+                        { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                          (void)pthread_rwlock_rdlock(&GC_allocate_ml); }
+#         define UNCOND_READER_UNLOCK() \
+                        { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                          (void)pthread_rwlock_unlock(&GC_allocate_ml); }
+#         define UNCOND_UNLOCK() \
+                        { GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
+                          (void)pthread_rwlock_unlock(&GC_allocate_ml); }
 #       else
-          GC_INNER void GC_lock(void);
-#         define UNCOND_LOCK() \
-              { if (0 != pthread_mutex_trylock(&GC_allocate_ml)) \
-                  GC_lock(); }
-#       endif
-#       define UNCOND_UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
-#     endif /* !GC_ASSERTIONS */
+#         define UNCOND_READER_LOCK() \
+                                (void)pthread_rwlock_rdlock(&GC_allocate_ml)
+#         define UNCOND_READER_UNLOCK() UNCOND_UNLOCK()
+#         define UNCOND_LOCK() (void)pthread_rwlock_wrlock(&GC_allocate_ml)
+#         define UNCOND_UNLOCK() (void)pthread_rwlock_unlock(&GC_allocate_ml)
+#       endif /* !GC_ASSERTIONS */
+#     else
+        GC_EXTERN pthread_mutex_t GC_allocate_ml;
+#       ifdef GC_ASSERTIONS
+#         define UNCOND_UNLOCK() \
+                        { GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
+                          pthread_mutex_unlock(&GC_allocate_ml); }
+#       else
+#         if defined(NO_PTHREAD_TRYLOCK)
+#           define UNCOND_LOCK() pthread_mutex_lock(&GC_allocate_ml)
+#         else
+            GC_INNER void GC_lock(void);
+#           define UNCOND_LOCK() \
+                { if (0 != pthread_mutex_trylock(&GC_allocate_ml)) \
+                    GC_lock(); }
+#         endif
+#         define UNCOND_UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
+#       endif /* !GC_ASSERTIONS */
+#     endif /* !USE_RWLOCK */
 #   endif /* USE_PTHREAD_LOCKS */
 #   ifdef GC_ASSERTIONS
       /* The allocator lock holder.     */
@@ -269,15 +321,26 @@
     /* influence to LOCK/UNLOCK semantic.                               */
 #   define LOCK() UNCOND_LOCK()
 #   define UNLOCK() UNCOND_UNLOCK()
+#   ifdef UNCOND_READER_LOCK
+#     define READER_LOCK() UNCOND_READER_LOCK()
+#     define READER_UNLOCK() UNCOND_READER_UNLOCK()
+#   endif
 # else
                 /* At least two thread running; need to lock.   */
 #   define LOCK() do { if (GC_need_to_lock) UNCOND_LOCK(); } while (0)
 #   define UNLOCK() do { if (GC_need_to_lock) UNCOND_UNLOCK(); } while (0)
+#   ifdef UNCOND_READER_LOCK
+#     define READER_LOCK() \
+                do { if (GC_need_to_lock) UNCOND_READER_LOCK(); } while (0)
+#     define READER_UNLOCK() \
+                do { if (GC_need_to_lock) UNCOND_READER_UNLOCK(); } while (0)
+#   endif
 # endif
-#endif
+#endif /* UNCOND_LOCK && !LOCK */
 
 #ifdef READER_LOCK
 # define HAS_REAL_READER_LOCK
+# define I_HOLD_READER_LOCK() TRUE /* TODO: implement */
 #else
 # define READER_LOCK() LOCK()
 # define READER_UNLOCK() UNLOCK()
