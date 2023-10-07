@@ -1345,9 +1345,10 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
       if (GC_gc_no != last_back_trace_gc_no) {
 #       ifdef KEEP_BACK_PTRS
           static GC_bool bt_in_progress = FALSE;
-          long i;
 
           if (!bt_in_progress) {
+            long i;
+
             bt_in_progress = TRUE; /* prevent recursion or parallel usage */
             for (i = 0; i < GC_backtraces; ++i) {
               /* FIXME: This tolerates concurrent heap mutation, which  */
