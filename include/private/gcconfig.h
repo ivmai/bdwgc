@@ -3109,6 +3109,15 @@ EXTERN_C_BEGIN
 # undef GC_PTHREADS_PARAMARK /* just in case defined by client */
 #endif
 
+#ifdef USE_RWLOCK
+  /* At least in the Linux threads implementation, rwlock primitives    */
+  /* are not atomic in respect to signals, and suspending externally    */
+  /* a thread which is running inside pthread_rwlock_rdlock() may lead  */
+  /* to a deadlock.                                                     */
+  /* TODO: As a workaround GC_suspend_thread() API is disabled.         */
+# undef GC_ENABLE_SUSPEND_THREAD
+#endif
+
 #ifndef GC_NO_THREADS_DISCOVERY
 # ifdef GC_DARWIN_THREADS
     /* Task-based thread registration requires stack-frame-walking code. */
