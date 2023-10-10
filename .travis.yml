@@ -349,7 +349,7 @@ jobs:
   - compiler: clang
     env:
     - CFLAGS_EXTRA="-D MARK_BIT_PER_OBJ -D USE_RWLOCK"
-    - CONF_OPTIONS="--enable-cplusplus"
+    - CONF_OPTIONS="--enable-cplusplus --disable-shared"
   - compiler: gcc
     env:
     - CFLAGS_EXTRA="-D _FORTIFY_SOURCE=2 -D NO_CLOCK -D POINTER_MASK=~0xf"
