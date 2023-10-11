@@ -554,22 +554,23 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_do_explicitly_typed(
       lp -> ld_size = pctd -> leaf.ld_size;
       lp -> ld_nelements = pctd -> leaf.ld_nelements;
       lp -> ld_descriptor = pctd -> leaf.ld_descriptor;
-      /* Hold the allocator lock while writing the descriptor word      */
-      /* to the object to ensure that the descriptor contents are seen  */
-      /* by GC_array_mark_proc as expected.                             */
+      /* Hold the allocator lock (in the reader mode which should be    */
+      /* enough) while writing the descriptor word to the object to     */
+      /* ensure that the descriptor contents are seen by                */
+      /* GC_array_mark_proc as expected.                                */
       /* TODO: It should be possible to replace locking with the atomic */
       /* operations (with the release barrier here) but, in this case,  */
       /* avoiding the acquire barrier in GC_array_mark_proc seems to    */
       /* be tricky as GC_mark_some might be invoked with the world      */
       /* running.                                                       */
-      LOCK();
+      READER_LOCK();
       ((word *)op)[nwords - 1] = (word)lp;
-      UNLOCK();
+      READER_UNLOCK_RELEASE();
     } else {
 #     ifndef GC_NO_FINALIZATION
-        LOCK();
+        READER_LOCK();
         ((word *)op)[nwords - 1] = (word)(pctd -> complex_d);
-        UNLOCK();
+        READER_UNLOCK_RELEASE();
 
         GC_dirty((word *)op + nwords - 1);
         REACHABLE_AFTER_DIRTY(pctd -> complex_d);

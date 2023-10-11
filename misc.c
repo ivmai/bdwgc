@@ -2177,9 +2177,19 @@ GC_API void *GC_CALL GC_call_with_reader_lock(GC_fn_type fn,
 {
     void *result;
 
-    UNUSED_ARG(release);
     READER_LOCK();
     result = fn(client_data);
+#   ifdef HAS_REAL_READER_LOCK
+      if (release) {
+        READER_UNLOCK_RELEASE();
+#       ifdef LINT2
+          GC_noop1((unsigned)release);
+#       endif
+        return result;
+      }
+#   else
+      UNUSED_ARG(release);
+#   endif
     READER_UNLOCK();
     return result;
 }

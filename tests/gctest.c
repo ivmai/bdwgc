@@ -1854,7 +1854,8 @@ static void run_one_test(void)
           exit(0);
         }
 #   endif
-    (void)GC_call_with_alloc_lock(set_stackbottom, &thr_hndl_sb);
+    (void)GC_call_with_reader_lock(set_stackbottom, &thr_hndl_sb,
+                                   1 /* release */);
 
     /* Repeated list reversal test. */
 #   ifndef NO_CLOCK

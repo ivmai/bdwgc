@@ -1564,10 +1564,12 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type /* fn */,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
 
 /* Execute given function with the allocator lock held in the reader    */
-/* (shared) mode.  The 3rd argument should be zero.                     */
+/* (shared) mode.  The 3rd argument (release), if non-zero, indicates   */
+/* that fn wrote some data that should be made visible to the thread    */
+/* which acquires the allocator lock in the exclusive mode later.       */
 GC_API void * GC_CALL GC_call_with_reader_lock(GC_fn_type /* fn */,
                                 void * /* client_data */,
-                                int /* unused */) GC_ATTR_NONNULL(1);
+                                int /* release */) GC_ATTR_NONNULL(1);
 
 /* These routines are intended to explicitly notify the collector       */
 /* of new threads.  Often this is unnecessary because thread creation   */
@@ -1687,7 +1689,8 @@ GC_API void GC_CALL GC_start_mark_threads(void);
   /* Notify the collector about the stack and the alt-stack of the      */
   /* current thread.  normstack and normstack_size are used to          */
   /* determine the "normal" stack boundaries when a thread is suspended */
-  /* while it is on an alt-stack.                                       */
+  /* while it is on an alt-stack.  Acquires the allocator lock in the   */
+  /* reader mode.                                                       */
   GC_API void GC_CALL GC_register_altstack(void * /* normstack */,
                                            GC_word /* normstack_size */,
                                            void * /* altstack */,
@@ -1741,6 +1744,8 @@ GC_API void GC_CALL GC_start_mark_threads(void);
 /* technique might be used to make stack scanning more precise (i.e.    */
 /* scan only stack frames of functions that allocate garbage collected  */
 /* memory and/or manipulate pointers to the garbage collected heap).    */
+/* Acquires the allocator lock in the reader mode (but fn is called     */
+/* not holding it).                                                     */
 GC_API void * GC_CALL GC_do_blocking(GC_fn_type /* fn */,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
 
@@ -1752,7 +1757,8 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type /* fn */,
 /* initialized and the current thread is registered.  fn may toggle     */
 /* the collector thread's state temporarily to "inactive" one by using  */
 /* GC_do_blocking.  GC_call_with_gc_active() often can be used to       */
-/* provide a sufficiently accurate stack bottom.                        */
+/* provide a sufficiently accurate stack bottom.  Acquires the          */
+/* allocator lock in the reader mode (but fn is called not holding it). */
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type /* fn */,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
 
@@ -1783,10 +1789,14 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *)
 /* thread.  The GC thread handle is either the one returned by          */
 /* GC_get_my_stackbottom or NULL (the latter designates the current     */
 /* thread).  The caller should hold the allocator lock (e.g. using      */
-/* GC_call_with_alloc_lock).  Also, the function could be used for      */
+/* GC_call_with_reader_lock with release argument set to 1), the reader */
+/* mode should be enough typically, at least for the collector itself   */
+/* (the client is responsible to avoid data race between this and       */
+/* GC_get_my_stackbottom functions if the client acquires the allocator */
+/* lock in the reader mode).  Also, the function could be used for      */
 /* setting GC_stackbottom value (the bottom of the primordial thread)   */
 /* before the collector is initialized (the allocator lock is not       */
-/* needed to be acquired in this case).                                 */
+/* needed to be acquired at all in this case).                          */
 GC_API void GC_CALL GC_set_stackbottom(void * /* gc_thread_handle */,
                                        const struct GC_stack_base *)
                                                         GC_ATTR_NONNULL(2);

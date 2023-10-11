@@ -351,6 +351,12 @@
 # endif
 #endif /* !READER_LOCK */
 
+/* A variant of READER_UNLOCK() which ensures that data written before  */
+/* the unlock will be visible to the thread which acquires the          */
+/* allocator lock in the exclusive mode.  But according to some rwlock  */
+/* documentation: writers synchronize with prior writers and readers.   */
+#define READER_UNLOCK_RELEASE() READER_UNLOCK()
+
 # ifndef ENTER_GC
 #   define ENTER_GC()
 #   define EXIT_GC()

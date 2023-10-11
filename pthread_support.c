@@ -920,7 +920,7 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
   GC_thread me;
   GC_stack_context_t crtn;
 
-  LOCK();
+  READER_LOCK();
   me = GC_self_thread_inner();
   if (EXPECT(NULL == me, FALSE)) {
     /* We are called before GC_thr_init. */
@@ -931,7 +931,7 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
   crtn -> normstack_size = normstack_size;
   crtn -> altstack = (ptr_t)altstack;
   crtn -> altstack_size = altstack_size;
-  UNLOCK();
+  READER_UNLOCK_RELEASE();
 #endif
 }
 
@@ -1824,7 +1824,7 @@ GC_INNER void GC_init_parallel(void)
 #   endif
     GC_stack_context_t crtn = me -> crtn;
 
-    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(I_HOLD_READER_LOCK());
     GC_ASSERT((me -> flags & DO_BLOCKING) == 0);
     *pTopOfStackUnset = FALSE;
 #   ifdef SPARC
@@ -1850,7 +1850,7 @@ GC_INNER void GC_init_parallel(void)
 
 static void do_blocking_leave(GC_thread me, GC_bool topOfStackUnset)
 {
-    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(I_HOLD_READER_LOCK());
     me -> flags &= (unsigned char)~DO_BLOCKING;
 #   ifdef E2K
       {
@@ -1876,14 +1876,14 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
     GC_bool topOfStackUnset;
 
     UNUSED_ARG(context);
-    LOCK();
+    READER_LOCK();
     me = GC_self_thread_inner();
     do_blocking_enter(&topOfStackUnset, me);
-    UNLOCK();
+    READER_UNLOCK_RELEASE();
 
     d -> client_data = (d -> fn)(d -> client_data);
 
-    LOCK();   /* This will block if the world is stopped.       */
+    READER_LOCK();  /* This will block if the world is stopped. */
 #   ifdef LINT2
       {
 #        ifdef GC_ASSERTIONS
@@ -1907,13 +1907,13 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
         word suspend_cnt = (word)(me -> ext_suspend_cnt);
                         /* read suspend counter (number) before unlocking */
 
-        UNLOCK();
+        READER_UNLOCK_RELEASE();
         GC_suspend_self_inner(me, suspend_cnt);
-        LOCK();
+        READER_LOCK();
       }
 #   endif
     do_blocking_leave(me, topOfStackUnset);
-    UNLOCK();
+    READER_UNLOCK_RELEASE();
 }
 
 #if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
@@ -1926,6 +1926,10 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
 
     UNUSED_ARG(context);
     GC_ASSERT(I_HOLD_LOCK());
+                        /* The caller holds the allocator lock in the   */
+                        /* exclusive mode, thus we require and restore  */
+                        /* it to the same mode upon return from the     */
+                        /* function.                                    */
     do_blocking_enter(&topOfStackUnset, me);
     while ((me -> ext_suspend_cnt & 1) != 0) {
       word suspend_cnt = (word)(me -> ext_suspend_cnt);
@@ -1955,7 +1959,7 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
       return;
     }
 
-    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(I_HOLD_READER_LOCK());
     if (NULL == t) /* current thread? */
       t = GC_self_thread_inner();
     GC_ASSERT(!KNOWN_FINISHED(t));
@@ -2007,7 +2011,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       ptr_t saved_bs_ptr, saved_bs_end;
 #   endif
 
-    LOCK();   /* This will block if the world is stopped.       */
+    READER_LOCK();  /* This will block if the world is stopped. */
     me = GC_self_thread_inner();
     crtn = me -> crtn;
 
@@ -2024,7 +2028,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
     if ((me -> flags & DO_BLOCKING) == 0) {
       /* We are not inside GC_do_blocking() - do nothing more.  */
-      UNLOCK();
+      READER_UNLOCK_RELEASE();
       client_data = fn(client_data);
       /* Prevent treating the above as a tail call.     */
       GC_noop1(COVERT_DATAFLOW(&stacksect));
@@ -2034,9 +2038,9 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 #   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
       while (EXPECT((me -> ext_suspend_cnt & 1) != 0, FALSE)) {
         word suspend_cnt = (word)(me -> ext_suspend_cnt);
-        UNLOCK();
+        READER_UNLOCK_RELEASE();
         GC_suspend_self_inner(me, suspend_cnt);
-        LOCK();
+        READER_LOCK();
         GC_ASSERT(me -> crtn == crtn);
       }
 #   endif
@@ -2060,7 +2064,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     me -> flags &= (unsigned char)~DO_BLOCKING;
     crtn -> traced_stack_sect = &stacksect;
 
-    UNLOCK();
+    READER_UNLOCK_RELEASE();
     client_data = fn(client_data);
     GC_ASSERT((me -> flags & DO_BLOCKING) == 0);
 
@@ -2068,7 +2072,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 #   ifdef E2K
       (void)GC_save_regs_in_stack();
 #   endif
-    LOCK();
+    READER_LOCK();
     GC_ASSERT(me -> crtn == crtn);
     GC_ASSERT(crtn -> traced_stack_sect == &stacksect);
 #   ifdef CPPCHECK
@@ -2084,7 +2088,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 #   endif
     me -> flags |= DO_BLOCKING;
     crtn -> stack_ptr = stacksect.saved_stack_ptr;
-    UNLOCK();
+    READER_UNLOCK_RELEASE();
     return client_data; /* result */
 }
 
