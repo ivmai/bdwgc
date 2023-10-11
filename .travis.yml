@@ -261,8 +261,8 @@ jobs:
         - gcc-multilib
     compiler: gcc
     env:
-    - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2 -D USE_RWLOCK"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-mmap"
+    - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-mmap --enable-rwlock"
   - os: osx
     env:
     - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2"
@@ -348,8 +348,8 @@ jobs:
     - CONF_OPTIONS="--enable-gc-assertions"
   - compiler: clang
     env:
-    - CFLAGS_EXTRA="-D MARK_BIT_PER_OBJ -D USE_RWLOCK"
-    - CONF_OPTIONS="--enable-cplusplus --disable-shared"
+    - CFLAGS_EXTRA="-D MARK_BIT_PER_OBJ"
+    - CONF_OPTIONS="--enable-cplusplus --enable-rwlock --disable-shared"
   - compiler: gcc
     env:
     - CFLAGS_EXTRA="-D _FORTIFY_SOURCE=2 -D NO_CLOCK -D POINTER_MASK=~0xf"
