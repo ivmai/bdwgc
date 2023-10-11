@@ -1567,9 +1567,13 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type /* fn */,
 /* (shared) mode.  The 3rd argument (release), if non-zero, indicates   */
 /* that fn wrote some data that should be made visible to the thread    */
 /* which acquires the allocator lock in the exclusive mode later.       */
-GC_API void * GC_CALL GC_call_with_reader_lock(GC_fn_type /* fn */,
+#ifdef GC_THREADS
+  GC_API void * GC_CALL GC_call_with_reader_lock(GC_fn_type /* fn */,
                                 void * /* client_data */,
                                 int /* release */) GC_ATTR_NONNULL(1);
+#else
+# define GC_call_with_reader_lock(fn, cd, r) ((void)(r), (fn)(cd))
+#endif
 
 /* These routines are intended to explicitly notify the collector       */
 /* of new threads.  Often this is unnecessary because thread creation   */

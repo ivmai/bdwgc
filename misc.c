@@ -2172,28 +2172,6 @@ GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc proc)
     return result;
 }
 
-GC_API void *GC_CALL GC_call_with_reader_lock(GC_fn_type fn,
-                                              void *client_data, int release)
-{
-    void *result;
-
-    READER_LOCK();
-    result = fn(client_data);
-#   ifdef HAS_REAL_READER_LOCK
-      if (release) {
-        READER_UNLOCK_RELEASE();
-#       ifdef LINT2
-          GC_noop1((unsigned)release);
-#       endif
-        return result;
-      }
-#   else
-      UNUSED_ARG(release);
-#   endif
-    READER_UNLOCK();
-    return result;
-}
-
 GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn, void *client_data)
 {
     void * result;
@@ -2213,6 +2191,29 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn, void *client_data)
   GC_API void GC_CALL GC_alloc_unlock(void)
   {
     UNLOCK();
+  }
+
+  GC_API void *GC_CALL GC_call_with_reader_lock(GC_fn_type fn,
+                                                void *client_data,
+                                                int release)
+  {
+    void *result;
+
+    READER_LOCK();
+    result = fn(client_data);
+#   ifdef HAS_REAL_READER_LOCK
+      if (release) {
+        READER_UNLOCK_RELEASE();
+#       ifdef LINT2
+          GC_noop1((unsigned)release);
+#       endif
+        return result;
+      }
+#   else
+      UNUSED_ARG(release);
+#   endif
+    READER_UNLOCK();
+    return result;
   }
 #endif /* THREADS */
 
