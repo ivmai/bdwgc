@@ -156,6 +156,14 @@ if test "${enable_threads_discovery}" = no; then
               [Disable threads discovery in GC.])
 fi
 
+AC_ARG_ENABLE(rwlock,
+    [AS_HELP_STRING([--enable-rwlock],
+                    [enable reader mode of the allocator lock])])
+if test "${enable_rwlock}" = yes; then
+    AC_DEFINE([USE_RWLOCK], 1,
+              [Use rwlock for the allocator lock instead of mutex.])
+fi
+
 AC_ARG_ENABLE(cplusplus,
     [AS_HELP_STRING([--enable-cplusplus], [install C++ support])])
 
