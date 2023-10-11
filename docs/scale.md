@@ -61,6 +61,13 @@ This _reduces performance_ for the standard allocation functions, though
 it usually improves performance when thread-local allocation is used heavily,
 and, thus, the number of short-duration lock acquisitions is greatly reduced.
 
+Also, `USE_RWLOCK` macro (experimental) should be noted which changes the
+allocator lock implementation base from a mutex (`CRITICAL_SECTION` in case
+of Win32) to `pthread_rwlock_t` (`SRWLOCK`, respectively), thus enabling
+acquisition of a slim lock in the reader (shared) mode where possible.  See
+the description of `GC_call_with_reader_lock` and `GC_REVEAL_POINTER` entities
+in `gc.h` for more details.
+
 ## The Parallel Marking Algorithm
 
 We use an algorithm similar to

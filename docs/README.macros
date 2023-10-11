@@ -411,6 +411,10 @@ GC_USE_DLOPEN_WRAP      Causes the collector to redefine malloc and
   dlopen and dlsym to refer to the original versions.  This makes it possible
   to build an LD_PRELOADable malloc replacement library.
 
+USE_RWLOCK      Use rwlock for the allocator lock instead of mutex.
+  Thus enable usage of the reader (shared) mode of the allocator lock where
+  possible.
+
 THREAD_LOCAL_ALLOC      Defines GC_malloc(), GC_malloc_atomic() and
   GC_gcj_malloc() to use a per-thread set of free-lists. These then allocate
   in a way that usually does not involve acquisition of the allocator (global)
