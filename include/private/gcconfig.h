@@ -848,6 +848,12 @@ EXTERN_C_BEGIN
     /* There seems to be some issues with trylock hanging on darwin.    */
     /* TODO: This should be looked into some more.                      */
 #   define NO_PTHREAD_TRYLOCK
+#   ifndef TARGET_OS_XR
+#     define TARGET_OS_XR 0
+#   endif
+#   ifndef TARGET_OS_VISION
+#     define TARGET_OS_VISION 0
+#   endif
 # endif /* DARWIN */
 
 # ifdef EMBOX
