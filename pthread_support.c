@@ -1443,13 +1443,22 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
       GC_ASSERT(I_DONT_HOLD_LOCK());
       /* Reinitialize the mutex.  It should be safe since we are        */
       /* running this in the child which only inherits a single thread. */
-      /* mutex_destroy() may return EBUSY, which makes no sense, but    */
-      /* that is the reason for the need of the reinitialization.       */
+      /* pthread_mutex_destroy() and pthread_rwlock_destroy() may       */
+      /* return EBUSY, which makes no sense, but that is the reason for */
+      /* the need of the reinitialization.                              */
       /* Note: excluded for Cygwin as does not seem to be needed.       */
 #     ifdef USE_RWLOCK
         (void)pthread_rwlock_destroy(&GC_allocate_ml);
-        if (pthread_rwlock_init(&GC_allocate_ml, NULL) != 0)
-          ABORT("pthread_rwlock_init failed (in child)");
+#       ifdef DARWIN
+          /* A workaround for pthread_rwlock_init() fail with EBUSY.    */
+          {
+            pthread_rwlock_t rwlock_local = PTHREAD_RWLOCK_INITIALIZER;
+            BCOPY(&rwlock_local, &GC_allocate_ml, sizeof(GC_allocate_ml));
+          }
+#       else
+          if (pthread_rwlock_init(&GC_allocate_ml, NULL) != 0)
+            ABORT("pthread_rwlock_init failed (in child)");
+#       endif
 #     else
         (void)pthread_mutex_destroy(&GC_allocate_ml);
         /* TODO: Probably some targets might need the default mutex     */
