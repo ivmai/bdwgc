@@ -212,7 +212,7 @@ jobs:
     compiler: gcc
     env:
     - CFLAGS_EXTRA="-O3 -D _FORTIFY_SOURCE=2"
-    - CONF_OPTIONS="--enable-cplusplus --enable-gc-assertions"
+    - CONF_OPTIONS="--enable-cplusplus --enable-gc-assertions --enable-rwlock"
     - MAKE_NPROC=8
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: freebsd
@@ -400,7 +400,7 @@ jobs:
   - os: osx
     env:
     - CFLAGS_EXTRA="-D TEST_HANDLE_FORK"
-    - CONF_OPTIONS="--enable-cplusplus --disable-shared --enable-static"
+    - CONF_OPTIONS="--enable-cplusplus --disable-shared --enable-rwlock --enable-static"
   - os: osx
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus --disable-handle-fork"
