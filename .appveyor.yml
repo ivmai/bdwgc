@@ -82,7 +82,7 @@ environment:
     CONF_OPTIONS: --enable-cplusplus --disable-munmap --enable-gc-assertions --enable-redirect-malloc
   - TARGET: cygwin64
     CFLAGS_EXTRA: -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB
-    CONF_OPTIONS: --enable-cplusplus --enable-gc-assertions --disable-shared
+    CONF_OPTIONS: --enable-cplusplus --enable-gc-assertions --enable-rwlock --disable-shared
 
 clone_depth: 50
 
