@@ -505,6 +505,14 @@ if (HAVE_FLAG_F_NO_STRICT_ALIASING)
   add_compile_options(-fno-strict-aliasing)
 endif()
 
+# Prevent "__builtin_return_address with a nonzero argument is unsafe" warning.
+if (NOT BORLAND AND NOT MSVC AND NOT WATCOM)
+  check_c_compiler_flag(-Wno-frame-address HAVE_FLAG_WNO_FRAME_ADDRESS)
+  if (HAVE_FLAG_WNO_FRAME_ADDRESS)
+    add_compile_options(-Wno-frame-address)
+  endif(HAVE_FLAG_WNO_FRAME_ADDRESS)
+endif()
+
 # Extra user-defined flags to pass both to C and C++ compilers.
 if (DEFINED CFLAGS_EXTRA)
   separate_arguments(CFLAGS_EXTRA_LIST UNIX_COMMAND "${CFLAGS_EXTRA}")
@@ -626,7 +634,7 @@ int main(void) {\n
         endif()
       endif(HAVE_PTHREAD_SETNAME_NP_WITH_TID)
     endif(HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG)
-  endif (HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
+  endif(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
 endif()
 
 # Check for dladdr (used for debugging).
