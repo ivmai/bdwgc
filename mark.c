@@ -604,7 +604,7 @@ GC_INNER void GC_invalidate_mark_state(void)
     GC_mark_stack_top = GC_mark_stack-1;
 }
 
-GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp)
+STATIC mse * GC_signal_mark_stack_overflow(mse *msp)
 {
     GC_mark_state = MS_INVALID;
 #   ifdef PARALLEL_MARK
@@ -986,8 +986,8 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
             /* More than one thread may get this entry, but that's only */
             /* a minor performance problem.                             */
             ++top;
-            top -> mse_descr.w = descr;
             top -> mse_start = p -> mse_start;
+            top -> mse_descr.w = descr;
             GC_ASSERT((descr & GC_DS_TAGS) != GC_DS_LENGTH /* 0 */
                 || descr < GC_greatest_real_heap_addr-GC_least_real_heap_addr
                 || (word)(p -> mse_start + descr)
@@ -1313,13 +1313,10 @@ GC_INNER void GC_mark_init(void)
     alloc_mark_stack(INITIAL_MARK_STACK_SIZE);
 }
 
-/*
- * Push all locations between b and t onto the mark stack.
- * b is the first location to be checked. t is one past the last
- * location to be checked.
- * Should only be used if there is no possibility of mark stack
- * overflow.
- */
+/* Push all locations between bottom and top onto the mark stack.   */
+/* bottom is the first location to be checked; top is one past the  */
+/* last location to be checked.  Should only be used if there is    */
+/* no possibility of mark stack overflow.                           */
 GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 {
     mse * mark_stack_top;
@@ -1340,6 +1337,44 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
     mark_stack_top -> mse_start = (ptr_t)bottom;
     mark_stack_top -> mse_descr.w = length | GC_DS_LENGTH;
     GC_mark_stack_top = mark_stack_top;
+}
+
+GC_API struct GC_ms_entry * GC_CALL GC_custom_push_range(void *bottom,
+                                void *top,
+                                struct GC_ms_entry *mark_stack_top,
+                                struct GC_ms_entry *mark_stack_limit)
+{
+    word length;
+
+    bottom = PTRT_ROUNDUP_BY_MASK(bottom, ALIGNMENT-1);
+    top = (void *)((word)top & ~(word)(ALIGNMENT-1));
+    if ((word)bottom >= (word)top) return mark_stack_top;
+
+    length = (word)top - (word)bottom;
+#   if GC_DS_TAGS > ALIGNMENT - 1
+        length = (length + GC_DS_TAGS) & ~(word)GC_DS_TAGS; /* round up */
+#   endif
+    return GC_custom_push_proc(length | GC_DS_LENGTH, bottom, mark_stack_top,
+                               mark_stack_limit);
+}
+
+GC_API struct GC_ms_entry * GC_CALL GC_custom_push_proc(GC_word descr,
+                                void *obj, struct GC_ms_entry *mark_stack_top,
+                                struct GC_ms_entry *mark_stack_limit)
+{
+    mark_stack_top++;
+    if ((word)mark_stack_top >= (word)mark_stack_limit) {
+        mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top);
+    }
+    mark_stack_top -> mse_start = (ptr_t)obj;
+    mark_stack_top -> mse_descr.w = descr;
+    return mark_stack_top;
+}
+
+GC_API void GC_CALL GC_push_proc(GC_word descr, void *obj)
+{
+    GC_mark_stack_top = GC_custom_push_proc(descr, obj, GC_mark_stack_top,
+                                            GC_mark_stack_limit);
 }
 
 #ifndef GC_DISABLE_INCREMENTAL

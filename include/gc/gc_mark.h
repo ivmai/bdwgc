@@ -178,6 +178,18 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void * /* obj */,
            && (GC_word)(obj) < (GC_word)GC_greatest_plausible_heap_addr ? \
            GC_mark_and_push(obj, msp, lim, src) : (msp))
 
+GC_API void GC_CALL GC_push_proc(GC_word /* descr */, void * /* obj */);
+
+GC_API struct GC_ms_entry * GC_CALL GC_custom_push_proc(GC_word /* descr */,
+                                void * /* obj */,
+                                struct GC_ms_entry * /* mark_stack_top */,
+                                struct GC_ms_entry * /* mark_stack_limit */);
+
+GC_API struct GC_ms_entry * GC_CALL GC_custom_push_range(void * /* bottom */,
+                                void * /* top */,
+                                struct GC_ms_entry * /* mark_stack_top */,
+                                struct GC_ms_entry * /* mark_stack_limit */);
+
 /* The size of the header added to objects allocated through the        */
 /* GC_debug routines.  Defined as a function so that client mark        */
 /* procedures do not need to be recompiled for the collector library    */

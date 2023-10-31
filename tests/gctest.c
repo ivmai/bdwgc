@@ -2787,6 +2787,8 @@ int main(void)
 #     endif
 #   endif
 #   if defined(CPPCHECK)
+      UNTESTED(GC_custom_push_range);
+      UNTESTED(GC_push_proc);
       UNTESTED(GC_register_altstack);
 #   endif /* CPPCHECK */
 

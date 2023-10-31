@@ -108,8 +108,6 @@ GC_EXTERN unsigned GC_n_mark_procs;
      */
 #endif /* PARALLEL_MARK */
 
-GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
-
 /* Push the object obj with corresponding heap block header hhdr onto   */
 /* the mark stack.  Returns the updated mark_stack_top value.           */
 GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr, mse * mark_stack_top,
@@ -117,12 +115,8 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr, mse * mark_stack_top,
 {
   GC_ASSERT(!HBLK_IS_FREE(hhdr));
   if (!IS_PTRFREE(hhdr)) {
-    mark_stack_top++;
-    if ((word)mark_stack_top >= (word)mark_stack_limit) {
-      mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top);
-    }
-    mark_stack_top -> mse_start = obj;
-    mark_stack_top -> mse_descr.w = hhdr -> hb_descr;
+    mark_stack_top = GC_custom_push_proc(hhdr -> hb_descr, obj,
+                                         mark_stack_top, mark_stack_limit);
   }
   return mark_stack_top;
 }

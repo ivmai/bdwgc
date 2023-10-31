@@ -190,13 +190,10 @@ STATIC mse *GC_CALLBACK GC_typed_mark_proc(word *addr, mse *mark_stack_top,
         /* stack.  Thus we never do too much work at once.  Note that   */
         /* we also can't overflow the mark stack unless we actually     */
         /* mark something.                                              */
-        mark_stack_top++;
-        if ((word)mark_stack_top >= (word)mark_stack_limit) {
-            mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top);
-        }
-        mark_stack_top -> mse_start = (ptr_t)(addr + CPP_WORDSZ);
-        mark_stack_top -> mse_descr.w =
-                        GC_MAKE_PROC(GC_typed_mark_proc_index, env + 1);
+        mark_stack_top = GC_custom_push_proc(
+                            GC_MAKE_PROC(GC_typed_mark_proc_index, env + 1),
+                            &addr[CPP_WORDSZ], mark_stack_top,
+                            mark_stack_limit);
     }
     return mark_stack_top;
 }
