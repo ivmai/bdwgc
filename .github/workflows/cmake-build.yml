@@ -1,0 +1,93 @@
+# This workflow is for CMake-based build/test running on multiple platforms.
+name: cmake build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: ${{ matrix.os }} ${{ matrix.c_compiler }} thr:${{ matrix.enable_threads }} redir:${{ matrix.redirect_malloc }} dll:${{ matrix.shared_libs }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # Deliver the feedback for all matrix combinations.
+      fail-fast: false
+
+      matrix:
+        os: [ macos-latest, ubuntu-latest, windows-latest ]
+        c_compiler: [ cl, clang, gcc ]
+        build_type: [ Release ]
+        disable_gc_debug: [ off ]
+        gc_assertions: [ off ]
+        large_config: [ off ]
+        enable_threads: [ off, on ]
+        redirect_malloc: [ off, on ]
+        shared_libs: [ off, on ]
+        exclude:
+        - os: macos-latest
+          c_compiler: cl
+        - os: macos-latest
+          c_compiler: gcc
+        - os: ubuntu-latest
+          c_compiler: cl
+        - os: windows-latest # TODO: support dependency on libatomic_ops
+          c_compiler: cl
+          enable_threads: on
+        - os: windows-latest # TODO: enable following
+          c_compiler: clang
+        - os: macos-latest
+          c_compiler: clang
+          enable_threads: on
+          redirect_malloc: on
+        - os: windows-latest
+          c_compiler: cl
+          enable_threads: off
+          redirect_malloc: on
+        - os: windows-latest
+          c_compiler: gcc
+          enable_threads: on
+        include:
+        - os: windows-latest
+          c_compiler: gcc
+          cmake_generator_opt: '-G "Unix Makefiles"'
+        #- os: windows-latest
+        #  c_compiler: clang
+        #  cmake_generator_opt: '-G "Unix Makefiles"'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set reusable strings
+      # Turn repeated input strings into step outputs.
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+    - name: Configure CMake
+      # Configure CMake in a 'build' subdirectory.
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        ${{ matrix.cmake_generator_opt }}
+        -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -Dbuild_tests=ON
+        -Ddisable_gc_debug=${{ matrix.disable_gc_debug }}
+        -Denable_gc_assertions=${{ matrix.gc_assertions }}
+        -Denable_large_config=${{ matrix.large_config }}
+        -Denable_redirect_malloc=${{ matrix.redirect_malloc }}
+        -Denable_threads=${{ matrix.enable_threads }}
+        -Denable_werror=ON
+        -Werror=dev
+        -S ${{ github.workspace }}
+
+    - name: Build
+      # Build the code with the given configuration.
+      run: >
+        cmake --build ${{ steps.strings.outputs.build-output-dir }}
+        --config ${{ matrix.build_type }} --verbose
+
+    - name: Test
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      # Execute tests defined by the CMake configuration.
+      run: ctest --build-config ${{ matrix.build_type }} --verbose
