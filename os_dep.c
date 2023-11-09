@@ -862,19 +862,17 @@ GC_INNER void GC_setpagesize(void)
 # define HAVE_GET_STACK_BASE
 #endif /* OS2 */
 
-# ifdef AMIGA
+#ifdef AMIGA
 #   define GC_AMIGA_SB
 #   include "extra/AmigaOS.c"
 #   undef GC_AMIGA_SB
 #   define GET_MAIN_STACKBASE_SPECIAL
-# endif /* AMIGA */
+#endif /* AMIGA */
 
-# if defined(NEED_FIND_LIMIT) \
-     || (defined(UNIX_LIKE) && !defined(NO_DEBUGGING)) \
-     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)) \
-     || (defined(WRAP_MARK_SOME) && defined(NO_SEH_AVAILABLE))
-
-    typedef void (*GC_fault_handler_t)(int);
+#if defined(NEED_FIND_LIMIT) \
+    || (defined(UNIX_LIKE) && !defined(NO_DEBUGGING)) \
+    || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)) \
+    || (defined(WRAP_MARK_SOME) && defined(NO_SEH_AVAILABLE))
 
 #   ifdef USE_SEGV_SIGACT
 #     ifndef OPENBSD
@@ -929,11 +927,11 @@ GC_INNER void GC_setpagesize(void)
           GC_noop1((word)&__asan_default_options);
 #       endif
     }
-# endif /* NEED_FIND_LIMIT || UNIX_LIKE */
+#endif /* NEED_FIND_LIMIT || UNIX_LIKE || WRAP_MARK_SOME */
 
-# if defined(NEED_FIND_LIMIT) \
-     || (defined(WRAP_MARK_SOME) && defined(NO_SEH_AVAILABLE)) \
-     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
+#if defined(NEED_FIND_LIMIT) \
+    || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)) \
+    || (defined(WRAP_MARK_SOME) && defined(NO_SEH_AVAILABLE))
     GC_INNER JMP_BUF GC_jmp_buf;
 
     STATIC void GC_fault_handler(int sig)
@@ -964,9 +962,9 @@ GC_INNER void GC_setpagesize(void)
 #         endif
 #       endif
     }
-# endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES || WRAP_MARK_SOME */
+#endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES || WRAP_MARK_SOME */
 
-# if defined(NEED_FIND_LIMIT) \
+#if defined(NEED_FIND_LIMIT) \
      || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
 #   define MIN_PAGE_SIZE 256 /* Smallest conceivable page size, in bytes. */
 
@@ -1022,7 +1020,7 @@ GC_INNER void GC_setpagesize(void)
         return GC_find_limit_with_bound((ptr_t)p, (GC_bool)up,
                                         up ? (ptr_t)GC_WORD_MAX : 0);
     }
-# endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES */
+#endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES */
 
 #ifdef HPUX_MAIN_STACKBOTTOM
 # include <sys/param.h>

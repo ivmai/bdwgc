@@ -2866,10 +2866,6 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   void * GC_find_limit(void *, int);
 #endif
 
-#if defined(UNIX_LIKE) && !defined(NO_DEBUGGING)
-  GC_INNER void GC_set_and_save_fault_handler(void (*handler)(int));
-#endif
-
 #ifdef NEED_PROC_MAPS
 # if defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES)
     GC_INNER const char *GC_parse_map_entry(const char *maps_ptr,
@@ -3057,8 +3053,16 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #endif /* DATASTART_USES_BSDGETDATASTART */
 
 #if defined(NEED_FIND_LIMIT) \
-     || (defined(WRAP_MARK_SOME) && defined(NO_SEH_AVAILABLE)) \
-     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
+     || (defined(UNIX_LIKE) && !defined(NO_DEBUGGING)) \
+     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)) \
+     || (defined(WRAP_MARK_SOME) && defined(NO_SEH_AVAILABLE))
+  typedef void (*GC_fault_handler_t)(int);
+  GC_INNER void GC_set_and_save_fault_handler(GC_fault_handler_t);
+#endif
+
+#if defined(NEED_FIND_LIMIT) \
+     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)) \
+     || (defined(WRAP_MARK_SOME) && defined(NO_SEH_AVAILABLE))
   GC_EXTERN JMP_BUF GC_jmp_buf;
 
   /* Set up a handler for address faults which will longjmp to  */
