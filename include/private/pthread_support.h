@@ -396,7 +396,8 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool);
   GC_INNER void GC_nacl_shutdown_gc_thread(void);
 #endif
 
-#ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
+#if defined(PTHREAD_STOP_WORLD_IMPL) && !defined(NO_SIGNALS_UNBLOCK_IN_MAIN) \
+    || defined(GC_EXPLICIT_SIGNALS_UNBLOCK)
   GC_INNER void GC_unblock_gc_signals(void);
 #endif
 

@@ -2230,6 +2230,23 @@ GC_API void GC_CALL GC_allow_register_threads(void)
   set_need_to_lock();
 }
 
+#if defined(PTHREAD_STOP_WORLD_IMPL) && !defined(NO_SIGNALS_UNBLOCK_IN_MAIN) \
+    || defined(GC_EXPLICIT_SIGNALS_UNBLOCK)
+  /* Some targets (e.g., Solaris) might require this to be called when  */
+  /* doing thread registering from the thread destructor.               */
+  GC_INNER void GC_unblock_gc_signals(void)
+  {
+    sigset_t set;
+
+    INIT_REAL_SYMS(); /* for pthread_sigmask */
+    sigemptyset(&set);
+    sigaddset(&set, GC_get_suspend_signal());
+    sigaddset(&set, GC_get_thr_restart_signal());
+    if (REAL_FUNC(pthread_sigmask)(SIG_UNBLOCK, &set, NULL) != 0)
+      ABORT("pthread_sigmask failed");
+  }
+#endif /* PTHREAD_STOP_WORLD_IMPL || GC_EXPLICIT_SIGNALS_UNBLOCK */
+
 GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 {
     GC_thread me;

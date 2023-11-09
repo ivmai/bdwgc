@@ -74,10 +74,10 @@ GC_INLINE void GC_usleep(unsigned us)
 # error please define AO_REQUIRE_CAS manually
 #endif
 
-/* It's safe to call original pthread_sigmask() here.   */
-#undef pthread_sigmask
-
 #ifdef DEBUG_THREADS
+  /* It's safe to call original pthread_sigmask() here. */
+# undef pthread_sigmask
+
 # ifndef NSIG
 #   ifdef CPPCHECK
 #     define NSIG 32
@@ -212,23 +212,6 @@ GC_API int GC_CALL GC_get_thr_restart_signal(void)
   return GC_sig_thr_restart != SIGNAL_UNSET
             ? GC_sig_thr_restart : SIG_THR_RESTART;
 }
-
-#if defined(GC_EXPLICIT_SIGNALS_UNBLOCK) \
-    || !defined(NO_SIGNALS_UNBLOCK_IN_MAIN)
-  /* Some targets (e.g., Solaris) might require this to be called when  */
-  /* doing thread registering from the thread destructor.               */
-  GC_INNER void GC_unblock_gc_signals(void)
-  {
-    sigset_t set;
-    sigemptyset(&set);
-    GC_ASSERT(GC_sig_suspend != SIGNAL_UNSET);
-    GC_ASSERT(GC_sig_thr_restart != SIGNAL_UNSET);
-    sigaddset(&set, GC_sig_suspend);
-    sigaddset(&set, GC_sig_thr_restart);
-    if (pthread_sigmask(SIG_UNBLOCK, &set, NULL) != 0)
-      ABORT("pthread_sigmask failed");
-  }
-#endif /* GC_EXPLICIT_SIGNALS_UNBLOCK */
 
 #ifdef BASE_ATOMIC_OPS_EMULATED
  /* The AO primitives emulated with locks cannot be used inside signal  */
