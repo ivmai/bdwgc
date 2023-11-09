@@ -848,7 +848,9 @@ GC_INNER size_t GC_page_size = 0;
 #   define GET_MAIN_STACKBASE_SPECIAL
 # endif /* AMIGA */
 
-# if defined(NEED_FIND_LIMIT) || defined(UNIX_LIKE)
+# if defined(NEED_FIND_LIMIT) \
+     || (defined(UNIX_LIKE) && !defined(NO_DEBUGGING)) \
+     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
 
     typedef void (*GC_fault_handler_t)(int);
 
