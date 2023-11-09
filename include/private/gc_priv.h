@@ -2404,7 +2404,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   GC_INNER void GC_init_netbsd_elf(void);
 #endif
 
-#ifdef UNIX_LIKE
+#if defined(UNIX_LIKE) && !defined(NO_DEBUGGING)
   GC_INNER void GC_set_and_save_fault_handler(void (*handler)(int));
 #endif
 
