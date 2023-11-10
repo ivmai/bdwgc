@@ -3116,6 +3116,13 @@ EXTERN_C_BEGIN
 # undef GC_PTHREADS_PARAMARK /* just in case defined by client */
 #endif
 
+#if !defined(GC_PTHREADS) && !defined(GC_PTHREADS_PARAMARK)
+# undef HAVE_PTHREAD_SETNAME_NP_WITH_TID
+# undef HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG
+# undef HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID
+# undef HAVE_PTHREAD_SET_NAME_NP
+#endif
+
 #ifdef USE_RWLOCK
   /* At least in the Linux threads implementation, rwlock primitives    */
   /* are not atomic in respect to signals, and suspending externally    */
