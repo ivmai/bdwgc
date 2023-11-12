@@ -723,8 +723,12 @@ if (build_tests)
     add_test(NAME cordtest COMMAND cordtest)
 
     if (WIN32 AND NOT CYGWIN)
+      if (NOT (CMAKE_C_COMPILER_ID STREQUAL "Clang"))
+        # Workaround MS Clang failure to compile a resource file.
+        set(DE_WIN_RC cord/tests/de_win.rc)
+      endif()
       add_executable(de cord/tests/de.c cord/tests/de_win.c
-                     cord/tests/de_win.rc)
+                     ${DE_WIN_RC})
       set_target_properties(de PROPERTIES WIN32_EXECUTABLE TRUE)
       target_link_libraries(de PRIVATE cord gc gdi32)
     endif()
