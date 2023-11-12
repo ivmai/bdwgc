@@ -2890,7 +2890,7 @@ EXTERN_C_BEGIN
 #endif
 
 #ifndef PREFETCH
-# if GC_GNUC_PREREQ(3, 0) && !defined(NO_PREFETCH)
+# if (GC_GNUC_PREREQ(3, 0) || defined(__clang__)) && !defined(NO_PREFETCH)
 #   define PREFETCH(x) __builtin_prefetch((x), 0, 0)
 # elif defined(_MSC_VER) && !defined(NO_PREFETCH) \
        && (defined(_M_IX86) || defined(_M_X64)) && !defined(_CHPE_ONLY_) \

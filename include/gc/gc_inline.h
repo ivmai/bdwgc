@@ -34,7 +34,7 @@
 #include "gc.h"
 #include "gc_tiny_fl.h"
 
-#if GC_GNUC_PREREQ(3, 0)
+#if GC_GNUC_PREREQ(3, 0) || defined(__clang__)
 # define GC_EXPECT(expr, outcome) __builtin_expect(expr, outcome)
   /* Equivalent to (expr), but predict that usually (expr)==outcome. */
 #else
@@ -51,7 +51,8 @@
 #endif
 
 #ifndef GC_PREFETCH_FOR_WRITE
-# if GC_GNUC_PREREQ(3, 0) && !defined(GC_NO_PREFETCH_FOR_WRITE)
+# if (GC_GNUC_PREREQ(3, 0) || defined(__clang__)) \
+     && !defined(GC_NO_PREFETCH_FOR_WRITE)
 #   define GC_PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1 /* write */)
 # elif defined(_MSC_VER) && !defined(GC_NO_PREFETCH_FOR_WRITE) \
        && (defined(_M_IX86) || defined(_M_X64)) && !defined(_CHPE_ONLY_) \

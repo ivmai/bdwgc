@@ -109,7 +109,7 @@ typedef int GC_bool;
 # define GC_SIZE_MAX (~(size_t)0)
 #endif
 
-#if GC_GNUC_PREREQ(3, 0) && !defined(LINT2)
+#if (GC_GNUC_PREREQ(3, 0) || defined(__clang__)) && !defined(LINT2)
 # define EXPECT(expr, outcome) __builtin_expect(expr,outcome)
   /* Equivalent to (expr), but predict that usually (expr)==outcome. */
 #else
