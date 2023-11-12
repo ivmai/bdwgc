@@ -152,9 +152,6 @@ if (BORLAND)
 elseif (MSVC)
   # All warnings but ignoring "conditional expression is constant" one.
   add_compile_options(/W4 /wd4127)
-  # Disable crt security warnings, since unfortunately they warn about all
-  # sorts of safe uses of strncpy.
-  add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 elseif (WATCOM)
   add_compile_options(/wx)
   if (NOT enable_threads)
@@ -164,6 +161,11 @@ elseif (WATCOM)
 else()
   # TODO: add -[W]pedantic -Wno-long-long
   add_compile_options(-Wall -Wextra)
+endif()
+
+if (WIN32)
+  # Disable MS crt security warnings reported e.g. for getenv, strcpy.
+  add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 endif()
 
 include_directories(include)
@@ -228,7 +230,7 @@ if (enable_threads)
   # Thread support detection.
   if (CMAKE_USE_PTHREADS_INIT)
     set(SRC ${SRC} gc_dlopen.c pthread_start.c pthread_support.c)
-    if (CYGWIN OR MSYS)
+    if (CYGWIN OR WIN32)
       set(SRC ${SRC} win32_threads.c)
     else()
       if (APPLE)
@@ -261,7 +263,7 @@ if (enable_threads)
     elseif (CMAKE_C_COMPILER_ID STREQUAL "SunPro")
       set(NEED_LIB_RT ON)
     endif()
-    if (MSYS)
+    if (WIN32) # AND NOT CYGWIN
       # Does not provide process fork functionality.
     elseif (APPLE)
       # The incremental mode conflicts with fork handling (for now).
@@ -434,7 +436,7 @@ endif(enable_werror)
 
 if (enable_single_obj_compilation OR (BUILD_SHARED_LIBS AND NOT disable_single_obj_compilation))
   set(SRC extra/gc.c) # override SRC
-  if (enable_threads AND CMAKE_USE_PTHREADS_INIT AND NOT (APPLE OR CYGWIN OR MSYS))
+  if (enable_threads AND CMAKE_USE_PTHREADS_INIT AND NOT (APPLE OR CYGWIN OR WIN32))
     add_definitions("-DGC_PTHREAD_START_STANDALONE")
     set(SRC ${SRC} pthread_start.c)
   endif()
@@ -566,7 +568,7 @@ endif()
 
 # Check for pthread_sigmask and sigset_t.
 if (enable_threads AND CMAKE_USE_PTHREADS_INIT)
-  if (NOT (APPLE OR CYGWIN OR MSYS))
+  if (NOT (APPLE OR CYGWIN OR WIN32))
     check_c_source_compiles("
 #define _GNU_SOURCE 1\n
 #include <pthread.h>\n
