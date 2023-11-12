@@ -3114,9 +3114,9 @@ EXTERN_C_BEGIN
 #endif
 
 #if !defined(CAN_HANDLE_FORK) && !defined(NO_HANDLE_FORK) \
-    && !defined(HAVE_NO_FORK) \
-    && ((defined(GC_PTHREADS) && !defined(NACL) \
-         && !defined(GC_WIN32_PTHREADS) && !defined(USE_WINALLOC)) \
+    && !defined(HAVE_NO_FORK) && defined(GC_PTHREADS) \
+    && (!(defined(NACL) || defined(GC_WIN32_PTHREADS) \
+          || defined(USE_WINALLOC)) \
         || (defined(DARWIN) && defined(MPROTECT_VDB)) || defined(HANDLE_FORK))
   /* Attempts (where supported and requested) to make GC_malloc work in */
   /* a child process fork'ed from a multi-threaded parent.              */
