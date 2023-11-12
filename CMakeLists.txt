@@ -143,9 +143,6 @@ elseif (MSVC)
   # All warnings but ignoring "unreferenced formal parameter" and
   # "conditional expression is constant" ones.
   add_compile_options(/W4 /wd4100 /wd4127)
-  # Disable crt security warnings, since unfortunately they warn about all
-  # sorts of safe uses of strncpy.
-  add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 elseif (WATCOM)
   add_compile_options(/wx)
   if (NOT enable_threads)
@@ -155,6 +152,11 @@ elseif (WATCOM)
 else()
   # TODO add -[W]pedantic -Wno-long-long
   add_compile_options(-Wall -Wextra)
+endif()
+
+if (WIN32)
+  # Disable MS crt security warnings reported e.g. for getenv, strcpy.
+  add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 endif()
 
 include_directories(include)
@@ -196,7 +198,7 @@ set(ATOMIC_OPS_LIBS "") # TODO: Assume libatomic_ops library is not needed.
 # Thread support detection.
 if (CMAKE_USE_PTHREADS_INIT)
   set(SRC ${SRC} gc_dlopen.c)
-  if (CYGWIN OR MSYS)
+  if (CYGWIN OR WIN32)
     set(SRC ${SRC} win32_threads.c)
   else()
     set(SRC ${SRC} pthread_start.c pthread_stop_world.c pthread_support.c)
@@ -223,7 +225,7 @@ if (CMAKE_USE_PTHREADS_INIT)
     add_definitions("-D_PTHREADS")
     set(NEED_LIB_RT ON)
   endif()
-  if (MSYS)
+  if (WIN32) # AND NOT CYGWIN
     # Does not provide process fork functionality.
   elseif (APPLE)
     # The incremental mode conflicts with fork handling (for now).
@@ -388,7 +390,7 @@ endif(enable_werror)
 
 if (enable_single_obj_compilation OR BUILD_SHARED_LIBS)
   set(SRC extra/gc.c) # override SRC
-  if (CMAKE_USE_PTHREADS_INIT AND NOT (CYGWIN OR MSYS))
+  if (CMAKE_USE_PTHREADS_INIT AND NOT (CYGWIN OR WIN32))
     add_definitions("-DGC_PTHREAD_START_STANDALONE")
     set(SRC ${SRC} pthread_start.c)
   endif()
