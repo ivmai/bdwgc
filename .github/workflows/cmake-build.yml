@@ -62,8 +62,6 @@ jobs:
         - os: windows-latest # TODO: support dependency on libatomic_ops
           c_compiler: cl
           enable_threads: on
-        - os: windows-latest # TODO: enable following
-          c_compiler: clang
         - os: macos-latest
           c_compiler: clang
           enable_threads: on
@@ -72,16 +70,13 @@ jobs:
           c_compiler: cl
           enable_threads: off
           redirect_malloc: on
-        - os: windows-latest
-          c_compiler: gcc
-          enable_threads: on
         include:
         - os: windows-latest
           c_compiler: gcc
           cmake_generator_opt: '-G "Unix Makefiles"'
-        #- os: windows-latest
-        #  c_compiler: clang
-        #  cmake_generator_opt: '-G "Unix Makefiles"'
+        - os: windows-latest
+          c_compiler: clang
+          cmake_generator_opt: '-G "Unix Makefiles"'
 
     steps:
     - uses: actions/checkout@v4
