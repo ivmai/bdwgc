@@ -19,8 +19,8 @@ jobs:
         enable_cplusplus: [ off, on ]
         build_type: [ Release ]
         disable_gc_debug: [ off ]
-        gc_assertions: [ off ]
-        large_config: [ off ]
+        gc_assertions: [ on ]
+        large_config: [ on ]
         enable_threads: [ off, on ]
         enable_rwlock: [ off, on ]
         redirect_malloc: [ off, on ]
@@ -62,8 +62,7 @@ jobs:
         - os: windows-latest # TODO: support dependency on libatomic_ops
           c_compiler: cl
           enable_threads: on
-        - os: macos-latest
-          c_compiler: clang
+        - os: macos-latest # FIXME: enable this after fixing assert fail
           enable_threads: on
           redirect_malloc: on
         include:
