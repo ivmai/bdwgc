@@ -5,7 +5,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    name: ${{ matrix.os }} ${{ matrix.c_compiler }} thr:${{ matrix.enable_threads }} redir:${{ matrix.redirect_malloc }} dll:${{ matrix.shared_libs }}
+    name: ${{ matrix.os }} ${{ matrix.c_compiler }} thr:${{ matrix.enable_threads }} rwlock::${{ matrix.enable_rwlock }} redir:${{ matrix.redirect_malloc }} dll:${{ matrix.shared_libs }}
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -20,6 +20,7 @@ jobs:
         gc_assertions: [ off ]
         large_config: [ off ]
         enable_threads: [ off, on ]
+        enable_rwlock: [ off, on ]
         redirect_malloc: [ off, on ]
         shared_libs: [ off, on ]
         exclude:
@@ -29,6 +30,8 @@ jobs:
           c_compiler: gcc
         - os: ubuntu-latest
           c_compiler: cl
+        - enable_threads: off
+          enable_rwlock: on
         - os: windows-latest # TODO: support dependency on libatomic_ops
           c_compiler: cl
           enable_threads: on
@@ -76,6 +79,7 @@ jobs:
         -Denable_gc_assertions=${{ matrix.gc_assertions }}
         -Denable_large_config=${{ matrix.large_config }}
         -Denable_redirect_malloc=${{ matrix.redirect_malloc }}
+        -Denable_rwlock=${{ matrix.enable_rwlock }}
         -Denable_threads=${{ matrix.enable_threads }}
         -Denable_werror=ON
         -Werror=dev
