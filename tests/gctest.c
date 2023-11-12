@@ -882,7 +882,8 @@ reverse_test_inner(void *data)
 #    else
 #      define BIG 1000
 #    endif
-#  elif defined(MSWINCE) || defined(EMBOX) || defined(RTEMS)
+#  elif defined(MSWINCE) || defined(EMBOX) || defined(RTEMS) \
+      || (defined(COSMO) && defined(THREADS))
   /* WinCE only allows 64 KB stacks. */
 #    define BIG 500
 #  elif defined(EMSCRIPTEN) || defined(OSF1)

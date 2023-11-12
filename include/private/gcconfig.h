@@ -124,6 +124,10 @@ EXTERN_C_BEGIN
 #  define ANY_BSD
 #endif
 
+#if defined(__COSMOPOLITAN__)
+#  define COSMO
+#endif
+
 #if defined(__EMBOX__)
 #  define EMBOX
 #endif
@@ -154,8 +158,8 @@ EXTERN_C_BEGIN
 /* Here we will rely upon arch-specific defines. */
 #  endif
 #endif
-#if defined(__aarch64__) && !defined(ANY_BSD) && !defined(DARWIN) \
-    && !defined(LINUX) && !defined(KOS) && !defined(QNX)          \
+#if defined(__aarch64__) && !defined(ANY_BSD) && !defined(COSMO)             \
+    && !defined(DARWIN) && !defined(LINUX) && !defined(KOS) && !defined(QNX) \
     && !defined(NN_BUILD_TARGET_PLATFORM_NX) && !defined(_WIN32)
 #  define AARCH64
 #  define NOSYS
@@ -480,9 +484,9 @@ EXTERN_C_BEGIN
 #  define mach_type_known
 #endif
 
-#if defined(__aarch64__)                                                      \
-    && (defined(ANY_BSD) || defined(DARWIN) || defined(LINUX) || defined(KOS) \
-        || defined(QNX))
+#if defined(__aarch64__)                                      \
+    && (defined(ANY_BSD) || defined(COSMO) || defined(DARWIN) \
+        || defined(LINUX) || defined(KOS) || defined(QNX))
 #  define AARCH64
 #  define mach_type_known
 #elif defined(__arc__) && defined(LINUX)
@@ -562,8 +566,8 @@ EXTERN_C_BEGIN
 #  define mach_type_known
 #elif (defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) \
        || defined(__X86_64__))                                        \
-    && (defined(ANY_BSD) || defined(DARWIN) || defined(LINUX)         \
-        || defined(QNX))
+    && (defined(ANY_BSD) || defined(COSMO) || defined(DARWIN)         \
+        || defined(LINUX) || defined(QNX))
 #  define X86_64
 #  define mach_type_known
 #endif
@@ -799,6 +803,16 @@ EXTERN_C_BEGIN
 #    define USE_MMAP_ANON
 #  endif
 #endif /* CYGWIN32 */
+
+#ifdef COSMO
+#  define OS_TYPE "COSMO"
+#  define LINUX_STACKBOTTOM
+extern int __data_start[] __attribute__((__weak__));
+#  define DATASTART ((ptr_t)__data_start)
+extern int _end[];
+#  define DATAEND ((ptr_t)_end)
+#  define USE_MMAP_ANON
+#endif /* COSMO */
 
 #ifdef DARWIN
 #  define OS_TYPE "DARWIN"
@@ -1982,6 +1996,9 @@ extern int __data_start[] __attribute__((__weak__));
 #      define DATASTART ((ptr_t)__data_start)
 #    endif
 #  endif
+#  ifdef COSMO
+/* Empty. */
+#  endif
 #  ifdef DARWIN
 /* OS X, iOS, visionOS */
 #    define DARWIN_DONT_PARSE_STACK 1
@@ -2215,6 +2232,9 @@ EXTERN_C_BEGIN
 #    ifndef SOFT_VDB
 #      define SOFT_VDB
 #    endif
+#  endif
+#  ifdef COSMO
+/* Empty. */
 #  endif
 #  ifdef DARWIN
 #    define DARWIN_DONT_PARSE_STACK 1
@@ -2604,10 +2624,10 @@ EXTERN_C_END
 EXTERN_C_BEGIN
 #endif /* GC_OPENBSD_THREADS */
 
-#if defined(AIX) || defined(ANY_BSD) || defined(BSD) || defined(DARWIN)  \
-    || defined(DGUX) || defined(HAIKU) || defined(HPUX) || defined(HURD) \
-    || defined(IRIX5) || defined(LINUX) || defined(OSF1) || defined(QNX) \
-    || defined(SVR4)
+#if defined(AIX) || defined(ANY_BSD) || defined(BSD) || defined(COSMO)     \
+    || defined(DARWIN) || defined(DGUX) || defined(HAIKU) || defined(HPUX) \
+    || defined(HURD) || defined(IRIX5) || defined(LINUX) || defined(OSF1)  \
+    || defined(QNX) || defined(SVR4)
 #  define UNIX_LIKE /* Basic Unix-like system calls work.   */
 #endif
 
