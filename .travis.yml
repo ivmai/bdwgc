@@ -772,7 +772,8 @@ script:
 - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
     if [[ "$CPPCHECK_OUT_FILTER" == "" ]]; then CPPCHECK_OUT_FILTER="c "; fi;
     set -o pipefail; ~/cppcheck/cppcheck --error-exitcode=2
-        -U CORD_API -U GC_API -D CPPCHECK -I include $CPPCHECK_ENABLE |
+        -U CORD_API -U GC_API -D __SIZEOF_POINTER__=8 -D CPPCHECK
+        -I include $CPPCHECK_ENABLE |
         grep --line-buffered "$CPPCHECK_OUT_FILTER";
   fi
 - if [[ "$TESTS_CUSTOM_RUN" == true ]]; then
