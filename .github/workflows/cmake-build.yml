@@ -66,10 +66,6 @@ jobs:
           c_compiler: clang
           enable_threads: on
           redirect_malloc: on
-        - os: windows-latest
-          c_compiler: cl
-          enable_threads: off
-          redirect_malloc: on
         include:
         - os: windows-latest
           c_compiler: gcc
