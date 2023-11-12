@@ -466,9 +466,9 @@ endif()
 # Alternatively, we could set CMAKE_REQUIRED_LIBRARIES properly.
 SET(CMAKE_REQUIRED_FLAGS "-c")
 
-# Instruct check_c_source_compiles and similar CMake checks not to ignore
-# compiler warnings (like "implicit declaration of function").
-if (NOT BORLAND AND NOT MSVC AND NOT WATCOM)
+if (NOT (BORLAND OR MSVC OR WATCOM))
+  # Instruct check_c_source_compiles and similar CMake checks not to ignore
+  # compiler warnings (like "implicit declaration of function").
   check_c_compiler_flag(-Werror HAVE_FLAG_WERROR)
   if (HAVE_FLAG_WERROR)
     check_c_compiler_flag(-Wno-unused-command-line-argument
@@ -480,6 +480,11 @@ if (NOT BORLAND AND NOT MSVC AND NOT WATCOM)
           "${CMAKE_REQUIRED_FLAGS} -Wno-unused-command-line-argument")
     endif()
   endif(HAVE_FLAG_WERROR)
+  # Prevent "__builtin_return_address with nonzero argument is unsafe" warning.
+  check_c_compiler_flag(-Wno-frame-address HAVE_FLAG_WNO_FRAME_ADDRESS)
+  if (HAVE_FLAG_WNO_FRAME_ADDRESS)
+    add_compile_options(-Wno-frame-address)
+  endif(HAVE_FLAG_WNO_FRAME_ADDRESS)
 endif()
 
 if (BUILD_SHARED_LIBS)
@@ -505,14 +510,6 @@ endif()
 check_c_compiler_flag(-fno-strict-aliasing HAVE_FLAG_F_NO_STRICT_ALIASING)
 if (HAVE_FLAG_F_NO_STRICT_ALIASING)
   add_compile_options(-fno-strict-aliasing)
-endif()
-
-# Prevent "__builtin_return_address with a nonzero argument is unsafe" warning.
-if (NOT BORLAND AND NOT MSVC AND NOT WATCOM)
-  check_c_compiler_flag(-Wno-frame-address HAVE_FLAG_WNO_FRAME_ADDRESS)
-  if (HAVE_FLAG_WNO_FRAME_ADDRESS)
-    add_compile_options(-Wno-frame-address)
-  endif(HAVE_FLAG_WNO_FRAME_ADDRESS)
 endif()
 
 # Extra user-defined flags to pass both to C and C++ compilers.
@@ -831,7 +828,7 @@ if (build_tests)
     target_link_libraries(cordtest PRIVATE cord gc)
     add_test(NAME cordtest COMMAND cordtest)
 
-    if (WIN32 AND NOT CYGWIN)
+    if (WIN32) # AND NOT CYGWIN
       add_executable(de cord/tests/de.c cord/tests/de_win.c
                      cord/tests/de_win.rc ${NODIST_SRC})
       set_target_properties(de PROPERTIES WIN32_EXECUTABLE TRUE)
