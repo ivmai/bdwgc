@@ -1878,7 +1878,7 @@ GC_API void GC_CALL GC_dump_finalization(void);
 /* Even then, these are probably more useful as                         */
 /* documentation than as part of the API.                               */
 /* Note that GC_PTR_ADD evaluates the first argument more than once.    */
-#if defined(GC_DEBUG) && defined(__GNUC__)
+#if defined(GC_DEBUG) && (defined(__GNUC__) || defined(__clang__))
 # define GC_PTR_ADD3(x, n, type_of_result) \
         ((type_of_result)GC_same_obj((x)+(n), (x)))
 # define GC_PRE_INCR3(x, n, type_of_result) \
