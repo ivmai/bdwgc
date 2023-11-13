@@ -2035,16 +2035,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
 #ifdef PARALLEL_MARK
 
-# if defined(GC_PTHREADS) && !defined(GC_PTHREADS_PARAMARK)
-    /* Use pthread-based parallel mark implementation.    */
-
-    /* Workaround a deadlock in winpthreads-3.0b internals (observed    */
-    /* with MinGW 32/64).                                               */
-#   if !defined(__MINGW32__)
-#     define GC_PTHREADS_PARAMARK
-#   endif
-# endif
-
 # if !defined(GC_PTHREADS_PARAMARK)
     STATIC HANDLE GC_marker_cv[MAX_MARKERS - 1] = {0};
                         /* Events with manual reset (one for each       */
