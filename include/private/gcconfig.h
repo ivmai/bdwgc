@@ -2658,8 +2658,19 @@ EXTERN_C_BEGIN
 # define NO_SIGNALS_UNBLOCK_IN_MAIN
 #endif
 
+#ifndef PARALLEL_MARK
+# undef GC_PTHREADS_PARAMARK /* just in case it is defined by client */
+#elif defined(GC_PTHREADS) && !defined(GC_PTHREADS_PARAMARK) \
+      && !defined(__MINGW32__)
+  /* Use pthread-based parallel mark implementation.    */
+  /* Except for MinGW 32/64 to workaround a deadlock in */
+  /* winpthreads-3.0b internals.                        */
+# define GC_PTHREADS_PARAMARK
+#endif
+
 #if !defined(NO_MARKER_SPECIAL_SIGMASK) \
     && (defined(NACL) || defined(GC_WIN32_PTHREADS) \
+        || (defined(GC_PTHREADS_PARAMARK) && defined(GC_WIN32_THREADS)) \
         || defined(GC_NO_PTHREAD_SIGMASK))
   /* Either there is no pthread_sigmask(), or GC marker thread cannot   */
   /* steal and drop user signal calls.                                  */
@@ -3105,16 +3116,6 @@ EXTERN_C_BEGIN
 #   define PUSHED_REGS_COUNT 29
 # endif
 #endif /* GC_WIN32_THREADS */
-
-#ifndef PARALLEL_MARK
-# undef GC_PTHREADS_PARAMARK /* just in case it is defined by client */
-#elif defined(GC_PTHREADS) && !defined(GC_PTHREADS_PARAMARK) \
-      && !defined(__MINGW32__)
-  /* Use pthread-based parallel mark implementation.    */
-  /* Except for MinGW 32/64 to workaround a deadlock in */
-  /* winpthreads-3.0b internals.                        */
-# define GC_PTHREADS_PARAMARK
-#endif
 
 #if !defined(GC_PTHREADS) && !defined(GC_PTHREADS_PARAMARK)
 # undef HAVE_PTHREAD_SETNAME_NP_WITH_TID
