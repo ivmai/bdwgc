@@ -3106,14 +3106,14 @@ EXTERN_C_BEGIN
 # endif
 #endif /* GC_WIN32_THREADS */
 
-#if defined(PARALLEL_MARK) && defined(GC_PTHREADS) \
-    && !defined(GC_PTHREADS_PARAMARK) && !defined(__MINGW32__)
+#ifndef PARALLEL_MARK
+# undef GC_PTHREADS_PARAMARK /* just in case it is defined by client */
+#elif defined(GC_PTHREADS) && !defined(GC_PTHREADS_PARAMARK) \
+      && !defined(__MINGW32__)
   /* Use pthread-based parallel mark implementation.    */
   /* Except for MinGW 32/64 to workaround a deadlock in */
   /* winpthreads-3.0b internals.                        */
 # define GC_PTHREADS_PARAMARK
-#else
-# undef GC_PTHREADS_PARAMARK /* just in case defined by client */
 #endif
 
 #if !defined(GC_PTHREADS) && !defined(GC_PTHREADS_PARAMARK)
