@@ -3053,8 +3053,17 @@ EXTERN_C_BEGIN
 # define NO_SIGNALS_UNBLOCK_IN_MAIN
 #endif
 
+#if defined(PARALLEL_MARK) && defined(GC_PTHREADS) \
+    && !defined(GC_PTHREADS_PARAMARK) && !defined(__MINGW32__)
+  /* Use pthread-based parallel mark implementation.    */
+  /* Except for MinGW 32/64 to workaround a deadlock in */
+  /* winpthreads-3.0b internals.                        */
+# define GC_PTHREADS_PARAMARK
+#endif
+
 #if !defined(NO_MARKER_SPECIAL_SIGMASK) \
     && (defined(NACL) || defined(GC_WIN32_PTHREADS) \
+        || (defined(GC_PTHREADS_PARAMARK) && defined(GC_WIN32_THREADS)) \
         || defined(GC_NO_PTHREAD_SIGMASK))
   /* Either there is no pthread_sigmask(), or GC marker thread cannot   */
   /* steal and drop user signal calls.                                  */
