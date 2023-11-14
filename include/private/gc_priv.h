@@ -2231,6 +2231,19 @@ GC_EXTERN GC_bool GC_print_back_height;
 #   endif
 # endif /* CAN_HANDLE_FORK */
 
+# if defined(MPROTECT_VDB) && defined(DARWIN)
+    EXTERN_C_END
+#   include <pthread.h>
+    EXTERN_C_BEGIN
+#   ifdef THREADS
+      GC_INNER int GC_inner_pthread_create(pthread_t *t,
+                                GC_PTHREAD_CREATE_CONST pthread_attr_t *a,
+                                void *(*fn)(void *), void *arg);
+#   else
+#     define GC_inner_pthread_create pthread_create
+#   endif
+# endif /* MPROTECT_VDB && DARWIN */
+
   GC_INNER GC_bool GC_dirty_init(void);
                 /* Returns true if dirty bits are maintained (otherwise */
                 /* it is OK to be called again if the client invokes    */

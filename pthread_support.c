@@ -259,6 +259,16 @@
 
 static GC_bool parallel_initialized = FALSE;
 
+#if defined(MPROTECT_VDB) && defined(DARWIN)
+  GC_INNER int GC_inner_pthread_create(pthread_t *t,
+                                GC_PTHREAD_CREATE_CONST pthread_attr_t *a,
+                                void *(*fn)(void *), void *arg)
+  {
+    INIT_REAL_SYMS();
+    return REAL_FUNC(pthread_create)(t, a, fn, arg);
+  }
+#endif
+
 #ifndef GC_ALWAYS_MULTITHREADED
   GC_INNER GC_bool GC_need_to_lock = FALSE;
 #endif
