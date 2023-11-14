@@ -3811,7 +3811,6 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #include <mach/mach_error.h>
 #include <mach/exception.h>
 #include <mach/task.h>
-#include <pthread.h>
 
 /* These are not defined in any header, although they are documented */
 extern boolean_t
@@ -4162,9 +4161,8 @@ GC_INNER GC_bool GC_dirty_init(void)
   if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0)
     ABORT("pthread_attr_setdetachedstate failed");
 
-# undef pthread_create
-  /* This will call the real pthread function, not our wrapper */
-  if (pthread_create(&thread, &attr, GC_mprotect_thread, NULL) != 0)
+  /* This will call the real pthread function, not our wrapper. */
+  if (GC_inner_pthread_create(&thread, &attr, GC_mprotect_thread, NULL) != 0)
     ABORT("pthread_create failed");
   (void)pthread_attr_destroy(&attr);
 
