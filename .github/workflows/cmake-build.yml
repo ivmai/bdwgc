@@ -108,9 +108,9 @@ jobs:
       # Build the code with the given configuration.
       run: >
         cmake --build ${{ steps.strings.outputs.build-output-dir }}
-        --config ${{ matrix.build_type }} --verbose
+        --config ${{ matrix.build_type }} --verbose --parallel
 
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       # Execute tests defined by the CMake configuration.
-      run: ctest --build-config ${{ matrix.build_type }} --verbose
+      run: ctest --build-config ${{ matrix.build_type }} --verbose --parallel 8
