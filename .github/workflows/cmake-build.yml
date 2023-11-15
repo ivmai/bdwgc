@@ -62,9 +62,6 @@ jobs:
         - os: windows-latest # TODO: support dependency on libatomic_ops
           c_compiler: cl
           enable_threads: on
-        - os: macos-latest # FIXME: KERN_PROTECTION_FAILURE while world stopped
-          enable_threads: on
-          redirect_malloc: off
         include:
         - os: windows-latest
           c_compiler: gcc
