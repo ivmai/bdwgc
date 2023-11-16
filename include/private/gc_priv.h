@@ -223,7 +223,7 @@ typedef int GC_bool;
 #endif /* !GC_ATTR_NO_SANITIZE_THREAD */
 
 #ifndef GC_ATTR_UNUSED
-# if GC_GNUC_PREREQ(3, 4)
+# if GC_GNUC_PREREQ(3, 4) || defined(__clang__)
 #   define GC_ATTR_UNUSED __attribute__((__unused__))
 # else
 #   define GC_ATTR_UNUSED /* empty */

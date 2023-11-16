@@ -67,7 +67,7 @@ typedef void (* oom_fn)(void);
                          ABORT("Out of memory"); }
 # define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
 
-#if GC_GNUC_PREREQ(3, 4)
+#if GC_GNUC_PREREQ(3, 4) || defined(__clang__)
 # define CORD_ATTR_UNUSED __attribute__((__unused__))
 #else
 # define CORD_ATTR_UNUSED /* empty */
