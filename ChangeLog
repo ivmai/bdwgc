@@ -4,27 +4,42 @@
 * Avoid unexpected heap growth in gctest for the case of VERY_SMALL_CONFIG
 * Change gc.man to include gc/gc.h
 * Check for out-of-memory on every memory allocation in tests
+* Do not compile pthread_start.c on Cygwin even if build shared libs (CMake)
 * Eliminate 'alloc_small declared but unused' gcc warning in gctest
 * Eliminate 'make_key is defined but unused' gcc warning in threadkeytest
 * Eliminate 'old_segv_handler is defined but unused' gcc warning on OpenBSD
 * Eliminate 'rand() may return deterministic values' warning
+* Eliminate 'unused parameter' compiler warnings reported by MS clang
 * Eliminate 'unused value' gcc warnings in init_global_static_roots (Symbian)
+* Eliminate GCC warning of unsafe __builtin_return_address(1) in Cmake script
 * Eliminate compiler warning of missing cast in LONG_MULT after shift
 * Eliminate warning of unused expression result in GC_FreeBSDGetDataStart
+* Ensure _GNU_SOURCE is defined if HAVE_DLADDR is defined by configure
 * Fix 'g++ not found' error on OpenBSD (Makefile.direct)
+* Fix 'implicit declaration of function pthread_atfork' gcc error on MinGW
 * Fix 'implicit declaration of function sbrk' gcc error on Symbian
 * Fix 'implicit declaration of iscntrl()' warning in cord/de_win (MinGW)
+* Fix 'info' buffer potential overrun in GC_save_callers
+* Fix 'l-value specifies const object' MSVC error in GC_push_many_regs
 * Fix 'linker input unused' error inside check_c_compiler_flag (CMake)
 * Fix 'missing binary operator before token' gcc error in gcconfig.h
 * Fix 'missing sysconf() prototype' gcc error in setjmp_t tool (OpenBSD)
+* Fix 'sigset_t undeclared' MS VC error if pthreads-w32 is used
 * Fix 'undefined reference' linker errors if shared build on OpenBSD (CMake)
+* Fix 'unused GC_set_and_save_fault_handler' warning on OS X
 * Fix GC_push_stack_for() to push also Xmm registers on Windows/x64
 * Fix MACH_TYPE macro redefinition on Symbian/arm
 * Fix SVR4 macro definition order
 * Fix asm constraint in LONG_MULT for gcc/x86
 * Fix bitwise negation and rounding direction in setjmp_t tool
+* Fix closing bracket placement for case statement in configure
+* Fix deprecation warning about support of CMake older than v3.5
+* Fix extra 'extern C' for include signal.h in gcconfig.h
 * Fix getcontext() detection by CMake on OpenBSD
-* Fix missing GC_pthread_sigmask on Free/NetBSD
+* Fix handling of GC_gc_no counter wrap in GC_clear_stack
+* Fix handling of GC_gc_no counter wrap in GC_notify_or_invoke_finalizers
+* Fix lock assertion violation in GC_try_to_collect_inner on OS X
+* Fix missing GC_pthread_sigmask on FreeBSD and NetBSD
 * Fix missing _setjmp() on djgpp
 * Fix missing atomic barriers in CORD_from_file_lazy
 * Fix missing outermost parentheses in CORD_pos_cur_char_addr and hugetest
@@ -32,11 +47,17 @@
 * Fix missing type widening before left shift in GC_MAKE_PROC
 * Fix misspelled GC_HEADERS_H macro in gc_priv.h
 * Fix typos in comments
+* Fix undefined GC_real_pthread_sigmask if redirect malloc on OS X
+* Fix update of last_back_trace_gc_no if KEEP_BACK_PTRS is not defined
+* Handle GC_gc_no counter overflow properly in GC_print_trace
 * Remove .log and cordtest .tmp files by 'make clean' (Makefile.direct)
 * Remove a redundant check of HOST_ANDROID in gcconfig.h
 * Remove duplication of random numbers generator formula
 * Support NetBSD/riscv64
+* Support non-msys MinGW build by CMake
 * Use AO primitives in GC_RAND_NEXT instead of no_sanitize attribute
+* Workaround 'malloc inconsistent dll linkage' MS VC error in CMake script
+* Workaround MS Clang failure to compile de_win.rc
 * Workaround mark stack overflow in GC_push_finalizer_structures on MinGW
 
 
