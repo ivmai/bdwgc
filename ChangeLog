@@ -1,3 +1,43 @@
+2023-10-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c (GC_stack_last_cleared): Fix mistyped name ("GC_gc_no") in
+	comment.
+
+2023-10-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* finalize.c [MAKE_BACK_GRAPH] (GC_notify_or_invoke_finalizers): Set
+	last_back_trace_gc_no to GC_gc_no regardless of KEEP_BACK_PTRS.
+
+2023-10-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_locks.h [GC_PTHREADS && GC_ASSERTIONS]
+	(SET_LOCK_HOLDER): Move and update comment about the allocator lock
+	holder.
+
+2023-09-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (GC_stop_world): Move comment about
+	"acquire and release the GC lock" out of PARALLEL_MARK block.
+
+2023-09-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* dyn_load.c [DARWIN] (GC_init_dyld): Fix typo ("is created") in
+	comment.
+
+2023-09-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [SAVE_CALL_CHAIN] (IGNORE_FRAMES): Do not define.
+	* os_dep.c [SAVE_CALL_CHAIN] (GC_save_callers): Do not call BCOPY() if
+	elements count is zero.
+	* os_dep.c [SAVE_CALL_CHAIN] (GC_save_callers): Move
+	comment about retrieving pc values down to be near backtrace(); replace
+	IGNORE_FRAMES to 1; set i to 0 if npcs is zero.
+
+2023-09-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac [$enable_gc_debug==yes]: Place "]" after "fi" instead
+	of "esac".
+
 2023-08-18  Ivan Maidanski <ivmai@mail.ru>
 
 	* dbg_mlc.c (GC_get_back_ptr_info): Remove wrong statement in comment
