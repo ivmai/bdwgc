@@ -1014,7 +1014,10 @@ Also, includes 7.6.18 changes
 == [7.6.20] (not released yet) ==
 
 * Eliminate compiler warning of missing cast in LONG_MULT after shift
+* Fix 'sigset_t undeclared' MS VC error if pthreads-w32 is used
+* Fix lock assertion violation in GC_try_to_collect_inner on OS X
 * Fix missing outermost parentheses in macro definitions in huge test
+* Fix undefined GC_real_pthread_sigmask if redirect malloc on OS X
 
 Also, includes 7.4.26 changes
 
