@@ -2016,11 +2016,9 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 #endif
 
 #ifdef E2K
-  /* Copy the full procedure stack to the provided buffer (with the     */
-  /* given capacity).  Returns either the required buffer size if it    */
-  /* is bigger than the provided buffer capacity, otherwise the amount  */
-  /* of copied bytes.  May be called from a signal handler.             */
-  GC_INNER size_t GC_get_procedure_stack(ptr_t, size_t);
+# include <errno.h>
+# include <asm/e2k_syswork.h>
+# include <sys/syscall.h>
 
 # if defined(CPPCHECK)
 #   define PS_ALLOCA_BUF(sz) __builtin_alloca(sz)
@@ -2031,16 +2029,30 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
   /* Copy procedure (register) stack to a stack-allocated buffer.       */
   /* Usable from a signal handler.  The buffer is valid only within     */
   /* the current function.                                              */
-# define GET_PROCEDURE_STACK_LOCAL(pbuf, psz)                       \
-        do {                                                        \
-          size_t capacity = 0;                                      \
-                                                                    \
-          for (*(pbuf) = NULL; ; capacity = *(psz)) {               \
-            *(psz) = GC_get_procedure_stack(*(pbuf), capacity);     \
-            if (*(psz) <= capacity) break;                          \
-            /* Allocate buffer on the stack; cannot return NULL. */ \
-            *(pbuf) = PS_ALLOCA_BUF(*(psz));                        \
-          }                                                         \
+# define GET_PROCEDURE_STACK_LOCAL(pbuf, psz)                               \
+        do {                                                                \
+          unsigned long long ofs_sz_ll = 0;                                 \
+                                                                            \
+          /* Determine buffer size to store the procedure stack.    */      \
+          if (syscall(__NR_access_hw_stacks, E2K_GET_PROCEDURE_STACK_SIZE,  \
+                      NULL, NULL, 0, &ofs_sz_ll) == -1)                     \
+            ABORT_ARG1("Cannot get size of procedure stack",                \
+                       ": errno= %d", errno);                               \
+          GC_ASSERT(ofs_sz_ll > 0 && ofs_sz_ll % sizeof(word) == 0);        \
+          *(psz) = (size_t)ofs_sz_ll;                                       \
+          /* Allocate buffer on the stack; cannot return NULL. */           \
+          *(pbuf) = PS_ALLOCA_BUF(*(psz));                                  \
+          /* Read the procedure stack to the buffer. */                     \
+          for (;;) {                                                        \
+            ofs_sz_ll = 0;                                                  \
+            if (syscall(__NR_access_hw_stacks, E2K_READ_PROCEDURE_STACK_EX, \
+                        &ofs_sz_ll, *(pbuf), *(psz), NULL) != -1)           \
+              break;                                                        \
+            if (errno != EAGAIN)                                            \
+              ABORT_ARG2("Cannot read procedure stack",                     \
+                         ": sz= %lu, errno= %d",                            \
+                         (unsigned long)(*(psz)), errno);                   \
+          }                                                                 \
         } while (0)
 #endif /* E2K */
 
