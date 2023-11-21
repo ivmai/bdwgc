@@ -798,10 +798,10 @@ GC_INNER void GC_push_all_stacks(void)
 #             ifdef IA64
                 bs_hi = GC_save_regs_in_stack();
 #             elif defined(E2K)
-                GC_ASSERT(NULL == crtn -> backing_store_end);
-                (void)GC_save_regs_in_stack();
                 {
                   size_t stack_size;
+
+                  GC_ASSERT(NULL == crtn -> backing_store_end);
                   GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
                   bs_hi = bs_lo + stack_size;
                 }

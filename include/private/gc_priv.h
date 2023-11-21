@@ -2009,7 +2009,7 @@ GC_EXTERN void (*GC_push_typed_structures)(void);
 GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
                                           volatile ptr_t arg);
 
-#if defined(E2K) || defined(IA64) || defined(SPARC)
+#if defined(IA64) || defined(SPARC)
   /* Cause all stacked registers to be saved in memory.  Return a       */
   /* pointer to the top of the corresponding memory stack.              */
   ptr_t GC_save_regs_in_stack(void);

@@ -59,11 +59,6 @@
     }
     return (size_t)new_sz;
   }
-
-  ptr_t GC_save_regs_in_stack(void) {
-    __asm__ __volatile__ ("flushr");
-    return NULL;
-  }
 #endif /* E2K */
 
 #if defined(MACOS) && defined(__MWERKS__)
@@ -327,7 +322,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
             ABORT("feenableexcept failed");
 #       endif
 #     endif /* GETCONTEXT_FPU_EXCMASK_BUG */
-#     if defined(E2K) || defined(IA64) || defined(SPARC)
+#     if defined(IA64) || defined(SPARC)
         /* On a register window machine, we need to save register       */
         /* contents on the stack for this to work.  This may already be */
         /* subsumed by the getcontext() call.                           */

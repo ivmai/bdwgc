@@ -2312,8 +2312,6 @@ STATIC void GC_do_blocking_inner(ptr_t data, void *context)
         GC_blocked_sp = (ptr_t) &d; /* save approx. sp */
 #       ifdef IA64
             GC_blocked_register_sp = GC_save_regs_in_stack();
-#       elif defined(E2K)
-            (void)GC_save_regs_in_stack();
 #       endif
 #   endif
 

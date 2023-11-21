@@ -2088,9 +2088,6 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     GC_ASSERT((me -> flags & DO_BLOCKING) == 0);
 
     /* Restore original "stack section".        */
-#   ifdef E2K
-      (void)GC_save_regs_in_stack();
-#   endif
     READER_LOCK();
     GC_ASSERT(me -> crtn == crtn);
     GC_ASSERT(crtn -> traced_stack_sect == &stacksect);
