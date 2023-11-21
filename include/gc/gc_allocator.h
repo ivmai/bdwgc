@@ -170,6 +170,7 @@ public:
 
 template<>
 class gc_allocator<void> {
+public:
   typedef GC_ALCTR_SIZE_T    size_type;
   typedef GC_ALCTR_PTRDIFF_T difference_type;
   typedef void*       pointer;
@@ -245,6 +246,7 @@ public:
 
 template<>
 class gc_allocator_ignore_off_page<void> {
+public:
   typedef GC_ALCTR_SIZE_T    size_type;
   typedef GC_ALCTR_PTRDIFF_T difference_type;
   typedef void*       pointer;
@@ -323,6 +325,7 @@ public:
 
 template<>
 class traceable_allocator<void> {
+public:
   typedef GC_ALCTR_SIZE_T    size_type;
   typedef GC_ALCTR_PTRDIFF_T difference_type;
   typedef void*       pointer;
