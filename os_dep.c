@@ -5129,7 +5129,7 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
 # endif
 }
 
-#else /* !GC_HAVE_BUILTIN_BACKTRACE */
+#elif defined(I386) || defined(SPARC)
 
 #if defined(ANY_BSD) && defined(SPARC)
 # define FR_SAVFP fr_fp
@@ -5154,12 +5154,12 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
     /* We assume this is turned on only with gcc as the compiler. */
     asm("movl %%ebp,%0" : "=r"(frame));
     fp = frame;
-# else
+# else /* SPARC */
     frame = (struct frame *)GC_save_regs_in_stack();
     fp = (struct frame *)((long)(frame -> FR_SAVFP) + BIAS);
 #endif
 
-   for (; !((word)fp HOTTER_THAN (word)frame)
+  for (; !((word)fp HOTTER_THAN (word)frame)
 #         ifndef THREADS
             && !((word)GC_stackbottom HOTTER_THAN (word)fp)
 #         elif defined(STACK_GROWS_UP)
