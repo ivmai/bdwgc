@@ -2006,7 +2006,7 @@ GC_EXTERN void (*GC_push_typed_structures)(void);
                         /* A pointer such that we can avoid linking in  */
                         /* the typed allocation support if unused.      */
 
-GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
+GC_INNER void GC_with_callee_saves_pushed(void (*volatile fn)(ptr_t, void *),
                                           volatile ptr_t arg);
 
 #if defined(IA64) || defined(SPARC)

@@ -1602,7 +1602,8 @@ typedef void * (GC_CALLBACK * GC_stack_base_func)(
 /* somewhere in the GC_call_with_stack_base frame.  This often can      */
 /* be used to provide a sufficiently accurate stack bottom.  And we     */
 /* implement it everywhere.                                             */
-GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
+GC_API void * GC_CALL GC_call_with_stack_base(
+                                        GC_stack_base_func volatile /* fn */,
                                         void * /* arg */) GC_ATTR_NONNULL(1);
 
 #define GC_SUCCESS 0
@@ -1763,7 +1764,7 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type /* fn */,
 /* GC_do_blocking.  GC_call_with_gc_active() often can be used to       */
 /* provide a sufficiently accurate stack bottom.  Acquires the          */
 /* allocator lock in the reader mode (but fn is called not holding it). */
-GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type /* fn */,
+GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type volatile /* fn */,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
 
 /* Attempt to fill in the GC_stack_base structure with the stack bottom */

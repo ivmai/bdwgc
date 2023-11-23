@@ -2217,7 +2217,8 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn, void *client_data)
   }
 #endif /* THREADS */
 
-GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
+GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func volatile fn,
+                                              void *arg)
 {
     struct GC_stack_base base;
     void *result;
@@ -2248,7 +2249,7 @@ GC_INNER ptr_t GC_blocked_sp = NULL;
 GC_INNER struct GC_traced_stack_sect_s *GC_traced_stack_sect = NULL;
 
 /* This is nearly the same as in pthread_support.c.     */
-GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
+GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type volatile fn,
                                              void * client_data)
 {
     struct GC_traced_stack_sect_s stacksect;
@@ -2262,7 +2263,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
     if (GC_blocked_sp == NULL) {
       /* We are not inside GC_do_blocking() - do nothing more.  */
-      client_data = fn(client_data);
+      client_data = (*fn)(client_data);
       /* Prevent treating the above as a tail call.     */
       GC_noop1(COVERT_DATAFLOW(&stacksect));
       return client_data; /* result */
@@ -2281,7 +2282,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     GC_blocked_sp = NULL;
     GC_traced_stack_sect = &stacksect;
 
-    client_data = fn(client_data);
+    client_data = (*fn)(client_data);
     GC_ASSERT(GC_blocked_sp == NULL);
     GC_ASSERT(GC_traced_stack_sect == &stacksect);
 
