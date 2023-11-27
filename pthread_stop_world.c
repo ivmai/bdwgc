@@ -355,7 +355,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
   GC_store_stack_ptr(crtn);
 # ifdef E2K
     GC_ASSERT(NULL == crtn -> backing_store_end);
-    GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
+    GET_PROCEDURE_STACK_LOCAL(crtn -> ps_ofs, &bs_lo, &stack_size);
     crtn -> backing_store_end = bs_lo;
     crtn -> backing_store_ptr = bs_lo + stack_size;
 # endif
@@ -802,7 +802,8 @@ GC_INNER void GC_push_all_stacks(void)
                   size_t stack_size;
 
                   GC_ASSERT(NULL == crtn -> backing_store_end);
-                  GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
+                  GET_PROCEDURE_STACK_LOCAL(crtn -> ps_ofs,
+                                            &bs_lo, &stack_size);
                   bs_hi = bs_lo + stack_size;
                 }
 #             endif

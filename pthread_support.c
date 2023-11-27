@@ -1549,14 +1549,16 @@ GC_INNER_WIN32THREAD void GC_record_stack_base(GC_stack_context_t crtn,
                                                const struct GC_stack_base *sb)
 {
 # if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_THREADS)
-    crtn -> stack_ptr = (ptr_t)sb->mem_base;
+    crtn -> stack_ptr = (ptr_t)(sb -> mem_base);
 # endif
-  if ((crtn -> stack_end = (ptr_t)sb->mem_base) == NULL)
+  if ((crtn -> stack_end = (ptr_t)(sb -> mem_base)) == NULL)
     ABORT("Bad stack base in GC_register_my_thread");
-# ifdef IA64
-    crtn -> backing_store_end = (ptr_t)sb->reg_base;
+# ifdef E2K
+    crtn -> ps_ofs = (size_t)(word)(sb -> reg_base);
+# elif defined(IA64)
+    crtn -> backing_store_end = (ptr_t)(sb -> reg_base);
 # elif defined(I386) && defined(GC_WIN32_THREADS)
-    crtn -> initial_stack_base = (ptr_t)sb->mem_base;
+    crtn -> initial_stack_base = (ptr_t)(sb -> mem_base);
 # endif
 }
 
@@ -1745,10 +1747,8 @@ GC_INNER void GC_thr_init(void)
 
     sb.mem_base = GC_stackbottom;
     GC_ASSERT(sb.mem_base != NULL);
-#   ifdef IA64
+#   if defined(E2K) || defined(IA64)
       sb.reg_base = GC_register_stackbottom;
-#   elif defined(E2K)
-      sb.reg_base = NULL;
 #   endif
     GC_ASSERT(NULL == GC_self_thread_inner());
     me = GC_register_my_thread_inner(&sb, self_id);
@@ -1828,7 +1828,8 @@ GC_INNER void GC_init_parallel(void)
           *(pTopOfStackUnset) = FALSE;                      \
           crtn -> stack_ptr = GC_approx_sp();               \
           GC_ASSERT(NULL == crtn -> backing_store_end);     \
-          GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);   \
+          GET_PROCEDURE_STACK_LOCAL(crtn -> ps_ofs,         \
+                                    &bs_lo, &stack_size);   \
           crtn -> backing_store_end = bs_lo;                \
           crtn -> backing_store_ptr = bs_lo + stack_size;   \
           (me) -> flags |= DO_BLOCKING;                     \
@@ -1972,7 +1973,7 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
       GC_ASSERT(NULL == t);
       /* Alter the stack bottom of the primordial thread.       */
       GC_stackbottom = (char*)(sb -> mem_base);
-#     ifdef IA64
+#     if defined(E2K) || defined(IA64)
         GC_register_stackbottom = (ptr_t)(sb -> reg_base);
 #     endif
       return;
@@ -1987,7 +1988,9 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
               && NULL == crtn -> traced_stack_sect); /* for now */
 
     crtn -> stack_end = (ptr_t)(sb -> mem_base);
-#   ifdef IA64
+#   ifdef E2K
+      crtn -> ps_ofs = (size_t)(word)(sb -> reg_base);
+#   elif defined(IA64)
       crtn -> backing_store_end = (ptr_t)(sb -> reg_base);
 #   endif
 #   ifdef GC_WIN32_THREADS
@@ -2007,7 +2010,7 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
     crtn = me -> crtn;
     sb -> mem_base = crtn -> stack_end;
 #   ifdef E2K
-      sb -> reg_base = NULL;
+      sb -> reg_base = (void *)(word)(crtn -> ps_ofs);
 #   elif defined(IA64)
       sb -> reg_base = crtn -> backing_store_end;
 #   endif
@@ -2029,6 +2032,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type volatile fn,
     ptr_t stack_end;
 #   ifdef E2K
       ptr_t saved_bs_ptr, saved_bs_end;
+      size_t saved_ps_ofs;
 #   endif
 
     READER_LOCK();  /* This will block if the world is stopped. */
@@ -2075,6 +2079,14 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type volatile fn,
       stacksect.saved_backing_store_ptr = crtn -> backing_store_ptr;
 #   elif defined(E2K)
       GC_ASSERT(crtn -> backing_store_end != NULL);
+      {
+        unsigned long long sz_ull;
+
+        GET_PROCEDURE_STACK_SIZE_INNER(&sz_ull);
+        saved_ps_ofs = crtn -> ps_ofs;
+        GC_ASSERT(saved_ps_ofs <= (size_t)sz_ull);
+        crtn -> ps_ofs = (size_t)sz_ull;
+      }
       saved_bs_end = crtn -> backing_store_end;
       saved_bs_ptr = crtn -> backing_store_ptr;
       crtn -> backing_store_ptr = NULL;
@@ -2102,6 +2114,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type volatile fn,
       GC_ASSERT(NULL == crtn -> backing_store_end);
       crtn -> backing_store_end = saved_bs_end;
       crtn -> backing_store_ptr = saved_bs_ptr;
+      crtn -> ps_ofs = saved_ps_ofs;
 #   endif
     me -> flags |= DO_BLOCKING;
     crtn -> stack_ptr = stacksect.saved_stack_ptr;

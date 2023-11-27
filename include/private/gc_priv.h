@@ -1851,9 +1851,13 @@ struct GC_traced_stack_sect_s {
                         /* NULL if no such "frame" active.              */
 #endif /* !THREADS */
 
-#ifdef IA64
+#if defined(E2K) && defined(THREADS) || defined(IA64)
+  /* The bottom of the register stack of the primordial thread. */
+  /* E2K: holds the offset (ps_ofs) instead of a pointer.       */
   GC_EXTERN ptr_t GC_register_stackbottom;
+#endif
 
+#ifdef IA64
   /* Similar to GC_push_all_stack_sections() but for IA-64 registers store. */
   GC_INNER void GC_push_all_register_sections(ptr_t bs_lo, ptr_t bs_hi,
                   int eager, struct GC_traced_stack_sect_s *traced_stack_sect);
@@ -2026,27 +2030,48 @@ GC_INNER void GC_with_callee_saves_pushed(void (*volatile fn)(ptr_t, void *),
 #   define PS_ALLOCA_BUF(sz) alloca(sz)
 # endif
 
-  /* Copy procedure (register) stack to a stack-allocated buffer.       */
-  /* Usable from a signal handler.  The buffer is valid only within     */
-  /* the current function.                                              */
-# define GET_PROCEDURE_STACK_LOCAL(pbuf, psz)                               \
+  /* Approximate size (in bytes) of the obtained procedure stack part   */
+  /* belonging the syscall() itself.                                    */
+# define PS_SYSCALL_TAIL_BYTES 0x100
+
+  /* Determine the current size of the whole procedure stack.  The size */
+  /* is valid only within the current function.                         */
+# define GET_PROCEDURE_STACK_SIZE_INNER(psz_ull)                            \
         do {                                                                \
-          unsigned long long ofs_sz_ll = 0;                                 \
-                                                                            \
-          /* Determine buffer size to store the procedure stack.    */      \
+          *(psz_ull) = 0; /* might be redundant */                          \
           if (syscall(__NR_access_hw_stacks, E2K_GET_PROCEDURE_STACK_SIZE,  \
-                      NULL, NULL, 0, &ofs_sz_ll) == -1)                     \
+                      NULL, NULL, 0, psz_ull) == -1)                        \
             ABORT_ARG1("Cannot get size of procedure stack",                \
                        ": errno= %d", errno);                               \
-          GC_ASSERT(ofs_sz_ll > 0 && ofs_sz_ll % sizeof(word) == 0);        \
-          *(psz) = (size_t)ofs_sz_ll;                                       \
+          GC_ASSERT(*(psz_ull) > 0 && *(psz_ull) % sizeof(word) == 0);      \
+        } while (0)
+
+  /* Copy procedure (register) stack to a stack-allocated buffer.       */
+  /* Usable from a signal handler.  The buffer is valid only within     */
+  /* the current function.  ps_ofs designates the offset in the         */
+  /* procedure stack to copy the contents from.  Note: this macro       */
+  /* cannot be changed to a function because alloca() and both          */
+  /* syscall() should be called in the context of the caller.           */
+# define GET_PROCEDURE_STACK_LOCAL(ps_ofs, pbuf, psz)                       \
+        do {                                                                \
+          unsigned long long ofs_sz_ull;                                    \
+          size_t adj_ps_ofs;                                                \
+                                                                            \
+          GET_PROCEDURE_STACK_SIZE_INNER(&ofs_sz_ull);                      \
+          if (ofs_sz_ull <= (ps_ofs))                                       \
+            ABORT_ARG2("Incorrect size of procedure stack",                 \
+                       ": ofs= %lu, size= %lu", (unsigned long)(ps_ofs),    \
+                       (unsigned long)ofs_sz_ull);                          \
+          adj_ps_ofs = (ps_ofs) > PS_SYSCALL_TAIL_BYTES ?                   \
+                            (ps_ofs) - PS_SYSCALL_TAIL_BYTES : 0;           \
+          *(psz) = (size_t)ofs_sz_ull - adj_ps_ofs;                         \
           /* Allocate buffer on the stack; cannot return NULL. */           \
           *(pbuf) = PS_ALLOCA_BUF(*(psz));                                  \
-          /* Read the procedure stack to the buffer. */                     \
+          /* Copy the procedure stack at the given offset to the buffer. */ \
           for (;;) {                                                        \
-            ofs_sz_ll = 0;                                                  \
+            ofs_sz_ull = adj_ps_ofs;                                        \
             if (syscall(__NR_access_hw_stacks, E2K_READ_PROCEDURE_STACK_EX, \
-                        &ofs_sz_ll, *(pbuf), *(psz), NULL) != -1)           \
+                        &ofs_sz_ull, *(pbuf), *(psz), NULL) != -1)          \
               break;                                                        \
             if (errno != EAGAIN)                                            \
               ABORT_ARG2("Cannot read procedure stack",                     \

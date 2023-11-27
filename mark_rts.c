@@ -874,7 +874,8 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void *context)
             ptr_t bs_lo;
             size_t stack_size;
 
-            GET_PROCEDURE_STACK_LOCAL(&bs_lo, &stack_size);
+            /* TODO: support ps_ofs here and in GC_do_blocking_inner */
+            GET_PROCEDURE_STACK_LOCAL(0, &bs_lo, &stack_size);
             GC_push_all_eager(bs_lo, bs_lo + stack_size);
           }
 #       endif

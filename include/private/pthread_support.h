@@ -95,6 +95,10 @@ typedef struct GC_StackContext_Rep {
     word normstack_size;
 # endif
 
+# ifdef E2K
+    size_t ps_ofs; /* the current offset of the procedure stack */
+# endif
+
 # ifndef GC_NO_FINALIZATION
     unsigned char finalizer_nested;
     char fnlz_pad[1];           /* Explicit alignment (for some rare    */

@@ -83,7 +83,7 @@ GC_INNER GC_bool GC_debugging_started = FALSE;
 
 ptr_t GC_stackbottom = 0;
 
-#ifdef IA64
+#if defined(E2K) && defined(THREADS) || defined(IA64)
   GC_INNER ptr_t GC_register_stackbottom = NULL;
 #endif
 
@@ -2229,7 +2229,12 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func volatile fn,
       /* TODO: Unnecessarily flushes register stack,    */
       /* but that probably doesn't hurt.                */
 #   elif defined(E2K)
-      base.reg_base = NULL; /* not used by GC currently */
+      {
+        unsigned long long sz_ull;
+
+        GET_PROCEDURE_STACK_SIZE_INNER(&sz_ull);
+        base.reg_base = (void *)(word)sz_ull;
+      }
 #   endif
     result = (*fn)(&base, arg);
     /* Strongly discourage the compiler from treating the above */
@@ -2338,9 +2343,9 @@ STATIC void GC_do_blocking_inner(ptr_t data, void *context)
               && NULL == GC_traced_stack_sect); /* for now */
     UNUSED_ARG(gc_thread_handle);
 
-    GC_stackbottom = (char *)sb->mem_base;
+    GC_stackbottom = (char *)(sb -> mem_base);
 #   ifdef IA64
-      GC_register_stackbottom = (ptr_t)sb->reg_base;
+      GC_register_stackbottom = (ptr_t)(sb -> reg_base);
 #   endif
   }
 
@@ -2355,6 +2360,7 @@ STATIC void GC_do_blocking_inner(ptr_t data, void *context)
 #   endif
     return &GC_stackbottom; /* gc_thread_handle */
   }
+
 #endif /* !THREADS */
 
 GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
