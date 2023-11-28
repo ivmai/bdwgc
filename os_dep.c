@@ -4277,7 +4277,7 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
     r = thread_get_state(thread, flavor, thread_state, &thread_state_count);
     if(r != KERN_SUCCESS)
       ABORT("thread_get_state failed in forward_exception");
-    }
+  }
 
   switch(behavior) {
     case EXCEPTION_STATE:
