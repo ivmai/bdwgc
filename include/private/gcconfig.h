@@ -2063,15 +2063,18 @@ EXTERN_C_BEGIN
 #     endif
 #   endif
 #   ifdef DARWIN
-      /* iOS */
+      /* OS X, iOS, visionOS */
 #     define DARWIN_DONT_PARSE_STACK 1
 #     define STACKBOTTOM ((ptr_t)0x16fdfffff)
-      /* MPROTECT_VDB causes use of non-public API like exc_server,     */
-      /* this could be a reason for blocking the client application in  */
-      /* the store.                                                     */
-#     if (TARGET_OS_IPHONE || TARGET_OS_XR || TARGET_OS_VISION) \
-         && !defined(NO_DYLD_BIND_FULLY_IMAGE)
-#       define NO_DYLD_BIND_FULLY_IMAGE
+#     if (TARGET_OS_IPHONE || TARGET_OS_XR || TARGET_OS_VISION)
+#       ifndef NO_DYLD_BIND_FULLY_IMAGE
+#         define NO_DYLD_BIND_FULLY_IMAGE
+#       endif
+        /* MPROTECT_VDB causes use of non-public API like exc_server,   */
+        /* this could be a reason for blocking the client application   */
+        /* in the store.                                                */
+#     elif TARGET_OS_OSX
+#       define MPROTECT_VDB
 #     endif
 #   endif
 #   ifdef FREEBSD
