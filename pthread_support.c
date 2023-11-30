@@ -1229,6 +1229,9 @@ static void fork_parent_proc(void)
 static void fork_child_proc(void)
 {
     GC_release_dirty_lock();
+#   ifndef GC_DISABLE_INCREMENTAL
+      GC_dirty_update_child();
+#   endif
 #   ifdef PARALLEL_MARK
       if (GC_parallel) {
 #       if defined(THREAD_SANITIZER) && defined(GC_ASSERTIONS) \
@@ -1248,9 +1251,6 @@ static void fork_child_proc(void)
 #   endif
     /* Clean up the thread table, so that just our thread is left.      */
     GC_remove_all_threads_but_me();
-#   ifndef GC_DISABLE_INCREMENTAL
-      GC_dirty_update_child();
-#   endif
     RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
     /* Even though after a fork the child only inherits the single      */
@@ -1279,12 +1279,6 @@ static void fork_child_proc(void)
   GC_API void GC_CALL GC_atfork_prepare(void)
   {
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
-#   if defined(GC_DARWIN_THREADS) && defined(MPROTECT_VDB)
-      if (GC_auto_incremental) {
-        GC_ASSERT(0 == GC_handle_fork);
-        ABORT("Unable to fork while mprotect_thread is running");
-      }
-#   endif
     if (GC_handle_fork <= 0)
       fork_prepare_proc();
   }

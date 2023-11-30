@@ -103,7 +103,7 @@
 #   include <pthread.h>
 # endif
 
-# if ((defined(DARWIN) && defined(MPROTECT_VDB) \
+# if ((defined(DARWIN) && defined(MPROTECT_VDB) && !defined(THREADS) \
        && !defined(MAKE_BACK_GRAPH) && !defined(TEST_HANDLE_FORK)) \
       || (defined(THREADS) && !defined(CAN_HANDLE_FORK)) \
       || defined(HAVE_NO_FORK) || defined(USE_WINALLOC)) \

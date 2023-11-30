@@ -203,6 +203,9 @@ if (CMAKE_USE_PTHREADS_INIT)
   else()
     set(SRC ${SRC} pthread_start.c pthread_stop_world.c pthread_support.c)
   endif()
+  if (APPLE)
+    set(SRC ${SRC} darwin_stop_world.c)
+  endif()
   if (HOST MATCHES .*-.*-hpux10.*)
     message(FATAL_ERROR "HP/UX 10 POSIX threads are not supported.")
   endif()
@@ -227,10 +230,6 @@ if (CMAKE_USE_PTHREADS_INIT)
   endif()
   if (WIN32) # AND NOT CYGWIN
     # Does not provide process fork functionality.
-  elseif (APPLE)
-    # The incremental mode conflicts with fork handling (for now).
-    # Thus, HANDLE_FORK is not defined.
-    set(SRC ${SRC} darwin_stop_world.c)
   elseif (enable_handle_fork AND NOT disable_handle_fork)
     add_definitions("-DHANDLE_FORK")
   endif()

@@ -2578,7 +2578,8 @@ GC_EXTERN GC_bool GC_print_back_height;
 # endif
 
 # ifdef CAN_HANDLE_FORK
-#   if defined(PROC_VDB) || defined(SOFT_VDB)
+#   if defined(PROC_VDB) || defined(SOFT_VDB) \
+       || (defined(MPROTECT_VDB) && defined(GC_DARWIN_THREADS))
       GC_INNER void GC_dirty_update_child(void);
                 /* Update pid-specific resources (like /proc file       */
                 /* descriptors) needed by the dirty bits implementation */
