@@ -480,6 +480,8 @@ GC_API void * GC_CALL GC_memalign(size_t align, size_t lb)
 /* This one exists largely to redirect posix_memalign for leaks finding. */
 GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
 {
+  void *p;
+
   /* Check alignment properly.  */
   if (((align - 1) & align) != 0 || align < sizeof(void *)) {
 #   ifdef MSWINCE
@@ -489,14 +491,16 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
 #   endif
   }
 
-  if ((*memptr = GC_memalign(align, lb)) == NULL) {
+  p = GC_memalign(align, lb);
+  if (EXPECT(NULL == p, FALSE)) {
 #   ifdef MSWINCE
       return ERROR_NOT_ENOUGH_MEMORY;
 #   else
       return ENOMEM;
 #   endif
   }
-  return 0;
+  *memptr = p;
+  return 0; /* success */
 }
 
 #ifdef ATOMIC_UNCOLLECTABLE
