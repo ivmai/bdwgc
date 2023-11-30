@@ -1659,8 +1659,11 @@ static void run_one_test(void)
               FAIL;
             }
           }
-          (void)GC_posix_memalign(&p, 64, 1);
-          CHECK_OUT_OF_MEMORY(p);
+          if (GC_posix_memalign(&p, 64, 1) != 0) {
+            GC_printf("Out of memory in GC_posix_memalign\n");
+            exit(69);
+          }
+          GC_noop1((GC_word)p);
           AO_fetch_and_add1(&collectable_count);
       }
 #     ifndef GC_NO_VALLOC
