@@ -2066,13 +2066,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type volatile fn,
 
     /* Setup new "stack section".       */
     stacksect.saved_stack_ptr = crtn -> stack_ptr;
-#   ifdef IA64
-      /* This is the same as in GC_call_with_stack_base().      */
-      stacksect.backing_store_end = GC_save_regs_in_stack();
-      /* Unnecessarily flushes register stack,          */
-      /* but that probably doesn't hurt.                */
-      stacksect.saved_backing_store_ptr = crtn -> backing_store_ptr;
-#   elif defined(E2K)
+#   ifdef E2K
       GC_ASSERT(crtn -> backing_store_end != NULL);
       {
         unsigned long long sz_ull;
@@ -2086,6 +2080,12 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type volatile fn,
       saved_bs_ptr = crtn -> backing_store_ptr;
       crtn -> backing_store_ptr = NULL;
       crtn -> backing_store_end = NULL;
+#   elif defined(IA64)
+      /* This is the same as in GC_call_with_stack_base().      */
+      stacksect.backing_store_end = GC_save_regs_in_stack();
+      /* Unnecessarily flushes register stack,          */
+      /* but that probably doesn't hurt.                */
+      stacksect.saved_backing_store_ptr = crtn -> backing_store_ptr;
 #   endif
     stacksect.prev = crtn -> traced_stack_sect;
     me -> flags &= (unsigned char)~DO_BLOCKING;
@@ -2103,13 +2103,13 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type volatile fn,
       GC_noop1((word)(crtn -> traced_stack_sect));
 #   endif
     crtn -> traced_stack_sect = stacksect.prev;
-#   ifdef IA64
-      crtn -> backing_store_ptr = stacksect.saved_backing_store_ptr;
-#   elif defined(E2K)
+#   ifdef E2K
       GC_ASSERT(NULL == crtn -> backing_store_end);
       crtn -> backing_store_end = saved_bs_end;
       crtn -> backing_store_ptr = saved_bs_ptr;
       crtn -> ps_ofs = saved_ps_ofs;
+#   elif defined(IA64)
+      crtn -> backing_store_ptr = stacksect.saved_backing_store_ptr;
 #   endif
     me -> flags |= DO_BLOCKING;
     crtn -> stack_ptr = stacksect.saved_stack_ptr;
