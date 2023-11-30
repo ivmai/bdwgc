@@ -265,9 +265,6 @@ if (enable_threads)
     endif()
     if (WIN32) # AND NOT CYGWIN
       # Does not provide process fork functionality.
-    elseif (APPLE)
-      # The incremental mode conflicts with fork handling (for now).
-      # Thus, HANDLE_FORK is not defined.
     elseif (enable_handle_fork AND NOT disable_handle_fork)
       add_definitions("-DHANDLE_FORK")
     endif()

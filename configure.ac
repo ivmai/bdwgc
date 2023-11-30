@@ -1283,11 +1283,8 @@ elif test "${enable_handle_fork}" != manual -a x$THREADS = xposix; then
     # If the option is omitted, pthread_atfork handlers are installed
     # by default for the targets where pthread_atfork is known to work.
     case "$host" in
-      *-*-darwin*)
-        # The incremental mode conflicts with fork handling on Darwin.
-        ;;
-      *-*-aix* | *-*-android* | *-*-cygwin* | *-*-freebsd* | *-*-haiku* | \
-      *-*-hpux11* | *-*-irix* | *-*-kfreebsd*-gnu | \
+      *-*-aix* | *-*-android* | *-*-cygwin* | *-*-darwin* | *-*-freebsd* | \
+      *-*-haiku* | *-*-hpux11* | *-*-irix* | *-*-kfreebsd*-gnu | \
       *-*-*linux* | *-*-netbsd* | *-*-openbsd* | *-*-osf* | *-*-solaris*)
         AC_DEFINE(HANDLE_FORK)
         ;;

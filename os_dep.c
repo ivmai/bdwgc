@@ -2260,7 +2260,7 @@ STATIC ptr_t GC_unix_sbrk_get_mem(size_t bytes)
         goto out;
     }
     if (lsbs != 0) {
-        if((ptr_t)sbrk((SBRK_ARG_T)GC_page_size - lsbs) == (ptr_t)(-1)) {
+        if ((ptr_t)sbrk((SBRK_ARG_T)GC_page_size - lsbs) == (ptr_t)(-1)) {
             result = 0;
             goto out;
         }
@@ -4550,6 +4550,39 @@ typedef enum {
     GC_mprotect_thread_notify(ID_RESUME);
   }
 
+# ifdef CAN_HANDLE_FORK
+    GC_INNER void GC_dirty_update_child(void)
+    {
+      unsigned i;
+
+      GC_ASSERT(I_HOLD_LOCK());
+      if (0 == GC_task_self) return; /* GC incremental mode is off */
+
+      GC_ASSERT(GC_auto_incremental);
+      GC_ASSERT(GC_mprotect_state == GC_MP_NORMAL);
+
+      /* Unprotect the entire heap not updating GC_dirty_pages. */
+      GC_task_self = mach_task_self(); /* needed by UNPROTECT() */
+      for (i = 0; i < GC_n_heap_sects; i++) {
+        UNPROTECT(GC_heap_sects[i].hs_start, GC_heap_sects[i].hs_bytes);
+      }
+
+      /* Restore the old task exception ports.  */
+      /* TODO: Should we do it in fork_prepare/parent_proc? */
+      if (GC_old_exc_ports.count > 0) {
+        /* TODO: Should we check GC_old_exc_ports.count<=1? */
+        if (task_set_exception_ports(GC_task_self, GC_old_exc_ports.masks[0],
+                    GC_old_exc_ports.ports[0], GC_old_exc_ports.behaviors[0],
+                    GC_old_exc_ports.flavors[0]) != KERN_SUCCESS)
+          ABORT("task_set_exception_ports failed (in child)");
+      }
+
+      /* TODO: Re-enable incremental mode in child. */
+      GC_task_self = 0;
+      GC_incremental = FALSE;
+    }
+# endif /* CAN_HANDLE_FORK */
+
 #else
   /* The compiler should optimize away any GC_mprotect_state computations */
 # define GC_mprotect_state GC_MP_NORMAL
@@ -4589,22 +4622,22 @@ STATIC void *GC_mprotect_thread(void *arg)
     GC_darwin_register_self_mach_handler();
 # endif
 
-  for(;;) {
+  for (;;) {
     r = mach_msg(&msg.head, MACH_RCV_MSG | MACH_RCV_LARGE |
-                 (GC_mprotect_state == GC_MP_DISCARDING ? MACH_RCV_TIMEOUT : 0),
-                 0, sizeof(msg), GC_ports.exception,
+                 (GC_mprotect_state == GC_MP_DISCARDING ? MACH_RCV_TIMEOUT
+                  : 0), 0, sizeof(msg), GC_ports.exception,
                  GC_mprotect_state == GC_MP_DISCARDING ? 0
                  : MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
     id = r == MACH_MSG_SUCCESS ? msg.head.msgh_id : -1;
 
 #   if defined(THREADS)
-      if(GC_mprotect_state == GC_MP_DISCARDING) {
-        if(r == MACH_RCV_TIMED_OUT) {
+      if (GC_mprotect_state == GC_MP_DISCARDING) {
+        if (r == MACH_RCV_TIMED_OUT) {
           GC_mprotect_state = GC_MP_STOPPED;
           GC_mprotect_thread_reply();
           continue;
         }
-        if(r == MACH_MSG_SUCCESS && (id == ID_STOP || id == ID_RESUME))
+        if (r == MACH_MSG_SUCCESS && (id == ID_STOP || id == ID_RESUME))
           ABORT("Out of order mprotect thread request");
       }
 #   endif /* THREADS */
@@ -4614,15 +4647,15 @@ STATIC void *GC_mprotect_thread(void *arg)
                  ": errcode= %d (%s)", (int)r, mach_error_string(r));
     }
 
-    switch(id) {
+    switch (id) {
 #     if defined(THREADS)
         case ID_STOP:
-          if(GC_mprotect_state != GC_MP_NORMAL)
+          if (GC_mprotect_state != GC_MP_NORMAL)
             ABORT("Called mprotect_stop when state wasn't normal");
           GC_mprotect_state = GC_MP_DISCARDING;
           break;
         case ID_RESUME:
-          if(GC_mprotect_state != GC_MP_STOPPED)
+          if (GC_mprotect_state != GC_MP_STOPPED)
             ABORT("Called mprotect_resume when state wasn't stopped");
           GC_mprotect_state = GC_MP_NORMAL;
           GC_mprotect_thread_reply();
@@ -4630,13 +4663,13 @@ STATIC void *GC_mprotect_thread(void *arg)
 #     endif /* THREADS */
         default:
           /* Handle the message (calls catch_exception_raise) */
-          if(!exc_server(&msg.head, &reply.head))
+          if (!exc_server(&msg.head, &reply.head))
             ABORT("exc_server failed");
           /* Send the reply */
           r = mach_msg(&reply.head, MACH_SEND_MSG, reply.head.msgh_size, 0,
                        MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE,
                        MACH_PORT_NULL);
-          if(r != MACH_MSG_SUCCESS) {
+          if (r != MACH_MSG_SUCCESS) {
             /* This will fail if the thread dies, but the thread */
             /* shouldn't die... */
 #           ifdef BROKEN_EXCEPTION_HANDLING
@@ -4647,7 +4680,7 @@ STATIC void *GC_mprotect_thread(void *arg)
 #           endif
           }
     } /* switch */
-  } /* for(;;) */
+  } /* for */
 }
 
 /* All this SIGBUS code shouldn't be necessary. All protection faults should
@@ -4684,7 +4717,7 @@ GC_INNER GC_bool GC_dirty_init(void)
   exception_mask_t mask;
 
   GC_ASSERT(I_HOLD_LOCK());
-# ifdef CAN_HANDLE_FORK
+# if defined(CAN_HANDLE_FORK) && !defined(THREADS)
     if (GC_handle_fork) {
       /* To both support GC incremental mode and GC functions usage in  */
       /* the forked child, pthread_atfork should be used to install     */
@@ -4709,6 +4742,7 @@ GC_INNER GC_bool GC_dirty_init(void)
   }
 
   GC_task_self = me = mach_task_self();
+  GC_ASSERT(me != 0);
 
   r = mach_port_allocate(me, MACH_PORT_RIGHT_RECEIVE, &GC_ports.exception);
   /* TODO: WARN and return FALSE in case of a failure. */
@@ -4726,9 +4760,8 @@ GC_INNER GC_bool GC_dirty_init(void)
       ABORT("mach_port_allocate failed (reply port)");
 # endif
 
-  /* The exceptions we want to catch */
+  /* The exceptions we want to catch. */
   mask = EXC_MASK_BAD_ACCESS;
-
   r = task_get_exception_ports(me, mask, GC_old_exc_ports.masks,
                                &GC_old_exc_ports.count, GC_old_exc_ports.ports,
                                GC_old_exc_ports.behaviors,
@@ -4740,11 +4773,11 @@ GC_INNER GC_bool GC_dirty_init(void)
                                GC_MACH_THREAD_STATE);
   if (r != KERN_SUCCESS)
     ABORT("task_set_exception_ports failed");
+
   if (pthread_attr_init(&attr) != 0)
     ABORT("pthread_attr_init failed");
   if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0)
     ABORT("pthread_attr_setdetachedstate failed");
-
   /* This will call the real pthread function, not our wrapper. */
   if (GC_inner_pthread_create(&thread, &attr, GC_mprotect_thread, NULL) != 0)
     ABORT("pthread_create failed");
@@ -4788,9 +4821,10 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
   thread_state_data_t thread_state;
   mach_msg_type_number_t thread_state_count = THREAD_STATE_MAX;
 
-  for (i=0; i < GC_old_exc_ports.count; i++)
-    if (GC_old_exc_ports.masks[i] & (1 << exception))
+  for (i = 0; i < GC_old_exc_ports.count; i++) {
+    if ((GC_old_exc_ports.masks[i] & ((exception_mask_t)1 << exception)) != 0)
       break;
+  }
   if (i == GC_old_exc_ports.count)
     ABORT("No handler for exception!");
 
@@ -4800,15 +4834,16 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 
   if (behavior == EXCEPTION_STATE || behavior == EXCEPTION_STATE_IDENTITY) {
     r = thread_get_state(thread, flavor, thread_state, &thread_state_count);
-    if(r != KERN_SUCCESS)
+    if (r != KERN_SUCCESS)
       ABORT("thread_get_state failed in forward_exception");
   }
 
-  switch(behavior) {
+  switch (behavior) {
     case EXCEPTION_STATE:
-      r = exception_raise_state(port, thread, task, exception, data, data_count,
-                                &flavor, thread_state, thread_state_count,
-                                thread_state, &thread_state_count);
+      r = exception_raise_state(port, thread, task, exception, data,
+                                data_count, &flavor, thread_state,
+                                thread_state_count, thread_state,
+                                &thread_state_count);
       break;
     case EXCEPTION_STATE_IDENTITY:
       r = exception_raise_state_identity(port, thread, task, exception, data,
@@ -4906,7 +4941,7 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 
   r = thread_get_state(thread, flavor, (natural_t*)&exc_state,
                        &exc_state_count);
-  if(r != KERN_SUCCESS) {
+  if (r != KERN_SUCCESS) {
     /* The thread is supposed to be suspended while the exception       */
     /* handler is called.  This shouldn't fail.                         */
 #   ifdef BROKEN_EXCEPTION_HANDLING
@@ -4929,12 +4964,12 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
       static char *last_fault;
       static int last_fault_count;
 
-      if(addr != last_fault) {
+      if (addr != last_fault) {
         last_fault = addr;
         last_fault_count = 0;
       }
-      if(++last_fault_count < 32) {
-        if(last_fault_count == 1)
+      if (++last_fault_count < 32) {
+        if (last_fault_count == 1)
           WARN("Ignoring KERN_PROTECTION_FAILURE at %p\n", addr);
         return KERN_SUCCESS;
       }
