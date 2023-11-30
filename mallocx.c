@@ -536,8 +536,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
 /* This one exists largely to redirect posix_memalign for leaks finding. */
 GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
 {
-  /* Check alignment properly.  */
+  void *p;
   size_t align_minus_one = align - 1; /* to workaround a cppcheck warning */
+
+  /* Check alignment properly.  */
   if (align < sizeof(void *) || (align_minus_one & align) != 0) {
 #   ifdef MSWINCE
       return ERROR_INVALID_PARAMETER;
@@ -546,14 +548,16 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
 #   endif
   }
 
-  if ((*memptr = GC_memalign(align, lb)) == NULL) {
+  p = GC_memalign(align, lb);
+  if (EXPECT(NULL == p, FALSE)) {
 #   ifdef MSWINCE
       return ERROR_NOT_ENOUGH_MEMORY;
 #   else
       return ENOMEM;
 #   endif
   }
-  return 0;
+  *memptr = p;
+  return 0; /* success */
 }
 
 /* provide a version of strdup() that uses the collector to allocate the
