@@ -2046,6 +2046,27 @@ GC_INNER void GC_with_callee_saves_pushed(void (*volatile fn)(ptr_t, void *),
           GC_ASSERT(*(psz_ull) > 0 && *(psz_ull) % sizeof(word) == 0);      \
         } while (0)
 
+# ifdef THREADS
+#   define PS_COMPUTE_ADJUSTED_OFS(padj_ps_ofs, ps_ofs, ofs_sz_ull) \
+        do {                                                        \
+          if ((ofs_sz_ull) <= (ps_ofs) /* && ofs_sz_ull > 0 */)     \
+            ABORT_ARG2("Incorrect size of procedure stack",         \
+                       ": ofs= %lu, size= %lu",                     \
+                       (unsigned long)(ps_ofs),                     \
+                       (unsigned long)(ofs_sz_ull));                \
+          *(padj_ps_ofs) = (ps_ofs) > PS_SYSCALL_TAIL_BYTES ?       \
+                            (ps_ofs) - PS_SYSCALL_TAIL_BYTES : 0;   \
+        } while (0)
+# else
+    /* A simplified version of the above assuming ps_ofs is a zero const. */
+#   define PS_COMPUTE_ADJUSTED_OFS(padj_ps_ofs, ps_ofs, ofs_sz_ull) \
+        do {                                                        \
+          GC_STATIC_ASSERT((ps_ofs) == 0);                          \
+          (void)(ofs_sz_ull);                                       \
+          *(padj_ps_ofs) = 0;                                       \
+        } while (0)
+# endif /* !THREADS */
+
   /* Copy procedure (register) stack to a stack-allocated buffer.       */
   /* Usable from a signal handler.  The buffer is valid only within     */
   /* the current function.  ps_ofs designates the offset in the         */
@@ -2058,12 +2079,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*volatile fn)(ptr_t, void *),
           size_t adj_ps_ofs;                                                \
                                                                             \
           GET_PROCEDURE_STACK_SIZE_INNER(&ofs_sz_ull);                      \
-          if (ofs_sz_ull <= (ps_ofs))                                       \
-            ABORT_ARG2("Incorrect size of procedure stack",                 \
-                       ": ofs= %lu, size= %lu", (unsigned long)(ps_ofs),    \
-                       (unsigned long)ofs_sz_ull);                          \
-          adj_ps_ofs = (ps_ofs) > PS_SYSCALL_TAIL_BYTES ?                   \
-                            (ps_ofs) - PS_SYSCALL_TAIL_BYTES : 0;           \
+          PS_COMPUTE_ADJUSTED_OFS(&adj_ps_ofs, ps_ofs, ofs_sz_ull);         \
           *(psz) = (size_t)ofs_sz_ull - adj_ps_ofs;                         \
           /* Allocate buffer on the stack; cannot return NULL. */           \
           *(pbuf) = PS_ALLOCA_BUF(*(psz));                                  \
