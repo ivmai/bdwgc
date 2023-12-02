@@ -252,55 +252,34 @@ GC_API void * GC_CALL GC_post_incr(void **p, ptrdiff_t how_much)
 GC_API void GC_CALL GC_set_same_obj_print_proc(GC_same_obj_print_proc_t fn)
 {
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
-    LOCK();
     GC_same_obj_print_proc = fn;
-    UNLOCK();
 }
 
 GC_API GC_same_obj_print_proc_t GC_CALL GC_get_same_obj_print_proc(void)
 {
-    GC_same_obj_print_proc_t fn;
-
-    READER_LOCK();
-    fn = GC_same_obj_print_proc;
-    READER_UNLOCK();
-    return fn;
+    return GC_same_obj_print_proc;
 }
 
 GC_API void GC_CALL GC_set_is_valid_displacement_print_proc(
                                         GC_valid_ptr_print_proc_t fn)
 {
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
-    LOCK();
     GC_is_valid_displacement_print_proc = fn;
-    UNLOCK();
 }
 
 GC_API GC_valid_ptr_print_proc_t GC_CALL
 GC_get_is_valid_displacement_print_proc(void)
 {
-    GC_valid_ptr_print_proc_t fn;
-
-    READER_LOCK();
-    fn = GC_is_valid_displacement_print_proc;
-    READER_UNLOCK();
-    return fn;
+    return GC_is_valid_displacement_print_proc;
 }
 
 GC_API void GC_CALL GC_set_is_visible_print_proc(GC_valid_ptr_print_proc_t fn)
 {
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
-    LOCK();
     GC_is_visible_print_proc = fn;
-    UNLOCK();
 }
 
 GC_API GC_valid_ptr_print_proc_t GC_CALL GC_get_is_visible_print_proc(void)
 {
-    GC_valid_ptr_print_proc_t fn;
-
-    READER_LOCK();
-    fn = GC_is_visible_print_proc;
-    READER_UNLOCK();
-    return fn;
+    return GC_is_visible_print_proc;
 }

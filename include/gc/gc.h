@@ -240,8 +240,7 @@ GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void);
 /* without the allocator lock held.  The default behavior is to fail    */
 /* with the appropriate message which includes the pointers.  The       */
 /* functions (variables) must not be 0.  Both the setters and the       */
-/* getters acquire the allocator lock (in the reader mode in case of    */
-/* the getters) to avoid data race.                                     */
+/* getters are unsynchronized.                                          */
 typedef void (GC_CALLBACK * GC_valid_ptr_print_proc_t)(void *);
 typedef void (GC_CALLBACK * GC_same_obj_print_proc_t)(void * /* p */,
                                                       void * /* q */);
