@@ -814,6 +814,8 @@ GC_API void GC_CALL GC_debug_free(void * p)
   GC_INNER void GC_debug_free_inner(void * p)
   {
     ptr_t base = (ptr_t)GC_base(p);
+
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((word)p - (word)base == sizeof(oh));
 #   ifdef LINT2
       if (!base) ABORT("Invalid GC_debug_free_inner argument");

@@ -251,6 +251,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
     static unsigned count = 0;
     unsigned long time_diff, nsec_diff;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (GC_default_stop_func())
       return TRUE;
 
@@ -305,6 +306,7 @@ static word min_bytes_allocd(void)
     word scan_size;             /* Estimate of memory to be scanned     */
                                 /* during normal GC.                    */
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef THREADS
       if (GC_need_to_lock) {
         /* We are multi-threaded... */
@@ -397,14 +399,14 @@ STATIC void GC_clear_a_few_frames(void)
 GC_API void GC_CALL GC_start_incremental_collection(void)
 {
 # ifndef GC_DISABLE_INCREMENTAL
-    if (!GC_incremental) return;
-
     LOCK();
-    GC_should_start_incremental_collection = TRUE;
-    if (!GC_dont_gc) {
-      ENTER_GC();
-      GC_collect_a_little_inner(1);
-      EXIT_GC();
+    if (GC_incremental) {
+      GC_should_start_incremental_collection = TRUE;
+      if (!GC_dont_gc) {
+        ENTER_GC();
+        GC_collect_a_little_inner(1);
+        EXIT_GC();
+      }
     }
     UNLOCK();
 # endif

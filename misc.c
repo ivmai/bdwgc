@@ -901,6 +901,28 @@ GC_API int GC_CALL GC_is_init_called(void)
   }
 #endif /* !SMALL_CONFIG */
 
+#ifndef GC_DISABLE_INCREMENTAL
+  static void set_incremental_mode_on(void)
+  {
+    GC_ASSERT(I_HOLD_LOCK());
+#   if defined(BASE_ATOMIC_OPS_EMULATED) || defined(CHECKSUMS) \
+       || defined(REDIRECT_MALLOC) || defined(SMALL_CONFIG) \
+       || defined(REDIRECT_MALLOC_IN_HEADER)
+      /* TODO: Implement CHECKSUMS for manual VDB. */
+#   else
+      if (manual_vdb_allowed) {
+        GC_manual_vdb = TRUE;
+        GC_incremental = TRUE;
+      } else
+#   endif
+    /* else */ {
+      /* For GWW_VDB on Win32, this needs to happen before any  */
+      /* heap memory is allocated.                              */
+      GC_incremental = GC_dirty_init();
+    }
+  }
+#endif /* !GC_DISABLE_INCREMENTAL */
+
 STATIC word GC_parse_mem_size_arg(const char *str)
 {
   word result;
@@ -1291,22 +1313,8 @@ GC_API void GC_CALL GC_init(void)
 #   endif
 #   ifndef GC_DISABLE_INCREMENTAL
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
-#       if defined(BASE_ATOMIC_OPS_EMULATED) || defined(CHECKSUMS) \
-           || defined(REDIRECT_MALLOC) || defined(REDIRECT_MALLOC_IN_HEADER) \
-           || defined(SMALL_CONFIG)
-          /* TODO: Implement CHECKSUMS for manual VDB. */
-#       else
-          if (manual_vdb_allowed) {
-              GC_manual_vdb = TRUE;
-              GC_incremental = TRUE;
-          } else
-#       endif
-        /* else */ {
-          /* For GWW_VDB on Win32, this needs to happen before any      */
-          /* heap memory is allocated.                                  */
-          GC_incremental = GC_dirty_init();
-          GC_ASSERT(GC_bytes_allocd == 0);
-        }
+        set_incremental_mode_on();
+        GC_ASSERT(GC_bytes_allocd == 0);
       }
 #   endif
 
@@ -1437,22 +1445,12 @@ GC_API void GC_CALL GC_enable_incremental(void)
         /* TODO: Should we skip enabling incremental if win32s? */
         maybe_install_looping_handler(); /* Before write fault handler! */
         if (!GC_is_initialized) {
-          UNLOCK();
           GC_incremental = TRUE; /* indicate intention to turn it on */
+          UNLOCK();
           GC_init();
           LOCK();
         } else {
-#         if !defined(BASE_ATOMIC_OPS_EMULATED) && !defined(CHECKSUMS) \
-             && !defined(REDIRECT_MALLOC) \
-             && !defined(REDIRECT_MALLOC_IN_HEADER) && !defined(SMALL_CONFIG)
-            if (manual_vdb_allowed) {
-              GC_manual_vdb = TRUE;
-              GC_incremental = TRUE;
-            } else
-#         endif
-          /* else */ {
-            GC_incremental = GC_dirty_init();
-          }
+          set_incremental_mode_on();
         }
         if (GC_incremental && !GC_dont_gc) {
                                 /* Can't easily do it if GC_dont_gc.    */

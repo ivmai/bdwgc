@@ -2800,6 +2800,7 @@ extern struct PCR_MM_ProcsRep * GC_old_allocator;
 
 STATIC void GC_CALLBACK GC_default_push_other_roots(void)
 {
+    GC_ASSERT(I_HOLD_LOCK());
     /* Traverse data allocated by previous memory managers.             */
           if ((*(GC_old_allocator->mmp_enumerate))(PCR_Bool_false,
                                                    GC_push_old_obj, 0)
@@ -3640,6 +3641,7 @@ STATIC void GC_protect_heap(void)
 # ifdef CAN_HANDLE_FORK
     GC_INNER void GC_dirty_update_child(void)
     {
+      GC_ASSERT(I_HOLD_LOCK());
       if (-1 == GC_proc_fd)
         return; /* GC incremental mode is off */
 
@@ -3821,6 +3823,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 # ifdef CAN_HANDLE_FORK
     GC_INNER void GC_dirty_update_child(void)
     {
+      GC_ASSERT(I_HOLD_LOCK());
       if (-1 == clear_refs_fd)
         return; /* GC incremental mode is off */
 
@@ -4223,7 +4226,9 @@ GC_INNER GC_bool GC_dirty_init(void)
         /* Currently used only in conjunction with SOFT_VDB.    */
         return GC_GWW_AVAILABLE();
 #     else
-        GC_ASSERT(GC_incremental);
+#       ifndef LINT2
+          GC_ASSERT(GC_incremental);
+#       endif
         return TRUE;
 #     endif
     }
@@ -4282,7 +4287,7 @@ GC_INNER GC_bool GC_dirty_init(void)
         return get_pht_entry_from_index(GC_written_pages, index);
 #     else
         /* TODO: implement me for MANUAL_VDB. */
-        (void)h;
+        UNUSED_ARG(h);
         return TRUE;
 #     endif
     }
@@ -4296,17 +4301,16 @@ GC_INNER GC_bool GC_dirty_init(void)
   GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
                                      GC_bool is_ptrfree)
   {
-#   ifdef PCR_VDB
-      (void)is_ptrfree;
-      if (!GC_auto_incremental)
-        return;
-      PCR_VD_WriteProtectDisable(h, nblocks*HBLKSIZE);
-      PCR_VD_WriteProtectEnable(h, nblocks*HBLKSIZE);
-#   elif defined(MPROTECT_VDB)
+#   ifdef MPROTECT_VDB
       struct hblk * h_trunc;    /* Truncated to page boundary */
       struct hblk * h_end;      /* Page boundary following block end */
       struct hblk * current;
+#   endif
 
+#   ifndef PARALLEL_MARK
+      GC_ASSERT(I_HOLD_LOCK());
+#   endif
+#   ifdef MPROTECT_VDB
       if (!GC_auto_incremental || GC_GWW_AVAILABLE())
         return;
       GC_ASSERT(GC_page_size != 0);
@@ -4326,9 +4330,17 @@ GC_INNER GC_bool GC_dirty_init(void)
         }
       }
       UNPROTECT(h_trunc, (ptr_t)h_end - (ptr_t)h_trunc);
+#   elif defined(PCR_VDB)
+      UNUSED_ARG(is_ptrfree);
+      if (!GC_auto_incremental)
+        return;
+      PCR_VD_WriteProtectDisable(h, nblocks * HBLKSIZE);
+      PCR_VD_WriteProtectEnable(h, nblocks * HBLKSIZE);
 #   else
       /* Ignore write hints.  They don't help us here.  */
-      (void)h; (void)nblocks; (void)is_ptrfree;
+      UNUSED_ARG(h);
+      UNUSED_ARG(nblocks);
+      UNUSED_ARG(is_ptrfree);
 #   endif
   }
 #endif /* !GC_DISABLE_INCREMENTAL */

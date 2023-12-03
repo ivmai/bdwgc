@@ -106,7 +106,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
 {
     void *op;
 
-    GC_ASSERT(GC_finalized_kind != 0);
+#   ifndef LINT2 /* no data race because the variable is set once */
+      GC_ASSERT(GC_finalized_kind != 0);
+#   endif
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fclos));
     GC_ASSERT(((word)fclos & FINALIZER_CLOSURE_FLAG) == 0);
     op = GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)),

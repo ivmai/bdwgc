@@ -666,6 +666,7 @@ void GC_push_thread_structures(void)
 #if defined(MPROTECT_VDB) && defined(GC_WIN32_THREADS)
   GC_INNER void GC_win32_unprotect_thread(GC_thread t)
   {
+    GC_ASSERT(I_HOLD_LOCK());
     if (!GC_win32_dll_threads && GC_auto_incremental) {
       GC_stack_context_t crtn = t -> crtn;
 

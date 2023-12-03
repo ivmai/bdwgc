@@ -1235,6 +1235,7 @@ GC_INNER void GC_stop_world(void)
     GC_thread p;
     int result;
 
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((GC_stop_count & THREAD_RESTARTED) != 0);
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {

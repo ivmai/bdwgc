@@ -148,6 +148,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 # endif
   ptr_t lo;
 
+  GC_ASSERT(I_HOLD_LOCK());
   if (thread == my_thread) {
     GC_ASSERT(NULL == p || (p -> flags & DO_BLOCKING) == 0);
     lo = GC_approx_sp();
@@ -471,6 +472,7 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
   int j = -1;
   GC_bool changed = FALSE;
 
+  GC_ASSERT(I_HOLD_LOCK());
   for (i = 0; i < count; i++) {
     thread_act_t thread = act_list[i];
     GC_bool found;
@@ -676,6 +678,7 @@ GC_INLINE void GC_thread_resume(thread_act_t thread)
     if (kern_result != KERN_SUCCESS)
       ABORT("thread_info failed");
 # endif
+  GC_ASSERT(I_HOLD_LOCK());
 # ifdef DEBUG_THREADS
     GC_log_printf("Resuming thread %p with state %d\n", (void *)(word)thread,
                   info.run_state);

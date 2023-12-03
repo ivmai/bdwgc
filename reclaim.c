@@ -308,6 +308,9 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk *hbp, hdr *hhdr, size_t sz,
 {
     ptr_t result;
 
+#   ifndef PARALLEL_MARK
+      GC_ASSERT(I_HOLD_LOCK());
+#   endif
     GC_ASSERT(GC_find_header((ptr_t)hbp) == hhdr);
 #   ifndef GC_DISABLE_INCREMENTAL
       GC_remove_protection(hbp, 1, IS_PTRFREE_SAFE(hhdr));
@@ -336,12 +339,16 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk *hbp, hdr *hhdr, size_t sz,
 STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp, word sz,
                                             GC_bool report_if_found)
 {
-    hdr *hhdr = HDR(hbp);
-    struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
-    void **flh = &(ok -> ok_freelist[BYTES_TO_GRANULES(sz)]);
+    hdr *hhdr;
+    struct obj_kind *ok;
+    void **flh;
+
+    GC_ASSERT(I_HOLD_LOCK());
+    hhdr = HDR(hbp);
+    ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
+    flh = &(ok -> ok_freelist[BYTES_TO_GRANULES(sz)]);
 
     hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
-
     if (report_if_found) {
         GC_reclaim_check(hbp, hhdr, sz);
     } else {
@@ -353,11 +360,17 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp, word sz,
 #ifdef ENABLE_DISCLAIM
   STATIC void GC_disclaim_and_reclaim_or_free_small_block(struct hblk *hbp)
   {
-    hdr *hhdr = HDR(hbp);
-    word sz = hhdr -> hb_sz;
-    struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
-    void **flh = &(ok -> ok_freelist[BYTES_TO_GRANULES(sz)]);
+    hdr *hhdr;
+    word sz;
+    struct obj_kind *ok;
+    void **flh;
     void *flh_next;
+
+    GC_ASSERT(I_HOLD_LOCK());
+    hhdr = HDR(hbp);
+    sz = hhdr -> hb_sz;
+    ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
+    flh = &(ok -> ok_freelist[BYTES_TO_GRANULES(sz)]);
 
     hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
     flh_next = GC_reclaim_generic(hbp, hhdr, sz, ok -> ok_init,
@@ -382,10 +395,13 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp, word sz,
 STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
                                          GC_word report_if_found)
 {
-    hdr * hhdr = HDR(hbp);
+    hdr *hhdr;
     word sz;    /* size of objects in current block */
-    struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
+    struct obj_kind *ok;
 
+    GC_ASSERT(I_HOLD_LOCK());
+    hhdr = HDR(hbp);
+    ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
 #   ifdef AO_HAVE_load
         /* Atomic access is used to avoid racing with GC_realloc.       */
         sz = (word)AO_load((volatile AO_t *)&(hhdr -> hb_sz));
@@ -783,6 +799,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
   {
     unsigned kind;
 
+    GC_ASSERT(I_HOLD_LOCK());
     for (kind = 0; kind < GC_n_kinds; kind++) {
         word sz;
         struct obj_kind *ok = &GC_obj_kinds[kind];

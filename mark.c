@@ -1620,6 +1620,7 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 
 GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 {
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifndef NEED_FIXUP_POINTER
       if (GC_all_interior_pointers
 #         if defined(THREADS) && defined(MPROTECT_VDB)
@@ -2001,24 +2002,24 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
   /* Identical to above, but mark only from dirty pages.        */
   STATIC struct hblk * GC_push_next_marked_dirty(struct hblk *h)
   {
-    hdr * hhdr = HDR(h);
+    hdr * hhdr;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (!GC_incremental) ABORT("Dirty bits not set up");
-    for (;;) {
-        if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr)
-                   || HBLK_IS_FREE(hhdr), FALSE)) {
-          h = GC_next_block(h, FALSE);
-          if (NULL == h) return NULL;
-          hhdr = GC_find_header((ptr_t)h);
-        } else {
-#         ifdef LINT2
-            if (NULL == h) ABORT("Bad HDR() definition");
-#         endif
-        }
-        if (GC_block_was_dirty(h, hhdr))
-          break;
-        h += OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
-        hhdr = HDR(h);
+    for (;; h += OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz)) {
+      hhdr = HDR(h);
+      if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr)
+                 || HBLK_IS_FREE(hhdr), FALSE)) {
+        h = GC_next_block(h, FALSE);
+        if (NULL == h) return NULL;
+        hhdr = GC_find_header((ptr_t)h);
+      } else {
+#       ifdef LINT2
+          if (NULL == h) ABORT("Bad HDR() definition");
+#       endif
+      }
+      if (GC_block_was_dirty(h, hhdr))
+        break;
     }
 #   ifdef ENABLE_DISCLAIM
       if ((hhdr -> hb_flags & MARK_UNCONDITIONALLY) != 0) {

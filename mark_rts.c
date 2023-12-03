@@ -687,6 +687,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
   GC_INNER void GC_push_all_register_sections(ptr_t bs_lo, ptr_t bs_hi,
                   int eager, struct GC_traced_stack_sect_s *traced_stack_sect)
   {
+    GC_ASSERT(I_HOLD_LOCK());
     while (traced_stack_sect != NULL) {
         ptr_t frame_bs_lo = traced_stack_sect -> backing_store_end;
 
@@ -710,10 +711,11 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
 
 #ifdef THREADS
 
-GC_INNER void GC_push_all_stack_sections(
+  GC_INNER void GC_push_all_stack_sections(
                         ptr_t lo /* top */, ptr_t hi /* bottom */,
                         struct GC_traced_stack_sect_s *traced_stack_sect)
-{
+  {
+    GC_ASSERT(I_HOLD_LOCK());
     while (traced_stack_sect != NULL) {
         GC_ASSERT((word)lo HOTTER_THAN (word)traced_stack_sect);
 #       ifdef STACK_GROWS_UP
@@ -732,7 +734,7 @@ GC_INNER void GC_push_all_stack_sections(
 #   else
         GC_push_all_stack(lo, hi);
 #   endif
-}
+  }
 
 #else /* !THREADS */
 
@@ -740,53 +742,52 @@ GC_INNER void GC_push_all_stack_sections(
                         /* part hotter than cold_gc_frame is scanned    */
                         /* immediately.  Needed to ensure that callee-  */
                         /* save registers are not missed.               */
-/*
- * A version of GC_push_all that treats all interior pointers as valid
- * and scans part of the area immediately, to make sure that saved
- * register values are not lost.
- * Cold_gc_frame delimits the stack section that must be scanned
- * eagerly.  A zero value indicates that no eager scanning is needed.
- * We don't need to worry about the manual VDB case here, since this
- * is only called in the single-threaded case.  We assume that we
- * cannot collect between an assignment and the corresponding
- * GC_dirty() call.
- */
-STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
-                                              ptr_t cold_gc_frame)
-{
-#ifndef NEED_FIXUP_POINTER
-  if (GC_all_interior_pointers) {
-    /* Push the hot end of the stack eagerly, so that register values   */
-    /* saved inside GC frames are marked before they disappear.         */
-    /* The rest of the marking can be deferred until later.             */
-    if (0 == cold_gc_frame) {
-        GC_push_all_stack(bottom, top);
-        return;
-    }
-    GC_ASSERT((word)bottom <= (word)cold_gc_frame
-              && (word)cold_gc_frame <= (word)top);
-#   ifdef STACK_GROWS_UP
-        GC_push_all(bottom, cold_gc_frame + sizeof(ptr_t));
-        GC_push_all_eager(cold_gc_frame, top);
-#   else
-        GC_push_all(cold_gc_frame - sizeof(ptr_t), top);
-        GC_push_all_eager(bottom, cold_gc_frame);
-#   endif
-  } else
-#endif
-  /* else */ {
-    GC_push_all_eager(bottom, top);
-  }
-# ifdef TRACE_BUF
-    GC_add_trace_entry("GC_push_all_stack", (word)bottom, (word)top);
-# endif
-}
 
-/* Similar to GC_push_all_stack_sections() but also uses cold_gc_frame. */
-STATIC void GC_push_all_stack_part_eager_sections(
+  /* A version of GC_push_all that treats all interior pointers as  */
+  /* valid and scans part of the area immediately, to make sure     */
+  /* that saved register values are not lost.  Cold_gc_frame        */
+  /* delimits the stack section that must be scanned eagerly.       */
+  /* A zero value indicates that no eager scanning is needed.       */
+  /* We do not need to worry about the manual VDB case here, since  */
+  /* this is only called in the single-threaded case.  We assume    */
+  /* that we cannot collect between an assignment and the           */
+  /* corresponding GC_dirty() call.                                 */
+  STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
+                                                ptr_t cold_gc_frame)
+  {
+#   ifndef NEED_FIXUP_POINTER
+      if (GC_all_interior_pointers) {
+        /* Push the hot end of the stack eagerly, so that register values   */
+        /* saved inside GC frames are marked before they disappear.         */
+        /* The rest of the marking can be deferred until later.             */
+        if (0 == cold_gc_frame) {
+          GC_push_all_stack(bottom, top);
+          return;
+        }
+        GC_ASSERT((word)bottom <= (word)cold_gc_frame
+                  && (word)cold_gc_frame <= (word)top);
+#       ifdef STACK_GROWS_UP
+          GC_push_all(bottom, cold_gc_frame + sizeof(ptr_t));
+          GC_push_all_eager(cold_gc_frame, top);
+#       else
+          GC_push_all(cold_gc_frame - sizeof(ptr_t), top);
+          GC_push_all_eager(bottom, cold_gc_frame);
+#       endif
+      } else
+#   endif
+    /* else */ {
+      GC_push_all_eager(bottom, top);
+    }
+#   ifdef TRACE_BUF
+      GC_add_trace_entry("GC_push_all_stack", (word)bottom, (word)top);
+#   endif
+  }
+
+  /* Similar to GC_push_all_stack_sections() but also uses cold_gc_frame. */
+  STATIC void GC_push_all_stack_part_eager_sections(
         ptr_t lo /* top */, ptr_t hi /* bottom */, ptr_t cold_gc_frame,
         struct GC_traced_stack_sect_s *traced_stack_sect)
-{
+  {
     GC_ASSERT(traced_stack_sect == NULL || cold_gc_frame == NULL ||
               (word)cold_gc_frame HOTTER_THAN (word)traced_stack_sect);
 
@@ -812,7 +813,7 @@ STATIC void GC_push_all_stack_part_eager_sections(
 #   else
         GC_push_all_stack_partially_eager(lo, hi, cold_gc_frame);
 #   endif
-}
+  }
 
 #endif /* !THREADS */
 
@@ -827,6 +828,7 @@ STATIC void GC_push_all_stack_part_eager_sections(
 STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void *context)
 {
     UNUSED_ARG(context);
+    GC_ASSERT(I_HOLD_LOCK());
 #   if defined(THREADS)
         /* cold_gc_frame is non-NULL.   */
 #       ifdef STACK_GROWS_UP
@@ -898,6 +900,7 @@ GC_INNER void GC_cond_register_dynamic_libraries(void)
 
 STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
 {
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef THREADS
       if (NULL == cold_gc_frame)
         return; /* GC_push_all_stacks should push registers and stack */

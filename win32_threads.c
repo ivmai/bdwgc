@@ -180,6 +180,9 @@ GC_INNER GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
 {
   GC_thread me;
 
+# ifdef GC_NO_THREADS_DISCOVERY
+    GC_ASSERT(I_HOLD_LOCK());
+# endif
   /* The following should be a no-op according to the Win32     */
   /* documentation.  There is empirical evidence that it        */
   /* isn't.             - HB                                    */
@@ -403,6 +406,7 @@ STATIC void GC_suspend(GC_thread t)
 #   endif
 # endif
 
+  GC_ASSERT(I_HOLD_LOCK());
 # if defined(DEBUG_THREADS) && !defined(MSWINCE) \
      && (!defined(MSWIN32) || defined(CONSOLE_LOG))
     GC_log_printf("Suspending 0x%x\n", (int)t->id);
@@ -758,6 +762,7 @@ STATIC word GC_push_stack_for(GC_thread thread, thread_id_t self_id,
   ptr_t stack_end = crtn -> stack_end;
   struct GC_traced_stack_sect_s *traced_stack_sect = crtn -> traced_stack_sect;
 
+  GC_ASSERT(I_HOLD_LOCK());
   if (EXPECT(NULL == stack_end, FALSE)) return 0;
 
   if (thread -> id == self_id) {
