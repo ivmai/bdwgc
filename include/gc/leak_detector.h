@@ -69,7 +69,7 @@
 #undef _aligned_malloc
 #define _aligned_malloc(n,a) GC_memalign(a,n) /* reverse args order */
 #undef _aligned_free
-#define _aligned_free(p) GC_free(GC_base(p)) /* non-debug */
+#define _aligned_free(p) GC_free(p) /* non-debug */
 
 #ifndef GC_NO_VALLOC
 # undef valloc

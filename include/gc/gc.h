@@ -586,8 +586,6 @@ GC_API GC_ATTR_DEPRECATED void * GC_CALL GC_malloc_stubborn(size_t);
 /* of two; GC_posix_memalign() also requires it to be not less than     */
 /* size of a pointer.  Note that posix_memalign() does not change value */
 /* of (*memptr) in case of failure (i.e. when the result is non-zero).  */
-/* Note also that GC_base() and GC_size() might return the values those */
-/* are not the expected ones due to the alignment.                      */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
         GC_memalign(size_t /* align */, size_t /* lb */);
 GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,

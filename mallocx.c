@@ -454,47 +454,19 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_many(size_t lb)
 }
 
 /* TODO: The debugging version of GC_memalign and friends is tricky     */
-/* and currently missing.  There are 2 major difficulties:              */
-/* - GC_base() should always point to the beginning of the allocated    */
-/* block (thus, for small objects allocation we should probably         */
-/* iterate over the list of free objects to find the one with the       */
-/* suitable alignment);                                                 */
+/* and currently missing.  The major difficulty is:                     */
 /* - store_debug_info() should return the pointer of the object with    */
 /* the requested alignment (unlike the object header).                  */
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
 {
-    size_t offset;
-    ptr_t result;
     size_t align_m1 = align - 1;
 
     /* Check the alignment argument.    */
     if (EXPECT(0 == align || (align & align_m1) != 0, FALSE)) return NULL;
+    /* TODO: use thread-local allocation */
     if (align <= GC_GRANULE_BYTES) return GC_malloc(lb);
-
-    if (align >= HBLKSIZE/2 || lb >= HBLKSIZE/2) {
-      return GC_clear_stack(GC_generic_malloc_aligned(lb, NORMAL,
-                                        0 /* flags */, align_m1));
-    }
-
-    /* We could also try to make sure that the real rounded-up object size */
-    /* is a multiple of align.  That would be correct up to HBLKSIZE.      */
-    /* TODO: Not space efficient for big align values. */
-    result = (ptr_t)GC_malloc(SIZET_SAT_ADD(lb, align_m1));
-            /* It is OK not to check result for NULL as in that case    */
-            /* GC_memalign returns NULL too since (0 + 0 % align) is 0. */
-    offset = (size_t)(word)result & align_m1;
-    if (offset != 0) {
-        offset = align - offset;
-        if (!GC_all_interior_pointers) {
-            GC_STATIC_ASSERT(VALID_OFFSET_SZ <= HBLKSIZE);
-            GC_ASSERT(offset < VALID_OFFSET_SZ);
-            GC_register_displacement(offset);
-        }
-        result += offset;
-    }
-    GC_ASSERT(((word)result & align_m1) == 0);
-    return result;
+    return GC_malloc_kind_aligned_global(lb, NORMAL, align_m1);
 }
 
 /* This one exists largely to redirect posix_memalign for leaks finding. */

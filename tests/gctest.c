@@ -1653,11 +1653,13 @@ static void run_one_test(void)
           for (i = sizeof(GC_word); i <= HBLKSIZE * 4; i *= 2) {
             p = checkOOM(GC_memalign(i, 17));
             AO_fetch_and_add1(&collectable_count);
-            if ((GC_word)p % i != 0 || *(int *)p != 0) {
-              GC_printf("GC_memalign(%u,17) produced incorrect result: %p\n",
-                        (unsigned)i, p);
+            if ((GC_word)p % i != 0 || *(int *)p != 0 || GC_base(p) != p) {
+              GC_printf("GC_memalign(%u,17) produced incorrect result:"
+                        " %p (base= %p)\n", (unsigned)i, p, GC_base(p));
               FAIL;
             }
+            if (i >= (size_t)(MIN_WORDS * 4) && i <= HBLKSIZE)
+              GC_free(p);
           }
           if (GC_posix_memalign(&p, 64, 1) != 0) {
             GC_printf("Out of memory in GC_posix_memalign\n");
@@ -1671,16 +1673,20 @@ static void run_one_test(void)
           void *p = checkOOM(GC_valloc(78));
 
           AO_fetch_and_add1(&collectable_count);
-          if (((GC_word)p & 0x1ff /* at least */) != 0 || *(int *)p != 0) {
-            GC_printf("GC_valloc() produced incorrect result: %p\n", p);
+          if (((GC_word)p & 0x1ff /* at least */) != 0 || *(int *)p != 0
+              || GC_base(p) != p) {
+            GC_printf("GC_valloc() produced incorrect result: %p (base= %p)\n",
+                      p, GC_base(p));
             FAIL;
           }
 
           p = checkOOM(GC_pvalloc(123));
           AO_fetch_and_add1(&collectable_count);
-          /* Note: cannot check GC_size() result. */
-          if (((GC_word)p & 0x1ff) != 0 || *(int *)p != 0) {
-            GC_printf("GC_pvalloc() produced incorrect result: %p\n", p);
+          if (((GC_word)p & 0x1ff) != 0 || *(int *)p != 0 || GC_base(p) != p
+              || (GC_size(p) & 0x1e0 /* at least */) != 0) {
+            GC_printf("GC_pvalloc() produced incorrect result:"
+                      " %p (base= %p, size= %lu)\n",
+                      p, GC_base(p), (unsigned long)GC_size(p));
             FAIL;
           }
         }

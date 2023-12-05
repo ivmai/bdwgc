@@ -309,8 +309,14 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
 {
+    return GC_malloc_kind_aligned_global(lb, k, 0 /* align_m1 */);
+}
+
+GC_INNER void * GC_malloc_kind_aligned_global(size_t lb, int k,
+                                              size_t align_m1)
+{
     GC_ASSERT(k < MAXOBJKINDS);
-    if (SMALL_OBJ(lb)) {
+    if (SMALL_OBJ(lb) && EXPECT(align_m1 < HBLKSIZE / 2, TRUE)) {
         void *op;
         void **opp;
         size_t lg;
@@ -320,18 +326,22 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
         lg = GC_size_map[lb];
         opp = &GC_obj_kinds[k].ok_freelist[lg];
         op = *opp;
-        if (EXPECT(op != NULL, TRUE)) {
-            if (k == PTRFREE) {
-                *opp = obj_link(op);
-            } else {
-                GC_ASSERT(NULL == obj_link(op)
-                          || ((word)obj_link(op) < GC_greatest_real_heap_addr
-                             && (word)obj_link(op) > GC_least_real_heap_addr));
-                *opp = obj_link(op);
-                obj_link(op) = 0;
+        if (EXPECT(align_m1 >= GC_GRANULE_BYTES, FALSE)) {
+            /* TODO: Avoid linear search. */
+            for (; ((word)op & align_m1) != 0; op = *opp) {
+                opp = &obj_link(op);
             }
+        }
+        if (EXPECT(op != NULL, TRUE)) {
+            GC_ASSERT(PTRFREE == k || NULL == obj_link(op)
+                      || ((word)obj_link(op) < GC_greatest_real_heap_addr
+                          && (word)obj_link(op) > GC_least_real_heap_addr));
+            *opp = obj_link(op);
+            if (k != PTRFREE)
+                obj_link(op) = NULL;
             GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
             UNLOCK();
+            GC_ASSERT(((word)op & align_m1) == 0);
             return op;
         }
         UNLOCK();
@@ -339,7 +349,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
 
     /* We make the GC_clear_stack() call a tail one, hoping to get more */
     /* of the stack.                                                    */
-    return GC_clear_stack(GC_generic_malloc_aligned(lb, k, 0 /* flags */, 0));
+    return GC_clear_stack(GC_generic_malloc_aligned(lb, k, 0 /* flags */,
+                                                    align_m1));
 }
 
 #if defined(THREADS) && !defined(THREAD_LOCAL_ALLOC)

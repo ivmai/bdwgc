@@ -2362,6 +2362,9 @@ GC_INNER void GC_collect_a_little_inner(int n);
                                 /* A unit is an amount appropriate for  */
                                 /* HBLKSIZE bytes of allocation.        */
 
+GC_INNER void * GC_malloc_kind_aligned_global(size_t lb, int k,
+                                              size_t align_m1);
+
 GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
                                           size_t align_m1);
 
