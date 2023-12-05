@@ -117,11 +117,10 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 /* Note that we use the zeroth free list to hold objects 1 granule in   */
 /* size that are used to satisfy size 0 allocation requests.            */
 /* We rely on much of this hopefully getting optimized away in the      */
-/* num_direct = 0 case.                                                 */
-/* Particularly, if granules argument is constant, this should generate */
-/* a small amount of code.                                              */
-# define GC_FAST_MALLOC_GRANS(result,granules,tiny_fl,num_direct, \
-                              kind,default_expr,init) \
+/* case of num_direct is 0.  Particularly, if granules argument is      */
+/* constant, this should generate a small amount of code.               */
+# define GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, num_direct, \
+                              kind, default_expr, init) \
   do { \
     if (GC_EXPECT((granules) >= GC_TINY_FREELISTS, 0)) { \
         result = (default_expr); \
@@ -134,7 +133,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
             if (GC_EXPECT((GC_word)my_entry \
                           > (num_direct) + GC_TINY_FREELISTS + 1, 1)) { \
                 next = *(void **)(my_entry); \
-                result = (void *)my_entry; \
+                result = my_entry; \
                 GC_FAST_M_AO_STORE(my_fl, next); \
                 init; \
                 GC_PREFETCH_FOR_WRITE(next); \
@@ -158,8 +157,8 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                 break; \
             } else { \
                 /* Large counter or NULL */ \
-                GC_generic_malloc_many(((granules) == 0? GC_GRANULE_BYTES : \
-                                        GC_RAW_BYTES_FROM_INDEX(granules)), \
+                GC_generic_malloc_many((granules) == 0 ? GC_GRANULE_BYTES : \
+                                        GC_RAW_BYTES_FROM_INDEX(granules), \
                                        kind, my_fl); \
                 my_entry = *my_fl; \
                 if (my_entry == 0) { \
@@ -174,13 +173,13 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 # define GC_WORDS_TO_WHOLE_GRANULES(n) \
         GC_WORDS_TO_GRANULES((n) + GC_GRANULE_WORDS - 1)
 
-/* Allocate n words (NOT BYTES).  X is made to point to the result.     */
-/* This should really only be used if GC_all_interior_pointers is       */
-/* not set, or DONT_ADD_BYTE_AT_END is set.  See above.                 */
+/* Allocate n words (not bytes).  The pointer is stored to result.      */
+/* Note: this should really only be used if GC_all_interior_pointers is */
+/* not set, or DONT_ADD_BYTE_AT_END is set; see above.                  */
 /* Does not acquire the allocator lock.  The caller is responsible for  */
 /* supplying a cleared tiny_fl free list array.  For single-threaded    */
 /* applications, this may be a global array.                            */
-# define GC_MALLOC_WORDS_KIND(result,n,tiny_fl,kind,init) \
+# define GC_MALLOC_WORDS_KIND(result, n, tiny_fl, kind, init) \
     do { \
       size_t granules = GC_WORDS_TO_WHOLE_GRANULES(n); \
       GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, 0, kind, \
@@ -188,11 +187,11 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                            init); \
     } while (0)
 
-# define GC_MALLOC_WORDS(result,n,tiny_fl) \
+# define GC_MALLOC_WORDS(result, n, tiny_fl) \
         GC_MALLOC_WORDS_KIND(result, n, tiny_fl, GC_I_NORMAL, \
                              *(void **)(result) = 0)
 
-# define GC_MALLOC_ATOMIC_WORDS(result,n,tiny_fl) \
+# define GC_MALLOC_ATOMIC_WORDS(result, n, tiny_fl) \
         GC_MALLOC_WORDS_KIND(result, n, tiny_fl, GC_I_PTRFREE, (void)0)
 
 /* And once more for two word initialized objects: */
