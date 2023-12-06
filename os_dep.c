@@ -2072,8 +2072,8 @@ void GC_register_data_segments(void)
       /* Avoid even referencing DATASTART and DATAEND as they are       */
       /* unnecessary and cause linker errors when bitcode is enabled.   */
       /* GC_register_data_segments() is not called anyway.              */
-#   elif defined(PCR)
-      /* No-op. */
+#   elif defined(PCR) || (defined(DYNAMIC_LOADING) && defined(DARWIN))
+      /* No-op.  GC_register_main_static_data() always returns false.   */
 #   elif defined(MACOS)
       {
 #       if defined(THINK_C)
