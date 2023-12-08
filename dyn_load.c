@@ -1472,7 +1472,7 @@ GC_INNER void GC_init_dyld(void)
         (void (*)(const struct mach_header*, intptr_t))GC_dyld_image_add);
   _dyld_register_func_for_remove_image(
         (void (*)(const struct mach_header*, intptr_t))GC_dyld_image_remove);
-                        /* Structure mach_header64 has the same fields  */
+                        /* Structure mach_header_64 has the same fields */
                         /* as mach_header except for the reserved one   */
                         /* at the end, so these casts are OK.           */
 
