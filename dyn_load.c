@@ -1313,6 +1313,10 @@ STATIC const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
     return NULL; /* not found */
 }
 
+/* getsectbynamefromheader is deprecated, getsectiondata is used    */
+/* instead (by default); define USE_GETSECTBYNAME to override this  */
+/* if needed.                                                       */
+
 static void dyld_section_add_del(const struct GC_MACH_HEADER *hdr,
                                  intptr_t slide, const char *dlpi_name,
                                  GC_has_static_roots_func callback,
@@ -1320,6 +1324,7 @@ static void dyld_section_add_del(const struct GC_MACH_HEADER *hdr,
                                  GC_bool is_add)
 {
   unsigned long start, end, sec_size;
+# ifdef USE_GETSECTBYNAME
 #   if CPP_WORDSZ == 64
       const struct section_64 *sec = getsectbynamefromheader_64(hdr, seg,
                                                                 secnam);
@@ -1330,7 +1335,13 @@ static void dyld_section_add_del(const struct GC_MACH_HEADER *hdr,
     if (NULL == sec) return;
     sec_size = sec -> size;
     start = slide + sec -> addr;
+# else
 
+    UNUSED_ARG(slide);
+    sec_size = 0;
+    start = (unsigned long)getsectiondata(hdr, seg, secnam, &sec_size);
+    if (0 == start) return;
+# endif
   if (sec_size < sizeof(word)) return;
   end = start + sec_size;
   if (is_add) {
