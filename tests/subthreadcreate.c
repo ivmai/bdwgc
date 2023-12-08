@@ -131,8 +131,11 @@ int main(void)
             exit(1);
         }
 #     else
-        DWORD thread_id;
-        th[i] = CreateThread(NULL, 0, entry, 0, 0, &thread_id);
+        {
+          DWORD thread_id;
+
+          th[i] = CreateThread(NULL, 0, entry, 0, 0, &thread_id);
+        }
         if (th[i] == NULL) {
             fprintf(stderr, "Thread #%d creation failed, errcode= %d\n",
                     th_nums[i], (int)GetLastError());
@@ -144,6 +147,7 @@ int main(void)
     for (i = 0; i < n; ++i) {
 #     ifdef GC_PTHREADS
         void *res;
+
         err = pthread_join(th[i], &res);
         if (err) {
             fprintf(stderr, "Thread #%d join failed: %s\n",
