@@ -880,11 +880,19 @@ STATIC GC_thread GC_self_thread(void) {
   /* Called by GC_notify_or_invoke_finalizers() only.                   */
   GC_INNER unsigned char *GC_check_finalizer_nested(void)
   {
+    GC_thread me;
     GC_stack_context_t crtn;
     unsigned nesting_level;
 
     GC_ASSERT(I_HOLD_LOCK());
-    crtn = GC_self_thread_inner() -> crtn;
+    me = GC_self_thread_inner();
+#   if defined(INCLUDE_LINUX_THREAD_DESCR) && defined(REDIRECT_MALLOC)
+      /* As noted in GC_pthread_start, an allocation may happen in  */
+      /* GC_get_stack_base, causing GC_notify_or_invoke_finalizers  */
+      /* to be called before the thread gets registered.            */
+      if (EXPECT(NULL == me, FALSE)) return NULL;
+#   endif
+    crtn = me -> crtn;
     nesting_level = crtn -> finalizer_nested;
     if (nesting_level) {
       /* We are inside another GC_invoke_finalizers().          */
