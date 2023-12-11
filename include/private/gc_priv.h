@@ -2439,7 +2439,7 @@ GC_EXTERN signed_word GC_bytes_found;
 #endif
 
 #ifdef CHECKSUMS
-# if defined(MPROTECT_VDB) && !defined(DARWIN)
+# ifdef MPROTECT_VDB
     void GC_record_fault(struct hblk * h);
 # endif
   void GC_check_dirty(void);
