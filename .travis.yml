@@ -272,6 +272,10 @@ jobs:
     env:
     - CONF_OPTIONS="--disable-threads --enable-checksums --disable-munmap --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
+  - os: osx
+    env:
+    - CONF_OPTIONS="--disable-threads --enable-checksums --disable-handle-fork --disable-munmap --enable-gc-assertions --enable-large-config --enable-static"
+    - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
     env:
     - CFLAGS_EXTRA="-D _FORTIFY_SOURCE=2 -D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
