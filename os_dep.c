@@ -5009,6 +5009,9 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
     struct hblk * h = (struct hblk *)((word)addr & ~(word)(GC_page_size-1));
     size_t i;
 
+#   ifdef CHECKSUMS
+      GC_record_fault(h);
+#   endif
     UNPROTECT(h, GC_page_size);
     for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
       word index = PHT_HASH(h+i);
