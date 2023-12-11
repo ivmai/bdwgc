@@ -17,8 +17,8 @@
 
 #include "private/gc_priv.h"
 
-#if (defined(MPROTECT_VDB) && !defined(DARWIN) && !defined(MSWINCE)) \
-    || defined(GC_SOLARIS_THREADS)
+#if (defined(MPROTECT_VDB) && !defined(MSWIN32) && !defined(MSWINCE)) \
+    || defined(GC_SOLARIS_THREADS) || defined(OPENBSD)
 # include <signal.h>
 #endif
 
@@ -872,6 +872,8 @@ GC_INNER void GC_setpagesize(void)
     || (defined(UNIX_LIKE) && !defined(NO_DEBUGGING)) \
     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)) \
     || (defined(WRAP_MARK_SOME) && defined(NO_SEH_AVAILABLE))
+
+#   include <signal.h>
 
 #   ifdef USE_SEGV_SIGACT
 #     ifndef OPENBSD
