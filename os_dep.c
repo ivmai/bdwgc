@@ -17,9 +17,8 @@
 
 #include "private/gc_priv.h"
 
-#if defined(MSWINCE) || defined(SN_TARGET_PS3)
-# define SIGSEGV 0 /* value is irrelevant */
-#else
+#if (defined(MPROTECT_VDB) && !defined(DARWIN) && !defined(MSWINCE)) \
+    || defined(GC_SOLARIS_THREADS)
 # include <signal.h>
 #endif
 
@@ -1438,7 +1437,6 @@ GC_INNER void GC_setpagesize(void)
 #if defined(GC_SOLARIS_THREADS) && !defined(_STRICT_STDC)
 
 # include <thread.h>
-# include <signal.h>
 # include <pthread.h>
 
   /* These variables are used to cache ss_sp value for the primordial   */
@@ -3100,7 +3098,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
 # elif !defined(USE_WINALLOC)
 #   include <sys/mman.h>
-#   include <signal.h>
 #   if !defined(AIX) && !defined(CYGWIN32) && !defined(HAIKU)
 #     include <sys/syscall.h>
 #   endif
@@ -3117,10 +3114,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   undef IGNORE_PAGES_EXECUTABLE
 
 # else /* USE_WINALLOC */
-#   ifndef MSWINCE
-#     include <signal.h>
-#   endif
-
     static DWORD protect_junk;
 #   define PROTECT_INNER(addr, len, allow_write, C_msg_prefix) \
         if (VirtualProtect(addr, len, \

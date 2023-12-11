@@ -19,10 +19,6 @@
 #include <limits.h>
 #include <stdarg.h>
 
-#ifndef MSWINCE
-# include <signal.h>
-#endif
-
 #ifdef GC_SOLARIS_THREADS
 # include <sys/syscall.h>
 #endif

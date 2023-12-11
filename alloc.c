@@ -18,10 +18,6 @@
 
 #include "private/gc_priv.h"
 
-#if !defined(MACOS) && !defined(MSWINCE)
-# include <signal.h>
-#endif
-
 /*
  * Separate free lists are maintained for different sized objects
  * up to MAXOBJBYTES.

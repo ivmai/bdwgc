@@ -51,7 +51,10 @@
 #   include <sys/stat.h>
 #   include <fcntl.h>
 # endif
-# include <signal.h>
+# if defined(GC_EXPLICIT_SIGNALS_UNBLOCK) || !defined(GC_NO_PTHREAD_SIGMASK) \
+     || (defined(GC_PTHREADS_PARAMARK) && !defined(NO_MARKER_SPECIAL_SIGMASK))
+#   include <signal.h>
+# endif
 #endif /* !GC_WIN32_THREADS */
 
 #ifdef E2K
