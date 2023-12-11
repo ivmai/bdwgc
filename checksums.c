@@ -36,7 +36,7 @@ STATIC word GC_faulted[NSUMS] = { 0 };
 
 STATIC size_t GC_n_faulted = 0;
 
-#if defined(MPROTECT_VDB) && !defined(DARWIN)
+#ifdef MPROTECT_VDB
   void GC_record_fault(struct hblk * h)
   {
     word page = (word)h & ~(word)(GC_page_size-1);
