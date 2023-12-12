@@ -24,7 +24,10 @@
 
 #include <sys/sysctl.h>
 #include <mach/machine.h>
-#include <CoreFoundation/CoreFoundation.h>
+
+#if defined(ARM32) && defined(ARM_THREAD_STATE32)
+# include <CoreFoundation/CoreFoundation.h>
+#endif
 
 /* From "Inside Mac OS X - Mach-O Runtime Architecture" published by Apple
    Page 49:
