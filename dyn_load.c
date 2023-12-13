@@ -1314,12 +1314,10 @@ STATIC const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
 }
 
 /* getsectbynamefromheader is deprecated (first time in macOS 13.0),    */
-/* getsectiondata (introduced in macOS 10.7) is used instead to avoid   */
-/* a warning about the deprecated symbol, at least.                     */
-/* Define USE_GETSECTBYNAME or USE_GETSECTIONDATA to control which      */
-/* symbol to use manually, if needed.                                   */
-#if !defined(USE_GETSECTBYNAME) && !defined(USE_GETSECTIONDATA) \
-    && (MAC_OS_X_VERSION_MAX_ALLOWED <= 120000 /*MAC_OS_X_VERSION_12_0*/)
+/* getsectiondata (introduced in macOS 10.7) is used instead if exists. */
+/* Define USE_GETSECTBYNAME to use the deprecated symbol, if needed.    */
+#if !defined(USE_GETSECTBYNAME) \
+    && (MAC_OS_X_VERSION_MIN_REQUIRED < 1070 /*MAC_OS_X_VERSION_10_7*/)
 # define USE_GETSECTBYNAME
 #endif
 
