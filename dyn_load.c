@@ -1313,9 +1313,15 @@ STATIC const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
     return NULL; /* not found */
 }
 
-/* getsectbynamefromheader is deprecated, getsectiondata is used    */
-/* instead (by default); define USE_GETSECTBYNAME to override this  */
-/* if needed.                                                       */
+/* getsectbynamefromheader is deprecated (first time in macOS 13.0),    */
+/* getsectiondata (introduced in macOS 10.7) is used instead to avoid   */
+/* a warning about the deprecated symbol, at least.                     */
+/* Define USE_GETSECTBYNAME or USE_GETSECTIONDATA to control which      */
+/* symbol to use manually, if needed.                                   */
+#if !defined(USE_GETSECTBYNAME) && !defined(USE_GETSECTIONDATA) \
+    && (MAC_OS_X_VERSION_MAX_ALLOWED <= 1200 /*MAC_OS_X_VERSION_12_0*/)
+# define USE_GETSECTBYNAME
+#endif
 
 static void dyld_section_add_del(const struct GC_MACH_HEADER *hdr,
                                  intptr_t slide, const char *dlpi_name,
