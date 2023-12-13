@@ -1319,7 +1319,7 @@ STATIC const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
 /* Define USE_GETSECTBYNAME or USE_GETSECTIONDATA to control which      */
 /* symbol to use manually, if needed.                                   */
 #if !defined(USE_GETSECTBYNAME) && !defined(USE_GETSECTIONDATA) \
-    && (MAC_OS_X_VERSION_MAX_ALLOWED <= 1200 /*MAC_OS_X_VERSION_12_0*/)
+    && (MAC_OS_X_VERSION_MAX_ALLOWED <= 120000 /*MAC_OS_X_VERSION_12_0*/)
 # define USE_GETSECTBYNAME
 #endif
 
