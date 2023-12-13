@@ -163,6 +163,10 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #   endif
 # endif
 
+# if defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) && __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1070
+#   define USE_GETSECTBYNAME
+# endif
+
 #if defined(SOLARISDL) && !defined(USE_PROC_FOR_LIBRARIES)
 
   EXTERN_C_BEGIN
