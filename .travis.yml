@@ -309,7 +309,7 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
-    - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2 -D AO_DISABLE_GCC_ATOMICS -D USE_GETSECTIONDATA"
+    - CFLAGS_EXTRA="-march=native -D _FORTIFY_SOURCE=2 -D AO_DISABLE_GCC_ATOMICS"
     - CONF_OPTIONS="--without-libatomic-ops --enable-munmap --enable-cplusplus --enable-static"
   - compiler: gcc
     env:
