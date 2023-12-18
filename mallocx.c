@@ -278,7 +278,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
         if (EXPECT(0 != op, TRUE))
             obj_link(op) = 0;
         *result = op;
-#       ifndef GC_DISABLE_INCREMENTAL
+#       ifndef NO_MANUAL_VDB
           if (GC_manual_vdb && GC_is_heap_ptr(result)) {
             GC_dirty_inner(result);
             REACHABLE_AFTER_DIRTY(op);

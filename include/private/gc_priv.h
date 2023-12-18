@@ -2578,14 +2578,26 @@ GC_EXTERN GC_bool GC_print_back_height;
                 /* accompanying routines are no-op in such a case.      */
 #endif
 
-#ifdef GC_DISABLE_INCREMENTAL
-# define GC_incremental FALSE
-# define GC_auto_incremental FALSE
+#ifdef NO_MANUAL_VDB
 # define GC_manual_vdb FALSE
+# define GC_auto_incremental GC_incremental
 # define GC_dirty(p) (void)(p)
 # define REACHABLE_AFTER_DIRTY(p) (void)(p)
+#else
+  GC_EXTERN GC_bool GC_manual_vdb;
+                /* The incremental collection is in the manual VDB      */
+                /* mode.  Assumes GC_incremental is true.  Should not   */
+                /* be modified once GC_incremental is set to true.      */
 
-#else /* !GC_DISABLE_INCREMENTAL */
+# define GC_auto_incremental (GC_incremental && !GC_manual_vdb)
+  GC_INNER void GC_dirty_inner(const void *p); /* does not require locking */
+# define GC_dirty(p) (GC_manual_vdb ? GC_dirty_inner(p) : (void)0)
+# define REACHABLE_AFTER_DIRTY(p) GC_reachable_here(p)
+#endif /* !NO_MANUAL_VDB */
+
+#ifdef GC_DISABLE_INCREMENTAL
+# define GC_incremental FALSE
+#else
   GC_EXTERN GC_bool GC_incremental;
                         /* Using incremental/generational collection.   */
                         /* Assumes dirty bits are being maintained.     */
@@ -2645,17 +2657,6 @@ GC_EXTERN GC_bool GC_print_back_height;
                 /* Returns true if dirty bits are maintained (otherwise */
                 /* it is OK to be called again if the client invokes    */
                 /* GC_enable_incremental once more).                    */
-
-  GC_EXTERN GC_bool GC_manual_vdb;
-                /* The incremental collection is in the manual VDB      */
-                /* mode.  Assumes GC_incremental is true.  Should not   */
-                /* be modified once GC_incremental is set to true.      */
-
-# define GC_auto_incremental (GC_incremental && !GC_manual_vdb)
-
-  GC_INNER void GC_dirty_inner(const void *p); /* does not require locking */
-# define GC_dirty(p) (GC_manual_vdb ? GC_dirty_inner(p) : (void)0)
-# define REACHABLE_AFTER_DIRTY(p) GC_reachable_here(p)
 #endif /* !GC_DISABLE_INCREMENTAL */
 
 /* Same as GC_base but excepts and returns a pointer to const object.   */

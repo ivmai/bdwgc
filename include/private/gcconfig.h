@@ -2860,6 +2860,14 @@ EXTERN_C_BEGIN
 # error Invalid config for CHECK_SOFT_VDB
 #endif
 
+#if (defined(GC_DISABLE_INCREMENTAL) || defined(BASE_ATOMIC_OPS_EMULATED) \
+     || defined(REDIRECT_MALLOC) || defined(SMALL_CONFIG) \
+     || defined(REDIRECT_MALLOC_IN_HEADER) || defined(CHECKSUMS)) \
+    && !defined(NO_MANUAL_VDB)
+  /* TODO: Implement CHECKSUMS for manual VDB. */
+# define NO_MANUAL_VDB
+#endif
+
 #if !defined(PROC_VDB) && !defined(SOFT_VDB) \
     && !defined(NO_VDB_FOR_STATIC_ROOTS)
   /* Cannot determine whether a static root page is dirty?      */

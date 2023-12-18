@@ -572,6 +572,8 @@ CHECK_SOFT_VDB  Turn on both MPROTECT_VDB and SOFT_VDB virtual dirty bit
   strategies to check whether they are consistent.  Use only for debugging of
   the incremental collector.
 
+NO_MANUAL_VDB   Do not allow the manual VDB mode.
+
 GC_IGNORE_GCJ_INFO      Disable GCJ-style type information (useful for
   debugging on WinCE).
 

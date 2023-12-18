@@ -901,11 +901,7 @@ GC_API int GC_CALL GC_is_init_called(void)
   static void set_incremental_mode_on(void)
   {
     GC_ASSERT(I_HOLD_LOCK());
-#   if defined(BASE_ATOMIC_OPS_EMULATED) || defined(CHECKSUMS) \
-       || defined(REDIRECT_MALLOC) || defined(SMALL_CONFIG) \
-       || defined(REDIRECT_MALLOC_IN_HEADER)
-      /* TODO: Implement CHECKSUMS for manual VDB. */
-#   else
+#   ifndef NO_MANUAL_VDB
       if (manual_vdb_allowed) {
         GC_manual_vdb = TRUE;
         GC_incremental = TRUE;

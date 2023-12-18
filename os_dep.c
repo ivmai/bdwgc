@@ -3047,7 +3047,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   }
 #endif /* DEFAULT_VDB */
 
-#ifndef GC_DISABLE_INCREMENTAL
+#if !defined(NO_MANUAL_VDB) || defined(MPROTECT_VDB)
 # if !defined(THREADS) || defined(HAVE_LOCKFREE_AO_OR)
 #   define async_set_pht_entry_from_index(db, index) \
                         set_pht_entry_from_index_concurrent(db, index)
@@ -3067,7 +3067,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # else
 #   error No test_and_set operation: Introduces a race.
 # endif /* THREADS && !AO_HAVE_test_and_set_acquire */
-#endif /* !GC_DISABLE_INCREMENTAL */
+#endif /* !NO_MANUAL_VDB || MPROTECT_VDB */
 
 #ifdef MPROTECT_VDB
   /*
@@ -4138,7 +4138,7 @@ GC_INNER GC_bool GC_dirty_init(void)
 }
 #endif /* PCR_VDB */
 
-#ifndef GC_DISABLE_INCREMENTAL
+#ifndef NO_MANUAL_VDB
   GC_INNER GC_bool GC_manual_vdb = FALSE;
 
   /* Manually mark the page containing p as dirty.  Logically, this     */
@@ -4154,7 +4154,9 @@ GC_INNER GC_bool GC_dirty_init(void)
 #   endif
     async_set_pht_entry_from_index(GC_dirty_pages, index);
   }
+#endif /* !NO_MANUAL_VDB */
 
+#ifndef GC_DISABLE_INCREMENTAL
   /* Retrieve system dirty bits for the heap to a local buffer (unless  */
   /* output_unneeded).  Restore the systems notion of which pages are   */
   /* dirty.  We assume that either the world is stopped or it is OK to  */
