@@ -389,7 +389,7 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: gcc
     env:
-    - CFLAGS_EXTRA="-O3 -flto -D _FORTIFY_SOURCE=2"
+    - CFLAGS_EXTRA="-O3 -flto -D _FORTIFY_SOURCE=2 -D NO_MANUAL_VDB"
     - CONF_OPTIONS="--disable-parallel-mark --disable-thread-local-alloc --enable-gc-assertions --enable-cplusplus"
   - compiler: gcc
     env:
