@@ -3462,22 +3462,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   }
 #endif /* !DARWIN */
 
-GC_API int GC_CALL GC_incremental_protection_needs(void)
-{
-    GC_ASSERT(GC_is_initialized);
-#   if defined(GWW_VDB) || (defined(SOFT_VDB) && !defined(CHECK_SOFT_VDB))
-      /* Only if the incremental mode is already switched on.   */
-      if (GC_GWW_AVAILABLE())
-        return GC_PROTECTS_NONE;
-#   endif
-    if (GC_page_size == HBLKSIZE) {
-        return GC_PROTECTS_POINTER_HEAP;
-    } else {
-        return GC_PROTECTS_POINTER_HEAP | GC_PROTECTS_PTRFREE_HEAP;
-    }
-}
-#define HAVE_INCREMENTAL_PROTECTION_NEEDS
-
 #define IS_PTRFREE(hhdr) ((hhdr)->hb_descr == 0)
 #define PAGE_ALIGNED(x) !((word)(x) & (GC_page_size - 1))
 
@@ -5037,13 +5021,24 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 
 #endif /* DARWIN && MPROTECT_VDB */
 
-#ifndef HAVE_INCREMENTAL_PROTECTION_NEEDS
-  GC_API int GC_CALL GC_incremental_protection_needs(void)
-  {
-    GC_ASSERT(GC_is_initialized);
+GC_API int GC_CALL GC_incremental_protection_needs(void)
+{
+  GC_ASSERT(GC_is_initialized);
+# ifdef MPROTECT_VDB
+#   if defined(GWW_VDB) || (defined(SOFT_VDB) && !defined(CHECK_SOFT_VDB))
+      /* Only if the incremental mode is already switched on.   */
+      if (GC_GWW_AVAILABLE())
+        return GC_PROTECTS_NONE;
+#   endif
+    if (GC_page_size == HBLKSIZE) {
+      return GC_PROTECTS_POINTER_HEAP;
+    } else {
+      return GC_PROTECTS_POINTER_HEAP | GC_PROTECTS_PTRFREE_HEAP;
+    }
+# else
     return GC_PROTECTS_NONE;
-  }
-#endif /* !HAVE_INCREMENTAL_PROTECTION_NEEDS */
+# endif
+}
 
 #ifdef ECOS
   /* Undo sbrk() redirection. */
