@@ -2763,9 +2763,7 @@ int main(void)
     GC_set_stop_func(GC_get_stop_func());
     GC_set_thr_restart_signal(GC_get_thr_restart_signal());
     GC_set_time_limit(GC_get_time_limit());
-#   if !defined(PCR) && !defined(SMALL_CONFIG)
-      GC_set_abort_func(GC_get_abort_func());
-#   endif
+    GC_set_abort_func(GC_get_abort_func());
 #   ifndef NO_CLOCK
       GC_set_time_limit_tv(GC_get_time_limit_tv());
 #   endif

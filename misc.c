@@ -2012,12 +2012,12 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
     return result;
 }
 
-#if !defined(PCR) && !defined(SMALL_CONFIG)
-  /* Print (or display) a message before abnormal exit (including       */
-  /* abort).  Invoked from ABORT(msg) macro (there msg is non-NULL)     */
-  /* and from EXIT() macro (msg is NULL in that case).                  */
-  STATIC void GC_CALLBACK GC_default_on_abort(const char *msg)
-  {
+/* Print (or display) a message before abnormal exit (including     */
+/* abort).  Invoked from ABORT(msg) macro (there msg is non-NULL)   */
+/* and from EXIT() macro (msg is NULL in that case).                */
+STATIC void GC_CALLBACK GC_default_on_abort(const char *msg)
+{
+# if !defined(PCR) && !defined(SMALL_CONFIG)
 #   ifndef DONT_USE_ATEXIT
       skip_gc_atexit = TRUE; /* disable at-exit GC_gcollect() */
 #   endif
@@ -2056,28 +2056,41 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
             }
       }
 #   endif
-  }
+# else
+    UNUSED_ARG(msg);
+# endif
+}
 
+#if !defined(PCR) && !defined(SMALL_CONFIG)
   GC_abort_func GC_on_abort = GC_default_on_abort;
+#endif
 
-  GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
-  {
-      GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
-      LOCK();
-      GC_on_abort = fn;
-      UNLOCK();
-  }
+GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
+{
+  GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
+  LOCK();
+# if !defined(PCR) && !defined(SMALL_CONFIG)
+    GC_on_abort = fn;
+# else
+    UNUSED_ARG(fn);
+# endif
+  UNLOCK();
+}
 
-  GC_API GC_abort_func GC_CALL GC_get_abort_func(void)
-  {
-      GC_abort_func fn;
+GC_API GC_abort_func GC_CALL GC_get_abort_func(void)
+{
+  GC_abort_func fn;
 
-      READER_LOCK();
-      fn = GC_on_abort;
-      READER_UNLOCK();
-      return fn;
-  }
-#endif /* !SMALL_CONFIG */
+  READER_LOCK();
+# if !defined(PCR) && !defined(SMALL_CONFIG)
+    fn = GC_on_abort;
+    GC_ASSERT(fn != 0);
+# else
+    fn = GC_default_on_abort;
+# endif
+  READER_UNLOCK();
+  return fn;
+}
 
 GC_API void GC_CALL GC_enable(void)
 {

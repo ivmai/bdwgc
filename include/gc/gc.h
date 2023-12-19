@@ -1513,8 +1513,9 @@ GC_API void GC_CALL GC_set_log_fd(int);
 /* outputs msg to stderr provided msg is non-NULL.  msg is NULL if      */
 /* invoked before exit(1) otherwise msg is non-NULL (i.e., if invoked   */
 /* before abort).  Both the setter and the getter acquire the allocator */
-/* lock (in the reader mode in case of the getter), and are defined     */
-/* only if the library has been compiled without SMALL_CONFIG defined.  */
+/* lock (in the reader mode in case of the getter).  The setter does    */
+/* not change abort_func if the library has been compiled with          */
+/* SMALL_CONFIG defined.                                                */
 typedef void (GC_CALLBACK * GC_abort_func)(const char * /* msg */);
 GC_API void GC_CALL GC_set_abort_func(GC_abort_func) GC_ATTR_NONNULL(1);
 GC_API GC_abort_func GC_CALL GC_get_abort_func(void);
