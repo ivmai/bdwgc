@@ -2213,6 +2213,19 @@ static void GC_CALLBACK warn_proc(char *msg, GC_word p)
 
 static void enable_incremental_mode(void)
 {
+# ifndef NO_INCREMENTAL
+    unsigned vdbs = GC_get_supported_vdbs();
+
+    if (vdbs != GC_VDB_NONE)
+      GC_printf("Supported VDBs:%s%s%s%s%s%s%s\n",
+                vdbs & GC_VDB_MANUAL ?    " manual" : "",
+                vdbs & GC_VDB_DEFAULT ?   " default" : "",
+                vdbs & GC_VDB_PCR ?   " pcr" : "",
+                vdbs & GC_VDB_GWW ?   " gww" : "",
+                vdbs & GC_VDB_PROC ?  " proc" : "",
+                vdbs & GC_VDB_SOFT ?      " soft" : "",
+                vdbs & GC_VDB_MPROTECT ?  " mprotect" : "");
+# endif
 # if (defined(TEST_DEFAULT_VDB) || defined(TEST_MANUAL_VDB) \
       || !defined(DEFAULT_VDB)) && !defined(GC_DISABLE_INCREMENTAL)
 #   if !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL) \

@@ -897,6 +897,37 @@ GC_API int GC_CALL GC_is_init_called(void)
   }
 #endif /* !SMALL_CONFIG */
 
+GC_API unsigned GC_CALL GC_get_supported_vdbs(void)
+{
+# ifdef GC_DISABLE_INCREMENTAL
+    return GC_VDB_NONE;
+# else
+    return 0
+#     ifndef NO_MANUAL_VDB
+        | GC_VDB_MANUAL
+#     endif
+#     ifdef DEFAULT_VDB
+        | GC_VDB_DEFAULT
+#     endif
+#     ifdef MPROTECT_VDB
+        | GC_VDB_MPROTECT
+#     endif
+#     ifdef GWW_VDB
+        | GC_VDB_GWW
+#     endif
+#     ifdef PCR_VDB
+        | GC_VDB_PCR
+#     endif
+#     ifdef PROC_VDB
+        | GC_VDB_PROC
+#     endif
+#     ifdef SOFT_VDB
+        | GC_VDB_SOFT
+#     endif
+      ;
+# endif
+}
+
 #ifndef GC_DISABLE_INCREMENTAL
   static void set_incremental_mode_on(void)
   {

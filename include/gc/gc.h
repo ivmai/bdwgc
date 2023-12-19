@@ -915,6 +915,22 @@ GC_API void GC_CALL GC_enable(void);
 GC_API void GC_CALL GC_set_manual_vdb_allowed(int);
 GC_API int GC_CALL GC_get_manual_vdb_allowed(void);
 
+/* The constants to represent available VDB techniques. */
+#define GC_VDB_NONE 0 /* means the incremental mode is unsupported */
+#define GC_VDB_MPROTECT 0x1
+#define GC_VDB_MANUAL   0x2 /* means GC_set_manual_vdb_allowed(1) has effect */
+#define GC_VDB_DEFAULT  0x4 /* means no other technique is usable */
+#define GC_VDB_GWW      0x8
+#define GC_VDB_PCR      0x10
+#define GC_VDB_PROC     0x20
+#define GC_VDB_SOFT     0x40
+
+/* Get the list of available virtual dirty bits (VDB) techniques.       */
+/* The returned value is a constant one, either GC_VDB_NONE, or one or  */
+/* more of the above GC_VDB_* constants, or'ed together.  May be called */
+/* before the collector is initialized.                                 */
+GC_API unsigned GC_CALL GC_get_supported_vdbs(void);
+
 /* Enable incremental/generational collection.  Not advisable unless    */
 /* dirty bits are available or most heap objects are pointer-free       */
 /* (atomic) or immutable.  Don't use in leak finding mode.  Ignored if  */
