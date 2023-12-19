@@ -910,8 +910,7 @@ GC_API void GC_CALL GC_enable(void);
 /* used only if the client has the appropriate GC_END_STUBBORN_CHANGE   */
 /* and GC_reachable_here (or, alternatively, GC_PTR_STORE_AND_DIRTY)    */
 /* calls (to ensure proper write barriers).  The setter and the getter  */
-/* are not synchronized, and are defined only if the library has been   */
-/* compiled without SMALL_CONFIG.                                       */
+/* are not synchronized.                                                */
 GC_API void GC_CALL GC_set_manual_vdb_allowed(int);
 GC_API int GC_CALL GC_get_manual_vdb_allowed(void);
 

@@ -879,23 +879,21 @@ GC_API int GC_CALL GC_is_init_called(void)
   }
 #endif
 
-#ifndef SMALL_CONFIG
-# ifdef MANUAL_VDB
+#ifdef MANUAL_VDB
     static GC_bool manual_vdb_allowed = TRUE;
-# else
+#else
     static GC_bool manual_vdb_allowed = FALSE;
-# endif
+#endif
 
-  GC_API void GC_CALL GC_set_manual_vdb_allowed(int value)
-  {
+GC_API void GC_CALL GC_set_manual_vdb_allowed(int value)
+{
     manual_vdb_allowed = (GC_bool)value;
-  }
+}
 
-  GC_API int GC_CALL GC_get_manual_vdb_allowed(void)
-  {
+GC_API int GC_CALL GC_get_manual_vdb_allowed(void)
+{
     return (int)manual_vdb_allowed;
-  }
-#endif /* !SMALL_CONFIG */
+}
 
 GC_API unsigned GC_CALL GC_get_supported_vdbs(void)
 {

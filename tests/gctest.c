@@ -155,10 +155,8 @@
 
 #ifdef TEST_MANUAL_VDB
 # define INIT_MANUAL_VDB_ALLOWED GC_set_manual_vdb_allowed(1)
-#elif !defined(SMALL_CONFIG)
-# define INIT_MANUAL_VDB_ALLOWED GC_set_manual_vdb_allowed(0)
 #else
-# define INIT_MANUAL_VDB_ALLOWED /* empty */
+# define INIT_MANUAL_VDB_ALLOWED GC_set_manual_vdb_allowed(0)
 #endif
 
 #ifdef TEST_PAGES_EXECUTABLE
@@ -2233,12 +2231,9 @@ static void enable_incremental_mode(void)
       GC_enable_incremental();
 #   endif
     if (GC_is_incremental_mode()) {
-#     ifndef SMALL_CONFIG
-        if (GC_get_manual_vdb_allowed()) {
-          GC_printf("Switched to incremental mode (manual VDB)\n");
-        } else
-#     endif
-      /* else */ {
+      if (GC_get_manual_vdb_allowed()) {
+        GC_printf("Switched to incremental mode (manual VDB)\n");
+      } else {
         GC_printf("Switched to incremental mode\n");
         if (GC_incremental_protection_needs() == GC_PROTECTS_NONE) {
 #         if defined(PROC_VDB) || defined(SOFT_VDB)
