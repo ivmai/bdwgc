@@ -170,10 +170,9 @@ endif()
 
 include_directories(include)
 
-set(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
-        mark_rts.c headers.c mark.c obj_map.c blacklst.c finalize.c
-        new_hblk.c dbg_mlc.c malloc.c dyn_load.c typd_mlc.c ptr_chck.c
-        mallocx.c)
+set(SRC allchblk.c alloc.c blacklst.c dbg_mlc.c dyn_load.c finalize.c headers.c
+        mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c
+        obj_map.c os_dep.c ptr_chck.c reclaim.c typd_mlc.c)
 set(NODIST_SRC)
 set(ATOMIC_OPS_LIBS)
 set(ATOMIC_OPS_LIBS_CMAKE)
