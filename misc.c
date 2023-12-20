@@ -1281,7 +1281,7 @@ GC_API void GC_CALL GC_init(void)
       GC_exclude_static_roots_inner(beginGC_aobjfreelist, endGC_aobjfreelist);
 #   endif
 #   if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
-        WARN("USE_PROC_FOR_LIBRARIES + GC_LINUX_THREADS performs poorly\n", 0);
+        /* TODO: USE_PROC_FOR_LIBRARIES+GC_LINUX_THREADS performs poorly! */
         /* If thread stacks are cached, they tend to be scanned in      */
         /* entirety as part of the root set.  This will grow them to    */
         /* maximum size, and is generally not desirable.                */
