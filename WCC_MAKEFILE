@@ -78,7 +78,7 @@ CXXFLAGS= $(CFLAGS) -xs
 TEST_CFLAGS=-$(CPU)$(CALLING) $(OPTIM) -iinclude -zp4 -zc $(SYSFLAG) $(TEST_DLLFLAG) $(DEFS) $(CFLAGS_EXTRA)
 TEST_CXXFLAGS= $(TEST_CFLAGS) -xs
 
-COBJS= cordbscs.obj cordxtra.obj cordprnt.obj
+COBJS= cordbscs.obj cordprnt.obj cordxtra.obj
 
 all: gc.lib gccpp.lib gctba.lib cord.lib
 
@@ -95,11 +95,11 @@ check: check-deps .SYMBOLIC
 
 !ifdef ENABLE_STATIC
 
-OBJS= alloc.obj reclaim.obj allchblk.obj backgraph.obj checksums.obj &
-      misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj &
-      obj_map.obj blacklst.obj finalize.obj new_hblk.obj &
-      dbg_mlc.obj malloc.obj dyn_load.obj &
-      typd_mlc.obj ptr_chck.obj mallocx.obj fnlz_mlc.obj gcj_mlc.obj
+OBJS= allchblk.obj alloc.obj backgraph.obj blacklst.obj checksums.obj &
+      dbg_mlc.obj dyn_load.obj finalize.obj fnlz_mlc.obj gcj_mlc.obj &
+      headers.obj mach_dep.obj malloc.obj mallocx.obj mark.obj mark_rts.obj &
+      misc.obj new_hblk.obj obj_map.obj os_dep.obj ptr_chck.obj reclaim.obj &
+      typd_mlc.obj
 
 gc.lib: $(OBJS)
         @%create $*.lb1
@@ -306,17 +306,17 @@ cpptest.obj: tests\cpp.cc .AUTODEPEND
         $(CXX) $(CXXFLAGS) $*.cc
 
 clean: .SYMBOLIC
-        @if exist *.obj del *.obj
-        @if exist *.map del *.map
-        @if exist *.lnk del *.lnk
-        @if exist *.lb1 del *.lb1
-        @if exist *.sym del *.sym
-        @if exist *.err del *.err
-        @if exist *.tmp del *.tmp
-        @if exist *.lst del *.lst
-        @if exist *.exe del *.exe
-        @if exist *.log del *.log
-        @if exist *.lib del *.lib
         @if exist *.dll del *.dll
+        @if exist *.err del *.err
+        @if exist *.exe del *.exe
+        @if exist *.lb1 del *.lb1
+        @if exist *.lib del *.lib
+        @if exist *.lnk del *.lnk
+        @if exist *.log del *.log
+        @if exist *.lst del *.lst
+        @if exist *.map del *.map
+        @if exist *.obj del *.obj
         @if exist *.rbj del *.rbj
         @if exist *.res del *.res
+        @if exist *.sym del *.sym
+        @if exist *.tmp del *.tmp
