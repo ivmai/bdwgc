@@ -5040,6 +5040,37 @@ GC_API int GC_CALL GC_incremental_protection_needs(void)
 # endif
 }
 
+GC_API unsigned GC_CALL GC_get_actual_vdb(void)
+{
+# ifndef GC_DISABLE_INCREMENTAL
+    if (GC_incremental) {
+#     ifndef NO_MANUAL_VDB
+        if (GC_manual_vdb) return GC_VDB_MANUAL;
+#     endif
+#     ifdef MPROTECT_VDB
+#       ifdef GWW_VDB
+          if (GC_GWW_AVAILABLE()) return GC_VDB_GWW;
+#       endif
+#       ifdef SOFT_VDB
+          if (GC_GWW_AVAILABLE()) return GC_VDB_SOFT;
+#       endif
+        return GC_VDB_MPROTECT;
+#     elif defined(GWW_VDB)
+        return GC_VDB_GWW;
+#     elif defined(SOFT_VDB)
+        return GC_VDB_SOFT;
+#     elif defined(PCR_VDB)
+        return GC_VDB_PCR;
+#     elif defined(PROC_VDB)
+        return GC_VDB_PROC;
+#     else /* DEFAULT_VDB */
+        return GC_VDB_DEFAULT;
+#     endif
+    }
+# endif
+  return GC_VDB_NONE;
+}
+
 #ifdef ECOS
   /* Undo sbrk() redirection. */
 # undef sbrk

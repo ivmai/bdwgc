@@ -2235,14 +2235,22 @@ static void enable_incremental_mode(void)
         GC_printf("Switched to incremental mode (manual VDB)\n");
       } else {
         GC_printf("Switched to incremental mode\n");
-        if (GC_incremental_protection_needs() == GC_PROTECTS_NONE) {
-#         if defined(PROC_VDB) || defined(SOFT_VDB)
-            GC_printf("Reading dirty bits from /proc\n");
-#         elif defined(GWW_VDB)
-            GC_printf("Using GetWriteWatch-based implementation\n");
-#         endif
-        } else {
-          GC_printf("Emulating dirty bits with mprotect/signals\n");
+        switch (GC_get_actual_vdb()) {
+        case GC_VDB_GWW:
+          GC_printf("Using GetWriteWatch-based implementation\n");
+          break;
+        case GC_VDB_PROC:
+        case GC_VDB_SOFT:
+          GC_printf("Reading dirty bits from /proc\n");
+          break;
+        case GC_VDB_MPROTECT:
+          GC_printf("Emulating dirty bits with mprotect/signals%s\n",
+                GC_incremental_protection_needs() & GC_PROTECTS_PTRFREE_HEAP ?
+                " (covering also ptr-free pages)" : "");
+          break;
+        default:
+          /* nothing for others */
+          break;
         }
       }
     }

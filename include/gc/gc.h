@@ -946,6 +946,11 @@ GC_API void GC_CALL GC_enable_incremental(void);
 /* Does not acquire the allocator lock.                                 */
 GC_API int GC_CALL GC_is_incremental_mode(void);
 
+/* An extended version of GC_is_incremental_mode() to return one of     */
+/* GC_VDB_* constants designating which VDB technique is used exactly.  */
+/* Does not acquire the allocator lock.                                 */
+GC_API unsigned GC_CALL GC_get_actual_vdb(void);
+
 #define GC_PROTECTS_POINTER_HEAP  1 /* May protect non-atomic objects.  */
 #define GC_PROTECTS_PTRFREE_HEAP  2
 #define GC_PROTECTS_STATIC_DATA   4 /* Currently never.                 */
