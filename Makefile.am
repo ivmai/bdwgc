@@ -62,19 +62,35 @@ else
 
 EXTRA_DIST += extra/gc.c
 libgc_la_SOURCES = \
-    allchblk.c alloc.c blacklst.c dbg_mlc.c dyn_load.c finalize.c gc_dlopen.c \
+    allchblk.c alloc.c blacklst.c dbg_mlc.c dyn_load.c finalize.c \
     headers.c mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c \
-    new_hblk.c obj_map.c os_dep.c ptr_chck.c reclaim.c specific.c typd_mlc.c
+    new_hblk.c obj_map.c os_dep.c ptr_chck.c reclaim.c typd_mlc.c
 
-# C Library: Architecture Dependent
+if MAKE_BACK_GRAPH
+libgc_la_SOURCES += backgraph.c
+endif
+
+if CHECKSUMS
+libgc_la_SOURCES += checksums.c
+endif
+
+if ENABLE_DISCLAIM
+libgc_la_SOURCES += fnlz_mlc.c
+endif
+
+if ENABLE_GCJ_SUPPORT
+libgc_la_SOURCES += gcj_mlc.c
+endif
+
+# C library: architecture dependent
 # ---------------------------------
 
 if THREADS
 
-libgc_la_SOURCES += pthread_start.c pthread_support.c
+libgc_la_SOURCES += gc_dlopen.c pthread_start.c pthread_support.c
 
 if THREAD_LOCAL_ALLOC
-libgc_la_SOURCES += thread_local_alloc.c
+libgc_la_SOURCES += specific.c thread_local_alloc.c
 endif
 
 if WIN32_THREADS
@@ -87,22 +103,6 @@ libgc_la_SOURCES += pthread_stop_world.c
 endif
 endif
 
-endif
-
-if MAKE_BACK_GRAPH
-libgc_la_SOURCES += backgraph.c
-endif
-
-if CHECKSUMS
-libgc_la_SOURCES += checksums.c
-endif
-
-if ENABLE_GCJ_SUPPORT
-libgc_la_SOURCES += gcj_mlc.c
-endif
-
-if ENABLE_DISCLAIM
-libgc_la_SOURCES += fnlz_mlc.c
 endif
 
 ## End of !SINGLE_GC_OBJ
