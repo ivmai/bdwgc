@@ -679,7 +679,9 @@ GC_API void GC_CALL GC_free(void * p)
 
   void free(void * p)
   {
-#   ifndef IGNORE_FREE
+#   ifdef IGNORE_FREE
+#     UNUSED_ARG(p);
+#   else
 #     if defined(GC_LINUX_THREADS) && !defined(USE_PROC_FOR_LIBRARIES)
         /* Don't bother with initialization checks.  If nothing         */
         /* has been initialized, the check fails, and that's safe,      */
