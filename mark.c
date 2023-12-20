@@ -450,24 +450,20 @@ GC_API GC_on_mark_stack_empty_proc GC_CALL GC_get_on_mark_stack_empty(void)
             if ((word)GC_mark_stack_top >= (word)GC_mark_stack) {
                 MARK_FROM_MARK_STACK();
             } else {
-                GC_on_mark_stack_empty_proc on_ms_empty;
+                GC_on_mark_stack_empty_proc on_ms_empty =
+                                                GC_on_mark_stack_empty;
 
-                if (GC_mark_stack_too_small) {
-                    GC_mark_state = MS_NONE;
-                    alloc_mark_stack(2*GC_mark_stack_size);
-                    return TRUE;
-                }
-                on_ms_empty = GC_on_mark_stack_empty;
                 if (on_ms_empty != 0) {
                     GC_mark_stack_top = on_ms_empty(GC_mark_stack_top,
                                                     GC_mark_stack_limit);
-                    /* If we pushed new items or overflowed the stack,  */
-                    /* we need to continue processing.                  */
-                    if ((word)GC_mark_stack_top >= (word)GC_mark_stack
-                            || GC_mark_stack_too_small)
+                    /* If we pushed new items, we need to continue  */
+                    /* processing.                                  */
+                    if ((word)GC_mark_stack_top >= (word)GC_mark_stack)
                         break;
                 }
-
+                if (GC_mark_stack_too_small) {
+                    alloc_mark_stack(2*GC_mark_stack_size);
+                }
                 GC_mark_state = MS_NONE;
                 return TRUE;
             }
