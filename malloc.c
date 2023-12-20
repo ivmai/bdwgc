@@ -583,7 +583,7 @@ GC_API void GC_CALL GC_free(void * p)
 #endif
 
 #ifdef REDIRECT_FREE
-  void free(void * p)
+  void free(void * p GC_ATTR_UNUSED)
   {
 #   if defined(GC_LINUX_THREADS) && !defined(USE_PROC_FOR_LIBRARIES)
         {
