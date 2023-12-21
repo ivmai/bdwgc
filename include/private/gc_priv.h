@@ -2786,10 +2786,8 @@ GC_EXTERN signed_word GC_bytes_found;
 
 #   endif
 # endif /* MSWIN32 || MSWINCE */
-# if defined(GC_DISABLE_INCREMENTAL) || defined(HAVE_LOCKFREE_AO_OR)
-#   define GC_acquire_dirty_lock() (void)0
-#   define GC_release_dirty_lock() (void)0
-# else
+# if (!defined(NO_MANUAL_VDB) || defined(MPROTECT_VDB)) \
+     && !defined(HAVE_LOCKFREE_AO_OR) && defined(AO_HAVE_test_and_set_acquire)
     /* Acquire the spin lock we use to update dirty bits.       */
     /* Threads should not get stopped holding it.  But we may   */
     /* acquire and release it during GC_remove_protection call. */
@@ -2799,7 +2797,10 @@ GC_EXTERN signed_word GC_bytes_found;
 #   define GC_release_dirty_lock() AO_CLEAR(&GC_fault_handler_lock)
     GC_EXTERN volatile AO_TS_t GC_fault_handler_lock;
                                         /* defined in os_dep.c */
-# endif
+# else
+#   define GC_acquire_dirty_lock() (void)0
+#   define GC_release_dirty_lock() (void)0
+# endif /* NO_MANUAL_VDB && !MPROTECT_VDB || HAVE_LOCKFREE_AO_OR */
 # ifdef MSWINCE
     GC_EXTERN GC_bool GC_dont_query_stack_min;
                                 /* Defined and set in os_dep.c. */
