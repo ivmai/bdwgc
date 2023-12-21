@@ -172,7 +172,94 @@ stored on the thread's stack for the duration of their lifetime.
 (This is arguably a longstanding bug, but it hasn't been fixed yet.)
 
 
-## Installation and Portability
+## Building and Installing
+
+There are multiple ways to build the collector:
+
+  * CMake (it is the recommended way)
+  * GNU autoconf/automake
+  * MS nmake (directly)
+  * Makefile.direct
+  * Manual C compilation
+
+### CMake
+
+The simplest way to build libgc (as well as libcord) and run the tests using
+cmake:
+
+```sh
+mkdir out
+cd out
+cmake -Dbuild_tests=ON ..
+cmake --build .
+ctest
+```
+
+This is the most cross-platform way of building the library.
+See [README.cmake](docs/README.cmake) for details.
+
+### GNU Autoconf/Automake
+
+Please note that the collector source repository does not contain `configure`
+and similar auto-generated files, thus the full procedure of autoconf-based
+build of the collector from the source repository could look like:
+
+```sh
+./autogen.sh
+./configure
+make check
+```
+
+The GNU style build process understands the usual targets and options.
+`make install` installs libgc and libcord.  Try `./configure --help` to see
+all the configuration options.  It is currently not possible to exercise all
+combinations of build options this way.
+
+See [README.autoconf](docs/README.autoconf) for details.
+
+### MS nmake
+
+On Windows, assuming the Microsoft build tools are installed and suitably
+configured, it is possible to build the library and run the tests using
+`nmake` directly, e.g. by by typing `nmake -f NT_MAKEFILE check`.  However,
+the recommended way is to use cmake as described above.
+
+See [README.win32](docs/platforms/README.win32) for details.
+
+### Makefile.direct
+
+For the old-style (classic) makefile-based build process, typing
+`make -f Makefile.direct check` will automatically build libgc, libcord and
+then run a number of tests such as `gctest`.  The test is a somewhat
+superficial test of collector functionality.  Failure is indicated by a core
+dump or a message to the effect that the collector is broken.  `gctest` may
+take a dozen of seconds to run on reasonable 2023 vintage 64-bit desktops.
+It may use up to about 30 MB of memory.
+
+Makefile.direct will generate a library libgc.a which you should link against.
+
+### Manual C Compilation
+
+Finally, on most targets, the collector could be built and tested directly
+with a single compiler invocation, like this (the sample lacks multi-threading
+support):
+
+```sh
+cc -I include -o gctest tests/gctest.c extra/gc.c && ./gctest
+```
+
+E.g., this could be convenient for a debugging purpose.
+
+### Configurable Macros
+
+The library can be configured more precisely during the build by defining
+the macros listed in [README.macros](docs/README.macros) file.
+
+The library is built with threads support enabled (i.e. for thread-safe
+operation) by default, unless explicitly disabled by:
+
+  * `-Denable_threads=false` option passed to `cmake`
+  * `--disable-threads` option passed to `./configure`
 
 The collector operates silently in the default configuration.
 In the event of issues, this can usually be changed by defining the
@@ -183,78 +270,18 @@ Things don't appear to add up for a variety of reasons, most notably
 fragmentation losses.  These are probably much more significant for the
 contrived program `gctest` than for your application.)
 
-On most Unix-like platforms, the collector can be built either using a
-GNU autoconf-based build infrastructure (type `./configure; make` in the
-simplest case), or using CMake (see the sample below), or with a classic
-makefile by itself (type `make -f Makefile.direct`).
+### Atomic ops
 
-Please note that the collector source repository does not contain configure
-and similar auto-generated files, thus the full procedure of autoconf-based
-build of `master` branch of the collector could look like:
+Use (cloning) of `libatomic_ops` is now optional provided the compiler
+supports atomic intrinsics.  Most modern compilers do.  The notable exception
+is the MS compiler (as of Visual Studio 2022).
 
-    git clone https://github.com/ivmai/bdwgc
-    cd bdwgc
-    git clone https://github.com/ivmai/libatomic_ops
-    ./autogen.sh
-    ./configure
-    make -j
-    make check
+If needed, most OS distributes have `libatomic_ops` package; alternatively,
+you can download or clone it from https://github.com/ivmai/libatomic_ops
+space.
 
-Cloning of `libatomic_ops` is now optional provided the compiler supports
-atomic intrinsics.  See [README.autoconf](docs/README.autoconf) for details.
 
-As noted above, alternatively, the collector could be built with CMake, like
-this:
-
-    mkdir out
-    cd out
-    cmake -Dbuild_tests=ON ..
-    cmake --build .
-    ctest
-
-See [README.cmake](docs/README.cmake) for details.
-
-Finally, on most targets, the collector could be built and tested directly
-with a single compiler invocation, like this:
-
-    gcc -I include -o gctest tests/gctest.c extra/gc.c && ./gctest
-
-On Windows, CMake could be used to build the library as described above or
-by typing `nmake -f NT_MAKEFILE`, this assumes you have Microsoft command-line
-tools installed and suitably configured.  See
-[README.win32](docs/platforms/README.win32) for details.
-
-The library is built with threads support on (i.e. for thread-safe operation)
-by default, unless `--disable-threads` is passed to `./configure` (or
-`-Denable_threads=OFF` is passed to `cmake` tool).
-
-The library could be configured more precisely during the build by defining
-the macros listed in [README.macros](docs/README.macros) file.
-
-Below we focus on the collector build using classic makefile.  For the
-Makefile.direct-based process, typing `make check` instead of `make` will
-automatically build the collector and then run `setjmp_test` and `gctest`.
-`setjmp_test` will give you information about configuring the collector, which
-is useful primarily if you have a machine that's not already supported.
-gctest is a somewhat superficial test of collector functionality.  Failure is
-indicated by a core dump or a message to the effect that the collector is
-broken.  gctest takes about a second to two to run on reasonable 2007 vintage
-desktops.  It may use up to about 30 MB of memory.  (The multi-threaded
-version will use more.  64-bit versions may use more.) `make check` will also,
-as its last step, attempt to build and test the "cord" string library.)
-
-Makefile.direct will generate a library libgc.a which you should link against.
-Typing `make -f Makefile.direct cords` will build the cord library (libcord.a)
-as well.
-
-The GNU style build process understands the usual targets.  `make check`
-runs a number of tests.  `make install` installs at least libgc, and libcord.
-Try `./configure --help` to see the configuration options.  It is currently
-not possible to exercise all combinations of build options this way.
-
-All include files that need to be used by clients will be put in the
-include subdirectory.  (Normally this is just gc.h.  `make cords` adds
-"cord.h" and "ec.h".)
+## Portability
 
 The collector currently is designed to run essentially unmodified on
 machines that use a flat 32-bit or 64-bit address space.
