@@ -29,7 +29,7 @@ duplication.)
 If neither thread support, nor tracing of dynamic library data is required,
 these are often the only changes you will need to make.
 
-The `gcconfig.h` file consists of three sections:
+The `include/private/gcconfig.h` file consists of three sections:
 
   1. A section that defines GC-internal macros that identify the architecture
   (e.g. `IA64` or `I386`) and operating system (e.g. `LINUX` or `MSWIN32`).
@@ -154,8 +154,8 @@ contents that the collector must trace from are copied to the stack. Typically
 this can be done portably, but on some platforms it may require assembly code,
 or just tweaking of conditional compilation tests.
 
-If your platform supports `getcontext` then defining the macro
-`UNIX_LIKE` for your OS in `gcconfig.h` (if it is not defined there yet)
+If your platform supports `getcontext` then defining the macro `UNIX_LIKE` for
+your OS in `include/private/gcconfig.h` (if it is not defined there yet)
 is likely to solve the problem. Otherwise, if you are using gcc,
 `_builtin_unwind_init` will be used, and should work fine. If that is not
 applicable either, the implementation will try to use `setjmp`. This will work
@@ -188,7 +188,8 @@ portable pthread support is implemented in `pthread_support.c` and
 These very often require that the garbage collector maintain its own data
 structures to track active threads.
 
-In addition, `LOCK` and `UNLOCK` must be implemented in `gc_locks.h`.
+In addition, `LOCK` and `UNLOCK` must be implemented in
+`include/private/gc_locks.h` file.
 
 The easiest case is probably a new pthreads platform on which threads can be
 stopped with signals. In this case, the changes involve:
@@ -223,7 +224,7 @@ in non-stack variables defined in dynamic libraries.
 If dynamic library data sections must also be traced, then:
 
   * `DYNAMIC_LOADING` must be defined in the appropriate section of
-  `gcconfig.h`.
+  `include/private/gcconfig.h`.
   * An appropriate versions of the functions `GC_register_dynamic_libraries`
   should be defined in `dyn_load.c`. This function should invoke
   `GC_cond_add_roots(region_start, region_end, TRUE)` on each dynamic

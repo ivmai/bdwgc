@@ -185,21 +185,21 @@ variables are located, it scans the following _root segments_ for pointers:
   the current stack pointer and `GC_stackbottom`. (For Intel Itanium, the
   register stack scanned separately.) The `GC_stackbottom` variable is set in
   a highly platform-specific way depending on the appropriate configuration
-  information in `gcconfig.h`. Note that the currently active stack needs
-  to be scanned carefully, since callee-save registers of client code may
-  appear inside collector stack frames, which may change during the mark
-  process. This is addressed by scanning some sections of the stack _eagerly_,
-  effectively capturing a snapshot at one point in time.
+  information in `include/private/gcconfig.h`. Note that the currently active
+  stack needs to be scanned carefully, since callee-save registers of client
+  code may appear inside collector stack frames, which may change during the
+  mark process. This is addressed by scanning some sections of the stack
+  _eagerly_, effectively capturing a snapshot at one point in time.
   * Static data region(s). In the simplest case, this is the region between
-  `DATASTART` and `DATAEND`, as defined in `gcconfig.h`. However, in most
-  cases, this will also involve static data regions associated with dynamic
-  libraries. These are identified by the mostly platform-specific code
-  in `dyn_load.c`.  The marker maintains an explicit stack of memory regions
-  that are known to be accessible, but that have not yet been searched for
-  contained pointers. Each stack entry contains the starting address of the
-  block to be scanned, as well as a descriptor of the block. If no layout
-  information is available for the block, then the descriptor is simply
-  a length. (For other possibilities, see `gc_mark.h`.)
+  `DATASTART` and `DATAEND`, as defined in `include/private/gcconfig.h`.
+  However, in most cases, this will also involve static data regions
+  associated with dynamic libraries. These are identified by the mostly
+  platform-specific code in `dyn_load.c`.  The marker maintains an explicit
+  stack of memory regions that are known to be accessible, but that have not
+  yet been searched for contained pointers. Each stack entry contains the
+  starting address of the block to be scanned, as well as a descriptor of the
+  block. If no layout information is available for the block, then the
+  descriptor is simply a length. (For other possibilities, see `gc_mark.h`.)
 
 At the beginning of the mark phase, all root segments (as described above) are
 pushed on the stack by `GC_push_roots`. (Registers and eagerly scanned stack

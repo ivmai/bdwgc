@@ -307,9 +307,9 @@ the following:
 
 In all cases we assume that pointer alignment is consistent with that
 enforced by the standard C compilers.  If you use a nonstandard compiler
-you may have to adjust the alignment parameters defined in gc_priv.h.
-Note that this may also be an issue with packed records/structs, if those
-enforce less alignment for pointers.
+you may have to adjust the alignment parameters defined in
+`include/private/gc_priv.h`.  Note that this may also be an issue with packed
+records/structs, if those enforce less alignment for pointers.
 
 A port to a machine that is not byte addressed, or does not use 32 bit
 or 64 bit addresses will require a major effort.  A port to plain MSDOS
@@ -403,7 +403,7 @@ considered as a candidate for collection.  Careless use may, of course, result
 in excessive memory consumption.
 
 Some additional tuning is possible through the parameters defined
-near the top of gc_priv.h.
+near the top of `include/private/gc_priv.h`.
 
 If only `GC_malloc` is intended to be used, it might be appropriate to define:
 
