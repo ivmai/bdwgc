@@ -132,12 +132,13 @@ CORD_OBJS= cord/cordbscs.o cord/cordprnt.o cord/cordxtra.o
 SRCS= $(CSRCS) \
   include/gc/gc_typed.h include/gc/gc_tiny_fl.h include/gc/gc_version.h \
   include/gc.h include/private/gc_hdrs.h include/private/gc_priv.h \
-  include/private/gcconfig.h include/private/gc_pmark.h \
+  include/gc/gc.h include/private/gcconfig.h include/private/gc_pmark.h \
   include/gc/gc_inline.h include/gc/gc_mark.h include/gc/gc_disclaim.h \
   tools/threadlibs.c tools/if_mach.c tools/if_not_there.c gc_badalc.cc \
-  gc_cpp.cc include/gc_cpp.h include/private/gc_alloc_ptrs.h \
-  include/gc/gc_allocator.h include/gc/javaxfc.h include/gc/gc_backptr.h \
-  include/gc/gc_gcj.h include/private/gc_locks.h include/private/dbg_mlc.h \
+  gc_cpp.cc include/gc_cpp.h include/gc/gc_cpp.h \
+  include/private/gc_alloc_ptrs.h include/gc/gc_allocator.h \
+  include/gc/javaxfc.h include/gc/gc_backptr.h include/gc/gc_gcj.h \
+  include/private/gc_locks.h include/private/dbg_mlc.h \
   include/private/specific.h include/gc/leak_detector.h \
   include/gc/gc_pthread_redirects.h include/private/gc_atomic_ops.h \
   include/gc/gc_config_macros.h include/private/pthread_support.h \
