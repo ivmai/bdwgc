@@ -45,8 +45,8 @@ For Microsoft development tools, type
 to build the release variant of the collector as a static library without
 threads support.
 
-In order to use the gc_cpp.h C++ interface, all client code should include
-gc_cpp.h.
+In order to use the C++ interface, the client code should include gc_cpp.h
+and/or gc_allocator.h.
 
 [See above for gctest.]
 
