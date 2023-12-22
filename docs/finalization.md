@@ -8,8 +8,8 @@ in which system resources are embedded in complex data structures (e.g. file
 descriptors in the `cord.h`).
 
 Our collector provides the necessary functionality through
-`GC_register_finalizer` in `include/gc.h`, or by inheriting from `gc_cleanup`
-in `include/gc_cpp.h`).
+`GC_register_finalizer` in `gc.h`, or by inheriting from `gc_cleanup` in
+`gc_cpp.h`.
 
 However, finalization should not be used in the same way as C++ destructors.
 In well-written programs there will typically be very few uses
