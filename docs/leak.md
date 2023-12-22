@@ -64,7 +64,7 @@ the aid of a debugger.
 
 ## An Example
 
-The `leak_detector.h` file is included in the "include" subdirectory of the
+The `leak_detector.h` file is located in the `include/gc` subdirectory of the
 distribution.
 
 Assume the collector has been built with `-DFIND_LEAK` or
