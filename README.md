@@ -329,7 +329,7 @@ machine on which the collector doesn't already understand them.)  On
 some machines, it may be desirable to set `GC_stackbottom` to a good
 approximation of the stack base (bottom).
 
-Client code may include "gc.h", which defines all of the following, plus many
+Client code may include `gc.h`, which defines all of the following, plus many
 others.
 
   1. `GC_malloc(bytes)` - Allocate an object of a given size.  Unlike malloc,
@@ -390,7 +390,8 @@ others.
   9. `GC_register_finalizer(object, proc, data, 0, 0)` and friends - Allow for
   registration of finalization code.  User supplied finalization code
   (`(*proc)(object, data)`) is invoked after object becomes unreachable.
-  For more sophisticated uses, and for finalization ordering issues, see gc.h.
+  For more sophisticated uses, and for finalization ordering issues, see
+  `gc.h`.
 
 The global variable `GC_free_space_divisor` may be adjusted up from it
 default value of 3 to use less space and more collection time, or down for
@@ -431,7 +432,7 @@ distribution.  If you intend to use this, type
 `make -f Makefile.direct c++` depending on the build system you use).
 This creates libgccpp.a and libgctba.a files, or their shared library
 equivalents (libgccpp.so and libgctba.so).  You should link with either the
-first (gccpp) or the second one (gctba), but not both.  See gc_cpp.h and
+first (gccpp) or the second one (gctba), but not both.  See `gc_cpp.h` and
 [here](docs/gcinterface.md) for the definition of the interface.
 This interface tries to approximate the Ellis-Detlefs C++ garbage collection
 proposal without compiler changes.
@@ -506,10 +507,10 @@ not copied).  If an error involving the object is detected, they are printed.
 
 The macros `GC_MALLOC`, `GC_MALLOC_ATOMIC`, `GC_REALLOC`, `GC_FREE`,
 `GC_REGISTER_FINALIZER` and friends are also provided.  These require the same
-arguments as the corresponding (nondebugging) routines.  If gc.h is included
+arguments as the corresponding (nondebugging) routines.  If `gc.h` is included
 with `GC_DEBUG` defined, they call the debugging versions of these
 functions, passing the current file name and line number as the two
-extra arguments, where appropriate.  If gc.h is included without `GC_DEBUG`
+extra arguments, where appropriate.  If `gc.h` is included without `GC_DEBUG`
 defined then all these macros will instead be defined to their nondebugging
 equivalents.  (`GC_REGISTER_FINALIZER` is necessary, since pointers to
 objects with debugging information are really pointers to a displacement
