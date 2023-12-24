@@ -354,7 +354,6 @@ pub fn build(b: *std.build.Builder) void {
         // Prevent "__builtin_return_address with nonzero argument is unsafe".
         "-Wno-frame-address",
         "-fno-strict-aliasing",
-        //"-O2", // FIXME: intermittent gctest failures w/o -O2
     }) catch unreachable;
 
     if (build_shared_libs) {
