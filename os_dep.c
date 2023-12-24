@@ -62,7 +62,8 @@
 # include <errno.h>
 #endif
 
-#ifdef DARWIN
+#if defined(DARWIN) && !defined(DYNAMIC_LOADING) \
+    && !defined(GC_DONT_REGISTER_MAIN_STATIC_DATA)
   /* for get_etext and friends */
 # include <mach-o/getsect.h>
 #endif
