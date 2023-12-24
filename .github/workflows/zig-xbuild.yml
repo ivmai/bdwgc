@@ -1,0 +1,33 @@
+# This workflow uses Zig and its excellent cross-compilation support to test
+# compiling for multiple platforms. No tests are actually run since it would
+# require emulation.
+name: zig cross-compile
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: ${{ matrix.ttriple }} thr:${{ matrix.enable_threads }} dll:${{ matrix.shared_libs }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        ttriple: [ aarch64-linux-musl, riscv64-linux-musl, x86_64-linux-musl, x86_64-linux-gnu.2.27, x86_64-windows-gnu, wasm32-wasi ]
+        shared_libs: [ false, true ]
+        enable_threads: [ false, true ]
+        exclude:
+        - ttriple: wasm32-wasi
+          enable_threads: true
+
+    # TODO: move from nightly to zig 0.12 when released.
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Install zig"
+      run: |
+        mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-0.12.0-dev.1814+5c0d58b71.tar.xz | tar Jx --directory=zig --strip-components=1
+    - name: Build
+      run: >
+        zig/zig build -Dtarget=${{ matrix.ttriple }}
+        -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
+        -Denable_threads=${{ matrix.enable_threads }}
