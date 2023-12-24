@@ -184,7 +184,7 @@ CCASFLAGS += $(DEFS)
 
 # other makefiles
 EXTRA_DIST += Makefile.direct NT_MAKEFILE WCC_MAKEFILE digimars.mak \
-    autogen.sh CMakeLists.txt Config.cmake.in
+    autogen.sh build.zig CMakeLists.txt Config.cmake.in
 
 # files used by makefiles other than Makefile.am
 #

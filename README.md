@@ -178,6 +178,7 @@ There are multiple ways to build the collector:
 
   * CMake (it is the recommended way)
   * GNU autoconf/automake
+  * Zig (experimental)
   * MS nmake (directly)
   * Makefile.direct
   * Manual C compilation
@@ -216,6 +217,25 @@ all the configuration options.  It is currently not possible to exercise all
 combinations of build options this way.
 
 See [README.autoconf](docs/README.autoconf) for details.
+
+### Zig
+
+Building using zig is straight forward in its simplest form:
+
+```sh
+zig build
+```
+
+It is possible to configure the build through the use of variables, e.g.
+`zig build -Denable_redirect_malloc -Denable_threads=false`. Zig offers
+excellent cross-compilation functionality, it is configurable like this:
+
+```sh
+zig build -Dtarget=riscv64-linux-musl
+```
+
+Currently, a nightly version of zig 0.12 is required, which can be downloaded
+from https://ziglang.org/download/
 
 ### MS nmake
 
@@ -258,7 +278,7 @@ the macros listed in [README.macros](docs/README.macros) file.
 The library is built with threads support enabled (i.e. for thread-safe
 operation) by default, unless explicitly disabled by:
 
-  * `-Denable_threads=false` option passed to `cmake`
+  * `-Denable_threads=false` option passed to `cmake` or `zig build`
   * `--disable-threads` option passed to `./configure`
 
 The collector operates silently in the default configuration.
