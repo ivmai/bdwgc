@@ -494,14 +494,21 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
 #   endif
     STATIC ptr_t GC_libld_start = NULL;
     STATIC ptr_t GC_libld_end = NULL;
+    static GC_bool lib_bounds_set = FALSE;
 
-    STATIC void GC_init_lib_bounds(void)
+    GC_INNER void GC_init_lib_bounds(void)
     {
       IF_CANCEL(int cancel_state;)
 
+      /* This test does not need to ensure memory visibility, since     */
+      /* the bounds will be set when/if we create another thread.       */
+      if (EXPECT(lib_bounds_set, TRUE)) return;
+
       DISABLE_CANCEL(cancel_state);
       GC_init(); /* if not called yet */
-      LOCK(); /* to avoid assertion violation in GC_get_maps, at least */
+#     if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+        LOCK(); /* just to set GC_lock_holder */
+#     endif
 #     ifdef HAVE_LIBPTHREAD_SO
         if (!GC_text_mapping("libpthread-",
                              &GC_libpthread_start, &GC_libpthread_end)) {
@@ -513,8 +520,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
       if (!GC_text_mapping("ld-", &GC_libld_start, &GC_libld_end)) {
           WARN("Failed to find ld.so text mapping: Expect crash\n", 0);
       }
-      UNLOCK();
+#     if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+        UNLOCK();
+#     endif
       RESTORE_CANCEL(cancel_state);
+      lib_bounds_set = TRUE;
     }
 # endif /* GC_LINUX_THREADS */
 
@@ -527,15 +537,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
       /* The linker may allocate some memory that is only pointed to by */
       /* mmapped thread stacks.  Make sure it is not collectible.       */
       {
-        static GC_bool lib_bounds_set = FALSE;
         ptr_t caller = (ptr_t)__builtin_return_address(0);
 
-        /* This test does not need to ensure memory visibility, since   */
-        /* the bounds will be set when/if we create another thread.     */
-        if (!EXPECT(lib_bounds_set, TRUE)) {
-          GC_init_lib_bounds();
-          lib_bounds_set = TRUE;
-        }
+        GC_init_lib_bounds();
         if (((word)caller >= (word)GC_libld_start
              && (word)caller < (word)GC_libld_end)
 #           ifdef HAVE_LIBPTHREAD_SO

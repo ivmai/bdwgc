@@ -2253,6 +2253,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
   GC_ASSERT(GC_self_thread() != NULL);
 
   INIT_REAL_SYMS(); /* to initialize symbols while single-threaded */
+  GC_init_lib_bounds();
   GC_start_mark_threads();
   set_need_to_lock();
 }
@@ -2522,6 +2523,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     GC_ASSERT(GC_thr_initialized);
 
+    GC_init_lib_bounds();
     if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) != 0)
         ABORT("sem_init failed");
     si.flags = 0;
