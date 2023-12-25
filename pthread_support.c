@@ -2080,6 +2080,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
     UNLOCK();
 # endif
   INIT_REAL_SYMS(); /* to initialize symbols while single-threaded */
+  GC_init_lib_bounds();
   GC_start_mark_threads();
   set_need_to_lock();
 }
@@ -2230,6 +2231,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     INIT_REAL_SYMS();
     if (!EXPECT(parallel_initialized, TRUE))
       GC_init_parallel();
+    GC_init_lib_bounds();
     if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) != 0)
       ABORT("sem_init failed");
 

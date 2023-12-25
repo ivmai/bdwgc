@@ -2816,6 +2816,13 @@ GC_INNER void GC_start_debugging_inner(void);   /* defined in dbg_mlc.c. */
 GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
                                          int linenum);
 
+#if defined(REDIRECT_MALLOC) && !defined(REDIRECT_MALLOC_IN_HEADER) \
+    && defined(GC_LINUX_THREADS)
+  GC_INNER void GC_init_lib_bounds(void);
+#else
+# define GC_init_lib_bounds() (void)0
+#endif
+
 #ifdef REDIRECT_MALLOC
 # ifdef GC_LINUX_THREADS
     GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
