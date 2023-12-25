@@ -3,7 +3,7 @@
 # require emulation.
 name: zig cross-compile
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
   build:
@@ -13,12 +13,89 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ttriple: [ aarch64-linux-musl, riscv64-linux-musl, x86_64-linux-musl, x86_64-linux-gnu.2.27, x86_64-windows-gnu, wasm32-wasi ]
-        shared_libs: [ false, true ]
+        # Some of the triples are commented out just to speedup this workflow.
+        ttriple: [
+          aarch64-linux-gnu,
+          #aarch64-linux-musl,
+          aarch64-windows-gnu,
+          #aarch64_be-linux-gnu,
+          aarch64_be-linux-musl,
+          #arm-linux-gnueabi,
+          arm-linux-gnueabihf,
+          arm-linux-musleabi,
+          #arm-linux-musleabihf,
+          armeb-linux-gnueabi,
+          #armeb-linux-gnueabihf,
+          #armeb-linux-musleabi,
+          armeb-linux-musleabihf,
+          #mips-linux-gnueabi,
+          #mips-linux-gnueabihf,
+          mips-linux-musl,
+          mips64-linux-gnuabi64,
+          #mips64-linux-gnuabin32,
+          mips64-linux-musl,
+          #mips64el-linux-gnuabi64,
+          mips64el-linux-gnuabin32,
+          mips64el-linux-musl,
+          mipsel-linux-gnueabi,
+          #mipsel-linux-gnueabihf,
+          mipsel-linux-musl,
+          #powerpc-linux-gnueabi,
+          powerpc-linux-gnueabihf,
+          #powerpc-linux-musl,
+          powerpc64-linux-gnu,
+          #powerpc64-linux-musl,
+          #powerpc64le-linux-gnu,
+          powerpc64le-linux-musl,
+          riscv64-linux-musl,
+          sparc64-linux-gnu,
+          thumb-linux-gnueabi,
+          #thumb-linux-gnueabihf,
+          #thumb-linux-musleabi,
+          thumb-linux-musleabihf,
+          wasm32-wasi-musl,
+          #x86-linux-gnu,
+          x86-linux-musl,
+          x86-windows-gnu,
+          x86_64-linux-gnu.2.27, # with a glibc version
+          x86_64-linux-gnux32,
+          #x86_64-linux-musl,
+          x86_64-windows-gnu,
+        ]
         enable_threads: [ false, true ]
+        shared_libs: [ false, true ]
         exclude:
-        - ttriple: wasm32-wasi
-          enable_threads: true
+        - enable_threads: true
+          ttriple: wasm32-wasi-musl
+        # The following ones have some zig link issue.
+        - shared_libs: true
+          ttriple: aarch64_be-linux-gnu
+        - shared_libs: true
+          ttriple: aarch64_be-linux-musl
+        - shared_libs: true
+          ttriple: armeb-linux-gnueabi
+        - shared_libs: true
+          ttriple: armeb-linux-gnueabihf
+        - shared_libs: true
+          ttriple: armeb-linux-musleabi
+        - shared_libs: true
+          ttriple: armeb-linux-musleabihf
+        - shared_libs: true
+          ttriple: mips64-linux-gnuabin32
+        - shared_libs: true
+          ttriple: mips64el-linux-gnuabin32
+        - shared_libs: true
+          ttriple: powerpc-linux-gnueabi
+        - shared_libs: true
+          ttriple: powerpc-linux-gnueabihf
+        - shared_libs: true
+          ttriple: sparc64-linux-gnu # FIXME: recompile with -fPIC
+        - shared_libs: true
+          ttriple: thumb-linux-gnueabi
+        - shared_libs: true
+          ttriple: thumb-linux-gnueabihf
+        - shared_libs: true
+          ttriple: x86_64-linux-gnux32 # FIXME: recompile with -fPIC
 
     # TODO: move from nightly to zig 0.12 when released.
     steps:
