@@ -332,8 +332,10 @@ GC_INNER const char * GC_get_maps(void)
     const char *prot;
     ptr_t my_start, my_end;
     unsigned int maj_dev;
-    const char *maps_ptr = GC_get_maps();
+    const char *maps_ptr;
 
+    GC_ASSERT(I_HOLD_LOCK());
+    maps_ptr = GC_get_maps();
     for (;;) {
       maps_ptr = GC_parse_map_entry(maps_ptr, &my_start, &my_end,
                                     &prot, &maj_dev, 0);
@@ -355,12 +357,15 @@ GC_INNER const char * GC_get_maps(void)
   /* stripping the directory part, starts with nm.                      */
   GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp)
   {
-    size_t nm_len = strlen(nm);
+    size_t nm_len;
     const char *prot, *map_path;
     ptr_t my_start, my_end;
     unsigned int maj_dev;
-    const char *maps_ptr = GC_get_maps();
+    const char *maps_ptr;
 
+    GC_ASSERT(I_HOLD_LOCK());
+    maps_ptr = GC_get_maps();
+    nm_len = strlen(nm);
     for (;;) {
       maps_ptr = GC_parse_map_entry(maps_ptr, &my_start, &my_end,
                                     &prot, &maj_dev, &map_path);
@@ -5459,10 +5464,12 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
   /* addresses in FIND_LEAK output.                                     */
   void GC_print_address_map(void)
   {
-    const char *maps = GC_get_maps();
+    const char *maps_ptr;
 
+    GC_ASSERT(I_HOLD_LOCK());
+    maps_ptr = GC_get_maps();
     GC_err_printf("---------- Begin address map ----------\n");
-    GC_err_puts(maps);
+    GC_err_puts(maps_ptr);
     GC_err_printf("---------- End address map ----------\n");
   }
 #endif /* LINUX && ELF */

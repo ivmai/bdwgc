@@ -2446,6 +2446,7 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
 #if defined(LINUX) && defined(__ELF__) && !defined(SMALL_CONFIG)
   void GC_print_address_map(void);
                         /* Print an address map of the process.         */
+                        /* The caller should hold the allocator lock.   */
 #endif
 
 #ifndef SHORT_DBG_HDRS
