@@ -1,0 +1,60 @@
+# This workflow is for zig-based build/test running on Linux/x86_64.
+name: zig build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: thr:${{ matrix.enable_threads }} rwlock:${{ matrix.enable_rwlock }} redir:${{ matrix.redirect_malloc }} gcdeb:${{ matrix.enable_gc_debug }} munmap:${{ matrix.enable_munmap }} paramark:${{ matrix.parallel_mark }} thrlocal:${{ matrix.thread_local_alloc }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        gc_assertions: [ true ]
+        large_config: [ false ]
+        enable_threads: [ false, true ]
+        disable_handle_fork: [ false ]
+        enable_rwlock: [ false, true ]
+        redirect_malloc: [ false, true ]
+        enable_gc_debug: [ false, true ]
+        enable_munmap: [ false, true ]
+        parallel_mark: [ false, true ]
+        thread_local_alloc: [ false, true ]
+        shared_libs: [ false ] # FIXME: gctest fail if shared lib
+        exclude:
+        - enable_threads: false
+          disable_handle_fork: true
+        - enable_threads: false
+          parallel_mark: true
+        - enable_threads: false
+          enable_rwlock: true
+        - enable_threads: false
+          thread_local_alloc: true
+        - enable_gc_debug: true # FIXME: some tests fail if gc_debug+redirect
+          redirect_malloc: true
+
+    # TODO: move from nightly to zig 0.12 when released.
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Install zig"
+      run: |
+        mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-0.12.0-dev.1814+5c0d58b71.tar.xz | tar Jx --directory=zig --strip-components=1
+    - name: Build
+      run: >
+        zig/zig build
+        -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
+        -Dbuild_tests=true
+        -Ddisable_handle_fork=${{ matrix.disable_handle_fork }}
+        -Denable_gc_assertions=${{ matrix.gc_assertions }}
+        -Denable_gc_debug=${{ matrix.enable_gc_debug }}
+        -Denable_large_config=${{ matrix.large_config }}
+        -Denable_munmap=${{ matrix.enable_munmap }}
+        -Denable_parallel_mark=${{ matrix.parallel_mark }}
+        -Denable_redirect_malloc=${{ matrix.redirect_malloc }}
+        -Denable_rwlock=${{ matrix.enable_rwlock }}
+        -Denable_thread_local_alloc=${{ matrix.thread_local_alloc }}
+        -Denable_threads=${{ matrix.enable_threads }}
+        -Denable_werror=true
+        test
