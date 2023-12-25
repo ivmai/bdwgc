@@ -3092,6 +3092,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
    * objects only if they are the same.
    */
 # ifdef DARWIN
+    /* #define BROKEN_EXCEPTION_HANDLING */
+
     /* Using vm_protect (mach syscall) over mprotect (BSD syscall) seems to
        decrease the likelihood of some of the problems described below. */
 #   include <mach/vm_map.h>
@@ -3147,11 +3149,13 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   undef SIG_DFL
 #   define SIG_DFL ((SIG_HNDLR_PTR)~(GC_funcptr_uint)0)
 # elif defined(DARWIN)
-    typedef void (*SIG_HNDLR_PTR)();
+#   ifdef BROKEN_EXCEPTION_HANDLING
+      typedef void (*SIG_HNDLR_PTR)();
+#   endif
 # else
     typedef void (*SIG_HNDLR_PTR)(int, siginfo_t *, void *);
     typedef void (*PLAIN_HNDLR_PTR)(int);
-# endif
+# endif /* !DARWIN && !MSWIN32 && !MSWINCE */
 
 #ifndef DARWIN
   STATIC SIG_HNDLR_PTR GC_old_segv_handler = 0;
@@ -4344,8 +4348,6 @@ GC_INNER GC_bool GC_dirty_init(void)
 
 /* The bug that caused all this trouble should now be fixed. This should
    eventually be removed if all goes well. */
-
-/* #define BROKEN_EXCEPTION_HANDLING */
 
 #include <mach/mach.h>
 #include <mach/mach_error.h>
