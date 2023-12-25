@@ -40,7 +40,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: "Install zig"
       run: |
-        mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-0.12.0-dev.1814+5c0d58b71.tar.xz | tar Jx --directory=zig --strip-components=1
+        mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-0.12.0-dev.1849+bb0f7d55e.tar.xz | tar Jx --directory=zig --strip-components=1
     - name: Build
       run: >
         zig/zig build
