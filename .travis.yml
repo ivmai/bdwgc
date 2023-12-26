@@ -138,7 +138,7 @@ jobs:
   - arch: ppc64le
     compiler: clang
     env:
-    - CFLAGS_EXTRA="-O3 -D _FORTIFY_SOURCE=2 -D FORCE_MPROTECT_BEFORE_MADVISE"
+    - CFLAGS_EXTRA="-O3 -D _FORTIFY_SOURCE=2 -D FORCE_MPROTECT_BEFORE_MADVISE -D GC_UNMAPPED_REGIONS_SOFT_LIMIT=120"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-static"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: ppc64le
