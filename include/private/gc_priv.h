@@ -2937,7 +2937,9 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #endif
 
 #ifdef NEED_PROC_MAPS
-# if defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES)
+# if defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES) \
+     || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
+     || (defined(REDIRECT_MALLOC) && defined(GC_LINUX_THREADS))
     GC_INNER const char *GC_parse_map_entry(const char *maps_ptr,
                                             ptr_t *start, ptr_t *end,
                                             const char **prot,
