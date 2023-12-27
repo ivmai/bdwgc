@@ -3887,11 +3887,9 @@ GC_INNER GC_bool GC_dirty_init(void)
       h_trunc = (struct hblk *)((word)h & ~(GC_page_size-1));
       h_end = (struct hblk *)(((word)(h + nblocks) + GC_page_size - 1)
                               & ~(GC_page_size - 1));
-      if (h_end == h_trunc + 1 &&
-        get_pht_entry_from_index(GC_dirty_pages, PHT_HASH(h_trunc))) {
-        /* already marked dirty, and hence unprotected. */
-        return;
-      }
+      /* Note that we cannot examine GC_dirty_pages to check    */
+      /* whether the page at h_trunc has already been marked    */
+      /* dirty as there could be a hash collision.              */
       for (current = h_trunc; (word)current < (word)h_end; ++current) {
         word index = PHT_HASH(current);
 
