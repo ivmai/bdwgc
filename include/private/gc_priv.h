@@ -2947,8 +2947,8 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
                                             const char **mapping_name);
 # endif
 # if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)
-    GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr,
-                                          ptr_t *startp, ptr_t *endp);
+    GC_INNER GC_bool GC_enclosing_writable_mapping(ptr_t addr, ptr_t *startp,
+                                                   ptr_t *endp);
 # endif
   GC_INNER const char *GC_get_maps(void);
 #endif /* NEED_PROC_MAPS */

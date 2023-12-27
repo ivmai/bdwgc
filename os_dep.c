@@ -270,7 +270,7 @@ GC_INNER const char * GC_get_maps(void)
 /* (*end), (*prot), (*maj_dev) and (*mapping_name).  mapping_name may   */
 /* be NULL. (*prot) and (*mapping_name) are assigned pointers into the  */
 /* original buffer.                                                     */
-#if (defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES)) \
+#if defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES) \
     || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
     || (defined(REDIRECT_MALLOC) && defined(GC_LINUX_THREADS))
   GC_INNER const char *GC_parse_map_entry(const char *maps_ptr,
@@ -326,8 +326,8 @@ GC_INNER const char * GC_get_maps(void)
   /* Return the bounds of the writable mapping with a 0 major device,   */
   /* which includes the address passed as data.                         */
   /* Return FALSE if there is no such mapping.                          */
-  GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp,
-                                        ptr_t *endp)
+  GC_INNER GC_bool GC_enclosing_writable_mapping(ptr_t addr, ptr_t *startp,
+                                                 ptr_t *endp)
   {
     const char *prot;
     ptr_t my_start, my_end;
@@ -343,9 +343,9 @@ GC_INNER const char * GC_get_maps(void)
 
       if (prot[1] == 'w' && maj_dev == 0
           && (word)my_end > (word)addr && (word)my_start <= (word)addr) {
-            *startp = my_start;
-            *endp = my_end;
-            return TRUE;
+        *startp = my_start;
+        *endp = my_end;
+        return TRUE;
       }
     }
     return FALSE;
@@ -395,7 +395,8 @@ GC_INNER const char * GC_get_maps(void)
     ptr_t my_start, my_end;
 
     GC_ASSERT(I_HOLD_LOCK());
-    if (!GC_enclosing_mapping(GC_save_regs_in_stack(), &my_start, &my_end)) {
+    if (!GC_enclosing_writable_mapping(GC_save_regs_in_stack(),
+                                       &my_start, &my_end)) {
         GC_COND_LOG_PRINTF("Failed to find backing store base from /proc\n");
         return 0;
     }

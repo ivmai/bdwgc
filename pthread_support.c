@@ -1623,8 +1623,8 @@ GC_INNER void GC_thr_init(void)
     {
       ptr_t thread_local_addr = (ptr_t)(&GC_dummy_thread_local);
       ptr_t main_thread_start, main_thread_end;
-      if (!GC_enclosing_mapping(thread_local_addr, &main_thread_start,
-                                &main_thread_end)) {
+      if (!GC_enclosing_writable_mapping(thread_local_addr,
+                                &main_thread_start, &main_thread_end)) {
         ABORT("Failed to find mapping for main thread thread locals");
       } else {
         /* main_thread_start and main_thread_end are initialized.       */
