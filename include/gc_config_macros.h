@@ -453,6 +453,14 @@
 # endif
 #endif
 
+#ifndef GC_CONSTEXPR
+# if __cplusplus >= 202002L
+#   define GC_CONSTEXPR constexpr
+# else
+#   define GC_CONSTEXPR /* empty */
+# endif
+#endif
+
 #endif /* __cplusplus */
 
 #endif
