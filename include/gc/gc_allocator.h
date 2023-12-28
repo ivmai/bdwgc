@@ -138,34 +138,34 @@ public:
     typedef gc_allocator<GC_Tp1> other;
   };
 
-  gc_allocator() GC_NOEXCEPT {}
-  gc_allocator(const gc_allocator&) GC_NOEXCEPT {}
+  GC_ATTR_CONSTEXPR gc_allocator() GC_NOEXCEPT {}
+  GC_ATTR_CONSTEXPR gc_allocator(const gc_allocator&) GC_NOEXCEPT {}
 # ifndef GC_NO_MEMBER_TEMPLATES
     template <class GC_Tp1> GC_ATTR_EXPLICIT
-    gc_allocator(const gc_allocator<GC_Tp1>&) GC_NOEXCEPT {}
+    GC_ATTR_CONSTEXPR gc_allocator(const gc_allocator<GC_Tp1>&) GC_NOEXCEPT {}
 # endif
-  ~gc_allocator() GC_NOEXCEPT {}
+  GC_ATTR_CONSTEXPR ~gc_allocator() GC_NOEXCEPT {}
 
-  pointer address(reference GC_x) const { return &GC_x; }
-  const_pointer address(const_reference GC_x) const { return &GC_x; }
+  GC_ATTR_CONSTEXPR pointer address(reference GC_x) const { return &GC_x; }
+  GC_ATTR_CONSTEXPR const_pointer address(const_reference GC_x) const { return &GC_x; }
 
   // GC_n is permitted to be 0.  The C++ standard says nothing about what
   // the return value is when GC_n == 0.
-  GC_Tp* allocate(size_type GC_n, const void* = 0) {
+  GC_ATTR_CONSTEXPR GC_Tp* allocate(size_type GC_n, const void* = 0) {
     GC_type_traits<GC_Tp> traits;
     return static_cast<GC_Tp *>(GC_selective_alloc(GC_n * sizeof(GC_Tp),
                                                    traits.GC_is_ptr_free,
                                                    false));
   }
 
-  void deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
+  GC_ATTR_CONSTEXPR void deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
     { GC_FREE(__p); }
 
-  size_type max_size() const GC_NOEXCEPT
+  GC_ATTR_CONSTEXPR size_type max_size() const GC_NOEXCEPT
     { return static_cast<GC_ALCTR_SIZE_T>(-1) / sizeof(GC_Tp); }
 
-  void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
-  void destroy(pointer __p) { __p->~GC_Tp(); }
+  GC_ATTR_CONSTEXPR void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
+  GC_ATTR_CONSTEXPR void destroy(pointer __p) { __p->~GC_Tp(); }
 };
 
 template<>
@@ -183,15 +183,15 @@ public:
 };
 
 template <class GC_T1, class GC_T2>
-inline bool operator==(const gc_allocator<GC_T1>&,
-                       const gc_allocator<GC_T2>&) GC_NOEXCEPT
+GC_ATTR_CONSTEXPR inline bool operator==(const gc_allocator<GC_T1>&,
+                                         const gc_allocator<GC_T2>&) GC_NOEXCEPT
 {
   return true;
 }
 
 template <class GC_T1, class GC_T2>
-inline bool operator!=(const gc_allocator<GC_T1>&,
-                       const gc_allocator<GC_T2>&) GC_NOEXCEPT
+GC_ATTR_CONSTEXPR inline bool operator!=(const gc_allocator<GC_T1>&,
+                                         const gc_allocator<GC_T2>&) GC_NOEXCEPT
 {
   return false;
 }
@@ -212,36 +212,36 @@ public:
     typedef gc_allocator_ignore_off_page<GC_Tp1> other;
   };
 
-  gc_allocator_ignore_off_page() GC_NOEXCEPT {}
-  gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page&)
+  GC_ATTR_CONSTEXPR gc_allocator_ignore_off_page() GC_NOEXCEPT {}
+  GC_ATTR_CONSTEXPR gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page&)
     GC_NOEXCEPT {}
 # ifndef GC_NO_MEMBER_TEMPLATES
     template <class GC_Tp1> GC_ATTR_EXPLICIT
-    gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page<GC_Tp1>&)
+    GC_ATTR_CONSTEXPR gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page<GC_Tp1>&)
       GC_NOEXCEPT {}
 # endif
-  ~gc_allocator_ignore_off_page() GC_NOEXCEPT {}
+  GC_ATTR_CONSTEXPR ~gc_allocator_ignore_off_page() GC_NOEXCEPT {}
 
-  pointer address(reference GC_x) const { return &GC_x; }
-  const_pointer address(const_reference GC_x) const { return &GC_x; }
+  GC_ATTR_CONSTEXPR pointer address(reference GC_x) const { return &GC_x; }
+  GC_ATTR_CONSTEXPR const_pointer address(const_reference GC_x) const { return &GC_x; }
 
   // GC_n is permitted to be 0.  The C++ standard says nothing about what
   // the return value is when GC_n == 0.
-  GC_Tp* allocate(size_type GC_n, const void* = 0) {
+  GC_ATTR_CONSTEXPR GC_Tp* allocate(size_type GC_n, const void* = 0) {
     GC_type_traits<GC_Tp> traits;
     return static_cast<GC_Tp *>(GC_selective_alloc(GC_n * sizeof(GC_Tp),
                                                    traits.GC_is_ptr_free,
                                                    true));
   }
 
-  void deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
+  GC_ATTR_CONSTEXPR void deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
     { GC_FREE(__p); }
 
-  size_type max_size() const GC_NOEXCEPT
+  GC_ATTR_CONSTEXPR size_type max_size() const GC_NOEXCEPT
     { return static_cast<GC_ALCTR_SIZE_T>(-1) / sizeof(GC_Tp); }
 
-  void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
-  void destroy(pointer __p) { __p->~GC_Tp(); }
+  GC_ATTR_CONSTEXPR void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
+  GC_ATTR_CONSTEXPR void destroy(pointer __p) { __p->~GC_Tp(); }
 };
 
 template<>
@@ -259,15 +259,15 @@ public:
 };
 
 template <class GC_T1, class GC_T2>
-inline bool operator==(const gc_allocator_ignore_off_page<GC_T1>&,
-                       const gc_allocator_ignore_off_page<GC_T2>&) GC_NOEXCEPT
+GC_ATTR_CONSTEXPR inline bool operator==(const gc_allocator_ignore_off_page<GC_T1>&,
+                                         const gc_allocator_ignore_off_page<GC_T2>&) GC_NOEXCEPT
 {
   return true;
 }
 
 template <class GC_T1, class GC_T2>
-inline bool operator!=(const gc_allocator_ignore_off_page<GC_T1>&,
-                       const gc_allocator_ignore_off_page<GC_T2>&) GC_NOEXCEPT
+GC_ATTR_CONSTEXPR inline bool operator!=(const gc_allocator_ignore_off_page<GC_T1>&,
+                                         const gc_allocator_ignore_off_page<GC_T2>&) GC_NOEXCEPT
 {
   return false;
 }
@@ -293,34 +293,34 @@ public:
     typedef traceable_allocator<GC_Tp1> other;
   };
 
-  traceable_allocator() GC_NOEXCEPT {}
-  traceable_allocator(const traceable_allocator&) GC_NOEXCEPT {}
+  GC_ATTR_CONSTEXPR traceable_allocator() GC_NOEXCEPT {}
+  GC_ATTR_CONSTEXPR traceable_allocator(const traceable_allocator&) GC_NOEXCEPT {}
 # ifndef GC_NO_MEMBER_TEMPLATES
     template <class GC_Tp1> GC_ATTR_EXPLICIT
-    traceable_allocator(const traceable_allocator<GC_Tp1>&) GC_NOEXCEPT {}
+    GC_ATTR_CONSTEXPR traceable_allocator(const traceable_allocator<GC_Tp1>&) GC_NOEXCEPT {}
 # endif
-  ~traceable_allocator() GC_NOEXCEPT {}
+  GC_ATTR_CONSTEXPR ~traceable_allocator() GC_NOEXCEPT {}
 
-  pointer address(reference GC_x) const { return &GC_x; }
-  const_pointer address(const_reference GC_x) const { return &GC_x; }
+  GC_ATTR_CONSTEXPR pointer address(reference GC_x) const { return &GC_x; }
+  GC_ATTR_CONSTEXPR const_pointer address(const_reference GC_x) const { return &GC_x; }
 
   // GC_n is permitted to be 0.  The C++ standard says nothing about what
   // the return value is when GC_n == 0.
-  GC_Tp* allocate(size_type GC_n, const void* = 0) {
+  GC_ATTR_CONSTEXPR GC_Tp* allocate(size_type GC_n, const void* = 0) {
     void * obj = GC_MALLOC_UNCOLLECTABLE(GC_n * sizeof(GC_Tp));
     if (0 == obj)
       GC_ALLOCATOR_THROW_OR_ABORT();
     return static_cast<GC_Tp*>(obj);
   }
 
-  void deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
+  GC_ATTR_CONSTEXPR void deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
     { GC_FREE(__p); }
 
-  size_type max_size() const GC_NOEXCEPT
+  GC_ATTR_CONSTEXPR size_type max_size() const GC_NOEXCEPT
     { return static_cast<GC_ALCTR_SIZE_T>(-1) / sizeof(GC_Tp); }
 
-  void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
-  void destroy(pointer __p) { __p->~GC_Tp(); }
+  GC_ATTR_CONSTEXPR void construct(pointer __p, const GC_Tp& __val) { new(__p) GC_Tp(__val); }
+  GC_ATTR_CONSTEXPR void destroy(pointer __p) { __p->~GC_Tp(); }
 };
 
 template<>
@@ -338,15 +338,15 @@ public:
 };
 
 template <class GC_T1, class GC_T2>
-inline bool operator==(const traceable_allocator<GC_T1>&,
-                       const traceable_allocator<GC_T2>&) GC_NOEXCEPT
+GC_ATTR_CONSTEXPR inline bool operator==(const traceable_allocator<GC_T1>&,
+                                         const traceable_allocator<GC_T2>&) GC_NOEXCEPT
 {
   return true;
 }
 
 template <class GC_T1, class GC_T2>
-inline bool operator!=(const traceable_allocator<GC_T1>&,
-                       const traceable_allocator<GC_T2>&) GC_NOEXCEPT
+GC_ATTR_CONSTEXPR inline bool operator!=(const traceable_allocator<GC_T1>&,
+                                         const traceable_allocator<GC_T2>&) GC_NOEXCEPT
 {
   return false;
 }
