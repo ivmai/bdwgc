@@ -7,6 +7,7 @@ jobs:
   build:
     name: thr:${{ matrix.enable_threads }} rwlock:${{ matrix.enable_rwlock }} redir:${{ matrix.redirect_malloc }} gcdeb:${{ matrix.enable_gc_debug }} munmap:${{ matrix.enable_munmap }} paramark:${{ matrix.parallel_mark }} thrlocal:${{ matrix.thread_local_alloc }}
     runs-on: ubuntu-latest
+    timeout-minutes: 4
 
     strategy:
       fail-fast: false
