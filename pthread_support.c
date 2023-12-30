@@ -2028,9 +2028,7 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
 /* functionality.  It might be called from a user function invoked by   */
 /* GC_do_blocking() to temporarily back allow calling any GC function   */
 /* and/or manipulating pointers to the garbage collected heap.          */
-/* Note: fn is volatile to prevent its call inlining.                   */
-GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type volatile fn,
-                                             void * client_data)
+GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn, void *client_data)
 {
     struct GC_traced_stack_sect_s stacksect;
     GC_thread me;
@@ -2059,7 +2057,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type volatile fn,
     if ((me -> flags & DO_BLOCKING) == 0) {
       /* We are not inside GC_do_blocking() - do nothing more.  */
       READER_UNLOCK_RELEASE();
-      client_data = (*fn)(client_data);
+      /* Cast fn to a volatile type to prevent its call inlining.   */
+      client_data = (*(GC_fn_type volatile *)&fn)(client_data);
       /* Prevent treating the above as a tail call.     */
       GC_noop1(COVERT_DATAFLOW(&stacksect));
       return client_data; /* result */
@@ -2103,7 +2102,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type volatile fn,
     crtn -> traced_stack_sect = &stacksect;
 
     READER_UNLOCK_RELEASE();
-    client_data = (*fn)(client_data);
+    client_data = (*(GC_fn_type volatile *)&fn)(client_data);
     GC_ASSERT((me -> flags & DO_BLOCKING) == 0);
 
     /* Restore original "stack section".        */

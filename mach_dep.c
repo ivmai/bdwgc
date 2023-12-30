@@ -222,10 +222,9 @@
 /* are somewhere on the stack, and then call fn(arg, ctxt).             */
 /* ctxt is either a pointer to a ucontext_t we generated, or NULL.      */
 /* Could be called with or w/o the allocator lock held; could be called */
-/* from a signal handler as well.  fn is specified as a volatile one to */
-/* prevent inlining of fn(arg, ctxt) call.                              */
+/* from a signal handler as well.                                       */
 GC_ATTR_NO_SANITIZE_ADDR
-GC_INNER void GC_with_callee_saves_pushed(void (*volatile fn)(ptr_t, void *),
+GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
                                           volatile ptr_t arg)
 {
   volatile int dummy;
@@ -334,7 +333,9 @@ GC_INNER void GC_with_callee_saves_pushed(void (*volatile fn)(ptr_t, void *),
 # endif /* !HAVE_PUSH_REGS */
   /* TODO: context here is sometimes just zero.  At the moment, the     */
   /* callees don't really need it.                                      */
-  (*fn)(arg, (/* no volatile */ void *)(word)context);
+  /* Cast fn to a volatile type to prevent call inlining.               */
+  (*(GC_with_callee_saves_func volatile *)&fn)(arg,
+                        (/* no volatile */ void *)(word)context);
   /* Strongly discourage the compiler from treating the above   */
   /* as a tail-call, since that would pop the register          */
   /* contents before we get a chance to look at them.           */
