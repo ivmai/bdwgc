@@ -1625,7 +1625,10 @@ struct _GC_arrays {
     page_hash_table _grungy_pages; /* Pages that were dirty at last     */
                                    /* GC_read_dirty.                    */
 #   define GC_dirty_pages GC_arrays._dirty_pages
-    volatile page_hash_table _dirty_pages;
+#   ifdef MPROTECT_VDB
+      volatile
+#   endif
+      page_hash_table _dirty_pages;
                         /* Pages dirtied since last GC_read_dirty. */
 # endif
 # if (defined(CHECKSUMS) && (defined(GWW_VDB) || defined(SOFT_VDB))) \
