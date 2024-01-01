@@ -81,7 +81,7 @@ jobs:
   - arch: arm64
     compiler: gcc
     env:
-    - CFLAGS_EXTRA="-O3 -std=c++2a -D SIMULATE_LOST_SIGNALS -D TRACE_BUF"
+    - CFLAGS_EXTRA="-O3 -D SIMULATE_LOST_SIGNALS -D TRACE_BUF"
     - CONF_OPTIONS="--enable-cplusplus --disable-gcj-support"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
@@ -626,6 +626,14 @@ jobs:
     - CC_FOR_CHECK=g++
     - CONF_OPTIONS="--enable-gc-assertions"
     - MAKEFILE_TARGETS="all"
+    - MAKEFILE_TARGETS_CHECK="check"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - compiler: gcc
+    env:
+    - CC_FOR_CHECK=g++
+    - CFLAGS_EXTRA="-std=c++20"
+    - CONF_OPTIONS="--enable-cplusplus --enable-gc-assertions --enable-gc-debug"
+    - MAKEFILE_TARGETS="clean"
     - MAKEFILE_TARGETS_CHECK="check"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
