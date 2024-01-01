@@ -1061,11 +1061,21 @@ typedef word page_hash_table[PHT_SIZE];
 # define set_pht_entry_from_index_concurrent(bl, index) \
                 AO_or((volatile AO_t *)&(bl)[divWORDSZ(index)], \
                       (AO_t)((word)1 << modWORDSZ(index)))
+# ifdef MPROTECT_VDB
+#   define set_pht_entry_from_index_concurrent_volatile(bl, index) \
+                set_pht_entry_from_index_concurrent(bl, index)
+# endif
 #else
 # define set_pht_entry_from_index_concurrent(bl, index) \
                 set_pht_entry_from_index(bl, index)
+# ifdef MPROTECT_VDB
+    /* Same as set_pht_entry_from_index() but avoiding the compound */
+    /* assignment for a volatile array.                             */
+#   define set_pht_entry_from_index_concurrent_volatile(bl, index) \
+                (void)((bl)[divWORDSZ(index)] \
+                    = (bl)[divWORDSZ(index)] | ((word)1 << modWORDSZ(index)))
+# endif
 #endif
-
 
 /********************************************/
 /*                                          */

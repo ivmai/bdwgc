@@ -98,11 +98,11 @@ static unsigned memhash(void *src, size_t len)
   return acc;
 }
 
-static volatile AO_t stat_added;
-static volatile AO_t stat_found;
-static volatile AO_t stat_removed;
-static volatile AO_t stat_skip_locked;
-static volatile AO_t stat_skip_marked;
+static AO_t stat_added;
+static AO_t stat_found;
+static AO_t stat_removed;
+static AO_t stat_skip_locked;
+static AO_t stat_skip_marked;
 
 struct weakmap_link {
   GC_hidden_pointer obj;

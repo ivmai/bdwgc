@@ -240,13 +240,12 @@ static void *checkOOM(void *p)
 #endif
 
 /* Allocation Statistics.  Synchronization is not strictly necessary.   */
-static volatile AO_t uncollectable_count = 0;
-static volatile AO_t collectable_count = 0;
-static volatile AO_t atomic_count = 0;
-static volatile AO_t realloc_count = 0;
+static AO_t uncollectable_count = 0;
+static AO_t collectable_count = 0;
+static AO_t atomic_count = 0;
+static AO_t realloc_count = 0;
 
-static volatile AO_t extra_count = 0;
-                                /* Amount of space wasted in cons node; */
+static AO_t extra_count = 0;    /* Amount of space wasted in cons node; */
                                 /* also used in gcj_cons, mktree and    */
                                 /* chktree (for other purposes).        */
 
@@ -1454,7 +1453,7 @@ static void typed_test(void)
 #ifdef DBG_HDRS_ALL
 # define set_print_procs() (void)(A.dummy = 17)
 #else
-  static volatile AO_t fail_count = 0;
+  static AO_t fail_count = 0;
 
   static void GC_CALLBACK fail_proc1(void *arg)
   {
@@ -1908,7 +1907,7 @@ static void run_one_test(void)
     /* Run reverse_test a second time, so we hopefully notice corruption. */
     reverse_test();
 #   ifndef NO_DEBUGGING
-      (void)GC_is_tmp_root((/* no volatile */ void *)(GC_word)&atomic_count);
+      (void)GC_is_tmp_root(&atomic_count);
 #   endif
 #   ifndef NO_CLOCK
       if (print_stats) {
@@ -2700,7 +2699,7 @@ int main(void)
     set_print_procs();
 
     /* Minimal testing of some API functions.   */
-    GC_exclude_static_roots((/* no volatile */ void *)(GC_word)&atomic_count,
+    GC_exclude_static_roots(&atomic_count,
                 (void *)((GC_word)&atomic_count + sizeof(atomic_count)));
     GC_register_has_static_roots_callback(has_static_roots);
     GC_register_describe_type_fn(GC_I_NORMAL, describe_norm_type);

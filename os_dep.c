@@ -552,7 +552,9 @@ GC_INNER const char * GC_get_maps(void)
       if ((word)result >= (word)bound - pgsz) {
         result = bound;
       } else {
-        result += pgsz; /* no overflow expected */
+        result = result + pgsz;
+                    /* no overflow expected; do not use compound        */
+                    /* assignment with volatile-qualified left operand  */
         GC_noop1((word)(*result));
       }
     }
@@ -1000,7 +1002,9 @@ GC_INNER void GC_setpagesize(void)
                       result = bound;
                       break;
                     }
-                    result += MIN_PAGE_SIZE; /* no overflow expected */
+                    result = result + MIN_PAGE_SIZE;
+                        /* no overflow expected; do not use compound        */
+                        /* assignment with volatile-qualified left operand  */
                 } else {
                     if ((word)result <= (word)bound + MIN_PAGE_SIZE) {
                       result = bound - MIN_PAGE_SIZE;
@@ -1011,16 +1015,15 @@ GC_INNER void GC_setpagesize(void)
                                         /* by setjmp otherwise).        */
                       break;
                     }
-                    result -= MIN_PAGE_SIZE; /* no underflow expected */
+                    result = result - MIN_PAGE_SIZE;
+                        /* no underflow expected; do not use compound       */
+                        /* assignment with volatile-qualified left operand  */
                 }
                 GC_noop1((word)(*result));
             }
         }
         GC_reset_fault_handler();
-        if (!up) {
-            result += MIN_PAGE_SIZE;
-        }
-        return result;
+        return up ? result : result + MIN_PAGE_SIZE;
     }
 
     void * GC_find_limit(void * p, int up)
@@ -3056,8 +3059,13 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
 #if !defined(NO_MANUAL_VDB) || defined(MPROTECT_VDB)
 # if !defined(THREADS) || defined(HAVE_LOCKFREE_AO_OR)
-#   define async_set_pht_entry_from_index(db, index) \
-                        set_pht_entry_from_index_concurrent(db, index)
+#   ifdef MPROTECT_VDB
+#     define async_set_pht_entry_from_index(db, index) \
+                set_pht_entry_from_index_concurrent_volatile(db, index)
+#   else
+#     define async_set_pht_entry_from_index(db, index) \
+                set_pht_entry_from_index_concurrent(db, index)
+#   endif
 # elif defined(AO_HAVE_test_and_set_acquire)
     /* We need to lock around the bitmap update (in the write fault     */
     /* handler or GC_dirty) in order to avoid the risk of losing a bit. */
