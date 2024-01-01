@@ -2002,7 +2002,7 @@ GC_EXTERN void (*GC_push_typed_structures)(void);
 
 typedef void (*GC_with_callee_saves_func)(ptr_t arg, void *context);
 GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
-                                          volatile ptr_t arg);
+                                          ptr_t arg);
 
 #if defined(IA64) || defined(SPARC)
   /* Cause all stacked registers to be saved in memory.  Return a       */

@@ -225,10 +225,19 @@
 /* from a signal handler as well.                                       */
 GC_ATTR_NO_SANITIZE_ADDR
 GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
-                                          volatile ptr_t arg)
+                                          ptr_t arg)
 {
   volatile int dummy;
   volatile ptr_t context = 0;
+# if defined(EMSCRIPTEN) || defined(HAVE_BUILTIN_UNWIND_INIT) \
+     || defined(HAVE_PUSH_REGS) || (defined(NO_CRT) && defined(MSWIN32)) \
+     || !defined(NO_UNDERSCORE_SETJMP)
+#   define volatile_arg arg
+# else
+    volatile ptr_t volatile_arg = arg;
+                        /* To avoid 'arg might be clobbered by setjmp'  */
+                        /* warning produced by some compilers.          */
+# endif
 
 # if defined(HAVE_PUSH_REGS)
     GC_push_regs();
@@ -334,12 +343,13 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
   /* TODO: context here is sometimes just zero.  At the moment, the     */
   /* callees don't really need it.                                      */
   /* Cast fn to a volatile type to prevent call inlining.               */
-  (*(GC_with_callee_saves_func volatile *)&fn)(arg,
+  (*(GC_with_callee_saves_func volatile *)&fn)(volatile_arg,
                         (/* no volatile */ void *)(word)context);
   /* Strongly discourage the compiler from treating the above   */
   /* as a tail-call, since that would pop the register          */
   /* contents before we get a chance to look at them.           */
   GC_noop1(COVERT_DATAFLOW(&dummy));
+# undef volatile_arg
 }
 
 #endif /* !PLATFORM_MACH_DEP && !SN_TARGET_PSP2 */
