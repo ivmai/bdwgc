@@ -207,13 +207,6 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr, mse * mark_stack_top,
     }
 #endif /* !USE_MARK_BYTES */
 
-#ifdef PARALLEL_MARK
-# define INCR_MARKS(hhdr) \
-                AO_store(&hhdr->hb_n_marks, AO_load(&hhdr->hb_n_marks) + 1)
-#else
-# define INCR_MARKS(hhdr) (void)(++hhdr->hb_n_marks)
-#endif
-
 #ifdef ENABLE_TRACE
 # define TRACE(source, cmd) \
         if (GC_trace_addr != 0 && (ptr_t)(source) == GC_trace_addr) cmd

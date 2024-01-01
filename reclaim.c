@@ -259,7 +259,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
             p += sz;
         } else if (disclaim(p)) {
             set_mark_bit_from_hdr(hhdr, bit_no);
-            hhdr -> hb_n_marks++;
+            INCR_MARKS(hhdr);
             p += sz;
         } else {
             obj_link(p) = list;

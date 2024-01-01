@@ -992,7 +992,7 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
 
         if (!mark_bit_from_hdr(hhdr, bit_no)) {
           set_mark_bit_from_hdr(hhdr, bit_no);
-          ++hhdr -> hb_n_marks;
+          INCR_MARKS(hhdr);
         }
 
         q = (ptr_t)obj_link(q);

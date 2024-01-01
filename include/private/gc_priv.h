@@ -3001,7 +3001,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 # define COND_DUMP COND_DUMP_CHECKS
 #endif
 
-#if defined(PARALLEL_MARK)
+#ifdef PARALLEL_MARK
   /* We need additional synchronization facilities from the thread      */
   /* support.  We believe these are less performance critical than      */
   /* the allocator lock; standard pthreads-based implementations        */
@@ -3044,7 +3044,12 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
               /* some other reason.                                     */
 
   GC_INNER void GC_start_mark_threads_inner(void);
-#endif /* PARALLEL_MARK */
+
+# define INCR_MARKS(hhdr) \
+            AO_store(&(hhdr)->hb_n_marks, AO_load(&(hhdr)->hb_n_marks) + 1)
+#else
+# define INCR_MARKS(hhdr) (void)(++(hhdr)->hb_n_marks)
+#endif /* !PARALLEL_MARK */
 
 #if defined(SIGNAL_BASED_STOP_WORLD) && !defined(SIG_SUSPEND)
   /* We define the thread suspension signal here, so that we can refer  */

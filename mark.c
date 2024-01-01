@@ -238,7 +238,7 @@ GC_API void GC_CALL GC_set_mark_bit(const void *p)
 
     if (!mark_bit_from_hdr(hhdr, bit_no)) {
       set_mark_bit_from_hdr(hhdr, bit_no);
-      ++hhdr -> hb_n_marks;
+      INCR_MARKS(hhdr);
     }
 }
 
@@ -1326,22 +1326,24 @@ GC_INNER void GC_mark_init(void)
  */
 GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 {
+    mse * mark_stack_top;
     word length;
 
     bottom = PTRT_ROUNDUP_BY_MASK(bottom, ALIGNMENT-1);
     top = (void *)((word)top & ~(word)(ALIGNMENT-1));
     if ((word)bottom >= (word)top) return;
 
-    GC_mark_stack_top++;
-    if ((word)GC_mark_stack_top >= (word)GC_mark_stack_limit) {
+    mark_stack_top = GC_mark_stack_top + 1;
+    if ((word)mark_stack_top >= (word)GC_mark_stack_limit) {
         ABORT("Unexpected mark stack overflow");
     }
     length = (word)top - (word)bottom;
 #   if GC_DS_TAGS > ALIGNMENT - 1
         length = (length + GC_DS_TAGS) & ~(word)GC_DS_TAGS; /* round up */
 #   endif
-    GC_mark_stack_top -> mse_start = (ptr_t)bottom;
-    GC_mark_stack_top -> mse_descr.w = length | GC_DS_LENGTH;
+    mark_stack_top -> mse_start = (ptr_t)bottom;
+    mark_stack_top -> mse_descr.w = length | GC_DS_LENGTH;
+    GC_mark_stack_top = mark_stack_top;
 }
 
 #ifndef GC_DISABLE_INCREMENTAL
