@@ -7,7 +7,7 @@ jobs:
   build:
     name: ${{ matrix.os }} ${{ matrix.c_compiler }} thr:${{ matrix.enable_threads }} rwlock:${{ matrix.enable_rwlock }} redir:${{ matrix.redirect_malloc }} dll:${{ matrix.shared_libs }} cpp:${{ matrix.enable_cplusplus }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 4
 
     strategy:
       # Deliver the feedback for all matrix combinations.
