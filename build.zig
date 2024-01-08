@@ -10,10 +10,22 @@
 // A script to build and test the collector using Zig build system.
 // The script matches CMakeLists.txt as much as possible.
 
-// TODO: this script assumes zig 0.12.0-dev.1814.
-
 const std = @import("std");
+const builtin = @import("builtin");
 const Path = std.Build.LazyPath;
+
+comptime {
+    const required_zig_version = "0.12.0-dev.1814+5c0d58b71";
+
+    const required_zig = std.SemanticVersion.parse(required_zig_version) 
+        catch unreachable;
+    if (builtin.zig_version.order(required_zig) != .eq) {
+        @compileError(std.fmt.comptimePrint(
+            "Zig version {} does not meet the build requirement of {}",
+            .{ builtin.zig_version, required_zig },
+        ));
+    }
+}
 
 // TODO: specify PACKAGE_VERSION and LIB*_VER_INFO.
 
