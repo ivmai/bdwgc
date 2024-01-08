@@ -15,7 +15,7 @@ const std = @import("std");
 const Path = std.Build.LazyPath;
 
 // TODO: update to zig v0.12 final (when released)
-const zig_min_required_version = "0.12.0-dev.1814";
+const zig_min_required_version = "0.12.0-dev.2015";
 
 // TODO: specify PACKAGE_VERSION and LIB*_VER_INFO.
 
@@ -40,10 +40,10 @@ comptime {
     }
 }
 
-pub fn build(b: *std.build.Builder) void {
+pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
-    const t = target.toTarget();
+    const t = target.result;
 
     const default_enable_threads = !t.isWasm(); // both emscripten and wasi
 
@@ -185,11 +185,11 @@ pub fn build(b: *std.build.Builder) void {
             "pthread_start.c",
             "pthread_support.c",
         }) catch unreachable;
-        if (target.isWindows()) {
+        if (t.os.tag == .windows) {
             source_files.appendSlice(&.{
                 "win32_threads.c",
             }) catch unreachable;
-        } else if (target.isDarwin()) {
+        } else if (t.isDarwin()) {
             source_files.appendSlice(&.{
                 "darwin_stop_world.c",
             }) catch unreachable;
@@ -213,7 +213,7 @@ pub fn build(b: *std.build.Builder) void {
             }) catch unreachable;
         }
         // Message for clients: Explicit GC_INIT() calls may be required.
-        if (target.isWindows()) {
+        if (t.os.tag == .windows) {
             // Does not provide process fork functionality.
         } else if (enable_handle_fork and !disable_handle_fork) {
             flags.append("-D HANDLE_FORK") catch unreachable;
@@ -261,7 +261,7 @@ pub fn build(b: *std.build.Builder) void {
     if (enable_gc_debug) {
         flags.append("-D DBG_HDRS_ALL") catch unreachable;
         flags.append("-D KEEP_BACK_PTRS") catch unreachable;
-        if (target.isLinux()) {
+        if (t.os.tag == .linux) {
             flags.append("-D MAKE_BACK_GRAPH") catch unreachable;
             // TODO: do not define SAVE_CALL_COUNT for e2k
             flags.append("-D SAVE_CALL_COUNT=8") catch unreachable;
@@ -289,7 +289,7 @@ pub fn build(b: *std.build.Builder) void {
         } else {
             flags.append("-D REDIRECT_MALLOC=GC_malloc") catch unreachable;
         }
-        if (target.isWindows()) {
+        if (t.os.tag == .windows) {
             flags.append("-D REDIRECT_MALLOC_IN_HEADER") catch unreachable;
         } else {
             flags.append("-D GC_USE_DLOPEN_WRAP") catch unreachable;
@@ -350,7 +350,7 @@ pub fn build(b: *std.build.Builder) void {
         source_files.appendSlice(&.{
             "extra/gc.c",
         }) catch unreachable;
-        if (enable_threads and !(target.isDarwin() or target.isWindows())) {
+        if (enable_threads and !(t.isDarwin() or t.os.tag == .windows)) {
             flags.append("-D GC_PTHREAD_START_STANDALONE") catch unreachable;
             source_files.appendSlice(&.{
                 "pthread_start.c",
@@ -377,7 +377,7 @@ pub fn build(b: *std.build.Builder) void {
         }) catch unreachable;
     } else {
         flags.append("-D GC_NOT_DLL") catch unreachable;
-        if (target.isWindows()) {
+        if (t.os.tag == .windows) {
             // Do not require the clients to link with "user32" system library.
             flags.append("-D DONT_USE_USER32_DLL") catch unreachable;
         }
@@ -401,7 +401,7 @@ pub fn build(b: *std.build.Builder) void {
     // dl_iterate_phdr exists (as a strong symbol).
     flags.append("-D HAVE_DL_ITERATE_PHDR") catch unreachable;
 
-    if (enable_threads and !(target.isDarwin() or target.isWindows())) {
+    if (enable_threads and !(t.isDarwin() or t.os.tag == .windows)) {
         // pthread_sigmask() and sigset_t are available and needed.
         flags.append("-D HAVE_PTHREAD_SIGMASK") catch unreachable;
     }
@@ -410,10 +410,10 @@ pub fn build(b: *std.build.Builder) void {
     flags.append("-D GC_REQUIRE_WCSDUP") catch unreachable;
 
     // pthread_setname_np, if available, may have 1, 2 or 3 arguments.
-    if (target.isDarwin()) {
+    if (t.isDarwin()) {
         flags.append("-D HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID")
                 catch unreachable;
-    } else if (target.isLinux()) {
+    } else if (t.os.tag == .linux) {
         flags.append("-D HAVE_PTHREAD_SETNAME_NP_WITH_TID") catch unreachable;
     } else {
         // TODO: support HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG
@@ -491,8 +491,8 @@ fn addTest(b: *std.Build, lib: *std.Build.Step.Compile,
                         catch @panic("Error joining paths");
     const test_exe = b.addExecutable(.{
         .name = testname,
-        .optimize = lib.optimize,
-        .target = lib.target
+        .optimize = lib.root_module.optimize.?,
+        .target = lib.root_module.resolved_target.?
     });
     test_exe.addCSourceFile(.{
         .file = Path.relative(filename),
