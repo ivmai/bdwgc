@@ -36,12 +36,12 @@ jobs:
         - enable_gc_debug: true # FIXME: some tests fail if gc_debug+redirect
           redirect_malloc: true
 
-    # TODO: move from nightly to zig 0.12 when released.
+    # TODO: move from nightly to zig 0.12 final when released.
     steps:
     - uses: actions/checkout@v4
     - name: "Install zig"
       run: |
-        mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-0.12.0-dev.1849+bb0f7d55e.tar.xz | tar Jx --directory=zig --strip-components=1
+        mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-0.12.0-dev.2076+8fd15c6ca.tar.xz | tar Jx --directory=zig --strip-components=1
     - name: Build
       run: >
         zig/zig build
