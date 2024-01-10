@@ -46,7 +46,6 @@ jobs:
       run: >
         zig/zig build
         -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
-        -Dbuild_tests=true
         -Ddisable_handle_fork=${{ matrix.disable_handle_fork }}
         -Denable_gc_assertions=${{ matrix.gc_assertions }}
         -Denable_gc_debug=${{ matrix.enable_gc_debug }}
@@ -57,5 +56,5 @@ jobs:
         -Denable_rwlock=${{ matrix.enable_rwlock }}
         -Denable_thread_local_alloc=${{ matrix.thread_local_alloc }}
         -Denable_threads=${{ matrix.enable_threads }}
-        -Denable_werror=true
+        -Denable_werror
         test
