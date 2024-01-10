@@ -54,6 +54,8 @@ pub fn build(b: *std.Build) void {
     // TODO: support build_cord
     const build_tests = b.option(bool, "build_tests",
                                  "Build tests") orelse false;
+    const cflags_extra = b.option([]const u8, "CFLAGS_EXTRA",
+                                  "Extra user-defined cflags") orelse "";
     // TODO: support enable_docs
     const enable_threads = b.option(bool, "enable_threads",
                 "Support threads") orelse default_enable_threads;
@@ -383,8 +385,6 @@ pub fn build(b: *std.Build) void {
         }
     }
 
-    // TODO: support CFLAGS_EXTRA (extra user-defined flags to pass to clang)
-
     // Note: Zig uses clang which ships with these so, unless another
     // sysroot/libc, etc. headers location is pointed out, it is fine to
     // hard-code enable this.
@@ -422,6 +422,15 @@ pub fn build(b: *std.Build) void {
 
     // Define to use 'dladdr' function (used for debugging).
     flags.append("-D HAVE_DLADDR") catch unreachable;
+
+    // Extra user-defined flags (if any) to pass to the compiler.
+    if (cflags_extra.len > 0) {
+        // Split it up on a space and append each part to flags separately.
+        var tokenizer = std.mem.tokenizeScalar(u8, cflags_extra, ' ');
+        while (tokenizer.next()) |token| {
+            flags.append(token) catch unreachable;
+        }
+    }
 
     lib.addCSourceFiles(.{
         .files = source_files.items,
