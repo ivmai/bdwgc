@@ -54,6 +54,8 @@ pub fn build(b: *std.Build) void {
     // TODO: support build_cord
     const build_tests = b.option(bool, "build_tests",
                                  "Build tests") orelse false;
+    const cflags_extra = b.option([]const u8, "CFLAGS_EXTRA",
+                                 "Extra cflags") orelse "";
     // TODO: support enable_docs
     const enable_threads = b.option(bool, "enable_threads",
                 "Support threads") orelse default_enable_threads;
@@ -152,6 +154,14 @@ pub fn build(b: *std.Build) void {
         "-Wpedantic",
         //"-Wno-long-long",
     }) catch unreachable;
+
+    if (cflags_extra.len > 0) {
+        // Split it up on space (' ') and append each part separately to flags.
+        var tokenizer = std.mem.tokenizeScalar(u8, cflags_extra, ' ');
+        while (tokenizer.next()) |token| {
+            flags.append(token) catch unreachable;
+        }
+    }
 
     source_files.appendSlice(&.{
         "allchblk.c",
