@@ -52,8 +52,6 @@ pub fn build(b: *std.Build) void {
     const build_shared_libs = b.option(bool, "BUILD_SHARED_LIBS",
                 "Build shared libraries (otherwise static ones)") orelse true;
     // TODO: support build_cord
-    const build_tests = b.option(bool, "build_tests",
-                                 "Build tests") orelse false;
     const cflags_extra = b.option([]const u8, "CFLAGS_EXTRA",
                                   "Extra user-defined cflags") orelse "";
     // TODO: support enable_docs
@@ -464,30 +462,30 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(lib);
 
+    // Note: there is no "build_tests" option, as the tests are built
+    // only if "test" step is requested.
     const test_step = b.step("test", "Run tests");
-    if (build_tests) {
-        addTest(b, lib, test_step, flags, "gctest");
-        addTest(b, lib, test_step, flags, "huge");
-        addTest(b, lib, test_step, flags, "leak");
-        addTest(b, lib, test_step, flags, "middle");
-        addTest(b, lib, test_step, flags, "realloc");
-        addTest(b, lib, test_step, flags, "smash");
-        // TODO: add staticroots test
-        if (enable_gc_debug) {
-            addTest(b, lib, test_step, flags, "trace");
-        }
-        if (enable_threads) {
-            addTest(b, lib, test_step, flags, "atomicops");
-            addTest(b, lib, test_step, flags, "initfromthread");
-            addTest(b, lib, test_step, flags, "subthreadcreate");
-            addTest(b, lib, test_step, flags, "threadleak");
-            addTest(b, lib, test_step, flags, "threadkey");
-        }
-        if (enable_disclaim) {
-            addTest(b, lib, test_step, flags, "disclaim_bench");
-            addTest(b, lib, test_step, flags, "disclaim");
-            addTest(b, lib, test_step, flags, "weakmap");
-        }
+    addTest(b, lib, test_step, flags, "gctest");
+    addTest(b, lib, test_step, flags, "huge");
+    addTest(b, lib, test_step, flags, "leak");
+    addTest(b, lib, test_step, flags, "middle");
+    addTest(b, lib, test_step, flags, "realloc");
+    addTest(b, lib, test_step, flags, "smash");
+    // TODO: add staticroots test
+    if (enable_gc_debug) {
+        addTest(b, lib, test_step, flags, "trace");
+    }
+    if (enable_threads) {
+        addTest(b, lib, test_step, flags, "atomicops");
+        addTest(b, lib, test_step, flags, "initfromthread");
+        addTest(b, lib, test_step, flags, "subthreadcreate");
+        addTest(b, lib, test_step, flags, "threadleak");
+        addTest(b, lib, test_step, flags, "threadkey");
+    }
+    if (enable_disclaim) {
+        addTest(b, lib, test_step, flags, "disclaim_bench");
+        addTest(b, lib, test_step, flags, "disclaim");
+        addTest(b, lib, test_step, flags, "weakmap");
     }
 }
 
