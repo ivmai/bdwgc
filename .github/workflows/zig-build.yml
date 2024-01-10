@@ -1,13 +1,13 @@
-# This workflow is for zig-based build/test running on Linux/x86_64.
+# This workflow is for zig-based build/test running on Linux and MacOS (x64).
 name: zig build
 
 on: [ push, pull_request ]
 
 jobs:
   build:
-    name: thr:${{ matrix.enable_threads }} rwlock:${{ matrix.enable_rwlock }} redir:${{ matrix.redirect_malloc }} gcdeb:${{ matrix.enable_gc_debug }} munmap:${{ matrix.enable_munmap }} paramark:${{ matrix.parallel_mark }} thrlocal:${{ matrix.thread_local_alloc }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 4
+    name: ${{ matrix.os }} thr:${{ matrix.enable_threads }} rwlock:${{ matrix.enable_rwlock }} redir:${{ matrix.redirect_malloc }} gcdeb:${{ matrix.enable_gc_debug }} munmap:${{ matrix.enable_munmap }} paramark:${{ matrix.parallel_mark }} thrlocal:${{ matrix.thread_local_alloc }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
 
     strategy:
       fail-fast: false
@@ -15,6 +15,7 @@ jobs:
       matrix:
         # TODO: move from nightly to zig 0.12 final when released.
         zig_version: [ "0.12.0-dev.2076+8fd15c6ca" ]
+        os: [ macos-latest, ubuntu-latest ]
         gc_assertions: [ true ]
         large_config: [ false ]
         enable_threads: [ false, true ]
@@ -40,9 +41,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: "Install zig"
+    - name: "Install zig on Linux/x86_64"
+      if: runner.os == 'Linux'
       run: |
         mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-${{matrix.zig_version}}.tar.xz | tar Jx --directory=zig --strip-components=1
+    - name: "Install zig on MacOS/x86_64"
+      if: runner.os == 'macOS'
+      run: |
+        mkdir zig && curl https://ziglang.org/builds/zig-macos-x86_64-${{matrix.zig_version}}.tar.xz | tar Jx --directory=zig --strip-components=1
     - name: Build
       run: >
         zig/zig build
