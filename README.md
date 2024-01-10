@@ -223,10 +223,11 @@ See [README.autoconf](docs/README.autoconf) for details.
 
 ### Zig
 
-Building using zig is straight forward in its simplest form:
+Building and testing the collector using zig is straight forward in its
+simplest form:
 
 ```sh
-zig build
+zig build test
 ```
 
 It is possible to configure the build through the use of variables, e.g.
