@@ -465,37 +465,41 @@ pub fn build(b: *std.Build) void {
     // Note: there is no "build_tests" option, as the tests are built
     // only if "test" step is requested.
     const test_step = b.step("test", "Run tests");
-    addTest(b, lib, test_step, flags, "gctest");
-    addTest(b, lib, test_step, flags, "huge");
-    addTest(b, lib, test_step, flags, "leak");
-    addTest(b, lib, test_step, flags, "middle");
-    addTest(b, lib, test_step, flags, "realloc");
-    addTest(b, lib, test_step, flags, "smash");
+    addTest(b, lib, test_step, flags, "gctest", "tests/gctest.c");
+    addTest(b, lib, test_step, flags, "hugetest", "tests/huge.c");
+    addTest(b, lib, test_step, flags, "leaktest", "tests/leak.c");
+    addTest(b, lib, test_step, flags, "middletest", "tests/middle.c");
+    addTest(b, lib, test_step, flags, "realloctest", "tests/realloc.c");
+    addTest(b, lib, test_step, flags, "smashtest", "tests/smash.c");
     // TODO: add staticroots test
     if (enable_gc_debug) {
-        addTest(b, lib, test_step, flags, "trace");
+        addTest(b, lib, test_step, flags, "tracetest", "tests/trace.c");
     }
     if (enable_threads) {
-        addTest(b, lib, test_step, flags, "atomicops");
-        addTest(b, lib, test_step, flags, "initfromthread");
-        addTest(b, lib, test_step, flags, "subthreadcreate");
-        addTest(b, lib, test_step, flags, "threadleak");
-        addTest(b, lib, test_step, flags, "threadkey");
+        addTest(b, lib, test_step, flags,
+                "atomicopstest", "tests/atomicops.c");
+        addTest(b, lib, test_step, flags,
+                "initfromthreadtest", "tests/initfromthread.c");
+        addTest(b, lib, test_step, flags,
+                "subthreadcreatetest", "tests/subthreadcreate.c");
+        addTest(b, lib, test_step, flags,
+                "threadleaktest", "tests/threadleak.c");
+        addTest(b, lib, test_step, flags,
+                "threadkeytest", "tests/threadkey.c");
     }
     if (enable_disclaim) {
-        addTest(b, lib, test_step, flags, "disclaim_bench");
-        addTest(b, lib, test_step, flags, "disclaim");
-        addTest(b, lib, test_step, flags, "weakmap");
+        addTest(b, lib, test_step, flags,
+                "disclaim_bench", "tests/disclaim_bench.c");
+        addTest(b, lib, test_step, flags,
+                "disclaimtest", "tests/disclaim.c");
+        addTest(b, lib, test_step, flags,
+                "weakmaptest", "tests/weakmap.c");
     }
 }
 
 fn addTest(b: *std.Build, lib: *std.Build.Step.Compile,
            test_step: *std.Build.Step, flags: std.ArrayList([]const u8),
-           testname: []const u8) void {
-    const filename = b.allocator.alloc(u8, "tests/".len + testname.len
-                                            + ".c".len) catch @panic("OOM");
-    _ = std.fmt.bufPrint(filename, "tests/{s}.c", .{testname})
-                        catch @panic("Error joining paths");
+           testname: []const u8, filename: []const u8) void {
     const test_exe = b.addExecutable(.{
         .name = testname,
         .optimize = lib.root_module.optimize.?,
@@ -517,7 +521,7 @@ fn installHeader(b: *std.Build, lib: *std.Build.Step.Compile,
    const inc_path = "include/";
    const src_path = b.allocator.alloc(u8, inc_path.len + hfile.len)
                         catch @panic("OOM");
-   _ = std.fmt.bufPrint(src_path, "{s}{s}", .{inc_path, hfile})
+   _ = std.fmt.bufPrint(src_path, "{s}{s}", .{ inc_path, hfile, })
                         catch @panic("Error joining paths");
    lib.installHeader(src_path, hfile);
 }
