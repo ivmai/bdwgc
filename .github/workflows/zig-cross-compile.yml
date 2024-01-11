@@ -77,6 +77,19 @@ jobs:
         exclude:
         - enable_threads: true
           ttriple: wasm32-wasi-musl
+        # The following ones have "exceeds the max lock-free size" warning.
+        - enable_threads: true
+          ttriple: arm-linux-gnueabi
+        - enable_threads: true
+          ttriple: arm-linux-musleabi
+        - enable_threads: true
+          ttriple: armeb-linux-gnueabi
+        - enable_threads: true
+          ttriple: thumb-linux-gnueabi
+        - enable_threads: true
+          ttriple: thumb-linux-musleabi
+        - enable_threads: true
+          ttriple: thumb-linux-musleabihf
         # The following ones have some zig link issue.
         - shared_libs: true
           ttriple: aarch64_be-linux-gnu
