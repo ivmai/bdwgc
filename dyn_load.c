@@ -1255,7 +1255,21 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #else
 # include <mach-o/dyld.h>
 #endif
-#include <mach-o/getsect.h>
+
+#if CPP_WORDSZ == 64
+# define GC_MACH_HEADER mach_header_64
+#else
+# define GC_MACH_HEADER mach_header
+#endif
+
+#ifdef MISSING_MACH_O_GETSECT_H
+  EXTERN_C_BEGIN
+  extern uint8_t *getsectiondata(const struct GC_MACH_HEADER *,
+                    const char *seg, const char *sect, unsigned long *psz);
+  EXTERN_C_END
+#else
+# include <mach-o/getsect.h>
+#endif
 
 /*#define DARWIN_DEBUG*/
 
@@ -1293,12 +1307,6 @@ STATIC const char * const GC_dyld_bss_prefixes[] = {
 /* in an object file.                                           */
 #ifndef L2_MAX_OFILE_ALIGNMENT
 # define L2_MAX_OFILE_ALIGNMENT 15
-#endif
-
-#if CPP_WORDSZ == 64
-# define GC_MACH_HEADER mach_header_64
-#else
-# define GC_MACH_HEADER mach_header
 #endif
 
 STATIC const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
