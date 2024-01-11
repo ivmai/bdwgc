@@ -5,7 +5,7 @@ on: [ push, pull_request ]
 
 jobs:
   build:
-    name: ${{ matrix.os }} thr:${{ matrix.enable_threads }} rwlock:${{ matrix.enable_rwlock }} redir:${{ matrix.redirect_malloc }} gcdeb:${{ matrix.enable_gc_debug }} munmap:${{ matrix.enable_munmap }} paramark:${{ matrix.parallel_mark }} thrlocal:${{ matrix.thread_local_alloc }}
+    name: ${{ matrix.os }} thr:${{ matrix.enable_threads }} rwlock:${{ matrix.enable_rwlock }} redir:${{ matrix.redirect_malloc }} gcdeb:${{ matrix.enable_gc_debug }} munmap:${{ matrix.enable_munmap }} paramark:${{ matrix.parallel_mark }} thrlocal:${{ matrix.thread_local_alloc }} dll:${{ matrix.shared_libs }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
 
@@ -26,7 +26,7 @@ jobs:
         enable_munmap: [ false, true ]
         parallel_mark: [ false, true ]
         thread_local_alloc: [ false, true ]
-        shared_libs: [ false ] # FIXME: gctest fail if shared lib
+        shared_libs: [ false, true ]
         exclude:
         - enable_threads: false
           disable_handle_fork: true
@@ -38,6 +38,12 @@ jobs:
           thread_local_alloc: true
         - enable_gc_debug: true # FIXME: some tests fail if gc_debug+redirect
           redirect_malloc: true
+        # The following ones just to reduce amount of jobs.
+        - enable_munmap: false
+          shared_libs: true
+        - enable_munmap: true
+          enable_threads: false
+          shared_libs: false
 
     steps:
     - uses: actions/checkout@v4
