@@ -118,3 +118,4 @@ jobs:
         -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
         -DCFLAGS_EXTRA="${{ matrix.cflags_extra }}"
         -Denable_threads=${{ matrix.enable_threads }}
+        -Denable_werror
