@@ -19,6 +19,7 @@ jobs:
         ttriple: [
           aarch64-linux-gnu,
           #aarch64-linux-musl,
+          aarch64-macos-none,
           aarch64-windows-gnu,
           #aarch64_be-linux-gnu,
           aarch64_be-linux-musl,
@@ -62,10 +63,17 @@ jobs:
           x86_64-linux-gnu.2.27, # with a glibc version
           x86_64-linux-gnux32,
           #x86_64-linux-musl,
+          x86_64-macos-none,
           x86_64-windows-gnu,
         ]
         enable_threads: [ false, true ]
         shared_libs: [ false, true ]
+        include:
+        # TODO: remove CFLAGS_EXTRA after exception.h, getsect.h added to zig.
+        - ttriple: aarch64-macos-none
+          cflags_extra: "-D NO_MPROTECT_VDB -D MISSING_MACH_O_GETSECT_H"
+        - ttriple: x86_64-macos-none
+          cflags_extra: "-D NO_MPROTECT_VDB -D MISSING_MACH_O_GETSECT_H"
         exclude:
         - enable_threads: true
           ttriple: wasm32-wasi-musl
@@ -108,4 +116,5 @@ jobs:
       run: >
         zig/zig build -Dtarget=${{ matrix.ttriple }}
         -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
+        -DCFLAGS_EXTRA="${{ matrix.cflags_extra }}"
         -Denable_threads=${{ matrix.enable_threads }}
