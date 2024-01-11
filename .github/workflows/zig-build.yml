@@ -1,7 +1,7 @@
 # This workflow is for zig-based build/test running on Linux/x86_64.
 name: zig build
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
   build:
@@ -13,6 +13,8 @@ jobs:
       fail-fast: false
 
       matrix:
+        # TODO: move from nightly to zig 0.12 final when released.
+        zig_version: [ "0.12.0-dev.2076+8fd15c6ca" ]
         gc_assertions: [ true ]
         large_config: [ false ]
         enable_threads: [ false, true ]
@@ -36,12 +38,11 @@ jobs:
         - enable_gc_debug: true # FIXME: some tests fail if gc_debug+redirect
           redirect_malloc: true
 
-    # TODO: move from nightly to zig 0.12 final when released.
     steps:
     - uses: actions/checkout@v4
     - name: "Install zig"
       run: |
-        mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-0.12.0-dev.2076+8fd15c6ca.tar.xz | tar Jx --directory=zig --strip-components=1
+        mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-${{matrix.zig_version}}.tar.xz | tar Jx --directory=zig --strip-components=1
     - name: Build
       run: >
         zig/zig build

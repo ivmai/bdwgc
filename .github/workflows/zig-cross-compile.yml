@@ -13,6 +13,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # TODO: move from nightly to zig 0.12 final when released.
+        zig_version: [ "0.12.0-dev.2076+8fd15c6ca" ]
         # Some of the triples are commented out just to speedup this workflow.
         ttriple: [
           aarch64-linux-gnu,
@@ -97,12 +99,11 @@ jobs:
         - shared_libs: true
           ttriple: x86_64-linux-gnux32 # FIXME: recompile with -fPIC
 
-    # TODO: move from nightly to zig 0.12 final when released.
     steps:
     - uses: actions/checkout@v4
     - name: "Install zig"
       run: |
-        mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-0.12.0-dev.2076+8fd15c6ca.tar.xz | tar Jx --directory=zig --strip-components=1
+        mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-${{matrix.zig_version}}.tar.xz | tar Jx --directory=zig --strip-components=1
     - name: Build
       run: >
         zig/zig build -Dtarget=${{ matrix.ttriple }}
