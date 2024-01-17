@@ -323,7 +323,9 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk *hbp, hdr *hhdr, size_t sz,
     /* else */ if (init || GC_debugging_started) {
       result = GC_reclaim_clear(hbp, hhdr, sz, list, pcount);
     } else {
-      GC_ASSERT(IS_PTRFREE_SAFE(hhdr));
+#     ifndef AO_HAVE_load
+        GC_ASSERT(hhdr -> hb_descr == 0 /* Pointer-free block */);
+#     endif
       result = GC_reclaim_uninit(hbp, hhdr, sz, list, pcount);
     }
     if (IS_UNCOLLECTABLE(hhdr -> hb_obj_kind)) GC_set_hdr_marks(hhdr);
