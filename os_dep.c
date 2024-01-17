@@ -812,7 +812,7 @@ GC_INNER void GC_setpagesize(void)
       unsigned log_pgsize = 0;
 
 #     if !defined(CPPCHECK)
-        if (((GC_page_size - 1) & GC_page_size) != 0)
+        if (((GC_page_size-1) & GC_page_size) != 0)
           ABORT("Invalid page size"); /* not a power of two */
 #     endif
       for (pgsize = GC_page_size; pgsize > 1; pgsize >>= 1)
@@ -2211,7 +2211,7 @@ void GC_register_data_segments(void)
 #   endif
 
     GC_ASSERT(GC_page_size != 0);
-    if (bytes & (GC_page_size - 1)) ABORT("Bad GET_MEM arg");
+    if (bytes & (GC_page_size-1)) ABORT("Bad GET_MEM arg");
     result = mmap(last_addr, bytes, (PROT_READ | PROT_WRITE)
                                     | (GC_pages_executable ? PROT_EXEC : 0),
                   GC_MMAP_FLAGS | OPT_MAP_ANON, zero_fd, 0/* offset */);
@@ -3481,8 +3481,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   }
 #endif /* !DARWIN */
 
-#define IS_PTRFREE(hhdr) ((hhdr)->hb_descr == 0)
-#define PAGE_ALIGNED(x) !((word)(x) & (GC_page_size - 1))
+#define PAGE_ALIGNED(x) !((word)(x) & (GC_page_size-1))
 
 STATIC void GC_protect_heap(void)
 {

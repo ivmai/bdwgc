@@ -115,16 +115,14 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr, mse * mark_stack_top,
                             mse * mark_stack_limit)
 {
-  word descr = hhdr -> hb_descr;
-
   GC_ASSERT(!HBLK_IS_FREE(hhdr));
-  if (descr != 0) {
+  if (!IS_PTRFREE(hhdr)) {
     mark_stack_top++;
     if ((word)mark_stack_top >= (word)mark_stack_limit) {
       mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top);
     }
     mark_stack_top -> mse_start = obj;
-    mark_stack_top -> mse_descr.w = descr;
+    mark_stack_top -> mse_descr.w = hhdr -> hb_descr;
   }
   return mark_stack_top;
 }

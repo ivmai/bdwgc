@@ -1793,7 +1793,7 @@ GC_EXTERN size_t GC_page_size;
 /* Round up allocation size to a multiple of a page size.       */
 /* GC_setpagesize() is assumed to be already invoked.           */
 #define ROUNDUP_PAGESIZE(lb) /* lb should have no side-effect */ \
-            (SIZET_SAT_ADD(lb, GC_page_size - 1) & ~(GC_page_size - 1))
+            (SIZET_SAT_ADD(lb, GC_page_size-1) & ~(GC_page_size-1))
 
 /* Same as above but used to make GET_MEM() argument safe.      */
 #ifdef MMAP_SUPPORTED
@@ -2150,6 +2150,9 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
 #else
   GC_INNER void GC_mark_and_push_stack(ptr_t p);
 #endif
+
+/* Is the block with the given header containing no pointers?   */
+#define IS_PTRFREE(hhdr) (0 == (hhdr) -> hb_descr)
 
 GC_INNER void GC_clear_hdr_marks(hdr * hhdr);
                                     /* Clear the mark bits in a header */

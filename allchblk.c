@@ -960,8 +960,7 @@ STATIC struct hblk *GC_allochblk_nth(size_t sz, int kind, unsigned flags,
       /* blocks are treated as dirty.  Necessary since we don't       */
       /* protect free blocks.                                         */
       GC_ASSERT(modHBLKSZ(size_needed) == 0);
-      GC_remove_protection(hbp, divHBLKSZ(size_needed),
-                           0 == hhdr -> hb_descr /* pointer-free */);
+      GC_remove_protection(hbp, divHBLKSZ(size_needed), IS_PTRFREE(hhdr));
 #   endif
     /* We just successfully allocated a block.  Restart count of        */
     /* consecutive failures.                                            */

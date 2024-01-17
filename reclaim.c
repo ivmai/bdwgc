@@ -291,14 +291,14 @@ STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
     }
 }
 
-/* Is a pointer-free block?  Same as IS_PTRFREE macro (in os_dep.c) but */
-/* uses unordered atomic access to avoid racing with GC_realloc.        */
+/* Is a pointer-free block?  Same as IS_PTRFREE() macro but uses    */
+/* unordered atomic access to avoid racing with GC_realloc.         */
 #ifdef AO_HAVE_load
 # define IS_PTRFREE_SAFE(hhdr) \
                 (AO_load((volatile AO_t *)&(hhdr)->hb_descr) == 0)
 #else
   /* No race as GC_realloc holds the allocator lock when updating hb_descr. */
-# define IS_PTRFREE_SAFE(hhdr) ((hhdr)->hb_descr == 0)
+# define IS_PTRFREE_SAFE(hhdr) IS_PTRFREE(hhdr)
 #endif
 
 /* Generic procedure to rebuild a free list in hbp.  Also called    */
@@ -324,7 +324,7 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk *hbp, hdr *hhdr, size_t sz,
       result = GC_reclaim_clear(hbp, hhdr, sz, list, pcount);
     } else {
 #     ifndef AO_HAVE_load
-        GC_ASSERT(hhdr -> hb_descr == 0 /* Pointer-free block */);
+        GC_ASSERT(IS_PTRFREE(hhdr));
 #     endif
       result = GC_reclaim_uninit(hbp, hhdr, sz, list, pcount);
     }
