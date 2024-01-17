@@ -3994,7 +3994,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
   }
 
   static void soft_set_grungy_pages(ptr_t vaddr /* start */, ptr_t limit,
-                                    ptr_t next_start_hint)
+                                    ptr_t next_start_hint,
+                                    GC_bool is_static_root)
   {
     GC_ASSERT(GC_log_pagesize != 0);
     while ((word)vaddr < (word)limit) {
@@ -4036,9 +4037,12 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 #         if defined(CHECK_SOFT_VDB) /* && MPROTECT_VDB */
             /* Ensure that each clean page according to the soft-dirty  */
             /* VDB is also identified such by the mprotect-based one.   */
-            if (get_pht_entry_from_index(GC_dirty_pages, PHT_HASH(vaddr))) {
+            if (!is_static_root
+                && get_pht_entry_from_index(GC_dirty_pages, PHT_HASH(vaddr))) {
               ABORT("Inconsistent soft-dirty against mprotect dirty bits");
             }
+#         else
+            UNUSED_ARG(is_static_root);
 #         endif
         }
       /* Read the next portion of pagemap file if incomplete.   */
@@ -4077,7 +4081,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 
         soft_set_grungy_pages(vaddr, vaddr + GC_heap_sects[i].hs_bytes,
                               i < GC_n_heap_sects-1 ?
-                                    GC_heap_sects[i+1].hs_start : NULL);
+                                    GC_heap_sects[i+1].hs_start : NULL,
+                              FALSE);
       }
 #     ifdef CHECKSUMS
         GC_or_pages(GC_written_pages, GC_grungy_pages);
@@ -4088,7 +4093,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
           soft_set_grungy_pages(GC_static_roots[i].r_start,
                                 GC_static_roots[i].r_end,
                                 (int)i < n_root_sets-1 ?
-                                    GC_static_roots[i+1].r_start : NULL);
+                                    GC_static_roots[i+1].r_start : NULL,
+                                TRUE);
         }
 #     endif
     }
