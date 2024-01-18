@@ -272,6 +272,7 @@ GC_INNER const char * GC_get_maps(void)
 /* original buffer.                                                     */
 #if defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES) \
     || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
+    || (defined(CHECK_SOFT_VDB) && defined(MPROTECT_VDB)) \
     || (defined(REDIRECT_MALLOC) && defined(GC_LINUX_THREADS))
   GC_INNER const char *GC_parse_map_entry(const char *maps_ptr,
                                           ptr_t *start, ptr_t *end,
@@ -321,7 +322,8 @@ GC_INNER const char * GC_get_maps(void)
   }
 #endif /* REDIRECT_MALLOC || DYNAMIC_LOADING || IA64 || ... */
 
-#if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)
+#if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
+    || (defined(CHECK_SOFT_VDB) && defined(MPROTECT_VDB))
   /* Try to read the backing store base from /proc/self/maps.           */
   /* Return the bounds of the writable mapping with a 0 major device,   */
   /* which includes the address passed as data.                         */
@@ -341,8 +343,8 @@ GC_INNER const char * GC_get_maps(void)
                                     &prot, &maj_dev, 0);
       if (NULL == maps_ptr) break;
 
-      if (prot[1] == 'w' && maj_dev == 0
-          && (word)my_end > (word)addr && (word)my_start <= (word)addr) {
+      if ((word)my_end > (word)addr && (word)my_start <= (word)addr) {
+        if (prot[1] != 'w' || maj_dev != 0) break;
         *startp = my_start;
         *endp = my_end;
         return TRUE;
@@ -3997,6 +3999,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
                                     ptr_t next_start_hint,
                                     GC_bool is_static_root)
   {
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(GC_log_pagesize != 0);
     while ((word)vaddr < (word)limit) {
       size_t res;
@@ -4039,7 +4042,13 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
             /* VDB is also identified such by the mprotect-based one.   */
             if (!is_static_root
                 && get_pht_entry_from_index(GC_dirty_pages, PHT_HASH(vaddr))) {
-              ABORT("Inconsistent soft-dirty against mprotect dirty bits");
+              ptr_t my_start, my_end; /* the values are not used */
+
+              /* There could be a hash collision, thus we need to       */
+              /* verify the page is clean using slow GC_get_maps().     */
+              if (GC_enclosing_writable_mapping(vaddr, &my_start, &my_end)) {
+                ABORT("Inconsistent soft-dirty against mprotect dirty bits");
+              }
             }
 #         else
             UNUSED_ARG(is_static_root);

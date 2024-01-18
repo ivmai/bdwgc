@@ -2956,6 +2956,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #ifdef NEED_PROC_MAPS
 # if defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES) \
      || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
+     || (defined(CHECK_SOFT_VDB) && defined(MPROTECT_VDB)) \
      || (defined(REDIRECT_MALLOC) && defined(GC_LINUX_THREADS))
     GC_INNER const char *GC_parse_map_entry(const char *maps_ptr,
                                             ptr_t *start, ptr_t *end,
@@ -2963,7 +2964,8 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
                                             unsigned *maj_dev,
                                             const char **mapping_name);
 # endif
-# if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)
+# if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
+     || (defined(CHECK_SOFT_VDB) && defined(MPROTECT_VDB))
     GC_INNER GC_bool GC_enclosing_writable_mapping(ptr_t addr, ptr_t *startp,
                                                    ptr_t *endp);
 # endif
