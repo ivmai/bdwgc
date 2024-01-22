@@ -2934,15 +2934,14 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
  *              MPROTECT_VDB may be defined as a fallback strategy.
  */
 
-#if (defined(CHECKSUMS) && (defined(GWW_VDB) || defined(SOFT_VDB))) \
-    || defined(PROC_VDB)
+#if (defined(CHECKSUMS) && defined(GWW_VDB)) || defined(PROC_VDB)
     /* Add all pages in pht2 to pht1.   */
     STATIC void GC_or_pages(page_hash_table pht1, const word *pht2)
     {
       unsigned i;
       for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
     }
-#endif /* CHECKSUMS && (GWW_VDB || SOFT_VDB) || PROC_VDB */
+#endif /* CHECKSUMS && GWW_VDB || PROC_VDB */
 
 #ifdef GWW_VDB
 
@@ -4030,10 +4029,35 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
           /* If the bit is set, the respective PTE was written to       */
           /* since clearing the soft-dirty bits.                        */
 #         ifdef DEBUG_DIRTY_BITS
-            GC_log_printf("dirty page at: %p\n", (void *)vaddr);
+            if (is_static_root)
+              GC_log_printf("static root dirty page at: %p\n", (void *)vaddr);
 #         endif
           for (h = (struct hblk *)vaddr; (word)h < (word)next_vaddr; h++) {
-            word index = PHT_HASH(h);
+            word index;
+
+#           ifdef CHECKSUMS
+              index = PHT_HASH(h);
+#           endif
+            if (!is_static_root) {
+              struct hblk *b;
+              hdr *hhdr;
+
+#             ifdef CHECKSUMS
+                set_pht_entry_from_index(GC_written_pages, index);
+#             endif
+              GET_HDR(h, hhdr);
+              if (NULL == hhdr) continue;
+              for (b = h; IS_FORWARDING_ADDR_OR_NIL(hhdr); hhdr = HDR(b)) {
+                 b = FORWARDED_ADDR(b, hhdr);
+              }
+              if (HBLK_IS_FREE(hhdr) || IS_PTRFREE(hhdr)) continue;
+#             ifdef DEBUG_DIRTY_BITS
+                GC_log_printf("dirty page (hblk) at: %p\n", (void *)h);
+#             endif
+            }
+#           ifndef CHECKSUMS
+              index = PHT_HASH(h);
+#           endif
             set_pht_entry_from_index(GC_grungy_pages, index);
           }
         } else {
@@ -4050,8 +4074,6 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
                 ABORT("Inconsistent soft-dirty against mprotect dirty bits");
               }
             }
-#         else
-            UNUSED_ARG(is_static_root);
 #         endif
         }
       /* Read the next portion of pagemap file if incomplete.   */
@@ -4093,9 +4115,6 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
                                     GC_heap_sects[i+1].hs_start : NULL,
                               FALSE);
       }
-#     ifdef CHECKSUMS
-        GC_or_pages(GC_written_pages, GC_grungy_pages);
-#     endif
 
 #     ifndef NO_VDB_FOR_STATIC_ROOTS
         for (i = 0; (int)i < n_root_sets; ++i) {

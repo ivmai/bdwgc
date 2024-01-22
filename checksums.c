@@ -98,6 +98,9 @@ STATIC void GC_update_check_page(struct hblk *h, int index)
         b = FORWARDED_ADDR(b, hhdr);
     }
     if (pe -> new_valid && hhdr != NULL && !IS_PTRFREE(hhdr)
+#       ifdef SOFT_VDB
+          && !HBLK_IS_FREE(hhdr)
+#       endif
         && pe -> old_sum != pe -> new_sum) {
         if (!GC_page_was_dirty(h) || !GC_page_was_ever_dirty(h)) {
             GC_bool was_faulted = GC_was_faulted(h);
