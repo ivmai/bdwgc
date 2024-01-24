@@ -333,7 +333,7 @@ STATIC void GC_remove_from_fl_at(hdr *hhdr, int index)
     GC_ASSERT(GC_free_bytes[index] >= hhdr -> hb_sz);
     GC_free_bytes[index] -= hhdr -> hb_sz;
     if (0 != hhdr -> hb_next) {
-        hdr * nhdr;
+        hdr *nhdr;
         GC_ASSERT(!IS_FORWARDING_ADDR_OR_NIL(NHDR(hhdr)));
         GET_HDR(hhdr -> hb_next, nhdr);
         nhdr -> hb_prev = hhdr -> hb_prev;
@@ -352,20 +352,19 @@ GC_INLINE void GC_remove_from_fl(hdr *hhdr)
 static struct hblk * get_block_ending_at(struct hblk *h)
 {
     struct hblk * p = h - 1;
-    hdr * phdr;
+    hdr *hhdr;
 
-    GET_HDR(p, phdr);
-    while (0 != phdr && IS_FORWARDING_ADDR_OR_NIL(phdr)) {
-        p = FORWARDED_ADDR(p,phdr);
-        phdr = HDR(p);
+    GET_HDR(p, hhdr);
+    for (; IS_FORWARDING_ADDR_OR_NIL(hhdr) && hhdr != NULL; hhdr = HDR(p)) {
+        p = FORWARDED_ADDR(p, hhdr);
     }
-    if (0 != phdr) {
+    if (hhdr != NULL) {
         return p;
     }
     p = GC_prev_block(h - 1);
-    if (p) {
-        phdr = HDR(p);
-        if ((ptr_t)p + phdr -> hb_sz == (ptr_t)h) {
+    if (p != NULL) {
+        hhdr = HDR(p);
+        if ((ptr_t)p + hhdr -> hb_sz == (ptr_t)h) {
             return p;
         }
     }
@@ -378,9 +377,9 @@ STATIC struct hblk * GC_free_block_ending_at(struct hblk *h)
     struct hblk * p = get_block_ending_at(h);
 
     if (p /* != NULL */) { /* CPPCHECK */
-      hdr * phdr = HDR(p);
+      hdr *hhdr = HDR(p);
 
-      if (HBLK_IS_FREE(phdr)) {
+      if (HBLK_IS_FREE(hhdr)) {
         return p;
       }
     }

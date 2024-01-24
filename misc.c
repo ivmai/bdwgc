@@ -439,11 +439,11 @@ GC_API void * GC_CALL GC_base(void * p)
     if (NULL == candidate_hdr) return NULL;
     /* If it's a pointer to the middle of a large object, move it       */
     /* to the beginning.                                                */
-        while (IS_FORWARDING_ADDR_OR_NIL(candidate_hdr)) {
-           h = FORWARDED_ADDR(h,candidate_hdr);
-           r = (ptr_t)h;
-           candidate_hdr = HDR(h);
-        }
+    while (IS_FORWARDING_ADDR_OR_NIL(candidate_hdr)) {
+        h = FORWARDED_ADDR(h, candidate_hdr);
+        r = (ptr_t)h;
+        candidate_hdr = HDR(h);
+    }
     if (HBLK_IS_FREE(candidate_hdr)) return NULL;
     /* Make sure r points to the beginning of the object */
         r = (ptr_t)((word)r & ~(word)(WORDS_TO_BYTES(1)-1));

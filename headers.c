@@ -55,23 +55,23 @@ GC_INNER hdr *
 #endif
 {
   hdr *hhdr;
+
   HC_MISS();
   GET_HDR(p, hhdr);
   if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
     if (GC_all_interior_pointers) {
-      if (hhdr != 0) {
-        ptr_t current = p;
+      if (hhdr != NULL) {
+        ptr_t current = (ptr_t)HBLKPTR(p);
 
-        current = (ptr_t)HBLKPTR(current);
         do {
-            current = current - HBLKSIZE * (word)hhdr;
+            current = (ptr_t)FORWARDED_ADDR(current, hhdr);
             hhdr = HDR(current);
-        } while(IS_FORWARDING_ADDR_OR_NIL(hhdr));
+        } while (IS_FORWARDING_ADDR_OR_NIL(hhdr));
         /* current points to near the start of the large object */
         if (hhdr -> hb_flags & IGNORE_OFF_PAGE)
             return 0;
         if (HBLK_IS_FREE(hhdr)
-            || p - current >= (signed_word)(hhdr -> hb_sz)) {
+                || p - current >= (signed_word)(hhdr -> hb_sz)) {
             GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
             /* Pointer past the end of the block */
             return 0;
@@ -80,13 +80,13 @@ GC_INNER hdr *
         GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
         /* And return zero: */
       }
-      GC_ASSERT(hhdr == 0 || !HBLK_IS_FREE(hhdr));
+      GC_ASSERT(NULL == hhdr || !HBLK_IS_FREE(hhdr));
       return hhdr;
       /* Pointers past the first page are probably too rare     */
       /* to add them to the cache.  We don't.                   */
       /* And correctness relies on the fact that we don't.      */
     } else {
-      if (hhdr == 0) {
+      if (NULL == hhdr) {
         GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
       }
       return 0;
@@ -338,7 +338,7 @@ GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn fn,
     signed_word j;
     bottom_index * index_p;
 
-    for (index_p = GC_all_bottom_indices; index_p != 0;
+    for (index_p = GC_all_bottom_indices; index_p != NULL;
          index_p = index_p -> asc_link) {
         for (j = BOTTOM_SZ-1; j >= 0;) {
             if (!IS_FORWARDING_ADDR_OR_NIL(index_p->index[j])) {

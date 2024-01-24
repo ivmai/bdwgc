@@ -93,10 +93,9 @@ STATIC void GC_update_check_page(struct hblk *h, int index)
     } else {
         GC_n_clean++;
     }
-    b = h;
-    while (IS_FORWARDING_ADDR_OR_NIL(hhdr) && hhdr != 0) {
-        b -= (word)hhdr;
-        hhdr = HDR(b);
+    for (b = h; IS_FORWARDING_ADDR_OR_NIL(hhdr) && hhdr != NULL;
+                hhdr = HDR(b)) {
+        b = FORWARDED_ADDR(b, hhdr);
     }
     if (pe -> new_valid && hhdr != NULL && !IS_PTRFREE(hhdr)
         && pe -> old_sum != pe -> new_sum) {

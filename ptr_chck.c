@@ -47,10 +47,8 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
     /* to the beginning.                                                */
     if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
         h = HBLKPTR(p) - (word)hhdr;
-        hhdr = HDR(h);
-        while (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
+        for (hhdr = HDR(h); IS_FORWARDING_ADDR_OR_NIL(hhdr); hhdr = HDR(h)) {
            h = FORWARDED_ADDR(h, hhdr);
-           hhdr = HDR(h);
         }
         limit = (ptr_t)h + hhdr -> hb_sz;
         if ((word)p >= (word)limit || (word)q >= (word)limit
@@ -113,9 +111,8 @@ GC_API void * GC_CALL GC_is_valid_displacement(void *p)
     if (NULL == hhdr) return p;
     h = HBLKPTR(p);
     if (GC_all_interior_pointers) {
-        while (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-           h = FORWARDED_ADDR(h, hhdr);
-           hhdr = HDR(h);
+        for (; IS_FORWARDING_ADDR_OR_NIL(hhdr); hhdr = HDR(h)) {
+            h = FORWARDED_ADDR(h, hhdr);
         }
     } else if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
         goto fail;

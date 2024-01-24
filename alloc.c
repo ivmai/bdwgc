@@ -1367,7 +1367,7 @@ GC_INNER ptr_t GC_os_get_mem(size_t bytes)
 /* Assumes p is HBLKSIZE aligned, bytes argument is a multiple of HBLKSIZE. */
 STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
 {
-    hdr * phdr;
+    hdr *hhdr;
     word endp;
     size_t old_capacity = 0;
     void *old_heap_sects = NULL;
@@ -1424,8 +1424,8 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
         if (0 == bytes) return;
         endp -= HBLKSIZE;
     }
-    phdr = GC_install_header(p);
-    if (EXPECT(NULL == phdr, FALSE)) {
+    hhdr = GC_install_header(p);
+    if (EXPECT(NULL == hhdr, FALSE)) {
         /* This is extremely unlikely. Can't add it.  This will         */
         /* almost certainly result in a 0 return from the allocator,    */
         /* which is entirely appropriate.                               */
@@ -1446,8 +1446,8 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
     GC_heap_sects[GC_n_heap_sects].hs_start = (ptr_t)p;
     GC_heap_sects[GC_n_heap_sects].hs_bytes = bytes;
     GC_n_heap_sects++;
-    phdr -> hb_sz = bytes;
-    phdr -> hb_flags = 0;
+    hhdr -> hb_sz = bytes;
+    hhdr -> hb_flags = 0;
     GC_freehblk(p);
     GC_heapsize += bytes;
 
