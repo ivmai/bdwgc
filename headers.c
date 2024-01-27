@@ -275,6 +275,7 @@ GC_INNER struct hblkhdr * GC_install_header(struct hblk *h)
 
     result = alloc_hdr();
     if (EXPECT(result != NULL, TRUE)) {
+      GC_ASSERT(!IS_FORWARDING_ADDR_OR_NIL(result));
       SET_HDR(h, result);
 #     ifdef USE_MUNMAP
         result -> hb_last_reclaimed = (unsigned short)GC_gc_no;
@@ -296,7 +297,7 @@ GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz/* bytes */)
     }
     if (!get_index((word)h + sz - 1))
         return FALSE;
-    for (hbp = h + 1; (word)hbp < (word)h + sz; hbp += 1) {
+    for (hbp = h + 1; (word)hbp < (word)h + sz; hbp++) {
         word i = (word)HBLK_PTR_DIFF(hbp, h);
 
         SET_HDR(hbp, (hdr *)(i > MAX_JUMP? MAX_JUMP : i));
@@ -319,16 +320,16 @@ GC_INNER void GC_remove_counts(struct hblk *h, size_t sz/* bytes */)
     struct hblk * hbp;
 
     if (sz <= HBLKSIZE) return;
-    if (HDR(h+1) == 0) {
+    if (NULL == HDR(h + 1)) {
 #     ifdef GC_ASSERTIONS
-        for (hbp = h+2; (word)hbp < (word)h + sz; hbp++)
-          GC_ASSERT(HDR(hbp) == 0);
+        for (hbp = h + 2; (word)hbp < (word)h + sz; hbp++)
+          GC_ASSERT(NULL == HDR(hbp));
 #     endif
       return;
     }
 
-    for (hbp = h+1; (word)hbp < (word)h + sz; hbp += 1) {
-        SET_HDR(hbp, 0);
+    for (hbp = h + 1; (word)hbp < (word)h + sz; hbp++) {
+      SET_HDR(hbp, NULL);
     }
 }
 
