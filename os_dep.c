@@ -4033,30 +4033,30 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
               GC_log_printf("static root dirty page at: %p\n", (void *)vaddr);
 #         endif
           for (h = (struct hblk *)vaddr; (word)h < (word)next_vaddr; h++) {
-            word index;
+            word index = PHT_HASH(h);
 
-#           ifdef CHECKSUMS
-              index = PHT_HASH(h);
-#           endif
-            if (!is_static_root) {
-              struct hblk *b;
-              hdr *hhdr;
+            /* Filter out the blocks without pointers.  It might worth  */
+            /* for the case when the heap is large enough for the hash  */
+            /* collisions to occur frequently.  Thus, off by default.   */
+#           if defined(FILTER_PTRFREE_HBLKS_IN_SOFT_VDB) \
+               || defined(CHECKSUMS) || defined(DEBUG_DIRTY_BITS)
+              if (!is_static_root) {
+                struct hblk *b;
+                hdr *hhdr;
 
-#             ifdef CHECKSUMS
-                set_pht_entry_from_index(GC_written_pages, index);
-#             endif
-              GET_HDR(h, hhdr);
-              if (NULL == hhdr) continue;
-              for (b = h; IS_FORWARDING_ADDR_OR_NIL(hhdr); hhdr = HDR(b)) {
-                 b = FORWARDED_ADDR(b, hhdr);
+#               ifdef CHECKSUMS
+                  set_pht_entry_from_index(GC_written_pages, index);
+#               endif
+                GET_HDR(h, hhdr);
+                if (NULL == hhdr) continue;
+                for (b = h; IS_FORWARDING_ADDR_OR_NIL(hhdr); hhdr = HDR(b)) {
+                   b = FORWARDED_ADDR(b, hhdr);
+                }
+                if (HBLK_IS_FREE(hhdr) || IS_PTRFREE(hhdr)) continue;
+#               ifdef DEBUG_DIRTY_BITS
+                  GC_log_printf("dirty page (hblk) at: %p\n", (void *)h);
+#               endif
               }
-              if (HBLK_IS_FREE(hhdr) || IS_PTRFREE(hhdr)) continue;
-#             ifdef DEBUG_DIRTY_BITS
-                GC_log_printf("dirty page (hblk) at: %p\n", (void *)h);
-#             endif
-            }
-#           ifndef CHECKSUMS
-              index = PHT_HASH(h);
 #           endif
             set_pht_entry_from_index(GC_grungy_pages, index);
           }
