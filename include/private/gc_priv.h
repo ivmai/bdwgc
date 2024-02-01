@@ -1017,10 +1017,10 @@ EXTERN_C_BEGIN
 #ifndef LOG_PHT_ENTRIES
 # ifdef LARGE_CONFIG
 #   if CPP_WORDSZ == 32
-#     define LOG_PHT_ENTRIES 20 /* Collisions likely at 1M blocks,      */
-                                /* which is >= 4 GB.  Each table takes  */
-                                /* 128 KB, some of which may never be   */
-                                /* touched.                             */
+#     define LOG_PHT_ENTRIES 20 /* Collisions are impossible (because   */
+                                /* of a 4 GB space limit).  Each table  */
+                                /* takes 128 KB, some of which may      */
+                                /* never be touched.                    */
 #   else
 #     define LOG_PHT_ENTRIES 21 /* Collisions likely at 2M blocks,      */
                                 /* which is >= 8 GB.  Each table takes  */
