@@ -5,6 +5,8 @@
 * Ensure _GNU_SOURCE is defined if HAVE_DLADDR is defined by configure
 * Fix 'implicit declaration of function pthread_atfork' gcc error on MinGW
 * Fix 'missing binary operator before token' gcc error in gcconfig.h
+* Fix GC_set_handle_fork(1) on Darwin when MPROTECT_VDB but no threads
+* Fix checksums GC_record_fault invocation on Darwin
 * Fix extra 'extern C' for include signal.h in gcconfig.h
 
 Also, includes 7.6.20 changes
