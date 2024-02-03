@@ -1108,6 +1108,7 @@ Also, includes 7.4.4 changes
 
 == [7.4.26] (not released yet) ==
 
+* Eliminate 'unused parameter' gcc warning in free() if IGNORE_FREE
 * Eliminate 'unused value' gcc warnings in init_global_static_roots (Symbian)
 * Fix 'implicit declaration of function sbrk' gcc error on Symbian
 * Fix 'unused GC_set_and_save_fault_handler' warning on OS X
@@ -1687,11 +1688,16 @@ Also, includes 7.2 changes
 * Fix 'missing sysconf() prototype' gcc error in setjmp_t tool (OpenBSD)
 * Fix SVR4 macro definition order
 * Fix asm constraint in LONG_MULT for gcc/x86
+* Fix assertion violation in GC_get_maps on Linux if malloc redirection
 * Fix bitwise negation and rounding direction in setjmp_t tool
 * Fix closing bracket placement for case statement in configure
+* Fix indent of a closing curly brace in GC_forward_exception
 * Fix missing outermost parentheses in CORD_pos_cur_char_addr
 * Fix missing type widening before left shift in GC_MAKE_PROC
 * Fix misspelled GC_HEADERS_H macro in gc_priv.h
+* Fix null dereference in check_finalizer_nested if redirect malloc on Linux
+* Fix posix_memalign() to overwrite pointer storage only on success
+* Fix skipped removal of page protection in case of address hash collision
 * Fix typos in comments
 * Fix update of last_back_trace_gc_no if KEEP_BACK_PTRS is not defined
 
