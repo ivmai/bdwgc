@@ -1108,7 +1108,7 @@ Also, includes 7.4.6 changes
 Also, includes 7.4.4 changes
 
 
-== [7.4.26] (not released yet) ==
+== [7.4.26] 2024-02-03 ==
 
 * Eliminate 'unused parameter' gcc warning in free() if IGNORE_FREE
 * Eliminate 'unused value' gcc warnings in init_global_static_roots (Symbian)
