@@ -2191,7 +2191,7 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 Also, includes 7.2 changes
 
 
-== [7.2r] (not released yet) ==
+== [7.2r] 2024-02-03 ==
 
 * Fix 'g++ not found' error on OpenBSD (Makefile.direct)
 * Fix 'implicit declaration of iscntrl()' warning in cord/de_win (MinGW)
