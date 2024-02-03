@@ -1,5 +1,5 @@
 
-== [7.6.20] (not released yet) ==
+== [7.6.20] 2024-02-03 ==
 
 * Eliminate compiler warning of missing cast in LONG_MULT after shift
 * Fix 'sigset_t undeclared' MS VC error if pthreads-w32 is used
