@@ -1,3 +1,11 @@
+[7.2r]
+
+2024-02-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README: Bump version to 7.2r (rev. R).
+	* Makefile.am (libgc_la_LDFLAGS): Bump version-info to 2:7:1.
+	* Makefile.in: Regenerate.
+
 2023-12-27  Ivan Maidanski <ivmai@mail.ru>
 
 	* os_dep.c [MPROTECT_VDB] (GC_remove_protection): Do not call
