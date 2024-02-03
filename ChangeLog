@@ -948,7 +948,7 @@
 * Workaround various cppcheck false positives
 
 
-== [8.0.12] (not released yet) ==
+== [8.0.12] 2024-02-04 ==
 
 * Eliminate 'make_key is defined but unused' gcc warning in threadkeytest
 * Ensure _GNU_SOURCE is defined if HAVE_DLADDR is defined by configure
