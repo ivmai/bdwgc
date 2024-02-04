@@ -552,6 +552,8 @@ static void * GC_CALLBACK refill_cache(void * client_data)
 #   ifdef CORD_USE_GCC_ATOMIC
         __atomic_store_n(&(state -> lf_cache[line_no]), new_cache,
                          __ATOMIC_RELEASE);
+#   else
+        state -> lf_cache[line_no] = new_cache;
 #   endif
     GC_END_STUBBORN_CHANGE((/* no volatile */ void *)(state -> lf_cache
                                                       + line_no));
