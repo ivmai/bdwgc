@@ -252,7 +252,8 @@ GC_API size_t GC_CALL GC_get_expl_freed_bytes_since_gc(void)
 /* GC_malloc_many or friends to replenish it.  (We do not round up      */
 /* object sizes, since a call indicates the intention to consume many   */
 /* objects of exactly this size.)                                       */
-/* We assume that the size is a multiple of GC_GRANULE_BYTES.           */
+/* We assume that the size is a multiple of GC_GRANULE_BYTES, and that  */
+/* EXTRA_BYTES was already added to it.                                 */
 /* We return the free-list by assigning it to *result, since it is      */
 /* not safe to return, e.g. a linked list of pointer-free objects,      */
 /* since the collector would not retain the entire list if it were      */
@@ -433,7 +434,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
 
     /* As a last attempt, try allocating a single object.  Note that    */
     /* this may trigger a collection or expand the heap.                */
-      op = GC_generic_malloc_inner(lb, k, 0 /* flags */);
+      op = GC_generic_malloc_inner(lb - EXTRA_BYTES, k, 0 /* flags */);
       if (op != NULL) obj_link(op) = NULL;
 
   out:
