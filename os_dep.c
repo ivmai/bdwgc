@@ -4057,6 +4057,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
                   GC_log_printf("dirty page (hblk) at: %p\n", (void *)h);
 #               endif
               }
+#           else
+              UNUSED_ARG(is_static_root);
 #           endif
             set_pht_entry_from_index(GC_grungy_pages, index);
           }
