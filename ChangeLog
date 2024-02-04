@@ -1,5 +1,5 @@
 
-== [8.2.6] (not released yet) ==
+== [8.2.6] 2024-02-04 ==
 
 * Avoid unexpected heap growth in gctest for the case of VERY_SMALL_CONFIG
 * Change gc.man to include gc/gc.h
