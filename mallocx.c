@@ -255,7 +255,8 @@ GC_API void GC_CALL GC_incr_bytes_freed(size_t n)
 /* GC_malloc_many or friends to replenish it.  (We do not round up      */
 /* object sizes, since a call indicates the intention to consume many   */
 /* objects of exactly this size.)                                       */
-/* We assume that the size is a multiple of GRANULE_BYTES.              */
+/* We assume that the size is non-zero and a multiple of                */
+/* GRANULE_BYTES, and that it already includes EXTRA_BYTES value.       */
 /* We return the free-list by assigning it to *result, since it is      */
 /* not safe to return, e.g. a linked list of pointer-free objects,      */
 /* since the collector would not retain the entire list if it were      */
@@ -274,7 +275,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     DCL_LOCK_STATE;
 
     GC_ASSERT(lb != 0 && (lb & (GRANULE_BYTES-1)) == 0);
-    if (!SMALL_OBJ(lb)
+    if (!EXPECT(lb <= MAXOBJBYTES, TRUE)
 #     ifdef MANUAL_VDB
         /* Currently a single object is allocated.                      */
         /* TODO: GC_dirty should be called for each linked object (but  */
@@ -282,7 +283,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
         || GC_incremental
 #     endif
        ) {
-        op = GC_generic_malloc(lb, k);
+        op = GC_generic_malloc(lb - EXTRA_BYTES, k);
         if (EXPECT(0 != op, TRUE))
             obj_link(op) = 0;
         *result = op;
@@ -299,7 +300,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     if (EXPECT(GC_have_errors, FALSE))
       GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
-    GC_DBG_COLLECT_AT_MALLOC(lb);
+    GC_DBG_COLLECT_AT_MALLOC(lb - EXTRA_BYTES);
     LOCK();
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     /* Do our share of marking work */
@@ -431,7 +432,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
 
     /* As a last attempt, try allocating a single object.  Note that    */
     /* this may trigger a collection or expand the heap.                */
-      op = GC_generic_malloc_inner(lb, k);
+      op = GC_generic_malloc_inner(lb - EXTRA_BYTES, k);
       if (0 != op) obj_link(op) = 0;
 
   out:
