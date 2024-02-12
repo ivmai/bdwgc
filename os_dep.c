@@ -3567,7 +3567,7 @@ STATIC void GC_protect_heap(void)
 /* problems.  It is preferred that the client instead avoids writing    */
 /* to the write-protected heap with a system call.                      */
 
-# if defined(CAN_HANDLE_FORK) && defined(DARWIN) \
+# if defined(CAN_HANDLE_FORK) && defined(DARWIN) && defined(THREADS) \
      || defined(COUNT_PROTECTED_REGIONS)
     /* Remove protection for the entire heap not updating GC_dirty_pages. */
     STATIC void GC_unprotect_all_heap(void)
@@ -3580,7 +3580,7 @@ STATIC void GC_protect_heap(void)
         UNPROTECT(GC_heap_sects[i].hs_start, GC_heap_sects[i].hs_bytes);
       }
     }
-# endif /* CAN_HANDLE_FORK && DARWIN || COUNT_PROTECTED_REGIONS */
+# endif /* CAN_HANDLE_FORK && DARWIN && THREADS || COUNT_PROTECTED_REGIONS */
 
 # ifdef COUNT_PROTECTED_REGIONS
     GC_INNER void GC_handle_protected_regions_limit(void)
