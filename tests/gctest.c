@@ -1988,9 +1988,12 @@ static void test_long_mult(void)
 
 #define NUMBER_ROUND_UP(v, bound) ((((v) + (bound) - 1) / (bound)) * (bound))
 
+static size_t initial_heapsize;
+
 static void check_heap_stats(void)
 {
     size_t max_heap_sz;
+    size_t init_heap_sz = initial_heapsize;
     int i;
 #   ifndef GC_NO_FINALIZATION
 #     ifdef FINALIZE_ON_DEMAND
@@ -2036,6 +2039,9 @@ static void check_heap_stats(void)
 #   if defined(USE_MMAP) || defined(MSWIN32)
       max_heap_sz = NUMBER_ROUND_UP(max_heap_sz, 4 * 1024 * 1024);
 #   endif
+    init_heap_sz += init_heap_sz / 100; /* add 1% for recycled blocks */
+    if (max_heap_sz < init_heap_sz)
+      max_heap_sz = init_heap_sz;
 
     /* Garbage collect repeatedly so that all inaccessible objects      */
     /* can be finalized.                                                */
@@ -2197,9 +2203,7 @@ void SetMinimumStack(long minSize)
                 MaxApplZone();
         }
 }
-
 #define cMinStackSpace (512L * 1024L)
-
 #endif
 
 static void GC_CALLBACK warn_proc(char *msg, GC_word p)
@@ -2210,6 +2214,7 @@ static void GC_CALLBACK warn_proc(char *msg, GC_word p)
 
 static void enable_incremental_mode(void)
 {
+  initial_heapsize = GC_get_heap_size();
 # ifndef NO_INCREMENTAL
     unsigned vdbs = GC_get_supported_vdbs();
 
@@ -2574,7 +2579,7 @@ int test(void)
       GC_noop1((GC_word)(GC_funcptr_uint)&test);
 #   endif
     n_tests = 0;
-    /* GC_enable_incremental(); */
+    enable_incremental_mode();
     GC_set_warn_proc(warn_proc);
     set_print_procs();
     th1 = PCR_Th_Fork(run_one_test, 0);
