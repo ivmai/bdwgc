@@ -1453,12 +1453,14 @@ struct _GC_arrays {
 # ifdef USE_MUNMAP
 #   define GC_unmapped_bytes GC_arrays._unmapped_bytes
     word _unmapped_bytes;
-#   ifdef COUNT_UNMAPPED_REGIONS
-#     define GC_num_unmapped_regions GC_arrays._num_unmapped_regions
-      signed_word _num_unmapped_regions;
-#   endif
 # else
 #   define GC_unmapped_bytes 0
+# endif
+# if defined(COUNT_UNMAPPED_REGIONS) && defined(USE_MUNMAP)
+#   define GC_num_unmapped_regions GC_arrays._num_unmapped_regions
+    signed_word _num_unmapped_regions;
+# else
+#   define GC_num_unmapped_regions 0
 # endif
   bottom_index * _all_nils;
 # define GC_scan_ptr GC_arrays._scan_ptr
@@ -2618,6 +2620,14 @@ GC_EXTERN GC_bool GC_print_back_height;
 # define GC_dirty(p) (GC_manual_vdb ? GC_dirty_inner(p) : (void)0)
 # define REACHABLE_AFTER_DIRTY(p) GC_reachable_here(p)
 #endif /* !GC_DISABLE_INCREMENTAL */
+
+#if defined(COUNT_PROTECTED_REGIONS) && defined(MPROTECT_VDB)
+  /* Do actions on heap growth, if needed, to prevent hitting the       */
+  /* kernel limit on the VM map regions.                                */
+  GC_INNER void GC_handle_protected_regions_limit(void);
+#else
+# define GC_handle_protected_regions_limit() (void)0
+#endif
 
 /* Same as GC_base but excepts and returns a pointer to const object.   */
 #define GC_base_C(p) ((const void *)GC_base((/* no const */ void *)(p)))

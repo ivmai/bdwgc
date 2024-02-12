@@ -2824,20 +2824,6 @@ EXTERN_C_BEGIN
 # define MUNMAP_THRESHOLD 2
 #endif
 
-#if defined(USE_MUNMAP) && defined(COUNT_UNMAPPED_REGIONS) \
-    && !defined(GC_UNMAPPED_REGIONS_SOFT_LIMIT)
-  /* The default limit of vm.max_map_count on Linux is ~65530.          */
-  /* There is approximately one mapped region to every unmapped region. */
-  /* Therefore if we aim to use up to half of vm.max_map_count for the  */
-  /* GC (leaving half for the rest of the process) then the number of   */
-  /* unmapped regions should be one quarter of vm.max_map_count.        */
-# if defined(__DragonFly__)
-#   define GC_UNMAPPED_REGIONS_SOFT_LIMIT (1000000 / 4)
-# else
-#   define GC_UNMAPPED_REGIONS_SOFT_LIMIT 16384
-# endif
-#endif
-
 #if defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB)
 # undef GWW_VDB
 # undef MPROTECT_VDB
@@ -2932,6 +2918,27 @@ EXTERN_C_BEGIN
     && !defined(NO_VDB_FOR_STATIC_ROOTS)
   /* Cannot determine whether a static root page is dirty?      */
 # define NO_VDB_FOR_STATIC_ROOTS
+#endif
+
+#if defined(MPROTECT_VDB) && !defined(DONT_COUNT_PROTECTED_REGIONS) \
+    && !defined(COUNT_PROTECTED_REGIONS) \
+    && (defined(LINUX) || defined(__DragonFly__))
+# define COUNT_PROTECTED_REGIONS
+#endif
+
+#if (defined(COUNT_PROTECTED_REGIONS) || defined(COUNT_UNMAPPED_REGIONS)) \
+    && !defined(GC_UNMAPPED_REGIONS_SOFT_LIMIT)
+  /* The default limit of vm.max_map_count on Linux is ~65530.      */
+  /* There is approximately one mapped region to every protected or */
+  /* unmapped region.  Therefore if we aim to use up to half of     */
+  /* vm.max_map_count for the GC (leaving half for the rest of the  */
+  /* process) then the number of such regions should be one quarter */
+  /* of vm.max_map_count.                                           */
+# if defined(__DragonFly__)
+#   define GC_UNMAPPED_REGIONS_SOFT_LIMIT (1000000 / 4)
+# else
+#   define GC_UNMAPPED_REGIONS_SOFT_LIMIT 16384
+# endif
 #endif
 
 #if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HAIKU) \
