@@ -2045,8 +2045,8 @@ static void check_heap_stats(void)
 
     /* Garbage collect repeatedly so that all inaccessible objects      */
     /* can be finalized.                                                */
-      while (GC_collect_a_little()) { } /* should work even if disabled GC */
-      for (i = 0; i < 16; i++) {
+    while (GC_collect_a_little()) { } /* should work even if disabled GC */
+    for (i = 0; i < 16; i++) {
         GC_gcollect();
 #       ifndef GC_NO_FINALIZATION
 #         ifdef FINALIZE_ON_DEMAND
@@ -2054,8 +2054,8 @@ static void check_heap_stats(void)
 #         endif
                 GC_invoke_finalizers();
 #       endif
-      }
-      if (print_stats) {
+    }
+    if (print_stats) {
         struct GC_stack_base sb;
         int res = GC_get_stack_base(&sb);
 
@@ -2067,7 +2067,7 @@ static void check_heap_stats(void)
           GC_printf("GC_get_stack_base() failed: %d\n", res);
           FAIL;
         }
-      }
+    }
     obj_count = 0;
     (void)GC_call_with_reader_lock(count_reachable_objs, &obj_count, 0);
     GC_printf("Completed %u tests\n", n_tests);
