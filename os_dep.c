@@ -3388,6 +3388,16 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
+#   ifdef COUNT_PROTECTED_REGIONS
+      GC_ASSERT(GC_page_size != 0);
+      if ((signed_word)(GC_heapsize / (word)GC_page_size)
+                >= ((signed_word)GC_UNMAPPED_REGIONS_SOFT_LIMIT
+                    - GC_num_unmapped_regions) * 2) {
+        GC_COND_LOG_PRINTF("Cannot turn on GC incremental mode"
+                           " as heap contains too many pages\n");
+        return FALSE;
+      }
+#   endif
 #   if !defined(MSWIN32) && !defined(MSWINCE)
       act.sa_flags = SA_RESTART | SA_SIGINFO;
       act.sa_sigaction = GC_write_fault_handler;
@@ -3556,6 +3566,44 @@ STATIC void GC_protect_heap(void)
 /* We no longer wrap read by default, since that was causing too many   */
 /* problems.  It is preferred that the client instead avoids writing    */
 /* to the write-protected heap with a system call.                      */
+
+# if defined(CAN_HANDLE_FORK) || defined(COUNT_PROTECTED_REGIONS)
+    /* Remove protection for the entire heap not updating GC_dirty_pages. */
+    STATIC void GC_unprotect_all_heap(void)
+    {
+      unsigned i;
+
+      GC_ASSERT(I_HOLD_LOCK());
+      GC_ASSERT(GC_auto_incremental);
+      for (i = 0; i < GC_n_heap_sects; i++) {
+        UNPROTECT(GC_heap_sects[i].hs_start, GC_heap_sects[i].hs_bytes);
+      }
+    }
+# endif /* CAN_HANDLE_FORK || COUNT_PROTECTED_REGIONS */
+
+# ifdef COUNT_PROTECTED_REGIONS
+    GC_INNER void GC_handle_protected_regions_limit(void)
+    {
+      GC_ASSERT(GC_page_size != 0);
+      /* To prevent exceeding the limit of vm.max_map_count, the most */
+      /* trivial (though highly restrictive) way is to turn off the   */
+      /* incremental collection mode (based on mprotect) once the     */
+      /* number of pages in the heap reaches that limit.              */
+      if (GC_auto_incremental && !GC_GWW_AVAILABLE()
+          && (signed_word)(GC_heapsize / (word)GC_page_size)
+                >= ((signed_word)GC_UNMAPPED_REGIONS_SOFT_LIMIT
+                    - GC_num_unmapped_regions) * 2) {
+        GC_unprotect_all_heap();
+#       ifdef DARWIN
+          GC_task_self = 0;
+#       endif
+        GC_incremental = FALSE;
+        WARN("GC incremental mode is turned off"
+             " to prevent hitting VM maps limit\n", 0);
+      }
+    }
+# endif /* COUNT_PROTECTED_REGIONS */
+
 #endif /* MPROTECT_VDB */
 
 #if !defined(THREADS) && (defined(PROC_VDB) || defined(SOFT_VDB))
@@ -4580,19 +4628,12 @@ typedef enum {
 # ifdef CAN_HANDLE_FORK
     GC_INNER void GC_dirty_update_child(void)
     {
-      unsigned i;
-
       GC_ASSERT(I_HOLD_LOCK());
       if (0 == GC_task_self) return; /* GC incremental mode is off */
 
-      GC_ASSERT(GC_auto_incremental);
       GC_ASSERT(GC_mprotect_state == GC_MP_NORMAL);
-
-      /* Unprotect the entire heap not updating GC_dirty_pages. */
       GC_task_self = mach_task_self(); /* needed by UNPROTECT() */
-      for (i = 0; i < GC_n_heap_sects; i++) {
-        UNPROTECT(GC_heap_sects[i].hs_start, GC_heap_sects[i].hs_bytes);
-      }
+      GC_unprotect_all_heap();
 
       /* Restore the old task exception ports.  */
       /* TODO: Should we do it in fork_prepare/parent_proc? */

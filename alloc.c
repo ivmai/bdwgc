@@ -1474,6 +1474,7 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
         GC_greatest_real_heap_addr = endp;
       }
 #   endif
+    GC_handle_protected_regions_limit();
     if (EXPECT(old_capacity > 0, FALSE)) {
 #     ifndef GWW_VDB
         /* Recycling may call GC_add_to_heap() again but should not     */
