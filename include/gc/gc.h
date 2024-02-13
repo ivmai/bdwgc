@@ -1951,9 +1951,12 @@ GC_API void GC_CALL GC_debug_ptr_store_and_dirty(void * /* p */,
 /* This returns a list of objects, linked through their first word.     */
 /* Its use can greatly reduce lock contention problems, since the       */
 /* allocator lock can be acquired and released many fewer times.        */
+/* Note that there is no "atomic" version of this function, as          */
+/* otherwise the links would not be seen by the collector.              */
+/* If the argument is zero, then it is treated as one.                  */
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_many(size_t /* lb */);
 #define GC_NEXT(p) (*(void * *)(p))     /* Retrieve the next element    */
-                                        /* in returned list.            */
+                                        /* in the returned list.        */
 
 /* A filter function to control the scanning of dynamic libraries.      */
 /* If implemented, called by GC before registering a dynamic library    */

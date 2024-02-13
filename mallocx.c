@@ -444,13 +444,13 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     (void) GC_clear_stack(0);
 }
 
-/* Note that the "atomic" version of this would be unsafe, since the    */
-/* links would not be seen by the collector.                            */
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_many(size_t lb)
 {
     void *result;
-    size_t lg = ALLOC_REQUEST_GRANS(lb);
+    size_t lg;
 
+    if (EXPECT(0 == lb, FALSE)) lb = 1;
+    lg = ALLOC_REQUEST_GRANS(lb);
     GC_generic_malloc_many(GRANULES_TO_BYTES(lg), NORMAL, &result);
     return result;
 }
