@@ -2214,7 +2214,6 @@ static void GC_CALLBACK warn_proc(char *msg, GC_word p)
 
 static void enable_incremental_mode(void)
 {
-  initial_heapsize = GC_get_heap_size();
 # ifndef NO_INCREMENTAL
     unsigned vdbs = GC_get_supported_vdbs();
 
@@ -2228,6 +2227,7 @@ static void enable_incremental_mode(void)
                 vdbs & GC_VDB_SOFT ?      " soft" : "",
                 vdbs & GC_VDB_MPROTECT ?  " mprotect" : "");
 # endif
+  initial_heapsize = GC_get_heap_size();
 # if (defined(TEST_DEFAULT_VDB) || defined(TEST_MANUAL_VDB) \
       || !defined(DEFAULT_VDB)) && !defined(GC_DISABLE_INCREMENTAL)
 #   if !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL) \
