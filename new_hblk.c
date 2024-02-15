@@ -162,27 +162,23 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
     return (ptr_t)p;
 }
 
-/* Allocate a new heapblock for small objects of the given size in  */
-/* granules and kind.  Add all of the heapblock's objects to the    */
-/* free list for objects of that size.  Set all mark bits           */
-/* if objects are uncollectible.  Will fail to do anything if we    */
-/* are out of memory.                                               */
-GC_INNER void GC_new_hblk(size_t gran, int k)
+GC_INNER void GC_new_hblk(size_t lg, int k)
 {
   struct hblk *h;       /* the new heap block */
+  size_t lb_adjusted = GRANULES_TO_BYTES(lg);
 
   GC_STATIC_ASSERT(sizeof(struct hblk) == HBLKSIZE);
   GC_ASSERT(I_HOLD_LOCK());
   /* Allocate a new heap block. */
-  h = GC_allochblk(GRANULES_TO_BYTES(gran), k, 0 /* flags */, 0);
+  h = GC_allochblk(lb_adjusted, k, 0 /* flags */, 0 /* align_m1 */);
   if (EXPECT(NULL == h, FALSE)) return; /* out of memory */
 
   /* Mark all objects if appropriate. */
   if (IS_UNCOLLECTABLE(k)) GC_set_hdr_marks(HDR(h));
 
-  /* Build the free list */
-  GC_obj_kinds[k].ok_freelist[gran] =
-        GC_build_fl(h, GRANULES_TO_WORDS(gran),
+  /* Build the free list.       */
+  GC_obj_kinds[k].ok_freelist[lg] =
+        GC_build_fl(h, GRANULES_TO_WORDS(lg),
                     GC_debugging_started || GC_obj_kinds[k].ok_init,
-                    (ptr_t)GC_obj_kinds[k].ok_freelist[gran]);
+                    (ptr_t)GC_obj_kinds[k].ok_freelist[lg]);
 }

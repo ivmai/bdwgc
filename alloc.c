@@ -21,8 +21,8 @@
 /*
  * Separate free lists are maintained for different sized objects
  * up to MAXOBJBYTES.
- * The call GC_allocobj(i,k) ensures that the freelist for
- * kind k objects of size i points to a non-empty
+ * The call GC_allocobj(lg, k) ensures that the freelist for
+ * kind k objects of size lg granules to a non-empty
  * free list. It returns a pointer to the first entry on the free list.
  * In a single-threaded world, GC_allocobj may be called to allocate
  * an object of small size lb (and NORMAL kind) as follows
@@ -1774,20 +1774,15 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
     return TRUE;
 }
 
-/*
- * Make sure the object free list for size gran (in granules) is not empty.
- * Return a pointer to the first object on the free list.
- * The object MUST BE REMOVED FROM THE FREE LIST BY THE CALLER.
- */
-GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
+GC_INNER ptr_t GC_allocobj(size_t lg, int k)
 {
-    void ** flh = &GC_obj_kinds[kind].ok_freelist[gran];
+    void **flh = &GC_obj_kinds[k].ok_freelist[lg];
     GC_bool tried_minor = FALSE;
     GC_bool retry = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(GC_is_initialized);
-    if (0 == gran) return NULL;
+    if (EXPECT(0 == lg, FALSE)) return NULL;
 
     while (NULL == *flh) {
       ENTER_GC();
@@ -1801,15 +1796,15 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
 #     endif
       /* Sweep blocks for objects of this size */
         GC_ASSERT(!GC_is_full_gc
-                  || NULL == GC_obj_kinds[kind].ok_reclaim_list
-                  || NULL == GC_obj_kinds[kind].ok_reclaim_list[gran]);
-        GC_continue_reclaim(gran, kind);
+                  || NULL == GC_obj_kinds[k].ok_reclaim_list
+                  || NULL == GC_obj_kinds[k].ok_reclaim_list[lg]);
+        GC_continue_reclaim(lg, k);
       EXIT_GC();
 #     if defined(CPPCHECK)
         GC_noop1((word)&flh);
 #     endif
       if (NULL == *flh) {
-        GC_new_hblk(gran, kind);
+        GC_new_hblk(lg, k);
 #       if defined(CPPCHECK)
           GC_noop1((word)&flh);
 #       endif
@@ -1832,6 +1827,5 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
     }
     /* Successful allocation; reset failure count.      */
     GC_fail_count = 0;
-
     return (ptr_t)(*flh);
 }

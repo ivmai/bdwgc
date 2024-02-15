@@ -73,11 +73,25 @@
 #define GC_I_PTRFREE 0
 #define GC_I_NORMAL  1
 
-/* Store a pointer to a list of newly allocated objects of kind k and   */
-/* size lb in *result.  The caller must make sure that *result is       */
-/* traced even if objects are ptrfree.                                  */
-GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
-                                           void ** /* result */);
+/* Return a list of one or more objects of the indicated size, linked   */
+/* through the first word in each object.  This has the advantage that  */
+/* it acquires the allocator lock only once, and may greatly reduce     */
+/* time wasted contending for the allocator lock.  Typical usage would  */
+/* be in a thread that requires many items of the same size.  It would  */
+/* keep its own free list in a thread-local storage, and call           */
+/* GC_malloc_many or friends to replenish it.  (We do not round up      */
+/* object sizes, since a call indicates the intention to consume many   */
+/* objects of exactly this size.)  We assume that the size is non-zero  */
+/* and a multiple of GC_GRANULE_BYTES, and that it already includes     */
+/* value of GC_all_interior_pointers (unless DONT_ADD_BYTE_AT_END is    */
+/* defined).  We return the free-list by assigning it to (*result),     */
+/* since it is not safe to return, e.g. a linked list of pointer-free   */
+/* objects, since the collector would not retain the entire list if it  */
+/* were invoked just as we were returning; the client must make sure    */
+/* that (*result) is traced even if objects are pointer-free.  Note     */
+/* also that the client should usually clear the link field.            */
+GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb_adjusted */,
+                                           int /* k */, void ** /* result */);
 
 /* Generalized version of GC_malloc and GC_malloc_atomic.               */
 /* Uses appropriately the thread-local (if available) or the global     */
@@ -103,11 +117,11 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 #endif
 
 /* The ultimately general inline allocation macro.  Allocate an object  */
-/* of size granules, putting the resulting pointer in result.  Tiny_fl  */
-/* is a "tiny" free list array, which will be used first, if the size   */
-/* is appropriate.  If granules argument is too large, we allocate with */
-/* default_expr instead.  If we need to refill the free list, we use    */
-/* GC_generic_malloc_many with the indicated kind.                      */
+/* of size lg (in granules), putting the resulting pointer in result.   */
+/* Tiny_fl is a "tiny" free list array, which will be used first, if    */
+/* the size is appropriate.  If lg argument is too large, we allocate   */
+/* with default_expr instead.  If we need to refill the free list, we   */
+/* use GC_generic_malloc_many with the indicated kind.                  */
 /* Tiny_fl should be an array of GC_TINY_FREELISTS void * pointers.     */
 /* If num_direct is nonzero, and the individual free list pointers      */
 /* are initialized to (void *)1, then we allocate num_direct granules   */
@@ -117,15 +131,15 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 /* Note that we use the zeroth free list to hold objects 1 granule in   */
 /* size that are used to satisfy size 0 allocation requests.            */
 /* We rely on much of this hopefully getting optimized away in the      */
-/* case of num_direct is 0.  Particularly, if granules argument is      */
-/* constant, this should generate a small amount of code.               */
-# define GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, num_direct, \
-                              kind, default_expr, init) \
+/* case of num_direct is 0.  Particularly, if lg argument is constant,  */
+/* this should generate a small amount of code.                         */
+# define GC_FAST_MALLOC_GRANS(result, lg, tiny_fl, num_direct, k, \
+                              default_expr, init) \
   do { \
-    if (GC_EXPECT((granules) >= GC_TINY_FREELISTS, 0)) { \
+    if (GC_EXPECT((lg) >= GC_TINY_FREELISTS, 0)) { \
         result = (default_expr); \
     } else { \
-        void **my_fl = (tiny_fl) + (granules); \
+        void **my_fl = (tiny_fl) + (lg); \
         void *my_entry = *my_fl; \
         void *next; \
     \
@@ -137,12 +151,12 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                 GC_FAST_M_AO_STORE(my_fl, next); \
                 init; \
                 GC_PREFETCH_FOR_WRITE(next); \
-                if ((kind) != GC_I_PTRFREE) { \
+                if ((k) != GC_I_PTRFREE) { \
                     GC_end_stubborn_change(my_fl); \
                     GC_reachable_here(next); \
                 } \
-                GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
-                GC_ASSERT((kind) == GC_I_PTRFREE \
+                GC_ASSERT(GC_size(result) >= (lg) * GC_GRANULE_BYTES); \
+                GC_ASSERT((k) == GC_I_PTRFREE \
                           || ((GC_word *)result)[1] == 0); \
                 break; \
             } \
@@ -151,18 +165,17 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                     /* (GC_word)my_entry <= (num_direct) */ \
                     && my_entry != 0 /* NULL */) { \
                 /* Small counter value, not NULL */ \
-                GC_FAST_M_AO_STORE(my_fl, (char *)my_entry \
-                                          + (granules) + 1); \
+                GC_FAST_M_AO_STORE(my_fl, (char *)my_entry + (lg) + 1); \
                 result = (default_expr); \
                 break; \
             } else { \
                 /* Large counter or NULL */ \
-                GC_generic_malloc_many((granules) == 0 ? GC_GRANULE_BYTES : \
-                                        GC_RAW_BYTES_FROM_INDEX(granules), \
-                                       kind, my_fl); \
+                GC_generic_malloc_many(0 == (lg) ? GC_GRANULE_BYTES \
+                                            : GC_RAW_BYTES_FROM_INDEX(lg), \
+                                       k, my_fl); \
                 my_entry = *my_fl; \
                 if (my_entry == 0) { \
-                    result = (*GC_get_oom_fn())((granules)*GC_GRANULE_BYTES); \
+                    result = (*GC_get_oom_fn())((lg) * GC_GRANULE_BYTES); \
                     break; \
                 } \
             } \
@@ -179,12 +192,11 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 /* Does not acquire the allocator lock.  The caller is responsible for  */
 /* supplying a cleared tiny_fl free list array.  For single-threaded    */
 /* applications, this may be a global array.                            */
-# define GC_MALLOC_WORDS_KIND(result, n, tiny_fl, kind, init) \
+# define GC_MALLOC_WORDS_KIND(result, n, tiny_fl, k, init) \
     do { \
-      size_t granules = GC_WORDS_TO_WHOLE_GRANULES(n); \
-      GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, 0, kind, \
-                           GC_malloc_kind(granules*GC_GRANULE_BYTES, kind), \
-                           init); \
+      size_t lg = GC_WORDS_TO_WHOLE_GRANULES(n); \
+      GC_FAST_MALLOC_GRANS(result, lg, tiny_fl, 0 /* num_direct */, k, \
+                           GC_malloc_kind(lg * GC_GRANULE_BYTES, k), init); \
     } while (0)
 
 # define GC_MALLOC_WORDS(result, n, tiny_fl) \
@@ -207,11 +219,11 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
       } \
     } while (0)
 
-/* Print address of each object in the free list.  The caller should    */
-/* hold the allocator lock at least in the reader mode.  Defined only   */
-/* if the library has been compiled without NO_DEBUGGING.               */
-GC_API void GC_CALL GC_print_free_list(int /* kind */,
-                                       size_t /* sz_in_granules */);
+/* Print address of each object in the free list for the given kind and */
+/* size (in granules).  The caller should hold the allocator lock at    */
+/* least in the reader mode.  Defined only if the library has been      */
+/* compiled without NO_DEBUGGING.                                       */
+GC_API void GC_CALL GC_print_free_list(int /* k */, size_t /* lg */);
 
 #ifdef __cplusplus
   } /* extern "C" */

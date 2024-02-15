@@ -243,42 +243,27 @@ GC_API size_t GC_CALL GC_get_expl_freed_bytes_since_gc(void)
     STATIC volatile AO_t GC_bytes_allocd_tmp = 0;
 # endif /* PARALLEL_MARK */
 
-/* Return a list of 1 or more objects of the indicated size, linked     */
-/* through the first word in the object.  This has the advantage that   */
-/* it acquires the allocator lock only once, and may greatly reduce     */
-/* time wasted contending for the allocator lock.  Typical usage would  */
-/* be in a thread that requires many items of the same size.  It would  */
-/* keep its own free list in thread-local storage, and call             */
-/* GC_malloc_many or friends to replenish it.  (We do not round up      */
-/* object sizes, since a call indicates the intention to consume many   */
-/* objects of exactly this size.)                                       */
-/* We assume that the size is non-zero and a multiple of                */
-/* GC_GRANULE_BYTES, and that it already includes EXTRA_BYTES value.    */
-/* We return the free-list by assigning it to *result, since it is      */
-/* not safe to return, e.g. a linked list of pointer-free objects,      */
-/* since the collector would not retain the entire list if it were      */
-/* invoked just as we were returning.                                   */
-/* Note that the client should usually clear the link field.            */
-GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
+GC_API void GC_CALL GC_generic_malloc_many(size_t lb_adjusted, int k,
+                                           void **result)
 {
     void *op;
     void *p;
     void **opp;
-    size_t lw;      /* Length in words.     */
-    size_t lg;      /* Length in granules.  */
+    size_t lw;  /* lb_adjusted converted to words,  */
+    size_t lg;  /* and to granules.                 */
     word my_bytes_allocd = 0;
-    struct obj_kind * ok;
-    struct hblk ** rlh;
+    struct obj_kind *ok;
+    struct hblk **rlh;
 
-    GC_ASSERT(lb != 0 && (lb & (GC_GRANULE_BYTES-1)) == 0);
+    GC_ASSERT(lb_adjusted != 0 && (lb_adjusted & (GC_GRANULE_BYTES-1)) == 0);
     /* Currently a single object is always allocated if manual VDB. */
     /* TODO: GC_dirty should be called for each linked object (but  */
     /* the last one) to support multiple objects allocation.        */
-    if (!EXPECT(lb <= MAXOBJBYTES, TRUE) || GC_manual_vdb) {
-        op = GC_generic_malloc_aligned(lb - EXTRA_BYTES, k,
+    if (!EXPECT(lb_adjusted <= MAXOBJBYTES, TRUE) || GC_manual_vdb) {
+        op = GC_generic_malloc_aligned(lb_adjusted - EXTRA_BYTES, k,
                                        0 /* flags */, 0 /* align_m1 */);
-        if (EXPECT(0 != op, TRUE))
-            obj_link(op) = 0;
+        if (EXPECT(op != NULL, TRUE))
+          obj_link(op) = NULL;
         *result = op;
 #       ifndef NO_MANUAL_VDB
           if (GC_manual_vdb && GC_is_heap_ptr(result)) {
@@ -289,20 +274,21 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
         return;
     }
     GC_ASSERT(k < MAXOBJKINDS);
-    lw = BYTES_TO_WORDS(lb);
-    lg = BYTES_TO_GRANULES(lb);
+    lw = BYTES_TO_WORDS(lb_adjusted);
+    lg = BYTES_TO_GRANULES(lb_adjusted);
     if (EXPECT(get_have_errors(), FALSE))
       GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
-    GC_DBG_COLLECT_AT_MALLOC(lb - EXTRA_BYTES);
+    GC_DBG_COLLECT_AT_MALLOC(lb_adjusted - EXTRA_BYTES);
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
     /* Do our share of marking work */
-      if (GC_incremental && !GC_dont_gc) {
+    if (GC_incremental && !GC_dont_gc) {
         ENTER_GC();
         GC_collect_a_little_inner(1);
         EXIT_GC();
-      }
+    }
+
     /* First see if we can reclaim a page of objects waiting to be */
     /* reclaimed.                                                  */
     ok = &GC_obj_kinds[k];
@@ -314,8 +300,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
         while ((hbp = rlh[lg]) != NULL) {
             hhdr = HDR(hbp);
             rlh[lg] = hhdr -> hb_next;
-            GC_ASSERT(hhdr -> hb_sz == lb);
-            hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
+            GC_ASSERT(hhdr -> hb_sz == lb_adjusted);
+            hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
 #           ifdef PARALLEL_MARK
               if (GC_parallel) {
                   signed_word my_bytes_allocd_tmp =
@@ -330,12 +316,12 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
                     GC_bytes_allocd += (word)my_bytes_allocd_tmp;
                   }
                   GC_acquire_mark_lock();
-                  ++ GC_fl_builder_count;
+                  ++GC_fl_builder_count;
                   UNLOCK();
                   GC_release_mark_lock();
               }
 #           endif
-            op = GC_reclaim_generic(hbp, hhdr, lb,
+            op = GC_reclaim_generic(hbp, hhdr, lb_adjusted,
                                     ok -> ok_init, 0, &my_bytes_allocd);
             if (op != 0) {
 #             ifdef PARALLEL_MARK
@@ -344,7 +330,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
                   (void)AO_fetch_and_add(&GC_bytes_allocd_tmp,
                                          (AO_t)my_bytes_allocd);
                   GC_acquire_mark_lock();
-                  -- GC_fl_builder_count;
+                  --GC_fl_builder_count;
                   if (GC_fl_builder_count == 0) GC_notify_all_builder();
 #                 ifdef THREAD_SANITIZER
                     GC_release_mark_lock();
@@ -356,7 +342,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
                                         /* The result may be inaccurate. */
                     GC_release_mark_lock();
 #                 endif
-                  (void) GC_clear_stack(0);
+                  (void)GC_clear_stack(0);
                   return;
                 }
 #             endif
@@ -369,7 +355,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
 #           ifdef PARALLEL_MARK
               if (GC_parallel) {
                 GC_acquire_mark_lock();
-                -- GC_fl_builder_count;
+                --GC_fl_builder_count;
                 if (GC_fl_builder_count == 0) GC_notify_all_builder();
                 GC_release_mark_lock();
                 LOCK();
@@ -387,15 +373,15 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     /* Next try to use prefix of global free list if there is one.      */
     /* We don't refill it, but we need to use it up before allocating   */
     /* a new block ourselves.                                           */
-      opp = &(ok -> ok_freelist[lg]);
-      if ((op = *opp) != NULL) {
-        *opp = 0;
+    opp = &(ok -> ok_freelist[lg]);
+    if ((op = *opp) != NULL) {
+        *opp = NULL;
         my_bytes_allocd = 0;
-        for (p = op; p != 0; p = obj_link(p)) {
-          my_bytes_allocd += lb;
+        for (p = op; p != NULL; p = obj_link(p)) {
+          my_bytes_allocd += lb_adjusted;
           if ((word)my_bytes_allocd >= HBLKSIZE) {
             *opp = obj_link(p);
-            obj_link(p) = 0;
+            obj_link(p) = NULL;
             break;
           }
         }
@@ -404,54 +390,56 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
       }
     /* Next try to allocate a new block worth of objects of this size.  */
     {
-        struct hblk *h = GC_allochblk(lb, k, 0 /* flags */, 0 /* align_m1 */);
+        struct hblk *h = GC_allochblk(lb_adjusted, k, 0 /* flags */,
+                                      0 /* align_m1 */);
 
         if (h /* != NULL */) { /* CPPCHECK */
           if (IS_UNCOLLECTABLE(k)) GC_set_hdr_marks(HDR(h));
-          GC_bytes_allocd += HBLKSIZE - HBLKSIZE % lb;
+          GC_bytes_allocd += HBLKSIZE - (HBLKSIZE % lb_adjusted);
 #         ifdef PARALLEL_MARK
             if (GC_parallel) {
               GC_acquire_mark_lock();
-              ++ GC_fl_builder_count;
+              ++GC_fl_builder_count;
               UNLOCK();
               GC_release_mark_lock();
 
               op = GC_build_fl(h, lw,
-                        (ok -> ok_init || GC_debugging_started), 0);
+                               ok -> ok_init || GC_debugging_started, 0);
 
               *result = op;
               GC_acquire_mark_lock();
-              -- GC_fl_builder_count;
+              --GC_fl_builder_count;
               if (GC_fl_builder_count == 0) GC_notify_all_builder();
               GC_release_mark_lock();
-              (void) GC_clear_stack(0);
+              (void)GC_clear_stack(0);
               return;
             }
 #         endif
-          op = GC_build_fl(h, lw, (ok -> ok_init || GC_debugging_started), 0);
+          op = GC_build_fl(h, lw, ok -> ok_init || GC_debugging_started, 0);
           goto out;
         }
     }
 
     /* As a last attempt, try allocating a single object.  Note that    */
     /* this may trigger a collection or expand the heap.                */
-      op = GC_generic_malloc_inner(lb - EXTRA_BYTES, k, 0 /* flags */);
-      if (op != NULL) obj_link(op) = NULL;
+    op = GC_generic_malloc_inner(lb_adjusted - EXTRA_BYTES, k, 0 /* flags */);
+    if (op != NULL) obj_link(op) = NULL;
 
   out:
     *result = op;
     UNLOCK();
-    (void) GC_clear_stack(0);
+    (void)GC_clear_stack(0);
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_many(size_t lb)
 {
     void *result;
-    size_t lg;
+    size_t lg, lb_adjusted;
 
     if (EXPECT(0 == lb, FALSE)) lb = 1;
     lg = ALLOC_REQUEST_GRANS(lb);
-    GC_generic_malloc_many(GRANULES_TO_BYTES(lg), NORMAL, &result);
+    lb_adjusted = GRANULES_TO_BYTES(lg);
+    GC_generic_malloc_many(lb_adjusted, NORMAL, &result);
     return result;
 }
 

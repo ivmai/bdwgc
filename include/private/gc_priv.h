@@ -998,15 +998,15 @@ EXTERN_C_BEGIN
 
 #if MAX_EXTRA_BYTES == 0
 # define ADD_EXTRA_BYTES(lb) (lb)
-# define SMALL_OBJ(bytes) EXPECT((bytes) <= MAXOBJBYTES, TRUE)
+# define SMALL_OBJ(lb) EXPECT((lb) <= MAXOBJBYTES, TRUE)
 #else
 # define ADD_EXTRA_BYTES(lb) /* lb should have no side-effect */ \
             SIZET_SAT_ADD(lb, EXTRA_BYTES)
-# define SMALL_OBJ(bytes) /* bytes argument should have no side-effect */ \
-            (EXPECT((bytes) <= MAXOBJBYTES - MAX_EXTRA_BYTES, TRUE) \
-             || (bytes) <= MAXOBJBYTES - EXTRA_BYTES)
-        /* This really just tests bytes <= MAXOBJBYTES - EXTRA_BYTES.   */
-        /* But we try to avoid looking up EXTRA_BYTES.                  */
+# define SMALL_OBJ(lb) /* lb should have no side-effect */ \
+            (EXPECT((lb) <= MAXOBJBYTES - MAX_EXTRA_BYTES, TRUE) \
+             || (lb) <= MAXOBJBYTES - EXTRA_BYTES)
+        /* This really just tests lb <= MAXOBJBYTES - EXTRA_BYTES, but  */
+        /* we try to avoid looking up EXTRA_BYTES.                      */
 #endif
 
 /* Hash table representation of sets of pages.  Implements a map from   */
@@ -1617,11 +1617,9 @@ struct _GC_arrays {
 #   define GC_obj_map GC_arrays._obj_map
     unsigned short * _obj_map[MAXOBJGRANULES + 1];
                        /* If not NULL, then a pointer to a map of valid */
-                       /* object addresses.                             */
-                       /* GC_obj_map[sz_in_granules][i] is              */
-                       /* i % sz_in_granules.                           */
-                       /* This is now used purely to replace a          */
-                       /* division in the marker by a table lookup.     */
+                       /* object addresses.  GC_obj_map[lg][i] is       */
+                       /* i % lg.  This is now used purely to replace   */
+                       /* a division in the marker by a table lookup.   */
                        /* _obj_map[0] is used for large objects and     */
                        /* contains all nonzero entries.  This gets us   */
                        /* out of the marker fast path without an extra  */
@@ -2257,12 +2255,10 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes);
 GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes);
                                 /* Reuse the memory region by the heap. */
 
-/* Heap block layout maps: */
 #ifndef MARK_BIT_PER_OBJ
-  GC_INNER GC_bool GC_add_map_entry(size_t sz);
-                                /* Add a heap block map for objects of  */
-                                /* size sz to obj_map.                  */
-                                /* Return FALSE on failure.             */
+  /* Add a heap block map for objects of a size in granules to obj_map. */
+  /* A size of 0 is used for large objects.  Returns FALSE on failure.  */
+  GC_INNER GC_bool GC_add_map_entry(size_t lg);
 #endif
 
 GC_INNER void GC_register_displacement_inner(size_t offset);
@@ -2270,10 +2266,11 @@ GC_INNER void GC_register_displacement_inner(size_t offset);
                                 /* that assumes the allocator lock is   */
                                 /* already held.                        */
 
-/*  hblk allocation: */
-GC_INNER void GC_new_hblk(size_t size_in_granules, int kind);
-                                /* Allocate a new heap block, and build */
-                                /* a free list in it.                   */
+/* Allocate a new heap block for small objects of the given size (in    */
+/* granules) and kind.  Add all of the block's objects to the free list */
+/* for objects of that size.  Set all mark bits if objects are          */
+/* uncollectible.  Will fail to do anything if out of memory.           */
+GC_INNER void GC_new_hblk(size_t lg, int k);
 
 GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t words, GC_bool clear,
                            ptr_t list);
@@ -2285,8 +2282,8 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t words, GC_bool clear,
                                 /* called explicitly without the        */
                                 /* allocator lock held.                 */
 
-GC_INNER struct hblk * GC_allochblk(size_t size_in_bytes, int kind,
-                                    unsigned flags, size_t align_m1);
+GC_INNER struct hblk * GC_allochblk(size_t lb_adjusted, int k, unsigned flags,
+                                    size_t align_m1);
                                 /* Allocate (and return pointer to)     */
                                 /* a heap block for objects of the      */
                                 /* given size and alignment (in bytes), */
@@ -2294,24 +2291,15 @@ GC_INNER struct hblk * GC_allochblk(size_t size_in_bytes, int kind,
                                 /* block lists; inform the marker       */
                                 /* that the found block is valid for    */
                                 /* objects of the indicated size.       */
-                                /* The client is responsible for        */
-                                /* clearing the block, if necessary.    */
+                                /* Assumes (as implied by the argument  */
+                                /* name) that EXTRA_BYTES value is      */
+                                /* already added to the size, if        */
+                                /* needed.  The client is responsible   */
+                                /* for clearing the block, if needed.   */
                                 /* Note: we set obj_map field in the    */
                                 /* header correctly; the caller is      */
                                 /* responsible for building an object   */
                                 /* freelist in the block.               */
-
-GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags,
-                              size_t align_m1);
-                        /* Allocate a large block of size lb bytes with */
-                        /* the requested alignment (align_m1 plus one). */
-                        /* The block is not cleared.  Assumes that      */
-                        /* EXTRA_BYTES value is already added to lb.    */
-                        /* The flags argument should be IGNORE_OFF_PAGE */
-                        /* or 0.  Calls GC_allochblk() to do the actual */
-                        /* allocation, but also triggers GC and/or heap */
-                        /* expansion as appropriate.  Updates value of  */
-                        /* GC_bytes_allocd; does also other accounting. */
 
 GC_INNER void GC_freehblk(struct hblk * p);
                                 /* Deallocate a heap block and mark it  */
@@ -2326,11 +2314,12 @@ GC_INNER void GC_start_reclaim(GC_bool abort_if_found);
                                 /* TRUE) report them.                   */
                                 /* Sweeping of small object pages is    */
                                 /* largely deferred.                    */
-GC_INNER void GC_continue_reclaim(word sz, int kind);
-                                /* Sweep pages of the given size and    */
-                                /* kind, as long as possible, and       */
-                                /* as long as the corresponding free    */
-                                /* list is empty.  sz is in granules.   */
+GC_INNER void GC_continue_reclaim(size_t lg, int k);
+                                /* Sweep blocks of the indicated object */
+                                /* size (in granules) and kind until    */
+                                /* either the appropriate nonempty free */
+                                /* list is found, or there are no more  */
+                                /* blocks to sweep.                     */
 
 GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old);
                                 /* Reclaim all blocks.  Abort (in a     */
@@ -2393,10 +2382,10 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k, unsigned flags);
 GC_INNER GC_bool GC_collect_or_expand(word needed_blocks, unsigned flags,
                                       GC_bool retry);
 
-GC_INNER ptr_t GC_allocobj(size_t gran, int kind);
-                                /* Make the indicated free list     */
-                                /* nonempty, and return its head.   */
-                                /* The size (gran) is in granules.  */
+/* Make sure the indicated object free is not empty, and return its     */
+/* head (the first object on the free list).  The object must be        */
+/* removed from the free list by the caller.  The size is in granules.  */
+GC_INNER ptr_t GC_allocobj(size_t lg, int k);
 
 #ifdef GC_ADD_CALLER
   /* GC_DBG_EXTRAS is used by GC debug API functions (unlike GC_EXTRAS  */

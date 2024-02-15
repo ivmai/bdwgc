@@ -88,11 +88,9 @@ static void return_freelists(void **fl, void **gfl)
 # define reset_thread_key 0
 #endif
 
-/* Each thread structure must be initialized.   */
-/* This call must be made from the new thread.  */
 GC_INNER void GC_init_thread_local(GC_tlfs p)
 {
-    int i, j, res;
+    int k, j, res;
 
     GC_ASSERT(I_HOLD_LOCK());
     if (!EXPECT(keys_initialized, TRUE)) {
@@ -111,8 +109,8 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
         ABORT("Failed to set thread specific allocation pointers");
     }
     for (j = 0; j < GC_TINY_FREELISTS; ++j) {
-        for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
-            p -> _freelists[i][j] = (void *)(word)1;
+        for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
+            p -> _freelists[k][j] = (void *)(word)1;
         }
 #       ifdef GC_GCJ_SUPPORT
             p -> gcj_freelists[j] = (void *)(word)1;
@@ -162,38 +160,37 @@ STATIC void *GC_get_tlfs(void)
 # endif
 }
 
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int kind)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t lb, int k)
 {
-    size_t granules;
+    size_t lg;
     void *tsd;
     void *result;
 
 #   if MAXOBJKINDS > THREAD_FREELISTS_KINDS
-      if (EXPECT(kind >= THREAD_FREELISTS_KINDS, FALSE)) {
-        return GC_malloc_kind_global(bytes, kind);
+      if (EXPECT(k >= THREAD_FREELISTS_KINDS, FALSE)) {
+        return GC_malloc_kind_global(lb, k);
       }
 #   endif
     tsd = GC_get_tlfs();
     if (EXPECT(NULL == tsd, FALSE)) {
-        return GC_malloc_kind_global(bytes, kind);
+        return GC_malloc_kind_global(lb, k);
     }
     GC_ASSERT(GC_is_initialized);
     GC_ASSERT(GC_is_thread_tsd_valid(tsd));
-    granules = ALLOC_REQUEST_GRANS(bytes);
+    lg = ALLOC_REQUEST_GRANS(lb);
 #   if defined(CPPCHECK)
 #     define MALLOC_KIND_PTRFREE_INIT (void*)1
 #   else
 #     define MALLOC_KIND_PTRFREE_INIT NULL
 #   endif
-    GC_FAST_MALLOC_GRANS(result, granules,
-                         ((GC_tlfs)tsd) -> _freelists[kind], DIRECT_GRANULES,
-                         kind, GC_malloc_kind_global(bytes, kind),
-                         (void)(kind == PTRFREE ? MALLOC_KIND_PTRFREE_INIT
+    GC_FAST_MALLOC_GRANS(result, lg,
+                         ((GC_tlfs)tsd) -> _freelists[k], DIRECT_GRANULES,
+                         k, GC_malloc_kind_global(lb, k),
+                         (void)(k == PTRFREE ? MALLOC_KIND_PTRFREE_INIT
                                                : (obj_link(result) = 0)));
 #   ifdef LOG_ALLOCS
       GC_log_printf("GC_malloc_kind(%lu, %d) returned %p, recent GC #%lu\n",
-                    (unsigned long)bytes, kind, result,
-                    (unsigned long)GC_gc_no);
+                    (unsigned long)lb, k, result, (unsigned long)GC_gc_no);
 #   endif
     return result;
 }
@@ -222,22 +219,20 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int kind)
 /* incremental GC should be enabled before we fork a second thread.     */
 /* Unlike the other thread local allocation calls, we assume that the   */
 /* collector has been explicitly initialized.                           */
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t bytes,
-                                    void * ptr_to_struct_containing_descr)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t lb,
+                                        void *ptr_to_struct_containing_descr)
 {
   if (EXPECT(GC_incremental, FALSE)) {
-    return GC_core_gcj_malloc(bytes, ptr_to_struct_containing_descr, 0);
+    return GC_core_gcj_malloc(lb, ptr_to_struct_containing_descr, 0);
   } else {
-    size_t granules = ALLOC_REQUEST_GRANS(bytes);
+    size_t lg = ALLOC_REQUEST_GRANS(lb);
     void *result;
     void **tiny_fl;
 
     GC_ASSERT(GC_gcjobjfreelist != NULL);
     tiny_fl = ((GC_tlfs)GC_getspecific(GC_thread_key))->gcj_freelists;
-    GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES,
-                         GC_gcj_kind,
-                         GC_core_gcj_malloc(bytes,
-                                            ptr_to_struct_containing_descr,
+    GC_FAST_MALLOC_GRANS(result, lg, tiny_fl, DIRECT_GRANULES, GC_gcj_kind,
+                         GC_core_gcj_malloc(lb, ptr_to_struct_containing_descr,
                                             0 /* flags */),
                          {AO_compiler_barrier();
                           *(void **)result = ptr_to_struct_containing_descr;});
@@ -272,13 +267,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t bytes,
 GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
 {
     ptr_t q;
-    int i, j;
+    int k, j;
 
     for (j = 0; j < GC_TINY_FREELISTS; ++j) {
-      for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
+      for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
         /* Load the pointer atomically as it might be updated   */
         /* concurrently by GC_FAST_MALLOC_GRANS.                */
-        q = (ptr_t)AO_load((volatile AO_t *)&p->_freelists[i][j]);
+        q = (ptr_t)AO_load((volatile AO_t *)&p->_freelists[k][j]);
         if ((word)q > HBLKSIZE)
           GC_set_fl_marks(q);
       }
@@ -296,11 +291,11 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
     /* Check that all thread-local free-lists in p are completely marked. */
     void GC_check_tls_for(GC_tlfs p)
     {
-        int i, j;
+        int k, j;
 
         for (j = 1; j < GC_TINY_FREELISTS; ++j) {
-          for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
-            GC_check_fl_marks(&p->_freelists[i][j]);
+          for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
+            GC_check_fl_marks(&p->_freelists[k][j]);
           }
 #         ifdef GC_GCJ_SUPPORT
             GC_check_fl_marks(&p->gcj_freelists[j]);

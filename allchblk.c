@@ -234,19 +234,19 @@ GC_API void GC_CALL GC_dump_regions(void)
 
 /* Initialize hdr for a block containing the indicated size and         */
 /* kind of objects.  Return FALSE on failure.                           */
-static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
-                            int kind, unsigned flags)
+static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t lb_adjusted,
+                            int k, unsigned flags)
 {
     struct obj_kind *ok;
     word descr;
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT(byte_sz >= ALIGNMENT);
+    GC_ASSERT(lb_adjusted >= ALIGNMENT);
 #   ifndef MARK_BIT_PER_OBJ
-      if (byte_sz > MAXOBJBYTES)
+      if (lb_adjusted > MAXOBJBYTES)
         flags |= LARGE_BLOCK;
 #   endif
-    ok = &GC_obj_kinds[kind];
+    ok = &GC_obj_kinds[k];
 #   ifdef ENABLE_DISCLAIM
       if (ok -> ok_disclaim_proc)
         flags |= HAS_DISCLAIM;
@@ -255,8 +255,8 @@ static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
 #   endif
 
     /* Set size, kind and mark proc fields.     */
-    hhdr -> hb_sz = byte_sz;
-    hhdr -> hb_obj_kind = (unsigned char)kind;
+    hhdr -> hb_sz = lb_adjusted;
+    hhdr -> hb_obj_kind = (unsigned char)k;
     hhdr -> hb_flags = (unsigned char)flags;
     hhdr -> hb_block = block;
     descr = ok -> ok_descriptor;
@@ -264,40 +264,40 @@ static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
       /* An extra byte is not added in case of ignore-off-page  */
       /* allocated objects not smaller than HBLKSIZE.           */
       if (EXTRA_BYTES != 0 && (flags & IGNORE_OFF_PAGE) != 0
-          && kind == NORMAL && byte_sz >= HBLKSIZE)
+          && k == NORMAL && lb_adjusted >= HBLKSIZE)
         descr += ALIGNMENT; /* or set to 0 */
 #   endif
-    if (ok -> ok_relocate_descr) descr += byte_sz;
+    if (ok -> ok_relocate_descr) descr += lb_adjusted;
     hhdr -> hb_descr = descr;
 
 #   ifdef MARK_BIT_PER_OBJ
-      /* Set hb_inv_sz as portably as possible.                         */
-      /* We set it to the smallest value such that sz*inv_sz >= 2**32.  */
+      /* Set hb_inv_sz as portably as possible.  We set it to the       */
+      /* smallest value such that lb_adjusted * inv_sz >= 2**32.        */
       /* This may be more precision than necessary.                     */
-      if (byte_sz > MAXOBJBYTES) {
+      if (lb_adjusted > MAXOBJBYTES) {
         hhdr -> hb_inv_sz = LARGE_INV_SZ;
       } else {
         unsigned32 inv_sz;
 
-        GC_ASSERT(byte_sz > 1);
+        GC_ASSERT(lb_adjusted > 1);
 #       if CPP_WORDSZ > 32
-          inv_sz = (unsigned32)(((word)1 << 32) / byte_sz);
-          if (((inv_sz * (word)byte_sz) >> 32) == 0) ++inv_sz;
+          inv_sz = (unsigned32)(((word)1 << 32) / lb_adjusted);
+          if (((inv_sz * (word)lb_adjusted) >> 32) == 0) ++inv_sz;
 #       else
-          inv_sz = (((unsigned32)1 << 31) / byte_sz) << 1;
-          while ((inv_sz * byte_sz) > byte_sz)
+          inv_sz = (((unsigned32)1 << 31) / lb_adjusted) << 1;
+          while ((inv_sz * lb_adjusted) > lb_adjusted)
             inv_sz++;
 #       endif
 #       if (CPP_WORDSZ == 32) && defined(__GNUC__)
-          GC_ASSERT(((1ULL << 32) + byte_sz - 1) / byte_sz == inv_sz);
+          GC_ASSERT(((1ULL << 32) + lb_adjusted - 1) / lb_adjusted == inv_sz);
 #       endif
         hhdr -> hb_inv_sz = inv_sz;
       }
 #   else
       {
-        size_t granules = BYTES_TO_GRANULES(byte_sz);
+        size_t lg = BYTES_TO_GRANULES(lb_adjusted);
 
-        if (EXPECT(!GC_add_map_entry(granules), FALSE)) {
+        if (EXPECT(!GC_add_map_entry(lg), FALSE)) {
           /* Make it look like a valid block.   */
           hhdr -> hb_sz = HBLKSIZE;
           hhdr -> hb_descr = 0;
@@ -306,7 +306,7 @@ static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t byte_sz,
           return FALSE;
         }
         hhdr -> hb_map = GC_obj_map[(hhdr -> hb_flags & LARGE_BLOCK) != 0 ?
-                                    0 : granules];
+                                    0 : lg];
       }
 #   endif
 
@@ -681,7 +681,7 @@ STATIC void GC_split_block(struct hblk *h, hdr *hhdr, struct hblk *n,
     nhdr -> hb_flags |= FREE_BLK;
 }
 
-STATIC struct hblk *GC_allochblk_nth(size_t sz /* bytes */, int kind,
+STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
                                      unsigned flags, int n, int may_split,
                                      size_t align_m1);
 
@@ -689,7 +689,7 @@ STATIC struct hblk *GC_allochblk_nth(size_t sz /* bytes */, int kind,
 # define AVOID_SPLIT_REMAPPED 2
 #endif
 
-GC_INNER struct hblk *GC_allochblk(size_t sz, int kind,
+GC_INNER struct hblk *GC_allochblk(size_t lb_adjusted, int k,
                                    unsigned flags /* IGNORE_OFF_PAGE or 0 */,
                                    size_t align_m1)
 {
@@ -700,15 +700,16 @@ GC_INNER struct hblk *GC_allochblk(size_t sz, int kind,
     int split_limit; /* highest index of free list whose blocks we split */
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT((sz & (GC_GRANULE_BYTES-1)) == 0);
-    blocks = OBJ_SZ_TO_BLOCKS_CHECKED(sz);
+    GC_ASSERT((lb_adjusted & (GC_GRANULE_BYTES-1)) == 0);
+    blocks = OBJ_SZ_TO_BLOCKS_CHECKED(lb_adjusted);
     if (EXPECT(SIZET_SAT_ADD(blocks * HBLKSIZE, align_m1)
                 >= (GC_SIZE_MAX >> 1), FALSE))
       return NULL; /* overflow */
 
     start_list = GC_hblk_fl_from_blocks(blocks);
-    /* Try for an exact match first. */
-    result = GC_allochblk_nth(sz, kind, flags, start_list, FALSE, align_m1);
+    /* Try for an exact match first.    */
+    result = GC_allochblk_nth(lb_adjusted, k, flags, start_list, FALSE,
+                              align_m1);
     if (result != NULL) return result;
 
     may_split = TRUE;
@@ -740,7 +741,7 @@ GC_INNER struct hblk *GC_allochblk(size_t sz, int kind,
       ++start_list;
     }
     for (; start_list <= split_limit; ++start_list) {
-      result = GC_allochblk_nth(sz, kind, flags, start_list, may_split,
+      result = GC_allochblk_nth(lb_adjusted, k, flags, start_list, may_split,
                                 align_m1);
       if (result != NULL) break;
     }
@@ -814,20 +815,21 @@ static void drop_hblk_in_chunks(int n, struct hblk *hbp, hdr *hhdr)
 
 /* The same as GC_allochblk, but with search restricted to the n-th     */
 /* free list.  flags should be IGNORE_OFF_PAGE or zero; may_split       */
-/* indicates whether it is OK to split larger blocks; sz is in bytes.   */
+/* indicates whether it is OK to split larger blocks; size is in bytes. */
 /* If may_split is set to AVOID_SPLIT_REMAPPED, then memory remapping   */
-/* followed by splitting should be generally avoided.  Rounded-up sz    */
-/* plus align_m1 value should be less than GC_SIZE_MAX/2.               */
-STATIC struct hblk *GC_allochblk_nth(size_t sz, int kind, unsigned flags,
-                                     int n, int may_split, size_t align_m1)
+/* followed by splitting should be generally avoided.  Rounded-up       */
+/* lb_adjusted plus align_m1 value should be less than GC_SIZE_MAX / 2. */
+STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
+                                     unsigned flags, int n, int may_split,
+                                     size_t align_m1)
 {
     struct hblk *hbp, *last_hbp;
     hdr *hhdr; /* header corresponding to hbp */
-    word size_needed = HBLKSIZE * OBJ_SZ_TO_BLOCKS_CHECKED(sz);
+    word size_needed = HBLKSIZE * OBJ_SZ_TO_BLOCKS_CHECKED(lb_adjusted);
                                 /* number of bytes in requested objects */
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT(((align_m1 + 1) & align_m1) == 0 && sz > 0);
+    GC_ASSERT(((align_m1 + 1) & align_m1) == 0 && lb_adjusted > 0);
     GC_ASSERT(0 == align_m1 || modHBLKSZ(align_m1 + 1) == 0);
   retry:
     /* Search for a big enough block in free list.      */
@@ -856,8 +858,8 @@ STATIC struct hblk *GC_allochblk_nth(size_t sz, int kind, unsigned flags,
           continue;
       }
 
-      if (IS_UNCOLLECTABLE(kind)
-          || (kind == PTRFREE && size_needed <= MAX_BLACK_LIST_ALLOC)) {
+      if (IS_UNCOLLECTABLE(k)
+          || (k == PTRFREE && size_needed <= MAX_BLACK_LIST_ALLOC)) {
         last_hbp = hbp + divHBLKSZ(align_ofs);
         break;
       }
@@ -947,7 +949,7 @@ STATIC struct hblk *GC_allochblk_nth(size_t sz, int kind, unsigned flags,
 
     /* Set up the header.       */
     GC_ASSERT(HDR(hbp) == hhdr);
-    if (EXPECT(!setup_header(hhdr, hbp, sz, kind, flags), FALSE)) {
+    if (EXPECT(!setup_header(hhdr, hbp, lb_adjusted, k, flags), FALSE)) {
       GC_remove_counts(hbp, (size_t)size_needed);
       return NULL; /* ditto */
     }
