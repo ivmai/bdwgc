@@ -566,8 +566,8 @@ unsigned GC_n_set_marks(hdr *hhdr)
 
         /* As mentioned in GC_set_hdr_marks(), all the bits are set     */
         /* instead of every n-th, thus the result should be adjusted.   */
-        GC_ASSERT(lg != 0 && result % lg == 0);
-        result /= lg;
+        GC_ASSERT((unsigned)lg != 0 && result % lg == 0);
+        result /= (unsigned)lg;
       }
 #   endif
     return result;
