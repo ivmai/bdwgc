@@ -90,9 +90,9 @@ GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 
 #if !defined(GC_DISABLE_INCREMENTAL)
   STATIC word GC_n_rescuing_pages = 0;
-                                /* Number of dirty pages we marked from */
-                                /* excludes ptrfree pages, etc.         */
-                                /* Used for logging only.               */
+                                /* Number of dirty pages we marked      */
+                                /* from, excluding pointer-free pages,  */
+                                /* etc.  Used for logging only.         */
 #endif
 
 #ifdef PARALLEL_MARK

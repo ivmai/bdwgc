@@ -3496,64 +3496,64 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
 STATIC void GC_protect_heap(void)
 {
-    unsigned i;
-    GC_bool protect_all =
+  unsigned i;
+  GC_bool protect_all =
         (0 != (GC_incremental_protection_needs() & GC_PROTECTS_PTRFREE_HEAP));
 
-    GC_ASSERT(GC_page_size != 0);
-    for (i = 0; i < GC_n_heap_sects; i++) {
-        ptr_t start = GC_heap_sects[i].hs_start;
-        size_t len = GC_heap_sects[i].hs_bytes;
+  GC_ASSERT(GC_page_size != 0);
+  for (i = 0; i < GC_n_heap_sects; i++) {
+    ptr_t start = GC_heap_sects[i].hs_start;
+    size_t len = GC_heap_sects[i].hs_bytes;
+    struct hblk *current;
+    struct hblk *current_start; /* start of block to be protected */
+    struct hblk *limit;
 
-        if (protect_all) {
-          PROTECT(start, len);
-        } else {
-          struct hblk * current;
-          struct hblk * current_start; /* Start of block to be protected. */
-          struct hblk * limit;
-
-          GC_ASSERT(PAGE_ALIGNED(len));
-          GC_ASSERT(PAGE_ALIGNED(start));
-          current_start = current = (struct hblk *)start;
-          limit = (struct hblk *)(start + len);
-          while ((word)current < (word)limit) {
-            hdr * hhdr;
-            word nhblks;
-            GC_bool is_ptrfree;
-
-            GC_ASSERT(PAGE_ALIGNED(current));
-            GET_HDR(current, hhdr);
-            if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-              /* This can happen only if we're at the beginning of a    */
-              /* heap segment, and a block spans heap segments.         */
-              /* We will handle that block as part of the preceding     */
-              /* segment.                                               */
-              GC_ASSERT(current_start == current);
-              current_start = ++current;
-              continue;
-            }
-            if (HBLK_IS_FREE(hhdr)) {
-              GC_ASSERT(PAGE_ALIGNED(hhdr -> hb_sz));
-              nhblks = divHBLKSZ(hhdr -> hb_sz);
-              is_ptrfree = TRUE;        /* dirty on alloc */
-            } else {
-              nhblks = OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
-              is_ptrfree = IS_PTRFREE(hhdr);
-            }
-            if (is_ptrfree) {
-              if ((word)current_start < (word)current) {
-                PROTECT(current_start, (ptr_t)current - (ptr_t)current_start);
-              }
-              current_start = (current += nhblks);
-            } else {
-              current += nhblks;
-            }
-          }
-          if ((word)current_start < (word)current) {
-            PROTECT(current_start, (ptr_t)current - (ptr_t)current_start);
-          }
-        }
+    GC_ASSERT(PAGE_ALIGNED(start));
+    GC_ASSERT(PAGE_ALIGNED(len));
+    if (protect_all) {
+      PROTECT(start, len);
+      continue;
     }
+
+    current_start = (struct hblk *)start;
+    limit = (struct hblk *)(start + len);
+    for (current = current_start;;) {
+      word nblocks = 0;
+      GC_bool is_ptrfree = TRUE;
+
+      GC_ASSERT(PAGE_ALIGNED(current));
+      if ((word)current < (word)limit) {
+        hdr *hhdr;
+
+        GET_HDR(current, hhdr);
+        if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
+          /* This can happen only if we are at the beginning of */
+          /* a heap segment, and a block spans heap segments.   */
+          /* We will handle that block as part of the preceding */
+          /* segment.                                           */
+          GC_ASSERT(current_start == current);
+
+          current_start = ++current;
+          continue;
+        }
+        if (HBLK_IS_FREE(hhdr)) {
+          GC_ASSERT(PAGE_ALIGNED(hhdr -> hb_sz));
+          nblocks = divHBLKSZ(hhdr -> hb_sz);
+        } else {
+          nblocks = OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
+          is_ptrfree = IS_PTRFREE(hhdr);
+        }
+      }
+      if (is_ptrfree) {
+        if ((word)current_start < (word)current) {
+          PROTECT(current_start, (ptr_t)current - (ptr_t)current_start);
+        }
+        if ((word)current >= (word)limit) break;
+      }
+      current += nblocks;
+      if (is_ptrfree) current_start = current;
+    }
+  }
 }
 
 /*
