@@ -1710,8 +1710,12 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 
 /* Object kinds: */
 #ifndef MAXOBJKINDS
-# define MAXOBJKINDS 16
-#endif
+# ifdef SMALL_CONFIG
+#   define MAXOBJKINDS 16
+# else
+#   define MAXOBJKINDS 24
+# endif
+#endif /* !MAXOBJKINDS */
 GC_EXTERN struct obj_kind {
   void **ok_freelist;   /* Array of free list headers for this kind of  */
                         /* object.  Point either to GC_arrays or to     */
