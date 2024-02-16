@@ -330,11 +330,11 @@ static void *store_debug_info(void *p, size_t lb,
 
 STATIC GC_describe_type_fn GC_describe_type_fns[MAXOBJKINDS] = {0};
 
-GC_API void GC_CALL GC_register_describe_type_fn(int kind,
+GC_API void GC_CALL GC_register_describe_type_fn(int k,
                                                  GC_describe_type_fn fn)
 {
-  GC_ASSERT((unsigned)kind < MAXOBJKINDS);
-  GC_describe_type_fns[kind] = fn;
+  GC_ASSERT((unsigned)k < MAXOBJKINDS);
+  GC_describe_type_fns[k] = fn;
 }
 
 #define GET_OH_LINENUM(ohdr) ((int)(ohdr)->oh_int)
@@ -354,7 +354,7 @@ STATIC void GC_print_obj(ptr_t p)
     oh * ohdr = (oh *)GC_base(p);
     ptr_t q;
     hdr * hhdr;
-    int kind;
+    int k;
     const char *kind_str;
     char buffer[GC_TYPE_DESCR_LEN + 1];
 
@@ -367,16 +367,16 @@ STATIC void GC_print_obj(ptr_t p)
     /* Print a type description for the object whose client-visible     */
     /* address is q.                                                    */
     hhdr = GC_find_header(q);
-    kind = hhdr -> hb_obj_kind;
-    if (0 != GC_describe_type_fns[kind] && GC_is_marked(ohdr)) {
+    k = hhdr -> hb_obj_kind;
+    if (GC_describe_type_fns[k] != 0 && GC_is_marked(ohdr)) {
         /* This should preclude free list objects except with   */
         /* thread-local allocation.                             */
         buffer[GC_TYPE_DESCR_LEN] = 0;
-        (GC_describe_type_fns[kind])(q, buffer);
+        (GC_describe_type_fns[k])(q, buffer);
         GC_ASSERT(buffer[GC_TYPE_DESCR_LEN] == 0);
         kind_str = buffer;
     } else {
-        switch(kind) {
+        switch (k) {
           case PTRFREE:
             kind_str = "PTRFREE";
             break;
@@ -410,7 +410,7 @@ STATIC void GC_print_obj(ptr_t p)
                       (void *)((ptr_t)ohdr + sizeof(oh)),
                       ohdr->oh_string, GET_OH_LINENUM(ohdr) /*, */
                       COMMA_IFNOT_SHORTDBG_HDRS((unsigned long)ohdr->oh_sz),
-                      kind, (unsigned long)hhdr->hb_descr);
+                      k, (unsigned long)(hhdr -> hb_descr));
     }
     PRINT_CALL_CHAIN(ohdr);
 }
@@ -857,26 +857,8 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
         return GC_realloc(p, lb);
     }
     hhdr = HDR(base);
-    switch (hhdr -> hb_obj_kind) {
-      case NORMAL:
-        result = GC_debug_malloc(lb, OPT_RA s, i);
-        break;
-      case PTRFREE:
-        result = GC_debug_malloc_atomic(lb, OPT_RA s, i);
-        break;
-      case UNCOLLECTABLE:
-        result = GC_debug_malloc_uncollectable(lb, OPT_RA s, i);
-        break;
-#     ifdef GC_ATOMIC_UNCOLLECTABLE
-        case AUNCOLLECTABLE:
-          result = GC_debug_malloc_atomic_uncollectable(lb, OPT_RA s, i);
-          break;
-#     endif
-      default:
-        result = GC_debug_generic_malloc(lb, hhdr -> hb_obj_kind, OPT_RA s, i);
-        break;
-    }
-
+    result = GC_debug_generic_or_special_malloc(lb, hhdr -> hb_obj_kind,
+                                                OPT_RA s, i);
     if (result != NULL) {
       size_t old_sz;
 #     ifdef SHORT_DBG_HDRS
