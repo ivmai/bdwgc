@@ -228,17 +228,17 @@ static int GC_CALLBACK weakmap_disclaim(void *obj_base)
 {
   struct weakmap *wm;
   struct weakmap_link **link;
-  GC_word hdr;
+  GC_word header;
   void *obj;
   unsigned h;
 
   /* Decode header word.    */
-  hdr = *(GC_word *)obj_base;
-  if ((hdr & FINALIZER_CLOSURE_FLAG) == 0)
+  header = *(GC_word *)obj_base;
+  if ((header & FINALIZER_CLOSURE_FLAG) == 0)
     return 0;   /* on GC free list, ignore it.  */
 
-  my_assert((hdr & INVALIDATE_FLAG) == 0);
-  wm = (struct weakmap *)(hdr & ~(GC_word)FINALIZER_CLOSURE_FLAG);
+  my_assert((header & INVALIDATE_FLAG) == 0);
+  wm = (struct weakmap *)(header & ~(GC_word)FINALIZER_CLOSURE_FLAG);
   if (NULL == wm->links)
     return 0;   /* weakmap has been already destroyed */
   obj = (GC_word *)obj_base + 1;

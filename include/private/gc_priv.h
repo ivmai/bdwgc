@@ -189,6 +189,8 @@ typedef int GC_bool;
 
 typedef unsigned int unsigned32;
 
+typedef struct hblkhdr hdr;
+
 #include "gc_hdrs.h"
 
 #ifndef GC_ATTR_NO_SANITIZE_ADDR
@@ -1223,7 +1225,7 @@ struct hblk {
     char hb_body[HBLKSIZE];
 };
 
-# define HBLK_IS_FREE(hdr) (((hdr) -> hb_flags & FREE_BLK) != 0)
+# define HBLK_IS_FREE(hhdr) (((hhdr) -> hb_flags & FREE_BLK) != 0)
 
 # define OBJ_SZ_TO_BLOCKS(lb) divHBLKSZ((lb) + HBLKSIZE-1)
 # define OBJ_SZ_TO_BLOCKS_CHECKED(lb) /* lb should have no side-effect */ \
@@ -2420,7 +2422,7 @@ GC_INNER ptr_t GC_allocobj(size_t lg, int k);
 #endif
 
 GC_INNER void GC_init_headers(void);
-GC_INNER struct hblkhdr * GC_install_header(struct hblk *h);
+GC_INNER hdr * GC_install_header(struct hblk *h);
                                 /* Install a header for block h.        */
                                 /* Return 0 on failure, or the header   */
                                 /* otherwise.                           */

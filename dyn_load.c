@@ -1309,12 +1309,12 @@ STATIC const char * const GC_dyld_bss_prefixes[] = {
 # define L2_MAX_OFILE_ALIGNMENT 15
 #endif
 
-STATIC const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
+STATIC const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *phdr)
 {
     unsigned long i, count = _dyld_image_count();
 
     for (i = 0; i < count; i++) {
-      if ((const struct GC_MACH_HEADER *)_dyld_get_image_header(i) == hdr)
+      if ((const struct GC_MACH_HEADER *)_dyld_get_image_header(i) == phdr)
         return _dyld_get_image_name(i);
     }
     /* TODO: probably ABORT in this case? */
@@ -1329,7 +1329,7 @@ STATIC const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
 # define USE_GETSECTBYNAME
 #endif
 
-static void dyld_section_add_del(const struct GC_MACH_HEADER *hdr,
+static void dyld_section_add_del(const struct GC_MACH_HEADER *phdr,
                                  intptr_t slide, const char *dlpi_name,
                                  GC_has_static_roots_func callback,
                                  const char *seg, const char *secnam,
@@ -1338,10 +1338,10 @@ static void dyld_section_add_del(const struct GC_MACH_HEADER *hdr,
   unsigned long start, end, sec_size;
 # ifdef USE_GETSECTBYNAME
 #   if CPP_WORDSZ == 64
-      const struct section_64 *sec = getsectbynamefromheader_64(hdr, seg,
+      const struct section_64 *sec = getsectbynamefromheader_64(phdr, seg,
                                                                 secnam);
 #   else
-      const struct section *sec = getsectbynamefromheader(hdr, seg, secnam);
+      const struct section *sec = getsectbynamefromheader(phdr, seg, secnam);
 #   endif
 
     if (NULL == sec) return;
@@ -1351,7 +1351,7 @@ static void dyld_section_add_del(const struct GC_MACH_HEADER *hdr,
 
     UNUSED_ARG(slide);
     sec_size = 0;
-    start = (unsigned long)getsectiondata(hdr, seg, secnam, &sec_size);
+    start = (unsigned long)getsectiondata(phdr, seg, secnam, &sec_size);
     if (0 == start) return;
 # endif
   if (sec_size < sizeof(word)) return;
@@ -1376,7 +1376,7 @@ static void dyld_section_add_del(const struct GC_MACH_HEADER *hdr,
 # endif
 }
 
-static void dyld_image_add_del(const struct GC_MACH_HEADER *hdr,
+static void dyld_image_add_del(const struct GC_MACH_HEADER *phdr,
                                intptr_t slide,
                                GC_has_static_roots_func callback,
                                GC_bool is_add)
@@ -1391,10 +1391,10 @@ static void dyld_image_add_del(const struct GC_MACH_HEADER *hdr,
     } else
 # endif
   /* else */ {
-    dlpi_name = GC_dyld_name_for_hdr(hdr);
+    dlpi_name = GC_dyld_name_for_hdr(phdr);
   }
   for (i = 0; i < sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]); i++) {
-    dyld_section_add_del(hdr, slide, dlpi_name, callback,
+    dyld_section_add_del(phdr, slide, dlpi_name, callback,
                          GC_dyld_sections[i].seg, GC_dyld_sections[i].sect,
                          is_add);
   }
@@ -1408,7 +1408,7 @@ static void dyld_image_add_del(const struct GC_MACH_HEADER *hdr,
       (void)snprintf(secnam, sizeof(secnam), "%s%u",
                      GC_dyld_bss_prefixes[j], i);
       secnam[sizeof(secnam) - 1] = '\0';
-      dyld_section_add_del(hdr, slide, dlpi_name, 0 /* callback */, SEG_DATA,
+      dyld_section_add_del(phdr, slide, dlpi_name, 0 /* callback */, SEG_DATA,
                            secnam, is_add);
     }
   }
@@ -1420,16 +1420,17 @@ static void dyld_image_add_del(const struct GC_MACH_HEADER *hdr,
 # endif
 }
 
-STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr, intptr_t slide)
+STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *phdr,
+                              intptr_t slide)
 {
   if (!GC_no_dls)
-    dyld_image_add_del(hdr, slide, GC_has_static_roots, TRUE);
+    dyld_image_add_del(phdr, slide, GC_has_static_roots, TRUE);
 }
 
-STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
+STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *phdr,
                                  intptr_t slide)
 {
-  dyld_image_add_del(hdr, slide, 0 /* callback */, FALSE);
+  dyld_image_add_del(phdr, slide, 0 /* callback */, FALSE);
 }
 
 GC_INNER void GC_register_dynamic_libraries(void)

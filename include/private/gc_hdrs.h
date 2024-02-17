@@ -25,8 +25,6 @@
 
 EXTERN_C_BEGIN
 
-typedef struct hblkhdr hdr;
-
 /*
  * The 2 level tree data structure that is used to find block headers.
  * If there are more than 32 bits in a pointer, the top level is a hash

@@ -827,7 +827,7 @@ struct enumerate_reachable_s {
 STATIC void GC_CALLBACK GC_do_enumerate_reachable_objects(struct hblk *hbp,
                                                           GC_word ped)
 {
-  struct hblkhdr *hhdr = HDR(hbp);
+  hdr *hhdr = HDR(hbp);
   size_t sz = (size_t)hhdr->hb_sz;
   size_t bit_no;
   char *p, *plim;

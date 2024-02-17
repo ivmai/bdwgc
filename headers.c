@@ -266,7 +266,7 @@ static GC_bool get_index(word addr)
 /* Install a header for block h.        */
 /* The header is uninitialized.         */
 /* Returns the header or 0 on failure.  */
-GC_INNER struct hblkhdr * GC_install_header(struct hblk *h)
+GC_INNER hdr * GC_install_header(struct hblk *h)
 {
     hdr * result;
 

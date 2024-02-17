@@ -95,7 +95,7 @@
   GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void *dest, void **base_p,
                                                   size_t *offset_p)
   {
-    oh * hdr = (oh *)GC_base(dest);
+    oh * ohdr = (oh *)GC_base(dest);
     ptr_t bp;
     ptr_t bp_base;
 
@@ -103,10 +103,10 @@
       /* Explicitly instruct the code analysis tool that                */
       /* GC_get_back_ptr_info is not expected to be called with an      */
       /* incorrect "dest" value.                                        */
-      if (!hdr) ABORT("Invalid GC_get_back_ptr_info argument");
+      if (!ohdr) ABORT("Invalid GC_get_back_ptr_info argument");
 #   endif
-    if (!GC_HAS_DEBUG_INFO((ptr_t)hdr)) return GC_NO_SPACE;
-    bp = (ptr_t)GC_REVEAL_POINTER(hdr -> oh_back_ptr);
+    if (!GC_HAS_DEBUG_INFO((ptr_t)ohdr)) return GC_NO_SPACE;
+    bp = (ptr_t)GC_REVEAL_POINTER(ohdr -> oh_back_ptr);
     if (MARKED_FOR_FINALIZATION == bp) return GC_FINALIZER_REFD;
     if (MARKED_FROM_REGISTER == bp) return GC_REFD_FROM_REG;
     if (NOT_MARKED == bp) return GC_UNREFERENCED;
@@ -941,7 +941,7 @@ STATIC void GC_print_all_smashed_proc(void)
 /* Avoid GC_apply_to_each_object for performance reasons.       */
 STATIC void GC_CALLBACK GC_check_heap_block(struct hblk *hbp, GC_word dummy)
 {
-    struct hblkhdr * hhdr = HDR(hbp);
+    hdr *hhdr = HDR(hbp);
     word sz = hhdr -> hb_sz;
     word bit_no;
     char *p, *plim;
