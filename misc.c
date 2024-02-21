@@ -426,29 +426,29 @@ STATIC void GC_init_size_map(void)
 /* an address within an object.  Return 0 o.w.                          */
 GC_API void * GC_CALL GC_base(void * p)
 {
-    ptr_t r;
+    ptr_t r = (ptr_t)p;
     struct hblk *h;
     bottom_index *bi;
-    hdr *candidate_hdr;
+    hdr *hhdr;
 
-    r = (ptr_t)p;
     if (!EXPECT(GC_is_initialized, TRUE)) return NULL;
     h = HBLKPTR(r);
     GET_BI(r, bi);
-    candidate_hdr = HDR_FROM_BI(bi, r);
-    if (NULL == candidate_hdr) return NULL;
+    hhdr = HDR_FROM_BI(bi, r);
+    if (NULL == hhdr) return NULL;
+
     /* If it's a pointer to the middle of a large object, move it       */
     /* to the beginning.                                                */
-    while (IS_FORWARDING_ADDR_OR_NIL(candidate_hdr)) {
-        h = FORWARDED_ADDR(h, candidate_hdr);
+    if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
+        h = GC_find_starting_hblk(h, &hhdr);
         r = (ptr_t)h;
-        candidate_hdr = HDR(h);
     }
-    if (HBLK_IS_FREE(candidate_hdr)) return NULL;
-    /* Make sure r points to the beginning of the object */
-        r = (ptr_t)((word)r & ~(word)(WORDS_TO_BYTES(1)-1));
-        {
-            word sz = candidate_hdr -> hb_sz;
+    if (HBLK_IS_FREE(hhdr)) return NULL;
+
+    /* Make sure r points to the beginning of the object.       */
+    r = (ptr_t)((word)r & ~(word)(WORDS_TO_BYTES(1)-1));
+    {
+            word sz = hhdr -> hb_sz;
             ptr_t limit;
 
             r -= HBLKDISPL(r) % sz;
@@ -456,7 +456,7 @@ GC_API void * GC_CALL GC_base(void * p)
             if (((word)limit > (word)(h + 1) && sz <= HBLKSIZE)
                 || (word)p >= (word)limit)
               return NULL;
-        }
+    }
     return (void *)r;
 }
 

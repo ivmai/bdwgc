@@ -61,13 +61,9 @@ GC_INNER hdr *
   if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
     if (GC_all_interior_pointers) {
       if (hhdr != NULL) {
-        ptr_t current = (ptr_t)HBLKPTR(p);
+        ptr_t current = (ptr_t)GC_find_starting_hblk(HBLKPTR(p), &hhdr);
+                    /* current points to near the start of the large object */
 
-        do {
-            current = (ptr_t)FORWARDED_ADDR(current, hhdr);
-            hhdr = HDR(current);
-        } while (IS_FORWARDING_ADDR_OR_NIL(hhdr));
-        /* current points to near the start of the large object */
         if (hhdr -> hb_flags & IGNORE_OFF_PAGE)
             return 0;
         if (HBLK_IS_FREE(hhdr)
@@ -176,7 +172,7 @@ static hdr * alloc_hdr(void)
         result = (hdr *)GC_scratch_alloc(sizeof(hdr));
     } else {
         result = GC_hdr_free_list;
-        GC_hdr_free_list = (hdr *) result -> hb_next;
+        GC_hdr_free_list = (hdr *)(result -> hb_next);
     }
     return result;
 }
@@ -263,9 +259,6 @@ static GC_bool get_index(word addr)
     return TRUE;
 }
 
-/* Install a header for block h.        */
-/* The header is uninitialized.         */
-/* Returns the header or 0 on failure.  */
 GC_INNER hdr * GC_install_header(struct hblk *h)
 {
     hdr * result;
@@ -284,8 +277,7 @@ GC_INNER hdr * GC_install_header(struct hblk *h)
     return result;
 }
 
-/* Set up forwarding counts for block h of size sz */
-GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz/* bytes */)
+GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz /* bytes */)
 {
     struct hblk * hbp;
 
@@ -297,6 +289,7 @@ GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz/* bytes */)
     }
     if (!get_index((word)h + sz - 1))
         return FALSE;
+    GC_ASSERT(!IS_FORWARDING_ADDR_OR_NIL(HDR(h)));
     for (hbp = h + 1; (word)hbp < (word)h + sz; hbp++) {
         word i = (word)HBLK_PTR_DIFF(hbp, h);
 
@@ -305,7 +298,6 @@ GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz/* bytes */)
     return TRUE;
 }
 
-/* Remove the header for block h */
 GC_INNER void GC_remove_header(struct hblk *h)
 {
     hdr **ha;
@@ -314,8 +306,7 @@ GC_INNER void GC_remove_header(struct hblk *h)
     *ha = 0;
 }
 
-/* Remove forwarding counts for h */
-GC_INNER void GC_remove_counts(struct hblk *h, size_t sz/* bytes */)
+GC_INNER void GC_remove_counts(struct hblk *h, size_t sz /* bytes */)
 {
     struct hblk * hbp;
 

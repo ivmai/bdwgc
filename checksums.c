@@ -78,7 +78,6 @@ STATIC void GC_update_check_page(struct hblk *h, int index)
 {
     page_entry *pe = GC_sums + index;
     hdr * hhdr = HDR(h);
-    struct hblk *b;
 
     if (pe -> block != 0 && pe -> block != h + OFFSET) ABORT("goofed");
     pe -> old_sum = pe -> new_sum;
@@ -93,19 +92,18 @@ STATIC void GC_update_check_page(struct hblk *h, int index)
     } else {
         GC_n_clean++;
     }
-    for (b = h; IS_FORWARDING_ADDR_OR_NIL(hhdr) && hhdr != NULL;
-                hhdr = HDR(b)) {
-        b = FORWARDED_ADDR(b, hhdr);
-    }
-    if (pe -> new_valid && hhdr != NULL && !IS_PTRFREE(hhdr)
-#       ifdef SOFT_VDB
-          && !HBLK_IS_FREE(hhdr)
-#       endif
-        && pe -> old_sum != pe -> new_sum) {
-        if (!GC_page_was_dirty(h) || !GC_page_was_ever_dirty(h)) {
-            GC_bool was_faulted = GC_was_faulted(h);
-            /* Set breakpoint here */GC_n_dirty_errors++;
-            if (was_faulted) GC_n_faulted_dirty_errors++;
+    if (hhdr != NULL) {
+        (void)GC_find_starting_hblk(h, &hhdr);
+        if (pe -> new_valid
+#           ifdef SOFT_VDB
+              && !HBLK_IS_FREE(hhdr)
+#           endif
+            && !IS_PTRFREE(hhdr) && pe -> old_sum != pe -> new_sum) {
+            if (!GC_page_was_dirty(h) || !GC_page_was_ever_dirty(h)) {
+                GC_bool was_faulted = GC_was_faulted(h);
+                /* Set breakpoint here */GC_n_dirty_errors++;
+                if (was_faulted) GC_n_faulted_dirty_errors++;
+            }
         }
     }
     pe -> new_valid = TRUE;

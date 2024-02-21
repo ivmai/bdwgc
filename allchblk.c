@@ -334,6 +334,7 @@ STATIC void GC_remove_from_fl_at(hdr *hhdr, int index)
     GC_free_bytes[index] -= hhdr -> hb_sz;
     if (0 != hhdr -> hb_next) {
         hdr *nhdr;
+
         GC_ASSERT(!IS_FORWARDING_ADDR_OR_NIL(NHDR(hhdr)));
         GET_HDR(hhdr -> hb_next, nhdr);
         nhdr -> hb_prev = hhdr -> hb_prev;
@@ -351,17 +352,14 @@ GC_INLINE void GC_remove_from_fl(hdr *hhdr)
 /* Return a pointer to the block ending just before h, if any.  */
 static struct hblk * get_block_ending_at(struct hblk *h)
 {
-    struct hblk * p = h - 1;
+    struct hblk *p = h - 1;
     hdr *hhdr;
 
     GET_HDR(p, hhdr);
-    for (; IS_FORWARDING_ADDR_OR_NIL(hhdr) && hhdr != NULL; hhdr = HDR(p)) {
-        p = FORWARDED_ADDR(p, hhdr);
-    }
     if (hhdr != NULL) {
-        return p;
+        return GC_find_starting_hblk(p, &hhdr);
     }
-    p = GC_prev_block(h - 1);
+    p = GC_prev_block(p);
     if (p != NULL) {
         hhdr = HDR(p);
         if ((ptr_t)p + hhdr -> hb_sz == (ptr_t)h) {
@@ -544,8 +542,8 @@ GC_INNER void GC_merge_unmapped(void)
         size = hhdr->hb_sz;
         next = (struct hblk *)((word)h + size);
         GET_HDR(next, nexthdr);
-        /* Coalesce with successor, if possible */
-          if (nexthdr != NULL && HBLK_IS_FREE(nexthdr)
+        /* Coalesce with successor, if possible. */
+        if (nexthdr != NULL && HBLK_IS_FREE(nexthdr)
               && !((size + (nextsize = nexthdr -> hb_sz)) & SIGNB)
                  /* no overflow */) {
             /* Note that we usually try to avoid adjacent free blocks   */
@@ -554,7 +552,7 @@ GC_INNER void GC_merge_unmapped(void)
             /* split them, and don't merge at that point.  It may also  */
             /* not hold if the merged block would be too big.           */
             if (IS_MAPPED(hhdr) && !IS_MAPPED(nexthdr)) {
-              /* make both consistent, so that we can merge */
+              /* Make both consistent, so that we can merge.    */
                 if (size > nextsize) {
                   GC_adjust_num_unmapped(next, nexthdr);
                   GC_remap((ptr_t)next, nextsize);
@@ -585,11 +583,11 @@ GC_INNER void GC_merge_unmapped(void)
             hhdr -> hb_sz += nexthdr -> hb_sz;
             GC_remove_header(next);
             GC_add_to_fl(h, hhdr);
-            /* Start over at beginning of list */
+            /* Start over at beginning of list. */
             h = GC_hblkfreelist[i];
-          } else /* not mergeable with successor */ {
+        } else /* not mergeable with successor */ {
             h = hhdr -> hb_next;
-          }
+        }
       } /* while (h != 0) ... */
     } /* for ... */
 }
@@ -992,32 +990,34 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
       /* Probably possible if we try to allocate more than half the address */
       /* space at once.  If we don't catch it here, strange things happen   */
       /* later.                                                             */
+
     GC_remove_counts(hbp, (size_t)size);
     hhdr -> hb_sz = size;
 #   ifdef USE_MUNMAP
       hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
 #   endif
 
-    /* Check for duplicate deallocation in the easy case */
-      if (HBLK_IS_FREE(hhdr)) {
+    /* Check for duplicate deallocation in the easy case. */
+    if (HBLK_IS_FREE(hhdr)) {
         ABORT_ARG1("Duplicate large block deallocation",
                    " of %p", (void *)hbp);
-      }
+    }
 
     GC_ASSERT(IS_MAPPED(hhdr));
     hhdr -> hb_flags |= FREE_BLK;
     next = (struct hblk *)((ptr_t)hbp + size);
     GET_HDR(next, nexthdr);
     prev = GC_free_block_ending_at(hbp);
-    /* Coalesce with successor, if possible */
-      if (nexthdr != NULL && HBLK_IS_FREE(nexthdr) && IS_MAPPED(nexthdr)
+    /* Coalesce with successor, if possible.    */
+    if (nexthdr != NULL && HBLK_IS_FREE(nexthdr) && IS_MAPPED(nexthdr)
           && !((hhdr -> hb_sz + nexthdr -> hb_sz) & SIGNB) /* no overflow */) {
         GC_remove_from_fl(nexthdr);
         hhdr -> hb_sz += nexthdr -> hb_sz;
         GC_remove_header(next);
-      }
+    }
+
     /* Coalesce with predecessor, if possible. */
-      if (prev /* != NULL */) { /* CPPCHECK */
+    if (prev /* != NULL */) { /* CPPCHECK */
         prevhdr = HDR(prev);
         if (IS_MAPPED(prevhdr)
             && !((hhdr -> hb_sz + prevhdr -> hb_sz) & SIGNB)) {
@@ -1030,7 +1030,7 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
           hbp = prev;
           hhdr = prevhdr;
         }
-      }
+    }
     /* FIXME: It is not clear we really always want to do these merges  */
     /* with USE_MUNMAP, since it updates ages and hence prevents        */
     /* unmapping.                                                       */

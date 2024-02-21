@@ -4090,7 +4090,6 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 #           if defined(FILTER_PTRFREE_HBLKS_IN_SOFT_VDB) \
                || defined(CHECKSUMS) || defined(DEBUG_DIRTY_BITS)
               if (!is_static_root) {
-                struct hblk *b;
                 hdr *hhdr;
 
 #               ifdef CHECKSUMS
@@ -4098,9 +4097,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 #               endif
                 GET_HDR(h, hhdr);
                 if (NULL == hhdr) continue;
-                for (b = h; IS_FORWARDING_ADDR_OR_NIL(hhdr); hhdr = HDR(b)) {
-                   b = FORWARDED_ADDR(b, hhdr);
-                }
+
+                (void)GC_find_starting_hblk(h, &hhdr);
                 if (HBLK_IS_FREE(hhdr) || IS_PTRFREE(hhdr)) continue;
 #               ifdef DEBUG_DIRTY_BITS
                   GC_log_printf("dirty page (hblk) at: %p\n", (void *)h);

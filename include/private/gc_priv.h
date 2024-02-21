@@ -2424,8 +2424,8 @@ GC_INNER ptr_t GC_allocobj(size_t lg, int k);
 GC_INNER void GC_init_headers(void);
 GC_INNER hdr * GC_install_header(struct hblk *h);
                                 /* Install a header for block h.        */
-                                /* Return 0 on failure, or the header   */
-                                /* otherwise.                           */
+                                /* Return NULL on failure, or the       */
+                                /* uninitialized header otherwise.      */
 GC_INNER GC_bool GC_install_counts(struct hblk * h, size_t sz);
                                 /* Set up forwarding counts for block   */
                                 /* h of size sz.                        */
@@ -2929,6 +2929,24 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
     GC_INNER void GC_darwin_register_self_mach_handler(void);
 # endif
 #endif
+
+#ifndef NOT_GCBUILD
+  /* Iterate over forwarding addresses, if any, to get the beginning of */
+  /* the block and its header.  Assumes *phhdr is non-NULL on entry,    */
+  /* and guarantees *phhdr is non-NULL on return.                       */
+  GC_INLINE struct hblk *GC_find_starting_hblk(struct hblk *h, hdr **phhdr)
+  {
+    hdr *hhdr = *phhdr;
+
+    GC_ASSERT(HDR(h) == hhdr);
+    for (; IS_FORWARDING_ADDR_OR_NIL(hhdr); hhdr = HDR(h)) {
+      GC_ASSERT(hhdr != NULL);
+      h = FORWARDED_ADDR(h, hhdr);
+    }
+    *phhdr = hhdr;
+    return h;
+  }
+#endif /* !NOT_GCBUILD */
 
 #ifdef THREADS
 # ifndef GC_NO_FINALIZATION
