@@ -3038,9 +3038,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
    * to the write-protected heap.  Probably the best way to do this is to
    * ensure that system calls write at most to pointer-free objects in the
    * heap, and do even that only if we are on a platform on which those
-   * are not protected.  Another alternative is to wrap system calls
-   * (see example for read below), but the current implementation holds
-   * applications.
+   * are not protected.
    * We assume the page size is a multiple of HBLKSIZE.
    * We prefer them to be the same.  We avoid protecting pointer-free
    * objects only if they are the same.
@@ -3530,17 +3528,6 @@ GC_INNER void GC_read_dirty(void)
     BZERO((word *)GC_dirty_pages, (sizeof GC_dirty_pages));
     GC_protect_heap();
 }
-
-/*
- * Acquiring the allocation lock here is dangerous, since this
- * can be called from within GC_call_with_alloc_lock, and the cord
- * package does so.  On systems that allow nested lock acquisition, this
- * happens to work.
- */
-
-/* We no longer wrap read by default, since that was causing too many   */
-/* problems.  It is preferred that the client instead avoids writing    */
-/* to the write-protected heap with a system call.                      */
 
 # ifdef CHECKSUMS
     GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h GC_ATTR_UNUSED)
