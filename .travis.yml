@@ -143,7 +143,7 @@ jobs:
   - arch: ppc64le
     compiler: clang
     env:
-    - CFLAGS_EXTRA="-O3 -D _FORTIFY_SOURCE=2 -D FORCE_MPROTECT_BEFORE_MADVISE -D GC_UNMAPPED_REGIONS_SOFT_LIMIT=120"
+    - CFLAGS_EXTRA="-O3 -D _FORTIFY_SOURCE=2 -D DONT_PROTECT_PTRFREE -D FORCE_MPROTECT_BEFORE_MADVISE -D GC_UNMAPPED_REGIONS_SOFT_LIMIT=120"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-static"
     - GCTEST_WITH_MPROTECT_VDB=true
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -486,7 +486,7 @@ jobs:
   - compiler: gcc
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
-    - CFLAGS_EXTRA="-O3 -march=native -D GC_PREFER_MPROTECT_VDB"
+    - CFLAGS_EXTRA="-O3 -march=native -D DONT_PROTECT_PTRFREE -D GC_PREFER_MPROTECT_VDB"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
