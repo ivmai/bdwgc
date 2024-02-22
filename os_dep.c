@@ -2659,6 +2659,12 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
 #   endif
 }
 
+/* Compute end address for an unmap operation on the indicated block.   */
+GC_INLINE ptr_t GC_unmap_end(ptr_t start, size_t bytes)
+{
+    return (ptr_t)HBLK_PAGE_ALIGNED(start + bytes);
+}
+
 GC_INNER void GC_unmap(ptr_t start, size_t bytes)
 {
     ptr_t start_addr = GC_unmap_start(start, bytes);
@@ -3264,8 +3270,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   endif
 
     if (SIG_OK && CODE_OK) {
-        struct hblk * h = (struct hblk *)((word)addr
-                                & ~(word)(GC_page_size-1));
+        struct hblk *h = HBLK_PAGE_ALIGNED(addr);
         GC_bool in_allocd_block;
         size_t i;
 
@@ -4055,7 +4060,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
         break;
       }
 
-      limit_buf = ((word)vaddr & ~(word)(GC_page_size-1))
+      limit_buf = (word)HBLK_PAGE_ALIGNED(vaddr)
                   + ((res / sizeof(pagemap_elem_t)) << GC_log_pagesize);
       for (; (word)vaddr < limit_buf; vaddr += GC_page_size, bufp++)
         if ((*bufp & PM_SOFTDIRTY_MASK) != 0) {
@@ -4367,7 +4372,7 @@ GC_INNER GC_bool GC_dirty_init(void)
       if (!GC_auto_incremental || GC_GWW_AVAILABLE())
         return;
       GC_ASSERT(GC_page_size != 0);
-      h_trunc = (struct hblk *)((word)h & ~(word)(GC_page_size-1));
+      h_trunc = HBLK_PAGE_ALIGNED(h);
       h_end = (struct hblk *)PTRT_ROUNDUP_BY_MASK(h + nblocks, GC_page_size-1);
       /* Note that we cannot examine GC_dirty_pages to check    */
       /* whether the page at h_trunc has already been marked    */
@@ -5048,7 +5053,7 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 
   GC_ASSERT(GC_page_size != 0);
   if (GC_mprotect_state == GC_MP_NORMAL) { /* common case */
-    struct hblk * h = (struct hblk *)((word)addr & ~(word)(GC_page_size-1));
+    struct hblk *h = HBLK_PAGE_ALIGNED(addr);
     size_t i;
 
 #   ifdef CHECKSUMS

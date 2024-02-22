@@ -38,18 +38,16 @@ STATIC size_t GC_n_faulted = 0;
 #ifdef MPROTECT_VDB
   void GC_record_fault(struct hblk * h)
   {
-    word page = (word)h & ~(word)(GC_page_size-1);
-
     GC_ASSERT(GC_page_size != 0);
     if (GC_n_faulted >= NSUMS) ABORT("write fault log overflowed");
-    GC_faulted[GC_n_faulted++] = page;
+    GC_faulted[GC_n_faulted++] = (word)HBLK_PAGE_ALIGNED(h);
   }
 #endif
 
 STATIC GC_bool GC_was_faulted(struct hblk *h)
 {
     size_t i;
-    word page = (word)h & ~(word)(GC_page_size-1);
+    word page = (word)HBLK_PAGE_ALIGNED(h);
 
     for (i = 0; i < GC_n_faulted; ++i) {
         if (GC_faulted[i] == page) return TRUE;

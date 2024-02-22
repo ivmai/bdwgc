@@ -435,9 +435,9 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
     GC_bool prev_unmapped = FALSE;
     GC_bool next_unmapped = FALSE;
 
-    next = GC_next_block((struct hblk *)((ptr_t)h + hhdr->hb_sz), TRUE);
+    next = GC_next_block((struct hblk *)((ptr_t)h + hhdr -> hb_sz), TRUE);
     /* Ensure next is contiguous with h.        */
-    if ((ptr_t)next != GC_unmap_end((ptr_t)h, (size_t)hhdr->hb_sz)) {
+    if (next != HBLK_PAGE_ALIGNED((ptr_t)h + hhdr -> hb_sz)) {
       next = NULL;
     }
     if (prev != NULL) {

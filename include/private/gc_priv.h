@@ -988,6 +988,10 @@ EXTERN_C_BEGIN
                                           & ~(word)(HBLKSIZE-1)))
 # define HBLKDISPL(objptr) modHBLKSZ((size_t)(objptr))
 
+/* Same as HBLKPTR() but points to the first block in the page.     */
+# define HBLK_PAGE_ALIGNED(objptr) \
+        ((struct hblk *)(((word)(objptr)) & ~(word)(GC_page_size-1)))
+
 /* Round up allocation size (in bytes) to a multiple of a granule.      */
 #define ROUNDUP_GRANULE_SIZE(lb) /* lb should have no side-effect */ \
         (SIZET_SAT_ADD(lb, GC_GRANULE_BYTES-1) \
@@ -2566,14 +2570,6 @@ GC_EXTERN GC_bool GC_print_back_height;
   GC_INNER void GC_remap(ptr_t start, size_t bytes);
   GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
                              size_t bytes2);
-
-# ifndef NOT_GCBUILD
-    /* Compute end address for an unmap operation on the indicated block. */
-    GC_INLINE ptr_t GC_unmap_end(ptr_t start, size_t bytes)
-    {
-      return (ptr_t)((word)(start + bytes) & ~(word)(GC_page_size-1));
-    }
-# endif
 #endif /* USE_MUNMAP */
 
 #ifdef CAN_HANDLE_FORK
