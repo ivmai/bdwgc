@@ -77,7 +77,7 @@ environment:
     CFLAGS_EXTRA: -std=c11 -D USE_WINALLOC
   - TARGET: cygwin64
     CONF_OPTIONS: --enable-cplusplus
-    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
+    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE -D DONT_PROTECT_PTRFREE
   - TARGET: cygwin
     CONF_OPTIONS: --enable-cplusplus --disable-munmap --enable-gc-assertions --enable-redirect-malloc
   - TARGET: cygwin64
