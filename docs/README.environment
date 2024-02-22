@@ -122,11 +122,12 @@ other means, but this may help with debugging and testing:
 
 GC_ENABLE_INCREMENTAL - Turn on incremental collection at startup.  Note that,
                      depending on platform and collector configuration, this
-                     may involve write protecting pieces of the heap to
-                     track modifications.  These pieces may include
-                     pointer-free objects or not.  Although this is intended
-                     to be transparent, it may cause unintended system call
-                     failures.  Use with caution.
+                     may involve write protecting pieces of the heap to track
+                     modifications.  These pieces may include pointer-free
+                     objects or not.  This is intended to be transparent, but
+                     in case of the mprotect-based implementation it may cause
+                     unintended system call failures (thus, use it with
+                     caution).
 
 GC_PAUSE_TIME_TARGET - Set the desired garbage collector pause time in
                      milliseconds (ms).  This only has an effect if incremental

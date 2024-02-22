@@ -3092,19 +3092,17 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #endif /* !NO_MANUAL_VDB || MPROTECT_VDB */
 
 #ifdef MPROTECT_VDB
-  /*
-   * This implementation maintains dirty bits itself by catching write
-   * faults and keeping track of them.  We assume nobody else catches
-   * SIGBUS or SIGSEGV.  We assume no write faults occur in system calls.
-   * This means that clients must ensure that system calls don't write
-   * to the write-protected heap.  Probably the best way to do this is to
-   * ensure that system calls write at most to pointer-free objects in the
-   * heap, and do even that only if we are on a platform on which those
-   * are not protected.
-   * We assume the page size is a multiple of HBLKSIZE.
-   * We prefer them to be the same.  We avoid protecting pointer-free
-   * objects only if they are the same.
-   */
+  /* This implementation maintains dirty bits itself by catching write  */
+  /* faults and keeping track of them.  We assume nobody else catches   */
+  /* SIGBUS or SIGSEGV.  We assume no write faults occur in system      */
+  /* calls.  This means that clients must ensure that system calls do   */
+  /* not write to the write-protected heap.  Probably the best way to   */
+  /* do this is to ensure that system calls write at most to            */
+  /* pointer-free objects in the heap, and do even that only if we are  */
+  /* on a platform on which those are not protected (or the collector   */
+  /* is built with DONT_PROTECT_PTRFREE defined).  We assume the page   */
+  /* size is a multiple of HBLKSIZE.                                    */
+
 # ifdef DARWIN
     /* #define BROKEN_EXCEPTION_HANDLING */
 
@@ -3500,8 +3498,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 STATIC void GC_protect_heap(void)
 {
   unsigned i;
-  GC_bool protect_all =
-        (0 != (GC_incremental_protection_needs() & GC_PROTECTS_PTRFREE_HEAP));
 
   GC_ASSERT(GC_page_size != 0);
   for (i = 0; i < GC_n_heap_sects; i++) {
@@ -3513,10 +3509,14 @@ STATIC void GC_protect_heap(void)
 
     GC_ASSERT(PAGE_ALIGNED(start));
     GC_ASSERT(PAGE_ALIGNED(len));
-    if (protect_all) {
-      PROTECT(start, len);
-      continue;
-    }
+#   ifndef DONT_PROTECT_PTRFREE
+      /* We avoid protecting pointer-free objects unless the page   */
+      /* size differs from HBLKSIZE.                                */
+      if (GC_page_size != HBLKSIZE) {
+        PROTECT(start, len);
+        continue;
+      }
+#   endif
 
     current_start = (struct hblk *)start;
     limit = (struct hblk *)(start + len);
@@ -3524,7 +3524,6 @@ STATIC void GC_protect_heap(void)
       word nblocks = 0;
       GC_bool is_ptrfree = TRUE;
 
-      GC_ASSERT(PAGE_ALIGNED(current));
       if ((word)current < (word)limit) {
         hdr *hhdr;
 
@@ -3540,7 +3539,7 @@ STATIC void GC_protect_heap(void)
           continue;
         }
         if (HBLK_IS_FREE(hhdr)) {
-          GC_ASSERT(PAGE_ALIGNED(hhdr -> hb_sz));
+          GC_ASSERT(modHBLKSZ(hhdr -> hb_sz) == 0);
           nblocks = divHBLKSZ(hhdr -> hb_sz);
         } else {
           nblocks = OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
@@ -3549,7 +3548,16 @@ STATIC void GC_protect_heap(void)
       }
       if (is_ptrfree) {
         if ((word)current_start < (word)current) {
-          PROTECT(current_start, (ptr_t)current - (ptr_t)current_start);
+#         ifdef DONT_PROTECT_PTRFREE
+            ptr_t cur_aligned = PTRT_ROUNDUP_BY_MASK(current, GC_page_size-1);
+
+            current_start = HBLK_PAGE_ALIGNED(current_start);
+            /* Adjacent free blocks might be protected too because  */
+            /* of the alignment by the page size.                   */
+            PROTECT(current_start, cur_aligned - (ptr_t)current_start);
+#         else
+            PROTECT(current_start, (ptr_t)current - (ptr_t)current_start);
+#         endif
         }
         if ((word)current >= (word)limit) break;
       }
@@ -4351,11 +4359,6 @@ GC_INNER GC_bool GC_dirty_init(void)
     }
 # endif /* CHECKSUMS || PROC_VDB */
 
-  /* We expect block h to be written shortly.  Ensure that all pages    */
-  /* containing any part of the n hblks starting at h are no longer     */
-  /* protected.  If is_ptrfree is false, also ensure that they will     */
-  /* subsequently appear to be dirty.  Not allowed to call GC_printf    */
-  /* (and the friends) here, see Win32 GC_stop_world for the details.   */
   GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
                                      GC_bool is_ptrfree)
   {
@@ -4369,6 +4372,11 @@ GC_INNER GC_bool GC_dirty_init(void)
       GC_ASSERT(I_HOLD_LOCK());
 #   endif
 #   ifdef MPROTECT_VDB
+      /* Note it is not allowed to call GC_printf (and the friends) */
+      /* in this function, see Win32 GC_stop_world for the details. */
+#     ifdef DONT_PROTECT_PTRFREE
+        if (is_ptrfree) return;
+#     endif
       if (!GC_auto_incremental || GC_GWW_AVAILABLE())
         return;
       GC_ASSERT(GC_page_size != 0);
@@ -4380,8 +4388,11 @@ GC_INNER GC_bool GC_dirty_init(void)
       for (current = h_trunc; (word)current < (word)h_end; ++current) {
         word index = PHT_HASH(current);
 
-        if (!is_ptrfree || (word)current < (word)h
-            || (word)current >= (word)(h + nblocks)) {
+#       ifndef DONT_PROTECT_PTRFREE
+          if (!is_ptrfree || (word)current < (word)h
+              || (word)current >= (word)(h + nblocks))
+#       endif
+        {
           async_set_pht_entry_from_index(GC_dirty_pages, index);
         }
       }
@@ -5096,11 +5107,11 @@ GC_API int GC_CALL GC_incremental_protection_needs(void)
       if (GC_GWW_AVAILABLE())
         return GC_PROTECTS_NONE;
 #   endif
-    if (GC_page_size == HBLKSIZE) {
-      return GC_PROTECTS_POINTER_HEAP;
-    } else {
-      return GC_PROTECTS_POINTER_HEAP | GC_PROTECTS_PTRFREE_HEAP;
-    }
+#   ifndef DONT_PROTECT_PTRFREE
+      if (GC_page_size != HBLKSIZE)
+        return GC_PROTECTS_POINTER_HEAP | GC_PROTECTS_PTRFREE_HEAP;
+#   endif
+    return GC_PROTECTS_POINTER_HEAP;
 # else
     return GC_PROTECTS_NONE;
 # endif

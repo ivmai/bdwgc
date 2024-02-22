@@ -811,6 +811,30 @@ static void drop_hblk_in_chunks(int n, struct hblk *hbp, hdr *hhdr)
   } while (EXPECT(hhdr != NULL, TRUE)); /* no header allocation failure? */
 }
 
+#if defined(MPROTECT_VDB) && defined(DONT_PROTECT_PTRFREE)
+  static GC_bool is_hblks_mix_in_page(struct hblk *hbp, GC_bool is_ptrfree)
+  {
+    struct hblk *h = HBLK_PAGE_ALIGNED(hbp);
+    size_t i, cnt = divHBLKSZ(GC_page_size);
+
+    /* Iterate over blocks in the page to check if all the    */
+    /* occupied blocks are pointer-free if we are going to    */
+    /* allocate a pointer-free one, and vice versa.           */
+    for (i = 0; i < cnt; i++) {
+      hdr *hhdr;
+
+      GET_HDR(&h[i], hhdr);
+      if (NULL == hhdr) continue;
+      (void)GC_find_starting_hblk(&h[i], &hhdr);
+      if (!HBLK_IS_FREE(hhdr)) {
+        /* It is OK to check only the first found occupied block.   */
+        return IS_PTRFREE(hhdr) != is_ptrfree;
+      }
+    }
+    return FALSE; /* all blocks are free */
+  }
+#endif /* MPROTECT_VDB && DONT_PROTECT_PTRFREE */
+
 /* The same as GC_allochblk, but with search restricted to the n-th     */
 /* free list.  flags should be IGNORE_OFF_PAGE or zero; may_split       */
 /* indicates whether it is OK to split larger blocks; size is in bytes. */
@@ -855,6 +879,17 @@ STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
         if (next_hblk_fits_better(hhdr, size_avail, size_needed, align_m1))
           continue;
       }
+
+#     if defined(MPROTECT_VDB) && defined(DONT_PROTECT_PTRFREE)
+        /* Avoid write-protecting pointer-free blocks (only the */
+        /* case if page size is larger than the block size).    */
+        GC_ASSERT(GC_page_size != 0);
+        if (GC_page_size != HBLKSIZE
+            && (!GC_incremental /* not enabled yet */
+                || GC_incremental_protection_needs() != GC_PROTECTS_NONE)
+            && is_hblks_mix_in_page(hbp, k == PTRFREE))
+          continue;
+#     endif
 
       if (IS_UNCOLLECTABLE(k)
           || (k == PTRFREE && size_needed <= MAX_BLACK_LIST_ALLOC)) {
@@ -953,11 +988,11 @@ STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
     }
 
 #   ifndef GC_DISABLE_INCREMENTAL
-      /* Notify virtual dirty bit implementation that we are about to */
-      /* write.  Ensure that pointer-free objects are not protected   */
-      /* if it is avoidable.  This also ensures that newly allocated  */
-      /* blocks are treated as dirty.  Necessary since we don't       */
-      /* protect free blocks.                                         */
+      /* Notify virtual dirty bit implementation that we are about to   */
+      /* write.  Ensure that pointer-free objects are not protected     */
+      /* if it is avoidable.  This also ensures that newly allocated    */
+      /* blocks are treated as dirty - it is necessary since we do not  */
+      /* protect free blocks.                                           */
       GC_ASSERT(modHBLKSZ(size_needed) == 0);
       GC_remove_protection(hbp, divHBLKSZ(size_needed), IS_PTRFREE(hhdr));
 #   endif

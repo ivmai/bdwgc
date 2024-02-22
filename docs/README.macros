@@ -568,6 +568,11 @@ GC_PREFER_MPROTECT_VDB  Choose MPROTECT_VDB manually in case of multiple
   Solaris and Linux to force MPROTECT_VDB strategy instead of the default
   GWW_VDB, PROC_VDB or SOFT_VDB ones, respectively).
 
+DONT_PROTECT_PTRFREE    Do not mix heap blocks with and without pointers in
+  a page, thus avoid protecting pointer-free pages (at the expense of
+  potentially bigger heap size).  Only if MPROTECT_VDB is defined and the page
+  is larger than the heap block.
+
 CHECK_SOFT_VDB  Turn on both MPROTECT_VDB and SOFT_VDB virtual dirty bit
   strategies to check whether they are consistent.  Use only for debugging of
   the incremental collector.

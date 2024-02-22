@@ -2623,10 +2623,12 @@ GC_EXTERN GC_bool GC_print_back_height;
                         /* Read retrieved dirty bits.   */
 
   GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
-                                   GC_bool pointerfree);
-                /* h is about to be written or allocated.  Ensure that  */
-                /* it is not write protected by the virtual dirty bit   */
-                /* implementation.  I.e., this is a call that:          */
+                                     GC_bool is_ptrfree);
+                /* Block h is about to be written or allocated shortly. */
+                /* Ensure that all pages containing any part of the     */
+                /* n hblks starting at h are no longer write protected  */
+                /* (by the virtual dirty bit implementation).  I.e.,    */
+                /* this is a call that:                                 */
                 /* - hints that [h, h+nblocks) is about to be written;  */
                 /* - guarantees that protection is removed;             */
                 /* - may speed up some dirty bit implementations;       */
