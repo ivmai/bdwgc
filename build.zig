@@ -375,11 +375,6 @@ pub fn build(b: *std.Build) void {
         flags.appendSlice(&.{
             "-fvisibility=hidden",
         }) catch unreachable;
-
-        // FIXME: gctest bss is not tracked by SOFT_VDB otherise.
-        if (t.os.tag == .linux) {
-            flags.append("-D NO_VDB_FOR_STATIC_ROOTS") catch unreachable;
-        }
     } else {
         flags.append("-D GC_NOT_DLL") catch unreachable;
         if (t.os.tag == .windows) {

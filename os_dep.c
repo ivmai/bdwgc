@@ -4043,23 +4043,26 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     return &soft_vdb_buf[ofs / sizeof(pagemap_elem_t)];
   }
 
-  static void soft_set_grungy_pages(ptr_t vaddr /* start */, ptr_t limit,
+  static void soft_set_grungy_pages(ptr_t start, ptr_t limit,
                                     ptr_t next_start_hint,
                                     GC_bool is_static_root)
   {
+    word vaddr = (word)HBLK_PAGE_ALIGNED(start);
+    off_t next_fpos_hint = (off_t)(((word)next_start_hint >> GC_log_pagesize)
+                                   * sizeof(pagemap_elem_t));
+
     GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT(modHBLKSZ((word)start) == 0);
     GC_ASSERT(GC_log_pagesize != 0);
-    while ((word)vaddr < (word)limit) {
+    while (vaddr < (word)limit) {
       size_t res;
       word limit_buf;
       const pagemap_elem_t *bufp = pagemap_buffered_read(&res,
-                (off_t)(((word)vaddr >> GC_log_pagesize)
-                        * sizeof(pagemap_elem_t)),
-                (size_t)((((word)limit - (word)vaddr
+                (off_t)((vaddr >> GC_log_pagesize) * sizeof(pagemap_elem_t)),
+                (size_t)((((word)limit - vaddr
                            + GC_page_size - 1) >> GC_log_pagesize)
                          * sizeof(pagemap_elem_t)),
-                (off_t)(((word)next_start_hint >> GC_log_pagesize)
-                        * sizeof(pagemap_elem_t)));
+                next_fpos_hint);
 
       if (res % sizeof(pagemap_elem_t) != 0) {
         /* Punt: */
@@ -4068,20 +4071,24 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
         break;
       }
 
-      limit_buf = (word)HBLK_PAGE_ALIGNED(vaddr)
-                  + ((res / sizeof(pagemap_elem_t)) << GC_log_pagesize);
-      for (; (word)vaddr < limit_buf; vaddr += GC_page_size, bufp++)
+      limit_buf = vaddr + ((res / sizeof(pagemap_elem_t)) << GC_log_pagesize);
+      for (; vaddr < limit_buf; vaddr += GC_page_size, bufp++)
         if ((*bufp & PM_SOFTDIRTY_MASK) != 0) {
           struct hblk * h;
-          ptr_t next_vaddr = vaddr + GC_page_size;
+          word next_vaddr = vaddr + GC_page_size;
 
+          if (EXPECT(next_vaddr > (word)limit, FALSE))
+            next_vaddr = (word)limit;
           /* If the bit is set, the respective PTE was written to       */
           /* since clearing the soft-dirty bits.                        */
 #         ifdef DEBUG_DIRTY_BITS
             if (is_static_root)
               GC_log_printf("static root dirty page at: %p\n", (void *)vaddr);
 #         endif
-          for (h = (struct hblk *)vaddr; (word)h < (word)next_vaddr; h++) {
+          h = (struct hblk *)vaddr;
+          if (EXPECT(vaddr < (word)start, FALSE))
+            h = (struct hblk *)start;
+          for (; (word)h < next_vaddr; h++) {
             word index = PHT_HASH(h);
 
             /* Filter out the blocks without pointers.  It might worth  */
@@ -4119,7 +4126,8 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 
               /* There could be a hash collision, thus we need to       */
               /* verify the page is clean using slow GC_get_maps().     */
-              if (GC_enclosing_writable_mapping(vaddr, &my_start, &my_end)) {
+              if (GC_enclosing_writable_mapping((ptr_t)vaddr,
+                                                &my_start, &my_end)) {
                 ABORT("Inconsistent soft-dirty against mprotect dirty bits");
               }
             }
@@ -4157,9 +4165,9 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
       pagemap_buf_len = 0; /* invalidate soft_vdb_buf */
 
       for (i = 0; i != GC_n_heap_sects; ++i) {
-        ptr_t vaddr = GC_heap_sects[i].hs_start;
+        ptr_t start = GC_heap_sects[i].hs_start;
 
-        soft_set_grungy_pages(vaddr, vaddr + GC_heap_sects[i].hs_bytes,
+        soft_set_grungy_pages(start, start + GC_heap_sects[i].hs_bytes,
                               i < GC_n_heap_sects-1 ?
                                     GC_heap_sects[i+1].hs_start : NULL,
                               FALSE);
@@ -4167,7 +4175,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 
 #     ifndef NO_VDB_FOR_STATIC_ROOTS
         for (i = 0; (int)i < n_root_sets; ++i) {
-          soft_set_grungy_pages(GC_static_roots[i].r_start,
+          soft_set_grungy_pages((ptr_t)HBLKPTR(GC_static_roots[i].r_start),
                                 GC_static_roots[i].r_end,
                                 (int)i < n_root_sets-1 ?
                                     GC_static_roots[i+1].r_start : NULL,
