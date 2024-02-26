@@ -1468,7 +1468,7 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 #endif
 
 GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
-                        mse *mark_stack_ptr, mse *mark_stack_limit, void **src)
+                        mse *mark_stack_top, mse *mark_stack_limit, void **src)
 {
     hdr * hhdr;
 
@@ -1479,9 +1479,9 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
              || NULL == (hhdr = GC_find_header((ptr_t)GC_base(obj)))))
         || EXPECT(HBLK_IS_FREE(hhdr), FALSE)) {
       GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
-      return mark_stack_ptr;
+      return mark_stack_top;
     }
-    return GC_push_contents_hdr((ptr_t)obj, mark_stack_ptr, mark_stack_limit,
+    return GC_push_contents_hdr((ptr_t)obj, mark_stack_top, mark_stack_limit,
                                 (ptr_t)src, hhdr, TRUE);
 }
 

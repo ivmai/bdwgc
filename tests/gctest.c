@@ -373,7 +373,7 @@ struct fake_vtable gcj_class_struct2 =
                         /* Bitmap based descriptor.     */
 
 static struct GC_ms_entry *GC_CALLBACK fake_gcj_mark_proc(GC_word *addr,
-                                        struct GC_ms_entry *mark_stack_ptr,
+                                        struct GC_ms_entry *mark_stack_top,
                                         struct GC_ms_entry *mark_stack_limit,
                                         GC_word env)
 {
@@ -384,13 +384,13 @@ static struct GC_ms_entry *GC_CALLBACK fake_gcj_mark_proc(GC_word *addr,
         addr = (GC_word *)GC_USR_PTR_FROM_BASE(addr);
     }
     x = (sexpr)(addr + 1); /* Skip the vtable pointer. */
-    mark_stack_ptr = GC_MARK_AND_PUSH(
-                              (void *)(x -> sexpr_cdr), mark_stack_ptr,
-                              mark_stack_limit, (void * *)&(x -> sexpr_cdr));
-    mark_stack_ptr = GC_MARK_AND_PUSH(
-                              (void *)(x -> sexpr_car), mark_stack_ptr,
-                              mark_stack_limit, (void * *)&(x -> sexpr_car));
-    return mark_stack_ptr;
+    mark_stack_top = GC_MARK_AND_PUSH((void *)(x -> sexpr_cdr),
+                                      mark_stack_top, mark_stack_limit,
+                                      (void **)&(x -> sexpr_cdr));
+    mark_stack_top = GC_MARK_AND_PUSH((void *)(x -> sexpr_car),
+                                      mark_stack_top, mark_stack_limit,
+                                      (void **)&(x -> sexpr_car));
+    return mark_stack_top;
 }
 
 #endif /* GC_GCJ_SUPPORT */
@@ -1100,7 +1100,7 @@ static tn * mktree(int n)
 #   ifndef GC_NO_FINALIZATION
       if (!GC_get_find_leak()) {
         GC_REGISTER_FINALIZER((void *)result, finalizer, (void *)(GC_word)n,
-                              (GC_finalization_proc *)0, (void * *)0);
+                              (GC_finalization_proc *)0, (void **)0);
         if (my_index >= MAX_FINALIZED) {
             GC_printf("live_indicators overflowed\n");
             FAIL;

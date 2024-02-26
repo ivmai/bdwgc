@@ -130,11 +130,11 @@ STATIC GC_descr GC_double_descr(GC_descr d, size_t nwords)
     return d;
 }
 
-STATIC mse *GC_CALLBACK GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
-                                           mse * mark_stack_limit, word env);
+STATIC mse *GC_CALLBACK GC_typed_mark_proc(word *addr, mse *mark_stack_top,
+                                           mse *mark_stack_limit, word env);
 
-STATIC mse *GC_CALLBACK GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
-                                           mse * mark_stack_limit, word env);
+STATIC mse *GC_CALLBACK GC_array_mark_proc(word *addr, mse *mark_stack_top,
+                                           mse *mark_stack_limit, word env);
 
 STATIC void GC_init_explicit_typing(void)
 {
@@ -159,8 +159,8 @@ STATIC void GC_init_explicit_typing(void)
     }
 }
 
-STATIC mse *GC_CALLBACK GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
-                                           mse * mark_stack_limit, word env)
+STATIC mse *GC_CALLBACK GC_typed_mark_proc(word *addr, mse *mark_stack_top,
+                                           mse *mark_stack_limit, word env)
 {
     word bm;
     ptr_t current_p = (ptr_t)addr;
@@ -180,7 +180,7 @@ STATIC mse *GC_CALLBACK GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
             LOAD_WORD_OR_CONTINUE(current, current_p);
             FIXUP_POINTER(current);
             if (current > (word)least_ha && current < (word)greatest_ha) {
-                PUSH_CONTENTS((ptr_t)current, mark_stack_ptr,
+                PUSH_CONTENTS((ptr_t)current, mark_stack_top,
                               mark_stack_limit, current_p);
             }
         }
@@ -190,15 +190,15 @@ STATIC mse *GC_CALLBACK GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
         /* stack.  Thus we never do too much work at once.  Note that   */
         /* we also can't overflow the mark stack unless we actually     */
         /* mark something.                                              */
-        mark_stack_ptr++;
-        if ((word)mark_stack_ptr >= (word)mark_stack_limit) {
-            mark_stack_ptr = GC_signal_mark_stack_overflow(mark_stack_ptr);
+        mark_stack_top++;
+        if ((word)mark_stack_top >= (word)mark_stack_limit) {
+            mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top);
         }
-        mark_stack_ptr -> mse_start = (ptr_t)(addr + CPP_WORDSZ);
-        mark_stack_ptr -> mse_descr.w =
+        mark_stack_top -> mse_start = (ptr_t)(addr + CPP_WORDSZ);
+        mark_stack_top -> mse_descr.w =
                         GC_MAKE_PROC(GC_typed_mark_proc_index, env + 1);
     }
-    return mark_stack_ptr;
+    return mark_stack_top;
 }
 
 GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
@@ -681,30 +681,30 @@ static complex_descriptor *get_complex_descr(word *addr, size_t nwords)
 }
 
 /* Used by GC_calloc_do_explicitly_typed via GC_array_kind.     */
-STATIC mse *GC_CALLBACK GC_array_mark_proc(word *addr, mse *mark_stack_ptr,
+STATIC mse *GC_CALLBACK GC_array_mark_proc(word *addr, mse *mark_stack_top,
                                            mse *mark_stack_limit, word env)
 {
   hdr *hhdr = HDR(addr);
   word sz = hhdr -> hb_sz;
   size_t nwords = (size_t)BYTES_TO_WORDS(sz);
   complex_descriptor *complex_d = get_complex_descr(addr, nwords);
-  mse *orig_mark_stack_ptr = mark_stack_ptr;
-  mse *new_mark_stack_ptr;
+  mse *orig_mark_stack_top = mark_stack_top;
+  mse *new_mark_stack_top;
 
   UNUSED_ARG(env);
   if (NULL == complex_d) {
     /* Found a reference to a free list entry.  Ignore it. */
-    return orig_mark_stack_ptr;
+    return orig_mark_stack_top;
   }
   /* In use counts were already updated when array descriptor was       */
   /* pushed.  Here we only replace it by subobject descriptors, so      */
   /* no update is necessary.                                            */
-  new_mark_stack_ptr = GC_push_complex_descriptor(addr, complex_d,
-                                                  mark_stack_ptr,
+  new_mark_stack_top = GC_push_complex_descriptor(addr, complex_d,
+                                                  mark_stack_top,
                                                   mark_stack_limit-1);
-  if (new_mark_stack_ptr == 0) {
+  if (NULL == new_mark_stack_top) {
     /* Explicitly instruct Clang Static Analyzer that ptr is non-null.  */
-    if (NULL == mark_stack_ptr) ABORT("Bad mark_stack_ptr");
+    if (NULL == mark_stack_top) ABORT("Bad mark_stack_top");
 
     /* Does not fit.  Conservatively push the whole array as a unit and */
     /* request a mark stack expansion.  This cannot cause a mark stack  */
@@ -716,14 +716,14 @@ STATIC mse *GC_CALLBACK GC_array_mark_proc(word *addr, mse *mark_stack_ptr,
     {
       GC_mark_stack_too_small = TRUE;
     }
-    new_mark_stack_ptr = orig_mark_stack_ptr + 1;
-    new_mark_stack_ptr -> mse_start = (ptr_t)addr;
-    new_mark_stack_ptr -> mse_descr.w = sz | GC_DS_LENGTH;
+    new_mark_stack_top = orig_mark_stack_top + 1;
+    new_mark_stack_top -> mse_start = (ptr_t)addr;
+    new_mark_stack_top -> mse_descr.w = sz | GC_DS_LENGTH;
   } else {
     /* Push descriptor itself.  */
-    new_mark_stack_ptr++;
-    new_mark_stack_ptr -> mse_start = (ptr_t)(addr + nwords - 1);
-    new_mark_stack_ptr -> mse_descr.w = sizeof(word) | GC_DS_LENGTH;
+    new_mark_stack_top++;
+    new_mark_stack_top -> mse_start = (ptr_t)(addr + nwords - 1);
+    new_mark_stack_top -> mse_descr.w = sizeof(word) | GC_DS_LENGTH;
   }
-  return new_mark_stack_ptr;
+  return new_mark_stack_top;
 }

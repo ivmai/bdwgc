@@ -70,7 +70,7 @@
 /* are created only if the client has called GC_start_mark_threads()    */
 /* or started a user thread previously).                                */
 typedef struct GC_ms_entry * (GC_CALLBACK * GC_mark_proc)(GC_word * /* addr */,
-                                struct GC_ms_entry * /* mark_stack_ptr */,
+                                struct GC_ms_entry * /* mark_stack_top */,
                                 struct GC_ms_entry * /* mark_stack_limit */,
                                 GC_word /* env */);
 
@@ -169,7 +169,7 @@ GC_API unsigned GC_CALL GC_get_pointer_shift(void);
 /* Note that mark procedures should explicitly call FIXUP_POINTER()     */
 /* if required.                                                         */
 GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void * /* obj */,
-                                struct GC_ms_entry * /* mark_stack_ptr */,
+                                struct GC_ms_entry * /* mark_stack_top */,
                                 struct GC_ms_entry * /* mark_stack_limit */,
                                 void ** /* src */);
 
@@ -405,7 +405,7 @@ GC_API void GC_CALL GC_print_trace_inner(GC_word /* gc_no */);
 /* setter and the getter acquire the allocator lock (in the reader mode */
 /* in case of the getter).                                              */
 typedef struct GC_ms_entry * (GC_CALLBACK * GC_on_mark_stack_empty_proc)(
-                                struct GC_ms_entry * /* mark_stack_ptr */,
+                                struct GC_ms_entry * /* mark_stack_top */,
                                 struct GC_ms_entry * /* mark_stack_limit */);
 GC_API void GC_CALL GC_set_on_mark_stack_empty(GC_on_mark_stack_empty_proc);
 GC_API GC_on_mark_stack_empty_proc GC_CALL GC_get_on_mark_stack_empty(void);

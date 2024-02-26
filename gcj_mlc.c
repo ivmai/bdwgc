@@ -45,7 +45,7 @@ int GC_gcj_debug_kind = 0;
                         /* with a mark proc call.                       */
 
 STATIC struct GC_ms_entry *GC_CALLBACK GC_gcj_fake_mark_proc(word *addr,
-                        struct GC_ms_entry *mark_stack_ptr,
+                        struct GC_ms_entry *mark_stack_top,
                         struct GC_ms_entry * mark_stack_limit, word env)
 {
     UNUSED_ARG(addr);
@@ -55,7 +55,7 @@ STATIC struct GC_ms_entry *GC_CALLBACK GC_gcj_fake_mark_proc(word *addr,
         GC_noop1((word)&GC_init_gcj_malloc);
 #   endif
     ABORT_RET("No client gcj mark proc is specified");
-    return mark_stack_ptr;
+    return mark_stack_top;
 }
 
 #ifdef FUNCPTR_IS_WORD
