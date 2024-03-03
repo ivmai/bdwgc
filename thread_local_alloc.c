@@ -266,22 +266,25 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t lb,
 /* we take care of an individual thread freelist structure.     */
 GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
 {
-    ptr_t q;
-    int k, j;
+    int j;
 
     for (j = 0; j < GC_TINY_FREELISTS; ++j) {
+      int k;
+
       for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
-        /* Load the pointer atomically as it might be updated   */
-        /* concurrently by GC_FAST_MALLOC_GRANS.                */
-        q = (ptr_t)AO_load((volatile AO_t *)&p->_freelists[k][j]);
-        if ((word)q > HBLKSIZE)
-          GC_set_fl_marks(q);
+        void **fl = (void **)AO_load((volatile AO_t *)&p->_freelists[k][j]);
+                /* Load the pointer atomically as it might be updated   */
+                /* concurrently by GC_FAST_MALLOC_GRANS.                */
+
+        if ((word)fl > HBLKSIZE)
+          GC_set_fl_marks(fl);
       }
 #     ifdef GC_GCJ_SUPPORT
         if (EXPECT(j > 0, TRUE)) {
-          q = (ptr_t)AO_load((volatile AO_t *)&p->gcj_freelists[j]);
-          if ((word)q > HBLKSIZE)
-            GC_set_fl_marks(q);
+          void **fl = (void **)AO_load((volatile AO_t *)&p->gcj_freelists[j]);
+
+          if ((word)fl > HBLKSIZE)
+            GC_set_fl_marks(fl);
         }
 #     endif
     }

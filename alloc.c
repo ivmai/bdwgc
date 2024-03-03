@@ -978,34 +978,40 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
     return TRUE;
 }
 
-/* Set all mark bits for the free list whose first entry is q   */
-GC_INNER void GC_set_fl_marks(ptr_t q)
+GC_INNER void GC_set_fl_marks(void **fl)
 {
-    if (q /* != NULL */) { /* CPPCHECK */
-      struct hblk *h = HBLKPTR(q);
-      struct hblk *last_h = h;
-      hdr *hhdr = HDR(h);
-      IF_PER_OBJ(word sz = hhdr->hb_sz;)
+    ptr_t q = (ptr_t)fl;
+    struct hblk *h = HBLKPTR(q);
+    struct hblk *last_h = h;
+    hdr *hhdr;
+#   ifdef MARK_BIT_PER_OBJ
+        word sz;
+#   endif
 
-      for (;;) {
+    GC_ASSERT(fl != NULL);
+    hhdr = HDR(h);
+#   ifdef MARK_BIT_PER_OBJ
+        sz = hhdr -> hb_sz;
+#   endif
+    for (;;) {
         word bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
 
         if (!mark_bit_from_hdr(hhdr, bit_no)) {
           set_mark_bit_from_hdr(hhdr, bit_no);
           INCR_MARKS(hhdr);
         }
-
         q = (ptr_t)obj_link(q);
-        if (q == NULL)
-          break;
+        if (NULL == q) break;
 
         h = HBLKPTR(q);
-        if (h != last_h) {
+        if (EXPECT(h != last_h, FALSE)) {
           last_h = h;
+          /* Update hhdr and sz. */
           hhdr = HDR(h);
-          IF_PER_OBJ(sz = hhdr->hb_sz;)
+#         ifdef MARK_BIT_PER_OBJ
+            sz = hhdr -> hb_sz;
+#         endif
         }
-      }
     }
 }
 
@@ -1054,14 +1060,15 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
   }
 #endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
-/* Clear all mark bits for the free list whose first entry is q */
-/* Decrement GC_bytes_found by number of bytes on free list.    */
-STATIC void GC_clear_fl_marks(ptr_t q)
+/* Clear all mark bits for the free list (specified by the first        */
+/* entry).  Decrement GC_bytes_found by number of bytes on free list.   */
+STATIC void GC_clear_fl_marks(void **fl)
 {
+      ptr_t q = (ptr_t)fl;
       struct hblk *h = HBLKPTR(q);
       struct hblk *last_h = h;
       hdr *hhdr = HDR(h);
-      word sz = hhdr->hb_sz; /* Normally set only once. */
+      word sz = hhdr -> hb_sz; /* Normally set only once. */
 
       for (;;) {
         word bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
@@ -1084,14 +1091,14 @@ STATIC void GC_clear_fl_marks(ptr_t q)
         GC_bytes_found -= (signed_word)sz;
 
         q = (ptr_t)obj_link(q);
-        if (q == NULL)
-          break;
+        if (NULL == q) break;
 
         h = HBLKPTR(q);
-        if (h != last_h) {
+        if (EXPECT(h != last_h, FALSE)) {
           last_h = h;
+          /* Update hhdr and sz. */
           hhdr = HDR(h);
-          sz = hhdr->hb_sz;
+          sz = hhdr -> hb_sz;
         }
       }
 }
@@ -1161,15 +1168,16 @@ STATIC void GC_finish_collection(void)
     if (GC_find_leak) {
       /* Mark all objects on the free list.  All objects should be      */
       /* marked when we're done.                                        */
-      word size;        /* current object size  */
       unsigned kind;
-      ptr_t q;
 
       for (kind = 0; kind < GC_n_kinds; kind++) {
+        word size; /* current object size */
+
         for (size = 1; size <= MAXOBJGRANULES; size++) {
-          q = (ptr_t)GC_obj_kinds[kind].ok_freelist[size];
-          if (q != NULL)
-            GC_set_fl_marks(q);
+          void **fl = GC_obj_kinds[kind].ok_freelist[size];
+
+          if (fl != NULL)
+            GC_set_fl_marks(fl);
         }
       }
       GC_start_reclaim(TRUE);
@@ -1200,15 +1208,16 @@ STATIC void GC_finish_collection(void)
     /* Thus accidentally marking a free list is not a problem;  only     */
     /* objects on the list itself will be marked, and that's fixed here. */
     {
-      word size;        /* current object size          */
-      ptr_t q;          /* pointer to current object    */
       unsigned kind;
 
       for (kind = 0; kind < GC_n_kinds; kind++) {
+        word size;  /* current object size */
+
         for (size = 1; size <= MAXOBJGRANULES; size++) {
-          q = (ptr_t)GC_obj_kinds[kind].ok_freelist[size];
-          if (q != NULL)
-            GC_clear_fl_marks(q);
+          void **fl = GC_obj_kinds[kind].ok_freelist[size];
+
+          if (fl != NULL)
+            GC_clear_fl_marks(fl);
         }
       }
     }
