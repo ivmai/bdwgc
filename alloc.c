@@ -981,6 +981,9 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 GC_INNER void GC_set_fl_marks(void **fl)
 {
     ptr_t q = (ptr_t)fl;
+#   ifdef GC_ASSERTIONS
+        ptr_t q2;
+#   endif
     struct hblk *h = HBLKPTR(q);
     struct hblk *last_h = h;
     hdr *hhdr;
@@ -993,6 +996,9 @@ GC_INNER void GC_set_fl_marks(void **fl)
 #   ifdef MARK_BIT_PER_OBJ
         sz = hhdr -> hb_sz;
 #   endif
+#   ifdef GC_ASSERTIONS
+        q2 = (ptr_t)obj_link(q);
+#   endif
     for (;;) {
         word bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
 
@@ -1002,6 +1008,20 @@ GC_INNER void GC_set_fl_marks(void **fl)
         }
         q = (ptr_t)obj_link(q);
         if (NULL == q) break;
+#       ifdef GC_ASSERTIONS
+          /* Detect a cycle in the freelist.  The algorithm is to   */
+          /* have a second "twice faster" iterator over the list -  */
+          /* the second iterator meets the first one in case of     */
+          /* a cycle existing in the list.                          */
+          if (q2 != NULL) {
+            q2 = (ptr_t)obj_link(q2);
+            GC_ASSERT(q2 != q);
+            if (q2 != NULL) {
+              q2 = (ptr_t)obj_link(q2);
+              GC_ASSERT(q2 != q);
+            }
+          }
+#       endif
 
         h = HBLKPTR(q);
         if (EXPECT(h != last_h, FALSE)) {
