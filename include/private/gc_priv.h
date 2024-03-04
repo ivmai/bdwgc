@@ -1920,13 +1920,11 @@ struct GC_traced_stack_sect_s {
         /* offset and size (in bytes).                                  */
 # define MARK_BIT_OFFSET(sz) 1
         /* Spacing between useful mark bits.                            */
-# define IF_PER_OBJ(x) x
 # define FINAL_MARK_BIT(sz) ((sz) > MAXOBJBYTES? 1 : HBLK_OBJS(sz))
         /* Position of final, always set, mark bit.                     */
 #else
 # define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES((word)(offset))
 # define MARK_BIT_OFFSET(sz) BYTES_TO_GRANULES(sz)
-# define IF_PER_OBJ(x)
 # define FINAL_MARK_BIT(sz) \
                 ((sz) > MAXOBJBYTES ? MARK_BITS_PER_HBLK \
                                 : BYTES_TO_GRANULES((sz) * HBLK_OBJS(sz)))
@@ -2168,7 +2166,7 @@ GC_INNER void GC_clear_hdr_marks(hdr * hhdr);
                                     /* Clear the mark bits in a header */
 GC_INNER void GC_set_hdr_marks(hdr * hhdr);
                                     /* Set the mark bits in a header */
-GC_INNER void GC_set_fl_marks(ptr_t p);
+GC_INNER void GC_set_fl_marks(ptr_t);
                                     /* Set all mark bits associated with */
                                     /* a free list.                      */
 #if defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)
