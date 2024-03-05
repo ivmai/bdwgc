@@ -20,10 +20,10 @@ environment:
     CMAKE_CONFIG: Release
     CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=MinSizeRel -Denable_parallel_mark=OFF
   - TARGET: cmake
-    CMAKE_OPTIONS: -Denable_gc_assertions=ON -Denable_thread_local_alloc=OFF -Ddisable_single_obj_compilation=ON
+    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_gc_assertions=ON -Denable_thread_local_alloc=OFF -Ddisable_single_obj_compilation=ON
   - TARGET: cmake
     CFLAGS_EXTRA: -DGC_DISABLE_INCREMENTAL
-    CMAKE_OPTIONS: -Denable_gc_assertions=ON -Denable_gcj_support=OFF -Denable_parallel_mark=OFF -Denable_thread_local_alloc=OFF
+    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_gc_assertions=ON -Denable_gcj_support=OFF -Denable_parallel_mark=OFF -Denable_thread_local_alloc=OFF
   - TARGET: cmake
     CMAKE_OPTIONS: -A Win32 -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Denable_large_config=ON
   - TARGET: cmake
