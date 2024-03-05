@@ -261,7 +261,7 @@ jobs:
   - compiler: gcc
     env:
     - CFLAGS_EXTRA="-D _FORTIFY_SOURCE=2"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-static"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --disable-disclaim --enable-static"
     - GCTEST_WITH_MPROTECT_VDB=true
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
