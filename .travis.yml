@@ -123,7 +123,7 @@ jobs:
   - arch: arm64
     compiler: clang
     env:
-    - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=MinSizeRel -Dbuild_tests=ON -DBUILD_SHARED_LIBS=OFF -Denable_cplusplus=ON -Denable_gc_assertions=ON"
+    - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=MinSizeRel -DBUILD_SHARED_LIBS=OFF -Denable_cplusplus=ON -Denable_gc_assertions=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: arm64
     compiler: gcc
@@ -171,7 +171,7 @@ jobs:
   - arch: ppc64le
     compiler: clang
     env:
-    - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON"
+    - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -Denable_cplusplus=ON -Denable_gc_assertions=ON"
     - GCTEST_WITH_MPROTECT_VDB=true
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: ppc64le
