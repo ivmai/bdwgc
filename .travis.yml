@@ -300,7 +300,7 @@ jobs:
   - compiler: clang
     env:
     - CFLAGS_EXTRA="-D _FORTIFY_SOURCE=2 -D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
-    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --disable-dynamic-loading"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
