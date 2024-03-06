@@ -78,6 +78,7 @@ option(enable_rwlock "Enable reader mode of the allocator lock" OFF)
 option(enable_throw_bad_alloc_library "Turn on C++ gctba library build" ON)
 option(enable_gcj_support "Support for gcj" ON)
 option(enable_sigrt_signals "Use SIGRTMIN-based signals for thread suspend/resume" OFF)
+option(enable_valgrind_tracking "Support tracking GC_malloc and friends for heap profiling tools" OFF)
 option(enable_gc_debug "Support for pointer back-tracing" OFF)
 option(disable_gc_debug "Disable debugging like GC_dump and its callees" OFF)
 option(enable_java_finalization "Support for java finalization" ON)
@@ -338,6 +339,10 @@ endif()
 
 if (enable_atomic_uncollectable)
   add_definitions("-DGC_ATOMIC_UNCOLLECTABLE")
+endif()
+
+if (enable_valgrind_tracking)
+  add_definitions("-DVALGRIND_TRACKING")
 endif()
 
 if (enable_gc_debug)

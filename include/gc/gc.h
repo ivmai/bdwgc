@@ -606,6 +606,19 @@ GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,
 /* GC_free(0) is a no-op, as required by ANSI C for free.               */
 GC_API void GC_CALL GC_free(void *);
 
+/* A symbol to be intercepted by heap profilers so that they can        */
+/* accurately track allocations.  Programs such as Valgrind massif      */
+/* and KDE heaptrack do tracking of allocated objects by overriding     */
+/* common allocator methods (e.g. malloc and free).  However, because   */
+/* the collector does not work by calling standard allocation methods   */
+/* on objects that were reclaimed, we need a way to tell the profiler   */
+/* that an object has been freed.  This function is not intended to     */
+/* be called by the client, it should be used for the interception      */
+/* purpose only.  The collector calls this function internally whenever */
+/* an object is freed.  Defined only if the library has been compiled   */
+/* with VALGRIND_TRACKING.                                              */
+GC_API void GC_CALLBACK GC_free_profiler_hook(void *);
+
 /* The "stubborn" objects allocation is not supported anymore.  Exists  */
 /* only for the backward compatibility.                                 */
 #define GC_MALLOC_STUBBORN(sz)  GC_MALLOC(sz)

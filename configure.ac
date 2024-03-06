@@ -769,6 +769,16 @@ AH_TEMPLATE([MAKE_BACK_GRAPH],
 AH_TEMPLATE([SAVE_CALL_COUNT],
             [The number of caller frames saved when allocating with the
              debugging API.])
+
+AC_ARG_ENABLE(valgrind-tracking,
+    [AS_HELP_STRING([--enable-valgrind-tracking],
+                    [heap profiler allocation tracking])],
+    [if test "${enable_valgrind_tracking}" = yes; then
+      AC_DEFINE([VALGRIND_TRACKING], 1,
+                [Define to support tracking GC_malloc and friends for heap
+                 profiling tools.])
+     fi])
+
 UNWINDLIBS=
 AC_ARG_ENABLE(gc-debug,
               [AS_HELP_STRING([--enable-gc-debug],

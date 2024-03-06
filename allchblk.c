@@ -1005,6 +1005,20 @@ STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
     return hbp;
 }
 
+#ifdef VALGRIND_TRACKING
+  /* Note: this is intentionally defined in a file other than malloc.c  */
+  /* and reclaim.c ones.                                                */
+  GC_ATTR_NOINLINE
+  GC_API void GC_CALLBACK GC_free_profiler_hook(void *p)
+  {
+#   ifndef PARALLEL_MARK
+      GC_ASSERT(I_HOLD_LOCK());
+#   endif
+    /* Prevent treating this function by the compiler as a no-op one.   */
+    GC_noop1((word)p);
+  }
+#endif /* VALGRIND_TRACKING */
+
 /*
  * Free a heap block.
  *

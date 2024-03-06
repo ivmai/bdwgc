@@ -671,6 +671,7 @@ GC_API void GC_CALL GC_free(void * p)
     GC_ASSERT(GC_base(p) == p);
     LOCK();
     free_internal(p, hhdr);
+    FREE_PROFILER_HOOK(p);
     UNLOCK();
 }
 

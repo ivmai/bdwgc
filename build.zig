@@ -72,7 +72,10 @@ pub fn build(b: *std.Build) void {
                                         "Support for gcj") orelse true;
     const enable_sigrt_signals = b.option(bool, "enable_sigrt_signals",
         "Use SIGRTMIN-based signals for thread suspend/resume") orelse false;
-
+    const enable_valgrind_tracking = b.option(bool,
+        "enable_valgrind_tracking",
+        "Support tracking GC_malloc and friends for heap profiling tools")
+        orelse false;
     const enable_gc_debug = b.option(bool, "enable_gc_debug",
         "Support for pointer back-tracing") orelse false;
     const disable_gc_debug = b.option(bool, "disable_gc_debug",
@@ -256,6 +259,10 @@ pub fn build(b: *std.Build) void {
 
     if (enable_atomic_uncollectable) {
         flags.append("-D GC_ATOMIC_UNCOLLECTABLE") catch unreachable;
+    }
+
+    if (enable_valgrind_tracking) {
+        flags.append("-D VALGRIND_TRACKING") catch unreachable;
     }
 
     if (enable_gc_debug) {

@@ -2534,6 +2534,12 @@ GC_EXTERN GC_bool GC_print_back_height;
   GC_INNER void GC_free_inner(void * p);
 #endif
 
+#ifdef VALGRIND_TRACKING
+# define FREE_PROFILER_HOOK(p) GC_free_profiler_hook(p)
+#else
+# define FREE_PROFILER_HOOK(p) (void)(p)
+#endif
+
 /* Macros used for collector internal allocation.       */
 /* These assume the allocator lock is held.             */
 #ifdef DBG_HDRS_ALL

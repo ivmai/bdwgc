@@ -351,6 +351,13 @@ GC_ASSERTIONS   Enable some internal GC assertion checking.  It is intended
   primarily for debugging of the garbage collector itself, but could also
   help to identify cases of incorrect GC usage by a client.
 
+VALGRIND_TRACKING   Support tracking GC_malloc and friends for heap profiling
+  tools like Valgrind's massif and KDE heaptrack.  Such tools work by
+  intercepting dynamically linked allocator calls so that they can do their
+  own bookkeeping for tracking memory usage.  The macro turns on export of
+  GC_free_profiler_hook no-op function which could be intercepted by the
+  profiling tools (thus, they could see which objects were freed).
+
 DBG_HDRS_ALL    Make sure that all objects have debug headers.  Increases
   the reliability (from 99.9999% to 100% mod. bugs) of some of the debugging
   code (especially KEEP_BACK_PTRS).  Makes SHORT_DBG_HDRS possible.

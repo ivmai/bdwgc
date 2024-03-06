@@ -199,6 +199,7 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, word sz,
             /* The object is available - put it on list. */
             obj_link(p) = list;
             list = p;
+            FREE_PROFILER_HOOK(p);
             p = (ptr_t)GC_clear_block((word *)p, sz, pcount);
         }
     }
@@ -227,6 +228,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
             /* The object is available - put it on list. */
             obj_link(p) = list;
             list = p;
+            FREE_PROFILER_HOOK(p);
         }
     }
     *pcount += n_bytes_found;
@@ -376,6 +378,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp, word sz,
     } else {
         GC_bytes_found += (signed_word)HBLKSIZE;
         GC_freehblk(hbp);
+        FREE_PROFILER_HOOK(hbp);
     }
   }
 #endif /* ENABLE_DISCLAIM */
@@ -425,6 +428,7 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
               }
               GC_bytes_found += (signed_word)sz;
               GC_freehblk(hbp);
+              FREE_PROFILER_HOOK(hbp);
             }
         } else {
 #        ifdef ENABLE_DISCLAIM
@@ -451,6 +455,21 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
 #       else
           GC_ASSERT(sz * hhdr -> hb_n_marks <= HBLKSIZE);
 #       endif
+#       ifdef VALGRIND_TRACKING
+          /* Call GC_free_profiler_hook() on freed objects so that  */
+          /* a profiling tool could track the allocations.          */
+          {
+            ptr_t p = hbp -> hb_body;
+            ptr_t plim = p + HBLKSIZE - sz;
+            word bit_no;
+
+            for (bit_no = 0; (word)p <= (word)plim;
+                 bit_no += MARK_BIT_OFFSET(sz), p += sz) {
+              if (!mark_bit_from_hdr(hhdr, bit_no))
+                FREE_PROFILER_HOOK(p);
+            }
+          }
+#       endif
         if (report_if_found) {
           GC_reclaim_small_nonempty_block(hbp, sz,
                                           TRUE /* report_if_found */);
@@ -463,6 +482,7 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
           /* else */ {
             GC_bytes_found += (signed_word)HBLKSIZE;
             GC_freehblk(hbp);
+            FREE_PROFILER_HOOK(hbp);
           }
         } else if (GC_find_leak || !GC_block_nearly_full(hhdr, sz)) {
           /* group of smaller objects, enqueue the real work */
