@@ -1005,6 +1005,12 @@ STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
     return hbp;
 }
 
+# if defined(VALGRIND_TRACKING)
+    GC_API void GC_CALL GC_free_profiler_hook(void * p) {
+        UNUSED_ARG(p);
+    }
+# endif
+
 /*
  * Free a heap block.
  *

@@ -1032,6 +1032,14 @@ if test "${enable_gc_assertions}" = yes; then
               [Define to enable internal debug assertions.])
 fi
 
+AC_ARG_ENABLE(valgrind-tracking,
+    [AS_HELP_STRING([--enable-valgrind-tracking],
+        [heap profiler allocation tracking])])
+if test "${enable_valgrind_tracking}" = yes; then
+    AC_DEFINE([VALGRIND_TRACKING], 1,
+              [Define to enable heap profiler allocation tracking.])
+fi
+
 AC_ARG_ENABLE(mmap,
     [AS_HELP_STRING([--enable-mmap],
                     [use mmap instead of sbrk to expand the heap])],

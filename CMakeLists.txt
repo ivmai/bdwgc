@@ -101,6 +101,7 @@ option(enable_emscripten_asyncify "Use Emscripten asyncify feature" OFF)
 option(install_headers "Install header and pkg-config metadata files" ON)
 option(with_libatomic_ops "Use an external libatomic_ops" OFF)
 option(without_libatomic_ops "Use atomic_ops.h in libatomic_ops/src" OFF)
+option(enable_track_valgrind "Support tracking GC_malloc and friends for heap profiling tools" OFF)
 
 # Override the default build type to RelWithDebInfo (this instructs cmake to
 # pass -O2 -g -DNDEBUG options to the compiler by default).
@@ -713,6 +714,10 @@ if (build_cord)
           RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
           INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 endif(build_cord)
+
+if (enable_valgrind_tracking)
+  add_definitions("-DVALGRIND_TRACKING")
+endif()
 
 if (BUILD_SHARED_LIBS AND HAVE_FLAG_WL_NO_UNDEFINED)
   # Declare that the libraries do not refer to external symbols.

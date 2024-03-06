@@ -200,6 +200,10 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, word sz,
                 obj_link(p) = list;
                 list = p;
 
+#             if defined(VALGRIND_TRACKING)
+                GC_free_profiler_hook(p);
+#             endif
+
                 p = (ptr_t)GC_clear_block((word *)p, sz, pcount);
             }
             bit_no += MARK_BIT_OFFSET(sz);
@@ -227,6 +231,9 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
                 n_bytes_found += sz;
                 /* object is available - put on list */
                     obj_link(p) = list;
+#                   if defined(VALGRIND_TRACKING)
+                      GC_free_profiler_hook(p);
+#                   endif
                     list = ((ptr_t)p);
             }
             p = (word *)((ptr_t)p + sz);
@@ -290,6 +297,27 @@ STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
       }
     }
 }
+
+# if defined(VALGRIND_TRACKING)
+/* Call GC_free_profiler_hook on freed objects so that profiling      */
+/* tools can track allocations.                                       */
+STATIC void GC_reclaim_check_for_profiler(struct hblk *hbp, word sz)
+{
+    hdr *hhdr = HDR(hbp);
+    word bit_no;
+    ptr_t p, plim;
+
+    /* go through all words in block */
+    p = hbp->hb_body;
+    plim = p + HBLKSIZE - sz;
+    for (bit_no = 0; (word)p <= (word)plim;
+         p += sz, bit_no += MARK_BIT_OFFSET(sz)) {
+      if (!mark_bit_from_hdr(hhdr, bit_no)) {
+        GC_free_profiler_hook(p);
+      }
+    }
+}
+# endif
 
 /* Is a pointer-free block?  Same as IS_PTRFREE() macro but uses    */
 /* unordered atomic access to avoid racing with GC_realloc.         */
@@ -431,6 +459,9 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
               }
               GC_bytes_found += (signed_word)sz;
               GC_freehblk(hbp);
+#             if defined(VALGRIND_TRACKING)
+                GC_free_profiler_hook(hbp);
+#             endif
             }
         } else {
 #        ifdef ENABLE_DISCLAIM
@@ -456,6 +487,9 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
 #       else
           GC_ASSERT(sz * hhdr -> hb_n_marks <= HBLKSIZE);
 #       endif
+#       if defined(VALGRIND_TRACKING)
+          GC_reclaim_check_for_profiler(hbp, sz);
+#       endif
         if (report_if_found) {
           GC_reclaim_small_nonempty_block(hbp, sz,
                                           TRUE /* report_if_found */);
@@ -468,6 +502,9 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
           /* else */ {
             GC_bytes_found += (signed_word)HBLKSIZE;
             GC_freehblk(hbp);
+#           if defined(VALGRIND_TRACKING)
+              GC_free_profiler_hook(hbp);
+#           endif
           }
         } else if (GC_find_leak || !GC_block_nearly_full(hhdr, sz)) {
           /* group of smaller objects, enqueue the real work */
