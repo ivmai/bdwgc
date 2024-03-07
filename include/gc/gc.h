@@ -615,6 +615,8 @@ GC_API void GC_CALL GC_free(void *);
 /* This function is called from the sweeper whenever an object is       */
 /* freed, which can then be intercepted by heap profilers so that       */
 /* they can accurately track allocations.                               */
+/*                                                                      */
+/* Defined only if the library has been compiled with VALGRIND_TRACKING.*/
 GC_API void GC_free_profiler_hook(void *);
 
 /* The "stubborn" objects allocation is not supported anymore.  Exists  */
