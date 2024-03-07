@@ -1037,7 +1037,7 @@ AC_ARG_ENABLE(valgrind-tracking,
         [heap profiler allocation tracking])])
 if test "${enable_valgrind_tracking}" = yes; then
     AC_DEFINE([VALGRIND_TRACKING], 1,
-              [Define to enable heap profiler allocation tracking.])
+              [Define to support tracking GC_malloc and friends for heap profiling tools.])
 fi
 
 AC_ARG_ENABLE(mmap,
