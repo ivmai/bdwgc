@@ -199,11 +199,9 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, word sz,
                 /* Object is available - put it on list. */
                 obj_link(p) = list;
                 list = p;
-
 #             ifdef VALGRIND_TRACKING
                 GC_free_profiler_hook(p);
 #             endif
-
                 p = (ptr_t)GC_clear_block((word *)p, sz, pcount);
             }
             bit_no += MARK_BIT_OFFSET(sz);
