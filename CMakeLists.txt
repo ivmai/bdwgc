@@ -87,6 +87,7 @@ option(enable_disclaim "Support alternative finalization interface" ON)
 option(enable_dynamic_pointer_mask "Support pointer mask/shift set at runtime" OFF)
 option(enable_large_config "Optimize for large heap or root set" OFF)
 option(enable_gc_assertions "Enable collector-internal assertion checking" OFF)
+option(enable_track_valgrind "Support tracking GC_malloc and friends for heap profiling tools" OFF)
 option(enable_mmap "Use mmap instead of sbrk to expand the heap" OFF)
 option(enable_munmap "Return page to the OS if empty for N collections" ON)
 option(enable_dynamic_loading "Enable tracing of dynamic library data roots" ON)
@@ -101,7 +102,6 @@ option(enable_emscripten_asyncify "Use Emscripten asyncify feature" OFF)
 option(install_headers "Install header and pkg-config metadata files" ON)
 option(with_libatomic_ops "Use an external libatomic_ops" OFF)
 option(without_libatomic_ops "Use atomic_ops.h in libatomic_ops/src" OFF)
-option(enable_track_valgrind "Support tracking GC_malloc and friends for heap profiling tools" OFF)
 
 # Override the default build type to RelWithDebInfo (this instructs cmake to
 # pass -O2 -g -DNDEBUG options to the compiler by default).
