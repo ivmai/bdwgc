@@ -94,6 +94,8 @@ pub fn build(b: *std.Build) void {
         "Optimize for large heap or root set") orelse false;
     const enable_gc_assertions = b.option(bool, "enable_gc_assertions",
         "Enable collector-internal assertion checking") orelse false;
+    const enable_valgrind_tracking = b.option(bool, "enable_valgrind_tracking",
+        "Support tracking GC_malloc and friends for heap profiling tools") orelse false;
     const enable_mmap = b.option(bool, "enable_mmap",
         "Use mmap instead of sbrk to expand the heap") orelse false;
     const enable_munmap = b.option(bool, "enable_munmap",
@@ -318,6 +320,10 @@ pub fn build(b: *std.Build) void {
 
     if (enable_gc_assertions) {
         flags.append("-D GC_ASSERTIONS") catch unreachable;
+    }
+
+    if (enable_valgrind_tracking) {
+        flags.append("-D VALGRIND_TRACKING") catch unreachable;
     }
 
     if (!enable_threads_discovery) {
