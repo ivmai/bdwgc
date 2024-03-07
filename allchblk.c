@@ -1006,6 +1006,8 @@ STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
 }
 
 # ifdef VALGRIND_TRACKING
+/* This function is called from the sweeper whenever an object is      */
+/* freed.                                                              */
     GC_API void GC_CALL GC_free_profiler_hook(void * p) {
         GC_noop1((word)(p));
     }

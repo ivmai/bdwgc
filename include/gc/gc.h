@@ -605,16 +605,17 @@ GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,
 /* GC_free(0) is a no-op, as required by ANSI C for free.               */
 GC_API void GC_CALL GC_free(void *);
 
-/* Notify heap profiling tools that an object was deallocated.          */
+/* A symbol to be intercepted by heap profilers so that they can        */
+/* accurately track allocations.                                        */
+/*                                                                      */
 /* Programs such as Valgrind massif and KDE heaptrack track allocated   */
 /* objects by overriding common allocator methods (e.g. malloc and      */
 /* free). However, because GC doesn't work by calling a standard alloc  */
 /* methods on objects which were reclaimed, we need a way to tell       */
 /* profilers that an object has been freed.                             */
 /*                                                                      */
-/* This function is called from the sweeper whenever an object is       */
-/* freed, which can then be intercepted by heap profilers so that       */
-/* they can accurately track allocations.                               */
+/* This function is not intended to be called by the client, it should  */
+/* be used for the interception purpose only.                           */
 /*                                                                      */
 /* Defined only if the library has been compiled with VALGRIND_TRACKING.*/
 GC_API void GC_free_profiler_hook(void *);
