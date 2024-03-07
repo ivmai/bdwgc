@@ -651,7 +651,7 @@ GC_API void GC_CALL GC_free(void * p)
         return;
     }
 
-#   if defined(VALGRIND_TRACKING)
+#   ifdef VALGRIND_TRACKING
       GC_free_profiler_hook(p);
 #   endif
 

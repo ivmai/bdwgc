@@ -200,7 +200,7 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, word sz,
                 obj_link(p) = list;
                 list = p;
 
-#             if defined(VALGRIND_TRACKING)
+#             ifdef VALGRIND_TRACKING
                 GC_free_profiler_hook(p);
 #             endif
 
@@ -231,7 +231,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
                 n_bytes_found += sz;
                 /* object is available - put on list */
                     obj_link(p) = list;
-#                   if defined(VALGRIND_TRACKING)
+#                   ifdef VALGRIND_TRACKING
                       GC_free_profiler_hook(p);
 #                   endif
                     list = ((ptr_t)p);
@@ -298,7 +298,7 @@ STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
     }
 }
 
-# if defined(VALGRIND_TRACKING)
+# ifdef VALGRIND_TRACKING
 /* Call GC_free_profiler_hook on freed objects so that profiling      */
 /* tools can track allocations.                                       */
 STATIC void GC_reclaim_check_for_profiler(struct hblk *hbp, word sz)
@@ -459,7 +459,7 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
               }
               GC_bytes_found += (signed_word)sz;
               GC_freehblk(hbp);
-#             if defined(VALGRIND_TRACKING)
+#             ifdef VALGRIND_TRACKING
                 GC_free_profiler_hook(hbp);
 #             endif
             }
@@ -487,7 +487,7 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
 #       else
           GC_ASSERT(sz * hhdr -> hb_n_marks <= HBLKSIZE);
 #       endif
-#       if defined(VALGRIND_TRACKING)
+#       ifdef VALGRIND_TRACKING
           GC_reclaim_check_for_profiler(hbp, sz);
 #       endif
         if (report_if_found) {
@@ -502,7 +502,7 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
           /* else */ {
             GC_bytes_found += (signed_word)HBLKSIZE;
             GC_freehblk(hbp);
-#           if defined(VALGRIND_TRACKING)
+#           ifdef VALGRIND_TRACKING
               GC_free_profiler_hook(hbp);
 #           endif
           }
