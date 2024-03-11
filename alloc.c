@@ -152,6 +152,15 @@ GC_API GC_VERSION_VAL_T GC_CALL GC_get_version(void)
          | (GC_VERSION_MINOR << 8) | GC_VERSION_MICRO;
 }
 
+GC_API int GC_CALL GC_get_dont_add_byte_at_end(void)
+{
+# ifdef DONT_ADD_BYTE_AT_END
+    return 1;
+# else
+    return 0; /* meaningful only if GC_all_interior_pointers */
+# endif
+}
+
 /* some more variables */
 
 #ifdef GC_DONT_EXPAND

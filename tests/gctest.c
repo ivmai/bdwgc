@@ -1267,9 +1267,9 @@ static void test_tinyfl(void)
   void *results[3];
   void *tfls[3][GC_TINY_FREELISTS];
 
-# ifndef DONT_ADD_BYTE_AT_END
-    if (GC_get_all_interior_pointers()) return; /* skip */
-# endif
+  if (!GC_get_dont_add_byte_at_end()
+      && GC_get_all_interior_pointers()) return; /* skip */
+
   BZERO(tfls, sizeof(tfls));
   /* TODO: Improve testing of FAST_MALLOC functionality. */
   GC_MALLOC_WORDS(results[0], 11, tfls[0]);

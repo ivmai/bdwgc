@@ -23,8 +23,8 @@
 /* In the standard collector configuration, the collector assumes that  */
 /* such a byte has been added, and hence does not trace the last word   */
 /* in the resulting object.                                             */
-/* This is not an issue if the collector is compiled with               */
-/* DONT_ADD_BYTE_AT_END, or if GC_all_interior_pointers is not set.     */
+/* This is not an issue if GC_get_all_interior_pointers() returns 0     */
+/* or if GC_get_dont_add_byte_at_end() returns 1.                       */
 /* This interface is most useful for compilers that generate C.         */
 /* It is also used internally for thread-local allocation.              */
 /* Manual use is hereby discouraged.                                    */
@@ -73,6 +73,11 @@
 #define GC_I_PTRFREE 0
 #define GC_I_NORMAL  1
 
+/* Determine if the collector has been configured not to pad the        */
+/* allocated objects even in the all-interior-pointers mode.            */
+/* Meaningful only if GC_get_all_interior_pointers() returns 1.         */
+GC_API int GC_CALL GC_get_dont_add_byte_at_end(void);
+
 /* Return a list of one or more objects of the indicated size, linked   */
 /* through the first word in each object.  This has the advantage that  */
 /* it acquires the allocator lock only once, and may greatly reduce     */
@@ -83,13 +88,14 @@
 /* object sizes, since a call indicates the intention to consume many   */
 /* objects of exactly this size.)  We assume that the size is non-zero  */
 /* and a multiple of GC_GRANULE_BYTES, and that it already includes     */
-/* value of GC_all_interior_pointers (unless DONT_ADD_BYTE_AT_END is    */
-/* defined).  We return the free-list by assigning it to (*result),     */
-/* since it is not safe to return, e.g. a linked list of pointer-free   */
-/* objects, since the collector would not retain the entire list if it  */
-/* were invoked just as we were returning; the client must make sure    */
-/* that (*result) is traced even if objects are pointer-free.  Note     */
-/* also that the client should usually clear the link field.            */
+/* value returned by GC_get_all_interior_pointers() (unless             */
+/* GC_get_dont_add_byte_at_end() returns a non-zero value).  We return  */
+/* the free-list by assigning it to (*result), since it is not safe to  */
+/* return, e.g. a linked list of pointer-free objects, since the        */
+/* collector would not retain the entire list if it were invoked just   */
+/* as we were returning; the client must make sure that (*result) is    */
+/* traced even if objects are pointer-free.  Note also that the client  */
+/* should usually clear the link field.                                 */
 GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb_adjusted */,
                                            int /* k */, void ** /* result */);
 
@@ -187,11 +193,11 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_WORDS_TO_GRANULES((n) + GC_GRANULE_WORDS - 1)
 
 /* Allocate n words (not bytes).  The pointer is stored to result.      */
-/* Note: this should really only be used if GC_all_interior_pointers is */
-/* not set, or DONT_ADD_BYTE_AT_END is set; see above.                  */
-/* Does not acquire the allocator lock.  The caller is responsible for  */
-/* supplying a cleared tiny_fl free list array.  For single-threaded    */
-/* applications, this may be a global array.                            */
+/* Should not be used unless GC_get_all_interior_pointers() returns 0   */
+/* or if GC_get_dont_add_byte_at_end() returns 1.  Does not acquire the */
+/* allocator lock.  The caller is responsible for supplying a cleared   */
+/* tiny_fl free list array.  For single-threaded applications, this may */
+/* be a global array.                                                   */
 # define GC_MALLOC_WORDS_KIND(result, n, tiny_fl, k, init) \
     do { \
       size_t lg = GC_WORDS_TO_WHOLE_GRANULES(n); \

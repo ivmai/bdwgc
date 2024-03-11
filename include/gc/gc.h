@@ -186,16 +186,17 @@ GC_API GC_ATTR_DEPRECATED int GC_all_interior_pointers;
                         /* not be changed after GC initialization (in   */
                         /* case of calling it after the GC is           */
                         /* initialized, the setter acquires the         */
-                        /* allocator lock.  The initial value depends   */
-                        /* on whether the GC is built with              */
-                        /* ALL_INTERIOR_POINTERS macro defined or not.  */
-                        /* Unless DONT_ADD_BYTE_AT_END is defined, this */
-                        /* also affects whether sizes are increased by  */
-                        /* at least a byte to allow "off the end"       */
-                        /* pointer recognition (but the size is not     */
-                        /* increased for uncollectible objects as well  */
-                        /* as for ignore-off-page objects of at least   */
-                        /* heap block size).  Must be only 0 or 1.      */
+                        /* allocator lock.  Must be only 0 or 1.  The   */
+                        /* initial value depends on whether the GC is   */
+                        /* built with ALL_INTERIOR_POINTERS macro       */
+                        /* defined or not.  This also affects, unless   */
+                        /* GC_get_dont_add_byte_at_end() returns        */
+                        /* a non-zero value, whether the object sizes   */
+                        /* are increased by at least a byte to allow    */
+                        /* "off the end" pointer recognition (but the   */
+                        /* size is not increased for uncollectible      */
+                        /* objects as well as for ignore-off-page       */
+                        /* objects of at least heap block size).        */
 GC_API void GC_CALL GC_set_all_interior_pointers(int);
 GC_API int GC_CALL GC_get_all_interior_pointers(void);
 

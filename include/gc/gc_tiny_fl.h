@@ -75,8 +75,9 @@
 
 /* The i-th free list corresponds to size i*GC_GRANULE_BYTES    */
 /* Internally to the collector, the index can be computed with  */
-/* ALLOC_REQUEST_GRANS().  Externally, we don't know whether    */
-/* DONT_ADD_BYTE_AT_END is set, but the client should know.     */
+/* ALLOC_REQUEST_GRANS().  The later also depends on the        */
+/* values returned by GC_get_dont_add_byte_at_end() and         */
+/* GC_get_all_interior_pointers().                              */
 
 /* Convert a free list index to the actual size of objects      */
 /* on that list, including extra space we added.  Not an        */
