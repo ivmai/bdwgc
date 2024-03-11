@@ -163,8 +163,7 @@ void * GC_core_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr,
         GC_ASSERT(NULL == ((void **)op)[1]);
     } else {
         maybe_finalize();
-        op = (ptr_t)GC_clear_stack(GC_generic_malloc_inner(lb, GC_gcj_kind,
-                                                           flags));
+        op = (ptr_t)GC_generic_malloc_inner(lb, GC_gcj_kind, flags);
         if (NULL == op) {
             GC_oom_func oom_fn = GC_oom_fn;
             UNLOCK();
@@ -175,7 +174,7 @@ void * GC_core_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr,
     UNLOCK();
     GC_dirty(op);
     REACHABLE_AFTER_DIRTY(ptr_to_struct_containing_descr);
-    return (void *)op;
+    return GC_clear_stack(op);
 }
 
 #ifndef THREAD_LOCAL_ALLOC
