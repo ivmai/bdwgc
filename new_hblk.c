@@ -98,13 +98,7 @@
   }
 #endif /* !SMALL_CONFIG */
 
-/* Build a free list for objects of size sz inside heap block h.        */
-/* Clear objects inside h if clear is set.  Add list to the end of      */
-/* the free list we build.  Return the new free list.                   */
-/* This could be called without the allocator lock, if we ensure that   */
-/* there is no concurrent collection which might reclaim objects that   */
-/* we have not yet allocated.                                           */
-GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
+GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t lw, GC_bool clear,
                            ptr_t list)
 {
   word *p, *prev;
@@ -121,7 +115,7 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
 # ifndef SMALL_CONFIG
     /* Handle small objects sizes more efficiently.  For larger objects */
     /* the difference is less significant.                              */
-    switch (sz) {
+    switch (lw) {
         case 2: if (clear) {
                     return GC_build_fl_clear2(h, list);
                 } else {
@@ -141,20 +135,17 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
     if (clear) BZERO(h, HBLKSIZE);
 
   /* Add objects to free list */
-    p = (word *)(h -> hb_body) + sz;    /* second object in *h  */
     prev = (word *)(h -> hb_body);              /* One object behind p  */
-    last_object = (word *)((char *)h + HBLKSIZE);
-    last_object -= sz;
+    last_object = (word *)((char *)h + HBLKSIZE) - lw;
                             /* Last place for last object to start */
 
-  /* make a list of all objects in *h with head as last object */
-    while ((word)p <= (word)last_object) {
+  /* Make a list of all objects in *h with head as last object. */
+    for (p = prev + lw; (word)p <= (word)last_object; p += lw) {
       /* current object's link points to last object */
         obj_link(p) = (ptr_t)prev;
         prev = p;
-        p += sz;
     }
-    p -= sz;                    /* p now points to last object */
+    p -= lw;    /* p now points to last object */
 
   /* Put p (which is now head of list of objects in *h) as first    */
   /* pointer in the appropriate free list for this size.            */
