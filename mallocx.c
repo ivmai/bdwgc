@@ -387,7 +387,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb_adjusted, int k,
         }
         GC_bytes_allocd += my_bytes_allocd;
         goto out;
-      }
+    }
+
     /* Next try to allocate a new block worth of objects of this size.  */
     {
         struct hblk *h = GC_allochblk(lb_adjusted, k, 0 /* flags */,
