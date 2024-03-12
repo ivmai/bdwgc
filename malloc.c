@@ -650,11 +650,9 @@ GC_API void GC_CALL GC_free(void * p)
         /* Required by ANSI.  It's not my fault ...     */
         return;
     }
-
 #   ifdef VALGRIND_TRACKING
       GC_free_profiler_hook(p);
 #   endif
-
 #   ifdef LOG_ALLOCS
       GC_log_printf("GC_free(%p) after GC #%lu\n",
                     p, (unsigned long)GC_gc_no);
