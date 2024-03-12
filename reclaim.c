@@ -833,7 +833,8 @@ STATIC void GC_do_enumerate_reachable_objects(struct hblk *hbp, word ped)
     plim = hbp->hb_body + HBLKSIZE - sz;
   }
   /* Go through all words in block. */
-  for (bit_no = 0; p <= plim; bit_no += MARK_BIT_OFFSET(sz), p += sz) {
+  for (bit_no = 0; (word)p <= (word)plim;
+       bit_no += MARK_BIT_OFFSET(sz), p += sz) {
     if (mark_bit_from_hdr(hhdr, bit_no)) {
       ((struct enumerate_reachable_s *)ped)->proc(p, sz,
                         ((struct enumerate_reachable_s *)ped)->client_data);
