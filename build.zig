@@ -88,6 +88,8 @@ pub fn build(b: *std.Build) void {
         "Support for atomic uncollectible allocation") orelse true;
     const enable_redirect_malloc = b.option(bool, "enable_redirect_malloc",
         "Redirect malloc and friend to GC routines") orelse false;
+    const enable_ignore_free = b.option(bool, "enable_ignore_free",
+        "Ignore calls to free") orelse false;
     const enable_disclaim = b.option(bool, "enable_disclaim",
         "Support alternative finalization interface") orelse true;
     const enable_dynamic_pointer_mask = b.option(bool,
@@ -301,6 +303,10 @@ pub fn build(b: *std.Build) void {
         } else {
             flags.append("-D GC_USE_DLOPEN_WRAP") catch unreachable;
         }
+    }
+
+    if (enable_ignore_free) {
+        flags.append("-D IGNORE_FREE") catch unreachable;
     }
 
     if (enable_mmap or enable_munmap) {
