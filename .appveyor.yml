@@ -23,7 +23,7 @@ environment:
     CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_gc_assertions=ON -Denable_thread_local_alloc=OFF -Ddisable_single_obj_compilation=ON
   - TARGET: cmake
     CFLAGS_EXTRA: -DGC_DISABLE_INCREMENTAL
-    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_gc_assertions=ON -Denable_gcj_support=OFF -Denable_parallel_mark=OFF -Denable_thread_local_alloc=OFF
+    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_gc_assertions=ON -Denable_gcj_support=OFF -Denable_parallel_mark=OFF -Denable_thread_local_alloc=OFF -Denable_valgrind_tracking=ON
   - TARGET: cmake
     CMAKE_OPTIONS: -A Win32 -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Denable_large_config=ON
   - TARGET: cmake
