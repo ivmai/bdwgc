@@ -516,9 +516,7 @@ STATIC void GC_maybe_gc(void)
     if (GC_time_limit != GC_TIME_UNLIMITED) GET_TIME(GC_start_time);
 # endif
   if (GC_stopped_mark(GC_timeout_stop_func)) {
-#   ifdef SAVE_CALL_CHAIN
-      GC_save_callers(GC_last_stack);
-#   endif
+    SAVE_CALLERS_TO_LAST_STACK();
     GC_finish_collection();
   } else if (!GC_is_full_gc) {
     /* Count this as the first attempt. */
@@ -604,9 +602,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
         }
     GC_invalidate_mark_state();  /* Flush mark stack.   */
     GC_clear_marks();
-#   ifdef SAVE_CALL_CHAIN
-        GC_save_callers(GC_last_stack);
-#   endif
+    SAVE_CALLERS_TO_LAST_STACK();
     GC_is_full_gc = TRUE;
     if (!GC_stopped_mark(stop_func)) {
       if (!GC_incremental) {
@@ -721,9 +717,7 @@ GC_INNER void GC_collect_a_little_inner(int n)
         if (i < max_deficit && !GC_dont_gc) {
             GC_ASSERT(!GC_collection_in_progress());
             /* Need to follow up with a full collection.        */
-#           ifdef SAVE_CALL_CHAIN
-                GC_save_callers(GC_last_stack);
-#           endif
+            SAVE_CALLERS_TO_LAST_STACK();
 #           ifdef PARALLEL_MARK
                 if (GC_parallel)
                     GC_wait_for_reclaim();
