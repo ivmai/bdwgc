@@ -263,6 +263,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
         } else {
             obj_link(p) = list;
             list = p;
+            FREE_PROFILER_HOOK(p);
             p = (ptr_t)GC_clear_block((word *)p, sz, pcount);
         }
     }
@@ -378,7 +379,6 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp, word sz,
     } else {
         GC_bytes_found += (signed_word)HBLKSIZE;
         GC_freehblk(hbp);
-        FREE_PROFILER_HOOK(hbp);
     }
   }
 #endif /* ENABLE_DISCLAIM */
