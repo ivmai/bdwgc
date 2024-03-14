@@ -3328,21 +3328,19 @@ EXTERN_C_BEGIN
                         /* include assembly code to do it well. */
 #endif
 
-/* Can we save call chain in objects for debugging?                     */
-/* SET NFRAMES (# of saved frames) and NARGS (#of args for each         */
+/* Can we save call chain in objects for debugging?  Set NFRAMES        */
+/* (number of saved frames) and NARGS (number of arguments for each     */
 /* frame) to reasonable values for the platform.                        */
-/* Set SAVE_CALL_CHAIN if we can.  SAVE_CALL_COUNT can be specified     */
+/* Define SAVE_CALL_CHAIN if we can.  SAVE_CALL_COUNT can be specified  */
 /* at build time, though we feel free to adjust it slightly.            */
 /* Define NEED_CALLINFO if we either save the call stack or             */
-/* GC_ADD_CALLER is defined.                                            */
-/* GC_CAN_SAVE_CALL_STACKS is set in gc.h.                              */
-#if defined(SPARC)
-# define CAN_SAVE_CALL_ARGS
-#endif
-#if (defined(I386) || defined(X86_64)) \
-    && (defined(LINUX) || defined(__GLIBC__))
-  /* SAVE_CALL_CHAIN is supported if the code is compiled to save       */
-  /* frame pointers by default, i.e. no -fomit-frame-pointer flag.      */
+/* GC_ADD_CALLER is defined.  Note: GC_CAN_SAVE_CALL_STACKS is defined  */
+/* (for certain platforms) in gc_config_macros.h file.                  */
+#if defined(SPARC) \
+    || ((defined(I386) || defined(X86_64)) \
+        && (defined(LINUX) || defined(__GLIBC__)))
+  /* Linux/x86: SAVE_CALL_CHAIN is supported if the code is compiled to */
+  /* save frame pointers by default, i.e. no -fomit-frame-pointer flag. */
 # define CAN_SAVE_CALL_ARGS
 #endif
 
