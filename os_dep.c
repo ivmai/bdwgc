@@ -409,7 +409,7 @@ GC_INNER const char * GC_get_maps(void)
 #endif /* NEED_PROC_MAPS */
 
 #if defined(SEARCH_FOR_DATA_START)
-  /* The x86 case can be handled without a search.  The Alpha case      */
+  /* The i686 case can be handled without a search.  The Alpha case     */
   /* used to be handled differently as well, but the rules changed      */
   /* for recent Linux versions.  This seems to be the easiest way to    */
   /* cover all versions.                                                */
@@ -4969,7 +4969,7 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 # if CPP_WORDSZ == 32
 #   if defined(i386_EXCEPTION_STATE_COUNT) \
        && !defined(x86_EXCEPTION_STATE32_COUNT)
-      /* Use old naming convention for 32-bit x86.      */
+      /* Use old naming convention for i686.    */
 #     define DARWIN_EXC_STATE           i386_EXCEPTION_STATE
 #     define DARWIN_EXC_STATE_COUNT     i386_EXCEPTION_STATE_COUNT
 #     define DARWIN_EXC_STATE_T         i386_exception_state_t
@@ -5186,7 +5186,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 /* mach_dep.c, but that requires reorganization.                        */
 #ifdef NEED_CALLINFO
 
-/* I suspect the following works for most *nix x86 variants, so         */
+/* I suspect the following works for most *nix i686 variants, so        */
 /* long as the frame pointer is explicitly stored.  In the case of gcc, */
 /* compiler flags (e.g. -fomit-frame-pointer) determine whether it is.  */
 #if defined(I386) && defined(LINUX) && defined(SAVE_CALL_CHAIN)

@@ -2279,8 +2279,8 @@ EXTERN_C_BEGIN
 #       if defined(__GLIBC__) && !defined(__UCLIBC__) \
            && !defined(GETCONTEXT_FPU_BUG_FIXED)
           /* At present, there's a bug in glibc getcontext() on         */
-          /* Linux/x64 (it clears FPU exception mask).  We define this  */
-          /* macro to workaround it.                                    */
+          /* Linux/x86_64 (it clears FPU exception mask).  We define    */
+          /* this macro to workaround it.                               */
           /* TODO: This seems to be fixed in glibc 2.14.                */
 #         define GETCONTEXT_FPU_EXCMASK_BUG
 #       endif

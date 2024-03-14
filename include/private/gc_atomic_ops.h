@@ -138,8 +138,8 @@
   /* AO_compiler_barrier, AO_load and AO_store should be defined for    */
   /* all targets; the rest of the primitives are guaranteed to exist    */
   /* only if AO_REQUIRE_CAS is defined (or if the corresponding         */
-  /* AO_HAVE_x macro is defined).  x86/x64 targets have AO_nop_full,    */
-  /* AO_load_acquire, AO_store_release, at least.                       */
+  /* AO_HAVE_x macro is defined).  i686 and x86_64 targets have         */
+  /* AO_nop_full, AO_load_acquire, AO_store_release, at least.          */
 # if (!defined(AO_HAVE_load) || !defined(AO_HAVE_store)) && !defined(CPPCHECK)
 #   error AO_load or AO_store is missing; probably old version of atomic_ops
 # endif

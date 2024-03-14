@@ -32,7 +32,7 @@
 /* overhead and space usage for mark bits (usually mark bytes).         */
 /* On many 64-bit architectures some memory references require 16-byte  */
 /* alignment, making this necessary anyway.  For a few 32-bit           */
-/* architectures (e.g. x86), we may also need 16-byte alignment for     */
+/* architectures (e.g. i686), we may also need 16-byte alignment for    */
 /* certain memory references.  But currently that does not seem to be   */
 /* the default for all conventional malloc implementations, so we       */
 /* ignore that problem.                                                 */

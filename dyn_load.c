@@ -659,7 +659,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 #else /* !HAVE_DL_ITERATE_PHDR */
 
 /* Dynamic loading code for Linux running ELF. Somewhat tested on
- * Linux/x86, untested but hopefully should work on Linux/Alpha.
+ * Linux/i686, untested but hopefully should work on Linux/Alpha.
  * This code was derived from the Solaris/ELF support. Thanks to
  * whatever kind soul wrote that.  - Patrick Bridges */
 

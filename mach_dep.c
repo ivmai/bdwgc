@@ -252,7 +252,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
       ucontext_t ctxt;
 #     ifdef GETCONTEXT_FPU_EXCMASK_BUG
         /* Workaround a bug (clearing the FPU exception mask) in        */
-        /* getcontext on Linux/x64.                                     */
+        /* getcontext on Linux/x86_64.                                  */
 #       ifdef X86_64
           /* We manipulate FPU control word here just not to force the  */
           /* client application to use -lm linker option.               */

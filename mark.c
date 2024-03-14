@@ -831,7 +831,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 
         /* Try to prefetch the next pointer to be examined ASAP.        */
         /* Empirically, this also seems to help slightly without        */
-        /* prefetches, at least on linux/x86.  Presumably this loop     */
+        /* prefetches, at least on Linux/i686.  Presumably this loop    */
         /* ends up with less register pressure, and gcc thus ends up    */
         /* generating slightly better code.  Overall gcc code quality   */
         /* for this loop is still not great.                            */

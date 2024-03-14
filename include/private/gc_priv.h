@@ -793,7 +793,7 @@ EXTERN_C_END
 # elif defined(I386) || defined(X86_64)
 #   if CPP_WORDSZ == 32
 #     if defined(i386_THREAD_STATE_COUNT) && !defined(x86_THREAD_STATE32_COUNT)
-        /* Use old naming convention for 32-bit x86.    */
+        /* Use old naming convention for i686.  */
 #       define GC_THREAD_STATE_T                i386_thread_state_t
 #       define GC_MACH_THREAD_STATE             i386_THREAD_STATE
 #       define GC_MACH_THREAD_STATE_COUNT       i386_THREAD_STATE_COUNT
@@ -922,9 +922,10 @@ EXTERN_C_BEGIN
 /* Incremental GC with MPROTECT_VDB currently requires the      */
 /* page size to be a multiple of HBLKSIZE.  Since most modern   */
 /* architectures support variable page sizes down to 4 KB, and  */
-/* x86 is generally 4 KB, we now default to 4 KB, except for    */
-/*   Alpha: Seems to be used with 8 KB pages.                   */
-/*   SMALL_CONFIG: Want less block-level fragmentation.         */
+/* i686 and x86_64 are generally 4 KB, we now default to 4 KB,  */
+/* except for:                                                  */
+/* - Alpha: seems to be used with 8 KB pages;                   */
+/* - SMALL_CONFIG: want less block-level fragmentation.         */
 #ifndef HBLKSIZE
 # if defined(SMALL_CONFIG) && !defined(LARGE_CONFIG)
 #   define CPP_LOG_HBLKSIZE 10
