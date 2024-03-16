@@ -56,11 +56,10 @@ associated objects.
 The same is generally true of thread support. However, the correct leak
 reports should be generated with linuxthreads, at least.
 
-On a few platforms (currently Solaris/SPARC, Irix, Linux/x86_64, and, with
-`-DSAVE_CALL_CHAIN`, Linux/i686), `GC_MALLOC` also causes some more
-information about its call stack to be saved in the object. Such information
-is reproduced in the error reports in very non-symbolic form, but it can be
-very useful with the aid of a debugger.
+On a few platforms (currently Linux/i686, Linux/x86_64 and SPARC), `GC_MALLOC`
+also causes some more information about its call stack to be saved in the
+object. Such information is reproduced in the error reports in very
+non-symbolic form, but it can be very useful with the aid of a debugger.
 
 ## An Example
 
@@ -73,32 +72,23 @@ Assume the collector has been built with `-DFIND_LEAK` or
 The program to be tested for leaks could look like `tests/leak.c` file
 of the distribution.
 
-On a Linux/i686 system this produces on the stderr stream:
+On Linux/x86_64 the output to the stderr stream would be like:
 
 
     Found 1 leaked objects:
-    0x806dff0 (tests/leak.c:19, sz=4, NORMAL)
+    0x7f5229ccbe70 (tests/leak.c:50, sz= 6, NORMAL)
+            Call chain at allocation:
+                    bdwgc/.libs/libgc.so.1(+0x173f3) [0x7f5229eff3f3]
+                    bdwgc/.libs/leaktest(+0x12f1) [0x55bcdfc5a2f1]
+                    /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xea) [0x7f5229d1fd0a]
+                    bdwgc/.libs/leaktest(+0x135a) [0x55bcdfc5a35a]
 
 
-(On most unmentioned operating systems, the output is similar to this. If the
-collector had been built on Linux/i686 with `-DSAVE_CALL_CHAIN`, the output
-would be closer to the Solaris example. For this to work, the program should
-not be compiled with `-fomit_frame_pointer`.)
-
-On Irix it reports:
-
-
-    Found 1 leaked objects:
-    0x10040fe0 (tests/leak.c:19, sz=4, NORMAL)
-            Caller at allocation:
-                    ##PC##= 0x10004910
-
-
-and on Solaris the error report is:
+On Solaris/SPARC host the output would be like:
 
 
     Found 1 leaked objects:
-    0xef621fc8 (tests/leak.c:19, sz=4, NORMAL)
+    0xef621fc8 (tests/leak.c:50, sz= 6, NORMAL)
             Call chain at allocation:
                     args: 4 (0x4), 200656 (0x30FD0)
                     ##PC##= 0x14ADC
@@ -106,13 +96,29 @@ and on Solaris the error report is:
                     ##PC##= 0x14A64
 
 
-In the latter two cases some additional information is given about how malloc
-was called when the leaked object was allocated. For Solaris, the first line
-specifies the arguments to `GC_debug_malloc` (the actual allocation routine),
-The second one specifies the program counter inside `main`, the third one
-specifies the arguments to `main`, and, finally, the program counter inside
-the caller to `main` (i.e. in the C startup code). In the Irix case, only the
-address inside the caller to `main` is given.
+On some operating systems the output would contain only information about the
+immediate caller:
+
+
+    Found 1 leaked objects:
+    0x10040fe0 (tests/leak.c:50, sz= 6, NORMAL)
+            Caller at allocation:
+                    ##PC##= 0x10004910
+
+
+On most other operating systems the output would look like:
+
+
+    Found 1 leaked objects:
+    0x806dff0 (tests/leak.c:50, sz= 6, NORMAL)
+
+
+In the first 3 cases some information is given about how malloc was called
+when the leaked object was allocated. For Solaris, the first line specifies
+the arguments to `GC_debug_malloc` (the actual allocation routine), the second
+one specifies the program counter inside `main`, the third line specifies the
+arguments to `main`, and, finally, the program counter inside the caller to
+`main` (i.e. in the C startup code).
 
 In many cases, a debugger is needed to interpret the additional information.
 On systems supporting the `adb` debugger, the `tools/callprocs.sh` script can
