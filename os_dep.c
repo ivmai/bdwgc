@@ -5186,18 +5186,18 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 /* mach_dep.c, but that requires reorganization.                        */
 #ifdef NEED_CALLINFO
 
-/* I suspect the following works for most *nix i686 variants, so        */
-/* long as the frame pointer is explicitly stored.  In the case of gcc, */
-/* compiler flags (e.g. -fomit-frame-pointer) determine whether it is.  */
-#if defined(I386) && defined(LINUX) && defined(SAVE_CALL_CHAIN)
+  /* I suspect the following works for most *nix i686 variants, so long */
+  /* as the frame pointer is explicitly stored.  In the case of gcc,    */
+  /* the client code should not be compiled with -fomit-frame-pointer.  */
+# if defined(I386) && defined(LINUX) && defined(SAVE_CALL_CHAIN)
     struct frame {
-        struct frame *fr_savfp;
+        struct  frame *fr_savfp;
         long    fr_savpc;
 #       if NARGS > 0
           long  fr_arg[NARGS];  /* All the arguments go here.   */
 #       endif
     };
-#endif
+# endif
 
 #if defined(SPARC)
 # if defined(LINUX)
