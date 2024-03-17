@@ -391,6 +391,7 @@ STATIC void GC_init_size_map(void)
         GC_bytes_allocd_at_reset = GC_bytes_allocd;
       }
       /* Adjust GC_high_water.  */
+      GC_ASSERT(GC_high_water != NULL);
       MAKE_COOLER(GC_high_water, WORDS_TO_BYTES(DEGRADE_RATE) + GC_SLOP);
       if ((word)sp HOTTER_THAN (word)GC_high_water) {
           GC_high_water = sp;
