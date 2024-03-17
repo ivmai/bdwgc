@@ -1221,12 +1221,14 @@ struct _GC_arrays {
 #   define GC_trace_addr GC_arrays._trace_addr
     ptr_t _trace_addr;
 # endif
-# if defined(SAVE_CALL_CHAIN) && !defined(DONT_SAVE_TO_LAST_STACK)
+# if defined(SAVE_CALL_CHAIN) && !defined(DONT_SAVE_TO_LAST_STACK) \
+     && (!defined(REDIRECT_MALLOC) || !defined(GC_HAVE_BUILTIN_BACKTRACE))
     struct callinfo _last_stack[NFRAMES];
                 /* Stack at last garbage collection.  Useful for        */
                 /* debugging mysterious object disappearances.  In the  */
                 /* multi-threaded case, we currently only save the      */
-                /* calling stack.                                       */
+                /* calling stack.  Not supported in case of malloc      */
+                /* redirection because backtrace() may call malloc().   */
 #   define SAVE_CALLERS_TO_LAST_STACK() GC_save_callers(GC_arrays._last_stack)
 # else
 #   define SAVE_CALLERS_TO_LAST_STACK() (void)0
