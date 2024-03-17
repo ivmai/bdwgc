@@ -36,11 +36,6 @@ jobs:
           enable_rwlock: true
         - enable_threads: false
           thread_local_alloc: true
-        - os: ubuntu-latest # TODO: illegal instruction in GC_clear_stack
-          enable_gc_debug: true
-          enable_threads: false
-          redirect_malloc: true
-          shared_libs: false
         # The following ones are long-running jobs, thus excluded.
         - os: macos-latest
           enable_gc_debug: true
