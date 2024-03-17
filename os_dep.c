@@ -5199,150 +5199,151 @@ GC_API int GC_CALL GC_get_pages_executable(void)
     };
 # endif
 
-#if defined(SPARC)
-# if defined(LINUX)
-#   if defined(SAVE_CALL_CHAIN)
-      struct frame {
-        long    fr_local[8];
-        long    fr_arg[6];
-        struct frame *fr_savfp;
-        long    fr_savpc;
-#       ifndef __arch64__
-          char  *fr_stret;
-#       endif
-        long    fr_argd[6];
-        long    fr_argx[0];
-      };
+# if defined(SPARC)
+#   if defined(LINUX)
+#     if defined(SAVE_CALL_CHAIN)
+        struct frame {
+          long fr_local[8];
+          long fr_arg[6];
+          struct frame *fr_savfp;
+          long fr_savpc;
+#         ifndef __arch64__
+            char *fr_stret;
+#         endif
+          long fr_argd[6];
+          long fr_argx[0];
+        };
+#     endif
+#   elif defined (DRSNX)
+#     include <sys/sparc/frame.h>
+#   elif defined(OPENBSD)
+#     include <frame.h>
+#   elif defined(FREEBSD) || defined(NETBSD)
+#     include <machine/frame.h>
+#   else
+#     include <sys/frame.h>
 #   endif
-# elif defined (DRSNX)
-#   include <sys/sparc/frame.h>
-# elif defined(OPENBSD)
-#   include <frame.h>
-# elif defined(FREEBSD) || defined(NETBSD)
-#   include <machine/frame.h>
-# else
-#   include <sys/frame.h>
-# endif
-# if NARGS > 6
-#   error We only know how to get the first 6 arguments
-# endif
-#endif /* SPARC */
+#   if NARGS > 6
+#     error We only know how to get the first 6 arguments
+#   endif
+# endif /* SPARC */
 
-/* Fill in the pc and argument information for up to NFRAMES of my      */
-/* callers.  Ignore my frame and my callers frame.                      */
+  /* Fill in the pc and argument information for up to NFRAMES of my    */
+  /* callers.  Ignore my frame and my callers frame.                    */
 
-#if defined(GC_HAVE_BUILTIN_BACKTRACE)
-# ifdef _MSC_VER
-    EXTERN_C_BEGIN
-    int backtrace(void* addresses[], int count);
-    char** backtrace_symbols(void* const addresses[], int count);
-    EXTERN_C_END
-# else
-#   include <execinfo.h>
-# endif
-#endif /* GC_HAVE_BUILTIN_BACKTRACE */
+# if defined(GC_HAVE_BUILTIN_BACKTRACE)
+#   ifdef _MSC_VER
+      EXTERN_C_BEGIN
+      int backtrace(void* addresses[], int count);
+      char** backtrace_symbols(void* const addresses[], int count);
+      EXTERN_C_END
+#   else
+#     include <execinfo.h>
+#   endif
+# endif /* GC_HAVE_BUILTIN_BACKTRACE */
 
-#ifdef SAVE_CALL_CHAIN
+# ifdef SAVE_CALL_CHAIN
 
-#if NARGS == 0 && NFRAMES % 2 == 0 /* No padding */ \
-    && defined(GC_HAVE_BUILTIN_BACKTRACE)
+#   if NARGS == 0 && NFRAMES % 2 == 0 /* No padding */ \
+       && defined(GC_HAVE_BUILTIN_BACKTRACE)
 
-#ifdef REDIRECT_MALLOC
-  /* Deal with possible malloc calls in backtrace by omitting   */
-  /* the infinitely recursing backtrace.                        */
-  STATIC GC_bool GC_in_save_callers = FALSE;
-#endif
+#     ifdef REDIRECT_MALLOC
+        /* Deal with possible malloc calls in backtrace by omitting */
+        /* the infinitely recursing backtrace.                      */
+        STATIC GC_bool GC_in_save_callers = FALSE;
+#     endif
 
-GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
-{
-  void * tmp_info[NFRAMES + 1];
-  int npcs, i;
+      GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
+      {
+        void * tmp_info[NFRAMES + 1];
+        int npcs, i;
 
-  GC_ASSERT(I_HOLD_LOCK());
+        GC_ASSERT(I_HOLD_LOCK());
                 /* backtrace() may call dl_iterate_phdr which is also   */
                 /* used by GC_register_dynamic_libraries(), and         */
                 /* dl_iterate_phdr is not guaranteed to be reentrant.   */
 
-  GC_STATIC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
-# ifdef REDIRECT_MALLOC
-    if (GC_in_save_callers) {
-      info[0].ci_pc = (word)(&GC_save_callers);
-      BZERO(&info[1], sizeof(void *) * (NFRAMES - 1));
-      return;
-    }
-    GC_in_save_callers = TRUE;
-# endif
+        GC_STATIC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
+#       ifdef REDIRECT_MALLOC
+          if (GC_in_save_callers) {
+            info[0].ci_pc = (word)(&GC_save_callers);
+            BZERO(&info[1], sizeof(void *) * (NFRAMES - 1));
+            return;
+          }
+          GC_in_save_callers = TRUE;
+#       endif
 
-  /* We retrieve NFRAMES+1 pc values, but discard the first one, since  */
-  /* it points to our own frame.                                        */
-  npcs = backtrace((void **)tmp_info, NFRAMES + 1);
-  i = 0;
-  if (npcs > 1) {
-    i = npcs - 1;
-    BCOPY(&tmp_info[1], info, (unsigned)i * sizeof(void *));
-  }
-  BZERO(&info[i], sizeof(void *) * (unsigned)(NFRAMES - i));
-# ifdef REDIRECT_MALLOC
-    GC_in_save_callers = FALSE;
-# endif
-}
+        /* We retrieve NFRAMES+1 pc values, but discard the first one,  */
+        /* since it points to our own frame.                            */
+        npcs = backtrace((void **)tmp_info, NFRAMES + 1);
+        i = 0;
+        if (npcs > 1) {
+          i = npcs - 1;
+          BCOPY(&tmp_info[1], info, (unsigned)i * sizeof(void *));
+        }
+        BZERO(&info[i], sizeof(void *) * (unsigned)(NFRAMES - i));
+#       ifdef REDIRECT_MALLOC
+          GC_in_save_callers = FALSE;
+#       endif
+      }
 
-#elif defined(I386) || defined(SPARC)
+#   elif defined(I386) || defined(SPARC)
 
-#if defined(ANY_BSD) && defined(SPARC)
-# define FR_SAVFP fr_fp
-# define FR_SAVPC fr_pc
-#else
-# define FR_SAVFP fr_savfp
-# define FR_SAVPC fr_savpc
-#endif
-
-#if defined(SPARC) && (defined(__arch64__) || defined(__sparcv9))
-# define BIAS 2047
-#else
-# define BIAS 0
-#endif
-
-GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
-{
-  struct frame *frame;
-  struct frame *fp;
-  int nframes = 0;
-# ifdef I386
-    /* We assume this is turned on only with gcc as the compiler. */
-    asm("movl %%ebp,%0" : "=r"(frame));
-    fp = frame;
-# else /* SPARC */
-    frame = (struct frame *)GC_save_regs_in_stack();
-    fp = (struct frame *)((long)(frame -> FR_SAVFP) + BIAS);
-#endif
-
-  for (; !((word)fp HOTTER_THAN (word)frame)
-#         ifndef THREADS
-            && !((word)GC_stackbottom HOTTER_THAN (word)fp)
-#         elif defined(STACK_GROWS_UP)
-            && fp != NULL
-#         endif
-          && nframes < NFRAMES;
-        fp = (struct frame *)((long)(fp -> FR_SAVFP) + BIAS), nframes++) {
-#     if NARGS > 0
-        int i;
+#     if defined(ANY_BSD) && defined(SPARC)
+#       define FR_SAVFP fr_fp
+#       define FR_SAVPC fr_pc
+#     else
+#       define FR_SAVFP fr_savfp
+#       define FR_SAVPC fr_savpc
 #     endif
 
-      info[nframes].ci_pc = fp -> FR_SAVPC;
-#     if NARGS > 0
-        for (i = 0; i < NARGS; i++) {
-          info[nframes].ci_arg[i] = GC_HIDE_NZ_POINTER(
-                                      (void *)(signed_word)(fp -> fr_arg[i]));
+#     if defined(SPARC) && (defined(__arch64__) || defined(__sparcv9))
+#       define BIAS 2047
+#     else
+#       define BIAS 0
+#     endif
+
+      GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
+      {
+        struct frame *frame;
+        struct frame *fp;
+        int nframes = 0;
+#       ifdef I386
+          /* We assume this is turned on only with gcc as the compiler. */
+          asm("movl %%ebp,%0" : "=r"(frame));
+          fp = frame;
+#       else /* SPARC */
+          frame = (struct frame *)GC_save_regs_in_stack();
+          fp = (struct frame *)((long)(frame -> FR_SAVFP) + BIAS);
+#       endif
+
+        for (; !((word)fp HOTTER_THAN (word)frame)
+#               ifndef THREADS
+                  && !((word)GC_stackbottom HOTTER_THAN (word)fp)
+#               elif defined(STACK_GROWS_UP)
+                  && fp != NULL
+#               endif
+                && nframes < NFRAMES;
+              fp = (struct frame *)((long)(fp -> FR_SAVFP) + BIAS),
+              nframes++) {
+#         if NARGS > 0
+            int i;
+#         endif
+
+          info[nframes].ci_pc = fp -> FR_SAVPC;
+#         if NARGS > 0
+            for (i = 0; i < NARGS; i++) {
+              info[nframes].ci_arg[i] =
+                GC_HIDE_NZ_POINTER((void *)(signed_word)(fp -> fr_arg[i]));
+            }
+#         endif
         }
-#     endif /* NARGS > 0 */
-  }
-  if (nframes < NFRAMES) info[nframes].ci_pc = 0;
-}
+        if (nframes < NFRAMES) info[nframes].ci_pc = 0;
+      }
 
-#endif /* !GC_HAVE_BUILTIN_BACKTRACE */
+#   endif /* !GC_HAVE_BUILTIN_BACKTRACE */
 
-#endif /* SAVE_CALL_CHAIN */
+# endif /* SAVE_CALL_CHAIN */
 
   /* Print info to stderr.  We do not hold the allocator lock.  */
   GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
