@@ -527,6 +527,11 @@ jobs:
   - os: osx
     env:
     - CMAKE_BUILD_OPTIONS="--verbose"
+    - CMAKE_OPTIONS="-Denable_cplusplus=ON -Denable_gc_assertions=ON -Denable_large_config=ON -Denable_redirect_malloc=ON -Denable_rwlock=ON -DCFLAGS_EXTRA=-DIGNORE_FREE"
+    - NO_CLONE_LIBATOMIC_OPS=true
+  - os: osx
+    env:
+    - CMAKE_BUILD_OPTIONS="--verbose"
     - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -Denable_cplusplus=ON -Denable_gc_assertions=ON -Denable_large_config=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: clang
