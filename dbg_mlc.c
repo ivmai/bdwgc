@@ -293,8 +293,8 @@ static void *store_debug_info(void *p, size_t lb,
     LOCK();
     if (!GC_debugging_started)
         GC_start_debugging_inner();
-    ADD_CALL_CHAIN(p, ra);
     result = GC_store_debug_info_inner(p, (word)lb, s, i);
+    ADD_CALL_CHAIN(p, ra);
     UNLOCK();
     return result;
 }
@@ -552,10 +552,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
   /* We assume we already hold the GC lock.                             */
   GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k)
   {
-    void * result = GC_generic_malloc_inner(
+    void *base = GC_generic_malloc_inner(
                                 SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    void *result;
 
-    if (result == 0) {
+    if (NULL == base) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);
@@ -563,17 +564,19 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     if (!GC_debugging_started) {
         GC_start_debugging_inner();
     }
-    ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
-    return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0));
+    result = GC_store_debug_info_inner(base, (word)lb, "INTERNAL", 0);
+    ADD_CALL_CHAIN(base, GC_RETURN_ADDR);
+    return result;
   }
 
   GC_INNER void * GC_debug_generic_malloc_inner_ignore_off_page(size_t lb,
                                                                 int k)
   {
-    void * result = GC_generic_malloc_inner_ignore_off_page(
+    void *base = GC_generic_malloc_inner_ignore_off_page(
                                 SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    void *result;
 
-    if (result == 0) {
+    if (NULL == base) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);
@@ -581,8 +584,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     if (!GC_debugging_started) {
         GC_start_debugging_inner();
     }
-    ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
-    return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0));
+    result = GC_store_debug_info_inner(base, (word)lb, "INTERNAL", 0);
+    ADD_CALL_CHAIN(base, GC_RETURN_ADDR);
+    return result;
   }
 #endif /* DBG_HDRS_ALL */
 
