@@ -4561,13 +4561,32 @@ GC_API int GC_CALL GC_get_pages_executable(void)
                 /* you could use something like pthread_getspecific.    */
 # endif
   GC_in_save_callers = FALSE;
-#endif
+
+# if defined(THREADS) && defined(DBG_HDRS_ALL)
+#   include "private/dbg_mlc.h"
+
+    /* A dummy version of GC_save_callers() which does not call */
+    /* backtrace().                                             */
+    GC_INNER void GC_save_callers_no_unlock(struct callinfo info[NFRAMES])
+    {
+      GC_ASSERT(I_HOLD_LOCK());
+      info[0].ci_pc = (word)(&GC_save_callers_no_unlock);
+      BZERO(&info[1], sizeof(void *) * (NFRAMES - 1));
+    }
+# endif
+#endif /* REDIRECT_MALLOC */
 
 GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
 {
   void * tmp_info[NFRAMES + 1];
   int npcs, i;
 
+  GC_ASSERT(I_HOLD_LOCK());
+                /* backtrace may call dl_iterate_phdr which is also     */
+                /* used by GC_register_dynamic_libraries, and           */
+                /* dl_iterate_phdr is not guaranteed to be reentrant.   */
+
+  GC_STATIC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
 # ifdef REDIRECT_MALLOC
     if (GC_in_save_callers) {
       info[0].ci_pc = (word)(&GC_save_callers);
@@ -4575,17 +4594,15 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
       return;
     }
     GC_in_save_callers = TRUE;
+    /* backtrace() might call a redirected malloc. */
+    UNLOCK();
+    npcs = backtrace((void **)tmp_info, NFRAMES + 1);
+    LOCK();
+# else
+    npcs = backtrace((void **)tmp_info, NFRAMES + 1);
 # endif
-
-  GC_ASSERT(I_HOLD_LOCK());
-                /* backtrace may call dl_iterate_phdr which is also     */
-                /* used by GC_register_dynamic_libraries, and           */
-                /* dl_iterate_phdr is not guaranteed to be reentrant.   */
-
   /* We retrieve NFRAMES+1 pc values, but discard the first one, since  */
   /* it points to our own frame.                                        */
-  GC_STATIC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
-  npcs = backtrace((void **)tmp_info, NFRAMES + 1);
   i = 0;
   if (npcs > 1) {
     i = npcs - 1;
