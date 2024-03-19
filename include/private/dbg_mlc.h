@@ -131,6 +131,12 @@ typedef struct {
   GC_INNER void GC_save_callers(struct callinfo info[NFRAMES]);
   GC_INNER void GC_print_callers(struct callinfo info[NFRAMES]);
 # define ADD_CALL_CHAIN(base, ra) GC_save_callers(((oh *)(base)) -> oh_ci)
+# if defined(REDIRECT_MALLOC) && defined(THREADS) && defined(DBG_HDRS_ALL) \
+     && NARGS == 0 && NFRAMES % 2 == 0 && defined(GC_HAVE_BUILTIN_BACKTRACE)
+    GC_INNER void GC_save_callers_no_unlock(struct callinfo info[NFRAMES]);
+#   define ADD_CALL_CHAIN_INNER(base) \
+                    GC_save_callers_no_unlock(((oh *)(base)) -> oh_ci)
+# endif
 # define PRINT_CALL_CHAIN(base) GC_print_callers(((oh *)(base)) -> oh_ci)
 #elif defined(GC_ADD_CALLER)
   struct callinfo;
@@ -140,6 +146,11 @@ typedef struct {
 #else
 # define ADD_CALL_CHAIN(base, ra)
 # define PRINT_CALL_CHAIN(base)
+#endif
+
+#if !defined(ADD_CALL_CHAIN_INNER) && defined(DBG_HDRS_ALL)
+  /* A variant of ADD_CALL_CHAIN() used for internal allocations.   */
+# define ADD_CALL_CHAIN_INNER(base) ADD_CALL_CHAIN(base, GC_RETURN_ADDR)
 #endif
 
 #ifdef GC_ADD_CALLER
