@@ -585,7 +585,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
         GC_start_debugging_inner();
     }
     result = GC_store_debug_info_inner(base, (word)lb, "INTERNAL", 0);
-    ADD_CALL_CHAIN(base, GC_RETURN_ADDR);
+    ADD_CALL_CHAIN_INNER(base);
     return result;
   }
 #endif /* DBG_HDRS_ALL */
