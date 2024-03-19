@@ -216,8 +216,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     if (!GC_debugging_started) {
         GC_start_debugging_inner();
     }
-    ADD_CALL_CHAIN(base, ra);
     result = GC_store_debug_info_inner(base, (word)lb, s, i);
+    ADD_CALL_CHAIN(base, ra);
     UNLOCK();
     GC_dirty(result);
     REACHABLE_AFTER_DIRTY(ptr_to_struct_containing_descr);

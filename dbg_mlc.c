@@ -295,8 +295,8 @@ static void *store_debug_info(void *base, size_t lb,
     LOCK();
     if (!GC_debugging_started)
         GC_start_debugging_inner();
-    ADD_CALL_CHAIN(base, ra);
     result = GC_store_debug_info_inner(base, (word)lb, s, i);
+    ADD_CALL_CHAIN(base, ra);
     UNLOCK();
     return result;
 }
@@ -570,7 +570,7 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int k, GC_EXTRA_PARAMS)
   GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k,
                                                 unsigned flags)
   {
-    void *base;
+    void *base, *result;
 
     GC_ASSERT(I_HOLD_LOCK());
     base = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES), k, flags);
@@ -581,8 +581,9 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int k, GC_EXTRA_PARAMS)
     }
     if (!GC_debugging_started)
         GC_start_debugging_inner();
+    result = GC_store_debug_info_inner(base, (word)lb, "INTERNAL", 0);
     ADD_CALL_CHAIN(base, GC_RETURN_ADDR);
-    return GC_store_debug_info_inner(base, (word)lb, "INTERNAL", 0);
+    return result;
   }
 #endif /* DBG_HDRS_ALL */
 
