@@ -123,7 +123,7 @@ typedef struct {
 /* ADD_CALL_CHAIN stores a (partial) call chain into an object  */
 /* header; it should be called with the allocator lock held.    */
 /* PRINT_CALL_CHAIN prints the call chain stored in an object   */
-/* to stderr.  It requires we do not hold the allocator lock.   */
+/* to stderr; it requires we do not hold the allocator lock.    */
 #if defined(SAVE_CALL_CHAIN)
 # define ADD_CALL_CHAIN(base, ra) GC_save_callers(((oh *)(base)) -> oh_ci)
 # define PRINT_CALL_CHAIN(base) GC_print_callers(((oh *)(base)) -> oh_ci)
@@ -145,29 +145,30 @@ typedef struct {
 /* p is assumed to point to a legitimate object in our part     */
 /* of the heap.                                                 */
 #ifdef SHORT_DBG_HDRS
-# define GC_has_other_debug_info(p) 1
+# define GC_has_other_debug_info(base) 1
 #else
-  GC_INNER int GC_has_other_debug_info(ptr_t p);
+  GC_INNER int GC_has_other_debug_info(ptr_t base);
 #endif
 
 #if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
 # if defined(SHORT_DBG_HDRS) && !defined(CPPCHECK)
 #   error Non-ptr stored in object results in GC_HAS_DEBUG_INFO malfunction
-    /* We may mistakenly conclude that p has a debugging wrapper.       */
+    /* We may mistakenly conclude that base has a debugging wrapper.    */
 # endif
 # if defined(PARALLEL_MARK) && defined(KEEP_BACK_PTRS)
-#   define GC_HAS_DEBUG_INFO(p) \
-                ((AO_load((volatile AO_t *)(p)) & 1) != 0 \
-                 && GC_has_other_debug_info(p) > 0)
+#   define GC_HAS_DEBUG_INFO(base) \
+                ((AO_load((volatile AO_t *)(base)) & 1) != 0 \
+                 && GC_has_other_debug_info(base) > 0)
                         /* Atomic load is used as GC_store_back_pointer */
-                        /* stores oh_back_ptr atomically (p might point */
-                        /* to the field); this prevents a TSan warning. */
+                        /* stores oh_back_ptr atomically (base might    */
+                        /* point to the field); this prevents a TSan    */
+                        /* warning.                                     */
 # else
-#   define GC_HAS_DEBUG_INFO(p) \
-                ((*(word *)(p) & 1) && GC_has_other_debug_info(p) > 0)
+#   define GC_HAS_DEBUG_INFO(base) \
+                ((*(word *)(base) & 1) && GC_has_other_debug_info(base) > 0)
 # endif
 #else
-# define GC_HAS_DEBUG_INFO(p) (GC_has_other_debug_info(p) > 0)
+# define GC_HAS_DEBUG_INFO(base) (GC_has_other_debug_info(base) > 0)
 #endif /* !KEEP_BACK_PTRS && !MAKE_BACK_GRAPH */
 
 EXTERN_C_END

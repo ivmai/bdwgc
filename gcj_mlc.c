@@ -197,27 +197,27 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
                 void * ptr_to_struct_containing_descr, GC_EXTRA_PARAMS)
 {
-    void * result;
+    void *base, *result;
 
     /* We're careful to avoid extra calls, which could          */
     /* confuse the backtrace.                                   */
     LOCK();
     maybe_finalize();
-    result = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES),
-                                     GC_gcj_debug_kind, 0 /* flags */);
-    if (NULL == result) {
+    base = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES),
+                                   GC_gcj_debug_kind, 0 /* flags */);
+    if (NULL == base) {
         GC_oom_func oom_fn = GC_oom_fn;
         UNLOCK();
         GC_err_printf("GC_debug_gcj_malloc(%lu, %p) returning NULL (%s:%d)\n",
                 (unsigned long)lb, ptr_to_struct_containing_descr, s, i);
         return (*oom_fn)(lb);
     }
-    *((void **)((ptr_t)result + sizeof(oh))) = ptr_to_struct_containing_descr;
+    *((void **)((ptr_t)base + sizeof(oh))) = ptr_to_struct_containing_descr;
     if (!GC_debugging_started) {
         GC_start_debugging_inner();
     }
-    ADD_CALL_CHAIN(result, ra);
-    result = GC_store_debug_info_inner(result, (word)lb, s, i);
+    ADD_CALL_CHAIN(base, ra);
+    result = GC_store_debug_info_inner(base, (word)lb, s, i);
     UNLOCK();
     GC_dirty(result);
     REACHABLE_AFTER_DIRTY(ptr_to_struct_containing_descr);
