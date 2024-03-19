@@ -5251,7 +5251,21 @@ GC_API int GC_CALL GC_get_pages_executable(void)
         /* Deal with possible malloc calls in backtrace by omitting */
         /* the infinitely recursing backtrace.                      */
         STATIC GC_bool GC_in_save_callers = FALSE;
-#     endif
+
+#       if defined(THREADS) && defined(DBG_HDRS_ALL)
+#         include "private/dbg_mlc.h"
+
+          /* A dummy version of GC_save_callers() which does not call   */
+          /* backtrace().                                               */
+          GC_INNER void GC_save_callers_no_unlock(
+                                        struct callinfo info[NFRAMES])
+          {
+            GC_ASSERT(I_HOLD_LOCK());
+            info[0].ci_pc = (word)(&GC_save_callers_no_unlock);
+            BZERO(&info[1], sizeof(void *) * (NFRAMES - 1));
+          }
+#       endif
+#     endif /* REDIRECT_MALLOC */
 
       GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
       {
@@ -5271,11 +5285,15 @@ GC_API int GC_CALL GC_get_pages_executable(void)
             return;
           }
           GC_in_save_callers = TRUE;
+          /* backtrace() might call a redirected malloc. */
+          UNLOCK();
+          npcs = backtrace((void **)tmp_info, NFRAMES + 1);
+          LOCK();
+#       else
+          npcs = backtrace((void **)tmp_info, NFRAMES + 1);
 #       endif
-
         /* We retrieve NFRAMES+1 pc values, but discard the first one,  */
         /* since it points to our own frame.                            */
-        npcs = backtrace((void **)tmp_info, NFRAMES + 1);
         i = 0;
         if (npcs > 1) {
           i = npcs - 1;
