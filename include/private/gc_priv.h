@@ -295,14 +295,15 @@ typedef struct hblkhdr hdr;
 #ifdef STACK_GROWS_UP
 #   define COOLER_THAN <
 #   define HOTTER_THAN >
-#   define MAKE_COOLER(x,y) if ((word)((x) - (y)) < (word)(x)) {(x) -= (y);} \
-                            else (x) = 0
+#   define MAKE_COOLER(p,d) \
+            (void)((p) -= (word)(p) >= (word)((d) * sizeof(*(p))) ? (d) : 0)
 #   define MAKE_HOTTER(x,y) (void)((x) += (y))
 #else
 #   define COOLER_THAN >
 #   define HOTTER_THAN <
-#   define MAKE_COOLER(x,y) if ((word)((x) + (y)) > (word)(x)) {(x) += (y);} \
-                            else (x) = (ptr_t)GC_WORD_MAX
+#   define MAKE_COOLER(p,d) \
+            (void)((p) += (word)(p) <= (word)(GC_WORD_MAX \
+                                              - (d) * sizeof(*(p))) ? (d) : 0)
 #   define MAKE_HOTTER(x,y) (void)((x) -= (y))
 #endif
 
