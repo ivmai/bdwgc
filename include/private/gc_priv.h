@@ -974,25 +974,24 @@ EXTERN_C_BEGIN
 #define CPP_MAXOBJGRANULES BYTES_TO_GRANULES(CPP_MAXOBJBYTES)
 #define MAXOBJGRANULES ((size_t)CPP_MAXOBJGRANULES)
 
-# define divHBLKSZ(n) ((n) >> LOG_HBLKSIZE)
+#define divHBLKSZ(n) ((n) >> LOG_HBLKSIZE)
 
-# define HBLK_PTR_DIFF(p,q) divHBLKSZ((ptr_t)p - (ptr_t)q)
+#define HBLK_PTR_DIFF(p,q) divHBLKSZ((ptr_t)p - (ptr_t)q)
         /* Equivalent to subtracting 2 hblk pointers.   */
         /* We do it this way because a compiler should  */
         /* find it hard to use an integer division      */
         /* instead of a shift.  The bundled SunOS 4.1   */
-        /* o.w. sometimes pessimizes the subtraction to */
-        /* involve a call to .div.                      */
+        /* otherwise sometimes pessimizes the           */
+        /* subtraction to involve a call to .div.       */
 
-# define modHBLKSZ(n) ((n) & (HBLKSIZE-1))
+#define modHBLKSZ(n) ((n) & (HBLKSIZE-1))
 
-# define HBLKPTR(objptr) ((struct hblk *)(((word)(objptr)) \
-                                          & ~(word)(HBLKSIZE-1)))
-# define HBLKDISPL(objptr) modHBLKSZ((size_t)(objptr))
+#define HBLKPTR(objptr) ((struct hblk *)PTR_ALIGN_DOWN(objptr, HBLKSIZE))
+#define HBLKDISPL(objptr) modHBLKSZ((size_t)(objptr))
 
 /* Same as HBLKPTR() but points to the first block in the page.     */
-# define HBLK_PAGE_ALIGNED(objptr) \
-        ((struct hblk *)(((word)(objptr)) & ~(word)(GC_page_size-1)))
+#define HBLK_PAGE_ALIGNED(objptr) \
+                ((struct hblk *)PTR_ALIGN_DOWN(objptr, GC_page_size))
 
 /* Round up allocation size (in bytes) to a multiple of a granule.      */
 #define ROUNDUP_GRANULE_SIZE(lb) /* lb should have no side-effect */ \

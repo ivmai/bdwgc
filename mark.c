@@ -1322,8 +1322,8 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
     mse * mark_stack_top;
     word length;
 
-    bottom = PTRT_ROUNDUP_BY_MASK(bottom, ALIGNMENT-1);
-    top = (void *)((word)top & ~(word)(ALIGNMENT-1));
+    bottom = PTR_ALIGN_UP((ptr_t)bottom, ALIGNMENT);
+    top = PTR_ALIGN_DOWN((ptr_t)top, ALIGNMENT);
     if ((word)bottom >= (word)top) return;
 
     mark_stack_top = GC_mark_stack_top + 1;
@@ -1340,14 +1340,13 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 }
 
 GC_API struct GC_ms_entry * GC_CALL GC_custom_push_range(void *bottom,
-                                void *top,
-                                struct GC_ms_entry *mark_stack_top,
+                                void *top, struct GC_ms_entry *mark_stack_top,
                                 struct GC_ms_entry *mark_stack_limit)
 {
     word length;
 
-    bottom = PTRT_ROUNDUP_BY_MASK(bottom, ALIGNMENT-1);
-    top = (void *)((word)top & ~(word)(ALIGNMENT-1));
+    bottom = PTR_ALIGN_UP((ptr_t)bottom, ALIGNMENT);
+    top = PTR_ALIGN_DOWN((ptr_t)top, ALIGNMENT);
     if ((word)bottom >= (word)top) return mark_stack_top;
 
     length = (word)top - (word)bottom;
@@ -1392,8 +1391,8 @@ GC_API void GC_CALL GC_push_proc(GC_word descr, void *obj)
   {
     struct hblk * h;
 
-    bottom = PTRT_ROUNDUP_BY_MASK(bottom, ALIGNMENT-1);
-    top = (ptr_t)((word)top & ~(word)(ALIGNMENT-1));
+    bottom = PTR_ALIGN_UP(bottom, ALIGNMENT);
+    top = PTR_ALIGN_DOWN(top, ALIGNMENT);
     if ((word)bottom >= (word)top) return;
 
     h = HBLKPTR(bottom + HBLKSIZE);
@@ -1630,17 +1629,16 @@ GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY GC_ATTR_NO_SANITIZE_THREAD
 GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 {
     REGISTER ptr_t current_p;
-    REGISTER word *lim;
+    REGISTER ptr_t lim;
     REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
     REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
 #   define GC_greatest_plausible_heap_addr greatest_ha
 #   define GC_least_plausible_heap_addr least_ha
 
-    if (top == 0) return;
-
+    if (NULL == top) return;
     /* Check all pointers in range and push if they appear to be valid. */
-    current_p = PTRT_ROUNDUP_BY_MASK(bottom, ALIGNMENT-1);
-    lim = (word *)((word)top & ~(word)(ALIGNMENT-1)) - 1;
+    current_p = PTR_ALIGN_UP((ptr_t)bottom, ALIGNMENT);
+    lim = PTR_ALIGN_DOWN((ptr_t)top, ALIGNMENT) - sizeof(ptr_t);
     for (; (word)current_p <= (word)lim; current_p += ALIGNMENT) {
       REGISTER word q;
 
@@ -1677,18 +1675,17 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
                                           GC_bool all)
   {
     REGISTER ptr_t current_p;
-    REGISTER word *lim;
+    REGISTER ptr_t lim;
     REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
     REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
 #   define GC_greatest_plausible_heap_addr greatest_ha
 #   define GC_least_plausible_heap_addr least_ha
 
-    if (top == NULL)
-      return;
+    if (NULL == top) return;
     (void)all; /* TODO: If !all then scan only dirty pages. */
 
-    current_p = PTRT_ROUNDUP_BY_MASK(bottom, ALIGNMENT-1);
-    lim = (word *)((word)top & ~(word)(ALIGNMENT-1)) - 1;
+    current_p = PTR_ALIGN_UP((ptr_t)bottom, ALIGNMENT);
+    lim = PTR_ALIGN_DOWN((ptr_t)top, ALIGNMENT) - sizeof(ptr_t);
     for (; (word)current_p <= (word)lim; current_p += ALIGNMENT) {
       REGISTER word q;
 

@@ -196,7 +196,8 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
     }
     if (cachedResult == 0) {
         int tag;
-        for( dp = ((ElfW(Dyn) *)(&_DYNAMIC)); (tag = dp->d_tag) != 0; dp++ ) {
+
+        for (dp = ((ElfW(Dyn) *)(&_DYNAMIC)); (tag = dp->d_tag) != 0; dp++) {
             if (tag == DT_DEBUG) {
                 struct r_debug *rd = (struct r_debug *)dp->d_un.d_ptr;
                 if (rd != NULL) {
@@ -223,17 +224,15 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
         char * start;
         int i;
 
-        e = (ElfW(Ehdr) *) lm->l_addr;
+        e = (ElfW(Ehdr) *)lm->l_addr;
         p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
         offset = ((unsigned long)(lm->l_addr));
-        for( i = 0; i < (int)e->e_phnum; i++, p++ ) {
-          switch( p->p_type ) {
+        for (i = 0; i < (int)e->e_phnum; i++, p++) {
+          switch (p->p_type) {
             case PT_LOAD:
-              {
-                if( !(p->p_flags & PF_W) ) break;
-                start = ((char *)(p->p_vaddr)) + offset;
-                GC_add_roots_inner(start, start + p->p_memsz, TRUE);
-              }
+              if (!(p->p_flags & PF_W)) break;
+              start = (char *)(p->p_vaddr) + offset;
+              GC_add_roots_inner(start, start + p->p_memsz, TRUE);
               break;
             default:
               break;
@@ -494,7 +493,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
           /* probably, we should remove the corresponding assertion */
           /* check in GC_add_roots_inner along with this code line. */
           /* start pointer value may require aligning.              */
-          start = (ptr_t)((word)start & ~(word)(sizeof(word)-1));
+          start = PTR_ALIGN_DOWN(start, sizeof(ptr_t));
 #       endif
         if (n_load_segs >= MAX_LOAD_SEGS) {
           if (!load_segs_overflow) {
@@ -506,8 +505,8 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
         } else {
           load_segs[n_load_segs].start = start;
           load_segs[n_load_segs].end = end;
-          load_segs[n_load_segs].start2 = 0;
-          load_segs[n_load_segs].end2 = 0;
+          load_segs[n_load_segs].start2 = NULL;
+          load_segs[n_load_segs].end2 = NULL;
           ++n_load_segs;
         }
 #     else
@@ -534,8 +533,8 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
             if (load_segs[j].start2 != 0) {
               WARN("More than one GNU_RELRO segment per load one\n",0);
             } else {
-              GC_ASSERT((word)end <=
-                (word)PTRT_ROUNDUP_BY_MASK(load_segs[j].end, GC_page_size-1));
+              GC_ASSERT((word)end
+                        <= (word)PTR_ALIGN_UP(load_segs[j].end, GC_page_size));
               /* Remove from the existing load segment. */
               load_segs[j].end2 = load_segs[j].end;
               load_segs[j].end = start;
@@ -725,7 +724,7 @@ GC_FirstDLOpenedLinkMap(void)
         ElfW(Dyn) *dp;
         int tag;
 
-        for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
+        for (dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++) {
             if (tag == DT_DEBUG) {
                 struct r_debug *rd = (struct r_debug *)dp->d_un.d_ptr;
                 /* d_ptr could be null if libs are linked statically. */
@@ -760,21 +759,19 @@ GC_INNER void GC_register_dynamic_libraries(void)
         char * start;
         int i;
 
-        e = (ElfW(Ehdr) *) lm->l_addr;
+        e = (ElfW(Ehdr) *)lm->l_addr;
 #       ifdef HOST_ANDROID
           if (e == NULL)
             continue;
 #       endif
         p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
         offset = ((unsigned long)(lm->l_addr));
-        for( i = 0; i < (int)e->e_phnum; i++, p++ ) {
-          switch( p->p_type ) {
+        for (i = 0; i < (int)e->e_phnum; i++, p++) {
+          switch (p->p_type) {
             case PT_LOAD:
-              {
-                if( !(p->p_flags & PF_W) ) break;
-                start = ((char *)(p->p_vaddr)) + offset;
-                GC_add_roots_inner(start, start + p->p_memsz, TRUE);
-              }
+              if (!(p->p_flags & PF_W)) break;
+              start = (char *)(p->p_vaddr) + offset;
+              GC_add_roots_inner(start, start + p->p_memsz, TRUE);
               break;
             default:
               break;
@@ -921,20 +918,20 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #ifdef ANY_MSWIN
   /* We traverse the entire address space and register all segments     */
   /* that could possibly have been written to.                          */
-  STATIC void GC_cond_add_roots(char *base, char * limit)
+  STATIC void GC_cond_add_roots(ptr_t base, ptr_t limit)
   {
 #   ifdef THREADS
       char * curr_base = base;
       char * next_stack_lo;
       char * next_stack_hi;
 #   else
-      char * stack_top;
+      ptr_t stack_top;
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
     if (base == limit) return;
 #   ifdef THREADS
-      for(;;) {
+      for (;;) {
           GC_get_next_stack(curr_base, limit, &next_stack_lo, &next_stack_hi);
           if ((word)next_stack_lo >= (word)limit) break;
           if ((word)next_stack_lo > (word)curr_base)
@@ -944,8 +941,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
       if ((word)curr_base < (word)limit)
         GC_add_roots_inner(curr_base, limit, TRUE);
 #   else
-      stack_top = (char *)((word)GC_approx_sp() &
-                            ~(word)(GC_sysinfo.dwAllocationGranularity - 1));
+      stack_top = PTR_ALIGN_DOWN(GC_approx_sp(),
+                                 GC_sysinfo.dwAllocationGranularity);
       if ((word)limit > (word)stack_top
           && (word)base < (word)GC_stackbottom) {
           /* Part of the stack; ignore it. */
@@ -996,31 +993,28 @@ GC_INNER void GC_register_dynamic_libraries(void)
   {
     MEMORY_BASIC_INFORMATION buf;
     DWORD protect;
-    LPVOID p;
-    char * base;
-    char * limit, * new_limit;
+    ptr_t p, base, limit, new_limit;
 
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef MSWIN32
       if (GC_no_win32_dlls) return;
 #   endif
-    p = GC_sysinfo.lpMinimumApplicationAddress;
-    base = limit = (char *)p;
+    p = (ptr_t)GC_sysinfo.lpMinimumApplicationAddress;
+    base = limit = p;
     while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
-        size_t result = VirtualQuery(p, &buf, sizeof(buf));
+        size_t result = VirtualQuery((LPVOID)p, &buf, sizeof(buf));
 
 #       ifdef MSWINCE
-          if (result == 0) {
-            /* Page is free; advance to the next possible allocation base */
-            new_limit = (char *)(((word)p + GC_sysinfo.dwAllocationGranularity)
-                 & ~(GC_sysinfo.dwAllocationGranularity-1));
+          if (0 == result) {
+            /* Page is free; advance to the next possible allocation base. */
+            new_limit = PTR_ALIGN_UP(p + 1,
+                                     GC_sysinfo.dwAllocationGranularity);
           } else
 #       endif
         /* else */ {
-            if (result != sizeof(buf)) {
+            if (result != sizeof(buf))
                 ABORT("Weird VirtualQuery result");
-            }
-            new_limit = (char *)p + buf.RegionSize;
+            new_limit = p + buf.RegionSize;
             protect = buf.Protect;
             if (buf.State == MEM_COMMIT
                 && (protect == PAGE_EXECUTE_READWRITE
@@ -1042,15 +1036,15 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #               ifdef DEBUG_VIRTUALQUERY
                   GC_dump_meminfo(&buf);
 #               endif
-                if ((char *)p != limit) {
+                if (p != limit) {
                     GC_cond_add_roots(base, limit);
-                    base = (char *)p;
+                    base = p;
                 }
                 limit = new_limit;
             }
         }
         if ((word)p > (word)new_limit /* overflow */) break;
-        p = (LPVOID)new_limit;
+        p = new_limit;
     }
     GC_cond_add_roots(base, limit);
   }

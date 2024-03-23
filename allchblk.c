@@ -777,7 +777,8 @@ static GC_bool next_hblk_fits_better(hdr *hhdr, word size_avail,
 static struct hblk *find_nonbl_hblk(struct hblk *last_hbp, word size_remain,
                                     word eff_size_needed, size_t align_m1)
 {
-  word search_end = ((word)last_hbp + size_remain) & ~(word)align_m1;
+  ptr_t search_end = PTR_ALIGN_DOWN((ptr_t)last_hbp + size_remain,
+                                    align_m1 + 1);
 
   do {
     struct hblk *next_hbp;
@@ -786,7 +787,7 @@ static struct hblk *find_nonbl_hblk(struct hblk *last_hbp, word size_remain,
     next_hbp = GC_is_black_listed(last_hbp, eff_size_needed);
     if (NULL == next_hbp) return last_hbp; /* not black-listed */
     last_hbp = next_hbp;
-  } while ((word)last_hbp <= search_end);
+  } while ((word)last_hbp <= (word)search_end);
   return NULL;
 }
 

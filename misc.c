@@ -375,7 +375,7 @@ STATIC void GC_init_size_map(void)
         ptr_t limit = sp;
 
         MAKE_HOTTER(limit, BIG_CLEAR_SIZE*sizeof(word));
-        limit = (ptr_t)((word)limit & ~(word)0xf);
+        limit = PTR_ALIGN_DOWN(limit, 0x10);
                         /* Make it sufficiently aligned for assembly    */
                         /* implementations of GC_clear_stack_inner.     */
         return GC_clear_stack_inner(arg, limit);
@@ -402,9 +402,7 @@ STATIC void GC_init_size_map(void)
 
         MAKE_HOTTER(limit, SLOP);
         if ((word)sp COOLER_THAN (word)limit) {
-          limit = (ptr_t)((word)limit & ~(word)0xf);
-                          /* Make it sufficiently aligned for assembly  */
-                          /* implementations of GC_clear_stack_inner.   */
+          limit = PTR_ALIGN_DOWN(limit, 0x10);
           GC_min_sp = sp;
           return GC_clear_stack_inner(arg, limit);
         }
@@ -424,13 +422,15 @@ STATIC void GC_init_size_map(void)
 #endif /* !ALWAYS_SMALL_CLEAR_STACK && !STACK_NOT_SCANNED */
 
 /* Return a pointer to the base address of p, given a pointer to a      */
-/* an address within an object.  Return 0 o.w.                          */
+/* an address within an object.  Return 0 otherwise.                    */
 GC_API void * GC_CALL GC_base(void * p)
 {
     ptr_t r = (ptr_t)p;
     struct hblk *h;
     bottom_index *bi;
     hdr *hhdr;
+    ptr_t limit;
+    word sz;
 
     if (!EXPECT(GC_is_initialized, TRUE)) return NULL;
     h = HBLKPTR(r);
@@ -441,24 +441,22 @@ GC_API void * GC_CALL GC_base(void * p)
     /* If it's a pointer to the middle of a large object, move it       */
     /* to the beginning.                                                */
     if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-        h = GC_find_starting_hblk(h, &hhdr);
-        r = (ptr_t)h;
+      h = GC_find_starting_hblk(h, &hhdr);
+      r = (ptr_t)h;
     }
     if (HBLK_IS_FREE(hhdr)) return NULL;
 
     /* Make sure r points to the beginning of the object.       */
-    r = (ptr_t)((word)r & ~(word)(WORDS_TO_BYTES(1)-1));
-    {
-            word sz = hhdr -> hb_sz;
-            ptr_t limit;
+    r = PTR_ALIGN_DOWN(r, WORDS_TO_BYTES(1));
 
-            r -= HBLKDISPL(r) % sz;
-            limit = r + sz;
-            if (((word)limit > (word)(h + 1) && sz <= HBLKSIZE)
-                || (word)p >= (word)limit)
-              return NULL;
-    }
-    return (void *)r;
+    sz = hhdr -> hb_sz;
+    r -= HBLKDISPL(r) % sz;
+    limit = r + sz;
+    if (((word)limit > (word)(h + 1) && sz <= HBLKSIZE)
+        || (word)p >= (word)limit)
+      return NULL;
+
+    return r;
 }
 
 /* Return TRUE if and only if p points to somewhere in GC heap. */
@@ -2052,7 +2050,7 @@ STATIC void GC_CALLBACK GC_default_on_abort(const char *msg)
             /* It's arguably nicer to sleep, but that makes it harder   */
             /* to look at the thread if the debugger doesn't know much  */
             /* about threads.                                           */
-            for(;;) {
+            for (;;) {
               /* Empty */
             }
       }

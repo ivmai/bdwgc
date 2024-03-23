@@ -171,9 +171,8 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 {
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((word)b <= (word)e);
-    b = PTRT_ROUNDUP_BY_MASK(b, sizeof(word)-1);
-    e = (ptr_t)((word)e & ~(word)(sizeof(word)-1));
-                                        /* round e down to word boundary */
+    b = PTR_ALIGN_UP(b, sizeof(ptr_t));
+    e = PTR_ALIGN_DOWN(e, sizeof(ptr_t));
     if ((word)b >= (word)e) return; /* nothing to do */
 
 #   ifdef ANY_MSWIN
@@ -344,9 +343,9 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
 
 GC_API void GC_CALL GC_remove_roots(void *b, void *e)
 {
-    /* Quick check whether has nothing to do */
-    if ((word)PTRT_ROUNDUP_BY_MASK(b, sizeof(word)-1)
-        >= ((word)e & ~(word)(sizeof(word)-1)))
+    /* A quick check whether has nothing to do. */
+    if ((word)PTR_ALIGN_UP((ptr_t)b, sizeof(ptr_t))
+            >= (word)PTR_ALIGN_DOWN((ptr_t)e, sizeof(ptr_t)))
       return;
 
     LOCK();
@@ -642,9 +641,9 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
 {
     if (b == e) return;  /* nothing to exclude? */
 
-    /* Round boundaries (in direction reverse to that of GC_add_roots). */
-    b = (void *)((word)b & ~(word)(sizeof(word)-1));
-    e = PTRT_ROUNDUP_BY_MASK(e, sizeof(word)-1);
+    /* Round boundaries in direction reverse to that of GC_add_roots. */
+    b = PTR_ALIGN_DOWN((ptr_t)b, sizeof(ptr_t));
+    e = PTR_ALIGN_UP((ptr_t)e, sizeof(ptr_t));
     if (NULL == e)
       e = (void *)(~(word)(sizeof(word)-1)); /* handle overflow */
 

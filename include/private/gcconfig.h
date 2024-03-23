@@ -798,8 +798,10 @@ EXTERN_C_BEGIN
 # define GC_GLIBC_PREREQ(major, minor) 0 /* FALSE */
 #endif
 
-#define PTRT_ROUNDUP_BY_MASK(p, mask) \
-                ((ptr_t)(((word)(p) + (mask)) & ~(word)(mask)))
+/* Align a ptr_t pointer down/up to a given boundary.               */
+#define PTR_ALIGN_DOWN(p, b) ((ptr_t)((word)(p) & ~(word)((b)-1)))
+#define PTR_ALIGN_UP(p, b) \
+                ((ptr_t)(((word)(p) + (word)((b)-1)) & ~(word)((b)-1)))
 
 /* If available, we can use __builtin_unwind_init() to push the     */
 /* relevant registers onto the stack.                               */
@@ -1133,7 +1135,7 @@ EXTERN_C_BEGIN
 #         endif
 #       else
           extern int etext[];
-#         define DATASTART PTRT_ROUNDUP_BY_MASK(etext, 0xfff)
+#         define DATASTART PTR_ALIGN_UP(etext, 0x1000)
 #       endif
 #   endif
 #   ifdef AMIGA
@@ -1379,12 +1381,12 @@ EXTERN_C_BEGIN
 #   ifdef SEQUENT
 #       define OS_TYPE "SEQUENT"
         extern int etext[];
-#       define DATASTART PTRT_ROUNDUP_BY_MASK(etext, 0xfff)
+#       define DATASTART PTR_ALIGN_UP(etext, 0x1000)
 #       define STACKBOTTOM ((ptr_t)0x3ffff000)
 #   endif
 #   ifdef HAIKU
       extern int etext[];
-#     define DATASTART PTRT_ROUNDUP_BY_MASK(etext, 0xfff)
+#     define DATASTART PTR_ALIGN_UP(etext, 0x1000)
 #   endif
 #   ifdef HURD
       /* Nothing specific. */
@@ -1409,8 +1411,8 @@ EXTERN_C_BEGIN
 #   ifdef SCO
 #       define OS_TYPE "SCO"
         extern int etext[];
-#       define DATASTART (PTRT_ROUNDUP_BY_MASK(etext, 0x3fffff) \
-                                 + ((word)(etext) & 0xfff))
+#       define DATASTART (PTR_ALIGN_UP(etext, 0x400000) \
+                            + ((word)(etext) & 0xfff))
 #       define STACKBOTTOM ((ptr_t)0x7ffffffc)
 #   endif
 #   ifdef SCO_ELF
@@ -1467,7 +1469,7 @@ EXTERN_C_BEGIN
 #            endif
 #       else
              extern int etext[];
-#            define DATASTART PTRT_ROUNDUP_BY_MASK(etext, 0xfff)
+#            define DATASTART PTR_ALIGN_UP(etext, 0x1000)
 #       endif
 #       ifdef USE_I686_PREFETCH
 #         define PREFETCH(x) \
@@ -1546,7 +1548,7 @@ EXTERN_C_BEGIN
         extern int etext[];
         extern int _stklen;
         extern int __djgpp_stack_limit;
-#       define DATASTART PTRT_ROUNDUP_BY_MASK(etext, 0x1ff)
+#       define DATASTART PTR_ALIGN_UP(etext, 0x200)
 /* #define STACKBOTTOM ((ptr_t)((word)_stubinfo+_stubinfo->size+_stklen)) */
 #       define STACKBOTTOM ((ptr_t)((word)__djgpp_stack_limit + _stklen))
                 /* This may not be right.  */
@@ -1679,13 +1681,13 @@ EXTERN_C_BEGIN
           extern int end[];
 #       endif
         extern int _DYNAMIC_LINKING[], _gp[];
-#       define DATASTART (PTRT_ROUNDUP_BY_MASK(etext, 0x3ffff) \
-                                + ((word)(etext) & 0xffff))
+#       define DATASTART (PTR_ALIGN_UP(etext, 0x40000) \
+                            + ((word)(etext) & 0xffff))
 #       define DATAEND ((ptr_t)(edata))
 #       define GC_HAVE_DATAREGION2
 #       define DATASTART2 (_DYNAMIC_LINKING \
-                ? PTRT_ROUNDUP_BY_MASK((word)_gp + 0x8000, 0x3ffff) \
-                : (ptr_t)edata)
+                            ? PTR_ALIGN_UP((ptr_t)_gp + 0x8000, 0x40000) \
+                            : (ptr_t)edata)
 #       define DATAEND2 ((ptr_t)(end))
 #     endif
 #   endif
@@ -1988,7 +1990,7 @@ EXTERN_C_BEGIN
     extern int etext[];
 #   ifdef CX_UX
 #       define OS_TYPE "CX_UX"
-#       define DATASTART (PTRT_ROUNDUP_BY_MASK(etext, 0x3fffff) + 0x10000)
+#       define DATASTART (PTR_ALIGN_UP(etext, 0x400000) + 0x10000)
 #   endif
 #   ifdef DGUX
 #       define OS_TYPE "DGUX"
