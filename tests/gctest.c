@@ -212,7 +212,7 @@ static void *checkOOM(void *p)
 /* Define AO primitives for a single-threaded mode. */
 #ifndef AO_HAVE_compiler_barrier
   /* AO_t not defined. */
-# define AO_t GC_word
+# define AO_t size_t
 #endif
 #ifndef AO_HAVE_load_acquire
   static AO_t AO_load_acquire(const volatile AO_t *addr)
@@ -435,7 +435,7 @@ static sexpr small_cons_uncollectable(sexpr x, sexpr y)
   static sexpr gcj_cons(sexpr x, sexpr y)
   {
     sexpr result;
-    GC_word cnt = (GC_word)AO_fetch_and_add1(&extra_count);
+    size_t cnt = (size_t)AO_fetch_and_add1(&extra_count);
     void *d = (cnt & 1) != 0 ? &gcj_class_struct1 : &gcj_class_struct2;
     size_t lb = sizeof(struct SEXPR) + sizeof(struct fake_vtable*);
     void *r = (cnt & 2) != 0 ? GC_GCJ_MALLOC_IGNORE_OFF_PAGE(lb
@@ -1195,13 +1195,13 @@ static void chktree(tn *t, int n)
     }
     if (AO_fetch_and_add1(&extra_count) % 373 == 0) {
         (void)checkOOM(GC_MALLOC(
-                        (unsigned)AO_fetch_and_add1(&extra_count) % 5001));
+                        (size_t)AO_fetch_and_add1(&extra_count) % 5001));
         AO_fetch_and_add1(&collectable_count);
     }
     chktree(t -> lchild, n-1);
     if (AO_fetch_and_add1(&extra_count) % 73 == 0) {
         (void)checkOOM(GC_MALLOC(
-                        (unsigned)AO_fetch_and_add1(&extra_count) % 373));
+                        (size_t)AO_fetch_and_add1(&extra_count) % 373));
         AO_fetch_and_add1(&collectable_count);
     }
     chktree(t -> rchild, n-1);

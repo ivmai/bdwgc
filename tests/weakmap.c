@@ -44,7 +44,7 @@ static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
 # undef NTHREADS
 # define NTHREADS 0
 # ifndef AO_HAVE_compiler_barrier
-#   define AO_t GC_word
+#   define AO_t size_t
 # endif
 #endif
 
