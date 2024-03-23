@@ -426,8 +426,8 @@ static sexpr small_cons_uncollectable(sexpr x, sexpr y)
     sexpr r = (sexpr)checkOOM(GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR)));
 
     AO_fetch_and_add1(&uncollectable_count);
-    r -> sexpr_cdr = (sexpr)(~(GC_word)y);
-    GC_PTR_STORE_AND_DIRTY(&r->sexpr_car, x);
+    r -> sexpr_cdr = (sexpr)GC_HIDE_POINTER(y);
+    GC_PTR_STORE_AND_DIRTY(&(r -> sexpr_car), x);
     return r;
 }
 
@@ -579,7 +579,7 @@ static void check_ints(sexpr list, int low, int up)
     }
 }
 
-# define UNCOLLECTABLE_CDR(x) (sexpr)(~(GC_word)cdr(x))
+#define UNCOLLECTABLE_CDR(x) (sexpr)GC_REVEAL_POINTER(cdr(x))
 
 static void check_uncollectable_ints(sexpr list, int low, int up)
 {
