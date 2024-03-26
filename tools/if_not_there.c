@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 #ifdef __DJGPP__
     DIR * d;
 #endif /* __DJGPP__ */
-    char *fname;
+    const char *fname;
 
     if (argc < 2 || argc > 3)
         goto Usage;

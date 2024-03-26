@@ -112,7 +112,7 @@ word GC_bytes_in_used_blocks = 0;
 
 STATIC void GC_CALLBACK GC_add_block(struct hblk *h, GC_word dummy)
 {
-   hdr * hhdr = HDR(h);
+   const hdr *hhdr = HDR(h);
 
    UNUSED_ARG(dummy);
    GC_bytes_in_used_blocks += (hhdr->hb_sz + HBLKSIZE-1) & ~(word)(HBLKSIZE-1);

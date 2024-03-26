@@ -98,7 +98,7 @@ static char const *model_str[3] = {
    "no finalization"
 };
 
-int main(int argc, char **argv)
+int main(int argc, const char *argv[])
 {
     int i;
     int model, model_min, model_max;

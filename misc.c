@@ -474,7 +474,7 @@ GC_API int GC_CALL GC_is_heap_ptr(const void *p)
 /* but that shouldn't be relied upon.)                                  */
 GC_API size_t GC_CALL GC_size(const void * p)
 {
-    hdr * hhdr = HDR((/* no const */ void *)(word)p);
+    const hdr *hhdr = HDR((/* no const */ void *)(word)p);
 
     return (size_t)(hhdr -> hb_sz);
 }
@@ -733,7 +733,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
   GC_INNER char * GC_envfile_getenv(const char *name)
   {
     char *p;
-    char *end_of_content;
+    const char *end_of_content;
     size_t namelen;
 
 #   ifndef NO_GETENV
@@ -742,10 +742,10 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
         return *p != '\0' ? p : NULL;
 #   endif
     p = GC_envfile_content;
-    if (p == NULL)
+    if (NULL == p)
       return NULL; /* "env" file is absent (or empty) */
     namelen = strlen(name);
-    if (namelen == 0) /* a sanity check */
+    if (0 == namelen) /* a sanity check */
       return NULL;
     for (end_of_content = p + GC_envfile_length;
          p != end_of_content; p += strlen(p) + 1) {
@@ -1086,34 +1086,34 @@ GC_API void GC_CALL GC_init(void)
         || (defined(CONSOLE_LOG) && defined(MSWIN32)) \
         || defined(CYGWIN32) || defined(SYMBIAN)) && !defined(SMALL_CONFIG)
         {
-          char * file_name = TRUSTED_STRING(GETENV("GC_LOG_FILE"));
+          const char *fname = TRUSTED_STRING(GETENV("GC_LOG_FILE"));
 #         ifdef GC_LOG_TO_FILE_ALWAYS
-            if (NULL == file_name)
-              file_name = GC_LOG_STD_NAME;
+            if (NULL == fname)
+              fname = GC_LOG_STD_NAME;
 #         else
-            if (0 != file_name)
+            if (0 != fname)
 #         endif
           {
 #           if defined(_MSC_VER)
-              int log_d = _open(file_name, O_CREAT | O_WRONLY | O_APPEND);
+              int log_d = _open(fname, O_CREAT | O_WRONLY | O_APPEND);
 #           else
-              int log_d = open(file_name, O_CREAT | O_WRONLY | O_APPEND, 0644);
+              int log_d = open(fname, O_CREAT | O_WRONLY | O_APPEND, 0644);
 #           endif
             if (log_d < 0) {
-              GC_err_printf("Failed to open %s as log file\n", file_name);
+              GC_err_printf("Failed to open %s as log file\n", fname);
             } else {
-              char *str;
+              const char *str;
               GC_log = log_d;
               str = GETENV("GC_ONLY_LOG_TO_FILE");
 #             ifdef GC_ONLY_LOG_TO_FILE
                 /* The similar environment variable set to "0"  */
                 /* overrides the effect of the macro defined.   */
-                if (str != NULL && *str == '0' && *(str + 1) == '\0')
+                if (str != NULL && str[0] == '0' && str[1] == '\0')
 #             else
                 /* Otherwise setting the environment variable   */
                 /* to anything other than "0" will prevent from */
                 /* redirecting stdout/err to the log file.      */
-                if (str == NULL || (*str == '0' && *(str + 1) == '\0'))
+                if (str == NULL || (str[0] == '0' && str[1] == '\0'))
 #             endif
               {
                 GC_stdout = log_d;
@@ -1130,10 +1130,11 @@ GC_API void GC_CALL GC_init(void)
 #   endif
 #   ifdef KEEP_BACK_PTRS
       {
-        char * backtraces_string = GETENV("GC_BACKTRACES");
-        if (0 != backtraces_string) {
-          GC_backtraces = atol(backtraces_string);
-          if (backtraces_string[0] == '\0') GC_backtraces = 1;
+        const char *str = GETENV("GC_BACKTRACES");
+
+        if (str != NULL) {
+          GC_backtraces = atol(str);
+          if (str[0] == '\0') GC_backtraces = 1;
         }
       }
 #   endif
@@ -1163,23 +1164,27 @@ GC_API void GC_CALL GC_init(void)
       GC_large_alloc_warn_interval = LONG_MAX;
     }
     {
-      char * addr_string = GETENV("GC_TRACE");
-      if (0 != addr_string) {
+      const char *str = GETENV("GC_TRACE");
+
+      if (str != NULL) {
 #       ifndef ENABLE_TRACE
           WARN("Tracing not enabled: Ignoring GC_TRACE value\n", 0);
 #       else
-          word addr = (word)STRTOULL(addr_string, NULL, 16);
-          if (addr < 0x1000)
+          ptr_t addr = (ptr_t)STRTOULL(str, NULL, 16);
+
+          if ((word)addr < 0x1000)
               WARN("Unlikely trace address: %p\n", (void *)addr);
-          GC_trace_addr = (ptr_t)addr;
+          GC_trace_addr = addr;
 #       endif
       }
     }
 #   ifdef GC_COLLECT_AT_MALLOC
       {
-        char * string = GETENV("GC_COLLECT_AT_MALLOC");
-        if (0 != string) {
-          size_t min_lb = (size_t)STRTOULL(string, NULL, 10);
+        const char *str = GETENV("GC_COLLECT_AT_MALLOC");
+
+        if (str != NULL) {
+          size_t min_lb = (size_t)STRTOULL(str, NULL, 10);
+
           if (min_lb > 0)
             GC_dbg_collect_at_malloc_min_lb = min_lb;
         }
@@ -1187,9 +1192,11 @@ GC_API void GC_CALL GC_init(void)
 #   endif
 #   if !defined(GC_DISABLE_INCREMENTAL) && !defined(NO_CLOCK)
       {
-        char * time_limit_string = GETENV("GC_PAUSE_TIME_TARGET");
-        if (0 != time_limit_string) {
-          long time_limit = atol(time_limit_string);
+        const char *str = GETENV("GC_PAUSE_TIME_TARGET");
+
+        if (str != NULL) {
+          long time_limit = atol(str);
+
           if (time_limit > 0) {
             GC_time_limit = (unsigned long)time_limit;
           }
@@ -1198,18 +1205,22 @@ GC_API void GC_CALL GC_init(void)
 #   endif
 #   ifndef SMALL_CONFIG
       {
-        char * full_freq_string = GETENV("GC_FULL_FREQUENCY");
-        if (full_freq_string != NULL) {
-          int full_freq = atoi(full_freq_string);
+        const char *str = GETENV("GC_FULL_FREQUENCY");
+
+        if (str != NULL) {
+          int full_freq = atoi(str);
+
           if (full_freq > 0)
             GC_full_freq = full_freq;
         }
       }
 #   endif
     {
-      char * interval_string = GETENV("GC_LARGE_ALLOC_WARN_INTERVAL");
-      if (0 != interval_string) {
-        long interval = atol(interval_string);
+      char const *str = GETENV("GC_LARGE_ALLOC_WARN_INTERVAL");
+
+      if (str != NULL) {
+        long interval = atol(str);
+
         if (interval <= 0) {
           WARN("GC_LARGE_ALLOC_WARN_INTERVAL environment variable has"
                " bad value - ignoring\n", 0);
@@ -1219,31 +1230,36 @@ GC_API void GC_CALL GC_init(void)
       }
     }
     {
-        char * space_divisor_string = GETENV("GC_FREE_SPACE_DIVISOR");
-        if (space_divisor_string != NULL) {
-          int space_divisor = atoi(space_divisor_string);
+        const char *str = GETENV("GC_FREE_SPACE_DIVISOR");
+
+        if (str != NULL) {
+          int space_divisor = atoi(str);
+
           if (space_divisor > 0)
             GC_free_space_divisor = (unsigned)space_divisor;
         }
     }
 #   ifdef USE_MUNMAP
       {
-        char * string = GETENV("GC_UNMAP_THRESHOLD");
-        if (string != NULL) {
-          if (*string == '0' && *(string + 1) == '\0') {
+        const char *str = GETENV("GC_UNMAP_THRESHOLD");
+
+        if (str != NULL) {
+          if (str[0] == '0' && str[1] == '\0') {
             /* "0" is used to disable unmapping. */
             GC_unmap_threshold = 0;
           } else {
-            int unmap_threshold = atoi(string);
+            int unmap_threshold = atoi(str);
+
             if (unmap_threshold > 0)
               GC_unmap_threshold = (unsigned)unmap_threshold;
           }
         }
       }
       {
-        char * string = GETENV("GC_FORCE_UNMAP_ON_GCOLLECT");
-        if (string != NULL) {
-          if (*string == '0' && *(string + 1) == '\0') {
+        const char *str = GETENV("GC_FORCE_UNMAP_ON_GCOLLECT");
+
+        if (str != NULL) {
+          if (str[0] == '0' && str[1] == '\0') {
             /* "0" is used to turn off the mode. */
             GC_force_unmap_on_gcollect = FALSE;
           } else {
@@ -1252,9 +1268,10 @@ GC_API void GC_CALL GC_init(void)
         }
       }
       {
-        char * string = GETENV("GC_USE_ENTIRE_HEAP");
-        if (string != NULL) {
-          if (*string == '0' && *(string + 1) == '\0') {
+        const char *str = GETENV("GC_USE_ENTIRE_HEAP");
+
+        if (str != NULL) {
+          if (str[0] == '0' && str[1] == '\0') {
             /* "0" is used to turn off the mode. */
             GC_use_entire_heap = FALSE;
           } else {
@@ -1345,22 +1362,26 @@ GC_API void GC_CALL GC_init(void)
     GC_bl_init();
     GC_mark_init();
     {
-        char * sz_str = GETENV("GC_INITIAL_HEAP_SIZE");
-        if (sz_str != NULL) {
-          word value = GC_parse_mem_size_arg(sz_str);
+        const char *str = GETENV("GC_INITIAL_HEAP_SIZE");
+
+        if (str != NULL) {
+          word value = GC_parse_mem_size_arg(str);
+
           if (GC_WORD_MAX == value) {
-            WARN("Bad initial heap size %s - ignoring\n", sz_str);
+            WARN("Bad initial heap size %s - ignoring\n", str);
           } else {
             initial_heap_sz = value;
           }
         }
     }
     {
-        char * sz_str = GETENV("GC_MAXIMUM_HEAP_SIZE");
-        if (sz_str != NULL) {
-          word max_heap_sz = GC_parse_mem_size_arg(sz_str);
+        const char *str = GETENV("GC_MAXIMUM_HEAP_SIZE");
+
+        if (str != NULL) {
+          word max_heap_sz = GC_parse_mem_size_arg(str);
+
           if (max_heap_sz < initial_heap_sz || GC_WORD_MAX == max_heap_sz) {
-            WARN("Bad maximum heap size %s - ignoring\n", sz_str);
+            WARN("Bad maximum heap size %s - ignoring\n", str);
           } else {
             if (0 == GC_max_retries) GC_max_retries = 2;
             GC_set_max_heap_size(max_heap_sz);
@@ -2444,8 +2465,8 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 
 static void GC_CALLBACK block_add_size(struct hblk *h, GC_word pbytes)
 {
-  hdr *hhdr = HDR(h);
-  *(word *)pbytes += (WORDS_TO_BYTES(hhdr->hb_sz) + HBLKSIZE-1)
+  const hdr *hhdr = HDR(h);
+  *(word *)pbytes += (WORDS_TO_BYTES(hhdr -> hb_sz) + HBLKSIZE-1)
                         & ~(word)(HBLKSIZE-1);
 }
 

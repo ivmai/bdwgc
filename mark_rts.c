@@ -528,13 +528,13 @@ GC_INNER ptr_t GC_approx_sp(void)
         /* Workaround some bugs in clang:                                   */
         /* "undefined reference to llvm.frameaddress" error (clang-9/e2k);  */
         /* a crash in SystemZTargetLowering of libLLVM-3.8 (S390).          */
-        sp = (word)&sp;
+        sp = (word)(&sp);
 #   elif defined(CPPCHECK) || (__GNUC__ >= 4 /* GC_GNUC_PREREQ(4, 0) */ \
                                && !defined(STACK_NOT_SCANNED))
         /* TODO: Use GC_GNUC_PREREQ after fixing a bug in cppcheck. */
         sp = (word)__builtin_frame_address(0);
 #   else
-        sp = (word)&sp;
+        sp = (word)(&sp);
 #   endif
                 /* Also force stack to grow if necessary. Otherwise the */
                 /* later accesses might cause the kernel to think we're */
@@ -945,7 +945,7 @@ GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
     /* saves us the trouble of scanning them, and possibly that of      */
     /* marking the freelists.                                           */
     for (kind = 0; kind < GC_n_kinds; kind++) {
-        void *base = GC_base(GC_obj_kinds[kind].ok_freelist);
+        const void *base = GC_base(GC_obj_kinds[kind].ok_freelist);
         if (base != NULL) {
             GC_set_mark_bit(base);
         }

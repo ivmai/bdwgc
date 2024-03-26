@@ -123,7 +123,7 @@ STATIC int GC_hblk_fl_from_blocks(size_t blocks_needed)
   {
       word total_free = 0;
 
-      GC_iterate_free_hblks(add_hb_sz, (word)&total_free);
+      GC_iterate_free_hblks(add_hb_sz, (word)(&total_free));
       return total_free;
   }
 #endif /* !NO_DEBUGGING || GC_ASSERTIONS */
@@ -152,7 +152,7 @@ STATIC int GC_hblk_fl_from_blocks(size_t blocks_needed)
     word total;
     int prev_index = -1;
 
-    GC_iterate_free_hblks(print_hblkfreelist_item, (word)&prev_index);
+    GC_iterate_free_hblks(print_hblkfreelist_item, (word)(&prev_index));
     GC_printf("GC_large_free_bytes: %lu\n",
               (unsigned long)GC_large_free_bytes);
     total = GC_compute_large_free_bytes();
@@ -237,7 +237,7 @@ GC_API void GC_CALL GC_dump_regions(void)
 static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t lb_adjusted,
                             int k, unsigned flags)
 {
-    struct obj_kind *ok;
+    const struct obj_kind *ok;
     word descr;
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -375,7 +375,7 @@ STATIC struct hblk * GC_free_block_ending_at(struct hblk *h)
     struct hblk * p = get_block_ending_at(h);
 
     if (p /* != NULL */) { /* CPPCHECK */
-      hdr *hhdr = HDR(p);
+      const hdr *hhdr = HDR(p);
 
       if (HBLK_IS_FREE(hhdr)) {
         return p;
@@ -394,11 +394,11 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 #   if defined(GC_ASSERTIONS) && !defined(USE_MUNMAP)
     {
       struct hblk *next = (struct hblk *)((word)h + hhdr -> hb_sz);
-      hdr * nexthdr = HDR(next);
+      const hdr *nexthdr = HDR(next);
       struct hblk *prev = GC_free_block_ending_at(h);
-      hdr * prevhdr = HDR(prev);
+      const hdr *prevhdr = HDR(prev);
 
-      GC_ASSERT(nexthdr == 0 || !HBLK_IS_FREE(nexthdr)
+      GC_ASSERT(NULL == nexthdr || !HBLK_IS_FREE(nexthdr)
                 || (GC_heapsize & SIGNB) != 0);
                 /* In the last case, blocks may be too large to merge. */
       GC_ASSERT(NULL == prev || !HBLK_IS_FREE(prevhdr)
@@ -441,11 +441,11 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
       next = NULL;
     }
     if (prev != NULL) {
-      hdr * prevhdr = HDR(prev);
+      const hdr *prevhdr = HDR(prev);
       prev_unmapped = !IS_MAPPED(prevhdr);
     }
     if (next != NULL) {
-      hdr * nexthdr = HDR(next);
+      const hdr *nexthdr = HDR(next);
       next_unmapped = !IS_MAPPED(nexthdr);
     }
 
@@ -756,17 +756,17 @@ STATIC unsigned GC_drop_blacklisted_count = 0;
 #define ALIGN_PAD_SZ(p, align_m1) \
                (((align_m1) + 1 - (size_t)(word)(p)) & (align_m1))
 
-static GC_bool next_hblk_fits_better(hdr *hhdr, word size_avail,
+static GC_bool next_hblk_fits_better(const hdr *hhdr, word size_avail,
                                      word size_needed, size_t align_m1)
 {
-  hdr *next_hdr;
+  const hdr *nexthdr;
   word next_size;
   size_t next_ofs;
   struct hblk *next_hbp = hhdr -> hb_next;
 
   if (NULL == next_hbp) return FALSE; /* no next block */
-  GET_HDR(next_hbp, next_hdr);
-  next_size = next_hdr -> hb_sz;
+  GET_HDR(next_hbp, nexthdr);
+  next_size = nexthdr -> hb_sz;
   if (size_avail <= next_size) return FALSE; /* not enough size */
 
   next_ofs = ALIGN_PAD_SZ(next_hbp, align_m1);

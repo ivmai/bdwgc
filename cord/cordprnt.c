@@ -289,7 +289,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         break;
                     case 's':
                         if (width == NONE && prec == NONE) {
-                            char * str = va_arg(args, char *);
+                            const char * str = va_arg(args, char *);
                             char c;
 
                             while ((c = *str++) != '\0') {

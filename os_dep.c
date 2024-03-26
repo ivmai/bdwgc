@@ -357,7 +357,7 @@ GC_INNER const char * GC_get_maps(void)
 #if defined(REDIRECT_MALLOC) && defined(GC_LINUX_THREADS)
   /* Find the text(code) mapping for the library whose name, after      */
   /* stripping the directory part, starts with nm.                      */
-  GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp)
+  GC_INNER GC_bool GC_text_mapping(const char *nm, ptr_t *startp, ptr_t *endp)
   {
     size_t nm_len;
     const char *prot, *map_path;
@@ -1989,7 +1989,7 @@ void GC_register_data_segments(void)
           /* Fallback to non-atomic fetch-and-store.    */
           char v = *result;
 #         if defined(CPPCHECK)
-            GC_noop1((word)&v);
+            GC_noop1((word)(&v));
 #         endif
           *result = v;
 #       endif
@@ -3001,7 +3001,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                                         pages, &count, &page_size) != 0) {
           static int warn_count = 0;
           struct hblk * start = (struct hblk *)GC_heap_sects[i].hs_start;
-          static struct hblk *last_warned = 0;
+          static const struct hblk *last_warned = NULL;
           size_t nblocks = divHBLKSZ(GC_heap_sects[i].hs_bytes);
 
           if (i != 0 && last_warned != start && warn_count++ < 5) {
@@ -3019,11 +3019,11 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
           }
           count = 1;  /* Done with this section. */
         } else /* succeeded */ if (!output_unneeded) {
-          PVOID * pages_end = pages + count;
+          const PVOID *pages_end = pages + count;
 
           while (pages != pages_end) {
-            struct hblk * h = (struct hblk *) *pages++;
-            struct hblk * h_end = (struct hblk *) ((char *) h + page_size);
+            struct hblk * h = (struct hblk *)(*pages++);
+            struct hblk * h_end = (struct hblk *)((ptr_t)h + page_size);
             do {
               set_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
             } while ((word)(++h) < (word)h_end);
@@ -5036,7 +5036,7 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
     /* If a "real" fault ever occurs it'll just keep faulting over and  */
     /* over and we'll hit the limit pretty quickly.                     */
 #   ifdef BROKEN_EXCEPTION_HANDLING
-      static char *last_fault;
+      static const char *last_fault;
       static int last_fault_count;
 
       if (addr != last_fault) {
@@ -5443,7 +5443,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 #               define RESULT_SZ 200
                 static char result_buf[RESULT_SZ];
                 size_t result_len;
-                char *old_preload;
+                const char *old_preload;
 #               define PRELOAD_SZ 200
                 char preload_buf[PRELOAD_SZ];
                 static GC_bool found_exe_name = FALSE;
@@ -5472,7 +5472,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
                                exe_name, (unsigned long)info[i].ci_pc);
                 cmd_buf[sizeof(cmd_buf) - 1] = '\0';
                 old_preload = GETENV("LD_PRELOAD");
-                if (0 != old_preload) {
+                if (old_preload != NULL) {
                   size_t old_len = strlen(old_preload);
                   if (old_len >= PRELOAD_SZ) {
                     will_fail = TRUE;
@@ -5482,7 +5482,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
                   unsetenv("LD_PRELOAD");
                 }
                 pipe = popen(cmd_buf, "r");
-                if (0 != old_preload
+                if (old_preload != NULL
                     && 0 != setenv("LD_PRELOAD", preload_buf, 0)) {
                   WARN("Failed to reset LD_PRELOAD\n", 0);
                 }

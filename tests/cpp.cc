@@ -178,7 +178,7 @@ class D: public GC_NS_QUALIFY(gc) { public:
     GC_ATTR_EXPLICIT D( int iArg ): i( iArg ) {
         nAllocated++;}
     static void CleanUp( void* obj, void* data ) {
-        D* self = static_cast<D*>(obj);
+        const D* self = static_cast<D*>(obj);
         nFreed++;
         my_assert(static_cast<GC_word>(self->i)
                     == reinterpret_cast<GC_word>(data));
@@ -305,7 +305,7 @@ void* Undisguise( GC_word i ) {
     argv = argv_;
     argc = sizeof(argv_) / sizeof(argv_[0]);
 #else
-  int main(int argc, char* argv[]) {
+  int main(int argc, const char *argv[]) {
 #endif
 
     GC_set_all_interior_pointers(1);
@@ -323,7 +323,7 @@ void* Undisguise( GC_word i ) {
 
     int i, iters, n;
     int *x = gc_allocator<int>().allocate(1);
-    int *xio;
+    const int *xio;
     xio = gc_allocator_ignore_off_page<int>().allocate(1);
     GC_reachable_here(xio);
     int **xptr = traceable_allocator<int *>().allocate(1);
@@ -379,7 +379,7 @@ void* Undisguise( GC_word i ) {
             drop the references to them immediately, forcing many
             collections. */
         for (i = 0; i < LARGE_CPP_ITER_CNT; i++) {
-            A* a;
+            const A* a;
             a = new (USE_GC) A( i );
             GC_reachable_here(a);
             B* b;

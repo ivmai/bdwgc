@@ -194,7 +194,7 @@
     GC_ASSERT(I_DONT_HOLD_LOCK());
     GC_print_heap_obj((ptr_t)GC_base(current));
 
-    for (i = 0; ; ++i) {
+    for (i = 0;; ++i) {
       source = GC_get_back_ptr_info(current, &base, &offset);
       if (GC_UNREFERENCED == source) {
         GC_err_printf("Reference could not be found\n");
@@ -775,7 +775,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
         ) {
       GC_free(base);
     } else {
-      hdr * hhdr = HDR(p);
+      const hdr *hhdr = HDR(p);
       if (hhdr -> hb_obj_kind == UNCOLLECTABLE
 #         ifdef GC_ATOMIC_UNCOLLECTABLE
             || hhdr -> hb_obj_kind == AUNCOLLECTABLE
@@ -826,7 +826,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 {
     void * base;
     void * result;
-    hdr * hhdr;
+    const hdr * hhdr;
 
     if (NULL == p) {
       return GC_debug_malloc(lb, OPT_RA s, i);
@@ -935,7 +935,7 @@ STATIC void GC_print_all_smashed_proc(void)
 /* Avoid GC_apply_to_each_object for performance reasons.       */
 STATIC void GC_CALLBACK GC_check_heap_block(struct hblk *hbp, GC_word dummy)
 {
-    hdr *hhdr = HDR(hbp);
+    const hdr *hhdr = HDR(hbp);
     word sz = hhdr -> hb_sz;
     word bit_no;
     char *p, *plim;

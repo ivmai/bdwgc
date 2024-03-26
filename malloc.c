@@ -610,7 +610,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
 #endif /* REDIRECT_MALLOC */
 
 /* Explicitly deallocate the object.  hhdr should correspond to p.      */
-static void free_internal(void *p, hdr *hhdr)
+static void free_internal(void *p, const hdr *hhdr)
 {
   size_t lb = (size_t)(hhdr -> hb_sz);  /* size in bytes */
   size_t lg = BYTES_TO_GRANULES(lb);    /* size in granules */
@@ -642,7 +642,7 @@ static void free_internal(void *p, hdr *hhdr)
 
 GC_API void GC_CALL GC_free(void * p)
 {
-    hdr *hhdr;
+    const hdr *hhdr;
 
     if (p /* != NULL */) {
         /* CPPCHECK */

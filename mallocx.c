@@ -43,7 +43,7 @@ void ** const GC_uobjfreelist_ptr = GC_uobjfreelist;
 
 GC_API int GC_CALL GC_get_kind_and_size(const void * p, size_t * psize)
 {
-    hdr * hhdr = HDR((/* no const */ void *)(word)p);
+    const hdr *hhdr = HDR((/* no const */ void *)(word)p);
 
     if (psize != NULL) {
         *psize = (size_t)(hhdr -> hb_sz);
@@ -101,7 +101,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
     orig_sz = sz;
 
     if (sz > MAXOBJBYTES) {
-        struct obj_kind * ok = &GC_obj_kinds[obj_kind];
+        const struct obj_kind * ok = &GC_obj_kinds[obj_kind];
         word descr = ok -> ok_descriptor;
 
         /* Round it up to the next whole heap block.    */

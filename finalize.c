@@ -631,7 +631,7 @@ STATIC void GC_normal_finalize_mark_proc(ptr_t p)
 /* most others as normal.                                               */
 STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
 {
-    hdr * hhdr = HDR(p);
+    const hdr *hhdr = HDR(p);
     word descr = hhdr -> hb_descr;
     ptr_t current_p;
     ptr_t scan_limit;
@@ -693,7 +693,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
     struct finalizable_object * curr_fo;
     size_t index;
     struct finalizable_object *new_fo = 0;
-    hdr *hhdr = NULL; /* initialized to prevent warning. */
+    const hdr *hhdr = NULL; /* initialized to prevent warning. */
 
     GC_ASSERT(GC_is_initialized);
     if (EXPECT(GC_find_leak, FALSE)) {
@@ -781,7 +781,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
         return;
       }
       GET_HDR(obj, hhdr);
-      if (EXPECT(0 == hhdr, FALSE)) {
+      if (EXPECT(NULL == hhdr, FALSE)) {
         /* We won't collect it, hence finalizer wouldn't be run. */
         if (ocd) *ocd = 0;
         if (ofn) *ofn = 0;
@@ -1420,7 +1420,7 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
 
   GC_INNER void GC_print_finalization_stats(void)
   {
-    struct finalizable_object *fo;
+    const struct finalizable_object *fo;
     unsigned long ready = 0;
 
     GC_log_printf("%lu finalization entries;"

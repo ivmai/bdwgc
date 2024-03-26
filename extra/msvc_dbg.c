@@ -273,7 +273,7 @@ static size_t GetFileLineFromAddress(void* address, char* fileName,
                                      size_t size, size_t* lineNumber,
                                      size_t* offsetBytes)
 {
-  char* sourceName;
+  const char* sourceName;
   IMAGEHLP_LINE line = { sizeof(line) };
   GC_ULONG_PTR dwOffset = 0;
 

@@ -133,12 +133,12 @@ GC_INNER void GC_print_all_errors(void)
 
 /* Test whether a block is completely empty, i.e. contains no marked    */
 /* objects.  This does not require the block to be in physical memory.  */
-GC_INNER GC_bool GC_block_empty(hdr *hhdr)
+GC_INNER GC_bool GC_block_empty(const hdr *hhdr)
 {
     return 0 == hhdr -> hb_n_marks;
 }
 
-STATIC GC_bool GC_block_nearly_full(hdr *hhdr, word sz)
+STATIC GC_bool GC_block_nearly_full(const hdr *hhdr, word sz)
 {
     return hhdr -> hb_n_marks > HBLK_OBJS(sz) * 7 / 8;
 }
@@ -175,7 +175,7 @@ GC_INLINE word *GC_clear_block(word *p, word sz, word *pcount)
  * free list.  Returns the new list.
  * Clears unmarked objects.  Sz is in bytes.
  */
-STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, word sz,
+STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, const hdr *hhdr, word sz,
                               ptr_t list, word *pcount)
 {
     word bit_no;
@@ -207,7 +207,7 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, word sz,
 }
 
 /* The same thing, but don't clear objects: */
-STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
+STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, const hdr *hhdr, word sz,
                                ptr_t list, word *pcount)
 {
     word bit_no;
@@ -272,7 +272,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
 #endif /* ENABLE_DISCLAIM */
 
 /* Don't really reclaim objects, just check for unmarked ones: */
-STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
+STATIC void GC_reclaim_check(struct hblk *hbp, const hdr *hhdr, word sz)
 {
     word bit_no;
     ptr_t p, plim;
@@ -518,7 +518,7 @@ struct Print_stats
 };
 
 EXTERN_C_BEGIN /* to avoid "no previous prototype" clang warning */
-unsigned GC_n_set_marks(hdr *);
+unsigned GC_n_set_marks(const hdr *);
 EXTERN_C_END
 
 #ifdef USE_MARK_BYTES
@@ -528,7 +528,7 @@ EXTERN_C_END
 /* There could be a race between GC_clear_hdr_marks and this    */
 /* function but the latter is for a debug purpose.              */
 GC_ATTR_NO_SANITIZE_THREAD
-unsigned GC_n_set_marks(hdr *hhdr)
+unsigned GC_n_set_marks(const hdr *hhdr)
 {
     unsigned result = 0;
     word i;
@@ -555,7 +555,7 @@ static unsigned count_ones(word n)
     return result;
 }
 
-unsigned GC_n_set_marks(hdr *hhdr)
+unsigned GC_n_set_marks(const hdr *hhdr)
 {
     unsigned result = 0;
     word sz = hhdr -> hb_sz;
@@ -597,7 +597,7 @@ GC_API unsigned GC_CALL GC_count_set_marks_in_hblk(const void *p) {
 STATIC void GC_CALLBACK GC_print_block_descr(struct hblk *h,
                                 GC_word /* struct PrintStats */ raw_ps)
 {
-    hdr *hhdr = HDR(h);
+    const hdr *hhdr = HDR(h);
     word sz = hhdr -> hb_sz;
     struct Print_stats *ps = (struct Print_stats *)raw_ps;
     unsigned n_marks = GC_n_set_marks(hhdr);
@@ -735,7 +735,7 @@ GC_INNER void GC_continue_reclaim(size_t lg, int k)
 
     flh = &(ok -> ok_freelist[lg]);
     for (rlh += lg; (hbp = *rlh) != NULL; ) {
-        hdr *hhdr = HDR(hbp);
+        const hdr *hhdr = HDR(hbp);
 
         *rlh = hhdr -> hb_next;
         GC_reclaim_small_nonempty_block(hbp, hhdr -> hb_sz, FALSE);
@@ -757,7 +757,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
 {
     size_t lg;
     int k;
-    hdr * hhdr;
+    const hdr * hhdr;
     struct hblk * hbp;
     struct hblk ** rlp;
     struct hblk ** rlh;
@@ -825,7 +825,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
             struct hblk *hbp;
 
             while ((hbp = *rlh) != NULL) {
-                hdr *hhdr = HDR(hbp);
+                const hdr *hhdr = HDR(hbp);
 
                 *rlh = hhdr -> hb_next;
                 GC_reclaim_small_nonempty_block(hbp, hhdr -> hb_sz, FALSE);
@@ -843,7 +843,7 @@ struct enumerate_reachable_s {
 STATIC void GC_CALLBACK GC_do_enumerate_reachable_objects(struct hblk *hbp,
                                                           GC_word ped)
 {
-  hdr *hhdr = HDR(hbp);
+  const hdr *hhdr = HDR(hbp);
   ptr_t p, plim;
   size_t sz = (size_t)(hhdr -> hb_sz);
   size_t bit_no;

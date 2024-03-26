@@ -268,7 +268,7 @@ static int GC_CALLBACK weakmap_disclaim(void *obj_base)
 # endif
   *(GC_word *)obj_base |= INVALIDATE_FLAG;
   for (link = &wm->links[h % wm->capacity];; link = &(*link)->next) {
-    void *old_obj;
+    const void *old_obj;
 
     if (NULL == *link) {
       fprintf(stderr, "Did not find %p\n", obj);

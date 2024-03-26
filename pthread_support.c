@@ -1635,7 +1635,7 @@ GC_INNER void GC_thr_init(void)
 
   /* Set GC_nprocs and GC_available_markers_m1. */
   {
-    char * nprocs_string = GETENV("GC_NPROCS");
+    const char *nprocs_string = GETENV("GC_NPROCS");
     GC_nprocs = -1;
     if (nprocs_string != NULL) GC_nprocs = atoi(nprocs_string);
   }
@@ -1658,7 +1658,7 @@ GC_INNER void GC_thr_init(void)
   } else {
 #   ifdef PARALLEL_MARK
       {
-        char * markers_string = GETENV("GC_MARKERS");
+        const char *markers_string = GETENV("GC_MARKERS");
         int markers = GC_required_markers_cnt;
 
         if (markers_string != NULL) {

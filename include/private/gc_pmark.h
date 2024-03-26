@@ -110,7 +110,7 @@ GC_EXTERN unsigned GC_n_mark_procs;
 
 /* Push the object obj with corresponding heap block header hhdr onto   */
 /* the mark stack.  Returns the updated mark_stack_top value.           */
-GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr, mse * mark_stack_top,
+GC_INLINE mse * GC_push_obj(ptr_t obj, const hdr * hhdr, mse * mark_stack_top,
                             mse * mark_stack_limit)
 {
   GC_ASSERT(!HBLK_IS_FREE(hhdr));

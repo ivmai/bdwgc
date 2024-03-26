@@ -121,7 +121,7 @@ STATIC void GC_clear_bl(word *doomed)
     BZERO(doomed, sizeof(page_hash_table));
 }
 
-STATIC void GC_copy_bl(word *old, word *dest)
+STATIC void GC_copy_bl(const word *old, word *dest)
 {
     BCOPY(old, dest, sizeof(page_hash_table));
 }

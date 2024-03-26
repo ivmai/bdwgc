@@ -125,7 +125,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 }
 
 /* Return the argument with all control characters replaced by blanks.  */
-static char * plain_chars(char * text, size_t len)
+static char * plain_chars(const char * text, size_t len)
 {
     char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
     size_t i;
@@ -144,7 +144,7 @@ static char * plain_chars(char * text, size_t len)
 
 /* Return the argument with all non-control-characters replaced by      */
 /* blank, and all control characters c replaced by c + 64.              */
-static char * control_chars(char * text, size_t len)
+static char * control_chars(const char * text, size_t len)
 {
     char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
     size_t i;
@@ -306,7 +306,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd_arg, UINT message,
             if (IntersectRect(&dummy, &this_line, &ps.rcPaint)) {
                 CORD raw_line = (CORD)retrieve_screen_line(i);
                 size_t len = CORD_len(raw_line);
-                char * text = CORD_to_char_star(raw_line);
+                const char * text = CORD_to_char_star(raw_line);
                              /* May contain embedded NULLs   */
                 char * plain = plain_chars(text, len);
                 char * blanks = CORD_to_char_star(CORD_chars(' ',

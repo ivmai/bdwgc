@@ -1690,7 +1690,7 @@ GC_INNER void GC_thr_init(void)
 
 # if defined(PARALLEL_MARK)
     {
-      char * markers_string = GETENV("GC_MARKERS");
+      const char *markers_string = GETENV("GC_MARKERS");
       int markers = GC_required_markers_cnt;
 
       if (markers_string != NULL) {

@@ -267,7 +267,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
     time_diff = MS_TIME_DIFF(current_time, GC_start_time);
     nsec_diff = NS_FRAC_TIME_DIFF(current_time, GC_start_time);
 #   if defined(CPPCHECK)
-      GC_noop1((word)&nsec_diff);
+      GC_noop1((word)(&nsec_diff));
 #   endif
     if (time_diff >= GC_time_limit
         && (time_diff > GC_time_limit || nsec_diff >= GC_time_lim_nsec)) {
@@ -987,7 +987,7 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
         ptr_t q2;
 #   endif
     struct hblk *h = HBLKPTR(q);
-    struct hblk *last_h = h;
+    const struct hblk *last_h = h;
     hdr *hhdr;
 #   ifdef MARK_BIT_PER_OBJ
         word sz;
@@ -1087,7 +1087,7 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
 STATIC void GC_clear_fl_marks(ptr_t q)
 {
       struct hblk *h = HBLKPTR(q);
-      struct hblk *last_h = h;
+      const struct hblk *last_h = h;
       hdr *hhdr = HDR(h);
       word sz = hhdr -> hb_sz; /* Normally set only once. */
 
@@ -1831,12 +1831,12 @@ GC_INNER ptr_t GC_allocobj(size_t lg, int k)
         GC_continue_reclaim(lg, k);
       EXIT_GC();
 #     if defined(CPPCHECK)
-        GC_noop1((word)&flh);
+        GC_noop1((word)(&flh));
 #     endif
       if (NULL == *flh) {
         GC_new_hblk(lg, k);
 #       if defined(CPPCHECK)
-          GC_noop1((word)&flh);
+          GC_noop1((word)(&flh));
 #       endif
         if (NULL == *flh) {
           ENTER_GC();

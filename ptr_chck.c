@@ -146,7 +146,7 @@ GC_valid_ptr_print_proc_t GC_is_visible_print_proc =
 
 GC_API void * GC_CALL GC_is_visible(void *p)
 {
-    hdr *hhdr;
+    const hdr *hhdr;
 
     if ((word)p & (ALIGNMENT - 1)) goto fail;
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();

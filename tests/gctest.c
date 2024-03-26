@@ -812,7 +812,7 @@ static void check_uncollectable_ints(sexpr list, int low, int up)
 
 #endif
 
-static void test_generic_malloc_or_special(void *p) {
+static void test_generic_malloc_or_special(const void *p) {
   size_t size;
   int kind;
   void *p2;
@@ -1071,7 +1071,7 @@ static tn * mktree(int n)
     result -> lchild = left = mktree(n - 1);
     result -> rchild = right = mktree(n - 1);
     if (AO_fetch_and_add1(&extra_count) % 17 == 0 && n >= 2) {
-        tn * tmp;
+        const tn *tmp;
 
         CHECK_OUT_OF_MEMORY(left);
         tmp = left -> rchild;
@@ -1223,7 +1223,7 @@ static void chktree(tn *t, int n)
 #   else
       void ** my_free_list_ptr;
       void * my_free_list;
-      void * next;
+      const void * next;
 
       my_free_list_ptr = (void **)pthread_getspecific(fl_key);
       if (NULL == my_free_list_ptr) {
@@ -1253,7 +1253,7 @@ static void chktree(tn *t, int n)
     int i;
 
     for (i = 0; i < n; i += 8) {
-      void *p = alloc8bytes();
+      const void *p = alloc8bytes();
 
       CHECK_OUT_OF_MEMORY(p);
     }
@@ -1587,7 +1587,7 @@ static void run_one_test(void)
         GC_printf("GC_is_heap_ptr(&local_var) produced incorrect result\n");
         FAIL;
       }
-      if (GC_is_heap_ptr((void *)(GC_word)&fail_count)
+      if (GC_is_heap_ptr((void *)(GC_word)(&fail_count))
           || GC_is_heap_ptr(NULL)) {
         GC_printf("GC_is_heap_ptr(&global_var) produced incorrect result\n");
         FAIL;
@@ -1606,7 +1606,7 @@ static void run_one_test(void)
           FAIL;
         }
 #     endif
-      if (GC_same_obj(x+5, x) != x + 5) {
+      if (GC_same_obj(x + 5, x) != x + 5) {
         GC_printf("GC_same_obj produced incorrect result\n");
         FAIL;
       }
@@ -1711,7 +1711,7 @@ static void run_one_test(void)
 #   ifdef GC_REQUIRE_WCSDUP
       {
         static const wchar_t ws[] = { 'a', 'b', 'c', 0 };
-        void *p = GC_WCSDUP(ws);
+        const void *p = GC_WCSDUP(ws);
 
         CHECK_OUT_OF_MEMORY(p);
         AO_fetch_and_add1(&atomic_count);
@@ -2705,7 +2705,7 @@ int main(void)
 
     /* Minimal testing of some API functions.   */
     GC_exclude_static_roots(&atomic_count,
-                (void *)((GC_word)&atomic_count + sizeof(atomic_count)));
+                (void *)((GC_word)(&atomic_count) + sizeof(atomic_count)));
     GC_register_has_static_roots_callback(has_static_roots);
     GC_register_describe_type_fn(GC_I_NORMAL, describe_norm_type);
 #   ifdef GC_GCJ_SUPPORT

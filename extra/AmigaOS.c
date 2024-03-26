@@ -68,7 +68,7 @@ ptr_t GC_get_main_stack_base(void)
    void GC_register_data_segments(void)
    {
      struct Process     *proc;
-     struct CommandLineInterface *cli;
+     const struct CommandLineInterface *cli;
      BPTR myseglist;
      ULONG *data;
 
@@ -90,7 +90,7 @@ ptr_t GC_get_main_stack_base(void)
         myseglist = proc->pr_SegList;
         if (proc->pr_Task.tc_Node.ln_Type==NT_PROCESS) {
           if (proc->pr_CLI != NULL) {
-            /* ProcLoaded       'Loaded as a command: '*/
+            /* ProcLoaded "Loaded as a command: " */
             cli = BADDR(proc->pr_CLI);
             myseglist = cli->cli_Module;
           }

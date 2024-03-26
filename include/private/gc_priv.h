@@ -2344,7 +2344,7 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
                                 /* bytes.  Add list to the end of the   */
                                 /* free list.  Add the number of        */
                                 /* reclaimed bytes to *pcount.          */
-GC_INNER GC_bool GC_block_empty(hdr * hhdr);
+GC_INNER GC_bool GC_block_empty(const hdr *hhdr);
                                 /* Block completely unmarked?   */
 GC_INNER int GC_CALLBACK GC_never_stop_func(void);
                                 /* Always returns 0 (FALSE).            */
@@ -2894,8 +2894,8 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 
 #ifdef REDIRECT_MALLOC
 # ifdef GC_LINUX_THREADS
-    GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
-                                                /* from os_dep.c */
+    GC_INNER GC_bool GC_text_mapping(const char *nm, ptr_t *startp,
+                                     ptr_t *endp); /* from os_dep.c */
 # endif
 #elif defined(USE_WINALLOC)
   GC_INNER void GC_add_current_malloc_heap(void);

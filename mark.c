@@ -1737,7 +1737,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 GC_ATTR_NO_SANITIZE_THREAD
 STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
 {
-    word * mark_word_addr = &(hhdr->hb_marks[0]);
+    const word *mark_word_addr = &(hhdr -> hb_marks[0]);
     word *p;
     word *plim;
 
@@ -1791,7 +1791,7 @@ STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
 GC_ATTR_NO_SANITIZE_THREAD
 STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
 {
-    word * mark_word_addr = &(hhdr->hb_marks[0]);
+    const word *mark_word_addr = &(hhdr -> hb_marks[0]);
     word *p;
     word *plim;
 
@@ -1843,7 +1843,7 @@ STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
 GC_ATTR_NO_SANITIZE_THREAD
 STATIC void GC_push_marked4(struct hblk *h, hdr *hhdr)
 {
-    word * mark_word_addr = &(hhdr->hb_marks[0]);
+    const word *mark_word_addr = &(hhdr -> hb_marks[0]);
     word *p;
     word *plim;
 
@@ -1895,7 +1895,7 @@ STATIC void GC_push_marked4(struct hblk *h, hdr *hhdr)
 #endif /* USE_PUSH_MARKED_ACCELERATORS */
 
 /* Push all objects reachable from marked objects in the given block.   */
-STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
+STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
 {
     word sz = hhdr -> hb_sz;
     word descr = hhdr -> hb_descr;
@@ -1957,7 +1957,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 /* a members of free-lists, and thus contains a word-aligned            */
 /* next-pointer as the first word.                                      */
  GC_ATTR_NO_SANITIZE_THREAD
- STATIC void GC_push_unconditionally(struct hblk *h, hdr *hhdr)
+ STATIC void GC_push_unconditionally(struct hblk *h, const hdr *hhdr)
  {
     word sz = hhdr -> hb_sz;
     word descr = hhdr -> hb_descr;
@@ -1987,7 +1987,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 
 #ifndef GC_DISABLE_INCREMENTAL
   /* Test whether any page in the given block is dirty.   */
-  STATIC GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
+  STATIC GC_bool GC_block_was_dirty(struct hblk *h, const hdr *hhdr)
   {
     word sz;
     ptr_t p;

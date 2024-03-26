@@ -121,7 +121,7 @@ GC_INLINE void * GC_getspecific(tsd * key)
 {
     word qtid = quick_thread_id();
     tse * volatile * entry_ptr = &(key -> cache[CACHE_HASH(qtid)]);
-    tse * entry = *entry_ptr;   /* Must be loaded only once.    */
+    const tse * entry = *entry_ptr; /* must be loaded only once */
 
     GC_ASSERT(qtid != INVALID_QTID);
     if (EXPECT(entry -> qtid == qtid, TRUE)) {

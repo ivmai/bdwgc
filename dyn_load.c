@@ -199,9 +199,9 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
         for (dp = ((ElfW(Dyn) *)(&_DYNAMIC)); (tag = dp->d_tag) != 0; dp++) {
             if (tag == DT_DEBUG) {
-                struct r_debug *rd = (struct r_debug *)dp->d_un.d_ptr;
+                const struct r_debug *rd = (struct r_debug *)dp->d_un.d_ptr;
                 if (rd != NULL) {
-                    struct link_map *lm = rd->r_map;
+                    const struct link_map *lm = rd->r_map;
                     if (lm != NULL)
                         cachedResult = lm->l_next; /* might be NULL */
                 }
@@ -726,10 +726,10 @@ GC_FirstDLOpenedLinkMap(void)
 
         for (dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++) {
             if (tag == DT_DEBUG) {
-                struct r_debug *rd = (struct r_debug *)dp->d_un.d_ptr;
+                const struct r_debug *rd = (struct r_debug *)dp->d_un.d_ptr;
                 /* d_ptr could be null if libs are linked statically. */
                 if (rd != NULL) {
-                    struct link_map *lm = rd->r_map;
+                    const struct link_map *lm = rd->r_map;
                     if (lm != NULL)
                         cachedResult = lm->l_next; /* might be NULL */
                 }
@@ -1490,7 +1490,7 @@ GC_INNER void GC_init_dyld(void)
 #   endif
 #   ifndef USE_DYLD_TO_BIND
       {
-        void *dl_handle = dlopen(NULL, RTLD_NOW);
+        const void *dl_handle = dlopen(NULL, RTLD_NOW);
 
         if (!dl_handle)
           ABORT("dlopen failed (to bind fully image)");
@@ -1542,7 +1542,7 @@ GC_INNER GC_bool GC_register_main_static_data(void)
   GC_INNER void GC_register_dynamic_libraries(void)
   {
     /* Add new static data areas of dynamically loaded modules. */
-    PCR_IL_LoadedFile * p = PCR_IL_GetLastLoadedFile();
+    const PCR_IL_LoadedFile * p = PCR_IL_GetLastLoadedFile();
     PCR_IL_LoadedSegment * q;
 
     /* Skip uncommitted files */
