@@ -35,10 +35,9 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
     word sz;
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
-    hhdr = HDR((word)p);
+    hhdr = HDR(p);
     if (NULL == hhdr) {
-        if (divHBLKSZ((word)p) != divHBLKSZ((word)q)
-                && HDR((word)q) != NULL) {
+        if (divHBLKSZ((word)p) != divHBLKSZ((word)q) && HDR(q) != NULL) {
             goto fail;
         }
         return p;
@@ -104,7 +103,7 @@ GC_API void * GC_CALL GC_is_valid_displacement(void *p)
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     if (NULL == p) return NULL;
-    hhdr = HDR((word)p);
+    hhdr = HDR(p);
     if (NULL == hhdr) return p;
     h = HBLKPTR(p);
     if (GC_all_interior_pointers) {
@@ -151,7 +150,7 @@ GC_API void * GC_CALL GC_is_visible(void *p)
     if ((word)p & (ALIGNMENT - 1)) goto fail;
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
 #   ifdef THREADS
-        hhdr = HDR((word)p);
+        hhdr = HDR(p);
         if (hhdr != NULL && NULL == GC_base(p)) {
             goto fail;
         } else {
@@ -160,8 +159,9 @@ GC_API void * GC_CALL GC_is_visible(void *p)
         }
 #   else
         /* Check stack first: */
-          if (GC_on_stack(p)) return p;
-        hhdr = HDR((word)p);
+        if (GC_on_stack(p)) return p;
+
+        hhdr = HDR(p);
         if (NULL == hhdr) {
             if (GC_is_static_root(p)) return p;
             /* Else do it again correctly:      */
