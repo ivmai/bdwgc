@@ -130,20 +130,17 @@ static void weakmap_lock(struct weakmap *wm, unsigned h)
 # endif
 }
 
-static int weakmap_trylock(struct weakmap *wm, unsigned h)
-{
-# ifdef GC_PTHREADS
+#ifdef GC_PTHREADS
+  static int weakmap_trylock(struct weakmap *wm, unsigned h)
+  {
     int err = pthread_mutex_trylock(&wm->mutex[h % WEAKMAP_MUTEX_COUNT]);
     if (err != 0 && err != EBUSY) {
       fprintf(stderr, "pthread_mutex_trylock: %s\n", strerror(err));
       exit(69);
     }
     return err;
-# else
-    (void)wm; (void)h;
-    return 0;
-# endif
-}
+  }
+#endif /* GC_PTHREADS */
 
 static void weakmap_unlock(struct weakmap *wm, unsigned h)
 {
@@ -245,13 +242,15 @@ static int GC_CALLBACK weakmap_disclaim(void *obj_base)
 
   /* Lock and check for mark.   */
   h = memhash(obj, wm->key_size);
-  if (weakmap_trylock(wm, h) != 0) {
-    AO_fetch_and_add1(&stat_skip_locked);
-#   ifdef DEBUG_DISCLAIM_WEAKMAP
-      printf("Skipping locked %p, hash= %p\n", obj, (void *)(GC_word)h);
-#   endif
-    return 1;
-  }
+# ifdef GC_PTHREADS
+    if (weakmap_trylock(wm, h) != 0) {
+      AO_fetch_and_add1(&stat_skip_locked);
+#     ifdef DEBUG_DISCLAIM_WEAKMAP
+        printf("Skipping locked %p, hash= %p\n", obj, (void *)(GC_word)h);
+#     endif
+      return 1;
+    }
+# endif
   if (GC_is_marked(obj_base)) {
     weakmap_unlock(wm, h);
     AO_fetch_and_add1(&stat_skip_marked);
