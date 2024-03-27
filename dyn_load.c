@@ -777,6 +777,12 @@ GC_INNER void GC_register_dynamic_libraries(void)
               break;
           }
         }
+#       if defined(CPPCHECK) && defined(HOST_ANDROID) \
+           && !defined(GC_DONT_DEFINE_LINK_MAP) && !(__ANDROID_API__ >= 21)
+          GC_noop1((word)lm->l_name);
+          GC_noop1((word)lm->l_ld);
+          GC_noop1((word)lm->l_prev);
+#       endif
     }
 }
 
