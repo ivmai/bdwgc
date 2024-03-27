@@ -82,6 +82,9 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
     static int last_root_set = MAX_ROOT_SETS;
     int i;
 
+#   if defined(CPPCHECK)
+      if (n_root_sets > MAX_ROOT_SETS) ABORT("Bad n_root_sets");
+#   endif
     if (last_root_set < n_root_sets
         && (word)p >= (word)GC_static_roots[last_root_set].r_start
         && (word)p < (word)GC_static_roots[last_root_set].r_end)
