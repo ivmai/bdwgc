@@ -42,7 +42,7 @@ char* GC_get_private_path_and_zero_file()
     path8.Append( KZero8 );
 
     size_t size = path8.Length() + 1;
-    char* copyChar = (char*) malloc( size );
+    char* copyChar = static_cast<char*>( malloc( size ) );
     if (copyChar)
         memcpy( copyChar, path8.PtrZ(), size );
 
