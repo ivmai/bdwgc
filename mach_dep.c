@@ -314,21 +314,18 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
         __builtin_unwind_init();
 #     elif defined(NO_CRT) && defined(MSWIN32)
         CONTEXT ctx;
+
         RtlCaptureContext(&ctx);
 #     else
-        /* Generic code                          */
+        /* Generic code.                         */
         /* The idea is due to Parag Patel at HP. */
         /* We're not sure whether he would like  */
         /* to be acknowledged for it or not.     */
         jmp_buf regs;
-        word *i = (word *)&regs[0];
-        ptr_t lim = (ptr_t)(&regs[0]) + sizeof(regs);
 
         /* setjmp doesn't always clear all of the buffer.               */
         /* That tends to preserve garbage.  Clear it.                   */
-        for (; (word)i < (word)lim; i++) {
-            *i = 0;
-        }
+        BZERO(regs, sizeof(regs));
 #       ifdef NO_UNDERSCORE_SETJMP
           (void)setjmp(regs);
 #       else
