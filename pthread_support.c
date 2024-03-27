@@ -1318,7 +1318,7 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
       store_to_threads_table(hv, NULL);
     }
 
-#   ifdef LINT2
+#   if defined(CPPCHECK) || defined(LINT2)
       if (NULL == me) ABORT("Current thread is not found after fork");
 #   else
       GC_ASSERT(me != NULL);
