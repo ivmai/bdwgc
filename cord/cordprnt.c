@@ -211,6 +211,9 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
     CORD_pos pos;
     char conv_spec[CONV_SPEC_LEN + 1];
 
+#   if defined(CPPCHECK)
+      memset(pos, '\0', sizeof(CORD_pos));
+#   endif
     CORD_ec_init(result);
     for (CORD_set_pos(pos, format, 0); CORD_pos_valid(pos); CORD_next(pos)) {
         current = CORD_pos_fetch(pos);

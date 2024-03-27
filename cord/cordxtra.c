@@ -145,6 +145,10 @@ int CORD_cmp(CORD x, CORD y)
     if (y == CORD_EMPTY) return x != CORD_EMPTY;
     if (x == CORD_EMPTY) return -1;
     if (CORD_IS_STRING(y) && CORD_IS_STRING(x)) return strcmp(x, y);
+#   if defined(CPPCHECK)
+      memset(xpos, '\0', sizeof(CORD_pos));
+      memset(ypos, '\0', sizeof(CORD_pos));
+#   endif
     CORD_set_pos(xpos, x, 0);
     CORD_set_pos(ypos, y, 0);
     for(;;) {
@@ -182,6 +186,10 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
     CORD_pos ypos;
     size_t count;
 
+#   if defined(CPPCHECK)
+      memset(xpos, '\0', sizeof(CORD_pos));
+      memset(ypos, '\0', sizeof(CORD_pos));
+#   endif
     CORD_set_pos(xpos, x, x_start);
     CORD_set_pos(ypos, y, y_start);
     for(count = 0; count < len;) {
@@ -253,6 +261,9 @@ char CORD_fetch(CORD x, size_t i)
 {
     CORD_pos xpos;
 
+#   if defined(CPPCHECK)
+      memset(xpos, '\0', sizeof(CORD_pos));
+#   endif
     CORD_set_pos(xpos, x, i);
     if (!CORD_pos_valid(xpos)) ABORT("bad index?");
     return CORD_pos_fetch(xpos);
@@ -374,6 +385,9 @@ size_t CORD_str(CORD x, size_t start, CORD s)
     if (xlen < start || xlen - start < slen) return CORD_NOT_FOUND;
     start_len = slen;
     if (start_len > sizeof(unsigned long)) start_len = sizeof(unsigned long);
+#   if defined(CPPCHECK)
+      memset(xpos, '\0', sizeof(CORD_pos));
+#   endif
     CORD_set_pos(xpos, x, start);
     for (i = 0; i < start_len; i++) {
         mask <<= 8;
@@ -384,7 +398,7 @@ size_t CORD_str(CORD x, size_t start, CORD s)
         x_buf |= (unsigned char)CORD_pos_fetch(xpos);
         CORD_next(xpos);
     }
-    for (match_pos = start; ; match_pos++) {
+    for (match_pos = start;; match_pos++) {
         if ((x_buf & mask) == s_buf
             && (slen == start_len
                 || CORD_ncmp(x, match_pos + start_len,

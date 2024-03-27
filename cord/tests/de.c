@@ -256,7 +256,10 @@ int screen_size = 0;
 
         move(i, 0); clrtoeol(); move(i,0);
 
-        CORD_FOR (p, s) {
+#       if defined(CPPCHECK)
+            memset(p, '\0', sizeof(CORD_pos));
+#       endif
+        CORD_FOR(p, s) {
             int c = CORD_pos_fetch(p) & 0x7f;
 
             if (iscntrl(c)) {
