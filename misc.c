@@ -1992,6 +1992,11 @@ void GC_err_puts(const char *s)
 STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
 {
     /* TODO: Add assertion on arg comply with msg (format).     */
+#   if defined(CPPCHECK)
+      /* Workaround "parameter can be declared as pointer to const" */
+      /* cppcheck warning.                                          */
+      GC_noop1((word)msg);
+#   endif
     GC_warn_printf(msg, arg);
 }
 

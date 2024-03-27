@@ -740,6 +740,7 @@ static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext) {
       PUSH4(IntT10,IntT11,IntT12,IntAt);
       sp = (ptr_t)context.IntSp;
 #   elif defined(CPPCHECK)
+      GC_noop1((word)regs);
       sp = (ptr_t)(word)cnt; /* to workaround "cnt not used" false positive */
 #   else
 #     error Architecture is not supported
@@ -1406,6 +1407,9 @@ STATIC void *GC_CALLBACK GC_win32_start_inner(struct GC_stack_base *sb,
 #   ifdef DEBUG_THREADS
       GC_log_printf("thread 0x%lx returned from start routine\n",
                     (long)GetCurrentThreadId());
+#   endif
+#   if defined(CPPCHECK)
+      GC_noop1((word)sb);
 #   endif
     return ret;
 }

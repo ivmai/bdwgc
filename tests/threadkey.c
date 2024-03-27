@@ -54,7 +54,7 @@ static void * entry(void *arg)
 static void * GC_CALLBACK on_thread_exit_inner(struct GC_stack_base * sb,
                                                void * arg)
 {
-  int res = GC_register_my_thread (sb);
+  int res = GC_register_my_thread(sb);
   pthread_t t;
   int creation_res;     /* Used to suppress a warning about     */
                         /* unchecked pthread_create() result.   */
@@ -68,19 +68,23 @@ static void * GC_CALLBACK on_thread_exit_inner(struct GC_stack_base * sb,
   creation_res = GC_pthread_create(&t, &attr, entry, NULL);
   (void)pthread_attr_destroy(&attr);
   if (res == GC_SUCCESS)
-    GC_unregister_my_thread ();
+    GC_unregister_my_thread();
 
+# if defined(CPPCHECK)
+    GC_noop1((GC_word)sb);
+    GC_noop1((GC_word)arg);
+# endif
   return arg ? (void*)(GC_word)creation_res : 0;
 }
 
 static void on_thread_exit(void *v)
 {
-  GC_call_with_stack_base (on_thread_exit_inner, v);
+  GC_call_with_stack_base(on_thread_exit_inner, v);
 }
 
 static void make_key(void)
 {
-  pthread_key_create (&key, on_thread_exit);
+  pthread_key_create(&key, on_thread_exit);
 }
 
 #ifndef NTHREADS
@@ -99,7 +103,7 @@ int main(void)
 # ifdef GC_SOLARIS_THREADS
     make_key();
 # else
-    pthread_once (&key_once, make_key);
+    pthread_once(&key_once, make_key);
 # endif
   for (i = 0; i < NTHREADS_INNER; i++) {
     pthread_t t;

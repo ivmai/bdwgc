@@ -857,6 +857,9 @@ static void *GC_CALLBACK reverse_test_inner(void *data)
       return GC_call_with_gc_active(reverse_test_inner, (void*)(GC_word)1);
     }
 
+# if defined(CPPCHECK)
+    GC_noop1((GC_word)data);
+# endif
 # ifndef BIG
 #   if defined(MACOS) \
        || (defined(UNIX_LIKE) && defined(NO_GETCONTEXT)) /* e.g. musl */
@@ -1276,8 +1279,11 @@ static void test_tinyfl(void)
   CHECK_OUT_OF_MEMORY(results[0]);
   GC_MALLOC_ATOMIC_WORDS(results[1], 20, tfls[1]);
   CHECK_OUT_OF_MEMORY(results[1]);
-  GC_CONS(results[2], results[0], results[1], tfls[2]);
-  CHECK_OUT_OF_MEMORY(results[2]);
+# if !defined(CPPCHECK)
+    /* Workaround "variable l can be declared as pointer to const" warning. */
+    GC_CONS(results[2], results[0], results[1], tfls[2]);
+    CHECK_OUT_OF_MEMORY(results[2]);
+# endif
 }
 
 # if defined(THREADS) && defined(GC_DEBUG)
@@ -1547,6 +1553,9 @@ static void run_one_test(void)
     test_tinyfl();
 #   ifndef DBG_HDRS_ALL
       x = (char *)checkOOM(GC_malloc(7));
+#     if defined(CPPCHECK)
+        GC_noop1((GC_word)x);
+#     endif
       AO_fetch_and_add1(&collectable_count);
       y = (char *)checkOOM(GC_malloc(7));
       AO_fetch_and_add1(&collectable_count);
@@ -2208,6 +2217,9 @@ void SetMinimumStack(long minSize)
 
 static void GC_CALLBACK warn_proc(char *msg, GC_word p)
 {
+#   if defined(CPPCHECK)
+        GC_noop1((GC_word)msg);
+#   endif
     GC_printf(msg, (unsigned long)p);
     /*FAIL;*/
 }

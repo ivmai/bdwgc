@@ -155,6 +155,9 @@ static void weakmap_unlock(struct weakmap *wm, unsigned h)
 static void *GC_CALLBACK set_mark_bit(void *obj)
 {
   GC_set_mark_bit(obj);
+# if defined(CPPCHECK)
+    GC_noop1((GC_word)obj);
+# endif
   return NULL;
 }
 
