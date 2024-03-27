@@ -361,11 +361,13 @@ void* Undisguise( GC_word i ) {
         for (i = 0; i < 1000; i++) {
             C* c = new C( 2 );
             C c1( 2 );           /* stack allocation should work too */
-            D* d;
             F* f;
-            d = ::new (USE_GC, D::CleanUp,
+#           if !defined(CPPCHECK)
+              D* d;
+              d = ::new (USE_GC, D::CleanUp,
                        reinterpret_cast<void*>(static_cast<GC_word>(i))) D(i);
-            GC_reachable_here(d);
+              GC_reachable_here(d);
+#           endif
             f = new F;
             F** fa = new F*[1];
             fa[0] = f;
