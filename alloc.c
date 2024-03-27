@@ -862,9 +862,11 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   ifdef THREADS
       if (GC_on_collection_event)
         GC_on_collection_event(GC_EVENT_POST_STOP_WORLD);
-#   endif
-#   ifdef THREAD_LOCAL_ALLOC
-      GC_world_stopped = TRUE;
+#     ifdef THREAD_LOCAL_ALLOC
+        GC_world_stopped = TRUE;
+#     elif defined(CPPCHECK)
+        (void)0; /* workaround a warning about adjacent same "if" condition */
+#     endif
 #   endif
 
 #   ifdef MAKE_BACK_GRAPH
