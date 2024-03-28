@@ -1106,13 +1106,23 @@ GC_INNER void GC_setpagesize(void)
 
       GC_ASSERT(I_HOLD_LOCK());
 #     ifdef USE_LIBC_PRIVATES
-        if (0 != &__libc_ia64_register_backing_store_base
-            && 0 != __libc_ia64_register_backing_store_base) {
-          /* glibc 2.2.4 has a bug such that for dynamically linked     */
-          /* executables __libc_ia64_register_backing_store_base is     */
-          /* defined but uninitialized during constructor calls.        */
-          /* Hence we check for both nonzero address and value.         */
-          return __libc_ia64_register_backing_store_base;
+        {
+          ptr_t *p_libc_ia64_register_backing_store_base
+                                = &__libc_ia64_register_backing_store_base;
+
+#         if defined(CPPCHECK)
+            /* Workaround a warning that the address of the global  */
+            /* symbol (which is a weak one) cannot be null.         */
+            GC_noop1((word)(&p_libc_ia64_register_backing_store_base));
+#         endif
+          if (p_libc_ia64_register_backing_store_base != NULL
+              && __libc_ia64_register_backing_store_base != NULL) {
+            /* glibc 2.2.4 has a bug such that for dynamically linked   */
+            /* executables __libc_ia64_register_backing_store_base is   */
+            /* defined but uninitialized during constructor calls.      */
+            /* Hence we check for both nonzero address and value.       */
+            return __libc_ia64_register_backing_store_base;
+          }
         }
 #     endif
       result = backing_store_base_from_proc();
@@ -1141,7 +1151,12 @@ GC_INNER void GC_setpagesize(void)
     /* becomes visible to us.  The second test works around     */
     /* this.                                                    */
 #   ifdef USE_LIBC_PRIVATES
-      if (0 != &__libc_stack_end && 0 != __libc_stack_end ) {
+      ptr_t *p_libc_stack_end = &__libc_stack_end;
+
+#     if defined(CPPCHECK)
+        GC_noop1((word)(&p_libc_stack_end));
+#     endif
+      if (p_libc_stack_end != NULL && __libc_stack_end != NULL) {
 #       if defined(IA64)
           /* Some versions of glibc set the address 16 bytes too        */
           /* low while the initialization code is running.              */
