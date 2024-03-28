@@ -899,7 +899,12 @@ GC_API unsigned GC_CALL GC_get_supported_vdbs(void)
 # ifdef GC_DISABLE_INCREMENTAL
     return GC_VDB_NONE;
 # else
-    return 0
+#   if defined(CPPCHECK)
+      volatile unsigned zero = 0;
+      return zero /* workaround a warning of redundant "or 0" */
+#   else
+      return 0
+#   endif
 #     ifndef NO_MANUAL_VDB
         | GC_VDB_MANUAL
 #     endif
