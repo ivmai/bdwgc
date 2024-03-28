@@ -2042,9 +2042,12 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
 # include <sys/syscall.h>
 
 # if defined(CPPCHECK)
-#   define PS_ALLOCA_BUF(sz) __builtin_alloca(sz)
+    /* Workaround "Uninitialized bs_lo" and "obsolete alloca() called"  */
+    /* false positive warnings.                                         */
+#   define PS_ALLOCA_BUF(pbuf, sz) \
+        (void)(GC_noop1((word)(pbuf)), *(pbuf) = __builtin_alloca(sz))
 # else
-#   define PS_ALLOCA_BUF(sz) alloca(sz)
+#   define PS_ALLOCA_BUF(pbuf, sz) (void)(*(pbuf) = alloca(sz))
 # endif
 
   /* Approximate size (in bytes) of the obtained procedure stack part   */
@@ -2099,7 +2102,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
           PS_COMPUTE_ADJUSTED_OFS(&adj_ps_ofs, ps_ofs, ofs_sz_ull);         \
           *(psz) = (size_t)ofs_sz_ull - adj_ps_ofs;                         \
           /* Allocate buffer on the stack; cannot return NULL. */           \
-          *(pbuf) = PS_ALLOCA_BUF(*(psz));                                  \
+          PS_ALLOCA_BUF(pbuf, *(psz));                                      \
           /* Copy the procedure stack at the given offset to the buffer. */ \
           for (;;) {                                                        \
             ofs_sz_ull = adj_ps_ofs;                                        \
