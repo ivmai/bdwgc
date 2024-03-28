@@ -192,8 +192,13 @@ static void ensure_struct(ptr_t p)
   GC_ASSERT(I_HOLD_LOCK());
   if (!((word)old_back_ptr & FLAG_MANY)) {
     back_edges *be = new_back_edges();
+
     be -> flags = 0;
-    if (0 == old_back_ptr) {
+#   if defined(CPPCHECK)
+      GC_noop1((word)(&old_back_ptr));
+      /* Workaround a false positive that old_back_ptr cannot be null.  */
+#   endif
+    if (NULL == old_back_ptr) {
       be -> n_edges = 0;
     } else {
       be -> n_edges = 1;
@@ -211,7 +216,7 @@ static void ensure_struct(ptr_t p)
 static void add_edge(ptr_t p, ptr_t q)
 {
     ptr_t pred = GET_OH_BG_PTR(q);
-    back_edges * be, *be_cont;
+    back_edges *be, *be_cont;
     word i;
 
     GC_ASSERT(p == GC_base(p) && q == GC_base(q));
@@ -221,6 +226,9 @@ static void add_edge(ptr_t p, ptr_t q)
       /* a pointer to a free list.  Don't overwrite it!                 */
       return;
     }
+#   if defined(CPPCHECK)
+      GC_noop1((word)(&pred));
+#   endif
     if (NULL == pred) {
       static unsigned random_number = 13;
 #     define GOT_LUCKY_NUMBER (((++random_number) & 0x7f) == 0)
@@ -383,6 +391,9 @@ static word backwards_height(ptr_t p)
   back_edges *be;
 
   GC_ASSERT(I_HOLD_LOCK());
+# if defined(CPPCHECK)
+    GC_noop1((word)(&pred));
+# endif
   if (NULL == pred)
     return 1;
   if (((word)pred & FLAG_MANY) == 0) {
@@ -471,14 +482,17 @@ static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
     /* It may have increased due to newly unreachable chains pointing   */
     /* to p, but it can't have decreased.                               */
     back_ptr = GET_OH_BG_PTR(p);
-    if (0 != back_ptr && ((word)back_ptr & FLAG_MANY)) {
+#   if defined(CPPCHECK)
+      GC_noop1((word)(&back_ptr));
+#   endif
+    if (back_ptr != NULL && ((word)back_ptr & FLAG_MANY)) {
       be = (back_edges *)((word)back_ptr & ~(word)FLAG_MANY);
       if (be -> height != HEIGHT_UNKNOWN)
         p_height = (word)(be -> height);
     }
 
     {
-      ptr_t pred = GET_OH_BG_PTR(p);
+      ptr_t pred = back_ptr;
       back_edges *e = (back_edges *)((word)pred & ~(word)FLAG_MANY);
       word n_edges;
       word total;
