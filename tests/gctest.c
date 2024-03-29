@@ -1983,6 +1983,10 @@ static void test_long_mult(void)
   unsigned32 hp, lp;
 
   LONG_MULT(hp, lp, (unsigned32)0x1234567UL, (unsigned32)0xfedcba98UL);
+# if defined(CPPCHECK)
+    GC_noop1((GC_word)(&hp));
+    GC_noop1((GC_word)(&lp));
+# endif
   if (hp != (unsigned32)0x121fa00UL || lp != (unsigned32)0x23e20b28UL) {
     GC_printf("LONG_MULT gives wrong result\n");
     FAIL;
