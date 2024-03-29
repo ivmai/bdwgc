@@ -314,7 +314,9 @@ void* Undisguise( GC_word i ) {
 #   ifdef TEST_MANUAL_VDB
       GC_set_manual_vdb_allowed(1);
 #   endif
-    GC_INIT();
+#   if !defined(CPPCHECK)
+      GC_INIT();
+#   endif
 #   ifndef NO_INCREMENTAL
       GC_enable_incremental();
 #   endif
