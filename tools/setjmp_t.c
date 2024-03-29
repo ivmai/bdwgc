@@ -63,7 +63,7 @@ struct a_s {
 
 static word nested_sp(void)
 {
-# if GC_GNUC_PREREQ(4, 0)
+# if defined(CPPCHECK) || GC_GNUC_PREREQ(4, 0)
     return (word)__builtin_frame_address(0);
 # else
     volatile word sp;
