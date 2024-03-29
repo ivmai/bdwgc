@@ -1553,9 +1553,6 @@ static void run_one_test(void)
     test_tinyfl();
 #   ifndef DBG_HDRS_ALL
       x = (char *)checkOOM(GC_malloc(7));
-#     if defined(CPPCHECK)
-        GC_noop1((GC_word)x);
-#     endif
       AO_fetch_and_add1(&collectable_count);
       y = (char *)checkOOM(GC_malloc(7));
       AO_fetch_and_add1(&collectable_count);
@@ -1717,6 +1714,9 @@ static void run_one_test(void)
       GC_printf("GC_strndup unexpected result\n");
       FAIL;
     }
+#   if defined(CPPCHECK)
+      GC_noop1((GC_word)x);
+#   endif
 #   ifdef GC_REQUIRE_WCSDUP
       {
         static const wchar_t ws[] = { 'a', 'b', 'c', 0 };
