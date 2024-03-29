@@ -983,10 +983,15 @@ STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
 
     /* Set up the header.       */
     GC_ASSERT(HDR(hbp) == hhdr);
-    if (EXPECT(!setup_header(hhdr, hbp, lb_adjusted, k, flags), FALSE)) {
-      GC_remove_counts(hbp, (size_t)size_needed);
-      return NULL; /* ditto */
-    }
+#   ifdef MARK_BIT_PER_OBJ
+      (void)setup_header(hhdr, hbp, lb_adjusted, k, flags);
+      /* Result is always true, not checked to avoid a cppcheck warning. */
+#   else
+      if (EXPECT(!setup_header(hhdr, hbp, lb_adjusted, k, flags), FALSE)) {
+        GC_remove_counts(hbp, (size_t)size_needed);
+        return NULL; /* ditto */
+      }
+#   endif
 
 #   ifndef GC_DISABLE_INCREMENTAL
       /* Notify virtual dirty bit implementation that we are about to   */
