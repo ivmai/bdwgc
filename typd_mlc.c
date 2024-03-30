@@ -175,13 +175,12 @@ STATIC mse *GC_CALLBACK GC_typed_mark_proc(word *addr, mse *mark_stack_top,
     INIT_HDR_CACHE;
     for (; bm != 0; bm >>= 1, current_p += sizeof(word)) {
         if (bm & 1) {
-            word current;
+            ptr_t q;
 
-            LOAD_WORD_OR_CONTINUE(current, current_p);
-            FIXUP_POINTER(current);
-            if (current > (word)least_ha && current < (word)greatest_ha) {
-                PUSH_CONTENTS((ptr_t)current, mark_stack_top,
-                              mark_stack_limit, current_p);
+            LOAD_WORD_OR_CONTINUE(q, current_p);
+            FIXUP_POINTER(q);
+            if ((word)q > (word)least_ha && (word)q < (word)greatest_ha) {
+                PUSH_CONTENTS(q, mark_stack_top, mark_stack_limit, current_p);
             }
         }
     }

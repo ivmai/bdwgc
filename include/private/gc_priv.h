@@ -2121,7 +2121,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
 # if defined(__ptr64__)
 #   define LOAD_TAGGED_VALUE(v, tag, p)         \
         do {                                    \
-          word val;                             \
+          ptr_t val;                            \
           __asm__ __volatile__ (                \
             "ldd, sm %[adr], 0x0, %[val]\n\t"   \
             "gettagd %[val], %[tag]\n"          \
@@ -2141,7 +2141,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
           if (tag != 0) continue; \
         }
 #else
-# define LOAD_WORD_OR_CONTINUE(v, p) (void)(v = *(word *)(p))
+# define LOAD_WORD_OR_CONTINUE(v, p) (void)(v = *(ptr_t *)(p))
 #endif /* !E2K */
 
 #if defined(AMIGA) || defined(MACOS) || defined(GC_DARWIN_THREADS)

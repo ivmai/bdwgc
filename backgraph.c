@@ -359,13 +359,13 @@ static void add_back_edges(ptr_t p, size_t n_bytes, word gc_descr)
     }
 
   for (; (word)current_p < (word)(p + gc_descr); current_p += sizeof(word)) {
-    word current;
+    ptr_t q;
 
-    LOAD_WORD_OR_CONTINUE(current, current_p);
-    FIXUP_POINTER(current);
-    if (current > GC_least_real_heap_addr
-        && current < GC_greatest_real_heap_addr) {
-      ptr_t target = (ptr_t)GC_base((void *)current);
+    LOAD_WORD_OR_CONTINUE(q, current_p);
+    FIXUP_POINTER(q);
+    if ((word)q > GC_least_real_heap_addr
+        && (word)q < GC_greatest_real_heap_addr) {
+      ptr_t target = (ptr_t)GC_base(q);
 
       if (target != NULL)
         add_edge(p, target);

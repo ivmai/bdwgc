@@ -3391,13 +3391,16 @@ EXTERN_C_BEGIN
   /* Custom FIXUP_POINTER(p).   */
 # define NEED_FIXUP_POINTER
 #elif defined(DYNAMIC_POINTER_MASK)
-# define FIXUP_POINTER(p) (p = ((p) & GC_pointer_mask) << GC_pointer_shift)
+# define FIXUP_POINTER(p) \
+            (p = (ptr_t)(((word)(p) & GC_pointer_mask) << GC_pointer_shift))
 # undef POINTER_MASK
 # undef POINTER_SHIFT
 # define NEED_FIXUP_POINTER
 #elif defined(POINTER_MASK)
-# define FIXUP_POINTER(p) (p = ((p) & (POINTER_MASK)) << (POINTER_SHIFT))
-            /* Extra parentheses around custom-defined POINTER_MASK/SHIFT. */
+# define FIXUP_POINTER(p) \
+            (p = (ptr_t)(((word)(p) & (POINTER_MASK)) << (POINTER_SHIFT)))
+                            /* Extra parentheses around custom-defined  */
+                            /* POINTER_MASK/SHIFT are intentional.      */
 # define NEED_FIXUP_POINTER
 #else
 # define FIXUP_POINTER(p) (void)(p)

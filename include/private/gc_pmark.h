@@ -320,10 +320,9 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
 
 #if defined(PRINT_BLACK_LIST) || defined(KEEP_BACK_PTRS)
 # define PUSH_ONE_CHECKED_STACK(p, source) \
-        GC_mark_and_push_stack((ptr_t)(p), (ptr_t)(source))
+                        GC_mark_and_push_stack(p, (ptr_t)(source))
 #else
-# define PUSH_ONE_CHECKED_STACK(p, source) \
-        GC_mark_and_push_stack((ptr_t)(p))
+# define PUSH_ONE_CHECKED_STACK(p, source) GC_mark_and_push_stack(p)
 #endif
 
 /* Push a single value onto mark stack. Mark from the object        */
@@ -336,23 +335,23 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
     /* Try both the raw version and the fixed up one.   */
 # define GC_PUSH_ONE_STACK(p, source) \
     do { \
-      word pp = (p); \
+      ptr_t pp = (p); \
       \
-      if ((p) > (word)GC_least_plausible_heap_addr \
-          && (p) < (word)GC_greatest_plausible_heap_addr) { \
+      if ((word)(p) > (word)GC_least_plausible_heap_addr \
+          && (word)(p) < (word)GC_greatest_plausible_heap_addr) { \
         PUSH_ONE_CHECKED_STACK(p, source); \
       } \
       FIXUP_POINTER(pp); \
-      if (pp > (word)GC_least_plausible_heap_addr \
-          && pp < (word)GC_greatest_plausible_heap_addr) { \
+      if ((word)pp > (word)GC_least_plausible_heap_addr \
+          && (word)pp < (word)GC_greatest_plausible_heap_addr) { \
         PUSH_ONE_CHECKED_STACK(pp, source); \
       } \
     } while (0)
 #else /* !NEED_FIXUP_POINTER */
 # define GC_PUSH_ONE_STACK(p, source) \
     do { \
-      if ((p) > (word)GC_least_plausible_heap_addr \
-          && (p) < (word)GC_greatest_plausible_heap_addr) { \
+      if ((word)(p) > (word)GC_least_plausible_heap_addr \
+          && (word)(p) < (word)GC_greatest_plausible_heap_addr) { \
         PUSH_ONE_CHECKED_STACK(p, source); \
       } \
     } while (0)
@@ -362,10 +361,10 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
 #define GC_PUSH_ONE_HEAP(p, source, mark_stack_top) \
     do { \
       FIXUP_POINTER(p); \
-      if ((p) > (word)GC_least_plausible_heap_addr \
-          && (p) < (word)GC_greatest_plausible_heap_addr) \
-        mark_stack_top = GC_mark_and_push((void *)(p), mark_stack_top, \
-                                GC_mark_stack_limit, (void * *)(source)); \
+      if ((word)(p) > (word)GC_least_plausible_heap_addr \
+          && (word)(p) < (word)GC_greatest_plausible_heap_addr) \
+        mark_stack_top = GC_mark_and_push(p, mark_stack_top, \
+                                GC_mark_stack_limit, (void **)(source)); \
     } while (0)
 
 /* Mark starting at mark stack entry top (incl.) down to        */

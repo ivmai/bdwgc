@@ -644,10 +644,10 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
     }
     for (current_p = p; (word)current_p <= (word)scan_limit;
          current_p += ALIGNMENT) {
-        word q;
+        ptr_t q;
 
         LOAD_WORD_OR_CONTINUE(q, current_p);
-        if (q < (word)p || q > (word)target_limit) {
+        if ((word)q < (word)p || (word)q > (word)target_limit) {
             GC_PUSH_ONE_HEAP(q, current_p, GC_mark_stack_top);
         }
     }
