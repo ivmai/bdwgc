@@ -77,7 +77,7 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
 #ifndef THREADS
   /* Primarily for debugging support:     */
   /* Is the address p in one of the registered static root sections?      */
-  GC_INNER GC_bool GC_is_static_root(void *p)
+  GC_INNER GC_bool GC_is_static_root(ptr_t p)
   {
     static int last_root_set = MAX_ROOT_SETS;
     int i;
@@ -719,7 +719,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
   {
     GC_ASSERT(I_HOLD_LOCK());
     while (traced_stack_sect != NULL) {
-        GC_ASSERT((word)lo HOTTER_THAN (word)traced_stack_sect);
+        GC_ASSERT(HOTTER_THAN(lo, (ptr_t)traced_stack_sect));
 #       ifdef STACK_GROWS_UP
             GC_push_all_stack((ptr_t)traced_stack_sect, lo);
 #       else
@@ -729,7 +729,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
         GC_ASSERT(lo != NULL);
         traced_stack_sect = traced_stack_sect -> prev;
     }
-    GC_ASSERT(!((word)hi HOTTER_THAN (word)lo));
+    GC_ASSERT(!HOTTER_THAN(hi, lo));
 #   ifdef STACK_GROWS_UP
         /* We got them backwards! */
         GC_push_all_stack(hi, lo);
@@ -790,11 +790,11 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
         ptr_t lo /* top */, ptr_t hi /* bottom */, ptr_t cold_gc_frame,
         struct GC_traced_stack_sect_s *traced_stack_sect)
   {
-    GC_ASSERT(traced_stack_sect == NULL || cold_gc_frame == NULL ||
-              (word)cold_gc_frame HOTTER_THAN (word)traced_stack_sect);
+    GC_ASSERT(traced_stack_sect == NULL || cold_gc_frame == NULL
+              || HOTTER_THAN(cold_gc_frame, (ptr_t)traced_stack_sect));
 
     while (traced_stack_sect != NULL) {
-        GC_ASSERT((word)lo HOTTER_THAN (word)traced_stack_sect);
+        GC_ASSERT(HOTTER_THAN(lo, (ptr_t)traced_stack_sect));
 #       ifdef STACK_GROWS_UP
             GC_push_all_stack_partially_eager((ptr_t)traced_stack_sect, lo,
                                               cold_gc_frame);
@@ -808,7 +808,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
         cold_gc_frame = NULL; /* Use at most once.      */
     }
 
-    GC_ASSERT(!((word)hi HOTTER_THAN (word)lo));
+    GC_ASSERT(!HOTTER_THAN(hi, lo));
 #   ifdef STACK_GROWS_UP
         /* We got them backwards! */
         GC_push_all_stack_partially_eager(hi, lo, cold_gc_frame);

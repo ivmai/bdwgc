@@ -1342,8 +1342,8 @@ GC_INNER void GC_setpagesize(void)
             result = (ptr_t)GC_find_limit(sp, TRUE);
 #         endif
 #         if defined(HEURISTIC2_LIMIT) && !defined(CPPCHECK)
-            if ((word)result COOLER_THAN (word)HEURISTIC2_LIMIT
-                && (word)sp HOTTER_THAN (word)HEURISTIC2_LIMIT)
+            if (HOTTER_THAN(HEURISTIC2_LIMIT, result)
+                && HOTTER_THAN(sp, HEURISTIC2_LIMIT))
               result = HEURISTIC2_LIMIT;
 #         endif
         }
@@ -1358,7 +1358,7 @@ GC_INNER void GC_setpagesize(void)
 #     endif
 #   endif
 #   if !defined(CPPCHECK)
-      GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)result);
+      GC_ASSERT(HOTTER_THAN(GC_approx_sp(), result));
 #   endif
     return result;
   }
@@ -1438,7 +1438,7 @@ GC_INNER void GC_setpagesize(void)
     /* pthread_get_stackaddr_np() should return stack bottom (highest   */
     /* stack address plus 1).                                           */
     b -> mem_base = pthread_get_stackaddr_np(pthread_self());
-    GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)b->mem_base);
+    GC_ASSERT(HOTTER_THAN(GC_approx_sp(), (ptr_t)(b -> mem_base)));
     return GC_SUCCESS;
   }
 # define HAVE_GET_STACK_BASE
@@ -1495,7 +1495,7 @@ GC_INNER void GC_setpagesize(void)
       ABORT("thr_stksegment failed");
     }
     /* s.ss_sp holds the pointer to the stack bottom. */
-    GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)s.ss_sp);
+    GC_ASSERT(HOTTER_THAN(GC_approx_sp(), (ptr_t)s.ss_sp));
 
     if (!stackbase_main_self && thr_main() != 0)
       {
@@ -1572,7 +1572,7 @@ GC_INNER void GC_setpagesize(void)
 
     if (GC_get_stack_base(&sb) != GC_SUCCESS)
       ABORT("GC_get_stack_base failed");
-    GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)sb.mem_base);
+    GC_ASSERT(HOTTER_THAN(GC_approx_sp(), (ptr_t)sb.mem_base));
     return (ptr_t)sb.mem_base;
   }
 #endif /* !GET_MAIN_STACKBASE_SPECIAL */
@@ -5347,9 +5347,9 @@ GC_API int GC_CALL GC_get_pages_executable(void)
           fp = (struct frame *)((long)(frame -> FR_SAVFP) + BIAS);
 #       endif
 
-        for (; !((word)fp HOTTER_THAN (word)frame)
+        for (; !HOTTER_THAN((ptr_t)fp, (ptr_t)frame)
 #               ifndef THREADS
-                  && !((word)GC_stackbottom HOTTER_THAN (word)fp)
+                  && !HOTTER_THAN(GC_stackbottom, (ptr_t)fp)
 #               elif defined(STACK_GROWS_UP)
                   && fp != NULL
 #               endif

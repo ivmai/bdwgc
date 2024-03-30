@@ -311,7 +311,7 @@ STATIC void GC_init_size_map(void)
       volatile word dummy[CLEAR_SIZE];
 
       BZERO((/* no volatile */ word *)((word)dummy), sizeof(dummy));
-      if ((word)GC_approx_sp() COOLER_THAN (word)limit) {
+      if (HOTTER_THAN((/* no volatile */ ptr_t)limit, GC_approx_sp())) {
         (void)GC_clear_stack_inner(arg, limit);
       }
       /* Make sure the recursive call is not a tail call, and the bzero */
@@ -393,15 +393,14 @@ STATIC void GC_init_size_map(void)
       /* Adjust GC_high_water.  */
       GC_ASSERT(GC_high_water != NULL);
       MAKE_COOLER(GC_high_water, WORDS_TO_BYTES(DEGRADE_RATE) + GC_SLOP);
-      if ((word)sp HOTTER_THAN (word)GC_high_water) {
+      if (HOTTER_THAN(sp, GC_high_water))
           GC_high_water = sp;
-      }
       MAKE_HOTTER(GC_high_water, GC_SLOP);
       {
         ptr_t limit = GC_min_sp;
 
         MAKE_HOTTER(limit, SLOP);
-        if ((word)sp COOLER_THAN (word)limit) {
+        if (HOTTER_THAN(limit, sp)) {
           limit = PTR_ALIGN_DOWN(limit, 0x10);
           GC_min_sp = sp;
           return GC_clear_stack_inner(arg, limit);
@@ -411,7 +410,7 @@ STATIC void GC_init_size_map(void)
         /* Restart clearing process, but limit how much clearing we do. */
         GC_min_sp = sp;
         MAKE_HOTTER(GC_min_sp, CLEAR_THRESHOLD/4);
-        if ((word)GC_min_sp HOTTER_THAN (word)GC_high_water)
+        if (HOTTER_THAN(GC_min_sp, GC_high_water))
           GC_min_sp = GC_high_water;
         GC_bytes_allocd_at_reset = GC_bytes_allocd;
       }
@@ -1345,7 +1344,7 @@ GC_API void GC_CALL GC_init(void)
 #   endif
     GC_STATIC_ASSERT(sizeof(struct hblk) == HBLKSIZE);
 #   ifndef THREADS
-      GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)GC_approx_sp()));
+      GC_ASSERT(!HOTTER_THAN(GC_stackbottom, GC_approx_sp()));
 #   endif
     GC_init_headers();
 #   ifdef SEARCH_FOR_DATA_START
@@ -2323,7 +2322,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn, void *client_data)
     /* Adjust our stack bottom pointer (this could happen if    */
     /* GC_get_main_stack_base() is unimplemented or broken for  */
     /* the platform).                                           */
-    if ((word)GC_stackbottom HOTTER_THAN (word)(&stacksect))
+    if (HOTTER_THAN(GC_stackbottom, (ptr_t)(&stacksect)))
       GC_stackbottom = (ptr_t)COVERT_DATAFLOW(&stacksect);
 
     if (GC_blocked_sp == NULL) {

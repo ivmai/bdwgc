@@ -136,10 +136,9 @@ GC_valid_ptr_print_proc_t GC_is_visible_print_proc =
 
 #ifndef THREADS
 /* Could p be a stack address? */
-  STATIC GC_bool GC_on_stack(void *p)
+  STATIC GC_bool GC_on_stack(ptr_t p)
   {
-    return (word)p HOTTER_THAN (word)GC_stackbottom
-            && !((word)p HOTTER_THAN (word)GC_approx_sp());
+    return HOTTER_THAN(p, GC_stackbottom) && !HOTTER_THAN(p, GC_approx_sp());
   }
 #endif /* !THREADS */
 
@@ -159,16 +158,16 @@ GC_API void * GC_CALL GC_is_visible(void *p)
         }
 #   else
         /* Check stack first: */
-        if (GC_on_stack(p)) return p;
+        if (GC_on_stack((ptr_t)p)) return p;
 
         hhdr = HDR(p);
         if (NULL == hhdr) {
-            if (GC_is_static_root(p)) return p;
+            if (GC_is_static_root((ptr_t)p)) return p;
             /* Else do it again correctly:      */
 #           if defined(DYNAMIC_LOADING) || defined(ANY_MSWIN) || defined(PCR)
               if (!GC_no_dls) {
                 GC_register_dynamic_libraries();
-                if (GC_is_static_root(p)) return p;
+                if (GC_is_static_root((ptr_t)p)) return p;
               }
 #           endif
             goto fail;

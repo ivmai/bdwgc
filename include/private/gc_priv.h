@@ -292,20 +292,19 @@ typedef struct hblkhdr hdr;
 
 #define GC_WORD_MAX (~(word)0)
 
+/* Handy definitions to compare and adjust pointers in a stack.     */
 #ifdef STACK_GROWS_UP
-#   define COOLER_THAN <
-#   define HOTTER_THAN >
-#   define MAKE_COOLER(p,d) \
+# define HOTTER_THAN(p,q) ((word)(p) > (word)(q))
+# define MAKE_COOLER(p,d) \
             (void)((p) -= (word)(p) >= (word)((d) * sizeof(*(p))) ? (d) : 0)
-#   define MAKE_HOTTER(x,y) (void)((x) += (y))
+# define MAKE_HOTTER(p,d) (void)((p) += (d))
 #else
-#   define COOLER_THAN >
-#   define HOTTER_THAN <
-#   define MAKE_COOLER(p,d) \
+# define HOTTER_THAN(p,q) ((word)(p) < (word)(q))
+# define MAKE_COOLER(p,d) \
             (void)((p) += (word)(p) <= (word)(GC_WORD_MAX \
                                               - (d) * sizeof(*(p))) ? (d) : 0)
-#   define MAKE_HOTTER(x,y) (void)((x) -= (y))
-#endif
+# define MAKE_HOTTER(p,d) (void)((p) -= (d))
+#endif /* !STACK_GROWS_UP */
 
 #if defined(AMIGA) && defined(__SASC)
 #   define GC_FAR __far
@@ -2218,7 +2217,7 @@ void GC_register_data_segments(void);
     GC_INNER GC_bool GC_is_main_thread(void);
 # endif
 #else
-  GC_INNER GC_bool GC_is_static_root(void *p);
+  GC_INNER GC_bool GC_is_static_root(ptr_t p);
                 /* Is the address p in one of the registered static     */
                 /* root sections?                                       */
 # ifdef TRACE_BUF

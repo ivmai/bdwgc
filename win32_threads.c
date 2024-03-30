@@ -846,7 +846,7 @@ STATIC word GC_push_stack_for(GC_thread thread, thread_id_t self_id,
             GC_log_printf("TIB stack limit/base: %p .. %p\n",
                           (void *)tib->StackLimit, (void *)tib->StackBase);
 #         endif
-          GC_ASSERT(!((word)stack_end COOLER_THAN (word)tib->StackBase));
+          GC_ASSERT(!HOTTER_THAN((ptr_t)tib->StackBase, stack_end));
           if (stack_end != crtn -> initial_stack_base
               /* We are in a coroutine (old-style way of the support).  */
               && ((word)stack_end <= (word)tib->StackLimit
