@@ -12,10 +12,9 @@
 
 const builtin = @import("builtin");
 const std = @import("std");
-const Path = std.Build.LazyPath;
 
 // TODO: update to zig v0.12 final (when released)
-const zig_min_required_version = "0.12.0-dev.2015";
+const zig_min_required_version = "0.12.0-dev.3610";
 
 // TODO: specify PACKAGE_VERSION and LIB*_VER_INFO.
 
@@ -441,7 +440,7 @@ pub fn build(b: *std.Build) void {
         .files = source_files.items,
         .flags = flags.items,
     });
-    lib.addIncludePath(.{ .path = "include" });
+    lib.addIncludePath(b.path("include"));
     lib.linkLibC();
     if (install_headers) {
         installHeader(b, lib, "gc.h");
@@ -513,10 +512,10 @@ fn addTest(b: *std.Build, lib: *std.Build.Step.Compile,
         .target = lib.root_module.resolved_target.?
     });
     test_exe.addCSourceFile(.{
-        .file = Path.relative(filename),
+        .file = b.path(filename),
         .flags = flags.items
     });
-    test_exe.addIncludePath(.{ .path = "include" });
+    test_exe.addIncludePath(b.path("include"));
     test_exe.linkLibrary(lib);
     test_exe.linkLibC();
     const run_test_exe = b.addRunArtifact(test_exe);
@@ -525,10 +524,6 @@ fn addTest(b: *std.Build, lib: *std.Build.Step.Compile,
 
 fn installHeader(b: *std.Build, lib: *std.Build.Step.Compile,
                  hfile: []const u8) void {
-   const inc_path = "include/";
-   const src_path = b.allocator.alloc(u8, inc_path.len + hfile.len)
-                        catch @panic("OOM");
-   _ = std.fmt.bufPrint(src_path, "{s}{s}", .{ inc_path, hfile, })
-                        catch @panic("Error joining paths");
-   lib.installHeader(src_path, hfile);
+   const src_path = b.pathJoin(&.{ "include", hfile });
+   lib.installHeader(b.path(src_path), hfile);
 }
