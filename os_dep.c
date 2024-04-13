@@ -386,7 +386,7 @@ GC_INNER const char * GC_get_maps(void)
 
           /* Set p to point just past last slash, if any. */
             while (*p != '\0' && *p != '\n' && *p != ' ' && *p != '\t') ++p;
-            while (*p != '/' && (word)p >= (word)map_path) --p;
+            while ((word)p >= (word)map_path && *p != '/') --p;
             ++p;
           if (strncmp(nm, p, nm_len) == 0) {
             *startp = my_start;
