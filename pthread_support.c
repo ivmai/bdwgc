@@ -910,14 +910,16 @@ STATIC GC_thread GC_self_thread(void) {
   }
 #endif /* !GC_NO_FINALIZATION */
 
+#define ADDR_INSIDE_OBJ(p, obj) \
+            ADDR_INSIDE(p, (ptr_t)(&(obj)), (ptr_t)(&(obj)) + sizeof(obj))
+
 #if defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)
   /* This is called from thread-local GC_malloc(). */
   GC_bool GC_is_thread_tsd_valid(void *tsd)
   {
     GC_thread me = GC_self_thread();
 
-    return (word)tsd >= (word)(&me->tlfs)
-            && (word)tsd < (word)(&me->tlfs) + sizeof(me->tlfs);
+    return ADDR_INSIDE_OBJ((ptr_t)tsd, me -> tlfs);
   }
 #endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
@@ -966,28 +968,24 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
     GC_ASSERT(I_HOLD_READER_LOCK());
 #   ifdef PARALLEL_MARK
       for (i = 0; i < GC_markers_m1; ++i) {
-        if ((word)GC_marker_sp[i] > (word)lo
-            && (word)GC_marker_sp[i] < (word)hi)
+        if (ADDR_LT(lo, GC_marker_sp[i]) && ADDR_LT(GC_marker_sp[i], hi))
           return TRUE;
 #       ifdef IA64
-          if ((word)marker_bsp[i] > (word)lo
-              && (word)marker_bsp[i] < (word)hi)
+          if (ADDR_LT(lo, marker_bsp[i]) && ADDR_LT(marker_bsp[i], hi))
             return TRUE;
 #       endif
       }
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
-        GC_stack_context_t crtn = p -> crtn;
+        ptr_t stack_end = p -> crtn -> stack_end;
 
-        if (crtn -> stack_end != NULL) {
+        if (stack_end != NULL) {
 #         ifdef STACK_GROWS_UP
-            if ((word)crtn -> stack_end >= (word)lo
-                && (word)crtn -> stack_end < (word)hi)
+            if (ADDR_INSIDE(stack_end, lo, hi))
               return TRUE;
 #         else
-            if ((word)crtn -> stack_end > (word)lo
-                && (word)crtn -> stack_end <= (word)hi)
+            if (ADDR_LT(lo, stack_end) && ADDR_GE(hi, stack_end))
               return TRUE;
 #         endif
         }
@@ -1006,24 +1004,22 @@ GC_API void GC_CALL GC_register_altstack(void *normstack,
   {
     int i;
     GC_thread p;
-    ptr_t result = 0;
+    ptr_t result = NULL;
 
     GC_ASSERT(I_HOLD_READER_LOCK());
 #   ifdef PARALLEL_MARK
       for (i = 0; i < GC_markers_m1; ++i) {
-        if ((word)GC_marker_sp[i] > (word)result
-            && (word)GC_marker_sp[i] < (word)bound)
+        if (ADDR_LT(result, GC_marker_sp[i])
+            && ADDR_LT(GC_marker_sp[i], bound))
           result = GC_marker_sp[i];
       }
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != NULL; p = p -> tm.next) {
-        GC_stack_context_t crtn = p -> crtn;
+        ptr_t stack_end = p -> crtn -> stack_end;
 
-        if ((word)(crtn -> stack_end) > (word)result
-            && (word)(crtn -> stack_end) < (word)bound) {
-          result = crtn -> stack_end;
-        }
+        if (ADDR_LT(result, stack_end) && ADDR_LT(stack_end, bound))
+          result = stack_end;
       }
     }
     return result;

@@ -86,12 +86,12 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
       if (n_root_sets > MAX_ROOT_SETS) ABORT("Bad n_root_sets");
 #   endif
     if (last_root_set < n_root_sets
-        && (word)p >= (word)GC_static_roots[last_root_set].r_start
-        && (word)p < (word)GC_static_roots[last_root_set].r_end)
+        && ADDR_INSIDE(p, GC_static_roots[last_root_set].r_start,
+                       GC_static_roots[last_root_set].r_end))
       return TRUE;
     for (i = 0; i < n_root_sets; i++) {
-        if ((word)p >= (word)GC_static_roots[i].r_start
-            && (word)p < (word)GC_static_roots[i].r_end) {
+        if (ADDR_INSIDE(p, GC_static_roots[i].r_start,
+                        GC_static_roots[i].r_end)) {
           last_root_set = i;
           return TRUE;
         }
@@ -173,10 +173,10 @@ GC_API void GC_CALL GC_add_roots(void *b, void *e)
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 {
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT((word)b <= (word)e);
+    GC_ASSERT(ADDR_GE(e, b));
     b = PTR_ALIGN_UP(b, sizeof(ptr_t));
     e = PTR_ALIGN_DOWN(e, sizeof(ptr_t));
-    if ((word)b >= (word)e) return; /* nothing to do */
+    if (ADDR_GE(b, e)) return; /* nothing to do */
 
 #   ifdef ANY_MSWIN
       /* Spend the time to ensure that there are no overlapping */
@@ -191,13 +191,12 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 
         for (i = 0; i < n_root_sets; i++) {
             old = GC_static_roots + i;
-            if ((word)b <= (word)old->r_end
-                 && (word)e >= (word)old->r_start) {
-                if ((word)b < (word)old->r_start) {
+            if (ADDR_GE(old -> r_end, b) && ADDR_GE(e, old -> r_start)) {
+                if (ADDR_LT(b, old -> r_start)) {
                     GC_root_size += (word)(old -> r_start - b);
                     old -> r_start = b;
                 }
-                if ((word)e > (word)old->r_end) {
+                if (ADDR_LT(old -> r_end, e)) {
                     GC_root_size += (word)(e - old -> r_end);
                     old -> r_end = e;
                 }
@@ -213,13 +212,12 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
               other = GC_static_roots + i;
               b = other -> r_start;
               e = other -> r_end;
-              if ((word)b <= (word)old->r_end
-                  && (word)e >= (word)old->r_start) {
-                if ((word)b < (word)old->r_start) {
+              if (ADDR_GE(old -> r_end, b) && ADDR_GE(e, old -> r_start)) {
+                if (ADDR_LT(b, old -> r_start)) {
                     GC_root_size += (word)(old -> r_start - b);
                     old -> r_start = b;
                 }
-                if ((word)e > (word)old->r_end) {
+                if (ADDR_LT(old -> r_end, e)) {
                     GC_root_size += (word)(e - old -> r_end);
                     old -> r_end = e;
                 }
@@ -238,8 +236,8 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
       {
         struct roots * old = (struct roots *)GC_roots_present(b);
 
-        if (old != 0) {
-          if ((word)e <= (word)old->r_end) {
+        if (old != NULL) {
+          if (ADDR_GE(old -> r_end, e)) {
             old -> r_tmp &= tmp;
             return; /* already there */
           }
@@ -347,8 +345,8 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
 GC_API void GC_CALL GC_remove_roots(void *b, void *e)
 {
     /* A quick check whether has nothing to do. */
-    if ((word)PTR_ALIGN_UP((ptr_t)b, sizeof(ptr_t))
-            >= (word)PTR_ALIGN_DOWN((ptr_t)e, sizeof(ptr_t)))
+    if (ADDR_GE(PTR_ALIGN_UP((ptr_t)b, sizeof(ptr_t)),
+                PTR_ALIGN_DOWN((ptr_t)e, sizeof(ptr_t))))
       return;
 
     LOCK();
@@ -365,11 +363,11 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
 
     GC_ASSERT(I_HOLD_LOCK());
     for (i = 0; i < n_root_sets; ) {
-        if ((word)GC_static_roots[i].r_start >= (word)b
-            && (word)GC_static_roots[i].r_end <= (word)e) {
-            GC_remove_root_at_pos(i);
+        if (ADDR_GE(GC_static_roots[i].r_start, b)
+            && ADDR_GE(e, GC_static_roots[i].r_end)) {
+          GC_remove_root_at_pos(i);
         } else {
-            i++;
+          i++;
         }
     }
 #   ifndef ANY_MSWIN
@@ -421,17 +419,17 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
       }
       r_start = GC_static_roots[i].r_start;
       r_end = GC_static_roots[i].r_end;
-      if (!EXPECT((word)e <= (word)r_start || (word)r_end <= (word)b, TRUE)) {
+      if (!EXPECT(ADDR_GE(r_start, e) || ADDR_GE(b, r_end), TRUE)) {
 #       ifdef DEBUG_ADD_DEL_ROOTS
           GC_log_printf("Removing %p .. %p from root section %d (%p .. %p)\n",
                         (void *)b, (void *)e,
                         i, (void *)r_start, (void *)r_end);
 #       endif
-        if ((word)r_start < (word)b) {
+        if (ADDR_LT(r_start, b)) {
           GC_root_size -= (word)(r_end - b);
           GC_static_roots[i].r_end = b;
           /* No need to rebuild as hash does not use r_end value. */
-          if ((word)e < (word)r_end) {
+          if (ADDR_LT(e, r_end)) {
             int j;
 
             if (rebuild) {
@@ -449,7 +447,7 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
             }
           }
         } else {
-          if ((word)e < (word)r_end) {
+          if (ADDR_LT(e, r_end)) {
             GC_root_size -= (word)(e - r_start);
             GC_static_roots[i].r_start = e;
           } else {
@@ -500,14 +498,14 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
       i = last_root_set;
 #   endif
     if (i < n_root_sets
-        && (word)p >= (word)GC_static_roots[i].r_start
-        && (word)p < (word)GC_static_roots[i].r_end) {
+        && ADDR_INSIDE((ptr_t)p, GC_static_roots[i].r_start,
+                       GC_static_roots[i].r_end)) {
       res = (int)GC_static_roots[i].r_tmp;
     } else {
       res = 0;
       for (i = 0; i < n_root_sets; i++) {
-        if ((word)p >= (word)GC_static_roots[i].r_start
-            && (word)p < (word)GC_static_roots[i].r_end) {
+        if (ADDR_INSIDE((ptr_t)p, GC_static_roots[i].r_start,
+                        GC_static_roots[i].r_end)) {
           res = (int)GC_static_roots[i].r_tmp;
 #         if defined(AO_HAVE_store) && defined(HAS_REAL_READER_LOCK)
             AO_store(&last_root_set, (AO_t)(unsigned)i);
@@ -584,38 +582,39 @@ STATIC struct exclusion * GC_next_exclusion(ptr_t start_addr)
         size_t mid = (low + high) >> 1;
 
         /* low <= mid < high    */
-        if ((word)GC_excl_table[mid].e_end <= (word)start_addr) {
+        if (ADDR_GE(start_addr, GC_excl_table[mid].e_end)) {
             low = mid + 1;
         } else {
             high = mid;
         }
     }
-    if ((word)GC_excl_table[low].e_end <= (word)start_addr) return NULL;
+    if (ADDR_GE(start_addr, GC_excl_table[low].e_end)) return NULL;
+
     return GC_excl_table + low;
 }
 
 /* The range boundaries should be properly aligned and valid.   */
-GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
+GC_INNER void GC_exclude_static_roots_inner(ptr_t start, ptr_t finish)
 {
     struct exclusion * next;
     size_t next_index;
 
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((word)start % sizeof(word) == 0);
-    GC_ASSERT((word)start < (word)finish);
+    GC_ASSERT(ADDR_LT(start, finish));
 
-    next = GC_next_exclusion((ptr_t)start);
+    next = GC_next_exclusion(start);
     if (next != NULL) {
-      if ((word)(next -> e_start) < (word)finish) {
+      if (ADDR_LT(next -> e_start, finish)) {
         /* Incomplete error check.      */
         ABORT("Exclusion ranges overlap");
       }
       if ((word)(next -> e_start) == (word)finish) {
         /* Extend old range backwards.  */
-        next -> e_start = (ptr_t)start;
+        next -> e_start = start;
 #       ifdef DEBUG_ADD_DEL_ROOTS
           GC_log_printf("Updating static root exclusion to %p .. %p\n",
-                        start, (void *)(next -> e_end));
+                        (void *)start, (void *)(next -> e_end));
 #       endif
         return;
       }
@@ -633,10 +632,10 @@ GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
     }
 #   ifdef DEBUG_ADD_DEL_ROOTS
       GC_log_printf("Adding static root exclusion at %u: %p .. %p\n",
-                    (unsigned)next_index, start, finish);
+                    (unsigned)next_index, (void *)start, (void *)finish);
 #   endif
-    GC_excl_table[next_index].e_start = (ptr_t)start;
-    GC_excl_table[next_index].e_end = (ptr_t)finish;
+    GC_excl_table[next_index].e_start = start;
+    GC_excl_table[next_index].e_end = finish;
     ++GC_excl_table_entries;
 }
 
@@ -651,7 +650,7 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
       e = (void *)(~(word)(sizeof(word)-1)); /* handle overflow */
 
     LOCK();
-    GC_exclude_static_roots_inner(b, e);
+    GC_exclude_static_roots_inner((ptr_t)b, (ptr_t)e);
     UNLOCK();
 }
 
@@ -668,16 +667,18 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
 STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
                                                 GC_bool all)
 {
-    while ((word)bottom < (word)top) {
+    while (ADDR_LT(bottom, top)) {
         struct exclusion *next = GC_next_exclusion(bottom);
-        ptr_t excl_start;
+        ptr_t excl_start = top;
 
-        if (NULL == next
-            || (word)(excl_start = next -> e_start) >= (word)top) {
-          next = NULL;
-          excl_start = top;
+        if (next != NULL) {
+          if (ADDR_GE(next -> e_start, top)) {
+            next = NULL;
+          } else {
+            excl_start = next -> e_start;
+          }
         }
-        if ((word)bottom < (word)excl_start)
+        if (ADDR_LT(bottom, excl_start))
           GC_PUSH_CONDITIONAL(bottom, excl_start, all);
         if (NULL == next) break;
         bottom = next -> e_end;
@@ -693,7 +694,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
     while (traced_stack_sect != NULL) {
         ptr_t frame_bs_lo = traced_stack_sect -> backing_store_end;
 
-        GC_ASSERT((word)frame_bs_lo <= (word)bs_hi);
+        GC_ASSERT(ADDR_GE(bs_hi, frame_bs_lo));
         if (eager) {
             GC_push_all_eager(frame_bs_lo, bs_hi);
         } else {
@@ -702,7 +703,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
         bs_hi = traced_stack_sect -> saved_backing_store_ptr;
         traced_stack_sect = traced_stack_sect -> prev;
     }
-    GC_ASSERT((word)bs_lo <= (word)bs_hi);
+    GC_ASSERT(ADDR_GE(bs_hi, bs_lo));
     if (eager) {
         GC_push_all_eager(bs_lo, bs_hi);
     } else {
@@ -766,8 +767,8 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
           GC_push_all_stack(bottom, top);
           return;
         }
-        GC_ASSERT((word)bottom <= (word)cold_gc_frame
-                  && (word)cold_gc_frame <= (word)top);
+        GC_ASSERT(ADDR_GE(cold_gc_frame, bottom)
+                  && ADDR_GE(top, cold_gc_frame));
 #       ifdef STACK_GROWS_UP
           GC_push_all(bottom, cold_gc_frame + sizeof(ptr_t));
           GC_push_all_eager(cold_gc_frame, top);
@@ -852,15 +853,16 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void *context)
             {
                 ptr_t bsp = GC_save_regs_ret_val;
                 ptr_t cold_gc_bs_pointer = bsp - 2048;
-                if (GC_all_interior_pointers && (word)cold_gc_bs_pointer
-                                        > (word)GC_register_stackbottom) {
+                if (GC_all_interior_pointers
+                    && ADDR_LT(GC_register_stackbottom, cold_gc_bs_pointer)) {
                   /* Adjust cold_gc_bs_pointer if below our innermost   */
                   /* "traced stack section" in backing store.           */
                   if (GC_traced_stack_sect != NULL
-                      && (word)cold_gc_bs_pointer
-                          < (word)(GC_traced_stack_sect -> backing_store_end))
+                      && ADDR_LT(cold_gc_bs_pointer,
+                                 GC_traced_stack_sect -> backing_store_end)) {
                     cold_gc_bs_pointer =
                                 GC_traced_stack_sect -> backing_store_end;
+                  }
                   GC_push_all_register_sections(GC_register_stackbottom,
                         cold_gc_bs_pointer, FALSE, GC_traced_stack_sect);
                   GC_push_all_eager(cold_gc_bs_pointer, bsp);

@@ -58,6 +58,16 @@ typedef GC_SIGNEDWORD GC_signed_word;
 #undef GC_SIGNEDWORD
 #undef GC_UNSIGNEDWORD
 
+/* Is first pointer has a smaller address than the second one?  The     */
+/* arguments should be of the same pointer type, e.g. of char* type.    */
+/* Ancient compilers might treat a pointer as a signed value, thus we   */
+/* need a cast to unsigned word of each compared pointer.               */
+#if defined(__GNUC__)
+# define GC_ADDR_LT(p,q) ((p) < (q))
+#else
+# define GC_ADDR_LT(p,q) ((GC_word)(p) < (GC_word)(q))
+#endif
+
 /* Get the GC library version. The returned value is a constant in the  */
 /* form: ((version_major<<16) | (version_minor<<8) | version_micro).    */
 GC_API GC_VERSION_VAL_T GC_CALL GC_get_version(void);
@@ -2155,16 +2165,16 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
     /* Cygwin/x64 does not add leading underscore to symbols anymore.   */
     extern int __data_start__[], __data_end__[];
     extern int __bss_start__[], __bss_end__[];
-#   define GC_DATASTART ((GC_word)__data_start__ < (GC_word)__bss_start__ \
+#   define GC_DATASTART (GC_ADDR_LT(__data_start__, __bss_start__) \
                          ? (void *)__data_start__ : (void *)__bss_start__)
-#   define GC_DATAEND ((GC_word)__data_end__ > (GC_word)__bss_end__ \
+#   define GC_DATAEND (GC_ADDR_LT(__bss_end__, __data_end__) \
                        ? (void *)__data_end__ : (void *)__bss_end__)
 # else
     extern int _data_start__[], _data_end__[], _bss_start__[], _bss_end__[];
-#   define GC_DATASTART ((GC_word)_data_start__ < (GC_word)_bss_start__ \
+#   define GC_DATASTART (GC_ADDR_LT(_data_start__, _bss_start__) \
                          ? (void *)_data_start__ : (void *)_bss_start__)
-#   define GC_DATAEND ((GC_word)_data_end__ > (GC_word)_bss_end__ \
-                      ? (void *)_data_end__ : (void *)_bss_end__)
+#   define GC_DATAEND (GC_ADDR_LT(_bss_end__, _data_end__) \
+                       ? (void *)_data_end__ : (void *)_bss_end__)
 # endif /* !__x86_64__ */
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND); \
                                  GC_gcollect() /* For blacklisting. */

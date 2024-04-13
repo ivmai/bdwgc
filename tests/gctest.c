@@ -334,7 +334,8 @@ static sexpr cons(sexpr x, sexpr y)
     r = (sexpr)checkOOM(GC_MALLOC(sizeof(struct SEXPR) + my_extra));
     AO_fetch_and_add1(&collectable_count);
     for (p = (int *)r;
-         (GC_word)p < (GC_word)r + my_extra + sizeof(struct SEXPR); p++) {
+         GC_ADDR_LT((ptr_t)p, (ptr_t)r + my_extra + sizeof(struct SEXPR));
+         p++) {
         if (*p) {
             GC_printf("Found nonzero at %p - allocator is broken\n",
                       (void *)p);
@@ -350,7 +351,7 @@ static sexpr cons(sexpr x, sexpr y)
     GC_reachable_here(x);
     return r;
 }
-# endif
+# endif /* !VERY_SMALL_CONFIG */
 
 #include "gc/gc_mark.h"
 

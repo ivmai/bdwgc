@@ -642,12 +642,12 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
     } else {
        scan_limit = target_limit + 1 - sizeof(word);
     }
-    for (current_p = p; (word)current_p <= (word)scan_limit;
+    for (current_p = p; ADDR_GE(scan_limit, current_p);
          current_p += ALIGNMENT) {
         ptr_t q;
 
         LOAD_WORD_OR_CONTINUE(q, current_p);
-        if ((word)q < (word)p || (word)q > (word)target_limit) {
+        if (ADDR_LT(q, p) || ADDR_LT(target_limit, q)) {
             GC_PUSH_ONE_HEAP(q, current_p, GC_mark_stack_top);
         }
     }

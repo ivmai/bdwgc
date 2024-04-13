@@ -263,7 +263,7 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
         }
         GC_ASSERT(hhdr -> hb_sz > HBLKSIZE
                   || hhdr -> hb_block == HBLKPTR(current));
-        GC_ASSERT((word)hhdr->hb_block <= (word)current);
+        GC_ASSERT(ADDR_GE(current, (ptr_t)(hhdr -> hb_block)));
         gran_displ = 0;
       } else {
 #       ifndef MARK_BIT_PER_OBJ
@@ -337,21 +337,21 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
     do { \
       ptr_t pp = (p); \
       \
-      if ((word)(p) > (word)GC_least_plausible_heap_addr \
-          && (word)(p) < (word)GC_greatest_plausible_heap_addr) { \
+      if (ADDR_LT((ptr_t)GC_least_plausible_heap_addr, p) \
+          && ADDR_LT(p, (ptr_t)GC_greatest_plausible_heap_addr)) { \
         PUSH_ONE_CHECKED_STACK(p, source); \
       } \
       FIXUP_POINTER(pp); \
-      if ((word)pp > (word)GC_least_plausible_heap_addr \
-          && (word)pp < (word)GC_greatest_plausible_heap_addr) { \
+      if (ADDR_LT((ptr_t)GC_least_plausible_heap_addr, pp) \
+          && ADDR_LT(pp, (ptr_t)GC_greatest_plausible_heap_addr)) { \
         PUSH_ONE_CHECKED_STACK(pp, source); \
       } \
     } while (0)
 #else /* !NEED_FIXUP_POINTER */
 # define GC_PUSH_ONE_STACK(p, source) \
     do { \
-      if ((word)(p) > (word)GC_least_plausible_heap_addr \
-          && (word)(p) < (word)GC_greatest_plausible_heap_addr) { \
+      if (ADDR_LT((ptr_t)GC_least_plausible_heap_addr, p) \
+          && ADDR_LT(p, (ptr_t)GC_greatest_plausible_heap_addr)) { \
         PUSH_ONE_CHECKED_STACK(p, source); \
       } \
     } while (0)
@@ -361,8 +361,8 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
 #define GC_PUSH_ONE_HEAP(p, source, mark_stack_top) \
     do { \
       FIXUP_POINTER(p); \
-      if ((word)(p) > (word)GC_least_plausible_heap_addr \
-          && (word)(p) < (word)GC_greatest_plausible_heap_addr) \
+      if (ADDR_LT((ptr_t)GC_least_plausible_heap_addr, p) \
+          && ADDR_LT(p, (ptr_t)GC_greatest_plausible_heap_addr)) \
         mark_stack_top = GC_mark_and_push(p, mark_stack_top, \
                                 GC_mark_stack_limit, (void **)(source)); \
     } while (0)
@@ -378,7 +378,8 @@ GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
                                          GC_mark_stack, \
                                          GC_mark_stack + GC_mark_stack_size);
 
-#define GC_mark_stack_empty() ((word)GC_mark_stack_top < (word)GC_mark_stack)
+#define GC_mark_stack_empty() \
+                ADDR_LT((ptr_t)GC_mark_stack_top, (ptr_t)GC_mark_stack)
 
                                 /* Current state of marking, as follows.*/
 

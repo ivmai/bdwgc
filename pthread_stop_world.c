@@ -560,7 +560,7 @@ STATIC void GC_restart_handler(int sig)
         return 0; /* simulate the signal is sent but lost */
 #   endif
 #   ifdef RETRY_TKILL_ON_EAGAIN
-      for (retry = 0; ; retry++)
+      for (retry = 0;; retry++)
 #   endif
     {
 #     ifdef USE_TKILL_ON_ANDROID
@@ -842,8 +842,8 @@ GC_INNER void GC_push_all_stacks(void)
 #         endif
 #       endif
         if (NULL == lo) ABORT("GC_push_all_stacks: sp not set!");
-        if (crtn -> altstack != NULL && (word)(crtn -> altstack) <= (word)lo
-            && (word)lo <= (word)(crtn -> altstack) + crtn -> altstack_size) {
+        if (crtn -> altstack != NULL && ADDR_GE(lo, crtn -> altstack)
+            && ADDR_GE(crtn -> altstack + crtn -> altstack_size, lo)) {
 #         ifdef STACK_GROWS_UP
             hi = crtn -> altstack;
 #         else

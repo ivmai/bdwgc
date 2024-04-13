@@ -196,7 +196,7 @@ GC_INNER void GC_unpromote_black_lists(void)
     GC_ASSERT(I_HOLD_LOCK());
 # endif
   if (GC_modws_valid_offsets[p & (sizeof(word)-1)]) {
-    word index = PHT_HASH((word)p);
+    word index = PHT_HASH(p);
 
     if (HDR(p) == 0 || get_pht_entry_from_index(GC_old_normal_bl, index)) {
 #     ifdef PRINT_BLACK_LIST
@@ -217,7 +217,7 @@ GC_INNER void GC_unpromote_black_lists(void)
   GC_INNER void GC_add_to_black_list_stack(word p)
 #endif
 {
-  word index = PHT_HASH((word)p);
+  word index = PHT_HASH(p);
 
 # ifndef PARALLEL_MARK
     GC_ASSERT(I_HOLD_LOCK());
@@ -242,7 +242,7 @@ GC_INNER void GC_unpromote_black_lists(void)
 GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *h,
                                                     GC_word len)
 {
-    word index = PHT_HASH((word)h);
+    word index = PHT_HASH(h);
     word i;
     word nblocks;
 
@@ -266,7 +266,7 @@ GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *h,
           i++;
         }
         if (i >= nblocks) break;
-        index = PHT_HASH((word)(h + i));
+        index = PHT_HASH(h + i);
     }
     return NULL;
 }
@@ -280,8 +280,8 @@ STATIC word GC_number_stack_black_listed(struct hblk *start,
     struct hblk * h;
     word result = 0;
 
-    for (h = start; (word)h < (word)endp1; h++) {
-        word index = PHT_HASH((word)h);
+    for (h = start; ADDR_LT((ptr_t)h, (ptr_t)endp1); h++) {
+        word index = PHT_HASH(h);
 
         if (get_pht_entry_from_index(GC_old_stack_bl, index)) result++;
     }

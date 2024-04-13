@@ -1395,12 +1395,12 @@ GC_INNER ptr_t GC_os_get_mem(size_t bytes)
   return (ptr_t)space;
 }
 
-/* Use the chunk of memory starting at p of size bytes as part of the heap. */
-/* Assumes p is HBLKSIZE aligned, bytes argument is a multiple of HBLKSIZE. */
-STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
+/* Use the chunk of memory starting at h of size bytes as part of the heap. */
+/* Assumes h is HBLKSIZE aligned, bytes argument is a multiple of HBLKSIZE. */
+STATIC void GC_add_to_heap(struct hblk *h, size_t bytes)
 {
     hdr *hhdr;
-    word endp;
+    ptr_t endp;
     size_t old_capacity = 0;
     void *old_heap_sects = NULL;
 #   ifdef GC_ASSERTIONS
@@ -1408,7 +1408,7 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT((word)p % HBLKSIZE == 0);
+    GC_ASSERT((word)h % HBLKSIZE == 0);
     GC_ASSERT(bytes % HBLKSIZE == 0);
     GC_ASSERT(bytes > 0);
     GC_ASSERT(GC_all_nils != NULL);
@@ -1443,65 +1443,64 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
                          (unsigned long)new_capacity);
     }
 
-    while (EXPECT((word)p <= HBLKSIZE, FALSE)) {
+    while (EXPECT((word)h <= HBLKSIZE, FALSE)) {
         /* Can't handle memory near address zero. */
-        ++p;
+        ++h;
         bytes -= HBLKSIZE;
         if (0 == bytes) return;
     }
-    endp = (word)p + bytes;
-    if (EXPECT(endp <= (word)p, FALSE)) {
-        /* Address wrapped. */
+    endp = (ptr_t)h + bytes;
+    if (EXPECT(ADDR_GE((ptr_t)h, endp), FALSE)) {
         bytes -= HBLKSIZE;
         if (0 == bytes) return;
         endp -= HBLKSIZE;
     }
-    hhdr = GC_install_header(p);
+    hhdr = GC_install_header(h);
     if (EXPECT(NULL == hhdr, FALSE)) {
         /* This is extremely unlikely. Can't add it.  This will         */
         /* almost certainly result in a 0 return from the allocator,    */
         /* which is entirely appropriate.                               */
         return;
     }
-    GC_ASSERT(endp > (word)p && endp == (word)p + bytes);
 #   ifdef GC_ASSERTIONS
       /* Ensure no intersection between sections.       */
       for (i = 0; i < GC_n_heap_sects; i++) {
-        word hs_start = (word)GC_heap_sects[i].hs_start;
-        word hs_end = hs_start + GC_heap_sects[i].hs_bytes;
+        ptr_t hs_start = GC_heap_sects[i].hs_start;
+        ptr_t hs_end = hs_start + GC_heap_sects[i].hs_bytes;
 
-        GC_ASSERT(!((hs_start <= (word)p && (word)p < hs_end)
-                    || (hs_start < endp && endp <= hs_end)
-                    || ((word)p < hs_start && hs_end < endp)));
+        GC_ASSERT(!(ADDR_INSIDE((ptr_t)h, hs_start, hs_end)
+                    || (ADDR_LT(hs_start, endp) && ADDR_GE(hs_end, endp))
+                    || (ADDR_LT((ptr_t)h, hs_start)
+                            && ADDR_LT(hs_end, endp))));
       }
 #   endif
-    GC_heap_sects[GC_n_heap_sects].hs_start = (ptr_t)p;
+    GC_heap_sects[GC_n_heap_sects].hs_start = (ptr_t)h;
     GC_heap_sects[GC_n_heap_sects].hs_bytes = bytes;
     GC_n_heap_sects++;
     hhdr -> hb_sz = bytes;
     hhdr -> hb_flags = 0;
-    GC_freehblk(p);
+    GC_freehblk(h);
     GC_heapsize += bytes;
 
-    if ((word)p <= (word)GC_least_plausible_heap_addr
+    if (ADDR_GE((ptr_t)GC_least_plausible_heap_addr, (ptr_t)h)
         || EXPECT(NULL == GC_least_plausible_heap_addr, FALSE)) {
-        GC_least_plausible_heap_addr = (void *)((ptr_t)p - sizeof(word));
+        GC_least_plausible_heap_addr = (void *)((ptr_t)h - sizeof(word));
                 /* Making it a little smaller than necessary prevents   */
                 /* us from getting a false hit from the variable        */
                 /* itself.  There's some unintentional reflection       */
                 /* here.                                                */
     }
-    if (endp > (word)GC_greatest_plausible_heap_addr) {
+    if (ADDR_LT((ptr_t)GC_greatest_plausible_heap_addr, endp)) {
         GC_greatest_plausible_heap_addr = (void *)endp;
     }
 #   ifdef SET_REAL_HEAP_BOUNDS
-      if ((word)p < GC_least_real_heap_addr
-          || EXPECT(0 == GC_least_real_heap_addr, FALSE))
-        GC_least_real_heap_addr = (word)p - sizeof(word);
-      if (endp > GC_greatest_real_heap_addr) {
+      if (ADDR_LT((ptr_t)h, GC_least_real_heap_addr)
+          || EXPECT(NULL == GC_least_real_heap_addr, FALSE))
+        GC_least_real_heap_addr = (ptr_t)h - sizeof(word);
+      if (ADDR_LT(GC_greatest_real_heap_addr, endp)) {
 #       ifdef INCLUDE_LINUX_THREAD_DESCR
           /* Avoid heap intersection with the static data roots. */
-          GC_exclude_static_roots_inner((void *)p, (void *)endp);
+          GC_exclude_static_roots_inner((ptr_t)h, endp);
 #       endif
         GC_greatest_real_heap_addr = endp;
       }
@@ -1535,7 +1534,7 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
       struct hblk *h;
       unsigned nbl = 0;
 
-      for (h = (struct hblk *)start; (word)h < (word)(start + len); h++) {
+      for (h = (struct hblk *)start; ADDR_LT((ptr_t)h, start + len); h++) {
         if (GC_is_black_listed(h, HBLKSIZE)) nbl++;
       }
       GC_printf("Section %d from %p to %p %u/%lu blacklisted\n",
@@ -1576,7 +1575,7 @@ GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
   GC_COND_LOG_PRINTF("Recycle %lu/%lu scratch-allocated bytes at %p\n",
                 (unsigned long)recycled_bytes, (unsigned long)bytes, ptr);
   if (recycled_bytes > 0)
-    GC_add_to_heap((struct hblk *)((word)ptr + displ), recycled_bytes);
+    GC_add_to_heap((struct hblk *)((ptr_t)ptr + displ), recycled_bytes);
 }
 
 /* This explicitly increases the size of the heap.  It is used          */
@@ -1615,19 +1614,21 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     /* GC_add_to_heap performs minimal adjustment needed for            */
     /* correctness.                                                     */
     expansion_slop = min_bytes_allocd() + 4 * MAXHINCR * HBLKSIZE;
-    if ((GC_last_heap_addr == 0 && !((word)space & SIGNB))
-        || (GC_last_heap_addr != 0
-            && (word)GC_last_heap_addr < (word)space)) {
+    if ((NULL == GC_last_heap_addr && !((word)space & SIGNB))
+        || (GC_last_heap_addr != NULL
+            && ADDR_LT(GC_last_heap_addr, (ptr_t)space))) {
         /* Assume the heap is growing up. */
-        word new_limit = (word)space + (word)bytes + expansion_slop;
-        if (new_limit > (word)space
-            && (word)GC_greatest_plausible_heap_addr < new_limit)
+        ptr_t new_limit = (ptr_t)space + bytes + expansion_slop;
+
+        if (ADDR_LT((ptr_t)space, new_limit)
+            && ADDR_LT((ptr_t)GC_greatest_plausible_heap_addr, new_limit))
           GC_greatest_plausible_heap_addr = (void *)new_limit;
     } else {
         /* Heap is growing down. */
-        word new_limit = (word)space - expansion_slop - sizeof(word);
-        if (new_limit < (word)space
-            && (word)GC_least_plausible_heap_addr > new_limit)
+        ptr_t new_limit = (ptr_t)space - expansion_slop - sizeof(word);
+
+        if (ADDR_LT(new_limit, (ptr_t)space)
+            && ADDR_LT(new_limit, (ptr_t)GC_least_plausible_heap_addr))
           GC_least_plausible_heap_addr = (void *)new_limit;
     }
     GC_last_heap_addr = (ptr_t)space;

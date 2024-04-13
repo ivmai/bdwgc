@@ -110,7 +110,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
     GC_ASSERT(I_HOLD_LOCK());
     bytes = ROUNDUP_GRANULE_SIZE(bytes);
     for (;;) {
-        GC_ASSERT((word)GC_scratch_end_ptr >= (word)result);
+        GC_ASSERT(ADDR_GE(GC_scratch_end_ptr, result));
         if (bytes <= (word)GC_scratch_end_ptr - (word)result) {
             /* Unallocated space of scratch buffer has enough size. */
             GC_scratch_free_ptr = result + bytes;
@@ -281,7 +281,7 @@ GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz /* bytes */)
 {
     struct hblk * hbp;
 
-    for (hbp = h; (word)hbp < (word)h + sz; hbp += BOTTOM_SZ) {
+    for (hbp = h; ADDR_LT((ptr_t)hbp, (ptr_t)h + sz); hbp += BOTTOM_SZ) {
         if (!get_index((word)hbp))
             return FALSE;
         if ((word)hbp > GC_WORD_MAX - (word)BOTTOM_SZ * HBLKSIZE)
@@ -290,10 +290,10 @@ GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz /* bytes */)
     if (!get_index((word)h + sz - 1))
         return FALSE;
     GC_ASSERT(!IS_FORWARDING_ADDR_OR_NIL(HDR(h)));
-    for (hbp = h + 1; (word)hbp < (word)h + sz; hbp++) {
+    for (hbp = h + 1; ADDR_LT((ptr_t)hbp, (ptr_t)h + sz); hbp++) {
         word i = (word)HBLK_PTR_DIFF(hbp, h);
 
-        SET_HDR(hbp, (hdr *)(i > MAX_JUMP? MAX_JUMP : i));
+        SET_HDR(hbp, (hdr *)(i > MAX_JUMP ? MAX_JUMP : i));
     }
     return TRUE;
 }
@@ -313,13 +313,14 @@ GC_INNER void GC_remove_counts(struct hblk *h, size_t sz /* bytes */)
     if (sz <= HBLKSIZE) return;
     if (NULL == HDR(h + 1)) {
 #     ifdef GC_ASSERTIONS
-        for (hbp = h + 2; (word)hbp < (word)h + sz; hbp++)
+        for (hbp = h + 2; ADDR_LT((ptr_t)hbp, (ptr_t)h + sz); hbp++) {
           GC_ASSERT(NULL == HDR(hbp));
+        }
 #     endif
       return;
     }
 
-    for (hbp = h + 1; (word)hbp < (word)h + sz; hbp++) {
+    for (hbp = h + 1; ADDR_LT((ptr_t)hbp, (ptr_t)h + sz); hbp++) {
       SET_HDR(hbp, NULL);
     }
 }

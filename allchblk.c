@@ -195,7 +195,7 @@ GC_API void GC_CALL GC_dump_regions(void)
             end = GC_heap_sects[i].hs_start + GC_heap_sects[i].hs_bytes;
           }
         GC_printf("***Section from %p to %p\n", (void *)start, (void *)end);
-        for (p = start; (word)p < (word)end; ) {
+        for (p = start; ADDR_LT(p, end); ) {
             hdr *hhdr = HDR(p);
 
             if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
@@ -787,7 +787,7 @@ static struct hblk *find_nonbl_hblk(struct hblk *last_hbp, word size_remain,
     next_hbp = GC_is_black_listed(last_hbp, eff_size_needed);
     if (NULL == next_hbp) return last_hbp; /* not black-listed */
     last_hbp = next_hbp;
-  } while ((word)last_hbp <= (word)search_end);
+  } while (ADDR_GE(search_end, (ptr_t)last_hbp));
   return NULL;
 }
 
@@ -806,7 +806,8 @@ static void drop_hblk_in_chunks(int n, struct hblk *hbp, hdr *hhdr)
   do {
     (void)setup_header(hhdr, hbp, HBLKSIZE, PTRFREE, 0); /* cannot fail */
     if (GC_debugging_started) BZERO(hbp, HBLKSIZE);
-    if ((word)(++hbp) >= (word)limit) break;
+    hbp++;
+    if (ADDR_GE(hbp, limit)) break;
 
     hhdr = GC_install_header(hbp);
   } while (EXPECT(hhdr != NULL, TRUE)); /* no header allocation failure? */

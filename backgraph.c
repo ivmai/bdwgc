@@ -206,7 +206,7 @@ static void ensure_struct(ptr_t p)
     }
     be -> height = HEIGHT_UNKNOWN;
     be -> height_gc_no = (unsigned short)(GC_gc_no - 1);
-    GC_ASSERT((word)be >= (word)back_edge_space);
+    GC_ASSERT(ADDR_GE((ptr_t)be, (ptr_t)back_edge_space));
     SET_OH_BG_PTR(p, (word)be | FLAG_MANY);
   }
 }
@@ -358,13 +358,13 @@ static void add_back_edges(ptr_t p, size_t n_bytes, word gc_descr)
       gc_descr = n_bytes;
     }
 
-  for (; (word)current_p < (word)(p + gc_descr); current_p += sizeof(word)) {
+  for (; ADDR_LT(current_p, p + gc_descr); current_p += sizeof(word)) {
     ptr_t q;
 
     LOAD_WORD_OR_CONTINUE(q, current_p);
     FIXUP_POINTER(q);
-    if ((word)q > GC_least_real_heap_addr
-        && (word)q < GC_greatest_real_heap_addr) {
+    if (ADDR_LT(GC_least_real_heap_addr, q)
+        && ADDR_LT(q, GC_greatest_real_heap_addr)) {
       ptr_t target = (ptr_t)GC_base(q);
 
       if (target != NULL)

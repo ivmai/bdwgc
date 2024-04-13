@@ -174,9 +174,9 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void * /* obj */,
                                 void ** /* src */);
 
 #define GC_MARK_AND_PUSH(obj, msp, lim, src) \
-          ((GC_word)(obj) > (GC_word)GC_least_plausible_heap_addr \
-           && (GC_word)(obj) < (GC_word)GC_greatest_plausible_heap_addr ? \
-           GC_mark_and_push(obj, msp, lim, src) : (msp))
+    (GC_ADDR_LT((char *)GC_least_plausible_heap_addr, (char *)(obj)) \
+     && GC_ADDR_LT((char *)(obj), (char *)GC_greatest_plausible_heap_addr) \
+        ? GC_mark_and_push(obj, msp, lim, src) : (msp))
 
 GC_API void GC_CALL GC_push_proc(GC_word /* descr */, void * /* obj */);
 

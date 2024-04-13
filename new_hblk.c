@@ -35,7 +35,7 @@
     p[2] = (word)p;
     p[3] = 0;
     p += 4;
-    for (; (word)p < (word)lim; p += 4) {
+    for (; ADDR_LT((ptr_t)p, (ptr_t)lim); p += 4) {
         p[0] = (word)(p-2);
         p[1] = 0;
         p[2] = (word)p;
@@ -55,7 +55,7 @@
     p[2] = 0;
     p[3] = 0;
     p += 4;
-    for (; (word)p < (word)lim; p += 4) {
+    for (; ADDR_LT((ptr_t)p, (ptr_t)lim); p += 4) {
         GC_PREFETCH_FOR_WRITE((ptr_t)(p + 64));
         p[0] = (word)(p-4);
         p[1] = 0;
@@ -73,7 +73,7 @@
     p[0] = (word)ofl;
     p[2] = (word)p;
     p += 4;
-    for (; (word)p < (word)lim; p += 4) {
+    for (; ADDR_LT((ptr_t)p, (ptr_t)lim); p += 4) {
         p[0] = (word)(p-2);
         p[2] = (word)p;
     }
@@ -89,7 +89,7 @@
     p[0] = (word)ofl;
     p[4] = (word)p;
     p += 8;
-    for (; (word)p < (word)lim; p += 8) {
+    for (; ADDR_LT((ptr_t)p, (ptr_t)lim); p += 8) {
         GC_PREFETCH_FOR_WRITE((ptr_t)(p + 64));
         p[0] = (word)(p-4);
         p[4] = (word)p;
@@ -140,7 +140,7 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t lw, GC_bool clear,
                             /* Last place for last object to start */
 
   /* Make a list of all objects in *h with head as last object. */
-    for (p = prev + lw; (word)p <= (word)last_object; p += lw) {
+    for (p = prev + lw; ADDR_GE((ptr_t)last_object, (ptr_t)p); p += lw) {
       /* current object's link points to last object */
         obj_link(p) = (ptr_t)prev;
         prev = p;

@@ -164,7 +164,7 @@ STATIC void * GC_generic_malloc_inner_small(size_t lb, int k)
 {
   struct obj_kind *ok = &GC_obj_kinds[k];
   size_t lg = GC_size_map[lb];
-  void ** opp = &(ok -> ok_freelist[lg]);
+  void **opp = &(ok -> ok_freelist[lg]);
   void *op = *opp;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -345,8 +345,8 @@ GC_INNER void * GC_malloc_kind_aligned_global(size_t lb, int k,
         }
         if (EXPECT(op != NULL, TRUE)) {
             GC_ASSERT(PTRFREE == k || NULL == obj_link(op)
-                      || ((word)obj_link(op) < GC_greatest_real_heap_addr
-                          && (word)obj_link(op) > GC_least_real_heap_addr));
+                || (ADDR_LT((ptr_t)obj_link(op), GC_greatest_real_heap_addr)
+                    && ADDR_LT(GC_least_real_heap_addr, (ptr_t)obj_link(op))));
             *opp = obj_link(op);
             if (k != PTRFREE)
                 obj_link(op) = NULL;
@@ -551,11 +551,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
         ptr_t caller = (ptr_t)__builtin_return_address(0);
 
         GC_init_lib_bounds();
-        if (((word)caller >= (word)GC_libld_start
-             && (word)caller < (word)GC_libld_end)
+        if (ADDR_INSIDE(caller, GC_libld_start, GC_libld_end)
 #           ifdef HAVE_LIBPTHREAD_SO
-              || ((word)caller >= (word)GC_libpthread_start
-                  && (word)caller < (word)GC_libpthread_end)
+              || ADDR_INSIDE(caller, GC_libpthread_start, GC_libpthread_end)
                     /* The two ranges are actually usually adjacent,    */
                     /* so there may be a way to speed this up.          */
 #           endif
@@ -707,11 +705,9 @@ GC_API void GC_CALL GC_free(void * p)
         ptr_t caller = (ptr_t)__builtin_return_address(0);
         /* This test does not need to ensure memory visibility, since   */
         /* the bounds will be set when/if we create another thread.     */
-        if (((word)caller >= (word)GC_libld_start
-             && (word)caller < (word)GC_libld_end)
+        if (ADDR_INSIDE(caller, GC_libld_start, GC_libld_end)
 #           ifdef HAVE_LIBPTHREAD_SO
-              || ((word)caller >= (word)GC_libpthread_start
-                  && (word)caller < (word)GC_libpthread_end)
+              || ADDR_INSIDE(caller, GC_libpthread_start, GC_libpthread_end)
 #           endif
            ) {
           GC_free(p);

@@ -18,7 +18,7 @@
  * preprocessor to validate C pointer arithmetic.
  */
 
-STATIC void GC_CALLBACK GC_default_same_obj_print_proc(void * p, void * q)
+STATIC void GC_CALLBACK GC_default_same_obj_print_proc(void *p, void *q)
 {
     ABORT_ARG2("GC_same_obj test failed",
                ": %p and %p are not in the same object", p, q);
@@ -38,7 +38,7 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
     hhdr = HDR(p);
     if (NULL == hhdr) {
         if (divHBLKSZ((word)p) != divHBLKSZ((word)q) && HDR(q) != NULL) {
-            goto fail;
+          GC_same_obj_print_proc((ptr_t)p, (ptr_t)q);
         }
         return p;
     }
@@ -47,9 +47,9 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
     if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
         h = GC_find_starting_hblk(HBLKPTR(p), &hhdr);
         limit = (ptr_t)h + hhdr -> hb_sz;
-        if ((word)p >= (word)limit || (word)q >= (word)limit
-            || (word)q < (word)h) {
-            goto fail;
+        if (ADDR_GE((ptr_t)p, limit) || ADDR_GE((ptr_t)q, limit)
+            || ADDR_LT((ptr_t)q, (ptr_t)h)) {
+          GC_same_obj_print_proc((ptr_t)p, (ptr_t)q);
         }
         return p;
     }
@@ -57,18 +57,22 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
     if (sz > MAXOBJBYTES) {
       base = (ptr_t)HBLKPTR(p);
       limit = base + sz;
-      if ((word)p >= (word)limit) {
-        goto fail;
+      if (ADDR_GE((ptr_t)p, limit)) {
+        GC_same_obj_print_proc((ptr_t)p, (ptr_t)q);
+        return p;
       }
     } else {
       size_t offset;
       size_t pdispl = HBLKDISPL(p);
 
       offset = pdispl % sz;
-      if (HBLKPTR(p) != HBLKPTR(q)) goto fail;
+      if (HBLKPTR(p) != HBLKPTR(q)) {
                 /* W/o this check, we might miss an error if    */
                 /* q points to the first object on a page, and  */
                 /* points just before the page.                 */
+        GC_same_obj_print_proc((ptr_t)p, (ptr_t)q);
+        return p;
+      }
       base = (ptr_t)p - offset;
       limit = base + sz;
     }
@@ -76,12 +80,9 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
     /* If p is not inside a valid object, then either q is      */
     /* also outside any valid object, or it is outside          */
     /* [base, limit).                                           */
-    if ((word)q >= (word)limit || (word)q < (word)base) {
-        goto fail;
+    if (!ADDR_INSIDE((ptr_t)q, base, limit)) {
+      GC_same_obj_print_proc((ptr_t)p, (ptr_t)q);
     }
-    return p;
-fail:
-    (*GC_same_obj_print_proc)((ptr_t)p, (ptr_t)q);
     return p;
 }
 
@@ -109,24 +110,22 @@ GC_API void * GC_CALL GC_is_valid_displacement(void *p)
     if (GC_all_interior_pointers) {
         h = GC_find_starting_hblk(h, &hhdr);
     } else if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-        goto fail;
+        GC_is_valid_displacement_print_proc((ptr_t)p);
+        return p;
     }
     sz = hhdr -> hb_sz;
     pdispl = HBLKDISPL(p);
     offset = pdispl % sz;
-    if ((sz > MAXOBJBYTES && (word)p >= (word)h + sz)
+    if ((sz > MAXOBJBYTES && ADDR_GE((ptr_t)p, (ptr_t)h + sz))
         || !GC_valid_offsets[offset]
-        || ((word)p + (sz - offset) > (word)(h + 1)
+        || (ADDR_LT((ptr_t)(h + 1), (ptr_t)p + sz - offset)
             && !IS_FORWARDING_ADDR_OR_NIL(HDR(h + 1)))) {
-        goto fail;
+        GC_is_valid_displacement_print_proc((ptr_t)p);
     }
-    return p;
-fail:
-    (*GC_is_valid_displacement_print_proc)((ptr_t)p);
     return p;
 }
 
-STATIC void GC_CALLBACK GC_default_is_visible_print_proc(void * p)
+STATIC void GC_CALLBACK GC_default_is_visible_print_proc(void *p)
 {
     ABORT_ARG1("GC_is_visible test failed", ": %p not GC-visible", p);
 }
@@ -181,8 +180,8 @@ GC_API void * GC_CALL GC_is_visible(void *p)
             if (HBLKPTR(base) != HBLKPTR(p))
                 hhdr = HDR(base);
             descr = hhdr -> hb_descr;
-    retry:
-            switch(descr & GC_DS_TAGS) {
+        retry:
+            switch (descr & GC_DS_TAGS) {
                 case GC_DS_LENGTH:
                     if ((word)p - (word)base > descr) goto fail;
                     break;
@@ -212,7 +211,7 @@ GC_API void * GC_CALL GC_is_visible(void *p)
         }
 #   endif
 fail:
-    (*GC_is_visible_print_proc)((ptr_t)p);
+    GC_is_visible_print_proc((ptr_t)p);
     return p;
 }
 

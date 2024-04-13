@@ -292,14 +292,21 @@ typedef struct hblkhdr hdr;
 
 #define GC_WORD_MAX (~(word)0)
 
+#define ADDR_LT(p,q) GC_ADDR_LT(p,q)
+#define ADDR_GE(p,q) (!ADDR_LT(p,q))
+
+/* Check whether pointer p is in range [s, e_p1).  p should not     */
+/* have side effects.                                               */
+#define ADDR_INSIDE(p, s, e_p1) (ADDR_GE(p, s) && ADDR_LT(p, e_p1))
+
 /* Handy definitions to compare and adjust pointers in a stack.     */
 #ifdef STACK_GROWS_UP
-# define HOTTER_THAN(p,q) ((word)(p) > (word)(q))
+# define HOTTER_THAN(p,q) ADDR_LT(q, p) /* inverse */
 # define MAKE_COOLER(p,d) \
             (void)((p) -= (word)(p) >= (word)((d) * sizeof(*(p))) ? (d) : 0)
 # define MAKE_HOTTER(p,d) (void)((p) += (d))
 #else
-# define HOTTER_THAN(p,q) ((word)(p) < (word)(q))
+# define HOTTER_THAN(p,q) ADDR_LT(p, q)
 # define MAKE_COOLER(p,d) \
             (void)((p) += (word)(p) <= (word)(GC_WORD_MAX \
                                               - (d) * sizeof(*(p))) ? (d) : 0)
@@ -1439,8 +1446,8 @@ struct _GC_arrays {
 #   define SET_REAL_HEAP_BOUNDS
 #   define GC_least_real_heap_addr GC_arrays._least_real_heap_addr
 #   define GC_greatest_real_heap_addr GC_arrays._greatest_real_heap_addr
-    word _least_real_heap_addr;
-    word _greatest_real_heap_addr;
+    ptr_t _least_real_heap_addr;
+    ptr_t _greatest_real_heap_addr;
         /* Similar to GC_least/greatest_plausible_heap_addr but */
         /* do not include future (potential) heap expansion.    */
         /* Both variables are zero initially.                   */
@@ -1716,7 +1723,7 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define GC_valid_offsets GC_arrays._valid_offsets
 
 #define beginGC_arrays ((ptr_t)(&GC_arrays))
-#define endGC_arrays ((ptr_t)(&GC_arrays) + sizeof(GC_arrays))
+#define endGC_arrays (beginGC_arrays + sizeof(GC_arrays))
 
 /* Object kinds: */
 #ifndef MAXOBJKINDS
@@ -2191,7 +2198,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp);
 #ifdef USE_PROC_FOR_LIBRARIES
   GC_INNER void GC_remove_roots_subregion(ptr_t b, ptr_t e);
 #endif
-GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish);
+GC_INNER void GC_exclude_static_roots_inner(ptr_t start, ptr_t finish);
 #if defined(DYNAMIC_LOADING) || defined(ANY_MSWIN) || defined(PCR)
   GC_INNER void GC_register_dynamic_libraries(void);
                 /* Add dynamic library data sections to the root set. */
@@ -2919,8 +2926,13 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 #endif
 
 #ifdef GC_WIN32_THREADS
-  GC_INNER void GC_get_next_stack(char *start, char * limit, char **lo,
-                                  char **hi);
+  /* Find stack with the lowest address which overlaps the interval     */
+  /* [start, limit).  Return stack bounds in *plo and *phi.  If no such */
+  /* stack is found, both *phi and *plo will be set to an address       */
+  /* higher than limit.                                                 */
+  GC_INNER void GC_get_next_stack(ptr_t start, ptr_t limit, ptr_t *plo,
+                                  ptr_t *phi);
+
 # if defined(MPROTECT_VDB) && !defined(CYGWIN32)
     GC_INNER void GC_set_write_fault_handler(void);
 # endif

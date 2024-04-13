@@ -117,11 +117,11 @@
         ptr_t target = *(ptr_t *)bp;
         ptr_t alternate_target = *(ptr_t *)alternate_ptr;
 
-        if ((word)alternate_target > GC_least_real_heap_addr
-            && (word)alternate_target < GC_greatest_real_heap_addr
-            && ((word)target <= GC_least_real_heap_addr
-                || (word)target >= GC_greatest_real_heap_addr)) {
-            bp = alternate_ptr;
+        if (ADDR_LT(GC_least_real_heap_addr, alternate_target)
+            && ADDR_LT(alternate_target, GC_greatest_real_heap_addr)
+            && (ADDR_GE(GC_least_real_heap_addr, target)
+                || ADDR_GE(target, GC_greatest_real_heap_addr))) {
+          bp = alternate_ptr;
         }
       }
 #   endif
@@ -436,8 +436,8 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t base)
 #   ifdef LINT2
       if (!ohdr) ABORT("Invalid GC_print_smashed_obj argument");
 #   endif
-    if ((word)clobbered_addr <= (word)(&ohdr->oh_sz)
-        || ohdr -> oh_string == 0) {
+    if (ADDR_GE((ptr_t)(&(ohdr -> oh_sz)), clobbered_addr)
+        || NULL == ohdr -> oh_string) {
         GC_err_printf(
                 "%s %p in or near object at %p(<smashed>, appr. sz= %lu)\n",
                 msg, (void *)clobbered_addr, p,
@@ -936,24 +936,20 @@ STATIC void GC_print_all_smashed_proc(void)
 STATIC void GC_CALLBACK GC_check_heap_block(struct hblk *hbp, GC_word dummy)
 {
     const hdr *hhdr = HDR(hbp);
+    ptr_t p = hbp -> hb_body;
+    ptr_t plim;
     word sz = hhdr -> hb_sz;
     word bit_no;
-    char *p, *plim;
 
     UNUSED_ARG(dummy);
-    p = hbp->hb_body;
-    if (sz > MAXOBJBYTES) {
-      plim = p;
-    } else {
-      plim = hbp->hb_body + HBLKSIZE - sz;
-    }
-    /* go through all words in block */
-    for (bit_no = 0; (word)p <= (word)plim;
+    plim = sz > MAXOBJBYTES ? p : p + HBLKSIZE - sz;
+    /* Go through all words in block.   */
+    for (bit_no = 0; ADDR_GE(plim, p);
          bit_no += MARK_BIT_OFFSET(sz), p += sz) {
-      if (mark_bit_from_hdr(hhdr, bit_no) && GC_HAS_DEBUG_INFO((ptr_t)p)) {
+      if (mark_bit_from_hdr(hhdr, bit_no) && GC_HAS_DEBUG_INFO(p)) {
         ptr_t clobbered = GC_check_annotated_obj((oh *)p);
-        if (clobbered != 0)
-          GC_add_smashed(clobbered);
+
+        if (clobbered != NULL) GC_add_smashed(clobbered);
       }
     }
 }
@@ -983,7 +979,7 @@ GC_INNER GC_bool GC_check_leaked(ptr_t base)
 
   /* Validate freed object's content. */
   p = (word *)(base + sizeof(oh));
-  obj_sz = BYTES_TO_WORDS(HDR(base)->hb_sz - sizeof(oh));
+  obj_sz = BYTES_TO_WORDS(HDR(base) -> hb_sz - sizeof(oh));
   for (i = 0; i < obj_sz; ++i)
     if (p[i] != GC_FREED_MEM_MARKER) {
         GC_set_mark_bit(base); /* do not reclaim it in this cycle */

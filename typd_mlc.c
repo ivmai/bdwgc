@@ -179,7 +179,7 @@ STATIC mse *GC_CALLBACK GC_typed_mark_proc(word *addr, mse *mark_stack_top,
 
             LOAD_WORD_OR_CONTINUE(q, current_p);
             FIXUP_POINTER(q);
-            if ((word)q > (word)least_ha && (word)q < (word)greatest_ha) {
+            if (ADDR_LT(least_ha, q) && ADDR_LT(q, greatest_ha)) {
                 PUSH_CONTENTS(q, mark_stack_top, mark_stack_limit, current_p);
             }
         }

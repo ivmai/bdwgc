@@ -339,8 +339,8 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #   endif
     crtn = p -> crtn;
     *phi = crtn -> stack_end;
-    if (crtn -> altstack != NULL && (word)(crtn -> altstack) <= (word)lo
-        && (word)lo <= (word)(crtn -> altstack) + crtn -> altstack_size) {
+    if (crtn -> altstack != NULL && ADDR_GE(lo, crtn -> altstack)
+        && ADDR_GE(crtn -> altstack + crtn -> altstack_size, lo)) {
       *paltstack_lo = lo;
       *paltstack_hi = crtn -> altstack + crtn -> altstack_size;
       lo = crtn -> normstack;
@@ -391,7 +391,7 @@ GC_INNER void GC_push_all_stacks(void)
                                       &altstack_lo, &altstack_hi, &found_me);
 
         if (lo) {
-          GC_ASSERT((word)lo <= (word)hi);
+          GC_ASSERT(ADDR_GE(hi, lo));
           total_size += hi - lo;
           GC_push_all_stack(lo, hi);
         }
@@ -418,7 +418,7 @@ GC_INNER void GC_push_all_stacks(void)
                                         &altstack_lo, &altstack_hi, &found_me);
 
           if (lo) {
-            GC_ASSERT((word)lo <= (word)hi);
+            GC_ASSERT(ADDR_GE(hi, lo));
             total_size += hi - lo;
             GC_push_all_stack_sections(lo, hi, p -> crtn -> traced_stack_sect);
           }

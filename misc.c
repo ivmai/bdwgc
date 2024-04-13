@@ -451,8 +451,8 @@ GC_API void * GC_CALL GC_base(void * p)
     sz = hhdr -> hb_sz;
     r -= HBLKDISPL(r) % sz;
     limit = r + sz;
-    if (((word)limit > (word)(h + 1) && sz <= HBLKSIZE)
-        || (word)p >= (word)limit)
+    if ((ADDR_LT((ptr_t)(h + 1), limit) && sz <= HBLKSIZE)
+        || ADDR_GE((ptr_t)p, limit))
       return NULL;
 
     return r;

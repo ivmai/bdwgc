@@ -57,12 +57,12 @@ STATIC GC_bool GC_was_faulted(struct hblk *h)
 
 STATIC word GC_checksum(struct hblk *h)
 {
-    word *p = (word *)h;
+    word *p;
     word *lim = (word *)(h+1);
     word result = 0;
 
-    while ((word)p < (word)lim) {
-        result += *p++;
+    for (p = (word *)h; ADDR_LT((ptr_t)p, (ptr_t)lim); p++) {
+        result += *p;
     }
     return result | SIGNB; /* does not look like pointer */
 }
@@ -153,13 +153,16 @@ void GC_check_dirty(void)
     for (i = 0; i < GC_n_heap_sects; i++) {
         start = GC_heap_sects[i].hs_start;
         for (h = (struct hblk *)start;
-             (word)h < (word)(start + GC_heap_sects[i].hs_bytes); h++) {
-             GC_update_check_page(h, index);
-             index++;
-             if (index >= NSUMS) goto out;
+             ADDR_LT((ptr_t)h, start + GC_heap_sects[i].hs_bytes); h++) {
+            GC_update_check_page(h, index);
+            index++;
+            if (index >= NSUMS) {
+                i = GC_n_heap_sects;
+                break;
+            }
         }
     }
-out:
+
     GC_COND_LOG_PRINTF("Checked %lu clean and %lu dirty pages\n",
                        GC_n_clean, GC_n_dirty);
     if (GC_n_dirty_errors > 0) {
