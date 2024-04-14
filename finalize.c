@@ -212,7 +212,7 @@ STATIC int GC_register_disappearing_link_inner(
           UNLOCK();
 #         ifndef DBG_HDRS_ALL
             /* Free unused new_dl returned by GC_oom_fn() */
-            GC_free((void *)new_dl);
+            GC_free(new_dl);
 #         endif
           return GC_DUPLICATE;
         }
@@ -723,7 +723,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
           /* Interruption by a signal in the middle of this     */
           /* should be safe.  The client may see only *ocd      */
           /* updated, but we'll declare that to be his problem. */
-          if (ocd) *ocd = (void *)(curr_fo -> fo_client_data);
+          if (ocd) *ocd = curr_fo -> fo_client_data;
           if (ofn) *ofn = curr_fo -> fo_fn;
           /* Delete the structure for obj.      */
           if (prev_fo == 0) {
@@ -738,7 +738,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
             /* estimate will only make the table larger than    */
             /* necessary.                                       */
 #           if !defined(THREADS) && !defined(DBG_HDRS_ALL)
-              GC_free((void *)curr_fo);
+              GC_free(curr_fo);
 #           endif
           } else {
             curr_fo -> fo_fn = fn;
@@ -759,7 +759,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
           UNLOCK();
 #         ifndef DBG_HDRS_ALL
               /* Free unused new_fo returned by GC_oom_fn() */
-              GC_free((void *)new_fo);
+              GC_free(new_fo);
 #         endif
           return;
         }
@@ -1298,8 +1298,8 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
         UNLOCK();
         fo_set_next(curr_fo, 0);
         real_ptr = (ptr_t)(curr_fo -> fo_hidden_base); /* revealed */
-        (*(curr_fo -> fo_fn))(real_ptr, curr_fo -> fo_client_data);
-        curr_fo -> fo_client_data = 0;
+        curr_fo -> fo_fn(real_ptr, curr_fo -> fo_client_data);
+        curr_fo -> fo_client_data = NULL;
         ++count;
         /* Explicit freeing of curr_fo is probably a bad idea.  */
         /* It throws off accounting if nearly all objects are   */

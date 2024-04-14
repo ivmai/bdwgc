@@ -385,13 +385,11 @@ static struct GC_ms_entry *GC_CALLBACK fake_gcj_mark_proc(GC_word *addr,
         addr = (GC_word *)GC_USR_PTR_FROM_BASE(addr);
     }
     x = (sexpr)(addr + 1); /* Skip the vtable pointer. */
-    mark_stack_top = GC_MARK_AND_PUSH((void *)(x -> sexpr_cdr),
+    mark_stack_top = GC_MARK_AND_PUSH(x -> sexpr_cdr,
                                       mark_stack_top, mark_stack_limit,
                                       (void **)&(x -> sexpr_cdr));
-    mark_stack_top = GC_MARK_AND_PUSH((void *)(x -> sexpr_car),
-                                      mark_stack_top, mark_stack_limit,
-                                      (void **)&(x -> sexpr_car));
-    return mark_stack_top;
+    return GC_MARK_AND_PUSH(x -> sexpr_car, mark_stack_top, mark_stack_limit,
+                            (void **)&(x -> sexpr_car));
 }
 
 #endif /* GC_GCJ_SUPPORT */
@@ -793,7 +791,7 @@ static void check_uncollectable_ints(sexpr list, int low, int up)
 #       else
           DWORD thread_id;
 
-          h = CreateThread((SECURITY_ATTRIBUTES *)NULL, (GC_word)0,
+          h = CreateThread((SECURITY_ATTRIBUTES *)NULL, 0U,
                            tiny_reverse_test, NULL, (DWORD)0, &thread_id);
                                 /* Explicitly specify types of the      */
                                 /* arguments to test the prototype.     */
@@ -896,18 +894,18 @@ static void *GC_CALLBACK reverse_test_inner(void *data)
     /* Check that realloc updates object descriptors correctly */
     f = (sexpr *)checkOOM(GC_MALLOC(4 * sizeof(sexpr)));
     AO_fetch_and_add1(&collectable_count);
-    f = (sexpr *)checkOOM(GC_REALLOC((void *)f, 6 * sizeof(sexpr)));
+    f = (sexpr *)checkOOM(GC_REALLOC(f, 6 * sizeof(sexpr)));
     AO_fetch_and_add1(&realloc_count);
     GC_PTR_STORE_AND_DIRTY(f + 5, ints(1, 17));
     g = (sexpr *)checkOOM(GC_MALLOC(513 * sizeof(sexpr)));
     AO_fetch_and_add1(&collectable_count);
     test_generic_malloc_or_special(g);
-    g = (sexpr *)checkOOM(GC_REALLOC((void *)g, 800 * sizeof(sexpr)));
+    g = (sexpr *)checkOOM(GC_REALLOC(g, 800 * sizeof(sexpr)));
     AO_fetch_and_add1(&realloc_count);
     GC_PTR_STORE_AND_DIRTY(g + 799, ints(1, 18));
     h = (sexpr *)checkOOM(GC_MALLOC(1025 * sizeof(sexpr)));
     AO_fetch_and_add1(&collectable_count);
-    h = (sexpr *)checkOOM(GC_REALLOC((void *)h, 2000 * sizeof(sexpr)));
+    h = (sexpr *)checkOOM(GC_REALLOC(h, 2000 * sizeof(sexpr)));
     AO_fetch_and_add1(&realloc_count);
 #   ifdef GC_GCJ_SUPPORT
       GC_PTR_STORE_AND_DIRTY(h + 1999, gcj_ints(1, 200));
@@ -926,7 +924,7 @@ static void *GC_CALLBACK reverse_test_inner(void *data)
     c = (sexpr)((char *)c + sizeof(char *));
     d = (sexpr)((char *)d + sizeof(char *));
 
-    GC_FREE((void *)e);
+    GC_FREE(e);
 
     check_ints(b,1,50);
 # ifdef PRINT_AND_CHECK_INT_LIST
@@ -1103,7 +1101,7 @@ static tn * mktree(int n)
 
 #   ifndef GC_NO_FINALIZATION
       if (!GC_get_find_leak()) {
-        GC_REGISTER_FINALIZER((void *)result, finalizer, (void *)(GC_word)n,
+        GC_REGISTER_FINALIZER(result, finalizer, (void *)(GC_word)n,
                               (GC_finalization_proc *)0, (void **)0);
         if (my_index >= MAX_FINALIZED) {
             GC_printf("live_indicators overflowed\n");
@@ -1111,17 +1109,17 @@ static tn * mktree(int n)
         }
         live_indicators[my_index] = 13;
         if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(
-                    (void **)(&(live_indicators[my_index])), result) != 0) {
+                        (void **)&live_indicators[my_index], result) != 0) {
             GC_printf("GC_general_register_disappearing_link failed\n");
             FAIL;
         }
-        if (GC_move_disappearing_link((void **)(&(live_indicators[my_index])),
-                    (void **)(&(live_indicators[my_index]))) != GC_SUCCESS) {
+        if (GC_move_disappearing_link((void **)&live_indicators[my_index],
+                        (void **)&live_indicators[my_index]) != GC_SUCCESS) {
             GC_printf("GC_move_disappearing_link(link,link) failed\n");
             FAIL;
         }
         *new_link = (void *)live_indicators[my_index];
-        if (GC_move_disappearing_link((void **)(&(live_indicators[my_index])),
+        if (GC_move_disappearing_link((void **)&live_indicators[my_index],
                                       new_link) != GC_SUCCESS) {
             GC_printf("GC_move_disappearing_link(new_link) failed\n");
             FAIL;
@@ -1135,13 +1133,13 @@ static tn * mktree(int n)
             GC_printf("GC_unregister_disappearing_link failed\n");
             FAIL;
         }
-        if (GC_move_disappearing_link((void **)(&(live_indicators[my_index])),
+        if (GC_move_disappearing_link((void **)&live_indicators[my_index],
                                       new_link) != GC_NOT_FOUND) {
             GC_printf("GC_move_disappearing_link(new_link) failed 2\n");
             FAIL;
         }
         if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(
-                    (void **)(&(live_indicators[my_index])), result) != 0) {
+                        (void **)&live_indicators[my_index], result) != 0) {
             GC_printf("GC_general_register_disappearing_link failed 2\n");
             FAIL;
         }

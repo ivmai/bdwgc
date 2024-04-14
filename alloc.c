@@ -1484,14 +1484,14 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t bytes)
 
     if (ADDR_GE((ptr_t)GC_least_plausible_heap_addr, (ptr_t)h)
         || EXPECT(NULL == GC_least_plausible_heap_addr, FALSE)) {
-        GC_least_plausible_heap_addr = (void *)((ptr_t)h - sizeof(word));
+        GC_least_plausible_heap_addr = (ptr_t)h - sizeof(word);
                 /* Making it a little smaller than necessary prevents   */
                 /* us from getting a false hit from the variable        */
                 /* itself.  There's some unintentional reflection       */
                 /* here.                                                */
     }
     if (ADDR_LT((ptr_t)GC_greatest_plausible_heap_addr, endp)) {
-        GC_greatest_plausible_heap_addr = (void *)endp;
+        GC_greatest_plausible_heap_addr = endp;
     }
 #   ifdef SET_REAL_HEAP_BOUNDS
       if (ADDR_LT((ptr_t)h, GC_least_real_heap_addr)
@@ -1622,14 +1622,14 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
 
         if (ADDR_LT((ptr_t)space, new_limit)
             && ADDR_LT((ptr_t)GC_greatest_plausible_heap_addr, new_limit))
-          GC_greatest_plausible_heap_addr = (void *)new_limit;
+          GC_greatest_plausible_heap_addr = new_limit;
     } else {
         /* Heap is growing down. */
         ptr_t new_limit = (ptr_t)space - expansion_slop - sizeof(word);
 
         if (ADDR_LT(new_limit, (ptr_t)space)
             && ADDR_LT(new_limit, (ptr_t)GC_least_plausible_heap_addr))
-          GC_least_plausible_heap_addr = (void *)new_limit;
+          GC_least_plausible_heap_addr = new_limit;
     }
     GC_last_heap_addr = (ptr_t)space;
 

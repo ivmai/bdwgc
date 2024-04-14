@@ -546,7 +546,7 @@ static void * GC_CALLBACK refill_cache(void * client_data)
 #ifndef CORD_USE_GCC_ATOMIC
   static void * GC_CALLBACK get_cache_line(void * client_data)
   {
-    return (void *)(*(cache_line **)client_data);
+    return *(cache_line **)client_data;
   }
 #endif
 

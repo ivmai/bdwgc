@@ -2017,7 +2017,7 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
       sb -> reg_base = crtn -> backing_store_end;
 #   endif
     READER_UNLOCK();
-    return (void *)me; /* gc_thread_handle */
+    return me; /* gc_thread_handle */
 }
 
 /* GC_call_with_gc_active() has the opposite to GC_do_blocking()        */

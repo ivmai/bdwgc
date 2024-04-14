@@ -380,7 +380,7 @@ STATIC void GC_init_size_map(void)
                         /* implementations of GC_clear_stack_inner.     */
         return GC_clear_stack_inner(arg, limit);
       }
-      BZERO((void *)dummy, SMALL_CLEAR_SIZE*sizeof(word));
+      BZERO((/* no volatile */ void *)dummy, SMALL_CLEAR_SIZE * sizeof(word));
 #   else
       if (GC_gc_no != GC_stack_last_cleared) {
         /* Start things over, so we clear the entire stack again.   */
@@ -1177,7 +1177,7 @@ GC_API void GC_CALL GC_init(void)
           ptr_t addr = (ptr_t)STRTOULL(str, NULL, 16);
 
           if ((word)addr < 0x1000)
-              WARN("Unlikely trace address: %p\n", (void *)addr);
+              WARN("Unlikely trace address: %p\n", addr);
           GC_trace_addr = addr;
 #       endif
       }
@@ -2283,9 +2283,9 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
     struct GC_stack_base base;
     void *result;
 
-    base.mem_base = (void *)&base;
+    base.mem_base = &base;
 #   ifdef IA64
-      base.reg_base = (void *)GC_save_regs_in_stack();
+      base.reg_base = GC_save_regs_in_stack();
       /* TODO: Unnecessarily flushes register stack,    */
       /* but that probably doesn't hurt.                */
 #   elif defined(E2K)

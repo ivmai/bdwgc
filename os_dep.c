@@ -2660,7 +2660,7 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
 
           if (EXPECT(MAP_FAILED == result, FALSE))
             ABORT_ON_REMAP_FAIL("unmap: mmap", start_addr, len);
-          if (result != (void *)start_addr)
+          if (result != start_addr)
             ABORT("unmap: mmap() result differs from start_addr");
 #         if defined(CPPCHECK) || defined(LINT2)
             /* Explicitly store the resource handle to a global variable. */
@@ -2741,7 +2741,7 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
                                    zero_fd, 0 /* offset */);
           if (EXPECT(MAP_FAILED == result, FALSE))
             ABORT_ON_REMAP_FAIL("remap: mmap", start_addr, len);
-          if (result != (void *)start_addr)
+          if (result != start_addr)
             ABORT("remap: mmap() result differs from start_addr");
 #         if defined(CPPCHECK) || defined(LINT2)
             GC_noop1((word)result);

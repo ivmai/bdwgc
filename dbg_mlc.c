@@ -1011,7 +1011,7 @@ STATIC void * GC_make_closure(GC_finalization_proc fn, void * data)
       result -> cl_fn = fn;
       result -> cl_data = data;
     }
-    return (void *)result;
+    return result;
 }
 
 /* An auxiliary fns to make finalization work correctly with displaced  */
@@ -1019,7 +1019,7 @@ STATIC void * GC_make_closure(GC_finalization_proc fn, void * data)
 STATIC void GC_CALLBACK GC_debug_invoke_finalizer(void * obj, void * data)
 {
     struct closure * cl = (struct closure *) data;
-    (*(cl -> cl_fn))((void *)((char *)obj + sizeof(oh)), cl -> cl_data);
+    cl -> cl_fn((ptr_t)obj + sizeof(oh), cl -> cl_data);
 }
 
 /* Special finalizer_proc value to detect GC_register_finalizer() failure. */

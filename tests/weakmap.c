@@ -204,7 +204,7 @@ static void *weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
                                           (int)wm->weakobj_kind);
   CHECK_OUT_OF_MEMORY(new_base);
   *new_base = (GC_word)wm | FINALIZER_CLOSURE_FLAG;
-  new_obj = (void *)(new_base + 1);
+  new_obj = new_base + 1;
   memcpy(new_obj, obj, wm->obj_size);
   GC_end_stubborn_change(new_base);
 
