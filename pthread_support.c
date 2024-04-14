@@ -932,7 +932,8 @@ GC_API int GC_CALL GC_thread_is_registered(void)
 }
 
 GC_API void GC_CALL GC_register_altstack(void *normstack,
-                GC_word normstack_size, void *altstack, GC_word altstack_size)
+                                         size_t normstack_size,
+                                         void *altstack, size_t altstack_size)
 {
 #ifdef GC_WIN32_THREADS
   /* TODO: Implement */

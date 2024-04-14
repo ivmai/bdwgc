@@ -89,10 +89,10 @@ typedef struct GC_StackContext_Rep {
 # else
     ptr_t altstack;             /* The start of the alt-stack if there  */
                                 /* is one, NULL otherwise.              */
-    word altstack_size;         /* The size of the alt-stack if exists. */
-    ptr_t normstack;            /* The start and size of the "normal"   */
-                                /* stack (set by GC_register_altstack). */
-    word normstack_size;
+    ptr_t normstack;            /* Same for the "normal" stack (set by  */
+                                /* GC_register_altstack).               */
+    size_t altstack_size;       /* The size of the alt-stack if exists. */
+    size_t normstack_size;
 # endif
 
 # ifdef E2K

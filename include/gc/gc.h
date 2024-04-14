@@ -1740,9 +1740,9 @@ GC_API void GC_CALL GC_start_mark_threads(void);
   /* while it is on an alt-stack.  Acquires the allocator lock in the   */
   /* reader mode.                                                       */
   GC_API void GC_CALL GC_register_altstack(void * /* normstack */,
-                                           GC_word /* normstack_size */,
+                                           size_t /* normstack_size */,
                                            void * /* altstack */,
-                                           GC_word /* altstack_size */);
+                                           size_t /* altstack_size */);
 
   /* Unregister the current thread.  Only an explicitly registered      */
   /* thread (i.e. for which GC_register_my_thread() returns GC_SUCCESS) */
