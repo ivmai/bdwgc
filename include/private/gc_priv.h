@@ -303,7 +303,7 @@ typedef struct hblkhdr hdr;
 #ifdef STACK_GROWS_UP
 # define HOTTER_THAN(p,q) ADDR_LT(q, p) /* inverse */
 # define MAKE_COOLER(p,d) \
-            (void)((p) -= (word)(p) >= (word)((d) * sizeof(*(p))) ? (d) : 0)
+            (void)((p) -= (word)(p) > (word)((d) * sizeof(*(p))) ? (d) : 0)
 # define MAKE_HOTTER(p,d) (void)((p) += (d))
 #else
 # define HOTTER_THAN(p,q) ADDR_LT(p, q)
