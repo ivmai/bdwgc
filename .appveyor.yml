@@ -1,7 +1,7 @@
 version: 8.3.0-{build}
 
 image:
-- Visual Studio 2019
+- Previous Visual Studio 2019
 
 environment:
   STUDIO_VERSION_EDITION: Studio\2019\Community
