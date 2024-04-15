@@ -2165,15 +2165,17 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
     /* Cygwin/x64 does not add leading underscore to symbols anymore.   */
     extern int __data_start__[], __data_end__[];
     extern int __bss_start__[], __bss_end__[];
-#   define GC_DATASTART (GC_ADDR_LT(__data_start__, __bss_start__) \
+#   define GC_DATASTART (GC_ADDR_LT((char *)__data_start__, \
+                                    (char *)__bss_start__) \
                          ? (void *)__data_start__ : (void *)__bss_start__)
-#   define GC_DATAEND (GC_ADDR_LT(__bss_end__, __data_end__) \
+#   define GC_DATAEND (GC_ADDR_LT((char *)__bss_end__, (char *)__data_end__) \
                        ? (void *)__data_end__ : (void *)__bss_end__)
 # else
     extern int _data_start__[], _data_end__[], _bss_start__[], _bss_end__[];
-#   define GC_DATASTART (GC_ADDR_LT(_data_start__, _bss_start__) \
+#   define GC_DATASTART (GC_ADDR_LT((char *)_data_start__, \
+                                    (char *)_bss_start__) \
                          ? (void *)_data_start__ : (void *)_bss_start__)
-#   define GC_DATAEND (GC_ADDR_LT(_bss_end__, _data_end__) \
+#   define GC_DATAEND (GC_ADDR_LT((char *)_bss_end__, (char *)_data_end__) \
                        ? (void *)_data_end__ : (void *)_bss_end__)
 # endif /* !__x86_64__ */
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND); \
