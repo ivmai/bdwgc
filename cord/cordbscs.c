@@ -237,7 +237,7 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
             result -> generic.left_len = (unsigned char)lenx;
         result -> generic.len = (unsigned long)result_len;
         result -> data.concat.left = x;
-        GC_PTR_STORE_AND_DIRTY((void *)(&result -> data.concat.right), y);
+        GC_PTR_STORE_AND_DIRTY(&(result -> data.concat.right), y);
         GC_reachable_here(x);
         if (depth >= CORD_MAX_DEPTH) {
             return CORD_balance((CORD)result);
@@ -278,7 +278,7 @@ CORD CORD_cat(CORD x, CORD y)
             result -> generic.left_len = (unsigned char)lenx;
         result -> generic.len = (unsigned long)result_len;
         result -> data.concat.left = x;
-        GC_PTR_STORE_AND_DIRTY((void *)&(result -> data.concat.right), y);
+        GC_PTR_STORE_AND_DIRTY(&(result -> data.concat.right), y);
         GC_reachable_here(x);
         if (depth >= CORD_MAX_DEPTH) {
             return CORD_balance((CORD)result);
@@ -366,7 +366,7 @@ static CORD CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
     if (sa == 0) OUT_OF_MEMORY;
     sa->sa_index = i;
     GC_PTR_STORE_AND_DIRTY(&sa->sa_cord, x);
-    result = CORD_from_fn_inner(f, (void *)sa, n);
+    result = CORD_from_fn_inner(f, sa, n);
     if ((CORD)result != CORD_EMPTY && 0 == result -> generic.nul)
         result -> generic.header = SUBSTR_HDR;
     return (CORD)result;
