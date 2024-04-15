@@ -747,13 +747,14 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
     if (0 == namelen) /* a sanity check */
       return NULL;
     for (end_of_content = p + GC_envfile_length;
-         p != end_of_content; p += strlen(p) + 1) {
+         ADDR_LT((ptr_t)p, (ptr_t)end_of_content); p += strlen(p) + 1) {
       if (strncmp(p, name, namelen) == 0 && *(p += namelen) == '=') {
         p++; /* the match is found; skip '=' */
         return *p != '\0' ? p : NULL;
       }
       /* If not matching then skip to the next line. */
     }
+    GC_ASSERT(p == end_of_content);
     return NULL; /* no match found */
   }
 #endif /* GC_READ_ENV_FILE */
