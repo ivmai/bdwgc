@@ -613,9 +613,9 @@ static void CORD_init_min_len(void)
     min_len[0] = previous = 1;
     min_len[1] = last = 2;
     for (i = 2; i < CORD_MAX_DEPTH; i++) {
-        size_t current = last + previous;
+        size_t current = last < (~(size_t)0) - previous ? last + previous
+                            : last /* overflow */;
 
-        if (current < last) /* overflow */ current = last;
         min_len[i] = current;
         previous = last;
         last = current;
