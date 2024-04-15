@@ -4105,7 +4105,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
           h = (struct hblk *)vaddr;
           if (EXPECT(ADDR_LT(vaddr, start), FALSE))
             h = (struct hblk *)start;
-          for (; ADDR_LT(h, next_vaddr); h++) {
+          for (; ADDR_LT((ptr_t)h, next_vaddr); h++) {
             word index = PHT_HASH(h);
 
             /* Filter out the blocks without pointers.  It might worth  */
