@@ -29,7 +29,6 @@ GC_same_obj_print_proc_t GC_same_obj_print_proc =
 
 GC_API void * GC_CALL GC_same_obj(void *p, void *q)
 {
-    struct hblk *h;
     hdr *hhdr;
     ptr_t base, limit;
     word sz;
@@ -45,7 +44,8 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
     /* If it's a pointer to the middle of a large object, move it       */
     /* to the beginning.                                                */
     if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-        h = GC_find_starting_hblk(HBLKPTR(p), &hhdr);
+        struct hblk *h = GC_find_starting_hblk(HBLKPTR(p), &hhdr);
+
         limit = (ptr_t)h + hhdr -> hb_sz;
         if (ADDR_GE((ptr_t)p, limit) || ADDR_GE((ptr_t)q, limit)
             || ADDR_LT((ptr_t)q, (ptr_t)h)) {

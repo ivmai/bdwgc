@@ -139,11 +139,8 @@ void GC_check_dirty(void)
 {
     int index;
     unsigned i;
-    struct hblk *h;
-    ptr_t start;
 
     GC_check_blocks();
-
     GC_n_dirty_errors = 0;
     GC_n_faulted_dirty_errors = 0;
     GC_n_clean = 0;
@@ -151,7 +148,9 @@ void GC_check_dirty(void)
 
     index = 0;
     for (i = 0; i < GC_n_heap_sects; i++) {
-        start = GC_heap_sects[i].hs_start;
+        ptr_t start = GC_heap_sects[i].hs_start;
+        struct hblk *h;
+
         for (h = (struct hblk *)start;
              ADDR_LT((ptr_t)h, start + GC_heap_sects[i].hs_bytes); h++) {
             GC_update_check_page(h, index);
