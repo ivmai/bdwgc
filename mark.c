@@ -763,7 +763,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           mark_stack_top--;
 #         ifdef ENABLE_TRACE
             if (ADDR_GE(GC_trace_addr, current_p)) {
-              void *base = GC_base(current_p);
+              const void *base = GC_base(current_p);
 
               if (base != NULL && GC_base(GC_trace_addr) == base) {
                 GC_log_printf("GC #%lu: tracing from %p, proc descr %lu\n",

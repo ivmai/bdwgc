@@ -796,7 +796,7 @@ static struct hblk *find_nonbl_hblk(struct hblk *last_hbp, word size_remain,
 static void drop_hblk_in_chunks(int n, struct hblk *hbp, hdr *hhdr)
 {
   size_t total_size = (size_t)(hhdr -> hb_sz);
-  struct hblk *limit = hbp + divHBLKSZ(total_size);
+  const struct hblk *limit = hbp + divHBLKSZ(total_size);
 
   GC_ASSERT(HDR(hbp) == hhdr);
   GC_ASSERT(modHBLKSZ(total_size) == 0 && total_size > 0);
