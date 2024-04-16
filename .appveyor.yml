@@ -5,6 +5,7 @@ image:
 
 environment:
   STUDIO_VERSION_EDITION: Studio\2022\Community
+  MINGW_FOLDER: mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0\mingw32
   DJGPP_VER: 3.4
   DJGPP_GCC_VER: 1220
   DMC_VER: 857
@@ -115,9 +116,8 @@ build_script:
     && 7z x -o.. dm%DMC_VER%c.zip > nul && set "path=%cd%\..\dm\bin;%path%"
     && make -f digimars.mak CFLAGS_EXTRA="-wx %CFLAGS_EXTRA%" )
 - cmd: if [%TARGET%]==[mingw-shared-no-make] (
-    C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc
-       && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -shared -o gc.dll extra/gc.c" )
+    set "path=C:\%MINGW_FOLDER%\bin;%path%"
+    && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -shared -o gc.dll extra/gc.c )
 - cmd: if [%TARGET%]==[msys64] (
     C:\msys64\usr\bin\bash -e -l -c
       "cd /c/projects/bdwgc
@@ -150,10 +150,9 @@ test_script:
     && type gctest.gc.log cpptest.gc.log
     && make -f digimars.mak clean )
 - cmd: if [%TARGET%]==[mingw-shared-no-make] (
-    C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc
-       && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o gctest.exe tests/gctest.c gc.dll
-       && gctest.exe" )
+    set "path=C:\%MINGW_FOLDER%\bin;%path%"
+    && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o gctest.exe tests/gctest.c gc.dll
+    && gctest.exe )
 - cmd: if [%TARGET%]==[msys64] (
     C:\msys64\usr\bin\bash -e -l -c
       "cd /c/projects/bdwgc
