@@ -1,10 +1,10 @@
 version: 8.3.0-{build}
 
 image:
-- Previous Visual Studio 2019
+- Visual Studio 2022
 
 environment:
-  STUDIO_VERSION_EDITION: Studio\2019\Community
+  STUDIO_VERSION_EDITION: Studio\2022\Community
   DJGPP_VER: 3.4
   DJGPP_GCC_VER: 1220
   DMC_VER: 857
@@ -99,7 +99,7 @@ build_script:
     && cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
     && cmake --build . --config %CMAKE_CONFIG% --verbose --parallel )
 - cmd: if [%TARGET%]==[nmake] (
-    "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
+    "C:\Program Files\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
     && nmake /f NT_MAKEFILE %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" )
 - cmd: if [%TARGET%]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c
@@ -143,7 +143,7 @@ test_script:
 - cmd: if [%TARGET%]==[cmake] (
     ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
 - cmd: if [%TARGET%]==[nmake] (
-    "C:\Program Files (x86)\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
+    "C:\Program Files\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
     && nmake /f NT_MAKEFILE %TEST_TARGET% %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%"
     && nmake /f NT_MAKEFILE clean )
 - cmd: if [%TARGET%]==[cygwin] (
