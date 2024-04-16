@@ -14,7 +14,7 @@ jobs:
 
       matrix:
         # TODO: move from nightly to zig 0.12 final when released.
-        zig_version: [ "0.12.0-dev.2833+8802ec583" ]
+        zig_version: [ "0.12.0-dev.3666+a2b834e8c" ]
         os: [ macos-latest, ubuntu-latest ]
         gc_assertions: [ true ]
         large_config: [ false ]
