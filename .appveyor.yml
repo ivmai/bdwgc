@@ -51,14 +51,18 @@ environment:
     CFLAGS_EXTRA: -O3 -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT
   - TARGET: dmc
     CFLAGS_EXTRA: -s -DNO_MSGBOX_ON_ERROR
-  - TARGET: mingw
-  - TARGET: mingw
-    CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D EMPTY_GETENV_RESULTS -D GC_GCJ_SUPPORT -D USE_MUNMAP -D LARGE_CONFIG -D NO_MSGBOX_ON_ERROR
-    TEST_TARGET: check cord/de
-  - TARGET: mingw
-    CFLAGS_EXTRA: -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT -D GC_TIME_LIMIT=10 -D WINXP_USE_PERF_COUNTER -D NO_MSGBOX_ON_ERROR -D NO_TEST_ENDTHREADEX
   - TARGET: mingw-shared-no-make
     CFLAGS_EXTRA: -D GC_THREADS -D GC_ASSERTIONS -D ENABLE_DISCLAIM -D GC_GCJ_SUPPORT -D GC_PREFER_MPROTECT_VDB -D GC_CALL=__stdcall -D GC_CALLBACK=__fastcall -D CONSOLE_LOG -D NO_MSGBOX_ON_ERROR -D USE_RWLOCK -D _WIN32_WINNT=0x0600
+  - TARGET: msys64
+  - TARGET: msys64
+    CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D EMPTY_GETENV_RESULTS -D GC_GCJ_SUPPORT -D USE_MUNMAP -D LARGE_CONFIG -D NO_MSGBOX_ON_ERROR
+    TEST_TARGET: check cord/de
+  - TARGET: msys64
+    CFLAGS_EXTRA: -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT -D GC_TIME_LIMIT=10 -D WINXP_USE_PERF_COUNTER -D NO_MSGBOX_ON_ERROR -D NO_TEST_ENDTHREADEX
+  - TARGET: msys64
+    CFLAGS_EXTRA: -D NO_MSGBOX_ON_ERROR
+  - TARGET: msys64
+    CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT -D NO_RETRY_GET_THREAD_CONTEXT
   - TARGET: wcc
     WCC_SYSTEM: OS2
     CFLAGS_EXTRA: -DGC_ASSERTIONS
@@ -69,10 +73,6 @@ environment:
     WCC_SYSTEM: MSWIN32
     CFLAGS_EXTRA: -DCONSOLE_LOG -DUSE_MMAP -DUSE_MUNMAP
     WCC_INC_SUBDIR: nt
-  - TARGET: msys64
-    CFLAGS_EXTRA: -D NO_MSGBOX_ON_ERROR
-  - TARGET: msys64
-    CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT -D NO_RETRY_GET_THREAD_CONTEXT
   - TARGET: cygwin64
     CONF_OPTIONS: --enable-cplusplus --enable-gc-debug
   - TARGET: cygwin64
@@ -114,10 +114,6 @@ build_script:
     appveyor DownloadFile "http://ftp.digitalmars.com/Digital_Mars_C++/Patch/dm%DMC_VER%c.zip"
     && 7z x -o.. dm%DMC_VER%c.zip > nul && set "path=%cd%\..\dm\bin;%path%"
     && make -f digimars.mak CFLAGS_EXTRA="-wx %CFLAGS_EXTRA%" )
-- cmd: if [%TARGET%]==[mingw] (
-    C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc
-       && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw-shared-no-make] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
       "cd /c/projects/bdwgc
@@ -153,10 +149,6 @@ test_script:
     && make -f digimars.mak %TEST_TARGET% CFLAGS_EXTRA="-wx %CFLAGS_EXTRA%"
     && type gctest.gc.log cpptest.gc.log
     && make -f digimars.mak clean )
-- cmd: if [%TARGET%]==[mingw] (
-    C:\MinGW\msys\1.0\bin\bash -e -l -c
-      "cd /c/projects/bdwgc
-       && make -j -f Makefile.direct %TEST_TARGET% CC=gcc CURSES=-lgdi32 CFLAGS_EXTRA='-DGC_NOT_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[mingw-shared-no-make] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
       "cd /c/projects/bdwgc
@@ -165,7 +157,7 @@ test_script:
 - cmd: if [%TARGET%]==[msys64] (
     C:\msys64\usr\bin\bash -e -l -c
       "cd /c/projects/bdwgc
-       && make -j -f Makefile.direct %TEST_TARGET% CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+       && make -j -f Makefile.direct %TEST_TARGET% CC=gcc CURSES=-lgdi32 CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[wcc] (
     set "watcom=%cd%\..\watcom" && set "beginlibpath=%cd%\..\watcom\binp\dll"
     && set "path=%cd%\..\watcom\binnt64;%cd%\..\watcom\binnt"
