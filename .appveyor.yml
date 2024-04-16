@@ -73,16 +73,15 @@ environment:
     CFLAGS_EXTRA: -D NO_MSGBOX_ON_ERROR
   - TARGET: msys64
     CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT -D NO_RETRY_GET_THREAD_CONTEXT
-  - TARGET: cygwin
-    CONF_OPTIONS: --enable-cplusplus
-    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE
+  - TARGET: cygwin64
+    CONF_OPTIONS: --enable-cplusplus --enable-gc-debug
   - TARGET: cygwin64
     CONF_OPTIONS: --disable-threads
     CFLAGS_EXTRA: -std=c11 -D USE_WINALLOC
   - TARGET: cygwin64
     CONF_OPTIONS: --enable-cplusplus
     CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE -D DONT_PROTECT_PTRFREE
-  - TARGET: cygwin
+  - TARGET: cygwin64
     CONF_OPTIONS: --enable-cplusplus --disable-munmap --enable-gc-assertions --enable-redirect-malloc
   - TARGET: cygwin64
     CFLAGS_EXTRA: -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB
@@ -101,11 +100,6 @@ build_script:
 - cmd: if [%TARGET%]==[nmake] (
     "C:\Program Files\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
     && nmake /f NT_MAKEFILE %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" )
-- cmd: if [%TARGET%]==[cygwin] (
-    C:\cygwin\bin\bash -e -l -c
-      "cd /cygdrive/c/projects/bdwgc && ./autogen.sh
-       && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h
-       && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[cygwin64] (
     C:\cygwin64\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc && ./autogen.sh
@@ -146,10 +140,6 @@ test_script:
     "C:\Program Files\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
     && nmake /f NT_MAKEFILE %TEST_TARGET% %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%"
     && nmake /f NT_MAKEFILE clean )
-- cmd: if [%TARGET%]==[cygwin] (
-    C:\cygwin\bin\bash -e -l -c
-      "cd /cygdrive/c/projects/bdwgc
-       && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[cygwin64] (
     C:\cygwin64\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc
