@@ -65,9 +65,9 @@ environment:
     WCC_SYSTEM: MSWIN32
     CFLAGS_EXTRA: -DCONSOLE_LOG -DUSE_MMAP -DUSE_MUNMAP
     WCC_INC_SUBDIR: nt
-  - TARGET: mingw-w64
+  - TARGET: msys64
     CFLAGS_EXTRA: -D NO_MSGBOX_ON_ERROR
-  - TARGET: mingw-w64
+  - TARGET: msys64
     CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT -D NO_RETRY_GET_THREAD_CONTEXT
   - TARGET: cygwin
     CONF_OPTIONS: --enable-cplusplus
@@ -124,7 +124,7 @@ build_script:
     C:\MinGW\msys\1.0\bin\bash -e -l -c
       "cd /c/projects/bdwgc
        && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -shared -o gc.dll extra/gc.c" )
-- cmd: if [%TARGET%]==[mingw-w64] (
+- cmd: if [%TARGET%]==[msys64] (
     C:\msys64\usr\bin\bash -e -l -c
       "cd /c/projects/bdwgc
        && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
@@ -168,7 +168,7 @@ test_script:
       "cd /c/projects/bdwgc
        && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o gctest.exe tests/gctest.c gc.dll
        && gctest.exe" )
-- cmd: if [%TARGET%]==[mingw-w64] (
+- cmd: if [%TARGET%]==[msys64] (
     C:\msys64\usr\bin\bash -e -l -c
       "cd /c/projects/bdwgc
        && make -j -f Makefile.direct %TEST_TARGET% CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
