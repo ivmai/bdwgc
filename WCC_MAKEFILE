@@ -95,24 +95,24 @@ OBJS= alloc.obj reclaim.obj allchblk.obj backgraph.obj checksums.obj &
 
 gc.lib: $(OBJS)
         @%create $*.lb1
-        @for %i in ($(OBJS)) do @%append $*.lb1 +'%i'
+        @for %i in ($(OBJS)) do @%append $*.lb1 +%i
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
 cord.lib: $(COBJS)
         @%create $*.lb1
-        @for %i in ($(COBJS)) do @%append $*.lb1 +'%i'
+        @for %i in ($(COBJS)) do @%append $*.lb1 +%i
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
 gccpp.lib: gc_badalc.obj gc_cpp.obj
         @%create $*.lb1
-        @%append $*.lb1 +'gc_badalc.obj'
-        @%append $*.lb1 +'gc_cpp.obj'
+        @%append $*.lb1 +gc_badalc.obj
+        @%append $*.lb1 +gc_cpp.obj
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
 # The same as gccpp.lib but contains only gc_badalc.obj.
 gctba.lib: gc_badalc.obj
         @%create $*.lb1
-        @%append $*.lb1 +'gc_badalc.obj'
+        @%append $*.lb1 +gc_badalc.obj
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
 !else
@@ -134,7 +134,7 @@ gc.dll: gc.obj .AUTODEPEND
 !endif
         @%append $*.lnk op case
         @%append $*.lnk name $*
-        @%append $*.lnk file 'gc.obj'
+        @%append $*.lnk file gc.obj
         *wlink @$*.lnk
 
 cord.lib: cord.dll
@@ -151,7 +151,7 @@ cord.dll: $(COBJS) gc.lib .AUTODEPEND
 !endif
         @%append $*.lnk op case
         @%append $*.lnk name $*
-        @for %i in ($(COBJS)) do @%append $*.lnk file '%i'
+        @for %i in ($(COBJS)) do @%append $*.lnk file %i
         @%append $*.lnk library gc.lib
         *wlink @$*.lnk
 
@@ -169,8 +169,8 @@ gccpp.dll: gc_badalc.obj gc_cpp.obj gc.lib .AUTODEPEND
 !endif
         @%append $*.lnk op case
         @%append $*.lnk name $*
-        @%append $*.lnk file 'gc_badalc.obj'
-        @%append $*.lnk file 'gc_cpp.obj'
+        @%append $*.lnk file gc_badalc.obj
+        @%append $*.lnk file gc_cpp.obj
         @%append $*.lnk library gc.lib
         @%append $*.lnk library wr7$(CALLING)dll.lib
         *wlink @$*.lnk
@@ -189,7 +189,7 @@ gctba.dll: gc_badalc.obj gc.lib .AUTODEPEND
 !endif
         @%append $*.lnk op case
         @%append $*.lnk name $*
-        @%append $*.lnk file 'gc_badalc.obj'
+        @%append $*.lnk file gc_badalc.obj
         @%append $*.lnk library gc.lib
         @%append $*.lnk library wr7$(CALLING)dll.lib
         *wlink @$*.lnk
