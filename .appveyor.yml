@@ -5,6 +5,10 @@ image:
 
 environment:
   STUDIO_VERSION_EDITION: Studio\2019\Community
+  DJGPP_VER: 3.4
+  DJGPP_GCC_VER: 1220
+  DMC_VER: 857
+  WATCOM_VER: 2023-12-01
   CMAKE_CONFIG: Debug
   TEST_TARGET: check
   matrix:
@@ -108,13 +112,13 @@ build_script:
        && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h
        && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[djgpp-no-make] (
-    appveyor DownloadFile "https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-mingw-gcc1220-standalone.zip"
-    && 7z x -o.. djgpp-mingw-gcc1220-standalone.zip > nul
+    appveyor DownloadFile "https://github.com/andrewwutw/build-djgpp/releases/download/v%DJGPP_VER%/djgpp-mingw-gcc%DJGPP_GCC_VER%-standalone.zip"
+    && 7z x -o.. djgpp-mingw-gcc%DJGPP_GCC_VER%-standalone.zip > nul
     && ..\djgpp\setenv.bat
     && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -c extra/gc.c )
 - cmd: if [%TARGET%]==[dmc] (
-    appveyor DownloadFile "http://ftp.digitalmars.com/Digital_Mars_C++/Patch/dm857c.zip"
-    && 7z x -o.. dm857c.zip > nul && set "path=%cd%\..\dm\bin;%path%"
+    appveyor DownloadFile "http://ftp.digitalmars.com/Digital_Mars_C++/Patch/dm%DMC_VER%c.zip"
+    && 7z x -o.. dm%DMC_VER%c.zip > nul && set "path=%cd%\..\dm\bin;%path%"
     && make -f digimars.mak CFLAGS_EXTRA="-wx %CFLAGS_EXTRA%" )
 - cmd: if [%TARGET%]==[mingw] (
     C:\MinGW\msys\1.0\bin\bash -e -l -c
@@ -129,7 +133,7 @@ build_script:
       "cd /c/projects/bdwgc
        && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[wcc] (
-    appveyor DownloadFile "https://github.com/open-watcom/open-watcom-v2/releases/download/2023-12-01-Build/ow-snapshot.tar.xz"
+    appveyor DownloadFile "https://github.com/open-watcom/open-watcom-v2/releases/download/%WATCOM_VER%-Build/ow-snapshot.tar.xz"
     && 7z x ow-snapshot.tar.xz > nul && 7z x -o..\watcom ow-snapshot.tar > nul
     && set "watcom=%cd%\..\watcom" && set "path=%cd%\..\watcom\binnt64"
     && set "include=%cd%\..\watcom\h\%WCC_INC_SUBDIR%;%cd%\..\watcom\h"
