@@ -1605,6 +1605,7 @@ EXTERN_C_BEGIN
                          /* confused? me too. */
 #     define DATASTART ((ptr_t)(&__nullarea))
 #     define DATAEND ((ptr_t)(&_end))
+#     define GETPAGESIZE() 4096
 #   endif
 #   ifdef DARWIN
 #     define DARWIN_DONT_PARSE_STACK 1
