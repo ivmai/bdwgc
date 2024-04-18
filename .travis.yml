@@ -254,7 +254,7 @@ jobs:
     - MAKE_NPROC=8
   - compiler: gcc
     env:
-    - CFLAGS_EXTRA="-O3 -march=native"
+    - CFLAGS_EXTRA="-O3 -march=native -fanalyzer"
     - CONF_OPTIONS="--enable-cplusplus"
     - GCTEST_WITH_MPROTECT_VDB=true
     - NO_CLONE_LIBATOMIC_OPS=true
@@ -457,7 +457,7 @@ jobs:
   - compiler: gcc
     env:
     - CONF_OPTIONS="--enable-large-config --enable-redirect-malloc --disable-threads"
-    - CFLAGS_EXTRA="-O3"
+    - CFLAGS_EXTRA="-O3 -fanalyzer"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
       apt:
@@ -486,7 +486,7 @@ jobs:
   - compiler: gcc
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
-    - CFLAGS_EXTRA="-O3 -march=native -D DONT_PROTECT_PTRFREE -D GC_PREFER_MPROTECT_VDB"
+    - CFLAGS_EXTRA="-O3 -march=native -fanalyzer -D DONT_PROTECT_PTRFREE -D GC_PREFER_MPROTECT_VDB"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: osx
     env:
