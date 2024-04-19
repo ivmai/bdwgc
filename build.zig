@@ -48,7 +48,8 @@ pub fn build(b: *std.Build) void {
     const default_enable_threads = !t.isWasm(); // both emscripten and wasi
 
     // Customize build by passing "-D<option_name>[=false]" in command line.
-    // TODO: support enable_cplusplus
+    const enable_cplusplus = b.option(bool, "enable_cplusplus",
+                                      "C++ support") orelse false;
     const build_shared_libs = b.option(bool, "BUILD_SHARED_LIBS",
                 "Build shared libraries (otherwise static ones)") orelse true;
     const build_cord = b.option(bool, "build_cord",
@@ -68,7 +69,9 @@ pub fn build(b: *std.Build) void {
         "Enable threads discovery in GC") orelse true;
     const enable_rwlock = b.option(bool, "enable_rwlock",
         "Enable reader mode of the allocator lock") orelse false;
-    // TODO: support enable_throw_bad_alloc_library
+    const enable_throw_bad_alloc_library = b.option(bool,
+        "enable_throw_bad_alloc_library",
+        "Turn on C++ gctba library build") orelse true;
     const enable_gcj_support = b.option(bool, "enable_gcj_support",
                                         "Support for gcj") orelse true;
     const enable_sigrt_signals = b.option(bool, "enable_sigrt_signals",
@@ -476,6 +479,24 @@ pub fn build(b: *std.Build) void {
         flags.append("-D NO_MPROTECT_VDB") catch unreachable;
     }
 
+    if (enable_cplusplus and enable_werror) {
+        if (build_shared_libs and t.os.tag == .windows or t.abi == .msvc) {
+            // Avoid "replacement operator new[] cannot be declared inline"
+            // warnings.
+            flags.appendSlice(&.{
+                "-Wno-inline-new-delete",
+            }) catch unreachable;
+        }
+        if (t.abi == .msvc) {
+            // TODO: as of zig 0.12,
+            // "argument unused during compilation: -nostdinc++" warning is
+            // reported if using MS compiler.
+            flags.appendSlice(&.{
+                "-Wno-unused-command-line-argument",
+            }) catch unreachable;
+        }
+    }
+
     if (build_cord and enable_werror and !enable_threads
         and (t.abi == .gnueabi or t.abi == .gnueabihf or t.abi == .musleabi
              or t.abi == .musleabihf)) {
@@ -500,6 +521,61 @@ pub fn build(b: *std.Build) void {
     });
     gc.addIncludePath(b.path("include"));
     gc.linkLibC();
+
+    var gccpp = b.addStaticLibrary(.{
+        .name = "gccpp",
+        .target = target,
+        .optimize = optimize,
+    });
+    var gctba = b.addStaticLibrary(.{
+        .name = "gctba",
+        .target = target,
+        .optimize = optimize,
+    });
+    if (enable_cplusplus) {
+        if (build_shared_libs) {
+            gccpp = b.addSharedLibrary(.{
+                .name = "gccpp",
+                .target = target,
+                .optimize = optimize,
+            });
+        }
+        var gccpp_src_files = std.ArrayList([]const u8).init(b.allocator);
+        defer gccpp_src_files.deinit();
+        gccpp_src_files.appendSlice(&.{
+            "gc_badalc.cc",
+            "gc_cpp.cc",
+        }) catch unreachable;
+        gccpp.addCSourceFiles(.{
+            .files = gccpp_src_files.items,
+            .flags = flags.items,
+        });
+        gccpp.addIncludePath(b.path("include"));
+        gccpp.linkLibrary(gc);
+        linkLibCpp(gccpp);
+        if (enable_throw_bad_alloc_library) {
+            // The same as gccpp but contains only gc_badalc.
+            if (build_shared_libs) {
+                gctba = b.addSharedLibrary(.{
+                    .name = "gctba",
+                    .target = target,
+                    .optimize = optimize,
+                });
+            }
+            var gctba_src_files = std.ArrayList([]const u8).init(b.allocator);
+            defer gctba_src_files.deinit();
+            gctba_src_files.appendSlice(&.{
+                "gc_badalc.cc",
+            }) catch unreachable;
+            gctba.addCSourceFiles(.{
+                .files = gctba_src_files.items,
+                .flags = flags.items,
+            });
+            gctba.addIncludePath(b.path("include"));
+            gctba.linkLibrary(gc);
+            linkLibCpp(gctba);
+        }
+    }
 
     var cord = b.addStaticLibrary(.{
         .name = "cord",
@@ -542,6 +618,17 @@ pub fn build(b: *std.Build) void {
         installHeader(b, gc, "gc/gc_version.h");
         installHeader(b, gc, "gc/javaxfc.h");
         installHeader(b, gc, "gc/leak_detector.h");
+        if (enable_cplusplus) {
+            installHeader(b, gccpp, "gc_cpp.h");
+            installHeader(b, gccpp, "gc/gc_allocator.h");
+            installHeader(b, gccpp, "gc/gc_cpp.h");
+            if (enable_throw_bad_alloc_library) {
+                // The same headers as gccpp library has.
+                installHeader(b, gctba, "gc_cpp.h");
+                installHeader(b, gctba, "gc/gc_allocator.h");
+                installHeader(b, gctba, "gc/gc_cpp.h");
+            }
+        }
         if (enable_disclaim) {
             installHeader(b, gc, "gc/gc_disclaim.h");
         }
@@ -560,6 +647,12 @@ pub fn build(b: *std.Build) void {
     }
 
     b.installArtifact(gc);
+    if (enable_cplusplus) {
+        b.installArtifact(gccpp);
+        if (enable_throw_bad_alloc_library) {
+            b.installArtifact(gctba);
+        }
+    }
     if (build_cord) {
         b.installArtifact(cord);
     }
@@ -595,11 +688,26 @@ pub fn build(b: *std.Build) void {
                     "threadkeytest", "tests/threadkey.c");
         }
     }
+    if (enable_cplusplus) {
+        addTestExt(b, gc, gccpp, test_step, flags,
+                   "cpptest", "tests/cpp.cc");
+    }
     if (enable_disclaim) {
         addTest(b, gc, test_step, flags,
                 "disclaim_bench", "tests/disclaim_bench.c");
         addTest(b, gc, test_step, flags, "disclaimtest", "tests/disclaim.c");
         addTest(b, gc, test_step, flags, "weakmaptest", "tests/weakmap.c");
+    }
+}
+
+fn linkLibCpp(lib: *std.Build.Step.Compile) void {
+    const t = lib.rootModuleTarget();
+    if (t.abi == .msvc) {
+        // TODO: as of zig 0.12, "unable to build libcxxabi" warning is
+        // reported if linking C++ code using MS compiler.
+        lib.linkLibC();
+    } else {
+        lib.linkLibCpp();
     }
 }
 
