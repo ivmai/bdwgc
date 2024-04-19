@@ -1,11 +1,11 @@
-# This workflow is for zig-based build/test running on Linux and MacOS (x64).
+# This workflow is for zig-based build/test running on Linux, MacOS, Windows.
 name: zig build
 
 on: [ push, pull_request ]
 
 jobs:
   build:
-    name: ${{ matrix.os }} thr:${{ matrix.enable_threads }} rwlock:${{ matrix.enable_rwlock }} redir:${{ matrix.redirect_malloc }} gcdeb:${{ matrix.enable_gc_debug }} munmap:${{ matrix.enable_munmap }} paramark:${{ matrix.parallel_mark }} thrlocal:${{ matrix.thread_local_alloc }} dll:${{ matrix.shared_libs }}
+    name: ${{ matrix.os }} ${{ matrix.ttriple }} thr:${{ matrix.enable_threads }} rwlock:${{ matrix.enable_rwlock }} redir:${{ matrix.redirect_malloc }} gcdeb:${{ matrix.enable_gc_debug }} munmap:${{ matrix.enable_munmap }} paramark:${{ matrix.parallel_mark }} thrlocal:${{ matrix.thread_local_alloc }} dll:${{ matrix.shared_libs }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 7
 
@@ -14,7 +14,8 @@ jobs:
 
       matrix:
         zig_version: [ "0.12.0" ]
-        os: [ macos-latest, ubuntu-latest ]
+        os: [ macos-latest, ubuntu-latest, windows-latest ]
+        ttriple: [ native, native-native-msvc ]
         gc_assertions: [ true ]
         large_config: [ false ]
         enable_threads: [ false, true ]
@@ -27,6 +28,12 @@ jobs:
         thread_local_alloc: [ false, true ]
         shared_libs: [ false, true ]
         exclude:
+        - os: macos-latest
+          ttriple: native-native-msvc
+        - os: ubuntu-latest
+          ttriple: native-native-msvc
+        - os: windows-latest
+          disable_handle_fork: true
         - enable_threads: false
           disable_handle_fork: true
         - enable_threads: false
@@ -83,7 +90,7 @@ jobs:
         zig-version: ${{ matrix.zig_version }}
     - name: Build
       run: >
-        zig build
+        zig build -Dtarget=${{ matrix.ttriple }}
         -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
         -Ddisable_handle_fork=${{ matrix.disable_handle_fork }}
         -Denable_gc_assertions=${{ matrix.gc_assertions }}
