@@ -104,5 +104,6 @@ jobs:
         -Denable_rwlock=${{ matrix.enable_rwlock }}
         -Denable_thread_local_alloc=${{ matrix.thread_local_alloc }}
         -Denable_threads=${{ matrix.enable_threads }}
+        -Denable_cplusplus=${{ matrix.enable_cplusplus }}
         -Denable_werror
         test

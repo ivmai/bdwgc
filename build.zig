@@ -675,6 +675,9 @@ pub fn build(b: *std.Build) void {
     if (enable_gc_debug) {
         addTest(b, gc, test_step, flags, "tracetest", "tests/trace.c");
     }
+    if(enable_cplusplus) {
+        addTest(b, gccpp, test_step, flags, "cpptest", "tests/cpp.cc");
+    }
     if (enable_threads) {
         addTest(b, gc, test_step, flags, "atomicopstest", "tests/atomicops.c");
         addTest(b, gc, test_step, flags,
