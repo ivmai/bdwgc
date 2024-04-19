@@ -78,17 +78,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: "Install zig on Linux/x86_64"
-      if: runner.os == 'Linux'
-      run: |
-        mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-${{matrix.zig_version}}.tar.xz | tar Jx --directory=zig --strip-components=1
-    - name: "Install zig on MacOS/x86_64"
-      if: runner.os == 'macOS'
-      run: |
-        mkdir zig && curl https://ziglang.org/builds/zig-macos-x86_64-${{matrix.zig_version}}.tar.xz | tar Jx --directory=zig --strip-components=1
+    - uses: korandoru/setup-zig@v1
+      with:
+        zig-version: ${{ matrix.zig_version }}
     - name: Build
       run: >
-        zig/zig build
+        zig build
         -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
         -Ddisable_handle_fork=${{ matrix.disable_handle_fork }}
         -Denable_gc_assertions=${{ matrix.gc_assertions }}

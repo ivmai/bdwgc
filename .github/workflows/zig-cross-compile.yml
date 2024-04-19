@@ -121,12 +121,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: "Install zig"
-      run: |
-        mkdir zig && curl https://ziglang.org/builds/zig-linux-x86_64-${{matrix.zig_version}}.tar.xz | tar Jx --directory=zig --strip-components=1
+    - uses: korandoru/setup-zig@v1
+      with:
+        zig-version: ${{ matrix.zig_version }}
     - name: Build
       run: >
-        zig/zig build -Dtarget=${{ matrix.ttriple }}
+        zig build -Dtarget=${{ matrix.ttriple }}
         -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
         -DCFLAGS_EXTRA="${{ matrix.cflags_extra }}"
         -Denable_threads=${{ matrix.enable_threads }}
