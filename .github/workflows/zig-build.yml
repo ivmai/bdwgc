@@ -16,6 +16,7 @@ jobs:
         zig_version: [ "0.12.0" ]
         os: [ macos-latest, ubuntu-latest, windows-latest ]
         ttriple: [ native, native-native-msvc ]
+        enable_cplusplus: [ true ]
         gc_assertions: [ true ]
         large_config: [ false ]
         enable_threads: [ false, true ]
@@ -93,6 +94,7 @@ jobs:
         zig build -Dtarget=${{ matrix.ttriple }}
         -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
         -Ddisable_handle_fork=${{ matrix.disable_handle_fork }}
+        -Denable_cplusplus=${{ matrix.enable_cplusplus }}
         -Denable_gc_assertions=${{ matrix.gc_assertions }}
         -Denable_gc_debug=${{ matrix.enable_gc_debug }}
         -Denable_large_config=${{ matrix.large_config }}
