@@ -17,10 +17,12 @@ const zig_min_required_version = "0.12.0";
 
 // TODO: specify PACKAGE_VERSION and LIB*_VER_INFO.
 
-// Compared to the CMake script, a lot more definitions and compiler options
+// Compared to the CMake script, some definitions and compiler options
 // are hard-coded here, which is natural because build.zig is only built with
 // the Zig build system and Zig ships with an embedded clang (as of zig 0.12).
-// As a consequence, we do not have to support lots of different compilers.
+// As a consequence, we do not have to support lots of different compilers
+// (a notable exception is msvc target which implies use of the corresponding
+// native compiler).
 // And, on the contrary, we know exactly what we get and thus we can align on
 // clang's capabilities rather than having to discover compiler capabilities.
 // Similarly, since Zig ships libc headers for many platforms, we can, with
@@ -153,6 +155,11 @@ pub fn build(b: *std.Build) void {
         "-Wextra",
         "-Wpedantic",
     }) catch unreachable;
+
+    // Disable MS crt security warnings reported e.g. for getenv, strcpy.
+    if (t.abi == .msvc) {
+        flags.append("-D _CRT_SECURE_NO_DEPRECATE") catch unreachable;
+    }
 
     source_files.appendSlice(&.{
         "allchblk.c",
@@ -376,10 +383,17 @@ pub fn build(b: *std.Build) void {
         }
     }
 
+    // Add implementation of backtrace() and backtrace_symbols().
+    if (t.abi == .msvc) {
+        source_files.appendSlice(&.{
+            "extra/msvc_dbg.c",
+        }) catch unreachable;
+    }
+
     // TODO: declare that the libraries do not refer to external symbols
     // of build_shared_libs.
 
-    // zig/clang supports these flags.
+    // zig cc supports these flags.
     flags.appendSlice(&.{
         // TODO: -Wno-unused-command-line-argument
         // Prevent "__builtin_return_address with nonzero argument is unsafe".
@@ -389,10 +403,16 @@ pub fn build(b: *std.Build) void {
 
     if (build_shared_libs) {
         flags.append("-D GC_DLL") catch unreachable;
-        flags.append("-D GC_VISIBILITY_HIDDEN_SET") catch unreachable;
-        flags.appendSlice(&.{
-            "-fvisibility=hidden",
-        }) catch unreachable;
+        if (t.abi == .msvc) {
+            // TODO: depend on user32.lib instead
+            flags.append("-D DONT_USE_USER32_DLL") catch unreachable;
+        } else {
+            // zig cc supports these flags.
+            flags.append("-D GC_VISIBILITY_HIDDEN_SET") catch unreachable;
+            flags.appendSlice(&.{
+                "-fvisibility=hidden",
+            }) catch unreachable;
+        }
     } else {
         flags.append("-D GC_NOT_DLL") catch unreachable;
         if (t.os.tag == .windows) {
@@ -407,7 +427,13 @@ pub fn build(b: *std.Build) void {
     // -U GC_MISSING_EXECINFO_H
     // -U GC_NO_SIGSETJMP
     flags.append("-D HAVE_SYS_TYPES_H") catch unreachable;
-    flags.append("-D HAVE_UNISTD_H") catch unreachable;
+
+    if (t.abi == .msvc) {
+        // To workaround "extension used" error reported for __try/finally.
+        flags.append("-D NO_SEH_AVAILABLE") catch unreachable;
+    } else {
+        flags.append("-D HAVE_UNISTD_H") catch unreachable;
+    }
 
     const have_getcontext = !t.abi.isMusl() and t.os.tag != .windows;
     if (!have_getcontext) {
