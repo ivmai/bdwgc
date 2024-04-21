@@ -334,7 +334,7 @@ static sexpr cons(sexpr x, sexpr y)
     r = (sexpr)checkOOM(GC_MALLOC(sizeof(struct SEXPR) + my_extra));
     AO_fetch_and_add1(&collectable_count);
     for (p = (int *)r;
-         GC_ADDR_LT((ptr_t)p, (ptr_t)r + my_extra + sizeof(struct SEXPR));
+         GC_ADDR_LT((char *)p, (char *)r + my_extra + sizeof(struct SEXPR));
          p++) {
         if (*p) {
             GC_printf("Found nonzero at %p - allocator is broken\n",

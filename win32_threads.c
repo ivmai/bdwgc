@@ -916,7 +916,7 @@ STATIC word GC_push_stack_for(GC_thread thread, thread_id_t self_id,
       stack_min = sp;
     } else {
       /* In the current thread it is always safe to use sp value.       */
-      if (may_be_in_stack(is_self && (word)sp < (word)(crtn -> last_stack_min)
+      if (may_be_in_stack(is_self && ADDR_LT(sp, crtn -> last_stack_min)
                             ? sp : crtn -> last_stack_min)) {
         stack_min = (ptr_t)last_info.BaseAddress;
         /* Do not probe rest of the stack if sp is correct. */
