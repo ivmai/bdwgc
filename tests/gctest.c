@@ -1032,26 +1032,26 @@ int dropped_something = 0;
     UNUSED_ARG(obj);
     UNUSED_ARG(client_data);
   }
-#endif /* !GC_NO_FINALIZATION */
 
 # define MAX_FINALIZED_PER_THREAD 4000
 
-#define MAX_FINALIZED ((NTHREADS+1) * MAX_FINALIZED_PER_THREAD)
+# define MAX_FINALIZED ((NTHREADS+1) * MAX_FINALIZED_PER_THREAD)
 
-#if !defined(MACOS)
-  GC_FAR GC_word live_indicators[MAX_FINALIZED] = {0};
-# ifndef GC_LONG_REFS_NOT_NEEDED
-    GC_FAR void *live_long_refs[MAX_FINALIZED] = { NULL };
-# endif
-#else
-  /* Too big for THINK_C. have to allocate it dynamically. */
-  GC_word *live_indicators = 0;
-# ifndef GC_LONG_REFS_NOT_NEEDED
-#   define GC_LONG_REFS_NOT_NEEDED
-# endif
-#endif
+# if !defined(MACOS)
+    GC_FAR void *live_indicators[MAX_FINALIZED] = { NULL };
+#   ifndef GC_LONG_REFS_NOT_NEEDED
+      GC_FAR void *live_long_refs[MAX_FINALIZED] = { NULL };
+#   endif
+# else
+    /* Too big for THINK_C. have to allocate it dynamically.    */
+    void **live_indicators = NULL;
+#   ifndef GC_LONG_REFS_NOT_NEEDED
+#     define GC_LONG_REFS_NOT_NEEDED
+#   endif
+# endif /* MACOS */
 
-int live_indicators_count = 0;
+  int live_indicators_count = 0;
+#endif /* !GC_NO_FINALIZATION */
 
 static tn * mktree(int n)
 {
@@ -1060,11 +1060,11 @@ static tn * mktree(int n)
 
     CHECK_OUT_OF_MEMORY(result);
     AO_fetch_and_add1(&collectable_count);
-#   if defined(MACOS)
+#   if defined(MACOS) && !defined(GC_NO_FINALIZATION)
         /* get around static data limitations. */
-        if (!live_indicators) {
+        if (NULL == live_indicators) {
           live_indicators =
-                    (GC_word*)NewPtrClear(MAX_FINALIZED * sizeof(GC_word));
+                        (void **)NewPtrClear(MAX_FINALIZED * sizeof(void *));
           CHECK_OUT_OF_MEMORY(live_indicators);
         }
 #   endif
@@ -1107,19 +1107,19 @@ static tn * mktree(int n)
             GC_printf("live_indicators overflowed\n");
             FAIL;
         }
-        live_indicators[my_index] = 13;
-        if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(
-                        (void **)&live_indicators[my_index], result) != 0) {
+        live_indicators[my_index] = (void *)13;
+        if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(&live_indicators[my_index],
+                                                  result) != 0) {
             GC_printf("GC_general_register_disappearing_link failed\n");
             FAIL;
         }
-        if (GC_move_disappearing_link((void **)&live_indicators[my_index],
-                        (void **)&live_indicators[my_index]) != GC_SUCCESS) {
+        if (GC_move_disappearing_link(&live_indicators[my_index],
+                                &live_indicators[my_index]) != GC_SUCCESS) {
             GC_printf("GC_move_disappearing_link(link,link) failed\n");
             FAIL;
         }
-        *new_link = (void *)live_indicators[my_index];
-        if (GC_move_disappearing_link((void **)&live_indicators[my_index],
+        *new_link = live_indicators[my_index];
+        if (GC_move_disappearing_link(&live_indicators[my_index],
                                       new_link) != GC_SUCCESS) {
             GC_printf("GC_move_disappearing_link(new_link) failed\n");
             FAIL;
@@ -1133,13 +1133,13 @@ static tn * mktree(int n)
             GC_printf("GC_unregister_disappearing_link failed\n");
             FAIL;
         }
-        if (GC_move_disappearing_link((void **)&live_indicators[my_index],
+        if (GC_move_disappearing_link(&live_indicators[my_index],
                                       new_link) != GC_NOT_FOUND) {
             GC_printf("GC_move_disappearing_link(new_link) failed 2\n");
             FAIL;
         }
-        if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(
-                        (void **)&live_indicators[my_index], result) != 0) {
+        if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(&live_indicators[my_index],
+                                                  result) != 0) {
             GC_printf("GC_general_register_disappearing_link failed 2\n");
             FAIL;
         }
@@ -2116,7 +2116,7 @@ static void check_heap_stats(void)
                   finalized_count, finalizable_count);
       }
       for (i = 0; i < MAX_FINALIZED; i++) {
-        if (live_indicators[i] != 0) {
+        if (live_indicators[i] != NULL) {
             still_live++;
         }
 #       ifndef GC_LONG_REFS_NOT_NEEDED
