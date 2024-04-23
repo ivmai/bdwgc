@@ -152,7 +152,7 @@ static void push_in_progress(ptr_t p)
                                 n_in_progress * sizeof(ptr_t));
 #   elif defined(LINT2)
       /* TODO: implement GWW-aware recycling as in alloc_mark_stack */
-      GC_noop1((word)in_progress_space);
+      NOOP1_PTR(in_progress_space);
 #   endif
     in_progress_space = new_in_progress_space;
   }
@@ -195,7 +195,7 @@ static void ensure_struct(ptr_t p)
 
     be -> flags = 0;
 #   if defined(CPPCHECK)
-      GC_noop1((word)(&old_back_ptr));
+      NOOP1_PTR(&old_back_ptr);
       /* Workaround a false positive that old_back_ptr cannot be null.  */
 #   endif
     if (NULL == old_back_ptr) {
@@ -227,7 +227,7 @@ static void add_edge(ptr_t p, ptr_t q)
       return;
     }
 #   if defined(CPPCHECK)
-      GC_noop1((word)(&pred));
+      NOOP1_PTR(&pred);
 #   endif
     if (NULL == pred) {
       static unsigned random_number = 13;
@@ -392,7 +392,7 @@ static word backwards_height(ptr_t p)
 
   GC_ASSERT(I_HOLD_LOCK());
 # if defined(CPPCHECK)
-    GC_noop1((word)(&pred));
+    NOOP1_PTR(&pred);
 # endif
   if (NULL == pred)
     return 1;
@@ -483,7 +483,7 @@ static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
     /* to p, but it can't have decreased.                               */
     back_ptr = GET_OH_BG_PTR(p);
 #   if defined(CPPCHECK)
-      GC_noop1((word)(&back_ptr));
+      NOOP1_PTR(&back_ptr);
 #   endif
     if (back_ptr != NULL && (ADDR(back_ptr) & FLAG_MANY) != 0) {
       be = (back_edges *)((word)back_ptr & ~(word)FLAG_MANY);

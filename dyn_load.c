@@ -774,9 +774,9 @@ GC_INNER void GC_register_dynamic_libraries(void)
         }
 #       if defined(CPPCHECK) && defined(HOST_ANDROID) \
            && !defined(GC_DONT_DEFINE_LINK_MAP) && !(__ANDROID_API__ >= 21)
-          GC_noop1((word)lm->l_name);
-          GC_noop1((word)lm->l_ld);
-          GC_noop1((word)lm->l_prev);
+          NOOP1_PTR(lm -> l_name);
+          GC_noop1((word)(lm -> l_ld));
+          NOOP1_PTR(lm -> l_prev);
 #       endif
     }
 }
@@ -1495,7 +1495,7 @@ GC_INNER void GC_init_dyld(void)
           ABORT("dlopen failed (to bind fully image)");
         /* Note that the handle is never closed.        */
 #       ifdef LINT2
-          GC_noop1((word)dl_handle);
+          NOOP1_PTR(dl_handle);
 #       endif
       }
 #   else

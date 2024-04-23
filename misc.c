@@ -2000,7 +2000,7 @@ STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
 #   if defined(CPPCHECK)
       /* Workaround "parameter can be declared as pointer to const" */
       /* cppcheck warning.                                          */
-      GC_noop1((word)msg);
+      NOOP1_PTR(msg);
 #   endif
     GC_warn_printf(msg, arg);
 }
@@ -2352,7 +2352,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn, void *client_data)
     GC_ASSERT(GC_traced_stack_sect == &stacksect);
 
 #   if defined(CPPCHECK)
-      GC_noop1((word)GC_traced_stack_sect - (word)GC_blocked_sp);
+      NOOP1_PTR(GC_traced_stack_sect);
+      NOOP1_PTR(GC_blocked_sp);
 #   endif
     /* Restore original "stack section".        */
     GC_traced_stack_sect = stacksect.prev;
@@ -2389,7 +2390,7 @@ STATIC void GC_do_blocking_inner(ptr_t data, void *context)
         GC_ASSERT(GC_blocked_sp == (ptr_t)(&d));
 #   endif
 #   if defined(CPPCHECK)
-      GC_noop1((word)GC_blocked_sp);
+      NOOP1_PTR(GC_blocked_sp);
 #   endif
     GC_blocked_sp = NULL;
 }

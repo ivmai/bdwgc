@@ -857,7 +857,7 @@ static void *GC_CALLBACK reverse_test_inner(void *data)
     }
 
 # if defined(CPPCHECK)
-    GC_noop1((GC_word)data);
+    NOOP1_PTR(data);
 # endif
 # ifndef BIG
 #   if defined(MACOS) \
@@ -1451,7 +1451,7 @@ static void typed_test(void)
         newP = (GC_word *)old[1];
     }
     GC_gcollect();
-    GC_noop1((GC_word)x);
+    NOOP1_PTR(x);
 }
 #endif /* !NO_TYPED_TEST */
 
@@ -1667,7 +1667,7 @@ static void run_one_test(void)
             GC_printf("Out of memory in GC_posix_memalign\n");
             exit(69);
           }
-          GC_noop1((GC_word)p);
+          NOOP1_PTR(p);
           AO_fetch_and_add1(&collectable_count);
       }
 #     ifndef GC_NO_VALLOC
@@ -1714,7 +1714,7 @@ static void run_one_test(void)
       FAIL;
     }
 #   if defined(CPPCHECK)
-      GC_noop1((GC_word)x);
+      NOOP1_PTR(x);
 #   endif
 #   ifdef GC_REQUIRE_WCSDUP
       {
@@ -1983,8 +1983,8 @@ static void test_long_mult(void)
 
   LONG_MULT(hp, lp, (unsigned32)0x1234567UL, (unsigned32)0xfedcba98UL);
 # if defined(CPPCHECK)
-    GC_noop1((GC_word)(&hp));
-    GC_noop1((GC_word)(&lp));
+    NOOP1_PTR(&hp);
+    NOOP1_PTR(&lp);
 # endif
   if (hp != (unsigned32)0x121fa00UL || lp != (unsigned32)0x23e20b28UL) {
     GC_printf("LONG_MULT gives wrong result\n");
@@ -2221,7 +2221,7 @@ void SetMinimumStack(long minSize)
 static void GC_CALLBACK warn_proc(char *msg, GC_word p)
 {
 #   if defined(CPPCHECK)
-        GC_noop1((GC_word)msg);
+        NOOP1_PTR(msg);
 #   endif
     GC_printf(msg, (unsigned long)p);
     /*FAIL;*/

@@ -621,7 +621,7 @@ STATIC mse * GC_signal_mark_stack_overflow(mse *msp)
     GC_COND_LOG_PRINTF("Mark stack overflow; current size: %lu entries\n",
                        (unsigned long)GC_mark_stack_size);
 #   if defined(CPPCHECK)
-      GC_noop1((word)msp);
+      NOOP1_PTR(msp);
 #   endif
     return msp - GC_MARK_STACK_DISCARDS;
 }
@@ -1003,7 +1003,7 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
     }
     *next = p;
 #   if defined(CPPCHECK)
-        GC_noop1((word)local);
+        NOOP1_PTR(local);
 #   endif
     return top;
 }

@@ -292,6 +292,11 @@ typedef struct hblkhdr hdr;
 
 #define GC_WORD_MAX (~(word)0)
 
+/* A handy macro to prevent certain compiler false positive         */
+/* warnings and misoptimizations by making the compiler to treat    */
+/* the specified pointer as the one stored to some global location. */
+#define NOOP1_PTR(p) GC_noop1(ADDR(p))
+
 /* Convert given pointer to its address.  Result is of word type.   */
 #define ADDR(p) ((word)(p))
 
@@ -2052,7 +2057,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
     /* Workaround "Uninitialized bs_lo" and "obsolete alloca() called"  */
     /* false positive warnings.                                         */
 #   define PS_ALLOCA_BUF(pbuf, sz) \
-        (void)(GC_noop1((word)(pbuf)), *(pbuf) = __builtin_alloca(sz))
+        (void)(NOOP1_PTR(pbuf), *(pbuf) = __builtin_alloca(sz))
 # else
 #   define PS_ALLOCA_BUF(pbuf, sz) (void)(*(pbuf) = alloca(sz))
 # endif

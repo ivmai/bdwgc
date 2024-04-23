@@ -134,7 +134,7 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
     /* This can only happen if the concurrent access is from another    */
     /* thread, and hence has missed the cache, but still...             */
 #   ifdef LINT2
-      GC_noop1((word)entry);
+      NOOP1_PTR(entry);
 #   endif
 
     /* With GC, we're done, since the pointers from the cache will      */

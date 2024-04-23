@@ -197,7 +197,7 @@ GC_INNER const char * GC_get_maps(void)
             while (maps_size >= maps_buf_sz) {
 #             ifdef LINT2
                 /* Workaround passing tainted maps_buf to a tainted sink. */
-                GC_noop1((word)maps_buf);
+                NOOP1_PTR(maps_buf);
 #             else
                 GC_scratch_recycle_no_gww(maps_buf, maps_buf_sz);
 #             endif
@@ -936,7 +936,7 @@ GC_INNER void GC_setpagesize(void)
 #         endif
 #       endif /* !USE_SEGV_SIGACT */
 #       if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
-          GC_noop1((word)&__asan_default_options);
+          NOOP1_PTR(&__asan_default_options);
 #       endif
     }
 #endif /* NEED_FIND_LIMIT || UNIX_LIKE || WRAP_MARK_SOME */
@@ -1114,7 +1114,7 @@ GC_INNER void GC_setpagesize(void)
 #         if defined(CPPCHECK)
             /* Workaround a warning that the address of the global  */
             /* symbol (which is a weak one) cannot be null.         */
-            GC_noop1((word)(&p_libc_ia64_register_backing_store_base));
+            NOOP1_PTR(&p_libc_ia64_register_backing_store_base);
 #         endif
           if (p_libc_ia64_register_backing_store_base != NULL
               && __libc_ia64_register_backing_store_base != NULL) {
@@ -1155,7 +1155,7 @@ GC_INNER void GC_setpagesize(void)
       ptr_t *p_libc_stack_end = &__libc_stack_end;
 
 #     if defined(CPPCHECK)
-        GC_noop1((word)(&p_libc_stack_end));
+        NOOP1_PTR(&p_libc_stack_end);
 #     endif
       if (p_libc_stack_end != NULL && __libc_stack_end != NULL) {
 #       if defined(IA64)
@@ -2003,7 +2003,7 @@ void GC_register_data_segments(void)
           /* Fallback to non-atomic fetch-and-store.    */
           char v = *result;
 #         if defined(CPPCHECK)
-            GC_noop1((word)(&v));
+            NOOP1_PTR(&v);
 #         endif
           *result = v;
 #       endif
@@ -2043,7 +2043,7 @@ void GC_register_data_segments(void)
         GC_reset_fault_handler();
     } else {
         GC_reset_fault_handler();
-        /* As above, we go to plan B    */
+        /* As above, we go to plan B.   */
         result = (ptr_t)GC_find_limit(DATAEND, FALSE);
     }
     return result;
@@ -2664,7 +2664,7 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
             ABORT("unmap: mmap() result differs from start_addr");
 #         if defined(CPPCHECK) || defined(LINT2)
             /* Explicitly store the resource handle to a global variable. */
-            GC_noop1((word)result);
+            NOOP1_PTR(result);
 #         endif
 #       endif
         GC_unmapped_bytes += len;
@@ -2717,7 +2717,7 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
               }
           }
 #         ifdef LINT2
-            GC_noop1((word)result);
+            NOOP1_PTR(result);
 #         endif
           GC_ASSERT(GC_unmapped_bytes >= alloc_len);
           GC_unmapped_bytes -= alloc_len;
@@ -2744,7 +2744,7 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
           if (result != start_addr)
             ABORT("remap: mmap() result differs from start_addr");
 #         if defined(CPPCHECK) || defined(LINT2)
-            GC_noop1((word)result);
+            NOOP1_PTR(result);
 #         endif
 #         undef IGNORE_PAGES_EXECUTABLE
 #       else
@@ -3502,7 +3502,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     endif
 #   endif /* !MSWIN32 && !MSWINCE */
 #   if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
-      GC_noop1((word)&__asan_default_options);
+      NOOP1_PTR(&__asan_default_options);
 #   endif
     return TRUE;
   }
