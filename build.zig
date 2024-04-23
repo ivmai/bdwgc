@@ -13,8 +13,7 @@
 const builtin = @import("builtin");
 const std = @import("std");
 
-// TODO: update to zig v0.12 final (when released)
-const zig_min_required_version = "0.12.0-dev.3610";
+const zig_min_required_version = "0.12.0";
 
 // TODO: specify PACKAGE_VERSION and LIB*_VER_INFO.
 
