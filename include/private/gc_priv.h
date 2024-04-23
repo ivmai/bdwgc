@@ -292,6 +292,9 @@ typedef struct hblkhdr hdr;
 
 #define GC_WORD_MAX (~(word)0)
 
+/* Convert given pointer to its address.  Result is of word type.   */
+#define ADDR(p) ((word)(p))
+
 #define ADDR_LT(p,q) GC_ADDR_LT(p,q)
 #define ADDR_GE(p,q) (!ADDR_LT(p,q))
 
@@ -303,13 +306,13 @@ typedef struct hblkhdr hdr;
 #ifdef STACK_GROWS_UP
 # define HOTTER_THAN(p,q) ADDR_LT(q, p) /* inverse */
 # define MAKE_COOLER(p,d) \
-            (void)((p) -= (word)(p) > (word)((d) * sizeof(*(p))) ? (d) : 0)
+            (void)((p) -= ADDR(p) > (word)((d) * sizeof(*(p))) ? (d) : 0)
 # define MAKE_HOTTER(p,d) (void)((p) += (d))
 #else
 # define HOTTER_THAN(p,q) ADDR_LT(p, q)
 # define MAKE_COOLER(p,d) \
-            (void)((p) += (word)(p) <= (word)(GC_WORD_MAX \
-                                              - (d) * sizeof(*(p))) ? (d) : 0)
+            (void)((p) += ADDR(p) <= (word)(GC_WORD_MAX \
+                                            - (d) * sizeof(*(p))) ? (d) : 0)
 # define MAKE_HOTTER(p,d) (void)((p) -= (d))
 #endif /* !STACK_GROWS_UP */
 
@@ -1059,11 +1062,11 @@ EXTERN_C_BEGIN
 # define PHT_SIZE (LOG_PHT_ENTRIES > LOGWL ? PHT_ENTRIES >> LOGWL : 1)
 typedef word page_hash_table[PHT_SIZE];
 
-# define PHT_HASH(addr) ((((word)(addr)) >> LOG_HBLKSIZE) & (PHT_ENTRIES - 1))
+#define PHT_HASH(addr) ((ADDR(addr) >> LOG_HBLKSIZE) & (PHT_ENTRIES-1))
 
-# define get_pht_entry_from_index(bl, index) \
+#define get_pht_entry_from_index(bl, index) \
                 (((bl)[divWORDSZ(index)] >> modWORDSZ(index)) & 1)
-# define set_pht_entry_from_index(bl, index) \
+#define set_pht_entry_from_index(bl, index) \
                 (void)((bl)[divWORDSZ(index)] |= (word)1 << modWORDSZ(index))
 
 #if defined(THREADS) && defined(AO_HAVE_or)
@@ -1383,7 +1386,7 @@ struct _GC_arrays {
   word _requested_heapsize;     /* Heap size due to explicit expansion. */
 # define GC_heapsize_on_gc_disable GC_arrays._heapsize_on_gc_disable
   word _heapsize_on_gc_disable;
-  ptr_t _last_heap_addr;
+  word _last_heap_addr;
   word _large_free_bytes;
         /* Total bytes contained in blocks on large object free */
         /* list.                                                */
@@ -1430,15 +1433,14 @@ struct _GC_arrays {
         /* assumes the allocator lock is held.                  */
   ptr_t _scratch_free_ptr;
   hdr *_hdr_free_list;
-  ptr_t _scratch_end_ptr;
-        /* GC_scratch_end_ptr is end point of the current scratch area. */
+# define GC_scratch_end_addr GC_arrays._scratch_end_addr
+  word _scratch_end_addr; /* the end point of the current scratch area */
 # if defined(IRIX5) || (defined(USE_PROC_FOR_LIBRARIES) && !defined(LINUX))
 #   define USE_SCRATCH_LAST_END_PTR
-#   define GC_scratch_last_end_ptr GC_arrays._scratch_last_end_ptr
-    ptr_t _scratch_last_end_ptr;
-        /* GC_scratch_last_end_ptr is the end point of the last */
-        /* obtained scratch area.                               */
-        /* Used by GC_register_dynamic_libraries().             */
+#   define GC_scratch_last_end_addr GC_arrays._scratch_last_end_addr
+    word _scratch_last_end_addr;
+        /* The address of the end point of the last obtained scratch    */
+        /* area.  Used by GC_register_dynamic_libraries().              */
 # endif
 # if defined(GC_ASSERTIONS) || defined(MAKE_BACK_GRAPH) \
      || defined(INCLUDE_LINUX_THREAD_DESCR) \
@@ -1446,8 +1448,8 @@ struct _GC_arrays {
 #   define SET_REAL_HEAP_BOUNDS
 #   define GC_least_real_heap_addr GC_arrays._least_real_heap_addr
 #   define GC_greatest_real_heap_addr GC_arrays._greatest_real_heap_addr
-    ptr_t _least_real_heap_addr;
-    ptr_t _greatest_real_heap_addr;
+    word _least_real_heap_addr;
+    word _greatest_real_heap_addr;
         /* Similar to GC_least/greatest_plausible_heap_addr but */
         /* do not include future (potential) heap expansion.    */
         /* Both variables are zero initially.                   */
@@ -1524,8 +1526,8 @@ struct _GC_arrays {
 # define GC_mark_state GC_arrays._mark_state
   mark_state_t _mark_state; /* Initialized to MS_NONE (0). */
 # ifdef ENABLE_TRACE
-#   define GC_trace_addr GC_arrays._trace_addr
-    ptr_t _trace_addr;
+#   define GC_trace_ptr GC_arrays._trace_ptr
+    ptr_t _trace_ptr;
 # endif
 # define GC_capacity_heap_sects GC_arrays._capacity_heap_sects
   size_t _capacity_heap_sects;
@@ -1715,7 +1717,6 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define GC_all_bottom_indices_end GC_arrays._all_bottom_indices_end
 #define GC_scratch_free_ptr GC_arrays._scratch_free_ptr
 #define GC_hdr_free_list GC_arrays._hdr_free_list
-#define GC_scratch_end_ptr GC_arrays._scratch_end_ptr
 #define GC_size_map GC_arrays._size_map
 #define GC_static_roots GC_arrays._static_roots
 #define GC_top_index GC_arrays._top_index

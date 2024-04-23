@@ -190,7 +190,7 @@ static void ensure_struct(ptr_t p)
   ptr_t old_back_ptr = GET_OH_BG_PTR(p);
 
   GC_ASSERT(I_HOLD_LOCK());
-  if (!((word)old_back_ptr & FLAG_MANY)) {
+  if ((ADDR(old_back_ptr) & FLAG_MANY) == 0) {
     back_edges *be = new_back_edges();
 
     be -> flags = 0;
@@ -250,9 +250,9 @@ static void add_edge(ptr_t p, ptr_t q)
       word total;
       int local = 0;
 
-      if (((word)pred & FLAG_MANY) != 0) {
+      if ((ADDR(pred) & FLAG_MANY) != 0) {
         n_edges = e -> n_edges;
-      } else if (((word)COVERT_DATAFLOW(pred) & 1) == 0) {
+      } else if ((ADDR(COVERT_DATAFLOW(pred)) & 1) == 0) {
         /* A misinterpreted freelist link.      */
         n_edges = 1;
         local = -1;
@@ -319,28 +319,28 @@ static void reset_back_edge(ptr_t p, size_t n_bytes, word gc_descr)
   /* Skip any free list links, or dropped blocks */
   if (GC_HAS_DEBUG_INFO(p)) {
     ptr_t old_back_ptr = GET_OH_BG_PTR(p);
-    if ((word)old_back_ptr & FLAG_MANY) {
+
+    if ((ADDR(old_back_ptr) & FLAG_MANY) != 0) {
       back_edges *be = (back_edges *)((word)old_back_ptr & ~(word)FLAG_MANY);
+
       if (!(be -> flags & RETAIN)) {
         deallocate_back_edges(be);
         SET_OH_BG_PTR(p, 0);
       } else {
-
         GC_ASSERT(GC_is_marked(p));
 
         /* Back edges may point to objects that will not be retained.   */
         /* Delete them for now, but remember the height.                */
         /* Some will be added back at next GC.                          */
-          be -> n_edges = 0;
-          if (0 != be -> cont) {
-            deallocate_back_edges(be -> cont);
-            be -> cont = 0;
-          }
+        be -> n_edges = 0;
+        if (0 != be -> cont) {
+          deallocate_back_edges(be -> cont);
+          be -> cont = 0;
+        }
 
         GC_ASSERT(GC_is_marked(p));
-
         /* We only retain things for one GC cycle at a time.            */
-          be -> flags &= (unsigned short)~RETAIN;
+        be -> flags &= (unsigned short)~RETAIN;
       }
     } else /* Simple back pointer */ {
       /* Clear to avoid dangling pointer. */
@@ -363,8 +363,8 @@ static void add_back_edges(ptr_t p, size_t n_bytes, word gc_descr)
 
     LOAD_WORD_OR_CONTINUE(q, current_p);
     FIXUP_POINTER(q);
-    if (ADDR_LT(GC_least_real_heap_addr, q)
-        && ADDR_LT(q, GC_greatest_real_heap_addr)) {
+    if (GC_least_real_heap_addr < ADDR(q)
+        && ADDR(q) < GC_greatest_real_heap_addr) {
       ptr_t target = (ptr_t)GC_base(q);
 
       if (target != NULL)
@@ -396,7 +396,7 @@ static word backwards_height(ptr_t p)
 # endif
   if (NULL == pred)
     return 1;
-  if (((word)pred & FLAG_MANY) == 0) {
+  if ((ADDR(pred) & FLAG_MANY) == 0) {
     if (is_in_progress(p)) return 0; /* DFS back edge, i.e. we followed */
                                      /* an edge to an object already    */
                                      /* on our stack: ignore            */
@@ -419,9 +419,9 @@ static word backwards_height(ptr_t p)
       word total;
       int local = 0;
 
-      if (((word)pred & FLAG_MANY) != 0) {
+      if ((ADDR(pred) & FLAG_MANY) != 0) {
         n_edges = e -> n_edges;
-      } else if (((word)pred & 1) == 0) {
+      } else if ((ADDR(pred) & 1) == 0) {
         /* A misinterpreted freelist link.      */
         n_edges = 1;
         local = -1;
@@ -439,7 +439,7 @@ static word backwards_height(ptr_t p)
 
         /* Execute the following once for each predecessor pred of p    */
         /* in the points-to graph.                                      */
-        if (GC_is_marked(pred) && ((word)GET_OH_BG_PTR(p) & FLAG_MANY) == 0) {
+        if (GC_is_marked(pred) && (ADDR(GET_OH_BG_PTR(p)) & FLAG_MANY) == 0) {
           GC_COND_LOG_PRINTF("Found bogus pointer from %p to %p\n",
                              (void *)pred, (void *)p);
             /* Reachable object "points to" unreachable one.            */
@@ -485,7 +485,7 @@ static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
 #   if defined(CPPCHECK)
       GC_noop1((word)(&back_ptr));
 #   endif
-    if (back_ptr != NULL && ((word)back_ptr & FLAG_MANY)) {
+    if (back_ptr != NULL && (ADDR(back_ptr) & FLAG_MANY) != 0) {
       be = (back_edges *)((word)back_ptr & ~(word)FLAG_MANY);
       if (be -> height != HEIGHT_UNKNOWN)
         p_height = (word)(be -> height);
@@ -498,9 +498,9 @@ static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
       word total;
       int local = 0;
 
-      if (((word)pred & FLAG_MANY) != 0) {
+      if ((ADDR(pred) & FLAG_MANY) != 0) {
         n_edges = e -> n_edges;
-      } else if (pred != NULL && ((word)pred & 1) == 0) {
+      } else if (pred != NULL && (ADDR(pred) & 1) == 0) {
         /* A misinterpreted freelist link.      */
         n_edges = 1;
         local = -1;

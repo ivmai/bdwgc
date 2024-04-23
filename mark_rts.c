@@ -113,7 +113,7 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
 
   GC_INLINE int rt_hash(ptr_t addr)
   {
-    word val = (word)addr;
+    word val = ADDR(addr);
 
 #   if CPP_WORDSZ > 4*LOG_RT_SIZE
 #     if CPP_WORDSZ > 8*LOG_RT_SIZE
@@ -403,7 +403,7 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
     GC_bool rebuild = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT((word)b % sizeof(word) == 0 && (word)e % sizeof(word) == 0);
+    GC_ASSERT(ADDR(b) % sizeof(word) == 0 && ADDR(e) % sizeof(word) == 0);
     for (i = 0; i < n_root_sets; i++) {
       ptr_t r_start, r_end;
 
@@ -523,24 +523,24 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
 
 GC_INNER ptr_t GC_approx_sp(void)
 {
-    volatile word sp;
+    volatile ptr_t sp;
 #   if ((defined(E2K) && defined(__clang__)) \
         || (defined(S390) && (__clang_major__ < 8))) && !defined(CPPCHECK)
         /* Workaround some bugs in clang:                                   */
         /* "undefined reference to llvm.frameaddress" error (clang-9/e2k);  */
         /* a crash in SystemZTargetLowering of libLLVM-3.8 (S390).          */
-        sp = (word)(&sp);
+        sp = (ptr_t)(&sp);
 #   elif defined(CPPCHECK) || (__GNUC__ >= 4 /* GC_GNUC_PREREQ(4, 0) */ \
                                && !defined(STACK_NOT_SCANNED))
         /* TODO: Use GC_GNUC_PREREQ after fixing a bug in cppcheck. */
-        sp = (word)__builtin_frame_address(0);
+        sp = (ptr_t)__builtin_frame_address(0);
 #   else
-        sp = (word)(&sp);
+        sp = (ptr_t)(&sp);
 #   endif
                 /* Also force stack to grow if necessary. Otherwise the */
                 /* later accesses might cause the kernel to think we're */
                 /* doing something wrong.                               */
-    return (ptr_t)sp;
+    return (/* no volatile */ ptr_t)sp;
 }
 
 /*
@@ -600,7 +600,7 @@ GC_INNER void GC_exclude_static_roots_inner(ptr_t start, ptr_t finish)
     size_t next_index;
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT((word)start % sizeof(word) == 0);
+    GC_ASSERT(ADDR(start) % sizeof(word) == 0);
     GC_ASSERT(ADDR_LT(start, finish));
 
     next = GC_next_exclusion(start);
@@ -609,7 +609,7 @@ GC_INNER void GC_exclude_static_roots_inner(ptr_t start, ptr_t finish)
         /* Incomplete error check.      */
         ABORT("Exclusion ranges overlap");
       }
-      if ((word)(next -> e_start) == (word)finish) {
+      if (ADDR(next -> e_start) == ADDR(finish)) {
         /* Extend old range backwards.  */
         next -> e_start = start;
 #       ifdef DEBUG_ADD_DEL_ROOTS

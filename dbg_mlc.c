@@ -117,10 +117,10 @@
         ptr_t target = *(ptr_t *)bp;
         ptr_t alternate_target = *(ptr_t *)alternate_ptr;
 
-        if (ADDR_LT(GC_least_real_heap_addr, alternate_target)
-            && ADDR_LT(alternate_target, GC_greatest_real_heap_addr)
-            && (ADDR_GE(GC_least_real_heap_addr, target)
-                || ADDR_GE(target, GC_greatest_real_heap_addr))) {
+        if (GC_least_real_heap_addr < ADDR(alternate_target)
+            && ADDR(alternate_target) < GC_greatest_real_heap_addr
+            && (GC_least_real_heap_addr >= ADDR(target)
+                || ADDR(target) >= GC_greatest_real_heap_addr)) {
           bp = alternate_ptr;
         }
       }
@@ -251,7 +251,7 @@
 #endif /* KEEP_BACK_PTRS */
 
 # define CROSSES_HBLK(p, sz) \
-        (((word)((p) + sizeof(oh) + (sz) - 1) ^ (word)(p)) >= HBLKSIZE)
+                ((ADDR((p) + sizeof(oh) + (sz) - 1) ^ ADDR(p)) >= HBLKSIZE)
 
 GC_INNER void *GC_store_debug_info_inner(void *base, word sz,
                                          const char *string, int linenum)
@@ -445,9 +445,9 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t base)
     } else {
         GC_err_printf("%s %p in or near object at %p (%s:%d, sz= %lu)\n",
                 msg, (void *)clobbered_addr, p,
-                (word)(ohdr -> oh_string) < HBLKSIZE ? "(smashed string)" :
-                ohdr -> oh_string[0] == '\0' ? "EMPTY(smashed?)" :
-                                                ohdr -> oh_string,
+                ADDR(ohdr -> oh_string) < HBLKSIZE ? "(smashed string)"
+                    : ohdr -> oh_string[0] == '\0' ? "EMPTY(smashed?)"
+                                                   : ohdr -> oh_string,
                 GET_OH_LINENUM(ohdr), (unsigned long)(ohdr -> oh_sz));
         PRINT_CALL_CHAIN(ohdr);
     }
@@ -738,7 +738,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
 #     endif
       ABORT_ARG1("Invalid pointer passed to free()", ": %p", p);
     }
-    if ((word)p - (word)base != sizeof(oh)) {
+    if ((word)((ptr_t)p - base) != sizeof(oh)) {
 #     if defined(REDIRECT_FREE) && defined(USE_PROC_FOR_LIBRARIES)
         /* TODO: Suppress the warning if free() caller is in libpthread */
         /* or libdl.                                                    */
@@ -752,6 +752,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
 #     ifndef SHORT_DBG_HDRS
         ptr_t clobbered = GC_check_annotated_obj((oh *)base);
         word sz = GC_size(base);
+
         if (clobbered != 0) {
           GC_SET_HAVE_ERRORS(); /* no "release" barrier is needed */
           if (((oh *)base) -> oh_sz == sz) {
@@ -770,7 +771,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
     }
     if (GC_find_leak
 #       ifndef SHORT_DBG_HDRS
-          && ((word)p - (word)base != sizeof(oh) || !GC_findleak_delay_free)
+          && ((word)((ptr_t)p - base) != sizeof(oh) || !GC_findleak_delay_free)
 #       endif
         ) {
       GC_free(base);
@@ -810,7 +811,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
     ptr_t base = (ptr_t)GC_base(p);
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT((word)p - (word)base == sizeof(oh));
+    GC_ASSERT((word)((ptr_t)p - base) == sizeof(oh));
 #   ifdef LINT2
       if (!base) ABORT("Invalid GC_debug_free_inner argument");
 #   endif
@@ -824,7 +825,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
 
 GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 {
-    void * base;
+    ptr_t base;
     void * result;
     const hdr * hhdr;
 
@@ -841,11 +842,11 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
         GC_caller_func_offset(ra, &s, &i);
       }
 #   endif
-    base = GC_base(p);
+    base = (ptr_t)GC_base(p);
     if (NULL == base) {
         ABORT_ARG1("Invalid pointer passed to realloc()", ": %p", p);
     }
-    if ((word)p - (word)base != sizeof(oh)) {
+    if ((word)((ptr_t)p - base) != sizeof(oh)) {
         GC_err_printf(
               "GC_debug_realloc called on pointer %p w/o debugging info\n", p);
         return GC_realloc(p, lb);

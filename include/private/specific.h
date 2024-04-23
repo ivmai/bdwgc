@@ -44,11 +44,10 @@ EXTERN_C_BEGIN
 #define MALLOC_CLEAR(n) GC_INTERNAL_MALLOC(n, NORMAL)
 
 #define TS_CACHE_SIZE 1024
-#define CACHE_HASH(n) ((((n) >> 8) ^ (n)) & (TS_CACHE_SIZE - 1))
+#define TS_CACHE_HASH(n) ((((n) >> 8) ^ (n)) & (TS_CACHE_SIZE-1))
 
 #define TS_HASH_SIZE 1024
-#define HASH(p) \
-          ((unsigned)((((word)(p)) >> 8) ^ (word)(p)) & (TS_HASH_SIZE - 1))
+#define TS_HASH(p) ((unsigned)((ADDR(p) >> 8) ^ ADDR(p)) & (TS_HASH_SIZE-1))
 
 #ifdef GC_ASSERTIONS
   /* Thread-local storage is not guaranteed to be scanned by GC.        */
@@ -87,7 +86,7 @@ typedef struct thread_specific_entry {
 /* or at least thread stack separation, is at least 4 KB.               */
 /* Must be defined so that it never returns 0.  (Page 0 can't really be */
 /* part of any stack, since that would make 0 a valid stack pointer.)   */
-#define quick_thread_id() (((word)GC_approx_sp()) >> 12)
+#define ts_quick_thread_id() (ADDR(GC_approx_sp()) >> 12)
 
 #define INVALID_QTID ((word)0)
 #define INVALID_THREADID ((pthread_t)0)
@@ -119,8 +118,8 @@ GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
 
 GC_INLINE void * GC_getspecific(tsd * key)
 {
-    word qtid = quick_thread_id();
-    tse * volatile * entry_ptr = &(key -> cache[CACHE_HASH(qtid)]);
+    word qtid = ts_quick_thread_id();
+    tse * volatile * entry_ptr = &(key -> cache[TS_CACHE_HASH(qtid)]);
     const tse * entry = *entry_ptr; /* must be loaded only once */
 
     GC_ASSERT(qtid != INVALID_QTID);

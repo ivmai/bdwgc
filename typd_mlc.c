@@ -75,7 +75,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
         word ed_size = GC_ed_size;
 
         if (ed_size == 0) {
-            GC_ASSERT((word)(&GC_ext_descriptors) % sizeof(word) == 0);
+            GC_ASSERT(ADDR(&GC_ext_descriptors) % sizeof(word) == 0);
             GC_push_typed_structures = GC_push_typed_structures_proc;
             UNLOCK();
             new_size = ED_INITIAL_SIZE;

@@ -92,7 +92,7 @@ GC_INNER hdr *
       GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
       return 0;
     } else {
-      hce -> block_addr = (word)(p) >> LOG_HBLKSIZE;
+      hce -> block_addr = ADDR(p) >> LOG_HBLKSIZE;
       hce -> hce_hdr = hhdr;
       return hhdr;
     }
@@ -110,8 +110,8 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
     GC_ASSERT(I_HOLD_LOCK());
     bytes = ROUNDUP_GRANULE_SIZE(bytes);
     for (;;) {
-        GC_ASSERT(ADDR_GE(GC_scratch_end_ptr, result));
-        if (bytes <= (word)GC_scratch_end_ptr - (word)result) {
+        GC_ASSERT(GC_scratch_end_addr >= ADDR(result));
+        if (bytes <= GC_scratch_end_addr - ADDR(result)) {
             /* Unallocated space of scratch buffer has enough size. */
             GC_scratch_free_ptr = result + bytes;
             return result;
@@ -123,14 +123,14 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             result = GC_os_get_mem(bytes_to_get);
             if (result != NULL) {
 #             if defined(KEEP_BACK_PTRS) && (GC_GRANULE_BYTES < 0x10)
-                GC_ASSERT((word)result > (word)NOT_MARKED);
+                GC_ASSERT(ADDR(result) > (word)NOT_MARKED);
 #             endif
               /* No update of scratch free area pointer;        */
               /* get memory directly.                           */
 #             ifdef USE_SCRATCH_LAST_END_PTR
                 /* Update end point of last obtained area (needed only  */
                 /* by GC_register_dynamic_libraries for some targets).  */
-                GC_scratch_last_end_ptr = result + bytes;
+                GC_scratch_last_end_addr = ADDR(result) + bytes;
 #             endif
             }
             return result;
@@ -146,7 +146,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             result = GC_os_get_mem(bytes_to_get);
             if (result != NULL) {
 #             ifdef USE_SCRATCH_LAST_END_PTR
-                GC_scratch_last_end_ptr = result + bytes;
+                GC_scratch_last_end_addr = ADDR(result) + bytes;
 #             endif
             }
             return result;
@@ -155,9 +155,9 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
         /* TODO: some amount of unallocated space may remain unused forever */
         /* Update scratch area pointers and retry.      */
         GC_scratch_free_ptr = result;
-        GC_scratch_end_ptr = GC_scratch_free_ptr + bytes_to_get;
+        GC_scratch_end_addr = ADDR(GC_scratch_free_ptr) + bytes_to_get;
 #       ifdef USE_SCRATCH_LAST_END_PTR
-          GC_scratch_last_end_ptr = GC_scratch_end_ptr;
+          GC_scratch_last_end_addr = GC_scratch_end_addr;
 #       endif
     }
 }
@@ -210,7 +210,7 @@ GC_INNER void GC_init_headers(void)
 /* Return FALSE on failure.                                             */
 static GC_bool get_index(word addr)
 {
-    word hi = (word)(addr) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
+    word hi = addr >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
     bottom_index * r;
     bottom_index * p;
     bottom_index ** prev;
@@ -264,7 +264,7 @@ GC_INNER hdr * GC_install_header(struct hblk *h)
     hdr * result;
 
     GC_ASSERT(I_HOLD_LOCK());
-    if (EXPECT(!get_index((word)h), FALSE)) return NULL;
+    if (EXPECT(!get_index(ADDR(h)), FALSE)) return NULL;
 
     result = alloc_hdr();
     if (EXPECT(result != NULL, TRUE)) {
@@ -282,12 +282,12 @@ GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz /* bytes */)
     struct hblk * hbp;
 
     for (hbp = h; ADDR_LT((ptr_t)hbp, (ptr_t)h + sz); hbp += BOTTOM_SZ) {
-        if (!get_index((word)hbp))
+        if (!get_index(ADDR(hbp)))
             return FALSE;
-        if ((word)hbp > GC_WORD_MAX - (word)BOTTOM_SZ * HBLKSIZE)
+        if (ADDR(hbp) > GC_WORD_MAX - (word)BOTTOM_SZ * HBLKSIZE)
             break; /* overflow of hbp+=BOTTOM_SZ is expected */
     }
-    if (!get_index((word)h + sz - 1))
+    if (!get_index(ADDR(h) + sz - 1))
         return FALSE;
     GC_ASSERT(!IS_FORWARDING_ADDR_OR_NIL(HDR(h)));
     for (hbp = h + 1; ADDR_LT((ptr_t)hbp, (ptr_t)h + sz); hbp++) {
@@ -354,12 +354,12 @@ GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn fn,
 GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free)
 {
     REGISTER bottom_index * bi;
-    REGISTER word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
+    REGISTER word j = (ADDR(h) >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
 
     GC_ASSERT(I_HOLD_READER_LOCK());
     GET_BI(h, bi);
     if (bi == GC_all_nils) {
-        REGISTER word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
+        REGISTER word hi = ADDR(h) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
 
         bi = GC_all_bottom_indices;
         while (bi != 0 && bi -> key < hi) bi = bi -> asc_link;
@@ -389,12 +389,12 @@ GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free)
 GC_INNER struct hblk * GC_prev_block(struct hblk *h)
 {
     bottom_index * bi;
-    signed_word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
+    signed_word j = (ADDR(h) >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
 
     GC_ASSERT(I_HOLD_READER_LOCK());
     GET_BI(h, bi);
     if (bi == GC_all_nils) {
-        word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
+        word hi = ADDR(h) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
 
         bi = GC_all_bottom_indices_end;
         while (bi != NULL && bi -> key > hi)
@@ -408,7 +408,7 @@ GC_INNER struct hblk * GC_prev_block(struct hblk *h)
             if (NULL == hhdr) {
                 --j;
             } else if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-                j -= (signed_word)hhdr;
+                j -= (signed_word)ADDR(hhdr);
             } else {
                 return (struct hblk*)(((bi -> key << LOG_BOTTOM_SZ) + (word)j)
                                        << LOG_HBLKSIZE);

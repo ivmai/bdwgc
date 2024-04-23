@@ -153,7 +153,7 @@ GC_INLINE word *GC_clear_block(word *p, word sz, word *pcount)
   /* Clear object, advance p to next object in the process.     */
 # ifdef USE_MARK_BYTES
     GC_ASSERT((sz & 1) == 0);
-    GC_ASSERT(((word)p & (2 * sizeof(word) - 1)) == 0);
+    GC_ASSERT((ADDR(p) & (2 * sizeof(word) - 1)) == 0);
     p[1] = 0;
     p += 2;
     while (ADDR_LT((ptr_t)p, (ptr_t)q)) {
@@ -780,7 +780,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
                 hhdr = HDR(hbp);
                 *rlh = hhdr -> hb_next;
                 if (!ignore_old
-                    || (word)hhdr->hb_last_reclaimed == GC_gc_no - 1) {
+                    || (word)(hhdr -> hb_last_reclaimed) == GC_gc_no - 1) {
                     /* It's likely we'll need it this time, too */
                     /* It's been touched recently, so this      */
                     /* shouldn't trigger paging.                */

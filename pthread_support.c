@@ -442,26 +442,27 @@
 # endif
   {
     word my_mark_no = 0;
+    word id_n = (word)id;
     IF_CANCEL(int cancel_state;)
 
-    if ((word)id == GC_WORD_MAX) return 0; /* to prevent a compiler warning */
+    if (id_n == GC_WORD_MAX) return 0; /* to prevent a compiler warning */
     DISABLE_CANCEL(cancel_state);
                          /* Mark threads are not cancellable; they      */
                          /* should be invisible to client.              */
-    set_marker_thread_name((unsigned)(word)id);
+    set_marker_thread_name((unsigned)id_n);
 #   if defined(GC_WIN32_THREADS) || defined(USE_PROC_FOR_LIBRARIES) \
        || (defined(IA64) && (defined(HAVE_PTHREAD_ATTR_GET_NP) \
                              || defined(HAVE_PTHREAD_GETATTR_NP)))
-      GC_marker_sp[(word)id] = GC_approx_sp();
+      GC_marker_sp[id_n] = GC_approx_sp();
 #   endif
 #   if defined(IA64) && defined(USE_PROC_FOR_LIBRARIES)
-      marker_bsp[(word)id] = GC_save_regs_in_stack();
+      marker_bsp[id_n] = GC_save_regs_in_stack();
 #   endif
 #   if defined(GC_DARWIN_THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
-      marker_mach_threads[(word)id] = mach_thread_self();
+      marker_mach_threads[id_n] = mach_thread_self();
 #   endif
 #   if !defined(GC_PTHREADS_PARAMARK)
-      GC_marker_Id[(word)id] = thread_id_self();
+      GC_marker_Id[id_n] = thread_id_self();
 #   endif
 
     /* Inform GC_start_mark_threads about completion of marker data init. */
@@ -483,7 +484,7 @@
       }
 #     ifdef DEBUG_THREADS
         GC_log_printf("Starting helper for mark number %lu (thread %u)\n",
-                      (unsigned long)my_mark_no, (unsigned)(word)id);
+                      (unsigned long)my_mark_no, (unsigned)id_n);
 #     endif
       GC_help_marker(my_mark_no);
     }
@@ -1557,7 +1558,7 @@ GC_INNER_WIN32THREAD void GC_record_stack_base(GC_stack_context_t crtn,
   if ((crtn -> stack_end = (ptr_t)(sb -> mem_base)) == NULL)
     ABORT("Bad stack base in GC_register_my_thread");
 # ifdef E2K
-    crtn -> ps_ofs = (size_t)(word)(sb -> reg_base);
+    crtn -> ps_ofs = (size_t)ADDR(sb -> reg_base);
 # elif defined(IA64)
     crtn -> backing_store_end = (ptr_t)(sb -> reg_base);
 # elif defined(I386) && defined(GC_WIN32_THREADS)
@@ -1604,7 +1605,7 @@ GC_INNER void GC_thr_init(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(!GC_thr_initialized);
-  GC_ASSERT((word)(&GC_threads) % sizeof(word) == 0);
+  GC_ASSERT(ADDR(&GC_threads) % sizeof(word) == 0);
 # ifdef GC_ASSERTIONS
     GC_thr_initialized = TRUE;
 # endif
@@ -1992,7 +1993,7 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
 
     crtn -> stack_end = (ptr_t)(sb -> mem_base);
 #   ifdef E2K
-      crtn -> ps_ofs = (size_t)(word)(sb -> reg_base);
+      crtn -> ps_ofs = (size_t)ADDR(sb -> reg_base);
 #   elif defined(IA64)
       crtn -> backing_store_end = (ptr_t)(sb -> reg_base);
 #   endif
@@ -2064,6 +2065,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn, void *client_data)
 #   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
       while (EXPECT((me -> ext_suspend_cnt & 1) != 0, FALSE)) {
         word suspend_cnt = (word)(me -> ext_suspend_cnt);
+
         READER_UNLOCK_RELEASE();
         GC_suspend_self_inner(me, suspend_cnt);
         READER_LOCK();

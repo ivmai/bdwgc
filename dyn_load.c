@@ -318,8 +318,8 @@ STATIC void GC_register_map_entries(const char *maps)
 #           endif
 #           if defined(E2K) && defined(__ptr64__)
               /* TODO: avoid hard-coded addresses */
-              if ((word)start == 0xc2fffffff000UL
-                  && (word)end == 0xc30000000000UL && path[0] == '\n')
+              if (ADDR(start) == 0xc2fffffff000UL
+                  && ADDR(end) == 0xc30000000000UL && path[0] == '\n')
                 continue; /* discard some special mapping */
 #           endif
             if (path[0] == '[' && strncmp(path+1, "heap]", 5) != 0)
@@ -636,7 +636,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
       /* statically linked executables.                         */
       GC_add_roots_inner(datastart, dataend, TRUE);
 #     ifdef GC_HAVE_DATAREGION2
-        if ((word)DATASTART2 - 1U >= (word)DATAEND2) {
+        if (ADDR(DATASTART2) - 1U >= ADDR(DATAEND2)) {
                         /* Subtract one to check also for NULL  */
                         /* without a compiler warning.          */
           ABORT_ARG2("Wrong DATASTART/END2 pair",
@@ -812,8 +812,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
     long flags;
     ptr_t start;
     ptr_t limit;
-    ptr_t heap_start = HEAP_START;
-    ptr_t heap_end = heap_start;
+    word heap_start = ADDR(HEAP_START);
+    word heap_end = heap_start;
 
 #   ifdef SOLARISDL
 #     define MA_PHYS 0
@@ -848,10 +848,10 @@ GC_INNER void GC_register_dynamic_libraries(void)
                    errno, needed_sz, (void *)addr_map);
     }
     if (GC_n_heap_sects > 0) {
-        heap_end = GC_heap_sects[GC_n_heap_sects-1].hs_start
+        heap_end = ADDR(GC_heap_sects[GC_n_heap_sects-1].hs_start)
                         + GC_heap_sects[GC_n_heap_sects-1].hs_bytes;
-        if (ADDR_LT(heap_end, GC_scratch_last_end_ptr))
-          heap_end = GC_scratch_last_end_ptr;
+        if (heap_end < GC_scratch_last_end_addr)
+          heap_end = GC_scratch_last_end_addr;
     }
     for (i = 0; i < needed_sz; i++) {
         flags = addr_map[i].pr_mflags;
@@ -866,7 +866,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
           /* This makes no sense to me. - HB                            */
         start = (ptr_t)(addr_map[i].pr_vaddr);
         if (GC_roots_present(start)
-            || ADDR_INSIDE(start, heap_start, heap_end)) goto irrelevant;
+            || (ADDR(start) >= heap_start && ADDR(start) < heap_end))
+          goto irrelevant;
 
         limit = start + addr_map[i].pr_size;
         /* The following seemed to be necessary for very old versions   */

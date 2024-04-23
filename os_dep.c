@@ -539,7 +539,7 @@ GC_INNER const char * GC_get_maps(void)
 
     GC_ASSERT(I_HOLD_LOCK());
     pgsz = (size_t)sysconf(_SC_PAGESIZE);
-    GC_ASSERT((word)bound >= (word)pgsz);
+    GC_ASSERT(ADDR(bound) >= (word)pgsz);
 
     act.sa_handler = GC_fault_handler_openbsd;
     sigemptyset(&act.sa_mask);
@@ -992,8 +992,8 @@ GC_INNER void GC_setpagesize(void)
                 /* static since it's only called with the allocator */
                 /* lock held.                                       */
 
-        GC_ASSERT(up ? (word)bound >= MIN_PAGE_SIZE
-                     : (word)bound <= ~(word)MIN_PAGE_SIZE);
+        GC_ASSERT(up ? ADDR(bound) >= MIN_PAGE_SIZE
+                     : ADDR(bound) <= ~(word)MIN_PAGE_SIZE);
         GC_ASSERT(I_HOLD_LOCK());
         GC_setup_temporary_fault_handler();
         if (SETJMP(GC_jmp_buf) == 0) {
@@ -1161,14 +1161,14 @@ GC_INNER void GC_setpagesize(void)
 #       if defined(IA64)
           /* Some versions of glibc set the address 16 bytes too        */
           /* low while the initialization code is running.              */
-          if (((word)__libc_stack_end & 0xfff) + 0x10 < 0x1000) {
+          if ((ADDR(__libc_stack_end) & 0xfff) + 0x10 < 0x1000) {
             return __libc_stack_end + 0x10;
           } /* Otherwise it's not safe to add 16 bytes and we fall      */
             /* back to using /proc.                                     */
 #       elif defined(SPARC)
           /* Older versions of glibc for 64-bit SPARC do not set this   */
           /* variable correctly, it gets set to either zero or one.     */
-          if (__libc_stack_end != (ptr_t) (unsigned long)0x1)
+          if (ADDR(__libc_stack_end) != 1)
             return __libc_stack_end;
 #       else
           return __libc_stack_end;
@@ -1985,7 +1985,7 @@ void GC_register_data_segments(void)
 # if (defined(SVR4) || defined(AIX) || defined(DGUX)) && !defined(PCR)
   ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
   {
-    word page_offset = (word)PTR_ALIGN_UP(etext_addr, sizeof(ptr_t))
+    word page_offset = ADDR(PTR_ALIGN_UP(etext_addr, sizeof(ptr_t)))
                         & ((word)max_page_size - 1);
     volatile ptr_t result = PTR_ALIGN_UP(etext_addr, max_page_size)
                             + page_offset;
@@ -2066,7 +2066,7 @@ void GC_register_data_segments(void)
   ptr_t region_start = DATASTART;
 
   GC_ASSERT(I_HOLD_LOCK());
-  if ((word)region_start - 1U >= (word)DATAEND)
+  if (ADDR(region_start) - 1U >= ADDR(DATAEND))
     ABORT_ARG2("Wrong DATASTART/END pair",
                ": %p .. %p", (void *)region_start, (void *)DATAEND);
   for (;;) {
@@ -2138,7 +2138,7 @@ void GC_register_data_segments(void)
             GC_add_roots_inner(DATASTART, p, FALSE);
         }
 #   else
-        if ((word)DATASTART - 1U >= (word)DATAEND) {
+        if (ADDR(DATASTART) - 1U >= ADDR(DATAEND)) {
                                 /* Subtract one to check also for NULL  */
                                 /* without a compiler warning.          */
           ABORT_ARG2("Wrong DATASTART/END pair",
@@ -2146,7 +2146,7 @@ void GC_register_data_segments(void)
         }
         GC_add_roots_inner(DATASTART, DATAEND, FALSE);
 #       ifdef GC_HAVE_DATAREGION2
-          if ((word)DATASTART2 - 1U >= (word)DATAEND2)
+          if (ADDR(DATASTART2) - 1U >= ADDR(DATAEND2))
             ABORT_ARG2("Wrong DATASTART/END2 pair",
                        ": %p .. %p", (void *)DATASTART2, (void *)DATAEND2);
           GC_add_roots_inner(DATASTART2, DATAEND2, FALSE);
@@ -2250,7 +2250,7 @@ void GC_register_data_segments(void)
 #   else
       GC_ASSERT(last_addr != 0);
 #   endif
-    if (((word)result % HBLKSIZE) != 0)
+    if ((ADDR(result) % HBLKSIZE) != 0)
       ABORT(
        "GC_unix_get_mem: Memory returned by mmap is not aligned to HBLKSIZE.");
     return (ptr_t)result;
@@ -2276,7 +2276,7 @@ STATIC ptr_t GC_unix_sbrk_get_mem(size_t bytes)
 # endif
   {
     ptr_t cur_brk = (ptr_t)sbrk(0);
-    SBRK_ARG_T lsbs = (word)cur_brk & (GC_page_size-1);
+    SBRK_ARG_T lsbs = ADDR(cur_brk) & (GC_page_size-1);
 
     GC_ASSERT(GC_page_size != 0);
     if ((SBRK_ARG_T)bytes < 0) {
@@ -3508,7 +3508,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   }
 #endif /* !DARWIN */
 
-#define PAGE_ALIGNED(x) !((word)(x) & (GC_page_size-1))
+#define PAGE_ALIGNED(x) ((ADDR(x) & (GC_page_size-1)) == 0)
 
 STATIC void GC_protect_heap(void)
 {
@@ -3901,7 +3901,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 
     GC_ASSERT(GC_log_pagesize != 0);
     *vaddr = 1; /* make it dirty */
-    fpos = (off_t)(((word)vaddr >> GC_log_pagesize) * sizeof(pagemap_elem_t));
+    fpos = (off_t)((ADDR(vaddr) >> GC_log_pagesize) * sizeof(pagemap_elem_t));
 
     for (;;) {
       /* Read the relevant PTE from the pagemap file.   */
@@ -4064,19 +4064,19 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
                                     GC_bool is_static_root)
   {
     ptr_t vaddr = (ptr_t)HBLK_PAGE_ALIGNED(start);
-    off_t next_fpos_hint = (off_t)(((word)next_start_hint >> GC_log_pagesize)
+    off_t next_fpos_hint = (off_t)((ADDR(next_start_hint) >> GC_log_pagesize)
                                    * sizeof(pagemap_elem_t));
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT(modHBLKSZ((word)start) == 0);
+    GC_ASSERT(modHBLKSZ(ADDR(start)) == 0);
     GC_ASSERT(GC_log_pagesize != 0);
     while (ADDR_LT(vaddr, limit)) {
       size_t res;
       ptr_t limit_buf;
       const pagemap_elem_t *bufp = pagemap_buffered_read(&res,
-                (off_t)(((word)vaddr >> GC_log_pagesize)
+                (off_t)((ADDR(vaddr) >> GC_log_pagesize)
                         * sizeof(pagemap_elem_t)),
-                (size_t)((((word)limit - (word)vaddr
+                (size_t)(((ADDR(limit) - ADDR(vaddr)
                            + GC_page_size - 1) >> GC_log_pagesize)
                          * sizeof(pagemap_elem_t)),
                 next_fpos_hint);
@@ -4702,7 +4702,7 @@ STATIC void *GC_mprotect_thread(void *arg)
   struct mp_msg_s msg;
   mach_msg_id_t id;
 
-  if ((word)arg == GC_WORD_MAX) return 0; /* to prevent a compiler warning */
+  if (ADDR(arg) == GC_WORD_MAX) return 0; /* to prevent a compiler warning */
 # if defined(CPPCHECK)
     reply.data[0] = 0; /* to prevent "field unused" warnings */
     msg.data[0] = 0;
@@ -5420,7 +5420,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
               void *p = GC_REVEAL_NZ_POINTER(info[i].ci_arg[j]);
 
               if (j != 0) GC_err_printf(", ");
-              GC_err_printf("%ld (%p)", (long)(signed_word)p, p);
+              GC_err_printf("%ld (%p)", (long)(signed_word)ADDR(p), p);
             }
             GC_err_printf("\n");
           }
@@ -5528,7 +5528,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
                   }
                   if (strncmp(result_buf, "main",
                               nl != NULL
-                                ? (size_t)((word)nl /* a cppcheck workaround */
+                                ? (size_t)(ADDR(nl) /* a cppcheck workaround */
                                            - COVERT_DATAFLOW(result_buf))
                                 : result_len) == 0) {
                     stop = TRUE;

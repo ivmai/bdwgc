@@ -234,7 +234,7 @@ GC_API void GC_CALL GC_set_mark_bit(const void *p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
-    word bit_no = MARK_BIT_NO((word)p - (word)h, hhdr -> hb_sz);
+    word bit_no = MARK_BIT_NO((word)((ptr_t)p - (ptr_t)h), hhdr -> hb_sz);
 
     if (!mark_bit_from_hdr(hhdr, bit_no)) {
       set_mark_bit_from_hdr(hhdr, bit_no);
@@ -246,7 +246,7 @@ GC_API void GC_CALL GC_clear_mark_bit(const void *p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
-    word bit_no = MARK_BIT_NO((word)p - (word)h, hhdr -> hb_sz);
+    word bit_no = MARK_BIT_NO((word)((ptr_t)p - (ptr_t)h), hhdr -> hb_sz);
 
     if (mark_bit_from_hdr(hhdr, bit_no)) {
       size_t n_marks = hhdr -> hb_n_marks;
@@ -270,7 +270,7 @@ GC_API int GC_CALL GC_is_marked(const void *p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
-    word bit_no = MARK_BIT_NO((word)p - (word)h, hhdr -> hb_sz);
+    word bit_no = MARK_BIT_NO((word)((ptr_t)p - (ptr_t)h), hhdr -> hb_sz);
 
     return (int)mark_bit_from_hdr(hhdr, bit_no); /* 0 or 1 */
 }
@@ -660,7 +660,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 # ifdef OS2 /* Use untweaked version to circumvent compiler problem.    */
     while (ADDR_GE((ptr_t)mark_stack_top, (ptr_t)mark_stack) && credit >= 0)
 # else
-    while (((((word)mark_stack_top - (word)mark_stack) | (word)credit)
+    while ((((ADDR(mark_stack_top) - ADDR(mark_stack)) | (word)credit)
             & SIGNB) == 0)
 # endif
   {
@@ -682,11 +682,11 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           /* too much on the stack.                                     */
 
           /* Either it is a heap object or a region outside the heap.   */
-          GC_ASSERT(descr < (word)GC_greatest_real_heap_addr
-                            - (word)GC_least_real_heap_addr
-                || ADDR_GE(GC_least_real_heap_addr + sizeof(word),
-                           current_p + descr)
-                || ADDR_GE(current_p, GC_greatest_real_heap_addr));
+          GC_ASSERT(descr < GC_greatest_real_heap_addr
+                            - GC_least_real_heap_addr
+                    || GC_least_real_heap_addr + sizeof(word)
+                        >= ADDR(current_p) + descr
+                    || ADDR(current_p) >= GC_greatest_real_heap_addr);
 #         ifdef PARALLEL_MARK
 #           define SHARE_BYTES 2048
             if (descr > SHARE_BYTES && GC_parallel
@@ -701,7 +701,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                                         /* misaligned pointers.         */
               mark_stack_top++;
 #             ifdef ENABLE_TRACE
-                if (ADDR_INSIDE(GC_trace_addr, current_p, current_p + descr)) {
+                if (ADDR_INSIDE(GC_trace_ptr, current_p, current_p + descr)) {
                   GC_log_printf("GC #%lu: large section; start %p, len %lu,"
                                 " splitting (parallel) at %p\n",
                                 (unsigned long)GC_gc_no, (void *)current_p,
@@ -719,7 +719,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           mark_stack_top -> mse_descr.w =
                                 descr - WORDS_TO_BYTES(SPLIT_RANGE_WORDS-1);
 #         ifdef ENABLE_TRACE
-            if (ADDR_INSIDE(GC_trace_addr, current_p, current_p + descr)) {
+            if (ADDR_INSIDE(GC_trace_ptr, current_p, current_p + descr)) {
               GC_log_printf("GC #%lu: large section; start %p, len %lu,"
                             " splitting at %p\n",
                             (unsigned long)GC_gc_no, (void *)current_p,
@@ -733,7 +733,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         case GC_DS_BITMAP:
           mark_stack_top--;
 #         ifdef ENABLE_TRACE
-            if (ADDR_INSIDE(GC_trace_addr, current_p,
+            if (ADDR_INSIDE(GC_trace_ptr, current_p,
                             current_p + WORDS_TO_BYTES(CPP_WORDSZ-2))) {
               GC_log_printf("GC #%lu: tracing from %p bitmap descr %lu\n",
                             (unsigned long)GC_gc_no, (void *)current_p,
@@ -749,7 +749,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             if (ADDR_LT(least_ha, q) && ADDR_LT(q, greatest_ha)) {
                 PREFETCH(q);
 #               ifdef ENABLE_TRACE
-                  if (GC_trace_addr == current_p) {
+                  if (GC_trace_ptr == current_p) {
                     GC_log_printf("GC #%lu: considering(3) %p -> %p\n",
                                   (unsigned long)GC_gc_no, (void *)current_p,
                                   (void *)q);
@@ -762,10 +762,10 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         case GC_DS_PROC:
           mark_stack_top--;
 #         ifdef ENABLE_TRACE
-            if (ADDR_GE(GC_trace_addr, current_p)) {
+            if (ADDR_GE(GC_trace_ptr, current_p)) {
               const void *base = GC_base(current_p);
 
-              if (base != NULL && GC_base(GC_trace_addr) == base) {
+              if (base != NULL && GC_base(GC_trace_ptr) == base) {
                 GC_log_printf("GC #%lu: tracing from %p, proc descr %lu\n",
                               (unsigned long)GC_gc_no, (void *)current_p,
                               (unsigned long)descr);
@@ -815,16 +815,16 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           continue;
 #     endif
 #     ifdef ENABLE_TRACE
-        if (ADDR_INSIDE(GC_trace_addr, current_p, current_p + descr)) {
+        if (ADDR_INSIDE(GC_trace_ptr, current_p, current_p + descr)) {
           GC_log_printf("GC #%lu: small object; start %p, len %lu\n",
                         (unsigned long)GC_gc_no, (void *)current_p,
                         (unsigned long)descr);
         }
 #     endif
-      limit = current_p + (word)descr;
+      limit = current_p + descr;
     }
     /* The simple case in which we're scanning a range. */
-    GC_ASSERT(!((word)current_p & (ALIGNMENT-1)));
+    GC_ASSERT((ADDR(current_p) & (ALIGNMENT-1)) == 0);
     credit -= limit - current_p;
     limit -= sizeof(word);
     {
@@ -875,7 +875,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           /* likely we will need them soon.                             */
           PREFETCH(q);
 #         ifdef ENABLE_TRACE
-            if (GC_trace_addr == current_p) {
+            if (GC_trace_ptr == current_p) {
               GC_log_printf("GC #%lu: considering(1) %p -> %p\n",
                             (unsigned long)GC_gc_no, (void *)current_p,
                             (void *)q);
@@ -890,7 +890,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         /* We already know that it passes the preliminary pointer       */
         /* validity test.                                               */
 #       ifdef ENABLE_TRACE
-            if (GC_trace_addr == current_p) {
+            if (GC_trace_ptr == current_p) {
               GC_log_printf("GC #%lu: considering(2) %p -> %p\n",
                             (unsigned long)GC_gc_no, (void *)current_p,
                             (void *)deferred);
@@ -991,11 +991,11 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
             top -> mse_start = p -> mse_start;
             top -> mse_descr.w = descr;
             GC_ASSERT((descr & GC_DS_TAGS) != GC_DS_LENGTH /* 0 */
-                || descr < (word)GC_greatest_real_heap_addr
-                            - (word)GC_least_real_heap_addr
-                || ADDR_GE(GC_least_real_heap_addr + sizeof(word),
-                           p -> mse_start + descr)
-                || ADDR_GE(p -> mse_start, GC_greatest_real_heap_addr));
+                    || descr < GC_greatest_real_heap_addr
+                                - GC_least_real_heap_addr
+                    || GC_least_real_heap_addr + sizeof(word)
+                        >= ADDR(p -> mse_start) + descr
+                    || ADDR(p -> mse_start) >= GC_greatest_real_heap_addr);
             /* If this is a big object, count it as size/256 + 1 objects. */
             ++i;
             if ((descr & GC_DS_TAGS) == GC_DS_LENGTH) i += (int)(descr >> 8);
@@ -1337,7 +1337,7 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
     if (ADDR_GE((ptr_t)mark_stack_top, (ptr_t)GC_mark_stack_limit)) {
         ABORT("Unexpected mark stack overflow");
     }
-    length = (word)top - (word)bottom;
+    length = (word)((ptr_t)top - (ptr_t)bottom);
 #   if GC_DS_TAGS > ALIGNMENT - 1
         length = (length + GC_DS_TAGS) & ~(word)GC_DS_TAGS; /* round up */
 #   endif
@@ -1356,7 +1356,7 @@ GC_API struct GC_ms_entry * GC_CALL GC_custom_push_range(void *bottom,
     top = PTR_ALIGN_DOWN((ptr_t)top, ALIGNMENT);
     if (ADDR_GE((ptr_t)bottom, (ptr_t)top)) return mark_stack_top;
 
-    length = (word)top - (word)bottom;
+    length = (word)((ptr_t)top - (ptr_t)bottom);
 #   if GC_DS_TAGS > ALIGNMENT - 1
         length = (length + GC_DS_TAGS) & ~(word)GC_DS_TAGS; /* round up */
 #   endif

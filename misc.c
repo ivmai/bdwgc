@@ -374,7 +374,7 @@ STATIC void GC_init_size_map(void)
       if (next_random_no() == 0) {
         ptr_t limit = sp;
 
-        MAKE_HOTTER(limit, BIG_CLEAR_SIZE*sizeof(word));
+        MAKE_HOTTER(limit, BIG_CLEAR_SIZE * sizeof(word));
         limit = PTR_ALIGN_DOWN(limit, 0x10);
                         /* Make it sufficiently aligned for assembly    */
                         /* implementations of GC_clear_stack_inner.     */
@@ -1175,11 +1175,11 @@ GC_API void GC_CALL GC_init(void)
 #       ifndef ENABLE_TRACE
           WARN("Tracing not enabled: Ignoring GC_TRACE value\n", 0);
 #       else
-          ptr_t addr = (ptr_t)STRTOULL(str, NULL, 16);
+          ptr_t p = (ptr_t)STRTOULL(str, NULL, 16);
 
-          if ((word)addr < 0x1000)
-              WARN("Unlikely trace address: %p\n", addr);
-          GC_trace_addr = addr;
+          if (ADDR(p) < 0x1000)
+              WARN("Unlikely trace address: %p\n", (void *)p);
+          GC_trace_ptr = p;
 #       endif
       }
     }

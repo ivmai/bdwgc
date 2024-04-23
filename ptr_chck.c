@@ -36,7 +36,7 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     hhdr = HDR(p);
     if (NULL == hhdr) {
-        if (divHBLKSZ((word)p) != divHBLKSZ((word)q) && HDR(q) != NULL) {
+        if (divHBLKSZ(ADDR(p)) != divHBLKSZ(ADDR(q)) && HDR(q) != NULL) {
           GC_same_obj_print_proc((ptr_t)p, (ptr_t)q);
         }
         return p;
@@ -145,7 +145,7 @@ GC_API void * GC_CALL GC_is_visible(void *p)
 {
     const hdr *hhdr;
 
-    if ((word)p & (ALIGNMENT - 1)) goto fail;
+    if ((ADDR(p) & (ALIGNMENT-1)) != 0) goto fail;
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
 #   ifdef THREADS
         hhdr = HDR(p);
@@ -183,12 +183,12 @@ GC_API void * GC_CALL GC_is_visible(void *p)
         retry:
             switch (descr & GC_DS_TAGS) {
                 case GC_DS_LENGTH:
-                    if ((word)p - (word)base > descr) goto fail;
+                    if ((word)((ptr_t)p - base) > descr) goto fail;
                     break;
                 case GC_DS_BITMAP:
                     if ((ptr_t)p - base >= WORDS_TO_BYTES(BITMAP_BITS)
-                        || ((word)p & (sizeof(word)-1)) != 0) goto fail;
-                    if (!(((word)1 << (CPP_WORDSZ-1 - ((word)p - (word)base)))
+                        || (ADDR(p) & (sizeof(word)-1)) != 0) goto fail;
+                    if (!(((word)1 << (CPP_WORDSZ-1 - (word)((ptr_t)p - base)))
                           & descr)) goto fail;
                     break;
                 case GC_DS_PROC:

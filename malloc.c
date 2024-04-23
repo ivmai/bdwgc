@@ -84,7 +84,7 @@ STATIC ptr_t GC_alloc_large(size_t lb_adjusted, int k, unsigned flags,
         }
         /* FIXME: Do we need some way to reset GC_max_large_allocd_bytes? */
         result = h -> hb_body;
-        GC_ASSERT(((word)result & align_m1) == 0);
+        GC_ASSERT((ADDR(result) & align_m1) == 0);
     }
     return result;
 }
@@ -339,20 +339,20 @@ GC_INNER void * GC_malloc_kind_aligned_global(size_t lb, int k,
         op = *opp;
         if (EXPECT(align_m1 >= GC_GRANULE_BYTES, FALSE)) {
             /* TODO: Avoid linear search. */
-            for (; ((word)op & align_m1) != 0; op = *opp) {
+            for (; (ADDR(op) & align_m1) != 0; op = *opp) {
                 opp = &obj_link(op);
             }
         }
         if (EXPECT(op != NULL, TRUE)) {
             GC_ASSERT(PTRFREE == k || NULL == obj_link(op)
-                || (ADDR_LT((ptr_t)obj_link(op), GC_greatest_real_heap_addr)
-                    && ADDR_LT(GC_least_real_heap_addr, (ptr_t)obj_link(op))));
+                      || (ADDR(obj_link(op)) < GC_greatest_real_heap_addr
+                          && GC_least_real_heap_addr < ADDR(obj_link(op))));
             *opp = obj_link(op);
             if (k != PTRFREE)
                 obj_link(op) = NULL;
             GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
             UNLOCK();
-            GC_ASSERT(((word)op & align_m1) == 0);
+            GC_ASSERT((ADDR(op) & align_m1) == 0);
             return op;
         }
         UNLOCK();

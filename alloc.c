@@ -1053,7 +1053,7 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
       AO_t *prev;
       AO_t *p;
 
-      if ((word)list <= HBLKSIZE) return;
+      if (ADDR(list) <= HBLKSIZE) return;
 
       prev = (AO_t *)pfreelist;
       for (p = list; p != NULL;) {
@@ -1408,7 +1408,7 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t bytes)
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT((word)h % HBLKSIZE == 0);
+    GC_ASSERT(ADDR(h) % HBLKSIZE == 0);
     GC_ASSERT(bytes % HBLKSIZE == 0);
     GC_ASSERT(bytes > 0);
     GC_ASSERT(GC_all_nils != NULL);
@@ -1443,7 +1443,7 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t bytes)
                          (unsigned long)new_capacity);
     }
 
-    while (EXPECT((word)h <= HBLKSIZE, FALSE)) {
+    while (EXPECT(ADDR(h) <= HBLKSIZE, FALSE)) {
         /* Can't handle memory near address zero. */
         ++h;
         bytes -= HBLKSIZE;
@@ -1494,15 +1494,15 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t bytes)
         GC_greatest_plausible_heap_addr = endp;
     }
 #   ifdef SET_REAL_HEAP_BOUNDS
-      if (ADDR_LT((ptr_t)h, GC_least_real_heap_addr)
-          || EXPECT(NULL == GC_least_real_heap_addr, FALSE))
-        GC_least_real_heap_addr = (ptr_t)h - sizeof(word);
-      if (ADDR_LT(GC_greatest_real_heap_addr, endp)) {
+      if (ADDR(h) < GC_least_real_heap_addr
+          || EXPECT(0 == GC_least_real_heap_addr, FALSE))
+        GC_least_real_heap_addr = ADDR(h) - sizeof(word);
+      if (GC_greatest_real_heap_addr < ADDR(endp)) {
 #       ifdef INCLUDE_LINUX_THREAD_DESCR
           /* Avoid heap intersection with the static data roots. */
           GC_exclude_static_roots_inner((ptr_t)h, endp);
 #       endif
-        GC_greatest_real_heap_addr = endp;
+        GC_greatest_real_heap_addr = ADDR(endp);
       }
 #   endif
     GC_handle_protected_regions_limit();
@@ -1568,7 +1568,7 @@ GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
   GC_ASSERT(bytes != 0);
   GC_ASSERT(GC_page_size != 0);
   /* TODO: Assert correct memory flags if GWW_VDB */
-  page_offset = (word)ptr & (GC_page_size - 1);
+  page_offset = ADDR(ptr) & (GC_page_size-1);
   if (page_offset != 0)
     displ = GC_page_size - page_offset;
   recycled_bytes = bytes > displ ? (bytes - displ) & ~(GC_page_size - 1) : 0;
@@ -1614,9 +1614,8 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     /* GC_add_to_heap performs minimal adjustment needed for            */
     /* correctness.                                                     */
     expansion_slop = min_bytes_allocd() + 4 * MAXHINCR * HBLKSIZE;
-    if ((NULL == GC_last_heap_addr && !((word)space & SIGNB))
-        || (GC_last_heap_addr != NULL
-            && ADDR_LT(GC_last_heap_addr, (ptr_t)space))) {
+    if ((0 == GC_last_heap_addr && (ADDR(space) & SIGNB) == 0)
+        || (GC_last_heap_addr != 0 && GC_last_heap_addr < ADDR(space))) {
         /* Assume the heap is growing up. */
         ptr_t new_limit = (ptr_t)space + bytes + expansion_slop;
 
@@ -1631,7 +1630,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
             && ADDR_LT(new_limit, (ptr_t)GC_least_plausible_heap_addr))
           GC_least_plausible_heap_addr = new_limit;
     }
-    GC_last_heap_addr = (ptr_t)space;
+    GC_last_heap_addr = ADDR(space);
 
     GC_add_to_heap(space, bytes);
     if (GC_on_heap_resize)

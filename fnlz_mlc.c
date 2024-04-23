@@ -110,7 +110,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
       GC_ASSERT(GC_finalized_kind != 0);
 #   endif
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fclos));
-    GC_ASSERT(((word)fclos & FINALIZER_CLOSURE_FLAG) == 0);
+    GC_ASSERT((ADDR(fclos) & FINALIZER_CLOSURE_FLAG) == 0);
     op = GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)),
                         (int)GC_finalized_kind);
     if (EXPECT(NULL == op, FALSE))

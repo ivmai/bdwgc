@@ -201,10 +201,10 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, const hdr * hhdr, mse * mark_stack_top,
 
 #ifdef ENABLE_TRACE
 # define TRACE(source, cmd) \
-        if (GC_trace_addr != 0 && (ptr_t)(source) == GC_trace_addr) cmd
+        if (GC_trace_ptr != NULL && (ptr_t)(source) == GC_trace_ptr) cmd
 # define TRACE_TARGET(target, cmd) \
-        if (GC_trace_addr != NULL && GC_is_heap_ptr(GC_trace_addr) \
-            && (target) == *(ptr_t *)GC_trace_addr) cmd
+        if (GC_trace_ptr != NULL && GC_is_heap_ptr(GC_trace_ptr) \
+            && (target) == *(ptr_t *)GC_trace_ptr) cmd
 #else
 # define TRACE(source, cmd)
 # define TRACE_TARGET(source, cmd)
@@ -251,7 +251,7 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
         /* gran_offset is bogus.        */
         size_t obj_displ;
 
-        base = (ptr_t)hhdr->hb_block;
+        base = (ptr_t)(hhdr -> hb_block);
         obj_displ = (size_t)(current - base);
         if (obj_displ != displ) {
           GC_ASSERT(obj_displ < hhdr -> hb_sz);

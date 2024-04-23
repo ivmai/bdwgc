@@ -844,13 +844,14 @@ STATIC word GC_push_stack_for(GC_thread thread, thread_id_t self_id,
 #         endif
 #         ifdef DEBUG_THREADS
             GC_log_printf("TIB stack limit/base: %p .. %p\n",
-                          (void *)tib->StackLimit, (void *)tib->StackBase);
+                          (void *)(tib -> StackLimit),
+                          (void *)(tib -> StackBase));
 #         endif
-          GC_ASSERT(!HOTTER_THAN((ptr_t)tib->StackBase, stack_end));
+          GC_ASSERT(!HOTTER_THAN((ptr_t)(tib -> StackBase), stack_end));
           if (stack_end != crtn -> initial_stack_base
               /* We are in a coroutine (old-style way of the support).  */
-              && ((word)stack_end <= (word)tib->StackLimit
-                  || (word)tib->StackBase < (word)stack_end)) {
+              && (ADDR(stack_end) <= (word)(tib -> StackLimit)
+                  || (word)(tib -> StackBase) < ADDR(stack_end))) {
             /* The coroutine stack is not within TIB stack.   */
             WARN("GetThreadContext might return stale register values"
                  " including ESP= %p\n", sp);
@@ -864,7 +865,7 @@ STATIC word GC_push_stack_for(GC_thread thread, thread_id_t self_id,
             /* limit).  There is no 100% guarantee that all the         */
             /* registers are pushed but we do our best (the proper      */
             /* solution would be to fix it inside Windows).             */
-            sp = (ptr_t)tib->StackLimit;
+            sp = (ptr_t)(tib -> StackLimit);
           }
         } /* else */
 #       ifdef DEBUG_THREADS
@@ -1663,7 +1664,7 @@ GC_INNER void GC_thr_init(void)
 
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(!GC_thr_initialized);
-  GC_ASSERT((word)(&GC_threads) % sizeof(word) == 0);
+  GC_ASSERT(ADDR(&GC_threads) % sizeof(ptr_t) == 0);
 # ifdef GC_ASSERTIONS
     GC_thr_initialized = TRUE;
 # endif

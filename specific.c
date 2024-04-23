@@ -31,7 +31,7 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
 
     GC_ASSERT(I_HOLD_LOCK());
     /* A quick alignment check, since we need atomic stores */
-    GC_ASSERT((word)(&invalid_tse.next) % sizeof(tse *) == 0);
+    GC_ASSERT(ADDR(&invalid_tse.next) % sizeof(tse *) == 0);
     result = (tsd *)MALLOC_CLEAR(sizeof(tsd));
     if (NULL == result) return ENOMEM;
     ret = pthread_mutex_init(&result->lock, NULL);
@@ -53,7 +53,7 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
 GC_INNER int GC_setspecific(tsd * key, void * value)
 {
     pthread_t self = pthread_self();
-    unsigned hash_val = HASH(self);
+    unsigned hash_val = TS_HASH(self);
     volatile tse * entry;
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -93,7 +93,7 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
 /* survived one.  GC_remove_specific() should be called on thread exit. */
 GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
 {
-    unsigned hash_val = HASH(t);
+    unsigned hash_val = TS_HASH(t);
     tse *entry;
     tse *prev = NULL;
 
@@ -149,7 +149,7 @@ GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
                                     tse * volatile * cache_ptr)
 {
     pthread_t self = pthread_self();
-    tse *entry = key->hash[HASH(self)].p;
+    tse *entry = key->hash[TS_HASH(self)].p;
 
     GC_ASSERT(qtid != INVALID_QTID);
     while (entry != NULL && !THREAD_EQUAL(entry->thread, self)) {

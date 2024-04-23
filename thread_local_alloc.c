@@ -36,17 +36,19 @@ static GC_bool keys_initialized;
 
 static void return_single_freelist(void *fl, void **gfl)
 {
-    if (*gfl == 0) {
-      *gfl = fl;
+    if (NULL == *gfl) {
+        *gfl = fl;
     } else {
-      void *q, **qptr;
+        void *q = fl;
+        void **qptr;
 
-      GC_ASSERT(GC_size(fl) == GC_size(*gfl));
-      /* Concatenate: */
-        qptr = &(obj_link(fl));
-        while ((word)(q = *qptr) >= HBLKSIZE)
-          qptr = &(obj_link(q));
-        GC_ASSERT(0 == q);
+        GC_ASSERT(GC_size(fl) == GC_size(*gfl));
+        /* Concatenate: */
+        do {
+            qptr = &obj_link(q);
+            q = *qptr;
+        } while (ADDR(q) >= HBLKSIZE);
+        GC_ASSERT(NULL == q);
         *qptr = *gfl;
         *gfl = fl;
     }
@@ -58,7 +60,7 @@ static void return_freelists(void **fl, void **gfl)
     int i;
 
     for (i = 1; i < GC_TINY_FREELISTS; ++i) {
-        if ((word)(fl[i]) >= HBLKSIZE) {
+        if (ADDR(fl[i]) >= HBLKSIZE) {
           return_single_freelist(fl[i], &gfl[i]);
         }
         /* Clear fl[i], since the thread structure may hang around.     */
@@ -66,7 +68,7 @@ static void return_freelists(void **fl, void **gfl)
         fl[i] = (ptr_t)HBLKSIZE;
     }
     /* The 0 granule freelist really contains 1 granule objects.        */
-    if ((word)fl[0] >= HBLKSIZE
+    if (ADDR(fl[0]) >= HBLKSIZE
 #       ifdef GC_GCJ_SUPPORT
           && fl[0] != ERROR_FL
 #       endif
@@ -96,7 +98,7 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
     if (!EXPECT(keys_initialized, TRUE)) {
 #       ifdef USE_CUSTOM_SPECIFIC
           /* Ensure proper alignment of a "pushed" GC symbol.   */
-          GC_ASSERT((word)(&GC_thread_key) % sizeof(word) == 0);
+          GC_ASSERT(ADDR(&GC_thread_key) % sizeof(word) == 0);
 #       endif
         res = GC_key_create(&GC_thread_key, reset_thread_key);
         if (COVERT_DATAFLOW(res) != 0) {
@@ -274,13 +276,13 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
         /* Load the pointer atomically as it might be updated   */
         /* concurrently by GC_FAST_MALLOC_GRANS.                */
         q = (ptr_t)AO_load((volatile AO_t *)&p->_freelists[k][j]);
-        if ((word)q > HBLKSIZE)
+        if (ADDR(q) > HBLKSIZE)
           GC_set_fl_marks(q);
       }
 #     ifdef GC_GCJ_SUPPORT
         if (EXPECT(j > 0, TRUE)) {
           q = (ptr_t)AO_load((volatile AO_t *)&p->gcj_freelists[j]);
-          if ((word)q > HBLKSIZE)
+          if (ADDR(q) > HBLKSIZE)
             GC_set_fl_marks(q);
         }
 #     endif

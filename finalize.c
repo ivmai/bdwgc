@@ -26,8 +26,8 @@
 typedef void (* finalization_mark_proc)(ptr_t /* finalizable_obj_ptr */);
 
 #define HASH3(addr,size,log_size) \
-        ((((word)(addr) >> 3) ^ ((word)(addr) >> (3 + (log_size)))) \
-         & ((size) - 1))
+            (((ADDR(addr) >> 3) ^ (ADDR(addr) >> (3 + (log_size)))) \
+             & ((size)-1))
 #define HASH2(addr,log_size) HASH3(addr, (word)1 << (log_size), log_size)
 
 struct hash_chain_entry {
@@ -70,10 +70,10 @@ struct finalizable_object {
 
 GC_API void GC_CALL GC_push_finalizer_structures(void)
 {
-  GC_ASSERT((word)(&GC_dl_hashtbl.head) % sizeof(word) == 0);
-  GC_ASSERT((word)(&GC_fnlz_roots) % sizeof(word) == 0);
+  GC_ASSERT(ADDR(&GC_dl_hashtbl.head) % sizeof(word) == 0);
+  GC_ASSERT(ADDR(&GC_fnlz_roots) % sizeof(word) == 0);
 # ifndef GC_LONG_REFS_NOT_NEEDED
-    GC_ASSERT((word)(&GC_ll_hashtbl.head) % sizeof(word) == 0);
+    GC_ASSERT(ADDR(&GC_ll_hashtbl.head) % sizeof(word) == 0);
     GC_PUSH_ALL_SYM(GC_ll_hashtbl.head);
 # endif
   GC_PUSH_ALL_SYM(GC_dl_hashtbl.head);
@@ -168,7 +168,7 @@ STATIC int GC_register_disappearing_link_inner(
     GC_ASSERT(GC_is_initialized);
     if (EXPECT(GC_find_leak, FALSE)) return GC_UNIMPLEMENTED;
 #   ifdef GC_ASSERTIONS
-      GC_noop1((word)(*link)); /* check accessibility */
+      GC_noop1(ADDR(*link)); /* check accessibility */
 #   endif
     LOCK();
     GC_ASSERT(obj != NULL && GC_base_C(obj) == obj);
@@ -232,7 +232,7 @@ STATIC int GC_register_disappearing_link_inner(
 GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
                                                          const void * obj)
 {
-    if (((word)link & (ALIGNMENT-1)) != 0 || !NONNULL_ARG_NOT_NULL(link))
+    if ((ADDR(link) & (ALIGNMENT-1)) != 0 || !NONNULL_ARG_NOT_NULL(link))
         ABORT("Bad arg to GC_general_register_disappearing_link");
     return GC_register_disappearing_link_inner(&GC_dl_hashtbl, link, obj,
                                                "dl");
@@ -279,7 +279,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 {
     struct disappearing_link *curr_dl;
 
-    if (((word)link & (ALIGNMENT-1)) != 0) return 0; /* Nothing to do. */
+    if ((ADDR(link) & (ALIGNMENT-1)) != 0) return 0; /* nothing to do */
 
     LOCK();
     curr_dl = GC_unregister_disappearing_link_inner(&GC_dl_hashtbl, link);
@@ -327,9 +327,9 @@ GC_INLINE void GC_complete_ongoing_collection(void) {
       GCToggleRef *r = &GC_toggleref_arr[i];
       void *obj = r -> strong_ref;
 
-      if (((word)obj & 1) != 0) {
+      if ((ADDR(obj) & 1) != 0) {
         obj = GC_REVEAL_POINTER(r -> weak_ref);
-        GC_ASSERT(((word)obj & 1) == 0);
+        GC_ASSERT((ADDR(obj) & 1) == 0);
       }
       if (NULL == obj) continue;
 
@@ -370,7 +370,7 @@ GC_INLINE void GC_complete_ongoing_collection(void) {
     GC_set_mark_bit(GC_toggleref_arr);
     for (i = 0; i < GC_toggleref_array_size; ++i) {
       void *obj = GC_toggleref_arr[i].strong_ref;
-      if (obj != NULL && ((word)obj & 1) == 0) {
+      if (obj != NULL && (ADDR(obj) & 1) == 0) {
         /* Push and mark the object.    */
         GC_mark_fo((ptr_t)obj, GC_normal_finalize_mark_proc);
         GC_set_mark_bit(obj);
@@ -387,7 +387,7 @@ GC_INLINE void GC_complete_ongoing_collection(void) {
     for (i = 0; i < GC_toggleref_array_size; ++i) {
       GCToggleRef *r = &GC_toggleref_arr[i];
 
-      if (((word)(r -> strong_ref) & 1) != 0) {
+      if ((ADDR(r -> strong_ref) & 1) != 0) {
         if (!GC_is_marked(GC_REVEAL_POINTER(r -> weak_ref))) {
           r -> weak_ref = 0;
         } else {
@@ -456,7 +456,7 @@ GC_INLINE void GC_complete_ongoing_collection(void) {
 
     GC_ASSERT(NONNULL_ARG_NOT_NULL(obj));
     LOCK();
-    GC_ASSERT(((word)obj & 1) == 0 && obj == GC_base(obj));
+    GC_ASSERT((ADDR(obj) & 1) == 0 && obj == GC_base(obj));
     if (GC_toggleref_callback != 0) {
       if (!ensure_toggleref_capacity(1)) {
         res = GC_NO_MEMORY;
@@ -501,7 +501,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 #ifndef GC_LONG_REFS_NOT_NEEDED
   GC_API int GC_CALL GC_register_long_link(void * * link, const void * obj)
   {
-    if (((word)link & (ALIGNMENT-1)) != 0 || !NONNULL_ARG_NOT_NULL(link))
+    if ((ADDR(link) & (ALIGNMENT-1)) != 0 || !NONNULL_ARG_NOT_NULL(link))
         ABORT("Bad arg to GC_register_long_link");
     return GC_register_disappearing_link_inner(&GC_ll_hashtbl, link, obj,
                                                "long dl");
@@ -511,7 +511,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
   {
     struct disappearing_link *curr_dl;
 
-    if (((word)link & (ALIGNMENT-1)) != 0) return 0; /* Nothing to do. */
+    if ((ADDR(link) & (ALIGNMENT-1)) != 0) return 0; /* nothing to do */
 
     LOCK();
     curr_dl = GC_unregister_disappearing_link_inner(&GC_ll_hashtbl, link);
@@ -533,7 +533,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     word curr_hidden_link, new_hidden_link;
 
 #   ifdef GC_ASSERTIONS
-      GC_noop1((word)(*new_link));
+      GC_noop1(ADDR(*new_link));
 #   endif
     GC_ASSERT(I_HOLD_LOCK());
     if (EXPECT(NULL == dl_hashtbl -> head, FALSE)) return GC_NOT_FOUND;
@@ -583,10 +583,10 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
   {
     int result;
 
-    if (((word)new_link & (ALIGNMENT-1)) != 0
+    if ((ADDR(new_link) & (ALIGNMENT-1)) != 0
         || !NONNULL_ARG_NOT_NULL(new_link))
       ABORT("Bad new_link arg to GC_move_disappearing_link");
-    if (((word)link & (ALIGNMENT-1)) != 0)
+    if ((ADDR(link) & (ALIGNMENT-1)) != 0)
       return GC_NOT_FOUND; /* Nothing to do. */
 
     LOCK();
@@ -600,10 +600,10 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     {
       int result;
 
-      if (((word)new_link & (ALIGNMENT-1)) != 0
+      if ((ADDR(new_link) & (ALIGNMENT-1)) != 0
           || !NONNULL_ARG_NOT_NULL(new_link))
         ABORT("Bad new_link arg to GC_move_long_link");
-      if (((word)link & (ALIGNMENT-1)) != 0)
+      if ((ADDR(link) & (ALIGNMENT-1)) != 0)
         return GC_NOT_FOUND; /* Nothing to do. */
 
       LOCK();
