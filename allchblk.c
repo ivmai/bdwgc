@@ -621,7 +621,7 @@ STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
  * appropriate free list.
  * N replaces h in the original free list.
  *
- * Nhdr is not completely filled in, since it is about to allocated.
+ * Nhdr is not completely filled in, since it is about to be allocated.
  * It may in fact end up on the wrong free list for its size.
  * That's not a disaster, since n is about to be allocated
  * by our caller.
