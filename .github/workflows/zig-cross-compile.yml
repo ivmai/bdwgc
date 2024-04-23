@@ -13,8 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # TODO: move from nightly to zig 0.12 final when released.
-        zig_version: [ "0.12.0-dev.3666+a2b834e8c" ]
+        zig_version: [ "0.12.0" ]
         # Some of the triples are commented out just to speedup this workflow.
         ttriple: [
           aarch64-linux-gnu,
