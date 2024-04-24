@@ -469,6 +469,13 @@ pub fn build(b: *std.Build) void {
         flags.append("-D HAVE_DLADDR") catch unreachable;
     }
 
+    // TODO: as of zig 0.12, exception.h and getsect.h are not provided
+    // by zig itself for Darwin target.
+    if (t.isDarwin() and !target.query.isNative()) {
+        flags.append("-D MISSING_MACH_O_GETSECT_H") catch unreachable;
+        flags.append("-D NO_MPROTECT_VDB") catch unreachable;
+    }
+
     if (build_cord and enable_werror and !enable_threads
         and (t.abi == .gnueabi or t.abi == .gnueabihf or t.abi == .musleabi
              or t.abi == .musleabihf)) {
