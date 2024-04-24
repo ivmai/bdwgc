@@ -423,6 +423,12 @@ pub fn build(b: *std.Build) void {
         // and HAVE_PTHREAD_SET_NAME_NP targets.
     }
 
+    // cross-compile for Darwin only
+    if (t.isDarwin() and !target.query.isNative()) {
+        flags.append("-D NO_MPROTECT_VDB") catch unreachable;
+        flags.append("-D MISSING_MACH_O_GETSECT_H") catch unreachable;
+    }
+
     // Define to use 'dladdr' function (used for debugging).
     flags.append("-D HAVE_DLADDR") catch unreachable;
 
