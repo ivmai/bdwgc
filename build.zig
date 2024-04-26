@@ -147,11 +147,11 @@ pub fn build(b: *std.Build) void {
     flags.append("-D ALL_INTERIOR_POINTERS") catch unreachable;
     flags.append("-D NO_EXECUTE_PERMISSION") catch unreachable;
 
+    // Output all warnings.
     flags.appendSlice(&.{
         "-Wall",
         "-Wextra",
         "-Wpedantic",
-        //"-Wno-long-long",
     }) catch unreachable;
 
     source_files.appendSlice(&.{
@@ -355,7 +355,7 @@ pub fn build(b: *std.Build) void {
         source_files.appendSlice(&.{
             "extra/gc.c",
         }) catch unreachable;
-        if (enable_threads and !(t.isDarwin() or t.os.tag == .windows)) {
+        if (enable_threads and !t.isDarwin() and t.os.tag != .windows) {
             flags.append("-D GC_PTHREAD_START_STANDALONE") catch unreachable;
             source_files.appendSlice(&.{
                 "pthread_start.c",
@@ -401,12 +401,13 @@ pub fn build(b: *std.Build) void {
         flags.append("-D NO_GETCONTEXT") catch unreachable;
     }
 
-    // dl_iterate_phdr exists (as a strong symbol).
-    flags.append("-D HAVE_DL_ITERATE_PHDR") catch unreachable;
-
-    if (enable_threads and !(t.isDarwin() or t.os.tag == .windows)) {
-        // pthread_sigmask() and sigset_t are available and needed.
-        flags.append("-D HAVE_PTHREAD_SIGMASK") catch unreachable;
+    if (!t.isDarwin() and t.os.tag != .windows) {
+        // dl_iterate_phdr exists (as a strong symbol).
+        flags.append("-D HAVE_DL_ITERATE_PHDR") catch unreachable;
+        if (enable_threads) {
+            // pthread_sigmask() and sigset_t are available and needed.
+            flags.append("-D HAVE_PTHREAD_SIGMASK") catch unreachable;
+        }
     }
 
     // Build with GC_wcsdup() support (wcslen is available).
