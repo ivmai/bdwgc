@@ -176,51 +176,64 @@ pub fn build(b: *std.Build) void {
         "typd_mlc.c",
     }) catch unreachable;
 
-    if (enable_threads) { // assume pthreads
-        // Zig comes with clang which supports GCC atomic intrinsics.
-        flags.append("-D GC_BUILTIN_ATOMIC") catch unreachable;
-        // TODO: define and use THREADDLLIBS_LIST
-
-        source_files.appendSlice(&.{
-            "gc_dlopen.c",
-            "pthread_start.c",
-            "pthread_support.c",
-        }) catch unreachable;
-        if (t.os.tag == .windows) {
-            source_files.appendSlice(&.{
-                "win32_threads.c",
-            }) catch unreachable;
-        } else if (t.isDarwin()) {
-            source_files.appendSlice(&.{
-                "darwin_stop_world.c",
-            }) catch unreachable;
-        } else {
-            source_files.appendSlice(&.{
-                "pthread_stop_world.c",
-            }) catch unreachable;
-        }
-        // Common defines for POSIX platforms.
+    if (enable_threads) {
         flags.append("-D GC_THREADS") catch unreachable;
-        flags.append("-D _REENTRANT") catch unreachable;
-        // TODO: some targets might need _PTHREADS defined too.
         if (enable_parallel_mark) {
             flags.append("-D PARALLEL_MARK") catch unreachable;
         }
-        if (enable_thread_local_alloc) {
-            flags.append("-D THREAD_LOCAL_ALLOC") catch unreachable;
+        if (t.os.tag != .windows) { // assume pthreads
+            // TODO: support cygwin when supported by zig
+            // Zig comes with clang which supports GCC atomic intrinsics.
+            flags.append("-D GC_BUILTIN_ATOMIC") catch unreachable;
+            // TODO: define and use THREADDLLIBS_LIST
             source_files.appendSlice(&.{
-                "specific.c",
-                "thread_local_alloc.c",
+                "gc_dlopen.c",
+                "pthread_start.c",
+                "pthread_support.c",
             }) catch unreachable;
-        }
-        // Message for clients: Explicit GC_INIT() calls may be required.
-        if (t.os.tag == .windows) {
-            // Does not provide process fork functionality.
-        } else if (enable_handle_fork and !disable_handle_fork) {
-            flags.append("-D HANDLE_FORK") catch unreachable;
-        }
-        if (enable_sigrt_signals) {
-            flags.append("-D GC_USESIGRT_SIGNALS") catch unreachable;
+            if (t.isDarwin()) {
+                source_files.appendSlice(&.{
+                    "darwin_stop_world.c",
+                }) catch unreachable;
+            } else {
+                source_files.appendSlice(&.{
+                    "pthread_stop_world.c",
+                }) catch unreachable;
+            }
+            // Common defines for POSIX platforms.
+            flags.append("-D _REENTRANT") catch unreachable;
+            // TODO: some targets might need _PTHREADS defined too.
+            if (enable_thread_local_alloc) {
+                flags.append("-D THREAD_LOCAL_ALLOC") catch unreachable;
+                source_files.appendSlice(&.{
+                    "specific.c",
+                    "thread_local_alloc.c",
+                }) catch unreachable;
+            }
+            // Message for clients: Explicit GC_INIT() calls may be required.
+            if (enable_handle_fork and !disable_handle_fork) {
+                flags.append("-D HANDLE_FORK") catch unreachable;
+            }
+            if (enable_sigrt_signals) {
+                flags.append("-D GC_USESIGRT_SIGNALS") catch unreachable;
+            }
+        } else {
+            // Assume the GCC atomic intrinsics are supported.
+            flags.append("-D GC_BUILTIN_ATOMIC") catch unreachable;
+            if (enable_thread_local_alloc
+                    and (enable_parallel_mark or !build_shared_libs)) {
+                // Imply THREAD_LOCAL_ALLOC unless GC_DLL.
+                flags.append("-D THREAD_LOCAL_ALLOC") catch unreachable;
+                source_files.appendSlice(&.{
+                    "thread_local_alloc.c",
+                }) catch unreachable;
+            }
+            flags.append("-D EMPTY_GETENV_RESULTS") catch unreachable;
+            source_files.appendSlice(&.{
+                "pthread_start.c", // just if client defines GC_WIN32_PTHREADS
+                "pthread_support.c",
+                "win32_threads.c",
+            }) catch unreachable;
         }
     }
 
@@ -396,7 +409,7 @@ pub fn build(b: *std.Build) void {
     flags.append("-D HAVE_SYS_TYPES_H") catch unreachable;
     flags.append("-D HAVE_UNISTD_H") catch unreachable;
 
-    const have_getcontext = !t.abi.isMusl();
+    const have_getcontext = !t.abi.isMusl() and t.os.tag != .windows;
     if (!have_getcontext) {
         flags.append("-D NO_GETCONTEXT") catch unreachable;
     }
@@ -424,8 +437,10 @@ pub fn build(b: *std.Build) void {
         // and HAVE_PTHREAD_SET_NAME_NP targets.
     }
 
-    // Define to use 'dladdr' function (used for debugging).
-    flags.append("-D HAVE_DLADDR") catch unreachable;
+    if (t.os.tag != .windows) {
+        // Define to use 'dladdr' function (used for debugging).
+        flags.append("-D HAVE_DLADDR") catch unreachable;
+    }
 
     // Extra user-defined flags (if any) to pass to the compiler.
     if (cflags_extra.len > 0) {
@@ -460,7 +475,7 @@ pub fn build(b: *std.Build) void {
         if (enable_gcj_support) {
             installHeader(b, lib, "gc/gc_gcj.h");
         }
-        if (enable_threads) {
+        if (enable_threads and t.os.tag != .windows) {
             installHeader(b, lib, "gc/gc_pthread_redirects.h");
         }
         // TODO: compose and install bdw-gc.pc and pkgconfig.
@@ -490,8 +505,10 @@ pub fn build(b: *std.Build) void {
                 "subthreadcreatetest", "tests/subthreadcreate.c");
         addTest(b, lib, test_step, flags,
                 "threadleaktest", "tests/threadleak.c");
-        addTest(b, lib, test_step, flags,
-                "threadkeytest", "tests/threadkey.c");
+        if (t.os.tag != .windows) {
+            addTest(b, lib, test_step, flags,
+                    "threadkeytest", "tests/threadkey.c");
+        }
     }
     if (enable_disclaim) {
         addTest(b, lib, test_step, flags,
