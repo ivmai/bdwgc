@@ -116,6 +116,8 @@ jobs:
           ttriple: thumb-linux-gnueabi
         - shared_libs: true
           ttriple: thumb-linux-gnueabihf
+        - shared_libs: true # FIXME: creating shared libs is not yet stable
+          ttriple: wasm32-wasi-musl
         - shared_libs: true
           ttriple: x86_64-linux-gnux32 # FIXME: recompile with -fPIC
 
