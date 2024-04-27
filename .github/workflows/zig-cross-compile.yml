@@ -67,12 +67,6 @@ jobs:
         ]
         enable_threads: [ false, true ]
         shared_libs: [ false, true ]
-        include:
-        # TODO: remove CFLAGS_EXTRA after exception.h, getsect.h added to zig.
-        - ttriple: aarch64-macos-none
-          cflags_extra: "-D NO_MPROTECT_VDB -D MISSING_MACH_O_GETSECT_H"
-        - ttriple: x86_64-macos-none
-          cflags_extra: "-D NO_MPROTECT_VDB -D MISSING_MACH_O_GETSECT_H"
         exclude:
         - enable_threads: true
           ttriple: wasm32-wasi-musl
