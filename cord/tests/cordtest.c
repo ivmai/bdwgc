@@ -16,7 +16,7 @@
 # include <stdio.h>
 # include <stdlib.h>
 
-#include "gc.h"    /* For GC_INIT() only */
+#include "gc.h"
 #include "gc/cord.h"
 
 /* This is a very incomplete test of the cord package.  It knows about  */
