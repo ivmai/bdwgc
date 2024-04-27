@@ -126,14 +126,14 @@ pub fn build(b: *std.Build) void {
         "Install header and pkg-config metadata files") orelse true;
     // TODO: support with_libatomic_ops, without_libatomic_ops
 
-    var lib = b.addStaticLibrary(.{
+    var gc = b.addStaticLibrary(.{
         .name = "gc",
         .target = target,
         .optimize = optimize,
     });
     if (build_shared_libs) {
         // TODO: convert VER_INFO values to [SO]VERSION ones
-        lib = b.addSharedLibrary(.{
+        gc = b.addSharedLibrary(.{
             .name = "gc",
             .target = target,
             .optimize = optimize,
@@ -477,89 +477,87 @@ pub fn build(b: *std.Build) void {
         }
     }
 
-    lib.addCSourceFiles(.{
+    gc.addCSourceFiles(.{
         .files = source_files.items,
         .flags = flags.items,
     });
-    lib.addIncludePath(b.path("include"));
-    lib.linkLibC();
+    gc.addIncludePath(b.path("include"));
+    gc.linkLibC();
+
     if (install_headers) {
-        installHeader(b, lib, "gc.h");
-        installHeader(b, lib, "gc/gc.h");
-        installHeader(b, lib, "gc/gc_backptr.h");
-        installHeader(b, lib, "gc/gc_config_macros.h");
-        installHeader(b, lib, "gc/gc_inline.h");
-        installHeader(b, lib, "gc/gc_mark.h");
-        installHeader(b, lib, "gc/gc_tiny_fl.h");
-        installHeader(b, lib, "gc/gc_typed.h");
-        installHeader(b, lib, "gc/gc_version.h");
-        installHeader(b, lib, "gc/javaxfc.h");
-        installHeader(b, lib, "gc/leak_detector.h");
+        installHeader(b, gc, "gc.h");
+        installHeader(b, gc, "gc/gc.h");
+        installHeader(b, gc, "gc/gc_backptr.h");
+        installHeader(b, gc, "gc/gc_config_macros.h");
+        installHeader(b, gc, "gc/gc_inline.h");
+        installHeader(b, gc, "gc/gc_mark.h");
+        installHeader(b, gc, "gc/gc_tiny_fl.h");
+        installHeader(b, gc, "gc/gc_typed.h");
+        installHeader(b, gc, "gc/gc_version.h");
+        installHeader(b, gc, "gc/javaxfc.h");
+        installHeader(b, gc, "gc/leak_detector.h");
         if (enable_disclaim) {
-            installHeader(b, lib, "gc/gc_disclaim.h");
+            installHeader(b, gc, "gc/gc_disclaim.h");
         }
         if (enable_gcj_support) {
-            installHeader(b, lib, "gc/gc_gcj.h");
+            installHeader(b, gc, "gc/gc_gcj.h");
         }
         if (enable_threads and t.os.tag != .windows) {
-            installHeader(b, lib, "gc/gc_pthread_redirects.h");
+            installHeader(b, gc, "gc/gc_pthread_redirects.h");
         }
         // TODO: compose and install bdw-gc.pc and pkgconfig.
     }
 
-    b.installArtifact(lib);
+    b.installArtifact(gc);
 
     // Note: there is no "build_tests" option, as the tests are built
     // only if "test" step is requested.
     const test_step = b.step("test", "Run tests");
-    addTest(b, lib, test_step, flags, "gctest", "tests/gctest.c");
-    addTest(b, lib, test_step, flags, "hugetest", "tests/huge.c");
-    addTest(b, lib, test_step, flags, "leaktest", "tests/leak.c");
-    addTest(b, lib, test_step, flags, "middletest", "tests/middle.c");
-    addTest(b, lib, test_step, flags, "realloctest", "tests/realloc.c");
-    addTest(b, lib, test_step, flags, "smashtest", "tests/smash.c");
+    addTest(b, gc, test_step, flags, "gctest", "tests/gctest.c");
+    addTest(b, gc, test_step, flags, "hugetest", "tests/huge.c");
+    addTest(b, gc, test_step, flags, "leaktest", "tests/leak.c");
+    addTest(b, gc, test_step, flags, "middletest", "tests/middle.c");
+    addTest(b, gc, test_step, flags, "realloctest", "tests/realloc.c");
+    addTest(b, gc, test_step, flags, "smashtest", "tests/smash.c");
     // TODO: add staticroots test
     if (enable_gc_debug) {
-        addTest(b, lib, test_step, flags, "tracetest", "tests/trace.c");
+        addTest(b, gc, test_step, flags, "tracetest", "tests/trace.c");
     }
     if (enable_threads) {
-        addTest(b, lib, test_step, flags,
-                "atomicopstest", "tests/atomicops.c");
-        addTest(b, lib, test_step, flags,
+        addTest(b, gc, test_step, flags, "atomicopstest", "tests/atomicops.c");
+        addTest(b, gc, test_step, flags,
                 "initfromthreadtest", "tests/initfromthread.c");
-        addTest(b, lib, test_step, flags,
+        addTest(b, gc, test_step, flags,
                 "subthreadcreatetest", "tests/subthreadcreate.c");
-        addTest(b, lib, test_step, flags,
+        addTest(b, gc, test_step, flags,
                 "threadleaktest", "tests/threadleak.c");
         if (t.os.tag != .windows) {
-            addTest(b, lib, test_step, flags,
+            addTest(b, gc, test_step, flags,
                     "threadkeytest", "tests/threadkey.c");
         }
     }
     if (enable_disclaim) {
-        addTest(b, lib, test_step, flags,
+        addTest(b, gc, test_step, flags,
                 "disclaim_bench", "tests/disclaim_bench.c");
-        addTest(b, lib, test_step, flags,
-                "disclaimtest", "tests/disclaim.c");
-        addTest(b, lib, test_step, flags,
-                "weakmaptest", "tests/weakmap.c");
+        addTest(b, gc, test_step, flags, "disclaimtest", "tests/disclaim.c");
+        addTest(b, gc, test_step, flags, "weakmaptest", "tests/weakmap.c");
     }
 }
 
-fn addTest(b: *std.Build, lib: *std.Build.Step.Compile,
+fn addTest(b: *std.Build, gc: *std.Build.Step.Compile,
            test_step: *std.Build.Step, flags: std.ArrayList([]const u8),
            testname: []const u8, filename: []const u8) void {
     const test_exe = b.addExecutable(.{
         .name = testname,
-        .optimize = lib.root_module.optimize.?,
-        .target = lib.root_module.resolved_target.?
+        .optimize = gc.root_module.optimize.?,
+        .target = gc.root_module.resolved_target.?
     });
     test_exe.addCSourceFile(.{
         .file = b.path(filename),
         .flags = flags.items
     });
     test_exe.addIncludePath(b.path("include"));
-    test_exe.linkLibrary(lib);
+    test_exe.linkLibrary(gc);
     test_exe.linkLibC();
     const run_test_exe = b.addRunArtifact(test_exe);
     test_step.dependOn(&run_test_exe.step);
