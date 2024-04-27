@@ -51,7 +51,8 @@ pub fn build(b: *std.Build) void {
     // TODO: support enable_cplusplus
     const build_shared_libs = b.option(bool, "BUILD_SHARED_LIBS",
                 "Build shared libraries (otherwise static ones)") orelse true;
-    // TODO: support build_cord
+    const build_cord = b.option(bool, "build_cord",
+                                "Build cord library") orelse true;
     const cflags_extra = b.option([]const u8, "CFLAGS_EXTRA",
                                   "Extra user-defined cflags") orelse "";
     // TODO: support enable_docs
@@ -484,6 +485,35 @@ pub fn build(b: *std.Build) void {
     gc.addIncludePath(b.path("include"));
     gc.linkLibC();
 
+    var cord = b.addStaticLibrary(.{
+        .name = "cord",
+        .target = target,
+        .optimize = optimize,
+    });
+    if (build_cord) {
+        if (build_shared_libs) {
+            cord = b.addSharedLibrary(.{
+                .name = "cord",
+                .target = target,
+                .optimize = optimize,
+            });
+        }
+        var cord_src_files = std.ArrayList([]const u8).init(b.allocator);
+        defer cord_src_files.deinit();
+        cord_src_files.appendSlice(&.{
+            "cord/cordbscs.c",
+            "cord/cordprnt.c",
+            "cord/cordxtra.c",
+        }) catch unreachable;
+        cord.addCSourceFiles(.{
+            .files = cord_src_files.items,
+            .flags = flags.items,
+        });
+        cord.addIncludePath(b.path("include"));
+        cord.linkLibrary(gc);
+        cord.linkLibC();
+    }
+
     if (install_headers) {
         installHeader(b, gc, "gc.h");
         installHeader(b, gc, "gc/gc.h");
@@ -505,15 +535,28 @@ pub fn build(b: *std.Build) void {
         if (enable_threads and t.os.tag != .windows) {
             installHeader(b, gc, "gc/gc_pthread_redirects.h");
         }
+        if (build_cord) {
+            installHeader(b, cord, "gc/cord.h");
+            installHeader(b, cord, "gc/cord_pos.h");
+            installHeader(b, cord, "gc/ec.h");
+        }
         // TODO: compose and install bdw-gc.pc and pkgconfig.
     }
 
     b.installArtifact(gc);
+    if (build_cord) {
+        b.installArtifact(cord);
+    }
 
     // Note: there is no "build_tests" option, as the tests are built
     // only if "test" step is requested.
     const test_step = b.step("test", "Run tests");
     addTest(b, gc, test_step, flags, "gctest", "tests/gctest.c");
+    if (build_cord) {
+        addTestExt(b, gc, cord, test_step, flags,
+                   "cordtest", "cord/tests/cordtest.c");
+        // TODO: add de test (Windows only)
+    }
     addTest(b, gc, test_step, flags, "hugetest", "tests/huge.c");
     addTest(b, gc, test_step, flags, "leaktest", "tests/leak.c");
     addTest(b, gc, test_step, flags, "middletest", "tests/middle.c");
@@ -547,6 +590,13 @@ pub fn build(b: *std.Build) void {
 fn addTest(b: *std.Build, gc: *std.Build.Step.Compile,
            test_step: *std.Build.Step, flags: std.ArrayList([]const u8),
            testname: []const u8, filename: []const u8) void {
+    addTestExt(b, gc, null, test_step, flags, testname, filename);
+}
+
+fn addTestExt(b: *std.Build, gc: *std.Build.Step.Compile,
+              lib2: ?*std.Build.Step.Compile, test_step: *std.Build.Step,
+              flags: std.ArrayList([]const u8), testname: []const u8,
+              filename: []const u8) void {
     const test_exe = b.addExecutable(.{
         .name = testname,
         .optimize = gc.root_module.optimize.?,
@@ -558,6 +608,9 @@ fn addTest(b: *std.Build, gc: *std.Build.Step.Compile,
     });
     test_exe.addIncludePath(b.path("include"));
     test_exe.linkLibrary(gc);
+    if (lib2 != null) {
+        test_exe.linkLibrary(lib2.?);
+    }
     test_exe.linkLibC();
     const run_test_exe = b.addRunArtifact(test_exe);
     test_step.dependOn(&run_test_exe.step);
