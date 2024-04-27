@@ -469,6 +469,15 @@ pub fn build(b: *std.Build) void {
         flags.append("-D HAVE_DLADDR") catch unreachable;
     }
 
+    if (build_cord and enable_werror and !enable_threads
+        and (t.abi == .gnueabi or t.abi == .gnueabihf or t.abi == .musleabi
+             or t.abi == .musleabihf)) {
+        // TODO: as of zig 0.12, if GCC built-in atomic intrinsic is used,
+        // "large atomic operation may incur significant performance penalty"
+        // warning is reported for 32-bit arm targets.
+        flags.append("-D AO_DISABLE_GCC_ATOMICS") catch unreachable;
+    }
+
     // Extra user-defined flags (if any) to pass to the compiler.
     if (cflags_extra.len > 0) {
         // Split it up on a space and append each part to flags separately.
