@@ -11,7 +11,7 @@
  * modified is included with the above copyright notice.
  */
 
-# include "gc.h"    /* For GC_INIT() only */
+# include "gc.h"
 # include "cord.h"
 # include <string.h>
 # include <stdio.h>
