@@ -7,7 +7,7 @@ on: [ push, pull_request ]
 
 jobs:
   build:
-    name: ${{ matrix.ttriple }} thr:${{ matrix.enable_threads }} dll:${{ matrix.shared_libs }}
+    name: ${{ matrix.ttriple }} cpp:${{ matrix.enable_cplusplus }} thr:${{ matrix.enable_threads }} dll:${{ matrix.shared_libs }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -65,11 +65,14 @@ jobs:
           x86_64-macos-none,
           x86_64-windows-gnu,
         ]
+        enable_cplusplus: [ false, true ]
         enable_threads: [ false, true ]
         shared_libs: [ false, true ]
         exclude:
         - enable_threads: true
           ttriple: wasm32-wasi-musl
+        - enable_cplusplus: false # excluded to speedup this workflow
+          shared_libs: false
         # The following ones have "exceeds the max lock-free size" warning.
         - enable_threads: true
           ttriple: arm-linux-gnueabi
@@ -112,8 +115,32 @@ jobs:
           ttriple: thumb-linux-gnueabihf
         - shared_libs: true # FIXME: creating shared libs is not yet stable
           ttriple: wasm32-wasi-musl
-        - shared_libs: true
-          ttriple: x86_64-linux-gnux32 # FIXME: recompile with -fPIC
+        - shared_libs: true # FIXME: recompile with -fPIC
+          ttriple: x86_64-linux-gnux32
+        - enable_cplusplus: true
+          shared_libs: true # FIXME: relocation R_MIPS_32 against local symbol
+          ttriple: mips-linux-musl
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: mips64-linux-gnuabi64
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: mips64-linux-musl
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: mips64el-linux-musl
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: mipsel-linux-gnueabi
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: mipsel-linux-musl
+        - enable_cplusplus: true
+          shared_libs: true # FIXME: relocation refers to a discarded section
+          ttriple: powerpc64-linux-gnu
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: powerpc64le-linux-musl
 
     steps:
     - uses: actions/checkout@v4
@@ -125,5 +152,6 @@ jobs:
         zig build -Dtarget=${{ matrix.ttriple }}
         -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
         -DCFLAGS_EXTRA="${{ matrix.cflags_extra }}"
+        -Denable_cplusplus=${{ matrix.enable_cplusplus }}
         -Denable_threads=${{ matrix.enable_threads }}
         -Denable_werror
