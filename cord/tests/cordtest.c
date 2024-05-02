@@ -228,9 +228,6 @@ void test_extras(void)
         /* But we cannot call fclose as it might lead to double close.   */
         fprintf(stderr, "WARNING: remove failed: " FNAME1 "\n");
     }
-    if (remove(FNAME2) != 0) {
-        fprintf(stderr, "WARNING: remove failed: " FNAME2 "\n");
-    }
 }
 
 int wrap_vprintf(CORD format, ...)
@@ -315,6 +312,11 @@ int main(void)
     test_basics();
     test_extras();
     test_printf();
+
+    GC_gcollect(); /* to close f2 before the file removal */
+    if (remove(FNAME2) != 0) {
+        fprintf(stderr, "WARNING: remove failed: " FNAME2 "\n");
+    }
     CORD_fprintf(stdout, "SUCCEEDED\n");
     return(0);
 }
