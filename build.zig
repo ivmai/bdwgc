@@ -203,13 +203,9 @@ pub fn build(b: *std.Build) void {
                 "pthread_support.c",
             }) catch unreachable;
             if (t.isDarwin()) {
-                source_files.appendSlice(&.{
-                    "darwin_stop_world.c",
-                }) catch unreachable;
+                source_files.append("darwin_stop_world.c") catch unreachable;
             } else {
-                source_files.appendSlice(&.{
-                    "pthread_stop_world.c",
-                }) catch unreachable;
+                source_files.append("pthread_stop_world.c") catch unreachable;
             }
             // Common defines for POSIX platforms.
             flags.append("-D _REENTRANT") catch unreachable;
@@ -235,9 +231,7 @@ pub fn build(b: *std.Build) void {
                     and (enable_parallel_mark or !build_shared_libs)) {
                 // Imply THREAD_LOCAL_ALLOC unless GC_DLL.
                 flags.append("-D THREAD_LOCAL_ALLOC") catch unreachable;
-                source_files.appendSlice(&.{
-                    "thread_local_alloc.c",
-                }) catch unreachable;
+                source_files.append("thread_local_alloc.c") catch unreachable;
             }
             flags.append("-D EMPTY_GETENV_RESULTS") catch unreachable;
             source_files.appendSlice(&.{
@@ -259,16 +253,12 @@ pub fn build(b: *std.Build) void {
         // TODO: do not define GC_ENABLE_SUSPEND_THREAD on kFreeBSD
         // if enable_thread_local_alloc (a workaround for some bug).
         flags.append("-D GC_ENABLE_SUSPEND_THREAD") catch unreachable;
-        source_files.appendSlice(&.{
-            "gcj_mlc.c",
-        }) catch unreachable;
+        source_files.append("gcj_mlc.c") catch unreachable;
     }
 
     if (enable_disclaim) {
         flags.append("-D ENABLE_DISCLAIM") catch unreachable;
-        source_files.appendSlice(&.{
-            "fnlz_mlc.c",
-        }) catch unreachable;
+        source_files.append("fnlz_mlc.c") catch unreachable;
     }
 
     if (enable_dynamic_pointer_mask) {
@@ -294,10 +284,7 @@ pub fn build(b: *std.Build) void {
             flags.append("-D MAKE_BACK_GRAPH") catch unreachable;
             // TODO: do not define SAVE_CALL_COUNT for e2k
             flags.append("-D SAVE_CALL_COUNT=8") catch unreachable;
-
-            source_files.appendSlice(&.{
-                "backgraph.c",
-            }) catch unreachable;
+            source_files.append("backgraph.c") catch unreachable;
         }
     }
 
@@ -362,36 +349,26 @@ pub fn build(b: *std.Build) void {
             @panic("CHECKSUMS not compatible with USE_MUNMAP or threads");
         }
         flags.append("-D CHECKSUMS") catch unreachable;
-        source_files.appendSlice(&.{
-            "checksums.c",
-        }) catch unreachable;
+        source_files.append("checksums.c") catch unreachable;
     }
 
     if (enable_werror) {
-        flags.appendSlice(&.{
-            "-Werror",
-        }) catch unreachable;
+        flags.append("-Werror") catch unreachable;
     }
 
     if (enable_single_obj_compilation
             or (build_shared_libs and !disable_single_obj_compilation)) {
         source_files.clearAndFree();
-        source_files.appendSlice(&.{
-            "extra/gc.c",
-        }) catch unreachable;
+        source_files.append("extra/gc.c") catch unreachable;
         if (enable_threads and !t.isDarwin() and t.os.tag != .windows) {
             flags.append("-D GC_PTHREAD_START_STANDALONE") catch unreachable;
-            source_files.appendSlice(&.{
-                "pthread_start.c",
-            }) catch unreachable;
+            source_files.append("pthread_start.c") catch unreachable;
         }
     }
 
     // Add implementation of backtrace() and backtrace_symbols().
     if (t.abi == .msvc) {
-        source_files.appendSlice(&.{
-            "extra/msvc_dbg.c",
-        }) catch unreachable;
+        source_files.append("extra/msvc_dbg.c") catch unreachable;
     }
 
     // TODO: declare that the libraries do not refer to external symbols
@@ -413,9 +390,7 @@ pub fn build(b: *std.Build) void {
         } else {
             // zig cc supports these flags.
             flags.append("-D GC_VISIBILITY_HIDDEN_SET") catch unreachable;
-            flags.appendSlice(&.{
-                "-fvisibility=hidden",
-            }) catch unreachable;
+            flags.append("-fvisibility=hidden") catch unreachable;
         }
     } else {
         flags.append("-D GC_NOT_DLL") catch unreachable;
@@ -483,17 +458,14 @@ pub fn build(b: *std.Build) void {
         if (build_shared_libs and t.os.tag == .windows or t.abi == .msvc) {
             // Avoid "replacement operator new[] cannot be declared inline"
             // warnings.
-            flags.appendSlice(&.{
-                "-Wno-inline-new-delete",
-            }) catch unreachable;
+            flags.append("-Wno-inline-new-delete") catch unreachable;
         }
         if (t.abi == .msvc) {
             // TODO: as of zig 0.12,
             // "argument unused during compilation: -nostdinc++" warning is
             // reported if using MS compiler.
-            flags.appendSlice(&.{
-                "-Wno-unused-command-line-argument",
-            }) catch unreachable;
+            flags.append("-Wno-unused-command-line-argument")
+                catch unreachable;
         }
     }
 
@@ -564,9 +536,7 @@ pub fn build(b: *std.Build) void {
             }
             var gctba_src_files = std.ArrayList([]const u8).init(b.allocator);
             defer gctba_src_files.deinit();
-            gctba_src_files.appendSlice(&.{
-                "gc_badalc.cc",
-            }) catch unreachable;
+            gctba_src_files.append("gc_badalc.cc") catch unreachable;
             gctba.addCSourceFiles(.{
                 .files = gctba_src_files.items,
                 .flags = flags.items,
