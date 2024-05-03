@@ -89,7 +89,8 @@ int main(void)
     unsigned ps = GETPAGESIZE();
 # ifndef WASI
     JMP_BUF b;
-#   if !defined(__cplusplus) || __cplusplus < 201703L /* before c++17 */
+#   if (!defined(__cplusplus) || __cplusplus < 201703L /* before c++17 */) \
+       && (!defined(__GNUC__) || defined(__OPTIMIZE__))
       register
 #   endif
       int x = (int)strlen(a_str); /* 1, slightly disguised */
