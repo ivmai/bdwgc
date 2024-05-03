@@ -28,7 +28,11 @@ jobs:
         parallel_mark: [ false, true ]
         thread_local_alloc: [ false, true ]
         shared_libs: [ false, true ]
+        build_cord: [ false, true ]
         exclude:
+        - build_cord: true # FIXME: cordtest hangs if shared lib build by MSVC
+          shared_libs: true
+          ttriple: native-native-msvc
         - os: macos-latest
           ttriple: native-native-msvc
         - os: ubuntu-latest
@@ -48,6 +52,10 @@ jobs:
           enable_gc_debug: true
           enable_rwlock: true
         # The following ones just to reduce amount of jobs.
+        - build_cord: false
+          shared_libs: false
+        - build_cord: false
+          ttriple: native
         - enable_munmap: false
           shared_libs: true
         - enable_munmap: true
@@ -93,6 +101,7 @@ jobs:
       run: >
         zig build -Dtarget=${{ matrix.ttriple }}
         -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
+        -Dbuild_cord=${{ matrix.build_cord }}
         -Ddisable_handle_fork=${{ matrix.disable_handle_fork }}
         -Denable_cplusplus=${{ matrix.enable_cplusplus }}
         -Denable_gc_assertions=${{ matrix.gc_assertions }}
