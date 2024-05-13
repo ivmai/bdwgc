@@ -38,7 +38,7 @@ built-in "new" and "delete".
 #endif
 #include "gc/gc_cpp.h"
 
-#if (!defined(_MSC_VER) && !defined(__DMC__) \
+#if !defined(SKIP_CPP_DEFINITIONS) && (!defined(_MSC_VER) && !defined(__DMC__) \
      || defined(GC_NO_INLINE_STD_NEW)) && !defined(GC_INLINE_STD_NEW)
 
 # if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
