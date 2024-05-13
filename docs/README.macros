@@ -268,6 +268,10 @@ REDIRECT_REALLOC=<X>    Causes realloc to be redirected to X.
 REDIRECT_FREE=<X>       Causes free to be redirected to X.  The canonical use
   is REDIRECT_FREE=GC_debug_free.
 
+SKIP_GCCPP_DEFINITIONS  Do not define new and delete operators in gc_cpp.cc.
+  This might be useful for compiling and linking of client code with
+  user-supplied allocation definitions.
+
 IGNORE_FREE     Turns calls to free into a no-op.  Only useful with
   REDIRECT_MALLOC.
 

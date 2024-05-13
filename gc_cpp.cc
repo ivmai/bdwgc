@@ -39,7 +39,8 @@ built-in "new" and "delete".
 #include "gc/gc_cpp.h"
 
 #if (!defined(_MSC_VER) && !defined(__DMC__) \
-     || defined(GC_NO_INLINE_STD_NEW)) && !defined(GC_INLINE_STD_NEW)
+     || defined(GC_NO_INLINE_STD_NEW)) \
+    && !defined(GC_INLINE_STD_NEW) && !defined(SKIP_GCCPP_DEFINITIONS)
 
 # if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 #   define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()
