@@ -269,7 +269,7 @@ REDIRECT_FREE=<X>       Causes free to be redirected to X.  The canonical use
   is REDIRECT_FREE=GC_debug_free.
 
 SKIP_CPP_DEFINITIONS    Do not include definitions for new, delete, etc in 
-  gc_cpp.h. This might be necessary for static compilation for user-supplied 
+  gc_cpp.cc. This might be necessary for static compilation for user-supplied 
   allocation definitions.
 
 IGNORE_FREE     Turns calls to free into a no-op.  Only useful with
