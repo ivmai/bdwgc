@@ -285,8 +285,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     /* the former might be updated asynchronously.                      */
     nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));
     set_obj_descr(op, nwords, d);
-    GC_dirty((word *)op + nwords - 1);
-    REACHABLE_AFTER_DIRTY(d);
     return op;
 }
 
@@ -310,8 +308,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 
     nwords = GRANULES_TO_WORDS(BYTES_TO_GRANULES(GC_size(op)));
     set_obj_descr(op, nwords, d);
-    GC_dirty((word *)op + nwords - 1);
-    REACHABLE_AFTER_DIRTY(d);
     return op;
 }
 
