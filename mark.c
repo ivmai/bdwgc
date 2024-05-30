@@ -1954,11 +1954,11 @@ STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
 /* To determine whether an object has been reclaimed, we require that   */
 /* any live object has a non-zero as one of the two least significant   */
 /* bits of the first word.  On the other hand, a reclaimed object is    */
-/* a members of free-lists, and thus contains a word-aligned            */
+/* a member of free-lists, and thus contains a word-aligned             */
 /* next-pointer as the first word.                                      */
- GC_ATTR_NO_SANITIZE_THREAD
- STATIC void GC_push_unconditionally(struct hblk *h, const hdr *hhdr)
- {
+  GC_ATTR_NO_SANITIZE_THREAD
+  STATIC void GC_push_unconditionally(struct hblk *h, const hdr *hhdr)
+  {
     word sz = hhdr -> hb_sz;
     word descr = hhdr -> hb_descr;
     ptr_t p;
