@@ -654,8 +654,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
         lg = BYTES_TO_GRANULES(GC_size(op));
     }
     set_obj_descr(op, GRANULES_TO_WORDS(lg), d);
-    GC_dirty(op + GRANULES_TO_WORDS(lg) - 1);
-    REACHABLE_AFTER_DIRTY(d);
     return((void *) op);
 }
 
@@ -694,8 +692,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
         lg = BYTES_TO_GRANULES(GC_size(op));
     }
     set_obj_descr(op, GRANULES_TO_WORDS(lg), d);
-    GC_dirty((word *)op + GRANULES_TO_WORDS(lg) - 1);
-    REACHABLE_AFTER_DIRTY(d);
     return op;
 }
 
