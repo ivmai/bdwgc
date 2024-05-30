@@ -925,7 +925,7 @@ STATIC void GC_check_heap_block(struct hblk *hbp, word dummy)
     } else {
       plim = hbp->hb_body + HBLKSIZE - sz;
     }
-    /* go through all words in block */
+    /* go through all objects in block */
     for (bit_no = 0; p <= plim; bit_no += MARK_BIT_OFFSET(sz), p += sz) {
       if (mark_bit_from_hdr(hhdr, bit_no) && GC_HAS_DEBUG_INFO((ptr_t)p)) {
         ptr_t clobbered = GC_check_annotated_obj((oh *)p);
