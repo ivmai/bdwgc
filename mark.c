@@ -1914,7 +1914,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 /*                                                                      */
 /* To determine whether an object has been reclaimed, we require that   */
 /* any live object has a non-zero as one of the two lowest bits of the  */
-/* first word.  On the other hand, a reclaimed object is a members of   */
+/* first word.  On the other hand, a reclaimed object is a member of    */
 /* free-lists, and thus contains a word-aligned next-pointer as the     */
 /* first word.                                                          */
  GC_ATTR_NO_SANITIZE_THREAD
