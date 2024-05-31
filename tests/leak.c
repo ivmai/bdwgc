@@ -35,6 +35,7 @@ int main(void) {
         p[i] = i > 0 ? (char*)malloc(sizeof(int) + i)
                      : strdup("abc");
         CHECK_OUT_OF_MEMORY(p[i]);
+        (void)malloc_usable_size(p[i]);
     }
     CHECK_LEAKS();
     for (i = 3; i < N_TESTS / 2; ++i) {

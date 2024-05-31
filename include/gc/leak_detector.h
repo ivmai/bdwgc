@@ -78,6 +78,9 @@
 # define pvalloc(n) GC_pvalloc(n) /* obsolete */
 #endif /* !GC_NO_VALLOC */
 
+#undef malloc_usable_size
+#define malloc_usable_size(p) GC_size(p)
+
 #ifndef CHECK_LEAKS
 # define CHECK_LEAKS() GC_gcollect()
   /* Note 1: CHECK_LEAKS does not have GC prefix (preserved for */
