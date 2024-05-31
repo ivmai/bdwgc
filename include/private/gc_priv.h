@@ -1282,6 +1282,8 @@ struct _GC_arrays {
 #   define GC_trace_addr GC_arrays._trace_addr
     ptr_t _trace_addr;
 # endif
+# define GC_noop_sink GC_arrays._noop_sink
+  volatile word _noop_sink;
   GC_mark_proc _mark_procs[MAX_MARK_PROCS];
         /* Table of user-defined mark procedures.  There is     */
         /* a small number of these, which can be referenced     */
