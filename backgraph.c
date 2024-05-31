@@ -303,7 +303,7 @@ static GC_CALLBACK void per_object_helper(struct hblk *h, GC_word fn_ptr)
   do {
     fn((ptr_t)(h -> hb_body + i), sz, descr);
     i += sz;
-  } while (i + sz <= BYTES_TO_WORDS(HBLKSIZE));
+  } while (i + sz <= HBLKSIZE);
 }
 
 GC_INLINE void GC_apply_to_each_object(per_object_func fn)

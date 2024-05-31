@@ -128,25 +128,30 @@ contributed originally by Dave Barrett.
            |                           \ from        |    (8/16 bits each)
            |    (hdr) (struct hblkhdr) / alloc_hdr() |
            +--->+----------------------+             |
-      GET_HDR(p)| word   hb_sz (words) |             |
+      GET_HDR(p)| struct hblk *hb_next |             |
                 +----------------------+             |
-                | struct hblk *hb_next |             |
+                | ...                  |             |
                 +----------------------+             |
-                | word hb_descr        |             |
+                | uchar  hb_obj_kind   |             |
                 +----------------------+             |
-                | char * hb_map        |>------------+
+                | uchar  hb_flags      |             |
+                +----------------------+             |
+                | hb_last_reclaimed    |             |
+                +----------------------+             |
+                | size_t hb_sz         |             |
+                +----------------------+             |
+                | word   hb_descr      |             |
+                +----------------------+             |
+                | char  *hb_map        |>------------+
                 +----------------------+
-                |   uchar hb_obj_kind  |
-                +----------------------+
-                |    uchar hb_flags    |
-                +----------------------+
-                |   hb_last_reclaimed  |
+                | AO_t   hb_n_marks    |
        ---      +----------------------+
         ^       |                      |
-    MARK_BITS_SZ|       hb_marks[]     |  * if hdr is free, hb_sz is the size of
-      (words)   |                      |  a heap chunk (struct hblk) of at least
-        v       |                      |  MININCR*HBLKSIZE bytes (below),
-       ---      +----------------------+  otherwise, size of each object in chunk.
+        |       |                      | * if hdr is free, hb_sz is the size
+    MARK_BITS_SZ| char/word hb_marks[] | of a heap chunk (struct hblk) of at
+        |       |                      | least MININCR*HBLKSIZE bytes (below);
+        v       |                      | otherwise, size of each object in chunk.
+       ---      +----------------------+
 
 
 Dynamic data structures above are interleaved throughout the heap in blocks
@@ -159,8 +164,8 @@ collected.
       ---    +----------------------+ < HBLKSIZE  ---
        ^     +-----hb_body----------+ (and         ^         ---   ---
        |     |                      |  CPP_WORDSZ- |          ^     ^
-       |     |                      |  aligned)    |        hb_sz   |
-       |     |                      |              |       (words)  |
+       |     |                      |  aligned)    |          |     |
+       |     |                      |              |        hb_sz   |
        |     |      Object 0        |              |          |     |
        |     |                      |            i |(word-    v     |
        |     + - - - - - - - - - - -+ ---   (bytes)|aligned) ---    |
