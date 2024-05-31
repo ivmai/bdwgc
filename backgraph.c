@@ -288,7 +288,7 @@ static void per_object_helper(struct hblk *h, word fn)
   do {
     f((ptr_t)(h -> hb_body + i), sz, descr);
     i += (int)sz;
-  } while ((word)i + sz <= BYTES_TO_WORDS(HBLKSIZE));
+  } while ((word)i + sz <= HBLKSIZE);
 }
 
 GC_INLINE void GC_apply_to_each_object(per_object_func f)
