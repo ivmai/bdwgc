@@ -34,8 +34,6 @@ void GC_noop6(word arg1 GC_ATTR_UNUSED, word arg2 GC_ATTR_UNUSED,
 # endif
 }
 
-volatile word GC_noop_sink;
-
 /* Single argument version, robust against whole program analysis. */
 GC_ATTR_NO_SANITIZE_THREAD
 GC_API void GC_CALL GC_noop1(word x)
