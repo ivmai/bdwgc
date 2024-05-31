@@ -1534,6 +1534,12 @@ struct _GC_arrays {
 #   define GC_trace_ptr GC_arrays._trace_ptr
     ptr_t _trace_ptr;
 # endif
+# define GC_noop_sink GC_arrays._noop_sink
+# if defined(AO_HAVE_store) && defined(THREAD_SANITIZER)
+    volatile AO_t _noop_sink;
+# else
+    volatile word _noop_sink;
+# endif
 # define GC_capacity_heap_sects GC_arrays._capacity_heap_sects
   size_t _capacity_heap_sects;
 # define GC_n_heap_sects GC_arrays._n_heap_sects

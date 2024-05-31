@@ -36,12 +36,6 @@ void GC_noop6(word arg1, word arg2, word arg3, word arg4, word arg5, word arg6)
 # endif
 }
 
-#if defined(AO_HAVE_store) && defined(THREAD_SANITIZER)
-  volatile AO_t GC_noop_sink;
-#else
-  volatile word GC_noop_sink;
-#endif
-
 /* Make the argument appear live to compiler.  This is similar  */
 /* to GC_noop6(), but with a single argument.  Robust against   */
 /* whole program analysis.                                      */
