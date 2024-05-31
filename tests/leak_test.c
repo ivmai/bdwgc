@@ -23,6 +23,7 @@ int main(void) {
     for (i = 0; i < 10; ++i) {
         p[i] = (char*)malloc(sizeof(int)+i);
         CHECK_OUT_OF_MEMORY(p[i]);
+        (void)malloc_usable_size(p[i]);
     }
     CHECK_LEAKS();
     for (i = 1; i < 10; ++i) {
