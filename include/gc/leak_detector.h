@@ -54,6 +54,9 @@
 # define wcsdup(s) GC_WCSDUP(s)
 #endif
 
+#undef malloc_usable_size
+#define malloc_usable_size(p) GC_size(p)
+
 /* The following routines for the aligned objects allocation    */
 /* (aligned_alloc, valloc, etc.) do not have their debugging    */
 /* counterparts.  Note that free() called for such objects      */
