@@ -1450,7 +1450,7 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t bytes)
         if (0 == bytes) return;
     }
     endp = (ptr_t)h + bytes;
-    if (EXPECT(ADDR_GE((ptr_t)h, endp), FALSE)) {
+    while (EXPECT(ADDR_GE((ptr_t)h, endp), FALSE)) {
         bytes -= HBLKSIZE;
         if (0 == bytes) return;
         endp -= HBLKSIZE;
