@@ -245,6 +245,9 @@ GC_API void * GC_CALL GC_is_visible(void *p)
                                         + (descr & ~(word)GC_DS_TAGS));
                     } else {
                       ptr_t type_descr = *(ptr_t *)base;
+
+                      if (EXPECT(NULL == type_descr, FALSE))
+                        goto fail; /* see comment in GC_mark_from */
                       descr = *(word *)(type_descr
                                         - (descr - (word)(GC_DS_PER_OBJECT
                                            - GC_INDIR_PER_OBJ_BIAS)));
