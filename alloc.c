@@ -1402,7 +1402,7 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
         if (0 == bytes) return;
     }
     endp = (word)p + bytes;
-    if (endp <= (word)p) {
+    while (endp <= (word)p) {
         /* Address wrapped. */
         bytes -= HBLKSIZE;
         if (0 == bytes) return;
