@@ -226,7 +226,7 @@ GC_API void * GC_CALL GC_is_visible(void *p)
     retry:
             switch(descr & GC_DS_TAGS) {
                 case GC_DS_LENGTH:
-                    if ((word)p - (word)base > descr) goto fail;
+                    if ((word)p - (word)base >= descr) goto fail;
                     break;
                 case GC_DS_BITMAP:
                     if ((word)p - (word)base >= WORDS_TO_BYTES(BITMAP_BITS)
