@@ -1896,6 +1896,10 @@ void check_heap_stats(void)
       (void)GC_get_size_map_at(-1);
       (void)GC_get_size_map_at(1);
 #   endif
+    if (GC_size(NULL) != 0) {
+      GC_printf("GC_size(NULL) failed\n");
+      FAIL;
+    }
 
 #   ifdef NO_CLOCK
       GC_printf("Completed %u collections\n", (unsigned)GC_get_gc_no());

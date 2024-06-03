@@ -598,9 +598,11 @@ GC_API void * GC_CALL GC_base(void * /* displaced_pointer */);
 GC_API int GC_CALL GC_is_heap_ptr(const void *);
 
 /* Given a pointer to the base of an object, return its size in bytes.  */
-/* The returned size may be slightly larger than what was originally    */
-/* requested.                                                           */
-GC_API size_t GC_CALL GC_size(const void * /* obj_addr */) GC_ATTR_NONNULL(1);
+/* (For small objects this also happens to work from interior pointers, */
+/* but that should not be relied upon.)  The returned size may be       */
+/* slightly larger than what was originally requested.  The argument    */
+/* may be NULL (causing 0 to be returned).                              */
+GC_API size_t GC_CALL GC_size(const void * /* obj_addr */);
 
 /* For compatibility with C library.  This is occasionally faster than  */
 /* a malloc followed by a bcopy.  But if you rely on that, either here  */

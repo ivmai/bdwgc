@@ -245,7 +245,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 #endif /* !GC_DEBUG */
 
 /* Similar to GC_size but returns object kind.  Size is returned too    */
-/* if psize is not NULL.                                                */
+/* if psize is not NULL.  The object pointer should not be NULL.        */
 GC_API int GC_CALL GC_get_kind_and_size(const void *, size_t * /* psize */)
                                                         GC_ATTR_NONNULL(1);
 
