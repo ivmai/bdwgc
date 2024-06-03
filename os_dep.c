@@ -1784,7 +1784,7 @@ void GC_register_data_segments(void)
       DWORD protect;
       LPVOID p;
       char * base;
-      char * limit, * new_limit;
+      char * limit;
 
       if (!GC_no_win32_dlls) return;
       p = base = limit = GC_least_described_address(static_root);
@@ -1792,20 +1792,17 @@ void GC_register_data_segments(void)
         result = VirtualQuery(p, &buf, sizeof(buf));
         if (result != sizeof(buf) || buf.AllocationBase == 0
             || GC_is_heap_base(buf.AllocationBase)) break;
-        new_limit = (char *)p + buf.RegionSize;
+        if ((word)p > ONES - buf.RegionSize) break; /* overflow */
         protect = buf.Protect;
         if (buf.State == MEM_COMMIT
             && is_writable(protect)) {
-            if ((char *)p == limit) {
-                limit = new_limit;
-            } else {
+            if ((char *)p != limit) {
                 if (base != limit) GC_add_roots_inner(base, limit, FALSE);
                 base = p;
-                limit = new_limit;
             }
+            limit = (char *)p + buf.RegionSize;
         }
-        if ((word)p > (word)new_limit /* overflow */) break;
-        p = (LPVOID)new_limit;
+        p = (char *)p + buf.RegionSize;
       }
       if (base != limit) GC_add_roots_inner(base, limit, FALSE);
   }
