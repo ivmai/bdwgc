@@ -1003,7 +1003,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
     DWORD protect;
     LPVOID p;
     char * base;
-    char * limit, * new_limit;
+    char * limit;
 
 #   ifdef MSWIN32
       if (GC_no_win32_dlls) return;
@@ -1015,17 +1015,19 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #       ifdef MSWINCE
           if (result == 0) {
-            /* Page is free; advance to the next possible allocation base */
-            new_limit = (char *)
-                (((DWORD) p + GC_sysinfo.dwAllocationGranularity)
-                 & ~(GC_sysinfo.dwAllocationGranularity-1));
+            if ((word)p > GC_WORD_MAX - GC_sysinfo.dwAllocationGranularity)
+              break; /* overflow */
+            /* Page is free; advance to the next possible allocation base. */
+            p = (LPVOID)(((DWORD)p + GC_sysinfo.dwAllocationGranularity)
+                         & ~(GC_sysinfo.dwAllocationGranularity-1));
           } else
 #       endif
         /* else */ {
             if (result != sizeof(buf)) {
                 ABORT("Weird VirtualQuery result");
             }
-            new_limit = (char *)p + buf.RegionSize;
+            if ((word)p > GC_WORD_MAX - buf.RegionSize) break; /* overflow */
+
             protect = buf.Protect;
             if (buf.State == MEM_COMMIT
                 && (protect == PAGE_EXECUTE_READWRITE
@@ -1051,11 +1053,10 @@ GC_INNER void GC_register_dynamic_libraries(void)
                     GC_cond_add_roots(base, limit);
                     base = (char *)p;
                 }
-                limit = new_limit;
+                limit = (char *)p + buf.RegionSize;
             }
+            p = (char *)p + buf.RegionSize;
         }
-        if ((word)p > (word)new_limit /* overflow */) break;
-        p = (LPVOID)new_limit;
     }
     GC_cond_add_roots(base, limit);
   }
