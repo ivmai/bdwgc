@@ -2189,6 +2189,10 @@ static void check_heap_stats(void)
       (void)GC_get_size_map_at(-1);
       (void)GC_get_size_map_at(1);
 #   endif
+    if (GC_size(NULL) != 0) {
+      GC_printf("GC_size(NULL) failed\n");
+      FAIL;
+    }
     test_long_mult();
 
 #   ifndef NO_CLOCK
