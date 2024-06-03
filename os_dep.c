@@ -1948,25 +1948,22 @@ void GC_register_data_segments(void)
       p = base = limit = GC_least_described_address(static_root);
       while (ADDR_LT(p, (ptr_t)GC_sysinfo.lpMaximumApplicationAddress)) {
         size_t result = VirtualQuery((LPVOID)p, &buf, sizeof(buf));
-        ptr_t new_limit;
         DWORD protect;
 
         if (result != sizeof(buf) || buf.AllocationBase == 0
             || GC_is_heap_base(buf.AllocationBase)) break;
-        new_limit = p + buf.RegionSize;
+        if (ADDR(p) > GC_WORD_MAX - buf.RegionSize) break; /* overflow */
+
         protect = buf.Protect;
         if (buf.State == MEM_COMMIT
             && is_writable(protect)) {
-            if (p == limit) {
-                limit = new_limit;
-            } else {
+            if (p != limit) {
                 if (base != limit) GC_add_roots_inner(base, limit, FALSE);
                 base = p;
-                limit = new_limit;
             }
+            limit = p + buf.RegionSize;
         }
-        if (ADDR_LT(new_limit, p) /* overflow */) break;
-        p = new_limit;
+        p += buf.RegionSize;
       }
       if (base != limit) GC_add_roots_inner(base, limit, FALSE);
   }

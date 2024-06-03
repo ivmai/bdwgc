@@ -992,7 +992,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
   {
     MEMORY_BASIC_INFORMATION buf;
     DWORD protect;
-    ptr_t p, base, limit, new_limit;
+    ptr_t p, base, limit;
 
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef MSWIN32
@@ -1005,15 +1005,17 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #       ifdef MSWINCE
           if (0 == result) {
+            if (ADDR(p) > GC_WORD_MAX - GC_sysinfo.dwAllocationGranularity)
+              break; /* overflow */
             /* Page is free; advance to the next possible allocation base. */
-            new_limit = PTR_ALIGN_UP(p + 1,
-                                     GC_sysinfo.dwAllocationGranularity);
+            p = PTR_ALIGN_UP(p + 1, GC_sysinfo.dwAllocationGranularity);
           } else
 #       endif
         /* else */ {
             if (result != sizeof(buf))
                 ABORT("Weird VirtualQuery result");
-            new_limit = p + buf.RegionSize;
+            if (ADDR(p) > GC_WORD_MAX - buf.RegionSize) break; /* overflow */
+
             protect = buf.Protect;
             if (buf.State == MEM_COMMIT
                 && (protect == PAGE_EXECUTE_READWRITE
@@ -1039,11 +1041,10 @@ GC_INNER void GC_register_dynamic_libraries(void)
                     GC_cond_add_roots(base, limit);
                     base = p;
                 }
-                limit = new_limit;
+                limit = p + buf.RegionSize;
             }
+            p += buf.RegionSize;
         }
-        if (ADDR_LT(new_limit, p)) break; /* overflow */
-        p = new_limit;
     }
     GC_cond_add_roots(base, limit);
   }
