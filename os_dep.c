@@ -1919,25 +1919,21 @@ void GC_register_data_segments(void)
       p = base = limit = GC_least_described_address(static_root);
       while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
         size_t result = VirtualQuery(p, &buf, sizeof(buf));
-        char * new_limit;
         DWORD protect;
 
         if (result != sizeof(buf) || buf.AllocationBase == 0
             || GC_is_heap_base(buf.AllocationBase)) break;
-        new_limit = (char *)p + buf.RegionSize;
+        if ((word)p > GC_WORD_MAX - buf.RegionSize) break; /* overflow */
         protect = buf.Protect;
         if (buf.State == MEM_COMMIT
             && is_writable(protect)) {
-            if ((char *)p == limit) {
-                limit = new_limit;
-            } else {
+            if ((char *)p != limit) {
                 if (base != limit) GC_add_roots_inner(base, limit, FALSE);
                 base = (char *)p;
-                limit = new_limit;
             }
+            limit = (char *)p + buf.RegionSize;
         }
-        if ((word)p > (word)new_limit /* overflow */) break;
-        p = (LPVOID)new_limit;
+        p = (char *)p + buf.RegionSize;
       }
       if (base != limit) GC_add_roots_inner(base, limit, FALSE);
   }
