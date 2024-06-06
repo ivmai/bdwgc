@@ -764,7 +764,7 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 /* A tagging macro (for a code static analyzer) to indicate that the    */
 /* string obtained from an untrusted source (e.g., argv[], getenv) is   */
 /* safe to use in a vulnerable operation (e.g., open, exec).            */
-#define TRUSTED_STRING(s) (char*)COVERT_DATAFLOW(s)
+#define TRUSTED_STRING(s) COVERT_DATAFLOW_P(s)
 
 /* Get environment entry */
 #ifdef GC_READ_ENV_FILE

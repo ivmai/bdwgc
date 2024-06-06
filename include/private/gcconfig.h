@@ -78,18 +78,6 @@ EXTERN_C_BEGIN
 # define GC_CLANG_PREREQ_FULL(major, minor, patchlevel) 0
 #endif
 
-#ifdef LINT2
-  /* A macro (based on a tricky expression) to prevent false warnings   */
-  /* like "Array compared to 0", "Comparison of identical expressions", */
-  /* "Untrusted loop bound" output by some static code analysis tools.  */
-  /* The argument should not be a literal value.  The result is         */
-  /* converted to word type.  (Actually, GC_word is used instead of     */
-  /* word type as the latter might be undefined at the place of use.)   */
-# define COVERT_DATAFLOW(w) (~(GC_word)(w)^(~(GC_word)0))
-#else
-# define COVERT_DATAFLOW(w) ((GC_word)(w))
-#endif
-
 /* Machine dependent parameters.  Some tuning parameters can be found   */
 /* near the top of gc_priv.h.                                           */
 
@@ -3406,6 +3394,20 @@ EXTERN_C_BEGIN
 #else
 # define FIXUP_POINTER(p) (void)(p)
 #endif
+
+#ifdef LINT2
+  /* A macro (based on a tricky expression) to prevent false warnings   */
+  /* like "Array compared to 0", "Comparison of identical expressions", */
+  /* "Untrusted loop bound" output by some static code analysis tools.  */
+  /* The argument should not be a literal value.  The result is         */
+  /* converted to word type.  (Actually, GC_word is used instead of     */
+  /* word type as the latter might be undefined at the place of use.)   */
+# define COVERT_DATAFLOW(w) (~(GC_word)(w)^(~(GC_word)0))
+#else
+# define COVERT_DATAFLOW(w) ((GC_word)(w))
+#endif
+
+# define COVERT_DATAFLOW_P(p) ((ptr_t)COVERT_DATAFLOW(p))
 
 #if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \
     && !defined(REDIRECT_MALLOC_IN_HEADER)

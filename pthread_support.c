@@ -2058,7 +2058,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn, void *client_data)
       /* Cast fn to a volatile type to prevent its call inlining.   */
       client_data = (*(GC_fn_type volatile *)&fn)(client_data);
       /* Prevent treating the above as a tail call.     */
-      GC_noop1(COVERT_DATAFLOW(&stacksect));
+      GC_noop1(COVERT_DATAFLOW(ADDR(&stacksect)));
       return client_data; /* result */
     }
 
@@ -2372,7 +2372,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
     /* After the join, thread id may have been recycled.                */
     READER_LOCK();
-    t = (GC_thread)COVERT_DATAFLOW(GC_lookup_by_pthread(thread));
+    t = (GC_thread)COVERT_DATAFLOW_P(GC_lookup_by_pthread(thread));
       /* This is guaranteed to be the intended one, since the thread id */
       /* cannot have been recycled by pthreads.                         */
     READER_UNLOCK();
@@ -2418,7 +2418,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
     INIT_REAL_SYMS();
     READER_LOCK();
-    t = (GC_thread)COVERT_DATAFLOW(GC_lookup_by_pthread(thread));
+    t = (GC_thread)COVERT_DATAFLOW_P(GC_lookup_by_pthread(thread));
     READER_UNLOCK();
     result = REAL_FUNC(pthread_detach)(thread);
     if (EXPECT(0 == result, TRUE)) {

@@ -443,12 +443,12 @@ GC_INNER const char * GC_get_maps(void)
       /* code is put into a shared library (directly or indirectly) */
       /* which is linked with -Bsymbolic-functions option.  Thus,   */
       /* the following is not used by default.                      */
-      if (COVERT_DATAFLOW(__data_start) != 0) {
+      if (COVERT_DATAFLOW(ADDR(__data_start)) != 0) {
         GC_data_start = (ptr_t)(__data_start);
       } else {
         GC_data_start = (ptr_t)(data_start);
       }
-      if (COVERT_DATAFLOW(GC_data_start) != 0) {
+      if (COVERT_DATAFLOW(ADDR(GC_data_start)) != 0) {
         if (ADDR_LT(data_end, GC_data_start))
           ABORT_ARG2("Wrong __data_start/_end pair",
                      ": %p .. %p", (void *)GC_data_start, (void *)data_end);
@@ -5526,7 +5526,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
                   if (strncmp(result_buf, "main",
                               nl != NULL
                                 ? (size_t)(ADDR(nl) /* a cppcheck workaround */
-                                           - COVERT_DATAFLOW(result_buf))
+                                           - COVERT_DATAFLOW(ADDR(result_buf)))
                                 : result_len) == 0) {
                     stop = TRUE;
                   }

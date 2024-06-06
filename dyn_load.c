@@ -190,7 +190,7 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
         dynStructureAddr = &_DYNAMIC;
 #   endif
 
-    if (0 == COVERT_DATAFLOW(dynStructureAddr)) {
+    if (0 == COVERT_DATAFLOW(ADDR(dynStructureAddr))) {
         /* _DYNAMIC symbol not resolved. */
         return NULL;
     }
@@ -563,7 +563,7 @@ GC_INNER GC_bool GC_register_main_static_data(void)
     /* zero (otherwise a compiler might issue a warning).               */
     return FALSE;
 # else
-    return 0 == COVERT_DATAFLOW(dl_iterate_phdr);
+    return 0 == COVERT_DATAFLOW(ADDR(dl_iterate_phdr));
 # endif
 }
 
@@ -694,7 +694,7 @@ GC_FirstDLOpenedLinkMap(void)
 {
     static struct link_map *cachedResult = 0;
 
-    if (0 == COVERT_DATAFLOW(_DYNAMIC)) {
+    if (0 == COVERT_DATAFLOW(ADDR(_DYNAMIC))) {
         /* _DYNAMIC symbol not resolved. */
         return NULL;
     }

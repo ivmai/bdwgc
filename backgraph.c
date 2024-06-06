@@ -252,7 +252,7 @@ static void add_edge(ptr_t p, ptr_t q)
 
       if ((ADDR(pred) & FLAG_MANY) != 0) {
         n_edges = e -> n_edges;
-      } else if ((ADDR(COVERT_DATAFLOW(pred)) & 1) == 0) {
+      } else if ((COVERT_DATAFLOW(ADDR(pred)) & 1) == 0) {
         /* A misinterpreted freelist link.      */
         n_edges = 1;
         local = -1;

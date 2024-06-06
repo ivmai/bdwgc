@@ -319,7 +319,7 @@ STATIC void GC_init_size_map(void)
 #     if defined(CPPCHECK)
         GC_noop1(dummy[0]);
 #     else
-        GC_noop1(COVERT_DATAFLOW(dummy));
+        GC_noop1(COVERT_DATAFLOW(ADDR(dummy)));
 #     endif
       return arg;
     }
@@ -2302,7 +2302,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
     result = (*(GC_stack_base_func volatile *)&fn)(&base, arg);
     /* Strongly discourage the compiler from treating the above */
     /* as a tail call.                                          */
-    GC_noop1(COVERT_DATAFLOW(&base));
+    GC_noop1(COVERT_DATAFLOW(ADDR(&base)));
     return result;
 }
 
@@ -2326,13 +2326,13 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn, void *client_data)
     /* GC_get_main_stack_base() is unimplemented or broken for  */
     /* the platform).                                           */
     if (HOTTER_THAN(GC_stackbottom, (ptr_t)(&stacksect)))
-      GC_stackbottom = (ptr_t)COVERT_DATAFLOW(&stacksect);
+      GC_stackbottom = COVERT_DATAFLOW_P(&stacksect);
 
     if (GC_blocked_sp == NULL) {
       /* We are not inside GC_do_blocking() - do nothing more.  */
       client_data = (*(GC_fn_type volatile *)&fn)(client_data);
       /* Prevent treating the above as a tail call.     */
-      GC_noop1(COVERT_DATAFLOW(&stacksect));
+      GC_noop1(COVERT_DATAFLOW(ADDR(&stacksect)));
       return client_data; /* result */
     }
 

@@ -345,7 +345,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
   /* Strongly discourage the compiler from treating the above   */
   /* as a tail-call, since that would pop the register          */
   /* contents before we get a chance to look at them.           */
-  GC_noop1(COVERT_DATAFLOW(&dummy));
+  GC_noop1(COVERT_DATAFLOW(ADDR(&dummy)));
 # undef volatile_arg
 }
 
