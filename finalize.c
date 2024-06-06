@@ -168,7 +168,7 @@ STATIC int GC_register_disappearing_link_inner(
     GC_ASSERT(GC_is_initialized);
     if (EXPECT(GC_find_leak, FALSE)) return GC_UNIMPLEMENTED;
 #   ifdef GC_ASSERTIONS
-      GC_noop1(ADDR(*link)); /* check accessibility */
+      GC_noop1_ptr(*link); /* check accessibility */
 #   endif
     LOCK();
     GC_ASSERT(obj != NULL && GC_base_C(obj) == obj);
@@ -533,7 +533,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     word curr_hidden_link, new_hidden_link;
 
 #   ifdef GC_ASSERTIONS
-      GC_noop1(ADDR(*new_link));
+      GC_noop1_ptr(*new_link);
 #   endif
     GC_ASSERT(I_HOLD_LOCK());
     if (EXPECT(NULL == dl_hashtbl -> head, FALSE)) return GC_NOT_FOUND;
@@ -670,7 +670,7 @@ STATIC void GC_unreachable_finalize_mark_proc(ptr_t p)
 {
     /* A dummy comparison to ensure the compiler not to optimize two    */
     /* identical functions into a single one (thus, to ensure a unique  */
-    /* address of each).  Alternatively, GC_noop1(p) could be used.     */
+    /* address of each).  Alternatively, GC_noop1_ptr(p) could be used. */
     if (EXPECT(NULL == p, FALSE)) return;
 
     GC_normal_finalize_mark_proc(p);

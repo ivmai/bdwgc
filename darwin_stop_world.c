@@ -78,7 +78,7 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
         frame = (StackFrame *)sp_reg;
 #   else
 #     if defined(CPPCHECK)
-        NOOP1_PTR(&frame);
+        GC_noop1_ptr(&frame);
 #     endif
       ABORT("GC_FindTopOfStack(0) is not implemented");
 #   endif

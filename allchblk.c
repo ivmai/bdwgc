@@ -1018,7 +1018,7 @@ STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
       GC_ASSERT(I_HOLD_LOCK());
 #   endif
     /* Prevent treating this function by the compiler as a no-op one.   */
-    NOOP1_PTR(p);
+    GC_noop1_ptr(p);
   }
 #endif /* VALGRIND_TRACKING */
 

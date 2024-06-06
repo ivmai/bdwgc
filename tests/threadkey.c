@@ -71,8 +71,8 @@ static void * GC_CALLBACK on_thread_exit_inner(struct GC_stack_base * sb,
     GC_unregister_my_thread();
 
 # if defined(CPPCHECK)
-    GC_noop1((GC_word)sb);
-    GC_noop1((GC_word)arg);
+    GC_noop1_ptr(sb);
+    GC_noop1_ptr(arg);
 # endif
   return arg ? (void*)(GC_word)creation_res : 0;
 }

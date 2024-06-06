@@ -79,7 +79,7 @@ static void GC_CALLBACK misc_sizes_dct(void *obj, void *cd)
     size = (size_t)1 << log_size;
     my_assert(memeq((char *)obj + 1, MEM_FILL_BYTE, size - 1));
 #   if defined(CPPCHECK)
-        GC_noop1((GC_word)cd);
+        GC_noop1_ptr(cd);
 #   endif
 }
 
@@ -141,7 +141,7 @@ static void GC_CALLBACK pair_dct(void *obj, void *cd)
     p->car = NULL;
     p->cdr = NULL;
 #   if defined(CPPCHECK)
-        GC_noop1((GC_word)cd);
+        GC_noop1_ptr(cd);
 #   endif
 }
 

@@ -1511,14 +1511,19 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 # endif
 #elif defined(LINT2)
 # define GC_reachable_here(ptr) GC_noop1(~(GC_word)(ptr)^(~(GC_word)0))
-                /* The expression matches the one of COVERT_DATAFLOW(). */
+                /* The expression is similar to that of COVERT_DATAFLOW(). */
 #else
-# define GC_reachable_here(ptr) GC_noop1((GC_word)(ptr))
+# define GC_reachable_here(ptr) GC_noop1_ptr(ptr)
 #endif
 
-/* Make the argument appear live to compiler.  Should be robust against */
-/* the whole program analysis.                                          */
+/* Make the argument of word type appear live to compiler.  This could  */
+/* be used to prevent certain compiler false positive (FP) warnings and */
+/* misoptimizations.  Should be robust against the whole program        */
+/* analysis.                                                            */
 GC_API void GC_CALL GC_noop1(GC_word);
+
+/* Same as GC_noop1() but for a pointer.        */
+GC_API void GC_CALL GC_noop1_ptr(volatile void *);
 
 /* GC_set_warn_proc can be used to redirect or filter warning messages. */
 /* p may not be a NULL pointer.  msg is printf format string (arg must  */

@@ -48,6 +48,11 @@ GC_API void GC_CALL GC_noop1(GC_word x)
 # endif
 }
 
+GC_API void GC_CALL GC_noop1_ptr(volatile void *p)
+{
+  GC_noop1(ADDR(p));
+}
+
 /* Initialize GC_obj_kinds properly and standard free lists properly.   */
 /* This must be done statically since they may be accessed before       */
 /* GC_init is called.                                                   */
@@ -615,7 +620,7 @@ STATIC mse * GC_signal_mark_stack_overflow(mse *msp)
     GC_COND_LOG_PRINTF("Mark stack overflow; current size: %lu entries\n",
                        (unsigned long)GC_mark_stack_size);
 #   if defined(CPPCHECK)
-      NOOP1_PTR(msp);
+      GC_noop1_ptr(msp);
 #   endif
     return msp - GC_MARK_STACK_DISCARDS;
 }
@@ -997,7 +1002,7 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
     }
     *next = p;
 #   if defined(CPPCHECK)
-        NOOP1_PTR(local);
+        GC_noop1_ptr(local);
 #   endif
     return top;
 }

@@ -259,7 +259,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
           unsigned short old_fcw;
 
 #         if defined(CPPCHECK)
-            NOOP1_PTR(&old_fcw);
+            GC_noop1_ptr(&old_fcw);
 #         endif
           __asm__ __volatile__ ("fstcw %0" : "=m" (*&old_fcw));
 #       else

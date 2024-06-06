@@ -58,7 +58,7 @@ static int test_fn(char c, void * client_data)
         }
         count++;
 #       if defined(CPPCHECK)
-            GC_noop1((GC_word)client_data);
+            GC_noop1_ptr(client_data);
 #       endif
         return 0;
     } else {
@@ -72,7 +72,7 @@ static char id_cord_fn(size_t i, void * client_data)
 {
     if (client_data != 0) ABORT("id_cord_fn: bad client data");
 #   if defined(CPPCHECK)
-        GC_noop1((GC_word)client_data);
+        GC_noop1_ptr(client_data);
 #   endif
     return (char)i;
 }

@@ -156,7 +156,7 @@ static void *GC_CALLBACK set_mark_bit(void *obj)
 {
   GC_set_mark_bit(obj);
 # if defined(CPPCHECK)
-    GC_noop1((GC_word)obj);
+    GC_noop1_ptr(obj);
 # endif
   return NULL;
 }

@@ -267,7 +267,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
     time_diff = MS_TIME_DIFF(current_time, GC_start_time);
     nsec_diff = NS_FRAC_TIME_DIFF(current_time, GC_start_time);
 #   if defined(CPPCHECK)
-      NOOP1_PTR(&nsec_diff);
+      GC_noop1_ptr(&nsec_diff);
 #   endif
     if (time_diff >= GC_time_limit
         && (time_diff > GC_time_limit || nsec_diff >= GC_time_lim_nsec)) {
@@ -1514,7 +1514,7 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t bytes)
                                   old_capacity * sizeof(struct HeapSect));
 #     else
         /* TODO: implement GWW-aware recycling as in alloc_mark_stack */
-        NOOP1_PTR(old_heap_sects);
+        GC_noop1_ptr(old_heap_sects);
 #     endif
     }
 }
@@ -1833,12 +1833,12 @@ GC_INNER ptr_t GC_allocobj(size_t lg, int k)
         GC_continue_reclaim(lg, k);
       EXIT_GC();
 #     if defined(CPPCHECK)
-        NOOP1_PTR(&flh);
+        GC_noop1_ptr(&flh);
 #     endif
       if (NULL == *flh) {
         GC_new_hblk(lg, k);
 #       if defined(CPPCHECK)
-          NOOP1_PTR(&flh);
+          GC_noop1_ptr(&flh);
 #       endif
         if (NULL == *flh) {
           ENTER_GC();

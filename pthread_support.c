@@ -2109,7 +2109,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn, void *client_data)
     GC_ASSERT(me -> crtn == crtn);
     GC_ASSERT(crtn -> traced_stack_sect == &stacksect);
 #   ifdef CPPCHECK
-      NOOP1_PTR(crtn -> traced_stack_sect);
+      GC_noop1_ptr(crtn -> traced_stack_sect);
 #   endif
     crtn -> traced_stack_sect = stacksect.prev;
 #   ifdef E2K
