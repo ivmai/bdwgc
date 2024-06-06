@@ -557,7 +557,7 @@ GC_INNER const char * GC_get_maps(void)
         result = result + pgsz;
                     /* no overflow expected; do not use compound        */
                     /* assignment with volatile-qualified left operand  */
-        GC_noop1((word)(*result));
+        GC_noop1((word)(unsigned char)(*result));
       }
     }
 
@@ -1021,7 +1021,7 @@ GC_INNER void GC_setpagesize(void)
                         /* no underflow expected; do not use compound       */
                         /* assignment with volatile-qualified left operand  */
                 }
-                GC_noop1((word)(*result));
+                GC_noop1((word)(unsigned char)(*result));
             }
         }
         GC_reset_fault_handler();
