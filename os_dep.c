@@ -619,7 +619,7 @@ GC_INNER const char * GC_get_maps(void)
         result = bound;
       } else {
         result += pgsz; /* no overflow expected */
-        GC_noop1((word)(*result));
+        GC_noop1((word)(unsigned char)(*result));
       }
     }
 
@@ -1026,7 +1026,7 @@ GC_INNER size_t GC_page_size = 0;
                     }
                     result -= MIN_PAGE_SIZE; /* no underflow expected */
                 }
-                GC_noop1((word)(*result));
+                GC_noop1((word)(unsigned char)(*result));
             }
         }
         GC_reset_fault_handler();
