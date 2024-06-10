@@ -58,6 +58,13 @@ typedef GC_SIGNEDWORD GC_signed_word;
 #undef GC_SIGNEDWORD
 #undef GC_UNSIGNEDWORD
 
+#if !defined(_UINTPTR_T) && !defined(_UINTPTR_T_DEFINED) \
+    && !defined(UINTPTR_MAX)
+  typedef GC_word GC_uintptr_t;
+#else
+  typedef uintptr_t GC_uintptr_t;
+#endif
+
 /* Is first pointer has a smaller address than the second one?  The     */
 /* arguments should be of the same pointer type, e.g. of char* type.    */
 /* Ancient compilers might treat a pointer as a signed value, thus we   */
@@ -1355,7 +1362,7 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
         /* with) are ignored.  This was added after a long      */
         /* email discussion with John Ellis.                    */
         /* link must be non-NULL (and be properly aligned).     */
-        /* obj must be a pointer to the first word of an object */
+        /* obj must be a pointer to the beginning of an object  */
         /* allocated by GC_malloc or friends.   A link          */
         /* disappears when it is unregistered manually, or when */
         /* (*link) is cleared, or when the object containing    */
@@ -1532,14 +1539,13 @@ GC_API void GC_CALL GC_noop1_ptr(volatile void *);
 /* data race.  In GC v7.1 and before, the setter returned the old       */
 /* warn_proc value.                                                     */
 typedef void (GC_CALLBACK * GC_warn_proc)(char * /* msg */,
-                                          GC_word /* arg */);
+                                          GC_uintptr_t /* arg */);
 GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc /* p */) GC_ATTR_NONNULL(1);
-/* GC_get_warn_proc returns the current warn_proc.                      */
 GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void);
 
 /* GC_ignore_warn_proc may be used as an argument for GC_set_warn_proc  */
 /* to suppress all warnings (unless statistics printing is turned on).  */
-GC_API void GC_CALLBACK GC_ignore_warn_proc(char *, GC_word);
+GC_API void GC_CALLBACK GC_ignore_warn_proc(char *, GC_uintptr_t);
 
 /* Change file descriptor of GC log.  Unavailable on some targets.      */
 GC_API void GC_CALL GC_set_log_fd(int);
@@ -1576,7 +1582,7 @@ GC_API void GC_CALL GC_abort_on_oom(void);
 /* a race with the collector (e.g., one thread might fetch hidden link  */
 /* value, while another thread might collect the relevant object and    */
 /* reuse the free space for another object).                            */
-typedef GC_word GC_hidden_pointer;
+typedef GC_uintptr_t GC_hidden_pointer;
 #define GC_HIDE_POINTER(p) (~(GC_hidden_pointer)(p))
 #define GC_REVEAL_POINTER(p) ((void *)GC_HIDE_POINTER(p))
 
@@ -1931,11 +1937,11 @@ GC_API void GC_CALL GC_dump_finalization(void);
 /* Note that GC_PTR_ADD evaluates the first argument more than once.    */
 #if defined(GC_DEBUG) && (defined(__GNUC__) || defined(__clang__))
 # define GC_PTR_ADD3(x, n, type_of_result) \
-        ((type_of_result)GC_same_obj((x)+(n), (x)))
+        ((type_of_result)GC_same_obj((x) + (n), (x)))
 # define GC_PRE_INCR3(x, n, type_of_result) \
-        ((type_of_result)GC_pre_incr((void **)(&(x)), (n)*sizeof(*x)))
+        ((type_of_result)GC_pre_incr((void **)&(x), (n) * sizeof(*(x))))
 # define GC_POST_INCR3(x, n, type_of_result) \
-        ((type_of_result)GC_post_incr((void **)(&(x)), (n)*sizeof(*x)))
+        ((type_of_result)GC_post_incr((void **)&(x), (n) * sizeof(*(x))))
 # define GC_PTR_ADD(x, n) GC_PTR_ADD3(x, n, __typeof__(x))
 # define GC_PRE_INCR(x, n) GC_PRE_INCR3(x, n, __typeof__(x))
 # define GC_POST_INCR(x) GC_POST_INCR3(x, 1, __typeof__(x))
@@ -1944,7 +1950,7 @@ GC_API void GC_CALL GC_dump_finalization(void);
   /* We can't do this right without typeof, which ANSI decided was not    */
   /* sufficiently useful.  Without it we resort to the non-debug version. */
   /* TODO: This should eventually support C++0x decltype. */
-# define GC_PTR_ADD(x, n) ((x)+(n))
+# define GC_PTR_ADD(x, n) ((x) + (n))
 # define GC_PRE_INCR(x, n) ((x) += (n))
 # define GC_POST_INCR(x) ((x)++)
 # define GC_POST_DECR(x) ((x)--)
@@ -1979,12 +1985,12 @@ GC_API void GC_CALL GC_debug_ptr_store_and_dirty(void * /* p */,
 # endif
 #endif
 
-/* This returns a list of objects, linked through their first word.     */
-/* Its use can greatly reduce lock contention problems, since the       */
-/* allocator lock can be acquired and released many fewer times.        */
-/* Note that there is no "atomic" version of this function, as          */
-/* otherwise the links would not be seen by the collector.              */
-/* If the argument is zero, then it is treated as one.                  */
+/* This returns a list of objects with the link pointer located at the  */
+/* beginning of each object.  The use of such list can greatly reduce   */
+/* lock contention problems, since the allocator lock can be acquired   */
+/* and released many fewer times.  Note that there is no "atomic"       */
+/* version of this function, as otherwise the links would not be seen   */
+/* by the collector.  If the argument is zero, then it is treated as 1. */
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_many(size_t /* lb */);
 #define GC_NEXT(p) (*(void * *)(p))     /* Retrieve the next element    */
                                         /* in the returned list.        */
@@ -2054,13 +2060,6 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 #     else
 #       define DECLSPEC_NORETURN __declspec(noreturn)
 #     endif
-#   endif
-
-#   if !defined(_UINTPTR_T) && !defined(_UINTPTR_T_DEFINED) \
-       && !defined(UINTPTR_MAX)
-      typedef GC_word GC_uintptr_t;
-#   else
-      typedef uintptr_t GC_uintptr_t;
 #   endif
 
 #   ifdef _WIN64

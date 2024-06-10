@@ -311,8 +311,8 @@ struct SEXPR {
 
 typedef struct SEXPR * sexpr;
 
-# define INT_TO_SEXPR(x) ((sexpr)(GC_word)(x))
-# define SEXPR_TO_INT(x) ((int)(GC_word)(x))
+# define INT_TO_SEXPR(v) ((sexpr)(GC_uintptr_t)(unsigned)(v))
+# define SEXPR_TO_INT(p) ((int)(GC_word)(p))
 
 # undef nil
 # define nil (INT_TO_SEXPR(0))
@@ -464,7 +464,7 @@ static sexpr reverse1(sexpr x, sexpr y)
 static sexpr reverse(sexpr x)
 {
 #   ifdef TEST_WITH_SYSTEM_MALLOC
-      GC_noop1(GC_HIDE_NZ_POINTER(checkOOM(malloc(100000))));
+      GC_noop1((GC_word)GC_HIDE_NZ_POINTER(checkOOM(malloc(100000))));
 #   endif
     return reverse1(x, nil);
 }
@@ -853,7 +853,8 @@ static void *GC_CALLBACK reverse_test_inner(void *data)
 
     if (data == 0) {
       /* This stack frame is not guaranteed to be scanned. */
-      return GC_call_with_gc_active(reverse_test_inner, (void*)(GC_word)1);
+      return GC_call_with_gc_active(reverse_test_inner,
+                                    (void *)(GC_uintptr_t)1);
     }
 
 # if defined(CPPCHECK)
@@ -1018,7 +1019,7 @@ int dropped_something = 0;
     tn *t = (tn *)obj;
 
     FINALIZER_LOCK();
-    if ((int)(GC_word)client_data != t -> level) {
+    if ((int)(GC_uintptr_t)client_data != t -> level) {
       GC_printf("Wrong finalization data - collector is broken\n");
       FAIL;
     }
@@ -1101,7 +1102,7 @@ static tn * mktree(int n)
 
 #   ifndef GC_NO_FINALIZATION
       if (!GC_get_find_leak()) {
-        GC_REGISTER_FINALIZER(result, finalizer, (void *)(GC_word)n,
+        GC_REGISTER_FINALIZER(result, finalizer, (void *)(GC_uintptr_t)n,
                               (GC_finalization_proc *)0, (void **)0);
         if (my_index >= MAX_FINALIZED) {
             GC_printf("live_indicators overflowed\n");
@@ -2222,12 +2223,12 @@ void SetMinimumStack(long minSize)
 #define cMinStackSpace (512L * 1024L)
 #endif
 
-static void GC_CALLBACK warn_proc(char *msg, GC_word p)
+static void GC_CALLBACK warn_proc(char *msg, GC_uintptr_t arg)
 {
 #   if defined(CPPCHECK)
         GC_noop1_ptr(msg);
 #   endif
-    GC_printf(msg, (unsigned long)p);
+    GC_printf(msg, arg);
     /*FAIL;*/
 }
 

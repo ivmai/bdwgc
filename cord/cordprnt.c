@@ -375,7 +375,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                       va_end(vsprintf_args);
 #                   endif
                     len = (unsigned)res;
-                    if ((char *)(GC_word)res == buf) {
+                    if ((GC_uintptr_t)len == (GC_uintptr_t)buf) {
                         /* old style vsprintf */
                         len = strlen(buf);
                     } else if (res < 0) {

@@ -240,12 +240,12 @@ int F::nFreedF = 0;
 int F::nAllocatedF = 0;
 
 
-GC_word Disguise( void* p ) {
+GC_uintptr_t Disguise(void *p) {
     return GC_HIDE_NZ_POINTER(p);
 }
 
-void* Undisguise( GC_word i ) {
-    return GC_REVEAL_NZ_POINTER(i);
+void* Undisguise(GC_uintptr_t v) {
+    return GC_REVEAL_NZ_POINTER(v);
 }
 
 #define GC_CHECKED_DELETE(p) \
@@ -352,8 +352,8 @@ void* Undisguise( GC_word i ) {
             /* Allocate some uncollectible As and disguise their pointers.
             Later we'll check to see if the objects are still there.  We're
             checking to make sure these objects really are uncollectible. */
-        GC_word as[ 1000 ];
-        GC_word bs[ 1000 ];
+        GC_uintptr_t as[1000];
+        GC_uintptr_t bs[1000];
         for (i = 0; i < 1000; i++) {
             as[ i ] = Disguise( new (GC_NS_QUALIFY(NoGC)) A(i) );
             bs[ i ] = Disguise( new (GC_NS_QUALIFY(NoGC)) B(i) ); }

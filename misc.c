@@ -1330,11 +1330,12 @@ GC_API void GC_CALL GC_init(void)
       }
 #   endif
 #   if !defined(CPPCHECK)
-      GC_STATIC_ASSERT(sizeof(ptr_t) == sizeof(word));
+      GC_STATIC_ASSERT(sizeof(ptrdiff_t) == sizeof(word));
       GC_STATIC_ASSERT(sizeof(signed_word) == sizeof(word));
+      GC_STATIC_ASSERT(sizeof(ptr_t) == sizeof(GC_uintptr_t));
       GC_STATIC_ASSERT(sizeof(GC_oom_func) == sizeof(GC_funcptr_uint));
-#     ifdef FUNCPTR_IS_WORD
-        GC_STATIC_ASSERT(sizeof(word) == sizeof(GC_funcptr_uint));
+#     ifdef FUNCPTR_IS_DATAPTR
+        GC_STATIC_ASSERT(sizeof(ptr_t) == sizeof(GC_funcptr_uint));
 #     endif
 #     if !defined(_AUX_SOURCE) || defined(__GNUC__)
         GC_STATIC_ASSERT((word)(-1) > (word)0);
@@ -1996,7 +1997,7 @@ void GC_err_puts(const char *s)
     (void)WRITE(GC_stderr, s, strlen(s)); /* ignore errors */
 }
 
-STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
+STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_uintptr_t arg)
 {
     /* TODO: Add assertion on arg comply with msg (format).     */
 #   if defined(CPPCHECK)
@@ -2010,7 +2011,7 @@ STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
 GC_INNER GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
 
 /* This is recommended for production code (release). */
-GC_API void GC_CALLBACK GC_ignore_warn_proc(char *msg, GC_word arg)
+GC_API void GC_CALLBACK GC_ignore_warn_proc(char *msg, GC_uintptr_t arg)
 {
     if (GC_print_stats) {
       /* Don't ignore warnings if stats printing is on. */

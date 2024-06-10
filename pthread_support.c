@@ -1558,7 +1558,7 @@ GC_INNER_WIN32THREAD void GC_record_stack_base(GC_stack_context_t crtn,
   if ((crtn -> stack_end = (ptr_t)(sb -> mem_base)) == NULL)
     ABORT("Bad stack base in GC_register_my_thread");
 # ifdef E2K
-    crtn -> ps_ofs = (size_t)ADDR(sb -> reg_base);
+    crtn -> ps_ofs = (size_t)(GC_uintptr_t)(sb -> reg_base);
 # elif defined(IA64)
     crtn -> backing_store_end = (ptr_t)(sb -> reg_base);
 # elif defined(I386) && defined(GC_WIN32_THREADS)
@@ -1993,7 +1993,7 @@ GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
 
     crtn -> stack_end = (ptr_t)(sb -> mem_base);
 #   ifdef E2K
-      crtn -> ps_ofs = (size_t)ADDR(sb -> reg_base);
+      crtn -> ps_ofs = (size_t)(GC_uintptr_t)(sb -> reg_base);
 #   elif defined(IA64)
       crtn -> backing_store_end = (ptr_t)(sb -> reg_base);
 #   endif
@@ -2014,7 +2014,8 @@ GC_API void * GC_CALL GC_get_my_stackbottom(struct GC_stack_base *sb)
     crtn = me -> crtn;
     sb -> mem_base = crtn -> stack_end;
 #   ifdef E2K
-      sb -> reg_base = (void *)(word)(crtn -> ps_ofs);
+      /* Store the offset in the procedure stack, not address.  */
+      sb -> reg_base = (void *)(GC_uintptr_t)(crtn -> ps_ofs);
 #   elif defined(IA64)
       sb -> reg_base = crtn -> backing_store_end;
 #   endif
@@ -2478,7 +2479,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
     *pstart = psi -> start_routine;
     *pstart_arg = psi -> arg;
-#   if defined(DEBUG_THREADS) && defined(FUNCPTR_IS_WORD)
+#   if defined(DEBUG_THREADS) && defined(FUNCPTR_IS_DATAPTR)
       GC_log_printf("start_routine= %p\n", (void *)(word)(*pstart));
 #   endif
     sem_post(&(psi -> registered));     /* Last action on *psi; */

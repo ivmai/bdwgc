@@ -78,11 +78,13 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
     hdr * hhdr;
     void * result;
 #   if defined(_FORTIFY_SOURCE) && defined(__GNUC__) && !defined(__clang__)
-      volatile  /* Use cleared_p instead of p as a workaround to avoid  */
-                /* passing alloc_size(lb) attribute associated with p   */
-                /* to memset (including memset call inside GC_free).    */
+      /* Use cleared_p instead of p as a workaround to avoid        */
+      /* passing alloc_size(lb) attribute associated with p to      */
+      /* memset (including a memset call inside GC_free).           */
+      volatile GC_uintptr_t cleared_p = (GC_uintptr_t)p;
+#   else
+#     define cleared_p p
 #   endif
-      word cleared_p = (word)p;
     size_t sz;      /* Current size in bytes    */
     size_t orig_sz; /* Original sz in bytes     */
     int obj_kind;
@@ -173,6 +175,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
 #     endif
     }
     return result;
+#   undef cleared_p
 }
 
 # if defined(REDIRECT_MALLOC) && !defined(REDIRECT_REALLOC)

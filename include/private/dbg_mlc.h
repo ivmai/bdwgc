@@ -32,12 +32,20 @@
 
 EXTERN_C_BEGIN
 
+#ifndef GC_FREED_MEM_MARKER
+# if CPP_WORDSZ == 32
+#   define GC_FREED_MEM_MARKER (GC_uintptr_t)0xdeadbeef
+# else
+#   define GC_FREED_MEM_MARKER (GC_uintptr_t)GC_WORD_C(0xEFBEADDEdeadbeef)
+# endif
+#endif /* !GC_FREED_MEM_MARKER */
+
 #if CPP_WORDSZ == 32
-# define START_FLAG (word)0xfedcedcb
-# define END_FLAG (word)0xbcdecdef
+# define START_FLAG (GC_uintptr_t)0xfedcedcb
+# define END_FLAG (GC_uintptr_t)0xbcdecdef
 #else
-# define START_FLAG GC_WORD_C(0xFEDCEDCBfedcedcb)
-# define END_FLAG GC_WORD_C(0xBCDECDEFbcdecdef)
+# define START_FLAG (GC_uintptr_t)GC_WORD_C(0xFEDCEDCBfedcedcb)
+# define END_FLAG (GC_uintptr_t)GC_WORD_C(0xBCDECDEFbcdecdef)
 #endif
         /* Stored both one past the end of user object, and one before  */
         /* the end of the object as seen by the allocator.              */
@@ -46,15 +54,15 @@ EXTERN_C_BEGIN
   /* Pointer "source"s that aren't real locations.      */
   /* Used in oh_back_ptr fields and as "source"         */
   /* argument to some marking functions.                */
-# define MARKED_FOR_FINALIZATION ((ptr_t)(word)2)
+# define MARKED_FOR_FINALIZATION ((ptr_t)(GC_uintptr_t)2)
                 /* Object was marked because it is finalizable. */
-# define MARKED_FROM_REGISTER ((ptr_t)(word)4)
+# define MARKED_FROM_REGISTER ((ptr_t)(GC_uintptr_t)4)
                 /* Object was marked from a register.  Hence the        */
                 /* source of the reference doesn't have an address.     */
-# define NOT_MARKED ((ptr_t)(word)8)
+# define NOT_MARKED ((ptr_t)(GC_uintptr_t)8)
 #endif /* KEEP_BACK_PTRS || PRINT_BLACK_LIST */
 
-/* Object header */
+/* Object debug header. */
 typedef struct {
 # if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
     /* We potentially keep two different kinds of back          */
@@ -78,20 +86,15 @@ typedef struct {
     /* never to overwrite such a value.                         */
 #   if ALIGNMENT == 1
       /* Fudge back pointer to be even. */
-#     define HIDE_BACK_PTR(p) GC_HIDE_POINTER(~(word)1 & (word)(p))
+#     define HIDE_BACK_PTR(p) \
+                GC_HIDE_POINTER((ptr_t)(~(GC_uintptr_t)1 & (GC_uintptr_t)(p)))
 #   else
 #     define HIDE_BACK_PTR(p) GC_HIDE_POINTER(p)
 #   endif
-#   ifdef KEEP_BACK_PTRS
-      GC_hidden_pointer oh_back_ptr;
-#   endif
-#   ifdef MAKE_BACK_GRAPH
-      GC_hidden_pointer oh_bg_ptr;
-#   endif
-#   if defined(KEEP_BACK_PTRS) != defined(MAKE_BACK_GRAPH)
-      /* Keep double-pointer-sized alignment.   */
-      word oh_dummy;
-#   endif
+    GC_hidden_pointer oh_back_ptr;
+    GC_hidden_pointer oh_bg_ptr;
+                        /* Always define either none or both of the     */
+                        /* fields to ensure double-pointer alignment.   */
 # endif
   const char * oh_string;       /* object descriptor string (file name)    */
   signed_word oh_int;           /* object descriptor integer (line number) */
@@ -99,12 +102,12 @@ typedef struct {
     struct callinfo oh_ci[NFRAMES];
 # endif
 # ifndef SHORT_DBG_HDRS
-    word oh_sz;                 /* Original malloc arg.         */
-    word oh_sf;                 /* start flag */
-# endif /* SHORT_DBG_HDRS */
+    GC_uintptr_t oh_sz;                 /* Original malloc argument.    */
+    GC_uintptr_t oh_sf;                 /* Start flag.                  */
+# endif
 } oh;
 /* The size of the above structure is assumed not to de-align things,   */
-/* and to be a multiple of the word length.                             */
+/* and to be a multiple of a double-pointer length.                     */
 
 #ifdef SHORT_DBG_HDRS
 # define DEBUG_BYTES sizeof(oh)
@@ -176,7 +179,8 @@ typedef struct {
                         /* warning.                                     */
 # else
 #   define GC_HAS_DEBUG_INFO(base) \
-                ((*(word *)(base) & 1) && GC_has_other_debug_info(base) > 0)
+                ((*(GC_uintptr_t *)(base) & 1) != 0 \
+                 && GC_has_other_debug_info(base) > 0)
 # endif
 #else
 # define GC_HAS_DEBUG_INFO(base) (GC_has_other_debug_info(base) > 0)

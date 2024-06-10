@@ -184,8 +184,8 @@ typedef int GC_bool;
 # define GC_ATTR_WORD_ALIGNED /* empty */
 #endif
 
-  typedef GC_word GC_funcptr_uint;
-# define FUNCPTR_IS_WORD
+  typedef GC_uintptr_t GC_funcptr_uint;
+# define FUNCPTR_IS_DATAPTR
 
 typedef unsigned int unsigned32;
 
@@ -290,6 +290,27 @@ typedef struct hblkhdr hdr;
 
 #include "gc_locks.h"
 
+#ifdef GC_ASSERTIONS
+# define GC_ASSERT(expr) \
+        do { \
+          if (EXPECT(!(expr), FALSE)) { \
+            GC_err_printf("Assertion failure: %s:%d\n", __FILE__, __LINE__); \
+            ABORT("assertion failure"); \
+          } \
+        } while (0)
+#else
+# define GC_ASSERT(expr)
+#endif
+
+#include "gc/gc_inline.h"
+
+/*********************************/
+/*                               */
+/* Definitions for conservative  */
+/* collector.                    */
+/*                               */
+/*********************************/
+
 #define GC_WORD_MAX (~(word)0)
 
 /* Convert given pointer to its address.  Result is of word type.   */
@@ -321,27 +342,6 @@ typedef struct hblkhdr hdr;
 #else
 #   define GC_FAR
 #endif
-
-#ifdef GC_ASSERTIONS
-# define GC_ASSERT(expr) \
-        do { \
-          if (EXPECT(!(expr), FALSE)) { \
-            GC_err_printf("Assertion failure: %s:%d\n", __FILE__, __LINE__); \
-            ABORT("assertion failure"); \
-          } \
-        } while (0)
-#else
-# define GC_ASSERT(expr)
-#endif
-
-#include "gc/gc_inline.h"
-
-/*********************************/
-/*                               */
-/* Definitions for conservative  */
-/* collector                     */
-/*                               */
-/*********************************/
 
 /*********************************/
 /*                               */
@@ -747,7 +747,7 @@ EXTERN_C_BEGIN
 #define WARN(msg, arg) \
     (*GC_current_warn_proc)((/* no const */ char *) \
                                 (word)("GC Warning: " msg), \
-                            (word)(arg))
+                            (GC_uintptr_t)(arg))
 GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
 /* Print format type macro for decimal signed_word value passed WARN(). */
@@ -755,8 +755,8 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 /* not be done as the WARN format string is, possibly, processed on the */
 /* client side, so non-standard print type modifiers (like MS "I64d")   */
 /* should be avoided here if possible.                                  */
+/* TODO: Assuming sizeof(void*) == sizeof(long) or a little-endian machine. */
 #ifndef WARN_PRIdPTR
-  /* Assume sizeof(void *) == sizeof(long) or a little-endian machine.  */
 # define WARN_PRIdPTR "ld"
 # define WARN_PRIuPTR "lu"
 #endif
@@ -1640,7 +1640,7 @@ struct _GC_arrays {
         /* the allocator lock held.                                     */
 # ifndef MARK_BIT_PER_OBJ
 #   define GC_obj_map GC_arrays._obj_map
-    unsigned short * _obj_map[MAXOBJGRANULES + 1];
+    unsigned short * _obj_map[MAXOBJGRANULES+1];
                        /* If not NULL, then a pointer to a map of valid */
                        /* object addresses.  GC_obj_map[lg][i] is       */
                        /* i % lg.  This is now used purely to replace   */
@@ -1938,7 +1938,7 @@ struct GC_traced_stack_sect_s {
         /* offset and size (in bytes).                                  */
 # define MARK_BIT_OFFSET(sz) 1
         /* Spacing between useful mark bits.                            */
-# define FINAL_MARK_BIT(sz) ((sz) > MAXOBJBYTES? 1 : HBLK_OBJS(sz))
+# define FINAL_MARK_BIT(sz) ((sz) > MAXOBJBYTES ? 1 : HBLK_OBJS(sz))
         /* Position of final, always set, mark bit.                     */
 #else
 # define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES((word)(offset))
@@ -1989,7 +1989,7 @@ GC_INNER GC_bool GC_collection_in_progress(void);
 /* Push contents of the symbol residing in the static roots area        */
 /* excluded from scanning by the the collector for a reason.            */
 /* Note: it should be used only for symbols of relatively small size    */
-/* (one or several words).                                              */
+/* (containing one or several pointers).                                */
 #define GC_PUSH_ALL_SYM(sym) GC_push_all_eager(&(sym), &(sym) + 1)
 
 GC_INNER void GC_push_all_stack(ptr_t b, ptr_t t);
@@ -2161,7 +2161,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
 #if defined(AMIGA) || defined(MACOS) || defined(GC_DARWIN_THREADS)
   void GC_push_one(word p);
                               /* If p points to an object, mark it    */
-                              /* and push contents on the mark stack  */
+                              /* and push contents on the mark stack. */
                               /* Pointer recognition test always      */
                               /* accepts interior pointers, i.e. this */
                               /* is appropriate for pointers found on */

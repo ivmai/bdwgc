@@ -435,12 +435,13 @@ void CORD_ec_append_cord(CORD_ec x, CORD s)
 static char CORD_nul_func(size_t i, void * client_data)
 {
     (void)i;
-    return (char)(GC_word)client_data;
+    return (char)(GC_uintptr_t)client_data;
 }
 
 CORD CORD_chars(char c, size_t i)
 {
-    return CORD_from_fn(CORD_nul_func, (void *)(GC_word)(unsigned char)c, i);
+    return CORD_from_fn(CORD_nul_func,
+                        (void *)(GC_uintptr_t)(unsigned char)c, i);
 }
 
 CORD CORD_from_file_eager(FILE * f)
@@ -537,10 +538,11 @@ static void * GC_CALLBACK refill_cache(void * client_data)
 #   else
         state -> lf_cache[line_no] = new_cache;
 #   endif
-    GC_END_STUBBORN_CHANGE((/* no volatile */ void *)
-                                (GC_word)(state -> lf_cache + line_no));
+    GC_END_STUBBORN_CHANGE((/* no volatile */ cache_line *)
+                           &(state -> lf_cache[line_no]));
     state -> lf_current = line_start + LINE_SZ;
-    return (void *)((GC_word)new_cache->data[MOD_LINE_SZ(file_pos)]);
+    return (void *)(GC_uintptr_t)
+                ((unsigned char)(new_cache -> data[MOD_LINE_SZ(file_pos)]));
 }
 
 #ifndef CORD_USE_GCC_ATOMIC
@@ -565,7 +567,7 @@ static char CORD_lf_func(size_t i, void * client_data)
                                             get_cache_line, (void *)cl_addr);
 #   else
         cl = (cache_line *)GC_call_with_reader_lock(get_cache_line,
-                                                    (void *)cl_addr, 0);
+                                (/* no volatile */ void *)cl_addr, 0);
 #   endif
     if (NULL == cl || cl -> tag != DIV_LINE_SZ(i)) {
         /* Cache miss */
@@ -575,7 +577,7 @@ static char CORD_lf_func(size_t i, void * client_data)
         rd.file_pos =  i;
         rd.new_cache = GC_NEW_ATOMIC(cache_line);
         if (NULL == rd.new_cache) OUT_OF_MEMORY;
-        return (char)((GC_word)GC_call_with_alloc_lock(refill_cache, &rd));
+        return (char)(GC_uintptr_t)GC_call_with_alloc_lock(refill_cache, &rd);
     }
     return cl -> data[MOD_LINE_SZ(i)];
 }

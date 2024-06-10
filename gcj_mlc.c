@@ -11,7 +11,6 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
  */
 
 #include "private/gc_pmark.h"  /* includes gc_priv.h */
@@ -46,24 +45,24 @@ int GC_gcj_debug_kind = 0;
 
 STATIC struct GC_ms_entry *GC_CALLBACK GC_gcj_fake_mark_proc(word *addr,
                         struct GC_ms_entry *mark_stack_top,
-                        struct GC_ms_entry * mark_stack_limit, word env)
+                        struct GC_ms_entry *mark_stack_limit, word env)
 {
     UNUSED_ARG(addr);
     UNUSED_ARG(mark_stack_limit);
     UNUSED_ARG(env);
-#   if defined(FUNCPTR_IS_WORD) && defined(CPPCHECK)
+#   if defined(FUNCPTR_IS_DATAPTR) && defined(CPPCHECK)
         GC_noop1((word)&GC_init_gcj_malloc);
 #   endif
     ABORT_RET("No client gcj mark proc is specified");
     return mark_stack_top;
 }
 
-#ifdef FUNCPTR_IS_WORD
+#ifdef FUNCPTR_IS_DATAPTR
   GC_API void GC_CALL GC_init_gcj_malloc(int mp_index, void *mp)
   {
     GC_init_gcj_malloc_mp((unsigned)mp_index, (GC_mark_proc)(word)mp);
   }
-#endif /* FUNCPTR_IS_WORD */
+#endif /* FUNCPTR_IS_DATAPTR */
 
 GC_API void GC_CALL GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp)
 {
