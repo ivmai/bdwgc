@@ -34,10 +34,10 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
     GC_ASSERT(ADDR(&invalid_tse.next) % sizeof(tse *) == 0);
     result = (tsd *)MALLOC_CLEAR(sizeof(tsd));
     if (NULL == result) return ENOMEM;
-    ret = pthread_mutex_init(&result->lock, NULL);
+    ret = pthread_mutex_init(&(result -> lock), NULL);
     if (ret != 0) return ret;
     for (i = 0; i < TS_CACHE_SIZE; ++i) {
-      result -> cache[i] = (/* no const */ tse *)(word)(&invalid_tse);
+      result -> cache[i] = (tse *)GC_CAST_AWAY_CONST_PVOID(&invalid_tse);
     }
 #   ifdef GC_ASSERTIONS
       for (i = 0; i < TS_HASH_SIZE; ++i) {

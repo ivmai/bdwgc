@@ -2705,7 +2705,7 @@ GC_EXTERN GC_bool GC_print_back_height;
 #endif
 
 /* Same as GC_base but excepts and returns a pointer to const object.   */
-#define GC_base_C(p) ((const void *)GC_base((/* no const */ void *)(word)(p)))
+#define GC_base_C(p) ((const void *)GC_base(GC_CAST_AWAY_CONST_PVOID(p)))
 
 /* Debugging print routines: */
 void GC_print_block_list(void);

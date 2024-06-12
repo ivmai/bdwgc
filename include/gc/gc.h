@@ -1098,15 +1098,16 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
         GC_debug_realloc_replacement(void * /* object_addr */,
                                      size_t /* size_in_bytes */);
 
+#define GC_CAST_AWAY_CONST_PVOID(p) ((/* no const */ void *)(GC_uintptr_t)(p))
+
 /* Convenient macros for disappearing links registration working both   */
 /* for debug and non-debug allocated objects, and accepting interior    */
 /* pointers to object.                                                  */
 #define GC_GENERAL_REGISTER_DISAPPEARING_LINK_SAFE(link, obj) \
       GC_general_register_disappearing_link(link, \
-                        GC_base((/* no const */ void *)(GC_word)(obj)))
+                                        GC_base(GC_CAST_AWAY_CONST_PVOID(obj)))
 #define GC_REGISTER_LONG_LINK_SAFE(link, obj) \
-      GC_register_long_link(link, \
-                            GC_base((/* no const */ void *)(GC_word)(obj)))
+      GC_register_long_link(link, GC_base(GC_CAST_AWAY_CONST_PVOID(obj)))
 
 #ifdef GC_DEBUG_REPLACEMENT
 # define GC_MALLOC(sz) GC_debug_malloc_replacement(sz)
