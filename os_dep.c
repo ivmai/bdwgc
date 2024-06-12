@@ -1872,10 +1872,11 @@ void GC_register_data_segments(void)
     } else {
         GC_reset_fault_handler();
         /* We got here via a longjmp.  The address is not readable.     */
-        /* This is known to happen under Solaris 2.4 + gcc, which place */
-        /* string constants in the text segment, but after etext.       */
-        /* Use plan B.  Note that we now know there is a gap between    */
-        /* text and data segments, so plan A brought us something.      */
+        /* This is known to happen under Solaris 2.4 + gcc, which       */
+        /* places string constants in the text segment, but after       */
+        /* etext.  Use plan B.  Note that we now know there is a gap    */
+        /* between text and data segments, so plan A brought us         */
+        /* something.                                                   */
         result = (char *)GC_find_limit((ptr_t)(DATAEND), FALSE);
     }
     return((ptr_t)result);
