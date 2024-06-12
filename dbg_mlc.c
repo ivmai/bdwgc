@@ -185,15 +185,15 @@
   {
     void *current = p;
     int i;
-    GC_ref_kind source;
-    size_t offset;
-    void *base;
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
     GC_print_heap_obj((ptr_t)GC_base(current));
 
     for (i = 0;; ++i) {
-      source = GC_get_back_ptr_info(current, &base, &offset);
+      void *base;
+      size_t offset;
+      GC_ref_kind source = GC_get_back_ptr_info(current, &base, &offset);
+
       if (GC_UNREFERENCED == source) {
         GC_err_printf("Reference could not be found\n");
         break;
