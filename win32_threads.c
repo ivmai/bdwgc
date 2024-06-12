@@ -1048,8 +1048,7 @@ GC_INNER void GC_get_next_stack(ptr_t start, ptr_t limit,
 
       if (ADDR_LT(start, stack_end) && ADDR_LT(stack_end, current_min)) {
         /* Update address of last_stack_min. */
-        plast_stack_min = (ptr_t * /* no volatile */)(word)(
-                            &(dll_thread_table[i].crtn -> last_stack_min));
+        plast_stack_min = &(dll_thread_table[i].crtn -> last_stack_min);
         current_min = stack_end;
 #       ifdef CPPCHECK
           /* To avoid a warning that thread is always null.     */
