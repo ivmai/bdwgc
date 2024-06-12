@@ -81,9 +81,9 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
     /* There can only be one writer at a time, but this needs to be     */
     /* atomic with respect to concurrent readers.                       */
     AO_store_release(&key->hash[hash_val].ao, (AO_t)entry);
-    GC_dirty((/* no volatile */ void *)(word)entry);
-    GC_dirty(key->hash + hash_val);
-    if (pthread_mutex_unlock(&key->lock) != 0)
+    GC_dirty(CAST_AWAY_VOLATILE_PVOID(entry));
+    GC_dirty(key -> hash + hash_val);
+    if (pthread_mutex_unlock(&(key -> lock)) != 0)
       ABORT("pthread_mutex_unlock failed (setspecific)");
     return 0;
 }
@@ -140,7 +140,7 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
     /* With GC, we're done, since the pointers from the cache will      */
     /* be overwritten, all local pointers to the entries will be        */
     /* dropped, and the entry will then be reclaimed.                   */
-    if (pthread_mutex_unlock(&key->lock) != 0)
+    if (pthread_mutex_unlock(&(key -> lock)) != 0)
       ABORT("pthread_mutex_unlock failed (remove_specific after fork)");
 }
 

@@ -212,6 +212,10 @@
 # ifdef GC_USE_DLOPEN_WRAP
     STATIC GC_bool GC_syms_initialized = FALSE;
 
+    /* Resolve a symbol from the dynamic library (given by a handle)    */
+    /* and cast it to the given functional type.                        */
+#   define TYPED_DLSYM(fn, h, name) CAST_THRU_UINTPTR(fn, dlsym(h, name))
+
     STATIC void GC_init_real_syms(void)
     {
       void *dl_handle;
@@ -226,28 +230,28 @@
           if (NULL == dl_handle) ABORT("Couldn't open libpthread");
         }
 #     endif
-      REAL_FUNC(pthread_create) = (GC_pthread_create_t)(word)
-                                dlsym(dl_handle, "pthread_create");
+      REAL_FUNC(pthread_create) = TYPED_DLSYM(GC_pthread_create_t, dl_handle,
+                                              "pthread_create");
 #     ifdef RTLD_NEXT
         if (REAL_FUNC(pthread_create) == 0)
           ABORT("pthread_create not found"
                 " (probably -lgc is specified after -lpthread)");
 #     endif
 #     ifndef GC_NO_PTHREAD_SIGMASK
-        REAL_FUNC(pthread_sigmask) = (GC_pthread_sigmask_t)(word)
-                                dlsym(dl_handle, "pthread_sigmask");
+        REAL_FUNC(pthread_sigmask) = TYPED_DLSYM(GC_pthread_sigmask_t,
+                                                 dl_handle, "pthread_sigmask");
 #     endif
-      REAL_FUNC(pthread_join) = (GC_pthread_join_t)(word)
-                                dlsym(dl_handle, "pthread_join");
-      REAL_FUNC(pthread_detach) = (GC_pthread_detach_t)(word)
-                                dlsym(dl_handle, "pthread_detach");
+      REAL_FUNC(pthread_join) = TYPED_DLSYM(GC_pthread_join_t, dl_handle,
+                                            "pthread_join");
+      REAL_FUNC(pthread_detach) = TYPED_DLSYM(GC_pthread_detach_t, dl_handle,
+                                              "pthread_detach");
 #     ifndef GC_NO_PTHREAD_CANCEL
-        REAL_FUNC(pthread_cancel) = (GC_pthread_cancel_t)(word)
-                                dlsym(dl_handle, "pthread_cancel");
+        REAL_FUNC(pthread_cancel) = TYPED_DLSYM(GC_pthread_cancel_t,
+                                                dl_handle, "pthread_cancel");
 #     endif
 #     ifdef GC_HAVE_PTHREAD_EXIT
-        REAL_FUNC(pthread_exit) = (GC_pthread_exit_t)(word)
-                                dlsym(dl_handle, "pthread_exit");
+        REAL_FUNC(pthread_exit) = TYPED_DLSYM(GC_pthread_exit_t, dl_handle,
+                                              "pthread_exit");
 #     endif
       GC_syms_initialized = TRUE;
     }
@@ -2480,7 +2484,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     *pstart = psi -> start_routine;
     *pstart_arg = psi -> arg;
 #   if defined(DEBUG_THREADS) && defined(FUNCPTR_IS_DATAPTR)
-      GC_log_printf("start_routine= %p\n", (void *)(word)(*pstart));
+      GC_log_printf("start_routine= %p\n", CAST_THRU_UINTPTR(void*, *pstart));
 #   endif
     sem_post(&(psi -> registered));     /* Last action on *psi; */
                                         /* OK to deallocate.    */

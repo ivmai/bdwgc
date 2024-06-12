@@ -269,7 +269,8 @@ STATIC void GC_init_size_map(void)
   {
 #   ifndef STACK_NOT_SCANNED
       word volatile dummy[SMALL_CLEAR_SIZE];
-      BZERO((/* no volatile */ word *)((word)dummy), sizeof(dummy));
+
+      BZERO(CAST_AWAY_VOLATILE_PVOID(dummy), sizeof(dummy));
 #   endif
     return arg;
   }
@@ -310,7 +311,7 @@ STATIC void GC_init_size_map(void)
 #     define CLEAR_SIZE 213 /* granularity */
       volatile word dummy[CLEAR_SIZE];
 
-      BZERO((/* no volatile */ word *)((word)dummy), sizeof(dummy));
+      BZERO(CAST_AWAY_VOLATILE_PVOID(dummy), sizeof(dummy));
       if (HOTTER_THAN((/* no volatile */ ptr_t)limit, GC_approx_sp())) {
         (void)GC_clear_stack_inner(arg, limit);
       }
@@ -380,7 +381,7 @@ STATIC void GC_init_size_map(void)
                         /* implementations of GC_clear_stack_inner.     */
         return GC_clear_stack_inner(arg, limit);
       }
-      BZERO((/* no volatile */ void *)dummy, SMALL_CLEAR_SIZE * sizeof(word));
+      BZERO(CAST_AWAY_VOLATILE_PVOID(dummy), sizeof(dummy));
 #   else
       if (GC_gc_no != GC_stack_last_cleared) {
         /* Start things over, so we clear the entire stack again.   */

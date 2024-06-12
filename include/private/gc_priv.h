@@ -311,6 +311,13 @@ typedef struct hblkhdr hdr;
 /*                               */
 /*********************************/
 
+/* Prevent certain compiler warnings by making a cast through       */
+/* a pointer-sized numeric type.                                    */
+#define CAST_THRU_UINTPTR(t, x) ((t)(GC_uintptr_t)(x))
+
+#define CAST_AWAY_VOLATILE_PVOID(p) \
+                        CAST_THRU_UINTPTR(/* no volatile */ void *, p)
+
 #define GC_WORD_MAX (~(word)0)
 
 /* Convert given pointer to its address.  Result is of word type.   */
@@ -3047,9 +3054,10 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 /* Runtime check for an argument declared as non-null is actually not null. */
 #if GC_GNUC_PREREQ(4, 0)
   /* Workaround tautological-pointer-compare Clang warning.     */
-# define NONNULL_ARG_NOT_NULL(arg) (*(volatile void **)(word)(&(arg)) != NULL)
+# define NONNULL_ARG_NOT_NULL(arg) \
+                (*CAST_THRU_UINTPTR(volatile void **, &(arg)) != NULL)
 #else
-# define NONNULL_ARG_NOT_NULL(arg) (NULL != (arg))
+# define NONNULL_ARG_NOT_NULL(arg) ((arg) != NULL)
 #endif
 
 #define COND_DUMP_CHECKS \

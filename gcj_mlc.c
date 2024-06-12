@@ -60,7 +60,8 @@ STATIC struct GC_ms_entry *GC_CALLBACK GC_gcj_fake_mark_proc(word *addr,
 #ifdef FUNCPTR_IS_DATAPTR
   GC_API void GC_CALL GC_init_gcj_malloc(int mp_index, void *mp)
   {
-    GC_init_gcj_malloc_mp((unsigned)mp_index, (GC_mark_proc)(word)mp);
+    GC_init_gcj_malloc_mp((unsigned)mp_index,
+                          CAST_THRU_UINTPTR(GC_mark_proc, mp));
   }
 #endif /* FUNCPTR_IS_DATAPTR */
 

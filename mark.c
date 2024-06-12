@@ -1932,7 +1932,7 @@ STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
 #   endif
     default:
       lim = sz > MAXOBJBYTES ? h -> hb_body
-                        : (ptr_t)((word)(h + 1) -> hb_body - sz);
+                : CAST_THRU_UINTPTR(ptr_t, (h + 1) -> hb_body) - sz;
       mark_stack_top = GC_mark_stack_top;
       for (p = h -> hb_body, bit_no = 0; ADDR_GE(lim, p);
            p += sz, bit_no += MARK_BIT_OFFSET(sz)) {
@@ -1972,7 +1972,7 @@ STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
 #   endif
     GC_objects_are_marked = TRUE;
     lim = sz > MAXOBJBYTES ? h -> hb_body
-                        : (ptr_t)((word)(h + 1) -> hb_body - sz);
+                : CAST_THRU_UINTPTR(ptr_t, (h + 1) -> hb_body) - sz;
     mark_stack_top = GC_mark_stack_top;
     for (p = h -> hb_body; ADDR_GE(lim, p); p += sz) {
       if ((*(word *)p & 0x3) != 0) {

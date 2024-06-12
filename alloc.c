@@ -397,8 +397,8 @@ STATIC void GC_clear_a_few_frames(void)
 #     define CLEAR_NWORDS 64
 #   endif
     volatile word frames[CLEAR_NWORDS];
-    BZERO((/* no volatile */ word *)((word)frames),
-          CLEAR_NWORDS * sizeof(word));
+
+    BZERO(CAST_AWAY_VOLATILE_PVOID(frames), sizeof(frames));
 }
 
 GC_API void GC_CALL GC_start_incremental_collection(void)

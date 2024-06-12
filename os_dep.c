@@ -1712,11 +1712,13 @@ void GC_register_data_segments(void)
         }
 #     endif
 
-#     ifdef MSWINRT_FLAVOR
+#     if defined(MSWINRT_FLAVOR) && defined(FUNCPTR_IS_DATAPTR)
         {
           MEMORY_BASIC_INFORMATION memInfo;
-          SIZE_T result = VirtualQuery((void*)(word)GetProcAddress,
-                                       &memInfo, sizeof(memInfo));
+          SIZE_T result
+                    = VirtualQuery(CAST_THRU_UINTPTR(void*, GetProcAddress),
+                                   &memInfo, sizeof(memInfo));
+
           if (result != sizeof(memInfo))
             ABORT("Weird VirtualQuery result");
           hK32 = (HMODULE)memInfo.AllocationBase;
@@ -1979,45 +1981,47 @@ void GC_register_data_segments(void)
 
 # else /* !ANY_MSWIN */
 
-# if (defined(SVR4) || defined(AIX) || defined(DGUX)) && !defined(PCR)
-  ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
-  {
-    word page_offset = ADDR(PTR_ALIGN_UP(etext_addr, sizeof(ptr_t)))
-                        & ((word)max_page_size - 1);
-    volatile ptr_t result = PTR_ALIGN_UP(etext_addr, max_page_size)
-                            + page_offset;
-    /* Note that this isn't equivalent to just adding           */
-    /* max_page_size to &etext if etext is at a page boundary.  */
+#   if (defined(SVR4) || defined(AIX) || defined(DGUX)) && !defined(PCR)
+      ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
+      {
+        word page_offset = ADDR(PTR_ALIGN_UP(etext_addr, sizeof(ptr_t)))
+                            & ((word)max_page_size - 1);
+        volatile ptr_t result = PTR_ALIGN_UP(etext_addr, max_page_size)
+                                + page_offset;
+        /* Note that this is not equivalent to just adding          */
+        /* max_page_size to &etext if etext is at a page boundary.  */
 
-    GC_ASSERT(max_page_size % sizeof(ptr_t) == 0);
-    GC_setup_temporary_fault_handler();
-    if (SETJMP(GC_jmp_buf) == 0) {
-        /* Try writing to the address.  */
-#       ifdef AO_HAVE_fetch_and_add
-          volatile AO_t zero = 0;
-          (void)AO_fetch_and_add((volatile AO_t *)result, zero);
-#       else
-          /* Fallback to non-atomic fetch-and-store.    */
-          char v = *result;
-#         if defined(CPPCHECK)
-            GC_noop1_ptr(&v);
+        GC_ASSERT(max_page_size % sizeof(ptr_t) == 0);
+        GC_setup_temporary_fault_handler();
+        if (SETJMP(GC_jmp_buf) == 0) {
+          /* Try writing to the address.    */
+#         ifdef AO_HAVE_fetch_and_add
+            volatile AO_t zero = 0;
+
+            (void)AO_fetch_and_add((volatile AO_t *)result, zero);
+#         else
+            /* Fallback to non-atomic fetch-and-store.  */
+            char v = *result;
+
+#           if defined(CPPCHECK)
+              GC_noop1_ptr(&v);
+#           endif
+            *result = v;
 #         endif
-          *result = v;
-#       endif
-        GC_reset_fault_handler();
-    } else {
-        GC_reset_fault_handler();
-        /* We got here via a longjmp.  The address is not readable.     */
-        /* This is known to happen under Solaris 2.4 + gcc, which       */
-        /* places string constants in the text segment, but after       */
-        /* etext.  Use plan B.  Note that we now know there is a gap    */
-        /* between text and data segments, so plan A brought us         */
-        /* something.                                                   */
-        result = (char *)GC_find_limit(DATAEND, FALSE);
-    }
-    return (/* no volatile */ ptr_t)(word)result;
-  }
-# endif
+          GC_reset_fault_handler();
+        } else {
+          GC_reset_fault_handler();
+          /* We got here via a longjmp.  The address is not readable.   */
+          /* This is known to happen under Solaris 2.4 + gcc, which     */
+          /* places string constants in the text segment, but after     */
+          /* etext.  Use plan B.  Note that we now know there is a gap  */
+          /* between text and data segments, so plan A brought us       */
+          /* something.                                                 */
+          result = (char *)GC_find_limit(DATAEND, FALSE);
+        }
+        return (ptr_t)CAST_AWAY_VOLATILE_PVOID(result);
+      }
+#   endif /* SVR4 || AIX || DGUX */
 
 #ifdef DATASTART_USES_BSDGETDATASTART
 /* It's unclear whether this should be identical to the above, or       */
@@ -4267,10 +4271,9 @@ GC_INNER GC_bool GC_dirty_init(void)
 #       endif
         ) {
       if (!output_unneeded)
-        BCOPY((/* no volatile */ void *)(word)GC_dirty_pages,
-              GC_grungy_pages, sizeof(GC_dirty_pages));
-      BZERO((/* no volatile */ void *)(word)GC_dirty_pages,
-            sizeof(GC_dirty_pages));
+        BCOPY(CAST_AWAY_VOLATILE_PVOID(GC_dirty_pages), GC_grungy_pages,
+              sizeof(GC_dirty_pages));
+      BZERO(CAST_AWAY_VOLATILE_PVOID(GC_dirty_pages), sizeof(GC_dirty_pages));
 #     ifdef MPROTECT_VDB
         if (!GC_manual_vdb)
           GC_protect_heap();
@@ -4301,8 +4304,7 @@ GC_INNER GC_bool GC_dirty_init(void)
       }
 #   endif
 #   if defined(CHECK_SOFT_VDB) /* && MPROTECT_VDB */
-      BZERO((/* no volatile */ void *)(word)GC_dirty_pages,
-            sizeof(GC_dirty_pages));
+      BZERO(CAST_AWAY_VOLATILE_PVOID(GC_dirty_pages), sizeof(GC_dirty_pages));
       GC_protect_heap();
 #   endif
   }

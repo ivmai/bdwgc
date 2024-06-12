@@ -985,8 +985,8 @@ static void *GC_CALLBACK reverse_test_inner(void *data)
 #   ifndef THREADS
       a_set(NULL);
 #   endif
-    *(sexpr volatile *)(GC_word)&b = 0;
-    *(sexpr volatile *)(GC_word)&c = 0;
+    *CAST_THRU_UINTPTR(volatile sexpr *, &b) = 0;
+    *CAST_THRU_UINTPTR(volatile sexpr *, &c) = 0;
     return 0;
 }
 

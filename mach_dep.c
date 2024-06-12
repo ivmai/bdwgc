@@ -341,7 +341,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
   /* callees don't really need it.                                      */
   /* Cast fn to a volatile type to prevent call inlining.               */
   (*(GC_with_callee_saves_func volatile *)&fn)(volatile_arg,
-                        (/* no volatile */ void *)(word)context);
+                        CAST_AWAY_VOLATILE_PVOID(context));
   /* Strongly discourage the compiler from treating the above   */
   /* as a tail-call, since that would pop the register          */
   /* contents before we get a chance to look at them.           */

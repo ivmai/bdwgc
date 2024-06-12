@@ -580,9 +580,9 @@ GC_INNER void GC_start_world(void)
 #       ifdef DEBUG_THREADS
           GC_log_printf("Resuming 0x%x\n", (int)p->id);
 #       endif
-        GC_ASSERT(p -> id != self_id
-            && *(/* no volatile */ ptr_t *)
-                        (word)(&(p -> crtn -> stack_end)) != NULL);
+        GC_ASSERT(p -> id != self_id);
+        GC_ASSERT(*(ptr_t *)CAST_AWAY_VOLATILE_PVOID(
+                                &(p -> crtn -> stack_end)) != NULL);
         if (ResumeThread(THREAD_HANDLE(p)) == (DWORD)-1)
           ABORT("ResumeThread failed");
         p -> flags &= (unsigned char)~IS_SUSPENDED;
@@ -1650,11 +1650,11 @@ GC_INNER void GC_thr_init(void)
 # if (!defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) && !defined(MSWINCE) \
       && defined(PARALLEL_MARK)) || defined(WOW64_THREAD_CONTEXT_WORKAROUND)
     HMODULE hK32;
-#   ifdef MSWINRT_FLAVOR
+#   if defined(MSWINRT_FLAVOR) && defined(FUNCPTR_IS_DATAPTR)
       MEMORY_BASIC_INFORMATION memInfo;
 
-      if (VirtualQuery((void*)(word)GetProcAddress, &memInfo, sizeof(memInfo))
-          != sizeof(memInfo))
+      if (VirtualQuery(CAST_THRU_UINTPTR(void*, GetProcAddress),
+                       &memInfo, sizeof(memInfo)) != sizeof(memInfo))
         ABORT("Weird VirtualQuery result");
       hK32 = (HMODULE)memInfo.AllocationBase;
 #   else
@@ -1820,7 +1820,7 @@ GC_INNER void GC_thr_init(void)
                         GC_get_stack_base(&sb);
             GC_ASSERT(sb_result == GC_SUCCESS);
             GC_register_my_thread_inner(&sb, self_id);
-        } /* o.w. we already did it during GC_thr_init, called by GC_init */
+        } /* else we already did it during GC_thr_init, called by GC_init */
         break;
 
        case DLL_THREAD_DETACH:
