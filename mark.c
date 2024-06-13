@@ -48,7 +48,7 @@ GC_API void GC_CALL GC_noop1(GC_word x)
 # endif
 }
 
-GC_API void GC_CALL GC_noop1_ptr(const volatile void *p)
+GC_API void GC_CALL GC_noop1_ptr(volatile void *p)
 {
   GC_noop1(ADDR(p));
 }

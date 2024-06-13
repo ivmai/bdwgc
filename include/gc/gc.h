@@ -1530,7 +1530,7 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 GC_API void GC_CALL GC_noop1(GC_word);
 
 /* Same as GC_noop1() but for a pointer.        */
-GC_API void GC_CALL GC_noop1_ptr(const volatile void *);
+GC_API void GC_CALL GC_noop1_ptr(volatile void *);
 
 /* GC_set_warn_proc can be used to redirect or filter warning messages. */
 /* p may not be a NULL pointer.  msg is printf format string (arg must  */
