@@ -78,7 +78,7 @@ typedef struct {
     /* kinds of back pointers are hidden using the              */
     /* following macros.  In both cases, the plain version      */
     /* is constrained to have the least significant bit of 1,   */
-    /* to allow it to be distinguished from a free list         */
+    /* to allow it to be distinguished from a free-list         */
     /* link.  This means the plain version must have the least  */
     /* significant bit of zero.  Note that blocks dropped by    */
     /* black-listing will also have the the least significant   */

@@ -136,7 +136,7 @@ The following table gives execution times for the collector built with
 parallel marking and thread-local allocation support
 (`-DGC_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC`). We tested the client
 using either one or two marker threads, and running one or two client threads.
-Note that the client uses thread local allocation exclusively. With
+Note that the client uses thread-local allocation exclusively. With
 `-DTHREAD_LOCAL_ALLOC` the collector switches to a locking strategy that
 is better tuned to less frequent lock acquisition. The standard allocation
 primitives thus perform slightly worse than without `-DTHREAD_LOCAL_ALLOC`,
@@ -160,7 +160,7 @@ Number of client threads| 1 marker thread (secs.)| 2 marker threads (secs.)
 The execution time for the single threaded case is slightly worse than with
 simple locking. However, even the single-threaded benchmark runs faster than
 even the thread-unsafe version if a second processor is available. The
-execution time for two clients with thread local allocation time is only 1.4
+execution time for two clients with thread-local allocation time is only 1.4
 times the sequential execution time for a single thread in a thread-unsafe
 environment, even though it involves twice the client work. That represents
 close to a factor of 2 improvement over the 2 client case with the old

@@ -132,7 +132,7 @@ typedef struct bi {
     struct bi * asc_link;       /* All indices are linked in    */
                                 /* ascending order...           */
     struct bi * desc_link;      /* ... and in descending order. */
-    word key;                   /* high order address bits.     */
+    word key;                   /* High-order address bits.     */
 # ifdef HASH_TL
     struct bi * hash_link;      /* Hash chain link.             */
 # endif
@@ -143,9 +143,9 @@ typedef struct bi {
 /* extern bottom_index * GC_top_index []; - really part of GC_arrays */
                                 /* Each entry points to a bottom_index. */
                                 /* On a 32 bit machine, it points to    */
-                                /* the index for a set of high order    */
+                                /* the index for a set of high-order    */
                                 /* bits equal to the index.  For longer */
-                                /* addresses, we hash the high order    */
+                                /* addresses, we hash the high-order    */
                                 /* bits to compute the index in         */
                                 /* GC_top_index, and each entry points  */
                                 /* to a hash chain.                     */

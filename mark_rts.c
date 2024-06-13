@@ -944,7 +944,7 @@ GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
                              GC_static_roots[i].r_end, all);
     }
 
-    /* Mark all free list header blocks, if those were allocated from   */
+    /* Mark all free-list header blocks, if those were allocated from   */
     /* the garbage collected heap.  This makes sure they don't          */
     /* disappear if we are not marking from static data.  It also       */
     /* saves us the trouble of scanning them, and possibly that of      */
@@ -968,7 +968,7 @@ GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
     if (GC_push_typed_structures)
         GC_push_typed_structures();
 
-    /* Mark thread local free lists, even if their mark        */
+    /* Mark thread-local free lists, even if their mark        */
     /* descriptor excludes the link field.                     */
     /* If the world is not stopped, this is unsafe.  It is     */
     /* also unnecessary, since we will do this again with the  */

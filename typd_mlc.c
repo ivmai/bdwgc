@@ -60,7 +60,7 @@ STATIC void GC_push_typed_structures_proc(void)
   GC_PUSH_ALL_SYM(GC_ext_descriptors);
 }
 
-/* Add a multiword bitmap to GC_ext_descriptors arrays.         */
+/* Add a multi-word bitmap to GC_ext_descriptors arrays.        */
 /* Returns starting index on success, -1 otherwise.             */
 STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
 {
@@ -113,7 +113,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
     return result;
 }
 
-/* Table of bitmap descriptors for n word long all pointer objects.     */
+/* Table of bitmap descriptors for n word-long all-pointer objects.     */
 STATIC GC_descr GC_bm_table[CPP_WORDSZ / 2];
 
 /* Return a descriptor for the concatenation of 2 nwords long objects,  */
@@ -684,7 +684,7 @@ STATIC mse *GC_CALLBACK GC_array_mark_proc(word *addr, mse *mark_stack_top,
 
   UNUSED_ARG(env);
   if (NULL == complex_d) {
-    /* Found a reference to a free list entry.  Ignore it. */
+    /* Found a reference to a free-list entry.  Ignore it.      */
     return orig_mark_stack_top;
   }
   /* In use counts were already updated when array descriptor was       */

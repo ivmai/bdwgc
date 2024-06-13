@@ -412,7 +412,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
             GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
             /* Mark bit was already set on free list.  It will be       */
             /* cleared only temporarily during a collection, as a       */
-            /* result of the normal free list mark bit clearing.        */
+            /* result of the normal free-list mark bit clearing.        */
             GC_non_gc_bytes += GRANULES_TO_BYTES((word)lg);
         } else {
             op = GC_generic_malloc_inner_small(lb, k);

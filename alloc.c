@@ -21,7 +21,7 @@
 /*
  * Separate free lists are maintained for different sized objects
  * up to MAXOBJBYTES.
- * The call GC_allocobj(lg, k) ensures that the freelist for
+ * The call GC_allocobj(lg, k) ensures that the free list for
  * kind k objects of size lg granules to a non-empty
  * free list. It returns a pointer to the first entry on the free list.
  * In a single-threaded world, GC_allocobj may be called to allocate
@@ -1013,7 +1013,7 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
         q = (ptr_t)obj_link(q);
         if (NULL == q) break;
 #       ifdef GC_ASSERTIONS
-          /* Detect a cycle in the freelist.  The algorithm is to   */
+          /* Detect a cycle in the free list.  The algorithm is to  */
           /* have a second "twice faster" iterator over the list -  */
           /* the second iterator meets the first one in case of     */
           /* a cycle existing in the list.                          */
@@ -1060,7 +1060,7 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
         AO_t *next;
 
         if (!GC_is_marked(p)) {
-          ABORT_ARG2("Unmarked local free list entry",
+          ABORT_ARG2("Unmarked local free-list entry",
                      ": object %p on list %p", (void *)p, (void *)list);
         }
 
@@ -1224,7 +1224,7 @@ STATIC void GC_finish_collection(void)
 #     endif
     }
 
-    /* Clear free list mark bits, in case they got accidentally marked   */
+    /* Clear free-list mark bits, in case they got accidentally marked   */
     /* (or GC_find_leak is set and they were intentionally marked).      */
     /* Also subtract memory remaining from GC_bytes_found count.         */
     /* Note that composite objects on free list are cleared.             */

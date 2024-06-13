@@ -93,7 +93,7 @@ GC_INLINE int GC_enough_large_bytes_left(void)
     return 0;
 }
 
-/* Map a number of blocks to the appropriate large block free list index. */
+/* Map a number of blocks to the appropriate large block free-list index. */
 STATIC int GC_hblk_fl_from_blocks(size_t blocks_needed)
 {
     if (blocks_needed <= UNIQUE_THRESHOLD) return (int)blocks_needed;
@@ -161,7 +161,7 @@ STATIC int GC_hblk_fl_from_blocks(size_t blocks_needed)
                     (unsigned long)total);
   }
 
-/* Return the free list index on which the block described by the header */
+/* Return the free-list index on which the block described by the header */
 /* appears, or -1 if it appears nowhere.                                 */
 static int free_list_index_of(const hdr *wanted)
 {
@@ -652,7 +652,7 @@ STATIC void GC_split_block(struct hblk *hbp, hdr *hhdr, struct hblk *last_hbp,
     struct hblk *prev = hhdr -> hb_prev;
     struct hblk *next = hhdr -> hb_next;
 
-    /* Replace hbp with last_hbp on its freelist.      */
+    /* Replace hbp with last_hbp on its free list.  */
     last_hdr -> hb_prev = prev;
     last_hdr -> hb_next = next;
     last_hdr -> hb_sz = total_size - h_size;
@@ -970,7 +970,7 @@ STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
         /* Note: This may leave adjacent, mapped free blocks. */
       }
 #   endif
-    /* hbp may be on the wrong freelist; the parameter index is important. */
+    /* hbp may be on the wrong free list; the parameter index is important. */
     hbp = GC_get_first_part(hbp, hhdr, (size_t)size_needed, index);
     if (EXPECT(NULL == hbp, FALSE)) return NULL;
 

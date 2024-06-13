@@ -980,7 +980,7 @@ EXTERN_C_BEGIN
 
 #define GC_SQRT_SIZE_MAX ((((size_t)1) << (CPP_WORDSZ / 2)) - 1)
 
-/*  Max size objects supported by freelist (larger objects are  */
+/*  Max size objects supported by free list (larger objects are */
 /*  allocated directly with allchblk(), by rounding to the next */
 /*  multiple of HBLKSIZE).                                      */
 #define CPP_MAXOBJBYTES (CPP_HBLKSIZE/2)
@@ -1254,7 +1254,7 @@ struct hblk {
     /* Size of block (in units of HBLKSIZE) needed to hold objects of   */
     /* given lb (in bytes).  The checked variant prevents wrap around.  */
 
-/* Object free list link */
+/* The object free-list link.   */
 # define obj_link(p) (*(void **)(p))
 
 # define LOG_MAX_MARK_PROCS 6
@@ -1325,7 +1325,7 @@ struct roots {
 #endif /* !MAX_HEAP_SECTS */
 
 typedef struct GC_ms_entry {
-    ptr_t mse_start;    /* First word of object, word aligned.  */
+    ptr_t mse_start;    /* First word of object, word-aligned one.      */
     union word_ptr_ao_u mse_descr;
                         /* Descriptor; low order two bits are tags,     */
                         /* as described in gc_mark.h.                   */
@@ -1748,7 +1748,7 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 # endif
 #endif /* !MAXOBJKINDS */
 GC_EXTERN struct obj_kind {
-  void **ok_freelist;   /* Array of free list headers for this kind of  */
+  void **ok_freelist;   /* Array of free-list headers for this kind of  */
                         /* object.  Point either to GC_arrays or to     */
                         /* storage allocated with GC_scratch_alloc.     */
   struct hblk **ok_reclaim_list;
@@ -1771,7 +1771,7 @@ GC_EXTERN struct obj_kind {
     int (GC_CALLBACK *ok_disclaim_proc)(void * /*obj*/);
                         /* The disclaim procedure is called before obj  */
                         /* is reclaimed, but must also tolerate being   */
-                        /* called with object from freelist.  Non-zero  */
+                        /* called with object from free list.  Non-zero */
                         /* exit prevents object from being reclaimed.   */
 #   define OK_DISCLAIM_INITZ /* comma */, FALSE, 0
 # else
@@ -1909,7 +1909,7 @@ struct GC_traced_stack_sect_s {
 /* Mark bit operations */
 
 /*
- * Retrieve, set, clear the nth mark bit in a given heap block.
+ * Retrieve, set, clear the n-th mark bit in a given heap block.
  *
  * (Recall that bit n corresponds to nth object or allocation granule
  * relative to the beginning of the block, including unused words)
@@ -2333,8 +2333,8 @@ GC_INNER struct hblk * GC_allochblk(size_t lb_adjusted, int k, unsigned flags,
                                 /* for clearing the block, if needed.   */
                                 /* Note: we set obj_map field in the    */
                                 /* header correctly; the caller is      */
-                                /* responsible for building an object   */
-                                /* freelist in the block.               */
+                                /* responsible for building an object's */
+                                /* free list in the block.              */
 
 GC_INNER void GC_freehblk(struct hblk * p);
                                 /* Deallocate a heap block and mark it  */
@@ -2445,7 +2445,7 @@ GC_INNER ptr_t GC_allocobj(size_t lg, int k);
 # define GC_DBG_COLLECT_AT_MALLOC(lb) (void)0
 #endif /* !GC_COLLECT_AT_MALLOC */
 
-/* Allocation routines that bypass the thread local cache.      */
+/* Allocation routines that bypass the thread-local cache.      */
 #if defined(THREAD_LOCAL_ALLOC) && defined(GC_GCJ_SUPPORT)
   GC_INNER void *GC_core_gcj_malloc(size_t lb, void *, unsigned flags);
 #endif

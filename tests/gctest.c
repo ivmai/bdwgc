@@ -366,12 +366,15 @@ struct fake_vtable {
   GC_word descr;
 };
 
-struct fake_vtable gcj_class_struct1 = { 0, sizeof(struct SEXPR)
-                                            + sizeof(struct fake_vtable *) };
-                        /* length based descriptor.     */
-struct fake_vtable gcj_class_struct2 =
-                        { 0, ((GC_word)3 << (CPP_WORDSZ - 3)) | GC_DS_BITMAP};
-                        /* Bitmap based descriptor.     */
+struct fake_vtable gcj_class_struct1 = { /* a length-based descriptor */
+  0,
+  sizeof(struct SEXPR) + sizeof(struct fake_vtable *)
+};
+
+struct fake_vtable gcj_class_struct2 = { /* a bitmap-based descriptor */
+  0,
+  ((GC_word)3 << (CPP_WORDSZ - 3)) | GC_DS_BITMAP
+};
 
 static struct GC_ms_entry *GC_CALLBACK fake_gcj_mark_proc(GC_word *addr,
                                         struct GC_ms_entry *mark_stack_top,

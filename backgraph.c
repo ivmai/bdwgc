@@ -68,7 +68,7 @@ typedef struct back_edges_struct {
   struct back_edges_struct *cont;
                 /* Pointer to continuation structure; we use only the   */
                 /* edges field in the continuation.                     */
-                /* also used as free list link.                         */
+                /* also used as a free-list link.                       */
 } back_edges;
 
 /* Allocate a new back edge structure.  Should be more sophisticated    */
@@ -222,7 +222,7 @@ static void add_edge(ptr_t p, ptr_t q)
     GC_ASSERT(p == GC_base(p) && q == GC_base(q));
     GC_ASSERT(I_HOLD_LOCK());
     if (!GC_HAS_DEBUG_INFO(q) || !GC_HAS_DEBUG_INFO(p)) {
-      /* This is really a misinterpreted free list link, since we saw   */
+      /* This is really a misinterpreted free-list link, since we saw   */
       /* a pointer to a free list.  Don't overwrite it!                 */
       return;
     }
@@ -253,7 +253,7 @@ static void add_edge(ptr_t p, ptr_t q)
       if ((ADDR(pred) & FLAG_MANY) != 0) {
         n_edges = e -> n_edges;
       } else if ((COVERT_DATAFLOW(ADDR(pred)) & 1) == 0) {
-        /* A misinterpreted freelist link.      */
+        /* A misinterpreted free-list link.     */
         n_edges = 1;
         local = -1;
       } else {
@@ -316,7 +316,7 @@ static void reset_back_edge(ptr_t p, size_t n_bytes, word gc_descr)
   UNUSED_ARG(n_bytes);
   UNUSED_ARG(gc_descr);
   GC_ASSERT(I_HOLD_LOCK());
-  /* Skip any free list links, or dropped blocks */
+  /* Skip any free-list links, or dropped blocks.   */
   if (GC_HAS_DEBUG_INFO(p)) {
     ptr_t old_back_ptr = GET_OH_BG_PTR(p);
 
@@ -422,7 +422,7 @@ static word backwards_height(ptr_t p)
       if ((ADDR(pred) & FLAG_MANY) != 0) {
         n_edges = e -> n_edges;
       } else if ((ADDR(pred) & 1) == 0) {
-        /* A misinterpreted freelist link.      */
+        /* A misinterpreted free-list link.     */
         n_edges = 1;
         local = -1;
       } else {
@@ -501,7 +501,7 @@ static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
       if ((ADDR(pred) & FLAG_MANY) != 0) {
         n_edges = e -> n_edges;
       } else if (pred != NULL && (ADDR(pred) & 1) == 0) {
-        /* A misinterpreted freelist link.      */
+        /* A misinterpreted free-list link.     */
         n_edges = 1;
         local = -1;
       } else {

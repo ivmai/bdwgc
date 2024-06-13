@@ -431,7 +431,7 @@ THREAD_LOCAL_ALLOC      Defines GC_malloc(), GC_malloc_atomic() and
   in a way that usually does not involve acquisition of the allocator (global)
   lock.  Recommended for multiprocessors.
 
-USE_COMPILER_TLS        Causes thread local allocation to use
+USE_COMPILER_TLS        Causes thread-local allocation to use
   the compiler-supported "__thread" thread-local variables.  This is the
   default in HP/UX.  It may help performance on recent Linux installations.
   (It failed for me on RedHat 8, but appears to work on RedHat 9.)

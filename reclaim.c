@@ -663,7 +663,7 @@ STATIC void GC_clear_fl_links(void **flp)
 
 /*
  * Perform GC_reclaim_block on the entire heap, after first clearing
- * small object free lists (if we are not just looking for leaks).
+ * small-object free lists (if we are not just looking for leaks).
  */
 GC_INNER void GC_start_reclaim(GC_bool report_if_found)
 {
@@ -697,7 +697,7 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
                 }
               }
             }
-        } /* otherwise free list objects are marked,    */
+        } /* otherwise free-list objects are marked,    */
           /* and it's safe to leave them.               */
         BZERO(rlist, (MAXOBJGRANULES + 1) * sizeof(void *));
       }

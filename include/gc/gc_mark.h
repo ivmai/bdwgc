@@ -63,7 +63,7 @@
 /* to invoke the normal mark procedure instead.                         */
 /* WARNING: Such a mark procedure may be invoked on an unused object    */
 /* residing on a free list.  Such objects are cleared, except for a     */
-/* free list link field in the first word.  Thus mark procedures may    */
+/* free-list link field in the first word.  Thus mark procedures may    */
 /* not count on the presence of a type descriptor, and must handle this */
 /* case correctly somehow.  Also, a mark procedure should be prepared   */
 /* to be executed concurrently from the marker threads (the later ones  */
@@ -85,19 +85,19 @@ typedef struct GC_ms_entry * (GC_CALLBACK * GC_mark_proc)(GC_word * /* addr */,
 
 /* Object descriptors on mark stack or in objects.  Low order two       */
 /* bits are tags distinguishing among the following 4 possibilities     */
-/* for the rest (high order) bits.                                      */
+/* for the rest (high-order) bits.                                      */
 #define GC_DS_TAG_BITS 2
 #define GC_DS_TAGS   ((1U << GC_DS_TAG_BITS) - 1)
 #define GC_DS_LENGTH 0  /* The entire word is a length in bytes that    */
                         /* must be a multiple of 4.                     */
-#define GC_DS_BITMAP 1  /* The high order bits are describing pointer   */
+#define GC_DS_BITMAP 1  /* The high-order bits are describing pointer   */
                         /* fields.  The most significant bit is set if  */
                         /* the first word is a pointer.                 */
                         /* (This unconventional ordering sometimes      */
                         /* makes the marker slightly faster.)           */
-                        /* Zeroes indicate definite nonpointers.  Ones  */
+                        /* Zeroes indicate definite non-pointers; ones  */
                         /* indicate possible pointers.                  */
-                        /* Only usable if pointers are word aligned.    */
+                        /* Only usable if pointers are word-aligned.    */
 #define GC_DS_PROC   2
                         /* The objects referenced by this object can be */
                         /* pushed on the mark stack by invoking         */
@@ -250,7 +250,7 @@ GC_API unsigned GC_CALL GC_count_set_marks_in_hblk(const void * /* p */);
 /* custom mark procedures, by language runtimes.                        */
 /* The _inner versions assume the caller holds the allocator lock.      */
 
-/* Return a new free list array.        */
+/* Return a new free-list array.    */
 GC_API void ** GC_CALL GC_new_free_list(void);
 GC_API void ** GC_CALL GC_new_free_list_inner(void);
 

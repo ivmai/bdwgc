@@ -61,7 +61,7 @@
 # define GC_WORDS_TO_GRANULES(n) ((n)*sizeof(void *)/GC_GRANULE_BYTES)
 #endif
 
-/* A "tiny" free list header contains GC_TINY_FREELISTS pointers to     */
+/* A "tiny" free-list header contains GC_TINY_FREELISTS pointers to     */
 /* singly linked lists of objects of different sizes, the i-th one      */
 /* containing objects i granules in size.  Note that there is a list    */
 /* of size zero objects.                                                */
@@ -79,7 +79,7 @@
 /* values returned by GC_get_dont_add_byte_at_end() and         */
 /* GC_get_all_interior_pointers().                              */
 
-/* Convert a free list index to the actual size of objects      */
+/* Convert a free-list index to the actual size of objects      */
 /* on that list, including extra space we added.  Not an        */
 /* inverse of the above.                                        */
 #define GC_RAW_BYTES_FROM_INDEX(i) ((i) * GC_GRANULE_BYTES)

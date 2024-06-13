@@ -24,7 +24,7 @@
 #ifndef SMALL_CONFIG
   /* Build a free list for size 2 (words) cleared objects inside        */
   /* hblk h.  Set the last link to be ofl.  Return a pointer to the     */
-  /* first free list entry.                                             */
+  /* first free-list entry.                                             */
   STATIC ptr_t GC_build_fl_clear2(struct hblk *h, ptr_t ofl)
   {
     word * p = (word *)(h -> hb_body);

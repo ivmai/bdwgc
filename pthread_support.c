@@ -1619,7 +1619,7 @@ GC_INNER void GC_thr_init(void)
 
 # ifdef INCLUDE_LINUX_THREAD_DESCR
     /* Explicitly register the region including the address     */
-    /* of a thread local variable.  This should include thread  */
+    /* of a thread-local variable.  This should include thread  */
     /* locals for the main thread, except for those allocated   */
     /* in response to dlopen calls.                             */
     {
@@ -1627,7 +1627,7 @@ GC_INNER void GC_thr_init(void)
       ptr_t main_thread_start, main_thread_end;
       if (!GC_enclosing_writable_mapping(thread_local_addr,
                                 &main_thread_start, &main_thread_end)) {
-        ABORT("Failed to find mapping for main thread thread locals");
+        ABORT("Failed to find TLS mapping for the primordial thread");
       } else {
         /* main_thread_start and main_thread_end are initialized.       */
         GC_add_roots_inner(main_thread_start, main_thread_end, FALSE);
@@ -1770,7 +1770,7 @@ GC_INNER void GC_thr_init(void)
 #endif /* !GC_WIN32_THREADS */
 
 /* Perform all initializations, including those that may require        */
-/* allocation, e.g. initialize thread local free lists if used.         */
+/* allocation, e.g. initialize thread-local free lists if used.         */
 /* Must be called before a thread is created.                           */
 GC_INNER void GC_init_parallel(void)
 {

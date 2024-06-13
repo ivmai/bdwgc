@@ -68,8 +68,8 @@ GC_NO_BLACKLIST_WARNING - Prevents the collector from issuing
                 warnings about allocations of very large blocks.
                 Deprecated.  Use GC_LARGE_ALLOC_WARN_INTERVAL instead.
 
-GC_LARGE_ALLOC_WARN_INTERVAL=<n> - Print every nth warning about very large
-                block allocations, starting with the nth one.  Small values
+GC_LARGE_ALLOC_WARN_INTERVAL=<n> - Print every n-th warning about very large
+                block allocations, starting with the n-th one.  Small values
                 of n are generally benign, in that a bounded number of
                 such warnings generally indicate at most a bounded leak.
                 For best results it should be set at 1 during testing.

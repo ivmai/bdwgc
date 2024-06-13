@@ -156,7 +156,7 @@ int main(void)
       printf(" per granule.\n");
 #   endif
 #   ifdef THREAD_LOCAL_ALLOC
-      printf("Thread local allocation enabled.\n");
+      printf("Thread-local allocation enabled.\n");
 #   endif
 #   ifdef PARALLEL_MARK
       printf("Parallel marking enabled.\n");

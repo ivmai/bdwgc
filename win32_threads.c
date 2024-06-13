@@ -174,7 +174,7 @@ STATIC volatile LONG GC_max_thread_index = 0;
 /* GC_win32_dll_threads is set.  Always called from the thread being    */
 /* added.  If GC_win32_dll_threads is not set, we already hold the      */
 /* allocator lock except possibly during single-threaded startup code.  */
-/* Does not initialize thread local free lists.                         */
+/* Does not initialize thread-local free lists.                         */
 GC_INNER GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                                                thread_id_t self_id)
 {

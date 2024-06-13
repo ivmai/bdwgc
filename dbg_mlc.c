@@ -368,7 +368,7 @@ STATIC void GC_print_obj(ptr_t base)
     hhdr = GC_find_header(q);
     k = hhdr -> hb_obj_kind;
     if (GC_describe_type_fns[k] != 0 && GC_is_marked(ohdr)) {
-        /* This should preclude free list objects except with   */
+        /* This should preclude free-list objects except with   */
         /* thread-local allocation.                             */
         buffer[GC_TYPE_DESCR_LEN] = 0;
         (GC_describe_type_fns[k])(q, buffer);

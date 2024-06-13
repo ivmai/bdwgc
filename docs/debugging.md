@@ -101,7 +101,7 @@ to be permanent, the warning indicates a memory leak.
 ## The Collector References a Bad Address in GC_malloc
 
 This typically happens while the collector is trying to remove an entry from
-its free list, and the free list pointer is bad because the free list link
+its free list, and the free-list pointer is bad because the free-list link
 in the last allocated object was bad.
 
 With >99% probability, you wrote past the end of an allocated object. Try
@@ -121,7 +121,7 @@ Unexpected heap growth can be due to one of the following:
   3. Heap fragmentation. This should never result in unbounded growth, but
   it may account for larger heaps. This is most commonly caused by allocation
   of large objects.
-  4. Per object overhead. This is usually a relatively minor effect, but
+  4. Per-object overhead. This is usually a relatively minor effect, but
   it may be worth considering. If the collector recognizes interior pointers,
   object sizes are increased, so that one-past-the-end pointers are correctly
   recognized. The collector can be configured not to do this

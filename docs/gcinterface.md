@@ -115,7 +115,7 @@ synchronization is usually required. See
 [here](http://www.hpl.hp.com/techreports/2002/HPL-2002-335.html) for details.
 
 If you are concerned with multiprocessor performance and scalability, you
-should consider enabling and using thread local allocation.
+should consider enabling and using thread-local allocation.
 
 If your platform supports it, you should also build the collector with
 parallel marking support (`-DPARALLEL_MARK`); configure has it on by default.
