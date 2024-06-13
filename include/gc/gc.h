@@ -58,11 +58,10 @@ typedef GC_SIGNEDWORD GC_signed_word;
 #undef GC_SIGNEDWORD
 #undef GC_UNSIGNEDWORD
 
-#if !defined(_UINTPTR_T) && !defined(_UINTPTR_T_DEFINED) \
-    && !defined(UINTPTR_MAX)
-  typedef GC_word GC_uintptr_t;
-#else
+#if defined(_UINTPTR_T) || defined(_UINTPTR_T_DEFINED)
   typedef uintptr_t GC_uintptr_t;
+#else
+  typedef GC_word GC_uintptr_t;
 #endif
 
 /* Is first pointer has a smaller address than the second one?  The     */
