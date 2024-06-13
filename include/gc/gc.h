@@ -1520,7 +1520,7 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 # define GC_reachable_here(ptr) GC_noop1(~(GC_word)(ptr)^(~(GC_word)0))
                 /* The expression is similar to that of COVERT_DATAFLOW(). */
 #else
-# define GC_reachable_here(ptr) GC_noop1_ptr(ptr)
+# define GC_reachable_here(ptr) GC_noop1_ptr(GC_CAST_AWAY_CONST_PVOID(ptr))
 #endif
 
 /* Make the argument of word type appear live to compiler.  This could  */
