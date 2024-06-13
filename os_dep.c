@@ -936,7 +936,7 @@ GC_INNER void GC_setpagesize(void)
 #         endif
 #       endif /* !USE_SEGV_SIGACT */
 #       if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
-          GC_noop1_ptr(&__asan_default_options);
+          GC_noop1((word)(GC_funcptr_uint)&__asan_default_options);
 #       endif
     }
 #endif /* NEED_FIND_LIMIT || UNIX_LIKE || WRAP_MARK_SOME */
@@ -3504,7 +3504,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     endif
 #   endif /* !MSWIN32 && !MSWINCE */
 #   if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
-      GC_noop1_ptr(&__asan_default_options);
+      GC_noop1((word)(GC_funcptr_uint)&__asan_default_options);
 #   endif
     return TRUE;
   }
