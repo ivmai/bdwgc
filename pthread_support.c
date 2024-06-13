@@ -2894,7 +2894,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     }
   }
 
-  /* Collector must wait for a freelist builders for 2 reasons:         */
+  /* Collector must wait for free-list builders for 2 reasons:          */
   /* 1) Mark bits may still be getting examined without lock.           */
   /* 2) Partial free lists referenced only by locals may not be scanned */
   /*    correctly, e.g. if they contain "pointer-free" objects, since   */
