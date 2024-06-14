@@ -1034,9 +1034,17 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_malloc_atomic_ignore_off_page(size_t /* lb */);
 
+#if (defined(GC_CAN_SAVE_CALL_STACKS) || defined(GC_ADD_CALLER)) \
+    && !defined(GC_RETURN_ADDR_T_DEFINED)
+  /* A type to hold a function return address (pointer).  Never used    */
+  /* for calling a function.                                            */
+  typedef void (*GC_return_addr_t)(void);
+# define GC_RETURN_ADDR_T_DEFINED
+#endif /* GC_CAN_SAVE_CALL_STACKS || GC_ADD_CALLER */
+
 #ifdef GC_ADD_CALLER
 # define GC_EXTRAS GC_RETURN_ADDR, __FILE__, __LINE__
-# define GC_EXTRA_PARAMS GC_word ra, const char * s, int i
+# define GC_EXTRA_PARAMS GC_return_addr_t ra, const char * s, int i
 #else
 # define GC_EXTRAS __FILE__, __LINE__
 # define GC_EXTRA_PARAMS const char * s, int i

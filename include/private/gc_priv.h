@@ -456,7 +456,7 @@ EXTERN_C_BEGIN
 
 #ifdef NEED_CALLINFO
   struct callinfo {
-    word ci_pc; /* pc of caller, not callee */
+    GC_return_addr_t ci_pc; /* pc of caller, not callee */
 #   if NARGS > 0
       GC_hidden_pointer ci_arg[NARGS]; /* hide to avoid retention */
 #   endif

@@ -492,23 +492,27 @@ GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
 }
 
 #ifdef GC_ADD_CALLER
-# if defined(HAVE_DLADDR) && defined(GC_HAVE_RETURN_ADDR_PARENT)
+# if defined(HAVE_DLADDR) && defined(GC_HAVE_RETURN_ADDR_PARENT) \
+     && defined(FUNCPTR_IS_DATAPTR)
 #   include <dlfcn.h>
 
-    STATIC void GC_caller_func_offset(word ad, const char **symp, int *offp)
+    STATIC void GC_caller_func_offset(GC_return_addr_t ra, const char **symp,
+                                      int *offp)
     {
       Dl_info caller;
 
-      if (ad && dladdr((void *)ad, &caller) && caller.dli_sname != NULL) {
+      if (ra != 0 && dladdr((void *)ra, &caller)
+          && caller.dli_sname != NULL) {
         *symp = caller.dli_sname;
-        *offp = (int)((char *)ad - (char *)caller.dli_saddr);
+        *offp = (int)((ptr_t)ra - (ptr_t)caller.dli_saddr);
       }
       if (NULL == *symp) {
         *symp = "unknown";
+        /* Note: *offp is unchanged.    */
       }
     }
 # else
-#   define GC_caller_func_offset(ad, symp, offp) (void)(*(symp) = "unknown")
+#   define GC_caller_func_offset(ra, symp, offp) (void)(*(symp) = "unknown")
 # endif
 #endif /* GC_ADD_CALLER */
 

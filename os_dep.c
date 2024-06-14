@@ -5276,7 +5276,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
                                         struct callinfo info[NFRAMES])
           {
             GC_ASSERT(I_HOLD_LOCK());
-            info[0].ci_pc = (word)(&GC_save_callers_no_unlock);
+            info[0].ci_pc = (GC_return_addr_t)(&GC_save_callers_no_unlock);
             BZERO(&info[1], sizeof(void *) * (NFRAMES - 1));
           }
 #       endif
@@ -5295,7 +5295,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
         GC_STATIC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
 #       ifdef REDIRECT_MALLOC
           if (GC_in_save_callers) {
-            info[0].ci_pc = (word)(&GC_save_callers);
+            info[0].ci_pc = (GC_return_addr_t)(&GC_save_callers);
             BZERO(&info[1], sizeof(void *) * (NFRAMES - 1));
             return;
           }
@@ -5363,11 +5363,11 @@ GC_API int GC_CALL GC_get_pages_executable(void)
             int i;
 #         endif
 
-          info[nframes].ci_pc = fp -> FR_SAVPC;
+          info[nframes].ci_pc = (GC_return_addr_t)(fp -> FR_SAVPC);
 #         if NARGS > 0
             for (i = 0; i < NARGS; i++) {
               info[nframes].ci_arg[i] =
-                GC_HIDE_NZ_POINTER((void *)(signed_word)(fp -> fr_arg[i]));
+                        GC_HIDE_NZ_POINTER((void *)(fp -> fr_arg[i]));
             }
 #         endif
         }
@@ -5437,9 +5437,9 @@ GC_API int GC_CALL GC_get_pages_executable(void)
           char buf[40];
           char *name;
 #         if defined(GC_HAVE_BUILTIN_BACKTRACE) \
-             && !defined(GC_BACKTRACE_SYMBOLS_BROKEN)
-            char **sym_name =
-              backtrace_symbols((void **)(&(info[i].ci_pc)), 1);
+             && !defined(GC_BACKTRACE_SYMBOLS_BROKEN) \
+             && defined(FUNCPTR_IS_DATAPTR)
+            char **sym_name = backtrace_symbols((void **)&info[i].ci_pc, 1);
             if (sym_name != NULL) {
               name = sym_name[0];
             } else
@@ -5550,7 +5550,8 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 #         endif /* LINUX */
           GC_err_printf("\t\t%s\n", name);
 #         if defined(GC_HAVE_BUILTIN_BACKTRACE) \
-             && !defined(GC_BACKTRACE_SYMBOLS_BROKEN)
+             && !defined(GC_BACKTRACE_SYMBOLS_BROKEN) \
+             && defined(FUNCPTR_IS_DATAPTR)
             if (sym_name != NULL)
               free(sym_name);   /* May call GC_[debug_]free; that's OK  */
 #         endif
