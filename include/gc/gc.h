@@ -1536,16 +1536,17 @@ GC_API void GC_CALL GC_noop1_ptr(volatile void *);
 /* p may not be a NULL pointer.  msg is printf format string (arg must  */
 /* match the format).  Both the setter and the getter acquire the       */
 /* allocator lock (in the reader mode in case of the getter) to avoid   */
-/* data race.  In GC v7.1 and before, the setter returned the old       */
-/* warn_proc value.                                                     */
-typedef void (GC_CALLBACK * GC_warn_proc)(char * /* msg */,
+/* data race.  In GC v7.1 and before: the setter returned the value of  */
+/* old warn_proc.  In GC v8.2.x and before: msg pointer type had no     */
+/* const qualifier.                                                     */
+typedef void (GC_CALLBACK * GC_warn_proc)(const char * /* msg */,
                                           GC_uintptr_t /* arg */);
 GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc /* p */) GC_ATTR_NONNULL(1);
 GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void);
 
 /* GC_ignore_warn_proc may be used as an argument for GC_set_warn_proc  */
 /* to suppress all warnings (unless statistics printing is turned on).  */
-GC_API void GC_CALLBACK GC_ignore_warn_proc(char *, GC_uintptr_t);
+GC_API void GC_CALLBACK GC_ignore_warn_proc(const char *, GC_uintptr_t);
 
 /* Change file descriptor of GC log.  Unavailable on some targets.      */
 GC_API void GC_CALL GC_set_log_fd(int);

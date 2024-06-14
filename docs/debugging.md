@@ -96,7 +96,8 @@ to be permanent, the warning indicates a memory leak.
   introducing a bounded leak by ignoring them. If the data structures being
   allocated are intended to be permanent, then it is also safe to ignore them.
   The warnings can be turned off by calling `GC_set_warn_proc` with
-  a procedure that ignores these warnings (e.g. by doing absolutely nothing).
+  a procedure that ignores these warnings (e.g. by doing absolutely nothing
+  like `GC_ignore_warn_proc` does).
 
 ## The Collector References a Bad Address in GC_malloc
 

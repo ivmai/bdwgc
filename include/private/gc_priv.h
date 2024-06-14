@@ -752,9 +752,7 @@ EXTERN_C_BEGIN
 /* The argument (if any) format specifier should be:    */
 /* "%s", "%p", "%"WARN_PRIdPTR or "%"WARN_PRIuPTR.      */
 #define WARN(msg, arg) \
-    (*GC_current_warn_proc)((/* no const */ char *) \
-                                (word)("GC Warning: " msg), \
-                            (GC_uintptr_t)(arg))
+                GC_current_warn_proc("GC Warning: " msg, (GC_uintptr_t)(arg))
 GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
 /* Print format type macro for decimal signed_word value passed WARN(). */

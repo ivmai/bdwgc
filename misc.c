@@ -1998,21 +1998,16 @@ void GC_err_puts(const char *s)
     (void)WRITE(GC_stderr, s, strlen(s)); /* ignore errors */
 }
 
-STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_uintptr_t arg)
+STATIC void GC_CALLBACK GC_default_warn_proc(const char *msg, GC_uintptr_t arg)
 {
     /* TODO: Add assertion on arg comply with msg (format).     */
-#   if defined(CPPCHECK)
-      /* Workaround "parameter can be declared as pointer to const" */
-      /* cppcheck warning.                                          */
-      GC_noop1_ptr(msg);
-#   endif
     GC_warn_printf(msg, arg);
 }
 
 GC_INNER GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
 
 /* This is recommended for production code (release). */
-GC_API void GC_CALLBACK GC_ignore_warn_proc(char *msg, GC_uintptr_t arg)
+GC_API void GC_CALLBACK GC_ignore_warn_proc(const char *msg, GC_uintptr_t arg)
 {
     if (GC_print_stats) {
       /* Don't ignore warnings if stats printing is on. */

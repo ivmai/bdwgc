@@ -2226,11 +2226,8 @@ void SetMinimumStack(long minSize)
 #define cMinStackSpace (512L * 1024L)
 #endif
 
-static void GC_CALLBACK warn_proc(char *msg, GC_uintptr_t arg)
+static void GC_CALLBACK warn_proc(const char *msg, GC_uintptr_t arg)
 {
-#   if defined(CPPCHECK)
-        GC_noop1_ptr(msg);
-#   endif
     GC_printf(msg, arg);
     /*FAIL;*/
 }
