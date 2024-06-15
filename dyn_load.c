@@ -1490,7 +1490,7 @@ GC_INNER void GC_init_dyld(void)
 #   endif
 #   ifndef USE_DYLD_TO_BIND
       {
-        const void *dl_handle = dlopen(NULL, RTLD_NOW);
+        void *dl_handle = dlopen(NULL, RTLD_NOW);
 
         if (!dl_handle)
           ABORT("dlopen failed (to bind fully image)");
