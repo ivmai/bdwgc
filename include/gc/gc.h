@@ -1112,7 +1112,12 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
         GC_debug_realloc_replacement(void * /* object_addr */,
                                      size_t /* size_in_bytes */);
 
-#define GC_CAST_AWAY_CONST_PVOID(p) ((/* no const */ void *)(GC_uintptr_t)(p))
+#ifdef __cplusplus
+# define GC_CAST_AWAY_CONST_PVOID(p) \
+    reinterpret_cast</* no const */ void *>(reinterpret_cast<GC_uintptr_t>(p))
+#else
+# define GC_CAST_AWAY_CONST_PVOID(p) ((/* no const */ void *)(GC_uintptr_t)(p))
+#endif
 
 /* Convenient macros for disappearing links registration working both   */
 /* for debug and non-debug allocated objects, and accepting interior    */
