@@ -1038,7 +1038,14 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
     && !defined(GC_RETURN_ADDR_T_DEFINED)
   /* A type to hold a function return address (pointer).  Never used    */
   /* for calling a function.                                            */
-  typedef void (*GC_return_addr_t)(void);
+# if defined(__GNUC__)
+    /* Define it as a data (object) pointer type to avoid the compiler  */
+    /* complain that ISO C forbids conversion between object and        */
+    /* function pointer types.                                          */
+    typedef void *GC_return_addr_t;
+# else
+    typedef void (*GC_return_addr_t)(void);
+# endif
 # define GC_RETURN_ADDR_T_DEFINED
 #endif /* GC_CAN_SAVE_CALL_STACKS || GC_ADD_CALLER */
 
