@@ -2445,7 +2445,8 @@ GC_INNER ptr_t GC_allocobj(size_t lg, int k);
 
 /* Allocation routines that bypass the thread-local cache.      */
 #if defined(THREAD_LOCAL_ALLOC) && defined(GC_GCJ_SUPPORT)
-  GC_INNER void *GC_core_gcj_malloc(size_t lb, void *, unsigned flags);
+  GC_INNER void *GC_core_gcj_malloc(size_t lb, const void *vtable_ptr,
+                                    unsigned flags);
 #endif
 
 GC_INNER void GC_init_headers(void);

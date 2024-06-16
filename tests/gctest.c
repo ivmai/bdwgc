@@ -356,36 +356,35 @@ static sexpr cons(sexpr x, sexpr y)
 #include "gc/gc_mark.h"
 
 #ifdef GC_GCJ_SUPPORT
+# include "gc/gc_gcj.h"
 
-#include "gc/gc_gcj.h"
+  /* The following struct emulates the vtable in gcj.       */
+  /* This assumes the default value of MARK_DESCR_OFFSET.   */
+  struct fake_vtable {
+    void *dummy; /* a class pointer in real GCJ */
+    GC_word descr;
+  };
 
-/* The following struct emulates the vtable in gcj.     */
-/* This assumes the default value of MARK_DESCR_OFFSET. */
-struct fake_vtable {
-  void * dummy;         /* class pointer in real gcj.   */
-  GC_word descr;
-};
+  const struct fake_vtable gcj_class_struct1 = { /* length-based descriptor */
+    NULL,
+    (sizeof(struct SEXPR) + sizeof(struct fake_vtable *)) | GC_DS_LENGTH
+  };
 
-struct fake_vtable gcj_class_struct1 = { /* a length-based descriptor */
-  0,
-  sizeof(struct SEXPR) + sizeof(struct fake_vtable *)
-};
+  const struct fake_vtable gcj_class_struct2 = { /* bitmap-based descriptor */
+    NULL,
+    ((GC_word)3 << (CPP_WORDSZ - 3)) | GC_DS_BITMAP
+  };
 
-struct fake_vtable gcj_class_struct2 = { /* a bitmap-based descriptor */
-  0,
-  ((GC_word)3 << (CPP_WORDSZ - 3)) | GC_DS_BITMAP
-};
-
-static struct GC_ms_entry *GC_CALLBACK fake_gcj_mark_proc(GC_word *addr,
+  static struct GC_ms_entry *GC_CALLBACK fake_gcj_mark_proc(GC_word *addr,
                                         struct GC_ms_entry *mark_stack_top,
                                         struct GC_ms_entry *mark_stack_limit,
                                         GC_word env)
-{
+  {
     sexpr x;
 
     if (1 == env) {
-        /* Object allocated with debug allocator.       */
-        addr = (GC_word *)GC_USR_PTR_FROM_BASE(addr);
+      /* Object allocated with debug allocator. */
+      addr = (GC_word *)GC_USR_PTR_FROM_BASE(addr);
     }
     x = (sexpr)(addr + 1); /* Skip the vtable pointer. */
     mark_stack_top = GC_MARK_AND_PUSH(x -> sexpr_cdr,
@@ -393,8 +392,7 @@ static struct GC_ms_entry *GC_CALLBACK fake_gcj_mark_proc(GC_word *addr,
                                       (void **)&(x -> sexpr_cdr));
     return GC_MARK_AND_PUSH(x -> sexpr_car, mark_stack_top, mark_stack_limit,
                             (void **)&(x -> sexpr_car));
-}
-
+  }
 #endif /* GC_GCJ_SUPPORT */
 
 static sexpr small_cons(sexpr x, sexpr y)
@@ -438,8 +436,8 @@ static sexpr small_cons_uncollectable(sexpr x, sexpr y)
   {
     sexpr result;
     size_t cnt = (size_t)AO_fetch_and_add1(&extra_count);
-    void *d = (cnt & 1) != 0 ? &gcj_class_struct1 : &gcj_class_struct2;
-    size_t lb = sizeof(struct SEXPR) + sizeof(struct fake_vtable*);
+    const void *d = (cnt & 1) != 0 ? &gcj_class_struct1 : &gcj_class_struct2;
+    size_t lb = sizeof(struct SEXPR) + sizeof(struct fake_vtable *);
     void *r = (cnt & 2) != 0 ? GC_GCJ_MALLOC_IGNORE_OFF_PAGE(lb
                                         + (cnt <= HBLKSIZE / 2 ? cnt : 0), d)
                              : GC_GCJ_MALLOC(lb, d);

@@ -221,10 +221,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t lb, int k)
 /* Unlike the other thread-local allocation calls, we assume that the   */
 /* collector has been explicitly initialized.                           */
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t lb,
-                                        void *ptr_to_struct_containing_descr)
+                                                   const void *vtable_ptr)
 {
   if (EXPECT(GC_incremental, FALSE)) {
-    return GC_core_gcj_malloc(lb, ptr_to_struct_containing_descr, 0);
+    return GC_core_gcj_malloc(lb, vtable_ptr, 0 /* flags */);
   } else {
     size_t lg = ALLOC_REQUEST_GRANS(lb);
     void *result;
@@ -233,10 +233,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t lb,
     GC_ASSERT(GC_gcjobjfreelist != NULL);
     tiny_fl = ((GC_tlfs)GC_getspecific(GC_thread_key))->gcj_freelists;
     GC_FAST_MALLOC_GRANS(result, lg, tiny_fl, DIRECT_GRANULES, GC_gcj_kind,
-                         GC_core_gcj_malloc(lb, ptr_to_struct_containing_descr,
-                                            0 /* flags */),
-                         {AO_compiler_barrier();
-                          *(void **)result = ptr_to_struct_containing_descr;});
+                         GC_core_gcj_malloc(lb, vtable_ptr, 0 /* flags */),
+                         do { AO_compiler_barrier();
+                           *(const void **)result = vtable_ptr; } while(0));
         /* This forces the initialization of the "method ptr".          */
         /* This is necessary to ensure some very subtle properties      */
         /* required if a GC is run in the middle of such an allocation. */

@@ -21,11 +21,10 @@
  * This is an allocator interface tuned for gcj (the GNU static
  * java compiler).
  *
- * Each allocated object has a pointer in its first word to a vtable,
+ * Each allocated object has a pointer in its beginning to a vtable,
  * which for our purposes is simply a structure describing the type of
- * the object.
- * This descriptor structure contains a GC marking descriptor at offset
- * MARK_DESCR_OFFSET.
+ * the object.  This descriptor structure contains a GC marking
+ * descriptor at offset MARK_DESCR_OFFSET.
  *
  * It is hoped that this interface may also be useful for other systems,
  * possibly with some tuning of the constants.  But the immediate goal
@@ -148,8 +147,7 @@ static void maybe_finalize(void)
 #else
   STATIC
 #endif
-void * GC_core_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr,
-                          unsigned flags)
+void * GC_core_gcj_malloc(size_t lb, const void *vtable_ptr, unsigned flags)
 {
     ptr_t op;
     size_t lg;
@@ -170,32 +168,29 @@ void * GC_core_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr,
             return (*oom_fn)(lb);
         }
     }
-    *(void **)op = ptr_to_struct_containing_descr;
+    *(const void **)op = vtable_ptr;
     UNLOCK();
     GC_dirty(op);
-    REACHABLE_AFTER_DIRTY(ptr_to_struct_containing_descr);
+    REACHABLE_AFTER_DIRTY(vtable_ptr);
     return GC_clear_stack(op);
 }
 
 #ifndef THREAD_LOCAL_ALLOC
   GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t lb,
-                                      void * ptr_to_struct_containing_descr)
+                                                     const void *vtable_ptr)
   {
-    return GC_core_gcj_malloc(lb, ptr_to_struct_containing_descr, 0);
+    return GC_core_gcj_malloc(lb, vtable_ptr, 0 /* flags */);
   }
 #endif /* !THREAD_LOCAL_ALLOC */
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
-                                        void * ptr_to_struct_containing_descr)
+                                                    const void *vtable_ptr)
 {
-    return GC_core_gcj_malloc(lb, ptr_to_struct_containing_descr,
-                              IGNORE_OFF_PAGE);
+    return GC_core_gcj_malloc(lb, vtable_ptr, IGNORE_OFF_PAGE);
 }
 
-/* Similar to GC_gcj_malloc, but add debug info.  This is allocated     */
-/* with GC_gcj_debug_kind.                                              */
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
-                void * ptr_to_struct_containing_descr, GC_EXTRA_PARAMS)
+                                const void *vtable_ptr, GC_EXTRA_PARAMS)
 {
     void *base, *result;
 
@@ -209,10 +204,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
         GC_oom_func oom_fn = GC_oom_fn;
         UNLOCK();
         GC_err_printf("GC_debug_gcj_malloc(%lu, %p) returning NULL (%s:%d)\n",
-                (unsigned long)lb, ptr_to_struct_containing_descr, s, i);
+                      (unsigned long)lb, vtable_ptr, s, i);
         return (*oom_fn)(lb);
     }
-    *((void **)((ptr_t)base + sizeof(oh))) = ptr_to_struct_containing_descr;
+    *((const void **)((ptr_t)base + sizeof(oh))) = vtable_ptr;
     if (!GC_debugging_started) {
         GC_start_debugging_inner();
     }
@@ -220,7 +215,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     ADD_CALL_CHAIN(base, ra);
     UNLOCK();
     GC_dirty(result);
-    REACHABLE_AFTER_DIRTY(ptr_to_struct_containing_descr);
+    REACHABLE_AFTER_DIRTY(vtable_ptr);
     return result;
 }
 
