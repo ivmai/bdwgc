@@ -322,7 +322,7 @@ STATIC void GC_register_map_entries(const char *maps)
                   && ADDR(end) == 0xc30000000000UL && path[0] == '\n')
                 continue; /* discard some special mapping */
 #           endif
-            if (path[0] == '[' && strncmp(path+1, "heap]", 5) != 0)
+            if (path[0] == '[' && strncmp(path + 1, "heap]", 5) != 0)
               continue; /* discard if a pseudo-path unless "[heap]" */
 
 #           ifdef THREADS
@@ -528,7 +528,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
         for (j = n_load_segs; --j >= 0; ) {
           if (ADDR_INSIDE(start, load_segs[j].start, load_segs[j].end)) {
             if (load_segs[j].start2 != NULL) {
-              WARN("More than one GNU_RELRO segment per load one\n",0);
+              WARN("More than one GNU_RELRO segment per load one\n", 0);
             } else {
               GC_ASSERT(ADDR_GE(PTR_ALIGN_UP(load_segs[j].end, GC_page_size),
                                 end));
@@ -605,10 +605,10 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
   } else {
       ptr_t datastart, dataend;
 #     ifdef DATASTART_IS_FUNC
-        static ptr_t datastart_cached = (ptr_t)GC_WORD_MAX;
+        static ptr_t datastart_cached = MAKE_CPTR(GC_WORD_MAX);
 
         /* Evaluate DATASTART only once.  */
-        if (datastart_cached == (ptr_t)GC_WORD_MAX) {
+        if (ADDR(datastart_cached) == GC_WORD_MAX) {
           datastart_cached = DATASTART;
         }
         datastart = datastart_cached;

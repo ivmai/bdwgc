@@ -566,7 +566,7 @@ GC_INNER const char * GC_get_maps(void)
   }
 #endif /* OPENBSD */
 
-# ifdef OS2
+#ifdef OS2
 
 # include <stddef.h>
 
@@ -649,7 +649,7 @@ struct o32_obj {
 # define INCL_DOSPROCESS
 # include <os2.h>
 
-# endif /* OS/2 */
+#endif /* OS2 */
 
 /* Find the page size.  */
 GC_INNER size_t GC_page_size = 0;
@@ -1031,7 +1031,7 @@ GC_INNER void GC_setpagesize(void)
     void * GC_find_limit(void * p, int up)
     {
         return GC_find_limit_with_bound((ptr_t)p, (GC_bool)up,
-                                        up ? (ptr_t)GC_WORD_MAX : 0);
+                                        up ? MAKE_CPTR(GC_WORD_MAX) : 0);
     }
 #endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES */
 
@@ -1143,7 +1143,7 @@ GC_INNER void GC_setpagesize(void)
 #     define STAT_BUF_SIZE 4096
     unsigned char stat_buf[STAT_BUF_SIZE];
     int f;
-    word result;
+    word addr;
     ssize_t i, buf_offset = 0, len;
 
     /* First try the easy way.  This should work for glibc 2.2. */
@@ -1206,11 +1206,10 @@ GC_INNER void GC_setpagesize(void)
     if (buf_offset + i >= len) ABORT("Could not parse /proc/self/stat");
     stat_buf[buf_offset + i] = '\0';
 
-    result = (word)STRTOULL((char*)stat_buf + buf_offset, NULL, 10);
-    if (result < 0x100000 || (result & (sizeof(word) - 1)) != 0)
-      ABORT_ARG1("Absurd stack bottom value",
-                 ": 0x%lx", (unsigned long)result);
-    return (ptr_t)result;
+    addr = (word)STRTOULL((char *)stat_buf + buf_offset, NULL, 10);
+    if (addr < 0x100000 || (addr & (sizeof(word)-1)) != 0)
+      ABORT_ARG1("Absurd stack bottom value", ": 0x%lx", (unsigned long)addr);
+    return MAKE_CPTR(addr);
   }
 #endif /* LINUX_STACKBOTTOM */
 
@@ -1355,7 +1354,7 @@ GC_INNER void GC_setpagesize(void)
 #     endif
 #     if !defined(STACK_GROWS_UP) && !defined(CPPCHECK)
         if (NULL == result)
-          result = (ptr_t)(signed_word)(-sizeof(ptr_t));
+          result = MAKE_CPTR((signed_word)(-sizeof(ptr_t)));
 #     endif
 #   endif
 #   if !defined(CPPCHECK)
@@ -1582,7 +1581,8 @@ GC_INNER void GC_setpagesize(void)
 /* added later then they need to be registered at that point (as we do  */
 /* with SunOS dynamic loading), or GC_mark_roots needs to check for     */
 /* them (as we do with PCR).                                            */
-# ifdef OS2
+
+#ifdef OS2
 
 void GC_register_data_segments(void)
 {
@@ -1618,7 +1618,7 @@ void GC_register_data_segments(void)
     if (myexefile == 0) {
         ABORT_ARG1("Failed to open executable", ": %s", path);
     }
-    if (fread((char *)(&hdrdos), 1, sizeof(hdrdos), myexefile)
+    if (fread((char *)&hdrdos, 1, sizeof(hdrdos), myexefile)
           < sizeof(hdrdos)) {
         ABORT_ARG1("Could not read MSDOS header", " from: %s", path);
     }
@@ -1628,7 +1628,7 @@ void GC_register_data_segments(void)
     if (fseek(myexefile, E_LFANEW(hdrdos), SEEK_SET) != 0) {
         ABORT_ARG1("Bad DOS magic number", " in file: %s", path);
     }
-    if (fread((char *)(&hdr386), 1, sizeof(hdr386), myexefile)
+    if (fread((char *)&hdr386, 1, sizeof(hdr386), myexefile)
           < sizeof(hdr386)) {
         ABORT_ARG1("Could not read OS/2 header", " from: %s", path);
     }
@@ -1647,7 +1647,7 @@ void GC_register_data_segments(void)
     }
     for (nsegs = E32_OBJCNT(hdr386); nsegs > 0; nsegs--) {
       int flags;
-      if (fread((char *)(&seg), 1, sizeof(seg), myexefile) < sizeof(seg)) {
+      if (fread((char *)&seg, 1, sizeof(seg), myexefile) < sizeof(seg)) {
         ABORT_ARG1("Could not read obj table entry", " from file: %s", path);
       }
       flags = O32_FLAGS(seg);
@@ -1663,7 +1663,7 @@ void GC_register_data_segments(void)
     (void)fclose(myexefile);
 }
 
-# else /* !OS2 */
+#else /* !OS2 */
 
 # if defined(GWW_VDB)
 #   ifndef MEM_WRITE_WATCH
@@ -2160,7 +2160,7 @@ void GC_register_data_segments(void)
 
 # endif /* !AMIGA && !OPENBSD */
 # endif /* !ANY_MSWIN */
-# endif /* !OS2 */
+#endif /* !OS2 */
 
 /*
  * Auxiliary routines for obtaining memory from OS.
@@ -2341,10 +2341,9 @@ ptr_t GC_unix_get_mem(size_t bytes)
 
 #endif /* !NO_UNIX_GET_MEM */
 
-# ifdef OS2
-
-void * os2_alloc(size_t bytes)
-{
+#ifdef OS2
+  void * os2_alloc(size_t bytes)
+  {
     void * result;
 
     if (DosAllocMem(&result, bytes, (PAG_READ | PAG_WRITE | PAG_COMMIT)
@@ -2356,9 +2355,8 @@ void * os2_alloc(size_t bytes)
     /* DosAllocMem returns memory at 0 address then just retry once.)   */
     if (NULL == result) return os2_alloc(bytes);
     return result;
-}
-
-# endif /* OS2 */
+  }
+#endif /* OS2 */
 
 #ifdef MSWIN_XBOX1
     ptr_t GC_durango_get_mem(size_t bytes)

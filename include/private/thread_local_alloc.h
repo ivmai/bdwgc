@@ -119,7 +119,7 @@ typedef struct thread_local_freelists {
         /* Note: Preserve *_freelists names for some clients.   */
 # ifdef GC_GCJ_SUPPORT
     void * gcj_freelists[GC_TINY_FREELISTS];
-#   define ERROR_FL ((void *)GC_WORD_MAX)
+#   define ERROR_FL GC_WORD_MAX
         /* Value used for gcj_freelists[-1]; allocation is      */
         /* erroneous.                                           */
 # endif

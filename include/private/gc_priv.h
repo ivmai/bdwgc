@@ -318,6 +318,9 @@ typedef struct hblkhdr hdr;
 #define CAST_AWAY_VOLATILE_PVOID(p) \
                         CAST_THRU_UINTPTR(/* no volatile */ void *, p)
 
+/* Create a ptr_t pointer from a number (of word type). */
+#define MAKE_CPTR(w) ((ptr_t)(word)(w))
+
 #define GC_WORD_MAX (~(word)0)
 
 /* Convert given pointer to its address.  Result is of word type.   */

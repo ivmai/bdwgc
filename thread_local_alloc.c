@@ -69,7 +69,7 @@ static void return_freelists(void **fl, void **gfl)
     /* The 0 granule free list really contains 1 granule objects.       */
     if (ADDR(fl[0]) >= HBLKSIZE
 #       ifdef GC_GCJ_SUPPORT
-          && fl[0] != ERROR_FL
+          && ADDR(fl[0]) != ERROR_FL
 #       endif
        ) {
         return_single_freelist(fl[0], &gfl[1]);
@@ -117,11 +117,11 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
             p -> gcj_freelists[j] = (void *)(GC_uintptr_t)1;
 #       endif
     }
-    /* The size 0 free lists are handled like the regular free lists,   */
-    /* to ensure that the explicit deallocation works.  However,        */
+    /* The zero-sized free list is handled like the regular free list,  */
+    /* to ensure that the explicit deallocation works.  However, an     */
     /* allocation of a size 0 "gcj" object is always an error.          */
 #   ifdef GC_GCJ_SUPPORT
-        p -> gcj_freelists[0] = ERROR_FL;
+        p -> gcj_freelists[0] = MAKE_CPTR(ERROR_FL);
 #   endif
 }
 

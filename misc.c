@@ -1177,10 +1177,10 @@ GC_API void GC_CALL GC_init(void)
 #       ifndef ENABLE_TRACE
           WARN("Tracing not enabled: Ignoring GC_TRACE value\n", 0);
 #       else
-          ptr_t p = (ptr_t)STRTOULL(str, NULL, 16);
+          ptr_t p = MAKE_CPTR(STRTOULL(str, NULL, 16));
 
           if (ADDR(p) < 0x1000)
-              WARN("Unlikely trace address: %p\n", (void *)p);
+              WARN("Unlikely trace address: %p\n", p);
           GC_trace_ptr = p;
 #       endif
       }
@@ -1294,8 +1294,8 @@ GC_API void GC_CALL GC_init(void)
 #   if ALIGNMENT > GC_DS_TAGS
       /* Adjust normal object descriptor for extra allocation.  */
       if (EXTRA_BYTES != 0)
-        GC_obj_kinds[NORMAL].ok_descriptor =
-                        ((~(word)ALIGNMENT) + 1) | GC_DS_LENGTH;
+        GC_obj_kinds[NORMAL].ok_descriptor
+                                = ((~(word)ALIGNMENT) + 1) | GC_DS_LENGTH;
 #   endif
     GC_exclude_static_roots_inner(beginGC_arrays, endGC_arrays);
     GC_exclude_static_roots_inner(beginGC_obj_kinds, endGC_obj_kinds);

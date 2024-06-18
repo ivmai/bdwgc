@@ -13,7 +13,6 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
  */
 
 #include "private/gc_priv.h"
@@ -1544,8 +1543,8 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t bytes)
   }
 #endif
 
-void * GC_least_plausible_heap_addr = (void *)GC_WORD_MAX;
-void * GC_greatest_plausible_heap_addr = 0;
+void * GC_least_plausible_heap_addr = MAKE_CPTR(GC_WORD_MAX);
+void * GC_greatest_plausible_heap_addr = NULL;
 
 STATIC word GC_max_heapsize = 0;
 
