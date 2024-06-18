@@ -476,7 +476,7 @@ GC_API size_t GC_CALL GC_size(const void * p)
     /* Accept NULL for compatibility with malloc_usable_size(). */
     if (EXPECT(NULL == p, FALSE)) return 0;
 
-    hhdr = HDR((/* no const */ void *)(word)p);
+    hhdr = HDR(p);
     return (size_t)(hhdr -> hb_sz);
 }
 

@@ -161,7 +161,7 @@ typedef struct bi {
 # define BI(p) GC_top_index[ADDR(p) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE)]
 # define HDR_INNER(p) HDR_FROM_BI(BI(p),p)
 # ifdef SMALL_CONFIG
-#     define HDR(p) GC_find_header((ptr_t)(p))
+#     define HDR(p) GC_find_header(p)
 # else
 #     define HDR(p) HDR_INNER(p)
 # endif
@@ -200,7 +200,7 @@ typedef struct bi {
           GC_ASSERT(bi != GC_all_nils); \
           HDR_FROM_BI(bi, p) = (hhdr); \
         } while (0)
-# define HDR(p) GC_find_header((ptr_t)(p))
+# define HDR(p) GC_find_header(p)
 #endif
 
 /* Is the result a forwarding address to someplace closer to the        */

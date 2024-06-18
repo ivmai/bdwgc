@@ -1502,6 +1502,7 @@ GC_API void GC_CALL GC_push_proc(GC_word descr, void *obj)
   GC_INNER void GC_push_many_regs(const word *regs, unsigned count)
   {
     unsigned i;
+
     for (i = 0; i < count; i++)
       GC_PUSH_ONE_STACK((ptr_t)regs[i], MARKED_FROM_REGISTER);
   }
@@ -1516,7 +1517,7 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
     GET_HDR(obj, hhdr);
     if ((EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)
          && (!GC_all_interior_pointers
-             || NULL == (hhdr = GC_find_header((ptr_t)GC_base(obj)))))
+             || NULL == (hhdr = GC_find_header(GC_base(obj)))))
         || EXPECT(HBLK_IS_FREE(hhdr), FALSE)) {
       GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
       return mark_stack_top;
@@ -1570,8 +1571,8 @@ GC_INNER void
     /* which is very mildly suboptimal.                         */
     /* FIXME: We should probably add a header word to address   */
     /* this.                                                    */
+#   undef source
 }
-# undef source
 
 #ifdef TRACE_BUF
 
@@ -2017,7 +2018,7 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
     if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr) || HBLK_IS_FREE(hhdr), FALSE)) {
       h = GC_next_block(h, FALSE);
       if (NULL == h) return NULL;
-      hhdr = GC_find_header((ptr_t)h);
+      hhdr = GC_find_header(h);
     } else {
 #     ifdef LINT2
         if (NULL == h) ABORT("Bad HDR() definition");
@@ -2041,7 +2042,7 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
                  || HBLK_IS_FREE(hhdr), FALSE)) {
         h = GC_next_block(h, FALSE);
         if (NULL == h) return NULL;
-        hhdr = GC_find_header((ptr_t)h);
+        hhdr = GC_find_header(h);
       } else {
 #       ifdef LINT2
           if (NULL == h) ABORT("Bad HDR() definition");
@@ -2080,7 +2081,7 @@ STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h)
                    || HBLK_IS_FREE(hhdr), FALSE)) {
           h = GC_next_block(h, FALSE);
           if (NULL == h) return NULL;
-          hhdr = GC_find_header((ptr_t)h);
+          hhdr = GC_find_header(h);
         } else {
 #         ifdef LINT2
             if (NULL == h) ABORT("Bad HDR() definition");

@@ -2465,7 +2465,7 @@ GC_INNER void GC_remove_header(struct hblk * h);
                                 /* Remove the header for block h.       */
 GC_INNER void GC_remove_counts(struct hblk * h, size_t sz);
                                 /* Remove forwarding counts for h.      */
-GC_INNER hdr * GC_find_header(ptr_t h);
+GC_INNER hdr * GC_find_header(const void * h);
 
 GC_INNER ptr_t GC_os_get_mem(size_t bytes);
                         /* Get HBLKSIZE-aligned heap memory chunk from  */

@@ -28,8 +28,8 @@
  * level tree.
  */
 
-/* Non-macro version of header location routine */
-GC_INNER hdr * GC_find_header(ptr_t h)
+/* A non-macro version of header location routine.      */
+GC_INNER hdr * GC_find_header(const void * h)
 {
 #   ifdef HASH_TL
         hdr * result;

@@ -181,7 +181,7 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, const hdr *hhdr, word sz,
     word bit_no;
     ptr_t p, plim;
 
-    GC_ASSERT(hhdr == GC_find_header((ptr_t)hbp));
+    GC_ASSERT(hhdr == GC_find_header(hbp));
 #   ifndef THREADS
       GC_ASSERT(sz == hhdr -> hb_sz);
 #   else
@@ -310,7 +310,7 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk *hbp, hdr *hhdr, size_t sz,
 #   ifndef PARALLEL_MARK
       GC_ASSERT(I_HOLD_LOCK());
 #   endif
-    GC_ASSERT(GC_find_header((ptr_t)hbp) == hhdr);
+    GC_ASSERT(GC_find_header(hbp) == hhdr);
 #   ifndef GC_DISABLE_INCREMENTAL
       GC_remove_protection(hbp, 1, IS_PTRFREE_SAFE(hhdr));
 #   endif
@@ -591,7 +591,7 @@ unsigned GC_n_set_marks(const hdr *hhdr)
 #endif /* !USE_MARK_BYTES  */
 
 GC_API unsigned GC_CALL GC_count_set_marks_in_hblk(const void *p) {
-    return GC_n_set_marks(HDR((/* no const */ void *)(word)p));
+    return GC_n_set_marks(HDR(p));
 }
 
 STATIC void GC_CALLBACK GC_print_block_descr(struct hblk *h,

@@ -3202,18 +3202,19 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   /* should not be harmful because the added or removed header should   */
   /* be already unprotected.                                            */
   GC_ATTR_NO_SANITIZE_THREAD
-  static GC_bool is_header_found_async(void *addr)
+  static GC_bool is_header_found_async(const void *p)
   {
 #   ifdef HASH_TL
       hdr *result;
-      GET_HDR((ptr_t)addr, result);
+
+      GET_HDR(p, result);
       return result != NULL;
 #   else
-      return HDR_INNER(addr) != NULL;
+      return HDR_INNER(p) != NULL;
 #   endif
   }
 #else
-# define is_header_found_async(addr) (HDR(addr) != NULL)
+# define is_header_found_async(p) (HDR(p) != NULL)
 #endif /* !THREADS */
 
 #ifndef DARWIN
@@ -3278,7 +3279,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   if !defined(MSWIN32) && !defined(MSWINCE)
         char *addr = (char *)si->si_addr;
 #   else
-        char * addr = (char *) (exc_info -> ExceptionRecord
+        char *addr = (char *)(exc_info -> ExceptionRecord
                                 -> ExceptionInformation[1]);
 #   endif
 
