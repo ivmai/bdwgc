@@ -239,7 +239,7 @@ GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn,
 /* NULL is returned.  Assumes the allocator lock is held at least in    */
 /* the reader mode but no assertion about it by design.                 */
 GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *,
-                                                    GC_word /* len */);
+                                                    size_t /* len */);
 
 /* Return the number of set mark bits for the heap block where object   */
 /* p is located.  Defined only if the library has been compiled         */

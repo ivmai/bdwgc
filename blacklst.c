@@ -242,11 +242,10 @@ GC_INNER void GC_unpromote_black_lists(void)
 /* the structure of the black list hash tables.  Assumes the allocator  */
 /* lock is held but no assertion about it by design.                    */
 GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *h,
-                                                    GC_word len)
+                                                    size_t len)
 {
-    word index = PHT_HASH(h);
-    word i;
-    word nblocks;
+    size_t index = (size_t)PHT_HASH(h);
+    size_t i, nblocks;
 
     if (!GC_all_interior_pointers
         && (get_pht_entry_from_index(GC_old_normal_bl, index)
@@ -259,7 +258,7 @@ GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *h,
         if (GC_old_stack_bl[divWORDSZ(index)] == 0
             && GC_incomplete_stack_bl[divWORDSZ(index)] == 0) {
           /* An easy case. */
-          i += (word)CPP_WORDSZ - modWORDSZ(index);
+          i += CPP_WORDSZ - modWORDSZ(index);
         } else {
           if (get_pht_entry_from_index(GC_old_stack_bl, index)
               || get_pht_entry_from_index(GC_incomplete_stack_bl, index)) {
@@ -268,7 +267,7 @@ GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *h,
           i++;
         }
         if (i >= nblocks) break;
-        index = PHT_HASH(h + i);
+        index = (size_t)PHT_HASH(h + i);
     }
     return NULL;
 }
