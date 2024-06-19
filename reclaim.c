@@ -569,7 +569,7 @@ unsigned GC_n_set_marks(const hdr *hhdr)
       }
 #   else
 
-      for (i = 0; i < MARK_BITS_SZ; i++) {
+      for (i = 0; i < HB_MARKS_SZ; i++) {
           result += count_ones(hhdr -> hb_marks[i]);
       }
 #   endif

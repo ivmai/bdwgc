@@ -1193,17 +1193,16 @@ struct hblkhdr {
                                 /* same object due to a race.           */
 #   else
       size_t hb_n_marks;        /* Without parallel marking, the count  */
-                                /* is accurate.                         */
-#   endif
+#   endif                       /* is accurate.                         */
 #   ifdef USE_MARK_BYTES
-#     define MARK_BITS_SZ (MARK_BITS_PER_HBLK + 1)
-        /* Unlike the other case, this is in units of bytes.            */
-        /* Since we force double-word alignment, we need at most one    */
-        /* mark bit per 2 words.  But we do allocate and set one        */
-        /* extra mark bit to avoid an explicit check for the            */
-        /* partial object at the end of each block.                     */
+#     define HB_MARKS_SZ (MARK_BITS_PER_HBLK + 1)
+        /* Unlike the other case, this is in units of bytes.  Since we  */
+        /* force certain alignment, we need at most one mark bit per    */
+        /* a granule.  But we do allocate and set one extra mark bit to */
+        /* avoid an explicit check for the partial object at the end of */
+        /* each block.                                                  */
       union {
-        char _hb_marks[MARK_BITS_SZ];
+        char _hb_marks[HB_MARKS_SZ];
                             /* The i'th byte is 1 if the object         */
                             /* starting at granule i or object i is     */
                             /* marked, 0 otherwise.                     */
@@ -1214,8 +1213,8 @@ struct hblkhdr {
       } _mark_byte_union;
 #     define hb_marks _mark_byte_union._hb_marks
 #   else
-#     define MARK_BITS_SZ (MARK_BITS_PER_HBLK/CPP_WORDSZ + 1)
-      word hb_marks[MARK_BITS_SZ];
+#     define HB_MARKS_SZ (MARK_BITS_PER_HBLK / CPP_WORDSZ + 1)
+        word hb_marks[HB_MARKS_SZ];
 #   endif /* !USE_MARK_BYTES */
 };
 
