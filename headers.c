@@ -342,13 +342,13 @@ GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn fn,
                           client_data);
                 }
                 j--;
-             } else if (index_p->index[j] == 0) {
+            } else if (index_p->index[j] == 0) {
                 j--;
-             } else {
+            } else {
                 j -= (signed_word)(index_p->index[j]);
-             }
-         }
-     }
+            }
+        }
+    }
 }
 
 GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free)
