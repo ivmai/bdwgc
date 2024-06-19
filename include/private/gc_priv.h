@@ -883,20 +883,12 @@ EXTERN_C_BEGIN
 /*                               */
 /*********************************/
 
-/* log[2] of CPP_WORDSZ.        */
-#if CPP_WORDSZ == 32
-# define LOGWL 5
-#elif CPP_WORDSZ == 64
-# define LOGWL 6
-#endif
-
-#define WORDS_TO_BYTES(x) ((x) << (LOGWL-3))
-#define BYTES_TO_WORDS(x) ((x) >> (LOGWL-3))
+#define WORDS_TO_BYTES(x) ((x) * sizeof(word))
+#define BYTES_TO_WORDS(x) ((x) / sizeof(word))
 #define modWORDSZ(n) ((n) & (CPP_WORDSZ-1)) /* n mod size of word */
-#define divWORDSZ(n) ((n) >> LOGWL) /* divide n by size of word */
+#define divWORDSZ(n) ((n) / CPP_WORDSZ)
 
 #define SIGNB ((word)1 << (CPP_WORDSZ-1))
-#define BYTES_PER_WORD ((word)sizeof(word))
 
 #if CPP_WORDSZ / 8 != ALIGNMENT
 # define UNALIGNED_PTRS
@@ -975,21 +967,16 @@ EXTERN_C_BEGIN
 # undef HBLKSIZE
 #endif
 
-# define CPP_HBLKSIZE (1 << CPP_LOG_HBLKSIZE)
-# define LOG_HBLKSIZE ((size_t)CPP_LOG_HBLKSIZE)
-# define HBLKSIZE ((size_t)CPP_HBLKSIZE)
+#define LOG_HBLKSIZE ((size_t)CPP_LOG_HBLKSIZE)
+#define HBLKSIZE ((size_t)1 << CPP_LOG_HBLKSIZE)
 
 #define GC_SQRT_SIZE_MAX ((((size_t)1) << (CPP_WORDSZ / 2)) - 1)
 
 /*  Max size objects supported by free list (larger objects are */
 /*  allocated directly with allchblk(), by rounding to the next */
 /*  multiple of HBLKSIZE).                                      */
-#define CPP_MAXOBJBYTES (CPP_HBLKSIZE/2)
-#define MAXOBJBYTES ((size_t)CPP_MAXOBJBYTES)
-#define CPP_MAXOBJWORDS BYTES_TO_WORDS(CPP_MAXOBJBYTES)
-#define MAXOBJWORDS ((size_t)CPP_MAXOBJWORDS)
-#define CPP_MAXOBJGRANULES BYTES_TO_GRANULES(CPP_MAXOBJBYTES)
-#define MAXOBJGRANULES ((size_t)CPP_MAXOBJGRANULES)
+#define MAXOBJBYTES (HBLKSIZE >> 1)
+#define MAXOBJGRANULES BYTES_TO_GRANULES(MAXOBJBYTES)
 
 #define divHBLKSZ(n) ((n) >> LOG_HBLKSIZE)
 
@@ -1066,8 +1053,8 @@ EXTERN_C_BEGIN
 # endif
 #endif /* !LOG_PHT_ENTRIES */
 
-# define PHT_ENTRIES ((word)1 << LOG_PHT_ENTRIES)
-# define PHT_SIZE (LOG_PHT_ENTRIES > LOGWL ? PHT_ENTRIES >> LOGWL : 1)
+#define PHT_ENTRIES (1 << LOG_PHT_ENTRIES)
+#define PHT_SIZE (PHT_ENTRIES > CPP_WORDSZ ? PHT_ENTRIES / CPP_WORDSZ : 1)
 typedef word page_hash_table[PHT_SIZE];
 
 #define PHT_HASH(addr) ((ADDR(addr) >> LOG_HBLKSIZE) & (PHT_ENTRIES-1))

@@ -461,7 +461,6 @@
 * Use GC_delete_thread instead of GC_delete_gc_thread_no_free (refactoring)
 * Use GC_printf in cpptest consistently (refactoring)
 * Use IS_PTRFREE() consistently (refactoring)
-* Use LOGWL to define WORDS_TO_BYTES() and BYTES_TO_WORDS() (refactoring)
 * Use __typeof__ in GC_PTR_ADD and similar if MS Clang
 * Use a dedicated integer type to hold function pointers (refactoring)
 * Use a macro internally to designate Cygwin and MSWin/WinCE (refactoring)

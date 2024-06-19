@@ -187,7 +187,7 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, const hdr *hhdr, word sz,
 #   else
       /* Skip the assertion because of a potential race with GC_realloc. */
 #   endif
-    GC_ASSERT((sz & (BYTES_PER_WORD-1)) == 0);
+    GC_ASSERT((sz & (sizeof(word)-1)) == 0);
 
     /* Go through all objects in the block. */
     p = hbp -> hb_body;
