@@ -58,7 +58,7 @@
                                 /* as used by GNU GCJ currently.        */
 
 GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn fn,
-                                          GC_word client_data)
+                                          void *client_data)
 {
   int i;
 
@@ -66,7 +66,7 @@ GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn fn,
     struct hblk *h;
 
     for (h = GC_hblkfreelist[i]; h != NULL; h = HDR(h) -> hb_next) {
-      (*fn)(h, i, client_data);
+      fn(h, i, client_data);
     }
   }
 }
@@ -112,10 +112,11 @@ STATIC int GC_hblk_fl_from_blocks(size_t blocks_needed)
 # endif /* !USE_MUNMAP */
 
 #if !defined(NO_DEBUGGING) || defined(GC_ASSERTIONS)
-  static void GC_CALLBACK add_hb_sz(struct hblk *h, int i, GC_word client_data)
+  static void GC_CALLBACK add_hb_sz(struct hblk *h, int i,
+                                    void *total_free_ptr)
   {
       UNUSED_ARG(i);
-      *(word *)client_data += HDR(h) -> hb_sz;
+      *(word *)total_free_ptr += HDR(h) -> hb_sz;
 #     if defined(CPPCHECK)
           GC_noop1_ptr(h);
 #     endif
@@ -126,14 +127,14 @@ STATIC int GC_hblk_fl_from_blocks(size_t blocks_needed)
   {
       word total_free = 0;
 
-      GC_iterate_free_hblks(add_hb_sz, (word)(&total_free));
+      GC_iterate_free_hblks(add_hb_sz, &total_free);
       return total_free;
   }
 #endif /* !NO_DEBUGGING || GC_ASSERTIONS */
 
 # if !defined(NO_DEBUGGING)
   static void GC_CALLBACK print_hblkfreelist_item(struct hblk *h, int i,
-                                                  GC_word prev_index_ptr)
+                                                  void *prev_index_ptr)
   {
     hdr *hhdr = HDR(h);
 
@@ -158,7 +159,7 @@ STATIC int GC_hblk_fl_from_blocks(size_t blocks_needed)
     word total;
     int prev_index = -1;
 
-    GC_iterate_free_hblks(print_hblkfreelist_item, (word)(&prev_index));
+    GC_iterate_free_hblks(print_hblkfreelist_item, &prev_index);
     GC_printf("GC_large_free_bytes: %lu\n",
               (unsigned long)GC_large_free_bytes);
     total = GC_compute_large_free_bytes();
