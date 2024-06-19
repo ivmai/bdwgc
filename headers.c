@@ -330,13 +330,13 @@ void GC_apply_to_all_blocks(void (*fn)(struct hblk *h, word client_data),
                           client_data);
                 }
                 j--;
-             } else if (index_p->index[j] == 0) {
+            } else if (index_p->index[j] == 0) {
                 j--;
-             } else {
+            } else {
                 j -= (signed_word)(index_p->index[j]);
-             }
-         }
-     }
+            }
+        }
+    }
 }
 
 /* Get the next valid block whose address is at least h */
