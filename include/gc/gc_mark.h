@@ -212,6 +212,15 @@ GC_API GC_ATTR_DEPRECATED
 /* size and kind of object.                                             */
 GC_API GC_ATTR_CONST size_t GC_CALL GC_get_hblk_size(void);
 
+typedef void (GC_CALLBACK * GC_walk_hblk_fn)(struct GC_hblk_s *,
+                                             void * /* client_data */);
+
+/* Apply fn to each allocated heap block.  It is the responsibility     */
+/* of the caller to avoid data race during the function execution (e.g. */
+/* by acquiring the allocator lock at least in the reader mode).        */
+GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn,
+                                void * /* client_data */) GC_ATTR_NONNULL(1);
+
 /* Same as GC_walk_hblk_fn but with index of the free list.             */
 typedef void (GC_CALLBACK * GC_walk_free_blk_fn)(struct GC_hblk_s *,
                                                  int /* index */,
@@ -223,15 +232,6 @@ typedef void (GC_CALLBACK * GC_walk_free_blk_fn)(struct GC_hblk_s *,
 /* reader mode).                                                        */
 GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
-
-typedef void (GC_CALLBACK * GC_walk_hblk_fn)(struct GC_hblk_s *,
-                                             GC_word /* client_data */);
-
-/* Apply fn to each allocated heap block.  It is the responsibility     */
-/* of the caller to avoid data race during the function execution (e.g. */
-/* by acquiring the allocator lock at least in the reader mode).        */
-GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn,
-                                GC_word /* client_data */) GC_ATTR_NONNULL(1);
 
 /* If there are likely to be false references to a block starting at h  */
 /* of the indicated length, then return the next plausible starting     */

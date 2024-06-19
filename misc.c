@@ -2473,7 +2473,7 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
   }
 #endif /* !NO_DEBUGGING */
 
-static void GC_CALLBACK block_add_size(struct hblk *h, GC_word pbytes)
+static void GC_CALLBACK block_add_size(struct hblk *h, void *pbytes)
 {
   const hdr *hhdr = HDR(h);
 
@@ -2488,7 +2488,7 @@ GC_API size_t GC_CALL GC_get_memory_use(void)
   word bytes = 0;
 
   READER_LOCK();
-  GC_apply_to_all_blocks(block_add_size, (word)(&bytes));
+  GC_apply_to_all_blocks(block_add_size, &bytes);
   READER_UNLOCK();
   return (size_t)bytes;
 }

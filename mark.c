@@ -216,7 +216,7 @@ GC_INNER void GC_set_hdr_marks(hdr *hhdr)
 }
 
 /* Clear all mark bits associated with block h. */
-static void GC_CALLBACK clear_marks_for_block(struct hblk *h, GC_word dummy)
+static void GC_CALLBACK clear_marks_for_block(struct hblk *h, void *dummy)
 {
     hdr * hhdr = HDR(h);
 
@@ -283,7 +283,7 @@ GC_API int GC_CALL GC_is_marked(const void *p)
 GC_INNER void GC_clear_marks(void)
 {
     GC_ASSERT(GC_is_initialized); /* needed for GC_push_roots */
-    GC_apply_to_all_blocks(clear_marks_for_block, (word)0);
+    GC_apply_to_all_blocks(clear_marks_for_block, NULL);
     GC_objects_are_marked = FALSE;
     GC_mark_state = MS_INVALID;
     GC_scan_ptr = NULL;

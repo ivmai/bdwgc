@@ -930,7 +930,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 
   /* Check all marked objects in the given block for validity   */
   /* Avoid GC_apply_to_each_object for performance reasons.     */
-  STATIC void GC_CALLBACK GC_check_heap_block(struct hblk *hbp, GC_word dummy)
+  STATIC void GC_CALLBACK GC_check_heap_block(struct hblk *hbp, void *dummy)
   {
     const hdr *hhdr = HDR(hbp);
     ptr_t p = hbp -> hb_body;
@@ -958,7 +958,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_ASSERT(I_HOLD_LOCK());
     GC_STATIC_ASSERT((sizeof(oh) & (GC_GRANULE_BYTES-1)) == 0);
     /* FIXME: Should we check for twice that alignment? */
-    GC_apply_to_all_blocks(GC_check_heap_block, 0);
+    GC_apply_to_all_blocks(GC_check_heap_block, NULL);
   }
 
   GC_INNER GC_bool GC_check_leaked(ptr_t base)
