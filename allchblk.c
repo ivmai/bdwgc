@@ -116,6 +116,9 @@ STATIC int GC_hblk_fl_from_blocks(size_t blocks_needed)
   {
       UNUSED_ARG(i);
       *(word *)client_data += HDR(h) -> hb_sz;
+#     if defined(CPPCHECK)
+          GC_noop1_ptr(h);
+#     endif
   }
 
   /* Should return the same value as GC_large_free_bytes.       */
@@ -134,6 +137,9 @@ STATIC int GC_hblk_fl_from_blocks(size_t blocks_needed)
   {
     hdr *hhdr = HDR(h);
 
+#   if defined(CPPCHECK)
+      GC_noop1_ptr(h);
+#   endif
     if (i != *(int *)prev_index_ptr) {
       GC_printf("Free list %d (total size %lu):\n",
                 i, (unsigned long)GC_free_bytes[i]);
@@ -168,10 +174,10 @@ static int free_list_index_of(const hdr *wanted)
     int i;
 
     for (i = 0; i <= N_HBLK_FLS; ++i) {
-      struct hblk * h;
-      hdr * hhdr;
+      const struct hblk * h;
+      const hdr * hhdr;
 
-      for (h = GC_hblkfreelist[i]; h != 0; h = hhdr -> hb_next) {
+      for (h = GC_hblkfreelist[i]; h != NULL; h = hhdr -> hb_next) {
         hhdr = HDR(h);
         if (hhdr == wanted) return i;
       }
@@ -916,7 +922,7 @@ STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
       if (size_needed == HBLKSIZE && 0 == align_m1
           && !GC_find_leak && IS_MAPPED(hhdr)
           && (++GC_drop_blacklisted_count & 3) == 0) {
-        struct hblk *prev = hhdr -> hb_prev;
+        const struct hblk *prev = hhdr -> hb_prev;
 
         drop_hblk_in_chunks(index, hbp, hhdr);
         if (NULL == prev) goto retry;

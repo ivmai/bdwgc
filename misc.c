@@ -2476,7 +2476,11 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 static void GC_CALLBACK block_add_size(struct hblk *h, GC_word pbytes)
 {
   const hdr *hhdr = HDR(h);
+
   *(word *)pbytes += (hhdr -> hb_sz + HBLKSIZE-1) & ~(word)(HBLKSIZE-1);
+# if defined(CPPCHECK)
+    GC_noop1_ptr(h);
+# endif
 }
 
 GC_API size_t GC_CALL GC_get_memory_use(void)

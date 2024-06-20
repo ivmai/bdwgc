@@ -226,6 +226,9 @@ static void GC_CALLBACK clear_marks_for_block(struct hblk *h, GC_word dummy)
         /* explicitly deallocated.  This either frees the block, or     */
         /* the bit is cleared once the object is on the free list.      */
     GC_clear_hdr_marks(hhdr);
+#   if defined(CPPCHECK)
+        GC_noop1_ptr(h);
+#   endif
 }
 
 /* Slow but general routines for setting/clearing/asking about mark bits. */

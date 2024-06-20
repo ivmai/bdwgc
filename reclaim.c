@@ -606,6 +606,9 @@ STATIC void GC_CALLBACK GC_print_block_descr(struct hblk *h,
 #   ifndef PARALLEL_MARK
         GC_ASSERT(hhdr -> hb_n_marks == n_marks);
 #   endif
+#   if defined(CPPCHECK)
+        GC_noop1_ptr(h);
+#   endif
     GC_ASSERT((n_objs > 0 ? n_objs : 1) >= n_marks);
     GC_printf("%u,%u,%u,%u\n",
               hhdr -> hb_obj_kind, (unsigned)sz, n_marks, n_objs);
