@@ -1504,7 +1504,7 @@ void GC_print_trace(word gc_no, GC_bool lock)
     DCL_LOCK_STATE;
 
     if (lock) LOCK();
-    for (i = GC_trace_buf_ptr-1; i != GC_trace_buf_ptr; i--) {
+    for (i = GC_trace_buf_ptr-1;; i--) {
         if (i < 0) i = TRACE_ENTRIES-1;
         p = GC_trace_buf + i;
         if (p -> gc_no < gc_no || p -> kind == 0) {
@@ -1515,6 +1515,7 @@ void GC_print_trace(word gc_no, GC_bool lock)
                 p -> kind, (unsigned)p -> gc_no,
                 (unsigned long)p -> bytes_allocd,
                 (p -> arg1) ^ 0x80000000, (p -> arg2) ^ 0x80000000);
+        if (i == GC_trace_buf_ptr) break;
     }
     printf("Trace incomplete\n");
     if (lock) UNLOCK();
