@@ -1433,7 +1433,7 @@ GC_API void GC_CALL GC_print_trace_inner(GC_word gc_no)
 {
     int i;
 
-    for (i = GC_trace_buf_ptr-1; i != GC_trace_buf_ptr; i--) {
+    for (i = GC_trace_buf_ptr-1;; i--) {
         struct trace_entry *p;
 
         if (i < 0) i = TRACE_ENTRIES-1;
@@ -1447,6 +1447,7 @@ GC_API void GC_CALL GC_print_trace_inner(GC_word gc_no)
                   p -> kind, (unsigned)(p -> gc_no),
                   (unsigned long)(p -> bytes_allocd),
                   (long)p->arg1 ^ 0x80000000L, (long)p->arg2 ^ 0x80000000L);
+        if (i == GC_trace_buf_ptr) break;
     }
     GC_printf("Trace incomplete\n");
 }
