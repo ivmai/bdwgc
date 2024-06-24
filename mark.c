@@ -1578,60 +1578,62 @@ GC_INNER void
 }
 
 #ifdef TRACE_BUF
-
 # ifndef TRACE_ENTRIES
 #   define TRACE_ENTRIES 1000
 # endif
 
-struct trace_entry {
-    char * kind;
+  struct trace_entry {
+    const char *caller_fn_name;
     word gc_no;
     word bytes_allocd;
-    word arg1;
-    word arg2;
-} GC_trace_buf[TRACE_ENTRIES] = { { NULL, 0, 0, 0, 0 } };
+    GC_hidden_pointer arg1;
+    GC_hidden_pointer arg2;
+  } GC_trace_buf[TRACE_ENTRIES] = { { (const char *)NULL, 0, 0, 0, 0 } };
 
-void GC_add_trace_entry(char *kind, word arg1, word arg2)
-{
-    GC_trace_buf[GC_trace_buf_ptr].kind = kind;
-    GC_trace_buf[GC_trace_buf_ptr].gc_no = GC_gc_no;
-    GC_trace_buf[GC_trace_buf_ptr].bytes_allocd = GC_bytes_allocd;
-    GC_trace_buf[GC_trace_buf_ptr].arg1 = arg1 ^ SIGNB;
-    GC_trace_buf[GC_trace_buf_ptr].arg2 = arg2 ^ SIGNB;
-    GC_trace_buf_ptr++;
-    if (GC_trace_buf_ptr >= TRACE_ENTRIES) GC_trace_buf_ptr = 0;
-}
+  void GC_add_trace_entry(const char *caller_fn_name, ptr_t arg1, ptr_t arg2)
+  {
+    size_t i = GC_trace_buf_pos;
 
-GC_API void GC_CALL GC_print_trace_inner(GC_word gc_no)
-{
-    int i;
+    GC_trace_buf[i].caller_fn_name = caller_fn_name;
+    GC_trace_buf[i].gc_no = GC_gc_no;
+    GC_trace_buf[i].bytes_allocd = GC_bytes_allocd;
+    GC_trace_buf[i].arg1 = GC_HIDE_POINTER(arg1);
+    GC_trace_buf[i].arg2 = GC_HIDE_POINTER(arg2);
+    i++;
+    if (i >= TRACE_ENTRIES) i = 0;
+    GC_trace_buf_pos = i;
+  }
 
-    for (i = GC_trace_buf_ptr-1;; i--) {
+  GC_API void GC_CALL GC_print_trace_inner(GC_word gc_no)
+  {
+    size_t i;
+
+    for (i = GC_trace_buf_pos;; i--) {
         struct trace_entry *p;
 
-        if (i < 0) i = TRACE_ENTRIES-1;
-        p = GC_trace_buf + i;
+        if (0 == i) i = TRACE_ENTRIES;
+        p = &GC_trace_buf[i - 1];
         /* Compare gc_no values (p->gc_no is less than given gc_no) */
         /* taking into account that the counter may overflow.       */
-        if ((((p -> gc_no) - gc_no) & SIGNB) != 0 || p -> kind == 0) {
-            return;
+        if ((((p -> gc_no) - gc_no) & SIGNB) != 0
+            || NULL == p -> caller_fn_name) {
+          return;
         }
-        GC_printf("Trace:%s (gc:%u, bytes:%lu) %p, %p\n",
-                  p -> kind, (unsigned)(p -> gc_no),
+        GC_printf("Trace:%s (gc:%lu, bytes:%lu) %p, %p\n",
+                  p -> caller_fn_name, (unsigned long)(p -> gc_no),
                   (unsigned long)(p -> bytes_allocd),
-                  (void *)(p -> arg1 ^ SIGNB), (void *)(p -> arg2 ^ SIGNB));
-        if (i == GC_trace_buf_ptr) break;
+                  GC_REVEAL_POINTER(p -> arg1), GC_REVEAL_POINTER(p -> arg2));
+        if (i == GC_trace_buf_pos + 1) break;
     }
     GC_printf("Trace incomplete\n");
-}
+  }
 
-GC_API void GC_CALL GC_print_trace(GC_word gc_no)
-{
+  GC_API void GC_CALL GC_print_trace(GC_word gc_no)
+  {
     READER_LOCK();
     GC_print_trace_inner(gc_no);
     READER_UNLOCK();
-}
-
+  }
 #endif /* TRACE_BUF */
 
 /* A version of GC_push_all that treats all interior pointers as valid  */

@@ -782,7 +782,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
       GC_push_all_eager(bottom, top);
     }
 #   ifdef TRACE_BUF
-      GC_add_trace_entry("GC_push_all_stack", (word)bottom, (word)top);
+      GC_add_trace_entry("GC_push_all_stack", bottom, top);
 #   endif
   }
 

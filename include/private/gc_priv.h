@@ -1568,8 +1568,8 @@ struct _GC_arrays {
 #   endif
 # endif
 # ifdef TRACE_BUF
-#   define GC_trace_buf_ptr GC_arrays._trace_buf_ptr
-    int _trace_buf_ptr;
+#   define GC_trace_buf_pos GC_arrays._trace_buf_pos
+    size_t _trace_buf_pos; /* an index in the circular buffer */
 # endif
 # ifdef ENABLE_DISCLAIM
 #   define GC_finalized_kind GC_arrays._finalized_kind
@@ -2229,7 +2229,8 @@ void GC_register_data_segments(void);
                 /* Is the address p in one of the registered static     */
                 /* root sections?                                       */
 # ifdef TRACE_BUF
-    void GC_add_trace_entry(char *kind, word arg1, word arg2);
+    void GC_add_trace_entry(const char *caller_fn_name,
+                            ptr_t arg1, ptr_t arg2);
 # endif
 #endif /* !THREADS */
 
