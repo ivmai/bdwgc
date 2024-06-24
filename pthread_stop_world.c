@@ -438,7 +438,7 @@ static void suspend_restart_barrier(int n_live_threads)
 # define WAIT_UNIT 3000 /* us */
 
 static int resend_lost_signals(int n_live_threads,
-                               int (*suspend_restart_all)(void))
+                               int (*suspend_restart_all)(GC_bool))
 {
 #   define RETRY_INTERVAL 100000 /* us */
 #   define RESEND_SIGNALS_LIMIT 150
@@ -455,7 +455,7 @@ static int resend_lost_signals(int n_live_threads,
         if (ack_count == n_live_threads)
           break;
         if (wait_usecs > RETRY_INTERVAL) {
-          int newly_sent = suspend_restart_all();
+          int newly_sent = suspend_restart_all(GC_retry_signals);
 
           if (newly_sent != prev_sent) {
             retry = 0; /* restart the counter */
@@ -488,7 +488,7 @@ static int resend_lost_signals(int n_live_threads,
 #endif
 
 static void resend_lost_signals_retry(int n_live_threads,
-                                      int (*suspend_restart_all)(void))
+                                      int (*suspend_restart_all)(GC_bool))
 {
 # if defined(HAVE_CLOCK_GETTIME) && !defined(DONT_TIMEDWAIT_ACK_SEM)
 #   define TIMEOUT_BEFORE_RESEND 10000 /* us */
@@ -912,7 +912,7 @@ GC_INNER void GC_push_all_stacks(void)
 
 /* Suspend all threads that might still be running.  Return the number  */
 /* of suspend signals that were sent.                                   */
-STATIC int GC_suspend_all(void)
+STATIC int GC_suspend_all(GC_bool is_retry)
 {
   int n_live_threads = 0;
   int i;
@@ -930,7 +930,8 @@ STATIC int GC_suspend_all(void)
 #           ifdef GC_ENABLE_SUSPEND_THREAD
                 if ((p -> ext_suspend_cnt & 1) != 0) continue;
 #           endif
-            if (AO_load(&(p -> last_stop_count)) == GC_stop_count)
+            if (is_retry
+                  && AO_load(&(p -> last_stop_count)) == GC_stop_count)
               continue; /* matters only if GC_retry_signals */
             n_live_threads++;
 #           ifdef DEBUG_THREADS
@@ -1040,7 +1041,7 @@ GC_INNER void GC_stop_world(void)
 # endif /* PARALLEL_MARK */
 
 # if defined(NACL)
-    (void)GC_suspend_all();
+    (void)GC_suspend_all(FALSE);
 # else
     AO_store(&GC_stop_count, GC_stop_count + THREAD_RESTARTED);
         /* Only concurrent reads are possible. */
@@ -1050,7 +1051,7 @@ GC_INNER void GC_stop_world(void)
       /* (thus double-locking should not occur in                       */
       /* async_set_pht_entry_from_index based on test-and-set).         */
     }
-    n_live_threads = GC_suspend_all();
+    n_live_threads = GC_suspend_all(FALSE);
     if (GC_retry_signals) {
       resend_lost_signals_retry(n_live_threads, GC_suspend_all);
     } else {
@@ -1227,7 +1228,7 @@ GC_INNER void GC_stop_world(void)
 
   /* Restart all threads that were suspended by the collector.  */
   /* Return the number of restart signals that were sent.       */
-  STATIC int GC_restart_all(void)
+  STATIC int GC_restart_all(GC_bool is_retry)
   {
     int n_live_threads = 0;
     int i;
@@ -1244,7 +1245,7 @@ GC_INNER void GC_stop_world(void)
 #         ifdef GC_ENABLE_SUSPEND_THREAD
               if ((p -> ext_suspend_cnt & 1) != 0) continue;
 #         endif
-          if (GC_retry_signals
+          if (is_retry
                 && AO_load(&(p -> last_stop_count)) == GC_stop_count)
               continue; /* The thread has been restarted. */
           n_live_threads++;
@@ -1286,7 +1287,7 @@ GC_INNER void GC_start_world(void)
                     /* The updated value should now be visible to the   */
                     /* signal handler (note that pthread_kill is not on */
                     /* the list of functions which synchronize memory). */
-    n_live_threads = GC_restart_all();
+    n_live_threads = GC_restart_all(FALSE);
     if (GC_retry_signals) {
         resend_lost_signals_retry(n_live_threads, GC_restart_all);
     } else {
