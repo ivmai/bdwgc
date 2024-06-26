@@ -62,7 +62,7 @@ GC_INNER void GC_default_print_heap_obj_proc(ptr_t p)
 GC_INNER void (*GC_print_heap_obj)(ptr_t p) = GC_default_print_heap_obj_proc;
 
 #ifdef PRINT_BLACK_LIST
-  STATIC void GC_print_blacklisted_ptr(word p, ptr_t source,
+  STATIC void GC_print_blacklisted_ptr(ptr_t p, ptr_t source,
                                        const char *kind_str)
   {
     ptr_t base = (ptr_t)GC_base(source);
@@ -187,19 +187,18 @@ GC_INNER void GC_unpromote_black_lists(void)
 /* the plausible heap bounds.                                   */
 /* Add it to the normal incomplete black list if appropriate.   */
 #ifdef PRINT_BLACK_LIST
-  GC_INNER void GC_add_to_black_list_normal(word p, ptr_t source)
+  GC_INNER void GC_add_to_black_list_normal(ptr_t p, ptr_t source)
 #else
-  GC_INNER void GC_add_to_black_list_normal(word p)
+  GC_INNER void GC_add_to_black_list_normal(ptr_t p)
 #endif
 {
 # ifndef PARALLEL_MARK
     GC_ASSERT(I_HOLD_LOCK());
 # endif
-  if (GC_modws_valid_offsets[p & (sizeof(word)-1)]) {
+  if (GC_modws_valid_offsets[ADDR(p) & (sizeof(word)-1)]) {
     word index = PHT_HASH(p);
 
-    if (NULL == HDR((ptr_t)p)
-        || get_pht_entry_from_index(GC_old_normal_bl, index)) {
+    if (NULL == HDR(p) || get_pht_entry_from_index(GC_old_normal_bl, index)) {
 #     ifdef PRINT_BLACK_LIST
         if (!get_pht_entry_from_index(GC_incomplete_normal_bl, index)) {
           GC_print_blacklisted_ptr(p, source, "normal");
@@ -213,9 +212,9 @@ GC_INNER void GC_unpromote_black_lists(void)
 
 /* And the same for false pointers from the stack. */
 #ifdef PRINT_BLACK_LIST
-  GC_INNER void GC_add_to_black_list_stack(word p, ptr_t source)
+  GC_INNER void GC_add_to_black_list_stack(ptr_t p, ptr_t source)
 #else
-  GC_INNER void GC_add_to_black_list_stack(word p)
+  GC_INNER void GC_add_to_black_list_stack(ptr_t p)
 #endif
 {
   word index = PHT_HASH(p);
@@ -223,8 +222,7 @@ GC_INNER void GC_unpromote_black_lists(void)
 # ifndef PARALLEL_MARK
     GC_ASSERT(I_HOLD_LOCK());
 # endif
-  if (NULL == HDR((ptr_t)p)
-      || get_pht_entry_from_index(GC_old_stack_bl, index)) {
+  if (NULL == HDR(p) || get_pht_entry_from_index(GC_old_stack_bl, index)) {
 #   ifdef PRINT_BLACK_LIST
       if (!get_pht_entry_from_index(GC_incomplete_stack_bl, index)) {
         GC_print_blacklisted_ptr(p, source, "stack");

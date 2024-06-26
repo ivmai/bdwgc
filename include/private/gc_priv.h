@@ -2236,27 +2236,27 @@ void GC_register_data_segments(void);
 
 /* Black listing: */
 #ifdef PRINT_BLACK_LIST
-  GC_INNER void GC_add_to_black_list_normal(word p, ptr_t source);
+  GC_INNER void GC_add_to_black_list_normal(ptr_t p, ptr_t source);
                         /* Register bits as a possible future false     */
                         /* reference from the heap or static data       */
-# define GC_ADD_TO_BLACK_LIST_NORMAL(bits, source) \
+# define GC_ADD_TO_BLACK_LIST_NORMAL(p, source) \
                 if (GC_all_interior_pointers) { \
-                  GC_add_to_black_list_stack((word)(bits), (source)); \
+                  GC_add_to_black_list_stack(p, source); \
                 } else \
-                  GC_add_to_black_list_normal((word)(bits), (source))
-  GC_INNER void GC_add_to_black_list_stack(word p, ptr_t source);
-# define GC_ADD_TO_BLACK_LIST_STACK(bits, source) \
-            GC_add_to_black_list_stack((word)(bits), (source))
+                  GC_add_to_black_list_normal(p, source)
+  GC_INNER void GC_add_to_black_list_stack(ptr_t p, ptr_t source);
+# define GC_ADD_TO_BLACK_LIST_STACK(p, source) \
+                GC_add_to_black_list_stack(p, source)
 #else
-  GC_INNER void GC_add_to_black_list_normal(word p);
-# define GC_ADD_TO_BLACK_LIST_NORMAL(bits, source) \
+  GC_INNER void GC_add_to_black_list_normal(ptr_t p);
+# define GC_ADD_TO_BLACK_LIST_NORMAL(p, source) \
                 if (GC_all_interior_pointers) { \
-                  GC_add_to_black_list_stack((word)(bits)); \
+                  GC_add_to_black_list_stack(p); \
                 } else \
-                  GC_add_to_black_list_normal((word)(bits))
-  GC_INNER void GC_add_to_black_list_stack(word p);
-# define GC_ADD_TO_BLACK_LIST_STACK(bits, source) \
-            GC_add_to_black_list_stack((word)(bits))
+                  GC_add_to_black_list_normal(p)
+  GC_INNER void GC_add_to_black_list_stack(ptr_t p);
+# define GC_ADD_TO_BLACK_LIST_STACK(p, source) \
+                GC_add_to_black_list_stack(p)
 #endif /* PRINT_BLACK_LIST */
 
 GC_INNER void GC_promote_black_lists(void);

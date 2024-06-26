@@ -1522,7 +1522,7 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
          && (!GC_all_interior_pointers
              || NULL == (hhdr = GC_find_header(GC_base(obj)))))
         || EXPECT(HBLK_IS_FREE(hhdr), FALSE)) {
-      GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
+      GC_ADD_TO_BLACK_LIST_NORMAL((ptr_t)obj, (ptr_t)src);
       return mark_stack_top;
     }
     return GC_push_contents_hdr((ptr_t)obj, mark_stack_top, mark_stack_limit,
