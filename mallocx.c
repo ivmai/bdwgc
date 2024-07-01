@@ -46,7 +46,7 @@ GC_API int GC_CALL GC_get_kind_and_size(const void * p, size_t * psize)
     const hdr *hhdr = HDR(p);
 
     if (psize != NULL) {
-        *psize = (size_t)(hhdr -> hb_sz);
+        *psize = hhdr -> hb_sz;
     }
     return hhdr -> hb_obj_kind;
 }
@@ -96,7 +96,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
       return NULL;
     }
     hhdr = HDR(HBLKPTR(p));
-    sz = (size_t)hhdr->hb_sz;
+    sz = hhdr -> hb_sz;
     obj_kind = hhdr -> hb_obj_kind;
     orig_sz = sz;
 

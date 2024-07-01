@@ -281,7 +281,7 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
 
             /* Accurate enough if HBLKSIZE <= 2**15.    */
             GC_STATIC_ASSERT(HBLKSIZE <= (1 << 15));
-            obj_displ = (((low_prod >> 16) + 1) * (size_t)hhdr->hb_sz) >> 16;
+            obj_displ = (((low_prod >> 16) + 1) * hhdr -> hb_sz) >> 16;
 #         endif
           if (do_offset_check && !GC_valid_offsets[obj_displ]) {
             GC_ADD_TO_BLACK_LIST_NORMAL(current, source);

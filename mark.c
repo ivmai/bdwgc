@@ -176,10 +176,10 @@ GC_INNER void GC_clear_hdr_marks(hdr *hhdr)
 
 # ifdef AO_HAVE_load
     /* Atomic access is used to avoid racing with GC_realloc.   */
-    last_bit = FINAL_MARK_BIT((size_t)AO_load((volatile AO_t *)&hhdr->hb_sz));
+    last_bit = FINAL_MARK_BIT(AO_load((volatile AO_t *)&hhdr->hb_sz));
 # else
     /* No race as GC_realloc holds the allocator lock while updating hb_sz. */
-    last_bit = FINAL_MARK_BIT((size_t)hhdr->hb_sz);
+    last_bit = FINAL_MARK_BIT(hhdr -> hb_sz);
 # endif
 
     BZERO(hhdr -> hb_marks, sizeof(hhdr->hb_marks));
@@ -191,7 +191,7 @@ GC_INNER void GC_clear_hdr_marks(hdr *hhdr)
 GC_INNER void GC_set_hdr_marks(hdr *hhdr)
 {
     unsigned i;
-    size_t sz = (size_t)hhdr->hb_sz;
+    size_t sz = hhdr -> hb_sz;
     unsigned n_marks = (unsigned)FINAL_MARK_BIT(sz);
 
 #   ifdef USE_MARK_BYTES
@@ -1903,7 +1903,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 /* Push all objects reachable from marked objects in the given block.   */
 STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
 {
-    word sz = hhdr -> hb_sz;
+    size_t sz = hhdr -> hb_sz;
     word descr = hhdr -> hb_descr;
     ptr_t p;
     word bit_no;
@@ -1965,7 +1965,7 @@ STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
   GC_ATTR_NO_SANITIZE_THREAD
   STATIC void GC_push_unconditionally(struct hblk *h, const hdr *hhdr)
   {
-    word sz = hhdr -> hb_sz;
+    size_t sz = hhdr -> hb_sz;
     word descr = hhdr -> hb_descr;
     ptr_t p;
     ptr_t lim;
@@ -1995,12 +1995,12 @@ STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
   /* Test whether any page in the given block is dirty.   */
   STATIC GC_bool GC_block_was_dirty(struct hblk *h, const hdr *hhdr)
   {
-    word sz;
+    size_t sz;
     ptr_t p;
 
 #   ifdef AO_HAVE_load
       /* Atomic access is used to avoid racing with GC_realloc. */
-      sz = (word)AO_load((volatile AO_t *)&(hhdr -> hb_sz));
+      sz = AO_load((volatile AO_t *)&(hhdr -> hb_sz));
 #   else
       sz = hhdr -> hb_sz;
 #   endif

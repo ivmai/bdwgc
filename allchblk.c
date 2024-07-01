@@ -523,7 +523,7 @@ GC_INNER void GC_unmap_old(unsigned threshold)
             }
             GC_num_unmapped_regions = regions;
 #         endif
-          GC_unmap((ptr_t)h, (size_t)(hhdr -> hb_sz));
+          GC_unmap((ptr_t)h, hhdr -> hb_sz);
           hhdr -> hb_flags |= WAS_UNMAPPED;
         }
       }
@@ -956,7 +956,7 @@ STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
 #     ifdef USE_MUNMAP
         if (!IS_MAPPED(hhdr)) {
           GC_adjust_num_unmapped(hbp, hhdr);
-          GC_remap((ptr_t)hbp, (size_t)(hhdr -> hb_sz));
+          GC_remap((ptr_t)hbp, hhdr -> hb_sz);
           hhdr -> hb_flags &= (unsigned char)~WAS_UNMAPPED;
         }
 #     endif
@@ -972,7 +972,7 @@ STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
 #   ifdef USE_MUNMAP
       if (!IS_MAPPED(hhdr)) {
         GC_adjust_num_unmapped(hbp, hhdr);
-        GC_remap((ptr_t)hbp, (size_t)(hhdr -> hb_sz));
+        GC_remap((ptr_t)hbp, hhdr -> hb_sz);
         hhdr -> hb_flags &= (unsigned char)~WAS_UNMAPPED;
         /* Note: This may leave adjacent, mapped free blocks. */
       }

@@ -676,8 +676,8 @@ static complex_descriptor *get_complex_descr(word *addr, size_t nwords)
 STATIC mse *GC_CALLBACK GC_array_mark_proc(word *addr, mse *mark_stack_top,
                                            mse *mark_stack_limit, word env)
 {
-  word sz = HDR(addr) -> hb_sz;
-  size_t nwords = (size_t)BYTES_TO_WORDS(sz);
+  size_t sz = HDR(addr) -> hb_sz;
+  size_t nwords = BYTES_TO_WORDS(sz);
   complex_descriptor *complex_d = get_complex_descr(addr, nwords);
   mse *orig_mark_stack_top = mark_stack_top;
   mse *new_mark_stack_top;

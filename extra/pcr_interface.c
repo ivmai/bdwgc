@@ -77,7 +77,7 @@ void GC_enumerate_block(struct hblk *h, enumerate_data * ed)
 # endif
     hhdr = HDR(h);
     descr = hhdr -> hb_descr;
-    sz = (size_t)hhdr->hb_sz;
+    sz = hhdr -> hb_sz;
     if (descr != 0 && ed -> ed_pointerfree
         || descr == 0 && !(ed -> ed_pointerfree)) return;
     lim = (ptr_t)(h+1) - sz;

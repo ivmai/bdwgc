@@ -115,7 +115,7 @@ STATIC void GC_CALLBACK GC_add_block(struct hblk *h, void *dummy)
    const hdr *hhdr = HDR(h);
 
    UNUSED_ARG(dummy);
-   GC_bytes_in_used_blocks += (hhdr->hb_sz + HBLKSIZE-1) & ~(word)(HBLKSIZE-1);
+   GC_bytes_in_used_blocks += (hhdr -> hb_sz + HBLKSIZE-1) & ~(HBLKSIZE-1);
 }
 
 STATIC void GC_check_blocks(void)

@@ -780,9 +780,9 @@ GC_API void GC_CALL GC_debug_free(void * p)
           ) {
         GC_free(base);
       } else {
-        word i;
-        word sz = hhdr -> hb_sz;
-        word obj_sz = BYTES_TO_WORDS(sz - sizeof(oh));
+        size_t i;
+        size_t sz = hhdr -> hb_sz;
+        size_t obj_sz = BYTES_TO_WORDS(sz - sizeof(oh));
 
         for (i = 0; i < obj_sz; ++i)
           ((GC_uintptr_t *)p)[i] = GC_FREED_MEM_MARKER;
@@ -935,8 +935,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     const hdr *hhdr = HDR(hbp);
     ptr_t p = hbp -> hb_body;
     ptr_t plim;
-    word sz = hhdr -> hb_sz;
-    word bit_no;
+    size_t sz = hhdr -> hb_sz;
+    size_t bit_no;
 
     UNUSED_ARG(dummy);
     plim = sz > MAXOBJBYTES ? p : p + HBLKSIZE - sz;
@@ -963,8 +963,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 
   GC_INNER GC_bool GC_check_leaked(ptr_t base)
   {
-    word i;
-    word obj_sz;
+    size_t i;
+    size_t obj_sz;
     word *p;
 
     if (

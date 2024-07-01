@@ -477,7 +477,7 @@ GC_API size_t GC_CALL GC_size(const void * p)
     if (EXPECT(NULL == p, FALSE)) return 0;
 
     hhdr = HDR(p);
-    return (size_t)(hhdr -> hb_sz);
+    return hhdr -> hb_sz;
 }
 
 /* These getters remain unsynchronized for compatibility (since some    */
@@ -2477,7 +2477,7 @@ static void GC_CALLBACK block_add_size(struct hblk *h, void *pbytes)
 {
   const hdr *hhdr = HDR(h);
 
-  *(word *)pbytes += (hhdr -> hb_sz + HBLKSIZE-1) & ~(word)(HBLKSIZE-1);
+  *(word *)pbytes += ((word)hhdr->hb_sz + HBLKSIZE-1) & ~(word)(HBLKSIZE-1);
 # if defined(CPPCHECK)
     GC_noop1_ptr(h);
 # endif
