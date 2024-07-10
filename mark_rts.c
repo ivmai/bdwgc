@@ -323,7 +323,7 @@ STATIC void GC_remove_root_at_pos(size_t i)
   STATIC void GC_remove_tmp_roots(void)
   {
     size_t i;
-#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#   ifndef ANY_MSWIN
       size_t old_n_roots = n_root_sets;
 #   endif
 
@@ -335,7 +335,7 @@ STATIC void GC_remove_root_at_pos(size_t i)
             i++;
         }
     }
-#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#   ifndef ANY_MSWIN
       if (n_root_sets < old_n_roots)
         GC_rebuild_root_index();
 #   endif
