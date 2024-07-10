@@ -281,13 +281,13 @@ STATIC void GC_init_size_map(void)
 # else
     STATIC word GC_stack_last_cleared = 0;
                         /* GC_gc_no value when we last did this.        */
+    STATIC word GC_bytes_allocd_at_reset = 0;
     STATIC ptr_t GC_min_sp = NULL;
                         /* Coolest stack pointer value from which       */
                         /* we've already cleared the stack.             */
     STATIC ptr_t GC_high_water = NULL;
                         /* "hottest" stack pointer value we have seen   */
                         /* recently.  Degrades over time.               */
-    STATIC word GC_bytes_allocd_at_reset = 0;
 #   define DEGRADE_RATE 50
 # endif
 
@@ -430,7 +430,7 @@ GC_API void * GC_CALL GC_base(void * p)
     bottom_index *bi;
     hdr *hhdr;
     ptr_t limit;
-    word sz;
+    size_t sz;
 
     if (!EXPECT(GC_is_initialized, TRUE)) return NULL;
     h = HBLKPTR(r);
@@ -1331,6 +1331,7 @@ GC_API void GC_CALL GC_init(void)
       }
 #   endif
 #   if !defined(CPPCHECK)
+      GC_STATIC_ASSERT(sizeof(size_t) <= sizeof(ptrdiff_t));
       GC_STATIC_ASSERT(sizeof(ptrdiff_t) == sizeof(word));
       GC_STATIC_ASSERT(sizeof(signed_word) == sizeof(word));
       GC_STATIC_ASSERT(sizeof(ptr_t) == sizeof(GC_uintptr_t));
@@ -1406,7 +1407,7 @@ GC_API void GC_CALL GC_init(void)
     }
     if (GC_all_interior_pointers)
       GC_initialize_offsets();
-    GC_register_displacement_inner(0L);
+    GC_register_displacement_inner(0);
 #   if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC)
       if (!GC_all_interior_pointers) {
         /* TLS ABI uses pointer-sized offsets for dtv. */
@@ -2154,7 +2155,7 @@ GC_API void ** GC_CALL GC_new_free_list_inner(void)
     GC_ASSERT(I_HOLD_LOCK());
     result = GC_INTERNAL_MALLOC((MAXOBJGRANULES+1) * sizeof(ptr_t), PTRFREE);
     if (NULL == result) ABORT("Failed to allocate free list for new kind");
-    BZERO(result, (MAXOBJGRANULES+1)*sizeof(ptr_t));
+    BZERO(result, (MAXOBJGRANULES+1) * sizeof(ptr_t));
     return (void **)result;
 }
 
@@ -2305,17 +2306,19 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 
 #ifndef THREADS
 
-GC_INNER ptr_t GC_blocked_sp = NULL;
+  GC_INNER ptr_t GC_blocked_sp = NULL;
         /* NULL value means we are not inside GC_do_blocking() call. */
+
 # ifdef IA64
     STATIC ptr_t GC_blocked_register_sp = NULL;
 # endif
 
-GC_INNER struct GC_traced_stack_sect_s *GC_traced_stack_sect = NULL;
+  GC_INNER struct GC_traced_stack_sect_s *GC_traced_stack_sect = NULL;
 
-/* This is nearly the same as in pthread_support.c.     */
-GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn, void *client_data)
-{
+  /* This is nearly the same as in pthread_support.c.   */
+  GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
+                                               void *client_data)
+  {
     struct GC_traced_stack_sect_s stacksect;
     GC_ASSERT(GC_is_initialized);
 
@@ -2362,11 +2365,11 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn, void *client_data)
     GC_blocked_sp = stacksect.saved_stack_ptr;
 
     return client_data; /* result */
-}
+  }
 
-/* This is nearly the same as in pthread_support.c.     */
-STATIC void GC_do_blocking_inner(ptr_t data, void *context)
-{
+  /* This is nearly the same as in pthread_support.c.   */
+  STATIC void GC_do_blocking_inner(ptr_t data, void *context)
+  {
     struct blocking_data * d = (struct blocking_data *)data;
 
     UNUSED_ARG(context);
@@ -2392,7 +2395,7 @@ STATIC void GC_do_blocking_inner(ptr_t data, void *context)
       GC_noop1_ptr(GC_blocked_sp);
 #   endif
     GC_blocked_sp = NULL;
-}
+  }
 
   GC_API void GC_CALL GC_set_stackbottom(void *gc_thread_handle,
                                          const struct GC_stack_base *sb)

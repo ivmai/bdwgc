@@ -889,6 +889,7 @@ EXTERN_C_BEGIN
 #define divWORDSZ(n) ((n) / CPP_WORDSZ)
 
 #define SIGNB ((word)1 << (CPP_WORDSZ-1))
+#define SIZET_SIGNB (GC_SIZE_MAX ^ (GC_SIZE_MAX >> 1))
 
 #if CPP_WORDSZ / 8 != ALIGNMENT
 # define UNALIGNED_PTRS
@@ -970,7 +971,7 @@ EXTERN_C_BEGIN
 #define LOG_HBLKSIZE ((size_t)CPP_LOG_HBLKSIZE)
 #define HBLKSIZE ((size_t)1 << CPP_LOG_HBLKSIZE)
 
-#define GC_SQRT_SIZE_MAX ((((size_t)1) << (CPP_WORDSZ / 2)) - 1)
+#define GC_SQRT_SIZE_MAX ((((size_t)1) << (sizeof(size_t) * 8 / 2)) - 1)
 
 /*  Max size objects supported by free list (larger objects are */
 /*  allocated directly with allchblk(), by rounding to the next */
@@ -1057,7 +1058,7 @@ EXTERN_C_BEGIN
 #define PHT_SIZE (PHT_ENTRIES > CPP_WORDSZ ? PHT_ENTRIES / CPP_WORDSZ : 1)
 typedef word page_hash_table[PHT_SIZE];
 
-#define PHT_HASH(addr) ((ADDR(addr) >> LOG_HBLKSIZE) & (PHT_ENTRIES-1))
+#define PHT_HASH(p) ((size_t)((ADDR(p) >> LOG_HBLKSIZE) & (PHT_ENTRIES-1)))
 
 #define get_pht_entry_from_index(bl, index) \
                 (((bl)[divWORDSZ(index)] >> modWORDSZ(index)) & 1)
@@ -1327,7 +1328,7 @@ struct finalizable_object;
 
 struct dl_hashtbl_s {
     struct disappearing_link **head;
-    word entries;
+    size_t entries;
     unsigned log_size;
 };
 
@@ -1535,7 +1536,7 @@ struct _GC_arrays {
   word _n_heap_sects;   /* Number of separately added heap sections.    */
 # ifdef ANY_MSWIN
 #   define GC_n_heap_bases GC_arrays._n_heap_bases
-    word _n_heap_bases; /* See GC_heap_bases.   */
+    size_t _n_heap_bases; /* see GC_heap_bases[] */
 # endif
 # ifdef USE_PROC_FOR_LIBRARIES
 #   define GC_n_memory GC_arrays._n_memory
@@ -1577,7 +1578,7 @@ struct _GC_arrays {
 # endif
 # define n_root_sets GC_arrays._n_root_sets
 # define GC_excl_table_entries GC_arrays._excl_table_entries
-  int _n_root_sets;     /* GC_static_roots[0..n_root_sets) contains the */
+  size_t _n_root_sets;  /* GC_static_roots[0..n_root_sets) contains the */
                         /* valid root sets.                             */
   size_t _excl_table_entries;   /* Number of entries in use.    */
 # define GC_ed_size GC_arrays._ed_size
@@ -1885,7 +1886,8 @@ struct GC_traced_stack_sect_s {
 #ifdef IA64
   /* Similar to GC_push_all_stack_sections() but for IA-64 registers store. */
   GC_INNER void GC_push_all_register_sections(ptr_t bs_lo, ptr_t bs_hi,
-                  int eager, struct GC_traced_stack_sect_s *traced_stack_sect);
+                        GC_bool eager,
+                        struct GC_traced_stack_sect_s *traced_stack_sect);
 #endif /* IA64 */
 
 /*  Marks are in a reserved area in                          */
@@ -1927,7 +1929,7 @@ struct GC_traced_stack_sect_s {
 #endif /* !USE_MARK_BYTES */
 
 #ifdef MARK_BIT_PER_OBJ
-# define MARK_BIT_NO(offset, sz) (((unsigned)(offset))/(sz))
+# define MARK_BIT_NO(offset, sz) ((offset) / (sz))
         /* Get the mark bit index corresponding to the given byte       */
         /* offset and size (in bytes).                                  */
 # define MARK_BIT_OFFSET(sz) 1
@@ -1935,7 +1937,7 @@ struct GC_traced_stack_sect_s {
 # define FINAL_MARK_BIT(sz) ((sz) > MAXOBJBYTES ? 1 : HBLK_OBJS(sz))
         /* Position of final, always set, mark bit.                     */
 #else
-# define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES((unsigned)(offset))
+# define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES(offset)
 # define MARK_BIT_OFFSET(sz) BYTES_TO_GRANULES(sz)
 # define FINAL_MARK_BIT(sz) \
                 ((sz) > MAXOBJBYTES ? MARK_BITS_PER_HBLK \
@@ -2276,7 +2278,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes);
 #else
 # define GC_scratch_recycle_no_gww GC_scratch_recycle_inner
 #endif
-GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes);
+GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t sz);
                                 /* Reuse the memory region by the heap. */
 
 #ifndef MARK_BIT_PER_OBJ
@@ -2642,7 +2644,7 @@ GC_EXTERN GC_bool GC_print_back_height;
   GC_INNER GC_bool GC_page_was_dirty(struct hblk *h);
                         /* Read retrieved dirty bits.   */
 
-  GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
+  GC_INNER void GC_remove_protection(struct hblk *h, size_t nblocks,
                                      GC_bool is_ptrfree);
                 /* Block h is about to be written or allocated shortly. */
                 /* Ensure that all pages containing any part of the     */
@@ -2894,7 +2896,7 @@ GC_INNER void GC_start_debugging_inner(void);   /* defined in dbg_mlc.c. */
 
 /* Store debugging info into p.  Return displaced pointer.      */
 /* Assume we hold the allocator lock.                           */
-GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
+GC_INNER void *GC_store_debug_info_inner(void *p, size_t sz, const char *str,
                                          int linenum);
 
 #if defined(REDIRECT_MALLOC) && !defined(REDIRECT_MALLOC_IN_HEADER) \

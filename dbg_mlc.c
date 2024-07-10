@@ -36,7 +36,7 @@
   GC_INNER int GC_has_other_debug_info(ptr_t base)
   {
     ptr_t body = (ptr_t)((oh *)base + 1);
-    word sz = GC_size(base);
+    size_t sz = GC_size(base);
 
     if (HBLKPTR(base) != HBLKPTR(body)
         || sz < DEBUG_BYTES + EXTRA_BYTES) {
@@ -250,7 +250,7 @@
 #define CROSSES_HBLK(p, sz) \
                 ((ADDR((p) + sizeof(oh) + (sz) - 1) ^ ADDR(p)) >= HBLKSIZE)
 
-GC_INNER void *GC_store_debug_info_inner(void *base, word sz,
+GC_INNER void *GC_store_debug_info_inner(void *base, size_t sz,
                                          const char *string, int linenum)
 {
     GC_uintptr_t *result = (GC_uintptr_t *)((oh *)base + 1);
@@ -293,7 +293,7 @@ static void *store_debug_info(void *base, size_t lb,
     LOCK();
     if (!GC_debugging_started)
         GC_start_debugging_inner();
-    result = GC_store_debug_info_inner(base, (word)lb, s, i);
+    result = GC_store_debug_info_inner(base, lb, s, i);
     ADD_CALL_CHAIN(base, ra);
     UNLOCK();
     return result;
@@ -306,7 +306,7 @@ static void *store_debug_info(void *base, size_t lb,
   STATIC ptr_t GC_check_annotated_obj(oh *ohdr)
   {
     ptr_t body = (ptr_t)(ohdr + 1);
-    word gc_sz = GC_size(ohdr);
+    size_t gc_sz = GC_size(ohdr);
 
     if (ohdr -> oh_sz + DEBUG_BYTES > (GC_uintptr_t)gc_sz) {
         return (ptr_t)(&(ohdr -> oh_sz));
@@ -471,7 +471,7 @@ GC_INNER void GC_start_debugging_inner(void)
 # endif
   GC_print_heap_obj = GC_debug_print_heap_obj_proc;
   GC_debugging_started = TRUE;
-  GC_register_displacement_inner((word)sizeof(oh));
+  GC_register_displacement_inner(sizeof(oh));
 # if defined(CPPCHECK)
     GC_noop1(GC_debug_header_size);
 # endif
@@ -487,7 +487,7 @@ GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
 {
   LOCK();
   GC_register_displacement_inner(offset);
-  GC_register_displacement_inner((word)sizeof(oh) + offset);
+  GC_register_displacement_inner(sizeof(oh) + offset);
   UNLOCK();
 }
 
@@ -585,7 +585,7 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int k, GC_EXTRA_PARAMS)
     }
     if (!GC_debugging_started)
         GC_start_debugging_inner();
-    result = GC_store_debug_info_inner(base, (word)lb, "INTERNAL", 0);
+    result = GC_store_debug_info_inner(base, lb, "INTERNAL", 0);
     ADD_CALL_CHAIN_INNER(base);
     return result;
   }
@@ -747,7 +747,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
     } else {
 #     ifndef SHORT_DBG_HDRS
         ptr_t clobbered = GC_check_annotated_obj((oh *)base);
-        word sz = GC_size(base);
+        size_t sz = GC_size(base);
 
         if (clobbered != NULL) {
           GC_SET_HAVE_ERRORS(); /* no "release" barrier is needed */
@@ -791,7 +791,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
         /* is deferred.                                         */
         LOCK();
 #       ifdef LINT2
-          GC_incr_bytes_freed((size_t)sz);
+          GC_incr_bytes_freed(sz);
 #       else
           GC_bytes_freed += sz;
 #       endif

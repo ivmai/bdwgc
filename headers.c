@@ -354,7 +354,7 @@ GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn fn,
 GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free)
 {
     REGISTER bottom_index * bi;
-    REGISTER word j = (ADDR(h) >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
+    REGISTER size_t j = (size_t)(ADDR(h) >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
 
     GC_ASSERT(I_HOLD_READER_LOCK());
     GET_BI(h, bi);
@@ -369,6 +369,7 @@ GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free)
     while (bi != 0) {
         while (j < BOTTOM_SZ) {
             hdr * hhdr = bi -> index[j];
+
             if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
                 j++;
             } else {

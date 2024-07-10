@@ -318,7 +318,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
 # endif
   IF_CANCEL(int cancel_state;)
 # ifdef GC_ENABLE_SUSPEND_THREAD
-    word suspend_cnt;
+    AO_t suspend_cnt;
 # endif
   AO_t my_stop_count = ao_load_acquire_async(&GC_stop_count);
                         /* After the barrier, this thread should see    */
@@ -360,7 +360,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
     crtn -> backing_store_ptr = bs_lo + stack_size;
 # endif
 # ifdef GC_ENABLE_SUSPEND_THREAD
-    suspend_cnt = (word)ao_load_async(&(me -> ext_suspend_cnt));
+    suspend_cnt = ao_load_async(&(me -> ext_suspend_cnt));
 # endif
 
   /* Tell the thread that wants to stop the world that this     */
@@ -385,8 +385,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context)
   } while (ao_load_acquire_async(&GC_stop_count) == my_stop_count
 #          ifdef GC_ENABLE_SUSPEND_THREAD
              || ((suspend_cnt & 1) != 0
-                 && (word)ao_load_async(&(me -> ext_suspend_cnt))
-                    == suspend_cnt)
+                 && ao_load_async(&(me -> ext_suspend_cnt)) == suspend_cnt)
 #          endif
           );
 
@@ -599,7 +598,7 @@ STATIC void GC_restart_handler(int sig)
       (void)select(0, 0, 0, 0, &tv);
     }
 
-    GC_INNER void GC_suspend_self_inner(GC_thread me, word suspend_cnt) {
+    GC_INNER void GC_suspend_self_inner(GC_thread me, size_t suspend_cnt) {
       IF_CANCEL(int cancel_state;)
 
       GC_ASSERT((suspend_cnt & 1) != 0);
@@ -607,8 +606,7 @@ STATIC void GC_restart_handler(int sig)
 #     ifdef DEBUG_THREADS
         GC_log_printf("Suspend self: %p\n", (void *)(me -> id));
 #     endif
-      while ((word)ao_load_acquire_async(&(me -> ext_suspend_cnt))
-             == suspend_cnt) {
+      while (ao_load_acquire_async(&(me -> ext_suspend_cnt)) == suspend_cnt) {
         /* TODO: Use sigsuspend() even for self-suspended threads. */
         GC_brief_async_signal_safe_sleep();
       }
@@ -621,7 +619,7 @@ STATIC void GC_restart_handler(int sig)
     GC_API void GC_CALL GC_suspend_thread(GC_SUSPEND_THREAD_ID thread) {
       GC_thread t;
       AO_t next_stop_count;
-      word suspend_cnt;
+      AO_t suspend_cnt;
       IF_CANCEL(int cancel_state;)
 
       LOCK();
@@ -630,21 +628,21 @@ STATIC void GC_restart_handler(int sig)
         UNLOCK();
         return;
       }
-      suspend_cnt = (word)(t -> ext_suspend_cnt);
+      suspend_cnt = t -> ext_suspend_cnt;
       if ((suspend_cnt & 1) != 0) /* already suspended? */ {
         GC_ASSERT(!THREAD_EQUAL((pthread_t)thread, pthread_self()));
         UNLOCK();
         return;
       }
       if ((t -> flags & (FINISHED | DO_BLOCKING)) != 0) {
-        t -> ext_suspend_cnt = (AO_t)(suspend_cnt | 1); /* suspend */
+        t -> ext_suspend_cnt = suspend_cnt | 1; /* suspend */
         /* Terminated but not joined yet, or in do-blocking state.  */
         UNLOCK();
         return;
       }
 
       if (THREAD_EQUAL((pthread_t)thread, pthread_self())) {
-        t -> ext_suspend_cnt = (AO_t)(suspend_cnt | 1);
+        t -> ext_suspend_cnt = suspend_cnt | 1;
         GC_with_callee_saves_pushed(GC_suspend_self_blocked, (ptr_t)t);
         UNLOCK();
         return;
@@ -677,7 +675,7 @@ STATIC void GC_restart_handler(int sig)
       AO_store(&GC_stop_count, next_stop_count);
 
       /* Set the flag making the change visible to the signal handler.  */
-      AO_store_release(&(t -> ext_suspend_cnt), (AO_t)(suspend_cnt | 1));
+      AO_store_release(&(t -> ext_suspend_cnt), suspend_cnt | 1);
 
       /* TODO: Support GC_retry_signals (not needed for TSan) */
       switch (raise_signal(t, GC_sig_suspend)) {
@@ -706,12 +704,12 @@ STATIC void GC_restart_handler(int sig)
       LOCK();
       t = GC_lookup_by_pthread((pthread_t)thread);
       if (t != NULL) {
-        word suspend_cnt = (word)(t -> ext_suspend_cnt);
+        AO_t suspend_cnt = t -> ext_suspend_cnt;
 
         if ((suspend_cnt & 1) != 0) /* is suspended? */ {
           GC_ASSERT((GC_stop_count & THREAD_RESTARTED) != 0);
           /* Mark the thread as not suspended - it will be resumed shortly. */
-          AO_store(&(t -> ext_suspend_cnt), (AO_t)(suspend_cnt + 1));
+          AO_store(&(t -> ext_suspend_cnt), suspend_cnt + 1);
 
           if ((t -> flags & (FINISHED | DO_BLOCKING)) == 0) {
             int result = raise_signal(t, GC_sig_thr_restart);
@@ -1022,8 +1020,8 @@ GC_INNER void GC_stop_world(void)
 # endif
   GC_ASSERT(I_HOLD_LOCK());
   /* Make sure all free list construction has stopped before we start.  */
-  /* No new construction can start, since a free list construction is   */
-  /* required to acquire and release the allocator lock before start.   */
+  /* No new construction can start, since it is required to acquire and */
+  /* release the allocator lock before start.                           */
 
   GC_ASSERT(GC_thr_initialized);
 # ifdef DEBUG_THREADS

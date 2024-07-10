@@ -145,7 +145,7 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
 }
 
 /* Note that even the slow path doesn't lock.   */
-GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
+GC_INNER void * GC_slow_getspecific(tsd * key, size_t qtid,
                                     tse * volatile * cache_ptr)
 {
     pthread_t self = pthread_self();

@@ -196,7 +196,7 @@ GC_INNER void GC_unpromote_black_lists(void)
     GC_ASSERT(I_HOLD_LOCK());
 # endif
   if (GC_modws_valid_offsets[ADDR(p) & (sizeof(word)-1)]) {
-    word index = PHT_HASH(p);
+    size_t index = PHT_HASH(p);
 
     if (NULL == HDR(p) || get_pht_entry_from_index(GC_old_normal_bl, index)) {
 #     ifdef PRINT_BLACK_LIST
@@ -217,7 +217,7 @@ GC_INNER void GC_unpromote_black_lists(void)
   GC_INNER void GC_add_to_black_list_stack(ptr_t p)
 #endif
 {
-  word index = PHT_HASH(p);
+  size_t index = PHT_HASH(p);
 
 # ifndef PARALLEL_MARK
     GC_ASSERT(I_HOLD_LOCK());
@@ -242,7 +242,7 @@ GC_INNER void GC_unpromote_black_lists(void)
 GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *h,
                                                     size_t len)
 {
-    size_t index = (size_t)PHT_HASH(h);
+    size_t index = PHT_HASH(h);
     size_t i, nblocks;
 
     if (!GC_all_interior_pointers
@@ -260,12 +260,12 @@ GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *h,
         } else {
           if (get_pht_entry_from_index(GC_old_stack_bl, index)
               || get_pht_entry_from_index(GC_incomplete_stack_bl, index)) {
-            return h + (i+1);
+            return &h[i + 1];
           }
           i++;
         }
         if (i >= nblocks) break;
-        index = (size_t)PHT_HASH(h + i);
+        index = PHT_HASH(h + i);
     }
     return NULL;
 }
@@ -280,7 +280,7 @@ STATIC word GC_number_stack_black_listed(struct hblk *start,
     word result = 0;
 
     for (h = start; ADDR_LT((ptr_t)h, (ptr_t)endp1); h++) {
-        word index = PHT_HASH(h);
+        size_t index = PHT_HASH(h);
 
         if (get_pht_entry_from_index(GC_old_stack_bl, index)) result++;
     }

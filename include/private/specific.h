@@ -68,10 +68,10 @@ EXTERN_C_BEGIN
 /* value.  This invariant must be preserved at ALL times, since         */
 /* asynchronous reads are allowed.                                      */
 typedef struct thread_specific_entry {
-        volatile AO_t qtid;     /* quick thread id, only for cache */
-        ts_entry_value_t value;
-        struct thread_specific_entry *next;
-        pthread_t thread;
+  volatile AO_t qtid;   /* quick thread id, only for cache */
+  ts_entry_value_t value;
+  struct thread_specific_entry *next;
+  pthread_t thread;
 } tse;
 
 /* We represent each thread-specific datum as two tables.  The first is */
@@ -86,9 +86,9 @@ typedef struct thread_specific_entry {
 /* or at least thread stack separation, is at least 4 KB.               */
 /* Must be defined so that it never returns 0.  (Page 0 can't really be */
 /* part of any stack, since that would make 0 a valid stack pointer.)   */
-#define ts_quick_thread_id() (ADDR(GC_approx_sp()) >> 12)
+#define ts_quick_thread_id() ((size_t)(ADDR(GC_approx_sp()) >> 12))
 
-#define INVALID_QTID ((word)0)
+#define INVALID_QTID ((size_t)0)
 #define INVALID_THREADID ((pthread_t)0)
 
 union ptse_ao_u {
@@ -113,21 +113,22 @@ GC_INNER int GC_setspecific(tsd * key, void * value);
 GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t);
 
 /* An internal version of getspecific that assumes a cache miss.        */
-GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
+GC_INNER void * GC_slow_getspecific(tsd * key, size_t qtid,
                                     tse * volatile * cache_entry);
 
 GC_INLINE void * GC_getspecific(tsd * key)
 {
-    word qtid = ts_quick_thread_id();
-    tse * volatile * entry_ptr = &(key -> cache[TS_CACHE_HASH(qtid)]);
-    const tse * entry = *entry_ptr; /* must be loaded only once */
+  size_t qtid = ts_quick_thread_id();
+  tse * volatile * entry_ptr = &(key -> cache[TS_CACHE_HASH(qtid)]);
+  const tse * entry = *entry_ptr; /* must be loaded only once */
 
-    GC_ASSERT(qtid != INVALID_QTID);
-    if (EXPECT(entry -> qtid == qtid, TRUE)) {
-      GC_ASSERT(entry -> thread == pthread_self());
-      return TS_REVEAL_PTR(entry -> value);
-    }
-    return GC_slow_getspecific(key, qtid, entry_ptr);
+  GC_ASSERT(qtid != INVALID_QTID);
+  if (EXPECT(entry -> qtid == qtid, TRUE)) {
+    GC_ASSERT(entry -> thread == pthread_self());
+    return TS_REVEAL_PTR(entry -> value);
+  }
+
+  return GC_slow_getspecific(key, qtid, entry_ptr);
 }
 
 EXTERN_C_END

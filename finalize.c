@@ -26,9 +26,9 @@
 typedef void (* finalization_mark_proc)(ptr_t /* finalizable_obj_ptr */);
 
 #define HASH3(addr,size,log_size) \
-            (((ADDR(addr) >> 3) ^ (ADDR(addr) >> (3 + (log_size)))) \
+            ((size_t)((ADDR(addr) >> 3) ^ (ADDR(addr) >> (3 + (log_size)))) \
              & ((size)-1))
-#define HASH2(addr,log_size) HASH3(addr, (word)1 << (log_size), log_size)
+#define HASH2(addr,log_size) HASH3(addr, (size_t)1 << (log_size), log_size)
 
 struct hash_chain_entry {
     word hidden_key;
@@ -53,9 +53,9 @@ struct finalizable_object {
                                 /* is on finalize_now queue.    */
 #   define fo_next(x) (struct finalizable_object *)((x) -> prolog.next)
 #   define fo_set_next(x,y) ((x)->prolog.next = (struct hash_chain_entry *)(y))
-    GC_finalization_proc fo_fn; /* Finalizer.                   */
+    GC_finalization_proc fo_fn; /* finalizer */
     ptr_t fo_client_data;
-    word fo_object_size;        /* In bytes.                    */
+    size_t fo_object_sz; /* in bytes */
     finalization_mark_proc fo_mark_proc;        /* Mark-through procedure */
 };
 
@@ -91,14 +91,14 @@ GC_API void GC_CALL GC_push_finalizer_structures(void)
 /* current size.  May be a no-op.  *table is a pointer to an array of   */
 /* hash headers.  We update both *table and *log_size_ptr on success.   */
 STATIC void GC_grow_table(struct hash_chain_entry ***table,
-                          unsigned *log_size_ptr, const word *entries_ptr)
+                          unsigned *log_size_ptr, const size_t *entries_ptr)
 {
-    word i;
+    size_t i;
     struct hash_chain_entry *p;
     unsigned log_old_size = *log_size_ptr;
     unsigned log_new_size = log_old_size + 1;
-    word old_size = *table == NULL ? 0 : (word)1 << log_old_size;
-    word new_size = (word)1 << log_new_size;
+    size_t old_size = NULL == *table ? 0 : (size_t)1 << log_old_size;
+    size_t new_size = (size_t)1 << log_new_size;
     /* FIXME: Power of 2 size often gets rounded up to one more page. */
     struct hash_chain_entry **new_table;
 
@@ -114,24 +114,22 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
       GC_gcollect_inner();
       RESTORE_CANCEL(cancel_state);
       /* GC_finalize might decrease entries value.  */
-      if (*entries_ptr < ((word)1 << log_old_size) - (*entries_ptr >> 2))
+      if (*entries_ptr < ((size_t)1 << log_old_size) - (*entries_ptr >> 2))
         return;
     }
 
     new_table = (struct hash_chain_entry **)
                     GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
-                        (size_t)new_size * sizeof(struct hash_chain_entry *),
-                        NORMAL);
-    if (new_table == 0) {
-        if (*table == 0) {
+                        new_size * sizeof(struct hash_chain_entry *), NORMAL);
+    if (NULL == new_table) {
+        if (NULL == *table) {
             ABORT("Insufficient space for initial table allocation");
         } else {
             return;
         }
     }
     for (i = 0; i < old_size; i++) {
-      p = (*table)[i];
-      while (p != 0) {
+      for (p = (*table)[i]; p != NULL;) {
         ptr_t real_key = (ptr_t)GC_REVEAL_POINTER(p -> hidden_key);
         struct hash_chain_entry *next = p -> next;
         size_t new_hash = HASH3(real_key, new_size, log_new_size);
@@ -174,7 +172,7 @@ STATIC int GC_register_disappearing_link_inner(
     GC_ASSERT(obj != NULL && GC_base_C(obj) == obj);
     if (EXPECT(NULL == dl_hashtbl -> head, FALSE)
         || EXPECT(dl_hashtbl -> entries
-                  > ((word)1 << dl_hashtbl -> log_size), FALSE)) {
+                  > ((size_t)1 << dl_hashtbl -> log_size), FALSE)) {
         GC_grow_table((struct hash_chain_entry ***)&dl_hashtbl -> head,
                       &dl_hashtbl -> log_size, &dl_hashtbl -> entries);
         GC_COND_LOG_PRINTF("Grew %s table to %u entries\n", tbl_log_name,
@@ -705,7 +703,8 @@ STATIC void GC_register_finalizer_inner(void * obj,
     if (mp == GC_unreachable_finalize_mark_proc)
         need_unreachable_finalization = TRUE;
     if (EXPECT(NULL == GC_fnlz_roots.fo_head, FALSE)
-        || EXPECT(GC_fo_entries > ((word)1 << GC_log_fo_table_size), FALSE)) {
+        || EXPECT(GC_fo_entries
+                    > ((size_t)1 << GC_log_fo_table_size), FALSE)) {
         GC_grow_table((struct hash_chain_entry ***)&GC_fnlz_roots.fo_head,
                       &GC_log_fo_table_size, &GC_fo_entries);
         GC_COND_LOG_PRINTF("Grew fo table to %u entries\n",
@@ -717,7 +716,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
 
       index = HASH2(obj, GC_log_fo_table_size);
       curr_fo = GC_fnlz_roots.fo_head[index];
-      while (curr_fo != 0) {
+      while (curr_fo != NULL) {
         GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
         if (curr_fo -> fo_hidden_base == GC_HIDE_POINTER(obj)) {
           /* Interruption by a signal in the middle of this     */
@@ -811,7 +810,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
     new_fo -> fo_hidden_base = GC_HIDE_POINTER(obj);
     new_fo -> fo_fn = fn;
     new_fo -> fo_client_data = (ptr_t)cd;
-    new_fo -> fo_object_size = hhdr -> hb_sz;
+    new_fo -> fo_object_sz = hhdr -> hb_sz;
     new_fo -> fo_mark_proc = mp;
     fo_set_next(new_fo, GC_fnlz_roots.fo_head[index]);
     GC_dirty(new_fo);
@@ -903,9 +902,9 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 #endif /* !NO_DEBUGGING */
 
 #ifndef SMALL_CONFIG
-  STATIC word GC_old_dl_entries = 0; /* for stats printing */
+  STATIC size_t GC_old_dl_entries = 0; /* for stats printing */
 # ifndef GC_LONG_REFS_NOT_NEEDED
-    STATIC word GC_old_ll_entries = 0;
+    STATIC size_t GC_old_ll_entries = 0;
 # endif
 #endif /* !SMALL_CONFIG */
 
@@ -1070,9 +1069,8 @@ GC_INNER void GC_finalize(void)
             /* see it.                                                */
               curr_fo -> fo_hidden_base =
                         (word)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
-              GC_bytes_finalized +=
-                        curr_fo -> fo_object_size
-                        + sizeof(struct finalizable_object);
+              GC_bytes_finalized += (word)(curr_fo -> fo_object_sz)
+                                    + sizeof(struct finalizable_object);
             GC_ASSERT(GC_is_marked(GC_base(curr_fo)));
             curr_fo = next_fo;
         } else {
@@ -1121,8 +1119,8 @@ GC_INNER void GC_finalize(void)
             GC_dirty(prev_fo);
           }
           curr_fo -> fo_hidden_base = GC_HIDE_POINTER(real_ptr);
-          GC_bytes_finalized -=
-              (curr_fo -> fo_object_size) + sizeof(struct finalizable_object);
+          GC_bytes_finalized -= (word)(curr_fo -> fo_object_sz)
+                                + sizeof(struct finalizable_object);
 
           i = HASH2(real_ptr, GC_log_fo_table_size);
           fo_set_next(curr_fo, GC_fnlz_roots.fo_head[i]);
@@ -1199,8 +1197,8 @@ STATIC unsigned GC_interrupt_finalizers = 0;
           /* see it.                                                    */
           curr_fo -> fo_hidden_base =
                         (word)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
-          GC_bytes_finalized +=
-                curr_fo -> fo_object_size + sizeof(struct finalizable_object);
+          GC_bytes_finalized += (word)(curr_fo -> fo_object_sz)
+                                + sizeof(struct finalizable_object);
           curr_fo = next_fo;
       }
     }

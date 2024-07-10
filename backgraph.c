@@ -9,7 +9,6 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
  */
 
 #include "private/dbg_mlc.h"
@@ -290,7 +289,7 @@ static void add_edge(ptr_t p, ptr_t q)
 #   endif
 }
 
-typedef void (*per_object_func)(ptr_t p, size_t n_bytes, word gc_descr);
+typedef void (*per_object_func)(ptr_t p, size_t sz, word descr);
 
 static GC_CALLBACK void per_object_helper(struct hblk *h, void *fn_ptr)
 {
@@ -311,10 +310,10 @@ GC_INLINE void GC_apply_to_each_object(per_object_func fn)
   GC_apply_to_all_blocks(per_object_helper, &fn);
 }
 
-static void reset_back_edge(ptr_t p, size_t n_bytes, word gc_descr)
+static void reset_back_edge(ptr_t p, size_t sz, word descr)
 {
-  UNUSED_ARG(n_bytes);
-  UNUSED_ARG(gc_descr);
+  UNUSED_ARG(sz);
+  UNUSED_ARG(descr);
   GC_ASSERT(I_HOLD_LOCK());
   /* Skip any free-list links, or dropped blocks.   */
   if (GC_HAS_DEBUG_INFO(p)) {
@@ -349,16 +348,16 @@ static void reset_back_edge(ptr_t p, size_t n_bytes, word gc_descr)
   }
 }
 
-static void add_back_edges(ptr_t p, size_t n_bytes, word gc_descr)
+static void add_back_edges(ptr_t p, size_t sz, word descr)
 {
   ptr_t current_p = p + sizeof(oh);
 
   /* For now, fix up non-length descriptors conservatively.     */
-    if((gc_descr & GC_DS_TAGS) != GC_DS_LENGTH) {
-      gc_descr = n_bytes;
+    if ((descr & GC_DS_TAGS) != GC_DS_LENGTH) {
+      descr = sz;
     }
 
-  for (; ADDR_LT(current_p, p + gc_descr); current_p += sizeof(word)) {
+  for (; ADDR_LT(current_p, p + descr); current_p += sizeof(word)) {
     ptr_t q;
 
     LOAD_WORD_OR_CONTINUE(q, current_p);
@@ -467,10 +466,10 @@ STATIC ptr_t GC_deepest_obj = NULL;
 /* next GC.                                                             */
 /* Set GC_max_height to be the maximum height we encounter, and         */
 /* GC_deepest_obj to be the corresponding object.                       */
-static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
+static void update_max_height(ptr_t p, size_t sz, word descr)
 {
-  UNUSED_ARG(n_bytes);
-  UNUSED_ARG(gc_descr);
+  UNUSED_ARG(sz);
+  UNUSED_ARG(descr);
   GC_ASSERT(I_HOLD_LOCK());
   if (GC_is_marked(p) && GC_HAS_DEBUG_INFO(p)) {
     word p_height = 0;

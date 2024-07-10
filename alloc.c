@@ -1003,7 +1003,7 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
         q2 = (ptr_t)obj_link(q);
 #   endif
     for (;;) {
-        unsigned bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
+        size_t bit_no = MARK_BIT_NO((size_t)((ptr_t)q - (ptr_t)h), sz);
 
         if (!mark_bit_from_hdr(hhdr, bit_no)) {
           set_mark_bit_from_hdr(hhdr, bit_no);
@@ -1093,7 +1093,7 @@ STATIC void GC_clear_fl_marks(ptr_t q)
       size_t sz = hhdr -> hb_sz; /* Normally set only once. */
 
       for (;;) {
-        unsigned bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
+        size_t bit_no = MARK_BIT_NO((size_t)((ptr_t)q - (ptr_t)h), sz);
 
         if (mark_bit_from_hdr(hhdr, bit_no)) {
           size_t n_marks = hhdr -> hb_n_marks;
@@ -1394,9 +1394,9 @@ GC_INNER ptr_t GC_os_get_mem(size_t bytes)
   return (ptr_t)space;
 }
 
-/* Use the chunk of memory starting at h of size bytes as part of the heap. */
-/* Assumes h is HBLKSIZE aligned, bytes argument is a multiple of HBLKSIZE. */
-STATIC void GC_add_to_heap(struct hblk *h, size_t bytes)
+/* Use the chunk of memory starting at h of size sz as part of the      */
+/* heap.  Assumes h is HBLKSIZE aligned, sz is a multiple of HBLKSIZE.  */
+STATIC void GC_add_to_heap(struct hblk *h, size_t sz)
 {
     hdr *hhdr;
     ptr_t endp;
@@ -1408,8 +1408,8 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t bytes)
 
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(ADDR(h) % HBLKSIZE == 0);
-    GC_ASSERT(bytes % HBLKSIZE == 0);
-    GC_ASSERT(bytes > 0);
+    GC_ASSERT(sz % HBLKSIZE == 0);
+    GC_ASSERT(sz > 0);
     GC_ASSERT(GC_all_nils != NULL);
 
     if (EXPECT(GC_n_heap_sects == GC_capacity_heap_sects, FALSE)) {
@@ -1445,13 +1445,13 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t bytes)
     while (EXPECT(ADDR(h) <= HBLKSIZE, FALSE)) {
         /* Can't handle memory near address zero. */
         ++h;
-        bytes -= HBLKSIZE;
-        if (0 == bytes) return;
+        sz -= HBLKSIZE;
+        if (0 == sz) return;
     }
-    endp = (ptr_t)h + bytes;
+    endp = (ptr_t)h + sz;
     while (EXPECT(ADDR_GE((ptr_t)h, endp), FALSE)) {
-        bytes -= HBLKSIZE;
-        if (0 == bytes) return;
+        sz -= HBLKSIZE;
+        if (0 == sz) return;
         endp -= HBLKSIZE;
     }
     hhdr = GC_install_header(h);
@@ -1474,12 +1474,12 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t bytes)
       }
 #   endif
     GC_heap_sects[GC_n_heap_sects].hs_start = (ptr_t)h;
-    GC_heap_sects[GC_n_heap_sects].hs_bytes = bytes;
+    GC_heap_sects[GC_n_heap_sects].hs_bytes = sz;
     GC_n_heap_sects++;
-    hhdr -> hb_sz = bytes;
+    hhdr -> hb_sz = sz;
     hhdr -> hb_flags = 0;
     GC_freehblk(h);
-    GC_heapsize += bytes;
+    GC_heapsize += sz;
 
     if (ADDR_GE((ptr_t)GC_least_plausible_heap_addr, (ptr_t)h)
         || EXPECT(NULL == GC_least_plausible_heap_addr, FALSE)) {
@@ -1555,7 +1555,7 @@ GC_API void GC_CALL GC_set_max_heap_size(GC_word n)
 
 word GC_max_retries = 0;
 
-GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
+GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t sz)
 {
   size_t page_offset;
   size_t displ = 0;
@@ -1564,15 +1564,15 @@ GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
   GC_ASSERT(I_HOLD_LOCK());
   if (NULL == ptr) return;
 
-  GC_ASSERT(bytes != 0);
+  GC_ASSERT(sz != 0);
   GC_ASSERT(GC_page_size != 0);
   /* TODO: Assert correct memory flags if GWW_VDB */
   page_offset = ADDR(ptr) & (GC_page_size-1);
   if (page_offset != 0)
     displ = GC_page_size - page_offset;
-  recycled_bytes = bytes > displ ? (bytes - displ) & ~(GC_page_size - 1) : 0;
+  recycled_bytes = sz > displ ? (sz - displ) & ~(GC_page_size - 1) : 0;
   GC_COND_LOG_PRINTF("Recycle %lu/%lu scratch-allocated bytes at %p\n",
-                (unsigned long)recycled_bytes, (unsigned long)bytes, ptr);
+                (unsigned long)recycled_bytes, (unsigned long)sz, ptr);
   if (recycled_bytes > 0)
     GC_add_to_heap((struct hblk *)((ptr_t)ptr + displ), recycled_bytes);
 }
@@ -1583,7 +1583,7 @@ GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
 /* Returns FALSE on failure.                                            */
 GC_INNER GC_bool GC_expand_hp_inner(word n)
 {
-    size_t bytes;
+    size_t sz;
     struct hblk * space;
     word expansion_slop;        /* Number of bytes by which we expect   */
                                 /* the heap to expand soon.             */
@@ -1591,22 +1591,22 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(GC_page_size != 0);
     if (0 == n) n = 1;
-    bytes = ROUNDUP_PAGESIZE((size_t)n * HBLKSIZE);
+    sz = ROUNDUP_PAGESIZE((size_t)n * HBLKSIZE);
     GC_DBGLOG_PRINT_HEAP_IN_USE();
     if (GC_max_heapsize != 0
-        && (GC_max_heapsize < (word)bytes
-            || GC_heapsize > GC_max_heapsize - (word)bytes)) {
+        && (GC_max_heapsize < (word)sz
+            || GC_heapsize > GC_max_heapsize - (word)sz)) {
         /* Exceeded self-imposed limit */
         return FALSE;
     }
-    space = (struct hblk *)GC_os_get_mem(bytes);
+    space = (struct hblk *)GC_os_get_mem(sz);
     if (EXPECT(NULL == space, FALSE)) {
-        WARN("Failed to expand heap by %" WARN_PRIuPTR " KiB\n", bytes >> 10);
+        WARN("Failed to expand heap by %" WARN_PRIuPTR " KiB\n", sz >> 10);
         return FALSE;
     }
     GC_last_heap_growth_gc_no = GC_gc_no;
     GC_INFOLOG_PRINTF("Grow heap to %lu KiB after %lu bytes allocated\n",
-                      TO_KiB_UL(GC_heapsize + bytes),
+                      TO_KiB_UL(GC_heapsize + sz),
                       (unsigned long)GC_bytes_allocd);
 
     /* Adjust heap limits generously for blacklisting to work better.   */
@@ -1615,14 +1615,14 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     expansion_slop = min_bytes_allocd() + 4 * MAXHINCR * HBLKSIZE;
     if ((0 == GC_last_heap_addr && (ADDR(space) & SIGNB) == 0)
         || (GC_last_heap_addr != 0 && GC_last_heap_addr < ADDR(space))) {
-        /* Assume the heap is growing up. */
-        ptr_t new_limit = (ptr_t)space + bytes + expansion_slop;
+      /* Assume the heap is growing up. */
+        ptr_t new_limit = (ptr_t)space + sz + expansion_slop;
 
         if (ADDR_LT((ptr_t)space, new_limit)
             && ADDR_LT((ptr_t)GC_greatest_plausible_heap_addr, new_limit))
           GC_greatest_plausible_heap_addr = new_limit;
     } else {
-        /* Heap is growing down. */
+      /* Heap is growing down.  */
         ptr_t new_limit = (ptr_t)space - expansion_slop - sizeof(word);
 
         if (ADDR_LT(new_limit, (ptr_t)space)
@@ -1631,7 +1631,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     }
     GC_last_heap_addr = ADDR(space);
 
-    GC_add_to_heap(space, bytes);
+    GC_add_to_heap(space, sz);
     if (GC_on_heap_resize)
         (*GC_on_heap_resize)(GC_heapsize);
 

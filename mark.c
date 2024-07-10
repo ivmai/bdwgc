@@ -190,12 +190,12 @@ GC_INNER void GC_clear_hdr_marks(hdr *hhdr)
 /* Set all mark bits in the header.  Used for uncollectible blocks. */
 GC_INNER void GC_set_hdr_marks(hdr *hhdr)
 {
-    unsigned i;
+    size_t i;
     size_t sz = hhdr -> hb_sz;
-    unsigned n_marks = (unsigned)FINAL_MARK_BIT(sz);
+    size_t n_marks = FINAL_MARK_BIT(sz);
 
 #   ifdef USE_MARK_BYTES
-      for (i = 0; i <= n_marks; i += (unsigned)MARK_BIT_OFFSET(sz)) {
+      for (i = 0; i <= n_marks; i += MARK_BIT_OFFSET(sz)) {
         hhdr -> hb_marks[i] = 1;
       }
 #   else
@@ -236,7 +236,7 @@ GC_API void GC_CALL GC_set_mark_bit(const void *p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
-    word bit_no = MARK_BIT_NO((word)((ptr_t)p - (ptr_t)h), hhdr -> hb_sz);
+    size_t bit_no = MARK_BIT_NO((size_t)((ptr_t)p - (ptr_t)h), hhdr -> hb_sz);
 
     if (!mark_bit_from_hdr(hhdr, bit_no)) {
       set_mark_bit_from_hdr(hhdr, bit_no);
@@ -248,7 +248,7 @@ GC_API void GC_CALL GC_clear_mark_bit(const void *p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
-    word bit_no = MARK_BIT_NO((word)((ptr_t)p - (ptr_t)h), hhdr -> hb_sz);
+    size_t bit_no = MARK_BIT_NO((size_t)((ptr_t)p - (ptr_t)h), hhdr -> hb_sz);
 
     if (mark_bit_from_hdr(hhdr, bit_no)) {
       size_t n_marks = hhdr -> hb_n_marks;
@@ -272,7 +272,7 @@ GC_API int GC_CALL GC_is_marked(const void *p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
-    word bit_no = MARK_BIT_NO((word)((ptr_t)p - (ptr_t)h), hhdr -> hb_sz);
+    size_t bit_no = MARK_BIT_NO((size_t)((ptr_t)p - (ptr_t)h), hhdr -> hb_sz);
 
     return (int)mark_bit_from_hdr(hhdr, bit_no); /* 0 or 1 */
 }
@@ -969,20 +969,20 @@ GC_INNER void GC_wait_for_markers_init(void)
 }
 
 /* Steal mark stack entries starting at mse low into mark stack local   */
-/* until we either steal mse high, or we have max entries.              */
+/* until we either steal mse high, or we have n_to_get entries.         */
 /* Return a pointer to the top of the local mark stack.                 */
 /* (*next) is replaced by a pointer to the next unscanned mark stack    */
 /* entry.                                                               */
 STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
-                                 unsigned max, mse **next)
+                                 size_t n_to_get, mse **next)
 {
     mse *p;
     mse *top = local - 1;
-    unsigned i = 0;
+    size_t i = 0;
 
     GC_ASSERT(ADDR_GE((ptr_t)high, (ptr_t)(low - 1))
               && (word)(high - low + 1) <= GC_mark_stack_size);
-    for (p = low; ADDR_GE((ptr_t)high, (ptr_t)p) && i <= max; ++p) {
+    for (p = low; ADDR_GE((ptr_t)high, (ptr_t)p) && i <= n_to_get; ++p) {
         word descr = (word)AO_load(&p->mse_descr.ao);
         if (descr != 0) {
             /* Must be ordered after read of descr: */
@@ -1000,7 +1000,8 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
                     || ADDR(p -> mse_start) >= GC_greatest_real_heap_addr);
             /* If this is a big object, count it as size/256 + 1 objects. */
             ++i;
-            if ((descr & GC_DS_TAGS) == GC_DS_LENGTH) i += (int)(descr >> 8);
+            if ((descr & GC_DS_TAGS) == GC_DS_LENGTH)
+              i += (size_t)(descr >> 8);
         }
     }
     *next = p;
@@ -1120,10 +1121,8 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
     GC_VERBOSE_LOG_PRINTF("Starting mark helper %d\n", id);
     GC_release_mark_lock();
     for (;;) {
-        size_t n_on_stack;
-        unsigned n_to_get;
-        mse * my_top;
-        mse * local_top;
+        size_t n_on_stack, n_to_get;
+        mse *my_top, *local_top;
         mse * global_first_nonempty = (mse *)AO_load(&GC_first_nonempty);
 
         GC_ASSERT(ADDR_GE((ptr_t)my_first_nonempty, (ptr_t)GC_mark_stack)
@@ -1906,7 +1905,7 @@ STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
     size_t sz = hhdr -> hb_sz;
     word descr = hhdr -> hb_descr;
     ptr_t p;
-    word bit_no;
+    size_t bit_no;
     ptr_t lim;
     mse * mark_stack_top;
     mse * mark_stack_limit = GC_mark_stack_limit;

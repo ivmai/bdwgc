@@ -1932,7 +1932,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
       /* otherwise there could be a static analysis tool warning    */
       /* (false positive) about unlock without a matching lock.     */
       while (EXPECT((me -> ext_suspend_cnt & 1) != 0, FALSE)) {
-        word suspend_cnt = (word)(me -> ext_suspend_cnt);
+        size_t suspend_cnt = me -> ext_suspend_cnt;
                         /* read suspend counter (number) before unlocking */
 
         READER_UNLOCK_RELEASE();
@@ -1960,7 +1960,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void *context)
                         /* function.                                    */
     do_blocking_enter(&topOfStackUnset, me);
     while ((me -> ext_suspend_cnt & 1) != 0) {
-      word suspend_cnt = (word)(me -> ext_suspend_cnt);
+      size_t suspend_cnt = me -> ext_suspend_cnt;
 
       UNLOCK();
       GC_suspend_self_inner(me, suspend_cnt);
@@ -2069,7 +2069,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn, void *client_data)
 
 #   if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
       while (EXPECT((me -> ext_suspend_cnt & 1) != 0, FALSE)) {
-        word suspend_cnt = (word)(me -> ext_suspend_cnt);
+        size_t suspend_cnt = me -> ext_suspend_cnt;
 
         READER_UNLOCK_RELEASE();
         GC_suspend_self_inner(me, suspend_cnt);
@@ -2674,7 +2674,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #       endif
         return;
       }
-      for (; pause_length <= SPIN_MAX; pause_length <<= 1) {
+      for (; pause_length <= (unsigned)SPIN_MAX; pause_length <<= 1) {
          for (i = 0; i < pause_length; ++i) {
             GC_pause();
         }
@@ -2737,20 +2737,19 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
   GC_INNER void GC_lock(void)
   {
-    unsigned my_spin_max;
-    unsigned my_last_spins;
-    unsigned i;
+    AO_t my_spin_max, my_last_spins_half;
+    size_t i;
 
     if (EXPECT(AO_test_and_set_acquire(&GC_allocate_lock)
                 == AO_TS_CLEAR, TRUE)) {
         return;
     }
-    my_spin_max = (unsigned)AO_load(&spin_max);
-    my_last_spins = (unsigned)AO_load(&last_spins);
+    my_spin_max = AO_load(&spin_max);
+    my_last_spins_half = AO_load(&last_spins) / 2;
     for (i = 0; i < my_spin_max; i++) {
         if (is_collecting() || GC_nprocs == 1)
           goto yield;
-        if (i < my_last_spins/2) {
+        if (i < my_last_spins_half) {
             GC_pause();
             continue;
         }
@@ -2761,13 +2760,13 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
              * against the other process with which we were contending.
              * Thus it makes sense to spin longer the next time.
              */
-            AO_store(&last_spins, (AO_t)i);
-            AO_store(&spin_max, (AO_t)high_spin_max);
+            AO_store(&last_spins, i);
+            AO_store(&spin_max, high_spin_max);
             return;
         }
     }
     /* We are probably being scheduled against the other process.  Sleep. */
-    AO_store(&spin_max, (AO_t)low_spin_max);
+    AO_store(&spin_max, low_spin_max);
   yield:
     for (i = 0;; ++i) {
         if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {

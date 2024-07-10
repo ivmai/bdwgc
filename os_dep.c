@@ -144,6 +144,7 @@
   {
     int f = open("/proc/self/maps", O_RDONLY);
     size_t result;
+
     if (f < 0) return 0; /* treat missing file as empty */
     result = GC_get_file_len(f);
     close(f);
@@ -1584,8 +1585,8 @@ GC_INNER void GC_setpagesize(void)
 
 #ifdef OS2
 
-void GC_register_data_segments(void)
-{
+  void GC_register_data_segments(void)
+  {
     PTIB ptib;
     PPIB ppib;
     HMODULE module_handle;
@@ -1661,7 +1662,7 @@ void GC_register_data_segments(void)
                          (ptr_t)(O32_BASE(seg)+O32_SIZE(seg)), FALSE);
     }
     (void)fclose(myexefile);
-}
+  }
 
 #else /* !OS2 */
 
@@ -1765,58 +1766,60 @@ void GC_register_data_segments(void)
 #   define GetWriteWatch_alloc_flag 0
 # endif /* !GWW_VDB */
 
-# ifdef ANY_MSWIN
-
 # ifdef MSWIN32
-  /* Unfortunately, we have to handle win32s very differently from NT,  */
-  /* Since VirtualQuery has very different semantics.  In particular,   */
-  /* under win32s a VirtualQuery call on an unmapped page returns an    */
-  /* invalid result.  Under NT, GC_register_data_segments is a no-op    */
-  /* and all real work is done by GC_register_dynamic_libraries.  Under */
-  /* win32s, we cannot find the data segments associated with dll's.    */
-  /* We register the main data segment here.                            */
-  GC_INNER GC_bool GC_no_win32_dlls = FALSE;
-        /* This used to be set for gcc, to avoid dealing with           */
-        /* the structured exception handling issues.  But we now have   */
-        /* assembly code to do that right.                              */
+    /* Unfortunately, we have to handle win32s very differently from    */
+    /* NT, since VirtualQuery has very different semantics.  In         */
+    /* particular, under win32s a VirtualQuery call on an unmapped page */
+    /* returns an invalid result.  Under NT, GC_register_data_segments  */
+    /* is a no-op and all real work is done by                          */
+    /* GC_register_dynamic_libraries().  Under win32s, we cannot find   */
+    /* the data segments associated with dll's.  We register the main   */
+    /* data segment here.                                               */
 
-  GC_INNER GC_bool GC_wnt = FALSE;
-         /* This is a Windows NT derivative, i.e. NT, Win2K, XP or later. */
+    GC_INNER GC_bool GC_no_win32_dlls = FALSE;
+                        /* This used to be set for gcc, to avoid        */
+                        /* dealing with the structured exception        */
+                        /* handling issues.  But we now have assembly   */
+                        /* code to do that right.                       */
 
-  GC_INNER void GC_init_win32(void)
-  {
-#   if defined(_WIN64) || (defined(_MSC_VER) && _MSC_VER >= 1800)
-      /* MS Visual Studio 2013 deprecates GetVersion, but on the other  */
-      /* hand it cannot be used to target pre-Win2K.                    */
-      GC_wnt = TRUE;
-#   else
-      /* Set GC_wnt.  If we're running under win32s, assume that no     */
-      /* DLLs will be loaded.  I doubt anyone still runs win32s, but... */
-      DWORD v = GetVersion();
+    GC_INNER GC_bool GC_wnt = FALSE;
+                        /* This is a Windows NT derivative, i.e. NT,    */
+                        /* Win2K, XP or later.                          */
 
-      GC_wnt = !(v & (DWORD)0x80000000UL);
-      GC_no_win32_dlls |= ((!GC_wnt) && (v & 0xff) <= 3);
-#   endif
-#   ifdef USE_MUNMAP
-      if (GC_no_win32_dlls) {
-        /* Turn off unmapping for safety (since may not work well with  */
-        /* GlobalAlloc).                                                */
-        GC_unmap_threshold = 0;
-      }
-#   endif
-  }
+    GC_INNER void GC_init_win32(void)
+    {
+#     if defined(_WIN64) || (defined(_MSC_VER) && _MSC_VER >= 1800)
+        /* MS Visual Studio 2013 deprecates GetVersion, but on the      */
+        /* other hand it cannot be used to target pre-Win2K.            */
+        GC_wnt = TRUE;
+#     else
+        /* Set GC_wnt.  If we're running under win32s, assume that no     */
+        /* DLLs will be loaded.  I doubt anyone still runs win32s, but... */
+        DWORD v = GetVersion();
 
-  /* Return the smallest address a such that VirtualQuery               */
-  /* returns correct results for all addresses between a and start.     */
-  /* Assumes VirtualQuery returns correct information for start.        */
-  STATIC ptr_t GC_least_described_address(ptr_t start)
-  {
-    MEMORY_BASIC_INFORMATION buf;
-    ptr_t limit = (ptr_t)GC_sysinfo.lpMinimumApplicationAddress;
-    ptr_t p = PTR_ALIGN_DOWN(start, GC_page_size);
+        GC_wnt = !(v & (DWORD)0x80000000UL);
+        GC_no_win32_dlls |= ((!GC_wnt) && (v & 0xff) <= 3);
+#     endif
+#     ifdef USE_MUNMAP
+        if (GC_no_win32_dlls) {
+          /* Turn off unmapping for safety (since may not work well     */
+          /* with GlobalAlloc).                                         */
+          GC_unmap_threshold = 0;
+        }
+#     endif
+    }
 
-    GC_ASSERT(GC_page_size != 0);
-    for (;;) {
+    /* Return the smallest address p such that VirtualQuery returns     */
+    /* correct results for all addresses between p and start.  Assumes  */
+    /* VirtualQuery() returns correct information for start.            */
+    STATIC ptr_t GC_least_described_address(ptr_t start)
+    {
+      ptr_t limit = (ptr_t)GC_sysinfo.lpMinimumApplicationAddress;
+      ptr_t p = PTR_ALIGN_DOWN(start, GC_page_size);
+
+      GC_ASSERT(GC_page_size != 0);
+      for (;;) {
+        MEMORY_BASIC_INFORMATION buf;
         size_t result;
         ptr_t q = p - GC_page_size;
 
@@ -1824,160 +1827,165 @@ void GC_register_data_segments(void)
         result = VirtualQuery((LPVOID)q, &buf, sizeof(buf));
         if (result != sizeof(buf) || 0 == buf.AllocationBase) break;
         p = (ptr_t)buf.AllocationBase;
+      }
+      return p;
     }
-    return p;
-  }
-# endif /* MSWIN32 */
 
-# if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
-  /* We maintain a linked list of AllocationBase values that we know    */
-  /* correspond to malloc heap sections.  Currently this is only called */
-  /* during a GC.  But there is some hope that for long running         */
-  /* programs we will eventually see most heap sections.                */
-
-  /* In the long run, it would be more reliable to occasionally walk    */
-  /* the malloc heap with HeapWalk on the default heap.  But that       */
-  /* apparently works only for NT-based Windows.                        */
-
-  STATIC size_t GC_max_root_size = 100000; /* Appr. largest root size.  */
-
-  /* In the long run, a better data structure would also be nice ...    */
-  STATIC struct GC_malloc_heap_list {
-    void * allocation_base;
-    struct GC_malloc_heap_list *next;
-  } *GC_malloc_heap_l = 0;
-
-  /* Is p the base of one of the malloc heap sections we already know   */
-  /* about?                                                             */
-  STATIC GC_bool GC_is_malloc_heap_base(const void *p)
-  {
-    struct GC_malloc_heap_list *q;
-
-    for (q = GC_malloc_heap_l; q != NULL; q = q -> next) {
-      if (q -> allocation_base == p) return TRUE;
-    }
-    return FALSE;
-  }
-
-  STATIC void *GC_get_allocation_base(void *p)
-  {
-    MEMORY_BASIC_INFORMATION buf;
-    size_t result = VirtualQuery(p, &buf, sizeof(buf));
-    if (result != sizeof(buf)) {
-      ABORT("Weird VirtualQuery result");
-    }
-    return buf.AllocationBase;
-  }
-
-  GC_INNER void GC_add_current_malloc_heap(void)
-  {
-    struct GC_malloc_heap_list *new_l = (struct GC_malloc_heap_list *)
-                 malloc(sizeof(struct GC_malloc_heap_list));
-    void *candidate;
-
-    if (NULL == new_l) return;
-    new_l -> allocation_base = NULL;
-                        /* to suppress maybe-uninitialized gcc warning  */
-
-    candidate = GC_get_allocation_base(new_l);
-    if (GC_is_malloc_heap_base(candidate)) {
-      /* Try a little harder to find malloc heap.                       */
-        size_t req_size = 10000;
-        do {
-          void *p = malloc(req_size);
-          if (0 == p) {
-            free(new_l);
-            return;
-          }
-          candidate = GC_get_allocation_base(p);
-          free(p);
-          req_size *= 2;
-        } while (GC_is_malloc_heap_base(candidate)
-                 && req_size < GC_max_root_size/10 && req_size < 500000);
-        if (GC_is_malloc_heap_base(candidate)) {
-          free(new_l);
-          return;
-        }
-    }
-    GC_COND_LOG_PRINTF("Found new system malloc AllocationBase at %p\n",
-                       candidate);
-    new_l -> allocation_base = candidate;
-    new_l -> next = GC_malloc_heap_l;
-    GC_malloc_heap_l = new_l;
-  }
-
-  /* Free all the linked list nodes. Could be invoked at process exit   */
-  /* to avoid memory leak complains of a dynamic code analysis tool.    */
-  STATIC void GC_free_malloc_heap_list(void)
-  {
-    struct GC_malloc_heap_list *q = GC_malloc_heap_l;
-
-    GC_malloc_heap_l = NULL;
-    while (q != NULL) {
-      struct GC_malloc_heap_list *next = q -> next;
-      free(q);
-      q = next;
-    }
-  }
-# endif /* USE_WINALLOC && !REDIRECT_MALLOC */
-
-  /* Is p the start of either the malloc heap, or of one of our */
-  /* heap sections?                                             */
-  GC_INNER GC_bool GC_is_heap_base(const void *p)
-  {
-    int i;
-
-#   if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
-      if (GC_root_size > GC_max_root_size)
-        GC_max_root_size = GC_root_size;
-      if (GC_is_malloc_heap_base(p))
-        return TRUE;
-#   endif
-    for (i = 0; i < (int)GC_n_heap_bases; i++) {
-      if (GC_heap_bases[i] == p) return TRUE;
-    }
-    return FALSE;
-  }
-
-#ifdef MSWIN32
-  STATIC void GC_register_root_section(ptr_t static_root)
-  {
-      MEMORY_BASIC_INFORMATION buf;
+    STATIC void GC_register_root_section(ptr_t static_root)
+    {
       ptr_t p, base, limit;
 
       GC_ASSERT(I_HOLD_LOCK());
       if (!GC_no_win32_dlls) return;
-      p = base = limit = GC_least_described_address(static_root);
-      while (ADDR_LT(p, (ptr_t)GC_sysinfo.lpMaximumApplicationAddress)) {
-        size_t result = VirtualQuery((LPVOID)p, &buf, sizeof(buf));
-        DWORD protect;
 
-        if (result != sizeof(buf) || buf.AllocationBase == 0
+      p = GC_least_described_address(static_root);
+      base = limit = p;
+      while (ADDR_LT(p, (ptr_t)GC_sysinfo.lpMaximumApplicationAddress)) {
+        MEMORY_BASIC_INFORMATION buf;
+        size_t result = VirtualQuery((LPVOID)p, &buf, sizeof(buf));
+
+        if (result != sizeof(buf) || 0 == buf.AllocationBase
             || GC_is_heap_base(buf.AllocationBase)) break;
         if (ADDR(p) > GC_WORD_MAX - buf.RegionSize) break; /* overflow */
 
-        protect = buf.Protect;
-        if (buf.State == MEM_COMMIT
-            && is_writable(protect)) {
-            if (p != limit) {
-                if (base != limit) GC_add_roots_inner(base, limit, FALSE);
-                base = p;
-            }
-            limit = p + buf.RegionSize;
+        if (buf.State == MEM_COMMIT && is_writable(buf.Protect)) {
+          if (p != limit) {
+            if (base != limit) GC_add_roots_inner(base, limit, FALSE);
+            base = p;
+          }
+          limit = p + buf.RegionSize;
         }
         p += buf.RegionSize;
       }
       if (base != limit) GC_add_roots_inner(base, limit, FALSE);
-  }
-#endif /* MSWIN32 */
+    }
+# endif /* MSWIN32 */
 
-  void GC_register_data_segments(void)
-  {
-#   ifdef MSWIN32
-      GC_register_root_section((ptr_t)&GC_pages_executable);
-                            /* any other GC global variable would fit too. */
-#   endif
-  }
+# ifdef ANY_MSWIN
+
+#   if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
+      /* We maintain a linked list of AllocationBase values that we */
+      /* know correspond to malloc heap sections.  Currently this   */
+      /* is only called during a GC.  But there is some hope that   */
+      /* for long running programs we will eventually see most heap */
+      /* sections.                                                  */
+
+      /* In the long run, it would be more reliable to occasionally */
+      /* walk the malloc heap with HeapWalk on the default heap.    */
+      /* But that apparently works only for NT-based Windows.       */
+
+      STATIC size_t GC_max_root_size = 100000; /* approx. largest root size */
+
+      /* In the long run, a better data structure would also be nice... */
+      STATIC struct GC_malloc_heap_list {
+        void * allocation_base;
+        struct GC_malloc_heap_list *next;
+      } *GC_malloc_heap_l = 0;
+
+      /* Is p the base of one of the malloc heap sections we already    */
+      /* know about?                                                    */
+      STATIC GC_bool GC_is_malloc_heap_base(const void *p)
+      {
+        struct GC_malloc_heap_list *q;
+
+        for (q = GC_malloc_heap_l; q != NULL; q = q -> next) {
+          if (q -> allocation_base == p) return TRUE;
+        }
+        return FALSE;
+      }
+
+      STATIC void *GC_get_allocation_base(void *p)
+      {
+        MEMORY_BASIC_INFORMATION buf;
+        size_t result = VirtualQuery(p, &buf, sizeof(buf));
+
+        if (result != sizeof(buf)) {
+          ABORT("Weird VirtualQuery result");
+        }
+        return buf.AllocationBase;
+      }
+
+      GC_INNER void GC_add_current_malloc_heap(void)
+      {
+        struct GC_malloc_heap_list *new_l = (struct GC_malloc_heap_list *)
+                                malloc(sizeof(struct GC_malloc_heap_list));
+        void *candidate;
+
+        if (NULL == new_l) return;
+        new_l -> allocation_base = NULL;
+                        /* to suppress maybe-uninitialized gcc warning */
+
+        candidate = GC_get_allocation_base(new_l);
+        if (GC_is_malloc_heap_base(candidate)) {
+          /* Try a little harder to find malloc heap.   */
+          size_t req_size = 10000;
+
+          do {
+            void *p = malloc(req_size);
+
+            if (NULL == p) {
+              free(new_l);
+              return;
+            }
+            candidate = GC_get_allocation_base(p);
+            free(p);
+            req_size *= 2;
+          } while (GC_is_malloc_heap_base(candidate)
+                   && req_size < GC_max_root_size / 10 && req_size < 500000);
+          if (GC_is_malloc_heap_base(candidate)) {
+            free(new_l);
+            return;
+          }
+        }
+        GC_COND_LOG_PRINTF("Found new system malloc AllocationBase at %p\n",
+                           candidate);
+        new_l -> allocation_base = candidate;
+        new_l -> next = GC_malloc_heap_l;
+        GC_malloc_heap_l = new_l;
+      }
+
+      /* Free all the linked list nodes.  Could be invoked at process   */
+      /* exit to avoid memory leak complains of a dynamic code analysis */
+      /* tool.                                                          */
+      STATIC void GC_free_malloc_heap_list(void)
+      {
+        struct GC_malloc_heap_list *q = GC_malloc_heap_l;
+
+        GC_malloc_heap_l = NULL;
+        while (q != NULL) {
+          struct GC_malloc_heap_list *next = q -> next;
+
+          free(q);
+          q = next;
+        }
+      }
+#   endif /* USE_WINALLOC && !REDIRECT_MALLOC */
+
+    /* Is p the start of either the malloc heap, or of one of our   */
+    /* heap sections?                                               */
+    GC_INNER GC_bool GC_is_heap_base(const void *p)
+    {
+      size_t i;
+
+#     if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
+        if (GC_root_size > GC_max_root_size)
+          GC_max_root_size = GC_root_size;
+        if (GC_is_malloc_heap_base(p))
+          return TRUE;
+#     endif
+      for (i = 0; i < GC_n_heap_bases; i++) {
+        if (GC_heap_bases[i] == p) return TRUE;
+      }
+      return FALSE;
+    }
+
+    void GC_register_data_segments(void)
+    {
+#     ifdef MSWIN32
+        GC_register_root_section((ptr_t)&GC_pages_executable);
+                            /* any other GC global variable would fit too */
+#     endif
+    }
 
 # else /* !ANY_MSWIN */
 
@@ -2023,142 +2031,142 @@ void GC_register_data_segments(void)
       }
 #   endif /* SVR4 || AIX || DGUX */
 
-#ifdef DATASTART_USES_BSDGETDATASTART
-/* It's unclear whether this should be identical to the above, or       */
-/* whether it should apply to non-x86 architectures.                    */
-/* For now we don't assume that there is always an empty page after     */
-/* etext.  But in some cases there actually seems to be slightly more.  */
-/* This also deals with holes between read-only data and writable data. */
-  GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t max_page_size,
-                                        ptr_t etext_addr)
-  {
-    volatile ptr_t result = PTR_ALIGN_UP(etext_addr, sizeof(ptr_t));
-    volatile ptr_t next_page = PTR_ALIGN_UP(etext_addr, max_page_size);
-
-    GC_ASSERT(max_page_size % sizeof(ptr_t) == 0);
-    GC_setup_temporary_fault_handler();
-    if (SETJMP(GC_jmp_buf) == 0) {
-        /* Try reading at the address.                          */
-        /* This should happen before there is another thread.   */
-        for (; ADDR_LT(next_page, DATAEND); next_page += max_page_size)
-            GC_noop1((word)(*(volatile unsigned char *)next_page));
-        GC_reset_fault_handler();
-    } else {
-        GC_reset_fault_handler();
-        /* As above, we go to plan B.   */
-        result = (ptr_t)GC_find_limit(DATAEND, FALSE);
-    }
-    return result;
-  }
-#endif /* DATASTART_USES_BSDGETDATASTART */
-
-#ifdef AMIGA
-
-# define GC_AMIGA_DS
-# include "extra/AmigaOS.c"
-# undef GC_AMIGA_DS
-
-#elif defined(OPENBSD)
-
-/* Depending on arch alignment, there can be multiple holes     */
-/* between DATASTART and DATAEND.  Scan in DATASTART .. DATAEND */
-/* and register each region.                                    */
-void GC_register_data_segments(void)
-{
-  ptr_t region_start = DATASTART;
-
-  GC_ASSERT(I_HOLD_LOCK());
-  if (ADDR(region_start) - 1U >= ADDR(DATAEND))
-    ABORT_ARG2("Wrong DATASTART/END pair",
-               ": %p .. %p", (void *)region_start, (void *)DATAEND);
-  for (;;) {
-    ptr_t region_end = GC_find_limit_with_bound(region_start, TRUE, DATAEND);
-
-    GC_add_roots_inner(region_start, region_end, FALSE);
-    if (ADDR_GE(region_end, DATAEND))
-      break;
-    region_start = GC_skip_hole_openbsd(region_end, DATAEND);
-  }
-}
-
-# else /* !AMIGA && !OPENBSD */
-
-# if !defined(PCR) && !defined(MACOS) && defined(REDIRECT_MALLOC) \
-     && defined(GC_SOLARIS_THREADS)
-    EXTERN_C_BEGIN
-    extern caddr_t sbrk(int);
-    EXTERN_C_END
-# endif
-
-  void GC_register_data_segments(void)
-  {
-    GC_ASSERT(I_HOLD_LOCK());
-#   if !defined(DYNAMIC_LOADING) && defined(GC_DONT_REGISTER_MAIN_STATIC_DATA)
-      /* Avoid even referencing DATASTART and DATAEND as they are       */
-      /* unnecessary and cause linker errors when bitcode is enabled.   */
-      /* GC_register_data_segments() is not called anyway.              */
-#   elif defined(PCR) || (defined(DYNAMIC_LOADING) && defined(DARWIN))
-      /* No-op.  GC_register_main_static_data() always returns false.   */
-#   elif defined(MACOS)
+#   ifdef DATASTART_USES_BSDGETDATASTART
+      /* It's unclear whether this should be identical to the above, or */
+      /* whether it should apply to non-x86 architectures.  For now we  */
+      /* do not assume that there is always an empty page after etext.  */
+      /* But in some cases there actually seems to be slightly more.    */
+      /* It also deals with holes between read-only and writable data.  */
+      GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t max_page_size,
+                                            ptr_t etext_addr)
       {
-#       if defined(THINK_C)
-          extern void *GC_MacGetDataStart(void);
+        volatile ptr_t result = PTR_ALIGN_UP(etext_addr, sizeof(ptr_t));
+        volatile ptr_t next_page = PTR_ALIGN_UP(etext_addr, max_page_size);
 
-          /* Globals begin above stack and end at a5.   */
-          GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
-                             (ptr_t)LMGetCurrentA5(), FALSE);
-#       elif defined(__MWERKS__) && defined(M68K)
-          extern void *GC_MacGetDataStart(void);
-#         if __option(far_data)
-            extern void *GC_MacGetDataEnd(void);
-
-            /* Handle Far Globals (CW Pro 3) located after the QD globals. */
-            GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
-                               (ptr_t)GC_MacGetDataEnd(), FALSE);
-#         else
-            GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
-                               (ptr_t)LMGetCurrentA5(), FALSE);
-#         endif
-#       elif defined(__MWERKS__) && defined(POWERPC)
-          extern char __data_start__[], __data_end__[];
-
-          GC_add_roots_inner((ptr_t)&__data_start__,
-                             (ptr_t)&__data_end__, FALSE);
-#       endif
+        GC_ASSERT(max_page_size % sizeof(ptr_t) == 0);
+        GC_setup_temporary_fault_handler();
+        if (SETJMP(GC_jmp_buf) == 0) {
+          /* Try reading at the address.                        */
+          /* This should happen before there is another thread. */
+          for (; ADDR_LT(next_page, DATAEND); next_page += max_page_size)
+            GC_noop1((word)(*(volatile unsigned char *)next_page));
+          GC_reset_fault_handler();
+        } else {
+          GC_reset_fault_handler();
+          /* As above, we go to plan B. */
+          result = (ptr_t)GC_find_limit(DATAEND, FALSE);
+        }
+        return result;
       }
-#   elif defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
-        /* As of Solaris 2.3, the Solaris threads implementation        */
-        /* allocates the data structure for the initial thread with     */
-        /* sbrk at process startup.  It needs to be scanned, so that    */
-        /* we don't lose some malloc allocated data structures          */
-        /* hanging from it.  We're on thin ice here ...                 */
-        GC_ASSERT(DATASTART);
-        {
-          ptr_t p = (ptr_t)sbrk(0);
+#   endif /* DATASTART_USES_BSDGETDATASTART */
 
-          if (ADDR_LT(DATASTART, p))
-            GC_add_roots_inner(DATASTART, p, FALSE);
-        }
-#   else
-        if (ADDR(DATASTART) - 1U >= ADDR(DATAEND)) {
-                                /* Subtract one to check also for NULL  */
-                                /* without a compiler warning.          */
+#   ifdef AMIGA
+#     define GC_AMIGA_DS
+#     include "extra/AmigaOS.c"
+#     undef GC_AMIGA_DS
+
+#   elif defined(OPENBSD)
+      /* Depending on arch alignment, there can be multiple holes       */
+      /* between DATASTART and DATAEND.  Scan in DATASTART .. DATAEND   */
+      /* and register each region.                                      */
+      void GC_register_data_segments(void)
+      {
+        ptr_t region_start = DATASTART;
+
+        GC_ASSERT(I_HOLD_LOCK());
+        if (ADDR(region_start) - 1U >= ADDR(DATAEND))
           ABORT_ARG2("Wrong DATASTART/END pair",
-                     ": %p .. %p", (void *)DATASTART, (void *)DATAEND);
-        }
-        GC_add_roots_inner(DATASTART, DATAEND, FALSE);
-#       ifdef GC_HAVE_DATAREGION2
-          if (ADDR(DATASTART2) - 1U >= ADDR(DATAEND2))
-            ABORT_ARG2("Wrong DATASTART/END2 pair",
-                       ": %p .. %p", (void *)DATASTART2, (void *)DATAEND2);
-          GC_add_roots_inner(DATASTART2, DATAEND2, FALSE);
-#       endif
-#   endif
-    /* Dynamic libraries are added at every collection, since they may  */
-    /* change.                                                          */
-  }
+                     ": %p .. %p", (void *)region_start, (void *)DATAEND);
+        for (;;) {
+          ptr_t region_end = GC_find_limit_with_bound(region_start, TRUE,
+                                                      DATAEND);
 
-# endif /* !AMIGA && !OPENBSD */
+          GC_add_roots_inner(region_start, region_end, FALSE);
+          if (ADDR_GE(region_end, DATAEND))
+            break;
+          region_start = GC_skip_hole_openbsd(region_end, DATAEND);
+        }
+      }
+
+#   else /* !AMIGA && !OPENBSD */
+#     if !defined(PCR) && !defined(MACOS) && defined(REDIRECT_MALLOC) \
+         && defined(GC_SOLARIS_THREADS)
+        EXTERN_C_BEGIN
+        extern caddr_t sbrk(int);
+        EXTERN_C_END
+#     endif
+
+      void GC_register_data_segments(void)
+      {
+        GC_ASSERT(I_HOLD_LOCK());
+#       if !defined(DYNAMIC_LOADING) \
+           && defined(GC_DONT_REGISTER_MAIN_STATIC_DATA)
+          /* Avoid even referencing DATASTART and DATAEND as they are   */
+          /* unnecessary and cause linker errors when bitcode is        */
+          /* enabled.  GC_register_data_segments is not called anyway.  */
+#       elif defined(PCR) || (defined(DYNAMIC_LOADING) && defined(DARWIN))
+          /* No-op.  GC_register_main_static_data() always returns false. */
+#       elif defined(MACOS)
+          {
+#           if defined(THINK_C)
+              extern void *GC_MacGetDataStart(void);
+
+              /* Globals begin above stack and end at a5.   */
+              GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
+                                 (ptr_t)LMGetCurrentA5(), FALSE);
+#           elif defined(__MWERKS__) && defined(M68K)
+              extern void *GC_MacGetDataStart(void);
+#             if __option(far_data)
+                extern void *GC_MacGetDataEnd(void);
+
+                /* Handle Far Globals (CW Pro 3) located after  */
+                /* the QD globals.                              */
+                GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
+                                   (ptr_t)GC_MacGetDataEnd(), FALSE);
+#             else
+                GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
+                                   (ptr_t)LMGetCurrentA5(), FALSE);
+#             endif
+#           elif defined(__MWERKS__) && defined(POWERPC)
+              extern char __data_start__[], __data_end__[];
+
+              GC_add_roots_inner((ptr_t)&__data_start__,
+                                 (ptr_t)&__data_end__, FALSE);
+#           endif
+          }
+#       elif defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
+            /* As of Solaris 2.3, the Solaris threads implementation    */
+            /* allocates the data structure for the initial thread with */
+            /* sbrk at process startup.  It needs to be scanned, so     */
+            /* that we don't lose some malloc allocated data structures */
+            /* hanging from it.  We're on thin ice here...              */
+            GC_ASSERT(DATASTART);
+            {
+              ptr_t p = (ptr_t)sbrk(0);
+
+              if (ADDR_LT(DATASTART, p))
+                GC_add_roots_inner(DATASTART, p, FALSE);
+            }
+#       else
+            if (ADDR(DATASTART) - 1U >= ADDR(DATAEND)) {
+                            /* Subtract one to check also for NULL  */
+                            /* without a compiler warning.          */
+              ABORT_ARG2("Wrong DATASTART/END pair",
+                         ": %p .. %p", (void *)DATASTART, (void *)DATAEND);
+            }
+            GC_add_roots_inner(DATASTART, DATAEND, FALSE);
+#           ifdef GC_HAVE_DATAREGION2
+              if (ADDR(DATASTART2) - 1U >= ADDR(DATAEND2))
+                ABORT_ARG2("Wrong DATASTART/END2 pair",
+                           ": %p .. %p", (void *)DATASTART2, (void *)DATAEND2);
+              GC_add_roots_inner(DATASTART2, DATAEND2, FALSE);
+#           endif
+#       endif
+        /* Dynamic libraries are added at every collection, since they  */
+        /* may change.                                                  */
+      }
+#   endif /* !AMIGA && !OPENBSD */
+
 # endif /* !ANY_MSWIN */
 #endif /* !OS2 */
 
@@ -2369,7 +2377,7 @@ ptr_t GC_unix_get_mem(size_t bytes)
   ptr_t GC_wince_get_mem(size_t bytes)
   {
     ptr_t result = 0; /* initialized to prevent warning. */
-    word i;
+    size_t i;
 
     GC_ASSERT(GC_page_size != 0);
     bytes = ROUNDUP_PAGESIZE(bytes);
@@ -2514,7 +2522,8 @@ ptr_t GC_unix_get_mem(size_t bytes)
           if (GLOBAL_ALLOC_TEST)
 #       endif
         {
-          while (GC_n_heap_bases-- > 0) {
+          while (GC_n_heap_bases > 0) {
+            GC_n_heap_bases--;
 #           ifdef CYGWIN32
               /* FIXME: Is it OK to use non-GC free() here? */
 #           else
@@ -2957,7 +2966,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     /* Add all pages in pht2 to pht1.   */
     STATIC void GC_or_pages(page_hash_table pht1, const word *pht2)
     {
-      unsigned i;
+      size_t i;
+
       for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
     }
 #endif /* CHECKSUMS && GWW_VDB || PROC_VDB */
@@ -2982,13 +2992,13 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
   GC_INLINE void GC_gww_read_dirty(GC_bool output_unneeded)
   {
-    word i;
+    size_t i;
 
     GC_ASSERT(I_HOLD_LOCK());
     if (!output_unneeded)
       BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
 
-    for (i = 0; i != GC_n_heap_sects; ++i) {
+    for (i = 0; i < GC_n_heap_sects; ++i) {
       GC_ULONG_PTR count;
 
       do {
@@ -3026,11 +3036,12 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                  " Falling back to marking all pages dirty\n", start);
           }
           if (!output_unneeded) {
-            unsigned j;
+            size_t j;
 
             for (j = 0; j < nblocks; ++j) {
-              word hash = PHT_HASH(start + j);
-              set_pht_entry_from_index(GC_grungy_pages, hash);
+              size_t index = PHT_HASH(start + j);
+
+              set_pht_entry_from_index(GC_grungy_pages, index);
             }
           }
           count = 1;  /* Done with this section. */
@@ -3367,7 +3378,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         /* and then to have the thread stopping code set the dirty      */
         /* flag, if necessary.                                          */
         for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
-            word index = PHT_HASH(h+i);
+            size_t index = PHT_HASH(h + i);
 
             async_set_pht_entry_from_index(GC_dirty_pages, index);
         }
@@ -3513,7 +3524,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
 STATIC void GC_protect_heap(void)
 {
-  unsigned i;
+  size_t i;
 
   GC_ASSERT(GC_page_size != 0);
   for (i = 0; i < GC_n_heap_sects; i++) {
@@ -3537,7 +3548,7 @@ STATIC void GC_protect_heap(void)
     current_start = (struct hblk *)start;
     limit = start + len;
     for (current = current_start;;) {
-      word nblocks = 0;
+      size_t nblocks = 0;
       GC_bool is_ptrfree = TRUE;
 
       if (ADDR_LT((ptr_t)current, limit)) {
@@ -3588,7 +3599,7 @@ STATIC void GC_protect_heap(void)
     /* Remove protection for the entire heap not updating GC_dirty_pages. */
     STATIC void GC_unprotect_all_heap(void)
     {
-      unsigned i;
+      size_t i;
 
       GC_ASSERT(I_HOLD_LOCK());
       GC_ASSERT(GC_auto_incremental);
@@ -3717,9 +3728,8 @@ GC_INNER GC_bool GC_dirty_init(void)
 
 GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 {
-    int nmaps;
+    size_t i, nmaps;
     char * bufp = GC_proc_buf;
-    int i;
 
     GC_ASSERT(I_HOLD_LOCK());
 #   ifndef THREADS
@@ -3764,10 +3774,10 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
     }
 
     /* Copy dirty bits into GC_grungy_pages     */
-    nmaps = ((struct prpageheader *)bufp) -> pr_nmap;
+    nmaps = (size_t)(((struct prpageheader *)bufp) -> pr_nmap);
 #   ifdef DEBUG_DIRTY_BITS
       GC_log_printf("Proc VDB read: pr_nmap= %u, pr_npage= %lu\n",
-                    nmaps, ((struct prpageheader *)bufp)->pr_npage);
+                    (unsigned)nmaps, ((struct prpageheader *)bufp)->pr_npage);
 #   endif
 #   if defined(GC_NO_SYS_FAULT_H) && defined(CPPCHECK)
       GC_noop1(((struct prpageheader *)bufp)->dummy[0]);
@@ -3801,7 +3811,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 #               endif
                 for (h = (struct hblk *)vaddr;
                      ADDR_LT((ptr_t)h, next_vaddr); h++) {
-                    word index = PHT_HASH(h);
+                    size_t index = PHT_HASH(h);
 
                     set_pht_entry_from_index(GC_grungy_pages, index);
                 }
@@ -4107,7 +4117,7 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
           if (EXPECT(ADDR_LT(vaddr, start), FALSE))
             h = (struct hblk *)start;
           for (; ADDR_LT((ptr_t)h, next_vaddr); h++) {
-            word index = PHT_HASH(h);
+            size_t index = PHT_HASH(h);
 
             /* Filter out the blocks without pointers.  It might worth  */
             /* for the case when the heap is large enough for the hash  */
@@ -4177,26 +4187,26 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
 #   endif
 
     if (!output_unneeded) {
-      word i;
+      size_t i;
 
       BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
       pagemap_buf_len = 0; /* invalidate soft_vdb_buf */
 
-      for (i = 0; i != GC_n_heap_sects; ++i) {
+      for (i = 0; i < GC_n_heap_sects; ++i) {
         ptr_t start = GC_heap_sects[i].hs_start;
 
         soft_set_grungy_pages(start, start + GC_heap_sects[i].hs_bytes,
-                              i < GC_n_heap_sects-1 ?
-                                    GC_heap_sects[i+1].hs_start : NULL,
+                              i + 1 < GC_n_heap_sects
+                                    ? GC_heap_sects[i+1].hs_start : NULL,
                               FALSE);
       }
 
 #     ifndef NO_VDB_FOR_STATIC_ROOTS
-        for (i = 0; (int)i < n_root_sets; ++i) {
+        for (i = 0; i < n_root_sets; ++i) {
           soft_set_grungy_pages((ptr_t)HBLKPTR(GC_static_roots[i].r_start),
                                 GC_static_roots[i].r_end,
-                                (int)i < n_root_sets-1 ?
-                                    GC_static_roots[i+1].r_start : NULL,
+                                i + 1 < n_root_sets
+                                    ? GC_static_roots[i+1].r_start : NULL,
                                 TRUE);
         }
 #     endif
@@ -4240,7 +4250,7 @@ GC_INNER GC_bool GC_dirty_init(void)
   /* dirties the entire object.                                         */
   GC_INNER void GC_dirty_inner(const void *p)
   {
-    word index = PHT_HASH(p);
+    size_t index = PHT_HASH(p);
 
 #   if defined(MPROTECT_VDB)
       /* Do not update GC_dirty_pages if it should be followed by the   */
@@ -4289,8 +4299,9 @@ GC_INNER GC_bool GC_dirty_init(void)
 #   elif defined(PCR_VDB)
       /* lazily enable dirty bits on newly added heap sects */
       {
-        static int onhs = 0;
-        int nhs = GC_n_heap_sects;
+        static size_t onhs = 0;
+        size_t nhs = GC_n_heap_sects;
+
         for (; onhs < nhs; onhs++) {
             PCR_VD_WriteProtectEnable(
                     GC_heap_sects[onhs].hs_start,
@@ -4330,7 +4341,7 @@ GC_INNER GC_bool GC_dirty_init(void)
   /* side of labeling pages as dirty (and this implementation does).    */
   GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
   {
-    word index;
+    size_t index;
 
 #   ifdef PCR_VDB
       if (!GC_manual_vdb) {
@@ -4358,7 +4369,7 @@ GC_INNER GC_bool GC_dirty_init(void)
     GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
     {
 #     if defined(GWW_VDB) || defined(PROC_VDB) || defined(SOFT_VDB)
-        word index;
+        size_t index;
 
 #       ifdef MPROTECT_VDB
           if (!GC_GWW_AVAILABLE())
@@ -4381,7 +4392,7 @@ GC_INNER GC_bool GC_dirty_init(void)
     }
 # endif /* CHECKSUMS || PROC_VDB */
 
-  GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
+  GC_INNER void GC_remove_protection(struct hblk *h, size_t nblocks,
                                      GC_bool is_ptrfree)
   {
 #   ifdef MPROTECT_VDB
@@ -4408,7 +4419,7 @@ GC_INNER GC_bool GC_dirty_init(void)
       /* whether the page at h_trunc has already been marked    */
       /* dirty as there could be a hash collision.              */
       for (current = h_trunc; ADDR_LT((ptr_t)current, h_end); ++current) {
-        word index = PHT_HASH(current);
+        size_t index = PHT_HASH(current);
 
 #       ifndef DONT_PROTECT_PTRFREE
           if (!is_ptrfree
@@ -4904,7 +4915,7 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
                                           exception_data_t data,
                                           mach_msg_type_number_t data_count)
 {
-  unsigned int i;
+  size_t i;
   kern_return_t r;
   mach_port_t port;
   exception_behavior_t behavior;
@@ -4913,11 +4924,11 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
   thread_state_data_t thread_state;
   mach_msg_type_number_t thread_state_count = THREAD_STATE_MAX;
 
-  for (i = 0; i < GC_old_exc_ports.count; i++) {
+  for (i = 0; (int)i < GC_old_exc_ports.count; i++) {
     if ((GC_old_exc_ports.masks[i] & ((exception_mask_t)1 << exception)) != 0)
       break;
   }
-  if (i == GC_old_exc_ports.count)
+  if (i == (size_t)GC_old_exc_ports.count)
     ABORT("No handler for exception!");
 
   port = GC_old_exc_ports.ports[i];
@@ -5094,7 +5105,8 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 #   endif
     UNPROTECT(h, GC_page_size);
     for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
-      word index = PHT_HASH(h+i);
+      size_t index = PHT_HASH(h + i);
+
       async_set_pht_entry_from_index(GC_dirty_pages, index);
     }
   } else if (GC_mprotect_state == GC_MP_DISCARDING) {

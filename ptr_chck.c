@@ -31,7 +31,7 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
 {
     hdr *hhdr;
     ptr_t base, limit;
-    word sz;
+    size_t sz;
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     hhdr = HDR(p);
@@ -63,9 +63,7 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
       }
     } else {
       size_t offset;
-      size_t pdispl = HBLKDISPL(p);
 
-      offset = pdispl % sz;
       if (HBLKPTR(p) != HBLKPTR(q)) {
                 /* W/o this check, we might miss an error if    */
                 /* q points to the first object on a page, and  */
@@ -73,6 +71,7 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
         GC_same_obj_print_proc((ptr_t)p, (ptr_t)q);
         return p;
       }
+      offset = HBLKDISPL(p) % sz;
       base = (ptr_t)p - offset;
       limit = base + sz;
     }
@@ -97,10 +96,9 @@ GC_valid_ptr_print_proc_t GC_is_valid_displacement_print_proc =
 GC_API void * GC_CALL GC_is_valid_displacement(void *p)
 {
     hdr *hhdr;
-    word pdispl;
-    word offset;
+    size_t offset;
     struct hblk *h;
-    word sz;
+    size_t sz;
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     if (NULL == p) return NULL;
@@ -114,8 +112,7 @@ GC_API void * GC_CALL GC_is_valid_displacement(void *p)
         return p;
     }
     sz = hhdr -> hb_sz;
-    pdispl = HBLKDISPL(p);
-    offset = pdispl % sz;
+    offset = HBLKDISPL(p) % sz;
     if ((sz > MAXOBJBYTES && ADDR_GE((ptr_t)p, (ptr_t)h + sz))
         || !GC_valid_offsets[offset]
         || (ADDR_LT((ptr_t)(h + 1), (ptr_t)p + sz - offset)
@@ -206,8 +203,8 @@ GC_API void * GC_CALL GC_is_visible(void *p)
                       if (EXPECT(NULL == type_descr, FALSE))
                         goto fail; /* see comment in GC_mark_from */
                       descr = *(word *)(type_descr
-                                        - (descr - (word)(GC_DS_PER_OBJECT
-                                           - GC_INDIR_PER_OBJ_BIAS)));
+                                - ((signed_word)descr + (GC_INDIR_PER_OBJ_BIAS
+                                                         - GC_DS_PER_OBJECT)));
                     }
                     goto retry;
             }
