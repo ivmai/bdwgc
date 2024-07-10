@@ -4924,7 +4924,7 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
   thread_state_data_t thread_state;
   mach_msg_type_number_t thread_state_count = THREAD_STATE_MAX;
 
-  for (i = 0; (int)i < GC_old_exc_ports.count; i++) {
+  for (i = 0; i < (size_t)GC_old_exc_ports.count; i++) {
     if ((GC_old_exc_ports.masks[i] & ((exception_mask_t)1 << exception)) != 0)
       break;
   }
