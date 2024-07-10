@@ -79,26 +79,27 @@ GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn fn,
 /* Return the largest n such that the number of free bytes on lists     */
 /* n .. N_HBLK_FLS is greater or equal to GC_max_large_allocd_bytes     */
 /* minus GC_large_allocd_bytes.  If there is no such n, return 0.       */
-GC_INLINE int GC_enough_large_bytes_left(void)
+GC_INLINE size_t GC_enough_large_bytes_left(void)
 {
-    int n;
+    size_t n;
     word bytes = GC_large_allocd_bytes;
 
     GC_ASSERT(GC_max_large_allocd_bytes <= GC_heapsize);
-    for (n = N_HBLK_FLS; n >= 0; --n) {
+    for (n = N_HBLK_FLS + 1; n > 0;) {
+        n--;
         bytes += GC_free_bytes[n];
-        if (bytes >= GC_max_large_allocd_bytes) return n;
+        if (bytes >= GC_max_large_allocd_bytes) break;
     }
-    return 0;
+    return n;
 }
 
 /* Map a number of blocks to the appropriate large block free-list index. */
-STATIC int GC_hblk_fl_from_blocks(size_t blocks_needed)
+STATIC size_t GC_hblk_fl_from_blocks(size_t blocks_needed)
 {
-    if (blocks_needed <= UNIQUE_THRESHOLD) return (int)blocks_needed;
+    if (blocks_needed <= UNIQUE_THRESHOLD) return blocks_needed;
     if (blocks_needed >= HUGE_THRESHOLD) return N_HBLK_FLS;
-    return (int)(blocks_needed - UNIQUE_THRESHOLD)/FL_COMPRESSION
-                                        + UNIQUE_THRESHOLD;
+    return (blocks_needed - UNIQUE_THRESHOLD) / FL_COMPRESSION
+           + UNIQUE_THRESHOLD;
 }
 
 #define PHDR(hhdr) HDR((hhdr) -> hb_prev)
@@ -211,7 +212,7 @@ STATIC int GC_hblk_fl_from_blocks(size_t blocks_needed)
                 continue;
             }
             if (HBLK_IS_FREE(hhdr)) {
-                int correct_index = GC_hblk_fl_from_blocks(
+                int correct_index = (int)GC_hblk_fl_from_blocks(
                                                 divHBLKSZ(hhdr -> hb_sz));
                 int actual_index;
 
@@ -323,7 +324,7 @@ static GC_bool setup_header(hdr *hhdr, struct hblk *block, size_t lb_adjusted,
 }
 
 /* Remove hhdr from the free list (it is assumed to specified by index). */
-STATIC void GC_remove_from_fl_at(hdr *hhdr, int index)
+STATIC void GC_remove_from_fl_at(hdr *hhdr, size_t index)
 {
     GC_ASSERT(modHBLKSZ(hhdr -> hb_sz) == 0);
     if (hhdr -> hb_prev == 0) {
@@ -392,7 +393,7 @@ STATIC struct hblk * GC_free_block_ending_at(struct hblk *h)
 /* We maintain individual free lists sorted by address. */
 STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 {
-    int index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr -> hb_sz));
+    size_t index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr -> hb_sz));
     struct hblk *second = GC_hblkfreelist[index];
 
 #   if defined(GC_ASSERTIONS) && !defined(USE_MUNMAP)
@@ -486,7 +487,7 @@ GC_INLINE void GC_adjust_num_unmapped(struct hblk *h, hdr *hhdr)
 /* way blocks are ever unmapped.                                        */
 GC_INNER void GC_unmap_old(unsigned threshold)
 {
-    int i;
+    size_t i;
 
 # ifdef COUNT_UNMAPPED_REGIONS
     /* Skip unmapping if we have already exceeded the soft limit.       */
@@ -532,7 +533,7 @@ GC_INNER void GC_unmap_old(unsigned threshold)
 /* fully mapped or fully unmapped.                                      */
 GC_INNER void GC_merge_unmapped(void)
 {
-    int i;
+    size_t i;
 
     for (i = 0; i <= N_HBLK_FLS; ++i) {
       struct hblk *h = GC_hblkfreelist[i];
@@ -608,7 +609,7 @@ GC_INNER void GC_merge_unmapped(void)
  * If the return value is not 0, then hhdr is the header for it.
  */
 STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
-                                       size_t size_needed, int index)
+                                       size_t size_needed, size_t index)
 {
     size_t total_size;
     struct hblk * rest;
@@ -649,7 +650,7 @@ STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
 /* a free list is silly.  But this path is hopefully rare enough that   */
 /* it does not matter.  The code is cleaner this way.)                  */
 STATIC void GC_split_block(struct hblk *hbp, hdr *hhdr, struct hblk *last_hbp,
-                           hdr *last_hdr, int index /* of free list */)
+                           hdr *last_hdr, size_t index /* of free list */)
 {
     size_t h_size = (size_t)((ptr_t)last_hbp - (ptr_t)hbp);
     struct hblk *prev = hhdr -> hb_prev;
@@ -678,8 +679,8 @@ STATIC void GC_split_block(struct hblk *hbp, hdr *hhdr, struct hblk *last_hbp,
     last_hdr -> hb_flags |= FREE_BLK;
 }
 
-STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
-                                     unsigned flags, int index, int may_split,
+STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k, unsigned flags,
+                                     size_t index, int may_split,
                                      size_t align_m1);
 
 #ifdef USE_MUNMAP
@@ -690,11 +691,10 @@ GC_INNER struct hblk *GC_allochblk(size_t lb_adjusted, int k,
                                    unsigned flags /* IGNORE_OFF_PAGE or 0 */,
                                    size_t align_m1)
 {
-    size_t blocks;
-    int start_list;
+    size_t blocks, start_list;
     struct hblk *result;
     int may_split;
-    int split_limit; /* highest index of free list whose blocks we split */
+    size_t split_limit; /* highest index of free list whose blocks we split */
 
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT((lb_adjusted & (GC_GRANULE_BYTES-1)) == 0);
@@ -792,7 +792,7 @@ static struct hblk *find_nonbl_hblk(struct hblk *last_hbp, size_t size_remain,
 
 /* Allocate and drop the block in small chunks, to maximize the chance  */
 /* that we will recover some later.  hhdr should correspond to hbp.     */
-static void drop_hblk_in_chunks(int n, struct hblk *hbp, hdr *hhdr)
+static void drop_hblk_in_chunks(size_t n, struct hblk *hbp, hdr *hhdr)
 {
   size_t total_size = hhdr -> hb_sz;
   const struct hblk *limit = hbp + divHBLKSZ(total_size);
@@ -842,8 +842,8 @@ static void drop_hblk_in_chunks(int n, struct hblk *hbp, hdr *hhdr)
 /* If may_split is set to AVOID_SPLIT_REMAPPED, then memory remapping   */
 /* followed by splitting should be generally avoided.  Rounded-up       */
 /* lb_adjusted plus align_m1 value should be less than GC_SIZE_MAX / 2. */
-STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k,
-                                     unsigned flags, int index, int may_split,
+STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k, unsigned flags,
+                                     size_t index, int may_split,
                                      size_t align_m1)
 {
     struct hblk *hbp, *last_hbp;
