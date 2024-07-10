@@ -1536,8 +1536,8 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t sz)
       for (h = (struct hblk *)start; ADDR_LT((ptr_t)h, start + len); h++) {
         if (GC_is_black_listed(h, HBLKSIZE)) nbl++;
       }
-      GC_printf("Section %d from %p to %p %u/%lu blacklisted\n",
-                i, (void *)start, (void *)&start[len],
+      GC_printf("Section %u from %p to %p %u/%lu blacklisted\n",
+                (unsigned)i, (void *)start, (void *)&start[len],
                 nbl, (unsigned long)divHBLKSZ(len));
     }
   }
