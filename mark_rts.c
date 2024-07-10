@@ -295,8 +295,8 @@ STATIC void GC_remove_root_at_pos(size_t i)
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(i < n_root_sets);
 #   ifdef DEBUG_ADD_DEL_ROOTS
-      GC_log_printf("Remove data root section at %d: %p .. %p%s\n",
-                    i, (void *)GC_static_roots[i].r_start,
+      GC_log_printf("Remove data root section at %u: %p .. %p%s\n",
+                    (unsigned)i, (void *)GC_static_roots[i].r_start,
                     (void *)GC_static_roots[i].r_end,
                     GC_static_roots[i].r_tmp ? " (temporary)" : "");
 #   endif
@@ -424,9 +424,9 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
       r_end = GC_static_roots[i].r_end;
       if (!EXPECT(ADDR_GE(r_start, e) || ADDR_GE(b, r_end), TRUE)) {
 #       ifdef DEBUG_ADD_DEL_ROOTS
-          GC_log_printf("Removing %p .. %p from root section %d (%p .. %p)\n",
+          GC_log_printf("Removing %p .. %p from root section %u (%p .. %p)\n",
                         (void *)b, (void *)e,
-                        i, (void *)r_start, (void *)r_end);
+                        (unsigned)i, (void *)r_start, (void *)r_end);
 #       endif
         if (ADDR_LT(r_start, b)) {
           GC_root_size -= (word)(r_end - b);
