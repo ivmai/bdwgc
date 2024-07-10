@@ -294,9 +294,9 @@ typedef void (*per_object_func)(ptr_t p, size_t sz, word descr);
 static GC_CALLBACK void per_object_helper(struct hblk *h, void *fn_ptr)
 {
   const hdr *hhdr = HDR(h);
-  size_t sz = hhdr -> hb_sz;
   word descr = hhdr -> hb_descr;
   per_object_func fn = *(per_object_func *)fn_ptr;
+  size_t sz = hhdr -> hb_sz;
   size_t i = 0;
 
   do {
