@@ -290,7 +290,7 @@ STATIC word GC_number_stack_black_listed(struct hblk *start,
 /* Return the total number of (stack) black-listed bytes. */
 static word total_stack_black_listed(void)
 {
-    unsigned i;
+    size_t i;
     word total = 0;
 
     for (i = 0; i < GC_n_heap_sects; i++) {

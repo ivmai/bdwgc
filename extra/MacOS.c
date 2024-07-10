@@ -100,7 +100,7 @@ Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory)
 static void perform_final_collection(void)
 {
   unsigned i;
-  word last_fo_entries = 0;
+  size_t last_fo_entries = 0;
 
   /* adjust the stack bottom, because CFM calls us from another stack
      location. */

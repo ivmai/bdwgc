@@ -58,7 +58,7 @@ STATIC GC_bool GC_was_faulted(struct hblk *h)
 STATIC word GC_checksum(struct hblk *h)
 {
     word *p;
-    word *lim = (word *)(h+1);
+    word *lim = (word *)(h + 1);
     word result = 0;
 
     for (p = (word *)h; ADDR_LT((ptr_t)p, (ptr_t)lim); p++) {
@@ -138,7 +138,7 @@ STATIC void GC_check_blocks(void)
 void GC_check_dirty(void)
 {
     int index;
-    unsigned i;
+    size_t i;
 
     GC_check_blocks();
     GC_n_dirty_errors = 0;

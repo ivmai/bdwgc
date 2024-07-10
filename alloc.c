@@ -1403,7 +1403,7 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t sz)
     size_t old_capacity = 0;
     void *old_heap_sects = NULL;
 #   ifdef GC_ASSERTIONS
-      unsigned i;
+      size_t i;
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -1417,14 +1417,14 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t sz)
 #     ifndef INITIAL_HEAP_SECTS
 #       define INITIAL_HEAP_SECTS 32
 #     endif
-      size_t new_capacity = GC_n_heap_sects > 0 ?
-                (size_t)GC_n_heap_sects * 2 : INITIAL_HEAP_SECTS;
+      size_t new_capacity = GC_n_heap_sects > 0
+                                ? GC_n_heap_sects * 2 : INITIAL_HEAP_SECTS;
       void *new_heap_sects =
                 GC_scratch_alloc(new_capacity * sizeof(struct HeapSect));
 
       if (NULL == new_heap_sects) {
         /* Retry with smaller yet sufficient capacity.  */
-        new_capacity = (size_t)GC_n_heap_sects + INITIAL_HEAP_SECTS;
+        new_capacity = GC_n_heap_sects + INITIAL_HEAP_SECTS;
         new_heap_sects =
                 GC_scratch_alloc(new_capacity * sizeof(struct HeapSect));
         if (NULL == new_heap_sects)
@@ -1521,7 +1521,7 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t sz)
 #if !defined(NO_DEBUGGING)
   void GC_print_heap_sects(void)
   {
-    unsigned i;
+    size_t i;
 
     GC_printf("Total heap size: %lu" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
               (unsigned long)GC_heapsize /*, */

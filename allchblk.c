@@ -187,7 +187,7 @@ STATIC int GC_hblk_fl_from_blocks(size_t blocks_needed)
 
   GC_API void GC_CALL GC_dump_regions(void)
   {
-    unsigned i;
+    size_t i;
 
     for (i = 0; i < GC_n_heap_sects; ++i) {
         ptr_t start = GC_heap_sects[i].hs_start;

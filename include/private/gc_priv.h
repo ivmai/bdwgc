@@ -1533,7 +1533,7 @@ struct _GC_arrays {
 # define GC_capacity_heap_sects GC_arrays._capacity_heap_sects
   size_t _capacity_heap_sects;
 # define GC_n_heap_sects GC_arrays._n_heap_sects
-  word _n_heap_sects;   /* Number of separately added heap sections.    */
+  size_t _n_heap_sects; /* number of separately added heap sections */
 # ifdef ANY_MSWIN
 #   define GC_n_heap_bases GC_arrays._n_heap_bases
     size_t _n_heap_bases; /* see GC_heap_bases[] */
@@ -1547,7 +1547,7 @@ struct _GC_arrays {
     ptr_t *_gcjobjfreelist;
 # endif
 # define GC_fo_entries GC_arrays._fo_entries
-  word _fo_entries;
+  size_t _fo_entries;
 # ifndef GC_NO_FINALIZATION
 #   define GC_dl_hashtbl GC_arrays._dl_hashtbl
 #   define GC_fnlz_roots GC_arrays._fnlz_roots
