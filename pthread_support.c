@@ -1609,7 +1609,7 @@ GC_INNER void GC_thr_init(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(!GC_thr_initialized);
-  GC_ASSERT(ADDR(&GC_threads) % sizeof(word) == 0);
+  GC_ASSERT(ADDR(&GC_threads) % sizeof(ptr_t) == 0);
 # ifdef GC_ASSERTIONS
     GC_thr_initialized = TRUE;
 # endif

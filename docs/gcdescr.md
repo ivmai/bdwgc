@@ -111,8 +111,8 @@ The allocator maintains separate free lists for each size and kind of object.
 Associated with each kind is an array of the free-list pointers, with entry
 `freelist[i]` pointing to a free list of size 'i' objects. Index `i` is
 expressed in granules, which are the minimum allocatable unit, typically 8 or
-16 bytes. The free lists themselves are linked through the first word in each
-object (see `obj_link` macro).
+16 bytes. The free lists themselves are linked through the first pointer in
+each object (see `obj_link` macro).
 
 Once a large block is split for use in smaller objects, it can only be used
 for objects of that size, unless the collector discovers a completely empty
@@ -315,7 +315,7 @@ Nonempty small object pages are swept when an allocation attempt encounters
 an empty free list for that object size and kind. Pages for the correct size
 and kind are repeatedly swept until at least one empty block is found.
 Sweeping such a page involves scanning the mark bit array in the page header,
-and building a free list linked through the first word in the objects
+and building a free list linked through the first pointer in the objects
 themselves. This does involve touching the appropriate data page, but in most
 cases it will be touched only just before it is used for allocation. Hence any
 paging is essentially unavoidable.
@@ -327,9 +327,9 @@ objects. This has the advantage that we can easily recover from accidentally
 marking a free list, though that could also be handled by other means. The
 collector currently spends a fair amount of time clearing objects, and this
 approach should probably be revisited. In most configurations, we use
-specialized sweep routines to handle common small object sizes. Since
-we allocate one mark bit per word, it becomes easier to examine the relevant
-mark bits if the object size divides the word length evenly. We also suitably
+specialized sweep routines to handle common small object sizes. Since we
+allocate one mark bit per pointer, it becomes easier to examine the relevant
+mark bits if the object size divides the pointer size evenly. We also suitably
 unroll the inner sweep loop in each case. (It is conceivable that
 profile-based procedure cloning in the compiler could make this unnecessary
 and counterproductive. I know of no existing compiler to which this applies.)
@@ -527,7 +527,7 @@ roughly `HBLKSIZE` space and put it on the corresponding local free list.
 Further allocations of that size and kind then use this free list, and no
 longer need to acquire the allocator lock. The allocation procedure
 is otherwise similar to the global free lists. The local free lists are also
-linked using the first word in the object. In most cases this means they
+linked using the first pointer in the object. In most cases this means they
 require considerably less time.
 
 Local free lists are treated by most of the rest of the collector as though

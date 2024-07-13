@@ -43,7 +43,7 @@
       return 0;
     }
     if (((oh *)base) -> oh_sf != (START_FLAG ^ (GC_uintptr_t)body)
-        && ((GC_uintptr_t *)base)[BYTES_TO_WORDS(sz) - 1]
+        && ((GC_uintptr_t *)base)[BYTES_TO_PTRS(sz) - 1]
             != (END_FLAG ^ (GC_uintptr_t)body)) {
       return 0;
     }
@@ -271,8 +271,8 @@ GC_INNER void *GC_store_debug_info_inner(void *base, size_t sz,
 #   else
       ((oh *)base) -> oh_sz = (GC_uintptr_t)sz;
       ((oh *)base) -> oh_sf = START_FLAG ^ (GC_uintptr_t)result;
-      ((GC_uintptr_t *)base)[BYTES_TO_WORDS(GC_size(base)) - 1]
-                        = result[SIMPLE_ROUNDED_UP_WORDS(sz)]
+      ((GC_uintptr_t *)base)[BYTES_TO_PTRS(GC_size(base)) - 1]
+                        = result[BYTES_TO_PTRS_ROUNDUP(sz)]
                         = END_FLAG ^ (GC_uintptr_t)result;
 #   endif
     return result;
@@ -314,13 +314,13 @@ static void *store_debug_info(void *base, size_t lb,
     if (ohdr -> oh_sf != (START_FLAG ^ (GC_uintptr_t)body)) {
         return (ptr_t)(&(ohdr -> oh_sf));
     }
-    if (((GC_uintptr_t *)ohdr)[BYTES_TO_WORDS(gc_sz) - 1]
+    if (((GC_uintptr_t *)ohdr)[BYTES_TO_PTRS(gc_sz) - 1]
             != (END_FLAG ^ (GC_uintptr_t)body)) {
-        return (ptr_t)(&((GC_uintptr_t *)ohdr)[BYTES_TO_WORDS(gc_sz) - 1]);
+        return (ptr_t)(&((GC_uintptr_t *)ohdr)[BYTES_TO_PTRS(gc_sz) - 1]);
     }
-    if (((GC_uintptr_t *)body)[SIMPLE_ROUNDED_UP_WORDS((size_t)(ohdr -> oh_sz))]
+    if (((GC_uintptr_t *)body)[BYTES_TO_PTRS_ROUNDUP((size_t)(ohdr -> oh_sz))]
             != (END_FLAG ^ (GC_uintptr_t)body)) {
-        return (ptr_t)(&((GC_uintptr_t *)body)[SIMPLE_ROUNDED_UP_WORDS(
+        return (ptr_t)(&((GC_uintptr_t *)body)[BYTES_TO_PTRS_ROUNDUP(
                                                 (size_t)(ohdr -> oh_sz))]);
     }
     return NULL;
@@ -780,11 +780,11 @@ GC_API void GC_CALL GC_debug_free(void * p)
           ) {
         GC_free(base);
       } else {
-        size_t i;
         size_t sz = hhdr -> hb_sz;
-        size_t obj_sz = BYTES_TO_WORDS(sz - sizeof(oh));
+        size_t i;
+        size_t lpw = BYTES_TO_PTRS(sz - sizeof(oh));
 
-        for (i = 0; i < obj_sz; ++i)
+        for (i = 0; i < lpw; ++i)
           ((GC_uintptr_t *)p)[i] = GC_FREED_MEM_MARKER;
         GC_ASSERT((GC_uintptr_t *)p + i == (GC_uintptr_t *)(base + sz));
         /* Update the counter even though the real deallocation */
@@ -964,8 +964,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
   GC_INNER GC_bool GC_check_leaked(ptr_t base)
   {
     size_t i;
-    size_t obj_sz;
-    word *p;
+    size_t lpw;
+    ptr_t *p;
 
     if (
 #       if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
@@ -975,10 +975,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
       return TRUE; /* object has leaked */
 
     /* Validate freed object's content. */
-    p = (word *)(base + sizeof(oh));
-    obj_sz = BYTES_TO_WORDS(HDR(base) -> hb_sz - sizeof(oh));
-    for (i = 0; i < obj_sz; ++i)
-      if (p[i] != GC_FREED_MEM_MARKER) {
+    p = (ptr_t *)(base + sizeof(oh));
+    lpw = BYTES_TO_PTRS(HDR(base) -> hb_sz - sizeof(oh));
+    for (i = 0; i < lpw; ++i)
+      if ((GC_uintptr_t)p[i] != GC_FREED_MEM_MARKER) {
         GC_set_mark_bit(base); /* do not reclaim it in this cycle */
         GC_add_smashed((ptr_t)(&p[i])); /* alter-after-free detected */
         break; /* don't report any other smashed locations in the object */

@@ -386,7 +386,7 @@ static sexpr cons(sexpr x, sexpr y)
       /* Object allocated with debug allocator. */
       addr = (GC_word *)GC_USR_PTR_FROM_BASE(addr);
     }
-    x = (sexpr)(addr + 1); /* Skip the vtable pointer. */
+    x = (sexpr)((void **)addr + 1); /* skip vtable pointer */
     mark_stack_top = GC_MARK_AND_PUSH(x -> sexpr_cdr,
                                       mark_stack_top, mark_stack_limit,
                                       (void **)&(x -> sexpr_cdr));
@@ -444,7 +444,7 @@ static sexpr small_cons_uncollectable(sexpr x, sexpr y)
 
     CHECK_OUT_OF_MEMORY(r);
     AO_fetch_and_add1(&collectable_count);
-    result = (sexpr)((GC_word *)r + 1);
+    result = (sexpr)((void **)r + 1); /* skip vtable pointer */
     result -> sexpr_car = x;
     GC_PTR_STORE_AND_DIRTY(&result->sexpr_cdr, y);
     GC_reachable_here(x);
@@ -1351,7 +1351,8 @@ const GC_word bm_huge[320 / CPP_WORDSZ] = {
 /* A very simple test of explicitly typed allocation.   */
 static void typed_test(void)
 {
-    GC_word * old, * newP;
+    void **old;
+    void **newP;
     GC_word bm3[1] = {0};
     GC_word bm2[1] = {0};
     GC_word bm_large[1] = { 0xf7ff7fff };
@@ -1362,8 +1363,8 @@ static void typed_test(void)
 #   ifndef GC_DEBUG
       struct GC_calloc_typed_descr_s ctd_l;
 #   endif
-    GC_word *x = (GC_word *)checkOOM(GC_MALLOC_EXPLICITLY_TYPED(
-                                        320 * sizeof(GC_word) + 123, d4));
+    void **x = (void **)checkOOM(GC_MALLOC_EXPLICITLY_TYPED(
+                                        320 * sizeof(void *) + 123, d4));
     int i;
 
     AO_fetch_and_add1(&collectable_count);
@@ -1380,77 +1381,75 @@ static void typed_test(void)
     d2 = GC_make_descriptor(bm2, 2);
 #   ifndef GC_DEBUG
       if (GC_calloc_prepare_explicitly_typed(&ctd_l, sizeof(ctd_l), 1001,
-                                             3 * sizeof(GC_word), d2) != 1) {
+                                             3 * sizeof(void *), d2) != 1) {
         GC_printf("Out of memory in calloc typed prepare\n");
         exit(69);
       }
 #   endif
-    old = 0;
+    old = NULL;
     for (i = 0; i < 4000; i++) {
         if ((i & 0xff) != 0) {
-          newP = (GC_word*)GC_MALLOC_EXPLICITLY_TYPED(4 * sizeof(GC_word), d1);
+          newP = (void **)GC_MALLOC_EXPLICITLY_TYPED(4 * sizeof(void *), d1);
         } else {
-          newP = (GC_word*)GC_MALLOC_EXPLICITLY_TYPED_IGNORE_OFF_PAGE(
-                                                      4 * sizeof(GC_word), d1);
+          newP = (void **)GC_MALLOC_EXPLICITLY_TYPED_IGNORE_OFF_PAGE(
+                                                4 * sizeof(void *), d1);
         }
         CHECK_OUT_OF_MEMORY(newP);
         AO_fetch_and_add1(&collectable_count);
-        if (newP[0] != 0 || newP[1] != 0) {
+        if (newP[0] != NULL || newP[1] != NULL) {
             GC_printf("Bad initialization by GC_malloc_explicitly_typed\n");
             FAIL;
         }
-        newP[0] = 17;
+        newP[0] = (void *)(GC_uintptr_t)17;
         GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
-        newP = (GC_word *)GC_MALLOC_EXPLICITLY_TYPED(4 * sizeof(GC_word), d2);
+        newP = (void **)GC_MALLOC_EXPLICITLY_TYPED(4 * sizeof(void *), d2);
         CHECK_OUT_OF_MEMORY(newP);
-        newP[0] = 17;
+        newP[0] = (void *)(GC_uintptr_t)17;
         GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
-        newP = (GC_word*)GC_MALLOC_EXPLICITLY_TYPED(33 * sizeof(GC_word), d3);
+        newP = (void **)GC_MALLOC_EXPLICITLY_TYPED(33 * sizeof(void *), d3);
         CHECK_OUT_OF_MEMORY(newP);
-        newP[0] = 17;
+        newP[0] = (void *)(GC_uintptr_t)17;
         GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
-        newP = (GC_word *)GC_CALLOC_EXPLICITLY_TYPED(4, 2 * sizeof(GC_word),
-                                                     d1);
+        newP = (void **)GC_CALLOC_EXPLICITLY_TYPED(4, 2 * sizeof(void *), d1);
         CHECK_OUT_OF_MEMORY(newP);
-        newP[0] = 17;
+        newP[0] = (void *)(GC_uintptr_t)17;
         GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
         AO_fetch_and_add1(&collectable_count);
-        if (i & 0xff) {
-          newP = (GC_word *)GC_CALLOC_EXPLICITLY_TYPED(7, 3 * sizeof(GC_word),
-                                                       d2);
+        if ((i & 0xff) != 0) {
+          newP = (void **)GC_CALLOC_EXPLICITLY_TYPED(7, 3 * sizeof(void*), d2);
         } else {
 #         ifdef GC_DEBUG
-            newP = (GC_word *)GC_CALLOC_EXPLICITLY_TYPED(1001,
-                                                3 * sizeof(GC_word), d2);
+            newP = (void **)GC_CALLOC_EXPLICITLY_TYPED(1001,
+                                                       3 * sizeof(void *), d2);
 #         else
-            newP = (GC_word *)GC_calloc_do_explicitly_typed(&ctd_l,
-                                                            sizeof(ctd_l));
+            newP = (void **)GC_calloc_do_explicitly_typed(&ctd_l,
+                                                          sizeof(ctd_l));
 #         endif
-          if (newP != NULL && (newP[0] != 0 || newP[1] != 0)) {
+          if (newP != NULL && (newP[0] != NULL || newP[1] != NULL)) {
             GC_printf("Bad initialization by GC_calloc_explicitly_typed\n");
             FAIL;
           }
         }
         CHECK_OUT_OF_MEMORY(newP);
-        newP[0] = 17;
+        newP[0] = (void *)(GC_uintptr_t)17;
         GC_PTR_STORE_AND_DIRTY(newP + 1, old);
         old = newP;
     }
     for (i = 0; i < 20000; i++) {
-        if (newP[0] != 17) {
+        if ((GC_uintptr_t)newP[0] != (GC_uintptr_t)17) {
             GC_printf("Typed alloc failed at %d\n", i);
             FAIL;
         }
-        newP[0] = 0;
+        newP[0] = NULL;
         old = newP;
-        newP = (GC_word *)old[1];
+        newP = (void **)old[1];
     }
     GC_gcollect();
     GC_noop1_ptr(x);
@@ -1522,10 +1521,6 @@ static void * GC_CALLBACK set_stackbottom(void *cd)
   return NULL;
 }
 
-#ifndef MIN_WORDS
-# define MIN_WORDS 2
-#endif
-
 static void run_one_test(void)
 {
     char *x;
@@ -1557,26 +1552,28 @@ static void run_one_test(void)
       AO_fetch_and_add1(&collectable_count);
       y = (char *)checkOOM(GC_malloc(7));
       AO_fetch_and_add1(&collectable_count);
-      if (GC_size(x) != 8 && GC_size(y) != MIN_WORDS * sizeof(GC_word)) {
+      if (GC_size(x) != 8 && GC_size(y) != GC_GRANULE_BYTES) {
         GC_printf("GC_size produced unexpected results\n");
         FAIL;
       }
       x = (char *)checkOOM(GC_malloc(15));
       AO_fetch_and_add1(&collectable_count);
-      if (GC_size(x) != 16) {
+      y = (char *)checkOOM(GC_malloc(15));
+      AO_fetch_and_add1(&collectable_count);
+      if (GC_size(x) != 16 && GC_size(y) != GC_GRANULE_BYTES) {
         GC_printf("GC_size produced unexpected results 2\n");
         FAIL;
       }
       x = (char *)checkOOM(GC_malloc(0));
       AO_fetch_and_add1(&collectable_count);
-      if (GC_size(x) != MIN_WORDS * sizeof(GC_word)) {
+      if (GC_size(x) != GC_GRANULE_BYTES) {
         GC_printf("GC_malloc(0) failed: GC_size returns %lu\n",
                       (unsigned long)GC_size(x));
         FAIL;
       }
       x = (char *)checkOOM(GC_malloc_uncollectable(0));
       AO_fetch_and_add1(&uncollectable_count);
-      if (GC_size(x) != MIN_WORDS * sizeof(GC_word)) {
+      if (GC_size(x) != GC_GRANULE_BYTES) {
         GC_printf("GC_malloc_uncollectable(0) failed\n");
         FAIL;
       }
@@ -1654,15 +1651,15 @@ static void run_one_test(void)
           AO_fetch_and_add1(&collectable_count);
 
           /* TODO: GC_memalign and friends are not tested well. */
-          for (i = sizeof(GC_word); i <= HBLKSIZE * 4; i *= 2) {
+          for (i = sizeof(void *); i <= HBLKSIZE * 4; i *= 2) {
             p = checkOOM(GC_memalign(i, 17));
             AO_fetch_and_add1(&collectable_count);
-            if ((GC_word)p % i != 0 || *(int *)p != 0 || GC_base(p) != p) {
+            if (ADDR(p) % i != 0 || *(int *)p != 0 || GC_base(p) != p) {
               GC_printf("GC_memalign(%u,17) produced incorrect result:"
                         " %p (base= %p)\n", (unsigned)i, p, GC_base(p));
               FAIL;
             }
-            if (i >= (size_t)(MIN_WORDS * 4) && i <= HBLKSIZE)
+            if (i >= (size_t)GC_GRANULE_BYTES && i <= HBLKSIZE)
               GC_free(p);
           }
           if (GC_posix_memalign(&p, 64, 1) != 0) {
@@ -1677,7 +1674,7 @@ static void run_one_test(void)
           void *p = checkOOM(GC_valloc(78));
 
           AO_fetch_and_add1(&collectable_count);
-          if (((GC_word)p & 0x1ff /* at least */) != 0 || *(int *)p != 0
+          if ((ADDR(p) & 0x1ff /* at least */) != 0 || *(int *)p != 0
               || GC_base(p) != p) {
             GC_printf("GC_valloc() produced incorrect result: %p (base= %p)\n",
                       p, GC_base(p));
@@ -1686,7 +1683,7 @@ static void run_one_test(void)
 
           p = checkOOM(GC_pvalloc(123));
           AO_fetch_and_add1(&collectable_count);
-          if (((GC_word)p & 0x1ff) != 0 || *(int *)p != 0 || GC_base(p) != p
+          if ((ADDR(p) & 0x1ff) != 0 || *(int *)p != 0 || GC_base(p) != p
               || (GC_size(p) & 0x1e0 /* at least */) != 0) {
             GC_printf("GC_pvalloc() produced incorrect result:"
                       " %p (base= %p, size= %lu)\n",
@@ -2026,7 +2023,7 @@ static void check_heap_stats(void)
     /* these may be particularly dubious, since empirically the */
     /* heap tends to grow largely as a result of the GC not     */
     /* getting enough cycles.                                   */
-#   if CPP_WORDSZ == 64
+#   if CPP_PTRSZ == 64
       max_heap_sz = 26000000;
 #   else
       max_heap_sz = 16000000;

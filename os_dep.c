@@ -1208,7 +1208,7 @@ GC_INNER void GC_setpagesize(void)
     stat_buf[buf_offset + i] = '\0';
 
     addr = (word)STRTOULL((char *)stat_buf + buf_offset, NULL, 10);
-    if (addr < 0x100000 || (addr & (sizeof(word)-1)) != 0)
+    if (addr < 0x100000 || (addr & (sizeof(ptr_t)-1)) != 0)
       ABORT_ARG1("Absurd stack bottom value", ": 0x%lx", (unsigned long)addr);
     return MAKE_CPTR(addr);
   }

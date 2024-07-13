@@ -70,15 +70,18 @@ operating system:
   * `OS_TYPE` - Defined to a string that represents the operating system name.
   Usually just the macro name used to identify the operating system, but
   enclosed in quotes.
-  * `CPP_WORDSZ` - The word size in bits as a constant suitable for
-  preprocessor tests, i.e. without casts or `sizeof` expressions. For
-  platforms supporting both 32- and 64-bit ABIs, this should be conditionally
-  defined depending on the current ABI.
+  * `CPP_WORDSZ` - The address (also referred simply as "word") size in bits
+  as a constant suitable for preprocessor tests, i.e. without casts or
+  `sizeof` expressions. For platforms supporting both 32- and 64-bit ABIs,
+  this should be conditionally defined depending on the current ABI.
+  * `CPP_PTRSZ` - Similar to `CPP_WORDSZ` but for the size of a pointer (also
+  referred as "pointer-sized" word) in bits. On most platforms, its value is
+  equal to that of `CPP_WORDSZ`.
   * `ALIGNMENT` - Defined to be the largest _N_ such that all pointer
   are guaranteed to be aligned on _N_-byte boundaries. Defining it to be _1_
   will always work, but perform poorly. For all modern 32-bit platforms, this
-  is 4. For all modern 64-bit platforms, this is 8. Whether or not x86
-  qualifies as a modern architecture here is compiler- and OS-dependent.
+  is 4. For all modern 64-bit platforms, this is 8. (Whether or not x86
+  qualifies as a modern architecture here is compiler- and OS-dependent.)
   * `DATASTART` - The beginning of the main data segment. The collector will
   trace all memory between `DATASTART` and `DATAEND` for root pointers.
   On some platforms, this can be defined to a constant address, though
@@ -139,9 +142,9 @@ operating system:
   read dirty bits.)
   * `PREFETCH`, `GC_PREFETCH_FOR_WRITE` - The collector uses `PREFETCH(x)`
   to preload the cache with the data at _x_ address. This defaults to a no-op.
-  * `CLEAR_DOUBLE` - If `CLEAR_DOUBLE` is defined, then `CLEAR_DOUBLE(x)`
-  is used as a fast way to clear the two words at `GC_malloc`-aligned address
-  _x_. By default, word stores of 0 are used instead.
+  * `CLEAR_DOUBLE` - If it is defined, then `CLEAR_DOUBLE(x)` is used as
+  a fast way to clear two "pointer-sized" words at `GC_malloc`-aligned address
+  _x_. By default, NULL pointers storing is used instead.
   * `HEAP_START` - May be defined as the initial address hint for mmap-based
   allocation.
 

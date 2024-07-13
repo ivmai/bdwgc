@@ -39,14 +39,14 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
     }
     if (!GC_valid_offsets[offset]) {
       GC_valid_offsets[offset] = TRUE;
-      GC_modws_valid_offsets[offset % sizeof(word)] = TRUE;
+      GC_modws_valid_offsets[offset % sizeof(ptr_t)] = TRUE;
     }
 }
 
 #ifndef MARK_BIT_PER_OBJ
   GC_INNER GC_bool GC_add_map_entry(size_t lg)
   {
-    unsigned displ;
+    size_t displ;
     unsigned short * new_map;
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -75,13 +75,14 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
 
 GC_INNER void GC_initialize_offsets(void)
 {
-  unsigned i;
+  size_t i;
+
   if (GC_all_interior_pointers) {
     for (i = 0; i < VALID_OFFSET_SZ; ++i)
       GC_valid_offsets[i] = TRUE;
   } else {
     BZERO(GC_valid_offsets, sizeof(GC_valid_offsets));
-    for (i = 0; i < sizeof(word); ++i)
+    for (i = 0; i < sizeof(ptr_t); ++i)
       GC_modws_valid_offsets[i] = FALSE;
   }
 }

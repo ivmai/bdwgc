@@ -177,11 +177,12 @@ typedef int GC_bool;
 #endif
 
 #if defined(M68K) && defined(__GNUC__)
-  /* By default, __alignof__(word) is 2 on m68k.  Use this attribute to */
-  /* have proper word alignment (i.e. 4-byte on a 32-bit arch).         */
-# define GC_ATTR_WORD_ALIGNED __attribute__((__aligned__(sizeof(word))))
+  /* By default, __alignof__(void*) is 2 on m68k.  Use this         */
+  /* attribute to have the proper pointer alignment (i.e. 4-byte    */
+  /* one on the given 32-bit architecture).                         */
+# define GC_ATTR_PTRT_ALIGNED __attribute__((__aligned__(sizeof(ptr_t))))
 #else
-# define GC_ATTR_WORD_ALIGNED /* empty */
+# define GC_ATTR_PTRT_ALIGNED /* empty */
 #endif
 
   typedef GC_uintptr_t GC_funcptr_uint;
@@ -465,7 +466,7 @@ EXTERN_C_BEGIN
 #   endif
 #   if (NFRAMES * (NARGS + 1)) % 2 == 1
       /* Likely alignment problem. */
-      word ci_dummy;
+      ptr_t ci_dummy;
 #   endif
   };
 
@@ -883,45 +884,25 @@ EXTERN_C_BEGIN
 /*                               */
 /*********************************/
 
-#define WORDS_TO_BYTES(x) ((x) * sizeof(word))
-#define BYTES_TO_WORDS(x) ((x) / sizeof(word))
 #define modWORDSZ(n) ((n) & (CPP_WORDSZ-1)) /* n mod size of word */
 #define divWORDSZ(n) ((n) / CPP_WORDSZ)
 
 #define SIGNB ((word)1 << (CPP_WORDSZ-1))
 #define SIZET_SIGNB (GC_SIZE_MAX ^ (GC_SIZE_MAX >> 1))
 
-#if CPP_WORDSZ / 8 != ALIGNMENT
+#if CPP_PTRSZ / 8 != ALIGNMENT
 # define UNALIGNED_PTRS
 #endif
 
-#if GC_GRANULE_BYTES == 4
-# define BYTES_TO_GRANULES(n) ((n)>>2)
-# define GRANULES_TO_BYTES(n) ((n)<<2)
-# define GRANULES_TO_WORDS(n) BYTES_TO_WORDS(GRANULES_TO_BYTES(n))
-#elif GC_GRANULE_BYTES == 8
-# define BYTES_TO_GRANULES(n) ((n)>>3)
-# define GRANULES_TO_BYTES(n) ((n)<<3)
-# if CPP_WORDSZ == 64
-#   define GRANULES_TO_WORDS(n) (n)
-# elif CPP_WORDSZ == 32
-#   define GRANULES_TO_WORDS(n) ((n)<<1)
-# else
-#   define GRANULES_TO_WORDS(n) BYTES_TO_WORDS(GRANULES_TO_BYTES(n))
-# endif
-#elif GC_GRANULE_BYTES == 16
-# define BYTES_TO_GRANULES(n) ((n)>>4)
-# define GRANULES_TO_BYTES(n) ((n)<<4)
-# if CPP_WORDSZ == 64
-#   define GRANULES_TO_WORDS(n) ((n)<<1)
-# elif CPP_WORDSZ == 32
-#   define GRANULES_TO_WORDS(n) ((n)<<2)
-# else
-#   define GRANULES_TO_WORDS(n) BYTES_TO_WORDS(GRANULES_TO_BYTES(n))
-# endif
-#else
-# error Bad GC_GRANULE_BYTES value
-#endif
+#define BYTES_TO_GRANULES(lb) ((lb) / GC_GRANULE_BYTES)
+#define GRANULES_TO_BYTES(lg) ((lg) * GC_GRANULE_BYTES)
+#define BYTES_TO_PTRS(lb) ((lb) / sizeof(ptr_t))
+#define PTRS_TO_BYTES(lpw) ((lpw) * sizeof(ptr_t))
+#define GRANULES_TO_PTRS(lg) ((lg) * GC_GRANULE_WORDS)
+
+/* Convert size in bytes to that in pointers rounding up (but   */
+/* not adding extra byte at end).                               */
+#define BYTES_TO_PTRS_ROUNDUP(lb) BYTES_TO_PTRS((lb) + sizeof(ptr_t) - 1)
 
 /*********************/
 /*                   */
@@ -1215,7 +1196,7 @@ struct hblkhdr {
 #     define hb_marks _mark_byte_union._hb_marks
 #   else
 #     define HB_MARKS_SZ (MARK_BITS_PER_HBLK / CPP_WORDSZ + 1)
-        word hb_marks[HB_MARKS_SZ];
+      word hb_marks[HB_MARKS_SZ];
 #   endif /* !USE_MARK_BYTES */
 };
 
@@ -1276,13 +1257,13 @@ struct exclusion {
 /* Under Win32, we need to do a better job of filtering overlaps, so    */
 /* we resort to sequential search, and pay the price.                   */
 struct roots {
-        ptr_t r_start;/* multiple of word size */
-        ptr_t r_end;  /* multiple of word size and greater than r_start */
+        ptr_t r_start;/* multiple of pointer size */
+        ptr_t r_end;  /* multiple of pointer size and greater than r_start */
 #       ifndef ANY_MSWIN
           struct roots * r_next;
 #       endif
         GC_bool r_tmp;
-                /* Delete before registering new dynamic libraries */
+                /* Delete before registering new dynamic libraries if set. */
 };
 
 #ifndef ANY_MSWIN
@@ -1313,8 +1294,8 @@ struct roots {
 #endif /* !MAX_HEAP_SECTS */
 
 typedef struct GC_ms_entry {
-    ptr_t mse_start;    /* First word of object, word-aligned one.      */
-    union word_ptr_ao_u mse_descr;
+  ptr_t mse_start;      /* Beginning of object, pointer-aligned one.    */
+  union word_ptr_ao_u mse_descr;
                         /* Descriptor; low order two bits are tags,     */
                         /* as described in gc_mark.h.                   */
 } mse;
@@ -1346,7 +1327,7 @@ union toggle_ref_u {
 
 /* Extended descriptors.  GC_typed_mark_proc understands these. */
 /* These are used for simple objects that are larger than what  */
-/* can be described by a BITMAP_BITS sized bitmap.              */
+/* can be described by a BITMAP_BITS-sized bitmap.              */
 typedef struct {
     word ed_bitmap; /* the least significant bit corresponds to first word. */
     GC_bool ed_continued;       /* next entry is continuation.  */
@@ -1592,9 +1573,9 @@ struct _GC_arrays {
         /* Table of user-defined mark procedures.  There is     */
         /* a small number of these, which can be referenced     */
         /* by DS_PROC mark descriptors.  See gc_mark.h.         */
-  char _modws_valid_offsets[sizeof(word)];
-                                /* GC_valid_offsets[i] ==>                */
-                                /* GC_modws_valid_offsets[i%sizeof(word)] */
+  char _modws_valid_offsets[sizeof(ptr_t)];
+                        /* GC_valid_offsets[i] ==>                  */
+                        /* GC_modws_valid_offsets[i%sizeof(ptr_t)]  */
 # ifndef ANY_MSWIN
 #   define GC_root_index GC_arrays._root_index
     struct roots * _root_index[RT_SIZE];
@@ -1905,7 +1886,7 @@ struct GC_traced_stack_sect_s {
  */
 
 #ifdef USE_MARK_BYTES
-# define mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[n])
+# define mark_bit_from_hdr(hhdr,n) ((hhdr) -> hb_marks[n])
 # define set_mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[n] = 1)
 # define clear_mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[n] = 0)
 #else
@@ -1921,9 +1902,9 @@ struct GC_traced_stack_sect_s {
 #   define OR_WORD(addr, bits) (void)(*(addr) |= (bits))
 # endif
 # define mark_bit_from_hdr(hhdr,n) \
-              (((hhdr)->hb_marks[divWORDSZ(n)] >> modWORDSZ(n)) & (word)1)
+            (((hhdr) -> hb_marks[divWORDSZ(n)] >> modWORDSZ(n)) & (word)1)
 # define set_mark_bit_from_hdr(hhdr,n) \
-              OR_WORD((hhdr)->hb_marks+divWORDSZ(n), (word)1 << modWORDSZ(n))
+            OR_WORD((hhdr) -> hb_marks + divWORDSZ(n), (word)1 << modWORDSZ(n))
 # define clear_mark_bit_from_hdr(hhdr,n) \
               ((hhdr)->hb_marks[divWORDSZ(n)] &= ~((word)1 << modWORDSZ(n)))
 #endif /* !USE_MARK_BYTES */
@@ -2072,7 +2053,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
                       NULL, NULL, 0, psz_ull) == -1)                        \
             ABORT_ARG1("Cannot get size of procedure stack",                \
                        ": errno= %d", errno);                               \
-          GC_ASSERT(*(psz_ull) > 0 && *(psz_ull) % sizeof(word) == 0);      \
+          GC_ASSERT(*(psz_ull) > 0 && *(psz_ull) % sizeof(ptr_t) == 0);     \
         } while (0)
 
 # ifdef THREADS
@@ -2144,14 +2125,14 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
 #   error Unsupported -march for e2k target
 # endif
 
-# define LOAD_WORD_OR_CONTINUE(v, p) \
+# define LOAD_PTR_OR_CONTINUE(v, p) \
         { \
           int tag LOCAL_VAR_INIT_OK; \
           LOAD_TAGGED_VALUE(v, tag, p); \
           if (tag != 0) continue; \
         }
 #else
-# define LOAD_WORD_OR_CONTINUE(v, p) (void)(v = *(ptr_t *)(p))
+# define LOAD_PTR_OR_CONTINUE(v, p) (void)(v = *(ptr_t *)(p))
 #endif /* !E2K */
 
 #if defined(AMIGA) || defined(MACOS) || defined(GC_DARWIN_THREADS)
@@ -2530,7 +2511,7 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
     GC_INLINE int GC_rand_next(GC_RAND_STATE_T *pseed)
     {
       AO_t next = (AO_t)((AO_load(pseed) * (unsigned32)1103515245UL + 12345)
-                         & (unsigned32)((unsigned)GC_RAND_MAX));
+                           & (unsigned32)((unsigned)GC_RAND_MAX));
       AO_store(pseed, next);
       return (int)next;
     }

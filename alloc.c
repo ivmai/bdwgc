@@ -40,7 +40,7 @@
  * Note that this is very fast if the free list is non-empty; it should
  * only involve the execution of 4 or 5 simple instructions.
  * All composite objects on freelists are cleared, except for
- * their first word.
+ * their first "pointer-sized" word.
  */
 
 /*
@@ -392,10 +392,10 @@ STATIC word GC_adj_bytes_allocd(void)
 /* stack clear of long-lived, client-generated garbage.                 */
 STATIC void GC_clear_a_few_frames(void)
 {
-#   ifndef CLEAR_NWORDS
-#     define CLEAR_NWORDS 64
+#   ifndef CLEAR_STACK_NPTRS
+#     define CLEAR_STACK_NPTRS 64 /* pointers */
 #   endif
-    volatile word frames[CLEAR_NWORDS];
+    volatile ptr_t frames[CLEAR_STACK_NPTRS];
 
     BZERO(CAST_AWAY_VOLATILE_PVOID(frames), sizeof(frames));
 }
@@ -1483,7 +1483,7 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t sz)
 
     if (ADDR_GE((ptr_t)GC_least_plausible_heap_addr, (ptr_t)h)
         || EXPECT(NULL == GC_least_plausible_heap_addr, FALSE)) {
-        GC_least_plausible_heap_addr = (ptr_t)h - sizeof(word);
+        GC_least_plausible_heap_addr = (ptr_t)h - sizeof(ptr_t);
                 /* Making it a little smaller than necessary prevents   */
                 /* us from getting a false hit from the variable        */
                 /* itself.  There's some unintentional reflection       */
@@ -1495,7 +1495,7 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t sz)
 #   ifdef SET_REAL_HEAP_BOUNDS
       if (ADDR(h) < GC_least_real_heap_addr
           || EXPECT(0 == GC_least_real_heap_addr, FALSE))
-        GC_least_real_heap_addr = ADDR(h) - sizeof(word);
+        GC_least_real_heap_addr = ADDR(h) - sizeof(ptr_t);
       if (GC_greatest_real_heap_addr < ADDR(endp)) {
 #       ifdef INCLUDE_LINUX_THREAD_DESCR
           /* Avoid heap intersection with the static data roots. */
@@ -1623,7 +1623,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
           GC_greatest_plausible_heap_addr = new_limit;
     } else {
       /* Heap is growing down.  */
-        ptr_t new_limit = (ptr_t)space - expansion_slop - sizeof(word);
+        ptr_t new_limit = (ptr_t)space - expansion_slop - sizeof(ptr_t);
 
         if (ADDR_LT(new_limit, (ptr_t)space)
             && ADDR_LT(new_limit, (ptr_t)GC_least_plausible_heap_addr))

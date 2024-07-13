@@ -182,9 +182,11 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
         /* up properly in dynamically linked .so's. This means we have  */
         /* to use its value in the set of original object files loaded  */
         /* at program startup.                                          */
-        if( dynStructureAddr == 0 ) {
-          void* startupSyms = dlopen(0, RTLD_LAZY);
-          dynStructureAddr = (ElfW(Dyn)*)(word)dlsym(startupSyms, "_DYNAMIC");
+        if (0 == dynStructureAddr) {
+          void *startupSyms = dlopen(0, RTLD_LAZY);
+
+          dynStructureAddr = (ElfW(Dyn) *)dlsym(startupSyms, "_DYNAMIC");
+          /* Note: dlclose() is not called intentionally. */
         }
 #   else
         dynStructureAddr = &_DYNAMIC;
@@ -197,7 +199,7 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
     if (cachedResult == 0) {
         int tag;
 
-        for (dp = ((ElfW(Dyn) *)(&_DYNAMIC)); (tag = dp->d_tag) != 0; dp++) {
+        for (dp = (ElfW(Dyn) *)&_DYNAMIC; (tag = dp->d_tag) != 0; dp++) {
             if (tag == DT_DEBUG) {
                 const struct r_debug *rd = (struct r_debug *)dp->d_un.d_ptr;
                 if (rd != NULL) {
@@ -485,7 +487,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
       if (callback != 0 && !callback(info->dlpi_name, start, p->p_memsz))
         continue;
 #     ifdef PT_GNU_RELRO
-#       if CPP_WORDSZ == 64
+#       if CPP_PTRSZ >= 64
           /* TODO: GC_push_all eventually does the correct          */
           /* rounding to the next multiple of ALIGNMENT, so, most   */
           /* probably, we should remove the corresponding assertion */
@@ -990,8 +992,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
   GC_INNER void GC_register_dynamic_libraries(void)
   {
-    MEMORY_BASIC_INFORMATION buf;
-    DWORD protect;
     ptr_t p, base, limit;
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -1001,50 +1001,53 @@ GC_INNER void GC_register_dynamic_libraries(void)
     p = (ptr_t)GC_sysinfo.lpMinimumApplicationAddress;
     base = limit = p;
     while (ADDR_LT(p, (ptr_t)GC_sysinfo.lpMaximumApplicationAddress)) {
-        size_t result = VirtualQuery((LPVOID)p, &buf, sizeof(buf));
+      MEMORY_BASIC_INFORMATION buf;
+      size_t result = VirtualQuery((LPVOID)p, &buf, sizeof(buf));
 
-#       ifdef MSWINCE
-          if (0 == result) {
-            if (ADDR(p) > GC_WORD_MAX - GC_sysinfo.dwAllocationGranularity)
-              break; /* overflow */
-            /* Page is free; advance to the next possible allocation base. */
-            p = PTR_ALIGN_UP(p + 1, GC_sysinfo.dwAllocationGranularity);
-          } else
-#       endif
-        /* else */ {
-            if (result != sizeof(buf))
-                ABORT("Weird VirtualQuery result");
-            if (ADDR(p) > GC_WORD_MAX - buf.RegionSize) break; /* overflow */
+#     ifdef MSWINCE
+        if (0 == result) {
+          if (ADDR(p) > GC_WORD_MAX - GC_sysinfo.dwAllocationGranularity)
+            break; /* overflow */
+          /* Page is free; advance to the next possible allocation base. */
+          p = PTR_ALIGN_UP(p + 1, GC_sysinfo.dwAllocationGranularity);
+        } else
+#     endif
+      /* else */ {
+        DWORD protect;
 
-            protect = buf.Protect;
-            if (buf.State == MEM_COMMIT
-                && (protect == PAGE_EXECUTE_READWRITE
-                    || protect == PAGE_EXECUTE_WRITECOPY
-                    || protect == PAGE_READWRITE
-                    || protect == PAGE_WRITECOPY)
-                && (buf.Type == MEM_IMAGE
-#                   ifdef GC_REGISTER_MEM_PRIVATE
-                      || (protect == PAGE_READWRITE && buf.Type == MEM_PRIVATE)
-#                   else
-                      /* There is some evidence that we cannot always   */
-                      /* ignore MEM_PRIVATE sections under Windows ME   */
-                      /* and predecessors.  Hence we now also check for */
-                      /* that case.                                     */
-                      || (!GC_wnt && buf.Type == MEM_PRIVATE)
-#                   endif
-                   )
-                && !GC_is_heap_base(buf.AllocationBase)) {
-#               ifdef DEBUG_VIRTUALQUERY
-                  GC_dump_meminfo(&buf);
+        if (result != sizeof(buf))
+          ABORT("Weird VirtualQuery result");
+        if (ADDR(p) > GC_WORD_MAX - buf.RegionSize) break; /* overflow */
+
+        protect = buf.Protect;
+        if (buf.State == MEM_COMMIT
+            && (protect == PAGE_EXECUTE_READWRITE
+                || protect == PAGE_EXECUTE_WRITECOPY
+                || protect == PAGE_READWRITE
+                || protect == PAGE_WRITECOPY)
+            && (buf.Type == MEM_IMAGE
+#               ifdef GC_REGISTER_MEM_PRIVATE
+                  || (protect == PAGE_READWRITE && buf.Type == MEM_PRIVATE)
+#               else
+                  /* There is some evidence that we cannot always   */
+                  /* ignore MEM_PRIVATE sections under Windows ME   */
+                  /* and predecessors.  Hence we now also check for */
+                  /* that case.                                     */
+                  || (!GC_wnt && buf.Type == MEM_PRIVATE)
 #               endif
-                if (p != limit) {
-                    GC_cond_add_roots(base, limit);
-                    base = p;
-                }
-                limit = p + buf.RegionSize;
-            }
-            p += buf.RegionSize;
+               )
+            && !GC_is_heap_base(buf.AllocationBase)) {
+#         ifdef DEBUG_VIRTUALQUERY
+            GC_dump_meminfo(&buf);
+#         endif
+          if (p != limit) {
+            GC_cond_add_roots(base, limit);
+            base = p;
+          }
+          limit = p + buf.RegionSize;
         }
+        p += buf.RegionSize;
+      }
     }
     GC_cond_add_roots(base, limit);
   }
@@ -1348,7 +1351,7 @@ static void dyld_section_add_del(const struct GC_MACH_HEADER *phdr,
     start = (unsigned long)getsectiondata(phdr, seg, secnam, &sec_size);
     if (0 == start) return;
 # endif
-  if (sec_size < sizeof(word)) return;
+  if (sec_size < sizeof(ptr_t)) return;
   end = start + sec_size;
   if (is_add) {
     LOCK();

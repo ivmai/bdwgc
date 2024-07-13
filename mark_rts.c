@@ -405,7 +405,7 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
     GC_bool rebuild = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT(ADDR(b) % sizeof(word) == 0 && ADDR(e) % sizeof(word) == 0);
+    GC_ASSERT(ADDR(b) % sizeof(ptr_t) == 0 && ADDR(e) % sizeof(ptr_t) == 0);
     for (i = 0; i < n_root_sets; i++) {
       ptr_t r_start, r_end;
 
@@ -603,7 +603,7 @@ GC_INNER void GC_exclude_static_roots_inner(ptr_t start, ptr_t finish)
     size_t next_index;
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT(ADDR(start) % sizeof(word) == 0);
+    GC_ASSERT(ADDR(start) % sizeof(ptr_t) == 0);
     GC_ASSERT(ADDR_LT(start, finish));
 
     next = GC_next_exclusion(start);
@@ -650,7 +650,7 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
     b = PTR_ALIGN_DOWN((ptr_t)b, sizeof(ptr_t));
     e = PTR_ALIGN_UP((ptr_t)e, sizeof(ptr_t));
     if (NULL == e)
-      e = (void *)(~(word)(sizeof(word)-1)); /* handle overflow */
+      e = (void *)(~(word)(sizeof(ptr_t)-1)); /* handle overflow */
 
     LOCK();
     GC_exclude_static_roots_inner((ptr_t)b, (ptr_t)e);

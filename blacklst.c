@@ -195,7 +195,7 @@ GC_INNER void GC_unpromote_black_lists(void)
 # ifndef PARALLEL_MARK
     GC_ASSERT(I_HOLD_LOCK());
 # endif
-  if (GC_modws_valid_offsets[ADDR(p) & (sizeof(word)-1)]) {
+  if (GC_modws_valid_offsets[ADDR(p) & (sizeof(ptr_t)-1)]) {
     size_t index = PHT_HASH(p);
 
     if (NULL == HDR(p) || get_pht_entry_from_index(GC_old_normal_bl, index)) {

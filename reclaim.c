@@ -146,28 +146,27 @@ STATIC GC_bool GC_block_nearly_full(const hdr *hhdr, size_t sz)
 /* TODO: This should perhaps again be specialized for USE_MARK_BYTES    */
 /* and USE_MARK_BITS cases.                                             */
 
-GC_INLINE word *GC_clear_block(word *p, size_t sz, word *pcount)
+GC_INLINE ptr_t GC_clear_block(ptr_t q, size_t sz, word *pcount)
 {
-  word *q = (word *)((ptr_t)p + sz);
+  ptr_t *p = (ptr_t *)q;
+  ptr_t plim = q + sz;
 
   /* Clear object, advance p to next object in the process.     */
 # ifdef USE_MARK_BYTES
     GC_ASSERT((sz & 1) == 0);
-    GC_ASSERT((ADDR(p) & (2 * sizeof(word) - 1)) == 0);
-    p[1] = 0;
-    p += 2;
-    while (ADDR_LT((ptr_t)p, (ptr_t)q)) {
+    GC_ASSERT((ADDR(p) & (2*sizeof(ptr_t)-1)) == 0);
+    p[1] = NULL; /* but do not clear link field */
+    for (p += 2; ADDR_LT((ptr_t)p, plim); p += 2) {
       CLEAR_DOUBLE(p);
-      p += 2;
     }
 # else
-    p++; /* Skip link field */
-    while (ADDR_LT((ptr_t)p, (ptr_t)q)) {
-      *p++ = 0;
+    p++; /* skip link field */
+    while (ADDR_LT((ptr_t)p, plim)) {
+      *p++ = NULL;
     }
 # endif
   *pcount += sz;
-  return p;
+  return (ptr_t)p;
 }
 
 /*
@@ -187,7 +186,7 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, const hdr *hhdr, size_t sz,
 #   else
       /* Skip the assertion because of a potential race with GC_realloc. */
 #   endif
-    GC_ASSERT((sz & (sizeof(word)-1)) == 0);
+    GC_ASSERT((sz & (sizeof(ptr_t)-1)) == 0);
 
     /* Go through all objects in the block. */
     p = hbp -> hb_body;
@@ -200,7 +199,7 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, const hdr *hhdr, size_t sz,
             obj_link(p) = list;
             list = p;
             FREE_PROFILER_HOOK(p);
-            p = (ptr_t)GC_clear_block((word *)p, sz, pcount);
+            p = GC_clear_block(p, sz, pcount);
         }
     }
     return list;
@@ -264,7 +263,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, const hdr *hhdr, size_t sz,
             obj_link(p) = list;
             list = p;
             FREE_PROFILER_HOOK(p);
-            p = (ptr_t)GC_clear_block((word *)p, sz, pcount);
+            p = GC_clear_block(p, sz, pcount);
         }
     }
     return list;
@@ -674,8 +673,8 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
     /* Reset in use counters.  GC_reclaim_block recomputes them. */
       GC_composite_in_use = 0;
       GC_atomic_in_use = 0;
-    /* Clear reclaim- and free-lists */
-      for (k = 0; k < (int)GC_n_kinds; k++) {
+    /* Clear reclaim- and free-lists.   */
+    for (k = 0; k < (int)GC_n_kinds; k++) {
         struct hblk **rlist = GC_obj_kinds[k].ok_reclaim_list;
         GC_bool should_clobber = GC_obj_kinds[k].ok_descriptor != 0;
 
@@ -683,10 +682,10 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
 
         if (!report_if_found) {
             void **fop;
-            void **lim = &GC_obj_kinds[k].ok_freelist[MAXOBJGRANULES+1];
+            void **lim = &GC_obj_kinds[k].ok_freelist[MAXOBJGRANULES + 1];
 
             for (fop = GC_obj_kinds[k].ok_freelist;
-                 ADDR_LT((ptr_t)fop, (ptr_t)lim); (*(word **)&fop)++) {
+                 ADDR_LT((ptr_t)fop, (ptr_t)lim); fop++) {
               if (*fop != NULL) {
                 if (should_clobber) {
                   GC_clear_fl_links(fop);
@@ -698,7 +697,7 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
         } /* otherwise free-list objects are marked,    */
           /* and it's safe to leave them.               */
         BZERO(rlist, (MAXOBJGRANULES + 1) * sizeof(void *));
-      }
+    }
 
 
     /* Go through all heap blocks (in hblklist) and reclaim unmarked    */

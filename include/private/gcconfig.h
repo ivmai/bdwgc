@@ -655,9 +655,12 @@ EXTERN_C_BEGIN
  * CPP_WORDSZ is a simple integer constant representing the word size
  * in bits.  We assume byte addressability, where a byte has 8 bits.
  * We also assume CPP_WORDSZ is either 32 or 64.
- * (We care about the length of pointers, not hardware
+ * (We care about the length of a pointer address, not hardware
  * bus widths.  Thus a 64-bit processor with a C compiler that uses
  * 32-bit pointers should use CPP_WORDSZ of 32, not 64.)
+ *
+ * CPP_PTRSZ is the pointer size in bits.  For most of the supported
+ * targets, it is equal to CPP_WORDSZ.
  *
  * MACH_TYPE is a string representation of the machine type.
  * OS_TYPE is analogous for the OS.
@@ -765,8 +768,8 @@ EXTERN_C_BEGIN
  * GC_PREFETCH_FOR_WRITE(x) is used if *x is about to be written.
  *
  * An architecture may also define CLEAR_DOUBLE(x) to be a fast way to
- * clear the two words at GC_malloc-aligned address x.  By default,
- * word stores of 0 are used instead.
+ * clear 2 pointers at GC_malloc-aligned address x.  The default
+ * implementation is just to store two NULL pointers.
  *
  * HEAP_START may be defined as the initial address hint for mmap-based
  * allocation.
@@ -1423,7 +1426,7 @@ EXTERN_C_BEGIN
 #       ifndef USE_MMAP
 #         define USE_MMAP 1
 #       endif
-#       define MAP_FAILED (void *) ((word)-1)
+#       define MAP_FAILED (void *)((word)-1)
 #       define HEAP_START (ptr_t)0x40000000
 #   endif /* DGUX */
 #   ifdef LINUX
@@ -2403,9 +2406,9 @@ EXTERN_C_BEGIN
 
 # ifdef TILEGX
 #   define MACH_TYPE "TILE-Gx"
-#   define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
-#   if CPP_WORDSZ < 64
-#     define CLEAR_DOUBLE(x) (*(long long *)(x) = 0)
+#   define CPP_WORDSZ (__SIZEOF_PTRDIFF_T__ * 8)
+#   if CPP_WORDSZ == 32
+#     define CLEAR_DOUBLE(x) (void)(*(long long *)(x) = 0)
 #   endif
 #   define PREFETCH(x) __insn_prefetch_l1(x)
 #   define CACHE_LINE_SIZE 64
@@ -2678,16 +2681,20 @@ EXTERN_C_BEGIN
 
 #if defined(CPPCHECK)
 # undef CPP_WORDSZ
-# define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
+# define CPP_WORDSZ (__SIZEOF_PTRDIFF_T__ * 8)
 #elif CPP_WORDSZ != 32 && CPP_WORDSZ != 64
 #   error Bad word size
 #endif
 
+#ifndef CPP_PTRSZ
+# define CPP_PTRSZ CPP_WORDSZ
+#endif
+
 #ifndef ALIGNMENT
-# if !defined(CPP_WORDSZ) && !defined(CPPCHECK)
-#   error Undefined both ALIGNMENT and CPP_WORDSZ
+# if !defined(CPP_PTRSZ) && !defined(CPPCHECK)
+#   error Undefined both ALIGNMENT and CPP_PTRSZ
 # endif
-# define ALIGNMENT (CPP_WORDSZ >> 3)
+# define ALIGNMENT (CPP_PTRSZ >> 3)
 #endif /* !ALIGNMENT */
 
 #ifdef PCR
@@ -2970,7 +2977,8 @@ EXTERN_C_BEGIN
 #endif
 
 #ifndef CLEAR_DOUBLE
-# define CLEAR_DOUBLE(x) (((word*)(x))[0] = 0, ((word*)(x))[1] = 0)
+# define CLEAR_DOUBLE(x) \
+                (void)(((ptr_t *)(x))[0] = NULL, ((ptr_t *)(x))[1] = NULL)
 #endif
 
 /* Some libc implementations like bionic, musl and glibc 2.34   */
@@ -3158,7 +3166,7 @@ EXTERN_C_BEGIN
 
 #ifdef PARALLEL_MARK
   /* The minimum stack size for a marker thread. */
-# define MIN_STACK_SIZE (8 * HBLKSIZE * sizeof(word))
+# define MIN_STACK_SIZE (8 * HBLKSIZE * sizeof(ptr_t))
 #endif
 
 #if defined(HOST_ANDROID) && !defined(THREADS) \
@@ -3407,7 +3415,12 @@ EXTERN_C_BEGIN
 # define COVERT_DATAFLOW(w) ((GC_word)(w))
 #endif
 
+#if CPP_PTRSZ > CPP_WORDSZ
+  /* TODO: Cannot use tricky operations on a pointer.   */
+# define COVERT_DATAFLOW_P(p) ((ptr_t)(p))
+#else
 # define COVERT_DATAFLOW_P(p) ((ptr_t)COVERT_DATAFLOW(p))
+#endif
 
 #if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \
     && !defined(REDIRECT_MALLOC_IN_HEADER)

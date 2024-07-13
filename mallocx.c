@@ -250,8 +250,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb_adjusted, int k,
     void *op;
     void *p;
     void **opp;
-    size_t lw;  /* lb_adjusted converted to words,  */
-    size_t lg;  /* and to granules.                 */
+    size_t lg;  /* lb_adjusted value converted to granules */
     word my_bytes_allocd = 0;
     struct obj_kind *ok;
     struct hblk **rlh;
@@ -275,7 +274,6 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb_adjusted, int k,
         return;
     }
     GC_ASSERT(k < MAXOBJKINDS);
-    lw = BYTES_TO_WORDS(lb_adjusted);
     lg = BYTES_TO_GRANULES(lb_adjusted);
     if (EXPECT(get_have_errors(), FALSE))
       GC_print_all_errors();
@@ -405,7 +403,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb_adjusted, int k,
               UNLOCK();
               GC_release_mark_lock();
 
-              op = GC_build_fl(h, lw,
+              op = GC_build_fl(h, BYTES_TO_PTRS(lb_adjusted),
                                ok -> ok_init || GC_debugging_started, 0);
 
               *result = op;
@@ -417,7 +415,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb_adjusted, int k,
               return;
             }
 #         endif
-          op = GC_build_fl(h, lw, ok -> ok_init || GC_debugging_started, 0);
+          op = GC_build_fl(h, BYTES_TO_PTRS(lb_adjusted),
+                           ok -> ok_init || GC_debugging_started, 0);
           goto out;
         }
     }

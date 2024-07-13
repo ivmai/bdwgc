@@ -289,13 +289,13 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
             BZERO(result, HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_adjusted));
           } else {
 #           ifdef THREADS
-              GC_ASSERT(GRANULES_TO_WORDS(lg) >= 2);
+              GC_ASSERT(GRANULES_TO_PTRS(lg) >= 2);
               /* Clear any memory that might be used for GC descriptors */
               /* before we release the allocator lock.                  */
-                ((word *)result)[0] = 0;
-                ((word *)result)[1] = 0;
-                ((word *)result)[GRANULES_TO_WORDS(lg)-1] = 0;
-                ((word *)result)[GRANULES_TO_WORDS(lg)-2] = 0;
+                ((ptr_t *)result)[0] = NULL;
+                ((ptr_t *)result)[1] = NULL;
+                ((ptr_t *)result)[GRANULES_TO_PTRS(lg) - 1] = NULL;
+                ((ptr_t *)result)[GRANULES_TO_PTRS(lg) - 2] = NULL;
 #           endif
           }
         }
@@ -303,8 +303,8 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
 #       ifdef THREADS
           if (init && !GC_debugging_started && result != NULL) {
             /* Clear the rest (i.e. excluding the initial 2 words). */
-            BZERO((word *)result + 2,
-                  HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_adjusted) - 2 * sizeof(word));
+            BZERO((ptr_t *)result + 2,
+                  HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_adjusted) - 2*sizeof(ptr_t));
           }
 #       endif
     }
@@ -623,8 +623,8 @@ static void free_internal(void *p, const hdr *hhdr)
     /* It is unnecessary to clear the mark bit.  If the object is       */
     /* reallocated, it does not matter.  Otherwise, the collector will  */
     /* do it, since it is on a free list.                               */
-    if (ok -> ok_init && EXPECT(lb > sizeof(word), TRUE)) {
-      BZERO((word *)p + 1, lb - sizeof(word));
+    if (ok -> ok_init && EXPECT(lb > sizeof(ptr_t), TRUE)) {
+      BZERO((ptr_t *)p + 1, lb - sizeof(ptr_t));
     }
 
     flh = &(ok -> ok_freelist[lg]);

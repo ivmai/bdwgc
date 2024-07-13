@@ -114,7 +114,7 @@
 * Consistently use GC_word (instead of word) type in tests (refactoring)
 * Declare GC_noop1 as public function unconditionally
 * Declare GC_register_stackbottom symbol as internal on IA64 (refactoring)
-* Define ALIGNMENT macro based on CPP_WORDSZ value by default (refactoring)
+* Define ALIGNMENT macro based on CPP_PTRSZ value by default (refactoring)
 * Define GC_GLIBC_PREREQ internal macro (refactoring)
 * Define GC_GRANULE_BYTES macro based on GC_GRANULE_WORDS value (refactoring)
 * Define GC_VERSION_VAL_T public macro (refactoring)
@@ -130,7 +130,7 @@
 * Define internal macro for pointers rounding up by a mask (refactoring)
 * Define macros in gcconfig.h to use sigaction for SIGSEGV and SIGBUS
 * Define marker_[b]sp only if needed (refactoring)
-* Define op and nwords local variables consistently across typd_mlc.c
+* Define op and nwords/lpw local variables consistently across typd_mlc.c
 * Define public GC_MALLOC_EXPLICITLY_TYPED_IGNORE_OFF_PAGE()
 * Define public GC_[p]valloc() and redirect to them in leak_detector.h
 * Define sized delete operator in 'gc' class

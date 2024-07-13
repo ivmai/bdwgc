@@ -398,7 +398,7 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 
 #   if defined(GC_ASSERTIONS) && !defined(USE_MUNMAP)
     {
-      struct hblk *next = (struct hblk *)((word)h + hhdr -> hb_sz);
+      struct hblk *next = (struct hblk *)((ptr_t)h + hhdr -> hb_sz);
       const hdr *nexthdr = HDR(next);
       struct hblk *prev = GC_free_block_ending_at(h);
       const hdr *prevhdr = HDR(prev);
@@ -545,7 +545,7 @@ GC_INNER void GC_merge_unmapped(void)
 
         GET_HDR(h, hhdr);
         size = hhdr -> hb_sz;
-        next = (struct hblk *)((word)h + size);
+        next = (struct hblk *)((ptr_t)h + size);
         GET_HDR(next, nexthdr);
         /* Coalesce with successor, if possible. */
         if (nexthdr != NULL && HBLK_IS_FREE(nexthdr)
@@ -622,7 +622,7 @@ STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
     GC_remove_from_fl_at(hhdr, index);
     if (total_size == size_needed) return h;
 
-    rest = (struct hblk *)((word)h + size_needed);
+    rest = (struct hblk *)((ptr_t)h + size_needed);
     rest_hdr = GC_install_header(rest);
     if (EXPECT(NULL == rest_hdr, FALSE)) {
         /* FIXME: This is likely to be very bad news ... */

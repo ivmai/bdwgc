@@ -95,12 +95,11 @@ contributed originally by Dave Barrett.
        ^       |              |   |                   |                  |
        |       |              |   |                   |                  |
       TOP_SZ   +--------------+<--+                   |                  |
-     (items)+-<|      []      | *                     |                  |
-       |    |  +--------------+  if 0 < bi< HBLKSIZE  |                  |
-       |    |  |              | then large object     |                  |
+     (items)+-<|      []      | * if 0<bi<HBLKSIZE    |                  |
+       |    |  +--------------+ then large object     |                  |
        |    |  |              | starts at the bi'th   |                  |
        v    |  |              | hblk before p.        |             i    |
-      ---   |  +--------------+                       |          (word-  |
+      ---   |  +--------------+                       |        (pointer- |
             v                                         |         aligned) |
         bi= |GET_BI(p){->hash_link}->key==hi          |                  |
             v                                         |                  |
@@ -163,20 +162,21 @@ collected.
                  (struct hblk)
       ---    +----------------------+ < HBLKSIZE  ---
        ^     +-----hb_body----------+ (and         ^         ---
-       |     |                      |  CPP_WORDSZ- |          ^
-       |     |                      |  aligned)    |          |
-       |     |                      |              |        hb_sz
-       |     |      Object 0        |              |          |
-       |     |                      |            i |(word-    v
+       |     |                      | pointer-     |          ^
+       |     |                      | aligned)     |          |
+       |     |      Object 0        |              |        hb_sz
+       |     |                      |              |          |
+       |     |                      |            i |(pointer- v
        |     + - - - - - - - - - - -+ ---   (bytes)|aligned) ---
        |     |                      |  ^           |          ^
-       |     |                      |  j (words)   |          |
+       |     |                      |  j (pointers)|          |
      n *     |      Object 1        |  v           v        hb_sz
     HBLKSIZE |                      |---------------          |
     (bytes)  |                      |                         v
        |     + - - - - - - - - - - -+                        ---
        |     |                      | !ALL_INTERIOR_POINTERS  ^
-       |     |                      | sets j only for       hb_sz
-       |     |      Object N        | valid object offsets.   |
-       v     |                      | All objects CPP_WORDSZ- v
-      ---    +----------------------+ aligned.               ---
+       |     |                      | sets j only for         |
+       |     |      Object N        | valid object offsets. hb_sz
+       |     |                      | All objects pointer-    |
+       v     |                      | aligned, at least.      v
+      ---    +----------------------+                        ---

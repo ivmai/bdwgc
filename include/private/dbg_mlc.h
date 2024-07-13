@@ -116,12 +116,9 @@ typedef struct {
   /* Add space for END_FLAG, but use any extra space that was already   */
   /* added to catch off-the-end pointers.                               */
   /* For uncollectible objects, the extra byte is not added.            */
-# define UNCOLLECTABLE_DEBUG_BYTES (sizeof(oh) + sizeof(word))
+# define UNCOLLECTABLE_DEBUG_BYTES (sizeof(oh) + sizeof(GC_uintptr_t))
 # define DEBUG_BYTES (UNCOLLECTABLE_DEBUG_BYTES - EXTRA_BYTES)
 #endif
-
-/* Round bytes to words without adding extra byte at end.       */
-#define SIMPLE_ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1) - 1)
 
 /* ADD_CALL_CHAIN stores a (partial) call chain into an object  */
 /* header; it should be called with the allocator lock held.    */

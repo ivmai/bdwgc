@@ -31,7 +31,7 @@ typedef void (* finalization_mark_proc)(ptr_t /* finalizable_obj_ptr */);
 #define HASH2(addr,log_size) HASH3(addr, (size_t)1 << (log_size), log_size)
 
 struct hash_chain_entry {
-    word hidden_key;
+    GC_hidden_pointer hidden_key;
     struct hash_chain_entry * next;
 };
 
@@ -42,7 +42,7 @@ struct disappearing_link {
 #   define dl_next(x) (struct disappearing_link *)((x) -> prolog.next)
 #   define dl_set_next(x, y) \
                 (void)((x)->prolog.next = (struct hash_chain_entry *)(y))
-    word dl_hidden_obj;         /* Pointer to object base       */
+    GC_hidden_pointer dl_hidden_obj; /* pointer to object base */
 };
 
 struct finalizable_object {
@@ -70,10 +70,10 @@ struct finalizable_object {
 
 GC_API void GC_CALL GC_push_finalizer_structures(void)
 {
-  GC_ASSERT(ADDR(&GC_dl_hashtbl.head) % sizeof(word) == 0);
-  GC_ASSERT(ADDR(&GC_fnlz_roots) % sizeof(word) == 0);
+  GC_ASSERT(ADDR(&GC_dl_hashtbl.head) % sizeof(ptr_t) == 0);
+  GC_ASSERT(ADDR(&GC_fnlz_roots) % sizeof(ptr_t) == 0);
 # ifndef GC_LONG_REFS_NOT_NEEDED
-    GC_ASSERT(ADDR(&GC_ll_hashtbl.head) % sizeof(word) == 0);
+    GC_ASSERT(ADDR(&GC_ll_hashtbl.head) % sizeof(ptr_t) == 0);
     GC_PUSH_ALL_SYM(GC_ll_hashtbl.head);
 # endif
   GC_PUSH_ALL_SYM(GC_dl_hashtbl.head);
@@ -528,7 +528,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     struct disappearing_link *curr_dl, *new_dl;
     struct disappearing_link *prev_dl = NULL;
     size_t curr_index, new_index;
-    word curr_hidden_link, new_hidden_link;
+    GC_hidden_pointer curr_hidden_link, new_hidden_link;
 
 #   ifdef GC_ASSERTIONS
       GC_noop1_ptr(*new_link);
@@ -636,15 +636,15 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
     ptr_t target_limit = p + hhdr -> hb_sz - 1;
 
     if ((descr & GC_DS_TAGS) == GC_DS_LENGTH) {
-       scan_limit = p + descr - sizeof(word);
+       scan_limit = p + descr - sizeof(ptr_t);
     } else {
-       scan_limit = target_limit + 1 - sizeof(word);
+       scan_limit = target_limit + 1 - sizeof(ptr_t);
     }
     for (current_p = p; ADDR_GE(scan_limit, current_p);
          current_p += ALIGNMENT) {
         ptr_t q;
 
-        LOAD_WORD_OR_CONTINUE(q, current_p);
+        LOAD_PTR_OR_CONTINUE(q, current_p);
         if (ADDR_LT(q, p) || ADDR_LT(target_limit, q)) {
             GC_PUSH_ONE_HEAP(q, current_p, GC_mark_stack_top);
         }
@@ -955,7 +955,7 @@ GC_INLINE void GC_make_disappearing_links_disappear(
       next_dl = dl_next(curr_dl);
 #     if defined(GC_ASSERTIONS) && !defined(THREAD_SANITIZER)
          /* Check accessibility of the location pointed by link. */
-        GC_noop1(*(word *)GC_REVEAL_POINTER(curr_dl -> dl_hidden_link));
+        GC_noop1_ptr(*(ptr_t *)GC_REVEAL_POINTER(curr_dl -> dl_hidden_link));
 #     endif
       if (is_remove_dangling) {
         ptr_t real_link = (ptr_t)GC_base(GC_REVEAL_POINTER(
@@ -1067,8 +1067,8 @@ GC_INNER void GC_finalize(void)
               SET_FINALIZE_NOW(curr_fo);
             /* Unhide object pointer so any future collections will   */
             /* see it.                                                */
-              curr_fo -> fo_hidden_base =
-                        (word)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
+              curr_fo -> fo_hidden_base = (GC_hidden_pointer)GC_REVEAL_POINTER(
+                                                curr_fo -> fo_hidden_base);
               GC_bytes_finalized += (word)(curr_fo -> fo_object_sz)
                                     + sizeof(struct finalizable_object);
             GC_ASSERT(GC_is_marked(GC_base(curr_fo)));
@@ -1195,8 +1195,8 @@ STATIC unsigned GC_interrupt_finalizers = 0;
 
           /* Unhide object pointer so any future collections will       */
           /* see it.                                                    */
-          curr_fo -> fo_hidden_base =
-                        (word)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
+          curr_fo -> fo_hidden_base = (GC_hidden_pointer)GC_REVEAL_POINTER(
+                                                curr_fo -> fo_hidden_base);
           GC_bytes_finalized += (word)(curr_fo -> fo_object_sz)
                                 + sizeof(struct finalizable_object);
           curr_fo = next_fo;

@@ -11,7 +11,6 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
  */
 
 /* Private declarations of GC marker data structures and macros */
@@ -52,7 +51,7 @@ EXTERN_C_BEGIN
 /* we can avoid scanning GC_mark_procs table.                           */
 
 #ifndef MARK_DESCR_OFFSET
-# define MARK_DESCR_OFFSET sizeof(word)
+# define MARK_DESCR_OFFSET sizeof(ptr_t)
 #endif
 
 /* Mark descriptor stuff that should remain private for now, mostly     */

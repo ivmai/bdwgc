@@ -234,7 +234,7 @@ typedef struct GC_Thread_Rep {
 # endif
 
 # ifdef THREAD_LOCAL_ALLOC
-    struct thread_local_freelists tlfs GC_ATTR_WORD_ALIGNED;
+    struct thread_local_freelists tlfs GC_ATTR_PTRT_ALIGNED;
 # endif
 
 # ifdef NACL
@@ -275,7 +275,7 @@ typedef struct GC_Thread_Rep {
 #ifdef GC_WIN32_THREADS
 # define THREAD_TABLE_INDEX(id) /* id is of DWORD type */ \
                 (int)((((id) >> 8) ^ (id)) % THREAD_TABLE_SZ)
-#elif CPP_WORDSZ == 64
+#elif CPP_WORDSZ > 32
 # define THREAD_TABLE_INDEX(id) \
     (int)(((((NUMERIC_THREAD_ID(id) >> 8) ^ NUMERIC_THREAD_ID(id)) >> 16) \
           ^ ((NUMERIC_THREAD_ID(id) >> 8) ^ NUMERIC_THREAD_ID(id))) \

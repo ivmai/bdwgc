@@ -268,7 +268,7 @@ STATIC void GC_init_size_map(void)
   GC_API void * GC_CALL GC_clear_stack(void *arg)
   {
 #   ifndef STACK_NOT_SCANNED
-      word volatile dummy[SMALL_CLEAR_SIZE];
+      volatile ptr_t dummy[SMALL_CLEAR_SIZE];
 
       BZERO(CAST_AWAY_VOLATILE_PVOID(dummy), sizeof(dummy));
 #   endif
@@ -309,7 +309,7 @@ STATIC void GC_init_size_map(void)
                                CLEARSTACK_LIMIT_MODIFIER ptr_t limit)
     {
 #     define CLEAR_SIZE 213 /* granularity */
-      volatile word dummy[CLEAR_SIZE];
+      volatile ptr_t dummy[CLEAR_SIZE];
 
       BZERO(CAST_AWAY_VOLATILE_PVOID(dummy), sizeof(dummy));
       if (HOTTER_THAN((/* no volatile */ ptr_t)limit, GC_approx_sp())) {
@@ -350,7 +350,7 @@ STATIC void GC_init_size_map(void)
   {
     ptr_t sp = GC_approx_sp();  /* Hotter than actual sp */
 #   ifdef THREADS
-        word volatile dummy[SMALL_CLEAR_SIZE];
+        volatile ptr_t dummy[SMALL_CLEAR_SIZE];
 #   endif
 
 #   define SLOP 400
@@ -375,7 +375,7 @@ STATIC void GC_init_size_map(void)
       if (next_random_no() == 0) {
         ptr_t limit = sp;
 
-        MAKE_HOTTER(limit, BIG_CLEAR_SIZE * sizeof(word));
+        MAKE_HOTTER(limit, BIG_CLEAR_SIZE * sizeof(ptr_t));
         limit = PTR_ALIGN_DOWN(limit, 0x10);
                         /* Make it sufficiently aligned for assembly    */
                         /* implementations of GC_clear_stack_inner.     */
@@ -393,7 +393,7 @@ STATIC void GC_init_size_map(void)
       }
       /* Adjust GC_high_water.  */
       GC_ASSERT(GC_high_water != NULL);
-      MAKE_COOLER(GC_high_water, WORDS_TO_BYTES(DEGRADE_RATE) + GC_SLOP);
+      MAKE_COOLER(GC_high_water, PTRS_TO_BYTES(DEGRADE_RATE) + GC_SLOP);
       if (HOTTER_THAN(sp, GC_high_water))
           GC_high_water = sp;
       MAKE_HOTTER(GC_high_water, GC_SLOP);
@@ -447,7 +447,7 @@ GC_API void * GC_CALL GC_base(void * p)
     if (HBLK_IS_FREE(hhdr)) return NULL;
 
     /* Make sure r points to the beginning of the object.       */
-    r = PTR_ALIGN_DOWN(r, WORDS_TO_BYTES(1));
+    r = PTR_ALIGN_DOWN(r, sizeof(ptr_t));
 
     sz = hhdr -> hb_sz;
     r -= HBLKDISPL(r) % sz;
@@ -1334,6 +1334,8 @@ GC_API void GC_CALL GC_init(void)
       GC_STATIC_ASSERT(sizeof(size_t) <= sizeof(ptrdiff_t));
       GC_STATIC_ASSERT(sizeof(ptrdiff_t) == sizeof(word));
       GC_STATIC_ASSERT(sizeof(signed_word) == sizeof(word));
+      GC_STATIC_ASSERT(sizeof(word) * 8 == CPP_WORDSZ);
+      GC_STATIC_ASSERT(sizeof(ptr_t) * 8 == CPP_PTRSZ);
       GC_STATIC_ASSERT(sizeof(ptr_t) == sizeof(GC_uintptr_t));
       GC_STATIC_ASSERT(sizeof(GC_oom_func) == sizeof(GC_funcptr_uint));
 #     ifdef FUNCPTR_IS_DATAPTR

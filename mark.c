@@ -12,7 +12,6 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
  */
 
 #include "private/gc_pmark.h"
@@ -647,22 +646,23 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                             mse *mark_stack_limit)
 {
   signed_word credit = HBLKSIZE;  /* Remaining credit for marking work. */
+  word descr;
   ptr_t current_p;      /* Pointer to current candidate ptr.            */
   ptr_t q;              /* Candidate pointer.                           */
   ptr_t limit = 0;      /* (Incl) limit of current candidate range.     */
-  word descr;
   ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
   ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
   DECLARE_HDR_CACHE;
 
-# define SPLIT_RANGE_WORDS 128  /* Must be power of 2.          */
+# define SPLIT_RANGE_PTRS 128 /* must be power of 2 */
 
   GC_objects_are_marked = TRUE;
   INIT_HDR_CACHE;
-# ifdef OS2 /* Use untweaked version to circumvent compiler problem.    */
+# if defined(OS2) || CPP_PTRSZ > CPP_WORDSZ
+        /* OS/2: use untweaked version to circumvent a compiler problem. */
     while (ADDR_GE((ptr_t)mark_stack_top, (ptr_t)mark_stack) && credit >= 0)
 # else
-    while ((((ADDR(mark_stack_top) - ADDR(mark_stack)) | (word)credit)
+    while (((((word)mark_stack_top - (word)mark_stack) | (word)credit)
             & SIGNB) == 0)
 # endif
   {
@@ -674,7 +674,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
     /* The following is 0 only for small objects described by a simple  */
     /* length descriptor.  For many applications this is the common     */
     /* case, so we try to detect it quickly.                            */
-    if (descr & (~(word)(WORDS_TO_BYTES(SPLIT_RANGE_WORDS)-1) | GC_DS_TAGS)) {
+    if (descr & (~(word)(PTRS_TO_BYTES(SPLIT_RANGE_PTRS)-1) | GC_DS_TAGS)) {
       word tag = descr & GC_DS_TAGS;
 
       GC_STATIC_ASSERT(GC_DS_TAGS == 0x3);
@@ -686,7 +686,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           /* Either it is a heap object or a region outside the heap.   */
           GC_ASSERT(descr < GC_greatest_real_heap_addr
                             - GC_least_real_heap_addr
-                    || GC_least_real_heap_addr + sizeof(word)
+                    || GC_least_real_heap_addr + sizeof(ptr_t)
                         >= ADDR(current_p) + descr
                     || ADDR(current_p) >= GC_greatest_real_heap_addr);
 #         ifdef PARALLEL_MARK
@@ -694,12 +694,12 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             if (descr > SHARE_BYTES && GC_parallel
                 && ADDR_LT((ptr_t)mark_stack_top,
                            (ptr_t)(mark_stack_limit - 1))) {
-              word new_size = (descr/2) & ~(word)(sizeof(word)-1);
+              word new_size = (descr >> 1) & ~(word)(sizeof(ptr_t)-1);
 
               mark_stack_top -> mse_start = current_p;
-              mark_stack_top -> mse_descr.w =
-                                (new_size + sizeof(word)) | GC_DS_LENGTH;
-                                        /* Makes sure we handle         */
+              mark_stack_top -> mse_descr.w
+                        = (new_size + sizeof(ptr_t)) | GC_DS_LENGTH;
+                                        /* This makes sure we handle    */
                                         /* misaligned pointers.         */
               mark_stack_top++;
 #             ifdef ENABLE_TRACE
@@ -716,10 +716,10 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
               goto retry;
             }
 #         endif /* PARALLEL_MARK */
-          mark_stack_top -> mse_start =
-                limit = current_p + WORDS_TO_BYTES(SPLIT_RANGE_WORDS-1);
-          mark_stack_top -> mse_descr.w =
-                                descr - WORDS_TO_BYTES(SPLIT_RANGE_WORDS-1);
+          limit = current_p + PTRS_TO_BYTES(SPLIT_RANGE_PTRS-1);
+          mark_stack_top -> mse_start = limit;
+          mark_stack_top -> mse_descr.w
+                                = descr - PTRS_TO_BYTES(SPLIT_RANGE_PTRS-1);
 #         ifdef ENABLE_TRACE
             if (ADDR_INSIDE(GC_trace_ptr, current_p, current_p + descr)) {
               GC_log_printf("GC #%lu: large section; start %p, len %lu,"
@@ -730,23 +730,23 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #         endif
           /* Make sure that pointers overlapping the two ranges are     */
           /* considered.                                                */
-          limit += sizeof(word) - ALIGNMENT;
+          limit += sizeof(ptr_t) - ALIGNMENT;
           break;
         case GC_DS_BITMAP:
           mark_stack_top--;
 #         ifdef ENABLE_TRACE
             if (ADDR_INSIDE(GC_trace_ptr, current_p,
-                            current_p + WORDS_TO_BYTES(CPP_WORDSZ-2))) {
+                            current_p + PTRS_TO_BYTES(BITMAP_BITS))) {
               GC_log_printf("GC #%lu: tracing from %p bitmap descr %lu\n",
                             (unsigned long)GC_gc_no, (void *)current_p,
                             (unsigned long)descr);
             }
 #         endif
           descr &= ~(word)GC_DS_TAGS;
-          credit -= (signed_word)WORDS_TO_BYTES(CPP_WORDSZ / 2); /* guess */
-          for (; descr != 0; descr <<= 1, current_p += sizeof(word)) {
+          credit -= (signed_word)PTRS_TO_BYTES(CPP_PTRSZ / 2); /* guess */
+          for (; descr != 0; descr <<= 1, current_p += sizeof(ptr_t)) {
             if ((descr & SIGNB) == 0) continue;
-            LOAD_WORD_OR_CONTINUE(q, current_p);
+            LOAD_PTR_OR_CONTINUE(q, current_p);
             FIXUP_POINTER(q);
             if (ADDR_LT(least_ha, q) && ADDR_LT(q, greatest_ha)) {
                 PREFETCH(q);
@@ -783,9 +783,10 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             /* Descriptor is in the object.     */
             descr = *(word *)(current_p + descr - GC_DS_PER_OBJECT);
           } else {
-            /* Descriptor is in type descriptor pointed to by first     */
-            /* word in object.                                          */
+            /* Descriptor is in the type descriptor pointed to by the   */
+            /* first "pointer-sized" word of the object.                */
             ptr_t type_descr = *(ptr_t *)current_p;
+
             /* type_descr is either a valid pointer to the descriptor   */
             /* structure, or this object was on a free list.            */
             /* If it was anything but the last object on the free list, */
@@ -793,7 +794,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             /* the type descriptor, and get a 0 GC descriptor, which    */
             /* is ideal.  Unfortunately, we need to check for the last  */
             /* object case explicitly.                                  */
-            if (EXPECT(0 == type_descr, FALSE)) {
+            if (EXPECT(NULL == type_descr, FALSE)) {
                 mark_stack_top--;
                 continue;
             }
@@ -813,7 +814,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
       /* Small object with length descriptor.   */
       mark_stack_top--;
 #     ifndef SMALL_CONFIG
-        if (descr < sizeof(word))
+        if (descr < sizeof(ptr_t))
           continue;
 #     endif
 #     ifdef ENABLE_TRACE
@@ -828,7 +829,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
     /* The simple case in which we're scanning a range. */
     GC_ASSERT((ADDR(current_p) & (ALIGNMENT-1)) == 0);
     credit -= limit - current_p;
-    limit -= sizeof(word);
+    limit -= sizeof(ptr_t);
     {
 #     define PREF_DIST 4
 
@@ -869,7 +870,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         /* Empirically, unrolling this loop doesn't help a lot. */
         /* Since PUSH_CONTENTS expands to a lot of code,        */
         /* we don't.                                            */
-        LOAD_WORD_OR_CONTINUE(q, current_p);
+        LOAD_PTR_OR_CONTINUE(q, current_p);
         FIXUP_POINTER(q);
         PREFETCH(current_p + PREF_DIST*CACHE_LINE_SIZE);
         if (ADDR_LT(least_ha, q) && ADDR_LT(q, greatest_ha)) {
@@ -984,6 +985,7 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
               && (word)(high - low + 1) <= GC_mark_stack_size);
     for (p = low; ADDR_GE((ptr_t)high, (ptr_t)p) && i <= n_to_get; ++p) {
         word descr = (word)AO_load(&p->mse_descr.ao);
+
         if (descr != 0) {
             /* Must be ordered after read of descr: */
             AO_store_release_write(&p->mse_descr.ao, 0);
@@ -995,7 +997,7 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
             GC_ASSERT((descr & GC_DS_TAGS) != GC_DS_LENGTH /* 0 */
                     || descr < GC_greatest_real_heap_addr
                                 - GC_least_real_heap_addr
-                    || GC_least_real_heap_addr + sizeof(word)
+                    || GC_least_real_heap_addr + sizeof(ptr_t)
                         >= ADDR(p -> mse_start) + descr
                     || ADDR(p -> mse_start) >= GC_greatest_real_heap_addr);
             /* If this is a big object, count it as size/256 + 1 objects. */
@@ -1419,7 +1421,7 @@ GC_API void GC_CALL GC_push_proc(GC_word descr, void *obj)
         GC_push_all(bottom, h);
     }
 
-    while (ADDR_GE(top, (ptr_t)(h+1))) {
+    while (ADDR_GE(top, (ptr_t)(h + 1))) {
         if ((*dirty_fn)(h)) {
             if ((word)(GC_mark_stack_top - GC_mark_stack)
                 > 3 * GC_mark_stack_size / 4) {
@@ -1654,7 +1656,7 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
     for (; ADDR_GE(lim, current_p); current_p += ALIGNMENT) {
       REGISTER ptr_t q;
 
-      LOAD_WORD_OR_CONTINUE(q, current_p);
+      LOAD_PTR_OR_CONTINUE(q, current_p);
       GC_PUSH_ONE_STACK(q, current_p);
     }
 #   undef GC_greatest_plausible_heap_addr
@@ -1701,7 +1703,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
     for (; ADDR_GE(lim, current_p); current_p += ALIGNMENT) {
       REGISTER ptr_t q;
 
-      LOAD_WORD_OR_CONTINUE(q, current_p);
+      LOAD_PTR_OR_CONTINUE(q, current_p);
       GC_PUSH_ONE_HEAP(q, current_p, GC_mark_stack_top);
     }
 #   undef GC_greatest_plausible_heap_addr
@@ -1710,16 +1712,15 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 #endif /* WRAP_MARK_SOME && PARALLEL_MARK */
 
 #if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES) \
-    && !defined(MARK_BIT_PER_OBJ)
+    && !defined(MARK_BIT_PER_OBJ) && GC_GRANULE_WORDS <= 4
+# define USE_PUSH_MARKED_ACCELERATORS
 # if GC_GRANULE_WORDS == 1
-#   define USE_PUSH_MARKED_ACCELERATORS
 #   define PUSH_GRANULE(q) \
                 do { \
                   ptr_t qcontents = (q)[0]; \
                   GC_PUSH_ONE_HEAP(qcontents, q, GC_mark_stack_top); \
                 } while (0)
 # elif GC_GRANULE_WORDS == 2
-#   define USE_PUSH_MARKED_ACCELERATORS
 #   define PUSH_GRANULE(q) \
                 do { \
                   ptr_t qcontents = (q)[0]; \
@@ -1727,8 +1728,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
                   qcontents = (q)[1]; \
                   GC_PUSH_ONE_HEAP(qcontents, (q)+1, GC_mark_stack_top); \
                 } while (0)
-# elif GC_GRANULE_WORDS == 4
-#   define USE_PUSH_MARKED_ACCELERATORS
+# else
 #   define PUSH_GRANULE(q) \
                 do { \
                   ptr_t qcontents = (q)[0]; \
@@ -1741,9 +1741,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
                   GC_PUSH_ONE_HEAP(qcontents, (q)+3, GC_mark_stack_top); \
                 } while (0)
 # endif
-#endif /* !USE_MARK_BYTES && !MARK_BIT_PER_OBJ && !SMALL_CONFIG */
 
-#ifdef USE_PUSH_MARKED_ACCELERATORS
   /* Push all objects reachable from marked objects in the given block  */
   /* containing objects of size 1 granule.                              */
   GC_ATTR_NO_SANITIZE_THREAD
@@ -1751,7 +1749,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
   {
     const word *mark_word_addr = &(hhdr -> hb_marks[0]);
     ptr_t *p;
-    ptr_t *plim;
+    ptr_t plim;
 
     /* Allow registers to be used for some frequently accessed  */
     /* global variables.  Otherwise aliasing issues are likely  */
@@ -1769,22 +1767,19 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 #   define GC_least_plausible_heap_addr least_ha
 
     p = (ptr_t *)(h -> hb_body);
-    plim = (ptr_t *)((ptr_t)h + HBLKSIZE);
+    plim = (ptr_t)h + HBLKSIZE;
 
-    /* Go through all words in block.   */
-        while (ADDR_LT((ptr_t)p, (ptr_t)plim)) {
-            word mark_word = *mark_word_addr++;
-            ptr_t *q = p;
+    /* Go through all granules in block.    */
+    while (ADDR_LT((ptr_t)p, plim)) {
+      word mark_word = *mark_word_addr++;
+      ptr_t *q;
 
-            while (mark_word != 0) {
-              if (mark_word & 1) {
-                  PUSH_GRANULE(q);
-              }
-              q += GC_GRANULE_WORDS;
-              mark_word >>= 1;
-            }
-            p += CPP_WORDSZ * GC_GRANULE_WORDS;
-        }
+      for (q = p; mark_word != 0; mark_word >>= 1) {
+        if ((mark_word & 1) != 0) PUSH_GRANULE(q);
+        q += GC_GRANULE_WORDS;
+      }
+      p += CPP_WORDSZ * GC_GRANULE_WORDS;
+    }
 
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr
@@ -1803,7 +1798,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
     {
       const word *mark_word_addr = &(hhdr -> hb_marks[0]);
       ptr_t *p;
-      ptr_t *plim;
+      ptr_t plim;
       ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
       ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
       mse * mark_stack_top = GC_mark_stack_top;
@@ -1817,23 +1812,22 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 #     define GC_least_plausible_heap_addr least_ha
 
       p = (ptr_t *)(h -> hb_body);
-      plim = (ptr_t *)((ptr_t)h + HBLKSIZE);
+      plim = (ptr_t)h + HBLKSIZE;
 
-      /* Go through all words in block.   */
-        while (ADDR_LT((ptr_t)p, (ptr_t)plim)) {
-            word mark_word = *mark_word_addr++;
-            ptr_t *q = p;
+      /* Go through all granules in block.  */
+      while (ADDR_LT((ptr_t)p, plim)) {
+        word mark_word = *mark_word_addr++;
+        ptr_t *q;
 
-            while (mark_word != 0) {
-              if (mark_word & 1) {
-                  PUSH_GRANULE(q);
-                  PUSH_GRANULE(q + GC_GRANULE_WORDS);
-              }
-              q += 2 * GC_GRANULE_WORDS;
-              mark_word >>= 2;
-            }
-            p += CPP_WORDSZ * GC_GRANULE_WORDS;
+        for (q = p; mark_word != 0; mark_word >>= 2) {
+          if (mark_word & 1) {
+            PUSH_GRANULE(q);
+            PUSH_GRANULE(q + GC_GRANULE_WORDS);
+          }
+          q += 2 * GC_GRANULE_WORDS;
         }
+        p += CPP_WORDSZ * GC_GRANULE_WORDS;
+      }
 
 #     undef GC_greatest_plausible_heap_addr
 #     undef GC_least_plausible_heap_addr
@@ -1854,7 +1848,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
       {
         const word *mark_word_addr = &(hhdr -> hb_marks[0]);
         ptr_t *p;
-        ptr_t *plim;
+        ptr_t plim;
         ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
         ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
         mse * mark_stack_top = GC_mark_stack_top;
@@ -1868,24 +1862,23 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 #       define GC_least_plausible_heap_addr least_ha
 
         p = (ptr_t *)(h -> hb_body);
-        plim = (ptr_t *)((ptr_t)h + HBLKSIZE);
+        plim = (ptr_t)h + HBLKSIZE;
 
-        /* Go through all words in block.   */
-        while (ADDR_LT((ptr_t)p, (ptr_t)plim)) {
-            word mark_word = *mark_word_addr++;
-            ptr_t *q = p;
+        /* Go through all granules in block.    */
+        while (ADDR_LT((ptr_t)p, plim)) {
+          word mark_word = *mark_word_addr++;
+          ptr_t *q;
 
-            while(mark_word != 0) {
-              if (mark_word & 1) {
-                  PUSH_GRANULE(q);
-                  PUSH_GRANULE(q + GC_GRANULE_WORDS);
-                  PUSH_GRANULE(q + 2*GC_GRANULE_WORDS);
-                  PUSH_GRANULE(q + 3*GC_GRANULE_WORDS);
-              }
-              q += 4 * GC_GRANULE_WORDS;
-              mark_word >>= 4;
+          for (q = p; mark_word != 0; mark_word >>= 4) {
+            if (mark_word & 1) {
+              PUSH_GRANULE(q);
+              PUSH_GRANULE(q + GC_GRANULE_WORDS);
+              PUSH_GRANULE(q + 2 * GC_GRANULE_WORDS);
+              PUSH_GRANULE(q + 3 * GC_GRANULE_WORDS);
             }
-            p += CPP_WORDSZ * GC_GRANULE_WORDS;
+            q += 4 * GC_GRANULE_WORDS;
+          }
+          p += CPP_WORDSZ * GC_GRANULE_WORDS;
         }
 #       undef GC_greatest_plausible_heap_addr
 #       undef GC_least_plausible_heap_addr
@@ -1897,21 +1890,20 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
       }
 #   endif /* GC_GRANULE_WORDS < 4 */
 # endif /* UNALIGNED_PTRS */
-#endif /* USE_PUSH_MARKED_ACCELERATORS */
+#endif /* !USE_MARK_BYTES && !MARK_BIT_PER_OBJ && !SMALL_CONFIG */
 
 /* Push all objects reachable from marked objects in the given block.   */
 STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
 {
     size_t sz = hhdr -> hb_sz;
-    word descr = hhdr -> hb_descr;
     ptr_t p;
     size_t bit_no;
-    ptr_t lim;
+    ptr_t plim;
     mse * mark_stack_top;
     mse * mark_stack_limit = GC_mark_stack_limit;
 
     /* Some quick shortcuts: */
-    if ((/* 0 | */ GC_DS_LENGTH) == descr) return;
+    if ((/* 0 | */ GC_DS_LENGTH) == hhdr -> hb_descr) return;
     if (GC_block_empty(hhdr)/* nothing marked */) return;
 
 #   if !defined(GC_DISABLE_INCREMENTAL)
@@ -1919,11 +1911,11 @@ STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
 #   endif
     GC_objects_are_marked = TRUE;
     switch (BYTES_TO_GRANULES(sz)) {
-#   if defined(USE_PUSH_MARKED_ACCELERATORS)
+#   ifdef USE_PUSH_MARKED_ACCELERATORS
       case 1:
         GC_push_marked1(h, hhdr);
         break;
-#     if !defined(UNALIGNED_PTRS)
+#     ifndef UNALIGNED_PTRS
         case 2:
           GC_push_marked2(h, hhdr);
           break;
@@ -1937,10 +1929,10 @@ STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
       case 1: /* to suppress "switch statement contains no case" warning */
 #   endif
     default:
-      lim = sz > MAXOBJBYTES ? h -> hb_body
+      plim = sz > MAXOBJBYTES ? h -> hb_body
                 : CAST_THRU_UINTPTR(ptr_t, (h + 1) -> hb_body) - sz;
       mark_stack_top = GC_mark_stack_top;
-      for (p = h -> hb_body, bit_no = 0; ADDR_GE(lim, p);
+      for (p = h -> hb_body, bit_no = 0; ADDR_GE(plim, p);
            p += sz, bit_no += MARK_BIT_OFFSET(sz)) {
         /* Mark from fields inside the object.  */
         if (mark_bit_from_hdr(hhdr, bit_no)) {
@@ -1953,35 +1945,34 @@ STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
 }
 
 #ifdef ENABLE_DISCLAIM
-/* Unconditionally mark from all objects which have not been reclaimed. */
-/* This is useful in order to retain pointers which are reachable from  */
-/* the disclaim notifiers.                                              */
-/* To determine whether an object has been reclaimed, we require that   */
-/* any live object has a non-zero as one of the two least significant   */
-/* bits of the first word.  On the other hand, a reclaimed object is    */
-/* a member of free-lists, and thus contains a word-aligned             */
-/* next-pointer as the first word.                                      */
+  /* Unconditionally mark from all objects which have not been          */
+  /* reclaimed.  This is useful in order to retain pointers reachable   */
+  /* from the disclaim notifiers.                                       */
+  /* To determine whether an object has been reclaimed, we require that */
+  /* any live object has a non-zero as one of the two least significant */
+  /* bits of the first "pointer-sized" word.  On the other hand, the    */
+  /* reclaimed object is a member of free lists, and thus contains      */
+  /* a pointer-aligned next-pointer as the first "pointer-sized" word.  */
   GC_ATTR_NO_SANITIZE_THREAD
   STATIC void GC_push_unconditionally(struct hblk *h, const hdr *hhdr)
   {
     size_t sz = hhdr -> hb_sz;
-    word descr = hhdr -> hb_descr;
     ptr_t p;
-    ptr_t lim;
+    ptr_t plim;
     mse * mark_stack_top;
     mse * mark_stack_limit = GC_mark_stack_limit;
 
-    if ((/* 0 | */ GC_DS_LENGTH) == descr) return;
+    if ((/* 0 | */ GC_DS_LENGTH) == hhdr -> hb_descr) return;
 
 #   if !defined(GC_DISABLE_INCREMENTAL)
       GC_n_rescuing_pages++;
 #   endif
     GC_objects_are_marked = TRUE;
-    lim = sz > MAXOBJBYTES ? h -> hb_body
+    plim = sz > MAXOBJBYTES ? h -> hb_body
                 : CAST_THRU_UINTPTR(ptr_t, (h + 1) -> hb_body) - sz;
     mark_stack_top = GC_mark_stack_top;
-    for (p = h -> hb_body; ADDR_GE(lim, p); p += sz) {
-      if ((*(word *)p & 0x3) != 0) {
+    for (p = h -> hb_body; ADDR_GE(plim, p); p += sz) {
+      if ((ADDR(*(ptr_t *)p) & 0x3) != 0) {
         mark_stack_top = GC_push_obj(p, hhdr, mark_stack_top,
                                      mark_stack_limit);
       }

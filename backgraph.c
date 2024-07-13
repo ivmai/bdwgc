@@ -29,7 +29,7 @@
 
 #define MAX_IN  10      /* Maximum in-degree we handle directly */
 
-#if (!defined(DBG_HDRS_ALL) || (ALIGNMENT != CPP_WORDSZ/8) \
+#if (!defined(DBG_HDRS_ALL) || (ALIGNMENT != CPP_PTRSZ / 8) \
      /* || !defined(UNIX_LIKE) */) && !defined(CPPCHECK)
 # error The configuration does not support MAKE_BACK_GRAPH
 #endif
@@ -357,10 +357,10 @@ static void add_back_edges(ptr_t p, size_t sz, word descr)
       descr = sz;
     }
 
-  for (; ADDR_LT(current_p, p + descr); current_p += sizeof(word)) {
+  for (; ADDR_LT(current_p, p + descr); current_p += sizeof(ptr_t)) {
     ptr_t q;
 
-    LOAD_WORD_OR_CONTINUE(q, current_p);
+    LOAD_PTR_OR_CONTINUE(q, current_p);
     FIXUP_POINTER(q);
     if (GC_least_real_heap_addr < ADDR(q)
         && ADDR(q) < GC_greatest_real_heap_addr) {
