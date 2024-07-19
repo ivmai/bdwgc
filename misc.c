@@ -318,7 +318,7 @@ STATIC void GC_init_size_map(void)
       /* Make sure the recursive call is not a tail call, and the bzero */
       /* call is not recognized as dead code.                           */
 #     if defined(CPPCHECK)
-        GC_noop1(dummy[0]);
+        GC_noop1(ADDR(dummy[0]));
 #     else
         GC_noop1(COVERT_DATAFLOW(ADDR(dummy)));
 #     endif
