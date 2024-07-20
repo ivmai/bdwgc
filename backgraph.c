@@ -35,8 +35,8 @@
 #endif
 
 /* We store single back pointers directly in the object's oh_bg_ptr field. */
-/* If there is more than one ptr to an object, we store q | FLAG_MANY,     */
-/* where q is a pointer to a back_edges object.                            */
+/* If there is more than one ptr to an object, we store q or'ed with       */
+/* FLAG_MANY, where q is a pointer to a back_edges object.                 */
 /* Every once in a while we use a back_edges object even for a single      */
 /* pointer, since we need the other fields in the back_edges structure to  */
 /* be present in some fraction of the objects.  Otherwise we get serious   */
@@ -206,7 +206,7 @@ static void ensure_struct(ptr_t p)
     be -> height = HEIGHT_UNKNOWN;
     be -> height_gc_no = (unsigned short)(GC_gc_no - 1);
     GC_ASSERT(ADDR_GE((ptr_t)be, (ptr_t)back_edge_space));
-    SET_OH_BG_PTR(p, (word)be | FLAG_MANY);
+    SET_OH_BG_PTR(p, CPTR_SET_FLAGS(be, FLAG_MANY));
   }
 }
 
@@ -244,7 +244,7 @@ static void add_edge(ptr_t p, ptr_t q)
 
     /* Check whether it was already in the list of predecessors. */
     {
-      back_edges *e = (back_edges *)((word)pred & ~(word)FLAG_MANY);
+      back_edges *e = (back_edges *)CPTR_CLEAR_FLAGS(pred, FLAG_MANY);
       word n_edges;
       word total;
       int local = 0;
@@ -271,7 +271,7 @@ static void add_edge(ptr_t p, ptr_t q)
     }
 
     ensure_struct(q);
-    be = (back_edges *)((word)GET_OH_BG_PTR(q) & ~(word)FLAG_MANY);
+    be = (back_edges *)CPTR_CLEAR_FLAGS(GET_OH_BG_PTR(q), FLAG_MANY);
     for (i = be -> n_edges, be_cont = be; i > MAX_IN; i -= MAX_IN)
         be_cont = be_cont -> cont;
     if (i == MAX_IN) {
@@ -320,7 +320,7 @@ static void reset_back_edge(ptr_t p, size_t sz, word descr)
     ptr_t old_back_ptr = GET_OH_BG_PTR(p);
 
     if ((ADDR(old_back_ptr) & FLAG_MANY) != 0) {
-      back_edges *be = (back_edges *)((word)old_back_ptr & ~(word)FLAG_MANY);
+      back_edges *be = (back_edges *)CPTR_CLEAR_FLAGS(old_back_ptr, FLAG_MANY);
 
       if (!(be -> flags & RETAIN)) {
         deallocate_back_edges(be);
@@ -404,7 +404,7 @@ static word backwards_height(ptr_t p)
     pop_in_progress(p);
     return result;
   }
-  be = (back_edges *)((word)pred & ~(word)FLAG_MANY);
+  be = (back_edges *)CPTR_CLEAR_FLAGS(pred, FLAG_MANY);
   if (be -> height >= 0 && be -> height_gc_no == (unsigned short)GC_gc_no)
       return (word)(be -> height);
   /* Ignore back edges in DFS */
@@ -485,14 +485,14 @@ static void update_max_height(ptr_t p, size_t sz, word descr)
       GC_noop1_ptr(&back_ptr);
 #   endif
     if (back_ptr != NULL && (ADDR(back_ptr) & FLAG_MANY) != 0) {
-      be = (back_edges *)((word)back_ptr & ~(word)FLAG_MANY);
+      be = (back_edges *)CPTR_CLEAR_FLAGS(back_ptr, FLAG_MANY);
       if (be -> height != HEIGHT_UNKNOWN)
         p_height = (word)(be -> height);
     }
 
     {
       ptr_t pred = back_ptr;
-      back_edges *e = (back_edges *)((word)pred & ~(word)FLAG_MANY);
+      back_edges *e = (back_edges *)CPTR_CLEAR_FLAGS(pred, FLAG_MANY);
       word n_edges;
       word total;
       int local = 0;
@@ -518,6 +518,7 @@ static void update_max_height(ptr_t p, size_t sz, word descr)
         /* in the points-to graph.                                      */
         if (!GC_is_marked(pred) && GC_HAS_DEBUG_INFO(pred)) {
           word this_height = backwards_height(pred);
+
           if (this_height > p_height) {
             p_height = this_height;
             p_deepest_obj = pred;
@@ -528,10 +529,10 @@ static void update_max_height(ptr_t p, size_t sz, word descr)
 
     if (p_height > 0) {
       /* Remember the height for next time. */
-        if (be == 0) {
+        if (NULL == be) {
           ensure_struct(p);
           back_ptr = GET_OH_BG_PTR(p);
-          be = (back_edges *)((word)back_ptr & ~(word)FLAG_MANY);
+          be = (back_edges *)CPTR_CLEAR_FLAGS(back_ptr, FLAG_MANY);
         }
         be -> flags |= RETAIN;
         be -> height = (signed_word)p_height;

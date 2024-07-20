@@ -45,8 +45,8 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
         /* clear fragments so that the assumption holds for the         */
         /* selected pointer location.                                   */
         const struct GC_finalizer_closure *fc
-            = (struct GC_finalizer_closure *)((word)fc_p
-                                        & ~(word)FINALIZER_CLOSURE_FLAG);
+            = (struct GC_finalizer_closure *)CPTR_CLEAR_FLAGS(fc_p,
+                                                FINALIZER_CLOSURE_FLAG);
 
         GC_ASSERT(!GC_find_leak);
         fc -> proc((ptr_t *)obj + 1, fc -> cd);
@@ -118,7 +118,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
                         (int)GC_finalized_kind);
     if (EXPECT(NULL == op, FALSE)) return NULL;
 
-    fc_p = (ptr_t)((word)fclos | FINALIZER_CLOSURE_FLAG);
+    /* Set the flag (w/o conversion to a numeric type) and store    */
+    /* the finalizer closure.                                       */
+    fc_p = CPTR_SET_FLAGS(GC_CAST_AWAY_CONST_PVOID(fclos),
+                          FINALIZER_CLOSURE_FLAG);
 #   ifdef AO_HAVE_store
         AO_store((volatile AO_t *)op, (AO_t)fc_p);
 #   else

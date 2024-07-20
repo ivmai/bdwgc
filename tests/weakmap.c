@@ -211,7 +211,7 @@ static void *weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
   new_base = (void **)GC_generic_malloc(sizeof(void *) + wm->obj_size,
                                         (int)wm->weakobj_kind);
   CHECK_OUT_OF_MEMORY(new_base);
-  *new_base = (void *)((GC_word)wm | FINALIZER_CLOSURE_FLAG);
+  *new_base = CPTR_SET_FLAGS(wm, FINALIZER_CLOSURE_FLAG);
   new_obj = new_base + 1;
   memcpy(new_obj, obj, wm->obj_size);
   GC_end_stubborn_change(new_base);
@@ -249,7 +249,7 @@ static int GC_CALLBACK weakmap_disclaim(void *obj_base)
     return 0;   /* on GC free list, ignore it.  */
 
   my_assert(!IS_FLAG_SET(header, INVALIDATE_FLAG));
-  wm = (struct weakmap *)((GC_word)header & ~(GC_word)FINALIZER_CLOSURE_FLAG);
+  wm = (struct weakmap *)CPTR_CLEAR_FLAGS(header, FINALIZER_CLOSURE_FLAG);
   if (NULL == wm->links)
     return 0;   /* weakmap has been already destroyed */
   obj = (void **)obj_base + 1;
@@ -278,7 +278,8 @@ static int GC_CALLBACK weakmap_disclaim(void *obj_base)
 # ifdef DEBUG_DISCLAIM_WEAKMAP
     printf("Removing %p, hash= 0x%x\n", obj, h);
 # endif
-  *(GC_word *)obj_base |= INVALIDATE_FLAG;
+  my_assert(header == *(void **)obj_base);
+  *(void **)obj_base = CPTR_SET_FLAGS(header, INVALIDATE_FLAG);
   AO_fetch_and_add1(&stat_removed);
   for (link = &wm->links[h % wm->capacity];; link = &(*link)->next) {
     const void *old_obj;

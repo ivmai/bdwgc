@@ -348,6 +348,10 @@ typedef struct hblkhdr hdr;
 # define MAKE_HOTTER(p,d) (void)((p) -= (d))
 #endif /* !STACK_GROWS_UP */
 
+/* Clear/set flags (given by a mask) in a pointer.  */
+#define CPTR_CLEAR_FLAGS(p, mask) (ptr_t)((word)(p) & ~(word)(mask))
+#define CPTR_SET_FLAGS(p, mask) (ptr_t)((word)(p) | (word)(mask))
+
 #if defined(AMIGA) && defined(__SASC)
 #   define GC_FAR __far
 #else
