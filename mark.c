@@ -1712,15 +1712,15 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 #endif /* WRAP_MARK_SOME && PARALLEL_MARK */
 
 #if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES) \
-    && !defined(MARK_BIT_PER_OBJ) && GC_GRANULE_WORDS <= 4
+    && !defined(MARK_BIT_PER_OBJ) && GC_GRANULE_PTRS <= 4
 # define USE_PUSH_MARKED_ACCELERATORS
-# if GC_GRANULE_WORDS == 1
+# if GC_GRANULE_PTRS == 1
 #   define PUSH_GRANULE(q) \
                 do { \
                   ptr_t qcontents = (q)[0]; \
                   GC_PUSH_ONE_HEAP(qcontents, q, GC_mark_stack_top); \
                 } while (0)
-# elif GC_GRANULE_WORDS == 2
+# elif GC_GRANULE_PTRS == 2
 #   define PUSH_GRANULE(q) \
                 do { \
                   ptr_t qcontents = (q)[0]; \
@@ -1776,9 +1776,9 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 
       for (q = p; mark_word != 0; mark_word >>= 1) {
         if ((mark_word & 1) != 0) PUSH_GRANULE(q);
-        q += GC_GRANULE_WORDS;
+        q += GC_GRANULE_PTRS;
       }
-      p += CPP_WORDSZ * GC_GRANULE_WORDS;
+      p += CPP_WORDSZ * GC_GRANULE_PTRS;
     }
 
 #   undef GC_greatest_plausible_heap_addr
@@ -1822,11 +1822,11 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
         for (q = p; mark_word != 0; mark_word >>= 2) {
           if (mark_word & 1) {
             PUSH_GRANULE(q);
-            PUSH_GRANULE(q + GC_GRANULE_WORDS);
+            PUSH_GRANULE(q + GC_GRANULE_PTRS);
           }
-          q += 2 * GC_GRANULE_WORDS;
+          q += 2 * GC_GRANULE_PTRS;
         }
-        p += CPP_WORDSZ * GC_GRANULE_WORDS;
+        p += CPP_WORDSZ * GC_GRANULE_PTRS;
       }
 
 #     undef GC_greatest_plausible_heap_addr
@@ -1838,7 +1838,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
       GC_mark_stack_top = mark_stack_top;
     }
 
-#   if GC_GRANULE_WORDS < 4
+#   if GC_GRANULE_PTRS < 4
       /* Push all objects reachable from marked objects in the given    */
       /* block of size 4 (granules) objects.  There is a risk of mark   */
       /* stack overflow here.  But we handle that.  And only unmarked   */
@@ -1872,13 +1872,13 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
           for (q = p; mark_word != 0; mark_word >>= 4) {
             if (mark_word & 1) {
               PUSH_GRANULE(q);
-              PUSH_GRANULE(q + GC_GRANULE_WORDS);
-              PUSH_GRANULE(q + 2 * GC_GRANULE_WORDS);
-              PUSH_GRANULE(q + 3 * GC_GRANULE_WORDS);
+              PUSH_GRANULE(q + GC_GRANULE_PTRS);
+              PUSH_GRANULE(q + 2 * GC_GRANULE_PTRS);
+              PUSH_GRANULE(q + 3 * GC_GRANULE_PTRS);
             }
-            q += 4 * GC_GRANULE_WORDS;
+            q += 4 * GC_GRANULE_PTRS;
           }
-          p += CPP_WORDSZ * GC_GRANULE_WORDS;
+          p += CPP_WORDSZ * GC_GRANULE_PTRS;
         }
 #       undef GC_greatest_plausible_heap_addr
 #       undef GC_least_plausible_heap_addr
@@ -1888,7 +1888,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 #       define GC_mark_stack_top GC_arrays._mark_stack_top
         GC_mark_stack_top = mark_stack_top;
       }
-#   endif /* GC_GRANULE_WORDS < 4 */
+#   endif /* GC_GRANULE_PTRS < 4 */
 # endif /* UNALIGNED_PTRS */
 #endif /* !USE_MARK_BYTES && !MARK_BIT_PER_OBJ && !SMALL_CONFIG */
 
@@ -1919,7 +1919,7 @@ STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
         case 2:
           GC_push_marked2(h, hhdr);
           break;
-#       if GC_GRANULE_WORDS < 4
+#       if GC_GRANULE_PTRS < 4
           case 4:
             GC_push_marked4(h, hhdr);
             break;

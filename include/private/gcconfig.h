@@ -2690,6 +2690,12 @@ EXTERN_C_BEGIN
 # define CPP_PTRSZ CPP_WORDSZ
 #endif
 
+#ifndef CPPCHECK
+# if GC_SIZEOF_PTR * 8 != CPP_PTRSZ
+#   error Bad pointer size
+# endif
+#endif /* !CPPCHECK */
+
 #ifndef ALIGNMENT
 # if !defined(CPP_PTRSZ) && !defined(CPPCHECK)
 #   error Undefined both ALIGNMENT and CPP_PTRSZ

@@ -116,7 +116,7 @@
 * Declare GC_register_stackbottom symbol as internal on IA64 (refactoring)
 * Define ALIGNMENT macro based on CPP_PTRSZ value by default (refactoring)
 * Define GC_GLIBC_PREREQ internal macro (refactoring)
-* Define GC_GRANULE_BYTES macro based on GC_GRANULE_WORDS value (refactoring)
+* Define GC_GRANULE_BYTES macro based on GC_GRANULE_PTRS value (refactoring)
 * Define GC_VERSION_VAL_T public macro (refactoring)
 * Define GC_get_parallel and GC_set_markers_count in single-threaded GC
 * Define GC_print_stats as GC_INNER (refactoring)

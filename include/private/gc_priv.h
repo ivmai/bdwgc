@@ -898,7 +898,7 @@ EXTERN_C_BEGIN
 #define GRANULES_TO_BYTES(lg) ((lg) * GC_GRANULE_BYTES)
 #define BYTES_TO_PTRS(lb) ((lb) / sizeof(ptr_t))
 #define PTRS_TO_BYTES(lpw) ((lpw) * sizeof(ptr_t))
-#define GRANULES_TO_PTRS(lg) ((lg) * GC_GRANULE_WORDS)
+#define GRANULES_TO_PTRS(lg) ((lg) * GC_GRANULE_PTRS)
 
 /* Convert size in bytes to that in pointers rounding up (but   */
 /* not adding extra byte at end).                               */
