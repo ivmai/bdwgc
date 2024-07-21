@@ -28,7 +28,7 @@
 STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
 {
 #   ifdef AO_HAVE_load
-        ptr_t fc_p = (ptr_t)AO_load((volatile AO_t *)obj);
+        ptr_t fc_p = GC_cptr_load((volatile ptr_t *)obj);
 #   else
         ptr_t fc_p = *(ptr_t *)obj;
 #   endif
@@ -123,7 +123,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
     fc_p = CPTR_SET_FLAGS(GC_CAST_AWAY_CONST_PVOID(fclos),
                           FINALIZER_CLOSURE_FLAG);
 #   ifdef AO_HAVE_store
-        AO_store((volatile AO_t *)op, (AO_t)fc_p);
+        GC_cptr_store((volatile ptr_t *)op, fc_p);
 #   else
         *(ptr_t *)op = fc_p;
 #   endif

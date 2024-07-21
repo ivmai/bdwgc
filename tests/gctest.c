@@ -214,26 +214,6 @@ static void *checkOOM(void *p)
   /* AO_t not defined. */
 # define AO_t size_t
 #endif
-#ifndef AO_HAVE_load_acquire
-  static AO_t AO_load_acquire(const volatile AO_t *addr)
-  {
-    AO_t result;
-
-    FINALIZER_LOCK();
-    result = *addr;
-    FINALIZER_UNLOCK();
-    return result;
-  }
-#endif
-#ifndef AO_HAVE_store_release
-  /* Not a macro as new_val argument should be evaluated before the lock. */
-  static void AO_store_release(volatile AO_t *addr, AO_t new_val)
-  {
-    FINALIZER_LOCK();
-    *addr = new_val;
-    FINALIZER_UNLOCK();
-  }
-#endif
 #ifndef AO_HAVE_fetch_and_add1
 # define AO_fetch_and_add1(p) ((*(p))++)
                 /* This is used only to update counters.        */
@@ -660,6 +640,29 @@ static void check_uncollectable_ints(sexpr list, int low, int up)
     }
   }
 
+# if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_OSF1_THREADS) \
+     && defined(SIGNAL_BASED_STOP_WORLD)
+#   ifndef AO_HAVE_load_acquire
+      static AO_t AO_load_acquire(const volatile AO_t *addr)
+      {
+        AO_t result;
+
+        FINALIZER_LOCK();
+        result = *addr;
+        FINALIZER_UNLOCK();
+        return result;
+      }
+#   endif
+#   ifndef AO_HAVE_store_release
+      static void AO_store_release(volatile AO_t *addr, AO_t new_val)
+      {
+        FINALIZER_LOCK();
+        *addr = new_val;
+        FINALIZER_UNLOCK();
+      }
+#   endif
+# endif /* GC_ENABLE_SUSPEND_THREAD && SIGNAL_BASED_STOP_WORLD */
+
 # if defined(GC_PTHREADS)
     static void*
 # elif !defined(MSWINCE) && !defined(MSWIN_XBOX1) && !defined(NO_CRT) \
@@ -831,13 +834,35 @@ static void test_generic_malloc_or_special(const void *p) {
   GC_FREE(p2);
 }
 
+#ifndef AO_HAVE_load_acquire
+  static char *GC_cptr_load_acquire(char * const volatile *addr)
+  {
+    char *result;
+
+    FINALIZER_LOCK();
+    result = *addr;
+    FINALIZER_UNLOCK();
+    return result;
+  }
+#endif
+
+#ifndef AO_HAVE_store_release
+  /* Not a macro as new_val argument should be evaluated before the lock. */
+  static void GC_cptr_store_release(char * volatile *addr, char *new_val)
+  {
+    FINALIZER_LOCK();
+    *addr = new_val;
+    FINALIZER_UNLOCK();
+  }
+#endif
+
 /* Try to force a to be strangely aligned */
 volatile struct A_s {
   char dummy;
-  AO_t aa;
+  char *volatile aa;
 } A;
-#define a_set(p) AO_store_release(&A.aa, (AO_t)(p))
-#define a_get() (sexpr)AO_load_acquire(&A.aa)
+#define a_set(p) GC_cptr_store_release(&A.aa, (char *)(p))
+#define a_get() (sexpr)GC_cptr_load_acquire(&A.aa)
 
 /*
  * Repeatedly reverse lists built out of very different sized cons cells.

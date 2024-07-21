@@ -168,8 +168,8 @@ typedef struct {
 # endif
 # if defined(PARALLEL_MARK) && defined(KEEP_BACK_PTRS)
 #   define GC_HAS_DEBUG_INFO(base) \
-                ((AO_load((volatile AO_t *)(base)) & 1) != 0 \
-                 && GC_has_other_debug_info(base) > 0)
+        (((GC_uintptr_t)GC_cptr_load((volatile ptr_t *)(base)) & 1) != 0 \
+         && GC_has_other_debug_info(base) > 0)
                         /* Atomic load is used as GC_store_back_pointer */
                         /* stores oh_back_ptr atomically (base might    */
                         /* point to the field); this prevents a TSan    */

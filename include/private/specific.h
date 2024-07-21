@@ -91,16 +91,10 @@ typedef struct thread_specific_entry {
 #define INVALID_QTID ((size_t)0)
 #define INVALID_THREADID ((pthread_t)0)
 
-union ptse_ao_u {
-  tse *p;
-  volatile AO_t ao;
-};
-
 typedef struct thread_specific_data {
-    tse * volatile cache[TS_CACHE_SIZE];
-                        /* A faster index to the hash table */
-    union ptse_ao_u hash[TS_HASH_SIZE];
-    pthread_mutex_t lock;
+  tse *volatile cache[TS_CACHE_SIZE]; /* a faster index to the hash table */
+  tse *hash[TS_HASH_SIZE];
+  pthread_mutex_t lock;
 } tsd;
 
 typedef tsd * GC_key_t;

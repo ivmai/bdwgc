@@ -90,7 +90,8 @@
 # define AO_HAVE_load
 # define AO_load_acquire(p) __atomic_load_n(p, __ATOMIC_ACQUIRE)
 # define AO_HAVE_load_acquire
-# define AO_load_acquire_read(p) AO_load_acquire(p)
+/* AO_load_acquire_read(p) is not defined as it is unused, but we   */
+/* need its AO_HAVE_x macro defined.                                */
 # define AO_HAVE_load_acquire_read
 
 # define AO_store(p, v) __atomic_store_n(p, v, __ATOMIC_RELAXED)
@@ -107,17 +108,10 @@
 
 # ifdef AO_REQUIRE_CAS
     AO_INLINE int
-    AO_compare_and_swap(volatile AO_t *p, AO_t ov, AO_t nv)
-    {
-      return (int)__atomic_compare_exchange_n(p, &ov, nv, 0,
-                                        __ATOMIC_RELAXED, __ATOMIC_RELAXED);
-    }
-
-    AO_INLINE int
     AO_compare_and_swap_release(volatile AO_t *p, AO_t ov, AO_t nv)
     {
       return (int)__atomic_compare_exchange_n(p, &ov, nv, 0,
-                                        __ATOMIC_RELEASE, __ATOMIC_RELAXED);
+                        __ATOMIC_RELEASE, __ATOMIC_RELAXED /* on fail */);
     }
 #   define AO_HAVE_compare_and_swap_release
 # endif
@@ -145,5 +139,40 @@
 # endif
 
 #endif /* !GC_BUILTIN_ATOMIC */
+
+#if defined(GC_BUILTIN_ATOMIC) || CPP_PTRSZ > CPP_WORDSZ
+  /* Assume that GCC atomic intrinsics are available (and have correct  */
+  /* implementation).  p should be of a pointer to ptr_t (char*) value. */
+# define GC_cptr_load(p) __atomic_load_n(p, __ATOMIC_RELAXED)
+# define GC_cptr_load_acquire(p) __atomic_load_n(p, __ATOMIC_ACQUIRE)
+# define GC_cptr_load_acquire_read(p) GC_cptr_load_acquire(p)
+# define GC_cptr_store(p, v) __atomic_store_n(p, v, __ATOMIC_RELAXED)
+# define GC_cptr_store_release(p, v) __atomic_store_n(p, v, __ATOMIC_RELEASE)
+# define GC_cptr_store_release_write(p, v) GC_cptr_store_release(p, v)
+# ifdef AO_REQUIRE_CAS
+    AO_INLINE int
+    GC_cptr_compare_and_swap(char *volatile *p, char *ov, char *nv)
+    {
+      return (int)__atomic_compare_exchange_n(p, &ov, nv, 0,
+                        __ATOMIC_RELAXED, __ATOMIC_RELAXED);
+    }
+# endif
+#else
+  /* Redirect to the AO_ primitives.  Assume the size of AO_t matches   */
+  /* that of a pointer.                                                 */
+# define GC_cptr_load(p) (char *)AO_load((volatile AO_t *)(p))
+# define GC_cptr_load_acquire(p) (char *)AO_load_acquire((volatile AO_t *)(p))
+# define GC_cptr_load_acquire_read(p) \
+            (char *)AO_load_acquire_read((volatile AO_t *)(p))
+# define GC_cptr_store(p, v) AO_store((volatile AO_t *)(p), (AO_t)(v))
+# define GC_cptr_store_release(p, v) \
+            AO_store_release((volatile AO_t *)(p), (AO_t)(v))
+# define GC_cptr_store_release_write(p, v) \
+            AO_store_release_write((volatile AO_t *)(p), (AO_t)(v))
+# ifdef AO_REQUIRE_CAS
+#   define GC_cptr_compare_and_swap(p, ov, nv) \
+            AO_compare_and_swap((volatile AO_t *)(p), (AO_t)(ov), (AO_t)(nv))
+# endif
+#endif /* !GC_BUILTIN_ATOMIC && CPP_PTRSZ == CPP_WORDSZ */
 
 #endif /* GC_ATOMIC_OPS_H */

@@ -221,12 +221,12 @@ GC_API int GC_CALL GC_get_thr_restart_signal(void)
 # define ao_load_acquire_async(p) (*(p))
 # define ao_load_async(p) ao_load_acquire_async(p)
 # define ao_store_release_async(p, v) (void)(*(p) = (v))
-# define ao_store_async(p, v) ao_store_release_async(p, v)
+# define ao_cptr_store_async(p, v) (void)(*(p) = (v))
 #else
 # define ao_load_acquire_async(p) AO_load_acquire(p)
 # define ao_load_async(p) AO_load(p)
 # define ao_store_release_async(p, v) AO_store_release(p, v)
-# define ao_store_async(p, v) AO_store(p, v)
+# define ao_cptr_store_async(p, v) GC_cptr_store(p, v)
 #endif /* !BASE_ATOMIC_OPS_EMULATED */
 
 STATIC sem_t GC_suspend_ack_sem; /* also used to acknowledge restart */
@@ -296,15 +296,13 @@ GC_INLINE void GC_store_stack_ptr(GC_stack_context_t crtn)
   /* and fetched (by GC_push_all_stacks) using the atomic primitives to */
   /* avoid the related TSan warning.                                    */
 # ifdef SPARC
-    ao_store_async((volatile AO_t *)&(crtn -> stack_ptr),
-                   (AO_t)GC_save_regs_in_stack());
+    ao_cptr_store_async(&(crtn -> stack_ptr), GC_save_regs_in_stack());
     /* TODO: regs saving already done by GC_with_callee_saves_pushed */
 # else
 #   ifdef IA64
       crtn -> backing_store_ptr = GC_save_regs_in_stack();
 #   endif
-    ao_store_async((volatile AO_t *)&(crtn -> stack_ptr),
-                   (AO_t)GC_approx_sp());
+    ao_cptr_store_async(&(crtn -> stack_ptr), GC_approx_sp());
 # endif
 }
 
@@ -747,9 +745,9 @@ STATIC void GC_restart_handler(int sig)
     }
 # endif /* GC_ENABLE_SUSPEND_THREAD */
 
+# undef ao_cptr_store_async
 # undef ao_load_acquire_async
 # undef ao_load_async
-# undef ao_store_async
 # undef ao_store_release_async
 #endif /* !NACL */
 
@@ -811,7 +809,7 @@ GC_INNER void GC_push_all_stacks(void)
               is_self = TRUE;
 #           endif
         } else {
-            lo = (ptr_t)AO_load((volatile AO_t *)&(crtn -> stack_ptr));
+            lo = GC_cptr_load(&(crtn -> stack_ptr));
 #           ifdef IA64
               bs_hi = crtn -> backing_store_ptr;
 #           elif defined(E2K)

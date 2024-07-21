@@ -63,7 +63,8 @@ struct finalizable_object {
   /* Update finalize_now atomically as GC_should_invoke_finalizers does */
   /* not acquire the allocator lock.                                    */
 # define SET_FINALIZE_NOW(fo) \
-            AO_store((volatile AO_t *)&GC_fnlz_roots.finalize_now, (AO_t)(fo))
+            GC_cptr_store((volatile ptr_t *)&GC_fnlz_roots.finalize_now, \
+                          (ptr_t)(fo))
 #else
 # define SET_FINALIZE_NOW(fo) (void)(GC_fnlz_roots.finalize_now = (fo))
 #endif /* !THREADS */
@@ -1259,7 +1260,7 @@ GC_API unsigned GC_CALL GC_get_interrupt_finalizers(void)
 GC_API int GC_CALL GC_should_invoke_finalizers(void)
 {
 # ifdef AO_HAVE_load
-    return AO_load((volatile AO_t *)&GC_fnlz_roots.finalize_now) != 0;
+    return GC_cptr_load((volatile ptr_t *)&GC_fnlz_roots.finalize_now) != NULL;
 # else
     return GC_fnlz_roots.finalize_now != NULL;
 # endif /* !THREADS */

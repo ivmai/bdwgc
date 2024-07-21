@@ -1047,17 +1047,14 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
     /* not do atomic updates to the free-list).  The race seems to be   */
     /* harmless, and for now we just skip this check in case of TSan.   */
 #   if defined(AO_HAVE_load_acquire_read) && !defined(THREAD_SANITIZER)
-      AO_t *list = (AO_t *)AO_load_acquire_read((AO_t *)pfreelist);
+      ptr_t list = GC_cptr_load_acquire_read((volatile ptr_t *)pfreelist);
                 /* Atomic operations are used because the world is running. */
-      AO_t *prev;
-      AO_t *p;
+      ptr_t p, prev, next;
 
       if (ADDR(list) <= HBLKSIZE) return;
 
-      prev = (AO_t *)pfreelist;
-      for (p = list; p != NULL;) {
-        AO_t *next;
-
+      prev = (ptr_t)pfreelist;
+      for (p = list; p != NULL; p = next) {
         if (!GC_is_marked(p)) {
           ABORT_ARG2("Unmarked local free-list entry",
                      ": object %p on list %p", (void *)p, (void *)list);
@@ -1070,11 +1067,10 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
         /* after the object was returned to the client.  It might       */
         /* perform the mark-check on the just allocated object but      */
         /* that should be harmless.                                     */
-        next = (AO_t *)AO_load_acquire_read(p);
-        if (AO_load(prev) != (AO_t)p)
+        next = GC_cptr_load_acquire_read((volatile ptr_t *)p);
+        if (GC_cptr_load((volatile ptr_t *)prev) != p)
           break;
         prev = p;
-        p = next;
       }
 #   else
       /* FIXME: Not implemented (just skipped). */

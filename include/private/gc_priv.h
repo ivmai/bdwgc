@@ -1442,7 +1442,6 @@ struct _GC_arrays {
 # ifdef PARALLEL_MARK
     mse *volatile _mark_stack_top;
         /* Updated only with the mark lock held, but read asynchronously. */
-        /* TODO: Use union to avoid casts to AO_t */
 # else
     mse *_mark_stack_top;
 # endif
@@ -1497,7 +1496,7 @@ struct _GC_arrays {
 #   define GC_main_local_mark_stack GC_arrays._main_local_mark_stack
     mse *_main_local_mark_stack;
 #   define GC_first_nonempty GC_arrays._first_nonempty
-    volatile AO_t _first_nonempty;
+    volatile ptr_t _first_nonempty;
                         /* Lowest entry on mark stack that may be       */
                         /* nonempty. Updated only by initiating thread. */
 # endif

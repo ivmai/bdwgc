@@ -41,7 +41,7 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
     }
 #   ifdef GC_ASSERTIONS
       for (i = 0; i < TS_HASH_SIZE; ++i) {
-        GC_ASSERT(result -> hash[i].p == 0);
+        GC_ASSERT(NULL == result -> hash[i]);
       }
 #   endif
     *key_ptr = result;
@@ -64,7 +64,7 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
     if (EXPECT(NULL == entry, FALSE)) return ENOMEM;
 
     pthread_mutex_lock(&(key -> lock));
-    entry -> next = key->hash[hash_val].p;
+    entry -> next = key -> hash[hash_val];
 #   ifdef GC_ASSERTIONS
       {
         tse *p;
@@ -80,7 +80,8 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
     GC_ASSERT(entry -> qtid == INVALID_QTID);
     /* There can only be one writer at a time, but this needs to be     */
     /* atomic with respect to concurrent readers.                       */
-    AO_store_release(&key->hash[hash_val].ao, (AO_t)entry);
+    GC_cptr_store_release((volatile ptr_t *)&(key -> hash[hash_val]),
+                          (ptr_t)CAST_AWAY_VOLATILE_PVOID(entry));
     GC_dirty(CAST_AWAY_VOLATILE_PVOID(entry));
     GC_dirty(key -> hash + hash_val);
     if (pthread_mutex_unlock(&(key -> lock)) != 0)
@@ -104,20 +105,20 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
       GC_ASSERT(I_HOLD_LOCK());
 #   endif
     pthread_mutex_lock(&(key -> lock));
-    entry = key->hash[hash_val].p;
-    while (entry != NULL && !THREAD_EQUAL(entry->thread, t)) {
+    for (entry = key -> hash[hash_val];
+         entry != NULL && !THREAD_EQUAL(entry -> thread, t);
+         entry = entry -> next) {
       prev = entry;
-      entry = entry->next;
     }
     /* Invalidate qtid field, since qtids may be reused, and a later    */
     /* cache lookup could otherwise find this entry.                    */
     if (entry != NULL) {
       entry -> qtid = INVALID_QTID;
       if (NULL == prev) {
-        key->hash[hash_val].p = entry->next;
-        GC_dirty(key->hash + hash_val);
+        key -> hash[hash_val] = entry -> next;
+        GC_dirty(key -> hash + hash_val);
       } else {
-        prev->next = entry->next;
+        prev -> next = entry -> next;
         GC_dirty(prev);
       }
       /* Atomic! concurrent accesses still work.        */
@@ -149,10 +150,10 @@ GC_INNER void * GC_slow_getspecific(tsd * key, size_t qtid,
                                     tse * volatile * cache_ptr)
 {
     pthread_t self = pthread_self();
-    tse *entry = key->hash[TS_HASH(self)].p;
+    tse *entry = key -> hash[TS_HASH(self)];
 
     GC_ASSERT(qtid != INVALID_QTID);
-    while (entry != NULL && !THREAD_EQUAL(entry->thread, self)) {
+    while (entry != NULL && !THREAD_EQUAL(entry -> thread, self)) {
       entry = entry -> next;
     }
     if (entry == NULL) return NULL;
@@ -180,7 +181,7 @@ GC_INNER void * GC_slow_getspecific(tsd * key, size_t qtid,
       ABORT("Unmarked thread-specific-data table");
     }
     for (i = 0; i < TS_HASH_SIZE; ++i) {
-      for (p = key->hash[i].p; p != 0; p = p -> next) {
+      for (p = key -> hash[i]; p != NULL; p = p -> next) {
         if (!GC_is_marked(GC_base(p))) {
           ABORT_ARG1("Unmarked thread-specific-data entry",
                      " at %p", (void *)p);

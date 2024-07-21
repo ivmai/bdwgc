@@ -436,7 +436,7 @@ GC_API GC_on_mark_stack_empty_proc GC_CALL GC_get_on_mark_stack_empty(void)
                 if (GC_parallel && !GC_parallel_mark_disabled) {
                   GC_do_parallel_mark();
                   GC_ASSERT(ADDR_LT((ptr_t)GC_mark_stack_top,
-                                    (ptr_t)GC_first_nonempty));
+                                    GC_first_nonempty));
                   GC_mark_stack_top = GC_mark_stack - 1;
                   if (GC_mark_stack_too_small) {
                     alloc_mark_stack(2*GC_mark_stack_size);
@@ -1034,10 +1034,10 @@ STATIC void GC_return_mark_stack(mse * low, mse * high)
       /* We drop the local mark stack.  We'll fix things later. */
     } else {
       BCOPY(low, my_start, stack_size * sizeof(mse));
-      GC_ASSERT((mse *)AO_load((volatile AO_t *)(&GC_mark_stack_top))
+      GC_ASSERT((mse *)GC_cptr_load((volatile ptr_t *)&GC_mark_stack_top)
                 == my_top);
-      AO_store_release_write((volatile AO_t *)(&GC_mark_stack_top),
-                             (AO_t)(my_top + stack_size));
+      GC_cptr_store_release_write((volatile ptr_t *)&GC_mark_stack_top,
+                                  (ptr_t)(my_top + stack_size));
                 /* Ensures visibility of previously written stack contents. */
     }
     GC_release_mark_lock();
@@ -1080,8 +1080,8 @@ STATIC void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
                 return;
             }
         }
-        if (ADDR_LT((ptr_t)AO_load((volatile AO_t *)&GC_mark_stack_top),
-                    (ptr_t)AO_load(&GC_first_nonempty))
+        if (ADDR_LT(GC_cptr_load((volatile ptr_t *)&GC_mark_stack_top),
+                    GC_cptr_load(&GC_first_nonempty))
             && ADDR_LT((ptr_t)(local_mark_stack + 1), (ptr_t)local_top)
             && has_inactive_helpers()) {
             /* Try to share the load, since the main stack is empty,    */
@@ -1113,37 +1113,38 @@ STATIC void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
 /* and maintain GC_active_count.                                        */
 STATIC void GC_mark_local(mse *local_mark_stack, int id)
 {
-    mse * my_first_nonempty;
+    mse *my_first_nonempty;
 
     GC_active_count++;
-    my_first_nonempty = (mse *)AO_load(&GC_first_nonempty);
+    my_first_nonempty = (mse *)GC_cptr_load(&GC_first_nonempty);
     GC_ASSERT(ADDR_GE((ptr_t)my_first_nonempty, (ptr_t)GC_mark_stack));
-    GC_ASSERT(ADDR_GE((ptr_t)AO_load((volatile AO_t *)&GC_mark_stack_top)
+    GC_ASSERT(ADDR_GE(GC_cptr_load((volatile ptr_t *)&GC_mark_stack_top)
                         + sizeof(mse), (ptr_t)my_first_nonempty));
     GC_VERBOSE_LOG_PRINTF("Starting mark helper %d\n", id);
     GC_release_mark_lock();
     for (;;) {
         size_t n_on_stack, n_to_get;
         mse *my_top, *local_top;
-        mse * global_first_nonempty = (mse *)AO_load(&GC_first_nonempty);
+        mse *global_first_nonempty = (mse *)GC_cptr_load(&GC_first_nonempty);
 
         GC_ASSERT(ADDR_GE((ptr_t)my_first_nonempty, (ptr_t)GC_mark_stack)
-            && ADDR_GE((ptr_t)AO_load((volatile AO_t *)&GC_mark_stack_top)
+            && ADDR_GE(GC_cptr_load((volatile ptr_t *)&GC_mark_stack_top)
                             + sizeof(mse), (ptr_t)my_first_nonempty));
         GC_ASSERT(ADDR_GE((ptr_t)global_first_nonempty, (ptr_t)GC_mark_stack));
         if (ADDR_LT((ptr_t)my_first_nonempty, (ptr_t)global_first_nonempty)) {
             my_first_nonempty = global_first_nonempty;
         } else if (ADDR_LT((ptr_t)global_first_nonempty,
                            (ptr_t)my_first_nonempty)) {
-            (void)AO_compare_and_swap(&GC_first_nonempty,
-                                      (AO_t)global_first_nonempty,
-                                      (AO_t)my_first_nonempty);
+            (void)GC_cptr_compare_and_swap(&GC_first_nonempty,
+                                           (ptr_t)global_first_nonempty,
+                                           (ptr_t)my_first_nonempty);
             /* If this fails, we just go ahead, without updating        */
             /* GC_first_nonempty.                                       */
         }
         /* Perhaps we should also update GC_first_nonempty, if it */
         /* is less.  But that would require using atomic updates. */
-        my_top = (mse *)AO_load_acquire((volatile AO_t *)(&GC_mark_stack_top));
+        my_top = (mse *)GC_cptr_load_acquire(
+                                (volatile ptr_t *)&GC_mark_stack_top);
         if (ADDR_LT((ptr_t)my_top, (ptr_t)my_first_nonempty)) {
             GC_acquire_mark_lock();
             my_top = GC_mark_stack_top;
@@ -1158,7 +1159,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
                 if (0 == GC_active_count) GC_notify_all_marker();
                 while (GC_active_count > 0
                        && ADDR_LT((ptr_t)GC_mark_stack_top,
-                                  (ptr_t)AO_load(&GC_first_nonempty))) {
+                                  GC_cptr_load(&GC_first_nonempty))) {
                     /* We will be notified if either GC_active_count    */
                     /* reaches zero, or if more objects are pushed on   */
                     /* the global mark stack.                           */
@@ -1166,7 +1167,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
                 }
                 if (0 == GC_active_count
                     && ADDR_LT((ptr_t)GC_mark_stack_top,
-                               (ptr_t)AO_load(&GC_first_nonempty))) {
+                               GC_cptr_load(&GC_first_nonempty))) {
                     GC_bool need_to_notify = FALSE;
 
                     /* The above conditions can't be falsified while we */
@@ -1199,7 +1200,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
                                         local_mark_stack, n_to_get,
                                         &my_first_nonempty);
         GC_ASSERT(ADDR_GE((ptr_t)my_first_nonempty, (ptr_t)GC_mark_stack)
-            && ADDR_GE((ptr_t)AO_load((volatile AO_t *)&GC_mark_stack_top)
+            && ADDR_GE(GC_cptr_load((volatile ptr_t *)&GC_mark_stack_top)
                             + sizeof(mse), (ptr_t)my_first_nonempty));
         GC_do_local_mark(local_mark_stack, local_top);
     }
@@ -1218,7 +1219,7 @@ STATIC void GC_do_parallel_mark(void)
         ABORT("Tried to start parallel mark in bad state");
     GC_VERBOSE_LOG_PRINTF("Starting marking for mark phase number %lu\n",
                           (unsigned long)GC_mark_no);
-    GC_first_nonempty = (AO_t)GC_mark_stack;
+    GC_first_nonempty = (ptr_t)GC_mark_stack;
     GC_active_count = 0;
     GC_helper_count = 1;
     GC_help_wanted = TRUE;

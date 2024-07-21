@@ -79,8 +79,8 @@
   {
     if (GC_HAS_DEBUG_INFO(dest)) {
 #     ifdef PARALLEL_MARK
-        AO_store((volatile AO_t *)&((oh *)dest)->oh_back_ptr,
-                 (AO_t)HIDE_BACK_PTR(source));
+        GC_cptr_store((volatile ptr_t *)&(((oh *)dest) -> oh_back_ptr),
+                      (ptr_t)HIDE_BACK_PTR(source));
 #     else
         ((oh *)dest) -> oh_back_ptr = HIDE_BACK_PTR(source);
 #     endif
