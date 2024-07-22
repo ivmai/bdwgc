@@ -94,11 +94,12 @@
   }
 #endif /* !SMALL_CONFIG */
 
-GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t lpw, GC_bool clear,
-                           ptr_t list)
+GC_INNER ptr_t GC_build_fl(struct hblk *h, ptr_t list, size_t lg,
+                           GC_bool clear)
 {
   ptr_t *p, *prev;
   ptr_t plim; /* points to last object in new hblk */
+  size_t lpw = GRANULES_TO_PTRS(lg);
 
   /* Do a few prefetches here, just because it's cheap.         */
   /* If we were more serious about it, these should go inside   */
@@ -167,7 +168,6 @@ GC_INNER void GC_new_hblk(size_t lg, int k)
 
   /* Build the free list.       */
   GC_obj_kinds[k].ok_freelist[lg] =
-        GC_build_fl(h, GRANULES_TO_PTRS(lg),
-                    GC_debugging_started || GC_obj_kinds[k].ok_init,
-                    (ptr_t)GC_obj_kinds[k].ok_freelist[lg]);
+        GC_build_fl(h, (ptr_t)GC_obj_kinds[k].ok_freelist[lg], lg,
+                    GC_debugging_started || GC_obj_kinds[k].ok_init);
 }

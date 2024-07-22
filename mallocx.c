@@ -403,9 +403,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb_adjusted, int k,
               UNLOCK();
               GC_release_mark_lock();
 
-              op = GC_build_fl(h, BYTES_TO_PTRS(lb_adjusted),
-                               ok -> ok_init || GC_debugging_started, 0);
-
+              op = GC_build_fl(h, NULL, lg,
+                               ok -> ok_init || GC_debugging_started);
               *result = op;
               GC_acquire_mark_lock();
               --GC_fl_builder_count;
@@ -415,8 +414,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb_adjusted, int k,
               return;
             }
 #         endif
-          op = GC_build_fl(h, BYTES_TO_PTRS(lb_adjusted),
-                           ok -> ok_init || GC_debugging_started, 0);
+          op = GC_build_fl(h, NULL, lg, ok -> ok_init || GC_debugging_started);
           goto out;
         }
     }

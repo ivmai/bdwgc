@@ -2282,14 +2282,14 @@ GC_INNER void GC_register_displacement_inner(size_t offset);
 /* uncollectible.  Will fail to do anything if out of memory.           */
 GC_INNER void GC_new_hblk(size_t lg, int k);
 
-/* Build a free list for objects of size lw (in words) inside heap      */
+/* Build a free list for objects of size lg (in granules) inside heap   */
 /* block h.  Clear objects inside h if clear is set.  Add list to the   */
 /* end of the free list we build.  Return the new free list.  Normally  */
 /* called by GC_new_hblk, but this could also be called without the     */
 /* allocator lock, if we ensure that there is no concurrent collection  */
 /* which might reclaim objects that we have not yet allocated.          */
-GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t lw, GC_bool clear,
-                           ptr_t list);
+GC_INNER ptr_t GC_build_fl(struct hblk *h, ptr_t list, size_t lg,
+                           GC_bool clear);
 
 GC_INNER struct hblk * GC_allochblk(size_t lb_adjusted, int k, unsigned flags,
                                     size_t align_m1);
