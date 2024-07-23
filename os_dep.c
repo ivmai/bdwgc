@@ -1821,9 +1821,13 @@ GC_INNER void GC_setpagesize(void)
       for (;;) {
         MEMORY_BASIC_INFORMATION buf;
         size_t result;
-        ptr_t q = p - GC_page_size;
+        ptr_t q;
 
-        if (ADDR_LT(p, q) /* underflow */ || ADDR_LT(q, limit)) break;
+        if (EXPECT(ADDR(p) <= (word)GC_page_size, FALSE))
+          break; /* prevent underflow */
+        q = p - GC_page_size;
+        if (ADDR_LT(q, limit)) break;
+
         result = VirtualQuery((LPVOID)q, &buf, sizeof(buf));
         if (result != sizeof(buf) || 0 == buf.AllocationBase) break;
         p = (ptr_t)buf.AllocationBase;

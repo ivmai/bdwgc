@@ -1444,12 +1444,13 @@ STATIC void GC_add_to_heap(struct hblk *h, size_t sz)
         sz -= HBLKSIZE;
         if (0 == sz) return;
     }
-    endp = (ptr_t)h + sz;
-    while (EXPECT(ADDR_GE((ptr_t)h, endp), FALSE)) {
+    while (EXPECT(ADDR(h) >= GC_WORD_MAX - sz, FALSE)) {
+        /* Prevent overflow when calculating endp.  */
         sz -= HBLKSIZE;
         if (0 == sz) return;
-        endp -= HBLKSIZE;
     }
+    endp = (ptr_t)h + sz;
+
     hhdr = GC_install_header(h);
     if (EXPECT(NULL == hhdr, FALSE)) {
         /* This is extremely unlikely. Can't add it.  This will         */
@@ -1612,18 +1613,20 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     if ((0 == GC_last_heap_addr && (ADDR(space) & SIGNB) == 0)
         || (GC_last_heap_addr != 0 && GC_last_heap_addr < ADDR(space))) {
       /* Assume the heap is growing up. */
+      if (EXPECT(ADDR(space) < GC_WORD_MAX - (sz + expansion_slop), TRUE)) {
         ptr_t new_limit = (ptr_t)space + sz + expansion_slop;
 
-        if (ADDR_LT((ptr_t)space, new_limit)
-            && ADDR_LT((ptr_t)GC_greatest_plausible_heap_addr, new_limit))
+        if (ADDR_LT((ptr_t)GC_greatest_plausible_heap_addr, new_limit))
           GC_greatest_plausible_heap_addr = new_limit;
+      }
     } else {
       /* Heap is growing down.  */
+      if (EXPECT(ADDR(space) > expansion_slop + sizeof(ptr_t), TRUE)) {
         ptr_t new_limit = (ptr_t)space - expansion_slop - sizeof(ptr_t);
 
-        if (ADDR_LT(new_limit, (ptr_t)space)
-            && ADDR_LT(new_limit, (ptr_t)GC_least_plausible_heap_addr))
+        if (ADDR_LT(new_limit, (ptr_t)GC_least_plausible_heap_addr))
           GC_least_plausible_heap_addr = new_limit;
+      }
     }
     GC_last_heap_addr = ADDR(space);
 

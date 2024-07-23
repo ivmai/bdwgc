@@ -648,9 +648,9 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
 
     /* Round boundaries in direction reverse to that of GC_add_roots. */
     b = PTR_ALIGN_DOWN((ptr_t)b, sizeof(ptr_t));
-    e = PTR_ALIGN_UP((ptr_t)e, sizeof(ptr_t));
-    if (NULL == e)
-      e = (void *)(~(word)(sizeof(ptr_t)-1)); /* handle overflow */
+    e = EXPECT(ADDR(e) > ~(word)(sizeof(ptr_t)-1), FALSE)
+            ? PTR_ALIGN_DOWN((ptr_t)e, sizeof(ptr_t)) /* overflow */
+            : PTR_ALIGN_UP((ptr_t)e, sizeof(ptr_t));
 
     LOCK();
     GC_exclude_static_roots_inner((ptr_t)b, (ptr_t)e);
