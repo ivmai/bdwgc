@@ -54,9 +54,9 @@ struct finalizable_object {
 #   define fo_next(x) (struct finalizable_object *)((x) -> prolog.next)
 #   define fo_set_next(x,y) ((x)->prolog.next = (struct hash_chain_entry *)(y))
     GC_finalization_proc fo_fn; /* finalizer */
+    finalization_mark_proc fo_mark_proc; /* mark-through procedure */
     ptr_t fo_client_data;
     size_t fo_object_sz; /* in bytes */
-    finalization_mark_proc fo_mark_proc;        /* Mark-through procedure */
 };
 
 #ifdef AO_HAVE_store
