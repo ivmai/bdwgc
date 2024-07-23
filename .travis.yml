@@ -582,7 +582,12 @@ jobs:
     - CFLAGS_EXTRA="-fsanitize=address -m32 -fno-omit-frame-pointer"
     - CONF_OPTIONS="--disable-shared --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - compiler: clang
+  - addons:
+      apt:
+        packages:
+        - clang-12
+    compiler: clang-12
+    dist: focal
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer -std=gnu11"
