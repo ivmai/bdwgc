@@ -158,14 +158,12 @@ GC_INNER void * GC_slow_getspecific(tsd * key, size_t qtid,
     }
     if (entry == NULL) return NULL;
     /* Set cache_entry. */
-    entry -> qtid = (AO_t)qtid;
+    AO_store(&(entry -> qtid), qtid);
         /* It's safe to do this asynchronously.  Either value   */
         /* is safe, though may produce spurious misses.         */
         /* We're replacing one qtid with another one for the    */
         /* same thread.                                         */
-    *cache_ptr = entry;
-        /* Again this is safe since pointer assignments are     */
-        /* presumed atomic, and either pointer is valid.        */
+    GC_cptr_store((volatile ptr_t *)cache_ptr, (ptr_t)entry);
     return TS_REVEAL_PTR(entry -> value);
 }
 
