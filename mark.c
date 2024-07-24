@@ -1085,7 +1085,7 @@ STATIC void GC_do_parallel_mark(void)
         ABORT("Tried to start parallel mark in bad state");
     GC_VERBOSE_LOG_PRINTF("Starting marking for mark phase number %lu\n",
                           (unsigned long)GC_mark_no);
-    GC_first_nonempty = (AO_t)GC_mark_stack;
+    AO_store(&GC_first_nonempty, (AO_t)GC_mark_stack);
     GC_active_count = 0;
     GC_helper_count = 1;
     GC_help_wanted = TRUE;
