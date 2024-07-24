@@ -1500,13 +1500,13 @@ struct _GC_arrays {
                         /* Lowest entry on mark stack that may be       */
                         /* nonempty. Updated only by initiating thread. */
 # endif
-# define GC_mark_stack_size GC_arrays._mark_stack_size
-  size_t _mark_stack_size;
-# define GC_mark_state GC_arrays._mark_state
-  mark_state_t _mark_state; /* Initialized to MS_NONE (0). */
 # ifdef ENABLE_TRACE
 #   define GC_trace_ptr GC_arrays._trace_ptr
     ptr_t _trace_ptr;
+# endif
+# if CPP_PTRSZ > CPP_WORDSZ
+#   define GC_noop_sink_ptr GC_arrays._noop_sink_ptr
+    volatile ptr_t _noop_sink_ptr;
 # endif
 # define GC_noop_sink GC_arrays._noop_sink
 # if defined(AO_HAVE_store) && defined(THREAD_SANITIZER)
@@ -1514,6 +1514,10 @@ struct _GC_arrays {
 # else
     volatile word _noop_sink;
 # endif
+# define GC_mark_stack_size GC_arrays._mark_stack_size
+  size_t _mark_stack_size;
+# define GC_mark_state GC_arrays._mark_state
+  mark_state_t _mark_state; /* Initialized to MS_NONE (0). */
 # define GC_capacity_heap_sects GC_arrays._capacity_heap_sects
   size_t _capacity_heap_sects;
 # define GC_n_heap_sects GC_arrays._n_heap_sects

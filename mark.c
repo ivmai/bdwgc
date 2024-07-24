@@ -49,7 +49,15 @@ GC_API void GC_CALL GC_noop1(GC_word x)
 
 GC_API void GC_CALL GC_noop1_ptr(volatile void *p)
 {
-  GC_noop1(ADDR(p));
+# if CPP_PTRSZ > CPP_WORDSZ
+#   if defined(AO_HAVE_store) && defined(THREAD_SANITIZER)
+      GC_cptr_store(&GC_noop_sink_ptr, (ptr_t)CAST_AWAY_VOLATILE_PVOID(p));
+#   else
+      GC_noop_sink_ptr = (ptr_t)CAST_AWAY_VOLATILE_PVOID(p);
+#   endif
+# else
+    GC_noop1(ADDR(p));
+# endif
 }
 
 /* Initialize GC_obj_kinds properly and standard free lists properly.   */
