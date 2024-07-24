@@ -745,7 +745,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #         ifdef ENABLE_TRACE
             if (ADDR_INSIDE(GC_trace_ptr, current_p,
                             current_p + PTRS_TO_BYTES(BITMAP_BITS))) {
-              GC_log_printf("GC #%lu: tracing from %p bitmap descr %lu\n",
+              GC_log_printf("GC #%lu: tracing from %p bitmap descr 0x%lx\n",
                             (unsigned long)GC_gc_no, (void *)current_p,
                             (unsigned long)descr);
             }
@@ -776,7 +776,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
               const void *base = GC_base(current_p);
 
               if (base != NULL && GC_base(GC_trace_ptr) == base) {
-                GC_log_printf("GC #%lu: tracing from %p, proc descr %lu\n",
+                GC_log_printf("GC #%lu: tracing from %p, proc descr 0x%lx\n",
                               (unsigned long)GC_gc_no, (void *)current_p,
                               (unsigned long)descr);
               }
