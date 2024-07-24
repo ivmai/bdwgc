@@ -42,6 +42,9 @@
 /* GC_GRANULE_BYTES should not be overridden in any instances of the GC */
 /* library that may be shared between applications, since it affects    */
 /* the binary interface to the library.                                 */
+#if defined(CPPCHECK) && GC_GRANULE_BYTES == 1
+# undef GC_GRANULE_BYTES
+#endif
 #ifdef GC_GRANULE_BYTES
 # define GC_GRANULE_PTRS (GC_GRANULE_BYTES / GC_SIZEOF_PTR)
 #else
