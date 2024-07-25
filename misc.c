@@ -1332,6 +1332,11 @@ GC_API void GC_CALL GC_init(void)
 #   endif
 #   if !defined(CPPCHECK)
       GC_STATIC_ASSERT(sizeof(size_t) <= sizeof(ptrdiff_t));
+#     ifdef AO_HAVE_store
+        /* As of now, hb/mse_descr and hb_marks[i] might be treated */
+        /* as words but might be accessed atomically.               */
+        GC_STATIC_ASSERT(sizeof(AO_t) == sizeof(word));
+#     endif
       GC_STATIC_ASSERT(sizeof(ptrdiff_t) == sizeof(word));
       GC_STATIC_ASSERT(sizeof(signed_word) == sizeof(word));
       GC_STATIC_ASSERT(sizeof(word) * 8 == CPP_WORDSZ);
@@ -2482,7 +2487,7 @@ static void GC_CALLBACK block_add_size(struct hblk *h, void *pbytes)
 {
   const hdr *hhdr = HDR(h);
 
-  *(word *)pbytes += ((word)hhdr->hb_sz + HBLKSIZE-1) & ~(word)(HBLKSIZE-1);
+  *(word *)pbytes += (hhdr -> hb_sz + HBLKSIZE-1) & ~(HBLKSIZE-1);
 # if defined(CPPCHECK)
     GC_noop1_ptr(h);
 # endif

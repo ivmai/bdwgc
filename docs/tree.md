@@ -147,7 +147,7 @@ contributed originally by Dave Barrett.
        ---      +----------------------+
         ^       |                      |
         |       |                      | * if hdr is free, hb_sz is the size
-    HB_MARKS_SZ | char/word hb_marks[] | of a heap chunk (struct hblk) of at
+    HB_MARKS_SZ | char/AO_t hb_marks[] | of a heap chunk (struct hblk) of at
         |       |                      | least MININCR*HBLKSIZE bytes (below);
         v       |                      | otherwise, size of each object in chunk.
        ---      +----------------------+

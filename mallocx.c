@@ -130,9 +130,8 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
         /* But that is probably more expensive, since we may end up     */
         /* scanning a bunch of zeros during GC.)                        */
 #       ifdef AO_HAVE_store
-          GC_STATIC_ASSERT(sizeof(hhdr->hb_sz) == sizeof(AO_t));
-          AO_store((volatile AO_t *)&hhdr->hb_sz, (AO_t)sz);
-          AO_store((volatile AO_t *)&hhdr->hb_descr, (AO_t)descr);
+          AO_store(&(hhdr -> hb_sz), sz);
+          AO_store(&(hhdr -> hb_descr), descr);
 #       else
           {
             LOCK();

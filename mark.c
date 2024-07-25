@@ -183,13 +183,14 @@ GC_INNER void GC_clear_hdr_marks(hdr *hhdr)
 
 # ifdef AO_HAVE_load
     /* Atomic access is used to avoid racing with GC_realloc.   */
-    last_bit = FINAL_MARK_BIT(AO_load((volatile AO_t *)&hhdr->hb_sz));
+    last_bit = FINAL_MARK_BIT(AO_load(&(hhdr -> hb_sz)));
 # else
     /* No race as GC_realloc holds the allocator lock while updating hb_sz. */
     last_bit = FINAL_MARK_BIT(hhdr -> hb_sz);
 # endif
 
-    BZERO(hhdr -> hb_marks, sizeof(hhdr->hb_marks));
+    BZERO(CAST_AWAY_VOLATILE_PVOID(hhdr -> hb_marks),
+          sizeof(hhdr -> hb_marks));
     set_mark_bit_from_hdr(hhdr, last_bit);
     hhdr -> hb_n_marks = 0;
 }
@@ -675,7 +676,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 # endif
   {
     current_p = mark_stack_top -> mse_start;
-    descr = mark_stack_top -> mse_descr.w;
+    descr = mark_stack_top -> mse_descr;
   retry:
     /* current_p and descr describe the current object.                 */
     /* (*mark_stack_top) is vacant.                                     */
@@ -705,7 +706,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
               word new_size = (descr >> 1) & ~(word)(sizeof(ptr_t)-1);
 
               mark_stack_top -> mse_start = current_p;
-              mark_stack_top -> mse_descr.w
+              mark_stack_top -> mse_descr
                         = (new_size + sizeof(ptr_t)) | GC_DS_LENGTH;
                                         /* This makes sure we handle    */
                                         /* misaligned pointers.         */
@@ -726,7 +727,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #         endif /* PARALLEL_MARK */
           limit = current_p + PTRS_TO_BYTES(SPLIT_RANGE_PTRS-1);
           mark_stack_top -> mse_start = limit;
-          mark_stack_top -> mse_descr.w
+          mark_stack_top -> mse_descr
                                 = descr - PTRS_TO_BYTES(SPLIT_RANGE_PTRS-1);
 #         ifdef ENABLE_TRACE
             if (ADDR_INSIDE(GC_trace_ptr, current_p, current_p + descr)) {
@@ -992,16 +993,16 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
     GC_ASSERT(ADDR_GE((ptr_t)high, (ptr_t)(low - 1))
               && (word)(high - low + 1) <= GC_mark_stack_size);
     for (p = low; ADDR_GE((ptr_t)high, (ptr_t)p) && i <= n_to_get; ++p) {
-        word descr = (word)AO_load(&p->mse_descr.ao);
+        word descr = AO_load(&(p -> mse_descr));
 
         if (descr != 0) {
             /* Must be ordered after read of descr: */
-            AO_store_release_write(&p->mse_descr.ao, 0);
+            AO_store_release_write(&(p -> mse_descr), 0);
             /* More than one thread may get this entry, but that's only */
             /* a minor performance problem.                             */
             ++top;
             top -> mse_start = p -> mse_start;
-            top -> mse_descr.w = descr;
+            top -> mse_descr = descr;
             GC_ASSERT((descr & GC_DS_TAGS) != GC_DS_LENGTH /* 0 */
                     || descr < GC_greatest_real_heap_addr
                                 - GC_least_real_heap_addr
@@ -1251,7 +1252,7 @@ STATIC void GC_do_parallel_mark(void)
 /* only, the initiating thread holds the allocator lock.                */
 GC_INNER void GC_help_marker(word my_mark_no)
 {
-#   define my_id my_id_mse.mse_descr.w
+#   define my_id my_id_mse.mse_descr
     mse my_id_mse;  /* align local_mark_stack explicitly */
     mse local_mark_stack[LOCAL_MARK_STACK_SIZE];
                 /* Note: local_mark_stack is quite big (up to 128 KiB). */
@@ -1354,7 +1355,7 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
         length = (length + GC_DS_TAGS) & ~(word)GC_DS_TAGS; /* round up */
 #   endif
     mark_stack_top -> mse_start = (ptr_t)bottom;
-    mark_stack_top -> mse_descr.w = length | GC_DS_LENGTH;
+    mark_stack_top -> mse_descr = length | GC_DS_LENGTH;
     GC_mark_stack_top = mark_stack_top;
 }
 
@@ -1385,7 +1386,7 @@ GC_API struct GC_ms_entry * GC_CALL GC_custom_push_proc(GC_word descr,
         mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top);
     }
     mark_stack_top -> mse_start = (ptr_t)obj;
-    mark_stack_top -> mse_descr.w = descr;
+    mark_stack_top -> mse_descr = descr;
     return mark_stack_top;
 }
 
@@ -1756,7 +1757,8 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
   GC_ATTR_NO_SANITIZE_THREAD
   STATIC void GC_push_marked1(struct hblk *h, const hdr *hhdr)
   {
-    const word *mark_word_addr = &(hhdr -> hb_marks[0]);
+    const word *mark_word_addr
+                        = (word *)CAST_AWAY_VOLATILE_PVOID(hhdr -> hb_marks);
     ptr_t *p;
     ptr_t plim;
 
@@ -1805,7 +1807,8 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
     GC_ATTR_NO_SANITIZE_THREAD
     STATIC void GC_push_marked2(struct hblk *h, const hdr *hhdr)
     {
-      const word *mark_word_addr = &(hhdr -> hb_marks[0]);
+      const word *mark_word_addr
+                        = (word *)CAST_AWAY_VOLATILE_PVOID(hhdr -> hb_marks);
       ptr_t *p;
       ptr_t plim;
       ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
@@ -1855,7 +1858,8 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
       GC_ATTR_NO_SANITIZE_THREAD
       STATIC void GC_push_marked4(struct hblk *h, const hdr *hhdr)
       {
-        const word *mark_word_addr = &(hhdr -> hb_marks[0]);
+        const word *mark_word_addr
+                        = (word *)CAST_AWAY_VOLATILE_PVOID(hhdr -> hb_marks);
         ptr_t *p;
         ptr_t plim;
         ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
@@ -1999,7 +2003,7 @@ STATIC void GC_push_marked(struct hblk *h, const hdr *hhdr)
 
 #   ifdef AO_HAVE_load
       /* Atomic access is used to avoid racing with GC_realloc. */
-      sz = AO_load((volatile AO_t *)&(hhdr -> hb_sz));
+      sz = AO_load(&(hhdr -> hb_sz));
 #   else
       sz = hhdr -> hb_sz;
 #   endif

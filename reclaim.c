@@ -292,8 +292,7 @@ STATIC void GC_reclaim_check(struct hblk *hbp, const hdr *hhdr, size_t sz)
 /* Is a pointer-free block?  Same as IS_PTRFREE() macro but uses    */
 /* unordered atomic access to avoid racing with GC_realloc.         */
 #ifdef AO_HAVE_load
-# define IS_PTRFREE_SAFE(hhdr) \
-                (AO_load((volatile AO_t *)&(hhdr)->hb_descr) == 0)
+# define IS_PTRFREE_SAFE(hhdr) (AO_load(&((hhdr) -> hb_descr)) == 0)
 #else
   /* No race as GC_realloc holds the allocator lock when updating hb_descr. */
 # define IS_PTRFREE_SAFE(hhdr) IS_PTRFREE(hhdr)
@@ -402,7 +401,7 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
     ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
 #   ifdef AO_HAVE_load
         /* Atomic access is used to avoid racing with GC_realloc.       */
-        sz = AO_load((volatile AO_t *)&(hhdr -> hb_sz));
+        sz = AO_load(&(hhdr -> hb_sz));
 #   else
         /* No race as GC_realloc holds the allocator lock while */
         /* updating hb_sz.                                      */
@@ -534,7 +533,7 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
       size_t limit = FINAL_MARK_BIT(hhdr -> hb_sz);
 
       for (i = 0; i < limit; i += offset) {
-        result += hhdr -> hb_marks[i];
+        result += (unsigned)(hhdr -> hb_marks[i]);
       }
       GC_ASSERT(hhdr -> hb_marks[limit]); /* the one set past the end */
       return result;

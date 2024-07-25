@@ -140,8 +140,8 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, const hdr * hhdr, mse * mark_stack_top,
     /* twice.  But that is only a performance issue.                    */
 #   define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
       { /* cannot use do-while(0) here */ \
-        volatile unsigned char * mark_byte_addr = \
-                        (unsigned char *)(hhdr)->hb_marks + (bit_no); \
+        volatile unsigned char *mark_byte_addr \
+                        = (unsigned char *)((hhdr) -> hb_marks) + (bit_no); \
         /* Unordered atomic load and store are sufficient here. */ \
         if (AO_char_load(mark_byte_addr) != 0) \
           break; /* go to the enclosing loop end */ \
@@ -150,52 +150,44 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, const hdr * hhdr, mse * mark_stack_top,
 # else
 #   define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
       { /* cannot use do-while(0) here */ \
-        char * mark_byte_addr = (char *)(hhdr)->hb_marks + (bit_no); \
+        ptr_t mark_byte_addr = (ptr_t)((hhdr) -> hb_marks) + (bit_no); \
+        \
         if (*mark_byte_addr != 0) break; /* go to the enclosing loop end */ \
         *mark_byte_addr = 1; \
       }
 # endif /* !PARALLEL_MARK */
 #else
-# ifdef PARALLEL_MARK
+# if defined(PARALLEL_MARK) || (defined(THREAD_SANITIZER) && defined(THREADS))
+#   ifdef THREAD_SANITIZER
+#     define MARK_WORD_READ(addr) AO_load(addr)
+#   else
+#     define MARK_WORD_READ(addr) (*(addr))
+#   endif
     /* This is used only if we explicitly set USE_MARK_BITS.            */
     /* The following may fail to exit even if the bit was already set.  */
     /* For our uses, that's benign:                                     */
-#   ifdef THREAD_SANITIZER
-#     define OR_WORD_EXIT_IF_SET(addr, bits) \
+#   define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
         { /* cannot use do-while(0) here */ \
-          if (!((word)AO_load((volatile AO_t *)(addr)) & (bits))) { \
-                /* Atomic load is just to avoid TSan false positive. */ \
-            AO_or((volatile AO_t *)(addr), (AO_t)(bits)); \
-          } else { \
+          volatile AO_t *mark_word_addr \
+                                = (hhdr) -> hb_marks + divWORDSZ(bit_no); \
+          word my_bits = (word)1 << modWORDSZ(bit_no); \
+          \
+          if ((MARK_WORD_READ(mark_word_addr) & my_bits) != 0) \
             break; /* go to the enclosing loop end */ \
-          } \
+          AO_or(mark_word_addr, my_bits); \
         }
-#   else
-#     define OR_WORD_EXIT_IF_SET(addr, bits) \
-        { /* cannot use do-while(0) here */ \
-          if (!(*(addr) & (bits))) { \
-            AO_or((volatile AO_t *)(addr), (AO_t)(bits)); \
-          } else { \
-            break; /* go to the enclosing loop end */ \
-          } \
-        }
-#   endif /* !THREAD_SANITIZER */
 # else
-#   define OR_WORD_EXIT_IF_SET(addr, bits) \
+#   define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
         { /* cannot use do-while(0) here */ \
-           word old = *(addr); \
-           word my_bits = (bits); \
-           if ((old & my_bits) != 0) \
-             break; /* go to the enclosing loop end */ \
-           *(addr) = old | my_bits; \
+          word *mark_word_addr = (hhdr) -> hb_marks + divWORDSZ(bit_no); \
+          word old = *mark_word_addr; \
+          word my_bits = (word)1 << modWORDSZ(bit_no); \
+          \
+          if ((old & my_bits) != 0) \
+            break; /* go to the enclosing loop end */ \
+          *(mark_word_addr) = old | my_bits; \
         }
 # endif /* !PARALLEL_MARK */
-# define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
-    { /* cannot use do-while(0) here */ \
-        word * mark_word_addr = (hhdr)->hb_marks + divWORDSZ(bit_no); \
-        OR_WORD_EXIT_IF_SET(mark_word_addr, \
-                (word)1 << modWORDSZ(bit_no)); /* contains "break" */ \
-    }
 #endif /* !USE_MARK_BYTES */
 
 #ifdef ENABLE_TRACE

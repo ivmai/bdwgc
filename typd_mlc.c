@@ -638,7 +638,7 @@ STATIC mse *GC_push_complex_descriptor(ptr_t current,
     for (i = 0; i < nelements; i++) {
       msp++;
       msp -> mse_start = current;
-      msp -> mse_descr.w = d;
+      msp -> mse_descr = d;
       current += sz;
     }
     break;
@@ -712,12 +712,12 @@ STATIC mse *GC_CALLBACK GC_array_mark_proc(word *addr, mse *mark_stack_top,
     }
     new_mark_stack_top = orig_mark_stack_top + 1;
     new_mark_stack_top -> mse_start = (ptr_t)addr;
-    new_mark_stack_top -> mse_descr.w = sz | GC_DS_LENGTH;
+    new_mark_stack_top -> mse_descr = sz | GC_DS_LENGTH;
   } else {
     /* Push descriptor itself.  */
     new_mark_stack_top++;
     new_mark_stack_top -> mse_start = (ptr_t)((ptr_t *)addr + lpw - 1);
-    new_mark_stack_top -> mse_descr.w = sizeof(ptr_t) | GC_DS_LENGTH;
+    new_mark_stack_top -> mse_descr = sizeof(ptr_t) | GC_DS_LENGTH;
   }
   return new_mark_stack_top;
 }

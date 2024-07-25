@@ -1056,8 +1056,7 @@ typedef word page_hash_table[PHT_SIZE];
   /* async_set_pht_entry_from_index (invoked by GC_dirty or the write   */
   /* fault handler).                                                    */
 # define set_pht_entry_from_index_concurrent(bl, index) \
-                AO_or((volatile AO_t *)&(bl)[divWORDSZ(index)], \
-                      (AO_t)((word)1 << modWORDSZ(index)))
+                AO_or((bl) + divWORDSZ(index), (word)1 << modWORDSZ(index))
 # ifdef MPROTECT_VDB
 #   define set_pht_entry_from_index_concurrent_volatile(bl, index) \
                 set_pht_entry_from_index_concurrent(bl, index)
@@ -1087,15 +1086,6 @@ typedef word page_hash_table[PHT_SIZE];
                 /* granules per object.  Otherwise, we only use the     */
                 /* initial group of mark bits, and it is safe to        */
                 /* allocate smaller header for large objects.           */
-
-union word_ptr_ao_u {
-  word w;
-  signed_word sw;
-  void *vp;
-# ifdef PARALLEL_MARK
-    volatile AO_t ao;
-# endif
-};
 
 /* We maintain layout maps for heap blocks containing objects of a given */
 /* size.  Each entry in this map describes a byte offset and has the     */
@@ -1146,13 +1136,18 @@ struct hblkhdr {
                                 /* LARGE_INV_SZ.                        */
 #     define LARGE_INV_SZ ((unsigned32)1 << 16)
 #   endif
-    size_t hb_sz;  /* If in use, size in bytes, of objects in the block. */
-                   /* if free, the size in bytes of the whole block      */
-                   /* We assume that this is convertible to signed_word  */
-                   /* without generating a negative result.  We avoid    */
-                   /* generating free blocks larger than that.           */
-    word hb_descr;              /* object descriptor for marking.  See  */
-                                /* gc_mark.h.                           */
+#   ifdef AO_HAVE_load
+      volatile AO_t hb_sz;
+      volatile AO_t hb_descr;
+#   else
+      size_t hb_sz;
+                /* If in use, size in bytes, of objects in the block.   */
+                /* Otherwise, the size of the whole free block.         */
+                /* We assume that this is convertible to signed_word    */
+                /* without generating a negative result.  We avoid      */
+                /* generating free blocks larger than that.             */
+      word hb_descr;            /* Object descriptor for marking.       */
+#   endif                       /* See gc_mark.h.                       */
 #   ifndef MARK_BIT_PER_OBJ
       unsigned short * hb_map;  /* Essentially a table of remainders    */
                                 /* mod BYTES_TO_GRANULES(hb_sz), except */
@@ -1200,7 +1195,12 @@ struct hblkhdr {
 #     define hb_marks _mark_byte_union._hb_marks
 #   else
 #     define HB_MARKS_SZ (MARK_BITS_PER_HBLK / CPP_WORDSZ + 1)
-      word hb_marks[HB_MARKS_SZ];
+#     if defined(PARALLEL_MARK) \
+         || (defined(THREAD_SANITIZER) && defined(THREADS))
+        volatile AO_t hb_marks[HB_MARKS_SZ];
+#     else
+        word hb_marks[HB_MARKS_SZ];
+#     endif
 #   endif /* !USE_MARK_BYTES */
 };
 
@@ -1299,9 +1299,11 @@ struct roots {
 
 typedef struct GC_ms_entry {
   ptr_t mse_start;      /* Beginning of object, pointer-aligned one.    */
-  union word_ptr_ao_u mse_descr;
-                        /* Descriptor; low order two bits are tags,     */
-                        /* as described in gc_mark.h.                   */
+# ifdef PARALLEL_MARK
+    volatile AO_t mse_descr;
+# else
+    word mse_descr;     /* Descriptor; low order two bits are tags,     */
+# endif                 /* as described in gc_mark.h.                   */
 } mse;
 
 typedef int mark_state_t;   /* Current state of marking.                */
@@ -1878,24 +1880,21 @@ struct GC_traced_stack_sect_s {
                         struct GC_traced_stack_sect_s *traced_stack_sect);
 #endif /* IA64 */
 
-/*  Marks are in a reserved area in                          */
-/*  each heap block.  Each word has one mark bit associated  */
-/*  with it. Only those corresponding to the beginning of an */
-/*  object are used.                                         */
+/* Marks are in a reserved area in each heap block.  Each object or */
+/* granule has one mark bit associated with it.  Only those         */
+/* corresponding to the beginning of an object are used.            */
 
-/* Mark bit operations */
+/* Mark bit operations. */
 
-/*
- * Retrieve, set, clear the n-th mark bit in a given heap block.
- *
- * (Recall that bit n corresponds to nth object or allocation granule
- * relative to the beginning of the block, including unused words)
- */
+/* Retrieve, set, clear the n-th mark bit in a given heap block.    */
+/* (Recall that bit n corresponds to n-th object or allocation      */
+/* granule relative to the beginning of the block, including unused */
+/* space.)                                                          */
 
 #ifdef USE_MARK_BYTES
 # define mark_bit_from_hdr(hhdr,n) ((hhdr) -> hb_marks[n])
-# define set_mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[n] = 1)
-# define clear_mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[n] = 0)
+# define set_mark_bit_from_hdr(hhdr,n) (void)((hhdr) -> hb_marks[n] = 1)
+# define clear_mark_bit_from_hdr(hhdr,n) (void)((hhdr) -> hb_marks[n] = 0)
 #else
 /* Set mark bit correctly, even if mark bits may be concurrently        */
 /* accessed.                                                            */
@@ -1904,7 +1903,7 @@ struct GC_traced_stack_sect_s {
     /* mark_bit_from_hdr and set_mark_bit_from_hdr when n is different  */
     /* (alternatively, USE_MARK_BYTES could be used).  If TSan is off,  */
     /* AO_or() is used only if we set USE_MARK_BITS explicitly.         */
-#   define OR_WORD(addr, bits) AO_or((volatile AO_t *)(addr), (AO_t)(bits))
+#   define OR_WORD(addr, bits) AO_or(addr, bits)
 # else
 #   define OR_WORD(addr, bits) (void)(*(addr) |= (bits))
 # endif
@@ -1913,7 +1912,8 @@ struct GC_traced_stack_sect_s {
 # define set_mark_bit_from_hdr(hhdr,n) \
             OR_WORD((hhdr) -> hb_marks + divWORDSZ(n), (word)1 << modWORDSZ(n))
 # define clear_mark_bit_from_hdr(hhdr,n) \
-              ((hhdr)->hb_marks[divWORDSZ(n)] &= ~((word)1 << modWORDSZ(n)))
+            (void)((hhdr) -> hb_marks[divWORDSZ(n)] \
+                    &= ~((word)1 << modWORDSZ(n)))
 #endif /* !USE_MARK_BYTES */
 
 #ifdef MARK_BIT_PER_OBJ
