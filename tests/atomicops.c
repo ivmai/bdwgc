@@ -75,6 +75,12 @@
       TA_assert(x == 13);
       TA_assert(AO_compare_and_swap_release(&x, 13, 42));
       TA_assert(x == 42);
+      {
+        char *cptr = (char *)NULL;
+
+        TA_assert(GC_cptr_compare_and_swap(&cptr, (char *)NULL, (char *)&x));
+        TA_assert(cptr == (char *)&x);
+      }
 #   else
       if (*(volatile AO_t *)&x == 13)
         *(volatile AO_t *)&x = 42;
