@@ -58,7 +58,9 @@ typedef GC_SIGNEDWORD GC_signed_word;
 #undef GC_SIGNEDWORD
 #undef GC_UNSIGNEDWORD
 
-#if defined(_UINTPTR_T) || defined(_UINTPTR_T_DEFINED)
+#if (defined(_UINTPTR_T) || defined(_UINTPTR_T_DEFINED)) \
+    && !defined(__MSYS__)
+        /* Note: MSYS2 might provide __uintptr_t instead of uintptr_t.  */
   typedef uintptr_t GC_uintptr_t;
 #else
   typedef GC_word GC_uintptr_t;
