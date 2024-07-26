@@ -292,7 +292,7 @@ STATIC void GC_reclaim_check(struct hblk *hbp, const hdr *hhdr, size_t sz)
 /* Is a pointer-free block?  Same as IS_PTRFREE() macro but uses    */
 /* unordered atomic access to avoid racing with GC_realloc.         */
 #ifdef AO_HAVE_load
-# define IS_PTRFREE_SAFE(hhdr) (AO_load(&((hhdr) -> hb_descr)) == 0)
+# define IS_PTRFREE_SAFE(hhdr) (AO_load((AO_t *)&((hhdr) -> hb_descr)) == 0)
 #else
   /* No race as GC_realloc holds the allocator lock when updating hb_descr. */
 # define IS_PTRFREE_SAFE(hhdr) IS_PTRFREE(hhdr)

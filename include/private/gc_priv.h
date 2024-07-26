@@ -1136,18 +1136,14 @@ struct hblkhdr {
                                 /* LARGE_INV_SZ.                        */
 #     define LARGE_INV_SZ ((unsigned32)1 << 16)
 #   endif
-#   ifdef AO_HAVE_load
-      volatile AO_t hb_sz;
-      volatile AO_t hb_descr;
-#   else
-      size_t hb_sz;
+    size_t hb_sz;
                 /* If in use, size in bytes, of objects in the block.   */
                 /* Otherwise, the size of the whole free block.         */
                 /* We assume that this is convertible to signed_word    */
                 /* without generating a negative result.  We avoid      */
                 /* generating free blocks larger than that.             */
-      word hb_descr;            /* Object descriptor for marking.       */
-#   endif                       /* See gc_mark.h.                       */
+    word hb_descr;              /* Object descriptor for marking.       */
+                                /* See gc_mark.h.                       */
 #   ifndef MARK_BIT_PER_OBJ
       unsigned short * hb_map;  /* Essentially a table of remainders    */
                                 /* mod BYTES_TO_GRANULES(hb_sz), except */
@@ -1912,7 +1908,8 @@ struct GC_traced_stack_sect_s {
 # define set_mark_bit_from_hdr(hhdr,n) \
             OR_WORD((hhdr) -> hb_marks + divWORDSZ(n), (word)1 << modWORDSZ(n))
 # define clear_mark_bit_from_hdr(hhdr,n) \
-            (void)((hhdr) -> hb_marks[divWORDSZ(n)] \
+            (void)(((word *)CAST_AWAY_VOLATILE_PVOID( \
+                                    (hhdr) -> hb_marks))[divWORDSZ(n)] \
                     &= ~((word)1 << modWORDSZ(n)))
 #endif /* !USE_MARK_BYTES */
 

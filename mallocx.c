@@ -131,7 +131,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
         /* scanning a bunch of zeros during GC.)                        */
 #       ifdef AO_HAVE_store
           AO_store(&(hhdr -> hb_sz), sz);
-          AO_store(&(hhdr -> hb_descr), descr);
+          AO_store((AO_t *)&(hhdr -> hb_descr), descr);
 #       else
           {
             LOCK();
