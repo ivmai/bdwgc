@@ -1056,7 +1056,8 @@ typedef word page_hash_table[PHT_SIZE];
   /* async_set_pht_entry_from_index (invoked by GC_dirty or the write   */
   /* fault handler).                                                    */
 # define set_pht_entry_from_index_concurrent(bl, index) \
-                AO_or((bl) + divWORDSZ(index), (word)1 << modWORDSZ(index))
+                AO_or((volatile AO_t *)&(bl)[divWORDSZ(index)], \
+                      (AO_t)1 << modWORDSZ(index))
 # ifdef MPROTECT_VDB
 #   define set_pht_entry_from_index_concurrent_volatile(bl, index) \
                 set_pht_entry_from_index_concurrent(bl, index)
