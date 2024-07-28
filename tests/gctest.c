@@ -1616,8 +1616,7 @@ static void run_one_test(void)
         GC_printf("GC_is_heap_ptr(&local_var) produced incorrect result\n");
         FAIL;
       }
-      if (GC_is_heap_ptr((void *)(GC_word)(&fail_count))
-          || GC_is_heap_ptr(NULL)) {
+      if (GC_is_heap_ptr(&fail_count) || GC_is_heap_ptr(NULL)) {
         GC_printf("GC_is_heap_ptr(&global_var) produced incorrect result\n");
         FAIL;
       }
@@ -1628,8 +1627,8 @@ static void run_one_test(void)
         GC_printf("Bad INCR/DECR result\n");
         FAIL;
       }
-      y = (char *)(GC_word)fail_proc1;
-#     ifndef PCR
+#     if defined(FUNCPTR_IS_DATAPTR) && !defined(PCR)
+        y = CAST_THRU_UINTPTR(char*, fail_proc1);
         if (GC_base(y) != 0) {
           GC_printf("GC_base(fn_ptr) produced incorrect result\n");
           FAIL;
@@ -1661,8 +1660,8 @@ static void run_one_test(void)
         }
 #     endif
       if (GC_is_valid_displacement(y) != y
-        || GC_is_valid_displacement(x) != x
-        || GC_is_valid_displacement(x + 3) != x + 3) {
+          || GC_is_valid_displacement(x) != x
+          || GC_is_valid_displacement(x + 3) != x + 3) {
         GC_printf("GC_is_valid_displacement produced incorrect result\n");
         FAIL;
       }
@@ -2745,7 +2744,7 @@ int main(void)
 
     /* Minimal testing of some API functions.   */
     GC_exclude_static_roots(&atomic_count,
-                (void *)((GC_word)(&atomic_count) + sizeof(atomic_count)));
+                            (char *)&atomic_count + sizeof(atomic_count));
     GC_register_has_static_roots_callback(has_static_roots);
     GC_register_describe_type_fn(GC_I_NORMAL, describe_norm_type);
 #   ifdef GC_GCJ_SUPPORT
