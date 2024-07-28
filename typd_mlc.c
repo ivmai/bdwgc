@@ -467,9 +467,9 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
 }
 
 struct GC_calloc_typed_descr_s {
+  complex_descriptor *complex_d; /* the first field, the only pointer */
   struct LeafDescriptor leaf;
   GC_descr simple_d;
-  complex_descriptor *complex_d;
   word alloc_lb; /* size_t actually */
   signed_word descr_type; /* int actually */
 };
@@ -480,7 +480,9 @@ GC_API int GC_CALL GC_calloc_prepare_explicitly_typed(
                                 size_t n, size_t lb, GC_descr d)
 {
     GC_STATIC_ASSERT(sizeof(struct GC_calloc_typed_descr_s)
-                        == GC_CALLOC_TYPED_DESCR_WORDS * sizeof(word));
+        == GC_CALLOC_TYPED_DESCR_PTRS * sizeof(ptr_t)
+            + (GC_CALLOC_TYPED_DESCR_WORDS - GC_CALLOC_TYPED_DESCR_PTRS)
+                * sizeof(word));
     GC_ASSERT(GC_explicit_typing_initialized);
     GC_ASSERT(sizeof(struct GC_calloc_typed_descr_s) == ctd_sz);
     (void)ctd_sz; /* unused currently */
