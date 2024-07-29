@@ -5291,7 +5291,8 @@ GC_API int GC_CALL GC_get_pages_executable(void)
                                         struct callinfo info[NFRAMES])
           {
             GC_ASSERT(I_HOLD_LOCK());
-            info[0].ci_pc = (GC_return_addr_t)(&GC_save_callers_no_unlock);
+            info[0].ci_pc = CAST_THRU_UINTPTR(GC_return_addr_t,
+                                              GC_save_callers_no_unlock);
             BZERO(&info[1], sizeof(void *) * (NFRAMES - 1));
           }
 #       endif
@@ -5310,7 +5311,8 @@ GC_API int GC_CALL GC_get_pages_executable(void)
         GC_STATIC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
 #       ifdef REDIRECT_MALLOC
           if (GC_in_save_callers) {
-            info[0].ci_pc = (GC_return_addr_t)(&GC_save_callers);
+            info[0].ci_pc = CAST_THRU_UINTPTR(GC_return_addr_t,
+                                              GC_save_callers);
             BZERO(&info[1], sizeof(void *) * (NFRAMES - 1));
             return;
           }
