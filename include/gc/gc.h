@@ -919,8 +919,9 @@ GC_API size_t GC_CALL GC_get_prof_stats(struct GC_prof_stats_s *,
 /* typically to avoid data race on multiprocessors.                     */
 GC_API size_t GC_CALL GC_get_size_map_at(int i);
 
-/* Count total memory use (in bytes) by all allocated blocks.  Acquires */
-/* the allocator lock in the reader mode.                               */
+/* Return the total memory use (in bytes) by all allocated blocks.      */
+/* The result is equal to GC_get_heap_size() - GC_get_free_bytes().     */
+/* Acquires the allocator lock in the reader mode.                      */
 GC_API GC_word GC_CALL GC_get_memory_use(void);
 
 /* Disable garbage collection.  Even GC_gcollect calls will be          */

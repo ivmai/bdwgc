@@ -2483,22 +2483,13 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
   }
 #endif /* !NO_DEBUGGING */
 
-static void GC_CALLBACK block_add_size(struct hblk *h, void *pbytes)
-{
-  const hdr *hhdr = HDR(h);
-
-  *(word *)pbytes += (hhdr -> hb_sz + HBLKSIZE-1) & ~(HBLKSIZE-1);
-# if defined(CPPCHECK)
-    GC_noop1_ptr(h);
-# endif
-}
-
 GC_API GC_word GC_CALL GC_get_memory_use(void)
 {
-  word bytes = 0;
+  word bytes;
 
   READER_LOCK();
-  GC_apply_to_all_blocks(block_add_size, &bytes);
+  GC_ASSERT(GC_heapsize >= GC_large_free_bytes);
+  bytes = GC_heapsize - GC_large_free_bytes;
   READER_UNLOCK();
   return bytes;
 }
