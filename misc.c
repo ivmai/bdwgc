@@ -2493,14 +2493,14 @@ static void GC_CALLBACK block_add_size(struct hblk *h, void *pbytes)
 # endif
 }
 
-GC_API size_t GC_CALL GC_get_memory_use(void)
+GC_API GC_word GC_CALL GC_get_memory_use(void)
 {
   word bytes = 0;
 
   READER_LOCK();
   GC_apply_to_all_blocks(block_add_size, &bytes);
   READER_UNLOCK();
-  return (size_t)bytes;
+  return bytes;
 }
 
 /* Getter functions for the public Read-only variables.                 */
