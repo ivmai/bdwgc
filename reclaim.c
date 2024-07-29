@@ -622,6 +622,9 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
     GC_printf("blocks= %lu, total_bytes= %lu\n",
               (unsigned long)pstats.number_of_blocks,
               (unsigned long)pstats.total_bytes);
+    if (pstats.total_bytes + GC_large_free_bytes != GC_heapsize)
+      GC_err_printf("LOST SOME BLOCKS!! Total bytes should be: %lu\n",
+                    (unsigned long)(GC_heapsize - GC_large_free_bytes));
   }
 
   GC_API void GC_CALL GC_print_free_list(int k, size_t lg)
