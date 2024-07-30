@@ -270,7 +270,7 @@ jobs:
         - gcc-multilib
     compiler: clang
     env:
-    - CFLAGS_EXTRA="-m32 -funsigned-char -D _FORTIFY_SOURCE=2 -D NO_LONGLONG64"
+    - CFLAGS_EXTRA="-m32 -funsigned-char -D _FORTIFY_SOURCE=2 -D GC_GCJ_MARK_DESCR_OFFSET=32 -D NO_LONGLONG64"
     - CONF_OPTIONS="--enable-gc-assertions"
     - GCTEST_WITH_MPROTECT_VDB=true
     - NO_CLONE_LIBATOMIC_OPS=true
