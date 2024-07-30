@@ -251,7 +251,7 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
         signed_word index = GC_add_ext_descriptor(bm,
                                                   (size_t)last_set_bit + 1);
 
-        if (EXPECT(index == -1, FALSE)) {
+        if (EXPECT(index < 0, FALSE)) {
             /* Out of memory: use a conservative approximation. */
             return PTRS_TO_BYTES((word)last_set_bit + 1) | GC_DS_LENGTH;
         }
