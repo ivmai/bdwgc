@@ -19,21 +19,12 @@
 /*
  * We allocate objects whose first word contains a pointer to a struct
  * describing the object type.  This struct contains a garbage collector mark
- * descriptor at offset MARK_DESCR_OFFSET.  Alternatively, the objects
+ * descriptor at offset GC_GCJ_MARK_DESCR_OFFSET.  Alternatively, the objects
  * may be marked by the mark procedure passed to GC_init_gcj_malloc_mp.
  */
 
 #ifndef GC_GCJ_H
 #define GC_GCJ_H
-
-        /* Gcj keeps GC descriptor as second word of vtable.    This    */
-        /* probably needs to be adjusted for other clients.             */
-        /* We currently assume that this offset is such that:           */
-        /*      - all objects of this kind are large enough to have     */
-        /*        a value at that offset, and                           */
-        /*      - it is not zero.                                       */
-        /* These assumptions allow objects on the free list to be       */
-        /* marked normally.                                             */
 
 #ifndef GC_H
 # include "gc.h"
@@ -41,6 +32,18 @@
 
 #ifdef __cplusplus
   extern "C" {
+#endif
+
+/* The offset of the garbage collector mark descriptor inside the       */
+/* structure describing the object type (vtable).  gcj keeps the mark   */
+/* descriptor as the second "pointer-sized" word of vtable.  Probably   */
+/* this needs to be adjusted for other clients.  It is currently        */
+/* assumed that this offset is such that: all objects of this kind are  */
+/* large enough to have a value at that offset, and it is not zero.     */
+/* (These assumptions allow objects on the free list to be marked       */
+/* normally.)                                                           */
+#ifndef GC_GCJ_MARK_DESCR_OFFSET
+# define GC_GCJ_MARK_DESCR_OFFSET sizeof(void *)
 #endif
 
 /* This function must be called before the gcj allocators are invoked.  */

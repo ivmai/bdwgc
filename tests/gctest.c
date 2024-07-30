@@ -338,14 +338,9 @@ static sexpr cons(sexpr x, sexpr y)
 #ifdef GC_GCJ_SUPPORT
 # include "gc/gc_gcj.h"
 
-  /* This should match that of gc_pmark.h.      */
-# ifndef MARK_DESCR_OFFSET
-#   define MARK_DESCR_OFFSET sizeof(ptr_t)
-# endif
-
   /* The following struct emulates the vtable in gcj.       */
   struct fake_vtable {
-    char dummy[MARK_DESCR_OFFSET]; /* a class pointer in real GCJ */
+    char dummy[GC_GCJ_MARK_DESCR_OFFSET]; /* a class pointer in real GCJ */
     GC_word descr;
   };
 

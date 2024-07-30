@@ -50,10 +50,6 @@ EXTERN_C_BEGIN
 /* The real declarations of the following is in gc_priv.h, so that      */
 /* we can avoid scanning GC_mark_procs table.                           */
 
-#ifndef MARK_DESCR_OFFSET
-# define MARK_DESCR_OFFSET sizeof(ptr_t)
-#endif
-
 /* Mark descriptor stuff that should remain private for now, mostly     */
 /* because it's hard to export CPP_WORDSZ without including gcconfig.h. */
 #define BITMAP_BITS (CPP_WORDSZ - GC_DS_TAG_BITS)
