@@ -1874,11 +1874,15 @@ GC_API void GC_CALL GC_start_mark_threads(void)
 #       else
           result = (int)write(fd, buf + bytes_written, len - bytes_written);
 #       endif
-        if (-1 == result) {
+        if (result < 0) {
           if (EAGAIN == errno) continue; /* resource temporarily unavailable */
           RESTORE_CANCEL(cancel_state);
           return -1;
         }
+#       ifdef LINT2
+          if ((unsigned)result > len - bytes_written)
+            ABORT("write() result cannot be bigger than requested length");
+#       endif
         bytes_written += (unsigned)result;
       }
       RESTORE_CANCEL(cancel_state);

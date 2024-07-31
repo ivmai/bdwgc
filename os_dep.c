@@ -108,6 +108,10 @@
 
       if (result < 0) return result;
       if (0 == result) break;
+#     ifdef LINT2
+        if ((size_t)result > count - num_read)
+          ABORT("read() result cannot be bigger than requested length");
+#     endif
       num_read += (size_t)result;
     }
     return num_read;
@@ -134,8 +138,12 @@
     for (;;) {
       ssize_t result = PROC_READ(f, buf, sizeof(buf));
 
-      if (result == -1) return 0; /* an error occurred */
+      if (result < 0) return 0; /* an error occurred */
       if (0 == result) break;
+#     ifdef LINT2
+        if ((size_t)result >= GC_SIZE_MAX - total)
+          ABORT("Too big file is passed to GC_get_file_len");
+#     endif
       total += (size_t)result;
     }
     return total;
