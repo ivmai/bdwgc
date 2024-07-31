@@ -1094,7 +1094,12 @@ STATIC void GC_clear_fl_marks(ptr_t q)
         if (mark_bit_from_hdr(hhdr, bit_no)) {
           size_t n_marks = hhdr -> hb_n_marks;
 
-          GC_ASSERT(n_marks != 0);
+#         ifdef LINT2
+            if (0 == n_marks)
+              ABORT("hhdr->hb_n_marks cannot be zero");
+#         else
+            GC_ASSERT(n_marks != 0);
+#         endif
           clear_mark_bit_from_hdr(hhdr, bit_no);
           n_marks--;
 #         ifdef PARALLEL_MARK
