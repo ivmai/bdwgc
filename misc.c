@@ -1858,32 +1858,31 @@ GC_API void GC_CALL GC_start_mark_threads(void)
 #     endif
       return (int)len;
 #   else
-      int bytes_written = 0;
+      size_t bytes_written = 0;
       IF_CANCEL(int cancel_state;)
 
       DISABLE_CANCEL(cancel_state);
-      while ((unsigned)bytes_written < len) {
-#        ifdef GC_SOLARIS_THREADS
-             int result = syscall(SYS_write, fd, buf + bytes_written,
-                                             len - bytes_written);
-#        elif defined(_MSC_VER)
-             int result = _write(fd, buf + bytes_written,
-                                 (unsigned)(len - bytes_written));
-#        else
-             int result = (int)write(fd, buf + bytes_written,
-                                     len - (size_t)bytes_written);
-#        endif
+      while (bytes_written < len) {
+        int result;
 
-         if (-1 == result) {
-             if (EAGAIN == errno) /* Resource temporarily unavailable */
-               continue;
-             RESTORE_CANCEL(cancel_state);
-             return result;
-         }
-         bytes_written += result;
+#       ifdef GC_SOLARIS_THREADS
+          result = syscall(SYS_write, fd, buf + bytes_written,
+                           len - bytes_written);
+#       elif defined(_MSC_VER)
+          result = _write(fd, buf + bytes_written,
+                          (unsigned)(len - bytes_written));
+#       else
+          result = (int)write(fd, buf + bytes_written, len - bytes_written);
+#       endif
+        if (-1 == result) {
+          if (EAGAIN == errno) continue; /* resource temporarily unavailable */
+          RESTORE_CANCEL(cancel_state);
+          return -1;
+        }
+        bytes_written += (unsigned)result;
       }
       RESTORE_CANCEL(cancel_state);
-      return bytes_written;
+      return (int)bytes_written;
 #   endif
   }
 

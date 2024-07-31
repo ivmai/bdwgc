@@ -98,18 +98,17 @@
 #if defined(LINUX_STACKBOTTOM) || defined(NEED_PROC_MAPS)
   /* Repeatedly perform a read call until the buffer is filled  */
   /* up, or we encounter EOF or an error.                       */
-  STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
+  STATIC ssize_t GC_repeat_read(int f, char *buf, size_t count)
   {
-    ssize_t num_read = 0;
+    size_t num_read = 0;
 
     ASSERT_CANCEL_DISABLED();
-    while ((size_t)num_read < count) {
-        ssize_t result = PROC_READ(fd, buf + num_read,
-                                   count - (size_t)num_read);
+    while (num_read < count) {
+      ssize_t result = PROC_READ(f, buf + num_read, count - num_read);
 
-        if (result < 0) return result;
-        if (result == 0) break;
-        num_read += result;
+      if (result < 0) return result;
+      if (0 == result) break;
+      num_read += (size_t)result;
     }
     return num_read;
   }
@@ -128,15 +127,17 @@
   STATIC size_t GC_get_file_len(int f)
   {
     size_t total = 0;
-    ssize_t result;
 #   define GET_FILE_LEN_BUF_SZ 500
     char buf[GET_FILE_LEN_BUF_SZ];
 
-    do {
-        result = PROC_READ(f, buf, sizeof(buf));
-        if (result == -1) return 0;
-        total += (size_t)result;
-    } while (result > 0);
+    ASSERT_CANCEL_DISABLED();
+    for (;;) {
+      ssize_t result = PROC_READ(f, buf, sizeof(buf));
+
+      if (result == -1) return 0; /* an error occurred */
+      if (0 == result) break;
+      total += (size_t)result;
+    }
     return total;
   }
 
