@@ -848,7 +848,7 @@ STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k, unsigned flags,
 {
     struct hblk *hbp, *last_hbp;
     hdr *hhdr; /* header corresponding to hbp */
-    size_t size_needed = HBLKSIZE * OBJ_SZ_TO_BLOCKS_CHECKED(lb_adjusted);
+    size_t size_needed = (lb_adjusted + HBLKSIZE-1) & ~(HBLKSIZE-1);
                                 /* number of bytes in requested objects */
 
     GC_ASSERT(I_HOLD_LOCK());
