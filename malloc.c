@@ -60,7 +60,7 @@ STATIC ptr_t GC_alloc_large(size_t lb_adjusted, int k, unsigned flags,
     /* Do our share of marking work.    */
     if (GC_incremental && !GC_dont_gc) {
             ENTER_GC();
-            GC_collect_a_little_inner((int)n_blocks);
+            GC_collect_a_little_inner(n_blocks);
             EXIT_GC();
     }
 

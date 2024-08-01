@@ -2365,8 +2365,8 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func);
 
 GC_EXTERN GC_bool GC_is_initialized; /* GC_init() has been run. */
 
-GC_INNER void GC_collect_a_little_inner(int n);
-                                /* Do n units worth of garbage          */
+GC_INNER void GC_collect_a_little_inner(size_t n_blocks);
+                                /* Do n_blocks units of a garbage       */
                                 /* collection work, if appropriate.     */
                                 /* A unit is an amount appropriate for  */
                                 /* HBLKSIZE bytes of allocation.        */

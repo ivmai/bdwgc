@@ -644,29 +644,30 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 }
 
 /* The number of extra calls to GC_mark_some that we have made. */
-STATIC int GC_deficit = 0;
+STATIC size_t GC_deficit = 0;
 
 /* The default value of GC_rate.        */
 #ifndef GC_RATE
 # define GC_RATE 10
 #endif
 
-/* When GC_collect_a_little_inner() performs n units of GC work, a unit */
-/* is intended to touch roughly GC_rate pages.  (But, every once in     */
-/* a while, we do more than that.)  This needs to be a fairly large     */
-/* number with our current incremental GC strategy, since otherwise we  */
-/* allocate too much during GC, and the cleanup gets expensive.         */
-STATIC int GC_rate = GC_RATE;
+/* When GC_collect_a_little_inner() performs n_blocks units of garbage  */
+/* collection work, a unit is intended to touch roughly GC_rate pages.  */
+/* (But, every once in a while, we do more than that.)  This needs to   */
+/* be a fairly large number with our current incremental GC strategy,   */
+/* since otherwise we allocate too much during GC, and the cleanup gets */
+/* expensive.                                                           */
+STATIC unsigned GC_rate = GC_RATE;
 
 GC_API void GC_CALL GC_set_rate(int value)
 {
     GC_ASSERT(value > 0);
-    GC_rate = value;
+    GC_rate = (unsigned)value;
 }
 
 GC_API int GC_CALL GC_get_rate(void)
 {
-    return GC_rate;
+    return (int)GC_rate;
 }
 
 /* The default maximum number of prior attempts at world stop marking.  */
@@ -690,7 +691,7 @@ GC_API int GC_CALL GC_get_max_prior_attempts(void)
     return max_prior_attempts;
 }
 
-GC_INNER void GC_collect_a_little_inner(int n)
+GC_INNER void GC_collect_a_little_inner(size_t n_blocks)
 {
     IF_CANCEL(int cancel_state;)
 
@@ -698,8 +699,8 @@ GC_INNER void GC_collect_a_little_inner(int n)
     GC_ASSERT(GC_is_initialized);
     DISABLE_CANCEL(cancel_state);
     if (GC_incremental && GC_collection_in_progress()) {
-        int i;
-        int max_deficit = GC_rate * n;
+        size_t i;
+        size_t max_deficit = GC_rate * n_blocks;
 
 #       ifdef PARALLEL_MARK
             if (GC_time_limit != GC_TIME_UNLIMITED)
@@ -734,9 +735,8 @@ GC_INNER void GC_collect_a_little_inner(int n)
             }
         }
         if (GC_deficit > 0) {
-            GC_deficit -= max_deficit;
-            if (GC_deficit < 0)
-                GC_deficit = 0;
+            GC_deficit = GC_deficit > max_deficit
+                            ? GC_deficit - max_deficit : 0;
         }
     } else if (!GC_dont_gc) {
         GC_maybe_gc();
@@ -823,8 +823,8 @@ GC_API int GC_CALL GC_collect_a_little(void)
 /* we succeed.                                                          */
 STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 {
-    int abandoned_at;
     ptr_t cold_gc_frame = GC_approx_sp();
+    unsigned abandoned_at;
 #   ifndef NO_CLOCK
       CLOCK_TYPE start_time = CLOCK_TYPE_INITIALIZER;
       GC_bool start_time_valid = FALSE;
@@ -833,10 +833,10 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(GC_is_initialized);
 #   if !defined(REDIRECT_MALLOC) && defined(USE_WINALLOC)
-        GC_add_current_malloc_heap();
+      GC_add_current_malloc_heap();
 #   endif
 #   if defined(REGISTER_LIBRARIES_EARLY)
-        GC_cond_register_dynamic_libraries();
+      GC_cond_register_dynamic_libraries();
 #   endif
 
 #   if !defined(GC_NO_FINALIZATION) && !defined(GC_TOGGLE_REFS_NOT_NEEDED)
@@ -875,37 +875,37 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   endif
 
     /* Notify about marking from all roots.     */
-        if (GC_on_collection_event)
-          GC_on_collection_event(GC_EVENT_MARK_START);
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_MARK_START);
 
     /* Minimize junk left in my registers and on the stack.     */
-            GC_clear_a_few_frames();
-            GC_noop6(0,0,0,0,0,0);
+    GC_clear_a_few_frames();
+    GC_noop6(0,0,0,0,0,0);
 
-        GC_initiate_gc();
+    GC_initiate_gc();
+#   ifdef PARALLEL_MARK
+      if (stop_func != GC_never_stop_func)
+        GC_parallel_mark_disabled = TRUE;
+#   endif
+    for (abandoned_at = 1; !(*stop_func)(); abandoned_at++) {
+      if (GC_mark_some(cold_gc_frame)) {
 #       ifdef PARALLEL_MARK
-          if (stop_func != GC_never_stop_func)
-            GC_parallel_mark_disabled = TRUE;
-#       endif
-        for (abandoned_at = 0; !(*stop_func)(); abandoned_at++) {
-          if (GC_mark_some(cold_gc_frame)) {
-#           ifdef PARALLEL_MARK
-              if (GC_parallel && GC_parallel_mark_disabled) {
-                GC_COND_LOG_PRINTF("Stopped marking done after %d iterations"
-                                   " with disabled parallel marker\n",
-                                   abandoned_at);
-              }
-#           endif
-            abandoned_at = -1;
-            break;
+          if (GC_parallel && GC_parallel_mark_disabled) {
+            GC_COND_LOG_PRINTF("Stopped marking done after %u iterations"
+                               " with disabled parallel marker\n",
+                               abandoned_at - 1);
           }
-        }
-#       ifdef PARALLEL_MARK
-          GC_parallel_mark_disabled = FALSE;
 #       endif
+        abandoned_at = 0;
+        break;
+      }
+    }
+#   ifdef PARALLEL_MARK
+      GC_parallel_mark_disabled = FALSE;
+#   endif
 
-    if (abandoned_at >= 0) {
-      GC_deficit = abandoned_at; /* Give the mutator a chance. */
+    if (abandoned_at > 0) {
+      GC_deficit = abandoned_at - 1; /* give the mutator a chance */
       /* TODO: Notify GC_EVENT_MARK_ABANDON */
     } else {
       GC_gc_no++;
@@ -964,7 +964,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
           /* Update old world_stopped_total_time and its divisor.   */
           world_stopped_total_time = total_time;
           world_stopped_total_divisor = ++divisor;
-          if (abandoned_at < 0) {
+          if (0 == abandoned_at) {
             GC_ASSERT(divisor != 0);
             GC_log_printf("World-stopped marking took %lu ms %lu ns"
                           " (%u ms in average)\n", time_diff, ns_frac_diff,
@@ -974,12 +974,10 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
       }
 #   endif
 
-    if (abandoned_at >= 0) {
-      GC_COND_LOG_PRINTF("Abandoned stopped marking after %d iterations\n",
-                         abandoned_at);
-      return FALSE;
-    }
-    return TRUE;
+    if (0 == abandoned_at) return TRUE;
+    GC_COND_LOG_PRINTF("Abandoned stopped marking after %u iterations\n",
+                       abandoned_at - 1);
+    return FALSE;
 }
 
 GC_INNER void GC_set_fl_marks(ptr_t q)
@@ -1645,7 +1643,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
 /* Really returns a bool, but it's externally visible, so that's clumsy. */
 GC_API int GC_CALL GC_expand_hp(size_t bytes)
 {
-    word n_blocks = OBJ_SZ_TO_BLOCKS_CHECKED(bytes);
+    size_t n_blocks = OBJ_SZ_TO_BLOCKS_CHECKED(bytes);
     word old_heapsize;
     GC_bool result;
 
