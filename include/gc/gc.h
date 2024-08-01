@@ -1534,7 +1534,10 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER) \
     && !(defined(__APPLE__) && defined(__arm__) && defined(__TINYC__))
         /* TCC (as of v0.9.28rc) does not support asm on macOS/arm. */
-# if defined(__e2k__)
+# if defined(__TINYC__)
+#   define GC_reachable_here(ptr) \
+                __asm__ __volatile__ (" " : : "g"(ptr) : "memory")
+# elif defined(__e2k__)
 #   define GC_reachable_here(ptr) \
                 __asm__ __volatile__ (" " : : "r"(ptr) : "memory")
 # else
