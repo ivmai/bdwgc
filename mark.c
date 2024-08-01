@@ -101,10 +101,6 @@ GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
                                 /* etc.  Used for logging only.         */
 #endif
 
-#ifdef PARALLEL_MARK
-  GC_INNER GC_bool GC_parallel_mark_disabled = FALSE;
-#endif
-
 GC_API void GC_CALL GC_set_pointer_mask(GC_word value)
 {
 # ifdef DYNAMIC_POINTER_MASK
@@ -516,6 +512,10 @@ GC_API GC_on_mark_stack_empty_proc GC_CALL GC_get_on_mark_stack_empty(void)
     }
     return FALSE;
 }
+
+#ifdef PARALLEL_MARK
+  GC_INNER GC_bool GC_parallel_mark_disabled = FALSE;
+#endif
 
 #ifdef WRAP_MARK_SOME
   GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame)
