@@ -554,10 +554,9 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
     unsigned GC_n_set_marks(const hdr *hhdr)
     {
       unsigned result = 0;
-      size_t sz = hhdr -> hb_sz;
       size_t i;
 #     ifdef MARK_BIT_PER_OBJ
-        size_t n_objs = HBLK_OBJS(sz);
+        size_t n_objs = HBLK_OBJS(hhdr -> hb_sz);
         size_t n_mark_words
                     = divWORDSZ(n_objs > 0 ? n_objs : 1); /* round down */
 
@@ -574,7 +573,7 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
       result--; /* exclude the one bit set past the end */
 #     ifndef MARK_BIT_PER_OBJ
         if (IS_UNCOLLECTABLE(hhdr -> hb_obj_kind)) {
-          size_t lg = BYTES_TO_GRANULES(sz);
+          size_t lg = BYTES_TO_GRANULES(hhdr -> hb_sz);
 
           /* As mentioned in GC_set_hdr_marks(), all the bits are set   */
           /* instead of every n-th, thus the result should be adjusted. */
