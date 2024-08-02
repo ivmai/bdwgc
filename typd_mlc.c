@@ -255,6 +255,10 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
             /* Out of memory: use a conservative approximation. */
             return PTRS_TO_BYTES((word)last_set_bit + 1) | GC_DS_LENGTH;
         }
+#       ifdef LINT2
+          if ((word)index > MAX_ENV)
+            ABORT("GC_add_ext_descriptor() result cannot exceed MAX_ENV");
+#       endif
         d = GC_MAKE_PROC(GC_typed_mark_proc_index, index);
     }
     return d;
