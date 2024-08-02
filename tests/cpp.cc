@@ -60,6 +60,12 @@ extern "C" {
 # define USE_GC GC_NS_QUALIFY(GC)
 #endif
 
+#if __cplusplus >= 201103L
+# define GC_OVERRIDE override
+#else
+# define GC_OVERRIDE /* empty */
+#endif
+
 #define my_assert( e ) \
     if (!(e)) { \
         GC_printf( "Assertion failure in " __FILE__ ", line %d: " #e "\n", \
@@ -89,7 +95,7 @@ class B: public GC_NS_QUALIFY(gc), public A { public:
     /* A collectible class. */
 
     GC_ATTR_EXPLICIT B( int j ): A( j ) {}
-    virtual ~B() {
+    virtual ~B() GC_OVERRIDE {
         my_assert( deleting );}
     static void Deleting( int on ) {
         deleting = on;}
@@ -141,7 +147,7 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
             C_INIT_LEFT_RIGHT(level - 1, level - 1);
         } else {
             left = right = 0;}}
-    ~C() {
+    ~C() GC_OVERRIDE {
         this->A::Test( level );
         nFreed++;
         my_assert( level == 0 ?
@@ -202,7 +208,7 @@ class E: public GC_NS_QUALIFY(gc_cleanup) { public:
 
     E() {
         nAllocated++;}
-    ~E() {
+    ~E() GC_OVERRIDE {
         nFreed++;}
 
     static int nFreed;
@@ -220,7 +226,7 @@ class F: public E {public:
         nAllocatedF++;
     }
 
-    ~F() {
+    ~F() GC_OVERRIDE {
         nFreedF++;
     }
 
