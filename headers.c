@@ -325,27 +325,27 @@ GC_INNER void GC_remove_counts(struct hblk *h, size_t sz /* bytes */)
     }
 }
 
+#define HBLK_ADDR(bi, j) \
+            ((((bi) -> key << LOG_BOTTOM_SZ) + (word)(j)) << LOG_HBLKSIZE)
+
 GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn fn,
                                            void *client_data)
 {
-    signed_word j;
-    bottom_index * index_p;
+    bottom_index * bi;
 
-    for (index_p = GC_all_bottom_indices; index_p != NULL;
-         index_p = index_p -> asc_link) {
+    for (bi = GC_all_bottom_indices; bi != NULL; bi = bi -> asc_link) {
+        signed_word j;
+
         for (j = BOTTOM_SZ-1; j >= 0;) {
-            if (!IS_FORWARDING_ADDR_OR_NIL(index_p -> index[j])) {
-                if (!HBLK_IS_FREE(index_p -> index[j])) {
-                    fn((struct hblk *)
-                              (((index_p -> key << LOG_BOTTOM_SZ) + (word)j)
-                               << LOG_HBLKSIZE),
-                       client_data);
+            hdr * hhdr = bi -> index[j];
+
+            if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
+                j -= (signed_word)(hhdr != NULL ? ADDR(hhdr) : 1);
+            } else {
+                if (!HBLK_IS_FREE(hhdr)) {
+                    fn((struct hblk *)HBLK_ADDR(bi, j), client_data);
                 }
                 j--;
-            } else if (NULL == index_p -> index[j]) {
-                j--;
-            } else {
-                j -= (signed_word)(index_p -> index[j]);
             }
         }
     }
@@ -362,11 +362,11 @@ GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free)
         REGISTER word hi = ADDR(h) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
 
         bi = GC_all_bottom_indices;
-        while (bi != 0 && bi -> key < hi) bi = bi -> asc_link;
+        while (bi != NULL && bi -> key < hi) bi = bi -> asc_link;
         j = 0;
     }
 
-    while (bi != 0) {
+    for (; bi != NULL; bi = bi -> asc_link) {
         while (j < BOTTOM_SZ) {
             hdr * hhdr = bi -> index[j];
 
@@ -374,15 +374,12 @@ GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free)
                 j++;
             } else {
                 if (allow_free || !HBLK_IS_FREE(hhdr)) {
-                    return (struct hblk *)(((bi -> key << LOG_BOTTOM_SZ)
-                                            + j) << LOG_HBLKSIZE);
-                } else {
-                    j += divHBLKSZ(hhdr -> hb_sz);
+                    return (struct hblk *)HBLK_ADDR(bi, j);
                 }
+                j += divHBLKSZ(hhdr -> hb_sz);
             }
         }
         j = 0;
-        bi = bi -> asc_link;
     }
     return NULL;
 }
@@ -411,8 +408,7 @@ GC_INNER struct hblk * GC_prev_block(struct hblk *h)
             } else if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
                 j -= (signed_word)ADDR(hhdr);
             } else {
-                return (struct hblk*)(((bi -> key << LOG_BOTTOM_SZ) + (word)j)
-                                       << LOG_HBLKSIZE);
+                return (struct hblk *)HBLK_ADDR(bi, j);
             }
         }
         j = BOTTOM_SZ - 1;
