@@ -506,7 +506,7 @@ GC_INNER void GC_unmap_old(unsigned threshold)
 
         /* Check that the interval is not smaller than the threshold.   */
         /* The truncated counter value wrapping is handled correctly.   */
-        if ((unsigned short)(GC_gc_no - hhdr->hb_last_reclaimed)
+        if ((unsigned short)(GC_gc_no - hhdr -> hb_last_reclaimed)
             >= (unsigned short)threshold) {
 #         ifdef COUNT_UNMAPPED_REGIONS
             /* Continue with unmapping the block only if it will not    */
@@ -629,6 +629,7 @@ STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
         WARN("Header allocation failed: dropping block\n", 0);
         return NULL;
     }
+    rest_hdr -> hb_block = rest;
     rest_hdr -> hb_sz = total_size - size_needed;
     rest_hdr -> hb_flags = 0;
 #   ifdef GC_ASSERTIONS

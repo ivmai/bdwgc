@@ -375,6 +375,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp, size_t sz,
     if (hhdr -> hb_n_marks) {
         *flh = flh_next;
     } else {
+        GC_ASSERT(hbp == hhdr -> hb_block);
         GC_bytes_found += (signed_word)HBLKSIZE;
         GC_freehblk(hbp);
     }
@@ -410,6 +411,7 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
     if (sz > MAXOBJBYTES) { /* 1 big object */
         if (!mark_bit_from_hdr(hhdr, 0)) {
             if (report_if_found) {
+              GC_ASSERT(hbp == hhdr -> hb_block);
               GC_add_leaked((ptr_t)hbp);
             } else {
 #             ifdef ENABLE_DISCLAIM
@@ -421,6 +423,7 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
                   }
                 }
 #             endif
+              GC_ASSERT(hbp == hhdr -> hb_block);
               if (sz > HBLKSIZE) {
                 GC_large_allocd_bytes -= HBLKSIZE * OBJ_SZ_TO_BLOCKS(sz);
               }
@@ -468,6 +471,7 @@ STATIC void GC_CALLBACK GC_reclaim_block(struct hblk *hbp,
             }
           }
 #       endif
+        GC_ASSERT(hbp == hhdr -> hb_block);
         if (report_if_found) {
           GC_reclaim_small_nonempty_block(hbp, sz,
                                           TRUE /* report_if_found */);

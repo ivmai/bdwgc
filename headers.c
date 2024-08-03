@@ -343,7 +343,8 @@ GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn fn,
                 j -= (signed_word)(hhdr != NULL ? ADDR(hhdr) : 1);
             } else {
                 if (!HBLK_IS_FREE(hhdr)) {
-                    fn((struct hblk *)HBLK_ADDR(bi, j), client_data);
+                    GC_ASSERT(HBLK_ADDR(bi, j) == ADDR(hhdr -> hb_block));
+                    fn(hhdr -> hb_block, client_data);
                 }
                 j--;
             }
@@ -374,7 +375,8 @@ GC_INNER struct hblk * GC_next_block(struct hblk *h, GC_bool allow_free)
                 j++;
             } else {
                 if (allow_free || !HBLK_IS_FREE(hhdr)) {
-                    return (struct hblk *)HBLK_ADDR(bi, j);
+                    GC_ASSERT(HBLK_ADDR(bi, j) == ADDR(hhdr -> hb_block));
+                    return hhdr -> hb_block;
                 }
                 j += divHBLKSZ(hhdr -> hb_sz);
             }
@@ -408,6 +410,7 @@ GC_INNER struct hblk * GC_prev_block(struct hblk *h)
             } else if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
                 j -= (signed_word)ADDR(hhdr);
             } else {
+                /* TODO: return hhdr -> hb_block instead */
                 return (struct hblk *)HBLK_ADDR(bi, j);
             }
         }

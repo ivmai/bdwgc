@@ -634,7 +634,8 @@ static void free_internal(void *p, const hdr *hhdr)
     if (lb > HBLKSIZE) {
       GC_large_allocd_bytes -= HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb);
     }
-    GC_freehblk(HBLKPTR(p));
+    GC_ASSERT(ADDR(HBLKPTR(p)) == ADDR(hhdr -> hb_block));
+    GC_freehblk(hhdr -> hb_block);
   }
 }
 

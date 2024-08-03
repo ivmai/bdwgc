@@ -939,6 +939,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     size_t bit_no;
 
     UNUSED_ARG(dummy);
+    GC_ASSERT((ptr_t)(hhdr -> hb_block) == p);
     plim = sz > MAXOBJBYTES ? p : p + HBLKSIZE - sz;
     /* Go through all objects in block. */
     for (bit_no = 0; ADDR_GE(plim, p);
