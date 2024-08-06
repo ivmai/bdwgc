@@ -54,15 +54,15 @@ environment:
     CFLAGS_EXTRA: -s -DNO_MSGBOX_ON_ERROR
   - TARGET: mingw-shared-no-make
     CFLAGS_EXTRA: -D GC_THREADS -D GC_ASSERTIONS -D ENABLE_DISCLAIM -D GC_GCJ_SUPPORT -D GC_PREFER_MPROTECT_VDB -D GC_CALL=__stdcall -D GC_CALLBACK=__fastcall -D CONSOLE_LOG -D NO_MSGBOX_ON_ERROR -D USE_RWLOCK -D _WIN32_WINNT=0x0600
-  - TARGET: msys64
-  - TARGET: msys64
+  - TARGET: msys64-mingw64
+  - TARGET: msys64-mingw64
     CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D EMPTY_GETENV_RESULTS -D GC_GCJ_SUPPORT -D USE_MUNMAP -D LARGE_CONFIG -D NO_MSGBOX_ON_ERROR
     TEST_TARGET: check cord/de
-  - TARGET: msys64
+  - TARGET: msys64-mingw64
     CFLAGS_EXTRA: -O3 -march=native -D GC_THREADS -D GC_GCJ_SUPPORT -D GC_TIME_LIMIT=10 -D WINXP_USE_PERF_COUNTER -D NO_MSGBOX_ON_ERROR -D NO_TEST_ENDTHREADEX
-  - TARGET: msys64
+  - TARGET: msys64-mingw64
     CFLAGS_EXTRA: -D NO_MSGBOX_ON_ERROR
-  - TARGET: msys64
+  - TARGET: msys64-mingw64
     CFLAGS_EXTRA: -D GC_THREADS -D THREAD_LOCAL_ALLOC -D PARALLEL_MARK -D GC_ASSERTIONS -D GC_GCJ_SUPPORT -D NO_RETRY_GET_THREAD_CONTEXT
   - TARGET: wcc
     WCC_SYSTEM: DOS4GW
@@ -123,10 +123,10 @@ build_script:
 - cmd: if [%TARGET%]==[mingw-shared-no-make] (
     set "path=C:\%MINGW_FOLDER%\bin;%path%"
     && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -shared -o gc.dll extra/gc.c )
-- cmd: if [%TARGET%]==[msys64] (
+- cmd: if [%TARGET%]==[msys64-mingw64] (
     C:\msys64\usr\bin\bash -e -l -c
       "cd /c/projects/bdwgc
-       && make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+       && PATH=/c/msys64/mingw64/bin:$PATH make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[wcc] (
     appveyor DownloadFile "https://github.com/open-watcom/open-watcom-v2/releases/download/%WATCOM_VER%-Build/ow-snapshot.tar.xz"
     && 7z x ow-snapshot.tar.xz > nul && 7z x -o..\watcom ow-snapshot.tar > nul
@@ -158,10 +158,10 @@ test_script:
     set "path=C:\%MINGW_FOLDER%\bin;%path%"
     && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o gctest.exe tests/gctest.c gc.dll
     && gctest.exe )
-- cmd: if [%TARGET%]==[msys64] (
+- cmd: if [%TARGET%]==[msys64-mingw64] (
     C:\msys64\usr\bin\bash -e -l -c
       "cd /c/projects/bdwgc
-       && make -j -f Makefile.direct %TEST_TARGET% CC=gcc CURSES=-lgdi32 CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
+       && PATH=/c/msys64/mingw64/bin:$PATH make -j -f Makefile.direct %TEST_TARGET% CC=gcc CURSES=-lgdi32 CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
 - cmd: if [%TARGET%]==[wcc] (
     set "watcom=%cd%\..\watcom" && set "beginlibpath=%cd%\..\watcom\binp\dll"
     && set "path=%cd%\..\watcom\binnt64;%cd%\..\watcom\binnt"
