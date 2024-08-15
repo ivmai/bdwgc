@@ -1081,47 +1081,80 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
 /* entry).  Decrement GC_bytes_found by number of bytes on free list.   */
 STATIC void GC_clear_fl_marks(ptr_t q)
 {
-      struct hblk *h = HBLKPTR(q);
-      const struct hblk *last_h = h;
-      hdr *hhdr = HDR(h);
-      size_t sz = hhdr -> hb_sz; /* Normally set only once. */
+  struct hblk *h = HBLKPTR(q);
+  const struct hblk *last_h = h;
+  hdr *hhdr = HDR(h);
+  size_t sz = hhdr -> hb_sz; /* normally set only once */
 
-      for (;;) {
-        size_t bit_no = MARK_BIT_NO((size_t)((ptr_t)q - (ptr_t)h), sz);
+  for (;;) {
+    size_t bit_no = MARK_BIT_NO((size_t)((ptr_t)q - (ptr_t)h), sz);
 
-        if (mark_bit_from_hdr(hhdr, bit_no)) {
-          size_t n_marks = hhdr -> hb_n_marks;
+    if (mark_bit_from_hdr(hhdr, bit_no)) {
+      size_t n_marks = hhdr -> hb_n_marks;
 
-#         ifdef LINT2
-            if (0 == n_marks)
-              ABORT("hhdr->hb_n_marks cannot be zero");
-#         else
-            GC_ASSERT(n_marks != 0);
-#         endif
-          clear_mark_bit_from_hdr(hhdr, bit_no);
-          n_marks--;
-#         ifdef PARALLEL_MARK
-            /* Appr. count, don't decrement to zero! */
-            if (0 != n_marks || !GC_parallel) {
-              hhdr -> hb_n_marks = n_marks;
-            }
-#         else
-            hhdr -> hb_n_marks = n_marks;
-#         endif
+#     ifdef LINT2
+        if (0 == n_marks)
+          ABORT("hhdr->hb_n_marks cannot be zero");
+#     else
+        GC_ASSERT(n_marks != 0);
+#     endif
+      clear_mark_bit_from_hdr(hhdr, bit_no);
+      n_marks--;
+#     ifdef PARALLEL_MARK
+        /* Appr. count, don't decrement to zero!    */
+        if (0 != n_marks || !GC_parallel) {
+          hhdr -> hb_n_marks = n_marks;
         }
-        GC_bytes_found -= (signed_word)sz;
+#     else
+        hhdr -> hb_n_marks = n_marks;
+#     endif
+    }
+    GC_bytes_found -= (signed_word)sz;
 
-        q = (ptr_t)obj_link(q);
-        if (NULL == q) break;
+    q = (ptr_t)obj_link(q);
+    if (NULL == q) break;
 
-        h = HBLKPTR(q);
-        if (EXPECT(h != last_h, FALSE)) {
-          last_h = h;
-          /* Update hhdr and sz. */
-          hhdr = HDR(h);
-          sz = hhdr -> hb_sz;
-        }
-      }
+    h = HBLKPTR(q);
+    if (EXPECT(h != last_h, FALSE)) {
+      last_h = h;
+      /* Update hhdr and sz.    */
+      hhdr = HDR(h);
+      sz = hhdr -> hb_sz;
+    }
+  }
+}
+
+/* Mark all objects on the free lists for every object kind.    */
+static void set_all_fl_marks(void)
+{
+  unsigned kind;
+
+  for (kind = 0; kind < GC_n_kinds; kind++) {
+    word size; /* current object size */
+
+    for (size = 1; size <= MAXOBJGRANULES; size++) {
+      ptr_t q = (ptr_t)GC_obj_kinds[kind].ok_freelist[size];
+
+      if (q != NULL) GC_set_fl_marks(q);
+    }
+  }
+}
+
+/* Clear free-list mark bits.  Also subtract memory remaining from  */
+/* GC_bytes_found count.                                            */
+static void clear_all_fl_marks(void)
+{
+  unsigned kind;
+
+  for (kind = 0; kind < GC_n_kinds; kind++) {
+    word size; /* current object size */
+
+    for (size = 1; size <= MAXOBJGRANULES; size++) {
+      ptr_t q = (ptr_t)GC_obj_kinds[kind].ok_freelist[size];
+
+      if (q != NULL) GC_clear_fl_marks(q);
+    }
+  }
 }
 
 #if defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)
@@ -1187,20 +1220,7 @@ STATIC void GC_finish_collection(void)
 #   endif
     COND_DUMP;
     if (GC_find_leak) {
-      /* Mark all objects on the free list.  All objects should be      */
-      /* marked when we're done.                                        */
-      unsigned kind;
-
-      for (kind = 0; kind < GC_n_kinds; kind++) {
-        word size;  /* current object size */
-
-        for (size = 1; size <= MAXOBJGRANULES; size++) {
-          ptr_t q = (ptr_t)GC_obj_kinds[kind].ok_freelist[size];
-
-          if (q != NULL)
-            GC_set_fl_marks(q);
-        }
-      }
+      set_all_fl_marks();
       GC_start_reclaim(TRUE);
         /* The above just checks; it doesn't really reclaim anything.   */
     }
@@ -1222,26 +1242,13 @@ STATIC void GC_finish_collection(void)
 #     endif
     }
 
-    /* Clear free-list mark bits, in case they got accidentally marked   */
-    /* (or GC_find_leak is set and they were intentionally marked).      */
-    /* Also subtract memory remaining from GC_bytes_found count.         */
-    /* Note that composite objects on free list are cleared.             */
-    /* Thus accidentally marking a free list is not a problem;  only     */
-    /* objects on the list itself will be marked, and that's fixed here. */
-    {
-      unsigned kind;
-
-      for (kind = 0; kind < GC_n_kinds; kind++) {
-        word size;  /* current object size */
-
-        for (size = 1; size <= MAXOBJGRANULES; size++) {
-          ptr_t q = (ptr_t)GC_obj_kinds[kind].ok_freelist[size];
-
-          if (q != NULL)
-            GC_clear_fl_marks(q);
-        }
-      }
-    }
+    /* Clear free-list mark bits, in case they got accidentally marked  */
+    /* (or GC_find_leak is set and they were intentionally marked).     */
+    /* Note that composite objects on free list are cleared, thus       */
+    /* accidentally marking a free list is not a problem; but some      */
+    /* objects on the list itself might be marked, and the given        */
+    /* function call fixes it.                                          */
+    clear_all_fl_marks();
 
     GC_VERBOSE_LOG_PRINTF("Bytes recovered before sweep - f.l. count = %ld\n",
                           (long)GC_bytes_found);
