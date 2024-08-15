@@ -37,11 +37,9 @@
 /* The offset of the garbage collector mark descriptor inside the       */
 /* structure describing the object type (vtable).  gcj keeps the mark   */
 /* descriptor as the second "pointer-sized" word of vtable.  Probably   */
-/* this needs to be adjusted for other clients.  It is currently        */
-/* assumed that this offset is such that: all objects of this kind are  */
-/* large enough to have a value at that offset, and it is not zero.     */
-/* (These assumptions allow objects on the free list to be marked       */
-/* normally.)                                                           */
+/* this needs to be adjusted for other clients.  It is assumed that     */
+/* this offset is not smaller than the size of a pointer (the           */
+/* assumption allows objects on the free list to be marked normally).   */
 #ifndef GC_GCJ_MARK_DESCR_OFFSET
 # define GC_GCJ_MARK_DESCR_OFFSET sizeof(void *)
 #endif

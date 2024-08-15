@@ -73,6 +73,7 @@ GC_API void GC_CALL GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp)
     if (mp == 0)        /* In case GC_DS_PROC is unused.        */
       mp = GC_gcj_fake_mark_proc;
 
+    GC_STATIC_ASSERT(GC_GCJ_MARK_DESCR_OFFSET >= sizeof(ptr_t));
     GC_init();  /* In case it's not already done.       */
     LOCK();
     if (GC_gcjobjfreelist != NULL) {
