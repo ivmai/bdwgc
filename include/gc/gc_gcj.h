@@ -41,7 +41,7 @@
 /* this offset is not smaller than the size of a pointer (the           */
 /* assumption allows objects on the free list to be marked normally).   */
 #ifndef GC_GCJ_MARK_DESCR_OFFSET
-# define GC_GCJ_MARK_DESCR_OFFSET sizeof(void *)
+# define GC_GCJ_MARK_DESCR_OFFSET GC_SIZEOF_PTR
 #endif
 
 /* This function must be called before the gcj allocators are invoked.  */
