@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
 
       matrix:
-        zig_version: [ "0.12.0" ]
+        zig_version: [ "0.13.0" ]
         os: [ macos-latest, ubuntu-latest, windows-latest ]
         ttriple: [ native, native-native-msvc ]
         enable_cplusplus: [ true ]
