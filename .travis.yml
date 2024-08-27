@@ -129,16 +129,12 @@ jobs:
     - MAKEFILE_TARGETS="check cord/de"
   - arch: ppc64le
     compiler: clang
+    dist: focal
   - arch: ppc64le
     compiler: gcc
-  - addons:
-      apt:
-        packages:
-        - clang-12
-        sources:
-        - ubuntu-toolchain-r-test
-    arch: ppc64le
-    compiler: clang-12
+    dist: focal
+  - arch: ppc64le
+    compiler: clang
     dist: focal
     env:
     - CFLAGS_EXTRA="-O3"
@@ -146,19 +142,13 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: ppc64le
     compiler: gcc
-    dist: jammy
+    dist: focal
     env:
     - CFLAGS_EXTRA="-O3 -D NO_MPROTECT_VDB"
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - addons:
-      apt:
-        packages:
-        - clang-12
-        sources:
-        - ubuntu-toolchain-r-test
-    arch: ppc64le
-    compiler: clang-12
+  - arch: ppc64le
+    compiler: clang
     dist: focal
     language: c
     env:
@@ -168,12 +158,14 @@ jobs:
     - TESTS_CUSTOM_RUN=true
   - arch: ppc64le
     compiler: clang
+    dist: focal
     env:
     - CMAKE_CONFIG="Release"
     - CMAKE_OPTIONS="-Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: ppc64le
     compiler: clang
+    dist: focal
     env:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check cord/de"
