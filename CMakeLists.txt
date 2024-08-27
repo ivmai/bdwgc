@@ -179,6 +179,7 @@ set(SRC allchblk.c alloc.c blacklst.c dbg_mlc.c dyn_load.c finalize.c
 
 set(NODIST_SRC)
 set(ATOMIC_OPS_LIBS)
+set(ATOMIC_OPS_PC)
 set(ATOMIC_OPS_LIBS_CMAKE)
 set(THREADDLLIBS_LIST)
 set(NEED_LIB_RT)
@@ -197,6 +198,7 @@ if (enable_threads)
         "with_libatomic_ops and without_libatomic_ops are mutually exclusive")
     endif()
     set(ATOMIC_OPS_LIBS "-latomic_ops")
+    set(ATOMIC_OPS_PC "atomic_ops")
     find_package(Atomic_ops CONFIG)
     if (Atomic_ops_FOUND)
       get_target_property(AO_INCLUDE_DIRS Atomic_ops::atomic_ops

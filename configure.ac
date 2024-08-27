@@ -1207,7 +1207,9 @@ AS_IF([test x"$with_libatomic_ops" != xno],
   [AS_IF([test x"$with_libatomic_ops" != xnone -a x"$THREADS" != xnone],
          [AC_MSG_RESULT([external])
           ATOMIC_OPS_LIBS="-latomic_ops"
-          AC_SUBST([ATOMIC_OPS_LIBS])],
+          ATOMIC_OPS_PC="atomic_ops"
+          AC_SUBST([ATOMIC_OPS_LIBS])
+          AC_SUBST([ATOMIC_OPS_PC])],
          [AC_MSG_RESULT([none])
           AS_IF([test x"$THREADS" != xnone],
                 [AC_DEFINE([GC_BUILTIN_ATOMIC], [1],
