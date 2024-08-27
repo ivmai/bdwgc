@@ -1262,6 +1262,10 @@ GC_INNER void GC_stop_world(void)
 
 #else /* !NACL */
 
+# ifndef GC_OPENBSD_UTHREADS
+    static GC_bool in_resend_restart_signals;
+# endif
+
   /* Restart all threads that were suspended by the collector.  */
   /* Return the number of restart signals that were sent.       */
   STATIC int GC_restart_all(void)
@@ -1285,8 +1289,24 @@ GC_INNER void GC_stop_world(void)
 #           endif
             if (GC_retry_signals
                 && AO_load(&p->stop_info.last_stop_count)
-                    == (AO_t)((word)GC_stop_count | THREAD_RESTARTED))
-              continue; /* The thread has been restarted. */
+                    == (AO_t)((word)GC_stop_count | THREAD_RESTARTED)) {
+              /* The thread has been restarted.   */
+              if (!in_resend_restart_signals) {
+                /* Some user signal (which we do not block, e.g. SIGQUIT) */
+                /* has already restarted the thread, but nonetheless we   */
+                /* need to count the thread in n_live_threads, so that    */
+                /* to decrement the semaphore's value proper amount of    */
+                /* times.  (We are also sending the restart signal to the */
+                /* thread, it is not needed actually but does not hurt.)  */
+              } else {
+                continue;
+                /* FIXME: Still, an extremely low chance exists that the  */
+                /* user signal restarts the thread after the restart      */
+                /* signal has been lost (causing sem_timedwait() to fail) */
+                /* while retrying, causing finally a mismatch between     */
+                /* GC_suspend_ack_sem and n_live_threads.                 */
+              }
+            }
             n_live_threads++;
 #         endif
 #         ifdef DEBUG_THREADS
@@ -1337,13 +1357,16 @@ GC_INNER void GC_start_world(void)
                     /* The updated value should now be visible to the   */
                     /* signal handler (note that pthread_kill is not on */
                     /* the list of functions which synchronize memory). */
+      GC_ASSERT(!in_resend_restart_signals);
 #   endif
     n_live_threads = GC_restart_all();
 #   ifdef GC_OPENBSD_UTHREADS
       (void)n_live_threads;
 #   else
       if (GC_retry_signals) {
+        in_resend_restart_signals = TRUE;
         resend_lost_signals_retry(n_live_threads, GC_restart_all);
+        in_resend_restart_signals = FALSE;
       } /* else */
 #     ifdef GC_NETBSD_THREADS_WORKAROUND
         else {
