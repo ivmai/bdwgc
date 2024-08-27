@@ -132,16 +132,19 @@ jobs:
     - MAKEFILE_TARGETS="check cord/de"
   - arch: ppc64le
     compiler: clang
+    dist: focal
     env:
     - GCTEST_WITH_MPROTECT_VDB=true
   - arch: ppc64le
     compiler: gcc
+    dist: focal
     env:
     - CONF_OPTIONS="--disable-disclaim"
     - GCTEST_WITH_MPROTECT_VDB=true
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: ppc64le
     compiler: clang
+    dist: focal
     env:
     - CFLAGS_EXTRA="-O3 -D _FORTIFY_SOURCE=2 -D DONT_PROTECT_PTRFREE -D FORCE_MPROTECT_BEFORE_MADVISE -D GC_UNMAPPED_REGIONS_SOFT_LIMIT=120"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --enable-static"
@@ -149,18 +152,21 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: ppc64le
     compiler: gcc
+    dist: focal
     env:
     - CFLAGS_EXTRA="-O3 -D NO_MPROTECT_VDB"
     - CONF_OPTIONS="--enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: ppc64le
     compiler: clang
+    dist: focal
     env:
     - CFLAGS_EXTRA="-D CHECK_SOFT_VDB"
     - CONF_OPTIONS="--enable-gc-assertions --enable-static --disable-thread-local-alloc"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: ppc64le
     compiler: clang
+    dist: focal
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory,undefined -fno-omit-frame-pointer"
@@ -170,12 +176,14 @@ jobs:
     - TESTS_CUSTOM_RUN=true
   - arch: ppc64le
     compiler: clang
+    dist: focal
     env:
     - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -Denable_cplusplus=ON -Denable_gc_assertions=ON"
     - GCTEST_WITH_MPROTECT_VDB=true
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: ppc64le
     compiler: clang
+    dist: focal
     env:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check cord/de"
