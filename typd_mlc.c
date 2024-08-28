@@ -696,7 +696,7 @@ STATIC mse *GC_CALLBACK GC_array_mark_proc(word *addr, mse *mark_stack_top,
     /* Found a reference to a free-list entry.  Ignore it.      */
     return orig_mark_stack_top;
   }
-  /* In use counts were already updated when array descriptor was       */
+  /* In-use counts were already updated when array descriptor was       */
   /* pushed.  Here we only replace it by subobject descriptors, so      */
   /* no update is necessary.                                            */
   new_mark_stack_top = GC_push_complex_descriptor((ptr_t)addr, complex_d,

@@ -675,7 +675,7 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
 #   if defined(PARALLEL_MARK)
       GC_ASSERT(0 == GC_fl_builder_count);
 #   endif
-    /* Reset in use counters.  GC_reclaim_block recomputes them. */
+    /* Reset in-use counters.  GC_reclaim_block recomputes them. */
       GC_composite_in_use = 0;
       GC_atomic_in_use = 0;
     /* Clear reclaim- and free-lists.   */
