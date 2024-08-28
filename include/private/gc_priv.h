@@ -1626,12 +1626,12 @@ GC_INNER void GC_invalidate_mark_state(void);
                                 /* ones, and roots may point to         */
                                 /* unmarked objects.  Reset mark stack. */
 GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame);
-                        /* Perform about one pages worth of marking     */
+                        /* Perform about one page of marking            */
                         /* work of whatever kind is needed.  Returns    */
                         /* quickly if no collection is in progress.     */
-                        /* Return TRUE if mark phase finished.          */
+                        /* Return TRUE if mark phase is finished.       */
 GC_INNER void GC_initiate_gc(void);
-                                /* initiate collection.                 */
+                                /* Initiate collection.                 */
                                 /* If the mark state is invalid, this   */
                                 /* becomes full collection.  Otherwise  */
                                 /* it's partial.                        */
