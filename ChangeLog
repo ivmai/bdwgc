@@ -600,7 +600,7 @@
 * Adjust WoW64 workaround to work on UWP/WinRT
 * Adjust naming of Win32/64 and x86/64 words in comments and documentation
 * Avoid potential race between realloc and GC_block_was_dirty
-* Do not double-clear first two words of object in GC_generic_malloc_aligned
+* Do not double-clear first two words of object in GC_generic_malloc
 * Do not mention FASTLOCK in comment
 * Do not mix debug and non-debug allocations in disclaim tests
 * Do not prohibit threaded builds with malloc redirection on non-Linux
