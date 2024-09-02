@@ -139,7 +139,7 @@ jobs:
     compiler: gcc
     dist: focal
     env:
-    - CONF_OPTIONS="--disable-disclaim"
+    - CONF_OPTIONS="--disable-shared --disable-threads"
     - GCTEST_WITH_MPROTECT_VDB=true
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: ppc64le
@@ -197,6 +197,7 @@ jobs:
     compiler: gcc
     dist: focal
     env:
+    - CONF_OPTIONS="--disable-disclaim"
     - GCTEST_WITH_MPROTECT_VDB=true
   - addons:
       apt:
