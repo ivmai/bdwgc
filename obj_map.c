@@ -50,7 +50,8 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
     unsigned short * new_map;
 
     GC_ASSERT(I_HOLD_LOCK());
-    if (lg > BYTES_TO_GRANULES(MAXOBJBYTES)) lg = 0;
+    GC_STATIC_ASSERT(MAXOBJGRANULES - 1U <= 0xffffU /* max ushort */);
+    if (lg > MAXOBJGRANULES) lg = 0;
     if (GC_obj_map[lg] != 0) return TRUE;
 
     new_map = (unsigned short *)GC_scratch_alloc(OBJ_MAP_LEN * sizeof(short));
