@@ -133,6 +133,8 @@ jobs:
   - arch: ppc64le
     compiler: gcc
     dist: focal
+    env:
+    - CONF_OPTIONS="--disable-shared --disable-threads"
   - arch: ppc64le
     compiler: clang
     dist: focal
@@ -173,6 +175,8 @@ jobs:
     compiler: clang
   - arch: s390x
     compiler: gcc
+    env:
+    - CONF_OPTIONS="--disable-disclaim"
   - addons:
       apt:
         packages:
