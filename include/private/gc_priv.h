@@ -1088,6 +1088,17 @@ typedef word page_hash_table[PHT_SIZE];
                 /* initial group of mark bits, and it is safe to        */
                 /* allocate smaller header for large objects.           */
 
+#ifndef MARK_BIT_PER_OBJ
+  /* We maintain layout maps for heap blocks containing objects of      */
+  /* a given size.  Each entry in this map describes a byte offset      */
+  /* (displacement) and has the following type.                         */
+# if (1 << (CPP_LOG_HBLKSIZE - 1)) / GC_GRANULE_BYTES <= 0x100
+    typedef unsigned char hb_map_entry_t;
+# else
+    typedef unsigned short hb_map_entry_t;
+# endif
+#endif /* !MARK_BIT_PER_OBJ */
+
 struct hblkhdr {
     struct hblk * hb_next;      /* Link field for hblk free list         */
                                 /* and for lists of chunks waiting to be */
@@ -1143,7 +1154,7 @@ struct hblkhdr {
     word hb_descr;              /* Object descriptor for marking.       */
                                 /* See gc_mark.h.                       */
 #   ifndef MARK_BIT_PER_OBJ
-      unsigned short * hb_map;  /* Essentially a table of remainders    */
+      hb_map_entry_t *hb_map;   /* Essentially a table of remainders    */
                                 /* mod BYTES_TO_GRANULES(hb_sz), except */
                                 /* for large blocks.  See GC_obj_map.   */
 #   endif
@@ -1619,7 +1630,7 @@ struct _GC_arrays {
         /* the allocator lock held.                                     */
 # ifndef MARK_BIT_PER_OBJ
 #   define GC_obj_map GC_arrays._obj_map
-    unsigned short * _obj_map[MAXOBJGRANULES+1];
+    hb_map_entry_t *_obj_map[MAXOBJGRANULES+1];
                        /* If not NULL, then a pointer to a map of valid */
                        /* object addresses.  GC_obj_map[lg][i] is       */
                        /* i % lg.  This is now used purely to replace   */

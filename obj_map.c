@@ -47,14 +47,15 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
   GC_INNER GC_bool GC_add_map_entry(size_t lg)
   {
     size_t displ;
-    unsigned short * new_map;
+    hb_map_entry_t *new_map;
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_STATIC_ASSERT(MAXOBJGRANULES - 1U <= 0xffffU /* max ushort */);
+    GC_STATIC_ASSERT(MAXOBJGRANULES - 1 <= (size_t)(~(hb_map_entry_t)0));
     if (lg > MAXOBJGRANULES) lg = 0;
-    if (GC_obj_map[lg] != 0) return TRUE;
+    if (EXPECT(GC_obj_map[lg] != NULL, TRUE)) return TRUE;
 
-    new_map = (unsigned short *)GC_scratch_alloc(OBJ_MAP_LEN * sizeof(short));
+    new_map = (hb_map_entry_t *)GC_scratch_alloc(OBJ_MAP_LEN
+                                                 * sizeof(hb_map_entry_t));
     if (EXPECT(NULL == new_map, FALSE)) return FALSE;
 
     GC_COND_LOG_PRINTF(
@@ -66,7 +67,7 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
       }
     } else {
       for (displ = 0; displ < OBJ_MAP_LEN; displ++) {
-        new_map[displ] = (unsigned short)(displ % lg);
+        new_map[displ] = (hb_map_entry_t)(displ % lg);
       }
     }
     GC_obj_map[lg] = new_map;

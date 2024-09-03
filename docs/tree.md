@@ -124,7 +124,7 @@ contributed originally by Dave Barrett.
            |                                         |   |<--OBJ_MAP_LEN-->|
            |                                         |   =HBLKSIZE/GC_GRANULE_BYTES
      HDR(p)| GC_find_header(p)                       |    (1024 elements on Alpha)
-           |                           \ from        |    (16 bits each)
+           |                           \ from        |    (8/16 bits each)
            |    (hdr) (struct hblkhdr) / alloc_hdr() |
            +--->+----------------------+             |
       GET_HDR(p)| struct hblk *hb_next |             |
@@ -141,7 +141,7 @@ contributed originally by Dave Barrett.
                 +----------------------+             |
                 | word   hb_descr      |             |
                 +----------------------+             |
-                | ushort *hb_map       |>------------+
+                | uchar/ushort *hb_map |>------------+
                 +----------------------+
                 | AO_t   hb_n_marks    |
        ---      +----------------------+
