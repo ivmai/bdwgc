@@ -921,9 +921,6 @@ union word_ptr_ao_u {
 # endif
 };
 
-/* We maintain layout maps for heap blocks containing objects of a given */
-/* size.  Each entry in this map describes a byte offset and has the     */
-/* following type.                                                       */
 struct hblkhdr {
     struct hblk * hb_next;      /* Link field for hblk free list         */
                                 /* and for lists of chunks waiting to be */
