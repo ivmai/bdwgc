@@ -1088,9 +1088,6 @@ typedef word page_hash_table[PHT_SIZE];
                 /* initial group of mark bits, and it is safe to        */
                 /* allocate smaller header for large objects.           */
 
-/* We maintain layout maps for heap blocks containing objects of a given */
-/* size.  Each entry in this map describes a byte offset and has the     */
-/* following type.                                                       */
 struct hblkhdr {
     struct hblk * hb_next;      /* Link field for hblk free list         */
                                 /* and for lists of chunks waiting to be */
