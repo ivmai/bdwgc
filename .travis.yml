@@ -615,7 +615,6 @@ jobs:
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-gc-assertions"
-    - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
       apt:
         packages:
