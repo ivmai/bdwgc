@@ -94,7 +94,7 @@ contributed originally by Dave Barrett.
       ---      +--------------+   |                   |                  |
        ^       |              |   |                   |                  |
        |       |              |   |                   |                  |
-      TOP_SZ   +--------------+<--+                   |                  |
+     TOP_SZ    +--------------+<--+                   |                  |
      (items)+-<|      []      | * if 0<bi<HBLKSIZE    |                  |
        |    |  +--------------+ then large object     |                  |
        |    |  |              | starts at the bi'th   |                  |
@@ -103,8 +103,8 @@ contributed originally by Dave Barrett.
             v                                         |         aligned) |
         bi= |GET_BI(p){->hash_link}->key==hi          |                  |
             v                                         |                  |
-            |   (bottom_index)  \ scratch_alloc'd     |                  |
-            |   ( struct  bi )  / by get_index()      |                  |
+            |   (bottom_index)  \ GC_scratch_alloc'd  |                  |
+            |    (struct bi)    / by get_index()      |                  |
       ---   +->+--------------+                       |                  |
        ^       |              |                       |                  |
        |       |              |                       |                  |
@@ -148,13 +148,13 @@ contributed originally by Dave Barrett.
         ^       |                      |
         |       |                      | * if hdr is free, hb_sz is the size
     HB_MARKS_SZ | char/AO_t hb_marks[] | of a heap chunk (struct hblk) of at
-        |       |                      | least MININCR*HBLKSIZE bytes (below);
+        |       |                      | least MINHINCR*HBLKSIZE bytes (below);
         v       |                      | otherwise, size of each object in chunk.
        ---      +----------------------+
 
 
 Dynamic data structures above are interleaved throughout the heap in blocks
-of size `MININCR * HBLKSIZE` bytes as done by `gc_scratch_alloc` which cannot
+of size `MINHINCR * HBLKSIZE` bytes as done by `GC_scratch_alloc` which cannot
 be freed; free lists are used (e.g. `alloc_hdr`). `hblk`'s below are
 collected.
 
