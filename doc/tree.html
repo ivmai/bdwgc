@@ -109,7 +109,7 @@ The data structure used by GC_base.
       ---      +--------------+   |                   |                  |
        ^       |              |   |                   |                  |
        |       |              |   |                   |                  |
-      TOP_SZ   +--------------+<--+                   |                  |
+     TOP_SZ    +--------------+<--+                   |                  |
      (items)+-<|      []      | *                     |                  |
        |    |  +--------------+  if 0 < bi< HBLKSIZE  |                  |
        |    |  |              | then large object     |                  |
@@ -119,8 +119,8 @@ The data structure used by GC_base.
             v                                         |         aligned) |
         bi= |GET_BI(p){->hash_link}->key==hi          |                  |
             v                                         |                  |
-            |   (bottom_index)  \ scratch_alloc'd     |                  |
-            |   ( struct  bi )  / by get_index()      |                  |
+            |   (bottom_index)  \ GC_scratch_alloc'd  |                  |
+            |    (struct bi)    / by get_index()      |                  |
       ---   +->+--------------+                       |                  |
        ^       |              |                       |                  |
        |       |              |                       |                  |
@@ -164,13 +164,13 @@ The data structure used by GC_base.
         ^       |                      |
         |       |                      | * if hdr is free, hb_sz is the size
     MARK_BITS_SZ| char/word hb_marks[] | of a heap chunk (struct hblk) of at
-        |       |                      | least MININCR*HBLKSIZE bytes (below);
+        |       |                      | least MINHINCR*HBLKSIZE bytes (below);
         v       |                      | otherwise, size of each object in chunk.
        ---      +----------------------+
 </PRE>
 <P>
 Dynamic data structures above are interleaved throughout the heap in blocks of
-size MININCR * HBLKSIZE bytes as done by gc_scratch_alloc which cannot be
+size MINHINCR * HBLKSIZE bytes as done by GC_scratch_alloc which cannot be
 freed; free lists are used (e.g. alloc_hdr).  hblk's below are collected.
 <PRE>
                  (struct hblk)
