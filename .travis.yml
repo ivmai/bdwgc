@@ -139,6 +139,12 @@ script:
     gzip --best --verbose gc-*.tar;
   fi
 
+before_deploy:
+- yes | gem update --system --force
+- gem install bundler
+- gem install uri
+- gem install logger
+
 deploy:
   provider: releases
   edge: true
