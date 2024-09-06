@@ -101,6 +101,7 @@ jobs:
       apt:
         packages:
         - libatomic-ops-dev
+    dist: focal
     env:
     - MAKEFILE_TARGETS="distcheck"
     - GC_REAL_VERSION=7.2s
@@ -137,10 +138,6 @@ script:
         --exclude=".*" --exclude="*.yml" gc-*/;
     gzip --best --verbose gc-*.tar;
   fi
-
-before_deploy:
-- yes | gem update --system --force
-- gem install bundler uri install
 
 deploy:
   provider: releases
