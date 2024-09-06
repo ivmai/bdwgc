@@ -139,7 +139,8 @@ script:
   fi
 
 before_deploy:
-- gem update uri
+- yes | gem update --system --force
+- gem install bundler uri install
 
 deploy:
   provider: releases
