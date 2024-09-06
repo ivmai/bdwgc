@@ -869,6 +869,12 @@ after_success:
     bash <(curl -s https://codecov.io/bash);
   fi
 
+before_deploy:
+- yes | gem update --system --force
+- gem install bundler
+- gem install uri
+- gem install logger
+
 deploy:
   provider: releases
   edge: true
