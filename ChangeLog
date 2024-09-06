@@ -1,3 +1,11 @@
+[7.2s]
+
+2024-09-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README: Bump version to 7.2s (rev. S).
+	* Makefile.am (libgc_la_LDFLAGS): Bump version-info to 2:8:1.
+	* Makefile.in: Regenerate.
+
 2017-03-16  Ivan Maidanski <ivmai@mail.ru>
 
 	* os_dep.c [REDIRECT_MALLOC] (GC_in_save_callers): Add missing type
