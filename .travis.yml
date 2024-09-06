@@ -138,6 +138,9 @@ script:
     gzip --best --verbose gc-*.tar;
   fi
 
+before_deploy:
+- gem update uri
+
 deploy:
   provider: releases
   edge: true
