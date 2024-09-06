@@ -301,6 +301,12 @@ script:
 - make -j $MAKEFILE_TARGETS CFLAGS_EXTRA="$CFLAGS_EXTRA"
 - if [ -f gctest.log ]; then cat gctest.log; fi
 
+before_deploy:
+- yes | gem update --system --force
+- gem install bundler
+- gem install uri
+- gem install logger
+
 deploy:
   provider: releases
   edge: true
