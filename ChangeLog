@@ -1,3 +1,210 @@
+2024-09-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/tree.html (A picture): Fix typos ("GC_scratch_alloc", "MINHINCR").
+
+2021-07-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/smash_test.c (q): New global variable (volatile).
+	* tests/smash_test.c (main): Clear q if i is 3000 or 6000; set q to
+	the address of the modified byte if i is 5678; add comment.
+
+2017-11-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/huge_test.c [!GC_ATTR_ALLOC_SIZE] (GC_ATTR_ALLOC_SIZE): Define
+	to empty (before include gc.h).
+
+2016-11-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h [USE_PROC_FOR_LIBRARIES && THREADS
+	|| NEED_FIND_LIMIT] (GC_jmp_buf): Replace variable definition with
+	a declaration (as GC_EXTERN).
+	* os_dep.c [USE_PROC_FOR_LIBRARIES && THREADS || NEED_FIND_LIMIT]
+	(GC_jmp_buf): Define global variable (as GC_INNER).
+
+2012-08-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* extra/setjmp_t.c (nested_sp): Change 'sp' local variable type from
+	int to word (to avoid 'cast from pointer to int' compiler warning).
+	* extra/setjmp_t.c (main): Cast pointers to unsigned long via word
+	type; cast WORDSZ value passed to printf() to match format type
+	specifier (to avoid compiler warnings).
+
+2012-02-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* extra/if_mach.c (main): Remove unused "envp" argument.
+	* extra/if_not_there.c (main): Likewise.
+	* extra/if_mach.c: Expand tabs to spaces.
+	* extra/if_not_there.c: Likewise.
+	* extra/setjmp_t.c (getpagesize): Define for Win32; include windows.h.
+	* extra/setjmp_t.c (main): Make printf() format specifier string
+	non-empty (to suppress compiler warning).
+	* extra/setjmp_t.c (main): Adjust printf() format specifier for WORDSZ
+	value (unsigned long instead of int).
+
+2024-09-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* dyn_load.c [MSWIN32 || MSWINCE || CYGWIN32]
+	(GC_register_dynamic_libraries): Remove new_limit local variable;
+	check for p address overflow before adding buf.RegionSize to p.
+	* os_dep.c [MSWIN32] (GC_register_root_section): Likewise.
+	* os_dep.c [MSWIN32] (GC_register_root_section): Move invariant code
+	(assignment of limit variable) out of the conditional statement.
+
+2024-09-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (hblkhdr): Remove a misleading comment
+	(which belongs initially to hb_map field type).
+
+2024-09-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/tree.html (A picture): Change type of hb_map field from char* to
+	short*; specify that GC_obj_map[j] has exactly 16 bits (instead of
+	8 or 16 bits).
+
+2024-09-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/tree.html (A picture): Update the Dave Barrett's ASCII diagrams
+	(from v3.7, 1994) to match the current BDWGC version.
+
+2024-06-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (GC_mark_some): Fix a typo
+	("one page of marking work") in comment.
+	* include/private/gc_priv.h (GC_initiate_gc): Start a sentence in
+	comment with an upper case letter.
+
+2024-06-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c [TRACE_BUF] (GC_print_trace_inner): Check loop condition
+	at the end of each loop iteration (not at the beginning).
+
+2024-06-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* headers.c (GC_apply_to_all_blocks): Adjust indentation of "}" for
+	block statements.
+
+2024-06-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [!(MSWIN32 || MSWINCE || CYGWIN32) && (SVR4 || AIX || DGUX)
+	&& !PCR] (GC_register_data_segments): Fix typo ("which places") in
+	a comment; reformat comment.
+
+2024-06-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* ptr_chck.c [!THREADS] (GC_is_visible): If descr is length-based and
+	p-base==descr then fail.
+
+2024-06-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* ptr_chck.c [!THREADS] (GC_is_visible): If type_descr is null then
+	fail (matching that in GC_mark_from).
+
+2024-06-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_add_to_heap): Replace if(endp<=p) to while(endp<=p).
+
+2024-05-31  Ivan Maidanski <ivmai@mail.ru>
+
+	* backgraph.c (per_object_helper): Replace BYTES_TO_WORDS(HBLKSIZE) to
+	HBLKSIZE.
+	* doc/tree.html (A picture): Change order of hb_sz, hb_descr, hb_map,
+	fields of hblkhdr (to match that in gc_priv.h); mention hb_n_marks
+	field in hblkhdr; change type of hb_sz to size_t; do not mention
+	"words" for hb_sz and MARK_BITS_SZ; specify type for hb_marks field in
+	hblkhdr and reformat its comment.
+
+2024-05-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* dbg_mlc.c [!SHORT_DBG_HDRS] (GC_check_heap_block): Fix typo
+	("through all objects") in comment.
+
+2024-04-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordtest.c: Remove "for GC_INIT only" comment belonging to
+	include gc.h directive.
+
+2024-04-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* allchblk.c (GC_split_block): Fix typo ("be allocated") in comment.
+
+2024-04-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [NEED_PROC_MAPS && REDIRECT_MALLOC] (GC_text_mapping):
+	Check p is not less than map_path before p dereference (instead of the
+	opposite order).
+
+2024-03-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* dbg_mlc.c [DBG_HDRS_ALL] (GC_debug_generic_malloc_inner): Call
+	ADD_CALL_CHAIN_INNER() instead of ADD_CALL_CHAIN().
+	* include/private/dbg_mlc.h [SAVE_CALL_CHAIN && REDIRECT_MALLOC
+	&& THREADS && DBG_HDRS_ALL && NARGS==0 && NFRAMES%2==0
+	&& GC_HAVE_BUILTIN_BACKTRACE] (GC_save_callers_no_unlock): Declare
+	function.
+	* include/private/dbg_mlc.h [DBG_HDRS_ALL] (ADD_CALL_CHAIN_INNER):
+	Define.
+	* os_dep.c [NEED_CALLINFO && SAVE_CALL_CHAIN && NARGS==0
+	&& NFRAMES%2==0 && GC_HAVE_BUILTIN_BACKTRACE && REDIRECT_MALLOC
+	&& THREADS && DBG_HDRS_ALL]: Include dbg_mlc.h.
+	* os_dep.c [NEED_CALLINFO && SAVE_CALL_CHAIN && NARGS==0
+	&& NFRAMES%2==0 && GC_HAVE_BUILTIN_BACKTRACE && REDIRECT_MALLOC
+	&& THREADS && DBG_HDRS_ALL] (GC_save_callers_no_unlock): Implement.
+	* os_dep.c [NEED_CALLINFO && SAVE_CALL_CHAIN && NARGS==0
+	&& NFRAMES%2==0 && GC_HAVE_BUILTIN_BACKTRACE && REDIRECT_MALLOC]
+	(GC_save_callers): Wrap backtrace() into UNLOCK/LOCK(); add comment.
+
+2024-03-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* dbg_mlc.c (store_debug_info, GC_debug_generic_malloc_inner,
+	GC_debug_generic_malloc_inner_ignore_off_page): Call ADD_CALL_CHAIN()
+	right after GC_store_debug_info_inner() call (instead of before it).
+	* gcj_mlc.c (GC_debug_gcj_malloc): Likewise.
+	* dbg_mlc.c (GC_debug_generic_malloc_inner,
+	GC_debug_generic_malloc_inner_ignore_off_page): Define base local
+	variable.
+	* gcj_mlc.c (GC_debug_gcj_malloc): Likewise.
+
+2024-03-17  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h [SAVE_CALL_CHAIN
+	&& !DONT_SAVE_TO_LAST_STACK] (GC_arrays._last_stack): Do not define
+	if REDIRECT_MALLOC and GC_HAVE_BUILTIN_BACKTRACE; update comment.
+	* include/private/gc_priv.h [SAVE_CALL_CHAIN && REDIRECT_MALLOC
+	&& GC_HAVE_BUILTIN_BACKTRACE && !DONT_SAVE_TO_LAST_STACK]
+	(SAVE_CALLERS_TO_LAST_STACK): Define to no-op.
+
+2024-03-14  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_maybe_gc, GC_try_to_collect_inner,
+	GC_collect_a_little_inner): Call SAVE_CALLERS_TO_LAST_STACK() instead
+	of GC_save_callers(GC_last_stack) and regardless of SAVE_CALL_CHAIN.
+	* include/private/gc_priv.h [SAVE_CALL_CHAIN] (GC_last_stack): Do not
+	define.
+	* include/private/gc_priv.h [SAVE_CALL_CHAIN] (GC_arrays._last_stack):
+	Do not define if DONT_SAVE_TO_LAST_STACK.
+	* include/private/gc_priv.h (SAVE_CALLERS_TO_LAST_STACK): Define macro.
+
+2024-02-04  Dave Barton <dbarton@mathscribe.com>
+
+	* mallocx.c (GC_generic_malloc_many): Document that lb is non-zero and
+	that EXTRA_BYTES value has already been added to lb; replace
+	SMALL_OBJ(lb) to lb<=MAXOBJBYTES; subtract EXTRA_BYTES from lb in
+	GC_generic_malloc() and GC_generic_malloc_inner() calls.
+
+2013-12-09  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/tree.html (A picture): Remove DISCARD_WORDS (since always zero
+	and already removed from the code in gc-6.0alpha6).
+
+2013-12-09  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.direct (DOC_FILES): Remove doc/barrett_diagram entry.
+	* Makefile.dj (OTHER_FILES): Likewise.
+	* doc/doc.am (dist_doc_DATA): Likewise.
+	* Makefile.in (dist_doc_DATA): Regenerate.
+	* doc/barrett_diagram: Remove file (as the content is duplicated in
+	doc/tree.html).
+
 [7.2r]
 
 2024-02-03  Ivan Maidanski <ivmai@mail.ru>
