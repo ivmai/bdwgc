@@ -1,3 +1,24 @@
+2016-08-17  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [MSWIN32] (GC_init_win32): Do not call GetVersion if
+	VS 2013+ or Win64 target (set GC_wnt to true instead).
+
+2015-09-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordbscs.c (CORD_cat_char_star, CORD_cat): Cast "lenx" to
+	unsigned char (to workaround false compiler warning about value
+	truncation).
+
+2012-10-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c (GC_init_explicit_typing): Cast -1 argument of
+	WORDS_TO_BYTES() to word (instead of casting its result) to avoid
+	"overflow in signed shift operation" warning (issued by some static
+	code analysis tools).
+	* typd_mlc.c (GC_init_explicit_typing): Simplify expression for
+	computing GC_bm_table elements (remove redundant right shift of
+	unsigned -1 before left shift for the same amount of bits).
+
 2024-09-05  Ivan Maidanski <ivmai@mail.ru>
 
 	* doc/tree.html (A picture): Fix typos ("GC_scratch_alloc", "MINHINCR").
