@@ -1,3 +1,8 @@
+2017-03-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [REDIRECT_MALLOC] (GC_in_save_callers): Add missing type
+	(GC_bool) of the declared variable.
+
 2016-08-17  Ivan Maidanski <ivmai@mail.ru>
 
 	* os_dep.c [MSWIN32] (GC_init_win32): Do not call GetVersion if
