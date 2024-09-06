@@ -756,6 +756,12 @@ after_success:
     coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info;
   fi
 
+before_deploy:
+- yes | gem update --system --force
+- gem install bundler
+- gem install uri
+- gem install logger
+
 deploy:
   provider: releases
   edge: true
