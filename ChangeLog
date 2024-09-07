@@ -2228,7 +2228,7 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 Also, includes 7.2 changes
 
 
-== [7.2s] (not released yet) ==
+== [7.2s] 2024-09-06 ==
 
 * Avoid gcc stringop-overflow warning for intended overflow in smashtest
 * Eliminate 'type defaults to int in declaration' warning (REDIRECT_MALLOC)
