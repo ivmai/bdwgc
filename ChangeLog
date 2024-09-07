@@ -528,7 +528,7 @@ Also, includes 7.6.18 changes
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
 
-== [7.6.22] (not released yet) ==
+== [7.6.22] 2024-09-07 ==
 
 * Eliminate 'cast signed to bigger unsigned' CSA warnings in GC_find_limit
 * Fix GC_debug_realloc to support custom kind
