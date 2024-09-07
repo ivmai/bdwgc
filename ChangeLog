@@ -523,6 +523,13 @@
 * Workaround various cppcheck false positives
 
 
+== [8.0.14] (not released yet) ==
+
+* Disable backtrace saving at garbage collections if DONT_SAVE_TO_LAST_STACK
+
+Also, includes 7.6.22 changes
+
+
 == [8.0.12] 2024-02-04 ==
 
 * Eliminate 'make_key is defined but unused' gcc warning in threadkeytest
