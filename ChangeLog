@@ -1,5 +1,5 @@
 
-== [7.4.28] (not released yet) ==
+== [7.4.28] 2024-09-07 ==
 
 * Avoid gcc stringop-overflow warning for intended overflow in smashtest
 * Do not provide call stack saving by backtrace() at garbage collection
