@@ -1534,6 +1534,17 @@ Also, includes 7.6.18 changes
 * Workaround Thread Sanitizer (TSan) false positive warnings
 
 
+== [7.6.22] (not released yet) ==
+
+* Eliminate 'cast signed to bigger unsigned' CSA warnings in GC_find_limit
+* Fix GC_debug_realloc to support custom kind
+* Fix heap blocks size computation by GC_get_memory_use
+* Fix pointer relational comparison in GC_do_enumerate_reachable_objects
+* Prevent GC_noop_sink from scanning by the collector
+
+Also, includes 7.4.28 changes
+
+
 == [7.6.20] 2024-02-03 ==
 
 * Eliminate compiler warning of missing cast in LONG_MULT after shift
