@@ -523,7 +523,7 @@
 * Workaround various cppcheck false positives
 
 
-== [8.0.14] (not released yet) ==
+== [8.0.14] 2024-09-07 ==
 
 * Disable backtrace saving at garbage collections if DONT_SAVE_TO_LAST_STACK
 
