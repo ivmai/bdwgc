@@ -1,5 +1,5 @@
 
-== [8.2.8] (not released yet) ==
+== [8.2.8] 2024-09-08 ==
 
 * Allow GC_size() argument to be null
 * Disable backtrace saving at garbage collections if DONT_SAVE_TO_LAST_STACK
