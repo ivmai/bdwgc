@@ -481,6 +481,41 @@
 * Workaround 'total_time<0 is always false' cppcheck FP warning
 
 
+== [8.2.8] (not released yet) ==
+
+* Allow GC_size() argument to be null
+* Disable backtrace saving at garbage collections if DONT_SAVE_TO_LAST_STACK
+* Eliminate 'cast signed to bigger unsigned' CSA warnings in GC_find_limit
+* Eliminate 'x might be clobbered by longjmp' gcc warning in setjmp_t.c
+* Fix 'un-mprotect vdb failed' abort with out-of-memory reason on Linux
+* Fix ADD_CALL_CHAIN() placement to follow GC_store_debug_info_inner call
+* Fix GC_debug_realloc to support custom kind
+* Fix GC_is_visible for case of arg pointing exactly to object upper bound
+* Fix GC_print_trace_inner to print the last element of the circular buffer
+* Fix cordtst2.tmp file deletion in cordtest on Windows
+* Fix double lock in GC_malloc called from backtrace()
+* Fix handling of page-unaligned boundaries in soft_set_grungy_pages
+* Fix heap blocks size computation by GC_get_memory_use
+* Fix indent of a closing curly braces in GC_apply_to_all_blocks
+* Fix infinite resend lost signals if a thread is restarted by SIGQUIT
+* Fix null pointer dereference in GC_is_visible if type_descr is null
+* Fix per_object_helper() after changing hb_sz units
+* Fix pointer relational comparison in GC_do_enumerate_reachable_objects
+* Fix poor thread-local allocation performance because of double EXTRA_BYTES
+* Fix potential GC_add_roots_inner call with an overflowed pointer (Win32)
+* Fix potential address overflow in GC_add_to_heap
+* Fix potential buffer overrun during read in GC_text_mapping
+* Fix various typos in comments
+* Prevent GC_noop_sink from scanning by the collector
+* Prevent redirected malloc call from a garbage collection routine
+* Redirect malloc_usable_size() in leak_detector.h
+* Remove redundant dirty/reachable_here calls in GC_malloc_explicitly_typed
+* Update and fix diagrams describing the tree structure for pointer lookups
+* Use atomic store to set GC_first_nonempty in GC_do_parallel_mark
+* Use atomic store to set entry id and update cache_ptr in slow_getspecific
+* Workaround '.obj file not found' error reported by watcom wlib
+
+
 == [8.2.6] 2024-02-04 ==
 
 * Avoid unexpected heap growth in gctest for the case of VERY_SMALL_CONFIG
