@@ -1129,7 +1129,6 @@ Also, includes 7.4.4 changes
 == [7.4.28] 2024-09-07 ==
 
 * Avoid gcc stringop-overflow warning for intended overflow in smashtest
-* Do not provide call stack saving by backtrace() at garbage collection
 * Fix ADD_CALL_CHAIN() placement to follow GC_store_debug_info_inner call
 * Fix GC_is_visible for case of arg pointing exactly to object upper bound
 * Fix GC_print_trace_inner to print the last element of the circular buffer
