@@ -72,16 +72,20 @@ jobs:
     - CPPCHECK_OUT_FILTER="Z"
   - arch: arm64
     compiler: clang
+    dist: focal
   - arch: arm64
     compiler: gcc
+    dist: focal
   - arch: arm64
     compiler: clang
+    dist: focal
     env:
     - CFLAGS_EXTRA="-O3"
     - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus --disable-shared"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: arm64
     compiler: gcc
+    dist: focal
     env:
     - CFLAGS_EXTRA="-O3 -D SIMULATE_LOST_SIGNALS -D TRACE_BUF"
     - CONF_OPTIONS="--enable-cplusplus --disable-gcj-support"
@@ -100,20 +104,23 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: arm64
     compiler: gcc
+    dist: focal
     env:
     - CONF_OPTIONS="--disable-threads"
     - NO_CLONE_LIBATOMIC_OPS=true
-  - arch: arm64
-    addons:
+  - addons:
       apt:
         packages:
         - libatomic-ops-dev
+    arch: arm64
     compiler: gcc
+    dist: focal
     env:
     - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus --disable-munmap"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: arm64
     compiler: clang
+    dist: focal
     language: c
     env:
     - CFLAGS_EXTRA="-fsanitize=memory,undefined -fno-omit-frame-pointer"
@@ -122,11 +129,13 @@ jobs:
     - TESTS_CUSTOM_RUN=true
   - arch: arm64
     compiler: clang
+    dist: focal
     env:
     - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=MinSizeRel -DBUILD_SHARED_LIBS=OFF -Denable_cplusplus=ON -Denable_gc_assertions=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: arm64
     compiler: gcc
+    dist: focal
     env:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check cord/de"
