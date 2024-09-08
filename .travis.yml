@@ -71,7 +71,7 @@ jobs:
     - NO_CLONE_LIBATOMIC_OPS=true
   - arch: arm64
     compiler: gcc
-    dist: jammy
+    dist: focal
     env:
     - CFLAGS_EXTRA="-O3 -march=native"
     - CONF_OPTIONS="--enable-cplusplus --disable-gcj-support"
