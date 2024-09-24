@@ -39,7 +39,7 @@
 int GC_gcj_kind = 0;    /* Object kind for objects with descriptors     */
                         /* in "vtable".                                 */
 int GC_gcj_debug_kind = 0;
-                        /* The kind of objects that is always marked    */
+                        /* The kind of objects that are always marked   */
                         /* with a mark proc call.                       */
 
 STATIC struct GC_ms_entry *GC_CALLBACK GC_gcj_fake_mark_proc(word *addr,
