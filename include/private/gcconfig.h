@@ -1046,7 +1046,7 @@
 #     define STACKBOTTOM ((ptr_t)ps3_get_stack_bottom())
 #     define NO_PTHREAD_TRYLOCK
                 /* Current GC LOCK() implementation for PS3 explicitly  */
-                /* use pthread_mutex_lock for some reason.              */
+                /* uses pthread_mutex_lock for some reason.             */
 #   endif
 #   ifdef AIX
 #     define OS_TYPE "AIX"
@@ -1967,7 +1967,7 @@
 /* #    define HEURISTIC2 */
         /* Normally HEURISTIC2 is too conservative, since               */
         /* the text segment immediately follows the stack.              */
-        /* Hence we give an upper pound.                                */
+        /* Hence we give an upper bound.                                */
         /* This is currently unused, since we disabled HEURISTIC2       */
         extern int __start[];
 #       define HEURISTIC2_LIMIT ((ptr_t)((word)(__start) & ~(getpagesize()-1)))
