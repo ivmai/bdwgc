@@ -2269,19 +2269,21 @@ GC_INNER void GC_setpagesize(void)
         ABORT("Cannot allocate executable pages");
       return NULL;
     }
-    last_addr = PTR_ALIGN_UP((ptr_t)result + bytes, GC_page_size);
-#   if !defined(LINUX)
-      if (last_addr == 0) {
+#   ifdef LINUX
+      GC_ASSERT(ADDR(result) <= ~(word)(GC_page_size-1) - bytes);
+      /* The following PTR_ALIGN_UP() cannot overflow.  */
+#   else
+      if (EXPECT(ADDR(result) > ~(word)(GC_page_size-1) - bytes, FALSE)) {
         /* Oops.  We got the end of the address space.  This isn't      */
         /* usable by arbitrary C code, since one-past-end pointers      */
         /* do not work, so we discard it and try again.                 */
         /* Leave the last page mapped, so we can't repeat.              */
-        munmap(result, ~GC_page_size - (size_t)result + 1);
+        (void)munmap(result, ~(GC_page_size-1) - (size_t)ADDR(result));
         return GC_unix_mmap_get_mem(bytes);
       }
-#   else
-      GC_ASSERT(last_addr != 0);
 #   endif
+    last_addr = PTR_ALIGN_UP((ptr_t)result + bytes, GC_page_size);
+
     if ((ADDR(result) % HBLKSIZE) != 0)
       ABORT(
        "GC_unix_get_mem: Memory returned by mmap is not aligned to HBLKSIZE.");
