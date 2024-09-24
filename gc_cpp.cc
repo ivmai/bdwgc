@@ -11,7 +11,7 @@
  * modified is included with the above copyright notice.
  */
 
-/*************************************************************************
+/*
 This implementation module for gc_cpp.h provides an implementation of
 the global operators "new" and "delete" that calls the Boehm
 allocator.  All objects allocated by this implementation will be
@@ -20,7 +20,7 @@ uncollectible but part of the root set of the collector.
 You should ensure (using implementation-dependent techniques) that the
 linker finds this module before the library that defines the default
 built-in "new" and "delete".
-**************************************************************************/
+*/
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

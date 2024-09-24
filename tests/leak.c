@@ -18,11 +18,12 @@ int main(void) {
     char *p[N_TESTS];
     unsigned i;
 
-    GC_set_find_leak(1); /* for new collect versions not compiled       */
-                         /* with -DFIND_LEAK.                           */
+    /* Just in case the code is compiled without FIND_LEAK defined. */
+    GC_set_find_leak(1);
 
-    GC_INIT();  /* Needed if thread-local allocation is enabled.        */
-                /* FIXME: This is not ideal.                            */
+    /* Needed if thread-local allocation is enabled.    */
+    /* FIXME: This is not ideal.    */
+    GC_INIT();
 
     p[0] = (char *)_aligned_malloc(70 /* size */, 16);
     if (!p[0]) {

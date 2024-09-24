@@ -11,19 +11,16 @@
  * modified is included with the above copyright notice.
  */
 
-/*
- * This is a reimplementation of a subset of the pthread_get/setspecific
- * interface.  This appears to outperform the standard LinuxThreads one
- * by a significant margin.
- * The major restriction is that each thread may only make a single
- * pthread_setspecific call on a single key.  (The current data structure
- * doesn't really require that.  The restriction should be easily removable.)
- * We don't currently support the destruction functions, though that
- * could be done.
- * We also currently assume that only one pthread_setspecific call
- * can be executed at a time, though that assumption would be easy to remove
- * by adding a lock.
- */
+/* This is a reimplementation of a subset of the                        */
+/* pthread_getspecific/setspecific interface. This appears to           */
+/* outperform the standard LinuxThreads one by a significant margin.    */
+/* The major restriction is that each thread may only make a single     */
+/* pthread_setspecific call on a single key.  (The current data         */
+/* structure does not really require that.  This restriction should be  */
+/* easily removable.)  We do not currently support the destruction      */
+/* functions, though that could be done.  We also currently assume that */
+/* only one pthread_setspecific call can be executed at a time, though  */
+/* that assumption would be easy to remove by adding a lock.            */
 
 #ifndef GC_SPECIFIC_H
 #define GC_SPECIFIC_H
@@ -36,11 +33,10 @@
 
 EXTERN_C_BEGIN
 
-/* Called during key creation or setspecific.           */
-/* For the GC we already hold the allocator lock.       */
-/* Currently allocated objects leak on thread exit.     */
-/* That's hard to fix, but OK if we allocate garbage    */
-/* collected memory.                                    */
+/* Called during key creation or setspecific.  For the GC we already    */
+/* hold the allocator lock.  Currently allocated objects leak on thread */
+/* exit.  It is hard to avoid, but OK if we allocate garbage collected  */
+/* memory.                                                              */
 #define MALLOC_CLEAR(n) GC_INTERNAL_MALLOC(n, NORMAL)
 
 #define TS_CACHE_SIZE 1024
@@ -108,7 +104,7 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t);
 
 /* An internal version of getspecific that assumes a cache miss.        */
 GC_INNER void * GC_slow_getspecific(tsd * key, size_t qtid,
-                                    tse * volatile * cache_entry);
+                                    tse * volatile * entry_ptr);
 
 GC_INLINE void * GC_getspecific(tsd * key)
 {

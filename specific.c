@@ -11,17 +11,15 @@
  * modified is included with the above copyright notice.
  */
 
+/* To determine type of tsd implementation; includes private/specific.h */
+/* if needed.                                                           */
 #include "private/thread_local_alloc.h"
-                /* To determine type of tsd impl.       */
-                /* Includes private/specific.h          */
-                /* if needed.                           */
 
 #if defined(USE_CUSTOM_SPECIFIC)
 
+/* A thread-specific data entry which will never appear valid to a      */
+/* reader.  Used to fill in empty cache entries to avoid a check for 0. */
 static const tse invalid_tse = {INVALID_QTID, 0, 0, INVALID_THREADID};
-            /* A thread-specific data entry which will never    */
-            /* appear valid to a reader.  Used to fill in empty */
-            /* cache entries to avoid a check for 0.            */
 
 GC_INNER int GC_key_create_inner(tsd ** key_ptr)
 {
@@ -30,12 +28,13 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
     tsd * result;
 
     GC_ASSERT(I_HOLD_LOCK());
-    /* A quick alignment check, since we need atomic stores */
+    /* A quick alignment check, since we need atomic stores.    */
     GC_ASSERT(ADDR(&invalid_tse.next) % sizeof(tse *) == 0);
     result = (tsd *)MALLOC_CLEAR(sizeof(tsd));
     if (NULL == result) return ENOMEM;
     ret = pthread_mutex_init(&(result -> lock), NULL);
     if (ret != 0) return ret;
+
     for (i = 0; i < TS_CACHE_SIZE; ++i) {
       result -> cache[i] = (tse *)GC_CAST_AWAY_CONST_PVOID(&invalid_tse);
     }
@@ -58,7 +57,8 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
 
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(self != INVALID_THREADID);
-    GC_dont_gc++; /* disable GC */
+    /* Disable GC during malloc.        */
+    GC_dont_gc++;
     entry = (volatile tse *)MALLOC_CLEAR(sizeof(tse));
     GC_dont_gc--;
     if (EXPECT(NULL == entry, FALSE)) return ENOMEM;
@@ -121,12 +121,10 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
         prev -> next = entry -> next;
         GC_dirty(prev);
       }
-      /* Atomic! concurrent accesses still work.        */
-      /* They must, since readers don't lock.           */
-      /* We shouldn't need a volatile access here,      */
-      /* since both this and the preceding write        */
-      /* should become visible no later than            */
-      /* the pthread_mutex_unlock() call.               */
+      /* Atomic! Concurrent accesses still work.  They must, since      */
+      /* readers do not lock.  We should not need a volatile access     */
+      /* here, since both this and the preceding write should become    */
+      /* visible no later than the pthread_mutex_unlock() call.         */
     }
     /* If we wanted to deallocate the entry, we'd first have to clear   */
     /* any cache entries pointing to it.  That probably requires        */
@@ -157,12 +155,11 @@ GC_INNER void * GC_slow_getspecific(tsd * key, size_t qtid,
       entry = entry -> next;
     }
     if (entry == NULL) return NULL;
-    /* Set cache_entry. */
+    /* Set the cache entry.  It is safe to do this asynchronously.      */
+    /* Either value is safe, though may produce spurious misses.        */
+    /* We are replacing one qtid with another one for the same thread.  */
     AO_store(&(entry -> qtid), qtid);
-        /* It's safe to do this asynchronously.  Either value   */
-        /* is safe, though may produce spurious misses.         */
-        /* We're replacing one qtid with another one for the    */
-        /* same thread.                                         */
+
     GC_cptr_store((volatile ptr_t *)cache_ptr, (ptr_t)entry);
     return TS_REVEAL_PTR(entry -> value);
 }

@@ -24,7 +24,7 @@ int GC_get_main_symbian_stack_base()
 
 char* GC_get_private_path_and_zero_file()
 {
-    // always on c: drive
+    // Always on c: drive.
     RFs fs;
     fs.Connect();
     fs.CreatePrivatePath( EDriveC );
@@ -35,7 +35,7 @@ char* GC_get_private_path_and_zero_file()
     path.Insert( 0, KCDrive );
 
 
-    //convert to char*, assume ascii
+    // Convert to char*, assume ASCII.
     TBuf8<KMaxFileName> path8;
     path8.Copy( path );
     _LIT8( KZero8, "zero" );
@@ -46,7 +46,8 @@ char* GC_get_private_path_and_zero_file()
     if (copyChar)
         memcpy( copyChar, path8.PtrZ(), size );
 
-    return copyChar; // ownership passed
+    // Ownership passed.
+    return copyChar;
 }
 
 } /* extern "C" */

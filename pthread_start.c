@@ -58,7 +58,9 @@ GC_INNER_PTHRSTART void *GC_CALLBACK GC_pthread_start_inner(
                   (void *)GC_PTHREAD_PTRVAL(pthread_self()));
 # endif
   me -> status = result;
-  GC_end_stubborn_change(me); /* cannot use GC_dirty */
+  /* Note: we cannot use GC_dirty() instead.    */
+  GC_end_stubborn_change(me);
+
   /* Cleanup acquires the allocator lock, ensuring that we cannot exit  */
   /* while a collection that thinks we are alive is trying to stop us.  */
 # ifdef NACL

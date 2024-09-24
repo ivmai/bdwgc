@@ -15,11 +15,9 @@
 
 #include "private/gc_priv.h"
 
-/*
- * This file contains the functions:
- *      ptr_t GC_build_flXXX(h, old_fl)
- *      void GC_new_hblk(size, kind)
- */
+/* This file contains the functions:    */
+/* - ptr_t GC_build_flXXX(h, old_fl);   */
+/* - void GC_new_hblk(size, kind);      */
 
 #ifndef SMALL_CONFIG
   /* Build a free list for two-pointer cleared objects inside the given */
@@ -85,7 +83,8 @@
 
     p[0] = ofl;
     p[4] = (ptr_t)p;
-    for (p += 8; ADDR_LT((ptr_t)p, plim); p += 8) { /* unroll by 2 */
+    /* Unroll the loop by 2.    */
+    for (p += 8; ADDR_LT((ptr_t)p, plim); p += 8) {
       GC_PREFETCH_FOR_WRITE((ptr_t)(p + 64));
       p[0] = (ptr_t)(p - 4);
       p[4] = (ptr_t)p;
@@ -135,8 +134,10 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, ptr_t list, size_t lg,
 
   /* Add objects to free list. */
   prev = (ptr_t *)(h -> hb_body); /* one object behind p */
+
+  /* The last place for the last object to start.       */
   plim = (ptr_t)h + HBLKSIZE - lpw * sizeof(ptr_t);
-                                /* last place for last object to start */
+
 
   /* Make a list of all objects in *h with head as last object. */
   for (p = prev + lpw; ADDR_GE(plim, (ptr_t)p); p += lpw) {
@@ -144,7 +145,8 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, ptr_t list, size_t lg,
     obj_link(p) = (ptr_t)prev;
     prev = p;
   }
-  p -= lpw;   /* p now points to last object */
+  p -= lpw;
+  /* p now points to the last object.   */
 
   /* Put p (which is now head of list of objects in *h) as first    */
   /* pointer in the appropriate free list for this size.            */
@@ -154,14 +156,17 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, ptr_t list, size_t lg,
 
 GC_INNER void GC_new_hblk(size_t lg, int k)
 {
-  struct hblk *h;       /* the new heap block */
+  struct hblk *h; /* the new heap block */
   size_t lb_adjusted = GRANULES_TO_BYTES(lg);
 
   GC_STATIC_ASSERT(sizeof(struct hblk) == HBLKSIZE);
   GC_ASSERT(I_HOLD_LOCK());
   /* Allocate a new heap block. */
   h = GC_allochblk(lb_adjusted, k, 0 /* flags */, 0 /* align_m1 */);
-  if (EXPECT(NULL == h, FALSE)) return; /* out of memory */
+  if (EXPECT(NULL == h, FALSE)) {
+    /* Out of memory.   */
+    return;
+  }
 
   /* Mark all objects if appropriate. */
   if (IS_UNCOLLECTABLE(k)) GC_set_hdr_marks(HDR(h));

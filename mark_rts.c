@@ -37,7 +37,8 @@ struct roots {
 struct roots GC_static_roots[MAX_ROOT_SETS];
 */
 
-int GC_no_dls = 0;      /* Register dynamic library data segments.      */
+/* Register dynamic library data segments.      */
+int GC_no_dls = 0;
 
 #if !defined(NO_DEBUGGING) || defined(GC_ASSERTIONS)
   /* Should return the same value as GC_root_size.      */
@@ -75,8 +76,8 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
 #endif /* !NO_DEBUGGING */
 
 #ifndef THREADS
-  /* Primarily for debugging support:     */
-  /* Is the address p in one of the registered static root sections?      */
+  /* Is the address p in one of the registered static root sections?    */
+  /* Primarily for debugging support.                                   */
   GC_INNER GC_bool GC_is_static_root(ptr_t p)
   {
     static size_t last_static_root_set = MAX_ROOT_SETS;
@@ -101,16 +102,6 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
 #endif /* !THREADS */
 
 #ifndef ANY_MSWIN
-/*
-#   define LOG_RT_SIZE 6
-#   define RT_SIZE (1 << LOG_RT_SIZE)  -- Power of 2, may be != MAX_ROOT_SETS
-
-    struct roots * GC_root_index[RT_SIZE];
-        -- Hash table header.  Used only to check whether a range is
-        -- already present.
-        -- really defined in gc_priv.h
-*/
-
   GC_INLINE size_t rt_hash(ptr_t addr)
   {
     word val = ADDR(addr);
@@ -176,7 +167,10 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
     GC_ASSERT(ADDR_GE(e, b));
     b = PTR_ALIGN_UP(b, sizeof(ptr_t));
     e = PTR_ALIGN_DOWN(e, sizeof(ptr_t));
-    if (ADDR_GE(b, e)) return; /* nothing to do */
+    if (ADDR_GE(b, e)) {
+      /* Nothing to do. */
+      return;
+    }
 
 #   ifdef ANY_MSWIN
       /* Spend the time to ensure that there are no overlapping */
@@ -187,7 +181,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
       /* takes to scan the roots.                               */
       {
         size_t i;
-        struct roots * old = NULL; /* initialized to prevent warning. */
+        struct roots * old = NULL; /* initialized to prevent warning */
 
         for (i = 0; i < n_root_sets; i++) {
             old = GC_static_roots + i;
@@ -205,7 +199,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
             }
         }
         if (i < n_root_sets) {
-          /* merge other overlapping intervals */
+            /* Merge other overlapping intervals.       */
             struct roots *other;
 
             for (i++; i < n_root_sets; i++) {
@@ -239,7 +233,8 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
         if (old != NULL) {
           if (ADDR_GE(old -> r_end, e)) {
             old -> r_tmp &= tmp;
-            return; /* already there */
+            /* Already there.   */
+            return;
           }
           if (old -> r_tmp == tmp || !tmp) {
             /* Extend the existing root. */
@@ -439,7 +434,8 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
               GC_rebuild_root_index();
               rebuild = FALSE;
             }
-            GC_add_roots_inner(e, r_end, FALSE); /* updates n_root_sets */
+            /* Note: updates n_root_sets as well.       */
+            GC_add_roots_inner(e, r_end, FALSE);
             for (j = i + 1; j < n_root_sets; j++)
               if (GC_static_roots[j].r_tmp)
                 break;
@@ -487,8 +483,8 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
 #   elif defined(AO_HAVE_load) || defined(AO_HAVE_store)
       static volatile AO_t last_root_set;
 #   else
+      /* Note: a race is acceptable, it's just a cached index.  */
       static volatile size_t last_root_set;
-                        /* A race is acceptable, it's just a cached index. */
 #   endif
     size_t i;
     int res;
@@ -527,6 +523,10 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
 GC_INNER ptr_t GC_approx_sp(void)
 {
     volatile ptr_t sp;
+
+    /* This also forces stack to grow if necessary.  Otherwise the      */
+    /* later accesses might cause the kernel to think we are doing      */
+    /* something wrong.                                                 */
 #   if ((defined(E2K) && defined(__clang__)) \
         || (defined(S390) && (__clang_major__ < 8))) && !defined(CPPCHECK)
         /* Workaround some bugs in clang:                                   */
@@ -540,25 +540,8 @@ GC_INNER ptr_t GC_approx_sp(void)
 #   else
         sp = (ptr_t)(&sp);
 #   endif
-                /* Also force stack to grow if necessary. Otherwise the */
-                /* later accesses might cause the kernel to think we're */
-                /* doing something wrong.                               */
     return (/* no volatile */ ptr_t)sp;
 }
-
-/*
- * Data structure for excluded static roots.
- * Real declaration is in gc_priv.h.
-
-struct exclusion {
-    ptr_t e_start;
-    ptr_t e_end;
-};
-
-struct exclusion GC_excl_table[MAX_EXCLUSIONS];
-                                        -- Array of exclusions, ascending
-                                        -- address order.
-*/
 
 /* Clear the number of entries in the exclusion table.  The caller  */
 /* should acquire the allocator lock (to avoid data race) but no    */
@@ -644,7 +627,10 @@ GC_INNER void GC_exclude_static_roots_inner(ptr_t start, ptr_t finish)
 
 GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
 {
-    if (b == e) return;  /* nothing to exclude? */
+    if (b == e) {
+      /* Nothing to exclude.    */
+      return;
+    }
 
     /* Round boundaries in direction reverse to that of GC_add_roots. */
     b = PTR_ALIGN_DOWN((ptr_t)b, sizeof(ptr_t));
@@ -745,28 +731,26 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
 
 #else /* !THREADS */
 
-                        /* Similar to GC_push_all_eager, but only the   */
-                        /* part hotter than cold_gc_frame is scanned    */
-                        /* immediately.  Needed to ensure that callee-  */
-                        /* save registers are not missed.               */
-
-  /* A version of GC_push_all that treats all interior pointers as  */
-  /* valid and scans part of the area immediately, to make sure     */
-  /* that saved register values are not lost.  Cold_gc_frame        */
-  /* delimits the stack section that must be scanned eagerly.       */
-  /* A zero value indicates that no eager scanning is needed.       */
-  /* We do not need to worry about the manual VDB case here, since  */
-  /* this is only called in the single-threaded case.  We assume    */
-  /* that we cannot collect between an assignment and the           */
+  /* Similar to GC_push_all_eager, but only the part hotter than    */
+  /* cold_gc_frame is scanned immediately.  Needed to ensure that   */
+  /* callee-save registers are not missed.  Treats all interior     */
+  /* pointers as valid and scans part of the area immediately, to   */
+  /* make sure that saved register values are not lost.             */
+  /* Cold_gc_frame delimits the stack section that must be scanned  */
+  /* eagerly.  A zero value indicates that no eager scanning is     */
+  /* needed.  We do not need to worry about the manual VDB case     */
+  /* here, since this is only called in the single-threaded case.   */
+  /* We assume that we cannot collect between an assignment and the */
   /* corresponding GC_dirty() call.                                 */
   STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
                                                 ptr_t cold_gc_frame)
   {
 #   ifndef NEED_FIXUP_POINTER
       if (GC_all_interior_pointers) {
-        /* Push the hot end of the stack eagerly, so that register values   */
-        /* saved inside GC frames are marked before they disappear.         */
-        /* The rest of the marking can be deferred until later.             */
+        /* Push the hot end of the stack eagerly, so that register  */
+        /* values saved inside GC frames are marked before they     */
+        /* disappear.  The rest of the marking can be deferred      */
+        /* until later.                                             */
         if (0 == cold_gc_frame) {
           GC_push_all_stack(bottom, top);
           return;
@@ -810,7 +794,8 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
         lo = traced_stack_sect -> saved_stack_ptr;
         GC_ASSERT(lo != NULL);
         traced_stack_sect = traced_stack_sect -> prev;
-        cold_gc_frame = NULL; /* Use at most once.      */
+        /* Note: use at most once.      */
+        cold_gc_frame = NULL;
     }
 
     GC_ASSERT(!HOTTER_THAN(hi, lo));
@@ -910,8 +895,10 @@ STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
 {
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef THREADS
-      if (NULL == cold_gc_frame)
-        return; /* GC_push_all_stacks should push registers and stack */
+      if (NULL == cold_gc_frame) {
+        /* GC_push_all_stacks should push registers and stack.          */
+        return;
+      }
 #   endif
     GC_with_callee_saves_pushed(GC_push_current_stack, cold_gc_frame);
 }
@@ -928,7 +915,9 @@ GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
     unsigned kind;
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT(GC_is_initialized); /* needed for GC_push_all_stacks */
+
+    /* The initialization is needed for GC_push_all_stacks().           */
+    GC_ASSERT(GC_is_initialized);
 
     /* Next push static data.  This must happen early on, since it is   */
     /* not robust against mark stack overflow.                          */

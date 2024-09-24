@@ -34,8 +34,9 @@
   /* The standard specifies rand() as not a thread-safe API function.   */
   /* On other hosts (e.g. OpenBSD 7.3), use of the standard rand()      */
   /* causes "rand() may return deterministic values" warning.           */
+  /* Note: concurrent update of seed does not hurt the test.            */
 #undef rand
-static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
+static GC_RAND_STATE_T seed;
 #define rand() GC_RAND_NEXT(&seed)
 
 # define MAX_LOG_MISC_SIZES 20 /* up to 1 MB */
@@ -185,7 +186,8 @@ static void pair_check_rec(pair_t p)
 
 #ifdef GC_PTHREADS
 # ifndef NTHREADS
-#   define NTHREADS 5 /* Excludes main thread, which also runs a test. */
+    /* Note: this excludes the main thread, which also runs a test.     */
+#   define NTHREADS 5
 # endif
 # include <errno.h> /* for EAGAIN */
 # include <pthread.h>
@@ -238,7 +240,9 @@ int main(void)
         GC_set_thr_restart_signal(GC_get_suspend_signal());
 #   endif
 
-    GC_set_all_interior_pointers(0); /* for a stricter test */
+    /* Make the test stricter.  */
+    GC_set_all_interior_pointers(0);
+
 #   ifdef TEST_MANUAL_VDB
         GC_set_manual_vdb_allowed(1);
 #   endif

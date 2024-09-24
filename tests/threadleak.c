@@ -72,11 +72,13 @@ int main(void) {
 #   endif
 # endif
 
-    GC_set_find_leak(1); /* for new collect versions not compiled       */
-                         /* with -DFIND_LEAK.                           */
+    /* Just in case the code is compiled without FIND_LEAK defined. */
+    GC_set_find_leak(1);
+
     GC_INIT();
 
-    GC_allow_register_threads(); /* optional if pthread_create redirected */
+    /* This is optional if pthread_create() redirected. */
+    GC_allow_register_threads();
 
 # if NTHREADS > 0
     for (i = 0; i < NTHREADS; ++i) {

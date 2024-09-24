@@ -92,9 +92,9 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
 
     frame = (StackFrame*)frame->savedSP;
 
-    /* we do these next two checks after going to the next frame
-       because the LR for the first stack frame in the loop
-       is not set up on purpose, so we shouldn't check it. */
+    /* We do these next two checks after going to the next frame        */
+    /* because the LR for the first stack frame in the loop is not set  */
+    /* up on purpose, so we should not check it.                        */
     maskedLR = frame -> savedLR & ~0x3UL;
     if (0 == maskedLR || ~0x3UL == maskedLR)
       break; /* if the next LR is bogus, stop */
@@ -465,7 +465,7 @@ GC_INNER void GC_push_all_stacks(void)
   STATIC int GC_mach_threads_count = 0;
   /* FIXME: it is better to implement GC_mach_threads as a hash set.  */
 
-/* returns true if there's a thread in act_list that wasn't in old_list */
+/* Return true if there is a thread in act_list that was not in old_list. */
 STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
                                       thread_act_array_t old_list,
                                       int old_count, task_t my_task,
@@ -522,7 +522,7 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
       continue;
     }
 
-    /* add it to the GC_mach_threads list */
+    /* Add it to the GC_mach_threads list.      */
     if (GC_mach_threads_count == GC_MAX_MACH_THREADS)
       ABORT("Too many threads");
     GC_mach_threads[GC_mach_threads_count].thread = thread;
@@ -572,8 +572,8 @@ GC_INNER void GC_stop_world(void)
 # ifdef PARALLEL_MARK
     if (GC_parallel) {
       GC_acquire_mark_lock();
-      GC_ASSERT(GC_fl_builder_count == 0);
       /* We should have previously waited for it to become zero. */
+      GC_ASSERT(GC_fl_builder_count == 0);
     }
 # endif /* PARALLEL_MARK */
 
@@ -686,7 +686,7 @@ GC_INLINE void GC_thread_resume(thread_act_t thread)
     GC_log_printf("Resuming thread %p with state %d\n", (void *)(word)thread,
                   info.run_state);
 # endif
-  /* Resume the thread */
+  /* Resume the thread. */
   kern_result = thread_resume(thread);
   if (kern_result != KERN_SUCCESS) {
     WARN("thread_resume(%p) failed: mach port invalid\n", thread);
@@ -699,7 +699,8 @@ GC_INNER void GC_start_world(void)
 {
   task_t my_task = current_task();
 
-  GC_ASSERT(I_HOLD_LOCK()); /* held continuously since the world stopped */
+  /* The allocator lock is held continuously since the world stopped.   */
+  GC_ASSERT(I_HOLD_LOCK());
 # ifdef DEBUG_THREADS
     GC_log_printf("World starting\n");
 # endif
@@ -725,9 +726,9 @@ GC_INNER void GC_start_world(void)
         thread_act_t thread = GC_mach_threads[i].thread;
 
         if (GC_mach_threads[i].suspended) {
-          int last_found = j;   /* The thread index found during the    */
-                                /* previous iteration (count value      */
-                                /* means no thread found yet).          */
+          /* The thread index found during the previous iteration       */
+          /* (count value means no thread found yet).                   */
+          int last_found = j;
 
           /* Search for the thread starting from the last found one first. */
           while (++j < (int)listcount) {
@@ -746,8 +747,8 @@ GC_INNER void GC_start_world(void)
             GC_thread_resume(thread);
           }
         } else {
-          /* This thread was failed to be suspended by GC_stop_world,   */
-          /* no action needed.                                          */
+          /* This thread failed to be suspended by GC_stop_world, no    */
+          /* action is needed.                                          */
 #         ifdef DEBUG_THREADS
             GC_log_printf("Not resuming thread %p as it is not suspended\n",
                           (void *)(word)thread);

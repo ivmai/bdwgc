@@ -46,37 +46,38 @@ EXTERN_C_BEGIN
 
 typedef struct GC_StackContext_Rep {
 # if defined(THREAD_SANITIZER) && defined(SIGNAL_BASED_STOP_WORLD)
-    char dummy[sizeof(oh)];     /* A dummy field to avoid TSan false    */
-                                /* positive about the race between      */
-                                /* GC_has_other_debug_info and          */
-                                /* GC_suspend_handler_inner (which      */
-                                /* sets stack_ptr).                     */
+    /* A dummy field to avoid TSan false positive about the race        */
+    /* between GC_has_other_debug_info and GC_suspend_handler_inner     */
+    /* (the latter sets stack_ptr).                                     */
+    char dummy[sizeof(oh)];
 # endif
 
+  /* Cold end of the stack (except for main thread on non-Windows).     */
+  /* On Windows: 0 means entry invalid; not in_use implies stack_end    */
+  /* is 0.                                                              */
 # if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
     volatile
 # endif
-  ptr_t stack_end;              /* Cold end of the stack (except for    */
-                                /* main thread on non-Windows).         */
-                                /* On Windows: 0 means entry invalid;   */
-                                /* not in_use implies stack_end is 0.   */
+  ptr_t stack_end;
 
-  ptr_t stack_ptr;      /* Valid only in some platform-specific states. */
+  /* Valid only in some platform-specific states.       */
+  ptr_t stack_ptr;
 
 # ifdef GC_WIN32_THREADS
 #   define ADDR_LIMIT ((ptr_t)GC_WORD_MAX)
-    ptr_t last_stack_min;       /* Last known minimum (hottest) address */
-                                /* in stack or ADDR_LIMIT if unset.     */
+    /* Last known minimum (hottest) address in stack or ADDR_LIMIT      */
+    /* if unset.                                                        */
+    ptr_t last_stack_min;
 #   ifdef I386
-      ptr_t initial_stack_base; /* The cold end of the stack saved by   */
-                                /* GC_record_stack_base (never modified */
-                                /* by GC_set_stackbottom); used for the */
-                                /* old way of the coroutines support.   */
+      /* The cold end of the stack saved by GC_record_stack_base (never */
+      /* modified by GC_set_stackbottom); used for the old way of the   */
+      /* coroutines support.                                            */
+      ptr_t initial_stack_base;
 #   endif
 # elif defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
-    ptr_t topOfStack;           /* Result of GC_FindTopOfStack(0);      */
-                                /* valid only if the thread is blocked; */
-                                /* non-NULL value means already set.    */
+    /* Result of GC_FindTopOfStack(0); valid only if the thread is      */
+    /* blocked; non-NULL value means already set.                       */
+    ptr_t topOfStack;
 # endif
 
 # if defined(E2K) || defined(IA64)
@@ -87,35 +88,39 @@ typedef struct GC_StackContext_Rep {
 # ifdef GC_WIN32_THREADS
     /* For now, alt-stack is not implemented for Win32. */
 # else
-    ptr_t altstack;             /* The start of the alt-stack if there  */
-                                /* is one, NULL otherwise.              */
-    ptr_t normstack;            /* Same for the "normal" stack (set by  */
-                                /* GC_register_altstack).               */
-    size_t altstack_size;       /* The size of the alt-stack if exists. */
+    /* The start of the alt-stack if there is one, NULL otherwise.      */
+    ptr_t altstack;
+
+    /* Same for the "normal" stack (set by GC_register_altstack).       */
+    ptr_t normstack;
+
+    /* The size of the alt-stack if exists.     */
+    size_t altstack_size;
+
     size_t normstack_size;
 # endif
 
 # ifdef E2K
-    size_t ps_ofs; /* the current offset in the procedure stack */
+    /* The current offset in the procedure stack.       */
+    size_t ps_ofs;
 # endif
 
 # ifndef GC_NO_FINALIZATION
     unsigned char finalizer_nested;
-    char fnlz_pad[1];           /* Explicit alignment (for some rare    */
-                                /* compilers such as bcc32 and wcc32).  */
+
+    /* Explicit alignment (for some rare compilers such as bcc32 and    */
+    /* wcc32).                                                          */
+    char fnlz_pad[1];
+
+    /* Used by GC_check_finalizer_nested() to minimize the level of     */
+    /* recursion when a client finalizer allocates memory.  Initially   */
+    /* it is 0 and finalizer_nested is false.                           */
     unsigned short finalizer_skipped;
-                                /* Used by GC_check_finalizer_nested()  */
-                                /* to minimize the level of recursion   */
-                                /* when a client finalizer allocates    */
-                                /* memory (initially both are 0).       */
 # endif
 
+  /* Points to the "frame" data held in stack by the innermost          */
+  /* GC_call_with_gc_active() of this stack (thread); may be NULL.      */
   struct GC_traced_stack_sect_s *traced_stack_sect;
-                                /* Points to the "frame" data held in   */
-                                /* stack by the innermost               */
-                                /* GC_call_with_gc_active() of this     */
-                                /* stack (thread); may be NULL.         */
-
 } *GC_stack_context_t;
 
 #ifdef GC_WIN32_THREADS
@@ -131,24 +136,22 @@ typedef struct GC_StackContext_Rep {
 typedef struct GC_Thread_Rep {
   union {
 #   if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
-      volatile AO_t in_use;     /* Updated without a lock.  We assert   */
-                                /* that each unused entry has invalid   */
-                                /* id of zero and zero stack_end.       */
-                                /* Used only with GC_win32_dll_threads. */
-      LONG long_in_use;         /* The same but of the type that        */
-                                /* matches the first argument of        */
-                                /* InterlockedExchange(); volatile is   */
-                                /* omitted because the ancient version  */
-                                /* of the prototype lacked the          */
-                                /* qualifier.                           */
+      /* Updated without a lock.  We assert that each unused entry has  */
+      /* invalid id of zero and zero stack_end.  Used only with         */
+      /* GC_win32_dll_threads.                                          */
+      volatile AO_t in_use;
+
+      /* The same but of the type that matches the first argument of    */
+      /* InterlockedExchange(); volatile is omitted because the ancient */
+      /* version of the prototype lacked the qualifier.                 */
+      LONG long_in_use;
 #   endif
-    struct GC_Thread_Rep *next; /* Hash table link without              */
-                                /* GC_win32_dll_threads.                */
-                                /* More recently allocated threads      */
-                                /* with a given pthread id come         */
-                                /* first.  (All but the first are       */
-                                /* guaranteed to be dead, but we may    */
-                                /* not yet have registered the join.)   */
+
+     /* Hash table link without GC_win32_dll_threads.  More recently    */
+     /* allocated threads with a given pthread id come first.  (All but */
+     /* the first are guaranteed to be dead, but we may not yet have    */
+     /* registered the join.)                                           */
+    struct GC_Thread_Rep *next;
   } tm; /* table_management */
 
   GC_stack_context_t crtn;
@@ -174,63 +177,59 @@ typedef struct GC_Thread_Rep {
 #   define THREAD_HANDLE(p) ((p) -> handle)
 # endif /* GC_WIN32_THREADS && !MSWINCE */
 
-  unsigned char flags;          /* Protected by the allocator lock.     */
-# define FINISHED       0x1     /* Thread has exited (pthreads only).   */
+  /* Note: this is protected by the allocator lock.     */
+  unsigned char flags;
+
+  /* Thread has exited (pthreads only).   */
+# define FINISHED       0x1
 # ifndef GC_PTHREADS
 #   define KNOWN_FINISHED(p) FALSE
 # else
 #   define KNOWN_FINISHED(p) (((p) -> flags & FINISHED) != 0)
-#   define DETACHED     0x2     /* Thread is treated as detached.       */
-                                /* Thread may really be detached, or    */
-                                /* it may have been explicitly          */
-                                /* registered, in which case we can     */
-                                /* deallocate its GC_Thread_Rep once    */
-                                /* it unregisters itself, since it      */
-                                /* may not return a GC pointer.         */
+    /* Thread is treated as detached.  Thread may really be detached,   */
+    /* or it may have been explicitly registered, in which case we can  */
+    /* deallocate its GC_Thread_Rep once it unregisters itself, since   */
+    /* it may not return a pointer to the GC heap.                      */
+#   define DETACHED     0x2
 # endif
 # if (defined(GC_HAVE_PTHREAD_EXIT) || !defined(GC_NO_PTHREAD_CANCEL)) \
      && defined(GC_PTHREADS)
-#   define DISABLED_GC  0x10    /* Collections are disabled while the   */
-                                /* thread is exiting.                   */
+    /* Collections are disabled while the thread is exiting.            */
+#   define DISABLED_GC  0x10
 # endif
-# define DO_BLOCKING    0x20    /* Thread is in the do-blocking state.  */
-                                /* If set, the thread will acquire the  */
-                                /* allocator lock before any pointer    */
-                                /* manipulation, and has set its SP     */
-                                /* value.  Thus, it does not need       */
-                                /* a signal sent to stop it.            */
+  /* Thread is in the do-blocking state.  If set, the thread will       */
+  /* acquire the allocator lock before any pointer manipulation, and    */
+  /* has set its SP value.  Thus, it does not need a signal sent to     */
+  /* stop it.                                                           */
+# define DO_BLOCKING    0x20
 # ifdef GC_WIN32_THREADS
-#   define IS_SUSPENDED 0x40    /* Thread is suspended by SuspendThread. */
+    /* Thread is suspended by SuspendThread.    */
+#   define IS_SUSPENDED 0x40
 # endif
 
+  /* Explicit alignment (for some rare compilers such as bcc32 and      */
+  /* wcc32).                                                            */
   char flags_pad[sizeof(word) - 1 /* sizeof(flags) */];
-                                /* Explicit alignment (for some rare    */
-                                /* compilers such as bcc32 and wcc32).  */
 
 # ifdef SIGNAL_BASED_STOP_WORLD
+    /* The value of GC_stop_count when the thread last successfully     */
+    /* handled a suspend signal.                                        */
     volatile AO_t last_stop_count;
-                                /* The value of GC_stop_count when the  */
-                                /* thread last successfully handled     */
-                                /* a suspend signal.                    */
 #   ifdef GC_ENABLE_SUSPEND_THREAD
+      /* Note: an odd value means thread was suspended externally;      */
+      /* incremented on every call of GC_suspend_thread() and           */
+      /* GC_resume_thread(); updated with the allocator lock held, but  */
+      /* could be read from a signal handler.                           */
       volatile AO_t ext_suspend_cnt;
-                                /* An odd value means thread was        */
-                                /* suspended externally; incremented on */
-                                /* every call of GC_suspend_thread()    */
-                                /* and GC_resume_thread(); updated with */
-                                /* the allocator lock held, but could   */
-                                /* be read from a signal handler.       */
 #   endif
 # endif
 
 # ifdef GC_PTHREADS
-    void *status;               /* The value returned from the thread.  */
-                                /* Used only to avoid premature         */
-                                /* reclamation of any data it might     */
-                                /* reference.                           */
-                                /* This is unfortunately also the       */
-                                /* reason we need to intercept join     */
-                                /* and detach.                          */
+    /* The value returned from the thread.  Used only to avoid          */
+    /* premature reclamation of any data it might reference.  This is   */
+    /* unfortunately also the reason we need to intercept join and      */
+    /* detach.                                                          */
+    void *status;
 # endif
 
 # ifdef THREAD_LOCAL_ALLOC
@@ -261,15 +260,16 @@ typedef struct GC_Thread_Rep {
 
 # ifdef RETRY_GET_THREAD_CONTEXT /* && GC_WIN32_THREADS */
     ptr_t context_sp;
+
+    /* Populated as part of GC_suspend() as resume/suspend loop may be  */
+    /* needed for GetThreadContext() to succeed.                        */
     word context_regs[PUSHED_REGS_COUNT];
-                                /* Populated as part of GC_suspend() as */
-                                /* resume/suspend loop may be needed    */
-                                /* for GetThreadContext() to succeed.   */
 # endif
 } * GC_thread;
 
 #ifndef THREAD_TABLE_SZ
-# define THREAD_TABLE_SZ 256    /* Power of 2 (for speed). */
+  /* Note: this is a power of 2 (for speed).    */
+# define THREAD_TABLE_SZ 256
 #endif
 
 #ifdef GC_WIN32_THREADS
@@ -408,8 +408,8 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool);
 #if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
   GC_INNER void GC_suspend_self_inner(GC_thread me, size_t suspend_cnt);
 
+  /* A wrapper over GC_suspend_self_inner.      */
   GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context);
-                                /* Wrapper over GC_suspend_self_inner.  */
 #endif
 
 #if defined(GC_PTHREADS) \

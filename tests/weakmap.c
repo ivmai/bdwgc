@@ -20,7 +20,8 @@
 #endif
 
 #undef GC_NO_THREAD_REDIRECTS
-#include "gc/gc_disclaim.h" /* includes gc.h */
+/* This includes gc.h transitively.     */
+#include "gc/gc_disclaim.h"
 
 #define NOT_GCBUILD
 #include "private/gc_priv.h"
@@ -28,14 +29,17 @@
 #include <string.h>
 
 #undef rand
-static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
+/* Note: concurrent update of seed does not hurt the test.      */
+static GC_RAND_STATE_T seed;
 #define rand() GC_RAND_NEXT(&seed)
 
-#include "gc/gc_mark.h" /* should not precede include gc_priv.h */
+/* Note: this should not precede include gc_priv.h.     */
+#include "gc/gc_mark.h"
 
 #ifdef GC_PTHREADS
 # ifndef NTHREADS
-#   define NTHREADS 5 /* Excludes main thread, which also runs a test. */
+    /* This excludes the main thread, which also runs a test.   */
+#   define NTHREADS 5
 # endif
 # include <errno.h> /* for EAGAIN, EBUSY */
 # include <pthread.h>
@@ -84,8 +88,8 @@ static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
     } while (0)
 
 #ifndef AO_HAVE_fetch_and_add1
+  /* This is used only to update counters.      */
 # define AO_fetch_and_add1(p) ((*(p))++)
-                /* This is used only to update counters.        */
 #endif
 
 static unsigned memhash(void *src, size_t len)
@@ -124,7 +128,8 @@ struct weakmap {
   size_t obj_size;
   size_t capacity;
   unsigned weakobj_kind;
-  struct weakmap_link **links; /* NULL means weakmap is destroyed */
+  /* Note: if links is NULL, then weakmap is destroyed. */
+  struct weakmap_link **links;
 };
 
 static void weakmap_lock(struct weakmap *wm, unsigned h)
@@ -245,13 +250,17 @@ static int GC_CALLBACK weakmap_disclaim(void *obj_base)
 
   /* Decode header word.    */
   header = *(void **)obj_base;
-  if (!IS_FLAG_SET(header, FINALIZER_CLOSURE_FLAG))
-    return 0;   /* on GC free list, ignore it.  */
+  if (!IS_FLAG_SET(header, FINALIZER_CLOSURE_FLAG)) {
+    /* On GC free list, ignore it.      */
+    return 0;
+  }
 
   my_assert(!IS_FLAG_SET(header, INVALIDATE_FLAG));
   wm = (struct weakmap *)CPTR_CLEAR_FLAGS(header, FINALIZER_CLOSURE_FLAG);
-  if (NULL == wm->links)
-    return 0;   /* weakmap has been already destroyed */
+  if (NULL == wm->links) {
+    /* weakmap has been already destroyed.      */
+    return 0;
+  }
   obj = (void **)obj_base + 1;
 
   /* Lock and check for mark.   */
@@ -333,12 +342,14 @@ static void weakmap_destroy(struct weakmap *wm)
       (void)pthread_mutex_destroy(&wm->mutex[i]);
     }
 # endif
-  wm->links = NULL; /* weakmap is destroyed */
+  /* weakmap is destroyed */
+  wm->links = NULL;
 }
 
 struct weakmap *pair_hcset;
 
-#define PAIR_MAGIC_SIZE 16 /* should not exceed sizeof(pair_magic) */
+/* Note: this should not exceed sizeof(pair_magic).     */
+#define PAIR_MAGIC_SIZE 16
 
 struct pair_key {
   struct pair *car, *cdr;
@@ -359,8 +370,9 @@ static struct pair *pair_new(struct pair *car, struct pair *cdr)
 {
   struct pair tmpl;
 
-  memset(&tmpl, 0, sizeof(tmpl));   /* To clear the paddings (to avoid  */
-                                    /* a compiler warning).             */
+  /* This is to clear the paddings (to avoid a compiler warning).   */
+  memset(&tmpl, 0, sizeof(tmpl));
+
   tmpl.car = car;
   tmpl.cdr = cdr;
   memcpy(tmpl.magic, pair_magic, PAIR_MAGIC_SIZE);
@@ -435,12 +447,16 @@ int main(void)
     pthread_t th[NTHREADS];
 # endif
 
-  GC_set_all_interior_pointers(0); /* for a stricter test */
+  /* Make the test stricter.  */
+  GC_set_all_interior_pointers(0);
+
 # ifdef TEST_MANUAL_VDB
     GC_set_manual_vdb_allowed(1);
 # endif
   GC_INIT();
-  GC_init_finalized_malloc(); /* to register the displacements */
+  /* Register the displacements.        */
+  GC_init_finalized_malloc();
+
 # ifndef NO_INCREMENTAL
     GC_enable_incremental();
 # endif

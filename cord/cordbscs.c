@@ -57,10 +57,11 @@ void CORD__call_oom_fn(void)
     struct Generic {
         char nul;
         char header;
-        char depth;     /* Concatenation nesting depth; 0 for function. */
+        /* Concatenation nesting depth; 0 for function. */
+        char depth;
+        /* Length of left concatenated child if it is   */
+        /* sufficiently short; 0 otherwise.             */
         unsigned char left_len;
-                        /* Length of left concatenated child if it is   */
-                        /* sufficiently short; 0 otherwise.             */
         unsigned long len;
     };
 
@@ -77,11 +78,12 @@ typedef struct {
 # define CONCAT_HDR 1
 
 # define FN_HDR 4
+
+/* Substring nodes are a special case of function nodes.        */
+/* The client_data field is known to point to a substr_args     */
+/* structure, and the function is either CORD_apply_access_fn   */
+/* or CORD_index_access_fn.                                     */
 # define SUBSTR_HDR 6
-        /* Substring nodes are a special case of function nodes.        */
-        /* The client_data field is known to point to a substr_args     */
-        /* structure, and the function is either CORD_apply_access_fn   */
-        /* or CORD_index_access_fn.                                     */
 
 /* The following may be applied only to function and concatenation nodes: */
 #define IS_CONCATENATION(s) \
@@ -104,8 +106,8 @@ typedef struct {
                            GEN_LEN(((const CordRep *)s) -> data.concat.right) \
                         : LEN(((const CordRep *)s) -> data.concat.left)))
 
+/* Cords shorter than this are C strings.       */
 #define SHORT_LIMIT (sizeof(CordRep) - 1)
-        /* Cords shorter than this are C strings */
 
 /* Dump the internal representation of x to stdout, with initial        */
 /* indentation level n.                                                 */
@@ -172,9 +174,9 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
 #           ifdef LINT2
                 memcpy(result, x, lenx + 1);
 #           else
+                /* No need to copy the terminating zero */
+                /* as result[lenx] is written below.    */
                 memcpy(result, x, lenx);
-                                /* No need to copy the terminating zero */
-                                /* as result[lenx] is written below.    */
 #           endif
             memcpy(result + lenx, y, leny);
             result[result_len] = '\0';
@@ -601,11 +603,10 @@ static size_t min_len[CORD_MAX_DEPTH];
 
 static int min_len_init = 0;
 
+/* The string is the concatenation      */
+/* of the forest in order of DECREASING */
+/* indices.  forest[i].len >= fib(i+1)  */
 typedef ForestElement Forest[CORD_MAX_DEPTH];
-                        /* forest[i].len >= fib(i+1)            */
-                        /* The string is the concatenation      */
-                        /* of the forest in order of DECREASING */
-                        /* indices.                             */
 
 static void CORD_init_min_len(void)
 {

@@ -67,7 +67,9 @@ STATIC void GC_register_disclaim_proc_inner(unsigned kind,
 
 GC_API void GC_CALL GC_init_finalized_malloc(void)
 {
-    GC_init();  /* In case it's not already done.       */
+    /* Initialize the collector just in case it is not done yet.        */
+    GC_init();
+
     LOCK();
     if (GC_finalized_kind != 0) {
         UNLOCK();
@@ -109,7 +111,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
     void *op;
     ptr_t fc_p;
 
-#   ifndef LINT2 /* no data race because the variable is set once */
+#   ifndef LINT2
+      /* Actually, there is no data race because the variable is set once. */
       GC_ASSERT(GC_finalized_kind != 0);
 #   endif
     GC_ASSERT(NONNULL_ARG_NOT_NULL(fclos));
@@ -129,7 +132,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
 #   endif
     GC_dirty(op);
     REACHABLE_AFTER_DIRTY(fc_p);
-
     return (ptr_t *)op + 1;
 }
 

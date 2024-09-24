@@ -46,8 +46,10 @@ int main(int argc, char **argv)
 #endif
     printf("^^^^Starting command^^^^\n");
     fflush(stdout);
-    if (argc == 2)
-        return 2; /* the file does not exist but no command is given */
+    if (argc == 2) {
+        /* The file is missing, but no command is given.        */
+        return 2;
+    }
 
     execvp(TRUSTED_STRING(argv[2]), (EXECV_ARGV_T)(argv + 2));
     exit(1);

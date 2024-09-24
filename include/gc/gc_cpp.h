@@ -14,7 +14,7 @@
 #ifndef GC_CPP_H
 #define GC_CPP_H
 
-/****************************************************************************
+/*
 C++ Interface to the Boehm Collector
 
     John R. Ellis and Jesse Hull
@@ -60,27 +60,27 @@ Both uncollectible and collectible objects can be explicitly deleted
 with "delete", which invokes an object's destructors and frees its
 storage immediately.
 
-A collectible object may have a clean-up function, which will be
+A collectible object may have a cleanup function, which will be
 invoked when the collector discovers the object to be inaccessible.
 An object derived from "gc_cleanup" or containing a member derived
-from "gc_cleanup" has a default clean-up function that invokes the
-object's destructors.  Explicit clean-up functions may be specified as
+from "gc_cleanup" has a default cleanup function that invokes the
+object's destructors.  Explicit cleanup functions may be specified as
 an additional placement argument:
 
     A* a = ::new (GC, MyCleanup) A;
 
 An object is considered "accessible" by the collector if it can be
 reached by a path of pointers from static variables, automatic
-variables of active functions, or from some object with clean-up
+variables of active functions, or from some object with cleanup
 enabled; pointers from an object to itself are ignored.
 
-Thus, if objects A and B both have clean-up functions, and A points at
-B, B is considered accessible.  After A's clean-up is invoked and its
+Thus, if objects A and B both have cleanup functions, and A points at
+B, B is considered accessible.  After A's cleanup is invoked and its
 storage released, B will then become inaccessible and will have its
-clean-up invoked.  If A points at B and B points to A, forming a
+cleanup invoked.  If A points at B and B points to A, forming a
 cycle, then that's considered a storage leak, and neither will be
 collectible.  See the interface gc.h for low-level facilities for
-handling such cycles of objects with clean-up.
+handling such cycles of objects with cleanup.
 
 The collector cannot guarantee that it will find all inaccessible
 objects.  In practice, it finds almost all of them.
@@ -108,11 +108,11 @@ the explicit GC placement to make the array collectible.  For example:
 Typically, only the destructor for the first element of the array will
 be invoked when the array is garbage-collected.  To get all the
 destructors of any array executed, you must supply an explicit
-clean-up function:
+cleanup function:
 
     A* a = new (GC, MyCleanUp) A[ 10 ];
 
-(Implementing clean-up of arrays correctly, portably, and in a way
+(Implementing cleanup of arrays correctly, portably, and in a way
 that preserves the correct exception semantics requires a language
 extension, e.g. the "gc" keyword.)
 
@@ -121,8 +121,7 @@ extension, e.g. the "gc" keyword.)
 Many other systems seem to use the identifier "GC" as an abbreviation
 for "Graphics Context".  Thus, GC placement has been replaced
 by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
-
-****************************************************************************/
+*/
 
 #include "gc.h"
 
@@ -243,26 +242,27 @@ enum GCPlacement
 # endif
 };
 
-/**
- * Instances of classes derived from gc will be allocated in the collected
- * heap by default, unless an explicit NoGC placement is specified.
- */
+// Instances of classes derived from gc will be allocated in the collected
+// heap by default, unless an explicit NoGC placement is specified.
 class gc
 {
 public:
   inline void* operator new(GC_SIZE_T);
   inline void* operator new(GC_SIZE_T, GCPlacement);
+
+  // Must be redefined here, since the other overloadings hide
+  // the global definition.
   inline void* operator new(GC_SIZE_T, void*) GC_NOEXCEPT;
-    // Must be redefined here, since the other overloadings hide
-    // the global definition.
+
   inline void operator delete(void*) GC_NOEXCEPT;
 # ifdef GC_OPERATOR_SIZED_DELETE
     inline void operator delete(void*, GC_SIZE_T) GC_NOEXCEPT;
 # endif
 
 # ifdef GC_PLACEMENT_DELETE
+    // Called if construction fails.
     inline void operator delete(void*, GCPlacement) GC_NOEXCEPT;
-      // Called if construction fails.
+
     inline void operator delete(void*, void*) GC_NOEXCEPT;
 # endif // GC_PLACEMENT_DELETE
 
@@ -281,12 +281,10 @@ public:
 # endif // GC_OPERATOR_NEW_ARRAY
 };
 
-/**
- * Instances of classes derived from gc_cleanup will be allocated
- * in the collected heap by default.  When the collector discovers
- * an inaccessible object derived from gc_cleanup or containing
- * a member derived from gc_cleanup, its destructors will be invoked.
- */
+// Instances of classes derived from gc_cleanup will be allocated in the
+// collected heap by default.  When the collector discovers an inaccessible
+// object derived from gc_cleanup or containing a member derived from
+// gc_cleanup, its destructors will be invoked.
 class gc_cleanup: virtual public gc
 {
 public:
@@ -314,21 +312,19 @@ extern "C" {
 # pragma warning(disable:4595)
 #endif
 
+// Allocates a collectible or uncollectible object, according to the
+// value of gcp.
+// For collectible objects, if cleanup is non-null, then when the
+// allocated object obj becomes inaccessible, the collector will
+// invoke cleanup(obj,clientData) but will not invoke the object's
+// destructors.  It is an error to explicitly delete an object
+// allocated with a non-null cleanup.
+// It is an error to specify a non-null cleanup with NoGC or for
+// classes derived from gc_cleanup or containing members derived
+// from gc_cleanup.
 inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
                           GC_NS_QUALIFY(GCCleanUpFunc) = 0,
                           void* /* clientData */ = 0);
-    // Allocates a collectible or uncollectible object, according to the
-    // value of gcp.
-    //
-    // For collectible objects, if cleanup is non-null, then when the
-    // allocated object obj becomes inaccessible, the collector will
-    // invoke cleanup(obj,clientData) but will not invoke the object's
-    // destructors.  It is an error to explicitly delete an object
-    // allocated with a non-null cleanup.
-    //
-    // It is an error to specify a non-null cleanup with NoGC or for
-    // classes derived from gc_cleanup or containing members derived
-    // from gc_cleanup.
 
 #ifdef GC_PLACEMENT_DELETE
   inline void operator delete(void*, GC_NS_QUALIFY(GCPlacement),

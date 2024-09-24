@@ -31,20 +31,20 @@
 
 /* Pointers to individual tables.  We replace one table by another by   */
 /* switching these pointers.                                            */
+
+/* Nonstack false references seen at last full collection.      */
 STATIC word * GC_old_normal_bl = NULL;
-                /* Nonstack false references seen at last full          */
-                /* collection.                                          */
+
+/* Nonstack false references seen since last full collection.   */
 STATIC word * GC_incomplete_normal_bl = NULL;
-                /* Nonstack false references seen since last            */
-                /* full collection.                                     */
+
 STATIC word * GC_old_stack_bl = NULL;
 STATIC word * GC_incomplete_stack_bl = NULL;
 
+/* Number of bytes on stack blacklist.  */
 STATIC word GC_total_stack_black_listed = 0;
-                        /* Number of bytes on stack blacklist.  */
 
-GC_INNER word GC_black_list_spacing = MINHINCR * HBLKSIZE;
-                        /* Initial rough guess. */
+GC_INNER word GC_black_list_spacing = MINHINCR * HBLKSIZE; /* initial guess */
 
 STATIC void GC_clear_bl(word *);
 
@@ -156,11 +156,11 @@ GC_INNER void GC_promote_black_lists(void)
         GC_black_list_spacing = 3 * HBLKSIZE;
     }
     if (GC_black_list_spacing > MAXHINCR * HBLKSIZE) {
+        /* Make it easier to allocate really huge blocks, which         */
+        /* otherwise may have problems with nonuniform blacklist        */
+        /* distributions.  This way we should always succeed            */
+        /* immediately after growing the heap.                          */
         GC_black_list_spacing = MAXHINCR * HBLKSIZE;
-        /* Makes it easier to allocate really huge blocks, which otherwise */
-        /* may have problems with nonuniform blacklist distributions.      */
-        /* This way we should always succeed immediately after growing the */
-        /* heap.                                                           */
     }
 }
 
@@ -183,9 +183,9 @@ GC_INNER void GC_unpromote_black_lists(void)
                         set_pht_entry_from_index(bl, index)
 #endif
 
-/* P is not a valid pointer reference, but it falls inside      */
-/* the plausible heap bounds.                                   */
-/* Add it to the normal incomplete black list if appropriate.   */
+/* The argument p is not a valid pointer reference, but it falls inside */
+/* the plausible heap bounds.  Add it to the normal incomplete black    */
+/* list if appropriate.                                                 */
 #ifdef PRINT_BLACK_LIST
   GC_INNER void GC_add_to_black_list_normal(ptr_t p, ptr_t source)
 #else
@@ -205,8 +205,10 @@ GC_INNER void GC_unpromote_black_lists(void)
         }
 #     endif
       backlist_set_pht_entry_from_index(GC_incomplete_normal_bl, index);
-    } /* else this is probably just an interior pointer to an allocated */
-      /* object, and isn't worth black listing.                         */
+    } else {
+      /* This is probably just an interior pointer to an allocated      */
+      /* object, and is not worth black listing.                        */
+    }
   }
 }
 
@@ -270,9 +272,8 @@ GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *h,
     return NULL;
 }
 
-/* Return the number of blacklisted blocks in a given range.    */
-/* Used only for statistical purposes.                          */
-/* Looks only at the GC_incomplete_stack_bl.                    */
+/* Return the number of blacklisted blocks in a given range.  Used only */
+/* for statistical purposes.  Looks only at the GC_incomplete_stack_bl. */
 STATIC word GC_number_stack_black_listed(struct hblk *start,
                                          struct hblk *endp1)
 {

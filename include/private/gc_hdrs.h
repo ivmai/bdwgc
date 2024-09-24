@@ -48,8 +48,8 @@ EXTERN_C_BEGIN
 #if defined(LARGE_CONFIG) || !defined(SMALL_CONFIG)
 # define LOG_BOTTOM_SZ 10
 #else
+  /* Keep top index size reasonable with smaller blocks.                */
 # define LOG_BOTTOM_SZ 11
-        /* Keep top index size reasonable with smaller blocks.  */
 #endif
 #define BOTTOM_SZ (1 << LOG_BOTTOM_SZ)
 
@@ -59,8 +59,6 @@ EXTERN_C_BEGIN
 # define LOG_TOP_SZ 11
 #endif
 #define TOP_SZ (1 << LOG_TOP_SZ)
-
-/* #define COUNT_HDR_CACHE_HITS  */
 
 #ifdef COUNT_HDR_CACHE_HITS
   extern word GC_hdr_cache_hits; /* used for debugging/profiling */
@@ -119,39 +117,25 @@ typedef struct hce {
         }
 
 typedef struct bi {
+    /* The bottom level index contains one of three kinds of values:    */
+    /* - 0 means we are not responsible for this block, or this is      */
+    /*   a block other than the first one in a free block;              */
+    /* - 1 < (long)X <= MAX_JUMP means the block starts at least        */
+    /*   X * HBLKSIZE bytes before the current address;                 */
+    /* - a valid pointer points to a hdr structure (the above cannot be */
+    /*   valid pointers due to the GET_MEM() return convention).        */
     hdr * index[BOTTOM_SZ];
-        /*
-         * The bottom level index contains one of three kinds of values:
-         * 0 means we're not responsible for this block,
-         *   or this is a block other than the first one in a free block.
-         * 1 < (long)X <= MAX_JUMP means the block starts at least
-         *        X * HBLKSIZE bytes before the current address.
-         * A valid pointer points to a hdr structure. (The above can't be
-         * valid pointers due to the GET_MEM return convention.)
-         */
-    struct bi * asc_link;       /* All indices are linked in    */
-                                /* ascending order...           */
-    struct bi * desc_link;      /* ... and in descending order. */
+
+    /* All indices are linked in the ascending and descending orders,   */
+    /* respectively.                                                    */
+    struct bi * asc_link;
+    struct bi * desc_link;
+
     word key;                   /* High-order address bits.     */
 # ifdef HASH_TL
     struct bi * hash_link;      /* Hash chain link.             */
 # endif
 } bottom_index;
-
-/* bottom_index GC_all_nils; - really part of GC_arrays */
-
-/* extern bottom_index * GC_top_index []; - really part of GC_arrays */
-                                /* Each entry points to a bottom_index. */
-                                /* On a 32 bit machine, it points to    */
-                                /* the index for a set of high-order    */
-                                /* bits equal to the index.  For longer */
-                                /* addresses, we hash the high-order    */
-                                /* bits to compute the index in         */
-                                /* GC_top_index, and each entry points  */
-                                /* to a hash chain.                     */
-                                /* The last entry in each chain is      */
-                                /* GC_all_nils.                         */
-
 
 #define MAX_JUMP (HBLKSIZE-1)
 
@@ -170,9 +154,9 @@ typedef struct bi {
 # define SET_HDR(p, hhdr) (void)(HDR_INNER(p) = (hhdr))
 # define GET_HDR_ADDR(p, ha) (void)((ha) = &HDR_INNER(p))
 #else /* hash */
-  /* Hash function for tree top level */
+  /* A hash function for the tree top level.    */
 # define TL_HASH(hi) ((hi) & (TOP_SZ-1))
-  /* Set bottom_indx to point to the bottom index for address p */
+  /* Set bottom_indx to point to the bottom index for address p.    */
 # define GET_BI(p, bottom_indx) \
         do { \
           REGISTER word hi = ADDR(p) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE); \

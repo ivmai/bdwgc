@@ -13,10 +13,8 @@
 
 #include "private/gc_pmark.h"
 
-/*
- * These are checking routines calls to which could be inserted by a
- * preprocessor to validate C pointer arithmetic.
- */
+/* These are checking routines calls to which could be inserted by      */
+/* a preprocessor to validate C pointer arithmetic.                     */
 
 STATIC void GC_CALLBACK GC_default_same_obj_print_proc(void *p, void *q)
 {
@@ -65,9 +63,8 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
       size_t offset;
 
       if (HBLKPTR(p) != HBLKPTR(q)) {
-                /* W/o this check, we might miss an error if    */
-                /* q points to the first object on a page, and  */
-                /* points just before the page.                 */
+        /* Without this check, we might miss an error if q points to    */
+        /* the first object on a page, and points just before the page. */
         GC_same_obj_print_proc((ptr_t)p, (ptr_t)q);
         return p;
       }
@@ -131,7 +128,7 @@ GC_valid_ptr_print_proc_t GC_is_visible_print_proc =
                 GC_default_is_visible_print_proc;
 
 #ifndef THREADS
-/* Could p be a stack address? */
+  /* Could p be a stack address?        */
   STATIC GC_bool GC_on_stack(ptr_t p)
   {
     return HOTTER_THAN(p, GC_stackbottom) && !HOTTER_THAN(p, GC_approx_sp());
@@ -170,8 +167,8 @@ GC_API void * GC_CALL GC_is_visible(void *p)
         } else {
             /* p points to the heap. */
             word descr;
+            /* TODO: should GC_base be manually inlined? */
             ptr_t base = (ptr_t)GC_base(p);
-                        /* TODO: should GC_base be manually inlined? */
 
             if (NULL == base) goto fail;
             if (HBLKPTR(base) != HBLKPTR(p))
@@ -200,8 +197,10 @@ GC_API void * GC_CALL GC_is_visible(void *p)
                     } else {
                       ptr_t type_descr = *(ptr_t *)base;
 
-                      if (EXPECT(NULL == type_descr, FALSE))
-                        goto fail; /* see comment in GC_mark_from */
+                      if (EXPECT(NULL == type_descr, FALSE)) {
+                        /* See the comment in GC_mark_from.     */
+                        goto fail;
+                      }
                       descr = *(word *)(type_descr
                                 - ((signed_word)descr + (GC_INDIR_PER_OBJ_BIAS
                                                          - GC_DS_PER_OBJECT)));

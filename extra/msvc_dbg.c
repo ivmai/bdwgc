@@ -384,7 +384,7 @@ char** backtrace_symbols(void* const addresses[], int count)
 
 #else
 
+  /* ANSI C does not allow translation units to be empty.       */
   extern int GC_quiet;
-        /* ANSI C does not allow translation units to be empty. */
 
 #endif

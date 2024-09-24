@@ -32,8 +32,8 @@ void * real_malloc(size_t size)
 
 # else
 
+/* ANSI C doesn't allow translation units to be empty.  */
+/* So we guarantee this one is nonempty.                */
 extern int GC_quiet;
-        /* ANSI C doesn't allow translation units to be empty.  */
-        /* So we guarantee this one is nonempty.                */
 
 #endif /* PCR */

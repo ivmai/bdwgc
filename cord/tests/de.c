@@ -107,12 +107,14 @@ history now = 0;
 CORD current;           /* == now -> file_contents.     */
 size_t current_len;     /* Current file length.         */
 line_map current_map = 0;       /* Current line no. to pos. map  */
-size_t current_map_size = 0;    /* Number of current_map entries.       */
-                                /* Not always accurate, but reset       */
-                                /* by prune_map.                        */
+
+/* Number of current_map entries.  Not always accurate, but reset   */
+/* by prune_map.                                                    */
+size_t current_map_size = 0;
+
 # define MAX_MAP_SIZE 3000
 
-/* Current display position */
+/* Current display position. */
 int dis_line = 0;
 int dis_col = 0;
 
@@ -279,8 +281,8 @@ int screen_size = 0;
 /* returning only characters after the given column.                    */
 static CORD retrieve_line(CORD s, size_t pos, unsigned column)
 {
+    /* Avoid scanning very long lines. */
     CORD candidate = CORD_substr(s, pos, column + COLS);
-                        /* avoids scanning very long lines      */
     size_t eol = CORD_chr(candidate, 0, '\n');
     int len;
 
@@ -594,7 +596,9 @@ void generic_init(void)
     add_map(0,0);
     add_hist(initial);
     now -> map = current_map;
-    now -> previous = now;  /* Can't back up further: beginning of the world */
+    /* Can't back up further: beginning of the world.   */
+    now -> previous = now;
+
     GC_END_STUBBORN_CHANGE(now);
     need_redisplay = ALL;
     fix_cursor();
@@ -612,7 +616,8 @@ int main(int argc, char **argv)
         cshow(stdout);
         argc = ccommand(&argv);
 #   endif
-    GC_set_find_leak(0); /* app is not for testing leak detection mode */
+    /* The app is not for testing leak detection mode. */
+    GC_set_find_leak(0);
     GC_INIT();
 #   ifndef NO_INCREMENTAL
       GC_enable_incremental();

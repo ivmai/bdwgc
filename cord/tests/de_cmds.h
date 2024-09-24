@@ -27,12 +27,12 @@
 # define LOCATE 12      /* ^L */
 # define TOP    20      /* ^T */
 
+/* Execute an editor command.           */
+/* The argument is a command character  */
+/* or one of the IDM_ commands.         */
 void do_command(int);
-                        /* Execute an editor command.           */
-                        /* The argument is a command character  */
-                        /* or one of the IDM_ commands.         */
 
+/* OS independent initialization.       */
 void generic_init(void);
-                        /* OS independent initialization.       */
 
 #endif /* DE_CMDS_H */

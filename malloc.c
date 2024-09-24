@@ -115,12 +115,12 @@ STATIC void GC_extend_size_map(size_t i)
 {
   size_t original_lg = ALLOC_REQUEST_GRANS(i);
   size_t lg;
+  /* The size we try to preserve.  Close to i, unless this would        */
+  /* introduce too many distinct sizes.                                 */
   size_t byte_sz = GRANULES_TO_BYTES(original_lg);
-                        /* The size we try to preserve.         */
-                        /* Close to i, unless this would        */
-                        /* introduce too many distinct sizes.   */
   size_t smaller_than_i = byte_sz - (byte_sz >> 3);
-  size_t low_limit; /* The lowest indexed entry we initialize.  */
+  /* The lowest indexed entry we initialize.    */
+  size_t low_limit;
   size_t number_of_objs;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -152,9 +152,9 @@ STATIC void GC_extend_size_map(size_t i)
   GC_ASSERT(number_of_objs != 0);
   lg = (HBLK_GRANULES / number_of_objs) & ~(size_t)1;
 
+  /* We may need one extra byte; do not always fill in  */
+  /* GC_size_map[byte_sz].                              */
   byte_sz = GRANULES_TO_BYTES(lg) - EXTRA_BYTES;
-                        /* We may need one extra byte; do not always    */
-                        /* fill in GC_size_map[byte_sz].                */
 
   for (; low_limit <= byte_sz; low_limit++)
     GC_size_map[low_limit] = lg;
@@ -181,7 +181,7 @@ STATIC void * GC_generic_malloc_inner_small(size_t lb, int k)
         lg = GC_size_map[lb];
         GC_ASSERT(lg != 0);
       }
-      /* Retry */
+      /* Retry. */
       opp = &(ok -> ok_freelist[lg]);
       op = *opp;
     }
@@ -223,8 +223,6 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k, unsigned flags)
 }
 
 #ifdef GC_COLLECT_AT_MALLOC
-  /* Parameter to force GC at every malloc of size greater or equal to  */
-  /* the given value.  This might be handy during debugging.            */
 # if defined(CPPCHECK)
     size_t GC_dbg_collect_at_malloc_min_lb = 16*1024; /* e.g. */
 # else
@@ -292,10 +290,10 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
               GC_ASSERT(GRANULES_TO_PTRS(lg) >= 2);
               /* Clear any memory that might be used for GC descriptors */
               /* before we release the allocator lock.                  */
-                ((ptr_t *)result)[0] = NULL;
-                ((ptr_t *)result)[1] = NULL;
-                ((ptr_t *)result)[GRANULES_TO_PTRS(lg) - 1] = NULL;
-                ((ptr_t *)result)[GRANULES_TO_PTRS(lg) - 2] = NULL;
+              ((ptr_t *)result)[0] = NULL;
+              ((ptr_t *)result)[1] = NULL;
+              ((ptr_t *)result)[GRANULES_TO_PTRS(lg) - 1] = NULL;
+              ((ptr_t *)result)[GRANULES_TO_PTRS(lg) - 2] = NULL;
 #           endif
           }
         }
@@ -308,8 +306,10 @@ GC_INNER void * GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
           }
 #       endif
     }
-    if (EXPECT(NULL == result, FALSE))
-      result = (*GC_get_oom_fn())(lb); /* might be misaligned */
+    if (EXPECT(NULL == result, FALSE)) {
+      result = (*GC_get_oom_fn())(lb);
+      /* Note: result might be misaligned.      */
+    }
     return result;
 }
 
@@ -390,9 +390,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
     size_t lb_orig = lb;
 
     GC_ASSERT(k < MAXOBJKINDS);
-    if (EXTRA_BYTES != 0 && EXPECT(lb != 0, TRUE)) lb--;
-                /* We do not need the extra byte, since this will   */
-                /* not be collected anyway.                         */
+    if (EXTRA_BYTES != 0 && EXPECT(lb != 0, TRUE)) {
+      /* We do not need the extra byte, since this will not be          */
+      /* collected anyway.                                              */
+      lb--;
+    }
 
     if (SMALL_OBJ(lb)) {
         void **opp;
@@ -431,15 +433,16 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
         hdr * hhdr = HDR(op);
 
         GC_ASSERT(HBLKDISPL(op) == 0); /* large block */
+
         /* We do not need to acquire the allocator lock before HDR(op), */
         /* since we have an undisguised pointer, but we need it while   */
         /* we adjust the mark bits.                                     */
         LOCK();
         set_mark_bit_from_hdr(hhdr, 0); /* Only object. */
 #       ifndef THREADS
+          /* This is not guaranteed in the multi-threaded case because  */
+          /* the counter could be updated before locking.               */
           GC_ASSERT(hhdr -> hb_n_marks == 0);
-                /* This is not guaranteed in the multi-threaded case    */
-                /* because the counter could be updated before locking. */
 #       endif
         hhdr -> hb_n_marks = 1;
         UNLOCK();
@@ -517,6 +520,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
 
       DISABLE_CANCEL(cancel_state);
       GC_init(); /* if not called yet */
+
 #     if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
         LOCK(); /* just to set GC_lock_holder */
 #     endif
@@ -553,9 +557,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
         GC_init_lib_bounds();
         if (ADDR_INSIDE(caller, GC_libld_start, GC_libld_end)
 #           ifdef HAVE_LIBPTHREAD_SO
+              /* Note: the two ranges are actually usually adjacent, so */
+              /* there may be a way to speed this up.                   */
               || ADDR_INSIDE(caller, GC_libpthread_start, GC_libpthread_end)
-                    /* The two ranges are actually usually adjacent,    */
-                    /* so there may be a way to speed this up.          */
 #           endif
            ) {
           return GC_generic_malloc_uncollectable(n * lb, UNCOLLECTABLE);
@@ -578,10 +582,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
       BCOPY(s, result, lb);
       return result;
     }
-# endif /* !defined(strdup) */
- /* If strdup is macro defined, we assume that it actually calls malloc, */
- /* and thus the right thing will happen even without overriding it.     */
- /* This seems to be true on most Linux systems.                         */
+# else
+    /* If strdup is macro defined, we assume that it actually calls     */
+    /* malloc, and thus the right thing will happen even without        */
+    /* overriding it.  This seems to be true on most Linux systems.     */
+# endif /* strdup */
 
 # ifndef strndup
     /* This is similar to strdup().     */

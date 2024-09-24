@@ -36,11 +36,11 @@
 #include "gc/gc_gcj.h"
 #include "private/dbg_mlc.h"
 
-int GC_gcj_kind = 0;    /* Object kind for objects with descriptors     */
-                        /* in "vtable".                                 */
+/* Object kind for objects with descriptors in "vtable".                */
+int GC_gcj_kind = 0;
+
+/* The kind of objects that are always marked with a mark proc call.    */
 int GC_gcj_debug_kind = 0;
-                        /* The kind of objects that are always marked   */
-                        /* with a mark proc call.                       */
 
 STATIC struct GC_ms_entry *GC_CALLBACK GC_gcj_fake_mark_proc(word *addr,
                         struct GC_ms_entry *mark_stack_top,
@@ -70,11 +70,15 @@ GC_API void GC_CALL GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp)
       GC_bool ignore_gcj_info;
 #   endif
 
-    if (mp == 0)        /* In case GC_DS_PROC is unused.        */
-      mp = GC_gcj_fake_mark_proc;
-
     GC_STATIC_ASSERT(GC_GCJ_MARK_DESCR_OFFSET >= sizeof(ptr_t));
-    GC_init();  /* In case it's not already done.       */
+    if (0 == mp) {
+      /* In case GC_DS_PROC is unused.  */
+      mp = GC_gcj_fake_mark_proc;
+    }
+
+    /* Initialize the collector just in case it is not done yet.        */
+    GC_init();
+
     LOCK();
     if (GC_gcjobjfreelist != NULL) {
       /* Already initialized.   */
@@ -195,8 +199,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
 {
     void *base, *result;
 
-    /* We're careful to avoid extra calls, which could          */
-    /* confuse the backtrace.                                   */
+    /* We are careful to avoid extra calls those could confuse the      */
+    /* backtrace.                                                       */
     LOCK();
     maybe_finalize();
     base = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES),

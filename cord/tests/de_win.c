@@ -172,9 +172,11 @@ static void get_line_rect(int line_arg, int win_width, RECT * rectp)
     rectp -> right = win_width;
 }
 
-int caret_visible = 0;  /* Caret is currently visible.  */
+/* A flag whether the caret is currently visible.   */
+int caret_visible = 0;
 
-int screen_was_painted = 0;/* Screen has been painted at least once.    */
+/* A flag whether the screen has been painted at least once.    */
+int screen_was_painted = 0;
 
 static void update_cursor(void);
 
@@ -360,17 +362,19 @@ void invalidate_line(int i)
 {
     RECT line_r;
 
-    if (!screen_was_painted) return;
+    if (!screen_was_painted) {
         /* Invalidating a rectangle before painting seems result in a   */
         /* major performance problem.                                   */
+        return;
+    }
     get_line_rect(i, COLS*char_width, &line_r);
     InvalidateRect(hwnd, &line_r, FALSE);
 }
 
 #else
 
+  /* ANSI C doesn't allow translation units to be empty.        */
+  /* So we guarantee this one is nonempty.                      */
   extern int GC_quiet;
-        /* ANSI C doesn't allow translation units to be empty.  */
-        /* So we guarantee this one is nonempty.                */
 
 #endif /* !WIN32 */

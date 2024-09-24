@@ -1,6 +1,6 @@
 
 #ifdef HAVE_CONFIG_H
-  /* For GC_THREADS and PARALLEL_MARK */
+  /* For GC_THREADS and PARALLEL_MARK.  */
 # include "config.h"
 #endif
 
@@ -40,7 +40,8 @@
 # define NTHREADS 5
 #endif
 
-#define NTHREADS_INNER (NTHREADS * 6) /* number of threads to create */
+/* Number of threads to create. */
+#define NTHREADS_INNER (NTHREADS * 6)
 
 #ifndef MAX_SUBTHREAD_DEPTH
 # define MAX_ALIVE_THREAD_COUNT 55

@@ -63,8 +63,9 @@
 
 # if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS) \
      || defined(GC_PTHREADS)
+    /* A value which is not equal to NUMERIC_THREAD_ID(pthread_self())  */
+    /* for any thread.                                                  */
 #   define NO_THREAD ((unsigned long)(-1L))
-                /* != NUMERIC_THREAD_ID(pthread_self()) for any thread */
 #   ifdef GC_ASSERTIONS
       GC_EXTERN unsigned long GC_lock_holder;
 #     define UNSET_LOCK_HOLDER() (void)(GC_lock_holder = NO_THREAD)
@@ -152,10 +153,10 @@
       /* Faster than pthread_equal().  Should not change with           */
       /* future versions of pthreads-win32 library.                     */
 #     define THREAD_EQUAL(id1, id2) ((id1.p == id2.p) && (id1.x == id2.x))
-#     undef NUMERIC_THREAD_ID_UNIQUE
       /* Generic definitions based on pthread_equal() always work but   */
       /* will result in poor performance (as NUMERIC_THREAD_ID is       */
       /* defined to just a constant) and weak assertion checking.       */
+#     undef NUMERIC_THREAD_ID_UNIQUE
 #   endif
 
 #   ifdef SN_TARGET_PSP2
@@ -306,11 +307,11 @@
 #   define LOCK() (void)0
 #   define UNLOCK() (void)0
 #   ifdef GC_ASSERTIONS
+      /* I_HOLD_LOCK() and I_DONT_HOLD_LOCK() are used only in positive */
+      /* assertions or to test whether we still need to acquire the     */
+      /* allocator lock; TRUE works in either case.                     */
 #     define I_HOLD_LOCK() TRUE
 #     define I_DONT_HOLD_LOCK() TRUE
-                /* Used only in positive assertions or to test whether  */
-                /* we still need to acquire the allocator lock.         */
-                /* TRUE works in either case.                           */
 #   endif
 #endif /* !THREADS */
 
@@ -326,7 +327,7 @@
 #     define READER_UNLOCK() UNCOND_READER_UNLOCK()
 #   endif
 # else
-                /* At least two thread running; need to lock.   */
+    /* At least two thread running; need to lock.   */
 #   define LOCK() do { if (GC_need_to_lock) UNCOND_LOCK(); } while (0)
 #   define UNLOCK() do { if (GC_need_to_lock) UNCOND_UNLOCK(); } while (0)
 #   ifdef UNCOND_READER_LOCK

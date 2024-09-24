@@ -39,18 +39,17 @@
 
 #include "gc/gc_typed.h"
 
+/* Object kind for objects with indirect (possibly extended) descriptors. */
 STATIC int GC_explicit_kind = 0;
-                        /* Object kind for objects with indirect        */
-                        /* (possibly extended) descriptors.             */
 
+/* Object kind for objects with complex descriptors and GC_array_mark_proc. */
 STATIC int GC_array_kind = 0;
-                        /* Object kind for objects with complex         */
-                        /* descriptors and GC_array_mark_proc.          */
 
 #define ED_INITIAL_SIZE 100
 
-STATIC unsigned GC_typed_mark_proc_index = 0;   /* Indices of the typed */
-STATIC unsigned GC_array_mark_proc_index = 0;   /* mark procedures.     */
+/* Indices of the typed mark procedures.        */
+STATIC unsigned GC_typed_mark_proc_index = 0;
+STATIC unsigned GC_array_mark_proc_index = 0;
 
 STATIC void GC_push_typed_structures_proc(void)
 {
@@ -93,7 +92,9 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, size_t nbits)
             }
             GC_ed_size = new_size;
             GC_ext_descriptors = newExtD;
-        }  /* else another thread already resized it in the meantime */
+        } else {
+            /* Another thread is already resized it in the meantime.    */
+        }
     }
     result = (signed_word)GC_avail_descr;
     for (i = 0; i < nwords - 1; i++) {
@@ -219,7 +220,10 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 
     while (last_set_bit >= 0 && !GC_get_bit(bm, (word)last_set_bit))
       last_set_bit--;
-    if (last_set_bit < 0) return 0; /* no pointers */
+    if (last_set_bit < 0) {
+      /* No pointers.   */
+      return 0;
+    }
 
 #   if ALIGNMENT == CPP_PTRSZ / 8
       {
@@ -323,14 +327,16 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 /* trailers.  Hence we provide for tree structured descriptors, */
 /* though we don't really use them currently.                   */
 
-struct LeafDescriptor {         /* Describes simple array.      */
+/* This type describes simple array.    */
+struct LeafDescriptor {
   word ld_tag;
 # define LEAF_TAG 1
-  size_t ld_size;               /* Bytes per element; non-zero, */
-                                /* multiple of ALIGNMENT.       */
-  size_t ld_nelements;          /* Number of elements.          */
-  GC_descr ld_descriptor;       /* A simple length, bitmap,     */
-                                /* or procedure descriptor.     */
+  /* Bytes per element; non-zero, multiple of ALIGNMENT.        */
+  size_t ld_size;
+  /* Number of elements.        */
+  size_t ld_nelements;
+  /* A simple length, bitmap, or procedure descriptor.          */
+  GC_descr ld_descriptor;
 };
 
 struct ComplexArrayDescriptor {
@@ -374,11 +380,11 @@ STATIC complex_descriptor *GC_make_sequence_descriptor(
                                                 complex_descriptor *first,
                                                 complex_descriptor *second)
 {
+  /* Note: for a reason, the sanitizer runtime complains of             */
+  /* insufficient space for complex_descriptor if the pointer type of   */
+  /* result variable is changed to.                                     */
   struct SequenceDescriptor *result = (struct SequenceDescriptor *)
                 GC_malloc(sizeof(struct SequenceDescriptor));
-                /* Note: for a reason, the sanitizer runtime complains  */
-                /* of insufficient space for complex_descriptor if the  */
-                /* pointer type of result variable is changed to.       */
 
   if (EXPECT(NULL == result, FALSE)) return NULL;
 
@@ -413,15 +419,16 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
                                     complex_descriptor **pcomplex_d,
                                     struct LeafDescriptor *pleaf)
 {
+  /* For larger arrays, we try to combine descriptors of adjacent       */
+  /* descriptors to speed up marking, and to reduce the amount of space */
+  /* needed on the mark stack.                                          */
 # define OPT_THRESHOLD 50
-        /* For larger arrays, we try to combine descriptors of adjacent */
-        /* descriptors to speed up marking, and to reduce the amount    */
-        /* of space needed on the mark stack.                           */
 
   GC_ASSERT(size != 0);
   if ((d & GC_DS_TAGS) == GC_DS_LENGTH) {
     if (d == (GC_descr)size) {
-      *psimple_d = nelements * d; /* no overflow guaranteed by caller */
+      /* Note: no overflow is guaranteed by caller.     */
+      *psimple_d = nelements * d;
       return SIMPLE;
     } else if (0 == d) {
       *psimple_d = 0;
@@ -493,7 +500,8 @@ GC_API int GC_CALL GC_calloc_prepare_explicitly_typed(
     if (EXPECT(0 == lb || 0 == n, FALSE)) lb = n = 1;
     if (EXPECT((lb | n) > GC_SQRT_SIZE_MAX, FALSE) /* fast initial check */
         && n > GC_SIZE_MAX / lb) {
-      pctd -> alloc_lb = GC_SIZE_MAX; /* n*lb overflow */
+      /* n*lb overflows.        */
+      pctd -> alloc_lb = GC_SIZE_MAX;
       pctd -> descr_type = NO_MEM;
       /* The rest of the fields are unset. */
       return 0; /* failure */

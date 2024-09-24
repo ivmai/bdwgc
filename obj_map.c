@@ -63,7 +63,8 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
                 (unsigned)lg, (unsigned)GRANULES_TO_BYTES(lg));
     if (0 == lg) {
       for (displ = 0; displ < OBJ_MAP_LEN; displ++) {
-        new_map[displ] = 1;  /* Nonzero to get us out of marker fast path. */
+        /* Set to a nonzero to get us out of the marker fast path.  */
+        new_map[displ] = 1;
       }
     } else {
       for (displ = 0; displ < OBJ_MAP_LEN; displ++) {

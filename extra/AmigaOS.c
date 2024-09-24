@@ -1,12 +1,6 @@
 
-
-/******************************************************************
-
-  AmigaOS-specific routines for GC.
-  This file is normally included from os_dep.c
-
-******************************************************************/
-
+/* AmigaOS-specific routines for GC.  This file is normally included    */
+/* from os_dep.c.                                                       */
 
 #if !defined(GC_AMIGA_DEF) && !defined(GC_AMIGA_SB) && !defined(GC_AMIGA_DS) && !defined(GC_AMIGA_AM)
 # include "private/gc_priv.h"
@@ -17,7 +11,6 @@
 # define GC_AMIGA_DS
 # define GC_AMIGA_AM
 #endif
-
 
 #ifdef GC_AMIGA_DEF
 
@@ -31,15 +24,8 @@
 
 #endif
 
-
-
-
 #ifdef GC_AMIGA_SB
-
-/******************************************************************
-   Find the base of the stack.
-******************************************************************/
-
+/* Find the base of the stack. */
 ptr_t GC_get_main_stack_base(void)
 {
     struct Process *proc = (struct Process*)SysBase->ThisTask;
@@ -56,15 +42,10 @@ ptr_t GC_get_main_stack_base(void)
         return (char *)proc->pr_Task.tc_SPUpper;
     }
 }
-
 #endif
 
-
 #ifdef GC_AMIGA_DS
-/******************************************************************
-   Register data segments.
-******************************************************************/
-
+   /* Register data segments. */
    void GC_register_data_segments(void)
    {
      struct Process     *proc;
@@ -124,10 +105,7 @@ ptr_t GC_get_main_stack_base(void)
            }
 #       endif
    }
-
 #endif
-
-
 
 #ifdef GC_AMIGA_AM
 
@@ -142,25 +120,15 @@ void *(*GC_amiga_allocwrapper_do)(size_t size,void *(*AllocFunction)(size_t size
 
 #else
 
-
-
-
 void *GC_amiga_allocwrapper_firsttime(size_t size,void *(*AllocFunction)(size_t size2));
 
 void *(*GC_amiga_allocwrapper_do)(size_t size,void *(*AllocFunction)(size_t size2))
         =GC_amiga_allocwrapper_firsttime;
 
-
-/******************************************************************
-   Amiga-specific routines to obtain memory, and force GC to give
-   back fast-mem whenever possible.
-        These hacks makes gc-programs go many times faster when
-   the Amiga is low on memory, and are therefore strictly necessary.
-
-   -Kjetil S. Matheussen, 2000.
-******************************************************************/
-
-
+/* Amiga-specific routines to obtain memory, and force GC to give back  */
+/* fast-mem whenever possible.  These hacks makes gc-programs go many   */
+/* times faster when the Amiga is low on memory, and are therefore      */
+/* strictly necessary.  -Kjetil S. Matheussen, 2000.                    */
 
 /* List-header for all allocated memory. */
 
@@ -170,12 +138,9 @@ struct GC_Amiga_AllocedMemoryHeader{
 };
 struct GC_Amiga_AllocedMemoryHeader *GC_AMIGAMEM=(struct GC_Amiga_AllocedMemoryHeader *)(int)~(NULL);
 
-
-
 /* Type of memory. Once in the execution of a program, this might change to MEMF_ANY|MEMF_CLEAR */
 
 ULONG GC_AMIGA_MEMF = MEMF_FAST | MEMF_CLEAR;
-
 
 /* Prevents GC_amiga_get_mem from allocating memory if this one is TRUE. */
 #ifndef GC_AMIGA_ONLYFAST
@@ -250,7 +215,6 @@ void GC_amiga_free_all_mem(void){
 
 char *chipmax;
 
-
 /*
  * Always set to the last size of memory tried to be allocated.
  * Needed to ensure allocation when the size is bigger than 100000.
@@ -259,7 +223,6 @@ char *chipmax;
 size_t latestsize;
 
 #endif
-
 
 #ifdef GC_AMIGA_FASTALLOC
 
@@ -296,11 +259,9 @@ void *GC_amiga_get_mem(size_t size){
 #endif
 
         return gc_am+1;
-
 }
 
 #endif
-
 
 #ifndef GC_AMIGA_ONLYFAST
 
@@ -347,11 +308,9 @@ void *GC_amiga_rec_alloc(size_t size,void *(*AllocFunction)(size_t size2),const 
 }
 #endif
 
-
 /* The allocating-functions defined inside the Amiga-blocks in gc.h is called
  * via these functions.
  */
-
 
 void *GC_amiga_allocwrapper_any(size_t size,void *(*AllocFunction)(size_t size2)){
         void *ret;
@@ -433,8 +392,6 @@ void *GC_amiga_allocwrapper_any(size_t size,void *(*AllocFunction)(size_t size2)
         return ret;
 }
 
-
-
 void (*GC_amiga_toany)(void)=NULL;
 
 void GC_amiga_set_toany(void (*func)(void)){
@@ -442,7 +399,6 @@ void GC_amiga_set_toany(void (*func)(void)){
 }
 
 #endif /* !GC_AMIGA_ONLYFAST */
-
 
 void *GC_amiga_allocwrapper_fast(size_t size,void *(*AllocFunction)(size_t size2)){
         void *ret;
@@ -486,16 +442,10 @@ void *GC_amiga_allocwrapper_firsttime(size_t size,void *(*AllocFunction)(size_t 
         return GC_amiga_allocwrapper_fast(size,AllocFunction);
 }
 
-
 #endif /* GC_AMIGA_FASTALLOC */
 
-
-
-/*
- * The wrapped realloc function.
- *
- */
-void *GC_amiga_realloc(void *old_object,size_t new_size_in_bytes){
+/* The wrapped realloc function. */
+void *GC_amiga_realloc(void *old_object,size_t new_size_in_bytes) {
 #ifndef GC_AMIGA_FASTALLOC
         return GC_realloc(old_object,new_size_in_bytes);
 #else

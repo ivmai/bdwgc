@@ -25,6 +25,7 @@
 /* Extensible cords are strings that may be destructively appended to.  */
 /* They allow fast construction of cords from characters that are       */
 /* being read from a stream.                                            */
+
 /*
  * A client might look like:
  *

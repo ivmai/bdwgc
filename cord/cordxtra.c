@@ -54,8 +54,8 @@
 #   define SEEK_END 2
 # endif
 
-# define BUFSZ 2048     /* Size of stack allocated buffers when */
-                        /* we want large buffers.               */
+/* Size of stack allocated buffers when we want large buffers.  */
+# define BUFSZ 2048
 
 # define OUT_OF_MEMORY { CORD__call_oom_fn(); ABORT("Out of memory"); }
 
@@ -209,7 +209,7 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
             CORD_next(ypos);
             count++;
         } else {
-            /* process as many characters as we can */
+            /* Process as many characters as we can.    */
             int result;
 
             if (avail > yavail) avail = yavail;
@@ -366,10 +366,8 @@ size_t CORD_str(CORD x, size_t start, CORD s)
     size_t slen;
     size_t start_len;
     const char * s_start;
-    unsigned long s_buf = 0;    /* The first few characters of s        */
-    unsigned long x_buf = 0;    /* Start of candidate substring.        */
-                    /* Initialized only to make compilers   */
-                    /* happy.                               */
+    unsigned long s_buf = 0; /* the first few characters of s */
+    unsigned long x_buf = 0; /* start of candidate substring */
     unsigned long mask = 0;
     size_t i;
     size_t match_pos;

@@ -84,11 +84,14 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
 #   else
 #     define cleared_p p
 #   endif
-    size_t sz;      /* Current size in bytes    */
-    size_t orig_sz; /* Original sz in bytes     */
+    size_t sz; /* current size in bytes */
+    size_t orig_sz; /* original sz (in bytes) */
     int obj_kind;
 
-    if (NULL == p) return GC_malloc(lb);  /* Required by ANSI */
+    if (NULL == p) {
+      /* Required by ANSI.      */
+      return GC_malloc(lb);
+    }
     if (0 == lb) /* and p != NULL */ {
 #     ifndef IGNORE_FREE
         GC_free(p);
@@ -159,7 +162,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
             }
             return p;
         }
-        /* shrink */
+        /* Shrink it.   */
         sz = lb;
     }
     result = GC_generic_or_special_malloc((word)lb, obj_kind);
@@ -280,7 +283,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb_adjusted, int k,
     GC_DBG_COLLECT_AT_MALLOC(lb_adjusted - EXTRA_BYTES);
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
-    /* Do our share of marking work */
+    /* Do our share of marking work.    */
     if (GC_incremental && !GC_dont_gc) {
         ENTER_GC();
         GC_collect_a_little_inner(1);
@@ -336,16 +339,15 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb_adjusted, int k,
                     GC_bytes_found += (signed_word)my_bytes_allocd;
                     UNLOCK();
 #                 else
+                    /* The resulting GC_bytes_found may be inaccurate.  */
                     GC_bytes_found += (signed_word)my_bytes_allocd;
-                                        /* The result may be inaccurate. */
                     GC_release_mark_lock();
 #                 endif
                   (void)GC_clear_stack(0);
                   return;
                 }
 #             endif
-              /* We also reclaimed memory, so we need to adjust       */
-              /* that count.                                          */
+              /* We also reclaimed memory, so we need to adjust that count. */
               GC_bytes_found += (signed_word)my_bytes_allocd;
               GC_bytes_allocd += my_bytes_allocd;
               goto out;
@@ -356,13 +358,14 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb_adjusted, int k,
                 --GC_fl_builder_count;
                 if (GC_fl_builder_count == 0) GC_notify_all_builder();
                 GC_release_mark_lock();
-                LOCK();
                 /* The allocator lock is needed for access to the       */
                 /* reclaim list.  We must decrement fl_builder_count    */
                 /* before reacquiring the allocator lock.  Hopefully    */
                 /* this path is rare.                                   */
+                LOCK();
 
-                rlh = ok -> ok_reclaim_list; /* reload rlh after locking */
+                /* Reload rlh after locking.    */
+                rlh = ok -> ok_reclaim_list;
                 if (NULL == rlh) break;
               }
 #           endif
@@ -452,6 +455,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
 
     /* Check the alignment argument.    */
     if (EXPECT(0 == align || (align & align_m1) != 0, FALSE)) return NULL;
+
     /* TODO: use thread-local allocation */
     if (align <= GC_GRANULE_BYTES) return GC_malloc(lb);
     return GC_malloc_kind_aligned_global(lb, NORMAL, align_m1);
@@ -524,7 +528,8 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strdup(const char *s)
 GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
 {
   char *copy;
-  size_t len = strlen(str); /* str is expected to be non-NULL  */
+  /* Note: str is expected to be non-NULL.      */
+  size_t len = strlen(str);
   if (EXPECT(len > size, FALSE))
     len = size;
   copy = (char *)GC_malloc_atomic(len + 1);

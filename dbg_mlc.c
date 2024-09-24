@@ -138,9 +138,8 @@
     }
   }
 
-  /* Generate a random heap address.            */
-  /* The resulting address is in the heap, but  */
-  /* not necessarily inside a valid object.     */
+  /* Generate a random heap address.  The resulting address is in the   */
+  /* heap, but not necessarily inside a valid object.                   */
   GC_API void * GC_CALL GC_generate_random_heap_address(void)
   {
     size_t i;
@@ -150,10 +149,11 @@
         heap_offset *= GC_RAND_MAX;
         heap_offset += (word)RANDOM();
     }
+
+    /* This does not yield a uniform distribution, especially if e.g.   */
+    /* RAND_MAX is 1.5*GC_heapsize.  But for typical cases,  it is not  */
+    /* too bad.                                                         */
     heap_offset %= GC_heapsize;
-        /* This doesn't yield a uniform distribution, especially if     */
-        /* e.g. RAND_MAX is 1.5*GC_heapsize.  But for typical cases,    */
-        /* it's not too bad.                                            */
 
     for (i = 0;; ++i) {
         size_t size;
@@ -300,9 +300,8 @@ static void *store_debug_info(void *base, size_t lb,
 }
 
 #ifndef SHORT_DBG_HDRS
-  /* Check the object with debugging info at ohdr.      */
-  /* Return NULL if it's OK.  Else return clobbered     */
-  /* address.                                           */
+  /* Check the object with debugging info at ohdr.  Return NULL if it   */
+  /* is OK.  Else return clobbered address.                             */
   STATIC ptr_t GC_check_annotated_obj(oh *ohdr)
   {
     ptr_t body = (ptr_t)(ohdr + 1);
@@ -392,8 +391,8 @@ STATIC void GC_print_obj(ptr_t base)
 #       endif
         default:
             kind_str = NULL;
-                /* The alternative is to use snprintf(buffer) but it is */
-                /* not quite portable (see vsnprintf in misc.c).        */
+            /* The alternative is to use snprintf(buffer) but the       */
+            /* latter is not quite portable (see vsnprintf in misc.c).  */
         }
     }
 
@@ -761,7 +760,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
                                  p, clobbered);
           }
         }
-        /* Invalidate size (mark the object as deallocated) */
+        /* Invalidate size (mark the object as deallocated).    */
         ((oh *)base) -> oh_sz = (GC_uintptr_t)sz;
 #     endif /* !SHORT_DBG_HDRS */
     }
@@ -812,7 +811,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
       if (!base) ABORT("Invalid GC_debug_free_inner argument");
 #   endif
 #   ifndef SHORT_DBG_HDRS
-      /* Invalidate size */
+      /* Invalidate size.       */
       ((oh *)base) -> oh_sz = (GC_uintptr_t)GC_size(base);
 #   endif
     GC_free_inner(base);
@@ -885,13 +884,14 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 
 #ifndef SHORT_DBG_HDRS
 
+# ifndef MAX_SMASHED
+#   define MAX_SMASHED 20
+# endif
+
   /* List of smashed (clobbered) locations.  We defer printing these,   */
   /* since we cannot always print them nicely with the allocator lock   */
   /* held.  We put them here instead of in GC_arrays, since it may be   */
   /* useful to be able to look at them with the debugger.               */
-# ifndef MAX_SMASHED
-#   define MAX_SMASHED 20
-# endif
   STATIC ptr_t GC_smashed[MAX_SMASHED] = {0};
   STATIC unsigned GC_n_smashed = 0;
 
@@ -901,9 +901,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_ASSERT(GC_is_marked(GC_base(smashed)));
     /* FIXME: Prevent adding an object while printing smashed list.     */
     GC_smashed[GC_n_smashed] = smashed;
+    /* In case of overflow, we keep the first MAX_SMASHED-1 entries     */
+    /* plus the last one.                                               */
     if (GC_n_smashed < MAX_SMASHED - 1) ++GC_n_smashed;
-                /* In case of overflow, we keep the first MAX_SMASHED-1 */
-                /* entries plus the last one.                           */
     GC_SET_HAVE_ERRORS();
   }
 
@@ -982,7 +982,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
       if ((GC_uintptr_t)p[i] != GC_FREED_MEM_MARKER) {
         GC_set_mark_bit(base); /* do not reclaim it in this cycle */
         GC_add_smashed((ptr_t)(&p[i])); /* alter-after-free detected */
-        break; /* don't report any other smashed locations in the object */
+        /* Do not report any other smashed locations in the object.     */
+        break;
       }
 
     return FALSE; /* GC_debug_free() has been called */

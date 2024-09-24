@@ -19,6 +19,7 @@
 #if defined(KEEP_BACK_PTRS) && defined(GC_ASSERTIONS)
 # include "private/dbg_mlc.h" /* for NOT_MARKED */
 #endif
+
 /*
  * This implements:
  * 1. allocation of heap block headers
@@ -61,15 +62,15 @@ GC_INNER hdr *
   if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
     if (GC_all_interior_pointers) {
       if (hhdr != NULL) {
+        /* Pointer to near the start of the large object.       */
         ptr_t current = (ptr_t)GC_find_starting_hblk(HBLKPTR(p), &hhdr);
-                    /* current points to near the start of the large object */
 
         if (hhdr -> hb_flags & IGNORE_OFF_PAGE)
             return 0;
         if (HBLK_IS_FREE(hhdr)
                 || p - current >= (signed_word)(hhdr -> hb_sz)) {
             GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
-            /* Pointer past the end of the block */
+            /* The pointer is past the end of the block.        */
             return 0;
         }
       } else {
@@ -77,10 +78,10 @@ GC_INNER hdr *
         /* And return zero: */
       }
       GC_ASSERT(NULL == hhdr || !HBLK_IS_FREE(hhdr));
+      /* Pointers past the first page are probably too rare to add them */
+      /* to the cache.  We do not.  And correctness relies on the fact  */
+      /* that we do not.                                                */
       return hhdr;
-      /* Pointers past the first page are probably too rare     */
-      /* to add them to the cache.  We don't.                   */
-      /* And correctness relies on the fact that we don't.      */
     } else {
       if (NULL == hhdr) {
         GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
@@ -125,8 +126,8 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
 #             if defined(KEEP_BACK_PTRS) && (GC_GRANULE_BYTES < 0x10)
                 GC_ASSERT(ADDR(result) > (word)NOT_MARKED);
 #             endif
-              /* No update of scratch free area pointer;        */
-              /* get memory directly.                           */
+              /* No update of scratch free area pointer; get memory     */
+              /* directly.                                              */
 #             ifdef USE_SCRATCH_LAST_END_PTR
                 /* Update end point of last obtained area (needed only  */
                 /* by GC_register_dynamic_libraries for some targets).  */
@@ -136,8 +137,9 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             return result;
         }
 
+        /* This is rounded up for a safety reason.      */
         bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(MINHINCR * HBLKSIZE);
-                                                /* round up for safety */
+
         result = GC_os_get_mem(bytes_to_get);
         if (EXPECT(NULL == result, FALSE)) {
             WARN("Out of memory - trying to allocate requested amount"
@@ -162,7 +164,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
     }
 }
 
-/* Return an uninitialized header */
+/* Return an uninitialized header.      */
 static hdr * alloc_hdr(void)
 {
     hdr * result;
@@ -220,7 +222,6 @@ static GC_bool get_index(word addr)
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef HASH_TL
       i = TL_HASH(hi);
-
       pi = GC_top_index[i];
       for (p = pi; p != GC_all_nils; p = p -> hash_link) {
           if (p -> key == hi) return TRUE;
@@ -239,23 +240,23 @@ static GC_bool get_index(word addr)
       r -> hash_link = pi;
 #   endif
 
-    /* Add it to the list of bottom indices */
-      prev = &GC_all_bottom_indices;    /* pointer to p */
-      pi = 0;                           /* bottom_index preceding p */
-      while ((p = *prev) != 0 && p -> key < hi) {
+    /* Add it to the list of bottom indices.    */
+    prev = &GC_all_bottom_indices; /* pointer to p */
+    pi = NULL; /* bottom_index preceding p */
+    while ((p = *prev) != 0 && p -> key < hi) {
         pi = p;
         prev = &(p -> asc_link);
-      }
-      r -> desc_link = pi;
-      if (0 == p) {
+    }
+    r -> desc_link = pi;
+    if (NULL == p) {
         GC_all_bottom_indices_end = r;
-      } else {
+    } else {
         p -> desc_link = r;
-      }
-      r -> asc_link = p;
-      *prev = r;
+    }
+    r -> asc_link = p;
+    *prev = r;
 
-      GC_top_index[i] = r;
+    GC_top_index[i] = r;
     return TRUE;
 }
 
@@ -284,11 +285,13 @@ GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz /* bytes */)
     for (hbp = h; ADDR_LT((ptr_t)hbp, (ptr_t)h + sz); hbp += BOTTOM_SZ) {
         if (!get_index(ADDR(hbp)))
             return FALSE;
+        /* Is overflow of hbp expected? */
         if (ADDR(hbp) > GC_WORD_MAX - (word)BOTTOM_SZ * HBLKSIZE)
-            break; /* overflow of hbp+=BOTTOM_SZ is expected */
+            break;
     }
     if (!get_index(ADDR(h) + sz - 1))
         return FALSE;
+
     GC_ASSERT(!IS_FORWARDING_ADDR_OR_NIL(HDR(h)));
     for (hbp = h + 1; ADDR_LT((ptr_t)hbp, (ptr_t)h + sz); hbp++) {
         word i = (word)HBLK_PTR_DIFF(hbp, h);

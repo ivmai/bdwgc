@@ -25,7 +25,8 @@ struct treenode *root[10] = { NULL };
 /* be placed to .data section instead of .bss).                         */
 struct treenode *root_nz[10] = { (struct treenode *)(GC_word)1 };
 
-static char *staticroot; /* intentionally static */
+/* Note: this is static intentionally.  */
+static char *staticroot;
 
 GC_TEST_IMPORT_API struct treenode * libsrl_mktree(int i);
 GC_TEST_IMPORT_API void * libsrl_init(void);

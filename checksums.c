@@ -24,14 +24,16 @@ typedef struct {
         GC_bool new_valid;
         word old_sum;
         word new_sum;
-        struct hblk * block;    /* Block to which this refers + OFFSET  */
-                                /* to hide it from collector.           */
+
+        /* Block to which this refers plus OFFSET to hide it from the   */
+        /* garbage collector.                                           */
+        struct hblk * block;
 } page_entry;
 
 page_entry GC_sums[NSUMS];
 
+/* Record of pages on which we saw a write fault.       */
 STATIC word GC_faulted[NSUMS] = { 0 };
-                /* Record of pages on which we saw a write fault.       */
 
 STATIC size_t GC_n_faulted = 0;
 
@@ -142,7 +144,8 @@ void GC_check_dirty(void)
                       GC_n_dirty_errors, GC_n_faulted_dirty_errors);
     }
     for (i = 0; i < GC_n_faulted; ++i) {
-        GC_faulted[i] = 0; /* Don't expose block pointers to GC */
+        /* Do not expose block addresses to the garbage collector.      */
+        GC_faulted[i] = 0;
     }
     GC_n_faulted = 0;
 }

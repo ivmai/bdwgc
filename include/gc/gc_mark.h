@@ -89,52 +89,48 @@ typedef struct GC_ms_entry * (GC_CALLBACK * GC_mark_proc)(GC_word * /* addr */,
 /* for the rest (high-order) bits.                                      */
 #define GC_DS_TAG_BITS 2
 #define GC_DS_TAGS   ((1U << GC_DS_TAG_BITS) - 1)
-#define GC_DS_LENGTH 0  /* The entire word is a length in bytes that    */
-                        /* must be a multiple of 4.                     */
-#define GC_DS_BITMAP 1  /* The high-order bits are describing pointer   */
-                        /* fields.  The most significant bit is set if  */
-                        /* the first "pointer-sized" word is a pointer. */
-                        /* (This unconventional ordering sometimes      */
-                        /* makes the marker slightly faster.)           */
-                        /* Zeros indicate definite non-pointers; ones   */
-                        /* indicate possible pointers.                  */
-                        /* Only usable if pointers are aligned.         */
+
+/* The entire word is a length in bytes that must be a multiple of 4.   */
+#define GC_DS_LENGTH 0
+
+/* The high-order bits are describing pointer fields.  The most         */
+/* significant bit is set if the first "pointer-sized" word is          */
+/* a pointer.  (This unconventional ordering sometimes makes the marker */
+/* slightly faster.)  Zeros indicate definite non-pointers; ones        */
+/* indicate possible pointers.  Only usable if pointers are aligned.    */
+#define GC_DS_BITMAP 1
+
+/* The objects referenced by this object can be pushed on the mark      */
+/* stack by invoking PROC(descr).  ENV(descr) is passed as the last     */
+/* argument.                                                            */
 #define GC_DS_PROC   2
-                        /* The objects referenced by this object can be */
-                        /* pushed on the mark stack by invoking         */
-                        /* PROC(descr).  ENV(descr) is passed as the    */
-                        /* last argument.                               */
+
+/* The real descriptor is at the byte displacement from the beginning   */
+/* of the object given by descr & ~GC_DS_TAGS.  If the descriptor is    */
+/* negative, the real descriptor is at                                  */
+/* (*<object_start>)-(descr&~GC_DS_TAGS)-GC_INDIR_PER_OBJ_BIAS.         */
+/* The latter alternative can be used if each object contains a type    */
+/* descriptor at the beginning of the object.  Note that in the         */
+/* multi-threaded environments per-object descriptors must be located   */
+/* in either the first two or last two "pointer-sized" words of the     */
+/* object, since only those are guaranteed to be cleared while the      */
+/* allocator lock is held.                                              */
+#define GC_DS_PER_OBJECT 3
+
+#define GC_INDIR_PER_OBJ_BIAS 0x10
+
 #define GC_MAKE_PROC(proc_index, env) \
             ((((((GC_word)(env)) << GC_LOG_MAX_MARK_PROCS) \
                | (unsigned)(proc_index)) << GC_DS_TAG_BITS) \
              | (GC_word)GC_DS_PROC)
-#define GC_DS_PER_OBJECT 3
-                        /* The real descriptor is at the byte           */
-                        /* displacement from the beginning of the       */
-                        /* object given by descr & ~GC_DS_TAGS.         */
-                        /* If the descriptor is negative, the real      */
-                        /* descriptor is at (*<object_start>) -         */
-                        /* (descr&~GC_DS_TAGS) - GC_INDIR_PER_OBJ_BIAS. */
-                        /* The latter alternative can be used if each   */
-                        /* object contains a type descriptor at the     */
-                        /* beginning of the object.  Note that in the   */
-                        /* multi-threaded environments per-object       */
-                        /* descriptors must be located in either the    */
-                        /* first two or last two "pointer-sized" words  */
-                        /* of the object, since only those are          */
-                        /* guaranteed to be cleared while the allocator */
-                        /* lock is held.                                */
-#define GC_INDIR_PER_OBJ_BIAS 0x10
 
+/* Bounds on the heap.  Guaranteed to be valid.  Likely to include      */
+/* future heap expansion.  Hence usually includes not-yet-mapped        */
+/* memory, or might overlap with other data roots.  The address of any  */
+/* heap object is larger than GC_least_plausible_heap_addr and less     */
+/* than GC_greatest_plausible_heap_addr.                                */
 GC_API void * GC_least_plausible_heap_addr;
 GC_API void * GC_greatest_plausible_heap_addr;
-                        /* Bounds on the heap.  Guaranteed to be valid. */
-                        /* Likely to include future heap expansion.     */
-                        /* Hence usually includes not-yet-mapped        */
-                        /* memory, or might overlap with other data     */
-                        /* roots.  The address of any heap object is    */
-                        /* larger than GC_least_plausible_heap_addr and */
-                        /* less than GC_greatest_plausible_heap_addr.   */
 
 /* Specify the pointer address mask.  Works only if the collector is    */
 /* built with DYNAMIC_POINTER_MASK macro defined.  These primitives are */
@@ -292,12 +288,11 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL GC_generic_malloc(
                                                             size_t /* lb */,
                                                             int /* knd */);
 
+/* As above, but pointers to past the first heap block of the resulting */
+/* object are ignored.                                                  */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                                         GC_generic_malloc_ignore_off_page(
                                             size_t /* lb */, int /* knd */);
-                                /* As above, but pointers to past the   */
-                                /* first hblk of the resulting object   */
-                                /* are ignored.                         */
 
 /* Generalized version of GC_malloc_[atomic_]uncollectable.     */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
@@ -328,26 +323,19 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 GC_API int GC_CALL GC_get_kind_and_size(const void *, size_t * /* psize */)
                                                         GC_ATTR_NONNULL(1);
 
+/* A procedure which produces a human-readable description of the       */
+/* "type" of object p into the buffer out_buf of length                 */
+/* GC_TYPE_DESCR_LEN.  This is used by the debug support when printing  */
+/* objects.  These functions should be as robust as possible, though we */
+/* do avoid invoking them on objects on the global free list.           */
 typedef void (GC_CALLBACK * GC_describe_type_fn)(void * /* p */,
                                                  char * /* out_buf */);
-                                /* A procedure which                    */
-                                /* produces a human-readable            */
-                                /* description of the "type" of object  */
-                                /* p into the buffer out_buf of length  */
-                                /* GC_TYPE_DESCR_LEN.  This is used by  */
-                                /* the debug support when printing      */
-                                /* objects.                             */
-                                /* These functions should be as robust  */
-                                /* as possible, though we do avoid      */
-                                /* invoking them on objects on the      */
-                                /* global free list.                    */
 #define GC_TYPE_DESCR_LEN 40
 
+/* Register a describe_type function to be used when printing objects   */
+/* of a particular kind.                                                */
 GC_API void GC_CALL GC_register_describe_type_fn(int /* kind */,
                                                  GC_describe_type_fn);
-                                /* Register a describe_type function    */
-                                /* to be used when printing objects     */
-                                /* of a particular kind.                */
 
 /* Clear some of the inaccessible part of the stack.  Returns its       */
 /* argument, so it can be used in a tail call position, hence clearing  */

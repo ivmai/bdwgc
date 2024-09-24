@@ -35,8 +35,8 @@
 #include "gc_tiny_fl.h"
 
 #if GC_GNUC_PREREQ(3, 0) || defined(__clang__)
+  /* Equivalent to (expr), but predict that usually (expr)==outcome.    */
 # define GC_EXPECT(expr, outcome) __builtin_expect(expr, outcome)
-  /* Equivalent to (expr), but predict that usually (expr)==outcome. */
 #else
 # define GC_EXPECT(expr, outcome) (expr)
 #endif

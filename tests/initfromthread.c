@@ -11,9 +11,8 @@
  * modified is included with the above copyright notice.
  */
 
-/* Make sure 'GC_INIT' can be called from threads other than the initial
- * thread.
- */
+/* Make sure GC_INIT() can be called from threads other than the        */
+/* initial thread.                                                      */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -23,8 +22,8 @@
 # define GC_THREADS
 #endif
 
+/* Do not redirect thread creation and join calls.      */
 #define GC_NO_THREAD_REDIRECTS 1
-                /* Do not redirect thread creation and join calls.      */
 
 #include "gc.h"
 
@@ -75,7 +74,8 @@ int main(void)
     pthread_t t;
 
 #   ifdef LINT2
-      t = pthread_self(); /* explicitly initialize to some value */
+      /* Explicitly initialize t to some value. */
+      t = pthread_self();
 #   endif
 # else
     HANDLE t;
@@ -92,7 +92,10 @@ int main(void)
     /* GC_INIT() must be called from main thread only. */
     GC_INIT();
 # endif
-  (void)GC_get_suspend_signal(); /* linking fails if no threads support */
+
+  /* Linking fails if no threads support.       */
+  (void)GC_get_suspend_signal();
+
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
 # ifdef GC_PTHREADS

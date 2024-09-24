@@ -15,13 +15,10 @@
  * modified is included with the above copyright notice.
  */
 
-/*
- * This header is private to the gc.  It is almost always included from
- * gc_priv.h.  However it is possible to include it by itself if just the
- * configuration macros are needed.  In that
- * case, a few declarations relying on types declared in gc_priv.h will be
- * omitted.
- */
+/* This header is private to libgc.  It is almost always included from  */
+/* gc_priv.h.  However it is possible to include it by itself if just   */
+/* the configuration macros are needed.  In that case, a few            */
+/* declarations relying on types declared in gc_priv.h will be omitted. */
 
 #ifndef GCCONFIG_H
 #define GCCONFIG_H
@@ -239,7 +236,7 @@ EXTERN_C_BEGIN
 #   error IBM PC/RT no longer supported
 # endif
 # if (defined(sun) || defined(__sun)) && (defined(sparc) || defined(__sparc))
-            /* Test for SunOS 5.x */
+    /* SunOS 5.x */
     EXTERN_C_END
 #   include <errno.h>
     EXTERN_C_BEGIN
@@ -258,7 +255,7 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 # if defined(_M_XENIX) && defined(_M_SYSV) && defined(_M_I386)
-        /* TODO: The above test may need refinement. */
+    /* TODO: The above test may need refinement. */
 #   define I386
 #   if defined(_SCO_ELF)
 #     define SCO_ELF
@@ -357,7 +354,7 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 # if defined(_WIN32_WCE) || defined(__CEGCC__) || defined(__MINGW32CE__)
-    /* SH3, SH4, MIPS already defined for corresponding architectures */
+    /* SH3, SH4, MIPS already defined for corresponding architectures. */
 #   if defined(SH3) || defined(SH4)
 #     define SH
 #   endif
@@ -397,14 +394,16 @@ EXTERN_C_BEGIN
 #   endif
 #   if defined(_MSC_VER) && defined(_M_IA64)
 #     define IA64
-#     define MSWIN32    /* Really Win64, but we do not treat 64-bit     */
-                        /* variants as a different platform.            */
+      /* Really Win64, but we do not treat 64-bit variants as   */
+      /* a different platform.                                  */
+#     define MSWIN32
 #   endif
 # endif /* !_WIN32_WCE && !__CEGCC__ && !__MINGW32CE__ */
 # if defined(__DJGPP__)
 #   define I386
 #   ifndef DJGPP
-#     define DJGPP  /* MSDOS running the DJGPP port of GCC */
+      /* MSDOS running the DJGPP port of GCC.   */
+#     define DJGPP
 #   endif
 #   define mach_type_known
 # endif
@@ -451,7 +450,7 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif /* __WATCOMC__ && __386__ */
 # if defined(__GNU__) && defined(__i386__)
-    /* The Debian Hurd running on generic PC */
+    /* The Debian Hurd running on generic PC.   */
 #   define HURD
 #   define I386
 #   define mach_type_known
@@ -593,61 +592,61 @@ EXTERN_C_BEGIN
 #   error The collector has not been ported to this machine/OS combination
 # endif
 
-                    /* Mapping is: M68K       ==> Motorola 680X0        */
-                    /*             (NEXT, and SYSV (A/UX),              */
-                    /*             MACOS and AMIGA variants)            */
-                    /*             I386       ==> Intel 386             */
-                    /*              (SEQUENT, OS2, SCO, LINUX, NETBSD,  */
-                    /*               FREEBSD, THREE86BSD, MSWIN32,      */
-                    /*               BSDI, SOLARIS, NEXT and others)    */
-                    /*             NS32K      ==> Encore Multimax       */
-                    /*             MIPS       ==> R2000 through R14K    */
-                    /*                  (many variants)                 */
-                    /*             VAX        ==> DEC VAX               */
-                    /*                  (BSD, ULTRIX variants)          */
-                    /*             HP_PA      ==> HP9000/700 & /800     */
-                    /*                            HP/UX, LINUX          */
-                    /*             SPARC      ==> SPARC v7/v8/v9        */
-                    /*                 (SOLARIS, LINUX, DRSNX variants) */
-                    /*             ALPHA      ==> DEC Alpha             */
-                    /*                  (OSF1 and LINUX variants)       */
-                    /*             LOONGARCH  ==> Loongson LoongArch    */
-                    /*                  (LINUX 32- and 64-bit variants) */
-                    /*             M88K       ==> Motorola 88XX0        */
-                    /*                  (CX_UX and DGUX)                */
-                    /*             S370       ==> 370-like machine      */
-                    /*                  running Amdahl UTS4             */
-                    /*             S390       ==> 390-like machine      */
-                    /*                  running LINUX                   */
-                    /*             AARCH64    ==> ARM AArch64           */
-                    /*                  (LP64 and ILP32 variants)       */
-                    /*             E2K        ==> Elbrus 2000           */
-                    /*                  running LINUX                   */
-                    /*             ARM32      ==> Intel StrongARM       */
-                    /*                  (many variants)                 */
-                    /*             IA64       ==> Intel IPF             */
-                    /*                            (e.g. Itanium)        */
-                    /*                  (LINUX and HPUX)                */
-                    /*             SH         ==> Hitachi SuperH        */
-                    /*                  (LINUX & MSWINCE)               */
-                    /*             SW_64      ==> Sunway (Shenwei)      */
-                    /*                  running LINUX                   */
-                    /*             X86_64     ==> AMD x86-64            */
-                    /*             POWERPC    ==> IBM/Apple PowerPC     */
-                    /*                  (MACOS(<=9),DARWIN(incl.MACOSX),*/
-                    /*                   LINUX, NETBSD, AIX, NOSYS      */
-                    /*                   variants)                      */
-                    /*                  Handles 32 and 64-bit variants. */
-                    /*             ARC        ==> Synopsys ARC          */
-                    /*             AVR32      ==> Atmel RISC 32-bit     */
-                    /*             CRIS       ==> Axis Etrax            */
-                    /*             M32R       ==> Renesas M32R          */
-                    /*             NIOS2      ==> Altera NIOS2          */
-                    /*             HEXAGON    ==> Qualcomm Hexagon      */
-                    /*             OR1K       ==> OpenRISC/or1k         */
-                    /*             RISCV      ==> RISC-V 32/64-bit      */
-                    /*             TILEPRO    ==> Tilera TILEPro        */
-                    /*             TILEGX     ==> Tilera TILE-Gx        */
+/* Mapping is: M68K       ==> Motorola 680X0        */
+/*             (NEXT, and SYSV (A/UX),              */
+/*             MACOS and AMIGA variants)            */
+/*             I386       ==> Intel 386             */
+/*              (SEQUENT, OS2, SCO, LINUX, NETBSD,  */
+/*               FREEBSD, THREE86BSD, MSWIN32,      */
+/*               BSDI, SOLARIS, NEXT and others)    */
+/*             NS32K      ==> Encore Multimax       */
+/*             MIPS       ==> R2000 through R14K    */
+/*                  (many variants)                 */
+/*             VAX        ==> DEC VAX               */
+/*                  (BSD, ULTRIX variants)          */
+/*             HP_PA      ==> HP9000/700 & /800     */
+/*                            HP/UX, LINUX          */
+/*             SPARC      ==> SPARC v7/v8/v9        */
+/*                 (SOLARIS, LINUX, DRSNX variants) */
+/*             ALPHA      ==> DEC Alpha             */
+/*                  (OSF1 and LINUX variants)       */
+/*             LOONGARCH  ==> Loongson LoongArch    */
+/*                  (LINUX 32- and 64-bit variants) */
+/*             M88K       ==> Motorola 88XX0        */
+/*                  (CX_UX and DGUX)                */
+/*             S370       ==> 370-like machine      */
+/*                  running Amdahl UTS4             */
+/*             S390       ==> 390-like machine      */
+/*                  running LINUX                   */
+/*             AARCH64    ==> ARM AArch64           */
+/*                  (LP64 and ILP32 variants)       */
+/*             E2K        ==> Elbrus 2000           */
+/*                  running LINUX                   */
+/*             ARM32      ==> Intel StrongARM       */
+/*                  (many variants)                 */
+/*             IA64       ==> Intel IPF             */
+/*                            (e.g. Itanium)        */
+/*                  (LINUX and HPUX)                */
+/*             SH         ==> Hitachi SuperH        */
+/*                  (LINUX & MSWINCE)               */
+/*             SW_64      ==> Sunway (Shenwei)      */
+/*                  running LINUX                   */
+/*             X86_64     ==> AMD x86-64            */
+/*             POWERPC    ==> IBM/Apple PowerPC     */
+/*                  (MACOS(<=9),DARWIN(incl.MACOSX),*/
+/*                   LINUX, NETBSD, AIX, NOSYS      */
+/*                   variants)                      */
+/*                  Handles 32 and 64-bit variants. */
+/*             ARC        ==> Synopsys ARC          */
+/*             AVR32      ==> Atmel RISC 32-bit     */
+/*             CRIS       ==> Axis Etrax            */
+/*             M32R       ==> Renesas M32R          */
+/*             NIOS2      ==> Altera NIOS2          */
+/*             HEXAGON    ==> Qualcomm Hexagon      */
+/*             OR1K       ==> OpenRISC/or1k         */
+/*             RISCV      ==> RISC-V 32/64-bit      */
+/*             TILEPRO    ==> Tilera TILEPro        */
+/*             TILEGX     ==> Tilera TILE-Gx        */
 
 /*
  * For each architecture and OS, the following need to be defined:
@@ -1054,10 +1053,10 @@ EXTERN_C_BEGIN
 #   define DATAEND ((ptr_t)(_end))
 #   if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
 #     define USE_MMAP 1
-        /* Otherwise we now use calloc.  Mmap may result in the     */
-        /* heap interleaved with thread stacks, which can result in */
-        /* excessive blacklisting.  Sbrk is unusable since it       */
-        /* doesn't interact correctly with the system malloc.       */
+      /* Otherwise we now use calloc.  mmap() may result in the     */
+      /* heap interleaved with thread stacks, which can result in   */
+      /* excessive blacklisting.  Sbrk is unusable since it         */
+      /* doesn't interact correctly with the system malloc.         */
 #   endif
 #   ifdef USE_MMAP
 #     define HEAP_START (ptr_t)0x40000000
@@ -1113,16 +1112,14 @@ EXTERN_C_BEGIN
 #         if GC_GLIBC_PREREQ(2, 0)
 #           define SEARCH_FOR_DATA_START
 #         else
+            /* Hideous kludge: __environ is the first word in crt0.o,   */
+            /* and delimits the start of the data segment, no matter    */
+            /* which ld options were passed through.  We could use      */
+            /* _etext instead, but that would include .rodata, which    */
+            /* may contain large read-only data tables that we'd rather */
+            /* not scan.                                                */
             extern char **__environ;
 #           define DATASTART ((ptr_t)(&__environ))
-                             /* hideous kludge: __environ is the first */
-                             /* word in crt0.o, and delimits the start */
-                             /* of the data segment, no matter which   */
-                             /* ld options were passed through.        */
-                             /* We could use _etext instead, but that  */
-                             /* would include .rodata, which may       */
-                             /* contain large read-only data tables    */
-                             /* that we'd rather not scan.             */
 #         endif
 #       else
           extern int etext[];
@@ -1131,8 +1128,7 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef AMIGA
 #       define OS_TYPE "AMIGA"
-                /* STACKBOTTOM and DATASTART handled specially  */
-                /* in os_dep.c                                  */
+        /* STACKBOTTOM and DATASTART handled specially in os_dep.c. */
 #       define DATAEND  /* not needed */
 #       define GETPAGESIZE() 4096
 #   endif
@@ -1229,9 +1225,9 @@ EXTERN_C_BEGIN
 #     define DATASTART ((ptr_t)(__bss_start))
 #     define DATAEND ((ptr_t)(_end))
 #     define STACKBOTTOM ((ptr_t)ps3_get_stack_bottom())
+      /* The current LOCK() implementation for PS3 explicitly uses  */
+      /* pthread_mutex_lock() for some reason.                      */
 #     define NO_PTHREAD_TRYLOCK
-                /* Current LOCK() implementation for PS3 explicitly     */
-                /* uses pthread_mutex_lock for some reason.             */
 #   endif
 #   ifdef AIX
 #     define OS_TYPE "AIX"
@@ -1260,18 +1256,19 @@ EXTERN_C_BEGIN
       extern int errno;
 #     define MPROTECT_VDB
 #     define DYNAMIC_LOADING
-        /* For really old versions of AIX, this may have to be removed. */
+      /* Note: for really old versions of AIX, DYNAMIC_LOADING may  */
+      /* have to be removed.                                        */
 #   endif
 #   ifdef NOSYS
 #     define OS_TYPE "NOSYS"
 #     define CPP_WORDSZ 32
 #     define ALIGNMENT 4
       extern void __end[], __dso_handle[];
-#     define DATASTART ((ptr_t)__dso_handle) /* OK, that's ugly.    */
+#     define DATASTART ((ptr_t)__dso_handle) /* OK, that's ugly */
 #     define DATAEND ((ptr_t)(__end))
-        /* Stack starts at 0xE0000000 for the simulator.  */
 #     undef STACK_GRAN
 #     define STACK_GRAN 0x10000000
+      /* Note: stack starts at 0xE0000000 for the simulator.    */
 #     define HEURISTIC1
 #   endif
 # endif /* POWERPC */
@@ -1279,13 +1276,14 @@ EXTERN_C_BEGIN
 # ifdef VAX
 #   define MACH_TYPE "VAX"
 #   define CPP_WORDSZ 32
-#   define ALIGNMENT 4  /* Pointers are longword aligned by 4.2 C compiler */
+    /* Pointers are longword aligned by 4.2 C compiler. */
+#   define ALIGNMENT 4
     extern char etext[];
 #   define DATASTART ((ptr_t)(etext))
 #   ifdef BSD
 #       define OS_TYPE "BSD"
 #       define HEURISTIC1
-                        /* HEURISTIC2 may be OK, but it's hard to test. */
+        /* Note: HEURISTIC2 may be OK, but it's hard to test.   */
 #   endif
 #   ifdef ULTRIX
 #       define OS_TYPE "ULTRIX"
@@ -1307,9 +1305,9 @@ EXTERN_C_BEGIN
 #   ifdef SOLARIS
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #       define PROC_VDB
+        /* getpagesize() appeared to be missing from at least   */
+        /* one Solaris 5.4 installation.  Weird.                */
 #       define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
-                /* getpagesize() appeared to be missing from at least   */
-                /* one Solaris 5.4 installation.  Weird.                */
 #   endif
 #   ifdef DRSNX
 #       define OS_TYPE "DRSNX"
@@ -1364,10 +1362,10 @@ EXTERN_C_BEGIN
 #     error This should be handled as X86_64
 #   else
 #     define CPP_WORDSZ 32
+      /* The 4-byte alignment appears to hold for all "32-bit"      */
+      /* compilers except Borland and Watcom.  The -a4 option       */
+      /* fixes Borland.  For Watcom, the option is -zp4.            */
 #     define ALIGNMENT 4
-                        /* Appears to hold for all "32 bit" compilers   */
-                        /* except Borland.  The -a4 option fixes        */
-                        /* Borland.  For Watcom the option is -zp4.     */
 #   endif
 #   ifdef SEQUENT
 #       define OS_TYPE "SEQUENT"
@@ -1430,48 +1428,41 @@ EXTERN_C_BEGIN
 #       define HEAP_START (ptr_t)0x40000000
 #   endif /* DGUX */
 #   ifdef LINUX
+        /* This encourages mmap to give us low addresses,       */
+        /* thus allowing the heap to grow to ~3 GB.             */
 #       define HEAP_START (ptr_t)0x1000
-                /* This encourages mmap to give us low addresses,       */
-                /* thus allowing the heap to grow to ~3 GB.             */
 #       ifdef __ELF__
-#            if GC_GLIBC_PREREQ(2, 0) || defined(HOST_ANDROID)
-#                define SEARCH_FOR_DATA_START
-#            else
-                 extern char **__environ;
-#                define DATASTART ((ptr_t)(&__environ))
-                              /* hideous kludge: __environ is the first */
-                              /* word in crt0.o, and delimits the start */
-                              /* of the data segment, no matter which   */
-                              /* ld options were passed through.        */
-                              /* We could use _etext instead, but that  */
-                              /* would include .rodata, which may       */
-                              /* contain large read-only data tables    */
-                              /* that we'd rather not scan.             */
-#            endif
-#            if !defined(GC_NO_SIGSETJMP) && (defined(HOST_TIZEN) \
-                    || (defined(HOST_ANDROID) \
-                        && !(GC_GNUC_PREREQ(4, 8) || GC_CLANG_PREREQ(3, 2) \
-                             || __ANDROID_API__ >= 18)))
-               /* Older Android NDK releases lack sigsetjmp in x86 libc */
-               /* (setjmp is used instead to find data_start).  The bug */
-               /* is fixed in Android NDK r8e (so, ok to use sigsetjmp  */
-               /* if gcc4.8+, clang3.2+ or Android API level 18+).      */
-#              define GC_NO_SIGSETJMP 1
-#            endif
+#         if GC_GLIBC_PREREQ(2, 0) || defined(HOST_ANDROID)
+#           define SEARCH_FOR_DATA_START
+#         else
+            /* See the comment of the Linux/m68k case.  */
+            extern char **__environ;
+#           define DATASTART ((ptr_t)(&__environ))
+#         endif
+#         if !defined(GC_NO_SIGSETJMP) && (defined(HOST_TIZEN) \
+             || (defined(HOST_ANDROID) \
+                 && !(GC_GNUC_PREREQ(4, 8) || GC_CLANG_PREREQ(3, 2) \
+                      || __ANDROID_API__ >= 18)))
+            /* Older Android NDK releases lack sigsetjmp in x86 libc    */
+            /* (setjmp is used instead to find data_start).  The bug    */
+            /* is fixed in Android NDK r8e (so, ok to use sigsetjmp     */
+            /* if gcc4.8+, clang3.2+ or Android API level 18+).         */
+#           define GC_NO_SIGSETJMP 1
+#         endif
 #       else
              extern int etext[];
 #            define DATASTART PTR_ALIGN_UP(etext, 0x1000)
 #       endif
 #       ifdef USE_I686_PREFETCH
+          /* Empirically prefetcht0 is much more effective at reducing  */
+          /* cache miss stalls for the targeted load instructions.  But */
+          /* it seems to interfere enough with other cache traffic that */
+          /* the net result is worse than prefetchnta.                  */
 #         define PREFETCH(x) \
             __asm__ __volatile__ ("prefetchnta %0" : : "m"(*(char *)(x)))
-            /* Empirically prefetcht0 is much more effective at reducing     */
-            /* cache miss stalls for the targeted load instructions.  But it */
-            /* seems to interfere enough with other cache traffic that the   */
-            /* net result is worse than prefetchnta.                         */
 #         ifdef FORCE_WRITE_PREFETCH
-            /* Using prefetches for write seems to have a slight negative    */
-            /* impact on performance, at least for a PIII/500.               */
+            /* Using prefetches for write seems to have a slight        */
+            /* negative impact on performance, at least for a PIII/500. */
 #           define GC_PREFETCH_FOR_WRITE(x) \
               __asm__ __volatile__ ("prefetcht0 %0" : : "m"(*(char *)(x)))
 #         else
@@ -1517,9 +1508,8 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef OS2
 #       define OS_TYPE "OS2"
-                /* STACKBOTTOM and DATASTART are handled specially in   */
-                /* os_dep.c. OS2 actually has the right                 */
-                /* system call!                                         */
+        /* STACKBOTTOM and DATASTART are handled specially in os_dep.c. */
+        /* OS2 actually has the right system call!                      */
 #       define DATAEND  /* not needed */
 #       define GETPAGESIZE() os2_getpagesize()
 #   endif
@@ -1540,9 +1530,9 @@ EXTERN_C_BEGIN
         extern int _stklen;
         extern int __djgpp_stack_limit;
 #       define DATASTART PTR_ALIGN_UP(etext, 0x200)
-/* #define STACKBOTTOM ((ptr_t)((word)_stubinfo+_stubinfo->size+_stklen)) */
+        /* This may not be right. */
+/* define STACKBOTTOM ((ptr_t)((word)_stubinfo+_stubinfo->size+_stklen)) */
 #       define STACKBOTTOM ((ptr_t)((word)__djgpp_stack_limit + _stklen))
-                /* This may not be right.  */
 #   endif
 #   ifdef OPENBSD
       /* Nothing specific. */
@@ -1592,8 +1582,7 @@ EXTERN_C_BEGIN
       /* Make sure startup code variables always have the same names.   */
 #     pragma aux __nullarea "*";
 #     pragma aux _end "*";
-#     define STACKBOTTOM ((ptr_t)_STACKTOP)
-                         /* confused? me too. */
+#     define STACKBOTTOM ((ptr_t)_STACKTOP) /* confused? me too. */
 #     define DATASTART ((ptr_t)(&__nullarea))
 #     define DATAEND ((ptr_t)(&_end))
 #     define GETPAGESIZE() 4096
@@ -1610,11 +1599,10 @@ EXTERN_C_BEGIN
 #   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
     extern char **environ;
+    /* Hideous kludge: environ is the first word in crt0.o, and         */
+    /* delimits the start of the data segment, no matter which ld       */
+    /* options were passed through.                                     */
 #   define DATASTART ((ptr_t)(&environ))
-                              /* hideous kludge: environ is the first   */
-                              /* word in crt0.o, and delimits the start */
-                              /* of the data segment, no matter which   */
-                              /* ld options were passed through.        */
 #   define STACKBOTTOM ((ptr_t)0xfffff000) /* for Encore */
 # endif /* NS32K */
 
@@ -1688,9 +1676,9 @@ EXTERN_C_BEGIN
 #     define CPP_WORDSZ 32
 #     define ALIGNMENT 4
 #     define HEURISTIC2
+      /* Note: the actual beginning of the data segment could probably  */
+      /* be slightly higher since startup code allocates lots of stuff. */
 #     define DATASTART ((ptr_t)0x10000000)
-                              /* Could probably be slightly higher since */
-                              /* startup code allocates lots of stuff.   */
 #   endif
 #   ifdef IRIX5
 #     define OS_TYPE "IRIX5"
@@ -1703,18 +1691,15 @@ EXTERN_C_BEGIN
 #     define HEURISTIC2
       extern int _fdata[];
 #     define DATASTART ((ptr_t)(_fdata))
+      /* Lowest plausible heap address.  In the USE_MMAP case, we map   */
+      /* there.  In either case it is used to identify heap sections so */
+      /* they are not considered as roots.                              */
 #     ifdef USE_MMAP
 #       define HEAP_START (ptr_t)0x30000000
 #     else
 #       define HEAP_START DATASTART
 #     endif
-                              /* Lowest plausible heap address.         */
-                              /* In the MMAP case, we map there.        */
-                              /* In either case it is used to identify  */
-                              /* heap sections so they're not           */
-                              /* considered as roots.                   */
-/*#       define MPROTECT_VDB DOB: this should work, but there is evidence */
-/*              of recent breakage.                                        */
+      /* MPROTECT_VDB should work, but there is evidence of a breakage. */
 #     define DYNAMIC_LOADING
 #   endif
 #   ifdef MSWINCE
@@ -1833,8 +1818,6 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef FREEBSD
-        /* MPROTECT_VDB is not yet supported at all on FreeBSD/alpha. */
-/* Handle unmapped hole alpha*-*-freebsd[45]* puts between etext and edata. */
         extern char etext[];
         extern char edata[];
 #       if !defined(CPPCHECK)
@@ -1845,9 +1828,12 @@ EXTERN_C_BEGIN
         void * GC_find_limit(void *, int);
 #       define DATAEND (ptr_t)GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
+        /* Handle unmapped hole which alpha*-*-freebsd[45]* puts        */
+        /* between etext and edata.                                     */
 #       define GC_HAVE_DATAREGION2
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
+        /* MPROTECT_VDB is not yet supported at all on FreeBSD/alpha. */
 #   endif
 #   ifdef OSF1
 #       define OS_TYPE "OSF1"
@@ -1855,15 +1841,14 @@ EXTERN_C_BEGIN
         extern int _end[];
 #       define DATAEND ((ptr_t)(&_end))
         extern char ** environ;
-        /* round up from the value of environ to the nearest page boundary */
-        /* Probably breaks if putenv is called before collector            */
-        /* initialization.                                                 */
+        /* Round up from the value of environ to the nearest page       */
+        /* boundary.  Probably this is broken if putenv() is called     */
+        /* before the collector initialization.                         */
 #       define STACKBOTTOM ((ptr_t)(((word)(environ) | (getpagesize()-1))+1))
-/* #define HEURISTIC2 */
-        /* Normally HEURISTIC2 is too conservative, since               */
-        /* the text segment immediately follows the stack.              */
-        /* Hence we give an upper bound.                                */
-        /* This is currently unused, since we disabled HEURISTIC2       */
+        /* Normally HEURISTIC2 is too conservative, since the text      */
+        /* segment immediately follows the stack.  Hence we give an     */
+        /* upper bound.  This is currently unused, since HEURISTIC2 is  */
+        /* not defined.                                                 */
         extern int __start[];
 #       define HEURISTIC2_LIMIT ((ptr_t)((word)(__start) \
                                          & ~(word)(getpagesize()-1)))
@@ -1924,7 +1909,7 @@ EXTERN_C_BEGIN
 #       else
           /* In the Intel compiler environment, we seem to end up with  */
           /* statically linked executables and an undefined reference   */
-          /* to _DYNAMIC                                                */
+          /* to _DYNAMIC.                                               */
 #       endif
 #       ifdef __GNUC__
 #         ifndef __INTEL_COMPILER
@@ -2111,20 +2096,13 @@ EXTERN_C_BEGIN
 #   endif
 #   define CPP_WORDSZ 32
 #   ifdef LINUX
-#       if GC_GLIBC_PREREQ(2, 0) || defined(HOST_ANDROID)
-#           define SEARCH_FOR_DATA_START
-#       else
-            extern char **__environ;
-#           define DATASTART ((ptr_t)(&__environ))
-                              /* hideous kludge: __environ is the first */
-                              /* word in crt0.o, and delimits the start */
-                              /* of the data segment, no matter which   */
-                              /* ld options were passed through.        */
-                              /* We could use _etext instead, but that  */
-                              /* would include .rodata, which may       */
-                              /* contain large read-only data tables    */
-                              /* that we'd rather not scan.             */
-#       endif
+#     if GC_GLIBC_PREREQ(2, 0) || defined(HOST_ANDROID)
+#       define SEARCH_FOR_DATA_START
+#     else
+        /* See the comment of the Linux/m68k case.  */
+        extern char **__environ;
+#       define DATASTART ((ptr_t)(&__environ))
+#     endif
 #   endif
 #   ifdef MSWINCE
       /* Nothing specific. */
@@ -2552,8 +2530,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
-        /* OS has SVR4 generic features.        */
-        /* Probably others also qualify.        */
+  /* OS has SVR4 generic features.  Probably others also qualify.   */
 # define SVR4
 #endif
 
@@ -2603,10 +2580,9 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(SOLARIS) || defined(DRSNX)
-        /* OS has SOLARIS style semi-undocumented interface     */
-        /* to dynamic loader.                                   */
+  /* OS has Solaris-style semi-undocumented interface to dynamic loader. */
 # define SOLARISDL
-        /* OS has SOLARIS style signal handlers.        */
+  /* OS has Solaris-style signal handlers.      */
 # define SUNOS5SIGS
 #endif
 
@@ -3329,8 +3305,8 @@ EXTERN_C_BEGIN
 #endif /* !__has_feature */
 
 #if defined(SPARC)
-# define ASM_CLEAR_CODE /* Stack clearing is crucial, and we    */
-                        /* include assembly code to do it well. */
+  /* Stack clearing is crucial, and we include assembly code to do it well. */
+# define ASM_CLEAR_CODE
 #endif
 
 /* Can we save call chain in objects for debugging?  Set NFRAMES        */
@@ -3355,14 +3331,15 @@ EXTERN_C_BEGIN
 #endif
 
 #ifdef SAVE_CALL_CHAIN
+  /* Number of arguments to save for each call.       */
 # if defined(SAVE_CALL_NARGS) && defined(CAN_SAVE_CALL_ARGS)
 #   define NARGS SAVE_CALL_NARGS
 # else
-#   define NARGS 0      /* Number of arguments to save for each call.   */
+#   define NARGS 0
 # endif
+  /* Number of frames to save.  Even for alignment reasons.         */
 # if !defined(SAVE_CALL_COUNT) || defined(CPPCHECK)
-#   define NFRAMES 6    /* Number of frames to save. Even for   */
-                        /* alignment reasons.                   */
+#   define NFRAMES 6
 # else
 #   define NFRAMES ((SAVE_CALL_COUNT + 1) & ~1)
 # endif
@@ -3400,10 +3377,10 @@ EXTERN_C_BEGIN
 # undef POINTER_SHIFT
 # define NEED_FIXUP_POINTER
 #elif defined(POINTER_MASK)
+  /* Note: extra parentheses around custom-defined POINTER_MASK/SHIFT   */
+  /* are intentional.                                                   */
 # define FIXUP_POINTER(p) \
             (p = (ptr_t)(((word)(p) & (POINTER_MASK)) << (POINTER_SHIFT)))
-                            /* Extra parentheses around custom-defined  */
-                            /* POINTER_MASK/SHIFT are intentional.      */
 # define NEED_FIXUP_POINTER
 #else
 # define FIXUP_POINTER(p) (void)(p)
@@ -3438,24 +3415,19 @@ EXTERN_C_BEGIN
 #endif
 
 #ifdef GC_PRIVATE_H
-        /* This relies on some type definitions from gc_priv.h, from    */
-        /* where it's normally included.                                */
-        /*                                                              */
-        /* How to get heap memory from the OS:                          */
-        /* Note that sbrk()-like allocation is preferred, since it      */
-        /* usually makes it possible to merge consecutively allocated   */
-        /* chunks.  It also avoids unintended recursion with            */
-        /* REDIRECT_MALLOC macro defined.                               */
-        /* GET_MEM() argument should be of size_t type and have         */
-        /* no side-effect.  GET_MEM() returns HBLKSIZE-aligned chunk;   */
-        /* 0 is taken to mean failure.                                  */
-        /* In case of MMAP_SUPPORTED, the argument must also be         */
-        /* a multiple of a physical page size.                          */
-        /* GET_MEM is currently not assumed to retrieve 0 filled space, */
-        /* though we should perhaps take advantage of the case in which */
-        /* does.                                                        */
+  /* This relies on some type definitions from gc_priv.h, from where it */
+  /* is normally included.  How to get heap memory from the OS:         */
+  /* Note that sbrk()-like allocation is preferred, since it usually    */
+  /* makes it possible to merge consecutively allocated chunks.         */
+  /* It also avoids unintended recursion with REDIRECT_MALLOC macro     */
+  /* defined.  GET_MEM() argument should be of size_t type and have no  */
+  /* side-effect.  GET_MEM() returns HBLKSIZE-aligned chunk (NULL means */
+  /* a failure).  In case of MMAP_SUPPORTED, the argument must also be  */
+  /* a multiple of a physical page size.  GET_MEM is currently not      */
+  /* assumed to retrieve zero-filled space.                             */
+  /* TODO: Take advantage of GET_MEM() returning a zero-filled space.   */
 # define hblk GC_hblk_s
-  struct hblk;  /* See gc_priv.h. */
+  struct hblk; /* defined in gc_priv.h */
 # if defined(PCR)
     char * real_malloc(size_t bytes);
 #   define GET_MEM(bytes) HBLKPTR(real_malloc(SIZET_SAT_ADD(bytes, \

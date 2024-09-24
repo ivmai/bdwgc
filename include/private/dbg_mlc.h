@@ -40,6 +40,8 @@ EXTERN_C_BEGIN
 # endif
 #endif /* !GC_FREED_MEM_MARKER */
 
+/* Stored both one past the end of user object, and one before  */
+/* the end of the object as seen by the allocator.              */
 #if CPP_WORDSZ == 32
 # define START_FLAG (GC_uintptr_t)0xfedcedcb
 # define END_FLAG (GC_uintptr_t)0xbcdecdef
@@ -47,22 +49,25 @@ EXTERN_C_BEGIN
 # define START_FLAG (GC_uintptr_t)GC_WORD_C(0xFEDCEDCBfedcedcb)
 # define END_FLAG (GC_uintptr_t)GC_WORD_C(0xBCDECDEFbcdecdef)
 #endif
-        /* Stored both one past the end of user object, and one before  */
-        /* the end of the object as seen by the allocator.              */
 
 #if defined(KEEP_BACK_PTRS) || defined(PRINT_BLACK_LIST)
   /* Pointer "source"s that aren't real locations.      */
   /* Used in oh_back_ptr fields and as "source"         */
   /* argument to some marking functions.                */
+
+/* Object was marked because it is finalizable.         */
 # define MARKED_FOR_FINALIZATION ((ptr_t)(GC_uintptr_t)2)
-                /* Object was marked because it is finalizable. */
+
+/* Object was marked from a register.  Hence the        */
+/* source of the reference doesn't have an address.     */
 # define MARKED_FROM_REGISTER ((ptr_t)(GC_uintptr_t)4)
-                /* Object was marked from a register.  Hence the        */
-                /* source of the reference doesn't have an address.     */
+
 # define NOT_MARKED ((ptr_t)(GC_uintptr_t)8)
 #endif /* KEEP_BACK_PTRS || PRINT_BLACK_LIST */
 
-/* Object debug header. */
+/* Object debug header.  The size of the structure is assumed   */
+/* not to de-align things, and to be a multiple of              */
+/* a double-pointer length.                                     */
 typedef struct {
 # if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
     /* We potentially keep two different kinds of back          */
@@ -91,10 +96,10 @@ typedef struct {
 #   else
 #     define HIDE_BACK_PTR(p) GC_HIDE_POINTER(p)
 #   endif
+    /* Always define either none or both of the fields to       */
+    /* ensure double-pointer alignment.                         */
     GC_hidden_pointer oh_back_ptr;
     GC_hidden_pointer oh_bg_ptr;
-                        /* Always define either none or both of the     */
-                        /* fields to ensure double-pointer alignment.   */
 # endif
   const char * oh_string;       /* object descriptor string (file name)    */
   signed_word oh_int;           /* object descriptor integer (line number) */
@@ -106,8 +111,6 @@ typedef struct {
     GC_uintptr_t oh_sf;                 /* Start flag.                  */
 # endif
 } oh;
-/* The size of the above structure is assumed not to de-align things,   */
-/* and to be a multiple of a double-pointer length.                     */
 
 #ifdef SHORT_DBG_HDRS
 # define DEBUG_BYTES sizeof(oh)
@@ -167,13 +170,12 @@ typedef struct {
     /* We may mistakenly conclude that base has a debugging wrapper.    */
 # endif
 # if defined(PARALLEL_MARK) && defined(KEEP_BACK_PTRS)
+    /* Atomic load is used as GC_store_back_pointer stores oh_back_ptr  */
+    /* atomically (base might point to the field); this prevents a TSan */
+    /* warning.                                                         */
 #   define GC_HAS_DEBUG_INFO(base) \
         (((GC_uintptr_t)GC_cptr_load((volatile ptr_t *)(base)) & 1) != 0 \
          && GC_has_other_debug_info(base) > 0)
-                        /* Atomic load is used as GC_store_back_pointer */
-                        /* stores oh_back_ptr atomically (base might    */
-                        /* point to the field); this prevents a TSan    */
-                        /* warning.                                     */
 # else
 #   define GC_HAS_DEBUG_INFO(base) \
                 ((*(GC_uintptr_t *)(base) & 1) != 0 \

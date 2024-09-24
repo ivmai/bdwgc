@@ -13,12 +13,10 @@
  * modified is included with the above copyright notice.
  */
 
-/* Private declarations of GC marker data structures and macros */
+/* Private declarations of GC marker data structures (like the mark     */
+/* stack) and macros.  Needed by the marker and the client-supplied     */
+/* mark routines.  Transitively include gc_priv.h.                      */
 
-/*
- * Declarations of mark stack.  Needed by marker and client supplied mark
- * routines.  Transitively include gc_priv.h.
- */
 #ifndef GC_PMARK_H
 #define GC_PMARK_H
 
@@ -368,44 +366,36 @@ GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
 #define GC_mark_stack_empty() \
                 ADDR_LT((ptr_t)GC_mark_stack_top, (ptr_t)GC_mark_stack)
 
-                                /* Current state of marking, as follows.*/
+/* Current state of marking, as follows.  We say something is dirty if  */
+/* it was written since the last time we retrieved dirty bits.  We say  */
+/* it is grungy if it was marked dirty in the last set of bits we       */
+/* retrieved.  Invariant "I": all roots and marked objects p are either */
+/* dirty, or point to objects q that are either marked or a pointer to  */
+/* q appears in a range on the mark stack.                              */
 
-                                /* We say something is dirty if it was  */
-                                /* written since the last time we       */
-                                /* retrieved dirty bits.  We say it's   */
-                                /* grungy if it was marked dirty in the */
-                                /* last set of bits we retrieved.       */
+/* No marking in progress.  "I" holds.  Mark stack is empty.            */
+#define MS_NONE 0
 
-                                /* Invariant "I": all roots and marked  */
-                                /* objects p are either dirty, or point */
-                                /* to objects q that are either marked  */
-                                /* or a pointer to q appears in a range */
-                                /* on the mark stack.                   */
+/* Rescuing objects are currently being pushed.  "I" holds, except that */
+/* grungy roots may point to unmarked objects, as may marked grungy     */
+/* objects above GC_scan_ptr.                                           */
+#define MS_PUSH_RESCUERS 1
 
-#define MS_NONE 0               /* No marking in progress. "I" holds.   */
-                                /* Mark stack is empty.                 */
+/* Uncollectible objects are currently being pushed.  "I" holds, except */
+/* that marked uncollectible objects above GC_scan_ptr may point to     */
+/* unmarked objects.  Roots may point to unmarked objects too.          */
+#define MS_PUSH_UNCOLLECTABLE 2
 
-#define MS_PUSH_RESCUERS 1      /* Rescuing objects are currently       */
-                                /* being pushed.  "I" holds, except     */
-                                /* that grungy roots may point to       */
-                                /* unmarked objects, as may marked      */
-                                /* grungy objects above GC_scan_ptr.    */
+/* "I" holds, mark stack may be nonempty.                               */
+#define MS_ROOTS_PUSHED 3
 
-#define MS_PUSH_UNCOLLECTABLE 2 /* "I" holds, except that marked        */
-                                /* uncollectible objects above          */
-                                /* GC_scan_ptr may point to unmarked    */
-                                /* objects.  Roots may point to         */
-                                /* unmarked objects.                    */
+/* "I" may not hold, e.g. because of the mark stack overflow.  However, */
+/* marked heap objects below GC_scan_ptr point to marked or stacked     */
+/* objects.                                                             */
+#define MS_PARTIALLY_INVALID 4
 
-#define MS_ROOTS_PUSHED 3       /* "I" holds, mark stack may be nonempty. */
-
-#define MS_PARTIALLY_INVALID 4  /* "I" may not hold, e.g. because of    */
-                                /* the mark stack overflow.  However,   */
-                                /* marked heap objects below            */
-                                /* GC_scan_ptr point to marked or       */
-                                /* stacked objects.                     */
-
-#define MS_INVALID 5            /* "I" may not hold.                    */
+/* "I" may not hold.                                                    */
+#define MS_INVALID 5
 
 EXTERN_C_END
 

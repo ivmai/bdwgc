@@ -92,7 +92,6 @@
 #endif /* MACOS && __MWERKS__ */
 
 # if defined(IA64) && !defined(THREADS)
-    /* Value returned from register flushing routine (ar.bsp).  */
     GC_INNER ptr_t GC_save_regs_ret_val = NULL;
 # endif
 
@@ -124,14 +123,15 @@
          /* a0, a1, d0 and d1 are caller save */
 
 #       ifdef __GNUC__
-          asm("subq.w &0x4,%sp");       /* allocate word on top of stack */
+          /* Allocate word on top of stack.     */
+          asm("subq.w &0x4,%sp");
 
           asm("mov.l %a2,(%sp)"); asm("jsr _GC_push_one");
           asm("mov.l %a3,(%sp)"); asm("jsr _GC_push_one");
           asm("mov.l %a4,(%sp)"); asm("jsr _GC_push_one");
           asm("mov.l %a5,(%sp)"); asm("jsr _GC_push_one");
           asm("mov.l %a6,(%sp)"); asm("jsr _GC_push_one");
-          /* Skip frame pointer and stack pointer */
+          /* Skip frame pointer and stack pointer.      */
           asm("mov.l %d2,(%sp)"); asm("jsr _GC_push_one");
           asm("mov.l %d3,(%sp)"); asm("jsr _GC_push_one");
           asm("mov.l %d4,(%sp)"); asm("jsr _GC_push_one");
@@ -139,7 +139,8 @@
           asm("mov.l %d6,(%sp)"); asm("jsr _GC_push_one");
           asm("mov.l %d7,(%sp)"); asm("jsr _GC_push_one");
 
-          asm("addq.w &0x4,%sp");       /* put stack back where it was  */
+          /* Put stack back where it was.       */
+          asm("addq.w &0x4,%sp");
 #       else /* !__GNUC__ */
           GC_push_one(getreg(REG_A2));
           GC_push_one(getreg(REG_A3));
@@ -149,7 +150,7 @@
 #         endif
           GC_push_one(getreg(REG_A5));
           GC_push_one(getreg(REG_A6));
-          /* Skip stack pointer */
+          /* Skip the stack pointer.    */
           GC_push_one(getreg(REG_D2));
           GC_push_one(getreg(REG_D3));
           GC_push_one(getreg(REG_D4));
@@ -234,9 +235,9 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
      || !defined(NO_UNDERSCORE_SETJMP)
 #   define volatile_arg arg
 # else
+    /* Note: volatile to avoid "arg might be clobbered by setjmp"       */
+    /* warning produced by some compilers.                              */
     volatile ptr_t volatile_arg = arg;
-                        /* To avoid 'arg might be clobbered by setjmp'  */
-                        /* warning produced by some compilers.          */
 # endif
 
 # if defined(HAVE_PUSH_REGS)
@@ -248,7 +249,9 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
       /* Older versions of Darwin seem to lack getcontext().    */
       /* ARM and MIPS Linux often doesn't support a real        */
       /* getcontext().                                          */
-      static signed char getcontext_works = 0; /* (-1) - broken, 1 - works */
+
+      /* The variable is set to -1 (means broken) or 1 (means it works). */
+      static signed char getcontext_works = 0;
       ucontext_t ctxt;
 #     ifdef GETCONTEXT_FPU_EXCMASK_BUG
         /* Workaround a bug (clearing the FPU exception mask) in        */
@@ -323,16 +326,16 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
         /* to be acknowledged for it or not.     */
         jmp_buf regs;
 
-        /* setjmp doesn't always clear all of the buffer.               */
-        /* That tends to preserve garbage.  Clear it.                   */
+        /* setjmp doesn't always clear all of the buffer.       */
+        /* That tends to preserve garbage.  Clear it.           */
         BZERO(regs, sizeof(regs));
 #       ifdef NO_UNDERSCORE_SETJMP
           (void)setjmp(regs);
 #       else
-          (void) _setjmp(regs);
-          /* We don't want to mess with signals. According to   */
+          /* We do not want to mess with signals.  According to */
           /* SUSV3, setjmp() may or may not save signal mask.   */
           /* _setjmp won't, but is less portable.               */
+          (void)_setjmp(regs);
 #       endif
 #     endif /* !HAVE_BUILTIN_UNWIND_INIT */
     }

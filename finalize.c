@@ -37,8 +37,7 @@ struct hash_chain_entry {
 
 struct disappearing_link {
     struct hash_chain_entry prolog;
-#   define dl_hidden_link prolog.hidden_key
-                                /* Field to be cleared.         */
+#   define dl_hidden_link prolog.hidden_key /* field to be cleared */
 #   define dl_next(x) (struct disappearing_link *)((x) -> prolog.next)
 #   define dl_set_next(x, y) \
                 (void)((x)->prolog.next = (struct hash_chain_entry *)(y))
@@ -47,10 +46,9 @@ struct disappearing_link {
 
 struct finalizable_object {
     struct hash_chain_entry prolog;
+    /* Pointer to object base.  No longer hidden once object is on      */
+    /* finalize_now queue.                                              */
 #   define fo_hidden_base prolog.hidden_key
-                                /* Pointer to object base.      */
-                                /* No longer hidden once object */
-                                /* is on finalize_now queue.    */
 #   define fo_next(x) (struct finalizable_object *)((x) -> prolog.next)
 #   define fo_set_next(x,y) ((x)->prolog.next = (struct hash_chain_entry *)(y))
     GC_finalization_proc fo_fn; /* finalizer */
@@ -211,7 +209,7 @@ STATIC int GC_register_disappearing_link_inner(
           curr_dl -> dl_hidden_obj = GC_HIDE_POINTER(obj);
           UNLOCK();
 #         ifndef DBG_HDRS_ALL
-            /* Free unused new_dl returned by GC_oom_fn() */
+            /* Free unused new_dl returned by GC_oom_fn().      */
             GC_free(new_dl);
 #         endif
           return GC_DUPLICATE;
@@ -279,7 +277,10 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 {
     struct disappearing_link *curr_dl;
 
-    if ((ADDR(link) & (ALIGNMENT-1)) != 0) return 0; /* nothing to do */
+    if ((ADDR(link) & (ALIGNMENT-1)) != 0) {
+      /* Nothing to do. */
+      return 0;
+    }
 
     LOCK();
     curr_dl = GC_unregister_disappearing_link_inner(&GC_dl_hashtbl, link);
@@ -511,8 +512,10 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
   {
     struct disappearing_link *curr_dl;
 
-    if ((ADDR(link) & (ALIGNMENT-1)) != 0) return 0; /* nothing to do */
-
+    if ((ADDR(link) & (ALIGNMENT-1)) != 0) {
+      /* Nothing to do. */
+      return 0;
+    }
     LOCK();
     curr_dl = GC_unregister_disappearing_link_inner(&GC_ll_hashtbl, link);
     UNLOCK();
@@ -550,16 +553,17 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     if (EXPECT(NULL == curr_dl, FALSE)) {
       return GC_NOT_FOUND;
     } else if (link == new_link) {
-      return GC_SUCCESS; /* Nothing to do.      */
+      /* Nothing to do. */
+      return GC_SUCCESS;
     }
 
-    /* link found; now check new_link not present.      */
+    /* link is found; now check new_link not present.   */
     new_index = HASH2(new_link, dl_hashtbl -> log_size);
     new_hidden_link = GC_HIDE_POINTER(new_link);
     for (new_dl = dl_hashtbl -> head[new_index]; new_dl;
          new_dl = dl_next(new_dl)) {
       if (new_dl -> dl_hidden_link == new_hidden_link) {
-        /* Target already registered; bail.     */
+        /* Target already registered; bail out. */
         return GC_DUPLICATE;
       }
     }
@@ -586,9 +590,10 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     if ((ADDR(new_link) & (ALIGNMENT-1)) != 0
         || !NONNULL_ARG_NOT_NULL(new_link))
       ABORT("Bad new_link arg to GC_move_disappearing_link");
-    if ((ADDR(link) & (ALIGNMENT-1)) != 0)
-      return GC_NOT_FOUND; /* Nothing to do. */
-
+    if ((ADDR(link) & (ALIGNMENT-1)) != 0) {
+      /* Nothing to do. */
+      return GC_NOT_FOUND;
+    }
     LOCK();
     result = GC_move_disappearing_link_inner(&GC_dl_hashtbl, link, new_link);
     UNLOCK();
@@ -603,9 +608,10 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
       if ((ADDR(new_link) & (ALIGNMENT-1)) != 0
           || !NONNULL_ARG_NOT_NULL(new_link))
         ABORT("Bad new_link arg to GC_move_long_link");
-      if ((ADDR(link) & (ALIGNMENT-1)) != 0)
-        return GC_NOT_FOUND; /* Nothing to do. */
-
+      if ((ADDR(link) & (ALIGNMENT-1)) != 0) {
+        /* Nothing to do.       */
+        return GC_NOT_FOUND;
+      }
       LOCK();
       result = GC_move_disappearing_link_inner(&GC_ll_hashtbl, link, new_link);
       UNLOCK();
@@ -676,9 +682,9 @@ STATIC void GC_unreachable_finalize_mark_proc(ptr_t p)
     GC_normal_finalize_mark_proc(p);
 }
 
+/* Avoid the work if unreachable finalizable objects are not used.      */
+/* TODO: turn need_unreachable_finalization into a counter */
 static GC_bool need_unreachable_finalization = FALSE;
-        /* Avoid the work if this is not used.  */
-        /* TODO: turn need_unreachable_finalization into a counter */
 
 /* Register a finalization function.  See gc.h for details.     */
 /* The last parameter is a procedure that determines            */
@@ -862,7 +868,10 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     size_t dl_size = (size_t)1 << dl_hashtbl -> log_size;
     size_t i;
 
-    if (NULL == dl_hashtbl -> head) return; /* empty table  */
+    if (NULL == dl_hashtbl -> head) {
+      /* The table is empty.    */
+      return;
+    }
 
     for (i = 0; i < dl_size; i++) {
       struct disappearing_link *curr_dl;
@@ -912,11 +921,11 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 
 #ifndef THREADS
   /* Global variables to minimize the level of recursion when a client  */
-  /* finalizer allocates memory.                                        */
+  /* finalizer allocates memory.  (Only the lowest byte of              */
+  /* GC_finalizer_nested is used, the rest of the variable is padding   */
+  /* for the proper global data alignment required for some compilers   */
+  /* like Watcom.)                                                      */
   STATIC int GC_finalizer_nested = 0;
-                        /* Only the lowest byte is used, the rest is    */
-                        /* padding for proper global data alignment     */
-                        /* required for some compilers (like Watcom).   */
   STATIC unsigned GC_finalizer_skipped = 0;
 
   /* Checks and updates the level of finalizers recursion.              */
@@ -947,7 +956,10 @@ GC_INLINE void GC_make_disappearing_links_disappear(
   GC_bool needs_barrier = FALSE;
 
   GC_ASSERT(I_HOLD_LOCK());
-  if (NULL == dl_hashtbl -> head) return; /* empty table  */
+  if (NULL == dl_hashtbl -> head) {
+    /* The table is empty.      */
+    return;
+  }
 
   for (i = 0; i < dl_size; i++) {
     struct disappearing_link *curr_dl, *next_dl;
@@ -1005,7 +1017,7 @@ GC_INNER void GC_finalize(void)
 
     GC_ASSERT(I_HOLD_LOCK());
 #   ifndef SMALL_CONFIG
-      /* Save current GC_[dl/ll]_entries value for stats printing */
+      /* Save current GC_[dl/ll]_entries value for stats printing.      */
       GC_old_dl_entries = GC_dl_hashtbl.entries;
 #     ifndef GC_LONG_REFS_NOT_NEEDED
         GC_old_ll_entries = GC_ll_hashtbl.entries;
@@ -1047,31 +1059,32 @@ GC_INNER void GC_finalize(void)
               GC_set_mark_bit(real_ptr);
             }
             /* Delete from hash table.  */
-              next_fo = fo_next(curr_fo);
-              if (NULL == prev_fo) {
+            next_fo = fo_next(curr_fo);
+            if (NULL == prev_fo) {
                 GC_fnlz_roots.fo_head[i] = next_fo;
                 if (GC_object_finalized_proc) {
                   GC_dirty(GC_fnlz_roots.fo_head + i);
                 } else {
                   needs_barrier = TRUE;
                 }
-              } else {
+            } else {
                 fo_set_next(prev_fo, next_fo);
                 GC_dirty(prev_fo);
-              }
-              GC_fo_entries--;
-              if (GC_object_finalized_proc)
+            }
+            GC_fo_entries--;
+            if (GC_object_finalized_proc)
                 GC_object_finalized_proc(real_ptr);
 
             /* Add to list of objects awaiting finalization.    */
-              fo_set_next(curr_fo, GC_fnlz_roots.finalize_now);
-              GC_dirty(curr_fo);
-              SET_FINALIZE_NOW(curr_fo);
+            fo_set_next(curr_fo, GC_fnlz_roots.finalize_now);
+            GC_dirty(curr_fo);
+            SET_FINALIZE_NOW(curr_fo);
             /* Unhide object pointer so any future collections will   */
             /* see it.                                                */
-              curr_fo -> fo_hidden_base = (GC_hidden_pointer)GC_REVEAL_POINTER(
+            curr_fo -> fo_hidden_base = (GC_hidden_pointer)GC_REVEAL_POINTER(
                                                 curr_fo -> fo_hidden_base);
-              GC_bytes_finalized += (word)(curr_fo -> fo_object_sz)
+
+            GC_bytes_finalized += (word)(curr_fo -> fo_object_sz)
                                     + sizeof(struct finalizable_object);
             GC_ASSERT(GC_is_marked(GC_base(curr_fo)));
             curr_fo = next_fo;
@@ -1083,8 +1096,8 @@ GC_INNER void GC_finalize(void)
     }
 
   if (GC_java_finalization) {
-    /* Make sure we mark everything reachable from objects finalized    */
-    /* using the no-order fo_mark_proc.                                 */
+      /* Make sure we mark everything reachable from objects finalized  */
+      /* using the no-order fo_mark_proc.                               */
       for (curr_fo = GC_fnlz_roots.finalize_now;
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
         real_ptr = (ptr_t)(curr_fo -> fo_hidden_base); /* revealed */
@@ -1098,8 +1111,8 @@ GC_INNER void GC_finalize(void)
         }
       }
 
-    /* Now revive finalize-when-unreachable objects reachable from      */
-    /* other finalizable objects.                                       */
+      /* Now revive finalize-when-unreachable objects reachable from    */
+      /* other finalizable objects.                                     */
       if (need_unreachable_finalization) {
         curr_fo = GC_fnlz_roots.finalize_now;
         GC_ASSERT(NULL == curr_fo || GC_fnlz_roots.fo_head != NULL);
@@ -1166,9 +1179,9 @@ STATIC unsigned GC_interrupt_finalizers = 0;
 
 #ifndef JAVA_FINALIZATION_NOT_NEEDED
 
-  /* Enqueue all remaining finalizers to be run.        */
-  /* A collection in progress, if any, is completed     */
-  /* when the first finalizer is enqueued.              */
+  /* Enqueue all remaining finalizers to be run.  A collection in       */
+  /* progress, if any, is completed when the first finalizer is         */
+  /* enqueued.                                                          */
   STATIC void GC_enqueue_all_finalizers(void)
   {
     size_t i;
@@ -1204,7 +1217,8 @@ STATIC unsigned GC_interrupt_finalizers = 0;
           curr_fo = next_fo;
       }
     }
-    GC_fo_entries = 0;  /* all entries deleted from the hash table */
+    /* All entries are deleted from the hash table.     */
+    GC_fo_entries = 0;
   }
 
   /* Invoke all remaining finalizers that haven't yet been run.
@@ -1271,7 +1285,7 @@ GC_API int GC_CALL GC_should_invoke_finalizers(void)
 GC_API int GC_CALL GC_invoke_finalizers(void)
 {
     int count = 0;
-    word bytes_freed_before = 0; /* initialized to prevent warning. */
+    word bytes_freed_before = 0; /* initialized to prevent warning */
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
     while (GC_should_invoke_finalizers()) {
@@ -1280,8 +1294,8 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
 
         LOCK();
         if (count == 0) {
-            bytes_freed_before = GC_bytes_freed;
             /* Note: we hold the allocator lock here.   */
+            bytes_freed_before = GC_bytes_freed;
         } else if (EXPECT(GC_interrupt_finalizers != 0, FALSE)
                    && (unsigned)count >= GC_interrupt_finalizers) {
             UNLOCK();
@@ -1328,7 +1342,7 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
 {
     GC_finalizer_notifier_proc notifier_fn = 0;
 #   if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
-      static word last_back_trace_gc_no = 1;    /* Skip first one. */
+      static word last_back_trace_gc_no = 1; /* skip first one */
 #   endif
 
 #   if defined(THREADS) && !defined(KEEP_BACK_PTRS) \
@@ -1349,7 +1363,8 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
           if (!bt_in_progress) {
             long i;
 
-            bt_in_progress = TRUE; /* prevent recursion or parallel usage */
+            /* Prevent a recursion or parallel usage.   */
+            bt_in_progress = TRUE;
             for (i = 0; i < GC_backtraces; ++i) {
               /* FIXME: This tolerates concurrent heap mutation, which  */
               /* may cause occasional mysterious results.  We need to   */
@@ -1392,11 +1407,15 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
       /* Skip GC_invoke_finalizers() if nested. */
       if (pnested != NULL) {
         (void)GC_invoke_finalizers();
-        *pnested = 0; /* Reset since no more finalizers or interrupted. */
+        /* Reset since no more finalizers or interrupted.       */
+        *pnested = 0;
 #       ifndef THREADS
           GC_ASSERT(NULL == GC_fnlz_roots.finalize_now
                     || GC_interrupt_finalizers > 0);
-#       endif   /* Otherwise GC can run concurrently and add more */
+#       else
+          /* Note: in the multi-threaded case GC can run concurrently   */
+          /* and add more finalizers to run.                            */
+#       endif
       }
       return;
     }
@@ -1407,8 +1426,10 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
         last_finalizer_notification = GC_gc_no;
     }
     UNLOCK();
-    if (notifier_fn != 0)
-        (*notifier_fn)(); /* Invoke the notifier */
+    if (notifier_fn != 0) {
+        /* Invoke the notifier. */
+        (*notifier_fn)();
+    }
 }
 
 #ifndef SMALL_CONFIG

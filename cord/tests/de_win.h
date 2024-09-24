@@ -50,25 +50,23 @@ extern char * arg_file_name;
 
 /* Calls from de_win.c to de.c. */
 
+/* Get the contents (CORD) of i-th screen line. */
+/* Relies on COLS.                              */
 const void *retrieve_screen_line(int i);
-                        /* Get the contents (CORD) of i-th screen line. */
-                        /* Relies on COLS.                              */
 
+/* Set column, row.  Upper left of window = (0,0).      */
 void set_position(int x, int y);
-                        /* Set column, row.  Upper left of window = (0,0). */
 
-/*
- * Calls from de.c to de_win.c
- */
+/* Calls from de.c to de_win.c. */
 
+/* Physically move the cursor on the display,   */
+/* so that it appears at (column, line).        */
 void move_cursor(int column, int line);
-                        /* Physically move the cursor on the display,   */
-                        /* so that it appears at (column, line).        */
 
+/* Invalidate line i on the screen.     */
 void invalidate_line(int line);
-                        /* Invalidate line i on the screen.     */
 
+/* Display error message.       */
 void de_error(const char *s);
-                        /* Display error message.       */
 
 #endif /* DE_WIN_H */

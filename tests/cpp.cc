@@ -39,10 +39,10 @@ using boehmgc::traceable_allocator;
 #   define GC_API_PRIV GC_API
 # endif
 extern "C" {
+  // Use GC private output to reach the same log file.
+  // Don't include gc_priv.h, since that may include Windows system
+  // header files that do not take kindly to this context.
   GC_API_PRIV void GC_printf(const char * format, ...);
-  /* Use GC private output to reach the same log file.  */
-  /* Don't include gc_priv.h, since that may include Windows system     */
-  /* header files that don't take kindly to this context.               */
 }
 
 #ifdef MSWIN32
@@ -73,7 +73,7 @@ extern "C" {
         exit(1); }
 
 #if defined(__powerpc64__) && !defined(__clang__) && GC_GNUC_PREREQ(10, 0)
-  /* Suppress "layout of aggregates ... has changed" GCC note. */
+  // Suppress "layout of aggregates ... has changed" GCC note.
 # define A_I_TYPE short
 #else
 # define A_I_TYPE int
@@ -81,8 +81,8 @@ extern "C" {
 
 # define LARGE_CPP_ITER_CNT 1000000
 
+// An uncollectible class.
 class A {public:
-    /* An uncollectible class. */
 
     GC_ATTR_EXPLICIT A(int iArg): i(static_cast<A_I_TYPE>(iArg)) {}
     void Test( int iArg ) {
@@ -91,8 +91,8 @@ class A {public:
     A_I_TYPE i; };
 
 
+// A collectible class.
 class B: public GC_NS_QUALIFY(gc), public A { public:
-    /* A collectible class. */
 
     GC_ATTR_EXPLICIT B( int j ): A( j ) {}
     virtual ~B() GC_OVERRIDE {
@@ -116,8 +116,8 @@ int B::deleting = 0;
         } \
     }
 
+// A collectible class with cleanup and virtual multiple inheritance.
 class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
-    /* A collectible class with cleanup and virtual multiple inheritance. */
 
     // The class uses dynamic memory/resource allocation, so provide both
     // a copy constructor and an assignment operator to workaround a cppcheck
@@ -177,9 +177,9 @@ int C::nFreed = 0;
 int C::nAllocated = 0;
 
 
+// A collectible class with a static member function to be used as
+// an explicit cleanup function supplied to ::new.
 class D: public GC_NS_QUALIFY(gc) { public:
-    /* A collectible class with a static member function to be used as
-    an explicit clean-up function supplied to ::new. */
 
     GC_ATTR_EXPLICIT D( int iArg ): i( iArg ) {
         nAllocated++;}
@@ -203,8 +203,8 @@ int D::nFreed = 0;
 int D::nAllocated = 0;
 
 
+// A collectible class with cleanup for use by F.
 class E: public GC_NS_QUALIFY(gc_cleanup) { public:
-    /* A collectible class with clean-up for use by F. */
 
     E() {
         nAllocated++;}
@@ -218,9 +218,9 @@ int E::nFreed = 0;
 int E::nAllocated = 0;
 
 
+// A collectible class with cleanup, a base with cleanup, and
+// a member with cleanup.
 class F: public E {public:
-    /* A collectible class with clean-up, a base with clean-up, and a
-    member with clean-up. */
 
     F() {
         nAllocatedF++;
@@ -254,10 +254,11 @@ void* Undisguise(GC_uintptr_t v) {
     return GC_REVEAL_NZ_POINTER(v);
 }
 
+// Note: "delete p" should invoke GC_FREE().
 #define GC_CHECKED_DELETE(p) \
     { \
       size_t freed_before = GC_get_expl_freed_bytes_since_gc(); \
-      delete p; /* the operator should invoke GC_FREE() */ \
+      delete p; \
       size_t freed_after = GC_get_expl_freed_bytes_since_gc(); \
       my_assert(freed_before != freed_after); \
     }
@@ -307,15 +308,16 @@ void* Undisguise(GC_uintptr_t v) {
       }
 #elif defined(MACOS)
   int main() {
-    char* argv_[] = {"cpptest", "7"}; // MacOS doesn't have a command line
+    // MacOS does not have a command line.
+    char* argv_[] = {"cpptest", "7"};
     argv = argv_;
     argc = sizeof(argv_) / sizeof(argv_[0]);
 #else
   int main(int argc, const char *argv[]) {
 #endif
 
+    // This is needed due to C++ multiple inheritance used.
     GC_set_all_interior_pointers(1);
-                        /* needed due to C++ multiple inheritance used  */
 
 #   ifdef TEST_MANUAL_VDB
       GC_set_manual_vdb_allowed(1);
@@ -355,20 +357,22 @@ void* Undisguise(GC_uintptr_t v) {
     for (iters = 1; iters <= n; iters++) {
         GC_printf( "Starting iteration %d\n", iters );
 
-            /* Allocate some uncollectible As and disguise their pointers.
-            Later we'll check to see if the objects are still there.  We're
-            checking to make sure these objects really are uncollectible. */
+        // Allocate some uncollectible objects and disguise their pointers.
+        // Later we will check to see if the objects are still there.
+        // We're checking to make sure these objects are uncollectible really.
         GC_uintptr_t as[1000];
         GC_uintptr_t bs[1000];
         for (i = 0; i < 1000; i++) {
             as[ i ] = Disguise( new (GC_NS_QUALIFY(NoGC)) A(i) );
-            bs[ i ] = Disguise( new (GC_NS_QUALIFY(NoGC)) B(i) ); }
+            bs[ i ] = Disguise( new (GC_NS_QUALIFY(NoGC)) B(i) );
+        }
 
-            /* Allocate a fair number of finalizable Cs, Ds, and Fs.
-            Later we'll check to make sure they've gone away. */
+        // Allocate a fair number of finalizable objects.
+        // Later we will check to make sure they've gone away.
         for (i = 0; i < 1000; i++) {
             C* c = new C( 2 );
-            C c1( 2 );           /* stack allocation should work too */
+            // Stack allocation should work too.
+            C c1( 2 );
             F* f;
 #           if !defined(CPPCHECK)
               D* d;
@@ -385,9 +389,8 @@ void* Undisguise(GC_uintptr_t v) {
                 GC_CHECKED_DELETE(c);
         }
 
-            /* Allocate a very large number of collectible As and Bs and
-            drop the references to them immediately, forcing many
-            collections. */
+        // Allocate a very large number of collectible objects and drop
+        // the references to them immediately, forcing many collections.
         for (i = 0; i < LARGE_CPP_ITER_CNT; i++) {
             const A* a;
             a = new (USE_GC) A( i );
@@ -403,9 +406,9 @@ void* Undisguise(GC_uintptr_t v) {
 #           if defined(FINALIZE_ON_DEMAND) && !defined(GC_NO_FINALIZATION)
               GC_invoke_finalizers();
 #           endif
-            }
+        }
 
-            /* Make sure the uncollectible As and Bs are still there. */
+        // Make sure the uncollectible objects are still there.
         for (i = 0; i < 1000; i++) {
             A* a = static_cast<A*>(Undisguise(as[i]));
             B* b = static_cast<B*>(Undisguise(bs[i]));
@@ -425,13 +428,13 @@ void* Undisguise(GC_uintptr_t v) {
 #           if defined(FINALIZE_ON_DEMAND) && !defined(GC_NO_FINALIZATION)
                  GC_invoke_finalizers();
 #           endif
-            }
+        }
 
-            /* Make sure most of the finalizable Cs, Ds, and Fs have
-            gone away. */
+        // Make sure most of the finalizable objects have gone away.
         C::Test();
         D::Test();
-        F::Test();}
+        F::Test();
+    }
 
     x = *xptr;
     my_assert(29 == x[0]);

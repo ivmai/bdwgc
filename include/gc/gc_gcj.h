@@ -88,10 +88,9 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_gcj_malloc_ignore_off_page(size_t /* lb */,
                                       const void * /* vtable_ptr */);
 
-/* The kind numbers of normal and debug gcj objects.            */
-/* Useful only for debug support, we hope.                      */
+/* The kind numbers of normal and debug gcj objects.  Useful only for   */
+/* debug support, we hope.                                              */
 GC_API int GC_gcj_kind;
-
 GC_API int GC_gcj_debug_kind;
 
 #ifdef GC_DEBUG

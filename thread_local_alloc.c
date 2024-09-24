@@ -134,8 +134,10 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
     /* We currently only do this from the thread itself.        */
     GC_STATIC_ASSERT(THREAD_FREELISTS_KINDS <= MAXOBJKINDS);
     for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
-        if (k == (int)GC_n_kinds)
-            break; /* kind is not created */
+        if (k == (int)GC_n_kinds) {
+            /* The kind is not created. */
+            break;
+        }
         return_freelists(p -> _freelists[k], GC_obj_kinds[k].ok_freelist);
     }
 #   ifdef GC_GCJ_SUPPORT
@@ -232,28 +234,25 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t lb,
 
     GC_ASSERT(GC_gcjobjfreelist != NULL);
     tiny_fl = ((GC_tlfs)GC_getspecific(GC_thread_key))->gcj_freelists;
+
+    /* This forces the initialization of the "method ptr".  This is     */
+    /* necessary to ensure some very subtle properties required if      */
+    /* a garbage collection is run in the middle of such an allocation. */
+    /* Here we implicitly also assume atomicity for the free list and   */
+    /* method pointer assignments.  We must update the free list before */
+    /* we store the pointer.  Otherwise a collection at this point      */
+    /* would see a corrupted free list.  A real memory barrier is not   */
+    /* needed, since the action of stopping this thread will cause      */
+    /* prior writes to complete.  We assert that any concurrent marker  */
+    /* will stop us.  Thus it is impossible for a mark procedure to see */
+    /* the allocation of the next object, but to see this object still  */
+    /* containing a free-list pointer.  Otherwise the marker, by        */
+    /* misinterpreting the free-list link as a vtable pointer, might    */
+    /* find a random "mark descriptor" in the next object.              */
     GC_FAST_MALLOC_GRANS(result, lg, tiny_fl, DIRECT_GRANULES, GC_gcj_kind,
                          GC_core_gcj_malloc(lb, vtable_ptr, 0 /* flags */),
                          do { AO_compiler_barrier();
                            *(const void **)result = vtable_ptr; } while(0));
-        /* This forces the initialization of the "method ptr".          */
-        /* This is necessary to ensure some very subtle properties      */
-        /* required if a GC is run in the middle of such an allocation. */
-        /* Here we implicitly also assume atomicity for the free list.  */
-        /* and method pointer assignments.                              */
-        /* We must update the free list before we store the pointer.    */
-        /* Otherwise a GC at this point would see a corrupted           */
-        /* free list.                                                   */
-        /* A real memory barrier is not needed, since the               */
-        /* action of stopping this thread will cause prior writes       */
-        /* to complete.                                                 */
-        /* We assert that any concurrent marker will stop us.           */
-        /* Thus it is impossible for a mark procedure to see the        */
-        /* allocation of the next object, but to see this object        */
-        /* still containing a free-list pointer.  Otherwise the         */
-        /* marker, by misinterpreting the free-list link as a vtable    */
-        /* pointer, might find a random "mark descriptor" in the next   */
-        /* object.                                                      */
     return result;
   }
 }

@@ -79,7 +79,8 @@ GC_API void * WRAP_DLFUNC(dlopen)(const char *path, int mode)
 # endif
   result = REAL_DLFUNC(dlopen)(path, mode);
 # ifndef USE_PROC_FOR_LIBRARIES
-    GC_enable(); /* undoes disable_gc_for_dlopen */
+    /* This undoes disable_gc_for_dlopen().     */
+    GC_enable();
 # endif
   return result;
 }

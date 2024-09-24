@@ -130,15 +130,16 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
       };
 #   endif
 # else
-    EXTERN_C_BEGIN      /* Workaround missing extern "C" around _DYNAMIC */
-                        /* symbol in link.h of some Linux hosts.         */
+    /* Workaround missing extern "C" around _DYNAMIC symbol in link.h   */
+    /* of some Linux hosts.                                             */
+    EXTERN_C_BEGIN
 #   include <link.h>
     EXTERN_C_END
 # endif
 #endif
 
-/* Newer versions of GNU/Linux define this macro.  We
- * define it similarly for any ELF systems that don't.  */
+/* Newer versions of GNU/Linux define this macro.  We define it         */
+/* similarly for any ELF systems that do not.                           */
 # ifndef ElfW
 #   if defined(FREEBSD)
 #     if __ELF_WORD_SIZE == 32
@@ -553,7 +554,8 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
     }
 # endif
 
-  *(int *)ptr = 1;     /* Signal that we were called */
+  /* Signal that we were called.        */
+  *(int *)ptr = 1;
   return 0;
 }
 
@@ -638,9 +640,8 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
       /* statically linked executables.                         */
       GC_add_roots_inner(datastart, dataend, TRUE);
 #     ifdef GC_HAVE_DATAREGION2
+        /* Subtract one to check also for NULL without a compiler warning. */
         if (ADDR(DATASTART2) - 1U >= ADDR(DATAEND2)) {
-                        /* Subtract one to check also for NULL  */
-                        /* without a compiler warning.          */
           ABORT_ARG2("Wrong DATASTART/END2 pair",
                      ": %p .. %p", (void *)DATASTART2, (void *)DATAEND2);
         }
@@ -806,20 +807,20 @@ GC_INNER void GC_register_dynamic_libraries(void)
 {
     static int fd = -1;
     static prmap_t * addr_map = 0;
-    static int current_sz = 0;  /* Number of records currently in addr_map */
-
+    /* Number of records currently in addr_map. */
+    static int current_sz = 0;
     char buf[32];
-    int needed_sz = 0;          /* Required size of addr_map            */
+    /* Required size of addr_map.       */
+    int needed_sz = 0;
     int i;
     long flags;
     ptr_t start;
     ptr_t limit;
     word heap_start = ADDR(HEAP_START);
     word heap_end = heap_start;
-
 #   ifdef SOLARISDL
 #     define MA_PHYS 0
-#   endif /* SOLARISDL */
+#   endif
 
     GC_ASSERT(I_HOLD_LOCK());
     if (fd < 0) {
@@ -837,8 +838,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
     if (needed_sz >= current_sz) {
         GC_scratch_recycle_no_gww(addr_map,
                                   (size_t)current_sz * sizeof(prmap_t));
+        /* Expansion, plus room for record 0.   */
         current_sz = needed_sz * 2 + 1;
-                        /* Expansion, plus room for 0 record */
         addr_map = (prmap_t *)GC_scratch_alloc(
                                 (size_t)current_sz * sizeof(prmap_t));
         if (addr_map == NULL)
@@ -861,12 +862,11 @@ GC_INNER void GC_register_dynamic_libraries(void)
                       | MA_FETCHOP | MA_NOTCACHED)) != 0) goto irrelevant;
         if ((flags & (MA_READ | MA_WRITE)) != (MA_READ | MA_WRITE))
             goto irrelevant;
-          /* The latter test is empirically useless in very old Irix    */
-          /* versions.  Other than the                                  */
-          /* main data and stack segments, everything appears to be     */
-          /* mapped readable, writable, executable, and shared(!!).     */
-          /* This makes no sense to me. - HB                            */
-        start = (ptr_t)(addr_map[i].pr_vaddr);
+        /* The latter test is empirically useless in very old Irix      */
+        /* versions.  Other than the main data and stack segments,      */
+        /* everything appears to be mapped readable, writable,          */
+        /* executable, and shared(!!).  This makes no sense to me. - HB */
+        start = (ptr_t)addr_map[i].pr_vaddr;
         if (GC_roots_present(start)
             || (ADDR(start) >= heap_start && ADDR(start) < heap_end))
           goto irrelevant;
@@ -882,8 +882,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
             caddr_t arg;
             int obj;
 #           define MAP_IRR_SZ 10
+            /* Known irrelevant map entries.    */
             static ptr_t map_irr[MAP_IRR_SZ];
-                                        /* Known irrelevant map entries */
             static int n_irr = 0;
             struct stat buf;
             int j;
@@ -912,8 +912,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
     /* to keep a /proc file descriptor around during kill -9.             */
     /* Otherwise, it should also require FD_CLOEXEC and proper handling   */
     /* at fork (i.e. close because of the pid change).                    */
-        if (close(fd) < 0) ABORT("Couldn't close /proc file");
-        fd = -1;
+    if (close(fd) < 0) ABORT("Couldn't close /proc file");
+    fd = -1;
 }
 
 # endif /* USE_PROC_FOR_LIBRARIES || IRIX5 */
@@ -946,7 +946,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
       stack_top = PTR_ALIGN_DOWN(GC_approx_sp(),
                                  GC_sysinfo.dwAllocationGranularity);
       if (ADDR_LT(stack_top, limit) && ADDR_LT(base, GC_stackbottom)) {
-          /* Part of the stack; ignore it. */
+          /* Part of the stack; ignore it.      */
           return;
       }
       GC_add_roots_inner(base, limit, TRUE);
@@ -1068,7 +1068,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
     ldr_process_t mypid;
 
     GC_ASSERT(I_HOLD_LOCK());
-    mypid = ldr_my_process(); /* obtain id of this process */
+    /* Obtain id of this process.       */
+    mypid = ldr_my_process();
 
     /* For each module. */
     for (;;) {
@@ -1080,26 +1081,30 @@ GC_INNER void GC_register_dynamic_libraries(void)
       int status = ldr_next_module(mypid, &moduleid);
                                 /* Get the next (first) module */
 
-      if (moduleid == LDR_NULL_MODULE)
-        break;  /* no more modules */
+      if (moduleid == LDR_NULL_MODULE) {
+        /* No more modules.     */
+        break;
+      }
 
       /* Check status AFTER checking moduleid because       */
       /* of a bug in the non-shared ldr_next_module stub.   */
-        if (status != 0) {
+      if (status != 0) {
           ABORT_ARG3("ldr_next_module failed",
                      ": status= %d, errcode= %d (%s)", status, errno,
                      errno < sys_nerr ? sys_errlist[errno] : "");
-        }
+      }
 
-      /* Get the module information */
-        status = ldr_inq_module(mypid, moduleid, &moduleinfo,
-                                sizeof(moduleinfo), &modulereturnsize);
-        if (status != 0 )
-            ABORT("ldr_inq_module failed");
+      /* Get the module information.    */
+      status = ldr_inq_module(mypid, moduleid, &moduleinfo,
+                              sizeof(moduleinfo), &modulereturnsize);
+      if (status != 0)
+        ABORT("ldr_inq_module failed");
 
-      /* is module for the main program (i.e. nonshared portion)? */
-          if (moduleinfo.lmi_flags & LDR_MAIN)
-              continue;    /* skip the main module */
+      /* Is module for the main program (i.e. nonshared portion)?   */
+      if ((moduleinfo.lmi_flags & LDR_MAIN) != 0) {
+        /* Skip the main module.        */
+        continue;
+      }
 
 #     ifdef DL_VERBOSE
         GC_log_printf("---Module---\n");
@@ -1110,16 +1115,16 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #     endif
 
       /* For each region in this module. */
-        for (region = 0; region < moduleinfo.lmi_nregion; region++) {
-          /* Get the region information */
-            status = ldr_inq_region(mypid, moduleid, region, &regioninfo,
-                                    sizeof(regioninfo), &regionreturnsize);
-            if (status != 0 )
-                ABORT("ldr_inq_region failed");
+      for (region = 0; region < moduleinfo.lmi_nregion; region++) {
+          /* Get the region information. */
+          status = ldr_inq_region(mypid, moduleid, region, &regioninfo,
+                                  sizeof(regioninfo), &regionreturnsize);
+          if (status != 0)
+            ABORT("ldr_inq_region failed");
 
-          /* only process writable (data) regions */
-            if (! (regioninfo.lri_prot & LDR_W))
-                continue;
+          /* Only process writable (data) regions.      */
+          if ((regioninfo.lri_prot & LDR_W) == 0)
+            continue;
 
 #         ifdef DL_VERBOSE
             GC_log_printf("--- Region ---\n");
@@ -1131,12 +1136,12 @@ GC_INNER void GC_register_dynamic_libraries(void)
             GC_log_printf("Region name: \"%s\"\n", regioninfo.lri_name);
 #         endif
 
-          /* register region as a garbage collection root */
+          /* Register region as a garbage collection root.      */
           GC_add_roots_inner((char *)regioninfo.lri_mapaddr,
                         (char *)regioninfo.lri_mapaddr + regioninfo.lri_size,
                         TRUE);
 
-        }
+      }
     }
   }
 #endif /* ALPHA && OSF1 */
@@ -1152,31 +1157,35 @@ EXTERN_C_END
 
 GC_INNER void GC_register_dynamic_libraries(void)
 {
-  int index = 1; /* Ordinal position in shared library search list */
+  /* Ordinal position in shared library search list.    */
+  int index = 1;
 
   GC_ASSERT(I_HOLD_LOCK());
   /* For each dynamic library loaded. */
   for (;;) {
-      struct shl_descriptor *shl_desc; /* Shared library info, see dl.h */
+       /* Shared library info, see dl.h.        */
+      struct shl_descriptor *shl_desc;
+      /* Get info about next shared library.    */
       int status = shl_get(index, &shl_desc);
-                                /* Get info about next shared library   */
 
-      /* Check if this is the end of the list or if some error occurred */
-        if (status != 0) {
+
+      /* Check if this is the end of the list or if some error occurred. */
+      if (status != 0) {
 #        ifdef GC_HPUX_THREADS
            /* I've seen errno values of 0.  The man page is not clear   */
            /* as to whether errno should get set on a -1 return.        */
            break;
 #        else
           if (errno == EINVAL) {
-            break; /* Moved past end of shared library list --> finished */
+            /* Moved past end of shared library list.  Finish.  */
+            break;
           } else {
             ABORT_ARG3("shl_get failed",
                        ": status= %d, errcode= %d (%s)", status, errno,
                        errno < sys_nerr ? sys_errlist[errno] : "");
           }
 #        endif
-        }
+      }
 
 #     ifdef DL_VERBOSE
         GC_log_printf("---Shared library---\n");
@@ -1190,11 +1199,12 @@ GC_INNER void GC_register_dynamic_libraries(void)
         GC_log_printf("ref.count= %lu\n", shl_desc->ref_count);
 #     endif
 
-      /* register shared library's data segment as a garbage collection root */
-        GC_add_roots_inner((char *) shl_desc->dstart,
-                           (char *) shl_desc->dend, TRUE);
+      /* Register shared library's data segment as a garbage collection */
+      /* root.                                                          */
+      GC_add_roots_inner((char *)shl_desc->dstart,
+                         (char *)shl_desc->dend, TRUE);
 
-        index++;
+      index++;
   }
 }
 #endif /* HPUX */
@@ -1281,7 +1291,7 @@ STATIC const struct dyld_sections_s {
     { SEG_DATA, SECT_BSS },
     { SEG_DATA, SECT_COMMON },
     /* FSF GCC - zero-sized object sections for targets         */
-    /*supporting section anchors.                               */
+    /* supporting section anchors.                              */
     { SEG_DATA, "__zobj_data" },
     { SEG_DATA, "__zobj_bss" }
 };
@@ -1467,13 +1477,13 @@ GC_INNER void GC_init_dyld(void)
      This WILL properly register already linked libraries and libraries
      linked in the future.
   */
+
+  /* Structure mach_header_64 has the same fields as mach_header except */
+  /* for the reserved one at the end, so these casts are OK.            */
   _dyld_register_func_for_add_image(
         (void (*)(const struct mach_header*, intptr_t))GC_dyld_image_add);
   _dyld_register_func_for_remove_image(
         (void (*)(const struct mach_header*, intptr_t))GC_dyld_image_remove);
-                        /* Structure mach_header_64 has the same fields */
-                        /* as mach_header except for the reserved one   */
-                        /* at the end, so these casts are OK.           */
 
   /* Set this early to avoid reentrancy issues. */
   initialized = TRUE;

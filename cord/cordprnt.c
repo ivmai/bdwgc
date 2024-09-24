@@ -42,11 +42,12 @@
 #include "gc/cord.h"
 #include "gc/ec.h"
 
-#define CONV_SPEC_LEN 50        /* Maximum length of a single   */
-                                /* conversion specification.    */
-#define CONV_RESULT_LEN 50      /* Maximum length of any        */
-                                /* conversion with default      */
-                                /* width and prec.              */
+/* Maximum length of a single conversion specification. */
+#define CONV_SPEC_LEN 50
+
+/* Maximum length of any conversion with default width and prec.    */
+#define CONV_RESULT_LEN 50
+
 #if defined(CPPCHECK)
 # define MACRO_BLKSTMT_BEGIN {
 # define MACRO_BLKSTMT_END   }
@@ -68,7 +69,9 @@ static size_t ec_len(CORD_ec x)
 
 /* Possible non-numeric precision values.   */
 # define NONE -1
+
 # define VARIABLE -2
+
 /* Copy the conversion specification from CORD_pos into the buffer buf  */
 /* Return negative on error.                                            */
 /* Source initially points one past the leading %.                      */

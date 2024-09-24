@@ -56,8 +56,9 @@ static void * GC_CALLBACK on_thread_exit_inner(struct GC_stack_base * sb,
 {
   int res = GC_register_my_thread(sb);
   pthread_t t;
-  int creation_res;     /* Used to suppress a warning about     */
-                        /* unchecked pthread_create() result.   */
+  /* This is used to suppress a warning about unchecked                 */
+  /* pthread_create() result.                                           */
+  int creation_res;
   pthread_attr_t attr;
 
   if (pthread_attr_init(&attr) != 0
@@ -91,7 +92,8 @@ static void make_key(void)
 # define NTHREADS 5
 #endif
 
-#define NTHREADS_INNER (NTHREADS * 6) /* number of threads to create */
+/* Number of threads to create. */
+#define NTHREADS_INNER (NTHREADS * 6)
 
 int main(void)
 {
