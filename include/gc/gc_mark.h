@@ -96,7 +96,7 @@ typedef struct GC_ms_entry * (GC_CALLBACK * GC_mark_proc)(GC_word * /* addr */,
                         /* the first "pointer-sized" word is a pointer. */
                         /* (This unconventional ordering sometimes      */
                         /* makes the marker slightly faster.)           */
-                        /* Zeroes indicate definite non-pointers; ones  */
+                        /* Zeros indicate definite non-pointers; ones   */
                         /* indicate possible pointers.                  */
                         /* Only usable if pointers are aligned.         */
 #define GC_DS_PROC   2
