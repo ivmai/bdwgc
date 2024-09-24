@@ -115,7 +115,7 @@ WHATS NEW:
 
 STILL MISSING:
 
-Programs can not be started from workbench, at least not for SAS/C. (Martin
+Programs cannot be started from workbench, at least not for SAS/C. (Martin
 Tauchmanns note about that it now works with workbench is definitely wrong
 when concerning SAS/C).  An iconx-script solves this problem.
 
