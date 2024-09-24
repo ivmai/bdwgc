@@ -1221,13 +1221,11 @@ STATIC void GC_do_parallel_mark(void)
 {
     GC_ASSERT(I_HOLD_LOCK());
     GC_acquire_mark_lock();
-
-    /* This could be a GC_ASSERT, but it seems safer to keep it on      */
-    /* all the time, especially since it's cheap.                       */
-    if (GC_help_wanted || GC_active_count != 0 || GC_helper_count != 0)
-        ABORT("Tried to start parallel mark in bad state");
+    GC_ASSERT(!GC_help_wanted);
+    GC_ASSERT(0 == GC_active_count && 0 == GC_helper_count);
     GC_VERBOSE_LOG_PRINTF("Starting marking for mark phase number %lu\n",
                           (unsigned long)GC_mark_no);
+
     GC_cptr_store(&GC_first_nonempty, (ptr_t)GC_mark_stack);
     GC_active_count = 0;
     GC_helper_count = 1;
