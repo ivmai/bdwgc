@@ -13,7 +13,7 @@
 
 /*
  * This is a reimplementation of a subset of the pthread_get/setspecific
- * interface. This appears to outperform the standard linuxthreads one
+ * interface.  This appears to outperform the standard LinuxThreads one
  * by a significant margin.
  * The major restriction is that each thread may only make a single
  * pthread_setspecific call on a single key.  (The current data structure

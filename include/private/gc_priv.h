@@ -3134,7 +3134,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, size_t sz, const char *str,
       /* It is aliased to SIGLOST in asm/signal.h, though.              */
 #     define SIG_SUSPEND SIGLOST
 #   else
-      /* Linuxthreads itself uses SIGUSR1 and SIGUSR2.                  */
+      /* LinuxThreads itself uses SIGUSR1 and SIGUSR2.                  */
 #     define SIG_SUSPEND SIGPWR
 #   endif
 # elif defined(GC_FREEBSD_THREADS) && defined(__GLIBC__) \

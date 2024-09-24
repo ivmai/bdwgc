@@ -57,7 +57,7 @@ To use threads, you need to abide by the following requirements:
    in simple cases.
 
 6) Thread-local storage (TLS) may not be viewed as part of the root set by the
-   collector.  This probably depends on the linuxthreads version.  For the
+   collector.  This probably depends on the LinuxThreads version.  For the
    time being, any collectible memory referenced by thread-local storage
    should also be referenced from elsewhere, or be allocated as uncollectible.
    (This is really a bug that should be fixed somehow.  Actually, the

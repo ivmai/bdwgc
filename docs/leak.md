@@ -54,7 +54,7 @@ generate additional bogus leak reports, since the collector itself drops some
 associated objects.
 
 The same is generally true of thread support. However, the correct leak
-reports should be generated with linuxthreads, at least.
+reports should be generated with LinuxThreads, at least.
 
 On a few platforms (currently Linux/i686, Linux/x86_64 and SPARC), `GC_MALLOC`
 also causes some more information about its call stack to be saved in the

@@ -2344,7 +2344,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
   /* Called at thread exit.  Never called for main thread.      */
   /* That is OK, since it results in at most a tiny one-time    */
-  /* leak.  And linuxthreads implementation does not reclaim    */
+  /* leak.  And LinuxThreads implementation does not reclaim    */
   /* the primordial (main) thread resources or id anyway.       */
   GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
   {

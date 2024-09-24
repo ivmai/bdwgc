@@ -143,7 +143,7 @@ primitives thus perform slightly worse than without `-DTHREAD_LOCAL_ALLOC`,
 and should be avoided in time-critical code.
 
 (The results using `pthread_mutex_lock` directly for acquiring the allocator
-lock would have been worse still, at least for older versions of linuxthreads.
+lock would have been worse still, at least for older versions of LinuxThreads.
 With `-DTHREAD_LOCAL_ALLOC`, we first repeatedly try to acquire the allocator
 lock with `pthread_mutex_try_lock`, busy-waiting between attempts. After
 a fixed number of attempts, we use `pthread_mutex_lock`.)
