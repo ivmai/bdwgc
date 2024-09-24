@@ -227,7 +227,7 @@
 * Do not send signal to thread which is suspended manually
 * Do not use usleep between signals resend if ThreadSanitizer
 * Eliminate '-pedantic is not option that controls warnings' GCC-6.3 message
-* Eliminate '/GS can not protect parameters' MS VC warning in msvc_dbg
+* Eliminate '/GS cannot protect parameters' MS VC warning in msvc_dbg
 * Eliminate 'R_AARCH64_ABS64 used with TLS symbol' linker warning (clang)
 * Eliminate 'buffer overflow detected' FP error in realloc_test
 * Eliminate 'extension used' clang warning in sparc_mach_dep.S (configure)
