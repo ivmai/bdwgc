@@ -146,7 +146,7 @@ GC_API GC_ATTR_DEPRECATED int GC_all_interior_pointers;
                         /* not be changed after GC initialization (in   */
                         /* case of calling it after the GC is           */
                         /* initialized, the setter acquires the GC lock */
-                        /* (to avoid data races).  The initial value    */
+                        /* to avoid data races).  The initial value     */
                         /* depends on whether the GC is built with      */
                         /* ALL_INTERIOR_POINTERS macro defined or not.  */
                         /* Unless DONT_ADD_BYTE_AT_END is defined, this */
