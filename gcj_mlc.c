@@ -49,7 +49,7 @@ GC_bool GC_gcj_malloc_initialized = FALSE;
 int GC_gcj_kind = 0;    /* Object kind for objects with descriptors     */
                         /* in "vtable".                                 */
 int GC_gcj_debug_kind = 0;
-                        /* The kind of objects that is always marked    */
+                        /* The kind of objects that are always marked   */
                         /* with a mark proc call.                       */
 
 GC_INNER ptr_t * GC_gcjobjfreelist = NULL;
