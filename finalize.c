@@ -88,17 +88,18 @@ GC_API void GC_CALL GC_push_finalizer_structures(void)
 # define GC_ON_GROW_LOG_SIZE_MIN LOG_HBLKSIZE
 #endif
 
-/* Double the size of a hash table. *log_size_ptr is the log of its     */
-/* current size.  May be a no-op.  *table is a pointer to an array of   */
-/* hash headers.  We update both *table and *log_size_ptr on success.   */
-STATIC void GC_grow_table(struct hash_chain_entry ***table,
+/* Double the size of a hash table.  *log_size_ptr is the log of its    */
+/* current size.  May be a no-op.  *table_ptr is a pointer to an array  */
+/* of hash headers.  We update both *table_ptr and *log_size_ptr on     */
+/* success.                                                             */
+STATIC void GC_grow_table(struct hash_chain_entry ***table_ptr,
                           unsigned *log_size_ptr, const size_t *entries_ptr)
 {
     size_t i;
     struct hash_chain_entry *p;
     unsigned log_old_size = *log_size_ptr;
     unsigned log_new_size = log_old_size + 1;
-    size_t old_size = NULL == *table ? 0 : (size_t)1 << log_old_size;
+    size_t old_size = NULL == *table_ptr ? 0 : (size_t)1 << log_old_size;
     size_t new_size = (size_t)1 << log_new_size;
     /* FIXME: Power of 2 size often gets rounded up to one more page. */
     struct hash_chain_entry **new_table;
@@ -123,14 +124,14 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
                     GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
                         new_size * sizeof(struct hash_chain_entry *), NORMAL);
     if (NULL == new_table) {
-        if (NULL == *table) {
+        if (NULL == *table_ptr) {
             ABORT("Insufficient space for initial table allocation");
         } else {
             return;
         }
     }
     for (i = 0; i < old_size; i++) {
-      for (p = (*table)[i]; p != NULL;) {
+      for (p = (*table_ptr)[i]; p != NULL;) {
         ptr_t real_key = (ptr_t)GC_REVEAL_POINTER(p -> hidden_key);
         struct hash_chain_entry *next = p -> next;
         size_t new_hash = HASH3(real_key, new_size, log_new_size);
@@ -142,7 +143,7 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
       }
     }
     *log_size_ptr = log_new_size;
-    *table = new_table;
+    *table_ptr = new_table;
     GC_dirty(new_table); /* entire object */
 }
 
