@@ -204,7 +204,7 @@ GC_API GC_ATTR_DEPRECATED int GC_all_interior_pointers;
                         /* not be changed after GC initialization (in   */
                         /* case of calling it after the GC is           */
                         /* initialized, the setter acquires the         */
-                        /* allocator lock.  Must be only 0 or 1.  The   */
+                        /* allocator lock).  Must be only 0 or 1.  The  */
                         /* initial value depends on whether the GC is   */
                         /* built with ALL_INTERIOR_POINTERS macro       */
                         /* defined or not.  This also affects, unless   */
