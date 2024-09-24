@@ -241,7 +241,7 @@
     LOCK();
     current = GC_generate_random_valid_address();
     UNLOCK();
-    GC_printf("\n****Chosen address %p in object\n", current);
+    GC_printf("\n***Chosen address %p in object\n", current);
     GC_print_backtrace(current);
   }
 

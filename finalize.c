@@ -1358,7 +1358,7 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
               void *current = GC_generate_random_valid_address();
 
               UNLOCK();
-              GC_printf("\n****Chosen address %p in object\n", current);
+              GC_printf("\n***Chosen address %p in object\n", current);
               GC_print_backtrace(current);
               LOCK();
             }
