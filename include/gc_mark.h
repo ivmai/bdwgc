@@ -92,7 +92,7 @@ typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
                         /* the first word is a pointer.                 */
                         /* (This unconventional ordering sometimes      */
                         /* makes the marker slightly faster.)           */
-                        /* Zeroes indicate definite nonpointers.  Ones  */
+                        /* Zeros indicate definite nonpointers.  Ones   */
                         /* indicate possible pointers.                  */
                         /* Only usable if pointers are word aligned.    */
 #define GC_DS_PROC   2
