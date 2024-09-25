@@ -2303,6 +2303,7 @@ GC_INNER void GC_setpagesize(void)
 STATIC ptr_t GC_unix_sbrk_get_mem(size_t bytes)
 {
   ptr_t result;
+
 # ifdef IRIX5
     /* Bare sbrk isn't thread safe.  Play by malloc rules.      */
     /* The equivalent may be needed on other systems as well.   */
@@ -2313,14 +2314,14 @@ STATIC ptr_t GC_unix_sbrk_get_mem(size_t bytes)
     SBRK_ARG_T lsbs = ADDR(cur_brk) & (GC_page_size-1);
 
     GC_ASSERT(GC_page_size != 0);
-    if ((SBRK_ARG_T)bytes < 0) {
+    if (EXPECT((SBRK_ARG_T)bytes < 0, FALSE)) {
         /* Value of bytes is too big.   */
-        result = 0;
+        result = NULL;
         goto out;
     }
     if (lsbs != 0) {
         if ((ptr_t)sbrk((SBRK_ARG_T)GC_page_size - lsbs) == (ptr_t)(-1)) {
-            result = 0;
+            result = NULL;
             goto out;
         }
     }
@@ -2334,7 +2335,7 @@ STATIC ptr_t GC_unix_sbrk_get_mem(size_t bytes)
       }
 #   endif
     result = (ptr_t)sbrk((SBRK_ARG_T)bytes);
-    if (result == (ptr_t)(-1)) result = 0;
+    if (EXPECT(result == (ptr_t)(-1), FALSE)) result = NULL;
   }
  out:
 # ifdef IRIX5
@@ -2348,7 +2349,7 @@ ptr_t GC_unix_get_mem(size_t bytes)
 # if defined(MMAP_SUPPORTED)
     /* By default, we try both sbrk and mmap, in that order.    */
     static GC_bool sbrk_failed = FALSE;
-    ptr_t result = 0;
+    ptr_t result = NULL;
 
     if (GC_pages_executable) {
         /* If the allocated memory should have the execute permission   */
@@ -2356,13 +2357,13 @@ ptr_t GC_unix_get_mem(size_t bytes)
         return GC_unix_mmap_get_mem(bytes);
     }
     if (!sbrk_failed) result = GC_unix_sbrk_get_mem(bytes);
-    if (0 == result) {
+    if (NULL == result) {
         sbrk_failed = TRUE;
         result = GC_unix_mmap_get_mem(bytes);
-    }
-    if (0 == result) {
-        /* Try sbrk again, in case sbrk memory became available.        */
-        result = GC_unix_sbrk_get_mem(bytes);
+        if (NULL == result) {
+            /* Try sbrk again, in case sbrk memory became available.    */
+            result = GC_unix_sbrk_get_mem(bytes);
+        }
     }
     return result;
 # else /* !MMAP_SUPPORTED */
@@ -2394,14 +2395,14 @@ ptr_t GC_unix_get_mem(size_t bytes)
 #ifdef MSWIN_XBOX1
     ptr_t GC_durango_get_mem(size_t bytes)
     {
-      if (0 == bytes) return NULL;
+      if (EXPECT(0 == bytes, FALSE)) return NULL;
       return (ptr_t)VirtualAlloc(NULL, bytes, MEM_COMMIT | MEM_TOP_DOWN,
                                  PAGE_READWRITE);
     }
 #elif defined(MSWINCE)
   ptr_t GC_wince_get_mem(size_t bytes)
   {
-    ptr_t result = 0; /* initialized to prevent warning */
+    ptr_t result = NULL; /* initialized to prevent warning */
     size_t i;
 
     GC_ASSERT(GC_page_size != 0);
@@ -2436,7 +2437,7 @@ ptr_t GC_unix_get_mem(size_t bytes)
           ABORT("Bad VirtualAlloc result");
         }
         if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
-        if (result == NULL) return NULL;
+        if (EXPECT(NULL == result, FALSE)) return NULL;
         GC_heap_bases[GC_n_heap_bases] = result;
         GC_heap_lengths[GC_n_heap_bases] = 0;
         GC_n_heap_bases++;
@@ -2448,10 +2449,8 @@ ptr_t GC_unix_get_mem(size_t bytes)
                                                   : PAGE_READWRITE);
 #   undef IGNORE_PAGES_EXECUTABLE
 
-    if (result != NULL) {
-        if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
-        GC_heap_lengths[i] += bytes;
-    }
+    if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
+    if (EXPECT(result != NULL, TRUE)) GC_heap_lengths[i] += bytes;
     return result;
   }
 
@@ -2527,7 +2526,8 @@ ptr_t GC_unix_get_mem(size_t bytes)
 # endif /* USE_WINALLOC */
     if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
     if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
-    if (result != NULL) GC_heap_bases[GC_n_heap_bases++] = result;
+    if (EXPECT(result != NULL, TRUE))
+        GC_heap_bases[GC_n_heap_bases++] = result;
     return result;
   }
 #endif /* USE_WINALLOC || CYGWIN32 */
@@ -2585,9 +2585,10 @@ ptr_t GC_unix_get_mem(size_t bytes)
     void* mem;
 
     GC_ASSERT(GC_page_size != 0);
-    if (posix_memalign(&mem, GC_page_size, bytes) == 0)
-      return mem;
-    return NULL;
+    if (EXPECT(posix_memalign(&mem, GC_page_size, bytes) != 0, FALSE))
+      return NULL;
+
+    return mem;
   }
 #endif /* HAIKU */
 
