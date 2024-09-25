@@ -50,7 +50,12 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
     hb_map_entry_t *new_map;
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_STATIC_ASSERT(MAXOBJGRANULES - 1 <= (size_t)(hb_map_entry_t)~0U);
+    /* Ensure displ % lg fits into hb_map_entry_t.  Note: the maximum   */
+    /* value is computed in this way to avoid compiler complains about  */
+    /* constant truncation or expression overflow.                      */
+    GC_STATIC_ASSERT(MAXOBJGRANULES - 1
+            <= ~(size_t)0 >> ((sizeof(size_t) - sizeof(hb_map_entry_t)) * 8));
+
     if (lg > MAXOBJGRANULES) lg = 0;
     if (EXPECT(GC_obj_map[lg] != NULL, TRUE)) return TRUE;
 
