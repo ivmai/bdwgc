@@ -39,7 +39,7 @@ environment:
     NMAKE_OPTIONS: enable_static=1
   - TARGET: nmake
     ARCH: x64
-    CFLAGS_EXTRA: /J
+    CFLAGS_EXTRA: /J /wd4391
   - TARGET: nmake
     ARCH: x86
     NMAKE_OPTIONS: nodebug=1
