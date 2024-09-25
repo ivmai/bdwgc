@@ -5,7 +5,7 @@
 [![GitHub Actions build status (cmake)](https://github.com/ivmai/bdwgc/actions/workflows/cmake-build.yml/badge.svg?event=push)](https://github.com/ivmai/bdwgc/actions/workflows/cmake-build.yml?query=branch%3Amaster)
 [![GitHub Actions build status (zig build/test)](https://github.com/ivmai/bdwgc/actions/workflows/zig-build.yml/badge.svg?event=push)](https://github.com/ivmai/bdwgc/actions/workflows/zig-build.yml?query=branch%3Amaster)
 [![GitHub Actions build status (zig cross-compile)](https://github.com/ivmai/bdwgc/actions/workflows/zig-cross-compile.yml/badge.svg?event=push)](https://github.com/ivmai/bdwgc/actions/workflows/zig-cross-compile.yml?query=branch%3Amaster)
-[![CodeQL](https://github.com/ivmai/bdwgc/workflows/CodeQL/badge.svg?event=push)](https://github.com/ivmai/bdwgc/actions/workflows/CodeQL.yml?query=branch%3Amaster)
+[![CodeQL](https://github.com/ivmai/bdwgc/workflows/CodeQL/badge.svg)](https://github.com/ivmai/bdwgc/actions/workflows/CodeQL.yml?query=branch%3Amaster)
 [![Codecov.io](https://codecov.io/github/ivmai/bdwgc/coverage.svg?branch=master)](https://codecov.io/github/ivmai/bdwgc?branch=master)
 [![Coveralls test coverage status](https://coveralls.io/repos/github/ivmai/bdwgc/badge.png?branch=master)](https://coveralls.io/github/ivmai/bdwgc)
 [![Coverity Scan build status](https://scan.coverity.com/projects/10813/badge.svg)](https://scan.coverity.com/projects/ivmai-bdwgc)
