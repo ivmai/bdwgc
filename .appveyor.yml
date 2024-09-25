@@ -81,16 +81,18 @@ environment:
     WCC_INC_SUBDIR: nt
   - TARGET: cygwin64
     CONF_OPTIONS: --enable-cplusplus --enable-gc-debug
+    CFLAGS_EXTRA: -Wno-array-bounds
   - TARGET: cygwin64
     CONF_OPTIONS: --disable-threads
-    CFLAGS_EXTRA: -std=c11 -D USE_WINALLOC
+    CFLAGS_EXTRA: -std=c11 -D USE_WINALLOC -Wno-array-bounds
   - TARGET: cygwin64
     CONF_OPTIONS: --enable-cplusplus
-    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE -D DONT_PROTECT_PTRFREE
+    CFLAGS_EXTRA: -D GCTEST_PRINT_VERBOSE -D DONT_PROTECT_PTRFREE -Wno-array-bounds
   - TARGET: cygwin64
     CONF_OPTIONS: --enable-cplusplus --disable-munmap --enable-gc-assertions --enable-redirect-malloc
+    CFLAGS_EXTRA: -Wno-array-bounds
   - TARGET: cygwin64
-    CFLAGS_EXTRA: -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB
+    CFLAGS_EXTRA: -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB -Wno-array-bounds
     CONF_OPTIONS: --enable-cplusplus --enable-gc-assertions --enable-rwlock --disable-shared
 
 clone_depth: 50
