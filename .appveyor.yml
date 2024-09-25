@@ -32,8 +32,6 @@ environment:
   - TARGET: cmake
     CMAKE_OPTIONS: -A Win32 -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Denable_large_config=ON
   - TARGET: cmake
-    CMAKE_OPTIONS: -A ARM -Denable_cplusplus=ON -Denable_gc_assertions=ON
-  - TARGET: cmake
     CMAKE_OPTIONS: -A ARM64 -DCMAKE_BUILD_TYPE=Release -Denable_cplusplus=ON
     CMAKE_CONFIG: Release
   - TARGET: nmake
