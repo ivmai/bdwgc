@@ -49,7 +49,6 @@
 # endif
 # define NOSERVICE
 # include <windows.h>
-# include "de_win.h"
 #elif defined(MACINTOSH)
 # include <console.h>
 /* curses emulation. */
@@ -71,6 +70,10 @@
 # include <curses.h>
 # include <unistd.h> /* for sleep() */
 # define de_error(s) { fprintf(stderr, s); sleep(2); }
+#endif
+
+#ifdef WIN32
+# include "de_win.h"
 #endif
 
 #include "de_cmds.h"

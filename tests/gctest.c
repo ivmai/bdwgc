@@ -43,6 +43,7 @@
 # undef GC_NO_THREAD_REDIRECTS
 #endif
 #include "gc.h"
+
 #include "gc/javaxfc.h"
 
 /* Number of additional threads to fork. */

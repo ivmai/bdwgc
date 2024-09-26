@@ -590,7 +590,9 @@ STATIC void GC_restart_handler(int sig)
 
 # ifdef GC_ENABLE_SUSPEND_THREAD
 #   include <sys/time.h>
-#   include "gc/javaxfc.h" /* to get the prototypes as extern "C" */
+
+    /* This is to get the prototypes as extern "C".     */
+#   include "gc/javaxfc.h"
 
     STATIC void GC_brief_async_signal_safe_sleep(void)
     {

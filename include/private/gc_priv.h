@@ -287,6 +287,8 @@ typedef struct hblkhdr hdr;
 # endif
 # define NOSERVICE
 # include <windows.h>
+
+  /* This is included strictly after windows.h. */
 # include <winbase.h>
 #endif /* ANY_MSWIN */
 

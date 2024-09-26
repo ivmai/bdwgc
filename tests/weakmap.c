@@ -28,6 +28,11 @@
 
 #include <string.h>
 
+#ifdef GC_PTHREADS
+# include <errno.h> /* for EAGAIN, EBUSY */
+# include <pthread.h>
+#endif
+
 #undef rand
 /* Note: concurrent update of seed does not hurt the test.      */
 static GC_RAND_STATE_T seed;
@@ -41,8 +46,6 @@ static GC_RAND_STATE_T seed;
     /* This excludes the main thread, which also runs a test.   */
 #   define NTHREADS 5
 # endif
-# include <errno.h> /* for EAGAIN, EBUSY */
-# include <pthread.h>
 # include "private/gc_atomic_ops.h" /* for AO_t and AO_fetch_and_add1 */
 #else
 # undef NTHREADS
