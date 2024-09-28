@@ -32,8 +32,8 @@
 #define GC_H
 
 /* Help debug mixed up preprocessor symbols.    */
-#if (defined(WIN64) && !defined(_WIN64)) && defined(_MSC_VER)
-#pragma message("Warning: Expecting _WIN64 for x64 targets! Notice the leading underscore!")
+#if defined(WIN64) && !defined(_WIN64) && defined(_MSC_VER)
+#pragma message("Warning: Expecting _WIN64 for x64 targets!")
 #endif
 
 /* Define version numbers here to allow test on build machine   */
