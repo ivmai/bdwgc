@@ -170,7 +170,7 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, const hdr * hhdr, mse * mark_stack_top,
             break; /* go to the enclosing loop end */ \
           AO_or(mark_word_addr, my_bits); \
         }
-# else
+# else /* !PARALLEL_MARK */
 #   define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
         { /* cannot use do-while(0) here */ \
           word *mark_word_addr = (hhdr) -> hb_marks + divWORDSZ(bit_no); \
@@ -181,7 +181,7 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, const hdr * hhdr, mse * mark_stack_top,
             break; /* go to the enclosing loop end */ \
           *(mark_word_addr) = old | my_bits; \
         }
-# endif /* !PARALLEL_MARK */
+# endif
 #endif /* !USE_MARK_BYTES */
 
 #ifdef ENABLE_TRACE

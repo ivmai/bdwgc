@@ -301,6 +301,6 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
 #         endif
         }
     }
-#endif /* GC_ASSERTIONS */
+#endif
 
 #endif /* THREAD_LOCAL_ALLOC */

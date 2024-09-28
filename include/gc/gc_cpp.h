@@ -278,7 +278,7 @@ public:
       inline void operator delete[](void*, GCPlacement) GC_NOEXCEPT;
       inline void operator delete[](void*, void*) GC_NOEXCEPT;
 #   endif
-# endif // GC_OPERATOR_NEW_ARRAY
+# endif
 };
 
 // Instances of classes derived from gc_cleanup will be allocated in the
@@ -359,7 +359,7 @@ inline void* operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
       {
         GC_FREE(obj);
       }
-#   endif // GC_OPERATOR_NEW_NOTHROW
+#   endif
 # endif // GC_OPERATOR_NEW_ARRAY
 
   inline void* operator new(GC_SIZE_T size) GC_DECL_NEW_THROW
@@ -665,6 +665,6 @@ inline void* operator new(GC_SIZE_T size, GC_NS_QUALIFY(GCPlacement) gcp,
   {
     return ::operator new(size, gcp, cleanup, clientData);
   }
-#endif // GC_OPERATOR_NEW_ARRAY
+#endif
 
 #endif /* GC_CPP_H */

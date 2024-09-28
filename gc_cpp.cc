@@ -124,7 +124,7 @@ built-in "new" and "delete".
       {
         GC_FREE(obj);
       }
-#   endif // GC_OPERATOR_NEW_NOTHROW
+#   endif
 # endif // GC_OPERATOR_NEW_ARRAY
 
 # ifdef GC_OPERATOR_SIZED_DELETE

@@ -66,8 +66,8 @@ EXTERN_C_BEGIN
 # define HC_HIT() (void)(++GC_hdr_cache_hits)
 # define HC_MISS() (void)(++GC_hdr_cache_misses)
 #else
-# define HC_HIT() /* empty */
-# define HC_MISS() /* empty */
+# define HC_HIT() (void)0
+# define HC_MISS() (void)0
 #endif
 
 typedef struct hce {

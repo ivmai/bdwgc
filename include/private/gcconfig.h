@@ -56,8 +56,8 @@
 # define EXTERN_C_BEGIN extern "C" {
 # define EXTERN_C_END } /* extern "C" */
 #else
-# define EXTERN_C_BEGIN /* empty */
-# define EXTERN_C_END /* empty */
+# define EXTERN_C_BEGIN
+# define EXTERN_C_END
 #endif
 
 EXTERN_C_BEGIN

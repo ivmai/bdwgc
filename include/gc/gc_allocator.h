@@ -138,15 +138,23 @@ public:
     typedef gc_allocator<GC_Tp1> other;
   };
 
-  GC_CONSTEXPR gc_allocator() GC_NOEXCEPT {}
-  GC_CONSTEXPR gc_allocator(const gc_allocator&) GC_NOEXCEPT {}
+  GC_CONSTEXPR gc_allocator() GC_NOEXCEPT {
+    // Empty.
+  }
+
+  GC_CONSTEXPR gc_allocator(const gc_allocator&) GC_NOEXCEPT {
+    // Empty.
+  }
+
 # ifndef GC_NO_MEMBER_TEMPLATES
     template <class GC_Tp1> GC_ATTR_EXPLICIT
     GC_CONSTEXPR gc_allocator(const gc_allocator<GC_Tp1>&) GC_NOEXCEPT {}
 # endif
+
   GC_CONSTEXPR ~gc_allocator() GC_NOEXCEPT {}
 
   GC_CONSTEXPR pointer address(reference GC_x) const { return &GC_x; }
+
   GC_CONSTEXPR const_pointer address(const_reference GC_x) const {
     return &GC_x;
   }
@@ -216,17 +224,25 @@ public:
     typedef gc_allocator_ignore_off_page<GC_Tp1> other;
   };
 
-  GC_CONSTEXPR gc_allocator_ignore_off_page() GC_NOEXCEPT {}
+  GC_CONSTEXPR gc_allocator_ignore_off_page() GC_NOEXCEPT {
+    // Empty.
+  }
+
   GC_CONSTEXPR gc_allocator_ignore_off_page(
-                const gc_allocator_ignore_off_page&) GC_NOEXCEPT {}
+                const gc_allocator_ignore_off_page&) GC_NOEXCEPT {
+    // Empty.
+  }
+
 # ifndef GC_NO_MEMBER_TEMPLATES
     template <class GC_Tp1> GC_ATTR_EXPLICIT
     GC_CONSTEXPR gc_allocator_ignore_off_page(
                 const gc_allocator_ignore_off_page<GC_Tp1>&) GC_NOEXCEPT {}
 # endif
+
   GC_CONSTEXPR ~gc_allocator_ignore_off_page() GC_NOEXCEPT {}
 
   GC_CONSTEXPR pointer address(reference GC_x) const { return &GC_x; }
+
   GC_CONSTEXPR const_pointer address(const_reference GC_x) const {
     return &GC_x;
   }
@@ -301,16 +317,24 @@ public:
     typedef traceable_allocator<GC_Tp1> other;
   };
 
-  GC_CONSTEXPR traceable_allocator() GC_NOEXCEPT {}
-  GC_CONSTEXPR traceable_allocator(const traceable_allocator&) GC_NOEXCEPT {}
+  GC_CONSTEXPR traceable_allocator() GC_NOEXCEPT {
+    // Empty.
+  }
+
+  GC_CONSTEXPR traceable_allocator(const traceable_allocator&) GC_NOEXCEPT {
+    // Empty.
+  }
+
 # ifndef GC_NO_MEMBER_TEMPLATES
     template <class GC_Tp1> GC_ATTR_EXPLICIT
     GC_CONSTEXPR traceable_allocator(
                 const traceable_allocator<GC_Tp1>&) GC_NOEXCEPT {}
 # endif
+
   GC_CONSTEXPR ~traceable_allocator() GC_NOEXCEPT {}
 
   GC_CONSTEXPR pointer address(reference GC_x) const { return &GC_x; }
+
   GC_CONSTEXPR const_pointer address(const_reference GC_x) const {
     return &GC_x;
   }

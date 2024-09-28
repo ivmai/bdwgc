@@ -104,7 +104,7 @@
 #   ifdef GC_HAVE_PTHREAD_EXIT
 #     define pthread_exit __pthread_exit
 #   endif
-# endif /* GC_OSF1_THREADS */
+# endif
 #endif /* GC_PTHREADS */
 
 #if !defined(GC_WIN32_THREADS) \
@@ -284,6 +284,7 @@
 #endif
 
 #ifdef THREAD_LOCAL_ALLOC
+
   /* We must explicitly mark ptrfree and gcj free lists, since the free */
   /* list links wouldn't otherwise be found.  We also set them in the   */
   /* normal free lists, since that involves touching less memory than   */
@@ -320,7 +321,8 @@
             GC_check_tsd_marks(GC_thread_key);
 #       endif
     }
-# endif /* GC_ASSERTIONS */
+# endif
+
 #endif /* THREAD_LOCAL_ALLOC */
 
 #ifdef GC_WIN32_THREADS

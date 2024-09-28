@@ -87,7 +87,7 @@
     rts
   }
 
-#endif /* M68K */
+#endif
 
 #endif /* MACOS && __MWERKS__ */
 
@@ -192,7 +192,7 @@
           PushMacRegisters();
       }
 #     define HAVE_PUSH_REGS
-#   endif /* __MWERKS__ */
+#   endif
 # endif /* MACOS */
 
 #endif /* !USE_ASM_PUSH_REGS */
@@ -216,8 +216,8 @@
 #   ifdef GETCONTEXT_FPU_EXCMASK_BUG
 #     include <fenv.h>
 #   endif
-# endif
-#endif /* !HAVE_PUSH_REGS */
+# endif /* !NO_GETCONTEXT */
+#endif
 
 /* Ensure that either registers are pushed, or callee-save registers    */
 /* are somewhere on the stack, and then call fn(arg, ctxt).             */
@@ -337,7 +337,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
           /* _setjmp won't, but is less portable.               */
           (void)_setjmp(regs);
 #       endif
-#     endif /* !HAVE_BUILTIN_UNWIND_INIT */
+#     endif
     }
 # endif /* !HAVE_PUSH_REGS */
   /* TODO: context here is sometimes just zero.  At the moment, the     */

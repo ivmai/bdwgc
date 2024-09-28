@@ -1539,6 +1539,7 @@ GC_INNER void GC_setpagesize(void)
 #endif /* GC_RTEMS_PTHREADS */
 
 #ifndef HAVE_GET_STACK_BASE
+
 # ifdef NEED_FIND_LIMIT
     /* Retrieve the stack bottom.                                       */
     /* Using the GC_find_limit version is risky.                        */
@@ -1568,7 +1569,7 @@ GC_INNER void GC_setpagesize(void)
       UNLOCK();
       return GC_SUCCESS;
     }
-# else
+# else /* !NEED_FIND_LIMIT */
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
     {
 #     if defined(GET_MAIN_STACKBASE_SPECIAL) && !defined(THREADS) \
@@ -1580,7 +1581,8 @@ GC_INNER void GC_setpagesize(void)
         return GC_UNIMPLEMENTED;
 #     endif
     }
-# endif /* !NEED_FIND_LIMIT */
+# endif
+
 #endif /* !HAVE_GET_STACK_BASE */
 
 #ifndef GET_MAIN_STACKBASE_SPECIAL
@@ -2523,7 +2525,7 @@ ptr_t GC_unix_get_mem(size_t bytes)
                                                   PAGE_READWRITE);
 #       undef IGNORE_PAGES_EXECUTABLE
     }
-# endif /* USE_WINALLOC */
+# endif
     if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
     if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
     if (EXPECT(result != NULL, TRUE))
@@ -3072,7 +3074,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
           }
           /* Done with this section.    */
           count = 1;
-        } else /* succeeded */ if (!output_unneeded) {
+        } else if (!output_unneeded) { /* succeeded */
           const PVOID *pages_end = pages + count;
 
           while (pages != pages_end) {
@@ -3139,9 +3141,9 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       set_pht_entry_from_index(db, index);
       GC_release_dirty_lock();
     }
-# else
+# else /* THREADS && !AO_HAVE_test_and_set_acquire */
 #   error No test_and_set operation: Introduces a race.
-# endif /* THREADS && !AO_HAVE_test_and_set_acquire */
+# endif
 #endif /* !NO_MANUAL_VDB || MPROTECT_VDB */
 
 #ifdef MPROTECT_VDB
@@ -3232,7 +3234,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # endif
 # if !defined(MSWIN32) && !defined(MSWINCE)
     STATIC GC_bool GC_old_segv_handler_used_si = FALSE;
-# endif /* !MSWIN32 */
+# endif
 #endif /* !DARWIN */
 
 #ifdef THREADS
@@ -3307,14 +3309,14 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     include <ucontext.h>
 #   endif
     STATIC void GC_write_fault_handler(int sig, siginfo_t *si, void *raw_sc)
-# else
+# else /* MSWIN32 || MSWINCE */
 #   define SIG_OK (exc_info -> ExceptionRecord -> ExceptionCode \
                      == STATUS_ACCESS_VIOLATION)
 #   define CODE_OK (exc_info -> ExceptionRecord -> ExceptionInformation[0] \
                       == 1) /* write fault */
     STATIC LONG WINAPI GC_write_fault_handler(
                                 struct _EXCEPTION_POINTERS *exc_info)
-# endif /* MSWIN32 || MSWINCE */
+# endif
   {
 #   if !defined(MSWIN32) && !defined(MSWINCE)
         char *addr = (char *)si->si_addr;
@@ -3633,7 +3635,7 @@ STATIC void GC_protect_heap(void)
         UNPROTECT(GC_heap_sects[i].hs_start, GC_heap_sects[i].hs_bytes);
       }
     }
-# endif /* CAN_HANDLE_FORK && DARWIN && THREADS || COUNT_PROTECTED_REGIONS */
+# endif
 
 # ifdef COUNT_PROTECTED_REGIONS
     GC_INNER void GC_handle_protected_regions_limit(void)
@@ -5124,7 +5126,7 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
       /* ignoring SIGBUS signals.  We also shouldn't call ABORT here as */
       /* signals don't always work too well from the exception handler. */
       EXIT();
-#   else /* BROKEN_EXCEPTION_HANDLING */
+#   else
       /* Pass it along to the next exception handler (which should call */
       /* SIGBUS/SIGSEGV).                                               */
       return FWD();

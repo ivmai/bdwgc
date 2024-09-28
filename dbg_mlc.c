@@ -341,8 +341,8 @@ GC_API void GC_CALL GC_register_describe_type_fn(int k,
 # define IF_NOT_SHORTDBG_HDRS(x) x
 # define COMMA_IFNOT_SHORTDBG_HDRS(x) /* comma */, x
 #else
-# define IF_NOT_SHORTDBG_HDRS(x) /* empty */
-# define COMMA_IFNOT_SHORTDBG_HDRS(x) /* empty */
+# define IF_NOT_SHORTDBG_HDRS(x)
+# define COMMA_IFNOT_SHORTDBG_HDRS(x)
 #endif
 
 /* Print a human-readable description of the object to stderr.  */

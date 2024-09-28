@@ -35,7 +35,7 @@
 #undef _endthreadex
 
 #if !defined(GC_PTHREADS) && !defined(MSWINCE)
-# include <errno.h> /* for errno, EAGAIN */
+# include <errno.h>
 # include <process.h> /* for _beginthreadex, _endthreadex */
 #endif
 

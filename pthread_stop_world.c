@@ -90,7 +90,7 @@ GC_INLINE void GC_usleep(unsigned us)
 #   else
 #     error define NSIG
 #   endif
-# endif /* !NSIG */
+# endif
 
   void GC_print_sig_mask(void)
   {
@@ -437,8 +437,8 @@ static void suspend_restart_barrier(int n_live_threads)
 static int resend_lost_signals(int n_live_threads,
                                int (*suspend_restart_all)(void))
 {
-#   define RETRY_INTERVAL 100000 /* us */
 #   define RESEND_SIGNALS_LIMIT 150
+#   define RETRY_INTERVAL 100000 /* us */
 
     if (n_live_threads > 0) {
       unsigned long wait_usecs = 0; /* total wait since retry */

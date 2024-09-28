@@ -695,9 +695,9 @@ EXTERN_C_BEGIN
                 /* ignored (i.e., the program is not aborted);          */
                 /* DebugBreak is a statement in some toolchains.        */
 #     endif
-#   else
+#   else /* !MSWIN32 */
 #     define ABORT(msg) (GC_on_abort(msg), abort())
-#   endif /* !MSWIN32 */
+#   endif
 # endif /* !PCR */
 
 /* For abort message with 1-3 arguments.  C_msg and C_fmt should be     */
@@ -1239,7 +1239,7 @@ struct roots {
     /* Size of hash table index to roots.       */
 #   define LOG_RT_SIZE 6
 #   define RT_SIZE (1 << LOG_RT_SIZE) /* Power of 2, may be != MAX_ROOT_SETS */
-#endif /* !ANY_MSWIN */
+#endif
 
 #if (!defined(MAX_HEAP_SECTS) || defined(CPPCHECK)) \
     && (defined(ANY_MSWIN) || defined(USE_PROC_FOR_LIBRARIES))
@@ -1741,7 +1741,7 @@ GC_EXTERN struct obj_kind {
 #   define OK_DISCLAIM_INITZ /* comma */, FALSE, 0
 # else
 #   define OK_DISCLAIM_INITZ /* empty */
-# endif /* !ENABLE_DISCLAIM */
+# endif
 } GC_obj_kinds[MAXOBJKINDS];
 
 #define beginGC_obj_kinds ((ptr_t)(&GC_obj_kinds[0]))
@@ -2660,7 +2660,7 @@ GC_EXTERN GC_bool GC_print_back_height;
 #   else
 #     define GC_inner_pthread_create pthread_create
 #   endif
-# endif /* MPROTECT_VDB && DARWIN */
+# endif
 
   /* Returns true if dirty bits are maintained (otherwise it is OK to   */
   /* be called again if the client invokes GC_enable_incremental once   */

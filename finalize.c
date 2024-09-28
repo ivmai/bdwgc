@@ -617,7 +617,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
       UNLOCK();
       return result;
     }
-# endif /* !GC_LONG_REFS_NOT_NEEDED */
+# endif
 #endif /* !GC_MOVE_DISAPPEARING_LINK_NOT_NEEDED */
 
 /* Possible finalization_marker procedures.  Note that mark stack       */

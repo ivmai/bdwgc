@@ -77,14 +77,14 @@
     /* Only matters if used in conjunction with -fvisibility=hidden option. */
 #     define CORD_API extern __attribute__((__visibility__("default")))
 #   endif
-# else
+# else /* !CORD_BUILD */
 #   if defined(__BORLANDC__) || defined(__CEGCC__) || defined(__CYGWIN__) \
        || defined(__DMC__) || defined(_MSC_VER)
 #     define CORD_API __declspec(dllimport)
 #   elif defined(__MINGW32__) || defined(__WATCOMC__)
 #     define CORD_API extern __declspec(dllimport)
 #   endif
-# endif /* !CORD_BUILD */
+# endif
 #endif /* GC_DLL */
 
 #ifndef CORD_API

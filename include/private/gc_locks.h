@@ -199,7 +199,7 @@
                   GC_lock(); }
 #       define UNCOND_UNLOCK() AO_CLEAR(&GC_allocate_lock)
 #     endif /* !GC_ASSERTIONS */
-#   else /* THREAD_LOCAL_ALLOC || USE_PTHREAD_LOCKS */
+#   else
 #     ifndef USE_PTHREAD_LOCKS
 #       define USE_PTHREAD_LOCKS
 #     endif
@@ -249,7 +249,7 @@
 #         endif
 #         define UNCOND_UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
 #       endif /* !GC_ASSERTIONS */
-#     endif /* !USE_RWLOCK */
+#     endif
 #   endif /* USE_PTHREAD_LOCKS */
 #   ifdef GC_ASSERTIONS
       /* The allocator lock holder.     */
@@ -275,7 +275,7 @@
 #       define ENTER_GC() (void)(GC_collecting = TRUE)
 #       define EXIT_GC() (void)(GC_collecting = FALSE)
 #     endif
-#   endif /* !GC_WIN32_THREADS */
+#   endif
 # endif /* GC_PTHREADS */
 # if defined(GC_ALWAYS_MULTITHREADED) \
       && (defined(USE_PTHREAD_LOCKS) || defined(USE_SPIN_LOCK))

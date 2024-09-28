@@ -1894,7 +1894,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
         GC_mark_stack_top = mark_stack_top;
       }
 #   endif /* GC_GRANULE_PTRS < 4 */
-# endif /* UNALIGNED_PTRS */
+# endif
 #endif /* !USE_MARK_BYTES && !MARK_BIT_PER_OBJ && !SMALL_CONFIG */
 
 /* Push all objects reachable from marked objects in the given block.   */

@@ -810,9 +810,9 @@ GC_API int GC_CALL GC_collect_a_little(void)
 # define IF_USE_MUNMAP(x) x
 # define COMMA_IF_USE_MUNMAP(x) /* comma */, x
 #else
-# define IF_USE_MUNMAP(x) /* empty */
-# define COMMA_IF_USE_MUNMAP(x) /* empty */
-#endif
+# define IF_USE_MUNMAP(x)
+# define COMMA_IF_USE_MUNMAP(x)
+#endif /* !USE_MUNMAP */
 
 /* We stop the world and mark from all roots.  If stop_func() ever      */
 /* returns TRUE, we may fail and return FALSE.  Increment GC_gc_no if   */
@@ -1319,7 +1319,9 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
                                          GC_bool force_unmap)
 {
     GC_bool result;
-    IF_USE_MUNMAP(unsigned old_unmap_threshold;)
+#   ifdef USE_MUNMAP
+        unsigned old_unmap_threshold;
+#   endif
     IF_CANCEL(int cancel_state;)
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
@@ -1344,7 +1346,10 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
     result = GC_try_to_collect_inner(stop_func != 0 ? stop_func :
                                      GC_default_stop_func);
     EXIT_GC();
-    IF_USE_MUNMAP(GC_unmap_threshold = old_unmap_threshold); /* restore */
+#   ifdef USE_MUNMAP
+        /* Restore it.  */
+        GC_unmap_threshold = old_unmap_threshold;
+#   endif
     RESTORE_CANCEL(cancel_state);
     UNLOCK();
     if (result) {
@@ -1786,6 +1791,7 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks, unsigned flags,
 #         endif
 #         if !defined(SMALL_CONFIG) && (CPP_WORDSZ >= 32)
 #           define MAX_HEAPSIZE_WARNED_IN_BYTES (5 << 20) /* 5 MB */
+
             if (GC_heapsize > (word)MAX_HEAPSIZE_WARNED_IN_BYTES) {
               WARN("Out of Memory! Heap size: %" WARN_PRIuPTR " MiB."
                    " Returning NULL!\n",
