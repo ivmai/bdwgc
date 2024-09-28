@@ -887,10 +887,18 @@ GC_API void GC_CALL GC_set_manual_vdb_allowed(int);
 GC_API int GC_CALL GC_get_manual_vdb_allowed(void);
 
 /* The constants to represent available VDB techniques. */
-#define GC_VDB_NONE 0 /* means the incremental mode is unsupported */
+
+/* Means the incremental mode is unsupported.           */
+#define GC_VDB_NONE 0
+
 #define GC_VDB_MPROTECT 0x1
-#define GC_VDB_MANUAL   0x2 /* means GC_set_manual_vdb_allowed(1) has effect */
-#define GC_VDB_DEFAULT  0x4 /* means no other technique is usable */
+
+/* Means GC_set_manual_vdb_allowed(1) has effect.       */
+#define GC_VDB_MANUAL 0x2
+
+/* Means no other technique is usable.                  */
+#define GC_VDB_DEFAULT 0x4
+
 #define GC_VDB_GWW      0x8
 #define GC_VDB_PCR      0x10
 #define GC_VDB_PROC     0x20
@@ -924,10 +932,16 @@ GC_API int GC_CALL GC_is_incremental_mode(void);
 /* Does not acquire the allocator lock.                                 */
 GC_API unsigned GC_CALL GC_get_actual_vdb(void);
 
-#define GC_PROTECTS_POINTER_HEAP  1 /* May protect non-atomic objects.  */
+/* May protect non-atomic objects.  */
+#define GC_PROTECTS_POINTER_HEAP  1
+
 #define GC_PROTECTS_PTRFREE_HEAP  2
-#define GC_PROTECTS_STATIC_DATA   4 /* Currently never.                 */
-#define GC_PROTECTS_STACK         8 /* Probably impractical.            */
+
+/* Protects static data.  But this is currently never.          */
+#define GC_PROTECTS_STATIC_DATA   4
+
+/* Deprecated.  It is probably impractical to protect stacks.   */
+#define GC_PROTECTS_STACK         8
 
 #define GC_PROTECTS_NONE 0
 
@@ -1628,12 +1642,15 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
                                         void * /* arg */) GC_ATTR_NONNULL(1);
 
 #define GC_SUCCESS 0
-#define GC_DUPLICATE 1          /* Was already registered.              */
-#define GC_NO_THREADS 2         /* No thread support in GC.             */
 
-/* GC_NO_THREADS is not returned by any GC function anymore.    */
+/* Means was already registered.                */
+#define GC_DUPLICATE 1
 
-#define GC_UNIMPLEMENTED 3 /* Not yet implemented on this platform.     */
+/* Deprecated.  No thread support in GC.        */
+#define GC_NO_THREADS 2
+
+/* Not yet implemented on this platform.        */
+#define GC_UNIMPLEMENTED 3
 
 /* Requested link not found (returned by GC_move_disappearing_link).    */
 #define GC_NOT_FOUND 4

@@ -38,8 +38,10 @@ GC_INLINE void GC_usleep(unsigned us)
 #   if defined(LINT2) || defined(THREAD_SANITIZER)
       /* Workaround "waiting while holding a lock" static analyzer warning. */
       /* Workaround a rare hang in usleep() trying to acquire TSan Lock.    */
-      while (us-- > 0)
-        sched_yield(); /* pretending it takes 1us */
+      while (us-- > 0) {
+        /* Sleep for a moment, pretending it takes 1us. */
+        sched_yield();
+      }
 #   elif defined(CPPCHECK) /* || _POSIX_C_SOURCE >= 199309L */
       struct timespec ts;
 

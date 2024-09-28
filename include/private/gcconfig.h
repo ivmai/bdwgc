@@ -960,7 +960,9 @@ EXTERN_C_BEGIN
 #   endif
     /* See os_dep.c for details of global data segments.        */
 #   define STACKBOTTOM ((ptr_t)LMGetCurStackBase())
-#   define DATAEND /* not needed */
+#   if !defined(CPPCHECK)
+#     define DATAEND /* not needed */
+#   endif
 # endif /* MACOS */
 
 # ifdef MSWIN32
@@ -1603,7 +1605,8 @@ EXTERN_C_BEGIN
     /* delimits the start of the data segment, no matter which ld       */
     /* options were passed through.                                     */
 #   define DATASTART ((ptr_t)(&environ))
-#   define STACKBOTTOM ((ptr_t)0xfffff000) /* for Encore */
+    /* Note: hard-coded stack bottom for Encore.        */
+#   define STACKBOTTOM ((ptr_t)0xfffff000)
 # endif /* NS32K */
 
 # ifdef LOONGARCH
@@ -2075,7 +2078,8 @@ EXTERN_C_BEGIN
 #   ifdef QNX
       /* Nothing specific. */
 #   endif
-#   ifdef MSWIN32   /* UWP */
+#   ifdef MSWIN32
+      /* UWP */
       /* TODO: Enable MPROTECT_VDB */
 #   endif
 #   ifdef NOSYS
@@ -2148,7 +2152,8 @@ EXTERN_C_BEGIN
       void *n3ds_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)n3ds_get_stack_bottom())
 #   endif
-#   ifdef MSWIN32   /* UWP */
+#   ifdef MSWIN32
+      /* UWP */
       /* TODO: Enable MPROTECT_VDB */
 #   endif
 #   ifdef NOSYS

@@ -1238,7 +1238,9 @@ struct roots {
 #ifndef ANY_MSWIN
     /* Size of hash table index to roots.       */
 #   define LOG_RT_SIZE 6
-#   define RT_SIZE (1 << LOG_RT_SIZE) /* Power of 2, may be != MAX_ROOT_SETS */
+
+    /* RT_SIZE should be a power of 2, may be != MAX_ROOT_SETS. */
+#   define RT_SIZE (1 << LOG_RT_SIZE)
 #endif
 
 #if (!defined(MAX_HEAP_SECTS) || defined(CPPCHECK)) \
