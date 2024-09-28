@@ -650,7 +650,7 @@ STATIC mse * GC_signal_mark_stack_overflow(mse *msp)
  * encoding, we optionally maintain a cache for the block address to
  * header mapping, we prefetch when an object is "grayed", etc.
  */
-GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY GC_ATTR_NO_SANITIZE_THREAD
+GC_ATTR_NO_SANITIZE_ADDR_MEM_THREAD
 GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                             mse *mark_stack_limit)
 {
@@ -1639,7 +1639,7 @@ GC_INNER void
 /* A version of GC_push_all that treats all interior pointers as valid  */
 /* and scans the entire region immediately, in case the contents        */
 /* change.                                                              */
-GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY GC_ATTR_NO_SANITIZE_THREAD
+GC_ATTR_NO_SANITIZE_ADDR_MEM_THREAD
 GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 {
     REGISTER ptr_t current_p;
@@ -1683,8 +1683,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 
 #if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
   /* Similar to GC_push_conditional but scans the whole region immediately. */
-  GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY
-  GC_ATTR_NO_SANITIZE_THREAD
+  GC_ATTR_NO_SANITIZE_ADDR_MEM_THREAD
   GC_INNER void GC_push_conditional_eager(void *bottom, void *top,
                                           GC_bool all)
   {

@@ -228,6 +228,10 @@ typedef struct hblkhdr hdr;
 # endif
 #endif /* !GC_ATTR_NO_SANITIZE_THREAD */
 
+#define GC_ATTR_NO_SANITIZE_ADDR_MEM_THREAD \
+                GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY \
+                GC_ATTR_NO_SANITIZE_THREAD
+
 #ifndef UNUSED_ARG
 # define UNUSED_ARG(arg) ((void)(arg))
 #endif
