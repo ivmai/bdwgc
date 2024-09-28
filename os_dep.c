@@ -4125,12 +4125,11 @@ STATIC void GC_protect_heap(void)
     while (ADDR_LT(vaddr, limit)) {
       size_t res;
       ptr_t limit_buf;
+      word vlen_p = ADDR(limit) - ADDR(vaddr) + GC_page_size - 1;
       const pagemap_elem_t *bufp = pagemap_buffered_read(&res,
                 (off_t)((ADDR(vaddr) >> GC_log_pagesize)
                         * sizeof(pagemap_elem_t)),
-                (size_t)(((ADDR(limit) - ADDR(vaddr)
-                           + GC_page_size - 1) >> GC_log_pagesize)
-                         * sizeof(pagemap_elem_t)),
+                (size_t)((vlen_p >> GC_log_pagesize) * sizeof(pagemap_elem_t)),
                 next_fpos_hint);
 
       if (res % sizeof(pagemap_elem_t) != 0) {

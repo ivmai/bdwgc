@@ -306,6 +306,7 @@ static void *store_debug_info(void *base, size_t lb,
   {
     ptr_t body = (ptr_t)(ohdr + 1);
     size_t gc_sz = GC_size(ohdr);
+    size_t lpw_up;
 
     if (ohdr -> oh_sz + DEBUG_BYTES > (GC_uintptr_t)gc_sz) {
         return (ptr_t)(&(ohdr -> oh_sz));
@@ -313,14 +314,17 @@ static void *store_debug_info(void *base, size_t lb,
     if (ohdr -> oh_sf != (START_FLAG ^ (GC_uintptr_t)body)) {
         return (ptr_t)(&(ohdr -> oh_sf));
     }
-    if (((GC_uintptr_t *)ohdr)[BYTES_TO_PTRS(gc_sz) - 1]
-            != (END_FLAG ^ (GC_uintptr_t)body)) {
-        return (ptr_t)(&((GC_uintptr_t *)ohdr)[BYTES_TO_PTRS(gc_sz) - 1]);
+
+    {
+      size_t lpw_m1 = BYTES_TO_PTRS(gc_sz) - 1;
+
+      if (((GC_uintptr_t *)ohdr)[lpw_m1] != (END_FLAG ^ (GC_uintptr_t)body)) {
+        return (ptr_t)(&((GC_uintptr_t *)ohdr)[lpw_m1]);
+      }
     }
-    if (((GC_uintptr_t *)body)[BYTES_TO_PTRS_ROUNDUP((size_t)(ohdr -> oh_sz))]
-            != (END_FLAG ^ (GC_uintptr_t)body)) {
-        return (ptr_t)(&((GC_uintptr_t *)body)[BYTES_TO_PTRS_ROUNDUP(
-                                                (size_t)(ohdr -> oh_sz))]);
+    lpw_up = BYTES_TO_PTRS_ROUNDUP((size_t)(ohdr -> oh_sz));
+    if (((GC_uintptr_t *)body)[lpw_up] != (END_FLAG ^ (GC_uintptr_t)body)) {
+        return (ptr_t)(&((GC_uintptr_t *)body)[lpw_up]);
     }
     return NULL;
   }

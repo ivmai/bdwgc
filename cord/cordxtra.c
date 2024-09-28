@@ -520,6 +520,7 @@ static void * GC_CALLBACK refill_cache(void * client_data)
     size_t line_start = LINE_START(file_pos);
     size_t line_no = DIV_LINE_SZ(MOD_CACHE_SZ(file_pos));
     cache_line * new_cache = ((refill_data *)client_data) -> new_cache;
+    unsigned char c;
 
     if (line_start != state -> lf_current
         && fseek(f, (long)line_start, SEEK_SET) != 0) {
@@ -539,8 +540,8 @@ static void * GC_CALLBACK refill_cache(void * client_data)
     GC_END_STUBBORN_CHANGE((/* no volatile */ cache_line *)
                            &(state -> lf_cache[line_no]));
     state -> lf_current = line_start + LINE_SZ;
-    return (void *)(GC_uintptr_t)
-                ((unsigned char)(new_cache -> data[MOD_LINE_SZ(file_pos)]));
+    c = (unsigned char)new_cache->data[MOD_LINE_SZ(file_pos)];
+    return (void *)(GC_uintptr_t)c;
 }
 
 #ifndef CORD_USE_GCC_ATOMIC
