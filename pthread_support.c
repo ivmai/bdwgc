@@ -1834,8 +1834,9 @@ GC_INNER void GC_init_parallel(void)
 }
 
 #if !defined(GC_NO_PTHREAD_SIGMASK) && defined(GC_PTHREADS)
-  GC_API int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set,
-                                        sigset_t *oset)
+# define GC_wrap_pthread_sigmask WRAP_FUNC(pthread_sigmask)
+  GC_API int GC_wrap_pthread_sigmask(int how, const sigset_t *set,
+                                     sigset_t *oset)
   {
 #   ifdef GC_WIN32_THREADS
       /* pthreads-win32 does not support sigmask.       */
@@ -1857,6 +1858,7 @@ GC_INNER void GC_init_parallel(void)
 #   endif
     return REAL_FUNC(pthread_sigmask)(how, set, oset);
   }
+# undef GC_wrap_pthread_sigmask
 #endif /* !GC_NO_PTHREAD_SIGMASK */
 
 /* Wrapper for functions that are likely to block for an appreciable    */
@@ -2255,7 +2257,8 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
   /* risk growing the heap unnecessarily. But it seems that we don't    */
   /* really have an option in that the process is not in a fully        */
   /* functional state while a thread is exiting.                        */
-  GC_API int WRAP_FUNC(pthread_cancel)(pthread_t thread)
+# define GC_wrap_pthread_cancel WRAP_FUNC(pthread_cancel)
+  GC_API int GC_wrap_pthread_cancel(pthread_t thread)
   {
 #   ifdef CANCEL_SAFE
       GC_thread t;
@@ -2276,10 +2279,12 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 #   endif
     return REAL_FUNC(pthread_cancel)(thread);
   }
+# undef GC_wrap_pthread_cancel
 #endif /* !GC_NO_PTHREAD_CANCEL */
 
 #ifdef GC_HAVE_PTHREAD_EXIT
-  GC_API GC_PTHREAD_EXIT_ATTRIBUTE void WRAP_FUNC(pthread_exit)(void *retval)
+# define GC_wrap_pthread_exit WRAP_FUNC(pthread_exit)
+  GC_API GC_PTHREAD_EXIT_ATTRIBUTE void GC_wrap_pthread_exit(void *retval)
   {
     GC_thread me;
 
@@ -2296,6 +2301,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 
     REAL_FUNC(pthread_exit)(retval);
   }
+# undef GC_wrap_pthread_exit
 #endif /* GC_HAVE_PTHREAD_EXIT */
 
 GC_API void GC_CALL GC_allow_register_threads(void)
@@ -2417,7 +2423,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     UNLOCK();
   }
 
-  GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
+# define GC_wrap_pthread_join WRAP_FUNC(pthread_join)
+  GC_API int GC_wrap_pthread_join(pthread_t thread, void **retval)
   {
     int result;
     GC_thread t;
@@ -2469,8 +2476,10 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #   endif
     return result;
   }
+# undef GC_wrap_pthread_join
 
-  GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
+# define GC_wrap_pthread_detach WRAP_FUNC(pthread_detach)
+  GC_API int GC_wrap_pthread_detach(pthread_t thread)
   {
     int result;
     GC_thread t;
@@ -2492,6 +2501,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     }
     return result;
   }
+# undef GC_wrap_pthread_detach
 
   struct start_info {
     void *(*start_routine)(void *);
@@ -2568,7 +2578,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #   endif
   }
 
-  GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
+# define GC_wrap_pthread_create WRAP_FUNC(pthread_create)
+  GC_API int GC_wrap_pthread_create(pthread_t *new_thread,
                        GC_PTHREAD_CREATE_CONST pthread_attr_t *attr,
                        void *(*start_routine)(void *), void *arg)
   {
@@ -2663,6 +2674,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     sem_destroy(&si.registered);
     return result;
   }
+# undef GC_wrap_pthread_create
 
 #endif /* GC_PTHREADS && !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
 

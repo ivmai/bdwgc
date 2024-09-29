@@ -68,7 +68,8 @@
 # define REAL_DLFUNC(f) f
 #endif
 
-GC_API void * WRAP_DLFUNC(dlopen)(const char *path, int mode)
+#define GC_wrap_dlopen WRAP_DLFUNC(dlopen)
+GC_API void *GC_wrap_dlopen(const char *path, int mode)
 {
   void * result;
 
@@ -84,6 +85,7 @@ GC_API void * WRAP_DLFUNC(dlopen)(const char *path, int mode)
 # endif
   return result;
 }
+#undef GC_wrap_dlopen
 
 #ifdef GC_USE_LD_WRAP
   /* Define GC_ function as an alias for the plain one, which will be   */
