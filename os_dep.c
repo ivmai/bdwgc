@@ -1580,88 +1580,7 @@ GC_INNER void GC_setpagesize(void)
 /* with SunOS dynamic loading), or GC_mark_roots needs to check for     */
 /* them.                                                                */
 
-#ifdef OS2
-
-  GC_INNER void GC_register_data_segments(void)
-  {
-    PTIB ptib;
-    PPIB ppib;
-    HMODULE module_handle;
-#   define PBUFSIZ 512
-    UCHAR path[PBUFSIZ];
-    FILE * myexefile;
-    struct exe_hdr hdrdos; /* MSDOS header */
-    struct e32_exe hdr386; /* real header for my executable */
-    struct o32_obj seg; /* current segment */
-    int nsegs;
-
-#   if defined(CPPCHECK)
-        hdrdos.padding[0] = 0; /* to prevent "field unused" warnings */
-        hdr386.exe_format_level = 0;
-        hdr386.os = 0;
-        hdr386.padding1[0] = 0;
-        hdr386.padding2[0] = 0;
-        seg.pagemap = 0;
-        seg.mapsize = 0;
-        seg.reserved = 0;
-#   endif
-    if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
-        ABORT("DosGetInfoBlocks failed");
-    }
-    module_handle = ppib -> pib_hmte;
-    if (DosQueryModuleName(module_handle, PBUFSIZ, path) != NO_ERROR) {
-        ABORT("DosQueryModuleName failed");
-    }
-    myexefile = fopen(path, "rb");
-    if (myexefile == 0) {
-        ABORT_ARG1("Failed to open executable", ": %s", path);
-    }
-    if (fread((char *)&hdrdos, 1, sizeof(hdrdos), myexefile)
-          < sizeof(hdrdos)) {
-        ABORT_ARG1("Could not read MSDOS header", " from: %s", path);
-    }
-    if (E_MAGIC(hdrdos) != EMAGIC) {
-        ABORT_ARG1("Bad DOS magic number", " in file: %s", path);
-    }
-    if (fseek(myexefile, E_LFANEW(hdrdos), SEEK_SET) != 0) {
-        ABORT_ARG1("Bad DOS magic number", " in file: %s", path);
-    }
-    if (fread((char *)&hdr386, 1, sizeof(hdr386), myexefile)
-          < sizeof(hdr386)) {
-        ABORT_ARG1("Could not read OS/2 header", " from: %s", path);
-    }
-    if (E32_MAGIC1(hdr386) != E32MAGIC1 || E32_MAGIC2(hdr386) != E32MAGIC2) {
-        ABORT_ARG1("Bad OS/2 magic number", " in file: %s", path);
-    }
-    if (E32_BORDER(hdr386) != E32LEBO || E32_WORDER(hdr386) != E32LEWO) {
-        ABORT_ARG1("Bad byte order in executable", " file: %s", path);
-    }
-    if (E32_CPU(hdr386) == E32CPU286) {
-        ABORT_ARG1("GC cannot handle 80286 executables", ": %s", path);
-    }
-    if (fseek(myexefile, E_LFANEW(hdrdos) + E32_OBJTAB(hdr386),
-              SEEK_SET) != 0) {
-        ABORT_ARG1("Seek to object table failed", " in file: %s", path);
-    }
-    for (nsegs = E32_OBJCNT(hdr386); nsegs > 0; nsegs--) {
-      int flags;
-      if (fread((char *)&seg, 1, sizeof(seg), myexefile) < sizeof(seg)) {
-        ABORT_ARG1("Could not read obj table entry", " from file: %s", path);
-      }
-      flags = O32_FLAGS(seg);
-      if (!(flags & OBJWRITE)) continue;
-      if (!(flags & OBJREAD)) continue;
-      if (flags & OBJINVALID) {
-          GC_err_printf("Object with invalid pages?\n");
-          continue;
-      }
-      GC_add_roots_inner((ptr_t)O32_BASE(seg),
-                         (ptr_t)(O32_BASE(seg)+O32_SIZE(seg)), FALSE);
-    }
-    (void)fclose(myexefile);
-  }
-
-#else /* !OS2 */
+#ifdef ANY_MSWIN
 
 # if defined(GWW_VDB)
 #   ifndef MEM_WRITE_WATCH
@@ -1863,9 +1782,7 @@ GC_INNER void GC_setpagesize(void)
     }
 # endif /* MSWIN32 */
 
-# ifdef ANY_MSWIN
-
-#   if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
+# if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
       /* We maintain a linked list of AllocationBase values that we */
       /* know correspond to malloc heap sections.  Currently this   */
       /* is only called during a GC.  But there is some hope that   */
@@ -1962,7 +1879,7 @@ GC_INNER void GC_setpagesize(void)
           q = next;
         }
       }
-#   endif /* USE_WINALLOC && !REDIRECT_MALLOC */
+# endif /* USE_WINALLOC && !REDIRECT_MALLOC */
 
     /* Is p the start of either the malloc heap, or of one of our   */
     /* heap sections?                                               */
@@ -1990,9 +1907,9 @@ GC_INNER void GC_setpagesize(void)
 #     endif
     }
 
-# else /* !ANY_MSWIN */
+#endif /* ANY_MSWIN */
 
-#   if defined(AIX) || defined(DGUX) || defined(SVR4)
+#if defined(AIX) || defined(DGUX) || defined(SVR4)
       ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
       {
         word page_offset = ADDR(PTR_ALIGN_UP(etext_addr, sizeof(ptr_t)))
@@ -2032,9 +1949,9 @@ GC_INNER void GC_setpagesize(void)
         }
         return (ptr_t)CAST_AWAY_VOLATILE_PVOID(result);
       }
-#   endif /* AIX || DGUX || SVR4 */
+#endif /* AIX || DGUX || SVR4 */
 
-#   ifdef DATASTART_USES_BSDGETDATASTART
+#ifdef DATASTART_USES_BSDGETDATASTART
       /* It's unclear whether this should be identical to the above, or */
       /* whether it should apply to non-x86 architectures.  For now we  */
       /* do not assume that there is always an empty page after etext.  */
@@ -2061,9 +1978,89 @@ GC_INNER void GC_setpagesize(void)
         }
         return result;
       }
-#   endif /* DATASTART_USES_BSDGETDATASTART */
+#endif /* DATASTART_USES_BSDGETDATASTART */
 
-#   if defined(OPENBSD)
+#if defined(OS2)
+  GC_INNER void GC_register_data_segments(void)
+  {
+    PTIB ptib;
+    PPIB ppib;
+    HMODULE module_handle;
+#   define PBUFSIZ 512
+    UCHAR path[PBUFSIZ];
+    FILE * myexefile;
+    struct exe_hdr hdrdos; /* MSDOS header */
+    struct e32_exe hdr386; /* real header for my executable */
+    struct o32_obj seg; /* current segment */
+    int nsegs;
+
+#   if defined(CPPCHECK)
+        hdrdos.padding[0] = 0; /* to prevent "field unused" warnings */
+        hdr386.exe_format_level = 0;
+        hdr386.os = 0;
+        hdr386.padding1[0] = 0;
+        hdr386.padding2[0] = 0;
+        seg.pagemap = 0;
+        seg.mapsize = 0;
+        seg.reserved = 0;
+#   endif
+    if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
+        ABORT("DosGetInfoBlocks failed");
+    }
+    module_handle = ppib -> pib_hmte;
+    if (DosQueryModuleName(module_handle, PBUFSIZ, path) != NO_ERROR) {
+        ABORT("DosQueryModuleName failed");
+    }
+    myexefile = fopen(path, "rb");
+    if (myexefile == 0) {
+        ABORT_ARG1("Failed to open executable", ": %s", path);
+    }
+    if (fread((char *)&hdrdos, 1, sizeof(hdrdos), myexefile)
+          < sizeof(hdrdos)) {
+        ABORT_ARG1("Could not read MSDOS header", " from: %s", path);
+    }
+    if (E_MAGIC(hdrdos) != EMAGIC) {
+        ABORT_ARG1("Bad DOS magic number", " in file: %s", path);
+    }
+    if (fseek(myexefile, E_LFANEW(hdrdos), SEEK_SET) != 0) {
+        ABORT_ARG1("Bad DOS magic number", " in file: %s", path);
+    }
+    if (fread((char *)&hdr386, 1, sizeof(hdr386), myexefile)
+          < sizeof(hdr386)) {
+        ABORT_ARG1("Could not read OS/2 header", " from: %s", path);
+    }
+    if (E32_MAGIC1(hdr386) != E32MAGIC1 || E32_MAGIC2(hdr386) != E32MAGIC2) {
+        ABORT_ARG1("Bad OS/2 magic number", " in file: %s", path);
+    }
+    if (E32_BORDER(hdr386) != E32LEBO || E32_WORDER(hdr386) != E32LEWO) {
+        ABORT_ARG1("Bad byte order in executable", " file: %s", path);
+    }
+    if (E32_CPU(hdr386) == E32CPU286) {
+        ABORT_ARG1("GC cannot handle 80286 executables", ": %s", path);
+    }
+    if (fseek(myexefile, E_LFANEW(hdrdos) + E32_OBJTAB(hdr386),
+              SEEK_SET) != 0) {
+        ABORT_ARG1("Seek to object table failed", " in file: %s", path);
+    }
+    for (nsegs = E32_OBJCNT(hdr386); nsegs > 0; nsegs--) {
+      int flags;
+      if (fread((char *)&seg, 1, sizeof(seg), myexefile) < sizeof(seg)) {
+        ABORT_ARG1("Could not read obj table entry", " from file: %s", path);
+      }
+      flags = O32_FLAGS(seg);
+      if (!(flags & OBJWRITE)) continue;
+      if (!(flags & OBJREAD)) continue;
+      if (flags & OBJINVALID) {
+          GC_err_printf("Object with invalid pages?\n");
+          continue;
+      }
+      GC_add_roots_inner((ptr_t)O32_BASE(seg),
+                         (ptr_t)(O32_BASE(seg)+O32_SIZE(seg)), FALSE);
+    }
+    (void)fclose(myexefile);
+  }
+
+#elif defined(OPENBSD)
       /* Depending on arch alignment, there can be multiple holes       */
       /* between DATASTART and DATAEND.  Scan in DATASTART .. DATAEND   */
       /* and register each region.                                      */
@@ -2086,7 +2083,7 @@ GC_INNER void GC_setpagesize(void)
         }
       }
 
-#   else /* !OPENBSD */
+#elif !defined(ANY_MSWIN)
 #     if defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
         EXTERN_C_BEGIN
         extern caddr_t sbrk(int);
@@ -2134,10 +2131,7 @@ GC_INNER void GC_setpagesize(void)
         /* Dynamic libraries are added at every collection, since they  */
         /* may change.                                                  */
       }
-#   endif /* !OPENBSD */
-
-# endif /* !ANY_MSWIN */
-#endif /* !OS2 */
+#endif /* !ANY_MSWIN && !OPENBSD && !OS2 */
 
 /* Auxiliary routines for obtaining memory from OS.     */
 
