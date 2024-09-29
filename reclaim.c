@@ -312,13 +312,15 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk *hbp, hdr *hhdr, size_t sz,
         result = GC_disclaim_and_reclaim(hbp, hhdr, sz, list, pcount);
       } else
 #   endif
-    /* else */ if (init || GC_debugging_started) {
-      result = GC_reclaim_clear(hbp, hhdr, sz, list, pcount);
-    } else {
-#     ifndef AO_HAVE_load
-        GC_ASSERT(IS_PTRFREE(hhdr));
-#     endif
-      result = GC_reclaim_uninit(hbp, hhdr, sz, list, pcount);
+    /* else */ {
+      if (init || GC_debugging_started) {
+        result = GC_reclaim_clear(hbp, hhdr, sz, list, pcount);
+      } else {
+#       ifndef AO_HAVE_load
+          GC_ASSERT(IS_PTRFREE(hhdr));
+#       endif
+        result = GC_reclaim_uninit(hbp, hhdr, sz, list, pcount);
+      }
     }
     if (IS_UNCOLLECTABLE(hhdr -> hb_obj_kind)) GC_set_hdr_marks(hhdr);
     return result;

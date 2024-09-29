@@ -1556,8 +1556,10 @@ GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all)
           GC_handle_fork = 1;
         } else
 #     endif
-      /* else */ if (GC_handle_fork != -1)
-        ABORT("pthread_atfork failed");
+      /* else */ {
+        if (GC_handle_fork != -1)
+          ABORT("pthread_atfork failed");
+      }
     }
   }
 
@@ -2352,24 +2354,26 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #     endif
     } else
 #   ifdef GC_PTHREADS
-      /* else */ if (KNOWN_FINISHED(me)) {
-        /* This code is executed when a thread is registered from the   */
-        /* client thread key destructor.                                */
-#       ifdef NACL
-          GC_nacl_initialize_gc_thread(me);
-#       endif
-#       ifdef GC_DARWIN_THREADS
-          /* Reinitialize mach_thread to avoid thread_suspend fail      */
-          /* with MACH_SEND_INVALID_DEST error.                         */
-          me -> mach_thread = mach_thread_self();
-#       endif
-        GC_record_stack_base(me -> crtn, sb);
-        me -> flags &= (unsigned char)~FINISHED; /* but not DETACHED */
-      } else
-#   endif
-    /* else */ {
+      /* else */ {
+        if (KNOWN_FINISHED(me)) {
+          /* This code is executed when a thread is registered from the */
+          /* client thread key destructor.                              */
+#         ifdef NACL
+            GC_nacl_initialize_gc_thread(me);
+#         endif
+#         ifdef GC_DARWIN_THREADS
+            /* Reinitialize mach_thread to avoid thread_suspend fail    */
+            /* with MACH_SEND_INVALID_DEST error.                       */
+            me -> mach_thread = mach_thread_self();
+#         endif
+          GC_record_stack_base(me -> crtn, sb);
+          me -> flags &= (unsigned char)~FINISHED; /* but not DETACHED */
+        } else
+#     endif
+      /* else */ {
         UNLOCK();
         return GC_DUPLICATE;
+      }
     }
 
 #   ifdef THREAD_LOCAL_ALLOC
@@ -2880,7 +2884,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 # if defined(GC_ASSERTIONS) && defined(GC_WIN32_THREADS) \
      && !defined(USE_PTHREAD_LOCKS)
     /* Id is not guaranteed to be unique.       */
-#   define NUMERIC_THREAD_ID(id) (unsigned long)(word)GC_PTHREAD_PTRVAL(id)
+#   define NUMERIC_THREAD_ID(id) \
+                (unsigned long)((word)GC_PTHREAD_PTRVAL(id))
 # endif
 
 # ifdef GC_ASSERTIONS
