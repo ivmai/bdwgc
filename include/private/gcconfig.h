@@ -306,18 +306,6 @@ EXTERN_C_BEGIN
 #   define M68K
 #   define mach_type_known
 # endif
-# if defined(THINK_C) \
-     || (defined(__MWERKS__) && !defined(__powerc) && !defined(SYMBIAN))
-#   define M68K
-#   define MACOS
-#   define mach_type_known
-# endif
-# if defined(__MWERKS__) && defined(__powerc) && !defined(__MACH__) \
-     && !defined(SYMBIAN)
-#   define POWERPC
-#   define MACOS
-#   define mach_type_known
-# endif
 # if defined(__rtems__) && (defined(i386) || defined(__i386__))
 #   define I386
 #   define RTEMS
@@ -594,7 +582,7 @@ EXTERN_C_BEGIN
 
 /* Mapping is: M68K       ==> Motorola 680X0        */
 /*             (NEXT, and SYSV (A/UX),              */
-/*             MACOS and AMIGA variants)            */
+/*             AMIGA variants)                      */
 /*             I386       ==> Intel 386             */
 /*              (SEQUENT, OS2, SCO, LINUX, NETBSD,  */
 /*               FREEBSD, THREE86BSD, MSWIN32,      */
@@ -633,7 +621,7 @@ EXTERN_C_BEGIN
 /*                  running LINUX                   */
 /*             X86_64     ==> AMD x86-64            */
 /*             POWERPC    ==> IBM/Apple PowerPC     */
-/*                  (MACOS(<=9),DARWIN(incl.MACOSX),*/
+/*                  (DARWIN (i.e. MacOS X),         */
 /*                   LINUX, NETBSD, AIX, NOSYS      */
 /*                   variants)                      */
 /*                  Handles 32 and 64-bit variants. */
@@ -951,20 +939,6 @@ EXTERN_C_BEGIN
 #   define DATASTART ((ptr_t)(__data_start))
 # endif /* KOS */
 
-# ifdef MACOS
-#   define OS_TYPE "MACOS"
-#   ifndef __LOWMEM__
-      EXTERN_C_END
-#     include <LowMem.h>
-      EXTERN_C_BEGIN
-#   endif
-    /* See os_dep.c for details of global data segments.        */
-#   define STACKBOTTOM ((ptr_t)LMGetCurStackBase())
-#   if !defined(CPPCHECK)
-#     define DATAEND /* not needed */
-#   endif
-# endif /* MACOS */
-
 # ifdef MSWIN32
 #   define OS_TYPE "MSWIN32"
     /* STACKBOTTOM and DATASTART are handled specially in os_dep.c.     */
@@ -1134,9 +1108,6 @@ EXTERN_C_BEGIN
 #       define DATAEND  /* not needed */
 #       define GETPAGESIZE() 4096
 #   endif
-#   ifdef MACOS
-#     define GETPAGESIZE() 4096
-#   endif
 #   ifdef NEXT
 #     define STACKBOTTOM ((ptr_t)0x4000000)
 #   endif
@@ -1144,10 +1115,6 @@ EXTERN_C_BEGIN
 
 # ifdef POWERPC
 #   define MACH_TYPE "POWERPC"
-#   ifdef MACOS
-#     define CPP_WORDSZ 32
-#     define ALIGNMENT 2  /* Still necessary?  Could it be 4?   */
-#   endif
 #   ifdef LINUX
 #     if defined(__powerpc64__)
 #       define CPP_WORDSZ 64
@@ -2544,20 +2511,20 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(HAVE_SYS_TYPES_H) \
-    || !(defined(AMIGA) || defined(MACOS) || defined(MSWINCE) \
-         || defined(OS2) || defined(PCR) || defined(SN_TARGET_ORBIS) \
-         || defined(SN_TARGET_PSP2) || defined(__CC_ARM))
+    || !(defined(AMIGA) || defined(OS2) || defined(PCR) || defined(MSWINCE) \
+    || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2) \
+    || defined(__CC_ARM))
   EXTERN_C_END
 # include <sys/types.h>
   EXTERN_C_BEGIN
 #endif /* HAVE_SYS_TYPES_H */
 
 #if defined(HAVE_UNISTD_H) \
-    || !(defined(AMIGA) || defined(MACOS) \
-         || defined(MSWIN32) || defined(MSWINCE) || defined(MSWIN_XBOX1) \
-         || defined(NINTENDO_SWITCH) || defined(NN_PLATFORM_CTR) \
-         || defined(OS2) || defined(PCR) || defined(SN_TARGET_ORBIS) \
-         || defined(SN_TARGET_PSP2) || defined(__CC_ARM))
+    || !(defined(AMIGA) || defined(MSWIN32) || defined(MSWINCE) \
+         || defined(MSWIN_XBOX1) || defined(NINTENDO_SWITCH) \
+         || defined(NN_PLATFORM_CTR) || defined(OS2) || defined(PCR) \
+         || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2) \
+         || defined(__CC_ARM))
   EXTERN_C_END
 # include <unistd.h>
   EXTERN_C_BEGIN
@@ -2921,10 +2888,10 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(AMIGA) || defined(DOS4GW) || defined(EMBOX) || defined(KOS) \
-    || defined(MACOS) || defined(NINTENDO_SWITCH) || defined(NONSTOP) \
-    || defined(OS2) || defined(PCR) || defined(RTEMS) \
-    || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
-    || defined(SN_TARGET_PSP2) || defined(USE_WINALLOC) || defined(__CC_ARM)
+    || defined(NINTENDO_SWITCH) || defined(NONSTOP) || defined(OS2) \
+    || defined(PCR) || defined(RTEMS) || defined(SN_TARGET_ORBIS) \
+    || defined(SN_TARGET_PS3) || defined(SN_TARGET_PSP2) \
+    || defined(USE_WINALLOC) || defined(__CC_ARM)
 # define NO_UNIX_GET_MEM
 #endif
 
@@ -3462,18 +3429,6 @@ EXTERN_C_BEGIN
 # elif defined(MSWIN32) || defined(CYGWIN32)
     ptr_t GC_win32_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
-# elif defined(MACOS)
-#   if defined(USE_TEMPORARY_MEMORY)
-      Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory);
-#     define GET_MEM(bytes) HBLKPTR(GC_MacTemporaryNewPtr( \
-                                        SIZET_SAT_ADD(bytes, \
-                                                      GC_page_size), true) \
-                        + GC_page_size-1)
-#   else
-#     define GET_MEM(bytes) HBLKPTR(NewPtrClear(SIZET_SAT_ADD(bytes, \
-                                                              GC_page_size)) \
-                                    + GC_page_size-1)
-#   endif
 # elif defined(MSWINCE)
     ptr_t GC_wince_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)

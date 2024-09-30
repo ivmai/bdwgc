@@ -32,9 +32,6 @@
 #include "gc.h"
 #include "gc/cord.h"
 
-#ifdef THINK_C
-# define MACINTOSH
-#endif
 #include <ctype.h>
 
 #if (defined(__CYGWIN__) || defined(__MINGW32__) \
@@ -49,23 +46,6 @@
 # endif
 # define NOSERVICE
 # include <windows.h>
-#elif defined(MACINTOSH)
-# include <console.h>
-/* curses emulation. */
-# define initscr()
-# define endwin()
-# define nonl()
-# define noecho() csetmode(C_NOECHO, stdout)
-# define cbreak() csetmode(C_CBREAK, stdout)
-# define refresh()
-# define addch(c) putchar(c)
-# define standout() cinverse(1, stdout)
-# define standend() cinverse(0, stdout)
-# define move(line,col) cgotoxy(col + 1, line + 1, stdout)
-# define clrtoeol() ccleol(stdout)
-# define de_error(s) { fprintf(stderr, s); getchar(); }
-# define LINES 25
-# define COLS 80
 #else
 # include <curses.h>
 # include <unistd.h> /* for sleep() */
@@ -241,21 +221,18 @@ int screen_size = 0;
   /* terribly appropriate for tabs.                                     */
   static void replace_line(int i, CORD s)
   {
-#   if !defined(MACINTOSH)
-        size_t len = CORD_len(s);
-#   endif
+    size_t len = CORD_len(s);
 
     if (screen == 0 || LINES > screen_size) {
         screen_size = LINES;
         screen = (CORD *)GC_MALLOC(screen_size * sizeof(CORD));
         if (NULL == screen) OUT_OF_MEMORY;
     }
-#   if !defined(MACINTOSH)
-        /* A gross workaround for an apparent curses bug: */
-        if (i == LINES-1 && len == (unsigned)COLS) {
-            s = CORD_substr(s, 0, len - 1);
-        }
-#   endif
+    /* A gross workaround for an apparent curses bug: */
+    if (i == LINES-1 && len == (unsigned)COLS) {
+        s = CORD_substr(s, 0, len - 1);
+    }
+
     if (CORD_cmp(screen[i], s) != 0) {
         CORD_pos p;
 
@@ -352,8 +329,6 @@ static void normalize_display(void)
 
 #if defined(WIN32)
     /* Defined in de_win.c. */
-#elif defined(MACINTOSH)
-#   define move_cursor(x, y) cgotoxy(x + 1, y + 1, stdout)
 #else
 #   define move_cursor(x, y) move(y, x)
 #endif
@@ -393,8 +368,6 @@ static void fix_pos(void)
 
 #if defined(WIN32)
 # define beep() Beep(1000 /* Hz */, 300 /* ms */)
-#elif defined(MACINTOSH)
-# define beep() SysBeep(1)
 #else
 /*
  * beep() is part of some curses packages and not others.
@@ -406,7 +379,7 @@ static void fix_pos(void)
     putc('\007', stderr);
     return 0;
   }
-#endif /* !WIN32 && !MACINTOSH */
+#endif /* !WIN32 */
 
 #   define NO_PREFIX -1
 #   define BARE_PREFIX -2
@@ -614,13 +587,9 @@ int main(int argc, char **argv)
     int c;
     void *buf;
 
-#   if defined(MACINTOSH)
-        console_options.title = "\pDumb Editor";
-        cshow(stdout);
-        argc = ccommand(&argv);
-#   endif
     /* The app is not for testing leak detection mode. */
     GC_set_find_leak(0);
+
     GC_INIT();
 #   ifndef NO_INCREMENTAL
       GC_enable_incremental();

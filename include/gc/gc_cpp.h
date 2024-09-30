@@ -143,11 +143,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 # define GC_NS_QUALIFY(T) T
 #endif
 
-#ifndef THINK_CPLUS
-# define GC_cdecl GC_CALLBACK
-#else
-# define GC_cdecl _cdecl
-#endif
+#define GC_cdecl GC_CALLBACK
 
 #if !defined(GC_NO_OPERATOR_NEW_ARRAY) \
     && !defined(_ENABLE_ARRAYNEW) /* Digimars */ \

@@ -989,7 +989,6 @@ if (enable_docs)
             docs/platforms/README.ews4800
             docs/platforms/README.hp
             docs/platforms/README.linux
-            docs/platforms/README.mac
             docs/platforms/README.os2
             docs/platforms/README.sgi
             docs/platforms/README.solaris2

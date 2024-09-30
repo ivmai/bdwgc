@@ -189,12 +189,11 @@ EXTRA_DIST += Makefile.direct NT_MAKEFILE WCC_MAKEFILE digimars.mak \
 # files used by makefiles other than Makefile.am
 #
 EXTRA_DIST += tools/if_mach.c tools/if_not_there.c tools/setjmp_t.c \
-    tools/threadlibs.c extra/MacOS.c extra/AmigaOS.c \
+    tools/threadlibs.c extra/AmigaOS.c \
     extra/symbian/global_end.cpp extra/symbian/global_start.cpp \
     extra/symbian/init_global_static_roots.cpp extra/symbian.cpp \
-    extra/pcr_interface.c extra/real_malloc.c \
-    extra/Mac_files/datastart.c extra/Mac_files/dataend.c \
-    extra/Mac_files/MacOS_config.h extra/msvc_dbg.c tools/callprocs.sh
+    extra/pcr_interface.c extra/real_malloc.c extra/msvc_dbg.c \
+    tools/callprocs.sh
 
 #
 # :GOTCHA: GNU make rule for making .s out of .S is flawed,
@@ -247,7 +246,6 @@ dist_docdocsplatforms_DATA = \
     docs/platforms/README.ews4800 \
     docs/platforms/README.hp \
     docs/platforms/README.linux \
-    docs/platforms/README.mac \
     docs/platforms/README.os2 \
     docs/platforms/README.sgi \
     docs/platforms/README.solaris2 \

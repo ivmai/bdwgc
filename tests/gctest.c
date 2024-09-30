@@ -901,8 +901,7 @@ static void *GC_CALLBACK reverse_test_inner(void *data)
     GC_noop1_ptr(data);
 # endif
 # ifndef BIG
-#   if defined(MACOS) \
-       || (defined(UNIX_LIKE) && defined(NO_GETCONTEXT)) /* e.g. musl */
+#   if defined(UNIX_LIKE) && defined(NO_GETCONTEXT) /* e.g. musl */
       /* Assume 128 KB stacks at least. */
 #     if defined(__aarch64__) || defined(__s390x__)
 #       define BIG 600
@@ -1078,18 +1077,10 @@ int dropped_something = 0;
 
 # define MAX_FINALIZED ((NTHREADS+1) * MAX_FINALIZED_PER_THREAD)
 
-# if !defined(MACOS)
     GC_FAR void *live_indicators[MAX_FINALIZED] = { NULL };
 #   ifndef GC_LONG_REFS_NOT_NEEDED
       GC_FAR void *live_long_refs[MAX_FINALIZED] = { NULL };
 #   endif
-# else
-    /* Too big for THINK_C.  Have to allocate it dynamically.   */
-    void **live_indicators = NULL;
-#   ifndef GC_LONG_REFS_NOT_NEEDED
-#     define GC_LONG_REFS_NOT_NEEDED
-#   endif
-# endif /* MACOS */
 
   int live_indicators_count = 0;
 #endif /* !GC_NO_FINALIZATION */
@@ -1101,14 +1092,6 @@ static tn * mktree(int n)
 
     CHECK_OUT_OF_MEMORY(result);
     AO_fetch_and_add1(&collectable_count);
-#   if defined(MACOS) && !defined(GC_NO_FINALIZATION)
-        /* Get around static data limitations.  */
-        if (NULL == live_indicators) {
-          live_indicators =
-                        (void **)NewPtrClear(MAX_FINALIZED * sizeof(void *));
-          CHECK_OUT_OF_MEMORY(live_indicators);
-        }
-#   endif
     if (0 == n) return NULL;
     result -> level = n;
     result -> lchild = left = mktree(n - 1);
@@ -2256,20 +2239,6 @@ static void check_heap_stats(void)
     GC_printf("Collector appears to work\n");
 }
 
-#if defined(MACOS)
-void SetMinimumStack(long minSize)
-{
-        if (minSize > LMGetDefltStack())
-        {
-                long newApplLimit = (long) GetApplLimit()
-                                        - (minSize - LMGetDefltStack());
-                SetApplLimit((Ptr) newApplLimit);
-                MaxApplZone();
-        }
-}
-#define cMinStackSpace (512L * 1024L)
-#endif
-
 static void GC_CALLBACK warn_proc(const char *msg, GC_uintptr_t arg)
 {
     GC_printf(msg, arg);
@@ -2392,12 +2361,6 @@ static void enable_incremental_mode(void)
     /* No-op as called before GC initialization.        */
     GC_clear_exclusion_table();
 
-#   if defined(MACOS)
-        /* Make sure we have lots and lots of stack space.      */
-        SetMinimumStack(cMinStackSpace);
-        /* Cheat and let stdio initialize toolbox for us.       */
-        printf("Testing GC Macintosh port\n");
-#   endif
     GC_COND_INIT();
     GC_set_warn_proc(warn_proc);
     enable_incremental_mode();
@@ -2426,9 +2389,6 @@ static void enable_incremental_mode(void)
           UNTESTED(GC_amiga_set_toany);
 #       endif
 #     endif
-#     if defined(MACOS) && defined(USE_TEMPORARY_MEMORY)
-        UNTESTED(GC_MacTemporaryNewPtr);
-#     endif
       UNTESTED(GC_abort_on_oom);
       UNTESTED(GC_deinit);
 #     ifndef NO_DEBUGGING
@@ -2437,8 +2397,8 @@ static void enable_incremental_mode(void)
         UNTESTED(GC_print_free_list);
 #     endif
 #   endif
-#   if !defined(GC_ANDROID_LOG) && !defined(KOS) && !defined(MACOS) \
-       && !defined(OS2) && !defined(MSWIN32) && !defined(MSWINCE)
+#   if !defined(GC_ANDROID_LOG) && !defined(KOS) && !defined(OS2) \
+       && !defined(MSWIN32) && !defined(MSWINCE)
       GC_set_log_fd(2);
 #   endif
 #   ifdef ANY_MSWIN

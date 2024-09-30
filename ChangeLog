@@ -50,7 +50,7 @@
 * Allow testing of retry-signals functionality
 * Allow to build with forced WRAP_MARK_SOME
 * Allow to compile tests with custom NTHREADS set to zero
-* Allow to cross-compile for MacOS with missing mach-o/getsect.h
+* Allow to cross-compile for MacOS X with missing mach-o/getsect.h
 * Allow to omit operator new/delete definitions in gc_cpp
 * Allow to randomly choose a CPU core if AO ops are emulated with locks
 * Allow to skip heap expansion in GC_init
@@ -468,7 +468,6 @@
 * Return free memory to OS explicitly before getting new memory from OS
 * Roundup size passed to GC_expand_hp
 * Set name of GC marker threads on OpenBSD
-* Simplify MacOS-related code in GC_register_data_segments (refactoring)
 * Simplify code of GC_allochblk_nth (refactoring)
 * Simplify code to define USE_x_SPECIFIC macros in thread_local_alloc.h
 * Simplify expression to clear extra bits in add_ext_descriptor (refactoring)

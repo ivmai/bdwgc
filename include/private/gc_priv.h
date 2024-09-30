@@ -606,11 +606,6 @@ EXTERN_C_END
 # elif defined(AMIGA) || defined(DARWIN)
 #   include <string.h>
 #   define BCOPY_EXISTS
-# elif defined(MACOS) && defined(POWERPC)
-#   include <MacMemory.h>
-#   define bcopy(x,y,n) BlockMoveData(x, y, n)
-#   define bzero(x,n) BlockZero(x, n)
-#   define BCOPY_EXISTS
 # endif
 
 # if !defined(BCOPY_EXISTS) || defined(CPPCHECK)
@@ -2133,7 +2128,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
 # define LOAD_PTR_OR_CONTINUE(v, p) (void)(v = *(ptr_t *)(p))
 #endif /* !E2K */
 
-#if defined(AMIGA) || defined(MACOS) || defined(GC_DARWIN_THREADS)
+#if defined(AMIGA) || defined(GC_DARWIN_THREADS)
   /* If p points to an object, mark it and push contents on the     */
   /* mark stack.  Pointer recognition test always accepts interior  */
   /* pointers, i.e. this is appropriate for pointers found on the   */

@@ -386,9 +386,6 @@ static void test_printf(void)
 
 int main(void)
 {
-#   ifdef THINK_C
-        printf("cordtest:\n");
-#   endif
     GC_INIT();
 #   ifndef NO_INCREMENTAL
       GC_enable_incremental();

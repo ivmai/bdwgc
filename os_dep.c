@@ -40,10 +40,6 @@
 # undef GC_AMIGA_DEF
 #endif
 
-#ifdef MACOS
-# include <Processes.h>
-#endif
-
 #ifdef IRIX5
 # include <sys/uio.h>
 # include <malloc.h>   /* for locking */
@@ -2115,7 +2111,7 @@ GC_INNER void GC_setpagesize(void)
       }
 
 #   else /* !AMIGA && !OPENBSD */
-#     if !defined(PCR) && !defined(MACOS) && defined(REDIRECT_MALLOC) \
+#     if !defined(PCR) && defined(REDIRECT_MALLOC) \
          && defined(GC_SOLARIS_THREADS)
         EXTERN_C_BEGIN
         extern caddr_t sbrk(int);
@@ -2132,34 +2128,6 @@ GC_INNER void GC_setpagesize(void)
           /* enabled.  GC_register_data_segments is not called anyway.  */
 #       elif defined(PCR) || (defined(DYNAMIC_LOADING) && defined(DARWIN))
           /* No-op.  GC_register_main_static_data() always returns false. */
-#       elif defined(MACOS)
-          {
-#           if defined(THINK_C)
-              extern void *GC_MacGetDataStart(void);
-
-              /* Globals begin above stack and end at a5.   */
-              GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
-                                 (ptr_t)LMGetCurrentA5(), FALSE);
-#           elif defined(__MWERKS__) && defined(M68K)
-              extern void *GC_MacGetDataStart(void);
-#             if __option(far_data)
-                extern void *GC_MacGetDataEnd(void);
-
-                /* Handle Far Globals (CW Pro 3) located after  */
-                /* the QD globals.                              */
-                GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
-                                   (ptr_t)GC_MacGetDataEnd(), FALSE);
-#             else
-                GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
-                                   (ptr_t)LMGetCurrentA5(), FALSE);
-#             endif
-#           elif defined(__MWERKS__) && defined(POWERPC)
-              extern char __data_start__[], __data_end__[];
-
-              GC_add_roots_inner((ptr_t)&__data_start__,
-                                 (ptr_t)&__data_end__, FALSE);
-#           endif
-          }
 #       elif defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
             /* As of Solaris 2.3, the Solaris threads implementation    */
             /* allocates the data structure for the initial thread with */

@@ -861,7 +861,7 @@ GC_API int GC_CALL GC_is_init_called(void)
 # define GC_DEFAULT_STDOUT_FD 1
 #endif
 
-#if !defined(OS2) && !defined(MACOS) && !defined(GC_ANDROID_LOG) \
+#if !defined(OS2) && !defined(GC_ANDROID_LOG) \
     && !defined(NN_PLATFORM_CTR) && !defined(NINTENDO_SWITCH) \
     && (!defined(MSWIN32) || defined(CONSOLE_LOG)) && !defined(MSWINCE)
   STATIC int GC_stdout = GC_DEFAULT_STDOUT_FD;
@@ -1823,7 +1823,7 @@ GC_API void GC_CALL GC_start_mark_threads(void)
   /* TODO: This is pretty ugly ... */
 # define WRITE(f, buf, len) GC_write(buf, len)
 
-#elif defined(OS2) || defined(MACOS)
+#elif defined(OS2)
   STATIC FILE * GC_stdout = NULL;
   STATIC FILE * GC_stderr = NULL;
   STATIC FILE * GC_log = NULL;
@@ -1929,7 +1929,7 @@ GC_API void GC_CALL GC_start_mark_threads(void)
   }
 
 # define WRITE(f, buf, len) GC_write(f, buf, len)
-#endif /* !MSWINCE && !OS2 && !MACOS && !GC_ANDROID_LOG */
+#endif /* !MSWINCE && !OS2 && !GC_ANDROID_LOG */
 
 #define BUFSZ 1024
 

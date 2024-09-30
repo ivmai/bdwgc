@@ -306,12 +306,6 @@ void* Undisguise(GC_uintptr_t v) {
           cmd = NULL;
         }
       }
-#elif defined(MACOS)
-  int main() {
-    // MacOS does not have a command line.
-    char* argv_[] = {"cpptest", "7"};
-    argv = argv_;
-    argc = sizeof(argv_) / sizeof(argv_[0]);
 #else
   int main(int argc, const char *argv[]) {
 #endif

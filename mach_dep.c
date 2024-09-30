@@ -25,74 +25,6 @@
 # endif
 #endif
 
-#if defined(MACOS) && defined(__MWERKS__)
-
-#if defined(POWERPC)
-
-# define NONVOLATILE_GPR_COUNT 19
-  struct ppc_registers {
-        unsigned long gprs[NONVOLATILE_GPR_COUNT];      /* R13-R31 */
-  };
-  typedef struct ppc_registers ppc_registers;
-
-# if defined(CPPCHECK)
-    void getRegisters(ppc_registers* regs);
-# else
-    asm static void getRegisters(register ppc_registers* regs)
-    {
-        stmw    r13,regs->gprs                          /* save R13-R31 */
-        blr
-    }
-# endif
-
-  static void PushMacRegisters(void)
-  {
-        ppc_registers regs;
-        int i;
-        getRegisters(&regs);
-        for (i = 0; i < NONVOLATILE_GPR_COUNT; i++)
-                GC_push_one(regs.gprs[i]);
-  }
-
-#else /* M68K */
-
-  asm static void PushMacRegisters(void)
-  {
-    /* Reserve space for one parameter. */
-    sub.w   #4,sp
-    move.l  a2,(sp)
-    jsr         GC_push_one
-    move.l  a3,(sp)
-    jsr         GC_push_one
-    move.l  a4,(sp)
-    jsr         GC_push_one
-    /* Skip a5 (globals), a6 (frame pointer), and a7 (stack pointer).   */
-#   if !__option(a6frames)
-        /* <pcb> perhaps a6 should be pushed if stack frames are not used. */
-        move.l  a6,(sp)
-        jsr         GC_push_one
-#   endif
-    move.l  d2,(sp)
-    jsr         GC_push_one
-    move.l  d3,(sp)
-    jsr         GC_push_one
-    move.l  d4,(sp)
-    jsr         GC_push_one
-    move.l  d5,(sp)
-    jsr         GC_push_one
-    move.l  d6,(sp)
-    jsr         GC_push_one
-    move.l  d7,(sp)
-    jsr         GC_push_one
-    /* Fixup stack. */
-    add.w   #4,sp
-    rts
-  }
-
-#endif
-
-#endif /* MACOS && __MWERKS__ */
-
 # if defined(IA64) && !defined(THREADS)
     GC_INNER ptr_t GC_save_regs_ret_val = NULL;
 # endif
@@ -163,39 +95,7 @@
     }
 #   define HAVE_PUSH_REGS
 
-# elif defined(MACOS)
-
-#   if defined(M68K) && defined(THINK_C) && !defined(CPPCHECK)
-#     define PushMacReg(reg) \
-              move.l  reg,(sp) \
-              jsr             GC_push_one
-      void GC_push_regs(void)
-      {
-          asm {
-              sub.w   #4,sp          ; reserve space for one parameter.
-              PushMacReg(a2);
-              PushMacReg(a3);
-              PushMacReg(a4);
-              ; skip a5 (globals), a6 (frame pointer), and a7 (stack pointer)
-              PushMacReg(d2);
-              PushMacReg(d3);
-              PushMacReg(d4);
-              PushMacReg(d5);
-              PushMacReg(d6);
-              PushMacReg(d7);
-              add.w   #4,sp          ; fix stack.
-          }
-      }
-#     define HAVE_PUSH_REGS
-#     undef PushMacReg
-#   elif defined(__MWERKS__)
-      void GC_push_regs(void)
-      {
-          PushMacRegisters();
-      }
-#     define HAVE_PUSH_REGS
-#   endif
-# endif /* MACOS */
+# endif /* AMIGA */
 
 #endif /* !USE_ASM_PUSH_REGS */
 
