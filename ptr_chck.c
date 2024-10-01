@@ -157,7 +157,7 @@ GC_API void * GC_CALL GC_is_visible(void *p)
         if (NULL == hhdr) {
             if (GC_is_static_root((ptr_t)p)) return p;
             /* Else do it again correctly:      */
-#           if defined(DYNAMIC_LOADING) || defined(ANY_MSWIN) || defined(PCR)
+#           if defined(ANY_MSWIN) || defined(DYNAMIC_LOADING)
               if (!GC_no_dls) {
                 GC_register_dynamic_libraries();
                 if (GC_is_static_root((ptr_t)p)) return p;

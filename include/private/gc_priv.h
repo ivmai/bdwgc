@@ -611,10 +611,6 @@ EXTERN_C_END
 #   define BZERO(x,n) bzero((void *)(x),(size_t)(n))
 # endif
 
-#ifdef PCR
-# include "th/PCR_ThCtl.h"
-#endif
-
 EXTERN_C_BEGIN
 
 #if defined(CPPCHECK) && defined(ANY_MSWIN)
@@ -627,16 +623,6 @@ EXTERN_C_BEGIN
 #endif /* CPPCHECK && ANY_MSWIN */
 
 /* Stop and restart mutator threads.    */
-# ifdef PCR
-#     define STOP_WORLD() \
-        PCR_ThCtl_SetExclusiveMode(PCR_ThCtl_ExclusiveMode_stopNormal, \
-                                   PCR_allSigsBlocked, \
-                                   PCR_waitForever)
-#     define START_WORLD() \
-        PCR_ThCtl_SetExclusiveMode(PCR_ThCtl_ExclusiveMode_null, \
-                                   PCR_allSigsBlocked, \
-                                   PCR_waitForever)
-# else
 #   if defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
        || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS)
       GC_INNER void GC_stop_world(void);
@@ -648,18 +634,15 @@ EXTERN_C_BEGIN
 #     define STOP_WORLD() GC_ASSERT(GC_blocked_sp == NULL)
 #     define START_WORLD()
 #   endif
-# endif
 
 /* Abandon ship. */
-# if defined(SMALL_CONFIG) || defined(PCR)
+# ifdef SMALL_CONFIG
 #   define GC_on_abort(msg) (void)0 /* be silent on abort */
 # else
     GC_API_PRIV GC_abort_func GC_on_abort;
 # endif
 # if defined(CPPCHECK)
 #   define ABORT(msg) { GC_on_abort(msg); abort(); }
-# elif defined(PCR)
-#   define ABORT(s) PCR_Base_Panic(s)
 # else
 #   if defined(MSWIN_XBOX1) && !defined(DebugBreak)
 #     define DebugBreak() __debugbreak()
@@ -691,7 +674,7 @@ EXTERN_C_BEGIN
 #   else /* !MSWIN32 */
 #     define ABORT(msg) (GC_on_abort(msg), abort())
 #   endif
-# endif /* !PCR */
+# endif /* !CPPCHECK */
 
 /* For abort message with 1-3 arguments.  C_msg and C_fmt should be     */
 /* literals.  C_msg should not contain format specifiers.  Arguments    */
@@ -720,11 +703,7 @@ EXTERN_C_BEGIN
     else ABORT(msg)
 
 /* Exit abnormally, but without making a mess (e.g. out of memory) */
-# ifdef PCR
-#   define EXIT() PCR_Base_Exit(1,PCR_waitForever)
-# else
-#   define EXIT() (GC_on_abort(NULL), exit(1 /* EXIT_FAILURE */))
-# endif
+#define EXIT() (GC_on_abort(NULL), exit(1 /* EXIT_FAILURE */))
 
 /* Print warning message, e.g. almost out of memory.  The argument (if  */
 /* any) format specifier should be: "%s", "%p", "%"WARN_PRIdPTR or      */
@@ -1996,7 +1975,7 @@ GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame);
 GC_API_PRIV GC_push_other_roots_proc GC_push_other_roots;
 
 #ifdef THREADS
-  void GC_push_thread_structures(void);
+  GC_INNER void GC_push_thread_structures(void);
 #endif
 
 /* A pointer set to GC_push_typed_structures_proc() lazily so that we   */
@@ -2172,7 +2151,8 @@ GC_INNER void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp);
   GC_INNER void GC_remove_roots_subregion(ptr_t b, ptr_t e);
 #endif
 GC_INNER void GC_exclude_static_roots_inner(ptr_t start, ptr_t finish);
-#if defined(DYNAMIC_LOADING) || defined(ANY_MSWIN) || defined(PCR)
+
+#if defined(ANY_MSWIN) || defined(DYNAMIC_LOADING)
   /* Add dynamic library data sections to the root set. */
   GC_INNER void GC_register_dynamic_libraries(void);
 #endif

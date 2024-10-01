@@ -38,10 +38,7 @@
 #endif
 
 #ifdef THREADS
-# ifdef PCR
-#   include "il/PCR_IL.h"
-    GC_INNER PCR_Th_ML GC_allocate_ml;
-# elif defined(SN_TARGET_PSP2)
+# if defined(SN_TARGET_PSP2)
     GC_INNER WapiMutex GC_allocate_ml_PSP2 = { 0, NULL };
 # elif defined(GC_DEFN_ALLOCATE_ML) && !defined(USE_RWLOCK) \
        || defined(SN_TARGET_PS3)
@@ -88,7 +85,7 @@ int GC_dont_gc = FALSE;
 
 int GC_dont_precollect = FALSE;
 
-GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
+GC_bool GC_quiet = 0; /* used also in msvc_dbg.c */
 
 #if !defined(NO_CLOCK) || !defined(SMALL_CONFIG)
   GC_INNER int GC_print_stats = 0;
@@ -799,7 +796,8 @@ GC_API int GC_CALL GC_is_init_called(void)
 #endif
 
 #ifndef DONT_USE_ATEXIT
-# if !defined(PCR) && !defined(SMALL_CONFIG)
+
+# if !defined(SMALL_CONFIG)
     /* A dedicated variable to avoid a garbage collection on abort.     */
     /* GC_find_leak cannot be used for this purpose as otherwise        */
     /* TSan finds a data race (between GC_default_on_abort and, e.g.,   */
@@ -827,7 +825,8 @@ GC_API int GC_CALL GC_is_init_called(void)
       GC_gcollect();
     }
   }
-#endif
+
+#endif /* !DONT_USE_ATEXIT */
 
 #if defined(UNIX_LIKE) && !defined(NO_DEBUGGING)
   static void looping_handler(int sig)
@@ -947,9 +946,6 @@ GC_API unsigned GC_CALL GC_get_supported_vdbs(void)
 #     endif
 #     ifdef GWW_VDB
         | GC_VDB_GWW
-#     endif
-#     ifdef PCR_VDB
-        | GC_VDB_PCR
 #     endif
 #     ifdef PROC_VDB
         | GC_VDB_PROC
@@ -1452,16 +1448,6 @@ GC_API void GC_CALL GC_init(void)
       }
 #   endif
     GC_init_size_map();
-#   ifdef PCR
-      if (PCR_IL_Lock(PCR_Bool_false, PCR_allSigsBlocked, PCR_waitForever)
-          != PCR_ERes_okay) {
-          ABORT("Can't lock load state");
-      } else if (PCR_IL_Unlock() != PCR_ERes_okay) {
-          ABORT("Can't unlock load state");
-      }
-      PCR_IL_Unlock();
-      GC_pcr_install();
-#   endif
     GC_is_initialized = TRUE;
 #   ifdef THREADS
 #       if defined(LINT2) \
@@ -2097,7 +2083,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 /* and from EXIT() macro (msg is NULL in that case).                */
 STATIC void GC_CALLBACK GC_default_on_abort(const char *msg)
 {
-# if !defined(PCR) && !defined(SMALL_CONFIG)
+# if !defined(SMALL_CONFIG)
 #   ifndef DONT_USE_ATEXIT
       /* Disable at-exit garbage collection.    */
       skip_gc_atexit = TRUE;
@@ -2142,7 +2128,7 @@ STATIC void GC_CALLBACK GC_default_on_abort(const char *msg)
 # endif
 }
 
-#if !defined(PCR) && !defined(SMALL_CONFIG)
+#ifndef SMALL_CONFIG
   GC_abort_func GC_on_abort = GC_default_on_abort;
 #endif
 
@@ -2150,7 +2136,7 @@ GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
 {
   GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
   LOCK();
-# if !defined(PCR) && !defined(SMALL_CONFIG)
+# ifndef SMALL_CONFIG
     GC_on_abort = fn;
 # else
     UNUSED_ARG(fn);
@@ -2163,7 +2149,7 @@ GC_API GC_abort_func GC_CALL GC_get_abort_func(void)
   GC_abort_func fn;
 
   READER_LOCK();
-# if !defined(PCR) && !defined(SMALL_CONFIG)
+# ifndef SMALL_CONFIG
     fn = GC_on_abort;
     GC_ASSERT(fn != 0);
 # else

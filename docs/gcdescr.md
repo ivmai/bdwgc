@@ -419,8 +419,6 @@ We keep track of modified pages using one of several distinct mechanisms:
   only Sun's Solaris supports this. Though this is considerably cleaner,
   performance may actually be better with `mprotect` and signals.)
   * (`SOFT_VDB`) By retrieving Linux soft-dirty bit information from /proc.
-  * (`PCR_VDB`) By relying on an external dirty bit implementation, in this
-  case the one in Xerox PCR.
   * Through explicit mutator cooperation. This enabled by
   `GC_set_manual_vdb_allowed(1)` call, and requires the client code to call
   `GC_ptr_store_and_dirty` or `GC_end_stubborn_change` (followed by a number

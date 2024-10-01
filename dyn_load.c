@@ -40,8 +40,8 @@
 # define GC_MUST_RESTORE_REDEFINED_DLOPEN
 #endif /* !GC_NO_DLOPEN */
 
-#if defined(SOLARISDL) && defined(THREADS) && !defined(PCR) \
-    && !defined(GC_SOLARIS_THREADS) && !defined(CPPCHECK)
+#if defined(SOLARISDL) && defined(THREADS) && !defined(GC_SOLARIS_THREADS) \
+    && !defined(CPPCHECK)
 #  error Fix mutual exclusion with dlopen
 #endif
 
@@ -51,9 +51,143 @@
 /* FIXME: Add filter support for more platforms.                        */
 STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
-#if defined(DYNAMIC_LOADING) && !defined(PCR) || defined(ANY_MSWIN)
+#ifdef ANY_MSWIN
+  /* We traverse the entire address space and register all segments     */
+  /* that could possibly have been written to.                          */
+  STATIC void GC_cond_add_roots(ptr_t base, ptr_t limit)
+  {
+#   ifdef THREADS
+      ptr_t curr_base = base;
+      ptr_t next_stack_lo, next_stack_hi;
+#   else
+      ptr_t stack_top;
+#   endif
 
-#if !(defined(CPPCHECK) || defined(AIX) || defined(ANY_MSWIN) \
+    GC_ASSERT(I_HOLD_LOCK());
+    if (base == limit) return;
+#   ifdef THREADS
+      for (;;) {
+          GC_get_next_stack(curr_base, limit, &next_stack_lo, &next_stack_hi);
+          if (ADDR_GE(next_stack_lo, limit)) break;
+          if (ADDR_LT(curr_base, next_stack_lo))
+            GC_add_roots_inner(curr_base, next_stack_lo, TRUE);
+          curr_base = next_stack_hi;
+      }
+      if (ADDR_LT(curr_base, limit))
+        GC_add_roots_inner(curr_base, limit, TRUE);
+#   else
+      stack_top = PTR_ALIGN_DOWN(GC_approx_sp(),
+                                 GC_sysinfo.dwAllocationGranularity);
+      if (ADDR_LT(stack_top, limit) && ADDR_LT(base, GC_stackbottom)) {
+          /* Part of the stack; ignore it.      */
+          return;
+      }
+      GC_add_roots_inner(base, limit, TRUE);
+#   endif
+  }
+
+#ifdef DYNAMIC_LOADING
+  /* GC_register_main_static_data is not needed unless DYNAMIC_LOADING. */
+  GC_INNER GC_bool GC_register_main_static_data(void)
+  {
+#   if defined(MSWINCE) || defined(CYGWIN32)
+      /* Do we need to separately register the main static data segment? */
+      return FALSE;
+#   else
+      return GC_no_win32_dlls;
+#   endif
+  }
+# define HAVE_REGISTER_MAIN_STATIC_DATA
+#endif /* DYNAMIC_LOADING */
+
+# ifdef DEBUG_VIRTUALQUERY
+  void GC_dump_meminfo(MEMORY_BASIC_INFORMATION *buf)
+  {
+    GC_printf("BaseAddress= 0x%lx, AllocationBase= 0x%lx,"
+              " RegionSize= 0x%lx(%lu)\n",
+              buf -> BaseAddress, buf -> AllocationBase,
+              buf -> RegionSize, buf -> RegionSize);
+    GC_printf("\tAllocationProtect= 0x%lx, State= 0x%lx, Protect= 0x%lx, "
+              "Type= 0x%lx\n", buf -> AllocationProtect, buf -> State,
+              buf -> Protect, buf -> Type);
+  }
+# endif /* DEBUG_VIRTUALQUERY */
+
+# if defined(MSWINCE) || defined(CYGWIN32)
+    /* FIXME: Should we really need to scan MEM_PRIVATE sections?       */
+    /* For now, we don't add MEM_PRIVATE sections to the data roots for */
+    /* WinCE because otherwise SEGV fault sometimes happens to occur in */
+    /* GC_mark_from() (and, even if we use WRAP_MARK_SOME, WinCE prints */
+    /* a "Data Abort" message to the debugging console).                */
+    /* To workaround that, use -DGC_REGISTER_MEM_PRIVATE.               */
+#   define GC_wnt TRUE
+# endif
+
+  GC_INNER void GC_register_dynamic_libraries(void)
+  {
+    ptr_t p, base, limit;
+
+    GC_ASSERT(I_HOLD_LOCK());
+#   ifdef MSWIN32
+      if (GC_no_win32_dlls) return;
+#   endif
+    p = (ptr_t)GC_sysinfo.lpMinimumApplicationAddress;
+    base = limit = p;
+    while (ADDR_LT(p, (ptr_t)GC_sysinfo.lpMaximumApplicationAddress)) {
+      MEMORY_BASIC_INFORMATION buf;
+      size_t result = VirtualQuery((LPVOID)p, &buf, sizeof(buf));
+
+#     ifdef MSWINCE
+        if (0 == result) {
+          if (ADDR(p) > GC_WORD_MAX - GC_sysinfo.dwAllocationGranularity)
+            break; /* overflow */
+          /* Page is free; advance to the next possible allocation base. */
+          p = PTR_ALIGN_UP(p + 1, GC_sysinfo.dwAllocationGranularity);
+        } else
+#     endif
+      /* else */ {
+        DWORD protect;
+
+        if (result != sizeof(buf))
+          ABORT("Weird VirtualQuery result");
+        if (ADDR(p) > GC_WORD_MAX - buf.RegionSize) break; /* overflow */
+
+        protect = buf.Protect;
+        if (buf.State == MEM_COMMIT
+            && (protect == PAGE_EXECUTE_READWRITE
+                || protect == PAGE_EXECUTE_WRITECOPY
+                || protect == PAGE_READWRITE
+                || protect == PAGE_WRITECOPY)
+            && (buf.Type == MEM_IMAGE
+#               ifdef GC_REGISTER_MEM_PRIVATE
+                  || (protect == PAGE_READWRITE && buf.Type == MEM_PRIVATE)
+#               else
+                  /* There is some evidence that we cannot always   */
+                  /* ignore MEM_PRIVATE sections under Windows ME   */
+                  /* and predecessors.  Hence we now also check for */
+                  /* that case.                                     */
+                  || (!GC_wnt && buf.Type == MEM_PRIVATE)
+#               endif
+               )
+            && !GC_is_heap_base(buf.AllocationBase)) {
+#         ifdef DEBUG_VIRTUALQUERY
+            GC_dump_meminfo(&buf);
+#         endif
+          if (p != limit) {
+            GC_cond_add_roots(base, limit);
+            base = p;
+          }
+          limit = p + buf.RegionSize;
+        }
+        p += buf.RegionSize;
+      }
+    }
+    GC_cond_add_roots(base, limit);
+  }
+
+#elif defined(DYNAMIC_LOADING) /* && !ANY_MSWIN */
+
+#if !(defined(CPPCHECK) || defined(AIX) \
       || defined(DARWIN) || defined(DGUX) || defined(IRIX5) \
       || defined(HAIKU) || defined(HPUX) || defined(HURD) \
       || defined(NACL) || defined(SCO_ELF) || defined(SOLARISDL) \
@@ -786,7 +920,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #endif /* !USE_PROC_FOR_LIBRARIES */
 
-#endif /* LINUX */
+#endif /* DGUX || HURD || NACL || (ANY_BSD || LINUX) && __ELF__ */
 
 #if defined(IRIX5) || (defined(USE_PROC_FOR_LIBRARIES) && !defined(LINUX))
 
@@ -917,141 +1051,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
 }
 
 # endif /* USE_PROC_FOR_LIBRARIES || IRIX5 */
-
-#ifdef ANY_MSWIN
-  /* We traverse the entire address space and register all segments     */
-  /* that could possibly have been written to.                          */
-  STATIC void GC_cond_add_roots(ptr_t base, ptr_t limit)
-  {
-#   ifdef THREADS
-      ptr_t curr_base = base;
-      ptr_t next_stack_lo, next_stack_hi;
-#   else
-      ptr_t stack_top;
-#   endif
-
-    GC_ASSERT(I_HOLD_LOCK());
-    if (base == limit) return;
-#   ifdef THREADS
-      for (;;) {
-          GC_get_next_stack(curr_base, limit, &next_stack_lo, &next_stack_hi);
-          if (ADDR_GE(next_stack_lo, limit)) break;
-          if (ADDR_LT(curr_base, next_stack_lo))
-            GC_add_roots_inner(curr_base, next_stack_lo, TRUE);
-          curr_base = next_stack_hi;
-      }
-      if (ADDR_LT(curr_base, limit))
-        GC_add_roots_inner(curr_base, limit, TRUE);
-#   else
-      stack_top = PTR_ALIGN_DOWN(GC_approx_sp(),
-                                 GC_sysinfo.dwAllocationGranularity);
-      if (ADDR_LT(stack_top, limit) && ADDR_LT(base, GC_stackbottom)) {
-          /* Part of the stack; ignore it.      */
-          return;
-      }
-      GC_add_roots_inner(base, limit, TRUE);
-#   endif
-  }
-
-#ifdef DYNAMIC_LOADING
-  /* GC_register_main_static_data is not needed unless DYNAMIC_LOADING. */
-  GC_INNER GC_bool GC_register_main_static_data(void)
-  {
-#   if defined(MSWINCE) || defined(CYGWIN32)
-      /* Do we need to separately register the main static data segment? */
-      return FALSE;
-#   else
-      return GC_no_win32_dlls;
-#   endif
-  }
-# define HAVE_REGISTER_MAIN_STATIC_DATA
-#endif /* DYNAMIC_LOADING */
-
-# ifdef DEBUG_VIRTUALQUERY
-  void GC_dump_meminfo(MEMORY_BASIC_INFORMATION *buf)
-  {
-    GC_printf("BaseAddress= 0x%lx, AllocationBase= 0x%lx,"
-              " RegionSize= 0x%lx(%lu)\n",
-              buf -> BaseAddress, buf -> AllocationBase,
-              buf -> RegionSize, buf -> RegionSize);
-    GC_printf("\tAllocationProtect= 0x%lx, State= 0x%lx, Protect= 0x%lx, "
-              "Type= 0x%lx\n", buf -> AllocationProtect, buf -> State,
-              buf -> Protect, buf -> Type);
-  }
-# endif /* DEBUG_VIRTUALQUERY */
-
-# if defined(MSWINCE) || defined(CYGWIN32)
-    /* FIXME: Should we really need to scan MEM_PRIVATE sections?       */
-    /* For now, we don't add MEM_PRIVATE sections to the data roots for */
-    /* WinCE because otherwise SEGV fault sometimes happens to occur in */
-    /* GC_mark_from() (and, even if we use WRAP_MARK_SOME, WinCE prints */
-    /* a "Data Abort" message to the debugging console).                */
-    /* To workaround that, use -DGC_REGISTER_MEM_PRIVATE.               */
-#   define GC_wnt TRUE
-# endif
-
-  GC_INNER void GC_register_dynamic_libraries(void)
-  {
-    ptr_t p, base, limit;
-
-    GC_ASSERT(I_HOLD_LOCK());
-#   ifdef MSWIN32
-      if (GC_no_win32_dlls) return;
-#   endif
-    p = (ptr_t)GC_sysinfo.lpMinimumApplicationAddress;
-    base = limit = p;
-    while (ADDR_LT(p, (ptr_t)GC_sysinfo.lpMaximumApplicationAddress)) {
-      MEMORY_BASIC_INFORMATION buf;
-      size_t result = VirtualQuery((LPVOID)p, &buf, sizeof(buf));
-
-#     ifdef MSWINCE
-        if (0 == result) {
-          if (ADDR(p) > GC_WORD_MAX - GC_sysinfo.dwAllocationGranularity)
-            break; /* overflow */
-          /* Page is free; advance to the next possible allocation base. */
-          p = PTR_ALIGN_UP(p + 1, GC_sysinfo.dwAllocationGranularity);
-        } else
-#     endif
-      /* else */ {
-        DWORD protect;
-
-        if (result != sizeof(buf))
-          ABORT("Weird VirtualQuery result");
-        if (ADDR(p) > GC_WORD_MAX - buf.RegionSize) break; /* overflow */
-
-        protect = buf.Protect;
-        if (buf.State == MEM_COMMIT
-            && (protect == PAGE_EXECUTE_READWRITE
-                || protect == PAGE_EXECUTE_WRITECOPY
-                || protect == PAGE_READWRITE
-                || protect == PAGE_WRITECOPY)
-            && (buf.Type == MEM_IMAGE
-#               ifdef GC_REGISTER_MEM_PRIVATE
-                  || (protect == PAGE_READWRITE && buf.Type == MEM_PRIVATE)
-#               else
-                  /* There is some evidence that we cannot always   */
-                  /* ignore MEM_PRIVATE sections under Windows ME   */
-                  /* and predecessors.  Hence we now also check for */
-                  /* that case.                                     */
-                  || (!GC_wnt && buf.Type == MEM_PRIVATE)
-#               endif
-               )
-            && !GC_is_heap_base(buf.AllocationBase)) {
-#         ifdef DEBUG_VIRTUALQUERY
-            GC_dump_meminfo(&buf);
-#         endif
-          if (p != limit) {
-            GC_cond_add_roots(base, limit);
-            base = p;
-          }
-          limit = p + buf.RegionSize;
-        }
-        p += buf.RegionSize;
-      }
-    }
-    GC_cond_add_roots(base, limit);
-  }
-#endif /* ANY_MSWIN */
 
 #if defined(ALPHA) && defined(OSF1)
 # include <loader.h>
@@ -1546,39 +1545,7 @@ GC_INNER GC_bool GC_register_main_static_data(void)
   }
 #endif /* HAIKU */
 
-#elif defined(PCR)
-
-# include "il/PCR_IL.h"
-# include "th/PCR_ThCtl.h"
-# include "mm/PCR_MM.h"
-
-  GC_INNER void GC_register_dynamic_libraries(void)
-  {
-    /* Add new static data areas of dynamically loaded modules. */
-    const PCR_IL_LoadedFile * p = PCR_IL_GetLastLoadedFile();
-    PCR_IL_LoadedSegment * q;
-
-    /* Skip uncommitted files */
-    while (p != NIL && !(p -> lf_commitPoint)) {
-        /* The loading of this file has not yet been committed    */
-        /* Hence its description could be inconsistent.           */
-        /* Furthermore, it hasn't yet been run.  Hence its data   */
-        /* segments can't possibly reference heap allocated       */
-        /* objects.                                               */
-        p = p -> lf_prev;
-    }
-    for (; p != NIL; p = p -> lf_prev) {
-      for (q = p -> lf_ls; q != NIL; q = q -> ls_next) {
-        if ((q -> ls_flags & PCR_IL_SegFlags_Traced_MASK)
-            == PCR_IL_SegFlags_Traced_on) {
-          GC_add_roots_inner((ptr_t)q->ls_addr,
-                             (ptr_t)q->ls_addr + q->ls_bytes, TRUE);
-        }
-      }
-    }
-  }
-
-#endif /* PCR && !ANY_MSWIN */
+#endif /* DYNAMIC_LOADING */
 
 #ifdef GC_MUST_RESTORE_REDEFINED_DLOPEN
 # define dlopen GC_dlopen

@@ -189,11 +189,9 @@ EXTRA_DIST += Makefile.direct NT_MAKEFILE WCC_MAKEFILE digimars.mak \
 # files used by makefiles other than Makefile.am
 #
 EXTRA_DIST += tools/if_mach.c tools/if_not_there.c tools/setjmp_t.c \
-    tools/threadlibs.c \
+    tools/threadlibs.c tools/callprocs.sh extra/msvc_dbg.c \
     extra/symbian/global_end.cpp extra/symbian/global_start.cpp \
-    extra/symbian/init_global_static_roots.cpp extra/symbian.cpp \
-    extra/pcr_interface.c extra/real_malloc.c extra/msvc_dbg.c \
-    tools/callprocs.sh
+    extra/symbian/init_global_static_roots.cpp extra/symbian.cpp
 
 #
 # :GOTCHA: GNU make rule for making .s out of .S is flawed,

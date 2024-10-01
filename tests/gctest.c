@@ -61,7 +61,7 @@
 #   include <assert.h>
 # endif
 
-#if !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS) \
+#if !defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
     && defined(_DEBUG) && (_MSC_VER >= 1900) /* VS 2015+ */
 # ifndef _CRTDBG_MAP_ALLOC
 #   define _CRTDBG_MAP_ALLOC
@@ -104,12 +104,6 @@
 # endif
 #endif /* !GC_PRINT_VERBOSE_STATS */
 
-# ifdef PCR
-#   include "th/PCR_ThCrSec.h"
-#   include "th/PCR_Th.h"
-#   define GC_printf printf
-# endif
-
 # if defined(GC_PTHREADS) && !defined(GC_WIN32_PTHREADS)
 #   include <pthread.h>
 # endif
@@ -140,10 +134,7 @@
 #   define INIT_FORK_SUPPORT /* empty */
 # endif
 
-#ifdef PCR
-# define FINALIZER_LOCK() PCR_ThCrSec_EnterSys()
-# define FINALIZER_UNLOCK() PCR_ThCrSec_ExitSys()
-#elif defined(GC_PTHREADS)
+#ifdef GC_PTHREADS
   static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
 # define FINALIZER_LOCK() pthread_mutex_lock(&incr_lock)
 # define FINALIZER_UNLOCK() pthread_mutex_unlock(&incr_lock)
@@ -234,7 +225,7 @@ static AO_t realloc_count = 0;
 /* and chktree (for other purposes).                                    */
 static AO_t extra_count = 0;
 
-# if defined(PCR) || defined(LINT2)
+# if defined(LINT2)
 #   define FAIL abort()
 # else
 #   define FAIL ABORT("Test failed")
@@ -866,9 +857,6 @@ static void *GC_CALLBACK reverse_test_inner(void *data)
 #     else
 #       define BIG 1000
 #     endif
-#   elif defined(PCR)
-      /* PCR default stack is 100 KB.  Stack frames are up to 120 bytes. */
-#     define BIG 700
 #   elif defined(MSWINCE) || defined(EMBOX) || defined(RTEMS)
       /* WinCE only allows 64 KB stacks. */
 #     define BIG 500
@@ -1587,7 +1575,7 @@ static void run_one_test(void)
         GC_printf("Bad INCR/DECR result\n");
         FAIL;
       }
-#     if defined(FUNCPTR_IS_DATAPTR) && !defined(PCR)
+#     if defined(FUNCPTR_IS_DATAPTR)
         y = CAST_THRU_UINTPTR(char*, fail_proc1);
         if (GC_base(y) != 0) {
           GC_printf("GC_base(fn_ptr) produced incorrect result\n");
@@ -2209,10 +2197,9 @@ static void enable_incremental_mode(void)
     unsigned vdbs = GC_get_supported_vdbs();
 
     if (vdbs != GC_VDB_NONE)
-      GC_printf("Supported VDBs:%s%s%s%s%s%s%s\n",
+      GC_printf("Supported VDBs:%s%s%s%s%s%s\n",
                 vdbs & GC_VDB_MANUAL ?    " manual" : "",
                 vdbs & GC_VDB_DEFAULT ?   " default" : "",
-                vdbs & GC_VDB_PCR ?   " pcr" : "",
                 vdbs & GC_VDB_GWW ?   " gww" : "",
                 vdbs & GC_VDB_PROC ?  " proc" : "",
                 vdbs & GC_VDB_SOFT ?      " soft" : "",
@@ -2262,7 +2249,7 @@ static void enable_incremental_mode(void)
 # define WINMAIN_LPTSTR LPSTR
 #endif
 
-#if !defined(PCR) && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
+#if !defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
 #if defined(_DEBUG) && (_MSC_VER >= 1900) /* VS 2015+ */
   /* Ensure that there is no system-malloc-allocated objects at normal  */
@@ -2542,39 +2529,6 @@ static DWORD __stdcall thr_window(void *arg)
 
 #endif /* GC_WIN32_THREADS */
 
-
-#ifdef PCR
-int test(void)
-{
-    PCR_Th_T * th1;
-    PCR_Th_T * th2;
-    int code;
-
-#   if defined(CPPCHECK)
-      GC_noop1((GC_word)(GC_funcptr_uint)&PCR_GC_Run);
-      GC_noop1((GC_word)(GC_funcptr_uint)&PCR_GC_Setup);
-      GC_noop1((GC_word)(GC_funcptr_uint)&test);
-#   endif
-    n_tests = 0;
-    enable_incremental_mode();
-    GC_set_warn_proc(warn_proc);
-    set_print_procs();
-    th1 = PCR_Th_Fork(run_one_test, 0);
-    th2 = PCR_Th_Fork(run_one_test, 0);
-    run_one_test();
-    if (PCR_Th_T_Join(th1, &code, NIL, PCR_allSigsBlocked, PCR_waitForever)
-        != PCR_ERes_okay || code != 0) {
-        GC_printf("Thread 1 failed\n");
-    }
-    if (PCR_Th_T_Join(th2, &code, NIL, PCR_allSigsBlocked, PCR_waitForever)
-        != PCR_ERes_okay || code != 0) {
-        GC_printf("Thread 2 failed\n");
-    }
-    run_single_threaded_test();
-    check_heap_stats();
-    return 0;
-}
-#endif
 
 #if defined(GC_PTHREADS)
 # include <errno.h> /* for EAGAIN */

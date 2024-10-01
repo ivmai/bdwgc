@@ -900,7 +900,7 @@ GC_API int GC_CALL GC_get_manual_vdb_allowed(void);
 #define GC_VDB_DEFAULT 0x4
 
 #define GC_VDB_GWW      0x8
-#define GC_VDB_PCR      0x10
+
 #define GC_VDB_PROC     0x20
 #define GC_VDB_SOFT     0x40
 

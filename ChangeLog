@@ -399,7 +399,7 @@
 * Remove STACK_GROWS_DOWN macro usage (refactoring)
 * Remove Symbian makefile
 * Remove USED_HEAP_SIZE macro (refactoring)
-* Remove ancient OS2_MAKEFILE, PCR-Makefile
+* Remove ancient OS2_MAKEFILE
 * Remove code duplication in GC_free[_inner] (refactoring)
 * Remove code duplication in gcconfig.h for Hurd (refactoring)
 * Remove comment from gc_cpp.h about bugs in ancient compilers

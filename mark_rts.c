@@ -311,7 +311,7 @@ STATIC void GC_remove_root_at_pos(size_t i)
   }
 #endif /* !ANY_MSWIN */
 
-#if defined(DYNAMIC_LOADING) || defined(ANY_MSWIN) || defined(PCR)
+#if defined(ANY_MSWIN) || defined(DYNAMIC_LOADING)
   STATIC void GC_remove_tmp_roots(void)
   {
     size_t i;
@@ -332,7 +332,7 @@ STATIC void GC_remove_root_at_pos(size_t i)
         GC_rebuild_root_index();
 #   endif
   }
-#endif /* DYNAMIC_LOADING || ANY_MSWIN || PCR */
+#endif /* ANY_MSWIN || DYNAMIC_LOADING */
 
 STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
 
@@ -880,7 +880,7 @@ GC_INNER void GC_cond_register_dynamic_libraries(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
 # if defined(DYNAMIC_LOADING) && !defined(MSWIN_XBOX1) \
-     || defined(ANY_MSWIN) || defined(PCR)
+     || defined(ANY_MSWIN)
     GC_remove_tmp_roots();
     if (!GC_no_dls) GC_register_dynamic_libraries();
 # else

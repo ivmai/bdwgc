@@ -660,7 +660,7 @@ static GC_stack_context_t saved_crtn = NULL;
   GC_INNER GC_bool GC_thr_initialized = FALSE;
 #endif
 
-void GC_push_thread_structures(void)
+GC_INNER void GC_push_thread_structures(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
 # if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)

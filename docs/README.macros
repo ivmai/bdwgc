@@ -140,10 +140,6 @@ SUNOS5SIGS      Solaris-like signal handling.  This is probably misnamed,
   since it really doesn't guarantee much more than POSIX.  Currently set only
   for DRSNX, FreeBSD, HP/UX and Solaris.
 
-PCR     Set if the collector is being built as part of the Xerox Portable
-  Common Runtime.  The client might need to define PCR_NO_RENAME and
-  PCR_NO_HOSTDEP_ERR as well.
-
 GC_THREADS      Should set the appropriate one of the below macros,
   except GC_WIN32_PTHREADS, which must be set explicitly.  Tested by gc.h.
   IMPORTANT: GC_THREADS macro (or the relevant platform-specific deprecated

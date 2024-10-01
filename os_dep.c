@@ -64,12 +64,6 @@
   typedef long unsigned int caddr_t;
 #endif
 
-#ifdef PCR
-# include "il/PCR_IL.h"
-# include "th/PCR_ThCtl.h"
-# include "mm/PCR_MM.h"
-#endif
-
 #if !defined(NO_EXECUTE_PERMISSION)
   STATIC GC_bool GC_pages_executable = TRUE;
 #else
@@ -1584,7 +1578,7 @@ GC_INNER void GC_setpagesize(void)
 /* Register static data segment(s) as roots.  If more data segments are */
 /* added later then they need to be registered at that point (as we do  */
 /* with SunOS dynamic loading), or GC_mark_roots needs to check for     */
-/* them (as we do with PCR).                                            */
+/* them.                                                                */
 
 #ifdef OS2
 
@@ -1998,7 +1992,7 @@ GC_INNER void GC_setpagesize(void)
 
 # else /* !ANY_MSWIN */
 
-#   if (defined(SVR4) || defined(AIX) || defined(DGUX)) && !defined(PCR)
+#   if defined(AIX) || defined(DGUX) || defined(SVR4)
       ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
       {
         word page_offset = ADDR(PTR_ALIGN_UP(etext_addr, sizeof(ptr_t)))
@@ -2038,7 +2032,7 @@ GC_INNER void GC_setpagesize(void)
         }
         return (ptr_t)CAST_AWAY_VOLATILE_PVOID(result);
       }
-#   endif /* SVR4 || AIX || DGUX */
+#   endif /* AIX || DGUX || SVR4 */
 
 #   ifdef DATASTART_USES_BSDGETDATASTART
       /* It's unclear whether this should be identical to the above, or */
@@ -2093,8 +2087,7 @@ GC_INNER void GC_setpagesize(void)
       }
 
 #   else /* !OPENBSD */
-#     if !defined(PCR) && defined(REDIRECT_MALLOC) \
-         && defined(GC_SOLARIS_THREADS)
+#     if defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
         EXTERN_C_BEGIN
         extern caddr_t sbrk(int);
         EXTERN_C_END
@@ -2108,7 +2101,7 @@ GC_INNER void GC_setpagesize(void)
           /* Avoid even referencing DATASTART and DATAEND as they are   */
           /* unnecessary and cause linker errors when bitcode is        */
           /* enabled.  GC_register_data_segments is not called anyway.  */
-#       elif defined(PCR) || (defined(DYNAMIC_LOADING) && defined(DARWIN))
+#       elif defined(DYNAMIC_LOADING) && defined(DARWIN)
           /* No-op.  GC_register_main_static_data() always returns false. */
 #       elif defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
             /* As of Solaris 2.3, the Solaris threads implementation    */
@@ -2786,54 +2779,13 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 
 #else /* THREADS */
 
-# ifdef PCR
-PCR_ERes GC_push_thread_stack(PCR_Th_T *t, PCR_Any dummy)
-{
-    struct PCR_ThCtl_TInfoRep info;
-    PCR_ERes result;
-
-    info.ti_stkLow = info.ti_stkHi = 0;
-    result = PCR_ThCtl_GetInfo(t, &info);
-    GC_push_all_stack((ptr_t)(info.ti_stkLow), (ptr_t)(info.ti_stkHi));
-    return result;
-}
-
-/* Push the content of an old object.  We treat this as stack   */
-/* data only because that makes it robust against mark stack    */
-/* overflow.                                                    */
-PCR_ERes GC_push_old_obj(void *p, size_t size, PCR_Any data)
-{
-    GC_push_all_stack((ptr_t)p, (ptr_t)p + size);
-    return PCR_ERes_okay;
-}
-
-extern struct PCR_MM_ProcsRep * GC_old_allocator;
-                                        /* defined in pcr_interface.c.  */
-
-STATIC void GC_CALLBACK GC_default_push_other_roots(void)
-{
-    GC_ASSERT(I_HOLD_LOCK());
-    /* Traverse data allocated by previous memory managers.             */
-    if ((*(GC_old_allocator->mmp_enumerate))(PCR_Bool_false,
-                                             GC_push_old_obj, 0)
-              != PCR_ERes_okay) {
-      ABORT("Old object enumeration failed");
-    }
-    /* Traverse all thread stacks.      */
-    if (PCR_ERes_IsErr(
-                PCR_ThCtl_ApplyToAllOtherThreads(GC_push_thread_stack, 0))
-            || PCR_ERes_IsErr(GC_push_thread_stack(PCR_Th_CurrThread(), 0))) {
-      ABORT("Thread stack marking failed");
-    }
-}
-
-# elif defined(SN_TARGET_PS3)
+# if defined(SN_TARGET_PS3)
     STATIC void GC_CALLBACK GC_default_push_other_roots(void)
     {
       ABORT("GC_default_push_other_roots is not implemented");
     }
 
-    void GC_push_thread_structures(void)
+    GC_INNER void GC_push_thread_structures(void)
     {
       ABORT("GC_push_thread_structures is not implemented");
     }
@@ -2905,7 +2857,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
  *              In single-threaded mode, it suffices to ensure that no
  *              collection can take place between the pointer assignment
  *              and the GC_dirty() call.
- * PCR_VDB:     Use PPCRs virtual dirty bit facility.
  * PROC_VDB:    Use the /proc facility for reading dirty bits.  Only
  *              works under some SVR4 variants.  Even then, it may be
  *              too slow to be entirely satisfactory.  Requires reading
@@ -4200,32 +4151,6 @@ STATIC void GC_protect_heap(void)
   }
 #endif /* SOFT_VDB */
 
-#ifdef PCR_VDB
-
-# include "vd/PCR_VD.h"
-
-# define NPAGES (32*1024)       /* 128 MB */
-
-PCR_VD_DB GC_grungy_bits[NPAGES];
-
-/* Address corresponding to GC_grungy_bits[0], HBLKSIZE aligned.    */
-STATIC ptr_t GC_vd_base = NULL;
-
-GC_INNER GC_bool GC_dirty_init(void)
-{
-    /* For the time being, we assume the heap generally grows up.   */
-    GC_vd_base = GC_heap_sects[0].hs_start;
-    if (GC_vd_base == 0) {
-        ABORT("Bad initial heap segment");
-    }
-    if (PCR_VD_Start(HBLKSIZE, GC_vd_base, NPAGES*HBLKSIZE)
-        != PCR_ERes_okay) {
-        ABORT("Dirty bit initialization failed");
-    }
-    return TRUE;
-}
-#endif /* PCR_VDB */
-
 #ifndef NO_MANUAL_VDB
   GC_INNER GC_bool GC_manual_vdb = FALSE;
 
@@ -4279,22 +4204,6 @@ GC_INNER GC_bool GC_dirty_init(void)
       GC_proc_read_dirty(output_unneeded);
 #   elif defined(SOFT_VDB)
       GC_soft_read_dirty(output_unneeded);
-#   elif defined(PCR_VDB)
-      /* Lazily enable dirty bits on newly added heap sects.    */
-      {
-        static size_t onhs = 0;
-        size_t nhs = GC_n_heap_sects;
-
-        for (; onhs < nhs; onhs++) {
-            PCR_VD_WriteProtectEnable(
-                    GC_heap_sects[onhs].hs_start,
-                    GC_heap_sects[onhs].hs_bytes);
-        }
-      }
-      if (PCR_VD_Clear(GC_vd_base, NPAGES*HBLKSIZE, GC_grungy_bits)
-          != PCR_ERes_okay) {
-        ABORT("Dirty bit read failed");
-      }
 #   endif
 #   if defined(CHECK_SOFT_VDB) /* && MPROTECT_VDB */
       BZERO(CAST_AWAY_VOLATILE_PVOID(GC_dirty_pages), sizeof(GC_dirty_pages));
@@ -4326,13 +4235,7 @@ GC_INNER GC_bool GC_dirty_init(void)
   {
     size_t index;
 
-#   ifdef PCR_VDB
-      if (!GC_manual_vdb) {
-        if (!ADDR_INSIDE((ptr_t)h, GC_vd_base, GC_vd_base + NPAGES * HBLKSIZE))
-          return TRUE;
-        return GC_grungy_bits[h-(struct hblk*)GC_vd_base] & PCR_VD_DB_dirtyBit;
-      }
-#   elif defined(DEFAULT_VDB)
+#   ifdef DEFAULT_VDB
       if (!GC_manual_vdb)
         return TRUE;
 #   elif defined(PROC_VDB)
@@ -4413,12 +4316,6 @@ GC_INNER GC_bool GC_dirty_init(void)
         }
       }
       UNPROTECT(h_trunc, h_end - (ptr_t)h_trunc);
-#   elif defined(PCR_VDB)
-      UNUSED_ARG(is_ptrfree);
-      if (!GC_auto_incremental)
-        return;
-      PCR_VD_WriteProtectDisable(h, nblocks * HBLKSIZE);
-      PCR_VD_WriteProtectEnable(h, nblocks * HBLKSIZE);
 #   else
       /* Ignore write hints.  They don't help us here.  */
       UNUSED_ARG(h);
@@ -5157,8 +5054,6 @@ GC_API unsigned GC_CALL GC_get_actual_vdb(void)
         return GC_VDB_GWW;
 #     elif defined(SOFT_VDB)
         return GC_VDB_SOFT;
-#     elif defined(PCR_VDB)
-        return GC_VDB_PCR;
 #     elif defined(PROC_VDB)
         return GC_VDB_PROC;
 #     else /* DEFAULT_VDB */

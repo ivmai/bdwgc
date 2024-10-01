@@ -666,7 +666,7 @@ EXTERN_C_BEGIN
  *
  * STACKBOTTOM is the cold end of the stack, which is usually the
  * highest address in the stack.
- * Under PCR or OS/2, we have other ways of finding thread stacks.
+ * Under OS/2, we have other ways of finding thread stacks.
  * For each machine, the following should:
  * 1) define STACK_GROWS_UP if the stack grows toward higher addresses, and
  * 2) define exactly one of
@@ -2497,9 +2497,8 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(HAVE_SYS_TYPES_H) \
-    || !(defined(OS2) || defined(PCR) || defined(MSWINCE) \
-         || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2) \
-         || defined(__CC_ARM))
+    || !(defined(__CC_ARM) || defined(OS2) || defined(MSWINCE) \
+         || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2))
   EXTERN_C_END
 # include <sys/types.h>
   EXTERN_C_BEGIN
@@ -2508,7 +2507,7 @@ EXTERN_C_BEGIN
 #if defined(HAVE_UNISTD_H) \
     || !(defined(MSWIN32) || defined(MSWINCE) || defined(MSWIN_XBOX1) \
          || defined(NINTENDO_SWITCH) || defined(NN_PLATFORM_CTR) \
-         || defined(OS2) || defined(PCR) || defined(SN_TARGET_ORBIS) \
+         || defined(OS2) || defined(SN_TARGET_ORBIS) \
          || defined(SN_TARGET_PSP2) || defined(__CC_ARM))
   EXTERN_C_END
 # include <unistd.h>
@@ -2636,16 +2635,6 @@ EXTERN_C_BEGIN
 # define ALIGNMENT (CPP_PTRSZ >> 3)
 #endif /* !ALIGNMENT */
 
-#ifdef PCR
-# undef DYNAMIC_LOADING
-# undef STACKBOTTOM
-# undef HEURISTIC1
-# undef HEURISTIC2
-# undef PROC_VDB
-# undef MPROTECT_VDB
-# define PCR_VDB
-#endif
-
 #if !defined(STACKBOTTOM) && (defined(ECOS) || defined(NOSYS)) \
     && !defined(CPPCHECK)
 # error Undefined STACKBOTTOM
@@ -2690,7 +2679,6 @@ EXTERN_C_BEGIN
 #if defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB)
 # undef GWW_VDB
 # undef MPROTECT_VDB
-# undef PCR_VDB
 # undef PROC_VDB
 # undef SOFT_VDB
 #endif
@@ -2739,7 +2727,6 @@ EXTERN_C_BEGIN
 
 #if defined(MPROTECT_VDB) && defined(GC_PREFER_MPROTECT_VDB)
   /* Choose MPROTECT_VDB manually (if multiple strategies available).   */
-# undef PCR_VDB
 # undef PROC_VDB
   /* GWW_VDB, SOFT_VDB are handled in os_dep.c. */
 #endif
@@ -2771,8 +2758,8 @@ EXTERN_C_BEGIN
 # undef MPROTECT_VDB
 #endif
 
-#if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
-    && !defined(GWW_VDB) && !defined(SOFT_VDB) && !defined(DEFAULT_VDB) \
+#if !defined(DEFAULT_VDB) && !defined(GWW_VDB) && !defined(MPROTECT_VDB) \
+    && !defined(PROC_VDB) && !defined(SOFT_VDB) \
     && !defined(GC_DISABLE_INCREMENTAL)
 # define DEFAULT_VDB
 #endif
@@ -2874,9 +2861,8 @@ EXTERN_C_BEGIN
 
 #if defined(DOS4GW) || defined(EMBOX) || defined(KOS) \
     || defined(NINTENDO_SWITCH) || defined(NONSTOP) || defined(OS2) \
-    || defined(PCR) || defined(RTEMS) || defined(SN_TARGET_ORBIS) \
-    || defined(SN_TARGET_PS3) || defined(SN_TARGET_PSP2) \
-    || defined(USE_WINALLOC) || defined(__CC_ARM)
+    || defined(RTEMS) || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
+    || defined(SN_TARGET_PSP2) || defined(USE_WINALLOC) || defined(__CC_ARM)
 # define NO_UNIX_GET_MEM
 #endif
 
@@ -2886,9 +2872,9 @@ EXTERN_C_BEGIN
     || defined(HPUX_MAIN_STACKBOTTOM) || defined(IA64) \
     || (defined(CYGWIN32) && defined(I386) && defined(USE_MMAP) \
         && !defined(USE_WINALLOC)) \
-    || (defined(NETBSD) && defined(__ELF__)) || defined(OPENBSD) \
-    || ((defined(SVR4) || defined(AIX) || defined(DGUX) \
-         || defined(DATASTART_USES_BSDGETDATASTART)) && !defined(PCR))
+    || (defined(NETBSD) && defined(__ELF__)) \
+    || defined(AIX) || defined(DGUX) || defined(OPENBSD) || defined(SVR4) \
+    || defined(DATASTART_USES_BSDGETDATASTART)
 # define NEED_FIND_LIMIT
 #endif
 
@@ -2969,10 +2955,10 @@ EXTERN_C_BEGIN
 # endif
 #endif /* !CPPCHECK */
 
-#if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
+#if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS) \
     || ((defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
-         || defined(SN_TARGET_PS3) \
-         || defined(SN_TARGET_PSP2)) && defined(GC_THREADS))
+         || defined(SN_TARGET_PS3) || defined(SN_TARGET_PSP2)) \
+        && defined(GC_THREADS))
 # define THREADS
 #endif
 
@@ -3385,12 +3371,7 @@ EXTERN_C_BEGIN
   /* TODO: Take advantage of GET_MEM() returning a zero-filled space.   */
 # define hblk GC_hblk_s
   struct hblk; /* defined in gc_priv.h */
-# if defined(PCR)
-    char * real_malloc(size_t bytes);
-#   define GET_MEM(bytes) HBLKPTR(real_malloc(SIZET_SAT_ADD(bytes, \
-                                                            GC_page_size)) \
-                                          + GC_page_size-1)
-# elif defined(OS2)
+# if defined(OS2)
     void * os2_alloc(size_t bytes);
 #   define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc( \
                                             SIZET_SAT_ADD(bytes, \

@@ -29,18 +29,9 @@
 
 #ifdef THREADS
 
-# ifdef PCR
-#   include <base/PCR_Base.h>
-#   include <th/PCR_Th.h>
-# endif
-
   EXTERN_C_BEGIN
 
-# ifdef PCR
-    GC_EXTERN PCR_Th_ML GC_allocate_ml;
-#   define UNCOND_LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml)
-#   define UNCOND_UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
-# elif defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH)
+# if defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH)
     extern void GC_lock(void);
     extern void GC_unlock(void);
 #   define UNCOND_LOCK() GC_lock()
