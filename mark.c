@@ -1501,7 +1501,7 @@ GC_API void GC_CALL GC_push_proc(GC_word descr, void *obj)
   }
 #endif /* GC_DISABLE_INCREMENTAL */
 
-#if defined(AMIGA) || defined(GC_DARWIN_THREADS)
+#ifdef GC_DARWIN_THREADS
   void GC_push_one(word p)
   {
     GC_PUSH_ONE_STACK((ptr_t)p, MARKED_FROM_REGISTER);

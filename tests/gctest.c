@@ -234,53 +234,11 @@ static AO_t realloc_count = 0;
 /* and chktree (for other purposes).                                    */
 static AO_t extra_count = 0;
 
-#if defined(GC_AMIGA_FASTALLOC) && defined(AMIGA)
-  EXTERN_C_BEGIN
-  void GC_amiga_free_all_mem(void);
-  EXTERN_C_END
-
-  void Amiga_Fail(void){GC_amiga_free_all_mem();abort();}
-# define FAIL Amiga_Fail()
-#ifndef NO_TYPED_TEST
-  void *GC_amiga_gctest_malloc_explicitly_typed(size_t lb, GC_descr d){
-    void *ret=GC_malloc_explicitly_typed(lb,d);
-    if(ret==NULL){
-              GC_gcollect();
-              ret=GC_malloc_explicitly_typed(lb,d);
-      if(ret==NULL){
-        GC_printf("Out of memory, (typed allocations are not directly "
-                      "supported with the GC_AMIGA_FASTALLOC option.)\n");
-        FAIL;
-      }
-    }
-    return ret;
-  }
-  void *GC_amiga_gctest_calloc_explicitly_typed(size_t a,size_t lb, GC_descr d){
-    void *ret=GC_calloc_explicitly_typed(a,lb,d);
-    if(ret==NULL){
-              GC_gcollect();
-              ret=GC_calloc_explicitly_typed(a,lb,d);
-      if(ret==NULL){
-        GC_printf("Out of memory, (typed allocations are not directly "
-                      "supported with the GC_AMIGA_FASTALLOC option.)\n");
-        FAIL;
-      }
-    }
-    return ret;
-  }
-# define GC_malloc_explicitly_typed(a,b) GC_amiga_gctest_malloc_explicitly_typed(a,b)
-# define GC_calloc_explicitly_typed(a,b,c) GC_amiga_gctest_calloc_explicitly_typed(a,b,c)
-#endif /* !NO_TYPED_TEST */
-
-#else /* !AMIGA_FASTALLOC */
-
 # if defined(PCR) || defined(LINT2)
 #   define FAIL abort()
 # else
 #   define FAIL ABORT("Test failed")
 # endif
-
-#endif /* !AMIGA_FASTALLOC */
 
 /* AT_END may be defined to exercise the interior pointer test  */
 /* if the collector is configured with ALL_INTERIOR_POINTERS.   */
@@ -1077,10 +1035,10 @@ int dropped_something = 0;
 
 # define MAX_FINALIZED ((NTHREADS+1) * MAX_FINALIZED_PER_THREAD)
 
-    GC_FAR void *live_indicators[MAX_FINALIZED] = { NULL };
-#   ifndef GC_LONG_REFS_NOT_NEEDED
-      GC_FAR void *live_long_refs[MAX_FINALIZED] = { NULL };
-#   endif
+  void *live_indicators[MAX_FINALIZED] = { NULL };
+# ifndef GC_LONG_REFS_NOT_NEEDED
+    void *live_long_refs[MAX_FINALIZED] = { NULL };
+# endif
 
   int live_indicators_count = 0;
 #endif /* !GC_NO_FINALIZATION */
@@ -2381,14 +2339,6 @@ static void enable_incremental_mode(void)
 #   endif
 #   if defined(CPPCHECK)
        /* Entry points we should be testing, but aren't.        */
-#     ifdef AMIGA
-#       ifdef GC_AMIGA_FASTALLOC
-          UNTESTED(GC_amiga_get_mem);
-#       endif
-#       ifndef GC_AMIGA_ONLYFAST
-          UNTESTED(GC_amiga_set_toany);
-#       endif
-#     endif
       UNTESTED(GC_abort_on_oom);
       UNTESTED(GC_deinit);
 #     ifndef NO_DEBUGGING

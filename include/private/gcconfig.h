@@ -299,13 +299,6 @@ EXTERN_C_BEGIN
 #   endif
 #   define mach_type_known
 # endif
-# if defined(_AMIGA) && !defined(AMIGA)
-#   define AMIGA
-# endif
-# ifdef AMIGA
-#   define M68K
-#   define mach_type_known
-# endif
 # if defined(__rtems__) && (defined(i386) || defined(__i386__))
 #   define I386
 #   define RTEMS
@@ -581,8 +574,7 @@ EXTERN_C_BEGIN
 # endif
 
 /* Mapping is: M68K       ==> Motorola 680X0        */
-/*             (NEXT, and SYSV (A/UX),              */
-/*             AMIGA variants)                      */
+/*             (NEXT, and SYSV (A/UX))              */
 /*             I386       ==> Intel 386             */
 /*              (SEQUENT, OS2, SCO, LINUX, NETBSD,  */
 /*               FREEBSD, THREE86BSD, MSWIN32,      */
@@ -1101,12 +1093,6 @@ EXTERN_C_BEGIN
           extern int etext[];
 #         define DATASTART PTR_ALIGN_UP(etext, 0x1000)
 #       endif
-#   endif
-#   ifdef AMIGA
-#       define OS_TYPE "AMIGA"
-        /* STACKBOTTOM and DATASTART handled specially in os_dep.c. */
-#       define DATAEND  /* not needed */
-#       define GETPAGESIZE() 4096
 #   endif
 #   ifdef NEXT
 #     define STACKBOTTOM ((ptr_t)0x4000000)
@@ -2511,20 +2497,19 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(HAVE_SYS_TYPES_H) \
-    || !(defined(AMIGA) || defined(OS2) || defined(PCR) || defined(MSWINCE) \
-    || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2) \
-    || defined(__CC_ARM))
+    || !(defined(OS2) || defined(PCR) || defined(MSWINCE) \
+         || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2) \
+         || defined(__CC_ARM))
   EXTERN_C_END
 # include <sys/types.h>
   EXTERN_C_BEGIN
 #endif /* HAVE_SYS_TYPES_H */
 
 #if defined(HAVE_UNISTD_H) \
-    || !(defined(AMIGA) || defined(MSWIN32) || defined(MSWINCE) \
-         || defined(MSWIN_XBOX1) || defined(NINTENDO_SWITCH) \
-         || defined(NN_PLATFORM_CTR) || defined(OS2) || defined(PCR) \
-         || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2) \
-         || defined(__CC_ARM))
+    || !(defined(MSWIN32) || defined(MSWINCE) || defined(MSWIN_XBOX1) \
+         || defined(NINTENDO_SWITCH) || defined(NN_PLATFORM_CTR) \
+         || defined(OS2) || defined(PCR) || defined(SN_TARGET_ORBIS) \
+         || defined(SN_TARGET_PSP2) || defined(__CC_ARM))
   EXTERN_C_END
 # include <unistd.h>
   EXTERN_C_BEGIN
@@ -2887,7 +2872,7 @@ EXTERN_C_BEGIN
 # endif
 #endif
 
-#if defined(AMIGA) || defined(DOS4GW) || defined(EMBOX) || defined(KOS) \
+#if defined(DOS4GW) || defined(EMBOX) || defined(KOS) \
     || defined(NINTENDO_SWITCH) || defined(NONSTOP) || defined(OS2) \
     || defined(PCR) || defined(RTEMS) || defined(SN_TARGET_ORBIS) \
     || defined(SN_TARGET_PS3) || defined(SN_TARGET_PSP2) \
@@ -3412,7 +3397,6 @@ EXTERN_C_BEGIN
                                                           GC_page_size)) \
                                   + GC_page_size-1)
 # elif defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) \
-        || (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) \
         || (defined(SOLARIS) && !defined(USE_MMAP)) || defined(RTEMS) \
         || defined(EMBOX) || defined(KOS) || defined(__CC_ARM)
     /* TODO: Use page_alloc() directly on Embox.    */
@@ -3432,12 +3416,6 @@ EXTERN_C_BEGIN
 # elif defined(MSWINCE)
     ptr_t GC_wince_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
-# elif defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
-    void *GC_amiga_get_mem(size_t bytes);
-#   define GET_MEM(bytes) HBLKPTR((size_t)GC_amiga_get_mem( \
-                                            SIZET_SAT_ADD(bytes, \
-                                                          GC_page_size)) \
-                          + GC_page_size-1)
 # elif defined(PLATFORM_GETMEM)
     void *platform_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)platform_get_mem(bytes)

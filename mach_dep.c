@@ -17,14 +17,6 @@
 
 #if !defined(PLATFORM_MACH_DEP) && !defined(SN_TARGET_PSP2)
 
-#ifdef AMIGA
-# ifndef __GNUC__
-#   include <dos.h>
-# else
-#   include <machine/reg.h>
-# endif
-#endif
-
 # if defined(IA64) && !defined(THREADS)
     GC_INNER ptr_t GC_save_regs_ret_val = NULL;
 # endif
@@ -37,67 +29,15 @@
 #undef HAVE_PUSH_REGS
 
 #if defined(USE_ASM_PUSH_REGS)
+  /* Have asm implementation in .S file.        */
 # define HAVE_PUSH_REGS
-#else  /* No asm implementation */
-
-# ifdef STACK_NOT_SCANNED
-    void GC_push_regs(void)
-    {
-      /* empty */
-    }
-#   define HAVE_PUSH_REGS
-
-# elif defined(M68K) && defined(AMIGA)
-    /* This function is not static because it could also be             */
-    /* erroneously defined in .S file, so this error would be caught    */
-    /* by the linker.                                                   */
-    void GC_push_regs(void)
-    {
-         /*  AMIGA - could be replaced by generic code                  */
-         /* a0, a1, d0 and d1 are caller save */
-
-#       ifdef __GNUC__
-          /* Allocate word on top of stack.     */
-          asm("subq.w &0x4,%sp");
-
-          asm("mov.l %a2,(%sp)"); asm("jsr _GC_push_one");
-          asm("mov.l %a3,(%sp)"); asm("jsr _GC_push_one");
-          asm("mov.l %a4,(%sp)"); asm("jsr _GC_push_one");
-          asm("mov.l %a5,(%sp)"); asm("jsr _GC_push_one");
-          asm("mov.l %a6,(%sp)"); asm("jsr _GC_push_one");
-          /* Skip frame pointer and stack pointer.      */
-          asm("mov.l %d2,(%sp)"); asm("jsr _GC_push_one");
-          asm("mov.l %d3,(%sp)"); asm("jsr _GC_push_one");
-          asm("mov.l %d4,(%sp)"); asm("jsr _GC_push_one");
-          asm("mov.l %d5,(%sp)"); asm("jsr _GC_push_one");
-          asm("mov.l %d6,(%sp)"); asm("jsr _GC_push_one");
-          asm("mov.l %d7,(%sp)"); asm("jsr _GC_push_one");
-
-          /* Put stack back where it was.       */
-          asm("addq.w &0x4,%sp");
-#       else /* !__GNUC__ */
-          GC_push_one(getreg(REG_A2));
-          GC_push_one(getreg(REG_A3));
-#         ifndef __SASC
-            /* Can probably be changed to #if 0 -Kjetil M. (a4=globals) */
-            GC_push_one(getreg(REG_A4));
-#         endif
-          GC_push_one(getreg(REG_A5));
-          GC_push_one(getreg(REG_A6));
-          /* Skip the stack pointer.    */
-          GC_push_one(getreg(REG_D2));
-          GC_push_one(getreg(REG_D3));
-          GC_push_one(getreg(REG_D4));
-          GC_push_one(getreg(REG_D5));
-          GC_push_one(getreg(REG_D6));
-          GC_push_one(getreg(REG_D7));
-#       endif /* !__GNUC__ */
-    }
-#   define HAVE_PUSH_REGS
-
-# endif /* AMIGA */
-
-#endif /* !USE_ASM_PUSH_REGS */
+#elif defined(STACK_NOT_SCANNED)
+  void GC_push_regs(void)
+  {
+    /* empty */
+  }
+# define HAVE_PUSH_REGS
+#endif
 
 #if defined(HAVE_PUSH_REGS) && defined(THREADS)
 # error GC_push_regs cannot be used with threads

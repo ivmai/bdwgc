@@ -352,12 +352,6 @@ typedef struct hblkhdr hdr;
 #define CPTR_CLEAR_FLAGS(p, mask) (ptr_t)((word)(p) & ~(word)(mask))
 #define CPTR_SET_FLAGS(p, mask) (ptr_t)((word)(p) | (word)(mask))
 
-#if defined(AMIGA) && defined(__SASC)
-#   define GC_FAR __far
-#else
-#   define GC_FAR
-#endif
-
 /* Easily changeable parameters ae below.   */
 
 #ifdef ALL_INTERIOR_POINTERS
@@ -603,7 +597,7 @@ EXTERN_C_END
 # if defined(SPARC) && defined(SUNOS4) \
      || (defined(M68K) && defined(NEXT)) || defined(VAX)
 #   define BCOPY_EXISTS
-# elif defined(AMIGA) || defined(DARWIN)
+# elif defined(DARWIN)
 #   include <string.h>
 #   define BCOPY_EXISTS
 # endif
@@ -1668,7 +1662,7 @@ struct _GC_arrays {
   bottom_index * _top_index[TOP_SZ];
 };
 
-GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
+GC_API_PRIV struct _GC_arrays GC_arrays;
 
 #define GC_all_nils GC_arrays._all_nils
 #define GC_atomic_in_use GC_arrays._atomic_in_use
@@ -2128,7 +2122,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
 # define LOAD_PTR_OR_CONTINUE(v, p) (void)(v = *(ptr_t *)(p))
 #endif /* !E2K */
 
-#if defined(AMIGA) || defined(GC_DARWIN_THREADS)
+#ifdef GC_DARWIN_THREADS
   /* If p points to an object, mark it and push contents on the     */
   /* mark stack.  Pointer recognition test always accepts interior  */
   /* pointers, i.e. this is appropriate for pointers found on the   */
@@ -2172,10 +2166,7 @@ GC_INNER void GC_set_fl_marks(ptr_t);
   void GC_check_fl_marks(void **);
 #endif
 
-#ifndef AMIGA
-  GC_INNER
-#endif
-void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp);
+GC_INNER void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp);
 
 #ifdef USE_PROC_FOR_LIBRARIES
   GC_INNER void GC_remove_roots_subregion(ptr_t b, ptr_t e);
@@ -2193,14 +2184,14 @@ GC_INNER void GC_cond_register_dynamic_libraries(void);
 /* Machine dependent startup routines.  */
 
 /* Get the cold end of the stack of the primordial thread.      */
-ptr_t GC_get_main_stack_base(void);
+GC_INNER ptr_t GC_get_main_stack_base(void);
 
 #ifdef IA64
   /* Get the cold end of register stack.        */
   GC_INNER ptr_t GC_get_register_stack_base(void);
 #endif
 
-void GC_register_data_segments(void);
+GC_INNER void GC_register_data_segments(void);
 
 #ifdef THREADS
   /* Both are invoked from GC_init only.        */

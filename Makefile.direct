@@ -228,8 +228,6 @@ base_lib libgc.a: $(OBJS) dyn_load.o $(UTILS)
 	rm -f dont_ar_1
 	./if_mach SPARC SOLARIS touch dont_ar_1
 	./if_mach SPARC SOLARIS $(AR) rus libgc.a $(OBJS) dyn_load.o
-	./if_mach M68K AMIGA touch dont_ar_1
-	./if_mach M68K AMIGA $(AR) -vrus libgc.a $(OBJS) dyn_load.o
 	./if_not_there dont_ar_1 || $(AR) ru libgc.a $(OBJS) dyn_load.o
 	./if_not_there dont_ar_1 || $(RANLIB) libgc.a || cat /dev/null
 	echo > base_lib
@@ -240,8 +238,6 @@ cords libcord.a: $(CORD_OBJS) $(UTILS)
 	rm -f dont_ar_3
 	./if_mach SPARC SOLARIS touch dont_ar_3
 	./if_mach SPARC SOLARIS $(AR) rus libcord.a $(CORD_OBJS)
-	./if_mach M68K AMIGA touch dont_ar_3
-	./if_mach M68K AMIGA $(AR) -vrus libcord.a $(CORD_OBJS)
 	./if_not_there dont_ar_3 || $(AR) ru libcord.a $(CORD_OBJS)
 	./if_not_there dont_ar_3 || $(RANLIB) libcord.a || cat /dev/null
 	echo > cords
@@ -275,9 +271,6 @@ c++ libgccpp.a libgctba.a: gc_badalc.o gc_cpp.o $(UTILS)
 	./if_mach SPARC SOLARIS touch dont_ar_4
 	./if_mach SPARC SOLARIS $(AR) rus libgccpp.a gc_badalc.o gc_cpp.o
 	./if_mach SPARC SOLARIS $(AR) rus libgctba.a gc_badalc.o
-	./if_mach M68K AMIGA touch dont_ar_4
-	./if_mach M68K AMIGA $(AR) -vrus libgccpp.a gc_badalc.o gc_cpp.o
-	./if_mach M68K AMIGA $(AR) -vrus libgctba.a gc_badalc.o
 	./if_not_there dont_ar_4 || $(AR) ru libgccpp.a gc_badalc.o gc_cpp.o
 	./if_not_there dont_ar_4 || $(RANLIB) libgccpp.a || cat /dev/null
 	./if_not_there dont_ar_4 || $(AR) ru libgctba.a gc_badalc.o
@@ -360,7 +353,6 @@ cordtest$(EXEEXT): $(srcdir)/cord/tests/cordtest.c cords base_lib $(NODIST_OBJS)
 	rm -f $@
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a -lucb
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a -ldld `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a `./threadlibs`
 	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a `./threadlibs`
 
 cord/de: de$(EXEEXT)
@@ -372,7 +364,6 @@ de$(EXEEXT): $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c \
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses -ltermlib -ldld `./threadlibs`
 	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses
 	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses
 	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c $(NODIST_OBJS) libgc.a libcord.a $(CURSES) `./threadlibs`
 
 if_mach$(EXEEXT): $(srcdir)/tools/if_mach.c \
@@ -397,7 +388,6 @@ gctest$(EXEEXT): tests/gctest.o base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f $@
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ tests/gctest.o $(NODIST_OBJS) libgc.a -lucb
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ tests/gctest.o $(NODIST_OBJS) libgc.a -ldld `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o $@ tests/gctest.o $(NODIST_OBJS) libgc.a `./threadlibs`
 	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ tests/gctest.o $(NODIST_OBJS) libgc.a `./threadlibs`
 
 # If an optimized setjmp_test generates a segmentation fault,

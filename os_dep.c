@@ -34,12 +34,6 @@
 /* Blatantly OS dependent routines, except for those that are related   */
 /* to dynamic loading.                                                  */
 
-#ifdef AMIGA
-# define GC_AMIGA_DEF
-# include "extra/AmigaOS.c"
-# undef GC_AMIGA_DEF
-#endif
-
 #ifdef IRIX5
 # include <sys/uio.h>
 # include <malloc.h>   /* for locking */
@@ -889,13 +883,6 @@ GC_INNER void GC_setpagesize(void)
 # define HAVE_GET_STACK_BASE
 #endif /* OS2 */
 
-#ifdef AMIGA
-#   define GC_AMIGA_SB
-#   include "extra/AmigaOS.c"
-#   undef GC_AMIGA_SB
-#   define GET_MAIN_STACKBASE_SPECIAL
-#endif /* AMIGA */
-
 #if defined(NEED_FIND_LIMIT) \
     || (defined(UNIX_LIKE) && !defined(NO_DEBUGGING)) \
     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)) \
@@ -1253,7 +1240,7 @@ GC_INNER void GC_setpagesize(void)
 #endif /* FREEBSD_STACKBOTTOM */
 
 #if defined(ECOS) || defined(NOSYS)
-  ptr_t GC_get_main_stack_base(void)
+  GC_INNER ptr_t GC_get_main_stack_base(void)
   {
     return STACKBOTTOM;
   }
@@ -1263,7 +1250,7 @@ GC_INNER void GC_setpagesize(void)
   extern int GC_get_main_symbian_stack_base(void);
   EXTERN_C_END
 
-  ptr_t GC_get_main_stack_base(void)
+  GC_INNER ptr_t GC_get_main_stack_base(void)
   {
     return (ptr_t)GC_get_main_symbian_stack_base();
   }
@@ -1271,13 +1258,13 @@ GC_INNER void GC_setpagesize(void)
 #elif defined(EMSCRIPTEN)
 # include <emscripten/stack.h>
 
-  ptr_t GC_get_main_stack_base(void)
+  GC_INNER ptr_t GC_get_main_stack_base(void)
   {
     return (ptr_t)emscripten_stack_get_base();
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#elif !defined(AMIGA) && !defined(EMBOX) && !defined(HAIKU) && !defined(OS2) \
-      && !defined(ANY_MSWIN) && !defined(GC_OPENBSD_THREADS) \
+#elif !defined(ANY_MSWIN) && !defined(EMBOX) && !defined(HAIKU) \
+      && !defined(OS2) && !defined(GC_OPENBSD_THREADS) \
       && (!defined(GC_SOLARIS_THREADS) || defined(_STRICT_STDC))
 
 # if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
@@ -1294,7 +1281,7 @@ GC_INNER void GC_setpagesize(void)
 #   define STACKBOTTOM (ptr_t)pthread_get_stackaddr_np(pthread_self())
 # endif
 
-  ptr_t GC_get_main_stack_base(void)
+  GC_INNER ptr_t GC_get_main_stack_base(void)
   {
     ptr_t result;
 #   if (defined(HAVE_PTHREAD_ATTR_GET_NP) \
@@ -1376,7 +1363,7 @@ GC_INNER void GC_setpagesize(void)
     return result;
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#endif /* !AMIGA && !ANY_MSWIN && !HAIKU && !GC_OPENBSD_THREADS && !OS2 */
+#endif /* !ANY_MSWIN && !HAIKU && !GC_OPENBSD_THREADS && !OS2 */
 
 #if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
     && defined(THREADS) && !defined(HAVE_GET_STACK_BASE)
@@ -1583,7 +1570,7 @@ GC_INNER void GC_setpagesize(void)
 
 #ifndef GET_MAIN_STACKBASE_SPECIAL
   /* This is always called from the main thread.  Default implementation. */
-  ptr_t GC_get_main_stack_base(void)
+  GC_INNER ptr_t GC_get_main_stack_base(void)
   {
     struct GC_stack_base sb;
 
@@ -1601,7 +1588,7 @@ GC_INNER void GC_setpagesize(void)
 
 #ifdef OS2
 
-  void GC_register_data_segments(void)
+  GC_INNER void GC_register_data_segments(void)
   {
     PTIB ptib;
     PPIB ppib;
@@ -2001,7 +1988,7 @@ GC_INNER void GC_setpagesize(void)
       return FALSE;
     }
 
-    void GC_register_data_segments(void)
+    GC_INNER void GC_register_data_segments(void)
     {
 #     ifdef MSWIN32
         /* Note: any other GC global variable would fit too.    */
@@ -2082,16 +2069,11 @@ GC_INNER void GC_setpagesize(void)
       }
 #   endif /* DATASTART_USES_BSDGETDATASTART */
 
-#   ifdef AMIGA
-#     define GC_AMIGA_DS
-#     include "extra/AmigaOS.c"
-#     undef GC_AMIGA_DS
-
-#   elif defined(OPENBSD)
+#   if defined(OPENBSD)
       /* Depending on arch alignment, there can be multiple holes       */
       /* between DATASTART and DATAEND.  Scan in DATASTART .. DATAEND   */
       /* and register each region.                                      */
-      void GC_register_data_segments(void)
+      GC_INNER void GC_register_data_segments(void)
       {
         ptr_t region_start = DATASTART;
 
@@ -2110,7 +2092,7 @@ GC_INNER void GC_setpagesize(void)
         }
       }
 
-#   else /* !AMIGA && !OPENBSD */
+#   else /* !OPENBSD */
 #     if !defined(PCR) && defined(REDIRECT_MALLOC) \
          && defined(GC_SOLARIS_THREADS)
         EXTERN_C_BEGIN
@@ -2118,7 +2100,7 @@ GC_INNER void GC_setpagesize(void)
         EXTERN_C_END
 #     endif
 
-      void GC_register_data_segments(void)
+      GC_INNER void GC_register_data_segments(void)
       {
         GC_ASSERT(I_HOLD_LOCK());
 #       if !defined(DYNAMIC_LOADING) \
@@ -2159,7 +2141,7 @@ GC_INNER void GC_setpagesize(void)
         /* Dynamic libraries are added at every collection, since they  */
         /* may change.                                                  */
       }
-#   endif /* !AMIGA && !OPENBSD */
+#   endif /* !OPENBSD */
 
 # endif /* !ANY_MSWIN */
 #endif /* !OS2 */
@@ -2539,13 +2521,7 @@ ptr_t GC_unix_get_mem(size_t bytes)
   }
 #endif /* ANY_MSWIN || MSWIN_XBOX1 */
 
-#ifdef AMIGA
-# define GC_AMIGA_AM
-# include "extra/AmigaOS.c"
-# undef GC_AMIGA_AM
-#endif
-
-#if defined(HAIKU)
+#ifdef HAIKU
 # ifdef GC_LEAK_DETECTOR_H
     /* This is to use the real one.     */
 #   undef posix_memalign

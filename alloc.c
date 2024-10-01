@@ -1785,7 +1785,6 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks, unsigned flags,
         WARN("Out of Memory!  Trying to continue...\n", 0);
         GC_gcollect_inner();
       } else {
-#       if !defined(AMIGA) || !defined(GC_AMIGA_FASTALLOC)
 #         ifdef USE_MUNMAP
             GC_ASSERT(GC_heapsize >= GC_unmapped_bytes);
 #         endif
@@ -1802,7 +1801,6 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks, unsigned flags,
               WARN("Out of Memory! Heap size: %" WARN_PRIuPTR " bytes."
                    " Returning NULL!\n", GC_heapsize - GC_unmapped_bytes);
           }
-#       endif
         RESTORE_CANCEL(cancel_state);
         return FALSE;
       }

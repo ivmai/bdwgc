@@ -69,7 +69,7 @@
   __thread unsigned char GC_cancel_disable_count = 0;
 #endif
 
-GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
+struct _GC_arrays GC_arrays /* = { 0 } */;
 
 GC_INNER unsigned GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
 

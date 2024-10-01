@@ -158,10 +158,7 @@ GC_API void GC_CALL GC_add_roots(void *b, void *e)
 /* them correctly.)                                                     */
 /* Tmp specifies that the interval may be deleted before                */
 /* re-registering dynamic libraries.                                    */
-#ifndef AMIGA
-  GC_INNER
-#endif
-void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
+GC_INNER void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 {
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(ADDR_GE(e, b));

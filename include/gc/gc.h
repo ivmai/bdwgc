@@ -2329,27 +2329,6 @@ GC_API void GC_CALL GC_win32_free_heap(void);
   void GC_init_global_static_roots(void);
 #endif
 
-#if defined(_AMIGA) && !defined(GC_AMIGA_MAKINGLIB)
-  /* Allocation really goes through GC_amiga_allocwrapper_do.   */
-  void *GC_amiga_realloc(void *, size_t);
-# define GC_realloc(a,b) GC_amiga_realloc(a,b)
-  void GC_amiga_set_toany(void (*)(void));
-  extern int GC_amiga_free_space_divisor_inc;
-  extern void *(*GC_amiga_allocwrapper_do)(size_t, void *(GC_CALL *)(size_t));
-# define GC_malloc(a) \
-        (*GC_amiga_allocwrapper_do)(a,GC_malloc)
-# define GC_malloc_atomic(a) \
-        (*GC_amiga_allocwrapper_do)(a,GC_malloc_atomic)
-# define GC_malloc_uncollectable(a) \
-        (*GC_amiga_allocwrapper_do)(a,GC_malloc_uncollectable)
-# define GC_malloc_atomic_uncollectable(a) \
-        (*GC_amiga_allocwrapper_do)(a,GC_malloc_atomic_uncollectable)
-# define GC_malloc_ignore_off_page(a) \
-        (*GC_amiga_allocwrapper_do)(a,GC_malloc_ignore_off_page)
-# define GC_malloc_atomic_ignore_off_page(a) \
-        (*GC_amiga_allocwrapper_do)(a,GC_malloc_atomic_ignore_off_page)
-#endif /* _AMIGA && !GC_AMIGA_MAKINGLIB */
-
 #ifdef __cplusplus
   } /* extern "C" */
 #endif
