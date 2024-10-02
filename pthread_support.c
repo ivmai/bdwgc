@@ -2430,9 +2430,8 @@ GC_register_my_thread(const struct GC_stack_base *sb)
 #  else
     (void)me;
 #  endif
-  } else
+  } else {
 #  ifdef GC_PTHREADS
-  /* else */ {
     if (KNOWN_FINISHED(me)) {
       /* This code is executed when a thread is registered from the */
       /* client thread key destructor.                              */
