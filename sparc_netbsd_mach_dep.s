@@ -8,9 +8,7 @@
 
 	.seg 	"text"
 	.globl	_C_LABEL(GC_save_regs_in_stack)
-	.globl 	_C_LABEL(GC_push_regs)
 _C_LABEL(GC_save_regs_in_stack):
-_C_LABEL(GC_push_regs):
 	ta	0x3   ! ST_FLUSH_WINDOWS
 	mov	%sp,%o0
 	retl

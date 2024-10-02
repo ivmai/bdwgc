@@ -1467,8 +1467,8 @@ static void uniq(void *p, ...) {
     for (j=0; j<i; j++)
       if (q[i] == q[j]) {
         GC_printf(
-              "Apparently failed to mark from some function arguments.\n"
-              "Perhaps GC_push_regs was configured incorrectly?\n"
+            "Apparently failed to mark from some function arguments.\n"
+            "Perhaps GC_with_callee_saves_pushed was configured incorrectly?\n"
         );
         FAIL;
       }

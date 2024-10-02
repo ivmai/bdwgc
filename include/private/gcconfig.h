@@ -1255,8 +1255,6 @@ EXTERN_C_BEGIN
 #     define CPP_WORDSZ 32
 #     define ALIGNMENT 4        /* Required by hardware */
 #   endif
-    /* Don't define USE_ASM_PUSH_REGS.  We do use an asm helper, but    */
-    /* not to push the registers on the mark stack.                     */
 #   ifdef SOLARIS
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #       define PROC_VDB

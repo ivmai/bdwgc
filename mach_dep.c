@@ -26,27 +26,7 @@
 /* and should not be used on platforms that are either UNIX-like, or    */
 /* require thread support.                                              */
 
-#undef HAVE_PUSH_REGS
-
-#if defined(USE_ASM_PUSH_REGS)
-  /* Have asm implementation in .S file.        */
-# define HAVE_PUSH_REGS
-#elif defined(STACK_NOT_SCANNED)
-  void GC_push_regs(void)
-  {
-    /* empty */
-  }
-# define HAVE_PUSH_REGS
-#endif
-
-#if defined(HAVE_PUSH_REGS) && defined(THREADS)
-# error GC_push_regs cannot be used with threads
- /* Would fail for GC_do_blocking.  There are probably other safety     */
- /* issues.                                                             */
-# undef HAVE_PUSH_REGS
-#endif
-
-#if !defined(HAVE_PUSH_REGS) && defined(UNIX_LIKE)
+#if defined(UNIX_LIKE) && !defined(STACK_NOT_SCANNED)
 # include <signal.h>
 # ifndef NO_GETCONTEXT
 #   if defined(DARWIN) \
@@ -73,7 +53,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
   volatile int dummy;
   volatile ptr_t context = 0;
 # if defined(EMSCRIPTEN) || defined(HAVE_BUILTIN_UNWIND_INIT) \
-     || defined(HAVE_PUSH_REGS) || (defined(NO_CRT) && defined(MSWIN32)) \
+     || defined(STACK_NOT_SCANNED) || (defined(NO_CRT) && defined(MSWIN32)) \
      || !defined(NO_UNDERSCORE_SETJMP)
 #   define volatile_arg arg
 # else
@@ -82,9 +62,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
     volatile ptr_t volatile_arg = arg;
 # endif
 
-# if defined(HAVE_PUSH_REGS)
-    GC_push_regs();
-# elif defined(EMSCRIPTEN)
+# if defined(EMSCRIPTEN) || defined(STACK_NOT_SCANNED)
     /* No-op, "registers" are pushed in GC_push_other_roots().  */
 # else
 #   if defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
@@ -181,7 +159,7 @@ GC_INNER void GC_with_callee_saves_pushed(GC_with_callee_saves_func fn,
 #       endif
 #     endif
     }
-# endif /* !HAVE_PUSH_REGS */
+# endif
   /* TODO: context here is sometimes just zero.  At the moment, the     */
   /* callees don't really need it.                                      */
   /* Cast fn to a volatile type to prevent call inlining.               */
