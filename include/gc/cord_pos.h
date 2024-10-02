@@ -13,11 +13,11 @@
 
 /* This should never be included directly; included only from cord.h.   */
 #if !defined(CORD_POSITION_H) && defined(CORD_H)
-#define CORD_POSITION_H
+#  define CORD_POSITION_H
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
+#  ifdef __cplusplus
+extern "C" {
+#  endif
 
 /* The representation of CORD_position.  This is private to the */
 /* implementation, but the size is known to clients.  Also      */
@@ -26,44 +26,44 @@
 
 /* The maximum depth of a balanced cord + 1.            */
 /* We do not let cords get deeper than this maximum.    */
-#define CORD_MAX_DEPTH 48
+#  define CORD_MAX_DEPTH 48
 
 struct CORD_pe {
-    CORD pe_cord;
-    size_t pe_start_pos;
+  CORD pe_cord;
+  size_t pe_start_pos;
 };
 
 /* A structure describing an entry on the path from the root    */
 /* to current position.                                         */
 typedef struct CORD_Pos {
-    size_t cur_pos;
+  size_t cur_pos;
 
-    int path_len;
+  int path_len;
 
-    /* path_len is CORD_POS_INVALID if and only if position is invalid. */
-#   define CORD_POS_INVALID 0x55555555
+  /* path_len is CORD_POS_INVALID if and only if position is invalid. */
+#  define CORD_POS_INVALID 0x55555555
 
-    /* Current leaf, if it is a string.  If the current leaf is */
-    /* a function, then this may point to function_buf          */
-    /* containing the next few characters.  Always points to a  */
-    /* valid string containing the current character unless     */
-    /* cur_end is 0.                                            */
-    const char *cur_leaf;
+  /* Current leaf, if it is a string.  If the current leaf is */
+  /* a function, then this may point to function_buf          */
+  /* containing the next few characters.  Always points to a  */
+  /* valid string containing the current character unless     */
+  /* cur_end is 0.                                            */
+  const char *cur_leaf;
 
-    /* Start position of cur_leaf.  */
-    size_t cur_start;
+  /* Start position of cur_leaf.  */
+  size_t cur_start;
 
-    /* Ending position of cur_leaf; 0 if cur_leaf is invalid.   */
-    size_t cur_end;
+  /* Ending position of cur_leaf; 0 if cur_leaf is invalid.   */
+  size_t cur_end;
 
-    /* path[path_len] is the leaf corresponding to cur_pos;     */
-    /* path[0].pe_cord is the cord we point to.                 */
-    struct CORD_pe path[CORD_MAX_DEPTH + 1];
+  /* path[path_len] is the leaf corresponding to cur_pos;     */
+  /* path[0].pe_cord is the cord we point to.                 */
+  struct CORD_pe path[CORD_MAX_DEPTH + 1];
 
-#   define CORD_FUNCTION_BUF_SZ 8
+#  define CORD_FUNCTION_BUF_SZ 8
 
-    /* Space for next few chars from function node.             */
-    char function_buf[CORD_FUNCTION_BUF_SZ];
+  /* Space for next few chars from function node.             */
+  char function_buf[CORD_FUNCTION_BUF_SZ];
 } CORD_pos[1];
 
 /* Extract the cord from a position.    */
@@ -94,42 +94,40 @@ CORD_API char CORD__pos_fetch(CORD_pos);
 CORD_API void CORD__next(CORD_pos);
 CORD_API void CORD__prev(CORD_pos);
 
-#define CORD_pos_fetch(p) \
-    ((p)[0].cur_end != 0 ? \
-        (p)[0].cur_leaf[(p)[0].cur_pos - (p)[0].cur_start] \
-        : CORD__pos_fetch(p))
+#  define CORD_pos_fetch(p)                                                   \
+    ((p)[0].cur_end != 0 ? (p)[0].cur_leaf[(p)[0].cur_pos - (p)[0].cur_start] \
+                         : CORD__pos_fetch(p))
 
-#define CORD_next(p) \
-    ((p)[0].cur_pos + 1 < (p)[0].cur_end ? \
-        (p)[0].cur_pos++ \
-        : (CORD__next(p), 0U))
+#  define CORD_next(p)                                      \
+    ((p)[0].cur_pos + 1 < (p)[0].cur_end ? (p)[0].cur_pos++ \
+                                         : (CORD__next(p), 0U))
 
-#define CORD_prev(p) \
-    ((p)[0].cur_end != 0 && (p)[0].cur_pos > (p)[0].cur_start ? \
-        (p)[0].cur_pos-- \
-        : (CORD__prev(p), 0U))
+#  define CORD_prev(p)                                        \
+    ((p)[0].cur_end != 0 && (p)[0].cur_pos > (p)[0].cur_start \
+         ? (p)[0].cur_pos--                                   \
+         : (CORD__prev(p), 0U))
 
-#define CORD_pos_to_index(p) ((p)[0].cur_pos)
+#  define CORD_pos_to_index(p) ((p)[0].cur_pos)
 
-#define CORD_pos_to_cord(p) ((p)[0].path[0].pe_cord)
+#  define CORD_pos_to_cord(p) ((p)[0].path[0].pe_cord)
 
-#define CORD_pos_valid(p) ((p)[0].path_len != CORD_POS_INVALID)
+#  define CORD_pos_valid(p) ((p)[0].path_len != CORD_POS_INVALID)
 
 /* Some grubby stuff for performance-critical friends:  */
 
 /* Number of characters in cache. A non-positive value means none.  */
-#define CORD_pos_chars_left(p) ((long)(p)[0].cur_end - (long)(p)[0].cur_pos)
+#  define CORD_pos_chars_left(p) ((long)(p)[0].cur_end - (long)(p)[0].cur_pos)
 
 /* Advance position by n characters; n should be positive and less  */
 /* than CORD_pos_chars_left(p).                                     */
-#define CORD_pos_advance(p,n) ((p)[0].cur_pos += (n) - 1, CORD_next(p))
+#  define CORD_pos_advance(p, n) ((p)[0].cur_pos += (n)-1, CORD_next(p))
 
 /* Address of the current character in cache.   */
-#define CORD_pos_cur_char_addr(p) \
+#  define CORD_pos_cur_char_addr(p) \
     ((p)[0].cur_leaf + ((p)[0].cur_pos - (p)[0].cur_start))
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+#  ifdef __cplusplus
+} /* extern "C" */
+#  endif
 
 #endif

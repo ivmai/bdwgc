@@ -43,13 +43,13 @@
 /* library that may be shared between applications, since it affects    */
 /* the binary interface to the library.                                 */
 #if defined(CPPCHECK) && GC_GRANULE_BYTES == 1
-# undef GC_GRANULE_BYTES
+#  undef GC_GRANULE_BYTES
 #endif
 #ifdef GC_GRANULE_BYTES
-# define GC_GRANULE_PTRS (GC_GRANULE_BYTES / GC_SIZEOF_PTR)
+#  define GC_GRANULE_PTRS (GC_GRANULE_BYTES / GC_SIZEOF_PTR)
 #else
-# define GC_GRANULE_PTRS 2 /* in pointers */
-# define GC_GRANULE_BYTES (GC_GRANULE_PTRS * GC_SIZEOF_PTR)
+#  define GC_GRANULE_PTRS 2 /* in pointers */
+#  define GC_GRANULE_BYTES (GC_GRANULE_PTRS * GC_SIZEOF_PTR)
 #endif /* !GC_GRANULE_BYTES */
 
 /* Convert size in pointers to that in granules.        */
@@ -58,18 +58,18 @@
 /* Convert size in pointers to that in granules, but rounding up the    */
 /* result.                                                              */
 #define GC_PTRS_TO_WHOLE_GRANULES(n) \
-                GC_PTRS_TO_GRANULES((n) + GC_GRANULE_PTRS - 1)
+  GC_PTRS_TO_GRANULES((n) + GC_GRANULE_PTRS - 1)
 
 /* A "tiny" free-list header contains GC_TINY_FREELISTS pointers to     */
 /* singly linked lists of objects of different sizes, the i-th one      */
 /* containing objects i granules in size.  Note that there is a list    */
 /* of size zero objects.                                                */
 #ifndef GC_TINY_FREELISTS
-# if GC_GRANULE_BYTES >= 16
-#   define GC_TINY_FREELISTS 25
-# else
-#   define GC_TINY_FREELISTS 33 /* Up to and including 256 bytes */
-# endif
+#  if GC_GRANULE_BYTES >= 16
+#    define GC_TINY_FREELISTS 25
+#  else
+#    define GC_TINY_FREELISTS 33 /* Up to and including 256 bytes */
+#  endif
 #endif /* !GC_TINY_FREELISTS */
 
 /* The i-th free list corresponds to size i*GC_GRANULE_BYTES    */
@@ -81,7 +81,7 @@
 /* Convert a free-list index to the actual size of objects      */
 /* on that list, including extra space we added.  Not an        */
 /* inverse of the above.                                        */
-#define GC_RAW_BYTES_FROM_INDEX(i) ((i) * GC_GRANULE_BYTES)
+#define GC_RAW_BYTES_FROM_INDEX(i) ((i)*GC_GRANULE_BYTES)
 
 /* Deprecated.  Use GC_GRANULE_PTRS instead.    */
 #undef GC_GRANULE_WORDS

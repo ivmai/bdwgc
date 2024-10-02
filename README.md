@@ -607,6 +607,7 @@ submission please check that it has not been done yet by someone else.
 
 If you want to contribute, submit
 a [pull request](https://github.com/ivmai/bdwgc/pulls) to GitHub.
+Please process the modified files with clang-format before the submission.
 
 If you need help, use
 [Stack Overflow](https://stackoverflow.com/questions/tagged/boehm-gc).

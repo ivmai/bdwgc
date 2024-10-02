@@ -60,35 +60,35 @@
 #include <stdio.h>
 
 #ifdef __cplusplus
-  extern "C" {
+extern "C" {
 #endif
 
 #if defined(GC_DLL) && !defined(CORD_NOT_DLL) && !defined(CORD_API)
-  /* Same as for GC_API in gc_config_macros.h.  */
-# ifdef CORD_BUILD
-#   if defined(__MINGW32__) && !defined(__cplusplus) || defined(__CEGCC__)
-#     define CORD_API __declspec(dllexport)
-#   elif defined(_MSC_VER) || defined(__DMC__) || defined(__BORLANDC__) \
-         || defined(__CYGWIN__) || defined(__MINGW32__) \
-         || defined(__WATCOMC__)
-#     define CORD_API extern __declspec(dllexport)
-#   elif defined(__GNUC__) && !defined(GC_NO_VISIBILITY) \
-         && (__GNUC__ >= 4 || defined(GC_VISIBILITY_HIDDEN_SET))
-    /* Only matters if used in conjunction with -fvisibility=hidden option. */
-#     define CORD_API extern __attribute__((__visibility__("default")))
-#   endif
-# else /* !CORD_BUILD */
-#   if defined(__BORLANDC__) || defined(__CEGCC__) || defined(__CYGWIN__) \
-       || defined(__DMC__) || defined(_MSC_VER)
-#     define CORD_API __declspec(dllimport)
-#   elif defined(__MINGW32__) || defined(__WATCOMC__)
-#     define CORD_API extern __declspec(dllimport)
-#   endif
-# endif
+/* Same as for GC_API in gc_config_macros.h.  */
+#  ifdef CORD_BUILD
+#    if defined(__MINGW32__) && !defined(__cplusplus) || defined(__CEGCC__)
+#      define CORD_API __declspec(dllexport)
+#    elif defined(_MSC_VER) || defined(__DMC__) || defined(__BORLANDC__) \
+        || defined(__CYGWIN__) || defined(__MINGW32__)                   \
+        || defined(__WATCOMC__)
+#      define CORD_API extern __declspec(dllexport)
+#    elif defined(__GNUC__) && !defined(GC_NO_VISIBILITY) \
+        && (__GNUC__ >= 4 || defined(GC_VISIBILITY_HIDDEN_SET))
+/* Only matters if used in conjunction with -fvisibility=hidden option. */
+#      define CORD_API extern __attribute__((__visibility__("default")))
+#    endif
+#  else /* !CORD_BUILD */
+#    if defined(__BORLANDC__) || defined(__CEGCC__) || defined(__CYGWIN__) \
+        || defined(__DMC__) || defined(_MSC_VER)
+#      define CORD_API __declspec(dllimport)
+#    elif defined(__MINGW32__) || defined(__WATCOMC__)
+#      define CORD_API extern __declspec(dllimport)
+#    endif
+#  endif
 #endif /* GC_DLL */
 
 #ifndef CORD_API
-# define CORD_API extern
+#  define CORD_API extern
 #endif
 
 /* Cords have type const char *.  This is cheating quite a bit, and not */
@@ -97,7 +97,7 @@
 /* never modified in place.  The empty cord is represented by, and      */
 /* can be written as, 0.                                                */
 
-typedef const char * CORD;
+typedef const char *CORD;
 
 /* An empty cord is always represented as nil.  */
 #define CORD_EMPTY 0
@@ -113,8 +113,8 @@ CORD_API CORD CORD_cat(CORD, CORD);
 /* empty string case, this is a special case of CORD_cat.  Since the    */
 /* length is known, it can be faster.  The string y is shared with the  */
 /* resulting CORD.  Hence it should not be altered by the caller.       */
-CORD_API CORD CORD_cat_char_star(CORD /* x */,
-                                 const char * /* y */, size_t /* y_len */);
+CORD_API CORD CORD_cat_char_star(CORD /* x */, const char * /* y */,
+                                 size_t /* y_len */);
 
 /* Compute the length of a cord. */
 CORD_API size_t CORD_len(CORD);
@@ -180,7 +180,7 @@ CORD_API int CORD_riter4(CORD, size_t /* i */, CORD_iter_fn /* f1 */,
 CORD_API int CORD_riter(CORD, CORD_iter_fn /* f1 */, void * /* client_data */);
 
 #ifdef __cplusplus
-  } /* extern "C" */
+} /* extern "C" */
 #endif
 
 /* Functions that operate on cord positions.  The easy way to traverse  */
@@ -223,19 +223,19 @@ CORD_API int CORD_riter(CORD, CORD_iter_fn /* f1 */, void * /* client_data */);
 */
 
 #ifdef __cplusplus
-  extern "C" {
+extern "C" {
 #endif
 
 #define CORD_FOR(pos, cord) \
-    for (CORD_set_pos(pos, cord, 0); CORD_pos_valid(pos); CORD_next(pos))
+  for (CORD_set_pos(pos, cord, 0); CORD_pos_valid(pos); CORD_next(pos))
 
 /* An out-of-memory handler to call.  Zero value means do nothing       */
 /* special, just abort.                                                 */
 #ifndef CORD_DONT_DECLARE_OOM_FN
-  CORD_API void (*CORD_oom_fn)(void);
+CORD_API void (*CORD_oom_fn)(void);
 #endif
 #ifdef CORD_BUILD
-  /* no export */ void CORD__call_oom_fn(void);
+/* no export */ void CORD__call_oom_fn(void);
 #endif
 
 /* Dump the representation of x to stdout in an implementation defined  */
@@ -249,7 +249,7 @@ CORD_API void CORD_dump(CORD);
 CORD_API CORD CORD_cat_char(CORD, char);
 
 /* Concatenate n cords. */
-CORD_API CORD CORD_catn(int /* n */, /* CORD */ ...);
+CORD_API CORD CORD_catn(int /* n */, /* CORD */...);
 
 /* Return the character in CORD_substr(x, i, 1).        */
 CORD_API char CORD_fetch(CORD /* x */, size_t /* i */);
@@ -259,8 +259,8 @@ CORD_API int CORD_cmp(CORD /* x */, CORD /* y */);
 
 /* A generalization that takes both starting positions for the          */
 /* comparison, and a limit on the number of characters to be compared.  */
-CORD_API int CORD_ncmp(CORD /* x */, size_t /* x_start */,
-                       CORD /* y */, size_t /* y_start */, size_t /* len */);
+CORD_API int CORD_ncmp(CORD /* x */, size_t /* x_start */, CORD /* y */,
+                       size_t /* y_start */, size_t /* len */);
 
 /* Find the first occurrence of s in x at position start or later.      */
 /* Return the position of the first character of s in x, or             */
@@ -303,7 +303,7 @@ CORD_API CORD CORD_from_file_lazy(FILE *);
 
 /* Turn a cord into a C string. The result shares no structure with     */
 /* x, and is thus modifiable.                                           */
-CORD_API char * CORD_to_char_star(CORD /* x */);
+CORD_API char *CORD_to_char_star(CORD /* x */);
 
 /* Turn a C string into a CORD.  The C string is copied, and so may     */
 /* subsequently be modified.                                            */
@@ -311,7 +311,7 @@ CORD_API CORD CORD_from_char_star(const char *);
 
 /* Identical to the above, but the result may share structure with      */
 /* the argument and is thus not modifiable.                             */
-CORD_API const char * CORD_to_const_char_star(CORD);
+CORD_API const char *CORD_to_const_char_star(CORD);
 
 /* Write a cord to a file, starting at the current position.            */
 /* No trailing NULs are newlines are added.                             */
@@ -332,7 +332,7 @@ CORD_API size_t CORD_chr(CORD /* x */, size_t /* i */, int /* c */);
 CORD_API size_t CORD_rchr(CORD /* x */, size_t /* i */, int /* c */);
 
 #ifdef __cplusplus
-  } /* extern "C" */
+} /* extern "C" */
 #endif
 
 /* The following ones provide functionality similar to the ANSI C       */
@@ -361,22 +361,22 @@ CORD_API size_t CORD_rchr(CORD /* x */, size_t /* i */, int /* c */);
 
 #ifndef CORD_NO_IO
 
-#include <stdarg.h>
+#  include <stdarg.h>
 
-# ifdef __cplusplus
-    extern "C" {
-# endif
+#  ifdef __cplusplus
+extern "C" {
+#  endif
 
-  CORD_API int CORD_sprintf(CORD * /* out */, CORD /* format */, ...);
-  CORD_API int CORD_vsprintf(CORD * /* out */, CORD /* format */, va_list);
-  CORD_API int CORD_fprintf(FILE *, CORD /* format */, ...);
-  CORD_API int CORD_vfprintf(FILE *, CORD /* format */, va_list);
-  CORD_API int CORD_printf(CORD /* format */, ...);
-  CORD_API int CORD_vprintf(CORD /* format */, va_list);
+CORD_API int CORD_sprintf(CORD * /* out */, CORD /* format */, ...);
+CORD_API int CORD_vsprintf(CORD * /* out */, CORD /* format */, va_list);
+CORD_API int CORD_fprintf(FILE *, CORD /* format */, ...);
+CORD_API int CORD_vfprintf(FILE *, CORD /* format */, va_list);
+CORD_API int CORD_printf(CORD /* format */, ...);
+CORD_API int CORD_vprintf(CORD /* format */, va_list);
 
-# ifdef __cplusplus
-    } /* extern "C" */
-# endif
+#  ifdef __cplusplus
+} /* extern "C" */
+#  endif
 
 #endif /* CORD_NO_IO */
 

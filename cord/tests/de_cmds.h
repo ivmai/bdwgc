@@ -14,18 +14,18 @@
 #ifndef DE_CMDS_H
 #define DE_CMDS_H
 
-# define UP     16      /* ^P */
-# define DOWN   14      /* ^N */
-# define LEFT   2       /* ^B */
-# define RIGHT  6       /* ^F */
-# define DEL    127     /* ^? */
-# define BS     8       /* ^H */
-# define UNDO   21      /* ^U */
-# define WRITE  23      /* ^W */
-# define QUIT   4       /* ^D */
-# define REPEAT 18      /* ^R */
-# define LOCATE 12      /* ^L */
-# define TOP    20      /* ^T */
+#define UP 16     /* ^P */
+#define DOWN 14   /* ^N */
+#define LEFT 2    /* ^B */
+#define RIGHT 6   /* ^F */
+#define DEL 127   /* ^? */
+#define BS 8      /* ^H */
+#define UNDO 21   /* ^U */
+#define WRITE 23  /* ^W */
+#define QUIT 4    /* ^D */
+#define REPEAT 18 /* ^R */
+#define LOCATE 12 /* ^L */
+#define TOP 20    /* ^T */
 
 /* Execute an editor command.           */
 /* The argument is a command character  */

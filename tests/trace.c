@@ -3,26 +3,28 @@
 #include <stdlib.h>
 
 #ifndef GC_DEBUG
-# define GC_DEBUG
+#  define GC_DEBUG
 #endif
 
 #include "gc.h"
 #include "gc/gc_backptr.h"
 
-#define CHECK_OUT_OF_MEMORY(p) \
-    do { \
-        if (NULL == (p)) { \
-            fprintf(stderr, "Out of memory\n"); \
-            exit(69); \
-        } \
-    } while (0)
+#define CHECK_OUT_OF_MEMORY(p)            \
+  do {                                    \
+    if (NULL == (p)) {                    \
+      fprintf(stderr, "Out of memory\n"); \
+      exit(69);                           \
+    }                                     \
+  } while (0)
 
 struct treenode {
-    struct treenode *x;
-    struct treenode *y;
-} *root[10];
+  struct treenode *x;
+  struct treenode *y;
+} * root[10];
 
-static struct treenode *mktree(int i) {
+static struct treenode *
+mktree(int i)
+{
   struct treenode *r = GC_NEW(struct treenode);
   struct treenode *x, *y;
 
@@ -35,8 +37,8 @@ static struct treenode *mktree(int i) {
   }
   x = mktree(i - 1);
   y = mktree(i - 1);
-  r -> x = x;
-  r -> y = y;
+  r->x = x;
+  r->y = y;
   if (i != 1) {
     GC_END_STUBBORN_CHANGE(r);
     GC_reachable_here(x);
@@ -45,7 +47,8 @@ static struct treenode *mktree(int i) {
   return r;
 }
 
-int main(void)
+int
+main(void)
 {
   int i;
 

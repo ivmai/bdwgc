@@ -16,37 +16,37 @@
 
 #include "de_cmds.h"
 
-#define OTHER_FLAG      0x100
-#define EDIT_CMD_FLAG   0x200
-#define REPEAT_FLAG     0x400
+#define OTHER_FLAG 0x100
+#define EDIT_CMD_FLAG 0x200
+#define REPEAT_FLAG 0x400
 
-#define CHAR_CMD(i) ((i) & 0xff)
+#define CHAR_CMD(i) ((i)&0xff)
 
 /* MENU: DE */
-#define IDM_FILESAVE            (EDIT_CMD_FLAG + WRITE)
-#define IDM_FILEEXIT            (OTHER_FLAG + 1)
-#define IDM_HELPABOUT           (OTHER_FLAG + 2)
-#define IDM_HELPCONTENTS        (OTHER_FLAG + 3)
+#define IDM_FILESAVE (EDIT_CMD_FLAG + WRITE)
+#define IDM_FILEEXIT (OTHER_FLAG + 1)
+#define IDM_HELPABOUT (OTHER_FLAG + 2)
+#define IDM_HELPCONTENTS (OTHER_FLAG + 3)
 
-#define IDM_EDITPDOWN           (REPEAT_FLAG + EDIT_CMD_FLAG + DOWN)
-#define IDM_EDITPUP             (REPEAT_FLAG + EDIT_CMD_FLAG + UP)
-#define IDM_EDITUNDO            (EDIT_CMD_FLAG + UNDO)
-#define IDM_EDITLOCATE          (EDIT_CMD_FLAG + LOCATE)
-#define IDM_EDITDOWN            (EDIT_CMD_FLAG + DOWN)
-#define IDM_EDITUP              (EDIT_CMD_FLAG + UP)
-#define IDM_EDITLEFT            (EDIT_CMD_FLAG + LEFT)
-#define IDM_EDITRIGHT           (EDIT_CMD_FLAG + RIGHT)
-#define IDM_EDITBS              (EDIT_CMD_FLAG + BS)
-#define IDM_EDITDEL             (EDIT_CMD_FLAG + DEL)
-#define IDM_EDITREPEAT          (EDIT_CMD_FLAG + REPEAT)
-#define IDM_EDITTOP             (EDIT_CMD_FLAG + TOP)
+#define IDM_EDITPDOWN (REPEAT_FLAG + EDIT_CMD_FLAG + DOWN)
+#define IDM_EDITPUP (REPEAT_FLAG + EDIT_CMD_FLAG + UP)
+#define IDM_EDITUNDO (EDIT_CMD_FLAG + UNDO)
+#define IDM_EDITLOCATE (EDIT_CMD_FLAG + LOCATE)
+#define IDM_EDITDOWN (EDIT_CMD_FLAG + DOWN)
+#define IDM_EDITUP (EDIT_CMD_FLAG + UP)
+#define IDM_EDITLEFT (EDIT_CMD_FLAG + LEFT)
+#define IDM_EDITRIGHT (EDIT_CMD_FLAG + RIGHT)
+#define IDM_EDITBS (EDIT_CMD_FLAG + BS)
+#define IDM_EDITDEL (EDIT_CMD_FLAG + DEL)
+#define IDM_EDITREPEAT (EDIT_CMD_FLAG + REPEAT)
+#define IDM_EDITTOP (EDIT_CMD_FLAG + TOP)
 
 /* Screen dimensions.  Maintained by de_win.c.  */
 extern int LINES;
 extern int COLS;
 
 /* File being edited.   */
-extern char * arg_file_name;
+extern char *arg_file_name;
 
 /* Calls from de_win.c to de.c. */
 

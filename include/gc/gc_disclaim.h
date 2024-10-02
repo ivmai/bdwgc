@@ -17,7 +17,7 @@
 #include "gc.h"
 
 #ifdef __cplusplus
-  extern "C" {
+extern "C" {
 #endif
 
 /* This API is defined only if the library has been suitably compiled   */
@@ -29,7 +29,7 @@
 GC_API void GC_CALL GC_init_finalized_malloc(void);
 
 /* Type of a disclaim callback.  Called with the allocator lock held.   */
-typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /* obj */);
+typedef int(GC_CALLBACK *GC_disclaim_proc)(void * /* obj */);
 
 /* Register proc to be called on each object (of given kind) ready to   */
 /* be reclaimed.  If proc() returns non-zero, the collector will not    */
@@ -47,8 +47,8 @@ GC_API void GC_CALL GC_register_disclaim_proc(int /* kind */,
 
 /* The finalizer closure used by GC_finalized_malloc.                   */
 struct GC_finalizer_closure {
-    GC_finalization_proc proc;
-    void *cd;
+  GC_finalization_proc proc;
+  void *cd;
 };
 
 /* Allocate an object which is to be finalized by the given closure.    */
@@ -64,12 +64,13 @@ struct GC_finalizer_closure {
 /* result points to a word prior to the start of the allocated object.  */
 /* The disclaim procedure is not invoked in the leak-finding mode.      */
 /* There is no debugging version of this allocation API.                */
-GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
-        GC_finalized_malloc(size_t /* size */,
-            const struct GC_finalizer_closure * /* fc */) GC_ATTR_NONNULL(2);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
+    GC_finalized_malloc(size_t /* size */,
+                        const struct GC_finalizer_closure * /* fc */)
+        GC_ATTR_NONNULL(2);
 
 #ifdef __cplusplus
-  } /* extern "C" */
+} /* extern "C" */
 #endif
 
 #endif

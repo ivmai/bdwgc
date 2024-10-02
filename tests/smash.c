@@ -1,7 +1,7 @@
 /* Test that overwrite error detection works reasonably.        */
 
 #ifndef GC_DEBUG
-# define GC_DEBUG
+#  define GC_DEBUG
 #endif
 
 #include "gc.h"
@@ -10,21 +10,22 @@
 #include <stdlib.h>
 
 #define COUNT 7000
-#define SIZE  40
+#define SIZE 40
 
-#define CHECK_OUT_OF_MEMORY(p) \
-    do { \
-        if (NULL == (p)) { \
-            fprintf(stderr, "Out of memory\n"); \
-            exit(69); \
-        } \
-    } while (0)
+#define CHECK_OUT_OF_MEMORY(p)            \
+  do {                                    \
+    if (NULL == (p)) {                    \
+      fprintf(stderr, "Out of memory\n"); \
+      exit(69);                           \
+    }                                     \
+  } while (0)
 
-char * A[COUNT];
+char *A[COUNT];
 
-char * volatile q;
+char *volatile q;
 
-int main(void)
+int
+main(void)
 {
   int i;
   char *p;

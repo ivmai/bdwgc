@@ -24,64 +24,70 @@
 /* Consider pointers that are offset bytes displaced from the beginning */
 /* of an object to be valid.                                            */
 
-GC_API void GC_CALL GC_register_displacement(size_t offset)
+GC_API void GC_CALL
+GC_register_displacement(size_t offset)
 {
-    LOCK();
-    GC_register_displacement_inner(offset);
-    UNLOCK();
+  LOCK();
+  GC_register_displacement_inner(offset);
+  UNLOCK();
 }
 
-GC_INNER void GC_register_displacement_inner(size_t offset)
+GC_INNER void
+GC_register_displacement_inner(size_t offset)
 {
-    GC_ASSERT(I_HOLD_LOCK());
-    if (offset >= VALID_OFFSET_SZ) {
-        ABORT("Bad argument to GC_register_displacement");
-    }
-    if (!GC_valid_offsets[offset]) {
-      GC_valid_offsets[offset] = TRUE;
-      GC_modws_valid_offsets[offset % sizeof(ptr_t)] = TRUE;
-    }
+  GC_ASSERT(I_HOLD_LOCK());
+  if (offset >= VALID_OFFSET_SZ) {
+    ABORT("Bad argument to GC_register_displacement");
+  }
+  if (!GC_valid_offsets[offset]) {
+    GC_valid_offsets[offset] = TRUE;
+    GC_modws_valid_offsets[offset % sizeof(ptr_t)] = TRUE;
+  }
 }
 
 #ifndef MARK_BIT_PER_OBJ
-  GC_INNER GC_bool GC_add_map_entry(size_t lg)
-  {
-    size_t displ;
-    hb_map_entry_t *new_map;
+GC_INNER GC_bool
+GC_add_map_entry(size_t lg)
+{
+  size_t displ;
+  hb_map_entry_t *new_map;
 
-    GC_ASSERT(I_HOLD_LOCK());
-    /* Ensure displ % lg fits into hb_map_entry_t.  Note: the maximum   */
-    /* value is computed in this way to avoid compiler complains about  */
-    /* constant truncation or expression overflow.                      */
-    GC_STATIC_ASSERT(MAXOBJGRANULES - 1
-            <= ~(size_t)0 >> ((sizeof(size_t) - sizeof(hb_map_entry_t)) * 8));
+  GC_ASSERT(I_HOLD_LOCK());
+  /* Ensure displ % lg fits into hb_map_entry_t.  Note: the maximum   */
+  /* value is computed in this way to avoid compiler complains about  */
+  /* constant truncation or expression overflow.                      */
+  GC_STATIC_ASSERT(MAXOBJGRANULES - 1 <= ~(size_t)0
+                   >> ((sizeof(size_t) - sizeof(hb_map_entry_t)) * 8));
 
-    if (lg > MAXOBJGRANULES) lg = 0;
-    if (EXPECT(GC_obj_map[lg] != NULL, TRUE)) return TRUE;
-
-    new_map = (hb_map_entry_t *)GC_scratch_alloc(OBJ_MAP_LEN
-                                                 * sizeof(hb_map_entry_t));
-    if (EXPECT(NULL == new_map, FALSE)) return FALSE;
-
-    GC_COND_LOG_PRINTF(
-                "Adding block map for size of %u granules (%u bytes)\n",
-                (unsigned)lg, (unsigned)GRANULES_TO_BYTES(lg));
-    if (0 == lg) {
-      for (displ = 0; displ < OBJ_MAP_LEN; displ++) {
-        /* Set to a nonzero to get us out of the marker fast path.  */
-        new_map[displ] = 1;
-      }
-    } else {
-      for (displ = 0; displ < OBJ_MAP_LEN; displ++) {
-        new_map[displ] = (hb_map_entry_t)(displ % lg);
-      }
-    }
-    GC_obj_map[lg] = new_map;
+  if (lg > MAXOBJGRANULES)
+    lg = 0;
+  if (EXPECT(GC_obj_map[lg] != NULL, TRUE))
     return TRUE;
+
+  new_map = (hb_map_entry_t *)GC_scratch_alloc(OBJ_MAP_LEN
+                                               * sizeof(hb_map_entry_t));
+  if (EXPECT(NULL == new_map, FALSE))
+    return FALSE;
+
+  GC_COND_LOG_PRINTF("Adding block map for size of %u granules (%u bytes)\n",
+                     (unsigned)lg, (unsigned)GRANULES_TO_BYTES(lg));
+  if (0 == lg) {
+    for (displ = 0; displ < OBJ_MAP_LEN; displ++) {
+      /* Set to a nonzero to get us out of the marker fast path.  */
+      new_map[displ] = 1;
+    }
+  } else {
+    for (displ = 0; displ < OBJ_MAP_LEN; displ++) {
+      new_map[displ] = (hb_map_entry_t)(displ % lg);
+    }
   }
+  GC_obj_map[lg] = new_map;
+  return TRUE;
+}
 #endif /* !MARK_BIT_PER_OBJ */
 
-GC_INNER void GC_initialize_offsets(void)
+GC_INNER void
+GC_initialize_offsets(void)
 {
   size_t i;
 

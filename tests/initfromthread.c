@@ -15,11 +15,11 @@
 /* initial thread.                                                      */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#  include "config.h"
 #endif
 
 #ifndef GC_THREADS
-# define GC_THREADS
+#  define GC_THREADS
 #endif
 
 /* Do not redirect thread creation and join calls.      */
@@ -28,100 +28,106 @@
 #include "gc.h"
 
 #ifdef GC_PTHREADS
-# include <pthread.h>
-# include <string.h>
+#  include <pthread.h>
+#  include <string.h>
 #else
-# ifndef WIN32_LEAN_AND_MEAN
-#   define WIN32_LEAN_AND_MEAN 1
-# endif
-# define NOSERVICE
-# include <windows.h>
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN 1
+#  endif
+#  define NOSERVICE
+#  include <windows.h>
 #endif /* !GC_PTHREADS */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-#define CHECK_OUT_OF_MEMORY(p) \
-    do { \
-        if (NULL == (p)) { \
-            fprintf(stderr, "Out of memory\n"); \
-            exit(69); \
-        } \
-    } while (0)
+#define CHECK_OUT_OF_MEMORY(p)            \
+  do {                                    \
+    if (NULL == (p)) {                    \
+      fprintf(stderr, "Out of memory\n"); \
+      exit(69);                           \
+    }                                     \
+  } while (0)
 
 #ifdef GC_PTHREADS
-  static void *thread(void *arg)
+static void *
+thread(void *arg)
 #else
-  static DWORD WINAPI thread(LPVOID arg)
+static DWORD WINAPI
+thread(LPVOID arg)
 #endif
 {
   GC_INIT();
   CHECK_OUT_OF_MEMORY(GC_MALLOC(123));
   CHECK_OUT_OF_MEMORY(GC_MALLOC(12345));
-# ifdef GC_PTHREADS
-    return arg;
-# else
-    return (DWORD)(GC_word)arg;
-# endif
+#ifdef GC_PTHREADS
+  return arg;
+#else
+  return (DWORD)(GC_word)arg;
+#endif
 }
 
 #include "private/gcconfig.h"
 
-int main(void)
+int
+main(void)
 {
-# ifdef GC_PTHREADS
-    int code;
-    pthread_t t;
+#ifdef GC_PTHREADS
+  int code;
+  pthread_t t;
 
-#   ifdef LINT2
-      /* Explicitly initialize t to some value. */
-      t = pthread_self();
-#   endif
-# else
-    HANDLE t;
-    DWORD thread_id;
-# endif
-# if !(defined(BEOS) || defined(ANY_MSWIN) \
-       || (defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP)) \
-       || ((defined(FREEBSD) || defined(LINUX) || defined(NETBSD) \
-            || defined(HOST_ANDROID)) && !defined(NO_PTHREAD_GETATTR_NP) \
-           && !defined(NO_PTHREAD_ATTR_GET_NP)) \
-       || (defined(GC_SOLARIS_THREADS) && !defined(_STRICT_STDC)) \
-       || (!defined(STACKBOTTOM) && (defined(HEURISTIC1) \
-          || (!defined(LINUX_STACKBOTTOM) && !defined(FREEBSD_STACKBOTTOM)))))
-    /* GC_INIT() must be called from main thread only. */
-    GC_INIT();
-# endif
+#  ifdef LINT2
+  /* Explicitly initialize t to some value. */
+  t = pthread_self();
+#  endif
+#else
+  HANDLE t;
+  DWORD thread_id;
+#endif
+#if !(defined(BEOS) || defined(ANY_MSWIN)                           \
+      || (defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP)) \
+      || ((defined(FREEBSD) || defined(LINUX) || defined(NETBSD)    \
+           || defined(HOST_ANDROID))                                \
+          && !defined(NO_PTHREAD_GETATTR_NP)                        \
+          && !defined(NO_PTHREAD_ATTR_GET_NP))                      \
+      || (defined(GC_SOLARIS_THREADS) && !defined(_STRICT_STDC))    \
+      || (!defined(STACKBOTTOM)                                     \
+          && (defined(HEURISTIC1)                                   \
+              || (!defined(LINUX_STACKBOTTOM)                       \
+                  && !defined(FREEBSD_STACKBOTTOM)))))
+  /* GC_INIT() must be called from main thread only. */
+  GC_INIT();
+#endif
 
   /* Linking fails if no threads support.       */
   (void)GC_get_suspend_signal();
 
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
-# ifdef GC_PTHREADS
-    if ((code = pthread_create(&t, NULL, thread, NULL)) != 0) {
-      fprintf(stderr, "Thread #0 creation failed: %s\n", strerror(code));
-      return 1;
-    }
-    if ((code = pthread_join(t, NULL)) != 0) {
-      fprintf(stderr, "Thread #0 join failed: %s\n", strerror(code));
-      return 1;
-    }
-# else
-    t = CreateThread(NULL, 0, thread, 0, 0, &thread_id);
-    if (t == NULL) {
-      fprintf(stderr, "Thread #0 creation failed, errcode= %d\n",
-              (int)GetLastError());
-      return 1;
-    }
-    if (WaitForSingleObject(t, INFINITE) != WAIT_OBJECT_0) {
-      fprintf(stderr, "Thread #0 join failed, errcode= %d\n",
-              (int)GetLastError());
-      CloseHandle(t);
-      return 1;
-    }
+#ifdef GC_PTHREADS
+  if ((code = pthread_create(&t, NULL, thread, NULL)) != 0) {
+    fprintf(stderr, "Thread #0 creation failed: %s\n", strerror(code));
+    return 1;
+  }
+  if ((code = pthread_join(t, NULL)) != 0) {
+    fprintf(stderr, "Thread #0 join failed: %s\n", strerror(code));
+    return 1;
+  }
+#else
+  t = CreateThread(NULL, 0, thread, 0, 0, &thread_id);
+  if (t == NULL) {
+    fprintf(stderr, "Thread #0 creation failed, errcode= %d\n",
+            (int)GetLastError());
+    return 1;
+  }
+  if (WaitForSingleObject(t, INFINITE) != WAIT_OBJECT_0) {
+    fprintf(stderr, "Thread #0 join failed, errcode= %d\n",
+            (int)GetLastError());
     CloseHandle(t);
-# endif
+    return 1;
+  }
+  CloseHandle(t);
+#endif
   printf("SUCCEEDED\n");
   return 0;
 }

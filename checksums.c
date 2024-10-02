@@ -17,17 +17,17 @@
 
 /* This is debugging code intended to verify the results of dirty bit   */
 /* computations.  Works only in a single threaded environment.          */
-# define NSUMS 10000
-# define OFFSET 0x10000
+#  define NSUMS 10000
+#  define OFFSET 0x10000
 
 typedef struct {
-        GC_bool new_valid;
-        word old_sum;
-        word new_sum;
+  GC_bool new_valid;
+  word old_sum;
+  word new_sum;
 
-        /* Block to which this refers plus OFFSET to hide it from the   */
-        /* garbage collector.                                           */
-        struct hblk * block;
+  /* Block to which this refers plus OFFSET to hide it from the   */
+  /* garbage collector.                                           */
+  struct hblk *block;
 } page_entry;
 
 page_entry GC_sums[NSUMS];
@@ -37,36 +37,41 @@ STATIC word GC_faulted[NSUMS] = { 0 };
 
 STATIC size_t GC_n_faulted = 0;
 
-#ifdef MPROTECT_VDB
-  void GC_record_fault(struct hblk * h)
-  {
-    GC_ASSERT(GC_page_size != 0);
-    if (GC_n_faulted >= NSUMS) ABORT("write fault log overflowed");
-    GC_faulted[GC_n_faulted++] = ADDR(HBLK_PAGE_ALIGNED(h));
-  }
-#endif
-
-STATIC GC_bool GC_was_faulted(struct hblk *h)
+#  ifdef MPROTECT_VDB
+void
+GC_record_fault(struct hblk *h)
 {
-    size_t i;
-    word page = ADDR(HBLK_PAGE_ALIGNED(h));
+  GC_ASSERT(GC_page_size != 0);
+  if (GC_n_faulted >= NSUMS)
+    ABORT("write fault log overflowed");
+  GC_faulted[GC_n_faulted++] = ADDR(HBLK_PAGE_ALIGNED(h));
+}
+#  endif
 
-    for (i = 0; i < GC_n_faulted; ++i) {
-        if (GC_faulted[i] == page) return TRUE;
-    }
-    return FALSE;
+STATIC GC_bool
+GC_was_faulted(struct hblk *h)
+{
+  size_t i;
+  word page = ADDR(HBLK_PAGE_ALIGNED(h));
+
+  for (i = 0; i < GC_n_faulted; ++i) {
+    if (GC_faulted[i] == page)
+      return TRUE;
+  }
+  return FALSE;
 }
 
-STATIC word GC_checksum(struct hblk *h)
+STATIC word
+GC_checksum(struct hblk *h)
 {
-    word *p;
-    word *lim = (word *)(h + 1);
-    word result = 0;
+  word *p;
+  word *lim = (word *)(h + 1);
+  word result = 0;
 
-    for (p = (word *)h; ADDR_LT((ptr_t)p, (ptr_t)lim); p++) {
-        result += *p;
-    }
-    return result | SIGNB; /* does not look like pointer */
+  for (p = (word *)h; ADDR_LT((ptr_t)p, (ptr_t)lim); p++) {
+    result += *p;
+  }
+  return result | SIGNB; /* does not look like pointer */
 }
 
 int GC_n_dirty_errors = 0;
@@ -74,80 +79,84 @@ int GC_n_faulted_dirty_errors = 0;
 unsigned long GC_n_clean = 0;
 unsigned long GC_n_dirty = 0;
 
-STATIC void GC_update_check_page(struct hblk *h, int index)
+STATIC void
+GC_update_check_page(struct hblk *h, int index)
 {
-    page_entry *pe = GC_sums + index;
-    hdr * hhdr = HDR(h);
+  page_entry *pe = GC_sums + index;
+  hdr *hhdr = HDR(h);
 
-    if (pe -> block != 0 && pe -> block != h + OFFSET) ABORT("goofed");
-    pe -> old_sum = pe -> new_sum;
-    pe -> new_sum = GC_checksum(h);
-#   if !defined(MSWIN32) && !defined(MSWINCE)
-        if (pe -> new_sum != SIGNB && !GC_page_was_ever_dirty(h)) {
-            GC_err_printf("GC_page_was_ever_dirty(%p) is wrong\n", (void *)h);
-        }
-#   endif
-    if (GC_page_was_dirty(h)) {
-        GC_n_dirty++;
-    } else {
-        GC_n_clean++;
+  if (pe->block != 0 && pe->block != h + OFFSET)
+    ABORT("goofed");
+  pe->old_sum = pe->new_sum;
+  pe->new_sum = GC_checksum(h);
+#  if !defined(MSWIN32) && !defined(MSWINCE)
+  if (pe->new_sum != SIGNB && !GC_page_was_ever_dirty(h)) {
+    GC_err_printf("GC_page_was_ever_dirty(%p) is wrong\n", (void *)h);
+  }
+#  endif
+  if (GC_page_was_dirty(h)) {
+    GC_n_dirty++;
+  } else {
+    GC_n_clean++;
+  }
+  if (hhdr != NULL) {
+    (void)GC_find_starting_hblk(h, &hhdr);
+    if (pe->new_valid
+#  ifdef SOFT_VDB
+        && !HBLK_IS_FREE(hhdr)
+#  endif
+        && !IS_PTRFREE(hhdr) && pe->old_sum != pe->new_sum) {
+      if (!GC_page_was_dirty(h) || !GC_page_was_ever_dirty(h)) {
+        GC_bool was_faulted = GC_was_faulted(h);
+        /* Set breakpoint here */ GC_n_dirty_errors++;
+        if (was_faulted)
+          GC_n_faulted_dirty_errors++;
+      }
     }
-    if (hhdr != NULL) {
-        (void)GC_find_starting_hblk(h, &hhdr);
-        if (pe -> new_valid
-#           ifdef SOFT_VDB
-              && !HBLK_IS_FREE(hhdr)
-#           endif
-            && !IS_PTRFREE(hhdr) && pe -> old_sum != pe -> new_sum) {
-            if (!GC_page_was_dirty(h) || !GC_page_was_ever_dirty(h)) {
-                GC_bool was_faulted = GC_was_faulted(h);
-                /* Set breakpoint here */GC_n_dirty_errors++;
-                if (was_faulted) GC_n_faulted_dirty_errors++;
-            }
-        }
-    }
-    pe -> new_valid = TRUE;
-    pe -> block = h + OFFSET;
+  }
+  pe->new_valid = TRUE;
+  pe->block = h + OFFSET;
 }
 
 /* Should be called immediately after GC_read_dirty.    */
-void GC_check_dirty(void)
+void
+GC_check_dirty(void)
 {
-    int index;
-    size_t i;
+  int index;
+  size_t i;
 
-    GC_n_dirty_errors = 0;
-    GC_n_faulted_dirty_errors = 0;
-    GC_n_clean = 0;
-    GC_n_dirty = 0;
+  GC_n_dirty_errors = 0;
+  GC_n_faulted_dirty_errors = 0;
+  GC_n_clean = 0;
+  GC_n_dirty = 0;
 
-    index = 0;
-    for (i = 0; i < GC_n_heap_sects; i++) {
-        ptr_t start = GC_heap_sects[i].hs_start;
-        struct hblk *h;
+  index = 0;
+  for (i = 0; i < GC_n_heap_sects; i++) {
+    ptr_t start = GC_heap_sects[i].hs_start;
+    struct hblk *h;
 
-        for (h = (struct hblk *)start;
-             ADDR_LT((ptr_t)h, start + GC_heap_sects[i].hs_bytes); h++) {
-            GC_update_check_page(h, index);
-            index++;
-            if (index >= NSUMS) {
-                i = GC_n_heap_sects;
-                break;
-            }
-        }
+    for (h = (struct hblk *)start;
+         ADDR_LT((ptr_t)h, start + GC_heap_sects[i].hs_bytes); h++) {
+      GC_update_check_page(h, index);
+      index++;
+      if (index >= NSUMS) {
+        i = GC_n_heap_sects;
+        break;
+      }
     }
+  }
 
-    GC_COND_LOG_PRINTF("Checked %lu clean and %lu dirty pages\n",
-                       GC_n_clean, GC_n_dirty);
-    if (GC_n_dirty_errors > 0) {
-        GC_err_printf("Found %d dirty bit errors (%d were faulted)\n",
-                      GC_n_dirty_errors, GC_n_faulted_dirty_errors);
-    }
-    for (i = 0; i < GC_n_faulted; ++i) {
-        /* Do not expose block addresses to the garbage collector.      */
-        GC_faulted[i] = 0;
-    }
-    GC_n_faulted = 0;
+  GC_COND_LOG_PRINTF("Checked %lu clean and %lu dirty pages\n", GC_n_clean,
+                     GC_n_dirty);
+  if (GC_n_dirty_errors > 0) {
+    GC_err_printf("Found %d dirty bit errors (%d were faulted)\n",
+                  GC_n_dirty_errors, GC_n_faulted_dirty_errors);
+  }
+  for (i = 0; i < GC_n_faulted; ++i) {
+    /* Do not expose block addresses to the garbage collector.      */
+    GC_faulted[i] = 0;
+  }
+  GC_n_faulted = 0;
 }
 
 #endif /* CHECKSUMS */

@@ -29,11 +29,11 @@
 /* guaranteed to be invoked (see the comments in pthread_start.c).      */
 
 #ifndef __cplusplus
-  /* static is desirable here for more efficient linkage.               */
-  /* TODO: Enable this in case of the compilation as C++ code.          */
-# define GC_INNER STATIC
-# define GC_EXTERN GC_INNER
-                /* STATIC is defined in gcconfig.h. */
+/* static is desirable here for more efficient linkage.               */
+/* TODO: Enable this in case of the compilation as C++ code.          */
+#  define GC_INNER STATIC
+#  define GC_EXTERN GC_INNER
+/* STATIC is defined in gcconfig.h. */
 #endif
 
 /* Small files go first... */
@@ -67,17 +67,17 @@
 #include "../dyn_load.c"
 #include "../gc_dlopen.c"
 #if !defined(PLATFORM_MACH_DEP)
-# include "../mach_dep.c"
+#  include "../mach_dep.c"
 #endif
 #if !defined(PLATFORM_STOP_WORLD)
-# include "../pthread_stop_world.c"
+#  include "../pthread_stop_world.c"
 #endif
 #include "../pthread_support.c"
 #include "../specific.c"
 #include "../win32_threads.c"
 
 #ifndef GC_PTHREAD_START_STANDALONE
-# include "../pthread_start.c"
+#  include "../pthread_start.c"
 #endif
 
 /* Restore pthread calls redirection (if altered in             */
@@ -85,8 +85,8 @@
 /* This is only useful if directly included from application    */
 /* (instead of linking gc).                                     */
 #ifndef GC_NO_THREAD_REDIRECTS
-# define GC_PTHREAD_REDIRECTS_ONLY
-# include "gc/gc_pthread_redirects.h"
+#  define GC_PTHREAD_REDIRECTS_ONLY
+#  include "gc/gc_pthread_redirects.h"
 #endif
 
 /* The files from "extra" folder are not included. */

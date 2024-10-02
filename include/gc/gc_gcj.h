@@ -27,11 +27,11 @@
 #define GC_GCJ_H
 
 #ifndef GC_H
-# include "gc.h"
+#  include "gc.h"
 #endif
 
 #ifdef __cplusplus
-  extern "C" {
+extern "C" {
 #endif
 
 /* The offset of the garbage collector mark descriptor inside the       */
@@ -41,7 +41,7 @@
 /* this offset is not smaller than the size of a pointer (the           */
 /* assumption allows objects on the free list to be marked normally).   */
 #ifndef GC_GCJ_MARK_DESCR_OFFSET
-# define GC_GCJ_MARK_DESCR_OFFSET GC_SIZEOF_PTR
+#  define GC_GCJ_MARK_DESCR_OFFSET GC_SIZEOF_PTR
 #endif
 
 /* This function must be called before the gcj allocators are invoked.  */
@@ -72,21 +72,21 @@ GC_API GC_ATTR_DEPRECATED void GC_CALL GC_init_gcj_malloc(int /* mp_index */,
 /* structure (vtable in gcj).  This adds a byte at the end of the       */
 /* object if GC_malloc() would.  In case of out of memory, GC_oom_fn()  */
 /* is called and its result is returned.                                */
-GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
-        GC_gcj_malloc(size_t /* lb */, const void * /* vtable_ptr */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
+    GC_gcj_malloc(size_t /* lb */, const void * /* vtable_ptr */);
 
 /* Similar to GC_gcj_malloc, but add the debug info.  This is allocated */
 /* with GC_gcj_debug_kind.                                              */
-GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
-        GC_debug_gcj_malloc(size_t /* lb */, const void * /* vtable_ptr */,
-                            GC_EXTRA_PARAMS);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
+    GC_debug_gcj_malloc(size_t /* lb */, const void * /* vtable_ptr */,
+                        GC_EXTRA_PARAMS);
 
 /* Similar to GC_gcj_malloc, but assumes that a pointer to near the     */
 /* beginning (i.e. within the first heap block) of the allocated object */
 /* is always maintained.                                                */
-GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
-        GC_gcj_malloc_ignore_off_page(size_t /* lb */,
-                                      const void * /* vtable_ptr */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
+    GC_gcj_malloc_ignore_off_page(size_t /* lb */,
+                                  const void * /* vtable_ptr */);
 
 /* The kind numbers of normal and debug gcj objects.  Useful only for   */
 /* debug support, we hope.                                              */
@@ -94,15 +94,16 @@ GC_API int GC_gcj_kind;
 GC_API int GC_gcj_debug_kind;
 
 #ifdef GC_DEBUG
-# define GC_GCJ_MALLOC(s,d) GC_debug_gcj_malloc(s,d,GC_EXTRAS)
-# define GC_GCJ_MALLOC_IGNORE_OFF_PAGE(s,d) GC_GCJ_MALLOC(s,d)
+#  define GC_GCJ_MALLOC(s, d) GC_debug_gcj_malloc(s, d, GC_EXTRAS)
+#  define GC_GCJ_MALLOC_IGNORE_OFF_PAGE(s, d) GC_GCJ_MALLOC(s, d)
 #else
-# define GC_GCJ_MALLOC(s,d) GC_gcj_malloc(s,d)
-# define GC_GCJ_MALLOC_IGNORE_OFF_PAGE(s,d) GC_gcj_malloc_ignore_off_page(s,d)
+#  define GC_GCJ_MALLOC(s, d) GC_gcj_malloc(s, d)
+#  define GC_GCJ_MALLOC_IGNORE_OFF_PAGE(s, d) \
+    GC_gcj_malloc_ignore_off_page(s, d)
 #endif
 
 #ifdef __cplusplus
-  } /* extern "C" */
+} /* extern "C" */
 #endif
 
 #endif /* GC_GCJ_H */
