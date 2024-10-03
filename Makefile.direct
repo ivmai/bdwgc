@@ -43,7 +43,8 @@ srcdir= .
 VPATH= $(srcdir)
 
 # Path to atomic_ops source.
-AO_SRC_DIR?= $(srcdir)/libatomic_ops
+AO_SRC_DIR?=
+AO_SRC_DIR+= $(srcdir)/libatomic_ops
 
 CFLAGS_EXTRA?=
 
