@@ -708,24 +708,10 @@ EXTERN_C_BEGIN
  *    likely to introduce significant amounts of excess storage retention
  *    unless the dead parts of the thread stacks are periodically cleared.)
  * 2) Client code may set GC_stackbottom before calling any GC_ routines.
- *    If the author of the client code controls the main program, this is
- *    easily accomplished by introducing a new main program, setting
- *    GC_stackbottom to the address of a local variable, and then calling
- *    the original main program.  The new main program would read something
- *    like (provided real_main() is not inlined by the compiler):
- *
- *              #include "gc/gc.h"
- *
- *              main(argc, argv, envp)
- *              int argc;
- *              char **argv, **envp;
- *              {
- *                  volatile int dummy;
- *
- *                  GC_stackbottom = (ptr_t)(&dummy);
- *                  return real_main(argc, argv, envp);
- *              }
- *
+ *    If the author of the client code controls the main program, this
+ *    could be accomplished by introducing a new main function, calling
+ *    GC_call_with_gc_active() which sets GC_stackbottom and then calls the
+ *    original (real) main function.
  *
  * Each architecture may also define the style of virtual dirty bit
  * implementation to be used:
