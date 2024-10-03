@@ -87,10 +87,7 @@ class A
 {
 public:
   GC_ATTR_EXPLICIT
-  A(int iArg)
-      : i(static_cast<A_I_TYPE>(iArg))
-  {
-  }
+  A(int iArg) : i(static_cast<A_I_TYPE>(iArg)) {}
   void
   Test(int iArg)
   {
@@ -105,10 +102,7 @@ class B : public GC_NS_QUALIFY(gc), public A
 {
 public:
   GC_ATTR_EXPLICIT
-  B(int j)
-      : A(j)
-  {
-  }
+  B(int j) : A(j) {}
   virtual ~B() GC_OVERRIDE { my_assert(deleting); }
   static void
   Deleting(int on)
@@ -163,8 +157,7 @@ public:
   }
 
   GC_ATTR_EXPLICIT
-  C(int levelArg)
-      : A(levelArg), level(levelArg)
+  C(int levelArg) : A(levelArg), level(levelArg)
   {
     nAllocated++;
     if (level > 0) {
@@ -213,11 +206,7 @@ class D : public GC_NS_QUALIFY(gc)
 {
 public:
   GC_ATTR_EXPLICIT
-  D(int iArg)
-      : i(iArg)
-  {
-    nAllocated++;
-  }
+  D(int iArg) : i(iArg) { nAllocated++; }
   static void
   CleanUp(void *obj, void *data)
   {
