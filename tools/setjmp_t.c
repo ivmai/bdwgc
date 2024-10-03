@@ -64,6 +64,7 @@ struct a_s {
   char *a_b;
 } a;
 
+GC_ATTR_NOINLINE
 static word
 nested_sp(void)
 {
