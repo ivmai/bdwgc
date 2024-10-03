@@ -69,10 +69,10 @@ static word
 nested_sp(void)
 {
 #if defined(CPPCHECK) || GC_GNUC_PREREQ(4, 0)
-  return (word)__builtin_frame_address(0);
+  return ADDR(__builtin_frame_address(0));
 #else
   volatile word sp;
-  sp = (word)(&sp);
+  sp = ADDR(&sp);
   return sp;
 #endif
 }
@@ -104,7 +104,7 @@ main(void)
   static volatile int y = 0;
 #endif
 
-  sp = (word)(&sp);
+  sp = ADDR(&sp);
   printf("This appears to be a %s running %s\n", MACH_TYPE, OS_TYPE);
 #if defined(CPPCHECK)
   (void)nested_sp(); /* to workaround a bug in cppcheck */
@@ -123,7 +123,7 @@ main(void)
   printf("the same architecture (e.g. Sun 3/50s and 3/80s).\n");
   printf("On many machines the value is not fixed.\n");
   printf("A good guess for ALIGNMENT on this machine is %lu.\n",
-         (unsigned long)((word)(&a.a_b) - (word)(&a)));
+         (unsigned long)(ADDR(&a.a_b) - ADDR(&a)));
 #ifndef WASI
   printf("The following is a very dubious test of one root marking"
          " strategy.\n");
