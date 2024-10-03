@@ -309,13 +309,13 @@ GC_store_stack_ptr(GC_stack_context_t crtn)
   /* and fetched (by GC_push_all_stacks) using the atomic primitives to */
   /* avoid the related TSan warning.                                    */
 #    ifdef SPARC
-  ao_cptr_store_async(&(crtn->stack_ptr), GC_save_regs_in_stack());
+  ao_cptr_store_async(&crtn->stack_ptr, GC_save_regs_in_stack());
   /* TODO: regs saving already done by GC_with_callee_saves_pushed */
 #    else
 #      ifdef IA64
   crtn->backing_store_ptr = GC_save_regs_in_stack();
 #      endif
-  ao_cptr_store_async(&(crtn->stack_ptr), GC_approx_sp());
+  ao_cptr_store_async(&crtn->stack_ptr, GC_approx_sp());
 #    endif
 }
 
@@ -374,14 +374,14 @@ GC_suspend_handler_inner(ptr_t dummy, void *context)
   crtn->backing_store_ptr = bs_lo + stack_size;
 #    endif
 #    ifdef GC_ENABLE_SUSPEND_THREAD
-  suspend_cnt = ao_load_async(&(me->ext_suspend_cnt));
+  suspend_cnt = ao_load_async(&me->ext_suspend_cnt);
 #    endif
 
   /* Tell the thread that wants to stop the world that this     */
   /* thread has been stopped.  Note that sem_post() is          */
   /* the only async-signal-safe primitive in LinuxThreads.      */
   sem_post(&GC_suspend_ack_sem);
-  ao_store_release_async(&(me->last_stop_count), my_stop_count);
+  ao_store_release_async(&me->last_stop_count, my_stop_count);
 
   /* Wait until that thread tells us to restart by sending      */
   /* this thread a GC_sig_thr_restart signal (should be masked  */
@@ -399,7 +399,7 @@ GC_suspend_handler_inner(ptr_t dummy, void *context)
   } while (ao_load_acquire_async(&GC_stop_count) == my_stop_count
 #    ifdef GC_ENABLE_SUSPEND_THREAD
            || ((suspend_cnt & 1) != 0
-               && ao_load_async(&(me->ext_suspend_cnt)) == suspend_cnt)
+               && ao_load_async(&me->ext_suspend_cnt) == suspend_cnt)
 #    endif
   );
 
@@ -423,7 +423,7 @@ GC_suspend_handler_inner(ptr_t dummy, void *context)
     sem_post(&GC_suspend_ack_sem);
     /* Set the flag that the thread has been restarted. */
     if (GC_retry_signals)
-      ao_store_release_async(&(me->last_stop_count),
+      ao_store_release_async(&me->last_stop_count,
                              my_stop_count | THREAD_RESTARTED);
   }
   RESTORE_CANCEL(cancel_state);
@@ -635,14 +635,14 @@ GC_suspend_self_inner(GC_thread me, size_t suspend_cnt)
   GC_ASSERT((suspend_cnt & 1) != 0);
   DISABLE_CANCEL(cancel_state);
 #      ifdef DEBUG_THREADS
-  GC_log_printf("Suspend self: %p\n", (void *)(me->id));
+  GC_log_printf("Suspend self: %p\n", (void *)me->id);
 #      endif
-  while (ao_load_acquire_async(&(me->ext_suspend_cnt)) == suspend_cnt) {
+  while (ao_load_acquire_async(&me->ext_suspend_cnt) == suspend_cnt) {
     /* TODO: Use sigsuspend() even for self-suspended threads. */
     GC_brief_async_signal_safe_sleep();
   }
 #      ifdef DEBUG_THREADS
-  GC_log_printf("Resume self: %p\n", (void *)(me->id));
+  GC_log_printf("Resume self: %p\n", (void *)me->id);
 #      endif
   RESTORE_CANCEL(cancel_state);
 }
@@ -708,7 +708,7 @@ GC_suspend_thread(GC_SUSPEND_THREAD_ID thread)
   AO_store(&GC_stop_count, next_stop_count);
 
   /* Set the flag making the change visible to the signal handler.  */
-  AO_store_release(&(t->ext_suspend_cnt), suspend_cnt | 1);
+  AO_store_release(&t->ext_suspend_cnt, suspend_cnt | 1);
 
   /* TODO: Support GC_retry_signals (not needed for TSan) */
   switch (raise_signal(t, GC_sig_suspend)) {
@@ -744,7 +744,7 @@ GC_resume_thread(GC_SUSPEND_THREAD_ID thread)
     if ((suspend_cnt & 1) != 0) /* is suspended? */ {
       GC_ASSERT((GC_stop_count & THREAD_RESTARTED) != 0);
       /* Mark the thread as not suspended - it will be resumed shortly. */
-      AO_store(&(t->ext_suspend_cnt), suspend_cnt + 1);
+      AO_store(&t->ext_suspend_cnt, suspend_cnt + 1);
 
       if ((t->flags & (FINISHED | DO_BLOCKING)) == 0) {
         int result = raise_signal(t, GC_sig_thr_restart);
@@ -849,7 +849,7 @@ GC_push_all_stacks(void)
         is_self = TRUE;
 #  endif
       } else {
-        lo = GC_cptr_load(&(crtn->stack_ptr));
+        lo = GC_cptr_load(&crtn->stack_ptr);
 #  ifdef IA64
         bs_hi = crtn->backing_store_ptr;
 #  elif defined(E2K)
@@ -870,10 +870,10 @@ GC_push_all_stacks(void)
 #  endif
 #  ifdef DEBUG_THREADS
 #    ifdef STACK_GROWS_UP
-      GC_log_printf("Stack for thread %p is (%p,%p]\n", (void *)(p->id),
+      GC_log_printf("Stack for thread %p is (%p,%p]\n", (void *)p->id,
                     (void *)hi, (void *)lo);
 #    else
-      GC_log_printf("Stack for thread %p is [%p,%p)\n", (void *)(p->id),
+      GC_log_printf("Stack for thread %p is [%p,%p)\n", (void *)p->id,
                     (void *)lo, (void *)hi);
 #    endif
 #  endif
@@ -890,7 +890,7 @@ GC_push_all_stacks(void)
       }
 #  ifdef STACKPTR_CORRECTOR_AVAILABLE
       if (GC_sp_corrector != 0)
-        GC_sp_corrector((void **)&lo, (void *)(p->id));
+        GC_sp_corrector((void **)&lo, (void *)p->id);
 #  endif
       GC_push_all_stack_sections(lo, hi, traced_stack_sect);
 #  ifdef STACK_GROWS_UP
@@ -916,7 +916,7 @@ GC_push_all_stacks(void)
 #  endif
 #  if defined(E2K) || defined(IA64)
 #    ifdef DEBUG_THREADS
-      GC_log_printf("Reg stack for thread %p is [%p,%p)\n", (void *)(p->id),
+      GC_log_printf("Reg stack for thread %p is [%p,%p)\n", (void *)p->id,
                     (void *)bs_lo, (void *)bs_hi);
 #    endif
       GC_ASSERT(bs_lo != NULL && bs_hi != NULL);
@@ -971,7 +971,7 @@ GC_suspend_all(void)
         if ((p->ext_suspend_cnt & 1) != 0)
           continue;
 #    endif
-        if (AO_load(&(p->last_stop_count)) == GC_stop_count) {
+        if (AO_load(&p->last_stop_count) == GC_stop_count) {
           /* Matters only if GC_retry_signals.  */
           continue;
         }
@@ -1308,7 +1308,7 @@ GC_restart_all(void)
           continue;
 #    endif
         if (GC_retry_signals
-            && AO_load(&(p->last_stop_count)) == GC_stop_count) {
+            && AO_load(&p->last_stop_count) == GC_stop_count) {
           /* The thread has been restarted.   */
           if (!in_resend_restart_signals) {
             /* Some user signal (which we do not block, e.g. SIGQUIT) */

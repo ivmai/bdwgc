@@ -2506,7 +2506,7 @@ GC_do_blocking_inner(ptr_t data, void *context)
 #    endif
 #  endif
 
-  d->client_data = (d->fn)(d->client_data);
+  d->client_data = d->fn(d->client_data);
 
 #  ifdef SPARC
   GC_ASSERT(GC_blocked_sp != NULL);
@@ -2528,9 +2528,9 @@ GC_set_stackbottom(void *gc_thread_handle, const struct GC_stack_base *sb)
             && NULL == GC_traced_stack_sect); /* for now */
   UNUSED_ARG(gc_thread_handle);
 
-  GC_stackbottom = (char *)(sb->mem_base);
+  GC_stackbottom = (char *)sb->mem_base;
 #  ifdef IA64
-  GC_register_stackbottom = (ptr_t)(sb->reg_base);
+  GC_register_stackbottom = (ptr_t)sb->reg_base;
 #  endif
 }
 

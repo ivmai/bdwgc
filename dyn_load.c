@@ -370,13 +370,13 @@ GC_register_dynamic_libraries(void)
 
     e = (ElfW(Ehdr) *)lm->l_addr;
     p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
-    offset = ((unsigned long)(lm->l_addr));
+    offset = (unsigned long)lm->l_addr;
     for (i = 0; i < (int)e->e_phnum; i++, p++) {
       switch (p->p_type) {
       case PT_LOAD:
         if (!(p->p_flags & PF_W))
           break;
-        start = (char *)(p->p_vaddr) + offset;
+        start = (char *)p->p_vaddr + offset;
         GC_add_roots_inner(start, start + p->p_memsz, TRUE);
         break;
       default:
@@ -912,14 +912,14 @@ GC_register_dynamic_libraries(void)
     if (e == NULL)
       continue;
 #      endif
-    p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
-    offset = ((unsigned long)(lm->l_addr));
+    p = (ElfW(Phdr) *)((char *)e + e->e_phoff);
+    offset = (unsigned long)lm->l_addr;
     for (i = 0; i < (int)e->e_phnum; i++, p++) {
       switch (p->p_type) {
       case PT_LOAD:
         if (!(p->p_flags & PF_W))
           break;
-        start = (char *)(p->p_vaddr) + offset;
+        start = (char *)p->p_vaddr + offset;
         GC_add_roots_inner(start, start + p->p_memsz, TRUE);
         break;
       default:
@@ -929,7 +929,7 @@ GC_register_dynamic_libraries(void)
 #      if defined(CPPCHECK) && defined(HOST_ANDROID) \
           && !defined(GC_DONT_DEFINE_LINK_MAP) && !(__ANDROID_API__ >= 21)
     GC_noop1_ptr(lm->l_name);
-    GC_noop1((word)(lm->l_ld));
+    GC_noop1((word)lm->l_ld);
     GC_noop1_ptr(lm->l_prev);
 #      endif
   }
@@ -1258,7 +1258,7 @@ GC_register_dynamic_libraries(void)
     while (ldi) {
       len = ldi->ldinfo_next;
       GC_add_roots_inner(ldi->ldinfo_dataorg,
-                         (ptr_t)(unsigned long)ldi->ldinfo_dataorg
+                         MAKE_CPTR((unsigned long)ldi->ldinfo_dataorg)
                              + ldi->ldinfo_datasize,
                          TRUE);
       ldi = len ? (struct ld_info *)((char *)ldi + len) : 0;

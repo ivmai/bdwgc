@@ -519,8 +519,8 @@ GC_calloc_prepare_explicitly_typed(struct GC_calloc_typed_descr_s *pctd,
     return 0; /* failure */
   }
 
-  pctd->descr_type = GC_make_array_descriptor(
-      n, lb, d, &(pctd->simple_d), &(pctd->complex_d), &(pctd->leaf));
+  pctd->descr_type = GC_make_array_descriptor(n, lb, d, &pctd->simple_d,
+                                              &pctd->complex_d, &pctd->leaf);
   switch (pctd->descr_type) {
   case NO_MEM:
   case SIMPLE:
@@ -550,10 +550,9 @@ GC_calloc_do_explicitly_typed(const struct GC_calloc_typed_descr_s *pctd,
   (void)ctd_sz; /* unused currently */
   switch (pctd->descr_type) {
   case NO_MEM:
-    return (*GC_get_oom_fn())((size_t)(pctd->alloc_lb));
+    return (*GC_get_oom_fn())((size_t)pctd->alloc_lb);
   case SIMPLE:
-    return GC_malloc_explicitly_typed((size_t)(pctd->alloc_lb),
-                                      pctd->simple_d);
+    return GC_malloc_explicitly_typed((size_t)pctd->alloc_lb, pctd->simple_d);
   case LEAF:
   case COMPLEX:
     break;
@@ -561,7 +560,7 @@ GC_calloc_do_explicitly_typed(const struct GC_calloc_typed_descr_s *pctd,
     ABORT_RET("Bad descriptor type");
     return NULL;
   }
-  op = GC_malloc_kind((size_t)(pctd->alloc_lb), GC_array_kind);
+  op = GC_malloc_kind((size_t)pctd->alloc_lb, GC_array_kind);
   if (EXPECT(NULL == op, FALSE))
     return NULL;
 
@@ -606,7 +605,7 @@ GC_calloc_do_explicitly_typed(const struct GC_calloc_typed_descr_s *pctd,
 #endif
     {
       /* Couldn't register it due to lack of memory.  Punt.       */
-      return (*GC_get_oom_fn())((size_t)(pctd->alloc_lb));
+      return (*GC_get_oom_fn())((size_t)pctd->alloc_lb);
     }
   }
   return op;

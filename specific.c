@@ -34,7 +34,7 @@ GC_key_create_inner(tsd **key_ptr)
   result = (tsd *)MALLOC_CLEAR(sizeof(tsd));
   if (NULL == result)
     return ENOMEM;
-  ret = pthread_mutex_init(&(result->lock), NULL);
+  ret = pthread_mutex_init(&result->lock, NULL);
   if (ret != 0)
     return ret;
 
@@ -68,7 +68,7 @@ GC_setspecific(tsd *key, void *value)
   if (EXPECT(NULL == entry, FALSE))
     return ENOMEM;
 
-  pthread_mutex_lock(&(key->lock));
+  pthread_mutex_lock(&key->lock);
   entry->next = key->hash[hash_val];
 #  ifdef GC_ASSERTIONS
   {
@@ -85,11 +85,11 @@ GC_setspecific(tsd *key, void *value)
   GC_ASSERT(entry->qtid == INVALID_QTID);
   /* There can only be one writer at a time, but this needs to be     */
   /* atomic with respect to concurrent readers.                       */
-  GC_cptr_store_release((volatile ptr_t *)&(key->hash[hash_val]),
+  GC_cptr_store_release((volatile ptr_t *)&key->hash[hash_val],
                         (ptr_t)CAST_AWAY_VOLATILE_PVOID(entry));
   GC_dirty(CAST_AWAY_VOLATILE_PVOID(entry));
   GC_dirty(key->hash + hash_val);
-  if (pthread_mutex_unlock(&(key->lock)) != 0)
+  if (pthread_mutex_unlock(&key->lock) != 0)
     ABORT("pthread_mutex_unlock failed (setspecific)");
   return 0;
 }
@@ -110,7 +110,7 @@ GC_remove_specific_after_fork(tsd *key, pthread_t t)
   /* the hash table in the forked child.                            */
   GC_ASSERT(I_HOLD_LOCK());
 #  endif
-  pthread_mutex_lock(&(key->lock));
+  pthread_mutex_lock(&key->lock);
   for (entry = key->hash[hash_val];
        entry != NULL && !THREAD_EQUAL(entry->thread, t); entry = entry->next) {
     prev = entry;
@@ -144,7 +144,7 @@ GC_remove_specific_after_fork(tsd *key, pthread_t t)
   /* With GC, we're done, since the pointers from the cache will      */
   /* be overwritten, all local pointers to the entries will be        */
   /* dropped, and the entry will then be reclaimed.                   */
-  if (pthread_mutex_unlock(&(key->lock)) != 0)
+  if (pthread_mutex_unlock(&key->lock) != 0)
     ABORT("pthread_mutex_unlock failed (remove_specific after fork)");
 }
 
@@ -164,7 +164,7 @@ GC_slow_getspecific(tsd *key, size_t qtid, tse *volatile *cache_ptr)
   /* Set the cache entry.  It is safe to do this asynchronously.      */
   /* Either value is safe, though may produce spurious misses.        */
   /* We are replacing one qtid with another one for the same thread.  */
-  AO_store(&(entry->qtid), qtid);
+  AO_store(&entry->qtid, qtid);
 
   GC_cptr_store((volatile ptr_t *)cache_ptr, (ptr_t)entry);
   return TS_REVEAL_PTR(entry->value);

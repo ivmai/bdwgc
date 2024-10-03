@@ -427,12 +427,12 @@ backwards_height(ptr_t p)
   }
   be = (back_edges *)CPTR_CLEAR_FLAGS(pred, FLAG_MANY);
   if (be->height >= 0 && be->height_gc_no == (unsigned short)GC_gc_no)
-    return (word)(be->height);
+    return (word)be->height;
   /* Ignore back edges in DFS.  */
   if (be->height == HEIGHT_IN_PROGRESS)
     return 0;
 
-  result = be->height > 0 ? (word)(be->height) : 1U;
+  result = be->height > 0 ? (word)be->height : 1U;
   be->height = HEIGHT_IN_PROGRESS;
 
   {
@@ -511,7 +511,7 @@ update_max_height(ptr_t p, size_t sz, word descr)
     if (back_ptr != NULL && (ADDR(back_ptr) & FLAG_MANY) != 0) {
       be = (back_edges *)CPTR_CLEAR_FLAGS(back_ptr, FLAG_MANY);
       if (be->height != HEIGHT_UNKNOWN)
-        p_height = (word)(be->height);
+        p_height = (word)be->height;
     }
 
     {

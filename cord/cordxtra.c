@@ -112,7 +112,7 @@ CORD_fill_proc(char c, void *client_data)
   CORD_fill_data *d = (CORD_fill_data *)client_data;
   size_t count = d->count;
 
-  (d->buf)[count] = c;
+  d->buf[count] = c;
   d->count = ++count;
   return count >= d->len ? 1 : 0;
 }
@@ -342,7 +342,7 @@ CORD_chr_proc(char c, void *client_data)
 
   if (c == d->target)
     return 1;
-  (d->pos)++;
+  d->pos++;
   return 0;
 }
 
@@ -353,7 +353,7 @@ CORD_rchr_proc(char c, void *client_data)
 
   if (c == d->target)
     return 1;
-  (d->pos)--;
+  d->pos--;
   return 0;
 }
 
@@ -594,12 +594,12 @@ refill_cache(void *client_data)
   }
   new_cache->tag = DIV_LINE_SZ(file_pos);
 #ifdef CORD_USE_GCC_ATOMIC
-  __atomic_store_n(&(state->lf_cache[line_no]), new_cache, __ATOMIC_RELEASE);
+  __atomic_store_n(&state->lf_cache[line_no], new_cache, __ATOMIC_RELEASE);
 #else
   state->lf_cache[line_no] = new_cache;
 #endif
   GC_END_STUBBORN_CHANGE(
-      (/* no volatile */ cache_line *)&(state->lf_cache[line_no]));
+      (/* no volatile */ cache_line *)&state->lf_cache[line_no]);
   state->lf_current = line_start + LINE_SZ;
   c = (unsigned char)new_cache->data[MOD_LINE_SZ(file_pos)];
   return (void *)(GC_uintptr_t)c;
@@ -618,7 +618,7 @@ CORD_lf_func(size_t i, void *client_data)
 {
   lf_state *state = (lf_state *)client_data;
   cache_line *volatile *cl_addr
-      = &(state->lf_cache[DIV_LINE_SZ(MOD_CACHE_SZ(i))]);
+      = &state->lf_cache[DIV_LINE_SZ(MOD_CACHE_SZ(i))];
   cache_line *cl;
 
 #ifdef CORD_USE_GCC_ATOMIC

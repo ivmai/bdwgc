@@ -142,21 +142,21 @@ CORD_dump_inner(CORD x, unsigned n)
       fputs("...", stdout);
     putchar('\n');
   } else if (IS_CONCATENATION(x)) {
-    const struct Concatenation *conc = &(((const CordRep *)x)->data.concat);
+    const struct Concatenation *conc = &((const CordRep *)x)->data.concat;
 
     printf("Concatenation: %p (len: %d, depth: %d)\n", (const void *)x,
            (int)LEN(x), (int)DEPTH(x));
     CORD_dump_inner(conc->left, n + 1);
     CORD_dump_inner(conc->right, n + 1);
   } else /* function */ {
-    const struct Function *f = &(((const CordRep *)x)->data.function);
+    const struct Function *f = &((const CordRep *)x)->data.function;
     size_t lim = (size_t)LEN(x);
 
     if (IS_SUBSTR(x))
       printf("(Substring) ");
     printf("Function: %p (len: %d): ", (const void *)x, (int)lim);
     for (i = 0; i < 20 && i < lim; i++) {
-      putchar((*(f->fn))(i, f->client_data));
+      putchar(f->fn(i, f->client_data));
     }
     if (i < lim)
       fputs("...", stdout);
@@ -260,7 +260,7 @@ CORD_cat_char_star(CORD x, const char *y, size_t leny)
       result->generic.left_len = (unsigned char)lenx;
     result->generic.len = (unsigned long)result_len;
     result->data.concat.left = x;
-    GC_PTR_STORE_AND_DIRTY((/* no const */ void *)&(result->data.concat.right),
+    GC_PTR_STORE_AND_DIRTY((/* no const */ void *)&result->data.concat.right,
                            y);
     GC_reachable_here(x);
     if (depth >= CORD_MAX_DEPTH) {
@@ -307,7 +307,7 @@ CORD_cat(CORD x, CORD y)
       result->generic.left_len = (unsigned char)lenx;
     result->generic.len = (unsigned long)result_len;
     result->data.concat.left = x;
-    GC_PTR_STORE_AND_DIRTY((/* no const */ void *)&(result->data.concat.right),
+    GC_PTR_STORE_AND_DIRTY((/* no const */ void *)&result->data.concat.right,
                            y);
     GC_reachable_here(x);
     if (depth >= CORD_MAX_DEPTH) {
@@ -329,7 +329,7 @@ CORD_from_fn_inner(CORD_fn fn, void *client_data, size_t len)
     char buf[SHORT_LIMIT + 1];
 
     for (i = 0; i < len; i++) {
-      char c = (*fn)(i, client_data);
+      char c = fn(i, client_data);
 
       if (c == '\0')
         goto gen_case;
@@ -353,7 +353,7 @@ gen_case:
     /* depth is already 0 */
     result->generic.len = (unsigned long)len;
     result->data.function.fn = fn;
-    GC_PTR_STORE_AND_DIRTY(&(result->data.function.client_data), client_data);
+    GC_PTR_STORE_AND_DIRTY(&result->data.function.client_data, client_data);
     return result;
   }
 }
@@ -387,7 +387,7 @@ static char
 CORD_apply_access_fn(size_t i, void *client_data)
 {
   struct substr_args *descr = (struct substr_args *)client_data;
-  struct Function *fn_cord = &(descr->sa_cord->data.function);
+  struct Function *fn_cord = &descr->sa_cord->data.function;
 
   return fn_cord->fn(i + descr->sa_index, fn_cord->client_data);
 }
@@ -434,7 +434,7 @@ CORD_substr_checked(CORD x, size_t i, size_t n)
       return result;
     }
   } else if (IS_CONCATENATION(x)) {
-    const struct Concatenation *conc = &(((const CordRep *)x)->data.concat);
+    const struct Concatenation *conc = &((const CordRep *)x)->data.concat;
     size_t left_len = LEFT_LEN(x);
     size_t right_len = (size_t)LEN(x) - left_len;
 
@@ -468,9 +468,8 @@ CORD_substr_checked(CORD x, size_t i, size_t n)
     if (n > SUBSTR_LIMIT) {
       if (IS_SUBSTR(x)) {
         /* Avoid nesting substring nodes.       */
-        const struct Function *f = &(((const CordRep *)x)->data.function);
-        const struct substr_args *descr
-            = (struct substr_args *)(f->client_data);
+        const struct Function *f = &((const CordRep *)x)->data.function;
+        const struct substr_args *descr = (struct substr_args *)f->client_data;
 
         return CORD_substr_closure((CORD)descr->sa_cord, i + descr->sa_index,
                                    n, f->fn);
@@ -479,14 +478,14 @@ CORD_substr_checked(CORD x, size_t i, size_t n)
       }
     } else {
       char *result;
-      const struct Function *f = &(((const CordRep *)x)->data.function);
+      const struct Function *f = &((const CordRep *)x)->data.function;
       char buf[SUBSTR_LIMIT + 1];
       char *p = buf;
       size_t j;
       size_t lim = i + n;
 
       for (j = i; j < lim; j++) {
-        char c = (*(f->fn))(j, f->client_data);
+        char c = f->fn(j, f->client_data);
 
         if (c == '\0') {
           return CORD_substr_closure(x, i, n, CORD_apply_access_fn);
@@ -538,7 +537,7 @@ CORD_iter5(CORD x, size_t i, CORD_iter_fn f1, CORD_batched_iter_fn f2,
       return 0;
     }
   } else if (IS_CONCATENATION(x)) {
-    const struct Concatenation *conc = &(((const CordRep *)x)->data.concat);
+    const struct Concatenation *conc = &((const CordRep *)x)->data.concat;
 
     if (i > 0) {
       size_t left_len = LEFT_LEN(x);
@@ -552,7 +551,7 @@ CORD_iter5(CORD x, size_t i, CORD_iter_fn f1, CORD_batched_iter_fn f2,
     }
     return CORD_iter5(conc->right, 0, f1, f2, client_data);
   } else /* function */ {
-    const struct Function *f = &(((const CordRep *)x)->data.function);
+    const struct Function *f = &((const CordRep *)x)->data.function;
     size_t j;
     size_t lim = (size_t)LEN(x);
 
@@ -592,7 +591,7 @@ CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void *client_data)
       p--;
     }
   } else if (IS_CONCATENATION(x)) {
-    const struct Concatenation *conc = &(((const CordRep *)x)->data.concat);
+    const struct Concatenation *conc = &((const CordRep *)x)->data.concat;
     CORD left_part = conc->left;
     size_t left_len = LEFT_LEN(x);
 
@@ -605,7 +604,7 @@ CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void *client_data)
       return CORD_riter4(left_part, i, f1, client_data);
     }
   } else /* function */ {
-    const struct Function *f = &(((const CordRep *)x)->data.function);
+    const struct Function *f = &((const CordRep *)x)->data.function;
     size_t j;
 
     for (j = i;; j--) {
@@ -761,7 +760,7 @@ CORD_balance_insert(CORD x, size_t len, ForestElement *forest)
   } else if (IS_CONCATENATION(x)
              && ((depth = DEPTH(x)) >= CORD_MAX_DEPTH
                  || len < min_len[depth])) {
-    const struct Concatenation *conc = &(((const CordRep *)x)->data.concat);
+    const struct Concatenation *conc = &((const CordRep *)x)->data.concat;
     size_t left_len = LEFT_LEN(x);
 
     CORD_balance_insert(conc->left, left_len, forest);
@@ -807,7 +806,7 @@ CORD_extend_path(CORD_pos p)
 
   /* Fill in the rest of the path. */
   while (!CORD_IS_STRING(top) && IS_CONCATENATION(top)) {
-    const struct Concatenation *conc = &(((const CordRep *)top)->data.concat);
+    const struct Concatenation *conc = &((const CordRep *)top)->data.concat;
     size_t left_len;
 
     left_len = LEFT_LEN(top);
@@ -869,7 +868,7 @@ CORD__next(CORD_pos p)
   p[0].cur_pos = cur_pos;
   if (!CORD_IS_STRING(leaf)) {
     /* Function leaf.       */
-    const struct Function *f = &(((const CordRep *)leaf)->data.function);
+    const struct Function *f = &((const CordRep *)leaf)->data.function;
     size_t start_pos = current_pe->pe_start_pos;
     size_t end_pos = start_pos + (size_t)LEN(leaf);
 
@@ -884,7 +883,7 @@ CORD__next(CORD_pos p)
         limit = end_pos - cur_pos;
       }
       for (i = 0; i < limit; i++) {
-        p[0].function_buf[i] = (*fn)(i + cur_pos - start_pos, client_data);
+        p[0].function_buf[i] = fn(i + cur_pos - start_pos, client_data);
       }
       p[0].cur_start = cur_pos;
       p[0].cur_leaf = p[0].function_buf;

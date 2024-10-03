@@ -1125,8 +1125,8 @@ GC_finalize(void)
         curr_fo->fo_hidden_base
             = (GC_hidden_pointer)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
 
-        GC_bytes_finalized += (word)(curr_fo->fo_object_sz)
-                              + sizeof(struct finalizable_object);
+        GC_bytes_finalized
+            += (word)curr_fo->fo_object_sz + sizeof(struct finalizable_object);
         GC_ASSERT(GC_is_marked(GC_base(curr_fo)));
         curr_fo = next_fo;
       } else {
@@ -1141,7 +1141,7 @@ GC_finalize(void)
     /* using the no-order fo_mark_proc.                               */
     for (curr_fo = GC_fnlz_roots.finalize_now; curr_fo != NULL;
          curr_fo = fo_next(curr_fo)) {
-      real_ptr = (ptr_t)(curr_fo->fo_hidden_base); /* revealed */
+      real_ptr = (ptr_t)curr_fo->fo_hidden_base; /* revealed */
       if (!GC_is_marked(real_ptr)) {
         if (curr_fo->fo_mark_proc == GC_null_finalize_mark_proc) {
           GC_mark_fo(real_ptr, GC_normal_finalize_mark_proc);
@@ -1163,7 +1163,7 @@ GC_finalize(void)
         if (curr_fo->fo_mark_proc != GC_unreachable_finalize_mark_proc)
           continue;
 
-        real_ptr = (ptr_t)(curr_fo->fo_hidden_base); /* revealed */
+        real_ptr = (ptr_t)curr_fo->fo_hidden_base; /* revealed */
         if (!GC_is_marked(real_ptr)) {
           GC_set_mark_bit(real_ptr);
           continue;
@@ -1175,8 +1175,8 @@ GC_finalize(void)
           GC_dirty(prev_fo);
         }
         curr_fo->fo_hidden_base = GC_HIDE_POINTER(real_ptr);
-        GC_bytes_finalized -= (word)(curr_fo->fo_object_sz)
-                              + sizeof(struct finalizable_object);
+        GC_bytes_finalized
+            -= (word)curr_fo->fo_object_sz + sizeof(struct finalizable_object);
 
         i = HASH2(real_ptr, GC_log_fo_table_size);
         fo_set_next(curr_fo, GC_fnlz_roots.fo_head[i]);
@@ -1255,7 +1255,7 @@ GC_enqueue_all_finalizers(void)
       curr_fo->fo_hidden_base
           = (GC_hidden_pointer)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
       GC_bytes_finalized
-          += (word)(curr_fo->fo_object_sz) + sizeof(struct finalizable_object);
+          += curr_fo->fo_object_sz + sizeof(struct finalizable_object);
       curr_fo = next_fo;
     }
   }
@@ -1358,7 +1358,7 @@ GC_invoke_finalizers(void)
     SET_FINALIZE_NOW(fo_next(curr_fo));
     UNLOCK();
     fo_set_next(curr_fo, 0);
-    real_ptr = (ptr_t)(curr_fo->fo_hidden_base); /* revealed */
+    real_ptr = (ptr_t)curr_fo->fo_hidden_base; /* revealed */
     curr_fo->fo_fn(real_ptr, curr_fo->fo_client_data);
     curr_fo->fo_client_data = NULL;
     ++count;

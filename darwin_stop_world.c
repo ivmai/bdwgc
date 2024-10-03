@@ -651,7 +651,7 @@ GC_stop_world(void)
             ABORT("thread_suspend failed");
           if (GC_on_thread_event)
             GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
-                               (void *)(word)(p->mach_thread));
+                               (void *)((word)p->mach_thread));
         }
       }
     }

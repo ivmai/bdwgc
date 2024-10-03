@@ -255,7 +255,7 @@ GC_register_my_thread_inner(const struct GC_stack_base *sb,
 #  ifndef MSWINCE
   /* GetCurrentThread() returns a pseudohandle (a const value).       */
   if (!DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
-                       GetCurrentProcess(), (HANDLE *)&(me->handle),
+                       GetCurrentProcess(), (HANDLE *)&me->handle,
                        0 /* dwDesiredAccess */, FALSE /* bInheritHandle */,
                        DUPLICATE_SAME_ACCESS)) {
     ABORT_ARG1("DuplicateHandle failed", ": errcode= 0x%X",
@@ -595,7 +595,7 @@ GC_start_world(void)
         GC_log_printf("Resuming 0x%x\n", (int)p->id);
 #  endif
         GC_ASSERT(p->id != self_id);
-        GC_ASSERT(*(ptr_t *)CAST_AWAY_VOLATILE_PVOID(&(p->crtn->stack_end))
+        GC_ASSERT(*(ptr_t *)CAST_AWAY_VOLATILE_PVOID(&p->crtn->stack_end)
                   != NULL);
         if (ResumeThread(THREAD_HANDLE(p)) == (DWORD)-1)
           ABORT("ResumeThread failed");
@@ -616,8 +616,7 @@ GC_start_world(void)
 #  ifdef DEBUG_THREADS
           GC_log_printf("Resuming 0x%x\n", (int)p->id);
 #  endif
-          GC_ASSERT(p->id != self_id
-                    && *(ptr_t *)&(p->crtn->stack_end) != NULL);
+          GC_ASSERT(p->id != self_id && *(ptr_t *)&p->crtn->stack_end != NULL);
           if (ResumeThread(THREAD_HANDLE(p)) == (DWORD)-1)
             ABORT("ResumeThread failed");
           GC_win32_unprotect_thread(p);
@@ -873,13 +872,13 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
 #    endif
 #    ifdef DEBUG_THREADS
         GC_log_printf("TIB stack limit/base: %p .. %p\n",
-                      (void *)(tib->StackLimit), (void *)(tib->StackBase));
+                      (void *)tib->StackLimit, (void *)tib->StackBase);
 #    endif
-        GC_ASSERT(!HOTTER_THAN((ptr_t)(tib->StackBase), stack_end));
+        GC_ASSERT(!HOTTER_THAN((ptr_t)tib->StackBase, stack_end));
         if (stack_end != crtn->initial_stack_base
             /* We are in a coroutine (old-style way of the support).  */
-            && (ADDR(stack_end) <= (word)(tib->StackLimit)
-                || (word)(tib->StackBase) < ADDR(stack_end))) {
+            && (ADDR(stack_end) <= (word)tib->StackLimit
+                || (word)tib->StackBase < ADDR(stack_end))) {
           /* The coroutine stack is not within TIB stack.   */
           WARN("GetThreadContext might return stale register values"
                " including ESP= %p\n",
@@ -894,7 +893,7 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
           /* limit).  There is no 100% guarantee that all the         */
           /* registers are pushed but we do our best (the proper      */
           /* solution would be to fix it inside Windows).             */
-          sp = (ptr_t)(tib->StackLimit);
+          sp = (ptr_t)tib->StackLimit;
         }
       } /* else */
 #    ifdef DEBUG_THREADS
@@ -911,7 +910,7 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
   }
 #  ifdef STACKPTR_CORRECTOR_AVAILABLE
   if (GC_sp_corrector != 0)
-    GC_sp_corrector((void **)&sp, (void *)(thread->pthread_id));
+    GC_sp_corrector((void **)&sp, (void *)thread->pthread_id);
 #  endif
 
   /* Set stack_min to the lowest address in the thread stack,   */
@@ -968,7 +967,7 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
   if (ADDR_INSIDE(sp, stack_min, stack_end)) {
 #  ifdef DEBUG_THREADS
     GC_log_printf("Pushing stack for 0x%x from sp %p to %p from 0x%x\n",
-                  (int)(thread->id), (void *)sp, (void *)stack_end,
+                  (int)thread->id, (void *)sp, (void *)stack_end,
                   (int)self_id);
 #  endif
     GC_push_all_stack_sections(sp, stack_end, traced_stack_sect);
@@ -981,7 +980,7 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
       WARN("Thread stack pointer %p out of range, pushing everything\n", sp);
 #  ifdef DEBUG_THREADS
     GC_log_printf("Pushing stack for 0x%x from (min) %p to %p from 0x%x\n",
-                  (int)(thread->id), (void *)stack_min, (void *)stack_end,
+                  (int)thread->id, (void *)stack_min, (void *)stack_end,
                   (int)self_id);
 #  endif
     /* Push everything - ignore "traced stack section" data.            */
@@ -1077,7 +1076,7 @@ GC_get_next_stack(ptr_t start, ptr_t limit, ptr_t *plo, ptr_t *phi)
 
       if (ADDR_LT(start, stack_end) && ADDR_LT(stack_end, current_min)) {
         /* Update address of last_stack_min. */
-        plast_stack_min = &(dll_thread_table[i].crtn->last_stack_min);
+        plast_stack_min = &dll_thread_table[i].crtn->last_stack_min;
         current_min = stack_end;
 #  ifdef CPPCHECK
         /* To avoid a warning that thread is always null.     */
@@ -1096,7 +1095,7 @@ GC_get_next_stack(ptr_t start, ptr_t limit, ptr_t *plo, ptr_t *phi)
 
         if (ADDR_LT(start, stack_end) && ADDR_LT(stack_end, current_min)) {
           /* Update address of last_stack_min. */
-          plast_stack_min = &(crtn->last_stack_min);
+          plast_stack_min = &crtn->last_stack_min;
           /* Remember current thread to unprotect.      */
           thread = p;
           current_min = stack_end;
@@ -1898,7 +1897,7 @@ GC_DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
       int my_max = (int)GC_get_max_thread_index();
 
       for (i = 0; i <= my_max; ++i) {
-        if (AO_load(&(dll_thread_table[i].tm.in_use)))
+        if (AO_load(&dll_thread_table[i].tm.in_use))
           GC_delete_thread((GC_thread)&dll_thread_table[i]);
       }
       GC_deinit();

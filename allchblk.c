@@ -150,7 +150,7 @@ print_hblkfreelist_item(struct hblk *h, int i, void *prev_index_ptr)
   }
 
   GC_printf("\t%p size %lu %s black listed\n", (void *)h,
-            (unsigned long)(hhdr->hb_sz),
+            (unsigned long)hhdr->hb_sz,
             GC_is_black_listed(h, HBLKSIZE) != NULL      ? "start"
             : GC_is_black_listed(h, hhdr->hb_sz) != NULL ? "partially"
                                                          : "not");
@@ -221,7 +221,7 @@ GC_dump_regions(void)
         int actual_index;
 
         GC_printf("\t%p\tfree block of size 0x%lx bytes%s\n", (void *)p,
-                  (unsigned long)(hhdr->hb_sz),
+                  (unsigned long)hhdr->hb_sz,
                   IS_MAPPED(hhdr) ? "" : " (unmapped)");
         actual_index = free_list_index_of(hhdr);
         if (-1 == actual_index) {
@@ -233,7 +233,7 @@ GC_dump_regions(void)
         p += hhdr->hb_sz;
       } else {
         GC_printf("\t%p\tused for blocks of size 0x%lx bytes\n", (void *)p,
-                  (unsigned long)(hhdr->hb_sz));
+                  (unsigned long)hhdr->hb_sz);
         p += HBLKSIZE * OBJ_SZ_TO_BLOCKS(hhdr->hb_sz);
       }
     }

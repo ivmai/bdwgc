@@ -170,7 +170,7 @@ GC_generic_malloc_inner_small(size_t lb, int k)
 {
   struct obj_kind *ok = &GC_obj_kinds[k];
   size_t lg = GC_size_map[lb];
-  void **opp = &(ok->ok_freelist[lg]);
+  void **opp = &ok->ok_freelist[lg];
   void *op = *opp;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -188,7 +188,7 @@ GC_generic_malloc_inner_small(size_t lb, int k)
         GC_ASSERT(lg != 0);
       }
       /* Retry. */
-      opp = &(ok->ok_freelist[lg]);
+      opp = &ok->ok_freelist[lg];
       op = *opp;
     }
     if (NULL == op) {
@@ -654,7 +654,7 @@ free_internal(void *p, const hdr *hhdr)
       BZERO((ptr_t *)p + 1, lb - sizeof(ptr_t));
     }
 
-    flh = &(ok->ok_freelist[lg]);
+    flh = &ok->ok_freelist[lg];
     obj_link(p) = *flh;
     *flh = (ptr_t)p;
   } else {

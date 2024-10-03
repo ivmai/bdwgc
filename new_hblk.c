@@ -26,7 +26,7 @@
 STATIC ptr_t
 GC_build_fl_clear2(struct hblk *h, ptr_t ofl)
 {
-  ptr_t *p = (ptr_t *)(h->hb_body);
+  ptr_t *p = (ptr_t *)h->hb_body;
   ptr_t plim = (ptr_t)(h + 1);
 
   p[0] = ofl;
@@ -46,7 +46,7 @@ GC_build_fl_clear2(struct hblk *h, ptr_t ofl)
 STATIC ptr_t
 GC_build_fl2(struct hblk *h, ptr_t ofl)
 {
-  ptr_t *p = (ptr_t *)(h->hb_body);
+  ptr_t *p = (ptr_t *)h->hb_body;
   ptr_t plim = (ptr_t)(h + 1);
 
   p[0] = ofl;
@@ -62,7 +62,7 @@ GC_build_fl2(struct hblk *h, ptr_t ofl)
 STATIC ptr_t
 GC_build_fl_clear4(struct hblk *h, ptr_t ofl)
 {
-  ptr_t *p = (ptr_t *)(h->hb_body);
+  ptr_t *p = (ptr_t *)h->hb_body;
   ptr_t plim = (ptr_t)(h + 1);
 
   p[0] = ofl;
@@ -82,7 +82,7 @@ GC_build_fl_clear4(struct hblk *h, ptr_t ofl)
 STATIC ptr_t
 GC_build_fl4(struct hblk *h, ptr_t ofl)
 {
-  ptr_t *p = (ptr_t *)(h->hb_body);
+  ptr_t *p = (ptr_t *)h->hb_body;
   ptr_t plim = (ptr_t)(h + 1);
 
   p[0] = ofl;
@@ -138,7 +138,7 @@ GC_build_fl(struct hblk *h, ptr_t list, size_t lg, GC_bool clear)
     BZERO(h, HBLKSIZE);
 
   /* Add objects to free list. */
-  prev = (ptr_t *)(h->hb_body); /* one object behind p */
+  prev = (ptr_t *)h->hb_body; /* one object behind p */
 
   /* The last place for the last object to start.       */
   plim = (ptr_t)h + HBLKSIZE - lpw * sizeof(ptr_t);

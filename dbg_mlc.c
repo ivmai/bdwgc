@@ -81,7 +81,7 @@ GC_store_back_pointer(ptr_t source, ptr_t dest)
 {
   if (GC_HAS_DEBUG_INFO(dest)) {
 #  ifdef PARALLEL_MARK
-    GC_cptr_store((volatile ptr_t *)&(((oh *)dest)->oh_back_ptr),
+    GC_cptr_store((volatile ptr_t *)&((oh *)dest)->oh_back_ptr,
                   (ptr_t)HIDE_BACK_PTR(source));
 #  else
     ((oh *)dest)->oh_back_ptr = HIDE_BACK_PTR(source);
@@ -324,10 +324,10 @@ GC_check_annotated_obj(oh *ohdr)
   size_t lpw_up;
 
   if (ohdr->oh_sz + DEBUG_BYTES > (GC_uintptr_t)gc_sz) {
-    return (ptr_t)(&(ohdr->oh_sz));
+    return (ptr_t)(&ohdr->oh_sz);
   }
   if (ohdr->oh_sf != (START_FLAG ^ (GC_uintptr_t)body)) {
-    return (ptr_t)(&(ohdr->oh_sf));
+    return (ptr_t)(&ohdr->oh_sf);
   }
 
   {
@@ -337,7 +337,7 @@ GC_check_annotated_obj(oh *ohdr)
       return (ptr_t)(&((GC_uintptr_t *)ohdr)[lpw_m1]);
     }
   }
-  lpw_up = BYTES_TO_PTRS_ROUNDUP((size_t)(ohdr->oh_sz));
+  lpw_up = BYTES_TO_PTRS_ROUNDUP((size_t)ohdr->oh_sz);
   if (((GC_uintptr_t *)body)[lpw_up] != (END_FLAG ^ (GC_uintptr_t)body)) {
     return (ptr_t)(&((GC_uintptr_t *)body)[lpw_up]);
   }
@@ -354,7 +354,7 @@ GC_register_describe_type_fn(int k, GC_describe_type_fn fn)
   GC_describe_type_fns[k] = fn;
 }
 
-#define GET_OH_LINENUM(ohdr) ((int)((ohdr)->oh_int))
+#define GET_OH_LINENUM(ohdr) ((int)(ohdr)->oh_int)
 
 #ifndef SHORT_DBG_HDRS
 #  define IF_NOT_SHORTDBG_HDRS(x) x
@@ -429,7 +429,7 @@ GC_print_obj(ptr_t base)
                   (void *)((ptr_t)ohdr + sizeof(oh)), ohdr->oh_string,
                   GET_OH_LINENUM(ohdr) /*, */
                   COMMA_IFNOT_SHORTDBG_HDRS((unsigned long)ohdr->oh_sz),
-                  k, (unsigned long)(hhdr->hb_descr));
+                  k, (unsigned long)hhdr->hb_descr);
   }
   PRINT_CALL_CHAIN(ohdr);
 }
@@ -459,7 +459,7 @@ GC_print_smashed_obj(const char *msg, void *p, ptr_t clobbered)
   if (!ohdr)
     ABORT("Invalid GC_print_smashed_obj argument");
 #  endif
-  if (ADDR_GE((ptr_t)(&(ohdr->oh_sz)), clobbered) || NULL == ohdr->oh_string) {
+  if (ADDR_GE((ptr_t)(&ohdr->oh_sz), clobbered) || NULL == ohdr->oh_string) {
     GC_err_printf("%s %p in or near object at %p(<smashed>, appr. sz= %lu)\n",
                   msg, (void *)clobbered, p,
                   (unsigned long)(GC_size(ohdr) - DEBUG_BYTES));
@@ -469,7 +469,7 @@ GC_print_smashed_obj(const char *msg, void *p, ptr_t clobbered)
                   ADDR(ohdr->oh_string) < HBLKSIZE ? "(smashed string)"
                   : ohdr->oh_string[0] == '\0'     ? "EMPTY(smashed?)"
                                                    : ohdr->oh_string,
-                  GET_OH_LINENUM(ohdr), (unsigned long)(ohdr->oh_sz));
+                  GET_OH_LINENUM(ohdr), (unsigned long)ohdr->oh_sz);
     PRINT_CALL_CHAIN(ohdr);
   }
 }
@@ -983,7 +983,7 @@ GC_check_heap_block(struct hblk *hbp, void *dummy)
   size_t bit_no;
 
   UNUSED_ARG(dummy);
-  GC_ASSERT((ptr_t)(hhdr->hb_block) == p);
+  GC_ASSERT((ptr_t)hhdr->hb_block == p);
   plim = sz > MAXOBJBYTES ? p : p + HBLKSIZE - sz;
   /* Go through all objects in block. */
   for (bit_no = 0; ADDR_GE(plim, p); bit_no += MARK_BIT_OFFSET(sz), p += sz) {

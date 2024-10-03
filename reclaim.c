@@ -294,7 +294,7 @@ GC_reclaim_check(struct hblk *hbp, const hdr *hhdr, size_t sz)
 /* Is a pointer-free block?  Same as IS_PTRFREE() macro but uses    */
 /* unordered atomic access to avoid racing with GC_realloc.         */
 #ifdef AO_HAVE_load
-#  define IS_PTRFREE_SAFE(hhdr) (AO_load((AO_t *)&((hhdr)->hb_descr)) == 0)
+#  define IS_PTRFREE_SAFE(hhdr) (AO_load((AO_t *)&(hhdr)->hb_descr) == 0)
 #else
 /* No race as GC_realloc holds the allocator lock when updating hb_descr. */
 #  define IS_PTRFREE_SAFE(hhdr) IS_PTRFREE(hhdr)
@@ -351,7 +351,7 @@ GC_reclaim_small_nonempty_block(struct hblk *hbp, size_t sz,
     GC_reclaim_check(hbp, hhdr, sz);
   } else {
     struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
-    void **flh = &(ok->ok_freelist[BYTES_TO_GRANULES(sz)]);
+    void **flh = &ok->ok_freelist[BYTES_TO_GRANULES(sz)];
 
     *flh = GC_reclaim_generic(hbp, hhdr, sz, ok->ok_init, (ptr_t)(*flh),
                               (/* unsigned */ word *)&GC_bytes_found);
@@ -372,7 +372,7 @@ GC_disclaim_and_reclaim_or_free_small_block(struct hblk *hbp)
   hhdr = HDR(hbp);
   sz = hhdr->hb_sz;
   ok = &GC_obj_kinds[hhdr->hb_obj_kind];
-  flh = &(ok->ok_freelist[BYTES_TO_GRANULES(sz)]);
+  flh = &ok->ok_freelist[BYTES_TO_GRANULES(sz)];
 
   hhdr->hb_last_reclaimed = (unsigned short)GC_gc_no;
   flh_next = GC_reclaim_generic(hbp, hhdr, sz, ok->ok_init, (ptr_t)(*flh),
@@ -407,7 +407,7 @@ GC_reclaim_block(struct hblk *hbp, void *report_if_found)
   ok = &GC_obj_kinds[hhdr->hb_obj_kind];
 #ifdef AO_HAVE_load
   /* Atomic access is used to avoid racing with GC_realloc.       */
-  sz = AO_load(&(hhdr->hb_sz));
+  sz = AO_load(&hhdr->hb_sz);
 #else
   /* No race as GC_realloc holds the allocator lock while */
   /* updating hb_sz.                                      */
@@ -548,7 +548,7 @@ GC_n_set_marks(const hdr *hhdr)
   size_t limit = FINAL_MARK_BIT(hhdr->hb_sz);
 
   for (i = 0; i < limit; i += offset) {
-    result += (unsigned)(hhdr->hb_marks[i]);
+    result += (unsigned)hhdr->hb_marks[i];
   }
 
   /* The one should be set past the end.    */
@@ -762,7 +762,7 @@ GC_continue_reclaim(size_t lg, int k)
     return;
   }
 
-  flh = &(ok->ok_freelist[lg]);
+  flh = &ok->ok_freelist[lg];
   for (rlh += lg; (hbp = *rlh) != NULL;) {
     const hdr *hhdr = HDR(hbp);
 
@@ -809,7 +809,7 @@ GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
         }
         hhdr = HDR(hbp);
         *rlh = hhdr->hb_next;
-        if (!ignore_old || (word)(hhdr->hb_last_reclaimed) == GC_gc_no - 1) {
+        if (!ignore_old || (word)hhdr->hb_last_reclaimed == GC_gc_no - 1) {
           /* It is likely we will need it this time, too.     */
           /* It has been touched recently, so this should not */
           /* trigger paging.                                  */
@@ -847,7 +847,7 @@ GC_reclaim_unconditionally_marked(void)
     struct obj_kind *ok = &GC_obj_kinds[k];
     struct hblk **rlp = ok->ok_reclaim_list;
 
-    if (NULL == rlp || !(ok->ok_mark_unconditionally))
+    if (NULL == rlp || !ok->ok_mark_unconditionally)
       continue;
 
     for (lg = 1; lg <= MAXOBJGRANULES; lg++) {

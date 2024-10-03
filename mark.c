@@ -189,7 +189,7 @@ GC_clear_hdr_marks(hdr *hhdr)
 
 #ifdef AO_HAVE_load
   /* Atomic access is used to avoid racing with GC_realloc.   */
-  last_bit = FINAL_MARK_BIT(AO_load(&(hhdr->hb_sz)));
+  last_bit = FINAL_MARK_BIT(AO_load(&hhdr->hb_sz));
 #else
   /* No race as GC_realloc holds the allocator lock while updating hb_sz. */
   last_bit = FINAL_MARK_BIT(hhdr->hb_sz);
@@ -1022,11 +1022,11 @@ GC_steal_mark_stack(mse *low, mse *high, mse *local, size_t n_to_get,
   GC_ASSERT(ADDR_GE((ptr_t)high, (ptr_t)(low - 1))
             && (word)(high - low + 1) <= GC_mark_stack_size);
   for (p = low; ADDR_GE((ptr_t)high, (ptr_t)p) && i <= n_to_get; ++p) {
-    word descr = AO_load(&(p->mse_descr));
+    word descr = AO_load(&p->mse_descr);
 
     if (descr != 0) {
       /* Must be ordered after read of descr: */
-      AO_store_release_write(&(p->mse_descr), 0);
+      AO_store_release_write(&p->mse_descr, 0);
       /* More than one thread may get this entry, but that's only */
       /* a minor performance problem.                             */
       ++top;
@@ -1672,11 +1672,11 @@ GC_print_trace_inner(GC_word gc_no)
     p = &GC_trace_buf[i - 1];
     /* Compare gc_no values (p->gc_no is less than given gc_no) */
     /* taking into account that the counter may overflow.       */
-    if ((((p->gc_no) - gc_no) & SIGNB) != 0 || NULL == p->caller_fn_name) {
+    if (((p->gc_no - gc_no) & SIGNB) != 0 || NULL == p->caller_fn_name) {
       return;
     }
     GC_printf("Trace:%s (gc:%lu, bytes:%lu) %p, %p\n", p->caller_fn_name,
-              (unsigned long)(p->gc_no), (unsigned long)(p->bytes_allocd),
+              (unsigned long)p->gc_no, (unsigned long)p->bytes_allocd,
               GC_REVEAL_POINTER(p->arg1), GC_REVEAL_POINTER(p->arg2));
     if (i == GC_trace_buf_pos + 1)
       break;
@@ -1830,7 +1830,7 @@ GC_push_marked1(struct hblk *h, const hdr *hhdr)
 #  define GC_greatest_plausible_heap_addr greatest_ha
 #  define GC_least_plausible_heap_addr least_ha
 
-  p = (ptr_t *)(h->hb_body);
+  p = (ptr_t *)h->hb_body;
   plim = (ptr_t)h + HBLKSIZE;
 
   /* Go through all granules in block.    */
@@ -1878,7 +1878,7 @@ GC_push_marked2(struct hblk *h, const hdr *hhdr)
 #    define GC_greatest_plausible_heap_addr greatest_ha
 #    define GC_least_plausible_heap_addr least_ha
 
-  p = (ptr_t *)(h->hb_body);
+  p = (ptr_t *)h->hb_body;
   plim = (ptr_t)h + HBLKSIZE;
 
   /* Go through all granules in block.  */
@@ -1930,7 +1930,7 @@ GC_push_marked4(struct hblk *h, const hdr *hhdr)
 #      define GC_greatest_plausible_heap_addr greatest_ha
 #      define GC_least_plausible_heap_addr least_ha
 
-  p = (ptr_t *)(h->hb_body);
+  p = (ptr_t *)h->hb_body;
   plim = (ptr_t)h + HBLKSIZE;
 
   /* Go through all granules in block.    */
@@ -2064,7 +2064,7 @@ GC_block_was_dirty(struct hblk *h, const hdr *hhdr)
 
 #  ifdef AO_HAVE_load
   /* Atomic access is used to avoid racing with GC_realloc. */
-  sz = AO_load(&(hhdr->hb_sz));
+  sz = AO_load(&hhdr->hb_sz);
 #  else
   sz = hhdr->hb_sz;
 #  endif

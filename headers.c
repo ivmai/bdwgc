@@ -68,7 +68,7 @@ GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce)
 
         if (hhdr->hb_flags & IGNORE_OFF_PAGE)
           return 0;
-        if (HBLK_IS_FREE(hhdr) || p - current >= (signed_word)(hhdr->hb_sz)) {
+        if (HBLK_IS_FREE(hhdr) || p - current >= (signed_word)hhdr->hb_sz) {
           GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
           /* The pointer is past the end of the block.        */
           return 0;
@@ -177,7 +177,7 @@ alloc_hdr(void)
     result = (hdr *)GC_scratch_alloc(sizeof(hdr));
   } else {
     result = GC_hdr_free_list;
-    GC_hdr_free_list = (hdr *)(result->hb_next);
+    GC_hdr_free_list = (hdr *)result->hb_next;
   }
   return result;
 }
@@ -252,7 +252,7 @@ get_index(word addr)
   pi = NULL;                     /* bottom_index preceding p */
   while ((p = *prev) != 0 && p->key < hi) {
     pi = p;
-    prev = &(p->asc_link);
+    prev = &p->asc_link;
   }
   r->desc_link = pi;
   if (NULL == p) {

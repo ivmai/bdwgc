@@ -853,7 +853,7 @@ GC_delete_thread(GC_thread t)
 #    ifdef RETRY_GET_THREAD_CONTEXT
     t->context_sp = NULL;
 #    endif
-    AO_store_release(&(t->tm.in_use), FALSE);
+    AO_store_release(&t->tm.in_use, FALSE);
   } else
 #  endif
   /* else */ {
@@ -959,12 +959,12 @@ GC_check_finalizer_nested(void)
     /* We are inside another GC_invoke_finalizers().          */
     /* Skip some implicitly-called GC_invoke_finalizers()     */
     /* depending on the nesting (recursion) level.            */
-    if (++(crtn->finalizer_skipped) < (1U << nesting_level))
+    if (++crtn->finalizer_skipped < (1U << nesting_level))
       return NULL;
     crtn->finalizer_skipped = 0;
   }
   crtn->finalizer_nested = (unsigned char)(nesting_level + 1);
-  return &(crtn->finalizer_nested);
+  return &crtn->finalizer_nested;
 }
 #  endif /* !GC_NO_FINALIZATION */
 
@@ -1411,7 +1411,7 @@ GC_remove_all_threads_but_me(void)
   me->id = thread_id_self();
 #      ifndef MSWINCE
   if (!DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
-                       GetCurrentProcess(), (HANDLE *)&(me->handle),
+                       GetCurrentProcess(), (HANDLE *)&me->handle,
                        0 /* dwDesiredAccess */, FALSE /* bInheritHandle */,
                        DUPLICATE_SAME_ACCESS))
     ABORT("DuplicateHandle failed");
@@ -1649,16 +1649,16 @@ GC_INNER_WIN32THREAD void
 GC_record_stack_base(GC_stack_context_t crtn, const struct GC_stack_base *sb)
 {
 #  if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_THREADS)
-  crtn->stack_ptr = (ptr_t)(sb->mem_base);
+  crtn->stack_ptr = (ptr_t)sb->mem_base;
 #  endif
-  if ((crtn->stack_end = (ptr_t)(sb->mem_base)) == NULL)
+  if ((crtn->stack_end = (ptr_t)sb->mem_base) == NULL)
     ABORT("Bad stack base in GC_register_my_thread");
 #  ifdef E2K
-  crtn->ps_ofs = (size_t)(GC_uintptr_t)(sb->reg_base);
+  crtn->ps_ofs = (size_t)((GC_uintptr_t)sb->reg_base);
 #  elif defined(IA64)
-  crtn->backing_store_end = (ptr_t)(sb->reg_base);
+  crtn->backing_store_end = (ptr_t)sb->reg_base;
 #  elif defined(I386) && defined(GC_WIN32_THREADS)
-  crtn->initial_stack_base = (ptr_t)(sb->mem_base);
+  crtn->initial_stack_base = (ptr_t)sb->mem_base;
 #  endif
 }
 
@@ -2015,7 +2015,7 @@ GC_do_blocking_inner(ptr_t data, void *context)
   do_blocking_enter(&topOfStackUnset, me);
   READER_UNLOCK_RELEASE();
 
-  d->client_data = (d->fn)(d->client_data);
+  d->client_data = d->fn(d->client_data);
 
   /* This will block if the world is stopped. */
   READER_LOCK();
@@ -2090,9 +2090,9 @@ GC_set_stackbottom(void *gc_thread_handle, const struct GC_stack_base *sb)
   if (!EXPECT(GC_is_initialized, TRUE)) {
     GC_ASSERT(NULL == t);
     /* Alter the stack bottom of the primordial thread.       */
-    GC_stackbottom = (char *)(sb->mem_base);
+    GC_stackbottom = (char *)sb->mem_base;
 #  if defined(E2K) || defined(IA64)
-    GC_register_stackbottom = (ptr_t)(sb->reg_base);
+    GC_register_stackbottom = (ptr_t)sb->reg_base;
 #  endif
     return;
   }
@@ -2107,11 +2107,11 @@ GC_set_stackbottom(void *gc_thread_handle, const struct GC_stack_base *sb)
   GC_ASSERT((t->flags & DO_BLOCKING) == 0
             && NULL == crtn->traced_stack_sect); /* for now */
 
-  crtn->stack_end = (ptr_t)(sb->mem_base);
+  crtn->stack_end = (ptr_t)sb->mem_base;
 #  ifdef E2K
-  crtn->ps_ofs = (size_t)(GC_uintptr_t)(sb->reg_base);
+  crtn->ps_ofs = (size_t)((GC_uintptr_t)sb->reg_base);
 #  elif defined(IA64)
-  crtn->backing_store_end = (ptr_t)(sb->reg_base);
+  crtn->backing_store_end = (ptr_t)sb->reg_base;
 #  endif
 #  ifdef GC_WIN32_THREADS
   /* Reset the known minimum (hottest address in the stack). */
@@ -2132,7 +2132,7 @@ GC_get_my_stackbottom(struct GC_stack_base *sb)
   sb->mem_base = crtn->stack_end;
 #  ifdef E2K
   /* Store the offset in the procedure stack, not address.  */
-  sb->reg_base = (void *)(GC_uintptr_t)(crtn->ps_ofs);
+  sb->reg_base = (void *)((GC_uintptr_t)crtn->ps_ofs);
 #  elif defined(IA64)
   sb->reg_base = crtn->backing_store_end;
 #  endif
@@ -2253,7 +2253,7 @@ GC_unregister_my_thread_inner(GC_thread me)
   GC_ASSERT(I_HOLD_LOCK());
 #  ifdef DEBUG_THREADS
   GC_log_printf("Unregistering thread %p, gc_thread= %p, n_threads= %d\n",
-                (void *)(signed_word)(me->id), (void *)me, GC_count_threads());
+                (void *)((signed_word)me->id), (void *)me, GC_count_threads());
 #  endif
   GC_ASSERT(!KNOWN_FINISHED(me));
 #  if defined(THREAD_LOCAL_ALLOC)
@@ -2485,7 +2485,7 @@ GC_thread_exit_proc(void *arg)
 
 #    ifdef DEBUG_THREADS
   GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread= %p\n",
-                (void *)(signed_word)(me->id), (void *)me);
+                (void *)((signed_word)me->id), (void *)me);
 #    endif
   LOCK();
   DISABLE_CANCEL(cancel_state);
@@ -2624,7 +2624,7 @@ GC_start_rtn_prepare_thread(void *(**pstart)(void *), void **pstart_arg,
 #    if defined(DEBUG_THREADS) && defined(FUNCPTR_IS_DATAPTR)
   GC_log_printf("start_routine= %p\n", CAST_THRU_UINTPTR(void *, *pstart));
 #    endif
-  sem_post(&(psi->registered));
+  sem_post(&psi->registered);
   /* This was the last action on *psi; OK to deallocate.      */
   return me;
 }

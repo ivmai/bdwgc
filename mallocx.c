@@ -135,8 +135,8 @@ GC_realloc(void *p, size_t lb)
       /* But that is probably more expensive, since we may end up     */
       /* scanning a bunch of zeros during GC.)                        */
 #ifdef AO_HAVE_store
-    AO_store(&(hhdr->hb_sz), sz);
-    AO_store((AO_t *)&(hhdr->hb_descr), descr);
+    AO_store(&hhdr->hb_sz, sz);
+    AO_store((AO_t *)&hhdr->hb_descr, descr);
 #else
     {
       LOCK();
@@ -385,7 +385,7 @@ GC_generic_malloc_many(size_t lb_adjusted, int k, void **result)
   /* Next try to use prefix of global free list if there is one.      */
   /* We don't refill it, but we need to use it up before allocating   */
   /* a new block ourselves.                                           */
-  opp = &(ok->ok_freelist[lg]);
+  opp = &ok->ok_freelist[lg];
   if ((op = *opp) != NULL) {
     *opp = NULL;
     my_bytes_allocd = 0;

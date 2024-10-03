@@ -1445,12 +1445,12 @@ GC_get_stack_base(struct GC_stack_base *b)
     return GC_UNIMPLEMENTED;
   }
 #  endif
-  if (pthread_attr_getstack(&attr, &(b->mem_base), &size) != 0) {
+  if (pthread_attr_getstack(&attr, &b->mem_base, &size) != 0) {
     ABORT("pthread_attr_getstack failed");
   }
   (void)pthread_attr_destroy(&attr);
 #  ifndef STACK_GROWS_UP
-  b->mem_base = (char *)(b->mem_base) + size;
+  b->mem_base = (char *)b->mem_base + size;
 #  endif
 #  ifdef IA64
   /* We could try backing_store_base_from_proc, but that's safe     */
@@ -1493,7 +1493,7 @@ GC_get_stack_base(struct GC_stack_base *b)
   /* pthread_get_stackaddr_np() should return stack bottom (highest   */
   /* stack address plus 1).                                           */
   b->mem_base = pthread_get_stackaddr_np(pthread_self());
-  GC_ASSERT(HOTTER_THAN(GC_approx_sp(), (ptr_t)(b->mem_base)));
+  GC_ASSERT(HOTTER_THAN(GC_approx_sp(), (ptr_t)b->mem_base));
   return GC_SUCCESS;
 }
 #  define HAVE_GET_STACK_BASE
@@ -3344,7 +3344,7 @@ GC_write_fault_handler(struct _EXCEPTION_POINTERS *exc_info)
 #    if !defined(MSWIN32) && !defined(MSWINCE)
   char *addr = (char *)si->si_addr;
 #    else
-  char *addr = (char *)(exc_info->ExceptionRecord->ExceptionInformation[1]);
+  char *addr = (char *)exc_info->ExceptionRecord->ExceptionInformation[1];
 #    endif
 
   if (SIG_OK && CODE_OK) {
@@ -3850,7 +3850,7 @@ GC_proc_read_dirty(GC_bool output_unneeded)
   bufp += sizeof(struct prpageheader);
   for (i = 0; i < nmaps; i++) {
     struct prasmap *map = (struct prasmap *)bufp;
-    ptr_t vaddr = (ptr_t)(map->pr_vaddr);
+    ptr_t vaddr = (ptr_t)map->pr_vaddr;
     unsigned long npages = map->pr_npage;
     unsigned pagesize = map->pr_pagesize;
     ptr_t limit;
@@ -5400,7 +5400,7 @@ GC_save_callers(struct callinfo info[NFRAMES])
   fp = frame;
 #      else /* SPARC */
   frame = (struct frame *)GC_save_regs_in_stack();
-  fp = (struct frame *)((long)(frame->FR_SAVFP) + BIAS);
+  fp = (struct frame *)((long)frame->FR_SAVFP + BIAS);
 #      endif
 
   for (; !HOTTER_THAN((ptr_t)fp, (ptr_t)frame)
@@ -5410,15 +5410,15 @@ GC_save_callers(struct callinfo info[NFRAMES])
          && fp != NULL
 #      endif
          && nframes < NFRAMES;
-       fp = (struct frame *)((long)(fp->FR_SAVFP) + BIAS), nframes++) {
+       fp = (struct frame *)((long)fp->FR_SAVFP + BIAS), nframes++) {
 #      if NARGS > 0
     int i;
 #      endif
 
-    info[nframes].ci_pc = (GC_return_addr_t)(fp->FR_SAVPC);
+    info[nframes].ci_pc = (GC_return_addr_t)fp->FR_SAVPC;
 #      if NARGS > 0
     for (i = 0; i < NARGS; i++) {
-      info[nframes].ci_arg[i] = GC_HIDE_NZ_POINTER((void *)(fp->fr_arg[i]));
+      info[nframes].ci_arg[i] = GC_HIDE_NZ_POINTER((void *)fp->fr_arg[i]);
     }
 #      endif
   }

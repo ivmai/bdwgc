@@ -110,7 +110,7 @@ GC_INLINE void *
 GC_getspecific(tsd *key)
 {
   size_t qtid = ts_quick_thread_id();
-  tse *volatile *entry_ptr = &(key->cache[TS_CACHE_HASH(qtid)]);
+  tse *volatile *entry_ptr = &key->cache[TS_CACHE_HASH(qtid)];
   const tse *entry = *entry_ptr; /* must be loaded only once */
 
   GC_ASSERT(qtid != INVALID_QTID);

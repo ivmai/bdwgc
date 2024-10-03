@@ -623,7 +623,7 @@ GC_exclude_static_roots_inner(ptr_t start, ptr_t finish)
       next->e_start = start;
 #ifdef DEBUG_ADD_DEL_ROOTS
       GC_log_printf("Updating static root exclusion to %p .. %p\n",
-                    (void *)start, (void *)(next->e_end));
+                    (void *)start, (void *)next->e_end);
 #endif
       return;
     }

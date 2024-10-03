@@ -328,11 +328,10 @@ fake_gcj_mark_proc(GC_word *addr, struct GC_ms_entry *mark_stack_top,
   /* Skip vtable pointer.     */
   x = (sexpr)((void **)addr + 1);
 
-  mark_stack_top
-      = GC_MARK_AND_PUSH(x->sexpr_cdr, mark_stack_top, mark_stack_limit,
-                         (void **)&(x->sexpr_cdr));
+  mark_stack_top = GC_MARK_AND_PUSH(x->sexpr_cdr, mark_stack_top,
+                                    mark_stack_limit, (void **)&x->sexpr_cdr);
   return GC_MARK_AND_PUSH(x->sexpr_car, mark_stack_top, mark_stack_limit,
-                          (void **)&(x->sexpr_car));
+                          (void **)&x->sexpr_car);
 }
 #endif /* GC_GCJ_SUPPORT */
 
@@ -371,7 +370,7 @@ small_cons_uncollectable(sexpr x, sexpr y)
 
   AO_fetch_and_add1(&uncollectable_count);
   r->sexpr_cdr = (sexpr)GC_HIDE_POINTER(y);
-  GC_PTR_STORE_AND_DIRTY(&(r->sexpr_car), x);
+  GC_PTR_STORE_AND_DIRTY(&r->sexpr_car, x);
   return r;
 }
 

@@ -134,20 +134,20 @@ GC_push_obj(ptr_t obj, const hdr *hhdr, mse *mark_stack_top,
 #    define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no)                 \
       { /* cannot use do-while(0) here */                          \
         volatile unsigned char *mark_byte_addr                     \
-            = (unsigned char *)((hhdr)->hb_marks) + (bit_no);      \
+            = (unsigned char *)(hhdr)->hb_marks + (bit_no);        \
         /* Unordered atomic load and store are sufficient here. */ \
         if (AO_char_load(mark_byte_addr) != 0)                     \
           break; /* go to the enclosing loop end */                \
         AO_char_store(mark_byte_addr, 1);                          \
       }
 #  else
-#    define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no)                   \
-      { /* cannot use do-while(0) here */                            \
-        ptr_t mark_byte_addr = (ptr_t)((hhdr)->hb_marks) + (bit_no); \
-                                                                     \
-        if (*mark_byte_addr != 0)                                    \
-          break; /* go to the enclosing loop end */                  \
-        *mark_byte_addr = 1;                                         \
+#    define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no)                 \
+      { /* cannot use do-while(0) here */                          \
+        ptr_t mark_byte_addr = (ptr_t)(hhdr)->hb_marks + (bit_no); \
+                                                                   \
+        if (*mark_byte_addr != 0)                                  \
+          break; /* go to the enclosing loop end */                \
+        *mark_byte_addr = 1;                                       \
       }
 #  endif /* !PARALLEL_MARK */
 #else
@@ -237,7 +237,7 @@ GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
         /* gran_offset is bogus.        */
         size_t obj_displ;
 
-        base = (ptr_t)(hhdr->hb_block);
+        base = (ptr_t)hhdr->hb_block;
         obj_displ = (size_t)(current - base);
         if (obj_displ != displ) {
           GC_ASSERT(obj_displ < hhdr->hb_sz);
@@ -249,7 +249,7 @@ GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
         }
         GC_ASSERT(hhdr->hb_sz > HBLKSIZE
                   || hhdr->hb_block == HBLKPTR(current));
-        GC_ASSERT(ADDR_GE(current, (ptr_t)(hhdr->hb_block)));
+        GC_ASSERT(ADDR_GE(current, (ptr_t)hhdr->hb_block));
         gran_displ = 0;
       } else {
 #ifdef MARK_BIT_PER_OBJ
