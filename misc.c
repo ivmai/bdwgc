@@ -1929,12 +1929,14 @@ GC_write(int fd, const char *buf, size_t len)
 {
 #  if defined(ECOS) || defined(PLATFORM_WRITE) || defined(SN_TARGET_PSP2) \
       || defined(NOSYS)
+  UNUSED_ARG(fd);
 #    ifdef ECOS
   /* FIXME: This seems to be defined nowhere at present.  */
   /* _Jv_diag_write(buf, len); */
 #    else
   /* No writing.  */
 #    endif
+  UNUSED_ARG(buf);
   return (int)len;
 #  else
   size_t bytes_written = 0;
