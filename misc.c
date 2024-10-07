@@ -1729,7 +1729,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #   endif
 # endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
 
-  STATIC int GC_write(int fd, const char *buf, size_t len)
+  STATIC int GC_write(int fd GC_ATTR_UNUSED, const char *buf GC_ATTR_UNUSED,
+                      size_t len)
   {
 #   if defined(ECOS) || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2) \
        || defined(NOSYS)
