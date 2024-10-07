@@ -2339,7 +2339,7 @@ extern int __data_start[];
 
 #ifdef RISCV
 #  define MACH_TYPE "RISC-V"
-#  define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
+#  define CPP_WORDSZ (__SIZEOF_SIZE_T__ * 8) /* 32 or 64 */
 #  ifdef FREEBSD
 /* Nothing specific. */
 #  endif
