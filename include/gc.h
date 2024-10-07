@@ -2166,7 +2166,7 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 GC_API void GC_CALL GC_win32_free_heap(void);
 
 #if defined(__SYMBIAN32__)
-  void GC_init_global_static_roots(void);
+  GC_API void GC_CALL GC_init_global_static_roots(void);
 #endif
 
 #if defined(_AMIGA) && !defined(GC_AMIGA_MAKINGLIB)

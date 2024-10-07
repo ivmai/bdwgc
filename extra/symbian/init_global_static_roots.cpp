@@ -8,7 +8,7 @@
 
 extern "C" {
 
-void GC_init_global_static_roots()
+GC_API void GC_CALL GC_init_global_static_roots()
 {
     ptr_t dataStart;
     ptr_t dataEnd;
