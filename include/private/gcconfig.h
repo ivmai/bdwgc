@@ -2553,7 +2553,7 @@ EXTERN_C_BEGIN
 
 # ifdef RISCV
 #   define MACH_TYPE "RISC-V"
-#   define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
+#   define CPP_WORDSZ (__SIZEOF_SIZE_T__ * 8) /* 32 or 64 */
 #   define ALIGNMENT (CPP_WORDSZ/8)
 #   ifdef FREEBSD
       /* Nothing specific. */
