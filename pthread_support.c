@@ -2144,6 +2144,7 @@ GC_get_my_stackbottom(struct GC_stack_base *sb)
 /* functionality.  It might be called from a user function invoked by   */
 /* GC_do_blocking() to temporarily back allow calling any GC function   */
 /* and/or manipulating pointers to the garbage collected heap.          */
+GC_ATTR_NOINLINE
 GC_API void *GC_CALL
 GC_call_with_gc_active(GC_fn_type fn, void *client_data)
 {

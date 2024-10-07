@@ -2398,6 +2398,7 @@ GC_call_with_reader_lock(GC_fn_type fn, void *client_data, int release)
 }
 #endif /* THREADS */
 
+GC_ATTR_NOINLINE
 GC_API void *GC_CALL
 GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 {
@@ -2436,6 +2437,7 @@ STATIC ptr_t GC_blocked_register_sp = NULL;
 GC_INNER struct GC_traced_stack_sect_s *GC_traced_stack_sect = NULL;
 
 /* This is nearly the same as in pthread_support.c.   */
+GC_ATTR_NOINLINE
 GC_API void *GC_CALL
 GC_call_with_gc_active(GC_fn_type fn, void *client_data)
 {
