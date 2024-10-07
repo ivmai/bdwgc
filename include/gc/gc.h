@@ -2336,7 +2336,7 @@ GC_API void *GC_CALL GC_find_limit(void * /* start */, int /* up */);
 GC_API void GC_CALL GC_win32_free_heap(void);
 
 #if defined(__SYMBIAN32__)
-void GC_init_global_static_roots(void);
+GC_API void GC_CALL GC_init_global_static_roots(void);
 #endif
 
 #ifdef __cplusplus

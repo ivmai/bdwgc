@@ -12,7 +12,7 @@ extern int winscw_data_start, winscw_data_end;
 extern int Image$$RW$$Limit[], Image$$RW$$Base[];
 #endif
 
-void
+GC_API void GC_CALL
 GC_init_global_static_roots()
 {
   void *dataStart;
