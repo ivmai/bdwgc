@@ -173,6 +173,11 @@ EXTERN_C_BEGIN
 #    define mach_type_known
 #  endif
 #endif
+#if defined(__riscv) && !defined(ANY_BSD) && !defined(LINUX)
+#  define RISCV
+#  define NOSYS
+#  define mach_type_known
+#endif
 #if defined(sun) && defined(mc68000) && !defined(CPPCHECK)
 #  error SUNOS4 no longer supported
 #endif
@@ -625,6 +630,8 @@ EXTERN_C_BEGIN
 /*             HEXAGON    ==> Qualcomm Hexagon      */
 /*             OR1K       ==> OpenRISC/or1k         */
 /*             RISCV      ==> RISC-V 32/64-bit      */
+/*                  (LINUX, FREEBSD, NETBSD,        */
+/*                   OPENBSD, NOSYS variants)       */
 /*             TILEPRO    ==> Tilera TILEPro        */
 /*             TILEGX     ==> Tilera TILE-Gx        */
 
@@ -774,7 +781,8 @@ EXTERN_C_BEGIN
 
 #if (defined(__CC_ARM) || defined(CX_UX) || defined(DJGPP) || defined(EMBOX) \
      || defined(EWS4800) || defined(LINUX) || defined(OS2) || defined(RTEMS) \
-     || defined(UTS4) || defined(MSWIN32) || defined(MSWINCE))               \
+     || defined(UTS4) || defined(MSWIN32) || defined(MSWINCE)                \
+     || (defined(NOSYS) && defined(RISCV)))                                  \
     && !defined(NO_UNDERSCORE_SETJMP)
 #  define NO_UNDERSCORE_SETJMP
 #endif
@@ -2352,6 +2360,14 @@ extern int __data_start[] __attribute__((__weak__));
 #  endif
 #  ifdef OPENBSD
 /* Nothing specific. */
+#  endif
+#  ifdef NOSYS
+#    define OS_TYPE "NOSYS"
+extern char etext[];
+#    define DATASTART ((ptr_t)etext)
+extern char **environ;
+#    define STACKBOTTOM ((ptr_t)environ) /* FIXME: this is wrong! */
+#    define GETPAGESIZE() 4096 /* TODO: support 64K page size */
 #  endif
 #endif /* RISCV */
 
