@@ -1213,10 +1213,8 @@ extern int errno;
 extern void __end[], __dso_handle[];
 #    define DATASTART ((ptr_t)__dso_handle) /* OK, that's ugly */
 #    define DATAEND ((ptr_t)(__end))
-#    undef STACK_GRAN
-#    define STACK_GRAN 0x10000000
 /* Note: stack starts at 0xE0000000 for the simulator.    */
-#    define HEURISTIC1
+#    define STACKBOTTOM PTR_ALIGN_UP(GC_approx_sp(), 0x10000000)
 #  endif
 #endif /* POWERPC */
 
