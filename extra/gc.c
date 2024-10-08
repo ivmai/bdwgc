@@ -84,7 +84,7 @@
 /* pthread_stop_world.c, pthread_support.c or win32_threads.c). */
 /* This is only useful if directly included from application    */
 /* (instead of linking gc).                                     */
-#ifndef GC_NO_THREAD_REDIRECTS
+#if !defined(GC_NO_THREAD_REDIRECTS) && defined(GC_PTHREADS)
 #  define GC_PTHREAD_REDIRECTS_ONLY
 #  include "gc/gc_pthread_redirects.h"
 #endif
