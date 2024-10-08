@@ -952,9 +952,8 @@
 #     define DATASTART (__dso_handle)  /* OK, that's ugly.  */
 #     define DATAEND (ptr_t)(__end)
         /* Stack starts at 0xE0000000 for the simulator.  */
-#     undef STACK_GRAN
-#     define STACK_GRAN 0x10000000
-#     define HEURISTIC1
+#     define STACKBOTTOM \
+        ((ptr_t)(((word)GC_approx_sp() + 0xfffffff) & ~(word)0xfffffff))
 #   endif
 # endif
 
