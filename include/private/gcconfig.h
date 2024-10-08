@@ -787,8 +787,6 @@ EXTERN_C_BEGIN
 #  define NO_UNDERSCORE_SETJMP
 #endif
 
-#define STACK_GRAN 0x1000000
-
 /* The common OS-specific definitions (should be applicable to  */
 /* all (or most, at least) supported architectures).            */
 
@@ -914,6 +912,7 @@ extern int _end[];
 
 #ifdef KOS
 #  define OS_TYPE "KOS"
+#  define STACK_GRAN 0x1000000
 #  define HEURISTIC1 /* relies on pthread_attr_getstack actually */
 #  ifndef USE_GET_STACKBASE_FOR_MAIN
 /* Note: this requires -lpthread option. */
@@ -947,7 +946,6 @@ extern int __data_start[];
 #  define DATASTART ((ptr_t)0x10020000)
 extern int _end[];
 #  define DATAEND ((ptr_t)_end)
-#  undef STACK_GRAN
 #  define STACK_GRAN 0x10000
 #  define HEURISTIC1
 #  define NO_PTHREAD_GETATTR_NP
@@ -997,6 +995,7 @@ extern char etext[];
 #  define OS_TYPE "QNX"
 #  define SA_RESTART 0
 #  ifndef QNX_STACKBOTTOM /* TODO: not the default one for now */
+#    define STACK_GRAN 0x1000000
 #    define HEURISTIC1
 #  endif
 extern char etext[];
@@ -1227,6 +1226,7 @@ extern char etext[];
 #  define DATASTART ((ptr_t)(etext))
 #  ifdef BSD
 #    define OS_TYPE "BSD"
+#    define STACK_GRAN 0x1000000
 #    define HEURISTIC1
 /* Note: HEURISTIC2 may be OK, but it's hard to test.   */
 #  endif

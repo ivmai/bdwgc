@@ -24,7 +24,7 @@ correctly (for historical reasons usually without the leading sharp sign).
 (Separate source files are of course fine if they do not result in code
 duplication.)
 
-## Adding Platforms to gcconfig.h
+## Adding platforms to gcconfig.h
 
 If neither thread support, nor tracing of dynamic library data is required,
 these are often the only changes you will need to make.
@@ -120,11 +120,11 @@ operating system:
   then the cold end of the stack will be determined, we usually read it from
   `/proc`.
   * `HEURISTIC1` - May be defined instead of `STACKBOTTOM`. `STACK_GRAN`
-  should generally also be redefined. The cold end of the stack is determined
+  should be defined too in this case. The cold end of the stack is determined
   by taking an address inside `GC_init`s frame, and rounding it up to the next
   multiple of `STACK_GRAN`. This works well if the stack bottom is always
-  aligned to a large power of two. (`STACK_GRAN` is predefined to 0x1000000,
-  which is rarely optimal.)
+  aligned to a large power of two. (Note: defining `STACK_GRAN` to 0x1000000
+  is rarely optimal.)
   * `HEURISTIC2` - May be defined instead of `STACKBOTTOM`. The cold end
   of the stack is determined by taking an address inside `GC_init`s frame,
   incrementing it repeatedly in small steps (decrement if `STACK_GROWS_UP`),
