@@ -605,7 +605,7 @@ pub fn build(b: *std.Build) void {
         if (enable_gcj_support) {
             installHeader(b, gc, "gc/gc_gcj.h");
         }
-        if (enable_threads and t.os.tag != .windows) {
+        if (enable_threads) {
             installHeader(b, gc, "gc/gc_pthread_redirects.h");
         }
         if (build_cord) {

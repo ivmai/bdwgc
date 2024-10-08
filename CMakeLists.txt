@@ -806,7 +806,7 @@ if (install_headers)
     install(FILES include/gc/gc_gcj.h
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
   endif()
-  if (enable_threads AND CMAKE_USE_PTHREADS_INIT)
+  if (enable_threads)
     install(FILES include/gc/gc_pthread_redirects.h
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
   endif()
