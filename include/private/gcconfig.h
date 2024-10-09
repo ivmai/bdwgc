@@ -950,7 +950,8 @@ extern int _end[];
 #  define HEURISTIC1
 #  define NO_PTHREAD_GETATTR_NP
 #  define USE_MMAP_ANON
-#  define GETPAGESIZE() 65536 /* FIXME: Not real page size */
+/* FIXME: Not real page size */
+#  define GETPAGESIZE() 65536
 #  define MAX_NACL_GC_THREADS 1024
 #endif /* NACL */
 
@@ -2363,9 +2364,11 @@ extern int __data_start[] __attribute__((__weak__));
 #    define OS_TYPE "NOSYS"
 extern char etext[];
 #    define DATASTART ((ptr_t)etext)
+/* FIXME: STACKBOTTOM is wrong! */
 extern char **environ;
-#    define STACKBOTTOM ((ptr_t)environ) /* FIXME: this is wrong! */
-#    define GETPAGESIZE() 4096 /* TODO: support 64K page size */
+#    define STACKBOTTOM ((ptr_t)environ)
+/* TODO: support 64K page size */
+#    define GETPAGESIZE() 4096
 #  endif
 #endif /* RISCV */
 
