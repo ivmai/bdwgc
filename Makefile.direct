@@ -113,7 +113,10 @@ OBJS= allchblk.o alloc.o backgraph.o blacklst.o checksums.o \
   pthread_support.o ptr_chck.o reclaim.o specific.o thread_local_alloc.o \
   typd_mlc.o win32_threads.o
 
-NODIST_OBJS= atomic_ops.o atomic_ops_sysdeps.o
+NODIST_OBJS= atomic_ops.o
+
+# Note: comment out the following line if compiler does not support .S files.
+NODIST_OBJS+= atomic_ops_sysdeps.o
 
 # Almost matches OBJS but also includes dyn_load.c.
 CSRCS= allchblk.c alloc.c backgraph.c blacklst.c checksums.c \
