@@ -379,10 +379,10 @@ if_not_there$(EXEEXT): $(srcdir)/tools/if_not_there.c
 	$(HOSTCC) $(HOSTCFLAGS) -o $@ $(srcdir)/tools/if_not_there.c
 
 clean:
-	rm -f *.a *.i *.o *.exe tests/*.o cpptest gctest gctest_dyn_link \
-	      setjmp_test mon.out gmon.out a.out core if_not_there if_mach \
-	      base_lib c++ $(CORD_OBJS) cordtest de cords dont_ar_* \
-	      threadlibs *.log cordtst*.tmp
+	rm -f *.a *.i *.o *.com.dbg *.elf *.exe tests/*.o \
+	      cpptest gctest gctest_dyn_link setjmp_test mon.out gmon.out \
+	      a.out core if_not_there if_mach base_lib c++ $(CORD_OBJS) \
+	      cordtest de cords dont_ar_* threadlibs *.log cordtst*.tmp
 	-rm -f *~
 
 gctest$(EXEEXT): tests/gctest.o base_lib $(NODIST_OBJS) $(UTILS)
