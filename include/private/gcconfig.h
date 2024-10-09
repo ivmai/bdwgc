@@ -3048,8 +3048,12 @@ extern ptr_t GC_data_start;
 #if !defined(GC_PTHREADS) && !defined(GC_PTHREADS_PARAMARK)
 #  undef HAVE_PTHREAD_SETNAME_NP_WITH_TID
 #  undef HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG
-#  undef HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID
 #  undef HAVE_PTHREAD_SET_NAME_NP
+#endif
+
+#if !(defined(GC_PTHREADS) || defined(GC_PTHREADS_PARAMARK) \
+      || (defined(MPROTECT_VDB) && defined(DARWIN)))
+#  undef HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID
 #endif
 
 #ifdef USE_RWLOCK
