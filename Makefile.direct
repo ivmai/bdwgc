@@ -100,7 +100,7 @@ CXXFLAGS?=
 CXXFLAGS+= -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
   $(CFLAGS_DEFAULT_MACROS) $(CFLAGS_FOR_PIC) $(CFLAGS_EXTRA)
 
-AR= ar
+AR?= ar
 
 RANLIB= ranlib
 # For EMX, replace "ranlib" with "ar s".
