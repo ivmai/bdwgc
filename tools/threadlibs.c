@@ -48,12 +48,11 @@ int main(void)
           printf("-pthread\n");
 #       endif
 #   endif
-#   if defined(GC_NETBSD_THREADS)
+#   if defined(GC_HPUX_THREADS) || defined(GC_NETBSD_THREADS)
           printf("-lpthread -lrt\n");
 #   endif
-
-#   if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS)
-        printf("-lpthread -lrt\n");
+#   if defined(GC_OSF1_THREADS)
+        printf("-pthread -lrt\n"); /* DOB: must be -pthread, not -lpthread */
 #   endif
 #   if defined(GC_SOLARIS_THREADS)
         printf("-lthread -lposix4\n");
@@ -69,9 +68,6 @@ int main(void)
 #      else
          printf("-lpthreadGC2\n");
 #      endif
-#   endif
-#   if defined(GC_OSF1_THREADS)
-        printf("-pthread -lrt\n"); /* DOB: must be -pthread, not -lpthread */
 #   endif
     /* You need GCC 3.0.3 to build this one!            */
     /* DG/UX native gcc doesn't know what "-pthread" is */
