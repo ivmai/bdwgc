@@ -962,7 +962,7 @@ reverse_test_inner(void *data)
     if (i % 10 == 0)
       fork_a_thread();
 #  else
-    GC_noop1((GC_word)(GC_funcptr_uint)&fork_a_thread);
+    GC_noop1((GC_word)(GC_funcptr_uint)(&fork_a_thread));
 #  endif
 #endif
     /* This maintains the invariant that a always points to a list  */
@@ -1468,9 +1468,7 @@ typed_test(void)
 }
 #endif /* !NO_TYPED_TEST */
 
-#ifdef DBG_HDRS_ALL
-#  define set_print_procs() (void)(A.dummy = 17)
-#else
+#ifndef DBG_HDRS_ALL
 static AO_t fail_count = 0;
 
 static void GC_CALLBACK
@@ -1480,21 +1478,31 @@ fail_proc1(void *arg)
   AO_fetch_and_add1(&fail_count);
 }
 
-static void
-set_print_procs(void)
-{
-  /* Set these global variables just once to avoid TSan false positives. */
-  A.dummy = 17;
-  GC_set_is_valid_displacement_print_proc(fail_proc1);
-  GC_set_is_visible_print_proc(fail_proc1);
-}
-
 #  ifdef THREADS
 #    define TEST_FAIL_COUNT(n) 1
 #  else
 #    define TEST_FAIL_COUNT(n) (fail_count >= (AO_t)(n))
 #  endif
 #endif /* !DBG_HDRS_ALL */
+
+#ifndef NO_CLOCK
+static CLOCK_TYPE start_main_time;
+#endif
+
+static void
+set_print_procs(void)
+{
+  /* Set these global variables just once to avoid TSan false positives. */
+  A.dummy = 17;
+#ifndef DBG_HDRS_ALL
+  GC_set_is_valid_displacement_print_proc(fail_proc1);
+  GC_set_is_visible_print_proc(fail_proc1);
+#endif
+
+#ifndef NO_CLOCK
+  GET_TIME(start_main_time);
+#endif
+}
 
 static void
 uniq(void *p, ...)
@@ -2019,13 +2027,15 @@ check_heap_stats(void)
   size_t max_heap_sz;
   size_t init_heap_sz = initial_heapsize;
   int i;
-#ifndef GC_NO_FINALIZATION
-#  ifdef FINALIZE_ON_DEMAND
+#if !defined(GC_NO_FINALIZATION) && defined(FINALIZE_ON_DEMAND)
   int late_finalize_count = 0;
-#  endif
 #endif
   unsigned obj_count;
+#ifndef NO_CLOCK
+  CLOCK_TYPE curr_time;
 
+  GET_TIME(curr_time);
+#endif
   if (!GC_is_init_called()) {
     GC_printf("GC should be initialized!\n");
     FAIL;
@@ -2225,7 +2235,12 @@ check_heap_stats(void)
 #else
   GC_printf("Completed %u collections\n", (unsigned)GC_get_gc_no());
 #endif
+#ifdef NO_CLOCK
   GC_printf("Collector appears to work\n");
+#else
+  GC_printf("Collector appears to work (testing done in %lu ms)\n",
+            MS_TIME_DIFF(curr_time, start_main_time));
+#endif
 }
 
 static void GC_CALLBACK
@@ -2286,7 +2301,7 @@ enable_incremental_mode(void)
 }
 
 #if defined(CPPCHECK)
-#  define UNTESTED(sym) GC_noop1((GC_word)(GC_funcptr_uint)&sym)
+#  define UNTESTED(sym) GC_noop1((GC_word)(GC_funcptr_uint)(&sym))
 #endif
 
 #if defined(MSWINCE) && defined(UNDER_CE)
@@ -2342,12 +2357,12 @@ main(void)
   UNUSED_ARG(cmd);
   UNUSED_ARG(n);
 #    if defined(CPPCHECK)
-  GC_noop1((GC_word)(GC_funcptr_uint)&WinMain);
+  GC_noop1((GC_word)(GC_funcptr_uint)(&WinMain));
 #    endif
 #  elif defined(RTEMS)
   UNUSED_ARG(ignord);
 #    if defined(CPPCHECK)
-  GC_noop1((GC_word)(GC_funcptr_uint)&Init);
+  GC_noop1((GC_word)(GC_funcptr_uint)(&Init));
 #    endif
 #  endif
   n_tests = 0;
@@ -2501,7 +2516,7 @@ main(void)
   UNUSED_ARG(cmd);
   UNUSED_ARG(n);
 #    if defined(CPPCHECK)
-  GC_noop1((GC_word)(GC_funcptr_uint)&WinMain);
+  GC_noop1((GC_word)(GC_funcptr_uint)(&WinMain));
 #    endif
 #  endif
 #  if defined(GC_DLL) && !defined(GC_NO_THREADS_DISCOVERY) \
@@ -2541,7 +2556,7 @@ main(void)
     }
   }
 #  else
-  GC_noop1((GC_word)(GC_funcptr_uint)&thr_run_one_test);
+  GC_noop1((GC_word)(GC_funcptr_uint)(&thr_run_one_test));
 #  endif
   run_one_test();
 #  if NTHREADS > 0
