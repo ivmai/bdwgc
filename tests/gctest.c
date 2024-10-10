@@ -2098,7 +2098,11 @@ check_heap_stats(void)
   }
   obj_count = 0;
   (void)GC_call_with_reader_lock(count_reachable_objs, &obj_count, 0);
+#ifdef THREADS
+  GC_printf("Completed %u tests (concurrently)\n", n_tests);
+#else
   GC_printf("Completed %u tests\n", n_tests);
+#endif
   GC_printf("Allocated %d collectable objects\n", (int)collectable_count);
   GC_printf("Allocated %d uncollectable objects\n", (int)uncollectable_count);
   GC_printf("Allocated %d atomic objects\n", (int)atomic_count);
