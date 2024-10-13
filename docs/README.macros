@@ -140,56 +140,16 @@ SUNOS5SIGS      Solaris-like signal handling.  This is probably misnamed,
   since it really doesn't guarantee much more than POSIX.  Currently set only
   for DRSNX, FreeBSD, HP/UX and Solaris.
 
-GC_THREADS      Should set the appropriate one of the below macros,
-  except GC_WIN32_PTHREADS, which must be set explicitly.  Tested by gc.h.
-  IMPORTANT: GC_THREADS macro (or the relevant platform-specific deprecated
-  one) must normally also be defined by the client before including gc.h.
-  This redefines thread primitives to invoke the GC_ wrappers instead.
-  Alternatively, linker-based symbol interception can be used on a few
-  platforms.
+GC_THREADS      Enables support for native threads.  Tested by gc.h.
+  IMPORTANT: this macro must normally be defined by the client before
+  including gc.h, thus redefining thread primitives to invoke the GC_ wrappers
+  instead.  Alternatively, linker-based symbol interception can be used on
+  a few platforms.
 
-GC_SOLARIS_THREADS      Enables support for Solaris pthreads.
-  Must also define _REENTRANT.  Deprecated, use GC_THREADS instead.
-
-GC_IRIX_THREADS         Enables support for Irix pthreads.  See README.sgi.
-  Deprecated, use GC_THREADS instead.
-
-GC_HPUX_THREADS         Enables support for HP/UX 11 pthreads.
-  Also requires _REENTRANT or _POSIX_C_SOURCE=199506L. See README.hp.
-  Deprecated, use GC_THREADS instead.
-
-GC_LINUX_THREADS        Enables support for Xavier Leroy's Linux threads
-  or NPTL threads.  See README.linux.  _REENTRANT may also be required.
-  Deprecated, use GC_THREADS instead.
-
-GC_OSF1_THREADS         Enables support for Tru64 pthreads.  Deprecated, use
-  GC_THREADS instead.
-
-GC_FREEBSD_THREADS      Enables support for FreeBSD pthreads.  Appeared to run
-  into some underlying thread problems.  Deprecated, use GC_THREADS instead.
-
-GC_NETBSD_THREADS       Enables support for NetBSD pthreads.  Deprecated, use
-  GC_THREADS instead.
-
-GC_OPENBSD_THREADS      Enables support for OpenBSD pthreads.  Deprecated,
-  use GC_THREADS instead.
-
-GC_DARWIN_THREADS       Enables support for Mac OS X pthreads.  Deprecated,
-  use GC_THREADS instead.
-
-GC_AIX_THREADS  Enables support for IBM AIX threads.  Deprecated, use
-  GC_THREADS instead.
-
-GC_DGUX386_THREADS      Enables support for DB/UX x86 threads.
-  See README.dgux386.  (Probably has not been tested recently.)  Deprecated,
-  use GC_THREADS instead.
-
-GC_WIN32_THREADS        Enables support for Win32 threads.  Deprecated,
-  use GC_THREADS instead.
-
-GC_WIN32_PTHREADS       Enables support for pthreads-win32 (or other
-  non-Cygwin pthreads library for Windows).  This cannot be enabled
-  automatically by GC_THREADS, which would assume Win32 native threads.
+GC_WIN32_PTHREADS (Win32 only)  Enables support for pthreads-win32 (or other
+  non-Cygwin pthreads library for Windows).  This should be specified instead
+  of (or in addition to) GC_THREADS, otherwise Win32 native threads API will
+  be used.
 
 PTW32_STATIC_LIB        Causes the static version of the Mingw pthreads
   library to be used.  Requires GC_WIN32_PTHREADS.

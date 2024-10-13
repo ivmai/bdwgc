@@ -197,10 +197,8 @@ In addition, `LOCK` and `UNLOCK` must be implemented in
 The easiest case is probably a new pthreads platform on which threads can be
 stopped with signals. In this case, the changes involve:
 
-  1. Introducing a suitable `GC_xxx_THREADS` macro, which should
-  be automatically defined by `gc_config_macros.h` in the right cases.
-  It should also result in a definition of `GC_PTHREADS`, as for the existing
-  cases.
+  1. Ensuring that if `GC_THREADS` macro is defined by the build scripts, then
+  it results in a definition of `GC_PTHREADS` in `include/private/gcconfig.h`.
   2. Ensuring that the `atomic_ops` package at least minimally
   supports the platform. If incremental GC is needed, or if pthread locks
   do not perform adequately as the allocator lock, you will probably need
