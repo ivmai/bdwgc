@@ -440,11 +440,12 @@ typedef long ptrdiff_t;
 #      endif
 #    endif
 
-#    if !defined(GC_HAVE_PTHREAD_EXIT) && !defined(HOST_ANDROID) \
-        && !defined(__ANDROID__)                                 \
-        && (defined(GC_LINUX_THREADS) || defined(GC_SOLARIS_THREADS))
+#    if !defined(GC_HAVE_PTHREAD_EXIT)                           \
+        && ((defined(GC_LINUX_THREADS) && !defined(HOST_ANDROID) \
+             && !defined(__ANDROID__))                           \
+            || defined(GC_SOLARIS_THREADS) || defined(__COSMOPOLITAN__))
+/* Intercept pthread_exit where available and needed.   */
 #      define GC_HAVE_PTHREAD_EXIT
-/* Intercept pthread_exit on Linux and Solaris.     */
 #      if GC_GNUC_PREREQ(2, 7)
 #        define GC_PTHREAD_EXIT_ATTRIBUTE __attribute__((__noreturn__))
 #      elif defined(__NORETURN) /* used in Solaris */
