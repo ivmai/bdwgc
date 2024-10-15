@@ -809,7 +809,11 @@ EXTERN_C_BEGIN
 
 #ifdef COSMO
 #  define OS_TYPE "COSMO"
-#  define LINUX_STACKBOTTOM
+#  define HEURISTIC1 /* relies on pthread_attr_getstack actually */
+#  define STACK_GRAN 0x1000000
+#  ifndef USE_GET_STACKBASE_FOR_MAIN
+#    define USE_GET_STACKBASE_FOR_MAIN
+#  endif
 extern int __data_start[] __attribute__((__weak__));
 #  define DATASTART ((ptr_t)__data_start)
 extern int _end[];
@@ -3122,8 +3126,8 @@ extern ptr_t GC_data_start;
 #endif
 
 /* Outline pthread primitives to use in GC_get_[main_]stack_base.       */
-#if ((defined(FREEBSD) && defined(__GLIBC__)) /* kFreeBSD */ \
-     || defined(LINUX) || defined(KOS) || defined(NETBSD))   \
+#if ((defined(FREEBSD) && defined(__GLIBC__)) /* kFreeBSD */                 \
+     || defined(COSMO) || defined(LINUX) || defined(KOS) || defined(NETBSD)) \
     && !defined(NO_PTHREAD_GETATTR_NP)
 #  define HAVE_PTHREAD_GETATTR_NP 1
 #elif defined(FREEBSD) && !defined(__GLIBC__) \
