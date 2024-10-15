@@ -1112,7 +1112,7 @@ GC_get_nprocs(void)
   return nprocs > 0 ? nprocs : 1;
 }
 
-#  elif defined(LINUX) /* && !HOST_ANDROID */
+#  elif defined(LINUX)
 /* Return the number of processors. */
 STATIC int
 GC_get_nprocs(void)
