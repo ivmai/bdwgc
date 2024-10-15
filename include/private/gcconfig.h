@@ -819,6 +819,13 @@ extern int __data_start[] __attribute__((__weak__));
 extern int _end[];
 #  define DATAEND ((ptr_t)_end)
 #  define USE_MMAP_ANON
+#  ifndef HAVE_CLOCK_GETTIME
+#    define HAVE_CLOCK_GETTIME 1
+#  endif
+#  ifndef HAVE_PTHREAD_SETNAME_NP_WITH_TID
+/* Normally should be defined by configure, etc. */
+#    define HAVE_PTHREAD_SETNAME_NP_WITH_TID 1
+#  endif
 #endif /* COSMO */
 
 #ifdef DARWIN
