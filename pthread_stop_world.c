@@ -160,7 +160,7 @@ STATIC GC_bool GC_retry_signals = FALSE;
  * pointer(s) and acknowledge.
  */
 #    ifndef SIG_THR_RESTART
-#      ifdef SUSPEND_HANDLER_NO_CONTEXT
+#      if defined(SUSPEND_HANDLER_NO_CONTEXT) || defined(GC_REUSE_SIG_SUSPEND)
 /* Reuse the suspend signal. */
 #        define SIG_THR_RESTART SIG_SUSPEND
 #      elif defined(HPUX) || defined(NETBSD) || defined(OSF1) \

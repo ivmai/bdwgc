@@ -400,7 +400,14 @@ GC_BUILTIN_ATOMIC       Use GCC atomic intrinsics instead of libatomic_ops
 GC_ALWAYS_MULTITHREADED     Force multi-threaded mode at GC initialization.
 
 GC_ENABLE_SUSPEND_THREAD (Linux only)   Turn on thread suspend/resume API
-support.
+  support.
+
+GC_REUSE_SIG_SUSPEND (Linux only)   Use same signal number to suspend and
+  resume threads.  Alternatively, the same effect could be achieved by
+  calling GC_set_suspend_signal(GC_get_thr_restart_signal()) at process
+  initialization time (before GC_INIT).  However, use of same signal might
+  slightly increase the overall time of resuming threads on some
+  architectures (because of an extra context save when resuming a thread).
 
 GC_WINMAIN_REDIRECT (Win32 only)        Redirect (rename) an application
   WinMain to GC_WinMain; implement the "real" WinMain which starts a new
