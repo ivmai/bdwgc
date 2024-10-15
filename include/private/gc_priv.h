@@ -2145,17 +2145,12 @@ ptr_t GC_save_regs_in_stack(void);
 #  define LOAD_PTR_OR_CONTINUE(v, p) (void)(v = *(ptr_t *)(p))
 #endif /* !E2K */
 
-#ifdef GC_DARWIN_THREADS
+#if defined(DARWIN) && defined(THREADS)
 /* If p points to an object, mark it and push contents on the     */
 /* mark stack.  Pointer recognition test always accepts interior  */
 /* pointers, i.e. this is appropriate for pointers found on the   */
 /* thread stack.                                                  */
 void GC_push_one(word p);
-#endif
-
-#ifdef GC_WIN32_THREADS
-/* Same as GC_push_one but for a sequence of registers.       */
-GC_INNER void GC_push_many_regs(const word *regs, unsigned count);
 #endif
 
 /* Mark and push (i.e. gray) a single object p onto the main    */
@@ -2652,7 +2647,7 @@ GC_INNER GC_bool GC_is_vdb_for_static_roots(void);
 
 #  ifdef CAN_HANDLE_FORK
 #    if defined(PROC_VDB) || defined(SOFT_VDB) \
-        || (defined(MPROTECT_VDB) && defined(GC_DARWIN_THREADS))
+        || (defined(MPROTECT_VDB) && defined(DARWIN) && defined(THREADS))
 /* Update pid-specific resources (like /proc file descriptors)    */
 /* needed by the dirty bits implementation after fork in the      */
 /* child process.                                                 */
@@ -2893,21 +2888,20 @@ GC_INNER void GC_start_debugging_inner(void);
 GC_INNER void *GC_store_debug_info_inner(void *p, size_t sz, const char *str,
                                          int linenum);
 
-#if defined(REDIRECT_MALLOC) && !defined(REDIRECT_MALLOC_IN_HEADER) \
-    && defined(GC_LINUX_THREADS)
+#if defined(REDIR_MALLOC_AND_LINUXTHREADS) \
+    && !defined(REDIRECT_MALLOC_IN_HEADER)
 GC_INNER void GC_init_lib_bounds(void);
 #else
 #  define GC_init_lib_bounds() (void)0
 #endif
 
-#ifdef REDIRECT_MALLOC
-#  ifdef GC_LINUX_THREADS
-GC_INNER GC_bool GC_text_mapping(const char *nm, ptr_t *startp,
-                                 ptr_t *endp); /* from os_dep.c */
-#  endif
-#elif defined(USE_WINALLOC)
+#ifdef REDIR_MALLOC_AND_LINUXTHREADS
+GC_INNER GC_bool GC_text_mapping(const char *nm, ptr_t *startp, ptr_t *endp);
+#endif
+
+#if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
 GC_INNER void GC_add_current_malloc_heap(void);
-#endif /* USE_WINALLOC && !REDIRECT_MALLOC */
+#endif
 
 #ifdef MAKE_BACK_GRAPH
 GC_INNER void GC_build_back_graph(void);
@@ -2925,7 +2919,10 @@ GC_INNER void GC_init_win32(void);
 GC_INNER void *GC_roots_present(ptr_t);
 #endif
 
-#ifdef GC_WIN32_THREADS
+#if defined(GC_WIN32_THREADS)
+/* Same as GC_push_one but for a sequence of registers.       */
+GC_INNER void GC_push_many_regs(const word *regs, unsigned count);
+
 /* Find stack with the lowest address which overlaps the interval     */
 /* [start, limit).  Return stack bounds in *plo and *phi.  If no such */
 /* stack is found, both *phi and *plo will be set to an address       */
@@ -2942,7 +2939,7 @@ GC_INNER GC_bool GC_started_thread_while_stopped(void);
 #  endif
 #endif /* GC_WIN32_THREADS */
 
-#if defined(GC_DARWIN_THREADS) && defined(MPROTECT_VDB)
+#if defined(MPROTECT_VDB) && defined(DARWIN) && defined(THREADS)
 GC_INNER void GC_mprotect_stop(void);
 GC_INNER void GC_mprotect_resume(void);
 #  ifndef GC_NO_THREADS_DISCOVERY
@@ -3001,7 +2998,7 @@ void *GC_find_limit(void *, int);
 #  if defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES) \
       || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)     \
       || (defined(CHECK_SOFT_VDB) && defined(MPROTECT_VDB))       \
-      || (defined(REDIRECT_MALLOC) && defined(GC_LINUX_THREADS))
+      || defined(REDIR_MALLOC_AND_LINUXTHREADS)
 GC_INNER const char *GC_parse_map_entry(const char *maps_ptr, ptr_t *start,
                                         ptr_t *end, const char **prot,
                                         unsigned *maj_dev,
@@ -3136,8 +3133,7 @@ GC_INNER void GC_start_mark_threads_inner(void);
 /* use some synchronous one instead (which is again unlikely to be  */
 /* used by clients directly).                                       */
 #    define SIG_SUSPEND SIGSYS
-#  elif (defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)) \
-      && !defined(GC_USESIGRT_SIGNALS)
+#  elif (defined(DGUX) || defined(LINUX)) && !defined(GC_USESIGRT_SIGNALS)
 #    if defined(SPARC) && !defined(SIGPWR)
 /* Linux/SPARC doesn't properly define SIGPWR in <signal.h>.      */
 /* It is aliased to SIGLOST in asm/signal.h, though.              */
@@ -3146,14 +3142,13 @@ GC_INNER void GC_start_mark_threads_inner(void);
 /* LinuxThreads itself uses SIGUSR1 and SIGUSR2.                  */
 #      define SIG_SUSPEND SIGPWR
 #    endif
-#  elif defined(GC_FREEBSD_THREADS) && defined(__GLIBC__) \
-      && !defined(GC_USESIGRT_SIGNALS)
+#  elif defined(FREEBSD) && defined(__GLIBC__) && !defined(GC_USESIGRT_SIGNALS)
 #    define SIG_SUSPEND (32 + 6)
-#  elif (defined(GC_FREEBSD_THREADS) || defined(HURD) || defined(RTEMS)) \
+#  elif (defined(FREEBSD) || defined(HURD) || defined(RTEMS)) \
       && !defined(GC_USESIGRT_SIGNALS)
 #    define SIG_SUSPEND SIGUSR1
 /* SIGTSTP and SIGCONT could be used alternatively on FreeBSD.  */
-#  elif defined(GC_OPENBSD_THREADS) && !defined(GC_USESIGRT_SIGNALS)
+#  elif defined(OPENBSD) && !defined(GC_USESIGRT_SIGNALS)
 #    define SIG_SUSPEND SIGXFSZ
 #  elif defined(_SIGRTMIN) && !defined(CPPCHECK)
 #    define SIG_SUSPEND _SIGRTMIN + 6

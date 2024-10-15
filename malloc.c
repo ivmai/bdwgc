@@ -505,7 +505,7 @@ malloc(size_t lb)
   /* It might help to manually inline the GC_malloc call here.        */
   /* But any decent compiler should reduce the extra procedure call   */
   /* to at most a jump instruction in this case.                      */
-#  if defined(I386) && defined(GC_SOLARIS_THREADS)
+#  if defined(SOLARIS) && defined(THREADS) && defined(I386)
   /* Thread initialization can call malloc before we are ready for. */
   /* It is not clear that this is enough to help matters.           */
   /* The thread implementation may well call malloc at other        */
@@ -516,7 +516,7 @@ malloc(size_t lb)
   return (void *)REDIRECT_MALLOC_F(lb);
 }
 
-#  if defined(GC_LINUX_THREADS)
+#  ifdef REDIR_MALLOC_AND_LINUXTHREADS
 #    ifdef HAVE_LIBPTHREAD_SO
 STATIC ptr_t GC_libpthread_start = NULL;
 STATIC ptr_t GC_libpthread_end = NULL;
@@ -558,7 +558,7 @@ GC_init_lib_bounds(void)
   RESTORE_CANCEL(cancel_state);
   lib_bounds_set = TRUE;
 }
-#  endif /* GC_LINUX_THREADS */
+#  endif /* REDIR_MALLOC_AND_LINUXTHREADS */
 
 void *
 calloc(size_t n, size_t lb)
@@ -566,7 +566,7 @@ calloc(size_t n, size_t lb)
   if (EXPECT((lb | n) > GC_SQRT_SIZE_MAX, FALSE) /* fast initial test */
       && lb && n > GC_SIZE_MAX / lb)
     return (*GC_get_oom_fn())(GC_SIZE_MAX); /* n*lb overflow */
-#  if defined(GC_LINUX_THREADS)
+#  ifdef REDIR_MALLOC_AND_LINUXTHREADS
   /* The linker may allocate some memory that is only pointed to by */
   /* mmapped thread stacks.  Make sure it is not collectible.       */
   {
@@ -684,8 +684,8 @@ GC_free(void *p)
   hhdr = HDR(p);
 #if defined(REDIRECT_MALLOC)                                           \
     && ((defined(NEED_CALLINFO) && defined(GC_HAVE_BUILTIN_BACKTRACE)) \
-        || defined(GC_SOLARIS_THREADS) || defined(GC_LINUX_THREADS)    \
-        || defined(MSWIN32))
+        || defined(REDIR_MALLOC_AND_LINUXTHREADS)                      \
+        || (defined(SOLARIS) && defined(THREADS)) || defined(MSWIN32))
   /* This might be called indirectly by GC_print_callers to free  */
   /* the result of backtrace_symbols.                             */
   /* For Solaris, we have to redirect malloc calls during         */
@@ -729,7 +729,8 @@ free(void *p)
 #  ifdef IGNORE_FREE
   UNUSED_ARG(p);
 #  else
-#    if defined(GC_LINUX_THREADS) && !defined(USE_PROC_FOR_LIBRARIES)
+#    if defined(REDIR_MALLOC_AND_LINUXTHREADS) \
+        && !defined(USE_PROC_FOR_LIBRARIES)
   /* Don't bother with initialization checks.  If nothing         */
   /* has been initialized, the check fails, and that's safe,      */
   /* since we have not allocated uncollectible objects neither.   */

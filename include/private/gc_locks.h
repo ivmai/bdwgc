@@ -38,14 +38,13 @@ extern void GC_unlock(void);
 #    define UNCOND_UNLOCK() GC_unlock()
 #  endif
 
-#  if (!defined(AO_HAVE_test_and_set_acquire) || defined(GC_RTEMS_PTHREADS) \
-       || defined(SN_TARGET_PS3) || defined(GC_WIN32_THREADS)               \
-       || defined(BASE_ATOMIC_OPS_EMULATED) || defined(LINT2)               \
-       || defined(USE_RWLOCK))                                              \
+#  if (!defined(AO_HAVE_test_and_set_acquire) || defined(GC_WIN32_THREADS) \
+       || defined(LINT2) || defined(RTEMS) || defined(SN_TARGET_PS3)       \
+       || defined(BASE_ATOMIC_OPS_EMULATED) || defined(USE_RWLOCK))        \
       && defined(GC_PTHREADS)
 #    define USE_PTHREAD_LOCKS
 #    undef USE_SPIN_LOCK
-#    if (defined(LINT2) || defined(GC_WIN32_THREADS) || defined(USE_RWLOCK)) \
+#    if (defined(GC_WIN32_THREADS) || defined(LINT2) || defined(USE_RWLOCK)) \
         && !defined(NO_PTHREAD_TRYLOCK)
 /* pthread_mutex_trylock may not win in GC_lock on Win32, */
 /* due to builtin support for spinning first?             */
@@ -304,7 +303,7 @@ GC_INNER void GC_lock(void);
            || GC_lock_holder != NUMERIC_THREAD_ID(pthread_self()))
 #      endif
 #    endif /* GC_ASSERTIONS */
-#    ifndef GC_WIN32_THREADS
+#    if !defined(GC_WIN32_THREADS)
 GC_EXTERN volatile unsigned char GC_collecting;
 #      ifdef AO_HAVE_char_store
 #        define ENTER_GC() AO_char_store(&GC_collecting, TRUE)

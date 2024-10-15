@@ -1513,8 +1513,7 @@ GC_ExitThread(DWORD dwExitCode)
   ExitThread(dwExitCode);
 }
 
-#  if !defined(CYGWIN32) && !defined(MSWINCE) && !defined(MSWIN_XBOX1) \
-      && !defined(NO_CRT)
+#  if defined(MSWIN32) && !defined(NO_CRT)
 GC_API GC_uintptr_t GC_CALL
 GC_beginthreadex(void *security, unsigned stack_size,
                  unsigned(__stdcall *start_address)(void *), void *arglist,
@@ -1574,7 +1573,7 @@ GC_endthreadex(unsigned retval)
     (void)GC_unregister_my_thread();
   _endthreadex(retval);
 }
-#  endif /* !CYGWIN32 && !MSWINCE && !MSWIN_XBOX1 && !NO_CRT */
+#  endif /* MSWIN32 && !NO_CRT */
 
 #  ifdef GC_WINMAIN_REDIRECT
 /* This might be useful on WinCE.  Shouldn't be used with GC_DLL.     */

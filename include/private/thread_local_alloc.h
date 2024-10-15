@@ -78,7 +78,7 @@ EXTERN_C_BEGIN
         && (GC_GNUC_PREREQ(4, 4) || GC_CLANG_PREREQ(3, 9))
 #      define USE_COMPILER_TLS
 
-#    elif defined(GC_HPUX_THREADS)
+#    elif defined(HPUX)
 #      ifdef __GNUC__
 /* Empirically, as of gcc 3.3, USE_COMPILER_TLS doesn't work. */
 #        define USE_PTHREAD_SPECIFIC
@@ -86,9 +86,8 @@ EXTERN_C_BEGIN
 #        define USE_COMPILER_TLS
 #      endif
 
-#    elif defined(GC_IRIX_THREADS) || defined(GC_OPENBSD_THREADS)  \
-        || defined(GC_SOLARIS_THREADS) || defined(NN_PLATFORM_CTR) \
-        || defined(NN_BUILD_TARGET_PLATFORM_NX)
+#    elif defined(IRIX5) || defined(OPENBSD) || defined(SOLARIS) \
+        || defined(NN_PLATFORM_CTR) || defined(NN_BUILD_TARGET_PLATFORM_NX)
 #      define USE_CUSTOM_SPECIFIC /* Use our own. */
 
 #    else

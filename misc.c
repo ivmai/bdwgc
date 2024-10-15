@@ -19,7 +19,7 @@
 #include <limits.h>
 #include <stdarg.h>
 
-#ifdef GC_SOLARIS_THREADS
+#if defined(SOLARIS) && defined(THREADS)
 #  include <sys/syscall.h>
 #endif
 
@@ -1375,15 +1375,13 @@ GC_init(void)
   GC_exclude_static_roots_inner(beginGC_objfreelist, endGC_objfreelist);
   GC_exclude_static_roots_inner(beginGC_aobjfreelist, endGC_aobjfreelist);
 #endif
-#if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
-  /* TODO: USE_PROC_FOR_LIBRARIES+GC_LINUX_THREADS performs poorly! */
-  /* If thread stacks are cached, they tend to be scanned in      */
-  /* entirety as part of the root set.  This will grow them to    */
-  /* maximum size, and is generally not desirable.                */
+#if defined(USE_PROC_FOR_LIBRARIES) && defined(LINUX) && defined(THREADS)
+  /* TODO: USE_PROC_FOR_LIBRARIES with LinuxThreads performs poorly!    */
+  /* If thread stacks are cached, they tend to be scanned in entirety   */
+  /* as part of the root set.  This will grow them to maximum size, and */
+  /* is generally not desirable.                                        */
 #endif
-#if !defined(THREADS) || defined(GC_PTHREADS) || defined(NN_PLATFORM_CTR) \
-    || defined(NINTENDO_SWITCH) || defined(GC_WIN32_THREADS)              \
-    || defined(GC_SOLARIS_THREADS)
+#if !defined(THREADS) || !(defined(SN_TARGET_PS3) || defined(SN_TARGET_PSP2))
   if (GC_stackbottom == 0) {
     GC_stackbottom = GC_get_main_stack_base();
 #  if (defined(LINUX) || defined(HPUX)) && defined(IA64)
@@ -1489,7 +1487,7 @@ GC_init(void)
   if (GC_all_interior_pointers)
     GC_initialize_offsets();
   GC_register_displacement_inner(0);
-#if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC)
+#ifdef REDIR_MALLOC_AND_LINUXTHREADS
   if (!GC_all_interior_pointers) {
     /* TLS ABI uses pointer-sized offsets for dtv. */
     GC_register_displacement_inner(sizeof(void *));
@@ -1946,7 +1944,7 @@ GC_write(int fd, const char *buf, size_t len)
   while (bytes_written < len) {
     int result;
 
-#    ifdef GC_SOLARIS_THREADS
+#    if defined(SOLARIS) && defined(THREADS)
     result = syscall(SYS_write, fd, buf + bytes_written, len - bytes_written);
 #    elif defined(_MSC_VER)
     result = _write(fd, buf + bytes_written, (unsigned)(len - bytes_written));

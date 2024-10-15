@@ -31,7 +31,7 @@
 #ifdef THREADS
 
 #  ifdef GC_PTHREADS
-#    if defined(GC_DARWIN_THREADS) \
+#    if defined(DARWIN) \
         || (defined(GC_WIN32_THREADS) && defined(EMULATE_PTHREAD_SEMAPHORE))
 #      include "private/darwin_semaphore.h"
 #    elif !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
@@ -40,11 +40,11 @@
 #    include <errno.h>
 #  endif /* GC_PTHREADS */
 
-#  ifndef GC_WIN32_THREADS
+#  if !defined(GC_WIN32_THREADS)
 #    include <sched.h>
 #    include <time.h>
 #    if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
-#      if !defined(GC_RTEMS_PTHREADS)
+#      ifndef RTEMS
 #        include <sys/mman.h>
 #      endif
 #      include <fcntl.h>
@@ -63,21 +63,17 @@
 #    include <alloca.h>
 #  endif
 
-#  if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS)
+#  if defined(DARWIN) || defined(ANY_BSD)
+#    if defined(NETBSD) || defined(OPENBSD)
+#      include <sys/param.h>
+#    endif
 #    include <sys/sysctl.h>
-#  endif
-
-#  if defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
-#    include <sys/param.h>
-#    include <sys/sysctl.h>
-#  endif
-
-#  if defined(GC_DGUX386_THREADS)
+#  elif defined(DGUX)
 #    include <sys/_int_psem.h>
 #    include <sys/dg_sys_info.h>
 /* sem_t is an uint in DG/UX */
 typedef unsigned int sem_t;
-#  endif /* GC_DGUX386_THREADS */
+#  endif
 
 #  if defined(GC_PTHREADS) && !defined(SN_TARGET_ORBIS) \
       && !defined(SN_TARGET_PSP2)
@@ -94,7 +90,7 @@ typedef unsigned int sem_t;
 #    endif
 #    undef pthread_join
 #    undef pthread_detach
-#    if defined(GC_OSF1_THREADS) && defined(_PTHREAD_USE_MANGLED_NAMES_) \
+#    if defined(OSF1) && defined(_PTHREAD_USE_MANGLED_NAMES_) \
         && !defined(_PTHREAD_USE_PTDNAM_)
 /* Restore the original mangled names on Tru64 UNIX.        */
 #      define pthread_create __pthread_create
@@ -160,7 +156,7 @@ static GC_pthread_exit_t REAL_FUNC(pthread_exit);
 #      endif
 #    else
 #      define WRAP_FUNC(f) GC_##f
-#      ifdef GC_DGUX386_THREADS
+#      ifdef DGUX
 #        define REAL_FUNC(f) __d10_##f
 #      else
 #        define REAL_FUNC(f) f
@@ -360,7 +356,7 @@ GC_INNER_WIN32THREAD ptr_t GC_marker_sp[MAX_MARKERS - 1] = { 0 };
 static ptr_t marker_bsp[MAX_MARKERS - 1] = { 0 };
 #    endif
 
-#    if defined(GC_DARWIN_THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
+#    if defined(DARWIN) && !defined(GC_NO_THREADS_DISCOVERY)
 static mach_port_t marker_mach_threads[MAX_MARKERS - 1] = { 0 };
 
 /* Used only by GC_suspend_thread_list().   */
@@ -374,7 +370,7 @@ GC_is_mach_marker(thread_act_t thread)
   }
   return FALSE;
 }
-#    endif /* GC_DARWIN_THREADS */
+#    endif /* DARWIN && !GC_NO_THREADS_DISCOVERY */
 
 #    ifdef HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG
 /* For NetBSD.      */
@@ -495,7 +491,7 @@ unsigned __stdcall GC_mark_thread(void *id)
 #    if defined(IA64) && defined(USE_PROC_FOR_LIBRARIES)
   marker_bsp[id_n] = GC_save_regs_in_stack();
 #    endif
-#    if defined(GC_DARWIN_THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
+#    if defined(DARWIN) && !defined(GC_NO_THREADS_DISCOVERY)
   marker_mach_threads[id_n] = mach_thread_self();
 #    endif
 #    if !defined(GC_PTHREADS_PARAMARK)
@@ -879,7 +875,7 @@ GC_delete_thread(GC_thread t)
       GC_dirty(prev);
     }
     if (EXPECT(p != &first_thread, TRUE)) {
-#  ifdef GC_DARWIN_THREADS
+#  ifdef DARWIN
       mach_port_deallocate(mach_task_self(), p->mach_thread);
 #  endif
       GC_ASSERT(p->crtn != &first_crtn);
@@ -1094,12 +1090,11 @@ GC_greatest_stack_base_below(ptr_t bound)
 #    define STAT_READ read
 #  endif
 
-#  ifdef GC_HPUX_THREADS
+#  ifdef HPUX
 #    define GC_get_nprocs() pthread_num_processors_np()
 
-#  elif defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS)       \
-      || defined(GC_HAIKU_THREADS) || defined(GC_SOLARIS_THREADS) \
-      || defined(HURD) || defined(HOST_ANDROID) || defined(NACL)
+#  elif defined(AIX) || defined(HAIKU) || defined(HOST_ANDROID) \
+      || defined(HURD) || defined(NACL) || defined(OSF1) || defined(SOLARIS)
 GC_INLINE int
 GC_get_nprocs(void)
 {
@@ -1108,7 +1103,7 @@ GC_get_nprocs(void)
   return nprocs > 0 ? nprocs : 1;
 }
 
-#  elif defined(GC_IRIX_THREADS)
+#  elif defined(IRIX5)
 GC_INLINE int
 GC_get_nprocs(void)
 {
@@ -1117,7 +1112,7 @@ GC_get_nprocs(void)
   return nprocs > 0 ? nprocs : 1;
 }
 
-#  elif defined(GC_LINUX_THREADS) /* && !HOST_ANDROID && !NACL */
+#  elif defined(LINUX) /* && !HOST_ANDROID */
 /* Return the number of processors. */
 STATIC int
 GC_get_nprocs(void)
@@ -1167,7 +1162,7 @@ GC_get_nprocs(void)
   return result;
 }
 
-#  elif defined(GC_DGUX386_THREADS)
+#  elif defined(DGUX)
 /* Return the number of processors, or i <= 0 if it can't be determined. */
 STATIC int
 GC_get_nprocs(void)
@@ -1188,8 +1183,7 @@ GC_get_nprocs(void)
   return numCpus;
 }
 
-#  elif defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS) \
-      || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
+#  elif defined(ANY_BSD) || defined(DARWIN)
 STATIC int
 GC_get_nprocs(void)
 {
@@ -1202,12 +1196,12 @@ GC_get_nprocs(void)
 }
 
 #  else
-/* E.g., GC_RTEMS_PTHREADS.   */
+/* E.g., RTEMS. */
 /* TODO: not implemented */
 #    define GC_get_nprocs() 1
-#  endif /* !GC_LINUX_THREADS && !GC_DARWIN_THREADS && ... */
+#  endif
 
-#  if defined(ARM32) && defined(GC_LINUX_THREADS) && !defined(NACL)
+#  if defined(LINUX) && defined(ARM32)
 /* Some buggy Linux/arm kernels show only non-sleeping CPUs in        */
 /* /proc/stat (and /proc/cpuinfo), so another data system source is   */
 /* tried first.  Result <= 0 on error.                                */
@@ -1247,7 +1241,7 @@ GC_get_nprocs_present(void)
   /* Skip "0-" and parse max_cpu_num. */
   return atoi(&stat_buf[2]) + 1;
 }
-#  endif /* ARM32 && GC_LINUX_THREADS && !NACL */
+#  endif /* LINUX && ARM32 */
 
 #  if defined(CAN_HANDLE_FORK) && defined(THREAD_SANITIZER)
 #    include "private/gc_pmark.h" /* for MS_NONE */
@@ -1417,7 +1411,7 @@ GC_remove_all_threads_but_me(void)
     ABORT("DuplicateHandle failed");
 #      endif
 #    endif
-#    ifdef GC_DARWIN_THREADS
+#    ifdef DARWIN
   /* Update thread Id after fork (it is OK to call  */
   /* GC_destroy_thread_local and GC_free_inner      */
   /* before update).                                */
@@ -1648,7 +1642,7 @@ GC_INNER GC_bool GC_in_thread_creation = FALSE;
 GC_INNER_WIN32THREAD void
 GC_record_stack_base(GC_stack_context_t crtn, const struct GC_stack_base *sb)
 {
-#  if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_THREADS)
+#  if !defined(DARWIN) && !defined(GC_WIN32_THREADS)
   crtn->stack_ptr = (ptr_t)sb->mem_base;
 #  endif
   if ((crtn->stack_end = (ptr_t)sb->mem_base) == NULL)
@@ -1687,7 +1681,7 @@ GC_register_my_thread_inner(const struct GC_stack_base *sb,
   GC_ASSERT(I_HOLD_LOCK());
   me = GC_new_thread(self_id);
   me->id = self_id;
-#    ifdef GC_DARWIN_THREADS
+#    ifdef DARWIN
   me->mach_thread = mach_thread_self();
 #    endif
   GC_record_stack_base(me->crtn, sb);
@@ -1737,7 +1731,7 @@ GC_thr_init(void)
       GC_nprocs = atoi(nprocs_string);
   }
   if (GC_nprocs <= 0
-#    if defined(ARM32) && defined(GC_LINUX_THREADS) && !defined(NACL)
+#    if defined(LINUX) && defined(ARM32)
       /* Workaround for some Linux/arm kernels.       */
       && (GC_nprocs = GC_get_nprocs_present()) <= 1
 #    endif
@@ -1833,7 +1827,7 @@ GC_thr_init(void)
   }
 #    endif /* BASE_ATOMIC_OPS_EMULATED */
 
-#    ifndef GC_DARWIN_THREADS
+#    ifndef DARWIN
   GC_stop_init();
 #    endif
 
@@ -1962,7 +1956,7 @@ do_blocking_enter(GC_bool *pTopOfStackUnset, GC_thread me)
 #    else
   crtn->stack_ptr = GC_approx_sp();
 #    endif
-#    if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
+#    if defined(DARWIN) && !defined(DARWIN_DONT_PARSE_STACK)
   if (NULL == crtn->topOfStack) {
     /* GC_do_blocking_inner is not called recursively,  */
     /* so topOfStack should be computed now.            */
@@ -1992,7 +1986,7 @@ do_blocking_leave(GC_thread me, GC_bool topOfStackUnset)
     crtn->backing_store_end = NULL;
   }
 #  endif
-#  if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
+#  if defined(DARWIN) && !defined(DARWIN_DONT_PARSE_STACK)
   if (topOfStackUnset) {
     /* Make it unset again.       */
     me->crtn->topOfStack = NULL;
@@ -2439,7 +2433,7 @@ GC_register_my_thread(const struct GC_stack_base *sb)
 #    ifdef NACL
       GC_nacl_initialize_gc_thread(me);
 #    endif
-#    ifdef GC_DARWIN_THREADS
+#    ifdef DARWIN
       /* Reinitialize mach_thread to avoid thread_suspend fail    */
       /* with MACH_SEND_INVALID_DEST error.                       */
       me->mach_thread = mach_thread_self();
@@ -2518,7 +2512,7 @@ GC_wrap_pthread_join(pthread_t thread, void **retval)
   READER_UNLOCK();
 
   result = REAL_FUNC(pthread_join)(thread, retval);
-#    if defined(GC_FREEBSD_THREADS)
+#    ifdef FREEBSD
   /* On FreeBSD, the wrapped pthread_join() sometimes returns       */
   /* (what appears to be) a spurious EINTR which caused the test    */
   /* and real code to fail gratuitously.  Having looked at system   */
@@ -2740,7 +2734,7 @@ GC_wrap_pthread_create(pthread_t *new_thread,
     DISABLE_CANCEL(cancel_state);
 
     while (0 != sem_wait(&si.registered)) {
-#    if defined(GC_HAIKU_THREADS)
+#    ifdef HAIKU
       /* To workaround some bug in Haiku semaphores.    */
       if (EACCES == errno)
         continue;

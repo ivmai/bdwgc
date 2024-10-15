@@ -20,7 +20,7 @@
 
 #include "gc_priv.h"
 
-#if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_THREADS)
+#if !defined(DARWIN) && !defined(GC_WIN32_THREADS) || !defined(GC_PTHREADS)
 #  error darwin_semaphore.h included for improper target
 #endif
 

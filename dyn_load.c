@@ -27,7 +27,7 @@
  * But then not much of anything is safe in the presence of dlclose.
  */
 
-/* BTL: avoid circular redefinition of dlopen if GC_SOLARIS_THREADS defined */
+/* BTL: avoid circular redefinition of dlopen if SOLARIS+THREADS defined */
 #undef GC_MUST_RESTORE_REDEFINED_DLOPEN
 #if defined(GC_PTHREADS) && !defined(GC_NO_DLOPEN) \
     && !defined(GC_NO_THREAD_REDIRECTS) && !defined(GC_USE_LD_WRAP)
@@ -40,7 +40,7 @@
 #  define GC_MUST_RESTORE_REDEFINED_DLOPEN
 #endif /* !GC_NO_DLOPEN */
 
-#if defined(SOLARISDL) && defined(THREADS) && !defined(GC_SOLARIS_THREADS) \
+#if defined(SOLARISDL) && defined(THREADS) && !defined(SOLARIS) \
     && !defined(CPPCHECK)
 #  error Fix mutual exclusion with dlopen
 #endif
@@ -1189,7 +1189,7 @@ GC_register_dynamic_libraries(void)
 
     /* Check if this is the end of the list or if some error occurred. */
     if (status != 0) {
-#    ifdef GC_HPUX_THREADS
+#    if defined(HPUX) && defined(THREADS)
       /* I've seen errno values of 0.  The man page is not clear   */
       /* as to whether errno should get set on a -1 return.        */
       break;

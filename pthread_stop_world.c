@@ -26,8 +26,8 @@
 #    include <errno.h>
 #    include <semaphore.h>
 #    include <signal.h>
-#    include <time.h> /* for nanosleep() */
-#  endif              /* !NACL */
+#    include <time.h>
+#  endif /* !NACL */
 
 #  ifdef E2K
 #    include <alloca.h>
@@ -69,7 +69,7 @@ STATIC __thread GC_thread GC_nacl_gc_thread_self = NULL;
 volatile int GC_nacl_thread_parked[MAX_NACL_GC_THREADS];
 int GC_nacl_thread_used[MAX_NACL_GC_THREADS];
 
-#  else
+#  else /* !NACL */
 
 #    if (!defined(AO_HAVE_load_acquire) || !defined(AO_HAVE_store_release)) \
         && !defined(CPPCHECK)
@@ -163,16 +163,16 @@ STATIC GC_bool GC_retry_signals = FALSE;
 #      ifdef SUSPEND_HANDLER_NO_CONTEXT
 /* Reuse the suspend signal. */
 #        define SIG_THR_RESTART SIG_SUSPEND
-#      elif defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) \
-          || defined(GC_NETBSD_THREADS) || defined(GC_USESIGRT_SIGNALS)
+#      elif defined(HPUX) || defined(NETBSD) || defined(OSF1) \
+          || defined(GC_USESIGRT_SIGNALS)
 #        if defined(_SIGRTMIN) && !defined(CPPCHECK)
 #          define SIG_THR_RESTART _SIGRTMIN + 5
 #        else
 #          define SIG_THR_RESTART SIGRTMIN + 5
 #        endif
-#      elif defined(GC_FREEBSD_THREADS) && defined(__GLIBC__)
+#      elif defined(FREEBSD) && defined(__GLIBC__)
 #        define SIG_THR_RESTART (32 + 5)
-#      elif defined(GC_FREEBSD_THREADS) || defined(HURD) || defined(RTEMS)
+#      elif defined(FREEBSD) || defined(HURD) || defined(RTEMS)
 #        define SIG_THR_RESTART SIGUSR2
 #      else
 #        define SIG_THR_RESTART SIGXCPU
@@ -251,7 +251,7 @@ GC_suspend_sigaction(int sig, siginfo_t *info, void *context)
   int old_errno = errno;
 
   if (sig != GC_sig_suspend) {
-#    if defined(GC_FREEBSD_THREADS)
+#    ifdef FREEBSD
     /* Workaround "deferred signal handling" bug in FreeBSD 9.2.      */
     if (0 == sig)
       return;
@@ -1062,7 +1062,7 @@ GC_suspend_all(void)
 GC_INNER void
 GC_stop_world(void)
 {
-#  if !defined(NACL)
+#  ifndef NACL
   int n_live_threads;
 #  endif
   GC_ASSERT(I_HOLD_LOCK());
@@ -1084,7 +1084,7 @@ GC_stop_world(void)
   }
 #  endif /* PARALLEL_MARK */
 
-#  if defined(NACL)
+#  ifdef NACL
   (void)GC_suspend_all();
 #  else
   /* Note: only concurrent reads are possible.        */
@@ -1400,7 +1400,7 @@ GC_start_world(void)
 GC_INNER void
 GC_stop_init(void)
 {
-#  if !defined(NACL)
+#  ifndef NACL
   struct sigaction act;
   char *str;
 
@@ -1416,7 +1416,7 @@ GC_stop_init(void)
   if (sigfillset(&act.sa_mask) != 0) {
     ABORT("sigfillset failed");
   }
-#    ifdef GC_RTEMS_PTHREADS
+#    ifdef RTEMS
   if (sigprocmask(SIG_UNBLOCK, &act.sa_mask, NULL) != 0) {
     ABORT("sigprocmask failed");
   }

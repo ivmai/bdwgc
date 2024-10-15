@@ -40,11 +40,8 @@ main(void)
 
 pthread_key_t key;
 
-#  ifdef GC_SOLARIS_THREADS
-/* pthread_once_t key_once = { PTHREAD_ONCE_INIT }; */
-#  else
+/* TODO: use pthread_once_t on Solaris. */
 pthread_once_t key_once = PTHREAD_ONCE_INIT;
-#  endif
 
 static void *
 entry(void *arg)
@@ -108,11 +105,9 @@ main(void)
   GC_INIT();
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
-#  ifdef GC_SOLARIS_THREADS
-  make_key();
-#  else
+  /* TODO: call make_key() instead on Solaris. */
   pthread_once(&key_once, make_key);
-#  endif
+
   for (i = 0; i < NTHREADS_INNER; i++) {
     pthread_t t;
     void *res;

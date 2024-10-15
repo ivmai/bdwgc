@@ -759,8 +759,8 @@ GC_debug_free(void *p)
   if (NULL == base) {
 #if defined(REDIRECT_MALLOC)                                           \
     && ((defined(NEED_CALLINFO) && defined(GC_HAVE_BUILTIN_BACKTRACE)) \
-        || defined(GC_LINUX_THREADS) || defined(GC_SOLARIS_THREADS)    \
-        || defined(MSWIN32))
+        || defined(REDIR_MALLOC_AND_LINUXTHREADS)                      \
+        || (defined(SOLARIS) && defined(THREADS)) || defined(MSWIN32))
     /* In some cases, we should ignore objects that do not belong   */
     /* to the GC heap.  See the comment in GC_free.                 */
     if (!GC_is_heap_ptr(p))

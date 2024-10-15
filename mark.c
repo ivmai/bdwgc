@@ -1553,15 +1553,15 @@ GC_push_conditional(void *bottom, void *top, int all)
 }
 #endif /* GC_DISABLE_INCREMENTAL */
 
-#ifdef GC_DARWIN_THREADS
+#if defined(DARWIN) && defined(THREADS)
 void
 GC_push_one(word p)
 {
   GC_PUSH_ONE_STACK((ptr_t)p, MARKED_FROM_REGISTER);
 }
-#endif
+#endif /* DARWIN && THREADS */
 
-#ifdef GC_WIN32_THREADS
+#if defined(GC_WIN32_THREADS)
 GC_INNER void
 GC_push_many_regs(const word *regs, unsigned count)
 {
@@ -1570,7 +1570,7 @@ GC_push_many_regs(const word *regs, unsigned count)
   for (i = 0; i < count; i++)
     GC_PUSH_ONE_STACK((ptr_t)regs[i], MARKED_FROM_REGISTER);
 }
-#endif
+#endif /* GC_WIN32_THREADS */
 
 GC_API struct GC_ms_entry *GC_CALL
 GC_mark_and_push(void *obj, mse *mark_stack_top, mse *mark_stack_limit,

@@ -598,7 +598,7 @@ check_marks_int_list(sexpr x)
 
 /* A tiny list reversal test to check thread creation.  */
 #ifdef THREADS
-#  if defined(GC_ENABLE_SUSPEND_THREAD)
+#  ifdef GC_ENABLE_SUSPEND_THREAD
 #    include "gc/javaxfc.h"
 #  endif
 
@@ -619,8 +619,9 @@ tiny_reverse_test_inner(void)
   }
 }
 
-#  if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_OSF1_THREADS) \
-      && defined(SIGNAL_BASED_STOP_WORLD)
+#  if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD) \
+      && !defined(OSF1)
+#    define TEST_THREAD_SUSPENDED
 #    ifndef AO_HAVE_load_acquire
 static AO_t
 AO_load_acquire(const volatile AO_t *addr)
@@ -655,8 +656,7 @@ static DWORD __stdcall
 #  endif
 tiny_reverse_test(void *p_resumed)
 {
-#  if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_OSF1_THREADS) \
-      && defined(SIGNAL_BASED_STOP_WORLD)
+#  ifdef TEST_THREAD_SUSPENDED
   if (p_resumed != NULL) {
     /* Test self-suspend is working.        */
     GC_suspend_thread(pthread_self());
@@ -666,7 +666,7 @@ tiny_reverse_test(void *p_resumed)
   (void)p_resumed;
 #  endif
   tiny_reverse_test_inner();
-#  if defined(GC_ENABLE_SUSPEND_THREAD)
+#  ifdef GC_ENABLE_SUSPEND_THREAD
   /* Force collection from a thread. */
   GC_gcollect();
 #  endif
@@ -723,8 +723,7 @@ fork_a_thread(void)
     GC_printf("Small thread creation failed %d\n", code);
     FAIL;
   }
-#    if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_OSF1_THREADS) \
-        && defined(SIGNAL_BASED_STOP_WORLD)
+#    ifdef TEST_THREAD_SUSPENDED
   if (GC_is_thread_suspended(t) && NULL == p_resumed) {
     GC_printf("Running thread should be not suspended\n");
     FAIL;
@@ -2625,23 +2624,23 @@ main(void)
 #  endif
   pthread_attr_t attr;
   int code;
-#  ifdef GC_IRIX_THREADS
+#  ifdef IRIX5
   /* Force a larger stack to be preallocated.  Since the initial  */
   /* one cannot always grow later.  Require 1 MB.                 */
   *((volatile char *)&code - 1024 * 1024) = 0;
-#  endif /* GC_IRIX_THREADS */
-#  if defined(GC_HPUX_THREADS)
+#  endif
+#  ifdef HPUX
   /* Default stack size is too small, especially with the 64-bit  */
   /* ABI.  Increase the stack size.                               */
   if (pthread_default_stacksize_np(1024 * 1024, 0) != 0) {
     GC_printf("pthread_default_stacksize_np failed\n");
   }
-#  endif /* GC_HPUX_THREADS */
+#  endif
 #  ifdef PTW32_STATIC_LIB
   pthread_win32_process_attach_np();
   pthread_win32_thread_attach_np();
 #  endif
-#  if defined(GC_DARWIN_THREADS) && !defined(GC_NO_THREADS_DISCOVERY) \
+#  if defined(DARWIN) && !defined(GC_NO_THREADS_DISCOVERY) \
       && !defined(DARWIN_DONT_PARSE_STACK) && !defined(THREAD_LOCAL_ALLOC)
   /* Test with the Darwin implicit thread registration. */
   GC_use_threads_discovery();
@@ -2661,9 +2660,8 @@ main(void)
     GC_printf("pthread_attr_init failed, errno= %d\n", code);
     FAIL;
   }
-#  if defined(GC_IRIX_THREADS) || defined(GC_FREEBSD_THREADS)  \
-      || defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS) \
-      || defined(GC_OPENBSD_THREADS)
+#  if defined(AIX) || defined(DARWIN) || defined(FREEBSD) || defined(IRIX5) \
+      || defined(OPENBSD)
   if ((code = pthread_attr_setstacksize(&attr, 1000 * 1024)) != 0) {
     GC_printf("pthread_attr_setstacksize failed, errno= %d\n", code);
     FAIL;

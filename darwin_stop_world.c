@@ -20,7 +20,7 @@
 
 /* This probably needs more porting work to ppc64. */
 
-#if defined(GC_DARWIN_THREADS)
+#if defined(DARWIN) && defined(THREADS)
 
 #  include <mach/machine.h>
 #  include <sys/sysctl.h>
@@ -794,4 +794,4 @@ GC_start_world(void)
 #  endif
 }
 
-#endif /* GC_DARWIN_THREADS */
+#endif /* DARWIN && THREADS */

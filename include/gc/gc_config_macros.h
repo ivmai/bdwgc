@@ -114,7 +114,7 @@
 #      define GC_THREADS
 #    endif
 #  elif defined(GC_THREADS)
-#    if defined(__linux__)
+#    if defined(__linux__) || defined(__native_client__)
 #      define GC_LINUX_THREADS
 #    elif defined(__OpenBSD__)
 #      define GC_OPENBSD_THREADS
@@ -347,7 +347,7 @@ typedef long ptrdiff_t;
 
 #  if defined(__sgi) && !defined(__GNUC__) && _COMPILER_VERSION >= 720
 #    define GC_ADD_CALLER
-#    define GC_RETURN_ADDR (GC_return_addr_t) __return_address
+#    define GC_RETURN_ADDR ((GC_return_addr_t)__return_address)
 #  endif
 
 #  if defined(__linux__) || defined(__GLIBC__)
@@ -393,15 +393,15 @@ typedef long ptrdiff_t;
 #    if GC_GNUC_PREREQ(2, 95)
 /* gcc knows how to retrieve return address, but we don't know      */
 /* how to generate call stacks.                                     */
-#      define GC_RETURN_ADDR (GC_return_addr_t) __builtin_return_address(0)
+#      define GC_RETURN_ADDR ((GC_return_addr_t)__builtin_return_address(0))
 #      if GC_GNUC_PREREQ(4, 0)                                     \
           && (defined(__i386__) || defined(__amd64__)              \
               || defined(__x86_64__) /* and probably others... */) \
           && !defined(GC_NO_RETURN_ADDR_PARENT)
 #        define GC_HAVE_RETURN_ADDR_PARENT
-#        define GC_RETURN_ADDR_PARENT \
-          (GC_return_addr_t)          \
-              __builtin_extract_return_addr(__builtin_return_address(1))
+#        define GC_RETURN_ADDR_PARENT                       \
+          ((GC_return_addr_t)__builtin_extract_return_addr( \
+              __builtin_return_address(1)))
 /* Note: a compiler might complain that calling                 */
 /* __builtin_return_address with a nonzero argument is unsafe.  */
 #      endif

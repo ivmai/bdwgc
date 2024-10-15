@@ -18,7 +18,7 @@
 #include "private/gc_priv.h"
 
 #if (defined(MPROTECT_VDB) && !defined(MSWIN32) && !defined(MSWINCE)) \
-    || defined(GC_SOLARIS_THREADS) || defined(OPENBSD)
+    || (defined(SOLARIS) && defined(THREADS)) || defined(OPENBSD)
 #  include <signal.h>
 #endif
 
@@ -282,7 +282,7 @@ GC_get_maps(void)
 #  if defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES) \
       || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)     \
       || (defined(CHECK_SOFT_VDB) && defined(MPROTECT_VDB))       \
-      || (defined(REDIRECT_MALLOC) && defined(GC_LINUX_THREADS))
+      || defined(REDIR_MALLOC_AND_LINUXTHREADS)
 GC_INNER const char *
 GC_parse_map_entry(const char *maps_ptr, ptr_t *start, ptr_t *end,
                    const char **prot, unsigned *maj_dev,
@@ -373,7 +373,7 @@ GC_enclosing_writable_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
 }
 #  endif /* IA64 || INCLUDE_LINUX_THREAD_DESCR */
 
-#  if defined(REDIRECT_MALLOC) && defined(GC_LINUX_THREADS)
+#  ifdef REDIR_MALLOC_AND_LINUXTHREADS
 /* Find the text(code) mapping for the library whose name, after      */
 /* stripping the directory part, starts with nm.                      */
 GC_INNER GC_bool
@@ -413,7 +413,7 @@ GC_text_mapping(const char *nm, ptr_t *startp, ptr_t *endp)
   }
   return FALSE;
 }
-#  endif /* REDIRECT_MALLOC */
+#  endif /* REDIR_MALLOC_AND_LINUXTHREADS */
 
 #  ifdef IA64
 static ptr_t
@@ -956,7 +956,7 @@ GC_set_and_save_fault_handler(GC_fault_handler_t h)
 
   (void)sigemptyset(&act.sa_mask);
   /* act.sa_restorer is deprecated and should not be initialized. */
-#    ifdef GC_IRIX_THREADS
+#    if defined(IRIX5) && defined(THREADS)
   /* Older versions have a bug related to retrieving and      */
   /* and setting a handler at the same time.                  */
   (void)sigaction(SIGSEGV, 0, &old_segv_act);
@@ -968,7 +968,7 @@ GC_set_and_save_fault_handler(GC_fault_handler_t h)
   /* don't have to worry in the threads case.       */
   (void)sigaction(SIGBUS, &act, &old_bus_act);
 #      endif
-#    endif /* !GC_IRIX_THREADS */
+#    endif /* !IRIX5 || !THREADS */
 #  else
   old_segv_hand = signal(SIGSEGV, h);
 #    ifdef HAVE_SIGBUS
@@ -1295,6 +1295,7 @@ GC_get_main_stack_base(void)
   return STACKBOTTOM;
 }
 #  define GET_MAIN_STACKBASE_SPECIAL
+
 #elif defined(SYMBIAN)
 EXTERN_C_BEGIN
 extern int GC_get_main_symbian_stack_base(void);
@@ -1306,6 +1307,7 @@ GC_get_main_stack_base(void)
   return (ptr_t)GC_get_main_symbian_stack_base();
 }
 #  define GET_MAIN_STACKBASE_SPECIAL
+
 #elif defined(EMSCRIPTEN)
 #  include <emscripten/stack.h>
 
@@ -1315,9 +1317,10 @@ GC_get_main_stack_base(void)
   return (ptr_t)emscripten_stack_get_base();
 }
 #  define GET_MAIN_STACKBASE_SPECIAL
+
 #elif !defined(ANY_MSWIN) && !defined(EMBOX) && !defined(HAIKU) \
-    && !defined(OS2) && !defined(GC_OPENBSD_THREADS)            \
-    && (!defined(GC_SOLARIS_THREADS) || defined(_STRICT_STDC))
+    && !defined(OS2) && !(defined(OPENBSD) && defined(THREADS)) \
+    && (!(defined(SOLARIS) && defined(THREADS)) || defined(_STRICT_STDC))
 
 #  if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
       && (defined(THREADS) || defined(USE_GET_STACKBASE_FOR_MAIN))
@@ -1416,7 +1419,7 @@ GC_get_main_stack_base(void)
   return result;
 }
 #  define GET_MAIN_STACKBASE_SPECIAL
-#endif /* !ANY_MSWIN && !HAIKU && !GC_OPENBSD_THREADS && !OS2 */
+#endif /* !ANY_MSWIN && !HAIKU && !OS2 */
 
 #if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
     && defined(THREADS) && !defined(HAVE_GET_STACK_BASE)
@@ -1484,7 +1487,8 @@ GC_get_stack_base(struct GC_stack_base *b)
 #  define HAVE_GET_STACK_BASE
 #endif /* THREADS && (HAVE_PTHREAD_ATTR_GET_NP || HAVE_PTHREAD_GETATTR_NP) */
 
-#if defined(GC_DARWIN_THREADS) && !defined(NO_PTHREAD_GET_STACKADDR_NP)
+#if defined(DARWIN) && defined(THREADS) \
+    && !defined(NO_PTHREAD_GET_STACKADDR_NP)
 #  include <pthread.h>
 
 GC_API int GC_CALL
@@ -1497,9 +1501,9 @@ GC_get_stack_base(struct GC_stack_base *b)
   return GC_SUCCESS;
 }
 #  define HAVE_GET_STACK_BASE
-#endif /* GC_DARWIN_THREADS */
+#endif /* DARWIN && THREADS && !NO_PTHREAD_GET_STACKADDR_NP */
 
-#ifdef GC_OPENBSD_THREADS
+#if defined(OPENBSD) && defined(THREADS)
 #  include <pthread.h>
 #  include <pthread_np.h>
 #  include <sys/signal.h>
@@ -1515,9 +1519,9 @@ GC_get_stack_base(struct GC_stack_base *sb)
   return GC_SUCCESS;
 }
 #  define HAVE_GET_STACK_BASE
-#endif /* GC_OPENBSD_THREADS */
+#endif /* OPENBSD && THREADS */
 
-#if defined(GC_SOLARIS_THREADS) && !defined(_STRICT_STDC)
+#if defined(SOLARIS) && defined(THREADS) && !defined(_STRICT_STDC)
 
 #  include <pthread.h>
 #  include <thread.h>
@@ -1565,9 +1569,9 @@ GC_get_stack_base(struct GC_stack_base *b)
   return GC_SUCCESS;
 }
 #  define HAVE_GET_STACK_BASE
-#endif /* GC_SOLARIS_THREADS */
+#endif /* SOLARIS && THREADS */
 
-#ifdef GC_RTEMS_PTHREADS
+#if defined(RTEMS) && defined(THREADS)
 GC_API int GC_CALL
 GC_get_stack_base(struct GC_stack_base *sb)
 {
@@ -1575,7 +1579,7 @@ GC_get_stack_base(struct GC_stack_base *sb)
   return GC_SUCCESS;
 }
 #  define HAVE_GET_STACK_BASE
-#endif /* GC_RTEMS_PTHREADS */
+#endif /* RTEMS && THREADS */
 
 #ifndef HAVE_GET_STACK_BASE
 
@@ -2168,7 +2172,7 @@ GC_register_data_segments(void)
 }
 
 #elif !defined(ANY_MSWIN)
-#  if defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
+#  if defined(REDIRECT_MALLOC) && defined(SOLARIS) && defined(THREADS)
 EXTERN_C_BEGIN
 extern caddr_t sbrk(int);
 EXTERN_C_END
@@ -2184,7 +2188,7 @@ GC_register_data_segments(void)
   /* enabled.  GC_register_data_segments is not called anyway.  */
 #  elif defined(DYNAMIC_LOADING) && defined(DARWIN)
   /* No-op.  GC_register_main_static_data() always returns false. */
-#  elif defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
+#  elif defined(REDIRECT_MALLOC) && defined(SOLARIS) && defined(THREADS)
   /* As of Solaris 2.3, the Solaris threads implementation    */
   /* allocates the data structure for the initial thread with */
   /* sbrk at process startup.  It needs to be scanned, so     */
@@ -2582,8 +2586,7 @@ GC_win32_free_heap(void)
       && !defined(MSWIN_XBOX1)
   GC_free_malloc_heap_list();
 #  endif
-#  if (defined(USE_WINALLOC) && !defined(MSWIN_XBOX1) && !defined(MSWINCE)) \
-      || defined(CYGWIN32)
+#  if defined(USE_WINALLOC) && defined(MSWIN32) || defined(CYGWIN32)
 #    ifndef MSWINRT_FLAVOR
 #      ifndef CYGWIN32
   if (GLOBAL_ALLOC_TEST)
@@ -2608,7 +2611,7 @@ GC_win32_free_heap(void)
     GC_heap_bases[GC_n_heap_bases] = 0;
   }
 #    endif
-#  endif /* USE_WINALLOC || CYGWIN32 */
+#  endif /* USE_WINALLOC && MSWIN32 || CYGWIN32 */
 }
 #endif /* ANY_MSWIN || MSWIN_XBOX1 */
 
@@ -2902,7 +2905,7 @@ GC_push_thread_structures(void)
   ABORT("GC_push_thread_structures is not implemented");
 }
 
-#  else /* GC_PTHREADS, or GC_WIN32_THREADS, etc. */
+#  else /* GC_PTHREADS, etc. */
 STATIC void GC_CALLBACK
 GC_default_push_other_roots(void)
 {
@@ -3311,12 +3314,9 @@ is_header_found_async(const void *p)
 #      elif defined(IRIX5)
 #        define CODE_OK (si->si_code == EACCES)
 #      elif defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
-          || defined(HURD)
-#        define CODE_OK TRUE
-#      elif defined(LINUX)
-/* Empirically c.trapno == 14, on IA32, but is that useful?       */
-/* Should probably consider alignment issues on other             */
-/* architectures.                                                 */
+          || defined(HURD) || defined(LINUX)
+/* Linux: Empirically c.trapno == 14, on IA32, but is that useful?      */
+/* Should probably consider alignment issues on other architectures.    */
 #        define CODE_OK TRUE
 #      elif defined(HPUX)
 #        define CODE_OK                                                 \
@@ -3524,7 +3524,7 @@ GC_dirty_init(void)
     /* FIXME: implement it (if possible). */
 #    else
   /* act.sa_restorer is deprecated and should not be initialized. */
-#      if defined(GC_IRIX_THREADS)
+#      if defined(IRIX5) && defined(THREADS)
   sigaction(SIGSEGV, 0, &oldact);
   sigaction(SIGSEGV, &act, 0);
 #      else
