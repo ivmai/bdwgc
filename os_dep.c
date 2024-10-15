@@ -2525,10 +2525,6 @@ void * os2_alloc(size_t bytes)
 
 #ifdef USE_MUNMAP
 
-/* For now, this only works on Win32/WinCE and some Unix-like   */
-/* systems.  If you have something else, don't define           */
-/* USE_MUNMAP.                                                  */
-
 #if !defined(NN_PLATFORM_CTR) && !defined(MSWIN32) && !defined(MSWINCE) \
     && !defined(MSWIN_XBOX1)
 # include <unistd.h>
