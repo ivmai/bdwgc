@@ -56,11 +56,12 @@ GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
 #    endif /* !GC_NO_DLOPEN */
 
 #    ifndef GC_NO_PTHREAD_SIGMASK
-#      if defined(GC_PTHREAD_SIGMASK_NEEDED)                          \
-          || defined(GC_HAVE_PTHREAD_SIGMASK) || defined(_BSD_SOURCE) \
-          || defined(_GNU_SOURCE) || defined(_NETBSD_SOURCE)          \
-          || (_POSIX_C_SOURCE >= 199506L) || (_XOPEN_SOURCE >= 500)   \
+#      if defined(GC_PTHREAD_SIGMASK_NEEDED) || defined(__COSMOPOLITAN__) \
+          || defined(GC_HAVE_PTHREAD_SIGMASK) || defined(_BSD_SOURCE)     \
+          || defined(_GNU_SOURCE) || defined(_NETBSD_SOURCE)              \
+          || (_POSIX_C_SOURCE >= 199506L) || (_XOPEN_SOURCE >= 500)       \
           || (__POSIX_VISIBLE >= 199506) /* xBSD internal macro */
+
 GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
                               sigset_t * /* oset */);
 #      else
