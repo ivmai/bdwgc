@@ -172,7 +172,7 @@ static CRITICAL_SECTION incr_cs;
 /* Call GC_INIT only on platforms on which we think we really need it,  */
 /* so that we can test automatic initialization on the rest.            */
 #if defined(TEST_EXPLICIT_GC_INIT) || defined(AIX) || defined(CYGWIN32) \
-    || defined(DARWIN) || defined(HOST_ANDROID)                         \
+    || defined(HOST_ANDROID)                                            \
     || (defined(MSWINCE) && !defined(GC_WINMAIN_REDIRECT))
 #  define GC_OPT_INIT GC_INIT()
 #else
