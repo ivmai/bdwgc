@@ -73,7 +73,7 @@ EXTERN_C_BEGIN
 #        define USE_COMPILER_TLS
 #      endif
 
-#    elif (defined(FREEBSD)                                                   \
+#    elif (defined(COSMO) || defined(FREEBSD)                                 \
            || (defined(NETBSD) && __NetBSD_Version__ >= 600000000 /* 6.0 */)) \
         && (GC_GNUC_PREREQ(4, 4) || GC_CLANG_PREREQ(3, 9))
 #      define USE_COMPILER_TLS
