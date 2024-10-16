@@ -2703,9 +2703,9 @@ block_unmap_inner(ptr_t start_addr, size_t len)
   if (len != 0) {
 #    ifdef SN_TARGET_PS3
     ps3_free_mem(start_addr, len);
-#    elif defined(AIX) || defined(CYGWIN32) || defined(HAIKU)  \
-        || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)) \
-        || defined(HPUX)
+#    elif defined(AIX) || defined(COSMO) || defined(CYGWIN32) \
+        || defined(HAIKU) || defined(HPUX)                    \
+        || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE))
     /* On AIX, mmap(PROT_NONE) fails with ENOMEM unless the       */
     /* environment variable XPG_SUS_ENV is set to ON.             */
     /* On Cygwin, calling mmap() with the new protection flags on */
@@ -2713,7 +2713,8 @@ block_unmap_inner(ptr_t start_addr, size_t len)
     /* However, calling mprotect() on the given address range     */
     /* with PROT_NONE seems to work fine.                         */
     /* On Linux, low RLIMIT_AS value may lead to mmap failure.    */
-#      if defined(LINUX) && !defined(FORCE_MPROTECT_BEFORE_MADVISE)
+#      if (defined(COSMO) || defined(LINUX)) \
+          && !defined(FORCE_MPROTECT_BEFORE_MADVISE)
     /* On Linux, at least, madvise() should be sufficient.      */
 #      else
     if (mprotect(start_addr, len, PROT_NONE))
@@ -2807,9 +2808,10 @@ GC_remap(ptr_t start, size_t bytes)
   /* It was already remapped with PROT_NONE. */
   {
 #    if !defined(SN_TARGET_PS3) && !defined(FORCE_MPROTECT_BEFORE_MADVISE) \
-        && defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)
+        && (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)              \
+            || defined(COSMO))
     /* Nothing to unprotect as madvise() is just a hint.  */
-#    elif defined(NACL) || defined(NETBSD)
+#    elif defined(COSMO) || defined(NACL) || defined(NETBSD)
     /* NaCl does not expose mprotect, but mmap should work fine.  */
     /* In case of NetBSD, mprotect fails (unlike mmap) even       */
     /* without PROT_EXEC if PaX MPROTECT feature is enabled.      */
