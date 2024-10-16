@@ -2121,15 +2121,6 @@ GC_API void GC_CALL
 GC_set_warn_proc(GC_warn_proc p)
 {
   GC_ASSERT(NONNULL_ARG_NOT_NULL(p));
-#ifdef GC_WIN32_THREADS
-#  ifdef CYGWIN32
-  /* Need an explicit GC_INIT() call.     */
-  GC_ASSERT(GC_is_initialized);
-#  else
-  if (!GC_is_initialized)
-    GC_init();
-#  endif
-#endif
   LOCK();
   GC_current_warn_proc = p;
   UNLOCK();
