@@ -64,7 +64,7 @@ EXTERN_C_BEGIN
 
 #    elif defined(LINUX) && GC_GNUC_PREREQ(3, 3) /* && !HOST_ANDROID */
 #      if defined(ARM32) || defined(AVR32)
-/* TODO: support Linux/arm */
+/* TODO: change to USE_COMPILER_TLS on Linux/arm */
 #        define USE_PTHREAD_SPECIFIC
 #      elif defined(AARCH64) && defined(__clang__) && !GC_CLANG_PREREQ(8, 0)
 /* To avoid "R_AARCH64_ABS64 used with TLS symbol" linker warnings. */
