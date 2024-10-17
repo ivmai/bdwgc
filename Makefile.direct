@@ -131,7 +131,8 @@ CORD_SRCS= cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c cord/tests/de.c \
   include/gc/cord_pos.h cord/tests/de_win.c cord/tests/de_win.h \
   cord/tests/de_cmds.h cord/tests/de_win.rc
 
-CORD_OBJS= cord/cordbscs.o cord/cordprnt.o cord/cordxtra.o
+# Not all compilers understand "-o" option.  Thus, no "cord/" prefix here.
+CORD_OBJS= cordbscs.o cordprnt.o cordxtra.o
 
 SRCS= $(CSRCS) \
   include/gc/gc_typed.h include/gc/gc_tiny_fl.h include/gc/gc_version.h \
@@ -207,7 +208,7 @@ BSD-pkg-install: BSD-pkg-all
 	${INSTALL_DATA} gc.h gc_cpp.h ${PREFIX}/include
 	${INSTALL_MAN} gc.man ${PREFIX}/man/man3/gc.3
 
-$(OBJS) tests/gctest.o dyn_load.o dyn_load_sunos53.o: \
+$(OBJS) gctest.o dyn_load.o dyn_load_sunos53.o: \
   $(srcdir)/include/private/gc_priv.h \
   $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
   $(srcdir)/include/gc.h $(srcdir)/include/gc/gc_pthread_redirects.h \
@@ -223,10 +224,9 @@ specific.o pthread_support.o thread_local_alloc.o win32_threads.o: \
 
 dbg_mlc.o gcj_mlc.o: $(srcdir)/include/private/dbg_mlc.h
 
-tests/gctest.o: $(srcdir)/tests/gctest.c
+gctest.o: $(srcdir)/tests/gctest.c
 	mkdir tests || cat /dev/null
 	$(CC) $(CFLAGS) -c $(srcdir)/tests/gctest.c
-	mv gctest.o $@
 
 base_lib libgc.a: $(OBJS) dyn_load.o $(UTILS)
 	rm -f dont_ar_1
@@ -337,21 +337,14 @@ mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
 
 alloc.o: include/gc/gc_version.h
 
-cord/cordbscs.o: $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
+cordbscs.o: $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -I$(srcdir) -c $(srcdir)/cord/cordbscs.c
-	mkdir cord || cat /dev/null
-	mv cordbscs.o $@
-#  not all compilers understand -o filename
 
-cord/cordxtra.o: $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
+cordxtra.o: $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -I$(srcdir) -c $(srcdir)/cord/cordxtra.c
-	mkdir cord || cat /dev/null
-	mv cordxtra.o $@
 
-cord/cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
+cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -I$(srcdir) -c $(srcdir)/cord/cordprnt.c
-	mkdir cord || cat /dev/null
-	mv cordprnt.o $@
 
 cordtest$(EXEEXT): $(srcdir)/cord/tests/cordtest.c cords base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f $@
@@ -382,17 +375,17 @@ if_not_there$(EXEEXT): $(srcdir)/tools/if_not_there.c
 	$(HOSTCC) $(HOSTCFLAGS) -o $@ $(srcdir)/tools/if_not_there.c
 
 clean:
-	rm -f *.a *.i *.o *.com.dbg *.elf *.exe tests/*.o \
+	rm -f *.a *.i *.o *.com.dbg *.elf *.exe \
 	      cpptest gctest gctest_dyn_link setjmp_test mon.out gmon.out \
-	      a.out core if_not_there if_mach base_lib c++ $(CORD_OBJS) \
+	      a.out core if_not_there if_mach base_lib c++ \
 	      cordtest de cords dont_ar_* threadlibs *.log cordtst*.tmp
 	-rm -f *~
 
-gctest$(EXEEXT): tests/gctest.o base_lib $(NODIST_OBJS) $(UTILS)
+gctest$(EXEEXT): gctest.o base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f $@
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ tests/gctest.o $(NODIST_OBJS) libgc.a -lucb
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ tests/gctest.o $(NODIST_OBJS) libgc.a -ldld `./threadlibs`
-	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ tests/gctest.o $(NODIST_OBJS) libgc.a `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ gctest.o $(NODIST_OBJS) libgc.a -lucb
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ gctest.o $(NODIST_OBJS) libgc.a -ldld `./threadlibs`
+	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ gctest.o $(NODIST_OBJS) libgc.a `./threadlibs`
 
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  gctest may still work.
@@ -417,11 +410,11 @@ test: check
 # Currently works only under SunOS5.  Requires GC_INIT call from statically
 # loaded client code.
 ABSDIR= `pwd`
-gctest_dyn_link: tests/gctest.o libgc.so
-	$(CC) -L$(ABSDIR) -R$(ABSDIR) -o $@ tests/gctest.o -lgc -ldl -lthread
+gctest_dyn_link: gctest.o libgc.so
+	$(CC) -L$(ABSDIR) -R$(ABSDIR) -o $@ gctest.o -lgc -ldl -lthread
 
-gctest_irix_dyn_link: tests/gctest.o libirixgc.so
-	$(CC) -L$(ABSDIR) -o $@ tests/gctest.o -lirixgc
+gctest_irix_dyn_link: gctest.o libirixgc.so
+	$(CC) -L$(ABSDIR) -o $@ gctest.o -lirixgc
 
 SYM_PREFIX-libgc= GC
 
