@@ -826,6 +826,11 @@ extern int _end[];
 /* Normally should be defined by configure, etc. */
 #    define HAVE_PTHREAD_SETNAME_NP_WITH_TID 1
 #  endif
+#  if !defined(GC_THREADS) || defined(NO_HANDLE_FORK) \
+      || defined(GC_NO_CAN_CALL_ATFORK)
+#    define MPROTECT_VDB
+/* FIXME: otherwise gctest crashes in child */
+#  endif
 #endif /* COSMO */
 
 #ifdef DARWIN
@@ -2544,6 +2549,9 @@ extern int __end__[];
     || !(defined(__CC_ARM) || defined(OS2) || defined(MSWINCE) \
          || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2))
 EXTERN_C_END
+#  if defined(COSMO) && defined(MPROTECT_VDB) && !defined(_GNU_SOURCE)
+#    define _GNU_SOURCE 1
+#  endif
 #  include <sys/types.h>
 EXTERN_C_BEGIN
 #endif /* HAVE_SYS_TYPES_H */
@@ -2593,12 +2601,12 @@ EXTERN_C_BEGIN
 #  define SUNOS5SIGS
 #endif
 
-#if defined(ANY_BSD) || defined(HAIKU) || defined(HURD) || defined(IRIX5) \
-    || defined(OSF1) || defined(SUNOS5SIGS)
+#if defined(ANY_BSD) || defined(COSMO) || defined(HAIKU) || defined(HURD) \
+    || defined(IRIX5) || defined(OSF1) || defined(SUNOS5SIGS)
 #  define USE_SEGV_SIGACT
 #  if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */   \
       || (defined(FREEBSD) && defined(SUNOS5SIGS)) || defined(HPUX) \
-      || defined(HURD) || defined(NETBSD)
+      || defined(COSMO) || defined(HURD) || defined(NETBSD)
 /* We may get SIGBUS.       */
 #    define USE_BUS_SIGACT
 #  endif

@@ -3311,8 +3311,8 @@ is_header_found_async(const void *p)
 #        define CODE_OK (si->si_code == 2 /* experimentally determined */)
 #      elif defined(IRIX5)
 #        define CODE_OK (si->si_code == EACCES)
-#      elif defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
-          || defined(HURD) || defined(LINUX)
+#      elif defined(AIX) || defined(COSMO) || defined(CYGWIN32) \
+          || defined(HAIKU) || defined(HURD) || defined(LINUX)
 /* Linux: Empirically c.trapno == 14, on IA32, but is that useful?      */
 /* Should probably consider alignment issues on other architectures.    */
 #        define CODE_OK TRUE
