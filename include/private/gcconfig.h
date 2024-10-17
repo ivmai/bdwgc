@@ -831,6 +831,8 @@ extern int _end[];
 #    define MPROTECT_VDB
 /* FIXME: otherwise gctest crashes in child */
 #  endif
+#  /* FIXME: a deadlock occurs in markers, thus disabled for now */
+#  undef PARALLEL_MARK
 #endif /* COSMO */
 
 #ifdef DARWIN

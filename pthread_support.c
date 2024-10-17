@@ -1093,8 +1093,9 @@ GC_greatest_stack_base_below(ptr_t bound)
 #  ifdef HPUX
 #    define GC_get_nprocs() pthread_num_processors_np()
 
-#  elif defined(AIX) || defined(HAIKU) || defined(HOST_ANDROID) \
-      || defined(HURD) || defined(NACL) || defined(OSF1) || defined(SOLARIS)
+#  elif defined(AIX) || defined(COSMO) || defined(HAIKU)         \
+      || defined(HOST_ANDROID) || defined(HURD) || defined(NACL) \
+      || defined(OSF1) || defined(SOLARIS)
 GC_INLINE int
 GC_get_nprocs(void)
 {
