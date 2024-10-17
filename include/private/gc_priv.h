@@ -28,6 +28,7 @@
 
 #if (defined(__linux__) || defined(__GLIBC__) || defined(__GNU__) \
      || defined(__CYGWIN__) || defined(HAVE_DLADDR)               \
+     || (defined(__COSMOPOLITAN__) && defined(USE_MUNMAP))        \
      || defined(GC_HAVE_PTHREAD_SIGMASK)                          \
      || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)              \
      || defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG)         \
