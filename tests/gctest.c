@@ -2254,7 +2254,10 @@ enable_incremental_mode(void)
 {
 #ifndef NO_INCREMENTAL
   unsigned vdbs = GC_get_supported_vdbs();
+#endif
 
+  GC_printf("Running on " OS_TYPE "/" MACH_TYPE " target\n");
+#ifndef NO_INCREMENTAL
   if (vdbs != GC_VDB_NONE)
     GC_printf(
         "Supported VDBs:%s%s%s%s%s%s\n", vdbs & GC_VDB_MANUAL ? " manual" : "",
