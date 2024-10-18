@@ -102,8 +102,8 @@ CXXFLAGS+= -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
 
 AR?= ar
 
-RANLIB= ranlib
-# For EMX, replace "ranlib" with "ar s".
+# Note: for Cosmo and EMX, specify "$(AR) s" instead of "ranlib".
+RANLIB?= ranlib
 
 # All .o files of libgc.a except for dyn_load.o.
 OBJS= allchblk.o alloc.o backgraph.o blacklst.o checksums.o \
