@@ -1092,6 +1092,9 @@ EXTERN_C_BEGIN
 #  endif
 #endif /* SYMBIAN */
 
+/* Below are the definitions specific to each supported architecture    */
+/* and OS, grouped by the former.                                       */
+
 #ifdef M68K
 #  define MACH_TYPE "M68K"
 #  define CPP_WORDSZ 32
@@ -1589,7 +1592,7 @@ extern char **environ;
 #endif /* NS32K */
 
 #ifdef LOONGARCH
-#  define MACH_TYPE "LoongArch"
+#  define MACH_TYPE "LOONGARCH"
 #  define CPP_WORDSZ _LOONGARCH_SZPTR
 #  ifdef LINUX
 #    pragma weak __data_start
@@ -2354,7 +2357,7 @@ extern int __data_start[] __attribute__((__weak__));
 #endif /* HEXAGON */
 
 #ifdef TILEPRO
-#  define MACH_TYPE "TILEPro"
+#  define MACH_TYPE "TILEPRO"
 #  define CPP_WORDSZ 32
 #  define PREFETCH(x) __insn_prefetch(x)
 #  define CACHE_LINE_SIZE 64
@@ -2365,7 +2368,7 @@ extern int __data_start[];
 #endif /* TILEPRO */
 
 #ifdef TILEGX
-#  define MACH_TYPE "TILE-Gx"
+#  define MACH_TYPE "TILEGX"
 #  define CPP_WORDSZ (__SIZEOF_PTRDIFF_T__ * 8)
 #  if CPP_WORDSZ == 32
 #    define CLEAR_DOUBLE(x) (void)(*(long long *)(x) = 0)
@@ -2379,7 +2382,7 @@ extern int __data_start[];
 #endif /* TILEGX */
 
 #ifdef RISCV
-#  define MACH_TYPE "RISC-V"
+#  define MACH_TYPE "RISCV"
 #  define CPP_WORDSZ (__SIZEOF_SIZE_T__ * 8) /* 32 or 64 */
 #  ifdef FREEBSD
 /* Nothing specific. */
@@ -2407,7 +2410,7 @@ extern char **environ;
 #endif /* RISCV */
 
 #ifdef WEBASSEMBLY
-#  define MACH_TYPE "WebAssembly"
+#  define MACH_TYPE "WEBASSEMBLY"
 #  if defined(__wasm64__) && !defined(CPPCHECK)
 #    error 64-bit WebAssembly is not yet supported
 #  endif

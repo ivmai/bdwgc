@@ -65,10 +65,10 @@ The following macros must be defined correctly for each architecture and
 operating system:
 
   * `MACH_TYPE` - Defined to a string that represents the machine
-  architecture. Usually just the macro name used to identify the architecture,
+  architecture. This is just the macro name used to identify the architecture,
   but enclosed in quotes.
   * `OS_TYPE` - Defined to a string that represents the operating system name.
-  Usually just the macro name used to identify the operating system, but
+  This is just the macro name used to identify the operating system, but
   enclosed in quotes.
   * `CPP_WORDSZ` - The address (also referred simply as "word") size in bits
   as a constant suitable for preprocessor tests, i.e. without casts or
