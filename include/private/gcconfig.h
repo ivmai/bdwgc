@@ -2074,11 +2074,7 @@ extern void *__stack_base__;
 #endif /* AARCH64 */
 
 #ifdef ARM32
-#  ifdef NACL
-#    define MACH_TYPE "NACL"
-#  else
-#    define MACH_TYPE "ARM32"
-#  endif
+#  define MACH_TYPE "ARM32"
 #  define CPP_WORDSZ 32
 #  ifdef LINUX
 #    if GC_GLIBC_PREREQ(2, 0) || defined(HOST_ANDROID)
