@@ -58,8 +58,10 @@ typedef GC_SIGNEDWORD GC_signed_word;
 #undef GC_SIGNEDWORD
 #undef GC_UNSIGNEDWORD
 
-#if (defined(_UINTPTR_T) || defined(_UINTPTR_T_DEFINED)) && !defined(__MSYS__)
-/* Note: MSYS2 might provide __uintptr_t instead of uintptr_t.  */
+#if (defined(_UINTPTR_T) || defined(_UINTPTR_T_DECLARED) \
+     || defined(_UINTPTR_T_DEFINED))                     \
+    && !defined(__MSYS__)
+/* Note: MSYS2 might provide __uintptr_t but not uintptr_t. */
 typedef uintptr_t GC_uintptr_t;
 #else
 typedef GC_word GC_uintptr_t;
@@ -1476,7 +1478,7 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER) \
     && !(defined(__APPLE__) && defined(__arm__) && defined(__TINYC__))
 /* TCC (as of v0.9.28rc) does not support asm on macOS/arm. */
-#  if defined(__TINYC__)
+#  if defined(__CHERI_PURE_CAPABILITY__) || defined(__TINYC__)
 #    define GC_reachable_here(ptr) \
       __asm__ __volatile__(" " : : "g"(ptr) : "memory")
 #  elif defined(__e2k__)

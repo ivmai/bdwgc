@@ -189,13 +189,13 @@
 #  define __GC
 #  if !defined(_WIN32_WCE) || defined(__GNUC__)
 #    include <stddef.h>
-#    if defined(__MINGW32__) && !defined(_WIN32_WCE)
+#    if defined(__MINGW32__) && !defined(_WIN32_WCE) \
+        || defined(__CHERI_PURE_CAPABILITY__)
 #      include <stdint.h>
-/* We mention uintptr_t.                                            */
-/* Perhaps this should be included in pure msft environments        */
-/* as well?                                                         */
+/* We mention uintptr_t.  Perhaps this should be included in pure   */
+/* msft environments as well.                                       */
 #    endif
-#  else                 /* _WIN32_WCE */
+#  else
 /* Yet more kludges for WinCE.        */
 #    include <stdlib.h> /* size_t is defined here */
 #    ifndef _PTRDIFF_T_DEFINED

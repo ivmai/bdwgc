@@ -2488,6 +2488,11 @@ extern char __global_base, __heap_base;
 #  define USE_MMAP_ANON
 #endif
 
+#if defined(__CHERI_PURE_CAPABILITY__) && defined(USE_MMAP)
+/* TODO: currently turned off to avoid downgrading permissions on CHERI */
+#  undef USE_MUNMAP
+#endif
+
 #if defined(REDIRECT_MALLOC) && defined(THREADS) \
     && (defined(LINUX) || defined(NACL))
 /* TODO: Unclear if NaCl really needs this. */
@@ -2674,7 +2679,11 @@ EXTERN_C_BEGIN
 #endif
 
 #ifndef CPP_PTRSZ
-#  define CPP_PTRSZ CPP_WORDSZ
+#  if defined(__CHERI_PURE_CAPABILITY__)
+#    define CPP_PTRSZ (__SIZEOF_POINTER__ * 8)
+#  else
+#    define CPP_PTRSZ CPP_WORDSZ
+#  endif
 #endif
 
 #ifndef CPPCHECK
