@@ -2780,7 +2780,7 @@ main(void)
 #  endif
 #  if defined(CPPCHECK)
 #    ifdef AO_HAVE_nop
-       AO_nop();
+  AO_nop();
 #    endif
   UNTESTED(GC_custom_push_range);
   UNTESTED(GC_push_proc);
