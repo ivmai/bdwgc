@@ -1719,8 +1719,8 @@ EXTERN_C_BEGIN
 #     pragma weak __data_start
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
-#     define CPP_WORDSZ _LOONGARCH_SZPTR
-#     define ALIGNMENT (_LOONGARCH_SZPTR/8)
+#     define CPP_WORDSZ (__SIZEOF_SIZE_T__ * 8)
+#     define ALIGNMENT (CPP_WORDSZ/8)
 #   endif
 # endif /* LOONGARCH */
 
