@@ -119,12 +119,14 @@ GC_API GC_ATTR_MALLOC GC_ATTR_CALLOC_SIZE(1, 2) void *GC_CALL
 
 #ifdef GC_BUILD
 struct GC_calloc_typed_descr_s;
-#else
+#  define GC_calloc_typed_descr_s GC_calloc_typed_descr_opaque_s
+#endif
+
 struct GC_calloc_typed_descr_s {
   GC_uintptr_t opaque_p[GC_CALLOC_TYPED_DESCR_PTRS];
   GC_word opaque[GC_CALLOC_TYPED_DESCR_WORDS - GC_CALLOC_TYPED_DESCR_PTRS];
 };
-#endif
+#undef GC_calloc_typed_descr_s
 
 /* This is same as GC_calloc_explicitly_typed but more optimal  */
 /* in terms of the performance and memory usage if the client   */

@@ -500,11 +500,8 @@ GC_calloc_prepare_explicitly_typed(struct GC_calloc_typed_descr_s *pctd,
                                    size_t ctd_sz, size_t n, size_t lb,
                                    GC_descr d)
 {
-  GC_STATIC_ASSERT(
-      sizeof(struct GC_calloc_typed_descr_s)
-      == GC_CALLOC_TYPED_DESCR_PTRS * sizeof(ptr_t)
-             + (GC_CALLOC_TYPED_DESCR_WORDS - GC_CALLOC_TYPED_DESCR_PTRS)
-                   * sizeof(word));
+  GC_STATIC_ASSERT(sizeof(struct GC_calloc_typed_descr_opaque_s)
+                   == sizeof(struct GC_calloc_typed_descr_s));
   GC_ASSERT(GC_explicit_typing_initialized);
   GC_ASSERT(sizeof(struct GC_calloc_typed_descr_s) == ctd_sz);
   (void)ctd_sz; /* unused currently */
