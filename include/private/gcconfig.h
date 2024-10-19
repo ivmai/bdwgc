@@ -2524,6 +2524,10 @@ extern char __global_base, __heap_base;
 #  define OS_TYPE ""
 #endif
 
+#ifndef MACH_TYPE
+#  define MACH_TYPE ""
+#endif
+
 #ifndef DATAEND
 #  if !defined(CPPCHECK)
 extern int end[];

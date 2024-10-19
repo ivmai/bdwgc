@@ -2256,7 +2256,9 @@ enable_incremental_mode(void)
   unsigned vdbs = GC_get_supported_vdbs();
 #endif
 
+#if !defined(CPPCHECK)
   GC_printf("Running on " OS_TYPE "/" MACH_TYPE " target\n");
+#endif
 #ifndef NO_INCREMENTAL
   if (vdbs != GC_VDB_NONE)
     GC_printf(
