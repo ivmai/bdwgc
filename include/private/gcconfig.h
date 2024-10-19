@@ -1593,7 +1593,7 @@ extern char **environ;
 
 #ifdef LOONGARCH
 #  define MACH_TYPE "LOONGARCH"
-#  define CPP_WORDSZ _LOONGARCH_SZPTR
+#  define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
 #  ifdef LINUX
 #    pragma weak __data_start
 extern int __data_start[];
