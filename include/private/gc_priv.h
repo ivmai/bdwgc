@@ -780,7 +780,7 @@ GC_INNER char *GC_envfile_getenv(const char *name);
 #  define GETENV(name) GC_envfile_getenv(name)
 #elif defined(NO_GETENV) && !defined(CPPCHECK)
 #  define GETENV(name) NULL
-#elif defined(EMPTY_GETENV_RESULTS)
+#elif defined(EMPTY_GETENV_RESULTS) && !defined(CPPCHECK)
 /* Workaround for a reputed Wine bug.   */
 GC_INLINE char *
 fixed_getenv(const char *name)
