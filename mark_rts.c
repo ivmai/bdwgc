@@ -543,21 +543,7 @@ GC_approx_sp(void)
   /* This also forces stack to grow if necessary.  Otherwise the      */
   /* later accesses might cause the kernel to think we are doing      */
   /* something wrong.                                                 */
-#if ((defined(E2K) && defined(__clang__))         \
-     || (defined(S390) && (__clang_major__ < 8))) \
-    && !defined(CPPCHECK)
-  /* Workaround some bugs in clang:                                   */
-  /* "undefined reference to llvm.frameaddress" error (clang-9/e2k);  */
-  /* a crash in SystemZTargetLowering of libLLVM-3.8 (S390).          */
-  sp = (ptr_t)(&sp);
-#elif defined(CPPCHECK)                          \
-    || (__GNUC__ >= 4 /* GC_GNUC_PREREQ(4, 0) */ \
-        && !defined(STACK_NOT_SCANNED))
-  /* TODO: Use GC_GNUC_PREREQ after fixing a bug in cppcheck. */
-  sp = (ptr_t)__builtin_frame_address(0);
-#else
-  sp = (ptr_t)(&sp);
-#endif
+  APPROX_SP(&sp);
   return (/* no volatile */ ptr_t)sp;
 }
 

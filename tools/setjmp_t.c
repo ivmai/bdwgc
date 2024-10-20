@@ -68,13 +68,10 @@ GC_ATTR_NOINLINE
 static word
 nested_sp(void)
 {
-#if defined(CPPCHECK) || GC_GNUC_PREREQ(4, 0)
-  return ADDR(__builtin_frame_address(0));
-#else
-  volatile word sp;
-  sp = ADDR(&sp);
-  return sp;
-#endif
+  volatile ptr_t sp;
+
+  APPROX_SP(&sp);
+  return ADDR(sp);
 }
 
 /* To prevent nested_sp inlining. */
@@ -91,7 +88,7 @@ const char *a_str = "a";
 int
 main(void)
 {
-  volatile word sp;
+  volatile ptr_t sp;
   unsigned ps = GETPAGESIZE();
 #ifndef WASI
   JMP_BUF b;
@@ -104,20 +101,21 @@ main(void)
   static volatile int y = 0;
 #endif
 
-  sp = ADDR(&sp);
+  APPROX_SP(&sp);
   printf("This appears to be a %s running %s\n", MACH_TYPE, OS_TYPE);
 #if defined(CPPCHECK)
   (void)nested_sp(); /* to workaround a bug in cppcheck */
 #endif
-  if (nested_sp_fn() < sp) {
+  if (nested_sp_fn() < ADDR(sp)) {
     printf("Stack appears to grow down, which is the default.\n");
     printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
-           ((unsigned long)sp + ps) & ~(unsigned long)(ps - 1));
+           ((unsigned long)ADDR(sp) + ps) & ~(unsigned long)(ps - 1));
   } else {
     printf("Stack appears to grow up.\n");
     printf("Define STACK_GROWS_UP in gc_priv.h\n");
+    /* Note: sp is rounded down. */
     printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
-           (unsigned long)sp & ~(unsigned long)(ps - 1)); /* round down */
+           (unsigned long)ADDR(sp) & ~(unsigned long)(ps - 1));
   }
   printf("Note that this may vary between machines of ostensibly\n");
   printf("the same architecture (e.g. Sun 3/50s and 3/80s).\n");

@@ -1943,7 +1943,27 @@ GC_INNER void GC_push_all_register_sections(
 
 /* Important internal collector routines.       */
 
+/* Return the current stack pointer, approximately. */
 GC_INNER ptr_t GC_approx_sp(void);
+
+/* Same as GC_approx_sp() but a macro.  sp_ptr should be a pointer  */
+/* to a local variable of volatile ptr_t type.                      */
+#if (defined(E2K) && defined(__clang__)         \
+     || (defined(S390) && __clang_major__ < 8)) \
+    && !defined(CPPCHECK)
+/* Workaround some bugs in clang:                                   */
+/* "undefined reference to llvm.frameaddress" error (clang-9/e2k);  */
+/* a crash in SystemZTargetLowering of libLLVM-3.8 (s390).          */
+#  define APPROX_SP(sp_ptr) (void)(*(sp_ptr) = (ptr_t)(sp_ptr))
+#elif defined(CPPCHECK)                          \
+    || (__GNUC__ >= 4 /* GC_GNUC_PREREQ(4, 0) */ \
+        && !defined(STACK_NOT_SCANNED))
+/* TODO: Use GC_GNUC_PREREQ after fixing a bug in cppcheck. */
+#  define APPROX_SP(sp_ptr) \
+    (void)(*(sp_ptr) = (ptr_t)__builtin_frame_address(0))
+#else
+#  define APPROX_SP(sp_ptr) (void)(*(sp_ptr) = (ptr_t)(sp_ptr))
+#endif
 
 GC_INNER GC_bool GC_should_collect(void);
 
