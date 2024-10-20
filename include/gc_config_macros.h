@@ -150,6 +150,13 @@
 # define _REENTRANT 1
 #endif
 
+#if defined(__clang__) && defined(__CYGWIN__) && defined(GC_THREADS) \
+    && defined(__LP64__)
+  /* Workaround "__stdcall__ ignored for this target" clang warning.    */
+  /* Note: __stdcall is defined implicitly based on __stdcall__.        */
+# define __stdcall__ /* empty */
+#endif
+
 #define __GC
 #if !defined(_WIN32_WCE) || defined(__GNUC__)
 # include <stddef.h>
