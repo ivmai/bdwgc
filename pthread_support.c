@@ -2000,7 +2000,6 @@ do_blocking_leave(GC_thread me, GC_bool topOfStackUnset)
 GC_INNER void
 GC_do_blocking_inner(ptr_t data, void *context)
 {
-  struct blocking_data *d = (struct blocking_data *)data;
   GC_thread me;
   GC_bool topOfStackUnset;
 
@@ -2010,7 +2009,9 @@ GC_do_blocking_inner(ptr_t data, void *context)
   do_blocking_enter(&topOfStackUnset, me);
   READER_UNLOCK_RELEASE();
 
-  d->client_data = d->fn(d->client_data);
+  ((struct blocking_data *)data)->client_data /* result */
+      = ((struct blocking_data *)data)
+            ->fn(((struct blocking_data *)data)->client_data);
 
   /* This will block if the world is stopped. */
   READER_LOCK();
@@ -2162,10 +2163,11 @@ GC_call_with_gc_active(GC_fn_type fn, void *client_data)
   /* GC_get_stack_base() was used which returned GC_SUCCESS). */
   stack_end = crtn->stack_end; /* read of a volatile field */
   GC_ASSERT(stack_end != NULL);
-  if (HOTTER_THAN(stack_end, (ptr_t)(&stacksect))) {
-    crtn->stack_end = (ptr_t)(&stacksect);
+  APPROX_SP((volatile ptr_t *)&stacksect.saved_stack_ptr);
+  if (HOTTER_THAN(stack_end, stacksect.saved_stack_ptr)) {
+    crtn->stack_end = stacksect.saved_stack_ptr;
 #  if defined(I386) && defined(GC_WIN32_THREADS)
-    crtn->initial_stack_base = (ptr_t)(&stacksect);
+    crtn->initial_stack_base = stacksect.saved_stack_ptr;
 #  endif
   }
 
@@ -2595,7 +2597,8 @@ GC_start_rtn_prepare_thread(void *(**pstart)(void *), void **pstart_arg,
 
 #    ifdef DEBUG_THREADS
   GC_log_printf("Starting thread %p, sp= %p\n",
-                (void *)GC_PTHREAD_PTRVAL(pthread_self()), (void *)&arg);
+                (void *)GC_PTHREAD_PTRVAL(pthread_self()),
+                (void *)GC_approx_sp());
 #    endif
   /* If a GC occurs before the thread is registered, that GC will     */
   /* ignore this thread.  That's fine, since it will block trying to  */

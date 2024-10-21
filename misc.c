@@ -2396,7 +2396,7 @@ GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
   struct GC_stack_base base;
   void *result;
 
-  base.mem_base = &base;
+  APPROX_SP((volatile ptr_t *)&base.mem_base);
 #ifdef IA64
   base.reg_base = GC_save_regs_in_stack();
   /* TODO: Unnecessarily flushes register stack,    */
@@ -2437,9 +2437,10 @@ GC_call_with_gc_active(GC_fn_type fn, void *client_data)
 
   /* Adjust our stack bottom pointer (this could happen if    */
   /* GC_get_main_stack_base() is unimplemented or broken for  */
-  /* the platform).                                           */
-  if (HOTTER_THAN(GC_stackbottom, (ptr_t)(&stacksect)))
-    GC_stackbottom = COVERT_DATAFLOW_P(&stacksect);
+  /* the platform).  Note: stacksect variable is reused here. */
+  APPROX_SP((volatile ptr_t *)&stacksect.saved_stack_ptr);
+  if (HOTTER_THAN(GC_stackbottom, stacksect.saved_stack_ptr))
+    GC_stackbottom = stacksect.saved_stack_ptr;
 
   if (GC_blocked_sp == NULL) {
     /* We are not inside GC_do_blocking() - do nothing more.  */
@@ -2484,28 +2485,23 @@ GC_call_with_gc_active(GC_fn_type fn, void *client_data)
 STATIC void
 GC_do_blocking_inner(ptr_t data, void *context)
 {
-  struct blocking_data *d = (struct blocking_data *)data;
-
   UNUSED_ARG(context);
   GC_ASSERT(GC_is_initialized);
   GC_ASSERT(GC_blocked_sp == NULL);
 #  ifdef SPARC
   GC_blocked_sp = GC_save_regs_in_stack();
 #  else
-  /* Save the approximate stack pointer.  */
-  GC_blocked_sp = (ptr_t)&d;
+  GC_blocked_sp = GC_approx_sp();
 #    ifdef IA64
   GC_blocked_register_sp = GC_save_regs_in_stack();
 #    endif
 #  endif
 
-  d->client_data = d->fn(d->client_data);
+  ((struct blocking_data *)data)->client_data /* result */
+      = ((struct blocking_data *)data)
+            ->fn(((struct blocking_data *)data)->client_data);
 
-#  ifdef SPARC
   GC_ASSERT(GC_blocked_sp != NULL);
-#  else
-  GC_ASSERT(GC_blocked_sp == (ptr_t)(&d));
-#  endif
 #  if defined(CPPCHECK)
   GC_noop1_ptr(GC_blocked_sp);
 #  endif
