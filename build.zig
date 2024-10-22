@@ -374,12 +374,11 @@ pub fn build(b: *std.Build) void {
     // TODO: declare that the libraries do not refer to external symbols
     // of build_shared_libs.
 
-    // zig cc supports these flags.
+    // zig cc supports this flag.
     flags.appendSlice(&.{
         // TODO: -Wno-unused-command-line-argument
         // Prevent "__builtin_return_address with nonzero argument is unsafe".
         "-Wno-frame-address",
-        "-fno-strict-aliasing",
     }) catch unreachable;
 
     if (build_shared_libs) {

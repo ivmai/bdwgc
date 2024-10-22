@@ -512,13 +512,6 @@ else()
   endif(WIN32)
 endif()
 
-# Disable strict aliasing optimizations.
-# It could re-enabled back by a flag passed in CFLAGS_EXTRA.
-check_c_compiler_flag(-fno-strict-aliasing HAVE_FLAG_F_NO_STRICT_ALIASING)
-if (HAVE_FLAG_F_NO_STRICT_ALIASING)
-  add_compile_options(-fno-strict-aliasing)
-endif()
-
 # Extra user-defined flags to pass both to C and C++ compilers.
 if (DEFINED CFLAGS_EXTRA)
   separate_arguments(CFLAGS_EXTRA_LIST UNIX_COMMAND "${CFLAGS_EXTRA}")

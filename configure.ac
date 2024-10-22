@@ -432,31 +432,6 @@ fi
 AM_CONDITIONAL([ASM_WITH_CPP_UNSUPPORTED],
     [test $compiler_xlc = yes -o $compiler_suncc = yes])
 
-if test "$GCC" = yes; then
-  # Disable aliasing optimization unless forced to.
-  AC_MSG_CHECKING([whether compiler supports -fno-strict-aliasing])
-  ac_cv_fno_strict_aliasing=no
-  for cflag in $CFLAGS; do
-    case "$cflag" in
-      -fstrict-aliasing)
-        # Opposite option already present
-        ac_cv_fno_strict_aliasing=skipped
-        break
-        ;;
-    esac
-  done
-  if test "$ac_cv_fno_strict_aliasing" != skipped; then
-    old_CFLAGS="$CFLAGS"
-    CFLAGS="$CFLAGS -fno-strict-aliasing"
-    AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],
-                      [ac_cv_fno_strict_aliasing=yes])
-    CFLAGS="$old_CFLAGS"
-    AS_IF([test "$ac_cv_fno_strict_aliasing" = yes],
-          [CFLAGS="$CFLAGS -fno-strict-aliasing"])
-  fi
-  AC_MSG_RESULT($ac_cv_fno_strict_aliasing)
-fi
-
 # Check for getcontext (uClibc can be configured without it, for example)
 AC_CHECK_FUNC([getcontext], [],
     [AC_DEFINE([NO_GETCONTEXT], [1], [Missing getcontext function.])])

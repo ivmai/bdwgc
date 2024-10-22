@@ -23,5 +23,3 @@ support - this could be done by passing "disable_threads=1" argument to nmake.
 Note that some warnings have been explicitly turned off in the makefile.
 
 VC++ note: to suppress warnings -D_CRT_SECURE_NO_DEPRECATE is used.
-
-gcc note: -fno-strict-aliasing should be used if optimizing.
