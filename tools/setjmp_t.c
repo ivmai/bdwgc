@@ -70,7 +70,7 @@ nested_sp(void)
 {
   volatile ptr_t sp;
 
-  APPROX_SP(&sp);
+  STORE_APPROX_SP_TO(sp);
   return ADDR(sp);
 }
 
@@ -101,7 +101,7 @@ main(void)
   static volatile int y = 0;
 #endif
 
-  APPROX_SP(&sp);
+  STORE_APPROX_SP_TO(sp);
   printf("This appears to be a %s running %s\n", MACH_TYPE, OS_TYPE);
 #if defined(CPPCHECK)
   (void)nested_sp(); /* to workaround a bug in cppcheck */

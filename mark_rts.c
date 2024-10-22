@@ -543,7 +543,7 @@ GC_approx_sp(void)
   /* This also forces stack to grow if necessary.  Otherwise the      */
   /* later accesses might cause the kernel to think we are doing      */
   /* something wrong.                                                 */
-  APPROX_SP(&sp);
+  STORE_APPROX_SP_TO(sp);
   return (/* no volatile */ ptr_t)sp;
 }
 

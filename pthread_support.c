@@ -2163,7 +2163,7 @@ GC_call_with_gc_active(GC_fn_type fn, void *client_data)
   /* GC_get_stack_base() was used which returned GC_SUCCESS). */
   stack_end = crtn->stack_end; /* read of a volatile field */
   GC_ASSERT(stack_end != NULL);
-  APPROX_SP((volatile ptr_t *)&stacksect.saved_stack_ptr);
+  STORE_APPROX_SP_TO(*(volatile ptr_t *)&stacksect.saved_stack_ptr);
   if (HOTTER_THAN(stack_end, stacksect.saved_stack_ptr)) {
     crtn->stack_end = stacksect.saved_stack_ptr;
 #  if defined(I386) && defined(GC_WIN32_THREADS)

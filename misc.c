@@ -2396,7 +2396,7 @@ GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
   struct GC_stack_base base;
   void *result;
 
-  APPROX_SP((volatile ptr_t *)&base.mem_base);
+  STORE_APPROX_SP_TO(*(volatile ptr_t *)&base.mem_base);
 #ifdef IA64
   base.reg_base = GC_save_regs_in_stack();
   /* TODO: Unnecessarily flushes register stack,    */
@@ -2438,7 +2438,7 @@ GC_call_with_gc_active(GC_fn_type fn, void *client_data)
   /* Adjust our stack bottom pointer (this could happen if    */
   /* GC_get_main_stack_base() is unimplemented or broken for  */
   /* the platform).  Note: stacksect variable is reused here. */
-  APPROX_SP((volatile ptr_t *)&stacksect.saved_stack_ptr);
+  STORE_APPROX_SP_TO(*(volatile ptr_t *)&stacksect.saved_stack_ptr);
   if (HOTTER_THAN(GC_stackbottom, stacksect.saved_stack_ptr))
     GC_stackbottom = stacksect.saved_stack_ptr;
 
