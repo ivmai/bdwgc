@@ -337,14 +337,16 @@ GC_FirstDLOpenedLinkMap(void)
     /* _DYNAMIC symbol not resolved. */
     return NULL;
   }
-  if (cachedResult == 0) {
+  if (NULL == cachedResult) {
     int tag;
 
     for (dp = (ElfW(Dyn) *)&_DYNAMIC; (tag = dp->d_tag) != 0; dp++) {
       if (tag == DT_DEBUG) {
-        const struct r_debug *rd = (struct r_debug *)dp->d_un.d_ptr;
+        const struct r_debug *rd = (struct r_debug *)MAKE_CPTR(dp->d_un.d_ptr);
+
         if (rd != NULL) {
           const struct link_map *lm = rd->r_map;
+
           if (lm != NULL)
             cachedResult = lm->l_next; /* might be NULL */
         }
@@ -361,22 +363,22 @@ GC_register_dynamic_libraries(void)
   struct link_map *lm;
 
   GC_ASSERT(I_HOLD_LOCK());
-  for (lm = GC_FirstDLOpenedLinkMap(); lm != 0; lm = lm->l_next) {
+  for (lm = GC_FirstDLOpenedLinkMap(); lm != NULL; lm = lm->l_next) {
     ElfW(Ehdr) * e;
     ElfW(Phdr) * p;
+    ptr_t start;
     unsigned long offset;
-    char *start;
     int i;
 
     e = (ElfW(Ehdr) *)lm->l_addr;
-    p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
-    offset = (unsigned long)lm->l_addr;
+    p = (ElfW(Phdr) *)((ptr_t)e + e->e_phoff);
+    offset = (unsigned long)ADDR(e);
     for (i = 0; i < (int)e->e_phnum; i++, p++) {
       switch (p->p_type) {
       case PT_LOAD:
-        if (!(p->p_flags & PF_W))
+        if ((p->p_flags & PF_W) == 0)
           break;
-        start = (char *)p->p_vaddr + offset;
+        start = MAKE_CPTR(p->p_vaddr) + offset;
         GC_add_roots_inner(start, start + p->p_memsz, TRUE);
         break;
       default:
@@ -630,7 +632,7 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       if ((p->p_flags & PF_W) == 0)
         continue;
 
-      start = (ptr_t)p->p_vaddr + info->dlpi_addr;
+      start = MAKE_CPTR(p->p_vaddr) + info->dlpi_addr;
       end = start + p->p_memsz;
       if (callback != 0 && !callback(info->dlpi_name, start, p->p_memsz))
         continue;
@@ -674,7 +676,7 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       /* encountered "LOAD" segment, so we need to exclude it.        */
       int j;
 
-      start = (ptr_t)p->p_vaddr + info->dlpi_addr;
+      start = MAKE_CPTR(p->p_vaddr) + info->dlpi_addr;
       end = start + p->p_memsz;
       for (j = n_load_segs; --j >= 0;) {
         if (ADDR_INSIDE(start, load_segs[j].start, load_segs[j].end)) {
@@ -874,10 +876,12 @@ GC_FirstDLOpenedLinkMap(void)
 
     for (dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++) {
       if (tag == DT_DEBUG) {
-        const struct r_debug *rd = (struct r_debug *)dp->d_un.d_ptr;
-        /* d_ptr could be null if libs are linked statically. */
+        const struct r_debug *rd = (struct r_debug *)MAKE_CPTR(dp->d_un.d_ptr);
+
+        /* d_ptr could be 0 if libs are linked statically. */
         if (rd != NULL) {
           const struct link_map *lm = rd->r_map;
+
           if (lm != NULL)
             cachedResult = lm->l_next; /* might be NULL */
         }
@@ -900,26 +904,26 @@ GC_register_dynamic_libraries(void)
     return;
   }
 #      endif
-  for (lm = GC_FirstDLOpenedLinkMap(); lm != 0; lm = lm->l_next) {
+  for (lm = GC_FirstDLOpenedLinkMap(); lm != NULL; lm = lm->l_next) {
     ElfW(Ehdr) * e;
     ElfW(Phdr) * p;
+    ptr_t start;
     unsigned long offset;
-    char *start;
     int i;
 
     e = (ElfW(Ehdr) *)lm->l_addr;
 #      ifdef HOST_ANDROID
-    if (e == NULL)
+    if (NULL == e)
       continue;
 #      endif
-    p = (ElfW(Phdr) *)((char *)e + e->e_phoff);
-    offset = (unsigned long)lm->l_addr;
+    p = (ElfW(Phdr) *)((ptr_t)e + e->e_phoff);
+    offset = (unsigned long)ADDR(e);
     for (i = 0; i < (int)e->e_phnum; i++, p++) {
       switch (p->p_type) {
       case PT_LOAD:
-        if (!(p->p_flags & PF_W))
+        if ((p->p_flags & PF_W) == 0)
           break;
-        start = (char *)p->p_vaddr + offset;
+        start = MAKE_CPTR(p->p_vaddr) + offset;
         GC_add_roots_inner(start, start + p->p_memsz, TRUE);
         break;
       default:
@@ -993,7 +997,7 @@ GC_register_dynamic_libraries(void)
     current_sz = needed_sz * 2 + 1;
     addr_map
         = (prmap_t *)GC_scratch_alloc((size_t)current_sz * sizeof(prmap_t));
-    if (addr_map == NULL)
+    if (NULL == addr_map)
       ABORT("Insufficient memory for address map");
   }
   if (ioctl(fd, PIOCMAP, addr_map) < 0) {
@@ -1255,13 +1259,14 @@ GC_register_dynamic_libraries(void)
     }
 
     ldi = (struct ld_info *)ldibuf;
-    while (ldi) {
+    for (;;) {
       len = ldi->ldinfo_next;
-      GC_add_roots_inner(ldi->ldinfo_dataorg,
-                         MAKE_CPTR((unsigned long)ldi->ldinfo_dataorg)
-                             + ldi->ldinfo_datasize,
+      GC_add_roots_inner((ptr_t)ldi->ldinfo_dataorg,
+                         (ptr_t)ldi->ldinfo_dataorg + ldi->ldinfo_datasize,
                          TRUE);
-      ldi = len ? (struct ld_info *)((char *)ldi + len) : 0;
+      if (0 == len)
+        break;
+      ldi = (struct ld_info *)((ptr_t)ldi + len);
     }
     break;
   }
@@ -1353,7 +1358,8 @@ dyld_section_add_del(const struct GC_MACH_HEADER *phdr, intptr_t slide,
                      const char *dlpi_name, GC_has_static_roots_func callback,
                      const char *seg, const char *secnam, GC_bool is_add)
 {
-  unsigned long start, end, sec_size;
+  ptr_t start, end;
+  unsigned long sec_size;
 #    ifdef USE_GETSECTBYNAME
 #      if CPP_WORDSZ == 64
   const struct section_64 *sec = getsectbynamefromheader_64(phdr, seg, secnam);
@@ -1364,13 +1370,13 @@ dyld_section_add_del(const struct GC_MACH_HEADER *phdr, intptr_t slide,
   if (NULL == sec)
     return;
   sec_size = sec->size;
-  start = slide + sec->addr;
+  start = MAKE_CPTR(slide + sec->addr);
 #    else
 
   UNUSED_ARG(slide);
   sec_size = 0;
-  start = (unsigned long)getsectiondata(phdr, seg, secnam, &sec_size);
-  if (0 == start)
+  start = (ptr_t)getsectiondata(phdr, seg, secnam, &sec_size);
+  if (NULL == start)
     return;
 #    endif
   if (sec_size < sizeof(ptr_t))
@@ -1380,14 +1386,14 @@ dyld_section_add_del(const struct GC_MACH_HEADER *phdr, intptr_t slide,
     LOCK();
     /* The user callback is invoked holding the allocator lock.   */
     if (EXPECT(callback != 0, FALSE)
-        && !callback(dlpi_name, (void *)start, (size_t)sec_size)) {
+        && !callback(dlpi_name, start, (size_t)sec_size)) {
       UNLOCK();
       return; /* skip section */
     }
-    GC_add_roots_inner((ptr_t)start, (ptr_t)end, FALSE);
+    GC_add_roots_inner(start, end, FALSE);
     UNLOCK();
   } else {
-    GC_remove_roots((void *)start, (void *)end);
+    GC_remove_roots(start, end);
   }
 #    ifdef DARWIN_DEBUG
   GC_log_printf("%s section __DATA,%s at %p-%p (%lu bytes) from image %s\n",

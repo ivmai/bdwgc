@@ -53,16 +53,16 @@ typedef struct StackFrame {
   unsigned long savedSP;
   unsigned long savedCR;
   unsigned long savedLR;
-  unsigned long reserved[2];
-  unsigned long savedRTOC;
+  /* unsigned long reserved[2]; */
+  /* unsigned long savedRTOC; */
 } StackFrame;
 
 GC_INNER ptr_t
 GC_FindTopOfStack(unsigned long stack_start)
 {
-  StackFrame *frame = (StackFrame *)stack_start;
+  StackFrame *frame = (StackFrame *)MAKE_CPTR(stack_start);
 
-  if (stack_start == 0) {
+  if (NULL == frame) {
 #    ifdef POWERPC
 #      if CPP_WORDSZ == 32
     __asm__ __volatile__("lwz %0,0(r1)" : "=r"(frame));
@@ -71,12 +71,14 @@ GC_FindTopOfStack(unsigned long stack_start)
 #      endif
 #    elif defined(ARM32)
     volatile ptr_t sp_reg;
+
     __asm__ __volatile__("mov %0, r7\n" : "=r"(sp_reg));
-    frame = (StackFrame *)sp_reg;
+    frame = (/* no volatile */ StackFrame *)sp_reg;
 #    elif defined(AARCH64)
     volatile ptr_t sp_reg;
+
     __asm__ __volatile__("mov %0, x29\n" : "=r"(sp_reg));
-    frame = (StackFrame *)sp_reg;
+    frame = (/* no volatile */ StackFrame *)sp_reg;
 #    else
 #      if defined(CPPCHECK)
     GC_noop1_ptr(&frame);
@@ -91,7 +93,10 @@ GC_FindTopOfStack(unsigned long stack_start)
   while (frame->savedSP != 0) { /* stop if no more stack frames */
     unsigned long maskedLR;
 
-    frame = (StackFrame *)frame->savedSP;
+#    ifdef CPPCHECK
+    GC_noop1(frame->savedCR);
+#    endif
+    frame = (StackFrame *)MAKE_CPTR(frame->savedSP);
 
     /* We do these next two checks after going to the next frame        */
     /* because the LR for the first stack frame in the loop is not set  */

@@ -964,7 +964,7 @@ EXTERN_C_BEGIN
 #define modHBLKSZ(n) ((n) & (HBLKSIZE - 1))
 
 #define HBLKPTR(objptr) ((struct hblk *)PTR_ALIGN_DOWN(objptr, HBLKSIZE))
-#define HBLKDISPL(objptr) modHBLKSZ((size_t)(objptr))
+#define HBLKDISPL(objptr) modHBLKSZ((size_t)ADDR(objptr))
 
 /* Same as HBLKPTR() but points to the first block in the page.     */
 #define HBLK_PAGE_ALIGNED(objptr) \

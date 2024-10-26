@@ -5398,7 +5398,7 @@ GC_save_callers(struct callinfo info[NFRAMES])
   fp = frame;
 #      else /* SPARC */
   frame = (struct frame *)GC_save_regs_in_stack();
-  fp = (struct frame *)((long)frame->FR_SAVFP + BIAS);
+  fp = (struct frame *)((ptr_t)frame->FR_SAVFP + BIAS);
 #      endif
 
   for (; !HOTTER_THAN((ptr_t)fp, (ptr_t)frame)
@@ -5408,7 +5408,7 @@ GC_save_callers(struct callinfo info[NFRAMES])
          && fp != NULL
 #      endif
          && nframes < NFRAMES;
-       fp = (struct frame *)((long)fp->FR_SAVFP + BIAS), nframes++) {
+       fp = (struct frame *)((ptr_t)fp->FR_SAVFP + BIAS), nframes++) {
 #      if NARGS > 0
     int i;
 #      endif
@@ -5416,7 +5416,7 @@ GC_save_callers(struct callinfo info[NFRAMES])
     info[nframes].ci_pc = (GC_return_addr_t)fp->FR_SAVPC;
 #      if NARGS > 0
     for (i = 0; i < NARGS; i++) {
-      info[nframes].ci_arg[i] = GC_HIDE_NZ_POINTER((void *)fp->fr_arg[i]);
+      info[nframes].ci_arg[i] = GC_HIDE_NZ_POINTER(MAKE_CPTR(fp->fr_arg[i]));
     }
 #      endif
   }
@@ -5480,7 +5480,7 @@ GC_print_callers(struct callinfo info[NFRAMES])
     if (reent_cnt > 0) {
       /* We were called either concurrently or during an allocation */
       /* by backtrace_symbols() called from GC_print_callers; punt. */
-      GC_err_printf("\t\t##PC##= 0x%lx\n", (unsigned long)info[i].ci_pc);
+      GC_err_printf("\t\t##PC##= 0x%lx\n", (unsigned long)ADDR(info[i].ci_pc));
       continue;
     }
 
@@ -5496,7 +5496,7 @@ GC_print_callers(struct callinfo info[NFRAMES])
 #  endif
       /* else */ {
         (void)snprintf(buf, sizeof(buf), "##PC##= 0x%lx",
-                       (unsigned long)info[i].ci_pc);
+                       (unsigned long)ADDR(info[i].ci_pc));
         buf[sizeof(buf) - 1] = '\0';
         name = buf;
       }
@@ -5536,7 +5536,7 @@ GC_print_callers(struct callinfo info[NFRAMES])
         /* isn't time critical.                                 */
         (void)snprintf(cmd_buf, sizeof(cmd_buf),
                        "/usr/bin/addr2line -f -e %s 0x%lx", exe_name,
-                       (unsigned long)info[i].ci_pc);
+                       (unsigned long)ADDR(info[i].ci_pc));
         cmd_buf[sizeof(cmd_buf) - 1] = '\0';
         old_preload = GETENV("LD_PRELOAD");
         if (old_preload != NULL) {
@@ -5588,7 +5588,7 @@ GC_print_callers(struct callinfo info[NFRAMES])
           /* Add address in the hex format.     */
           (void)snprintf(&result_buf[result_len],
                          sizeof(result_buf) - result_len, " [0x%lx]",
-                         (unsigned long)info[i].ci_pc);
+                         (unsigned long)ADDR(info[i].ci_pc));
           result_buf[sizeof(result_buf) - 1] = '\0';
         }
 #    if defined(CPPCHECK)

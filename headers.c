@@ -430,7 +430,7 @@ GC_prev_block(struct hblk *h)
         j -= (signed_word)ADDR(hhdr);
       } else {
         /* TODO: return hhdr -> hb_block instead */
-        return (struct hblk *)HBLK_ADDR(bi, j);
+        return (struct hblk *)MAKE_CPTR(HBLK_ADDR(bi, j));
       }
     }
     j = BOTTOM_SZ - 1;

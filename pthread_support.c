@@ -2979,9 +2979,9 @@ GC_lock(void)
 
 #    if defined(GC_ASSERTIONS) && defined(GC_WIN32_THREADS) \
         && !defined(USE_PTHREAD_LOCKS)
-/* Id is not guaranteed to be unique.       */
+/* Note: result is not guaranteed to be unique. */
 #      define NUMERIC_THREAD_ID(id) \
-        (unsigned long)((word)GC_PTHREAD_PTRVAL(id))
+        ((unsigned long)ADDR(GC_PTHREAD_PTRVAL(id)))
 #    endif
 
 #    ifdef GC_ASSERTIONS
