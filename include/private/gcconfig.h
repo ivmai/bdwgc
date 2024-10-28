@@ -942,6 +942,10 @@
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
 #       endif
+#       ifndef USE_MMAP
+          /* sbrk() is not available. */
+#         define USE_MMAP 1
+#       endif
         extern char etext[];
         ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
@@ -1143,6 +1147,9 @@
 #       define FREEBSD_STACKBOTTOM
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
+#       endif
+#       ifndef USE_MMAP
+#         define USE_MMAP 1
 #       endif
         extern char etext[];
         extern char edata[];
@@ -1439,6 +1446,9 @@
 #       define FREEBSD_STACKBOTTOM
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
+#       endif
+#       ifndef USE_MMAP
+#         define USE_MMAP 1
 #       endif
         extern char etext[];
         char * GC_FreeBSDGetDataStart(size_t, ptr_t);
@@ -1781,6 +1791,9 @@
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
 #       endif
+#       ifndef USE_MMAP
+#         define USE_MMAP 1
+#       endif
 /* Handle unmapped hole alpha*-*-freebsd[45]* puts between etext and edata. */
         extern char etext[];
         extern char edata[];
@@ -2076,6 +2089,9 @@
 #     ifdef __ELF__
 #       define DYNAMIC_LOADING
 #     endif
+#     ifndef USE_MMAP
+#       define USE_MMAP 1
+#     endif
 #     define HEURISTIC2
       extern char etext[];
 #     define SEARCH_FOR_DATA_START
@@ -2323,6 +2339,9 @@
 #       define FREEBSD_STACKBOTTOM
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
+#       endif
+#       ifndef USE_MMAP
+#         define USE_MMAP 1
 #       endif
         extern char etext[];
         ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
