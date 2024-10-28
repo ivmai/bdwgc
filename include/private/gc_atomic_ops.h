@@ -140,7 +140,7 @@ AO_compare_and_swap_release(volatile AO_t *p, AO_t ov, AO_t nv)
 
 #endif /* !GC_BUILTIN_ATOMIC */
 
-#if defined(GC_BUILTIN_ATOMIC) || CPP_PTRSZ > CPP_WORDSZ
+#if defined(GC_BUILTIN_ATOMIC) || defined(__CHERI_PURE_CAPABILITY__)
 /* Assume that GCC atomic intrinsics are available (and have correct  */
 /* implementation).  p should be of a pointer to ptr_t (char*) value. */
 #  define GC_cptr_load(p) __atomic_load_n(p, __ATOMIC_RELAXED)
@@ -173,6 +173,6 @@ GC_cptr_compare_and_swap(char *volatile *p, char *ov, char *nv)
 #    define GC_cptr_compare_and_swap(p, ov, nv) \
       AO_compare_and_swap((volatile AO_t *)(p), (AO_t)(ov), (AO_t)(nv))
 #  endif
-#endif /* !GC_BUILTIN_ATOMIC && CPP_PTRSZ == CPP_WORDSZ */
+#endif /* !GC_BUILTIN_ATOMIC */
 
 #endif /* GC_ATOMIC_OPS_H */
