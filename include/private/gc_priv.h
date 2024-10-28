@@ -324,6 +324,11 @@ typedef struct hblkhdr hdr;
 #define CAST_AWAY_VOLATILE_PVOID(p) \
   CAST_THRU_UINTPTR(/* no volatile */ void *, p)
 
+/* Convert an unsigned value to a void pointer.  Typically used to  */
+/* print a numeric value using "%p" format specifier.  The pointer  */
+/* is not supposed to be dereferenced.                              */
+#define NUMERIC_TO_VPTR(v) ((void *)(word)(v))
+
 /* Create a ptr_t pointer from a number (of word type). */
 #define MAKE_CPTR(w) ((ptr_t)(word)(w))
 

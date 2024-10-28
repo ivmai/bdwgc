@@ -251,7 +251,7 @@ struct SEXPR {
 
 typedef struct SEXPR *sexpr;
 
-#define INT_TO_SEXPR(v) ((sexpr)(GC_uintptr_t)(unsigned)(v))
+#define INT_TO_SEXPR(v) ((sexpr)NUMERIC_TO_VPTR(v))
 #define SEXPR_TO_INT(p) ((int)(GC_word)(p))
 
 #undef nil
@@ -866,7 +866,7 @@ reverse_test_inner(void *data)
 
   if (data == 0) {
     /* This stack frame is not guaranteed to be scanned. */
-    return GC_call_with_gc_active(reverse_test_inner, (void *)(GC_uintptr_t)1);
+    return GC_call_with_gc_active(reverse_test_inner, NUMERIC_TO_VPTR(1));
   }
 
 #if defined(CPPCHECK)
@@ -1101,7 +1101,7 @@ mktree(int n)
 
 #ifndef GC_NO_FINALIZATION
     if (!GC_get_find_leak()) {
-      GC_REGISTER_FINALIZER(result, finalizer, (void *)(GC_uintptr_t)n,
+      GC_REGISTER_FINALIZER(result, finalizer, NUMERIC_TO_VPTR(n),
                             (GC_finalization_proc *)0, (void **)0);
       if (my_index >= MAX_FINALIZED) {
         GC_printf("live_indicators overflowed\n");
@@ -1413,25 +1413,25 @@ typed_test(void)
       GC_printf("Bad initialization by GC_malloc_explicitly_typed\n");
       FAIL;
     }
-    newP[0] = (void *)(GC_uintptr_t)17;
+    newP[0] = NUMERIC_TO_VPTR(17);
     GC_PTR_STORE_AND_DIRTY(newP + 1, old);
     old = newP;
     AO_fetch_and_add1(&collectable_count);
     newP = (void **)GC_MALLOC_EXPLICITLY_TYPED(4 * sizeof(void *), d2);
     CHECK_OUT_OF_MEMORY(newP);
-    newP[0] = (void *)(GC_uintptr_t)17;
+    newP[0] = NUMERIC_TO_VPTR(17);
     GC_PTR_STORE_AND_DIRTY(newP + 1, old);
     old = newP;
     AO_fetch_and_add1(&collectable_count);
     newP = (void **)GC_MALLOC_EXPLICITLY_TYPED(33 * sizeof(void *), d3);
     CHECK_OUT_OF_MEMORY(newP);
-    newP[0] = (void *)(GC_uintptr_t)17;
+    newP[0] = NUMERIC_TO_VPTR(17);
     GC_PTR_STORE_AND_DIRTY(newP + 1, old);
     old = newP;
     AO_fetch_and_add1(&collectable_count);
     newP = (void **)GC_CALLOC_EXPLICITLY_TYPED(4, 2 * sizeof(void *), d1);
     CHECK_OUT_OF_MEMORY(newP);
-    newP[0] = (void *)(GC_uintptr_t)17;
+    newP[0] = NUMERIC_TO_VPTR(17);
     GC_PTR_STORE_AND_DIRTY(newP + 1, old);
     old = newP;
     AO_fetch_and_add1(&collectable_count);
@@ -1449,7 +1449,7 @@ typed_test(void)
       }
     }
     CHECK_OUT_OF_MEMORY(newP);
-    newP[0] = (void *)(GC_uintptr_t)17;
+    newP[0] = NUMERIC_TO_VPTR(17);
     GC_PTR_STORE_AND_DIRTY(newP + 1, old);
     old = newP;
   }
@@ -1511,8 +1511,9 @@ uniq(void *p, ...)
   int n = 0, i, j;
   q[n++] = p;
   va_start(a, p);
-  for (; (q[n] = va_arg(a, void *)) != NULL; n++)
-    ;
+  for (; (q[n] = va_arg(a, void *)) != NULL; n++) {
+    /* Empty. */
+  }
   va_end(a);
   for (i = 0; i < n; i++)
     for (j = 0; j < i; j++)

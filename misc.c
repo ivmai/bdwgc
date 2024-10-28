@@ -2406,7 +2406,7 @@ GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
     unsigned long long sz_ull;
 
     GET_PROCEDURE_STACK_SIZE_INNER(&sz_ull);
-    base.reg_base = (void *)(word)sz_ull;
+    base.reg_base = NUMERIC_TO_VPTR(sz_ull);
   }
 #endif
   result = (*(GC_stack_base_func volatile *)&fn)(&base, arg);

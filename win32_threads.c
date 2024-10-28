@@ -109,7 +109,7 @@ GC_use_threads_discovery(void)
 #    endif
   GC_init();
 #    ifdef CPPCHECK
-  GC_noop1((word)(GC_funcptr_uint)&GC_DllMain);
+  GC_noop1((word)(GC_funcptr_uint)(&GC_DllMain));
 #    endif
 #  endif
 }
@@ -1215,7 +1215,7 @@ GC_start_mark_threads_inner(void)
     /* There is no _beginthreadex() in WinCE. */
     handle = CreateThread(NULL /* lpsa */,
                           MARK_THREAD_STACK_SIZE /* ignored */, GC_mark_thread,
-                          (LPVOID)(word)i, 0 /* fdwCreate */, &thread_id);
+                          NUMERIC_TO_VPTR(i), 0 /* fdwCreate */, &thread_id);
     if (EXPECT(NULL == handle, FALSE)) {
       WARN("Marker thread %" WARN_PRIdPTR " creation failed\n",
            (signed_word)i);
@@ -1231,7 +1231,7 @@ GC_start_mark_threads_inner(void)
 
     GC_marker_last_stack_min[i] = ADDR_LIMIT;
     handle = _beginthreadex(NULL /* security_attr */, MARK_THREAD_STACK_SIZE,
-                            GC_mark_thread, (void *)(word)i, 0 /* flags */,
+                            GC_mark_thread, NUMERIC_TO_VPTR(i), 0 /* flags */,
                             &thread_id);
     if (EXPECT(!handle || handle == (GC_uintptr_t)-1L, FALSE)) {
       WARN("Marker thread %" WARN_PRIdPTR " creation failed\n",
@@ -1429,7 +1429,7 @@ GC_win32_start_inner(struct GC_stack_base *sb, void *arg)
   __try
 #  endif
   {
-    ret = (void *)(word)((*start_routine)(start_arg));
+    ret = NUMERIC_TO_VPTR(start_routine(start_arg));
   }
 #  ifndef NO_SEH_AVAILABLE
   __finally
@@ -1608,7 +1608,7 @@ main_thread_start(LPVOID arg)
 STATIC void *GC_CALLBACK
 GC_waitForSingleObjectInfinite(void *handle)
 {
-  return (void *)(word)WaitForSingleObject((HANDLE)handle, INFINITE);
+  return NUMERIC_TO_VPTR(WaitForSingleObject((HANDLE)handle, INFINITE));
 }
 
 #    ifndef WINMAIN_THREAD_STACK_SIZE

@@ -1034,7 +1034,7 @@ GC_suspend_all(void)
         if (GC_nacl_thread_parked[i] == 1) {
           num_threads_parked++;
           if (GC_on_thread_event)
-            GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED, (void *)(word)i);
+            GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED, NUMERIC_TO_VPTR(i));
         }
       }
     }

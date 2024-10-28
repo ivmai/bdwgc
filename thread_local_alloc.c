@@ -66,7 +66,7 @@ return_freelists(void **fl, void **gfl)
     }
     /* Clear fl[i], since the thread structure may hang around.     */
     /* Do it in a way that is likely to trap if we access it.       */
-    fl[i] = (ptr_t)(GC_uintptr_t)HBLKSIZE;
+    fl[i] = (ptr_t)NUMERIC_TO_VPTR(HBLKSIZE);
   }
   /* The 0 granule free list really contains 1 granule objects.       */
   if (ADDR(fl[0]) >= HBLKSIZE
@@ -116,10 +116,10 @@ GC_init_thread_local(GC_tlfs p)
   }
   for (j = 0; j < GC_TINY_FREELISTS; ++j) {
     for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
-      p->_freelists[k][j] = (void *)(GC_uintptr_t)1;
+      p->_freelists[k][j] = NUMERIC_TO_VPTR(1);
     }
 #  ifdef GC_GCJ_SUPPORT
-    p->gcj_freelists[j] = (void *)(GC_uintptr_t)1;
+    p->gcj_freelists[j] = NUMERIC_TO_VPTR(1);
 #  endif
   }
   /* The zero-sized free list is handled like the regular free list,  */

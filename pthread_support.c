@@ -378,7 +378,7 @@ static void
 set_marker_thread_name(unsigned id)
 {
   int err = pthread_setname_np(pthread_self(), "GC-marker-%zu",
-                               (void *)(size_t)id);
+                               NUMERIC_TO_VPTR(id));
   if (EXPECT(err != 0, FALSE))
     WARN("pthread_setname_np failed, errno= %" WARN_PRIdPTR "\n",
          (signed_word)err);
@@ -637,7 +637,7 @@ GC_start_mark_threads_inner(void)
     GC_marker_last_stack_min[i] = ADDR_LIMIT;
 #    endif
     if (EXPECT(REAL_FUNC(pthread_create)(&new_thread, &attr, GC_mark_thread,
-                                         (void *)(word)i)
+                                         NUMERIC_TO_VPTR(i))
                    != 0,
                FALSE)) {
       WARN("Marker thread %" WARN_PRIdPTR " creation failed\n",
@@ -1649,7 +1649,7 @@ GC_record_stack_base(GC_stack_context_t crtn, const struct GC_stack_base *sb)
   if ((crtn->stack_end = (ptr_t)sb->mem_base) == NULL)
     ABORT("Bad stack base in GC_register_my_thread");
 #  ifdef E2K
-  crtn->ps_ofs = (size_t)((GC_uintptr_t)sb->reg_base);
+  crtn->ps_ofs = (size_t)(GC_uintptr_t)sb->reg_base;
 #  elif defined(IA64)
   crtn->backing_store_end = (ptr_t)sb->reg_base;
 #  elif defined(I386) && defined(GC_WIN32_THREADS)
@@ -2105,7 +2105,7 @@ GC_set_stackbottom(void *gc_thread_handle, const struct GC_stack_base *sb)
 
   crtn->stack_end = (ptr_t)sb->mem_base;
 #  ifdef E2K
-  crtn->ps_ofs = (size_t)((GC_uintptr_t)sb->reg_base);
+  crtn->ps_ofs = (size_t)(GC_uintptr_t)sb->reg_base;
 #  elif defined(IA64)
   crtn->backing_store_end = (ptr_t)sb->reg_base;
 #  endif
@@ -2128,7 +2128,7 @@ GC_get_my_stackbottom(struct GC_stack_base *sb)
   sb->mem_base = crtn->stack_end;
 #  ifdef E2K
   /* Store the offset in the procedure stack, not address.  */
-  sb->reg_base = (void *)((GC_uintptr_t)crtn->ps_ofs);
+  sb->reg_base = NUMERIC_TO_VPTR(crtn->ps_ofs);
 #  elif defined(IA64)
   sb->reg_base = crtn->backing_store_end;
 #  endif

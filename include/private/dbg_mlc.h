@@ -36,7 +36,7 @@ EXTERN_C_BEGIN
 #  if CPP_WORDSZ == 32
 #    define GC_FREED_MEM_MARKER (GC_uintptr_t)0xdeadbeef
 #  else
-#    define GC_FREED_MEM_MARKER (GC_uintptr_t) GC_WORD_C(0xEFBEADDEdeadbeef)
+#    define GC_FREED_MEM_MARKER ((GC_uintptr_t)GC_WORD_C(0xEFBEADDEdeadbeef))
 #  endif
 #endif /* !GC_FREED_MEM_MARKER */
 
@@ -46,8 +46,8 @@ EXTERN_C_BEGIN
 #  define START_FLAG (GC_uintptr_t)0xfedcedcb
 #  define END_FLAG (GC_uintptr_t)0xbcdecdef
 #else
-#  define START_FLAG (GC_uintptr_t) GC_WORD_C(0xFEDCEDCBfedcedcb)
-#  define END_FLAG (GC_uintptr_t) GC_WORD_C(0xBCDECDEFbcdecdef)
+#  define START_FLAG ((GC_uintptr_t)GC_WORD_C(0xFEDCEDCBfedcedcb))
+#  define END_FLAG ((GC_uintptr_t)GC_WORD_C(0xBCDECDEFbcdecdef))
 #endif
 
 #if defined(KEEP_BACK_PTRS) || defined(PRINT_BLACK_LIST)
@@ -56,13 +56,13 @@ EXTERN_C_BEGIN
 /* argument to some marking functions.                */
 
 /* Object was marked because it is finalizable.         */
-#  define MARKED_FOR_FINALIZATION ((ptr_t)(GC_uintptr_t)2)
+#  define MARKED_FOR_FINALIZATION ((ptr_t)NUMERIC_TO_VPTR(2))
 
 /* Object was marked from a register.  Hence the        */
 /* source of the reference doesn't have an address.     */
-#  define MARKED_FROM_REGISTER ((ptr_t)(GC_uintptr_t)4)
+#  define MARKED_FROM_REGISTER ((ptr_t)NUMERIC_TO_VPTR(4))
 
-#  define NOT_MARKED ((ptr_t)(GC_uintptr_t)8)
+#  define NOT_MARKED ((ptr_t)NUMERIC_TO_VPTR(8))
 #endif /* KEEP_BACK_PTRS || PRINT_BLACK_LIST */
 
 /* Object debug header.  The size of the structure is assumed   */

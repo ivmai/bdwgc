@@ -731,7 +731,7 @@ GC_start_reclaim(GC_bool report_if_found)
 
   /* Go through all heap blocks (in hblklist) and reclaim unmarked    */
   /* objects or enqueue the block for later processing.               */
-  GC_apply_to_all_blocks(GC_reclaim_block, (void *)(word)report_if_found);
+  GC_apply_to_all_blocks(GC_reclaim_block, NUMERIC_TO_VPTR(report_if_found));
 
 #ifdef EAGER_SWEEP
   /* This is a very stupid thing to do.  We make it possible anyway,  */

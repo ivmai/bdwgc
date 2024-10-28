@@ -306,7 +306,7 @@ GC_install_counts(struct hblk *h, size_t sz /* bytes */)
   for (hbp = h + 1; ADDR_LT((ptr_t)hbp, (ptr_t)h + sz); hbp++) {
     word i = (word)HBLK_PTR_DIFF(hbp, h);
 
-    SET_HDR(hbp, (hdr *)(i > MAX_JUMP ? MAX_JUMP : i));
+    SET_HDR(hbp, (hdr *)NUMERIC_TO_VPTR(i > MAX_JUMP ? MAX_JUMP : i));
   }
   return TRUE;
 }
