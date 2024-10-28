@@ -71,7 +71,7 @@ typedef GC_word GC_uintptr_t;
 /* arguments should be of the same pointer type, e.g. of char* type.    */
 /* Ancient compilers might treat a pointer as a signed value, thus we   */
 /* need a cast to unsigned word of each compared pointer.               */
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__CHERI_PURE_CAPABILITY__)
 #  define GC_ADDR_LT(p, q) ((p) < (q))
 #else
 #  define GC_ADDR_LT(p, q) ((GC_word)(p) < (GC_word)(q))
