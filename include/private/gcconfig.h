@@ -871,6 +871,10 @@ extern int _apps_bss_end[];
 #  ifdef __ELF__
 #    define DYNAMIC_LOADING
 #  endif
+#  ifndef USE_MMAP
+/* sbrk() is not available. */
+#    define USE_MMAP 1
+#  endif
 #  if !defined(ALPHA) && !defined(SPARC)
 extern char etext[];
 #    define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
