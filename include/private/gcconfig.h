@@ -3436,8 +3436,8 @@ void *os2_alloc(size_t bytes);
 #    if defined(REDIRECT_MALLOC) && !defined(CPPCHECK)
 #      error Malloc redirection is unsupported
 #    endif
-#    define GET_MEM(bytes)                                          \
-      HBLKPTR((size_t)calloc(1, SIZET_SAT_ADD(bytes, GC_page_size)) \
+#    define GET_MEM(bytes)                                         \
+      HBLKPTR((ptr_t)calloc(1, SIZET_SAT_ADD(bytes, GC_page_size)) \
               + GC_page_size - 1)
 #  elif defined(MSWIN_XBOX1)
 ptr_t GC_durango_get_mem(size_t bytes);
