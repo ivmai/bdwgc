@@ -1023,6 +1023,10 @@
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
 #       endif
+#       ifndef USE_MMAP
+          /* sbrk() is not available. */
+#         define USE_MMAP 1
+#       endif
         extern char etext[];
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #       define DATASTART_USES_BSDGETDATASTART
@@ -1247,6 +1251,9 @@
 #       define FREEBSD_STACKBOTTOM
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
+#       endif
+#       ifndef USE_MMAP
+#         define USE_MMAP 1
 #       endif
         extern char etext[];
         extern char edata[];
@@ -1525,6 +1532,9 @@
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
 #       endif
+#       ifndef USE_MMAP
+#         define USE_MMAP 1
+#       endif
         extern char etext[];
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #       define DATASTART_USES_BSDGETDATASTART
@@ -1768,6 +1778,9 @@
 #    ifdef __ELF__
 #      define DYNAMIC_LOADING
 #    endif
+#    ifndef USE_MMAP
+#      define USE_MMAP 1
+#    endif
      extern char etext[];
 #    define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #    define DATASTART_USES_BSDGETDATASTART
@@ -1938,6 +1951,9 @@
 #       define FREEBSD_STACKBOTTOM
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
+#       endif
+#       ifndef USE_MMAP
+#         define USE_MMAP 1
 #       endif
 /* Handle unmapped hole alpha*-*-freebsd[45]* puts between etext and edata. */
         extern char etext[];
@@ -2210,6 +2226,9 @@
 #     ifdef __ELF__
 #       define DYNAMIC_LOADING
 #     endif
+#     ifndef USE_MMAP
+#       define USE_MMAP 1
+#     endif
       extern char etext[];
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #     define DATASTART_USES_BSDGETDATASTART
@@ -2314,6 +2333,9 @@
 #     define FREEBSD_STACKBOTTOM
 #     ifdef __ELF__
 #       define DYNAMIC_LOADING
+#     endif
+#     ifndef USE_MMAP
+#       define USE_MMAP 1
 #     endif
       extern char etext[];
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
@@ -2582,6 +2604,9 @@
 #       define FREEBSD_STACKBOTTOM
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
+#       endif
+#       ifndef USE_MMAP
+#         define USE_MMAP 1
 #       endif
         extern char etext[];
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
