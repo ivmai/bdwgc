@@ -268,25 +268,25 @@ GC_get_maps(void)
  *  is as follows:
  *  XXXXXXXX-XXXXXXXX r-xp 00000000 30:05 260537     name of mapping...\n
  *  ^^^^^^^^ ^^^^^^^^ ^^^^          ^^
- *  start    end      prot          maj_dev
+ *  *p_start *p_end   *p_prot       *p_maj_dev
  *
  *  Note that since about august 2003 kernels, the columns no longer have
  *  fixed offsets on 64-bit kernels.  Hence we no longer rely on fixed offsets
  *  anywhere, which is safer anyway.
  */
 
-/* Assign various fields of the first line in maps_ptr to (*start),     */
-/* (*end), (*prot), (*maj_dev) and (*mapping_name).  mapping_name may   */
-/* be NULL. (*prot) and (*mapping_name) are assigned pointers into the  */
+/* Assign various fields of the first line in maps_ptr to *p_start,     */
+/* *p_end, *p_prot, *p_maj_dev and *p_mapping_name.  p_mapping_name may */
+/* be NULL. *p_prot and *p_mapping_name are assigned pointers into the  */
 /* original buffer.                                                     */
 #  if defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES) \
       || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)     \
       || (defined(CHECK_SOFT_VDB) && defined(MPROTECT_VDB))       \
       || defined(REDIR_MALLOC_AND_LINUXTHREADS)
 GC_INNER const char *
-GC_parse_map_entry(const char *maps_ptr, ptr_t *start, ptr_t *end,
-                   const char **prot, unsigned *maj_dev,
-                   const char **mapping_name)
+GC_parse_map_entry(const char *maps_ptr, ptr_t *p_start, ptr_t *p_end,
+                   const char **p_prot, unsigned *p_maj_dev,
+                   const char **p_mapping_name)
 {
   const unsigned char *start_start, *end_start, *maj_dev_start;
   const unsigned char *p; /* unsigned for isspace, isxdigit */
@@ -300,19 +300,19 @@ GC_parse_map_entry(const char *maps_ptr, ptr_t *start, ptr_t *end,
     ++p;
   start_start = p;
   GC_ASSERT(isxdigit(*start_start));
-  *start = (ptr_t)strtoul((const char *)start_start, (char **)&p, 16);
+  *p_start = (ptr_t)strtoul((const char *)start_start, (char **)&p, 16);
   GC_ASSERT(*p == '-');
 
   ++p;
   end_start = p;
   GC_ASSERT(isxdigit(*end_start));
-  *end = (ptr_t)strtoul((const char *)end_start, (char **)&p, 16);
+  *p_end = (ptr_t)strtoul((const char *)end_start, (char **)&p, 16);
   GC_ASSERT(isspace(*p));
 
   while (isspace(*p))
     ++p;
   GC_ASSERT(*p == 'r' || *p == '-');
-  *prot = (const char *)p;
+  *p_prot = (const char *)p;
   /* Skip past protection field to offset field.      */
   while (!isspace(*p))
     ++p;
@@ -326,15 +326,16 @@ GC_parse_map_entry(const char *maps_ptr, ptr_t *start, ptr_t *end,
     p++;
   maj_dev_start = p;
   GC_ASSERT(isxdigit(*maj_dev_start));
-  *maj_dev = strtoul((const char *)maj_dev_start, NULL, 16);
+  *p_maj_dev = strtoul((const char *)maj_dev_start, NULL, 16);
 
-  if (mapping_name != NULL) {
+  if (p_mapping_name != NULL) {
     while (*p && *p != '\n' && *p != '/' && *p != '[')
       p++;
-    *mapping_name = (const char *)p;
+    *p_mapping_name = (const char *)p;
   }
-  while (*p && *p++ != '\n')
-    ;
+  while (*p && *p++ != '\n') {
+    /* Empty. */
+  }
   return (const char *)p;
 }
 #  endif /* REDIRECT_MALLOC || DYNAMIC_LOADING || IA64 || ... */
@@ -356,8 +357,8 @@ GC_enclosing_writable_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
   GC_ASSERT(I_HOLD_LOCK());
   maps_ptr = GC_get_maps();
   for (;;) {
-    maps_ptr
-        = GC_parse_map_entry(maps_ptr, &my_start, &my_end, &prot, &maj_dev, 0);
+    maps_ptr = GC_parse_map_entry(maps_ptr, &my_start, &my_end, &prot,
+                                  &maj_dev, NULL);
     if (NULL == maps_ptr)
       break;
 
@@ -398,10 +399,12 @@ GC_text_mapping(const char *nm, ptr_t *startp, ptr_t *endp)
       const char *p = map_path;
 
       /* Set p to point just past last slash, if any.       */
-      while (*p != '\0' && *p != '\n' && *p != ' ' && *p != '\t')
+      while (*p != '\0' && *p != '\n' && *p != ' ' && *p != '\t') {
         ++p;
-      while (ADDR_GE((ptr_t)p, (ptr_t)map_path) && *p != '/')
+      }
+      while (ADDR_GE((ptr_t)p, (ptr_t)map_path) && *p != '/') {
         --p;
+      }
       ++p;
 
       if (strncmp(nm, p, nm_len) == 0) {
@@ -2872,9 +2875,9 @@ GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2, size_t bytes2)
 #    include <emscripten.h>
 
 static void
-scan_regs_cb(void *begin, void *end)
+scan_regs_cb(void *begin, void *finish)
 {
-  GC_push_all_stack((ptr_t)begin, (ptr_t)end);
+  GC_push_all_stack((ptr_t)begin, (ptr_t)finish);
 }
 
 STATIC void GC_CALLBACK

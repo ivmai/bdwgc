@@ -1326,17 +1326,15 @@ ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 /* Nothing specific. */
 #  endif
 #  ifdef FREEBSD
-extern char etext[];
-extern char edata[];
-#    if !defined(CPPCHECK)
-extern char end[];
-#    endif
 #    define NEED_FIND_LIMIT
+extern char etext[];
 #    define DATASTART ((ptr_t)(&etext))
 void *GC_find_limit(void *, int);
 #    define DATAEND (ptr_t) GC_find_limit(DATASTART, TRUE)
 #    define DATAEND_IS_FUNC
 #    define GC_HAVE_DATAREGION2
+extern char edata[];
+extern char end[];
 #    define DATASTART2 ((ptr_t)(&edata))
 #    define DATAEND2 ((ptr_t)(&end))
 #  endif
@@ -1646,9 +1644,6 @@ extern int _fdata[], _end[];
 #      define CPP_WORDSZ 32
 #      define ALIGNMENT 4
 extern int etext[], edata[];
-#      if !defined(CPPCHECK)
-extern int end[];
-#      endif
 extern int _DYNAMIC_LINKING[], _gp[];
 #      define DATASTART (PTR_ALIGN_UP(etext, 0x40000) + ((word)(etext)&0xffff))
 #      define DATAEND ((ptr_t)(edata))
@@ -1656,7 +1651,8 @@ extern int _DYNAMIC_LINKING[], _gp[];
 #      define DATASTART2                                               \
         (_DYNAMIC_LINKING ? PTR_ALIGN_UP((ptr_t)_gp + 0x8000, 0x40000) \
                           : (ptr_t)edata)
-#      define DATAEND2 ((ptr_t)(end))
+extern int end[];
+#      define DATAEND2 ((ptr_t)end)
 #    endif
 #  endif
 #  ifdef ULTRIX
@@ -1807,12 +1803,8 @@ extern char **environ;
 /* Nothing specific. */
 #  endif
 #  ifdef FREEBSD
-extern char etext[];
-extern char edata[];
-#    if !defined(CPPCHECK)
-extern char end[];
-#    endif
 #    define NEED_FIND_LIMIT
+extern char etext[];
 #    define DATASTART ((ptr_t)(&etext))
 void *GC_find_limit(void *, int);
 #    define DATAEND (ptr_t) GC_find_limit(DATASTART, TRUE)
@@ -1820,6 +1812,8 @@ void *GC_find_limit(void *, int);
 /* Handle unmapped hole which alpha*-*-freebsd[45]* puts        */
 /* between etext and edata.                                     */
 #    define GC_HAVE_DATAREGION2
+extern char edata[];
+extern char end[];
 #    define DATASTART2 ((ptr_t)(&edata))
 #    define DATAEND2 ((ptr_t)(&end))
 /* MPROTECT_VDB is not yet supported at all on FreeBSD/alpha. */
@@ -2538,10 +2532,8 @@ extern char __global_base, __heap_base;
 #endif
 
 #ifndef DATAEND
-#  if !defined(CPPCHECK)
 extern int end[];
-#  endif
-#  define DATAEND ((ptr_t)(end))
+#  define DATAEND ((ptr_t)end)
 #endif
 
 /* Workaround for Android NDK clang 3.5+ (as of NDK r10e) which does    */

@@ -440,7 +440,7 @@ STATIC void
 GC_register_map_entries(const char *maps)
 {
   const char *prot, *path;
-  ptr_t start, end;
+  ptr_t my_start, my_end;
   ptr_t least_ha, greatest_ha;
   unsigned maj_dev;
   unsigned i;
@@ -452,7 +452,8 @@ GC_register_map_entries(const char *maps)
                 + GC_our_memory[GC_n_memory - 1].hs_bytes;
 
   for (;;) {
-    maps = GC_parse_map_entry(maps, &start, &end, &prot, &maj_dev, &path);
+    maps
+        = GC_parse_map_entry(maps, &my_start, &my_end, &prot, &maj_dev, &path);
     if (NULL == maps)
       break;
 
@@ -461,15 +462,16 @@ GC_register_map_entries(const char *maps)
       /* the root set unless it is already otherwise      */
       /* accounted for.                                   */
 #      ifndef THREADS
-      if (ADDR_GE(GC_stackbottom, start) && ADDR_GE(end, GC_stackbottom)) {
+      if (ADDR_GE(GC_stackbottom, my_start)
+          && ADDR_GE(my_end, GC_stackbottom)) {
         /* Stack mapping; discard it.   */
         continue;
       }
 #      endif
 #      if defined(E2K) && defined(__ptr64__)
       /* TODO: avoid hard-coded addresses */
-      if (ADDR(start) == 0xc2fffffff000UL && ADDR(end) == 0xc30000000000UL
-          && path[0] == '\n')
+      if (ADDR(my_start) == 0xc2fffffff000UL
+          && ADDR(my_end) == 0xc30000000000UL && path[0] == '\n')
         continue; /* discard some special mapping */
 #      endif
       if (path[0] == '[' && strncmp(path + 1, "heap]", 5) != 0)
@@ -482,7 +484,7 @@ GC_register_map_entries(const char *maps)
       /* we're marking.  Thus the marker is, and has to be      */
       /* prepared to recover from segmentation faults.          */
 
-      if (GC_segment_is_thread_stack(start, end))
+      if (GC_segment_is_thread_stack(my_start, my_end))
         continue;
 
         /* FIXME: NPTL squirrels                                  */
@@ -502,35 +504,35 @@ GC_register_map_entries(const char *maps)
         /* very suboptimal for performance reasons.               */
 #      endif
       /* We no longer exclude the main data segment.              */
-      if (ADDR_GE(least_ha, end) || ADDR_GE(start, greatest_ha)) {
+      if (ADDR_GE(least_ha, my_end) || ADDR_GE(my_start, greatest_ha)) {
         /* The easy case; just trace the entire segment.  */
-        GC_add_roots_inner(start, end, TRUE);
+        GC_add_roots_inner(my_start, my_end, TRUE);
         continue;
       }
       /* Add sections that don't belong to us. */
       i = 0;
       while (ADDR_LT(GC_our_memory[i].hs_start + GC_our_memory[i].hs_bytes,
-                     start)) {
+                     my_start)) {
         ++i;
       }
       GC_ASSERT(i < GC_n_memory);
-      if (ADDR_GE(start, GC_our_memory[i].hs_start)) {
-        start = GC_our_memory[i].hs_start + GC_our_memory[i].hs_bytes;
+      if (ADDR_GE(my_start, GC_our_memory[i].hs_start)) {
+        my_start = GC_our_memory[i].hs_start + GC_our_memory[i].hs_bytes;
         ++i;
       }
-      for (; i < GC_n_memory && ADDR_LT(start, end)
-             && ADDR_LT(GC_our_memory[i].hs_start, end);
+      for (; i < GC_n_memory && ADDR_LT(my_start, my_end)
+             && ADDR_LT(GC_our_memory[i].hs_start, my_end);
            ++i) {
-        if (ADDR_LT(start, GC_our_memory[i].hs_start))
-          GC_add_roots_inner(start, GC_our_memory[i].hs_start, TRUE);
-        start = GC_our_memory[i].hs_start + GC_our_memory[i].hs_bytes;
+        if (ADDR_LT(my_start, GC_our_memory[i].hs_start))
+          GC_add_roots_inner(my_start, GC_our_memory[i].hs_start, TRUE);
+        my_start = GC_our_memory[i].hs_start + GC_our_memory[i].hs_bytes;
       }
-      if (ADDR_LT(start, end))
-        GC_add_roots_inner(start, end, TRUE);
+      if (ADDR_LT(my_start, my_end))
+        GC_add_roots_inner(my_start, my_end, TRUE);
     } else if (prot[0] == '-' && prot[1] == '-' && prot[2] == '-') {
       /* Even roots added statically might disappear partially    */
       /* (e.g. the roots added by INCLUDE_LINUX_THREAD_DESCR).    */
-      GC_remove_roots_subregion(start, end);
+      GC_remove_roots_subregion(my_start, my_end);
     }
   }
 }
@@ -616,7 +618,7 @@ STATIC int
 GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
 {
   const ElfW(Phdr) * p;
-  ptr_t start, end;
+  ptr_t my_start, my_end;
   int i;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -632,9 +634,9 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       if ((p->p_flags & PF_W) == 0)
         continue;
 
-      start = MAKE_CPTR(p->p_vaddr) + info->dlpi_addr;
-      end = start + p->p_memsz;
-      if (callback != 0 && !callback(info->dlpi_name, start, p->p_memsz))
+      my_start = MAKE_CPTR(p->p_vaddr) + info->dlpi_addr;
+      my_end = my_start + p->p_memsz;
+      if (callback != 0 && !callback(info->dlpi_name, my_start, p->p_memsz))
         continue;
 #        ifdef PT_GNU_RELRO
 #          if CPP_PTRSZ >= 64
@@ -642,8 +644,8 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       /* rounding to the next multiple of ALIGNMENT, so, most   */
       /* probably, we should remove the corresponding assertion */
       /* check in GC_add_roots_inner along with this code line. */
-      /* start pointer value may require aligning.              */
-      start = PTR_ALIGN_DOWN(start, sizeof(ptr_t));
+      /* my_start pointer value may require aligning.           */
+      my_start = PTR_ALIGN_DOWN(my_start, sizeof(ptr_t));
 #          endif
       if (n_load_segs >= MAX_LOAD_SEGS) {
         if (!load_segs_overflow) {
@@ -652,16 +654,16 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
                0);
           load_segs_overflow = TRUE;
         }
-        GC_add_roots_inner(start, end, TRUE);
+        GC_add_roots_inner(my_start, my_end, TRUE);
       } else {
-        load_segs[n_load_segs].start = start;
-        load_segs[n_load_segs].end = end;
+        load_segs[n_load_segs].start = my_start;
+        load_segs[n_load_segs].end = my_end;
         load_segs[n_load_segs].start2 = NULL;
         load_segs[n_load_segs].end2 = NULL;
         ++n_load_segs;
       }
 #        else
-      GC_add_roots_inner(start, end, TRUE);
+      GC_add_roots_inner(my_start, my_end, TRUE);
 #        endif /* !PT_GNU_RELRO */
     }
   }
@@ -676,19 +678,19 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       /* encountered "LOAD" segment, so we need to exclude it.        */
       int j;
 
-      start = MAKE_CPTR(p->p_vaddr) + info->dlpi_addr;
-      end = start + p->p_memsz;
+      my_start = MAKE_CPTR(p->p_vaddr) + info->dlpi_addr;
+      my_end = my_start + p->p_memsz;
       for (j = n_load_segs; --j >= 0;) {
-        if (ADDR_INSIDE(start, load_segs[j].start, load_segs[j].end)) {
+        if (ADDR_INSIDE(my_start, load_segs[j].start, load_segs[j].end)) {
           if (load_segs[j].start2 != NULL) {
             WARN("More than one GNU_RELRO segment per load one\n", 0);
           } else {
             GC_ASSERT(
-                ADDR_GE(PTR_ALIGN_UP(load_segs[j].end, GC_page_size), end));
+                ADDR_GE(PTR_ALIGN_UP(load_segs[j].end, GC_page_size), my_end));
             /* Remove from the existing load segment. */
             load_segs[j].end2 = load_segs[j].end;
-            load_segs[j].end = start;
-            load_segs[j].start2 = end;
+            load_segs[j].end = my_start;
+            load_segs[j].start2 = my_end;
             /* Note that start2 may be greater than end2 because of   */
             /* p->p_memsz value multiple of page size.                */
           }
@@ -1358,7 +1360,7 @@ dyld_section_add_del(const struct GC_MACH_HEADER *phdr, intptr_t slide,
                      const char *dlpi_name, GC_has_static_roots_func callback,
                      const char *seg, const char *secnam, GC_bool is_add)
 {
-  ptr_t start, end;
+  ptr_t start, finish;
   unsigned long sec_size;
 #    ifdef USE_GETSECTBYNAME
 #      if CPP_WORDSZ == 64
@@ -1381,7 +1383,7 @@ dyld_section_add_del(const struct GC_MACH_HEADER *phdr, intptr_t slide,
 #    endif
   if (sec_size < sizeof(ptr_t))
     return;
-  end = start + sec_size;
+  finish = start + sec_size;
   if (is_add) {
     LOCK();
     /* The user callback is invoked holding the allocator lock.   */
@@ -1390,15 +1392,15 @@ dyld_section_add_del(const struct GC_MACH_HEADER *phdr, intptr_t slide,
       UNLOCK();
       return; /* skip section */
     }
-    GC_add_roots_inner(start, end, FALSE);
+    GC_add_roots_inner(start, finish, FALSE);
     UNLOCK();
   } else {
-    GC_remove_roots(start, end);
+    GC_remove_roots(start, finish);
   }
 #    ifdef DARWIN_DEBUG
   GC_log_printf("%s section __DATA,%s at %p-%p (%lu bytes) from image %s\n",
                 is_add ? "Added" : "Removed", secnam, (void *)start,
-                (void *)end, sec_size, dlpi_name);
+                (void *)finish, sec_size, dlpi_name);
 #    endif
 }
 

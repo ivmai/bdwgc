@@ -3025,10 +3025,10 @@ void *GC_find_limit(void *, int);
       || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)     \
       || (defined(CHECK_SOFT_VDB) && defined(MPROTECT_VDB))       \
       || defined(REDIR_MALLOC_AND_LINUXTHREADS)
-GC_INNER const char *GC_parse_map_entry(const char *maps_ptr, ptr_t *start,
-                                        ptr_t *end, const char **prot,
-                                        unsigned *maj_dev,
-                                        const char **mapping_name);
+GC_INNER const char *GC_parse_map_entry(const char *maps_ptr, ptr_t *p_start,
+                                        ptr_t *p_end, const char **p_prot,
+                                        unsigned *p_maj_dev,
+                                        const char **p_mapping_name);
 #  endif
 #  if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
       || (defined(CHECK_SOFT_VDB) && defined(MPROTECT_VDB))

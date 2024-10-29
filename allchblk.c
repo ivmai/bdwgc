@@ -198,16 +198,17 @@ GC_dump_regions(void)
   for (i = 0; i < GC_n_heap_sects; ++i) {
     ptr_t start = GC_heap_sects[i].hs_start;
     size_t bytes = GC_heap_sects[i].hs_bytes;
-    ptr_t end = start + bytes;
+    ptr_t finish = start + bytes;
     ptr_t p;
 
     /* Merge in contiguous sections.        */
-    while (i + 1 < GC_n_heap_sects && GC_heap_sects[i + 1].hs_start == end) {
+    while (i + 1 < GC_n_heap_sects
+           && GC_heap_sects[i + 1].hs_start == finish) {
       ++i;
-      end = GC_heap_sects[i].hs_start + GC_heap_sects[i].hs_bytes;
+      finish = GC_heap_sects[i].hs_start + GC_heap_sects[i].hs_bytes;
     }
-    GC_printf("***Section from %p to %p\n", (void *)start, (void *)end);
-    for (p = start; ADDR_LT(p, end);) {
+    GC_printf("***Section from %p to %p\n", (void *)start, (void *)finish);
+    for (p = start; ADDR_LT(p, finish);) {
       hdr *hhdr = HDR(p);
 
       if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
