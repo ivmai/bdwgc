@@ -75,13 +75,13 @@ on_thread_exit_inner(struct GC_stack_base *sb, void *arg)
   GC_noop1_ptr(sb);
   GC_noop1_ptr(arg);
 #  endif
-  return arg ? (void *)(GC_word)creation_res : 0;
+  return arg ? (void *)(GC_uintptr_t)creation_res : 0;
 }
 
 static void
 on_thread_exit(void *v)
 {
-  GC_call_with_stack_base(on_thread_exit_inner, v);
+  (void)GC_call_with_stack_base(on_thread_exit_inner, v);
 }
 
 static void

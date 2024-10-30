@@ -212,8 +212,8 @@ public:
   {
     const D *self = static_cast<D *>(obj);
     nFreed++;
-    my_assert(static_cast<GC_word>(self->i)
-              == reinterpret_cast<GC_word>(data));
+    my_assert(static_cast<GC_uintptr_t>(self->i)
+              == reinterpret_cast<GC_uintptr_t>(data));
   }
   static void
   Test()
@@ -304,7 +304,7 @@ WinMain(HINSTANCE /* instance */, HINSTANCE /* prev */, LPSTR cmd,
   char *argv[3];
 
 #  if defined(CPPCHECK)
-  GC_noop1(reinterpret_cast<GC_word>(&WinMain));
+  GC_noop1(static_cast<GC_word>(reinterpret_cast<GC_uintptr_t>(&WinMain)));
 #  endif
   if (cmd != 0)
     for (argc = 1; argc < static_cast<int>(sizeof(argv) / sizeof(argv[0]));
@@ -404,7 +404,7 @@ main(int argc, const char *argv[])
 #if !defined(CPPCHECK)
       D *d;
       d = ::new (USE_GC, D::CleanUp,
-                 reinterpret_cast<void *>(static_cast<GC_word>(i))) D(i);
+                 reinterpret_cast<void *>(static_cast<GC_uintptr_t>(i))) D(i);
       GC_reachable_here(d);
 #endif
       f = new F;

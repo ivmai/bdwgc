@@ -73,7 +73,8 @@ static GC_RAND_STATE_T seed;
 #  define INVALIDATE_FLAG 0x2
 #endif
 
-#define IS_FLAG_SET(p, mask) (((GC_word)(p)&mask) != 0)
+#define IS_FLAG_SET(p, mask) \
+  (((unsigned)(GC_uintptr_t)(p) & (unsigned)(mask)) != 0)
 
 #define my_assert(e)                                                   \
   if (!(e)) {                                                          \

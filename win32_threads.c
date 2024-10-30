@@ -1451,7 +1451,8 @@ GC_win32_start_inner(struct GC_stack_base *sb, void *arg)
 STATIC DWORD WINAPI
 GC_win32_start(LPVOID arg)
 {
-  return (DWORD)(word)GC_call_with_stack_base(GC_win32_start_inner, arg);
+  return (DWORD)(GC_uintptr_t)GC_call_with_stack_base(GC_win32_start_inner,
+                                                      arg);
 }
 
 GC_API HANDLE WINAPI
@@ -1636,8 +1637,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, WINMAIN_LPTSTR lpCmdLine,
   if (NULL == thread_h)
     ABORT("GC_CreateThread(main_thread) failed");
 
-  if ((DWORD)(word)GC_do_blocking(GC_waitForSingleObjectInfinite,
-                                  (void *)thread_h)
+  if ((DWORD)(GC_uintptr_t)GC_do_blocking(GC_waitForSingleObjectInfinite,
+                                          (void *)thread_h)
       == WAIT_FAILED)
     ABORT("WaitForSingleObject(main_thread) failed");
   GetExitCodeThread(thread_h, &exit_code);

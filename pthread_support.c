@@ -471,7 +471,7 @@ unsigned __stdcall GC_mark_thread(void *id)
 #    endif
 {
   word my_mark_no = 0;
-  word id_n = (word)id;
+  word id_n = (word)(GC_uintptr_t)id;
   IF_CANCEL(int cancel_state;)
 
   if (id_n == GC_WORD_MAX)
@@ -763,7 +763,7 @@ GC_new_thread(thread_id_t self_id)
   GC_ASSERT(I_HOLD_LOCK());
 #  ifdef DEBUG_THREADS
 #    if !defined(GC_WIN32_PTHREADS)
-  GC_log_printf("Creating thread %p\n", (void *)(signed_word)self_id);
+  GC_log_printf("Creating thread %p\n", (void *)(GC_uintptr_t)self_id);
 #    endif
   for (result = GC_threads[hv]; result != NULL; result = result->tm.next)
     if (!THREAD_ID_EQUAL(result->id, self_id)) {
@@ -865,7 +865,7 @@ GC_delete_thread(GC_thread t)
       && (!defined(MSWIN32) || defined(CONSOLE_LOG)) \
       && !defined(GC_WIN32_PTHREADS)
     GC_log_printf("Deleting thread %p, n_threads= %d\n",
-                  (void *)(signed_word)id, GC_count_threads());
+                  (void *)(GC_uintptr_t)id, GC_count_threads());
 #  endif
     for (p = GC_threads[hv]; p != t; p = p->tm.next) {
       prev = p;
@@ -2254,7 +2254,7 @@ GC_unregister_my_thread_inner(GC_thread me)
   GC_ASSERT(I_HOLD_LOCK());
 #  if defined(DEBUG_THREADS) && !defined(GC_WIN32_PTHREADS)
   GC_log_printf("Unregistering thread %p, gc_thread= %p, n_threads= %d\n",
-                (void *)((signed_word)me->id), (void *)me, GC_count_threads());
+                (void *)(GC_uintptr_t)me->id, (void *)me, GC_count_threads());
 #  endif
   GC_ASSERT(!KNOWN_FINISHED(me));
 #  if defined(THREAD_LOCAL_ALLOC)
@@ -2482,7 +2482,7 @@ GC_thread_exit_proc(void *arg)
 
 #    if defined(DEBUG_THREADS) && !defined(GC_WIN32_PTHREADS)
   GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread= %p\n",
-                (void *)((signed_word)me->id), (void *)me);
+                (void *)(GC_uintptr_t)me->id, (void *)me);
 #    endif
   LOCK();
   DISABLE_CANCEL(cancel_state);

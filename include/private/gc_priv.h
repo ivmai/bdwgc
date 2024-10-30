@@ -327,15 +327,15 @@ typedef struct hblkhdr hdr;
 /* Convert an unsigned value to a void pointer.  Typically used to  */
 /* print a numeric value using "%p" format specifier.  The pointer  */
 /* is not supposed to be dereferenced.                              */
-#define NUMERIC_TO_VPTR(v) ((void *)(word)(v))
+#define NUMERIC_TO_VPTR(v) ((void *)(GC_uintptr_t)(v))
 
 /* Create a ptr_t pointer from a number (of word type). */
-#define MAKE_CPTR(w) ((ptr_t)(word)(w))
+#define MAKE_CPTR(w) ((ptr_t)(GC_uintptr_t)(word)(w))
 
 #define GC_WORD_MAX (~(word)0)
 
 /* Convert given pointer to its address.  Result is of word type.   */
-#define ADDR(p) ((word)(p))
+#define ADDR(p) ((word)(GC_uintptr_t)(p))
 
 #define ADDR_LT(p, q) GC_ADDR_LT(p, q)
 #define ADDR_GE(p, q) (!ADDR_LT(p, q))
@@ -359,8 +359,9 @@ typedef struct hblkhdr hdr;
 #endif /* !STACK_GROWS_UP */
 
 /* Clear/set flags (given by a mask) in a pointer.  */
-#define CPTR_CLEAR_FLAGS(p, mask) (ptr_t)((word)(p) & ~(word)(mask))
-#define CPTR_SET_FLAGS(p, mask) (ptr_t)((word)(p) | (word)(mask))
+#define CPTR_CLEAR_FLAGS(p, mask) \
+  (ptr_t)((GC_uintptr_t)(p) & ~(GC_uintptr_t)(word)(mask))
+#define CPTR_SET_FLAGS(p, mask) (ptr_t)((GC_uintptr_t)(p) | (word)(mask))
 
 /* Easily changeable parameters ae below.   */
 

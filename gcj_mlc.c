@@ -50,7 +50,7 @@ GC_gcj_fake_mark_proc(word *addr, struct GC_ms_entry *mark_stack_top,
   UNUSED_ARG(mark_stack_limit);
   UNUSED_ARG(env);
 #  if defined(FUNCPTR_IS_DATAPTR) && defined(CPPCHECK)
-  GC_noop1((word)&GC_init_gcj_malloc);
+  GC_noop1((word)(GC_funcptr_uint)(&GC_init_gcj_malloc));
 #  endif
   ABORT_RET("No client gcj mark proc is specified");
   return mark_stack_top;

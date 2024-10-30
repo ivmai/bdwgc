@@ -768,9 +768,11 @@ EXTERN_C_BEGIN
 #endif
 
 /* Align a ptr_t pointer down/up to a given boundary.               */
-#define PTR_ALIGN_DOWN(p, b) ((ptr_t)((word)(p) & ~(word)((b)-1)))
-#define PTR_ALIGN_UP(p, b) \
-  ((ptr_t)(((word)(p) + (word)((b)-1)) & ~(word)((b)-1)))
+#define PTR_ALIGN_DOWN(p, b) \
+  ((ptr_t)((GC_uintptr_t)(p) & ~(GC_uintptr_t)((b)-1)))
+#define PTR_ALIGN_UP(p, b)                             \
+  ((ptr_t)(((GC_uintptr_t)(p) + (GC_uintptr_t)((b)-1)) \
+           & ~(GC_uintptr_t)((b)-1)))
 
 /* If available, we can use __builtin_unwind_init() to push the     */
 /* relevant registers onto the stack.                               */
@@ -1407,7 +1409,7 @@ ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #    ifndef USE_MMAP
 #      define USE_MMAP 1
 #    endif
-#    define MAP_FAILED (void *)((word)-1)
+#    define MAP_FAILED (void *)((GC_uintptr_t)-1)
 #    define HEAP_START (ptr_t)0x40000000
 #  endif /* DGUX */
 #  ifdef LINUX

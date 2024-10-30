@@ -616,8 +616,9 @@ inline gc_cleanup::~gc_cleanup()
 inline void GC_CALLBACK
 gc_cleanup::cleanup(void *obj, void *displ)
 {
-  reinterpret_cast<gc_cleanup *>(reinterpret_cast<char *>(obj)
-                                 + reinterpret_cast<GC_PTRDIFF_T>(displ))
+  reinterpret_cast<gc_cleanup *>(
+      reinterpret_cast<char *>(obj)
+      + static_cast<GC_PTRDIFF_T>(reinterpret_cast<GC_uintptr_t>(displ)))
       ->~gc_cleanup();
 }
 
@@ -632,8 +633,9 @@ inline gc_cleanup::gc_cleanup()
     // Don't call the debug version, since this is a real base address.
     GC_register_finalizer_ignore_self(
         base, reinterpret_cast<GC_finalization_proc>(cleanup),
-        reinterpret_cast<void *>(reinterpret_cast<char *>(this_ptr)
-                                 - reinterpret_cast<char *>(base)),
+        reinterpret_cast<void *>(
+            static_cast<GC_uintptr_t>(reinterpret_cast<char *>(this_ptr)
+                                      - reinterpret_cast<char *>(base))),
         &oldProc, &oldData);
     if (oldProc != 0) {
       GC_register_finalizer_ignore_self(base, oldProc, oldData, 0, 0);

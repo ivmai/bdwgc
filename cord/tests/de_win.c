@@ -65,7 +65,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR command_line,
   GC_enable_incremental();
 #  endif
 #  if defined(CPPCHECK)
-  GC_noop1((GC_word)&WinMain);
+  GC_noop1((GC_word)(GC_uintptr_t)(&WinMain));
 #  endif
 
   if (!hPrevInstance) {

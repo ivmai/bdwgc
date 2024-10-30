@@ -74,7 +74,8 @@ typedef GC_word GC_uintptr_t;
 #if defined(__GNUC__) && !defined(__CHERI_PURE_CAPABILITY__)
 #  define GC_ADDR_LT(p, q) ((p) < (q))
 #else
-#  define GC_ADDR_LT(p, q) ((GC_word)(p) < (GC_word)(q))
+#  define GC_ADDR_LT(p, q) \
+    ((GC_word)(GC_uintptr_t)(p) < (GC_word)(GC_uintptr_t)(q))
 #endif
 
 /* Get the GC library version. The returned value is a constant in the  */
@@ -1571,7 +1572,11 @@ typedef GC_uintptr_t GC_hidden_pointer;
 /* might be useful in conjunction with GC_register_disappearing_link.   */
 /* Note that unlike GC_HIDE_POINTER, inversion of the least significant */
 /* bit of the argument is not guaranteed.                               */
-#define GC_HIDE_NZ_POINTER(p) ((GC_hidden_pointer)(-(GC_signed_word)(p)))
+#if defined(__CHERI_PURE_CAPABILITY__)
+#  define GC_HIDE_NZ_POINTER(p) ((GC_hidden_pointer)(-(intptr_t)(p)))
+#else
+#  define GC_HIDE_NZ_POINTER(p) ((GC_hidden_pointer)(-(GC_signed_word)(p)))
+#endif
 #define GC_REVEAL_NZ_POINTER(p) ((void *)GC_HIDE_NZ_POINTER(p))
 
 /* The routines to acquire/release the GC (allocator) lock.             */

@@ -193,7 +193,8 @@ typedef struct bi {
 /* Get an HBLKSIZE-aligned address closer to the beginning of the block */
 /* h.  Assumes hhdr == HDR(h), IS_FORWARDING_ADDR(hhdr) and hhdr is not */
 /* NULL.  HDR(result) is expected to be non-NULL.                       */
-#define FORWARDED_ADDR(h, hhdr) ((struct hblk *)(h) - (size_t)(hhdr))
+#define FORWARDED_ADDR(h, hhdr) \
+  ((struct hblk *)(h) - (size_t)(GC_uintptr_t)(hhdr))
 
 EXTERN_C_END
 

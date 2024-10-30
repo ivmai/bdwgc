@@ -66,7 +66,7 @@ entry(LPVOID arg)
 #  endif
 {
   int thread_num = (int)AO_fetch_and_add1(&thread_created_cnt);
-  GC_word my_depth = (GC_word)arg + 1;
+  GC_word my_depth = (GC_word)(GC_uintptr_t)arg + 1;
 
   if (my_depth <= MAX_SUBTHREAD_DEPTH && thread_num < MAX_SUBTHREAD_COUNT
       && (thread_num % DECAY_DENOM) < DECAY_NUMER
@@ -76,7 +76,7 @@ entry(LPVOID arg)
     int err;
     pthread_t th;
 
-    err = pthread_create(&th, NULL, entry, (void *)my_depth);
+    err = pthread_create(&th, NULL, entry, (void *)(GC_uintptr_t)my_depth);
     if (err != 0) {
       fprintf(stderr, "Thread #%d creation failed from other thread: %s\n",
               thread_num, strerror(err));

@@ -979,7 +979,7 @@ GC_set_and_save_fault_handler(GC_fault_handler_t h)
 #    endif
 #  endif /* !USE_SEGV_SIGACT */
 #  if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
-  GC_noop1((word)(GC_funcptr_uint)&__asan_default_options);
+  GC_noop1((word)(GC_funcptr_uint)(&__asan_default_options));
 #  endif
 }
 #endif /* NEED_FIND_LIMIT || UNIX_LIKE || WRAP_MARK_SOME */
@@ -3566,7 +3566,7 @@ GC_dirty_init(void)
 #      endif
 #    endif /* !MSWIN32 && !MSWINCE */
 #    if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
-  GC_noop1((word)(GC_funcptr_uint)&__asan_default_options);
+  GC_noop1((word)(GC_funcptr_uint)(&__asan_default_options));
 #    endif
   return TRUE;
 }
@@ -4937,7 +4937,7 @@ GC_dirty_init(void)
   }
 #  endif /* BROKEN_EXCEPTION_HANDLING  */
 #  if defined(CPPCHECK)
-  GC_noop1((word)GC_ports.os_callback[0]);
+  GC_noop1((word)(GC_funcptr_uint)GC_ports.os_callback[0]);
 #  endif
   return TRUE;
 }

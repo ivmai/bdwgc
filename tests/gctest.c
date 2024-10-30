@@ -252,7 +252,7 @@ struct SEXPR {
 typedef struct SEXPR *sexpr;
 
 #define INT_TO_SEXPR(v) ((sexpr)NUMERIC_TO_VPTR(v))
-#define SEXPR_TO_INT(p) ((int)(GC_word)(p))
+#define SEXPR_TO_INT(p) ((int)(GC_uintptr_t)(p))
 
 #undef nil
 #define nil (INT_TO_SEXPR(0))

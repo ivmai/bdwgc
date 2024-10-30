@@ -141,7 +141,7 @@ EXTERN_C_BEGIN
 /* as possible.                                                 */
 /* Refine to exclude platforms on which pthread_t is struct.    */
 #    if !defined(GC_WIN32_PTHREADS)
-#      define NUMERIC_THREAD_ID(id) ((unsigned long)(id))
+#      define NUMERIC_THREAD_ID(id) ((unsigned long)(GC_uintptr_t)(id))
 #      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
 #      define NUMERIC_THREAD_ID_UNIQUE
 #    elif defined(__WINPTHREADS_VERSION_MAJOR) /* winpthreads */

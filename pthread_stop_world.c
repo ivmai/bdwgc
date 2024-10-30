@@ -995,7 +995,7 @@ GC_suspend_all(void)
           if (GC_on_thread_event) {
             /* Note: thread id might be truncated.    */
             GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
-                               (void *)(word)THREAD_SYSTEM_ID(p));
+                               (void *)(GC_uintptr_t)THREAD_SYSTEM_ID(p));
           }
           break;
         default:
@@ -1339,7 +1339,7 @@ GC_restart_all(void)
         case 0:
           if (GC_on_thread_event)
             GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED,
-                               (void *)(word)THREAD_SYSTEM_ID(p));
+                               (void *)(GC_uintptr_t)THREAD_SYSTEM_ID(p));
           break;
         default:
           ABORT_ARG1("pthread_kill failed at resume", ": errcode= %d", result);

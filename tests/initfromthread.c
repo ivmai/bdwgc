@@ -63,7 +63,7 @@ thread(LPVOID arg)
 #ifdef GC_PTHREADS
   return arg;
 #else
-  return (DWORD)(GC_word)arg;
+  return (DWORD)(GC_uintptr_t)arg;
 #endif
 }
 

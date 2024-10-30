@@ -34,7 +34,7 @@ struct treenode {
 };
 
 static struct treenode *root[10] = { 0 };
-static struct treenode *root_nz[10] = { (struct treenode *)(GC_word)2 };
+static struct treenode *root_nz[10] = { (struct treenode *)(GC_uintptr_t)2 };
 
 /* Declare it to avoid "no previous prototype" clang warning.   */
 GC_TEST_EXPORT_API struct treenode **libsrl_getpelem(int i, int j);

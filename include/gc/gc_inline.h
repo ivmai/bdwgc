@@ -155,7 +155,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
       void *next;                                                         \
                                                                           \
       for (;;) {                                                          \
-        if (GC_EXPECT((GC_word)my_entry                                   \
+        if (GC_EXPECT((GC_word)(GC_uintptr_t)my_entry                     \
                           > (num_direct) + GC_TINY_FREELISTS + 1,         \
                       1)) {                                               \
           next = *(void **)(my_entry);                                    \
@@ -172,16 +172,17 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
                     || 0 /* NULL */ == ((void **)result)[1]);             \
           break;                                                          \
         }                                                                 \
-        /* Entry contains counter or NULL */                              \
-        if ((GC_signed_word)my_entry - (GC_signed_word)(num_direct)       \
-                <= 0 /* (GC_word)my_entry <= (num_direct) */              \
+        /* Entry contains counter or NULL. */                             \
+        if ((GC_signed_word)(GC_uintptr_t)my_entry                        \
+                    - (GC_signed_word)(num_direct)                        \
+                <= 0 /* (GC_uintptr_t)my_entry <= num_direct */           \
             && my_entry != 0 /* NULL */) {                                \
-          /* Small counter value, not NULL */                             \
+          /* Small counter value, not NULL. */                            \
           GC_FAST_M_AO_STORE(my_fl, (char *)my_entry + (lg) + 1);         \
           result = (default_expr);                                        \
           break;                                                          \
         } else {                                                          \
-          /* Large counter or NULL */                                     \
+          /* Large counter or NULL. */                                    \
           GC_generic_malloc_many(0 == (lg) ? GC_GRANULE_BYTES             \
                                            : GC_RAW_BYTES_FROM_INDEX(lg), \
                                  k, my_fl);                               \

@@ -23,7 +23,7 @@ struct treenode *root[10] = { NULL };
 
 /* Same as "root" variable but initialized to some non-zero value (to   */
 /* be placed to .data section instead of .bss).                         */
-struct treenode *root_nz[10] = { (struct treenode *)(GC_word)1 };
+struct treenode *root_nz[10] = { (struct treenode *)(GC_uintptr_t)1 };
 
 /* Note: this is static intentionally.  */
 static char *staticroot;
