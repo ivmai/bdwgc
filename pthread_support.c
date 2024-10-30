@@ -762,7 +762,9 @@ GC_new_thread(thread_id_t self_id)
 
   GC_ASSERT(I_HOLD_LOCK());
 #  ifdef DEBUG_THREADS
+#    if !defined(GC_WIN32_PTHREADS)
   GC_log_printf("Creating thread %p\n", (void *)(signed_word)self_id);
+#    endif
   for (result = GC_threads[hv]; result != NULL; result = result->tm.next)
     if (!THREAD_ID_EQUAL(result->id, self_id)) {
       GC_log_printf("Hash collision at GC_threads[%d]\n", hv);
@@ -859,8 +861,9 @@ GC_delete_thread(GC_thread t)
     GC_thread prev = NULL;
 
     GC_ASSERT(I_HOLD_LOCK());
-#  if defined(DEBUG_THREADS) && !defined(MSWINCE) \
-      && (!defined(MSWIN32) || defined(CONSOLE_LOG))
+#  if defined(DEBUG_THREADS) && !defined(MSWINCE)    \
+      && (!defined(MSWIN32) || defined(CONSOLE_LOG)) \
+      && !defined(GC_WIN32_PTHREADS)
     GC_log_printf("Deleting thread %p, n_threads= %d\n",
                   (void *)(signed_word)id, GC_count_threads());
 #  endif
@@ -2249,7 +2252,7 @@ STATIC void
 GC_unregister_my_thread_inner(GC_thread me)
 {
   GC_ASSERT(I_HOLD_LOCK());
-#  ifdef DEBUG_THREADS
+#  if defined(DEBUG_THREADS) && !defined(GC_WIN32_PTHREADS)
   GC_log_printf("Unregistering thread %p, gc_thread= %p, n_threads= %d\n",
                 (void *)((signed_word)me->id), (void *)me, GC_count_threads());
 #  endif
@@ -2300,10 +2303,6 @@ GC_unregister_my_thread(void)
   /* complete before we remove this thread.                   */
   GC_wait_for_gc_completion(FALSE);
   me = GC_self_thread_inner();
-#  ifdef DEBUG_THREADS
-  GC_log_printf("Called GC_unregister_my_thread on %p, gc_thread= %p\n",
-                (void *)(signed_word)thread_id_self(), (void *)me);
-#  endif
   GC_ASSERT(THREAD_ID_EQUAL(me->id, thread_id_self()));
   GC_unregister_my_thread_inner(me);
   RESTORE_CANCEL(cancel_state);
@@ -2481,7 +2480,7 @@ GC_thread_exit_proc(void *arg)
   GC_thread me = (GC_thread)arg;
   IF_CANCEL(int cancel_state;)
 
-#    ifdef DEBUG_THREADS
+#    if defined(DEBUG_THREADS) && !defined(GC_WIN32_PTHREADS)
   GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread= %p\n",
                 (void *)((signed_word)me->id), (void *)me);
 #    endif
