@@ -1829,7 +1829,9 @@ extern char **environ;
 /* Round up from the value of environ to the nearest page       */
 /* boundary.  Probably this is broken if putenv() is called     */
 /* before the collector initialization.                         */
-#    define STACKBOTTOM ((ptr_t)(((word)(environ) | (getpagesize() - 1)) + 1))
+#    define STACKBOTTOM                            \
+      ((ptr_t)(((word)environ + getpagesize() - 1) \
+               & ~(word)(getpagesize() - 1)))
 /* Normally HEURISTIC2 is too conservative, since the text      */
 /* segment immediately follows the stack.  Hence we give an     */
 /* upper bound.  This is currently unused, since HEURISTIC2 is  */
