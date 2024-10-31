@@ -858,8 +858,7 @@ extern int _end[];
 
 #ifdef EMBOX
 #  define OS_TYPE "EMBOX"
-extern int _modules_data_start[];
-extern int _apps_bss_end[];
+extern int _modules_data_start[], _apps_bss_end[];
 #  define DATASTART ((ptr_t)_modules_data_start)
 #  define DATAEND ((ptr_t)_apps_bss_end)
 /* Note: the designated area might be quite large (several  */
@@ -900,7 +899,7 @@ EXTERN_C_BEGIN
 #ifdef HPUX
 #  define OS_TYPE "HPUX"
 extern int __data_start[];
-#  define DATASTART ((ptr_t)(__data_start))
+#  define DATASTART ((ptr_t)__data_start)
 #  ifdef USE_MMAP
 #    define USE_MMAP_ANON
 #  endif
@@ -913,7 +912,7 @@ extern int __data_start[];
 #  define HEURISTIC2
 #  define SEARCH_FOR_DATA_START
 extern int _end[];
-#  define DATAEND ((ptr_t)(_end))
+#  define DATAEND ((ptr_t)_end)
 /* TODO: MPROTECT_VDB is not quite working yet? */
 #  define DYNAMIC_LOADING
 #  define USE_MMAP_ANON
@@ -934,7 +933,7 @@ extern int _end[];
 #  if defined(__ELF__) && !defined(ARC) && !defined(RISCV) && !defined(S390) \
       && !defined(TILEGX) && !defined(TILEPRO)
 extern int _end[];
-#    define DATAEND ((ptr_t)(_end))
+#    define DATAEND ((ptr_t)_end)
 #  endif
 #  if !defined(REDIRECT_MALLOC) && !defined(E2K)
 /* Requires Linux 2.3.47 or later. */
@@ -960,7 +959,7 @@ extern int _end[];
 #    define USE_GET_STACKBASE_FOR_MAIN
 #  endif
 extern int __data_start[];
-#  define DATASTART ((ptr_t)(__data_start))
+#  define DATASTART ((ptr_t)__data_start)
 #endif /* KOS */
 
 #ifdef MSWIN32
@@ -984,7 +983,7 @@ extern int __data_start[];
 #  if defined(__GLIBC__)
 #    define DYNAMIC_LOADING
 #  endif
-#  define DATASTART ((ptr_t)0x10020000)
+#  define DATASTART MAKE_CPTR(0x10020000)
 extern int _end[];
 #  define DATAEND ((ptr_t)_end)
 #  define STACK_GRAN 0x10000
@@ -1004,7 +1003,7 @@ extern int _end[];
 #    define DYNAMIC_LOADING
 #  elif !defined(MIPS) /* TODO: probably do not exclude it */
 extern char etext[];
-#    define DATASTART ((ptr_t)(etext))
+#    define DATASTART ((ptr_t)etext)
 #  endif
 #endif /* NETBSD */
 
@@ -1021,14 +1020,13 @@ extern char etext[];
 #    define HEURISTIC2
 #  endif
 #  ifdef __ELF__
-extern int __data_start[];
+extern int __data_start[], _end[];
 #    define DATASTART ((ptr_t)__data_start)
-extern int _end[];
-#    define DATAEND ((ptr_t)(&_end))
+#    define DATAEND ((ptr_t)_end)
 #    define DYNAMIC_LOADING
 #  else
 extern char etext[];
-#    define DATASTART ((ptr_t)(etext))
+#    define DATASTART ((ptr_t)etext)
 #  endif
 #  define MPROTECT_VDB
 #endif /* OPENBSD */
@@ -1051,7 +1049,7 @@ extern int _end[];
 extern int _etext[], _end[];
 ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #  define DATASTART_IS_FUNC
-#  define DATAEND ((ptr_t)(_end))
+#  define DATAEND ((ptr_t)_end)
 #  if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
 #    define USE_MMAP 1
 /* Otherwise we now use calloc.  mmap() may result in the     */
@@ -1060,7 +1058,7 @@ ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 /* doesn't interact correctly with the system malloc.         */
 #  endif
 #  ifdef USE_MMAP
-#    define HEAP_START (ptr_t)0x40000000
+#    define HEAP_START MAKE_CPTR(0x40000000)
 #  else
 #    define HEAP_START DATAEND
 #  endif
@@ -1131,7 +1129,7 @@ extern int etext[];
 #    endif
 #  endif
 #  ifdef NEXT
-#    define STACKBOTTOM ((ptr_t)0x4000000)
+#    define STACKBOTTOM MAKE_CPTR(0x4000000)
 #  endif
 #endif
 
@@ -1165,7 +1163,7 @@ extern int etext[];
 #  ifdef DARWIN
 #    if defined(__ppc64__)
 #      define CPP_WORDSZ 64
-#      define STACKBOTTOM ((ptr_t)0x7fff5fc00000)
+#      define STACKBOTTOM MAKE_CPTR(0x7fff5fc00000)
 #      define CACHE_LINE_SIZE 64
 #      ifndef HBLKSIZE
 #        define HBLKSIZE 4096
@@ -1173,7 +1171,7 @@ extern int etext[];
 #    else
 #      define CPP_WORDSZ 32
 #      define ALIGNMENT 4
-#      define STACKBOTTOM ((ptr_t)0xc0000000)
+#      define STACKBOTTOM MAKE_CPTR(0xc0000000)
 #    endif
 #    define MPROTECT_VDB
 #    if defined(USE_PPC_PREFETCH) && defined(__GNUC__)
@@ -1211,10 +1209,9 @@ extern int etext[];
 #    define OS_TYPE "SN_TARGET_PS3"
 #    define CPP_WORDSZ 32
 #    define NO_GETENV
-extern int _end[];
-extern int __bss_start;
-#    define DATASTART ((ptr_t)(__bss_start))
-#    define DATAEND ((ptr_t)(_end))
+extern int _end[], __bss_start;
+#    define DATASTART ((ptr_t)__bss_start)
+#    define DATAEND ((ptr_t)_end)
 #    define STACKBOTTOM ((ptr_t)ps3_get_stack_bottom())
 /* The current LOCK() implementation for PS3 explicitly uses  */
 /* pthread_mutex_lock() for some reason.                      */
@@ -1228,10 +1225,11 @@ extern int __bss_start;
 /* /usr/include/sys/systemcfg.h                   */
 #    ifdef __64BIT__
 #      define CPP_WORDSZ 64
-#      define STACKBOTTOM ((ptr_t)0x1000000000000000)
+#      define STACKBOTTOM MAKE_CPTR(0x1000000000000000)
 #    else
 #      define CPP_WORDSZ 32
-#      define STACKBOTTOM ((ptr_t)((ulong)&errno))
+extern int errno;
+#      define STACKBOTTOM ((ptr_t)(&errno))
 #    endif
 #    define USE_MMAP_ANON
 /* From AIX linker man page:
@@ -1242,9 +1240,8 @@ _edata Specifies the first location after the initialized data
 _end or end Specifies the first location after all data.
 */
 extern int _data[], _end[];
-#    define DATASTART ((ptr_t)((ulong)_data))
-#    define DATAEND ((ptr_t)((ulong)_end))
-extern int errno;
+#    define DATASTART ((ptr_t)_data)
+#    define DATAEND ((ptr_t)_end)
 #    define MPROTECT_VDB
 #    define DYNAMIC_LOADING
 /* Note: for really old versions of AIX, DYNAMIC_LOADING may  */
@@ -1256,7 +1253,7 @@ extern int errno;
 #    define ALIGNMENT 4
 extern void __end[], __dso_handle[];
 #    define DATASTART ((ptr_t)__dso_handle) /* OK, that's ugly */
-#    define DATAEND ((ptr_t)(__end))
+#    define DATAEND ((ptr_t)__end)
 /* Note: stack starts at 0xE0000000 for the simulator.    */
 #    define STACKBOTTOM PTR_ALIGN_UP(GC_approx_sp(), 0x10000000)
 #  endif
@@ -1268,7 +1265,7 @@ extern void __end[], __dso_handle[];
 /* Pointers are longword aligned by 4.2 C compiler. */
 #  define ALIGNMENT 4
 extern char etext[];
-#  define DATASTART ((ptr_t)(etext))
+#  define DATASTART ((ptr_t)etext)
 #  ifdef BSD
 #    define OS_TYPE "BSD"
 #    define STACK_GRAN 0x1000000
@@ -1277,7 +1274,7 @@ extern char etext[];
 #  endif
 #  ifdef ULTRIX
 #    define OS_TYPE "ULTRIX"
-#    define STACKBOTTOM ((ptr_t)0x7fffc800)
+#    define STACKBOTTOM MAKE_CPTR(0x7fffc800)
 #  endif
 #endif /* VAX */
 
@@ -1304,7 +1301,7 @@ ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #    define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)etext)
 #    define DATASTART_IS_FUNC
 #    define MPROTECT_VDB
-#    define STACKBOTTOM ((ptr_t)0xdfff0000)
+#    define STACKBOTTOM MAKE_CPTR(0xdfff0000)
 #    define DYNAMIC_LOADING
 #  endif
 #  ifdef LINUX
@@ -1335,8 +1332,7 @@ void *GC_find_limit(void *, int);
 #    define DATAEND (ptr_t) GC_find_limit(DATASTART, TRUE)
 #    define DATAEND_IS_FUNC
 #    define GC_HAVE_DATAREGION2
-extern char edata[];
-extern char end[];
+extern char edata[], end[];
 #    define DATASTART2 ((ptr_t)(&edata))
 #    define DATAEND2 ((ptr_t)(&end))
 #  endif
@@ -1357,7 +1353,7 @@ extern char end[];
 #    define OS_TYPE "SEQUENT"
 extern int etext[];
 #    define DATASTART PTR_ALIGN_UP(etext, 0x1000)
-#    define STACKBOTTOM ((ptr_t)0x3ffff000)
+#    define STACKBOTTOM MAKE_CPTR(0x3ffff000)
 #  endif
 #  ifdef HAIKU
 extern int etext[];
@@ -1386,14 +1382,14 @@ extern int etext[];
 #  ifdef SCO
 #    define OS_TYPE "SCO"
 extern int etext[];
-#    define DATASTART (PTR_ALIGN_UP(etext, 0x400000) + ((word)(etext)&0xfff))
-#    define STACKBOTTOM ((ptr_t)0x7ffffffc)
+#    define DATASTART (PTR_ALIGN_UP(etext, 0x400000) + (ADDR(etext) & 0xfff))
+#    define STACKBOTTOM MAKE_CPTR(0x7ffffffc)
 #  endif
 #  ifdef SCO_ELF
 #    define OS_TYPE "SCO_ELF"
 extern int etext[];
-#    define DATASTART ((ptr_t)(etext))
-#    define STACKBOTTOM ((ptr_t)0x08048000)
+#    define DATASTART ((ptr_t)etext)
+#    define STACKBOTTOM MAKE_CPTR(0x8048000)
 #    define DYNAMIC_LOADING
 #    define ELF_CLASS ELFCLASS32
 #  endif
@@ -1410,12 +1406,12 @@ ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #      define USE_MMAP 1
 #    endif
 #    define MAP_FAILED (void *)((GC_uintptr_t)-1)
-#    define HEAP_START (ptr_t)0x40000000
+#    define HEAP_START MAKE_CPTR(0x40000000)
 #  endif /* DGUX */
 #  ifdef LINUX
 /* This encourages mmap to give us low addresses,       */
 /* thus allowing the heap to grow to ~3 GB.             */
-#    define HEAP_START (ptr_t)0x1000
+#    define HEAP_START MAKE_CPTR(0x1000)
 #    ifdef __ELF__
 #      if GC_GLIBC_PREREQ(2, 0) || defined(HOST_ANDROID)
 #        define SEARCH_FOR_DATA_START
@@ -1482,8 +1478,7 @@ EXTERN_C_BEGIN
 #  endif
 #  ifdef INTERIX
 #    define OS_TYPE "INTERIX"
-extern int _data_start__[];
-extern int _bss_end__[];
+extern int _data_start__[], _bss_end__[];
 #    define DATASTART ((ptr_t)_data_start__)
 #    define DATAEND ((ptr_t)_bss_end__)
 #    define STACKBOTTOM                                        \
@@ -1515,12 +1510,9 @@ EXTERN_C_END
 #    include "stubinfo.h"
 EXTERN_C_BEGIN
 extern int etext[];
-extern int _stklen;
-extern int __djgpp_stack_limit;
 #    define DATASTART PTR_ALIGN_UP(etext, 0x200)
-/* This may not be right. */
-/* define STACKBOTTOM ((ptr_t)((word)_stubinfo+_stubinfo->size+_stklen)) */
-#    define STACKBOTTOM ((ptr_t)((word)__djgpp_stack_limit + _stklen))
+extern int __djgpp_stack_limit, _stklen;
+#    define STACKBOTTOM (MAKE_CPTR(__djgpp_stack_limit) + _stklen)
 #  endif
 #  ifdef OPENBSD
 /* Nothing specific. */
@@ -1528,7 +1520,7 @@ extern int __djgpp_stack_limit;
 #  ifdef FREEBSD
 #    if defined(__GLIBC__)
 extern int _end[];
-#      define DATAEND ((ptr_t)(_end))
+#      define DATAEND ((ptr_t)_end)
 #    endif
 #  endif
 #  ifdef NETBSD
@@ -1538,16 +1530,16 @@ extern int _end[];
 #    define OS_TYPE "THREE86BSD"
 #    define HEURISTIC2
 extern char etext[];
-#    define DATASTART ((ptr_t)(etext))
+#    define DATASTART ((ptr_t)etext)
 #  endif
 #  ifdef BSDI
 #    define OS_TYPE "BSDI"
 #    define HEURISTIC2
 extern char etext[];
-#    define DATASTART ((ptr_t)(etext))
+#    define DATASTART ((ptr_t)etext)
 #  endif
 #  ifdef NEXT
-#    define STACKBOTTOM ((ptr_t)0xc0000000)
+#    define STACKBOTTOM MAKE_CPTR(0xc0000000)
 #  endif
 #  ifdef RTEMS
 #    define OS_TYPE "RTEMS"
@@ -1555,9 +1547,9 @@ EXTERN_C_END
 #    include <sys/unistd.h>
 EXTERN_C_BEGIN
 extern int etext[];
+#    define DATASTART ((ptr_t)etext)
 void *rtems_get_stack_bottom(void);
 #    define InitStackBottom rtems_get_stack_bottom()
-#    define DATASTART ((ptr_t)etext)
 #    define STACKBOTTOM ((ptr_t)InitStackBottom)
 #  endif
 #  ifdef DOS4GW
@@ -1577,7 +1569,7 @@ extern char *_STACKTOP;
 #  endif
 #  ifdef DARWIN
 #    define DARWIN_DONT_PARSE_STACK 1
-#    define STACKBOTTOM ((ptr_t)0xc0000000)
+#    define STACKBOTTOM MAKE_CPTR(0xc0000000)
 #    define MPROTECT_VDB
 #  endif
 #endif /* I386 */
@@ -1592,7 +1584,7 @@ extern char **environ;
 /* options were passed through.                                     */
 #  define DATASTART ((ptr_t)(&environ))
 /* Note: hard-coded stack bottom for Encore.        */
-#  define STACKBOTTOM ((ptr_t)0xfffff000)
+#  define STACKBOTTOM MAKE_CPTR(0xfffff000)
 #endif /* NS32K */
 
 #ifdef LOONGARCH
@@ -1601,7 +1593,7 @@ extern char **environ;
 #  ifdef LINUX
 #    pragma weak __data_start
 extern int __data_start[];
-#    define DATASTART ((ptr_t)(__data_start))
+#    define DATASTART ((ptr_t)__data_start)
 #  endif
 #endif /* LOONGARCH */
 
@@ -1624,14 +1616,14 @@ extern int __data_start[];
 #    endif
 #    pragma weak __data_start
 extern int __data_start[];
-#    define DATASTART ((ptr_t)(__data_start))
+#    define DATASTART ((ptr_t)__data_start)
 #    ifndef HBLKSIZE
 #      define HBLKSIZE 4096
 #    endif
 #    if GC_GLIBC_PREREQ(2, 2)
 #      define LINUX_STACKBOTTOM
 #    else
-#      define STACKBOTTOM ((ptr_t)0x7fff8000)
+#      define STACKBOTTOM MAKE_CPTR(0x7fff8000)
 #    endif
 #  endif
 #  ifdef EWS4800
@@ -1646,10 +1638,10 @@ extern int _fdata[], _end[];
 #      define CPP_WORDSZ 32
 #      define ALIGNMENT 4
 extern int etext[], edata[];
-extern int _DYNAMIC_LINKING[], _gp[];
-#      define DATASTART (PTR_ALIGN_UP(etext, 0x40000) + ((word)(etext)&0xffff))
-#      define DATAEND ((ptr_t)(edata))
+#      define DATASTART (PTR_ALIGN_UP(etext, 0x40000) + (ADDR(etext) & 0xffff))
+#      define DATAEND ((ptr_t)edata)
 #      define GC_HAVE_DATAREGION2
+extern int _DYNAMIC_LINKING[], _gp[];
 #      define DATASTART2                                               \
         (_DYNAMIC_LINKING ? PTR_ALIGN_UP((ptr_t)_gp + 0x8000, 0x40000) \
                           : (ptr_t)edata)
@@ -1664,7 +1656,7 @@ extern int end[];
 #    define HEURISTIC2
 /* Note: the actual beginning of the data segment could probably  */
 /* be slightly higher since startup code allocates lots of stuff. */
-#    define DATASTART ((ptr_t)0x10000000)
+#    define DATASTART MAKE_CPTR(0x10000000)
 #  endif
 #  ifdef IRIX5
 #    define OS_TYPE "IRIX5"
@@ -1676,12 +1668,12 @@ extern int end[];
 #    endif
 #    define HEURISTIC2
 extern int _fdata[];
-#    define DATASTART ((ptr_t)(_fdata))
+#    define DATASTART ((ptr_t)_fdata)
 /* Lowest plausible heap address.  In the USE_MMAP case, we map   */
 /* there.  In either case it is used to identify heap sections so */
 /* they are not considered as roots.                              */
 #    ifdef USE_MMAP
-#      define HEAP_START (ptr_t)0x30000000
+#      define HEAP_START MAKE_CPTR(0x30000000)
 #    else
 #      define HEAP_START DATASTART
 #    endif
@@ -1696,8 +1688,8 @@ extern int _fdata[];
 #    define CPP_WORDSZ 32
 #    define ALIGNMENT 4
 #    ifndef __ELF__
-#      define DATASTART ((ptr_t)0x10000000)
-#      define STACKBOTTOM ((ptr_t)0x7ffff000)
+#      define DATASTART MAKE_CPTR(0x10000000)
+#      define STACKBOTTOM MAKE_CPTR(0x7ffff000)
 #    endif
 #  endif
 #  ifdef OPENBSD
@@ -1710,10 +1702,10 @@ extern int _fdata[];
 #  ifdef NONSTOP
 #    define OS_TYPE "NONSTOP"
 #    define CPP_WORDSZ 32
-#    define DATASTART ((ptr_t)0x08000000)
+#    define DATASTART MAKE_CPTR(0x8000000)
 extern char **environ;
 #    define DATAEND ((ptr_t)(environ - 0x10))
-#    define STACKBOTTOM ((ptr_t)0x4fffffff)
+#    define STACKBOTTOM MAKE_CPTR(0x4fffffff)
 #  endif
 #endif /* MIPS */
 
@@ -1725,7 +1717,7 @@ extern char **environ;
 #  endif
 #  ifdef LINUX
 extern int __data_start[];
-#    define DATASTART ((ptr_t)(__data_start))
+#    define DATASTART ((ptr_t)__data_start)
 #  endif
 #endif /* NIOS2 */
 
@@ -1737,7 +1729,7 @@ extern int __data_start[];
 #  endif
 #  ifdef LINUX
 extern int __data_start[];
-#    define DATASTART ((ptr_t)(__data_start))
+#    define DATASTART ((ptr_t)__data_start)
 #  endif
 #endif /* OR1K */
 
@@ -1766,7 +1758,8 @@ extern int __data_start[];
 /* and in 11.23 and latter, the size can be set dynamically.    */
 /* It also doesn't handle SHMEM_MAGIC binaries which have       */
 /* stack and data in the first quadrant.                        */
-#      define STACKBOTTOM ((ptr_t)0x7b033000) /* from /etc/conf/h/param.h */
+/* This is from /etc/conf/h/param.h file.                       */
+#      define STACKBOTTOM MAKE_CPTR(0x7b033000)
 #    elif defined(USE_ENVIRON_POINTER)
 /* Gustavo Rodriguez-Rivera suggested changing HEURISTIC2       */
 /* to this.  Note that the GC must be initialized before the    */
@@ -1814,31 +1807,27 @@ void *GC_find_limit(void *, int);
 /* Handle unmapped hole which alpha*-*-freebsd[45]* puts        */
 /* between etext and edata.                                     */
 #    define GC_HAVE_DATAREGION2
-extern char edata[];
-extern char end[];
+extern char edata[], end[];
 #    define DATASTART2 ((ptr_t)(&edata))
 #    define DATAEND2 ((ptr_t)(&end))
 /* MPROTECT_VDB is not yet supported at all on FreeBSD/alpha. */
 #  endif
 #  ifdef OSF1
 #    define OS_TYPE "OSF1"
-#    define DATASTART ((ptr_t)0x140000000)
+#    define DATASTART MAKE_CPTR(0x140000000)
 extern int _end[];
 #    define DATAEND ((ptr_t)(&_end))
 extern char **environ;
 /* Round up from the value of environ to the nearest page       */
 /* boundary.  Probably this is broken if putenv() is called     */
 /* before the collector initialization.                         */
-#    define STACKBOTTOM                            \
-      ((ptr_t)(((word)environ + getpagesize() - 1) \
-               & ~(word)(getpagesize() - 1)))
+#    define STACKBOTTOM PTR_ALIGN_UP((ptr_t)environ, getpagesize())
 /* Normally HEURISTIC2 is too conservative, since the text      */
 /* segment immediately follows the stack.  Hence we give an     */
 /* upper bound.  This is currently unused, since HEURISTIC2 is  */
 /* not defined.                                                 */
 extern int __start[];
-#    define HEURISTIC2_LIMIT \
-      ((ptr_t)((word)(__start) & ~(word)(getpagesize() - 1)))
+#    define HEURISTIC2_LIMIT PTR_ALIGN_DOWN((ptr_t)__start, getpagesize())
 #    ifndef GC_THREADS
 /* Unresolved signal issues with threads.     */
 #      define MPROTECT_VDB
@@ -1849,9 +1838,9 @@ extern int __start[];
 #    ifdef __ELF__
 #      define SEARCH_FOR_DATA_START
 #    else
-#      define DATASTART ((ptr_t)0x140000000)
+#      define DATASTART MAKE_CPTR(0x140000000)
 extern int _end[];
-#      define DATAEND ((ptr_t)(_end))
+#      define DATAEND ((ptr_t)_end)
 #    endif
 #  endif
 #endif /* ALPHA */
@@ -1886,7 +1875,7 @@ extern char **environ;
 #  ifdef LINUX
 #    define CPP_WORDSZ 64
 /* The following works on NUE and older kernels:        */
-/* define STACKBOTTOM ((ptr_t)0xa000000000000000l)      */
+/* define STACKBOTTOM MAKE_CPTR(0xa000000000000000l)    */
 /* TODO: LINUX_STACKBOTTOM does not work on NUE.        */
 /* We also need the base address of the register stack  */
 /* backing store.                                       */
@@ -1949,7 +1938,7 @@ extern int __dso_handle[];
 #  define MACH_TYPE "M88K"
 #  define CPP_WORDSZ 32
 #  define ALIGNMENT 4
-#  define STACKBOTTOM ((char *)0xf0000000) /* determined empirically */
+#  define STACKBOTTOM MAKE_CPTR(0xf0000000) /* determined empirically */
 extern int etext[];
 #  ifdef CX_UX
 #    define OS_TYPE "CX_UX"
@@ -1971,12 +1960,11 @@ ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #  define ALIGNMENT 4 /* Required by hardware */
 #  ifdef UTS4
 #    define OS_TYPE "UTS4"
-extern int _etext[];
-extern int _end[];
+extern int _etext[], _end[];
 ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #    define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #    define DATASTART_IS_FUNC
-#    define DATAEND ((ptr_t)(_end))
+#    define DATAEND ((ptr_t)_end)
 #    define HEURISTIC2
 #  endif
 #endif /* S370 */
@@ -1993,9 +1981,9 @@ ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #  endif
 #  ifdef LINUX
 extern int __data_start[] __attribute__((__weak__));
-#    define DATASTART ((ptr_t)(__data_start))
 extern int _end[] __attribute__((__weak__));
-#    define DATAEND ((ptr_t)(_end))
+#    define DATASTART ((ptr_t)__data_start)
+#    define DATAEND ((ptr_t)_end)
 #    define CACHE_LINE_SIZE 256
 #    define GETPAGESIZE() 4096
 #    ifndef SOFT_VDB
@@ -2028,7 +2016,7 @@ extern int __data_start[] __attribute__((__weak__));
 #  ifdef DARWIN
 /* OS X, iOS, visionOS */
 #    define DARWIN_DONT_PARSE_STACK 1
-#    define STACKBOTTOM ((ptr_t)0x16fdfffff)
+#    define STACKBOTTOM MAKE_CPTR(0x16fdfffff)
 #    if (TARGET_OS_IPHONE || TARGET_OS_XR || TARGET_OS_VISION)
 /* MPROTECT_VDB causes use of non-public API like exc_server,   */
 /* this could be a reason for blocking the client application   */
@@ -2048,10 +2036,10 @@ extern int __data_start[] __attribute__((__weak__));
 #  endif
 #  ifdef NINTENDO_SWITCH
 #    define OS_TYPE "NINTENDO_SWITCH"
-extern int __bss_end[];
 #    define NO_HANDLE_FORK 1
+extern int __bss_end[];
 #    define DATASTART (ptr_t) ALIGNMENT /* cannot be null */
-#    define DATAEND (ptr_t)(&__bss_end)
+#    define DATAEND ((ptr_t)(&__bss_end))
 void *switch_get_stack_bottom(void);
 #    define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
 #    ifndef HAVE_CLOCK_GETTIME
@@ -2099,7 +2087,7 @@ extern char **__environ;
 #  ifdef DARWIN
 /* iOS */
 #    define DARWIN_DONT_PARSE_STACK 1
-#    define STACKBOTTOM ((ptr_t)0x30000000)
+#    define STACKBOTTOM MAKE_CPTR(0x30000000)
 /* MPROTECT_VDB causes use of non-public API.     */
 #  endif
 #  ifdef NETBSD
@@ -2125,9 +2113,9 @@ void *psp2_get_stack_bottom(void);
 #  ifdef NN_PLATFORM_CTR
 #    define OS_TYPE "NN_PLATFORM_CTR"
 extern unsigned char Image$$ZI$$ZI$$Base[];
-#    define DATASTART (ptr_t)(Image$$ZI$$ZI$$Base)
+#    define DATASTART ((ptr_t)Image$$ZI$$ZI$$Base)
 extern unsigned char Image$$ZI$$ZI$$Limit[];
-#    define DATAEND (ptr_t)(Image$$ZI$$ZI$$Limit)
+#    define DATAEND ((ptr_t)Image$$ZI$$ZI$$Limit)
 void *n3ds_get_stack_bottom(void);
 #    define STACKBOTTOM ((ptr_t)n3ds_get_stack_bottom())
 #  endif
@@ -2139,10 +2127,10 @@ void *n3ds_get_stack_bottom(void);
 #    define OS_TYPE "NOSYS"
 /* __data_start is usually defined in the target linker script.  */
 extern int __data_start[];
-#    define DATASTART ((ptr_t)(__data_start))
+#    define DATASTART ((ptr_t)__data_start)
 /* __stack_base__ is set in newlib/libc/sys/arm/crt0.S  */
 extern void *__stack_base__;
-#    define STACKBOTTOM ((ptr_t)(__stack_base__))
+#    define STACKBOTTOM ((ptr_t)__stack_base__)
 #  endif
 #  ifdef SYMBIAN
 /* Nothing specific. */
@@ -2257,13 +2245,13 @@ EXTERN_C_BEGIN
 #  endif
 #  ifdef DARWIN
 #    define DARWIN_DONT_PARSE_STACK 1
-#    define STACKBOTTOM ((ptr_t)0x7fff5fc00000)
+#    define STACKBOTTOM MAKE_CPTR(0x7fff5fc00000)
 #    define MPROTECT_VDB
 #  endif
 #  ifdef FREEBSD
 #    if defined(__GLIBC__)
 extern int _end[];
-#      define DATAEND ((ptr_t)(_end))
+#      define DATAEND ((ptr_t)_end)
 #    endif
 #    if defined(__DragonFly__)
 /* DragonFly BSD still has vm.max_proc_mmap, according to   */
