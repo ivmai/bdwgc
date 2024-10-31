@@ -767,12 +767,18 @@ EXTERN_C_BEGIN
 #  define GC_GLIBC_PREREQ(major, minor) 0 /* FALSE */
 #endif
 
-/* Align a ptr_t pointer down/up to a given boundary.               */
-#define PTR_ALIGN_DOWN(p, b) \
-  ((ptr_t)((GC_uintptr_t)(p) & ~(GC_uintptr_t)((b)-1)))
-#define PTR_ALIGN_UP(p, b)                             \
-  ((ptr_t)(((GC_uintptr_t)(p) + (GC_uintptr_t)((b)-1)) \
-           & ~(GC_uintptr_t)((b)-1)))
+/* Align a ptr_t pointer down/up to a given boundary.  The latter   */
+/* should be a power of two.                                        */
+#if GC_CLANG_PREREQ(11, 0)
+#  define PTR_ALIGN_DOWN(p, b) __builtin_align_down(p, b)
+#  define PTR_ALIGN_UP(p, b) __builtin_align_up(p, b)
+#else
+#  define PTR_ALIGN_DOWN(p, b) \
+    ((ptr_t)((GC_uintptr_t)(p) & ~(GC_uintptr_t)((b)-1)))
+#  define PTR_ALIGN_UP(p, b)                             \
+    ((ptr_t)(((GC_uintptr_t)(p) + (GC_uintptr_t)((b)-1)) \
+             & ~(GC_uintptr_t)((b)-1)))
+#endif
 
 /* If available, we can use __builtin_unwind_init() to push the     */
 /* relevant registers onto the stack.                               */
@@ -1125,7 +1131,7 @@ extern char **__environ;
 #      endif
 #    else
 extern int etext[];
-#      define DATASTART PTR_ALIGN_UP(etext, 0x1000)
+#      define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
 #    endif
 #  endif
 #  ifdef NEXT
@@ -1352,12 +1358,12 @@ extern char edata[], end[];
 #  ifdef SEQUENT
 #    define OS_TYPE "SEQUENT"
 extern int etext[];
-#    define DATASTART PTR_ALIGN_UP(etext, 0x1000)
+#    define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
 #    define STACKBOTTOM MAKE_CPTR(0x3ffff000)
 #  endif
 #  ifdef HAIKU
 extern int etext[];
-#    define DATASTART PTR_ALIGN_UP(etext, 0x1000)
+#    define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
 #  endif
 #  ifdef HURD
 /* Nothing specific. */
@@ -1382,7 +1388,8 @@ extern int etext[];
 #  ifdef SCO
 #    define OS_TYPE "SCO"
 extern int etext[];
-#    define DATASTART (PTR_ALIGN_UP(etext, 0x400000) + (ADDR(etext) & 0xfff))
+#    define DATASTART \
+      (PTR_ALIGN_UP((ptr_t)etext, 0x400000) + (ADDR(etext) & 0xfff))
 #    define STACKBOTTOM MAKE_CPTR(0x7ffffffc)
 #  endif
 #  ifdef SCO_ELF
@@ -1433,7 +1440,7 @@ extern char **__environ;
 #      endif
 #    else
 extern int etext[];
-#      define DATASTART PTR_ALIGN_UP(etext, 0x1000)
+#      define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
 #    endif
 #    ifdef USE_I686_PREFETCH
 /* Empirically prefetcht0 is much more effective at reducing  */
@@ -1510,7 +1517,7 @@ EXTERN_C_END
 #    include "stubinfo.h"
 EXTERN_C_BEGIN
 extern int etext[];
-#    define DATASTART PTR_ALIGN_UP(etext, 0x200)
+#    define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x200)
 extern int __djgpp_stack_limit, _stklen;
 #    define STACKBOTTOM (MAKE_CPTR(__djgpp_stack_limit) + _stklen)
 #  endif
@@ -1638,7 +1645,8 @@ extern int _fdata[], _end[];
 #      define CPP_WORDSZ 32
 #      define ALIGNMENT 4
 extern int etext[], edata[];
-#      define DATASTART (PTR_ALIGN_UP(etext, 0x40000) + (ADDR(etext) & 0xffff))
+#      define DATASTART \
+        (PTR_ALIGN_UP((ptr_t)etext, 0x40000) + (ADDR(etext) & 0xffff))
 #      define DATAEND ((ptr_t)edata)
 #      define GC_HAVE_DATAREGION2
 extern int _DYNAMIC_LINKING[], _gp[];
@@ -1942,7 +1950,7 @@ extern int __dso_handle[];
 extern int etext[];
 #  ifdef CX_UX
 #    define OS_TYPE "CX_UX"
-#    define DATASTART (PTR_ALIGN_UP(etext, 0x400000) + 0x10000)
+#    define DATASTART (PTR_ALIGN_UP((ptr_t)etext, 0x400000) + 0x10000)
 #  endif
 #  ifdef DGUX
 #    define OS_TYPE "DGUX"
