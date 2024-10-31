@@ -1816,7 +1816,8 @@
         /* round up from the value of environ to the nearest page boundary */
         /* Probably breaks if putenv is called before collector            */
         /* initialization.                                                 */
-#       define STACKBOTTOM ((ptr_t)(((word)(environ) | (getpagesize()-1))+1))
+#       define STACKBOTTOM ((ptr_t)(((word)environ + getpagesize() - 1) \
+                                    & ~(word)(getpagesize() - 1)))
 /* #    define HEURISTIC2 */
         /* Normally HEURISTIC2 is too conservative, since               */
         /* the text segment immediately follows the stack.              */
