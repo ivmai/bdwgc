@@ -54,8 +54,7 @@ extern void GC_unlock(void);
 
 #  if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS) \
       || defined(GC_PTHREADS)
-/* A value which is not equal to NUMERIC_THREAD_ID(pthread_self())  */
-/* for any thread.                                                  */
+/* A value which is not equal to NUMERIC_THREAD_ID(id) for any thread.  */
 #    define NO_THREAD ((unsigned long)(-1L))
 #    ifdef GC_ASSERTIONS
 GC_EXTERN unsigned long GC_lock_holder;
@@ -135,11 +134,10 @@ EXTERN_C_BEGIN
 /* Unfortunately, we need to use a pthread_t to index a data    */
 /* structure.  It also helps if comparisons don't involve a     */
 /* function call.  Hence we introduce platform-dependent macros */
-/* to compare pthread_t ids and to map them to integers.        */
-/* The mapping to integers does not need to result in different */
-/* integers for each thread, though that should be true as much */
-/* as possible.                                                 */
-/* Refine to exclude platforms on which pthread_t is struct.    */
+/* to compare pthread_t ids and to map them to integers (of     */
+/* unsigned long type).  This mapping does not need to result   */
+/* in different values for each thread, though that should be   */
+/* true as much as possible.                                    */
 #    if !defined(GC_WIN32_PTHREADS)
 #      define NUMERIC_THREAD_ID(id) ((unsigned long)(GC_uintptr_t)(id))
 #      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
@@ -147,19 +145,20 @@ EXTERN_C_BEGIN
 #    elif defined(__WINPTHREADS_VERSION_MAJOR) /* winpthreads */
 #      define NUMERIC_THREAD_ID(id) ((unsigned long)(id))
 #      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
+/* NUMERIC_THREAD_ID() is 32-bit and, thus, not unique on Win64. */
 #      ifndef _WIN64
-/* NUMERIC_THREAD_ID is 32-bit and not unique on Win64. */
 #        define NUMERIC_THREAD_ID_UNIQUE
 #      endif
 #    else /* pthreads-win32 */
 #      define NUMERIC_THREAD_ID(id) ((unsigned long)(word)(id.p))
+/* The platform on which pthread_t is a struct.                   */
 /* Using documented internal details of pthreads-win32 library.   */
 /* Faster than pthread_equal().  Should not change with           */
 /* future versions of pthreads-win32 library.                     */
 #      define THREAD_EQUAL(id1, id2) ((id1.p == id2.p) && (id1.x == id2.x))
 /* Generic definitions based on pthread_equal() always work but   */
-/* will result in poor performance (as NUMERIC_THREAD_ID is       */
-/* defined to just a constant) and weak assertion checking.       */
+/* will result in poor performance (as NUMERIC_THREAD_ID() might  */
+/* give a constant value) and weak assertion checking.            */
 #      undef NUMERIC_THREAD_ID_UNIQUE
 #    endif
 
