@@ -264,9 +264,9 @@ struct link_map {
 struct r_debug {
   int32_t r_version;
   struct link_map *r_map;
-  void (*r_brk)(void);
-  int32_t r_state;
-  uintptr_t r_ldbase;
+  /* void (*r_brk)(void); */
+  /* int32_t r_state; */
+  /* uintptr_t r_ldbase; */
 };
 #      endif
 #    else
@@ -884,6 +884,10 @@ GC_FirstDLOpenedLinkMap(void)
         if (rd != NULL) {
           const struct link_map *lm = rd->r_map;
 
+#        if defined(CPPCHECK) && defined(HOST_ANDROID) \
+            && !defined(GC_DONT_DEFINE_LINK_MAP) && !(__ANDROID_API__ >= 21)
+          GC_noop1((word)rd->r_version);
+#        endif
           if (lm != NULL)
             cachedResult = lm->l_next; /* might be NULL */
         }
