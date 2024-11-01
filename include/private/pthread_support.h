@@ -267,6 +267,19 @@ typedef struct GC_Thread_Rep {
 #  endif
 } * GC_thread;
 
+/* Convert a platform-specific thread id (of thread_id_t type) to   */
+/* some pointer identifying the thread.  This is used mostly for    */
+/* a debugging purpose when printing thread id.                     */
+#  if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)                  \
+      && (defined(GC_WIN32_PTHREADS) || defined(GC_PTHREADS_PARAMARK)) \
+      && !defined(__WINPTHREADS_VERSION_MAJOR)
+/* Using documented internal details of pthreads-win32 library. */
+/* pthread_t is a struct.                                       */
+#    define THREAD_ID_TO_VPTR(id) ((void *)(id).p)
+#  else
+#    define THREAD_ID_TO_VPTR(id) CAST_THRU_UINTPTR(void *, id)
+#  endif
+
 #  ifndef THREAD_TABLE_SZ
 /* Note: this is a power of 2 (for speed).    */
 #    define THREAD_TABLE_SZ 256
@@ -375,13 +388,6 @@ GC_INNER void GC_win32_unprotect_thread(GC_thread);
 #  endif /* !GC_WIN32_THREADS */
 
 #  ifdef GC_PTHREADS
-#    if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)                  \
-        && (defined(GC_WIN32_PTHREADS) || defined(GC_PTHREADS_PARAMARK)) \
-        && !defined(__WINPTHREADS_VERSION_MAJOR)
-#      define GC_PTHREAD_PTRVAL(pthread_id) pthread_id.p
-#    else
-#      define GC_PTHREAD_PTRVAL(pthread_id) pthread_id
-#    endif /* !GC_WIN32_THREADS || CYGWIN32 */
 #    ifdef GC_WIN32_THREADS
 GC_INNER GC_thread GC_lookup_by_pthread(pthread_t);
 #    else

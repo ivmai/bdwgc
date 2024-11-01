@@ -146,6 +146,9 @@ GC_use_threads_discovery(void)
 #    define kCFCoreFoundationVersionNumber_iOS_8_0 1140.1
 #  endif
 
+#  define THREAD_ACT_TO_VPTR(t) THREAD_ID_TO_VPTR(t)
+#  define MACH_PORT_TO_VPTR(t) THREAD_ID_TO_VPTR(t)
+
 /* Evaluates the stack range for a given thread.  Returns the lower     */
 /* bound and sets *phi to the upper one.  Sets *pfound_me to TRUE if    */
 /* this is current thread, otherwise the value is not changed.          */
@@ -361,11 +364,11 @@ GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
   }
 #  if defined(STACKPTR_CORRECTOR_AVAILABLE) && defined(DARWIN_DONT_PARSE_STACK)
   if (GC_sp_corrector != 0)
-    GC_sp_corrector((void **)&lo, (void *)(p->id));
+    GC_sp_corrector((void **)&lo, THREAD_ID_TO_VPTR(p->id));
 #  endif
 #  ifdef DEBUG_THREADS
   GC_log_printf("Darwin: Stack for thread %p is [%p,%p)\n",
-                (void *)(word)thread, (void *)lo, (void *)(*phi));
+                THREAD_ACT_TO_VPTR(thread), (void *)lo, (void *)*phi);
 #  endif
   return lo;
 }
@@ -542,7 +545,7 @@ GC_suspend_thread_list(thread_act_array_t act_list, int count,
     changed = TRUE;
 
 #    ifdef DEBUG_THREADS
-    GC_log_printf("Suspending %p\n", (void *)(word)thread);
+    GC_log_printf("Suspending %p\n", THREAD_ACT_TO_VPTR(thread));
 #    endif
     /* Unconditionally suspend the thread.  It will do no     */
     /* harm if it is already suspended by the client logic.   */
@@ -559,7 +562,8 @@ GC_suspend_thread_list(thread_act_array_t act_list, int count,
       /* Mark the thread as suspended and require resume.     */
       GC_mach_threads[GC_mach_threads_count].suspended = TRUE;
       if (GC_on_thread_event)
-        GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED, (void *)(word)thread);
+        GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
+                           THREAD_ACT_TO_VPTR(thread));
     }
     GC_mach_threads_count++;
   }
@@ -579,7 +583,7 @@ GC_stop_world(void)
   GC_ASSERT(GC_thr_initialized);
 #  ifdef DEBUG_THREADS
   GC_log_printf("Stopping the world from thread %p\n",
-                (void *)(word)my_thread);
+                MACH_PORT_TO_VPTR(my_thread));
 #  endif
 #  ifdef PARALLEL_MARK
   if (GC_parallel) {
@@ -656,7 +660,7 @@ GC_stop_world(void)
             ABORT("thread_suspend failed");
           if (GC_on_thread_event)
             GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
-                               (void *)((word)p->mach_thread));
+                               MACH_PORT_TO_VPTR(p->mach_thread));
         }
       }
     }
@@ -673,7 +677,7 @@ GC_stop_world(void)
 #  endif
 
 #  ifdef DEBUG_THREADS
-  GC_log_printf("World stopped from %p\n", (void *)(word)my_thread);
+  GC_log_printf("World stopped from %p\n", MACH_PORT_TO_VPTR(my_thread));
 #  endif
   mach_port_deallocate(my_task, my_thread);
 }
@@ -696,15 +700,16 @@ GC_thread_resume(thread_act_t thread)
 #  endif
   GC_ASSERT(I_HOLD_LOCK());
 #  ifdef DEBUG_THREADS
-  GC_log_printf("Resuming thread %p with state %d\n", (void *)(word)thread,
-                info.run_state);
+  GC_log_printf("Resuming thread %p with state %d\n",
+                THREAD_ACT_TO_VPTR(thread), info.run_state);
 #  endif
   /* Resume the thread. */
   kern_result = thread_resume(thread);
   if (kern_result != KERN_SUCCESS) {
     WARN("thread_resume(%p) failed: mach port invalid\n", thread);
   } else if (GC_on_thread_event) {
-    GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)(word)thread);
+    GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED,
+                       THREAD_ACT_TO_VPTR(thread));
   }
 }
 
@@ -765,7 +770,7 @@ GC_start_world(void)
         /* action is needed.                                          */
 #    ifdef DEBUG_THREADS
         GC_log_printf("Not resuming thread %p as it is not suspended\n",
-                      (void *)(word)thread);
+                      THREAD_ACT_TO_VPTR(thread));
 #    endif
       }
       mach_port_deallocate(my_task, thread);

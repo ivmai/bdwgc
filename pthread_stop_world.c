@@ -635,14 +635,14 @@ GC_suspend_self_inner(GC_thread me, size_t suspend_cnt)
   GC_ASSERT((suspend_cnt & 1) != 0);
   DISABLE_CANCEL(cancel_state);
 #      ifdef DEBUG_THREADS
-  GC_log_printf("Suspend self: %p\n", (void *)me->id);
+  GC_log_printf("Suspend self: %p\n", THREAD_ID_TO_VPTR(me->id));
 #      endif
   while (ao_load_acquire_async(&me->ext_suspend_cnt) == suspend_cnt) {
     /* TODO: Use sigsuspend() even for self-suspended threads. */
     GC_brief_async_signal_safe_sleep();
   }
 #      ifdef DEBUG_THREADS
-  GC_log_printf("Resume self: %p\n", (void *)me->id);
+  GC_log_printf("Resume self: %p\n", THREAD_ID_TO_VPTR(me->id));
 #      endif
   RESTORE_CANCEL(cancel_state);
 }
@@ -870,11 +870,11 @@ GC_push_all_stacks(void)
 #  endif
 #  ifdef DEBUG_THREADS
 #    ifdef STACK_GROWS_UP
-      GC_log_printf("Stack for thread %p is (%p,%p]\n", (void *)p->id,
-                    (void *)hi, (void *)lo);
+      GC_log_printf("Stack for thread %p is (%p,%p]\n",
+                    THREAD_ID_TO_VPTR(p->id), (void *)hi, (void *)lo);
 #    else
-      GC_log_printf("Stack for thread %p is [%p,%p)\n", (void *)p->id,
-                    (void *)lo, (void *)hi);
+      GC_log_printf("Stack for thread %p is [%p,%p)\n",
+                    THREAD_ID_TO_VPTR(p->id), (void *)lo, (void *)hi);
 #    endif
 #  endif
       if (NULL == lo)
@@ -890,7 +890,7 @@ GC_push_all_stacks(void)
       }
 #  ifdef STACKPTR_CORRECTOR_AVAILABLE
       if (GC_sp_corrector != 0)
-        GC_sp_corrector((void **)&lo, (void *)p->id);
+        GC_sp_corrector((void **)&lo, THREAD_ID_TO_VPTR(p->id));
 #  endif
       GC_push_all_stack_sections(lo, hi, traced_stack_sect);
 #  ifdef STACK_GROWS_UP
@@ -916,8 +916,8 @@ GC_push_all_stacks(void)
 #  endif
 #  if defined(E2K) || defined(IA64)
 #    ifdef DEBUG_THREADS
-      GC_log_printf("Reg stack for thread %p is [%p,%p)\n", (void *)p->id,
-                    (void *)bs_lo, (void *)bs_hi);
+      GC_log_printf("Reg stack for thread %p is [%p,%p)\n",
+                    THREAD_ID_TO_VPTR(p->id), (void *)bs_lo, (void *)bs_hi);
 #    endif
       GC_ASSERT(bs_lo != NULL && bs_hi != NULL);
       /* FIXME: This (if is_self) may add an unbounded number of    */
@@ -977,7 +977,8 @@ GC_suspend_all(void)
         }
         n_live_threads++;
 #    ifdef DEBUG_THREADS
-        GC_log_printf("Sending suspend signal to %p\n", (void *)p->id);
+        GC_log_printf("Sending suspend signal to %p\n",
+                      THREAD_ID_TO_VPTR(p->id));
 #    endif
 
         /* The synchronization between GC_dirty (based on       */
@@ -995,7 +996,7 @@ GC_suspend_all(void)
           if (GC_on_thread_event) {
             /* Note: thread id might be truncated.    */
             GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
-                               (void *)(GC_uintptr_t)THREAD_SYSTEM_ID(p));
+                               THREAD_ID_TO_VPTR(THREAD_SYSTEM_ID(p)));
           }
           break;
         default:
@@ -1328,7 +1329,8 @@ GC_restart_all(void)
         }
         n_live_threads++;
 #    ifdef DEBUG_THREADS
-        GC_log_printf("Sending restart signal to %p\n", (void *)p->id);
+        GC_log_printf("Sending restart signal to %p\n",
+                      THREAD_ID_TO_VPTR(p->id));
 #    endif
         result = raise_signal(p, GC_sig_thr_restart);
         switch (result) {
@@ -1339,7 +1341,7 @@ GC_restart_all(void)
         case 0:
           if (GC_on_thread_event)
             GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED,
-                               (void *)(GC_uintptr_t)THREAD_SYSTEM_ID(p));
+                               THREAD_ID_TO_VPTR(THREAD_SYSTEM_ID(p)));
           break;
         default:
           ABORT_ARG1("pthread_kill failed at resume", ": errcode= %d", result);

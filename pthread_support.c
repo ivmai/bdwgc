@@ -762,9 +762,7 @@ GC_new_thread(thread_id_t self_id)
 
   GC_ASSERT(I_HOLD_LOCK());
 #  ifdef DEBUG_THREADS
-#    if !defined(GC_WIN32_PTHREADS)
-  GC_log_printf("Creating thread %p\n", (void *)(GC_uintptr_t)self_id);
-#    endif
+  GC_log_printf("Creating thread %p\n", THREAD_ID_TO_VPTR(self_id));
   for (result = GC_threads[hv]; result != NULL; result = result->tm.next)
     if (!THREAD_ID_EQUAL(result->id, self_id)) {
       GC_log_printf("Hash collision at GC_threads[%d]\n", hv);
@@ -861,11 +859,10 @@ GC_delete_thread(GC_thread t)
     GC_thread prev = NULL;
 
     GC_ASSERT(I_HOLD_LOCK());
-#  if defined(DEBUG_THREADS) && !defined(MSWINCE)    \
-      && (!defined(MSWIN32) || defined(CONSOLE_LOG)) \
-      && !defined(GC_WIN32_PTHREADS)
-    GC_log_printf("Deleting thread %p, n_threads= %d\n",
-                  (void *)(GC_uintptr_t)id, GC_count_threads());
+#  if defined(DEBUG_THREADS) && !defined(MSWINCE) \
+      && (!defined(MSWIN32) || defined(CONSOLE_LOG))
+    GC_log_printf("Deleting thread %p, n_threads= %d\n", THREAD_ID_TO_VPTR(id),
+                  GC_count_threads());
 #  endif
     for (p = GC_threads[hv]; p != t; p = p->tm.next) {
       prev = p;
@@ -2252,9 +2249,9 @@ STATIC void
 GC_unregister_my_thread_inner(GC_thread me)
 {
   GC_ASSERT(I_HOLD_LOCK());
-#  if defined(DEBUG_THREADS) && !defined(GC_WIN32_PTHREADS)
+#  ifdef DEBUG_THREADS
   GC_log_printf("Unregistering thread %p, gc_thread= %p, n_threads= %d\n",
-                (void *)(GC_uintptr_t)me->id, (void *)me, GC_count_threads());
+                THREAD_ID_TO_VPTR(me->id), (void *)me, GC_count_threads());
 #  endif
   GC_ASSERT(!KNOWN_FINISHED(me));
 #  if defined(THREAD_LOCAL_ALLOC)
@@ -2480,9 +2477,9 @@ GC_thread_exit_proc(void *arg)
   GC_thread me = (GC_thread)arg;
   IF_CANCEL(int cancel_state;)
 
-#    if defined(DEBUG_THREADS) && !defined(GC_WIN32_PTHREADS)
+#    ifdef DEBUG_THREADS
   GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread= %p\n",
-                (void *)(GC_uintptr_t)me->id, (void *)me);
+                THREAD_ID_TO_VPTR(me->id), (void *)me);
 #    endif
   LOCK();
   DISABLE_CANCEL(cancel_state);
@@ -2502,8 +2499,7 @@ GC_wrap_pthread_join(pthread_t thread, void **retval)
   INIT_REAL_SYMS();
 #    ifdef DEBUG_THREADS
   GC_log_printf("thread %p is joining thread %p\n",
-                (void *)GC_PTHREAD_PTRVAL(pthread_self()),
-                (void *)GC_PTHREAD_PTRVAL(thread));
+                THREAD_ID_TO_VPTR(pthread_self()), THREAD_ID_TO_VPTR(thread));
 #    endif
 
   /* After the join, thread id may have been recycled.                */
@@ -2541,8 +2537,7 @@ GC_wrap_pthread_join(pthread_t thread, void **retval)
 
 #    ifdef DEBUG_THREADS
   GC_log_printf("thread %p join with thread %p %s\n",
-                (void *)GC_PTHREAD_PTRVAL(pthread_self()),
-                (void *)GC_PTHREAD_PTRVAL(thread),
+                THREAD_ID_TO_VPTR(pthread_self()), THREAD_ID_TO_VPTR(thread),
                 result != 0 ? "failed" : "succeeded");
 #    endif
   return result;
@@ -2596,8 +2591,7 @@ GC_start_rtn_prepare_thread(void *(**pstart)(void *), void **pstart_arg,
 
 #    ifdef DEBUG_THREADS
   GC_log_printf("Starting thread %p, sp= %p\n",
-                (void *)GC_PTHREAD_PTRVAL(pthread_self()),
-                (void *)GC_approx_sp());
+                THREAD_ID_TO_VPTR(pthread_self()), (void *)GC_approx_sp());
 #    endif
   /* If a GC occurs before the thread is registered, that GC will     */
   /* ignore this thread.  That's fine, since it will block trying to  */
@@ -2722,7 +2716,7 @@ GC_wrap_pthread_create(pthread_t *new_thread,
 #    endif
 #    ifdef DEBUG_THREADS
   GC_log_printf("About to start new thread from thread %p\n",
-                (void *)GC_PTHREAD_PTRVAL(pthread_self()));
+                THREAD_ID_TO_VPTR(pthread_self()));
 #    endif
   set_need_to_lock();
   result = REAL_FUNC(pthread_create)(new_thread, attr, GC_pthread_start, &si);
@@ -2980,7 +2974,7 @@ GC_lock(void)
         && !defined(USE_PTHREAD_LOCKS)
 /* Note: result is not guaranteed to be unique. */
 #      define NUMERIC_THREAD_ID(id) \
-        ((unsigned long)ADDR(GC_PTHREAD_PTRVAL(id)))
+        ((unsigned long)ADDR(THREAD_ID_TO_VPTR(id)))
 #    endif
 
 #    ifdef GC_ASSERTIONS
