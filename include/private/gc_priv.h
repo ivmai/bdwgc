@@ -317,8 +317,8 @@ typedef struct hblkhdr hdr;
 
 #include "gc/gc_inline.h"
 
-/* Prevent certain compiler warnings by making a cast through       */
-/* a pointer-sized numeric type.                                    */
+/* Prevent certain compiler warnings by making a pointer-related    */
+/* cast through a pointer-sized numeric type.                       */
 #define CAST_THRU_UINTPTR(t, x) ((t)(GC_uintptr_t)(x))
 
 #define CAST_AWAY_VOLATILE_PVOID(p) \
