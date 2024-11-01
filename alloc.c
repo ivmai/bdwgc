@@ -56,6 +56,7 @@ word GC_non_gc_bytes = 0;
 word GC_gc_no = 0;
 
 #ifndef NO_CLOCK
+
 static unsigned long full_gc_total_time = 0; /* in ms, may wrap */
 static unsigned long stopped_mark_total_time = 0;
 static unsigned32 full_gc_total_ns_frac = 0; /* fraction of 1 ms */
@@ -82,6 +83,50 @@ GC_get_stopped_mark_total_time(void)
 {
   return stopped_mark_total_time;
 }
+
+/* Variables for world-stop average delay time statistic computation. */
+/* "divisor" is incremented every world stop and halved when reached  */
+/* its maximum (or upon "total_time" overflow).  In milliseconds.     */
+/* TODO: Store the nanosecond part. */
+static unsigned world_stopped_total_time = 0;
+static unsigned world_stopped_total_divisor = 0;
+
+#  ifndef MAX_TOTAL_TIME_DIVISOR
+/* We shall not use big values here (so "outdated" delay time       */
+/* values would have less impact on "average" delay time value than */
+/* newer ones).                                                     */
+#    define MAX_TOTAL_TIME_DIVISOR 1000
+#  endif
+
+GC_API unsigned long GC_CALL
+GC_get_avg_stopped_mark_time_ns(void)
+{
+  unsigned long total_time;
+  unsigned divisor;
+
+  READER_LOCK();
+  total_time = (unsigned long)world_stopped_total_time;
+  divisor = world_stopped_total_divisor;
+  READER_UNLOCK();
+  if (0 == divisor) {
+    GC_ASSERT(0 == total_time);
+    /* No world-stopped collection has occurred since the start of  */
+    /* performance measurements.                                    */
+    return 0;
+  }
+
+  /* Halve values to prevent overflow during the multiplication.    */
+  for (; total_time > ~0UL / (1000UL * 1000); total_time >>= 1) {
+    divisor >>= 1;
+    if (EXPECT(0 == divisor, FALSE)) {
+      /* The actual result is larger than representable value.  */
+      return ~0UL;
+    }
+  }
+
+  return total_time * (1000UL * 1000) / divisor;
+}
+
 #endif /* !NO_CLOCK */
 
 #ifndef GC_DISABLE_INCREMENTAL
@@ -824,20 +869,6 @@ GC_start_world_external(void)
 }
 #endif /* THREADS */
 
-#ifndef NO_CLOCK
-/* Variables for world-stop average delay time statistic computation. */
-/* "divisor" is incremented every world-stop and halved when reached  */
-/* its maximum (or upon "total_time" overflow).                       */
-static unsigned world_stopped_total_time = 0;
-static unsigned world_stopped_total_divisor = 0;
-#  ifndef MAX_TOTAL_TIME_DIVISOR
-/* We shall not use big values here (so "outdated" delay time       */
-/* values would have less impact on "average" delay time value than */
-/* newer ones).                                                     */
-#    define MAX_TOTAL_TIME_DIVISOR 1000
-#  endif
-#endif /* !NO_CLOCK */
-
 #ifdef USE_MUNMAP
 #  ifndef MUNMAP_THRESHOLD
 #    define MUNMAP_THRESHOLD 7
@@ -982,7 +1013,7 @@ GC_stopped_mark(GC_stop_func stop_func)
       }
     }
 
-    if (GC_PRINT_STATS_FLAG) {
+    if (GC_PRINT_STATS_FLAG || measure_performance) {
       unsigned total_time = world_stopped_total_time;
       unsigned divisor = world_stopped_total_divisor;
 
@@ -998,7 +1029,7 @@ GC_stopped_mark(GC_stop_func stop_func)
       /* Update old world_stopped_total_time and its divisor.   */
       world_stopped_total_time = total_time;
       world_stopped_total_divisor = ++divisor;
-      if (0 == abandoned_at) {
+      if (GC_PRINT_STATS_FLAG && 0 == abandoned_at) {
         GC_ASSERT(divisor != 0);
         GC_log_printf("World-stopped marking took %lu ms %lu ns"
                       " (%u ms in average)\n",

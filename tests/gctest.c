@@ -2226,8 +2226,10 @@ check_heap_stats(void)
   test_long_mult();
 
 #ifndef NO_CLOCK
-  GC_printf("Full/world-stopped collections took %lu/%lu ms\n",
-            GC_get_full_gc_total_time(), GC_get_stopped_mark_total_time());
+  GC_printf("Full collections took %lu ms\n", GC_get_full_gc_total_time());
+  GC_printf("World-stopped pauses took %lu ms (%lu us each in avg.)\n",
+            GC_get_stopped_mark_total_time(),
+            GC_get_avg_stopped_mark_time_ns() / 1000);
 #endif
 #ifdef PARALLEL_MARK
   GC_printf("Completed %u collections (using %d marker threads)\n",

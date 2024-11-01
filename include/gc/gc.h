@@ -413,8 +413,9 @@ GC_API void GC_CALL GC_set_allocd_bytes_per_finalizer(GC_word);
 GC_API GC_word GC_CALL GC_get_allocd_bytes_per_finalizer(void);
 
 /* Tell the collector to start various performance measurements.        */
-/* Only the total time taken by full collections is calculated, as      */
-/* of now.  And, currently, there is no way to stop the measurements.   */
+/* Only the total time taken by full collections and the average time   */
+/* spent in the world-stopped collections are calculated, as of now.    */
+/* And, currently, there is no way to stop the measurements.            */
 /* The function does not use any synchronization.  Defined only if the  */
 /* library has been compiled without NO_CLOCK.                          */
 GC_API void GC_CALL GC_start_performance_measurement(void);
@@ -431,6 +432,15 @@ GC_API unsigned long GC_CALL GC_get_full_gc_total_time(void);
 /* Same as GC_get_full_gc_total_time but takes into account all mark    */
 /* phases with the world stopped and nothing else.                      */
 GC_API unsigned long GC_CALL GC_get_stopped_mark_total_time(void);
+
+/* Get the average time spent in all mark phases with the world         */
+/* stopped.  The average value is computed since the start of the       */
+/* performance measurements (or right since the collector               */
+/* initialization if the GC logging is enabled).  The result is in      */
+/* nanoseconds.  The function acquires the allocator lock (in the       */
+/* reader mode) to avoid data race.  Defined only if the library has    */
+/* been compiled without NO_CLOCK.                                      */
+GC_API unsigned long GC_CALL GC_get_avg_stopped_mark_time_ns(void);
 
 /* Set whether the garbage collector will allocate executable memory    */
 /* pages or not.  A non-zero argument instructs the collector to        */
