@@ -571,6 +571,7 @@ if (EMSCRIPTEN AND enable_emscripten_asyncify)
 endif()
 
 add_library(gc ${SRC})
+add_library(bdwgc::gc ALIAS gc)
 target_link_libraries(gc PRIVATE ${THREADDLLIBS_LIST} ${ATOMIC_OPS_LIBS})
 target_include_directories(gc INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -578,6 +579,7 @@ target_include_directories(gc INTERFACE
 
 if (enable_cplusplus)
   add_library(gccpp gc_badalc.cc gc_cpp.cc)
+  add_library(bdwgc::gccpp ALIAS gccpp)
   target_link_libraries(gccpp PRIVATE gc)
   target_include_directories(gccpp INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -585,6 +587,7 @@ if (enable_cplusplus)
   if (enable_throw_bad_alloc_library)
     # The same as gccpp but contains only gc_badalc.
     add_library(gctba gc_badalc.cc)
+    add_library(bdwgc::gctba ALIAS gctba)
     target_link_libraries(gctba PRIVATE gc)
     target_include_directories(gctba INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -595,6 +598,7 @@ endif()
 if (build_cord)
   set(CORD_SRC cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c)
   add_library(cord ${CORD_SRC})
+  add_library(bdwgc::cord ALIAS cord)
   target_link_libraries(cord PRIVATE gc)
   target_include_directories(cord INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
