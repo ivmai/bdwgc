@@ -421,7 +421,7 @@ GC_INNER void GC_print_finalization_stats(void);
 /* GC_all_interior_pointers is assumed to have only 0 or 1 value.   */
 #    define EXTRA_BYTES ((size_t)(GC_all_interior_pointers ? 1 : 0))
 #  else
-#    define EXTRA_BYTES (size_t) GC_all_interior_pointers
+#    define EXTRA_BYTES ((size_t)GC_all_interior_pointers)
 #  endif
 #  define MAX_EXTRA_BYTES 1
 #else

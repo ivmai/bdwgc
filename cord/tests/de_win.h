@@ -20,7 +20,7 @@
 #define EDIT_CMD_FLAG 0x200
 #define REPEAT_FLAG 0x400
 
-#define CHAR_CMD(i) ((i)&0xff)
+#define CHAR_CMD(i) ((i) & (0xff))
 
 /* MENU: DE */
 #define IDM_FILESAVE (EDIT_CMD_FLAG + WRITE)

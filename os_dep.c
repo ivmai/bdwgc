@@ -3235,11 +3235,11 @@ static DWORD protect_junk;
 #  if defined(MSWIN32)
 typedef LPTOP_LEVEL_EXCEPTION_FILTER SIG_HNDLR_PTR;
 #    undef SIG_DFL
-#    define SIG_DFL ((LPTOP_LEVEL_EXCEPTION_FILTER) ~(GC_funcptr_uint)0)
+#    define SIG_DFL ((LPTOP_LEVEL_EXCEPTION_FILTER)(~(GC_funcptr_uint)0))
 #  elif defined(MSWINCE)
 typedef LONG(WINAPI *SIG_HNDLR_PTR)(struct _EXCEPTION_POINTERS *);
 #    undef SIG_DFL
-#    define SIG_DFL ((SIG_HNDLR_PTR) ~(GC_funcptr_uint)0)
+#    define SIG_DFL ((SIG_HNDLR_PTR)(~(GC_funcptr_uint)0))
 #  elif defined(DARWIN)
 #    ifdef BROKEN_EXCEPTION_HANDLING
 typedef void (*SIG_HNDLR_PTR)();
@@ -3572,7 +3572,9 @@ GC_dirty_init(void)
 }
 #  endif /* !DARWIN */
 
-#  define PAGE_ALIGNED(x) ((ADDR(x) & (GC_page_size - 1)) == 0)
+#  ifdef GC_ASSERTIONS
+#    define IS_PAGE_ALIGNED(p) ((ADDR(p) & (GC_page_size - 1)) == 0)
+#  endif
 
 STATIC void
 GC_protect_heap(void)
@@ -3587,8 +3589,8 @@ GC_protect_heap(void)
     struct hblk *current_start; /* start of block to be protected */
     ptr_t limit;
 
-    GC_ASSERT(PAGE_ALIGNED(start));
-    GC_ASSERT(PAGE_ALIGNED(len));
+    GC_ASSERT(IS_PAGE_ALIGNED(start));
+    GC_ASSERT(IS_PAGE_ALIGNED(len));
 #  ifndef DONT_PROTECT_PTRFREE
     /* We avoid protecting pointer-free objects unless the page   */
     /* size differs from HBLKSIZE.                                */

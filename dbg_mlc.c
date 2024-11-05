@@ -262,7 +262,7 @@ GC_generate_random_backtrace(void)
 #endif /* KEEP_BACK_PTRS */
 
 #define CROSSES_HBLK(p, sz) \
-  ((ADDR((p) + sizeof(oh) + (sz)-1) ^ ADDR(p)) >= HBLKSIZE)
+  ((ADDR((p) + (sizeof(oh) - 1) + (sz)) ^ ADDR(p)) >= HBLKSIZE)
 
 GC_INNER void *
 GC_store_debug_info_inner(void *base, size_t sz, const char *string,
@@ -1071,7 +1071,7 @@ GC_debug_invoke_finalizer(void *obj, void *data)
 }
 
 /* Special finalizer_proc value to detect GC_register_finalizer failure. */
-#  define OFN_UNSET ((GC_finalization_proc) ~(GC_funcptr_uint)0)
+#  define OFN_UNSET ((GC_finalization_proc)(~(GC_funcptr_uint)0))
 
 /* Set ofn and ocd to reflect the values we got back. */
 static void

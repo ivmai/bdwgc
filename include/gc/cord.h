@@ -272,7 +272,7 @@ CORD_API size_t CORD_str(CORD /* x */, size_t /* start */, CORD /* s */);
 /* The resulting representation takes constant space, independent of i. */
 CORD_API CORD CORD_chars(char /* c */, size_t /* i */);
 
-#define CORD_nul(i) CORD_chars('\0', (i))
+#define CORD_nul(i) CORD_chars('\0', i)
 
 /* Turn a file into cord.  The file must be seekable.  Its contents     */
 /* must remain constant.  The file may be accessed as an immediate      */
