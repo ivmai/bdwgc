@@ -145,9 +145,9 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
 # if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) \
      || defined(GC_NETBSD_THREADS) || defined(GC_USESIGRT_SIGNALS)
 #   if defined(_SIGRTMIN) && !defined(CPPCHECK)
-#     define SIG_THR_RESTART _SIGRTMIN + 5
+#     define SIG_THR_RESTART (_SIGRTMIN + 5)
 #   else
-#     define SIG_THR_RESTART SIGRTMIN + 5
+#     define SIG_THR_RESTART (SIGRTMIN + 5)
 #   endif
 # else
 #   define SIG_THR_RESTART SIGXCPU
