@@ -76,7 +76,7 @@
 #  endif
 #endif /* !GC_TINY_FREELISTS */
 
-/* The i-th free list corresponds to size i*GC_GRANULE_BYTES    */
+/* The i-th free list corresponds to size i*GC_GRANULE_BYTES.   */
 /* Internally to the collector, the index can be computed with  */
 /* ALLOC_REQUEST_GRANS().  The later also depends on the        */
 /* values returned by GC_get_dont_add_byte_at_end() and         */
@@ -85,7 +85,7 @@
 /* Convert a free-list index to the actual size of objects      */
 /* on that list, including extra space we added.  Not an        */
 /* inverse of the above.                                        */
-#define GC_RAW_BYTES_FROM_INDEX(i) ((i)*GC_GRANULE_BYTES)
+#define GC_RAW_BYTES_FROM_INDEX(i) ((i) * GC_GRANULE_BYTES)
 
 /* Deprecated.  Use GC_GRANULE_PTRS instead.    */
 #undef GC_GRANULE_WORDS
