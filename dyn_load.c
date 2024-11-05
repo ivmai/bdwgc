@@ -625,7 +625,7 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
   /* Make sure struct dl_phdr_info is at least as big as we need.  */
   if (size
       < offsetof(struct dl_phdr_info, dlpi_phnum) + sizeof(info->dlpi_phnum))
-    return -1;
+    return 1; /* stop */
 
   p = info->dlpi_phdr;
   for (i = 0; i < (int)info->dlpi_phnum; i++, p++) {
