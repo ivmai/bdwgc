@@ -53,12 +53,11 @@ typedef GC_word *GC_bitmap;
 #define GC_BITMAP_SIZE(t) ((GC_WORD_LEN(t) + GC_WORDSZ - 1) / GC_WORDSZ)
 
 /* The setter and getter of the bitmap.  The bm argument should be of   */
-/* GC_bitmap type; index argument should be of some unsigned type and   */
+/* GC_bitmap type; i argument should be of some unsigned type and       */
 /* should not have side effects.                                        */
-#define GC_set_bit(bm, index) \
-  ((bm)[(index) / GC_WORDSZ] |= (GC_word)1 << ((index) % GC_WORDSZ))
-#define GC_get_bit(bm, index) \
-  (((bm)[(index) / GC_WORDSZ] >> ((index) % GC_WORDSZ)) & 1)
+#define GC_set_bit(bm, i) \
+  ((bm)[(i) / GC_WORDSZ] |= (GC_word)1 << ((i) % GC_WORDSZ))
+#define GC_get_bit(bm, i) (((bm)[(i) / GC_WORDSZ] >> ((i) % GC_WORDSZ)) & 1)
 
 typedef GC_word GC_descr;
 
