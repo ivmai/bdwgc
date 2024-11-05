@@ -36,7 +36,7 @@ main(void)
       exit(1);
     }
 
-    *p = (int *)GC_REALLOC(q, 2 * sizeof(int));
+    *p = (int *)GC_REALLOC(q, (i % 8 != 0 ? 2 : 4) * sizeof(int));
     CHECK_OUT_OF_MEMORY(*p);
 
     if (i % 10 == 0) {
