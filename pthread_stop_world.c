@@ -166,9 +166,9 @@ STATIC GC_bool GC_retry_signals = FALSE;
 #      elif defined(HPUX) || defined(NETBSD) || defined(OSF1) \
           || defined(GC_USESIGRT_SIGNALS)
 #        if defined(_SIGRTMIN) && !defined(CPPCHECK)
-#          define SIG_THR_RESTART _SIGRTMIN + 5
+#          define SIG_THR_RESTART (_SIGRTMIN + 5)
 #        else
-#          define SIG_THR_RESTART SIGRTMIN + 5
+#          define SIG_THR_RESTART (SIGRTMIN + 5)
 #        endif
 #      elif defined(FREEBSD) && defined(__GLIBC__)
 #        define SIG_THR_RESTART (32 + 5)
