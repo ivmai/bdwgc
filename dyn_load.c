@@ -90,12 +90,10 @@ GC_cond_add_roots(ptr_t base, ptr_t limit)
 }
 
 #  ifdef DYNAMIC_LOADING
-/* GC_register_main_static_data is not needed unless DYNAMIC_LOADING. */
 GC_INNER GC_bool
 GC_register_main_static_data(void)
 {
 #    if defined(MSWINCE) || defined(CYGWIN32)
-  /* Do we need to separately register the main static data segment? */
   return FALSE;
 #    else
   return GC_no_win32_dlls;
@@ -196,12 +194,11 @@ GC_register_dynamic_libraries(void)
 
 #  if !(defined(CPPCHECK) || defined(AIX) || defined(DARWIN) || defined(DGUX) \
         || defined(IRIX5) || defined(HAIKU) || defined(HPUX) || defined(HURD) \
-        || defined(NACL) || defined(SCO_ELF) || defined(SOLARISDL)            \
+        || defined(NACL) || defined(OSF1) || defined(SCO_ELF)                 \
+        || defined(SOLARISDL)                                                 \
         || ((defined(ANY_BSD) || defined(LINUX)) && defined(__ELF__))         \
-        || (defined(ALPHA) && defined(OSF1))                                  \
         || (defined(OPENBSD) && defined(M68K)))
-# error We only know how to find data segments of dynamic libraries for above.
-#    error Additional SVR4 variants might not be too hard to add.
+#    error Finding data segments of dynamic libraries is unsupported on target
 #  endif
 
 #  if defined(DARWIN) && !defined(USE_DYLD_TO_BIND) \
@@ -275,7 +272,7 @@ struct r_debug {
 EXTERN_C_BEGIN
 #      include <link.h>
 EXTERN_C_END
-#    endif
+#    endif /* !HOST_ANDROID */
 #  endif
 
 /* Newer versions of GNU/Linux define this macro.  We define it         */
@@ -395,9 +392,8 @@ GC_register_dynamic_libraries(void)
 
 #    ifdef USE_PROC_FOR_LIBRARIES
 
-#      include <string.h>
-
 #      include <fcntl.h>
+#      include <string.h>
 #      include <sys/stat.h>
 
 #      define MAPS_BUF_SIZE (32 * 1024)
@@ -543,13 +539,12 @@ GC_register_dynamic_libraries(void)
   GC_register_map_entries(GC_get_maps());
 }
 
-/* We now take care of the main data segment ourselves: */
 GC_INNER GC_bool
 GC_register_main_static_data(void)
 {
+  /* We now take care of the main data segment ourselves. */
   return FALSE;
 }
-
 #      define HAVE_REGISTER_MAIN_STATIC_DATA
 
 #    else /* !USE_PROC_FOR_LIBRARIES */
@@ -589,7 +584,7 @@ EXTERN_C_BEGIN
 EXTERN_C_END
 #      endif
 
-#      if defined(HAVE_DL_ITERATE_PHDR)
+#      ifdef HAVE_DL_ITERATE_PHDR
 
 #        ifdef PT_GNU_RELRO
 /* Instead of registering PT_LOAD sections directly, we keep them       */
@@ -712,7 +707,6 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
   return 0;
 }
 
-/* Do we need to separately register the main static data segment? */
 GC_INNER GC_bool
 GC_register_main_static_data(void)
 {
@@ -724,6 +718,7 @@ GC_register_main_static_data(void)
   return 0 == COVERT_DATAFLOW(ADDR(dl_iterate_phdr));
 #        endif
 }
+#        define HAVE_REGISTER_MAIN_STATIC_DATA
 
 /* Return TRUE if we succeed, FALSE if dl_iterate_phdr wasn't there. */
 STATIC GC_bool
@@ -805,21 +800,19 @@ GC_register_dynamic_libraries_dl_iterate_phdr(void)
   return TRUE;
 }
 
-#        define HAVE_REGISTER_MAIN_STATIC_DATA
-
 #      else /* !HAVE_DL_ITERATE_PHDR */
 
-/* Dynamic loading code for Linux running ELF. Somewhat tested on
- * Linux/i686, untested but hopefully should work on Linux/Alpha.
- * This code was derived from the Solaris/ELF support. Thanks to
- * whatever kind soul wrote that.  - Patrick Bridges */
+/* Dynamic loading code for Linux running ELF.  Somewhat tested on  */
+/* Linux/i686, untested but hopefully should work on Linux/Alpha.   */
+/* This code was derived from the Solaris/ELF support.  Thanks to   */
+/* whatever kind soul wrote that.  - Patrick Bridges                */
 
-/* This doesn't necessarily work in all cases, e.g. with preloaded
- * dynamic libraries.                                           */
+/* This does not necessarily work in all cases, e.g. with preloaded */
+/* dynamic libraries.                                               */
 
 #        if defined(NETBSD) || defined(OPENBSD)
 #          include <sys/exec_elf.h>
-/* for compatibility with 1.4.x */
+/* For compatibility with 1.4.x. */
 #          ifndef DT_DEBUG
 #            define DT_DEBUG 21
 #          endif
@@ -949,14 +942,16 @@ GC_register_dynamic_libraries(void)
 
 #  endif /* DGUX || HURD || NACL || (ANY_BSD || LINUX) && __ELF__ */
 
-#  if defined(IRIX5) || (defined(USE_PROC_FOR_LIBRARIES) && !defined(LINUX))
+#  if defined(USE_PROC_FOR_LIBRARIES) && !defined(LINUX) || defined(IRIX5)
 
 #    include <elf.h>
 #    include <errno.h>
 #    include <fcntl.h>
-#    include <signal.h> /* Only for the following test. */
 #    include <sys/procfs.h>
 #    include <sys/stat.h>
+
+/* This is included only for the following test. */
+#    include <signal.h>
 #    ifndef _sigargs
 #      define IRIX6
 #    endif
@@ -1080,160 +1075,7 @@ GC_register_dynamic_libraries(void)
   fd = -1;
 }
 
-#  endif /* USE_PROC_FOR_LIBRARIES || IRIX5 */
-
-#  if defined(ALPHA) && defined(OSF1)
-#    include <loader.h>
-
-EXTERN_C_BEGIN
-extern char *sys_errlist[];
-extern int sys_nerr;
-extern int errno;
-EXTERN_C_END
-
-GC_INNER void
-GC_register_dynamic_libraries(void)
-{
-  ldr_module_t moduleid = LDR_NULL_MODULE;
-  ldr_process_t mypid;
-
-  GC_ASSERT(I_HOLD_LOCK());
-  /* Obtain id of this process.       */
-  mypid = ldr_my_process();
-
-  /* For each module. */
-  for (;;) {
-    ldr_module_info_t moduleinfo;
-    size_t modulereturnsize;
-    ldr_region_t region;
-    ldr_region_info_t regioninfo;
-    size_t regionreturnsize;
-    int status = ldr_next_module(mypid, &moduleid);
-    /* Get the next (first) module */
-
-    if (moduleid == LDR_NULL_MODULE) {
-      /* No more modules.     */
-      break;
-    }
-
-    /* Check status AFTER checking moduleid because       */
-    /* of a bug in the non-shared ldr_next_module stub.   */
-    if (status != 0) {
-      ABORT_ARG3("ldr_next_module failed", ": status= %d, errcode= %d (%s)",
-                 status, errno, errno < sys_nerr ? sys_errlist[errno] : "");
-    }
-
-    /* Get the module information.    */
-    status = ldr_inq_module(mypid, moduleid, &moduleinfo, sizeof(moduleinfo),
-                            &modulereturnsize);
-    if (status != 0)
-      ABORT("ldr_inq_module failed");
-
-    /* Is module for the main program (i.e. nonshared portion)?   */
-    if ((moduleinfo.lmi_flags & LDR_MAIN) != 0) {
-      /* Skip the main module.        */
-      continue;
-    }
-
-#    ifdef DL_VERBOSE
-    GC_log_printf("---Module---\n");
-    GC_log_printf("Module ID: %ld\n", moduleinfo.lmi_modid);
-    GC_log_printf("Count of regions: %d\n", moduleinfo.lmi_nregion);
-    GC_log_printf("Flags for module: %016lx\n", moduleinfo.lmi_flags);
-    GC_log_printf("Module pathname: \"%s\"\n", moduleinfo.lmi_name);
-#    endif
-
-    /* For each region in this module. */
-    for (region = 0; region < moduleinfo.lmi_nregion; region++) {
-      /* Get the region information. */
-      status = ldr_inq_region(mypid, moduleid, region, &regioninfo,
-                              sizeof(regioninfo), &regionreturnsize);
-      if (status != 0)
-        ABORT("ldr_inq_region failed");
-
-      /* Only process writable (data) regions.      */
-      if ((regioninfo.lri_prot & LDR_W) == 0)
-        continue;
-
-#    ifdef DL_VERBOSE
-      GC_log_printf("--- Region ---\n");
-      GC_log_printf("Region number: %ld\n", regioninfo.lri_region_no);
-      GC_log_printf("Protection flags: %016x\n", regioninfo.lri_prot);
-      GC_log_printf("Virtual address: %p\n", regioninfo.lri_vaddr);
-      GC_log_printf("Mapped address: %p\n", regioninfo.lri_mapaddr);
-      GC_log_printf("Region size: %ld\n", regioninfo.lri_size);
-      GC_log_printf("Region name: \"%s\"\n", regioninfo.lri_name);
-#    endif
-
-      /* Register region as a garbage collection root.      */
-      GC_add_roots_inner((char *)regioninfo.lri_mapaddr,
-                         (char *)regioninfo.lri_mapaddr + regioninfo.lri_size,
-                         TRUE);
-    }
-  }
-}
-#  endif /* ALPHA && OSF1 */
-
-#  if defined(HPUX)
-#    include <dl.h>
-#    include <errno.h>
-
-EXTERN_C_BEGIN
-extern char *sys_errlist[];
-extern int sys_nerr;
-EXTERN_C_END
-
-GC_INNER void
-GC_register_dynamic_libraries(void)
-{
-  /* Ordinal position in shared library search list.    */
-  int index = 1;
-
-  GC_ASSERT(I_HOLD_LOCK());
-  /* For each dynamic library loaded. */
-  for (;;) {
-    /* Shared library info, see dl.h.        */
-    struct shl_descriptor *shl_desc;
-    /* Get info about next shared library.    */
-    int status = shl_get(index, &shl_desc);
-
-    /* Check if this is the end of the list or if some error occurred. */
-    if (status != 0) {
-#    if defined(HPUX) && defined(THREADS)
-      /* I've seen errno values of 0.  The man page is not clear   */
-      /* as to whether errno should get set on a -1 return.        */
-      break;
-#    else
-      if (errno == EINVAL) {
-        /* Moved past end of shared library list.  Finish.  */
-        break;
-      } else {
-        ABORT_ARG3("shl_get failed", ": status= %d, errcode= %d (%s)", status,
-                   errno, errno < sys_nerr ? sys_errlist[errno] : "");
-      }
-#    endif
-    }
-
-#    ifdef DL_VERBOSE
-    GC_log_printf("---Shared library---\n");
-    GC_log_printf("filename= \"%s\"\n", shl_desc->filename);
-    GC_log_printf("index= %d\n", index);
-    GC_log_printf("handle= %08x\n", (unsigned long)shl_desc->handle);
-    GC_log_printf("text seg.start= %08x\n", shl_desc->tstart);
-    GC_log_printf("text seg.end= %08x\n", shl_desc->tend);
-    GC_log_printf("data seg.start= %08x\n", shl_desc->dstart);
-    GC_log_printf("data seg.end= %08x\n", shl_desc->dend);
-    GC_log_printf("ref.count= %lu\n", shl_desc->ref_count);
-#    endif
-
-    /* Register shared library's data segment as a garbage collection */
-    /* root.                                                          */
-    GC_add_roots_inner((char *)shl_desc->dstart, (char *)shl_desc->dend, TRUE);
-
-    index++;
-  }
-}
-#  endif /* HPUX */
+#  endif /* USE_PROC_FOR_LIBRARIES && !LINUX || IRIX5 */
 
 #  ifdef AIX
 #    include <alloca.h>
@@ -1304,8 +1146,6 @@ EXTERN_C_END
 #    else
 #      include <mach-o/getsect.h>
 #    endif
-
-/*#define DARWIN_DEBUG*/
 
 /* Writable sections generally available on Darwin.     */
 STATIC const struct dyld_sections_s {
@@ -1550,13 +1390,13 @@ GC_init_dyld(void)
 #    endif
 }
 
-#    define HAVE_REGISTER_MAIN_STATIC_DATA
 GC_INNER GC_bool
 GC_register_main_static_data(void)
 {
-  /* Already done through dyld callbacks */
+  /* Already done through dyld callbacks. */
   return FALSE;
 }
+#    define HAVE_REGISTER_MAIN_STATIC_DATA
 
 #  endif /* DARWIN */
 
@@ -1576,6 +1416,158 @@ GC_register_dynamic_libraries(void)
   }
 }
 #  endif /* HAIKU */
+
+#  ifdef HPUX
+#    include <dl.h>
+#    include <errno.h>
+
+EXTERN_C_BEGIN
+extern char *sys_errlist[];
+extern int sys_nerr;
+EXTERN_C_END
+
+GC_INNER void
+GC_register_dynamic_libraries(void)
+{
+  /* Ordinal position in shared library search list.    */
+  int index = 1;
+
+  GC_ASSERT(I_HOLD_LOCK());
+  /* For each dynamic library loaded. */
+  for (;;) {
+    /* Shared library info, see dl.h.        */
+    struct shl_descriptor *shl_desc;
+    /* Get info about next shared library.    */
+    int status = shl_get(index, &shl_desc);
+
+    /* Check if this is the end of the list or if some error occurred. */
+    if (status != 0) {
+#    ifdef THREADS
+      /* I've seen errno values of 0.  The man page is not clear   */
+      /* as to whether errno should get set on a -1 return.        */
+      break;
+#    else
+      if (errno == EINVAL) {
+        /* Moved past end of shared library list.  Finish.  */
+        break;
+      } else {
+        ABORT_ARG3("shl_get failed", ": status= %d, errcode= %d (%s)", status,
+                   errno, errno < sys_nerr ? sys_errlist[errno] : "");
+      }
+#    endif
+    }
+
+#    ifdef DL_VERBOSE
+    GC_log_printf("---Shared library---\n");
+    GC_log_printf("filename= \"%s\"\n", shl_desc->filename);
+    GC_log_printf("index= %d\n", index);
+    GC_log_printf("handle= %08x\n", (unsigned long)shl_desc->handle);
+    GC_log_printf("text seg.start= %08x\n", shl_desc->tstart);
+    GC_log_printf("text seg.end= %08x\n", shl_desc->tend);
+    GC_log_printf("data seg.start= %08x\n", shl_desc->dstart);
+    GC_log_printf("data seg.end= %08x\n", shl_desc->dend);
+    GC_log_printf("ref.count= %lu\n", shl_desc->ref_count);
+#    endif
+
+    /* Register shared library's data segment as a garbage collection */
+    /* root.                                                          */
+    GC_add_roots_inner((char *)shl_desc->dstart, (char *)shl_desc->dend, TRUE);
+
+    index++;
+  }
+}
+#  endif /* HPUX */
+
+#  ifdef OSF1
+#    include <loader.h>
+
+EXTERN_C_BEGIN
+extern char *sys_errlist[];
+extern int sys_nerr, errno;
+EXTERN_C_END
+
+GC_INNER void
+GC_register_dynamic_libraries(void)
+{
+  ldr_module_t moduleid = LDR_NULL_MODULE;
+  ldr_process_t mypid;
+
+  GC_ASSERT(I_HOLD_LOCK());
+  /* Obtain id of this process.       */
+  mypid = ldr_my_process();
+
+  /* For each module. */
+  for (;;) {
+    ldr_module_info_t moduleinfo;
+    size_t modulereturnsize;
+    ldr_region_t region;
+    ldr_region_info_t regioninfo;
+    size_t regionreturnsize;
+    /* Get the next (first) module. */
+    int status = ldr_next_module(mypid, &moduleid);
+
+    if (moduleid == LDR_NULL_MODULE) {
+      /* No more modules.     */
+      break;
+    }
+
+    /* Check status AFTER checking moduleid because       */
+    /* of a bug in the non-shared ldr_next_module stub.   */
+    if (status != 0) {
+      ABORT_ARG3("ldr_next_module failed", ": status= %d, errcode= %d (%s)",
+                 status, errno, errno < sys_nerr ? sys_errlist[errno] : "");
+    }
+
+    /* Get the module information.    */
+    status = ldr_inq_module(mypid, moduleid, &moduleinfo, sizeof(moduleinfo),
+                            &modulereturnsize);
+    if (status != 0)
+      ABORT("ldr_inq_module failed");
+
+    /* Is module for the main program (i.e. nonshared portion)?   */
+    if ((moduleinfo.lmi_flags & LDR_MAIN) != 0) {
+      /* Skip the main module.        */
+      continue;
+    }
+
+#    ifdef DL_VERBOSE
+    GC_log_printf("---Module---\n");
+    GC_log_printf("Module ID: %ld\n", moduleinfo.lmi_modid);
+    GC_log_printf("Count of regions: %d\n", moduleinfo.lmi_nregion);
+    GC_log_printf("Flags for module: %016lx\n", moduleinfo.lmi_flags);
+    GC_log_printf("Module pathname: \"%s\"\n", moduleinfo.lmi_name);
+#    endif
+
+    /* For each region in this module. */
+    for (region = 0; region < moduleinfo.lmi_nregion; region++) {
+      /* Get the region information. */
+      status = ldr_inq_region(mypid, moduleid, region, &regioninfo,
+                              sizeof(regioninfo), &regionreturnsize);
+      if (status != 0)
+        ABORT("ldr_inq_region failed");
+
+      /* Only process writable (data) regions.      */
+      if ((regioninfo.lri_prot & LDR_W) == 0)
+        continue;
+
+#    ifdef DL_VERBOSE
+      GC_log_printf("--- Region ---\n");
+      GC_log_printf("Region number: %ld\n", regioninfo.lri_region_no);
+      GC_log_printf("Protection flags: %016x\n", regioninfo.lri_prot);
+      GC_log_printf("Virtual address: %p\n", regioninfo.lri_vaddr);
+      GC_log_printf("Mapped address: %p\n", regioninfo.lri_mapaddr);
+      GC_log_printf("Region size: %ld\n", regioninfo.lri_size);
+      GC_log_printf("Region name: \"%s\"\n", regioninfo.lri_name);
+#    endif
+
+      /* Register region as a garbage collection root.      */
+      GC_add_roots_inner((char *)regioninfo.lri_mapaddr,
+                         (char *)regioninfo.lri_mapaddr + regioninfo.lri_size,
+                         TRUE);
+    }
+  }
+}
+#  endif /* OSF1 */
 
 #endif /* DYNAMIC_LOADING */
 
