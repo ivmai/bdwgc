@@ -59,10 +59,10 @@ GC_push_typed_structures_proc(void)
 
 /* Add a multi-word bitmap to GC_ext_descriptors arrays.        */
 /* Returns starting index on success, -1 otherwise.             */
-STATIC signed_word
+STATIC GC_signed_word
 GC_add_ext_descriptor(const word *bm, size_t nbits)
 {
-  signed_word result;
+  GC_signed_word result;
   size_t i;
   size_t nwords = divWORDSZ(nbits + CPP_WORDSZ - 1);
 
@@ -99,7 +99,7 @@ GC_add_ext_descriptor(const word *bm, size_t nbits)
       /* Another thread is already resized it in the meantime.    */
     }
   }
-  result = (signed_word)GC_avail_descr;
+  result = (GC_signed_word)GC_avail_descr;
   for (i = 0; i < nwords - 1; i++) {
     GC_ext_descriptors[(size_t)result + i].ed_bitmap = bm[i];
     GC_ext_descriptors[(size_t)result + i].ed_continued = TRUE;
@@ -203,7 +203,7 @@ GC_typed_mark_proc(word *addr, mse *mark_stack_top, mse *mark_stack_limit,
 GC_API GC_descr GC_CALL
 GC_make_descriptor(const GC_word *bm, size_t len)
 {
-  signed_word last_set_bit = (signed_word)len - 1;
+  GC_signed_word last_set_bit = (GC_signed_word)len - 1;
   GC_descr d;
 
 #if defined(AO_HAVE_load_acquire) && defined(AO_HAVE_store_release)
@@ -233,7 +233,7 @@ GC_make_descriptor(const GC_word *bm, size_t len)
 
 #if ALIGNMENT == CPP_PTRSZ / 8
   {
-    signed_word i;
+    GC_signed_word i;
 
     for (i = 0; i < last_set_bit; i++) {
       if (!GC_get_bit(bm, (word)i))
@@ -247,7 +247,7 @@ GC_make_descriptor(const GC_word *bm, size_t len)
   }
 #endif
   if (last_set_bit < BITMAP_BITS) {
-    signed_word i;
+    GC_signed_word i;
 
     /* Hopefully the common case.  Build the bitmap descriptor  */
     /* (with the bits reversed).                                */
@@ -259,7 +259,7 @@ GC_make_descriptor(const GC_word *bm, size_t len)
     }
     d |= GC_DS_BITMAP;
   } else {
-    signed_word index = GC_add_ext_descriptor(bm, (size_t)last_set_bit + 1);
+    GC_signed_word index = GC_add_ext_descriptor(bm, (size_t)last_set_bit + 1);
 
     if (EXPECT(index < 0, FALSE)) {
       /* Out of memory: use a conservative approximation. */
@@ -491,8 +491,8 @@ struct GC_calloc_typed_descr_s {
   complex_descriptor *complex_d; /* the first field, the only pointer */
   struct LeafDescriptor leaf;
   GC_descr simple_d;
-  word alloc_lb;          /* size_t actually */
-  signed_word descr_type; /* int actually */
+  word alloc_lb;             /* size_t actually */
+  GC_signed_word descr_type; /* int actually */
 };
 
 GC_API int GC_CALL
@@ -655,7 +655,7 @@ GC_push_complex_descriptor(ptr_t current, complex_descriptor *complex_d,
     nelements = complex_d->ld.ld_nelements;
     sz = complex_d->ld.ld_size;
 
-    if (EXPECT(msl - msp <= (signed_word)nelements, FALSE))
+    if (EXPECT(msl - msp <= (GC_signed_word)nelements, FALSE))
       return NULL;
     GC_ASSERT(sz != 0);
     for (i = 0; i < nelements; i++) {

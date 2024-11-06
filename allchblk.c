@@ -528,7 +528,7 @@ GC_unmap_old(unsigned threshold)
         /* create too many unmapped regions, or if unmapping        */
         /* reduces the number of regions.                           */
         int delta = calc_num_unmapped_regions_delta(h, hhdr);
-        signed_word regions = GC_num_unmapped_regions + delta;
+        GC_signed_word regions = GC_num_unmapped_regions + delta;
 
         if (delta >= 0 && regions >= GC_UNMAPPED_REGIONS_SOFT_LIMIT) {
           GC_COND_LOG_PRINTF("Unmapped regions limit reached!\n");

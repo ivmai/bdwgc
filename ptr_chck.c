@@ -219,7 +219,7 @@ GC_is_visible(void *p)
           goto fail;
         }
         descr = *(word *)(type_descr
-                          - ((signed_word)descr
+                          - ((GC_signed_word)descr
                              + (GC_INDIR_PER_OBJ_BIAS - GC_DS_PER_OBJECT)));
       }
       goto retry;

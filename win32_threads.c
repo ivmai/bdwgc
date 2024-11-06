@@ -1218,7 +1218,7 @@ GC_start_mark_threads_inner(void)
                           NUMERIC_TO_VPTR(i), 0 /* fdwCreate */, &thread_id);
     if (EXPECT(NULL == handle, FALSE)) {
       WARN("Marker thread %" WARN_PRIdPTR " creation failed\n",
-           (signed_word)i);
+           (GC_signed_word)i);
       /* The most probable failure reason is "not enough memory". */
       /* Don't try to create other marker threads.                */
       break;
@@ -1235,7 +1235,7 @@ GC_start_mark_threads_inner(void)
                             &thread_id);
     if (EXPECT(!handle || handle == (GC_uintptr_t)-1L, FALSE)) {
       WARN("Marker thread %" WARN_PRIdPTR " creation failed\n",
-           (signed_word)i);
+           (GC_signed_word)i);
       /* Don't try to create other marker threads.                */
       break;
     } else {
@@ -1748,7 +1748,7 @@ GC_thr_init(void)
       if (markers <= 0 || markers > MAX_MARKERS) {
         WARN("Too big or invalid number of mark threads: %" WARN_PRIdPTR
              "; using maximum threads\n",
-             (signed_word)markers);
+             (GC_signed_word)markers);
         markers = MAX_MARKERS;
       }
     } else if (0 == markers) {

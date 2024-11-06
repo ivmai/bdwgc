@@ -89,7 +89,6 @@
 #include "gc/gc_tiny_fl.h"
 
 typedef GC_word word;
-typedef GC_signed_word signed_word;
 
 typedef int GC_bool;
 #define TRUE 1
@@ -764,11 +763,11 @@ GC_API_PRIV GC_abort_func GC_on_abort;
   GC_current_warn_proc("GC Warning: " msg, (GC_uintptr_t)(arg))
 GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
-/* Print format type macro for decimal signed_word value passed WARN(). */
-/* This could be redefined for Win64 or LLP64, but typically should     */
-/* not be done as the WARN format string is, possibly, processed on the */
-/* client side, so non-standard print type modifiers (like MS "I64d")   */
-/* should be avoided here if possible.                                  */
+/* Print format type macro for decimal GC_signed_word value passed      */
+/* WARN().  This could be redefined for Win64 or LLP64, but typically   */
+/* should not be done as the WARN format string is, possibly, processed */
+/* on the client side, so non-standard print type modifiers (like MS    */
+/* "I64d") should be avoided here if possible.                          */
 /* TODO: Assuming sizeof(void*) == sizeof(long) or a little-endian machine. */
 #ifndef WARN_PRIdPTR
 #  define WARN_PRIdPTR "ld"
@@ -1137,7 +1136,7 @@ struct hblkhdr {
 
   /* If in use, size in bytes, of objects in the block.           */
   /* Otherwise, the size of the whole free block.  We assume that */
-  /* this is convertible to signed_word without generating        */
+  /* this is convertible to GC_signed_word without generating     */
   /* a negative result.  We avoid generating free blocks larger   */
   /* than that.                                                   */
   size_t hb_sz;
@@ -1485,7 +1484,7 @@ struct _GC_arrays {
 #endif
 #if defined(COUNT_UNMAPPED_REGIONS) && defined(USE_MUNMAP)
 #  define GC_num_unmapped_regions GC_arrays._num_unmapped_regions
-  signed_word _num_unmapped_regions;
+  GC_signed_word _num_unmapped_regions;
 #else
 #  define GC_num_unmapped_regions 0
 #endif
@@ -2815,7 +2814,7 @@ GC_EXTERN long GC_large_alloc_warn_interval; /* defined in misc.c */
 
 /* Number of reclaimed bytes after garbage collection; protected by the */
 /* allocator lock.                                                      */
-GC_EXTERN signed_word GC_bytes_found;
+GC_EXTERN GC_signed_word GC_bytes_found;
 
 #ifndef GC_GET_HEAP_USAGE_NOT_NEEDED
 /* Number of bytes reclaimed before this collection cycle; used for   */
@@ -3122,7 +3121,7 @@ GC_INNER void GC_release_mark_lock(void);
 GC_INNER void GC_notify_all_builder(void);
 GC_INNER void GC_wait_for_reclaim(void);
 
-GC_EXTERN signed_word GC_fl_builder_count; /* protected by the mark lock */
+GC_EXTERN GC_signed_word GC_fl_builder_count; /* protected by the mark lock */
 
 GC_INNER void GC_notify_all_marker(void);
 GC_INNER void GC_wait_marker(void);

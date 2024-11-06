@@ -63,7 +63,7 @@ typedef struct back_edges_struct {
 
   /* Longest path through unreachable nodes to this node that we found  */
   /* using depth first search.                                          */
-  signed_word height;
+  GC_signed_word height;
 #  define HEIGHT_UNKNOWN (-2)
 #  define HEIGHT_IN_PROGRESS (-1)
 
@@ -475,7 +475,7 @@ backwards_height(ptr_t p)
     }
   }
 
-  be->height = (signed_word)result;
+  be->height = (GC_signed_word)result;
   be->height_gc_no = (unsigned short)GC_gc_no;
   return result;
 }
@@ -559,7 +559,7 @@ update_max_height(ptr_t p, size_t sz, word descr)
         be = (back_edges *)CPTR_CLEAR_FLAGS(back_ptr, FLAG_MANY);
       }
       be->flags |= RETAIN;
-      be->height = (signed_word)p_height;
+      be->height = (GC_signed_word)p_height;
       be->height_gc_no = (unsigned short)GC_gc_no;
     }
     if (p_height > GC_max_height) {

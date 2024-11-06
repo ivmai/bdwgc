@@ -681,7 +681,7 @@ GC_ATTR_NO_SANITIZE_ADDR_MEM_THREAD
 GC_INNER mse *
 GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
 {
-  signed_word credit = HBLKSIZE; /* remaining credit for marking work */
+  GC_signed_word credit = HBLKSIZE; /* remaining credit for marking work */
   word descr;
   ptr_t current_p; /* pointer to current candidate ptr */
   ptr_t q;         /* the candidate pointer */
@@ -776,7 +776,7 @@ GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
         }
 #endif
         descr &= ~(word)GC_DS_TAGS;
-        credit -= (signed_word)PTRS_TO_BYTES(CPP_PTRSZ / 2); /* guess */
+        credit -= (GC_signed_word)PTRS_TO_BYTES(CPP_PTRSZ / 2); /* guess */
         for (; descr != 0; descr <<= 1, current_p += sizeof(ptr_t)) {
           if ((descr & SIGNB) == 0)
             continue;
@@ -833,7 +833,7 @@ GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
             continue;
           }
           descr = *(word *)(type_descr
-                            - ((signed_word)descr
+                            - ((GC_signed_word)descr
                                + (GC_INDIR_PER_OBJ_BIAS - GC_DS_PER_OBJECT)));
         }
         if (0 == descr) {
@@ -971,7 +971,7 @@ GC_INNER word GC_mark_no = 0;
 GC_INNER void
 GC_wait_for_markers_init(void)
 {
-  signed_word count;
+  GC_signed_word count;
 
   GC_ASSERT(I_HOLD_LOCK());
   if (GC_markers_m1 == 0)

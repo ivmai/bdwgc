@@ -407,11 +407,11 @@ GC_register_dynamic_libraries(void)
 static void
 sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
 {
-  signed_word n = (signed_word)number_of_elements;
-  signed_word nsorted = 1;
+  GC_signed_word n = (GC_signed_word)number_of_elements;
+  GC_signed_word nsorted = 1;
 
   while (nsorted < n) {
-    signed_word i;
+    GC_signed_word i;
 
     while (nsorted < n
            && ADDR_LT(base[nsorted - 1].hs_start, base[nsorted].hs_start)) {

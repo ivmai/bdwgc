@@ -102,7 +102,7 @@ typedef struct {
   GC_hidden_pointer oh_bg_ptr;
 #endif
   const char *oh_string; /* object descriptor string (file name)    */
-  signed_word oh_int;    /* object descriptor integer (line number) */
+  GC_signed_word oh_int; /* object descriptor integer (line number) */
 #ifdef NEED_CALLINFO
   struct callinfo oh_ci[NFRAMES];
 #endif

@@ -1413,7 +1413,7 @@ GC_get_main_stack_base(void)
 #    endif
 #    if !defined(STACK_GROWS_UP) && !defined(CPPCHECK)
   if (NULL == result)
-    result = MAKE_CPTR((signed_word)(-sizeof(ptr_t)));
+    result = MAKE_CPTR((GC_signed_word)(-sizeof(ptr_t)));
 #    endif
 #  endif
 #  if !defined(CPPCHECK)
@@ -2454,7 +2454,7 @@ GC_wince_get_mem(size_t bytes)
 
   /* Try to find reserved, uncommitted pages. */
   for (i = 0; i < GC_n_heap_bases; i++) {
-    if (((word)(-(signed_word)GC_heap_lengths[i])
+    if (((word)(-(GC_signed_word)GC_heap_lengths[i])
          & (GC_sysinfo.dwAllocationGranularity - 1))
         >= bytes) {
       result = GC_heap_bases[i] + GC_heap_lengths[i];
@@ -3472,8 +3472,8 @@ GC_dirty_init(void)
   GC_ASSERT(I_HOLD_LOCK());
 #    ifdef COUNT_PROTECTED_REGIONS
   GC_ASSERT(GC_page_size != 0);
-  if ((signed_word)(GC_heapsize / (word)GC_page_size)
-      >= ((signed_word)GC_UNMAPPED_REGIONS_SOFT_LIMIT
+  if ((GC_signed_word)(GC_heapsize / (word)GC_page_size)
+      >= ((GC_signed_word)GC_UNMAPPED_REGIONS_SOFT_LIMIT
           - GC_num_unmapped_regions)
              * 2) {
     GC_COND_LOG_PRINTF("Cannot turn on GC incremental mode"
@@ -3676,8 +3676,8 @@ GC_handle_protected_regions_limit(void)
   /* incremental collection mode (based on mprotect) once the     */
   /* number of pages in the heap reaches that limit.              */
   if (GC_auto_incremental && !GC_GWW_AVAILABLE()
-      && (signed_word)(GC_heapsize / (word)GC_page_size)
-             >= ((signed_word)GC_UNMAPPED_REGIONS_SOFT_LIMIT
+      && (GC_signed_word)(GC_heapsize / (word)GC_page_size)
+             >= ((GC_signed_word)GC_UNMAPPED_REGIONS_SOFT_LIMIT
                  - GC_num_unmapped_regions)
                     * 2) {
     GC_unprotect_all_heap();
@@ -5446,7 +5446,7 @@ GC_print_callers(struct callinfo info[NFRAMES])
   /* but practically this has little sense because printing is done */
   /* into a single output stream.                                   */
   GC_ASSERT(I_DONT_HOLD_LOCK());
-  reent_cnt = (int)(signed_word)AO_fetch_and_add1(&reentry_count);
+  reent_cnt = (int)(GC_signed_word)AO_fetch_and_add1(&reentry_count);
 #  else
   static int reentry_count = 0;
 
@@ -5477,7 +5477,7 @@ GC_print_callers(struct callinfo info[NFRAMES])
 
         if (j != 0)
           GC_err_printf(", ");
-        GC_err_printf("%ld (%p)", (long)(signed_word)ADDR(p), p);
+        GC_err_printf("%ld (%p)", (long)(GC_signed_word)ADDR(p), p);
       }
       GC_err_printf("\n");
     }

@@ -114,7 +114,7 @@ GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp, size_t descr_offset)
   } else {
     GC_gcj_kind = (int)GC_new_kind_inner(
         (void **)GC_gcjobjfreelist,
-        (((word)(-(signed_word)GC_GCJ_MARK_DESCR_OFFSET
+        (((word)(-(GC_signed_word)GC_GCJ_MARK_DESCR_OFFSET
                  - GC_INDIR_PER_OBJ_BIAS))
          | GC_DS_PER_OBJECT),
         FALSE, TRUE);

@@ -68,7 +68,7 @@ GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce)
 
         if (hhdr->hb_flags & IGNORE_OFF_PAGE)
           return 0;
-        if (HBLK_IS_FREE(hhdr) || p - current >= (signed_word)hhdr->hb_sz) {
+        if (HBLK_IS_FREE(hhdr) || p - current >= (GC_signed_word)hhdr->hb_sz) {
           GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
           /* The pointer is past the end of the block.        */
           return 0;
@@ -350,13 +350,13 @@ GC_apply_to_all_blocks(GC_walk_hblk_fn fn, void *client_data)
   bottom_index *bi;
 
   for (bi = GC_all_bottom_indices; bi != NULL; bi = bi->asc_link) {
-    signed_word j;
+    GC_signed_word j;
 
     for (j = BOTTOM_SZ - 1; j >= 0;) {
       hdr *hhdr = bi->index[j];
 
       if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-        j -= (signed_word)(hhdr != NULL ? ADDR(hhdr) : 1);
+        j -= (GC_signed_word)(hhdr != NULL ? ADDR(hhdr) : 1);
       } else {
         if (!HBLK_IS_FREE(hhdr)) {
           GC_ASSERT(HBLK_ADDR(bi, j) == ADDR(hhdr->hb_block));
@@ -408,7 +408,7 @@ GC_INNER struct hblk *
 GC_prev_block(struct hblk *h)
 {
   bottom_index *bi;
-  signed_word j = (ADDR(h) >> LOG_HBLKSIZE) & (BOTTOM_SZ - 1);
+  GC_signed_word j = (ADDR(h) >> LOG_HBLKSIZE) & (BOTTOM_SZ - 1);
 
   GC_ASSERT(I_HOLD_READER_LOCK());
   GET_BI(h, bi);
@@ -427,7 +427,7 @@ GC_prev_block(struct hblk *h)
       if (NULL == hhdr) {
         --j;
       } else if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-        j -= (signed_word)ADDR(hhdr);
+        j -= (GC_signed_word)ADDR(hhdr);
       } else {
         /* TODO: return hhdr -> hb_block instead */
         return (struct hblk *)MAKE_CPTR(HBLK_ADDR(bi, j));

@@ -408,32 +408,32 @@ STATIC word GC_non_gc_bytes_at_gc = 0;
 STATIC word
 GC_adj_bytes_allocd(void)
 {
-  signed_word result;
-  signed_word expl_managed
-      = (signed_word)GC_non_gc_bytes - (signed_word)GC_non_gc_bytes_at_gc;
+  GC_signed_word result;
+  GC_signed_word expl_managed = (GC_signed_word)GC_non_gc_bytes
+                                - (GC_signed_word)GC_non_gc_bytes_at_gc;
 
   /* Don't count what was explicitly freed, or newly allocated for    */
   /* explicit management.  Note that deallocating an explicitly       */
   /* managed object should not alter result, assuming the client      */
   /* is playing by the rules.                                         */
-  result = (signed_word)GC_bytes_allocd + (signed_word)GC_bytes_dropped
-           - (signed_word)GC_bytes_freed
-           + (signed_word)GC_finalizer_bytes_freed - expl_managed;
-  if (result > (signed_word)GC_bytes_allocd) {
+  result = (GC_signed_word)GC_bytes_allocd + (GC_signed_word)GC_bytes_dropped
+           - (GC_signed_word)GC_bytes_freed
+           + (GC_signed_word)GC_finalizer_bytes_freed - expl_managed;
+  if (result > (GC_signed_word)GC_bytes_allocd) {
     /* Probably a client bug or unfortunate scheduling.     */
-    result = (signed_word)GC_bytes_allocd;
+    result = (GC_signed_word)GC_bytes_allocd;
   }
   /* We count objects enqueued for finalization as though they had    */
   /* been reallocated this round. Finalization is user visible        */
   /* progress.  And if we do not count this, we have stability        */
   /* problems for programs that finalize all objects.                 */
-  result += (signed_word)GC_bytes_finalized;
-  if (result < (signed_word)(GC_bytes_allocd >> 3)) {
+  result += (GC_signed_word)GC_bytes_finalized;
+  if (result < (GC_signed_word)(GC_bytes_allocd >> 3)) {
     /* Always count at least 1/8 of the allocations.  We don't want */
     /* to collect too infrequently, since that would inhibit        */
     /* coalescing of free storage blocks.                           */
     /* This also makes us partially robust against client bugs.     */
-    result = (signed_word)(GC_bytes_allocd >> 3);
+    result = (GC_signed_word)(GC_bytes_allocd >> 3);
   }
   return (word)result;
 }
@@ -1180,7 +1180,7 @@ GC_clear_fl_marks(ptr_t q)
       hhdr->hb_n_marks = n_marks;
 #endif
     }
-    GC_bytes_found -= (signed_word)sz;
+    GC_bytes_found -= (GC_signed_word)sz;
 
     q = (ptr_t)obj_link(q);
     if (NULL == q)

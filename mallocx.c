@@ -314,8 +314,8 @@ GC_generic_malloc_many(size_t lb_adjusted, int k, void **result)
       hhdr->hb_last_reclaimed = (unsigned short)GC_gc_no;
 #ifdef PARALLEL_MARK
       if (GC_parallel) {
-        signed_word my_bytes_allocd_tmp
-            = (signed_word)AO_load(&GC_bytes_allocd_tmp);
+        GC_signed_word my_bytes_allocd_tmp
+            = (GC_signed_word)AO_load(&GC_bytes_allocd_tmp);
         GC_ASSERT(my_bytes_allocd_tmp >= 0);
         /* We only decrement it while holding the allocator   */
         /* lock.  Thus, we cannot accidentally adjust it down */
@@ -345,11 +345,11 @@ GC_generic_malloc_many(size_t lb_adjusted, int k, void **result)
 #  ifdef THREAD_SANITIZER
           GC_release_mark_lock();
           LOCK();
-          GC_bytes_found += (signed_word)my_bytes_allocd;
+          GC_bytes_found += (GC_signed_word)my_bytes_allocd;
           UNLOCK();
 #  else
           /* The resulting GC_bytes_found may be inaccurate.  */
-          GC_bytes_found += (signed_word)my_bytes_allocd;
+          GC_bytes_found += (GC_signed_word)my_bytes_allocd;
           GC_release_mark_lock();
 #  endif
           (void)GC_clear_stack(0);
@@ -357,7 +357,7 @@ GC_generic_malloc_many(size_t lb_adjusted, int k, void **result)
         }
 #endif
         /* We also reclaimed memory, so we need to adjust that count. */
-        GC_bytes_found += (signed_word)my_bytes_allocd;
+        GC_bytes_found += (GC_signed_word)my_bytes_allocd;
         GC_bytes_allocd += my_bytes_allocd;
         goto out;
       }

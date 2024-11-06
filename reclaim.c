@@ -23,14 +23,14 @@
 
 /* Number of bytes of memory reclaimed minus the number of bytes        */
 /* originally on free lists which we had to drop.                       */
-GC_INNER signed_word GC_bytes_found = 0;
+GC_INNER GC_signed_word GC_bytes_found = 0;
 
 #if defined(PARALLEL_MARK)
 /* Number of threads currently building free lists without holding    */
 /* the allocator lock.  It is not safe to collect if this is nonzero. */
 /* Also, together with the mark lock, it is used as a semaphore       */
 /* during marker threads startup.                                     */
-GC_INNER signed_word GC_fl_builder_count = 0;
+GC_INNER GC_signed_word GC_fl_builder_count = 0;
 #endif /* PARALLEL_MARK */
 
 /* We defer printing of leaked objects until we're done with the GC     */
@@ -381,7 +381,7 @@ GC_disclaim_and_reclaim_or_free_small_block(struct hblk *hbp)
     *flh = flh_next;
   } else {
     GC_ASSERT(hbp == hhdr->hb_block);
-    GC_bytes_found += (signed_word)HBLKSIZE;
+    GC_bytes_found += (GC_signed_word)HBLKSIZE;
     GC_freehblk(hbp);
   }
 }
@@ -433,7 +433,7 @@ GC_reclaim_block(struct hblk *hbp, void *report_if_found)
         if (sz > HBLKSIZE) {
           GC_large_allocd_bytes -= HBLKSIZE * OBJ_SZ_TO_BLOCKS(sz);
         }
-        GC_bytes_found += (signed_word)sz;
+        GC_bytes_found += (GC_signed_word)sz;
         GC_freehblk(hbp);
         FREE_PROFILER_HOOK(hbp);
       }
@@ -490,7 +490,7 @@ GC_reclaim_block(struct hblk *hbp, void *report_if_found)
       } else
 #endif
       /* else */ {
-        GC_bytes_found += (signed_word)HBLKSIZE;
+        GC_bytes_found += (GC_signed_word)HBLKSIZE;
         GC_freehblk(hbp);
         FREE_PROFILER_HOOK(hbp);
       }

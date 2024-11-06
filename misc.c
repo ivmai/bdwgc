@@ -592,7 +592,7 @@ fill_prof_stats(struct GC_prof_stats_s *pstats)
   pstats->non_gc_bytes = GC_non_gc_bytes;
   pstats->gc_no = GC_gc_no; /* could be -1 */
 #  ifdef PARALLEL_MARK
-  pstats->markers_m1 = (word)((signed_word)GC_markers_m1);
+  pstats->markers_m1 = (word)((GC_signed_word)GC_markers_m1);
 #  else
   /* A single marker.       */
   pstats->markers_m1 = 0;
@@ -1407,7 +1407,7 @@ GC_init(void)
   GC_STATIC_ASSERT(sizeof(AO_t) == sizeof(word));
 #  endif
   GC_STATIC_ASSERT(sizeof(ptrdiff_t) == sizeof(word));
-  GC_STATIC_ASSERT(sizeof(signed_word) == sizeof(word));
+  GC_STATIC_ASSERT(sizeof(GC_signed_word) == sizeof(word));
   GC_STATIC_ASSERT(sizeof(word) * 8 == CPP_WORDSZ);
   GC_STATIC_ASSERT(sizeof(ptr_t) * 8 == CPP_PTRSZ);
   GC_STATIC_ASSERT(sizeof(ptr_t) == sizeof(GC_uintptr_t));
@@ -1421,7 +1421,7 @@ GC_init(void)
 #  endif
   /* We no longer check for ((void*)(-1) > NULL) since all pointers */
   /* are explicitly cast to word in every less/greater comparison.  */
-  GC_STATIC_ASSERT((signed_word)(-1) < (signed_word)0);
+  GC_STATIC_ASSERT((GC_signed_word)(-1) < (GC_signed_word)0);
 #endif
   GC_STATIC_ASSERT(sizeof(struct hblk) == HBLKSIZE);
 #ifndef THREADS
