@@ -1221,9 +1221,6 @@ struct hblk {
 /* The object free-list link.   */
 #define obj_link(p) (*(void **)(p))
 
-#define LOG_MAX_MARK_PROCS 6
-#define MAX_MARK_PROCS (1 << LOG_MAX_MARK_PROCS)
-
 /* Root sets.  Logically private to mark_rts.c.  But we don't want the  */
 /* tables scanned, so we put them here.                                 */
 
@@ -1587,7 +1584,7 @@ struct _GC_arrays {
   /* Table of user-defined mark procedures.  There is a small       */
   /* number of these, which can be referenced by DS_PROC mark       */
   /* descriptors.  See gc_mark.h.                                   */
-  GC_mark_proc _mark_procs[MAX_MARK_PROCS];
+  GC_mark_proc _mark_procs[GC_MAX_MARK_PROCS];
 
   /* GC_valid_offsets[i] ==> GC_modws_valid_offsets[i%sizeof(ptr_t)].   */
   char _modws_valid_offsets[sizeof(ptr_t)];

@@ -2322,7 +2322,7 @@ GC_new_proc_inner(GC_mark_proc proc)
 {
   unsigned result = GC_n_mark_procs;
 
-  if (result < MAX_MARK_PROCS) {
+  if (result < GC_MAX_MARK_PROCS) {
     GC_n_mark_procs++;
     GC_mark_procs[result] = proc;
   } else {
