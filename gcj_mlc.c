@@ -61,18 +61,21 @@ GC_API void GC_CALL
 GC_init_gcj_malloc(int mp_index, void *mp)
 {
   GC_init_gcj_malloc_mp((unsigned)mp_index,
-                        CAST_THRU_UINTPTR(GC_mark_proc, mp));
+                        CAST_THRU_UINTPTR(GC_mark_proc, mp),
+                        GC_GCJ_MARK_DESCR_OFFSET);
 }
 #  endif /* FUNCPTR_IS_DATAPTR */
 
 GC_API void GC_CALL
-GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp)
+GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp, size_t descr_offset)
 {
 #  ifndef GC_IGNORE_GCJ_INFO
   GC_bool ignore_gcj_info;
 #  endif
 
   GC_STATIC_ASSERT(GC_GCJ_MARK_DESCR_OFFSET >= sizeof(ptr_t));
+  if (descr_offset != GC_GCJ_MARK_DESCR_OFFSET)
+    ABORT("GC_init_gcj_malloc_mp: bad offset");
   if (0 == mp) {
     /* In case GC_DS_PROC is unused.  */
     mp = GC_gcj_fake_mark_proc;

@@ -276,10 +276,12 @@ GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc);
 GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc);
 
 /* Similar to GC_init_gcj_malloc() described in gc_gcj.h but with the   */
-/* proper types of the arguments.                                       */
+/* proper types of the arguments and an additional runtime checking.    */
+/* GC_GCJ_MARK_DESCR_OFFSET should be passed to descr_offset argument.  */
 /* Defined only if the library has been compiled with GC_GCJ_SUPPORT.   */
 GC_API void GC_CALL GC_init_gcj_malloc_mp(unsigned /* mp_index */,
-                                          GC_mark_proc /* mp */);
+                                          GC_mark_proc /* mp */,
+                                          size_t /* descr_offset */);
 
 /* Allocate an object of a given kind.  By default, there are only      */
 /* a few kinds: composite (pointerful), atomic, uncollectible, etc.     */
