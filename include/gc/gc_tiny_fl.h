@@ -48,11 +48,7 @@
 #ifdef GC_GRANULE_BYTES
 #  define GC_GRANULE_PTRS (GC_GRANULE_BYTES / GC_SIZEOF_PTR)
 #else
-#  if defined(__CHERI_PURE_CAPABILITY__)
-#    define GC_GRANULE_PTRS 1
-#  else
-#    define GC_GRANULE_PTRS 2 /* in pointers */
-#  endif
+#  define GC_GRANULE_PTRS 2 /* in pointers */
 #  define GC_GRANULE_BYTES (GC_GRANULE_PTRS * GC_SIZEOF_PTR)
 #endif /* !GC_GRANULE_BYTES */
 
