@@ -74,8 +74,6 @@ GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp, size_t descr_offset)
 #  endif
 
   GC_STATIC_ASSERT(GC_GCJ_MARK_DESCR_OFFSET >= sizeof(ptr_t));
-  if (descr_offset != GC_GCJ_MARK_DESCR_OFFSET)
-    ABORT("GC_init_gcj_malloc_mp: bad offset");
   if (0 == mp) {
     /* In case GC_DS_PROC is unused.  */
     mp = GC_gcj_fake_mark_proc;
@@ -83,6 +81,8 @@ GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp, size_t descr_offset)
 
   /* Initialize the collector just in case it is not done yet.        */
   GC_init();
+  if (descr_offset != GC_GCJ_MARK_DESCR_OFFSET)
+    ABORT("GC_init_gcj_malloc_mp: bad offset");
 
   LOCK();
   if (GC_gcjobjfreelist != NULL) {
