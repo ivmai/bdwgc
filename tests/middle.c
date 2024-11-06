@@ -3,10 +3,12 @@
  * Inspired by a test case from Zoltan Varga.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "gc.h"
 
 #define NOT_GCBUILD
 #include "private/gc_priv.h"
