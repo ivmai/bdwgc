@@ -3015,7 +3015,6 @@ GC_INNER void GC_init_dyld(void);
 
 #ifdef SEARCH_FOR_DATA_START
 GC_INNER void GC_init_linux_data_start(void);
-void *GC_find_limit(void *, int);
 #endif
 
 #ifdef NEED_PROC_MAPS
@@ -3218,6 +3217,16 @@ EXTERN_C_BEGIN
 GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
 #  define DATASTART_IS_FUNC
 #endif /* DATASTART_USES_BSDGETDATASTART */
+
+#if defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS) \
+    || defined(NEED_FIND_LIMIT) || defined(SEARCH_FOR_DATA_START)
+#  if (defined(HOST_ANDROID) || defined(__ANDROID__)) \
+      && defined(IGNORE_DYNAMIC_LOADING)
+/* Declared as public one in gc.h. */
+#  else
+void *GC_find_limit(void *p, int up);
+#  endif
+#endif
 
 #if defined(NEED_FIND_LIMIT)                                 \
     || (defined(UNIX_LIKE) && !defined(NO_DEBUGGING))        \

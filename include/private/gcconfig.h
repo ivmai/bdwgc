@@ -1330,10 +1330,8 @@ ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 /* Nothing specific. */
 #  endif
 #  ifdef FREEBSD
-#    define NEED_FIND_LIMIT
 extern char etext[];
 #    define DATASTART ((ptr_t)(&etext))
-void *GC_find_limit(void *, int);
 #    define DATAEND ((ptr_t)GC_find_limit(DATASTART, TRUE))
 #    define DATAEND_IS_FUNC
 #    define GC_HAVE_DATAREGION2
@@ -1805,10 +1803,8 @@ extern char **environ;
 /* Nothing specific. */
 #  endif
 #  ifdef FREEBSD
-#    define NEED_FIND_LIMIT
 extern char etext[];
 #    define DATASTART ((ptr_t)(&etext))
-void *GC_find_limit(void *, int);
 #    define DATAEND ((ptr_t)GC_find_limit(DATASTART, TRUE))
 #    define DATAEND_IS_FUNC
 /* Handle unmapped hole which alpha*-*-freebsd[45]* puts        */
@@ -2930,13 +2926,12 @@ EXTERN_C_BEGIN
 
 /* Do we need the GC_find_limit machinery to find the end of    */
 /* a data segment (or the backing store base)?                  */
-#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START)       \
-    || defined(HPUX_MAIN_STACKBOTTOM) || defined(IA64)          \
-    || (defined(CYGWIN32) && defined(I386) && defined(USE_MMAP) \
-        && !defined(USE_WINALLOC))                              \
-    || (defined(NETBSD) && defined(__ELF__)) || defined(DGUX)   \
-    || defined(OPENBSD) || defined(SVR4)                        \
-    || defined(DATASTART_USES_BSDGETDATASTART)
+#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START)               \
+    || defined(HPUX_MAIN_STACKBOTTOM) || defined(IA64) || defined(DGUX) \
+    || defined(FREEBSD) || defined(OPENBSD) || defined(SVR4)            \
+    || (defined(CYGWIN32) && defined(I386) && defined(USE_MMAP)         \
+        && !defined(USE_WINALLOC))                                      \
+    || (defined(NETBSD) && defined(__ELF__))
 #  define NEED_FIND_LIMIT
 #endif
 
