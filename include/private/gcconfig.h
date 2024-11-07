@@ -1094,8 +1094,8 @@ EXTERN_C_BEGIN
 
 #ifdef SYMBIAN
 #  define OS_TYPE "SYMBIAN"
-#  define DATASTART (ptr_t) ALIGNMENT /* cannot be null */
-#  define DATAEND (ptr_t) ALIGNMENT
+#  define DATASTART ((ptr_t)ALIGNMENT) /* cannot be null */
+#  define DATAEND ((ptr_t)ALIGNMENT)
 #  ifndef USE_MMAP
 /* sbrk() is not available. */
 #    define USE_MMAP 1
@@ -1238,13 +1238,12 @@ extern int errno;
 #      define STACKBOTTOM ((ptr_t)(&errno))
 #    endif
 #    define USE_MMAP_ANON
-/* From AIX linker man page:
-_text Specifies the first location of the program.
-_etext Specifies the first location after the program.
-_data Specifies the first location of the data.
-_edata Specifies the first location after the initialized data
-_end or end Specifies the first location after all data.
-*/
+/* From AIX linker man page:                                        */
+/* _text specifies the first location of the program;               */
+/* _etext specifies the first location after the program;           */
+/* _data specifies the first location of the data;                  */
+/* _edata specifies the first location after the initialized data;  */
+/* _end (or end) specifies the first location after all data.       */
 extern int _data[], _end[];
 #    define DATASTART ((ptr_t)_data)
 #    define DATAEND ((ptr_t)_end)
@@ -1335,7 +1334,7 @@ ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 extern char etext[];
 #    define DATASTART ((ptr_t)(&etext))
 void *GC_find_limit(void *, int);
-#    define DATAEND (ptr_t) GC_find_limit(DATASTART, TRUE)
+#    define DATAEND ((ptr_t)GC_find_limit(DATASTART, TRUE))
 #    define DATAEND_IS_FUNC
 #    define GC_HAVE_DATAREGION2
 extern char edata[], end[];
@@ -1810,7 +1809,7 @@ extern char **environ;
 extern char etext[];
 #    define DATASTART ((ptr_t)(&etext))
 void *GC_find_limit(void *, int);
-#    define DATAEND (ptr_t) GC_find_limit(DATASTART, TRUE)
+#    define DATAEND ((ptr_t)GC_find_limit(DATASTART, TRUE))
 #    define DATAEND_IS_FUNC
 /* Handle unmapped hole which alpha*-*-freebsd[45]* puts        */
 /* between etext and edata.                                     */
@@ -2046,7 +2045,7 @@ extern int __data_start[] __attribute__((__weak__));
 #    define OS_TYPE "NINTENDO_SWITCH"
 #    define NO_HANDLE_FORK 1
 extern int __bss_end[];
-#    define DATASTART (ptr_t) ALIGNMENT /* cannot be null */
+#    define DATASTART ((ptr_t)ALIGNMENT) /* cannot be null */
 #    define DATAEND ((ptr_t)(&__bss_end))
 void *switch_get_stack_bottom(void);
 #    define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
@@ -2113,8 +2112,8 @@ extern char **__environ;
 #    ifndef HBLKSIZE
 #      define HBLKSIZE 65536 /* page size is 64 KB */
 #    endif
-#    define DATASTART (ptr_t) ALIGNMENT
-#    define DATAEND (ptr_t) ALIGNMENT
+#    define DATASTART ((ptr_t)ALIGNMENT)
+#    define DATAEND ((ptr_t)ALIGNMENT)
 void *psp2_get_stack_bottom(void);
 #    define STACKBOTTOM ((ptr_t)psp2_get_stack_bottom())
 #  endif
@@ -2212,8 +2211,8 @@ extern void *__stack_base__;
 #  endif
 #  ifdef PLATFORM_GETMEM
 #    define OS_TYPE "PLATFORM_GETMEM"
-#    define DATASTART (ptr_t) ALIGNMENT
-#    define DATAEND (ptr_t) ALIGNMENT
+#    define DATASTART ((ptr_t)ALIGNMENT)
+#    define DATAEND ((ptr_t)ALIGNMENT)
 EXTERN_C_END
 #    include <pthread.h>
 EXTERN_C_BEGIN
@@ -2304,8 +2303,8 @@ extern int _end[];
 #  ifdef MSWIN_XBOX1
 #    define OS_TYPE "MSWIN_XBOX1"
 #    define NO_GETENV
-#    define DATASTART (ptr_t) ALIGNMENT
-#    define DATAEND (ptr_t) ALIGNMENT
+#    define DATASTART ((ptr_t)ALIGNMENT)
+#    define DATAEND ((ptr_t)ALIGNMENT)
 LONG64 durango_get_stack_bottom(void);
 #    define STACKBOTTOM ((ptr_t)durango_get_stack_bottom())
 #    define GETPAGESIZE() 4096
@@ -2416,8 +2415,8 @@ extern char **environ;
 #  define ALIGNMENT 4
 #  ifdef EMSCRIPTEN
 #    define OS_TYPE "EMSCRIPTEN"
-#    define DATASTART (ptr_t) ALIGNMENT
-#    define DATAEND (ptr_t) ALIGNMENT
+#    define DATASTART ((ptr_t)ALIGNMENT)
+#    define DATAEND ((ptr_t)ALIGNMENT)
 /* Emscripten does emulate mmap and munmap, but those should  */
 /* not be used in the collector, since WebAssembly lacks the  */
 /* native support of memory mapping.  Use sbrk() instead.     */
