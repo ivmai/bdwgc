@@ -3277,8 +3277,8 @@ extern __thread unsigned char GC_cancel_disable_count;
 #ifdef NO_LONGLONG64
 #  define LONG_MULT(hprod, lprod, x, y)                                 \
     do {                                                                \
-      unsigned32 lx = (x)&0xffffU;                                      \
-      unsigned32 ly = (y)&0xffffU;                                      \
+      unsigned32 lx = (x) & (0xffffU);                                  \
+      unsigned32 ly = (y) & (0xffffU);                                  \
       unsigned32 hx = (x) >> 16;                                        \
       unsigned32 hy = (y) >> 16;                                        \
       unsigned32 lxhy = lx * hy;                                        \
