@@ -49,12 +49,12 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
                                            void ** /* result */);
 
 /* The ultimately general inline allocation macro.  Allocate an object  */
-/* of size granules, putting the resulting pointer in result.  Tiny_fl  */
+/* of size granules, putting the resulting pointer in result.  tiny_fl  */
 /* is a "tiny" free list array, which will be used first, if the size   */
 /* is appropriate.  If granules is too large, we allocate with          */
 /* default_expr instead.  If we need to refill the free list, we use    */
 /* GC_generic_malloc_many with the indicated kind.                      */
-/* Tiny_fl should be an array of GC_TINY_FREELISTS void * pointers.     */
+/* tiny_fl should be an array of GC_TINY_FREELISTS void pointers.       */
 /* If num_direct is nonzero, and the individual free list pointers      */
 /* are initialized to (void *)1, then we allocate num_direct granules   */
 /* directly using generic_malloc before putting multiple objects into   */
