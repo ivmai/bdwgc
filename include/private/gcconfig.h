@@ -2459,6 +2459,10 @@ extern char __global_base, __heap_base;
 #  define THREADS
 #endif
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+#  define CHERI_PURECAP
+#endif
+
 #if defined(__GLIBC__) && !defined(DONT_USE_LIBC_PRIVATES)
 /* Use glibc's stack-end marker. */
 #  define USE_LIBC_PRIVATES
@@ -2486,7 +2490,7 @@ extern char __global_base, __heap_base;
 #  define USE_MMAP_ANON
 #endif
 
-#if defined(__CHERI_PURE_CAPABILITY__) && defined(USE_MMAP)
+#if defined(CHERI_PURECAP) && defined(USE_MMAP)
 /* TODO: currently turned off to avoid downgrading permissions on CHERI */
 #  undef USE_MUNMAP
 #endif
@@ -2675,7 +2679,7 @@ EXTERN_C_BEGIN
 #endif
 
 #ifndef CPP_PTRSZ
-#  if defined(__CHERI_PURE_CAPABILITY__)
+#  ifdef CHERI_PURECAP
 #    define CPP_PTRSZ (__SIZEOF_POINTER__ * 8)
 #  else
 #    define CPP_PTRSZ CPP_WORDSZ
