@@ -2708,7 +2708,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 /* Do we need the GC_find_limit machinery to find the end of a  */
 /* data segment.                                                */
 #if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START) \
-    || ((defined(SVR4) || defined(AIX) || defined(DGUX) \
+    || ((defined(SVR4) || defined(DGUX) \
          || (defined(LINUX) && defined(SPARC))) && !defined(PCR))
 # define NEED_FIND_LIMIT
 #endif
