@@ -66,6 +66,13 @@
 #undef posix_memalign
 #define posix_memalign(p, a, n) GC_posix_memalign(p, a, n)
 
+/* These are defined in the C23 standard. */
+#undef free_sized
+#define free_sized(p, n) (free(p), (void)(n))
+#undef free_aligned_sized
+#define free_aligned_sized(p, a, n) \
+  (GC_free(p) /* non-debug */, (void)(a), (void)(n))
+
 #undef _aligned_malloc
 #define _aligned_malloc(n, a) GC_memalign(a, n) /* reverse args order */
 #undef _aligned_free
@@ -76,7 +83,7 @@
 #  define valloc(n) GC_valloc(n)
 #  undef pvalloc
 #  define pvalloc(n) GC_pvalloc(n) /* obsolete */
-#endif                             /* !GC_NO_VALLOC */
+#endif
 
 #undef malloc_usable_size /* available in glibc */
 #define malloc_usable_size(p) GC_size(p)

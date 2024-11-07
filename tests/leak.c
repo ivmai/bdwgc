@@ -31,9 +31,16 @@ main(void)
   /* FIXME: This is not ideal.    */
   GC_INIT();
 
+  p[0] = (char *)aligned_alloc(8, 50 /* size */);
+  if (NULL == p[0]) {
+    fprintf(stderr, "aligned_alloc failed\n");
+    return 1;
+  }
+  free_aligned_sized(p[0], 8, 50);
+
   p[0] = (char *)_aligned_malloc(70 /* size */, 16);
-  if (!p[0]) {
-    fprintf(stderr, "Aligned allocation failed\n");
+  if (NULL == p[0]) {
+    fprintf(stderr, "_aligned_malloc failed\n");
     return 1;
   }
   _aligned_free(p[0]);
@@ -57,6 +64,8 @@ main(void)
     p[i] = i < 3 || i > 6 ? (char *)malloc(sizeof(int) + i)
                           : strndup("abcd", i);
     CHECK_OUT_OF_MEMORY(p[i]);
+    if (i == 3)
+      free_sized(p[i], i /* strlen(p[i]) */ + 1);
   }
 #ifdef GC_REQUIRE_WCSDUP
   {
