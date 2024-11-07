@@ -1,4 +1,8 @@
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -54,6 +58,14 @@ main(void)
                           : strndup("abcd", i);
     CHECK_OUT_OF_MEMORY(p[i]);
   }
+#ifdef GC_REQUIRE_WCSDUP
+  {
+    static const wchar_t ws[] = { 'w', 0 };
+
+    p[0] = (char *)wcsdup(ws);
+    CHECK_OUT_OF_MEMORY(p[0]);
+  }
+#endif
   CHECK_LEAKS();
   CHECK_LEAKS();
   CHECK_LEAKS();

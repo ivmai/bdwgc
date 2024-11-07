@@ -589,6 +589,15 @@ GC_wcsdup(const wchar_t *str)
   BCOPY(str, copy, lb);
   return copy;
 }
+
+#  if !defined(wcsdup) && defined(REDIRECT_MALLOC) \
+      && !defined(REDIRECT_MALLOC_IN_HEADER)
+wchar_t *
+wcsdup(const wchar_t *str)
+{
+  return GC_wcsdup(str);
+}
+#  endif
 #endif /* GC_REQUIRE_WCSDUP */
 
 #ifndef CPPCHECK
