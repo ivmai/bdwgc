@@ -1999,7 +1999,7 @@ GC_register_data_segments(void)
 
 #endif /* ANY_MSWIN */
 
-#if defined(AIX) || defined(DGUX) || defined(SVR4)
+#if defined(DGUX) || defined(SVR4)
 ptr_t
 GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
 {
@@ -2040,7 +2040,7 @@ GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
   }
   return (ptr_t)CAST_AWAY_VOLATILE_PVOID(result);
 }
-#endif /* AIX || DGUX || SVR4 */
+#endif /* DGUX || SVR4 */
 
 #ifdef DATASTART_USES_BSDGETDATASTART
 /* It's unclear whether this should be identical to the above, or */

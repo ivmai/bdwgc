@@ -2931,12 +2931,12 @@ EXTERN_C_BEGIN
 
 /* Do we need the GC_find_limit machinery to find the end of    */
 /* a data segment (or the backing store base)?                  */
-#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START)                     \
-    || defined(HPUX_MAIN_STACKBOTTOM) || defined(IA64)                        \
-    || (defined(CYGWIN32) && defined(I386) && defined(USE_MMAP)               \
-        && !defined(USE_WINALLOC))                                            \
-    || (defined(NETBSD) && defined(__ELF__)) || defined(AIX) || defined(DGUX) \
-    || defined(OPENBSD) || defined(SVR4)                                      \
+#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START)       \
+    || defined(HPUX_MAIN_STACKBOTTOM) || defined(IA64)          \
+    || (defined(CYGWIN32) && defined(I386) && defined(USE_MMAP) \
+        && !defined(USE_WINALLOC))                              \
+    || (defined(NETBSD) && defined(__ELF__)) || defined(DGUX)   \
+    || defined(OPENBSD) || defined(SVR4)                        \
     || defined(DATASTART_USES_BSDGETDATASTART)
 #  define NEED_FIND_LIMIT
 #endif
