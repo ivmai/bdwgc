@@ -1999,33 +1999,51 @@ GC_register_data_segments(void)
 
 #endif /* ANY_MSWIN */
 
-#if defined(DGUX) || defined(SVR4)
+#ifdef DATASTART_USES_XGETDATASTART
 GC_INNER ptr_t
-GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
+GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_ptr)
 {
-  word page_offset = ADDR(PTR_ALIGN_UP(etext_addr, sizeof(ptr_t)))
-                     & ((word)max_page_size - 1);
-  /* Note that this is not equivalent to just adding          */
-  /* max_page_size to &etext if etext is at a page boundary.  */
-  volatile ptr_t result
-      = PTR_ALIGN_UP(etext_addr, max_page_size) + page_offset;
+  volatile ptr_t result, next_page;
 
   GC_ASSERT(max_page_size % sizeof(ptr_t) == 0);
+  result = PTR_ALIGN_UP(etext_ptr, sizeof(ptr_t));
+  /* Note that this is not equivalent to just adding max_page_size  */
+  /* to etext_ptr because the latter is not guaranteed to be        */
+  /* multiple of the page size.                                     */
+  next_page = PTR_ALIGN_UP(result, max_page_size);
+
   GC_setup_temporary_fault_handler();
   if (SETJMP(GC_jmp_buf) == 0) {
-    /* Try writing to the address.    */
-#  ifdef AO_HAVE_fetch_and_add
-    volatile AO_t zero = 0;
+#  ifdef FREEBSD
+    /* It's unclear whether this should be identical to the below, or   */
+    /* whether it should apply to non-x86 architectures.  For now we    */
+    /* do not assume that there is always an empty page after etext.    */
+    /* But in some cases there actually seems to be slightly more.      */
+    /* It also deals with holes between read-only and writable data.    */
 
-    (void)AO_fetch_and_add((volatile AO_t *)result, zero);
+    /* Try reading at the address.                        */
+    /* This should happen before there is another thread. */
+    for (; ADDR_LT(next_page, DATAEND); next_page += max_page_size) {
+      GC_noop1((word)(*(volatile unsigned char *)next_page));
+    }
 #  else
-    /* Fallback to non-atomic fetch-and-store.  */
-    char v = *result;
+    result = next_page + (ADDR(result) & ((word)max_page_size - 1));
+    /* Try writing to the address.    */
+    {
+#    ifdef AO_HAVE_fetch_and_add
+      volatile AO_t zero = 0;
 
-#    if defined(CPPCHECK)
-    GC_noop1_ptr(&v);
+      (void)AO_fetch_and_add((volatile AO_t *)result, zero);
+#    else
+      /* Fallback to non-atomic fetch-and-store. */
+      char v = *result;
+
+#      ifdef CPPCHECK
+      GC_noop1_ptr(&v);
+#      endif
+      *result = v;
 #    endif
-    *result = v;
+    }
 #  endif
     GC_reset_fault_handler();
   } else {
@@ -2036,37 +2054,9 @@ GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
     /* etext.  Use plan B.  Note that we now know there is a gap  */
     /* between text and data segments, so plan A brought us       */
     /* something.                                                 */
-    result = (char *)GC_find_limit(DATAEND, FALSE);
-  }
-  return (ptr_t)CAST_AWAY_VOLATILE_PVOID(result);
-}
-
-#elif defined(DATASTART_USES_XGETDATASTART) /* && FREEBSD */
-/* It's unclear whether this should be identical to the above, or */
-/* whether it should apply to non-x86 architectures.  For now we  */
-/* do not assume that there is always an empty page after etext.  */
-/* But in some cases there actually seems to be slightly more.    */
-/* It also deals with holes between read-only and writable data.  */
-GC_INNER ptr_t
-GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
-{
-  volatile ptr_t result = PTR_ALIGN_UP(etext_addr, sizeof(ptr_t));
-  volatile ptr_t next_page = PTR_ALIGN_UP(etext_addr, max_page_size);
-
-  GC_ASSERT(max_page_size % sizeof(ptr_t) == 0);
-  GC_setup_temporary_fault_handler();
-  if (SETJMP(GC_jmp_buf) == 0) {
-    /* Try reading at the address.                        */
-    /* This should happen before there is another thread. */
-    for (; ADDR_LT(next_page, DATAEND); next_page += max_page_size)
-      GC_noop1((word)(*(volatile unsigned char *)next_page));
-    GC_reset_fault_handler();
-  } else {
-    GC_reset_fault_handler();
-    /* As above, we go to plan B. */
     result = (ptr_t)GC_find_limit(DATAEND, FALSE);
   }
-  return result;
+  return (ptr_t)CAST_AWAY_VOLATILE_PVOID(result);
 }
 #endif /* DATASTART_USES_XGETDATASTART */
 
