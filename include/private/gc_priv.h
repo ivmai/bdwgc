@@ -3210,13 +3210,14 @@ EXTERN_C_BEGIN
 #  define JMP_BUF jmp_buf
 #endif /* !UNIX_LIKE || GC_NO_SIGSETJMP */
 
-#if defined(DATASTART_USES_BSDGETDATASTART)
+#ifdef DATASTART_USES_XGETDATASTART
+#  ifdef FREEBSD
 EXTERN_C_END
-#  include <machine/trap.h>
+#    include <machine/trap.h>
 EXTERN_C_BEGIN
-GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
-#  define DATASTART_IS_FUNC
-#endif /* DATASTART_USES_BSDGETDATASTART */
+#  endif
+GC_INNER ptr_t GC_SysVGetDataStart(size_t, ptr_t);
+#endif /* DATASTART_USES_XGETDATASTART */
 
 #if defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS) \
     || defined(NEED_FIND_LIMIT) || defined(SEARCH_FOR_DATA_START)

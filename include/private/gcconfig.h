@@ -884,8 +884,8 @@ extern int _modules_data_start[], _apps_bss_end[];
 #  endif
 #  if !defined(ALPHA) && !defined(SPARC)
 extern char etext[];
-#    define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
-#    define DATASTART_USES_BSDGETDATASTART
+#    define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)etext)
+#    define DATASTART_USES_XGETDATASTART
 #    ifndef GC_THREADS
 #      define MPROTECT_VDB
 #    endif
@@ -1016,7 +1016,6 @@ extern char etext[];
 #ifdef NEXT
 #  define OS_TYPE "NEXT"
 #  define DATASTART ((ptr_t)get_etext())
-#  define DATASTART_IS_FUNC
 #  define DATAEND /* not needed */
 #endif
 
@@ -1052,9 +1051,7 @@ extern int _end[];
 
 #ifdef SOLARIS
 #  define OS_TYPE "SOLARIS"
-extern int _etext[], _end[];
-ptr_t GC_SysVGetDataStart(size_t, ptr_t);
-#  define DATASTART_IS_FUNC
+extern int _end[];
 #  define DATAEND ((ptr_t)_end)
 #  if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
 #    define USE_MMAP 1
@@ -1293,6 +1290,7 @@ extern char etext[];
 #    define ALIGNMENT 4 /* Required by hardware */
 #  endif
 #  ifdef SOLARIS
+extern int _etext[];
 #    define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #    define PROC_VDB
 /* getpagesize() appeared to be missing from at least   */
@@ -1302,9 +1300,7 @@ extern char etext[];
 #  ifdef DRSNX
 #    define OS_TYPE "DRSNX"
 extern int etext[];
-ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #    define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)etext)
-#    define DATASTART_IS_FUNC
 #    define MPROTECT_VDB
 #    define STACKBOTTOM MAKE_CPTR(0xdfff0000)
 #    define DYNAMIC_LOADING
@@ -1313,15 +1309,12 @@ ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #    if !defined(__ELF__) && !defined(CPPCHECK)
 #      error Linux SPARC a.out not supported
 #    endif
-#    define SVR4
 extern int _etext[];
-ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #    ifdef __arch64__
 #      define DATASTART GC_SysVGetDataStart(0x100000, (ptr_t)_etext)
 #    else
 #      define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #    endif
-#    define DATASTART_IS_FUNC
 #  endif
 #  ifdef OPENBSD
 /* Nothing specific. */
@@ -1375,6 +1368,7 @@ extern int etext[];
 /* Nothing specific. */
 #  endif
 #  ifdef SOLARIS
+extern int _etext[];
 #    define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
 /* At least in Solaris 2.5, PROC_VDB gives wrong values for     */
 /* dirty bits.  It appears to be fixed in 2.8 and 2.9.          */
@@ -1400,9 +1394,8 @@ extern int etext[];
 #  ifdef DGUX
 #    define OS_TYPE "DGUX"
 extern int _etext, _end;
-ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #    define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)(&_etext))
-#    define DATASTART_IS_FUNC
+#    define DATASTART_USES_XGETDATASTART
 #    define DATAEND ((ptr_t)(&_end))
 #    define HEURISTIC2
 #    define DYNAMIC_LOADING
@@ -1949,9 +1942,8 @@ extern int etext[];
 #  endif
 #  ifdef DGUX
 #    define OS_TYPE "DGUX"
-ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #    define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)etext)
-#    define DATASTART_IS_FUNC
+#    define DATASTART_USES_XGETDATASTART
 #  endif
 #endif /* M88K */
 
@@ -1964,9 +1956,7 @@ ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #  ifdef UTS4
 #    define OS_TYPE "UTS4"
 extern int _etext[], _end[];
-ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #    define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
-#    define DATASTART_IS_FUNC
 #    define DATAEND ((ptr_t)_end)
 #    define HEURISTIC2
 #  endif
@@ -2280,6 +2270,7 @@ extern int _end[];
 #  endif
 #  ifdef SOLARIS
 #    define ELF_CLASS ELFCLASS64
+extern int _etext[];
 #    define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
 #    ifdef SOLARIS25_PROC_VDB_BUG_FIXED
 #      define PROC_VDB
@@ -2545,9 +2536,11 @@ extern int __end__[];
 #  define DATAEND (__end__ != 0 ? (ptr_t)__end__ : (ptr_t)_end)
 #endif
 
-#if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
+#if defined(SOLARIS) || defined(DRSNX) || defined(UTS4) \
+    || (defined(LINUX) && defined(SPARC))
 /* OS has SVR4 generic features.  Probably others also qualify.   */
 #  define SVR4
+#  define DATASTART_USES_XGETDATASTART
 #endif
 
 #if defined(HAVE_SYS_TYPES_H)                                  \

@@ -2000,7 +2000,7 @@ GC_register_data_segments(void)
 #endif /* ANY_MSWIN */
 
 #if defined(DGUX) || defined(SVR4)
-ptr_t
+GC_INNER ptr_t
 GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
 {
   word page_offset = ADDR(PTR_ALIGN_UP(etext_addr, sizeof(ptr_t)))
@@ -2040,16 +2040,15 @@ GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
   }
   return (ptr_t)CAST_AWAY_VOLATILE_PVOID(result);
 }
-#endif /* DGUX || SVR4 */
 
-#ifdef DATASTART_USES_BSDGETDATASTART
+#elif defined(DATASTART_USES_XGETDATASTART) /* && FREEBSD */
 /* It's unclear whether this should be identical to the above, or */
 /* whether it should apply to non-x86 architectures.  For now we  */
 /* do not assume that there is always an empty page after etext.  */
 /* But in some cases there actually seems to be slightly more.    */
 /* It also deals with holes between read-only and writable data.  */
 GC_INNER ptr_t
-GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr)
+GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
 {
   volatile ptr_t result = PTR_ALIGN_UP(etext_addr, sizeof(ptr_t));
   volatile ptr_t next_page = PTR_ALIGN_UP(etext_addr, max_page_size);
@@ -2069,7 +2068,7 @@ GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr)
   }
   return result;
 }
-#endif /* DATASTART_USES_BSDGETDATASTART */
+#endif /* DATASTART_USES_XGETDATASTART */
 
 #if defined(OS2)
 GC_INNER void

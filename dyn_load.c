@@ -758,7 +758,7 @@ GC_register_dynamic_libraries_dl_iterate_phdr(void)
 #        endif
   } else {
     ptr_t datastart, dataend;
-#        ifdef DATASTART_IS_FUNC
+#        ifdef DATASTART_USES_XGETDATASTART
     static ptr_t datastart_cached = MAKE_CPTR(GC_WORD_MAX);
 
     /* Evaluate DATASTART only once.  */
