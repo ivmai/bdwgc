@@ -2003,17 +2003,18 @@ GC_register_data_segments(void)
 GC_INNER ptr_t
 GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_ptr)
 {
-  volatile ptr_t result, next_page;
+  volatile ptr_t result;
 
   GC_ASSERT(max_page_size % sizeof(ptr_t) == 0);
   result = PTR_ALIGN_UP(etext_ptr, sizeof(ptr_t));
-  /* Note that this is not equivalent to just adding max_page_size  */
-  /* to etext_ptr because the latter is not guaranteed to be        */
-  /* multiple of the page size.                                     */
-  next_page = PTR_ALIGN_UP(result, max_page_size);
 
   GC_setup_temporary_fault_handler();
   if (SETJMP(GC_jmp_buf) == 0) {
+    /* Note that this is not equivalent to just adding max_page_size to */
+    /* etext_ptr because the latter is not guaranteed to be multiple of */
+    /* the page size.                                                   */
+    ptr_t next_page = PTR_ALIGN_UP(result, max_page_size);
+
 #  ifdef FREEBSD
     /* It's unclear whether this should be identical to the below, or   */
     /* whether it should apply to non-x86 architectures.  For now we    */
@@ -2021,14 +2022,14 @@ GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_ptr)
     /* But in some cases there actually seems to be slightly more.      */
     /* It also deals with holes between read-only and writable data.    */
 
-    /* Try reading at the address.                        */
-    /* This should happen before there is another thread. */
+    /* Try reading at the address.  This should happen before there is  */
+    /* another thread.                                                  */
     for (; ADDR_LT(next_page, DATAEND); next_page += max_page_size) {
       GC_noop1((word)(*(volatile unsigned char *)next_page));
     }
 #  else
     result = next_page + (ADDR(result) & ((word)max_page_size - 1));
-    /* Try writing to the address.    */
+    /* Try writing to the address. */
     {
 #    ifdef AO_HAVE_fetch_and_add
       volatile AO_t zero = 0;
