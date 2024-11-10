@@ -511,14 +511,11 @@ pub fn build(b: *std.Build) void {
                 .optimize = optimize,
             });
         }
-        var gccpp_src_files = std.ArrayList([]const u8).init(b.allocator);
-        defer gccpp_src_files.deinit();
-        gccpp_src_files.appendSlice(&.{
-            "gc_badalc.cc",
-            "gc_cpp.cc",
-        }) catch unreachable;
         gccpp.addCSourceFiles(.{
-            .files = gccpp_src_files.items,
+            .files = &.{
+                "gc_badalc.cc",
+                "gc_cpp.cc",
+            },
             .flags = flags.items,
         });
         gccpp.addIncludePath(b.path("include"));
@@ -533,11 +530,10 @@ pub fn build(b: *std.Build) void {
                     .optimize = optimize,
                 });
             }
-            var gctba_src_files = std.ArrayList([]const u8).init(b.allocator);
-            defer gctba_src_files.deinit();
-            gctba_src_files.append("gc_badalc.cc") catch unreachable;
             gctba.addCSourceFiles(.{
-                .files = gctba_src_files.items,
+                .files = &.{
+                    "gc_badalc.cc",
+                },
                 .flags = flags.items,
             });
             gctba.addIncludePath(b.path("include"));
@@ -559,15 +555,12 @@ pub fn build(b: *std.Build) void {
                 .optimize = optimize,
             });
         }
-        var cord_src_files = std.ArrayList([]const u8).init(b.allocator);
-        defer cord_src_files.deinit();
-        cord_src_files.appendSlice(&.{
-            "cord/cordbscs.c",
-            "cord/cordprnt.c",
-            "cord/cordxtra.c",
-        }) catch unreachable;
         cord.addCSourceFiles(.{
-            .files = cord_src_files.items,
+            .files = &.{
+                "cord/cordbscs.c",
+                "cord/cordprnt.c",
+                "cord/cordxtra.c",
+            },
             .flags = flags.items,
         });
         cord.addIncludePath(b.path("include"));
