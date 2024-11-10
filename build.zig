@@ -130,19 +130,20 @@ pub fn build(b: *std.Build) void {
         "Install header and pkg-config metadata files") orelse true;
     // TODO: support with_libatomic_ops, without_libatomic_ops
 
-    var gc = b.addStaticLibrary(.{
-        .name = "gc",
-        .target = target,
-        .optimize = optimize,
-    });
-    if (build_shared_libs) {
+    const gc = if (build_shared_libs) blk: {
         // TODO: convert VER_INFO values to [SO]VERSION ones
-        gc = b.addSharedLibrary(.{
+        break :blk b.addSharedLibrary(.{
             .name = "gc",
             .target = target,
             .optimize = optimize,
         });
-    }
+    } else blk: {
+        break :blk b.addStaticLibrary(.{
+            .name = "gc",
+            .target = target,
+            .optimize = optimize,
+        });
+    };
 
     var source_files = std.ArrayList([]const u8).init(b.allocator);
     defer source_files.deinit();
@@ -493,24 +494,22 @@ pub fn build(b: *std.Build) void {
     gc.addIncludePath(b.path("include"));
     gc.linkLibC();
 
-    var gccpp = b.addStaticLibrary(.{
-        .name = "gccpp",
-        .target = target,
-        .optimize = optimize,
-    });
-    var gctba = b.addStaticLibrary(.{
-        .name = "gctba",
-        .target = target,
-        .optimize = optimize,
-    });
+    var gccpp: *std.Build.Step.Compile = undefined;
+    var gctba: *std.Build.Step.Compile = undefined;
     if (enable_cplusplus) {
-        if (build_shared_libs) {
-            gccpp = b.addSharedLibrary(.{
+        gccpp = if (build_shared_libs) blk: {
+            break :blk b.addSharedLibrary(.{
                 .name = "gccpp",
                 .target = target,
                 .optimize = optimize,
             });
-        }
+        } else blk: {
+            break :blk b.addStaticLibrary(.{
+                .name = "gccpp",
+                .target = target,
+                .optimize = optimize,
+            });
+        };
         gccpp.addCSourceFiles(.{
             .files = &.{
                 "gc_badalc.cc",
@@ -523,13 +522,19 @@ pub fn build(b: *std.Build) void {
         linkLibCpp(gccpp);
         if (enable_throw_bad_alloc_library) {
             // The same as gccpp but contains only gc_badalc.
-            if (build_shared_libs) {
-                gctba = b.addSharedLibrary(.{
+            gctba = if (build_shared_libs) blk: {
+                break :blk b.addSharedLibrary(.{
                     .name = "gctba",
                     .target = target,
                     .optimize = optimize,
                 });
-            }
+            } else blk: {
+                break :blk b.addStaticLibrary(.{
+                    .name = "gctba",
+                    .target = target,
+                    .optimize = optimize,
+                });
+            };
             gctba.addCSourceFiles(.{
                 .files = &.{
                     "gc_badalc.cc",
@@ -542,19 +547,21 @@ pub fn build(b: *std.Build) void {
         }
     }
 
-    var cord = b.addStaticLibrary(.{
-        .name = "cord",
-        .target = target,
-        .optimize = optimize,
-    });
+    var cord: *std.Build.Step.Compile = undefined;
     if (build_cord) {
-        if (build_shared_libs) {
-            cord = b.addSharedLibrary(.{
+        cord = if (build_shared_libs) blk: {
+            break :blk b.addSharedLibrary(.{
                 .name = "cord",
                 .target = target,
                 .optimize = optimize,
             });
-        }
+        } else blk: {
+            break :blk b.addStaticLibrary(.{
+                .name = "cord",
+                .target = target,
+                .optimize = optimize,
+            });
+        };
         cord.addCSourceFiles(.{
             .files = &.{
                 "cord/cordbscs.c",
