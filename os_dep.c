@@ -1026,9 +1026,9 @@ GC_reset_fault_handler(void)
     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
 #  define MIN_PAGE_SIZE 256 /* Smallest conceivable page size, in bytes. */
 
-/* Return the first non-addressable location > p (up) or    */
-/* the smallest location q s.t. [q,p) is addressable (!up). */
-/* We assume that p (up) or p-1 (!up) is addressable.       */
+/* Return the first non-addressable location greater than p (if up) or  */
+/* the smallest location q such that [q,p) is addressable (if not up).  */
+/* We assume that p (if up) or p-1 (if not up) is addressable.          */
 GC_ATTR_NO_SANITIZE_ADDR
 STATIC ptr_t
 GC_find_limit_with_bound(ptr_t p, GC_bool up, ptr_t bound)
@@ -1041,9 +1041,9 @@ GC_find_limit_with_bound(ptr_t p, GC_bool up, ptr_t bound)
   GC_ASSERT(up ? ADDR(bound) >= MIN_PAGE_SIZE
                : ADDR(bound) <= ~(word)MIN_PAGE_SIZE);
   GC_ASSERT(I_HOLD_LOCK());
+  result = PTR_ALIGN_DOWN(p, MIN_PAGE_SIZE);
   GC_setup_temporary_fault_handler();
   if (SETJMP(GC_jmp_buf) == 0) {
-    result = PTR_ALIGN_DOWN(p, MIN_PAGE_SIZE);
     for (;;) {
       if (up) {
         if (ADDR_GE(result, bound - MIN_PAGE_SIZE)) {
@@ -1479,7 +1479,7 @@ GC_get_stack_base(struct GC_stack_base *b)
     DISABLE_CANCEL(cancel_state);
     bsp = GC_save_regs_in_stack();
     next_stack = GC_greatest_stack_base_below(bsp);
-    if (0 == next_stack) {
+    if (NULL == next_stack) {
       b->reg_base = GC_find_limit(bsp, FALSE);
     } else {
       /* Avoid walking backwards into preceding memory stack and    */
