@@ -436,6 +436,9 @@ GC_add_to_fl(struct hblk *h, hdr *hhdr)
   hhdr->hb_flags |= FREE_BLK;
 }
 
+#define BLOCKS_MERGE_OVERFLOW(hhdr, nexthdr) \
+  ((((hhdr)->hb_sz + (nexthdr)->hb_sz) & SIZET_SIGNB) != 0)
+
 #ifdef USE_MUNMAP
 
 #  ifdef COUNT_UNMAPPED_REGIONS
@@ -554,7 +557,7 @@ GC_merge_unmapped(void)
   for (i = 0; i <= N_HBLK_FLS; ++i) {
     struct hblk *h = GC_hblkfreelist[i];
 
-    while (h != 0) {
+    while (h != NULL) {
       struct hblk *next;
       hdr *hhdr, *nexthdr;
       size_t size, next_size;
@@ -564,53 +567,55 @@ GC_merge_unmapped(void)
       next = (struct hblk *)((ptr_t)h + size);
       GET_HDR(next, nexthdr);
       /* Coalesce with successor, if possible. */
-      if (nexthdr != NULL && HBLK_IS_FREE(nexthdr)
-          && ((size + (next_size = nexthdr->hb_sz)) & SIZET_SIGNB) == 0
-          /* no overflow */) {
-        /* Note that we usually try to avoid adjacent free blocks   */
-        /* that are either both mapped or both unmapped.  But that  */
-        /* isn't guaranteed to hold since we remap blocks when we   */
-        /* split them, and don't merge at that point.  It may also  */
-        /* not hold if the merged block would be too big.           */
-        if (IS_MAPPED(hhdr) && !IS_MAPPED(nexthdr)) {
-          /* Make both consistent, so that we can merge.    */
-          if (size > next_size) {
-            GC_adjust_num_unmapped(next, nexthdr);
-            GC_remap((ptr_t)next, next_size);
-          } else {
-            GC_adjust_num_unmapped(h, hhdr);
-            GC_unmap((ptr_t)h, size);
-            GC_unmap_gap((ptr_t)h, size, (ptr_t)next, next_size);
-            hhdr->hb_flags |= WAS_UNMAPPED;
-          }
-        } else if (IS_MAPPED(nexthdr) && !IS_MAPPED(hhdr)) {
-          if (size > next_size) {
-            GC_adjust_num_unmapped(next, nexthdr);
-            GC_unmap((ptr_t)next, next_size);
-            GC_unmap_gap((ptr_t)h, size, (ptr_t)next, next_size);
-          } else {
-            GC_adjust_num_unmapped(h, hhdr);
-            GC_remap((ptr_t)h, size);
-            hhdr->hb_flags &= (unsigned char)~WAS_UNMAPPED;
-            hhdr->hb_last_reclaimed = nexthdr->hb_last_reclaimed;
-          }
-        } else if (!IS_MAPPED(hhdr) && !IS_MAPPED(nexthdr)) {
-          /* Unmap any gap in the middle.   */
-          GC_unmap_gap((ptr_t)h, size, (ptr_t)next, next_size);
-        }
-        /* If they are both unmapped, we merge, but leave unmapped. */
-        GC_remove_from_fl_at(hhdr, i);
-        GC_remove_from_fl(nexthdr);
-        hhdr->hb_sz += nexthdr->hb_sz;
-        GC_remove_header(next);
-        GC_add_to_fl(h, hhdr);
-        /* Start over at beginning of list. */
-        h = GC_hblkfreelist[i];
-      } else /* not mergeable with successor */ {
+      if (NULL == nexthdr || !HBLK_IS_FREE(nexthdr)
+          || BLOCKS_MERGE_OVERFLOW(hhdr, nexthdr)) {
+        /* Not mergeable with the successor. */
         h = hhdr->hb_next;
+        continue;
       }
-    } /* while (h != 0) ... */
-  }   /* for ... */
+
+      next_size = nexthdr->hb_sz;
+      /* Note that we usually try to avoid adjacent free blocks     */
+      /* that are either both mapped or both unmapped.  But that    */
+      /* isn't guaranteed to hold since we remap blocks when we     */
+      /* split them, and don't merge at that point.  It may also    */
+      /* not hold if the merged block would be too big.             */
+      if (IS_MAPPED(hhdr) && !IS_MAPPED(nexthdr)) {
+        /* Make both consistent, so that we can merge. */
+        if (size > next_size) {
+          GC_adjust_num_unmapped(next, nexthdr);
+          GC_remap((ptr_t)next, next_size);
+        } else {
+          GC_adjust_num_unmapped(h, hhdr);
+          GC_unmap((ptr_t)h, size);
+          GC_unmap_gap((ptr_t)h, size, (ptr_t)next, next_size);
+          hhdr->hb_flags |= WAS_UNMAPPED;
+        }
+      } else if (IS_MAPPED(nexthdr) && !IS_MAPPED(hhdr)) {
+        if (size > next_size) {
+          GC_adjust_num_unmapped(next, nexthdr);
+          GC_unmap((ptr_t)next, next_size);
+          GC_unmap_gap((ptr_t)h, size, (ptr_t)next, next_size);
+        } else {
+          GC_adjust_num_unmapped(h, hhdr);
+          GC_remap((ptr_t)h, size);
+          hhdr->hb_flags &= (unsigned char)~WAS_UNMAPPED;
+          hhdr->hb_last_reclaimed = nexthdr->hb_last_reclaimed;
+        }
+      } else if (!IS_MAPPED(hhdr) && !IS_MAPPED(nexthdr)) {
+        /* Unmap any gap in the middle.   */
+        GC_unmap_gap((ptr_t)h, size, (ptr_t)next, next_size);
+      }
+      /* If they are both unmapped, we merge, but leave unmapped. */
+      GC_remove_from_fl_at(hhdr, i);
+      GC_remove_from_fl(nexthdr);
+      hhdr->hb_sz += nexthdr->hb_sz;
+      GC_remove_header(next);
+      GC_add_to_fl(h, hhdr);
+      /* Start over at the beginning of list. */
+      h = GC_hblkfreelist[i];
+    }
+  }
 }
 
 #endif /* USE_MUNMAP */
@@ -1091,8 +1096,7 @@ GC_freehblk(struct hblk *hbp)
   prev = GC_free_block_ending_at(hbp);
   /* Coalesce with successor, if possible.    */
   if (nexthdr != NULL && HBLK_IS_FREE(nexthdr) && IS_MAPPED(nexthdr)
-      && ((hhdr->hb_sz + nexthdr->hb_sz) & SIZET_SIGNB) == 0
-      /* no overflow */) {
+      && !BLOCKS_MERGE_OVERFLOW(hhdr, nexthdr)) {
     GC_remove_from_fl(nexthdr);
     hhdr->hb_sz += nexthdr->hb_sz;
     GC_remove_header(next);
@@ -1101,8 +1105,7 @@ GC_freehblk(struct hblk *hbp)
   /* Coalesce with predecessor, if possible. */
   if (prev /* != NULL */) { /* CPPCHECK */
     prevhdr = HDR(prev);
-    if (IS_MAPPED(prevhdr)
-        && ((hhdr->hb_sz + prevhdr->hb_sz) & SIZET_SIGNB) == 0) {
+    if (IS_MAPPED(prevhdr) && !BLOCKS_MERGE_OVERFLOW(prevhdr, hhdr)) {
       GC_remove_from_fl(prevhdr);
       prevhdr->hb_sz += hhdr->hb_sz;
 #ifdef USE_MUNMAP
