@@ -22,7 +22,7 @@
 #  this will generate gc.sln
 #
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 set(PACKAGE_VERSION 8.3.0)
 # Version must match that in AC_INIT of configure.ac and that in README.
