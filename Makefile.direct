@@ -254,7 +254,8 @@ gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
 	$(CXX) $(CXXFLAGS) -c $(srcdir)/gc_cpp.cc
 
 cpptest$(EXEEXT): $(srcdir)/tests/cpp.cc $(srcdir)/include/gc_cpp.h \
-  $(srcdir)/include/gc.h c++ base_lib $(NODIST_OBJS) $(UTILS)
+  $(srcdir)/include/gc/gc_allocator.h $(srcdir)/include/gc.h c++ \
+  base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f $@
 	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o $@ $(srcdir)/tests/cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a -ldld `./threadlibs`
 	./if_not_there $@ || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o $@ $(srcdir)/tests/cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a `./threadlibs`
