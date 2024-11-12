@@ -126,7 +126,7 @@ main(void)
     th_nums[i] = (int)AO_fetch_and_add1(&thread_created_cnt);
 #    ifdef GC_PTHREADS
     err = pthread_create(&th[i], NULL, entry, 0);
-    if (err) {
+    if (err != 0) {
       fprintf(stderr, "Thread #%d creation failed: %s\n", th_nums[i],
               strerror(err));
       if (i > 0 && EAGAIN == err)
@@ -152,7 +152,7 @@ main(void)
     void *res;
 
     err = pthread_join(th[i], &res);
-    if (err) {
+    if (err != 0) {
       fprintf(stderr, "Thread #%d join failed: %s\n", th_nums[i],
               strerror(err));
 #      if defined(__HAIKU__)

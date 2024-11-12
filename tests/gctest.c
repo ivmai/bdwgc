@@ -94,12 +94,12 @@ static int print_stats = 0;
 /* GETENV uses GC internal function in this case.   */
 #    define INIT_PRINT_STATS /* empty */
 #  else
-#    define INIT_PRINT_STATS                       \
-      {                                            \
-        if (0 != GETENV("GC_PRINT_VERBOSE_STATS")) \
-          print_stats = VERBOSE;                   \
-        else if (0 != GETENV("GC_PRINT_STATS"))    \
-          print_stats = 1;                         \
+#    define INIT_PRINT_STATS                          \
+      {                                               \
+        if (GETENV("GC_PRINT_VERBOSE_STATS") != NULL) \
+          print_stats = VERBOSE;                      \
+        else if (GETENV("GC_PRINT_STATS") != NULL)    \
+          print_stats = 1;                            \
       }
 #  endif
 #endif /* !GC_PRINT_VERBOSE_STATS */
@@ -433,15 +433,15 @@ static void
 collect_from_other_thread(void)
 {
   pthread_t t;
-  int code = pthread_create(&t, NULL, do_gcollect, NULL /* arg */);
+  int err = pthread_create(&t, NULL, do_gcollect, NULL /* arg */);
 
-  if (code != 0) {
-    GC_printf("gcollect thread creation failed, errno= %d\n", code);
+  if (err != 0) {
+    GC_printf("gcollect thread creation failed, errno= %d\n", err);
     FAIL;
   }
-  code = pthread_join(t, NULL);
-  if (code != 0) {
-    GC_printf("gcollect thread join failed, errno= %d\n", code);
+  err = pthread_join(t, NULL);
+  if (err != 0) {
+    GC_printf("gcollect thread join failed, errno= %d\n", err);
     FAIL;
   }
 }
@@ -704,7 +704,7 @@ static void
 fork_a_thread(void)
 {
   pthread_t t;
-  int code;
+  int err;
 #    ifdef GC_ENABLE_SUSPEND_THREAD
   static volatile AO_t forked_cnt = 0;
   volatile AO_t *p_resumed = NULL;
@@ -717,9 +717,9 @@ fork_a_thread(void)
 #    else
 #      define p_resumed NULL
 #    endif
-  code = pthread_create(&t, NULL, tiny_reverse_test, (void *)p_resumed);
-  if (code != 0) {
-    GC_printf("Small thread creation failed %d\n", code);
+  err = pthread_create(&t, NULL, tiny_reverse_test, (void *)p_resumed);
+  if (err != 0) {
+    GC_printf("Small thread creation failed %d\n", err);
     FAIL;
   }
 #    ifdef TEST_THREAD_SUSPENDED
@@ -760,8 +760,9 @@ fork_a_thread(void)
   }
   GC_resume_thread(t);
 #    endif
-  if ((code = pthread_join(t, 0)) != 0) {
-    GC_printf("Small thread join failed, errno= %d\n", code);
+  err = pthread_join(t, 0);
+  if (err != 0) {
+    GC_printf("Small thread join failed, errno= %d\n", err);
     FAIL;
   }
 }
@@ -2155,7 +2156,7 @@ check_heap_stats(void)
 #  endif
     }
     i = finalizable_count - finalized_count - still_live;
-    if (0 != i) {
+    if (i != 0) {
       GC_printf("%d disappearing links remain and %d more objects "
                 "were not finalized\n",
                 still_live, i);
@@ -2166,7 +2167,7 @@ check_heap_stats(void)
       }
     }
 #  ifndef GC_LONG_REFS_NOT_NEEDED
-    if (0 != still_long_live) {
+    if (still_long_live != 0) {
       GC_printf("%d 'long' links remain\n", still_long_live);
     }
 #  endif
@@ -2630,11 +2631,12 @@ main(void)
   int i, nthreads;
 #  endif
   pthread_attr_t attr;
-  int code;
+  int err;
+
 #  ifdef IRIX5
   /* Force a larger stack to be preallocated.  Since the initial  */
   /* one cannot always grow later.  Require 1 MB.                 */
-  *((volatile char *)&code - 1024 * 1024) = 0;
+  *((volatile char *)&err - 1024 * 1024) = 0;
 #  endif
 #  ifdef HPUX
   /* Default stack size is too small, especially with the 64-bit  */
@@ -2663,14 +2665,16 @@ main(void)
   GC_set_pointer_shift(GC_get_pointer_shift());
   GC_COND_INIT();
 
-  if ((code = pthread_attr_init(&attr)) != 0) {
-    GC_printf("pthread_attr_init failed, errno= %d\n", code);
+  err = pthread_attr_init(&attr);
+  if (err != 0) {
+    GC_printf("pthread_attr_init failed, errno= %d\n", err);
     FAIL;
   }
 #  if defined(AIX) || defined(DARWIN) || defined(FREEBSD) || defined(IRIX5) \
       || defined(OPENBSD)
-  if ((code = pthread_attr_setstacksize(&attr, 1000 * 1024)) != 0) {
-    GC_printf("pthread_attr_setstacksize failed, errno= %d\n", code);
+  err = pthread_attr_setstacksize(&attr, 1000 * 1024);
+  if (err != 0) {
+    GC_printf("pthread_attr_setstacksize failed, errno= %d\n", err);
     FAIL;
   }
 #  endif
@@ -2689,8 +2693,9 @@ main(void)
   }
   GC_set_warn_proc(warn_proc);
 #  ifndef VERY_SMALL_CONFIG
-  if ((code = pthread_key_create(&fl_key, 0)) != 0) {
-    GC_printf("Key creation failed, errno= %d\n", code);
+  err = pthread_key_create(&fl_key, 0);
+  if (err != 0) {
+    GC_printf("Key creation failed, errno= %d\n", err);
     FAIL;
   }
 #  endif
@@ -2707,9 +2712,10 @@ main(void)
 
 #  if NTHREADS > 0
   for (i = 0; i < NTHREADS; ++i) {
-    if ((code = pthread_create(th + i, &attr, thr_run_one_test, 0)) != 0) {
-      GC_printf("Thread #%d creation failed, errno= %d\n", i, code);
-      if (i > 0 && EAGAIN == code) {
+    err = pthread_create(th + i, &attr, thr_run_one_test, 0);
+    if (err != 0) {
+      GC_printf("Thread #%d creation failed, errno= %d\n", i, err);
+      if (i > 0 && EAGAIN == err) {
         /* Resource is temporarily unavailable.     */
         break;
       }
@@ -2720,8 +2726,9 @@ main(void)
   for (; i <= NTHREADS; i++)
     run_one_test();
   for (i = 0; i < nthreads; ++i) {
-    if ((code = pthread_join(th[i], 0)) != 0) {
-      GC_printf("Thread #%d join failed, errno= %d\n", i, code);
+    err = pthread_join(th[i], 0);
+    if (err != 0) {
+      GC_printf("Thread #%d join failed, errno= %d\n", i, err);
       FAIL;
     }
   }

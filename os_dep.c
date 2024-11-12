@@ -1693,7 +1693,7 @@ detect_GetWriteWatch(void)
   {
     char *str = GETENV("GC_USE_GETWRITEWATCH");
 #      if defined(GC_PREFER_MPROTECT_VDB)
-    if (str == NULL || (*str == '0' && *(str + 1) == '\0')) {
+    if (NULL == str || (*str == '0' && *(str + 1) == '\0')) {
       /* GC_USE_GETWRITEWATCH is unset or set to "0".           */
       /* Falling back to MPROTECT_VDB strategy.                 */
       done = TRUE;
@@ -4110,7 +4110,7 @@ GC_dirty_init(void)
 #  if defined(MPROTECT_VDB) && !defined(CHECK_SOFT_VDB)
   char *str = GETENV("GC_USE_GETWRITEWATCH");
 #    ifdef GC_PREFER_MPROTECT_VDB
-  if (str == NULL || (*str == '0' && *(str + 1) == '\0')) {
+  if (NULL == str || (*str == '0' && *(str + 1) == '\0')) {
     /* The environment variable is unset or set to "0".   */
     return FALSE;
   }
@@ -5617,7 +5617,8 @@ GC_print_callers(struct callinfo info[NFRAMES])
           unsetenv("LD_PRELOAD");
         }
         pipe = popen(cmd_buf, "r");
-        if (old_preload != NULL && 0 != setenv("LD_PRELOAD", preload_buf, 0)) {
+        if (old_preload != NULL
+            && setenv("LD_PRELOAD", preload_buf, 0 /* overwrite */) == -1) {
           WARN("Failed to reset LD_PRELOAD\n", 0);
         }
         if (NULL == pipe) {

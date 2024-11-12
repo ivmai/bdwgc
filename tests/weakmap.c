@@ -142,6 +142,7 @@ weakmap_lock(struct weakmap *wm, unsigned h)
 {
 #ifdef GC_PTHREADS
   int err = pthread_mutex_lock(&wm->mutex[h % WEAKMAP_MUTEX_COUNT]);
+
   my_assert(0 == err);
 #else
   (void)wm;
@@ -154,6 +155,7 @@ static int
 weakmap_trylock(struct weakmap *wm, unsigned h)
 {
   int err = pthread_mutex_trylock(&wm->mutex[h % WEAKMAP_MUTEX_COUNT]);
+
   if (err != 0 && err != EBUSY) {
     fprintf(stderr, "pthread_mutex_trylock: %s\n", strerror(err));
     exit(69);
@@ -167,6 +169,7 @@ weakmap_unlock(struct weakmap *wm, unsigned h)
 {
 #ifdef GC_PTHREADS
   int err = pthread_mutex_unlock(&wm->mutex[h % WEAKMAP_MUTEX_COUNT]);
+
   my_assert(0 == err);
 #else
   (void)wm;
@@ -334,6 +337,7 @@ weakmap_new(size_t capacity, size_t key_size, size_t obj_size,
     int i;
     for (i = 0; i < WEAKMAP_MUTEX_COUNT; ++i) {
       int err = pthread_mutex_init(&wm->mutex[i], NULL);
+
       my_assert(err == 0);
     }
   }
@@ -492,6 +496,7 @@ main(void)
 #if NTHREADS > 0
   for (i = 0; i < NTHREADS; ++i) {
     int err = pthread_create(&th[i], NULL, test, NULL);
+
     if (err != 0) {
       fprintf(stderr, "Thread #%d creation failed: %s\n", i, strerror(err));
       if (i > 1 && EAGAIN == err)
@@ -505,6 +510,7 @@ main(void)
 #if NTHREADS > 0
   for (i = 0; i < n; ++i) {
     int err = pthread_join(th[i], NULL);
+
     if (err != 0) {
       fprintf(stderr, "Thread #%d join failed: %s\n", i, strerror(err));
       exit(69);

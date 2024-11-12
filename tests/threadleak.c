@@ -87,11 +87,11 @@ main(void)
 #if NTHREADS > 0
   for (i = 0; i < NTHREADS; ++i) {
 #  ifdef GC_PTHREADS
-    int code = pthread_create(t + i, 0, test, 0);
+    int err = pthread_create(t + i, 0, test, 0);
 
-    if (code != 0) {
-      fprintf(stderr, "Thread #%d creation failed: %s\n", i, strerror(code));
-      if (i > 1 && EAGAIN == code)
+    if (err != 0) {
+      fprintf(stderr, "Thread #%d creation failed: %s\n", i, strerror(err));
+      if (i > 1 && EAGAIN == err)
         break;
       exit(2);
     }
@@ -108,17 +108,17 @@ main(void)
   }
   n = i;
   for (i = 0; i < n; ++i) {
-    int code;
+    int err;
 
 #  ifdef GC_PTHREADS
-    code = pthread_join(t[i], 0);
+    err = pthread_join(t[i], 0);
 #  else
-    code = WaitForSingleObject(t[i], INFINITE) == WAIT_OBJECT_0
-               ? 0
-               : (int)GetLastError();
+    err = WaitForSingleObject(t[i], INFINITE) == WAIT_OBJECT_0
+              ? 0
+              : (int)GetLastError();
 #  endif
-    if (code != 0) {
-      fprintf(stderr, "Thread #%d join failed, errcode= %d\n", i, code);
+    if (err != 0) {
+      fprintf(stderr, "Thread #%d join failed, errcode= %d\n", i, err);
       exit(2);
     }
   }

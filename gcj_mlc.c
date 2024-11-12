@@ -94,7 +94,7 @@ GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp, size_t descr_offset)
   /* This is useful for debugging on platforms with missing getenv(). */
 #    define ignore_gcj_info TRUE
 #  else
-  ignore_gcj_info = (0 != GETENV("GC_IGNORE_GCJ_INFO"));
+  ignore_gcj_info = GETENV("GC_IGNORE_GCJ_INFO") != NULL;
 #  endif
   if (ignore_gcj_info) {
     GC_COND_LOG_PRINTF("Gcj-style type information is disabled!\n");

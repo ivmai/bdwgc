@@ -435,7 +435,7 @@ suspend_restart_barrier(int n_live_threads)
   int i;
 
   for (i = 0; i < n_live_threads; i++) {
-    while (0 != sem_wait(&GC_suspend_ack_sem)) {
+    while (sem_wait(&GC_suspend_ack_sem) == -1) {
       /* On Linux, sem_wait is documented to always return zero.      */
       /* But the documentation appears to be incorrect.               */
       /* EINTR seems to happen with some versions of gdb.             */
@@ -519,7 +519,7 @@ resend_lost_signals_retry(int n_live_threads, int (*suspend_restart_all)(void))
     /* First, try to wait for the semaphore with some timeout.            */
     /* On failure, fallback to WAIT_UNIT pause and resend of the signal.  */
     for (i = 0; i < n_live_threads; i++) {
-      if (0 != sem_timedwait(&GC_suspend_ack_sem, &ts))
+      if (sem_timedwait(&GC_suspend_ack_sem, &ts) == -1)
         break; /* Wait timed out or any other error.  */
     }
     /* Update the count of threads to wait the ack from.      */
@@ -1411,7 +1411,7 @@ GC_stop_init(void)
   if (SIGNAL_UNSET == GC_sig_thr_restart)
     GC_sig_thr_restart = SIG_THR_RESTART;
 
-  if (sem_init(&GC_suspend_ack_sem, GC_SEM_INIT_PSHARED, 0) != 0)
+  if (sem_init(&GC_suspend_ack_sem, GC_SEM_INIT_PSHARED, 0) == -1)
     ABORT("sem_init failed");
   GC_stop_count = THREAD_RESTARTED; /* i.e. the world is not stopped */
 

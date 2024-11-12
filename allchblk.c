@@ -315,7 +315,7 @@ setup_header(hdr *hhdr, struct hblk *block, size_t lb_adjusted, int k,
       hhdr->hb_sz = HBLKSIZE;
       hhdr->hb_descr = 0;
       hhdr->hb_flags |= LARGE_BLOCK;
-      hhdr->hb_map = 0;
+      hhdr->hb_map = NULL;
       return FALSE;
     }
     hhdr->hb_map = GC_obj_map[(hhdr->hb_flags & LARGE_BLOCK) != 0 ? 0 : lg];
@@ -345,7 +345,7 @@ GC_remove_from_fl_at(hdr *hhdr, size_t index)
   /* We always need index to maintain free counts.    */
   GC_ASSERT(GC_free_bytes[index] >= hhdr->hb_sz);
   GC_free_bytes[index] -= hhdr->hb_sz;
-  if (0 != hhdr->hb_next) {
+  if (hhdr->hb_next != NULL) {
     hdr *nhdr;
 
     GC_ASSERT(!IS_FORWARDING_ADDR_OR_NIL(NHDR(hhdr)));
@@ -426,7 +426,7 @@ GC_add_to_fl(struct hblk *h, hdr *hhdr)
   GC_free_bytes[index] += hhdr->hb_sz;
   GC_ASSERT(GC_free_bytes[index] <= GC_large_free_bytes);
   hhdr->hb_next = second;
-  hhdr->hb_prev = 0;
+  hhdr->hb_prev = NULL;
   if (second /* != NULL */) { /* CPPCHECK */
     hdr *second_hdr;
 
@@ -517,7 +517,7 @@ GC_unmap_old(unsigned threshold)
     struct hblk *h;
     hdr *hhdr;
 
-    for (h = GC_hblkfreelist[i]; 0 != h; h = hhdr->hb_next) {
+    for (h = GC_hblkfreelist[i]; h != NULL; h = hhdr->hb_next) {
       hhdr = HDR(h);
       if (!IS_MAPPED(hhdr))
         continue;

@@ -585,9 +585,9 @@ GC_start_mark_threads_inner(void)
   GC_ASSERT(GC_fl_builder_count == 0);
   INIT_REAL_SYMS(); /* for pthread_create */
 
-  if (0 != pthread_attr_init(&attr))
+  if (pthread_attr_init(&attr) != 0)
     ABORT("pthread_attr_init failed");
-  if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
+  if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0)
     ABORT("pthread_attr_setdetachstate failed");
 
 #    ifdef DEFAULT_STACK_MAYBE_SMALL
@@ -1566,7 +1566,7 @@ fork_child_proc(void)
   (void)pthread_mutex_destroy(&GC_allocate_ml);
   /* TODO: Probably some targets might need the default mutex     */
   /* attribute to be passed instead of NULL.                      */
-  if (0 != pthread_mutex_init(&GC_allocate_ml, NULL))
+  if (pthread_mutex_init(&GC_allocate_ml, NULL) != 0)
     ABORT("pthread_mutex_init failed (in child)");
 #      endif
 #    endif
@@ -2661,7 +2661,7 @@ GC_wrap_pthread_create(pthread_t *new_thread,
   GC_ASSERT(GC_thr_initialized);
 
   GC_init_lib_bounds();
-  if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) != 0)
+  if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) == -1)
     ABORT("sem_init failed");
   si.flags = 0;
   si.start_routine = start_routine;
@@ -2730,13 +2730,13 @@ GC_wrap_pthread_create(pthread_t *new_thread,
     /* pthread_create() is not a cancellation point.        */
     DISABLE_CANCEL(cancel_state);
 
-    while (0 != sem_wait(&si.registered)) {
+    while (sem_wait(&si.registered) == -1) {
 #    ifdef HAIKU
       /* To workaround some bug in Haiku semaphores.    */
       if (EACCES == errno)
         continue;
 #    endif
-      if (EINTR != errno)
+      if (errno != EINTR)
         ABORT("sem_wait failed");
     }
     RESTORE_CANCEL(cancel_state);
@@ -3006,15 +3006,12 @@ setup_mark_lock(void)
   if (glibc_major > 2 || (glibc_major == 2 && glibc_minor >= 19)) {
     /* TODO: disable this workaround for glibc with fixed TSX */
     /* This disables lock elision to workaround a bug in glibc 2.19+ */
-    if (0 != pthread_mutexattr_init(&mattr)) {
+    if (pthread_mutexattr_init(&mattr) != 0)
       ABORT("pthread_mutexattr_init failed");
-    }
-    if (0 != pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_NORMAL)) {
+    if (pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_NORMAL) != 0)
       ABORT("pthread_mutexattr_settype failed");
-    }
-    if (0 != pthread_mutex_init(&mark_mutex, &mattr)) {
+    if (pthread_mutex_init(&mark_mutex, &mattr) != 0)
       ABORT("pthread_mutex_init failed");
-    }
     (void)pthread_mutexattr_destroy(&mattr);
   }
 #      endif
@@ -3035,9 +3032,8 @@ GC_INNER void
 GC_release_mark_lock(void)
 {
   UNSET_MARK_LOCK_HOLDER;
-  if (pthread_mutex_unlock(&mark_mutex) != 0) {
+  if (pthread_mutex_unlock(&mark_mutex) != 0)
     ABORT("pthread_mutex_unlock failed");
-  }
 }
 
 /* Collector must wait for free-list builders for 2 reasons:          */
@@ -3050,9 +3046,8 @@ GC_wait_builder(void)
 {
   ASSERT_CANCEL_DISABLED();
   UNSET_MARK_LOCK_HOLDER;
-  if (pthread_cond_wait(&builder_cv, &mark_mutex) != 0) {
+  if (pthread_cond_wait(&builder_cv, &mark_mutex) != 0)
     ABORT("pthread_cond_wait failed");
-  }
   GC_ASSERT(GC_mark_lock_holder == NO_THREAD);
   SET_MARK_LOCK_HOLDER;
 }
@@ -3086,9 +3081,8 @@ GC_INNER void
 GC_notify_all_builder(void)
 {
   GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
-  if (pthread_cond_broadcast(&builder_cv) != 0) {
+  if (pthread_cond_broadcast(&builder_cv) != 0)
     ABORT("pthread_cond_broadcast failed");
-  }
 }
 
 GC_INNER void
@@ -3097,9 +3091,8 @@ GC_wait_marker(void)
   ASSERT_CANCEL_DISABLED();
   GC_ASSERT(GC_parallel);
   UNSET_MARK_LOCK_HOLDER;
-  if (pthread_cond_wait(&mark_cv, &mark_mutex) != 0) {
+  if (pthread_cond_wait(&mark_cv, &mark_mutex) != 0)
     ABORT("pthread_cond_wait failed");
-  }
   GC_ASSERT(GC_mark_lock_holder == NO_THREAD);
   SET_MARK_LOCK_HOLDER;
 }
@@ -3108,9 +3101,8 @@ GC_INNER void
 GC_notify_all_marker(void)
 {
   GC_ASSERT(GC_parallel);
-  if (pthread_cond_broadcast(&mark_cv) != 0) {
+  if (pthread_cond_broadcast(&mark_cv) != 0)
     ABORT("pthread_cond_broadcast failed");
-  }
 }
 
 #  endif /* GC_PTHREADS_PARAMARK */

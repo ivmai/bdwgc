@@ -279,7 +279,7 @@ GC_EXTERN pthread_mutex_t GC_allocate_ml;
 GC_INNER void GC_lock(void);
 #            define UNCOND_LOCK()                                \
               {                                                  \
-                if (0 != pthread_mutex_trylock(&GC_allocate_ml)) \
+                if (pthread_mutex_trylock(&GC_allocate_ml) != 0) \
                   GC_lock();                                     \
               }
 #          endif

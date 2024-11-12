@@ -111,25 +111,25 @@ main(void)
   for (i = 0; i < NTHREADS_INNER; i++) {
     pthread_t t;
     void *res;
-    int code = GC_pthread_create(&t, NULL, entry, NULL);
+    int err = GC_pthread_create(&t, NULL, entry, NULL);
 
-    if (code != 0) {
-      fprintf(stderr, "Thread #%d creation failed: %s\n", i, strerror(code));
-      if (i > 0 && EAGAIN == code)
+    if (err != 0) {
+      fprintf(stderr, "Thread #%d creation failed: %s\n", i, strerror(err));
+      if (i > 0 && EAGAIN == err)
         break;
       exit(2);
     }
 
     if ((i & 1) != 0) {
-      code = GC_pthread_join(t, &res);
-      if (code != 0) {
-        fprintf(stderr, "Thread #%d join failed: %s\n", i, strerror(code));
+      err = GC_pthread_join(t, &res);
+      if (err != 0) {
+        fprintf(stderr, "Thread #%d join failed: %s\n", i, strerror(err));
         exit(2);
       }
     } else {
-      code = GC_pthread_detach(t);
-      if (code != 0) {
-        fprintf(stderr, "Thread #%d detach failed: %s\n", i, strerror(code));
+      err = GC_pthread_detach(t);
+      if (err != 0) {
+        fprintf(stderr, "Thread #%d detach failed: %s\n", i, strerror(err));
         exit(2);
       }
     }

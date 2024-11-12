@@ -73,7 +73,7 @@ int
 main(void)
 {
 #ifdef GC_PTHREADS
-  int code;
+  int err;
   pthread_t t;
 
 #  ifdef LINT2
@@ -104,12 +104,14 @@ main(void)
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
 #ifdef GC_PTHREADS
-  if ((code = pthread_create(&t, NULL, thread, NULL)) != 0) {
-    fprintf(stderr, "Thread #0 creation failed: %s\n", strerror(code));
+  err = pthread_create(&t, NULL, thread, NULL);
+  if (err != 0) {
+    fprintf(stderr, "Thread #0 creation failed: %s\n", strerror(err));
     return 1;
   }
-  if ((code = pthread_join(t, NULL)) != 0) {
-    fprintf(stderr, "Thread #0 join failed: %s\n", strerror(code));
+  err = pthread_join(t, NULL);
+  if (err != 0) {
+    fprintf(stderr, "Thread #0 join failed: %s\n", strerror(err));
     return 1;
   }
 #else

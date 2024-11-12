@@ -98,7 +98,7 @@ new_back_edges(void)
     if (NULL == back_edge_space)
       ABORT("Insufficient memory for back edges");
   }
-  if (0 != avail_back_edges) {
+  if (avail_back_edges != 0) {
     back_edges *result = avail_back_edges;
     avail_back_edges = result->cont;
     result->cont = 0;
@@ -115,10 +115,11 @@ new_back_edges(void)
 static void
 deallocate_back_edges(back_edges *p)
 {
-  back_edges *last = p;
+  back_edges *last;
 
-  while (0 != last->cont)
+  for (last = p; last->cont != NULL;)
     last = last->cont;
+
   last->cont = avail_back_edges;
   avail_back_edges = p;
 }
@@ -340,7 +341,7 @@ reset_back_edge(ptr_t p, size_t sz, word descr)
 
       if (!(be->flags & RETAIN)) {
         deallocate_back_edges(be);
-        SET_OH_BG_PTR(p, 0);
+        SET_OH_BG_PTR(p, NULL);
       } else {
         GC_ASSERT(GC_is_marked(p));
 
@@ -348,9 +349,9 @@ reset_back_edge(ptr_t p, size_t sz, word descr)
         /* Delete them for now, but remember the height.                */
         /* Some will be added back at next GC.                          */
         be->n_edges = 0;
-        if (0 != be->cont) {
+        if (be->cont != NULL) {
           deallocate_back_edges(be->cont);
-          be->cont = 0;
+          be->cont = NULL;
         }
 
         GC_ASSERT(GC_is_marked(p));
@@ -359,7 +360,7 @@ reset_back_edge(ptr_t p, size_t sz, word descr)
       }
     } else /* simple back pointer */ {
       /* Clear to avoid dangling pointer. */
-      SET_OH_BG_PTR(p, 0);
+      SET_OH_BG_PTR(p, NULL);
     }
   }
 }

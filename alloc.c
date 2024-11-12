@@ -1173,7 +1173,7 @@ GC_clear_fl_marks(ptr_t q)
       n_marks--;
 #ifdef PARALLEL_MARK
       /* Appr. count, don't decrement to zero!    */
-      if (0 != n_marks || !GC_parallel) {
+      if (n_marks != 0 || !GC_parallel) {
         hhdr->hb_n_marks = n_marks;
       }
 #else
@@ -1293,7 +1293,7 @@ GC_finish_collection(void)
 #endif
   GC_bytes_found = 0;
 #if defined(LINUX) && defined(__ELF__) && !defined(SMALL_CONFIG)
-  if (GETENV("GC_PRINT_ADDRESS_MAP") != 0) {
+  if (GETENV("GC_PRINT_ADDRESS_MAP") != NULL) {
     GC_print_address_map();
   }
 #endif

@@ -876,7 +876,7 @@ maybe_install_looping_handler(void)
 {
   /* Install looping handler before the write fault handler, so we    */
   /* handle write faults correctly.                                   */
-  if (!installed_looping_handler && 0 != GETENV("GC_LOOP_ON_ABORT")) {
+  if (!installed_looping_handler && GETENV("GC_LOOP_ON_ABORT") != NULL) {
     GC_set_and_save_fault_handler(looping_handler);
     installed_looping_handler = TRUE;
   }
@@ -1091,12 +1091,10 @@ GC_init(void)
   {
     pthread_mutexattr_t mattr;
 
-    if (0 != pthread_mutexattr_init(&mattr)) {
+    if (pthread_mutexattr_init(&mattr) != 0)
       ABORT("pthread_mutexattr_init failed");
-    }
-    if (0 != pthread_mutex_init(&GC_allocate_ml, &mattr)) {
+    if (pthread_mutex_init(&GC_allocate_ml, &mattr) != 0)
       ABORT("pthread_mutex_init failed");
-    }
     (void)pthread_mutexattr_destroy(&mattr);
   }
 #  endif
@@ -1151,9 +1149,9 @@ GC_init(void)
   /* missing getenv() (like WinCE).                               */
   GC_print_stats = VERBOSE;
 #  else
-  if (0 != GETENV("GC_PRINT_VERBOSE_STATS")) {
+  if (GETENV("GC_PRINT_VERBOSE_STATS") != NULL) {
     GC_print_stats = VERBOSE;
-  } else if (0 != GETENV("GC_PRINT_STATS")) {
+  } else if (GETENV("GC_PRINT_STATS") != NULL) {
     GC_print_stats = 1;
   }
 #  endif
@@ -1168,7 +1166,7 @@ GC_init(void)
     if (NULL == fname)
       fname = GC_LOG_STD_NAME;
 #  else
-    if (0 != fname)
+    if (fname != NULL)
 #  endif
     {
 #  if defined(_MSC_VER)
@@ -1201,7 +1199,7 @@ GC_init(void)
   }
 #endif
 #if !defined(NO_DEBUGGING) && !defined(GC_DUMP_REGULARLY)
-  if (0 != GETENV("GC_DUMP_REGULARLY")) {
+  if (GETENV("GC_DUMP_REGULARLY") != NULL) {
     GC_dump_regularly = TRUE;
   }
 #endif
@@ -1216,18 +1214,18 @@ GC_init(void)
     }
   }
 #endif
-  if (0 != GETENV("GC_FIND_LEAK")) {
+  if (GETENV("GC_FIND_LEAK") != NULL) {
     GC_find_leak = 1;
   }
 #ifndef SHORT_DBG_HDRS
-  if (0 != GETENV("GC_FINDLEAK_DELAY_FREE")) {
+  if (GETENV("GC_FINDLEAK_DELAY_FREE") != NULL) {
     GC_findleak_delay_free = TRUE;
   }
 #endif
-  if (0 != GETENV("GC_ALL_INTERIOR_POINTERS")) {
+  if (GETENV("GC_ALL_INTERIOR_POINTERS") != NULL) {
     GC_all_interior_pointers = 1;
   }
-  if (0 != GETENV("GC_DONT_GC")) {
+  if (GETENV("GC_DONT_GC") != NULL) {
 #if defined(LINT2) \
     && !(defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED))
     GC_disable();
@@ -1235,10 +1233,10 @@ GC_init(void)
     GC_dont_gc = 1;
 #endif
   }
-  if (0 != GETENV("GC_PRINT_BACK_HEIGHT")) {
+  if (GETENV("GC_PRINT_BACK_HEIGHT") != NULL) {
     GC_print_back_height = TRUE;
   }
-  if (0 != GETENV("GC_NO_BLACKLIST_WARNING")) {
+  if (GETENV("GC_NO_BLACKLIST_WARNING") != NULL) {
     GC_large_alloc_warn_interval = LONG_MAX;
   }
   {
@@ -1435,7 +1433,7 @@ GC_init(void)
     GC_init_linux_data_start();
 #endif
 #ifndef GC_DISABLE_INCREMENTAL
-  if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
+  if (GC_incremental || GETENV("GC_ENABLE_INCREMENTAL") != NULL) {
     set_incremental_mode_on();
     GC_ASSERT(GC_bytes_allocd == 0);
   }
@@ -1558,7 +1556,7 @@ GC_enable_incremental(void)
   /* If we are keeping back pointers, the GC itself dirties all */
   /* pages on which objects have been marked, making            */
   /* incremental GC pointless.                                  */
-  if (!GC_find_leak && 0 == GETENV("GC_DISABLE_INCREMENTAL")) {
+  if (!GC_find_leak && NULL == GETENV("GC_DISABLE_INCREMENTAL")) {
     LOCK();
     if (!GC_incremental) {
       GC_setpagesize();
