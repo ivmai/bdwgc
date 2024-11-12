@@ -57,5 +57,5 @@ test_cpp.cpp: tests\test_cpp.cc
 # This generates the C++ test executable.  The executable expects
 # a single numeric argument, which is the number of iterations.
 # The output appears in the file "test_cpp.gc.log".
-test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib
+test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc_allocator.h include\gc.h gc.lib
 	$(link) -debug -debugtype:cv $(guiflags) -stack:16384 -out:test_cpp.exe test_cpp.obj gc.lib $(guilibs)
