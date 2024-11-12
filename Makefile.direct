@@ -248,8 +248,9 @@ cords: $(CORD_OBJS) cord/cordtest $(UTILS)
 gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h Makefile
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 
-test_cpp: $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h gc_cpp.o $(srcdir)/include/gc.h \
-base_lib $(UTILS)
+test_cpp: $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h \
+  $(srcdir)/include/gc_allocator.h gc_cpp.o $(srcdir)/include/gc.h \
+  base_lib $(UTILS)
 	rm -f test_cpp
 	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc_cpp.o gc.a -ldld `./threadlibs`
 	./if_not_there test_cpp $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc_cpp.o gc.a `./threadlibs`
