@@ -186,28 +186,6 @@ atomic_ops_sysdeps.o: $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S
 
 LEAK_CFLAGS= $(CFLAGS) -DFIND_LEAK
 
-BSD-pkg-all: bsd-libgc.a bsd-libleak.a
-
-bsd-libgc.a bsd-libgccpp.a bsd-libgctba.a:
-	$(MAKE) -f Makefile.direct CFLAGS="$(CFLAGS)" clean c++-t
-	mv libgc.a bsd-libgc.a
-	mv libgccpp.a bsd-libgccpp.a
-	mv libgctba.a bsd-libgctba.a
-
-bsd-libleak.a:
-	$(MAKE) -f Makefile.direct CFLAGS="$(LEAK_CFLAGS)" clean c++-nt
-	mv libgc.a $@
-
-BSD-pkg-install: BSD-pkg-all
-	${CP} bsd-libgc.a libgc.a
-	${INSTALL_DATA} libgc.a ${PREFIX}/lib
-	${CP} bsd-libgccpp.a libgccpp.a
-	${INSTALL_DATA} libgccpp.a ${PREFIX}/lib
-	${CP} bsd-libgctba.a libgctba.a
-	${INSTALL_DATA} libgctba.a ${PREFIX}/lib
-	${INSTALL_DATA} gc.h gc_cpp.h ${PREFIX}/include
-	${INSTALL_MAN} gc.man ${PREFIX}/man/man3/gc.3
-
 $(OBJS) gctest.o dyn_load.o dyn_load_sunos53.o: \
   $(srcdir)/include/private/gc_priv.h \
   $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
