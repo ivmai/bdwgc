@@ -77,10 +77,12 @@ lib*.so
 /test_cpp.cpp
 /test_cpp.log
 /test_cpp.trs
+/test_tree.cpp
 /threadkeytest
 /threadleaktest
 /threadlibs
 /tracetest
+/treetest
 /weakmaptest
 
 /build/
