@@ -151,7 +151,7 @@ SRCS= $(CSRCS) \
   ia64_save_regs_in_stack.s sparc_mach_dep.S \
   sparc_netbsd_mach_dep.s $(CORD_SRCS)
 
-CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/gc/cord.h \
+CORD_INCLUDE_FILES= $(srcdir)/include/gc/gc.h $(srcdir)/include/gc/cord.h \
   $(srcdir)/include/gc/ec.h $(srcdir)/include/gc/cord_pos.h
 
 # Executable file name extension.  For EMX, specify ".exe".
@@ -189,7 +189,7 @@ LEAK_CFLAGS= $(CFLAGS) -DFIND_LEAK
 $(OBJS) gctest.o dyn_load.o dyn_load_sunos53.o: \
   $(srcdir)/include/private/gc_priv.h \
   $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
-  $(srcdir)/include/gc.h $(srcdir)/include/gc/gc_pthread_redirects.h \
+  $(srcdir)/include/gc/gc.h $(srcdir)/include/gc/gc_pthread_redirects.h \
   $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc/gc_typed.h \
   $(srcdir)/include/gc/gc_config_macros.h
 
@@ -224,15 +224,16 @@ cords libcord.a: $(CORD_OBJS) $(UTILS)
 	./if_not_there dont_ar_3 || $(RANLIB) libcord.a || cat /dev/null
 	echo > cords
 
-gc_badalc.o: $(srcdir)/gc_badalc.cc $(srcdir)/include/gc_cpp.h \
-  $(srcdir)/include/gc.h
+gc_badalc.o: $(srcdir)/gc_badalc.cc $(srcdir)/include/gc/gc_cpp.h \
+  $(srcdir)/include/gc/gc.h
 	$(CXX) $(CXXFLAGS) -c $(srcdir)/gc_badalc.cc
 
-gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
+gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc/gc_cpp.h \
+  $(srcdir)/include/gc/gc.h
 	$(CXX) $(CXXFLAGS) -c $(srcdir)/gc_cpp.cc
 
-cpptest$(EXEEXT): $(srcdir)/tests/cpp.cc $(srcdir)/include/gc_cpp.h \
-  $(srcdir)/include/gc/gc_allocator.h $(srcdir)/include/gc.h c++ \
+cpptest$(EXEEXT): $(srcdir)/tests/cpp.cc $(srcdir)/include/gc/gc_cpp.h \
+  $(srcdir)/include/gc/gc_allocator.h $(srcdir)/include/gc/gc.h c++ \
   base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f $@
 	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o $@ $(srcdir)/tests/cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a -ldld `./threadlibs`
@@ -369,7 +370,7 @@ gctest$(EXEEXT): gctest.o base_lib $(NODIST_OBJS) $(UTILS)
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  gctest may still work.
 # Try compiling setjmp_t.c unoptimized.
-setjmp_test$(EXEEXT): $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h \
+setjmp_test$(EXEEXT): $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc/gc.h \
   $(UTILS)
 	$(CC) $(CFLAGS) -o $@ $(srcdir)/tools/setjmp_t.c
 

@@ -119,7 +119,7 @@ check: check-deps
 .cpp.obj:
 	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude $(CFLAGS_DEFAULT) $(CXXFLAGS_SPECIFIC) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.cpp /Fo$*.obj
 
-$(OBJS) tests\gctest.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc\gc_mark.h include\gc\gc_disclaim.h
+$(OBJS) tests\gctest.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc\gc_mark.h include\gc\gc_disclaim.h
 
 !IFDEF ENABLE_STATIC
 
@@ -172,9 +172,9 @@ de.exe: cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib cor
 cordtest.exe: cord\tests\cordtest.obj gc.lib cord.lib
 	$(link) /subsystem:console /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:cordtest.exe cord\tests\cordtest.obj gc.lib cord.lib user32.lib
 
-gc_badalc.obj: gc_badalc.cc include\gc_cpp.h include\gc.h
+gc_badalc.obj: gc_badalc.cc include\gc\gc_cpp.h include\gc\gc.h
 
-gc_cpp.obj: gc_cpp.cc include\gc_cpp.h include\gc.h
+gc_cpp.obj: gc_cpp.cc include\gc\gc_cpp.h include\gc\gc.h
 
 test_cpp.cpp: tests\cpp.cc
 	copy tests\cpp.cc test_cpp.cpp
@@ -182,7 +182,7 @@ test_cpp.cpp: tests\cpp.cc
 # This generates the C++ test executable.  The executable expects
 # a single numeric argument, which is the number of iterations.
 # The output appears in cpptest.gc.log file.
-cpptest.exe: test_cpp.obj include\gc_cpp.h include\gc\gc_allocator.h include\gc.h gc.lib gccpp.lib
+cpptest.exe: test_cpp.obj include\gc\gc_cpp.h include\gc\gc_allocator.h include\gc\gc.h gc.lib gccpp.lib
 	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:cpptest.exe test_cpp.obj gc.lib gccpp.lib
 
 $(AO_SRC_DIR):
