@@ -43,15 +43,22 @@ typedef struct {
 GC_INLINE int
 sem_init(sem_t *sem, int pshared, int value)
 {
+  int err;
+
   if (pshared != 0) {
     errno = EPERM; /* unsupported */
     return -1;
   }
   sem->value = value;
-  if (pthread_mutex_init(&sem->mutex, NULL) != 0)
+  err = pthread_mutex_init(&sem->mutex, NULL);
+  if (err != 0) {
+    errno = err;
     return -1;
-  if (pthread_cond_init(&sem->cond, NULL) != 0) {
+  }
+  err = pthread_cond_init(&sem->cond, NULL);
+  if (err != 0) {
     (void)pthread_mutex_destroy(&sem->mutex);
+    errno = err;
     return -1;
   }
   return 0;
@@ -60,38 +67,68 @@ sem_init(sem_t *sem, int pshared, int value)
 GC_INLINE int
 sem_post(sem_t *sem)
 {
-  if (pthread_mutex_lock(&sem->mutex) != 0)
-    return -1;
-  sem->value++;
-  if (pthread_cond_signal(&sem->cond) != 0) {
-    (void)pthread_mutex_unlock(&sem->mutex);
+  int err = pthread_mutex_lock(&sem->mutex);
+
+  if (err != 0) {
+    errno = err;
     return -1;
   }
-  return pthread_mutex_unlock(&sem->mutex) != 0 ? -1 : 0;
+  sem->value++;
+  err = pthread_cond_signal(&sem->cond);
+  if (err != 0) {
+    (void)pthread_mutex_unlock(&sem->mutex);
+    errno = err;
+    return -1;
+  }
+  err = pthread_mutex_unlock(&sem->mutex);
+  if (err != 0) {
+    errno = err;
+    return -1;
+  }
+  return 0;
 }
 
 GC_INLINE int
 sem_wait(sem_t *sem)
 {
-  if (pthread_mutex_lock(&sem->mutex) != 0)
+  int err = pthread_mutex_lock(&sem->mutex);
+
+  if (err != 0) {
+    errno = err;
     return -1;
-  while (sem->value == 0) {
-    if (pthread_cond_wait(&sem->cond, &sem->mutex) != 0) {
+  }
+  while (0 == sem->value) {
+    err = pthread_cond_wait(&sem->cond, &sem->mutex);
+    if (err != 0) {
       (void)pthread_mutex_unlock(&sem->mutex);
+      errno = err;
       return -1;
     }
   }
   sem->value--;
-  return pthread_mutex_unlock(&sem->mutex) != 0 ? -1 : 0;
+  err = pthread_mutex_unlock(&sem->mutex);
+  if (err != 0) {
+    errno = err;
+    return -1;
+  }
+  return 0;
 }
 
 GC_INLINE int
 sem_destroy(sem_t *sem)
 {
-  return pthread_cond_destroy(&sem->cond) != 0
-                 || pthread_mutex_destroy(&sem->mutex) != 0
-             ? -1
-             : 0;
+  int err = pthread_cond_destroy(&sem->cond);
+
+  if (err != 0) {
+    errno = err;
+    return -1;
+  }
+  err = pthread_mutex_destroy(&sem->mutex);
+  if (err != 0) {
+    errno = err;
+    return -1;
+  }
+  return 0;
 }
 
 #ifdef __cplusplus
