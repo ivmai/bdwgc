@@ -233,7 +233,7 @@ gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 
 test_cpp$(EXEEXT): $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h \
-  $(srcdir)/include/gc.h c++ base_lib $(UTILS)
+  $(srcdir)/include/gc_allocator.h $(srcdir)/include/gc.h c++ base_lib $(UTILS)
 	rm -f test_cpp$(EXEEXT)
 	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc.a gccpp.a -ldld `./threadlibs`
 	./if_not_there test_cpp$(EXEEXT) || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o test_cpp$(EXEEXT) $(srcdir)/tests/test_cpp.cc gc.a gccpp.a `./threadlibs`
