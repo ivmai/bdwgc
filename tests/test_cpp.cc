@@ -329,10 +329,6 @@ void* Undisguise( GC_word i ) {
 #   endif
     *x = 29;
 #   ifndef DONT_USE_STD_ALLOCATOR
-      if (!xptr) {
-        fprintf(stderr, "Out of memory!\n");
-        exit(3);
-      }
       GC_PTR_STORE_AND_DIRTY(xptr, x);
       x = 0;
 #   endif
