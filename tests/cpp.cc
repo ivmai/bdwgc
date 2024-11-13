@@ -364,10 +364,6 @@ main(int argc, const char *argv[])
   GC_reachable_here(xio);
   int **xptr = traceable_allocator<int *>().allocate(1);
   *x = 29;
-  if (!xptr) {
-    GC_printf("Out of memory!\n");
-    exit(69);
-  }
   GC_PTR_STORE_AND_DIRTY(xptr, x);
   x = 0;
   if (argc != 2 || (n = atoi(argv[1])) <= 0) {
