@@ -302,10 +302,6 @@ void* Undisguise( GC_word i ) {
 #   endif
     *x = 29;
 #   ifndef DONT_USE_STD_ALLOCATOR
-      if (!xptr) {
-        fprintf(stderr, "Out of memory!\n");
-        exit(3);
-      }
       *xptr = x;
       GC_END_STUBBORN_CHANGE(xptr);
       GC_reachable_here(x);
