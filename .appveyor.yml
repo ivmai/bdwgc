@@ -34,6 +34,13 @@ environment:
   - TARGET: cmake
     CMAKE_OPTIONS: -A ARM64 -DCMAKE_BUILD_TYPE=Release -Denable_cplusplus=ON
     CMAKE_CONFIG: Release
+  - TARGET: cmake-msys
+    CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Dinstall_headers=OFF -Denable_rwlock=ON
+    CMAKE_CONFIG: Release
+  - TARGET: cmake-msys
+    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_docs=OFF
+  - TARGET: cmake-msys
+    CMAKE_OPTIONS: -Dbuild_cord=OFF -Dbuild_tests=ON -Denable_atomic_uncollectable=OFF -Denable_disclaim=OFF -Denable_threads=OFF
   - TARGET: nmake
     ARCH: x86
     NMAKE_OPTIONS: enable_static=1
@@ -103,6 +110,11 @@ build_script:
     mkdir out && cd out
     && cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
     && cmake --build . --config %CMAKE_CONFIG% --verbose --parallel )
+- cmd: if [%TARGET%]==[cmake-msys] (
+    set "path=C:\msys64\usr\bin;%path%"
+    && mkdir out && cd out
+    && cmake -G "MSYS Makefiles" %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
+    && cmake --build . --config %CMAKE_CONFIG% --verbose --parallel )
 - cmd: if [%TARGET%]==[nmake] (
     "C:\Program Files\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
     && nmake /f NT_MAKEFILE %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" )
@@ -137,6 +149,9 @@ build_script:
 test_script:
 - cmd: if [%TARGET%]==[cmake] (
     ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
+- cmd: if [%TARGET%]==[cmake-msys] (
+    set "path=C:\msys64\usr\bin;%path%"
+    && ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
 - cmd: if [%TARGET%]==[nmake] (
     "C:\Program Files\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
     && nmake /f NT_MAKEFILE %TEST_TARGET% %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%"
