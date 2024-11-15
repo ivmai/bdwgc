@@ -2077,9 +2077,9 @@ ptr_t GC_save_regs_in_stack(void);
 /* Workaround "Uninitialized bs_lo" and "obsolete alloca() called"  */
 /* false positive warnings.                                         */
 #    define PS_ALLOCA_BUF(pbuf, sz) \
-      (void)(GC_noop1_ptr(pbuf), *(pbuf) = __builtin_alloca(sz))
+      (void)(GC_noop1_ptr(pbuf), *(pbuf) = (ptr_t)__builtin_alloca(sz))
 #  else
-#    define PS_ALLOCA_BUF(pbuf, sz) (void)(*(pbuf) = alloca(sz))
+#    define PS_ALLOCA_BUF(pbuf, sz) (void)(*(pbuf) = (ptr_t)alloca(sz))
 #  endif
 
 /* Approximate size (in bytes) of the obtained procedure stack part   */
