@@ -3321,7 +3321,8 @@ extern __thread unsigned char GC_cancel_disable_count;
 #  define LONG_MULT(hprod, lprod, x, y) \
     __asm__ __volatile__("mull %2" : "=a"(lprod), "=d"(hprod) : "r"(y), "0"(x))
 #else
-#  if defined(__int64) && !defined(__GNUC__) && !defined(CPPCHECK)
+#  if (defined(__int64) && !defined(__GNUC__) || defined(__BORLANDC__)) \
+      && !defined(CPPCHECK)
 #    define ULONG_MULT_T unsigned __int64
 #  else
 #    define ULONG_MULT_T unsigned long long
