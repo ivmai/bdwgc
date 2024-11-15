@@ -85,9 +85,6 @@ environment:
     CFLAGS_EXTRA: -DCONSOLE_LOG -DUSE_MMAP -DUSE_MUNMAP
     WCC_INC_SUBDIR: nt
   - TARGET: cygwin64
-    CONF_OPTIONS: --enable-cplusplus --enable-gc-debug
-    CFLAGS_EXTRA: -Wno-array-bounds
-  - TARGET: cygwin64
     CONF_OPTIONS: --disable-threads
     CFLAGS_EXTRA: -std=c11 -D USE_WINALLOC -Wno-array-bounds
   - TARGET: cygwin64
@@ -99,6 +96,9 @@ environment:
   - TARGET: cygwin64
     CFLAGS_EXTRA: -D GC_ALWAYS_MULTITHREADED -D LINT2 -D TEST_MANUAL_VDB -Wno-array-bounds
     CONF_OPTIONS: --enable-cplusplus --enable-gc-assertions --enable-rwlock --disable-shared
+  - TARGET: cygwin64
+    CONF_OPTIONS: --enable-cplusplus --enable-gc-debug
+    CFLAGS_EXTRA: -Wno-array-bounds
 
 clone_depth: 50
 
