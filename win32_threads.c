@@ -612,7 +612,8 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
     /* We are inside another GC_invoke_finalizers().            */
     /* Skip some implicitly-called GC_invoke_finalizers()       */
     /* depending on the nesting (recursion) level.              */
-    if (++me->finalizer_skipped < (1U << nesting_level)) return NULL;
+    if ((unsigned)(++me->finalizer_skipped) < (1U << nesting_level))
+      return NULL;
     me->finalizer_skipped = 0;
   }
   me->finalizer_nested = (unsigned char)(nesting_level + 1);
