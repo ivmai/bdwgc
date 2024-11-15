@@ -83,14 +83,17 @@ COBJS= cordbscs.obj cordprnt.obj cordxtra.obj
 all: gc.lib gccpp.lib gctba.lib cord.lib
 
 !ifdef MSWIN32
-check-deps: gctest.exe cpptest.exe cordtest.exe de.exe .SYMBOLIC
+check-deps-mswin: de.exe .SYMBOLIC
 !else
-check-deps: gctest.exe cpptest.exe cordtest.exe .SYMBOLIC
+check-deps-mswin: .SYMBOLIC
 !endif
+
+check-deps: gctest.exe cpptest.exe treetest.exe cordtest.exe check-deps-mswin .SYMBOLIC
 
 check: check-deps .SYMBOLIC
         *gctest.exe
         *cpptest.exe
+        *treetest.exe
         *cordtest.exe
 
 !ifdef ENABLE_STATIC
@@ -280,6 +283,23 @@ cpptest.exe: cpptest.obj gc.lib gccpp.lib
         @%append $*.lnk library gccpp.lib
         *wlink @$*.lnk
 
+treetest.exe: treetest.obj gc.lib gctba.lib
+        %create $*.lnk
+!ifdef DOS4GW
+        @%append $*.lnk sys dos4g
+!else ifdef MSWIN32
+        @%append $*.lnk sys nt
+!else ifdef OS2
+        @%append $*.lnk sys os2v2
+!endif
+        @%append $*.lnk op case
+        @%append $*.lnk op stack=256K
+        @%append $*.lnk name $*
+        @%append $*.lnk file treetest.obj
+        @%append $*.lnk library gc.lib
+        @%append $*.lnk library gctba.lib
+        *wlink @$*.lnk
+
 cordbscs.obj: cord\cordbscs.c .AUTODEPEND
         $(CC) $(CFLAGS) $(CORDFLAG) cord\cordbscs.c
 cordxtra.obj: cord\cordxtra.c .AUTODEPEND
@@ -298,6 +318,8 @@ cordtest.obj: cord\tests\cordtest.c .AUTODEPEND
         $(CC) $(TEST_CFLAGS) $(CORDFLAG) cord\tests\cordtest.c
 cpptest.obj: tests\cpp.cc .AUTODEPEND
         $(CXX) $(TEST_CXXFLAGS) -fo=cpptest.obj tests\cpp.cc
+treetest.obj: tests\tree.cc .AUTODEPEND
+        $(CXX) $(TEST_CXXFLAGS) -fo=treetest.obj tests\tree.cc
 
 .c.obj: .AUTODEPEND
         $(CC) $(CFLAGS) $*.c

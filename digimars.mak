@@ -22,9 +22,10 @@ gc.obj: extra\gc.c
 
 OBJS= gc.obj gc_badalc.obj gc_cpp.obj
 
-check: gctest.exe cpptest.exe
+check: gctest.exe cpptest.exe treetest.exe
 	gctest.exe
 	cpptest.exe
+	treetest.exe
 
 gc.lib: gc.dll
 
@@ -40,8 +41,9 @@ gc.def: digimars.mak
 	echo GC_is_valid_displacement_print_proc >>gc.def
 
 clean:
-	del *.log gc.def gc.dll gc.lib gc.map gctest.map cpptest.map
+	del *.log *.map gc.def gc.dll gc.lib
 	del tests\gctest.obj gctest.exe tests\cpptest.obj cpptest.exe
+	del tests\treetest.obj treetest.exe
 	del $(OBJS)
 
 gctest.exe: gc.lib tests\gctest.obj
@@ -55,6 +57,12 @@ cpptest.exe: gc.lib tests\cpptest.obj
 
 tests\cpptest.obj: tests\cpp.cc
 	$(CC) -c $(CFLAGS) -cpp tests\cpp.cc -otests\cpptest.obj
+
+treetest.exe: gc.lib tests\treetest.obj
+	$(CC) -otreetest.exe tests\treetest.obj gc.lib
+
+tests\treetest.obj: tests\tree.cc
+	$(CC) -c $(CFLAGS) -cpp tests\tree.cc -otests\treetest.obj
 
 gc_badalc.obj: gc_badalc.cc gc_badalc.cpp
 gc_cpp.obj: gc_cpp.cc gc_cpp.cpp

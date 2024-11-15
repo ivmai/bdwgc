@@ -658,8 +658,11 @@ pub fn build(b: *std.Build) void {
         }
     }
     if (enable_cplusplus) {
-        addTestExt(b, gc, gccpp, test_step, flags,
-                   "cpptest", "tests/cpp.cc");
+        addTestExt(b, gc, gccpp, test_step, flags, "cpptest", "tests/cpp.cc");
+        if (enable_throw_bad_alloc_library) {
+            addTestExt(b, gc, gctba, test_step, flags,
+                       "treetest", "tests/tree.cc");
+        }
     }
     if (enable_disclaim) {
         addTest(b, gc, test_step, flags,

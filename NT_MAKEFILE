@@ -104,12 +104,13 @@ COBJS= cord\cordbscs.obj cord\cordprnt.obj cord\cordxtra.obj
 
 all: gc.lib cord.lib gccpp.lib gctba.lib
 
-check-deps: gctest.exe cpptest.exe cordtest.exe de.exe
+check-deps: gctest.exe cpptest.exe treetest.exe cordtest.exe de.exe
 
 check: check-deps
 	gctest.exe
 	cordtest.exe
 	cpptest.exe
+	treetest.exe
 
 .c.obj:
 	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) $(CORDFLAG) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.c /Fo$*.obj /wd4127 /wd4701
@@ -185,8 +186,14 @@ test_cpp.cpp: tests\cpp.cc
 cpptest.exe: test_cpp.obj include\gc\gc_cpp.h include\gc\gc_allocator.h include\gc\gc.h gc.lib gccpp.lib
 	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:cpptest.exe test_cpp.obj gc.lib gccpp.lib
 
+test_tree.cpp: tests\tree.cc
+	copy tests\tree.cc test_tree.cpp
+
+treetest.exe: test_tree.obj include\gc\gc_cpp.h include\gc\gc.h gc.lib gctba.lib
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:treetest.exe test_tree.obj gc.lib gctba.lib
+
 $(AO_SRC_DIR):
 	tar xvfz $(AO_SRC_DIR).tar.gz
 
 clean:
-	del *.dll *.exe *.exp *.lib *.log *.obj *.pdb cordtst*.tmp cord\*.obj cord\tests\*.rbj cord\tests\*.res cord\tests\*.obj extra\*.obj test_cpp.cpp tests\*.obj 2> nul
+	del *.dll *.exe *.exp *.lib *.log *.obj *.pdb cordtst*.tmp cord\*.obj cord\tests\*.rbj cord\tests\*.res cord\tests\*.obj extra\*.obj test_cpp.cpp test_tree.cpp tests\*.obj 2> nul

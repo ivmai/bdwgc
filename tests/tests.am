@@ -118,6 +118,7 @@ threadleaktest_LDADD = $(test_ldadd) $(THREADDLLIBS)
 endif
 
 if CPLUSPLUS
+
 TESTS += cpptest$(EXEEXT)
 check_PROGRAMS += cpptest
 cpptest_SOURCES = tests/cpp.cc
@@ -132,6 +133,22 @@ if ENABLE_SHARED
 cpptest_LDADD += $(top_builddir)/libgc.la
 endif
 endif
+
+if GC_TBA_LIBRARY
+TESTS += treetest$(EXEEXT)
+check_PROGRAMS += treetest
+treetest_SOURCES = tests/tree.cc
+if AVOID_CPP_LIB
+treetest_LDADD = gc_badalc.o $(test_ldadd) $(CXXLIBS)
+else
+treetest_LDADD = libgctba.la $(nodist_libgc_la_OBJECTS) \
+                $(EXTRA_TEST_LIBS) $(CXXLIBS)
+if ENABLE_SHARED
+treetest_LDADD += $(top_builddir)/libgc.la
+endif
+endif
+endif
+
 endif
 
 if ENABLE_DISCLAIM
@@ -181,5 +198,6 @@ check-without-test-driver: $(TESTS)
 	test ! -f threadkeytest$(EXEEXT) || ./threadkeytest$(EXEEXT)
 	test ! -f threadleaktest$(EXEEXT) || ./threadleaktest$(EXEEXT)
 	test ! -f tracetest$(EXEEXT) || ./tracetest$(EXEEXT)
+	test ! -f treetest(EXEEXT) || ./treetest$(EXEEXT)
 	test ! -f weakmaptest$(EXEEXT) || ./weakmaptest$(EXEEXT)
 	./cordtest$(EXEEXT)
