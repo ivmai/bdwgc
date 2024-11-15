@@ -2013,7 +2013,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 #   define PS_ALLOCA_BUF(sz) NULL
 #   define ALLOCA_SAFE_LIMIT 0
 # else
-#   define PS_ALLOCA_BUF(sz) alloca(sz) /* cannot return NULL */
+#   define PS_ALLOCA_BUF(sz) ((ptr_t)alloca(sz)) /* cannot return NULL */
 #   ifndef ALLOCA_SAFE_LIMIT
 #     define ALLOCA_SAFE_LIMIT (HBLKSIZE*256)
 #   endif
