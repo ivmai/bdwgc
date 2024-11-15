@@ -34,6 +34,8 @@ environment:
   - TARGET: cmake
     CMAKE_OPTIONS: -A ARM64 -DCMAKE_BUILD_TYPE=Release -Denable_cplusplus=ON
     CMAKE_CONFIG: Release
+  - TARGET: cmake-mingw
+    CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON
   - TARGET: cmake-msys
     CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Dinstall_headers=OFF -Denable_rwlock=ON
     CMAKE_CONFIG: Release
@@ -110,6 +112,11 @@ build_script:
     mkdir out && cd out
     && cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
     && cmake --build . --config %CMAKE_CONFIG% --verbose --parallel )
+- cmd: if [%TARGET%]==[cmake-mingw] (
+    set "path=C:\Program Files\CMake\bin;C:\%MINGW_FOLDER%\bin"
+    && mkdir out && cd out
+    && cmake -G "MinGW Makefiles" %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
+    && cmake --build . --config %CMAKE_CONFIG% --verbose --parallel )
 - cmd: if [%TARGET%]==[cmake-msys] (
     set "path=C:\msys64\usr\bin;%path%"
     && mkdir out && cd out
@@ -149,6 +156,9 @@ build_script:
 test_script:
 - cmd: if [%TARGET%]==[cmake] (
     ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
+- cmd: if [%TARGET%]==[cmake-mingw] (
+    set "path=C:\Program Files\CMake\bin;C:\%MINGW_FOLDER%\bin"
+    && ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
 - cmd: if [%TARGET%]==[cmake-msys] (
     set "path=C:\msys64\usr\bin;%path%"
     && ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
