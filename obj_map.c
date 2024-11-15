@@ -56,8 +56,9 @@ GC_add_map_entry(size_t lg)
   /* Ensure displ % lg fits into hb_map_entry_t.  Note: the maximum   */
   /* value is computed in this way to avoid compiler complains about  */
   /* constant truncation or expression overflow.                      */
-  GC_STATIC_ASSERT(MAXOBJGRANULES - 1 <= ~(size_t)0
-                   >> ((sizeof(size_t) - sizeof(hb_map_entry_t)) * 8));
+  GC_STATIC_ASSERT(
+      MAXOBJGRANULES - 1
+      <= (~(size_t)0 >> ((sizeof(size_t) - sizeof(hb_map_entry_t)) * 8)));
 
   if (lg > MAXOBJGRANULES)
     lg = 0;
