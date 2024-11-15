@@ -955,7 +955,7 @@ GC_check_finalizer_nested(void)
     /* We are inside another GC_invoke_finalizers().          */
     /* Skip some implicitly-called GC_invoke_finalizers()     */
     /* depending on the nesting (recursion) level.            */
-    if (++crtn->finalizer_skipped < (1U << nesting_level))
+    if ((unsigned)(++crtn->finalizer_skipped) < (1U << nesting_level))
       return NULL;
     crtn->finalizer_skipped = 0;
   }
