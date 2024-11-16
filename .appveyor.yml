@@ -108,87 +108,83 @@ install:
 - cmd: git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
 
 build_script:
-- cmd: if [%TARGET%]==[cmake] (
+- cmd: if %TARGET%==cmake (
     mkdir out && cd out
     && cmake %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
     && cmake --build . --config %CMAKE_CONFIG% --verbose --parallel )
-- cmd: if [%TARGET%]==[cmake-mingw] (
+- cmd: if %TARGET%==cmake-mingw (
     set "path=C:\Program Files\CMake\bin;C:\%MINGW_FOLDER%\bin"
     && mkdir out && cd out
     && cmake -G "MinGW Makefiles" %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
     && cmake --build . --config %CMAKE_CONFIG% --verbose --parallel )
-- cmd: if [%TARGET%]==[cmake-msys] (
+- cmd: if %TARGET%==cmake-msys (
     set "path=C:\msys64\usr\bin;%path%"
     && mkdir out && cd out
     && cmake -G "MSYS Makefiles" %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
     && cmake --build . --config %CMAKE_CONFIG% --verbose --parallel )
-- cmd: if [%TARGET%]==[nmake] (
+- cmd: if %TARGET%==nmake (
     "C:\Program Files\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
     && nmake /f NT_MAKEFILE %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%" )
-- cmd: if [%TARGET%]==[cygwin64] (
+- cmd: if %TARGET%==cygwin64 (
     C:\cygwin64\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc && ./autogen.sh
        && ./configure %CONF_OPTIONS% --enable-werror && cat include/config.h
        && make -j CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
-- cmd: if [%TARGET%]==[djgpp-no-make] (
+- cmd: if %TARGET%==djgpp-no-make (
     appveyor DownloadFile "https://github.com/andrewwutw/build-djgpp/releases/download/v%DJGPP_VER%/djgpp-mingw-gcc%DJGPP_GCC_VER%-standalone.zip"
     && 7z x -o.. djgpp-mingw-gcc%DJGPP_GCC_VER%-standalone.zip > nul
     && ..\djgpp\setenv.bat
     && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -c extra/gc.c )
-- cmd: if [%TARGET%]==[dmc] (
+- cmd: if %TARGET%==dmc (
     appveyor DownloadFile "http://ftp.digitalmars.com/Digital_Mars_C++/Patch/dm%DMC_VER%c.zip"
     && 7z x -o.. dm%DMC_VER%c.zip > nul && set "path=%cd%\..\dm\bin;%path%"
     && make -f digimars.mak CFLAGS_EXTRA="-wx %CFLAGS_EXTRA%" )
-- cmd: if [%TARGET%]==[mingw-shared-no-make] (
+- cmd: if %TARGET%==mingw-shared-no-make (
     set "path=C:\%MINGW_FOLDER%\bin;%path%"
     && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -shared -o gc.dll extra/gc.c )
-- cmd: if [%TARGET%]==[msys64-mingw64] (
+- cmd: if %TARGET%==msys64-mingw64 (
     C:\msys64\usr\bin\bash -e -l -c
       "cd /c/projects/bdwgc
        && PATH=/c/msys64/mingw64/bin:$PATH make -j -f Makefile.direct CC=gcc CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
-- cmd: if [%TARGET%]==[wcc] (
+- cmd: if %TARGET%==wcc (
     appveyor DownloadFile "https://github.com/open-watcom/open-watcom-v2/releases/download/%WATCOM_VER%-Build/ow-snapshot.tar.xz"
     && 7z x ow-snapshot.tar.xz > nul && 7z x -o..\watcom ow-snapshot.tar > nul
-    && set "watcom=%cd%\..\watcom" && set "path=%cd%\..\watcom\binnt64"
+    && set "watcom=%cd%\..\watcom"
+    && set "path=%cd%\..\watcom\binnt64;%cd%\..\watcom\binnt"
     && set "include=%cd%\..\watcom\h\%WCC_INC_SUBDIR%;%cd%\..\watcom\h"
     && wmake -f WCC_MAKEFILE SYSTEM=%WCC_SYSTEM% %ENABLE_STATIC_OPT% CFLAGS_EXTRA="-we %CFLAGS_EXTRA%" )
 
 test_script:
-- cmd: if [%TARGET%]==[cmake] (
+- cmd: if %TARGET%==cmake (
     ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
-- cmd: if [%TARGET%]==[cmake-mingw] (
-    set "path=C:\Program Files\CMake\bin;C:\%MINGW_FOLDER%\bin"
-    && ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
-- cmd: if [%TARGET%]==[cmake-msys] (
-    set "path=C:\msys64\usr\bin;%path%"
-    && ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
-- cmd: if [%TARGET%]==[nmake] (
+- cmd: if %TARGET%==cmake-mingw (
+    ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
+- cmd: if %TARGET%==cmake-msys (
+    ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
+- cmd: if %TARGET%==nmake (
     "C:\Program Files\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
     && nmake /f NT_MAKEFILE %TEST_TARGET% %NMAKE_OPTIONS% CFLAGS_EXTRA="/WX %CFLAGS_EXTRA%"
     && nmake /f NT_MAKEFILE clean )
-- cmd: if [%TARGET%]==[cygwin64] (
+- cmd: if %TARGET%==cygwin64 (
     C:\cygwin64\bin\bash -e -l -c
       "cd /cygdrive/c/projects/bdwgc
        && make -j check-without-test-driver CFLAGS_EXTRA='%CFLAGS_EXTRA%'" )
-- cmd: if [%TARGET%]==[djgpp-no-make] (
+- cmd: if %TARGET%==djgpp-no-make (
     ..\djgpp\setenv.bat
     && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o cordtest.exe cord/tests/cordtest.c cord/*.c gc.o
     && gcc -I include -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -v -o gctest.exe tests/gctest.c gc.o )
-- cmd: if [%TARGET%]==[dmc] (
-    set "path=%cd%\..\dm\bin;%path%"
-    && make -f digimars.mak %TEST_TARGET% CFLAGS_EXTRA="-wx %CFLAGS_EXTRA%"
+- cmd: if %TARGET%==dmc (
+    make -f digimars.mak %TEST_TARGET% CFLAGS_EXTRA="-wx %CFLAGS_EXTRA%"
     && type gctest.gc.log cpptest.gc.log
     && make -f digimars.mak clean )
-- cmd: if [%TARGET%]==[mingw-shared-no-make] (
-    set "path=C:\%MINGW_FOLDER%\bin;%path%"
-    && gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o gctest.exe tests/gctest.c gc.dll
+- cmd: if %TARGET%==mingw-shared-no-make (
+    gcc -I include -D GC_BUILTIN_ATOMIC -D GC_DLL -Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA% -o gctest.exe tests/gctest.c gc.dll
     && gctest.exe )
-- cmd: if [%TARGET%]==[msys64-mingw64] (
+- cmd: if %TARGET%==msys64-mingw64 (
     C:\msys64\usr\bin\bash -e -l -c
       "cd /c/projects/bdwgc
        && PATH=/c/msys64/mingw64/bin:$PATH make -j -f Makefile.direct %TEST_TARGET% CC=gcc CURSES=-lgdi32 CFLAGS_EXTRA='-Werror -Wall -Wextra -Wpedantic %CFLAGS_EXTRA%'" )
-- cmd: if [%TARGET%]==[wcc] (
-    set "watcom=%cd%\..\watcom" && set "beginlibpath=%cd%\..\watcom\binp\dll"
-    && set "path=%cd%\..\watcom\binnt64;%cd%\..\watcom\binnt"
+- cmd: if %TARGET%==wcc (
+    set "beginlibpath=%cd%\..\watcom\binp\dll"
     && wmake -f WCC_MAKEFILE %TEST_TARGET% SYSTEM=%WCC_SYSTEM% %ENABLE_STATIC_OPT% CFLAGS_EXTRA="-we %CFLAGS_EXTRA%"
     && wmake -f WCC_MAKEFILE clean )
