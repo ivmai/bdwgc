@@ -156,8 +156,9 @@ elseif (MSVC)
   add_compile_options(/W4 /wd4127)
 elseif (WATCOM)
   add_compile_options(/wx)
-  if (NOT enable_threads)
-    # Suppress "unreachable code" warning in GC_ASSERT(I_HOLD_LOCK()).
+  if (enable_gc_assertions)
+    # Suppress "unreachable code" warning in GC_ASSERT() if some constant
+    # non-zero expression is given as the argument.
     add_compile_options(/wcd=201)
   endif()
 else()
