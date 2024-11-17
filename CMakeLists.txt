@@ -747,12 +747,11 @@ if (build_tests)
   # Compile some tests as C++ to test extern "C" in header files.
   if (enable_cplusplus)
     set_source_files_properties(tests/leak_test.c PROPERTIES LANGUAGE CXX)
-    if (NOT MSVC)
+    if (BORLAND OR MSVC OR WATCOM)
       # WinMain-based test hangs at startup if compiled by VC as C++ code.
+    else()
       set_source_files_properties(tests/test.c PROPERTIES LANGUAGE CXX)
-    endif()
-    # To avoid "treating 'c' input as 'c++' when in C++ mode" Clang warning.
-    if (NOT (BORLAND OR MSVC OR WATCOM))
+      # To avoid "treating 'c' input as 'c++' when in C++ mode" Clang warning.
       add_compile_options(-x c++)
     endif()
   endif(enable_cplusplus)
@@ -760,11 +759,9 @@ if (build_tests)
   add_executable(gctest WIN32 tests/test.c)
   target_link_libraries(gctest PRIVATE gc ${THREADDLLIBS_LIST})
   add_test(NAME gctest COMMAND gctest)
-  if (WATCOM)
-    # Suppress "conditional expression in if statement is always true/false"
-    # and "unreachable code" warnings in GC_MALLOC_[ATOMIC_]WORDS.
-    target_compile_options(gctest PRIVATE
-                           /wcd=13 /wcd=201 /wcd=367 /wcd=368 /wcd=726)
+  if (WATCOM AND NOT enable_gc_assertions)
+    # Suppress "unreachable code" warning in GC_MALLOC_[ATOMIC_]WORDS().
+    target_compile_options(gctest PRIVATE /wcd=201)
   endif()
 
   add_executable(hugetest tests/huge_test.c)
