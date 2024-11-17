@@ -26,6 +26,9 @@
 
 # ifdef PARALLEL_MARK
 #   define AO_REQUIRE_CAS
+#   if !defined(__GNUC__) && !defined(AO_ASSUME_WINDOWS98)
+#     define AO_ASSUME_WINDOWS98
+#   endif
 # endif
 
 # include "private/gc_atomic_ops.h"
