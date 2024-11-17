@@ -161,6 +161,11 @@ elseif (WATCOM)
     # non-zero expression is given as the argument.
     add_compile_options(/wcd=201)
   endif()
+  if (enable_threads)
+    # Suppress "missing return value" wcc warning for AO_test_and_set_full()
+    # and AO_char_fetch_and_add_full() in AO msftc/x86.h file.
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/wcd=107>)
+  endif(enable_threads)
 else()
   add_compile_options(-Wall)
   add_compile_options(-Wextra)
