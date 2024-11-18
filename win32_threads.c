@@ -266,7 +266,7 @@ GC_register_my_thread_inner(const struct GC_stack_base *sb,
   /* Lookup TIB value via a call to NtCurrentTeb() on thread          */
   /* registration rather than calling GetThreadSelectorEntry() which  */
   /* is not available on UWP.                                         */
-  me->tib = (PNT_TIB)NtCurrentTeb();
+  me->tib = (GC_NT_TIB *)NtCurrentTeb();
 #  endif
   me->crtn->last_stack_min = ADDR_LIMIT;
   GC_record_stack_base(me->crtn, sb);
@@ -856,7 +856,7 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
               & (CONTEXT_EXCEPTION_ACTIVE
                  /* | CONTEXT_SERVICE_ACTIVE */))
                  != 0) {
-        PNT_TIB tib;
+        GC_NT_TIB *tib;
 
 #    ifdef MSWINRT_FLAVOR
         tib = thread->tib;
@@ -866,9 +866,9 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
 
         if (!GetThreadSelectorEntry(THREAD_HANDLE(thread), SegFs, &selector))
           ABORT("GetThreadSelectorEntry failed");
-        tib = (PNT_TIB)(selector.BaseLow
-                        | (selector.HighWord.Bits.BaseMid << 16)
-                        | (selector.HighWord.Bits.BaseHi << 24));
+        tib = (GC_NT_TIB *)(selector.BaseLow
+                            | (selector.HighWord.Bits.BaseMid << 16)
+                            | (selector.HighWord.Bits.BaseHi << 24));
 #    endif
 #    ifdef DEBUG_THREADS
         GC_log_printf("TIB stack limit/base: %p .. %p\n",

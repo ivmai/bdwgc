@@ -44,6 +44,10 @@
 
 EXTERN_C_BEGIN
 
+#  ifdef WOW64_THREAD_CONTEXT_WORKAROUND
+#    define GC_NT_TIB NT_TIB
+#  endif
+
 typedef struct GC_StackContext_Rep {
 #  if defined(THREAD_SANITIZER) && defined(SIGNAL_BASED_STOP_WORLD)
   /* A dummy field to avoid TSan false positive about the race        */
@@ -255,7 +259,7 @@ typedef struct GC_Thread_Rep {
 #  endif
 
 #  if defined(WOW64_THREAD_CONTEXT_WORKAROUND) && defined(MSWINRT_FLAVOR)
-  PNT_TIB tib;
+  GC_NT_TIB *tib;
 #  endif
 
 #  ifdef RETRY_GET_THREAD_CONTEXT /* && GC_WIN32_THREADS */
