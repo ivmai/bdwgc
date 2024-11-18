@@ -43,6 +43,19 @@ environment:
     CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_docs=OFF
   - TARGET: cmake-msys
     CMAKE_OPTIONS: -Dbuild_cord=OFF -Dbuild_tests=ON -Denable_atomic_uncollectable=OFF -Denable_disclaim=OFF -Denable_threads=OFF
+  - TARGET: cmake-wcc-nt
+    CFLAGS_EXTRA: -DCONSOLE_LOG
+    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_threads=OFF
+    CMAKE_CONFIG: Release
+  - TARGET: cmake-wcc-nt
+    CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=MinSizeRel -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_checksums=ON -Denable_dynamic_loading=OFF -Denable_large_config=ON -Denable_munmap=OFF -Denable_threads=OFF
+  - TARGET: cmake-wcc-nt
+    CMAKE_CONFIG: Release
+    CFLAGS_EXTRA: -DCONSOLE_LOG -DNO_MSGBOX_ON_ERROR
+    CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON
+  - TARGET: cmake-wcc-nt
+    CFLAGS_EXTRA: -DCONSOLE_LOG -DNO_MSGBOX_ON_ERROR
+    CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Debug -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON
   - TARGET: nmake
     ARCH: x86
     NMAKE_OPTIONS: enable_static=1
@@ -153,6 +166,15 @@ build_script:
     && set "path=%cd%\..\watcom\binnt64;%cd%\..\watcom\binnt"
     && set "include=%cd%\..\watcom\h\%WCC_INC_SUBDIR%;%cd%\..\watcom\h"
     && wmake -f WCC_MAKEFILE SYSTEM=%WCC_SYSTEM% %ENABLE_STATIC_OPT% CFLAGS_EXTRA="-we %CFLAGS_EXTRA%" )
+- cmd: if %TARGET%==cmake-wcc-nt (
+    appveyor DownloadFile "https://github.com/open-watcom/open-watcom-v2/releases/download/%WATCOM_VER%-Build/ow-snapshot.tar.xz"
+    && 7z x ow-snapshot.tar.xz > nul && 7z x -o..\watcom ow-snapshot.tar > nul
+    && set "watcom=%cd%\..\watcom"
+    && set "path=C:\Program Files\CMake\bin;%cd%\..\watcom\binnt"
+    && set "include=%cd%\..\watcom\h\nt;%cd%\..\watcom\h"
+    && mkdir out && cd out
+    && cmake -G "Watcom WMake" %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
+    && cmake --build . --config %CMAKE_CONFIG% --verbose )
 
 test_script:
 - cmd: if %TARGET%==cmake (
@@ -160,6 +182,8 @@ test_script:
 - cmd: if %TARGET%==cmake-mingw (
     ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
 - cmd: if %TARGET%==cmake-msys (
+    ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
+- cmd: if %TARGET%==cmake-wcc-nt (
     ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
 - cmd: if %TARGET%==nmake (
     "C:\Program Files\Microsoft Visual %STUDIO_VERSION_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
