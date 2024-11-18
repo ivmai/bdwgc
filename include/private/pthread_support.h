@@ -45,7 +45,19 @@
 EXTERN_C_BEGIN
 
 #  ifdef WOW64_THREAD_CONTEXT_WORKAROUND
-#    define GC_NT_TIB NT_TIB
+#    if defined(__WATCOMC__) && defined(GC_WIN32_THREADS)
+/* Open Watcom (as of v2 2024-11-02 Build) does not define NT_TIB   */
+/* in winnt.h file.                                                 */
+struct GC_NT_TIB_s {
+  /* struct _EXCEPTION_REGISTRATION_RECORD */ void *ExceptionList; /* unused */
+  PVOID StackBase;
+  PVOID StackLimit;
+  /* The remaining fields are unused. */
+};
+typedef struct GC_NT_TIB_s GC_NT_TIB;
+#    else
+#      define GC_NT_TIB NT_TIB
+#    endif
 #  endif
 
 typedef struct GC_StackContext_Rep {
