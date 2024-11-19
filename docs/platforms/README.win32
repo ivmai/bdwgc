@@ -50,12 +50,6 @@ and/or gc_allocator.h.
 
 [See above for gctest.]
 
-If you would prefer a VC++ .NET project file, ask Hans Boehm.  One has
-been contributed, but it seems to contain some absolute paths etc., so
-it can presumably only be a starting point, and is not in the standard
-distribution.  It is unclear (to me, Hans Boehm) whether it is feasible to
-change that.
-
 Clients may need to define GC_NOT_DLL before including gc.h, if the
 collector was built as a static library.
 
