@@ -90,10 +90,6 @@
 
 typedef GC_word word;
 
-typedef int GC_bool;
-#define TRUE 1
-#define FALSE 0
-
 #ifndef PTR_T_DEFINED
 /* A generic pointer to which we can add byte displacements and which */
 /* can be used for address comparisons.                               */
@@ -122,9 +118,26 @@ typedef char *ptr_t;
 /* Saturated addition of size_t values.  Used to avoid value wrap       */
 /* around on overflow.  The arguments should have no side effects.      */
 #define SIZET_SAT_ADD(a, b) \
-  (EXPECT((a) < GC_SIZE_MAX - (b), TRUE) ? (a) + (b) : GC_SIZE_MAX)
+  (EXPECT((a) < GC_SIZE_MAX - (b), 1 /* TRUE */) ? (a) + (b) : GC_SIZE_MAX)
 
 #include "gcconfig.h"
+
+#ifdef __cplusplus
+typedef bool GC_bool;
+#elif defined(__BORLANDC__) || defined(__WATCOMC__)
+typedef int GC_bool;
+#else
+typedef char GC_bool;
+#endif
+
+#if defined(__cplusplus) && !defined(ANY_MSWIN)
+/* Avoid macro redefinition on a Windows platform. */
+#  define TRUE true
+#  define FALSE false
+#else
+#  define TRUE 1
+#  define FALSE 0
+#endif
 
 #if !defined(GC_ATOMIC_UNCOLLECTABLE) && defined(ATOMIC_UNCOLLECTABLE)
 /* For compatibility with old-style naming. */
