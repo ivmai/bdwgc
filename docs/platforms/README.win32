@@ -74,15 +74,15 @@ Memory unmapping could be turned off by "--disable-munmap" option.
 Borland Tools
 -------------
 
-For Borland tools, use `cmake -G "Borland Makefiles"`.  Note that
-Borland's compiler defaults to 1 byte alignment in structures (-a1),
-whereas Visual C++ appears to default to 8 byte alignment (/Zp8).
-The garbage collector in its default configuration EXPECTS AT
-LEAST 4 BYTE ALIGNMENT.  Thus the BORLAND DEFAULT MUST
-BE OVERRIDDEN.  (In my opinion, it should usually be anyway.
-I expect that -a1 introduces major performance penalties on a
-486 or Pentium.)  Note that this changes structure layouts.  (As a last
-resort, gcconfig.h can be changed to allow 1 byte alignment.  But
+For Borland tools (e.g. C++Builder), use `cmake -G "Borland Makefiles"`.
+
+Note that the Borland's compiler defaults to 1-byte alignment in structures
+(-a1), whereas Visual C++ appears to default to 8-byte alignment.
+The garbage collector in its default configuration expects at least 4-byte
+alignment.  Thus, the Borland default must be overridden.  (In my opinion,
+it should usually be anyway.  I expect that -a1 introduces major performance
+penalties on a 486 or Pentium.)  Note that this changes structure layouts.
+(As a last resort, gcconfig.h can be changed to allow 1-byte alignment, but
 this has significant negative performance implications.)
 
 Digital Mars compiler
@@ -91,6 +91,12 @@ Digital Mars compiler
 Same as MS Visual C++ but might require
 -DAO_OLD_STYLE_INTERLOCKED_COMPARE_EXCHANGE option to compile with the
 parallel marker enabled.
+
+To build the collector, use the command:
+    make -f digimars.mak
+
+As usual, specify `check` goal to run the tests:
+    make -f digimars.mak check
 
 Watcom compiler
 ---------------
@@ -103,23 +109,29 @@ dos-extender. It should also run under OS/2, though this isn't
 tested. Under Win32 the collector can be built either as dll
 or as static library.
 
-Note that all compilations were done under Windows 95 or NT.
-For unknown reason compiling under Windows 3.11 for NT (one
+Note that all compilations were done under Windows 95, NT, Windows 2K or
+later.  For unknown reason compiling under Windows 3.11 for NT (one
 attempt has been made) leads to broken executables.
 
 Incremental collection is supported (except for MSDOS and OS/2).
 
-Before compiling you may need to edit WCC_MAKEFILE to set target
-platform, library type (dynamic or static), calling conventions, and
-optimization options.
-
-To compile the collector use the command:
+To build the collector, use the command:
     wmake -f WCC_MAKEFILE
 
-All programs using gc should be compiled with 4-byte alignment.
-For further explanations on this see comments about Borland.
+You might need to customize the build, i.e. set the target platform, library
+type (dynamic or static), calling conventions, and optimization options.
+In this case, pass additional arguments to wmake, e.g.:
+- "SYSTEM=DOS4GW" to target dos4gw execution environment,
+- "SYSTEM=OS2" to target OS/2 operating system,
+- "ENABLE_STATIC=1" to build the collector as a static library.
 
-If the gc is compiled as dll, the macro "GC_DLL" should be defined before
+To run the tests, specify `check` goal:
+    wmake -f WCC_MAKEFILE check
+
+All programs using libgc should be compiled with 4-byte alignment.
+For further explanations on this, see comments about Borland compiler.
+
+If the libgc is compiled as dll, the macro "GC_DLL" should be defined before
 including "gc.h" (for example, with -DGC_DLL compiler option). It's
 important, otherwise resulting programs will not run.
 
@@ -163,8 +175,8 @@ The collector by default handles threads similarly to other platforms.
 James Clark's code which tracks threads attached to the collector DLL still
 exists, but requires that both
 - the collector is built in a DLL with GC_DLL defined, and
-- GC_use_threads_discovery() is called before GC initialization, which
-  in turn must happen before creating additional threads.
+- GC_use_threads_discovery() is called before the collector initialization,
+  which in turn must happen before creating additional threads.
 We generally recommend avoiding this if possible, since it seems to
 be less than 100% reliable.
 
@@ -193,11 +205,12 @@ Note that, as usual, GC_CreateThread tends to introduce resource leaks (in the
 C runtime) that are avoided by GC_beginthreadex.  There is currently no
 equivalent of _beginthread, and it should not be used.
 
-GC_INIT should be called from the main thread before other GC calls.
+GC_INIT() should be called from the main thread before other calls to the
+collector.
 
 We strongly advise against using the TerminateThread() Windows API call,
 especially with the garbage collector.  Any use is likely to provoke a
-crash in the GC, since it makes it impossible for the collector to
+crash in the collector, since it makes it impossible for the collector to
 correctly track threads.
 
 To build the collector for MinGW pthreads-win32 (or other non-Cygwin pthreads
