@@ -49,7 +49,7 @@ typedef size_t AO_t;
 
 typedef unsigned char AO_TS_t;
 #  define AO_TS_CLEAR 0
-#  define AO_TS_INITIALIZER (AO_TS_t) AO_TS_CLEAR
+#  define AO_TS_INITIALIZER ((AO_TS_t)AO_TS_CLEAR)
 #  if defined(__GCC_ATOMIC_TEST_AND_SET_TRUEVAL) && !defined(CPPCHECK)
 #    define AO_TS_SET __GCC_ATOMIC_TEST_AND_SET_TRUEVAL
 #  else
