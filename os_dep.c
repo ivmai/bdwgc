@@ -523,11 +523,10 @@ tiny_sbrk(ptrdiff_t increment)
 {
   void *p = ecos_gc_brk;
 
-  ecos_gc_brk += increment;
-  if (ADDR_LT((ptr_t)ecos_gc_memory + sizeof(ecos_gc_memory), ecos_gc_brk)) {
-    ecos_gc_brk -= increment;
+  if (ADDR_LT((ptr_t)ecos_gc_memory + sizeof(ecos_gc_memory),
+              (ptr_t)p + increment))
     return NULL;
-  }
+  ecos_gc_brk += increment;
   return p;
 }
 #  define sbrk tiny_sbrk
