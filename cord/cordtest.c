@@ -204,7 +204,7 @@ void test_extras(void)
     }
 }
 
-#ifdef __DJGPP__
+#if defined(__DJGPP__) || defined(__DMC__)
   /* snprintf is missing in DJGPP (v2.0.3) */
 #else
 # if defined(_MSC_VER)
