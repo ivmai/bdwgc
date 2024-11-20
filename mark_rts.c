@@ -157,10 +157,10 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
     struct roots * old;
 
     GC_ASSERT(b <= e);
-    b = (ptr_t)(((word)b + (sizeof(word) - 1)) & ~(word)(sizeof(word) - 1));
-                                        /* round b up to word boundary */
-    e = (ptr_t)((word)e & ~(word)(sizeof(word) - 1));
-                                        /* round e down to word boundary */
+    b = (ptr_t)(((word)b + (ALIGNMENT - 1)) & ~(word)(ALIGNMENT - 1));
+                        /* round b up to pointer alignment boundary */
+    e = (ptr_t)((word)e & ~(word)(ALIGNMENT - 1));
+                        /* round e down to pointer alignment boundary */
     if (b >= e) return; /* nothing to do */
 
 #   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
@@ -305,8 +305,8 @@ STATIC void GC_remove_tmp_roots(void)
     DCL_LOCK_STATE;
 
     /* Quick check whether has nothing to do */
-    if ((((word)b + (sizeof(word) - 1)) & ~(word)(sizeof(word) - 1)) >=
-        ((word)e & ~(word)(sizeof(word) - 1)))
+    if ((((word)b + (ALIGNMENT - 1)) & ~(word)(ALIGNMENT - 1)) >=
+        ((word)e & ~(word)(ALIGNMENT - 1)))
       return;
 
     LOCK();
@@ -357,7 +357,7 @@ STATIC void GC_remove_tmp_roots(void)
     GC_bool rebuild = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT((word)b % sizeof(word) == 0 && (word)e % sizeof(word) == 0);
+    GC_ASSERT((word)b % ALIGNMENT == 0 && (word)e % ALIGNMENT == 0);
     for (i = 0; i < n_root_sets; i++) {
       ptr_t r_start, r_end;
 
@@ -509,7 +509,7 @@ GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
     struct exclusion * next;
     size_t next_index;
 
-    GC_ASSERT((word)start % sizeof(word) == 0);
+    GC_ASSERT((word)start % ALIGNMENT == 0);
     GC_ASSERT(start < finish);
 
     if (0 == GC_excl_table_entries) {
@@ -549,7 +549,7 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
     DCL_LOCK_STATE;
 
     /* Adjust the upper boundary for safety (round down) */
-    e = (void *)((word)e & ~(word)(sizeof(word) - 1));
+    e = (void *)((word)e & ~(word)(ALIGNMENT - 1));
 
     if (b == e) return;  /* nothing to exclude? */
 
