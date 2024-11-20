@@ -203,7 +203,7 @@ void test_extras(void)
     }
 }
 
-#if defined(__DJGPP__) || defined(__STRICT_ANSI__)
+#if defined(__DJGPP__) || defined(__DMC__) || defined(__STRICT_ANSI__)
   /* snprintf is missing in DJGPP (v2.0.3) */
 #else
 # if defined(_MSC_VER)
