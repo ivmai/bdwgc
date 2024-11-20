@@ -1192,7 +1192,7 @@ GC_INNER size_t GC_page_size = 0;
     stat_buf[buf_offset + i] = '\0';
 
     result = (word)STRTOULL(&stat_buf[buf_offset], NULL, 10);
-    if (result < 0x100000 || (result & (sizeof(word) - 1)) != 0)
+    if (result < 0x100000 || (result & (ALIGNMENT - 1)) != 0)
       ABORT("Absurd stack bottom value");
     return (ptr_t)result;
   }
@@ -1953,9 +1953,9 @@ void GC_register_data_segments(void)
       || (defined(LINUX) && defined(SPARC))) && !defined(PCR)
   ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
   {
-    word text_end = ((word)(etext_addr) + sizeof(word) - 1)
-                    & ~(word)(sizeof(word) - 1);
-        /* etext rounded to word boundary       */
+    word text_end = ((word)(etext_addr) + ALIGNMENT - 1)
+                    & ~(word)(ALIGNMENT - 1);
+        /* etext rounded to pointer alignment boundary */
     word next_page = ((text_end + (word)max_page_size - 1)
                       & ~((word)max_page_size - 1));
     word page_offset = (text_end & ((word)max_page_size - 1));
@@ -2001,9 +2001,9 @@ void GC_register_data_segments(void)
   GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t max_page_size,
                                         ptr_t etext_addr)
   {
-    word text_end = ((word)(etext_addr) + sizeof(word) - 1)
-                     & ~(word)(sizeof(word) - 1);
-        /* etext rounded to word boundary       */
+    word text_end = ((word)(etext_addr) + ALIGNMENT - 1)
+                     & ~(word)(ALIGNMENT - 1);
+        /* etext rounded to pointer alignment boundary */
     volatile word next_page = (text_end + (word)max_page_size - 1)
                               & ~((word)max_page_size - 1);
     volatile ptr_t result = (ptr_t)text_end;
