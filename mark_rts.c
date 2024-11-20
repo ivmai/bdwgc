@@ -284,7 +284,7 @@ GC_clear_roots(void)
   n_root_sets = 0;
   GC_root_size = 0;
 #ifndef ANY_MSWIN
-  BZERO(GC_root_index, RT_SIZE * sizeof(void *));
+  BZERO(GC_root_index, sizeof(GC_root_index));
 #endif
 #ifdef DEBUG_ADD_DEL_ROOTS
   GC_log_printf("Clear all data root sections\n");
@@ -317,7 +317,7 @@ GC_rebuild_root_index(void)
 {
   size_t i;
 
-  BZERO(GC_root_index, RT_SIZE * sizeof(void *));
+  BZERO(GC_root_index, sizeof(GC_root_index));
   for (i = 0; i < n_root_sets; i++)
     add_roots_to_index(GC_static_roots + i);
 }
