@@ -2865,7 +2865,7 @@ GC_INNER void GC_thr_init(void)
   GC_ASSERT(I_HOLD_LOCK());
   if (GC_thr_initialized) return;
 
-  GC_ASSERT((word)&GC_threads % sizeof(word) == 0);
+  GC_ASSERT((word)&GC_threads % ALIGNMENT == 0);
   GC_main_thread = GetCurrentThreadId();
   GC_thr_initialized = TRUE;
 
