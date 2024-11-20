@@ -1905,8 +1905,8 @@ EXTERN_C_BEGIN
 #    if defined(_WIN64)
 #      define CPP_WORDSZ 64
 #    else
-#      define CPP_WORDSZ 32 /* Is this possible?     */
-#      define ALIGNMENT 8
+/* TODO: Is this possible? */
+#      define CPP_WORDSZ 32
 #    endif
 #  endif
 #endif /* IA64 */
