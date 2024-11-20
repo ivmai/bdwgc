@@ -124,8 +124,8 @@ typedef struct GC_StackContext_Rep {
 #  ifndef GC_NO_FINALIZATION
   unsigned char finalizer_nested;
 
-  /* Explicit alignment (for some rare compilers such as bcc32 and    */
-  /* wcc32).                                                          */
+  /* Explicit alignment (for some rare compilers such as bcc32 and  */
+  /* wcc386).                                                       */
   char fnlz_pad[1];
 
   /* Used by GC_check_finalizer_nested() to minimize the level of     */
@@ -223,8 +223,8 @@ typedef struct GC_Thread_Rep {
 #    define IS_SUSPENDED 0x40
 #  endif
 
-  /* Explicit alignment (for some rare compilers such as bcc32 and      */
-  /* wcc32).                                                            */
+  /* Explicit alignment (for some rare compilers such as bcc32 and  */
+  /* wcc386).                                                       */
   char flags_pad[sizeof(word) - 1 /* sizeof(flags) */];
 
 #  ifdef SIGNAL_BASED_STOP_WORLD
