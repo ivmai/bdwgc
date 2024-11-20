@@ -1174,7 +1174,7 @@ GC_INNER void GC_thr_init(void)
   if (GC_thr_initialized) return;
   GC_thr_initialized = TRUE;
 
-  GC_ASSERT((word)&GC_threads % sizeof(word) == 0);
+  GC_ASSERT((word)&GC_threads % ALIGNMENT == 0);
 # ifdef CAN_HANDLE_FORK
     /* Prepare for forks if requested.  */
     if (GC_handle_fork) {
