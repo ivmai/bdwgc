@@ -658,9 +658,9 @@ EXTERN_C_BEGIN
  * MACH_TYPE is a string representation of the machine type.
  * OS_TYPE is analogous for the OS.
  *
- * ALIGNMENT is the largest N, such that
- * all pointer are guaranteed to be aligned on N byte boundaries.
- * defining it to be 1 will always work, but perform poorly.
+ * ALIGNMENT is the largest N, such that all pointer are guaranteed to be
+ * aligned on N-byte boundary.  Defining it to be 1 will always work, but
+ * will perform poorly.  Should not be larger than size of a pointer.
  *
  * DATASTART is the beginning of the data segment.
  * On some platforms SEARCH_FOR_DATA_START is defined.
@@ -1105,7 +1105,7 @@ EXTERN_C_BEGIN
 #ifdef M68K
 #  define MACH_TYPE "M68K"
 #  define CPP_WORDSZ 32
-#  define ALIGNMENT 2
+#  define ALIGNMENT 2 /* not 4 */
 #  ifdef OPENBSD
 /* Nothing specific. */
 #  endif
@@ -1146,7 +1146,6 @@ extern int etext[];
 #      endif
 #    else
 #      define CPP_WORDSZ 32
-#      define ALIGNMENT 4
 #    endif
 /* HEURISTIC1 has been reliably reported to fail for a 32-bit     */
 /* executable on a 64-bit kernel.                                 */
@@ -1173,7 +1172,6 @@ extern int etext[];
 #      endif
 #    else
 #      define CPP_WORDSZ 32
-#      define ALIGNMENT 4
 #      define STACKBOTTOM MAKE_CPTR(0xc0000000)
 #    endif
 #    define MPROTECT_VDB
@@ -1190,7 +1188,6 @@ extern int etext[];
 #      define CPP_WORDSZ 64
 #    else
 #      define CPP_WORDSZ 32
-#      define ALIGNMENT 4
 #    endif
 #  endif
 #  ifdef FREEBSD
@@ -1201,12 +1198,10 @@ extern int etext[];
 #      endif
 #    else
 #      define CPP_WORDSZ 32
-#      define ALIGNMENT 4
 #    endif
 #  endif
 #  ifdef NETBSD
 #    define CPP_WORDSZ 32
-#    define ALIGNMENT 4
 #  endif
 #  ifdef SN_TARGET_PS3
 #    define OS_TYPE "SN_TARGET_PS3"
@@ -1222,7 +1217,7 @@ extern int _end[], __bss_start;
 #  endif
 #  ifdef AIX
 #    define OS_TYPE "AIX"
-#    undef ALIGNMENT /* in case it's defined   */
+#    undef ALIGNMENT /* in case it's defined */
 #    undef IA64
 /* DOB: some AIX installs stupidly define IA64 in */
 /* /usr/include/sys/systemcfg.h                   */
@@ -1252,7 +1247,6 @@ extern int _data[], _end[];
 #  ifdef NOSYS
 #    define OS_TYPE "NOSYS"
 #    define CPP_WORDSZ 32
-#    define ALIGNMENT 4
 extern void __end[], __dso_handle[];
 #    define DATASTART ((ptr_t)__dso_handle) /* OK, that's ugly */
 #    define DATAEND ((ptr_t)__end)
@@ -1265,7 +1259,6 @@ extern void __end[], __dso_handle[];
 #  define MACH_TYPE "VAX"
 #  define CPP_WORDSZ 32
 /* Pointers are longword aligned by 4.2 C compiler. */
-#  define ALIGNMENT 4
 extern char etext[];
 #  define DATASTART ((ptr_t)etext)
 #  ifdef BSD
@@ -1350,8 +1343,6 @@ extern char edata[], end[];
 #  if defined(FORCE_ALIGNMENT_ONE) \
       && (defined(__BORLANDC__) || defined(__WATCOMC__))
 #    define ALIGNMENT 1
-#  else
-#    define ALIGNMENT 4
 #  endif
 #  ifdef SEQUENT
 #    define OS_TYPE "SEQUENT"
@@ -1582,7 +1573,6 @@ extern char *_STACKTOP;
 #ifdef NS32K
 #  define MACH_TYPE "NS32K"
 #  define CPP_WORDSZ 32
-#  define ALIGNMENT 4
 extern char **environ;
 /* Hideous kludge: environ is the first word in crt0.o, and         */
 /* delimits the start of the data segment, no matter which ld       */
@@ -1617,7 +1607,6 @@ extern int __data_start[];
 #      define CPP_WORDSZ _MIPS_SZPTR
 #    else
 #      define CPP_WORDSZ 32
-#      define ALIGNMENT 4
 #    endif
 #    pragma weak __data_start
 extern int __data_start[];
@@ -1641,7 +1630,6 @@ extern int _fdata[], _end[];
 #      define DATAEND ((ptr_t)_end)
 #    else
 #      define CPP_WORDSZ 32
-#      define ALIGNMENT 4
 extern int etext[], edata[];
 #      define DATASTART \
         (PTR_ALIGN_UP((ptr_t)etext, 0x40000) + (ADDR(etext) & 0xffff))
@@ -1658,7 +1646,6 @@ extern int end[];
 #  ifdef ULTRIX
 #    define OS_TYPE "ULTRIX"
 #    define CPP_WORDSZ 32
-#    define ALIGNMENT 4
 #    define HEURISTIC2
 /* Note: the actual beginning of the data segment could probably  */
 /* be slightly higher since startup code allocates lots of stuff. */
@@ -1670,7 +1657,6 @@ extern int end[];
 #      define CPP_WORDSZ _MIPS_SZPTR
 #    else
 #      define CPP_WORDSZ 32
-#      define ALIGNMENT 4
 #    endif
 #    define HEURISTIC2
 extern int _fdata[];
@@ -1688,11 +1674,9 @@ extern int _fdata[];
 #  endif
 #  ifdef MSWINCE
 #    define CPP_WORDSZ 32
-#    define ALIGNMENT 4
 #  endif
 #  ifdef NETBSD
 #    define CPP_WORDSZ 32
-#    define ALIGNMENT 4
 #    ifndef __ELF__
 #      define DATASTART MAKE_CPTR(0x10000000)
 #      define STACKBOTTOM MAKE_CPTR(0x7ffff000)
@@ -1703,7 +1687,6 @@ extern int _fdata[];
 #  endif
 #  ifdef FREEBSD
 #    define CPP_WORDSZ 32
-#    define ALIGNMENT 4
 #  endif
 #  ifdef NONSTOP
 #    define OS_TYPE "NONSTOP"
@@ -1854,14 +1837,14 @@ extern int _end[];
 #  ifdef HPUX
 #    ifdef _ILP32
 #      define CPP_WORDSZ 32
-/* Requires 8 byte alignment for malloc */
+/* Note: requires 8-byte alignment (granularity) for malloc.    */
 #      define ALIGNMENT 4
 #    else
 #      if !defined(_LP64) && !defined(CPPCHECK)
 #        error Unknown ABI
 #      endif
 #      define CPP_WORDSZ 64
-/* Requires 16 byte alignment for malloc */
+/* Note: requires 16-byte alignment (granularity) for malloc.   */
 #      define ALIGNMENT 8
 #    endif
 /* Note that the GC must be initialized before the 1st putenv call. */
@@ -1941,7 +1924,6 @@ extern int __dso_handle[];
 #ifdef M88K
 #  define MACH_TYPE "M88K"
 #  define CPP_WORDSZ 32
-#  define ALIGNMENT 4
 #  define STACKBOTTOM MAKE_CPTR(0xf0000000) /* determined empirically */
 extern int etext[];
 #  ifdef CX_UX
@@ -2150,7 +2132,6 @@ extern void *__stack_base__;
 #if defined(SH) && !defined(SH4)
 #  define MACH_TYPE "SH"
 #  define CPP_WORDSZ 32
-#  define ALIGNMENT 4
 #  ifdef LINUX
 #    define SEARCH_FOR_DATA_START
 #  endif
@@ -2168,7 +2149,6 @@ extern void *__stack_base__;
 #ifdef SH4
 #  define MACH_TYPE "SH4"
 #  define CPP_WORDSZ 32
-#  define ALIGNMENT 4
 #  ifdef MSWINCE
 /* Nothing specific. */
 #  endif
@@ -2407,7 +2387,6 @@ extern char **environ;
 #    error 64-bit WebAssembly is not yet supported
 #  endif
 #  define CPP_WORDSZ 32
-#  define ALIGNMENT 4
 #  ifdef EMSCRIPTEN
 #    define OS_TYPE "EMSCRIPTEN"
 #    define DATASTART ((ptr_t)ALIGNMENT)
@@ -2689,11 +2668,8 @@ EXTERN_C_BEGIN
 #endif /* !CPPCHECK */
 
 #ifndef ALIGNMENT
-#  if !defined(CPP_PTRSZ) && !defined(CPPCHECK)
-#    error Undefined both ALIGNMENT and CPP_PTRSZ
-#  endif
 #  define ALIGNMENT (CPP_PTRSZ >> 3)
-#endif /* !ALIGNMENT */
+#endif
 
 #if !defined(STACKBOTTOM) && (defined(ECOS) || defined(NOSYS)) \
     && !defined(CPPCHECK)
