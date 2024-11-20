@@ -1264,7 +1264,7 @@ GC_linux_main_stack_base(void)
   stat_buf[buf_offset + i] = '\0';
 
   addr = (word)STRTOULL((char *)stat_buf + buf_offset, NULL, 10);
-  if (addr < 0x100000 || (addr & (sizeof(ptr_t) - 1)) != 0)
+  if (addr < 0x100000 || addr % ALIGNMENT != 0)
     ABORT_ARG1("Absurd stack bottom value", ": 0x%lx", (unsigned long)addr);
   return MAKE_CPTR(addr);
 }
@@ -2070,8 +2070,8 @@ GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_ptr)
 {
   volatile ptr_t result;
 
-  GC_ASSERT(max_page_size % sizeof(ptr_t) == 0);
-  result = PTR_ALIGN_UP(etext_ptr, sizeof(ptr_t));
+  GC_ASSERT(max_page_size % ALIGNMENT == 0);
+  result = PTR_ALIGN_UP(etext_ptr, ALIGNMENT);
 #  ifdef CHERI_PURECAP
   result = derive_cap_from_ldr(result, DATAEND);
 #  endif

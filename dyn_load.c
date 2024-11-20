@@ -632,8 +632,8 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       my_start = MAKE_CPTR(p->p_vaddr) + info->dlpi_addr;
       my_end = my_start + p->p_memsz;
 #        ifdef CHERI_PURECAP
-      my_start = PTR_ALIGN_UP(my_start, sizeof(ptr_t));
-      my_end = PTR_ALIGN_DOWN(my_end, sizeof(ptr_t));
+      my_start = PTR_ALIGN_UP(my_start, ALIGNMENT);
+      my_end = PTR_ALIGN_DOWN(my_end, ALIGNMENT);
       if (!SPANNING_CAPABILITY(info->dlpi_addr, ADDR(my_start), ADDR(my_end)))
         continue;
       my_start = cheri_bounds_set(my_start, (word)(my_end - my_start));
@@ -648,7 +648,7 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       /* probably, we should remove the corresponding assertion */
       /* check in GC_add_roots_inner along with this code line. */
       /* my_start pointer value may require aligning.           */
-      my_start = PTR_ALIGN_DOWN(my_start, sizeof(ptr_t));
+      my_start = PTR_ALIGN_DOWN(my_start, ALIGNMENT);
 #          endif
       if (n_load_segs >= MAX_LOAD_SEGS) {
         if (!load_segs_overflow) {

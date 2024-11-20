@@ -170,8 +170,8 @@ GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 {
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(ADDR_GE(e, b));
-  b = PTR_ALIGN_UP(b, sizeof(ptr_t));
-  e = PTR_ALIGN_DOWN(e, sizeof(ptr_t));
+  b = PTR_ALIGN_UP(b, ALIGNMENT);
+  e = PTR_ALIGN_DOWN(e, ALIGNMENT);
   if (ADDR_GE(b, e)) {
     /* Nothing to do. */
     return;
@@ -353,8 +353,8 @@ GC_API void GC_CALL
 GC_remove_roots(void *b, void *e)
 {
   /* A quick check whether has nothing to do. */
-  if (ADDR_GE(PTR_ALIGN_UP((ptr_t)b, sizeof(ptr_t)),
-              PTR_ALIGN_DOWN((ptr_t)e, sizeof(ptr_t))))
+  if (ADDR_GE(PTR_ALIGN_UP((ptr_t)b, ALIGNMENT),
+              PTR_ALIGN_DOWN((ptr_t)e, ALIGNMENT)))
     return;
 
   LOCK();
@@ -414,7 +414,7 @@ GC_remove_roots_subregion(ptr_t b, ptr_t e)
   GC_bool rebuild = FALSE;
 
   GC_ASSERT(I_HOLD_LOCK());
-  GC_ASSERT(ADDR(b) % sizeof(ptr_t) == 0 && ADDR(e) % sizeof(ptr_t) == 0);
+  GC_ASSERT(ADDR(b) % ALIGNMENT == 0 && ADDR(e) % ALIGNMENT == 0);
   for (i = 0; i < n_root_sets; i++) {
     ptr_t r_start, r_end;
 
@@ -595,7 +595,7 @@ GC_exclude_static_roots_inner(ptr_t start, ptr_t finish)
   size_t next_index;
 
   GC_ASSERT(I_HOLD_LOCK());
-  GC_ASSERT(ADDR(start) % sizeof(ptr_t) == 0);
+  GC_ASSERT(ADDR(start) % ALIGNMENT == 0);
   GC_ASSERT(ADDR_LT(start, finish));
 
   next = GC_next_exclusion(start);
@@ -644,10 +644,10 @@ GC_exclude_static_roots(void *b, void *e)
   }
 
   /* Round boundaries in direction reverse to that of GC_add_roots. */
-  b = PTR_ALIGN_DOWN((ptr_t)b, sizeof(ptr_t));
-  e = EXPECT(ADDR(e) > ~(word)(sizeof(ptr_t) - 1), FALSE)
-          ? PTR_ALIGN_DOWN((ptr_t)e, sizeof(ptr_t)) /* overflow */
-          : PTR_ALIGN_UP((ptr_t)e, sizeof(ptr_t));
+  b = PTR_ALIGN_DOWN((ptr_t)b, ALIGNMENT);
+  e = EXPECT(ADDR(e) > ~(word)(ALIGNMENT - 1), FALSE)
+          ? PTR_ALIGN_DOWN((ptr_t)e, ALIGNMENT) /* overflow */
+          : PTR_ALIGN_UP((ptr_t)e, ALIGNMENT);
 
   LOCK();
   GC_exclude_static_roots_inner((ptr_t)b, (ptr_t)e);
