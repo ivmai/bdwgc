@@ -82,8 +82,9 @@ The garbage collector in its default configuration expects at least 4-byte
 alignment.  Thus, the Borland default must be overridden.  (In my opinion,
 it should usually be anyway.  I expect that -a1 introduces major performance
 penalties on a 486 or Pentium.)  Note that this changes structure layouts.
-(As a last resort, gcconfig.h can be changed to allow 1-byte alignment, but
-this has significant negative performance implications.)
+(As a last resort, -DFORCE_ALIGNMENT_ONE option could be passed to the
+compiler to allow 1-byte alignment, but this would have significant negative
+performance implications.)
 
 Digital Mars compiler
 ---------------------

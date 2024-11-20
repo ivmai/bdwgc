@@ -1338,11 +1338,19 @@ extern char edata[], end[];
 #  define MACH_TYPE "I386"
 #  if (defined(__LP64__) || defined(_WIN64)) && !defined(CPPCHECK)
 #    error This should be handled as X86_64
+#  endif
+#  define CPP_WORDSZ 32
+/* The 4-byte alignment appears to hold for all 32-bit compilers    */
+/* except Borland and Watcom.  If using the Borland (bcc32) or      */
+/* Watcom (wcc386) compiler, "-a4" or "-zp4" option, respectively,  */
+/* should be passed to the compiler, both for building the library  */
+/* and client code.  (The alternate solution is to define           */
+/* FORCE_ALIGNMENT_ONE macro but this would have significant        */
+/* negative performance implications.)                              */
+#  if defined(FORCE_ALIGNMENT_ONE) \
+      && (defined(__BORLANDC__) || defined(__WATCOMC__))
+#    define ALIGNMENT 1
 #  else
-#    define CPP_WORDSZ 32
-/* The 4-byte alignment appears to hold for all "32-bit"      */
-/* compilers except Borland and Watcom.  The -a4 option       */
-/* fixes Borland.  For Watcom, the option is -zp4.            */
 #    define ALIGNMENT 4
 #  endif
 #  ifdef SEQUENT
