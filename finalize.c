@@ -76,12 +76,12 @@ static signed_word log_fo_table_size = -1;
 
 GC_INNER void GC_push_finalizer_structures(void)
 {
-    GC_ASSERT((word)&GC_dl_hashtbl.head % sizeof(word) == 0);
-    GC_ASSERT((word)&GC_fo_head % sizeof(word) == 0);
-    GC_ASSERT((word)&GC_finalize_now % sizeof(word) == 0);
+    GC_ASSERT((word)&GC_dl_hashtbl.head % ALIGNMENT == 0);
+    GC_ASSERT((word)&GC_fo_head % ALIGNMENT == 0);
+    GC_ASSERT((word)&GC_finalize_now % ALIGNMENT == 0);
 
 # ifndef GC_LONG_REFS_NOT_NEEDED
-    GC_ASSERT((word)&GC_ll_hashtbl.head % sizeof(word) == 0);
+    GC_ASSERT((word)&GC_ll_hashtbl.head % ALIGNMENT == 0);
     GC_push_all((ptr_t)(&GC_ll_hashtbl.head),
                 (ptr_t)(&GC_ll_hashtbl.head) + sizeof(word));
 # endif

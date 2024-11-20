@@ -92,7 +92,7 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
     if (!EXPECT(keys_initialized, TRUE)) {
 #       ifdef USE_CUSTOM_SPECIFIC
           /* Ensure proper alignment of a "pushed" GC symbol.   */
-          GC_ASSERT((word)&GC_thread_key % sizeof(word) == 0);
+          GC_ASSERT((word)&GC_thread_key % ALIGNMENT == 0);
 #       endif
         if (0 != GC_key_create(&GC_thread_key, 0)) {
             ABORT("Failed to create key for local allocator");
