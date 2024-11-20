@@ -3,7 +3,7 @@
 # Written by Walter Bright
 
 CFLAGS_EXTRA=
-DEFINES=-D_WINDOWS -DGC_DLL -DGC_THREADS -DGC_DISCOVER_TASK_THREADS \
+DEFINES=-DGC_DLL -DGC_THREADS -DGC_DISCOVER_TASK_THREADS \
     -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE \
     -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION \
     -DGC_REQUIRE_WCSDUP -DUSE_MUNMAP
@@ -12,15 +12,13 @@ LFLAGS=/ma/implib/co
 CC=sc
 
 # Must precede other goals.
-all: gc.dll gc.lib
+all: gc.lib
 
 gc.obj: extra\gc.c
 	$(CC) -c $(CFLAGS) extra\gc.c -ogc.obj
 
 .cpp.obj:
 	$(CC) -c $(CFLAGS) -Aa $*
-
-OBJS= gc.obj gc_badalc.obj gc_cpp.obj
 
 check: gctest.exe cpptest.exe treetest.exe
 	gctest.exe
@@ -29,8 +27,8 @@ check: gctest.exe cpptest.exe treetest.exe
 
 gc.lib: gc.dll
 
-gc.dll: $(OBJS) gc.def digimars.mak
-	$(CC) -ogc.dll $(OBJS) -L$(LFLAGS) gc.def kernel32.lib user32.lib
+gc.dll: gc.obj gc_badalc.obj gc_cpp.obj gc.def digimars.mak
+	$(CC) -ogc.dll gc.obj gc_badalc.obj gc_cpp.obj -L$(LFLAGS) gc.def kernel32.lib user32.lib
 
 gc.def: digimars.mak
 	echo LIBRARY GC >gc.def
@@ -41,10 +39,8 @@ gc.def: digimars.mak
 	echo GC_is_valid_displacement_print_proc >>gc.def
 
 clean:
-	del *.log *.map gc.def gc.dll gc.lib
-	del tests\gctest.obj gctest.exe tests\cpptest.obj cpptest.exe
-	del tests\treetest.obj treetest.exe
-	del $(OBJS)
+	del *.log *.map *.obj gc.def gc.dll gc.lib
+	del tests\*.obj gctest.exe cpptest.exe treetest.exe
 
 gctest.exe: gc.lib tests\gctest.obj
 	$(CC) -ogctest.exe tests\gctest.obj gc.lib
