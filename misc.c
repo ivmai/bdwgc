@@ -2292,7 +2292,7 @@ GC_new_kind_inner(void **fl, GC_word descr, int adjust, int clear)
     GC_obj_kinds[result].ok_freelist = fl;
     GC_obj_kinds[result].ok_reclaim_list = 0;
     GC_obj_kinds[result].ok_descriptor = descr;
-    GC_obj_kinds[result].ok_relocate_descr = adjust;
+    GC_obj_kinds[result].ok_relocate_descr = (GC_bool)adjust;
     GC_obj_kinds[result].ok_init = (GC_bool)clear;
 #ifdef ENABLE_DISCLAIM
     GC_obj_kinds[result].ok_mark_unconditionally = FALSE;
