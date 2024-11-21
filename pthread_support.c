@@ -773,14 +773,9 @@ GC_new_thread(thread_id_t self_id)
     result = &first_thread;
     first_thread.crtn = &first_crtn;
     GC_ASSERT(NULL == GC_threads[hv]);
-#  ifdef CPPCHECK
-    GC_noop1((unsigned char)first_thread.flags_pad[0]);
-#    if defined(THREAD_SANITIZER) && defined(SIGNAL_BASED_STOP_WORLD)
+#  if defined(CPPCHECK) && defined(THREAD_SANITIZER) \
+      && defined(SIGNAL_BASED_STOP_WORLD)
     GC_noop1((unsigned char)first_crtn.dummy[0]);
-#    endif
-#    ifndef GC_NO_FINALIZATION
-    GC_noop1((unsigned char)first_crtn.fnlz_pad[0]);
-#    endif
 #  endif
   } else {
     GC_stack_context_t crtn;
