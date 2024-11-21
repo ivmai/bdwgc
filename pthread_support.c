@@ -582,7 +582,7 @@ GC_start_mark_threads_inner(void)
   }
 #    endif
 
-  GC_ASSERT(GC_fl_builder_count == 0);
+  GC_ASSERT(0 == GC_fl_builder_count);
   INIT_REAL_SYMS(); /* for pthread_create */
 
   if (pthread_attr_init(&attr) != 0)
@@ -2406,7 +2406,7 @@ GC_register_my_thread(const struct GC_stack_base *sb)
 {
   GC_thread me;
 
-  if (GC_need_to_lock == FALSE)
+  if (!GC_need_to_lock)
     ABORT("Threads explicit registering is not previously enabled");
 
   /* We lock here, since we want to wait for an ongoing GC.   */

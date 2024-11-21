@@ -515,7 +515,7 @@ GC_stop_world(void)
   if (GC_parallel) {
     GC_acquire_mark_lock();
     /* We should have previously waited for the count to become zero. */
-    GC_ASSERT(GC_fl_builder_count == 0);
+    GC_ASSERT(0 == GC_fl_builder_count);
   }
 #  endif /* PARALLEL_MARK */
 
@@ -1194,7 +1194,7 @@ GC_start_mark_threads_inner(void)
     return;
   GC_wait_for_gc_completion(TRUE);
 
-  GC_ASSERT(GC_fl_builder_count == 0);
+  GC_ASSERT(0 == GC_fl_builder_count);
   /* Initialize GC_marker_cv[] fully before starting the    */
   /* first helper thread.                                   */
   GC_markers_m1 = GC_available_markers_m1;
@@ -1318,7 +1318,7 @@ GC_release_mark_lock(void)
   if (EXPECT(InterlockedExchange(&GC_mark_mutex_state, 0 /* unlocked */) < 0,
              FALSE)) {
     /* Wake a waiter.       */
-    if (SetEvent(mark_mutex_event) == FALSE)
+    if (!SetEvent(mark_mutex_event))
       ABORT("SetEvent failed");
   }
 }
@@ -1336,9 +1336,9 @@ GC_wait_for_reclaim(void)
   GC_ASSERT(builder_cv != 0);
   for (;;) {
     GC_acquire_mark_lock();
-    if (GC_fl_builder_count == 0)
+    if (0 == GC_fl_builder_count)
       break;
-    if (ResetEvent(builder_cv) == FALSE)
+    if (!ResetEvent(builder_cv))
       ABORT("ResetEvent failed");
     GC_release_mark_lock();
     if (WaitForSingleObject(builder_cv, INFINITE) == WAIT_FAILED)
@@ -1352,8 +1352,8 @@ GC_notify_all_builder(void)
 {
   GC_ASSERT(GC_mark_lock_holder == GetCurrentThreadId());
   GC_ASSERT(builder_cv != 0);
-  GC_ASSERT(GC_fl_builder_count == 0);
-  if (SetEvent(builder_cv) == FALSE)
+  GC_ASSERT(0 == GC_fl_builder_count);
+  if (!SetEvent(builder_cv))
     ABORT("SetEvent failed");
 }
 
@@ -1373,7 +1373,7 @@ GC_wait_marker(void)
     }
   }
 
-  if (ResetEvent(event) == FALSE)
+  if (!ResetEvent(event))
     ABORT("ResetEvent failed");
   GC_release_mark_lock();
   if (WaitForSingleObject(event, INFINITE) == WAIT_FAILED)
@@ -1389,8 +1389,7 @@ GC_notify_all_marker(void)
 
   while (i-- > 0) {
     /* Notify every marker ignoring self (for efficiency).  */
-    if (SetEvent(GC_marker_Id[i] != self_id ? GC_marker_cv[i] : mark_cv)
-        == FALSE)
+    if (!SetEvent(GC_marker_Id[i] != self_id ? GC_marker_cv[i] : mark_cv))
       ABORT("SetEvent failed");
   }
 }

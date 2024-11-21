@@ -1380,14 +1380,14 @@ GC_init(void)
   /* is generally not desirable.                                        */
 #endif
 #if !defined(THREADS) || !(defined(SN_TARGET_PS3) || defined(SN_TARGET_PSP2))
-  if (GC_stackbottom == 0) {
+  if (NULL == GC_stackbottom) {
     GC_stackbottom = GC_get_main_stack_base();
 #  if (defined(LINUX) || defined(HPUX)) && defined(IA64)
     GC_register_stackbottom = GC_get_register_stack_base();
 #  endif
   } else {
 #  if (defined(LINUX) || defined(HPUX)) && defined(IA64)
-    if (GC_register_stackbottom == 0) {
+    if (NULL == GC_register_stackbottom) {
       WARN("GC_register_stackbottom should be set with GC_stackbottom\n", 0);
       /* The following may fail, since we may rely on             */
       /* alignment properties that may not hold with a user set   */
@@ -1435,7 +1435,7 @@ GC_init(void)
 #ifndef GC_DISABLE_INCREMENTAL
   if (GC_incremental || GETENV("GC_ENABLE_INCREMENTAL") != NULL) {
     set_incremental_mode_on();
-    GC_ASSERT(GC_bytes_allocd == 0);
+    GC_ASSERT(0 == GC_bytes_allocd);
   }
 #endif
 
@@ -1813,7 +1813,7 @@ GC_write(const char *buf, size_t len)
     return -1;
 #  endif
 
-  if (len == 0)
+  if (0 == len)
     return 0;
   IF_NEED_TO_LOCK(EnterCriticalSection(&GC_write_cs));
 #  if defined(THREADS) && defined(GC_ASSERTIONS)
@@ -1822,7 +1822,7 @@ GC_write(const char *buf, size_t len)
     ABORT("Assertion failure: GC_write called with write_disabled");
   }
 #  endif
-  if (GC_log == 0) {
+  if (0 == GC_log) {
     GC_log = GC_CreateLogFile();
   }
   if (GC_log == INVALID_HANDLE_VALUE) {
@@ -2279,13 +2279,12 @@ GC_new_kind_inner(void **fl, GC_word descr, int adjust, int clear)
   unsigned result = GC_n_kinds;
 
   GC_ASSERT(NONNULL_ARG_NOT_NULL(fl));
-  GC_ASSERT(adjust == FALSE || adjust == TRUE);
+  GC_ASSERT(!adjust || 1 == adjust);
   /* If an object is not needed to be cleared (when moved to the      */
   /* free list) then its descriptor should be zero to denote          */
   /* a pointer-free object (and, as a consequence, the size of the    */
   /* object should not be added to the descriptor template).          */
-  GC_ASSERT(clear == TRUE
-            || (descr == 0 && adjust == FALSE && clear == FALSE));
+  GC_ASSERT(1 == clear || (0 == descr && !adjust && !clear));
   if (result < MAXOBJKINDS) {
     GC_ASSERT(result > 0);
     GC_n_kinds++;

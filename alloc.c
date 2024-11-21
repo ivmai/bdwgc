@@ -1396,7 +1396,7 @@ GC_finish_collection(void)
 /* Note: accessed with the allocator lock held. */
 STATIC word GC_heapsize_at_forced_unmap = 0;
 
-/* If stop_func == 0 then GC_default_stop_func is used instead.         */
+/* Note: if stop_func is 0 then GC_default_stop_func is used instead. */
 STATIC GC_bool
 GC_try_to_collect_general(GC_stop_func stop_func, GC_bool force_unmap)
 {
@@ -1828,7 +1828,7 @@ GC_collect_or_expand(word needed_blocks, unsigned flags, GC_bool retry)
         GC_bytes_allocd > 0 && (!GC_dont_expand || !retry)
             ? GC_default_stop_func
             : GC_never_stop_func);
-    if (gc_not_stopped == TRUE || !retry) {
+    if (gc_not_stopped || !retry) {
       /* Either the collection hasn't been aborted or this is the     */
       /* first attempt (in a loop).                                   */
       last_fo_entries = GC_fo_entries;
@@ -1882,10 +1882,10 @@ GC_collect_or_expand(word needed_blocks, unsigned flags, GC_bool retry)
   if (!GC_expand_hp_inner(blocks_to_get)
       && (blocks_to_get == needed_blocks
           || !GC_expand_hp_inner(needed_blocks))) {
-    if (gc_not_stopped == FALSE) {
+    if (!gc_not_stopped) {
       /* Don't increment GC_fail_count here (and no warning).     */
       GC_gcollect_inner();
-      GC_ASSERT(GC_bytes_allocd == 0);
+      GC_ASSERT(0 == GC_bytes_allocd);
     } else if (GC_fail_count++ < GC_max_retries) {
       WARN("Out of Memory!  Trying to continue...\n", 0);
       GC_gcollect_inner();
