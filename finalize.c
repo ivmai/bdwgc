@@ -957,14 +957,6 @@ STATIC size_t GC_old_ll_entries = 0;
 #  endif /* !SMALL_CONFIG */
 
 #  ifndef THREADS
-/* Global variables to minimize the level of recursion when a client  */
-/* finalizer allocates memory.  (Only the lowest byte of              */
-/* GC_finalizer_nested is used, the rest of the variable is padding   */
-/* for the proper global data alignment required for some compilers   */
-/* like Watcom.)                                                      */
-STATIC int GC_finalizer_nested = 0;
-STATIC unsigned GC_finalizer_skipped = 0;
-
 /* Checks and updates the level of finalizers recursion.              */
 /* Returns NULL if GC_invoke_finalizers() should not be called by the */
 /* collector (to minimize the risk of a deep finalizers recursion),   */
@@ -972,17 +964,17 @@ STATIC unsigned GC_finalizer_skipped = 0;
 STATIC unsigned char *
 GC_check_finalizer_nested(void)
 {
-  unsigned nesting_level = *(unsigned char *)&GC_finalizer_nested;
+  unsigned nesting_level = GC_finalizer_nested;
   if (nesting_level) {
     /* We are inside another GC_invoke_finalizers().          */
     /* Skip some implicitly-called GC_invoke_finalizers()     */
     /* depending on the nesting (recursion) level.            */
-    if (++GC_finalizer_skipped < (1U << nesting_level))
+    if ((unsigned)(++GC_finalizer_skipped) < (1U << nesting_level))
       return NULL;
     GC_finalizer_skipped = 0;
   }
-  *(char *)&GC_finalizer_nested = (char)(nesting_level + 1);
-  return (unsigned char *)&GC_finalizer_nested;
+  GC_finalizer_nested = (unsigned char)(nesting_level + 1);
+  return &GC_finalizer_nested;
 }
 #  endif /* !THREADS */
 

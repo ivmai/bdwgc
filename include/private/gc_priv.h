@@ -1468,6 +1468,21 @@ struct _GC_arrays {
   word _pointer_mask;
   unsigned char _pointer_shift;
 #endif
+
+#ifdef THREADS
+#  define GC_roots_were_cleared GC_arrays._roots_were_cleared
+  GC_bool _roots_were_cleared;
+#else
+#  ifndef GC_NO_FINALIZATION
+/* The variables to minimize the level of recursion when a client   */
+/* finalizer allocates memory.                                      */
+#    define GC_finalizer_nested GC_arrays._finalizer_nested
+#    define GC_finalizer_skipped GC_arrays._finalizer_skipped
+  unsigned char _finalizer_nested;
+  unsigned short _finalizer_skipped;
+#  endif
+#endif
+
   /* Do we need a larger mark stack?  May be set by client-supplied */
   /* mark routines.                                                 */
 #define GC_mark_stack_too_small GC_arrays._mark_stack_too_small
@@ -1477,10 +1492,6 @@ struct _GC_arrays {
 #define GC_objects_are_marked GC_arrays._objects_are_marked
   GC_bool _objects_are_marked;
 
-#ifdef THREADS
-#  define GC_roots_were_cleared GC_arrays._roots_were_cleared
-  GC_bool _roots_were_cleared;
-#endif
 #define GC_explicit_typing_initialized GC_arrays._explicit_typing_initialized
 #ifdef AO_HAVE_load_acquire
   volatile AO_t _explicit_typing_initialized;
