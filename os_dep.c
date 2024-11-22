@@ -3211,12 +3211,10 @@ GC_dirty_init(void)
 #      define async_set_pht_entry_from_index(db, index) \
         set_pht_entry_from_index_concurrent(db, index)
 #    endif
-#  elif defined(AO_HAVE_test_and_set_acquire)
+#  elif defined(NEED_FAULT_HANDLER_LOCK)
 /* We need to lock around the bitmap update (in the write fault     */
 /* handler or GC_dirty) in order to avoid the risk of losing a bit. */
 /* We do this with a test-and-set spin lock if possible.            */
-GC_INNER volatile AO_TS_t GC_fault_handler_lock = AO_TS_INITIALIZER;
-
 static void
 async_set_pht_entry_from_index(volatile page_hash_table db, size_t index)
 {
@@ -3224,7 +3222,7 @@ async_set_pht_entry_from_index(volatile page_hash_table db, size_t index)
   set_pht_entry_from_index(db, index);
   GC_release_dirty_lock();
 }
-#  else /* THREADS && !AO_HAVE_test_and_set_acquire */
+#  else /* THREADS && !NEED_FAULT_HANDLER_LOCK */
 #    error No test_and_set operation: Introduces a race.
 #  endif
 #endif /* !NO_MANUAL_VDB || MPROTECT_VDB */

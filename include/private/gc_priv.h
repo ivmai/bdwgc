@@ -1470,6 +1470,16 @@ struct _GC_arrays {
 #endif
 
 #ifdef THREADS
+#  ifdef USE_SPIN_LOCK
+#    define GC_allocate_lock GC_arrays._allocate_lock
+  volatile AO_TS_t _allocate_lock;
+#  endif
+#  if !defined(HAVE_LOCKFREE_AO_OR) && defined(AO_HAVE_test_and_set_acquire) \
+      && (!defined(NO_MANUAL_VDB) || defined(MPROTECT_VDB))
+#    define NEED_FAULT_HANDLER_LOCK
+#    define GC_fault_handler_lock GC_arrays._fault_handler_lock
+  volatile AO_TS_t _fault_handler_lock;
+#  endif
 #  define GC_roots_were_cleared GC_arrays._roots_were_cleared
   GC_bool _roots_were_cleared;
 #else
@@ -2884,9 +2894,7 @@ GC_EXTERN CRITICAL_SECTION GC_write_cs;
 GC_EXTERN GC_bool GC_write_disabled;
 #    endif
 #  endif /* MSWIN32 || MSWINCE */
-#  if (!defined(NO_MANUAL_VDB) || defined(MPROTECT_VDB)) \
-      && !defined(HAVE_LOCKFREE_AO_OR)                   \
-      && defined(AO_HAVE_test_and_set_acquire)
+#  ifdef NEED_FAULT_HANDLER_LOCK
 /* Acquire the spin lock we use to update dirty bits.       */
 /* Threads should not get stopped holding it.  But we may   */
 /* acquire and release it during GC_remove_protection call. */
@@ -2894,11 +2902,10 @@ GC_EXTERN GC_bool GC_write_disabled;
       do { /* empty */              \
       } while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET)
 #    define GC_release_dirty_lock() AO_CLEAR(&GC_fault_handler_lock)
-GC_EXTERN volatile AO_TS_t GC_fault_handler_lock;
 #  else
 #    define GC_acquire_dirty_lock() (void)0
 #    define GC_release_dirty_lock() (void)0
-#  endif /* NO_MANUAL_VDB && !MPROTECT_VDB || HAVE_LOCKFREE_AO_OR */
+#  endif
 #  ifdef MSWINCE
 GC_EXTERN GC_bool GC_dont_query_stack_min;
 #  endif

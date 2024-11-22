@@ -195,7 +195,6 @@ GC_EXTERN WapiMutex GC_allocate_ml_PSP2;
 /* significant wasted time.  We thus rely mostly on queued locks. */
 #      undef USE_SPIN_LOCK
 #      define USE_SPIN_LOCK
-GC_EXTERN volatile AO_TS_t GC_allocate_lock;
 GC_INNER void GC_lock(void);
 #      ifdef GC_ASSERTIONS
 #        define UNCOND_LOCK()                                            \

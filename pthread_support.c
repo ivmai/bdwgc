@@ -2856,8 +2856,6 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 /* as STL alloc.h.  This isn't really the right way to do this.       */
 /* but until the POSIX scheduling mess gets straightened out ...      */
 
-GC_INNER volatile AO_TS_t GC_allocate_lock = AO_TS_INITIALIZER;
-
 /* Spin cycles if we suspect we are running on an uniprocessor.       */
 #    define low_spin_max 30
 

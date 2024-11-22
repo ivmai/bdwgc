@@ -1087,6 +1087,12 @@ GC_init(void)
 #  ifndef GC_ALWAYS_MULTITHREADED
   GC_ASSERT(!GC_need_to_lock);
 #  endif
+#  ifdef USE_SPIN_LOCK
+  GC_allocate_lock = AO_TS_INITIALIZER;
+#  endif
+#  ifdef NEED_FAULT_HANDLER_LOCK
+  GC_fault_handler_lock = AO_TS_INITIALIZER;
+#  endif
 #  ifdef SN_TARGET_PS3
   {
     pthread_mutexattr_t mattr;
