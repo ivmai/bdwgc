@@ -28,12 +28,11 @@
  *   the file after each character change (and keeping the old ones in an
  *   edit history).
  *
- * For optimal performance, cords should be built by
- * concatenating short sections.
- * This interface is designed for maximum compatibility with C strings.
- * ASCII NUL characters may be embedded in cords using CORD_from_fn.
- * This is handled correctly, but CORD_to_char_star will produce a string
- * with embedded NULs when given such a cord.
+ * For optimal performance, cords should be built by concatenating short
+ * sections.  This interface is designed for maximum compatibility with
+ * C strings.  ASCII NUL characters may be embedded in cords using
+ * CORD_from_fn.  This is handled correctly, but CORD_to_char_star will
+ * produce a string with embedded NULs when given such a cord.
  *
  * This interface is fairly big, largely for performance reasons.
  * The most basic constants and functions:
@@ -41,15 +40,15 @@
  * CORD - the type of a cord;
  * CORD_EMPTY - empty cord;
  * CORD_len(cord) - length of a cord;
- * CORD_cat(cord1,cord2) - concatenation of two cords;
+ * CORD_cat(cord1, cord2) - concatenation of two cords;
  * CORD_substr(cord, start, len) - substring (or subcord);
- * CORD_pos i;  CORD_FOR(i, cord) {  ... CORD_pos_fetch(i) ... } -
- *  examine each character in a cord (CORD_pos_fetch(i) is the char);
- * CORD_fetch(int i) - Retrieve i'th character (slowly);
+ * CORD_pos i; CORD_FOR(i, cord) { ... CORD_pos_fetch(i) ... } - examine
+ *  each character in a cord (CORD_pos_fetch(i) is the char);
+ * CORD_fetch(i) - retrieve i'th character (slowly);
  * CORD_cmp(cord1, cord2) - compare two cords;
- * CORD_from_file(FILE * f) - turn a read-only file into a cord;
- * CORD_to_char_star(cord) - convert to C string
- *  (non-NULL C constant strings are cords);
+ * CORD_from_file(FILE *f) - turn a read-only file into a cord;
+ * CORD_to_char_star(cord) - convert to C string (non-NULL C constant
+ *  strings are cords);
  * CORD_printf (etc.) - cord version of printf (use %r for cords).
  */
 
