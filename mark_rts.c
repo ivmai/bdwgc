@@ -644,10 +644,12 @@ GC_exclude_static_roots(void *b, void *e)
   }
 
   /* Round boundaries in direction reverse to that of GC_add_roots. */
+#if ALIGNMENT > 1
   b = PTR_ALIGN_DOWN((ptr_t)b, ALIGNMENT);
   e = EXPECT(ADDR(e) > ~(word)(ALIGNMENT - 1), FALSE)
           ? PTR_ALIGN_DOWN((ptr_t)e, ALIGNMENT) /* overflow */
           : PTR_ALIGN_UP((ptr_t)e, ALIGNMENT);
+#endif
 
   LOCK();
   GC_exclude_static_roots_inner((ptr_t)b, (ptr_t)e);
