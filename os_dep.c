@@ -3108,12 +3108,10 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # if !defined(THREADS) || defined(HAVE_LOCKFREE_AO_OR)
 #   define async_set_pht_entry_from_index(db, index) \
                         set_pht_entry_from_index_concurrent(db, index)
-# elif defined(AO_HAVE_test_and_set_acquire)
+# elif defined(NEED_FAULT_HANDLER_LOCK)
     /* We need to lock around the bitmap update (in the write fault     */
     /* handler or GC_dirty) in order to avoid the risk of losing a bit. */
     /* We do this with a test-and-set spin lock if possible.            */
-    GC_INNER volatile AO_TS_t GC_fault_handler_lock = AO_TS_INITIALIZER;
-
     static void async_set_pht_entry_from_index(volatile page_hash_table db,
                                                size_t index)
     {
@@ -3123,7 +3121,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     }
 # else
 #   error No test_and_set operation: Introduces a race.
-# endif /* THREADS && !AO_HAVE_test_and_set_acquire */
+# endif /* THREADS && !NEED_FAULT_HANDLER_LOCK */
 #endif /* !GC_DISABLE_INCREMENTAL */
 
 #ifdef MPROTECT_VDB

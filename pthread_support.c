@@ -2425,8 +2425,6 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
 /* as STL alloc.h.  This isn't really the right way to do this.   */
 /* but until the POSIX scheduling mess gets straightened out ...  */
 
-GC_INNER volatile AO_TS_t GC_allocate_lock = AO_TS_INITIALIZER;
-
 # define low_spin_max 30 /* spin cycles if we suspect uniprocessor  */
 # define high_spin_max SPIN_MAX /* spin cycles for multiprocessor   */
 

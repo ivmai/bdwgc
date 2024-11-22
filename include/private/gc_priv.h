@@ -1539,6 +1539,15 @@ struct _GC_arrays {
                         /* valid root sets.                             */
   size_t _excl_table_entries;   /* Number of entries in use.    */
 # ifdef THREADS
+#   ifdef USE_SPIN_LOCK
+#     define GC_allocate_lock GC_arrays._allocate_lock
+      volatile AO_TS_t _allocate_lock;
+#   endif
+#   if !defined(HAVE_LOCKFREE_AO_OR) && !defined(GC_DISABLE_INCREMENTAL)
+#     define NEED_FAULT_HANDLER_LOCK
+#     define GC_fault_handler_lock GC_arrays._fault_handler_lock
+      volatile AO_TS_t _fault_handler_lock;
+#   endif
 #   define GC_roots_were_cleared GC_arrays._roots_were_cleared
     GC_bool _roots_were_cleared;
 # endif
@@ -2761,7 +2770,7 @@ GC_EXTERN signed_word GC_bytes_found;
 
 #   endif
 # endif /* MSWIN32 || MSWINCE */
-# if defined(GC_DISABLE_INCREMENTAL) || defined(HAVE_LOCKFREE_AO_OR)
+# ifndef NEED_FAULT_HANDLER_LOCK
 #   define GC_acquire_dirty_lock() (void)0
 #   define GC_release_dirty_lock() (void)0
 # else
@@ -2772,8 +2781,6 @@ GC_EXTERN signed_word GC_bytes_found;
         do { /* empty */ \
         } while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET)
 #   define GC_release_dirty_lock() AO_CLEAR(&GC_fault_handler_lock)
-    GC_EXTERN volatile AO_TS_t GC_fault_handler_lock;
-                                        /* defined in os_dep.c */
 # endif
 # ifdef MSWINCE
     GC_EXTERN GC_bool GC_dont_query_stack_min;
