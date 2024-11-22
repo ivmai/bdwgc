@@ -7,7 +7,9 @@ DEFINES=-DGC_DLL -DGC_THREADS -DGC_DISCOVER_TASK_THREADS \
     -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE \
     -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION \
     -DGC_REQUIRE_WCSDUP -DUSE_MUNMAP
+CORD_DEFINES=-DGC_DLL -DCORD_NOT_DLL
 CFLAGS=-Iinclude -Ilibatomic_ops\src $(DEFINES) -g $(CFLAGS_EXTRA)
+CORD_CFLAGS=-Iinclude $(CORD_DEFINES) -g $(CFLAGS_EXTRA)
 LFLAGS=/ma/implib/co
 CC=sc
 
@@ -20,10 +22,11 @@ gc.obj: extra\gc.c
 .cpp.obj:
 	$(CC) -c $(CFLAGS) -Aa $*
 
-check: gctest.exe cpptest.exe treetest.exe
+check: gctest.exe cpptest.exe treetest.exe cordtest.exe
 	gctest.exe
 	cpptest.exe
 	treetest.exe
+	cordtest.exe
 
 gc.lib: gc.dll
 
@@ -38,9 +41,19 @@ gc.def: digimars.mak
 	echo GC_is_visible_print_proc >>gc.def
 	echo GC_is_valid_displacement_print_proc >>gc.def
 
+cord\cordbscs.obj: cord\cordbscs.c
+	$(CC) -c $(CORD_CFLAGS) cord\cordbscs.c -ocord\cordbscs.obj
+
+cord\cordprnt.obj: cord\cordprnt.c
+	$(CC) -c $(CORD_CFLAGS) cord\cordprnt.c -ocord\cordprnt.obj
+
+cord\cordxtra.obj: cord\cordxtra.c
+	$(CC) -c $(CORD_CFLAGS) cord\cordxtra.c -ocord\cordxtra.obj
+
 clean:
 	del *.log *.map *.obj gc.def gc.dll gc.lib
 	del tests\*.obj gctest.exe cpptest.exe treetest.exe
+	del cord\*.obj cord\tests\cordtest.obj cordtest.exe
 
 gctest.exe: gc.lib tests\gctest.obj
 	$(CC) -ogctest.exe tests\gctest.obj gc.lib
@@ -59,6 +72,12 @@ treetest.exe: gc.lib tests\treetest.obj
 
 tests\treetest.obj: tests\tree.cc
 	$(CC) -c $(CFLAGS) -cpp tests\tree.cc -otests\treetest.obj
+
+cordtest.exe: cord\tests\cordtest.obj cord\cordbscs.obj cord\cordprnt.obj cord\cordxtra.obj gc.lib
+	$(CC) -ocordtest.exe cord\tests\cordtest.obj cord\cordbscs.obj cord\cordprnt.obj cord\cordxtra.obj gc.lib
+
+cord\tests\cordtest.obj: cord\tests\cordtest.c
+	$(CC) -c $(CORD_CFLAGS) cord\tests\cordtest.c -ocord\tests\cordtest.obj
 
 gc_badalc.obj: gc_badalc.cc gc_badalc.cpp
 gc_cpp.obj: gc_cpp.cc gc_cpp.cpp
