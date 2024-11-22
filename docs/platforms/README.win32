@@ -106,15 +106,14 @@ Ivan V. Demakov's README for the Watcom port:
 
 The collector has been tested with Watcom C 10.6, 11.0 and OpenWatcom 2.0.
 It runs under Win32 and win32s, and even under DOS with dos4gw
-dos-extender. It should also run under OS/2, though this isn't
-tested. Under Win32 the collector can be built either as dll
+dos-extender.  Under Win32 the collector can be built either as dll
 or as static library.
 
 Note that all compilations were done under Windows 95, NT, Windows 2K or
 later.  For unknown reason compiling under Windows 3.11 for NT (one
 attempt has been made) leads to broken executables.
 
-Incremental collection is supported (except for MSDOS and OS/2).
+Incremental collection is supported (except for MSDOS).
 
 To build the collector, use the command:
     wmake -f WCC_MAKEFILE
@@ -122,9 +121,8 @@ To build the collector, use the command:
 You might need to customize the build, i.e. set the target platform, library
 type (dynamic or static), calling conventions, and optimization options.
 In this case, pass additional arguments to wmake, e.g.:
-- "SYSTEM=DOS4GW" to target dos4gw execution environment,
-- "SYSTEM=OS2" to target OS/2 operating system,
-- "ENABLE_STATIC=1" to build the collector as a static library.
+- "ENABLE_STATIC=1" to build the collector as a static library,
+- "SYSTEM=DOS4GW" to target dos4gw execution environment.
 
 To run the tests, specify `check` goal:
     wmake -f WCC_MAKEFILE check
