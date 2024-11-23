@@ -2174,6 +2174,11 @@ GC_default_on_abort(const char *msg)
 #  else
     __android_log_assert("*" /* cond */, GC_ANDROID_LOG_TAG, "%s\n", msg);
 #  endif
+#  if defined(HAIKU) && !defined(DONT_CALL_DEBUGGER)
+    /* This will cause the crash reason to appear in any debug reports  */
+    /* generated (by the default system application crash dialog).      */
+    debugger(msg);
+#  endif
   }
 
 #  if !defined(NO_DEBUGGING) && !defined(GC_ANDROID_LOG)
