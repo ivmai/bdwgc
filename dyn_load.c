@@ -1418,8 +1418,9 @@ GC_register_dynamic_libraries(void)
   int32 cookie = 0;
 
   GC_ASSERT(I_HOLD_LOCK());
-  while (get_next_image_info(0, &cookie, &info) == B_OK) {
+  while (get_next_image_info(B_CURRENT_TEAM, &cookie, &info) == B_OK) {
     ptr_t data = (ptr_t)info.data;
+
     GC_add_roots_inner(data, data + info.data_size, TRUE);
   }
 }
