@@ -1510,12 +1510,7 @@ fork_child_proc(void)
 #    endif
 #    ifdef PARALLEL_MARK
   if (GC_parallel) {
-#      if defined(THREAD_SANITIZER) && defined(GC_ASSERTIONS) \
-          && defined(CAN_CALL_ATFORK)
-    (void)pthread_mutex_unlock(&mark_mutex);
-#      else
-    GC_release_mark_lock();
-#      endif
+    pthread_mutex_init(&mark_mutex, NULL);
     /* Turn off parallel marking in the child, since we are probably  */
     /* just going to exec, and we would have to restart mark threads. */
     GC_parallel = FALSE;
@@ -2726,11 +2721,6 @@ GC_wrap_pthread_create(pthread_t *new_thread,
     DISABLE_CANCEL(cancel_state);
 
     while (sem_wait(&si.registered) == -1) {
-#    ifdef HAIKU
-      /* To workaround some bug in Haiku semaphores.    */
-      if (EACCES == errno)
-        continue;
-#    endif
       if (errno != EINTR)
         ABORT("sem_wait failed");
     }

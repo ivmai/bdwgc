@@ -2174,6 +2174,10 @@ GC_default_on_abort(const char *msg)
 #  else
     __android_log_assert("*" /* cond */, GC_ANDROID_LOG_TAG, "%s\n", msg);
 #  endif
+
+#  if defined(__HAIKU__)
+    debugger(msg);
+#  endif
   }
 
 #  if !defined(NO_DEBUGGING) && !defined(GC_ANDROID_LOG)

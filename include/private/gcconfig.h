@@ -895,7 +895,19 @@ extern char etext[];
 #ifdef HAIKU
 #  define OS_TYPE "HAIKU"
 #  define DYNAMIC_LOADING
-#  define MPROTECT_VDB
+#  define USE_GET_STACKBASE_FOR_MAIN
+#  undef MPROTECT_VDB		/* slow */
+#  ifndef HAVE_PTHREAD_GETATTR_NP
+#    define HAVE_PTHREAD_GETATTR_NP 1
+#  endif
+#  ifndef HAVE_CLOCK_GETTIME
+#    define HAVE_CLOCK_GETTIME 1
+#  endif
+#  ifndef USE_MMAP
+#    define USE_MMAP 1
+#  endif
+#  define USE_MMAP_ANON
+#  define USE_SPIN_LOCK
 EXTERN_C_END
 #  include <OS.h>
 EXTERN_C_BEGIN
@@ -1351,8 +1363,7 @@ extern int etext[];
 #    define STACKBOTTOM MAKE_CPTR(0x3ffff000)
 #  endif
 #  ifdef HAIKU
-extern int etext[];
-#    define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
+/* Nothing specific. */
 #  endif
 #  ifdef HURD
 /* Nothing specific. */
@@ -2247,8 +2258,7 @@ extern int _end[];
 /* Nothing specific. */
 #  endif
 #  ifdef HAIKU
-#    define HEURISTIC2
-#    define SEARCH_FOR_DATA_START
+/* Nothing specific. */
 #  endif
 #  ifdef HURD
 /* Nothing specific. */
@@ -3431,9 +3441,6 @@ void *psp2_get_mem(size_t bytes);
 #  elif defined(NINTENDO_SWITCH)
 void *switch_get_mem(size_t bytes);
 #    define GET_MEM(bytes) (struct hblk *)switch_get_mem(bytes)
-#  elif defined(HAIKU)
-ptr_t GC_haiku_get_mem(size_t bytes);
-#    define GET_MEM(bytes) (struct hblk *)GC_haiku_get_mem(bytes)
 #  elif defined(EMSCRIPTEN_TINY)
 void *emmalloc_memalign(size_t alignment, size_t size);
 #    define GET_MEM(bytes) \

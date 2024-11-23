@@ -33,10 +33,6 @@
 #    include <windows.h>
 #  endif /* !GC_PTHREADS */
 
-#  if defined(__HAIKU__)
-#    include <errno.h>
-#  endif
-
 #  include <stdlib.h>
 
 #  ifndef NTHREADS
@@ -158,13 +154,6 @@ main(void)
     if (err != 0) {
       fprintf(stderr, "Thread #%d join failed: %s\n", th_nums[i],
               strerror(err));
-#      if defined(__HAIKU__)
-      /* The error is just ignored (and the test is ended) to */
-      /* workaround some bug in Haiku pthread_join.           */
-      /* TODO: The thread is not deleted from GC_threads.     */
-      if (ESRCH == err)
-        break;
-#      endif
       exit(1);
     }
 #    else

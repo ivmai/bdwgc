@@ -889,20 +889,6 @@ GC_get_stack_base(struct GC_stack_base *sb)
 #  define HAVE_GET_STACK_BASE
 #endif /* EMBOX */
 
-#ifdef HAIKU
-#  include <kernel/OS.h>
-
-GC_API int GC_CALL
-GC_get_stack_base(struct GC_stack_base *sb)
-{
-  thread_info th;
-  get_thread_info(find_thread(NULL), &th);
-  sb->mem_base = th.stack_end;
-  return GC_SUCCESS;
-}
-#  define HAVE_GET_STACK_BASE
-#endif /* HAIKU */
-
 #ifdef OS2
 GC_API int GC_CALL
 GC_get_stack_base(struct GC_stack_base *sb)
@@ -1327,7 +1313,7 @@ GC_get_main_stack_base(void)
 }
 #  define GET_MAIN_STACKBASE_SPECIAL
 
-#elif !defined(ANY_MSWIN) && !defined(EMBOX) && !defined(HAIKU) \
+#elif !defined(ANY_MSWIN) && !defined(EMBOX) \
     && !defined(OS2) && !(defined(OPENBSD) && defined(THREADS)) \
     && (!(defined(SOLARIS) && defined(THREADS)) || defined(_STRICT_STDC))
 
@@ -1397,6 +1383,8 @@ GC_get_main_stack_base(void)
   result = GC_qnx_main_stack_base();
 #    elif defined(FREEBSD_STACKBOTTOM)
   result = GC_freebsd_main_stack_base();
+#    elif defined(HAIKU)
+  ABORT("pthread_attr_getstack failed");
 #    elif defined(HEURISTIC2)
   {
     ptr_t sp = GC_approx_sp();
@@ -1428,7 +1416,7 @@ GC_get_main_stack_base(void)
   return result;
 }
 #  define GET_MAIN_STACKBASE_SPECIAL
-#endif /* !ANY_MSWIN && !HAIKU && !OS2 */
+#endif /* !ANY_MSWIN && && !OS2 */
 
 #if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
     && defined(THREADS) && !defined(HAVE_GET_STACK_BASE)
@@ -2251,7 +2239,7 @@ GC_register_data_segments(void)
   /* Avoid even referencing DATASTART and DATAEND as they are   */
   /* unnecessary and cause linker errors when bitcode is        */
   /* enabled.  GC_register_data_segments is not called anyway.  */
-#  elif defined(DYNAMIC_LOADING) && defined(DARWIN)
+#  elif defined(DYNAMIC_LOADING) && (defined(DARWIN) || defined(HAIKU))
   /* No-op.  GC_register_main_static_data() always returns false. */
 #  elif defined(REDIRECT_MALLOC) && defined(SOLARIS) && defined(THREADS)
   /* As of Solaris 2.3, the Solaris threads implementation    */
@@ -2680,24 +2668,6 @@ GC_win32_free_heap(void)
 }
 #endif /* ANY_MSWIN || MSWIN_XBOX1 */
 
-#ifdef HAIKU
-#  ifdef GC_LEAK_DETECTOR_H
-/* This is to use the real one.     */
-#    undef posix_memalign
-#  endif
-ptr_t
-GC_haiku_get_mem(size_t bytes)
-{
-  void *mem;
-
-  GC_ASSERT(GC_page_size != 0);
-  if (EXPECT(posix_memalign(&mem, GC_page_size, bytes) != 0, FALSE))
-    return NULL;
-
-  return mem;
-}
-#endif /* HAIKU */
-
 #if (defined(USE_MUNMAP) || defined(MPROTECT_VDB)) && !defined(USE_WINALLOC)
 #  define ABORT_ON_REMAP_FAIL(C_msg_prefix, start_addr, len)             \
     ABORT_ARG3(C_msg_prefix " failed", " at %p (length %lu), errno= %d", \
@@ -2769,7 +2739,7 @@ block_unmap_inner(ptr_t start_addr, size_t len)
 #    ifdef SN_TARGET_PS3
     ps3_free_mem(start_addr, len);
 #    elif defined(AIX) || defined(COSMO) || defined(CYGWIN32) \
-        || defined(HAIKU) || defined(HPUX)                    \
+        || defined(HPUX)                    \
         || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE))
     /* On AIX, mmap(PROT_NONE) fails with ENOMEM unless the       */
     /* environment variable XPG_SUS_ENV is set to ON.             */
@@ -4813,6 +4783,8 @@ GC_mprotect_thread(void *arg)
 
 #  if defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
   (void)pthread_setname_np("GC-mprotect");
+#  elif defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID)
+  (void)pthread_setname_np(pthread_self(), "GC-mprotect");
 #  endif
 #  if defined(THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
   GC_darwin_register_self_mach_handler();
