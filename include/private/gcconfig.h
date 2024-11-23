@@ -970,6 +970,10 @@ EXTERN_C_BEGIN
 # ifdef HAIKU
 #   define OS_TYPE "HAIKU"
 #   define DYNAMIC_LOADING
+#   define HEURISTIC1 /* relies on pthread_attr_getstack actually */
+#   ifndef USE_GET_STACKBASE_FOR_MAIN
+#     define USE_GET_STACKBASE_FOR_MAIN
+#   endif
 #   define USE_MMAP_ANON
     /* TODO: MPROTECT_VDB is not working correctly on anything other than */
     /* recent nightly Haiku OS builds (as of Nov 2024), and also it is    */
@@ -2449,7 +2453,6 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef HAIKU
-#     define HEURISTIC2
 #     define SEARCH_FOR_DATA_START
 #   endif
 #   ifdef SOLARIS
@@ -3104,7 +3107,7 @@ EXTERN_C_BEGIN
 
 /* Outline pthread primitives to use in GC_get_[main_]stack_base.       */
 #if ((defined(FREEBSD) && defined(__GLIBC__)) /* kFreeBSD */ \
-     || defined(LINUX) || defined(NETBSD)) \
+     || defined(HAIKU) || defined(LINUX) || defined(NETBSD)) \
     && !defined(NO_PTHREAD_GETATTR_NP)
 # define HAVE_PTHREAD_GETATTR_NP 1
 #elif defined(FREEBSD) && !defined(__GLIBC__) \

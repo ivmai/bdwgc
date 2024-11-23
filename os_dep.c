@@ -845,19 +845,6 @@ GC_INNER size_t GC_page_size = 0;
   }
 #endif /* !MSWIN32 */
 
-#ifdef HAIKU
-# include <kernel/OS.h>
-
-  GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
-  {
-    thread_info th;
-    get_thread_info(find_thread(NULL),&th);
-    sb->mem_base = th.stack_end;
-    return GC_SUCCESS;
-  }
-# define HAVE_GET_STACK_BASE
-#endif /* HAIKU */
-
 #ifdef OS2
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
   {
@@ -1269,8 +1256,8 @@ GC_INNER size_t GC_page_size = 0;
 #   endif
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#elif !defined(AMIGA) && !defined(HAIKU) && !defined(OS2) \
-      && !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
+#elif !defined(AMIGA) && !defined(OS2) && !defined(MSWIN32) \
+      && !defined(MSWINCE) && !defined(CYGWIN32) \
       && !defined(GC_OPENBSD_THREADS) \
       && (!defined(GC_SOLARIS_THREADS) || defined(_STRICT_STDC))
 
@@ -1375,7 +1362,7 @@ GC_INNER size_t GC_page_size = 0;
     return(result);
   }
 # define GET_MAIN_STACKBASE_SPECIAL
-#endif /* !AMIGA, !HAIKU, !OPENBSD, !OS2, !Windows */
+#endif /* !AMIGA, !OPENBSD, !OS2, !Windows */
 
 #if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
     && defined(THREADS) && !defined(HAVE_GET_STACK_BASE)
