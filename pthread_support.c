@@ -1247,6 +1247,12 @@ static void fork_child_proc(void)
 #       else
           GC_release_mark_lock();
 #       endif
+        /* Reinitialize the mark lock.  The reason is the same as for   */
+        /* GC_allocate_ml below.                                        */
+        (void)pthread_mutex_destroy(&mark_mutex);
+        /* TODO: GLIBC_2_19_TSX_BUG has no effect. */
+        if (pthread_mutex_init(&mark_mutex, NULL) != 0)
+          ABORT("mark_mutex re-init failed in child");
         /* Turn off parallel marking in the child, since we are probably  */
         /* just going to exec, and we would have to restart mark threads. */
         GC_parallel = FALSE;
