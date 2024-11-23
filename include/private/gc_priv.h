@@ -1872,8 +1872,7 @@ GC_EXTERN size_t GC_real_page_size;
 /* a multiple of a physical page size.  GET_MEM is currently not      */
 /* assumed to retrieve zero-filled space.                             */
 /* TODO: Take advantage of GET_MEM() returning a zero-filled space.   */
-#if defined(ANY_MSWIN) || defined(HAIKU) || defined(MSWIN_XBOX1) \
-    || defined(OS2)
+#if defined(ANY_MSWIN) || defined(MSWIN_XBOX1) || defined(OS2)
 GC_INNER void *GC_get_mem(size_t lb);
 #  define GET_MEM(lb) GC_get_mem(lb)
 #  if defined(CYGWIN32) && !defined(USE_WINALLOC)

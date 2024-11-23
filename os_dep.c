@@ -2477,24 +2477,7 @@ GC_unix_get_mem(size_t bytes)
 
 #endif /* NEED_UNIX_GET_MEM */
 
-#ifdef HAIKU
-#  ifdef GC_LEAK_DETECTOR_H
-/* This is to use the real one. */
-#    undef posix_memalign
-#  endif
-GC_INNER void *
-GC_get_mem(size_t bytes)
-{
-  void *mem;
-
-  GC_ASSERT(GC_page_size != 0);
-  if (EXPECT(posix_memalign(&mem, GC_page_size, bytes) != 0, FALSE))
-    return NULL;
-
-  return mem;
-}
-
-#elif defined(OS2)
+#if defined(OS2)
 GC_INNER void *
 GC_get_mem(size_t bytes)
 {
@@ -2771,7 +2754,7 @@ block_unmap_inner(ptr_t start_addr, size_t len)
 #    ifdef SN_TARGET_PS3
     ps3_free_mem(start_addr, len);
 #    elif defined(AIX) || defined(COSMO) || defined(CYGWIN32) \
-        || defined(HAIKU) || defined(HPUX)                    \
+        || defined(HPUX)                                      \
         || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE))
     /* On AIX, mmap(PROT_NONE) fails with ENOMEM unless the       */
     /* environment variable XPG_SUS_ENV is set to ON.             */

@@ -895,6 +895,7 @@ extern char etext[];
 #ifdef HAIKU
 #  define OS_TYPE "HAIKU"
 #  define DYNAMIC_LOADING
+#  define USE_MMAP_ANON
 #  define MPROTECT_VDB
 EXTERN_C_END
 #  include <OS.h>
@@ -2719,8 +2720,8 @@ EXTERN_C_BEGIN
 #  undef USE_MMAP
 #endif
 
-#if defined(ANY_BSD) || defined(DARWIN) || defined(HAIKU) || defined(IRIX5) \
-    || defined(LINUX) || defined(SOLARIS)                                   \
+#if defined(ANY_BSD) || defined(DARWIN) || defined(IRIX5) || defined(LINUX) \
+    || defined(SOLARIS)                                                     \
     || ((defined(CYGWIN32) || defined(USE_MMAP) || defined(USE_MUNMAP))     \
         && !defined(USE_WINALLOC))
 /* Try both sbrk and mmap, in that order.     */
