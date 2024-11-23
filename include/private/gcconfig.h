@@ -970,6 +970,9 @@ EXTERN_C_BEGIN
 # ifdef HAIKU
 #   define OS_TYPE "HAIKU"
 #   define DYNAMIC_LOADING
+    /* Note: DATASTART is not used really, see GC_register_main_static_data. */
+    extern int etext[];
+#   define DATASTART ((ptr_t)(((word)(etext) + 0xfff) & ~(word)0xfff))
 #   define HEURISTIC1 /* relies on pthread_attr_getstack actually */
 #   ifndef USE_GET_STACKBASE_FOR_MAIN
 #     define USE_GET_STACKBASE_FOR_MAIN
@@ -1472,8 +1475,7 @@ EXTERN_C_BEGIN
 #     define DATAEND ((ptr_t)_end)
 #   endif
 #   ifdef HAIKU
-      extern int etext[];
-#     define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~(word)0xfff))
+      /* Nothing specific. */
 #   endif
 #   ifdef SOLARIS
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
@@ -2460,7 +2462,7 @@ EXTERN_C_BEGIN
       /* Nothing specific. */
 #   endif
 #   ifdef HAIKU
-#     define SEARCH_FOR_DATA_START
+      /* Nothing specific. */
 #   endif
 #   ifdef SOLARIS
 #     define ELF_CLASS ELFCLASS64

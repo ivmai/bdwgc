@@ -1524,6 +1524,16 @@ GC_INNER GC_bool GC_register_main_static_data(void)
       GC_add_roots_inner(data, data + info.data_size, TRUE);
     }
   }
+
+  GC_INNER GC_bool
+  GC_register_main_static_data(void)
+  {
+    /* On Haiku, the main application binary is also a "shared image" and */
+    /* will be reported in an image_info same as for dynamically-loaded   */
+    /* libraries.                                                         */
+    return FALSE;
+  }
+# define HAVE_REGISTER_MAIN_STATIC_DATA
 #endif /* HAIKU */
 
 #elif defined(PCR)
