@@ -895,6 +895,9 @@ extern char etext[];
 #ifdef HAIKU
 #  define OS_TYPE "HAIKU"
 #  define DYNAMIC_LOADING
+/* Note: DATASTART is not used really, see GC_register_main_static_data(). */
+extern int etext[];
+#  define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
 #  ifndef USE_GET_STACKBASE_FOR_MAIN
 #    define USE_GET_STACKBASE_FOR_MAIN
 #  endif
@@ -1368,8 +1371,7 @@ extern int etext[];
 #    define STACKBOTTOM MAKE_CPTR(0x3ffff000)
 #  endif
 #  ifdef HAIKU
-extern int etext[];
-#    define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
+/* Nothing specific. */
 #  endif
 #  ifdef HURD
 /* Nothing specific. */
@@ -2274,7 +2276,7 @@ extern int _end[];
 /* Nothing specific. */
 #  endif
 #  ifdef HAIKU
-#    define SEARCH_FOR_DATA_START
+/* Nothing specific. */
 #  endif
 #  ifdef HURD
 /* Nothing specific. */

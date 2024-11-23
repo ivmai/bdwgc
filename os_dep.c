@@ -2237,7 +2237,7 @@ GC_register_data_segments(void)
   /* Avoid even referencing DATASTART and DATAEND as they are   */
   /* unnecessary and cause linker errors when bitcode is        */
   /* enabled.  GC_register_data_segments is not called anyway.  */
-#  elif defined(DYNAMIC_LOADING) && defined(DARWIN)
+#  elif defined(DYNAMIC_LOADING) && (defined(DARWIN) || defined(HAIKU))
   /* No-op.  GC_register_main_static_data() always returns false. */
 #  elif defined(REDIRECT_MALLOC) && defined(SOLARIS) && defined(THREADS)
   /* As of Solaris 2.3, the Solaris threads implementation    */
