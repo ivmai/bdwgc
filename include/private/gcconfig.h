@@ -902,6 +902,13 @@ extern int etext[];
 #    define USE_GET_STACKBASE_FOR_MAIN
 #  endif
 #  define USE_MMAP_ANON
+/* On Haiku R1, at least, pthread locks never spin but always call      */
+/* into the kernel if the lock cannot be acquired with a simple atomic  */
+/* operation.  (Up to 5x overall performance improvement of the         */
+/* collector is observed by forcing use of spin locks.)                 */
+#  ifndef USE_SPIN_LOCK
+#    define USE_SPIN_LOCK
+#  endif
 /* TODO: MPROTECT_VDB is not working correctly on anything other than   */
 /* recent nightly Haiku OS builds (as of Nov 2024), and also it is      */
 /* considerably slower than regular collecting, so do not enable it     */
