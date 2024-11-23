@@ -898,6 +898,8 @@ extern char etext[];
 /* Note: DATASTART is not used really, see GC_register_main_static_data(). */
 extern int etext[];
 #  define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
+#  define HEURISTIC1 /* relies on pthread_attr_getstack actually */
+#  define STACK_GRAN 0x1000000
 #  ifndef USE_GET_STACKBASE_FOR_MAIN
 #    define USE_GET_STACKBASE_FOR_MAIN
 #  endif
