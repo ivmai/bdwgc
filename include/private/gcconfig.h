@@ -896,7 +896,10 @@ extern char etext[];
 #  define OS_TYPE "HAIKU"
 #  define DYNAMIC_LOADING
 #  define USE_MMAP_ANON
-#  define MPROTECT_VDB
+/* TODO: MPROTECT_VDB is not working correctly on anything other than   */
+/* recent nightly Haiku OS builds (as of Nov 2024), and also it is      */
+/* considerably slower than regular collecting, so do not enable it     */
+/* for now.                                                             */
 EXTERN_C_END
 #  include <OS.h>
 EXTERN_C_BEGIN
