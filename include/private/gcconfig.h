@@ -895,6 +895,9 @@ extern char etext[];
 #ifdef HAIKU
 #  define OS_TYPE "HAIKU"
 #  define DYNAMIC_LOADING
+#  ifndef USE_GET_STACKBASE_FOR_MAIN
+#    define USE_GET_STACKBASE_FOR_MAIN
+#  endif
 #  define USE_MMAP_ANON
 /* TODO: MPROTECT_VDB is not working correctly on anything other than   */
 /* recent nightly Haiku OS builds (as of Nov 2024), and also it is      */
@@ -2271,7 +2274,6 @@ extern int _end[];
 /* Nothing specific. */
 #  endif
 #  ifdef HAIKU
-#    define HEURISTIC2
 #    define SEARCH_FOR_DATA_START
 #  endif
 #  ifdef HURD
@@ -3143,8 +3145,9 @@ extern ptr_t GC_data_start;
 #endif
 
 /* Outline pthread primitives to use in GC_get_[main_]stack_base.       */
-#if ((defined(FREEBSD) && defined(__GLIBC__)) /* kFreeBSD */                 \
-     || defined(COSMO) || defined(LINUX) || defined(KOS) || defined(NETBSD)) \
+#if ((defined(FREEBSD) && defined(__GLIBC__)) /* kFreeBSD */               \
+     || defined(COSMO) || defined(HAIKU) || defined(LINUX) || defined(KOS) \
+     || defined(NETBSD))                                                   \
     && !defined(NO_PTHREAD_GETATTR_NP)
 #  define HAVE_PTHREAD_GETATTR_NP 1
 #elif defined(FREEBSD) && !defined(__GLIBC__) \

@@ -889,20 +889,6 @@ GC_get_stack_base(struct GC_stack_base *sb)
 #  define HAVE_GET_STACK_BASE
 #endif /* EMBOX */
 
-#ifdef HAIKU
-#  include <kernel/OS.h>
-
-GC_API int GC_CALL
-GC_get_stack_base(struct GC_stack_base *sb)
-{
-  thread_info th;
-  get_thread_info(find_thread(NULL), &th);
-  sb->mem_base = th.stack_end;
-  return GC_SUCCESS;
-}
-#  define HAVE_GET_STACK_BASE
-#endif /* HAIKU */
-
 #ifdef OS2
 GC_API int GC_CALL
 GC_get_stack_base(struct GC_stack_base *sb)
@@ -1327,8 +1313,8 @@ GC_get_main_stack_base(void)
 }
 #  define GET_MAIN_STACKBASE_SPECIAL
 
-#elif !defined(ANY_MSWIN) && !defined(EMBOX) && !defined(HAIKU) \
-    && !defined(OS2) && !(defined(OPENBSD) && defined(THREADS)) \
+#elif !defined(ANY_MSWIN) && !defined(EMBOX) && !defined(OS2) \
+    && !(defined(OPENBSD) && defined(THREADS))                \
     && (!(defined(SOLARIS) && defined(THREADS)) || defined(_STRICT_STDC))
 
 #  if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
@@ -1428,7 +1414,7 @@ GC_get_main_stack_base(void)
   return result;
 }
 #  define GET_MAIN_STACKBASE_SPECIAL
-#endif /* !ANY_MSWIN && !HAIKU && !OS2 */
+#endif /* !ANY_MSWIN && !EMBOX && !OS2 */
 
 #if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
     && defined(THREADS) && !defined(HAVE_GET_STACK_BASE)
