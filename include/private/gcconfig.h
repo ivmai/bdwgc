@@ -900,6 +900,9 @@ EXTERN_C_END
 #  include <OS.h>
 EXTERN_C_BEGIN
 #  define GETPAGESIZE() (unsigned)B_PAGE_SIZE
+#  ifndef HAVE_CLOCK_GETTIME
+#    define HAVE_CLOCK_GETTIME 1
+#  endif
 #endif /* HAIKU */
 
 #ifdef HPUX
