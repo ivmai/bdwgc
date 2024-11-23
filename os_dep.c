@@ -2578,19 +2578,6 @@ void * os2_alloc(size_t bytes)
 # undef GC_AMIGA_AM
 #endif
 
-#if defined(HAIKU)
-# include <stdlib.h>
-  ptr_t GC_haiku_get_mem(size_t bytes)
-  {
-    void* mem;
-
-    GC_ASSERT(GC_page_size != 0);
-    if (posix_memalign(&mem, GC_page_size, bytes) == 0)
-      return mem;
-    return NULL;
-  }
-#endif /* HAIKU */
-
 #if (defined(USE_MUNMAP) || defined(MPROTECT_VDB)) && !defined(USE_WINALLOC)
 # define ABORT_ON_REMAP_FAIL(C_msg_prefix, start_addr, len) \
         ABORT_ARG3(C_msg_prefix " failed", \
@@ -2662,7 +2649,7 @@ static void block_unmap_inner(ptr_t start_addr, size_t len)
       if (len != 0) {
 #       ifdef SN_TARGET_PS3
           ps3_free_mem(start_addr, len);
-#       elif defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
+#       elif defined(AIX) || defined(CYGWIN32) \
              || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE)) \
              || defined(HPUX)
           /* On AIX, mmap(PROT_NONE) fails with ENOMEM unless the       */

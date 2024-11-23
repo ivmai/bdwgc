@@ -970,6 +970,7 @@ EXTERN_C_BEGIN
 # ifdef HAIKU
 #   define OS_TYPE "HAIKU"
 #   define DYNAMIC_LOADING
+#   define USE_MMAP_ANON
 #   define MPROTECT_VDB
     EXTERN_C_END
 #   include <OS.h>
@@ -2809,9 +2810,8 @@ EXTERN_C_BEGIN
 # undef USE_MMAP
 #endif
 
-#if defined(DARWIN) || defined(FREEBSD) || defined(HAIKU) \
-    || defined(IRIX5) || defined(LINUX) || defined(NETBSD) \
-    || defined(OPENBSD) || defined(SOLARIS) \
+#if defined(DARWIN) || defined(FREEBSD) || defined(IRIX5) || defined(LINUX) \
+    || defined(NETBSD) || defined(OPENBSD) || defined(SOLARIS) \
     || ((defined(CYGWIN32) || defined(USE_MMAP) || defined(USE_MUNMAP)) \
         && !defined(USE_WINALLOC))
   /* Try both sbrk and mmap, in that order.     */
@@ -3409,9 +3409,6 @@ EXTERN_C_BEGIN
 # elif defined(NINTENDO_SWITCH)
     void *switch_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)switch_get_mem(bytes)
-# elif defined(HAIKU)
-    ptr_t GC_haiku_get_mem(size_t bytes);
-#   define GET_MEM(bytes) (struct hblk*)GC_haiku_get_mem(bytes)
 # elif defined(EMSCRIPTEN_TINY)
     void *emmalloc_memalign(size_t alignment, size_t size);
 #   define GET_MEM(bytes) (struct hblk*)emmalloc_memalign(GC_page_size, bytes)
