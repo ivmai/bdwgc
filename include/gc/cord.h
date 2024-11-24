@@ -229,9 +229,13 @@ extern "C" {
   for (CORD_set_pos(pos, cord, 0); CORD_pos_valid(pos); CORD_next(pos))
 
 /* An out-of-memory handler to call.  Zero value means do nothing       */
-/* special, just abort.                                                 */
+/* special, just abort.  Use of the setter and getter is preferred over */
+/* the direct access to the global variable.                            */
+typedef void (*CORD_oom_fn_t)(void);
+CORD_API void CORD_set_oom_fn(CORD_oom_fn_t);
+CORD_API CORD_oom_fn_t CORD_get_oom_fn(void);
 #ifndef CORD_DONT_DECLARE_OOM_FN
-CORD_API void (*CORD_oom_fn)(void);
+CORD_API CORD_oom_fn_t CORD_oom_fn;
 #endif
 #ifdef CORD_BUILD
 /* no export */ void CORD__call_oom_fn(void);

@@ -33,7 +33,19 @@
 /* programmed defensively enough that this does not result in memory    */
 /* smashes.                                                             */
 
-void (*CORD_oom_fn)(void) = 0;
+CORD_oom_fn_t CORD_oom_fn = 0;
+
+void
+CORD_set_oom_fn(CORD_oom_fn_t fn)
+{
+  CORD_oom_fn = fn;
+}
+
+CORD_oom_fn_t
+CORD_get_oom_fn(void)
+{
+  return CORD_oom_fn;
+}
 
 void
 CORD__call_oom_fn(void)
