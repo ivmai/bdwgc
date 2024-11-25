@@ -977,7 +977,11 @@ extern int __data_start[];
 #  if !defined(CPPCHECK)
 #    define DATAEND /* not needed */
 #  endif
-#  define GWW_VDB
+#  if defined(USE_GLOBAL_ALLOC) && !defined(MSWINRT_FLAVOR)
+/* Cannot pass MEM_WRITE_WATCH to GlobalAlloc(). */
+#  else
+#    define GWW_VDB
+#  endif
 #endif
 
 #ifdef MSWINCE
@@ -2746,11 +2750,6 @@ EXTERN_C_BEGIN
 
 #ifdef GC_DISABLE_INCREMENTAL
 #  undef CHECKSUMS
-#endif
-
-#ifdef USE_GLOBAL_ALLOC
-/* Cannot pass MEM_WRITE_WATCH to GlobalAlloc().      */
-#  undef GWW_VDB
 #endif
 
 #if defined(BASE_ATOMIC_OPS_EMULATED)
