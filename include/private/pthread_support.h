@@ -426,7 +426,7 @@ GC_INNER void GC_suspend_self_inner(GC_thread me, size_t suspend_cnt);
 GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context);
 #  endif
 
-#  if defined(GC_PTHREADS) && !defined(SN_TARGET_ORBIS) \
+#  if defined(GC_PTHREADS) && !defined(PLATFORM_THREADS) \
       && !defined(SN_TARGET_PSP2)
 
 #    ifdef GC_PTHREAD_START_STANDALONE

@@ -36,7 +36,7 @@
 
 #include "private/pthread_support.h"
 
-#if defined(GC_PTHREADS) && !defined(SN_TARGET_ORBIS) \
+#if defined(GC_PTHREADS) && !defined(PLATFORM_THREADS) \
     && !defined(SN_TARGET_PSP2)
 
 /* Invoked from GC_pthread_start. */

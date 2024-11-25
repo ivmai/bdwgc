@@ -34,7 +34,7 @@
 #    if defined(DARWIN) \
         || (defined(GC_WIN32_THREADS) && defined(EMULATE_PTHREAD_SEMAPHORE))
 #      include "private/darwin_semaphore.h"
-#    elif !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+#    elif !defined(PLATFORM_THREADS) && !defined(SN_TARGET_PSP2)
 #      include <semaphore.h>
 #    endif
 #    include <errno.h>
@@ -43,7 +43,7 @@
 #  if !defined(GC_WIN32_THREADS)
 #    include <sched.h>
 #    include <time.h>
-#    if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+#    if !defined(PLATFORM_THREADS) && !defined(SN_TARGET_PSP2)
 #      ifndef RTEMS
 #        include <sys/mman.h>
 #      endif
@@ -75,7 +75,7 @@
 typedef unsigned int sem_t;
 #  endif
 
-#  if defined(GC_PTHREADS) && !defined(SN_TARGET_ORBIS) \
+#  if defined(GC_PTHREADS) && !defined(PLATFORM_THREADS) \
       && !defined(SN_TARGET_PSP2)
 /* Undefine macros used to redirect pthread primitives.       */
 #    undef pthread_create
@@ -105,7 +105,7 @@ typedef unsigned int sem_t;
 #    endif
 #  endif /* GC_PTHREADS */
 
-#  if !defined(GC_WIN32_THREADS) && !defined(SN_TARGET_ORBIS) \
+#  if !defined(GC_WIN32_THREADS) && !defined(PLATFORM_THREADS) \
       && !defined(SN_TARGET_PSP2)
 /* TODO: Enable GC_USE_DLOPEN_WRAP for Cygwin? */
 
@@ -2459,7 +2459,7 @@ GC_register_my_thread(const struct GC_stack_base *sb)
   return GC_SUCCESS;
 }
 
-#  if defined(GC_PTHREADS) && !defined(SN_TARGET_ORBIS) \
+#  if defined(GC_PTHREADS) && !defined(PLATFORM_THREADS) \
       && !defined(SN_TARGET_PSP2)
 
 /* Called at thread exit.  Never called for main thread.      */
@@ -2741,7 +2741,7 @@ GC_wrap_pthread_create(pthread_t *new_thread,
 }
 #    undef GC_wrap_pthread_create
 
-#  endif /* GC_PTHREADS && !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
+#  endif /* GC_PTHREADS && !PLATFORM_THREADS && !SN_TARGET_PSP2 */
 
 #  if ((defined(GC_PTHREADS_PARAMARK) || defined(USE_PTHREAD_LOCKS)) \
        && !defined(NO_PTHREAD_TRYLOCK))                              \
