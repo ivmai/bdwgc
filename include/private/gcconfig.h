@@ -2530,9 +2530,9 @@ extern int __end__[];
 #  define DATASTART_USES_XGETDATASTART
 #endif
 
-#if defined(HAVE_SYS_TYPES_H)                                  \
-    || !(defined(__CC_ARM) || defined(OS2) || defined(MSWINCE) \
-         || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2))
+#if defined(HAVE_SYS_TYPES_H)                                      \
+    || !(defined(__CC_ARM) || defined(GC_NO_TYPES) || defined(OS2) \
+         || defined(MSWINCE) || defined(SN_TARGET_PSP2))
 EXTERN_C_END
 #  if defined(COSMO) && defined(MPROTECT_VDB) && !defined(_GNU_SOURCE)
 #    define _GNU_SOURCE 1
@@ -2542,9 +2542,9 @@ EXTERN_C_BEGIN
 #endif /* HAVE_SYS_TYPES_H */
 
 #if defined(HAVE_UNISTD_H)                                            \
-    || !(defined(MSWIN32) || defined(MSWINCE) || defined(MSWIN_XBOX1) \
-         || defined(NINTENDO_SWITCH) || defined(NN_PLATFORM_CTR)      \
-         || defined(OS2) || defined(SN_TARGET_ORBIS)                  \
+    || !(defined(GC_NO_TYPES) || defined(MSWIN32) || defined(MSWINCE) \
+         || defined(MSWIN_XBOX1) || defined(NINTENDO_SWITCH)          \
+         || defined(NN_PLATFORM_CTR) || defined(OS2)                  \
          || defined(SN_TARGET_PSP2) || defined(__CC_ARM))
 EXTERN_C_END
 #  include <unistd.h>
@@ -2894,10 +2894,10 @@ EXTERN_C_BEGIN
 #  endif
 #endif
 
-#if defined(DOS4GW) || defined(EMBOX) || defined(KOS)                       \
-    || defined(NINTENDO_SWITCH) || defined(NONSTOP) || defined(OS2)         \
-    || defined(RTEMS) || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
-    || defined(SN_TARGET_PSP2) || defined(USE_WINALLOC) || defined(__CC_ARM)
+#if defined(DOS4GW) || defined(EMBOX) || defined(KOS)                      \
+    || defined(NINTENDO_SWITCH) || defined(NONSTOP) || defined(OS2)        \
+    || defined(RTEMS) || defined(SN_TARGET_PS3) || defined(SN_TARGET_PSP2) \
+    || defined(USE_WINALLOC) || defined(__CC_ARM)
 #  define NO_UNIX_GET_MEM
 #endif
 
