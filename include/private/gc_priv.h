@@ -1862,6 +1862,52 @@ GC_EXTERN size_t GC_real_page_size;
 #  define GC_real_page_size GC_page_size
 #endif
 
+/* Get heap memory from the OS.                                       */
+/* Note that sbrk()-like allocation is preferred, since it usually    */
+/* makes it possible to merge consecutively allocated chunks.         */
+/* It also avoids unintended recursion with REDIRECT_MALLOC macro     */
+/* defined.  GET_MEM() argument should be of size_t type and have no  */
+/* side-effect.  GET_MEM() returns HBLKSIZE-aligned chunk (NULL means */
+/* a failure).  In case of MMAP_SUPPORTED, the argument must also be  */
+/* a multiple of a physical page size.  GET_MEM is currently not      */
+/* assumed to retrieve zero-filled space.                             */
+/* TODO: Take advantage of GET_MEM() returning a zero-filled space.   */
+#if defined(CYGWIN32) || defined(MSWIN32)
+void *GC_win32_get_mem(size_t lb);
+#  define GET_MEM(lb) GC_win32_get_mem(lb)
+#  ifndef USE_WINALLOC
+#    define NEED_UNIX_GET_MEM
+#  endif
+#elif defined(MSWINCE)
+void *GC_wince_get_mem(size_t lb);
+#  define GET_MEM(lb) GC_wince_get_mem(lb)
+#elif defined(MSWIN_XBOX1)
+void *GC_durango_get_mem(size_t lb);
+#  define GET_MEM(lb) GC_durango_get_mem(lb)
+#elif defined(HAIKU)
+void *GC_haiku_get_mem(size_t lb);
+#  define GET_MEM(lb) GC_haiku_get_mem(lb)
+#elif defined(OS2)
+void *os2_alloc(size_t lb);
+#  define GET_MEM(lb)                                                  \
+    ((void *)HBLKPTR((ptr_t)os2_alloc(SIZET_SAT_ADD(lb, GC_page_size)) \
+                     + GC_page_size - 1))
+#elif defined(DOS4GW) || defined(EMBOX) || defined(KOS) || defined(NEXT) \
+    || defined(NONSTOP) || defined(RTEMS) || defined(__CC_ARM)           \
+    || (defined(SOLARIS) && !defined(USE_MMAP))
+/* TODO: Use page_alloc() directly on Embox.    */
+#  if defined(REDIRECT_MALLOC) && !defined(CPPCHECK)
+#    error Malloc redirection is unsupported
+#  endif
+#  define GET_MEM(lb)                                                  \
+    ((void *)HBLKPTR((ptr_t)calloc(1, SIZET_SAT_ADD(lb, GC_page_size)) \
+                     + GC_page_size - 1))
+#elif !defined(GET_MEM)
+void *GC_unix_get_mem(size_t lb);
+#  define GET_MEM(lb) GC_unix_get_mem(lb)
+#  define NEED_UNIX_GET_MEM
+#endif
+
 /* Round up allocation size to a multiple of a page size.       */
 /* GC_setpagesize() is assumed to be already invoked.           */
 #define ROUNDUP_PAGESIZE(lb) /* lb should have no side-effect */ \
