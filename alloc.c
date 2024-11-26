@@ -1472,22 +1472,23 @@ GC_gcollect_and_unmap(void)
 GC_INNER ptr_t
 GC_os_get_mem(size_t bytes)
 {
-  struct hblk *space = GET_MEM(bytes); /* HBLKSIZE-aligned */
+  ptr_t space;
 
   GC_ASSERT(I_HOLD_LOCK());
+  space = (ptr_t)GET_MEM(bytes); /* HBLKSIZE-aligned */
   if (EXPECT(NULL == space, FALSE))
     return NULL;
 #ifdef USE_PROC_FOR_LIBRARIES
   /* Add HBLKSIZE aligned, GET_MEM-generated block to GC_our_memory. */
   if (GC_n_memory >= MAX_HEAP_SECTS)
     ABORT("Too many GC-allocated memory sections: Increase MAX_HEAP_SECTS");
-  GC_our_memory[GC_n_memory].hs_start = (ptr_t)space;
+  GC_our_memory[GC_n_memory].hs_start = space;
   GC_our_memory[GC_n_memory].hs_bytes = bytes;
   GC_n_memory++;
 #endif
   GC_our_mem_bytes += bytes;
   GC_VERBOSE_LOG_PRINTF("Got %lu bytes from OS\n", (unsigned long)bytes);
-  return (ptr_t)space;
+  return space;
 }
 
 /* Use the chunk of memory starting at h of size sz as part of the      */

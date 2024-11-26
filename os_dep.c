@@ -2321,7 +2321,7 @@ extern char *GC_get_private_path_and_zero_file(void);
 EXTERN_C_END
 #      endif
 
-STATIC ptr_t
+STATIC void *
 GC_unix_mmap_get_mem(size_t bytes)
 {
   void *result;
@@ -2382,24 +2382,24 @@ GC_unix_mmap_get_mem(size_t bytes)
   if ((ADDR(result) % HBLKSIZE) != 0)
     ABORT("GC_unix_get_mem: Memory returned by mmap is not aligned to "
           "HBLKSIZE.");
-  return (ptr_t)result;
+  return result;
 }
 #    endif /* !MSWIN_XBOX1 */
 
 #  endif /* MMAP_SUPPORTED */
 
 #  if defined(USE_MMAP)
-ptr_t
+void *
 GC_unix_get_mem(size_t bytes)
 {
   return GC_unix_mmap_get_mem(bytes);
 }
 #  else /* !USE_MMAP */
 
-STATIC ptr_t
+STATIC void *
 GC_unix_sbrk_get_mem(size_t bytes)
 {
-  ptr_t result;
+  void *result;
 
 #    ifdef IRIX5
   /* Bare sbrk isn't thread safe.  Play by malloc rules.      */
@@ -2431,8 +2431,8 @@ GC_unix_sbrk_get_mem(size_t bytes)
         ABORT("ADD_HEAP_GUARD_PAGES: mprotect failed");
     }
 #    endif
-    result = (ptr_t)sbrk((SBRK_ARG_T)bytes);
-    if (EXPECT(result == (ptr_t)(-1), FALSE))
+    result = sbrk((SBRK_ARG_T)bytes);
+    if (EXPECT(ADDR(result) == GC_WORD_MAX, FALSE))
       result = NULL;
   }
 out:
@@ -2442,13 +2442,13 @@ out:
   return result;
 }
 
-ptr_t
+void *
 GC_unix_get_mem(size_t bytes)
 {
 #    if defined(MMAP_SUPPORTED)
   /* By default, we try both sbrk and mmap, in that order.    */
   static GC_bool sbrk_failed = FALSE;
-  ptr_t result = NULL;
+  void *result = NULL;
 
   if (GC_pages_executable) {
     /* If the allocated memory should have the execute permission   */
@@ -2496,19 +2496,18 @@ os2_alloc(size_t bytes)
 #endif /* OS2 */
 
 #ifdef MSWIN_XBOX1
-ptr_t
+void *
 GC_durango_get_mem(size_t bytes)
 {
   if (EXPECT(0 == bytes, FALSE))
     return NULL;
-  return (ptr_t)VirtualAlloc(NULL, bytes, MEM_COMMIT | MEM_TOP_DOWN,
-                             PAGE_READWRITE);
+  return VirtualAlloc(NULL, bytes, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE);
 }
 #elif defined(MSWINCE)
-ptr_t
+void *
 GC_wince_get_mem(size_t bytes)
 {
-  ptr_t result = NULL; /* initialized to prevent warning */
+  void *result = NULL; /* initialized to prevent warning */
   size_t i;
 
   GC_ASSERT(GC_page_size != 0);
@@ -2534,9 +2533,9 @@ GC_wince_get_mem(size_t bytes)
     /* so that VirtualProtect never spans regions.  It seems to be  */
     /* fine for a VirtualFree argument to span regions, so we       */
     /* should be OK for now.                                        */
-    result = (ptr_t)VirtualAlloc(NULL, res_bytes, MEM_RESERVE | MEM_TOP_DOWN,
-                                 GC_pages_executable ? PAGE_EXECUTE_READWRITE
-                                                     : PAGE_READWRITE);
+    result = VirtualAlloc(NULL, res_bytes, MEM_RESERVE | MEM_TOP_DOWN,
+                          GC_pages_executable ? PAGE_EXECUTE_READWRITE
+                                              : PAGE_READWRITE);
     if (HBLKDISPL(result) != 0) {
       /* If I read the documentation correctly, this can only       */
       /* happen if HBLKSIZE > 64 KB or not a power of 2.            */
@@ -2546,15 +2545,15 @@ GC_wince_get_mem(size_t bytes)
       ABORT("Too many heap sections");
     if (EXPECT(NULL == result, FALSE))
       return NULL;
-    GC_heap_bases[GC_n_heap_bases] = result;
+    GC_heap_bases[GC_n_heap_bases] = (ptr_t)result;
     GC_heap_lengths[GC_n_heap_bases] = 0;
     GC_n_heap_bases++;
   }
 
   /* Commit pages.    */
-  result = (ptr_t)VirtualAlloc(result, bytes, MEM_COMMIT,
-                               GC_pages_executable ? PAGE_EXECUTE_READWRITE
-                                                   : PAGE_READWRITE);
+  result = VirtualAlloc(result, bytes, MEM_COMMIT,
+                        GC_pages_executable ? PAGE_EXECUTE_READWRITE
+                                            : PAGE_READWRITE);
 #  undef IGNORE_PAGES_EXECUTABLE
 
   if (HBLKDISPL(result) != 0)
@@ -2581,10 +2580,10 @@ DWORD GC_mem_top_down = MEM_TOP_DOWN;
 #    define GC_mem_top_down 0
 #  endif /* !GC_USE_MEM_TOP_DOWN */
 
-ptr_t
+void *
 GC_win32_get_mem(size_t bytes)
 {
-  ptr_t result;
+  void *result;
 
 #  ifndef USE_WINALLOC
   result = GC_unix_get_mem(bytes);
@@ -2594,9 +2593,9 @@ GC_win32_get_mem(size_t bytes)
     /* VirtualAlloc doesn't like PAGE_EXECUTE_READWRITE.    */
     /* There are also unconfirmed rumors of other problems, */
     /* so we dodge the issue.                               */
-    result = (ptr_t)GlobalAlloc(0, SIZET_SAT_ADD(bytes, HBLKSIZE));
+    result = GlobalAlloc(0, SIZET_SAT_ADD(bytes, HBLKSIZE));
     /* Align it at HBLKSIZE boundary (NULL value remains unchanged). */
-    result = PTR_ALIGN_UP(result, HBLKSIZE);
+    result = PTR_ALIGN_UP((ptr_t)result, HBLKSIZE);
   } else
 #    endif
   /* else */ {
@@ -2625,10 +2624,9 @@ GC_win32_get_mem(size_t bytes)
     /* available.  Otherwise we waste resources or possibly */
     /* cause VirtualAlloc to fail (observed in Windows 2000 */
     /* SP2).                                                */
-    result = (ptr_t)VirtualAlloc(
+    result = VirtualAlloc(
         NULL, SIZET_SAT_ADD(bytes, VIRTUAL_ALLOC_PAD),
-        GetWriteWatch_alloc_flag | (MEM_COMMIT | MEM_RESERVE)
-            | GC_mem_top_down,
+        MEM_COMMIT | MEM_RESERVE | GetWriteWatch_alloc_flag | GC_mem_top_down,
         GC_pages_executable ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE);
 #    undef IGNORE_PAGES_EXECUTABLE
   }
@@ -2638,7 +2636,7 @@ GC_win32_get_mem(size_t bytes)
   if (GC_n_heap_bases >= MAX_HEAP_SECTS)
     ABORT("Too many heap sections");
   if (EXPECT(result != NULL, TRUE))
-    GC_heap_bases[GC_n_heap_bases++] = result;
+    GC_heap_bases[GC_n_heap_bases++] = (ptr_t)result;
   return result;
 }
 #endif /* USE_WINALLOC || CYGWIN32 */
@@ -2685,7 +2683,7 @@ GC_win32_free_heap(void)
 /* This is to use the real one.     */
 #    undef posix_memalign
 #  endif
-ptr_t
+void *
 GC_haiku_get_mem(size_t bytes)
 {
   void *mem;

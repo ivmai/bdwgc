@@ -207,12 +207,19 @@ typedef char GC_bool;
 #  include <cheriintrin.h>
 #endif
 
+EXTERN_C_BEGIN
+
 typedef GC_uintptr_t GC_funcptr_uint;
 #define FUNCPTR_IS_DATAPTR
 
 typedef unsigned int unsigned32;
 
+#define hblk GC_hblk_s
+struct hblk;
+
 typedef struct hblkhdr hdr;
+
+EXTERN_C_END
 
 #include "gc_hdrs.h"
 

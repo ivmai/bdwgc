@@ -3395,13 +3395,11 @@ extern ptr_t GC_data_start;
 /* a multiple of a physical page size.  GET_MEM is currently not      */
 /* assumed to retrieve zero-filled space.                             */
 /* TODO: Take advantage of GET_MEM() returning a zero-filled space.   */
-#  define hblk GC_hblk_s
-struct hblk; /* defined in gc_priv.h */
 #  if defined(OS2)
-void *os2_alloc(size_t bytes);
-#    define GET_MEM(bytes)                                         \
-      HBLKPTR((ptr_t)os2_alloc(SIZET_SAT_ADD(bytes, GC_page_size)) \
-              + GC_page_size - 1)
+void *os2_alloc(size_t lb);
+#    define GET_MEM(lb)                                                  \
+      ((void *)HBLKPTR((ptr_t)os2_alloc(SIZET_SAT_ADD(lb, GC_page_size)) \
+                       + GC_page_size - 1))
 #  elif defined(NEXT) || defined(DOS4GW) || defined(NONSTOP)        \
       || (defined(SOLARIS) && !defined(USE_MMAP)) || defined(RTEMS) \
       || defined(EMBOX) || defined(KOS) || defined(__CC_ARM)
@@ -3409,40 +3407,39 @@ void *os2_alloc(size_t bytes);
 #    if defined(REDIRECT_MALLOC) && !defined(CPPCHECK)
 #      error Malloc redirection is unsupported
 #    endif
-#    define GET_MEM(bytes)                                         \
-      HBLKPTR((ptr_t)calloc(1, SIZET_SAT_ADD(bytes, GC_page_size)) \
-              + GC_page_size - 1)
+#    define GET_MEM(lb)                                                  \
+      ((void *)HBLKPTR((ptr_t)calloc(1, SIZET_SAT_ADD(lb, GC_page_size)) \
+                       + GC_page_size - 1))
 #  elif defined(MSWIN_XBOX1)
-ptr_t GC_durango_get_mem(size_t bytes);
-#    define GET_MEM(bytes) (struct hblk *)GC_durango_get_mem(bytes)
+void *GC_durango_get_mem(size_t lb);
+#    define GET_MEM(lb) GC_durango_get_mem(lb)
 #  elif defined(MSWIN32) || defined(CYGWIN32)
-ptr_t GC_win32_get_mem(size_t bytes);
-#    define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
+void *GC_win32_get_mem(size_t lb);
+#    define GET_MEM(lb) GC_win32_get_mem(lb)
 #  elif defined(MSWINCE)
-ptr_t GC_wince_get_mem(size_t bytes);
-#    define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
+void *GC_wince_get_mem(size_t lb);
+#    define GET_MEM(lb) GC_wince_get_mem(lb)
 #  elif defined(PLATFORM_GETMEM)
-void *platform_get_mem(size_t bytes);
-#    define GET_MEM(bytes) (struct hblk *)platform_get_mem(bytes)
+void *platform_get_mem(size_t lb);
+#    define GET_MEM(lb) platform_get_mem(lb)
 #  elif defined(SN_TARGET_PS3)
-void *ps3_get_mem(size_t bytes);
-#    define GET_MEM(bytes) (struct hblk *)ps3_get_mem(bytes)
+void *ps3_get_mem(size_t lb);
+#    define GET_MEM(lb) ps3_get_mem(lb)
 #  elif defined(SN_TARGET_PSP2)
-void *psp2_get_mem(size_t bytes);
-#    define GET_MEM(bytes) (struct hblk *)psp2_get_mem(bytes)
+void *psp2_get_mem(size_t lb);
+#    define GET_MEM(lb) psp2_get_mem(lb)
 #  elif defined(NINTENDO_SWITCH)
-void *switch_get_mem(size_t bytes);
-#    define GET_MEM(bytes) (struct hblk *)switch_get_mem(bytes)
+void *switch_get_mem(size_t lb);
+#    define GET_MEM(lb) switch_get_mem(lb)
 #  elif defined(HAIKU)
-ptr_t GC_haiku_get_mem(size_t bytes);
-#    define GET_MEM(bytes) (struct hblk *)GC_haiku_get_mem(bytes)
+void *GC_haiku_get_mem(size_t lb);
+#    define GET_MEM(lb) GC_haiku_get_mem(lb)
 #  elif defined(EMSCRIPTEN_TINY)
-void *emmalloc_memalign(size_t alignment, size_t size);
-#    define GET_MEM(bytes) \
-      (struct hblk *)emmalloc_memalign(GC_page_size, bytes)
+void *emmalloc_memalign(size_t align, size_t lb);
+#    define GET_MEM(lb) emmalloc_memalign(GC_page_size, lb)
 #  else
-ptr_t GC_unix_get_mem(size_t bytes);
-#    define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
+void *GC_unix_get_mem(size_t lb);
+#    define GET_MEM(lb) GC_unix_get_mem(lb)
 #  endif
 #endif /* GC_PRIVATE_H */
 
