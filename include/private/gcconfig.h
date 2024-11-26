@@ -1219,6 +1219,8 @@ extern int _end[], __bss_start;
 #    define DATASTART ((ptr_t)__bss_start)
 #    define DATAEND ((ptr_t)_end)
 #    define STACKBOTTOM ((ptr_t)ps3_get_stack_bottom())
+void *ps3_get_mem(size_t lb);
+#    define GET_MEM(lb) ps3_get_mem(lb)
 /* The current LOCK() implementation for PS3 explicitly uses  */
 /* pthread_mutex_lock() for some reason.                      */
 #    define NO_PTHREAD_TRYLOCK
@@ -2037,6 +2039,8 @@ extern int __bss_end[];
 #    define DATAEND ((ptr_t)(&__bss_end))
 void *switch_get_stack_bottom(void);
 #    define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
+void *switch_get_mem(size_t lb);
+#    define GET_MEM(lb) switch_get_mem(lb)
 #    ifndef HAVE_CLOCK_GETTIME
 #      define HAVE_CLOCK_GETTIME 1
 #    endif
@@ -2104,6 +2108,8 @@ extern char **__environ;
 #    define DATAEND ((ptr_t)ALIGNMENT)
 void *psp2_get_stack_bottom(void);
 #    define STACKBOTTOM ((ptr_t)psp2_get_stack_bottom())
+void *psp2_get_mem(size_t lb);
+#    define GET_MEM(lb) psp2_get_mem(lb)
 #  endif
 #  ifdef NN_PLATFORM_CTR
 #    define OS_TYPE "NN_PLATFORM_CTR"
@@ -2204,6 +2210,8 @@ EXTERN_C_END
 EXTERN_C_BEGIN
 void *platform_get_stack_bottom(void);
 #    define STACKBOTTOM ((ptr_t)platform_get_stack_bottom())
+void *platform_get_mem(size_t lb);
+#    define GET_MEM(lb) platform_get_mem(lb)
 #  endif
 #  ifdef LINUX
 #    define SEARCH_FOR_DATA_START
@@ -2399,15 +2407,19 @@ extern char **environ;
 #    error 64-bit WebAssembly is not yet supported
 #  endif
 #  define CPP_WORDSZ 32
+/* Emscripten does emulate mmap and munmap, but those should not be     */
+/* used in the collector, since WebAssembly lacks the native support    */
+/* of memory mapping.  Use sbrk() instead (by default).                 */
+#  undef USE_MMAP
+#  undef USE_MUNMAP
+#  ifdef EMSCRIPTEN_TINY
+void *emmalloc_memalign(size_t align, size_t lb);
+#    define GET_MEM(lb) emmalloc_memalign(GC_page_size, lb)
+#  endif
 #  ifdef EMSCRIPTEN
 #    define OS_TYPE "EMSCRIPTEN"
 #    define DATASTART ((ptr_t)ALIGNMENT)
 #    define DATAEND ((ptr_t)ALIGNMENT)
-/* Emscripten does emulate mmap and munmap, but those should  */
-/* not be used in the collector, since WebAssembly lacks the  */
-/* native support of memory mapping.  Use sbrk() instead.     */
-#    undef USE_MMAP
-#    undef USE_MUNMAP
 #    if defined(GC_THREADS) && !defined(CPPCHECK)
 #      error No threads support yet
 #    endif
@@ -2424,8 +2436,6 @@ extern char __global_base, __heap_base;
 #    ifndef NO_CLOCK
 #      define NO_CLOCK 1 /* no support of clock */
 #    endif
-#    undef USE_MMAP /* similar to Emscripten */
-#    undef USE_MUNMAP
 #    if defined(GC_THREADS) && !defined(CPPCHECK)
 #      error No threads support yet
 #    endif
@@ -2899,13 +2909,6 @@ EXTERN_C_BEGIN
 #  else
 #    define STATIC static
 #  endif
-#endif
-
-#if defined(DOS4GW) || defined(EMBOX) || defined(KOS)                      \
-    || defined(NINTENDO_SWITCH) || defined(NONSTOP) || defined(OS2)        \
-    || defined(RTEMS) || defined(SN_TARGET_PS3) || defined(SN_TARGET_PSP2) \
-    || defined(USE_WINALLOC) || defined(__CC_ARM)
-#  define NO_UNIX_GET_MEM
 #endif
 
 /* Do we need the GC_find_limit machinery to find the end of    */
@@ -3400,14 +3403,29 @@ extern ptr_t GC_data_start;
 /* a multiple of a physical page size.  GET_MEM is currently not      */
 /* assumed to retrieve zero-filled space.                             */
 /* TODO: Take advantage of GET_MEM() returning a zero-filled space.   */
-#  if defined(OS2)
+#  if defined(CYGWIN32) || defined(MSWIN32)
+void *GC_win32_get_mem(size_t lb);
+#    define GET_MEM(lb) GC_win32_get_mem(lb)
+#    ifndef USE_WINALLOC
+#      define NEED_UNIX_GET_MEM
+#    endif
+#  elif defined(MSWINCE)
+void *GC_wince_get_mem(size_t lb);
+#    define GET_MEM(lb) GC_wince_get_mem(lb)
+#  elif defined(MSWIN_XBOX1)
+void *GC_durango_get_mem(size_t lb);
+#    define GET_MEM(lb) GC_durango_get_mem(lb)
+#  elif defined(HAIKU)
+void *GC_haiku_get_mem(size_t lb);
+#    define GET_MEM(lb) GC_haiku_get_mem(lb)
+#  elif defined(OS2)
 void *os2_alloc(size_t lb);
 #    define GET_MEM(lb)                                                  \
       ((void *)HBLKPTR((ptr_t)os2_alloc(SIZET_SAT_ADD(lb, GC_page_size)) \
                        + GC_page_size - 1))
-#  elif defined(NEXT) || defined(DOS4GW) || defined(NONSTOP)        \
-      || (defined(SOLARIS) && !defined(USE_MMAP)) || defined(RTEMS) \
-      || defined(EMBOX) || defined(KOS) || defined(__CC_ARM)
+#  elif defined(DOS4GW) || defined(EMBOX) || defined(KOS) || defined(NEXT) \
+      || defined(NONSTOP) || defined(RTEMS) || defined(__CC_ARM)           \
+      || (defined(SOLARIS) && !defined(USE_MMAP))
 /* TODO: Use page_alloc() directly on Embox.    */
 #    if defined(REDIRECT_MALLOC) && !defined(CPPCHECK)
 #      error Malloc redirection is unsupported
@@ -3415,36 +3433,10 @@ void *os2_alloc(size_t lb);
 #    define GET_MEM(lb)                                                  \
       ((void *)HBLKPTR((ptr_t)calloc(1, SIZET_SAT_ADD(lb, GC_page_size)) \
                        + GC_page_size - 1))
-#  elif defined(MSWIN_XBOX1)
-void *GC_durango_get_mem(size_t lb);
-#    define GET_MEM(lb) GC_durango_get_mem(lb)
-#  elif defined(MSWIN32) || defined(CYGWIN32)
-void *GC_win32_get_mem(size_t lb);
-#    define GET_MEM(lb) GC_win32_get_mem(lb)
-#  elif defined(MSWINCE)
-void *GC_wince_get_mem(size_t lb);
-#    define GET_MEM(lb) GC_wince_get_mem(lb)
-#  elif defined(PLATFORM_GETMEM)
-void *platform_get_mem(size_t lb);
-#    define GET_MEM(lb) platform_get_mem(lb)
-#  elif defined(SN_TARGET_PS3)
-void *ps3_get_mem(size_t lb);
-#    define GET_MEM(lb) ps3_get_mem(lb)
-#  elif defined(SN_TARGET_PSP2)
-void *psp2_get_mem(size_t lb);
-#    define GET_MEM(lb) psp2_get_mem(lb)
-#  elif defined(NINTENDO_SWITCH)
-void *switch_get_mem(size_t lb);
-#    define GET_MEM(lb) switch_get_mem(lb)
-#  elif defined(HAIKU)
-void *GC_haiku_get_mem(size_t lb);
-#    define GET_MEM(lb) GC_haiku_get_mem(lb)
-#  elif defined(EMSCRIPTEN_TINY)
-void *emmalloc_memalign(size_t align, size_t lb);
-#    define GET_MEM(lb) emmalloc_memalign(GC_page_size, lb)
-#  else
+#  elif !defined(GET_MEM)
 void *GC_unix_get_mem(size_t lb);
 #    define GET_MEM(lb) GC_unix_get_mem(lb)
+#    define NEED_UNIX_GET_MEM
 #  endif
 #endif /* GC_PRIVATE_H */
 

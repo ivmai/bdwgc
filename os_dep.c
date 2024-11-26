@@ -2288,7 +2288,7 @@ GC_register_data_segments(void)
 
 /* Auxiliary routines for obtaining memory from OS.     */
 
-#ifndef NO_UNIX_GET_MEM
+#ifdef NEED_UNIX_GET_MEM
 
 #  define SBRK_ARG_T ptrdiff_t
 
@@ -2473,7 +2473,7 @@ GC_unix_get_mem(size_t bytes)
 
 #  endif /* !USE_MMAP */
 
-#endif /* !NO_UNIX_GET_MEM */
+#endif /* NEED_UNIX_GET_MEM */
 
 #ifdef OS2
 void *
