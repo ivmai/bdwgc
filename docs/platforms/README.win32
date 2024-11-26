@@ -31,9 +31,6 @@ The collector normally allocates memory from the OS with VirtualAlloc.
 This appears to cause problems under Windows NT and Windows 2000 (but
 not Windows 95/98) if the memory is later passed to CreateDIBitmap.
 To work around this problem, build the collector with -DUSE_GLOBAL_ALLOC.
-This is currently incompatible with -DUSE_MUNMAP.  (Thanks to Jonathan
-Clark for tracking this down.  There's some chance this may be fixed
-since we now separate heap sections with an unused page.)
 
 [Threads and incremental collection are discussed near the end, below.]
 
