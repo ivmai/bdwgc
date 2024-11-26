@@ -64,6 +64,7 @@ environment:
     CFLAGS_EXTRA: /J /wd4391
   - TARGET: nmake
     ARCH: x86
+    CFLAGS_EXTRA: -DUSE_GLOBAL_ALLOC
     NMAKE_OPTIONS: nodebug=1
   - TARGET: nmake
     ARCH: x64
