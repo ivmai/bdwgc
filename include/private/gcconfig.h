@@ -1024,6 +1024,7 @@ extern char etext[];
 #  define OS_TYPE "NEXT"
 #  define DATASTART ((ptr_t)get_etext())
 #  define DATAEND /* not needed */
+#  undef USE_MUNMAP
 #endif
 
 #ifdef OPENBSD
@@ -1497,6 +1498,7 @@ extern int _data_start__[], _bss_end__[];
 /* STACKBOTTOM and DATASTART are handled specially in os_dep.c. */
 /* OS2 actually has the right system call!                      */
 #    define DATAEND /* not needed */
+#    undef USE_MUNMAP
 #    define GETPAGESIZE() os2_getpagesize()
 #  endif
 #  ifdef MSWIN32
@@ -1554,6 +1556,7 @@ extern int etext[];
 void *rtems_get_stack_bottom(void);
 #    define InitStackBottom rtems_get_stack_bottom()
 #    define STACKBOTTOM ((ptr_t)InitStackBottom)
+#    undef USE_MUNMAP
 #  endif
 #  ifdef DOS4GW
 #    define OS_TYPE "DOS4GW"
@@ -1568,6 +1571,7 @@ extern char *_STACKTOP;
 #    define STACKBOTTOM ((ptr_t)_STACKTOP) /* confused? me too. */
 #    define DATASTART ((ptr_t)(&__nullarea))
 #    define DATAEND ((ptr_t)(&_end))
+#    undef USE_MUNMAP
 #    define GETPAGESIZE() 4096
 #  endif
 #  ifdef DARWIN
@@ -1702,6 +1706,7 @@ extern int _fdata[];
 extern char **environ;
 #    define DATAEND ((ptr_t)(environ - 0x10))
 #    define STACKBOTTOM MAKE_CPTR(0x4fffffff)
+#    undef USE_MUNMAP
 #  endif
 #endif /* MIPS */
 
