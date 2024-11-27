@@ -1889,9 +1889,7 @@ void *GC_haiku_get_mem(size_t lb);
 #  define GET_MEM(lb) GC_haiku_get_mem(lb)
 #elif defined(OS2)
 void *os2_alloc(size_t lb);
-#  define GET_MEM(lb)                                                  \
-    ((void *)HBLKPTR((ptr_t)os2_alloc(SIZET_SAT_ADD(lb, GC_page_size)) \
-                     + GC_page_size - 1))
+#  define GET_MEM(lb) os2_alloc(lb)
 #elif defined(DOS4GW) || defined(EMBOX) || defined(KOS) || defined(NEXT) \
     || defined(NONSTOP) || defined(RTEMS) || defined(__CC_ARM)           \
     || (defined(SOLARIS) && !defined(USE_MMAP))

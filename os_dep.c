@@ -2479,19 +2479,24 @@ GC_unix_get_mem(size_t bytes)
 void *
 os2_alloc(size_t bytes)
 {
-  void *result;
+  void *result = NULL;
+  int retry;
 
-  if (DosAllocMem(&result, bytes,
-                  (PAG_READ | PAG_WRITE | PAG_COMMIT)
-                      | (GC_pages_executable ? PAG_EXECUTE : 0))
-      != NO_ERROR) {
-    return NULL;
+  GC_ASSERT(GC_page_size != 0);
+  bytes = SIZET_SAT_ADD(bytes, GC_page_size);
+  for (retry = 0;; retry++) {
+    if (DosAllocMem(&result, bytes,
+                    (PAG_READ | PAG_WRITE | PAG_COMMIT)
+                        | (GC_pages_executable ? PAG_EXECUTE : 0))
+            == NO_ERROR
+        && EXPECT(result != NULL, TRUE))
+      break;
+    /* TODO: Unclear the purpose of the retry.  (Probably, if           */
+    /* DosAllocMem returns memory at 0 address then just retry once.)   */
+    if (retry >= 1)
+      return NULL;
   }
-  /* FIXME: What's the purpose of this recursion?  (Probably, if      */
-  /* DosAllocMem returns memory at 0 address then just retry once.)   */
-  if (NULL == result)
-    return os2_alloc(bytes);
-  return result;
+  return HBLKPTR((ptr_t)result + GC_page_size - 1);
 }
 #endif /* OS2 */
 
