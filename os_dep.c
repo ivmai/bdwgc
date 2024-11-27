@@ -2389,11 +2389,13 @@ GC_unix_mmap_get_mem(size_t bytes)
 #  endif /* MMAP_SUPPORTED */
 
 #  if defined(USE_MMAP)
-void *
+
+GC_INNER void *
 GC_unix_get_mem(size_t bytes)
 {
   return GC_unix_mmap_get_mem(bytes);
 }
+
 #  else /* !USE_MMAP */
 
 STATIC void *
@@ -2442,7 +2444,7 @@ out:
   return result;
 }
 
-void *
+GC_INNER void *
 GC_unix_get_mem(size_t bytes)
 {
 #    if defined(MMAP_SUPPORTED)
@@ -2475,9 +2477,26 @@ GC_unix_get_mem(size_t bytes)
 
 #endif /* NEED_UNIX_GET_MEM */
 
-#ifdef OS2
-void *
-os2_alloc(size_t bytes)
+#ifdef HAIKU
+#  ifdef GC_LEAK_DETECTOR_H
+/* This is to use the real one. */
+#    undef posix_memalign
+#  endif
+GC_INNER void *
+GC_get_mem(size_t bytes)
+{
+  void *mem;
+
+  GC_ASSERT(GC_page_size != 0);
+  if (EXPECT(posix_memalign(&mem, GC_page_size, bytes) != 0, FALSE))
+    return NULL;
+
+  return mem;
+}
+
+#elif defined(OS2)
+GC_INNER void *
+GC_get_mem(size_t bytes)
 {
   void *result = NULL;
   int retry;
@@ -2498,19 +2517,19 @@ os2_alloc(size_t bytes)
   }
   return HBLKPTR((ptr_t)result + GC_page_size - 1);
 }
-#endif /* OS2 */
 
-#ifdef MSWIN_XBOX1
-void *
-GC_durango_get_mem(size_t bytes)
+#elif defined(MSWIN_XBOX1)
+GC_INNER void *
+GC_get_mem(size_t bytes)
 {
   if (EXPECT(0 == bytes, FALSE))
     return NULL;
   return VirtualAlloc(NULL, bytes, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE);
 }
+
 #elif defined(MSWINCE)
-void *
-GC_wince_get_mem(size_t bytes)
+GC_INNER void *
+GC_get_mem(size_t bytes)
 {
   void *result = NULL; /* initialized to prevent warning */
   size_t i;
@@ -2584,8 +2603,8 @@ DWORD GC_mem_top_down = MEM_TOP_DOWN;
 #    define GC_mem_top_down 0
 #  endif /* !GC_USE_MEM_TOP_DOWN */
 
-void *
-GC_win32_get_mem(size_t bytes)
+GC_INNER void *
+GC_get_mem(size_t bytes)
 {
   void *result;
 
@@ -2680,24 +2699,6 @@ GC_win32_free_heap(void)
 #  endif
 }
 #endif /* ANY_MSWIN || MSWIN_XBOX1 */
-
-#ifdef HAIKU
-#  ifdef GC_LEAK_DETECTOR_H
-/* This is to use the real one.     */
-#    undef posix_memalign
-#  endif
-void *
-GC_haiku_get_mem(size_t bytes)
-{
-  void *mem;
-
-  GC_ASSERT(GC_page_size != 0);
-  if (EXPECT(posix_memalign(&mem, GC_page_size, bytes) != 0, FALSE))
-    return NULL;
-
-  return mem;
-}
-#endif /* HAIKU */
 
 #if (defined(USE_MUNMAP) || defined(MPROTECT_VDB)) && !defined(USE_WINALLOC)
 #  define ABORT_ON_REMAP_FAIL(C_msg_prefix, start_addr, len)             \

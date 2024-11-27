@@ -1872,24 +1872,13 @@ GC_EXTERN size_t GC_real_page_size;
 /* a multiple of a physical page size.  GET_MEM is currently not      */
 /* assumed to retrieve zero-filled space.                             */
 /* TODO: Take advantage of GET_MEM() returning a zero-filled space.   */
-#if defined(CYGWIN32) || defined(MSWIN32)
-void *GC_win32_get_mem(size_t lb);
-#  define GET_MEM(lb) GC_win32_get_mem(lb)
-#  ifndef USE_WINALLOC
+#if defined(ANY_MSWIN) || defined(HAIKU) || defined(MSWIN_XBOX1) \
+    || defined(OS2)
+GC_INNER void *GC_get_mem(size_t lb);
+#  define GET_MEM(lb) GC_get_mem(lb)
+#  if defined(CYGWIN32) && !defined(USE_WINALLOC)
 #    define NEED_UNIX_GET_MEM
 #  endif
-#elif defined(MSWINCE)
-void *GC_wince_get_mem(size_t lb);
-#  define GET_MEM(lb) GC_wince_get_mem(lb)
-#elif defined(MSWIN_XBOX1)
-void *GC_durango_get_mem(size_t lb);
-#  define GET_MEM(lb) GC_durango_get_mem(lb)
-#elif defined(HAIKU)
-void *GC_haiku_get_mem(size_t lb);
-#  define GET_MEM(lb) GC_haiku_get_mem(lb)
-#elif defined(OS2)
-void *os2_alloc(size_t lb);
-#  define GET_MEM(lb) os2_alloc(lb)
 #elif defined(DOS4GW) || defined(EMBOX) || defined(KOS) || defined(NEXT) \
     || defined(NONSTOP) || defined(RTEMS) || defined(__CC_ARM)           \
     || (defined(SOLARIS) && !defined(USE_MMAP))
@@ -1901,7 +1890,7 @@ void *os2_alloc(size_t lb);
     ((void *)HBLKPTR((ptr_t)calloc(1, SIZET_SAT_ADD(lb, GC_page_size)) \
                      + GC_page_size - 1))
 #elif !defined(GET_MEM)
-void *GC_unix_get_mem(size_t lb);
+GC_INNER void *GC_unix_get_mem(size_t lb);
 #  define GET_MEM(lb) GC_unix_get_mem(lb)
 #  define NEED_UNIX_GET_MEM
 #endif

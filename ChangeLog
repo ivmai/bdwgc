@@ -338,7 +338,7 @@
 * Preserve provenance of capability to heap block (CHERI)
 * Prevent requesting blocks past max_heapsize in GC_collect_or_expand
 * Prevent result of MAKE_COOLER to be NULL
-* Prevent use of redirected posix_memalign in GC_haiku_get_mem
+* Prevent use of redirected posix_memalign in GC_get_mem on Haiku
 * Print heap size in bytes (not MB) in out-of-memory warning if small heap
 * Print in-use heap statistic on heap growth
 * Print iteration number on thread creation or join failure in tests
