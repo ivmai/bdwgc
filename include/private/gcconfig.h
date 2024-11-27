@@ -2707,8 +2707,11 @@ EXTERN_C_BEGIN
 #  define GC_DISABLE_INCREMENTAL
 #endif
 
-#if (defined(MSWIN32) || defined(MSWINCE)) && !defined(USE_WINALLOC)
 /* USE_WINALLOC is only an option for Cygwin. */
+#ifndef CYGWIN32
+#  undef USE_WINALLOC
+#endif
+#if defined(MSWIN32) || defined(MSWINCE)
 #  define USE_WINALLOC 1
 #endif
 

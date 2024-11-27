@@ -2568,8 +2568,7 @@ GC_wince_get_mem(size_t bytes)
   return result;
 }
 
-#elif defined(USE_WINALLOC) /* && !MSWIN_XBOX1 */ || defined(CYGWIN32)
-
+#elif defined(CYGWIN32) || defined(MSWIN32)
 #  ifdef USE_GLOBAL_ALLOC
 #    define GLOBAL_ALLOC_TEST 1
 #  else
@@ -2644,19 +2643,18 @@ GC_win32_get_mem(size_t bytes)
     GC_heap_bases[GC_n_heap_bases++] = (ptr_t)result;
   return result;
 }
-#endif /* USE_WINALLOC || CYGWIN32 */
+#endif /* CYGWIN32 || MSWIN32 */
 
 #if defined(ANY_MSWIN) || defined(MSWIN_XBOX1)
 GC_API void GC_CALL
 GC_win32_free_heap(void)
 {
-#  if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC) \
-      && !defined(MSWIN_XBOX1)
+#  if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
   GC_free_malloc_heap_list();
 #  endif
-#  if defined(USE_WINALLOC) && defined(MSWIN32) || defined(CYGWIN32)
+#  if defined(CYGWIN32) || defined(MSWIN32)
 #    ifndef MSWINRT_FLAVOR
-#      ifndef CYGWIN32
+#      ifdef MSWIN32
   if (GLOBAL_ALLOC_TEST)
 #      endif
   {
@@ -2679,7 +2677,7 @@ GC_win32_free_heap(void)
     GC_heap_bases[GC_n_heap_bases] = 0;
   }
 #    endif
-#  endif /* USE_WINALLOC && MSWIN32 || CYGWIN32 */
+#  endif
 }
 #endif /* ANY_MSWIN || MSWIN_XBOX1 */
 
