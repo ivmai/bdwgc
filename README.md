@@ -80,7 +80,7 @@ widespread use.
 
 Rudimentary tools for use of the collector as a [leak detector](docs/leak.md)
 are included, as is a fairly sophisticated string package "cord" that
-makes use of the collector.  (See [README.cords](docs/README.cords) and
+makes use of the collector.  (See [cords.md](docs/cords.md) and
 H.-J. Boehm, R. Atkinson, and M. Plass, "Ropes: An Alternative to Strings",
 Software Practice and Experience 25, 12 (December 1995), pp. 1315-1330.
 This is very similar to the "rope" package in Xerox Cedar, or the "rope"

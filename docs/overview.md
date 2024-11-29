@@ -93,7 +93,7 @@ For an overview of the implementation, see [here](gcdescr.md).
 The garbage collector distribution includes a C string (`cord.h`) package that
 provides for fast concatenation and substring operations on long strings.
 A simple curses- and Windows-based editor that represents the entire file as
-a cord is included as a sample application.  See [README.cords](README.cords)
+a cord is included as a sample application.  See [cords.md](cords.md)
 file for the details.
 
 Performance of the non-incremental collector is typically competitive with
@@ -261,7 +261,7 @@ The following documents are not platform-specific in general.
 
 [Instructions on how to port the library to new platforms](porting.md).
 
-[Description of the cord library built on top of GC](README.cords).
+[Description of the cord library built on top of GC](cords.md).
 
 ## More background information
 

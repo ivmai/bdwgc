@@ -218,9 +218,9 @@ docdocsdir = $(docdir)/docs
 dist_docdocs_DATA = \
     docs/README.autoconf \
     docs/README.cmake \
-    docs/README.cords \
     docs/README.environment \
     docs/README.macros \
+    docs/cords.md \
     docs/debugging.md \
     docs/faq.md \
     docs/finalization.md \
