@@ -1,5 +1,5 @@
 
-This is a string packages that uses a tree-based representation.
+This is a string package that uses a tree-based representation.
 See cord.h for a description of the functions provided.  Ec.h describes
 "extensible cords", which are essentially output streams that write
 to a cord.  These allow for efficient construction of cords without
@@ -27,7 +27,7 @@ cord/tests/de.c is a very dumb text editor that illustrates the use of cords.
 It maintains a list of file versions.  Each version is simply a
 cord representing the file contents.  Nonetheless, standard
 editing operations are efficient, even on very large files.
-(Its 3 line "user manual" can be obtained by invoking it without
+(Its 3-line "user manual" can be obtained by invoking it without
 arguments.  Note that ^R^N and ^R^P move the cursor by
 almost a screen.  It does not understand tabs, which will show
 up as highlighted "I"s.  Use the UNIX "expand" program first.)
