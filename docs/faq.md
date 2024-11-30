@@ -35,8 +35,7 @@ For (a lot) more details see:
 * "Bounding Space Usage of Conservative Garbage Collectors", Proceedings of
 the 2002 ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages,
 Jan. 2002, pp. 93-100
-([official version](https://dl.acm.org/doi/10.1145/565816.503282),
-[Technical report](http://www.hpl.hp.com/techreports/2001/HPL-2001-251.html)).
+([official version](https://dl.acm.org/doi/10.1145/565816.503282)).
 
 ### How can I get more of the finalizers to run to convince myself that the GC is working?
 
@@ -60,7 +59,6 @@ unreachable.  Programming techniques for ensuring this are discussed in
 SIGPLAN-SIGACT Symposium on Principles of Programming Languages, Jan. 2003,
 pp. 262-272
 ([official version](https://dl.acm.org/doi/10.1145/604131.604153),
-[Technical report](http://www.hpl.hp.com/techreports/2002/HPL-2002-335.html),
 [slides](http://www.hboehm.info/popl03/slides.pdf)).
 
 ### I wrote a memory allocation loop, and it runs much slower with the garbage collector than when I use malloc/free memory management.  Why?

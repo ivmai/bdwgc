@@ -17,7 +17,7 @@
 `ftp://ftp.parc.xerox.com/pub/gc/gc.html`. ]
 
 The
-[Boehm](http://www.hboehm.info)-[Demers](http://www.cs.cornell.edu/annual_report/00-01/bios.htm#demers)-[Weiser](http://www.ubiq.com/hypertext/weiser/weiser.html)
+[Boehm](http://www.hboehm.info)-[Demers](http://www.cs.cornell.edu/annual_report/00-01/bios.htm#demers)-[Weiser](https://en.wikipedia.org/wiki/Mark_Weiser)
 conservative Garbage Collector (**BDWGC**) can be used as a garbage collecting
 replacement for C `malloc` or C++ `new`. It allows you to allocate memory
 basically as you normally would, without explicitly deallocating memory that
@@ -48,8 +48,8 @@ briefly discussed [here](http://www.hboehm.info/gc/issues.html).
 
 The garbage collector code is copyrighted by
 [Hans-J. Boehm](http://www.hboehm.info), Alan J. Demers,
-[Xerox Corporation](http://www.xerox.com/),
-[Silicon Graphics](http://www.sgi.com/),
+[Xerox Corporation](https://en.wikipedia.org/wiki/Xerox),
+[Silicon Graphics](https://en.wikipedia.org/wiki/Silicon_Graphics),
 [Hewlett-Packard Company](http://www.hp.com/),
 [Ivan Maidanski](https://github.com/ivmai), and partially by some others.
 It may be used and copied without payment of a fee under minimal restrictions.
@@ -100,7 +100,7 @@ Performance of the non-incremental collector is typically competitive with
 `malloc`/`free` implementations. Both space and time overhead are likely to be
 only slightly higher for programs written for `malloc`/`free` (see Detlefs,
 Dosser and Zorn's
-[Memory Allocation Costs in Large C and C++ Programs](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.30.3073&rep=rep1&type=ps)).
+[Memory Allocation Costs in Large C and C++ Programs](https://www.semanticscholar.org/paper/Memory-allocation-costs-in-large-C-and-C%2B%2B-programs-Detlefs-Dosser/49b2b2cec4ce52493c031d964fb3be31d1e02b77)).
 For programs allocating primarily very small objects, the collector may be
 faster; for programs allocating primarily large objects it will be slower.
 If the collector is used in a multi-threaded environment and configured for
@@ -117,7 +117,7 @@ for garbage collection.
 
 Paul Wilson's
 [garbage collection ftp archive](ftp://ftp.cs.utexas.edu/pub/garbage)
-and [GC survey](ftp://ftp.cs.utexas.edu/pub/garbage/gcsurvey.ps).
+and [GC survey](https://ftpmirror.infania.net/sites/ftp.leo.org/historic/doc/programming/gcsurvey.ps.Z).
 
 The Ravenbrook
 [Memory Management Reference](http://www.memorymanagement.org/).
@@ -125,8 +125,9 @@ The Ravenbrook
 David Chase's [GC FAQ](http://www.iecc.com/gclist/GC-faq.html).
 
 Richard Jones'
-[Garbage Collection Page](https://www.cs.kent.ac.uk/people/staff/rej/gc.html)
-and his [book](http://www.cs.kent.ac.uk/people/staff/rej/gcbook/gcbook.html).
+[Garbage Collection page](https://www.cs.kent.ac.uk/people/staff/rej/gc.html)
+and his [book](http://www.cs.kent.ac.uk/people/staff/rej/gcbook/gcbook.html)
+mentioned on the page.
 
 **The following papers describe the collector algorithms we use and the
 underlying design decisions at a higher level:**
@@ -142,7 +143,7 @@ at an otherwise sophisticated audience unfamiliar with memory allocation
 issues. The algorithmic details differ from those in the implementation. There
 is a related letter to the editor and a minor correction in the next issue.
 
-Boehm, H., and [M. Weiser](http://www.ubiq.com/hypertext/weiser/weiser.html),
+Boehm, H., and M. Weiser,
 [Garbage Collection in an Uncooperative Environment](http://www.hboehm.info/spe_gc_paper/),
 _Software Practice and Experience_, September 1988, pp. 807-820.
 
@@ -159,21 +160,19 @@ and Implementation, _SIGPLAN Notices 28_, 6 (June 1993), pp. 197-206.
 Boehm, H., Reducing Garbage Collector Cache Misses,
 _Proceedings of the 2000 International Symposium on Memory Management_.
 [Official version](https://dl.acm.org/doi/10.1145/362422.362438).
-[Technical report](http://www.hpl.hp.com/techreports/2000/HPL-2000-99.html)
-version. Describes the prefetch strategy incorporated into the collector for
+Describes the prefetch strategy incorporated into the collector for
 some platforms. Explains why the sweep phase of a _mark-sweep_ collector
 should not really be a distinct phase.
 
 M. Serrano, H. Boehm, Understanding Memory Allocation of Scheme Programs,
 _Proceedings of the Fifth ACM SIGPLAN International Conference on Functional
 Programming_, 2000, Montreal, Canada, pp. 245-256.
-[Official version](https://dl.acm.org/doi/10.1145/357766.351264). Earlier
-[Technical Report](http://www.hpl.hp.com/techreports/2000/HPL-2000-62.html)
-version. Includes some discussion of the collector debugging facilities for
+[Official version](https://dl.acm.org/doi/10.1145/357766.351264).
+Includes some discussion of the collector debugging facilities for
 identifying causes of memory retention.
 
-Boehm, H., Fast Multiprocessor Memory Allocation and Garbage Collection,
-[HP Labs Technical Report HPL 2000-165](http://www.hpl.hp.com/techreports/2000/HPL-2000-165.html).
+Boehm, H.,
+[Fast Multiprocessor Memory Allocation and Garbage Collection](https://www.researchgate.net/publication/242553754_Fast_multiprocessor_memory_allocation_and_garbage_collection).
 Discusses the parallel collection algorithms, and presents some performance
 results.
 
@@ -181,8 +180,7 @@ Boehm, H., Bounding Space Usage of Conservative Garbage Collectors,
 _Proceedings of the 2002 ACM SIGPLAN-SIGACT Symposium on Principles
 of Programming Languages_, Jan. 2002, pp. 93-100.
 [Official version](https://dl.acm.org/doi/10.1145/565816.503282).
-[Technical report](http://www.hpl.hp.com/techreports/2001/HPL-2001-251.html)
-version. Includes a discussion of a collector facility to much more reliably
+Includes a discussion of a collector facility to much more reliably
 test for the potential of unbounded heap growth.
 
 **The following papers discuss language and compiler restrictions necessary
@@ -203,25 +201,25 @@ _Journal of C Language Translation 4_, 2 (December 1992), pp. 126-141.
 **Other related information:**
 
 The Detlefs, Dosser and Zorn's
-[Memory Allocation Costs in Large C and C++ Programs](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.30.3073&rep=rep1&type=ps).
+[Memory Allocation Costs in Large C and C++ Programs](https://www.semanticscholar.org/paper/Memory-allocation-costs-in-large-C-and-C%2B%2B-programs-Detlefs-Dosser/49b2b2cec4ce52493c031d964fb3be31d1e02b77).
 This is a performance comparison of the Boehm-Demers-Weiser collector
 to `malloc`/`free`, using programs written for `malloc`/`free`.
 
 Joel Bartlett's
-[mostly copying conservative garbage collector for C++](ftp://gatekeeper.dec.com/pub/compaq/WRL/research-reports/WRL-TN-12.ps).
+[Mostly Copying Conservative Garbage Collector for C++](https://ftp.zx.net.nz/pub/archive/ftp.digital.com/pub/DEC/WRL/research-reports/WRL-TN-12.ps).
 
 John Ellis and David Detlef's
-[Safe Efficient Garbage Collection for C++](https://dl.acm.org/doi/10.5555/1267974.1267983)
+["Safe, Efficient Garbage Collection for C++"](https://dl.acm.org/doi/10.5555/1267974.1267983)
 proposal.
 
-Henry Baker's [paper collection](http://home.pipeline.com/%7Ehbaker1/).
+[Henry Baker's Archive of Research Papers](https://web.archive.org/web/20200212080133/http://home.pipeline.com/~hbaker1/).
 
 Slides for Hans Boehm's
 [Allocation and GC Myths](http://www.hboehm.info/gc/myths.ps) talk.
 
 ## Information provided on the BDWGC site
 
-[Current users](https://github.com/ivmai/bdwgc/wiki/Known-clients) list.
+[Known BDWGC users](https://github.com/ivmai/bdwgc/wiki/Known-clients) list.
 
 [Slides from an ISMM 2004 tutorial about the GC](http://www.hboehm.info/gc/04tutorial.pdf).
 
@@ -277,11 +275,8 @@ The following documents are not platform-specific in general.
 
 [Slide set discussing performance of nonmoving garbage collectors](http://www.hboehm.info/gc/nonmoving/).
 
-[Slide set discussing _Destructors, Finalizers, and Synchronization_, POPL 2003](http://www.hboehm.info/popl03/web/).
-
-[Paper corresponding to above slide set](https://dl.acm.org/doi/10.1145/604131.604153)
-([Technical Report](http://www.hpl.hp.com/techreports/2002/HPL-2002-335.html)
-version).
+Slide set discussing ["Destructors, Finalizers, and Synchronization"](http://www.hboehm.info/popl03/web/), POPL 2003
+(and the corresponding [paper](https://dl.acm.org/doi/10.1145/604131.604153)).
 
 [A Java/Scheme/C/C++ garbage collection benchmark](http://www.hboehm.info/gc/gc_bench/).
 

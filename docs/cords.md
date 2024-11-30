@@ -12,18 +12,15 @@ The `cord` library is built along with `gc` library by default unless manually
 disabled (e.g., in case of cmake-based build, unless `-Dbuild_cord=OFF` option
 is passed to `cmake`).
 
-More details on the data structure can be found in:
-
-
-    Boehm, Atkinson, and Plass, "Ropes: An Alternative to Strings",
-    Software Practice and Experience 25, 12, December 1995, pp. 1315-1330.
-
+More details on the data structure can be found in: Boehm, Atkinson, and Plass,
+["Ropes: An Alternative to Strings"](https://ondoc.logand.com/d/686/pdf),
+Software Practice and Experience 25, 12, December 1995, pp. 1315-1330.
 
 A fundamentally similar "rope" data structure is also part of SGI's standard
 template library implementation, and its descendants, which include the
 GNU C++ library.  That uses reference counting by default.  There is a short
 description of that data structure in
-[Rope Implementation Overview](http://www.sgi.com/tech/stl/ropeimpl.html).
+[Rope Implementation Overview](https://www.boostcpp.org/sgi/stl/ropeimpl.html).
 
 All of these are descendants of the "ropes" in Xerox Cedar.
 
