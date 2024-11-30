@@ -24,7 +24,7 @@ A fundamentally similar "rope" data structure is also part of SGI's standard
 template library implementation, and its descendants, which include the
 GNU C++ library.  That uses reference counting by default.
 There is a short description of that data structure at
-http://www.sgi.com/tech/stl/ropeimpl.html .
+https://www.boostcpp.org/sgi/stl/ropeimpl.html .
 
 All of these are descendants of the "ropes" in Xerox Cedar.
 

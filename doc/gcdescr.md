@@ -3,7 +3,7 @@
 This is a description of the algorithms and data structures used in our
 conservative garbage collector. I expect the level of detail to increase with
 time. For a survey of GC algorithms, e.g. see Paul Wilson's
-["Uniprocessor Garbage Collection Techniques"](ftp://ftp.cs.utexas.edu/pub/garbage/gcsurvey.ps)
+[Uniprocessor Garbage Collection Techniques](https://ftpmirror.infania.net/sites/ftp.leo.org/historic/doc/programming/gcsurvey.ps.Z)
 excellent paper. For an overview of the collector interface, see
 [here](gcinterface.md).
 
@@ -378,7 +378,7 @@ arising from C++ implementations of virtual inheritance.
 ## Generational Collection and Dirty Bits
 
 We basically use the concurrent and generational GC algorithm described in
-["Mostly Parallel Garbage Collection"](http://www.hboehm.info/gc/papers/pldi91.ps.Z),
+[Mostly Parallel Garbage Collection](http://www.hboehm.info/gc/papers/pldi91.ps.Z),
 by Boehm, Demers, and Shenker.
 
 The most significant modification is that the collector always starts running
@@ -432,8 +432,8 @@ We keep track of modified pages using one of several distinct mechanisms:
 ## Black-listing
 
 The collector implements _black-listing_ of pages, as described in
-["Space Efficient Conservative Collection", PLDI'93](http://dl.acm.org/citation.cfm?doid=155090.155109)
-by Boehm, also available
+[Space Efficient Conservative Collection](https://dl.acm.org/doi/10.1145/173262.155109)
+by Boehm, PLDI'93, also available
 [here](https://www.cs.rice.edu/~javaplt/311/Readings/pldi93.pdf).
 
 During the mark phase, the collector tracks _near misses_, i.e. attempts
@@ -543,4 +543,4 @@ default for most platforms), `GC_malloc` and friends only use thread-local
 allocation.
 
 For some more details see [here](scale.md), and the technical report entitled
-["Fast Multiprocessor Memory Allocation and Garbage Collection"](http://www.hpl.hp.com/techreports/2000/HPL-2000-165.html).
+[Fast Multiprocessor Memory Allocation and Garbage Collection](https://www.researchgate.net/publication/242553754_Fast_multiprocessor_memory_allocation_and_garbage_collection).

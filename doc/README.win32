@@ -137,9 +137,8 @@ Special note for OpenWatcom users: the C (unlike the C++) compiler (of the
 latest stable release, not sure for older ones) doesn't force pointer global
 variables (i.e. not struct fields, not sure for locals) to be aligned unless
 optimizing for speed (e.g., "-ot" option is set); the "-zp" option (or align
-pragma) only controls alignment for structs; I don't know whether it's a bug or
-a feature (see an old report of same kind -
-http://bugzilla.openwatcom.org/show_bug.cgi?id=664), so You are warned.
+pragma) only controls alignment for structs; I don't know whether it's a bug
+or a feature, but you are warned.
 
 Incremental Collection
 ----------------------
