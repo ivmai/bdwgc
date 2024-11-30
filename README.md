@@ -240,8 +240,8 @@ excellent cross-compilation functionality, it is configurable like this:
 zig build -Dtarget=riscv64-linux-musl
 ```
 
-Currently, a nightly version of zig 0.12 is required, which can be downloaded
-from https://ziglang.org/download/
+The appropriate Zig binary package file could be downloaded from the official
+[Zig releases](https://ziglang.org/download/) page.
 
 ### MS nmake
 
