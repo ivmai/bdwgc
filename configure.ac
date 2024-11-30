@@ -990,7 +990,7 @@ AC_ARG_ENABLE(docs,
                         [do not build and install documentation])])
 AM_CONDITIONAL(ENABLE_DOCS, test x$enable_docs != xno)
 
-# Atomic Ops
+# Atomic_ops
 # ----------
 
 # Do we want to use an external libatomic_ops?  By default use it if it's
