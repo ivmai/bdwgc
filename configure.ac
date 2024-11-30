@@ -763,7 +763,7 @@ fi
 AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
 
 
-# Atomic Ops
+# Atomic_ops
 # ----------
 
 # Do we want to use an external libatomic_ops?  By default use it if it's
