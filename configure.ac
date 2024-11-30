@@ -938,7 +938,7 @@ if test "$enable_gcov" = "yes"; then
   CXXFLAGS=`echo "$CXXFLAGS" | sed -e 's/-O\(1\|2\|3\|4\|s\|fast\)\?//g'`
 fi
 
-# Atomic Ops
+# Atomic_ops
 # ----------
 
 # Do we want to use an external libatomic_ops?  By default use it if it's
