@@ -296,7 +296,7 @@ Things don't appear to add up for a variety of reasons, most notably
 fragmentation losses.  These are probably much more significant for the
 contrived program `gctest` than for your application.)
 
-### Atomic ops
+### Atomic_ops
 
 Use (cloning) of `libatomic_ops` is now optional provided the compiler
 supports atomic intrinsics.  Most modern compilers do.  The notable exception

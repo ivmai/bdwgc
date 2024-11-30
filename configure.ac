@@ -1121,7 +1121,7 @@ AM_CONDITIONAL(ENABLE_DOCS, test x$enable_docs != xno)
 
 AM_CONDITIONAL(ENABLE_SHARED, test x$enable_shared = xyes)
 
-# Atomic Ops
+# Atomic_ops
 # ----------
 
 # Do we want to use an external libatomic_ops?  By default use it if it's
