@@ -1119,7 +1119,7 @@ GC_get_register_stack_base(void)
                         BACKING_STORE_ALIGNMENT);
 }
 
-#endif /* HPUX_STACK_BOTTOM */
+#endif /* HPUX_STACKBOTTOM */
 
 #ifdef LINUX_STACKBOTTOM
 
