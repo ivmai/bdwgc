@@ -84,15 +84,14 @@ main(void)
   HANDLE t;
   DWORD thread_id;
 #endif
-#if !(defined(ANY_MSWIN) || defined(BEOS)                               \
-      || (defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP))     \
-      || ((defined(FREEBSD) || defined(LINUX) || defined(NETBSD)        \
-           || defined(HOST_ANDROID))                                    \
-          && !defined(NO_PTHREAD_ATTR_GET_NP)                           \
-          && !defined(NO_PTHREAD_GETATTR_NP))                           \
-      || (defined(SOLARIS) && !defined(_STRICT_STDC))                   \
-      || ((!defined(FREEBSD_STACKBOTTOM) && !defined(LINUX_STACKBOTTOM) \
-           || defined(HEURISTIC1))                                      \
+#if !(defined(ANY_MSWIN) || defined(BEOS)                              \
+      || (defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP))    \
+      || ((defined(FREEBSD) || defined(LINUX) || defined(NETBSD)       \
+           || defined(HOST_ANDROID))                                   \
+          && !defined(NO_PTHREAD_ATTR_GET_NP)                          \
+          && !defined(NO_PTHREAD_GETATTR_NP))                          \
+      || (defined(SOLARIS) && !defined(_STRICT_STDC))                  \
+      || ((!defined(SPECIFIC_MAIN_STACKBOTTOM) || defined(HEURISTIC1)) \
           && !defined(STACKBOTTOM)))
   /* GC_INIT() must be called from main thread only. */
   GC_INIT();

@@ -116,9 +116,9 @@ operating system:
   defined and none of the following three macros is defined, client code must
   explicitly set `GC_stackbottom` to an appropriate value before calling
   `GC_INIT` or any other `GC_` routine.
-  * `LINUX_STACKBOTTOM` - May be defined instead of `STACKBOTTOM`. If defined,
-  then the cold end of the stack will be determined, we usually read it from
-  `/proc`.
+  * `SPECIFIC_MAIN_STACKBOTTOM` - May be defined instead of `STACKBOTTOM`.
+  If defined, then the cold end of the main stack will be determined in some
+  OS-specific way, e.g. by reading it from `/proc` in case of Linux.
   * `HEURISTIC1` - May be defined instead of `STACKBOTTOM`. `STACK_GRAN`
   should be defined too in this case. The cold end of the stack is determined
   by taking an address inside `GC_init`s frame, and rounding it up to the next

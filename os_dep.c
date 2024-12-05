@@ -27,7 +27,7 @@
 #  include <fcntl.h>
 #endif
 
-#if defined(LINUX) || defined(LINUX_STACKBOTTOM)
+#ifdef LINUX
 #  include <ctype.h>
 #endif
 
@@ -47,8 +47,9 @@
 #  include <sys/stat.h>
 #endif
 
-#if defined(ADD_HEAP_GUARD_PAGES) || defined(LINUX_STACKBOTTOM) \
-    || defined(MMAP_SUPPORTED) || defined(NEED_PROC_MAPS)
+#if defined(LINUX) && defined(SPECIFIC_MAIN_STACKBOTTOM)        \
+    || defined(ADD_HEAP_GUARD_PAGES) || defined(MMAP_SUPPORTED) \
+    || defined(NEED_PROC_MAPS)
 #  include <errno.h>
 #endif
 
@@ -73,15 +74,16 @@ STATIC GC_bool GC_pages_executable = FALSE;
 /* Note: it is undefined later on GC_pages_executable real use. */
 #define IGNORE_PAGES_EXECUTABLE 1
 
-#if ((defined(LINUX_STACKBOTTOM) || defined(NEED_PROC_MAPS) \
-      || defined(PROC_VDB) || defined(SOFT_VDB))            \
-     && !defined(PROC_READ))                                \
+#if ((defined(LINUX) && defined(SPECIFIC_MAIN_STACKBOTTOM)                  \
+      || defined(NEED_PROC_MAPS) || defined(PROC_VDB) || defined(SOFT_VDB)) \
+     && !defined(PROC_READ))                                                \
     || defined(CPPCHECK)
 /* Note: should probably call the real read, if read is wrapped.  */
 #  define PROC_READ read
 #endif
 
-#if defined(LINUX_STACKBOTTOM) || defined(NEED_PROC_MAPS)
+#if defined(LINUX) && defined(SPECIFIC_MAIN_STACKBOTTOM) \
+    || defined(NEED_PROC_MAPS)
 /* Repeatedly perform a read call until the buffer is filled  */
 /* up, or we encounter EOF or an error.                       */
 STATIC ssize_t
@@ -105,7 +107,7 @@ GC_repeat_read(int f, char *buf, size_t count)
   }
   return num_read;
 }
-#endif /* LINUX_STACKBOTTOM || NEED_PROC_MAPS */
+#endif /* LINUX && SPECIFIC_MAIN_STACKBOTTOM || NEED_PROC_MAPS */
 
 #ifdef NEED_PROC_MAPS
 /* We need to parse /proc/self/maps, either to find dynamic libraries,  */
@@ -1072,32 +1074,7 @@ GC_find_limit(void *p, int up)
 }
 #endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES */
 
-#ifdef HPUX_MAIN_STACKBOTTOM
-#  include <sys/param.h>
-#  include <sys/pstat.h>
-
-STATIC ptr_t
-GC_hpux_main_stack_base(void)
-{
-  struct pst_vm_status vm_status;
-  int i = 0;
-
-  while (pstat_getprocvm(&vm_status, sizeof(vm_status), 0, i++) == 1) {
-    if (vm_status.pst_type == PS_STACK)
-      return (ptr_t)vm_status.pst_vaddr;
-  }
-
-  /* Old way to get the stack bottom. */
-#  ifdef STACK_GROWS_UP
-  return (ptr_t)GC_find_limit(GC_approx_sp(), FALSE);
-#  else /* not HP_PA */
-  return (ptr_t)GC_find_limit(GC_approx_sp(), TRUE /* up */);
-#  endif
-}
-#endif /* HPUX_MAIN_STACKBOTTOM */
-
-#ifdef HPUX_STACKBOTTOM
-
+#if defined(HPUX) && defined(IA64)
 #  include <sys/param.h>
 #  include <sys/pstat.h>
 
@@ -1118,44 +1095,32 @@ GC_get_register_stack_base(void)
   return PTR_ALIGN_DOWN(GC_stackbottom - BACKING_STORE_DISPLACEMENT - 1,
                         BACKING_STORE_ALIGNMENT);
 }
+#endif /* HPUX && IA64 */
 
-#endif /* HPUX_STACKBOTTOM */
-
-#ifdef LINUX_STACKBOTTOM
-
-#  include <sys/stat.h>
-
-/* Number of fields preceding startstack one in /proc/self/stat.  */
-#  define STAT_SKIP 27
-
+#if defined(LINUX) && defined(IA64)
 #  ifdef USE_LIBC_PRIVATES
 EXTERN_C_BEGIN
-#    pragma weak __libc_stack_end
-extern ptr_t __libc_stack_end;
-#    ifdef IA64
-#      pragma weak __libc_ia64_register_backing_store_base
+#    pragma weak __libc_ia64_register_backing_store_base
 extern ptr_t __libc_ia64_register_backing_store_base;
-#    endif
 EXTERN_C_END
 #  endif
 
-#  ifdef IA64
 GC_INNER ptr_t
 GC_get_register_stack_base(void)
 {
   ptr_t result;
 
   GC_ASSERT(I_HOLD_LOCK());
-#    ifdef USE_LIBC_PRIVATES
+#  ifdef USE_LIBC_PRIVATES
   {
     ptr_t *p_libc_ia64_register_backing_store_base
         = &__libc_ia64_register_backing_store_base;
 
-#      if defined(CPPCHECK)
+#    ifdef CPPCHECK
     /* Workaround a warning that the address of the global  */
     /* symbol (which is a weak one) cannot be null.         */
     GC_noop1_ptr(&p_libc_ia64_register_backing_store_base);
-#      endif
+#    endif
     if (p_libc_ia64_register_backing_store_base != NULL
         && __libc_ia64_register_backing_store_base != NULL) {
       /* glibc 2.2.4 has a bug such that for dynamically linked   */
@@ -1165,7 +1130,7 @@ GC_get_register_stack_base(void)
       return __libc_ia64_register_backing_store_base;
     }
   }
-#    endif
+#  endif
   result = backing_store_base_from_proc();
   if (0 == result) {
     /* This works better than a constant displacement heuristic.  */
@@ -1173,15 +1138,53 @@ GC_get_register_stack_base(void)
   }
   return result;
 }
-#  endif /* IA64 */
+#endif /* LINUX && IA64 */
 
-STATIC ptr_t
-GC_linux_main_stack_base(void)
+#ifdef SPECIFIC_MAIN_STACKBOTTOM
+
+#  ifdef HPUX
+#    include <sys/param.h>
+#    include <sys/pstat.h>
+
+static ptr_t
+os_main_stackbottom(void)
+{
+  struct pst_vm_status vm_status;
+  int i = 0;
+
+  while (pstat_getprocvm(&vm_status, sizeof(vm_status), 0, i++) == 1) {
+    if (vm_status.pst_type == PS_STACK)
+      return (ptr_t)vm_status.pst_vaddr;
+  }
+
+  /* Old way to get the stack bottom. */
+#    ifdef STACK_GROWS_UP
+  return (ptr_t)GC_find_limit(GC_approx_sp(), FALSE);
+#    else
+  return (ptr_t)GC_find_limit(GC_approx_sp(), TRUE /* up */);
+#    endif
+}
+
+#  elif defined(LINUX)
+#    include <sys/stat.h>
+
+/* Number of fields preceding startstack one in /proc/self/stat.  */
+#    define STAT_SKIP 27
+
+#    ifdef USE_LIBC_PRIVATES
+EXTERN_C_BEGIN
+#      pragma weak __libc_stack_end
+extern ptr_t __libc_stack_end;
+EXTERN_C_END
+#    endif
+
+static ptr_t
+os_main_stackbottom(void)
 {
   /* We read the stack bottom value from /proc/self/stat.  We do this */
   /* using direct I/O system calls in order to avoid calling malloc   */
   /* in case REDIRECT_MALLOC is defined.                              */
-#  define STAT_BUF_SIZE 4096
+#    define STAT_BUF_SIZE 4096
   unsigned char stat_buf[STAT_BUF_SIZE];
   int f;
   word addr;
@@ -1192,30 +1195,30 @@ GC_linux_main_stack_base(void)
   /* since the correct value of __libc_stack_end never        */
   /* becomes visible to us.  The second test works around     */
   /* this.                                                    */
-#  ifdef USE_LIBC_PRIVATES
+#    ifdef USE_LIBC_PRIVATES
   ptr_t *p_libc_stack_end = &__libc_stack_end;
 
-#    if defined(CPPCHECK)
+#      ifdef CPPCHECK
   GC_noop1_ptr(&p_libc_stack_end);
-#    endif
+#      endif
   if (p_libc_stack_end != NULL && __libc_stack_end != NULL) {
-#    if defined(IA64)
+#      ifdef IA64
     /* Some versions of glibc set the address 16 bytes too        */
     /* low while the initialization code is running.              */
     if ((ADDR(__libc_stack_end) & 0xfff) + 0x10 < 0x1000) {
       return __libc_stack_end + 0x10;
     } /* Otherwise it's not safe to add 16 bytes and we fall      */
       /* back to using /proc.                                     */
-#    elif defined(SPARC)
+#      elif defined(SPARC)
     /* Older versions of glibc for 64-bit SPARC do not set this   */
     /* variable correctly, it gets set to either zero or one.     */
     if (ADDR(__libc_stack_end) != 1)
       return __libc_stack_end;
-#    else
+#      else
     return __libc_stack_end;
-#    endif
+#      endif
   }
-#  endif
+#    endif
 
   f = open("/proc/self/stat", O_RDONLY);
   if (-1 == f)
@@ -1253,35 +1256,36 @@ GC_linux_main_stack_base(void)
     ABORT_ARG1("Absurd stack bottom value", ": 0x%lx", (unsigned long)addr);
   return MAKE_CPTR(addr);
 }
-#endif /* LINUX_STACKBOTTOM */
 
-#ifdef QNX_STACKBOTTOM
-STATIC ptr_t
-GC_qnx_main_stack_base(void)
+#  elif defined(QNX)
+static ptr_t
+os_main_stackbottom(void)
 {
   /* TODO: this approach is not very exact but it works for the       */
   /* tests, at least, unlike other available heuristics.              */
   return (ptr_t)__builtin_frame_address(0);
 }
-#endif /* QNX_STACKBOTTOM */
 
-#ifdef FREEBSD_STACKBOTTOM
-#  include <sys/sysctl.h>
+#  elif defined(FREEBSD)
+#    include <sys/sysctl.h>
 
 /* This uses an undocumented sysctl call, but at least one expert     */
 /* believes it will stay.                                             */
-STATIC ptr_t
-GC_freebsd_main_stack_base(void)
+static ptr_t
+os_main_stackbottom(void)
 {
   int nm[2] = { CTL_KERN, KERN_USRSTACK };
   ptr_t base;
   size_t len = sizeof(ptr_t);
   int r = sysctl(nm, 2, &base, &len, NULL, 0);
-  if (r)
+
+  if (r != 0)
     ABORT("Error getting main stack base");
   return base;
 }
-#endif /* FREEBSD_STACKBOTTOM */
+#  endif
+
+#endif /* SPECIFIC_MAIN_STACKBOTTOM */
 
 #if defined(ECOS) || defined(NOSYS)
 GC_INNER ptr_t
@@ -1375,14 +1379,8 @@ GC_get_main_stack_base(void)
 #      else
   result = PTR_ALIGN_UP(GC_approx_sp(), STACKBOTTOM_ALIGNMENT_M1 + 1);
 #      endif
-#    elif defined(HPUX_MAIN_STACKBOTTOM)
-  result = GC_hpux_main_stack_base();
-#    elif defined(LINUX_STACKBOTTOM)
-  result = GC_linux_main_stack_base();
-#    elif defined(QNX_STACKBOTTOM)
-  result = GC_qnx_main_stack_base();
-#    elif defined(FREEBSD_STACKBOTTOM)
-  result = GC_freebsd_main_stack_base();
+#    elif defined(SPECIFIC_MAIN_STACKBOTTOM)
+  result = os_main_stackbottom();
 #    elif defined(HEURISTIC2)
   {
     ptr_t sp = GC_approx_sp();

@@ -685,24 +685,25 @@ EXTERN_C_BEGIN
  * 1) define STACK_GROWS_UP if the stack grows toward higher addresses, and
  * 2) define exactly one of
  *      STACKBOTTOM (should be defined to be an expression)
- *      LINUX_STACKBOTTOM
  *      HEURISTIC1
+ *      SPECIFIC_MAIN_STACKBOTTOM
  *      HEURISTIC2
  * If STACKBOTTOM is defined, then its value will be used directly (as the
- * stack bottom).  If LINUX_STACKBOTTOM is defined, then it will be determined
- * with a method appropriate for most Linux systems.  Currently we look
- * first for __libc_stack_end (currently only if USE_LIBC_PRIVATES is
- * defined), and if that fails read it from /proc.  (If USE_LIBC_PRIVATES
- * is not defined and NO_PROC_STAT is defined, we revert to HEURISTIC2.)
+ * stack bottom).  If SPECIFIC_MAIN_STACKBOTTOM is defined, then it will be
+ * determined with a specific method appropriate for the operating system.
+ * Currently we look first for __libc_stack_end (currently only
+ * if USE_LIBC_PRIVATES is defined), and if that fails, read it from /proc.
+ * (If USE_LIBC_PRIVATES is not defined and NO_PROC_STAT is defined, we
+ * revert to HEURISTIC2.)
  * If either of the last two macros are defined, then STACKBOTTOM is computed
  * during collector startup using one of the following two heuristics:
  * HEURISTIC1:  Take an address inside GC_init's frame, and round it up to
- *              the next multiple of STACK_GRAN.
- * HEURISTIC2:  Take an address inside GC_init's frame, increment it repeatedly
- *              in small steps (decrement if STACK_GROWS_UP), and read the
- * value at each location.  Remember the value when the first Segmentation
- * violation or Bus error is signaled.  Round that to the nearest plausible
- * page boundary, and use that instead of STACKBOTTOM.
+ *      the next multiple of STACK_GRAN.
+ * HEURISTIC2:  Take an address inside GC_init's frame, increment it
+ *      repeatedly in small steps (decrement if STACK_GROWS_UP), and read the
+ *      value at each location; remember the value when the first Segmentation
+ *      violation or Bus error is signaled; round that to the nearest
+ *      plausible page boundary, and use that instead of STACKBOTTOM.
  *
  * Gustavo Rodriguez-Rivera points out that on most (all?) Unix machines,
  * the value of environ is a pointer that can serve as STACKBOTTOM.
@@ -874,7 +875,7 @@ extern int _modules_data_start[], _apps_bss_end[];
 
 #ifdef FREEBSD
 #  define OS_TYPE "FREEBSD"
-#  define FREEBSD_STACKBOTTOM
+#  define SPECIFIC_MAIN_STACKBOTTOM
 #  ifdef __ELF__
 #    define DYNAMIC_LOADING
 #  endif
@@ -953,7 +954,7 @@ extern int _end[];
 #  endif
 #  define RETRY_TKILL_ON_EAGAIN
 #  if !defined(MIPS) && !defined(POWERPC)
-#    define LINUX_STACKBOTTOM
+#    define SPECIFIC_MAIN_STACKBOTTOM
 #  endif
 #  if defined(__ELF__) && !defined(IA64)
 #    define DYNAMIC_LOADING
@@ -1066,7 +1067,7 @@ extern char etext[];
 #ifdef QNX
 #  define OS_TYPE "QNX"
 #  define SA_RESTART 0
-#  ifndef QNX_STACKBOTTOM /* TODO: not the default one for now */
+#  ifndef SPECIFIC_MAIN_STACKBOTTOM /* TODO: not the default one */
 #    define STACK_GRAN 0x1000000
 #    define HEURISTIC1
 #  endif
@@ -1178,11 +1179,11 @@ extern int etext[];
 /* executable on a 64-bit kernel.                                 */
 #    if defined(__bg__)
 /* The Linux Compute Node Kernel (used on BlueGene systems)     */
-/* does not support LINUX_STACKBOTTOM way.                      */
+/* does not support SPECIFIC_MAIN_STACKBOTTOM way.              */
 #      define HEURISTIC2
 #      define NO_PTHREAD_GETATTR_NP
 #    else
-#      define LINUX_STACKBOTTOM
+#      define SPECIFIC_MAIN_STACKBOTTOM
 #    endif
 #    define SEARCH_FOR_DATA_START
 #    ifndef SOFT_VDB
@@ -1646,7 +1647,7 @@ extern int __data_start[];
 #      define HBLKSIZE 4096
 #    endif
 #    if GC_GLIBC_PREREQ(2, 2)
-#      define LINUX_STACKBOTTOM
+#      define SPECIFIC_MAIN_STACKBOTTOM
 #    else
 #      define STACKBOTTOM MAKE_CPTR(0x7fff8000)
 #    endif
@@ -1789,7 +1790,7 @@ extern char **environ;
 #      define STACKBOTTOM ((ptr_t)environ)
 #    elif !defined(HEURISTIC2)
 /* This uses pst_vm_status support. */
-#      define HPUX_MAIN_STACKBOTTOM
+#      define SPECIFIC_MAIN_STACKBOTTOM
 #    endif
 #    ifndef __GNUC__
 #      define PREFETCH(x)                   \
@@ -1882,7 +1883,6 @@ extern int _end[];
 /* Note that the GC must be initialized before the 1st putenv call. */
 extern char **environ;
 #    define STACKBOTTOM ((ptr_t)environ)
-#    define HPUX_STACKBOTTOM
 /* The following was empirically determined, and is probably    */
 /* not very robust.                                             */
 /* Note that the backing store base seems to be at a nice       */
@@ -1893,11 +1893,11 @@ extern char **environ;
 #  endif
 #  ifdef LINUX
 #    define CPP_WORDSZ 64
-/* The following works on NUE and older kernels:        */
-/* define STACKBOTTOM MAKE_CPTR(0xa000000000000000l)    */
-/* TODO: LINUX_STACKBOTTOM does not work on NUE.        */
-/* We also need the base address of the register stack  */
-/* backing store.                                       */
+/* The following works on NUE and older kernels:            */
+/* define STACKBOTTOM MAKE_CPTR(0xa000000000000000l)        */
+/* TODO: SPECIFIC_MAIN_STACKBOTTOM does not work on NUE.    */
+/* We also need the base address of the register stack      */
+/* backing store.                                           */
 #    define SEARCH_FOR_DATA_START
 #    ifdef __GNUC__
 #      define DYNAMIC_LOADING
@@ -2484,11 +2484,11 @@ extern char __global_base, __heap_base;
 #  undef RETRY_GET_THREAD_CONTEXT
 #endif
 
-#if defined(LINUX_STACKBOTTOM) && defined(NO_PROC_STAT) \
-    && !defined(USE_LIBC_PRIVATES)
+#if defined(LINUX) && defined(SPECIFIC_MAIN_STACKBOTTOM) \
+    && defined(NO_PROC_STAT) && !defined(USE_LIBC_PRIVATES)
 /* This combination will fail, since we have no way to get  */
 /* the stack bottom.  Use HEURISTIC2 instead.               */
-#  undef LINUX_STACKBOTTOM
+#  undef SPECIFIC_MAIN_STACKBOTTOM
 #  define HEURISTIC2
 /* This may still fail on some architectures like IA64.     */
 /* We tried ...                                             */
@@ -2933,11 +2933,11 @@ EXTERN_C_BEGIN
 
 /* Do we need the GC_find_limit machinery to find the end of    */
 /* a data segment (or the backing store base)?                  */
-#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START)               \
-    || defined(HPUX_MAIN_STACKBOTTOM) || defined(IA64) || defined(DGUX) \
-    || defined(FREEBSD) || defined(OPENBSD) || defined(SVR4)            \
-    || (defined(CYGWIN32) && defined(I386) && defined(USE_MMAP)         \
-        && !defined(USE_WINALLOC))                                      \
+#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START) || defined(IA64)    \
+    || defined(DGUX) || defined(FREEBSD) || defined(OPENBSD) || defined(SVR4) \
+    || (defined(HPUX) && defined(SPECIFIC_MAIN_STACKBOTTOM))                  \
+    || (defined(CYGWIN32) && defined(I386) && defined(USE_MMAP)               \
+        && !defined(USE_WINALLOC))                                            \
     || (defined(NETBSD) && defined(__ELF__))
 #  define NEED_FIND_LIMIT
 #endif
@@ -3149,9 +3149,9 @@ extern ptr_t GC_data_start;
 
 #if defined(HOST_ANDROID) && !defined(THREADS) \
     && !defined(USE_GET_STACKBASE_FOR_MAIN)
-/* Always use pthread_attr_getstack on Android ("-lpthread" option is  */
-/* not needed to be specified manually) since GC_linux_main_stack_base */
-/* causes app crash if invoked inside Dalvik VM.                       */
+/* Always use pthread_attr_getstack on Android ("-lpthread" option is   */
+/* not needed to be specified manually) since Linux-specific            */
+/* os_main_stackbottom() causes app crash if invoked inside Dalvik VM.  */
 #  define USE_GET_STACKBASE_FOR_MAIN
 #endif
 
