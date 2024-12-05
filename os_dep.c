@@ -1030,7 +1030,7 @@ GC_INNER size_t GC_page_size = 0;
                    & ~(BACKING_STORE_ALIGNMENT - 1));
   }
 
-#endif /* HPUX_STACK_BOTTOM */
+#endif /* HPUX_STACKBOTTOM */
 
 #ifdef LINUX_STACKBOTTOM
 
