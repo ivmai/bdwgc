@@ -818,8 +818,6 @@ EXTERN_C_BEGIN
 
 #ifdef COSMO
 #  define OS_TYPE "COSMO"
-#  define HEURISTIC1 /* relies on pthread_attr_getstack actually */
-#  define STACK_GRAN 0x1000000
 #  ifndef USE_GET_STACKBASE_FOR_MAIN
 #    define USE_GET_STACKBASE_FOR_MAIN
 #  endif
@@ -899,8 +897,6 @@ extern char etext[];
 /* Note: DATASTART is not used really, see GC_register_main_static_data(). */
 extern int etext[];
 #  define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
-#  define HEURISTIC1 /* relies on pthread_attr_getstack actually */
-#  define STACK_GRAN 0x1000000
 #  ifndef USE_GET_STACKBASE_FOR_MAIN
 #    define USE_GET_STACKBASE_FOR_MAIN
 #  endif
@@ -981,8 +977,6 @@ extern int _end[];
 
 #ifdef KOS
 #  define OS_TYPE "KOS"
-#  define STACK_GRAN 0x1000000
-#  define HEURISTIC1 /* relies on pthread_attr_getstack actually */
 #  ifndef USE_GET_STACKBASE_FOR_MAIN
 /* Note: this requires -lpthread option. */
 #    define USE_GET_STACKBASE_FOR_MAIN
@@ -3165,6 +3159,15 @@ extern ptr_t GC_data_start;
     && !defined(NO_PTHREAD_ATTR_GET_NP)
 #  define HAVE_PTHREAD_NP_H 1 /* requires include pthread_np.h */
 #  define HAVE_PTHREAD_ATTR_GET_NP 1
+#endif
+
+#if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
+    && defined(USE_GET_STACKBASE_FOR_MAIN) && !defined(STACKBOTTOM)         \
+    && !defined(HEURISTIC1) && !defined(HEURISTIC2) && !defined(STACK_GRAN) \
+    && !defined(SPECIFIC_MAIN_STACKBOTTOM)
+/* Dummy definitions; rely on pthread_attr_getstack actually. */
+#  define HEURISTIC1
+#  define STACK_GRAN 0x1000000
 #endif
 
 #if !defined(HAVE_CLOCK_GETTIME) && defined(_POSIX_TIMERS) \
