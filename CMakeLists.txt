@@ -138,7 +138,7 @@ endif()
 # Output all warnings.
 if (BORLAND)
   # All warnings except for particular ones.
-  add_compile_options(/w /w-pro /w-aus /w-par /w-ccc /w-inl /w-rch)
+  add_compile_options(/w /w-aus /w-ccc /w-inl /w-par /w-pro /w-rch /w-use)
 elseif (MSVC)
   # All warnings but ignoring "unreferenced formal parameter" and
   # "conditional expression is constant" ones.
@@ -196,6 +196,12 @@ if (enable_threads)
     set(THREADDLLIBS_LIST ${THREADDLLIBS_LIST} -l${CMAKE_DL_LIBS})
   else()
     set(THREADDLLIBS_LIST ${THREADDLLIBS_LIST} ${CMAKE_DL_LIBS})
+  endif()
+  if (BORLAND)
+    # Workaround "cannot locate assembly file" and "out of hash space"
+    # compilation errors, "restarting compile using assembly" warning.
+    add_definitions("-DAO_NO_ASM_XADD")
+    add_definitions("-DAO_NO_ASM_XCHG")
   endif()
 endif(enable_threads)
 
@@ -372,11 +378,6 @@ endif(enable_checksums)
 if (enable_werror)
   if (BORLAND)
     add_compile_options(/w!)
-    if (enable_threads)
-      # Workaround "function should return a value" warning for several
-      # asm functions in atomic_ops/sysdeps/msftc/x86.h.
-      add_compile_options(/w-rvl)
-    endif(enable_threads)
   elseif (MSVC)
     add_compile_options(/WX)
     # Workaround "typedef ignored on left of ..." warning reported in
@@ -399,9 +400,6 @@ if (enable_single_obj_compilation OR BUILD_SHARED_LIBS)
     add_definitions("-DGC_PTHREAD_START_STANDALONE")
     set(SRC ${SRC} pthread_start.c)
   endif()
-elseif (BORLAND)
-  # Suppress "GC_push_contents_hdr() is declared but never used" warning.
-  add_compile_options(/w-use)
 endif()
 
 # Add implementation of backtrace() and backtrace_symbols().
