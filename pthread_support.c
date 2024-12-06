@@ -812,6 +812,10 @@ GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
   UNLOCK();
 }
 
+#if defined(GC_ASSERTIONS) && defined(PARALLEL_MARK)
+  STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
+#endif
+
 #ifdef CAN_HANDLE_FORK
 
   /* Prevent TSan false positive about the race during items removal    */
@@ -1241,12 +1245,15 @@ static void fork_child_proc(void)
 #   endif
 #   ifdef PARALLEL_MARK
       if (GC_parallel) {
-#       if defined(THREAD_SANITIZER) && defined(GC_ASSERTIONS) \
-           && defined(CAN_CALL_ATFORK)
-          (void)pthread_mutex_unlock(&mark_mutex);
+#       if !defined(GC_ASSERTIONS) \
+           || (defined(THREAD_SANITIZER) && defined(CAN_CALL_ATFORK))
+          /* Do not change GC_mark_lock_holder. */
 #       else
-          GC_release_mark_lock();
+          GC_mark_lock_holder = NO_THREAD;
 #       endif
+        /* The unlock operation may fail on some targets, just ignore   */
+        /* the error silently.                                          */
+        (void)pthread_mutex_unlock(&mark_mutex);
         /* Reinitialize the mark lock.  The reason is the same as for   */
         /* GC_allocate_ml below.                                        */
         (void)pthread_mutex_destroy(&mark_mutex);
@@ -2524,7 +2531,6 @@ yield:
 #ifdef PARALLEL_MARK
 
 # ifdef GC_ASSERTIONS
-    STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
 #   define SET_MARK_LOCK_HOLDER \
                 (void)(GC_mark_lock_holder = NUMERIC_THREAD_ID(pthread_self()))
 #   define UNSET_MARK_LOCK_HOLDER \
