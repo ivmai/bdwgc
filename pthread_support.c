@@ -1303,6 +1303,10 @@ GC_wait_for_gc_completion(GC_bool wait_for_all)
 #  endif
 }
 
+#  if defined(GC_ASSERTIONS) && defined(GC_PTHREADS_PARAMARK)
+STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
+#  endif
+
 #  ifdef CAN_HANDLE_FORK
 
 /* Procedures called before and after a fork.  The goal here is to    */
@@ -1510,15 +1514,20 @@ fork_child_proc(void)
 #    endif
 #    ifdef PARALLEL_MARK
   if (GC_parallel) {
-#      if defined(THREAD_SANITIZER) && defined(GC_ASSERTIONS) \
-          && defined(CAN_CALL_ATFORK)
-    (void)pthread_mutex_unlock(&mark_mutex);
-#      else
+#      ifdef GC_WIN32_THREADS
     GC_release_mark_lock();
-#      endif
+#      else
+#        if !defined(GC_ASSERTIONS) \
+            || (defined(THREAD_SANITIZER) && defined(CAN_CALL_ATFORK))
+    /* Do not change GC_mark_lock_holder. */
+#        else
+    GC_mark_lock_holder = NO_THREAD;
+#        endif
+    /* The unlock operation may fail on some targets, just ignore   */
+    /* the error silently.                                          */
+    (void)pthread_mutex_unlock(&mark_mutex);
     /* Reinitialize the mark lock.  The reason is the same as for   */
     /* GC_allocate_ml below.                                        */
-#      ifndef GC_WIN32_THREADS
     (void)pthread_mutex_destroy(&mark_mutex);
     if (pthread_mutex_init(&mark_mutex, NULL) != 0)
       ABORT("mark_mutex re-init failed in child");
@@ -2978,7 +2987,6 @@ GC_lock(void)
 #    endif
 
 #    ifdef GC_ASSERTIONS
-STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
 #      define SET_MARK_LOCK_HOLDER \
         (void)(GC_mark_lock_holder = NUMERIC_THREAD_ID(pthread_self()))
 #      define UNSET_MARK_LOCK_HOLDER                       \
