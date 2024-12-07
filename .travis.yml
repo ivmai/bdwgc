@@ -762,8 +762,8 @@ jobs:
     env:
     - MAKEFILE_TARGETS="distcheck"
     - AUTOCONF_VER=2.72
-    - AUTOMAKE_VER=1.16.5
-    - LIBTOOL_VER=2.4.7
+    - AUTOMAKE_VER=1.17
+    - LIBTOOL_VER=2.5.4
     - M4_VER=1.4.19
     - NO_CLONE_LIBATOMIC_OPS=true
 
