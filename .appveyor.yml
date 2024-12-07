@@ -34,6 +34,16 @@ environment:
   - TARGET: cmake
     CMAKE_CONFIG: Release
     CMAKE_OPTIONS: -A ARM64 -DCMAKE_BUILD_TYPE=Release -Denable_cplusplus=ON
+  - TARGET: cmake-bcc
+    CFLAGS_EXTRA: -DCONSOLE_LOG
+    CMAKE_OPTIONS: -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON
+  - TARGET: cmake-bcc
+    CFLAGS_EXTRA: -DCONSOLE_LOG -DNO_GWW_VDB
+    CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON -Denable_gc_assertions=ON -Denable_gc_debug=ON -Denable_large_config=ON -Denable_threads=OFF
+  - TARGET: cmake-bcc
+    CFLAGS_EXTRA: -DCONSOLE_LOG
+    CMAKE_CONFIG: Release
+    CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON
   - TARGET: cmake-mingw
     CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -Dbuild_tests=ON -Denable_cplusplus=ON
   - TARGET: cmake-msys
@@ -176,9 +186,20 @@ build_script:
     && mkdir out && cd out
     && cmake -G "Watcom WMake" %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
     && cmake --build . --config %CMAKE_CONFIG% --verbose )
+- cmd: if %TARGET%==cmake-bcc (
+    appveyor DownloadFile "https://www.ivmaisoft.com/_bin/misc/freecommandLinetools.exe"
+    && 7z x -o..\Bcc55 freecommandLinetools.exe > nul
+    && set "path=C:\Program Files\CMake\bin;%cd%\..\Bcc55\Bin"
+    && echo -I"%cd%\..\Bcc55\Include" > %cd%\..\Bcc55\Bin\bcc32.cfg
+    && echo -L"%cd%\..\Bcc55\Lib;%cd%\..\Bcc55\Lib\PSDK" > %cd%\..\Bcc55\Bin\ilink32.cfg
+    && mkdir out && cd out
+    && cmake -G "Borland Makefiles" %CMAKE_OPTIONS% -Denable_werror=ON -DCFLAGS_EXTRA="%CFLAGS_EXTRA%" ..
+    && cmake --build . --config %CMAKE_CONFIG% --verbose --parallel )
 
 test_script:
 - cmd: if %TARGET%==cmake (
+    ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
+- cmd: if %TARGET%==cmake-bcc (
     ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
 - cmd: if %TARGET%==cmake-mingw (
     ctest --build-config %CMAKE_CONFIG% --verbose --parallel 4 )
