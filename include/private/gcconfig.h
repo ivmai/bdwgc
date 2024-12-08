@@ -1616,7 +1616,12 @@ EXTERN_C_BEGIN
 #   ifdef MSWIN32
 #       define WOW64_THREAD_CONTEXT_WORKAROUND
 #       define RETRY_GET_THREAD_CONTEXT
-#       define MPROTECT_VDB
+#       if defined(__BORLANDC__)
+          /* TODO: VDB based on VirtualProtect and                  */
+          /* SetUnhandledExceptionFilter does not work correctly.   */
+#       else
+#         define MPROTECT_VDB
+#       endif
 #   endif
 #   ifdef MSWINCE
         /* Nothing specific. */
