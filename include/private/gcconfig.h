@@ -1320,7 +1320,12 @@
 #       define OS_TYPE "MSWIN32"
                 /* STACKBOTTOM and DATASTART are handled specially in   */
                 /* os_dep.c.                                            */
-#       define MPROTECT_VDB
+#       if defined(__BORLANDC__)
+          /* TODO: VDB based on VirtualProtect and                  */
+          /* SetUnhandledExceptionFilter does not work correctly.   */
+#       else
+#         define MPROTECT_VDB
+#       endif
 #       define GWW_VDB
 #       define DATAEND  /* not needed */
 #   endif
