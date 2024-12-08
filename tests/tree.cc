@@ -62,7 +62,7 @@ Tree::~Tree()
       delete m_nodes[i];
     }
 #ifdef GC_OPERATOR_NEW_ARRAY
-    gc::operator delete[](m_nodes);
+    GC_NS_QUALIFY(gc)::operator delete[](m_nodes);
 #else
     GC_FREE(m_nodes);
 #endif
