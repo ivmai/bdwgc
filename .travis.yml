@@ -627,6 +627,7 @@ jobs:
     - TESTS_CUSTOM_RUN=true
     - NO_CLONE_LIBATOMIC_OPS=true
   - compiler: gcc
+    dist: focal
     env:
     - CFLAGS_EXTRA="-fsanitize=thread -fno-omit-frame-pointer"
     - CONF_OPTIONS="--enable-gc-assertions"
