@@ -25,6 +25,7 @@ class Tree : public GC_NS_QUALIFY(gc)
 public:
   GC_ATTR_EXPLICIT
   Tree(int a, int d);
+  ~Tree();
   void verify();
 
 private:
@@ -52,6 +53,20 @@ Tree::Tree(int a, int d) : arity(a), depth(d)
   this->m_nodes = nodes;
   GC_END_STUBBORN_CHANGE(this);
   GC_reachable_here(nodes);
+}
+
+Tree::~Tree()
+{
+  if (depth > 0) {
+    for (int i = 0; i < arity; i++) {
+      delete m_nodes[i];
+    }
+#ifdef GC_OPERATOR_NEW_ARRAY
+    gc::operator delete[](m_nodes);
+#else
+    GC_FREE(m_nodes);
+#endif
+  }
 }
 
 void
@@ -98,6 +113,10 @@ Tree::verify(int a, int d)
 #  define MAX_DEPTH 9
 #endif
 
+#ifndef DEL_EVERY_N_TREE
+#  define DEL_EVERY_N_TREE 7
+#endif
+
 int
 main(void)
 {
@@ -107,21 +126,25 @@ main(void)
 #ifndef CPPCHECK
   GC_INIT();
 #endif
-  if (GC_get_find_leak())
-    printf("This test program is not designed for leak detection mode\n");
+  int is_find_leak = GC_get_find_leak();
 #ifndef NO_INCREMENTAL
   GC_enable_incremental();
 #endif
 
   Tree *keep_tree = new (USE_GC) Tree(MAX_ARITY, MAX_DEPTH);
   keep_tree->verify();
+  int trees_cnt = 0;
   for (int arity = 2; arity <= MAX_ARITY; arity++) {
     for (int depth = 1; depth <= MAX_DEPTH; depth++) {
       Tree *tree = new (USE_GC) Tree(arity, depth);
       tree->verify();
+      if (is_find_leak || ++trees_cnt % DEL_EVERY_N_TREE == 0)
+        delete tree;
     }
   }
   keep_tree->verify(); // recheck
+  if (is_find_leak)
+    delete keep_tree;
   printf("SUCCEEDED\n");
   return 0;
 }
