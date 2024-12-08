@@ -14,7 +14,7 @@ LFLAGS=/ma/implib/co
 CC=sc
 
 # Must precede other goals.
-all: gc.lib
+all: cord.lib gc.lib
 
 gc.obj: extra\gc.c
 	$(CC) -c $(CFLAGS) extra\gc.c -ogc.obj
@@ -41,6 +41,10 @@ gc.def: digimars.mak
 	echo GC_is_visible_print_proc >>gc.def
 	echo GC_is_valid_displacement_print_proc >>gc.def
 
+# FIXME: building cord as DLL results in cordtest fail.
+cord.lib: cord\cordbscs.obj cord\cordprnt.obj cord\cordxtra.obj
+	lib -c cord.lib cord\cordbscs.obj cord\cordprnt.obj cord\cordxtra.obj
+
 cord\cordbscs.obj: cord\cordbscs.c
 	$(CC) -c $(CORD_CFLAGS) cord\cordbscs.c -ocord\cordbscs.obj
 
@@ -53,7 +57,7 @@ cord\cordxtra.obj: cord\cordxtra.c
 clean:
 	del *.log *.map *.obj gc.def gc.dll gc.lib
 	del tests\*.obj gctest.exe cpptest.exe treetest.exe
-	del cord\*.obj cord\tests\cordtest.obj cordtest.exe
+	del cord\*.obj cord.lib cord\tests\cordtest.obj cordtest.exe
 
 gctest.exe: gc.lib tests\gctest.obj
 	$(CC) -ogctest.exe tests\gctest.obj gc.lib
@@ -73,8 +77,8 @@ treetest.exe: gc.lib tests\treetest.obj
 tests\treetest.obj: tests\tree.cc
 	$(CC) -c $(CFLAGS) -cpp tests\tree.cc -otests\treetest.obj
 
-cordtest.exe: cord\tests\cordtest.obj cord\cordbscs.obj cord\cordprnt.obj cord\cordxtra.obj gc.lib
-	$(CC) -ocordtest.exe cord\tests\cordtest.obj cord\cordbscs.obj cord\cordprnt.obj cord\cordxtra.obj gc.lib
+cordtest.exe: cord\tests\cordtest.obj cord.lib gc.lib
+	$(CC) -ocordtest.exe cord\tests\cordtest.obj cord.lib gc.lib
 
 cord\tests\cordtest.obj: cord\tests\cordtest.c
 	$(CC) -c $(CORD_CFLAGS) cord\tests\cordtest.c -ocord\tests\cordtest.obj
