@@ -18,7 +18,12 @@
 #define USE_GC GC_NS_QUALIFY(UseGC)
 
 class Tree;
-typedef Tree *PTree;
+
+class PTree : public GC_NS_QUALIFY(gc)
+{
+public:
+  Tree *ptr;
+};
 
 class Tree : public GC_NS_QUALIFY(gc)
 {
@@ -47,7 +52,8 @@ Tree::Tree(int a, int d) : arity(a), depth(d)
     GC_OP_NEW_OOM_CHECK(nodes);
 #endif
     for (int i = 0; i < arity; i++) {
-      GC_PTR_STORE_AND_DIRTY(&nodes[i], new (USE_GC) Tree(arity, depth - 1));
+      GC_PTR_STORE_AND_DIRTY(&nodes[i].ptr,
+                             new (USE_GC) Tree(arity, depth - 1));
     }
   }
   this->m_nodes = nodes;
@@ -59,10 +65,10 @@ Tree::~Tree()
 {
   if (depth > 0) {
     for (int i = 0; i < arity; i++) {
-      delete m_nodes[i];
+      delete m_nodes[i].ptr;
     }
 #ifdef GC_OPERATOR_NEW_ARRAY
-    GC_NS_QUALIFY(gc)::operator delete[](m_nodes);
+    delete[] m_nodes;
 #else
     GC_FREE(m_nodes);
 #endif
@@ -101,7 +107,7 @@ Tree::verify(int a, int d)
   if (0 == depth)
     return;
   for (int i = 0; i < arity; i++) {
-    m_nodes[i]->verify(a, d - 1);
+    m_nodes[i].ptr->verify(a, d - 1);
   }
 }
 
