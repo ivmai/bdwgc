@@ -1194,7 +1194,7 @@ GC_API GC_ATTR_MALLOC wchar_t *GC_CALL GC_debug_wcsdup(const wchar_t *,
 /* The interface represents my conclusions from a long discussion       */
 /* with Alan Demers, Dan Greene, Carl Hauser, Barry Hayes,              */
 /* Christian Jacobi, and Russ Atkinson.  It's not perfect, and          */
-/* probably nobody else agrees with it.     Hans-J. Boehm  3/13/92      */
+/* probably nobody else agrees with it.  Hans-J. Boehm  3/13/92         */
 typedef void(GC_CALLBACK *GC_finalization_proc)(void * /* obj */,
                                                 void * /* client_data */);
 
@@ -1339,7 +1339,7 @@ GC_API int GC_CALL GC_register_disappearing_link(void ** /* link */)
 /* email discussion with John Ellis.                    */
 /* link must be non-NULL (and be properly aligned).     */
 /* obj must be a pointer to the beginning of an object  */
-/* allocated by GC_malloc or friends.   A link          */
+/* allocated by GC_malloc or friends.  A link           */
 /* disappears when it is unregistered manually, or when */
 /* (*link) is cleared, or when the object containing    */
 /* this link is garbage collected.  It is unsafe to     */

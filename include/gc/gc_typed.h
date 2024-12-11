@@ -48,7 +48,7 @@ extern "C" {
 typedef GC_word *GC_bitmap;
 
 /* The number of elements (words) of a bitmap array to create for       */
-/* a given type.   The bitmap is intended to be passed to               */
+/* a given type.  The bitmap is intended to be passed to                */
 /* GC_make_descriptor().                                                */
 #define GC_BITMAP_SIZE(t) ((GC_WORD_LEN(t) + GC_WORDSZ - 1) / GC_WORDSZ)
 

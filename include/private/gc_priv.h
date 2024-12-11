@@ -1544,8 +1544,8 @@ struct _GC_arrays {
 #  define GC_main_local_mark_stack GC_arrays._main_local_mark_stack
   mse *_main_local_mark_stack;
 
-  /* Lowest entry on mark stack that may be nonempty.   Updated only  */
-  /* by initiating thread.                                            */
+  /* Lowest entry on mark stack that may be nonempty.  Updated only */
+  /* by initiating thread.                                          */
 #  define GC_first_nonempty GC_arrays._first_nonempty
   volatile ptr_t _first_nonempty;
 #endif
