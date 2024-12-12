@@ -842,6 +842,10 @@ EXTERN_C_END
 
 #include <setjmp.h>
 
+#if defined(CAN_HANDLE_FORK) && defined(GC_PTHREADS)
+#  include <pthread.h> /* for pthread_t */
+#endif
+
 #if __STDC_VERSION__ >= 201112L
 # include <assert.h> /* for static_assert */
 #endif
@@ -1562,6 +1566,13 @@ struct _GC_arrays {
 # endif
   size_t _ed_size;      /* Current size of above arrays.        */
   size_t _avail_descr;  /* Next available slot.                 */
+
+# if defined(CAN_HANDLE_FORK) && defined(GC_PTHREADS)
+    /* Value of pthread_self() of the thread which called fork().   */
+#   define GC_parent_pthread_self GC_arrays._parent_pthread_self
+    pthread_t _parent_pthread_self;
+# endif
+
   typed_ext_descr_t *_ext_descriptors;  /* Points to array of extended  */
                                         /* descriptors.                 */
   GC_mark_proc _mark_procs[MAX_MARK_PROCS];

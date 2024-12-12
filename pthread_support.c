@@ -829,9 +829,6 @@ GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
     GC_threads[hv] = me;
   }
 
-/* Value of pthread_self() of the thread which called fork(). */
-STATIC pthread_t GC_parent_pthread_self;
-
 /* Remove all entries from the GC_threads table, except the one for */
 /* the current thread.  Also update thread identifiers stored in    */
 /* the table for the current thread.  We need to do this in the     */
@@ -895,18 +892,22 @@ STATIC void GC_remove_all_threads_but_me(void)
     /* Put "me" back to GC_threads.     */
     store_to_threads_table(THREAD_TABLE_INDEX(me -> id), me);
 
-#   if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
-    {
-      int res;
+#   ifdef THREAD_LOCAL_ALLOC
+#     ifdef USE_CUSTOM_SPECIFIC
+        GC_update_specific_after_fork(GC_thread_key);
+#     else
+        {
+          int res;
 
-      /* Some TLS implementations might be not fork-friendly, so    */
-      /* we re-assign thread-local pointer to 'tlfs' for safety     */
-      /* instead of the assertion check (again, it is OK to call    */
-      /* GC_destroy_thread_local and GC_free_inner before).         */
-      res = GC_setspecific(GC_thread_key, &me->tlfs);
-      if (COVERT_DATAFLOW(res) != 0)
-        ABORT("GC_setspecific failed (in child)");
-    }
+          /* Some TLS implementations might be not fork-friendly, so    */
+          /* we re-assign thread-local pointer to 'tlfs' for safety     */
+          /* instead of the assertion check (again, it is OK to call    */
+          /* GC_destroy_thread_local and GC_free_inner before).         */
+          res = GC_setspecific(GC_thread_key, &me->tlfs);
+          if (COVERT_DATAFLOW(res) != 0)
+            ABORT("GC_setspecific failed (in child)");
+        }
+#     endif
 #   endif
 }
 #endif /* CAN_HANDLE_FORK */
