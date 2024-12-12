@@ -1344,15 +1344,19 @@ store_to_threads_table(int hv, GC_thread me)
   GC_threads[hv] = me;
 }
 
-/* Remove all entries from the GC_threads table, except the one for   */
-/* the current thread.  We need to do this in the child process after */
-/* a fork(), since only the current thread survives in the child.     */
+/* Value of pthread_self() of the thread which called fork(). */
+STATIC pthread_t GC_parent_pthread_self;
+
+/* Remove all entries from the GC_threads table, except the one for */
+/* the current thread.  Also update thread identifiers stored in    */
+/* the table for the current thread.  We need to do this in the     */
+/* child process after a fork(), since only the current thread      */
+/* survives in the child.                                           */
 STATIC void
 GC_remove_all_threads_but_me(void)
 {
   int hv;
   GC_thread me = NULL;
-  pthread_t self = pthread_self(); /* same as in parent */
 #    ifndef GC_WIN32_THREADS
 #      define pthread_id id
 #    endif
@@ -1362,7 +1366,7 @@ GC_remove_all_threads_but_me(void)
 
     for (p = GC_threads[hv]; p != NULL; p = next) {
       next = p->tm.next;
-      if (THREAD_EQUAL(p->pthread_id, self) && me == NULL) {
+      if (THREAD_EQUAL(p->pthread_id, GC_parent_pthread_self) && me == NULL) {
         /* Ignore dead threads with the same id.      */
         me = p;
         p->tm.next = NULL;
@@ -1399,6 +1403,9 @@ GC_remove_all_threads_but_me(void)
 #    else
   GC_ASSERT(me != NULL);
 #    endif
+  /* Update pthread's id as it is not guaranteed to be the same     */
+  /* between this (child) process and the parent one.               */
+  me->pthread_id = pthread_self();
 #    ifdef GC_WIN32_THREADS
   /* Update Win32 thread id and handle.     */
   /* They differ from that in the parent.   */
@@ -1457,6 +1464,7 @@ fork_prepare_proc(void)
 
   LOCK();
   DISABLE_CANCEL(fork_cancel_state);
+  GC_parent_pthread_self = pthread_self();
   /* The following waits may include cancellation points.   */
 #    ifdef PARALLEL_MARK
   if (GC_parallel)
@@ -1498,6 +1506,9 @@ fork_parent_proc(void)
   }
 #    endif
   RESTORE_CANCEL(fork_cancel_state);
+#    ifdef GC_ASSERTIONS
+  BZERO(&GC_parent_pthread_self, sizeof(pthread_t));
+#    endif
   UNLOCK();
 }
 
@@ -1544,6 +1555,9 @@ fork_child_proc(void)
   /* Clean up the thread table, so that just our thread is left.      */
   GC_remove_all_threads_but_me();
   RESTORE_CANCEL(fork_cancel_state);
+#    ifdef GC_ASSERTIONS
+  BZERO(&GC_parent_pthread_self, sizeof(pthread_t));
+#    endif
   UNLOCK();
   /* Even though after a fork the child only inherits the single      */
   /* thread that called the fork(), if another thread in the parent   */
