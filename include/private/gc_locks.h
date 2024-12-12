@@ -36,6 +36,9 @@ extern void GC_lock(void);
 extern void GC_unlock(void);
 #    define UNCOND_LOCK() GC_lock()
 #    define UNCOND_UNLOCK() GC_unlock()
+#    ifdef GC_ASSERTIONS
+#      define SET_LOCK_HOLDER() (void)0
+#    endif
 #  endif
 
 #  if (!defined(AO_HAVE_test_and_set_acquire) || defined(GC_WIN32_THREADS) \

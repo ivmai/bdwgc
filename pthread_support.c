@@ -1519,6 +1519,11 @@ GC_ATTR_NO_SANITIZE_THREAD
 static void
 fork_child_proc(void)
 {
+#    ifdef GC_ASSERTIONS
+  /* Update GC_lock_holder as value of thread_id_self() might       */
+  /* differ from that of the parent process.                        */
+  SET_LOCK_HOLDER();
+#    endif
   GC_release_dirty_lock();
 #    ifndef GC_DISABLE_INCREMENTAL
   GC_dirty_update_child();
