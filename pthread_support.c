@@ -750,47 +750,28 @@ GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
 }
 
 #ifdef CAN_HANDLE_FORK
+/* Value of pthread_self() of the thread which called fork(). */
+STATIC pthread_t GC_parent_pthread_self;
+
 /* Remove all entries from the GC_threads table, except the     */
-/* one for the current thread.  We need to do this in the child */
-/* process after a fork(), since only the current thread        */
-/* survives in the child.                                       */
+/* one for the current thread.  Also update thread identifiers  */
+/* stored in the table for the current thread.  We need to do   */
+/* this in the child process after a fork(), since only the     */
+/* current thread survives in the child.                        */
 STATIC void GC_remove_all_threads_but_me(void)
 {
-    pthread_t self = pthread_self();
     int hv;
+    GC_thread me = NULL;
 
     for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
       GC_thread p, next;
-      GC_thread me = NULL;
 
       for (p = GC_threads[hv]; 0 != p; p = next) {
         next = p -> next;
-        if (THREAD_EQUAL(p -> id, self)
+        if (THREAD_EQUAL(p -> id, GC_parent_pthread_self)
             && me == NULL) { /* ignore dead threads with the same id */
           me = p;
           p -> next = 0;
-#         ifdef GC_DARWIN_THREADS
-            /* Update thread Id after fork (it is OK to call    */
-            /* GC_destroy_thread_local and GC_free_inner        */
-            /* before update).                                  */
-            me -> stop_info.mach_thread = mach_thread_self();
-#         endif
-#         ifdef USE_TKILL_ON_ANDROID
-            me -> kernel_id = gettid();
-#         endif
-#         if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
-          {
-            int res;
-
-            /* Some TLS implementations might be not fork-friendly, so  */
-            /* we re-assign thread-local pointer to 'tlfs' for safety   */
-            /* instead of the assertion check (again, it is OK to call  */
-            /* GC_destroy_thread_local and GC_free_inner before).       */
-            res = GC_setspecific(GC_thread_key, &me->tlfs);
-            if (COVERT_DATAFLOW(res) != 0)
-              ABORT("GC_setspecific failed (in child)");
-          }
-#         endif
         } else {
 #         ifdef THREAD_LOCAL_ALLOC
             if (!(p -> flags & FINISHED)) {
@@ -806,8 +787,44 @@ STATIC void GC_remove_all_threads_but_me(void)
           if (p != &first_thread) GC_INTERNAL_FREE(p);
         }
       }
-      GC_threads[hv] = me;
+      GC_threads[hv] = NULL;
     }
+
+#   if defined(CPPCHECK) || defined(LINT2)
+      if (NULL == me)
+        ABORT("Current thread is not found after fork");
+#   else
+      GC_ASSERT(me != NULL);
+#   endif
+    /* Update pthread's id as it is not guaranteed to be the same   */
+    /* between this (child) process and the parent one.             */
+    me -> id = pthread_self();
+#   ifdef GC_DARWIN_THREADS
+      /* Update thread Id after fork (it is OK to call  */
+      /* GC_destroy_thread_local and GC_free_inner      */
+      /* before update).                                */
+      me -> stop_info.mach_thread = mach_thread_self();
+#   endif
+#   ifdef USE_TKILL_ON_ANDROID
+      me -> kernel_id = gettid();
+#   endif
+
+    /* Put "me" back to GC_threads.     */
+    GC_threads[THREAD_TABLE_INDEX(me -> id)] = me;
+
+#   if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
+    {
+      int res;
+
+      /* Some TLS implementations might be not fork-friendly, so    */
+      /* we re-assign thread-local pointer to 'tlfs' for safety     */
+      /* instead of the assertion check (again, it is OK to call    */
+      /* GC_destroy_thread_local and GC_free_inner before).         */
+      res = GC_setspecific(GC_thread_key, &me->tlfs);
+      if (COVERT_DATAFLOW(res) != 0)
+        ABORT("GC_setspecific failed (in child)");
+    }
+#   endif
 }
 #endif /* CAN_HANDLE_FORK */
 
@@ -1064,6 +1081,7 @@ static void fork_prepare_proc(void)
     /* the (one remaining thread in) the child.                         */
       LOCK();
       DISABLE_CANCEL(fork_cancel_state);
+      GC_parent_pthread_self = pthread_self();
                 /* Following waits may include cancellation points. */
 #     if defined(PARALLEL_MARK)
         if (GC_parallel)
@@ -1086,6 +1104,9 @@ static void fork_parent_proc(void)
         GC_release_mark_lock();
 #   endif
     RESTORE_CANCEL(fork_cancel_state);
+#   ifdef GC_ASSERTIONS
+      BZERO(&GC_parent_pthread_self, sizeof(pthread_t));
+#   endif
     UNLOCK();
 }
 
@@ -1108,6 +1129,9 @@ static void fork_child_proc(void)
       GC_dirty_update_child();
 #   endif
     RESTORE_CANCEL(fork_cancel_state);
+#   ifdef GC_ASSERTIONS
+      BZERO(&GC_parent_pthread_self, sizeof(pthread_t));
+#   endif
     UNLOCK();
     /* Even though after a fork the child only inherits the single      */
     /* thread that called the fork(), if another thread in the parent   */
