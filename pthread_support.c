@@ -1344,9 +1344,6 @@ store_to_threads_table(int hv, GC_thread me)
   GC_threads[hv] = me;
 }
 
-/* Value of pthread_self() of the thread which called fork(). */
-STATIC pthread_t GC_parent_pthread_self;
-
 /* Remove all entries from the GC_threads table, except the one for */
 /* the current thread.  Also update thread identifiers stored in    */
 /* the table for the current thread.  We need to do this in the     */
@@ -1559,6 +1556,7 @@ fork_child_proc(void)
 #    endif
   /* Clean up the thread table, so that just our thread is left.      */
   GC_remove_all_threads_but_me();
+  GC_stackbase_info_update_after_fork();
   RESTORE_CANCEL(fork_cancel_state);
 #    ifdef GC_ASSERTIONS
   BZERO(&GC_parent_pthread_self, sizeof(pthread_t));

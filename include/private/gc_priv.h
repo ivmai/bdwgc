@@ -906,6 +906,10 @@ EXTERN_C_END
 
 #include <stdio.h>
 
+#if defined(CAN_HANDLE_FORK) && defined(GC_PTHREADS)
+#  include <pthread.h> /* for pthread_t */
+#endif
+
 #if __STDC_VERSION__ >= 201112L
 #  include <assert.h> /* for static_assert */
 #endif
@@ -1625,6 +1629,12 @@ struct _GC_arrays {
 #define GC_ext_descriptors GC_arrays._ext_descriptors
   size_t _ed_size;     /* Current size of above arrays.        */
   size_t _avail_descr; /* Next available slot.                 */
+
+#if defined(CAN_HANDLE_FORK) && defined(GC_PTHREADS)
+  /* Value of pthread_self() of the thread which called fork().     */
+#  define GC_parent_pthread_self GC_arrays._parent_pthread_self
+  pthread_t _parent_pthread_self;
+#endif
 
   /* Points to array of extended descriptors.   */
   typed_ext_descr_t *_ext_descriptors;
@@ -2704,7 +2714,16 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 /* abort occurs in GC_init), GC_atfork_prepare and the    */
 /* accompanying routines are no-op in such a case.        */
 GC_EXTERN int GC_handle_fork;
-#endif
+
+#  ifdef THREADS
+#    if defined(SOLARIS) && !defined(_STRICT_STDC)
+/* Update pthread's id in the child process right after fork.   */
+GC_INNER void GC_stackbase_info_update_after_fork(void);
+#    else
+#      define GC_stackbase_info_update_after_fork() (void)0
+#    endif
+#  endif
+#endif /* CAN_HANDLE_FORK */
 
 #ifdef NO_MANUAL_VDB
 #  define GC_manual_vdb FALSE

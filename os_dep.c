@@ -1527,6 +1527,19 @@ GC_get_stack_base(struct GC_stack_base *sb)
 static pthread_t stackbase_main_self = 0;
 static void *stackbase_main_ss_sp = NULL;
 
+#  ifdef CAN_HANDLE_FORK
+GC_INNER void
+GC_stackbase_info_update_after_fork(void)
+{
+  if (stackbase_main_self == GC_parent_pthread_self) {
+    /* The primordial thread has forked the process. */
+    stackbase_main_self = pthread_self();
+  } else {
+    stackbase_main_self = 0;
+  }
+}
+#  endif
+
 GC_API int GC_CALL
 GC_get_stack_base(struct GC_stack_base *b)
 {
