@@ -165,9 +165,10 @@ EXTERN_C_BEGIN
 /* Here we will rely upon arch-specific defines. */
 #  endif
 #endif
-#if defined(__aarch64__) && !defined(ANY_BSD) && !defined(COSMO)             \
-    && !defined(DARWIN) && !defined(LINUX) && !defined(KOS) && !defined(QNX) \
-    && !defined(NN_BUILD_TARGET_PLATFORM_NX) && !defined(_WIN32)
+#if defined(__aarch64__) && !defined(ANY_BSD) && !defined(COSMO) \
+    && !defined(DARWIN) && !defined(LINUX) && !defined(KOS)      \
+    && !defined(NN_BUILD_TARGET_PLATFORM_NX) && !defined(QNX)    \
+    && !defined(SERENITY) && !defined(_WIN32)
 #  define AARCH64
 #  define NOSYS
 #  define mach_type_known
@@ -493,7 +494,8 @@ EXTERN_C_BEGIN
 
 #if defined(__aarch64__)                                      \
     && (defined(ANY_BSD) || defined(COSMO) || defined(DARWIN) \
-        || defined(LINUX) || defined(KOS) || defined(QNX))
+        || defined(LINUX) || defined(KOS) || defined(QNX)     \
+        || defined(SERENITY))
 #  define AARCH64
 #  define mach_type_known
 #elif defined(__arc__) && defined(LINUX)
@@ -2083,6 +2085,9 @@ void *switch_get_mem(size_t lb);
 /* Nothing specific. */
 #  endif
 #  ifdef QNX
+/* Nothing specific. */
+#  endif
+#  ifdef SERENITY
 /* Nothing specific. */
 #  endif
 #  ifdef MSWIN32
