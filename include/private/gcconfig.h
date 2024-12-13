@@ -2878,11 +2878,11 @@ EXTERN_C_BEGIN
 #endif
 
 #if (((defined(ARM32) || defined(AVR32) || defined(MIPS) || defined(NIOS2)    \
-       || defined(OR1K) || defined(DARWIN) || defined(HAIKU) || defined(HURD) \
-       || defined(OPENBSD) || defined(QNX))                                   \
+       || defined(OR1K))                                                      \
       && defined(UNIX_LIKE))                                                  \
-     || defined(HOST_ANDROID) || defined(RTEMS)                               \
-     || (defined(LINUX) && !defined(__gnu_linux__)))                          \
+     || defined(DARWIN) || defined(HAIKU) || defined(HURD)                    \
+     || defined(OPENBSD) || defined(QNX) || defined(RTEMS)                    \
+     || defined(HOST_ANDROID) || (defined(LINUX) && !defined(__gnu_linux__))) \
     && !defined(NO_GETCONTEXT)
 #  define NO_GETCONTEXT 1
 #endif
