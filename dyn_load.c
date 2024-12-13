@@ -249,9 +249,10 @@ GC_register_dynamic_libraries(void)
 #      endif
 #      include <link.h>
 #    endif /* HOST_ANDROID */
-#    if (defined(HOST_ANDROID) && !defined(GC_DONT_DEFINE_LINK_MAP) \
-         && !(__ANDROID_API__ >= 21))                               \
-        || defined(SERENITY)
+#    if ((defined(HOST_ANDROID) && !defined(GC_DONT_DEFINE_LINK_MAP) \
+          && !(__ANDROID_API__ >= 21))                               \
+         || defined(SERENITY))                                       \
+        && !defined(USE_PROC_FOR_LIBRARIES)
 /* link_map and r_debug are defined in link.h of NDK r10+.        */
 /* bionic/linker/linker.h defines them too but the header         */
 /* itself is a C++ one starting from Android 4.3.                 */
@@ -890,8 +891,10 @@ GC_FirstDLOpenedLinkMap(void)
         if (rd != NULL) {
           const struct link_map *lm = rd->r_map;
 
-#        if defined(CPPCHECK) && defined(HOST_ANDROID) \
-            && !defined(GC_DONT_DEFINE_LINK_MAP) && !(__ANDROID_API__ >= 21)
+#        if defined(CPPCHECK)                                               \
+            && ((defined(HOST_ANDROID) && !defined(GC_DONT_DEFINE_LINK_MAP) \
+                 && !(__ANDROID_API__ >= 21))                               \
+                || defined(SERENITY))
           GC_noop1((word)rd->r_version);
 #        endif
           if (lm != NULL)
@@ -942,8 +945,10 @@ GC_register_dynamic_libraries(void)
         break;
       }
     }
-#      if defined(CPPCHECK) && defined(HOST_ANDROID) \
-          && !defined(GC_DONT_DEFINE_LINK_MAP) && !(__ANDROID_API__ >= 21)
+#      if defined(CPPCHECK)                                               \
+          && ((defined(HOST_ANDROID) && !defined(GC_DONT_DEFINE_LINK_MAP) \
+               && !(__ANDROID_API__ >= 21))                               \
+              || defined(SERENITY))
     GC_noop1_ptr(lm->l_name);
     GC_noop1((word)lm->l_ld);
     GC_noop1_ptr(lm->l_prev);
