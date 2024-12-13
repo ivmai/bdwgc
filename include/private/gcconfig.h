@@ -2624,15 +2624,15 @@ EXTERN_C_BEGIN
 #  define SUNOS5SIGS
 #endif
 
-#if defined(ANY_BSD) || defined(COSMO) || defined(HAIKU) || defined(HURD) \
-    || defined(IRIX5) || defined(OSF1) || defined(SUNOS5SIGS)
+#if defined(COSMO) || defined(HPUX) || defined(HURD) || defined(NETBSD) \
+    || (defined(FREEBSD) && defined(SUNOS5SIGS))                        \
+    || (defined(IRIX5) && defined(_sigargs)) /* Irix 5.x, not 6.x */
 #  define USE_SEGV_SIGACT
-#  if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */   \
-      || (defined(FREEBSD) && defined(SUNOS5SIGS)) || defined(HPUX) \
-      || defined(COSMO) || defined(HURD) || defined(NETBSD)
-/* We may get SIGBUS.       */
-#    define USE_BUS_SIGACT
-#  endif
+/* We may also get SIGBUS. */
+#  define USE_BUS_SIGACT
+#elif defined(ANY_BSD) || defined(HAIKU) || defined(IRIX5) || defined(OSF1) \
+    || defined(SUNOS5SIGS)
+#  define USE_SEGV_SIGACT
 #endif
 
 #if !defined(GC_EXPLICIT_SIGNALS_UNBLOCK) && defined(SUNOS5SIGS) \
