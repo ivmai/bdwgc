@@ -2770,7 +2770,7 @@ block_unmap_inner(ptr_t start_addr, size_t len)
 #    ifdef SN_TARGET_PS3
     ps3_free_mem(start_addr, len);
 #    elif defined(AIX) || defined(COSMO) || defined(CYGWIN32) \
-        || defined(HPUX) || defined(SERENITY)                 \
+        || defined(HPUX)                                      \
         || (defined(LINUX) && !defined(PREFER_MMAP_PROT_NONE))
     /* On AIX, mmap(PROT_NONE) fails with ENOMEM unless the       */
     /* environment variable XPG_SUS_ENV is set to ON.             */
@@ -3259,8 +3259,7 @@ STATIC mach_port_t GC_task_self = 0;
 
 #  elif !defined(USE_WINALLOC)
 #    include <sys/mman.h>
-#    if !defined(AIX) && !defined(CYGWIN32) && !defined(HAIKU) \
-        && !defined(SERENITY)
+#    if !defined(AIX) && !defined(CYGWIN32) && !defined(HAIKU)
 #      include <sys/syscall.h>
 #    endif
 
@@ -3377,8 +3376,7 @@ is_header_found_async(const void *p)
 #      elif defined(IRIX5)
 #        define CODE_OK (si->si_code == EACCES)
 #      elif defined(AIX) || defined(COSMO) || defined(CYGWIN32) \
-          || defined(HAIKU) || defined(HURD) || defined(LINUX)  \
-          || defined(SERENITY)
+          || defined(HAIKU) || defined(HURD) || defined(LINUX)
 /* Linux: Empirically c.trapno == 14, on IA32, but is that useful?      */
 /* Should probably consider alignment issues on other architectures.    */
 #        define CODE_OK TRUE
