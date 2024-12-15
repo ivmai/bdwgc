@@ -1083,7 +1083,6 @@ extern int etext[], _end[];
 #  define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
 #  define DATAEND ((ptr_t)_end)
 #  define DYNAMIC_LOADING
-#  define MPROTECT_VDB
 #  define USE_MMAP_ANON
 #endif /* SERENITY */
 
