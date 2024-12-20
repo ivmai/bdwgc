@@ -2049,9 +2049,9 @@ ld_cap_search(struct dl_phdr_info *info, size_t size, void *cd)
   if (!SPANNING_CAPABILITY(load_ptr, region->start_addr, region->end_addr))
     return 0;
 
-  region->ld_cap
-      = cheri_bounds_set(cheri_address_set(load_ptr, region->start_addr),
-                         region->end_addr - region->start_addr);
+  region->ld_cap = (ptr_t)cheri_bounds_set(
+      cheri_address_set(load_ptr, region->start_addr),
+      region->end_addr - region->start_addr);
   return 1; /* stop */
 }
 
