@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define PTRFREE_GC GC_NS_QUALIFY(PointerFreeGC)
 #define USE_GC GC_NS_QUALIFY(UseGC)
 
 class Tree;
@@ -53,7 +54,8 @@ Tree::Tree(int a, int d) : arity(a), depth(d)
 #endif
     for (int i = 0; i < arity; i++) {
       GC_PTR_STORE_AND_DIRTY(&nodes[i].ptr,
-                             new (USE_GC) Tree(arity, depth - 1));
+                             depth > 1 ? new (USE_GC) Tree(arity, depth - 1)
+                                       : new (PTRFREE_GC) Tree(arity, 0));
     }
   }
   this->m_nodes = nodes;
