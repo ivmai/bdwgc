@@ -3633,10 +3633,6 @@ GC_dirty_init(void)
 }
 #  endif /* !DARWIN */
 
-#  ifdef GC_ASSERTIONS
-#    define IS_PAGE_ALIGNED(p) ((ADDR(p) & (GC_page_size - 1)) == 0)
-#  endif
-
 STATIC void
 GC_protect_heap(void)
 {
@@ -3650,8 +3646,8 @@ GC_protect_heap(void)
     struct hblk *current_start; /* start of block to be protected */
     ptr_t limit;
 
-    GC_ASSERT(IS_PAGE_ALIGNED(start));
-    GC_ASSERT(IS_PAGE_ALIGNED(len));
+    GC_ASSERT((ADDR(start) & (GC_page_size - 1)) == 0);
+    GC_ASSERT((len & (GC_page_size - 1)) == 0);
 #  ifndef DONT_PROTECT_PTRFREE
     /* We avoid protecting pointer-free objects unless the page   */
     /* size differs from HBLKSIZE.                                */
