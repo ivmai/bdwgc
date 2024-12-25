@@ -1546,6 +1546,7 @@ fork_child_proc(void)
     /* Reinitialize the mark lock.  The reason is the same as for   */
     /* GC_allocate_ml below.                                        */
     (void)pthread_mutex_destroy(&mark_mutex);
+    /* TODO: GLIBC_2_19_TSX_BUG has no effect. */
     if (pthread_mutex_init(&mark_mutex, NULL) != 0)
       ABORT("mark_mutex re-init failed in child");
 #      endif
