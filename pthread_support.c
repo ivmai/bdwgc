@@ -1596,8 +1596,8 @@ fork_child_proc(void)
 #        endif
 #      else
   (void)pthread_mutex_destroy(&GC_allocate_ml);
-  /* TODO: Probably some targets might need the default mutex     */
-  /* attribute to be passed instead of NULL.                      */
+  /* TODO: Probably some targets (e.g. with GLIBC_2_19_TSX_BUG) might   */
+  /* need the default mutex attribute to be passed instead of NULL.     */
   if (pthread_mutex_init(&GC_allocate_ml, NULL) != 0)
     ABORT("pthread_mutex_init failed (in child)");
 #      endif
