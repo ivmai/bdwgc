@@ -351,7 +351,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
       /* cancellation point is inherently a problem, unless there is    */
       /* some way to disable cancellation in the handler.               */
 # ifdef DEBUG_THREADS
-    GC_log_printf("Suspending %p\n", (void *)self);
+    GC_log_printf("Suspending %p\n", (void *)(word)self);
 # endif
   GC_ASSERT(((word)my_stop_count & THREAD_RESTARTED) == 0);
 
@@ -415,7 +415,7 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
           );
 
 # ifdef DEBUG_THREADS
-    GC_log_printf("Continuing %p\n", (void *)self);
+    GC_log_printf("Continuing %p\n", (void *)(word)self);
 # endif
 # ifdef E2K
     GC_ASSERT(me -> backing_store_end == bs_lo);
@@ -542,7 +542,7 @@ static void resend_lost_signals_retry(int n_live_threads,
 
 STATIC void GC_restart_handler(int sig)
 {
-# if defined(DEBUG_THREADS)
+# ifdef DEBUG_THREADS
     int old_errno = errno;      /* Preserve errno value.        */
 # endif
 
@@ -557,7 +557,8 @@ STATIC void GC_restart_handler(int sig)
   ** will thus not interrupt the sigsuspend() above.
   */
 # ifdef DEBUG_THREADS
-    GC_log_printf("In GC_restart_handler for %p\n", (void *)pthread_self());
+    GC_log_printf("In GC_restart_handler for %p\n",
+                  (void *)(word)pthread_self());
     errno = old_errno;
 # endif
 }
@@ -626,7 +627,7 @@ STATIC void GC_restart_handler(int sig)
       GC_ASSERT((suspend_cnt & 1) != 0);
       DISABLE_CANCEL(cancel_state);
 #     ifdef DEBUG_THREADS
-        GC_log_printf("Suspend self: %p\n", (void *)(me -> id));
+        GC_log_printf("Suspend self: %p\n", (void *)(word)(me -> id));
 #     endif
       while ((word)ao_load_acquire_async(&(me -> stop_info.ext_suspend_cnt))
              == suspend_cnt) {
@@ -634,7 +635,7 @@ STATIC void GC_restart_handler(int sig)
         GC_brief_async_signal_safe_sleep();
       }
 #     ifdef DEBUG_THREADS
-        GC_log_printf("Resume self: %p\n", (void *)(me -> id));
+        GC_log_printf("Resume self: %p\n", (void *)(word)(me -> id));
 #     endif
       RESTORE_CANCEL(cancel_state);
     }
@@ -796,7 +797,7 @@ GC_INNER void GC_push_all_stacks(void)
     if (!EXPECT(GC_thr_initialized, TRUE))
       GC_thr_init();
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Pushing stacks from thread %p\n", (void *)self);
+      GC_log_printf("Pushing stacks from thread %p\n", (void *)(word)self);
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
@@ -853,10 +854,10 @@ GC_INNER void GC_push_all_stacks(void)
 #       ifdef DEBUG_THREADS
 #         ifdef STACK_GROWS_UP
             GC_log_printf("Stack for thread %p is (%p,%p]\n",
-                          (void *)(p -> id), (void *)hi, (void *)lo);
+                          (void *)(word)(p -> id), (void *)hi, (void *)lo);
 #         else
             GC_log_printf("Stack for thread %p is [%p,%p)\n",
-                          (void *)(p -> id), (void *)lo, (void *)hi);
+                          (void *)(word)(p -> id), (void *)lo, (void *)hi);
 #         endif
 #       endif
         if (0 == lo) ABORT("GC_push_all_stacks: sp not set!");
@@ -896,7 +897,8 @@ GC_INNER void GC_push_all_stacks(void)
 #       if defined(E2K) || defined(IA64)
 #         ifdef DEBUG_THREADS
             GC_log_printf("Reg stack for thread %p is [%p,%p)\n",
-                          (void *)(p -> id), (void *)bs_lo, (void *)bs_hi);
+                          (void *)(word)(p -> id),
+                          (void *)bs_lo, (void *)bs_hi);
 #         endif
           GC_ASSERT(bs_lo != NULL && bs_hi != NULL);
           /* FIXME: This (if p->id==self) may add an unbounded number of */
@@ -953,7 +955,8 @@ STATIC int GC_suspend_all(void)
               n_live_threads++;
 #           endif
 #           ifdef DEBUG_THREADS
-              GC_log_printf("Sending suspend signal to %p\n", (void *)p->id);
+              GC_log_printf("Sending suspend signal to %p\n",
+                            (void *)(word)p->id);
 #           endif
 
 #           ifdef GC_OPENBSD_UTHREADS
@@ -1059,7 +1062,8 @@ GC_INNER void GC_stop_world(void)
 # ifdef DEBUG_THREADS
     GC_stopping_thread = pthread_self();
     GC_stopping_pid = getpid();
-    GC_log_printf("Stopping the world from %p\n", (void *)GC_stopping_thread);
+    GC_log_printf("Stopping the world from %p\n",
+                  (void *)(word)GC_stopping_thread);
 # endif
 
   /* Make sure all free list construction has stopped before we start.  */
@@ -1102,7 +1106,7 @@ GC_INNER void GC_stop_world(void)
       GC_release_mark_lock();
 # endif
 # ifdef DEBUG_THREADS
-    GC_log_printf("World stopped from %p\n", (void *)pthread_self());
+    GC_log_printf("World stopped from %p\n", (void *)(word)pthread_self());
     GC_stopping_thread = 0;
 # endif
 }
@@ -1310,7 +1314,8 @@ GC_INNER void GC_stop_world(void)
             n_live_threads++;
 #         endif
 #         ifdef DEBUG_THREADS
-            GC_log_printf("Sending restart signal to %p\n", (void *)p->id);
+            GC_log_printf("Sending restart signal to %p\n",
+                          (void *)(word)p->id);
 #         endif
 #         ifdef GC_OPENBSD_UTHREADS
             if (pthread_resume_np(p -> id) != 0)
