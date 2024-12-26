@@ -599,7 +599,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
     static GC_bool first_thread_used = FALSE;
 
 #   ifdef DEBUG_THREADS
-        GC_log_printf("Creating thread %p\n", (void *)id);
+        GC_log_printf("Creating thread %p\n", (void *)(word)id);
         for (result = GC_threads[hv]; result != NULL; result = result->next)
           if (!THREAD_EQUAL(result->id, id)) {
             GC_log_printf("Hash collision at GC_threads[%d]\n", hv);
@@ -646,7 +646,7 @@ STATIC void GC_delete_thread(pthread_t id)
 
 #   ifdef DEBUG_THREADS
       GC_log_printf("Deleting thread %p, n_threads= %d\n",
-                    (void *)id, GC_count_threads());
+                    (void *)(word)id, GC_count_threads());
 #   endif
     GC_ASSERT(I_HOLD_LOCK());
     while (!THREAD_EQUAL(p -> id, id)) {
@@ -698,7 +698,7 @@ STATIC void GC_delete_gc_thread(GC_thread t)
 
 #   ifdef DEBUG_THREADS
       GC_log_printf("Deleted thread %p, n_threads= %d\n",
-                    (void *)id, GC_count_threads());
+                    (void *)(word)id, GC_count_threads());
 #   endif
 }
 
@@ -1880,7 +1880,7 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
 #   ifdef DEBUG_THREADS
       GC_log_printf(
                 "Unregistering thread %p, gc_thread= %p, n_threads= %d\n",
-                (void *)me->id, (void *)me, GC_count_threads());
+                (void *)(word)me->id, (void *)me, GC_count_threads());
 #   endif
     GC_ASSERT(!(me -> flags & FINISHED));
 #   if defined(THREAD_LOCAL_ALLOC)
@@ -1925,7 +1925,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 #   ifdef DEBUG_THREADS
         GC_log_printf(
                 "Called GC_unregister_my_thread on %p, gc_thread= %p\n",
-                (void *)self, (void *)me);
+                (void *)(word)self, (void *)me);
 #   endif
     GC_ASSERT(THREAD_EQUAL(me->id, self));
     GC_unregister_my_thread_inner(me);
@@ -1946,7 +1946,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
 
 #   ifdef DEBUG_THREADS
         GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread= %p\n",
-                      (void *)((GC_thread)arg)->id, arg);
+                      (void *)(word)((GC_thread)arg)->id, arg);
 #   endif
     LOCK();
     DISABLE_CANCEL(cancel_state);
@@ -2212,7 +2212,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
 
 #   ifdef DEBUG_THREADS
       GC_log_printf("Starting thread %p, pid= %ld, sp= %p\n",
-                    (void *)self, (long)getpid(), (void *)&arg);
+                    (void *)(word)self, (long)getpid(), (void *)&arg);
 #   endif
     LOCK();
     me = GC_register_my_thread_inner(sb, self);
@@ -2324,7 +2324,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     UNLOCK();
 #   ifdef DEBUG_THREADS
       GC_log_printf("About to start new thread from thread %p\n",
-                    (void *)pthread_self());
+                    (void *)(word)pthread_self());
 #   endif
 #   ifdef PARALLEL_MARK
       if (EXPECT(!GC_parallel && available_markers_m1 > 0, FALSE))
@@ -2342,7 +2342,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
 
 #       ifdef DEBUG_THREADS
             /* new_thread is non-NULL because pthread_create requires it. */
-            GC_log_printf("Started thread %p\n", (void *)(*new_thread));
+            GC_log_printf("Started thread %p\n", (void *)(word)(*new_thread));
 #       endif
         DISABLE_CANCEL(cancel_state);
                 /* pthread_create is not a cancellation point. */

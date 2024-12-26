@@ -56,7 +56,7 @@ GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
 # endif
   result = (*start)(start_arg);
 # if defined(DEBUG_THREADS) && !defined(GC_PTHREAD_START_STANDALONE)
-    GC_log_printf("Finishing thread %p\n", (void *)pthread_self());
+    GC_log_printf("Finishing thread %p\n", (void *)(word)pthread_self());
 # endif
   me -> status = result;
   GC_end_stubborn_change(me); /* cannot use GC_dirty */
