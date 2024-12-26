@@ -54,7 +54,7 @@ GC_pthread_start_inner(struct GC_stack_base *sb, void *arg)
 #  endif
   result = (*start)(start_arg);
 #  if defined(DEBUG_THREADS) && !defined(GC_PTHREAD_START_STANDALONE)
-  GC_log_printf("Finishing thread %p\n", THREAD_ID_TO_VPTR(pthread_self()));
+  GC_log_printf("Finishing thread %p\n", PTHREAD_TO_VPTR(pthread_self()));
 #  endif
   me->status = result;
   /* Note: we cannot use GC_dirty() instead.    */

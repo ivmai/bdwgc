@@ -139,10 +139,15 @@ typedef struct GC_StackContext_Rep {
 typedef DWORD thread_id_t;
 #    define thread_id_self() GetCurrentThreadId()
 #    define THREAD_ID_EQUAL(id1, id2) ((id1) == (id2))
+/* Convert a platform-specific thread id (of thread_id_t type) to   */
+/* some pointer identifying the thread.  This is used mostly for    */
+/* a debugging purpose when printing thread id.                     */
+#    define THREAD_ID_TO_VPTR(id) CAST_THRU_UINTPTR(void *, id)
 #  else
 typedef pthread_t thread_id_t;
 #    define thread_id_self() pthread_self()
 #    define THREAD_ID_EQUAL(id1, id2) THREAD_EQUAL(id1, id2)
+#    define THREAD_ID_TO_VPTR(id) PTHREAD_TO_VPTR(id)
 #  endif
 
 typedef struct GC_Thread_Rep {
@@ -275,17 +280,17 @@ typedef struct GC_Thread_Rep {
 #  endif
 } * GC_thread;
 
-/* Convert a platform-specific thread id (of thread_id_t type) to   */
-/* some pointer identifying the thread.  This is used mostly for    */
-/* a debugging purpose when printing thread id.                     */
-#  if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)                  \
-      && (defined(GC_WIN32_PTHREADS) || defined(GC_PTHREADS_PARAMARK)) \
-      && !defined(__WINPTHREADS_VERSION_MAJOR)
+#  if defined(GC_PTHREADS) || defined(GC_PTHREADS_PARAMARK)
+/* Convert an opaque pthread_t value to a pointer identifying the thread. */
+#    if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)                  \
+        && (defined(GC_WIN32_PTHREADS) || defined(GC_PTHREADS_PARAMARK)) \
+        && !defined(__WINPTHREADS_VERSION_MAJOR)
 /* Using documented internal details of pthreads-win32 library. */
 /* pthread_t is a struct.                                       */
-#    define THREAD_ID_TO_VPTR(id) ((void *)(id).p)
-#  else
-#    define THREAD_ID_TO_VPTR(id) CAST_THRU_UINTPTR(void *, id)
+#      define PTHREAD_TO_VPTR(id) ((void *)(id).p)
+#    else
+#      define PTHREAD_TO_VPTR(id) CAST_THRU_UINTPTR(void *, id)
+#    endif
 #  endif
 
 #  ifndef THREAD_TABLE_SZ

@@ -2532,7 +2532,7 @@ GC_wrap_pthread_join(pthread_t thread, void **retval)
   INIT_REAL_SYMS();
 #    ifdef DEBUG_THREADS
   GC_log_printf("thread %p is joining thread %p\n",
-                THREAD_ID_TO_VPTR(pthread_self()), THREAD_ID_TO_VPTR(thread));
+                PTHREAD_TO_VPTR(pthread_self()), PTHREAD_TO_VPTR(thread));
 #    endif
 
   /* After the join, thread id may have been recycled.                */
@@ -2570,7 +2570,7 @@ GC_wrap_pthread_join(pthread_t thread, void **retval)
 
 #    ifdef DEBUG_THREADS
   GC_log_printf("thread %p join with thread %p %s\n",
-                THREAD_ID_TO_VPTR(pthread_self()), THREAD_ID_TO_VPTR(thread),
+                PTHREAD_TO_VPTR(pthread_self()), PTHREAD_TO_VPTR(thread),
                 result != 0 ? "failed" : "succeeded");
 #    endif
   return result;
@@ -2624,7 +2624,7 @@ GC_start_rtn_prepare_thread(void *(**pstart)(void *), void **pstart_arg,
 
 #    ifdef DEBUG_THREADS
   GC_log_printf("Starting thread %p, sp= %p\n",
-                THREAD_ID_TO_VPTR(pthread_self()), (void *)GC_approx_sp());
+                PTHREAD_TO_VPTR(pthread_self()), (void *)GC_approx_sp());
 #    endif
   /* If a GC occurs before the thread is registered, that GC will     */
   /* ignore this thread.  That's fine, since it will block trying to  */
@@ -2749,7 +2749,7 @@ GC_wrap_pthread_create(pthread_t *new_thread,
 #    endif
 #    ifdef DEBUG_THREADS
   GC_log_printf("About to start new thread from thread %p\n",
-                THREAD_ID_TO_VPTR(pthread_self()));
+                PTHREAD_TO_VPTR(pthread_self()));
 #    endif
   set_need_to_lock();
   result = REAL_FUNC(pthread_create)(new_thread, attr, GC_pthread_start, &si);
@@ -3004,8 +3004,7 @@ GC_lock(void)
 #    if defined(GC_ASSERTIONS) && defined(GC_WIN32_THREADS) \
         && !defined(USE_PTHREAD_LOCKS)
 /* Note: result is not guaranteed to be unique. */
-#      define NUMERIC_THREAD_ID(id) \
-        ((unsigned long)ADDR(THREAD_ID_TO_VPTR(id)))
+#      define NUMERIC_THREAD_ID(id) ((unsigned long)ADDR(PTHREAD_TO_VPTR(id)))
 #    endif
 
 #    ifdef GC_ASSERTIONS

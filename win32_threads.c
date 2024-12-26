@@ -908,9 +908,9 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
     }
 #  endif /* WOW64_THREAD_CONTEXT_WORKAROUND */
   }
-#  ifdef STACKPTR_CORRECTOR_AVAILABLE
+#  if defined(STACKPTR_CORRECTOR_AVAILABLE) && defined(GC_PTHREADS)
   if (GC_sp_corrector != 0)
-    GC_sp_corrector((void **)&sp, (void *)thread->pthread_id);
+    GC_sp_corrector((void **)&sp, PTHREAD_TO_VPTR(thread->pthread_id));
 #  endif
 
   /* Set stack_min to the lowest address in the thread stack,   */
