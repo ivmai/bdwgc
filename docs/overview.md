@@ -117,7 +117,8 @@ for garbage collection.
 
 Paul Wilson's
 [garbage collection ftp archive](ftp://ftp.cs.utexas.edu/pub/garbage)
-and [GC survey](https://ftpmirror.infania.net/sites/ftp.leo.org/historic/doc/programming/gcsurvey.ps.Z).
+and
+[GC survey](https://ftpmirror.infania.net/sites/ftp.leo.org/historic/doc/programming/gcsurvey.ps.Z).
 
 The Ravenbrook
 [Memory Management Reference](http://www.memorymanagement.org/).
@@ -221,7 +222,8 @@ Slides for Hans Boehm's
 
 [Known BDWGC users](https://github.com/ivmai/bdwgc/wiki/Known-clients) list.
 
-[Slides from an ISMM 2004 tutorial about the GC](http://www.hboehm.info/gc/04tutorial.pdf).
+Tutorial slides from an ISMM 2004:
+[The Boehm-Demers-Weiser Conservative Garbage Collector](http://www.hboehm.info/gc/04tutorial.pdf).
 
 [A FAQ (frequently asked questions) list](faq.md).
 
@@ -267,24 +269,36 @@ The following documents are not platform-specific in general.
 
 [Mark-sweep versus copying garbage collectors and their complexity](http://www.hboehm.info/gc/complexity.html).
 
-[Pros and cons of conservative garbage collectors, in comparison to other collectors](http://www.hboehm.info/gc/conservative.html).
+["Why Conservative Garbage Collectors?"](http://www.hboehm.info/gc/conservative.html)
+(pros and cons of conservative garbage collectors, in comparison to other
+collectors).
 
-[Issues related to garbage collection vs. manual memory management in C/C++](http://www.hboehm.info/gc/issues.html).
+[Advantages and Disadvantages of Conservative Garbage Collection](http://www.hboehm.info/gc/issues.html)
+(issues related to garbage collection versus manual memory management in
+C/C++).
 
-[An example of a case in which garbage collection results in a much faster implementation as a result of reduced synchronization](http://www.hboehm.info/gc/example.html).
+An example of
+[Expensive Explicit Deallocation](http://www.hboehm.info/gc/example.html)
+in which the garbage collection results in a much faster implementation as
+a result of reduced synchronization.
 
-[Slide set discussing performance of nonmoving garbage collectors](http://www.hboehm.info/gc/nonmoving/).
+Slide set discussing
+[Performance of Non-Moving Garbage Collectors](http://www.hboehm.info/gc/nonmoving/).
 
-Slide set discussing ["Destructors, Finalizers, and Synchronization"](http://www.hboehm.info/popl03/web/), POPL 2003
-(and the corresponding [paper](https://dl.acm.org/doi/10.1145/604131.604153)).
+Slide set discussing
+["Destructors, Finalizers, and Synchronization"](http://www.hboehm.info/popl03/web/),
+POPL 2003 (and the corresponding
+[paper](https://dl.acm.org/doi/10.1145/604131.604153)).
 
 [A Java/Scheme/C/C++ garbage collection benchmark](http://www.hboehm.info/gc/gc_bench/).
 
-[Slides for talk on memory allocation myths](http://www.hboehm.info/gc/myths.ps).
+Slides for talk on
+[Memory Allocation Myths](http://www.hboehm.info/gc/myths.ps).
 
-[Slides for OOPSLA 98 garbage collection talk](http://www.hboehm.info/gc/gctalk.ps).
+Slides for OOPSLA 98
+[Garbage Collection Talk](http://www.hboehm.info/gc/gctalk.ps).
 
-[Related papers](http://www.hboehm.info/gc/papers/).
+Some other [related papers](http://www.hboehm.info/gc/papers/).
 
 ## Contacts and new release announcements
 
