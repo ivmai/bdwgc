@@ -354,7 +354,7 @@ GC_suspend_handler_inner(ptr_t dummy, void *context)
   DISABLE_CANCEL(cancel_state);
 
 #    ifdef DEBUG_THREADS
-  GC_log_printf("Suspending %p\n", (void *)pthread_self());
+  GC_log_printf("Suspending %p\n", PTHREAD_TO_VPTR(pthread_self()));
 #    endif
   me = GC_lookup_self_thread_async();
   if ((me->last_stop_count & ~(word)THREAD_RESTARTED) == my_stop_count) {
@@ -404,7 +404,7 @@ GC_suspend_handler_inner(ptr_t dummy, void *context)
   );
 
 #    ifdef DEBUG_THREADS
-  GC_log_printf("Resuming %p\n", (void *)pthread_self());
+  GC_log_printf("Resuming %p\n", PTHREAD_TO_VPTR(pthread_self()));
 #    endif
 #    ifdef E2K
   GC_ASSERT(crtn->backing_store_end == bs_lo);
@@ -533,7 +533,7 @@ resend_lost_signals_retry(int n_live_threads, int (*suspend_restart_all)(void))
 STATIC void
 GC_restart_handler(int sig)
 {
-#    if defined(DEBUG_THREADS)
+#    ifdef DEBUG_THREADS
   /* Preserve errno value.    */
   int old_errno = errno;
 #    endif
@@ -546,7 +546,8 @@ GC_restart_handler(int sig)
     /* signals, otherwise the signals will not be delivered at all,       */
     /* and will thus not interrupt the sigsuspend() above.                */
 #    ifdef DEBUG_THREADS
-  GC_log_printf("In GC_restart_handler for %p\n", (void *)pthread_self());
+  GC_log_printf("In GC_restart_handler for %p\n",
+                PTHREAD_TO_VPTR(pthread_self()));
   errno = old_errno;
 #    endif
 }
@@ -812,7 +813,7 @@ GC_push_all_stacks(void)
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(GC_thr_initialized);
 #  ifdef DEBUG_THREADS
-  GC_log_printf("Pushing stacks from thread %p\n", (void *)self);
+  GC_log_printf("Pushing stacks from thread %p\n", PTHREAD_TO_VPTR(self));
 #  endif
   for (i = 0; i < THREAD_TABLE_SZ; i++) {
     for (p = GC_threads[i]; p != NULL; p = p->tm.next) {
@@ -1075,7 +1076,8 @@ GC_stop_world(void)
 #  ifdef DEBUG_THREADS
   GC_stopping_thread = pthread_self();
   GC_stopping_pid = getpid();
-  GC_log_printf("Stopping the world from %p\n", (void *)GC_stopping_thread);
+  GC_log_printf("Stopping the world from %p\n",
+                PTHREAD_TO_VPTR(GC_stopping_thread));
 #  endif
 #  ifdef PARALLEL_MARK
   if (GC_parallel) {
@@ -1113,7 +1115,7 @@ GC_stop_world(void)
     GC_release_mark_lock();
 #  endif
 #  ifdef DEBUG_THREADS
-  GC_log_printf("World stopped from %p\n", (void *)pthread_self());
+  GC_log_printf("World stopped from %p\n", PTHREAD_TO_VPTR(pthread_self()));
   GC_stopping_thread = 0;
 #  endif
 }
