@@ -1081,7 +1081,8 @@ GC_INNER void GC_start_world(void)
             if (pthread_resume_np(p -> id) != 0)
               ABORT("pthread_resume_np failed");
             if (GC_on_thread_event)
-              GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)p->id);
+              GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED,
+                                 (void *)(word)p->id);
 #         else
             result = RAISE_SIGNAL(p, GC_sig_thr_restart);
             switch(result) {
