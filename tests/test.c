@@ -1413,16 +1413,14 @@ void run_one_test(void)
         FAIL;
       }
       AO_fetch_and_add1(&collectable_count);
-      x = (char*)GC_malloc(0);
-      CHECK_OUT_OF_MEMORY(x);
+      x = (char*)checkOOM(GC_malloc(0));
       if (GC_size(x) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_malloc(0) failed: GC_size returns %lu\n",
                       (unsigned long)GC_size(x));
         FAIL;
       }
       AO_fetch_and_add1(&uncollectable_count);
-      x = (char*)GC_malloc_uncollectable(0);
-      CHECK_OUT_OF_MEMORY(x);
+      x = (char*)checkOOM(GC_malloc_uncollectable(0));
       if (GC_size(x) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_malloc_uncollectable(0) failed\n");
         FAIL;
