@@ -872,7 +872,7 @@ GC_INNER void GC_push_all_stacks(void)
         }
 #       ifdef STACKPTR_CORRECTOR_AVAILABLE
           if (GC_sp_corrector != 0)
-            GC_sp_corrector((void **)&lo, (void *)(p -> id));
+            GC_sp_corrector((void **)&lo, (void *)(word)(p -> id));
 #       endif
         GC_push_all_stack_sections(lo, hi, traced_stack_sect);
 #       ifdef STACK_GROWS_UP
