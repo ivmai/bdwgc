@@ -1036,6 +1036,7 @@ extern int _end[];
 extern char etext[];
 #    define DATASTART ((ptr_t)etext)
 #  endif
+#  define MPROTECT_VDB
 #endif /* NETBSD */
 
 #ifdef NEXT
