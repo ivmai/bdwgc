@@ -2253,12 +2253,6 @@ GC_register_data_segments(void)
 }
 
 #elif !defined(ANY_MSWIN)
-#  if defined(REDIRECT_MALLOC) && defined(SOLARIS) && defined(THREADS)
-EXTERN_C_BEGIN
-extern caddr_t sbrk(int);
-EXTERN_C_END
-#  endif
-
 GC_INNER void
 GC_register_data_segments(void)
 {
