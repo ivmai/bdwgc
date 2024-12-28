@@ -891,7 +891,11 @@ extern int _modules_data_start[], _apps_bss_end[];
 extern char etext[];
 #    define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)etext)
 #    define DATASTART_USES_XGETDATASTART
-#    define MPROTECT_VDB
+#    ifndef REDIRECT_MALLOC
+#      define MPROTECT_VDB
+#    else
+/* Similar as on Linux, fread() might use malloc(). */
+#    endif
 #  endif
 #endif /* FREEBSD */
 
