@@ -2111,13 +2111,6 @@ void GC_register_data_segments(void)
 
 # else /* !OS2 && !Windows && !AMIGA && !OPENBSD */
 
-# if !defined(PCR) && !defined(MACOS) && defined(REDIRECT_MALLOC) \
-     && defined(GC_SOLARIS_THREADS)
-    EXTERN_C_BEGIN
-    extern caddr_t sbrk(int);
-    EXTERN_C_END
-# endif
-
   void GC_register_data_segments(void)
   {
 #   if !defined(DYNAMIC_LOADING) && defined(GC_DONT_REGISTER_MAIN_STATIC_DATA)
