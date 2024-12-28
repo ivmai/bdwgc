@@ -15,8 +15,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define NO_GC GC_NS_QUALIFY(NoGC)
 #define PTRFREE_GC GC_NS_QUALIFY(PointerFreeGC)
 #define USE_GC GC_NS_QUALIFY(UseGC)
+
+#ifdef GC_ATOMIC_UNCOLLECTABLE
+#  define PTRFREE_NOGC GC_NS_QUALIFY(PointerFreeNoGC)
+#endif
 
 class Tree;
 
@@ -30,7 +35,7 @@ class Tree : public GC_NS_QUALIFY(gc)
 {
 public:
   GC_ATTR_EXPLICIT
-  Tree(int a, int d);
+  Tree(int a, int d, bool uncollectable);
   ~Tree();
   void verify();
 
@@ -41,21 +46,32 @@ private:
   PTree *m_nodes;
 };
 
-Tree::Tree(int a, int d) : arity(a), depth(d)
+Tree::Tree(int a, int d, bool uncollectable) : arity(a), depth(d)
 {
   PTree *nodes = 0;
   if (depth > 0) {
 #ifdef GC_OPERATOR_NEW_ARRAY
-    nodes = new (USE_GC) PTree[arity];
+    nodes
+        = uncollectable ? new (NO_GC) PTree[arity] : new (USE_GC) PTree[arity];
 #else
     nodes = reinterpret_cast<PTree *>(
-        GC_MALLOC(sizeof(PTree) * (unsigned)arity));
+        uncollectable
+            ? GC_MALLOC_UNCOLLECTABLE(sizeof(PTree) * (unsigned)arity)
+            : GC_MALLOC(sizeof(PTree) * (unsigned)arity));
     GC_OP_NEW_OOM_CHECK(nodes);
 #endif
     for (int i = 0; i < arity; i++) {
-      GC_PTR_STORE_AND_DIRTY(&nodes[i].ptr,
-                             depth > 1 ? new (USE_GC) Tree(arity, depth - 1)
-                                       : new (PTRFREE_GC) Tree(arity, 0));
+      Tree const *pnode
+          = depth > 1
+                ? (uncollectable ? new (NO_GC) Tree(arity, depth - 1, true)
+                                 : new (USE_GC) Tree(arity, depth - 1, false))
+            :
+#ifdef GC_ATOMIC_UNCOLLECTABLE
+            uncollectable ? new (PTRFREE_NOGC) Tree(arity, 0, true)
+                          :
+#endif
+                          new (PTRFREE_GC) Tree(arity, 0, uncollectable);
+      GC_PTR_STORE_AND_DIRTY(&nodes[i].ptr, pnode);
     }
   }
   this->m_nodes = nodes;
@@ -125,6 +141,20 @@ Tree::verify(int a, int d)
 #  define DEL_EVERY_N_TREE 7
 #endif
 
+static void
+create_trees(bool is_find_leak, bool uncollectable)
+{
+  int trees_cnt = 0;
+  for (int arity = 2; arity <= MAX_ARITY; arity++) {
+    for (int depth = 1; depth <= MAX_DEPTH; depth++) {
+      Tree *tree = new (USE_GC) Tree(arity, depth, uncollectable);
+      tree->verify();
+      if (is_find_leak || uncollectable || ++trees_cnt % DEL_EVERY_N_TREE == 0)
+        delete tree;
+    }
+  }
+}
+
 int
 main(void)
 {
@@ -134,22 +164,14 @@ main(void)
 #ifndef CPPCHECK
   GC_INIT();
 #endif
-  int is_find_leak = GC_get_find_leak();
+  bool is_find_leak = static_cast<bool>(GC_get_find_leak());
 #ifndef NO_INCREMENTAL
   GC_enable_incremental();
 #endif
-
-  Tree *keep_tree = new (USE_GC) Tree(MAX_ARITY, MAX_DEPTH);
+  Tree *keep_tree = new (USE_GC) Tree(MAX_ARITY, MAX_DEPTH, false);
   keep_tree->verify();
-  int trees_cnt = 0;
-  for (int arity = 2; arity <= MAX_ARITY; arity++) {
-    for (int depth = 1; depth <= MAX_DEPTH; depth++) {
-      Tree *tree = new (USE_GC) Tree(arity, depth);
-      tree->verify();
-      if (is_find_leak || ++trees_cnt % DEL_EVERY_N_TREE == 0)
-        delete tree;
-    }
-  }
+  create_trees(is_find_leak, false);
+  create_trees(is_find_leak, true);
   keep_tree->verify(); // recheck
   if (is_find_leak)
     delete keep_tree;
