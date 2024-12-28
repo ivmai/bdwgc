@@ -459,7 +459,7 @@ jobs:
   - os: osx
     env:
     - CFLAGS_EXTRA="-D TEST_HANDLE_FORK"
-    - CONF_OPTIONS="--enable-cplusplus --disable-shared --enable-rwlock --enable-static"
+    - CONF_OPTIONS="--disable-atomic-uncollectible --enable-cplusplus --enable-rwlock --disable-shared --enable-static"
   - os: osx
     env:
     - CONF_OPTIONS="--enable-large-config --enable-cplusplus --disable-gc-debug --disable-handle-fork"
