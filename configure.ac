@@ -250,7 +250,6 @@ case "$THREADS" in
         # The default THREADDLLIBS.
         ;;
       *-*-netbsd*)
-        AC_MSG_WARN("Only on NetBSD 2.0 or later.")
         AC_DEFINE(_PTHREADS)
         THREADDLLIBS="-lpthread"
         need_lib_rt=true
