@@ -891,9 +891,7 @@ extern int _modules_data_start[], _apps_bss_end[];
 extern char etext[];
 #    define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)etext)
 #    define DATASTART_USES_XGETDATASTART
-#    ifndef GC_THREADS
-#      define MPROTECT_VDB
-#    endif
+#    define MPROTECT_VDB
 #  endif
 #endif /* FREEBSD */
 
