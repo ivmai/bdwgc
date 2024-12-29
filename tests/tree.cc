@@ -51,8 +51,11 @@ Tree::Tree(int a, int d, bool uncollectable) : arity(a), depth(d)
   PTree *nodes = 0;
   if (depth > 0) {
 #ifdef GC_OPERATOR_NEW_ARRAY
-    nodes
-        = uncollectable ? new (NO_GC) PTree[arity] : new (USE_GC) PTree[arity];
+    nodes =
+#  ifndef CPPCHECK
+        uncollectable ? new (NO_GC) PTree[arity] :
+#  endif
+                      new (USE_GC) PTree[arity];
 #else
     nodes = reinterpret_cast<PTree *>(
         uncollectable
