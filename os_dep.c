@@ -2335,7 +2335,7 @@ STATIC void *
 GC_unix_mmap_get_mem(size_t bytes)
 {
   void *result;
-  static ptr_t last_addr = HEAP_START;
+  static word last_addr = HEAP_START;
 
 #      ifndef USE_MMAP_ANON
   static GC_bool initialized = FALSE;
@@ -2362,8 +2362,11 @@ GC_unix_mmap_get_mem(size_t bytes)
   GC_ASSERT(GC_page_size != 0);
   if (bytes & (GC_page_size - 1))
     ABORT("Bad GET_MEM arg");
+  /* Note: it is essential for CHERI to have only address part in   */
+  /* last_addr without metadata (thus the variable is of word type  */
+  /* intentionally), otherwise mmap() fails setting errno to EPROT. */
   result
-      = mmap(last_addr, bytes,
+      = mmap(MAKE_CPTR(last_addr), bytes,
              (PROT_READ | PROT_WRITE) | (GC_pages_executable ? PROT_EXEC : 0),
              GC_MMAP_FLAGS | OPT_MAP_ANON, zero_fd, 0 /* offset */);
 #      undef IGNORE_PAGES_EXECUTABLE
@@ -2387,11 +2390,10 @@ GC_unix_mmap_get_mem(size_t bytes)
     return GC_unix_mmap_get_mem(bytes);
   }
 #      endif
-  last_addr = PTR_ALIGN_UP((ptr_t)result + bytes, GC_page_size);
-
   if ((ADDR(result) % HBLKSIZE) != 0)
-    ABORT("GC_unix_get_mem: Memory returned by mmap is not aligned to "
-          "HBLKSIZE.");
+    ABORT("Memory returned by mmap is not aligned to HBLKSIZE");
+  last_addr = ADDR(result) + bytes;
+  GC_ASSERT((last_addr & (GC_page_size - 1)) == 0);
   return result;
 }
 #    endif /* !MSWIN_XBOX1 */

@@ -1102,9 +1102,9 @@ extern int _end[];
 /* doesn't interact correctly with the system malloc.         */
 #  endif
 #  ifdef USE_MMAP
-#    define HEAP_START MAKE_CPTR(0x40000000)
+#    define HEAP_START ((word)0x40000000)
 #  else
-#    define HEAP_START DATAEND
+#    define HEAP_START ADDR(DATAEND)
 #  endif
 #  ifndef GC_THREADS
 #    define MPROTECT_VDB
@@ -1447,12 +1447,12 @@ extern int _etext, _end;
 #      define USE_MMAP 1
 #    endif
 #    define MAP_FAILED (void *)((GC_uintptr_t)-1)
-#    define HEAP_START MAKE_CPTR(0x40000000)
+#    define HEAP_START ((word)0x40000000)
 #  endif /* DGUX */
 #  ifdef LINUX
 /* This encourages mmap to give us low addresses,       */
 /* thus allowing the heap to grow to ~3 GB.             */
-#    define HEAP_START MAKE_CPTR(0x1000)
+#    define HEAP_START ((word)0x1000)
 #    ifdef __ELF__
 #      if GC_GLIBC_PREREQ(2, 0) || defined(HOST_ANDROID)
 #        define SEARCH_FOR_DATA_START
@@ -1718,9 +1718,9 @@ extern int _fdata[];
 /* there.  In either case it is used to identify heap sections so */
 /* they are not considered as roots.                              */
 #    ifdef USE_MMAP
-#      define HEAP_START MAKE_CPTR(0x30000000)
+#      define HEAP_START ((word)0x30000000)
 #    else
-#      define HEAP_START DATASTART
+#      define HEAP_START ADDR(DATASTART)
 #    endif
 /* MPROTECT_VDB should work, but there is evidence of a breakage. */
 #    define DYNAMIC_LOADING
@@ -2992,7 +2992,7 @@ extern ptr_t GC_data_start;
 #endif
 
 #ifndef HEAP_START
-#  define HEAP_START ((ptr_t)0)
+#  define HEAP_START 0
 #endif
 
 #ifndef CLEAR_DOUBLE

@@ -991,7 +991,7 @@ GC_register_dynamic_libraries(void)
   long flags;
   ptr_t start;
   ptr_t limit;
-  word heap_start = ADDR(HEAP_START);
+  word heap_start = HEAP_START;
   word heap_end = heap_start;
 #    ifdef SOLARISDL
 #      define MA_PHYS 0
