@@ -328,6 +328,10 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
   me = GC_lookup_thread_async(self);
 
 # ifdef GC_ENABLE_SUSPEND_THREAD
+#   if defined(__GNUC__) && !defined(__clang__)
+      /* Workaround "writing bytes into a region of size 0" gcc warning. */
+      if (NULL == me) ABORT("Self thread not found");
+#   endif
     suspend_cnt = (word)ao_load_async(&(me -> stop_info.ext_suspend_cnt));
 # endif
   if (((word)me->stop_info.last_stop_count & ~(word)THREAD_RESTARTED)
