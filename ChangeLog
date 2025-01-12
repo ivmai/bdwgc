@@ -1,3 +1,100 @@
+2024-12-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h [I386 && MSWIN32] (MPROTECT_VDB): Do not
+	define if __BORLANDC__ is defined; add TODO item.
+
+2024-12-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [HPUX_STACKBOTTOM] (GC_get_register_stack_base): Fix typo
+	("HPUX_STACKBOTTOM") in comment.
+
+2024-11-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac: Fix a typo ("Atomic_ops") in comment.
+
+2024-11-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.cords: Fix typos ("string package", "3-line").
+
+2024-11-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordtest.c [__DMC__] (GC_SNPRINTF): Do not define.
+
+2024-11-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark_rts.c (GC_add_roots_inner, GC_remove_roots,
+	GC_remove_roots_subregion, GC_exclude_static_roots_inner,
+	GC_exclude_static_roots): Replace `sizeof(word)` to `ALIGNMENT` in
+	expression to make a pointer aligned up or down.
+	* os_dep.c [!OS2 && !MSWIN32 && !MSWINCE && !CYGWIN32 && (SVR4 || AIX
+	|| DGUX || LINUX && SPARC) && !PCR] (GC_SysVGetDataStart): Likewise.
+	* os_dep.c [!OS2 && !MSWIN32 && !MSWINCE && !CYGWIN32 && FREEBSD
+	&& !PCR && (I386 || X86_64 || powerpc || __powerpc__)]
+	(GC_FreeBSDGetDataStart): Likewise.
+	* os_dep.c [LINUX_STACKBOTTOM] (GC_linux_main_stack_base): Likewise.
+
+2024-11-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.direct (test_cpp): Add dependency on
+	`include/gc_allocator.h` file.
+	* NT_MAKEFILE (test_cpp.exe): Likewise.
+
+2024-11-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_inline.h (GC_FAST_MALLOC_GRANS): Change "void* pointer"
+	to "void pointer".
+
+2024-11-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_stop_world.c [!SIG_THR_RESTART && (GC_HPUX_THREADS
+	|| GC_OSF1_THREADS || GC_NETBSD_THREADS)]
+	(SIG_THR_RESTART): Add outermost parentheses.
+
+2024-10-31  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h [ALPHA && OSF1] (STACKBOTTOM): Use
+	`(e+ps-1)&~(ps-1)` formula to round up e value instead of
+	`(e|(ps-1))+1`.
+
+2024-10-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* tools/threadlibs.c [GC_NETBSD_THREADS] (main): Avoid code
+	duplication (against GC_HPUX_THREADS).
+	* tools/threadlibs.c [GC_OSF1_THREADS] (main): Do not print
+	"-lpthread"; print "-lrt" just once.
+
+2024-10-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h [POWERPC && NOSYS] (STACK_GRAN): Do not
+	redefine.
+	* include/private/gcconfig.h [POWERPC && NOSYS] (STACKBOTTOM): Define
+	macro (using algorithm of HEURISTIC1).
+	* include/private/gcconfig.h [POWERPC && NOSYS] (HEURISTIC1): Do not
+	define.
+
+2024-09-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h [ALPHA && OSF1] (HEURISTIC2_LIMIT): Fix
+	typo ("bound") in comment.
+
+2024-09-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_mark.h (GC_DS_BITMAP): Fix a typo ("zeros") in comment.
+
+2024-09-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_all_interior_pointers): Fix missing ")" in
+	comment.
+
+2024-09-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* gcj_mlc.c (GC_gcj_debug_kind): Fix typo ("objects that are") in
+	comment.
+
+2024-09-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.amiga: Fix typo ("cannot") in documentation.
+
 [7.2s]
 
 2024-09-06  Ivan Maidanski <ivmai@mail.ru>
