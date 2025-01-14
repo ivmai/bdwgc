@@ -407,7 +407,7 @@ GC_add_to_fl(struct hblk *h, hdr *hhdr)
   size_t index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr->hb_sz));
   struct hblk *second = GC_hblkfreelist[index];
 
-#if defined(GC_ASSERTIONS) && !defined(USE_MUNMAP)
+#if defined(GC_ASSERTIONS) && !defined(USE_MUNMAP) && !defined(CHERI_PURECAP)
   {
     struct hblk *next = (struct hblk *)((ptr_t)h + hhdr->hb_sz);
     const hdr *nexthdr = HDR(next);
