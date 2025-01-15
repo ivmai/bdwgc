@@ -94,21 +94,23 @@ AO_SRC_DIR=libatomic_ops/src
 AO_INCLUDE_DIR=$(AO_SRC_DIR)
 
 !IFDEF ENABLE_STATIC
-OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gcj_mlc.obj mallocx.obj extra\msvc_dbg.obj thread_local_alloc.obj
+# pthread_start.obj is needed just in case client defines GC_WIN32_PTHREADS.
+OBJS= allchblk.obj alloc.obj blacklst.obj dbg_mlc.obj dyn_load.obj finalize.obj fnlz_mlc.obj gcj_mlc.obj headers.obj mach_dep.obj malloc.obj mallocx.obj mark.obj mark_rts.obj misc.obj new_hblk.obj obj_map.obj os_dep.obj pthread_start.obj pthread_support.obj ptr_chck.obj reclaim.obj thread_local_alloc.obj typd_mlc.obj win32_threads.obj extra\msvc_dbg.obj
 !ELSE
 OBJS= extra\gc.obj extra\msvc_dbg.obj
 !ENDIF
 
-COBJS= cord\cordbscs.obj cord\cordxtra.obj cord\cordprnt.obj
+COBJS= cord\cordbscs.obj cord\cordprnt.obj cord\cordxtra.obj
 
 all: gc.lib cord.lib gccpp.lib gctba.lib
 
-check-deps: gctest.exe cpptest.exe cordtest.exe de.exe
+check-deps: gctest.exe cpptest.exe treetest.exe cordtest.exe de.exe
 
 check: check-deps
 	gctest.exe
 	cordtest.exe
 	cpptest.exe
+	treetest.exe
 
 .c.obj:
 	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) $(CORDFLAG) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.c /Fo$*.obj /wd4127 /wd4701
@@ -118,7 +120,7 @@ check: check-deps
 .cpp.obj:
 	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude $(CFLAGS_DEFAULT) $(CXXFLAGS_SPECIFIC) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.cpp /Fo$*.obj
 
-$(OBJS) tests\gctest.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc\gc_mark.h include\gc\gc_disclaim.h
+$(OBJS) tests\gctest.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc\gc_mark.h include\gc\gc_disclaim.h
 
 !IFDEF ENABLE_STATIC
 
@@ -171,9 +173,9 @@ de.exe: cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib cor
 cordtest.exe: cord\tests\cordtest.obj gc.lib cord.lib
 	$(link) /subsystem:console /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:cordtest.exe cord\tests\cordtest.obj gc.lib cord.lib user32.lib
 
-gc_badalc.obj: gc_badalc.cc include\gc_cpp.h include\gc.h
+gc_badalc.obj: gc_badalc.cc include\gc\gc_cpp.h include\gc\gc.h
 
-gc_cpp.obj: gc_cpp.cc include\gc_cpp.h include\gc.h
+gc_cpp.obj: gc_cpp.cc include\gc\gc_cpp.h include\gc\gc.h
 
 test_cpp.cpp: tests\cpp.cc
 	copy tests\cpp.cc test_cpp.cpp
@@ -181,11 +183,17 @@ test_cpp.cpp: tests\cpp.cc
 # This generates the C++ test executable.  The executable expects
 # a single numeric argument, which is the number of iterations.
 # The output appears in cpptest.gc.log file.
-cpptest.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib gccpp.lib
+cpptest.exe: test_cpp.obj include\gc\gc_cpp.h include\gc\gc_allocator.h include\gc\gc.h gc.lib gccpp.lib
 	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:cpptest.exe test_cpp.obj gc.lib gccpp.lib
+
+test_tree.cpp: tests\tree.cc
+	copy tests\tree.cc test_tree.cpp
+
+treetest.exe: test_tree.obj include\gc\gc_cpp.h include\gc\gc.h gc.lib gctba.lib
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:treetest.exe test_tree.obj gc.lib gctba.lib
 
 $(AO_SRC_DIR):
 	tar xvfz $(AO_SRC_DIR).tar.gz
 
 clean:
-	del *.dll *.exe *.exp *.lib *.log *.obj *.pdb cordtst*.tmp cord\*.obj cord\tests\*.rbj cord\tests\*.res cord\tests\*.obj extra\*.obj test_cpp.cpp tests\*.obj 2> nul
+	del *.dll *.exe *.exp *.lib *.log *.obj *.pdb cordtst*.tmp cord\*.obj cord\tests\*.rbj cord\tests\*.res cord\tests\*.obj extra\*.obj test_cpp.cpp test_tree.cpp tests\*.obj 2> nul

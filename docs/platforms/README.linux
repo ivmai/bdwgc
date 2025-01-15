@@ -1,0 +1,65 @@
+See README.alpha for Linux on DEC AXP info.
+
+This file applies mostly to Linux/Intel IA-32.  Ports to Linux on an M68K,
+IA-64, SPARC, MIPS, Alpha and PowerPC are integrated too.  They should behave
+similarly, except that the PowerPC port lacks incremental GC support, and
+it is unknown to what extent the Linux threads code is functional.
+See below for M68K specific notes.
+
+Incremental GC is generally supported.
+
+Dynamic libraries are supported on an ELF system.
+
+The collector appears to work reliably with Linux threads, but beware
+of older versions of glibc and gdb.
+
+The garbage collector uses SIGPWR and SIGXCPU if it is used with
+Linux threads.  These should not be touched by the client program.
+
+To use threads, you need to abide by the following requirements:
+
+1) You need to use LinuxThreads or NPTL (which are included in libc6).
+
+   The collector relies on some implementation details of the LinuxThreads
+   package.  This code may not work on other
+   pthread implementations (in particular it will *not* work with
+   MIT pthreads).
+
+2) You must compile the collector with "-DGC_THREADS -D_REENTRANT" specified
+   in the Makefile.direct file.
+
+3a) Every file that makes thread calls should define GC_THREADS, and then
+   include gc.h.  The latter redefines some of the pthread primitives as
+   macros which also provide the collector with information it requires.
+
+3b) A new alternative to (3a) is to build the collector and compile GC clients
+   with -DGC_USE_LD_WRAP, and to link the final program with
+
+   (for ld) --wrap dlopen --wrap pthread_create \
+            --wrap pthread_join --wrap pthread_detach \
+            --wrap pthread_sigmask --wrap pthread_exit --wrap pthread_cancel
+
+   (for gcc) -Wl,--wrap -Wl,dlopen -Wl,--wrap -Wl,pthread_create \
+             -Wl,--wrap -Wl,pthread_join -Wl,--wrap -Wl,pthread_detach \
+             -Wl,--wrap -Wl,pthread_sigmask -Wl,--wrap -Wl,pthread_exit \
+             -Wl,--wrap -Wl,pthread_cancel
+
+   In any case, _REENTRANT should be defined during compilation.
+
+4) Dlopen() disables collection during its execution.  (It can't run
+   concurrently with the collector, since the collector looks at its
+   data structures.  It can't acquire the allocator lock, since arbitrary
+   user startup code may run as part of dlopen().)  Under unusual
+   conditions, this may cause unexpected heap growth.
+
+5) The combination of GC_THREADS, REDIRECT_MALLOC, and incremental
+   collection is probably not fully reliable, though it now seems to work
+   in simple cases.
+
+6) Thread-local storage (TLS) may not be viewed as part of the root set by the
+   collector.  This probably depends on the LinuxThreads version.  For the
+   time being, any collectible memory referenced by thread-local storage
+   should also be referenced from elsewhere, or be allocated as uncollectible.
+   (This is really a bug that should be fixed somehow.  Actually, the
+   collector probably gets things right, on Linux at least, if there are not
+   too many tls locations and if dlopen is not used.)

@@ -23,10 +23,10 @@ AS_ABI_FLAG?= $(ABI_FLAG)
 # ABI flag for assembler.  On HP/UX this is +A64 for 64 bit
 # executables.
 
-CC= cc $(ABI_FLAG)
+CC?= cc $(ABI_FLAG)
 # Compiler executable name.  For EMX, replace to "gcc".
 
-CXX= g++ $(ABI_FLAG)
+CXX?= c++ $(ABI_FLAG)
 # Needed only for "make c++", which builds the C++ interface.
 
 AS= as $(AS_ABI_FLAG)
@@ -43,7 +43,8 @@ srcdir= .
 VPATH= $(srcdir)
 
 # Path to atomic_ops source.
-AO_SRC_DIR?= $(srcdir)/libatomic_ops
+AO_SRC_DIR?=
+AO_SRC_DIR+= $(srcdir)/libatomic_ops
 
 CFLAGS_EXTRA?=
 
@@ -80,8 +81,8 @@ CFLAGS+= -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
 # part of the build process, i.e. on the build machine.  These will usually
 # be the same as CC and CFLAGS, except in a cross-compilation environment.
 # Note that HOSTCFLAGS should include any -D flags that affect thread support.
-HOSTCC?= $(CC)
-HOSTCFLAGS?= $(CFLAGS)
+HOSTCC= $(CC)
+HOSTCFLAGS= $(CFLAGS)
 
 # For dynamic library builds, it may be necessary to add flags to generate
 # PIC code, e.g. -fPIC on Linux.
@@ -89,48 +90,60 @@ HOSTCFLAGS?= $(CFLAGS)
 # setjmp_test may yield overly optimistic results when compiled
 # without optimization.
 
-# Look into doc/README.macros for the description of the "define arguments"
+# Look into docs/README.macros for the description of the "define arguments"
 # influencing the collector configuration.
 
-CXXFLAGS?= $(CFLAGS)
-AR= ar
+# Flags for the C++ files.
+# Note: non-GNU make might not recognize "?=" properly, so just duplicate
+# the flags of CFLAGS as a workaround.
+CXXFLAGS?=
+CXXFLAGS+= -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
+  $(CFLAGS_DEFAULT_MACROS) $(CFLAGS_FOR_PIC) $(CFLAGS_EXTRA)
 
-RANLIB= ranlib
-# For EMX, replace "ranlib" with "ar s".
+AR?= ar
+
+# Note: for Cosmo and EMX, specify "$(AR) s" instead of "ranlib".
+RANLIB?= ranlib
 
 # All .o files of libgc.a except for dyn_load.o.
-OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o \
-  headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o  \
-  malloc.o checksums.o pthread_support.o pthread_stop_world.o \
-  darwin_stop_world.o typd_mlc.o ptr_chck.o mallocx.o gcj_mlc.o specific.o \
-  gc_dlopen.o backgraph.o win32_threads.o pthread_start.o \
-  thread_local_alloc.o fnlz_mlc.o
+OBJS= allchblk.o alloc.o backgraph.o blacklst.o checksums.o \
+  darwin_stop_world.o dbg_mlc.o finalize.o fnlz_mlc.o gc_dlopen.o \
+  gcj_mlc.o headers.o mach_dep.o malloc.o mallocx.o mark.o mark_rts.o misc.o \
+  new_hblk.o obj_map.o os_dep.o pthread_start.o pthread_stop_world.o \
+  pthread_support.o ptr_chck.o reclaim.o specific.o thread_local_alloc.o \
+  typd_mlc.o win32_threads.o
 
-NODIST_OBJS= atomic_ops.o atomic_ops_sysdeps.o
+NODIST_OBJS= atomic_ops.o
 
-CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c \
-  headers.c mark.c obj_map.c blacklst.c finalize.c \
-  new_hblk.c dyn_load.c dbg_mlc.c malloc.c \
-  checksums.c pthread_support.c pthread_stop_world.c darwin_stop_world.c \
-  typd_mlc.c ptr_chck.c mallocx.c gcj_mlc.c specific.c gc_dlopen.c \
-  backgraph.c win32_threads.c pthread_start.c thread_local_alloc.c fnlz_mlc.c
+# Note: comment out the following line if compiler does not support .S files.
+NODIST_OBJS+= atomic_ops_sysdeps.o
 
-CORD_SRCS= cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/tests/de.c \
+# Almost matches OBJS but also includes dyn_load.c.
+CSRCS= allchblk.c alloc.c backgraph.c blacklst.c checksums.c \
+  darwin_stop_world.c dbg_mlc.c dyn_load.c finalize.c fnlz_mlc.c gc_dlopen.c \
+  gcj_mlc.c headers.c mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c \
+  new_hblk.c obj_map.c os_dep.c pthread_start.c pthread_stop_world.c \
+  pthread_support.c ptr_chck.c reclaim.c specific.c thread_local_alloc.c \
+  typd_mlc.c win32_threads.c
+
+CORD_SRCS= cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c cord/tests/de.c \
   cord/tests/cordtest.c include/gc/cord.h include/gc/ec.h \
   include/gc/cord_pos.h cord/tests/de_win.c cord/tests/de_win.h \
   cord/tests/de_cmds.h cord/tests/de_win.rc
 
-CORD_OBJS= cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
+# Not all compilers understand "-o" option.  Thus, no "cord/" prefix here.
+CORD_OBJS= cordbscs.o cordprnt.o cordxtra.o
 
 SRCS= $(CSRCS) \
   include/gc/gc_typed.h include/gc/gc_tiny_fl.h include/gc/gc_version.h \
   include/gc.h include/private/gc_hdrs.h include/private/gc_priv.h \
-  include/private/gcconfig.h include/private/gc_pmark.h \
+  include/gc/gc.h include/private/gcconfig.h include/private/gc_pmark.h \
   include/gc/gc_inline.h include/gc/gc_mark.h include/gc/gc_disclaim.h \
   tools/threadlibs.c tools/if_mach.c tools/if_not_there.c gc_badalc.cc \
-  gc_cpp.cc include/gc_cpp.h include/private/gc_alloc_ptrs.h \
-  include/gc/gc_allocator.h include/gc/javaxfc.h include/gc/gc_backptr.h \
-  include/gc/gc_gcj.h include/private/gc_locks.h include/private/dbg_mlc.h \
+  gc_cpp.cc include/gc_cpp.h include/gc/gc_cpp.h \
+  include/private/gc_alloc_ptrs.h include/gc/gc_allocator.h \
+  include/gc/javaxfc.h include/gc/gc_backptr.h include/gc/gc_gcj.h \
+  include/private/gc_locks.h include/private/dbg_mlc.h \
   include/private/specific.h include/gc/leak_detector.h \
   include/gc/gc_pthread_redirects.h include/private/gc_atomic_ops.h \
   include/gc/gc_config_macros.h include/private/pthread_support.h \
@@ -138,7 +151,7 @@ SRCS= $(CSRCS) \
   ia64_save_regs_in_stack.s sparc_mach_dep.S \
   sparc_netbsd_mach_dep.s $(CORD_SRCS)
 
-CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/gc/cord.h \
+CORD_INCLUDE_FILES= $(srcdir)/include/gc/gc.h $(srcdir)/include/gc/cord.h \
   $(srcdir)/include/gc/ec.h $(srcdir)/include/gc/cord_pos.h
 
 # Executable file name extension.  For EMX, specify ".exe".
@@ -148,6 +161,7 @@ UTILS= if_mach$(EXEEXT) if_not_there$(EXEEXT) threadlibs$(EXEEXT)
 
 # Libraries needed for curses applications.  Only needed for de.
 # It might also require -ltermlib on some targets.
+# For Win32, it should be set to: -lgdi32
 CURSES?= -lcurses
 
 # The following is irrelevant on most systems.  But a few
@@ -172,32 +186,10 @@ atomic_ops_sysdeps.o: $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S
 
 LEAK_CFLAGS= $(CFLAGS) -DFIND_LEAK
 
-BSD-pkg-all: bsd-libgc.a bsd-libleak.a
-
-bsd-libgc.a bsd-libgccpp.a bsd-libgctba.a:
-	$(MAKE) -f Makefile.direct CFLAGS="$(CFLAGS)" clean c++-t
-	mv libgc.a bsd-libgc.a
-	mv libgccpp.a bsd-libgccpp.a
-	mv libgctba.a bsd-libgctba.a
-
-bsd-libleak.a:
-	$(MAKE) -f Makefile.direct CFLAGS="$(LEAK_CFLAGS)" clean c++-nt
-	mv libgc.a $@
-
-BSD-pkg-install: BSD-pkg-all
-	${CP} bsd-libgc.a libgc.a
-	${INSTALL_DATA} libgc.a ${PREFIX}/lib
-	${CP} bsd-libgccpp.a libgccpp.a
-	${INSTALL_DATA} libgccpp.a ${PREFIX}/lib
-	${CP} bsd-libgctba.a libgctba.a
-	${INSTALL_DATA} libgctba.a ${PREFIX}/lib
-	${INSTALL_DATA} gc.h gc_cpp.h ${PREFIX}/include
-	${INSTALL_MAN} gc.man ${PREFIX}/man/man3/gc.3
-
-$(OBJS) tests/gctest.o dyn_load.o dyn_load_sunos53.o: \
+$(OBJS) gctest.o dyn_load.o dyn_load_sunos53.o: \
   $(srcdir)/include/private/gc_priv.h \
   $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
-  $(srcdir)/include/gc.h $(srcdir)/include/gc/gc_pthread_redirects.h \
+  $(srcdir)/include/gc/gc.h $(srcdir)/include/gc/gc_pthread_redirects.h \
   $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc/gc_typed.h \
   $(srcdir)/include/gc/gc_config_macros.h
 
@@ -210,17 +202,14 @@ specific.o pthread_support.o thread_local_alloc.o win32_threads.o: \
 
 dbg_mlc.o gcj_mlc.o: $(srcdir)/include/private/dbg_mlc.h
 
-tests/gctest.o: $(srcdir)/tests/gctest.c
+gctest.o: $(srcdir)/tests/gctest.c
 	mkdir tests || cat /dev/null
 	$(CC) $(CFLAGS) -c $(srcdir)/tests/gctest.c
-	mv gctest.o $@
 
 base_lib libgc.a: $(OBJS) dyn_load.o $(UTILS)
 	rm -f dont_ar_1
 	./if_mach SPARC SOLARIS touch dont_ar_1
 	./if_mach SPARC SOLARIS $(AR) rus libgc.a $(OBJS) dyn_load.o
-	./if_mach M68K AMIGA touch dont_ar_1
-	./if_mach M68K AMIGA $(AR) -vrus libgc.a $(OBJS) dyn_load.o
 	./if_not_there dont_ar_1 || $(AR) ru libgc.a $(OBJS) dyn_load.o
 	./if_not_there dont_ar_1 || $(RANLIB) libgc.a || cat /dev/null
 	echo > base_lib
@@ -231,29 +220,34 @@ cords libcord.a: $(CORD_OBJS) $(UTILS)
 	rm -f dont_ar_3
 	./if_mach SPARC SOLARIS touch dont_ar_3
 	./if_mach SPARC SOLARIS $(AR) rus libcord.a $(CORD_OBJS)
-	./if_mach M68K AMIGA touch dont_ar_3
-	./if_mach M68K AMIGA $(AR) -vrus libcord.a $(CORD_OBJS)
 	./if_not_there dont_ar_3 || $(AR) ru libcord.a $(CORD_OBJS)
 	./if_not_there dont_ar_3 || $(RANLIB) libcord.a || cat /dev/null
 	echo > cords
 
-gc_badalc.o: $(srcdir)/gc_badalc.cc $(srcdir)/include/gc_cpp.h \
-  $(srcdir)/include/gc.h
+gc_badalc.o: $(srcdir)/gc_badalc.cc $(srcdir)/include/gc/gc_cpp.h \
+  $(srcdir)/include/gc/gc.h
 	$(CXX) $(CXXFLAGS) -c $(srcdir)/gc_badalc.cc
 
-gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
+gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc/gc_cpp.h \
+  $(srcdir)/include/gc/gc.h
 	$(CXX) $(CXXFLAGS) -c $(srcdir)/gc_cpp.cc
 
-cpptest$(EXEEXT): $(srcdir)/tests/cpp.cc $(srcdir)/include/gc_cpp.h \
-  $(srcdir)/include/gc.h c++ base_lib $(NODIST_OBJS) $(UTILS)
+cpptest$(EXEEXT): $(srcdir)/tests/cpp.cc $(srcdir)/include/gc/gc_cpp.h \
+  $(srcdir)/include/gc/gc_allocator.h $(srcdir)/include/gc/gc.h c++ \
+  base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f $@
 	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o $@ $(srcdir)/tests/cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a -ldld `./threadlibs`
 	./if_not_there $@ || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o $@ $(srcdir)/tests/cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a `./threadlibs`
 
-check-cpp-deps: cpptest$(EXEEXT)
+treetest$(EXEEXT): $(srcdir)/tests/tree.cc $(srcdir)/include/gc/gc.h \
+  $(srcdir)/include/gc/gc_cpp.h libgctba.a base_lib $(NODIST_OBJS)
+	$(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o $@ $(srcdir)/tests/tree.cc $(NODIST_OBJS) libgc.a libgctba.a `./threadlibs`
+
+check-cpp-deps: cpptest$(EXEEXT) treetest$(EXEEXT)
 
 check-cpp: check-cpp-deps
 	./cpptest
+	./treetest
 
 c++-t: c++ cpptest$(EXEEXT)
 	./cpptest 1
@@ -266,9 +260,6 @@ c++ libgccpp.a libgctba.a: gc_badalc.o gc_cpp.o $(UTILS)
 	./if_mach SPARC SOLARIS touch dont_ar_4
 	./if_mach SPARC SOLARIS $(AR) rus libgccpp.a gc_badalc.o gc_cpp.o
 	./if_mach SPARC SOLARIS $(AR) rus libgctba.a gc_badalc.o
-	./if_mach M68K AMIGA touch dont_ar_4
-	./if_mach M68K AMIGA $(AR) -vrus libgccpp.a gc_badalc.o gc_cpp.o
-	./if_mach M68K AMIGA $(AR) -vrus libgctba.a gc_badalc.o
 	./if_not_there dont_ar_4 || $(AR) ru libgccpp.a gc_badalc.o gc_cpp.o
 	./if_not_there dont_ar_4 || $(RANLIB) libgccpp.a || cat /dev/null
 	./if_not_there dont_ar_4 || $(AR) ru libgctba.a gc_badalc.o
@@ -331,27 +322,19 @@ mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
 
 alloc.o: include/gc/gc_version.h
 
-cord/cordbscs.o: $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
+cordbscs.o: $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -I$(srcdir) -c $(srcdir)/cord/cordbscs.c
-	mkdir cord || cat /dev/null
-	mv cordbscs.o $@
-#  not all compilers understand -o filename
 
-cord/cordxtra.o: $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
+cordxtra.o: $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -I$(srcdir) -c $(srcdir)/cord/cordxtra.c
-	mkdir cord || cat /dev/null
-	mv cordxtra.o $@
 
-cord/cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
+cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -I$(srcdir) -c $(srcdir)/cord/cordprnt.c
-	mkdir cord || cat /dev/null
-	mv cordprnt.o $@
 
 cordtest$(EXEEXT): $(srcdir)/cord/tests/cordtest.c cords base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f $@
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a -lucb
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a -ldld `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a `./threadlibs`
 	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a `./threadlibs`
 
 cord/de: de$(EXEEXT)
@@ -363,7 +346,6 @@ de$(EXEEXT): $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c \
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses -ltermlib -ldld `./threadlibs`
 	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses
 	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses
 	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c $(NODIST_OBJS) libgc.a libcord.a $(CURSES) `./threadlibs`
 
 if_mach$(EXEEXT): $(srcdir)/tools/if_mach.c \
@@ -378,33 +360,34 @@ if_not_there$(EXEEXT): $(srcdir)/tools/if_not_there.c
 	$(HOSTCC) $(HOSTCFLAGS) -o $@ $(srcdir)/tools/if_not_there.c
 
 clean:
-	rm -f *.a *.i *.o *.exe tests/*.o cpptest gctest gctest_dyn_link \
-	      setjmp_test mon.out gmon.out a.out core if_not_there if_mach \
-	      base_lib c++ $(CORD_OBJS) cordtest de cords dont_ar_* threadlibs
+	rm -f *.a *.i *.o *.com.dbg *.elf *.exe \
+	      cpptest treetest gctest gctest_dyn_link setjmp_test \
+	      a.out core if_not_there if_mach base_lib c++ gmon.out mon.out \
+	      cordtest de cords dont_ar_* threadlibs *.log cordtst*.tmp
 	-rm -f *~
 
-gctest$(EXEEXT): tests/gctest.o base_lib $(NODIST_OBJS) $(UTILS)
+gctest$(EXEEXT): gctest.o base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f $@
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ tests/gctest.o $(NODIST_OBJS) libgc.a -lucb
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ tests/gctest.o $(NODIST_OBJS) libgc.a -ldld `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o $@ tests/gctest.o $(NODIST_OBJS) libgc.a `./threadlibs`
-	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ tests/gctest.o $(NODIST_OBJS) libgc.a `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ gctest.o $(NODIST_OBJS) libgc.a -lucb
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ gctest.o $(NODIST_OBJS) libgc.a -ldld `./threadlibs`
+	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ gctest.o $(NODIST_OBJS) libgc.a `./threadlibs`
 
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  gctest may still work.
 # Try compiling setjmp_t.c unoptimized.
-setjmp_test$(EXEEXT): $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h \
+setjmp_test$(EXEEXT): $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc/gc.h \
   $(UTILS)
 	$(CC) $(CFLAGS) -o $@ $(srcdir)/tools/setjmp_t.c
 
 check-deps: cordtest$(EXEEXT) gctest$(EXEEXT) setjmp_test$(EXEEXT) \
-  cpptest$(EXEEXT)
+  cpptest$(EXEEXT) treetest$(EXEEXT)
 
 check: check-deps
 	./setjmp_test
 	./gctest
 	./cordtest
 	./cpptest
+	./treetest
 
 # A synonym to "check" (for compatibility with older GC versions).
 test: check
@@ -413,11 +396,11 @@ test: check
 # Currently works only under SunOS5.  Requires GC_INIT call from statically
 # loaded client code.
 ABSDIR= `pwd`
-gctest_dyn_link: tests/gctest.o libgc.so
-	$(CC) -L$(ABSDIR) -R$(ABSDIR) -o $@ tests/gctest.o -lgc -ldl -lthread
+gctest_dyn_link: gctest.o libgc.so
+	$(CC) -L$(ABSDIR) -R$(ABSDIR) -o $@ gctest.o -lgc -ldl -lthread
 
-gctest_irix_dyn_link: tests/gctest.o libirixgc.so
-	$(CC) -L$(ABSDIR) -o $@ tests/gctest.o -lirixgc
+gctest_irix_dyn_link: gctest.o libirixgc.so
+	$(CC) -L$(ABSDIR) -o $@ gctest.o -lirixgc
 
 SYM_PREFIX-libgc= GC
 

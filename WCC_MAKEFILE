@@ -78,45 +78,52 @@ CXXFLAGS= $(CFLAGS) -xs
 TEST_CFLAGS=-$(CPU)$(CALLING) $(OPTIM) -iinclude -zp4 -zc $(SYSFLAG) $(TEST_DLLFLAG) $(DEFS) $(CFLAGS_EXTRA)
 TEST_CXXFLAGS= $(TEST_CFLAGS) -xs
 
-COBJS= cordbscs.obj cordxtra.obj cordprnt.obj
+COBJS= cordbscs.obj cordprnt.obj cordxtra.obj
 
 all: gc.lib gccpp.lib gctba.lib cord.lib
 
-check-deps: gctest.exe cpptest.exe cordtest.exe .SYMBOLIC
+!ifdef MSWIN32
+check-deps-mswin: de.exe .SYMBOLIC
+!else
+check-deps-mswin: .SYMBOLIC
+!endif
+
+check-deps: gctest.exe cpptest.exe treetest.exe cordtest.exe check-deps-mswin .SYMBOLIC
 
 check: check-deps .SYMBOLIC
         *gctest.exe
         *cpptest.exe
+        *treetest.exe
         *cordtest.exe
 
 !ifdef ENABLE_STATIC
 
-OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj &
-      mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj &
-      obj_map.obj blacklst.obj finalize.obj new_hblk.obj &
-      dbg_mlc.obj malloc.obj dyn_load.obj &
-      typd_mlc.obj ptr_chck.obj mallocx.obj fnlz_mlc.obj gcj_mlc.obj
+OBJS= allchblk.obj alloc.obj backgraph.obj blacklst.obj checksums.obj &
+      dbg_mlc.obj dyn_load.obj finalize.obj fnlz_mlc.obj gcj_mlc.obj &
+      headers.obj mach_dep.obj malloc.obj mallocx.obj mark.obj mark_rts.obj &
+      misc.obj new_hblk.obj obj_map.obj os_dep.obj ptr_chck.obj reclaim.obj &
+      typd_mlc.obj
 
 gc.lib: $(OBJS)
         @%create $*.lb1
-        @for %i in ($(OBJS)) do @%append $*.lb1 +'%i'
+        @for %i in ($(OBJS)) do @%append $*.lb1 +%i
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
 cord.lib: $(COBJS)
         @%create $*.lb1
-        @for %i in ($(COBJS)) do @%append $*.lb1 +'%i'
+        @for %i in ($(COBJS)) do @%append $*.lb1 +%i
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
 gccpp.lib: gc_badalc.obj gc_cpp.obj
         @%create $*.lb1
-        @%append $*.lb1 +'gc_badalc.obj'
-        @%append $*.lb1 +'gc_cpp.obj'
+        @%append $*.lb1 +gc_badalc.obj
+        @%append $*.lb1 +gc_cpp.obj
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
 # The same as gccpp.lib but contains only gc_badalc.obj.
 gctba.lib: gc_badalc.obj
         @%create $*.lb1
-        @%append $*.lb1 +'gc_badalc.obj'
+        @%append $*.lb1 +gc_badalc.obj
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
 !else
@@ -138,7 +145,7 @@ gc.dll: gc.obj .AUTODEPEND
 !endif
         @%append $*.lnk op case
         @%append $*.lnk name $*
-        @%append $*.lnk file 'gc.obj'
+        @%append $*.lnk file gc.obj
         *wlink @$*.lnk
 
 cord.lib: cord.dll
@@ -155,7 +162,7 @@ cord.dll: $(COBJS) gc.lib .AUTODEPEND
 !endif
         @%append $*.lnk op case
         @%append $*.lnk name $*
-        @for %i in ($(COBJS)) do @%append $*.lnk file '%i'
+        @for %i in ($(COBJS)) do @%append $*.lnk file %i
         @%append $*.lnk library gc.lib
         *wlink @$*.lnk
 
@@ -173,8 +180,8 @@ gccpp.dll: gc_badalc.obj gc_cpp.obj gc.lib .AUTODEPEND
 !endif
         @%append $*.lnk op case
         @%append $*.lnk name $*
-        @%append $*.lnk file 'gc_badalc.obj'
-        @%append $*.lnk file 'gc_cpp.obj'
+        @%append $*.lnk file gc_badalc.obj
+        @%append $*.lnk file gc_cpp.obj
         @%append $*.lnk library gc.lib
         @%append $*.lnk library wr7$(CALLING)dll.lib
         *wlink @$*.lnk
@@ -193,7 +200,7 @@ gctba.dll: gc_badalc.obj gc.lib .AUTODEPEND
 !endif
         @%append $*.lnk op case
         @%append $*.lnk name $*
-        @%append $*.lnk file 'gc_badalc.obj'
+        @%append $*.lnk file gc_badalc.obj
         @%append $*.lnk library gc.lib
         @%append $*.lnk library wr7$(CALLING)dll.lib
         *wlink @$*.lnk
@@ -233,6 +240,32 @@ cordtest.exe: cordtest.obj gc.lib cord.lib
         @%append $*.lnk library cord.lib
         *wlink @$*.lnk
 
+!ifdef MSWIN32
+de.exe: de.obj de_win.obj de_win.rbj gc.lib cord.lib
+        %create $*.lnk
+        @%append $*.lnk sys nt
+        @%append $*.lnk op case
+        @%append $*.lnk op stack=256K
+        @%append $*.lnk name $*
+        @%append $*.lnk file de.obj
+        @%append $*.lnk file de_win.obj
+        @%append $*.lnk resource de_win.rbj
+        @%append $*.lnk library gc.lib
+        @%append $*.lnk library cord.lib
+        @%append $*.lnk library gdi32.lib
+        *wlink @$*.lnk
+
+de.obj: cord\tests\de.c .AUTODEPEND
+        $(CC) $(TEST_CFLAGS) $(CORDFLAG) cord\tests\de.c
+de_win.obj: cord\tests\de_win.c .AUTODEPEND
+        $(CC) $(TEST_CFLAGS) $(CORDFLAG) cord\tests\de_win.c
+
+de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cmds.h
+        rc -fo $@ cord\tests\de_win.rc
+de_win.rbj: de_win.res
+        cvtres -out:$@ de_win.res
+!endif
+
 cpptest.exe: cpptest.obj gc.lib gccpp.lib
         %create $*.lnk
 !ifdef DOS4GW
@@ -250,6 +283,23 @@ cpptest.exe: cpptest.obj gc.lib gccpp.lib
         @%append $*.lnk library gccpp.lib
         *wlink @$*.lnk
 
+treetest.exe: treetest.obj gc.lib gctba.lib
+        %create $*.lnk
+!ifdef DOS4GW
+        @%append $*.lnk sys dos4g
+!else ifdef MSWIN32
+        @%append $*.lnk sys nt
+!else ifdef OS2
+        @%append $*.lnk sys os2v2
+!endif
+        @%append $*.lnk op case
+        @%append $*.lnk op stack=256K
+        @%append $*.lnk name $*
+        @%append $*.lnk file treetest.obj
+        @%append $*.lnk library gc.lib
+        @%append $*.lnk library gctba.lib
+        *wlink @$*.lnk
+
 cordbscs.obj: cord\cordbscs.c .AUTODEPEND
         $(CC) $(CFLAGS) $(CORDFLAG) cord\cordbscs.c
 cordxtra.obj: cord\cordxtra.c .AUTODEPEND
@@ -263,11 +313,13 @@ gc_cpp.obj: gc_cpp.cc .AUTODEPEND
         $(CXX) $(TEST_CXXFLAGS) $*.cc
 
 gctest.obj: tests\gctest.c .AUTODEPEND
-        $(CC) $(TEST_CFLAGS) /wcd=13 /wcd=201 /wcd=367 /wcd=368 tests\gctest.c
+        $(CC) $(TEST_CFLAGS) /wcd=201 tests\gctest.c
 cordtest.obj: cord\tests\cordtest.c .AUTODEPEND
         $(CC) $(TEST_CFLAGS) $(CORDFLAG) cord\tests\cordtest.c
 cpptest.obj: tests\cpp.cc .AUTODEPEND
         $(CXX) $(TEST_CXXFLAGS) -fo=cpptest.obj tests\cpp.cc
+treetest.obj: tests\tree.cc .AUTODEPEND
+        $(CXX) $(TEST_CXXFLAGS) -fo=treetest.obj tests\tree.cc
 
 .c.obj: .AUTODEPEND
         $(CC) $(CFLAGS) $*.c
@@ -276,15 +328,17 @@ cpptest.obj: tests\cpp.cc .AUTODEPEND
         $(CXX) $(CXXFLAGS) $*.cc
 
 clean: .SYMBOLIC
-    @if exist *.obj del *.obj
-    @if exist *.map del *.map
-    @if exist *.lnk del *.lnk
-    @if exist *.lb1 del *.lb1
-    @if exist *.sym del *.sym
-    @if exist *.err del *.err
-    @if exist *.tmp del *.tmp
-    @if exist *.lst del *.lst
-    @if exist *.exe del *.exe
-    @if exist *.log del *.log
-    @if exist *.lib del *.lib
-    @if exist *.dll del *.dll
+        @if exist *.dll del *.dll
+        @if exist *.err del *.err
+        @if exist *.exe del *.exe
+        @if exist *.lb1 del *.lb1
+        @if exist *.lib del *.lib
+        @if exist *.lnk del *.lnk
+        @if exist *.log del *.log
+        @if exist *.lst del *.lst
+        @if exist *.map del *.map
+        @if exist *.obj del *.obj
+        @if exist *.rbj del *.rbj
+        @if exist *.res del *.res
+        @if exist *.sym del *.sym
+        @if exist *.tmp del *.tmp

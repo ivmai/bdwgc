@@ -2,57 +2,60 @@
 /* does not exist.  If the command is omitted (and the file does not    */
 /* exist) then just exit with a non-zero code.                          */
 
-# include "private/gc_priv.h"
-# include <stdio.h>
-# include <stdlib.h>
-# include <unistd.h>
+#include "private/gc_priv.h"
+
+#include <unistd.h>
+
 #ifdef __DJGPP__
-#include <dirent.h>
-#endif /* __DJGPP__ */
+#  include <dirent.h>
+#endif
 
 #ifdef __cplusplus
-# define EXECV_ARGV_T char**
+#  define EXECV_ARGV_T char **
 #else
-# define EXECV_ARGV_T void* /* see the comment in if_mach.c */
+#  define EXECV_ARGV_T void * /* see the comment in if_mach.c */
 #endif
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
-    FILE * f;
+  FILE *f;
 #ifdef __DJGPP__
-    DIR * d;
+  DIR *d;
 #endif /* __DJGPP__ */
-    char *fname;
+  const char *fname;
 
-    if (argc < 2 || argc > 3)
-        goto Usage;
+  if (argc < 2 || argc > 3)
+    goto Usage;
 
-    fname = TRUSTED_STRING(argv[1]);
-    f = fopen(fname, "rb");
-    if (f != NULL) {
-        fclose(f);
-        return 0;
-    }
-    f = fopen(fname, "r");
-    if (f != NULL) {
-        fclose(f);
-        return 0;
-    }
+  fname = TRUSTED_STRING(argv[1]);
+  f = fopen(fname, "rb");
+  if (f != NULL) {
+    fclose(f);
+    return 0;
+  }
+  f = fopen(fname, "r");
+  if (f != NULL) {
+    fclose(f);
+    return 0;
+  }
 #ifdef __DJGPP__
-    if ((d = opendir(fname)) != 0) {
-            closedir(d);
-            return 0;
-    }
+  if ((d = opendir(fname)) != 0) {
+    closedir(d);
+    return 0;
+  }
 #endif
-    printf("^^^^Starting command^^^^\n");
-    fflush(stdout);
-    if (argc == 2)
-        return 2; /* the file does not exist but no command is given */
+  printf("^^^^Starting command^^^^\n");
+  fflush(stdout);
+  if (argc == 2) {
+    /* The file is missing, but no command is given.        */
+    return 2;
+  }
 
-    execvp(TRUSTED_STRING(argv[2]), (EXECV_ARGV_T)(argv + 2));
-    exit(1);
+  execvp(TRUSTED_STRING(argv[2]), (EXECV_ARGV_T)(argv + 2));
+  exit(1);
 
 Usage:
-    fprintf(stderr, "Usage: %s file_name [command]\n", argv[0]);
-    return 1;
+  fprintf(stderr, "Usage: %s file_name [command]\n", argv[0]);
+  return 1;
 }

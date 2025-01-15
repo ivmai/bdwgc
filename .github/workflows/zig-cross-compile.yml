@@ -1,0 +1,157 @@
+# This workflow uses Zig and its excellent cross-compilation support to test
+# compiling for multiple platforms. No tests are actually run since it would
+# require emulation.
+name: zig cross-compile
+
+on: [ push, pull_request ]
+
+jobs:
+  build:
+    name: ${{ matrix.ttriple }} cpp:${{ matrix.enable_cplusplus }} thr:${{ matrix.enable_threads }} dll:${{ matrix.shared_libs }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        zig_version: [ "0.13.0" ]
+        # Some of the triples are commented out just to speedup this workflow.
+        ttriple: [
+          aarch64-linux-gnu,
+          #aarch64-linux-musl,
+          aarch64-macos-none,
+          aarch64-windows-gnu,
+          #aarch64_be-linux-gnu,
+          aarch64_be-linux-musl,
+          #arm-linux-gnueabi,
+          arm-linux-gnueabihf,
+          arm-linux-musleabi,
+          #arm-linux-musleabihf,
+          armeb-linux-gnueabi,
+          #armeb-linux-gnueabihf,
+          #armeb-linux-musleabi,
+          armeb-linux-musleabihf,
+          #mips-linux-gnueabi,
+          #mips-linux-gnueabihf,
+          mips-linux-musl,
+          mips64-linux-gnuabi64,
+          #mips64-linux-gnuabin32,
+          mips64-linux-musl,
+          #mips64el-linux-gnuabi64,
+          mips64el-linux-gnuabin32,
+          mips64el-linux-musl,
+          mipsel-linux-gnueabi,
+          #mipsel-linux-gnueabihf,
+          mipsel-linux-musl,
+          #powerpc-linux-gnueabi,
+          powerpc-linux-gnueabihf,
+          #powerpc-linux-musl,
+          powerpc64-linux-gnu,
+          #powerpc64-linux-musl,
+          #powerpc64le-linux-gnu,
+          powerpc64le-linux-musl,
+          riscv64-linux-musl,
+          sparc64-linux-gnu,
+          thumb-linux-gnueabi,
+          #thumb-linux-gnueabihf,
+          #thumb-linux-musleabi,
+          thumb-linux-musleabihf,
+          wasm32-wasi-musl,
+          #x86-linux-gnu,
+          x86-linux-musl,
+          x86-windows-gnu,
+          x86_64-linux-gnu.2.27, # with a glibc version
+          x86_64-linux-gnux32,
+          #x86_64-linux-musl,
+          x86_64-macos-none,
+          x86_64-windows-gnu,
+        ]
+        enable_cplusplus: [ false, true ]
+        enable_threads: [ false, true ]
+        shared_libs: [ false, true ]
+        exclude:
+        - enable_threads: true
+          ttriple: wasm32-wasi-musl
+        - enable_cplusplus: false # excluded to speedup this workflow
+          shared_libs: false
+        # The following ones have "exceeds the max lock-free size" warning.
+        - enable_threads: true
+          ttriple: arm-linux-gnueabi
+        - enable_threads: true
+          ttriple: arm-linux-musleabi
+        - enable_threads: true
+          ttriple: armeb-linux-gnueabi
+        - enable_threads: true
+          ttriple: thumb-linux-gnueabi
+        - enable_threads: true
+          ttriple: thumb-linux-musleabi
+        - enable_threads: true
+          ttriple: thumb-linux-musleabihf
+        # The following ones have some zig link issue.
+        - shared_libs: true
+          ttriple: aarch64_be-linux-gnu
+        - shared_libs: true
+          ttriple: aarch64_be-linux-musl
+        - shared_libs: true
+          ttriple: armeb-linux-gnueabi
+        - shared_libs: true
+          ttriple: armeb-linux-gnueabihf
+        - shared_libs: true
+          ttriple: armeb-linux-musleabi
+        - shared_libs: true
+          ttriple: armeb-linux-musleabihf
+        - shared_libs: true
+          ttriple: mips64-linux-gnuabin32
+        - shared_libs: true
+          ttriple: mips64el-linux-gnuabin32
+        - shared_libs: true
+          ttriple: powerpc-linux-gnueabi
+        - shared_libs: true
+          ttriple: powerpc-linux-gnueabihf
+        - shared_libs: true
+          ttriple: sparc64-linux-gnu # FIXME: recompile with -fPIC
+        - shared_libs: true
+          ttriple: thumb-linux-gnueabi
+        - shared_libs: true
+          ttriple: thumb-linux-gnueabihf
+        - shared_libs: true # FIXME: creating shared libs is not yet stable
+          ttriple: wasm32-wasi-musl
+        - shared_libs: true # FIXME: recompile with -fPIC
+          ttriple: x86_64-linux-gnux32
+        - enable_cplusplus: true
+          shared_libs: true # FIXME: relocation R_MIPS_32 against local symbol
+          ttriple: mips-linux-musl
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: mips64-linux-gnuabi64
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: mips64-linux-musl
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: mips64el-linux-musl
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: mipsel-linux-gnueabi
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: mipsel-linux-musl
+        - enable_cplusplus: true
+          shared_libs: true # FIXME: relocation refers to a discarded section
+          ttriple: powerpc64-linux-gnu
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: powerpc64le-linux-musl
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: korandoru/setup-zig@v1
+      with:
+        zig-version: ${{ matrix.zig_version }}
+    - name: Build
+      run: >
+        zig build -Dtarget=${{ matrix.ttriple }}
+        -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
+        -DCFLAGS_EXTRA="${{ matrix.cflags_extra }}"
+        -Denable_cplusplus=${{ matrix.enable_cplusplus }}
+        -Denable_threads=${{ matrix.enable_threads }}
+        -Denable_werror

@@ -2,15 +2,18 @@
 
 [![Travis-CI build status](https://app.travis-ci.com/ivmai/bdwgc.svg?branch=master)](https://app.travis-ci.com/github/ivmai/bdwgc)
 [![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/ivmai/bdwgc?branch=master&svg=true)](https://ci.appveyor.com/project/ivmai/bdwgc)
+[![GitHub Actions build status (cmake)](https://github.com/ivmai/bdwgc/actions/workflows/cmake-build.yml/badge.svg?event=push)](https://github.com/ivmai/bdwgc/actions/workflows/cmake-build.yml?query=branch%3Amaster)
+[![GitHub Actions build status (cmake cosmo)](https://github.com/ivmai/bdwgc/actions/workflows/cmake-cosmo.yml/badge.svg?event=push)](https://github.com/ivmai/bdwgc/actions/workflows/cmake-cosmo.yml?query=branch%3Amaster)
+[![GitHub Actions build status (zig build/test)](https://github.com/ivmai/bdwgc/actions/workflows/zig-build.yml/badge.svg?event=push)](https://github.com/ivmai/bdwgc/actions/workflows/zig-build.yml?query=branch%3Amaster)
+[![GitHub Actions build status (zig cross-compile)](https://github.com/ivmai/bdwgc/actions/workflows/zig-cross-compile.yml/badge.svg?event=push)](https://github.com/ivmai/bdwgc/actions/workflows/zig-cross-compile.yml?query=branch%3Amaster)
+[![GitHub Actions status (clang-format)](https://github.com/ivmai/bdwgc/actions/workflows/clang-format-check.yml/badge.svg?event=push)](https://github.com/ivmai/bdwgc/actions/workflows/clang-format-check.yml?query=branch%3Amaster)
+[![CodeQL](https://github.com/ivmai/bdwgc/workflows/CodeQL/badge.svg)](https://github.com/ivmai/bdwgc/actions/workflows/CodeQL.yml?query=branch%3Amaster)
 [![Codecov.io](https://codecov.io/github/ivmai/bdwgc/coverage.svg?branch=master)](https://codecov.io/github/ivmai/bdwgc?branch=master)
 [![Coveralls test coverage status](https://coveralls.io/repos/github/ivmai/bdwgc/badge.png?branch=master)](https://coveralls.io/github/ivmai/bdwgc)
 [![Coverity Scan build status](https://scan.coverity.com/projects/10813/badge.svg)](https://scan.coverity.com/projects/ivmai-bdwgc)
-[![LGTM Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/context:cpp)
-[![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/ivmai/bdwgc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ivmai/bdwgc/alerts)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fivmai%2Fbdwgc.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fivmai%2Fbdwgc?ref=badge_shield)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/6332/badge)](https://bestpractices.coreinfrastructure.org/projects/6332)
 [![Hits-of-Code](https://hitsofcode.com/github/ivmai/bdwgc?branch=master)](https://hitsofcode.com/github/ivmai/bdwgc/view)
-[![Lines of code](https://img.shields.io/tokei/lines/github/ivmai/bdwgc)](https://shields.io/category/size)
 [![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/ivmai/bdwgc)](https://shields.io/category/size)
 [![Github All Releases](https://img.shields.io/github/downloads/ivmai/bdwgc/total.svg)](https://shields.io/category/downloads)
 [![Packaging status](https://repology.org/badge/tiny-repos/boehm-gc.svg)](https://repology.org/project/boehm-gc/versions)
@@ -75,16 +78,16 @@ CSL 84-7).  Doug McIlroy wrote a simpler fully conservative collector that
 was part of version 8 UNIX (tm), but appears to not have received
 widespread use.
 
-Rudimentary tools for use of the collector as a [leak detector](doc/leak.md)
+Rudimentary tools for use of the collector as a [leak detector](docs/leak.md)
 are included, as is a fairly sophisticated string package "cord" that
-makes use of the collector.  (See [README.cords](doc/README.cords) and
+makes use of the collector.  (See [cords.md](docs/cords.md) and
 H.-J. Boehm, R. Atkinson, and M. Plass, "Ropes: An Alternative to Strings",
 Software Practice and Experience 25, 12 (December 1995), pp. 1315-1330.
 This is very similar to the "rope" package in Xerox Cedar, or the "rope"
 package in the SGI STL or the g++ distribution.)
 
 Further collector documentation can be found in the
-[overview](doc/overview.md).
+[overview](docs/overview.md).
 
 Some of the known uses of the collector are listed on the GitHub
 [Known-clients](https://github.com/ivmai/bdwgc/wiki/Known-clients) page.
@@ -127,7 +130,7 @@ large objects to be disregarded, greatly reducing the probability of
 accidental retention of large objects.  For most purposes it seems
 best to compile with `ALL_INTERIOR_POINTERS` and to use
 `GC_malloc_ignore_off_page` if you get collector warnings from
-allocations of very large objects.  See [here](doc/debugging.md) for details.
+allocations of very large objects.  See [here](docs/debugging.md) for details.
 
 _WARNING_: pointers inside memory allocated by the standard (system) `malloc`
 are not seen by the garbage collector.  Thus objects pointed to only from such
@@ -144,12 +147,12 @@ areas that are associated with dynamic libraries.  This is easy to remedy
 if you know how to find those data areas on your operating system (see
 `GC_add_roots`).  Code for doing this under SunOS, IRIX 5.X and 6.X, HP/UX,
 Alpha OSF/1, Linux, and Win32 is included and used by default.
-(See [README.win32](doc/README.win32) and [README.win64](doc/README.win64)
-for Windows details.)  On other systems, pointers from dynamic library data
-areas may not be considered by the collector.  If you're writing a program
-that depends on the collector scanning dynamic library data areas, it may
-be a good idea to include at least one call to `GC_is_visible` to ensure
-that those areas are visible to the collector.
+(See [README.win32](docs/platforms/README.win32) and
+[README.win64](docs/platforms/README.win64) for Windows details.)  On other
+systems, pointers from dynamic library data areas may not be considered by the
+collector.  If you're writing a program that depends on the collector scanning
+dynamic library data areas, it may be a good idea to include at least one call
+to `GC_is_visible` to ensure that those areas are visible to the collector.
 
 Note that the garbage collector does not need to be informed of shared
 read-only data.  However, if the shared library mechanism can introduce
@@ -174,7 +177,115 @@ stored on the thread's stack for the duration of their lifetime.
 (This is arguably a longstanding bug, but it hasn't been fixed yet.)
 
 
-## Installation and Portability
+## Building and Installing
+
+There are multiple ways to build the collector:
+
+  * CMake (it is the recommended way)
+  * GNU autoconf/automake
+  * Zig (experimental)
+  * MS nmake (directly)
+  * Makefile.direct
+  * Manual C compilation
+
+### CMake
+
+The simplest way to build libgc (as well as libcord) and run the tests using
+cmake:
+
+```sh
+mkdir out
+cd out
+cmake -Dbuild_tests=ON ..
+cmake --build .
+ctest
+```
+
+This is the most cross-platform way of building the library.
+See [README.cmake](docs/README.cmake) for details.
+
+### GNU Autoconf/Automake
+
+Please note that the collector source repository does not contain `configure`
+and similar auto-generated files, thus the full procedure of autoconf-based
+build of the collector from the source repository could look like:
+
+```sh
+./autogen.sh
+./configure
+make check
+```
+
+The GNU style build process understands the usual targets and options.
+`make install` installs libgc and libcord.  Try `./configure --help` to see
+all the configuration options.  It is currently not possible to exercise all
+combinations of build options this way.
+
+See [README.autoconf](docs/README.autoconf) for details.
+
+### Zig
+
+Building and testing the collector using zig is straight forward in its
+simplest form:
+
+```sh
+zig build test
+```
+
+It is possible to configure the build through the use of variables, e.g.
+`zig build -Denable_redirect_malloc -Denable_threads=false`. Zig offers
+excellent cross-compilation functionality, it is configurable like this:
+
+```sh
+zig build -Dtarget=riscv64-linux-musl
+```
+
+The appropriate Zig binary package file could be downloaded from the official
+[Zig releases](https://ziglang.org/download/) page.
+
+### MS nmake
+
+On Windows, assuming the Microsoft build tools are installed and suitably
+configured, it is possible to build the library and run the tests using
+`nmake` directly, e.g. by by typing `nmake -f NT_MAKEFILE check`.  However,
+the recommended way is to use cmake as described above.
+
+See [README.win32](docs/platforms/README.win32) for details.
+
+### Makefile.direct
+
+For the old-style (classic) makefile-based build process, typing
+`make -f Makefile.direct check` will automatically build libgc, libcord and
+then run a number of tests such as `gctest`.  The test is a somewhat
+superficial test of collector functionality.  Failure is indicated by a core
+dump or a message to the effect that the collector is broken.  `gctest` may
+take a dozen of seconds to run on reasonable 2023 vintage 64-bit desktops.
+It may use up to about 30 MB of memory.
+
+Makefile.direct will generate a library libgc.a which you should link against.
+
+### Manual C Compilation
+
+Finally, on most targets, the collector could be built and tested directly
+with a single compiler invocation, like this (the sample lacks multi-threading
+support):
+
+```sh
+cc -I include -o gctest tests/gctest.c extra/gc.c && ./gctest
+```
+
+E.g., this could be convenient for a debugging purpose.
+
+### Configurable Macros
+
+The library can be configured more precisely during the build by defining
+the macros listed in [README.macros](docs/README.macros) file.
+
+The library is built with threads support enabled (i.e. for thread-safe
+operation) by default, unless explicitly disabled by:
+
+  * `-Denable_threads=false` option passed to `cmake` or `zig build`
+  * `--disable-threads` option passed to `./configure`
 
 The collector operates silently in the default configuration.
 In the event of issues, this can usually be changed by defining the
@@ -185,85 +296,25 @@ Things don't appear to add up for a variety of reasons, most notably
 fragmentation losses.  These are probably much more significant for the
 contrived program `gctest` than for your application.)
 
-On most Unix-like platforms, the collector can be built either using a
-GNU autoconf-based build infrastructure (type `./configure; make` in the
-simplest case), or using CMake (see the sample below), or with a classic
-makefile by itself (type `make -f Makefile.direct`).
+### Atomic_ops
 
-Please note that the collector source repository does not contain configure
-and similar auto-generated files, thus the full procedure of autoconf-based
-build of `master` branch of the collector could look like:
+Use (cloning) of `libatomic_ops` is now optional provided the compiler
+supports atomic intrinsics.  Most modern compilers do.  The notable exception
+is the MS compiler (as of Visual Studio 2022).
 
-    git clone https://github.com/ivmai/bdwgc
-    cd bdwgc
-    git clone https://github.com/ivmai/libatomic_ops
-    ./autogen.sh
-    ./configure
-    make -j
-    make check
+If needed, most OS distributes have `libatomic_ops` package; alternatively,
+you can download or clone it from
+[libatomic_ops](https://github.com/ivmai/libatomic_ops) repository on GitHub.
 
-Cloning of `libatomic_ops` is now optional provided the compiler supports
-atomic intrinsics.  See [README.autoconf](doc/README.autoconf) for details.
 
-As noted above, alternatively, the collector could be built with CMake, like
-this:
-
-    mkdir out
-    cd out
-    cmake ..
-    cmake --build .
-    ctest
-
-See [README.cmake](doc/README.cmake) for details.
-
-Finally, on most targets, the collector could be built and tested directly
-with a single compiler invocation, like this:
-
-    gcc -I include -o gctest tests/gctest.c extra/gc.c && ./gctest
-
-On Windows, CMake could be used to build the library as described above or
-by typing `nmake -f NT_MAKEFILE`, this assumes you have Microsoft command-line
-tools installed and suitably configured.  See [README.win32](doc/README.win32)
-for details.
-
-The library is built with threads support on (i.e. for thread-safe operation)
-by default, unless `--disable-threads` is passed to `./configure` (or
-`-Denable_threads=OFF` is passed to `cmake` tool).
-
-The library could be configured more precisely during the build by defining
-the macros listed in [README.macros](doc/README.macros) file.
-
-Below we focus on the collector build using classic makefile.  For the
-Makefile.direct-based process, typing `make check` instead of `make` will
-automatically build the collector and then run `setjmp_test` and `gctest`.
-`setjmp_test` will give you information about configuring the collector, which
-is useful primarily if you have a machine that's not already supported.
-gctest is a somewhat superficial test of collector functionality.  Failure is
-indicated by a core dump or a message to the effect that the collector is
-broken.  gctest takes about a second to two to run on reasonable 2007 vintage
-desktops.  It may use up to about 30 MB of memory.  (The multi-threaded
-version will use more.  64-bit versions may use more.) `make check` will also,
-as its last step, attempt to build and test the "cord" string library.)
-
-Makefile.direct will generate a library libgc.a which you should link against.
-Typing `make -f Makefile.direct cords` will build the cord library (libcord.a)
-as well.
-
-The GNU style build process understands the usual targets.  `make check`
-runs a number of tests.  `make install` installs at least libgc, and libcord.
-Try `./configure --help` to see the configuration options.  It is currently
-not possible to exercise all combinations of build options this way.
-
-All include files that need to be used by clients will be put in the
-include subdirectory.  (Normally this is just gc.h.  `make cords` adds
-"cord.h" and "ec.h".)
+## Portability
 
 The collector currently is designed to run essentially unmodified on
 machines that use a flat 32-bit or 64-bit address space.
 That includes the vast majority of Workstations and x86 (i386 or later) PCs.
 
-In a few cases (OS/2, Win32) a separate makefile is supplied; these have
-a separate host-specific doc/README.* file.
+In a few cases (e.g., OS/2, Win32) a separate makefile is supplied; these have
+a separate host-specific docs/platforms/README.* file.
 
 Dynamic libraries are completely supported only under SunOS/Solaris,
 (and even that support is not functional on the last Sun 3 release),
@@ -282,16 +333,16 @@ the following:
 
 In all cases we assume that pointer alignment is consistent with that
 enforced by the standard C compilers.  If you use a nonstandard compiler
-you may have to adjust the alignment parameters defined in gc_priv.h.
-Note that this may also be an issue with packed records/structs, if those
-enforce less alignment for pointers.
+you may have to adjust the alignment parameters defined in
+`include/private/gc_priv.h`.  Note that this may also be an issue with packed
+records/structs, if those enforce less alignment for pointers.
 
 A port to a machine that is not byte addressed, or does not use 32 bit
 or 64 bit addresses will require a major effort.  A port to plain MSDOS
 or win16 is hard.
 
 For machines not already mentioned, or for nonstandard compilers,
-some porting suggestions are provided [here](doc/porting.md).
+some porting suggestions are provided [here](docs/porting.md).
 
 
 ## The C Interface to the Allocator
@@ -304,7 +355,7 @@ machine on which the collector doesn't already understand them.)  On
 some machines, it may be desirable to set `GC_stackbottom` to a good
 approximation of the stack base (bottom).
 
-Client code may include "gc.h", which defines all of the following, plus many
+Client code may include `gc.h`, which defines all of the following, plus many
 others.
 
   1. `GC_malloc(bytes)` - Allocate an object of a given size.  Unlike malloc,
@@ -343,8 +394,9 @@ others.
   frequent collections at program startup.)
 
   6. `GC_malloc_ignore_off_page(bytes)` - Identical to `GC_malloc`, but the
-  client promises to keep a pointer to the somewhere within the first 256
-  bytes of the object while it is live.  (This pointer should normally be
+  client promises to keep a pointer to the somewhere within the first GC
+  heap block (512 .. 4096 bytes or even more, depending on the configuration)
+  of the object while it is live.  (This pointer should normally be
   declared volatile to prevent interference from compiler optimizations.)
   This is the recommended way to allocate anything that is likely to be
   larger than 100 KB or so.  (`GC_malloc` may result in a failure to reclaim
@@ -364,7 +416,8 @@ others.
   9. `GC_register_finalizer(object, proc, data, 0, 0)` and friends - Allow for
   registration of finalization code.  User supplied finalization code
   (`(*proc)(object, data)`) is invoked after object becomes unreachable.
-  For more sophisticated uses, and for finalization ordering issues, see gc.h.
+  For more sophisticated uses, and for finalization ordering issues, see
+  `gc.h`.
 
 The global variable `GC_free_space_divisor` may be adjusted up from it
 default value of 3 to use less space and more collection time, or down for
@@ -377,7 +430,7 @@ considered as a candidate for collection.  Careless use may, of course, result
 in excessive memory consumption.
 
 Some additional tuning is possible through the parameters defined
-near the top of gc_priv.h.
+near the top of `include/private/gc_priv.h`.
 
 If only `GC_malloc` is intended to be used, it might be appropriate to define:
 
@@ -405,8 +458,8 @@ distribution.  If you intend to use this, type
 `make -f Makefile.direct c++` depending on the build system you use).
 This creates libgccpp.a and libgctba.a files, or their shared library
 equivalents (libgccpp.so and libgctba.so).  You should link with either the
-first (gccpp) or the second one (gctba), but not both.  See gc_cpp.h and
-[gcinterface.md](doc/gcinterface.md) for the definition of the interface.
+first (gccpp) or the second one (gctba), but not both.  See `gc_cpp.h` and
+[here](docs/gcinterface.md) for the definition of the interface.
 This interface tries to approximate the Ellis-Detlefs C++ garbage collection
 proposal without compiler changes.
 
@@ -480,10 +533,10 @@ not copied).  If an error involving the object is detected, they are printed.
 
 The macros `GC_MALLOC`, `GC_MALLOC_ATOMIC`, `GC_REALLOC`, `GC_FREE`,
 `GC_REGISTER_FINALIZER` and friends are also provided.  These require the same
-arguments as the corresponding (nondebugging) routines.  If gc.h is included
+arguments as the corresponding (nondebugging) routines.  If `gc.h` is included
 with `GC_DEBUG` defined, they call the debugging versions of these
 functions, passing the current file name and line number as the two
-extra arguments, where appropriate.  If gc.h is included without `GC_DEBUG`
+extra arguments, where appropriate.  If `gc.h` is included without `GC_DEBUG`
 defined then all these macros will instead be defined to their nondebugging
 equivalents.  (`GC_REGISTER_FINALIZER` is necessary, since pointers to
 objects with debugging information are really pointers to a displacement
@@ -556,6 +609,7 @@ submission please check that it has not been done yet by someone else.
 
 If you want to contribute, submit
 a [pull request](https://github.com/ivmai/bdwgc/pulls) to GitHub.
+Please process the modified files with clang-format before the submission.
 
 If you need help, use
 [Stack Overflow](https://stackoverflow.com/questions/tagged/boehm-gc).

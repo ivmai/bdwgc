@@ -32,7 +32,7 @@ if ENABLE_GCJ_SUPPORT
 pkginclude_HEADERS += include/gc/gc_gcj.h
 endif
 
-if PTHREADS
+if THREADS
 pkginclude_HEADERS += include/gc/gc_pthread_redirects.h
 endif
 

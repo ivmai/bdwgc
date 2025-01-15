@@ -1,0 +1,69 @@
+# This workflow is for cmake-based build/test using Cosmo (Cosmopolitan).
+name: cmake cosmo
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: ${{ matrix.os }} thr:${{ matrix.enable_threads }} single-obj:${{ matrix.single_obj_compilation }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 4
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        os: [ ubuntu-latest ] # TODO: macos-latest, windows-latest
+        enable_cplusplus: [ on ]
+        build_type: [ Debug ]
+        disable_gc_debug: [ off ]
+        gc_assertions: [ on ]
+        large_config: [ on ]
+        enable_threads: [ off ] # TODO: on
+        enable_rwlock: [ off ]
+        single_obj_compilation: [ off, on ]
+        redirect_malloc: [ off ]
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: bjia56/setup-cosmocc@main
+      with:
+        version: latest
+
+    - name: Set reusable strings
+      # Turn repeated input strings into step outputs.
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+    - name: Configure CMake targetting Cosmo
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        ${{ matrix.cmake_generator_opt }}
+        -DBUILD_SHARED_LIBS=OFF
+        -Denable_single_obj_compilation=${{ matrix.single_obj_compilation }}
+        -DCMAKE_C_COMPILER=cosmocc
+        -DCMAKE_CXX_COMPILER=cosmoc++
+        -DCMAKE_AR=`type -p cosmoar`
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -Dbuild_tests=ON
+        -Ddisable_gc_debug=${{ matrix.disable_gc_debug }}
+        -Denable_cplusplus=${{ matrix.enable_cplusplus }}
+        -Denable_gc_assertions=${{ matrix.gc_assertions }}
+        -Denable_large_config=${{ matrix.large_config }}
+        -Denable_redirect_malloc=${{ matrix.redirect_malloc }}
+        -Denable_rwlock=${{ matrix.enable_rwlock }}
+        -Denable_threads=${{ matrix.enable_threads }}
+        -Denable_werror=ON
+        -Werror=dev
+        -S ${{ github.workspace }}
+
+    - name: Build
+      run: >
+        cmake --build ${{ steps.strings.outputs.build-output-dir }}
+        --config ${{ matrix.build_type }} --verbose --parallel
+
+    - name: Test
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      run: ctest --build-config ${{ matrix.build_type }} --verbose --parallel 8
