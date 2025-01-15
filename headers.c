@@ -430,7 +430,11 @@ GC_prev_block(struct hblk *h)
         j -= (GC_signed_word)ADDR(hhdr);
       } else {
         /* TODO: return hhdr -> hb_block instead */
+#ifndef CHERI_PURECAP
         return (struct hblk *)MAKE_CPTR(HBLK_ADDR(bi, j));
+#else
+        return (struct hblk *)hhdr->hb_block;
+#endif
       }
     }
     j = BOTTOM_SZ - 1;
