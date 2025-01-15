@@ -2387,7 +2387,14 @@ GC_unix_mmap_get_mem(size_t bytes)
     return GC_unix_mmap_get_mem(bytes);
   }
 #      endif
+
+#      ifndef CHERI_PURECAP
   last_addr = PTR_ALIGN_UP((ptr_t)result + bytes, GC_page_size);
+#      else
+  /* CHERI_PURECAP: Non-NULL addresses don't work in CheriABI */
+  last_addr = NULL;
+#      endif // CHERI_PURECAP
+
 
   if ((ADDR(result) % HBLKSIZE) != 0)
     ABORT("GC_unix_get_mem: Memory returned by mmap is not aligned to "
