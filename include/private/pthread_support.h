@@ -60,7 +60,7 @@ typedef struct GC_NT_TIB_s GC_NT_TIB;
 #    endif
 #  endif
 
-typedef struct GC_StackContext_Rep {
+struct GC_StackContext_Rep {
 #  if defined(THREAD_SANITIZER) && defined(SIGNAL_BASED_STOP_WORLD)
   /* A dummy field to avoid TSan false positive about the race        */
   /* between GC_has_other_debug_info and GC_suspend_handler_inner     */
@@ -133,7 +133,8 @@ typedef struct GC_StackContext_Rep {
   /* Points to the "frame" data held in stack by the innermost          */
   /* GC_call_with_gc_active() of this stack (thread); may be NULL.      */
   struct GC_traced_stack_sect_s *traced_stack_sect;
-} * GC_stack_context_t;
+};
+typedef struct GC_StackContext_Rep *GC_stack_context_t;
 
 #  ifdef GC_WIN32_THREADS
 typedef DWORD thread_id_t;
@@ -150,7 +151,7 @@ typedef pthread_t thread_id_t;
 #    define THREAD_ID_TO_VPTR(id) PTHREAD_TO_VPTR(id)
 #  endif
 
-typedef struct GC_Thread_Rep {
+struct GC_Thread_Rep {
   union {
 #  if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
     /* Updated without a lock.  We assert that each unused entry has  */
@@ -278,7 +279,8 @@ typedef struct GC_Thread_Rep {
   /* needed for GetThreadContext() to succeed.                        */
   word context_regs[PUSHED_REGS_COUNT];
 #  endif
-} * GC_thread;
+};
+typedef struct GC_Thread_Rep *GC_thread;
 
 #  if defined(GC_PTHREADS) || defined(GC_PTHREADS_PARAMARK)
 /* Convert an opaque pthread_t value to a pointer identifying the thread. */

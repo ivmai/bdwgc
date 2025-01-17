@@ -177,8 +177,9 @@ GC_INNER int GC_has_other_debug_info(ptr_t base);
       (((GC_uintptr_t)GC_cptr_load((volatile ptr_t *)(base)) & 1) != 0 \
        && GC_has_other_debug_info(base) > 0)
 #  else
-#    define GC_HAS_DEBUG_INFO(base) \
-      ((*(GC_uintptr_t *)(base)&1) != 0 && GC_has_other_debug_info(base) > 0)
+#    define GC_HAS_DEBUG_INFO(base)         \
+      (((*(GC_uintptr_t *)(base)) & 1) != 0 \
+       && GC_has_other_debug_info(base) > 0)
 #  endif
 #else
 #  define GC_HAS_DEBUG_INFO(base) (GC_has_other_debug_info(base) > 0)

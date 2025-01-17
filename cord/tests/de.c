@@ -80,18 +80,20 @@
 
 /* List of line number to position mappings, in descending order. */
 /* There may be holes.                                            */
-typedef struct LineMapRep {
+struct LineMapRep {
   int line;
   size_t pos;
   struct LineMapRep *previous;
-} * line_map;
+};
+typedef struct LineMapRep *line_map;
 
-/* List of file versions, one per edit operation */
-typedef struct HistoryRep {
+/* List of file versions, one per edit operation. */
+struct HistoryRep {
   CORD file_contents;
   struct HistoryRep *previous;
-  line_map map; /* Invalid for first record "now" */
-} * history;
+  line_map map; /* invalid for the first record "now" */
+};
+typedef struct HistoryRep *history;
 
 history now = 0;
 CORD current;             /* == now -> file_contents.     */

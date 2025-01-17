@@ -120,7 +120,7 @@ EXTERN_C_BEGIN
 /* allocation, equivalent to 0;                                     */
 /* - >=HBLKSIZE means pointer to nonempty free list.                */
 
-typedef struct thread_local_freelists {
+struct thread_local_freelists {
   /* Note: Preserve *_freelists names for some clients. */
   void *_freelists[THREAD_FREELISTS_KINDS][GC_TINY_FREELISTS];
 #  define ptrfree_freelists _freelists[PTRFREE]
@@ -133,7 +133,8 @@ typedef struct thread_local_freelists {
 
   /* Do not use local free lists for up to this much allocation.    */
 #  define DIRECT_GRANULES (HBLKSIZE / GC_GRANULE_BYTES)
-} * GC_tlfs;
+};
+typedef struct thread_local_freelists *GC_tlfs;
 
 #  if defined(USE_PTHREAD_SPECIFIC)
 #    define GC_getspecific pthread_getspecific

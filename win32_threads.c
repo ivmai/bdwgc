@@ -645,7 +645,7 @@ GC_start_world(void)
 /* argument later and must not be used as the lower bound for sp      */
 /* check (since the stack may be bigger than 64 KiB).                 */
 #    define GC_wince_evaluate_stack_min(s) \
-      (ptr_t)(((word)(s)-1) & ~(word)0xFFFF)
+      (ptr_t)(((word)(s) - (word)1) & ~(word)0xFFFF)
 #  elif defined(GC_ASSERTIONS)
 #    define GC_dont_query_stack_min FALSE
 #  endif
@@ -1233,7 +1233,7 @@ GC_start_mark_threads_inner(void)
     handle = _beginthreadex(NULL /* security_attr */, MARK_THREAD_STACK_SIZE,
                             GC_mark_thread, NUMERIC_TO_VPTR(i), 0 /* flags */,
                             &thread_id);
-    if (EXPECT(!handle || handle == (GC_uintptr_t)-1L, FALSE)) {
+    if (EXPECT(!handle || handle == ~(GC_uintptr_t)0, FALSE)) {
       WARN("Marker thread %" WARN_PRIdPTR " creation failed\n",
            (GC_signed_word)i);
       /* Don't try to create other marker threads.                */

@@ -120,7 +120,8 @@ CORD_API void CORD__prev(CORD_pos);
 
 /* Advance position by n characters; n should be positive and less  */
 /* than CORD_pos_chars_left(p).                                     */
-#  define CORD_pos_advance(p, n) ((p)[0].cur_pos += (n)-1, CORD_next(p))
+#  define CORD_pos_advance(p, n) \
+    ((p)[0].cur_pos += (n) - (size_t)1, CORD_next(p))
 
 /* Address of the current character in cache.   */
 #  define CORD_pos_cur_char_addr(p) \

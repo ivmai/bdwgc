@@ -2316,11 +2316,11 @@ GC_API void *GC_CALL GC_find_limit(void * /* start */, int /* up */);
 
 #if defined(GC_INITIAL_HEAP_SIZE) && !defined(CPPCHECK)
 /* Set heap size to the desired value at start-up */
-#  define GC_INIT_CONF_INITIAL_HEAP_SIZE                      \
-    {                                                         \
-      size_t heap_size = GC_get_heap_size();                  \
-      if (heap_size < (GC_INITIAL_HEAP_SIZE))                 \
-        (void)GC_expand_hp((GC_INITIAL_HEAP_SIZE)-heap_size); \
+#  define GC_INIT_CONF_INITIAL_HEAP_SIZE                                  \
+    {                                                                     \
+      size_t heap_size = GC_get_heap_size();                              \
+      if (heap_size < (size_t)(GC_INITIAL_HEAP_SIZE))                     \
+        (void)GC_expand_hp(((size_t)(GC_INITIAL_HEAP_SIZE)) - heap_size); \
     }
 #else
 #  define GC_INIT_CONF_INITIAL_HEAP_SIZE /* empty */

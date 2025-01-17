@@ -1226,8 +1226,9 @@ os_main_stackbottom(void)
     /* low while the initialization code is running.              */
     if ((ADDR(__libc_stack_end) & 0xfff) + 0x10 < 0x1000) {
       return __libc_stack_end + 0x10;
-    } /* Otherwise it's not safe to add 16 bytes and we fall      */
-      /* back to using /proc.                                     */
+    } else {
+      /* It is not safe to add 16 bytes.  Thus, fallback to using /proc. */
+    }
 #      elif defined(SPARC)
     /* Older versions of glibc for 64-bit SPARC do not set this   */
     /* variable correctly, it gets set to either zero or one.     */
@@ -4872,7 +4873,7 @@ GC_mprotect_thread(void *arg)
 #  endif
       }
     } /* switch */
-  }   /* for */
+  }
 }
 
 /* All this SIGBUS code should not be necessary.  All protection faults */

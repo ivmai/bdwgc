@@ -27,7 +27,7 @@ typedef void (*finalization_mark_proc)(ptr_t /* finalizable_obj_ptr */);
 
 #  define HASH3(addr, size, log_size)                               \
     ((size_t)((ADDR(addr) >> 3) ^ (ADDR(addr) >> (3 + (log_size)))) \
-     & ((size)-1))
+     & ((size) - (size_t)1))
 #  define HASH2(addr, log_size) HASH3(addr, (size_t)1 << (log_size), log_size)
 
 struct hash_chain_entry {

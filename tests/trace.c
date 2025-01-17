@@ -20,7 +20,9 @@
 struct treenode {
   struct treenode *x;
   struct treenode *y;
-} * root[10];
+};
+
+static struct treenode *root[10];
 
 static struct treenode *
 mktree(int i)

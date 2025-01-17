@@ -381,10 +381,13 @@ gcj_cons(sexpr x, sexpr y)
   size_t cnt = (size_t)AO_fetch_and_add1(&extra_count);
   const void *d = (cnt & 1) != 0 ? &gcj_class_struct1 : &gcj_class_struct2;
   size_t lb = sizeof(struct SEXPR) + sizeof(struct fake_vtable *);
-  void *r = (cnt & 2) != 0 ? GC_GCJ_MALLOC_IGNORE_OFF_PAGE(
-                lb + (cnt <= HBLKSIZE / 2 ? cnt : 0), d)
-                           : GC_GCJ_MALLOC(lb, d);
+  void *r;
 
+  if ((cnt & 2) != 0) {
+    r = GC_GCJ_MALLOC_IGNORE_OFF_PAGE(lb + (cnt <= HBLKSIZE / 2 ? cnt : 0), d);
+  } else {
+    r = GC_GCJ_MALLOC(lb, d);
+  }
   CHECK_OUT_OF_MEMORY(r);
   AO_fetch_and_add1(&collectable_count);
   /* Skip vtable pointer.     */
@@ -2022,7 +2025,8 @@ test_long_mult(void)
 #endif
 }
 
-#define NUMBER_ROUND_UP(v, bound) ((((v) + (bound)-1) / (bound)) * (bound))
+#define NUMBER_ROUND_UP(v, bound) \
+  ((((v) + (bound) - (unsigned)1) / (bound)) * (bound))
 
 static size_t initial_heapsize;
 

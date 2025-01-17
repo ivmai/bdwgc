@@ -781,10 +781,10 @@ EXTERN_C_BEGIN
 #  define PTR_ALIGN_UP(p, b) __builtin_align_up(p, b)
 #else
 #  define PTR_ALIGN_DOWN(p, b) \
-    ((ptr_t)((GC_uintptr_t)(p) & ~(GC_uintptr_t)((b)-1)))
-#  define PTR_ALIGN_UP(p, b)                             \
-    ((ptr_t)(((GC_uintptr_t)(p) + (GC_uintptr_t)((b)-1)) \
-             & ~(GC_uintptr_t)((b)-1)))
+    ((ptr_t)((GC_uintptr_t)(p) & ~((GC_uintptr_t)(b) - (GC_uintptr_t)1)))
+#  define PTR_ALIGN_UP(p, b)                                           \
+    ((ptr_t)(((GC_uintptr_t)(p) + (GC_uintptr_t)(b) - (GC_uintptr_t)1) \
+             & ~((GC_uintptr_t)(b) - (GC_uintptr_t)1)))
 #endif
 
 /* If available, we can use __builtin_unwind_init() to push the     */
@@ -1446,7 +1446,7 @@ extern int _etext, _end;
 #    ifndef USE_MMAP
 #      define USE_MMAP 1
 #    endif
-#    define MAP_FAILED (void *)((GC_uintptr_t)-1)
+#    define MAP_FAILED ((void *)(~(GC_uintptr_t)0))
 #    define HEAP_START ((word)0x40000000)
 #  endif /* DGUX */
 #  ifdef LINUX
@@ -2357,7 +2357,7 @@ LONG64 durango_get_stack_bottom(void);
 #    define PROT_EXEC 4
 #    define MAP_PRIVATE 2
 #    define MAP_FIXED 0x10
-#    define MAP_FAILED ((void *)-1)
+#    define MAP_FAILED ((void *)(~(GC_uintptr_t)0))
 #  endif
 #  ifdef MSWIN32
 #    define RETRY_GET_THREAD_CONTEXT
@@ -2471,9 +2471,9 @@ void *emmalloc_memalign(size_t align, size_t lb);
 #  ifdef WASI
 #    define OS_TYPE "WASI"
 extern char __global_base, __heap_base;
-#    define STACKBOTTOM ((ptr_t)&__global_base)
-#    define DATASTART ((ptr_t)&__global_base)
-#    define DATAEND ((ptr_t)&__heap_base)
+#    define DATASTART ((ptr_t)(&__global_base))
+#    define DATAEND ((ptr_t)(&__heap_base))
+#    define STACKBOTTOM DATASTART
 #    ifndef GC_NO_SIGSETJMP
 #      define GC_NO_SIGSETJMP 1 /* no support of signals */
 #    endif
@@ -3408,7 +3408,7 @@ extern ptr_t GC_data_start;
 #  define NEED_FIXUP_POINTER
 #elif defined(DYNAMIC_POINTER_MASK)
 #  define FIXUP_POINTER(p) \
-    (p = (ptr_t)(((word)(p)&GC_pointer_mask) << GC_pointer_shift))
+    (p = (ptr_t)((((word)(p)) & GC_pointer_mask) << GC_pointer_shift))
 #  undef POINTER_MASK
 #  undef POINTER_SHIFT
 #  define NEED_FIXUP_POINTER

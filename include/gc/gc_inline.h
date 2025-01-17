@@ -167,7 +167,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
             GC_end_stubborn_change(my_fl);                                \
             GC_reachable_here(next);                                      \
           }                                                               \
-          GC_ASSERT(GC_size(result) >= GC_GRANULE_BYTES * (lg));          \
+          GC_ASSERT(GC_size(result) >= GC_RAW_BYTES_FROM_INDEX(lg));      \
           GC_ASSERT((k) == GC_I_PTRFREE                                   \
                     || 0 /* NULL */ == ((void **)result)[1]);             \
           break;                                                          \
@@ -188,7 +188,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
                                  k, my_fl);                               \
           my_entry = *my_fl;                                              \
           if (0 /* NULL */ == my_entry) {                                 \
-            result = (*GC_get_oom_fn())(GC_GRANULE_BYTES * (lg));         \
+            result = (*GC_get_oom_fn())(GC_RAW_BYTES_FROM_INDEX(lg));     \
             break;                                                        \
           }                                                               \
         }                                                                 \
@@ -203,12 +203,13 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
 /* allocator lock.  The caller is responsible for supplying a cleared   */
 /* tiny_fl free-list array.  For single-threaded applications, this may */
 /* be a global array.                                                   */
-#define GC_MALLOC_WORDS_KIND(result, n, tiny_fl, k, init)                 \
-  do {                                                                    \
-    size_t lg = GC_PTRS_TO_WHOLE_GRANULES(n);                             \
-                                                                          \
-    GC_FAST_MALLOC_GRANS(result, lg, tiny_fl, 0 /* num_direct */, k,      \
-                         GC_malloc_kind((lg)*GC_GRANULE_BYTES, k), init); \
+#define GC_MALLOC_WORDS_KIND(result, n, tiny_fl, k, init)                \
+  do {                                                                   \
+    size_t lg = GC_PTRS_TO_WHOLE_GRANULES(n);                            \
+                                                                         \
+    GC_FAST_MALLOC_GRANS(result, lg, tiny_fl, 0 /* num_direct */, k,     \
+                         GC_malloc_kind(GC_RAW_BYTES_FROM_INDEX(lg), k), \
+                         init);                                          \
   } while (0)
 
 #define GC_MALLOC_WORDS(result, n, tiny_fl)             \

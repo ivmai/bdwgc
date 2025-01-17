@@ -929,10 +929,10 @@ EXTERN_C_BEGIN
 #endif
 
 #define BYTES_TO_GRANULES(lb) ((lb) / GC_GRANULE_BYTES)
-#define GRANULES_TO_BYTES(lg) ((lg)*GC_GRANULE_BYTES)
+#define GRANULES_TO_BYTES(lg) (GC_GRANULE_BYTES * (lg))
 #define BYTES_TO_PTRS(lb) ((lb) / sizeof(ptr_t))
 #define PTRS_TO_BYTES(lpw) ((lpw) * sizeof(ptr_t))
-#define GRANULES_TO_PTRS(lg) ((lg)*GC_GRANULE_PTRS)
+#define GRANULES_TO_PTRS(lg) (GC_GRANULE_PTRS * (lg))
 
 /* Convert size in bytes to that in pointers rounding up (but   */
 /* not adding extra byte at end).                               */
@@ -2032,7 +2032,7 @@ GC_INNER void GC_push_all_register_sections(
 #  define MARK_BIT_OFFSET(sz) BYTES_TO_GRANULES(sz)
 #  define FINAL_MARK_BIT(sz)                 \
     ((sz) > MAXOBJBYTES ? MARK_BITS_PER_HBLK \
-                        : BYTES_TO_GRANULES((sz)*HBLK_OBJS(sz)))
+                        : BYTES_TO_GRANULES(HBLK_OBJS(sz) * (sz)))
 #endif /* !MARK_BIT_PER_OBJ */
 
 /* Important internal collector routines.       */
@@ -2183,15 +2183,15 @@ ptr_t GC_save_regs_in_stack(void);
     } while (0)
 
 #  ifdef THREADS
-#    define PS_COMPUTE_ADJUSTED_OFS(padj_ps_ofs, ps_ofs, ofs_sz_ull)   \
-      do {                                                             \
-        if ((ofs_sz_ull) <= (ps_ofs) /* && ofs_sz_ull > 0 */)          \
-          ABORT_ARG2("Incorrect size of procedure stack",              \
-                     ": ofs= %lu, size= %lu", (unsigned long)(ps_ofs), \
-                     (unsigned long)(ofs_sz_ull));                     \
-        *(padj_ps_ofs) = (ps_ofs) > PS_SYSCALL_TAIL_BYTES              \
-                             ? (ps_ofs)-PS_SYSCALL_TAIL_BYTES          \
-                             : 0;                                      \
+#    define PS_COMPUTE_ADJUSTED_OFS(padj_ps_ofs, ps_ofs, ofs_sz_ull)      \
+      do {                                                                \
+        if ((ofs_sz_ull) <= (ps_ofs) /* && ofs_sz_ull > 0 */)             \
+          ABORT_ARG2("Incorrect size of procedure stack",                 \
+                     ": ofs= %lu, size= %lu", (unsigned long)(ps_ofs),    \
+                     (unsigned long)(ofs_sz_ull));                        \
+        *(padj_ps_ofs) = (ps_ofs) > (unsigned)PS_SYSCALL_TAIL_BYTES       \
+                             ? (ps_ofs) - (unsigned)PS_SYSCALL_TAIL_BYTES \
+                             : 0;                                         \
       } while (0)
 #  else
 /* A simplified variant of the above assuming ps_ofs is a zero const. */
@@ -3165,7 +3165,10 @@ GC_INNER word GC_compute_root_size(void);
     static_assert(expr, "static assertion failed: " #expr)
 #elif defined(static_assert) && !defined(CPPCHECK) \
     && (__STDC_VERSION__ >= 201112L)
-#  define GC_STATIC_ASSERT(expr) static_assert(expr, #  expr)
+#  define GC_STATIC_ASSERT(expr)                                        \
+    do { /* wrap into do-while for proper formatting by clang-format */ \
+      static_assert(expr, #expr);                                       \
+    } while (0)
 #elif defined(mips) && !defined(__GNUC__) && !defined(CPPCHECK)
 /* DOB: MIPSPro C gets an internal error taking the sizeof an array type.
    This code works correctly (ugliness is to avoid "unused var" warnings) */
