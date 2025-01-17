@@ -429,8 +429,8 @@ GC_prev_block(struct hblk *h)
       } else if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
         j -= (GC_signed_word)ADDR(hhdr);
       } else {
-        /* TODO: return hhdr -> hb_block instead */
-        return (struct hblk *)MAKE_CPTR(HBLK_ADDR(bi, j));
+        GC_ASSERT(HBLK_ADDR(bi, j) == ADDR(hhdr->hb_block));
+        return hhdr->hb_block;
       }
     }
     j = BOTTOM_SZ - 1;

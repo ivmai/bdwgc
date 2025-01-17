@@ -688,6 +688,7 @@ GC_split_block(struct hblk *hbp, hdr *hhdr, struct hblk *last_hbp,
   /* Replace hbp with last_hbp on its free list.  */
   last_hdr->hb_prev = prev;
   last_hdr->hb_next = next;
+  last_hdr->hb_block = last_hbp;
   last_hdr->hb_sz = hhdr->hb_sz - h_size;
   last_hdr->hb_flags = 0;
   if (prev /* != NULL */) { /* CPPCHECK */

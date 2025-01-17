@@ -1576,6 +1576,7 @@ GC_add_to_heap(struct hblk *h, size_t sz)
   GC_heap_sects[GC_n_heap_sects].hs_start = (ptr_t)h;
   GC_heap_sects[GC_n_heap_sects].hs_bytes = sz;
   GC_n_heap_sects++;
+  hhdr->hb_block = h;
   hhdr->hb_sz = sz;
   hhdr->hb_flags = 0;
   GC_freehblk(h);
