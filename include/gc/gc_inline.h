@@ -144,56 +144,56 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
 /* We rely on much of this hopefully getting optimized away in the      */
 /* case of num_direct is 0.  Particularly, if lg argument is constant,  */
 /* this should generate a small amount of code.                         */
-#define GC_FAST_MALLOC_GRANS(result, lg, tiny_fl, num_direct, k,          \
-                             default_expr, init)                          \
-  do {                                                                    \
-    if (GC_EXPECT((lg) >= GC_TINY_FREELISTS, 0)) {                        \
-      result = (default_expr);                                            \
-    } else {                                                              \
-      void **my_fl = (tiny_fl) + (lg);                                    \
-      void *my_entry = *my_fl;                                            \
-      void *next;                                                         \
-                                                                          \
-      for (;;) {                                                          \
-        if (GC_EXPECT((GC_word)(GC_uintptr_t)my_entry                     \
-                          > (num_direct) + GC_TINY_FREELISTS + 1,         \
-                      1)) {                                               \
-          next = *(void **)(my_entry);                                    \
-          result = my_entry;                                              \
-          GC_FAST_M_AO_STORE(my_fl, next);                                \
-          init;                                                           \
-          GC_PREFETCH_FOR_WRITE(next);                                    \
-          if ((k) != GC_I_PTRFREE) {                                      \
-            GC_end_stubborn_change(my_fl);                                \
-            GC_reachable_here(next);                                      \
-          }                                                               \
-          GC_ASSERT(GC_size(result) >= GC_RAW_BYTES_FROM_INDEX(lg));      \
-          GC_ASSERT((k) == GC_I_PTRFREE                                   \
-                    || 0 /* NULL */ == ((void **)result)[1]);             \
-          break;                                                          \
-        }                                                                 \
-        /* Entry contains counter or NULL. */                             \
-        if ((GC_signed_word)(GC_uintptr_t)my_entry                        \
-                    - (GC_signed_word)(num_direct)                        \
-                <= 0 /* (GC_uintptr_t)my_entry <= num_direct */           \
-            && my_entry != 0 /* NULL */) {                                \
-          /* Small counter value, not NULL. */                            \
-          GC_FAST_M_AO_STORE(my_fl, (char *)my_entry + (lg) + 1);         \
-          result = (default_expr);                                        \
-          break;                                                          \
-        } else {                                                          \
-          /* Large counter or NULL. */                                    \
-          GC_generic_malloc_many(0 == (lg) ? GC_GRANULE_BYTES             \
-                                           : GC_RAW_BYTES_FROM_INDEX(lg), \
-                                 k, my_fl);                               \
-          my_entry = *my_fl;                                              \
-          if (0 /* NULL */ == my_entry) {                                 \
-            result = (*GC_get_oom_fn())(GC_RAW_BYTES_FROM_INDEX(lg));     \
-            break;                                                        \
-          }                                                               \
-        }                                                                 \
-      }                                                                   \
-    }                                                                     \
+#define GC_FAST_MALLOC_GRANS(result, lg, tiny_fl, num_direct, k,         \
+                             default_expr, init)                         \
+  do {                                                                   \
+    if (GC_EXPECT((lg) >= GC_TINY_FREELISTS, 0)) {                       \
+      result = (default_expr);                                           \
+    } else {                                                             \
+      void **my_fl = (tiny_fl) + (lg);                                   \
+      void *my_entry = *my_fl;                                           \
+      void *next;                                                        \
+                                                                         \
+      for (;;) {                                                         \
+        if (GC_EXPECT((GC_word)(GC_uintptr_t)my_entry                    \
+                          > (num_direct) + GC_TINY_FREELISTS + 1,        \
+                      1)) {                                              \
+          next = *(void **)(my_entry);                                   \
+          result = my_entry;                                             \
+          GC_FAST_M_AO_STORE(my_fl, next);                               \
+          init;                                                          \
+          GC_PREFETCH_FOR_WRITE(next);                                   \
+          if ((k) != GC_I_PTRFREE) {                                     \
+            GC_end_stubborn_change(my_fl);                               \
+            GC_reachable_here(next);                                     \
+          }                                                              \
+          GC_ASSERT(GC_size(result) >= GC_RAW_BYTES_FROM_INDEX(lg));     \
+          GC_ASSERT((k) == GC_I_PTRFREE                                  \
+                    || 0 /* NULL */ == ((void **)result)[1]);            \
+          break;                                                         \
+        }                                                                \
+        /* Entry contains counter or NULL. */                            \
+        if ((GC_signed_word)(GC_uintptr_t)my_entry                       \
+                    - (GC_signed_word)(num_direct)                       \
+                <= 0 /* (GC_uintptr_t)my_entry <= num_direct */          \
+            && my_entry != 0 /* NULL */) {                               \
+          /* Small counter value, not NULL. */                           \
+          GC_FAST_M_AO_STORE(my_fl, (char *)my_entry + (lg) + 1);        \
+          result = (default_expr);                                       \
+          break;                                                         \
+        } else {                                                         \
+          /* Large counter or NULL. */                                   \
+          size_t lb_adj = GC_RAW_BYTES_FROM_INDEX(0 == (lg) ? 1 : (lg)); \
+                                                                         \
+          GC_generic_malloc_many(lb_adj, k, my_fl);                      \
+          my_entry = *my_fl;                                             \
+          if (0 /* NULL */ == my_entry) {                                \
+            result = (*GC_get_oom_fn())(lb_adj);                         \
+            break;                                                       \
+          }                                                              \
+        }                                                                \
+      }                                                                  \
+    }                                                                    \
   } while (0)
 
 /* Allocate n "pointer-sized" words.  The allocation size is            */
