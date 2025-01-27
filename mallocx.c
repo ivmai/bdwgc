@@ -294,9 +294,7 @@ GC_generic_malloc_many(size_t lb_adjusted, int k, void **result)
   LOCK();
   /* Do our share of marking work.    */
   if (GC_incremental && !GC_dont_gc) {
-    ENTER_GC();
     GC_collect_a_little_inner(1);
-    EXIT_GC();
   }
 
   /* First see if we can reclaim a page of objects waiting to be */

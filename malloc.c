@@ -61,9 +61,7 @@ GC_alloc_large(size_t lb_adjusted, int k, unsigned flags, size_t align_m1)
   }
   /* Do our share of marking work.    */
   if (GC_incremental && !GC_dont_gc) {
-    ENTER_GC();
     GC_collect_a_little_inner(n_blocks);
-    EXIT_GC();
   }
 
   h = GC_allochblk(lb_adjusted, k, flags, align_m1);

@@ -462,9 +462,7 @@ GC_start_incremental_collection(void)
   if (GC_incremental) {
     GC_should_start_incremental_collection = TRUE;
     if (!GC_dont_gc) {
-      ENTER_GC();
       GC_collect_a_little_inner(1);
-      EXIT_GC();
     }
   }
   UNLOCK();
@@ -634,9 +632,7 @@ GC_try_to_collect_inner(GC_stop_func stop_func)
         /* TODO: Notify GC_EVENT_ABANDON */
         return FALSE;
       }
-      ENTER_GC();
       GC_collect_a_little_inner(1);
-      EXIT_GC();
     } while (GC_collection_in_progress());
   }
   GC_notify_full_gc();
@@ -770,6 +766,7 @@ GC_collect_a_little_inner(size_t n_blocks)
 
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(GC_is_initialized);
+  ENTER_GC();
   DISABLE_CANCEL(cancel_state);
   if (GC_incremental && GC_collection_in_progress()) {
     size_t i;
@@ -815,6 +812,7 @@ GC_collect_a_little_inner(size_t n_blocks)
     GC_maybe_gc();
   }
   RESTORE_CANCEL(cancel_state);
+  EXIT_GC();
 }
 
 GC_INNER void (*GC_check_heap)(void) = 0;
@@ -828,11 +826,9 @@ GC_collect_a_little(void)
   if (!EXPECT(GC_is_initialized, TRUE))
     GC_init();
   LOCK();
-  ENTER_GC();
   /* Note: if the collection is in progress, this may do marking (not */
   /* stopping the world) even in case of disabled GC.                 */
   GC_collect_a_little_inner(1);
-  EXIT_GC();
   result = (int)GC_collection_in_progress();
   UNLOCK();
   if (!result && GC_debugging_started)
@@ -1932,7 +1928,6 @@ GC_allocobj(size_t lg, int k)
     return NULL;
 
   while (NULL == *flh) {
-    ENTER_GC();
 #ifndef GC_DISABLE_INCREMENTAL
     if (GC_incremental && GC_time_limit != GC_TIME_UNLIMITED && !GC_dont_gc) {
       /* True incremental mode, not just generational.      */
@@ -1944,7 +1939,6 @@ GC_allocobj(size_t lg, int k)
     GC_ASSERT(!GC_is_full_gc || NULL == GC_obj_kinds[k].ok_reclaim_list
               || NULL == GC_obj_kinds[k].ok_reclaim_list[lg]);
     GC_continue_reclaim(lg, k);
-    EXIT_GC();
 #if defined(CPPCHECK)
     GC_noop1_ptr(&flh);
 #endif
@@ -1954,19 +1948,19 @@ GC_allocobj(size_t lg, int k)
       GC_noop1_ptr(&flh);
 #endif
       if (NULL == *flh) {
-        ENTER_GC();
         if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED
             && !tried_minor && !GC_dont_gc) {
           GC_collect_a_little_inner(1);
           tried_minor = TRUE;
         } else {
+          ENTER_GC();
           if (!GC_collect_or_expand(1, 0 /* flags */, retry)) {
             EXIT_GC();
             return NULL;
           }
+          EXIT_GC();
           retry = TRUE;
         }
-        EXIT_GC();
       }
     }
   }

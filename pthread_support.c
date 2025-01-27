@@ -1283,12 +1283,10 @@ GC_wait_for_gc_completion(GC_bool wait_for_all)
     /* code defect about missing unlock after lock.               */
 #    endif
     do {
-      ENTER_GC();
       GC_ASSERT(!GC_in_thread_creation);
       GC_in_thread_creation = TRUE;
       GC_collect_a_little_inner(1);
       GC_in_thread_creation = FALSE;
-      EXIT_GC();
 
       UNLOCK();
 #    ifdef GC_WIN32_THREADS
