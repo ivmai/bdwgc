@@ -845,6 +845,7 @@ GC_stop_world_external(void)
 #  ifdef THREAD_LOCAL_ALLOC
   GC_ASSERT(!GC_world_stopped);
 #  endif
+  ENTER_GC();
   STOP_WORLD();
 #  ifdef THREAD_LOCAL_ALLOC
   GC_world_stopped = TRUE;
@@ -861,6 +862,7 @@ GC_start_world_external(void)
   GC_ASSERT(GC_is_initialized);
 #  endif
   START_WORLD();
+  EXIT_GC();
   UNLOCK();
 }
 #endif /* THREADS */
