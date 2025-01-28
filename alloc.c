@@ -558,9 +558,9 @@ GC_maybe_gc(void)
     GC_COND_LOG_PRINTF(
         "***>Full mark for collection #%lu after %lu allocd bytes\n",
         (unsigned long)GC_gc_no + 1, (unsigned long)GC_bytes_allocd);
+    GC_notify_full_gc();
     GC_promote_black_lists();
     (void)GC_reclaim_all((GC_stop_func)0, TRUE);
-    GC_notify_full_gc();
     GC_clear_marks();
     n_partial_gcs = 0;
     GC_is_full_gc = TRUE;
