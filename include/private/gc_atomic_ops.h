@@ -105,6 +105,8 @@ AO_nop_full(void)
 #  define AO_HAVE_char_load
 #  define AO_char_store(p, v) __atomic_store_n(p, v, __ATOMIC_RELAXED)
 #  define AO_HAVE_char_store
+#  define AO_char_fetch_and_add1(p) __atomic_fetch_add(p, 1, __ATOMIC_RELAXED)
+#  define AO_HAVE_char_fetch_and_add1
 
 #  ifdef AO_REQUIRE_CAS
 AO_INLINE int

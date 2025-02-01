@@ -559,9 +559,11 @@ GC_maybe_gc(void)
         "***>Full mark for collection #%lu after %lu allocd bytes\n",
         (unsigned long)GC_gc_no + 1, (unsigned long)GC_bytes_allocd);
     GC_notify_full_gc();
+    ENTER_GC();
     GC_promote_black_lists();
     (void)GC_reclaim_all((GC_stop_func)0, TRUE);
     GC_clear_marks();
+    EXIT_GC();
     n_partial_gcs = 0;
     GC_is_full_gc = TRUE;
   } else {
@@ -655,16 +657,19 @@ GC_try_to_collect_inner(GC_stop_func stop_func)
   if (GC_parallel)
     GC_wait_for_reclaim();
 #endif
+  ENTER_GC();
   if ((GC_find_leak || stop_func != GC_never_stop_func)
       && !GC_reclaim_all(stop_func, FALSE)) {
     /* Aborted.  So far everything is still consistent. */
+    EXIT_GC();
     /* TODO: Notify GC_EVENT_ABANDON */
     return FALSE;
   }
-  GC_invalidate_mark_state(); /* Flush mark stack.   */
+  GC_invalidate_mark_state(); /* flush mark stack */
   GC_clear_marks();
   SAVE_CALLERS_TO_LAST_STACK();
   GC_is_full_gc = TRUE;
+  EXIT_GC();
   if (!GC_stopped_mark(stop_func)) {
     if (!GC_incremental) {
       /* We're partially done and have no way to complete or use      */
@@ -766,12 +771,12 @@ GC_collect_a_little_inner(size_t n_blocks)
 
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(GC_is_initialized);
-  ENTER_GC();
   DISABLE_CANCEL(cancel_state);
   if (GC_incremental && GC_collection_in_progress()) {
     size_t i;
     size_t max_deficit = GC_rate * n_blocks;
 
+    ENTER_GC();
 #ifdef PARALLEL_MARK
     if (GC_time_limit != GC_TIME_UNLIMITED)
       GC_parallel_mark_disabled = TRUE;
@@ -783,6 +788,7 @@ GC_collect_a_little_inner(size_t n_blocks)
 #ifdef PARALLEL_MARK
     GC_parallel_mark_disabled = FALSE;
 #endif
+    EXIT_GC();
 
     if (i < max_deficit && !GC_dont_gc) {
       GC_ASSERT(!GC_collection_in_progress());
@@ -812,7 +818,6 @@ GC_collect_a_little_inner(size_t n_blocks)
     GC_maybe_gc();
   }
   RESTORE_CANCEL(cancel_state);
-  EXIT_GC();
 }
 
 GC_INNER void (*GC_check_heap)(void) = 0;
@@ -895,6 +900,7 @@ GC_stopped_mark(GC_stop_func stop_func)
 
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(GC_is_initialized);
+  ENTER_GC();
 #if !defined(REDIRECT_MALLOC) && defined(USE_WINALLOC)
   GC_add_current_malloc_heap();
 #endif
@@ -1037,6 +1043,7 @@ GC_stopped_mark(GC_stop_func stop_func)
   }
 #endif
 
+  EXIT_GC();
   if (0 == abandoned_at)
     return TRUE;
   GC_COND_LOG_PRINTF("Abandoned stopped marking after %u iterations\n",
@@ -1421,12 +1428,10 @@ GC_try_to_collect_general(GC_stop_func stop_func, GC_bool force_unmap)
   if (force_unmap || (GC_force_unmap_on_gcollect && old_unmap_threshold > 0))
     GC_unmap_threshold = 1; /* unmap as much as possible */
 #endif
-  ENTER_GC();
   /* Minimize junk left in my registers.      */
   GC_noop6(0, 0, 0, 0, 0, 0);
   result = GC_try_to_collect_inner(stop_func != 0 ? stop_func
                                                   : GC_default_stop_func);
-  EXIT_GC();
 #ifdef USE_MUNMAP
   /* Restore it.  */
   GC_unmap_threshold = old_unmap_threshold;
@@ -1955,12 +1960,9 @@ GC_allocobj(size_t lg, int k)
           GC_collect_a_little_inner(1);
           tried_minor = TRUE;
         } else {
-          ENTER_GC();
           if (!GC_collect_or_expand(1, 0 /* flags */, retry)) {
-            EXIT_GC();
             return NULL;
           }
-          EXIT_GC();
           retry = TRUE;
         }
       }

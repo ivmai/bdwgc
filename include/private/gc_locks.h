@@ -307,7 +307,12 @@ GC_INNER void GC_lock(void);
 #    if !defined(GC_WIN32_THREADS)
 GC_EXTERN volatile unsigned char GC_collecting;
 #      ifdef AO_HAVE_char_store
-#        define ENTER_GC() AO_char_store(&GC_collecting, TRUE)
+#        if defined(GC_ASSERTIONS) && defined(AO_HAVE_char_fetch_and_add1)
+/* Ensure ENTER_GC() is not used recursively. */
+#          define ENTER_GC() GC_ASSERT(!AO_char_fetch_and_add1(&GC_collecting))
+#        else
+#          define ENTER_GC() AO_char_store(&GC_collecting, TRUE)
+#        endif
 #        define EXIT_GC() AO_char_store(&GC_collecting, FALSE)
 #      else
 #        define ENTER_GC() (void)(GC_collecting = TRUE)
