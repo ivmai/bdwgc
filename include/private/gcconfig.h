@@ -924,6 +924,8 @@ EXTERN_C_BEGIN
      && !(defined(POWERPC) && defined(DARWIN)) /* for MacOS X 10.3.9 */ \
      && !defined(E2K) && !defined(RTEMS) \
      && !defined(__ARMCC_VERSION) /* does not exist in armcc gnu emu */ \
+     && !(defined(__clang__) \
+          && defined(__ARM_ARCH_5TE__) /* clang-19 emits vpush/vpop */) \
      && (!defined(__clang__) \
          || GC_CLANG_PREREQ(8, 0) /* was no-op in clang-3 at least */)
 #   define HAVE_BUILTIN_UNWIND_INIT
