@@ -209,7 +209,6 @@ jobs:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check cord/de"
   - os: freebsd
-    compiler: gcc
     env:
     - CONF_OPTIONS="--enable-cplusplus --enable-gc-assertions"
     - MAKE_NPROC=8
@@ -230,7 +229,6 @@ jobs:
     - CMAKE_OPTIONS="-Denable_cplusplus=ON"
     - NO_CLONE_LIBATOMIC_OPS=true
   - os: freebsd
-    compiler: clang
     env:
     - MAKEFILE_NAME=Makefile.direct
     - MAKEFILE_TARGETS="check cord/de"
