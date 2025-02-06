@@ -3932,6 +3932,8 @@ GC_proc_read_dirty(GC_bool output_unneeded)
     GC_log_printf("pr_vaddr= %p, npage= %lu, mflags= 0x%x, pagesize= 0x%x\n",
                   (void *)vaddr, npages, map->pr_mflags, pagesize);
 #  endif
+    if (0 == pagesize || ((pagesize - 1) & pagesize) != 0)
+      ABORT("Wrong pagesize read from /proc");
 
     limit = vaddr + pagesize * npages;
     for (; ADDR_LT(vaddr, limit); vaddr += pagesize) {
