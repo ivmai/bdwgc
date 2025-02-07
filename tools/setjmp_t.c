@@ -22,6 +22,7 @@
 /* safe, but this will not be noticed by this piece of       */
 /* code.)  This test appears to be far from perfect.         */
 
+#define NOT_GCBUILD
 #include "private/gc_priv.h"
 
 #include <string.h>
