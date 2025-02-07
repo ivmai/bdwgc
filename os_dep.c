@@ -3769,17 +3769,17 @@ static pid_t saved_proc_pid; /* pid used to compose /proc file names */
 /* This exists only to check PROC_VDB code compilation (on Linux).  */
 #    define PG_MODIFIED 1
 struct prpageheader {
-  int dummy[2]; /* pr_tstamp */
-  unsigned long pr_nmap;
-  unsigned long pr_npage;
+  long dummy[2]; /* pr_tstamp */
+  long pr_nmap;
+  long pr_npage;
 };
 struct prasmap {
-  char *pr_vaddr;
+  uintptr_t pr_vaddr;
   size_t pr_npage;
   char dummy1[64 + 8]; /* pr_mapname, pr_offset */
-  unsigned pr_mflags;
-  unsigned pr_pagesize;
-  int dummy2[2];
+  int pr_mflags;
+  int pr_pagesize;
+  int dummy2[2]; /* pr_shmid, pr_filler */
 };
 #  else
 #    include <sys/fault.h>
@@ -3903,7 +3903,7 @@ GC_proc_read_dirty(GC_bool output_unneeded)
   /* Copy dirty bits into GC_grungy_pages.    */
   nmaps = (size_t)(((struct prpageheader *)bufp)->pr_nmap);
 #  ifdef DEBUG_DIRTY_BITS
-  GC_log_printf("Proc VDB read: pr_nmap= %u, pr_npage= %lu\n", (unsigned)nmaps,
+  GC_log_printf("Proc VDB read: pr_nmap= %u, pr_npage= %ld\n", (unsigned)nmaps,
                 ((struct prpageheader *)bufp)->pr_npage);
 #  endif
 #  if defined(GC_NO_SYS_FAULT_H) && defined(CPPCHECK)
@@ -3919,12 +3919,12 @@ GC_proc_read_dirty(GC_bool output_unneeded)
     bufp += sizeof(struct prasmap);
     /* Ensure no buffer overrun. */
     if (bufp - GC_proc_buf < pagedata_len)
-      npages = map->pr_npage;
+      npages = (unsigned long)map->pr_npage;
     if (bufp - GC_proc_buf > pagedata_len - (ssize_t)npages)
       ABORT("Wrong pr_nmap or pr_npage read from /proc");
 
     vaddr = (ptr_t)map->pr_vaddr;
-    pagesize = map->pr_pagesize;
+    pagesize = (unsigned)map->pr_pagesize;
 #  if defined(GC_NO_SYS_FAULT_H) && defined(CPPCHECK)
     GC_noop1(map->dummy1[0] + map->dummy2[0]);
 #  endif
