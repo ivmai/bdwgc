@@ -606,7 +606,7 @@ case "$host" in
     AC_DEFINE(SUNOS53_SHARED_LIB, 1,
               [Define to work around a Solaris 5.3 bug (see dyn_load.c).])
     ;;
-  sparc*-sun-solaris2*)
+  sparc*-sun-solaris*)
     machdep="sparc_mach_dep.lo"
     compile_asm=true
     ;;
