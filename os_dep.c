@@ -3646,7 +3646,7 @@ STATIC void GC_protect_heap(void)
 #endif
 
 #ifdef PROC_VDB
-/* This implementation assumes a Solaris 2.X like /proc                 */
+/* This implementation assumes the Solaris new structured /proc         */
 /* pseudo-file-system from which we can read page modified bits.  This  */
 /* facility is far from optimal (e.g. we would like to get the info for */
 /* only some of the address space), but it avoids intercepting system   */
@@ -3675,8 +3675,8 @@ STATIC void GC_protect_heap(void)
       int dummy2[2];
     };
 # else
-#   include <sys/fault.h>
-#   include <sys/procfs.h>
+    /* Use the new structured /proc definitions. */
+#   include <procfs.h>
 # endif
 
 # define INITIAL_BUF_SZ 16384
@@ -3833,8 +3833,10 @@ GC_INLINE void GC_proc_read_dirty(GC_bool output_unneeded)
                 }
             }
         }
-        bufp = (char *)(((word)bufp + (sizeof(long)-1))
-                        & ~(word)(sizeof(long)-1));
+        /* According to the new structured "pagedata" file format,  */
+        /* an 8-byte alignment is enforced (preceding the next      */
+        /* struct prasmap) regardless of the pointer size.          */
+        bufp = (char *)(((word)bufp + 7) & ~(word)7);
     }
 #   ifdef DEBUG_DIRTY_BITS
       GC_log_printf("Proc VDB read done\n");
