@@ -3754,7 +3754,7 @@ static pid_t saved_proc_pid; /* pid used to compose /proc file names */
 #endif
 
 #ifdef PROC_VDB
-/* This implementation assumes a Solaris 2.X like /proc               */
+/* This implementation assumes the Solaris new structured /proc       */
 /* pseudo-file-system from which we can read page modified bits.      */
 /* This facility is far from optimal (e.g. we would like to get the   */
 /* info for only some of the address space), but it avoids            */
@@ -3782,8 +3782,8 @@ struct prasmap {
   int dummy2[2]; /* pr_shmid, pr_filler */
 };
 #  else
-#    include <sys/fault.h>
-#    include <sys/procfs.h>
+/* Use the new structured /proc definitions. */
+#    include <procfs.h>
 #  endif
 
 #  define INITIAL_BUF_SZ 16384
@@ -3951,7 +3951,10 @@ GC_proc_read_dirty(GC_bool output_unneeded)
         }
       }
     }
-    bufp = PTR_ALIGN_UP(bufp, sizeof(long));
+    /* According to the new structured "pagedata" file format,  */
+    /* an 8-byte alignment is enforced (preceding the next      */
+    /* struct prasmap) regardless of the pointer size.          */
+    bufp = PTR_ALIGN_UP(bufp, 8);
   }
 #  ifdef DEBUG_DIRTY_BITS
   GC_log_printf("Proc VDB read done\n");
