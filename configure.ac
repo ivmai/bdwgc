@@ -592,11 +592,6 @@ case "$host" in
          "OpenBSD/Alpha without dlopen(). Shared library support is disabled.")
     fi
     ;;
-  i?86-*-solaris2.[[89]])
-    # PROC_VDB appears to work in 2.8 and 2.9 but not in 2.10+ (for now).
-    AC_DEFINE([SOLARIS25_PROC_VDB_BUG_FIXED], 1,
-              [See the comment in gcconfig.h.])
-    ;;
   sparc-*-netbsd*)
     machdep="sparc_netbsd_mach_dep.lo"
     compile_asm=true

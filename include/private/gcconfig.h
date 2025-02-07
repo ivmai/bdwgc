@@ -1416,11 +1416,7 @@ extern int etext[];
 #  ifdef SOLARIS
 extern int _etext[];
 #    define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
-/* At least in Solaris 2.5, PROC_VDB gives wrong values for     */
-/* dirty bits.  It appears to be fixed in 2.8 and 2.9.          */
-#    ifdef SOLARIS25_PROC_VDB_BUG_FIXED
-#      define PROC_VDB
-#    endif
+#    define PROC_VDB
 #  endif
 #  ifdef SCO
 #    define OS_TYPE "SCO"
@@ -2326,9 +2322,7 @@ extern int _end[];
 #    define ELF_CLASS ELFCLASS64
 extern int _etext[];
 #    define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
-#    ifdef SOLARIS25_PROC_VDB_BUG_FIXED
-#      define PROC_VDB
-#    endif
+#    define PROC_VDB
 #  endif
 #  ifdef CYGWIN32
 #    ifndef USE_WINALLOC

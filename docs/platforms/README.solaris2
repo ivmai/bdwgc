@@ -1,5 +1,5 @@
 The collector supports both incremental collection and threads under
-Solaris 2.  The incremental collector normally retrieves page dirty information
+Solaris.  The incremental collector normally retrieves page dirty information
 through the appropriate /proc calls.  But it can also be configured
 (by defining MPROTECT_VDB instead of PROC_VDB in gcconfig.h) to use mprotect
 and signals.  This may result in shorter pause times, but it is no longer
@@ -13,8 +13,8 @@ not safe: "Many library routines use malloc() internally, so use brk()
 and sbrk() only when you know that malloc() definitely will not be used by
 any library routine."  This doesn't make a lot of sense to me, since there
 seems to be no documentation as to which routines can transitively call malloc.
-Nonetheless, under Solaris2, the collector now allocates
-memory using mmap by default.  (It defines USE_MMAP in gcconfig.h.)
+Nonetheless, under Solaris, the collector now allocates memory using mmap by
+default.  (It defines USE_MMAP in gcconfig.h.)
 You may want to reverse this decisions if you use -DREDIRECT_MALLOC=...
 
 Note:
