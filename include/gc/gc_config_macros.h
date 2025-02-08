@@ -380,7 +380,7 @@ typedef long ptrdiff_t;
 #  endif
 
 #  if defined(GC_HAVE_BUILTIN_BACKTRACE) && !defined(GC_CAN_SAVE_CALL_STACKS) \
-      || defined(__sparc__)
+      || defined(__sparc)
 #    define GC_CAN_SAVE_CALL_STACKS
 #  endif
 

@@ -566,7 +566,7 @@ EXTERN_C_BEGIN
     && (defined(LINUX) || defined(NETBSD) || defined(OPENBSD))
 #  define SH
 #  define mach_type_known
-#elif (defined(__sparc__) || defined(sparc)) \
+#elif (defined(__sparc) || defined(sparc)) \
     && (defined(ANY_BSD) || defined(LINUX))
 #  define SPARC
 #  define mach_type_known
