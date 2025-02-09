@@ -3774,7 +3774,7 @@ struct prpageheader {
   long pr_npage;
 };
 struct prasmap {
-  uintptr_t pr_vaddr;
+  GC_uintptr_t pr_vaddr;
   size_t pr_npage;
   char dummy1[64 + 8]; /* pr_mapname, pr_offset */
   int pr_mflags;
