@@ -3873,34 +3873,41 @@ GC_proc_read_dirty(GC_bool output_unneeded)
   }
 #  endif
 
-  BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
-  pagedata_len = PROC_READ(GC_proc_fd, bufp, GC_proc_buf_size);
-  if (pagedata_len <= 0) {
-    /* Retry with larger buffer.    */
-    size_t new_size = 2 * GC_proc_buf_size;
+  for (;;) {
     char *new_buf;
+    size_t new_size;
 
-    WARN("/proc read failed (buffer size is %" WARN_PRIuPTR " bytes)\n",
-         GC_proc_buf_size);
-    new_buf = GC_scratch_alloc(new_size);
-    if (new_buf != 0) {
-      GC_scratch_recycle_no_gww(bufp, GC_proc_buf_size);
-      GC_proc_buf = bufp = new_buf;
-      GC_proc_buf_size = new_size;
-    }
     pagedata_len = PROC_READ(GC_proc_fd, bufp, GC_proc_buf_size);
-    if (pagedata_len <= 0) {
-      WARN("Insufficient space for /proc read\n", 0);
-      /* Punt:        */
+    if (EXPECT(pagedata_len != -1, TRUE))
+      break;
+    if (errno != E2BIG) {
+      WARN("read /proc failed, errno= %" WARN_PRIdPTR "\n",
+           (GC_signed_word)errno);
+      /* Punt: */
       if (!output_unneeded)
         memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
       memset(GC_written_pages, 0xff, sizeof(page_hash_table));
       return;
     }
+    /* Retry with larger buffer. */
+    new_size = 2 * GC_proc_buf_size;
+    /* Alternatively, we could use fstat() to determine the required    */
+    /* buffer size.                                                     */
+#  ifdef DEBUG_DIRTY_BITS
+    GC_log_printf("Growing proc buf to %lu bytes at collection #%lu\n",
+                  (unsigned long)new_size, (unsigned long)GC_gc_no + 1);
+#  endif
+    new_buf = GC_scratch_alloc(new_size);
+    if (new_buf != NULL) {
+      GC_scratch_recycle_no_gww(bufp, GC_proc_buf_size);
+      GC_proc_buf = bufp = new_buf;
+      GC_proc_buf_size = new_size;
+    }
   }
   GC_ASSERT((size_t)pagedata_len <= GC_proc_buf_size);
 
   /* Copy dirty bits into GC_grungy_pages.    */
+  BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
   nmaps = (size_t)(((struct prpageheader *)bufp)->pr_nmap);
 #  ifdef DEBUG_DIRTY_BITS
   GC_log_printf("Proc VDB read: pr_nmap= %u, pr_npage= %ld\n", (unsigned)nmaps,
