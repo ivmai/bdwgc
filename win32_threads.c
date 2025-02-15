@@ -431,7 +431,7 @@ GC_suspend(GC_thread t)
     GC_acquire_dirty_lock();
   }
 #  elif defined(RETRY_GET_THREAD_CONTEXT)
-  for (retry_cnt = 0;;) {
+  for (retry_cnt = 0; t->handle != NULL;) {
     /* Apparently the Windows 95 GetOpenFileName call creates         */
     /* a thread that does not properly get cleaned up, and            */
     /* SuspendThread on its descriptor may provoke a crash.           */
@@ -487,12 +487,13 @@ GC_suspend(GC_thread t)
 #    endif
     return;
   }
-  if (SuspendThread(t->handle) == (DWORD)-1)
+  if (SuspendThread(t->handle) == (DWORD)-1 && t->handle != NULL)
     ABORT("SuspendThread failed");
 #  endif
-  t->flags |= IS_SUSPENDED;
+  if (THREAD_HANDLE(t) != NULL)
+    t->flags |= IS_SUSPENDED;
   GC_release_dirty_lock();
-  if (GC_on_thread_event)
+  if (THREAD_HANDLE(t) != NULL && GC_on_thread_event)
     GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED, THREAD_HANDLE(t));
 }
 
