@@ -3786,7 +3786,7 @@ struct prasmap {
 #    include <procfs.h>
 #  endif
 
-#  define INITIAL_BUF_SZ 16384
+#  define INITIAL_BUF_SZ 8192
 STATIC size_t GC_proc_buf_size = INITIAL_BUF_SZ;
 STATIC char *GC_proc_buf = NULL;
 STATIC int GC_proc_fd = -1;
