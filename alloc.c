@@ -1925,9 +1925,10 @@ GC_collect_or_expand(word needed_blocks, unsigned flags, GC_bool retry)
 GC_INNER ptr_t
 GC_allocobj(size_t lg, int k)
 {
+#define MAX_ALLOCOBJ_RETRIES 3
+  int retry_cnt = 0;
   void **flh = &GC_obj_kinds[k].ok_freelist[lg];
   GC_bool tried_minor = FALSE;
-  GC_bool retry = FALSE;
 
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(GC_is_initialized);
@@ -1935,6 +1936,10 @@ GC_allocobj(size_t lg, int k)
     return NULL;
 
   while (NULL == *flh) {
+    /* Only a few iterations are expected at most, otherwise    */
+    /* something is wrong in one of the functions called below. */
+    if (retry_cnt > MAX_ALLOCOBJ_RETRIES)
+      ABORT("Too many retries in GC_allocobj");
 #ifndef GC_DISABLE_INCREMENTAL
     if (GC_incremental && GC_time_limit != GC_TIME_UNLIMITED && !GC_dont_gc) {
       /* True incremental mode, not just generational.      */
@@ -1960,10 +1965,10 @@ GC_allocobj(size_t lg, int k)
           GC_collect_a_little_inner(1);
           tried_minor = TRUE;
         } else {
-          if (!GC_collect_or_expand(1, 0 /* flags */, retry)) {
+          if (!GC_collect_or_expand(1, 0 /* flags */, retry_cnt > 0)) {
             return NULL;
           }
-          retry = TRUE;
+          retry_cnt++;
         }
       }
     }

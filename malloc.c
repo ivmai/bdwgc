@@ -46,10 +46,11 @@ GC_alloc_reclaim_list(struct obj_kind *ok)
 STATIC ptr_t
 GC_alloc_large(size_t lb_adjusted, int k, unsigned flags, size_t align_m1)
 {
+#define MAX_ALLOCLARGE_RETRIES 3
+  int retry_cnt = 0;
   struct hblk *h;
   size_t n_blocks; /* includes alignment */
   ptr_t result = NULL;
-  GC_bool retry = FALSE;
 
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(lb_adjusted != 0 && (lb_adjusted & (GC_GRANULE_BYTES - 1)) == 0);
@@ -71,9 +72,15 @@ GC_alloc_large(size_t lb_adjusted, int k, unsigned flags, size_t align_m1)
     h = GC_allochblk(lb_adjusted, k, flags, align_m1);
   }
 #endif
-  while (NULL == h && GC_collect_or_expand(n_blocks, flags, retry)) {
+  while (NULL == h) {
+    /* Only a few iterations are expected at most, otherwise    */
+    /* something is wrong in one of the functions called below. */
+    if (retry_cnt > MAX_ALLOCLARGE_RETRIES)
+      ABORT("Too many retries in GC_alloc_large");
+    if (!GC_collect_or_expand(n_blocks, flags, retry_cnt > 0))
+      break;
     h = GC_allochblk(lb_adjusted, k, flags, align_m1);
-    retry = TRUE;
+    retry_cnt++;
   }
   if (EXPECT(h != NULL, TRUE)) {
     GC_bytes_allocd += lb_adjusted;
