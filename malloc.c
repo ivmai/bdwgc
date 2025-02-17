@@ -47,10 +47,10 @@ STATIC ptr_t
 GC_alloc_large(size_t lb_adjusted, int k, unsigned flags, size_t align_m1)
 {
 #define MAX_ALLOCLARGE_RETRIES 3
-  int retry_cnt = 0;
-  struct hblk *h;
+  int retry_cnt;
   size_t n_blocks; /* includes alignment */
-  ptr_t result = NULL;
+  struct hblk *h;
+  ptr_t result;
 
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(lb_adjusted != 0 && (lb_adjusted & (GC_GRANULE_BYTES - 1)) == 0);
@@ -72,27 +72,25 @@ GC_alloc_large(size_t lb_adjusted, int k, unsigned flags, size_t align_m1)
     h = GC_allochblk(lb_adjusted, k, flags, align_m1);
   }
 #endif
-  while (NULL == h) {
+  for (retry_cnt = 0; NULL == h; retry_cnt++) {
     /* Only a few iterations are expected at most, otherwise    */
     /* something is wrong in one of the functions called below. */
     if (retry_cnt > MAX_ALLOCLARGE_RETRIES)
       ABORT("Too many retries in GC_alloc_large");
-    if (!GC_collect_or_expand(n_blocks, flags, retry_cnt > 0))
-      break;
+    if (EXPECT(!GC_collect_or_expand(n_blocks, flags, retry_cnt > 0), FALSE))
+      return NULL;
     h = GC_allochblk(lb_adjusted, k, flags, align_m1);
-    retry_cnt++;
   }
-  if (EXPECT(h != NULL, TRUE)) {
-    GC_bytes_allocd += lb_adjusted;
-    if (lb_adjusted > HBLKSIZE) {
-      GC_large_allocd_bytes += HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_adjusted);
-      if (GC_large_allocd_bytes > GC_max_large_allocd_bytes)
-        GC_max_large_allocd_bytes = GC_large_allocd_bytes;
-    }
-    /* FIXME: Do we need some way to reset GC_max_large_allocd_bytes? */
-    result = h->hb_body;
-    GC_ASSERT((ADDR(result) & align_m1) == 0);
+
+  GC_bytes_allocd += lb_adjusted;
+  if (lb_adjusted > HBLKSIZE) {
+    GC_large_allocd_bytes += HBLKSIZE * OBJ_SZ_TO_BLOCKS(lb_adjusted);
+    if (GC_large_allocd_bytes > GC_max_large_allocd_bytes)
+      GC_max_large_allocd_bytes = GC_large_allocd_bytes;
   }
+  /* FIXME: Do we need some way to reset GC_max_large_allocd_bytes? */
+  result = h->hb_body;
+  GC_ASSERT((ADDR(result) & align_m1) == 0);
   return result;
 }
 

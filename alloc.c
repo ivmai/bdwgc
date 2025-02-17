@@ -1928,7 +1928,9 @@ GC_allocobj(size_t lg, int k)
 #define MAX_ALLOCOBJ_RETRIES 3
   int retry_cnt = 0;
   void **flh = &GC_obj_kinds[k].ok_freelist[lg];
+#ifndef GC_DISABLE_INCREMENTAL
   GC_bool tried_minor = FALSE;
+#endif
 
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(GC_is_initialized);
@@ -1954,24 +1956,27 @@ GC_allocobj(size_t lg, int k)
 #if defined(CPPCHECK)
     GC_noop1_ptr(&flh);
 #endif
-    if (NULL == *flh) {
-      GC_new_hblk(lg, k);
+    if (*flh != NULL)
+      break;
+
+    GC_new_hblk(lg, k);
 #if defined(CPPCHECK)
-      GC_noop1_ptr(&flh);
+    GC_noop1_ptr(&flh);
 #endif
-      if (NULL == *flh) {
-        if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED
-            && !tried_minor && !GC_dont_gc) {
-          GC_collect_a_little_inner(1);
-          tried_minor = TRUE;
-        } else {
-          if (!GC_collect_or_expand(1, 0 /* flags */, retry_cnt > 0)) {
-            return NULL;
-          }
-          retry_cnt++;
-        }
-      }
+    if (*flh != NULL)
+      break;
+
+#ifndef GC_DISABLE_INCREMENTAL
+    if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED && !tried_minor
+        && !GC_dont_gc) {
+      GC_collect_a_little_inner(1);
+      tried_minor = TRUE;
+      continue;
     }
+#endif
+    if (EXPECT(!GC_collect_or_expand(1, 0 /* flags */, retry_cnt > 0), FALSE))
+      return NULL;
+    retry_cnt++;
   }
   /* Successful allocation; reset failure count.      */
   GC_fail_count = 0;
