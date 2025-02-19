@@ -82,8 +82,7 @@ GC_enough_large_bytes_left(void)
   word bytes = GC_large_allocd_bytes;
 
   GC_ASSERT(GC_max_large_allocd_bytes <= GC_heapsize);
-  for (n = N_HBLK_FLS + 1; n > 0;) {
-    n--;
+  for (n = N_HBLK_FLS; n > 0; n--) {
     bytes += GC_free_bytes[n];
     if (bytes >= GC_max_large_allocd_bytes)
       break;
