@@ -45,7 +45,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const t = target.result;
 
-    const default_enable_threads = !t.isWasm(); // both emscripten and wasi
+    const default_enable_threads = !t.cpu.arch.isWasm(); // emscripten/wasi
 
     // Customize build by passing "-D<option_name>[=false]" in command line.
     const enable_cplusplus = b.option(bool, "enable_cplusplus",
@@ -203,7 +203,7 @@ pub fn build(b: *std.Build) void {
                 "pthread_start.c",
                 "pthread_support.c",
             }) catch unreachable;
-            if (t.isDarwin()) {
+            if (t.os.tag.isDarwin()) {
                 source_files.append("darwin_stop_world.c") catch unreachable;
             } else {
                 source_files.append("pthread_stop_world.c") catch unreachable;
@@ -361,7 +361,7 @@ pub fn build(b: *std.Build) void {
             or (build_shared_libs and !disable_single_obj_compilation)) {
         source_files.clearAndFree();
         source_files.append("extra/gc.c") catch unreachable;
-        if (enable_threads and !t.isDarwin() and t.os.tag != .windows) {
+        if (enable_threads and !t.os.tag.isDarwin() and t.os.tag != .windows) {
             flags.append("-D GC_PTHREAD_START_STANDALONE") catch unreachable;
             source_files.append("pthread_start.c") catch unreachable;
         }
@@ -419,7 +419,7 @@ pub fn build(b: *std.Build) void {
         flags.append("-D NO_GETCONTEXT") catch unreachable;
     }
 
-    if (!t.isDarwin() and t.os.tag != .windows) {
+    if (!t.os.tag.isDarwin() and t.os.tag != .windows) {
         // dl_iterate_phdr exists (as a strong symbol).
         flags.append("-D HAVE_DL_ITERATE_PHDR") catch unreachable;
         if (enable_threads) {
@@ -432,7 +432,7 @@ pub fn build(b: *std.Build) void {
     flags.append("-D GC_REQUIRE_WCSDUP") catch unreachable;
 
     // pthread_setname_np, if available, may have 1, 2 or 3 arguments.
-    if (t.isDarwin()) {
+    if (t.os.tag.isDarwin()) {
         flags.append("-D HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID")
                 catch unreachable;
     } else if (t.os.tag == .linux) {
@@ -449,7 +449,7 @@ pub fn build(b: *std.Build) void {
 
     // TODO: as of zig 0.12, exception.h and getsect.h are not provided
     // by zig itself for Darwin target.
-    if (t.isDarwin() and !target.query.isNative()) {
+    if (t.os.tag.isDarwin() and !target.query.isNative()) {
         flags.append("-D MISSING_MACH_O_GETSECT_H") catch unreachable;
         flags.append("-D NO_MPROTECT_VDB") catch unreachable;
     }
