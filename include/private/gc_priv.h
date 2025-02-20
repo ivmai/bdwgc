@@ -2704,7 +2704,7 @@ GC_INNER void GC_debug_free_inner(void *p);
 #ifdef USE_MUNMAP
 /* Memory unmapping: */
 GC_INNER void GC_unmap_old(unsigned threshold);
-GC_INNER void GC_merge_unmapped(void);
+GC_INNER GC_bool GC_merge_unmapped(void);
 GC_INNER void GC_unmap(ptr_t start, size_t bytes);
 GC_INNER void GC_remap(ptr_t start, size_t bytes);
 GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,

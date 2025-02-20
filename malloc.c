@@ -67,8 +67,7 @@ GC_alloc_large(size_t lb_adjusted, int k, unsigned flags, size_t align_m1)
 
   h = GC_allochblk(lb_adjusted, k, flags, align_m1);
 #ifdef USE_MUNMAP
-  if (NULL == h) {
-    GC_merge_unmapped();
+  if (NULL == h && GC_merge_unmapped()) {
     h = GC_allochblk(lb_adjusted, k, flags, align_m1);
   }
 #endif

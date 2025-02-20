@@ -545,13 +545,14 @@ GC_unmap_old(unsigned threshold)
   }
 }
 
-/* Merge all unmapped blocks that are adjacent to other free            */
-/* blocks.  This may involve remapping, since all blocks are either     */
-/* fully mapped or fully unmapped.                                      */
-GC_INNER void
+/* Merge all unmapped blocks that are adjacent to other free blocks.    */
+/* This may involve remapping, since all blocks are either fully mapped */
+/* or fully unmapped.  Returns TRUE if at least one block was merged.   */
+GC_INNER GC_bool
 GC_merge_unmapped(void)
 {
   size_t i;
+  GC_bool merged = FALSE;
 
   for (i = 0; i <= N_HBLK_FLS; ++i) {
     struct hblk *h = GC_hblkfreelist[i];
@@ -619,10 +620,12 @@ GC_merge_unmapped(void)
       hhdr->hb_sz += nexthdr->hb_sz;
       GC_remove_header(next);
       GC_add_to_fl(h, hhdr);
+      merged = TRUE;
       /* Start over at the beginning of list. */
       h = GC_hblkfreelist[i];
     }
   }
+  return merged;
 }
 
 #endif /* USE_MUNMAP */
