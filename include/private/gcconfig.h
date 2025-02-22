@@ -2530,6 +2530,13 @@ extern char __global_base, __heap_base;
 #  undef USE_MUNMAP
 #endif
 
+#if (defined(E2K) && defined(USE_PTR_HWTAG) || defined(CHERI_PURECAP)) \
+    && !defined(NO_BLACK_LISTING)
+/* Misinterpreting of an integer is not possible on the platforms with  */
+/* H/W-tagged pointers, thus the black-listing mechanism is redundant.  */
+#  define NO_BLACK_LISTING
+#endif
+
 #if defined(REDIRECT_MALLOC) && defined(THREADS) \
     && (defined(LINUX) || defined(NACL))
 /* TODO: Unclear if NaCl really needs this. */

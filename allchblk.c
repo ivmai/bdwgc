@@ -133,7 +133,7 @@ GC_compute_large_free_bytes(void)
 }
 #endif /* !NO_DEBUGGING || GC_ASSERTIONS */
 
-#if !defined(NO_DEBUGGING)
+#ifndef NO_DEBUGGING
 static void GC_CALLBACK
 print_hblkfreelist_item(struct hblk *h, int i, void *prev_index_ptr)
 {
@@ -148,11 +148,15 @@ print_hblkfreelist_item(struct hblk *h, int i, void *prev_index_ptr)
     *(int *)prev_index_ptr = i;
   }
 
+#  ifdef NO_BLACK_LISTING
+  GC_printf("\t%p size %lu\n", (void *)h, (unsigned long)hhdr->hb_sz);
+#  else
   GC_printf("\t%p size %lu %s black listed\n", (void *)h,
             (unsigned long)hhdr->hb_sz,
             GC_is_black_listed(h, HBLKSIZE) != NULL      ? "start"
             : GC_is_black_listed(h, hhdr->hb_sz) != NULL ? "partially"
                                                          : "not");
+#  endif
 }
 
 void
@@ -239,7 +243,7 @@ GC_dump_regions(void)
     }
   }
 }
-#endif /* NO_DEBUGGING */
+#endif /* !NO_DEBUGGING */
 
 /* Initialize hdr for a block containing the indicated size and         */
 /* kind of objects.  Return FALSE on failure.                           */
@@ -778,13 +782,6 @@ GC_allochblk(size_t lb_adjusted, int k,
   return result;
 }
 
-/* Number of warnings suppressed so far.        */
-STATIC long GC_large_alloc_warn_suppressed = 0;
-
-/* Counter of the cases when found block by GC_allochblk_nth is     */
-/* blacklisted completely.                                          */
-STATIC unsigned GC_drop_blacklisted_count = 0;
-
 #define ALIGN_PAD_SZ(p, align_m1) \
   (((align_m1) + 1 - (size_t)ADDR(p)) & (align_m1))
 
@@ -806,13 +803,21 @@ next_hblk_fits_better(const hdr *hhdr, size_t size_avail, size_t size_needed,
 
   next_ofs = ALIGN_PAD_SZ(next_hbp, align_m1);
   return next_size >= size_needed + next_ofs
-         && !GC_is_black_listed(next_hbp + divHBLKSZ(next_ofs), size_needed);
+#ifndef NO_BLACK_LISTING
+         && !GC_is_black_listed(next_hbp + divHBLKSZ(next_ofs), size_needed)
+#endif
+      ;
 }
 
 static struct hblk *
 find_nonbl_hblk(struct hblk *last_hbp, size_t size_remain,
                 size_t eff_size_needed, size_t align_m1)
 {
+#ifdef NO_BLACK_LISTING
+  UNUSED_ARG(size_remain);
+  UNUSED_ARG(eff_size_needed);
+  return last_hbp + divHBLKSZ(ALIGN_PAD_SZ(last_hbp, align_m1));
+#else
   ptr_t search_end
       = PTR_ALIGN_DOWN((ptr_t)last_hbp + size_remain, align_m1 + 1);
 
@@ -826,7 +831,16 @@ find_nonbl_hblk(struct hblk *last_hbp, size_t size_remain,
     last_hbp = next_hbp;
   } while (ADDR_GE(search_end, (ptr_t)last_hbp));
   return NULL;
+#endif
 }
+
+#ifndef NO_BLACK_LISTING
+/* Number of warnings suppressed so far.        */
+STATIC long GC_large_alloc_warn_suppressed = 0;
+
+/* Counter of the cases when found block by GC_allochblk_nth is     */
+/* blacklisted completely.                                          */
+STATIC unsigned GC_drop_blacklisted_count = 0;
 
 /* Allocate and drop the block in small chunks, to maximize the chance  */
 /* that we will recover some later.  hhdr should correspond to hbp.     */
@@ -852,6 +866,7 @@ drop_hblk_in_chunks(size_t n, struct hblk *hbp, hdr *hhdr)
     hhdr = GC_install_header(hbp);
   } while (EXPECT(hhdr != NULL, TRUE)); /* no header allocation failure? */
 }
+#endif /* !NO_BLACK_LISTING */
 
 #if defined(MPROTECT_VDB) && defined(DONT_PROTECT_PTRFREE)
 static GC_bool
@@ -898,7 +913,9 @@ GC_allochblk_nth(size_t lb_adjusted, int k, unsigned flags, size_t index,
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(((align_m1 + 1) & align_m1) == 0 && lb_adjusted > 0);
   GC_ASSERT(0 == align_m1 || modHBLKSZ(align_m1 + 1) == 0);
+#ifndef NO_BLACK_LISTING
 retry:
+#endif
   /* Search for a big enough block in free list.      */
   for (hbp = GC_hblkfreelist[index];; hbp = hhdr->hb_next) {
     size_t size_avail; /* bytes available in this block */
@@ -957,6 +974,7 @@ retry:
       break;
     }
 
+#ifndef NO_BLACK_LISTING
     /* The block is completely blacklisted.  If so, we need to        */
     /* drop some such blocks, since otherwise we spend all our        */
     /* time traversing them if pointer-free blocks are unpopular.     */
@@ -985,6 +1003,7 @@ retry:
       last_hbp = hbp + divHBLKSZ(align_ofs);
       break;
     }
+#endif
   }
 
   GC_ASSERT((ADDR(last_hbp) & align_m1) == 0);

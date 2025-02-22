@@ -435,6 +435,21 @@ GC_print_obj(ptr_t base)
 }
 
 STATIC void
+GC_default_print_heap_obj_proc(ptr_t p)
+{
+  ptr_t base = (ptr_t)GC_base(p);
+  int kind = HDR(base)->hb_obj_kind;
+
+  GC_err_printf("object at %p of appr. %lu bytes (%s)\n", (void *)base,
+                (unsigned long)GC_size(base),
+                kind == PTRFREE          ? "atomic"
+                : IS_UNCOLLECTABLE(kind) ? "uncollectable"
+                                         : "composite");
+}
+
+GC_INNER void (*GC_print_heap_obj)(ptr_t p) = GC_default_print_heap_obj_proc;
+
+STATIC void
 GC_debug_print_heap_obj_proc(ptr_t base)
 {
   GC_ASSERT(I_DONT_HOLD_LOCK());

@@ -163,8 +163,9 @@ GC_INNER GC_bool GC_force_unmap_on_gcollect = FALSE;
 #  define GC_LARGE_ALLOC_WARN_INTERVAL 5
 #endif
 
-/* The interval between unsuppressed warnings.  */
+#ifndef NO_BLACK_LISTING
 GC_INNER long GC_large_alloc_warn_interval = GC_LARGE_ALLOC_WARN_INTERVAL;
+#endif
 
 STATIC void *GC_CALLBACK
 GC_default_oom_fn(size_t bytes_requested)
@@ -1242,9 +1243,6 @@ GC_init(void)
   if (GETENV("GC_PRINT_BACK_HEIGHT") != NULL) {
     GC_print_back_height = TRUE;
   }
-  if (GETENV("GC_NO_BLACKLIST_WARNING") != NULL) {
-    GC_large_alloc_warn_interval = LONG_MAX;
-  }
   {
     const char *str = GETENV("GC_TRACE");
 
@@ -1297,6 +1295,7 @@ GC_init(void)
     }
   }
 #endif
+#ifndef NO_BLACK_LISTING
   {
     char const *str = GETENV("GC_LARGE_ALLOC_WARN_INTERVAL");
 
@@ -1310,8 +1309,11 @@ GC_init(void)
       } else {
         GC_large_alloc_warn_interval = interval;
       }
+    } else if (GETENV("GC_NO_BLACKLIST_WARNING") != NULL) {
+      GC_large_alloc_warn_interval = LONG_MAX;
     }
   }
+#endif
   {
     const char *str = GETENV("GC_FREE_SPACE_DIVISOR");
 
@@ -2733,9 +2735,10 @@ GC_set_all_interior_pointers(int value)
     LOCK();
     /* Note: this resets manual offsets as well.      */
     GC_initialize_offsets();
-
+#ifndef NO_BLACK_LISTING
     if (!GC_all_interior_pointers)
       GC_bl_init_no_interiors();
+#endif
     UNLOCK();
   }
 }

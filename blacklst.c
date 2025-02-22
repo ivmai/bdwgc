@@ -14,6 +14,8 @@
 
 #include "private/gc_priv.h"
 
+#ifndef NO_BLACK_LISTING
+
 /*
  * We maintain several hash tables of hblks that have had false hits.
  * Each contains one bit per hash bucket;  If any page in the bucket
@@ -48,22 +50,7 @@ GC_INNER word GC_black_list_spacing = MINHINCR * HBLKSIZE; /* initial guess */
 
 STATIC void GC_clear_bl(word *);
 
-GC_INNER void
-GC_default_print_heap_obj_proc(ptr_t p)
-{
-  ptr_t base = (ptr_t)GC_base(p);
-  int kind = HDR(base)->hb_obj_kind;
-
-  GC_err_printf("object at %p of appr. %lu bytes (%s)\n", (void *)base,
-                (unsigned long)GC_size(base),
-                kind == PTRFREE          ? "atomic"
-                : IS_UNCOLLECTABLE(kind) ? "uncollectable"
-                                         : "composite");
-}
-
-GC_INNER void (*GC_print_heap_obj)(ptr_t p) = GC_default_print_heap_obj_proc;
-
-#ifdef PRINT_BLACK_LIST
+#  ifdef PRINT_BLACK_LIST
 STATIC void
 GC_print_blacklisted_ptr(ptr_t p, ptr_t source, const char *kind_str)
 {
@@ -83,7 +70,7 @@ GC_print_blacklisted_ptr(ptr_t p, ptr_t source, const char *kind_str)
                   (unsigned long)GC_size(base));
   }
 }
-#endif /* PRINT_BLACK_LIST */
+#  endif /* PRINT_BLACK_LIST */
 
 GC_INNER void
 GC_bl_init_no_interiors(void)
@@ -180,40 +167,40 @@ GC_unpromote_black_lists(void)
   GC_copy_bl(GC_old_stack_bl, GC_incomplete_stack_bl);
 }
 
-#if defined(PARALLEL_MARK) && defined(THREAD_SANITIZER)
-#  define backlist_set_pht_entry_from_index(db, index) \
-    set_pht_entry_from_index_concurrent(db, index)
-#else
+#  if defined(PARALLEL_MARK) && defined(THREAD_SANITIZER)
+#    define backlist_set_pht_entry_from_index(db, index) \
+      set_pht_entry_from_index_concurrent(db, index)
+#  else
 /* It is safe to set a bit in a blacklist even without        */
 /* synchronization, the only drawback is that we might have   */
 /* to redo blacklisting sometimes.                            */
-#  define backlist_set_pht_entry_from_index(bl, index) \
-    set_pht_entry_from_index(bl, index)
-#endif
+#    define backlist_set_pht_entry_from_index(bl, index) \
+      set_pht_entry_from_index(bl, index)
+#  endif
 
 /* The argument p is not a valid pointer reference, but it falls inside */
 /* the plausible heap bounds.  Add it to the normal incomplete black    */
 /* list if appropriate.                                                 */
-#ifdef PRINT_BLACK_LIST
+#  ifdef PRINT_BLACK_LIST
 GC_INNER void
 GC_add_to_black_list_normal(ptr_t p, ptr_t source)
-#else
+#  else
 GC_INNER void
 GC_add_to_black_list_normal(ptr_t p)
-#endif
+#  endif
 {
-#ifndef PARALLEL_MARK
+#  ifndef PARALLEL_MARK
   GC_ASSERT(I_HOLD_LOCK());
-#endif
+#  endif
   if (GC_modws_valid_offsets[ADDR(p) & (sizeof(ptr_t) - 1)]) {
     size_t index = PHT_HASH(p);
 
     if (NULL == HDR(p) || get_pht_entry_from_index(GC_old_normal_bl, index)) {
-#ifdef PRINT_BLACK_LIST
+#  ifdef PRINT_BLACK_LIST
       if (!get_pht_entry_from_index(GC_incomplete_normal_bl, index)) {
         GC_print_blacklisted_ptr(p, source, "normal");
       }
-#endif
+#  endif
       backlist_set_pht_entry_from_index(GC_incomplete_normal_bl, index);
     } else {
       /* This is probably just an interior pointer to an allocated      */
@@ -223,28 +210,30 @@ GC_add_to_black_list_normal(ptr_t p)
 }
 
 /* And the same for false pointers from the stack. */
-#ifdef PRINT_BLACK_LIST
+#  ifdef PRINT_BLACK_LIST
 GC_INNER void
 GC_add_to_black_list_stack(ptr_t p, ptr_t source)
-#else
+#  else
 GC_INNER void
 GC_add_to_black_list_stack(ptr_t p)
-#endif
+#  endif
 {
   size_t index = PHT_HASH(p);
 
-#ifndef PARALLEL_MARK
+#  ifndef PARALLEL_MARK
   GC_ASSERT(I_HOLD_LOCK());
-#endif
+#  endif
   if (NULL == HDR(p) || get_pht_entry_from_index(GC_old_stack_bl, index)) {
-#ifdef PRINT_BLACK_LIST
+#  ifdef PRINT_BLACK_LIST
     if (!get_pht_entry_from_index(GC_incomplete_stack_bl, index)) {
       GC_print_blacklisted_ptr(p, source, "stack");
     }
-#endif
+#  endif
     backlist_set_pht_entry_from_index(GC_incomplete_stack_bl, index);
   }
 }
+
+#endif /* !NO_BLACK_LISTING */
 
 /* Is the block starting at h of size len bytes black-listed?  If so,   */
 /* return the address of the next plausible r such that (r,len) might   */
@@ -256,6 +245,10 @@ GC_add_to_black_list_stack(ptr_t p)
 GC_API struct GC_hblk_s *GC_CALL
 GC_is_black_listed(struct GC_hblk_s *h, size_t len)
 {
+#ifdef NO_BLACK_LISTING
+  UNUSED_ARG(h);
+  UNUSED_ARG(len);
+#else
   size_t index = PHT_HASH(h);
   size_t i, nblocks;
 
@@ -282,9 +275,11 @@ GC_is_black_listed(struct GC_hblk_s *h, size_t len)
       break;
     index = PHT_HASH(h + i);
   }
+#endif
   return NULL;
 }
 
+#ifndef NO_BLACK_LISTING
 /* Return the number of blacklisted blocks in a given range.  Used only */
 /* for statistical purposes.  Looks only at the GC_incomplete_stack_bl. */
 STATIC word
@@ -317,3 +312,4 @@ total_stack_black_listed(void)
   }
   return total * HBLKSIZE;
 }
+#endif /* !NO_BLACK_LISTING */

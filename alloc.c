@@ -1621,7 +1621,7 @@ GC_add_to_heap(struct hblk *h, size_t sz)
   }
 }
 
-#if !defined(NO_DEBUGGING)
+#ifndef NO_DEBUGGING
 void
 GC_print_heap_sects(void)
 {
@@ -1634,19 +1634,21 @@ GC_print_heap_sects(void)
   for (i = 0; i < GC_n_heap_sects; i++) {
     ptr_t start = GC_heap_sects[i].hs_start;
     size_t len = GC_heap_sects[i].hs_bytes;
-    struct hblk *h;
     unsigned nbl = 0;
+#  ifndef NO_BLACK_LISTING
+    struct hblk *h;
 
     for (h = (struct hblk *)start; ADDR_LT((ptr_t)h, start + len); h++) {
       if (GC_is_black_listed(h, HBLKSIZE))
         nbl++;
     }
+#  endif
     GC_printf("Section %u from %p to %p %u/%lu blacklisted\n", (unsigned)i,
               (void *)start, (void *)&start[len], nbl,
               (unsigned long)divHBLKSZ(len));
   }
 }
-#endif
+#endif /* !NO_DEBUGGING */
 
 void *GC_least_plausible_heap_addr = MAKE_CPTR(GC_WORD_MAX);
 void *GC_greatest_plausible_heap_addr = NULL;
@@ -1847,6 +1849,10 @@ GC_collect_or_expand(word needed_blocks, unsigned flags, GC_bool retry)
                       / (HBLKSIZE * GC_free_space_divisor)
                   + needed_blocks;
   if (blocks_to_get > MAXHINCR) {
+#ifdef NO_BLACK_LISTING
+    UNUSED_ARG(flags);
+    blocks_to_get = needed_blocks > MAXHINCR ? needed_blocks : MAXHINCR;
+#else
     word slop;
 
     /* Get the minimum required to make it likely that we can satisfy */
@@ -1864,6 +1870,7 @@ GC_collect_or_expand(word needed_blocks, unsigned flags, GC_bool retry)
     } else {
       blocks_to_get = MAXHINCR;
     }
+#endif
     if (blocks_to_get > divHBLKSZ(GC_WORD_MAX))
       blocks_to_get = divHBLKSZ(GC_WORD_MAX);
   } else if (blocks_to_get < MINHINCR) {

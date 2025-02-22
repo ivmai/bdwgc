@@ -468,14 +468,6 @@ GC_INNER void GC_print_finalization_stats(void);
 #  define MAXHINCR 2048
 #endif /* !LARGE_CONFIG */
 
-/* If we need a block of N bytes, and we have a block of N+BL_LIMIT */
-/* bytes available, and N > BL_LIMIT, but all possible positions in */
-/* it are blacklisted, we just use it anyway (and print a warning,  */
-/* if warnings are enabled).  This risks subsequently leaking the   */
-/* block due to a false reference.  But not using the block risks   */
-/* unreasonable immediate heap growth.                              */
-#define BL_LIMIT GC_black_list_spacing
-
 /* Stack saving for debugging.  */
 
 #ifdef NEED_CALLINFO
@@ -1921,11 +1913,6 @@ GC_EXTERN SYSTEM_INFO GC_sysinfo;
 GC_INNER GC_bool GC_is_heap_base(const void *p);
 #endif
 
-/* Average number of bytes between blacklisted blocks.  Approximate.    */
-/* Counts only blocks that are "stack-blacklisted", i.e. that are       */
-/* problematic in the interior of an object.                            */
-GC_EXTERN word GC_black_list_spacing;
-
 #ifdef GC_GCJ_SUPPORT
 extern struct hblk *GC_hblkfreelist[];
 extern word GC_free_bytes[]; /* Both remain visible to GNU GCJ.      */
@@ -2364,29 +2351,58 @@ void GC_add_trace_entry(const char *caller_fn_name, ptr_t arg1, ptr_t arg2);
 #  endif
 #endif /* !THREADS */
 
-/* Black listing: */
-#ifdef PRINT_BLACK_LIST
-/* Register bits as a possible future false reference from the heap   */
-/* or static data.                                                    */
-GC_INNER void GC_add_to_black_list_normal(ptr_t p, ptr_t source);
-#  define GC_ADD_TO_BLACK_LIST_NORMAL(p, source) \
-    if (GC_all_interior_pointers) {              \
-      GC_add_to_black_list_stack(p, source);     \
-    } else                                       \
-      GC_add_to_black_list_normal(p, source)
-GC_INNER void GC_add_to_black_list_stack(ptr_t p, ptr_t source);
-#  define GC_ADD_TO_BLACK_LIST_STACK(p, source) \
-    GC_add_to_black_list_stack(p, source)
+#ifdef NO_BLACK_LISTING
+#  define GC_bl_init() (void)0
+/* Do not define GC_bl_init_no_interiors(). */
+#  define GC_ADD_TO_BLACK_LIST_NORMAL(p, source) ((void)(p))
+#  define GC_ADD_TO_BLACK_LIST_STACK(p, source) ((void)(p))
+#  define GC_promote_black_lists() (void)0
+#  define GC_unpromote_black_lists() (void)0
 #else
+
+/* If we need a block of N bytes, and we have a block of N+BL_LIMIT */
+/* bytes available, and N > BL_LIMIT, but all possible positions in */
+/* it are blacklisted, we just use it anyway (and print a warning,  */
+/* if warnings are enabled).  This risks subsequently leaking the   */
+/* block due to a false reference.  But not using the block risks   */
+/* unreasonable immediate heap growth.                              */
+#  define BL_LIMIT GC_black_list_spacing
+
+/* Average number of bytes between blacklisted blocks.  Approximate.    */
+/* Counts only blocks that are "stack-blacklisted", i.e. that are       */
+/* problematic in the interior of an object.                            */
+GC_EXTERN word GC_black_list_spacing;
+
+/* The interval between unsuppressed warnings about repeated allocation */
+/* of a very large block.                                               */
+GC_EXTERN long GC_large_alloc_warn_interval;
+
+/* Black listing: */
+GC_INNER void GC_bl_init(void);
+GC_INNER void GC_bl_init_no_interiors(void);
+
+#  ifdef PRINT_BLACK_LIST
+/* Register bits as a possible future false reference from the heap */
+/* or static data.                                                  */
+GC_INNER void GC_add_to_black_list_normal(ptr_t p, ptr_t source);
+#    define GC_ADD_TO_BLACK_LIST_NORMAL(p, source) \
+      if (GC_all_interior_pointers) {              \
+        GC_add_to_black_list_stack(p, source);     \
+      } else                                       \
+        GC_add_to_black_list_normal(p, source)
+GC_INNER void GC_add_to_black_list_stack(ptr_t p, ptr_t source);
+#    define GC_ADD_TO_BLACK_LIST_STACK(p, source) \
+      GC_add_to_black_list_stack(p, source)
+#  else
 GC_INNER void GC_add_to_black_list_normal(ptr_t p);
-#  define GC_ADD_TO_BLACK_LIST_NORMAL(p, source) \
-    if (GC_all_interior_pointers) {              \
-      GC_add_to_black_list_stack(p);             \
-    } else                                       \
-      GC_add_to_black_list_normal(p)
+#    define GC_ADD_TO_BLACK_LIST_NORMAL(p, source) \
+      if (GC_all_interior_pointers) {              \
+        GC_add_to_black_list_stack(p);             \
+      } else                                       \
+        GC_add_to_black_list_normal(p)
 GC_INNER void GC_add_to_black_list_stack(ptr_t p);
-#  define GC_ADD_TO_BLACK_LIST_STACK(p, source) GC_add_to_black_list_stack(p)
-#endif /* PRINT_BLACK_LIST */
+#    define GC_ADD_TO_BLACK_LIST_STACK(p, source) GC_add_to_black_list_stack(p)
+#  endif /* PRINT_BLACK_LIST */
 
 /* Declare an end to a black listing phase.     */
 GC_INNER void GC_promote_black_lists(void);
@@ -2394,6 +2410,7 @@ GC_INNER void GC_promote_black_lists(void);
 /* Approximately undo the effect of the above.  This actually loses     */
 /* some information, but only in a reasonably safe way.                 */
 GC_INNER void GC_unpromote_black_lists(void);
+#endif /* !NO_BLACK_LISTING */
 
 /* GC internal memory allocation for small objects.  Deallocation is    */
 /* not possible.  May return NULL.                                      */
@@ -2932,8 +2949,6 @@ void GC_err_puts(const char *s);
 /* How many consecutive GC/expansion failures?  Reset by GC_allochblk(). */
 GC_EXTERN unsigned GC_fail_count;
 
-GC_EXTERN long GC_large_alloc_warn_interval; /* defined in misc.c */
-
 /* Number of reclaimed bytes after garbage collection; protected by the */
 /* allocator lock.                                                      */
 GC_EXTERN GC_signed_word GC_bytes_found;
@@ -3013,14 +3028,9 @@ void GC_record_fault(struct hblk *h);
 void GC_check_dirty(void);
 #endif
 
-GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
-
 GC_INNER void GC_setpagesize(void);
 
 GC_INNER void GC_initialize_offsets(void); /* defined in obj_map.c */
-
-GC_INNER void GC_bl_init(void);
-GC_INNER void GC_bl_init_no_interiors(void); /* defined in blacklst.c */
 
 /* Turn on the debugging mode.  Should not be called if         */
 /* GC_debugging_started is already set.                         */
