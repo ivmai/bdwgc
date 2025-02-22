@@ -409,7 +409,7 @@ jobs:
     - GCTEST_WITH_MPROTECT_VDB=true
   - compiler: gcc
     env:
-    - CFLAGS_EXTRA="-D PROC_VDB -D GC_NO_SYS_FAULT_H -D NO_INCREMENTAL -D DEBUG_DIRTY_BITS"
+    - CFLAGS_EXTRA="-D PROC_VDB -D NO_BLACK_LISTING -D GC_NO_SYS_FAULT_H -D NO_INCREMENTAL -D DEBUG_DIRTY_BITS"
     - CONF_OPTIONS="--enable-cplusplus --disable-docs"
   - compiler: clang
     env:
