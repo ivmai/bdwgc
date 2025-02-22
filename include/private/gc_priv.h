@@ -2410,7 +2410,7 @@ GC_INNER void GC_promote_black_lists(void);
 /* Approximately undo the effect of the above.  This actually loses     */
 /* some information, but only in a reasonably safe way.                 */
 GC_INNER void GC_unpromote_black_lists(void);
-#endif /* !NO_BLACK_LISTING */
+#endif
 
 /* GC internal memory allocation for small objects.  Deallocation is    */
 /* not possible.  May return NULL.                                      */
