@@ -827,7 +827,9 @@ GC_INNER_WIN32THREAD void
 GC_delete_thread(GC_thread t)
 {
 #  if defined(GC_WIN32_THREADS) && !defined(MSWINCE)
-  CloseHandle(t->handle);
+  HANDLE handle = t->handle;
+  t->handle = NULL;
+  CloseHandle(handle);
 #  endif
 #  if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
   if (GC_win32_dll_threads) {
