@@ -453,6 +453,11 @@ GC_suspend(GC_thread t)
     if (SuspendThread(t->handle) != (DWORD)-1) {
       CONTEXT context;
 
+      /* Calls to GetThreadContext() may fail.  Work around this by */
+      /* putting access in suspend/resume loop to advance thread    */
+      /* past problematic areas where suspend fails.  Capture the   */
+      /* context in per thread structure at the suspend time rather */
+      /* than at retrieving the context during the push logic.      */
       context.ContextFlags = GET_THREAD_CONTEXT_FLAGS;
       if (GetThreadContext(t->handle, &context)) {
         /* TODO: WoW64 extra workaround: if CONTEXT_EXCEPTION_ACTIVE  */
