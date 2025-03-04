@@ -3125,6 +3125,10 @@ EXTERN_C_BEGIN
 # define WRAP_MARK_SOME
 #endif
 
+#if defined(GC_DISABLE_SUSPEND_THREAD)
+# undef GC_ENABLE_SUSPEND_THREAD
+#endif
+
 #if defined(PARALLEL_MARK) && !defined(DEFAULT_STACK_MAYBE_SMALL) \
     && (defined(HPUX) || defined(GC_DGUX386_THREADS) \
         || defined(NO_GETCONTEXT) /* e.g. musl */)
