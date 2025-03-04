@@ -3135,7 +3135,7 @@ extern ptr_t GC_data_start;
 #  undef HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID
 #endif
 
-#ifdef USE_RWLOCK
+#if defined(USE_RWLOCK) || defined(GC_DISABLE_SUSPEND_THREAD)
 /* At least in the Linux threads implementation, rwlock primitives    */
 /* are not atomic in respect to signals, and suspending externally    */
 /* a thread which is running inside pthread_rwlock_rdlock() may lead  */
