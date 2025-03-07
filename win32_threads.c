@@ -472,8 +472,15 @@ GC_suspend(GC_thread t)
       }
 
       /* Resume the thread, try to suspend it in a better location.   */
-      if (ResumeThread(t->handle) == (DWORD)-1)
+      if (ResumeThread(t->handle) == (DWORD)-1) {
+#    ifndef GC_NO_THREADS_DISCOVERY
+        if (NULL == GC_cptr_load_acquire(&t->handle)) {
+          GC_release_dirty_lock();
+          return;
+        }
+#    endif
         ABORT("ResumeThread failed in suspend loop");
+      }
     } else {
 #    ifndef GC_NO_THREADS_DISCOVERY
       if (NULL == GC_cptr_load_acquire(&t->handle)) {
