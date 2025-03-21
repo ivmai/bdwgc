@@ -13,13 +13,13 @@
 const builtin = @import("builtin");
 const std = @import("std");
 
-const zig_min_required_version = "0.12.0";
+const zig_min_required_version = "0.14.0";
 
 // TODO: specify PACKAGE_VERSION and LIB*_VER_INFO.
 
 // Compared to the CMake script, some definitions and compiler options
 // are hard-coded here, which is natural because build.zig is only built with
-// the Zig build system and Zig ships with an embedded clang (as of zig 0.12).
+// the Zig build system and Zig ships with an embedded clang (as of zig 0.14).
 // As a consequence, we do not have to support lots of different compilers
 // (a notable exception is msvc target which implies use of the corresponding
 // native compiler).
@@ -130,18 +130,22 @@ pub fn build(b: *std.Build) void {
         "Install header and pkg-config metadata files") orelse true;
     // TODO: support with_libatomic_ops, without_libatomic_ops
 
+    const gc_mod = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+    });
     const gc = if (build_shared_libs) blk: {
         // TODO: convert VER_INFO values to [SO]VERSION ones
-        break :blk b.addSharedLibrary(.{
+        break :blk b.addLibrary(.{
+            .linkage = .dynamic,
             .name = "gc",
-            .target = target,
-            .optimize = optimize,
+            .root_module = gc_mod,
         });
     } else blk: {
-        break :blk b.addStaticLibrary(.{
+        break :blk b.addLibrary(.{
+            .linkage = .static,
             .name = "gc",
-            .target = target,
-            .optimize = optimize,
+            .root_module = gc_mod,
         });
     };
 
@@ -447,7 +451,7 @@ pub fn build(b: *std.Build) void {
         flags.append("-D HAVE_DLADDR") catch unreachable;
     }
 
-    // TODO: as of zig 0.12, exception.h and getsect.h are not provided
+    // TODO: as of zig 0.14, exception.h and getsect.h are not provided
     // by zig itself for Darwin target.
     if (t.os.tag.isDarwin() and !target.query.isNative()) {
         flags.append("-D MISSING_MACH_O_GETSECT_H") catch unreachable;
@@ -461,21 +465,12 @@ pub fn build(b: *std.Build) void {
             flags.append("-Wno-inline-new-delete") catch unreachable;
         }
         if (t.abi == .msvc) {
-            // TODO: as of zig 0.12,
+            // TODO: as of zig 0.14,
             // "argument unused during compilation: -nostdinc++" warning is
             // reported if using MS compiler.
             flags.append("-Wno-unused-command-line-argument")
                 catch unreachable;
         }
-    }
-
-    if (build_cord and enable_werror and !enable_threads
-        and (t.abi == .gnueabi or t.abi == .gnueabihf or t.abi == .musleabi
-             or t.abi == .musleabihf)) {
-        // TODO: as of zig 0.12, if GCC built-in atomic intrinsic is used,
-        // "large atomic operation may incur significant performance penalty"
-        // warning is reported for 32-bit arm targets.
-        flags.append("-D AO_DISABLE_GCC_ATOMICS") catch unreachable;
     }
 
     // Extra user-defined flags (if any) to pass to the compiler.
@@ -497,17 +492,21 @@ pub fn build(b: *std.Build) void {
     var gccpp: *std.Build.Step.Compile = undefined;
     var gctba: *std.Build.Step.Compile = undefined;
     if (enable_cplusplus) {
+        const gccpp_mod = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        });
         gccpp = if (build_shared_libs) blk: {
-            break :blk b.addSharedLibrary(.{
+            break :blk b.addLibrary(.{
+                .linkage = .dynamic,
                 .name = "gccpp",
-                .target = target,
-                .optimize = optimize,
+                .root_module = gccpp_mod,
             });
         } else blk: {
-            break :blk b.addStaticLibrary(.{
+            break :blk b.addLibrary(.{
+                .linkage = .static,
                 .name = "gccpp",
-                .target = target,
-                .optimize = optimize,
+                .root_module = gccpp_mod,
             });
         };
         gccpp.addCSourceFiles(.{
@@ -522,17 +521,21 @@ pub fn build(b: *std.Build) void {
         linkLibCpp(gccpp);
         if (enable_throw_bad_alloc_library) {
             // The same as gccpp but contains only gc_badalc.
+            const gctba_mod = b.createModule(.{
+                .target = target,
+                .optimize = optimize,
+            });
             gctba = if (build_shared_libs) blk: {
-                break :blk b.addSharedLibrary(.{
+                break :blk b.addLibrary(.{
+                    .linkage = .dynamic,
                     .name = "gctba",
-                    .target = target,
-                    .optimize = optimize,
+                    .root_module = gctba_mod,
                 });
             } else blk: {
-                break :blk b.addStaticLibrary(.{
+                break :blk b.addLibrary(.{
+                    .linkage = .static,
                     .name = "gctba",
-                    .target = target,
-                    .optimize = optimize,
+                    .root_module = gctba_mod,
                 });
             };
             gctba.addCSourceFiles(.{
@@ -549,17 +552,21 @@ pub fn build(b: *std.Build) void {
 
     var cord: *std.Build.Step.Compile = undefined;
     if (build_cord) {
+        const cord_mod = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        });
         cord = if (build_shared_libs) blk: {
-            break :blk b.addSharedLibrary(.{
+            break :blk b.addLibrary(.{
+                .linkage = .dynamic,
                 .name = "cord",
-                .target = target,
-                .optimize = optimize,
+                .root_module = cord_mod
             });
         } else blk: {
-            break :blk b.addStaticLibrary(.{
+            break :blk b.addLibrary(.{
+                .linkage = .static,
                 .name = "cord",
-                .target = target,
-                .optimize = optimize,
+                .root_module = cord_mod
             });
         };
         cord.addCSourceFiles(.{
@@ -675,7 +682,7 @@ pub fn build(b: *std.Build) void {
 fn linkLibCpp(lib: *std.Build.Step.Compile) void {
     const t = lib.rootModuleTarget();
     if (t.abi == .msvc) {
-        // TODO: as of zig 0.12, "unable to build libcxxabi" warning is
+        // TODO: as of zig 0.14, "unable to build libcxxabi" warning is
         // reported if linking C++ code using MS compiler.
         lib.linkLibC();
     } else {
