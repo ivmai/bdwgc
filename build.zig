@@ -19,7 +19,7 @@ const zig_min_required_version = "0.14.0";
 
 // Compared to the CMake script, some definitions and compiler options
 // are hard-coded here, which is natural because build.zig is only built with
-// the Zig build system and Zig ships with an embedded clang (as of zig 0.12).
+// the Zig build system and Zig ships with an embedded clang (as of zig 0.14).
 // As a consequence, we do not have to support lots of different compilers
 // (a notable exception is msvc target which implies use of the corresponding
 // native compiler).
@@ -50,6 +50,8 @@ pub fn build(b: *std.Build) void {
     // Customize build by passing "-D<option_name>[=false]" in command line.
     const enable_cplusplus = b.option(bool, "enable_cplusplus",
                                       "C++ support") orelse false;
+    const linkage = b.option(std.builtin.LinkMode, "linkage",
+                "Link mode for a foo_bar library") orelse .dynamic;
     const build_shared_libs = b.option(bool, "BUILD_SHARED_LIBS",
                 "Build shared libraries (otherwise static ones)") orelse true;
     const build_cord = b.option(bool, "build_cord",
@@ -452,9 +454,8 @@ pub fn build(b: *std.Build) void {
         flags.append("-D HAVE_DLADDR") catch unreachable;
     }
 
-    // TODO: as of zig 0.12, exception.h and getsect.h are not provided
+    // TODO: as of zig 0.14, exception.h and getsect.h are not provided
     // by zig itself for Darwin target.
-    // See https://github.com/ziglang/zig/issues/18257
     if (t.os.tag.isDarwin() and !target.query.isNative()) {
         flags.append("-D MISSING_MACH_O_GETSECT_H") catch unreachable;
         flags.append("-D NO_MPROTECT_VDB") catch unreachable;
