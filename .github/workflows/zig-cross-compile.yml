@@ -55,10 +55,8 @@ jobs:
           riscv32-linux-musl,
           riscv64-linux-musl,
           sparc64-linux-gnu,
-          thumb-linux-gnueabi,
-          #thumb-linux-gnueabihf,
-          #thumb-linux-musleabi,
-          thumb-linux-musleabihf,
+          thumb-linux-musleabi,
+          #thumb-linux-musleabihf,
           wasm32-wasi-musl,
           #x86-linux-gnu,
           x86-linux-musl,
@@ -84,8 +82,6 @@ jobs:
           ttriple: arm-linux-musleabi
         - enable_threads: true
           ttriple: armeb-linux-gnueabi
-        - enable_threads: true
-          ttriple: thumb-linux-gnueabi
         - enable_threads: true
           ttriple: thumb-linux-musleabi
         - enable_threads: true
@@ -113,10 +109,6 @@ jobs:
           ttriple: powerpc-linux-gnueabihf
         - shared_libs: true
           ttriple: sparc64-linux-gnu # FIXME: recompile with -fPIC
-        - shared_libs: true
-          ttriple: thumb-linux-gnueabi
-        - shared_libs: true
-          ttriple: thumb-linux-gnueabihf
         - shared_libs: true # FIXME: creating shared libs is not yet stable
           ttriple: wasm32-wasi-musl
         - shared_libs: true # FIXME: recompile with -fPIC
