@@ -48,7 +48,7 @@ jobs:
           powerpc64-linux-gnu,
           #powerpc64-linux-musl,
           #powerpc64le-linux-gnu,
-          powerpc64le-linux-muslabi,
+          powerpc64le-linux-musl,
           riscv64-linux-musl,
           sparc64-linux-gnu,
           thumb-linux-gnueabi,
