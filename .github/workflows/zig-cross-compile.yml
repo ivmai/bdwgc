@@ -32,16 +32,16 @@ jobs:
           armeb-linux-musleabihf,
           #mips-linux-gnueabi,
           #mips-linux-gnueabihf,
-          mips-linux-musl,
+          mips-linux-musleabi,
           mips64-linux-gnuabi64,
           #mips64-linux-gnuabin32,
-          mips64-linux-musl,
+          mips64-linux-muslabi64,
           #mips64el-linux-gnuabi64,
           mips64el-linux-gnuabin32,
-          mips64el-linux-musl,
+          mips64el-linux-muslabi64,
           mipsel-linux-gnueabi,
           #mipsel-linux-gnueabihf,
-          mipsel-linux-musl,
+          mipsel-linux-musleabi,
           #powerpc-linux-gnueabi,
           powerpc-linux-gnueabihf,
           #powerpc-linux-musl,
@@ -51,8 +51,6 @@ jobs:
           powerpc64le-linux-musl,
           riscv64-linux-musl,
           sparc64-linux-gnu,
-          thumb-linux-gnueabi,
-          #thumb-linux-gnueabihf,
           #thumb-linux-musleabi,
           thumb-linux-musleabihf,
           wasm32-wasi-musl,
@@ -81,8 +79,6 @@ jobs:
         - enable_threads: true
           ttriple: armeb-linux-gnueabi
         - enable_threads: true
-          ttriple: thumb-linux-gnueabi
-        - enable_threads: true
           ttriple: thumb-linux-musleabi
         - enable_threads: true
           ttriple: thumb-linux-musleabihf
@@ -109,32 +105,28 @@ jobs:
           ttriple: powerpc-linux-gnueabihf
         - shared_libs: true
           ttriple: sparc64-linux-gnu # FIXME: recompile with -fPIC
-        - shared_libs: true
-          ttriple: thumb-linux-gnueabi
-        - shared_libs: true
-          ttriple: thumb-linux-gnueabihf
         - shared_libs: true # FIXME: creating shared libs is not yet stable
           ttriple: wasm32-wasi-musl
         - shared_libs: true # FIXME: recompile with -fPIC
           ttriple: x86_64-linux-gnux32
         - enable_cplusplus: true
           shared_libs: true # FIXME: relocation R_MIPS_32 against local symbol
-          ttriple: mips-linux-musl
+          ttriple: mips-linux-musleabi
         - enable_cplusplus: true
           shared_libs: true
           ttriple: mips64-linux-gnuabi64
         - enable_cplusplus: true
           shared_libs: true
-          ttriple: mips64-linux-musl
+          ttriple: mips64-linux-muslabi64
         - enable_cplusplus: true
           shared_libs: true
-          ttriple: mips64el-linux-musl
+          ttriple: mips64el-linux-muslabi64
         - enable_cplusplus: true
           shared_libs: true
           ttriple: mipsel-linux-gnueabi
         - enable_cplusplus: true
           shared_libs: true
-          ttriple: mipsel-linux-musl
+          ttriple: mipsel-linux-musleabi
         - enable_cplusplus: true
           shared_libs: true # FIXME: relocation refers to a discarded section
           ttriple: powerpc64-linux-gnu
