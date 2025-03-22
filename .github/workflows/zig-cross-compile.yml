@@ -119,22 +119,22 @@ jobs:
           ttriple: x86_64-linux-gnux32
         - enable_cplusplus: true
           shared_libs: true # FIXME: relocation R_MIPS_32 against local symbol
-          ttriple: mips-linux-musl
+          ttriple: mips-linux-musleabi
         - enable_cplusplus: true
           shared_libs: true
           ttriple: mips64-linux-gnuabi64
         - enable_cplusplus: true
           shared_libs: true
-          ttriple: mips64-linux-musl
+          ttriple: mips64-linux-muslabi64
         - enable_cplusplus: true
           shared_libs: true
-          ttriple: mips64el-linux-musl
+          ttriple: mips64el-linux-muslabi64
         - enable_cplusplus: true
           shared_libs: true
           ttriple: mipsel-linux-gnueabi
         - enable_cplusplus: true
           shared_libs: true
-          ttriple: mipsel-linux-musl
+          ttriple: mipsel-linux-musleabi
         - enable_cplusplus: true
           shared_libs: true # FIXME: relocation refers to a discarded section
           ttriple: powerpc64-linux-gnu
