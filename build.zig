@@ -50,8 +50,6 @@ pub fn build(b: *std.Build) void {
     // Customize build by passing "-D<option_name>[=false]" in command line.
     const enable_cplusplus = b.option(bool, "enable_cplusplus",
                                       "C++ support") orelse false;
-    const linkage = b.option(std.builtin.LinkMode, "linkage",
-                "Link mode for a foo_bar library") orelse .dynamic;
     const build_shared_libs = b.option(bool, "BUILD_SHARED_LIBS",
                 "Build shared libraries (otherwise static ones)") orelse true;
     const build_cord = b.option(bool, "build_cord",
@@ -503,15 +501,11 @@ pub fn build(b: *std.Build) void {
 
     var gccpp: *std.Build.Step.Compile = undefined;
     var gctba: *std.Build.Step.Compile = undefined;
-    const gccpp_mod = b.createModule(.{
-        .target = target,
-        .optimize = optimize,
-    });
-    const gctba_mod = b.createModule(.{
-        .target = target,
-        .optimize = optimize,
-    });
     if (enable_cplusplus) {
+        const gccpp_mod = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        });
         gccpp = if (build_shared_libs) blk: {
             break :blk b.addLibrary(.{
                 .linkage = .dynamic,
@@ -536,6 +530,10 @@ pub fn build(b: *std.Build) void {
         gccpp.linkLibrary(gc);
         linkLibCpp(gccpp);
         if (enable_throw_bad_alloc_library) {
+            const gctba_mod = b.createModule(.{
+                .target = target,
+                .optimize = optimize,
+            });
             // The same as gccpp but contains only gc_badalc.
             gctba = if (build_shared_libs) blk: {
                 break :blk b.addLibrary(.{
