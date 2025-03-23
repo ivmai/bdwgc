@@ -466,21 +466,12 @@ pub fn build(b: *std.Build) void {
             flags.append("-Wno-inline-new-delete") catch unreachable;
         }
         if (t.abi == .msvc) {
-            // TODO: as of zig 0.12,
+            // TODO: as of zig 0.14,
             // "argument unused during compilation: -nostdinc++" warning is
             // reported if using MS compiler.
             flags.append("-Wno-unused-command-line-argument")
                 catch unreachable;
         }
-    }
-
-    if (build_cord and enable_werror and !enable_threads
-        and (t.abi == .gnueabi or t.abi == .gnueabihf or t.abi == .musleabi
-             or t.abi == .musleabihf)) {
-        // TODO: as of zig 0.12, if GCC built-in atomic intrinsic is used,
-        // "large atomic operation may incur significant performance penalty"
-        // warning is reported for 32-bit arm targets.
-        flags.append("-D AO_DISABLE_GCC_ATOMICS") catch unreachable;
     }
 
     // Extra user-defined flags (if any) to pass to the compiler.
@@ -692,7 +683,7 @@ pub fn build(b: *std.Build) void {
 fn linkLibCpp(lib: *std.Build.Step.Compile) void {
     const t = lib.rootModuleTarget();
     if (t.abi == .msvc) {
-        // TODO: as of zig 0.12, "unable to build libcxxabi" warning is
+        // TODO: as of zig 0.14, "unable to build libcxxabi" warning is
         // reported if linking C++ code using MS compiler.
         lib.linkLibC();
     } else {
