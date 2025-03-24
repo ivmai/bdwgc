@@ -33,6 +33,16 @@ jobs:
         - build_cord: true # FIXME: cordtest hangs if shared lib build by MSVC
           shared_libs: true
           ttriple: native-native-msvc
+        - os: ubuntu-latest # FIXME: gctest or threadleaktest hang
+          enable_gc_debug: true
+          redirect_malloc: true
+          shared_libs: true
+          build_cord: true
+          enable_munmap: true
+          parallel_mark: true
+          enable_rwlock: true
+          thread_local_alloc: true
+          enable_threads: true
         - os: macos-latest
           ttriple: native-native-msvc
         - os: ubuntu-latest
