@@ -47,7 +47,7 @@ jobs:
           #powerpc-linux-gnueabi,
           powerpc-linux-gnueabihf,
           #powerpc-linux-musl,
-          powerpc64-linux-gnu,
+          #powerpc64-linux-gnu, # FIXME: as of zig 0.14, not implemented correctly.
           #powerpc64-linux-musl,
           #powerpc64le-linux-gnu,
           powerpc64le-linux-musl,
@@ -75,50 +75,22 @@ jobs:
           ttriple: wasm32-wasi-musl
         - enable_cplusplus: false # excluded to speedup this workflow
           shared_libs: false
-        # The following ones have "exceeds the max lock-free size" warning.
-        - enable_threads: true
-          ttriple: arm-linux-gnueabi
-        - enable_threads: true
-          ttriple: arm-linux-musleabi
-        - enable_threads: true
-          ttriple: armeb-linux-gnueabi
-        - enable_threads: true
-          ttriple: thumb-linux-musleabi
-        - enable_threads: true
-          ttriple: thumb-linux-musleabihf
-        - enable_cplusplus: true # FIXME: ignoring -fno-PIC option
-          ttriple: mips64-linux-muslabi64
-        - enable_cplusplus: true # FIXME: ignoring -fno-PIC option
-          ttriple: mips64el-linux-muslabi64
-        # The following ones have some zig link issue.
-        - shared_libs: true
-          ttriple: aarch64_be-linux-gnu
-        - shared_libs: true
-          ttriple: aarch64_be-linux-musl
-        - shared_libs: true
-          ttriple: armeb-linux-gnueabi
-        - shared_libs: true
-          ttriple: armeb-linux-gnueabihf
-        - shared_libs: true
-          ttriple: armeb-linux-musleabi
-        - shared_libs: true
-          ttriple: armeb-linux-musleabihf
-        - shared_libs: true
-          ttriple: powerpc-linux-gnueabi
-        - shared_libs: true
-          ttriple: powerpc-linux-gnueabihf
         - shared_libs: true
           ttriple: sparc64-linux-gnu # FIXME: recompile with -fPIC
         - shared_libs: true # FIXME: creating shared libs is not yet stable
           ttriple: wasm32-wasi-musl
         - shared_libs: true # FIXME: recompile with -fPIC
           ttriple: x86_64-linux-gnux32
-        - enable_cplusplus: true
-          shared_libs: true # FIXME: relocation refers to a discarded section
-          ttriple: powerpc64-linux-gnu
+        - enable_cplusplus: true # FIXME: ignoring -fno-PIC option
+          ttriple: mips64-linux-muslabi64
+        - enable_cplusplus: true # FIXME: ignoring -fno-PIC option
+          ttriple: mips64el-linux-muslabi64
+        # The following ones have some zig link issue.
+        - enable_cplusplus: false
+          ttriple: x86-linux-musl
         - enable_cplusplus: true
           shared_libs: true
-          ttriple: powerpc64le-linux-musl
+          ttriple: x86-linux-musl
 
     steps:
     - uses: actions/checkout@v4
