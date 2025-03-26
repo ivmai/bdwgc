@@ -578,6 +578,9 @@ GC_ANDROID_LOG (Android only)   Output error/debug information to Android log.
 CONSOLE_LOG (Win32 only)        Output error/debug information to stdout and
   stderr.
 
+GC_DISABLE_OUTPUT               Disable error/debug logging entirely. Useful to
+  reduce binary size but will also prevent any errors from being printed.
+
 GC_DONT_EXPAND  Do not expand the heap unless explicitly requested or forced
   to.
 
