@@ -22,6 +22,7 @@ jobs:
           aarch64-windows-gnu,
           #aarch64_be-linux-gnu,
           aarch64_be-linux-musl,
+          #arc-linux-gnu, # FIXME: __linux__ macro is not predefined
           #arm-linux-gnueabi,
           arm-linux-gnueabihf,
           arm-linux-musleabi,
@@ -31,32 +32,47 @@ jobs:
           #armeb-linux-musleabi,
           armeb-linux-musleabihf,
           loongarch64-linux-gnu,
+          #loongarch64-linux-gnusf, # FIXME: gnu/stubs-lp64s.h not found
           loongarch64-linux-musl,
+          #m68k-linux-gnu, # FIXME: No available targets compatible with triple
+          #m68k-linux-musl, # FIXME: No available targets compatible with triple
           #mips-linux-gnueabi,
           #mips-linux-gnueabihf,
           mips-linux-musleabi,
+          mips-linux-musleabihf,
           mips64-linux-gnuabi64,
           #mips64-linux-gnuabin32,
           mips64-linux-muslabi64,
+          mips64-linux-muslabin32,
           #mips64el-linux-gnuabi64,
           mips64el-linux-gnuabin32,
           mips64el-linux-muslabi64,
+          mips64el-linux-muslabin32,
           mipsel-linux-gnueabi,
           #mipsel-linux-gnueabihf,
           mipsel-linux-musleabi,
+          mipsel-linux-musleabihf,
           #powerpc-linux-gnueabi,
           powerpc-linux-gnueabihf,
-          #powerpc-linux-musl,
-          #powerpc64-linux-gnu, # FIXME: as of zig 0.14, not implemented correctly.
+          #powerpc-linux-musleabi,
+          powerpc-linux-musleabihf,
+          #powerpc64-linux-gnu, # FIXME: not implemented correctly in zig
           #powerpc64-linux-musl,
           #powerpc64le-linux-gnu,
           powerpc64le-linux-musl,
           riscv32-linux-gnu,
           riscv32-linux-musl,
+          riscv64-linux-gnu,
           riscv64-linux-musl,
+          s390x-linux-gnu,
+          s390x-linux-musl,
+          sparc-linux-gnu,
           sparc64-linux-gnu,
           thumb-linux-musleabi,
           #thumb-linux-musleabihf,
+          thumb-windows-gnu,
+          #thumbeb-linux-musleabi,
+          thumbeb-linux-musleabihf,
           wasm32-wasi-musl,
           #x86-linux-gnu,
           x86-linux-musl,
@@ -64,6 +80,7 @@ jobs:
           x86_64-linux-gnu.2.27, # with a glibc version
           x86_64-linux-gnux32,
           #x86_64-linux-musl,
+          x86_64-linux-muslx32,
           x86_64-macos-none,
           x86_64-windows-gnu,
         ]
@@ -75,12 +92,16 @@ jobs:
           ttriple: wasm32-wasi-musl
         - enable_cplusplus: false # excluded to speedup this workflow
           shared_libs: false
-        - shared_libs: true
-          ttriple: sparc64-linux-gnu # FIXME: recompile with -fPIC
-        - shared_libs: true # FIXME: creating shared libs is not yet stable
-          ttriple: wasm32-wasi-musl
+        - shared_libs: true # FIXME: SPARCv8 does not handle f128 in calls
+          ttriple: sparc-linux-gnu
+        - shared_libs: true # FIXME: recompile with -fPIC
+          ttriple: sparc64-linux-gnu
         - shared_libs: true # FIXME: recompile with -fPIC
           ttriple: x86_64-linux-gnux32
+        - shared_libs: true # FIXME: recompile with -fPIC
+          ttriple: x86_64-linux-muslx32
+        - shared_libs: true # FIXME: creating shared libs is not yet stable
+          ttriple: wasm32-wasi-musl
         - enable_cplusplus: true # FIXME: ignoring -fno-PIC option
           ttriple: mips64-linux-muslabi64
         - enable_cplusplus: true # FIXME: ignoring -fno-PIC option
