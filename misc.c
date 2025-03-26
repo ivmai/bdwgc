@@ -1999,45 +1999,54 @@ GC_write(int fd, const char *buf, size_t len)
 #  define WRITE(f, buf, len) GC_write(f, buf, len)
 #endif /* !MSWINCE && !OS2 && !GC_ANDROID_LOG */
 
-#define BUFSZ 1024
+#ifndef GC_DISABLE_SNPRINTF
+#  define BUFSZ 1024
 
-#if defined(DJGPP) || defined(__STRICT_ANSI__)
+#  if defined(DJGPP) || defined(__STRICT_ANSI__)
 /* vsnprintf is missing in DJGPP (v2.0.3) */
-#  define GC_VSNPRINTF(buf, bufsz, format, args) vsprintf(buf, format, args)
-#elif defined(_MSC_VER)
-#  ifdef MSWINCE
+#    define GC_VSNPRINTF(buf, bufsz, format, args) vsprintf(buf, format, args)
+#  elif defined(_MSC_VER)
+#    ifdef MSWINCE
 /* _vsnprintf is deprecated in WinCE */
-#    define GC_VSNPRINTF StringCchVPrintfA
+#      define GC_VSNPRINTF StringCchVPrintfA
+#    else
+#      define GC_VSNPRINTF _vsnprintf
+#    endif
 #  else
-#    define GC_VSNPRINTF _vsnprintf
+#    define GC_VSNPRINTF vsnprintf
 #  endif
-#else
-#  define GC_VSNPRINTF vsnprintf
-#endif
 
 /* A version of printf that is unlikely to call malloc, and is thus safer */
 /* to call from the collector in case malloc has been bound to GC_malloc. */
 /* Floating point arguments and formats should be avoided, since FP       */
 /* conversion is more likely to allocate memory.                          */
 /* Assumes that no more than BUFSZ-1 characters are written at once.      */
-#define GC_PRINTF_FILLBUF(buf, format)                      \
-  do {                                                      \
-    va_list args;                                           \
-    va_start(args, format);                                 \
-    (buf)[sizeof(buf) - 1] = 0x15; /* guard */              \
-    (void)GC_VSNPRINTF(buf, sizeof(buf) - 1, format, args); \
-    va_end(args);                                           \
-    if ((buf)[sizeof(buf) - 1] != 0x15)                     \
-      ABORT("GC_printf clobbered stack");                   \
-  } while (0)
+#  define GC_PRINTF_FILLBUF(buf, format)                      \
+    do {                                                      \
+      va_list args;                                           \
+      va_start(args, format);                                 \
+      (buf)[sizeof(buf) - 1] = 0x15; /* guard */              \
+      (void)GC_VSNPRINTF(buf, sizeof(buf) - 1, format, args); \
+      va_end(args);                                           \
+      if ((buf)[sizeof(buf) - 1] != 0x15)                     \
+        ABORT("GC_printf clobbered stack");                   \
+    } while (0)
+
+#  define DECL_BUF_AND_PRINTF_TO(buf, format) \
+    char buf[BUFSZ + 1];                      \
+    GC_PRINTF_FILLBUF(buf, format)
+#else
+/* At most, when vsnprintf() is unavailable, we could only print the    */
+/* format string as is, not handling the format specifiers (if any),    */
+/* thus skipping the rest of the printf arguments.                      */
+#  define DECL_BUF_AND_PRINTF_TO(buf, format) const char *buf = (format)
+#endif /* GC_DISABLE_SNPRINTF */
 
 void
 GC_printf(const char *format, ...)
 {
   if (!GC_quiet) {
-    char buf[BUFSZ + 1];
-
-    GC_PRINTF_FILLBUF(buf, format);
+    DECL_BUF_AND_PRINTF_TO(buf, format);
 #ifdef NACL
     (void)WRITE(GC_stdout, buf, strlen(buf));
     /* Ignore errors silently.      */
@@ -2056,18 +2065,14 @@ GC_printf(const char *format, ...)
 void
 GC_err_printf(const char *format, ...)
 {
-  char buf[BUFSZ + 1];
-
-  GC_PRINTF_FILLBUF(buf, format);
+  DECL_BUF_AND_PRINTF_TO(buf, format);
   GC_err_puts(buf);
 }
 
 void
 GC_log_printf(const char *format, ...)
 {
-  char buf[BUFSZ + 1];
-
-  GC_PRINTF_FILLBUF(buf, format);
+  DECL_BUF_AND_PRINTF_TO(buf, format);
 #ifdef NACL
   (void)WRITE(GC_log, buf, strlen(buf));
 #else
@@ -2090,18 +2095,14 @@ GC_log_printf(const char *format, ...)
 GC_INNER void
 GC_info_log_printf(const char *format, ...)
 {
-  char buf[BUFSZ + 1];
-
-  GC_PRINTF_FILLBUF(buf, format);
+  DECL_BUF_AND_PRINTF_TO(buf, format);
   (void)WRITE(ANDROID_LOG_INFO, buf, 0 /* unused */);
 }
 
 GC_INNER void
 GC_verbose_log_printf(const char *format, ...)
 {
-  char buf[BUFSZ + 1];
-
-  GC_PRINTF_FILLBUF(buf, format);
+  DECL_BUF_AND_PRINTF_TO(buf, format);
   /* Note: write errors are ignored.  */
   (void)WRITE(ANDROID_LOG_VERBOSE, buf, 0);
 }
@@ -2109,9 +2110,7 @@ GC_verbose_log_printf(const char *format, ...)
 STATIC void
 GC_warn_printf(const char *format, ...)
 {
-  char buf[BUFSZ + 1];
-
-  GC_PRINTF_FILLBUF(buf, format);
+  DECL_BUF_AND_PRINTF_TO(buf, format);
   (void)WRITE(ANDROID_LOG_WARN, buf, 0);
 }
 

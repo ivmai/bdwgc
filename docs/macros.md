@@ -233,6 +233,12 @@ use is `REDIRECT_FREE=GC_debug_free`.
 `GC_print_free_list` functions.  Reduces code size slightly at the expense of
 debuggability.
 
+`GC_DISABLE_SNPRINTF` - Prevents `snprintf()` usage by the internal
+`GC_printf()` and friends.  The formatting string is printed as is, ignoring
+the rest of arguments passed to `GC_printf()`.  This might be needed for
+environments where static linking with the standard `snprintf()` is not
+desired for the matter of code size.
+
 `GC_DUMP_REGULARLY` - Causes generation of regular debugging dumps.
 
 `DEBUG_THREADS` - Turns on printing of additional thread-support debugging
