@@ -91,10 +91,12 @@ GC_bool GC_quiet = 0; /* used also in msvc_dbg.c */
 GC_INNER int GC_print_stats = 0;
 #endif
 
-#ifdef GC_PRINT_BACK_HEIGHT
+#ifdef MAKE_BACK_GRAPH
+#  ifdef GC_PRINT_BACK_HEIGHT
 GC_INNER GC_bool GC_print_back_height = TRUE;
-#else
+#  else
 GC_INNER GC_bool GC_print_back_height = FALSE;
+#  endif
 #endif
 
 #ifndef NO_DEBUGGING
@@ -1257,9 +1259,15 @@ GC_init(void)
     GC_dont_gc = 1;
 #endif
   }
+#if !defined(SMALL_CONFIG) && !defined(GC_PRINT_BACK_HEIGHT)
   if (GETENV("GC_PRINT_BACK_HEIGHT") != NULL) {
+#  ifdef MAKE_BACK_GRAPH
     GC_print_back_height = TRUE;
+#  else
+    GC_err_printf("Back height is not available!\n");
+#  endif
   }
+#endif
   {
     const char *str = GETENV("GC_TRACE");
 

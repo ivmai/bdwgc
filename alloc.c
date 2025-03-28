@@ -1316,15 +1316,11 @@ GC_finish_collection(void)
   if (GC_print_stats)
     GET_TIME(finalize_time);
 #endif
-
-  if (GC_print_back_height) {
 #ifdef MAKE_BACK_GRAPH
+  if (GC_print_back_height) {
     GC_traverse_back_graph();
-#elif !defined(SMALL_CONFIG)
-    GC_err_printf("Back height not available: "
-                  "Rebuild collector with -DMAKE_BACK_GRAPH\n");
-#endif
   }
+#endif
 
   /* Clear free-list mark bits, in case they got accidentally marked  */
   /* (or GC_find_leak is set and they were intentionally marked).     */

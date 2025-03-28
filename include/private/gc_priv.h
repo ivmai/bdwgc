@@ -2676,9 +2676,8 @@ GC_rand_next(GC_RAND_STATE_T *pseed)
                      & (unsigned32)((unsigned)GC_RAND_MAX))
 #endif
 
-GC_EXTERN GC_bool GC_print_back_height;
-
 #ifdef MAKE_BACK_GRAPH
+GC_EXTERN GC_bool GC_print_back_height;
 void GC_print_back_graph_stats(void);
 #endif
 
