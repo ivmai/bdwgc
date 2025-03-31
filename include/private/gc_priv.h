@@ -1577,6 +1577,8 @@ struct _GC_arrays {
   word _n_memory;
 #endif
 #ifdef GC_GCJ_SUPPORT
+#  define GC_last_finalized_no GC_arrays._last_finalized_no
+  word _last_finalized_no;
 #  define GC_gcjobjfreelist GC_arrays._gcjobjfreelist
   ptr_t *_gcjobjfreelist;
 #endif
@@ -1914,8 +1916,9 @@ GC_INNER GC_bool GC_is_heap_base(const void *p);
 #endif
 
 #ifdef GC_GCJ_SUPPORT
+/* Note: the following variables remain visible to GNU GCJ. */
 extern struct hblk *GC_hblkfreelist[];
-extern word GC_free_bytes[]; /* Both remain visible to GNU GCJ.      */
+extern word GC_free_bytes[];
 #endif
 
 /* Total size of registered root sections.      */
@@ -3030,15 +3033,6 @@ void GC_check_dirty(void);
 GC_INNER void GC_setpagesize(void);
 
 GC_INNER void GC_initialize_offsets(void); /* defined in obj_map.c */
-
-/* Turn on the debugging mode.  Should not be called if         */
-/* GC_debugging_started is already set.                         */
-GC_INNER void GC_start_debugging_inner(void);
-
-/* Store debugging info into p.  Return displaced pointer.      */
-/* Assume we hold the allocator lock.                           */
-GC_INNER void *GC_store_debug_info_inner(void *p, size_t sz, const char *str,
-                                         int linenum);
 
 #if defined(REDIR_MALLOC_AND_LINUXTHREADS) \
     && !defined(REDIRECT_MALLOC_IN_HEADER)

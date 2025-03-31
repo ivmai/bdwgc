@@ -232,7 +232,9 @@ GC_generate_random_backtrace(void)
 #define CROSSES_HBLK(p, sz) \
   ((ADDR((p) + (sizeof(oh) - 1) + (sz)) ^ ADDR(p)) >= HBLKSIZE)
 
-GC_INNER void *
+/* Store debugging info into p.  Return displaced pointer.  Assume we   */
+/* hold the allocator lock.                                             */
+STATIC void *
 GC_store_debug_info_inner(void *base, size_t sz, const char *string,
                           int linenum)
 {
@@ -257,27 +259,6 @@ GC_store_debug_info_inner(void *base, size_t sz, const char *string,
   ((GC_uintptr_t *)base)[BYTES_TO_PTRS(GC_size(base)) - 1]
       = result[BYTES_TO_PTRS_ROUNDUP(sz)] = END_FLAG ^ (GC_uintptr_t)result;
 #endif
-  return result;
-}
-
-/* Check the allocation is successful, store debugging info into base,  */
-/* start the debugging mode (if not yet), and return displaced pointer. */
-static void *
-store_debug_info(void *base, size_t lb, const char *fn, GC_EXTRA_PARAMS)
-{
-  void *result;
-
-  if (NULL == base) {
-    GC_err_printf("%s(%lu) returning NULL (%s:%d)\n", fn, (unsigned long)lb, s,
-                  i);
-    return NULL;
-  }
-  LOCK();
-  if (!GC_debugging_started)
-    GC_start_debugging_inner();
-  result = GC_store_debug_info_inner(base, lb, s, i);
-  ADD_CALL_CHAIN(base, ra);
-  UNLOCK();
   return result;
 }
 
@@ -420,7 +401,9 @@ GC_do_nothing(void)
 }
 #endif /* SHORT_DBG_HDRS */
 
-GC_INNER void
+/* Turn on the debugging mode.  Should not be called if */
+/* GC_debugging_started is already set.                 */
+STATIC void
 GC_start_debugging_inner(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
@@ -437,6 +420,27 @@ GC_start_debugging_inner(void)
 #if defined(CPPCHECK)
   GC_noop1(GC_debug_header_size);
 #endif
+}
+
+/* Check the allocation is successful, store debugging info into base,  */
+/* start the debugging mode (if not yet), and return displaced pointer. */
+static void *
+store_debug_info(void *base, size_t lb, const char *fn, GC_EXTRA_PARAMS)
+{
+  void *result;
+
+  if (NULL == base) {
+    GC_err_printf("%s(%lu) returning NULL (%s:%d)\n", fn, (unsigned long)lb, s,
+                  i);
+    return NULL;
+  }
+  LOCK();
+  if (!GC_debugging_started)
+    GC_start_debugging_inner();
+  result = GC_store_debug_info_inner(base, lb, s, i);
+  ADD_CALL_CHAIN(base, ra);
+  UNLOCK();
+  return result;
 }
 
 const size_t GC_debug_header_size = sizeof(oh);
@@ -1117,3 +1121,43 @@ GC_debug_realloc_replacement(void *p, size_t lb)
 {
   return GC_debug_realloc(p, lb, GC_DBG_EXTRAS);
 }
+
+#ifdef GC_GCJ_SUPPORT
+#  include "gc/gc_gcj.h"
+
+GC_API GC_ATTR_MALLOC void *GC_CALL
+GC_debug_gcj_malloc(size_t lb, const void *vtable_ptr, GC_EXTRA_PARAMS)
+{
+  void *base, *result;
+
+  /* We are careful to avoid extra calls those could confuse the backtrace. */
+  LOCK();
+  /* A mechanism to invoke finalizers (same as in GC_core_gcj_malloc). */
+  if (GC_gc_no != GC_last_finalized_no) {
+    UNLOCK();
+    GC_INVOKE_FINALIZERS();
+    LOCK();
+    GC_last_finalized_no = GC_gc_no;
+  }
+
+  base = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES),
+                                 GC_gcj_debug_kind, 0 /* flags */);
+  if (NULL == base) {
+    GC_oom_func oom_fn = GC_oom_fn;
+    UNLOCK();
+    GC_err_printf("GC_debug_gcj_malloc(%lu, %p) returning NULL (%s:%d)\n",
+                  (unsigned long)lb, vtable_ptr, s, i);
+    return (*oom_fn)(lb);
+  }
+  *((const void **)((ptr_t)base + sizeof(oh))) = vtable_ptr;
+  if (!GC_debugging_started) {
+    GC_start_debugging_inner();
+  }
+  result = GC_store_debug_info_inner(base, lb, s, i);
+  ADD_CALL_CHAIN(base, ra);
+  UNLOCK();
+  GC_dirty(result);
+  REACHABLE_AFTER_DIRTY(vtable_ptr);
+  return result;
+}
+#endif /* GC_GCJ_SUPPORT */

@@ -34,7 +34,6 @@
  */
 
 #  include "gc/gc_gcj.h"
-#  include "private/dbg_mlc.h"
 
 /* Object kind for objects with descriptors in "vtable".                */
 int GC_gcj_kind = 0;
@@ -128,27 +127,6 @@ GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp, size_t descr_offset)
 #  undef ignore_gcj_info
 }
 
-/* A mechanism to release the allocator lock and invoke finalizers.     */
-/* We don't really have an opportunity to do this on a rarely executed  */
-/* path on which the allocator lock is not held.  Thus we check at      */
-/* a rarely executed point at which it is safe to release the allocator */
-/* lock; we do this even where we could just call GC_INVOKE_FINALIZERS, */
-/* since it is probably cheaper and certainly more uniform.             */
-/* TODO: Consider doing the same elsewhere? */
-static void
-maybe_finalize(void)
-{
-  static word last_finalized_no = 0;
-
-  GC_ASSERT(I_HOLD_LOCK());
-  if (GC_gc_no == last_finalized_no || !EXPECT(GC_is_initialized, TRUE))
-    return;
-  UNLOCK();
-  GC_INVOKE_FINALIZERS();
-  LOCK();
-  last_finalized_no = GC_gc_no;
-}
-
 /* Allocate an object, clear it, and store the pointer to the   */
 /* type structure (vtable in gcj).  This adds a byte at the     */
 /* end of the object if GC_malloc would.                        */
@@ -172,7 +150,21 @@ GC_core_gcj_malloc(size_t lb, const void *vtable_ptr, unsigned flags)
     GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
     GC_ASSERT(NULL == ((void **)op)[1]);
   } else {
-    maybe_finalize();
+    /* A mechanism to release the allocator lock and invoke finalizers. */
+    /* We do not really have an opportunity to do this on a rarely      */
+    /* executed path on which the allocator lock is not held.  Thus we  */
+    /* check at a rarely executed point at which it is safe to release  */
+    /* the allocator lock; we do this even where we could just call     */
+    /* GC_INVOKE_FINALIZERS(), since it is probably cheaper and         */
+    /* certainly more uniform.                                          */
+    /* TODO: Consider doing the same elsewhere? */
+    if (GC_gc_no != GC_last_finalized_no) {
+      UNLOCK();
+      GC_INVOKE_FINALIZERS();
+      LOCK();
+      GC_last_finalized_no = GC_gc_no;
+    }
+
     op = (ptr_t)GC_generic_malloc_inner(lb, GC_gcj_kind, flags);
     if (NULL == op) {
       GC_oom_func oom_fn = GC_oom_fn;
@@ -199,36 +191,6 @@ GC_API GC_ATTR_MALLOC void *GC_CALL
 GC_gcj_malloc_ignore_off_page(size_t lb, const void *vtable_ptr)
 {
   return GC_core_gcj_malloc(lb, vtable_ptr, IGNORE_OFF_PAGE);
-}
-
-GC_API GC_ATTR_MALLOC void *GC_CALL
-GC_debug_gcj_malloc(size_t lb, const void *vtable_ptr, GC_EXTRA_PARAMS)
-{
-  void *base, *result;
-
-  /* We are careful to avoid extra calls those could confuse the      */
-  /* backtrace.                                                       */
-  LOCK();
-  maybe_finalize();
-  base = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES),
-                                 GC_gcj_debug_kind, 0 /* flags */);
-  if (NULL == base) {
-    GC_oom_func oom_fn = GC_oom_fn;
-    UNLOCK();
-    GC_err_printf("GC_debug_gcj_malloc(%lu, %p) returning NULL (%s:%d)\n",
-                  (unsigned long)lb, vtable_ptr, s, i);
-    return (*oom_fn)(lb);
-  }
-  *((const void **)((ptr_t)base + sizeof(oh))) = vtable_ptr;
-  if (!GC_debugging_started) {
-    GC_start_debugging_inner();
-  }
-  result = GC_store_debug_info_inner(base, lb, s, i);
-  ADD_CALL_CHAIN(base, ra);
-  UNLOCK();
-  GC_dirty(result);
-  REACHABLE_AFTER_DIRTY(vtable_ptr);
-  return result;
 }
 
 #endif /* GC_GCJ_SUPPORT */
