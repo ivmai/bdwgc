@@ -23,38 +23,6 @@
 #endif
 #include <string.h>
 
-#ifndef SHORT_DBG_HDRS
-/* Check whether object given by its base pointer has debugging   */
-/* info.  base is assumed to point to a legitimate object in our  */
-/* heap.  This excludes the check as to whether the back pointer  */
-/* is odd, which is added by the GC_HAS_DEBUG_INFO macro.         */
-/* Note that if DBG_HDRS_ALL is set, uncollectible objects on     */
-/* free lists may not have debug information set.  Thus, it is    */
-/* not always safe to return TRUE (1), even if the client does    */
-/* its part.  Return -1 if the object with debug info has been    */
-/* marked as deallocated.                                         */
-GC_INNER int
-GC_has_other_debug_info(ptr_t base)
-{
-  ptr_t body = (ptr_t)((oh *)base + 1);
-  size_t sz = GC_size(base);
-
-  if (HBLKPTR(base) != HBLKPTR(body) || sz < DEBUG_BYTES + EXTRA_BYTES) {
-    return 0;
-  }
-  if (((oh *)base)->oh_sf != (START_FLAG ^ (GC_uintptr_t)body)
-      && ((GC_uintptr_t *)base)[BYTES_TO_PTRS(sz) - 1]
-             != (END_FLAG ^ (GC_uintptr_t)body)) {
-    return 0;
-  }
-  if (((oh *)base)->oh_sz == (GC_uintptr_t)sz) {
-    /* Object may have had debug info, but has been deallocated.  */
-    return -1;
-  }
-  return 1;
-}
-#endif /* !SHORT_DBG_HDRS */
-
 #ifdef KEEP_BACK_PTRS
 
 /* Use a custom trivial random() implementation as the standard   */
@@ -354,8 +322,6 @@ GC_register_describe_type_fn(int k, GC_describe_type_fn fn)
   GC_describe_type_fns[k] = fn;
 }
 
-#define GET_OH_LINENUM(ohdr) ((int)(ohdr)->oh_int)
-
 #ifndef SHORT_DBG_HDRS
 #  define IF_NOT_SHORTDBG_HDRS(x) x
 #  define COMMA_IFNOT_SHORTDBG_HDRS(x) /* comma */ , x
@@ -435,21 +401,6 @@ GC_print_obj(ptr_t base)
 }
 
 STATIC void
-GC_default_print_heap_obj_proc(ptr_t p)
-{
-  ptr_t base = (ptr_t)GC_base(p);
-  int kind = HDR(base)->hb_obj_kind;
-
-  GC_err_printf("object at %p of appr. %lu bytes (%s)\n", (void *)base,
-                (unsigned long)GC_size(base),
-                kind == PTRFREE          ? "atomic"
-                : IS_UNCOLLECTABLE(kind) ? "uncollectable"
-                                         : "composite");
-}
-
-GC_INNER void (*GC_print_heap_obj)(ptr_t p) = GC_default_print_heap_obj_proc;
-
-STATIC void
 GC_debug_print_heap_obj_proc(ptr_t base)
 {
   GC_ASSERT(I_DONT_HOLD_LOCK());
@@ -461,36 +412,7 @@ GC_debug_print_heap_obj_proc(ptr_t base)
 }
 
 #ifndef SHORT_DBG_HDRS
-/* Use GC_err_printf and friends to print a description of the object */
-/* whose client-visible address is p, and which was smashed at memory */
-/* location pointed by clobbered.                                     */
-STATIC void
-GC_print_smashed_obj(const char *msg, void *p, ptr_t clobbered)
-{
-  oh *ohdr = (oh *)GC_base(p);
-
-  GC_ASSERT(I_DONT_HOLD_LOCK());
-#  ifdef LINT2
-  if (!ohdr)
-    ABORT("Invalid GC_print_smashed_obj argument");
-#  endif
-  if (ADDR_GE((ptr_t)(&ohdr->oh_sz), clobbered) || NULL == ohdr->oh_string) {
-    GC_err_printf("%s %p in or near object at %p(<smashed>, appr. sz= %lu)\n",
-                  msg, (void *)clobbered, p,
-                  (unsigned long)(GC_size(ohdr) - DEBUG_BYTES));
-  } else {
-    GC_err_printf("%s %p in or near object at %p (%s:%d, sz= %lu)\n", msg,
-                  (void *)clobbered, p,
-                  ADDR(ohdr->oh_string) < HBLKSIZE ? "(smashed string)"
-                  : ohdr->oh_string[0] == '\0'     ? "EMPTY(smashed?)"
-                                                   : ohdr->oh_string,
-                  GET_OH_LINENUM(ohdr), (unsigned long)ohdr->oh_sz);
-    PRINT_CALL_CHAIN(ohdr);
-  }
-}
-
 STATIC void GC_check_heap_proc(void);
-STATIC void GC_print_all_smashed_proc(void);
 #else
 STATIC void
 GC_do_nothing(void)
@@ -937,55 +859,6 @@ GC_debug_generic_or_special_malloc(size_t lb, int k, GC_EXTRA_PARAMS)
 
 #ifndef SHORT_DBG_HDRS
 
-#  ifndef MAX_SMASHED
-#    define MAX_SMASHED 20
-#  endif
-
-/* List of smashed (clobbered) locations.  We defer printing these,   */
-/* since we cannot always print them nicely with the allocator lock   */
-/* held.  We put them here instead of in GC_arrays, since it may be   */
-/* useful to be able to look at them with the debugger.               */
-STATIC ptr_t GC_smashed[MAX_SMASHED] = { 0 };
-STATIC unsigned GC_n_smashed = 0;
-
-STATIC void
-GC_add_smashed(ptr_t smashed)
-{
-  GC_ASSERT(I_HOLD_LOCK());
-  GC_ASSERT(GC_is_marked(GC_base(smashed)));
-  /* FIXME: Prevent adding an object while printing smashed list.     */
-  GC_smashed[GC_n_smashed] = smashed;
-  /* In case of overflow, we keep the first MAX_SMASHED-1 entries     */
-  /* plus the last one.                                               */
-  if (GC_n_smashed < MAX_SMASHED - 1)
-    ++GC_n_smashed;
-  GC_SET_HAVE_ERRORS();
-}
-
-/* Print all objects on the list.  Clear the list.    */
-STATIC void
-GC_print_all_smashed_proc(void)
-{
-  unsigned i;
-
-  GC_ASSERT(I_DONT_HOLD_LOCK());
-  if (GC_n_smashed == 0)
-    return;
-  GC_err_printf("GC_check_heap_block: found %u smashed heap objects:\n",
-                GC_n_smashed);
-  for (i = 0; i < GC_n_smashed; ++i) {
-    ptr_t base = (ptr_t)GC_base(GC_smashed[i]);
-
-#  ifdef LINT2
-    if (!base)
-      ABORT("Invalid GC_smashed element");
-#  endif
-    GC_print_smashed_obj("", base + sizeof(oh), GC_smashed[i]);
-    GC_smashed[i] = 0;
-  }
-  GC_n_smashed = 0;
-}
-
 /* Check all marked objects in the given block for validity   */
 /* Avoid GC_apply_to_each_object for performance reasons.     */
 STATIC void GC_CALLBACK
@@ -1020,34 +893,6 @@ GC_check_heap_proc(void)
   GC_STATIC_ASSERT((sizeof(oh) & (GC_GRANULE_BYTES - 1)) == 0);
   /* FIXME: Should we check for twice that alignment? */
   GC_apply_to_all_blocks(GC_check_heap_block, NULL);
-}
-
-GC_INNER GC_bool
-GC_check_leaked(ptr_t base)
-{
-  size_t i;
-  size_t lpw;
-  ptr_t *p;
-
-  if (
-#  if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
-      (*(GC_uintptr_t *)base & 1) != 0 &&
-#  endif
-      GC_has_other_debug_info(base) >= 0)
-    return TRUE; /* object has leaked */
-
-  /* Validate freed object's content. */
-  p = (ptr_t *)(base + sizeof(oh));
-  lpw = BYTES_TO_PTRS(HDR(base)->hb_sz - sizeof(oh));
-  for (i = 0; i < lpw; ++i)
-    if ((GC_uintptr_t)p[i] != GC_FREED_MEM_MARKER) {
-      GC_set_mark_bit(base);          /* do not reclaim it in this cycle */
-      GC_add_smashed((ptr_t)(&p[i])); /* alter-after-free detected */
-      /* Do not report any other smashed locations in the object.     */
-      break;
-    }
-
-  return FALSE; /* GC_debug_free() has been called */
 }
 
 #endif /* !SHORT_DBG_HDRS */

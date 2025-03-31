@@ -112,6 +112,8 @@ typedef struct {
 #endif
 } oh;
 
+#define GET_OH_LINENUM(ohdr) ((int)(ohdr)->oh_int)
+
 #ifdef SHORT_DBG_HDRS
 #  define DEBUG_BYTES sizeof(oh)
 #  define UNCOLLECTABLE_DEBUG_BYTES DEBUG_BYTES
@@ -155,14 +157,29 @@ GC_INNER void GC_save_callers_no_unlock(struct callinfo info[NFRAMES]);
 #  define OPT_RA
 #endif
 
-/* Check whether object with base pointer p has debugging info  */
-/* p is assumed to point to a legitimate object in our part     */
-/* of the heap.                                                 */
+/* Check whether object given by its base pointer has debugging info.   */
+/* The argument (base) is assumed to point to a legitimate object in    */
+/* our heap.  This excludes the check as to whether the back pointer    */
+/* is odd, which is added by the GC_HAS_DEBUG_INFO macro.  Note that    */
+/* if DBG_HDRS_ALL is set, uncollectible objects on free lists may not  */
+/* have debug information set.  Thus, it is not always safe to return   */
+/* TRUE (1), even if the client does its part.  Return -1 if the object */
+/* with debug info has been marked as deallocated.                      */
 #ifdef SHORT_DBG_HDRS
 #  define GC_has_other_debug_info(base) 1
 #else
 GC_INNER int GC_has_other_debug_info(ptr_t base);
-#endif
+
+GC_INNER void GC_add_smashed(ptr_t smashed);
+
+/* Use GC_err_printf and friends to print a description of the object */
+/* whose client-visible address is p, and which was smashed at memory */
+/* location pointed by clobbered.                                     */
+GC_INNER void GC_print_smashed_obj(const char *msg, void *p, ptr_t clobbered);
+
+/* Print all objects on the list.  Clear the list.    */
+GC_INNER void GC_print_all_smashed_proc(void);
+#endif /* !SHORT_DBG_HDRS */
 
 #if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
 #  if defined(SHORT_DBG_HDRS) && !defined(CPPCHECK)

@@ -2610,6 +2610,8 @@ GC_EXTERN void (*GC_print_all_smashed)(void);
 /* "\n") of the object referred to by p.        */
 GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
 
+GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
+
 #if defined(LINUX) && defined(__ELF__) && !defined(SMALL_CONFIG)
 /* Print an address map of the process.  The caller should hold the   */
 /* allocator lock.                                                    */
@@ -2620,8 +2622,6 @@ void GC_print_address_map(void);
 /* Do not immediately deallocate object on free() in the leak-finding */
 /* mode, just mark it as freed (and deallocate it after GC).          */
 GC_EXTERN GC_bool GC_findleak_delay_free;
-
-GC_INNER GC_bool GC_check_leaked(ptr_t base); /* from dbg_mlc.c */
 #endif
 
 #ifdef AO_HAVE_store
