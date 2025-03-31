@@ -287,7 +287,7 @@ GC_generic_malloc_many(size_t lb_adjusted, int k, void **result)
   lg = BYTES_TO_GRANULES(lb_adjusted);
   if (EXPECT(get_have_errors(), FALSE))
     GC_print_all_errors();
-  GC_INVOKE_FINALIZERS();
+  GC_notify_or_invoke_finalizers();
   GC_DBG_COLLECT_AT_MALLOC(lb_adjusted - EXTRA_BYTES);
   if (!EXPECT(GC_is_initialized, TRUE))
     GC_init();

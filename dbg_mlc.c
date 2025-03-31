@@ -1135,7 +1135,7 @@ GC_debug_gcj_malloc(size_t lb, const void *vtable_ptr, GC_EXTRA_PARAMS)
   /* A mechanism to invoke finalizers (same as in GC_core_gcj_malloc). */
   if (GC_gc_no != GC_last_finalized_no) {
     UNLOCK();
-    GC_INVOKE_FINALIZERS();
+    GC_notify_or_invoke_finalizers();
     LOCK();
     GC_last_finalized_no = GC_gc_no;
   }

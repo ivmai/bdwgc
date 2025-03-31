@@ -155,12 +155,12 @@ GC_core_gcj_malloc(size_t lb, const void *vtable_ptr, unsigned flags)
     /* executed path on which the allocator lock is not held.  Thus we  */
     /* check at a rarely executed point at which it is safe to release  */
     /* the allocator lock; we do this even where we could just call     */
-    /* GC_INVOKE_FINALIZERS(), since it is probably cheaper and         */
-    /* certainly more uniform.                                          */
+    /* GC_notify_or_invoke_finalizers(), since it is probably cheaper   */
+    /* and certainly more uniform.                                      */
     /* TODO: Consider doing the same elsewhere? */
     if (GC_gc_no != GC_last_finalized_no) {
       UNLOCK();
-      GC_INVOKE_FINALIZERS();
+      GC_notify_or_invoke_finalizers();
       LOCK();
       GC_last_finalized_no = GC_gc_no;
     }

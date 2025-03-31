@@ -1411,7 +1411,7 @@ GC_try_to_collect_general(GC_stop_func stop_func, GC_bool force_unmap)
     GC_init();
   if (GC_debugging_started)
     GC_print_all_smashed();
-  GC_INVOKE_FINALIZERS();
+  GC_notify_or_invoke_finalizers();
   LOCK();
   if (force_unmap) {
     /* Record current heap size to make heap growth more conservative */
@@ -1437,7 +1437,7 @@ GC_try_to_collect_general(GC_stop_func stop_func, GC_bool force_unmap)
   if (result) {
     if (GC_debugging_started)
       GC_print_all_smashed();
-    GC_INVOKE_FINALIZERS();
+    GC_notify_or_invoke_finalizers();
   }
   return result;
 }

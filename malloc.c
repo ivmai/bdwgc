@@ -246,7 +246,7 @@ GC_generic_malloc_aligned(size_t lb, int k, unsigned flags, size_t align_m1)
   GC_ASSERT(k < MAXOBJKINDS);
   if (EXPECT(get_have_errors(), FALSE))
     GC_print_all_errors();
-  GC_INVOKE_FINALIZERS();
+  GC_notify_or_invoke_finalizers();
   GC_DBG_COLLECT_AT_MALLOC(lb);
   if (SMALL_OBJ(lb) && EXPECT(align_m1 < GC_GRANULE_BYTES, TRUE)) {
     LOCK();
@@ -416,7 +416,7 @@ GC_generic_malloc_uncollectable(size_t lb, int k)
 
     if (EXPECT(get_have_errors(), FALSE))
       GC_print_all_errors();
-    GC_INVOKE_FINALIZERS();
+    GC_notify_or_invoke_finalizers();
     GC_DBG_COLLECT_AT_MALLOC(lb_orig);
     LOCK();
     lg = GC_size_map[lb];

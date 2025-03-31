@@ -422,7 +422,6 @@ EXTERN_C_BEGIN
 /* finalizers.  Otherwise: call (*GC_finalizer_notifier)() if     */
 /* there are finalizers to be run, and we have not called this    */
 /* procedure yet this collection cycle.                           */
-#  define GC_INVOKE_FINALIZERS() GC_notify_or_invoke_finalizers()
 GC_INNER void GC_notify_or_invoke_finalizers(void);
 
 /* Perform all indicated finalization actions on unmarked         */
@@ -439,7 +438,7 @@ GC_INNER void GC_process_togglerefs(void);
 GC_INNER void GC_print_finalization_stats(void);
 #  endif
 #else
-#  define GC_INVOKE_FINALIZERS() (void)0
+#  define GC_notify_or_invoke_finalizers() (void)0
 #endif /* GC_NO_FINALIZATION */
 
 #if !defined(DONT_ADD_BYTE_AT_END)
