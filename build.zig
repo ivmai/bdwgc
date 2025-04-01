@@ -130,25 +130,6 @@ pub fn build(b: *std.Build) void {
         "Install header and pkg-config metadata files") orelse true;
     // TODO: support with_libatomic_ops, without_libatomic_ops
 
-    const gc_mod = b.createModule(.{
-        .target = target,
-        .optimize = optimize,
-    });
-    const gc = if (build_shared_libs) blk: {
-        // TODO: convert VER_INFO values to [SO]VERSION ones
-        break :blk b.addLibrary(.{
-            .linkage = .dynamic,
-            .name = "gc",
-            .root_module = gc_mod,
-        });
-    } else blk: {
-        break :blk b.addLibrary(.{
-            .linkage = .static,
-            .name = "gc",
-            .root_module = gc_mod,
-        });
-    };
-
     var source_files = std.ArrayList([]const u8).init(b.allocator);
     defer source_files.deinit();
     var flags = std.ArrayList([]const u8).init(b.allocator);
@@ -482,6 +463,15 @@ pub fn build(b: *std.Build) void {
         }
     }
 
+    // TODO: convert VER_INFO values to [SO]VERSION ones
+    const gc = b.addLibrary(.{
+        .linkage = if (build_shared_libs) .dynamic else .static,
+        .name = "gc",
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
     gc.addCSourceFiles(.{
         .files = source_files.items,
         .flags = flags.items,
@@ -492,23 +482,14 @@ pub fn build(b: *std.Build) void {
     var gccpp: *std.Build.Step.Compile = undefined;
     var gctba: *std.Build.Step.Compile = undefined;
     if (enable_cplusplus) {
-        const gccpp_mod = b.createModule(.{
-            .target = target,
-            .optimize = optimize,
+        gccpp = b.addLibrary(.{
+            .linkage = if (build_shared_libs) .dynamic else .static,
+            .name = "gccpp",
+            .root_module = b.createModule(.{
+                .target = target,
+                .optimize = optimize,
+            }),
         });
-        gccpp = if (build_shared_libs) blk: {
-            break :blk b.addLibrary(.{
-                .linkage = .dynamic,
-                .name = "gccpp",
-                .root_module = gccpp_mod,
-            });
-        } else blk: {
-            break :blk b.addLibrary(.{
-                .linkage = .static,
-                .name = "gccpp",
-                .root_module = gccpp_mod,
-            });
-        };
         gccpp.addCSourceFiles(.{
             .files = &.{
                 "gc_badalc.cc",
@@ -521,23 +502,14 @@ pub fn build(b: *std.Build) void {
         linkLibCpp(gccpp);
         if (enable_throw_bad_alloc_library) {
             // The same as gccpp but contains only gc_badalc.
-            const gctba_mod = b.createModule(.{
-                .target = target,
-                .optimize = optimize,
+            gctba = b.addLibrary(.{
+                .linkage = if (build_shared_libs) .dynamic else .static,
+                .name = "gctba",
+                .root_module = b.createModule(.{
+                    .target = target,
+                    .optimize = optimize,
+                }),
             });
-            gctba = if (build_shared_libs) blk: {
-                break :blk b.addLibrary(.{
-                    .linkage = .dynamic,
-                    .name = "gctba",
-                    .root_module = gctba_mod,
-                });
-            } else blk: {
-                break :blk b.addLibrary(.{
-                    .linkage = .static,
-                    .name = "gctba",
-                    .root_module = gctba_mod,
-                });
-            };
             gctba.addCSourceFiles(.{
                 .files = &.{
                     "gc_badalc.cc",
@@ -552,23 +524,14 @@ pub fn build(b: *std.Build) void {
 
     var cord: *std.Build.Step.Compile = undefined;
     if (build_cord) {
-        const cord_mod = b.createModule(.{
-            .target = target,
-            .optimize = optimize,
+        cord = b.addLibrary(.{
+            .linkage = if (build_shared_libs) .dynamic else .static,
+            .name = "cord",
+            .root_module = b.createModule(.{
+                .target = target,
+                .optimize = optimize,
+            })
         });
-        cord = if (build_shared_libs) blk: {
-            break :blk b.addLibrary(.{
-                .linkage = .dynamic,
-                .name = "cord",
-                .root_module = cord_mod
-            });
-        } else blk: {
-            break :blk b.addLibrary(.{
-                .linkage = .static,
-                .name = "cord",
-                .root_module = cord_mod
-            });
-        };
         cord.addCSourceFiles(.{
             .files = &.{
                 "cord/cordbscs.c",
