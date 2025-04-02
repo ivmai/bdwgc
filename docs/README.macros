@@ -122,15 +122,20 @@ configuration values, others become hard-coded values for the library.
 MACRO           EXPLANATION
 -----           -----------
 
+NO_FIND_LEAK    Turns off the support of the find-leak mode in the collector.
+  Worth using to reduce the library code size slightly.
+
 FIND_LEAK       Causes GC_find_leak to be initially set.  This causes the
   collector to assume that all inaccessible objects should have been
   explicitly deallocated, and reports exceptions.  Finalization and the test
-  program are not usable in this mode.
+  program are not usable in this mode.  Should not be defined if NO_FIND_LEAK
+  is defined.
 
 GC_FINDLEAK_DELAY_FREE  Turns on deferred freeing of objects in the
   leak-finding mode letting the collector to detect alter-object-after-free
   errors as well as detect leaked objects sooner (instead of only when program
-  terminates).  Has no effect if SHORT_DBG_HDRS.
+  terminates).  Should not be defined if NO_FIND_LEAK or SHORT_DBG_HDRS is
+  defined.
 
 GC_ABORT_ON_LEAK        Causes the application to be terminated once leaked or
   smashed (corrupted on use-after-free) objects are found (after printing the

@@ -24,9 +24,10 @@ main(void)
   char *p[N_TESTS];
   unsigned i;
 
+#ifndef NO_FIND_LEAK
   /* Just in case the code is compiled without FIND_LEAK defined. */
   GC_set_find_leak(1);
-
+#endif
   /* Needed if thread-local allocation is enabled.    */
   /* FIXME: This is not ideal.    */
   GC_INIT();

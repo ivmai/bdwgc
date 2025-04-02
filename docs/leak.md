@@ -16,8 +16,9 @@ structures. Thus it does not require all objects to be deallocated at process
 exit time, a potentially useless activity that often triggers large amounts
 of paging.
 
-The garbage collector provides leak detection support. This includes the
-following features:
+The garbage collector provides leak detection support (unless the collector
+is built with `NO_FIND_LEAK` macro defined). This includes the following
+features:
 
   1. Leak detection mode can be initiated at run-time by `GC_set_find_leak(1)`
   call at program startup instead of building the collector with `FIND_LEAK`

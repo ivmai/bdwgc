@@ -658,7 +658,7 @@ GC_try_to_collect_inner(GC_stop_func stop_func)
     GC_wait_for_reclaim();
 #endif
   ENTER_GC();
-  if ((GC_find_leak || stop_func != GC_never_stop_func)
+  if ((GC_find_leak_inner || stop_func != GC_never_stop_func)
       && !GC_reclaim_all(stop_func, FALSE)) {
     /* Aborted.  So far everything is still consistent. */
     EXIT_GC();
@@ -1303,7 +1303,7 @@ GC_finish_collection(void)
   }
 #endif
   COND_DUMP;
-  if (GC_find_leak) {
+  if (GC_find_leak_inner) {
     set_all_fl_marks();
     /* This just checks; it doesn't really reclaim anything.      */
     GC_start_reclaim(TRUE);

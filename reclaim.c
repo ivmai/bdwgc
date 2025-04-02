@@ -37,11 +37,13 @@ GC_INNER GC_signed_word GC_fl_builder_count = 0;
 /* cycle, since the routine for printing objects needs to run outside   */
 /* the collector, e.g. without the allocator lock.                      */
 
-#ifndef MAX_LEAKED
-#  define MAX_LEAKED 40
-#endif
+#ifndef NO_FIND_LEAK
+#  ifndef MAX_LEAKED
+#    define MAX_LEAKED 40
+#  endif
 STATIC ptr_t GC_leaked[MAX_LEAKED] = { NULL };
 STATIC unsigned GC_n_leaked = 0;
+#endif
 
 #ifdef AO_HAVE_store
 GC_INNER volatile AO_t GC_have_errors = 0;
@@ -150,55 +152,7 @@ GC_has_other_debug_info(ptr_t base)
   }
   return 1;
 }
-
-STATIC GC_bool
-GC_check_leaked(ptr_t base)
-{
-  size_t i;
-  size_t lpw;
-  ptr_t *p;
-
-  if (
-#  if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
-      (*(GC_uintptr_t *)base & 1) != 0 &&
-#  endif
-      GC_has_other_debug_info(base) >= 0)
-    return TRUE; /* object has leaked */
-
-  /* Validate freed object's content. */
-  p = (ptr_t *)(base + sizeof(oh));
-  lpw = BYTES_TO_PTRS(HDR(base)->hb_sz - sizeof(oh));
-  for (i = 0; i < lpw; ++i)
-    if ((GC_uintptr_t)p[i] != GC_FREED_MEM_MARKER) {
-      /* Do not reclaim it in this cycle. */
-      GC_set_mark_bit(base);
-      /* Alter-after-free has been detected. */
-      GC_add_smashed((ptr_t)(&p[i]));
-      /* Do not report any other smashed locations in the object. */
-      break;
-    }
-
-  return FALSE; /* GC_debug_free() has been called */
-}
-
 #endif /* !SHORT_DBG_HDRS */
-
-GC_INLINE void
-GC_add_leaked(ptr_t leaked)
-{
-  GC_ASSERT(I_HOLD_LOCK());
-#ifndef SHORT_DBG_HDRS
-  if (GC_findleak_delay_free && !GC_check_leaked(leaked))
-    return;
-#endif
-
-  GC_SET_HAVE_ERRORS();
-  if (GC_n_leaked < MAX_LEAKED) {
-    GC_leaked[GC_n_leaked++] = leaked;
-    /* Make sure it is not reclaimed this cycle.      */
-    GC_set_mark_bit(leaked);
-  }
-}
 
 GC_INNER void
 GC_default_print_heap_obj_proc(ptr_t p)
@@ -222,8 +176,10 @@ GC_print_all_errors(void)
 {
   static GC_bool printing_errors = FALSE;
   GC_bool have_errors;
+#ifndef NO_FIND_LEAK
   unsigned i, n_leaked;
   ptr_t leaked[MAX_LEAKED];
+#endif
 
   LOCK();
   if (printing_errors) {
@@ -232,6 +188,7 @@ GC_print_all_errors(void)
   }
   have_errors = get_have_errors();
   printing_errors = TRUE;
+#ifndef NO_FIND_LEAK
   n_leaked = GC_n_leaked;
   if (n_leaked > 0) {
     GC_ASSERT(n_leaked <= MAX_LEAKED);
@@ -239,6 +196,7 @@ GC_print_all_errors(void)
     GC_n_leaked = 0;
     BZERO(GC_leaked, n_leaked * sizeof(ptr_t));
   }
+#endif
   UNLOCK();
 
   if (GC_debugging_started) {
@@ -247,17 +205,20 @@ GC_print_all_errors(void)
     have_errors = FALSE;
   }
 
+#ifndef NO_FIND_LEAK
   if (n_leaked > 0) {
     GC_err_printf("Found %u leaked objects:\n", n_leaked);
     have_errors = TRUE;
   }
   for (i = 0; i < n_leaked; i++) {
     ptr_t p = leaked[i];
-#ifndef SKIP_LEAKED_OBJECTS_PRINTING
+
+#  ifndef SKIP_LEAKED_OBJECTS_PRINTING
     GC_print_heap_obj(p);
-#endif
+#  endif
     GC_free(p);
   }
+#endif
 
   if (have_errors
 #ifndef GC_ABORT_ON_LEAK
@@ -417,6 +378,57 @@ GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, size_t sz, ptr_t list,
 }
 #endif /* ENABLE_DISCLAIM */
 
+#ifndef NO_FIND_LEAK
+
+#  ifndef SHORT_DBG_HDRS
+STATIC GC_bool
+GC_check_leaked(ptr_t base)
+{
+  size_t i;
+  size_t lpw;
+  ptr_t *p;
+
+  if (
+#    if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
+      (*(GC_uintptr_t *)base & 1) != 0 &&
+#    endif
+      GC_has_other_debug_info(base) >= 0)
+    return TRUE; /* object has leaked */
+
+  /* Validate freed object's content. */
+  p = (ptr_t *)(base + sizeof(oh));
+  lpw = BYTES_TO_PTRS(HDR(base)->hb_sz - sizeof(oh));
+  for (i = 0; i < lpw; ++i)
+    if ((GC_uintptr_t)p[i] != GC_FREED_MEM_MARKER) {
+      /* Do not reclaim it in this cycle. */
+      GC_set_mark_bit(base);
+      /* Alter-after-free has been detected. */
+      GC_add_smashed((ptr_t)(&p[i]));
+      /* Do not report any other smashed locations in the object. */
+      break;
+    }
+
+  return FALSE; /* GC_debug_free() has been called */
+}
+#  endif /* !SHORT_DBG_HDRS */
+
+GC_INLINE void
+GC_add_leaked(ptr_t leaked)
+{
+  GC_ASSERT(I_HOLD_LOCK());
+#  ifndef SHORT_DBG_HDRS
+  if (GC_findleak_delay_free && !GC_check_leaked(leaked))
+    return;
+#  endif
+
+  GC_SET_HAVE_ERRORS();
+  if (GC_n_leaked < MAX_LEAKED) {
+    GC_leaked[GC_n_leaked++] = leaked;
+    /* Make sure it is not reclaimed this cycle. */
+    GC_set_mark_bit(leaked);
+  }
+}
+
 /* Do not really reclaim objects, just check for unmarked ones.     */
 STATIC void
 GC_reclaim_check(struct hblk *hbp, const hdr *hhdr, size_t sz)
@@ -424,9 +436,9 @@ GC_reclaim_check(struct hblk *hbp, const hdr *hhdr, size_t sz)
   size_t bit_no;
   ptr_t p, plim;
 
-#ifndef THREADS
+#  ifndef THREADS
   GC_ASSERT(sz == hhdr->hb_sz);
-#endif
+#  endif
   /* Go through all objects in the block. */
   p = hbp->hb_body;
   plim = p + HBLKSIZE - sz;
@@ -435,6 +447,8 @@ GC_reclaim_check(struct hblk *hbp, const hdr *hhdr, size_t sz)
       GC_add_leaked(p);
   }
 }
+
+#endif /* !NO_FIND_LEAK */
 
 /* Is a pointer-free block?  Same as IS_PTRFREE() macro but uses    */
 /* unordered atomic access to avoid racing with GC_realloc.         */
@@ -493,7 +507,9 @@ GC_reclaim_small_nonempty_block(struct hblk *hbp, size_t sz,
   hhdr = HDR(hbp);
   hhdr->hb_last_reclaimed = (unsigned short)GC_gc_no;
   if (report_if_found) {
+#ifndef NO_FIND_LEAK
     GC_reclaim_check(hbp, hhdr, sz);
+#endif
   } else {
     struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
     void **flh = &ok->ok_freelist[BYTES_TO_GRANULES(sz)];
@@ -563,7 +579,9 @@ GC_reclaim_block(struct hblk *hbp, void *report_if_found)
     if (!mark_bit_from_hdr(hhdr, 0)) {
       if (report_if_found) {
         GC_ASSERT(hbp == hhdr->hb_block);
+#ifndef NO_FIND_LEAK
         GC_add_leaked((ptr_t)hbp);
+#endif
       } else {
 #ifdef ENABLE_DISCLAIM
         if (EXPECT(hhdr->hb_flags & HAS_DISCLAIM, 0)) {
@@ -639,7 +657,7 @@ GC_reclaim_block(struct hblk *hbp, void *report_if_found)
         GC_freehblk(hbp);
         FREE_PROFILER_HOOK(hbp);
       }
-    } else if (GC_find_leak || !GC_block_nearly_full(hhdr, sz)) {
+    } else if (GC_find_leak_inner || !GC_block_nearly_full(hhdr, sz)) {
       /* Group of smaller objects, enqueue the real work.   */
       struct hblk **rlh = ok->ok_reclaim_list;
 

@@ -76,11 +76,11 @@ main(void)
 #  endif
 #endif
 
+#ifndef NO_FIND_LEAK
   /* Just in case the code is compiled without FIND_LEAK defined. */
   GC_set_find_leak(1);
-
+#endif
   GC_INIT();
-
   /* This is optional if pthread_create() redirected. */
   GC_allow_register_threads();
 

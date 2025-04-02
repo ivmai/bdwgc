@@ -166,7 +166,7 @@ GC_register_disappearing_link_inner(struct dl_hashtbl_s *dl_hashtbl,
   struct disappearing_link *new_dl;
 
   GC_ASSERT(GC_is_initialized);
-  if (EXPECT(GC_find_leak, FALSE))
+  if (EXPECT(GC_find_leak_inner, FALSE))
     return GC_UNIMPLEMENTED;
 #  ifdef GC_ASSERTIONS
   GC_noop1_ptr(*link); /* check accessibility */
@@ -730,7 +730,7 @@ GC_register_finalizer_inner(void *obj, GC_finalization_proc fn, void *cd,
   const hdr *hhdr = NULL; /* initialized to prevent warning. */
 
   GC_ASSERT(GC_is_initialized);
-  if (EXPECT(GC_find_leak, FALSE)) {
+  if (EXPECT(GC_find_leak_inner, FALSE)) {
     /* No-op.  *ocd and *ofn remain unchanged.    */
     return;
   }

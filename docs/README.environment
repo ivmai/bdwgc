@@ -160,11 +160,14 @@ GC_FORCE_UNMAP_ON_GCOLLECT - Turn "unmap as much as possible on explicit GC"
 
 GC_FIND_LEAK - Turns on GC_find_leak and thus leak detection.  Forces a
                collection at program termination to detect leaks that would
-               otherwise occur after the last GC.
+               otherwise occur after the last GC.  Not functional if the
+               collector is built with NO_FIND_LEAK macro defined.
 
 GC_FINDLEAK_DELAY_FREE - Turns on deferred freeing of objects in the
-                       leak-finding mode (see the corresponding macro
-                       description for more information).
+                         leak-finding mode (see the corresponding macro
+                         description for more information).  Not functional
+                         if the collector is built with NO_FIND_LEAK macro
+                         defined.
 
 GC_ABORT_ON_LEAK - Causes the application to be terminated once leaked or
                    smashed objects are found.

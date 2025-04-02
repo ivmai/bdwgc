@@ -979,7 +979,7 @@ retry:
     /* drop some such blocks, since otherwise we spend all our        */
     /* time traversing them if pointer-free blocks are unpopular.     */
     /* A dropped block will be reconsidered at next GC.               */
-    if (size_needed == HBLKSIZE && 0 == align_m1 && !GC_find_leak
+    if (size_needed == HBLKSIZE && 0 == align_m1 && !GC_find_leak_inner
         && IS_MAPPED(hhdr) && (++GC_drop_blacklisted_count & 3) == 0) {
       const struct hblk *prev = hhdr->hb_prev;
 

@@ -2620,11 +2620,16 @@ GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
 void GC_print_address_map(void);
 #endif
 
-#ifndef SHORT_DBG_HDRS
+#ifdef NO_FIND_LEAK
+#  define GC_find_leak_inner FALSE
+#else
+#  define GC_find_leak_inner GC_find_leak
+#  ifndef SHORT_DBG_HDRS
 /* Do not immediately deallocate object on free() in the leak-finding */
 /* mode, just mark it as freed (and deallocate it after GC).          */
 GC_EXTERN GC_bool GC_findleak_delay_free;
-#endif
+#  endif
+#endif /* !NO_FIND_LEAK */
 
 #ifdef AO_HAVE_store
 GC_EXTERN volatile AO_t GC_have_errors;

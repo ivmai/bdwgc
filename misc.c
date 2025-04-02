@@ -123,13 +123,13 @@ int GC_find_leak = 1;
 int GC_find_leak = 0;
 #endif
 
-#ifndef SHORT_DBG_HDRS
+#if !defined(NO_FIND_LEAK) && !defined(SHORT_DBG_HDRS)
 #  ifdef GC_FINDLEAK_DELAY_FREE
 GC_INNER GC_bool GC_findleak_delay_free = TRUE;
 #  else
 GC_INNER GC_bool GC_findleak_delay_free = FALSE;
 #  endif
-#endif /* !SHORT_DBG_HDRS */
+#endif /* !NO_FIND_LEAK && !SHORT_DBG_HDRS */
 
 #ifdef ALL_INTERIOR_POINTERS
 int GC_all_interior_pointers = 1;
@@ -828,7 +828,6 @@ GC_INNER CRITICAL_SECTION GC_write_cs;
 #endif
 
 #ifndef DONT_USE_ATEXIT
-
 #  if !defined(SMALL_CONFIG)
 /* A dedicated variable to avoid a garbage collection on abort.     */
 /* GC_find_leak cannot be used for this purpose as otherwise        */
@@ -859,7 +858,6 @@ GC_exit_check(void)
     GC_gcollect();
   }
 }
-
 #endif /* !DONT_USE_ATEXIT */
 
 #if defined(UNIX_LIKE) && !defined(NO_DEBUGGING)
@@ -1240,13 +1238,15 @@ GC_init(void)
     }
   }
 #endif
+#ifndef NO_FIND_LEAK
   if (GETENV("GC_FIND_LEAK") != NULL) {
     GC_find_leak = 1;
   }
-#ifndef SHORT_DBG_HDRS
+#  ifndef SHORT_DBG_HDRS
   if (GETENV("GC_FINDLEAK_DELAY_FREE") != NULL) {
     GC_findleak_delay_free = TRUE;
   }
+#  endif
 #endif
   if (GETENV("GC_ALL_INTERIOR_POINTERS") != NULL) {
     GC_all_interior_pointers = 1;
@@ -1589,7 +1589,7 @@ GC_enable_incremental(void)
   /* If we are keeping back pointers, the GC itself dirties all */
   /* pages on which objects have been marked, making            */
   /* incremental GC pointless.                                  */
-  if (!GC_find_leak && NULL == GETENV("GC_DISABLE_INCREMENTAL")) {
+  if (!GC_find_leak_inner && NULL == GETENV("GC_DISABLE_INCREMENTAL")) {
     LOCK();
     if (!GC_incremental) {
       GC_setpagesize();
@@ -2740,13 +2740,18 @@ GC_API void GC_CALL
 GC_set_find_leak(int value)
 {
   /* value is of boolean type. */
+#ifdef NO_FIND_LEAK
+  if (value)
+    ABORT("Find-leak mode is unsupported");
+#else
   GC_find_leak = value;
+#endif
 }
 
 GC_API int GC_CALL
 GC_get_find_leak(void)
 {
-  return GC_find_leak;
+  return GC_find_leak_inner;
 }
 
 GC_API void GC_CALL

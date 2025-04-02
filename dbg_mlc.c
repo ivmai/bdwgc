@@ -607,7 +607,7 @@ GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
   char *copy;
   size_t lb;
   if (str == NULL) {
-    if (GC_find_leak)
+    if (GC_find_leak_inner)
       GC_err_printf("strdup(NULL) behavior is undefined\n");
     return NULL;
   }
@@ -740,14 +740,18 @@ GC_debug_free(void *p)
     ((oh *)base)->oh_sz = (GC_uintptr_t)sz;
 #endif /* !SHORT_DBG_HDRS */
   }
-  if (GC_find_leak
-#ifndef SHORT_DBG_HDRS
+#ifndef NO_FIND_LEAK
+  if (GC_find_leak_inner
+#  ifndef SHORT_DBG_HDRS
       && ((word)((ptr_t)p - base) != sizeof(oh) || !GC_findleak_delay_free)
-#endif
+#  endif
   ) {
     GC_free(base);
-  } else {
+  } else
+#endif
+  /* else */ {
     const hdr *hhdr = HDR(p);
+
     if (hhdr->hb_obj_kind == UNCOLLECTABLE
 #ifdef GC_ATOMIC_UNCOLLECTABLE
         || hhdr->hb_obj_kind == AUNCOLLECTABLE
@@ -772,7 +776,7 @@ GC_debug_free(void *p)
 #endif
       UNLOCK();
     }
-  } /* !GC_find_leak */
+  }
 }
 
 #if defined(THREADS) && defined(DBG_HDRS_ALL)

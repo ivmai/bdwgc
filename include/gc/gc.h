@@ -180,6 +180,8 @@ GC_API GC_on_thread_event_proc GC_CALL GC_get_on_thread_event(void);
 /* GC_FREE).  Initial value is determined by FIND_LEAK macro.           */
 /* The value should not typically be modified after the collector       */
 /* initialization (and, thus, it does not use or need synchronization). */
+/* The mode is supported only if the library has been compiled without  */
+/* NO_FIND_LEAK macro defined.                                          */
 GC_API GC_ATTR_DEPRECATED int GC_find_leak;
 GC_API void GC_CALL GC_set_find_leak(int);
 GC_API int GC_CALL GC_get_find_leak(void);

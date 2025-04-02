@@ -3021,7 +3021,7 @@ extern ptr_t GC_data_start;
 #  define INCLUDE_LINUX_THREAD_DESCR
 #endif
 
-#if !defined(CPPCHECK)
+#ifndef CPPCHECK
 #  if defined(GC_AIX_THREADS) && !defined(AIX)                            \
       || (defined(GC_DARWIN_THREADS) && !defined(DARWIN))                 \
       || (defined(GC_DGUX386_THREADS) && !defined(DGUX))                  \
@@ -3041,14 +3041,21 @@ extern ptr_t GC_data_start;
 #  elif defined(GC_WIN32_PTHREADS) && defined(CYGWIN32)
 #    error Inconsistent configuration (GC_PTHREADS)
 #  endif
+#  if defined(PARALLEL_MARK) && !defined(THREADS)
+#    error Invalid config: PARALLEL_MARK requires GC_THREADS
+#  endif
+#  if defined(GWW_VDB) && !defined(USE_WINALLOC)
+#    error Invalid config: GWW_VDB requires USE_WINALLOC
+#  endif
+#  if (defined(GC_FINDLEAK_DELAY_FREE) && defined(SHORT_DBG_HDRS)) \
+      || ((defined(FIND_LEAK) || defined(GC_FINDLEAK_DELAY_FREE))  \
+          && defined(NO_FIND_LEAK))
+#    error Invalid config: FIND_LEAK and NO_FIND_LEAK are mutually exclusive
+#  endif
 #endif /* !CPPCHECK */
 
-#if defined(PARALLEL_MARK) && !defined(THREADS) && !defined(CPPCHECK)
-#  error Invalid config: PARALLEL_MARK requires GC_THREADS
-#endif
-
-#if defined(GWW_VDB) && !defined(USE_WINALLOC) && !defined(CPPCHECK)
-#  error Invalid config: GWW_VDB requires USE_WINALLOC
+#if defined(NO_FIND_LEAK) && !defined(DONT_USE_ATEXIT)
+#  define DONT_USE_ATEXIT
 #endif
 
 /* Whether GC_page_size is to be set to a value other than page size.   */

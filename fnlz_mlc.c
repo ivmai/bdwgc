@@ -49,7 +49,7 @@ GC_finalized_disclaim(void *obj)
         = (struct GC_finalizer_closure *)CPTR_CLEAR_FLAGS(
             fc_p, FINALIZER_CLOSURE_FLAG);
 
-    GC_ASSERT(!GC_find_leak);
+    GC_ASSERT(!GC_find_leak_inner);
     fc->proc((ptr_t *)obj + 1, fc->cd);
   }
   return 0;
@@ -60,7 +60,7 @@ GC_register_disclaim_proc_inner(unsigned kind, GC_disclaim_proc proc,
                                 GC_bool mark_unconditionally)
 {
   GC_ASSERT(kind < MAXOBJKINDS);
-  if (EXPECT(GC_find_leak, FALSE))
+  if (EXPECT(GC_find_leak_inner, FALSE))
     return;
 
   GC_obj_kinds[kind].ok_disclaim_proc = proc;
