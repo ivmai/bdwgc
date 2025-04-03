@@ -214,4 +214,4 @@ GC_WIN32_PTHREADS (or pass --enable-threads=pthreads to configure).
 Use -DPTW32_STATIC_LIB for the static threads library.
 
 The alternate (better) way to build the library is to use CMake script;
-please see README.cmake for the details.
+please see cmake.md file for the details.

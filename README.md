@@ -202,7 +202,7 @@ ctest
 ```
 
 This is the most cross-platform way of building the library.
-See [README.cmake](docs/README.cmake) for details.
+See [cmake.md](docs/cmake.md) for details.
 
 ### GNU Autoconf/Automake
 
@@ -221,7 +221,7 @@ The GNU style build process understands the usual targets and options.
 all the configuration options.  It is currently not possible to exercise all
 combinations of build options this way.
 
-See [README.autoconf](docs/README.autoconf) for details.
+See [autoconf.md](docs/autoconf.md) for details.
 
 ### Zig
 

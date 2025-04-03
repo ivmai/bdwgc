@@ -249,9 +249,9 @@ The following documents are not platform-specific in general.
 
 [Scalability of the collector to multiprocessors](scale.md).
 
-[Instructions on building the library using autoconf/configure](README.autoconf).
+[Instructions on building the library using autoconf/configure](autoconf.md).
 
-[Instructions on building the library using cmake](README.cmake).
+[Instructions on building the library using cmake](cmake.md).
 
 [List of environment variables that affect the collector operation at runtime](README.environment).
 

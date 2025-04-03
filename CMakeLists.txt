@@ -964,10 +964,10 @@ if (enable_docs)
   install(FILES AUTHORS ChangeLog LICENSE README.md
           DESTINATION "${CMAKE_INSTALL_DOCDIR}")
   install(FILES
-            docs/README.autoconf
-            docs/README.cmake
             docs/README.environment
             docs/README.macros
+            docs/autoconf.md
+            docs/cmake.md
             docs/cords.md
             docs/debugging.md
             docs/faq.md

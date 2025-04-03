@@ -5,7 +5,7 @@
 * Add 'lib' prefix to build artifact names in Makefile.direct
 * Add API to get total stopped-world marking time
 * Add I_HOLD_LOCK assertion to callers of GC_get_maps (refactoring)
-* Add Linux example to README.cmake
+* Add Linux example to cmake.md
 * Add assertion about kind argument range in GC_register_describe_type_fn
 * Add assertion about minimal value of GC_GCJ_MARK_DESCR_OFFSET
 * Add assertion in GC_set_fl_marks that there is no loop in freelist
