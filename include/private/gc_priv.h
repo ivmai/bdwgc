@@ -2625,7 +2625,7 @@ void GC_print_address_map(void);
 #else
 #  define GC_find_leak_inner GC_find_leak
 #  ifndef SHORT_DBG_HDRS
-/* Do not immediately deallocate object on free() in the leak-finding */
+/* Do not immediately deallocate object on free() in the find-leak    */
 /* mode, just mark it as freed (and deallocate it after GC).          */
 GC_EXTERN GC_bool GC_findleak_delay_free;
 #  endif

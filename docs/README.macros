@@ -105,9 +105,9 @@ GC_NO_VALLOC    Tested by gc.h and leak_detector.h.  Do not provide GC_valloc
 
 GC_REQUIRE_WCSDUP   Tested by gc.h and leak_detector.h (and by dbg_mlc.c and
                 mallocx.c).  Force GC to export GC_wcsdup() (the Unicode
-                version of GC_strdup); could be useful in the leak-finding
-                mode.  Clients should define it before including gc.h if the
-                function is needed.
+                version of GC_strdup); could be useful in the find-leak mode.
+                Clients should define it before including gc.h if the function
+                is needed.
 
 GC_MARKERS=<n>  Tested by gc.h.  Set the desired number of marker threads.
                 If not defined or defined to zero, then the collector decides
@@ -131,11 +131,10 @@ FIND_LEAK       Causes GC_find_leak to be initially set.  This causes the
   program are not usable in this mode.  Should not be defined if NO_FIND_LEAK
   is defined.
 
-GC_FINDLEAK_DELAY_FREE  Turns on deferred freeing of objects in the
-  leak-finding mode letting the collector to detect alter-object-after-free
-  errors as well as detect leaked objects sooner (instead of only when program
-  terminates).  Should not be defined if NO_FIND_LEAK or SHORT_DBG_HDRS is
-  defined.
+GC_FINDLEAK_DELAY_FREE  Turns on deferred freeing of objects in the find-leak
+  mode letting the collector to detect alter-object-after-free errors as well
+  as detect leaked objects sooner (instead of only when program terminates).
+  Should not be defined if NO_FIND_LEAK or SHORT_DBG_HDRS is defined.
 
 GC_ABORT_ON_LEAK        Causes the application to be terminated once leaked or
   smashed (corrupted on use-after-free) objects are found (after printing the
