@@ -274,7 +274,7 @@ GC_API void GC_CALL GC_set_dont_expand(int);
 GC_API int GC_CALL GC_get_dont_expand(void);
 
 /* Causes the non-incremental collector to use the entire heap before   */
-/* collecting.  This sometimes results in more large block              */
+/* collecting.  This sometimes results in more large-block              */
 /* fragmentation, since very large blocks will tend to get broken up    */
 /* during each collection cycle.  It is likely to result in a larger    */
 /* working set, but lower collection frequencies, and hence fewer       */
