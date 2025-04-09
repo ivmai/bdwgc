@@ -2025,6 +2025,9 @@ GC_write(int fd, const char *buf, size_t len)
 /* Floating point arguments and formats should be avoided, since FP       */
 /* conversion is more likely to allocate memory.                          */
 /* Assumes that no more than BUFSZ-1 characters are written at once.      */
+#if defined(GC_DISABLE_OUTPUT)
+#define GC_PRINTF_FILLBUF(buf, format)
+#else
 #define GC_PRINTF_FILLBUF(buf, format)                      \
   do {                                                      \
     va_list args;                                           \
@@ -2035,10 +2038,12 @@ GC_write(int fd, const char *buf, size_t len)
     if ((buf)[sizeof(buf) - 1] != 0x15)                     \
       ABORT("GC_printf clobbered stack");                   \
   } while (0)
+#endif
 
 void
 GC_printf(const char *format, ...)
 {
+#if !defined(GC_DISABLE_OUTPUT)
   if (!GC_quiet) {
     char buf[BUFSZ + 1];
 
@@ -2056,6 +2061,7 @@ GC_printf(const char *format, ...)
     }
 #endif
   }
+#endif
 }
 
 void
@@ -2070,6 +2076,7 @@ GC_err_printf(const char *format, ...)
 void
 GC_log_printf(const char *format, ...)
 {
+#if !defined(GC_DISABLE_OUTPUT)
   char buf[BUFSZ + 1];
 
   GC_PRINTF_FILLBUF(buf, format);
@@ -2084,6 +2091,7 @@ GC_log_printf(const char *format, ...)
     ABORT("write to GC log failed");
   }
 #endif
+#endif // !defined(GC_DISABLE_OUTPUT)
 }
 
 #ifndef GC_ANDROID_LOG
@@ -2126,7 +2134,9 @@ void
 GC_err_puts(const char *s)
 {
   /* Note: write errors are ignored.  */
+  #if !defined(GC_DISABLE_OUTPUT)
   (void)WRITE(GC_stderr, s, strlen(s));
+  #endif
 }
 
 STATIC void GC_CALLBACK
@@ -2195,8 +2205,10 @@ GC_default_on_abort(const char *msg)
     if (!GC_write_disabled)
 #    endif
     {
+#     if !defined(GC_DISABLE_OUTPUT)
       if (WRITE(GC_stderr, msg, strlen(msg)) >= 0)
         (void)WRITE(GC_stderr, "\n", 1);
+#     endif
     }
 #  else
     __android_log_assert("*" /* cond */, GC_ANDROID_LOG_TAG, "%s\n", msg);
