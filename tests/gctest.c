@@ -415,6 +415,10 @@ static sexpr
 reverse(sexpr x)
 {
 #ifdef TEST_WITH_SYSTEM_MALLOC
+  /* This causes gctest to allocate (and leak) large chunks of memory   */
+  /* with the standard system malloc().  This should cause the root set */
+  /* and collected heap to grow significantly if malloc'ed memory is    */
+  /* somehow getting traced by the collector.                           */
   GC_noop1((GC_word)GC_HIDE_NZ_POINTER(checkOOM(malloc(100000))));
 #endif
   return reverse1(x, nil);

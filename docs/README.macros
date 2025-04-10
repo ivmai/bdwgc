@@ -468,12 +468,6 @@ HANDLE_FORK (Unix and Cygwin only)      Attempt by default to make GC_malloc()
   work in a child process fork()'ed from a multi-threaded parent.  Not fully
   POSIX-compliant and could be disabled at runtime (before GC_INIT).
 
-TEST_WITH_SYSTEM_MALLOC         Causes gctest to allocate (and leak) large
-  chunks of memory with the standard system malloc().  This will cause the
-  root set and collected heap to grow significantly if malloc'ed memory is
-  somehow getting traced by the collector.  This has no impact on the built
-  library - it only affects the test.
-
 POINTER_MASK=<0x...>    Causes candidate pointers to be AND'ed with the given
   mask before being considered.  If either this or POINTER_SHIFT macro is
   defined, it will be assumed that all pointers stored in the heap need to be
