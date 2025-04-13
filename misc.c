@@ -1334,8 +1334,6 @@ GC_init(void)
       } else {
         GC_large_alloc_warn_interval = interval;
       }
-    } else if (GETENV("GC_NO_BLACKLIST_WARNING") != NULL) {
-      GC_large_alloc_warn_interval = LONG_MAX;
     }
   }
 #endif

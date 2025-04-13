@@ -66,10 +66,6 @@ the number of processor cores.  It is safer to adjust `GC_MARKERS` one than
 allocator lock implementation.  Has no effect unless the collector is built
 with `PARALLEL_MARK` macro defined.
 
-`GC_NO_BLACKLIST_WARNING` - Prevents the collector from issuing warnings about
-allocations of very large blocks.  Deprecated.  Use
-`GC_LARGE_ALLOC_WARN_INTERVAL` one instead.
-
 `GC_LARGE_ALLOC_WARN_INTERVAL=<n>` - Instructs the collector to print every
 n-th warning about very large block allocations, starting with the n-th one.
 Small values of `n` are generally benign, in that a bounded number of such
