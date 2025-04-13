@@ -288,7 +288,7 @@ case "$THREADS" in
         ;;
     esac
     case "$host" in
-      sparc*-*-solaris*)
+      sparc*)
         if test "$GCC" != yes; then
           need_atomic_ops_asm=true
         fi
@@ -1198,7 +1198,7 @@ AM_CONDITIONAL([NEED_ATOMIC_OPS_ASM],
 # Check whether particular AO primitives are emulated with locks.
 # The check below is based on the fact that linking with the libatomic_ops
 # binary file is not needed in case of absence of the emulation (except for
-# Solaris SPARC).
+# Solaris/SPARC).
 AS_IF([test x$with_libatomic_ops != xnone -a x$need_atomic_ops_asm != xtrue],
     [old_CFLAGS="$CFLAGS"
      CFLAGS="$CFLAGS $AO_TRYLINK_CFLAGS $CFLAGS_EXTRA"
