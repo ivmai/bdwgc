@@ -216,17 +216,17 @@ dist_doc_DATA = \
 
 docdocsdir = $(docdir)/docs
 dist_docdocs_DATA = \
-    docs/README.environment \
-    docs/README.macros \
     docs/autoconf.md \
     docs/cmake.md \
     docs/cords.md \
     docs/debugging.md \
+    docs/environment.md \
     docs/faq.md \
     docs/finalization.md \
     docs/gcdescr.md \
     docs/gcinterface.md \
     docs/leak.md \
+    docs/macros.md \
     docs/overview.md \
     docs/porting.md \
     docs/scale.md \

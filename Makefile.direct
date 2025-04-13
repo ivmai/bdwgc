@@ -90,7 +90,7 @@ HOSTCFLAGS= $(CFLAGS)
 # setjmp_test may yield overly optimistic results when compiled
 # without optimization.
 
-# Look into docs/README.macros for the description of the "define arguments"
+# Look into docs/macros.md for the description of the "define arguments"
 # influencing the collector configuration.
 
 # Flags for the C++ files.

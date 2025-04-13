@@ -253,9 +253,9 @@ The following documents are not platform-specific in general.
 
 [Instructions on building the library using cmake](cmake.md).
 
-[List of environment variables that affect the collector operation at runtime](README.environment).
+[List of environment variables that affect the collector operation at runtime](environment.md).
 
-[List of compile time macros that affect the library when built](README.macros).
+[List of compile time macros that affect the collector](macros.md).
 
 [Details on the finalization facility](finalization.md).
 

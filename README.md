@@ -279,7 +279,7 @@ E.g., this could be convenient for a debugging purpose.
 ### Configurable Macros
 
 The library can be configured more precisely during the build by defining
-the macros listed in [README.macros](docs/README.macros) file.
+the macros listed in [macros.md](docs/macros.md) file.
 
 The library is built with threads support enabled (i.e. for thread-safe
 operation) by default, unless explicitly disabled by:
