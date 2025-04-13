@@ -219,6 +219,7 @@ if (enable_threads)
     set(NODIST_SRC libatomic_ops/src/atomic_ops.c)
     if (CMAKE_C_COMPILER_ID STREQUAL "SunPro")
       # SunCC compiler on SunOS (Solaris).
+      enable_language(ASM)
       set(NODIST_SRC ${NODIST_SRC} libatomic_ops/src/atomic_ops_sysdeps.S)
     endif()
   elseif (BORLAND OR MSVC OR WATCOM)
