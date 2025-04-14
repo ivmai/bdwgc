@@ -333,20 +333,20 @@ cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 
 cordtest$(EXEEXT): $(srcdir)/cord/tests/cordtest.c cords base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f $@
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a -lucb
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a -ldld `./threadlibs`
-	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libgc.a libcord.a `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libcord.a libgc.a -lucb
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libcord.a libgc.a -ldld `./threadlibs`
+	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libcord.a libgc.a `./threadlibs`
 
 cord/de: de$(EXEEXT)
 
 de$(EXEEXT): $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c \
   $(srcdir)/cord/tests/de_win.h cords base_lib $(NODIST_OBJS) $(UTILS)
 	rm -f $@
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses -ltermlib -lucb `./threadlibs`
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses -ltermlib -ldld `./threadlibs`
-	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a -lcurses
-	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libgc.a libcord.a
-	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c $(NODIST_OBJS) libgc.a libcord.a $(CURSES) `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libcord.a libgc.a -lcurses -ltermlib -lucb `./threadlibs`
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libcord.a libgc.a -lcurses -ltermlib -ldld `./threadlibs`
+	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libcord.a libgc.a -lcurses
+	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libcord.a libgc.a
+	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c $(NODIST_OBJS) libcord.a libgc.a $(CURSES) `./threadlibs`
 
 if_mach$(EXEEXT): $(srcdir)/tools/if_mach.c \
   $(srcdir)/include/private/gcconfig.h
