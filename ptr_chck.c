@@ -143,6 +143,30 @@ GC_on_stack(ptr_t p)
 {
   return HOTTER_THAN(p, GC_stackbottom) && !HOTTER_THAN(p, GC_approx_sp());
 }
+
+/* Is the address p in one of the registered static root sections?    */
+STATIC GC_bool
+GC_is_static_root(ptr_t p)
+{
+  static size_t last_static_root_set = MAX_ROOT_SETS;
+  size_t i;
+
+#  if defined(CPPCHECK)
+  if (n_root_sets > MAX_ROOT_SETS)
+    ABORT("Bad n_root_sets");
+#  endif
+  if (last_static_root_set < n_root_sets
+      && ADDR_INSIDE(p, GC_static_roots[last_static_root_set].r_start,
+                     GC_static_roots[last_static_root_set].r_end))
+    return TRUE;
+  for (i = 0; i < n_root_sets; i++) {
+    if (ADDR_INSIDE(p, GC_static_roots[i].r_start, GC_static_roots[i].r_end)) {
+      last_static_root_set = i;
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
 #endif /* !THREADS */
 
 GC_API void *GC_CALL

@@ -2343,8 +2343,6 @@ GC_INNER void GC_init_parallel(void);
 GC_INNER GC_bool GC_is_main_thread(void);
 #  endif
 #else
-/* Is the address p in one of the registered static root sections?    */
-GC_INNER GC_bool GC_is_static_root(ptr_t p);
 #  ifdef TRACE_BUF
 void GC_add_trace_entry(const char *caller_fn_name, ptr_t arg1, ptr_t arg2);
 #  endif
