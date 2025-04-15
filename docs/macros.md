@@ -332,9 +332,11 @@ in which most client code is written in a "safe" language, such as
 Scheme or Java.  Assumes that all client allocation is done using
 the `GC_debug_` functions, or through the macros that expand to these,
 or by redirecting `malloc()` to `GC_debug_malloc_replacement()`.
-(Also eliminates the field for the requested object size.)
-Occasionally it could be useful for debugging of client code.  Slows down
-the collector somewhat, but not drastically.
+(Also eliminates the field for the requested object size.)  It could be
+useful for debugging of client code.  In combination with `NO_FIND_LEAK`
+macro, this could also be used to reduce code size slightly.  Slows down
+the collector somewhat (if the `GC_debug_` functions are used), but not
+drastically.
 
 `SAVE_CALL_COUNT=<n>` - Sets the number of call frames saved with objects
 allocated through the debugging interface.  Affects the amount of

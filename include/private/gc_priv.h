@@ -1923,9 +1923,6 @@ extern word GC_free_bytes[];
 /* Total size of registered root sections.      */
 GC_EXTERN word GC_root_size;
 
-/* GC_debug_malloc has been called.     */
-GC_EXTERN GC_bool GC_debugging_started;
-
 /* This is used by GC_do_blocking[_inner]().    */
 struct blocking_data {
   GC_fn_type fn;
@@ -2594,18 +2591,27 @@ GC_INNER hdr *GC_find_header(const void *h);
 /* Return NULL if out of memory.                */
 GC_INNER ptr_t GC_os_get_mem(size_t bytes);
 
-/* Print smashed and leaked objects, if any.    */
-/* Clear the lists of such objects.             */
+#if defined(NO_FIND_LEAK) && defined(SHORT_DBG_HDRS)
+#  define GC_print_all_errors() (void)0
+#  define GC_debugging_started FALSE
+#  define GC_check_heap() (void)0
+#  define GC_print_all_smashed() (void)0
+#else
+
+/* Print smashed and leaked objects, if any.  Clear the lists of such   */
+/* objects.                                                             */
 GC_INNER void GC_print_all_errors(void);
 
-/* Check that all objects in the heap with      */
-/* debugging info are intact.                   */
-/* Add any that are not to GC_smashed list.     */
+/* GC_debug_malloc has been called.     */
+GC_EXTERN GC_bool GC_debugging_started;
+
+/* Check that all objects in the heap with debugging info are intact.   */
+/* Add any that are not to GC_smashed list.                             */
 GC_EXTERN void (*GC_check_heap)(void);
 
-/* Print GC_smashed if it's not empty.          */
-/* Clear GC_smashed list.                       */
+/* Print GC_smashed list if it is not empty.  Then clear the list.      */
 GC_EXTERN void (*GC_print_all_smashed)(void);
+#endif
 
 /* If possible print (using GC_err_printf)      */
 /* a more detailed description (terminated with */
@@ -2631,11 +2637,15 @@ GC_EXTERN GC_bool GC_findleak_delay_free;
 #  endif
 #endif /* !NO_FIND_LEAK */
 
-#ifdef AO_HAVE_store
+#if defined(NO_FIND_LEAK) && defined(SHORT_DBG_HDRS)
+#  define get_have_errors() FALSE
+
+#elif defined(AO_HAVE_store)
 GC_EXTERN volatile AO_t GC_have_errors;
 #  define GC_SET_HAVE_ERRORS() AO_store(&GC_have_errors, (AO_t)TRUE)
 #  define get_have_errors() \
     ((GC_bool)AO_load(&GC_have_errors)) /* no barrier */
+
 #else
 GC_EXTERN GC_bool GC_have_errors;
 #  define GC_SET_HAVE_ERRORS() (void)(GC_have_errors = TRUE)

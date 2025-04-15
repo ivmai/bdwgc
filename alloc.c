@@ -820,8 +820,10 @@ GC_collect_a_little_inner(size_t n_blocks)
   RESTORE_CANCEL(cancel_state);
 }
 
+#if !defined(NO_FIND_LEAK) || !defined(SHORT_DBG_HDRS)
 GC_INNER void (*GC_check_heap)(void) = 0;
 GC_INNER void (*GC_print_all_smashed)(void) = 0;
+#endif
 
 GC_API int GC_CALL
 GC_collect_a_little(void)
@@ -836,7 +838,7 @@ GC_collect_a_little(void)
   GC_collect_a_little_inner(1);
   result = (int)GC_collection_in_progress();
   UNLOCK();
-  if (!result && GC_debugging_started)
+  if (GC_debugging_started && !result)
     GC_print_all_smashed();
   return result;
 }
@@ -979,9 +981,8 @@ GC_stopped_mark(GC_stop_func stop_func)
   } else {
     GC_gc_no++;
     /* Check all debugged objects for consistency.    */
-    if (GC_debugging_started) {
-      (*GC_check_heap)();
-    }
+    if (GC_debugging_started)
+      GC_check_heap();
     if (GC_on_collection_event)
       GC_on_collection_event(GC_EVENT_MARK_END);
   }

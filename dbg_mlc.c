@@ -394,15 +394,21 @@ GC_debug_print_heap_obj_proc(ptr_t base)
 
 #ifndef SHORT_DBG_HDRS
 STATIC void GC_check_heap_proc(void);
-#else
-STATIC void
-GC_do_nothing(void)
+#elif !defined(NO_FIND_LEAK)
+static void
+do_nothing(void)
 {
 }
 #endif /* SHORT_DBG_HDRS */
 
+#if defined(NO_FIND_LEAK) && defined(SHORT_DBG_HDRS)
+static GC_bool debugging_initialized = FALSE;
+#else
+#  define debugging_initialized GC_debugging_started
+#endif
+
 /* Turn on the debugging mode.  Should not be called if */
-/* GC_debugging_started is already set.                 */
+/* debugging_initialized is already set.                */
 STATIC void
 GC_start_debugging_inner(void)
 {
@@ -410,12 +416,12 @@ GC_start_debugging_inner(void)
 #ifndef SHORT_DBG_HDRS
   GC_check_heap = GC_check_heap_proc;
   GC_print_all_smashed = GC_print_all_smashed_proc;
-#else
-  GC_check_heap = GC_do_nothing;
-  GC_print_all_smashed = GC_do_nothing;
+#elif !defined(NO_FIND_LEAK)
+  GC_check_heap = do_nothing;
+  GC_print_all_smashed = do_nothing;
 #endif
   GC_print_heap_obj = GC_debug_print_heap_obj_proc;
-  GC_debugging_started = TRUE;
+  debugging_initialized = TRUE;
   GC_register_displacement_inner(sizeof(oh));
 #if defined(CPPCHECK)
   GC_noop1(GC_debug_header_size);
@@ -435,7 +441,7 @@ store_debug_info(void *base, size_t lb, const char *fn, GC_EXTRA_PARAMS)
     return NULL;
   }
   LOCK();
-  if (!GC_debugging_started)
+  if (!debugging_initialized)
     GC_start_debugging_inner();
   result = GC_store_debug_info_inner(base, lb, s, i);
   ADD_CALL_CHAIN(base, ra);
@@ -551,7 +557,7 @@ GC_debug_generic_malloc_inner(size_t lb, int k, unsigned flags)
                   (unsigned long)lb);
     return NULL;
   }
-  if (!GC_debugging_started)
+  if (!debugging_initialized)
     GC_start_debugging_inner();
   result = GC_store_debug_info_inner(base, lb, "INTERNAL", 0);
   ADD_CALL_CHAIN_INNER(base);
@@ -1154,9 +1160,8 @@ GC_debug_gcj_malloc(size_t lb, const void *vtable_ptr, GC_EXTRA_PARAMS)
     return (*oom_fn)(lb);
   }
   *((const void **)((ptr_t)base + sizeof(oh))) = vtable_ptr;
-  if (!GC_debugging_started) {
+  if (!debugging_initialized)
     GC_start_debugging_inner();
-  }
   result = GC_store_debug_info_inner(base, lb, s, i);
   ADD_CALL_CHAIN(base, ra);
   UNLOCK();

@@ -72,9 +72,6 @@ GC_INNER unsigned GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
 
 GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
 
-/* This variable is defined here so we do not have to link dbg_mlc.o.   */
-GC_INNER GC_bool GC_debugging_started = FALSE;
-
 ptr_t GC_stackbottom = 0;
 
 #if defined(E2K) && defined(THREADS) || defined(IA64)

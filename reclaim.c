@@ -45,12 +45,6 @@ STATIC ptr_t GC_leaked[MAX_LEAKED] = { NULL };
 STATIC unsigned GC_n_leaked = 0;
 #endif
 
-#ifdef AO_HAVE_store
-GC_INNER volatile AO_t GC_have_errors = 0;
-#else
-GC_INNER GC_bool GC_have_errors = FALSE;
-#endif
-
 #if !defined(EAGER_SWEEP) && defined(ENABLE_DISCLAIM)
 STATIC void GC_reclaim_unconditionally_marked(void);
 #endif
@@ -169,6 +163,15 @@ GC_default_print_heap_obj_proc(ptr_t p)
 
 GC_INNER void (*GC_print_heap_obj)(ptr_t p) = GC_default_print_heap_obj_proc;
 
+#if !defined(NO_FIND_LEAK) || !defined(SHORT_DBG_HDRS)
+#  ifdef AO_HAVE_store
+GC_INNER volatile AO_t GC_have_errors = 0;
+#  else
+GC_INNER GC_bool GC_have_errors = FALSE;
+#  endif
+
+GC_INNER GC_bool GC_debugging_started = FALSE;
+
 /* Print all objects on the list after printing any smashed objects.    */
 /* Clear both lists.  Called without the allocator lock held.           */
 GC_INNER void
@@ -176,10 +179,10 @@ GC_print_all_errors(void)
 {
   static GC_bool printing_errors = FALSE;
   GC_bool have_errors;
-#ifndef NO_FIND_LEAK
+#  ifndef NO_FIND_LEAK
   unsigned i, n_leaked;
   ptr_t leaked[MAX_LEAKED];
-#endif
+#  endif
 
   LOCK();
   if (printing_errors) {
@@ -188,7 +191,7 @@ GC_print_all_errors(void)
   }
   have_errors = get_have_errors();
   printing_errors = TRUE;
-#ifndef NO_FIND_LEAK
+#  ifndef NO_FIND_LEAK
   n_leaked = GC_n_leaked;
   if (n_leaked > 0) {
     GC_ASSERT(n_leaked <= MAX_LEAKED);
@@ -196,7 +199,7 @@ GC_print_all_errors(void)
     GC_n_leaked = 0;
     BZERO(GC_leaked, n_leaked * sizeof(ptr_t));
   }
-#endif
+#  endif
   UNLOCK();
 
   if (GC_debugging_started) {
@@ -205,7 +208,7 @@ GC_print_all_errors(void)
     have_errors = FALSE;
   }
 
-#ifndef NO_FIND_LEAK
+#  ifndef NO_FIND_LEAK
   if (n_leaked > 0) {
     GC_err_printf("Found %u leaked objects:\n", n_leaked);
     have_errors = TRUE;
@@ -213,17 +216,17 @@ GC_print_all_errors(void)
   for (i = 0; i < n_leaked; i++) {
     ptr_t p = leaked[i];
 
-#  ifndef SKIP_LEAKED_OBJECTS_PRINTING
+#    ifndef SKIP_LEAKED_OBJECTS_PRINTING
     GC_print_heap_obj(p);
-#  endif
+#    endif
     GC_free(p);
   }
-#endif
+#  endif
 
   if (have_errors
-#ifndef GC_ABORT_ON_LEAK
+#  ifndef GC_ABORT_ON_LEAK
       && GETENV("GC_ABORT_ON_LEAK") != NULL
-#endif
+#  endif
   ) {
     ABORT("Leaked or smashed objects encountered");
   }
@@ -232,6 +235,7 @@ GC_print_all_errors(void)
   printing_errors = FALSE;
   UNLOCK();
 }
+#endif
 
 /* The reclaim phase.   */
 
