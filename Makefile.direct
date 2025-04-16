@@ -194,8 +194,6 @@ atomicops libatomic_ops.a: $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S \
 	./if_not_there dont_ar_2 || $(RANLIB) libatomic_ops.a || cat /dev/null
 	echo > atomicops
 
-LEAK_CFLAGS= $(CFLAGS) -DFIND_LEAK
-
 $(OBJS) gctest.o dyn_load.o dyn_load_sunos53.o: \
   $(srcdir)/include/private/gc_priv.h \
   $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
