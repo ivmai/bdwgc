@@ -516,6 +516,13 @@ else()
   endif(WIN32)
 endif()
 
+# Configuration of machine-dependent code.
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(sparc.*|SPARC.*)")
+  # TODO: Handle NetBSD/SPARC (32-bit) specially.
+  enable_language(ASM)
+  set(SRC ${SRC} sparc_mach_dep.S)
+endif()
+
 # Extra user-defined flags to pass both to C and C++ compilers.
 if (DEFINED CFLAGS_EXTRA)
   separate_arguments(CFLAGS_EXTRA_LIST UNIX_COMMAND "${CFLAGS_EXTRA}")
