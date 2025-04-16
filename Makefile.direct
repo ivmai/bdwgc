@@ -113,11 +113,6 @@ OBJS= allchblk.o alloc.o backgraph.o blacklst.o checksums.o \
   pthread_support.o ptr_chck.o reclaim.o specific.o thread_local_alloc.o \
   typd_mlc.o win32_threads.o
 
-NODIST_OBJS= atomic_ops.o
-
-# Note: comment out the following line if compiler does not support .S files.
-NODIST_OBJS+= atomic_ops_sysdeps.o
-
 # Almost matches OBJS but also includes dyn_load.c.
 CSRCS= allchblk.c alloc.c backgraph.c blacklst.c checksums.c \
   darwin_stop_world.c dbg_mlc.c dyn_load.c finalize.c fnlz_mlc.c gc_dlopen.c \
@@ -181,8 +176,23 @@ atomic_ops.o: $(AO_SRC_DIR)/src/atomic_ops.c
 	$(CC) $(CFLAGS) -c $(AO_SRC_DIR)/src/atomic_ops.c
 # For some reason, Solaris make does not handle "$<" properly.
 
-atomic_ops_sysdeps.o: $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S
-	$(CC) $(CFLAGS) -c $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S
+# Create libatomic_ops.a for tests.  The library contains atomic_ops.o and,
+# optionally, atomic_ops_sysdeps.o.  The latter exists only on Solaris/SPARC
+# platform (the .o file should contain no symbols on platforms other than
+# SPARC-based ones or if the GCC-compatible compiler is used).
+# Note: the conditional addition of atomic_ops_sysdeps.o is aimed at
+# preventing .S file to be passed to a compiler which might not support such
+# a file type (like Cosmos) and preventing the linker (like GNU ld) to imply
+# executable stack because of an empty .o file is encountered.
+atomicops libatomic_ops.a: $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S \
+  atomic_ops.o $(UTILS)
+	rm -f dont_ar_2
+	./if_mach SPARC SOLARIS touch dont_ar_2
+	./if_mach SPARC SOLARIS $(CC) $(CFLAGS) -c $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S
+	./if_mach SPARC SOLARIS $(AR) rus libatomic_ops.a atomic_ops.o atomic_ops_sysdeps.o
+	./if_not_there dont_ar_2 || $(AR) ru libatomic_ops.a atomic_ops.o
+	./if_not_there dont_ar_2 || $(RANLIB) libatomic_ops.a || cat /dev/null
+	echo > atomicops
 
 LEAK_CFLAGS= $(CFLAGS) -DFIND_LEAK
 
@@ -234,14 +244,14 @@ gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc/gc_cpp.h \
 
 cpptest$(EXEEXT): $(srcdir)/tests/cpp.cc $(srcdir)/include/gc/gc_cpp.h \
   $(srcdir)/include/gc/gc_allocator.h $(srcdir)/include/gc/gc.h c++ \
-  base_lib $(NODIST_OBJS) $(UTILS)
+  atomicops base_lib $(UTILS)
 	rm -f $@
-	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o $@ $(srcdir)/tests/cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a -ldld `./threadlibs`
-	./if_not_there $@ || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o $@ $(srcdir)/tests/cpp.cc $(NODIST_OBJS) libgc.a libgccpp.a `./threadlibs`
+	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o $@ $(srcdir)/tests/cpp.cc libgc.a libgccpp.a libatomic_ops.a -ldld `./threadlibs`
+	./if_not_there $@ || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o $@ $(srcdir)/tests/cpp.cc libgc.a libgccpp.a libatomic_ops.a `./threadlibs`
 
 treetest$(EXEEXT): $(srcdir)/tests/tree.cc $(srcdir)/include/gc/gc.h \
-  $(srcdir)/include/gc/gc_cpp.h libgctba.a base_lib $(NODIST_OBJS)
-	$(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o $@ $(srcdir)/tests/tree.cc $(NODIST_OBJS) libgc.a libgctba.a `./threadlibs`
+  $(srcdir)/include/gc/gc_cpp.h libgctba.a atomicops base_lib
+	$(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o $@ $(srcdir)/tests/tree.cc libgc.a libgctba.a libatomic_ops.a `./threadlibs`
 
 check-cpp-deps: cpptest$(EXEEXT) treetest$(EXEEXT)
 
@@ -270,23 +280,23 @@ dyn_load_sunos53.o: dyn_load.c
 	$(CC) $(CFLAGS) -DSUNOS53_SHARED_LIB -c -o $@ $(srcdir)/dyn_load.c
 
 # SunOS5 shared library version of the collector
-sunos5gc.so: $(OBJS) $(NODIST_OBJS) dyn_load_sunos53.o
-	$(CC) -G -o $@ $(OBJS) $(NODIST_OBJS) dyn_load_sunos53.o -ldl
+sunos5gc.so: $(OBJS) atomicops dyn_load_sunos53.o
+	$(CC) -G -o $@ $(OBJS) dyn_load_sunos53.o libatomic_ops.a -ldl
 	ln $@ libgc.so
 
 # Alpha/OSF shared library version of the collector
-libalphagc.so: $(OBJS) $(NODIST_OBJS) dyn_load.o
-	$(LD) -shared -o $@ $(OBJS) $(NODIST_OBJS) dyn_load.o -lc
+libalphagc.so: $(OBJS) atomicops dyn_load.o
+	$(LD) -shared -o $@ $(OBJS) dyn_load.o libatomic_ops.a -lc
 	ln $@ libgc.so
 
 # IRIX shared library version of the collector
-libirixgc.so: $(OBJS) $(NODIST_OBJS) dyn_load.o
-	$(LD) -shared $(ABI_FLAG) -o $@ $(OBJS) $(NODIST_OBJS) dyn_load.o -lc
+libirixgc.so: $(OBJS) atomicops dyn_load.o
+	$(LD) -shared $(ABI_FLAG) -o $@ $(OBJS) dyn_load.o libatomic_ops.a -lc
 	ln $@ libgc.so
 
 # Linux shared library version of the collector
-liblinuxgc.so: $(OBJS) $(NODIST_OBJS) dyn_load.o
-	gcc -shared -o $@ $(OBJS) $(NODIST_OBJS) dyn_load.o
+liblinuxgc.so: $(OBJS) atomicops dyn_load.o
+	gcc -shared -o $@ $(OBJS) dyn_load.o libatomic_ops.a
 	ln $@ libgc.so
 
 # Build gctest with dynamic library
@@ -331,22 +341,23 @@ cordxtra.o: $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
 cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -I$(srcdir) -c $(srcdir)/cord/cordprnt.c
 
-cordtest$(EXEEXT): $(srcdir)/cord/tests/cordtest.c cords base_lib $(NODIST_OBJS) $(UTILS)
+cordtest$(EXEEXT): $(srcdir)/cord/tests/cordtest.c atomicops base_lib cords \
+  $(UTILS)
 	rm -f $@
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libcord.a libgc.a -lucb
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libcord.a libgc.a -ldld `./threadlibs`
-	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c $(NODIST_OBJS) libcord.a libgc.a `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c libcord.a libgc.a libatomic_ops.a -lucb
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c libcord.a libgc.a libatomic_ops.a -ldld `./threadlibs`
+	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/cordtest.c libcord.a libgc.a libatomic_ops.a `./threadlibs`
 
 cord/de: de$(EXEEXT)
 
 de$(EXEEXT): $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c \
-  $(srcdir)/cord/tests/de_win.h cords base_lib $(NODIST_OBJS) $(UTILS)
+  $(srcdir)/cord/tests/de_win.h atomicops base_lib cords $(UTILS)
 	rm -f $@
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libcord.a libgc.a -lcurses -ltermlib -lucb `./threadlibs`
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libcord.a libgc.a -lcurses -ltermlib -ldld `./threadlibs`
-	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libcord.a libgc.a -lcurses
-	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(NODIST_OBJS) libcord.a libgc.a
-	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c $(NODIST_OBJS) libcord.a libgc.a $(CURSES) `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c libcord.a libgc.a libatomic_ops.a -lcurses -ltermlib -lucb `./threadlibs`
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c libcord.a libgc.a libatomic_ops.a -lcurses -ltermlib -ldld `./threadlibs`
+	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c libcord.a libgc.a libatomic_ops.a -lcurses
+	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c libcord.a libgc.a libatomic_ops.a
+	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c libcord.a libgc.a libatomic_ops.a $(CURSES) `./threadlibs`
 
 if_mach$(EXEEXT): $(srcdir)/tools/if_mach.c \
   $(srcdir)/include/private/gcconfig.h
@@ -363,14 +374,14 @@ clean:
 	rm -f *.a *.i *.o *.com.dbg *.elf *.exe \
 	      cpptest treetest gctest gctest_dyn_link setjmp_test \
 	      a.out core if_not_there if_mach base_lib c++ gmon.out mon.out \
-	      cordtest de cords dont_ar_* threadlibs *.log cordtst*.tmp
+	      cordtest de cords atomicops dont_ar_* threadlibs *.log cordtst*.tmp
 	-rm -f *~
 
-gctest$(EXEEXT): gctest.o base_lib $(NODIST_OBJS) $(UTILS)
+gctest$(EXEEXT): gctest.o atomicops base_lib $(UTILS)
 	rm -f $@
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ gctest.o $(NODIST_OBJS) libgc.a -lucb
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ gctest.o $(NODIST_OBJS) libgc.a -ldld `./threadlibs`
-	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ gctest.o $(NODIST_OBJS) libgc.a `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o $@ gctest.o libgc.a libatomic_ops.a -lucb
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ gctest.o libgc.a libatomic_ops.a -ldld `./threadlibs`
+	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ gctest.o libgc.a libatomic_ops.a `./threadlibs`
 
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  gctest may still work.
