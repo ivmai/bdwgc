@@ -248,7 +248,7 @@ cpptest$(EXEEXT): $(srcdir)/tests/cpp.cc $(srcdir)/include/gc/gc_cpp.h \
 	./if_not_there $@ || $(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o $@ $(srcdir)/tests/cpp.cc libgc.a libgccpp.a libatomic_ops.a `./threadlibs`
 
 treetest$(EXEEXT): $(srcdir)/tests/tree.cc $(srcdir)/include/gc/gc.h \
-  $(srcdir)/include/gc/gc_cpp.h libgctba.a atomicops base_lib
+  $(srcdir)/include/gc/gc_cpp.h atomicops base_lib c++
 	$(CXX) $(CXXFLAGS) -DGC_NOT_DLL -o $@ $(srcdir)/tests/tree.cc libgc.a libgctba.a libatomic_ops.a `./threadlibs`
 
 check-cpp-deps: cpptest$(EXEEXT) treetest$(EXEEXT)
