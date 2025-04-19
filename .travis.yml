@@ -348,7 +348,7 @@ jobs:
         - libatomic-ops-dev
     compiler: gcc
     env:
-    - CFLAGS_EXTRA="-D _FORTIFY_SOURCE=2 -D TEST_PAGES_EXECUTABLE"
+    - CFLAGS_EXTRA="-D _FORTIFY_SOURCE=2 -D GC_DISABLE_SNPRINTF -D TEST_PAGES_EXECUTABLE"
     - CONF_OPTIONS="--with-libatomic-ops=yes --enable-gc-assertions --enable-cplusplus --disable-throw-bad-alloc-library"
     - GCTEST_WITH_MPROTECT_VDB=true
     - NO_CLONE_LIBATOMIC_OPS=true
