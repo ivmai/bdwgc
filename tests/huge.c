@@ -52,9 +52,12 @@ main(void)
 {
   GC_INIT();
 
+  CHECK_ALLOC_FAILED(GC_MALLOC(U_SSIZE_MAX - 4096), "SSIZE_MAX-4096");
+  /* Skip other checks to avoid "exceeds maximum object size" gcc warning. */
+#if !(defined(_FORTIFY_SOURCE) && defined(__x86_64__) && defined(__ILP32__))
   CHECK_ALLOC_FAILED(GC_MALLOC(U_SSIZE_MAX - 1024), "SSIZE_MAX-1024");
   CHECK_ALLOC_FAILED(GC_MALLOC(U_SSIZE_MAX), "SSIZE_MAX");
-  /* Skip other checks to avoid "exceeds maximum object size" gcc warning. */
+#endif
 #if !defined(_FORTIFY_SOURCE)
   CHECK_ALLOC_FAILED(GC_MALLOC(U_SSIZE_MAX + 1), "SSIZE_MAX+1");
   CHECK_ALLOC_FAILED(GC_MALLOC(U_SSIZE_MAX + 1024), "SSIZE_MAX+1024");
