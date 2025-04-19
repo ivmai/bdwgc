@@ -189,7 +189,7 @@ GC_clear_hdr_marks(hdr *hhdr)
 
 #ifdef AO_HAVE_load
   /* Atomic access is used to avoid racing with GC_realloc.   */
-  last_bit = FINAL_MARK_BIT(AO_load(&hhdr->hb_sz));
+  last_bit = FINAL_MARK_BIT(AO_load((volatile AO_t *)&hhdr->hb_sz));
 #else
   /* No race as GC_realloc holds the allocator lock while updating hb_sz. */
   last_bit = FINAL_MARK_BIT(hhdr->hb_sz);
@@ -2109,7 +2109,7 @@ GC_block_was_dirty(struct hblk *h, const hdr *hhdr)
 
 #  ifdef AO_HAVE_load
   /* Atomic access is used to avoid racing with GC_realloc. */
-  sz = AO_load(&hhdr->hb_sz);
+  sz = AO_load((volatile AO_t *)&hhdr->hb_sz);
 #  else
   sz = hhdr->hb_sz;
 #  endif

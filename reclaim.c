@@ -572,7 +572,7 @@ GC_reclaim_block(struct hblk *hbp, void *report_if_found)
   ok = &GC_obj_kinds[hhdr->hb_obj_kind];
 #ifdef AO_HAVE_load
   /* Atomic access is used to avoid racing with GC_realloc.       */
-  sz = AO_load(&hhdr->hb_sz);
+  sz = AO_load((volatile AO_t *)&hhdr->hb_sz);
 #else
   /* No race as GC_realloc holds the allocator lock while */
   /* updating hb_sz.                                      */
