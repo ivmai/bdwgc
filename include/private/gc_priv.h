@@ -3124,6 +3124,32 @@ GC_find_starting_hblk(struct hblk *h, hdr **phhdr)
 }
 #endif /* !NOT_GCBUILD */
 
+#if (defined(PARALLEL_MARK)                                      \
+     && !defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG)       \
+     && (defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID)               \
+         || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)         \
+         || defined(HAVE_PTHREAD_SET_NAME_NP)))                  \
+    || (defined(DYNAMIC_LOADING)                                 \
+        && ((defined(USE_PROC_FOR_LIBRARIES) && !defined(LINUX)) \
+            || defined(DARWIN) || defined(IRIX5)))               \
+    || defined(PROC_VDB) || defined(SOFT_VDB)
+/* A function to convert a long integer value to a string adding the    */
+/* prefix and optional suffix.  The resulting string is put to buf of   */
+/* the designated size (buf_sz).  Guaranteed to append a trailing '\0'  */
+/* and not to exceed the buffer size.  (Note that it is recommended to  */
+/* reserve at least 20 characters for the number part of the string in  */
+/* buf to avoid a compiler warning about potential number truncation.)  */
+#  ifndef GC_DISABLE_SNPRINTF
+#    define GC_snprintf_s_ld_s(buf, buf_sz, prefix, lv, suffix)    \
+      (void)(snprintf(buf, buf_sz, "%s%ld%s", prefix, lv, suffix), \
+             (buf)[(buf_sz) - (size_t)1] = '\0')
+#  else
+#    define NEED_SNPRINTF_SLDS
+GC_INNER void GC_snprintf_s_ld_s(char *buf, size_t buf_sz, const char *prefix,
+                                 long lv, const char *suffix);
+#  endif
+#endif
+
 #ifdef THREADS
 #  ifndef GC_NO_FINALIZATION
 GC_INNER void GC_reset_finalizer_nested(void);

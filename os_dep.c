@@ -3794,11 +3794,10 @@ STATIC int GC_proc_fd = -1;
 static GC_bool
 proc_dirty_open_files(void)
 {
-  char buf[40];
+  char buf[6 + 20 + 9 + 1];
   pid_t pid = getpid();
 
-  (void)snprintf(buf, sizeof(buf), "/proc/%ld/pagedata", (long)pid);
-  buf[sizeof(buf) - 1] = '\0';
+  GC_snprintf_s_ld_s(buf, sizeof(buf), "/proc/", (long)pid, "/pagedata");
   GC_proc_fd = open(buf, O_RDONLY);
   if (-1 == GC_proc_fd) {
     WARN("/proc open failed; cannot enable GC incremental mode\n", 0);
@@ -3979,17 +3978,16 @@ GC_proc_read_dirty(GC_bool output_unneeded)
 #  endif
 
 static int
-open_proc_fd(pid_t pid, const char *proc_filename, int mode)
+open_proc_fd(pid_t pid, const char *slash_filename, int mode)
 {
   int f;
-  char buf[40];
+  char buf[6 + 20 + 11 + 1];
 
-  (void)snprintf(buf, sizeof(buf), "/proc/%ld/%s", (long)pid, proc_filename);
-  buf[sizeof(buf) - 1] = '\0';
+  GC_snprintf_s_ld_s(buf, sizeof(buf), "/proc/", (long)pid, slash_filename);
   f = open(buf, mode);
   if (-1 == f) {
-    WARN("/proc/self/%s open failed; cannot enable GC incremental mode\n",
-         proc_filename);
+    WARN("/proc/self%s open failed; cannot enable GC incremental mode\n",
+         slash_filename);
   } else if (fcntl(f, F_SETFD, FD_CLOEXEC) == -1) {
     WARN("Could not set FD_CLOEXEC for /proc\n", 0);
   }
@@ -4008,10 +4006,10 @@ soft_dirty_open_files(void)
 {
   pid_t pid = getpid();
 
-  clear_refs_fd = open_proc_fd(pid, "clear_refs", O_WRONLY);
+  clear_refs_fd = open_proc_fd(pid, "/clear_refs", O_WRONLY);
   if (-1 == clear_refs_fd)
     return FALSE;
-  pagemap_fd = open_proc_fd(pid, "pagemap", O_RDONLY);
+  pagemap_fd = open_proc_fd(pid, "/pagemap", O_RDONLY);
   if (-1 == pagemap_fd) {
     close(clear_refs_fd);
     clear_refs_fd = -1;

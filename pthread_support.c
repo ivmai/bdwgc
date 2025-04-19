@@ -393,17 +393,11 @@ set_marker_thread_name(unsigned id)
 static void
 set_marker_thread_name(unsigned id)
 {
-  char name_buf[16]; /* pthread_setname_np may fail for longer names */
-  int len = sizeof("GC-marker-") - 1;
+  /* Note: a smaller size of the buffer may result in   */
+  /* "output may be truncated" compiler warning.        */
+  char name_buf[10 + 20 + 1];
 
-  /* Compose the name manually as snprintf may be unavailable or    */
-  /* "%u directive output may be truncated" warning may occur.      */
-  BCOPY("GC-marker-", name_buf, len);
-  if (id >= 10)
-    name_buf[len++] = (char)('0' + (id / 10) % 10);
-  name_buf[len] = (char)('0' + id % 10);
-  name_buf[len + 1] = '\0';
-
+  GC_snprintf_s_ld_s(name_buf, sizeof(name_buf), "GC-marker-", (long)id, "");
 #      ifdef HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID
   /* The iOS or OS X case.        */
   (void)pthread_setname_np(name_buf);
@@ -412,6 +406,7 @@ set_marker_thread_name(unsigned id)
   pthread_set_name_np(pthread_self(), name_buf);
 #      else
   /* The case of Linux, Solaris, etc.     */
+  GC_ASSERT(strlen(name_buf) < 16); /* setname may fail for longer names */
   if (EXPECT(pthread_setname_np(pthread_self(), name_buf) != 0, FALSE))
     WARN("pthread_setname_np failed\n", 0);
 #      endif

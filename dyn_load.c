@@ -984,7 +984,7 @@ GC_register_dynamic_libraries(void)
   static prmap_t *addr_map = 0;
   /* Number of records currently in addr_map. */
   static int current_sz = 0;
-  char buf[32];
+  char buf[6 + 20 + 1];
   /* Required size of addr_map.       */
   int needed_sz = 0;
   int i;
@@ -999,8 +999,7 @@ GC_register_dynamic_libraries(void)
 
   GC_ASSERT(I_HOLD_LOCK());
   if (fd < 0) {
-    (void)snprintf(buf, sizeof(buf), "/proc/%ld", (long)getpid());
-    buf[sizeof(buf) - 1] = '\0';
+    GC_snprintf_s_ld_s(buf, sizeof(buf), "/proc/", (long)getpid(), "");
     fd = open(buf, O_RDONLY);
     if (fd < 0) {
       ABORT("/proc open failed");
@@ -1293,11 +1292,10 @@ dyld_image_add_del(const struct GC_MACH_HEADER *phdr, intptr_t slide,
   for (j = 0; j < sizeof(GC_dyld_bss_prefixes) / sizeof(char *); j++) {
     /* Our manufactured aligned BSS sections.   */
     for (i = 0; i <= L2_MAX_OFILE_ALIGNMENT; i++) {
-      char secnam[16];
+      char secnam[11 + 20 + 1];
 
-      (void)snprintf(secnam, sizeof(secnam), "%s%u", GC_dyld_bss_prefixes[j],
-                     i);
-      secnam[sizeof(secnam) - 1] = '\0';
+      GC_snprintf_s_ld_s(secnam, sizeof(secnam), GC_dyld_bss_prefixes[j],
+                         (long)i, "");
       dyld_section_add_del(phdr, slide, dlpi_name, 0 /* callback */, SEG_DATA,
                            secnam, is_add);
     }

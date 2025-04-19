@@ -2251,6 +2251,62 @@ GC_get_abort_func(void)
   return fn;
 }
 
+#if defined(NEED_SNPRINTF_SLDS) /* && GC_DISABLE_SNPRINTF */
+GC_INNER void
+GC_snprintf_s_ld_s(char *buf, size_t buf_sz, const char *prefix, long lv,
+                   const char *suffix)
+{
+  size_t len = strlen(prefix);
+
+  GC_ASSERT(buf_sz > 0);
+  /* Copy the prefix. */
+  if (EXPECT(len >= buf_sz, FALSE))
+    len = buf_sz - 1;
+  BCOPY(prefix, buf, len);
+  buf += len;
+  buf_sz -= len;
+
+  /* Handle sign of the number. */
+  if (lv >= 0) {
+    lv = -lv;
+  } else if (EXPECT(buf_sz > 1, TRUE)) {
+    *(buf++) = '-';
+    buf_sz--;
+  }
+
+  /* Convert the decimal number to string. (A trivial implementation.) */
+  {
+    char num_buf[20];
+    size_t pos = sizeof(num_buf);
+
+    do {
+      long r = lv / 10;
+
+      if (EXPECT(0 == pos, FALSE))
+        break; /* overflow */
+      num_buf[--pos] = (char)(r * 10 - lv + '0');
+      lv = r;
+    } while (lv < 0);
+    len = sizeof(num_buf) - pos;
+    if (EXPECT(len >= buf_sz, FALSE))
+      len = buf_sz - 1;
+    BCOPY(&num_buf[pos], buf, len);
+  }
+  buf += len;
+  buf_sz -= len;
+
+  /* Copy the suffix (if any). */
+  len = strlen(suffix);
+  if (len > 0) {
+    if (EXPECT(len >= buf_sz, FALSE))
+      len = buf_sz - 1;
+    BCOPY(suffix, buf, len);
+    buf += len;
+  }
+  *buf = '\0';
+}
+#endif /* NEED_SNPRINTF_SLDS */
+
 GC_API void GC_CALL
 GC_enable(void)
 {
