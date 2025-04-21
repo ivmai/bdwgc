@@ -724,12 +724,13 @@ GC_array_mark_proc(word *addr, mse *mark_stack_top, mse *mark_stack_limit,
       (ptr_t)addr, complex_d, mark_stack_top, mark_stack_limit - 1);
   if (NULL == new_mark_stack_top) {
     /* Explicitly instruct Clang Static Analyzer that ptr is non-null.  */
-    if (NULL == mark_stack_top)
+    if (NULL == mark_stack_top) {
       ABORT("Bad mark_stack_top");
+    }
 
-      /* Does not fit.  Conservatively push the whole array as a unit and */
-      /* request a mark stack expansion.  This cannot cause a mark stack  */
-      /* overflow, since it replaces the original array entry.            */
+    /* Does not fit.  Conservatively push the whole array as a unit and */
+    /* request a mark stack expansion.  This cannot cause a mark stack  */
+    /* overflow, since it replaces the original array entry.            */
 #ifdef PARALLEL_MARK
     /* We might be using a local_mark_stack in parallel mode. */
     if (GC_mark_stack + GC_mark_stack_size == mark_stack_limit)

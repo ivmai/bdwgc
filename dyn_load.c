@@ -486,24 +486,24 @@ GC_register_map_entries(const char *maps)
       /* we're marking.  Thus the marker is, and has to be      */
       /* prepared to recover from segmentation faults.          */
 
-      if (GC_segment_is_thread_stack(my_start, my_end))
+      if (GC_segment_is_thread_stack(my_start, my_end)) {
         continue;
-
-        /* FIXME: NPTL squirrels                                  */
-        /* away pointers in pieces of the stack segment that we   */
-        /* don't scan.  We work around this                       */
-        /* by treating anything allocated by libpthread as        */
-        /* uncollectible, as we do in some other cases.           */
-        /* A specifically identified problem is that              */
-        /* thread stacks contain pointers to dynamic thread       */
-        /* vectors, which may be reused due to thread caching.    */
-        /* They may not be marked if the thread is still live.    */
-        /* This specific instance should be addressed by          */
-        /* INCLUDE_LINUX_THREAD_DESCR, but that doesn't quite     */
-        /* seem to suffice.                                       */
-        /* We currently trace entire thread stacks, if they are   */
-        /* are currently cached but unused.  This is              */
-        /* very suboptimal for performance reasons.               */
+        /* FIXME: NPTL squirrels                                */
+        /* away pointers in pieces of the stack segment that we */
+        /* don't scan.  We work around this                     */
+        /* by treating anything allocated by libpthread as      */
+        /* uncollectible, as we do in some other cases.         */
+        /* A specifically identified problem is that            */
+        /* thread stacks contain pointers to dynamic thread     */
+        /* vectors, which may be reused due to thread caching.  */
+        /* They may not be marked if the thread is still live.  */
+        /* This specific instance should be addressed by        */
+        /* INCLUDE_LINUX_THREAD_DESCR, but that doesn't quite   */
+        /* seem to suffice.                                     */
+        /* We currently trace entire thread stacks, if they are */
+        /* are currently cached but unused.  This is            */
+        /* very suboptimal for performance reasons.             */
+      }
 #      endif
       /* We no longer exclude the main data segment.              */
       if (ADDR_GE(least_ha, my_end) || ADDR_GE(my_start, greatest_ha)) {
@@ -1380,10 +1380,10 @@ GC_init_dyld(void)
   /* all undefined symbols the application needs at launch time.      */
   /* This includes function symbols that are normally bound lazily at */
   /* the time of their first invocation.                              */
-  if (GETENV("DYLD_BIND_AT_LAUNCH") != NULL)
+  if (GETENV("DYLD_BIND_AT_LAUNCH") != NULL) {
     return;
-
-    /* The environment variable is unset, so we should bind manually.   */
+  }
+  /* Else we should bind manually.  */
 #      ifdef DARWIN_DEBUG
   GC_log_printf("Forcing full bind of GC code...\n");
 #      endif
@@ -1391,9 +1391,10 @@ GC_init_dyld(void)
   {
     void *dl_handle = dlopen(NULL, RTLD_NOW);
 
-    if (!dl_handle)
+    if (!dl_handle) {
       ABORT("dlopen failed (to bind fully image)");
-      /* Note that the handle is never closed.        */
+    }
+    /* Note that the handle is never closed. */
 #        if defined(CPPCHECK) || defined(LINT2)
     GC_noop1_ptr(dl_handle);
 #        endif

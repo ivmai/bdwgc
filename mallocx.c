@@ -119,21 +119,23 @@ GC_realloc(void *p, size_t lb)
         && obj_kind == NORMAL)
       descr += ALIGNMENT; /* or set to 0 */
 #endif
-    if (ok->ok_relocate_descr)
+    if (ok->ok_relocate_descr) {
       descr += sz;
-      /* GC_realloc might be changing the block size while            */
-      /* GC_reclaim_block or GC_clear_hdr_marks is examining it.      */
-      /* The change to the size field is benign, in that GC_reclaim   */
-      /* (and GC_clear_hdr_marks) would work correctly with either    */
-      /* value, since we are not changing the number of objects in    */
-      /* the block.  But seeing a half-updated value (though unlikely */
-      /* to occur in practice) could be probably bad.                 */
-      /* Using unordered atomic accesses on the size and hb_descr     */
-      /* fields would solve the issue.  (The alternate solution might */
-      /* be to initially overallocate large objects, so we do not     */
-      /* have to adjust the size in GC_realloc, if they still fit.    */
-      /* But that is probably more expensive, since we may end up     */
-      /* scanning a bunch of zeros during GC.)                        */
+    }
+
+    /* GC_realloc might be changing the block size while            */
+    /* GC_reclaim_block or GC_clear_hdr_marks is examining it.      */
+    /* The change to the size field is benign, in that GC_reclaim   */
+    /* (and GC_clear_hdr_marks) would work correctly with either    */
+    /* value, since we are not changing the number of objects in    */
+    /* the block.  But seeing a half-updated value (though unlikely */
+    /* to occur in practice) could be probably bad.                 */
+    /* Using unordered atomic accesses on the size and hb_descr     */
+    /* fields would solve the issue.  (The alternate solution might */
+    /* be to initially overallocate large objects, so we do not     */
+    /* have to adjust the size in GC_realloc, if they still fit.    */
+    /* But that is probably more expensive, since we may end up     */
+    /* scanning a bunch of zeros during GC.)                        */
 #ifdef AO_HAVE_store
     AO_store(&hhdr->hb_sz, sz);
     AO_store((AO_t *)&hhdr->hb_descr, descr);

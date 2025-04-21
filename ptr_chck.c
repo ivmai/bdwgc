@@ -193,9 +193,10 @@ GC_is_visible(void *p)
 
   hhdr = HDR(p);
   if (NULL == hhdr) {
-    if (GC_is_static_root((ptr_t)p))
+    if (GC_is_static_root((ptr_t)p)) {
       return p;
-      /* Else do it again correctly:      */
+    }
+    /* Else do it again correctly. */
 #  if defined(ANY_MSWIN) || defined(DYNAMIC_LOADING)
     if (!GC_no_dls) {
       GC_register_dynamic_libraries();

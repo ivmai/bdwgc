@@ -948,24 +948,25 @@ GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
   if (GC_no_dls || GC_roots_were_cleared)
     GC_push_thread_structures();
 #endif
-  if (GC_push_typed_structures)
+  if (GC_push_typed_structures) {
     GC_push_typed_structures();
+  }
 
-    /* Mark thread-local free lists, even if their mark        */
-    /* descriptor excludes the link field.                     */
-    /* If the world is not stopped, this is unsafe.  It is     */
-    /* also unnecessary, since we will do this again with the  */
-    /* world stopped.                                          */
 #if defined(THREAD_LOCAL_ALLOC)
-  if (GC_world_stopped)
+  /* Mark thread-local free lists, even if their mark           */
+  /* descriptor excludes the link field.  If the world is not   */
+  /* stopped, this is unsafe.  It is also unnecessary, since    */
+  /* we will do this again with the world stopped.              */
+  if (GC_world_stopped) {
     GC_mark_thread_local_free_lists();
+  }
 #endif
 
-    /* Now traverse stacks, and mark from register contents.    */
-    /* These must be done last, since they can legitimately     */
-    /* overflow the mark stack.  This is usually done by saving */
-    /* the current context on the stack, and then just tracing  */
-    /* from the stack.                                          */
+  /* Now traverse stacks, and mark from register contents.      */
+  /* These must be done last, since they can legitimately       */
+  /* overflow the mark stack.  This is usually done by saving   */
+  /* the current context on the stack, and then just tracing    */
+  /* from the stack.                                            */
 #ifdef STACK_NOT_SCANNED
   UNUSED_ARG(cold_gc_frame);
 #else

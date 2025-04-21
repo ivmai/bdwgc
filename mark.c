@@ -1011,11 +1011,9 @@ GC_wait_for_markers_init(void)
   GC_signed_word count;
 
   GC_ASSERT(I_HOLD_LOCK());
-  if (GC_markers_m1 == 0)
+  if (0 == GC_markers_m1)
     return;
 
-    /* Allocate the local mark stack for the thread that holds    */
-    /* the allocator lock.                                        */
 #  ifndef CAN_HANDLE_FORK
   GC_ASSERT(NULL == GC_main_local_mark_stack);
 #  else
@@ -1025,6 +1023,8 @@ GC_wait_for_markers_init(void)
     size_t bytes_to_get
         = ROUNDUP_PAGESIZE_IF_MMAP(LOCAL_MARK_STACK_SIZE * sizeof(mse));
 
+    /* Allocate the local mark stack for the thread that holds  */
+    /* the allocator lock.                                      */
     GC_ASSERT(GC_page_size != 0);
     GC_main_local_mark_stack = (mse *)GC_os_get_mem(bytes_to_get);
     if (NULL == GC_main_local_mark_stack)

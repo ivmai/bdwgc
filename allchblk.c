@@ -1010,10 +1010,11 @@ retry:
   if (last_hbp != hbp) {
     hdr *last_hdr = GC_install_header(last_hbp);
 
-    if (EXPECT(NULL == last_hdr, FALSE))
+    if (EXPECT(NULL == last_hdr, FALSE)) {
       return NULL;
-      /* Make sure it's mapped before we mangle it.     */
+    }
 #ifdef USE_MUNMAP
+    /* Make sure it is mapped before we mangle it. */
     if (!IS_MAPPED(hhdr)) {
       GC_adjust_num_unmapped(hbp, hhdr);
       GC_remap((ptr_t)hbp, hhdr->hb_sz);

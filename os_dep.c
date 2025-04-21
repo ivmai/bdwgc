@@ -2833,10 +2833,11 @@ GC_remap(ptr_t start, size_t bytes)
   ptr_t start_addr = GC_unmap_start(start, bytes);
   ptr_t end_addr = GC_unmap_end(start, bytes);
   word len = (word)(end_addr - start_addr);
-  if (0 == start_addr)
+  if (0 == start_addr) {
     return;
+  }
 
-    /* FIXME: Handle out-of-memory correctly (at least for Win32)       */
+  /* FIXME: Handle out-of-memory correctly (at least for Win32) */
 #  ifdef USE_WINALLOC
   while (len != 0) {
     MEMORY_BASIC_INFORMATION mem_info;
@@ -3580,8 +3581,10 @@ GC_dirty_init(void)
     GC_old_segv_handler = SIG_DFL;
   }
 #    elif defined(MSWINCE)
-    /* MPROTECT_VDB is unsupported for WinCE at present.      */
+  {
+    /* MPROTECT_VDB is unsupported for WinCE at present.    */
     /* FIXME: implement it (if possible). */
+  }
 #    else
   /* act.sa_restorer is deprecated and should not be initialized. */
 #      if defined(IRIX5) && defined(THREADS)
@@ -4266,10 +4269,12 @@ soft_set_grungy_pages(ptr_t start, ptr_t limit, ptr_t next_start_hint,
         struct hblk *h;
         ptr_t next_vaddr = vaddr + GC_page_size;
 
-        if (EXPECT(ADDR_LT(limit, next_vaddr), FALSE))
+        if (EXPECT(ADDR_LT(limit, next_vaddr), FALSE)) {
           next_vaddr = limit;
-          /* If the bit is set, the respective PTE was written to       */
-          /* since clearing the soft-dirty bits.                        */
+        }
+
+        /* If the bit is set, the respective PTE was written to */
+        /* since clearing the soft-dirty bits.                  */
 #  ifdef DEBUG_DIRTY_BITS
         if (is_static_root)
           GC_log_printf("static root dirty page at: %p\n", (void *)vaddr);

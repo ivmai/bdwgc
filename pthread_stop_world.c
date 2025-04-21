@@ -538,13 +538,14 @@ GC_restart_handler(int sig)
   int old_errno = errno;
 #    endif
 
-  if (sig != GC_sig_thr_restart)
+  if (sig != GC_sig_thr_restart) {
     ABORT("Bad signal in restart handler");
+  }
 
-    /* Note: even if we do not do anything useful here, it would still    */
-    /* be necessary to have a signal handler, rather than ignoring the    */
-    /* signals, otherwise the signals will not be delivered at all,       */
-    /* and will thus not interrupt the sigsuspend() above.                */
+  /* Note: even if we do not do anything useful here, it would still    */
+  /* be necessary to have a signal handler, rather than ignoring the    */
+  /* signals, otherwise the signals will not be delivered at all,       */
+  /* and will thus not interrupt the sigsuspend() above.                */
 #    ifdef DEBUG_THREADS
   GC_log_printf("In GC_restart_handler for %p\n",
                 PTHREAD_TO_VPTR(pthread_self()));
