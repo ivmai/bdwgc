@@ -204,7 +204,6 @@ GC_is_visible(void *p)
         return p;
     }
 #  endif
-    goto fail;
   } else {
     /* p points to the heap. */
     word descr;
