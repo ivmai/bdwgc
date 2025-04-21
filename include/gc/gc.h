@@ -122,9 +122,14 @@ GC_API void GC_CALL GC_set_markers_count(unsigned);
 /* When there is insufficient memory to satisfy an allocation request,  */
 /* we return (*GC_oom_fn)(size).  If it returns, it must return either  */
 /* NULL or a valid pointer to a previously allocated heap object.       */
-/* By default, this just returns NULL.  GC_oom_fn must not be 0.  Both  */
-/* the setter and the getter acquire the allocator lock (in the reader  */
-/* mode in case of the getter) to avoid data race.                      */
+/* By default, this just returns NULL.  If it points to a function      */
+/* which never returns NULL, probably by aborting the program instead,  */
+/* then invocations of GC_MALLOC() and friends (that are additionally   */
+/* marked as "never returning NULL unless GC_oom_fn returns NULL") do   */
+/* not need to be followed by code that checks for the NULL result.     */
+/* GC_oom_fn must not be 0.  Both the setter and the getter acquire     */
+/* the allocator lock (in the reader mode in case of the getter) to     */
+/* avoid data race.                                                     */
 typedef void *(GC_CALLBACK *GC_oom_func)(size_t /* bytes_requested */);
 GC_API GC_ATTR_DEPRECATED GC_oom_func GC_oom_fn;
 GC_API void GC_CALL GC_set_oom_fn(GC_oom_func) GC_ATTR_NONNULL(1);
@@ -521,7 +526,7 @@ GC_API int GC_CALL GC_is_init_called(void);
 /* not be called after the shutdown.  See also GC_win32_free_heap().    */
 GC_API void GC_CALL GC_deinit(void);
 
-/* General purpose allocation routines, with roughly malloc calling     */
+/* General-purpose allocation functions, with roughly malloc calling    */
 /* conv.  The atomic versions promise that no relevant pointers are     */
 /* contained in the object.  The non-atomic versions guarantee that the */
 /* new object is cleared.  GC_malloc_uncollectable allocates            */
@@ -529,7 +534,9 @@ GC_API void GC_CALL GC_deinit(void);
 /* objects, but is not itself collectible.  The object is scanned even  */
 /* if it does not appear to be reachable.  GC_malloc_uncollectable and  */
 /* GC_free called on the resulting object implicitly update             */
-/* GC_non_gc_bytes appropriately.                                       */
+/* GC_non_gc_bytes appropriately.  All these functions (GC_malloc,      */
+/* GC_malloc_atomic, GC_strdup, GC_strndup, GC_malloc_uncollectable)    */
+/* are guaranteed never to return NULL unless GC_oom_fn returns NULL.   */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_malloc(size_t /* size_in_bytes */);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
@@ -540,11 +547,14 @@ GC_API GC_ATTR_MALLOC char *GC_CALL GC_strndup(const char *, size_t)
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_malloc_uncollectable(size_t /* size_in_bytes */);
 
-/* The routines that guarantee the requested alignment of the allocated */
-/* memory object.  The align argument should be non-zero and a power    */
-/* of two; GC_posix_memalign() also requires it to be not less than     */
-/* size of a pointer.  Note that posix_memalign() does not change value */
-/* of (*memptr) in case of failure (i.e. when the result is non-zero).  */
+/* The functions that guarantee the requested alignment of the          */
+/* allocated memory object.  The align argument should be non-zero and  */
+/* a power of two; GC_posix_memalign() also requires it to be not less  */
+/* than size of a pointer.  Note that posix_memalign() does not change  */
+/* value of (*memptr) in case of failure (i.e. when the result is       */
+/* non-zero).  All these functions (GC_memalign, GC_posix_memalign,     */
+/* GC_valloc, GC_pvalloc) are guaranteed never to return NULL unless    */
+/* GC_oom_fn returns NULL.                                              */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(2) void *GC_CALL
     GC_memalign(size_t /* align */, size_t /* lb */);
 GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,
@@ -667,7 +677,9 @@ GC_API size_t GC_CALL GC_size(const void * /* obj_addr */);
 /* If the returned pointer is not the same as old_object and both of    */
 /* them are non-NULL then old_object is freed.  Returns either NULL (in */
 /* case of the allocation failure or zero new size) or pointer to the   */
-/* allocated memory.                                                    */
+/* allocated memory.  For a non-zero new size, the function (including  */
+/* its debug variant) is guaranteed never to return NULL unless         */
+/* GC_oom_fn returns NULL.                                              */
 GC_API void *GC_CALL GC_realloc(void * /* old_object */,
                                 size_t /* new_size_in_bytes */)
     /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);
@@ -1019,7 +1031,7 @@ GC_API int GC_CALL GC_collect_a_little(void);
 /* long as the object is live, it will be referenced by a pointer that  */
 /* points to somewhere within the first GC heap block (hblk) of the     */
 /* object.  (This should normally be declared volatile to prevent the   */
-/* compiler from invalidating this assertion.)  This routine is only    */
+/* compiler from invalidating this assertion.)  This function is only   */
 /* useful if a large array is being allocated.  It reduces the chance   */
 /* of accidentally retaining such an array as a result of scanning an   */
 /* integer that happens to be an address inside the array.  (Actually,  */
@@ -1028,7 +1040,8 @@ GC_API int GC_CALL GC_collect_a_little(void);
 /* reference.)  On a SunOS 4.X or Windows system this is recommended    */
 /* for arrays likely to be larger than 100 KB or so.  For other systems,*/
 /* or if the collector is not configured to recognize all interior      */
-/* pointers, the threshold is normally much higher.                     */
+/* pointers, the threshold is normally much higher.  These functions    */
+/* are guaranteed never to return NULL unless GC_oom_fn returns NULL.   */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_malloc_ignore_off_page(size_t /* lb */);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
@@ -1036,8 +1049,10 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
 
 /* Allocate lb bytes of pointer-free, untraced, uncollectible data.     */
 /* This is normally roughly equivalent to the system malloc.  But it    */
-/* may be useful if malloc is redefined.  Defined only if the library   */
-/* has been compiled with GC_ATOMIC_UNCOLLECTABLE.                      */
+/* may be useful if malloc is redefined.  The function (including its   */
+/* debug variant) is guaranteed never to return NULL unless GC_oom_fn   */
+/* returns NULL.  Defined only if the library has been compiled with    */
+/* GC_ATOMIC_UNCOLLECTABLE macro defined.                               */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_malloc_atomic_uncollectable(size_t /* size_in_bytes */);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
@@ -1063,7 +1078,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_debug_malloc_atomic_ignore_off_page(size_t /* size_in_bytes */,
                                            GC_EXTRA_PARAMS);
 
-/* Routines that allocate objects with debug information (like the      */
+/* The functions that allocate objects with debug information (like the */
 /* above), but just fill in dummy file and line number information.     */
 /* Thus they can serve as drop-in malloc/realloc replacements.  This    */
 /* can be useful for two reasons:                                       */
@@ -1075,6 +1090,9 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
 /*    platforms it may be more convenient not to recompile, e.g. for    */
 /*    leak detection.  This can be accomplished by instructing the      */
 /*    linker to replace malloc/realloc with these.                      */
+/* Note that these functions (for a non-zero new size in case of        */
+/* realloc) are guaranteed never to return NULL unless GC_oom_fn        */
+/* returns NULL.                                                        */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_debug_malloc_replacement(size_t /* size_in_bytes */);
 GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void *GC_CALL
@@ -1098,6 +1116,13 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void *GC_CALL
 #define GC_REGISTER_LONG_LINK_SAFE(link, obj) \
   GC_register_long_link(link, GC_base(GC_CAST_AWAY_CONST_PVOID(obj)))
 
+/* Convenient macros over debug and non-debug allocation functions.     */
+/* All these macros (GC_MALLOC, GC_REALLOC, GC_MALLOC_ATOMIC,           */
+/* GC_STRDUP, GC_STRNDUP, GC_MALLOC_ATOMIC_UNCOLLECTABLE,               */
+/* GC_MALLOC_UNCOLLECTABLE, GC_MALLOC_IGNORE_OFF_PAGE,                  */
+/* GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE) are guaranteed never to return     */
+/* NULL (for a non-zero new size in case of realloc) unless GC_oom_fn   */
+/* returns NULL.                                                        */
 #ifdef GC_DEBUG_REPLACEMENT
 #  define GC_MALLOC(sz) GC_debug_malloc_replacement(sz)
 #  define GC_REALLOC(old, sz) GC_debug_realloc_replacement(old, sz)
@@ -1108,7 +1133,6 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void *GC_CALL
 #  define GC_MALLOC(sz) GC_malloc(sz)
 #  define GC_REALLOC(old, sz) GC_realloc(old, sz)
 #endif /* !GC_DEBUG_REPLACEMENT && !GC_DEBUG */
-
 #ifdef GC_DEBUG
 #  define GC_MALLOC_ATOMIC(sz) GC_debug_malloc_atomic(sz, GC_EXTRAS)
 #  define GC_STRDUP(s) GC_debug_strdup(s, GC_EXTRAS)
@@ -1121,6 +1145,18 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void *GC_CALL
     GC_debug_malloc_ignore_off_page(sz, GC_EXTRAS)
 #  define GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(sz) \
     GC_debug_malloc_atomic_ignore_off_page(sz, GC_EXTRAS)
+#else
+#  define GC_MALLOC_ATOMIC(sz) GC_malloc_atomic(sz)
+#  define GC_STRDUP(s) GC_strdup(s)
+#  define GC_STRNDUP(s, sz) GC_strndup(s, sz)
+#  define GC_MALLOC_ATOMIC_UNCOLLECTABLE(sz) GC_malloc_atomic_uncollectable(sz)
+#  define GC_MALLOC_UNCOLLECTABLE(sz) GC_malloc_uncollectable(sz)
+#  define GC_MALLOC_IGNORE_OFF_PAGE(sz) GC_malloc_ignore_off_page(sz)
+#  define GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(sz) \
+    GC_malloc_atomic_ignore_off_page(sz)
+#endif /* !GC_DEBUG */
+
+#ifdef GC_DEBUG
 #  define GC_FREE(p) GC_debug_free(p)
 #  define GC_REGISTER_FINALIZER(p, f, d, of, od) \
     GC_debug_register_finalizer(p, f, d, of, od)
@@ -1139,14 +1175,6 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void *GC_CALL
     GC_REGISTER_LONG_LINK_SAFE(link, obj)
 #  define GC_REGISTER_DISPLACEMENT(n) GC_debug_register_displacement(n)
 #else
-#  define GC_MALLOC_ATOMIC(sz) GC_malloc_atomic(sz)
-#  define GC_STRDUP(s) GC_strdup(s)
-#  define GC_STRNDUP(s, sz) GC_strndup(s, sz)
-#  define GC_MALLOC_ATOMIC_UNCOLLECTABLE(sz) GC_malloc_atomic_uncollectable(sz)
-#  define GC_MALLOC_UNCOLLECTABLE(sz) GC_malloc_uncollectable(sz)
-#  define GC_MALLOC_IGNORE_OFF_PAGE(sz) GC_malloc_ignore_off_page(sz)
-#  define GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(sz) \
-    GC_malloc_atomic_ignore_off_page(sz)
 #  define GC_FREE(p) GC_free(p)
 #  define GC_REGISTER_FINALIZER(p, f, d, of, od) \
     GC_register_finalizer(p, f, d, of, od)
@@ -1165,18 +1193,22 @@ GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void *GC_CALL
 #  define GC_REGISTER_DISPLACEMENT(n) GC_register_displacement(n)
 #endif /* !GC_DEBUG */
 
-/* The following are included because they are often convenient, and    */
-/* reduce the chance for a misspecified size argument.  But calls may   */
-/* expand to something syntactically incorrect if t is a complicated    */
-/* type expression.  Note that, unlike C++ new operator, these ones     */
-/* may return NULL (if out of memory).                                  */
+/* Convenient macros for object allocation in C++ style.  The use of    */
+/* them also reduces the chance for a misspecified size argument.  But, */
+/* note, that they may expand to something syntactically incorrect if   */
+/* the argument is a complicated type expression.  Note also, unlike    */
+/* C++ new operator, these ones may return NULL (in case of out of      */
+/* memory); however these macros are guaranteed never to return NULL    */
+/* unless GC_oom_fn returns NULL.                                       */
 #define GC_NEW(t) ((t *)GC_MALLOC(sizeof(t)))
 #define GC_NEW_ATOMIC(t) ((t *)GC_MALLOC_ATOMIC(sizeof(t)))
 #define GC_NEW_UNCOLLECTABLE(t) ((t *)GC_MALLOC_UNCOLLECTABLE(sizeof(t)))
 
 #ifdef GC_REQUIRE_WCSDUP
-/* This might be unavailable on some targets (or not needed). */
-/* wchar_t should be defined in stddef.h */
+/* Same as GC_strdup but for a wchar_t string.  Might be unavailable on */
+/* some targets (or not needed).  wchar_t should be defined in stddef.h */
+/* file.  The function (including its debug variant) is guaranteed      */
+/* never to return NULL unless GC_oom_fn returns NULL.                  */
 GC_API GC_ATTR_MALLOC wchar_t *GC_CALL GC_wcsdup(const wchar_t *)
     GC_ATTR_NONNULL(1);
 GC_API GC_ATTR_MALLOC wchar_t *GC_CALL GC_debug_wcsdup(const wchar_t *,
@@ -1994,6 +2026,8 @@ extern "C" {
 /* and released many fewer times.  Note that there is no "atomic"       */
 /* version of this function, as otherwise the links would not be seen   */
 /* by the collector.  If the argument is zero, then it is treated as 1. */
+/* The function is guaranteed never to return NULL unless GC_oom_fn     */
+/* returns NULL.                                                        */
 GC_API GC_ATTR_MALLOC void *GC_CALL GC_malloc_many(size_t /* lb */);
 
 /* Retrieve the next element in the list returned by GC_malloc_many().  */
