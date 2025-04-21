@@ -492,6 +492,11 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES]);
 
 EXTERN_C_END
 
+/* Macros to ensure same formatting of C array/struct/union initializer */
+/* across multiple versions of clang-format.                            */
+#define C_INITIALIZER_BEGIN {
+#define C_INITIALIZER_END }
+
 /* OS interface routines.       */
 
 #ifndef NO_CLOCK
@@ -500,10 +505,7 @@ EXTERN_C_END
 #    undef GET_TIME
 #    undef MS_TIME_DIFF
 #    define CLOCK_TYPE struct timeval
-#    define CLOCK_TYPE_INITIALIZER \
-      {                            \
-        0, 0                       \
-      }
+#    define CLOCK_TYPE_INITIALIZER C_INITIALIZER_BEGIN 0, 0 C_INITIALIZER_END
 #    define GET_TIME(x)                  \
       do {                               \
         struct rusage rusage;            \
@@ -573,10 +575,7 @@ EXTERN_C_END
 #  elif defined(HAVE_CLOCK_GETTIME)
 #    include <time.h>
 #    define CLOCK_TYPE struct timespec
-#    define CLOCK_TYPE_INITIALIZER \
-      {                            \
-        0, 0                       \
-      }
+#    define CLOCK_TYPE_INITIALIZER C_INITIALIZER_BEGIN 0, 0 C_INITIALIZER_END
 #    if defined(_POSIX_MONOTONIC_CLOCK) && !defined(NINTENDO_SWITCH)
 #      define GET_TIME(x)                               \
         do {                                            \
