@@ -539,7 +539,8 @@ GC_API GC_ATTR_MALLOC char *GC_CALL GC_strndup(const char *, size_t)
     GC_ATTR_NONNULL(1);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_malloc_uncollectable(size_t /* size_in_bytes */);
-GC_API GC_ATTR_DEPRECATED void *GC_CALL GC_malloc_stubborn(size_t);
+GC_API GC_ATTR_ALLOC_SIZE(1) GC_ATTR_DEPRECATED void *GC_CALL
+    GC_malloc_stubborn(size_t);
 
 /* The routines that guarantee the requested alignment of the allocated */
 /* memory object.  The align argument should be non-zero and a power    */
@@ -1047,7 +1048,7 @@ GC_API GC_ATTR_MALLOC char *GC_CALL GC_debug_strndup(const char *, size_t,
     GC_ATTR_NONNULL(1);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_debug_malloc_uncollectable(size_t /* size_in_bytes */, GC_EXTRA_PARAMS);
-GC_API GC_ATTR_DEPRECATED void *GC_CALL
+GC_API GC_ATTR_ALLOC_SIZE(1) GC_ATTR_DEPRECATED void *GC_CALL
     GC_debug_malloc_stubborn(size_t /* size_in_bytes */, GC_EXTRA_PARAMS);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_debug_malloc_ignore_off_page(size_t /* size_in_bytes */,
