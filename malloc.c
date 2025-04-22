@@ -473,9 +473,6 @@ GC_malloc_uncollectable(size_t lb)
 }
 
 #ifdef GC_ATOMIC_UNCOLLECTABLE
-/* Allocate lb bytes of pointer-free, untraced, uncollectible data    */
-/* This is normally roughly equivalent to the system malloc.          */
-/* But it may be useful if malloc is redefined.                       */
 GC_API GC_ATTR_MALLOC void *GC_CALL
 GC_malloc_atomic_uncollectable(size_t lb)
 {

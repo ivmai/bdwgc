@@ -557,12 +557,12 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
 #endif /* !GC_NO_VALLOC */
 
 /* Explicitly deallocate an object.  Dangerous if used incorrectly.     */
-/* Requires a pointer to the base of an object.                         */
-/* An object should not be enabled for finalization (and it should not  */
-/* contain registered disappearing links of any kind) when it is        */
-/* explicitly deallocated.                                              */
+/* Requires a pointer to the base of an object.  An object should not   */
+/* be enabled for finalization (and it should not contain registered    */
+/* disappearing links of any kind) when it is explicitly deallocated.   */
 /* GC_free(0) is a no-op, as required by ANSI C for free.               */
 GC_API void GC_CALL GC_free(void *);
+GC_API void GC_CALL GC_debug_free(void *);
 
 /* A symbol to be intercepted by heap profilers so that they can        */
 /* accurately track allocations.  Programs such as Valgrind massif      */
@@ -671,6 +671,10 @@ GC_API size_t GC_CALL GC_size(const void * /* obj_addr */);
 GC_API void *GC_CALL GC_realloc(void * /* old_object */,
                                 size_t /* new_size_in_bytes */)
     /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);
+GC_API void *GC_CALL GC_debug_realloc(void * /* old_object */,
+                                      size_t /* new_size_in_bytes */,
+                                      GC_EXTRA_PARAMS)
+    /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);
 
 /* Increase the heap size explicitly.  Performs the GC initialization   */
 /* as well (if not yet).  Returns 0 on failure, 1 on success.           */
@@ -712,20 +716,17 @@ GC_API void GC_CALL GC_remove_roots(void * /* low_address */,
 
 /* Add a displacement to the set of those considered valid by the       */
 /* collector.  GC_register_displacement(n) means that if p was returned */
-/* by GC_malloc, then (char *)p + n will be considered to be a valid    */
+/* by GC_malloc, then (char*)p+n will be considered to be a valid       */
 /* pointer to p.  N must be small and less than the size of p.          */
 /* (All pointers to the interior of objects from the stack are          */
 /* considered valid in any case.  This applies to heap objects and      */
-/* static data.)                                                        */
-/* Preferably, this should be called before any other GC procedures.    */
-/* Calling it later adds to the probability of excess memory            */
-/* retention.                                                           */
-/* This is a no-op if the collector has recognition of                  */
-/* arbitrary interior pointers enabled, which is now the default.       */
-GC_API void GC_CALL GC_register_displacement(size_t /* n */);
-
-/* The following version should be used if any debugging allocation is  */
+/* static data.)  Preferably, this should be called before any other    */
+/* GC procedures.  Calling it later adds to the probability of excess   */
+/* memory retention.  This is a no-op if the collector has recognition  */
+/* of arbitrary interior pointers enabled, which is now the default.    */
+/* The debugging variant should be used if any debugging allocation is  */
 /* being done.                                                          */
+GC_API void GC_CALL GC_register_displacement(size_t /* n */);
 GC_API void GC_CALL GC_debug_register_displacement(size_t /* n */);
 
 /* Explicitly trigger a full, world-stop collection.    */
@@ -1033,8 +1034,10 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_malloc_atomic_ignore_off_page(size_t /* lb */);
 
-/* The following is only defined if the library has been suitably       */
-/* compiled:                                                            */
+/* Allocate lb bytes of pointer-free, untraced, uncollectible data.     */
+/* This is normally roughly equivalent to the system malloc.  But it    */
+/* may be useful if malloc is redefined.  Defined only if the library   */
+/* has been compiled with GC_ATOMIC_UNCOLLECTABLE.                      */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_malloc_atomic_uncollectable(size_t /* size_in_bytes */);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
@@ -1059,11 +1062,6 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_debug_malloc_atomic_ignore_off_page(size_t /* size_in_bytes */,
                                            GC_EXTRA_PARAMS);
-GC_API void GC_CALL GC_debug_free(void *);
-GC_API void *GC_CALL GC_debug_realloc(void * /* old_object */,
-                                      size_t /* new_size_in_bytes */,
-                                      GC_EXTRA_PARAMS)
-    /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);
 
 /* Routines that allocate objects with debug information (like the      */
 /* above), but just fill in dummy file and line number information.     */
