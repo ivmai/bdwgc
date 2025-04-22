@@ -539,8 +539,6 @@ GC_API GC_ATTR_MALLOC char *GC_CALL GC_strndup(const char *, size_t)
     GC_ATTR_NONNULL(1);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_malloc_uncollectable(size_t /* size_in_bytes */);
-GC_API GC_ATTR_ALLOC_SIZE(1) GC_ATTR_DEPRECATED void *GC_CALL
-    GC_malloc_stubborn(size_t);
 
 /* The routines that guarantee the requested alignment of the allocated */
 /* memory object.  The align argument should be non-zero and a power    */
@@ -579,12 +577,40 @@ GC_API void GC_CALL GC_free(void *);
 /* with VALGRIND_TRACKING.                                              */
 GC_API void GC_CALLBACK GC_free_profiler_hook(void *);
 
+#if (defined(GC_CAN_SAVE_CALL_STACKS) || defined(GC_ADD_CALLER)) \
+    && !defined(GC_RETURN_ADDR_T_DEFINED)
+/* A type to hold a function return address (pointer).  Never used  */
+/* for calling a function.                                          */
+#  if defined(__GNUC__)
+/* Define it as a data (object) pointer type to avoid the compiler  */
+/* complain that ISO C forbids conversion between object and        */
+/* function pointer types.                                          */
+typedef void *GC_return_addr_t;
+#  else
+typedef void (*GC_return_addr_t)(void);
+#  endif
+#  define GC_RETURN_ADDR_T_DEFINED
+#endif /* GC_CAN_SAVE_CALL_STACKS || GC_ADD_CALLER */
+
+#ifdef GC_ADD_CALLER
+#  define GC_EXTRAS GC_RETURN_ADDR, __FILE__, __LINE__
+#  define GC_EXTRA_PARAMS GC_return_addr_t ra, const char *s, int i
+#else
+#  define GC_EXTRAS __FILE__, __LINE__
+#  define GC_EXTRA_PARAMS const char *s, int i
+#endif
+
 /* The "stubborn" objects allocation is not supported anymore.  Exists  */
 /* only for the backward compatibility.                                 */
 #define GC_MALLOC_STUBBORN(sz) GC_MALLOC(sz)
 #define GC_NEW_STUBBORN(t) GC_NEW(t)
 #define GC_CHANGE_STUBBORN(p) GC_change_stubborn(p)
 GC_API GC_ATTR_DEPRECATED void GC_CALL GC_change_stubborn(const void *);
+GC_API GC_ATTR_DEPRECATED void GC_CALL GC_debug_change_stubborn(const void *);
+GC_API GC_ATTR_ALLOC_SIZE(1) GC_ATTR_DEPRECATED void *GC_CALL
+    GC_malloc_stubborn(size_t);
+GC_API GC_ATTR_ALLOC_SIZE(1) GC_ATTR_DEPRECATED void *GC_CALL
+    GC_debug_malloc_stubborn(size_t, GC_EXTRA_PARAMS);
 
 /* Inform the collector that the object has been changed.               */
 /* Only non-NULL pointer stores into the object are considered to be    */
@@ -593,6 +619,8 @@ GC_API GC_ATTR_DEPRECATED void GC_CALL GC_change_stubborn(const void *);
 /* Should be followed typically by GC_reachable_here called for each    */
 /* of the stored pointers.                                              */
 GC_API void GC_CALL GC_end_stubborn_change(const void *) GC_ATTR_NONNULL(1);
+GC_API void GC_CALL GC_debug_end_stubborn_change(const void *)
+    GC_ATTR_NONNULL(1);
 
 /* Return a pointer to the base (lowest address) of an object given     */
 /* a pointer to a location within the object.                           */
@@ -1005,29 +1033,6 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_malloc_atomic_ignore_off_page(size_t /* lb */);
 
-#if (defined(GC_CAN_SAVE_CALL_STACKS) || defined(GC_ADD_CALLER)) \
-    && !defined(GC_RETURN_ADDR_T_DEFINED)
-/* A type to hold a function return address (pointer).  Never used    */
-/* for calling a function.                                            */
-#  if defined(__GNUC__)
-/* Define it as a data (object) pointer type to avoid the compiler  */
-/* complain that ISO C forbids conversion between object and        */
-/* function pointer types.                                          */
-typedef void *GC_return_addr_t;
-#  else
-typedef void (*GC_return_addr_t)(void);
-#  endif
-#  define GC_RETURN_ADDR_T_DEFINED
-#endif /* GC_CAN_SAVE_CALL_STACKS || GC_ADD_CALLER */
-
-#ifdef GC_ADD_CALLER
-#  define GC_EXTRAS GC_RETURN_ADDR, __FILE__, __LINE__
-#  define GC_EXTRA_PARAMS GC_return_addr_t ra, const char *s, int i
-#else
-#  define GC_EXTRAS __FILE__, __LINE__
-#  define GC_EXTRA_PARAMS const char *s, int i
-#endif
-
 /* The following is only defined if the library has been suitably       */
 /* compiled:                                                            */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
@@ -1048,8 +1053,6 @@ GC_API GC_ATTR_MALLOC char *GC_CALL GC_debug_strndup(const char *, size_t,
     GC_ATTR_NONNULL(1);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_debug_malloc_uncollectable(size_t /* size_in_bytes */, GC_EXTRA_PARAMS);
-GC_API GC_ATTR_ALLOC_SIZE(1) GC_ATTR_DEPRECATED void *GC_CALL
-    GC_debug_malloc_stubborn(size_t /* size_in_bytes */, GC_EXTRA_PARAMS);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_debug_malloc_ignore_off_page(size_t /* size_in_bytes */,
                                     GC_EXTRA_PARAMS);
@@ -1061,9 +1064,6 @@ GC_API void *GC_CALL GC_debug_realloc(void * /* old_object */,
                                       size_t /* new_size_in_bytes */,
                                       GC_EXTRA_PARAMS)
     /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);
-GC_API GC_ATTR_DEPRECATED void GC_CALL GC_debug_change_stubborn(const void *);
-GC_API void GC_CALL GC_debug_end_stubborn_change(const void *)
-    GC_ATTR_NONNULL(1);
 
 /* Routines that allocate objects with debug information (like the      */
 /* above), but just fill in dummy file and line number information.     */
