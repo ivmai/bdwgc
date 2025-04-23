@@ -132,7 +132,7 @@ environment:
 clone_depth: 50
 
 install:
-- cmd: git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
+- cmd: git clone --depth=50 https://github.com/bdwgc/libatomic_ops.git
 
 build_script:
 - cmd: if %TARGET%==cmake (
