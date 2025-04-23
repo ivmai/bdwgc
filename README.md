@@ -304,7 +304,7 @@ is the MS compiler (as of Visual Studio 2022).
 
 If needed, most OS distributes have `libatomic_ops` package; alternatively,
 you can download or clone it from
-[libatomic_ops](https://github.com/ivmai/libatomic_ops) repository on GitHub.
+[libatomic_ops](https://github.com/bdwgc/libatomic_ops) repository on GitHub.
 
 
 ## Portability
