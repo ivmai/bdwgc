@@ -313,7 +313,7 @@ WndProc(HWND hwnd_arg, UINT message, WPARAM wParam, LPARAM lParam)
         CORD raw_line = (CORD)retrieve_screen_line(i);
         size_t len = CORD_len(raw_line);
         const char *text = CORD_to_char_star(raw_line);
-        /* May contain embedded NULLs   */
+        /* May contain embedded NUL characters. */
         char *plain = plain_chars(text, len);
         char *blanks = CORD_to_char_star(CORD_chars(' ', COLS - len));
         char *control = control_chars(text, len);
