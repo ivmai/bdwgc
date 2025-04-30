@@ -478,7 +478,7 @@ ints(int low, int up)
 }
 
 #ifdef GC_GCJ_SUPPORT
-/* Return reverse(x) concatenated with y.     */
+/* Return gcj_reverse(x) concatenated with y. */
 static sexpr
 gcj_reverse1(sexpr x, sexpr y)
 {
