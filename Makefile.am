@@ -17,9 +17,6 @@
 LIBGC_VER_INFO = 6:3:5
 LIBGCCPP_VER_INFO = 6:0:5
 
-## FIXME: `make distcheck' in this directory will not currently work.
-##     This is most likely to the explicit flags passed to submakes.
-
 # We currently use the source files directly from libatomic_ops, if we
 # use the internal version.
 # Thus there seems to be no real reason to recursively build in the
