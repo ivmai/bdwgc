@@ -649,8 +649,8 @@ dnl it is actually a problem, because the compiler we're passed can't
 dnl necessarily do a full link.  So we fool automake here.
 if false; then
   dnl autoconf 2.50 runs AC_EXEEXT by default, and the macro expands
-  dnl to nothing, so nothing would remain between `then' and `fi' if it
-  dnl were not for the `:' below.
+  dnl to nothing, so nothing would remain between `then` and `fi` if it
+  dnl were not for the ':' below.
   :
   AC_EXEEXT
 fi

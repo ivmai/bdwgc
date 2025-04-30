@@ -4828,7 +4828,7 @@ GC_register_my_thread, GC_unregister_my_thread): Define only if
 GC_THREADS.
 * include/gc.h (GC_get_heap_size): Fix a typo in a comment.
 
-* configure.ac: Use `AC_C_INLINE'.
+* configure.ac: Use AC_C_INLINE.
 * include/private/gc_priv.h (GC_INLINE): Use "inline" keyword
 (determined by configure AC_C_INLINE) if HAVE_CONFIG_H is defined.
 

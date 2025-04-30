@@ -155,8 +155,7 @@ CXXFLAGS += $(CFLAGS_EXTRA)
 ## FIXME: ./configure --enable-dependency-tracking should be used
 
 ## FIXME: we shouldn't have to do this, but automake forces us to.
-## We use -Wp,-P to strip #line directives.  Irix `as' chokes on
-## these.
+## We use -Wp,-P to strip #line directives.  Irix `as` chokes on these.
 if ASM_WITH_CPP_UNSUPPORTED
   ASM_CPP_OPTIONS =
 else

@@ -31,7 +31,7 @@ CXX?= c++ $(ABI_FLAG)
 
 AS= as $(AS_ABI_FLAG)
 # The above doesn't work with gas, which doesn't run cpp.
-# Define AS as `gcc -c -x assembler-with-cpp' instead.
+# Define AS as `gcc -c -x assembler-with-cpp` instead.
 # Under Irix 6, you have to specify the ABI (-o32, -n32, or -64)
 # if you use something other than the default ABI on your machine.
 
