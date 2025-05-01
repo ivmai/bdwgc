@@ -22,56 +22,57 @@
 /* safe, but this will not be noticed by this piece of       */
 /* code.)  This test appears to be far from perfect.         */
 
-#include <stdio.h>
-#include <setjmp.h>
-#include <string.h>
-
+#define NOT_GCBUILD
 #include "private/gc_priv.h"
 
+#include <string.h>
+
 #ifdef OS2
-# define INCL_DOSERRORS
-# define INCL_DOSFILEMGR
-# define INCL_DOSMISC
-# include <os2.h>
+#  define INCL_DOSERRORS
+#  define INCL_DOSFILEMGR
+#  define INCL_DOSMISC
+#  include <os2.h>
 
-  /* Similar to that in os_dep.c but use fprintf() to report a failure. */
-  /* GETPAGESIZE() macro is defined to os2_getpagesize().               */
-  static int os2_getpagesize(void)
-  {
-    ULONG result[1];
+/* Similar to that in os_dep.c but use fprintf() to report a failure. */
+/* GETPAGESIZE() macro is defined to os2_getpagesize().               */
+static int
+os2_getpagesize(void)
+{
+  ULONG result[1];
 
-    if (DosQuerySysInfo(QSV_PAGE_SIZE, QSV_PAGE_SIZE,
-                        (void *)result, sizeof(ULONG)) != NO_ERROR) {
-        fprintf(stderr, "DosQuerySysInfo failed\n");
-        result[0] = 4096;
-    }
-    return (int)result[0];
+  if (DosQuerySysInfo(QSV_PAGE_SIZE, QSV_PAGE_SIZE, (void *)result,
+                      sizeof(ULONG))
+      != NO_ERROR) {
+    fprintf(stderr, "DosQuerySysInfo failed\n");
+    result[0] = 4096;
   }
+  return (int)result[0];
+}
 
-#elif defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-  static int win32_getpagesize(void)
-  {
-    SYSTEM_INFO sysinfo;
-    GetSystemInfo(&sysinfo);
-    return sysinfo.dwPageSize;
-  }
-# define GETPAGESIZE() win32_getpagesize()
+#elif defined(ANY_MSWIN)
+static int
+win32_getpagesize(void)
+{
+  SYSTEM_INFO sysinfo;
+  GetSystemInfo(&sysinfo);
+  return sysinfo.dwPageSize;
+}
+#  define GETPAGESIZE() win32_getpagesize()
 #endif
 
 struct a_s {
   char a_a;
-  char * a_b;
+  char *a_b;
 } a;
 
-word nested_sp(void)
+GC_ATTR_NOINLINE
+static word
+nested_sp(void)
 {
-# if GC_GNUC_PREREQ(4, 0)
-    return (word)__builtin_frame_address(0);
-# else
-    volatile word sp;
-    sp = (word)(&sp);
-    return sp;
-# endif
+  volatile ptr_t sp;
+
+  STORE_APPROX_SP_TO(sp);
+  return ADDR(sp);
 }
 
 /* To prevent nested_sp inlining. */
@@ -79,89 +80,104 @@ word (*volatile nested_sp_fn)(void) = nested_sp;
 
 int g(int x);
 
-#if defined(CPPCHECK) || !defined(__cplusplus)
-  const char *a_str = "a";
+#if (defined(CPPCHECK) || !defined(__cplusplus)) && !defined(WASI)
+const char *a_str = "a";
 #else
-# define a_str "a"
+#  define a_str "a"
 #endif
 
-int main(void)
+int
+main(void)
 {
-    volatile word sp;
-    unsigned ps = GETPAGESIZE();
-    JMP_BUF b;
-    register int x = (int)strlen(a_str); /* 1, slightly disguised */
-    static volatile int y = 0;
+  volatile ptr_t sp;
+  unsigned ps = GETPAGESIZE();
+#ifndef WASI
+  JMP_BUF b;
+#  if (!defined(__cplusplus) || __cplusplus < 201703L /* before c++17 */) \
+      && (!defined(__GNUC__) || defined(__OPTIMIZE__))
+  register
+#  endif
+      int x
+      = (int)strlen(a_str); /* 1, slightly disguised */
+  static volatile int y = 0;
+#endif
 
-    sp = (word)(&sp);
-    printf("This appears to be a %s running %s\n", MACH_TYPE, OS_TYPE);
-#   if defined(CPPCHECK)
-      (void)nested_sp(); /* to workaround a bug in cppcheck */
-#   endif
-    if (nested_sp_fn() < sp) {
-      printf("Stack appears to grow down, which is the default.\n");
-      printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
-             ((unsigned long)sp + ps) & ~(ps-1));
+  STORE_APPROX_SP_TO(sp);
+  printf("This appears to be a %s running %s\n", MACH_TYPE, OS_TYPE);
+#if defined(CPPCHECK)
+  (void)nested_sp(); /* to workaround a bug in cppcheck */
+#endif
+  if (nested_sp_fn() < ADDR(sp)) {
+    printf("Stack appears to grow down, which is the default.\n");
+    printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
+           ((unsigned long)ADDR(sp) + ps) & ~(unsigned long)(ps - 1));
+  } else {
+    printf("Stack appears to grow up.\n");
+    printf("Define STACK_GROWS_UP in gc_priv.h\n");
+    /* Note: sp is rounded down. */
+    printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
+           (unsigned long)ADDR(sp) & ~(unsigned long)(ps - 1));
+  }
+  printf("Note that this may vary between machines of ostensibly\n");
+  printf("the same architecture (e.g. Sun 3/50s and 3/80s).\n");
+  printf("On many machines the value is not fixed.\n");
+  printf("A good guess for ALIGNMENT on this machine is %lu.\n",
+         (unsigned long)(ADDR(&a.a_b) - ADDR(&a)));
+#ifndef WASI
+  printf("The following is a very dubious test of one root marking"
+         " strategy.\n");
+  printf("Results may not be accurate/useful:\n");
+  /* Encourage the compiler to keep x in a callee-save register */
+  x = 2 * x - 1;
+  printf("\n");
+  x = 2 * x - 1;
+  (void)SETJMP(b);
+  if (y == 1) {
+    if (x == 2) {
+      printf("setjmp-based generic mark_regs code probably won't work.\n");
+      printf("But we rarely try that anymore.  If you have getcontect()\n");
+      printf("this probably doesn't matter.\n");
+    } else if (x == 1) {
+      printf("setjmp-based register marking code may work.\n");
     } else {
-      printf("Stack appears to grow up.\n");
-      printf("Define STACK_GROWS_UP in gc_private.h\n");
-      printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
-             ((unsigned long)sp + ps) & ~(ps-1));
+      printf("Very strange setjmp implementation.\n");
     }
-    printf("Note that this may vary between machines of ostensibly\n");
-    printf("the same architecture (e.g. Sun 3/50s and 3/80s).\n");
-    printf("On many machines the value is not fixed.\n");
-    printf("A good guess for ALIGNMENT on this machine is %lu.\n",
-           (unsigned long)((word)(&(a.a_b)) - (word)(&a)));
-
-    printf("The following is a very dubious test of one root marking"
-           " strategy.\n");
-    printf("Results may not be accurate/useful:\n");
-    /* Encourage the compiler to keep x in a callee-save register */
-    x = 2*x-1;
-    printf("\n");
-    x = 2*x-1;
-    (void)SETJMP(b);
-    if (y == 1) {
-      if (x == 2) {
-        printf("setjmp-based generic mark_regs code probably won't work.\n");
-        printf("But we rarely try that anymore.  If you have getcontect()\n");
-        printf("this probably doesn't matter.\n");
-      } else if (x == 1) {
-          printf("setjmp-based register marking code may work.\n");
-      } else {
-          printf("Very strange setjmp implementation.\n");
-      }
-    }
-    y++;
-    x = 2;
-    if (y == 1) LONGJMP(b, 1);
-    printf("Some GC internal configuration stuff: \n");
-    printf("\tWORDSZ = %lu, ALIGNMENT = %d, GC_GRANULE_BYTES = %d\n",
-           (unsigned long)WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);
-    printf("\tUsing one mark ");
-#   if defined(USE_MARK_BYTES)
-      printf("byte");
-#   else
-      printf("bit");
-#   endif
-    printf(" per ");
-#   if defined(MARK_BIT_PER_OBJ)
-      printf("object.\n");
-#   elif defined(MARK_BIT_PER_GRANULE)
-      printf("granule.\n");
-#   endif
-#   ifdef THREAD_LOCAL_ALLOC
-      printf("Thread local allocation enabled.\n");
-#   endif
-#   ifdef PARALLEL_MARK
-      printf("Parallel marking enabled.\n");
-#   endif
-    (void)g(x);
-    return 0;
+  }
+  y++;
+  x = 2;
+  if (y == 1)
+    LONGJMP(b, 1);
+#endif
+  printf("Some GC internal configuration stuff: \n");
+  printf("\tWORDSZ = %lu, ALIGNMENT = %d, GC_GRANULE_BYTES = %d\n",
+         (unsigned long)CPP_WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);
+  printf("\tUsing one mark ");
+#ifdef USE_MARK_BYTES
+  printf("byte");
+#else
+  printf("bit");
+#endif
+#ifdef MARK_BIT_PER_OBJ
+  printf(" per object.\n");
+#else
+  printf(" per granule.\n");
+#endif
+#ifdef THREAD_LOCAL_ALLOC
+  printf("Thread-local allocation enabled.\n");
+#endif
+#ifdef PARALLEL_MARK
+  printf("Parallel marking enabled.\n");
+#endif
+#ifdef WASI
+  (void)g(0);
+#else
+  (void)g(x);
+#endif
+  return 0;
 }
 
-int g(int x)
+int
+g(int x)
 {
-    return x;
+  return x;
 }

@@ -1,0 +1,128 @@
+# This workflow uses Zig and its excellent cross-compilation support to test
+# compiling for multiple platforms. No tests are actually run since it would
+# require emulation.
+name: zig cross-compile
+
+on: [ push, pull_request ]
+
+jobs:
+  build:
+    name: ${{ matrix.ttriple }} cpp:${{ matrix.enable_cplusplus }} thr:${{ matrix.enable_threads }} dll:${{ matrix.shared_libs }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        zig_version: [ "0.14.0" ]
+        # Some of the triples are commented out just to speedup this workflow.
+        ttriple: [
+          aarch64-linux-gnu,
+          #aarch64-linux-musl,
+          aarch64-macos-none,
+          aarch64-windows-gnu,
+          #aarch64_be-linux-gnu,
+          aarch64_be-linux-musl,
+          #arc-linux-gnu, # FIXME: __linux__ macro is not predefined
+          #arm-linux-gnueabi,
+          arm-linux-gnueabihf,
+          arm-linux-musleabi,
+          #arm-linux-musleabihf,
+          armeb-linux-gnueabi,
+          #armeb-linux-gnueabihf,
+          #armeb-linux-musleabi,
+          armeb-linux-musleabihf,
+          loongarch64-linux-gnu,
+          #loongarch64-linux-gnusf, # FIXME: gnu/stubs-lp64s.h not found
+          loongarch64-linux-musl,
+          #m68k-linux-gnu, # FIXME: No available targets compatible with triple
+          #m68k-linux-musl, # FIXME: No available targets compatible with triple
+          #mips-linux-gnueabi,
+          #mips-linux-gnueabihf,
+          mips-linux-musleabi,
+          mips-linux-musleabihf,
+          mips64-linux-gnuabi64,
+          #mips64-linux-gnuabin32,
+          mips64-linux-muslabi64,
+          mips64-linux-muslabin32,
+          #mips64el-linux-gnuabi64,
+          mips64el-linux-gnuabin32,
+          mips64el-linux-muslabi64,
+          mips64el-linux-muslabin32,
+          mipsel-linux-gnueabi,
+          #mipsel-linux-gnueabihf,
+          mipsel-linux-musleabi,
+          mipsel-linux-musleabihf,
+          #powerpc-linux-gnueabi,
+          powerpc-linux-gnueabihf,
+          #powerpc-linux-musleabi,
+          powerpc-linux-musleabihf,
+          #powerpc64-linux-gnu, # FIXME: not implemented correctly in zig
+          #powerpc64-linux-musl,
+          #powerpc64le-linux-gnu,
+          powerpc64le-linux-musl,
+          riscv32-linux-gnu,
+          riscv32-linux-musl,
+          riscv64-linux-gnu,
+          riscv64-linux-musl,
+          s390x-linux-gnu,
+          s390x-linux-musl,
+          sparc-linux-gnu,
+          sparc64-linux-gnu,
+          thumb-linux-musleabi,
+          #thumb-linux-musleabihf,
+          thumb-windows-gnu,
+          #thumbeb-linux-musleabi,
+          thumbeb-linux-musleabihf,
+          wasm32-wasi-musl,
+          #x86-linux-gnu,
+          x86-linux-musl,
+          x86-windows-gnu,
+          x86_64-linux-gnu.2.27, # with a glibc version
+          x86_64-linux-gnux32,
+          #x86_64-linux-musl,
+          x86_64-linux-muslx32,
+          x86_64-macos-none,
+          x86_64-windows-gnu,
+        ]
+        enable_cplusplus: [ false, true ]
+        enable_threads: [ false, true ]
+        shared_libs: [ false, true ]
+        exclude:
+        - enable_threads: true
+          ttriple: wasm32-wasi-musl
+        - enable_cplusplus: false # excluded to speedup this workflow
+          shared_libs: false
+        - shared_libs: true # FIXME: SPARCv8 does not handle f128 in calls
+          ttriple: sparc-linux-gnu
+        - shared_libs: true # FIXME: recompile with -fPIC
+          ttriple: sparc64-linux-gnu
+        - shared_libs: true # FIXME: recompile with -fPIC
+          ttriple: x86_64-linux-gnux32
+        - shared_libs: true # FIXME: recompile with -fPIC
+          ttriple: x86_64-linux-muslx32
+        - shared_libs: true # FIXME: creating shared libs is not yet stable
+          ttriple: wasm32-wasi-musl
+        - enable_cplusplus: true # FIXME: ignoring -fno-PIC option
+          ttriple: mips64-linux-muslabi64
+        - enable_cplusplus: true # FIXME: ignoring -fno-PIC option
+          ttriple: mips64el-linux-muslabi64
+        # The following ones have some zig link issue.
+        - enable_cplusplus: false
+          ttriple: x86-linux-musl
+        - enable_cplusplus: true
+          shared_libs: true
+          ttriple: x86-linux-musl
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: korandoru/setup-zig@v1
+      with:
+        zig-version: ${{ matrix.zig_version }}
+    - name: Build
+      run: >
+        zig build -Dtarget=${{ matrix.ttriple }}
+        -DBUILD_SHARED_LIBS=${{ matrix.shared_libs }}
+        -DCFLAGS_EXTRA="${{ matrix.cflags_extra }}"
+        -Denable_cplusplus=${{ matrix.enable_cplusplus }}
+        -Denable_threads=${{ matrix.enable_threads }}
+        -Denable_werror

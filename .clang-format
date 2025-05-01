@@ -1,0 +1,9 @@
+# Clang-format configuration for bdwgc source.
+BasedOnStyle: GNU
+
+AlignEscapedNewlines: Left
+BreakBeforeBraces: Linux
+IndentCaseBlocks: true
+IndentPPDirectives: AfterHash
+SpaceBeforeParens: ControlStatements
+TabWidth: 2

@@ -1,8 +1,0 @@
-status = ["buildbot/ci-builder"]
-
-timeout_sec = 1800 # 30 minutes
-
-# Have bors delete auto-merged branches
-delete_merged_branches = true
-
-cut_body_after = ""

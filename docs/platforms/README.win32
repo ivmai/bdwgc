@@ -1,0 +1,217 @@
+The collector has at various times been compiled under Windows 95 and later,
+NT, and XP, with the original Microsoft SDK, with Visual C++ 2.0, 4.0, and 6,
+with the GNU Win32 tools, with Borland C++ Builder, with Watcom C, with EMX,
+and with the Digital Mars compiler (DMC).
+
+For historical reasons,
+the collector test program "gctest" is linked as a GUI application,
+but does not open any windows.  Its output normally appears in the file
+"gctest.gc.log".  It may be started from the file manager.  The hour glass
+cursor may appear as long as it's running.  If it is started from the
+command line, it will usually run in the background.  Wait a few
+minutes (a few seconds on a modern machine) before you check the output.
+You should see either a failure indication or a "Collector appears to work"
+message.
+
+A toy editor (de.exe) based on cords (heavyweight
+strings represented as trees) has been ported and is included.
+It runs fine under either Win32 or win32s.  It serves as an example
+of a true Windows application, except that it was written by a
+nonexpert Windows programmer.  (There are some peculiarities
+in the way files are displayed.  The <cr> is displayed explicitly
+for standard DOS text files.  As in the UNIX version, control
+characters are displayed explicitly, but in this case as red text.
+This may be suboptimal for some tastes and/or sets of default
+window colors.)
+
+In general -DREDIRECT_MALLOC is unlikely to work unless the
+application is completely statically linked.
+
+The collector normally allocates memory from the OS with VirtualAlloc.
+This appears to cause problems under Windows NT and Windows 2000 (but
+not Windows 95/98) if the memory is later passed to CreateDIBitmap.
+To work around this problem, build the collector with -DUSE_GLOBAL_ALLOC.
+
+[Threads and incremental collection are discussed near the end, below.]
+
+Microsoft Tools
+---------------
+
+For Microsoft development tools, type
+"nmake -f NT_MAKEFILE cpu=i386 disable_threads=1 enable_static=1 nodebug=1"
+to build the release variant of the collector as a static library without
+threads support.
+
+In order to use the C++ interface, the client code should include gc_cpp.h
+and/or gc_allocator.h.
+
+[See above for gctest.]
+
+Clients may need to define GC_NOT_DLL before including gc.h, if the
+collector was built as a static library.
+
+GNU Tools
+---------
+
+The collector should be buildable under Cygwin with the
+"./configure; make check" machinery.
+
+MinGW builds (including for x64) are available both directly (on a Windows
+host) and via cross-compilation, e.g.
+"./configure --host=i686-pc-mingw32; make check"
+
+By default, configure instructs make to build the collector as a DLL (shared
+library), adding -D GC_DLL to CFLAGS.
+
+Parallel marker is enabled by default; it could be disabled by
+"--disable-parallel-mark" option.
+
+Memory unmapping could be turned off by "--disable-munmap" option.
+
+Borland Tools
+-------------
+
+For Borland tools (e.g. C++Builder), use `cmake -G "Borland Makefiles"`.
+
+Note that the Borland's compiler defaults to 1-byte alignment in structures
+(-a1), whereas Visual C++ appears to default to 8-byte alignment.
+The garbage collector in its default configuration expects at least 4-byte
+alignment.  Thus, the Borland default must be overridden.  (In my opinion,
+it should usually be anyway.  I expect that -a1 introduces major performance
+penalties on a 486 or Pentium.)  Note that this changes structure layouts.
+(As a last resort, -DFORCE_ALIGNMENT_ONE option could be passed to the
+compiler to allow 1-byte alignment, but this would have significant negative
+performance implications.)
+
+Digital Mars compiler
+---------------------
+
+Same as MS Visual C++ but might require
+-DAO_OLD_STYLE_INTERLOCKED_COMPARE_EXCHANGE option to compile with the
+parallel marker enabled.
+
+To build the collector, use the command:
+    make -f digimars.mak
+
+As usual, specify `check` goal to run the tests:
+    make -f digimars.mak check
+
+Watcom compiler
+---------------
+
+Ivan V. Demakov's README for the Watcom port:
+
+The collector has been tested with Watcom C 10.6, 11.0 and OpenWatcom 2.0.
+It runs under Win32 and win32s, and even under DOS with dos4gw
+dos-extender.  Under Win32 the collector can be built either as dll
+or as static library.
+
+Note that all compilations were done under Windows 95, NT, Windows 2K or
+later.  For unknown reason compiling under Windows 3.11 for NT (one
+attempt has been made) leads to broken executables.
+
+Incremental collection is supported (except for MSDOS).
+
+To build the collector, use the command:
+    wmake -f WCC_MAKEFILE
+
+You might need to customize the build, i.e. set the target platform, library
+type (dynamic or static), calling conventions, and optimization options.
+In this case, pass additional arguments to wmake, e.g.:
+- "ENABLE_STATIC=1" to build the collector as a static library,
+- "SYSTEM=DOS4GW" to target dos4gw execution environment.
+
+To run the tests, specify `check` goal:
+    wmake -f WCC_MAKEFILE check
+
+All programs using libgc should be compiled with 4-byte alignment.
+For further explanations on this, see comments about Borland compiler.
+
+If the libgc is compiled as dll, the macro "GC_DLL" should be defined before
+including "gc.h" (for example, with -DGC_DLL compiler option). It's
+important, otherwise resulting programs will not run.
+
+The alternate way to compile the collector is to use cmake build system:
+    cmake -G "Watcom WMake" .
+    cmake --build .
+
+Special note for OpenWatcom users: the C (unlike the C++) compiler (of the
+latest stable release, not sure for older ones) doesn't force pointer global
+variables (i.e. not struct fields, not sure for locals) to be aligned unless
+optimizing for speed (e.g., "-ot" option is set); the "-zp" option (or align
+pragma) only controls alignment for structs; I don't know whether it's a bug
+or a feature, but you are warned.
+
+Incremental Collection
+----------------------
+
+There is some support for incremental collection.  By default, the
+collector chooses between explicit page protection, and GetWriteWatch-based
+write tracking automatically, depending on the platform.
+
+The former is slow and interacts poorly with a debugger.
+Pages are protected.  Protection faults are caught by a handler
+installed at the bottom of the handler
+stack.  Whenever possible, I recommend adding a call to
+GC_enable_incremental at the last possible moment, after most
+debugging is complete.  No system
+calls are wrapped by the collector itself.  It may be necessary
+to wrap ReadFile calls that use a buffer in the heap, so that the
+call does not encounter a protection fault while it's running.
+(As usual, none of this is an issue unless GC_enable_incremental
+is called.)
+
+Note that incremental collection is disabled with -DSMALL_CONFIG.
+
+Threads
+-------
+
+The collector by default handles threads similarly to other platforms.
+James Clark's code which tracks threads attached to the collector DLL still
+exists, but requires that both
+- the collector is built in a DLL with GC_DLL defined, and
+- GC_use_threads_discovery() is called before the collector initialization,
+  which in turn must happen before creating additional threads.
+We generally recommend avoiding this if possible, since it seems to
+be less than 100% reliable.
+
+To build the collector as a dynamic library which handles threads similarly
+to other platforms, type "nmake -f NT_MAKEFILE".  If automatic tracking of
+threads attached to the collector DLL (i.e. support of both kinds of thread
+tracking) is needed then delete "-DTHREAD_LOCAL_ALLOC" from NT_MAKEFILE
+manually before the build.
+
+The incremental collection is supported only if it is enabled before any
+additional threads are created.
+
+Threads are also supported in static library builds with Microsoft tools
+(e.g., NT_MAKEFILE), as well as with the CMake and GNU tools.  The collector
+must be built with GC_THREADS defined (this is the default in NT_MAKEFILE,
+CMakeLists.txt and configure).
+
+For the normal, non-dll-based thread tracking to work properly,
+threads should be created with GC_CreateThread or GC_beginthreadex,
+and exit normally, or call GC_endthreadex or GC_ExitThread.  (For Cygwin, the
+standard pthread_create/exit calls could be used instead.)  As in the pthread
+case, including gc.h will redefine CreateThread, _beginthreadex,
+_endthreadex, and ExitThread to call the GC_ versions instead.
+
+Note that, as usual, GC_CreateThread tends to introduce resource leaks (in the
+C runtime) that are avoided by GC_beginthreadex.  There is currently no
+equivalent of _beginthread, and it should not be used.
+
+GC_INIT() should be called from the main thread before other calls to the
+collector.
+
+We strongly advise against using the TerminateThread() Windows API call,
+especially with the garbage collector.  Any use is likely to provoke a
+crash in the collector, since it makes it impossible for the collector to
+correctly track threads.
+
+To build the collector for MinGW pthreads-win32 (or other non-Cygwin pthreads
+implementation for Windows), use Makefile.direct and explicitly set
+GC_WIN32_PTHREADS (or pass --enable-threads=pthreads to configure).
+Use -DPTW32_STATIC_LIB for the static threads library.
+
+The alternate (better) way to build the library is to use CMake script;
+please see cmake.md file for the details.

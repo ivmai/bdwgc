@@ -1,0 +1,18 @@
+The code assumes static linking, and a single thread.  The editor de has
+not been ported; the cord test program has.  The supplied WCC_MAKEFILE should
+work for OS/2 but was not tested on the target.
+
+To build the collector, use the command:
+    wmake -f WCC_MAKEFILE SYSTEM=OS2 ENABLE_STATIC=1
+
+Since we haven't figured out how to do partial linking or to build static
+libraries, clients currently need to link against a long list of executables.
+
+Notes:
+* adding dynamic linking support seems easy, but was not done;
+* adding thread support may be nontrivial, since we have not yet figured out
+  how to look at another thread's registers;
+* memory unmapping to the operating system is not supported;
+* incremental collection is not supported yet;
+* setjmp_test may yield overly optimistic results when compiled without
+  optimization.

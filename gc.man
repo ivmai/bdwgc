@@ -1,11 +1,11 @@
-.TH BDWGC 3 "26 Mar 2019"
+.TH BDWGC 3 "14 Jun 2024"
 .SH NAME
 GC_malloc, GC_malloc_atomic, GC_free, GC_realloc, GC_enable_incremental,
 GC_register_finalizer, GC_malloc_ignore_off_page,
 GC_malloc_atomic_ignore_off_page, GC_set_warn_proc \- Garbage collecting
 malloc replacement
 .SH SYNOPSIS
-#include <gc.h>
+#include <gc/gc.h>
 .br
 void * GC_malloc(size_t size);
 .br
@@ -21,7 +21,7 @@ void * GC_malloc_ignore_off_page(size_t size);
 .br
 void * GC_malloc_atomic_ignore_off_page(size_t size);
 .br
-void GC_set_warn_proc(void (*proc)(char *, GC_word));
+void GC_set_warn_proc(void (*proc)(const char *, GC_uintptr_t));
 .br
 .sp
 cc ... -lgc
@@ -90,7 +90,7 @@ and
 .I
 GC_malloc_atomic_ignore_off_page
 inform the collector that the client code will always maintain a pointer to
-near the beginning of the object (within the first 512 bytes), and that
+near the beginning (i.e. within the first heap block) of the object, and that
 pointers beyond that can be ignored by the collector.  This makes it much
 easier for the collector to place large objects.  These are recommended for
 large object allocation.  (Objects expected to be > ~100 KB should be

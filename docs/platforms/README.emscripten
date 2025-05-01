@@ -1,0 +1,35 @@
+
+The build system (at least autotools-based one) should detect and configure
+emscripten correctly.
+
+Due to the limitations of webassembly, finding all roots on the stack needs
+more coordination with the code using the collector than on other platforms.
+There are two strategies for dealing with this:
+
+1. Compile any code relying on the collector with
+   -sBINARYEN_EXTRA_PASSES='--spill-pointers' option. This instructs the
+   C compiler to always keep roots in a place where the collector can find
+   them. This is the simplest option but there is some negative impact on
+   the code size and performance.
+
+2. Only trigger the GC at points where it can be guaranteed that there are
+   no pointers on the stack. When running in the browser, this can be done,
+   e.g., in the main event loop using emscripten_set_timeout(). Triggering
+   the collection manually involves calling GC_enable(), GC_gcollect() and
+   GC_disable() in succession, having also a GC_disable() call at start.
+   This method does not have a drawback on the code size and performance but
+   might lead to the garbage collection running too often or, vice versa,
+   rarely if the timeouts are chosen incorrectly, as a consequence, leading
+   to the heap growth.
+
+As of now, gctest almost passes, except for the tests that involve a_get().
+
+No thread support for now. No idea how to stop other threads (perhaps we need
+support from JS side).
+
+How to build (LDFLAGS could be omitted depending on the strategy):
+
+    # source EMSDK first
+    LDFLAGS="-sBINARYEN_EXTRA_PASSES='--spill-pointers'" emconfigure ./configure
+    emmake make gctest.html
+    # point your browser at .libs/gctest.html or call `node .libs/gctest.js`
