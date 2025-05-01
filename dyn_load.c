@@ -589,7 +589,7 @@ STATIC int
 GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
 {
   const ElfW(Phdr) * p;
-  ptr_t my_start, my_end;
+  ptr_t load_ptr, my_start, my_end;
   int i;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -598,6 +598,7 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       < offsetof(struct dl_phdr_info, dlpi_phnum) + sizeof(info->dlpi_phnum))
     return 1; /* stop */
 
+  load_ptr = (ptr_t)info->dlpi_addr;
   p = info->dlpi_phdr;
   for (i = 0; i < (int)info->dlpi_phnum; i++, p++) {
     if (p->p_type == PT_LOAD) {
@@ -605,12 +606,12 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       if ((p->p_flags & PF_W) == 0)
         continue;
 
-      my_start = MAKE_CPTR(p->p_vaddr) + info->dlpi_addr;
+      my_start = load_ptr + p->p_vaddr;
       my_end = my_start + p->p_memsz;
 #        ifdef CHERI_PURECAP
       my_start = PTR_ALIGN_UP(my_start, ALIGNMENT);
       my_end = PTR_ALIGN_DOWN(my_end, ALIGNMENT);
-      if (!SPANNING_CAPABILITY(info->dlpi_addr, ADDR(my_start), ADDR(my_end)))
+      if (!SPANNING_CAPABILITY(load_ptr, ADDR(my_start), ADDR(my_end)))
         continue;
       my_start = cheri_bounds_set(my_start, (word)(my_end - my_start));
 #        endif
@@ -657,7 +658,7 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       /* encountered "LOAD" segment, so we need to exclude it.        */
       int j;
 
-      my_start = MAKE_CPTR(p->p_vaddr) + info->dlpi_addr;
+      my_start = load_ptr + p->p_vaddr;
       my_end = my_start + p->p_memsz;
       for (j = n_load_segs; --j >= 0;) {
         if (ADDR_INSIDE(my_start, load_segs[j].start, load_segs[j].end)) {
@@ -897,16 +898,15 @@ GC_register_dynamic_libraries(void)
   for (lm = GC_FirstDLOpenedLinkMap(); lm != NULL; lm = lm->l_next) {
     ElfW(Ehdr) * e;
     ElfW(Phdr) * p;
-    unsigned long offset;
+    ptr_t load_ptr = (ptr_t)lm->l_addr;
     int i;
 
-    e = (ElfW(Ehdr) *)lm->l_addr;
 #    ifdef HOST_ANDROID
-    if (NULL == e)
+    if (NULL == load_ptr)
       continue;
 #    endif
-    p = (ElfW(Phdr) *)((ptr_t)e + e->e_phoff);
-    offset = (unsigned long)ADDR(e);
+    e = (ElfW(Ehdr) *)load_ptr;
+    p = (ElfW(Phdr) *)(load_ptr + e->e_phoff);
     for (i = 0; i < (int)e->e_phnum; i++, p++) {
       ptr_t start;
 
@@ -914,7 +914,7 @@ GC_register_dynamic_libraries(void)
       case PT_LOAD:
         if ((p->p_flags & PF_W) == 0)
           break;
-        start = MAKE_CPTR(p->p_vaddr) + offset;
+        start = load_ptr + p->p_vaddr;
         GC_add_roots_inner(start, start + p->p_memsz, TRUE);
         break;
       default:
