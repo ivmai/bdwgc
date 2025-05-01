@@ -17,7 +17,6 @@
 
 #include "private/gc_pmark.h"
 
-
 #ifndef GC_NO_FINALIZATION
 #  include "gc/javaxfc.h" /* to get GC_finalize_all() as extern "C" */
 

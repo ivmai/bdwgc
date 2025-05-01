@@ -635,7 +635,7 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       if ((p->p_flags & PF_W) == 0)
         continue;
 
-      my_start = MAKE_CPTR(p->p_vaddr) + info->dlpi_addr;
+      my_start = CAST_THRU_UINTPTR(ptr_t, info->dlpi_addr + p->p_vaddr);
       my_end = my_start + p->p_memsz;
 #        ifdef CHERI_PURECAP
       my_start = PTR_ALIGN_UP(my_start, ALIGNMENT);

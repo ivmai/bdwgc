@@ -50,7 +50,6 @@ GC_INNER pthread_mutex_t GC_allocate_ml;
 #  endif
 #endif /* THREADS */
 
-
 #ifdef DYNAMIC_LOADING
 /* We need to register the main data segment.  Returns TRUE unless    */
 /* this is done implicitly as part of dynamic library registration.   */
