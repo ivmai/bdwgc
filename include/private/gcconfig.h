@@ -780,7 +780,14 @@ EXTERN_C_BEGIN
 /* should be a power of two.                                        */
 #if GC_CLANG_PREREQ(11, 0)
 #  define PTR_ALIGN_DOWN(p, b) __builtin_align_down(p, b)
-#  define PTR_ALIGN_UP(p, b) __builtin_align_up(p, b)
+#  if defined(DARWIN) && defined(GC_SINGLE_OBJ_BUILD) && GC_CLANG_PREREQ(17, 0)
+/* Workaround a crash in Apple clang-17.                            */
+/* TODO: Disable for later clang versions when the bug is fixed.    */
+#    define PTR_ALIGN_UP(p, b) \
+      ((ptr_t)__builtin_align_up((GC_uintptr_t)(p), b))
+#  else
+#    define PTR_ALIGN_UP(p, b) __builtin_align_up(p, b)
+#  endif
 #else
 #  define PTR_ALIGN_DOWN(p, b) \
     ((ptr_t)((GC_uintptr_t)(p) & ~((GC_uintptr_t)(b) - (GC_uintptr_t)1)))
