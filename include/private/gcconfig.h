@@ -597,7 +597,6 @@ EXTERN_C_BEGIN
 /*              (SEQUENT, OS2, SCO, LINUX, NETBSD,  */
 /*               FREEBSD, THREE86BSD, MSWIN32,      */
 /*               BSDI, SOLARIS, NEXT and others)    */
-/*             NS32K      ==> Encore Multimax       */
 /*             MIPS       ==> R2000 through R14K    */
 /*                  (many variants)                 */
 /*             VAX        ==> DEC VAX               */
@@ -1620,18 +1619,6 @@ extern char *_STACKTOP;
 #    define MPROTECT_VDB
 #  endif
 #endif /* I386 */
-
-#ifdef NS32K
-#  define MACH_TYPE "NS32K"
-#  define CPP_WORDSZ 32
-extern char **environ;
-/* Hideous kludge: environ is the first word in crt0.o, and         */
-/* delimits the start of the data segment, no matter which ld       */
-/* options were passed through.                                     */
-#  define DATASTART ((ptr_t)(&environ))
-/* Note: hard-coded stack bottom for Encore.        */
-#  define STACKBOTTOM MAKE_CPTR(0xfffff000)
-#endif /* NS32K */
 
 #ifdef LOONGARCH
 #  define MACH_TYPE "LOONGARCH"
