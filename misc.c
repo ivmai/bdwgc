@@ -437,7 +437,7 @@ GC_clear_stack(void *arg)
 
 #endif /* !ALWAYS_SMALL_CLEAR_STACK && !STACK_NOT_SCANNED */
 
-/* Return a pointer to the base address of p, given a pointer to a      */
+/* Return a pointer to the base address of p, given a pointer to        */
 /* an address within an object.  Return 0 otherwise.                    */
 GC_API void *GC_CALL
 GC_base(void *p)
