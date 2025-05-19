@@ -311,7 +311,7 @@ GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
 #endif
 
 /* Push a single value onto mark stack. Mark from the object        */
-/* pointed to by p.  The argument should be of word type.           */
+/* pointed to by p.  The argument should be of ptr_t type.          */
 /* Invoke FIXUP_POINTER() before any further processing.  p is      */
 /* considered valid even if it is an interior pointer.  Previously  */
 /* marked objects are not pushed.  Hence we make progress even      */
