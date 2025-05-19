@@ -1276,7 +1276,7 @@ GC_API void GC_CALL GC_debug_register_finalizer(
     void * /* obj */, GC_finalization_proc /* fn */, void * /* cd */,
     GC_finalization_proc * /* ofn */, void ** /* ocd */) GC_ATTR_NONNULL(1);
 
-/* Another versions of the above follow.  It ignores            */
+/* Another version of the above follow.  It ignores             */
 /* self-cycles, i.e. pointers from a finalizable object to      */
 /* itself.  There is a stylistic argument that this is wrong,   */
 /* but it's unavoidable for C++, since the compiler may         */
