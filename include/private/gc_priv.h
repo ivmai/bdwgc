@@ -2860,7 +2860,7 @@ GC_INNER void GC_handle_protected_regions_limit(void);
 #  define GC_handle_protected_regions_limit() (void)0
 #endif
 
-/* Same as GC_base but excepts and returns a pointer to const object.   */
+/* Same as GC_base but accepts and returns a pointer to const object.   */
 #define GC_base_C(p) ((const void *)GC_base(GC_CAST_AWAY_CONST_PVOID(p)))
 
 /* Debugging print routines: */
