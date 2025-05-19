@@ -477,7 +477,7 @@ GC_register_map_entries(const char *maps)
         continue; /* discard some special mapping */
 #      endif
       if (path[0] == '[' && strncmp(path + 1, "heap]", 5) != 0)
-        continue; /* discard if a pseudo-path unless "[heap]" */
+        continue; /* discard a pseudo-file path unless "[heap]" */
 
 #      ifdef THREADS
       /* This may fail, since a thread may already be           */
