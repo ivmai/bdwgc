@@ -666,7 +666,7 @@ tiny_reverse_test(void *p_resumed)
   if (p_resumed != NULL) {
     /* Test self-suspend is working.        */
     GC_suspend_thread(pthread_self());
-    AO_store_release((volatile AO_t *)p_resumed, (AO_t)TRUE);
+    AO_store_release((volatile AO_t *)p_resumed, (AO_t)1);
   }
 #  else
   (void)p_resumed;
