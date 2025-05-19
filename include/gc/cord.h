@@ -317,7 +317,7 @@ CORD_API CORD CORD_from_char_star(const char *);
 CORD_API const char *CORD_to_const_char_star(CORD);
 
 /* Write a cord to a file, starting at the current position.            */
-/* No trailing NULs are newlines are added.                             */
+/* No trailing NULs and newlines are added.                             */
 /* Returns EOF if a write error occurs, 1 otherwise.                    */
 CORD_API int CORD_put(CORD, FILE *);
 
