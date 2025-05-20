@@ -227,9 +227,10 @@ EXTERN_C_END
 #  ifndef ADDRESS_SANITIZER
 #    define GC_ATTR_NO_SANITIZE_ADDR /* empty */
 #  elif GC_CLANG_PREREQ(3, 8)
-#    define GC_ATTR_NO_SANITIZE_ADDR __attribute__((no_sanitize("address")))
+#    define GC_ATTR_NO_SANITIZE_ADDR \
+      __attribute__((__no_sanitize__("address")))
 #  else
-#    define GC_ATTR_NO_SANITIZE_ADDR __attribute__((no_sanitize_address))
+#    define GC_ATTR_NO_SANITIZE_ADDR __attribute__((__no_sanitize_address__))
 #  endif
 #endif /* !GC_ATTR_NO_SANITIZE_ADDR */
 
@@ -237,9 +238,10 @@ EXTERN_C_END
 #  ifndef MEMORY_SANITIZER
 #    define GC_ATTR_NO_SANITIZE_MEMORY /* empty */
 #  elif GC_CLANG_PREREQ(3, 8)
-#    define GC_ATTR_NO_SANITIZE_MEMORY __attribute__((no_sanitize("memory")))
+#    define GC_ATTR_NO_SANITIZE_MEMORY \
+      __attribute__((__no_sanitize__("memory")))
 #  else
-#    define GC_ATTR_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
+#    define GC_ATTR_NO_SANITIZE_MEMORY __attribute__((__no_sanitize_memory__))
 #  endif
 #endif /* !GC_ATTR_NO_SANITIZE_MEMORY */
 
@@ -247,12 +249,13 @@ EXTERN_C_END
 #  ifndef THREAD_SANITIZER
 #    define GC_ATTR_NO_SANITIZE_THREAD /* empty */
 #  elif GC_CLANG_PREREQ(3, 8)
-#    define GC_ATTR_NO_SANITIZE_THREAD __attribute__((no_sanitize("thread")))
+#    define GC_ATTR_NO_SANITIZE_THREAD \
+      __attribute__((__no_sanitize__("thread")))
 #  else
 /* It seems that no_sanitize_thread attribute has no effect if the  */
 /* function is inlined (as of gcc 11.1.0, at least).                */
 #    define GC_ATTR_NO_SANITIZE_THREAD \
-      GC_ATTR_NOINLINE __attribute__((no_sanitize_thread))
+      GC_ATTR_NOINLINE __attribute__((__no_sanitize_thread__))
 #  endif
 #endif /* !GC_ATTR_NO_SANITIZE_THREAD */
 
