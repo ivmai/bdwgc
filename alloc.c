@@ -21,8 +21,8 @@
  * Separate free lists are maintained for different sized objects
  * up to MAXOBJBYTES.
  * The call GC_allocobj(lg, k) ensures that the free list for
- * kind k objects of size lg granules to a non-empty
- * free list. It returns a pointer to the first entry on the free list.
+ * kind k objects of size lg granules is a non-empty one.
+ * It returns a pointer to the first entry on the free list.
  * In a single-threaded world, GC_allocobj may be called to allocate
  * an object of small size lb (and NORMAL kind) as follows
  * (GC_generic_malloc_inner is a wrapper over GC_allocobj which also

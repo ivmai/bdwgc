@@ -2527,7 +2527,7 @@ GC_INNER void *GC_generic_malloc_inner(size_t lb, int k, unsigned flags);
 GC_INNER GC_bool GC_collect_or_expand(word needed_blocks, unsigned flags,
                                       GC_bool retry);
 
-/* Make sure the indicated object free is not empty, and return its     */
+/* Make the indicated object free list non-empty, and return its        */
 /* head (the first object on the free list).  The object must be        */
 /* removed from the free list by the caller.  The size is in granules.  */
 GC_INNER ptr_t GC_allocobj(size_t lg, int k);
