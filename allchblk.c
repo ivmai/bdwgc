@@ -248,7 +248,7 @@ GC_dump_regions(void)
 /* Initialize hdr for a block containing the indicated size and         */
 /* kind of objects.  Return FALSE on failure.                           */
 static GC_bool
-setup_header(hdr *hhdr, struct hblk *block, size_t lb_adjusted, int k,
+setup_header(hdr *hhdr, struct hblk *block, size_t lb_adjusted, int kind,
              unsigned flags)
 {
   const struct obj_kind *ok;
@@ -260,7 +260,7 @@ setup_header(hdr *hhdr, struct hblk *block, size_t lb_adjusted, int k,
   if (lb_adjusted > MAXOBJBYTES)
     flags |= LARGE_BLOCK;
 #endif
-  ok = &GC_obj_kinds[k];
+  ok = &GC_obj_kinds[kind];
 #ifdef ENABLE_DISCLAIM
   if (ok->ok_disclaim_proc)
     flags |= HAS_DISCLAIM;
@@ -270,14 +270,14 @@ setup_header(hdr *hhdr, struct hblk *block, size_t lb_adjusted, int k,
 
   /* Set size, kind and mark proc fields.     */
   hhdr->hb_sz = lb_adjusted;
-  hhdr->hb_obj_kind = (unsigned char)k;
+  hhdr->hb_obj_kind = (unsigned char)kind;
   hhdr->hb_flags = (unsigned char)flags;
   hhdr->hb_block = block;
   descr = ok->ok_descriptor;
 #if ALIGNMENT > GC_DS_TAGS
   /* An extra byte is not added in case of ignore-off-page  */
   /* allocated objects not smaller than HBLKSIZE.           */
-  if (EXTRA_BYTES != 0 && (flags & IGNORE_OFF_PAGE) != 0 && k == NORMAL
+  if (EXTRA_BYTES != 0 && (flags & IGNORE_OFF_PAGE) != 0 && kind == NORMAL
       && lb_adjusted >= HBLKSIZE)
     descr += ALIGNMENT; /* or set to 0 */
 #endif
@@ -715,16 +715,16 @@ GC_split_block(struct hblk *hbp, hdr *hhdr, struct hblk *last_hbp,
   last_hdr->hb_flags |= FREE_BLK;
 }
 
-STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int k, unsigned flags,
-                                     size_t index, int may_split,
-                                     size_t align_m1);
+STATIC struct hblk *GC_allochblk_nth(size_t lb_adjusted, int kind,
+                                     unsigned flags, size_t index,
+                                     int may_split, size_t align_m1);
 
 #ifdef USE_MUNMAP
 #  define AVOID_SPLIT_REMAPPED 2
 #endif
 
 GC_INNER struct hblk *
-GC_allochblk(size_t lb_adjusted, int k,
+GC_allochblk(size_t lb_adjusted, int kind,
              unsigned flags /* IGNORE_OFF_PAGE or 0 */, size_t align_m1)
 {
   size_t blocks, start_list;
@@ -741,8 +741,8 @@ GC_allochblk(size_t lb_adjusted, int k,
 
   start_list = GC_hblk_fl_from_blocks(blocks);
   /* Try for an exact match first.    */
-  result
-      = GC_allochblk_nth(lb_adjusted, k, flags, start_list, FALSE, align_m1);
+  result = GC_allochblk_nth(lb_adjusted, kind, flags, start_list, FALSE,
+                            align_m1);
   if (result != NULL)
     return result;
 
@@ -774,7 +774,7 @@ GC_allochblk(size_t lb_adjusted, int k,
     ++start_list;
   }
   for (; start_list <= split_limit; ++start_list) {
-    result = GC_allochblk_nth(lb_adjusted, k, flags, start_list, may_split,
+    result = GC_allochblk_nth(lb_adjusted, kind, flags, start_list, may_split,
                               align_m1);
     if (result != NULL)
       break;
@@ -901,7 +901,7 @@ is_hblks_mix_in_page(struct hblk *hbp, GC_bool is_ptrfree)
 /* followed by splitting should be generally avoided.  Rounded-up       */
 /* lb_adjusted plus align_m1 value should be less than GC_SIZE_MAX / 2. */
 STATIC struct hblk *
-GC_allochblk_nth(size_t lb_adjusted, int k, unsigned flags, size_t index,
+GC_allochblk_nth(size_t lb_adjusted, int kind, unsigned flags, size_t index,
                  int may_split, size_t align_m1)
 {
   struct hblk *hbp, *last_hbp;
@@ -950,12 +950,12 @@ retry:
     if (GC_page_size != HBLKSIZE
         && (!GC_incremental /* not enabled yet */
             || GC_incremental_protection_needs() != GC_PROTECTS_NONE)
-        && is_hblks_mix_in_page(hbp, k == PTRFREE))
+        && is_hblks_mix_in_page(hbp, kind == PTRFREE))
       continue;
 #endif
 
-    if (IS_UNCOLLECTABLE(k)
-        || (k == PTRFREE && size_needed <= MAX_BLACK_LIST_ALLOC)) {
+    if (IS_UNCOLLECTABLE(kind)
+        || (kind == PTRFREE && size_needed <= MAX_BLACK_LIST_ALLOC)) {
       last_hbp = hbp + divHBLKSZ(align_ofs);
       break;
     }
@@ -1050,10 +1050,10 @@ retry:
   /* Set up the header.       */
   GC_ASSERT(HDR(hbp) == hhdr);
 #ifdef MARK_BIT_PER_OBJ
-  (void)setup_header(hhdr, hbp, lb_adjusted, k, flags);
+  (void)setup_header(hhdr, hbp, lb_adjusted, kind, flags);
   /* Result is always true, not checked to avoid a cppcheck warning. */
 #else
-  if (EXPECT(!setup_header(hhdr, hbp, lb_adjusted, k, flags), FALSE)) {
+  if (EXPECT(!setup_header(hhdr, hbp, lb_adjusted, kind, flags), FALSE)) {
     GC_remove_counts(hbp, size_needed);
     return NULL; /* ditto */
   }

@@ -96,7 +96,7 @@ reset_thread_key(void *v)
 GC_INNER void
 GC_init_thread_local(GC_tlfs p)
 {
-  int k, j, res;
+  int kind, j, res;
 
   GC_ASSERT(I_HOLD_LOCK());
   if (!EXPECT(keys_initialized, TRUE)) {
@@ -115,8 +115,8 @@ GC_init_thread_local(GC_tlfs p)
     ABORT("Failed to set thread specific allocation pointers");
   }
   for (j = 0; j < GC_TINY_FREELISTS; ++j) {
-    for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
-      p->_freelists[k][j] = NUMERIC_TO_VPTR(1);
+    for (kind = 0; kind < THREAD_FREELISTS_KINDS; ++kind) {
+      p->_freelists[kind][j] = NUMERIC_TO_VPTR(1);
     }
 #  ifdef GC_GCJ_SUPPORT
     p->gcj_freelists[j] = NUMERIC_TO_VPTR(1);
@@ -133,18 +133,18 @@ GC_init_thread_local(GC_tlfs p)
 GC_INNER void
 GC_destroy_thread_local(GC_tlfs p)
 {
-  int k;
+  int kind;
 
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(GC_getspecific(GC_thread_key) == p);
   /* We currently only do this from the thread itself.        */
   GC_STATIC_ASSERT(THREAD_FREELISTS_KINDS <= MAXOBJKINDS);
-  for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
-    if (k == (int)GC_n_kinds) {
+  for (kind = 0; kind < THREAD_FREELISTS_KINDS; ++kind) {
+    if (kind == (int)GC_n_kinds) {
       /* The kind is not created. */
       break;
     }
-    return_freelists(p->_freelists[k], GC_obj_kinds[k].ok_freelist);
+    return_freelists(p->_freelists[kind], GC_obj_kinds[kind].ok_freelist);
   }
 #  ifdef GC_GCJ_SUPPORT
   return_freelists(p->gcj_freelists, (void **)GC_gcjobjfreelist);
@@ -172,20 +172,20 @@ GC_get_tlfs(void)
 }
 
 GC_API GC_ATTR_MALLOC void *GC_CALL
-GC_malloc_kind(size_t lb, int k)
+GC_malloc_kind(size_t lb, int kind)
 {
   size_t lg;
   void *tsd;
   void *result;
 
 #  if MAXOBJKINDS > THREAD_FREELISTS_KINDS
-  if (EXPECT(k >= THREAD_FREELISTS_KINDS, FALSE)) {
-    return GC_malloc_kind_global(lb, k);
+  if (EXPECT(kind >= THREAD_FREELISTS_KINDS, FALSE)) {
+    return GC_malloc_kind_global(lb, kind);
   }
 #  endif
   tsd = GC_get_tlfs();
   if (EXPECT(NULL == tsd, FALSE)) {
-    return GC_malloc_kind_global(lb, k);
+    return GC_malloc_kind_global(lb, kind);
   }
   GC_ASSERT(GC_is_initialized);
   GC_ASSERT(GC_is_thread_tsd_valid(tsd));
@@ -195,13 +195,13 @@ GC_malloc_kind(size_t lb, int k)
 #  else
 #    define MALLOC_KIND_PTRFREE_INIT NULL
 #  endif
-  GC_FAST_MALLOC_GRANS(result, lg, ((GC_tlfs)tsd)->_freelists[k],
-                       DIRECT_GRANULES, k, GC_malloc_kind_global(lb, k),
-                       (void)(k == PTRFREE ? MALLOC_KIND_PTRFREE_INIT
-                                           : (obj_link(result) = 0)));
+  GC_FAST_MALLOC_GRANS(result, lg, ((GC_tlfs)tsd)->_freelists[kind],
+                       DIRECT_GRANULES, kind, GC_malloc_kind_global(lb, kind),
+                       (void)(kind == PTRFREE ? MALLOC_KIND_PTRFREE_INIT
+                                              : (obj_link(result) = 0)));
 #  ifdef LOG_ALLOCS
   GC_log_printf("GC_malloc_kind(%lu, %d) returned %p, recent GC #%lu\n",
-                (unsigned long)lb, k, result, (unsigned long)GC_gc_no);
+                (unsigned long)lb, kind, result, (unsigned long)GC_gc_no);
 #  endif
   return result;
 }
@@ -277,13 +277,13 @@ GC_INNER void
 GC_mark_thread_local_fls_for(GC_tlfs p)
 {
   ptr_t q;
-  int k, j;
+  int kind, j;
 
   for (j = 0; j < GC_TINY_FREELISTS; ++j) {
-    for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
+    for (kind = 0; kind < THREAD_FREELISTS_KINDS; ++kind) {
       /* Load the pointer atomically as it might be updated   */
       /* concurrently by GC_FAST_MALLOC_GRANS.                */
-      q = GC_cptr_load((volatile ptr_t *)&p->_freelists[k][j]);
+      q = GC_cptr_load((volatile ptr_t *)&p->_freelists[kind][j]);
       if (ADDR(q) > HBLKSIZE)
         GC_set_fl_marks(q);
     }
@@ -302,11 +302,11 @@ GC_mark_thread_local_fls_for(GC_tlfs p)
 void
 GC_check_tls_for(GC_tlfs p)
 {
-  int k, j;
+  int kind, j;
 
   for (j = 1; j < GC_TINY_FREELISTS; ++j) {
-    for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
-      GC_check_fl_marks(&p->_freelists[k][j]);
+    for (kind = 0; kind < THREAD_FREELISTS_KINDS; ++kind) {
+      GC_check_fl_marks(&p->_freelists[kind][j]);
     }
 #    ifdef GC_GCJ_SUPPORT
     GC_check_fl_marks(&p->gcj_freelists[j]);

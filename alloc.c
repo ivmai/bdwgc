@@ -20,8 +20,8 @@
 /*
  * Separate free lists are maintained for different sized objects
  * up to MAXOBJBYTES.
- * The call GC_allocobj(lg, k) ensures that the free list for
- * kind k objects of size lg granules is a non-empty one.
+ * The call GC_allocobj(lg, kind) ensures that the free list for the given
+ * kind of objects of the given size in granules is a non-empty one.
  * It returns a pointer to the first entry on the free list.
  * In a single-threaded world, GC_allocobj may be called to allocate
  * an object of small size lb (and NORMAL kind) as follows
@@ -1927,11 +1927,11 @@ GC_collect_or_expand(word needed_blocks, unsigned flags, GC_bool retry)
 }
 
 GC_INNER ptr_t
-GC_allocobj(size_t lg, int k)
+GC_allocobj(size_t lg, int kind)
 {
 #define MAX_ALLOCOBJ_RETRIES 3
   int retry_cnt = 0;
-  void **flh = &GC_obj_kinds[k].ok_freelist[lg];
+  void **flh = &GC_obj_kinds[kind].ok_freelist[lg];
 #ifndef GC_DISABLE_INCREMENTAL
   GC_bool tried_minor = FALSE;
 #endif
@@ -1954,16 +1954,16 @@ GC_allocobj(size_t lg, int k)
     }
 #endif
     /* Sweep blocks for objects of this size. */
-    GC_ASSERT(!GC_is_full_gc || NULL == GC_obj_kinds[k].ok_reclaim_list
-              || NULL == GC_obj_kinds[k].ok_reclaim_list[lg]);
-    GC_continue_reclaim(lg, k);
+    GC_ASSERT(!GC_is_full_gc || NULL == GC_obj_kinds[kind].ok_reclaim_list
+              || NULL == GC_obj_kinds[kind].ok_reclaim_list[lg]);
+    GC_continue_reclaim(lg, kind);
 #if defined(CPPCHECK)
     GC_noop1_ptr(&flh);
 #endif
     if (*flh != NULL)
       break;
 
-    GC_new_hblk(lg, k);
+    GC_new_hblk(lg, kind);
 #if defined(CPPCHECK)
     GC_noop1_ptr(&flh);
 #endif

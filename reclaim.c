@@ -819,14 +819,14 @@ GC_print_block_list(void)
 }
 
 GC_API void GC_CALL
-GC_print_free_list(int k, size_t lg)
+GC_print_free_list(int kind, size_t lg)
 {
   void *flh_next;
   int n;
 
-  GC_ASSERT(k < MAXOBJKINDS);
+  GC_ASSERT(kind < MAXOBJKINDS);
   GC_ASSERT(lg <= MAXOBJGRANULES);
-  flh_next = GC_obj_kinds[k].ok_freelist[lg];
+  flh_next = GC_obj_kinds[kind].ok_freelist[lg];
   for (n = 0; flh_next != NULL; n++) {
     GC_printf("Free object in heap block %p [%d]: %p\n",
               (void *)HBLKPTR(flh_next), n, flh_next);
@@ -856,7 +856,7 @@ GC_clear_fl_links(void **flp)
 GC_INNER void
 GC_start_reclaim(GC_bool report_if_found)
 {
-  int k;
+  int kind;
 
   GC_ASSERT(I_HOLD_LOCK());
 #if defined(PARALLEL_MARK)
@@ -867,9 +867,9 @@ GC_start_reclaim(GC_bool report_if_found)
   GC_atomic_in_use = 0;
 
   /* Clear reclaim- and free-lists.   */
-  for (k = 0; k < (int)GC_n_kinds; k++) {
-    struct hblk **rlist = GC_obj_kinds[k].ok_reclaim_list;
-    GC_bool should_clobber = GC_obj_kinds[k].ok_descriptor != 0;
+  for (kind = 0; kind < (int)GC_n_kinds; kind++) {
+    struct hblk **rlist = GC_obj_kinds[kind].ok_reclaim_list;
+    GC_bool should_clobber = GC_obj_kinds[kind].ok_descriptor != 0;
 
     if (NULL == rlist) {
       /* Means this object kind is not used.        */
@@ -878,10 +878,10 @@ GC_start_reclaim(GC_bool report_if_found)
 
     if (!report_if_found) {
       void **fop;
-      void **lim = &GC_obj_kinds[k].ok_freelist[MAXOBJGRANULES + 1];
+      void **lim = &GC_obj_kinds[kind].ok_freelist[MAXOBJGRANULES + 1];
 
-      for (fop = GC_obj_kinds[k].ok_freelist; ADDR_LT((ptr_t)fop, (ptr_t)lim);
-           fop++) {
+      for (fop = GC_obj_kinds[kind].ok_freelist;
+           ADDR_LT((ptr_t)fop, (ptr_t)lim); fop++) {
         if (*fop != NULL) {
           if (should_clobber) {
             GC_clear_fl_links(fop);
@@ -916,10 +916,10 @@ GC_start_reclaim(GC_bool report_if_found)
 }
 
 GC_INNER void
-GC_continue_reclaim(size_t lg, int k)
+GC_continue_reclaim(size_t lg, int kind)
 {
   struct hblk *hbp;
-  struct obj_kind *ok = &GC_obj_kinds[k];
+  struct obj_kind *ok = &GC_obj_kinds[kind];
   struct hblk **rlh = ok->ok_reclaim_list;
   void **flh;
 
@@ -951,7 +951,7 @@ GC_INNER GC_bool
 GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
 {
   size_t lg;
-  int k;
+  int kind;
   const hdr *hhdr;
   struct hblk *hbp;
   struct hblk **rlp;
@@ -964,8 +964,8 @@ GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
 #endif
   GC_ASSERT(I_HOLD_LOCK());
 
-  for (k = 0; k < (int)GC_n_kinds; k++) {
-    rlp = GC_obj_kinds[k].ok_reclaim_list;
+  for (kind = 0; kind < (int)GC_n_kinds; kind++) {
+    rlp = GC_obj_kinds[kind].ok_reclaim_list;
     if (NULL == rlp)
       continue;
 
@@ -1006,12 +1006,12 @@ GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
 STATIC void
 GC_reclaim_unconditionally_marked(void)
 {
-  int k;
+  int kind;
 
   GC_ASSERT(I_HOLD_LOCK());
-  for (k = 0; k < (int)GC_n_kinds; k++) {
+  for (kind = 0; kind < (int)GC_n_kinds; kind++) {
     size_t lg;
-    struct obj_kind *ok = &GC_obj_kinds[k];
+    struct obj_kind *ok = &GC_obj_kinds[kind];
     struct hblk **rlp = ok->ok_reclaim_list;
 
     if (NULL == rlp || !ok->ok_mark_unconditionally)
