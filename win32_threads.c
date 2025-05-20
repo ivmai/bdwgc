@@ -1336,10 +1336,15 @@ STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
 #      define UNSET_MARK_LOCK_HOLDER (void)0
 #    endif /* !GC_ASSERTIONS */
 
-/* Mutex state: unlocked (0), locked and no other waiters (1),      */
-/* locked and waiters may exist (-1).  Accessed using               */
-/* InterlockedExchange().                                           */
-STATIC /* volatile */ LONG GC_mark_mutex_state = 0;
+/* Allowed values for GC_mark_mutex_state.                          */
+/* MARK_MUTEX_LOCKED means "locked but no other waiters";           */
+/* MARK_MUTEX_WAITERS_EXIST means "locked and waiters may exist".   */
+#    define MARK_MUTEX_UNLOCKED 0
+#    define MARK_MUTEX_LOCKED 1
+#    define MARK_MUTEX_WAITERS_EXIST (-1)
+
+/* The mutex state.  Accessed using InterlockedExchange(). */
+STATIC /* volatile */ LONG GC_mark_mutex_state = MARK_MUTEX_UNLOCKED;
 
 #    ifdef LOCK_STATS
 volatile AO_t GC_block_count = 0;
@@ -1350,15 +1355,14 @@ GC_INNER void
 GC_acquire_mark_lock(void)
 {
   GC_ASSERT(GC_mark_lock_holder != GetCurrentThreadId());
-  if (EXPECT(InterlockedExchange(&GC_mark_mutex_state, 1 /* locked */) != 0,
+  if (EXPECT(InterlockedExchange(&GC_mark_mutex_state, MARK_MUTEX_LOCKED) != 0,
              FALSE)) {
 #    ifdef LOCK_STATS
     (void)AO_fetch_and_add1(&GC_block_count);
 #    endif
     /* Repeatedly reset the state and wait until we acquire the */
     /* mark lock.                                               */
-    while (InterlockedExchange(&GC_mark_mutex_state,
-                               -1 /* locked_and_has_waiters */)
+    while (InterlockedExchange(&GC_mark_mutex_state, MARK_MUTEX_WAITERS_EXIST)
            != 0) {
       if (WaitForSingleObject(mark_mutex_event, INFINITE) == WAIT_FAILED)
         ABORT("WaitForSingleObject failed");
@@ -1378,7 +1382,8 @@ GC_INNER void
 GC_release_mark_lock(void)
 {
   UNSET_MARK_LOCK_HOLDER;
-  if (EXPECT(InterlockedExchange(&GC_mark_mutex_state, 0 /* unlocked */) < 0,
+  if (EXPECT(InterlockedExchange(&GC_mark_mutex_state, MARK_MUTEX_UNLOCKED)
+                 < 0,
              FALSE)) {
     /* Wake a waiter.       */
     if (!SetEvent(mark_mutex_event))
