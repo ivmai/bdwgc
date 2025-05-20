@@ -591,61 +591,64 @@ EXTERN_C_BEGIN
 #  error The collector has not been ported to this machine/OS combination
 #endif
 
-/* Mapping is: M68K       ==> Motorola 680X0        */
-/*             (NEXT, and SYSV (A/UX))              */
-/*             I386       ==> Intel 386             */
-/*              (SEQUENT, OS2, SCO, LINUX, NETBSD,  */
-/*               FREEBSD, THREE86BSD, MSWIN32,      */
-/*               BSDI, SOLARIS, NEXT and others)    */
-/*             MIPS       ==> R2000 through R14K    */
-/*                  (many variants)                 */
-/*             VAX        ==> DEC VAX               */
-/*                  (BSD, ULTRIX variants)          */
-/*             HP_PA      ==> HP9000/700 & /800     */
-/*                            HP/UX, LINUX          */
-/*             SPARC      ==> SPARC v7/v8/v9        */
-/*                 (SOLARIS, LINUX, DRSNX variants) */
-/*             ALPHA      ==> DEC Alpha             */
-/*                  (OSF1 and LINUX variants)       */
-/*             LOONGARCH  ==> Loongson LoongArch    */
-/*                  (LINUX 32- and 64-bit variants) */
-/*             M88K       ==> Motorola 88XX0        */
-/*                  (CX_UX and DGUX)                */
-/*             S370       ==> 370-like machine      */
-/*                  running Amdahl UTS4             */
-/*             S390       ==> 390-like machine      */
-/*                  running LINUX                   */
-/*             AARCH64    ==> ARM AArch64           */
-/*                  (LP64 and ILP32 variants)       */
-/*             E2K        ==> Elbrus 2000           */
-/*                  running LINUX                   */
-/*             ARM32      ==> Intel StrongARM       */
-/*                  (many variants)                 */
-/*             IA64       ==> Intel IPF             */
-/*                            (e.g. Itanium)        */
-/*                  (LINUX and HPUX)                */
-/*             SH         ==> Hitachi SuperH        */
-/*                  (LINUX & MSWINCE)               */
-/*             SW_64      ==> Sunway (Shenwei)      */
-/*                  running LINUX                   */
-/*             X86_64     ==> AMD x86-64            */
-/*             POWERPC    ==> IBM/Apple PowerPC     */
-/*                  (DARWIN (i.e. MacOS X),         */
-/*                   LINUX, NETBSD, AIX, NOSYS      */
-/*                   variants)                      */
-/*                  Handles 32 and 64-bit variants. */
-/*             ARC        ==> Synopsys ARC          */
-/*             AVR32      ==> Atmel RISC 32-bit     */
-/*             CRIS       ==> Axis Etrax            */
-/*             M32R       ==> Renesas M32R          */
-/*             NIOS2      ==> Altera NIOS2          */
-/*             HEXAGON    ==> Qualcomm Hexagon      */
-/*             OR1K       ==> OpenRISC/or1k         */
-/*             RISCV      ==> RISC-V 32/64-bit      */
-/*                  (LINUX, FREEBSD, NETBSD,        */
-/*                   OPENBSD, NOSYS variants)       */
-/*             TILEPRO    ==> Tilera TILEPro        */
-/*             TILEGX     ==> Tilera TILE-Gx        */
+/*
+ * The CPU architecture mapping is:
+ * - AARCH64: ARM AArch64 ILP32/64-bit (running COSMO environment,
+ *   DARWIN (OS X or iOS), KOS, LINUX, MSWIN32, NETBSD,
+ *   NINTENDO_SWITCH, NOSYS environment, OPENBSD, QNX,
+ *   SERENITY);
+ * - ALPHA: DEC Alpha (running FREEBSD, LINUX, NETBSD,
+ *   OPENBSD, OSF1);
+ * - ARC: Synopsys ARC (running LINUX);
+ * - ARM32: ARMv7 (running DARWIN (iOS), FREEBSD, LINUX,
+ *   MSWIN32, MSWINCE, NETBSD, NN_PLATFORM_CTR, NOSYS
+ *   environment, OPENBSD, QNX, SN_TARGET_PSP2, SYMBIAN);
+ * - AVR32: Atmel RISC (running LINUX);
+ * - CRIS: Axis Etrax (running LINUX);
+ * - E2K: Elbrus 2000 32/64-bit (running LINUX);
+ * - HEXAGON: Qualcomm Hexagon (running LINUX);
+ * - HP_PA: HP9000/700 and HP9000/800 32/64-bit (running HPUX,
+ *   LINUX, OPENBSD);
+ * - I386: Intel 486/586/686 (running BSDI, CYGWIN32 environment,
+ *   DARWIN (macOS), DGUX, DJGPP environment, DOS4GW
+ *   environment, EMBOX, FREEBSD, HAIKU, HURD, INTERIX,
+ *   LINUX, MSWIN32, MSWINCE, NACL environment, NETBSD,
+ *   NEXT, OPENBSD, OS2, QNX, RTEMS, SCO, SCO_ELF,
+ *   SEQUENT, SERENITY, SOLARIS, THREE86BSD);
+ * - IA64: Intel IPF, e.g. Itanium 32/64-bit (running HPUX,
+ *   LINUX, MSWIN32);
+ * - LOONGARCH: Loongson LoongArch 32/64-bit (running LINUX);
+ * - M32R: Renesas M32R (running LINUX);
+ * - M68K: Motorola 680x0 (running LINUX, NETBSD, NEXT,
+ *   OPENBSD);
+ * - M88K: Motorola 88xx0 (running CX_UX, DGUX);
+ * - MIPS: R2000+ 32/64-bit (running EWS4800, FREEBSD, IRIX5,
+ *   LINUX, MSWINCE, NETBSD, NONSTOP, OPENBSD, ULTRIX);
+ * - NIOS2: Altera NIOS2 (running LINUX);
+ * - OR1K: OpenRISC/or1k (running LINUX);
+ * - POWERPC: IBM/Apple PowerPC 32/64-bit (running AIX, DARWIN,
+ *   FREEBSD, LINUX, NETBSD, NOSYS environment, OPENBSD,
+ *   SN_TARGET_PS3);
+ * - RISCV: RISC-V 32/64-bit (running FREEBSD, LINUX, NETBSD,
+ *   NOSYS environment, OPENBSD);
+ * - S370: A 370-like machine (running UTS4);
+ * - S390: A 390-like machine 32/64-bit (running LINUX);
+ * - SH: Hitachi SuperH (running LINUX, MSWINCE, NETBSD,
+ *   OPENBSD);
+ * - SH4: Hitachi SH4 (running MSWINCE);
+ * - SPARC: SPARC v7/v8/v9 32/64-bit (running DRSNX, FREEBSD,
+ *   LINUX, NETBSD, OPENBSD, SOLARIS);
+ * - SW_64: Sunway/Shenwei (running LINUX);
+ * - TILEGX: Tilera TILE-Gx 32/64-bit (running LINUX);
+ * - TILEPRO: Tilera TILEPro (running LINUX);
+ * - VAX: DEC VAX (running BSD, ULTRIX);
+ * - WEBASSEMBLY: WebAssembly/Wasm (running EMSCRIPTEN environment,
+ *   WASI environment);
+ * - X86_64: AMD x86-64 ILP32/64-bit (running COSMO environment,
+ *   CYGWIN32 environment, DARWIN (macOS), FREEBSD, HAIKU,
+ *   HURD, LINUX, MSWIN32, MSWIN_XBOX1, NETBSD, OPENBSD,
+ *   PLATFORM_GETMEM environment, QNX, SERENITY, SOLARIS).
+ */
 
 /*
  * For each architecture and OS, the following need to be defined:
