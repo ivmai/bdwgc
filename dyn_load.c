@@ -307,62 +307,6 @@ EXTERN_C_END
 #    endif
 #  endif
 
-#  if defined(SOLARISDL) && !defined(USE_PROC_FOR_LIBRARIES)
-
-EXTERN_C_BEGIN
-extern ElfW(Dyn) _DYNAMIC;
-EXTERN_C_END
-
-STATIC struct link_map *
-GC_FirstDLOpenedLinkMap(void)
-{
-  ElfW(Dyn) * dp;
-  static struct link_map *cachedResult = 0;
-  static ElfW(Dyn) *dynStructureAddr = 0;
-  /* BTL: added to avoid Solaris 5.3 ld.so _DYNAMIC bug   */
-
-#    ifdef SUNOS53_SHARED_LIB
-  /* BTL: Avoid the Solaris 5.3 bug that _DYNAMIC isn't being set */
-  /* up properly in dynamically linked .so's. This means we have  */
-  /* to use its value in the set of original object files loaded  */
-  /* at program startup.                                          */
-  if (0 == dynStructureAddr) {
-    void *startupSyms = dlopen(0, RTLD_LAZY);
-
-    dynStructureAddr = (ElfW(Dyn) *)dlsym(startupSyms, "_DYNAMIC");
-    /* Note: dlclose() is not called intentionally. */
-  }
-#    else
-  dynStructureAddr = &_DYNAMIC;
-#    endif
-
-  if (0 == COVERT_DATAFLOW(ADDR(dynStructureAddr))) {
-    /* _DYNAMIC symbol not resolved. */
-    return NULL;
-  }
-  if (NULL == cachedResult) {
-    int tag;
-
-    for (dp = (ElfW(Dyn) *)&_DYNAMIC; (tag = dp->d_tag) != 0; dp++) {
-      if (tag == DT_DEBUG) {
-        const struct r_debug *rd
-            = CAST_THRU_UINTPTR(struct r_debug *, dp->d_un.d_ptr);
-
-        if (rd != NULL) {
-          const struct link_map *lm = rd->r_map;
-
-          if (lm != NULL)
-            cachedResult = lm->l_next; /* might be NULL */
-        }
-        break;
-      }
-    }
-  }
-  return cachedResult;
-}
-
-#  endif /* SOLARISDL && !USE_PROC_FOR_LIBRARIES */
-
 #  if defined(DGUX) || defined(HURD) || defined(NACL) || defined(SCO_ELF) \
       || defined(SERENITY)                                                \
       || ((defined(ANY_BSD) || defined(LINUX)) && defined(__ELF__))
@@ -788,14 +732,6 @@ GC_register_dynamic_libraries_dl_iterate_phdr(void)
 
 #      else /* !HAVE_DL_ITERATE_PHDR */
 
-/* Dynamic loading code for Linux running ELF.  Somewhat tested on  */
-/* Linux/i686, untested but hopefully should work on Linux/Alpha.   */
-/* This code was derived from the Solaris/ELF support.  Thanks to   */
-/* whatever kind soul wrote that.  - Patrick Bridges                */
-
-/* This does not necessarily work in all cases, e.g. with preloaded */
-/* dynamic libraries.                                               */
-
 #        if defined(NETBSD) || defined(OPENBSD)
 #          include <sys/exec_elf.h>
 /* For compatibility with 1.4.x. */
@@ -818,30 +754,65 @@ GC_register_dynamic_libraries_dl_iterate_phdr(void)
 
 #      endif /* !HAVE_DL_ITERATE_PHDR */
 
+#    endif /* !USE_PROC_FOR_LIBRARIES */
+
+#  endif /* DGUX || HURD || NACL || (ANY_BSD || LINUX) && __ELF__ */
+
+#  if (defined(DGUX) || defined(HURD) || defined(NACL) || defined(SCO_ELF) \
+       || defined(SERENITY) || defined(SOLARISDL)                          \
+       || ((defined(ANY_BSD) || defined(LINUX)) && defined(__ELF__)))      \
+      && !defined(USE_PROC_FOR_LIBRARIES)
+
+/* Dynamic loading code for Linux, Solaris or similar OS running ELF. */
+
+/* This does not necessarily work in all cases, e.g. with preloaded */
+/* dynamic libraries.                                               */
+
 EXTERN_C_BEGIN
-#      ifdef __GNUC__
-#        pragma weak _DYNAMIC
-#      endif
+#    if defined(__GNUC__) && !defined(SOLARISDL)
+#      pragma weak _DYNAMIC
+#    endif
 extern ElfW(Dyn) _DYNAMIC[];
 EXTERN_C_END
 
 STATIC struct link_map *
 GC_FirstDLOpenedLinkMap(void)
 {
-  static struct link_map *cachedResult = 0;
+  static struct link_map *cachedResult = NULL;
 
+#    ifdef SUNOS53_SHARED_LIB
+  /* BTL: Avoid the Solaris 5.3 ld.so bug that _DYNAMIC is not being    */
+  /* setup properly in dynamically linked library file.  This means we  */
+  /* have to use its value in the set of original object files loaded   */
+  /* at the program startup.                                            */
+  static ElfW(Dyn) *dynStructureAddr = NULL;
+
+  if (NULL == dynStructureAddr) {
+    void *startupSyms = dlopen(NULL, RTLD_LAZY);
+
+    dynStructureAddr = (ElfW(Dyn) *)dlsym(startupSyms, "_DYNAMIC");
+    /* Note: dlclose() is not called intentionally. */
+    if (NULL == dynStructureAddr) {
+      /* _DYNAMIC symbol is not resolved. */
+      return NULL;
+    }
+  }
+#    else
   if (0 == COVERT_DATAFLOW(ADDR(_DYNAMIC))) {
-    /* _DYNAMIC symbol not resolved. */
+    /* _DYNAMIC symbol is not resolved. */
     return NULL;
   }
+#    endif
+
   if (NULL == cachedResult) {
-#      if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
-#        if defined(CPPCHECK)
-#          define GC_RTLD_DI_LINKMAP 2
-#        else
-#          define GC_RTLD_DI_LINKMAP RTLD_DI_LINKMAP
-#        endif
+#    if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
+#      if defined(CPPCHECK)
+#        define GC_RTLD_DI_LINKMAP 2
+#      else
+#        define GC_RTLD_DI_LINKMAP RTLD_DI_LINKMAP
+#      endif
     struct link_map *lm = NULL;
+
     if (!dlinfo(RTLD_SELF, GC_RTLD_DI_LINKMAP, &lm) && lm != NULL) {
       /* Now lm points link_map object of libgc.  Since it    */
       /* might not be the first dynamically linked object,    */
@@ -851,7 +822,7 @@ GC_FirstDLOpenedLinkMap(void)
       }
       cachedResult = lm->l_next;
     }
-#      else
+#    else
     ElfW(Dyn) * dp;
     int tag;
 
@@ -860,32 +831,24 @@ GC_FirstDLOpenedLinkMap(void)
         const struct r_debug *rd
             = CAST_THRU_UINTPTR(struct r_debug *, dp->d_un.d_ptr);
 
-        /* d_ptr could be 0 if libs are linked statically. */
+        /* d_ptr could be NULL if libs are linked statically. */
         if (rd != NULL) {
           const struct link_map *lm = rd->r_map;
 
-#        if defined(CPPCHECK) && defined(LINK_MAP_R_DEBUG_DEFINED)
+#      if defined(CPPCHECK) && defined(LINK_MAP_R_DEBUG_DEFINED)
           GC_noop1((word)rd->r_version);
-#        endif
+#      endif
           if (lm != NULL)
             cachedResult = lm->l_next; /* might be NULL */
         }
         break;
       }
     }
-#      endif /* !NETBSD || !RTLD_DI_LINKMAP */
+#    endif
   }
   return cachedResult;
 }
 
-#    endif /* !USE_PROC_FOR_LIBRARIES */
-
-#  endif /* DGUX || HURD || NACL || (ANY_BSD || LINUX) && __ELF__ */
-
-#  if (defined(DGUX) || defined(HURD) || defined(NACL) || defined(SCO_ELF) \
-       || defined(SERENITY) || defined(SOLARISDL)                          \
-       || ((defined(ANY_BSD) || defined(LINUX)) && defined(__ELF__)))      \
-      && !defined(USE_PROC_FOR_LIBRARIES)
 GC_INNER void
 GC_register_dynamic_libraries(void)
 {
@@ -930,7 +893,8 @@ GC_register_dynamic_libraries(void)
 #    endif
   }
 }
-#  endif
+
+#  endif /* (SOLARISDL || LINUX && __ELF__) && !USE_PROC_FOR_LIBRARIES */
 
 #  if defined(USE_PROC_FOR_LIBRARIES) && !defined(LINUX) || defined(IRIX5)
 
