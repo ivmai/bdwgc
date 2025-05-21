@@ -345,7 +345,8 @@ GC_FirstDLOpenedLinkMap(void)
 
     for (dp = (ElfW(Dyn) *)&_DYNAMIC; (tag = dp->d_tag) != 0; dp++) {
       if (tag == DT_DEBUG) {
-        const struct r_debug *rd = (struct r_debug *)MAKE_CPTR(dp->d_un.d_ptr);
+        const struct r_debug *rd
+            = CAST_THRU_UINTPTR(struct r_debug *, dp->d_un.d_ptr);
 
         if (rd != NULL) {
           const struct link_map *lm = rd->r_map;
@@ -856,7 +857,8 @@ GC_FirstDLOpenedLinkMap(void)
 
     for (dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++) {
       if (tag == DT_DEBUG) {
-        const struct r_debug *rd = (struct r_debug *)MAKE_CPTR(dp->d_un.d_ptr);
+        const struct r_debug *rd
+            = CAST_THRU_UINTPTR(struct r_debug *, dp->d_un.d_ptr);
 
         /* d_ptr could be 0 if libs are linked statically. */
         if (rd != NULL) {
@@ -1203,7 +1205,7 @@ dyld_section_add_del(const struct GC_MACH_HEADER *phdr, intptr_t slide,
   if (NULL == sec)
     return;
   sec_size = sec->size;
-  start = MAKE_CPTR(slide + sec->addr);
+  start = (ptr_t)slide + sec->addr;
 #    else
 
   UNUSED_ARG(slide);
