@@ -360,37 +360,6 @@ GC_FirstDLOpenedLinkMap(void)
   return cachedResult;
 }
 
-GC_INNER void
-GC_register_dynamic_libraries(void)
-{
-  struct link_map *lm;
-
-  GC_ASSERT(I_HOLD_LOCK());
-  for (lm = GC_FirstDLOpenedLinkMap(); lm != NULL; lm = lm->l_next) {
-    ElfW(Ehdr) * e;
-    ElfW(Phdr) * p;
-    ptr_t start;
-    unsigned long offset;
-    int i;
-
-    e = (ElfW(Ehdr) *)lm->l_addr;
-    p = (ElfW(Phdr) *)((ptr_t)e + e->e_phoff);
-    offset = (unsigned long)ADDR(e);
-    for (i = 0; i < (int)e->e_phnum; i++, p++) {
-      switch (p->p_type) {
-      case PT_LOAD:
-        if ((p->p_flags & PF_W) == 0)
-          break;
-        start = MAKE_CPTR(p->p_vaddr) + offset;
-        GC_add_roots_inner(start, start + p->p_memsz, TRUE);
-        break;
-      default:
-        break;
-      }
-    }
-  }
-}
-
 #  endif /* SOLARISDL && !USE_PROC_FOR_LIBRARIES */
 
 #  if defined(DGUX) || defined(HURD) || defined(NACL) || defined(SCO_ELF) \
@@ -906,32 +875,41 @@ GC_FirstDLOpenedLinkMap(void)
   return cachedResult;
 }
 
+#    endif /* !USE_PROC_FOR_LIBRARIES */
+
+#  endif /* DGUX || HURD || NACL || (ANY_BSD || LINUX) && __ELF__ */
+
+#  if (defined(DGUX) || defined(HURD) || defined(NACL) || defined(SCO_ELF) \
+       || defined(SERENITY) || defined(SOLARISDL)                          \
+       || ((defined(ANY_BSD) || defined(LINUX)) && defined(__ELF__)))      \
+      && !defined(USE_PROC_FOR_LIBRARIES)
 GC_INNER void
 GC_register_dynamic_libraries(void)
 {
   struct link_map *lm;
 
   GC_ASSERT(I_HOLD_LOCK());
-#      ifdef HAVE_DL_ITERATE_PHDR
+#    ifdef HAVE_DL_ITERATE_PHDR
   if (GC_register_dynamic_libraries_dl_iterate_phdr()) {
     return;
   }
-#      endif
+#    endif
   for (lm = GC_FirstDLOpenedLinkMap(); lm != NULL; lm = lm->l_next) {
     ElfW(Ehdr) * e;
     ElfW(Phdr) * p;
-    ptr_t start;
     unsigned long offset;
     int i;
 
     e = (ElfW(Ehdr) *)lm->l_addr;
-#      ifdef HOST_ANDROID
+#    ifdef HOST_ANDROID
     if (NULL == e)
       continue;
-#      endif
+#    endif
     p = (ElfW(Phdr) *)((ptr_t)e + e->e_phoff);
     offset = (unsigned long)ADDR(e);
     for (i = 0; i < (int)e->e_phnum; i++, p++) {
+      ptr_t start;
+
       switch (p->p_type) {
       case PT_LOAD:
         if ((p->p_flags & PF_W) == 0)
@@ -943,17 +921,14 @@ GC_register_dynamic_libraries(void)
         break;
       }
     }
-#      if defined(CPPCHECK) && defined(LINK_MAP_R_DEBUG_DEFINED)
+#    if defined(CPPCHECK) && defined(LINK_MAP_R_DEBUG_DEFINED)
     GC_noop1_ptr(lm->l_name);
     GC_noop1((word)lm->l_ld);
     GC_noop1_ptr(lm->l_prev);
-#      endif
+#    endif
   }
 }
-
-#    endif /* !USE_PROC_FOR_LIBRARIES */
-
-#  endif /* DGUX || HURD || NACL || (ANY_BSD || LINUX) && __ELF__ */
+#  endif
 
 #  if defined(USE_PROC_FOR_LIBRARIES) && !defined(LINUX) || defined(IRIX5)
 
