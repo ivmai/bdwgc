@@ -270,6 +270,7 @@ struct r_debug {
   /* int32_t r_state; */
   /* uintptr_t r_ldbase; */
 };
+#      define LINK_MAP_R_DEBUG_DEFINED
 #    endif /* __ANDROID_API__ >= 21 || SERENITY */
 #    ifndef HOST_ANDROID
 /* Workaround missing extern "C" around _DYNAMIC symbol in link.h   */
@@ -891,10 +892,7 @@ GC_FirstDLOpenedLinkMap(void)
         if (rd != NULL) {
           const struct link_map *lm = rd->r_map;
 
-#        if defined(CPPCHECK)                                               \
-            && ((defined(HOST_ANDROID) && !defined(GC_DONT_DEFINE_LINK_MAP) \
-                 && !(__ANDROID_API__ >= 21))                               \
-                || defined(SERENITY))
+#        if defined(CPPCHECK) && defined(LINK_MAP_R_DEBUG_DEFINED)
           GC_noop1((word)rd->r_version);
 #        endif
           if (lm != NULL)
@@ -945,10 +943,7 @@ GC_register_dynamic_libraries(void)
         break;
       }
     }
-#      if defined(CPPCHECK)                                               \
-          && ((defined(HOST_ANDROID) && !defined(GC_DONT_DEFINE_LINK_MAP) \
-               && !(__ANDROID_API__ >= 21))                               \
-              || defined(SERENITY))
+#      if defined(CPPCHECK) && defined(LINK_MAP_R_DEBUG_DEFINED)
     GC_noop1_ptr(lm->l_name);
     GC_noop1((word)lm->l_ld);
     GC_noop1_ptr(lm->l_prev);
