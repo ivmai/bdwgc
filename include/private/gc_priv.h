@@ -227,9 +227,10 @@ EXTERN_C_END
 #  ifndef ADDRESS_SANITIZER
 #    define GC_ATTR_NO_SANITIZE_ADDR /* empty */
 #  elif GC_CLANG_PREREQ(3, 8)
-#    define GC_ATTR_NO_SANITIZE_ADDR __attribute__((no_sanitize("address")))
+#    define GC_ATTR_NO_SANITIZE_ADDR \
+      __attribute__((__no_sanitize__("address")))
 #  else
-#    define GC_ATTR_NO_SANITIZE_ADDR __attribute__((no_sanitize_address))
+#    define GC_ATTR_NO_SANITIZE_ADDR __attribute__((__no_sanitize_address__))
 #  endif
 #endif /* !GC_ATTR_NO_SANITIZE_ADDR */
 
@@ -237,9 +238,10 @@ EXTERN_C_END
 #  ifndef MEMORY_SANITIZER
 #    define GC_ATTR_NO_SANITIZE_MEMORY /* empty */
 #  elif GC_CLANG_PREREQ(3, 8)
-#    define GC_ATTR_NO_SANITIZE_MEMORY __attribute__((no_sanitize("memory")))
+#    define GC_ATTR_NO_SANITIZE_MEMORY \
+      __attribute__((__no_sanitize__("memory")))
 #  else
-#    define GC_ATTR_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
+#    define GC_ATTR_NO_SANITIZE_MEMORY __attribute__((__no_sanitize_memory__))
 #  endif
 #endif /* !GC_ATTR_NO_SANITIZE_MEMORY */
 
@@ -247,12 +249,13 @@ EXTERN_C_END
 #  ifndef THREAD_SANITIZER
 #    define GC_ATTR_NO_SANITIZE_THREAD /* empty */
 #  elif GC_CLANG_PREREQ(3, 8)
-#    define GC_ATTR_NO_SANITIZE_THREAD __attribute__((no_sanitize("thread")))
+#    define GC_ATTR_NO_SANITIZE_THREAD \
+      __attribute__((__no_sanitize__("thread")))
 #  else
 /* It seems that no_sanitize_thread attribute has no effect if the  */
 /* function is inlined (as of gcc 11.1.0, at least).                */
 #    define GC_ATTR_NO_SANITIZE_THREAD \
-      GC_ATTR_NOINLINE __attribute__((no_sanitize_thread))
+      GC_ATTR_NOINLINE __attribute__((__no_sanitize_thread__))
 #  endif
 #endif /* !GC_ATTR_NO_SANITIZE_THREAD */
 
@@ -2434,7 +2437,7 @@ GC_INNER void GC_register_displacement_inner(size_t offset);
 /* granules) and kind.  Add all of the block's objects to the free list */
 /* for objects of that size.  Set all mark bits if objects are          */
 /* uncollectible.  Will fail to do anything if out of memory.           */
-GC_INNER void GC_new_hblk(size_t lg, int k);
+GC_INNER void GC_new_hblk(size_t lg, int kind);
 
 /* Build a free list for objects of size lg (in granules) inside heap   */
 /* block h.  Clear objects inside h if clear is set.  Add list to the   */
@@ -2454,8 +2457,8 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, ptr_t list, size_t lg,
 /* needed.  Note: we set obj_map field in the header correctly; the     */
 /* caller is responsible for building an object's free list in the      */
 /* block.                                                               */
-GC_INNER struct hblk *GC_allochblk(size_t lb_adjusted, int k, unsigned flags,
-                                   size_t align_m1);
+GC_INNER struct hblk *GC_allochblk(size_t lb_adjusted, int kind,
+                                   unsigned flags, size_t align_m1);
 
 /* Deallocate a heap block and mark it as invalid.                      */
 GC_INNER void GC_freehblk(struct hblk *p);
@@ -2472,7 +2475,7 @@ GC_INNER void GC_start_reclaim(GC_bool abort_if_found);
 /* Sweep blocks of the indicated object size (in granules) and kind     */
 /* until either the appropriate nonempty free list is found, or there   */
 /* are no more blocks to sweep.                                         */
-GC_INNER void GC_continue_reclaim(size_t lg, int k);
+GC_INNER void GC_continue_reclaim(size_t lg, int kind);
 
 /* Reclaim all blocks.  Abort the reclamation at some point (in         */
 /* a consistent state) if stop_func() returns true.                     */
@@ -2510,10 +2513,10 @@ GC_EXTERN GC_bool GC_is_initialized; /* GC_init() has been run. */
 /* A unit is an amount appropriate for HBLKSIZE bytes of allocation.    */
 GC_INNER void GC_collect_a_little_inner(size_t n_blocks);
 
-GC_INNER void *GC_malloc_kind_aligned_global(size_t lb, int k,
+GC_INNER void *GC_malloc_kind_aligned_global(size_t lb, int kind,
                                              size_t align_m1);
 
-GC_INNER void *GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
+GC_INNER void *GC_generic_malloc_aligned(size_t lb, int kind, unsigned flags,
                                          size_t align_m1);
 
 /* Allocate an object of the given kind but assuming the allocator lock */
@@ -2522,15 +2525,15 @@ GC_INNER void *GC_generic_malloc_aligned(size_t lb, int k, unsigned flags,
 /* be 0 or IGNORE_OFF_PAGE.  In the latter case the client guarantees   */
 /* there will always be a pointer to the beginning (i.e. within the     */
 /* first hblk) of the object while it is live.                          */
-GC_INNER void *GC_generic_malloc_inner(size_t lb, int k, unsigned flags);
+GC_INNER void *GC_generic_malloc_inner(size_t lb, int kind, unsigned flags);
 
 GC_INNER GC_bool GC_collect_or_expand(word needed_blocks, unsigned flags,
                                       GC_bool retry);
 
-/* Make sure the indicated object free is not empty, and return its     */
+/* Make the indicated object free list non-empty, and return its        */
 /* head (the first object on the free list).  The object must be        */
 /* removed from the free list by the caller.  The size is in granules.  */
-GC_INNER ptr_t GC_allocobj(size_t lg, int k);
+GC_INNER ptr_t GC_allocobj(size_t lg, int kind);
 
 #ifdef GC_ADD_CALLER
 /* GC_DBG_EXTRAS is used by GC debug API functions (unlike GC_EXTRAS  */
@@ -2710,7 +2713,8 @@ GC_INNER void GC_free_inner(void *p);
 /* Macros used for collector internal allocation.       */
 /* These assume the allocator lock is held.             */
 #ifdef DBG_HDRS_ALL
-GC_INNER void *GC_debug_generic_malloc_inner(size_t lb, int k, unsigned flags);
+GC_INNER void *GC_debug_generic_malloc_inner(size_t lb, int kind,
+                                             unsigned flags);
 #  define GC_INTERNAL_MALLOC(lb, k) GC_debug_generic_malloc_inner(lb, k, 0)
 #  define GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(lb, k) \
     GC_debug_generic_malloc_inner(lb, k, IGNORE_OFF_PAGE)
@@ -2860,7 +2864,7 @@ GC_INNER void GC_handle_protected_regions_limit(void);
 #  define GC_handle_protected_regions_limit() (void)0
 #endif
 
-/* Same as GC_base but excepts and returns a pointer to const object.   */
+/* Same as GC_base but accepts and returns a pointer to const object.   */
 #define GC_base_C(p) ((const void *)GC_base(GC_CAST_AWAY_CONST_PVOID(p)))
 
 /* Debugging print routines: */

@@ -97,18 +97,19 @@ GC_API int GC_CALL GC_get_dont_add_byte_at_end(void);
 /* (*result) is traced even if objects are pointer-free.  Note also     */
 /* that the client should usually clear the link field.                 */
 GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb_adjusted */,
-                                           int /* k */, void ** /* result */);
+                                           int /* kind */,
+                                           void ** /* result */);
 
 /* Generalized version of GC_malloc and GC_malloc_atomic.               */
 /* Uses appropriately the thread-local (if available) or the global     */
 /* free-list of the specified kind.                                     */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
-    GC_malloc_kind(size_t /* lb */, int /* k */);
+    GC_malloc_kind(size_t /* lb */, int /* kind */);
 
 #ifdef GC_THREADS
 /* Same as above but uses only the global free-list.  */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
-    GC_malloc_kind_global(size_t /* lb */, int /* k */);
+    GC_malloc_kind_global(size_t /* lb */, int /* kind */);
 #else
 #  define GC_malloc_kind_global GC_malloc_kind
 #endif
@@ -236,7 +237,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
 /* size (in granules).  The caller should hold the allocator lock at    */
 /* least in the reader mode.  Defined only if the library has been      */
 /* compiled without NO_DEBUGGING.                                       */
-GC_API void GC_CALL GC_print_free_list(int /* k */, size_t /* lg */);
+GC_API void GC_CALL GC_print_free_list(int /* kind */, size_t /* lg */);
 
 #ifdef __cplusplus
 } /* extern "C" */

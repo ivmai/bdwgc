@@ -297,10 +297,10 @@ GC_check_annotated_obj(oh *ohdr)
 STATIC GC_describe_type_fn GC_describe_type_fns[MAXOBJKINDS] = { 0 };
 
 GC_API void GC_CALL
-GC_register_describe_type_fn(int k, GC_describe_type_fn fn)
+GC_register_describe_type_fn(int kind, GC_describe_type_fn fn)
 {
-  GC_ASSERT((unsigned)k < MAXOBJKINDS);
-  GC_describe_type_fns[k] = fn;
+  GC_ASSERT((unsigned)kind < MAXOBJKINDS);
+  GC_describe_type_fns[kind] = fn;
 }
 
 #ifndef SHORT_DBG_HDRS
@@ -319,7 +319,7 @@ GC_print_obj(ptr_t base)
   oh *ohdr = (oh *)base;
   ptr_t q;
   hdr *hhdr;
-  int k;
+  int kind;
   const char *kind_str;
   char buffer[GC_TYPE_DESCR_LEN + 1];
 
@@ -333,16 +333,16 @@ GC_print_obj(ptr_t base)
   /* Print a type description for the object whose client-visible     */
   /* address is q.                                                    */
   hhdr = GC_find_header(q);
-  k = hhdr->hb_obj_kind;
-  if (GC_describe_type_fns[k] != 0 && GC_is_marked(ohdr)) {
+  kind = hhdr->hb_obj_kind;
+  if (GC_describe_type_fns[kind] != 0 && GC_is_marked(ohdr)) {
     /* This should preclude free-list objects except with   */
     /* thread-local allocation.                             */
     buffer[GC_TYPE_DESCR_LEN] = 0;
-    (GC_describe_type_fns[k])(q, buffer);
+    (*GC_describe_type_fns[kind])(q, buffer);
     GC_ASSERT(buffer[GC_TYPE_DESCR_LEN] == 0);
     kind_str = buffer;
   } else {
-    switch (k) {
+    switch (kind) {
     case PTRFREE:
       kind_str = "PTRFREE";
       break;
@@ -376,7 +376,7 @@ GC_print_obj(ptr_t base)
                   (void *)((ptr_t)ohdr + sizeof(oh)), ohdr->oh_string,
                   GET_OH_LINENUM(ohdr) /*, */
                   COMMA_IFNOT_SHORTDBG_HDRS((unsigned long)ohdr->oh_sz),
-                  k, (unsigned long)hhdr->hb_descr);
+                  kind, (unsigned long)hhdr->hb_descr);
   }
   PRINT_CALL_CHAIN(ohdr);
 }
@@ -533,9 +533,9 @@ GC_debug_malloc_atomic_ignore_off_page(size_t lb, GC_EXTRA_PARAMS)
 }
 
 STATIC void *
-GC_debug_generic_malloc(size_t lb, int k, GC_EXTRA_PARAMS)
+GC_debug_generic_malloc(size_t lb, int kind, GC_EXTRA_PARAMS)
 {
-  void *base = GC_generic_malloc_aligned(SIZET_SAT_ADD(lb, DEBUG_BYTES), k,
+  void *base = GC_generic_malloc_aligned(SIZET_SAT_ADD(lb, DEBUG_BYTES), kind,
                                          0 /* flags */, 0 /* align_m1 */);
 
   return store_debug_info(base, lb, "GC_debug_generic_malloc", OPT_RA s, i);
@@ -546,12 +546,12 @@ GC_debug_generic_malloc(size_t lb, int k, GC_EXTRA_PARAMS)
 /* allocated objects do not have debug information.  But in this      */
 /* case, we need to make sure that all objects have debug headers.    */
 GC_INNER void *
-GC_debug_generic_malloc_inner(size_t lb, int k, unsigned flags)
+GC_debug_generic_malloc_inner(size_t lb, int kind, unsigned flags)
 {
   void *base, *result;
 
   GC_ASSERT(I_HOLD_LOCK());
-  base = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES), k, flags);
+  base = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES), kind, flags);
   if (NULL == base) {
     GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                   (unsigned long)lb);
@@ -853,9 +853,9 @@ GC_debug_realloc(void *p, size_t lb, GC_EXTRA_PARAMS)
 }
 
 GC_API GC_ATTR_MALLOC void *GC_CALL
-GC_debug_generic_or_special_malloc(size_t lb, int k, GC_EXTRA_PARAMS)
+GC_debug_generic_or_special_malloc(size_t lb, int kind, GC_EXTRA_PARAMS)
 {
-  switch (k) {
+  switch (kind) {
   case PTRFREE:
     return GC_debug_malloc_atomic(lb, OPT_RA s, i);
   case NORMAL:
@@ -867,7 +867,7 @@ GC_debug_generic_or_special_malloc(size_t lb, int k, GC_EXTRA_PARAMS)
     return GC_debug_malloc_atomic_uncollectable(lb, OPT_RA s, i);
 #endif
   default:
-    return GC_debug_generic_malloc(lb, k, OPT_RA s, i);
+    return GC_debug_generic_malloc(lb, kind, OPT_RA s, i);
   }
 }
 

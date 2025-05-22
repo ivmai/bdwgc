@@ -17,9 +17,6 @@
 LIBGC_VER_INFO = 6:3:5
 LIBGCCPP_VER_INFO = 6:0:5
 
-## FIXME: `make distcheck' in this directory will not currently work.
-##     This is most likely to the explicit flags passed to submakes.
-
 # We currently use the source files directly from libatomic_ops, if we
 # use the internal version.
 # Thus there seems to be no real reason to recursively build in the
@@ -158,8 +155,7 @@ CXXFLAGS += $(CFLAGS_EXTRA)
 ## FIXME: ./configure --enable-dependency-tracking should be used
 
 ## FIXME: we shouldn't have to do this, but automake forces us to.
-## We use -Wp,-P to strip #line directives.  Irix `as' chokes on
-## these.
+## We use -Wp,-P to strip #line directives.  Irix `as` chokes on these.
 if ASM_WITH_CPP_UNSUPPORTED
   ASM_CPP_OPTIONS =
 else

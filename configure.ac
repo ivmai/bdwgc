@@ -649,8 +649,8 @@ dnl it is actually a problem, because the compiler we're passed can't
 dnl necessarily do a full link.  So we fool automake here.
 if false; then
   dnl autoconf 2.50 runs AC_EXEEXT by default, and the macro expands
-  dnl to nothing, so nothing would remain between `then' and `fi' if it
-  dnl were not for the `:' below.
+  dnl to nothing, so nothing would remain between `then` and `fi` if it
+  dnl were not for the ':' below.
   :
   AC_EXEEXT
 fi
@@ -948,7 +948,7 @@ if test "${enable_redirect_malloc}" = yes; then
         AC_DEFINE([REDIRECT_MALLOC], GC_debug_malloc_replacement,
                   [If defined, redirect malloc to this function.])
         AC_DEFINE([REDIRECT_REALLOC], GC_debug_realloc_replacement,
-                  [If defined, redirect GC_realloc to this function.])
+                  [If defined, redirect realloc to this function.])
         AC_DEFINE([REDIRECT_FREE], GC_debug_free,
                   [If defined, redirect free to this function.])
     else

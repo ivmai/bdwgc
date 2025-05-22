@@ -159,7 +159,7 @@ GC_build_fl(struct hblk *h, ptr_t list, size_t lg, GC_bool clear)
 }
 
 GC_INNER void
-GC_new_hblk(size_t lg, int k)
+GC_new_hblk(size_t lg, int kind)
 {
   struct hblk *h; /* the new heap block */
   size_t lb_adjusted = GRANULES_TO_BYTES(lg);
@@ -167,18 +167,18 @@ GC_new_hblk(size_t lg, int k)
   GC_STATIC_ASSERT(sizeof(struct hblk) == HBLKSIZE);
   GC_ASSERT(I_HOLD_LOCK());
   /* Allocate a new heap block. */
-  h = GC_allochblk(lb_adjusted, k, 0 /* flags */, 0 /* align_m1 */);
+  h = GC_allochblk(lb_adjusted, kind, 0 /* flags */, 0 /* align_m1 */);
   if (EXPECT(NULL == h, FALSE)) {
     /* Out of memory.   */
     return;
   }
 
   /* Mark all objects if appropriate. */
-  if (IS_UNCOLLECTABLE(k))
+  if (IS_UNCOLLECTABLE(kind))
     GC_set_hdr_marks(HDR(h));
 
   /* Build the free list.       */
-  GC_obj_kinds[k].ok_freelist[lg]
-      = GC_build_fl(h, (ptr_t)GC_obj_kinds[k].ok_freelist[lg], lg,
-                    GC_debugging_started || GC_obj_kinds[k].ok_init);
+  GC_obj_kinds[kind].ok_freelist[lg]
+      = GC_build_fl(h, (ptr_t)GC_obj_kinds[kind].ok_freelist[lg], lg,
+                    GC_debugging_started || GC_obj_kinds[kind].ok_init);
 }

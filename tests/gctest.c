@@ -478,7 +478,7 @@ ints(int low, int up)
 }
 
 #ifdef GC_GCJ_SUPPORT
-/* Return reverse(x) concatenated with y.     */
+/* Return gcj_reverse(x) concatenated with y. */
 static sexpr
 gcj_reverse1(sexpr x, sexpr y)
 {
@@ -666,7 +666,7 @@ tiny_reverse_test(void *p_resumed)
   if (p_resumed != NULL) {
     /* Test self-suspend is working.        */
     GC_suspend_thread(pthread_self());
-    AO_store_release((volatile AO_t *)p_resumed, (AO_t)TRUE);
+    AO_store_release((volatile AO_t *)p_resumed, (AO_t)1);
   }
 #  else
   (void)p_resumed;

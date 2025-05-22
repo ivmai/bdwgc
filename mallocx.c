@@ -53,19 +53,19 @@ GC_get_kind_and_size(const void *p, size_t *psize)
 }
 
 GC_API GC_ATTR_MALLOC void *GC_CALL
-GC_generic_or_special_malloc(size_t lb, int k)
+GC_generic_or_special_malloc(size_t lb, int kind)
 {
-  switch (k) {
+  switch (kind) {
   case PTRFREE:
   case NORMAL:
-    return GC_malloc_kind(lb, k);
+    return GC_malloc_kind(lb, kind);
   case UNCOLLECTABLE:
 #ifdef GC_ATOMIC_UNCOLLECTABLE
   case AUNCOLLECTABLE:
 #endif
-    return GC_generic_malloc_uncollectable(lb, k);
+    return GC_generic_malloc_uncollectable(lb, kind);
   default:
-    return GC_generic_malloc_aligned(lb, k, 0 /* flags */, 0);
+    return GC_generic_malloc_aligned(lb, kind, 0 /* flags */, 0);
   }
 }
 
@@ -208,9 +208,10 @@ realloc(void *p, size_t lb)
 /* the object are considered.  We avoid holding the allocator lock  */
 /* while we clear the memory.                                       */
 GC_API GC_ATTR_MALLOC void *GC_CALL
-GC_generic_malloc_ignore_off_page(size_t lb, int k)
+GC_generic_malloc_ignore_off_page(size_t lb, int kind)
 {
-  return GC_generic_malloc_aligned(lb, k, IGNORE_OFF_PAGE, 0 /* align_m1 */);
+  return GC_generic_malloc_aligned(lb, kind, IGNORE_OFF_PAGE,
+                                   0 /* align_m1 */);
 }
 
 GC_API GC_ATTR_MALLOC void *GC_CALL
@@ -257,7 +258,7 @@ STATIC volatile AO_t GC_bytes_allocd_tmp = 0;
 #endif /* PARALLEL_MARK */
 
 GC_API void GC_CALL
-GC_generic_malloc_many(size_t lb_adjusted, int k, void **result)
+GC_generic_malloc_many(size_t lb_adjusted, int kind, void **result)
 {
   void *op;
   void *p;
@@ -272,8 +273,8 @@ GC_generic_malloc_many(size_t lb_adjusted, int k, void **result)
   /* TODO: GC_dirty should be called for each linked object (but  */
   /* the last one) to support multiple objects allocation.        */
   if (!EXPECT(lb_adjusted <= MAXOBJBYTES, TRUE) || GC_manual_vdb) {
-    op = GC_generic_malloc_aligned(lb_adjusted - EXTRA_BYTES, k, 0 /* flags */,
-                                   0 /* align_m1 */);
+    op = GC_generic_malloc_aligned(lb_adjusted - EXTRA_BYTES, kind,
+                                   0 /* flags */, 0 /* align_m1 */);
     if (EXPECT(op != NULL, TRUE))
       obj_link(op) = NULL;
     *result = op;
@@ -285,7 +286,7 @@ GC_generic_malloc_many(size_t lb_adjusted, int k, void **result)
 #endif
     return;
   }
-  GC_ASSERT(k < MAXOBJKINDS);
+  GC_ASSERT(kind < MAXOBJKINDS);
   lg = BYTES_TO_GRANULES(lb_adjusted);
   if (EXPECT(get_have_errors(), FALSE))
     GC_print_all_errors();
@@ -301,7 +302,7 @@ GC_generic_malloc_many(size_t lb_adjusted, int k, void **result)
 
   /* First see if we can reclaim a page of objects waiting to be */
   /* reclaimed.                                                  */
-  ok = &GC_obj_kinds[k];
+  ok = &GC_obj_kinds[kind];
   rlh = ok->ok_reclaim_list;
   if (rlh != NULL) {
     struct hblk *hbp;
@@ -404,10 +405,10 @@ GC_generic_malloc_many(size_t lb_adjusted, int k, void **result)
   /* Next try to allocate a new block worth of objects of this size.  */
   {
     struct hblk *h
-        = GC_allochblk(lb_adjusted, k, 0 /* flags */, 0 /* align_m1 */);
+        = GC_allochblk(lb_adjusted, kind, 0 /* flags */, 0 /* align_m1 */);
 
     if (h /* != NULL */) { /* CPPCHECK */
-      if (IS_UNCOLLECTABLE(k))
+      if (IS_UNCOLLECTABLE(kind))
         GC_set_hdr_marks(HDR(h));
       GC_bytes_allocd += HBLKSIZE - (HBLKSIZE % lb_adjusted);
 #ifdef PARALLEL_MARK
@@ -435,7 +436,7 @@ GC_generic_malloc_many(size_t lb_adjusted, int k, void **result)
 
   /* As a last attempt, try allocating a single object.  Note that    */
   /* this may trigger a collection or expand the heap.                */
-  op = GC_generic_malloc_inner(lb_adjusted - EXTRA_BYTES, k, 0 /* flags */);
+  op = GC_generic_malloc_inner(lb_adjusted - EXTRA_BYTES, kind, 0 /* flags */);
   if (op != NULL)
     obj_link(op) = NULL;
 

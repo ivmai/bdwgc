@@ -270,6 +270,7 @@ struct r_debug {
   /* int32_t r_state; */
   /* uintptr_t r_ldbase; */
 };
+#      define LINK_MAP_R_DEBUG_DEFINED
 #    endif /* __ANDROID_API__ >= 21 || SERENITY */
 #    ifndef HOST_ANDROID
 /* Workaround missing extern "C" around _DYNAMIC symbol in link.h   */
@@ -305,92 +306,6 @@ EXTERN_C_END
 #      endif
 #    endif
 #  endif
-
-#  if defined(SOLARISDL) && !defined(USE_PROC_FOR_LIBRARIES)
-
-EXTERN_C_BEGIN
-extern ElfW(Dyn) _DYNAMIC;
-EXTERN_C_END
-
-STATIC struct link_map *
-GC_FirstDLOpenedLinkMap(void)
-{
-  ElfW(Dyn) * dp;
-  static struct link_map *cachedResult = 0;
-  static ElfW(Dyn) *dynStructureAddr = 0;
-  /* BTL: added to avoid Solaris 5.3 ld.so _DYNAMIC bug   */
-
-#    ifdef SUNOS53_SHARED_LIB
-  /* BTL: Avoid the Solaris 5.3 bug that _DYNAMIC isn't being set */
-  /* up properly in dynamically linked .so's. This means we have  */
-  /* to use its value in the set of original object files loaded  */
-  /* at program startup.                                          */
-  if (0 == dynStructureAddr) {
-    void *startupSyms = dlopen(0, RTLD_LAZY);
-
-    dynStructureAddr = (ElfW(Dyn) *)dlsym(startupSyms, "_DYNAMIC");
-    /* Note: dlclose() is not called intentionally. */
-  }
-#    else
-  dynStructureAddr = &_DYNAMIC;
-#    endif
-
-  if (0 == COVERT_DATAFLOW(ADDR(dynStructureAddr))) {
-    /* _DYNAMIC symbol not resolved. */
-    return NULL;
-  }
-  if (NULL == cachedResult) {
-    int tag;
-
-    for (dp = (ElfW(Dyn) *)&_DYNAMIC; (tag = dp->d_tag) != 0; dp++) {
-      if (tag == DT_DEBUG) {
-        const struct r_debug *rd = (struct r_debug *)MAKE_CPTR(dp->d_un.d_ptr);
-
-        if (rd != NULL) {
-          const struct link_map *lm = rd->r_map;
-
-          if (lm != NULL)
-            cachedResult = lm->l_next; /* might be NULL */
-        }
-        break;
-      }
-    }
-  }
-  return cachedResult;
-}
-
-GC_INNER void
-GC_register_dynamic_libraries(void)
-{
-  struct link_map *lm;
-
-  GC_ASSERT(I_HOLD_LOCK());
-  for (lm = GC_FirstDLOpenedLinkMap(); lm != NULL; lm = lm->l_next) {
-    ElfW(Ehdr) * e;
-    ElfW(Phdr) * p;
-    ptr_t start;
-    unsigned long offset;
-    int i;
-
-    e = (ElfW(Ehdr) *)lm->l_addr;
-    p = (ElfW(Phdr) *)((ptr_t)e + e->e_phoff);
-    offset = (unsigned long)ADDR(e);
-    for (i = 0; i < (int)e->e_phnum; i++, p++) {
-      switch (p->p_type) {
-      case PT_LOAD:
-        if ((p->p_flags & PF_W) == 0)
-          break;
-        start = MAKE_CPTR(p->p_vaddr) + offset;
-        GC_add_roots_inner(start, start + p->p_memsz, TRUE);
-        break;
-      default:
-        break;
-      }
-    }
-  }
-}
-
-#  endif /* SOLARISDL && !USE_PROC_FOR_LIBRARIES */
 
 #  if defined(DGUX) || defined(HURD) || defined(NACL) || defined(SCO_ELF) \
       || defined(SERENITY)                                                \
@@ -477,7 +392,7 @@ GC_register_map_entries(const char *maps)
         continue; /* discard some special mapping */
 #      endif
       if (path[0] == '[' && strncmp(path + 1, "heap]", 5) != 0)
-        continue; /* discard if a pseudo-path unless "[heap]" */
+        continue; /* discard a pseudo-file path unless "[heap]" */
 
 #      ifdef THREADS
       /* This may fail, since a thread may already be           */
@@ -619,7 +534,7 @@ STATIC int
 GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
 {
   const ElfW(Phdr) * p;
-  ptr_t my_start, my_end;
+  ptr_t load_ptr, my_start, my_end;
   int i;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -628,6 +543,7 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       < offsetof(struct dl_phdr_info, dlpi_phnum) + sizeof(info->dlpi_phnum))
     return 1; /* stop */
 
+  load_ptr = (ptr_t)info->dlpi_addr;
   p = info->dlpi_phdr;
   for (i = 0; i < (int)info->dlpi_phnum; i++, p++) {
     if (p->p_type == PT_LOAD) {
@@ -635,12 +551,12 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       if ((p->p_flags & PF_W) == 0)
         continue;
 
-      my_start = CAST_THRU_UINTPTR(ptr_t, info->dlpi_addr + p->p_vaddr);
+      my_start = load_ptr + p->p_vaddr;
       my_end = my_start + p->p_memsz;
 #        ifdef CHERI_PURECAP
       my_start = PTR_ALIGN_UP(my_start, ALIGNMENT);
       my_end = PTR_ALIGN_DOWN(my_end, ALIGNMENT);
-      if (!SPANNING_CAPABILITY(info->dlpi_addr, ADDR(my_start), ADDR(my_end)))
+      if (!SPANNING_CAPABILITY(load_ptr, ADDR(my_start), ADDR(my_end)))
         continue;
       my_start = cheri_bounds_set(my_start, (word)(my_end - my_start));
 #        endif
@@ -687,7 +603,7 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       /* encountered "LOAD" segment, so we need to exclude it.        */
       int j;
 
-      my_start = MAKE_CPTR(p->p_vaddr) + info->dlpi_addr;
+      my_start = load_ptr + p->p_vaddr;
       my_end = my_start + p->p_memsz;
       for (j = n_load_segs; --j >= 0;) {
         if (ADDR_INSIDE(my_start, load_segs[j].start, load_segs[j].end)) {
@@ -816,14 +732,6 @@ GC_register_dynamic_libraries_dl_iterate_phdr(void)
 
 #      else /* !HAVE_DL_ITERATE_PHDR */
 
-/* Dynamic loading code for Linux running ELF.  Somewhat tested on  */
-/* Linux/i686, untested but hopefully should work on Linux/Alpha.   */
-/* This code was derived from the Solaris/ELF support.  Thanks to   */
-/* whatever kind soul wrote that.  - Patrick Bridges                */
-
-/* This does not necessarily work in all cases, e.g. with preloaded */
-/* dynamic libraries.                                               */
-
 #        if defined(NETBSD) || defined(OPENBSD)
 #          include <sys/exec_elf.h>
 /* For compatibility with 1.4.x. */
@@ -846,30 +754,65 @@ GC_register_dynamic_libraries_dl_iterate_phdr(void)
 
 #      endif /* !HAVE_DL_ITERATE_PHDR */
 
+#    endif /* !USE_PROC_FOR_LIBRARIES */
+
+#  endif /* DGUX || HURD || NACL || (ANY_BSD || LINUX) && __ELF__ */
+
+#  if (defined(DGUX) || defined(HURD) || defined(NACL) || defined(SCO_ELF) \
+       || defined(SERENITY) || defined(SOLARISDL)                          \
+       || ((defined(ANY_BSD) || defined(LINUX)) && defined(__ELF__)))      \
+      && !defined(USE_PROC_FOR_LIBRARIES)
+
+/* Dynamic loading code for Linux, Solaris or similar OS running ELF. */
+
+/* This does not necessarily work in all cases, e.g. with preloaded */
+/* dynamic libraries.                                               */
+
 EXTERN_C_BEGIN
-#      ifdef __GNUC__
-#        pragma weak _DYNAMIC
-#      endif
+#    if defined(__GNUC__) && !defined(SOLARISDL)
+#      pragma weak _DYNAMIC
+#    endif
 extern ElfW(Dyn) _DYNAMIC[];
 EXTERN_C_END
 
 STATIC struct link_map *
 GC_FirstDLOpenedLinkMap(void)
 {
-  static struct link_map *cachedResult = 0;
+  static struct link_map *cachedResult = NULL;
 
+#    ifdef SUNOS53_SHARED_LIB
+  /* BTL: Avoid the Solaris 5.3 ld.so bug that _DYNAMIC is not being    */
+  /* setup properly in dynamically linked library file.  This means we  */
+  /* have to use its value in the set of original object files loaded   */
+  /* at the program startup.                                            */
+  static ElfW(Dyn) *dynStructureAddr = NULL;
+
+  if (NULL == dynStructureAddr) {
+    void *startupSyms = dlopen(NULL, RTLD_LAZY);
+
+    dynStructureAddr = (ElfW(Dyn) *)dlsym(startupSyms, "_DYNAMIC");
+    /* Note: dlclose() is not called intentionally. */
+    if (NULL == dynStructureAddr) {
+      /* _DYNAMIC symbol is not resolved. */
+      return NULL;
+    }
+  }
+#    else
   if (0 == COVERT_DATAFLOW(ADDR(_DYNAMIC))) {
-    /* _DYNAMIC symbol not resolved. */
+    /* _DYNAMIC symbol is not resolved. */
     return NULL;
   }
+#    endif
+
   if (NULL == cachedResult) {
-#      if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
-#        if defined(CPPCHECK)
-#          define GC_RTLD_DI_LINKMAP 2
-#        else
-#          define GC_RTLD_DI_LINKMAP RTLD_DI_LINKMAP
-#        endif
+#    if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
+#      if defined(CPPCHECK)
+#        define GC_RTLD_DI_LINKMAP 2
+#      else
+#        define GC_RTLD_DI_LINKMAP RTLD_DI_LINKMAP
+#      endif
     struct link_map *lm = NULL;
+
     if (!dlinfo(RTLD_SELF, GC_RTLD_DI_LINKMAP, &lm) && lm != NULL) {
       /* Now lm points link_map object of libgc.  Since it    */
       /* might not be the first dynamically linked object,    */
@@ -879,31 +822,29 @@ GC_FirstDLOpenedLinkMap(void)
       }
       cachedResult = lm->l_next;
     }
-#      else
+#    else
     ElfW(Dyn) * dp;
     int tag;
 
     for (dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++) {
       if (tag == DT_DEBUG) {
-        const struct r_debug *rd = (struct r_debug *)MAKE_CPTR(dp->d_un.d_ptr);
+        const struct r_debug *rd
+            = CAST_THRU_UINTPTR(struct r_debug *, dp->d_un.d_ptr);
 
-        /* d_ptr could be 0 if libs are linked statically. */
+        /* d_ptr could be NULL if libs are linked statically. */
         if (rd != NULL) {
           const struct link_map *lm = rd->r_map;
 
-#        if defined(CPPCHECK)                                               \
-            && ((defined(HOST_ANDROID) && !defined(GC_DONT_DEFINE_LINK_MAP) \
-                 && !(__ANDROID_API__ >= 21))                               \
-                || defined(SERENITY))
+#      if defined(CPPCHECK) && defined(LINK_MAP_R_DEBUG_DEFINED)
           GC_noop1((word)rd->r_version);
-#        endif
+#      endif
           if (lm != NULL)
             cachedResult = lm->l_next; /* might be NULL */
         }
         break;
       }
     }
-#      endif /* !NETBSD || !RTLD_DI_LINKMAP */
+#    endif
   }
   return cachedResult;
 }
@@ -914,51 +855,46 @@ GC_register_dynamic_libraries(void)
   struct link_map *lm;
 
   GC_ASSERT(I_HOLD_LOCK());
-#      ifdef HAVE_DL_ITERATE_PHDR
+#    ifdef HAVE_DL_ITERATE_PHDR
   if (GC_register_dynamic_libraries_dl_iterate_phdr()) {
     return;
   }
-#      endif
+#    endif
   for (lm = GC_FirstDLOpenedLinkMap(); lm != NULL; lm = lm->l_next) {
     ElfW(Ehdr) * e;
     ElfW(Phdr) * p;
-    ptr_t start;
-    unsigned long offset;
+    ptr_t load_ptr = (ptr_t)lm->l_addr;
     int i;
 
-    e = (ElfW(Ehdr) *)lm->l_addr;
-#      ifdef HOST_ANDROID
-    if (NULL == e)
+#    ifdef HOST_ANDROID
+    if (NULL == load_ptr)
       continue;
-#      endif
-    p = (ElfW(Phdr) *)((ptr_t)e + e->e_phoff);
-    offset = (unsigned long)ADDR(e);
+#    endif
+    e = (ElfW(Ehdr) *)load_ptr;
+    p = (ElfW(Phdr) *)(load_ptr + e->e_phoff);
     for (i = 0; i < (int)e->e_phnum; i++, p++) {
+      ptr_t start;
+
       switch (p->p_type) {
       case PT_LOAD:
         if ((p->p_flags & PF_W) == 0)
           break;
-        start = MAKE_CPTR(p->p_vaddr) + offset;
+        start = load_ptr + p->p_vaddr;
         GC_add_roots_inner(start, start + p->p_memsz, TRUE);
         break;
       default:
         break;
       }
     }
-#      if defined(CPPCHECK)                                               \
-          && ((defined(HOST_ANDROID) && !defined(GC_DONT_DEFINE_LINK_MAP) \
-               && !(__ANDROID_API__ >= 21))                               \
-              || defined(SERENITY))
+#    if defined(CPPCHECK) && defined(LINK_MAP_R_DEBUG_DEFINED)
     GC_noop1_ptr(lm->l_name);
     GC_noop1((word)lm->l_ld);
     GC_noop1_ptr(lm->l_prev);
-#      endif
+#    endif
   }
 }
 
-#    endif /* !USE_PROC_FOR_LIBRARIES */
-
-#  endif /* DGUX || HURD || NACL || (ANY_BSD || LINUX) && __ELF__ */
+#  endif /* (SOLARISDL || LINUX && __ELF__) && !USE_PROC_FOR_LIBRARIES */
 
 #  if defined(USE_PROC_FOR_LIBRARIES) && !defined(LINUX) || defined(IRIX5)
 
@@ -1233,7 +1169,7 @@ dyld_section_add_del(const struct GC_MACH_HEADER *phdr, intptr_t slide,
   if (NULL == sec)
     return;
   sec_size = sec->size;
-  start = MAKE_CPTR(slide + sec->addr);
+  start = (ptr_t)slide + sec->addr;
 #    else
 
   UNUSED_ARG(slide);
