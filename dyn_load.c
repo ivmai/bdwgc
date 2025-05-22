@@ -551,7 +551,13 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       if ((p->p_flags & PF_W) == 0)
         continue;
 
+#        ifdef CHERI_PURECAP
       my_start = load_ptr + p->p_vaddr;
+#        else
+      /* Prevent "applying non-zero offset to null pointer" compiler    */
+      /* warning as load_ptr could be NULL.                             */
+      my_start = (ptr_t)((GC_uintptr_t)load_ptr + p->p_vaddr);
+#        endif
       my_end = my_start + p->p_memsz;
 #        ifdef CHERI_PURECAP
       my_start = PTR_ALIGN_UP(my_start, ALIGNMENT);
@@ -603,7 +609,11 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       /* encountered "LOAD" segment, so we need to exclude it.        */
       int j;
 
+#          ifdef CHERI_PURECAP
       my_start = load_ptr + p->p_vaddr;
+#          else
+      my_start = (ptr_t)((GC_uintptr_t)load_ptr + p->p_vaddr);
+#          endif
       my_end = my_start + p->p_memsz;
       for (j = n_load_segs; --j >= 0;) {
         if (ADDR_INSIDE(my_start, load_segs[j].start, load_segs[j].end)) {
@@ -861,10 +871,10 @@ GC_register_dynamic_libraries(void)
   }
 #    endif
   for (lm = GC_FirstDLOpenedLinkMap(); lm != NULL; lm = lm->l_next) {
-    ElfW(Ehdr) * e;
-    ElfW(Phdr) * p;
+    const ElfW(Ehdr) * e;
+    const ElfW(Phdr) * p;
     ptr_t load_ptr = (ptr_t)lm->l_addr;
-    int i;
+    size_t i;
 
 #    ifdef HOST_ANDROID
     if (NULL == load_ptr)
@@ -872,7 +882,7 @@ GC_register_dynamic_libraries(void)
 #    endif
     e = (ElfW(Ehdr) *)load_ptr;
     p = (ElfW(Phdr) *)(load_ptr + e->e_phoff);
-    for (i = 0; i < (int)e->e_phnum; i++, p++) {
+    for (i = 0; i < (size_t)e->e_phnum; i++, p++) {
       ptr_t start;
 
       switch (p->p_type) {

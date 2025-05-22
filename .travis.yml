@@ -40,7 +40,11 @@ jobs:
     - TESTS_CUSTOM_RUN=true
   - env:
     - MAKEFILE_TARGETS="dist"
-  - compiler: clang
+  - addons:
+      apt:
+        packages:
+        - gcc-multilib
+    compiler: clang
     env:
     - CSA_CHECK=true
     - CFLAGS_EXTRA="-m32"
