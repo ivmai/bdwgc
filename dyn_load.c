@@ -874,7 +874,7 @@ GC_register_dynamic_libraries(void)
     const ElfW(Ehdr) * e;
     const ElfW(Phdr) * p;
     ptr_t load_ptr = (ptr_t)lm->l_addr;
-    int i;
+    size_t i;
 
 #    ifdef HOST_ANDROID
     if (NULL == load_ptr)
@@ -882,7 +882,7 @@ GC_register_dynamic_libraries(void)
 #    endif
     e = (ElfW(Ehdr) *)load_ptr;
     p = (ElfW(Phdr) *)(load_ptr + e->e_phoff);
-    for (i = 0; i < (int)e->e_phnum; i++, p++) {
+    for (i = 0; i < (size_t)e->e_phnum; i++, p++) {
       ptr_t start;
 
       switch (p->p_type) {
