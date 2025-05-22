@@ -871,8 +871,8 @@ GC_register_dynamic_libraries(void)
   }
 #    endif
   for (lm = GC_FirstDLOpenedLinkMap(); lm != NULL; lm = lm->l_next) {
-    ElfW(Ehdr) * e;
-    ElfW(Phdr) * p;
+    const ElfW(Ehdr) * e;
+    const ElfW(Phdr) * p;
     ptr_t load_ptr = (ptr_t)lm->l_addr;
     int i;
 
