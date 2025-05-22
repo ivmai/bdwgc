@@ -551,7 +551,13 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       if ((p->p_flags & PF_W) == 0)
         continue;
 
+#        ifdef CHERI_PURECAP
       my_start = load_ptr + p->p_vaddr;
+#        else
+      /* Prevent "applying non-zero offset to null pointer" compiler    */
+      /* warning as load_ptr could be NULL.                             */
+      my_start = (ptr_t)((GC_uintptr_t)load_ptr + p->p_vaddr);
+#        endif
       my_end = my_start + p->p_memsz;
 #        ifdef CHERI_PURECAP
       my_start = PTR_ALIGN_UP(my_start, ALIGNMENT);
@@ -603,7 +609,11 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
       /* encountered "LOAD" segment, so we need to exclude it.        */
       int j;
 
+#          ifdef CHERI_PURECAP
       my_start = load_ptr + p->p_vaddr;
+#          else
+      my_start = (ptr_t)((GC_uintptr_t)load_ptr + p->p_vaddr);
+#          endif
       my_end = my_start + p->p_memsz;
       for (j = n_load_segs; --j >= 0;) {
         if (ADDR_INSIDE(my_start, load_segs[j].start, load_segs[j].end)) {
