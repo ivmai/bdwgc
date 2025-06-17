@@ -806,7 +806,6 @@ CORD_balance(CORD x)
 
 /* P contains a prefix of the  path to cur_pos. Extend it to a full     */
 /* path and set up leaf info.                                           */
-/* Return 0 if past the end of cord, 1 o.w.                             */
 static void
 CORD_extend_path(CORD_pos p)
 {
