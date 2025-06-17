@@ -36,7 +36,7 @@ EXTERN_C_BEGIN
  * We take advantage of a header lookup
  * cache.  This is a locally declared direct mapped cache, used inside
  * the marker.  The HC_GET_HDR macro uses and maintains this
- * cache.  Assuming we get reasonable hit rates, this shaves a few
+ * cache.  Assuming we get reasonable hit rates, this saves a few
  * memory references from each pointer validation.
  */
 
