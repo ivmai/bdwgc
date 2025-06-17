@@ -978,8 +978,8 @@ EXTERN_C_BEGIN
 #define GC_SQRT_SIZE_MAX ((((size_t)1) << (sizeof(size_t) * 8 / 2)) - 1)
 
 /*  Max size objects supported by free list (larger objects are */
-/*  allocated directly with allchblk(), by rounding to the next */
-/*  multiple of HBLKSIZE).                                      */
+/*  allocated directly with GC_alloc_large, by rounding to the  */
+/*  next multiple of HBLKSIZE).                                 */
 #define MAXOBJBYTES (HBLKSIZE >> 1)
 #define MAXOBJGRANULES BYTES_TO_GRANULES(MAXOBJBYTES)
 
