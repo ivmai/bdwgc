@@ -332,7 +332,7 @@ setup_header(hdr *hhdr, struct hblk *block, size_t lb_adjusted, int kind,
   return TRUE;
 }
 
-/* Remove hhdr from the free list (it is assumed to specified by index). */
+/* Remove hhdr from the free list (it is assumed to be specified by index). */
 STATIC void
 GC_remove_from_fl_at(hdr *hhdr, size_t index)
 {
