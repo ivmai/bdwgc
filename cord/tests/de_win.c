@@ -38,7 +38,7 @@ int COLS = 0;
 
 #  define szAppName TEXT("DE")
 
-HWND hwnd;
+static HWND hwnd;
 
 void
 de_error(const char *s)
@@ -165,8 +165,8 @@ control_chars(const char *text, size_t len)
   return result;
 }
 
-int char_width;
-int char_height;
+static int char_width;
+static int char_height;
 
 static void
 get_line_rect(int line_arg, int win_width, RECT *rectp)
@@ -178,10 +178,10 @@ get_line_rect(int line_arg, int win_width, RECT *rectp)
 }
 
 /* A flag whether the caret is currently visible.   */
-int caret_visible = 0;
+static int caret_visible = 0;
 
 /* A flag whether the screen has been painted at least once.    */
-int screen_was_painted = 0;
+static int screen_was_painted = 0;
 
 static void update_cursor(void);
 
@@ -343,8 +343,8 @@ WndProc(HWND hwnd_arg, UINT message, WPARAM wParam, LPARAM lParam)
   return DefWindowProc(hwnd_arg, message, wParam, lParam);
 }
 
-int last_col;
-int last_line;
+static int last_col;
+static int last_line;
 
 void
 move_cursor(int c, int l)

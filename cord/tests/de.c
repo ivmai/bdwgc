@@ -95,29 +95,30 @@ struct HistoryRep {
 };
 typedef struct HistoryRep *history;
 
-history now = 0;
-CORD current;             /* == now -> file_contents.     */
-size_t current_len;       /* Current file length.         */
-line_map current_map = 0; /* Current line no. to pos. map  */
+static history now = NULL;
+static CORD current;                /* == now -> file_contents             */
+static size_t current_len;          /* current file length                 */
+static line_map current_map = NULL; /* current line number to position map */
 
 /* Number of current_map entries.  Not always accurate, but reset   */
 /* by prune_map.                                                    */
-size_t current_map_size = 0;
+static size_t current_map_size = 0;
 
 #define MAX_MAP_SIZE 3000
 
 /* Current display position. */
-int dis_line = 0;
-int dis_col = 0;
+static int dis_line = 0;
+static int dis_col = 0;
 
 #define ALL -1
 #define NONE -2
-int need_redisplay = 0; /* Line that needs to be redisplayed.   */
+static int need_redisplay = 0; /* line that needs to be redisplayed */
 
 /* Current cursor position. Always within file. */
-int line = 0;
-int col = 0;
-size_t file_pos = 0; /* Character position corresponding to cursor.  */
+static int line = 0;
+static int col = 0;
+
+static size_t file_pos = 0; /* character position corresponding to cursor */
 
 /* Invalidate line map for lines > i */
 static void
@@ -236,11 +237,11 @@ del_hist(void)
   current_len = CORD_len(current);
 }
 
-/* Current screen_contents; a dynamically allocated array of CORDs      */
-CORD *screen = 0;
-int screen_size = 0;
-
 #ifndef WIN32
+/* Current screen_contents; a dynamically allocated array of CORDs      */
+static CORD *screen = NULL;
+static int screen_size = 0;
+
 /* Replace a line in the curses stdscr.  All control characters are   */
 /* displayed as upper case characters in standout mode.  This is not  */
 /* terribly appropriate for tabs.                                     */
@@ -348,7 +349,7 @@ done:
   need_redisplay = NONE;
 }
 
-int dis_granularity;
+static int dis_granularity;
 
 /* Update dis_line, dis_col, and dis_pos to make cursor visible.        */
 /* Assumes line, col, dis_line, dis_pos are in bounds.                  */
@@ -435,10 +436,10 @@ beep(void)
 
 #define NO_PREFIX -1
 #define BARE_PREFIX -2
-int repeat_count = NO_PREFIX; /* Current command prefix. */
+static int repeat_count = NO_PREFIX; /* current command prefix */
 
-int locate_mode = 0;             /* Currently between 2 ^Ls      */
-CORD locate_string = CORD_EMPTY; /* Current search string.       */
+static int locate_mode = 0;             /* currently between 2 ^Ls  */
+static CORD locate_string = CORD_EMPTY; /* current search string    */
 
 char *arg_file_name;
 
