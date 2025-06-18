@@ -2163,7 +2163,7 @@ GC_get_warn_proc(void)
 }
 
 /* Print (or display) a message before abnormal exit (including     */
-/* abort).  Invoked from ABORT(msg) macro (there msg is non-NULL)   */
+/* abort).  Invoked from ABORT(msg) macro (where msg is non-NULL)   */
 /* and from EXIT() macro (msg is NULL in that case).                */
 STATIC void GC_CALLBACK
 GC_default_on_abort(const char *msg)
