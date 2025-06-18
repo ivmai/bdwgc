@@ -3352,7 +3352,7 @@ GC_INNER void GC_start_mark_threads_inner(void);
 #endif
 
 /* Some macros for setjmp that works across signal handlers     */
-/* were possible, and a couple of routines to facilitate        */
+/* where possible, and a couple of routines to facilitate       */
 /* catching accesses to bad addresses when that's               */
 /* possible/needed.                                             */
 #if (defined(UNIX_LIKE) || (defined(NEED_FIND_LIMIT) && defined(CYGWIN32))) \
