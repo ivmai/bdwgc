@@ -43,6 +43,7 @@ jobs:
   - addons:
       apt:
         packages:
+        - g++-multilib
         - gcc-multilib
     compiler: clang
     env:
