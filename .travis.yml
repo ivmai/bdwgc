@@ -571,9 +571,14 @@ jobs:
     - CFLAGS_EXTRA="-fsanitize=address -O0"
     - CONF_OPTIONS="--enable-gc-assertions"
     - LDFLAGS="-fuse-ld=gold"
-  - compiler: clang
+  - addons:
+      apt:
+        packages:
+        - g++-multilib
+        - gcc-multilib
+    dist: xenial
     env:
-    - CFLAGS_EXTRA="-fsanitize=address -m32 -fno-omit-frame-pointer"
+    - CFLAGS_EXTRA="-fsanitize=address -m32 -O0"
     - CONF_OPTIONS="--disable-shared --enable-cplusplus"
     - NO_CLONE_LIBATOMIC_OPS=true
   - addons:
