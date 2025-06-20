@@ -53,9 +53,9 @@ GC_add_map_entry(size_t lg)
   hb_map_entry_t *new_map;
 
   GC_ASSERT(I_HOLD_LOCK());
-  /* Ensure displ % lg fits into hb_map_entry_t.  Note: the maximum   */
-  /* value is computed in this way to avoid compiler complains about  */
-  /* constant truncation or expression overflow.                      */
+  /* Ensure `displ % lg` fits into `hb_map_entry_t` type.  Note: the    */
+  /* maximum value is computed in this way to avoid compiler complains  */
+  /* about constant truncation or expression overflow.                  */
   GC_STATIC_ASSERT(
       MAXOBJGRANULES - 1
       <= (~(size_t)0 >> ((sizeof(size_t) - sizeof(hb_map_entry_t)) * 8)));

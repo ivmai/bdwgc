@@ -15,22 +15,25 @@
  * modified is included with the above copyright notice.
  */
 
-/* We want to make sure that GC_thread_exit_proc() is unconditionally   */
-/* invoked, even if the client is not compiled with -fexceptions, but   */
-/* the GC is.  The workaround is to put GC_pthread_start_inner() in its */
-/* own file (pthread_start.c), and undefine __EXCEPTIONS in the GCC     */
-/* case at the top of the file.  FIXME: it's still unclear whether this */
-/* will actually cause the exit handler to be invoked last when         */
-/* thread_exit is called (and if -fexceptions is used).                 */
+/* We want to make sure that `GC_thread_exit_proc()` is unconditionally */
+/* invoked, even if the client is not compiled with `-fexceptions`      */
+/* option, but the the collector is.  The workaround is to put          */
+/* `GC_pthread_start_inner()` in its own file (this one), and           */
+/* undefine `__EXCEPTIONS` in the GCC case at the top of the file.      */
+/* FIXME: it is still unclear whether this will actually cause the      */
+/* `exit` handler to be invoked last when `thread_exit` is called (and  */
+/* if `-fexceptions` option is used).                                   */
+
 #if !defined(DONT_UNDEF_EXCEPTIONS) && defined(__GNUC__) && defined(__linux__)
-/* We undefine __EXCEPTIONS to avoid using GCC __cleanup__ attribute. */
-/* The current NPTL implementation of pthread_cleanup_push uses       */
-/* __cleanup__ attribute when __EXCEPTIONS is defined (-fexceptions). */
-/* The stack unwinding and cleanup with __cleanup__ attributes work   */
-/* correctly when everything is compiled with -fexceptions, but it is */
-/* not the requirement for this library clients to use -fexceptions   */
-/* everywhere.  With __EXCEPTIONS undefined, the cleanup routines are */
-/* registered with __pthread_register_cancel thus should work anyway. */
+/* We undefine `__EXCEPTIONS` to avoid using GCC `__cleanup__`          */
+/* attribute.  The current NPTL implementation of                       */
+/* `pthread_cleanup_push` uses `__cleanup__` attribute when             */
+/* `__EXCEPTIONS` is defined (`-fexceptions` option).  The stack        */
+/* unwinding and cleanup with `__cleanup__` attribute work correctly    */
+/* when everything is compiled with `-fexceptions` option, but it is    */
+/* not the requirement for this library clients to use `-fexceptions`   */
+/* everywhere.  With `__EXCEPTIONS` undefined, the cleanup routines are */
+/* registered with `__pthread_register_cancel` thus should work anyway. */
 #  undef __EXCEPTIONS
 #endif
 
@@ -39,7 +42,7 @@
 #if defined(GC_PTHREADS) && !defined(PLATFORM_THREADS) \
     && !defined(SN_TARGET_PSP2)
 
-/* Invoked from GC_pthread_start. */
+/* Invoked from `GC_pthread_start()`. */
 GC_INNER_PTHRSTART void *GC_CALLBACK
 GC_pthread_start_inner(struct GC_stack_base *sb, void *arg)
 {
@@ -57,7 +60,7 @@ GC_pthread_start_inner(struct GC_stack_base *sb, void *arg)
   GC_log_printf("Finishing thread %p\n", PTHREAD_TO_VPTR(pthread_self()));
 #  endif
   me->status = result;
-  /* Note: we cannot use GC_dirty() instead.    */
+  /* Note: we cannot use `GC_dirty()` instead. */
   GC_end_stubborn_change(me);
 
   /* Cleanup acquires the allocator lock, ensuring that we cannot exit  */

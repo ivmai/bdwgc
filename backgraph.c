@@ -21,7 +21,7 @@
  * One restriction is that we drop all back-edges from nodes with very
  * high in-degree, and simply add them add them to a list of such
  * nodes.  They are then treated as permanent roots.  If this by itself
- * doesn't introduce a space leak, then such nodes can't contribute to
+ * does not introduce a space leak, then such nodes cannot contribute to
  * a growing space leak.
  */
 
@@ -30,19 +30,19 @@
 /* The maximum in-degree we handle directly.    */
 #  define MAX_IN 10
 
-#  if (!defined(DBG_HDRS_ALL)                                        \
-       || (ALIGNMENT != CPP_PTRSZ / 8) /* || !defined(UNIX_LIKE) */) \
+#  if (!defined(DBG_HDRS_ALL)                                          \
+       || (ALIGNMENT != CPP_PTRSZ / 8) /* `|| !defined(UNIX_LIKE)` */) \
       && !defined(CPPCHECK)
 #    error The configuration does not support MAKE_BACK_GRAPH
 #  endif
 
-/* We store single back pointers directly in the object's oh_bg_ptr field. */
-/* If there is more than one ptr to an object, we store q or'ed with       */
-/* FLAG_MANY, where q is a pointer to a back_edges object.                 */
-/* Every once in a while we use a back_edges object even for a single      */
-/* pointer, since we need the other fields in the back_edges structure to  */
-/* be present in some fraction of the objects.  Otherwise we get serious   */
-/* performance issues.                                                     */
+/* We store single back pointers directly in the object's `oh_bg_ptr`   */
+/* field.  If there is more than one pointer to an object, we store `q` */
+/* or'ed with `FLAG_MANY`, where `q` is a pointer to a `back_edges`     */
+/* object.  Every once in a while we use a `back_edges` object even for */
+/* a single pointer, since we need the other fields in the `back_edges` */
+/* structure to be present in some fraction of the objects.  Otherwise  */
+/* we get serious performance issues.                                   */
 #  define FLAG_MANY 2
 
 typedef struct back_edges_struct {
@@ -51,14 +51,15 @@ typedef struct back_edges_struct {
 
   unsigned short flags;
 
-  /* Directly points to a reachable object; retain for the next GC.     */
+  /* Directly points to a reachable object; retain for the next collection. */
 #  define RETAIN 1
 
-  /* If height > 0, then the GC_gc_no value when it was computed.       */
-  /* If it was computed this cycle, then it is current.  If it was      */
-  /* computed during the last cycle, then it represents the old height, */
-  /* which is only saved for live objects referenced by dead ones.      */
-  /* This may grow due to refs from newly dead objects.                 */
+  /* If `height` is greater than zero, then keeps the `GC_gc_no` value  */
+  /* when it was computed.  If it was computed this cycle, then it is   */
+  /* current.  If it was computed during the last cycle, then it        */
+  /* belongs to the old height, which is only saved for live objects    */
+  /* referenced by dead ones.  This may grow due to references from     */
+  /* newly dead objects.                                                */
   unsigned short height_gc_no;
 
   /* Longest path through unreachable nodes to this node that we found  */
@@ -77,10 +78,10 @@ typedef struct back_edges_struct {
 #  define MAX_BACK_EDGE_STRUCTS 100000
 static back_edges *back_edge_space = 0;
 
-/* Points to never-used back_edges space.       */
+/* Points to never-used `back_edges` space. */
 STATIC int GC_n_back_edge_structs = 0;
 
-/* Pointer to free list of deallocated back_edges structures.   */
+/* Pointer to free list of deallocated `back_edges` structures. */
 static back_edges *avail_back_edges = 0;
 
 /* Allocate a new back edge structure.  Should be more sophisticated    */
@@ -111,7 +112,7 @@ new_back_edges(void)
   return back_edge_space + (GC_n_back_edge_structs++);
 }
 
-/* Deallocate p and its associated continuation structures.     */
+/* Deallocate `p` and its associated continuation structures. */
 static void
 deallocate_back_edges(back_edges *p)
 {
@@ -126,8 +127,8 @@ deallocate_back_edges(back_edges *p)
 
 /* Table of objects that are currently on the depth-first search        */
 /* stack.  Only objects with in-degree one are in this table.           */
-/* Other objects are identified using HEIGHT_IN_PROGRESS.               */
-/* FIXME: This data structure NEEDS IMPROVEMENT.                        */
+/* Other objects are identified using `HEIGHT_IN_PROGRESS`.             */
+/* FIXME: This data structure needs improvement.                        */
 static ptr_t *in_progress_space = 0;
 #  define INITIAL_IN_PROGRESS 10000
 static size_t in_progress_size = 0;
@@ -159,7 +160,7 @@ push_in_progress(ptr_t p)
     GC_scratch_recycle_no_gww(in_progress_space,
                               n_in_progress * sizeof(ptr_t));
 #  elif defined(LINT2)
-    /* TODO: implement GWW-aware recycling as in alloc_mark_stack */
+    /* TODO: implement GWW-aware recycling as in `alloc_mark_stack` */
     GC_noop1_ptr(in_progress_space);
 #  endif
     in_progress_space = new_in_progress_space;
@@ -194,7 +195,7 @@ pop_in_progress(ptr_t p)
 #  define GET_OH_BG_PTR(p) (ptr_t) GC_REVEAL_POINTER(((oh *)(p))->oh_bg_ptr)
 #  define SET_OH_BG_PTR(p, q) (((oh *)(p))->oh_bg_ptr = GC_HIDE_POINTER(q))
 
-/* Ensure that p has a back_edges structure associated with it. */
+/* Ensure that `p` has a `back_edges` structure associated with it. */
 static void
 ensure_struct(ptr_t p)
 {
@@ -207,7 +208,7 @@ ensure_struct(ptr_t p)
     be->flags = 0;
 #  if defined(CPPCHECK)
     GC_noop1_ptr(&old_back_ptr);
-    /* Workaround a false positive that old_back_ptr cannot be null.  */
+    /* Workaround a false positive that `old_back_ptr` cannot be `NULL`. */
 #  endif
     if (NULL == old_back_ptr) {
       be->n_edges = 0;
@@ -222,8 +223,9 @@ ensure_struct(ptr_t p)
   }
 }
 
-/* Add the (forward) edge from p to q to the backward graph.  Both p    */
-/* and q are pointers to the object base, i.e. pointers to an oh.       */
+/* Add the (forward) edge from `p` to `q` to the backward graph.        */
+/* Both `p` and `q` are pointers to the object base, i.e. pointers to   */
+/* an `oh`.                                                             */
 static void
 add_edge(ptr_t p, ptr_t q)
 {
@@ -234,19 +236,19 @@ add_edge(ptr_t p, ptr_t q)
   GC_ASSERT(p == GC_base(p) && q == GC_base(q));
   GC_ASSERT(I_HOLD_LOCK());
   if (!GC_HAS_DEBUG_INFO(q) || !GC_HAS_DEBUG_INFO(p)) {
-    /* This is really a misinterpreted free-list link, since we saw   */
-    /* a pointer to a free list.  Don't overwrite it!                 */
+    /* This is really a misinterpreted free-list link, since we saw */
+    /* a pointer to a free list.  Do not overwrite it!              */
     return;
   }
 #  if defined(CPPCHECK)
   GC_noop1_ptr(&pred);
 #  endif
   if (NULL == pred) {
-    /* A not very random number we use to occasionally allocate a     */
-    /* back_edges structure even for a single backward edge.  This    */
-    /* prevents us from repeatedly tracing back through very long     */
-    /* chains, since we will have some place to store height and      */
-    /* in_progress flags along the way.                               */
+    /* A not very random number we use to occasionally allocate         */
+    /* a `back_edges` structure even for a single backward edge.        */
+    /* This prevents us from repeatedly tracing back through very long  */
+    /* chains, since we will have some place to store `height` and      */
+    /* `HEIGHT_IN_PROGRESS` flag along the way.                         */
 #  define GOT_LUCKY_NUMBER (((++random_number) & 0x7f) == 0)
     static unsigned random_number = 13;
 
@@ -299,7 +301,7 @@ add_edge(ptr_t p, ptr_t q)
   if (GC_print_stats == VERBOSE && be->n_edges == 100) {
     GC_err_printf("The following object has big in-degree:\n");
 #    ifdef THREADS
-    /* We cannot call the debug version of GC_print_heap_obj here   */
+    /* We cannot call the debug variant of `GC_print_heap_obj` here */
     /* because the allocator lock is held.                          */
     GC_default_print_heap_obj_proc(q);
 #    else
@@ -353,7 +355,7 @@ reset_back_edge(ptr_t p, size_t sz, word descr)
 
         /* Back edges may point to objects that will not be retained.   */
         /* Delete them for now, but remember the height.                */
-        /* Some will be added back at next GC.                          */
+        /* Some will be added back at next collection.                  */
         be->n_edges = 0;
         if (be->cont != NULL) {
           deallocate_back_edges(be->cont);
@@ -361,7 +363,7 @@ reset_back_edge(ptr_t p, size_t sz, word descr)
         }
 
         GC_ASSERT(GC_is_marked(p));
-        /* We only retain things for one GC cycle at a time.            */
+        /* We only retain things for one collection cycle at a time. */
         be->flags &= (unsigned short)~RETAIN;
       }
     } else /* simple back pointer */ {
@@ -406,8 +408,8 @@ GC_build_back_graph(void)
 }
 
 /* Return an approximation to the length of the longest simple path     */
-/* through unreachable objects to p.  We refer to this as the height    */
-/* of p.                                                                */
+/* through unreachable objects to `p`.  We refer to this as the height  */
+/* of `p`.                                                              */
 static word
 backwards_height(ptr_t p)
 {
@@ -423,8 +425,8 @@ backwards_height(ptr_t p)
     return 1;
   if ((ADDR(pred) & FLAG_MANY) == 0) {
     if (is_in_progress(p)) {
-      /* DFS back edge, i.e. we followed an edge to an object already   */
-      /* on our stack: ignore.                                          */
+      /* DFS (depth-first search) back edge, i.e. we followed an edge   */
+      /* to an object already on our stack: ignore.                     */
       return 0;
     }
     push_in_progress(p);
@@ -466,8 +468,8 @@ backwards_height(ptr_t p)
       if (local >= 0)
         pred = e->edges[local++];
 
-      /* Execute the following once for each predecessor pred of p    */
-      /* in the points-to graph.                                      */
+      /* Execute the following once for each predecessor `pred` of `p`  */
+      /* in the points-to graph.                                        */
       if (GC_is_marked(pred) && (ADDR(GET_OH_BG_PTR(p)) & FLAG_MANY) == 0) {
         GC_COND_LOG_PRINTF("Found bogus pointer from %p to %p\n", (void *)pred,
                            (void *)p);
@@ -490,12 +492,11 @@ backwards_height(ptr_t p)
 STATIC word GC_max_height = 0;
 STATIC ptr_t GC_deepest_obj = NULL;
 
-/* Compute the maximum height of every unreachable predecessor p of a   */
-/* reachable object.  Arrange to save the heights of all such objects p */
-/* so that they can be used in calculating the height of objects in the */
-/* next GC.                                                             */
-/* Set GC_max_height to be the maximum height we encounter, and         */
-/* GC_deepest_obj to be the corresponding object.                       */
+/* Compute the maximum height of every unreachable predecessor `p` of   */
+/* a reachable object.  Arrange to save the heights of all such objects */
+/* `p` so that they can be used in calculating the height of objects in */
+/* the next GC.  Set `GC_max_height` to be the maximum height we        */
+/* encounter, and `GC_deepest_obj` to be the corresponding object.      */
 static void
 update_max_height(ptr_t p, size_t sz, word descr)
 {
@@ -510,7 +511,7 @@ update_max_height(ptr_t p, size_t sz, word descr)
 
     /* If we remembered a height last time, use it as a minimum.        */
     /* It may have increased due to newly unreachable chains pointing   */
-    /* to p, but it can't have decreased.                               */
+    /* to `p`, but it cannot have decreased.                            */
     back_ptr = GET_OH_BG_PTR(p);
 #  if defined(CPPCHECK)
     GC_noop1_ptr(&back_ptr);
@@ -545,8 +546,8 @@ update_max_height(ptr_t p, size_t sz, word descr)
         if (local >= 0)
           pred = e->edges[local++];
 
-        /* Execute the following once for each predecessor pred of p    */
-        /* in the points-to graph.                                      */
+        /* Execute the following once for each predecessor `pred` of    */
+        /* `p` in the points-to graph.                                  */
         if (!GC_is_marked(pred) && GC_HAS_DEBUG_INFO(pred)) {
           word this_height = backwards_height(pred);
 

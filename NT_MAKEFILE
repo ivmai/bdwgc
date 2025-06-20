@@ -1,9 +1,12 @@
 # Makefile for Windows (Win32/64).  Assumes Microsoft compiler.
-# Should be invoked as "nmake -f NT_MAKEFILE [<args>]"; the optional arguments
-# are: "cpu=AMD64" - to target x64, "cpu=i386" - to target x86,
-# "enable_static=1" - to build it as a static library, "nodebug=1" - to produce
-# the release variant of the library, "disable_threads=1" - to build the
-# library and the tests without threads support.
+
+# Should be invoked as `nmake -f NT_MAKEFILE [<args>]`; the optional arguments
+# are:
+# - `cpu=AMD64` to target x64;
+# - `cpu=i386` to target x86;
+# - `enable_static=1` to build it as a static library;
+# - `nodebug=1` to produce the release variant of the library;
+# - `disable_threads=1` to build the library without threads support.
 
 cc = cl
 link = link
@@ -57,10 +60,10 @@ CFLAGS_GCDLL=-DGC_NOT_DLL
 CORDFLAG=
 !ELSE
 CFLAGS_GCDLL=-DGC_DLL
-# cord.dll and its clients should not link C library statically otherwise
-# FILE-related functions might not work (because own set of opened FILEs
-# is maintained by each copy of the C library thus making impossible to pass
-# FILE pointer from .exe code to .dll code).
+# `cord.dll` file and its clients should not link C library statically
+# otherwise `FILE`-related functions might not work (because own set of
+# opened `FILE` instances is maintained by each copy of the C library thus
+# making impossible to pass `FILE` pointer from `.exe` code to `.dll` code).
 cvarsmt=
 !IFDEF NODEBUG
 CORDFLAG=-MD
@@ -82,7 +85,7 @@ CFLAGS_DEFAULT=-DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTAB
 
 CXXFLAGS_SPECIFIC=/EHsc
 
-# Make sure that .cc is not viewed as a suffix.  It is for VC++2005, but
+# Make sure that `.cc` is not viewed as a suffix.  It is for VC++2005, but
 # not earlier versions.  We can deal with either, but not inconsistency.
 .SUFFIXES:
 .SUFFIXES: .obj .cpp .c
@@ -94,7 +97,8 @@ AO_SRC_DIR=libatomic_ops/src
 AO_INCLUDE_DIR=$(AO_SRC_DIR)
 
 !IFDEF ENABLE_STATIC
-# pthread_start.obj is needed just in case client defines GC_WIN32_PTHREADS.
+# `pthread_start.obj` file is needed just in case client defines
+# `GC_WIN32_PTHREADS` macro.
 OBJS= allchblk.obj alloc.obj blacklst.obj dbg_mlc.obj dyn_load.obj finalize.obj fnlz_mlc.obj gcj_mlc.obj headers.obj mach_dep.obj malloc.obj mallocx.obj mark.obj mark_rts.obj misc.obj new_hblk.obj obj_map.obj os_dep.obj pthread_start.obj pthread_support.obj ptr_chck.obj reclaim.obj thread_local_alloc.obj typd_mlc.obj win32_threads.obj extra\msvc_dbg.obj
 !ELSE
 OBJS= extra\gc.obj extra\msvc_dbg.obj
@@ -114,8 +118,8 @@ check: check-deps
 
 .c.obj:
 	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) $(CORDFLAG) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.c /Fo$*.obj /wd4127 /wd4701
-# Disable crt security warnings, since unfortunately they warn about all sorts
-# of safe uses of strncpy.  It would be nice to leave the rest enabled.
+# Disable `crt` security warnings, since unfortunately they warn about all
+# sorts of safe uses of `strncpy`.  It would be nice to leave the rest enabled.
 
 .cpp.obj:
 	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude $(CFLAGS_DEFAULT) $(CXXFLAGS_SPECIFIC) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.cpp /Fo$*.obj
@@ -133,7 +137,7 @@ cord.lib: $(COBJS)
 gccpp.lib: gc_badalc.obj gc_cpp.obj
 	lib /out:gccpp.lib /MACHINE:$(CPU) gc_badalc.obj gc_cpp.obj
 
-# The same as gccpp.lib but contains only gc_badalc.obj.
+# The same as `gccpp.lib` file but contains only `gc_badalc.obj` file.
 gctba.lib: gc_badalc.obj
 	lib /out:gctba.lib /MACHINE:$(CPU) gc_badalc.obj
 
@@ -155,8 +159,9 @@ gctba.lib: gc_badalc.obj gc.lib
 
 gctest.exe: gc.lib tests\gctest.obj
 	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:$*.exe tests\gctest.obj gc.lib
-#	mapsympe -n -o gctest.sym gctest.exe
-# This produces a GUI app that opens no window and writes to gctest.gc.log.
+#	`mapsympe -n -o gctest.sym gctest.exe`
+# This produces a GUI application that opens no window and writes
+# to `gctest.gc.log` file.
 
 cord\tests\de_win.rbj: cord\tests\de_win.res
 	cvtres /MACHINE:$(CVTRES_CPU) /OUT:cord\tests\de_win.rbj cord\tests\de_win.res
@@ -166,7 +171,7 @@ cord\tests\de.obj cord\tests\de_win.obj: include\gc\cord.h include\gc\cord_pos.h
 cord\tests\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cmds.h
 	$(rc) $(rcvars) -r -fo cord\tests\de_win.res cord\tests\de_win.rc
 
-# Cord/de is a real Windows GUI app.
+# `cord/de` is a real Windows GUI application.
 de.exe: cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib cord.lib
 	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:de.exe cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib cord.lib gdi32.lib user32.lib
 
@@ -182,7 +187,7 @@ test_cpp.cpp: tests\cpp.cc
 
 # This generates the C++ test executable.  The executable expects
 # a single numeric argument, which is the number of iterations.
-# The output appears in cpptest.gc.log file.
+# The output appears in `cpptest.gc.log` file.
 cpptest.exe: test_cpp.obj include\gc\gc_cpp.h include\gc\gc_allocator.h include\gc\gc.h gc.lib gccpp.lib
 	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:cpptest.exe test_cpp.obj gc.lib gccpp.lib
 

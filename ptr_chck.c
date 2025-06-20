@@ -42,8 +42,8 @@ GC_same_obj(void *p, void *q)
     }
     return p;
   }
-  /* If it's a pointer to the middle of a large object, move it       */
-  /* to the beginning.                                                */
+  /* If it is a pointer to the middle of a large object, move it    */
+  /* to the beginning.                                              */
   if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
     struct hblk *h = GC_find_starting_hblk(HBLKPTR(p), &hhdr);
 
@@ -66,8 +66,8 @@ GC_same_obj(void *p, void *q)
     size_t offset;
 
     if (HBLKPTR(p) != HBLKPTR(q)) {
-      /* Without this check, we might miss an error if q points to    */
-      /* the first object on a page, and points just before the page. */
+      /* Without this check, we might miss an error if `q` points to    */
+      /* the first object on a page, and points just before the page.   */
       GC_same_obj_print_proc((ptr_t)p, (ptr_t)q);
       return p;
     }
@@ -75,10 +75,9 @@ GC_same_obj(void *p, void *q)
     base = (ptr_t)p - offset;
     limit = base + sz;
   }
-  /* [base, limit) delimits the object containing p, if any.  */
-  /* If p is not inside a valid object, then either q is      */
-  /* also outside any valid object, or it is outside          */
-  /* [base, limit).                                           */
+  /* [`base`,`limit`) delimits the object containing `p`, if any.   */
+  /* If `p` is not inside a valid object, then either `q` is also   */
+  /* outside any valid object, or it is outside [`base`,`limit`).   */
   if (!ADDR_INSIDE((ptr_t)q, base, limit)) {
     GC_same_obj_print_proc((ptr_t)p, (ptr_t)q);
   }
@@ -137,14 +136,14 @@ GC_valid_ptr_print_proc_t GC_is_visible_print_proc
     = GC_default_is_visible_print_proc;
 
 #ifndef THREADS
-/* Could p be a stack address?        */
+/* Could `p` be a stack address? */
 STATIC GC_bool
 GC_on_stack(ptr_t p)
 {
   return HOTTER_THAN(p, GC_stackbottom) && !HOTTER_THAN(p, GC_approx_sp());
 }
 
-/* Is the address p in one of the registered static root sections?    */
+/* Is the address `p` in one of the registered static root sections? */
 STATIC GC_bool
 GC_is_static_root(ptr_t p)
 {
@@ -183,11 +182,11 @@ GC_is_visible(void *p)
   if (hhdr != NULL && NULL == GC_base(p)) {
     goto fail;
   } else {
-    /* May be inside thread stack.  We can't do much. */
+    /* May be inside thread stack.  We cannot do much. */
     return p;
   }
 #else
-  /* Check stack first: */
+  /* Check stack first. */
   if (GC_on_stack((ptr_t)p))
     return p;
 
@@ -205,9 +204,9 @@ GC_is_visible(void *p)
     }
 #  endif
   } else {
-    /* p points to the heap. */
+    /* `p` points to the heap. */
     word descr;
-    /* TODO: should GC_base be manually inlined? */
+    /* TODO: should `GC_base` be manually inlined? */
     ptr_t base = (ptr_t)GC_base(p);
 
     if (NULL == base)
@@ -242,7 +241,7 @@ GC_is_visible(void *p)
         ptr_t type_descr = *(ptr_t *)base;
 
         if (EXPECT(NULL == type_descr, FALSE)) {
-          /* See the comment in GC_mark_from.     */
+          /* See the comment in `GC_mark_from`. */
           goto fail;
         }
         descr = *(word *)(type_descr
@@ -282,7 +281,7 @@ GC_post_incr(void **p, ptrdiff_t how_much)
     (void)GC_is_valid_displacement(result);
   }
   *p = result;
-  return initial; /* original *p */
+  return initial; /* original `*p` */
 }
 
 GC_API void GC_CALL

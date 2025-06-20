@@ -25,8 +25,8 @@ typedef struct {
   word old_sum;
   word new_sum;
 
-  /* Block to which this refers plus OFFSET to hide it from the   */
-  /* garbage collector.                                           */
+  /* Block to which this refers plus `OFFSET` to hide it from the   */
+  /* garbage collector.                                             */
   struct hblk *block;
 } page_entry;
 
@@ -118,7 +118,7 @@ GC_update_check_page(struct hblk *h, int index)
   pe->block = h + OFFSET;
 }
 
-/* Should be called immediately after GC_read_dirty.    */
+/* Should be called immediately after `GC_read_dirty`. */
 void
 GC_check_dirty(void)
 {

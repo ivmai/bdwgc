@@ -19,8 +19,8 @@
 
 /*
  * These are extra allocation routines which are likely to be less
- * frequently used than those in malloc.c.  They are separate in the
- * hope that the .o file will be excluded from statically linked
+ * frequently used than those in `malloc.c` file.  They are separate in
+ * the hope that the `.o` file will be excluded from statically linked
  * executables.  We should probably break this up further.
  */
 
@@ -30,9 +30,9 @@
 #  include <errno.h>
 #endif
 
-/* Some externally visible but unadvertised variables to allow access to */
-/* free lists from inlined allocators without including gc_priv.h        */
-/* or introducing dependencies on internal data structure layouts.       */
+/* Some externally visible but unadvertised variables to allow access   */
+/* to free lists from inlined allocators without include `gc_priv.h`    */
+/* file or introducing dependencies on internal data structure layouts. */
 #include "private/gc_alloc_ptrs.h"
 void **const GC_objfreelist_ptr = GC_objfreelist;
 void **const GC_aobjfreelist_ptr = GC_aobjfreelist;
@@ -65,36 +65,36 @@ GC_generic_or_special_malloc(size_t lb, int kind)
 #endif
     return GC_generic_malloc_uncollectable(lb, kind);
   default:
-    return GC_generic_malloc_aligned(lb, kind, 0 /* flags */, 0);
+    return GC_generic_malloc_aligned(lb, kind, 0 /* `flags` */, 0);
   }
 }
 
-/* Change the size of the block pointed to by p to contain at least   */
-/* lb bytes.  The object may be (and quite likely will be) moved.     */
-/* The kind (e.g. atomic) is the same as that of the old.             */
-/* Shrinking of large blocks is not implemented well.                 */
+/* Change the size of the block pointed to by `p` to contain at least   */
+/* `lb` bytes.  The object may be (and quite likely will be) moved.     */
+/* The kind (e.g. atomic) is the same as that of the old.               */
+/* Shrinking of large blocks is not implemented well.                   */
 GC_API void *GC_CALL
 GC_realloc(void *p, size_t lb)
 {
   hdr *hhdr;
   void *result;
 #if defined(_FORTIFY_SOURCE) && defined(__GNUC__) && !defined(__clang__)
-  /* Use cleared_p instead of p as a workaround to avoid        */
-  /* passing alloc_size(lb) attribute associated with p to      */
-  /* memset (including a memset call inside GC_free).           */
+  /* Use `cleared_p` instead of `p` as a workaround to avoid    */
+  /* passing `alloc_size(lb)` attribute associated with `p` to  */
+  /* `memset` (including a `memset` call inside `GC_free`).     */
   volatile GC_uintptr_t cleared_p = (GC_uintptr_t)p;
 #else
 #  define cleared_p p
 #endif
   size_t sz;      /* current size in bytes */
-  size_t orig_sz; /* original sz (in bytes) */
+  size_t orig_sz; /* original `sz` (in bytes) */
   int obj_kind;
 
   if (NULL == p) {
     /* Required by ANSI.      */
     return GC_malloc(lb);
   }
-  if (0 == lb) /* and p != NULL */ {
+  if (0 == lb) /* `&& p != NULL` */ {
 #ifndef IGNORE_FREE
     GC_free(p);
 #endif
@@ -112,8 +112,8 @@ GC_realloc(void *p, size_t lb)
     /* Round it up to the next whole heap block.    */
     sz = (sz + HBLKSIZE - 1) & ~(HBLKSIZE - 1);
 #if ALIGNMENT > GC_DS_TAGS
-    /* An extra byte is not added in case of ignore-off-page  */
-    /* allocated objects not smaller than HBLKSIZE.           */
+    /* An extra byte is not added in case of ignore-off-page    */
+    /* allocated objects not smaller than `HBLKSIZE`.           */
     GC_ASSERT(sz >= HBLKSIZE);
     if (EXTRA_BYTES != 0 && (hhdr->hb_flags & IGNORE_OFF_PAGE) != 0
         && obj_kind == NORMAL)
@@ -123,19 +123,19 @@ GC_realloc(void *p, size_t lb)
       descr += sz;
     }
 
-    /* GC_realloc might be changing the block size while            */
-    /* GC_reclaim_block or GC_clear_hdr_marks is examining it.      */
-    /* The change to the size field is benign, in that GC_reclaim   */
-    /* (and GC_clear_hdr_marks) would work correctly with either    */
+    /* `GC_realloc` might be changing the block size while          */
+    /* `GC_reclaim_block` or `GC_clear_hdr_marks` is examining it.  */
+    /* The change to the size field is benign, in that `GC_reclaim` */
+    /* (and `GC_clear_hdr_marks`) would work correctly with either  */
     /* value, since we are not changing the number of objects in    */
     /* the block.  But seeing a half-updated value (though unlikely */
     /* to occur in practice) could be probably bad.                 */
-    /* Using unordered atomic accesses on the size and hb_descr     */
+    /* Using unordered atomic accesses on `hb_sz` and `hb_descr`    */
     /* fields would solve the issue.  (The alternate solution might */
     /* be to initially overallocate large objects, so we do not     */
-    /* have to adjust the size in GC_realloc, if they still fit.    */
+    /* have to adjust the size in `GC_realloc`, if they still fit.  */
     /* But that is probably more expensive, since we may end up     */
-    /* scanning a bunch of zeros during GC.)                        */
+    /* scanning a bunch of zeros during the collection.)            */
 #ifdef AO_HAVE_store
     AO_store(&hhdr->hb_sz, sz);
     AO_store((AO_t *)&hhdr->hb_descr, descr);
@@ -156,7 +156,7 @@ GC_realloc(void *p, size_t lb)
 #endif
     if (IS_UNCOLLECTABLE(obj_kind))
       GC_non_gc_bytes += (sz - orig_sz);
-    /* Extra area is already cleared by GC_alloc_large_and_clear. */
+    /* Extra area is already cleared by `GC_alloc_large_and_clear`. */
   }
   if (ADD_EXTRA_BYTES(lb) <= sz) {
     if (lb >= (sz >> 1)) {
@@ -189,7 +189,7 @@ GC_realloc(void *p, size_t lb)
 
 #ifdef REDIRECT_REALLOC
 
-/* As with malloc, avoid two levels of extra calls here.        */
+/* As with `malloc`, avoid two levels of extra calls here. */
 #  define GC_debug_realloc_replacement(p, lb) \
     GC_debug_realloc(p, lb, GC_DBG_EXTRAS)
 
@@ -211,7 +211,7 @@ GC_API GC_ATTR_MALLOC void *GC_CALL
 GC_generic_malloc_ignore_off_page(size_t lb, int kind)
 {
   return GC_generic_malloc_aligned(lb, kind, IGNORE_OFF_PAGE,
-                                   0 /* align_m1 */);
+                                   0 /* `align_m1` */);
 }
 
 GC_API GC_ATTR_MALLOC void *GC_CALL
@@ -226,15 +226,15 @@ GC_malloc_atomic_ignore_off_page(size_t lb)
   return GC_generic_malloc_aligned(lb, PTRFREE, IGNORE_OFF_PAGE, 0);
 }
 
-/* Increment GC_bytes_allocd from code that doesn't have direct access  */
-/* to GC_arrays.                                                        */
+/* Increment `GC_bytes_allocd` from code that does not have direct  */
+/* access to `GC_arrays`.                                           */
 void GC_CALL
 GC_incr_bytes_allocd(size_t n)
 {
   GC_bytes_allocd += n;
 }
 
-/* The same for GC_bytes_freed.                         */
+/* The same as `GC_incr_bytes_allocd` but for `GC_bytes_freed`. */
 void GC_CALL
 GC_incr_bytes_freed(size_t n)
 {
@@ -252,7 +252,7 @@ GC_get_expl_freed_bytes_since_gc(void)
 /* allocator lock.  Instead of reacquiring the allocator lock just  */
 /* to add this in, we add it in the next time we reacquire the      */
 /* allocator lock.  (Atomically adding it does not work, since we   */
-/* would have to atomically update it in GC_malloc, which is too    */
+/* would have to atomically update it in `GC_malloc`, which is too  */
 /* expensive.)                                                      */
 STATIC volatile AO_t GC_bytes_allocd_tmp = 0;
 #endif /* PARALLEL_MARK */
@@ -263,18 +263,19 @@ GC_generic_malloc_many(size_t lb_adjusted, int kind, void **result)
   void *op;
   void *p;
   void **opp;
-  size_t lg; /* lb_adjusted value converted to granules */
+  /* The value of `lb_adjusted` converted to granules. */
+  size_t lg;
   word my_bytes_allocd = 0;
   struct obj_kind *ok;
   struct hblk **rlh;
 
   GC_ASSERT(lb_adjusted != 0 && (lb_adjusted & (GC_GRANULE_BYTES - 1)) == 0);
-  /* Currently a single object is always allocated if manual VDB. */
-  /* TODO: GC_dirty should be called for each linked object (but  */
-  /* the last one) to support multiple objects allocation.        */
+  /* Currently a single object is always allocated if manual VDB.   */
+  /* TODO: `GC_dirty` should be called for each linked object (but  */
+  /* the last one) to support multiple objects allocation.          */
   if (!EXPECT(lb_adjusted <= MAXOBJBYTES, TRUE) || GC_manual_vdb) {
     op = GC_generic_malloc_aligned(lb_adjusted - EXTRA_BYTES, kind,
-                                   0 /* flags */, 0 /* align_m1 */);
+                                   0 /* `flags` */, 0 /* `align_m1` */);
     if (EXPECT(op != NULL, TRUE))
       obj_link(op) = NULL;
     *result = op;
@@ -349,7 +350,7 @@ GC_generic_malloc_many(size_t lb_adjusted, int kind, void **result)
           GC_bytes_found += (GC_signed_word)my_bytes_allocd;
           UNLOCK();
 #  else
-          /* The resulting GC_bytes_found may be inaccurate.  */
+          /* The resulting `GC_bytes_found` may be inaccurate. */
           GC_bytes_found += (GC_signed_word)my_bytes_allocd;
           GC_release_mark_lock();
 #  endif
@@ -369,13 +370,13 @@ GC_generic_malloc_many(size_t lb_adjusted, int kind, void **result)
         if (GC_fl_builder_count == 0)
           GC_notify_all_builder();
         GC_release_mark_lock();
-        /* The allocator lock is needed for access to the       */
-        /* reclaim list.  We must decrement fl_builder_count    */
-        /* before reacquiring the allocator lock.  Hopefully    */
-        /* this path is rare.                                   */
+        /* The allocator lock is needed for access to the reclaim   */
+        /* list.  We must decrement `GC_fl_builder_count` before    */
+        /* reacquiring the allocator lock.  Hopefully this path is  */
+        /* rare.                                                    */
         LOCK();
 
-        /* Reload rlh after locking.    */
+        /* Reload `rlh` after locking. */
         rlh = ok->ok_reclaim_list;
         if (NULL == rlh)
           break;
@@ -383,9 +384,9 @@ GC_generic_malloc_many(size_t lb_adjusted, int kind, void **result)
 #endif
     }
   }
-  /* Next try to use prefix of global free list if there is one.      */
-  /* We don't refill it, but we need to use it up before allocating   */
-  /* a new block ourselves.                                           */
+  /* Next try to use prefix of global free list if there is one.        */
+  /* We do not refill it, but we need to use it up before allocating    */
+  /* a new block ourselves.                                             */
   opp = &ok->ok_freelist[lg];
   if ((op = *opp) != NULL) {
     *opp = NULL;
@@ -405,9 +406,9 @@ GC_generic_malloc_many(size_t lb_adjusted, int kind, void **result)
   /* Next try to allocate a new block worth of objects of this size.  */
   {
     struct hblk *h
-        = GC_allochblk(lb_adjusted, kind, 0 /* flags */, 0 /* align_m1 */);
+        = GC_allochblk(lb_adjusted, kind, 0 /* `flags` */, 0 /* `align_m1` */);
 
-    if (h /* != NULL */) { /* CPPCHECK */
+    if (h /* `!= NULL` */) { /* CPPCHECK */
       if (IS_UNCOLLECTABLE(kind))
         GC_set_hdr_marks(HDR(h));
       GC_bytes_allocd += HBLKSIZE - (HBLKSIZE % lb_adjusted);
@@ -436,7 +437,8 @@ GC_generic_malloc_many(size_t lb_adjusted, int kind, void **result)
 
   /* As a last attempt, try allocating a single object.  Note that    */
   /* this may trigger a collection or expand the heap.                */
-  op = GC_generic_malloc_inner(lb_adjusted - EXTRA_BYTES, kind, 0 /* flags */);
+  op = GC_generic_malloc_inner(lb_adjusted - EXTRA_BYTES, kind,
+                               0 /* `flags` */);
   if (op != NULL)
     obj_link(op) = NULL;
 
@@ -460,10 +462,10 @@ GC_malloc_many(size_t lb)
   return result;
 }
 
-/* TODO: The debugging version of GC_memalign and friends is tricky     */
-/* and currently missing.  The major difficulty is:                     */
-/* - store_debug_info() should return the pointer of the object with    */
-/* the requested alignment (unlike the object header).                  */
+/* TODO: The debugging variant of `GC_memalign` and friends is tricky   */
+/* and currently missing.  The major difficulty is: `store_debug_info`  */
+/* should return the pointer of the object with the requested alignment */
+/* (unlike the object header).                                          */
 
 GC_API GC_ATTR_MALLOC void *GC_CALL
 GC_memalign(size_t align, size_t lb)
@@ -480,7 +482,7 @@ GC_memalign(size_t align, size_t lb)
   return GC_malloc_kind_aligned_global(lb, NORMAL, align_m1);
 }
 
-/* This one exists largely to redirect posix_memalign for leaks finding. */
+/* This one exists largely to redirect `posix_memalign` for leaks finding. */
 GC_API int GC_CALL
 GC_posix_memalign(void **memptr, size_t align, size_t lb)
 {
@@ -530,7 +532,7 @@ GC_pvalloc(size_t lb)
 }
 #endif /* !GC_NO_VALLOC */
 
-/* Provide a version of strdup() that uses the collector to allocate    */
+/* Provide a variant of `strdup()` that uses the collector to allocate  */
 /* the copy of the string.                                              */
 GC_API GC_ATTR_MALLOC char *GC_CALL
 GC_strdup(const char *s)
@@ -555,7 +557,7 @@ GC_API GC_ATTR_MALLOC char *GC_CALL
 GC_strndup(const char *str, size_t size)
 {
   char *copy;
-  /* Note: str is expected to be non-NULL.      */
+  /* Note: `str` is expected to be non-`NULL`. */
   size_t len = strlen(str);
   if (EXPECT(len > size, FALSE))
     len = size;
@@ -573,7 +575,7 @@ GC_strndup(const char *str, size_t size)
 }
 
 #ifdef GC_REQUIRE_WCSDUP
-#  include <wchar.h> /* for wcslen() */
+#  include <wchar.h> /* for `wcslen()` */
 
 GC_API GC_ATTR_MALLOC wchar_t *GC_CALL
 GC_wcsdup(const wchar_t *str)

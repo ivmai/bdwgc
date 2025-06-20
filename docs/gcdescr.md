@@ -35,34 +35,27 @@ The garbage collector uses a modified mark-sweep algorithm. Conceptually
 it operates roughly in four phases, which are performed occasionally as part
 of a memory allocation:
 
-  1. _Preparation phase_
+  1. _Preparation phase_. Each object has an associated mark bit. Clear all
+     mark bits, indicating that all objects are potentially unreachable.
 
-     Each object has an associated mark bit. Clear all mark
-     bits, indicating that all objects are potentially unreachable.
+  2. _Mark phase_. Marks all objects that can be reachable via chains of
+     pointers from variables. Often the collector has no real information
+     about the location of pointer variables in the heap, so it views all
+     static data areas, stacks and registers as potentially containing
+     pointers. Any bit patterns that represent addresses inside heap objects
+     managed by the collector are viewed as pointers. Unless the client
+     program has made heap object layout information available to the
+     collector, any heap objects found to be reachable from variables are
+     again scanned similarly.
 
-  2. _Mark phase_
-
-     Marks all objects that can be reachable via chains of pointers from
-     variables. Often the collector has no real information about the location
-     of pointer variables in the heap, so it views all static data areas,
-     stacks and registers as potentially containing pointers. Any bit
-     patterns that represent addresses inside heap objects managed by the
-     collector are viewed as pointers. Unless the client program has made heap
-     object layout information available to the collector, any heap objects
-     found to be reachable from variables are again scanned similarly.
-
-  3. _Sweep phase_
-
-     Scans the heap for inaccessible, and hence unmarked,
+  3. _Sweep phase_. Scans the heap for inaccessible, and hence unmarked,
      objects, and returns them to an appropriate free list for reuse. This is
      not really a separate phase; even in non-incremental mode this operation
      is usually performed on demand during an allocation that discovers an
      empty free list. Thus the sweep phase is very unlikely to touch a page
      that would not have been touched shortly thereafter anyway.
 
-  4. _Finalization phase_
-
-     Unreachable objects which had been registered for
+  4. _Finalization phase_. Unreachable objects which had been registered for
      finalization are enqueued for finalization outside the collector.
 
 The remaining sections describe the memory allocation data structures, and
@@ -90,7 +83,7 @@ per-object type descriptors that determine pointer locations. Or a specific
 kind may correspond to one specific object layout. Two built-in kinds are
 uncollectible. In spite of that, it is very likely that most C clients of the
 collector currently use at most two kinds: `NORMAL` and `PTRFREE` objects. The
-[GCJ](https://gcc.gnu.org/onlinedocs/gcc-4.8.5/gcj/) runtime also makes heavy
+[gcj](https://gcc.gnu.org/onlinedocs/gcc-4.8.5/gcj/) runtime also makes heavy
 use of a kind (allocated with `GC_gcj_malloc`) that stores type information
 at a known offset in method tables.
 
@@ -180,26 +173,29 @@ variables are located, it scans the following _root segments_ for pointers:
   * The registers. Depending on the architecture, this may be done using
   assembly code, or by calling a `setjmp`-like function which saves register
   contents on the stack.
+
   * The stack(s). In the case of a single-threaded application, on most
   platforms this is done by scanning the memory between (an approximation of)
   the current stack pointer and `GC_stackbottom`. (For Intel Itanium, the
   register stack scanned separately.) The `GC_stackbottom` variable is set in
   a highly platform-specific way depending on the appropriate configuration
-  information in `include/private/gcconfig.h`. Note that the currently active
-  stack needs to be scanned carefully, since callee-save registers of client
-  code may appear inside collector stack frames, which may change during the
-  mark process. This is addressed by scanning some sections of the stack
-  _eagerly_, effectively capturing a snapshot at one point in time.
+  information in `include/private/gcconfig.h` file. Note that the currently
+  active stack needs to be scanned carefully, since callee-save registers of
+  client code may appear inside collector stack frames, which may change
+  during the mark process. This is addressed by scanning some sections of the
+  stack _eagerly_, effectively capturing a snapshot at one point in time.
+
   * Static data region(s). In the simplest case, this is the region between
-  `DATASTART` and `DATAEND`, as defined in `include/private/gcconfig.h`.
+  `DATASTART` and `DATAEND`, as defined in `include/private/gcconfig.h` file.
   However, in most cases, this will also involve static data regions
   associated with dynamic libraries. These are identified by the mostly
-  platform-specific code in `dyn_load.c`.  The marker maintains an explicit
-  stack of memory regions that are known to be accessible, but that have not
-  yet been searched for contained pointers. Each stack entry contains the
-  starting address of the block to be scanned, as well as a descriptor of the
-  block. If no layout information is available for the block, then the
-  descriptor is simply a length. (For other possibilities, see `gc_mark.h`.)
+  platform-specific code in `dyn_load.c` file.  The marker maintains an
+  explicit stack of memory regions that are known to be accessible, but that
+  have not yet been searched for contained pointers. Each stack entry contains
+  the starting address of the block to be scanned, as well as a descriptor of
+  the block. If no layout information is available for the block, then the
+  descriptor is simply a length. (For other possibilities, see `gc_mark.h`
+  file.)
 
 At the beginning of the mark phase, all root segments (as described above) are
 pushed on the stack by `GC_push_roots`. (Registers and eagerly scanned stack
@@ -217,17 +213,20 @@ stack, identify how much work remains to be done in each sub-phase. The normal
 progression of mark states for a stop-the-world collection is:
 
   1. `MS_INVALID` indicating that there may be accessible unmarked objects.
-  In this case `GC_objects_are_marked` will simultaneously be false, so the
-  mark state is advanced to
+      In this case `GC_objects_are_marked` will simultaneously be false, so
+      the mark state is advanced to
+
   2. `MS_PUSH_UNCOLLECTABLE` indicating that it suffices to push uncollectible
-  objects, roots, and then mark everything reachable from them. `GC_scan_ptr`
-  is advanced through the heap until all uncollectible objects are pushed, and
-  objects reachable from them are marked. At that point, the next call
-  to `GC_mark_some` calls `GC_push_roots` to push the roots. It, then,
-  advances the mark state to
+     objects, roots, and then mark everything reachable from them.
+     `GC_scan_ptr` is advanced through the heap until all uncollectible
+     objects are pushed, and objects reachable from them are marked. At that
+     point, the next call to `GC_mark_some` calls `GC_push_roots` to push the
+     roots. It, then, advances the mark state to
+
   3. `MS_ROOTS_PUSHED` asserting that once the mark stack is empty, all
-  reachable objects are marked. Once in this state, we work only on emptying
-  the mark stack. Once this is completed, the state changes to
+     reachable objects are marked. Once in this state, we work only on
+     emptying the mark stack. Once this is completed, the state changes to
+
   4. `MS_NONE` indicating that reachable objects are marked.
 
 The core mark routine `GC_mark_from`, is called repeatedly by several of the
@@ -269,14 +268,14 @@ block. This is done in the following steps:
   * The candidate pointer is divided into two pieces; the most significant
   bits identify a `HBLKSIZE`-sized page in the address space, and the least
   significant bits specify an offset within that page. (A hardware page may
-  actually consist of multiple such pages. Normally, HBLKSIZE is usually the
+  actually consist of multiple such pages. Normally, `HBLKSIZE` is usually the
   page size divided by a small power of two. Alternatively, if the collector
   is built with `-DLARGE_CONFIG`, such a page may consist of multiple hardware
   pages.)
   * The page address part of the candidate pointer is looked up in
   a [table](tree.md). Each table entry contains either 0, indicating that
-  the page is not part of the garbage collected heap, a small integer _n_,
-  indicating that the page is part of large object, starting at least _n_
+  the page is not part of the garbage-collected heap, a small integer `n`,
+  indicating that the page is part of large object, starting at least `n`
   pages back, or a pointer to a descriptor for the page. In the first case,
   the candidate pointer is not a true pointer and can be safely ignored.
   In the last two cases, we can obtain a descriptor for the page containing
@@ -411,14 +410,14 @@ again from marked objects on those pages, this time with the mutator stopped.
 We keep track of modified pages using one of several distinct mechanisms:
 
   * (`MPROTECT_VDB`) By write-protecting physical pages and catching write
-  faults. This is implemented for many Unix-like systems and for Win32. It is
+  faults. This is implemented for many UNIX-like systems and for Win32. It is
   not possible in a few environments.
   * (`GWW_VDB`) By using the Win32 `GetWriteWatch` function to read dirty
   bits.
-  * (`PROC_VDB`) By retrieving dirty bit information from /proc. (Currently
+  * (`PROC_VDB`) By retrieving dirty bit information from `/proc`. (Currently
   only Sun's Solaris supports this. Though this is considerably cleaner,
   performance may actually be better with `mprotect` and signals.)
-  * (`SOFT_VDB`) By retrieving Linux soft-dirty bit information from /proc.
+  * (`SOFT_VDB`) By retrieving Linux soft-dirty bit information from `/proc`.
   * Through explicit mutator cooperation. This enabled by
   `GC_set_manual_vdb_allowed(1)` call, and requires the client code to call
   `GC_ptr_store_and_dirty` or `GC_end_stubborn_change` (followed by a number
@@ -477,15 +476,15 @@ and has them wait in the signal handler.
 
 The Linux and Irix implementations use only documented Pthreads calls, but
 rely on extensions to their semantics. The Linux implementation
-`pthread_stop_world.c` relies on only very mild extensions to the pthreads
-semantics, and already supports a large number of other Unix-like pthreads
-implementations. Our goal is to make this the only pthread support in the
-collector.
+`pthread_stop_world.c` file relies on only very mild extensions to the
+`pthreads` semantics, and already supports a large number of other UNIX-like
+`pthreads` implementations. Our goal is to make this the only `pthreads`
+support in the collector.
 
 All implementations must intercept thread creation and a few other
 thread-specific calls to allow enumeration of threads and location of thread
-stacks. This is current accomplished with `#define`'s in `gc.h` (really
-`gc_pthread_redirects.h`), or optionally by using `ld`'s function call
+stacks. This is current accomplished with `#define`'s in `gc.h` file (really
+`gc_pthread_redirects.h` file), or optionally by using `ld`'s function call
 wrapping mechanism under Linux.
 
 The collector support several facilities to enhance the processor-scalability
@@ -531,7 +530,7 @@ require considerably less time.
 Local free lists are treated by most of the rest of the collector as though
 they were in-use reachable data. This requires some care, since pointer-free
 objects are not normally traced, and hence a special tracing procedure
-is required to mark all objects on pointer-free and gcj local free lists.
+is required to mark all objects on pointer-free and `gcj` local free lists.
 
 On thread exit, any remaining thread-local free-list entries are transferred
 back to the global free list.

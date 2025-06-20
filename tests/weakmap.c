@@ -15,12 +15,12 @@
 /* in order to protect objects from collection.                         */
 
 #ifdef HAVE_CONFIG_H
-/* For GC_[P]THREADS */
+/* For `GC_THREADS` and `GC_PTHREADS` macros. */
 #  include "config.h"
 #endif
 
 #undef GC_NO_THREAD_REDIRECTS
-/* This includes gc.h transitively.     */
+/* This includes `gc.h` file transitively. */
 #include "gc/gc_disclaim.h"
 
 #define NOT_GCBUILD
@@ -29,16 +29,16 @@
 #include <string.h>
 
 #ifdef GC_PTHREADS
-#  include <errno.h> /* for EAGAIN, EBUSY */
+#  include <errno.h> /* for `EAGAIN`, `EBUSY` */
 #  include <pthread.h>
 #endif
 
 #undef rand
-/* Note: concurrent update of seed does not hurt the test.      */
+/* Note: concurrent update of `seed` does not hurt the test. */
 static GC_RAND_STATE_T seed;
 #define rand() GC_RAND_NEXT(&seed)
 
-/* Note: this should not precede include gc_priv.h.     */
+/* Note: this should not precede include `gc_priv.h` file. */
 #include "gc/gc_mark.h"
 
 #ifdef GC_PTHREADS
@@ -46,7 +46,7 @@ static GC_RAND_STATE_T seed;
 /* This excludes the main thread, which also runs a test.   */
 #    define NTHREADS 5
 #  endif
-#  include "private/gc_atomic_ops.h" /* for AO_t and AO_fetch_and_add1 */
+#  include "private/gc_atomic_ops.h" /* for `AO_t`, `AO_fetch_and_add1` */
 #else
 #  undef NTHREADS
 #  define NTHREADS 0
@@ -64,7 +64,7 @@ static GC_RAND_STATE_T seed;
 #define WEAKMAP_CAPACITY 256
 #define WEAKMAP_MUTEX_COUNT 32
 
-/* FINALIZER_CLOSURE_FLAG definition matches the one in fnlz_mlc.c. */
+/* `FINALIZER_CLOSURE_FLAG` definition matches the one in `fnlz_mlc.c` file. */
 #if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
 #  define FINALIZER_CLOSURE_FLAG 0x2
 #  define INVALIDATE_FLAG 0x1
@@ -133,7 +133,8 @@ struct weakmap {
   size_t obj_size;
   size_t capacity;
   unsigned weakobj_kind;
-  /* Note: if links is NULL, then weakmap is destroyed. */
+  /* Note: if `links` field is `NULL`, then this `weakmap` instance */
+  /* is destroyed.                                                  */
   struct weakmap_link **links;
 };
 
@@ -210,7 +211,7 @@ weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
     if (memcmp(old_obj, obj, key_size) == 0) {
       GC_call_with_alloc_lock(set_mark_bit, (void **)old_obj - 1);
       /* Pointers in the key part may have been freed and reused,   */
-      /* changing the keys without memcmp noticing.  This is okay   */
+      /* changing the keys without `memcmp` noticing.  This is OK   */
       /* as long as we update the mapped value.                     */
       if (memcmp((char *)old_obj + key_size, (char *)obj + key_size,
                  wm->obj_size - key_size)
@@ -268,14 +269,14 @@ weakmap_disclaim(void *obj_base)
   /* Decode header word.    */
   header = *(void **)obj_base;
   if (!IS_FLAG_SET(header, FINALIZER_CLOSURE_FLAG)) {
-    /* On GC free list, ignore it.      */
+    /* On the collector free list, ignore it.      */
     return 0;
   }
 
   my_assert(!IS_FLAG_SET(header, INVALIDATE_FLAG));
   wm = (struct weakmap *)CPTR_CLEAR_FLAGS(header, FINALIZER_CLOSURE_FLAG);
   if (NULL == wm->links) {
-    /* weakmap has been already destroyed.      */
+    /* The weakmap has been already destroyed. */
     return 0;
   }
   obj = (void **)obj_base + 1;
@@ -300,7 +301,7 @@ weakmap_disclaim(void *obj_base)
     return 1;
   }
 
-  /* Remove obj from wm.        */
+  /* Remove `obj` from `wm`. */
 #ifdef DEBUG_DISCLAIM_WEAKMAP
   printf("Removing %p, hash= 0x%x\n", obj, h);
 #endif
@@ -362,13 +363,13 @@ weakmap_destroy(struct weakmap *wm)
     (void)pthread_mutex_destroy(&wm->mutex[i]);
   }
 #endif
-  /* weakmap is destroyed */
+  /* The weakmap is destroyed. */
   wm->links = NULL;
 }
 
 struct weakmap *pair_hcset;
 
-/* Note: this should not exceed sizeof(pair_magic).     */
+/* Note: this should not exceed `sizeof(pair_magic)`. */
 #define PAIR_MAGIC_SIZE 16
 
 struct pair_key {
@@ -487,9 +488,9 @@ main(void)
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
   weakobj_kind = GC_new_kind(GC_new_free_list(), /* 0 | */ GC_DS_LENGTH,
-                             1 /* adjust */, 1 /* clear */);
+                             1 /* `adjust` */, 1 /* `clear` */);
   GC_register_disclaim_proc((int)weakobj_kind, weakmap_disclaim,
-                            1 /* mark_unconditionally */);
+                            1 /* `mark_unconditionally` */);
   pair_hcset = weakmap_new(WEAKMAP_CAPACITY, sizeof(struct pair_key),
                            sizeof(struct pair), weakobj_kind);
 

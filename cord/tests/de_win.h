@@ -22,7 +22,7 @@
 
 #define CHAR_CMD(i) ((i) & (0xff))
 
-/* MENU: DE */
+/* `MENU`: `DE` */
 #define IDM_FILESAVE (EDIT_CMD_FLAG + WRITE)
 #define IDM_FILEEXIT (OTHER_FLAG + 1)
 #define IDM_HELPABOUT (OTHER_FLAG + 2)
@@ -41,29 +41,28 @@
 #define IDM_EDITREPEAT (EDIT_CMD_FLAG + REPEAT)
 #define IDM_EDITTOP (EDIT_CMD_FLAG + TOP)
 
-/* Screen dimensions.  Maintained by de_win.c.  */
+/* Screen dimensions.  Maintained by `de_win.c` file. */
 extern int LINES;
 extern int COLS;
 
 /* File being edited.   */
 extern char *arg_file_name;
 
-/* Calls from de_win.c to de.c. */
+/* The following calls are from `de_win.c` file to `de.c` one. */
 
-/* Get the contents (CORD) of i-th screen line. */
-/* Relies on COLS.                              */
+/* Get the contents (`CORD`) of `i`-th screen line.  Relies on `COLS`. */
 const void *retrieve_screen_line(int i);
 
-/* Set column, row.  Upper left of window = (0,0).      */
+/* Set the column (`x`) and row (`y`).  Upper left of window is (0,0). */
 void set_position(int x, int y);
 
-/* Calls from de.c to de_win.c. */
+/* The following calls are from `de.c` file to `de_win.c` one. */
 
-/* Physically move the cursor on the display,   */
-/* so that it appears at (column, line).        */
+/* Physically move the cursor on the display, so that it appears at */
+/* given `column` and row (`line`).                                 */
 void move_cursor(int column, int line);
 
-/* Invalidate line i on the screen.     */
+/* Invalidate given row (`line`) on the screen. */
 void invalidate_line(int line);
 
 /* Display error message.       */

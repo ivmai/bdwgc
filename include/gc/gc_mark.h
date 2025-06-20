@@ -14,10 +14,10 @@
  */
 
 /*
- * This contains interfaces to the GC marker that are likely to be useful to
- * clients that provide detailed heap layout information to the collector.
- * This interface should not be used by normal C or C++ clients.
- * It will be useful to runtimes for other languages.
+ * This contains interfaces to the garbage collector marker that are likely
+ * to be useful to clients that provide detailed heap layout information
+ * to the collector.  This interface should not be used by normal C or C++
+ * clients.  It will be useful to runtimes for other languages.
  *
  * This is an experts-only interface!  There are many ways to break the
  * collector in subtle ways by using this functionality.
@@ -52,7 +52,7 @@ struct GC_hblk_s {
 /* Mark stack pointer values are passed and returned explicitly.        */
 /* Global variables describing mark stack are not necessarily valid.    */
 /* (This usually saves a few cycles by keeping things in registers.)    */
-/* Assumed to scan about GC_PROC_BYTES on average.  If it needs to do   */
+/* Assumed to scan about `GC_PROC_BYTES` on average.  If it needs to do   */
 /* much more work than that, it should do it in smaller pieces by       */
 /* pushing itself back on the mark stack.                               */
 /* Note that it should always do some work (defined as marking some     */
@@ -71,19 +71,20 @@ struct GC_hblk_s {
 /* type descriptor, and must handle this case correctly somehow.  Also, */
 /* a mark procedure should be prepared to be executed concurrently from */
 /* the marker threads (the later ones are created only if the client    */
-/* has called GC_start_mark_threads() or started a user thread          */
+/* has called `GC_start_mark_threads()` or started a user thread        */
 /* previously).  For the compatibility reason, addr is a pointer to     */
 /* word, but it should be treated as a pointer to void pointer.         */
 typedef struct GC_ms_entry *(GC_CALLBACK *GC_mark_proc)(
-    GC_word * /* addr */, struct GC_ms_entry * /* mark_stack_top */,
-    struct GC_ms_entry * /* mark_stack_limit */, GC_word /* env */);
+    GC_word * /* `addr` */, struct GC_ms_entry * /* `mark_stack_top` */,
+    struct GC_ms_entry * /* `mark_stack_limit` */, GC_word /* `env` */);
 
 #define GC_LOG_MAX_MARK_PROCS 6
 #define GC_MAX_MARK_PROCS (1 << GC_LOG_MAX_MARK_PROCS)
 
-/* In a few cases it's necessary to assign statically known indices to  */
-/* certain mark procs.  Thus we reserve a few for well known clients.   */
-/* (This is necessary if mark descriptors are compiler generated.)      */
+/* In a few cases it is necessary to assign statically known indices to */
+/* certain mark procedures.  Thus we reserve a few for well known       */
+/* clients.  (This is necessary if mark descriptors are compiler        */
+/* generated.)                                                          */
 #define GC_RESERVED_MARK_PROCS 8
 #define GC_GCJ_RESERVED_MARK_PROC_INDEX 0
 
@@ -93,7 +94,8 @@ typedef struct GC_ms_entry *(GC_CALLBACK *GC_mark_proc)(
 #define GC_DS_TAG_BITS 2
 #define GC_DS_TAGS ((1U << GC_DS_TAG_BITS) - 1)
 
-/* The entire word is a length in bytes that must be a multiple of 4.   */
+/* The entire descriptor is a length in bytes that must be a multiple   */
+/* of 4.                                                                */
 #define GC_DS_LENGTH 0
 
 /* The high-order bits are describing pointer fields.  The most         */
@@ -104,14 +106,14 @@ typedef struct GC_ms_entry *(GC_CALLBACK *GC_mark_proc)(
 #define GC_DS_BITMAP 1
 
 /* The objects referenced by this object can be pushed on the mark      */
-/* stack by invoking PROC(descr).  ENV(descr) is passed as the last     */
+/* stack by invoking `PROC(descr)`.  `ENV(descr)` is passed as the last */
 /* argument.                                                            */
 #define GC_DS_PROC 2
 
 /* The real descriptor is at the byte displacement from the beginning   */
-/* of the object given by descr & ~GC_DS_TAGS.  If the descriptor is    */
+/* of the object given by `descr & ~GC_DS_TAGS`.  If the descriptor is  */
 /* negative, the real descriptor is at                                  */
-/* (*<object_start>)-(descr&~GC_DS_TAGS)-GC_INDIR_PER_OBJ_BIAS.         */
+/* `*<object_start> - (descr & ~GC_DS_TAGS) - GC_INDIR_PER_OBJ_BIAS`.   */
 /* The latter alternative can be used if each object contains a type    */
 /* descriptor at the beginning of the object.  Note that in the         */
 /* multi-threaded environments per-object descriptors must be located   */
@@ -130,48 +132,47 @@ typedef struct GC_ms_entry *(GC_CALLBACK *GC_mark_proc)(
 /* Bounds on the heap.  Guaranteed to be valid.  Likely to include      */
 /* future heap expansion.  Hence usually includes not-yet-mapped        */
 /* memory, or might overlap with other data roots.  The address of any  */
-/* heap object is larger than GC_least_plausible_heap_addr and less     */
-/* than GC_greatest_plausible_heap_addr.                                */
+/* heap object is larger than `GC_least_plausible_heap_addr` and less   */
+/* than `GC_greatest_plausible_heap_addr`.                              */
 GC_API void *GC_least_plausible_heap_addr;
 GC_API void *GC_greatest_plausible_heap_addr;
 
 /* Specify the pointer address mask.  Works only if the collector is    */
-/* built with DYNAMIC_POINTER_MASK macro defined.  These primitives are */
-/* normally needed only to support systems that use high-order pointer  */
-/* tags.  The setter is expected to be called, if needed, before the GC */
-/* initialization or, at least, before the first object is allocated.   */
-/* Both the setter and the getter are unsynchronized.                   */
+/* built with `DYNAMIC_POINTER_MASK` macro defined.  These primitives   */
+/* are normally needed only to support systems that use high-order      */
+/* pointer tags.  The setter is expected to be called, if needed,       */
+/* before the collector initialization or, at least, before the first   */
+/* object is allocated.  Both the setter and the getter are             */
+/* unsynchronized.                                                      */
 GC_API void GC_CALL GC_set_pointer_mask(GC_word);
 GC_API GC_word GC_CALL GC_get_pointer_mask(void);
 
-/* Similar to GC_set/get_pointer_mask but for the pointer address       */
-/* shift.  The value should be less than the size of word, in bits.     */
-/* Applied after the mask.                                              */
+/* Similar to `GC_set_pointer_mask`/`GC_get_pointer_mask` but for the   */
+/* pointer address shift.  The value should be less than the size of    */
+/* `GC_word`, in bits.  Applied after the mask.                         */
 GC_API void GC_CALL GC_set_pointer_shift(unsigned);
 GC_API unsigned GC_CALL GC_get_pointer_shift(void);
 
 /* Handle nested references in a custom mark procedure.                 */
-/* Check if obj is a valid object. If so, ensure that it is marked.     */
+/* Check if `obj` is a valid object. If so, ensure that it is marked.   */
 /* If it was not previously marked, push its contents onto the mark     */
 /* stack for future scanning.  The object will then be scanned using    */
-/* its mark descriptor.                                                 */
-/* Returns the new mark stack pointer.                                  */
-/* Handles mark stack overflows correctly.                              */
-/* Since this marks first, it makes progress even if there are mark     */
-/* stack overflows.                                                     */
-/* Src is the address of the pointer to obj, which is used only         */
+/* its mark descriptor.  Returns the new mark stack pointer.            */
+/* Handles mark stack overflows correctly.  Since this marks first, it  */
+/* makes progress even if there are mark stack overflows.               */
+/* `src` is the address of the pointer to `obj`, which is used only     */
 /* for back pointer-based heap debugging.                               */
 /* It is strongly recommended that most objects be handled without mark */
 /* procedures, e.g. with bitmap descriptors, and that mark procedures   */
 /* be reserved for exceptional cases.  That will ensure that            */
 /* performance of this call is not extremely performance critical.      */
-/* (Otherwise we would need to inline GC_mark_and_push completely,      */
+/* (Otherwise we would need to inline `GC_mark_and_push` completely,    */
 /* which would tie the client code to a fixed collector version.)       */
-/* Note that mark procedures should explicitly call FIXUP_POINTER()     */
+/* Note that mark procedures should explicitly call `FIXUP_POINTER()`   */
 /* if required.                                                         */
 GC_API struct GC_ms_entry *GC_CALL GC_mark_and_push(
-    void * /* obj */, struct GC_ms_entry * /* mark_stack_top */,
-    struct GC_ms_entry * /* mark_stack_limit */, void ** /* src */);
+    void * /* `obj` */, struct GC_ms_entry * /* `mark_stack_top` */,
+    struct GC_ms_entry * /* `mark_stack_limit` */, void ** /* `src` */);
 
 #define GC_MARK_AND_PUSH(obj, msp, lim, src)                       \
   (GC_ADDR_LT((char *)GC_least_plausible_heap_addr, (char *)(obj)) \
@@ -180,30 +181,30 @@ GC_API struct GC_ms_entry *GC_CALL GC_mark_and_push(
        ? GC_mark_and_push(obj, msp, lim, src)                      \
        : (msp))
 
-GC_API void GC_CALL GC_push_proc(GC_word /* descr */, void * /* obj */);
+GC_API void GC_CALL GC_push_proc(GC_word /* `descr` */, void * /* `obj` */);
 
 GC_API struct GC_ms_entry *GC_CALL
-GC_custom_push_proc(GC_word /* descr */, void * /* obj */,
-                    struct GC_ms_entry * /* mark_stack_top */,
-                    struct GC_ms_entry * /* mark_stack_limit */);
+GC_custom_push_proc(GC_word /* `descr` */, void * /* `obj` */,
+                    struct GC_ms_entry * /* `mark_stack_top` */,
+                    struct GC_ms_entry * /* `mark_stack_limit` */);
 
 GC_API struct GC_ms_entry *GC_CALL
-GC_custom_push_range(void * /* bottom */, void * /* top */,
-                     struct GC_ms_entry * /* mark_stack_top */,
-                     struct GC_ms_entry * /* mark_stack_limit */);
+GC_custom_push_range(void * /* `bottom` */, void * /* `top` */,
+                     struct GC_ms_entry * /* `mark_stack_top` */,
+                     struct GC_ms_entry * /* `mark_stack_limit` */);
 
 /* The size of the header added to objects allocated through the        */
-/* GC_debug routines.  Defined as a function so that client mark        */
+/* `GC_debug_` routines.  Defined as a function so that client mark     */
 /* procedures do not need to be recompiled for the collector library    */
 /* version changes.                                                     */
 GC_API GC_ATTR_CONST size_t GC_CALL GC_get_debug_header_size(void);
 #define GC_USR_PTR_FROM_BASE(p) \
   ((void *)((char *)(p) + GC_get_debug_header_size()))
 
-/* The same but defined as a variable.  Exists only for the backward    */
-/* compatibility.  Some compilers do not accept "const" together with   */
-/* deprecated or dllimport attributes, so the symbol is exported as     */
-/* a non-constant one.                                                  */
+/* The same as `GC_get_debug_header_size()` but defined as a variable.  */
+/* Exists only for the backward compatibility.  Some compilers do not   */
+/* accept `const` together with `deprecated` or `dllimport` attributes, */
+/* so the symbol is exported as a non-constant one.                     */
 GC_API GC_ATTR_DEPRECATED
 #ifdef GC_BUILD
     const
@@ -215,103 +216,105 @@ GC_API GC_ATTR_DEPRECATED
 GC_API GC_ATTR_CONST size_t GC_CALL GC_get_hblk_size(void);
 
 typedef void(GC_CALLBACK *GC_walk_hblk_fn)(struct GC_hblk_s *,
-                                           void * /* client_data */);
+                                           void * /* `client_data` */);
 
-/* Apply fn to each allocated heap block.  It is the responsibility     */
+/* Apply `fn` to each allocated heap block.  It is the responsibility   */
 /* of the caller to avoid data race during the function execution (e.g. */
 /* by acquiring the allocator lock at least in the reader mode).        */
 GC_API void GC_CALL GC_apply_to_all_blocks(GC_walk_hblk_fn,
-                                           void * /* client_data */)
+                                           void * /* `client_data` */)
     GC_ATTR_NONNULL(1);
 
-/* Same as GC_walk_hblk_fn but with index of the free list.             */
+/* Same as `GC_walk_hblk_fn` but with index of the free list. */
 typedef void(GC_CALLBACK *GC_walk_free_blk_fn)(struct GC_hblk_s *,
-                                               int /* index */,
-                                               void * /* client_data */);
+                                               int /* `index` */,
+                                               void * /* `client_data` */);
 
-/* Apply fn to each completely empty heap block.  It is the             */
+/* Apply `fn` to each completely empty heap block.  It is the           */
 /* responsibility of the caller to avoid data race during the function  */
 /* execution (e.g. by acquiring the allocator lock at least in the      */
 /* reader mode).                                                        */
 GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn,
-                                          void * /* client_data */)
+                                          void * /* `client_data` */)
     GC_ATTR_NONNULL(1);
 
-/* If there are likely to be false references to a block starting at h  */
-/* of the indicated length, then return the next plausible starting     */
-/* location for h that might avoid these false references.  Otherwise   */
-/* NULL is returned.  Assumes the allocator lock is held at least in    */
-/* the reader mode but no assertion about it by design.                 */
+/* If there are likely to be false references to a block starting at    */
+/* `h` of the indicated length (`len`), then return the next plausible  */
+/* starting location for `h` that might avoid these false references.   */
+/* Otherwise `NULL` is returned.  Assumes the allocator lock is held at */
+/* least in the reader mode but no assertion about it by design.        */
 GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *,
-                                                    size_t /* len */);
+                                                    size_t /* `len` */);
 
 /* Return the number of set mark bits for the heap block where object   */
-/* p is located.  Defined only if the library has been compiled         */
-/* without NO_DEBUGGING.                                                */
-GC_API unsigned GC_CALL GC_count_set_marks_in_hblk(const void * /* p */);
+/* `p` is located.  Defined only if the library has been compiled       */
+/* without `NO_DEBUGGING` macro defined.                                */
+GC_API unsigned GC_CALL GC_count_set_marks_in_hblk(const void * /* `p` */);
 
 /* And some routines to support creation of new "kinds", e.g. with      */
 /* custom mark procedures, by language runtimes.                        */
-/* The _inner versions assume the caller holds the allocator lock.      */
+/* The `_inner` variants assume the caller holds the allocator lock.    */
 
 /* Return a new free-list array.    */
 GC_API void **GC_CALL GC_new_free_list(void);
 GC_API void **GC_CALL GC_new_free_list_inner(void);
 
-/* Return a new kind, as specified. */
-GC_API unsigned GC_CALL GC_new_kind(void ** /* free_list */,
-                                    GC_word /* mark_descriptor_template */,
-                                    int /* add_size_to_descriptor */,
-                                    int /* clear_new_objects */)
-    GC_ATTR_NONNULL(1);
+/* Return a new kind, as specified.             */
 /* The last two parameters must be zero or one. */
+GC_API unsigned GC_CALL GC_new_kind(void ** /* `free_list` */,
+                                    GC_word /* `mark_descriptor_template` */,
+                                    int /* `add_size_to_descriptor` */,
+                                    int /* `clear_new_objects` */)
+    GC_ATTR_NONNULL(1);
 GC_API unsigned GC_CALL GC_new_kind_inner(
-    void ** /* free_list */, GC_word /* mark_descriptor_template */,
-    int /* add_size_to_descriptor */, int /* clear_new_objects */)
+    void ** /* `free_list` */, GC_word /* `mark_descriptor_template` */,
+    int /* `add_size_to_descriptor` */, int /* `clear_new_objects` */)
     GC_ATTR_NONNULL(1);
 
-/* Return a new mark procedure identifier, suitable for use as  */
-/* the first argument in GC_MAKE_PROC.                          */
+/* Return a new mark procedure identifier, suitable for use as the      */
+/* first argument in `GC_MAKE_PROC()`.                                  */
 GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc);
 GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc);
 
-/* Similar to GC_init_gcj_malloc() described in gc_gcj.h but with the   */
-/* proper types of the arguments and an additional runtime checking.    */
-/* GC_GCJ_MARK_DESCR_OFFSET should be passed to descr_offset argument.  */
-/* Defined only if the library has been compiled with GC_GCJ_SUPPORT.   */
-GC_API void GC_CALL GC_init_gcj_malloc_mp(unsigned /* mp_index */,
-                                          GC_mark_proc /* mp */,
-                                          size_t /* descr_offset */);
+/* Similar to `GC_init_gcj_malloc()` described in `gc_gcj.h` file but   */
+/* with the proper types of the arguments and an additional runtime     */
+/* checking.  `GC_GCJ_MARK_DESCR_OFFSET` should be passed to            */
+/* `descr_offset` argument.  Defined only if the library has been       */
+/* compiled with `GC_GCJ_SUPPORT` macro defined.                        */
+GC_API void GC_CALL GC_init_gcj_malloc_mp(unsigned /* `mp_index` */,
+                                          GC_mark_proc /* `mp` */,
+                                          size_t /* `descr_offset` */);
 
-/* Allocate an object of a given kind.  By default, there are only      */
+/* Allocate an object of a given `kind`.  By default, there are only    */
 /* a few kinds: composite (pointerful), atomic, uncollectible, etc.     */
 /* We claim it is possible for clever client code that understands the  */
-/* GC internals to add more, e.g. to communicate object layout          */
+/* collector internals to add more, e.g. to communicate object layout   */
 /* information to the collector.  Note that in the multi-threaded       */
 /* contexts, this is usually unsafe for kinds that have the descriptor  */
 /* in the object itself, since there is otherwise a window in which     */
 /* the descriptor is not correct.  Even in the single-threaded case,    */
-/* we need to be sure that cleared objects on a free list don't         */
+/* we need to be sure that cleared objects on a free list do not        */
 /* cause a GC crash if they are accidentally traced.                    */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
-    GC_generic_malloc(size_t /* lb */, int /* kind */);
+    GC_generic_malloc(size_t /* `lb` */, int /* `kind` */);
 
-/* As above, but pointers to past the first heap block of the resulting */
-/* object are ignored.                                                  */
+/* Same as `GC_generic_malloc()`, but pointers to past the first heap   */
+/* block of the resulting object are ignored.                           */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
-    GC_generic_malloc_ignore_off_page(size_t /* lb */, int /* kind */);
+    GC_generic_malloc_ignore_off_page(size_t /* `lb` */, int /* `kind` */);
 
-/* Generalized version of GC_malloc_[atomic_]uncollectable.     */
+/* A generalized variant of `GC_malloc_uncollectable()` and             */
+/* `GC_malloc_atomic_uncollectable()`.                                  */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
-    GC_generic_malloc_uncollectable(size_t /* lb */, int /* kind */);
+    GC_generic_malloc_uncollectable(size_t /* `lb` */, int /* `kind` */);
 
 /* Same as above but primary for allocating an object of the same kind  */
-/* as an existing one (kind obtained by GC_get_kind_and_size).          */
-/* Not suitable for GCJ and typed-malloc kinds.                         */
+/* as an existing one (`kind` obtained by `GC_get_kind_and_size()`).    */
+/* Not suitable for `gcj` and typed-`malloc` kinds.                     */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
-    GC_generic_or_special_malloc(size_t /* size */, int /* kind */);
+    GC_generic_or_special_malloc(size_t /* `size` */, int /* `kind` */);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
-    GC_debug_generic_or_special_malloc(size_t /* size */, int /* kind */,
+    GC_debug_generic_or_special_malloc(size_t /* `size` */, int /* `kind` */,
                                        GC_EXTRA_PARAMS);
 
 #ifdef GC_DEBUG
@@ -322,35 +325,36 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_generic_or_special_malloc(sz, k)
 #endif /* !GC_DEBUG */
 
-/* Similar to GC_size but returns object kind.  Size is returned too    */
-/* if psize is not NULL.  The object pointer should not be NULL.        */
-GC_API int GC_CALL GC_get_kind_and_size(const void *, size_t * /* psize */)
+/* Similar to `GC_size` but returns object kind.  The size is returned  */
+/* too if `psize` is not `NULL`.  The object pointer should be          */
+/* non-`NULL`.                                                          */
+GC_API int GC_CALL GC_get_kind_and_size(const void *, size_t * /* `psize` */)
     GC_ATTR_NONNULL(1);
 
 /* A procedure which produces a human-readable description of the       */
-/* "type" of object p into the buffer out_buf of length                 */
-/* GC_TYPE_DESCR_LEN.  This is used by the debug support when printing  */
-/* objects.  These functions should be as robust as possible, though we */
-/* do avoid invoking them on objects on the global free list.           */
-typedef void(GC_CALLBACK *GC_describe_type_fn)(void * /* p */,
-                                               char * /* out_buf */);
+/* "type" of object `p` into the buffer `out_buf` of length             */
+/* `GC_TYPE_DESCR_LEN`.  This is used by the debug support when         */
+/* printing objects.  These functions should be as robust as possible,  */
+/* though we do avoid invoking them on objects on the global free list. */
+typedef void(GC_CALLBACK *GC_describe_type_fn)(void * /* `p` */,
+                                               char * /* `out_buf` */);
 #define GC_TYPE_DESCR_LEN 40
 
-/* Register a describe_type function to be used when printing objects   */
-/* of a particular kind.                                                */
-GC_API void GC_CALL GC_register_describe_type_fn(int /* kind */,
+/* Register a `describe_type` function to be used when printing objects */
+/* of a particular `kind`.                                              */
+GC_API void GC_CALL GC_register_describe_type_fn(int /* `kind` */,
                                                  GC_describe_type_fn);
 
 /* Clear some of the inaccessible part of the stack.  Returns its       */
 /* argument, so it can be used in a tail call position, hence clearing  */
-/* another frame.  Argument may be NULL.                                */
+/* another frame.  The argument may be `NULL`.                          */
 GC_API void *GC_CALL GC_clear_stack(void *);
 
 /* Set and get the client notifier on collections.  The client function */
 /* is called at the start of every full GC (called with the allocator   */
 /* lock held).  May be 0.  This is a really tricky interface to use     */
 /* correctly.  Unless you really understand the collector internals,    */
-/* the callback should not, directly or indirectly, make any GC_ or     */
+/* the callback should not, directly or indirectly, make any `GC_` or   */
 /* potentially blocking calls.  In particular, it is not safe to        */
 /* allocate memory using the garbage collector from within the callback */
 /* function.  Both the setter and the getter acquire the allocator      */
@@ -360,22 +364,28 @@ GC_API void GC_CALL GC_set_start_callback(GC_start_callback_proc);
 GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void);
 
 /* Slow/general mark bit manipulation.  The caller should hold the      */
-/* allocator lock (the reader mode is enough in case of GC_is_marked).  */
-/* GC_is_marked returns 1 (true) or 0.  The argument should be the real */
-/* address of an object (i.e. the address of the debug header if there  */
-/* is one).                                                             */
-GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);
+/* allocator lock.  The argument should be the real address of an       */
+/* object (i.e. the address of the debug header if there is one).       */
 GC_API void GC_CALL GC_clear_mark_bit(const void *) GC_ATTR_NONNULL(1);
 GC_API void GC_CALL GC_set_mark_bit(const void *) GC_ATTR_NONNULL(1);
 
+/* Get the mark bit.  Returns 1 (true) or 0.  The caller should hold    */
+/* the allocator lock at least in the reader mode.  The argument        */
+/* should be the real address of an object (i.e. the address of the     */
+/* debug header if there is one).                                       */
+GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);
+
 /* Push everything in the given range onto the mark stack.              */
-/* (GC_push_conditional pushes either all or only dirty pages depending */
-/* on the third argument.)  GC_push_all_eager also ensures that stack   */
-/* is scanned immediately, not just scheduled for scanning.             */
-GC_API void GC_CALL GC_push_all(void * /* bottom */, void * /* top */);
-GC_API void GC_CALL GC_push_all_eager(void * /* bottom */, void * /* top */);
-GC_API void GC_CALL GC_push_conditional(void * /* bottom */, void * /* top */,
-                                        int /* bool all */);
+/* `(GC_push_conditional()` pushes either all or only dirty pages       */
+/* depending on the third argument (`all`).  `GC_push_all_eager()` also */
+/* ensures that stack is scanned immediately, not just scheduled for    */
+/* scanning.)                                                           */
+GC_API void GC_CALL GC_push_all(void * /* `bottom` */, void * /* `top` */);
+GC_API void GC_CALL GC_push_all_eager(void * /* `bottom` */,
+                                      void * /* `top` */);
+GC_API void GC_CALL GC_push_conditional(void * /* `bottom` */,
+                                        void * /* `top` */,
+                                        int /* `bool` `all` */);
 GC_API void GC_CALL GC_push_finalizer_structures(void);
 
 /* Set and get the client push-other-roots procedure.  A client         */
@@ -391,18 +401,17 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void);
 /* pointer, object size and client custom data are passed to the        */
 /* callback (holding the allocator lock in the same mode as the caller  */
 /* does).                                                               */
-typedef void(GC_CALLBACK *GC_reachable_object_proc)(void * /* obj */,
-                                                    size_t /* bytes */,
-                                                    void * /* client_data */);
+typedef void(GC_CALLBACK *GC_reachable_object_proc)(
+    void * /* `obj` */, size_t /* `bytes` */, void * /* `client_data` */);
 GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
-    GC_reachable_object_proc, void * /* client_data */) GC_ATTR_NONNULL(1);
+    GC_reachable_object_proc, void * /* `client_data` */) GC_ATTR_NONNULL(1);
 
 /* Is the given address in one of the temporary static root sections?   */
 /* Acquires the allocator lock in the reader mode.                      */
 GC_API int GC_CALL GC_is_tmp_root(void *);
 
-GC_API void GC_CALL GC_print_trace(GC_word /* gc_no */);
-GC_API void GC_CALL GC_print_trace_inner(GC_word /* gc_no */);
+GC_API void GC_CALL GC_print_trace(GC_word /* `gc_no` */);
+GC_API void GC_CALL GC_print_trace_inner(GC_word /* `gc_no` */);
 
 /* Set the client for when mark stack is empty.  A client can use       */
 /* this callback to process (un)marked objects and push additional      */
@@ -410,8 +419,8 @@ GC_API void GC_CALL GC_print_trace_inner(GC_word /* gc_no */);
 /* setter and the getter acquire the allocator lock (in the reader mode */
 /* in case of the getter).                                              */
 typedef struct GC_ms_entry *(GC_CALLBACK *GC_on_mark_stack_empty_proc)(
-    struct GC_ms_entry * /* mark_stack_top */,
-    struct GC_ms_entry * /* mark_stack_limit */);
+    struct GC_ms_entry * /* `mark_stack_top` */,
+    struct GC_ms_entry * /* `mark_stack_limit` */);
 GC_API void GC_CALL GC_set_on_mark_stack_empty(GC_on_mark_stack_empty_proc);
 GC_API GC_on_mark_stack_empty_proc GC_CALL GC_get_on_mark_stack_empty(void);
 

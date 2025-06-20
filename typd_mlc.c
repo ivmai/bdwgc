@@ -17,24 +17,25 @@
 
 /*
  * Some simple primitives for allocation with explicit type information.
- * Simple objects are allocated such that they contain a GC_descr at the
+ * Simple objects are allocated such that they contain a `GC_descr` at the
  * end (in the last allocated word).  This descriptor may be a procedure
  * which then examines an extended descriptor passed as its environment.
  *
  * Arrays are treated as simple objects if they have sufficiently simple
  * structure.  Otherwise they are allocated from an array kind that supplies
  * a special mark procedure.  These arrays contain a pointer to a
- * complex_descriptor as their last "pointer-sized" word.
+ * `complex_descriptor` as their last "pointer-sized" word.
  * This is done because the environment field is too small, and the collector
- * must trace the complex_descriptor.
+ * must trace the `complex_descriptor`.
  *
  * Note that descriptors inside objects may appear cleared, if we encounter
  * a false reference to an object on a free list.  In the case of a simple
  * object, this is OK, since a zero descriptor corresponds to examining no
- * fields.  In the complex_descriptor case, we explicitly check for that case.
+ * fields.  In the `complex_descriptor` case, we explicitly check for that
+ * case.
  *
- * MAJOR PARTS OF THIS CODE HAVE NOT BEEN TESTED AT ALL and are not testable,
- * since they are not accessible through the current interface.
+ * Note: major parts of this code have not been tested at all and are not
+ * testable, since they are not accessible through the current interface.
  */
 
 #include "gc/gc_typed.h"
@@ -42,7 +43,8 @@
 /* Object kind for objects with indirect (possibly extended) descriptors. */
 STATIC int GC_explicit_kind = 0;
 
-/* Object kind for objects with complex descriptors and GC_array_mark_proc. */
+/* Object kind for objects with complex descriptors and         */
+/* `GC_array_mark_proc`.                                        */
 STATIC int GC_array_kind = 0;
 
 #define ED_INITIAL_SIZE 100
@@ -57,7 +59,7 @@ GC_push_typed_structures_proc(void)
   GC_PUSH_ALL_SYM(GC_ext_descriptors);
 }
 
-/* Add a multi-word bitmap to GC_ext_descriptors arrays.        */
+/* Add a multi-word bitmap to `GC_ext_descriptors` arrays.      */
 /* Returns starting index on success, -1 otherwise.             */
 STATIC GC_signed_word
 GC_add_ext_descriptor(const word *bm, size_t nbits)
@@ -118,13 +120,13 @@ GC_add_ext_descriptor(const word *bm, size_t nbits)
 STATIC GC_descr GC_bm_table[CPP_WORDSZ / 2];
 
 /* Return a descriptor for the concatenation of 2 objects, each one is  */
-/* lpw pointers long and described by descriptor d.  The result is      */
+/* `lpw` pointers long and described by descriptor `d`.  The result is  */
 /* known to be short enough to fit into a bitmap descriptor.            */
-/* d is a GC_DS_LENGTH or GC_DS_BITMAP descriptor.                      */
+/* `d` is a `GC_DS_LENGTH` or `GC_DS_BITMAP` descriptor.                */
 STATIC GC_descr
 GC_double_descr(GC_descr d, size_t lpw)
 {
-  GC_ASSERT(GC_bm_table[0] == GC_DS_BITMAP); /* bm table is initialized */
+  GC_ASSERT(GC_bm_table[0] == GC_DS_BITMAP); /* `bm` table is initialized */
   if ((d & GC_DS_TAGS) == GC_DS_LENGTH) {
     d = GC_bm_table[BYTES_TO_PTRS(d)];
   }
@@ -191,7 +193,7 @@ GC_typed_mark_proc(word *addr, mse *mark_stack_top, mse *mark_stack_limit,
   if (GC_ext_descriptors[env].ed_continued) {
     /* Push an entry with the rest of the descriptor back onto the  */
     /* stack.  Thus we never do too much work at once.  Note that   */
-    /* we also can't overflow the mark stack unless we actually     */
+    /* we also cannot overflow the mark stack unless we actually    */
     /* mark something.                                              */
     mark_stack_top = GC_custom_push_proc(
         GC_MAKE_PROC(GC_typed_mark_proc_index, env + 1),
@@ -282,8 +284,8 @@ set_obj_descr(ptr_t op, GC_descr d)
   if (EXPECT(NULL == op, FALSE))
     return;
 
-  /* It is not safe to use GC_size_map[] here as the table might be */
-  /* updated asynchronously.                                        */
+  /* It is not safe to use `GC_size_map[]` here as the table might be   */
+  /* updated asynchronously.                                            */
   sz = GC_size(op);
 
   GC_ASSERT((sz & (GC_GRANULE_BYTES - 1)) == 0 && sz > sizeof(GC_descr));
@@ -319,9 +321,9 @@ GC_malloc_explicitly_typed_ignore_off_page(size_t lb, GC_descr d)
     return GC_malloc_explicitly_typed(lb, d);
 
   GC_ASSERT(GC_explicit_typing_initialized);
-  /* Note that ignore-off-page objects with the requested size    */
-  /* of at least HBLKSIZE do not have EXTRA_BYTES added by        */
-  /* GC_generic_malloc_aligned().                                 */
+  /* Note that ignore-off-page objects with the requested size of at    */
+  /* least `HBLKSIZE` do not have `EXTRA_BYTES` added by                */
+  /* `GC_generic_malloc_aligned()`.                                     */
   op = (ptr_t)GC_clear_stack(
       GC_generic_malloc_aligned(SIZET_SAT_ADD(lb, sizeof(GC_descr)),
                                 GC_explicit_kind, IGNORE_OFF_PAGE, 0));
@@ -329,16 +331,16 @@ GC_malloc_explicitly_typed_ignore_off_page(size_t lb, GC_descr d)
   return op;
 }
 
-/* Array descriptors.  GC_array_mark_proc understands these.    */
-/* We may eventually need to add provisions for headers and     */
-/* trailers.  Hence we provide for tree structured descriptors, */
-/* though we don't really use them currently.                   */
+/* Array descriptors.  `GC_array_mark_proc` understands these.      */
+/* We may eventually need to add provisions for headers and         */
+/* trailers.  Hence we provide for tree structured descriptors,     */
+/* though we do not really use them currently.                      */
 
 /* This type describes simple array.    */
 struct LeafDescriptor {
   word ld_tag;
 #define LEAF_TAG 1
-  /* Bytes per element; non-zero, multiple of ALIGNMENT.        */
+  /* Bytes per element; non-zero, multiple of `ALIGNMENT`. */
   size_t ld_size;
   /* Number of elements.        */
   size_t ld_nelements;
@@ -388,7 +390,7 @@ GC_make_sequence_descriptor(complex_descriptor *first,
                             complex_descriptor *second)
 {
   /* Note: for a reason, the sanitizer runtime complains of             */
-  /* insufficient space for complex_descriptor if the pointer type of   */
+  /* insufficient space for `complex_descriptor` if the pointer type of */
   /* result variable is changed to.                                     */
   struct SequenceDescriptor *result = (struct SequenceDescriptor *)GC_malloc(
       sizeof(struct SequenceDescriptor));
@@ -396,7 +398,7 @@ GC_make_sequence_descriptor(complex_descriptor *first,
   if (EXPECT(NULL == result, FALSE))
     return NULL;
 
-  /* Can't result in overly conservative marking, since tags are        */
+  /* Cannot result in overly conservative marking, since tags are       */
   /* very small integers. Probably faster than maintaining type info.   */
   result->sd_tag = SEQUENCE_TAG;
   result->sd_first = first;
@@ -413,15 +415,16 @@ GC_make_sequence_descriptor(complex_descriptor *first,
 #define COMPLEX 2
 
 /* Build a descriptor for an array with nelements elements, each of     */
-/* which can be described by a simple descriptor d.  We try to optimize */
-/* some common cases.  If the result is COMPLEX, a complex_descriptor*  */
-/* value is returned in *pcomplex_d.  If the result is LEAF, then a     */
-/* LeafDescriptor value is built in the structure pointed to by pleaf.  */
-/* The tag in the *pleaf structure is not set.  If the result is        */
-/* SIMPLE, then a GC_descr value is returned in *psimple_d.  If the     */
-/* result is NO_MEM, then we failed to allocate the descriptor.         */
-/* The implementation assumes GC_DS_LENGTH is 0.  *pleaf, *pcomplex_d   */
-/* and *psimple_d may be used as temporaries during the construction.   */
+/* which can be described by a simple descriptor `d`.  We try to        */
+/* optimize some common cases.  If the result is `COMPLEX`,             */
+/* a `complex_descriptor *` value is returned in `*pcomplex_d`.  If the */
+/* result is `LEAF`, then a `LeafDescriptor` value is built in the      */
+/* structure pointed to by `pleaf`.  The tag in the `*pleaf` structure  */
+/* is not set.  If the result is `SIMPLE`, then a `GC_descr` value is   */
+/* returned in `*psimple_d`.  If the result is `NO_MEM`, then we failed */
+/* to allocate the descriptor.  The implementation assumes              */
+/* `GC_DS_LENGTH` is 0.  `*pleaf`, `*pcomplex_d` and `*psimple_d` may   */
+/* be used as temporaries during the construction.                      */
 STATIC int
 GC_make_array_descriptor(size_t nelements, size_t size, GC_descr d,
                          GC_descr *psimple_d, complex_descriptor **pcomplex_d,
@@ -491,8 +494,8 @@ struct GC_calloc_typed_descr_s {
   complex_descriptor *complex_d; /* the first field, the only pointer */
   struct LeafDescriptor leaf;
   GC_descr simple_d;
-  word alloc_lb;             /* size_t actually */
-  GC_signed_word descr_type; /* int actually */
+  word alloc_lb;             /* of `size_t` type actually */
+  GC_signed_word descr_type; /* of `int` type actually */
 };
 
 GC_API int GC_CALL
@@ -509,7 +512,7 @@ GC_calloc_prepare_explicitly_typed(struct GC_calloc_typed_descr_s *pctd,
     lb = n = 1;
   if (EXPECT((lb | n) > GC_SQRT_SIZE_MAX, FALSE) /* fast initial check */
       && n > GC_SIZE_MAX / lb) {
-    /* n*lb overflows.        */
+    /* `n * lb` overflows. */
     pctd->alloc_lb = GC_SIZE_MAX;
     pctd->descr_type = NO_MEM;
     /* The rest of the fields are unset. */
@@ -573,15 +576,15 @@ GC_calloc_do_explicitly_typed(const struct GC_calloc_typed_descr_s *pctd,
     lp->ld_size = pctd->leaf.ld_size;
     lp->ld_nelements = pctd->leaf.ld_nelements;
     lp->ld_descriptor = pctd->leaf.ld_descriptor;
-    /* Hold the allocator lock (in the reader mode which should be    */
-    /* enough) while writing the descriptor word to the object to     */
-    /* ensure that the descriptor contents are seen by                */
-    /* GC_array_mark_proc as expected.                                */
-    /* TODO: It should be possible to replace locking with the atomic */
-    /* operations (with the release barrier here) but, in this case,  */
-    /* avoiding the acquire barrier in GC_array_mark_proc seems to    */
-    /* be tricky as GC_mark_some might be invoked with the world      */
-    /* running.                                                       */
+    /* Hold the allocator lock (in the reader mode which should be      */
+    /* enough) while writing the descriptor word to the object to       */
+    /* ensure that the descriptor contents are seen by                  */
+    /* `GC_array_mark_proc` as expected.                                */
+    /* TODO: It should be possible to replace locking with the atomic   */
+    /* operations (with the release barrier here) but, in this case,    */
+    /* avoiding the acquire barrier in `GC_array_mark_proc` seems to    */
+    /* be tricky as `GC_mark_some` might be invoked with the world      */
+    /* running.                                                         */
     READER_LOCK();
     ((struct LeafDescriptor **)op)[lpw_m1] = lp;
     READER_UNLOCK_RELEASE();
@@ -601,7 +604,7 @@ GC_calloc_do_explicitly_typed(const struct GC_calloc_typed_descr_s *pctd,
                FALSE))
 #endif
     {
-      /* Couldn't register it due to lack of memory.  Punt.       */
+      /* Could not register it due to lack of memory.  Punt. */
       return (*GC_get_oom_fn())((size_t)pctd->alloc_lb);
     }
   }
@@ -617,9 +620,9 @@ GC_calloc_explicitly_typed(size_t n, size_t lb, GC_descr d)
   return GC_calloc_do_explicitly_typed(&ctd, sizeof(ctd));
 }
 
-/* Return the size of the object described by complex_d.  It would be   */
+/* Return the size of the object described by `complex_d`.  It would be */
 /* faster to store this directly, or to compute it as part of           */
-/* GC_push_complex_descriptor, but hopefully it does not matter.        */
+/* `GC_push_complex_descriptor`, but hopefully it does not matter.      */
 STATIC size_t
 GC_descr_obj_size(complex_descriptor *complex_d)
 {
@@ -639,7 +642,7 @@ GC_descr_obj_size(complex_descriptor *complex_d)
 }
 
 /* Push descriptors for the object with complex descriptor onto the */
-/* mark stack.  Return NULL if the mark stack overflowed.           */
+/* mark stack.  Return `NULL` if the mark stack overflowed.         */
 STATIC mse *
 GC_push_complex_descriptor(ptr_t current, complex_descriptor *complex_d,
                            mse *msp, mse *msl)
@@ -701,7 +704,7 @@ get_complex_descr(ptr_t *p, size_t lpw)
   return (complex_descriptor *)p[lpw - 1];
 }
 
-/* Used by GC_calloc_do_explicitly_typed via GC_array_kind.     */
+/* Used by `GC_calloc_do_explicitly_typed()` via `GC_array_kind`. */
 STATIC mse *GC_CALLBACK
 GC_array_mark_proc(word *addr, mse *mark_stack_top, mse *mark_stack_limit,
                    word env)
@@ -723,7 +726,7 @@ GC_array_mark_proc(word *addr, mse *mark_stack_top, mse *mark_stack_limit,
   new_mark_stack_top = GC_push_complex_descriptor(
       (ptr_t)addr, complex_d, mark_stack_top, mark_stack_limit - 1);
   if (NULL == new_mark_stack_top) {
-    /* Explicitly instruct Clang Static Analyzer that ptr is non-null.  */
+    /* Explicitly instruct Clang Static Analyzer that pointer is non-`NULL`. */
     if (NULL == mark_stack_top) {
       ABORT("Bad mark_stack_top");
     }
@@ -732,7 +735,7 @@ GC_array_mark_proc(word *addr, mse *mark_stack_top, mse *mark_stack_limit,
     /* request a mark stack expansion.  This cannot cause a mark stack  */
     /* overflow, since it replaces the original array entry.            */
 #ifdef PARALLEL_MARK
-    /* We might be using a local_mark_stack in parallel mode. */
+    /* We might be using a `local_mark_stack` in the parallel collection. */
     if (GC_mark_stack + GC_mark_stack_size == mark_stack_limit)
 #endif
     {

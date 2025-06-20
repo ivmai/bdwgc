@@ -14,11 +14,11 @@
  * modified is included with the above copyright notice.
  */
 
-/* An incomplete test for the garbage collector.                */
-/* Some more obscure entry points are not tested at all.        */
-/* This must be compiled with the same flags used to build the  */
-/* GC.  It uses GC internals to allow more precise results      */
-/* checking for some of the tests.                              */
+/* An incomplete test for the garbage collector.  Some more obscure */
+/* entry points are not tested at all.  This must be compiled with  */
+/* the same flags used to build the collector.  It uses the         */
+/* collector internals to allow more precise results checking for   */
+/* some of the tests.                                               */
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -31,7 +31,7 @@
 #  define GC_DEBUG
 #endif
 
-/* In case DEFAULT_VDB is specified manually (e.g. passed to CFLAGS).   */
+/* In case `DEFAULT_VDB` is specified manually (e.g. passed to `CFLAGS`). */
 #ifdef DEFAULT_VDB
 #  define TEST_DEFAULT_VDB
 #endif
@@ -55,7 +55,7 @@
 
 #if defined(_WIN32_WCE) && !defined(__GNUC__)
 #  include <winbase.h>
-/* define assert ASSERT */
+/* `define assert ASSERT` */
 #else
 /* Not normally used, but handy for debugging.      */
 #  include <assert.h>
@@ -66,9 +66,9 @@
 #  ifndef _CRTDBG_MAP_ALLOC
 #    define _CRTDBG_MAP_ALLOC
 #  endif
-/* This should be included before gc_priv.h (see the note about   */
-/* _malloca redefinition bug in gcconfig.h).                      */
-#  include <crtdbg.h> /* for _CrtDumpMemoryLeaks, _CrtSetDbgFlag */
+/* This should be included before `gc_priv.h` file (see the note about  */
+/* `_malloca` redefinition bug in `gcconfig.h` file).                   */
+#  include <crtdbg.h> /* for `_CrtDumpMemoryLeaks`, `_CrtSetDbgFlag` */
 #endif
 
 #if (defined(GC_NO_FINALIZATION) || defined(DBG_HDRS_ALL)) \
@@ -80,7 +80,7 @@
 #  include "gc/gc_typed.h"
 #endif
 
-/* For output, locking, some statistics and gcconfig.h. */
+/* For output, locking, some statistics and `gcconfig.h` file. */
 #define NOT_GCBUILD
 #include "private/gc_priv.h"
 
@@ -88,10 +88,10 @@
 #  define print_stats VERBOSE
 #  define INIT_PRINT_STATS /* empty */
 #else
-/* Use own variable as GC_print_stats might not be visible.   */
+/* Use own variable as `GC_print_stats` might not be visible. */
 static int print_stats = 0;
 #  ifdef GC_READ_ENV_FILE
-/* GETENV uses GC internal function in this case.   */
+/* `GETENV()` uses the collector internal function in this case. */
 #    define INIT_PRINT_STATS /* empty */
 #  else
 #    define INIT_PRINT_STATS                          \
@@ -121,11 +121,12 @@ static int print_stats = 0;
 #  include <sys/wait.h>
 #  include <unistd.h>
 #  if defined(HANDLE_FORK) && defined(CAN_CALL_ATFORK)
-/* This causes abort in GC_init on pthread_atfork failure.        */
+/* This causes abort in `GC_init` on `pthread_atfork` failure.  */
 #    define INIT_FORK_SUPPORT GC_set_handle_fork(1)
 #  elif !defined(TEST_FORK_WITHOUT_ATFORK)
-/* Note: passing -1 implies fork() should be as well manually     */
-/* surrounded with GC_atfork_prepare/parent/child.                */
+/* Note: passing -1 implies `fork()` should be as well manually */
+/* surrounded with `GC_atfork_prepare`, `GC_atfork_parent` and  */
+/* `GC_atfork_child` calls.                                     */
 #    define INIT_FORK_SUPPORT GC_set_handle_fork(-1)
 #  endif
 #endif
@@ -169,8 +170,8 @@ static CRITICAL_SECTION incr_cs;
     exit(1);                                               \
   }
 
-/* Call GC_INIT only on platforms on which we think we really need it,  */
-/* so that we can test automatic initialization on the rest.            */
+/* Call `GC_INIT()` only on platforms on which we think we really need  */
+/* it, so that we can test automatic initialization on the rest.        */
 #if defined(TEST_EXPLICIT_GC_INIT) || defined(AIX) || defined(HOST_ANDROID) \
     || (defined(MSWINCE) && !defined(GC_WINMAIN_REDIRECT))
 #  define GC_OPT_INIT GC_INIT()
@@ -214,7 +215,7 @@ checkOOM(void *p)
 
 /* Define AO primitives for a single-threaded mode. */
 #ifndef AO_HAVE_compiler_barrier
-/* AO_t not defined. */
+/* `AO_t` is not defined. */
 #  define AO_t size_t
 #endif
 #ifndef AO_HAVE_fetch_and_add1
@@ -222,14 +223,14 @@ checkOOM(void *p)
 /* This is used only to update counters.        */
 #endif
 
-/* Allocation Statistics.  Synchronization is not strictly necessary.   */
+/* The allocation statistics.  Synchronization is not strictly necessary. */
 static AO_t uncollectable_count = 0;
 static AO_t collectable_count = 0;
 static AO_t atomic_count = 0;
 static AO_t realloc_count = 0;
 
-/* Amount of space wasted in cons node; also used in gcj_cons, mktree   */
-/* and chktree (for other purposes).                                    */
+/* Amount of space wasted in `cons` nodes; also used in `gcj_cons`,     */
+/* `mktree` and `chktree` (for other purposes).                         */
 static AO_t extra_count = 0;
 
 #if defined(LINT2)
@@ -238,11 +239,11 @@ static AO_t extra_count = 0;
 #  define FAIL ABORT("Test failed")
 #endif
 
-/* AT_END may be defined to exercise the interior pointer test  */
-/* if the collector is configured with ALL_INTERIOR_POINTERS.   */
-/* As it stands, this test should succeed with either           */
-/* configuration.  In the FIND_LEAK configuration, it should    */
-/* find lots of leaks, since we free almost nothing.            */
+/* `AT_END` may be defined to exercise the interior pointer test    */
+/* if the collector is configured with `ALL_INTERIOR_POINTERS`.     */
+/* As it stands, this test should succeed with either               */
+/* configuration.  In the `FIND_LEAK` configuration, it should      */
+/* find lots of leaks, since we free almost nothing.                */
 
 struct SEXPR {
   struct SEXPR *sexpr_car;
@@ -260,7 +261,7 @@ typedef struct SEXPR *sexpr;
 #define cdr(x) ((x)->sexpr_cdr)
 #define is_nil(x) ((x) == nil)
 
-/* Silly implementation of Lisp cons.  Intentionally wastes lots of     */
+/* Silly implementation of Lisp "cons".  Intentionally wastes lots of   */
 /* space to test collector.                                             */
 #ifdef VERY_SMALL_CONFIG
 #  define cons small_cons
@@ -298,9 +299,9 @@ cons(sexpr x, sexpr y)
 #ifdef GC_GCJ_SUPPORT
 #  include "gc/gc_gcj.h"
 
-/* The following struct emulates the vtable in gcj.       */
+/* The following `struct` emulates the "vtable" in `gcj`. */
 struct fake_vtable {
-  /* A class pointer in the real GCJ. */
+  /* A class pointer in the real `gcj`. */
   char dummy[GC_GCJ_MARK_DESCR_OFFSET];
   GC_word descr;
 };
@@ -321,10 +322,10 @@ fake_gcj_mark_proc(GC_word *addr, struct GC_ms_entry *mark_stack_top,
   sexpr x;
 
   if (1 == env) {
-    /* Object allocated with debug allocator. */
+    /* Object allocated by the debug allocator. */
     addr = (GC_word *)GC_USR_PTR_FROM_BASE(addr);
   }
-  /* Skip vtable pointer.     */
+  /* Skip "vtable" pointer. */
   x = (sexpr)((void **)addr + 1);
 
   mark_stack_top = GC_MARK_AND_PUSH(x->sexpr_cdr, mark_stack_top,
@@ -390,7 +391,7 @@ gcj_cons(sexpr x, sexpr y)
   }
   CHECK_OUT_OF_MEMORY(r);
   AO_fetch_and_add1(&collectable_count);
-  /* Skip vtable pointer.     */
+  /* Skip "vtable" pointer. */
   result = (sexpr)((void **)r + 1);
 
   result->sexpr_car = x;
@@ -400,7 +401,7 @@ gcj_cons(sexpr x, sexpr y)
 }
 #endif /* GC_GCJ_SUPPORT */
 
-/* Return reverse(x) concatenated with y.       */
+/* Return `reverse(x)` concatenated with `y`. */
 static sexpr
 reverse1(sexpr x, sexpr y)
 {
@@ -415,10 +416,10 @@ static sexpr
 reverse(sexpr x)
 {
 #ifdef TEST_WITH_SYSTEM_MALLOC
-  /* This causes gctest to allocate (and leak) large chunks of memory   */
-  /* with the standard system malloc().  This should cause the root set */
-  /* and collected heap to grow significantly if malloc'ed memory is    */
-  /* somehow getting traced by the collector.                           */
+  /* This causes `gctest` to allocate (and leak) large chunks of memory */
+  /* with the standard system `malloc()`.  This should cause the root   */
+  /* set and collected heap to grow significantly if `malloc`'ed memory */
+  /* is somehow getting traced by the collector.                        */
   GC_noop1((GC_word)GC_HIDE_NZ_POINTER(checkOOM(malloc(100000))));
 #endif
   return reverse1(x, nil);
@@ -440,7 +441,7 @@ static void
 collect_from_other_thread(void)
 {
   pthread_t t;
-  int err = pthread_create(&t, NULL, do_gcollect, NULL /* arg */);
+  int err = pthread_create(&t, NULL, do_gcollect, NULL /* `arg` */);
 
   if (err != 0) {
     GC_printf("gcollect thread creation failed, errno= %d\n", err);
@@ -478,7 +479,7 @@ ints(int low, int up)
 }
 
 #ifdef GC_GCJ_SUPPORT
-/* Return gcj_reverse(x) concatenated with y. */
+/* Return `gcj_reverse(x)` concatenated with `y`. */
 static sexpr
 gcj_reverse1(sexpr x, sexpr y)
 {
@@ -506,8 +507,8 @@ gcj_ints(int low, int up)
 }
 #endif /* GC_GCJ_SUPPORT */
 
-/* To check uncollectible allocation we build lists with disguised cdr  */
-/* pointers, and make sure they don't go away.                          */
+/* To check uncollectible allocation we build lists with disguised      */
+/* `cdr` pointers, and make sure they do not go away.                   */
 static sexpr
 uncollectable_ints(int low, int up)
 {
@@ -782,9 +783,9 @@ fork_a_thread(void)
 #    ifdef TEST_ENDTHREADEX
   unsigned thread_id;
 
-  h = (HANDLE)GC_beginthreadex(NULL /* security */, 0 /* stack_size */,
-                               tiny_reverse_test, NULL /* arglist */,
-                               0 /* initflag */, &thread_id);
+  h = (HANDLE)GC_beginthreadex(NULL /* `security` */, 0 /* `stack_size` */,
+                               tiny_reverse_test, NULL /* `arglist` */,
+                               0 /* `initflag` */, &thread_id);
 #    else
   DWORD thread_id;
 
@@ -842,7 +843,7 @@ GC_cptr_load_acquire(char *const volatile *addr)
 #endif
 
 #ifndef AO_HAVE_store_release
-/* Not a macro as new_val argument should be evaluated before the lock. */
+/* Not a macro as `new_val` argument should be evaluated before the lock. */
 static void
 GC_cptr_store_release(char *volatile *addr, char *new_val)
 {
@@ -852,7 +853,7 @@ GC_cptr_store_release(char *volatile *addr, char *new_val)
 }
 #endif
 
-/* Try to force A.aa to be strangely aligned.   */
+/* Try to force `A.aa` to be strangely aligned. */
 volatile struct A_s {
   char dummy;
   char *volatile aa;
@@ -910,7 +911,7 @@ reverse_test_inner(void *data)
   d = uncollectable_ints(1, 100);
   test_generic_malloc_or_special(d);
   e = uncollectable_ints(1, 1);
-  /* Check that realloc updates object descriptors correctly. */
+  /* Check that `realloc` updates object descriptors correctly. */
   f = (sexpr *)checkOOM(GC_MALLOC(4 * sizeof(sexpr)));
   AO_fetch_and_add1(&collectable_count);
   f = (sexpr *)checkOOM(GC_REALLOC(f, 6 * sizeof(sexpr)));
@@ -953,7 +954,7 @@ reverse_test_inner(void *data)
 #ifndef EMSCRIPTEN
   check_ints(a_get(), 1, 49);
 #else
-  /* FIXME: gctest fails unless check_ints(a_get(), ...) are skipped. */
+  /* FIXME: `gctest` fails unless `check_ints(a_get(), ...)` are skipped. */
 #endif
   for (i = 0; i < 50; i++) {
     check_ints(b, 1, 50);
@@ -972,11 +973,11 @@ reverse_test_inner(void *data)
     GC_noop1((GC_word)(GC_funcptr_uint)(&fork_a_thread));
 #  endif
 #endif
-    /* This maintains the invariant that a always points to a list  */
-    /* of 49 integers.  Thus, this is thread safe without locks,    */
-    /* assuming acquire/release barriers in a_get/set() and atomic  */
-    /* pointer assignments (otherwise, e.g., check_ints() may see   */
-    /* an uninitialized object returned by GC_MALLOC).              */
+    /* This maintains the invariant that a always points to a list of   */
+    /* 49 integers.  Thus, this is thread safe without locks, assuming  */
+    /* acquire/release barriers in `a_get`/`a_set` and atomic pointer   */
+    /* assignments (otherwise, e.g., `check_ints()` may see an          */
+    /* uninitialized object returned by `GC_MALLOC`).                   */
     a_set(reverse(reverse(a_get())));
 #if !defined(AT_END) && !defined(THREADS)
     /* This is not thread safe, since realloc explicitly deallocates. */
@@ -989,7 +990,7 @@ reverse_test_inner(void *data)
 #endif
   check_ints(b, 1, 50);
 
-  /* Restore c and d values. */
+  /* Restore `c` and `d` values. */
   c = (sexpr)((char *)c - sizeof(char *));
   d = (sexpr)((char *)d - sizeof(char *));
 
@@ -1012,7 +1013,7 @@ reverse_test_inner(void *data)
 static void
 reverse_test(void)
 {
-  /* Test GC_do_blocking/GC_call_with_gc_active. */
+  /* Test `GC_do_blocking`/`GC_call_with_gc_active`. */
   (void)GC_do_blocking(reverse_test_inner, 0);
 }
 
@@ -1134,11 +1135,11 @@ mktree(int n)
         GC_printf("GC_move_disappearing_link(new_link) failed\n");
         FAIL;
       }
-      /* Note: if other thread is performing fork at this moment,     */
-      /* then the stack of the current thread is dropped (together    */
-      /* with new_link variable) in the child process, and            */
-      /* GC_dl_hashtbl entry with the link equal to new_link will be  */
-      /* removed when a collection occurs (as expected).              */
+      /* Note: if other thread is performing `fork()` at this moment,   */
+      /* then the stack of the current thread is dropped (together with */
+      /* `new_link` variable) in the child process, and `GC_dl_hashtbl` */
+      /* entry with the `link` field equal to `new_link` will be        */
+      /* removed when a collection occurs (as expected).                */
       if (GC_unregister_disappearing_link(new_link) == 0) {
         GC_printf("GC_unregister_disappearing_link failed\n");
         FAIL;
@@ -1199,7 +1200,7 @@ static void
 chktree(tn *t, int n)
 {
   if (0 == n) {
-    /* Is it a leaf?        */
+    /* Is it a leaf? */
     if (NULL == t)
       return;
     GC_printf("Clobbered a leaf - collector is broken\n");
@@ -1287,12 +1288,12 @@ test_tinyfl(void)
   void *tfls[3][GC_TINY_FREELISTS];
 
   if (!GC_get_dont_add_byte_at_end() && GC_get_all_interior_pointers()) {
-    /* Skip.    */
+    /* Skip. */
     return;
   }
 
   BZERO(tfls, sizeof(tfls));
-  /* TODO: Improve testing of FAST_MALLOC functionality. */
+  /* TODO: Improve testing of `GC_FAST_MALLOC_GRANS` functionality. */
   GC_MALLOC_WORDS(results[0], 11, tfls[0]);
   CHECK_OUT_OF_MEMORY(results[0]);
   GC_MALLOC_ATOMIC_WORDS(results[1], 20, tfls[1]);
@@ -1335,7 +1336,7 @@ tree_test(void)
   }
   dropped_something = 1;
   FINALIZER_UNLOCK();
-  /* Root needs to remain live until dropped_something is set.    */
+  /* Root needs to remain live until `dropped_something` is set. */
   GC_reachable_here(root);
 
   root = mktree(TREE_HEIGHT);
@@ -1666,9 +1667,9 @@ run_one_test(void)
   }
 #  if !defined(IA64) && !defined(POWERPC)
   if (!TEST_FAIL_COUNT(1)) {
-    /* On POWERPCs function pointers point to a descriptor in the */
-    /* data segment, so there should have been no failures.       */
-    /* The same applies to IA64.                                  */
+    /* On a PowerPC function pointers refer to a descriptor in the  */
+    /* data segment, so there should have been no failures.         */
+    /* The same applies to IA-64.                                   */
     GC_printf("GC_is_visible produced wrong failure indication\n");
     FAIL;
   }
@@ -1687,7 +1688,7 @@ run_one_test(void)
     CHECK_OUT_OF_MEMORY(p);
     AO_fetch_and_add1(&collectable_count);
 
-    /* TODO: GC_memalign and friends are not tested well. */
+    /* TODO: `GC_memalign` and friends are not tested well. */
     for (i = sizeof(void *); i <= HBLKSIZE * 4; i *= 2) {
       p = checkOOM(GC_memalign(i, 17));
       AO_fetch_and_add1(&collectable_count);
@@ -1765,7 +1766,7 @@ run_one_test(void)
   if (!GC_get_find_leak()) {
     void **p = (void **)GC_MALLOC_ATOMIC(sizeof(void *));
 
-    CHECK_OUT_OF_MEMORY(p); /* LINT2: do not use checkOOM() */
+    CHECK_OUT_OF_MEMORY(p); /* LINT2: do not use `checkOOM()` */
     AO_fetch_and_add1(&atomic_count);
     *p = x;
     if (GC_register_disappearing_link(p) != 0) {
@@ -1828,7 +1829,7 @@ run_one_test(void)
   GC_REGISTER_DISPLACEMENT(sizeof(struct fake_vtable *));
   GC_init_gcj_malloc_mp(0U, fake_gcj_mark_proc, GC_GCJ_MARK_DESCR_OFFSET);
 #endif
-  /* Make sure that fn arguments are visible to the collector.        */
+  /* Make sure that function arguments are visible to the collector. */
   uniq(GC_malloc(12), GC_malloc(12), GC_malloc(12),
        (GC_gcollect(), GC_malloc(12)), GC_malloc(12), GC_malloc(12),
        GC_malloc(12), (GC_gcollect(), GC_malloc(12)), GC_malloc(12),
@@ -1836,7 +1837,7 @@ run_one_test(void)
        GC_malloc(12), GC_malloc(12), GC_malloc(12),
        (GC_gcollect(), GC_malloc(12)), GC_malloc(12), GC_malloc(12),
        GC_malloc(12), (GC_gcollect(), GC_malloc(12)), (void *)0);
-  /* GC_malloc(0) must return NULL or something we can deallocate. */
+  /* `GC_malloc(0)` must return `NULL` or something we can deallocate. */
   GC_free(checkOOM(GC_malloc(0)));
   GC_free(checkOOM(GC_malloc_atomic(0)));
   GC_free(checkOOM(GC_malloc(0)));
@@ -1874,10 +1875,9 @@ run_one_test(void)
     GC_start_mark_threads();
     GC_gcollect();
 #  ifdef THREADS
-    /* Skip "Premature finalization" check in the       */
-    /* child process because there could be a chance    */
-    /* that some other thread of the parent was         */
-    /* executing mktree at the moment of fork.          */
+    /* Skip "Premature finalization" check in the child process because */
+    /* there could be a chance that some other thread of the parent was */
+    /* executing `mktree()` at the moment of process fork.              */
     dropped_something = 1;
 #  endif
     tree_test();
@@ -1896,7 +1896,7 @@ run_one_test(void)
   }
 #endif
   (void)GC_call_with_reader_lock(set_stackbottom, &thr_hndl_sb,
-                                 1 /* release */);
+                                 1 /* `release` */);
 
   /* Repeated list reversal test. */
 #ifndef NO_CLOCK
@@ -1939,7 +1939,7 @@ run_one_test(void)
                   (void *)&start_time);
   }
 #endif
-  /* Run reverse_test a second time, so we hopefully notice corruption. */
+  /* Run `reverse_test` a second time, so we hopefully notice corruption. */
   reverse_test();
 #ifndef NO_DEBUGGING
   (void)GC_is_tmp_root(&atomic_count);
@@ -1952,8 +1952,8 @@ run_one_test(void)
                   (unsigned)time_diff, (void *)&start_time);
   }
 #endif
-  /* GC_allocate_ml and GC_need_to_lock are no longer exported, and   */
-  /* AO_fetch_and_add1() may be unavailable to update a counter.      */
+  /* `GC_allocate_ml` and `GC_need_to_lock` are no longer exported, and */
+  /* `AO_fetch_and_add1()` may be unavailable to update a counter.      */
   (void)GC_call_with_alloc_lock(inc_int_counter, &n_tests);
 
   /* Dummy checking of API functions while the allocator lock is held. */
@@ -2005,7 +2005,7 @@ count_reachable_objs(void *plocalcnt)
   return NULL;
 }
 
-/* A minimal testing of LONG_MULT().    */
+/* A minimal testing of `LONG_MULT()`. */
 static void
 test_long_mult(void)
 {
@@ -2091,8 +2091,8 @@ check_heap_stats(void)
   if (max_heap_sz < init_heap_sz)
     max_heap_sz = init_heap_sz;
 
-  /* Garbage collect repeatedly so that all inaccessible objects      */
-  /* can be finalized.  Should work even if GC is disabled.           */
+  /* Do garbage collection repeatedly so that all inaccessible objects  */
+  /* can be finalized.  Should work even if the collection is disabled. */
   while (GC_collect_a_little()) {
     /* Empty. */
   }
@@ -2262,7 +2262,7 @@ static void GC_CALLBACK
 warn_proc(const char *msg, GC_uintptr_t arg)
 {
   GC_printf(msg, arg);
-  /*FAIL;*/
+  /* `FAIL;` */
 }
 
 static void
@@ -2386,7 +2386,7 @@ main(void)
 #    endif
 #  endif
   n_tests = 0;
-  /* No-op as called before GC initialization.        */
+  /* No-op as called before the collector initialization. */
   GC_clear_exclusion_table();
 
   GC_COND_INIT();
@@ -2408,7 +2408,7 @@ main(void)
   fflush(stdout);
 #  endif
 #  if defined(CPPCHECK)
-  /* Entry points we should be testing, but aren't.        */
+  /* Entry points we should be testing, but are not. */
   UNTESTED(GC_abort_on_oom);
   UNTESTED(GC_deinit);
 #    ifndef NO_DEBUGGING
@@ -2596,7 +2596,7 @@ main(void)
 #  endif
   run_single_threaded_test();
   check_heap_stats();
-  /* Just to check it works (for main). */
+  /* Just to check it works (for `main`). */
   (void)GC_unregister_my_thread();
   return 0;
 }
@@ -2604,7 +2604,7 @@ main(void)
 #endif /* GC_WIN32_THREADS */
 
 #if defined(GC_PTHREADS)
-#  include <errno.h> /* for EAGAIN */
+#  include <errno.h> /* for `EAGAIN` */
 
 static void *
 thr_run_one_test(void *arg)
@@ -2651,8 +2651,8 @@ main(void)
   *((volatile char *)&err - 1024 * 1024) = 0;
 #  endif
 #  ifdef HPUX
-  /* Default stack size is too small, especially with the 64-bit  */
-  /* ABI.  Increase the stack size.                               */
+  /* Default stack size is too small, especially with the 64-bit ABI.   */
+  /* Increase the stack size.                                           */
   if (pthread_default_stacksize_np(1024 * 1024, 0) != 0) {
     GC_printf("pthread_default_stacksize_np failed\n");
   }

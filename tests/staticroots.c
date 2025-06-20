@@ -13,7 +13,7 @@
 #  define GC_TEST_IMPORT_API extern
 #endif
 
-/* Should match that in staticroots_lib.c.      */
+/* Should match that in `staticroots_lib.c` file. */
 struct treenode {
   struct treenode *x;
   struct treenode *y;
@@ -21,11 +21,11 @@ struct treenode {
 
 struct treenode *root[10] = { NULL };
 
-/* Same as "root" variable but initialized to some non-zero value (to   */
-/* be placed to .data section instead of .bss).                         */
+/* Same as `root` variable but initialized to some non-zero value (to   */
+/* be placed to `.data` section instead of `.bss`).                     */
 struct treenode *root_nz[10] = { (struct treenode *)(GC_uintptr_t)1 };
 
-/* Note: this is static intentionally.  */
+/* Note: this is `static` intentionally. */
 static char *staticroot;
 
 GC_TEST_IMPORT_API struct treenode *libsrl_mktree(int i);
@@ -37,9 +37,9 @@ GC_TEST_IMPORT_API struct treenode **libsrl_getpelem2(int i, int j);
 static void
 init_staticroot(void)
 {
-  /* Intentionally put staticroot initialization in a function other    */
-  /* than main to prevent CSA warning that staticroot variable can be   */
-  /* changed to be a local one).                                        */
+  /* Intentionally put `staticroot` initialization in a function other  */
+  /* than `main` to prevent CSA warning (that `staticroot` variable can */
+  /* be changed to be a local one).                                     */
   staticroot = (char *)libsrl_init();
 }
 

@@ -36,74 +36,70 @@ GC_INNER CRITICAL_SECTION GC_allocate_ml;
 
 #  if !defined(GC_PTHREADS) && !defined(MSWINCE)
 #    include <errno.h>
-#    include <process.h> /* for _beginthreadex, _endthreadex */
+#    include <process.h> /* for `_beginthreadex`, `_endthreadex` */
 #  endif
 
 static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext);
 
 #  ifndef GC_NO_THREADS_DISCOVERY
-/* This code operates in two distinct modes, depending on     */
-/* the setting of GC_win32_dll_threads.                       */
-/* If GC_win32_dll_threads is set, all threads in the process */
-/* are implicitly registered with the GC by DllMain.          */
-/* No explicit registration is required, and attempts at      */
-/* explicit registration are ignored.  This mode is           */
-/* very different from the Posix operation of the collector.  */
-/* In this mode access to the thread table is lock-free.      */
-/* Hence there is a static limit on the number of threads.    */
+/* This code operates in two distinct modes, depending on the setting   */
+/* of `GC_win32_dll_threads`.  If `GC_win32_dll_threads`, then all      */
+/* threads in the process are implicitly registered with the collector  */
+/* by `DllMain()`.  No explicit registration is required, and attempts  */
+/* at explicit registration are ignored.  This mode is very different   */
+/* from the POSIX operation of the collector.  In this mode access to   */
+/* the thread table is lock-free.  Hence there is a static limit on the */
+/* number of threads.                                                   */
 
-/* GC_DISCOVER_TASK_THREADS should be used if DllMain-based   */
-/* thread registration is required but it is impossible to    */
-/* call GC_use_threads_discovery before other GC routines.    */
+/* `GC_DISCOVER_TASK_THREADS` should be used if `DllMain`-based thread  */
+/* registration is required but it is impossible to call                */
+/* `GC_use_threads_discovery()` before other GC routines.               */
 
 #    ifndef GC_DISCOVER_TASK_THREADS
-/* GC_win32_dll_threads must be set (if needed) at the      */
+/* `GC_win32_dll_threads` must be set (if needed) at the    */
 /* application initialization time, i.e. before any         */
 /* collector or thread calls.  We make it a "dynamic"       */
 /* option only to avoid multiple library versions.          */
 GC_INNER GC_bool GC_win32_dll_threads = FALSE;
 #    endif
 #  else
-/* If GC_win32_dll_threads is FALSE (or the collector is      */
-/* built without GC_DLL defined), things operate in a way     */
-/* that is very similar to Posix platforms, and new threads   */
-/* must be registered with the collector, e.g. by using       */
-/* preprocessor-based interception of the thread primitives.  */
-/* In this case, we use a real data structure for the thread  */
-/* table.  Note that there is no equivalent of linker-based   */
-/* call interception, since we don't have ELF-like            */
-/* facilities.  The Windows analog appears to be "API         */
-/* hooking", which really seems to be a standard way to       */
-/* do minor binary rewriting (?).  I'd prefer not to have     */
-/* the basic collector rely on such facilities, but an        */
-/* optional package that intercepts thread calls this way     */
-/* would probably be nice.                                    */
+/* If not `GC_win32_dll_threads` (or the collector is built without */
+/* `GC_DLL` macro defined), things operate in a way that is very    */
+/* similar to POSIX platforms, and new threads must be registered   */
+/* with the collector, e.g. by using preprocessor-based             */
+/* interception of the thread primitives.  In this case, we use     */
+/* a real data structure for the thread table.  Note that there is  */
+/* no equivalent of linker-based call interception, since we do not */
+/* have ELF-like facilities.  The Windows analog appears to be      */
+/* "API hooking", which really seems to be a standard way to do     */
+/* minor binary rewriting (?).  I would prefer not to have the      */
+/* basic collector rely on such facilities, but an optional package */
+/* that intercepts thread calls this way would probably be nice.    */
 #    undef MAX_THREADS
-/* dll_thread_table[] is always empty.        */
+/* `dll_thread_table[]` is always empty. */
 #    define MAX_THREADS 1
 #  endif /* GC_NO_THREADS_DISCOVERY */
 
-/* We have two versions of the thread table.  Which one */
-/* we use depends on whether GC_win32_dll_threads       */
-/* is set.  Note that before initialization, we don't   */
-/* add any entries to either table, even if DllMain is  */
-/* called.  The main thread will be added on            */
-/* initialization.                                      */
+/* We have two variants of the thread table.  Which one we use depends  */
+/* on whether `GC_win32_dll_threads` is set.  Note that before the      */
+/* initialization, we do not add any entries to either table, even      */
+/* if `DllMain()` is called.  The main thread will be added on the      */
+/* collector initialization.                                            */
 
-/* GC_use_threads_discovery() is currently incompatible with pthreads   */
-/* and WinCE.  It might be possible to get DllMain-based thread         */
-/* registration to work with Cygwin, but if you try it then you are on  */
-/* your own.                                                            */
+/* `GC_use_threads_discovery()` is currently incompatible with          */
+/* `pthreads` and WinCE.  It might be possible to get `DllMain`-based   */
+/* thread registration to work with Cygwin, but if you try it then you  */
+/* are on your own.                                                     */
 GC_API void GC_CALL
 GC_use_threads_discovery(void)
 {
 #  ifdef GC_NO_THREADS_DISCOVERY
   ABORT("GC DllMain-based thread registration unsupported");
 #  else
-  /* Turn on GC_win32_dll_threads. */
+  /* Turn on `GC_win32_dll_threads`. */
   GC_ASSERT(!GC_is_initialized);
-  /* Note that GC_use_threads_discovery is expected to be called by   */
-  /* the client application (not from DllMain) at start-up.           */
+  /* Note that `GC_use_threads_discovery()` is expected to be called by */
+  /* the client application (not from `DllMain()`) at start-up.         */
 #    ifndef GC_DISCOVER_TASK_THREADS
   GC_win32_dll_threads = TRUE;
 #    endif
@@ -115,22 +111,23 @@ GC_use_threads_discovery(void)
 }
 
 #  ifndef GC_NO_THREADS_DISCOVERY
-/* We track thread attachments while the world is supposed to be      */
-/* stopped.  Unfortunately, we cannot stop them from starting, since  */
-/* blocking in DllMain seems to cause the world to deadlock.  Thus,   */
-/* we have to recover if we notice this in the middle of marking.     */
+/* We track thread attachments while the world is supposed to be        */
+/* stopped.  Unfortunately, we cannot stop them from starting, since    */
+/* blocking in `DllMain` seems to cause the world to deadlock.  Thus,   */
+/* we have to recover if we notice this in the middle of marking.       */
 STATIC volatile AO_t GC_attached_thread = FALSE;
 
-/* We assume that volatile implies memory ordering, at least among    */
-/* volatiles.  This code should consistently use atomic_ops.          */
+/* We assume that `volatile` implies memory ordering, at least among    */
+/* `volatile` variables.  This code should consistently use             */
+/* `libatomic_ops` package.                                             */
 STATIC volatile GC_bool GC_please_stop = FALSE;
 #  elif defined(GC_ASSERTIONS)
 STATIC GC_bool GC_please_stop = FALSE;
 #  endif /* GC_NO_THREADS_DISCOVERY && GC_ASSERTIONS */
 
 #  if defined(WRAP_MARK_SOME) && !defined(GC_PTHREADS)
-/* Return TRUE if a thread was attached since we last asked or  */
-/* since GC_attached_thread was explicitly reset.               */
+/* Return `TRUE` if a thread was attached since we last asked or since  */
+/* `GC_attached_thread` was explicitly reset.                           */
 GC_INNER GC_bool
 GC_started_thread_while_stopped(void)
 {
@@ -155,10 +152,9 @@ GC_started_thread_while_stopped(void)
 }
 #  endif /* WRAP_MARK_SOME */
 
-/* Thread table used if GC_win32_dll_threads is set.    */
-/* This is a fixed size array.                          */
-/* Since we use runtime conditionals, both versions     */
-/* are always defined.                                  */
+/* The thread table used if `GC_win32_dll_threads`.  This is        */
+/* a fixed-size array.  Since we use runtime conditionals, both     */
+/* variants are always defined.                                     */
 #  ifndef MAX_THREADS
 #    define MAX_THREADS 512
 #  endif
@@ -170,13 +166,13 @@ static volatile struct GC_Thread_Rep dll_thread_table[MAX_THREADS];
 static struct GC_StackContext_Rep dll_crtn_table[MAX_THREADS];
 #  endif
 
-/* Largest index in dll_thread_table that was ever used.                */
+/* Largest index in `dll_thread_table` that was ever used. */
 STATIC volatile LONG GC_max_thread_index = 0;
 
-/* This may be called from DllMain, and hence operates under unusual    */
+/* This may be called from `DllMain`, and hence operates under unusual  */
 /* constraints.  In particular, it must be lock-free if                 */
-/* GC_win32_dll_threads is set.  Always called from the thread being    */
-/* added.  If GC_win32_dll_threads is not set, we already hold the      */
+/* `GC_win32_dll_threads` is set.  Always called from the thread being  */
+/* added.  If not `GC_win32_dll_threads`, then we already hold the      */
 /* allocator lock except possibly during single-threaded startup code.  */
 /* Does not initialize thread-local free lists.                         */
 GC_INNER GC_thread
@@ -188,9 +184,8 @@ GC_register_my_thread_inner(const struct GC_stack_base *sb,
 #  ifdef GC_NO_THREADS_DISCOVERY
   GC_ASSERT(I_HOLD_LOCK());
 #  endif
-  /* The following should be a no-op according to the Win32     */
-  /* documentation.  There is empirical evidence that it        */
-  /* isn't. - HB                                                */
+  /* The following should be a no-op according to the Win32         */
+  /* documentation.  There is empirical evidence that it is not.    */
 #  if defined(MPROTECT_VDB) && !defined(CYGWIN32)
   if (GC_auto_incremental
 #    ifdef GWW_VDB
@@ -203,42 +198,42 @@ GC_register_my_thread_inner(const struct GC_stack_base *sb,
 #  ifndef GC_NO_THREADS_DISCOVERY
   if (GC_win32_dll_threads) {
     int i;
-    /* It appears to be unsafe to acquire a lock here, since this     */
-    /* code is apparently not preemptible on some systems.            */
-    /* (This is based on complaints, not on Microsoft's official      */
-    /* documentation, which says this should perform "only simple     */
-    /* initialization tasks".)                                        */
-    /* Hence we make do with nonblocking synchronization.             */
-    /* It has been claimed that DllMain is really only executed with  */
-    /* a particular system lock held, and thus careful use of locking */
-    /* around code that doesn't call back into the system libraries   */
-    /* might be OK.  But this has not been tested across all Win32    */
-    /* variants.                                                      */
+    /* It appears to be unsafe to acquire a lock here, since this       */
+    /* code is apparently not preemptible on some systems.              */
+    /* (This is based on complaints, not on Microsoft's official        */
+    /* documentation, which says this should perform                    */
+    /* "only simple initialization tasks".)                             */
+    /* Hence we make it does with a nonblocking synchronization.        */
+    /* It has been claimed that `DllMain` is really only executed with  */
+    /* a particular system lock held, and thus careful use of locking   */
+    /* around code that does not call back into the system libraries    */
+    /* might be OK.  (But this has not been tested across all Win32     */
+    /* versions.)                                                       */
     for (i = 0;
          InterlockedExchange(&dll_thread_table[i].tm.long_in_use, 1) != 0;
          i++) {
-      /* Compare-and-swap would make this cleaner, but that's not     */
-      /* supported before Windows 98 and NT 4.0.  In Windows 2000,    */
-      /* InterlockedExchange is supposed to be replaced by            */
-      /* InterlockedExchangePointer, but that's not really what I     */
-      /* want here.                                                   */
-      /* FIXME: We should eventually declare Windows 95 dead and use  */
-      /* AO_ primitives here.                                         */
+      /* Compare-and-swap would make this cleaner, but that is not      */
+      /* supported before Windows 98 and NT 4.0.  In Windows 2000,      */
+      /* `InterlockedExchange` is supposed to be replaced by            */
+      /* `InterlockedExchangePointer`, but that is not really what I    */
+      /* want here.                                                     */
+      /* FIXME: We should eventually declare Windows 95 dead and use    */
+      /* AO primitives here.                                            */
       if (i == MAX_THREADS - 1)
         ABORT("Too many threads");
     }
-    /* Update GC_max_thread_index if necessary.  The following is     */
-    /* safe, and unlike CompareExchange-based solutions seems to work */
-    /* on all Windows 95 and later platforms.  Unfortunately,         */
-    /* GC_max_thread_index may be temporarily out of bounds, so       */
-    /* readers have to compensate.                                    */
+    /* Update `GC_max_thread_index` if necessary.  The following is     */
+    /* safe, and unlike `CompareExchange`-based solutions seems to work */
+    /* on all Windows 95 and later platforms.  Note that                */
+    /* `GC_max_thread_index` may be temporarily out of bounds, so       */
+    /* readers have to compensate.                                      */
     while (i > GC_max_thread_index) {
       InterlockedIncrement((LONG *)&GC_max_thread_index);
-      /* Cast away volatile for older versions of Win32 headers. */
+      /* Cast away `volatile` for older versions of Win32 headers. */
     }
     if (EXPECT(GC_max_thread_index >= MAX_THREADS, FALSE)) {
-      /* We overshot due to simultaneous increments.  */
-      /* Setting it to MAX_THREADS-1 is always safe.  */
+      /* We overshot due to simultaneous increments.  Setting it to     */
+      /* `MAX_THREADS - 1` is always safe.                              */
       GC_max_thread_index = MAX_THREADS - 1;
     }
     me = (GC_thread)(dll_thread_table + i);
@@ -246,54 +241,54 @@ GC_register_my_thread_inner(const struct GC_stack_base *sb,
   } else
 #  endif
   /* else */ {
-    /* Not using DllMain.       */
+    /* Not using `DllMain`. */
     me = GC_new_thread(self_id);
   }
 #  ifdef GC_PTHREADS
   me->pthread_id = pthread_self();
 #  endif
 #  ifndef MSWINCE
-  /* GetCurrentThread() returns a pseudohandle (a const value).       */
+  /* `GetCurrentThread()` returns a pseudohandle (a constant value). */
   if (!DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
                        GetCurrentProcess(), (HANDLE *)&me->handle,
-                       0 /* dwDesiredAccess */, FALSE /* bInheritHandle */,
+                       0 /* `dwDesiredAccess` */, FALSE /* `bInheritHandle` */,
                        DUPLICATE_SAME_ACCESS)) {
     ABORT_ARG1("DuplicateHandle failed", ": errcode= 0x%X",
                (unsigned)GetLastError());
   }
 #  endif
 #  if defined(WOW64_THREAD_CONTEXT_WORKAROUND) && defined(MSWINRT_FLAVOR)
-  /* Lookup TIB value via a call to NtCurrentTeb() on thread          */
-  /* registration rather than calling GetThreadSelectorEntry() which  */
-  /* is not available on UWP.                                         */
+  /* Lookup TIB value via a call to `NtCurrentTeb()` on thread          */
+  /* registration rather than calling `GetThreadSelectorEntry()` which  */
+  /* is not available on UWP.                                           */
   me->tib = (GC_NT_TIB *)NtCurrentTeb();
 #  endif
   me->crtn->last_stack_min = ADDR_LIMIT;
   GC_record_stack_base(me->crtn, sb);
-  /* Up until this point, GC_push_all_stacks considers this thread      */
+  /* Up until this point, `GC_push_all_stacks` considers this thread    */
   /* invalid.  And, up until this point, the entry is viewed by         */
-  /* GC_win32_dll_lookup_thread as reserved but invalid.                */
+  /* `GC_win32_dll_lookup_thread` as reserved but invalid.              */
   ((volatile struct GC_Thread_Rep *)me)->id = self_id;
 #  ifndef GC_NO_THREADS_DISCOVERY
   if (GC_win32_dll_threads) {
     if (GC_please_stop) {
       AO_store(&GC_attached_thread, TRUE);
-      AO_nop_full(); /* Later updates must become visible after this. */
+      AO_nop_full(); /* later updates must become visible after this */
     }
-    /* We'd like to wait here, but cannot, since waiting in DllMain   */
-    /* provokes deadlocks.  Thus we force marking to be restarted     */
-    /* instead.                                                       */
+    /* We would like to wait here, but cannot, since waiting in         */
+    /* `DllMain()` provokes deadlocks.  Thus we force marking to be     */
+    /* restarted instead.                                               */
   } else
 #  endif
   /* else */ {
-    /* GC_please_stop is false, otherwise both we and the               */
-    /* thread-stopping code would be holding the allocator lock.        */
+    /* `GC_please_stop` is `FALSE`, otherwise both we and the       */
+    /* thread-stopping code would be holding the allocator lock.    */
     GC_ASSERT(!GC_please_stop);
   }
   return me;
 }
 
-/* GC_max_thread_index may temporarily be larger than MAX_THREADS.      */
+/* `GC_max_thread_index` may temporarily be larger than `MAX_THREADS`.  */
 /* To avoid subscript errors, we check it on access.                    */
 GC_INLINE LONG
 GC_get_max_thread_index(void)
@@ -305,11 +300,11 @@ GC_get_max_thread_index(void)
 }
 
 #  ifndef GC_NO_THREADS_DISCOVERY
-/* Search in dll_thread_table and return the GC_thread entity         */
-/* corresponding to the given thread id.                              */
-/* May be called without a lock, but should be called in contexts in  */
-/* which the requested thread cannot be asynchronously deleted, e.g.  */
-/* from the thread itself.                                            */
+/* Search in `dll_thread_table` and return the `GC_thread[]` entity     */
+/* corresponding to the given thread `id`.                              */
+/* May be called without a lock, but should be called in contexts in    */
+/* those the requested thread cannot be asynchronously deleted, e.g.    */
+/* from the thread itself.                                              */
 GC_INNER GC_thread
 GC_win32_dll_lookup_thread(thread_id_t id)
 {
@@ -321,7 +316,7 @@ GC_win32_dll_lookup_thread(thread_id_t id)
     if (AO_load_acquire(&dll_thread_table[i].tm.in_use)
         && dll_thread_table[i].id == id) {
       /* Must still be in use, since nobody else can store our      */
-      /* thread id.                                                 */
+      /* thread `id`.                                               */
       break;
     }
   }
@@ -330,11 +325,11 @@ GC_win32_dll_lookup_thread(thread_id_t id)
 #  endif /* !GC_NO_THREADS_DISCOVERY */
 
 #  ifdef GC_PTHREADS
-/* A quick-and-dirty cache of the mapping between pthread_t   */
-/* and Win32 thread id.                                       */
+/* A quick-and-dirty cache of the mapping between `pthread_t`   */
+/* and Win32 thread id.                                         */
 #    define PTHREAD_MAP_SIZE 512
 thread_id_t GC_pthread_map_cache[PTHREAD_MAP_SIZE] = { 0 };
-/* It appears pthread_t is really a pointer type ...          */
+/* It appears `pthread_t` is really a pointer type... */
 #    define PTHREAD_MAP_INDEX(pthread_id) \
       ((NUMERIC_THREAD_ID(pthread_id) >> 5) % PTHREAD_MAP_SIZE)
 #    define SET_PTHREAD_MAP_CACHE(pthread_id, win32_id) \
@@ -351,16 +346,16 @@ GC_win32_cache_self_pthread(thread_id_t self_id)
   SET_PTHREAD_MAP_CACHE(self, self_id);
 }
 
-/* Return a GC_thread corresponding to a given pthread_t, or  */
-/* NULL if it is not there.  We assume that this is only      */
-/* called for pthread ids that have not yet terminated or are */
-/* still joinable, and cannot be terminated concurrently.     */
+/* Return a `GC_thread` corresponding to a given `pthread_t`, or `NULL` */
+/* if it is not there.  We assume that this is only called for          */
+/* `pthreads` ids that have not yet terminated or are still joinable,   */
+/* and cannot be terminated concurrently.                               */
 GC_INNER GC_thread
 GC_lookup_by_pthread(pthread_t thread)
 {
-  /* TODO: search in dll_thread_table instead when DllMain-based    */
-  /* thread registration is made compatible with pthreads (and      */
-  /* turned on).                                                    */
+  /* TODO: search in `dll_thread_table` instead when `DllMain`-based    */
+  /* thread registration is made compatible with `pthreads` (and turned */
+  /* on).                                                               */
   thread_id_t id;
   GC_thread p;
   int hv;
@@ -403,7 +398,7 @@ static GC_bool isWow64;
       (CONTEXT_INTEGER | CONTEXT_CONTROL | CONTEXT_FLOATING_POINT)
 #  endif /* !WOW64_THREAD_CONTEXT_WORKAROUND && !I386 */
 
-/* Suspend the given thread, if it's still active.      */
+/* Suspend the given thread, if it is still active. */
 STATIC void
 GC_suspend(GC_thread t)
 {
@@ -428,7 +423,7 @@ GC_suspend(GC_thread t)
   GC_acquire_dirty_lock();
 
 #  ifdef MSWINCE
-  /* SuspendThread() will fail if thread is running kernel code.      */
+  /* `SuspendThread()` will fail if thread is running kernel code. */
   while (SuspendThread(THREAD_HANDLE(t)) == (DWORD)-1) {
     GC_release_dirty_lock();
     Sleep(10); /* in millis */
@@ -436,19 +431,19 @@ GC_suspend(GC_thread t)
   }
 #  elif defined(RETRY_GET_THREAD_CONTEXT)
   for (retry_cnt = 0;;) {
-    /* Apparently the Windows 95 GetOpenFileName call creates         */
-    /* a thread that does not properly get cleaned up, and            */
-    /* SuspendThread on its descriptor may provoke a crash.           */
-    /* This reduces the probability of that event, though it still    */
-    /* appears there is a race here.                                  */
+    /* Apparently the Windows 95 `GetOpenFileName()` call creates   */
+    /* a thread that does not properly get cleaned up, and          */
+    /* `SuspendThread()` on its descriptor may provoke a crash.     */
+    /* This reduces the probability of that event, though it still  */
+    /* appears there is a race here.                                */
     if (GetExitCodeThread(t->handle, &exitCode) && exitCode != STILL_ACTIVE) {
       GC_release_dirty_lock();
 #    ifdef GC_PTHREADS
       /* Prevent stack from being pushed.   */
       t->crtn->stack_end = NULL;
 #    else
-      /* This breaks pthread_join on Cygwin, which is guaranteed to */
-      /* only see user threads.                                     */
+      /* This breaks `pthread_join` on Cygwin, which is guaranteed to   */
+      /* only see user threads.                                         */
       GC_delete_thread(t);
 #    endif
       return;
@@ -457,15 +452,15 @@ GC_suspend(GC_thread t)
     if (SuspendThread(t->handle) != (DWORD)-1) {
       CONTEXT context;
 
-      /* Calls to GetThreadContext() may fail.  Work around this by */
-      /* putting access in suspend/resume loop to advance thread    */
-      /* past problematic areas where suspend fails.  Capture the   */
-      /* context in per thread structure at the suspend time rather */
-      /* than at retrieving the context during the push logic.      */
+      /* Calls to `GetThreadContext()` may fail.  Work around this by   */
+      /* putting access in suspend/resume loop to advance thread past   */
+      /* problematic areas where suspend fails.  Capture the `context`  */
+      /* in per thread structure at the suspend time rather than at     */
+      /* retrieving the `context` during the push logic.                */
       context.ContextFlags = GET_THREAD_CONTEXT_FLAGS;
       if (GetThreadContext(t->handle, &context)) {
-        /* TODO: WoW64 extra workaround: if CONTEXT_EXCEPTION_ACTIVE  */
-        /* then Sleep(1) and retry.                                   */
+        /* TODO: WoW64 extra workaround: if `CONTEXT_EXCEPTION_ACTIVE`  */
+        /* then `Sleep(1)` and retry.                                   */
         t->context_sp = copy_ptr_regs(t->context_regs, &context);
         /* Success; the context pointer registers are saved.  */
         break;
@@ -476,17 +471,17 @@ GC_suspend(GC_thread t)
 #    ifndef GC_NO_THREADS_DISCOVERY
         if (NULL == GC_cptr_load_acquire(&t->handle)) {
           /* It might be the scenario like this:                        */
-          /* 1. GC_suspend calls SuspendThread on a valid handle;       */
-          /* 2. Within the SuspendThread call a context switch occurs   */
-          /*    to DllMain (before the thread has actually been         */
-          /*    suspended);                                             */
-          /* 3. DllMain sets t->handle to NULL, but does not yet close  */
-          /*    the handle;                                             */
-          /* 4. A context switch occurs returning to SuspendThread      */
-          /*    which completes on the handle that was originally       */
-          /*    passed into it;                                         */
-          /* 5. Then ResumeThread attempts to run on t->handle which is */
-          /*    now NULL.                                               */
+          /*   1. `GC_suspend` calls `SuspendThread` on a valid handle; */
+          /*   2. Within the `SuspendThread` call a context switch      */
+          /*      occurs to `DllMain` (before the thread has actually   */
+          /*      been suspended);                                      */
+          /*   3. `DllMain` sets `t->handle` to `NULL`, but does not    */
+          /*      yet close the handle;                                 */
+          /*   4. A context switch occurs returning to `SuspendThread`  */
+          /*      which completes on the handle that was originally     */
+          /*      passed into it;                                       */
+          /*   5. Then `ResumeThread` attempts to run on `t->handle`    */
+          /*      which is now `NULL`.                                  */
           GC_release_dirty_lock();
           /* FIXME: the thread seems to be suspended forever (causing   */
           /* a resource leak).                                          */
@@ -499,7 +494,7 @@ GC_suspend(GC_thread t)
     } else {
 #    ifndef GC_NO_THREADS_DISCOVERY
       if (NULL == GC_cptr_load_acquire(&t->handle)) {
-        /* The thread handle is closed asynchronously by GC_DllMain. */
+        /* The thread handle is closed asynchronously by `GC_DllMain`. */
         GC_release_dirty_lock();
         return;
       }
@@ -548,7 +543,7 @@ GC_suspend(GC_thread t)
 
 #  if defined(GC_ASSERTIONS) \
       && ((defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE))
-/* Note: set to true only if GC_stop_world() has acquired GC_write_cs. */
+/* Note: set to `TRUE` only if `GC_stop_world()` has acquired `GC_write_cs`. */
 GC_INNER GC_bool GC_write_disabled = FALSE;
 #  endif
 
@@ -560,7 +555,7 @@ GC_stop_world(void)
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(GC_thr_initialized);
 
-  /* This code is the same as in pthread_stop_world.c.  */
+  /* This code is the same as in `pthread_stop_world.c` file. */
 #  ifdef PARALLEL_MARK
   if (GC_parallel) {
     GC_acquire_mark_lock();
@@ -575,10 +570,10 @@ GC_stop_world(void)
 #  if (defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE)
   GC_ASSERT(!GC_write_disabled);
   EnterCriticalSection(&GC_write_cs);
-  /* It's not allowed to call GC_printf() (and friends) here down to  */
-  /* LeaveCriticalSection (same applies recursively to GC_suspend,    */
-  /* GC_delete_thread, GC_get_max_thread_index, GC_size and           */
-  /* GC_remove_protection).                                           */
+  /* It is not allowed to call `GC_printf()` (and friends) here down to */
+  /* `LeaveCriticalSection` (same applies recursively to `GC_suspend`,  */
+  /* `GC_delete_thread`, `GC_get_max_thread_index`, `GC_size` and       */
+  /* `GC_remove_protection`).                                           */
 #    ifdef GC_ASSERTIONS
   GC_write_disabled = TRUE;
 #    endif
@@ -587,9 +582,10 @@ GC_stop_world(void)
   if (GC_win32_dll_threads) {
     int i;
     int my_max;
-    /* Any threads being created during this loop will end up setting */
-    /* GC_attached_thread when they start.  This will force marking   */
-    /* to restart.  This is not ideal, but hopefully correct.         */
+
+    /* Any threads being created during this loop will end up setting   */
+    /* `GC_attached_thread` when they start.  This will force marking   */
+    /* to restart.  This is not ideal, but hopefully correct.           */
     AO_store(&GC_attached_thread, FALSE);
     my_max = (int)GC_get_max_thread_index();
     for (i = 0; i <= my_max; i++) {
@@ -650,7 +646,7 @@ GC_start_world(void)
                   != NULL);
         if (ResumeThread(p->handle) == (DWORD)-1) {
           if (NULL == GC_cptr_load_acquire(&p->handle)) {
-            /* FIXME: See the same issue in GC_suspend() */
+            /* FIXME: See the same issue in `GC_suspend`. */
             WARN("ResumeThread failed (async CloseHandle by DllMain)\n", 0);
           } else {
             ABORT("ResumeThread failed");
@@ -697,27 +693,26 @@ GC_start_world(void)
 }
 
 #  ifdef MSWINCE
-/* The VirtualQuery calls below won't work properly on some old WinCE */
-/* versions, but since each stack is restricted to an aligned 64 KiB  */
-/* region of virtual memory we can just take the next lowest multiple */
-/* of 64 KiB.  The result of this macro must not be used as its       */
-/* argument later and must not be used as the lower bound for sp      */
-/* check (since the stack may be bigger than 64 KiB).                 */
+/* The `VirtualQuery()` calls below will not work properly on some old  */
+/* WinCE versions, but since each stack is restricted to an aligned     */
+/* 64 KiB region of virtual memory we can just take the next lowest     */
+/* multiple of 64 KiB.  The result of this macro must not be used as    */
+/* its argument later and must not be used as the lower bound for `sp`  */
+/* check (since the stack may be bigger than 64 KiB).                   */
 #    define GC_wince_evaluate_stack_min(s) \
       (ptr_t)(((word)(s) - (word)1) & ~(word)0xFFFF)
 #  elif defined(GC_ASSERTIONS)
 #    define GC_dont_query_stack_min FALSE
 #  endif
 
-/* A cache holding the results of the recent VirtualQuery call. */
-/* Protected by the allocator lock.                             */
+/* A cache holding the results of the recent `VirtualQuery()` call. */
+/* Protected by the allocator lock.                                 */
 static ptr_t last_address = 0;
 static MEMORY_BASIC_INFORMATION last_info;
 
-/* Probe stack memory region (starting at "s") to find out its  */
-/* lowest address (i.e. stack top).                             */
-/* S must be a mapped address inside the region, NOT the first  */
-/* unmapped address.                                            */
+/* Probe stack memory region (starting at `s`) to find out its lowest   */
+/* address (i.e. stack top).  `s` must be a mapped address inside the   */
+/* region, *not* the first unmapped address.                            */
 STATIC ptr_t
 GC_get_stack_min(ptr_t s)
 {
@@ -737,8 +732,8 @@ GC_get_stack_min(ptr_t s)
   return bottom;
 }
 
-/* Return true if the page at s has protections appropriate     */
-/* for a stack page.                                            */
+/* Return `TRUE` if the page at `s` has protections appropriate for */
+/* a stack page.                                                    */
 static GC_bool
 may_be_in_stack(ptr_t s)
 {
@@ -747,16 +742,16 @@ may_be_in_stack(ptr_t s)
     VirtualQuery(s, &last_info, sizeof(last_info));
     last_address = s;
   }
-  return (last_info.Protect & PAGE_READWRITE)
-         && !(last_info.Protect & PAGE_GUARD);
+  return (last_info.Protect & PAGE_READWRITE) != 0
+         && (last_info.Protect & PAGE_GUARD) == 0;
 }
 
-/* Copy all registers that might point into the heap.  Frame    */
-/* pointer registers are included in case client code was       */
-/* compiled with the 'omit frame pointer' optimization.         */
-/* The context register values are stored to regs argument      */
-/* which is expected to be of PUSHED_REGS_COUNT length exactly. */
-/* The functions returns the context stack pointer value.       */
+/* Copy all registers that might point into the heap.  Frame pointer    */
+/* registers are included in case client code was compiled with the     */
+/* "omit frame pointer" optimization.  The context register values are  */
+/* stored to `regs` argument which is expected to be of                 */
+/* `PUSHED_REGS_COUNT` length exactly.  The functions returns the       */
+/* context stack pointer value.                                         */
 static ptr_t
 copy_ptr_regs(word *regs, const CONTEXT *pcontext)
 {
@@ -771,9 +766,9 @@ copy_ptr_regs(word *regs, const CONTEXT *pcontext)
      PUSH4(r3.Low, r3.High, r4.Low, r4.High))
 #  if defined(I386)
 #    ifdef WOW64_THREAD_CONTEXT_WORKAROUND
-  /* Notes: these should be the first "pushed" registers, exactly */
-  /* in this order, see the WoW64 logic in GC_push_stack_for();   */
-  /* these registers do not contain pointers.                     */
+  /* Notes: these should be the first "pushed" registers, exactly   */
+  /* in this order, see the WoW64 logic in `GC_push_stack_for()`;   */
+  /* these registers do not contain pointers.                       */
   PUSH2(ContextFlags, SegFs);
 #    endif
   PUSH4(Edi, Esi, Ebx, Edx), PUSH2(Ecx, Eax), PUSH1(Ebp);
@@ -858,7 +853,7 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
     is_self = TRUE;
     *pfound_me = TRUE;
   } else if ((thread->flags & DO_BLOCKING) != 0) {
-    /* Use saved sp value for blocked threads.  */
+    /* Use saved `sp` value for blocked threads. */
     sp = crtn->stack_ptr;
   } else {
 #  ifdef RETRY_GET_THREAD_CONTEXT
@@ -876,7 +871,7 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
     /* else */ {
       CONTEXT context;
 
-      /* For unblocked threads call GetThreadContext().       */
+      /* For unblocked threads call `GetThreadContext()`. */
       context.ContextFlags = GET_THREAD_CONTEXT_FLAGS;
       if (GetThreadContext(THREAD_HANDLE(thread), &context)) {
         sp = copy_ptr_regs(regs, &context);
@@ -908,7 +903,7 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
     GC_push_many_regs(regs, PUSHED_REGS_COUNT);
 #  else
     GC_push_many_regs(regs + 2, PUSHED_REGS_COUNT - 2);
-    /* skip ContextFlags and SegFs */
+    /* Skip `ContextFlags` and `SegFs`. */
 
     /* WoW64 workaround. */
     if (isWow64) {
@@ -917,7 +912,7 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
       if ((ContextFlags & CONTEXT_EXCEPTION_REPORTING) != 0
           && (ContextFlags
               & (CONTEXT_EXCEPTION_ACTIVE
-                 /* | CONTEXT_SERVICE_ACTIVE */))
+                 /* `| CONTEXT_SERVICE_ACTIVE` */))
                  != 0) {
         GC_NT_TIB *tib;
 
@@ -946,16 +941,16 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
           WARN("GetThreadContext might return stale register values"
                " including ESP= %p\n",
                sp);
-          /* TODO: Because of WoW64 bug, there is no guarantee that   */
-          /* sp really points to the stack top but, for now, we do    */
-          /* our best as the TIB stack limit/base cannot be used      */
-          /* while we are inside a coroutine.                         */
+          /* TODO: Because of WoW64 bug, there is no guarantee that     */
+          /* `sp` really points to the stack top but, for now, we do    */
+          /* our best as the TIB stack limit/base cannot be used        */
+          /* while we are inside a coroutine.                           */
         } else {
-          /* GetThreadContext() might return stale register values,   */
-          /* so we scan the entire stack region (down to the stack    */
-          /* limit).  There is no 100% guarantee that all the         */
-          /* registers are pushed but we do our best (the proper      */
-          /* solution would be to fix it inside Windows).             */
+          /* `GetThreadContext()` might return stale register values,   */
+          /* so we scan the entire stack region (down to the stack      */
+          /* limit).  There is no 100% guarantee that all the registers */
+          /* are pushed but we do our best (the proper solution would   */
+          /* be to fix it inside Windows).                              */
           sp = (ptr_t)tib->StackLimit;
         }
       } /* else */
@@ -976,16 +971,16 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
     GC_sp_corrector((void **)&sp, PTHREAD_TO_VPTR(thread->pthread_id));
 #  endif
 
-  /* Set stack_min to the lowest address in the thread stack,   */
-  /* or to an address in the thread stack no larger than sp,    */
-  /* taking advantage of the old value to avoid slow traversals */
-  /* of large stacks.                                           */
+  /* Set `stack_min` to the lowest address in the thread stack, or to   */
+  /* an address in the thread stack not bigger than `sp`, taking        */
+  /* advantage of the old value to avoid slow traversals of large       */
+  /* stacks.                                                            */
   if (crtn->last_stack_min == ADDR_LIMIT) {
 #  ifdef MSWINCE
     if (GC_dont_query_stack_min) {
       stack_min = GC_wince_evaluate_stack_min(
           traced_stack_sect != NULL ? (ptr_t)traced_stack_sect : stack_end);
-      /* Keep last_stack_min value unmodified. */
+      /* Keep `last_stack_min` value unmodified. */
     } else
 #  endif
     /* else */ {
@@ -995,8 +990,8 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
       crtn->last_stack_min = stack_min;
     }
   } else {
-    /* First, adjust the latest known minimum stack address if we       */
-    /* are inside GC_call_with_gc_active().                             */
+    /* First, adjust the latest known minimum stack address if we   */
+    /* are inside `GC_call_with_gc_active`.                         */
     if (traced_stack_sect != NULL
         && ADDR_LT((ptr_t)traced_stack_sect, crtn->last_stack_min)) {
       GC_win32_unprotect_thread(thread);
@@ -1006,12 +1001,12 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
     if (ADDR_INSIDE(sp, crtn->last_stack_min, stack_end)) {
       stack_min = sp;
     } else {
-      /* In the current thread it is always safe to use sp value.       */
+      /* In the current thread it is always safe to use `sp` value. */
       if (may_be_in_stack(is_self && ADDR_LT(sp, crtn->last_stack_min)
                               ? sp
                               : crtn->last_stack_min)) {
         stack_min = (ptr_t)last_info.BaseAddress;
-        /* Do not probe rest of the stack if sp is correct. */
+        /* Do not probe rest of the stack if `sp` is correct. */
         if (!ADDR_INSIDE(sp, stack_min, stack_end))
           stack_min = GC_get_stack_min(crtn->last_stack_min);
       } else {
@@ -1035,9 +1030,9 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
 #  endif
     GC_push_all_stack_sections(sp, stack_end, traced_stack_sect);
   } else {
-    /* If not current thread then it is possible for sp to point to     */
+    /* If not current thread, then it is possible for `sp` to point to  */
     /* the guarded (untouched yet) page just below the current          */
-    /* stack_min of the thread.                                         */
+    /* `stack_min` of the thread.                                       */
     if (is_self || ADDR_GE(sp, stack_end)
         || ADDR_LT(sp + GC_page_size, stack_min))
       WARN("Thread stack pointer %p out of range, pushing everything\n", sp);
@@ -1111,8 +1106,8 @@ GC_push_all_stacks(void)
 }
 
 #  ifdef PARALLEL_MARK
-/* Last known minimum (hottest) address in stack (or ADDR_LIMIT if    */
-/* unset) for markers.                                                */
+/* Last known minimum (hottest) address in stack (or `ADDR_LIMIT` if    */
+/* unset) for markers.                                                  */
 GC_INNER ptr_t GC_marker_last_stack_min[MAX_MARKERS - 1] = { 0 };
 #  endif /* PARALLEL_MARK */
 
@@ -1122,15 +1117,15 @@ GC_get_next_stack(ptr_t start, ptr_t limit, ptr_t *plo, ptr_t *phi)
   int i;
   /* Least in-range stack base. */
   ptr_t current_min = ADDR_LIMIT;
-  /* Address of last_stack_min field for thread corresponding   */
-  /* to current_min.                                            */
+  /* Address of `last_stack_min` field for thread corresponding to  */
+  /* `current_min`.                                                 */
   ptr_t *plast_stack_min = NULL;
-  /* Either NULL or points to the thread's hash table entry     */
-  /* containing (*plast_stack_min).                             */
+  /* Either `NULL` or points to the thread's hash table entry       */
+  /* containing `*plast_stack_min`.                                 */
   GC_thread thread = NULL;
 
   GC_ASSERT(I_HOLD_LOCK());
-  /* First set current_min, ignoring limit. */
+  /* First set `current_min`, ignoring `limit`. */
   if (GC_win32_dll_threads) {
     LONG my_max = GC_get_max_thread_index();
 
@@ -1138,7 +1133,7 @@ GC_get_next_stack(ptr_t start, ptr_t limit, ptr_t *plo, ptr_t *phi)
       ptr_t stack_end = (ptr_t)dll_thread_table[i].crtn->stack_end;
 
       if (ADDR_LT(start, stack_end) && ADDR_LT(stack_end, current_min)) {
-        /* Update address of last_stack_min. */
+        /* Update address of `last_stack_min`. */
         plast_stack_min = &dll_thread_table[i].crtn->last_stack_min;
         current_min = stack_end;
 #  ifdef CPPCHECK
@@ -1153,11 +1148,11 @@ GC_get_next_stack(ptr_t start, ptr_t limit, ptr_t *plo, ptr_t *phi)
 
       for (p = GC_threads[i]; p != NULL; p = p->tm.next) {
         GC_stack_context_t crtn = p->crtn;
-        /* Note: the following is read of a volatile field.     */
+        /* Note: the following is read of a `volatile` field. */
         ptr_t stack_end = crtn->stack_end;
 
         if (ADDR_LT(start, stack_end) && ADDR_LT(stack_end, current_min)) {
-          /* Update address of last_stack_min. */
+          /* Update value of `*plast_stack_min`. */
           plast_stack_min = &crtn->last_stack_min;
           /* Remember current thread to unprotect.      */
           thread = p;
@@ -1193,15 +1188,15 @@ GC_get_next_stack(ptr_t start, ptr_t limit, ptr_t *plo, ptr_t *phi)
 #  ifdef MSWINCE
   if (GC_dont_query_stack_min) {
     *plo = GC_wince_evaluate_stack_min(current_min);
-    /* Keep last_stack_min value unmodified.  */
+    /* Keep `last_stack_min` value unmodified. */
     return;
   }
 #  endif
 
   if (ADDR_LT(limit, current_min) && !may_be_in_stack(limit)) {
-    /* Skip the rest since the memory region at limit address is        */
-    /* not a stack (so the lowest address of the found stack would      */
-    /* be above the limit value anyway).                                */
+    /* Skip the rest since the memory region at `limit` address is not  */
+    /* a stack (so the lowest address of the found stack would be above */
+    /* the `limit` value anyway).                                       */
     *plo = ADDR_LIMIT;
     return;
   }
@@ -1209,14 +1204,14 @@ GC_get_next_stack(ptr_t start, ptr_t limit, ptr_t *plo, ptr_t *phi)
   /* Get the minimum address of the found stack by probing its memory   */
   /* region starting from the recent known minimum (if set).            */
   if (*plast_stack_min == ADDR_LIMIT || !may_be_in_stack(*plast_stack_min)) {
-    /* Unsafe to start from last_stack_min value. */
+    /* Unsafe to start from `last_stack_min` value. */
     *plo = GC_get_stack_min(current_min);
   } else {
-    /* Use the recent value to optimize search for min address. */
+    /* Use the recent value to optimize search for minimum address. */
     *plo = GC_get_stack_min(*plast_stack_min);
   }
 
-  /* Remember current stack_min value. */
+  /* Remember current `stack_min` value. */
   if (thread != NULL)
     GC_win32_unprotect_thread(thread);
   *plast_stack_min = *plo;
@@ -1237,7 +1232,8 @@ STATIC HANDLE GC_marker_cv[MAX_MARKERS - 1] = { 0 };
 /* a few entries).                                                  */
 GC_INNER thread_id_t GC_marker_Id[MAX_MARKERS - 1] = { 0 };
 
-/* mark_mutex_event, builder_cv, mark_cv are initialized in GC_thr_init. */
+/* `mark_mutex_event`, `builder_cv`, `mark_cv` are initialized in   */
+/* `GC_thr_init()`.                                                 */
 
 /* Note: this event should be with auto-reset.      */
 static HANDLE mark_mutex_event = (HANDLE)0;
@@ -1258,13 +1254,13 @@ GC_start_mark_threads_inner(void)
   GC_wait_for_gc_completion(TRUE);
 
   GC_ASSERT(0 == GC_fl_builder_count);
-  /* Initialize GC_marker_cv[] fully before starting the    */
-  /* first helper thread.                                   */
+  /* Initialize `GC_marker_cv[]` fully before starting the first helper */
+  /* thread.                                                            */
   GC_markers_m1 = GC_available_markers_m1;
   for (i = 0; i < GC_markers_m1; ++i) {
     if ((GC_marker_cv[i]
-         = CreateEvent(NULL /* attrs */, TRUE /* isManualReset */,
-                       FALSE /* initialState */, NULL /* name (A/W) */))
+         = CreateEvent(NULL /* `attrs` */, TRUE /* `isManualReset` */,
+                       FALSE /* `initialState` */, NULL /* `name` (A/W) */))
         == (HANDLE)0)
       ABORT("CreateEvent failed");
   }
@@ -1275,15 +1271,15 @@ GC_start_mark_threads_inner(void)
     DWORD thread_id;
 
     GC_marker_last_stack_min[i] = ADDR_LIMIT;
-    /* There is no _beginthreadex() in WinCE. */
-    handle = CreateThread(NULL /* lpsa */,
+    /* There is no `_beginthreadex()` in WinCE. */
+    handle = CreateThread(NULL /* `lpsa` */,
                           MARK_THREAD_STACK_SIZE /* ignored */, GC_mark_thread,
-                          NUMERIC_TO_VPTR(i), 0 /* fdwCreate */, &thread_id);
+                          NUMERIC_TO_VPTR(i), 0 /* `fdwCreate` */, &thread_id);
     if (EXPECT(NULL == handle, FALSE)) {
       WARN("Marker thread %" WARN_PRIdPTR " creation failed\n",
            (GC_signed_word)i);
-      /* The most probable failure reason is "not enough memory". */
-      /* Don't try to create other marker threads.                */
+      /* The most probable failure reason is "not enough memory".   */
+      /* Do not try to create other marker threads.                 */
       break;
     }
     /* It is safe to detach the thread.   */
@@ -1293,22 +1289,22 @@ GC_start_mark_threads_inner(void)
     unsigned thread_id;
 
     GC_marker_last_stack_min[i] = ADDR_LIMIT;
-    handle = _beginthreadex(NULL /* security_attr */, MARK_THREAD_STACK_SIZE,
-                            GC_mark_thread, NUMERIC_TO_VPTR(i), 0 /* flags */,
-                            &thread_id);
+    handle = _beginthreadex(NULL /* `security_attr` */, MARK_THREAD_STACK_SIZE,
+                            GC_mark_thread, NUMERIC_TO_VPTR(i),
+                            0 /* `flags` */, &thread_id);
     if (EXPECT(!handle || handle == ~(GC_uintptr_t)0, FALSE)) {
       WARN("Marker thread %" WARN_PRIdPTR " creation failed\n",
            (GC_signed_word)i);
-      /* Don't try to create other marker threads.                */
+      /* Do not try to create other marker threads. */
       break;
     } else {
-      /* We may detach the thread (if handle is of HANDLE type).  */
-      /* CloseHandle((HANDLE)handle); */
+      /* We may detach the thread (if `handle` is of `HANDLE` type).    */
+      /* `CloseHandle((HANDLE)handle);`                                 */
     }
 #    endif
   }
 
-  /* Adjust GC_markers_m1 (and free unused resources) if failed.    */
+  /* Adjust `GC_markers_m1` (and free unused resources) if failed. */
   while (GC_markers_m1 > i) {
     GC_markers_m1--;
     CloseHandle(GC_marker_cv[GC_markers_m1]);
@@ -1336,15 +1332,15 @@ STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
 #      define UNSET_MARK_LOCK_HOLDER (void)0
 #    endif /* !GC_ASSERTIONS */
 
-/* Allowed values for GC_mark_mutex_state.                          */
-/* MARK_MUTEX_LOCKED means "locked but no other waiters";           */
-/* MARK_MUTEX_WAITERS_EXIST means "locked and waiters may exist".   */
+/* Allowed values for `GC_mark_mutex_state`.                        */
+/* `MARK_MUTEX_LOCKED` means "locked but no other waiters";         */
+/* `MARK_MUTEX_WAITERS_EXIST` means "locked and waiters may exist". */
 #    define MARK_MUTEX_UNLOCKED 0
 #    define MARK_MUTEX_LOCKED 1
 #    define MARK_MUTEX_WAITERS_EXIST (-1)
 
-/* The mutex state.  Accessed using InterlockedExchange(). */
-STATIC /* volatile */ LONG GC_mark_mutex_state = MARK_MUTEX_UNLOCKED;
+/* The mutex state.  Accessed using `InterlockedExchange()`. */
+STATIC /* `volatile` */ LONG GC_mark_mutex_state = MARK_MUTEX_UNLOCKED;
 
 #    ifdef LOCK_STATS
 volatile AO_t GC_block_count = 0;
@@ -1391,12 +1387,13 @@ GC_release_mark_lock(void)
   }
 }
 
-/* In GC_wait_for_reclaim/GC_notify_all_builder() we emulate POSIX  */
-/* cond_wait/cond_broadcast() primitives with WinAPI Event object   */
-/* (working in "manual reset" mode).  This works here because       */
-/* GC_notify_all_builder() is always called holding the mark lock   */
-/* and the checked condition (GC_fl_builder_count == 0) is the only */
-/* one for which broadcasting on builder_cv is performed.           */
+/* In `GC_wait_for_reclaim()`/`GC_notify_all_builder()` we emulate      */
+/* `pthread_cond_wait()`/`pthread_cond_broadcast()` primitives with     */
+/* WinAPI Event object (working in the "manual reset" mode).            */
+/* This works here because `GC_notify_all_builder()` is always called   */
+/* holding the mark lock and the checked condition                      */
+/* (`GC_fl_builder_count` is zero) is the only one for which            */
+/* broadcasting on `builder_cv` is performed.                           */
 
 GC_INNER void
 GC_wait_for_reclaim(void)
@@ -1425,7 +1422,7 @@ GC_notify_all_builder(void)
     ABORT("SetEvent failed");
 }
 
-/* mark_cv is used (for waiting) by a non-helper thread.    */
+/* `mark_cv` is used (for waiting) by a non-helper thread. */
 
 GC_INNER void
 GC_wait_marker(void)
@@ -1464,8 +1461,8 @@ GC_notify_all_marker(void)
 
 #  endif /* PARALLEL_MARK && !GC_PTHREADS_PARAMARK */
 
-/* We have no DllMain to take care of new threads.  Thus, we    */
-/* must properly intercept thread creation.                     */
+/* We have no `DllMain` to take care of new threads.  Thus, we must     */
+/* properly intercept thread creation.                                  */
 
 struct win32_start_info {
   LPTHREAD_START_ROUTINE start_routine;
@@ -1528,9 +1525,9 @@ GC_CreateThread(LPSECURITY_ATTRIBUTES lpThreadAttributes,
                 LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter,
                 DWORD dwCreationFlags, LPDWORD lpThreadId)
 {
-  /* Make sure GC is initialized (i.e. main thread is attached,   */
-  /* tls is initialized).  This is redundant when                 */
-  /* GC_win32_dll_threads is set by GC_use_threads_discovery().   */
+  /* Make sure the collector is initialized (i.e. main thread is        */
+  /* attached, TLS is initialized).  This is redundant when             */
+  /* `GC_win32_dll_threads` is set by `GC_use_threads_discovery()`.     */
   if (!EXPECT(GC_is_initialized, TRUE))
     GC_init();
   GC_ASSERT(GC_thr_initialized);
@@ -1606,10 +1603,10 @@ GC_beginthreadex(void *security, unsigned stack_size,
             sizeof(struct win32_start_info));
 
     if (EXPECT(NULL == psi, FALSE)) {
-      /* MSDN docs say _beginthreadex() returns 0 on error and sets */
-      /* errno to either EAGAIN (too many threads) or EINVAL (the   */
-      /* argument is invalid or the stack size is incorrect), so we */
-      /* set errno to EAGAIN on "not enough memory".                */
+      /* MSDN docs say `_beginthreadex()` returns 0 on error and sets   */
+      /* `errno` to either `EAGAIN` (too many threads) or `EINVAL` (the */
+      /* argument is invalid or the stack size is incorrect), so we set */
+      /* `errno` to `EAGAIN` on "not enough memory".                    */
       errno = EAGAIN;
       return 0;
     }
@@ -1644,7 +1641,7 @@ GC_endthreadex(unsigned retval)
 #  endif /* MSWIN32 && !NO_CRT */
 
 #  ifdef GC_WINMAIN_REDIRECT
-/* This might be useful on WinCE.  Shouldn't be used with GC_DLL.     */
+/* This might be useful on WinCE.  Should not be used with `GC_DLL`. */
 
 #    if defined(MSWINCE) && defined(UNDER_CE)
 #      define WINMAIN_LPTSTR LPWSTR
@@ -1652,10 +1649,10 @@ GC_endthreadex(unsigned retval)
 #      define WINMAIN_LPTSTR LPSTR
 #    endif
 
-/* This is defined in gc.h.   */
+/* This is defined in `gc.h` file. */
 #    undef WinMain
 
-/* Defined outside GC by an application.      */
+/* Defined outside the collector by an application. */
 int WINAPI GC_WinMain(HINSTANCE, HINSTANCE, WINMAIN_LPTSTR, int);
 
 typedef struct {
@@ -1680,7 +1677,7 @@ GC_waitForSingleObjectInfinite(void *handle)
 }
 
 #    ifndef WINMAIN_THREAD_STACK_SIZE
-/* The default size of the WinMain's thread stack.  */
+/* The default size of the `WinMain`'s thread stack. */
 #      define WINMAIN_THREAD_STACK_SIZE 0
 #    endif
 
@@ -1699,8 +1696,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, WINMAIN_LPTSTR lpCmdLine,
 
   /* Start the main thread.   */
   thread_h = GC_CreateThread(
-      NULL /* lpsa */, WINMAIN_THREAD_STACK_SIZE /* ignored on WinCE */,
-      main_thread_start, &args, 0 /* fdwCreate */, &thread_id);
+      NULL /* `lpsa` */, WINMAIN_THREAD_STACK_SIZE /* ignored on WinCE */,
+      main_thread_start, &args, 0 /* `fdwCreate` */, &thread_id);
   if (NULL == thread_h)
     ABORT("GC_CreateThread(main_thread) failed");
 
@@ -1730,7 +1727,7 @@ is_wow64_process(HMODULE hK32)
 {
   BOOL is_wow64;
 #    ifdef MSWINRT_FLAVOR
-  /* Try to use IsWow64Process2 as it handles different WoW64 cases. */
+  /* Try to use `IsWow64Process2()` as it handles different WoW64 cases. */
   HMODULE hWow64 = GetModuleHandleW(L"api-ms-win-core-wow64-l1-1-1.dll");
 
   UNUSED_ARG(hK32);
@@ -1755,7 +1752,7 @@ is_wow64_process(HMODULE hK32)
       return (GC_bool)is_wow64;
   }
 #    endif
-  /* IsWow64Process() failed. */
+  /* `IsWow64Process()` failed. */
   return FALSE;
 }
 #  endif /* WOW64_THREAD_CONTEXT_WORKAROUND */
@@ -1795,7 +1792,7 @@ GC_thr_init(void)
   GC_setup_atfork();
 #  endif
 #  ifdef WOW64_THREAD_CONTEXT_WORKAROUND
-  /* Set isWow64 flag. */
+  /* Set `isWow64` flag. */
   isWow64 = is_wow64_process(hK32);
 #  endif
   /* Add the initial thread, so we can stop it. */
@@ -1823,8 +1820,8 @@ GC_thr_init(void)
       /* parallel markers, it is determined based on the      */
       /* number of CPU cores.                                 */
 #    ifdef MSWINCE
-      /* There is no GetProcessAffinityMask() in WinCE.     */
-      /* GC_sysinfo is already initialized.                 */
+      /* There is no `GetProcessAffinityMask()` in WinCE.     */
+      /* `GC_sysinfo` is already initialized.                 */
       markers = (int)GC_sysinfo.dwNumberOfProcessors;
 #    else
 #      ifdef _WIN64
@@ -1839,7 +1836,8 @@ GC_thr_init(void)
 #      ifdef __cplusplus
           GetProcessAffinityMask(GetCurrentProcess(), &procMask, &sysMask)
 #      else
-          /* Cast args to void* for compatibility with some old SDKs. */
+          /* Cast the mask arguments to `void *` for compatibility with */
+          /* some old SDKs.                                             */
           GetProcessAffinityMask(GetCurrentProcess(), (void *)&procMask,
                                  (void *)&sysMask)
 #      endif
@@ -1851,7 +1849,7 @@ GC_thr_init(void)
       markers = ncpu;
 #    endif
 #    if defined(GC_MIN_MARKERS) && !defined(CPPCHECK)
-      /* This is primarily for testing on systems without getenv(). */
+      /* This is primarily for testing on systems without `getenv()`. */
       if (markers < GC_MIN_MARKERS)
         markers = GC_MIN_MARKERS;
 #    endif
@@ -1871,12 +1869,13 @@ GC_thr_init(void)
   } else {
 #    ifndef GC_PTHREADS_PARAMARK
     /* Initialize Win32 event objects for parallel marking.       */
-    mark_mutex_event = CreateEvent(NULL /* attrs */, FALSE /* isManualReset */,
-                                   FALSE /* initialState */, NULL /* name */);
-    builder_cv = CreateEvent(NULL /* attrs */, TRUE /* isManualReset */,
-                             FALSE /* initialState */, NULL /* name */);
-    mark_cv = CreateEvent(NULL /* attrs */, TRUE /* isManualReset */,
-                          FALSE /* initialState */, NULL /* name */);
+    mark_mutex_event
+        = CreateEvent(NULL /* `attrs` */, FALSE /* `isManualReset` */,
+                      FALSE /* `initialState` */, NULL /* `name` */);
+    builder_cv = CreateEvent(NULL /* `attrs` */, TRUE /* `isManualReset` */,
+                             FALSE /* `initialState` */, NULL /* `name` */);
+    mark_cv = CreateEvent(NULL /* `attrs` */, TRUE /* `isManualReset` */,
+                          FALSE /* `initialState` */, NULL /* `name` */);
     if (mark_mutex_event == (HANDLE)0 || builder_cv == (HANDLE)0
         || mark_cv == (HANDLE)0)
       ABORT("CreateEvent failed");
@@ -1891,12 +1890,12 @@ GC_thr_init(void)
 }
 
 #  ifndef GC_NO_THREADS_DISCOVERY
-/* We avoid acquiring locks here, since this doesn't seem to be     */
+/* We avoid acquiring locks here, since this does not seem to be    */
 /* preemptible.  This may run with an uninitialized collector, in   */
-/* which case we don't do much.  This implies that no threads other */
-/* than the main one should be created with an uninitialized        */
+/* which case we do not do much.  This implies that no threads      */
+/* other than the main one should be created with an uninitialized  */
 /* collector.  (The alternative of initializing the collector here  */
-/* seems dangerous, since DllMain is limited in what it can do.)    */
+/* seems dangerous, since `DllMain` is limited in what it can do.)  */
 
 #    ifdef GC_INSIDE_DLL
 /* Export only if needed by client. */
@@ -1911,11 +1910,11 @@ GC_DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
 
   UNUSED_ARG(inst);
   UNUSED_ARG(reserved);
-  /* Note that GC_use_threads_discovery should be called by the     */
-  /* client application at start-up to activate automatic thread    */
-  /* registration (it is the default GC behavior);                  */
-  /* to always have automatic thread registration turned on, the GC */
-  /* should be compiled with -D GC_DISCOVER_TASK_THREADS.           */
+  /* Note that `GC_use_threads_discovery` should be called by the       */
+  /* client application at start-up to activate automatic thread        */
+  /* registration (it is the default collector behavior); to always     */
+  /* have automatic thread registration turned on, the collector should */
+  /* be compiled with `-D GC_DISCOVER_TASK_THREADS` option.             */
   if (!GC_win32_dll_threads && GC_is_initialized)
     return TRUE;
 
@@ -1923,10 +1922,10 @@ GC_DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
   case DLL_THREAD_ATTACH:
     /* This is invoked for threads other than main one.     */
 #    ifdef PARALLEL_MARK
-    /* Don't register marker threads. */
+    /* Do not register marker threads. */
     if (GC_parallel) {
-      /* We could reach here only if GC is not initialized.       */
-      /* Because GC_thr_init() sets GC_parallel to off.           */
+      /* We could reach here only if the collector is not initialized.  */
+      /* Because `GC_thr_init()` sets `GC_parallel` to `FALSE`.         */
       break;
     }
 #    endif
@@ -1936,7 +1935,7 @@ GC_DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
     self_id = GetCurrentThreadId();
     if (GC_is_initialized && GC_main_thread_id != self_id) {
       struct GC_stack_base sb;
-      /* Don't lock here. */
+      /* Do not lock here. */
 #    ifdef GC_ASSERTIONS
       int sb_result =
 #    endif
@@ -1944,7 +1943,7 @@ GC_DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
       GC_ASSERT(sb_result == GC_SUCCESS);
       GC_register_my_thread_inner(&sb, self_id);
     } else {
-      /* We already did it during GC_thr_init, called by GC_init.   */
+      /* We already did it during `GC_thr_init()`, called by `GC_init()`. */
     }
     break;
 

@@ -16,13 +16,13 @@
 #include "private/gc_priv.h"
 
 /* This file contains the functions:    */
-/* - ptr_t GC_build_flXXX(h, old_fl);   */
-/* - void GC_new_hblk(size, kind);      */
+/* - `ptr_t GC_build_flXXX(h, old_fl);` */
+/* - `void GC_new_hblk(size, kind);`    */
 
 #ifndef SMALL_CONFIG
-/* Build a free list for two-pointer cleared objects inside the given */
-/* block.  Set the last link to be ofl.  Return a pointer to the      */
-/* first free-list entry.                                             */
+/* Build a free list for two-pointer cleared objects inside the given   */
+/* block.  Set the last link to be `ofl`.  Return a pointer to the      */
+/* first free-list entry.                                               */
 STATIC ptr_t
 GC_build_fl_clear2(struct hblk *h, ptr_t ofl)
 {
@@ -78,7 +78,7 @@ GC_build_fl_clear4(struct hblk *h, ptr_t ofl)
   return (ptr_t)(p - 4);
 }
 
-/* The same as GC_build_fl_clear4() but uncleared objects.            */
+/* The same as `GC_build_fl_clear4()` but uncleared objects. */
 STATIC ptr_t
 GC_build_fl4(struct hblk *h, ptr_t ofl)
 {
@@ -101,12 +101,12 @@ GC_INNER ptr_t
 GC_build_fl(struct hblk *h, ptr_t list, size_t lg, GC_bool clear)
 {
   ptr_t *p, *prev;
-  ptr_t plim; /* points to last object in new hblk */
+  ptr_t plim; /* points to last object in new `hblk` entity */
   size_t lpw = GRANULES_TO_PTRS(lg);
 
-  /* Do a few prefetches here, just because it's cheap.         */
+  /* Do a few prefetches here, just because it is cheap.        */
   /* If we were more serious about it, these should go inside   */
-  /* the loops.  But write prefetches usually don't seem to     */
+  /* the loops.  But write prefetches usually do not seem to    */
   /* matter much.                                               */
   GC_PREFETCH_FOR_WRITE((ptr_t)h);
   GC_PREFETCH_FOR_WRITE((ptr_t)h + 128);
@@ -138,22 +138,22 @@ GC_build_fl(struct hblk *h, ptr_t list, size_t lg, GC_bool clear)
     BZERO(h, HBLKSIZE);
 
   /* Add objects to free list. */
-  prev = (ptr_t *)h->hb_body; /* one object behind p */
+  prev = (ptr_t *)h->hb_body; /* one object behind `p` */
 
   /* The last place for the last object to start.       */
   plim = (ptr_t)h + HBLKSIZE - lpw * sizeof(ptr_t);
 
-  /* Make a list of all objects in *h with head as last object. */
+  /* Make a list of all objects in `*h` with head as last object. */
   for (p = prev + lpw; ADDR_GE(plim, (ptr_t)p); p += lpw) {
-    /* current object's link points to last object */
+    /* The current object's link points to last object. */
     obj_link(p) = (ptr_t)prev;
     prev = p;
   }
   p -= lpw;
-  /* p now points to the last object.   */
+  /* `p` now points to the last object. */
 
-  /* Put p (which is now head of list of objects in *h) as first    */
-  /* pointer in the appropriate free list for this size.            */
+  /* Put `p` (which is now head of list of objects in `*h`) as first    */
+  /* pointer in the appropriate free list for this size.                */
   *(ptr_t *)h = list;
   return (ptr_t)p;
 }
@@ -167,7 +167,7 @@ GC_new_hblk(size_t lg, int kind)
   GC_STATIC_ASSERT(sizeof(struct hblk) == HBLKSIZE);
   GC_ASSERT(I_HOLD_LOCK());
   /* Allocate a new heap block. */
-  h = GC_allochblk(lb_adjusted, kind, 0 /* flags */, 0 /* align_m1 */);
+  h = GC_allochblk(lb_adjusted, kind, 0 /* `flags` */, 0 /* `align_m1` */);
   if (EXPECT(NULL == h, FALSE)) {
     /* Out of memory.   */
     return;

@@ -11,16 +11,16 @@
  * modified is included with the above copyright notice.
  */
 
-/* An sprintf implementation that understands cords.  This is probably  */
-/* not terribly portable.  It assumes an ANSI stdarg.h.  It further     */
-/* assumes that I can make copies of va_list variables, and read        */
-/* arguments repeatedly by applying va_arg to the copies.  This         */
-/* could be avoided at some performance cost.                           */
+/* A `sprintf` implementation that understands cords.  This is probably */
+/* not terribly portable.  It assumes an ANSI platform `stdarg.h` file. */
+/* It further assumes that I can make copies of `va_list` variables,    */
+/* and read arguments repeatedly by applying `va_arg` to the copies.    */
+/* This could be avoided at some performance cost.                      */
 /* We also assume that unsigned and signed integers of various kinds    */
 /* have the same sizes, and can be cast back and forth.                 */
-/* We assume that void* and char* have the same size.                   */
+/* We assume that `void *` and `char *` have the same size.             */
 /* All this cruft is needed because we want to rely on the underlying   */
-/* sprintf implementation whenever possible.                            */
+/* `sprintf` implementation whenever possible.                          */
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -36,7 +36,7 @@
 #  define CORD_BUILD
 #endif
 #ifndef CORD_DONT_DECLARE_OOM_FN
-/* Avoid CORD_oom_fn symbol redefinition on MinGW.    */
+/* Avoid `CORD_oom_fn` symbol redefinition by MinGW. */
 #  define CORD_DONT_DECLARE_OOM_FN
 #endif
 #include "gc/cord.h"
@@ -73,18 +73,17 @@ ec_len(CORD_ec x)
 
 /* Possible non-numeric precision values.   */
 #define NONE -1
-
 #define VARIABLE -2
 
-/* Copy the conversion specification from CORD_pos into the buffer buf  */
-/* Return negative on error.                                            */
-/* Source initially points one past the leading %.                      */
-/* It is left pointing at the conversion type.                          */
-/* Assign field width and precision to *width and *prec.                */
-/* If width or prec is *, VARIABLE is assigned.                         */
-/* Set *left to 1 if left adjustment flag is present.                   */
-/* Set *long_arg to 1 if long flag ('l' or 'L') is present, or to       */
-/* -1 if 'h' is present, or to 2 if 'z' is present.                     */
+/* Copy the conversion specification from `CORD_pos` into the       */
+/* buffer `buf`.  Return a negative value on error.                 */
+/* `source` initially points one past the leading "%" symbol;       */
+/* it is left-pointing at the conversion type.  Assign width and    */
+/* precision fields to `*width` and `*prec`, respectively.  If the  */
+/* width or precision is specified as "*", then the corresponding   */
+/* variable is assigned.  Set `*left` to 1 if left adjustment flag  */
+/* is present.  Set `*long_arg` to 1 if long flag ("l" or "L") is   */
+/* present, or to -1 if "h" is present, or to 2 if "z" is present.  */
 static int
 extract_conv_spec(CORD_pos source, char *buf, int *width, int *prec, int *left,
                   int *long_arg)
@@ -110,7 +109,7 @@ extract_conv_spec(CORD_pos source, char *buf, int *width, int *prec, int *left,
       break;
     case '0':
       if (!saw_number) {
-        /* Zero fill flag; ignore */
+        /* Zero-fill flag; ignore it. */
         break;
       }
       current_number *= 10;
@@ -199,11 +198,11 @@ done:
 }
 
 #if defined(__DJGPP__) || defined(__STRICT_ANSI__)
-/* vsnprintf is missing in DJGPP (v2.0.3) */
+/* `vsnprintf` is missing in DJGPP (v2.0.3). */
 #  define GC_VSNPRINTF(buf, bufsz, format, args) vsprintf(buf, format, args)
 #elif defined(_MSC_VER)
 #  if defined(_WIN32_WCE)
-/* _vsnprintf is deprecated in WinCE */
+/* `_vsnprintf` is deprecated in WinCE. */
 #    define GC_VSNPRINTF StringCchVPrintfA
 #  else
 #    define GC_VSNPRINTF _vsnprintf
@@ -249,7 +248,7 @@ CORD_vsprintf(CORD *out, CORD format, va_list args)
         current = CORD_pos_fetch(pos);
         switch (current) {
         case 'n':
-          /* Assign length to next arg */
+          /* Assign the length to next argument. */
           if (long_arg == 0) {
             unsigned *pos_ptr = va_arg(args, unsigned *);
             *pos_ptr = (unsigned)ec_len(result);
@@ -265,7 +264,7 @@ CORD_vsprintf(CORD *out, CORD format, va_list args)
           }
           goto done;
         case 'r':
-          /* Append cord and any padding  */
+          /* Append the cord and padding, if any. */
           if (width == VARIABLE)
             width = va_arg(args, int);
           if (prec == VARIABLE)
@@ -316,7 +315,7 @@ CORD_vsprintf(CORD *out, CORD format, va_list args)
         default:
           break;
         }
-        /* Use standard sprintf to perform conversion */
+        /* Use standard `sprintf` to perform the conversion. */
         {
           char *buf;
           va_list vsprintf_args;
@@ -365,7 +364,7 @@ CORD_vsprintf(CORD *out, CORD format, va_list args)
               (void)va_arg(args, int);
             } else if (long_arg == 2) {
               (void)va_arg(args, size_t);
-            } else /* long_arg == 1 */ {
+            } else /* `long_arg == 1` */ {
               (void)va_arg(args, long);
             }
             break;
@@ -392,7 +391,7 @@ CORD_vsprintf(CORD *out, CORD format, va_list args)
 #endif
           len = (unsigned)res;
           if ((GC_uintptr_t)len == (GC_uintptr_t)buf) {
-            /* old style vsprintf */
+            /* old-style `vsprintf` */
             len = strlen(buf);
           } else if (res < 0) {
             return -1;
@@ -435,7 +434,7 @@ CORD_fprintf(FILE *f, CORD format, ...)
 {
   va_list args;
   int result;
-  CORD out = CORD_EMPTY; /* initialized to prevent compiler warning */
+  CORD out = CORD_EMPTY; /* initialized to prevent a compiler warning */
 
   va_start(args, format);
   result = CORD_vsprintf(&out, format, args);

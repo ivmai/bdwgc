@@ -23,9 +23,10 @@
 #endif
 
 /* Mutual exclusion between allocator/collector routines.  Needed if    */
-/* there is more than one allocator thread.  Note that I_HOLD_LOCK,     */
-/* I_DONT_HOLD_LOCK and I_HOLD_READER_LOCK are used only positively in  */
-/* assertions, and may return TRUE in the "don't know" case.            */
+/* there is more than one allocator thread.  Note that `I_HOLD_LOCK`,   */
+/* `I_DONT_HOLD_LOCK` and `I_HOLD_READER_LOCK` macros are used only     */
+/* positively in assertions, and may return `TRUE` in the "do not know" */
+/* case.                                                                */
 
 #ifdef THREADS
 
@@ -49,15 +50,15 @@ extern void GC_unlock(void);
 #    undef USE_SPIN_LOCK
 #    if (defined(GC_WIN32_THREADS) || defined(LINT2) || defined(USE_RWLOCK)) \
         && !defined(NO_PTHREAD_TRYLOCK)
-/* pthread_mutex_trylock may not win in GC_lock on Win32, */
-/* due to builtin support for spinning first?             */
+/* `pthread_mutex_trylock` may not win in `GC_lock` on Win32, due to    */
+/* built-in support for spinning first?                                 */
 #      define NO_PTHREAD_TRYLOCK
 #    endif
 #  endif
 
 #  if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS) \
       || defined(GC_PTHREADS)
-/* A value which is not equal to NUMERIC_THREAD_ID(id) for any thread.  */
+/* A value which is not equal to `NUMERIC_THREAD_ID(id)` for any thread. */
 #    define NO_THREAD ((unsigned long)(-1L))
 #    ifdef GC_ASSERTIONS
 GC_EXTERN unsigned long GC_lock_holder;
@@ -133,14 +134,13 @@ GC_EXTERN CRITICAL_SECTION GC_allocate_ml;
 EXTERN_C_END
 #    include <pthread.h>
 EXTERN_C_BEGIN
-/* Posix allows pthread_t to be a struct, though it rarely is.  */
-/* Unfortunately, we need to use a pthread_t to index a data    */
-/* structure.  It also helps if comparisons don't involve a     */
-/* function call.  Hence we introduce platform-dependent macros */
-/* to compare pthread_t ids and to map them to integers (of     */
-/* unsigned long type).  This mapping does not need to result   */
-/* in different values for each thread, though that should be   */
-/* true as much as possible.                                    */
+/* POSIX allows `pthread_t` to be a `struct`, though it rarely is.      */
+/* Unfortunately, we need to use a `pthread_t` to index a data          */
+/* structure.  It also helps if comparisons do not involve a function   */
+/* call.  Hence we introduce platform-dependent macros to compare       */
+/* `pthread_t` ids and to map them to integers (of `unsigned long`      */
+/* type).  This mapping does not need to result in different values for */
+/* each thread, though that should be true as much as possible.         */
 #    if !defined(GC_WIN32_PTHREADS)
 #      define NUMERIC_THREAD_ID(id) ((unsigned long)(GC_uintptr_t)(id))
 #      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
@@ -148,20 +148,20 @@ EXTERN_C_BEGIN
 #    elif defined(__WINPTHREADS_VERSION_MAJOR) /* winpthreads */
 #      define NUMERIC_THREAD_ID(id) ((unsigned long)(id))
 #      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
-/* NUMERIC_THREAD_ID() is 32-bit and, thus, not unique on Win64. */
+/* `NUMERIC_THREAD_ID()` is 32-bit and, thus, not unique on Win64. */
 #      ifndef _WIN64
 #        define NUMERIC_THREAD_ID_UNIQUE
 #      endif
 #    else /* pthreads-win32 */
 #      define NUMERIC_THREAD_ID(id) ((unsigned long)(word)(id.p))
-/* The platform on which pthread_t is a struct.                   */
-/* Using documented internal details of pthreads-win32 library.   */
-/* Faster than pthread_equal().  Should not change with           */
-/* future versions of pthreads-win32 library.                     */
+/* The platform on which `pthread_t` is a `struct`.  Using documented   */
+/* internal details of pthreads-win32 library.  Faster than             */
+/* `pthread_equal()`.  Should not change with the future versions of    */
+/* pthreads-win32 library.                                              */
 #      define THREAD_EQUAL(id1, id2) ((id1.p == id2.p) && (id1.x == id2.x))
-/* Generic definitions based on pthread_equal() always work but   */
-/* will result in poor performance (as NUMERIC_THREAD_ID() might  */
-/* give a constant value) and weak assertion checking.            */
+/* Generic definitions based on `pthread_equal()` always work but will  */
+/* result in poor performance (as `NUMERIC_THREAD_ID()` might give      */
+/* a constant value) and weak assertion checking.                       */
 #      undef NUMERIC_THREAD_ID_UNIQUE
 #    endif
 
@@ -192,7 +192,7 @@ GC_EXTERN WapiMutex GC_allocate_ml_PSP2;
 #    elif (!defined(THREAD_LOCAL_ALLOC) || defined(USE_SPIN_LOCK))   \
         && !defined(USE_PTHREAD_LOCKS) && !defined(THREAD_SANITIZER) \
         && !defined(USE_RWLOCK)
-/* In the THREAD_LOCAL_ALLOC case, the allocator lock tends to    */
+/* In the `THREAD_LOCAL_ALLOC` case, the allocator lock tends to  */
 /* be held for long periods, if it is held at all.  Thus spinning */
 /* and sleeping for fixed periods are likely to result in         */
 /* significant wasted time.  We thus rely mostly on queued locks. */
@@ -308,7 +308,7 @@ GC_INNER void GC_lock(void);
 GC_EXTERN volatile unsigned char GC_collecting;
 #      ifdef AO_HAVE_char_store
 #        if defined(GC_ASSERTIONS) && defined(AO_HAVE_char_fetch_and_add1)
-/* Ensure ENTER_GC() is not used recursively. */
+/* Ensure `ENTER_GC()` is not used recursively. */
 #          define ENTER_GC() GC_ASSERT(!AO_char_fetch_and_add1(&GC_collecting))
 #        else
 #          define ENTER_GC() AO_char_store(&GC_collecting, TRUE)
@@ -331,9 +331,9 @@ GC_EXTERN volatile unsigned char GC_collecting;
 #    undef GC_ALWAYS_MULTITHREADED
 GC_EXTERN GC_bool GC_need_to_lock;
 #    ifdef THREAD_SANITIZER
-/* To workaround TSan false positive (e.g., when                */
-/* GC_pthread_create is called from multiple threads in         */
-/* parallel), do not set GC_need_to_lock if it is already set.  */
+/* To workaround TSan false positive (e.g., when `GC_pthread_create()`  */
+/* is called from multiple threads in parallel), do not set             */
+/* `GC_need_to_lock` if it is already set.                              */
 #      define set_need_to_lock()                     \
         (void)(*(GC_bool volatile *)&GC_need_to_lock \
                    ? FALSE                           \
@@ -350,9 +350,9 @@ EXTERN_C_END
 #  define LOCK() (void)0
 #  define UNLOCK() (void)0
 #  ifdef GC_ASSERTIONS
-/* I_HOLD_LOCK() and I_DONT_HOLD_LOCK() are used only in positive */
-/* assertions or to test whether we still need to acquire the     */
-/* allocator lock; TRUE works in either case.                     */
+/* `I_HOLD_LOCK()` and `I_DONT_HOLD_LOCK()` are used only in positive   */
+/* assertions or to test whether we still need to acquire the allocator */
+/* lock; `TRUE` works in either case.                                   */
 #    define I_HOLD_LOCK() TRUE
 #    define I_DONT_HOLD_LOCK() TRUE
 #  endif
@@ -361,8 +361,8 @@ EXTERN_C_END
 #if defined(UNCOND_LOCK) && !defined(LOCK)
 #  if (defined(LINT2) && defined(USE_PTHREAD_LOCKS)) \
       || defined(GC_ALWAYS_MULTITHREADED)
-/* Instruct code analysis tools not to care about GC_need_to_lock   */
-/* influence to LOCK/UNLOCK semantic.                               */
+/* Instruct code analysis tools not to care about `GC_need_to_lock`     */
+/* influence to `LOCK`/`UNLOCK` semantic.                               */
 #    define LOCK() UNCOND_LOCK()
 #    define UNLOCK() UNCOND_UNLOCK()
 #    ifdef UNCOND_READER_LOCK
@@ -409,10 +409,11 @@ EXTERN_C_END
 #  endif
 #endif /* !READER_LOCK */
 
-/* A variant of READER_UNLOCK() which ensures that data written before  */
-/* the unlock will be visible to the thread which acquires the          */
-/* allocator lock in the exclusive mode.  But according to some rwlock  */
-/* documentation: writers synchronize with prior writers and readers.   */
+/* A variant of `READER_UNLOCK()` which ensures that data written       */
+/* before the unlock will be visible to the thread which acquires the   */
+/* allocator lock in the exclusive mode.  But according to some         */
+/* `rwlock` documentation: writers synchronize with prior writers and   */
+/* readers.                                                             */
 #define READER_UNLOCK_RELEASE() READER_UNLOCK()
 
 #ifndef ENTER_GC

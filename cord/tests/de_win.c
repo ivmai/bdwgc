@@ -11,11 +11,10 @@
  * modified is included with the above copyright notice.
  */
 
-/*
- * The Windows specific part of de.
- * This started as the generic Windows application template
- * but significant parts didn't survive to the final version.
- */
+/* The Windows-specific part of `de`.  This started as the generic  */
+/* Windows application template but significant parts did not       */
+/* survive to the final version.                                    */
+
 #if defined(__CYGWIN__) || defined(__MINGW32__)                 \
     || (defined(__NT__) && defined(__386__)) || defined(_WIN32) \
     || defined(WIN32)
@@ -99,14 +98,13 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR command_line,
         = CORD_to_char_star(CORD_substr(command_line, 0, p - command_line));
   }
 
-  hwnd = CreateWindow(szAppName, TEXT("Demonstration Editor"),
-                      WS_OVERLAPPEDWINDOW | WS_CAPTION, /* Window style */
-                      CW_USEDEFAULT, 0,                 /* default pos. */
-                      CW_USEDEFAULT, 0, /* default width, height */
-                      NULL,             /* No parent */
-                      NULL,             /* Window class menu */
-                      hInstance, NULL);
-  if (hwnd == NULL) {
+  hwnd = CreateWindow(
+      szAppName, TEXT("Demonstration Editor") /* `lpWindowName` */,
+      WS_OVERLAPPEDWINDOW | WS_CAPTION /* `dwStyle` */,
+      CW_USEDEFAULT /* `x` */, 0 /* `y` */, CW_USEDEFAULT /* `nWidth` */,
+      0 /* `nHeight` */, NULL /* `hWndParent` */, NULL /* `hMenu` */,
+      hInstance, NULL /* `lpParam` */);
+  if (NULL == hwnd) {
     de_error("CreateWindow error");
     return 0;
   }
@@ -145,7 +143,7 @@ plain_chars(const char *text, size_t len)
 }
 
 /* Return the argument with all non-control-characters replaced by      */
-/* blank, and all control characters c replaced by c + 64.              */
+/* blank, and all control characters `c` replaced by `c + 64`.          */
 static char *
 control_chars(const char *text, size_t len)
 {
@@ -379,8 +377,8 @@ invalidate_line(int i)
 
 #else
 
-/* ANSI C doesn't allow translation units to be empty.        */
-/* So we guarantee this one is nonempty.                      */
+/* ANSI C does not allow translation units to be empty.  So we      */
+/* guarantee this one is nonempty.                                  */
 extern int GC_quiet;
 
 #endif /* !WIN32 */

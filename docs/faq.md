@@ -6,7 +6,7 @@ are likely to apply to any garbage collector whatsoever.
 
 ## Questions and Answers
 
-### I wrote a test program which allocates objects and registers finalizers for them.  Only a few (or no) objects are finalized.  What's wrong?
+### I wrote a test program which allocates objects and registers finalizers for them.  Only a few (or no) objects are finalized.  What is wrong?
 
 Probably nothing.  Finalizers are only executed if all of the following happen
 before the process exits:
@@ -15,13 +15,13 @@ before the process exits:
 amount of allocation.
 * The objects in question appear inaccessible at the time of the collection.
 It is common for a handful of objects to appear accessible even though they
-should not be, e.g. because temporary pointers to them haven't yet been
+should not be, e.g. because temporary pointers to them have not yet been
 overwritten.  Also note that by default only the first item in a chain of
 finalizable objects will be finalized in a collection.
 * Another GC_ call notices that there are finalizers waiting to be run and
 does so.
 
-Small test programs typically don't run long enough for this to happen.
+Small test programs typically do not run long enough for this to happen.
 
 ### Does this mean that the collector might leak memory?
 
@@ -43,7 +43,7 @@ Invoke GC_gcollect a couple of times just before process exit.
 
 ### I want to ensure that all my objects are finalized and reclaimed before process exit.  How can I do that?
 
-You can't, and you do not really want that.  This would require finalizing
+You cannot, and you do not really want that.  This would require finalizing
 _reachable_ objects.  Finalizers run later would have to be able to handle
 this, and would have to be able to run with randomly broken libraries, because
 the objects they rely on where previously finalized.  In most environments,
@@ -64,9 +64,9 @@ pp. 262-272
 ### I wrote a memory allocation loop, and it runs much slower with the garbage collector than when I use malloc/free memory management.  Why?
 
 Odds are your loop allocates very large objects and never initializes them.
-Real programs generally don't behave that way.  Garbage collectors generally
+Real programs generally do not behave that way.  Garbage collectors generally
 perform appreciably worse for large object allocations, and they generally
-initialize objects, even if you don't.
+initialize objects, even if you do not.
 
 ### What can I do to maximize allocation performance?
 
@@ -79,14 +79,14 @@ locking on each allocation.
 * If you use large statically allocated arrays or mapped files, consider
 `GC_exclude_static_roots`.
 
-### If my heap uses 2 GB on a 32-bit machine, won't every other integer or other random data be misinterpreted as a pointer by the collector?  Thus won't way too much memory be retained?
+### If my heap uses 2 GB on a 32-bit machine, will not every other integer or other random data be misinterpreted as a pointer by the collector?  Thus will not way too much memory be retained?
 
 Maybe.  Probably, if the collector is used purely conservatively, with no
 pointer layout information (such as use of `GC_MALLOC_ATOMIC`).
 
 With a gigabyte heap, you are clearly much better off on a 64-bit machine.
 Empirical evidence seems to suggest that some such applications work on
-a 32-bit machine, and others don't perform acceptably.
+a 32-bit machine, and others do not perform acceptably.
 
 Simple probability calculations for pointer misidentifications are generally
 incorrect.  The probability of misinterpreting an integer is typically reduced
@@ -98,6 +98,6 @@ ignore some or all pointers to object interiors.
 
 ### I have a different question that is not answered here, nor in the other GC documentation.  Where else can I go?
 
-If you can't find the answer in the [GC overview](overview.md) and the linked
+If you cannot find the answer in the [GC overview](overview.md) and the linked
 files, please see "Feedback, Contribution, Questions and Notifications" section of
 the main [README](../README.md).

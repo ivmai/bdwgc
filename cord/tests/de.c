@@ -13,21 +13,22 @@
 
 /*
  * A really simple-minded text editor based on cords.
+ *
  * Things it does right:
- *      No size bounds.
- *      Unbounded undo.
- *      Shouldn't crash no matter what file you invoke it on (e.g. /vmunix)
- *              (Make sure /vmunix is not writable before you try this.)
- *      Scrolls horizontally.
+ *   - No size bounds;
+ *   - Unbounded undo;
+ *   - Should not crash no matter what file you invoke it on;
+ *   - Scrolls horizontally.
+ *
  * Things it does wrong:
- *      It doesn't handle tabs reasonably (use "expand" first).
- *      The command set is MUCH too small.
- *      The redisplay algorithm doesn't let curses do the scrolling.
- *      The rule for moving the window over the file is suboptimal.
+ *   - It does not handle tabs reasonably (use `expand` first);
+ *   - The command set is *much* too small;
+ *   - The redisplay algorithm does not let `curses` do the scrolling;
+ *   - The rule for moving the window over the file is suboptimal.
  */
 
 #include <stdio.h>
-#include <stdlib.h> /* for exit() */
+#include <stdlib.h> /* for `exit` */
 
 #include "gc.h"
 #include "gc/cord.h"
@@ -48,7 +49,7 @@
 #  include <windows.h>
 #else
 #  include <curses.h>
-#  include <unistd.h> /* for sleep() */
+#  include <unistd.h> /* for `sleep` */
 #  define de_error(s)     \
     {                     \
       fprintf(stderr, s); \
@@ -91,17 +92,23 @@ typedef struct LineMapRep *line_map;
 struct HistoryRep {
   CORD file_contents;
   struct HistoryRep *previous;
-  line_map map; /* invalid for the first record "now" */
+  line_map map; /* note: this is invalid for the first record `now` */
 };
 typedef struct HistoryRep *history;
 
 static history now = NULL;
-static CORD current;                /* == now -> file_contents             */
-static size_t current_len;          /* current file length                 */
-static line_map current_map = NULL; /* current line number to position map */
 
-/* Number of current_map entries.  Not always accurate, but reset   */
-/* by prune_map.                                                    */
+/* This is `now -> file_contents`. */
+static CORD current;
+
+/* The current file length. */
+static size_t current_len;
+
+/* Map of current line number to position. */
+static line_map current_map = NULL;
+
+/* Number of `current_map` entries.  Not always accurate, but reset */
+/* by `prune_map`.                                                  */
 static size_t current_map_size = 0;
 
 #define MAX_MAP_SIZE 3000
@@ -118,9 +125,10 @@ static int need_redisplay = 0; /* line that needs to be redisplayed */
 static int line = 0;
 static int col = 0;
 
-static size_t file_pos = 0; /* character position corresponding to cursor */
+/* Character position corresponding to cursor. */
+static size_t file_pos = 0;
 
-/* Invalidate line map for lines > i */
+/* Invalidate line map for lines greater than `i`. */
 static void
 invalidate_map(int i)
 {
@@ -154,7 +162,7 @@ prune_map(void)
   } while (map != 0);
 }
 
-/* Add mapping entry */
+/* Add mapping entry. */
 static void
 add_map(int line_arg, size_t pos)
 {
@@ -173,11 +181,10 @@ add_map(int line_arg, size_t pos)
   current_map_size++;
 }
 
-/* Return position of column *c of i-th line in */
-/* the current file.  Adjust *c to be within    */
-/* the line.  A 0 pointer is taken as 0 column. */
-/* Returns CORD_NOT_FOUND if i is too big.      */
-/* Assumes i > dis_line.                        */
+/* Return position of column `*c` of `i`-th line in the current file.   */
+/* Adjust `*c` to be within the line.  A `NULL` pointer is taken as     */
+/* 0 column.  Returns `CORD_NOT_FOUND` if `i` is too big.  Assumes `i`  */
+/* is greater than `dis_line`.                                          */
 static size_t
 line_pos(int i, int *c)
 {
@@ -238,13 +245,13 @@ del_hist(void)
 }
 
 #ifndef WIN32
-/* Current screen_contents; a dynamically allocated array of CORDs      */
+/* Current screen contents; a dynamically allocated array of cords. */
 static CORD *screen = NULL;
 static int screen_size = 0;
 
-/* Replace a line in the curses stdscr.  All control characters are   */
-/* displayed as upper case characters in standout mode.  This is not  */
-/* terribly appropriate for tabs.                                     */
+/* Replace a line in the `stdscr` of `curses` package.  All control     */
+/* characters are displayed as upper case characters in standout mode.  */
+/* This is not terribly appropriate for tabs.                           */
 static void
 replace_line(int i, CORD s)
 {
@@ -256,7 +263,8 @@ replace_line(int i, CORD s)
     if (NULL == screen)
       OUT_OF_MEMORY;
   }
-  /* A gross workaround for an apparent curses bug: */
+
+  /* A gross workaround for an apparent `curses` bug. */
   if (i == LINES - 1 && len == (unsigned)COLS) {
     s = CORD_substr(s, 0, len - 1);
   }
@@ -290,8 +298,8 @@ replace_line(int i, CORD s)
 #  define replace_line(i, s) invalidate_line(i)
 #endif
 
-/* Return up to COLS characters of the line of s starting at pos,       */
-/* returning only characters after the given column.                    */
+/* Return up to `COLS` characters of the line of `s` starting at `pos`, */
+/* returning only characters after the given `column`.                  */
 static CORD
 retrieve_line(CORD s, size_t pos, unsigned column)
 {
@@ -316,7 +324,9 @@ retrieve_screen_line(int i)
 {
   size_t pos;
 
-  invalidate_map(dis_line + LINES); /* Prune search */
+  /* Prune the search. */
+  invalidate_map(dis_line + LINES);
+
   pos = line_pos(dis_line + i, 0);
   if (pos == CORD_NOT_FOUND)
     return CORD_EMPTY;
@@ -324,13 +334,15 @@ retrieve_screen_line(int i)
 }
 #endif
 
-/* Display the visible section of the current file       */
+/* Display the visible section of the current file. */
 static void
 redisplay(void)
 {
   int i;
 
-  invalidate_map(dis_line + LINES); /* Prune search */
+  /* Prune the search. */
+  invalidate_map(dis_line + LINES);
+
   for (i = 0; i < LINES; i++) {
     if (need_redisplay == ALL || need_redisplay == i) {
       size_t pos = line_pos(dis_line + i, 0);
@@ -351,8 +363,8 @@ done:
 
 static int dis_granularity;
 
-/* Update dis_line, dis_col, and dis_pos to make cursor visible.        */
-/* Assumes line, col, dis_line, dis_pos are in bounds.                  */
+/* Update `dis_line`, `dis_col` and `dis_pos` to make cursor visible.   */
+/* Assumes `line`, `col`, `dis_line` and `dis_pos` are in bounds.       */
 static void
 normalize_display(void)
 {
@@ -376,12 +388,12 @@ normalize_display(void)
 }
 
 #if defined(WIN32)
-/* Defined in de_win.c. */
+/* Defined in `de_win.c` file. */
 #else
 #  define move_cursor(x, y) move(y, x)
 #endif
 
-/* Adjust display so that cursor is visible; move cursor into position  */
+/* Adjust display so that cursor is visible; move cursor into position. */
 /* Update screen if necessary.                                          */
 static void
 fix_cursor(void)
@@ -396,8 +408,8 @@ fix_cursor(void)
 #endif
 }
 
-/* Make sure line, col, and dis_pos are somewhere inside file.  */
-/* Recompute file_pos.  Assumes dis_pos is accurate or past eof */
+/* Make sure `line`, `col` and `dis_pos` are somewhere inside file.     */
+/* Recompute `file_pos`.  Assumes `dis_pos` is accurate or past EOF.    */
 static void
 fix_pos(void)
 {
@@ -421,11 +433,9 @@ fix_pos(void)
 #if defined(WIN32)
 #  define beep() Beep(1000 /* Hz */, 300 /* ms */)
 #else
-/*
- * beep() is part of some curses packages and not others.
- * We try to match the type of the builtin one, if any.
- * Declared in curses.h.
- */
+/* `beep()` is part of some `curses` packages and not others.  We try   */
+/* to match the type of the built-in one, if any.  Declared in the      */
+/* platform `curses.h` file.                                            */
 int
 beep(void)
 {
@@ -436,16 +446,17 @@ beep(void)
 
 #define NO_PREFIX -1
 #define BARE_PREFIX -2
-static int repeat_count = NO_PREFIX; /* current command prefix */
+static int repeat_count = NO_PREFIX; /* the current command prefix */
 
-static int locate_mode = 0;             /* currently between 2 ^Ls  */
-static CORD locate_string = CORD_EMPTY; /* current search string    */
+static int locate_mode = 0; /* currently between 2 ^Ls */
+
+static CORD locate_string = CORD_EMPTY; /* the current search string */
 
 char *arg_file_name;
 
 #ifdef WIN32
 /* Change the current position to whatever is currently displayed at    */
-/* the given SCREEN coordinates.                                        */
+/* the given screen coordinates.                                        */
 void
 set_position(int c, int l)
 {
@@ -456,10 +467,10 @@ set_position(int c, int l)
 }
 #endif /* WIN32 */
 
-/* Perform the command associated with character c.  C may be an        */
-/* integer > 256 denoting a windows command, one of the above control   */
-/* characters, or another ASCII character to be used as either a        */
-/* character to be inserted, a repeat count, or a search string,        */
+/* Perform the command associated with character `c`.  `c` may be an    */
+/* integer greater 255 denoting a windows command, one of the above     */
+/* control characters, or another ASCII character to be used as either  */
+/* a character to be inserted, a repeat count, or a search string,      */
 /* depending on the current state.                                      */
 void
 do_command(int c)
@@ -567,7 +578,7 @@ do_command(int c)
     case DEL:
       if (file_pos == current_len - 1)
         break;
-      /* Can't delete trailing newline */
+      /* Cannot delete a trailing newline. */
       if (CORD_fetch(current, file_pos) == '\n') {
         need_redisplay = ALL;
         need_fix_pos = 1;
@@ -618,7 +629,7 @@ do_command(int c)
   repeat_count = NO_PREFIX;
 }
 
-/* OS independent initialization */
+/* OS-independent initialization. */
 
 void
 generic_init(void)
@@ -640,7 +651,7 @@ generic_init(void)
   add_map(0, 0);
   add_hist(initial);
   now->map = current_map;
-  /* Can't back up further: beginning of the world.   */
+  /* Cannot back up further: beginning of the world. */
   now->previous = now;
 
   GC_END_STUBBORN_CHANGE(now);
@@ -656,7 +667,7 @@ main(int argc, char **argv)
   int c;
   void *buf;
 
-  /* The app is not for testing leak detection mode. */
+  /* The application is not for testing leak detection mode. */
   GC_set_find_leak(0);
 
   GC_INIT();

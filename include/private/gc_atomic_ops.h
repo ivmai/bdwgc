@@ -12,17 +12,18 @@
  */
 
 /* This is a private GC header which provides an implementation of      */
-/* libatomic_ops subset primitives sufficient for GC assuming that GCC  */
-/* atomic intrinsics are available (and have correct implementation).   */
-/* This is enabled by defining GC_BUILTIN_ATOMIC macro.  Otherwise,     */
-/* libatomic_ops library is used to define the primitives.              */
+/* `libatomic_ops` subset primitives sufficient for the collector       */
+/* assuming that GCC atomic intrinsics are available (and have correct  */
+/* implementation).  This is enabled by defining `GC_BUILTIN_ATOMIC`    */
+/* macro.  Otherwise, `libatomic_ops` library is used to define the     */
+/* primitives.                                                          */
 
 #ifndef GC_ATOMIC_OPS_H
 #define GC_ATOMIC_OPS_H
 
 #ifdef GC_BUILTIN_ATOMIC
 
-#  include "gc/gc.h" /* for size_t */
+#  include "gc/gc.h" /* for `size_t` */
 
 #  ifdef __cplusplus
 extern "C" {
@@ -30,14 +31,14 @@ extern "C" {
 
 typedef size_t AO_t;
 
-#  ifdef GC_PRIVATE_H /* have GC_INLINE */
+#  ifdef GC_PRIVATE_H /* i.e. have `GC_INLINE` */
 #    define AO_INLINE GC_INLINE
 #  else
 #    define AO_INLINE static __inline
 #  endif
 
 #  if !defined(THREAD_SANITIZER) && !defined(GC_PRIVATE_H)
-/* Similar to that in gcconfig.h.   */
+/* Similar to that in `gcconfig.h` file. */
 #    if defined(__has_feature)
 #      if __has_feature(thread_sanitizer)
 #        define THREAD_SANITIZER
@@ -63,8 +64,8 @@ typedef unsigned char AO_TS_t;
 #  define AO_compiler_barrier() __atomic_signal_fence(__ATOMIC_SEQ_CST)
 
 #  if defined(THREAD_SANITIZER) && !defined(AO_USE_ATOMIC_THREAD_FENCE)
-/* Workaround a compiler warning (reported by gcc-11, at least)     */
-/* that atomic_thread_fence is unsupported with thread sanitizer.   */
+/* Workaround a compiler warning (reported by gcc-11, at least) that    */
+/* `__atomic_thread_fence` is unsupported with thread sanitizer.        */
 AO_INLINE void
 AO_nop_full(void)
 {
@@ -90,8 +91,8 @@ AO_nop_full(void)
 #  define AO_HAVE_load
 #  define AO_load_acquire(p) __atomic_load_n(p, __ATOMIC_ACQUIRE)
 #  define AO_HAVE_load_acquire
-/* AO_load_acquire_read(p) is not defined as it is unused, but we   */
-/* need its AO_HAVE_x macro defined.                                */
+/* `AO_load_acquire_read(p)` is not defined as it is unused, but we     */
+/* need its `AO_HAVE_` macro defined.                                   */
 #  define AO_HAVE_load_acquire_read
 
 #  define AO_store(p, v) __atomic_store_n(p, v, __ATOMIC_RELAXED)
@@ -123,19 +124,19 @@ AO_compare_and_swap_release(volatile AO_t *p, AO_t ov, AO_t nv)
 #  endif
 
 #  ifndef NO_LOCKFREE_AO_OR
-/* __atomic_or_fetch is assumed to be lock-free.    */
+/* `__atomic_or_fetch()` is assumed to be lock-free. */
 #    define HAVE_LOCKFREE_AO_OR 1
 #  endif
 
 #else
-/* Fallback to libatomic_ops. */
+/* Fallback to `libatomic_ops`. */
 #  include "atomic_ops.h"
 
-/* AO_compiler_barrier, AO_load and AO_store should be defined for    */
-/* all targets; the rest of the primitives are guaranteed to exist    */
-/* only if AO_REQUIRE_CAS is defined (or if the corresponding         */
-/* AO_HAVE_x macro is defined).  i686 and x86_64 targets have         */
-/* AO_nop_full, AO_load_acquire, AO_store_release, at least.          */
+/* `AO_compiler_barrier`, `AO_load` and `AO_store` should be defined    */
+/* for all targets; the rest of the primitives are guaranteed to exist  */
+/* only if `AO_REQUIRE_CAS` is defined (or if the corresponding         */
+/* `AO_HAVE_` macro is defined).  i686 and x86_64 targets have          */
+/* `AO_nop_full`, `AO_load_acquire`, `AO_store_release`, at least.      */
 #  if (!defined(AO_HAVE_load) || !defined(AO_HAVE_store)) && !defined(CPPCHECK)
 #    error AO_load or AO_store is missing; probably old version of atomic_ops
 #  endif
@@ -143,8 +144,9 @@ AO_compare_and_swap_release(volatile AO_t *p, AO_t ov, AO_t nv)
 #endif /* !GC_BUILTIN_ATOMIC */
 
 #if defined(GC_BUILTIN_ATOMIC) || defined(__CHERI_PURE_CAPABILITY__)
-/* Assume that GCC atomic intrinsics are available (and have correct  */
-/* implementation).  p should be of a pointer to ptr_t (char*) value. */
+/* Assume that GCC atomic intrinsics are available (and have correct    */
+/* implementation).  `p` should be of a pointer to `ptr_t` (`char *`)   */
+/* value.                                                               */
 #  define GC_cptr_load(p) __atomic_load_n(p, __ATOMIC_RELAXED)
 #  define GC_cptr_load_acquire(p) __atomic_load_n(p, __ATOMIC_ACQUIRE)
 #  define GC_cptr_load_acquire_read(p) GC_cptr_load_acquire(p)
@@ -160,8 +162,8 @@ GC_cptr_compare_and_swap(char *volatile *p, char *ov, char *nv)
 }
 #  endif
 #else
-/* Redirect to the AO_ primitives.  Assume the size of AO_t matches   */
-/* that of a pointer.                                                 */
+/* Redirect to the `AO_` primitives.  Assume the size of `AO_t` matches */
+/* that of a pointer.                                                   */
 #  define GC_cptr_load(p) (char *)AO_load((volatile AO_t *)(p))
 #  define GC_cptr_load_acquire(p) (char *)AO_load_acquire((volatile AO_t *)(p))
 #  define GC_cptr_load_acquire_read(p) \

@@ -17,19 +17,19 @@
 #ifndef NO_BLACK_LISTING
 
 /*
- * We maintain several hash tables of hblks that have had false hits.
- * Each contains one bit per hash bucket;  If any page in the bucket
+ * We maintain several hash tables of `hblk` entities that have had false
+ * hits.  Each contains one bit per hash bucket.  If any page in the bucket
  * has had a false hit, we assume that all of them have.
- * See the definition of page_hash_table in gc_priv.h.
+ * See the definition of `page_hash_table` in `gc_priv.h` file.
  * False hits from the stack(s) are much more dangerous than false hits
  * from elsewhere, since the former can pin a large object that spans the
  * block, even though it does not start on the dangerous block.
  */
 
 /* Externally callable routines are:    */
-/* - GC_add_to_black_list_normal,       */
-/* - GC_add_to_black_list_stack,        */
-/* - GC_promote_black_lists.            */
+/* - `GC_add_to_black_list_normal`,     */
+/* - `GC_add_to_black_list_stack`,      */
+/* - `GC_promote_black_lists`.          */
 
 /* Pointers to individual tables.  We replace one table by another by   */
 /* switching these pointers.                                            */
@@ -61,9 +61,9 @@ GC_print_blacklisted_ptr(ptr_t p, ptr_t source, const char *kind_str)
                   (void *)p, (void *)source,
                   NULL != source ? "root set" : "register");
   } else {
-    /* FIXME: We can't call the debug version of GC_print_heap_obj  */
-    /* (with PRINT_CALL_CHAIN) here because the allocator lock is   */
-    /* held and the world is stopped.                               */
+    /* FIXME: We cannot call the debug variant of `GC_print_heap_obj`   */
+    /* (with `PRINT_CALL_CHAIN`) here because the allocator lock is     */
+    /* held and the world is stopped.                                   */
     GC_err_printf("Black listing (%s) %p referenced from %p in"
                   " object at %p of appr. %lu bytes\n",
                   kind_str, (void *)p, (void *)source, (void *)base,
@@ -178,9 +178,9 @@ GC_unpromote_black_lists(void)
       set_pht_entry_from_index(bl, index)
 #  endif
 
-/* The argument p is not a valid pointer reference, but it falls inside */
-/* the plausible heap bounds.  Add it to the normal incomplete black    */
-/* list if appropriate.                                                 */
+/* The argument `p` is not a valid pointer reference, but it falls      */
+/* inside the plausible heap bounds.  Add it to the normal incomplete   */
+/* black list if appropriate.                                           */
 #  ifdef PRINT_BLACK_LIST
 GC_INNER void
 GC_add_to_black_list_normal(ptr_t p, ptr_t source)
@@ -235,13 +235,14 @@ GC_add_to_black_list_stack(ptr_t p)
 
 #endif /* !NO_BLACK_LISTING */
 
-/* Is the block starting at h of size len bytes black-listed?  If so,   */
-/* return the address of the next plausible r such that (r,len) might   */
-/* not be black-listed.  (Pointer r may not actually be in the heap.    */
-/* We guarantee only that every smaller value of r after h is also      */
-/* black-listed.)  If (h,len) is not, then return NULL.  Knows about    */
-/* the structure of the black list hash tables.  Assumes the allocator  */
-/* lock is held but no assertion about it by design.                    */
+/* Is the block starting at `h` of size `len` bytes black-listed?       */
+/* If so, return the address of the next plausible `r` such that        */
+/* (`r`,`len`) might not be black-listed.  (Pointer `r` may not         */
+/* actually be in the heap.  We guarantee only that every smaller value */
+/* of `r` after `h` is also black-listed.)  If (`h`,`len`) is not, then */
+/* return `NULL`.  Knows about the structure of the black-list hash     */
+/* tables.  Assumes the allocator lock is held but no assertion about   */
+/* it by design.                                                        */
 GC_API struct GC_hblk_s *GC_CALL
 GC_is_black_listed(struct GC_hblk_s *h, size_t len)
 {
@@ -281,7 +282,8 @@ GC_is_black_listed(struct GC_hblk_s *h, size_t len)
 
 #ifndef NO_BLACK_LISTING
 /* Return the number of blacklisted blocks in a given range.  Used only */
-/* for statistical purposes.  Looks only at the GC_incomplete_stack_bl. */
+/* for statistical purposes.  Looks only at the                         */
+/* `GC_incomplete_stack_bl`.                                            */
 STATIC word
 GC_number_stack_black_listed(struct hblk *start, struct hblk *endp1)
 {

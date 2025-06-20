@@ -11,8 +11,9 @@
  * modified is included with the above copyright notice.
  */
 
-/* Minimal testing of atomic operations used by the BDWGC.  Primary use */
-/* is to determine whether compiler atomic intrinsics can be relied on. */
+/* Minimal testing of atomic operations used by the collector.          */
+/* Primary use is to determine whether the compiler atomic intrinsics   */
+/* can be relied on.                                                    */
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -73,7 +74,7 @@ main(void)
   TA_assert(AO_fetch_and_add(&x, (AO_t)(-43)) == 55);
   TA_assert(AO_fetch_and_add1(&x) == 12);
   TA_assert(AO_fetch_and_sub1(&x) == 13);
-  TA_assert(AO_fetch_and_add1(&x) == 12); /* 2nd call */
+  TA_assert(AO_fetch_and_add1(&x) == 12); /* the 2nd call */
 #  endif
 #  ifdef AO_HAVE_compare_and_swap_release
   TA_assert(!AO_compare_and_swap_release(&x, 14, 42));

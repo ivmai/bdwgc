@@ -12,8 +12,8 @@
  */
 
 // This program tries to test the specific C++ functionality provided by
-// gc_cpp.h that isn't tested by the more general test routines of the
-// collector.
+// `gc_cpp.h` file that is not tested by the more general test routines
+// of the collector.
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -39,9 +39,9 @@ using boehmgc::traceable_allocator;
 #  define GC_API_PRIV GC_API
 #endif
 extern "C" {
-// Use GC private output to reach the same log file.
-// Don't include gc_priv.h, since that may include Windows system
-// header files that do not take kindly to this context.
+// Use the collector private output to reach the same log file.
+// Do not include `gc_priv.h` file, since that may include Windows
+// system header files that do not take kindly to this context.
 GC_API_PRIV void GC_printf(const char *format, ...);
 }
 
@@ -180,8 +180,8 @@ public:
   Test()
   {
     if (GC_is_incremental_mode() && nFreed < (nAllocated / 5) * 4) {
-      // An explicit GC might be needed to reach the expected number
-      // of the finalized objects.
+      // An explicit garbage collection might be needed to reach the expected
+      // number of the finalized objects.
       GC_gcollect();
     }
     my_assert(nFreed <= nAllocated);
@@ -201,7 +201,7 @@ int C::nFreed = 0;
 int C::nAllocated = 0;
 
 // A collectible class with a static member function to be used as
-// an explicit cleanup function supplied to ::new.
+// an explicit cleanup function supplied to operator `::new`.
 class D : public GC_NS_QUALIFY(gc)
 {
 public:
@@ -231,7 +231,7 @@ public:
 int D::nFreed = 0;
 int D::nAllocated = 0;
 
-// A collectible class with cleanup for use by F.
+// A collectible class with cleanup for use by `F`.
 class E : public GC_NS_QUALIFY(gc_cleanup)
 {
 public:
@@ -283,7 +283,7 @@ Undisguise(GC_uintptr_t v)
   return GC_REVEAL_NZ_POINTER(v);
 }
 
-// Note: "delete p" should invoke GC_FREE().
+// Note: `delete p` should invoke `GC_FREE()`.
 #define GC_CHECKED_DELETE(p)                                  \
   {                                                           \
     size_t freed_before = GC_get_expl_freed_bytes_since_gc(); \
@@ -297,8 +297,8 @@ Undisguise(GC_uintptr_t v)
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
 int APIENTRY
-WinMain(HINSTANCE /* instance */, HINSTANCE /* prev */, LPSTR cmd,
-        int /* cmdShow */)
+WinMain(HINSTANCE /* `instance` */, HINSTANCE /* `prev` */, LPSTR cmd,
+        int /* `cmdShow` */)
 {
   int argc = 0;
   char *argv[3];
@@ -309,10 +309,10 @@ WinMain(HINSTANCE /* instance */, HINSTANCE /* prev */, LPSTR cmd,
   if (cmd != 0)
     for (argc = 1; argc < static_cast<int>(sizeof(argv) / sizeof(argv[0]));
          argc++) {
-      // Parse the command-line string.  Non-reentrant strtok() is not used
-      // to avoid complains of static analysis tools.  (And, strtok_r() is
+      // Parse the command-line string.  Non-reentrant `strtok()` is not used
+      // to avoid complains of static analysis tools.  (And, `strtok_r()` is
       // not available on some platforms.)  The code is equivalent to:
-      //   if (!(argv[argc] = strtok(argc == 1 ? cmd : 0, " \t"))) break;
+      // `if (!(argv[argc] = strtok(argc == 1 ? cmd : 0, " \t"))) break;`.
       if (NULL == cmd) {
         argv[argc] = NULL;
         break;
@@ -382,7 +382,7 @@ main(int argc, const char *argv[])
 
     // Allocate some uncollectible objects and disguise their pointers.
     // Later we will check to see if the objects are still there.
-    // We're checking to make sure these objects are uncollectible really.
+    // We are checking to make sure these objects are uncollectible really.
     GC_uintptr_t as[1000];
     GC_uintptr_t bs[1000];
     for (i = 0; i < 1000; i++) {
@@ -391,7 +391,7 @@ main(int argc, const char *argv[])
     }
 
     // Allocate a fair number of finalizable objects.
-    // Later we will check to make sure they've gone away.
+    // Later we will check to make sure they have gone away.
     for (i = 0; i < 1000; i++) {
       C *c = new C(2);
       // Stack allocation should work too.
@@ -438,9 +438,9 @@ main(int argc, const char *argv[])
       B *b = static_cast<B *>(Undisguise(bs[i]));
       a->Test(i);
 #if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER)
-      // Workaround for ASan/MSan: the linker uses operator delete
-      // implementation from libclang_rt instead of gc_cpp (thus
-      // causing incompatible alloc/free).
+      // Workaround for ASan/MSan: the linker uses operator `delete`
+      // implementation from `libclang_rt` instead of `gccpp` library (thus
+      // causing incompatible `alloc`/`free`).
       GC_FREE(a);
 #else
       GC_CHECKED_DELETE(a);

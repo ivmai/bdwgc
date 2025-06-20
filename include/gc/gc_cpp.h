@@ -31,46 +31,54 @@ collectible objects when it discovers them to be inaccessible.
 Collectible objects may freely point at uncollectible objects and vice
 versa.
 
-Objects allocated with the built-in "::operator new" are uncollectible.
+Objects allocated with the built-in `::operator new` are uncollectible.
 
-Objects derived from class "gc" are collectible.  For example:
+Objects derived from class `gc` are collectible.  E.g.:
 
+```
+  class A: public gc {...};
+  A *a = new A; // a is collectible
+```
+
+Collectible instances of non-class types can be allocated using `GC`
+(or `UseGC`) placement:
+
+```
+  typedef int A[10];
+  A *a = new (GC) A;
+```
+
+Uncollectible instances of classes derived from `gc` can be allocated
+using `NoGC` placement:
+
+```
     class A: public gc {...};
-    A* a = new A;       // a is collectible.
+    A *a = new (NoGC) A; // a is uncollectible
+```
 
-Collectible instances of non-class types can be allocated using the GC
-(or UseGC) placement:
-
-    typedef int A[ 10 ];
-    A* a = new (GC) A;
-
-Uncollectible instances of classes derived from "gc" can be allocated
-using the NoGC placement:
-
-    class A: public gc {...};
-    A* a = new (NoGC) A;   // a is uncollectible.
-
-The new(PointerFreeGC) syntax allows the allocation of collectible
+The `new(PointerFreeGC)` syntax allows the allocation of collectible
 objects that are not scanned by the collector.  This useful if you
 are allocating compressed data, bitmaps, or network packets.  (In
 the latter case, it may remove danger of unfriendly network packets
 intentionally containing values that cause spurious memory retention.)
 
 Both uncollectible and collectible objects can be explicitly deleted
-with "delete", which invokes an object's destructors and frees its
-storage immediately.
+with `operator delete`, which invokes an object's destructors and frees
+its storage immediately.
 
 A collectible object may have a cleanup function, which will be
 invoked when the collector discovers the object to be inaccessible.
-An object derived from "gc_cleanup" or containing a member derived
-from "gc_cleanup" has a default cleanup function that invokes the
+An object derived from `gc_cleanup` or containing a member derived
+from `gc_cleanup` has a default cleanup function that invokes the
 object's destructors.  Explicit cleanup functions may be specified as
 an additional placement argument:
 
-    A* a = ::new (GC, MyCleanup) A;
+```
+    A *a = ::new (GC, MyCleanup) A;
+```
 
 An object is considered "accessible" by the collector if it can be
-reached by a path of pointers from static variables, automatic
+reached by a path of pointers from `static` variables, automatic
 variables of active functions, or from some object with cleanup
 enabled; pointers from an object to itself are ignored.
 
@@ -78,55 +86,58 @@ Thus, if objects A and B both have cleanup functions, and A points at
 B, B is considered accessible.  After A's cleanup is invoked and its
 storage released, B will then become inaccessible and will have its
 cleanup invoked.  If A points at B and B points to A, forming a
-cycle, then that's considered a storage leak, and neither will be
-collectible.  See the interface gc.h for low-level facilities for
-handling such cycles of objects with cleanup.
+cycle, then that is considered a storage leak, and neither will be
+collectible.  See the interface in `gc.h` file for low-level facilities
+for handling such cycles of objects with cleanup.
 
 The collector cannot guarantee that it will find all inaccessible
 objects.  In practice, it finds almost all of them.
 
 Cautions:
 
-1. Be sure the collector is compiled with the C++ support
-(e.g. --enable-cplusplus option is passed to make).
+  1. Be sure the collector is compiled with the C++ support
+     (e.g. `--enable-cplusplus` option is passed to `configure`).
 
-2. If the compiler does not support "operator new[]", beware that an
-array of type T, where T is derived from "gc", may or may not be
-allocated as a collectible object (it depends on the compiler).  Use
-the explicit GC placement to make the array collectible.  For example:
+  2. If the compiler does not support `operator new[]`, beware that an
+     array of type `T`, where `T` is derived from `gc`, may or may not be
+     allocated as a collectible object (it depends on the compiler).  Use
+     the explicit GC placement to make the array collectible.  E.g.:
 
-    class A: public gc {...};
-    A* a1 = new A[ 10 ];        // collectible or uncollectible?
-    A* a2 = new (GC) A[ 10 ];   // collectible.
+     ```
+       class A: public gc {...};
+       A *a1 = new A[10];      // collectible or uncollectible?
+       A *a2 = new (GC) A[10]; // collectible
+     ```
 
-3. The destructors of collectible arrays of objects derived from
-"gc_cleanup" will not be invoked properly.  For example:
+  3. The destructors of collectible arrays of objects derived from
+     `gc_cleanup` will not be invoked properly.  E.g.:
 
-    class A: public gc_cleanup {...};
-    A* a = new (GC) A[ 10 ];    // destructors not invoked correctly
+     ```
+       class A: public gc_cleanup {...};
+       A *a = new (GC) A[10]; // destructors not invoked correctly
+     ```
+     Typically, only the destructor for the first element of the array will
+     be invoked when the array is garbage-collected.  To get all the
+     destructors of any array executed, you must supply an explicit
+     cleanup function:
 
-Typically, only the destructor for the first element of the array will
-be invoked when the array is garbage-collected.  To get all the
-destructors of any array executed, you must supply an explicit
-cleanup function:
+     ```
+       A *a = new (GC, MyCleanUp) A[10];
+     ```
+     (Implementing cleanup of arrays correctly, portably, and in a way
+     that preserves the correct exception semantics, requires a language
+     extension, e.g. the `gc` keyword.)
 
-    A* a = new (GC, MyCleanUp) A[ 10 ];
-
-(Implementing cleanup of arrays correctly, portably, and in a way
-that preserves the correct exception semantics requires a language
-extension, e.g. the "gc" keyword.)
-
-4. GC name conflicts:
-
-Many other systems seem to use the identifier "GC" as an abbreviation
-for "Graphics Context".  Thus, GC placement has been replaced
-by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
+  4. GC name conflicts: Many other systems seem to use the identifier `GC`
+     as an abbreviation for "Graphics Context".  Thus, `GC` placement has
+     been replaced by `UseGC`.  `GC` is an alias for `UseGC`, unless
+     `GC_NAME_CONFLICT` macro is defined.
 */
 
 #include "gc.h"
 
 #ifdef GC_INCLUDE_NEW
-#  include <new> // for std, bad_alloc
+#  include <new> // for `std`, `bad_alloc`
 #endif
 
 #if defined(GC_INCLUDE_NEW) && (__cplusplus >= 201103L)
@@ -164,7 +175,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
              || defined(__CYGWIN32__) || defined(__MINGW32__)     \
              || defined(__WATCOMC__))                             \
             && !defined(GC_BUILD) && !defined(GC_NOT_DLL)))
-// Inlining done to avoid mix up of new and delete operators by VC++ 9
+// Inlining done to avoid mix up of `new` and `delete` operators by VC++ 9
 // (due to arbitrary ordering during linking).
 #  define GC_INLINE_STD_NEW
 #endif
@@ -184,8 +195,8 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
     && ((defined(GC_INCLUDE_NEW)                                              \
          && (__cplusplus >= 201103L || _MSVC_LANG >= 201103L))                \
         || defined(__NOTHROW_T_DEFINED))
-// Note: this might require defining GC_INCLUDE_NEW by client
-// before include gc_cpp.h (on Windows).
+// Note: this might require defining `GC_INCLUDE_NEW` macro by client
+// before include `gc_cpp.h` file (on Windows).
 #  define GC_OPERATOR_NEW_NOTHROW
 #endif
 
@@ -204,7 +215,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 #elif defined(GC_INCLUDE_NEW)
 #  define GC_DECL_NEW_THROW throw(std::bad_alloc)
 #else
-#  define GC_DECL_NEW_THROW /* empty (as bad_alloc might be undeclared) */
+#  define GC_DECL_NEW_THROW /* empty (as `bad_alloc` might be undeclared) */
 #endif
 
 #if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
@@ -219,7 +230,8 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
     } else                         \
       throw std::bad_alloc()
 #else
-// "new" header is not included, so bad_alloc cannot be thrown directly.
+// The platform `new` header file is not included, so `bad_alloc` cannot
+// be thrown directly.
 GC_API void GC_CALL GC_throw_bad_alloc();
 #  define GC_OP_NEW_OOM_CHECK(obj) \
     if (obj) {                     \
@@ -245,8 +257,8 @@ enum GCPlacement {
 #endif
 };
 
-// Instances of classes derived from gc will be allocated in the collected
-// heap by default, unless an explicit NoGC placement is specified.
+// Instances of classes derived from `gc` will be allocated in the collected
+// heap by default, unless an explicit `NoGC` placement is specified.
 class gc
 {
 public:
@@ -286,8 +298,8 @@ public:
 
 // Instances of classes derived from gc_cleanup will be allocated in the
 // collected heap by default.  When the collector discovers an inaccessible
-// object derived from gc_cleanup or containing a member derived from
-// gc_cleanup, its destructors will be invoked.
+// object derived from `gc_cleanup` or containing a member derived from
+// `gc_cleanup`, its destructors will be invoked.
 class gc_cleanup : virtual public gc
 {
 public:
@@ -316,18 +328,18 @@ typedef void(GC_CALLBACK *GCCleanUpFunc)(void *obj, void *clientData);
 #endif
 
 // Allocates a collectible or uncollectible object, according to the
-// value of gcp.
-// For collectible objects, if cleanup is non-null, then when the
-// allocated object obj becomes inaccessible, the collector will
-// invoke cleanup(obj,clientData) but will not invoke the object's
-// destructors.  It is an error to explicitly delete an object
-// allocated with a non-null cleanup.
-// It is an error to specify a non-null cleanup with NoGC or for
-// classes derived from gc_cleanup or containing members derived
-// from gc_cleanup.
-inline void *operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
-                          GC_NS_QUALIFY(GCCleanUpFunc) = 0,
-                          void * /* clientData */ = 0);
+// value of `gcp`.
+// For collectible objects, if `cleanup` is non-null, then when the
+// allocated object `obj` becomes inaccessible, the collector will
+// invoke `cleanup(obj, clientData)` but will not invoke the object's
+// destructors.  It is an error to explicitly `delete` an object
+// allocated with a non-null `cleanup`.
+// It is an error to specify a non-null `cleanup` with `NoGC` or for
+// classes derived from `gc_cleanup` or containing members derived
+// from `gc_cleanup`.
+inline void *operator new(GC_SIZE_T, GC_NS_QUALIFY(GCPlacement) /* `gcp` */,
+                          GC_NS_QUALIFY(GCCleanUpFunc) = 0 /* `cleanup` */,
+                          void * /* `clientData` */ = 0);
 
 #ifdef GC_PLACEMENT_DELETE
 inline void operator delete(void *, GC_NS_QUALIFY(GCPlacement),
@@ -352,7 +364,7 @@ operator delete[](void *obj) GC_NOEXCEPT
 }
 
 #    ifdef GC_OPERATOR_NEW_NOTHROW
-inline /* GC_ATTR_MALLOC */ void *
+inline /* `GC_ATTR_MALLOC` */ void *
 operator new[](GC_SIZE_T size, const std::nothrow_t &) GC_NOEXCEPT
 {
   return GC_MALLOC_UNCOLLECTABLE(size);
@@ -381,7 +393,7 @@ operator delete(void *obj) GC_NOEXCEPT
 }
 
 #  ifdef GC_OPERATOR_NEW_NOTHROW
-inline /* GC_ATTR_MALLOC */ void *
+inline /* `GC_ATTR_MALLOC` */ void *
 operator new(GC_SIZE_T size, const std::nothrow_t &) GC_NOEXCEPT
 {
   return GC_MALLOC_UNCOLLECTABLE(size);
@@ -413,7 +425,7 @@ operator delete[](void *obj, GC_SIZE_T) GC_NOEXCEPT
 #  ifdef _MSC_VER
 // This new operator is used by VC++ in case of Debug builds.
 inline void *
-operator new(GC_SIZE_T size, int /* nBlockUse */, const char *szFileName,
+operator new(GC_SIZE_T size, int /* `nBlockUse` */, const char *szFileName,
              int nLine)
 {
 #    ifdef GC_DEBUG
@@ -440,25 +452,25 @@ operator new[](GC_SIZE_T size, int nBlockUse, const char *szFileName,
 
 #elif defined(GC_NO_INLINE_STD_NEW) && defined(_MSC_VER)
 
-// The following ensures that the system default operator new[] does not
+// The following ensures that the system default `operator new[]` does not
 // get undefined, which is what seems to happen on VC++ 6 for some reason
-// if we define a multi-argument operator new[].
+// if we define a multi-argument `operator new[]`.
 // There seems to be no way to redirect new in this environment without
 // including this everywhere.
 #  ifdef GC_OPERATOR_NEW_ARRAY
 void *operator new[](GC_SIZE_T) GC_DECL_NEW_THROW;
 void operator delete[](void *) GC_NOEXCEPT;
 #    ifdef GC_OPERATOR_NEW_NOTHROW
-/* GC_ATTR_MALLOC */ void *operator new[](GC_SIZE_T,
-                                          const std::nothrow_t &) GC_NOEXCEPT;
+/* `GC_ATTR_MALLOC` */ void *
+operator new[](GC_SIZE_T, const std::nothrow_t &) GC_NOEXCEPT;
 void operator delete[](void *, const std::nothrow_t &) GC_NOEXCEPT;
 #    endif
 #    ifdef GC_OPERATOR_SIZED_DELETE
 void operator delete[](void *, GC_SIZE_T) GC_NOEXCEPT;
 #    endif
 
-void *operator new[](GC_SIZE_T, int /* nBlockUse */,
-                     const char * /* szFileName */, int /* nLine */);
+void *operator new[](GC_SIZE_T, int /* `nBlockUse` */,
+                     const char * /* `szFileName` */, int /* `nLine` */);
 #  endif // GC_OPERATOR_NEW_ARRAY
 
 void *operator new(GC_SIZE_T) GC_DECL_NEW_THROW;
@@ -472,16 +484,16 @@ void operator delete(void *, const std::nothrow_t &) GC_NOEXCEPT;
 void operator delete(void *, GC_SIZE_T) GC_NOEXCEPT;
 #  endif
 
-void *operator new(GC_SIZE_T, int /* nBlockUse */,
-                   const char * /* szFileName */, int /* nLine */);
+void *operator new(GC_SIZE_T, int /* `nBlockUse` */,
+                   const char * /* `szFileName` */, int /* `nLine` */);
 
 #endif // GC_NO_INLINE_STD_NEW && _MSC_VER
 
 #ifdef GC_OPERATOR_NEW_ARRAY
-// The operator new for arrays, identical to the above.
+// The `operator new` for arrays, identical to the above.
 inline void *operator new[](GC_SIZE_T, GC_NS_QUALIFY(GCPlacement),
                             GC_NS_QUALIFY(GCCleanUpFunc) = 0,
-                            void * /* clientData */ = 0);
+                            void * /* `clientData` */ = 0);
 #endif // GC_OPERATOR_NEW_ARRAY
 
 // Inline implementation.
@@ -630,7 +642,7 @@ inline gc_cleanup::gc_cleanup()
   void *this_ptr = reinterpret_cast<void *>(this);
   void *base = GC_base(this_ptr);
   if (base != 0) {
-    // Don't call the debug version, since this is a real base address.
+    // Do not call the debug variant, since this is a real base address.
     GC_register_finalizer_ignore_self(
         base, reinterpret_cast<GC_finalization_proc>(cleanup),
         reinterpret_cast<void *>(
@@ -687,7 +699,7 @@ operator new(GC_SIZE_T size, GC_NS_QUALIFY(GCPlacement) gcp,
 inline void
 operator delete(void *obj, GC_NS_QUALIFY(GCPlacement),
                 GC_NS_QUALIFY(GCCleanUpFunc),
-                void * /* clientData */) GC_NOEXCEPT
+                void * /* `clientData` */) GC_NOEXCEPT
 {
   GC_FREE(obj);
 }

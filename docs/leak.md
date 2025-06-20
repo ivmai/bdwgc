@@ -21,18 +21,21 @@ is built with `NO_FIND_LEAK` macro defined). This includes the following
 features:
 
   1. Leak detection mode can be initiated at run-time by `GC_set_find_leak(1)`
-  call at program startup instead of building the collector with `FIND_LEAK`
-  macro defined.
-  2. Leaked objects should be reported and then correctly garbage collected.
+     call at program startup instead of building the collector with
+     `FIND_LEAK` macro defined;
+
+  2. Leaked objects should be reported and then correctly garbage-collected.
 
 To use the collector as a leak detector, do the following steps:
 
-  1. Activate the leak detection mode as described above.
+  1. Activate the leak detection mode as described above;
+
   2. Change the program so that all allocation and deallocation goes through
-  the garbage collector.
+     the garbage collector;
+
   3. Arrange to call `GC_gcollect` (or `CHECK_LEAKS()`) at appropriate points
-  to check for leaks. (This happens implicitly but probably not with
-  a sufficient frequency for long running programs.)
+     to check for leaks. (This happens implicitly but probably not with
+     a sufficient frequency for long running programs.)
 
 The second step can usually be accomplished with the
 `-DREDIRECT_MALLOC=GC_malloc` option when the collector is built, or by
@@ -45,9 +48,10 @@ error reports will include only object addresses.
 
 For more precise error reports, as much of the program as possible should use
 the all uppercase variants of these functions, after defining `GC_DEBUG`, and
-then including `gc.h`. In this environment `GC_MALLOC` is a macro which causes
-at least the file name and line number at the allocation point to be saved
-as part of the object. Leak reports will then also include this information.
+then including `gc.h` file. In this environment `GC_MALLOC` is a macro which
+causes at least the file name and line number at the allocation point to be
+saved as part of the object. Leak reports will then also include this
+information.
 
 Many collector features (e.g. finalization and disappearing links) are less
 useful in this context, and are not fully supported. Their use will usually
@@ -134,35 +138,39 @@ It should be possible to run the collector in the leak detection mode on
 a program a.out under Linux/i686 and Linux/x86_64 as follows:
 
   1. If possible, ensure that a.out is a single-threaded executable. On some
-  platforms this does not work at all for the multi-threaded programs.
-  2. If possible, ensure that the `addr2line` program is installed
-  in `/usr/bin`. (It comes with most Linux distributions.)
-  3. If possible, compile your program, which we'll call `a.out`, with full
-  debug information. This will improve the quality of the leak reports.
-  With this approach, it is no longer necessary to call `GC_` routines
-  explicitly, though that can also improve the quality of the leak reports.
-  4. Build the collector and install it in directory _foo_ as follows (it may
-  be safe to omit the `--disable-threads` option on Linux, but the combination
-  of thread support and `malloc` replacement is not yet rock solid):
+     platforms this does not work at all for the multi-threaded programs.
 
-   - `./configure --prefix=_foo_ --enable-gc-debug --enable-redirect-malloc --disable-threads`
-   - `make`
-   - `make install`
+  2. If possible, ensure that the `addr2line` program is installed
+     in `/usr/bin`. (It comes with most Linux distributions.)
+
+  3. If possible, compile your program, which we will call `a.out`, with full
+     debug information. This will improve the quality of the leak reports.
+     With this approach, it is no longer necessary to call `GC_` routines
+     explicitly, though that can also improve the quality of the leak reports.
+
+  4. Build the collector and install it in directory _foo_ as follows (it may
+     be safe to omit the `--disable-threads` option on Linux, but the
+     combination of thread support and `malloc` replacement is not yet rock
+     solid):
+
+       - `./configure --prefix=_foo_ --enable-gc-debug --enable-redirect-malloc --disable-threads`
+       - `make`
+       - `make install`
 
   5. Set environment variables as follows (the last two are optional, just to
-  confirm the collector is running, and to facilitate debugging from another
-  console window if something goes wrong, respectively):
+     confirm the collector is running, and to facilitate debugging from
+     another console window if something goes wrong, respectively):
 
-   - `LD_PRELOAD=_foo_/lib/libgc.so`
-   - `GC_FIND_LEAK`
-   - `GC_PRINT_STATS`
-   - `GC_LOOP_ON_ABORT`
+       - `LD_PRELOAD=_foo_/lib/libgc.so`
+       - `GC_FIND_LEAK`
+       - `GC_PRINT_STATS`
+       - `GC_LOOP_ON_ABORT`
 
   6. Simply run `a.out` as you normally would. Note that if you run anything
-  else (e.g. your editor) with those environment variables set, it will also
-  be leak tested. This may or may not be useful and/or embarrassing. It can
-  generate mountains of leak reports if the application was not designed
-  to avoid leaks, e.g. because it's always short-lived.
+     else (e.g. your editor) with those environment variables set, it will
+     also be leak-tested. This may or may not be useful and/or embarrassing.
+     It can generate mountains of leak reports if the application was not
+     designed to avoid leaks, e.g. because it is always short-lived.
 
-This has not yet been thoroughly tested on large applications, but it's known
+This has not yet been thoroughly tested on large applications, but it is known
 to do the right thing on at least some small ones.

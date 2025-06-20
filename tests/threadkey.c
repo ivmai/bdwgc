@@ -34,13 +34,13 @@ main(void)
 
 #else
 
-#  include <errno.h> /* for EAGAIN */
+#  include <errno.h> /* for `EAGAIN` */
 #  include <pthread.h>
 #  include <string.h>
 
 pthread_key_t key;
 
-/* TODO: use pthread_once_t on Solaris. */
+/* TODO: use `pthread_once_t` on Solaris. */
 pthread_once_t key_once = PTHREAD_ONCE_INIT;
 
 static void *
@@ -56,8 +56,8 @@ on_thread_exit_inner(struct GC_stack_base *sb, void *arg)
 {
   int res = GC_register_my_thread(sb);
   pthread_t t;
-  /* This is used to suppress a warning about unchecked                 */
-  /* pthread_create() result.                                           */
+  /* This is used to suppress a warning about unchecked             */
+  /* `pthread_create()` result.                                     */
   int creation_res;
   pthread_attr_t attr;
 
@@ -105,7 +105,7 @@ main(void)
   GC_INIT();
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
-  /* TODO: call make_key() instead on Solaris. */
+  /* TODO: call `make_key()` instead on Solaris. */
   pthread_once(&key_once, make_key);
 
   for (i = 0; i < NTHREADS_INNER; i++) {

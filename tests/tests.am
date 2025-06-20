@@ -8,7 +8,7 @@
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
 
-# Common libs to *_LDADD for most tests.
+# Common libs to `*_LDADD` for most tests.
 test_ldadd = $(nodist_libgc_la_OBJECTS) $(top_builddir)/libgc.la \
             $(EXTRA_TEST_LIBS)
 
@@ -25,8 +25,8 @@ endif
 gctest_DEPENDENCIES = $(top_builddir)/libgc.la
 
 if EMSCRIPTEN
-# Note: because of libtool, you'll need to point your browser to
-# .libs/gctest.html, not gctest.html at topdir.
+# Note: because of `libtool`, you will need to point your browser to
+# ".libs/gctest.html", not "gctest.html" at `topdir`.
 check_PROGRAMS += gctest.html
 gctest_html_SOURCES = $(gctest_SOURCES)
 gctest_html_LDADD = $(gctest_LDADD)
@@ -127,8 +127,8 @@ cpptest_LDADD = gc_badalc.o gc_cpp.o $(test_ldadd) $(CXXLIBS)
 else
 cpptest_LDADD = libgccpp.la $(nodist_libgc_la_OBJECTS) \
                 $(EXTRA_TEST_LIBS) $(CXXLIBS)
-## In case of static libraries build, libgc.a is already referenced in
-## dependency_libs attribute of libgccpp.la file.
+## In case of static libraries build, `libgc.a` file is already referenced in
+## `dependency_libs` attribute of `libgccpp.la` file.
 if ENABLE_SHARED
 cpptest_LDADD += $(top_builddir)/libgc.la
 endif
@@ -179,7 +179,7 @@ endif
 
 endif
 
-# Run the tests directly (without test-driver):
+# Run the tests directly (without `test-driver`):
 .PHONY: check-without-test-driver
 check-without-test-driver: $(TESTS)
 	./gctest$(EXEEXT)

@@ -51,15 +51,15 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(KEEP_BACK_PTRS) || defined(PRINT_BLACK_LIST)
-/* Pointer "source"s that aren't real locations.      */
-/* Used in oh_back_ptr fields and as "source"         */
-/* argument to some marking functions.                */
+/* Pointer "source" variants that are not real locations.  Used in      */
+/* `oh_back_ptr` fields and as `source` argument to some marking        */
+/* functions.                                                           */
 
 /* Object was marked because it is finalizable.         */
 #  define MARKED_FOR_FINALIZATION ((ptr_t)NUMERIC_TO_VPTR(2))
 
 /* Object was marked from a register.  Hence the        */
-/* source of the reference doesn't have an address.     */
+/* "source" of the reference does not have an address.  */
 #  define MARKED_FROM_REGISTER ((ptr_t)NUMERIC_TO_VPTR(4))
 
 #  define NOT_MARKED ((ptr_t)NUMERIC_TO_VPTR(8))
@@ -71,20 +71,20 @@ EXTERN_C_BEGIN
 typedef struct {
 #if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
   /* We potentially keep two different kinds of back          */
-  /* pointers.  KEEP_BACK_PTRS stores a single back           */
+  /* pointers.  `KEEP_BACK_PTRS` stores a single back         */
   /* pointer in each reachable object to allow reporting      */
-  /* of why an object was retained.  MAKE_BACK_GRAPH          */
+  /* of why an object was retained.  `MAKE_BACK_GRAPH`        */
   /* builds a graph containing the inverse of all             */
   /* "points-to" edges including those involving              */
-  /* objects that have just become unreachable. This          */
+  /* objects that have just become unreachable.  This         */
   /* allows detection of growing chains of unreachable        */
   /* objects.  It may be possible to eventually combine       */
   /* both, but for now we keep them separate.  Both           */
   /* kinds of back pointers are hidden using the              */
-  /* following macros.  In both cases, the plain version      */
+  /* following macros.  In both cases, the plain variant      */
   /* is constrained to have the least significant bit of 1,   */
   /* to allow it to be distinguished from a free-list         */
-  /* link.  This means the plain version must have the least  */
+  /* link.  This means the plain variant must have the least  */
   /* significant bit of zero.  Note that blocks dropped by    */
   /* black-listing will also have the the least significant   */
   /* bit clear once debugging has started; we are careful     */
@@ -107,8 +107,8 @@ typedef struct {
   struct callinfo oh_ci[NFRAMES];
 #endif
 #ifndef SHORT_DBG_HDRS
-  GC_uintptr_t oh_sz; /* Original malloc argument.    */
-  GC_uintptr_t oh_sf; /* Start flag.                  */
+  GC_uintptr_t oh_sz; /* the original `malloc` argument */
+  GC_uintptr_t oh_sf; /* the "start" flag (marker) */
 #endif
 } oh;
 
@@ -118,17 +118,17 @@ typedef struct {
 #  define DEBUG_BYTES sizeof(oh)
 #  define UNCOLLECTABLE_DEBUG_BYTES DEBUG_BYTES
 #else
-/* Add space for END_FLAG, but use any extra space that was already   */
-/* added to catch off-the-end pointers.                               */
-/* For uncollectible objects, the extra byte is not added.            */
+/* Add space for `END_FLAG`, but use any extra space that was already   */
+/* added to catch off-the-end pointers.  For uncollectible objects, the */
+/* extra byte is not added.                                             */
 #  define UNCOLLECTABLE_DEBUG_BYTES (sizeof(oh) + sizeof(GC_uintptr_t))
 #  define DEBUG_BYTES (UNCOLLECTABLE_DEBUG_BYTES - EXTRA_BYTES)
 #endif
 
-/* ADD_CALL_CHAIN stores a (partial) call chain into an object  */
-/* header; it should be called with the allocator lock held.    */
-/* PRINT_CALL_CHAIN prints the call chain stored in an object   */
-/* to stderr; it requires we do not hold the allocator lock.    */
+/* `ADD_CALL_CHAIN` stores a (partial) call chain into an object    */
+/* header; it should be called with the allocator lock held.        */
+/* `PRINT_CALL_CHAIN` prints the call chain stored in an object     */
+/* to `stderr`; it requires we do not hold the allocator lock.      */
 #if defined(SAVE_CALL_CHAIN)
 #  define ADD_CALL_CHAIN(base, ra) GC_save_callers(((oh *)(base))->oh_ci)
 #  if defined(REDIRECT_MALLOC) && defined(THREADS) && defined(DBG_HDRS_ALL) \
@@ -147,7 +147,7 @@ GC_INNER void GC_save_callers_no_unlock(struct callinfo info[NFRAMES]);
 #endif
 
 #if !defined(ADD_CALL_CHAIN_INNER) && defined(DBG_HDRS_ALL)
-/* A variant of ADD_CALL_CHAIN() used for internal allocations.   */
+/* A variant of `ADD_CALL_CHAIN()` used for internal allocations. */
 #  define ADD_CALL_CHAIN_INNER(base) ADD_CALL_CHAIN(base, GC_RETURN_ADDR)
 #endif
 
@@ -158,13 +158,13 @@ GC_INNER void GC_save_callers_no_unlock(struct callinfo info[NFRAMES]);
 #endif
 
 /* Check whether object given by its base pointer has debugging info.   */
-/* The argument (base) is assumed to point to a legitimate object in    */
+/* The argument (`base`) is assumed to point to a legitimate object in  */
 /* our heap.  This excludes the check as to whether the back pointer    */
-/* is odd, which is added by the GC_HAS_DEBUG_INFO macro.  Note that    */
-/* if DBG_HDRS_ALL is set, uncollectible objects on free lists may not  */
-/* have debug information set.  Thus, it is not always safe to return   */
-/* TRUE (1), even if the client does its part.  Return -1 if the object */
-/* with debug info has been marked as deallocated.                      */
+/* is odd, which is added by the `GC_HAS_DEBUG_INFO` macro.  Note that  */
+/* if `DBG_HDRS_ALL` is defined, uncollectible objects on free lists    */
+/* may not have debug information set.  Thus, it is not always safe to  */
+/* return 1 (true), even if the client does its part.  Return -1 if the */
+/* object with debug info has been marked as deallocated.               */
 #ifdef SHORT_DBG_HDRS
 #  define GC_has_other_debug_info(base) 1
 #else
@@ -172,9 +172,9 @@ GC_INNER int GC_has_other_debug_info(ptr_t base);
 
 GC_INNER void GC_add_smashed(ptr_t smashed);
 
-/* Use GC_err_printf and friends to print a description of the object */
-/* whose client-visible address is p, and which was smashed at memory */
-/* location pointed by clobbered.                                     */
+/* Use `GC_err_printf()` and friends to print a description of the      */
+/* object whose client-visible address is `p`, and which was smashed at */
+/* memory location pointed by clobbered.                                */
 GC_INNER void GC_print_smashed_obj(const char *msg, void *p, ptr_t clobbered);
 
 /* Print all objects on the list.  Clear the list.    */
@@ -187,9 +187,9 @@ GC_INNER void GC_print_all_smashed_proc(void);
 /* We may mistakenly conclude that base has a debugging wrapper.    */
 #  endif
 #  if defined(PARALLEL_MARK) && defined(KEEP_BACK_PTRS)
-/* Atomic load is used as GC_store_back_pointer stores oh_back_ptr  */
-/* atomically (base might point to the field); this prevents a TSan */
-/* warning.                                                         */
+/* Note: the atomic load is used as `GC_store_back_pointer` stores  */
+/* `oh_back_ptr` atomically (`base` might point to the field); this */
+/* prevents a TSan warning.                                         */
 #    define GC_HAS_DEBUG_INFO(base)                                    \
       (((GC_uintptr_t)GC_cptr_load((volatile ptr_t *)(base)) & 1) != 0 \
        && GC_has_other_debug_info(base) > 0)

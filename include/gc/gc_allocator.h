@@ -24,12 +24,12 @@
 
 /*
  * This implements standard-conforming allocators that interact with
- * the garbage collector.  Gc_allocator<T> allocates garbage-collectible
- * objects of type T.  Traceable_allocator<T> allocates objects that
- * are not themselves garbage collected, but are scanned by the
- * collector for pointers to collectible objects.  Traceable_alloc
- * should be used for explicitly managed STL containers that may
- * point to collectible objects.
+ * the garbage collector.  `gc_allocator<T>` allocates garbage-collectible
+ * objects of type `T`.  `traceable_allocator<T>` allocates objects that
+ * are not themselves garbage-collected ones, but are scanned by the
+ * collector for pointers to collectible objects.  `traceable_allocator<T>`
+ * should be used for explicitly managed STL containers that may point to
+ * collectible objects.
  *
  * This code was derived from an earlier version of the GNU C++ standard
  * library, which itself was derived from the SGI STL implementation.
@@ -42,7 +42,7 @@
 
 #include "gc.h"
 
-#include <new> // for placement new and bad_alloc
+#include <new> // for placement `new` and `bad_alloc`
 
 #ifdef GC_NAMESPACE_ALLOCATOR
 namespace boehmgc
@@ -70,7 +70,7 @@ namespace boehmgc
 
 // First some helpers to allow us to dispatch on whether or not a type
 // is known to be pointer-free.  These are private, except that the client
-// may invoke the GC_DECLARE_PTRFREE macro.
+// may invoke the `GC_DECLARE_PTRFREE` macro.
 
 struct GC_true_type {
 };
@@ -100,8 +100,8 @@ GC_DECLARE_PTRFREE(double);
 GC_DECLARE_PTRFREE(long double);
 // The client may want to add others.
 
-// In the following GC_Tp is GC_true_type if we are allocating a pointer-free
-// object.
+// In the following `GC_Tp` is `GC_true_type` if we are allocating
+// a pointer-free object.
 template <class GC_Tp>
 inline void *
 GC_selective_alloc(GC_ALCTR_SIZE_T n, GC_Tp, bool ignore_off_page)
@@ -127,7 +127,7 @@ GC_selective_alloc<GC_true_type>(GC_ALCTR_SIZE_T n, GC_true_type,
 }
 #endif
 
-// Now the public gc_allocator<T> class.
+// Now the public `gc_allocator<T>` class.
 template <class GC_Tp> class gc_allocator
 {
 public:
@@ -177,8 +177,8 @@ public:
     return &GC_x;
   }
 
-  // GC_n is permitted to be 0.  The C++ standard says nothing about what
-  // the return value is when GC_n == 0.
+  // `GC_n` is permitted to be 0.  The C++ standard says nothing about what
+  // the return value is when `GC_n` is zero.
   GC_CONSTEXPR GC_Tp *
   allocate(size_type GC_n, const void * = 0)
   {
@@ -188,7 +188,7 @@ public:
   }
 
   GC_CONSTEXPR void
-  deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
+  deallocate(pointer __p, size_type /* `GC_n` */) GC_NOEXCEPT
   {
     GC_FREE(__p);
   }
@@ -242,7 +242,7 @@ operator!=(const gc_allocator<GC_T1> &,
   return false;
 }
 
-// Now the public gc_allocator_ignore_off_page<T> class.
+// Now the public `gc_allocator_ignore_off_page<T>` class.
 template <class GC_Tp> class gc_allocator_ignore_off_page
 {
 public:
@@ -294,8 +294,8 @@ public:
     return &GC_x;
   }
 
-  // GC_n is permitted to be 0.  The C++ standard says nothing about what
-  // the return value is when GC_n == 0.
+  // `GC_n` is permitted to be 0.  The C++ standard says nothing about what
+  // the return value is when `GC_n` is zero.
   GC_CONSTEXPR GC_Tp *
   allocate(size_type GC_n, const void * = 0)
   {
@@ -305,7 +305,7 @@ public:
   }
 
   GC_CONSTEXPR void
-  deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
+  deallocate(pointer __p, size_type /* `GC_n` */) GC_NOEXCEPT
   {
     GC_FREE(__p);
   }
@@ -359,7 +359,7 @@ operator!=(const gc_allocator_ignore_off_page<GC_T1> &,
   return false;
 }
 
-// And the public traceable_allocator class.
+// And the public `traceable_allocator<T>` class.
 
 // Note that we currently do not specialize the pointer-free case,
 // since a pointer-free traceable container does not make that much sense,
@@ -414,8 +414,8 @@ public:
     return &GC_x;
   }
 
-  // GC_n is permitted to be 0.  The C++ standard says nothing about what
-  // the return value is when GC_n == 0.
+  // `GC_n` is permitted to be 0.  The C++ standard says nothing about what
+  // the return value is when `GC_n` is zero.
   GC_CONSTEXPR GC_Tp *
   allocate(size_type GC_n, const void * = 0)
   {
@@ -426,7 +426,7 @@ public:
   }
 
   GC_CONSTEXPR void
-  deallocate(pointer __p, size_type /* GC_n */) GC_NOEXCEPT
+  deallocate(pointer __p, size_type /* `GC_n` */) GC_NOEXCEPT
   {
     GC_FREE(__p);
   }

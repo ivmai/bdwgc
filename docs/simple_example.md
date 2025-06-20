@@ -1,7 +1,7 @@
 # Using the Garbage Collector: A simple example
 
 The following consists of step-by-step instructions for building and using the
-collector. We'll assume a Linux/gcc platform and a single-threaded
+collector. Let's assume a Linux/gcc platform and a single-threaded
 application. The green text contains information about other platforms
 or scenarios. It can be skipped, especially on first reading.
 
@@ -30,10 +30,11 @@ a basic correctness test which usually takes well under a minute.
 
 ### Other platforms
 
-On non-Unix, non-Linux platforms, the collector is usually built by copying
-the appropriate makefile (see the platform-specific README in `docs/platforms`
-folder in the distribution) to the file `Makefile`, and then typing `make` (or
-`nmake` or ...). This builds the library in the source tree. You may want
+The old way, probably suitable for ancient platforms, is to build the
+collector by copying the appropriate makefile (e.g., `Makefile.direct` file,
+see the platform-specific `README` in `docs/platforms` folder in the
+distribution) to the file `Makefile`, and then typing `make` (or `nmake`
+or similar). This builds the library in the source tree. You may want
 to move it and the files in the include directory to a more convenient place.
 
 If you use a makefile that does not require running a configure script, you
@@ -62,13 +63,13 @@ on some corner cases of the language. On Linux, it suffices to add
 
 ## Writing the program
 
-You will need to include "gc.h" at the beginning of every file that allocates
-memory through the garbage collector. Call `GC_MALLOC` wherever you would have
-call `malloc`. This initializes memory to zero like `calloc`; there is no need
-to explicitly clear the result.
+You will need to include `gc.h` file at the beginning of every file that
+allocates memory through the garbage collector. Call `GC_MALLOC` wherever you
+would have call `malloc`. This initializes memory to zero like `calloc`;
+there is no need to explicitly clear the result.
 
 If you know that an object will not contain pointers to the garbage-collected
-heap, and you don't need it to be initialized, call `GC_MALLOC_ATOMIC`
+heap, and you do not need it to be initialized, call `GC_MALLOC_ATOMIC`
 instead.
 
 A function `GC_FREE` is provided but need not be called. For very small
@@ -122,9 +123,9 @@ library. This can never hurt, and is thus generally good practice.
 For a multi-threaded program, some more rules apply:
 
   * Files that either allocate through the GC _or make thread-related calls_
-  should first define the macro `GC_THREADS`, and then include `gc.h`. On some
-  platforms this will redefine some threads primitives, e.g. to let the
-  collector keep track of thread creation.
+  should first define the macro `GC_THREADS`, and then include `gc.h` file.
+  On some platforms this will redefine some threads primitives, e.g. to let
+  the collector keep track of thread creation.
 
 ### C++
 
@@ -135,11 +136,11 @@ The collector includes some _alternate interfaces_ to make that easier.
 ### Debugging
 
 Additional debug checks can be performed by defining `GC_DEBUG` before
-including `gc.h`. Additional options are available if the collector is also
+include `gc.h` file. Additional options are available if the collector is also
 built with `--enable-gc-debug` and all allocations are performed with
 `GC_DEBUG` defined.
 
-### What if I can't rewrite/recompile my program?
+### What if I cannot rewrite/recompile my program?
 
 You may be able to build the collector with `--enable-redirect-malloc` and set
 the `LD_PRELOAD` environment variable to point to the resulting library, thus
@@ -162,11 +163,11 @@ loader to find it, e.g. by setting `LD_LIBRARY_PATH`.
 
 ### Threads
 
-On pthread platforms, you will of course also have to link with `-lpthread`,
-and compile with any thread-safety options required by your compiler. On some
-platforms, you may also need to link with `-ldl` or `-lrt`. Looking
-at `tools/threadlibs.c` should give you the appropriate list if a plain
-`-lpthread` does not work.
+On `pthreads` platforms, you will of course also have to link with
+`-lpthread`, and compile with any thread-safety options required by your
+compiler. On some platforms, you may also need to link with `-ldl` or `-lrt`.
+Looking at `tools/threadlibs.c` should give you the appropriate list if
+a plain `-lpthread` does not work.
 
 ## Running the executable
 

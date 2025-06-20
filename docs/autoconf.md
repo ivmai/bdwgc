@@ -1,7 +1,7 @@
 # Building bdwgc with autoconf/automake
 
 We support GNU-style builds based on `autoconf`, `automake` and `libtool`.
-This is based almost entirely on _Tom Tromey_'s work with gcj.
+This is based almost entirely on _Tom Tromey_'s work with `gcj`.
 
 Type the following to regenerate `configure` (if older than `configure.ac`):
 
@@ -34,7 +34,7 @@ The known disadvantages are:
      understand (though they are largely standard); there might be some
      redundant stuff.
 
-  2. It probably does not work on all Unix-like platforms yet; it probably
+  2. It probably does not work on all UNIX-like platforms yet; it probably
      will never work on some other.
 
   3. The scripts might be not yet complete; some of the standard GNU targets
@@ -50,7 +50,7 @@ always equivalent to the generated one.
 Important options to configure:
 
   * `--prefix=PREFIX`: install architecture-independent files in `PREFIX`
-    (`/usr/local` by default on Unix-like platforms).
+    (`/usr/local` path by default on UNIX-like platforms).
 
   * `--exec-prefix=EPREFIX`: install architecture-dependent files in `EPREFIX`
     (same as `prefix` by default).
@@ -62,7 +62,7 @@ Important options to configure:
 
   * `--enable-gc-debug`: include full support for pointer back-tracing, etc.
 
-On Unix-like platforms, unless `--prefix` is set (or `--exec-prefix`, or one
+On UNIX-like platforms, unless `--prefix` is set (or `--exec-prefix`, or one
 of the more obscure options), `make install` will install `libgc.a` and
 `libgc.so` in `/usr/local/lib` and `/usr/local/bin`, respectively, which would
 typically require the `make install` to be run as root.

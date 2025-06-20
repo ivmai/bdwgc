@@ -19,11 +19,11 @@ A few guidelines have mostly been followed in order to keep this manageable:
      that we indent ordinary `if` statements.
 
   2. Whenever possible, tests are performed on the macros defined in
-     `gcconfig.h` instead of directly testing platform-specific predefined
-     macros.  This makes it relatively easy to adapt to new compilers with
-     a different set of predefined macros.  Currently these macros generally
-     identify platforms instead of features.  In many cases, this is
-     a mistake.
+     `gcconfig.h` file instead of directly testing platform-specific
+     predefined macros.  This makes it relatively easy to adapt to new
+     compilers with a different set of predefined macros.  Currently these
+     macros generally identify platforms instead of features.  In many cases,
+     this is a mistake.
 
 Many of the tested configuration macros are at least somewhat defined in
 either `include/config.h.in` or in `Makefile.direct`.  Below is an attempt at
@@ -32,84 +32,89 @@ documenting these macros.
 
 ## Macros tested during client build
 
-The following macros are tested by the public headers (`gc.h` and others).
-Some of them are also affecting the collector build.
+The following macros are tested by the public headers (`gc.h` file and
+others). Some of them are also affecting the collector build.
 
-`GC_DEBUG` - Tested by `gc.h` (and by `gc_cpp.cc`).  Causes all-upper-case
-macros to expand to calls to debug versions of collector routines.
+`GC_DEBUG` - Tested by `gc.h` file (and by `gc_cpp.cc` file).  Causes
+all-upper-case macros to expand to calls to the debug variant of collector
+routines.
 
-`GC_NAMESPACE` - Tested by `gc_cpp.h`. Causes `gc_cpp` symbols to be defined
-in `boehmgc` namespace.
+`GC_NAMESPACE` - Tested by `gc_cpp.h` file. Causes `gc_cpp` symbols to be
+defined in `boehmgc` namespace.
 
-`GC_NAMESPACE_ALLOCATOR` - Tested by `gc_allocator.h`.  Causes
+`GC_NAMESPACE_ALLOCATOR` - Tested by `gc_allocator.h` file.  Causes
 `gc_allocator<T>` and similar symbols to be defined in `boehmgc` namespace.
 
-`GC_DEBUG_REPLACEMENT` - Tested by `gc.h`.  Causes `GC_MALLOC`/`GC_REALLOC` to
-be defined as `GC_debug_malloc_replacement`/`GC_debug_realloc_replacement`.
+`GC_DEBUG_REPLACEMENT` - Tested by `gc.h` file.  Causes
+`GC_MALLOC`/`GC_REALLOC` to be defined as
+`GC_debug_malloc_replacement`/`GC_debug_realloc_replacement`.
 
-`GC_NO_THREAD_REDIRECTS` - Tested by `gc.h`.  Prevents redirection of thread
-creation routines and friends to `GC_` versions.  Requires the client to
-explicitly handle thread registration.
+`GC_NO_THREAD_REDIRECTS` - Tested by `gc.h` file.  Prevents redirection of
+thread creation routines and friends to the `GC_` variants.  Requires the
+client to explicitly handle thread registration.
 
-`GC_NO_THREAD_DECLS` - Tested by `gc.h`.  Does not declare thread creation
-(and related) routines and do not include `windows.h` from `gc.h`.
+`GC_NO_THREAD_DECLS` - Tested by `gc.h` file.  Does not declare thread
+creation (and related) routines and do not include platform `windows.h` file
+from `gc.h` file.
 
-`GC_DONT_INCLUDE_WINDOWS_H` - Tested by `gc.h`.  Windows only.  Does not
-include `windows.h` from `gc.h` (but Windows-specific thread creation routines
-are declared).
+`GC_DONT_INCLUDE_WINDOWS_H` - Tested by `gc.h` file.  Windows only.  Does not
+include platform `windows.h` file from `gc.h` file (but Windows-specific
+thread creation routines are declared).
 
-`GC_UNDERSCORE_STDCALL` - Tested by `gc.h`.  Explicitly prefixes
-exported/imported `WINAPI` (`__stdcall`) symbols with '_' (underscore).  Could
+`GC_UNDERSCORE_STDCALL` - Tested by `gc.h` file.  Explicitly prefixes
+exported/imported `WINAPI` (`__stdcall`) symbols with "_" (underscore).  Could
 be used with MinGW compiler targeting x86 (in conjunction with `GC_DLL`) to
 follow MS conventions for `__stdcall` symbols naming.
 
 `_ENABLE_ARRAYNEW` - Tested by gc_cpp.h.  Predefined by the Digital Mars C++
 compiler when operator `new[]` and `delete[]` are separately overloadable.
 
-`GC_NO_OPERATOR_NEW_ARRAY` - Tested by `gc_cpp.h`.  Declares that the C++
+`GC_NO_OPERATOR_NEW_ARRAY` - Tested by `gc_cpp.h` file.  Declares that the C++
 compiler does not support the new syntax `operator new[]` for allocating and
 deleting arrays.  This is defined implicitly in a few environments.
 
-`GC_NO_INLINE_STD_NEW` - Tested by `gc_cpp.h` (and by `gc_cpp.cc`).  Windows
-only.  Defines the system-wide `new` and `delete` operators in `gccpp.dll`
-instead of providing an inline version of the operators.
+`GC_NO_INLINE_STD_NEW` - Tested by `gc_cpp.h` file (and by `gc_cpp.cc` file).
+Windows only.  Defines the system-wide `new` and `delete` operators in
+`gccpp.dll` file instead of providing an inline variant of the operators.
 
 `_DLL` - Tested by gc.h.  Defined by Visual C++ if runtime dynamic libraries
 are in use.  Used (only if none of `GC_DLL`, `GC_NOT_DLL` and `__GNUC__` are
 defined) to test whether `__declspec(dllimport)` needs to be added to
 declarations to support the case in which the collector is in a DLL.
 
-`GC_DLL` - Tested by `cord.h`, `gc.h`.  Defined by client if dynamic libraries
-are being built or used.  Also set in `gc.h` if `_DLL` is defined (except for
-MinGW) when `GC_NOT_DLL` and `__GNUC__` are both undefined.  This is the macro
-that is tested internally to determine whether the collector is in its own
-dynamic library.  May need to be set by clients before including `gc.h`.  Note
-that inside the collector implementation it indicates primarily that the
-collector should export its symbols.  But in clients, it indicates that the
-collector resides in a different dynamic (shared) library, its entry points
-should be referenced accordingly, and precautions may need to be taken to
-properly deal with statically allocated variables of the main program.  Used
-for Windows, and also by GCC v4+ (only when the dynamic shared library is
-being built) to hide internally used symbols.
+`GC_DLL` - Tested by `cord.h`, `gc.h` files.  Defined by client if dynamic
+libraries are being built or used.  Also the macro is set in `gc.h` file if
+`_DLL` is defined (except for MinGW) when `GC_NOT_DLL` and `__GNUC__` are both
+undefined.  This is the macro that is tested internally to determine whether
+the collector is in its own dynamic library.  May need to be set by clients
+before include `gc.h` file.  Note that inside the collector implementation it
+indicates primarily that the collector should export its symbols.  But in
+clients, it indicates that the collector resides in a different dynamic
+(shared) library, its entry points should be referenced accordingly, and
+precautions may need to be taken to properly deal with statically allocated
+variables of the main program.  Used for Windows, and also by GCC v4+ (only
+when the dynamic shared library is being built) to hide internally used
+symbols.
 
-`GC_NOT_DLL` - Tested by `gc.h` and `gc_cpp.h`.  A client-settable macro that
-overrides `_DLL`, e.g. if runtime dynamic libraries are used, but the
-collector is in a static library.
+`GC_NOT_DLL` - Tested by `gc.h` and `gc_cpp.h` files.  A client-settable macro
+that overrides `_DLL` macro, e.g. if runtime dynamic libraries are used, but
+the collector is in a static library.
 
-`GC_NO_VALLOC` - Tested by `gc.h` and `leak_detector.h`.  Does not provide
-`GC_valloc` and `GC_pvalloc` functions, and do not redirect the corresponding
-`glibc` functions in `leak_detector.h`.
+`GC_NO_VALLOC` - Tested by `gc.h` and `leak_detector.h` files.  Does not
+provide `GC_valloc` and `GC_pvalloc` functions, and do not redirect the
+corresponding `glibc` functions in `leak_detector.h` file.
 
-`GC_REQUIRE_WCSDUP` - Tested by `gc.h` and `leak_detector.h` (and by
-`dbg_mlc.c` and `mallocx.c`).  Forces the collector to export `GC_wcsdup` (the
-Unicode version of `GC_strdup`); could be useful in the find-leak mode.
-Clients should define it before including `gc.h` if the function is needed.
+`GC_REQUIRE_WCSDUP` - Tested by `gc.h` and `leak_detector.h` files (and by
+`dbg_mlc.c` and `mallocx.c` files).  Forces the collector to export
+`GC_wcsdup` (the Unicode variant of `GC_strdup`); could be useful in the
+find-leak mode. Clients should define it before including `gc.h` file if the
+function is needed.
 
-`GC_THREADS` - Tested by `gc.h`.  Enables support for native threads.  Must
-normally be defined by the client (before including `gc.h`), thus redefining
-thread primitives to invoke the `GC_` wrappers instead.
+`GC_THREADS` - Tested by `gc.h` file.  Enables support for native threads.
+Must normally be defined by the client (before including `gc.h` file), thus
+redefining thread primitives to invoke the `GC_` wrappers instead.
 
-`GC_MARKERS=<n>` - Tested by `gc.h`.  Sets the desired number of marker
+`GC_MARKERS=<n>` - Tested by `gc.h` file.  Sets the desired number of marker
 threads.  If not defined or defined to zero, then the collector decides based
 on the number of total CPU cores.  Has no effect unless the collector is built
 with `PARALLEL_MARK` macro defined.
@@ -146,19 +151,19 @@ since it really does not guarantee much more than POSIX.  Currently is set
 only for DRSNX, FreeBSD, HP/UX and Solaris.
 
 `GC_WIN32_PTHREADS` (Win32 only) - Enables support for pthreads-win32 (or
-other non-Cygwin pthreads library for Windows).  This should be specified
+other non-Cygwin `pthreads` library for Windows).  This should be specified
 instead of (or in addition to) `GC_THREADS`, otherwise Win32 native threads
 API will be used.
 
-`PTW32_STATIC_LIB` - Causes the static version of the MinGW pthreads library
+`PTW32_STATIC_LIB` - Causes the static variant of the MinGW `pthreads` library
 to be used.  Requires `GC_WIN32_PTHREADS` macro defined.
 
-`GC_PTHREADS_PARAMARK` - Causes pthread-based parallel mark implementation
+`GC_PTHREADS_PARAMARK` - Causes `pthreads`-based parallel mark implementation
 to be used even if `GC_WIN32_PTHREADS` macro is undefined.  (Useful for
 WinCE.)
 
 `ALL_INTERIOR_POINTERS` - Allows all pointers to the interior of objects to be
-recognized.  (See `gc_priv.h` for the consequences.)  Alternatively,
+recognized.  (See `gc_priv.h` file for the consequences.)  Alternatively,
 `GC_all_interior_pointers` variable can be set at runtime before the collector
 initialization.
 
@@ -212,7 +217,7 @@ The former is occasionally useful to workaround leaks in code
 you do not want to (or cannot) look at.  It may not work for
 existing code, but it often does.  Neither works on all platforms,
 since some ports use `malloc` or `calloc` to obtain system memory.  Probably
-works for Unix and Win32.)  If you build the collector with `DBG_HDRS_ALL`
+works for UNIX and Win32.)  If you build the collector with `DBG_HDRS_ALL`
 macro defined, you should only use `GC_debug_malloc_replacement` as a `malloc`
 replacement.
 
@@ -283,8 +288,8 @@ fragmentation, but generally better performance for large heaps.
 the OS.  Works for Linux, FreeBSD, Cygwin, Solaris and Irix, at least.
 
 `USE_MUNMAP` - Causes memory to be returned to the OS under the right
-circumstances.  Works under some Unix, Linux and Windows versions.
-Requires `USE_MMAP` macro defined (except for Windows).
+circumstances.  Unsupported on some platforms.  Requires `USE_MMAP` macro
+defined (except for Windows).
 
 `USE_WINALLOC` (Cygwin only) - Causes Win32 `VirtualAlloc()` to be used
 (instead of `sbrk()` and `mmap()`) to get new memory.  Useful if memory
@@ -310,7 +315,7 @@ memory that are likely to contribute misidentified pointers.
 for objects allocated with the debugging allocator.  If all objects are
 allocated through `GC_MALLOC()` with `GC_DEBUG` defined, this allows the
 client to determine how particular or randomly chosen objects are reachable
-for debugging/profiling purposes.  The `gc_backptr.h` interface is
+for debugging/profiling purposes.  The `gc_backptr.h` file interface is
 implemented only if this is defined.
 
 `GC_ASSERTIONS` - Enables some internal assertion checking in the collector.
@@ -380,16 +385,16 @@ The performance impact is untested.
 
 `GC_USE_LD_WRAP` - In combination with the old flags listed in
 [README.linux](platforms/README.linux) causes the collector to handle some
-system and pthread calls in a more transparent fashion than the usual
+system and `pthreads` calls in a more transparent fashion than the usual
 macro-based approach.  Requires GNU `ld`, and currently probably works only
 with Linux.
 
 `GC_USE_DLOPEN_WRAP` - Causes the collector to redefine `malloc` and
-intercepted `pthread` routines with their real names, and causes it to use
+intercepted `pthreads` routines with their real names, and causes it to use
 `dlopen()` and `dlsym()` to refer to the original versions.  This makes it
 possible to build an LD_PRELOAD'able `malloc` replacement library.
 
-`USE_RWLOCK` - Uses `rwlock` for the allocator lock instead of `mutex`.
+`USE_RWLOCK` - Uses `rwlock` for the allocator lock instead of mutex.
 Thus enable usage of the reader (shared) mode of the allocator lock where
 possible.
 
@@ -468,7 +473,7 @@ done using the collector debug interface.
 variable description in [environment.md](environment.md).  Requires
 `MAKE_BACK_GRAPH` macro to be defined.
 
-`HANDLE_FORK` (Unix and Cygwin only) - Attempts by default to make
+`HANDLE_FORK` (UNIX and Cygwin only) - Attempts by default to make
 `GC_malloc()` work in a child process fork'ed from a multi-threaded parent.
 Not fully POSIX-compliant and could be disabled at runtime (before `GC_INIT()`
 call).
@@ -495,7 +500,7 @@ job.  By default this is not supported in order to keep the marker as fast as
 possible.
 
 `DARWIN_DONT_PARSE_STACK` - Causes the Darwin port to discover thread
-stack bounds in the same way as other pthread ports, without trying to
+stack bounds in the same way as other `pthreads` ports, without trying to
 walk the frames on the stack.  This is recommended only as a fall-back for
 applications that do not support proper stack unwinding.
 
@@ -537,7 +542,7 @@ unit of the collector to be declared as static (this is the default if
 make some kinds of debugging and profiling harder.
 
 `GC_DLL` - Tunes to build dynamic-link library (or dynamic shared object).
-For Unix this causes the exported symbols to have `default` visibility
+For UNIX this causes the exported symbols to have `default` visibility
 (ignored unless GCC v4+) and the internal ones to have `hidden` visibility.
 
 `NO_MSGBOX_ON_ERROR` (Win32 only) - Prevents showing Windows message box with
@@ -565,7 +570,7 @@ of the incremental collector.
 `NO_MANUAL_VDB` - Turns off support of the manual VDB (virtual dirty bits)
 mode.
 
-`GC_IGNORE_GCJ_INFO` - Disables GCJ-style type information.  This might be
+`GC_IGNORE_GCJ_INFO` - Disables `gcj`-style type information.  This might be
 useful for client debugging on WinCE (which has no `getenv`).
 
 `GC_PRINT_VERBOSE_STATS` - Permanently turns on verbose logging (useful for
@@ -610,15 +615,16 @@ enabled).
 between full collections (matters only if the incremental collection mode
 is on).
 
-`NO_CANCEL_SAFE` (Posix platforms with threads only) - Stops bothering about
+`NO_CANCEL_SAFE` (POSIX platforms with threads only) - Stops bothering about
 making the collector safe for thread cancellation.  Assuming cancellation is
 not used by client.  (If cancellation is used anyway, threads may end up
 getting canceled in unexpected places.)  Even without this option,
 `PTHREAD_CANCEL_ASYNCHRONOUS` is never safe with the collector.  (We could
 argue about its safety without the collector.)
 
-`UNICODE` (Win32 only) - Forces to use the Unicode variant ('W') of the Win32
-API instead of ANSI/ASCII one ('A').  Useful for WinCE.
+`UNICODE` (Win32 only) - Forces to use the Unicode variant (with suffix "W")
+of the Win32 API instead of ANSI/ASCII one (with suffix "A").  Useful for
+WinCE.
 
 `HOST_ANDROID` (or `__ANDROID__`) - Targets compilation for Android NDK
 platform.

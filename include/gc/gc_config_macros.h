@@ -16,8 +16,9 @@
  * modified is included with the above copyright notice.
  */
 
-/* This should never be included directly; it is included only from gc.h. */
-/* We separate it only to make gc.h more suitable as documentation.       */
+/* This should never be included directly; it is included only from     */
+/* `gc.h` file.  We separate it only to make `gc.h` file more suitable  */
+/* as documentation.                                                    */
 #if defined(GC_H)
 
 /* Convenient internal macro to test version of gcc.    */
@@ -25,15 +26,15 @@
 #    define GC_GNUC_PREREQ(major, minor) \
       ((__GNUC__ << 8) + __GNUC_MINOR__ >= ((major) << 8) + (minor))
 #  else
-#    define GC_GNUC_PREREQ(major, minor) 0 /* FALSE */
+#    define GC_GNUC_PREREQ(major, minor) 0 /* false */
 #  endif
 
 /* A macro to define integer types of a pointer size.  There seems to   */
 /* be no way to do this even semi-portably.  The following is probably  */
 /* no better/worse than almost anything else.                           */
-/* The ANSI standard suggests that size_t and ptrdiff_t might be        */
+/* The ANSI standard suggests that `size_t` and `ptrdiff_t` might be    */
 /* better choices.  But those had incorrect definitions on some older   */
-/* systems; notably "typedef int size_t" is wrong.                      */
+/* systems; notably `typedef int size_t` is wrong.                      */
 #  ifdef _WIN64
 #    if defined(__int64) && !defined(CPPCHECK)
 #      define GC_SIGNEDWORD __int64
@@ -57,16 +58,16 @@
 #    define GC_SIZEOF_PTR 4
 #  endif
 
-/* The return type of GC_get_version().  A 32-bit unsigned integer  */
-/* or longer.                                                       */
+/* The return type of `GC_get_version()`.  A 32-bit unsigned integer    */
+/* or longer.                                                           */
 #  define GC_VERSION_VAL_T unsigned
 
 /* Some tests for old macros.  These violate our namespace rules and    */
-/* will disappear shortly.  Use the GC_ names.                          */
+/* are deprecated.  Use the `GC_` names instead.                        */
 #  if defined(SOLARIS_THREADS) || defined(_SOLARIS_THREADS) \
       || defined(_SOLARIS_PTHREADS) || defined(GC_SOLARIS_PTHREADS)
 /* We no longer support old style Solaris threads.            */
-/* GC_SOLARIS_THREADS now means pthreads.                     */
+/* `GC_SOLARIS_THREADS` now means `pthreads`.                 */
 #    ifndef GC_SOLARIS_THREADS
 #      define GC_SOLARIS_THREADS
 #    endif
@@ -130,13 +131,13 @@
 #      define GC_FREEBSD_THREADS
 #    elif defined(__NetBSD__)
 #      define GC_NETBSD_THREADS
-#    elif defined(__alpha) || defined(__alpha__) /* && !Linux && !xBSD */
+#    elif defined(__alpha) || defined(__alpha__) /* and not Linux or xBSD */
 #      define GC_OSF1_THREADS
 #    elif (defined(mips) || defined(__mips) || defined(_mips))        \
         && !(defined(nec_ews) || defined(_nec_ews) || defined(ultrix) \
              || defined(__ultrix))
 #      define GC_IRIX_THREADS
-#    elif defined(__sparc) /* && !Linux */                             \
+#    elif defined(__sparc) /* `&& !defined(__linux__)` */              \
         || ((defined(sun) || defined(__sun))                           \
             && (defined(i386) || defined(__i386__) || defined(__amd64) \
                 || defined(__amd64__)))
@@ -155,7 +156,7 @@
          || defined(__CEGCC__) || defined(_WIN32_WCE)                  \
          || defined(__MINGW32__))                                      \
         && !defined(GC_WIN32_THREADS)
-/* Either posix or native Win32 threads. */
+/* Either POSIX or native Win32 threads. */
 #      define GC_WIN32_THREADS
 #    endif
 #    if defined(__rtems__) && (defined(i386) || defined(__i386__))
@@ -168,7 +169,7 @@
        || defined(__CYGWIN32__) || defined(__CYGWIN__))         \
       && defined(GC_THREADS) && !defined(NN_PLATFORM_CTR)       \
       && !defined(NN_BUILD_TARGET_PLATFORM_NX)
-/* Posix threads. */
+/* POSIX threads (`pthreads`). */
 #    define GC_PTHREADS
 #  endif
 
@@ -189,8 +190,8 @@
 
 #  if defined(__clang__) && defined(__CYGWIN__) && defined(GC_THREADS) \
       && defined(__LP64__)
-/* Workaround "__stdcall__ ignored for this target" clang warning. */
-/* Note: __stdcall is defined implicitly based on __stdcall__.     */
+/* Workaround "__stdcall__ ignored for this target" clang warning.  */
+/* Note: `__stdcall` is defined implicitly based on `__stdcall__`.  */
 #    define __stdcall__ /* empty */
 #  endif
 
@@ -200,14 +201,14 @@
 #    if defined(__MINGW32__) && !defined(_WIN32_WCE) \
         || defined(__CHERI_PURE_CAPABILITY__)
 #      include <stdint.h>
-/* We mention uintptr_t.  Perhaps this should be included in pure   */
-/* msft environments as well.                                       */
+/* We mention `uintptr_t`.  Perhaps this should be included in pure */
+/* MS environments as well.                                         */
 #    endif
 #  else
 /* Yet more kludges for WinCE.        */
-#    include <stdlib.h> /* size_t is defined here */
+#    include <stdlib.h> /* for `size_t` */
 #    ifndef _PTRDIFF_T_DEFINED
-/* ptrdiff_t is not defined */
+/* `ptrdiff_t` is not defined. */
 #      define _PTRDIFF_T_DEFINED
 typedef long ptrdiff_t;
 #    endif
@@ -260,7 +261,7 @@ typedef long ptrdiff_t;
 #      endif
 
 #    elif defined(__GNUC__)
-/* Only matters if used in conjunction with -fvisibility=hidden option. */
+/* Only matters if used in conjunction with `-fvisibility=hidden` option. */
 #      if defined(GC_BUILD) && !defined(GC_NO_VISIBILITY) \
           && (GC_GNUC_PREREQ(4, 0) || defined(GC_VISIBILITY_HIDDEN_SET))
 #        define GC_API extern __attribute__((__visibility__("default")))
@@ -281,11 +282,12 @@ typedef long ptrdiff_t;
 #  endif
 
 #  ifndef GC_ATTR_MALLOC
-/* 'malloc' attribute should be used for all malloc-like functions    */
-/* (to tell the compiler that a function may be treated as if any     */
-/* non-NULL pointer it returns cannot alias any other pointer valid   */
-/* when the function returns).  If the client code violates this rule */
-/* by using custom GC_oom_func then define GC_OOM_FUNC_RETURNS_ALIAS. */
+/* `malloc` attribute should be used for all `malloc`-like functions    */
+/* (to tell the compiler that a function may be treated as if any       */
+/* non-`NULL` pointer it returns cannot alias any other pointer valid   */
+/* when the function returns).  If the client code violates this rule   */
+/* by using custom `GC_oom_func`, then the client should define         */
+/* `GC_OOM_FUNC_RETURNS_ALIAS` macro.                                   */
 #    ifdef GC_OOM_FUNC_RETURNS_ALIAS
 #      define GC_ATTR_MALLOC /* empty */
 #    elif GC_GNUC_PREREQ(3, 1)
@@ -301,7 +303,7 @@ typedef long ptrdiff_t;
 #  endif
 
 #  ifndef GC_ATTR_ALLOC_SIZE
-/* 'alloc_size' attribute improves __builtin_object_size correctness. */
+/* `alloc_size` attribute improves `__builtin_object_size` correctness. */
 #    undef GC_ATTR_CALLOC_SIZE
 #    ifdef __clang__
 #      if __has_attribute(__alloc_size__)
@@ -385,8 +387,8 @@ typedef long ptrdiff_t;
 #    define GC_CAN_SAVE_CALL_STACKS
 #  endif
 
-/* If we're on a platform on which we can't save call stacks, but       */
-/* gcc is normally used, we go ahead and define GC_ADD_CALLER.          */
+/* If we are on a platform on which we cannot save call stacks, but     */
+/* gcc is normally used, we go ahead and define `GC_ADD_CALLER` macro.  */
 /* We make this decision independent of whether gcc is actually being   */
 /* used, in order to keep the interface consistent, and allow mixing    */
 /* of compilers.                                                        */
@@ -399,8 +401,8 @@ typedef long ptrdiff_t;
       && !defined(GC_CAN_SAVE_CALL_STACKS)
 #    define GC_ADD_CALLER
 #    if GC_GNUC_PREREQ(2, 95)
-/* gcc knows how to retrieve return address, but we don't know      */
-/* how to generate call stacks.                                     */
+/* gcc knows how to retrieve return address, but we do not know how to  */
+/* generate call stacks.                                                */
 #      define GC_RETURN_ADDR ((GC_return_addr_t)__builtin_return_address(0))
 #      if GC_GNUC_PREREQ(4, 0)                                     \
           && (defined(__i386__) || defined(__amd64__)              \
@@ -410,8 +412,8 @@ typedef long ptrdiff_t;
 #        define GC_RETURN_ADDR_PARENT                       \
           ((GC_return_addr_t)__builtin_extract_return_addr( \
               __builtin_return_address(1)))
-/* Note: a compiler might complain that calling                 */
-/* __builtin_return_address with a nonzero argument is unsafe.  */
+/* Note: a compiler might complain that calling                     */
+/* `__builtin_return_address` with a nonzero argument is unsafe.    */
 #      endif
 #    else
 /* Just pass 0 for gcc compatibility.       */
@@ -424,21 +426,21 @@ typedef long ptrdiff_t;
 #    if (defined(GC_DARWIN_THREADS) || defined(GC_WIN32_PTHREADS)     \
          || defined(__native_client__) || defined(GC_RTEMS_PTHREADS)) \
         && !defined(GC_NO_DLOPEN)
-/* Either there is no dlopen() or we do not need to intercept it.   */
+/* Either there is no `dlopen()` or we do not need to intercept it. */
 #      define GC_NO_DLOPEN
 #    endif
 
 #    if (defined(GC_DARWIN_THREADS) || defined(GC_WIN32_PTHREADS) \
          || defined(__native_client__))                           \
         && !defined(GC_NO_PTHREAD_SIGMASK)
-/* Either there is no pthread_sigmask() or no need to intercept it. */
+/* Either there is no `pthread_sigmask()` or no need to intercept it. */
 #      define GC_NO_PTHREAD_SIGMASK
 #    endif
 
 #    if defined(__native_client__)
-/* At present, NaCl pthread_create() prototype does not have        */
-/* "const" for its "attr" argument; also, NaCl pthread_exit() one   */
-/* does not have "noreturn" attribute.                              */
+/* At present, NaCl `pthread_create()` prototype does not have      */
+/* `const` for its `attr` argument; also, NaCl `pthread_exit()` one */
+/* does not have `noreturn` attribute.                              */
 #      ifndef GC_PTHREAD_CREATE_CONST
 #        define GC_PTHREAD_CREATE_CONST /* empty */
 #      endif
@@ -452,7 +454,7 @@ typedef long ptrdiff_t;
         && ((defined(GC_LINUX_THREADS) && !defined(HOST_ANDROID) \
              && !defined(__ANDROID__))                           \
             || defined(GC_SOLARIS_THREADS) || defined(__COSMOPOLITAN__))
-/* Intercept pthread_exit where available and needed.   */
+/* Intercept `pthread_exit()` where available and needed. */
 #      define GC_HAVE_PTHREAD_EXIT
 #      if GC_GNUC_PREREQ(2, 7)
 #        define GC_PTHREAD_EXIT_ATTRIBUTE __attribute__((__noreturn__))
@@ -465,7 +467,7 @@ typedef long ptrdiff_t;
 
 #    if (!defined(GC_HAVE_PTHREAD_EXIT) || defined(__native_client__)) \
         && !defined(GC_NO_PTHREAD_CANCEL)
-/* Either there is no pthread_cancel() or no need to intercept it.  */
+/* Either there is no `pthread_cancel()` or no need to intercept it. */
 #      define GC_NO_PTHREAD_CANCEL
 #    endif
 

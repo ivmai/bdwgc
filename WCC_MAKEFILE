@@ -7,11 +7,11 @@ SYSTEM=MSWIN32
 #SYSTEM=OS2
 
 # The collector can be built either as dynamic (the default) or as static
-# library. The latter is selected by setting ENABLE_STATIC variable.
+# library.  The latter is selected by setting `ENABLE_STATIC` variable.
 #ENABLE_STATIC=1
 
 # Select calling conventions.
-# Possible choices are r and s.
+# Possible choices are `r` and `s`.
 CALLING=s
 
 # Select target CPU.
@@ -20,7 +20,7 @@ CALLING=s
 CPU=5
 
 # Set optimization options.
-# Watcom before 11.0 does not support option "-oh".
+# Watcom before 11.0 does not support option `-oh`.
 OPTIM=-oneatx -s
 #OPTIM=-ohneatx -s
 
@@ -63,10 +63,10 @@ CORDFLAG=
 !else
 DLLFLAG=-bd -DGC_DLL
 TEST_DLLFLAG=-DGC_DLL
-# cord.dll and its clients should not link C library statically otherwise
-# FILE-related functions might not work (because own set of opened FILEs
-# is maintained by each copy of the C library thus making impossible to pass
-# FILE pointer from, e.g., .exe code to .dll one).
+# `cord.dll` file and its clients should not link C library statically
+# otherwise `FILE`-related functions might not work (because own set of
+# opened `FILE` instances is maintained by each copy of the C library thus
+# making impossible to pass `FILE` pointer from `.exe` code to `.dll` code).
 CORDFLAG=-br
 !endif
 
@@ -120,7 +120,7 @@ gccpp.lib: gc_badalc.obj gc_cpp.obj
         @%append $*.lb1 +gc_cpp.obj
         *wlib -b -c -n -p=512 $@ @$*.lb1
 
-# The same as gccpp.lib but contains only gc_badalc.obj.
+# The same as `gccpp.lib` file but contains only `gc_badalc.obj` file.
 gctba.lib: gc_badalc.obj
         @%create $*.lb1
         @%append $*.lb1 +gc_badalc.obj

@@ -23,7 +23,7 @@ GC_get_main_symbian_stack_base()
 char *
 GC_get_private_path_and_zero_file()
 {
-  // Always on c: drive.
+  // Always on `c:` drive.
   RFs fs;
   fs.Connect();
   fs.CreatePrivatePath(EDriveC);
@@ -33,7 +33,7 @@ GC_get_private_path_and_zero_file()
   _LIT(KCDrive, "c:");
   path.Insert(0, KCDrive);
 
-  // Convert to char*, assume ASCII.
+  // Convert to `char *`, assume ASCII.
   TBuf8<KMaxFileName> path8;
   path8.Copy(path);
   _LIT8(KZero8, "zero");

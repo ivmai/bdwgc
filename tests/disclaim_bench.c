@@ -149,7 +149,7 @@ main(int argc, const char *argv[])
 #endif
 
 #ifdef EMBOX
-    /* Workaround some issue with %g processing in Embox libc.  */
+    /* Workaround some issue with "%g" processing in Embox `libc`. */
 #  define PRINTF_SPEC_12g "%12f"
 #else
 #  define PRINTF_SPEC_12g "%12g"

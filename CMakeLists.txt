@@ -15,21 +15,14 @@
 # modified is included with the above copyright notice.
 ##
 
-#
-#  get cmake and run:
-#    cmake -G "Visual Studio 8 2005"
-#  in the same dir as this file
-#  this will generate gc.sln
-#
-
 cmake_minimum_required(VERSION 3.10)
 
 set(PACKAGE_VERSION 8.3.0)
-# Version must match that in AC_INIT of configure.ac and that in README.
+# Version must match that in `AC_INIT` of `configure.ac` file and in README.
 # Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
 
-# Info (current:revision:age) for the Libtool versioning system.
-# These values should match those in cord/cord.am and Makefile.am.
+# Info (`current:revision:age`) for the Libtool versioning system.
+# These values should match those in `cord/cord.am` and `Makefile.am` files.
 set(LIBCORD_VER_INFO    6:1:5)
 set(LIBGC_VER_INFO      6:3:5)
 set(LIBGCCPP_VER_INFO   6:0:5)
@@ -42,7 +35,7 @@ else()
 endif()
 
 if (POLICY CMP0057)
-  # Required for CheckLinkerFlag, at least.
+  # Required for `CheckLinkerFlag`, at least.
   cmake_policy(SET CMP0057 NEW)
 endif()
 
@@ -103,8 +96,8 @@ option(install_headers "Install header and pkg-config metadata files" ON)
 option(with_libatomic_ops "Use an external libatomic_ops" OFF)
 option(without_libatomic_ops "Use atomic_ops.h in libatomic_ops/src" OFF)
 
-# Override the default build type to RelWithDebInfo (this instructs cmake to
-# pass -O2 -g -DNDEBUG options to the compiler by default).
+# Override the default build type to `RelWithDebInfo` (this instructs `cmake`
+# to pass `-O2 -g -DNDEBUG` options to the compiler by default).
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE
       STRING "Choose the type of build." FORCE)
@@ -112,23 +105,23 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
                STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
 endif()
 
-# Convert VER_INFO values to [SO]VERSION ones.
+# Convert `VER_INFO` values to `VERSION`, `SOVERSION` ones.
 if (BUILD_SHARED_LIBS)
-  # cord:
+  # `cord`:
   string(REGEX REPLACE "(.+):.+:.+"  "\\1" cord_cur ${LIBCORD_VER_INFO})
   string(REGEX REPLACE ".+:(.+):.+"  "\\1" cord_rev ${LIBCORD_VER_INFO})
   string(REGEX REPLACE ".+:.+:(.+)$" "\\1" cord_age ${LIBCORD_VER_INFO})
   math(EXPR CORD_SOVERSION "${cord_cur} - ${cord_age}")
   set(CORD_VERSION_PROP "${CORD_SOVERSION}.${cord_age}.${cord_rev}")
   message(STATUS "CORD_VERSION_PROP = ${CORD_VERSION_PROP}")
-  # gc:
+  # `gc`:
   string(REGEX REPLACE "(.+):.+:.+"  "\\1" gc_cur ${LIBGC_VER_INFO})
   string(REGEX REPLACE ".+:(.+):.+"  "\\1" gc_rev ${LIBGC_VER_INFO})
   string(REGEX REPLACE ".+:.+:(.+)$" "\\1" gc_age ${LIBGC_VER_INFO})
   math(EXPR GC_SOVERSION "${gc_cur} - ${gc_age}")
   set(GC_VERSION_PROP "${GC_SOVERSION}.${gc_age}.${gc_rev}")
   message(STATUS "GC_VERSION_PROP = ${GC_VERSION_PROP}")
-  # gccpp and gctba:
+  # `gccpp` and `gctba`:
   string(REGEX REPLACE "(.+):.+:.+"  "\\1" gccpp_cur ${LIBGCCPP_VER_INFO})
   string(REGEX REPLACE ".+:(.+):.+"  "\\1" gccpp_rev ${LIBGCCPP_VER_INFO})
   string(REGEX REPLACE ".+:.+:(.+)$" "\\1" gccpp_age ${LIBGCCPP_VER_INFO})
@@ -157,23 +150,23 @@ elseif (MSVC)
 elseif (WATCOM)
   add_compile_options(/wx)
   if (enable_gc_assertions)
-    # Suppress "unreachable code" warning in GC_ASSERT() if some constant
+    # Suppress "unreachable code" warning in `GC_ASSERT()` if some constant
     # non-zero expression is given as the argument.
     add_compile_options(/wcd=201)
   endif()
   if (enable_threads)
-    # Suppress "missing return value" wcc warning for AO_test_and_set_full()
-    # and AO_char_fetch_and_add_full() in AO msftc/x86.h file.
+    # Suppress "missing return value" wcc warning for `AO_test_and_set_full()`
+    # and `AO_char_fetch_and_add_full()` in AO `msftc/x86.h` file.
     add_compile_options($<$<COMPILE_LANGUAGE:C>:/wcd=107>)
   endif(enable_threads)
 else()
   add_compile_options(-Wall)
   add_compile_options(-Wextra)
-  # TODO: add -[W]pedantic -Wno-long-long
+  # TODO: add `-[W]pedantic -Wno-long-long`
 endif()
 
 if (WIN32)
-  # Disable MS crt security warnings reported e.g. for getenv, strcpy.
+  # Disable MS crt security warnings reported e.g. for `getenv`, `strcpy`.
   add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 endif()
 
@@ -215,7 +208,8 @@ if (enable_threads)
     endif()
   elseif (without_libatomic_ops)
     include_directories(libatomic_ops/src)
-    # In the tests we use the source files directly from libatomic_ops subtree.
+    # In the tests we use the source files directly from `libatomic_ops`
+    # subtree.
     set(NODIST_SRC libatomic_ops/src/atomic_ops.c)
     if (CMAKE_C_COMPILER_ID STREQUAL "SunPro")
       # SunCC compiler on SunOS (Solaris).
@@ -224,15 +218,16 @@ if (enable_threads)
     endif()
   elseif (BORLAND OR MSVC OR WATCOM)
     include_directories(libatomic_ops/src)
-    # Note: alternatively, use CFLAGS_EXTRA to pass -I<...>/libatomic_ops/src.
+    # Note: alternatively, use `CFLAGS_EXTRA` to
+    # pass `-I<...>/libatomic_ops/src`.
   else()
     # Assume the compiler supports GCC atomic intrinsics.
     add_definitions("-DGC_BUILTIN_ATOMIC")
   endif()
   set(THREADDLLIBS_LIST ${CMAKE_THREAD_LIBS_INIT})
   if (${CMAKE_DL_LIBS} MATCHES ^[^-].*)
-    # Some cmake versions have a broken non-empty CMAKE_DL_LIBS omitting "-l".
-    # Assume CMAKE_DL_LIBS contains just one library.
+    # Some `cmake` versions have a broken non-empty `CMAKE_DL_LIBS`
+    # omitting "-l".  Assume `CMAKE_DL_LIBS` contains just one library.
     set(THREADDLLIBS_LIST ${THREADDLLIBS_LIST} -l${CMAKE_DL_LIBS})
   else()
     set(THREADDLLIBS_LIST ${THREADDLLIBS_LIST} ${CMAKE_DL_LIBS})
@@ -274,7 +269,7 @@ if (enable_threads)
       set(NEED_LIB_RT ON)
     endif()
     if (WIN32) # AND NOT CYGWIN
-      # Does not provide process fork functionality.
+      # Does not provide process `fork` functionality.
     elseif (enable_handle_fork AND NOT disable_handle_fork)
       add_definitions("-DHANDLE_FORK")
     endif()
@@ -287,12 +282,14 @@ if (enable_threads)
       add_definitions("-DPARALLEL_MARK")
     endif()
     if (enable_thread_local_alloc AND (enable_parallel_mark OR NOT BUILD_SHARED_LIBS))
-      # Imply THREAD_LOCAL_ALLOC unless GC_DLL.
+      # Imply `THREAD_LOCAL_ALLOC` unless `GC_DLL`.
       add_definitions("-DTHREAD_LOCAL_ALLOC")
       set(SRC ${SRC} thread_local_alloc.c)
     endif()
     add_definitions("-DEMPTY_GETENV_RESULTS")
-    set(SRC ${SRC} pthread_start.c) # in case client defines GC_WIN32_PTHREADS
+    # Add `pthread_start.c` file just in case client defines
+    # `GC_WIN32_PTHREADS` macro.
+    set(SRC ${SRC} pthread_start.c)
     set(SRC ${SRC} pthread_support.c win32_threads.c)
   elseif (CMAKE_HP_PTHREADS_INIT OR CMAKE_USE_SPROC_INIT)
     message(FATAL_ERROR "Unsupported thread package")
@@ -305,16 +302,16 @@ if (enable_threads)
   endif()
 endif(enable_threads)
 
-# Check whether -lrt linker option is needed to use clock_gettime.
+# Check whether `-lrt` linker option is needed to use `clock_gettime`.
 if (NOT NEED_LIB_RT)
   check_function_exists(clock_gettime HAVE_CLOCK_GETTIME_DIRECTLY)
   if (NOT HAVE_CLOCK_GETTIME_DIRECTLY)
-    # Use of clock_gettime() probably requires linking with "rt" library.
+    # Use of `clock_gettime` probably requires linking with `rt` library.
     set(NEED_LIB_RT ON)
   endif()
 endif()
 
-# Locate and use "rt" library if needed (and the library is available).
+# Locate and use `rt` library if needed (and the library is available).
 if (NEED_LIB_RT)
   find_library(LIBRT rt)
   if (LIBRT)
@@ -329,8 +326,8 @@ endif()
 if (enable_gcj_support)
   add_definitions("-DGC_GCJ_SUPPORT")
   if (enable_threads AND NOT (enable_thread_local_alloc AND HOST MATCHES .*-.*-kfreebsd.*-gnu))
-    # FIXME: For a reason, gctest hangs up on kFreeBSD if both of
-    # THREAD_LOCAL_ALLOC and GC_ENABLE_SUSPEND_THREAD are defined.
+    # FIXME: For a reason, `gctest` hangs up on kFreeBSD if both of
+    # `THREAD_LOCAL_ALLOC` and `GC_ENABLE_SUSPEND_THREAD` are defined.
     add_definitions("-DGC_ENABLE_SUSPEND_THREAD")
   endif()
   set(SRC ${SRC} gcj_mlc.c)
@@ -372,7 +369,7 @@ endif(enable_gc_debug)
 if (disable_gc_debug)
   add_definitions("-DNO_DEBUGGING")
 elseif (WINCE)
-  # Read environment variables from "<program>.gc.env" file.
+  # Read environment variables from `<program>.gc.env` file.
   add_definitions("-DGC_READ_ENV_FILE")
 endif()
 
@@ -412,8 +409,8 @@ endif()
 
 if (enable_gc_assertions)
   add_definitions("-DGC_ASSERTIONS")
-  # TODO: pass -Wno-missing-prototypes (if supported) to turn off the clang
-  # warning for STATIC functions.
+  # TODO: pass `-Wno-missing-prototypes` (if supported) to turn off the clang
+  # warning for `STATIC` functions.
 endif()
 
 if (NOT enable_threads_discovery)
@@ -421,7 +418,7 @@ if (NOT enable_threads_discovery)
 endif()
 
 if (enable_rwlock)
-  # Use rwlock for the allocator lock instead of mutex.
+  # Use `rwlock` for the allocator lock instead of mutex.
   add_definitions("-DUSE_RWLOCK")
 endif()
 
@@ -439,7 +436,7 @@ if (enable_werror)
   elseif (MSVC)
     add_compile_options(/WX)
     # Workaround "typedef ignored on left of ..." warning reported in
-    # imagehlp.h of e.g. Windows Kit 8.1.
+    # `imagehlp.h` file of e.g. Windows Kit 8.1.
     add_compile_options(/wd4091)
   elseif (WATCOM)
     add_compile_options(/we)
@@ -449,21 +446,21 @@ if (enable_werror)
 endif(enable_werror)
 
 if (enable_single_obj_compilation OR (BUILD_SHARED_LIBS AND NOT disable_single_obj_compilation))
-  set(SRC extra/gc.c) # override SRC
+  set(SRC extra/gc.c) # override `SRC`
   if (enable_threads AND CMAKE_USE_PTHREADS_INIT AND NOT (APPLE OR CYGWIN OR WIN32))
     add_definitions("-DGC_PTHREAD_START_STANDALONE")
     set(SRC ${SRC} pthread_start.c)
   endif()
 endif()
 
-# Add implementation of backtrace() and backtrace_symbols().
+# Add implementation of `backtrace` and `backtrace_symbols`.
 if (MSVC)
   set(SRC ${SRC} extra/msvc_dbg.c)
 endif()
 
 # Declare that the libraries do not refer to external symbols.
 if (BUILD_SHARED_LIBS AND NOT (APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD"))
-  # Note: performed before CMAKE_REQUIRED_FLAGS is updated with "-c".
+  # Note: performed before `CMAKE_REQUIRED_FLAGS` is updated with "-c".
   if (${CMAKE_VERSION} VERSION_LESS "3.18.0")
     set(WL_NO_UNDEFINED_OPT "-Wl,--no-undefined")
     check_c_compiler_flag(${WL_NO_UNDEFINED_OPT} HAVE_FLAG_WL_NO_UNDEFINED)
@@ -473,19 +470,19 @@ if (BUILD_SHARED_LIBS AND NOT (APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD"))
   endif()
 endif()
 
-# Instruct check_c_source_compiles to skip linking.
-# Alternatively, we could set CMAKE_REQUIRED_LIBRARIES properly.
+# Instruct `check_c_source_compiles` to skip linking.
+# Alternatively, we could set `CMAKE_REQUIRED_LIBRARIES` properly.
 SET(CMAKE_REQUIRED_FLAGS "-c")
 
 if (NOT (BORLAND OR MSVC OR WATCOM))
-  # Instruct check_c_source_compiles and similar CMake checks not to ignore
-  # compiler warnings (like "implicit declaration of function").
+  # Instruct `check_c_source_compiles` and similar `cmake` checks not to
+  # ignore compiler warnings (like "implicit declaration of function").
   check_c_compiler_flag(-Werror HAVE_FLAG_WERROR)
   if (HAVE_FLAG_WERROR)
     check_c_compiler_flag(-Wno-unused-command-line-argument
                           HAVE_FLAG_WNO_UNUSED_CMDLINE_ARG)
     SET(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Werror")
-    # Prevent "linker input unused" error in further check_c_compiler_flag.
+    # Prevent "linker input unused" error in further `check_c_compiler_flag`.
     if (HAVE_FLAG_WNO_UNUSED_CMDLINE_ARG)
       SET(CMAKE_REQUIRED_FLAGS
           "${CMAKE_REQUIRED_FLAGS} -Wno-unused-command-line-argument")
@@ -500,7 +497,7 @@ endif()
 
 if (BUILD_SHARED_LIBS)
   add_definitions("-DGC_DLL")
-  # Pass -fvisibility=hidden option if supported.
+  # Pass `-fvisibility=hidden` option if supported.
   check_c_compiler_flag(-fvisibility=hidden HAVE_FLAG_F_VISIBILITY_HIDDEN)
   if (HAVE_FLAG_F_VISIBILITY_HIDDEN)
     add_definitions("-DGC_VISIBILITY_HIDDEN_SET")
@@ -511,7 +508,7 @@ if (BUILD_SHARED_LIBS)
 else()
   add_definitions("-DGC_NOT_DLL")
   if (WIN32)
-    # Do not require the clients to link with "user32" system library.
+    # Do not require the clients to link with `user32` system library.
     add_definitions("-DDONT_USE_USER32_DLL")
   endif(WIN32)
 endif()
@@ -529,7 +526,7 @@ if (DEFINED CFLAGS_EXTRA)
   add_compile_options(${CFLAGS_EXTRA_LIST})
 endif()
 
-# Check whether execinfo.h header file is present.
+# Check whether platform `execinfo.h` file is present.
 check_include_file(execinfo.h HAVE_EXECINFO_H)
 if (NOT HAVE_EXECINFO_H)
   add_definitions("-DGC_MISSING_EXECINFO_H")
@@ -547,11 +544,11 @@ if (NOT WIN32)
   endif()
 endif()
 
-# Check for getcontext (uClibc can be configured without it, for example).
+# Check for `getcontext` (e.g., uClibc can be configured without it).
 if (NOT (BORLAND OR MSVC))
   check_function_exists(getcontext HAVE_GETCONTEXT)
   if (HAVE_GETCONTEXT AND NOT APPLE)
-    # Double check getcontext() is available (needed at least on OpenBSD 7.3).
+    # Double check `getcontext` is available (needed at least on OpenBSD 7.3).
     # Note: OS X is excluded here because the header filename differs.
     check_c_source_compiles("
 #include <ucontext.h>\n
@@ -566,7 +563,7 @@ int main(void) { ucontext_t ctxt; (void)getcontext(&ctxt); return 0; }"
   endif()
 endif()
 
-# Check whether dl_iterate_phdr exists (as a strong symbol).
+# Check whether `dl_iterate_phdr` exists (as a strong symbol).
 if (NOT (APPLE OR CYGWIN OR WIN32))
   check_function_exists(dl_iterate_phdr HAVE_DL_ITERATE_PHDR)
   if (HAVE_DL_ITERATE_PHDR)
@@ -574,7 +571,7 @@ if (NOT (APPLE OR CYGWIN OR WIN32))
   endif(HAVE_DL_ITERATE_PHDR)
 endif()
 
-# Check for pthread_sigmask and sigset_t.
+# Check for `pthread_sigmask` and `sigset_t`.
 if (enable_threads AND CMAKE_USE_PTHREADS_INIT)
   if (NOT (APPLE OR CYGWIN OR WIN32))
     check_c_source_compiles("
@@ -584,7 +581,7 @@ if (enable_threads AND CMAKE_USE_PTHREADS_INIT)
 int main(void) { sigset_t t; (void)pthread_sigmask(SIG_BLOCK, 0, &t); return 0; }"
       HAVE_PTHREAD_SIGMASK)
     if (HAVE_PTHREAD_SIGMASK)
-      # Define to use 'pthread_sigmask' function if needed.
+      # Define to use `pthread_sigmask` function if needed.
       add_definitions("-DGC_HAVE_PTHREAD_SIGMASK")
     endif(HAVE_PTHREAD_SIGMASK)
   endif()
@@ -595,13 +592,13 @@ if (NOT HAVE_SIGSETJMP)
   add_definitions("-DGC_NO_SIGSETJMP")
 endif()
 
-# Build with GC_wcsdup() support if possible.
+# Build with `GC_wcsdup` support if possible.
 check_symbol_exists(wcslen wchar.h HAVE_WCSLEN)
 if (HAVE_WCSLEN)
   add_definitions("-DGC_REQUIRE_WCSDUP")
 endif()
 
-# pthread_setname_np, if available, may have 1, 2 or 3 arguments.
+# `pthread_setname_np`, if available, may have 1, 2 or 3 arguments.
 if (enable_threads AND CMAKE_USE_PTHREADS_INIT)
   check_c_source_compiles("
 #define _GNU_SOURCE 1\n
@@ -609,7 +606,7 @@ if (enable_threads AND CMAKE_USE_PTHREADS_INIT)
 int main(void) { (void)pthread_setname_np(\"thread-name\"); return 0; }"
     HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
   if (HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
-    # Define to use 'pthread_setname_np(const char*)' function.
+    # Define to use `pthread_setname_np(const char *)`.
     add_definitions("-DHAVE_PTHREAD_SETNAME_NP_WITHOUT_TID")
   else()
     check_c_source_compiles("
@@ -619,7 +616,7 @@ int main(void) {\n
   (void)pthread_setname_np(pthread_self(), \"thread-name-%u\", 0); return 0; }"
       HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG)
     if (HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG)
-      # Define to use 'pthread_setname_np(pthread_t, const char*, void *)'.
+      # Define to use `pthread_setname_np(pthread_t, const char *, void *)`.
       add_definitions("-DHAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG")
     else()
       check_c_source_compiles("
@@ -629,7 +626,7 @@ int main(void) {\n
   (void)pthread_setname_np(pthread_self(), \"thread-name\"); return 0; }"
         HAVE_PTHREAD_SETNAME_NP_WITH_TID)
       if (HAVE_PTHREAD_SETNAME_NP_WITH_TID)
-        # Define to use 'pthread_setname_np(pthread_t, const char*)' function.
+        # Define to use `pthread_setname_np(pthread_t, const char *)`.
         add_definitions("-DHAVE_PTHREAD_SETNAME_NP_WITH_TID")
       else()
         check_c_source_compiles("
@@ -639,7 +636,7 @@ int main(void) {\n
   pthread_set_name_np(pthread_self(), \"thread-name\"); return 0; }"
           HAVE_PTHREAD_SET_NAME_NP)
         if (HAVE_PTHREAD_SET_NAME_NP)
-          # Define to use 'pthread_set_name_np(pthread_t, const char*)'.
+          # Define to use `pthread_set_name_np(pthread_t, const char *)`.
           add_definitions("-DHAVE_PTHREAD_SET_NAME_NP")
         endif()
       endif(HAVE_PTHREAD_SETNAME_NP_WITH_TID)
@@ -647,18 +644,18 @@ int main(void) {\n
   endif(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
 endif()
 
-# Check for dladdr (used for debugging).
+# Check for `dladdr` (used for debugging).
 check_c_source_compiles("
 #define _GNU_SOURCE 1\n
 #include <dlfcn.h>\n
 int main(void) { Dl_info info; (void)dladdr(\"\", &info); return 0; }"
   HAVE_DLADDR)
 if (HAVE_DLADDR)
-  # Define to use 'dladdr' function.
+  # Define to use `dladdr` function.
   add_definitions("-DHAVE_DLADDR")
 endif()
 
-# Check for emscripten; use asyncify feature if requested.
+# Check for `emscripten`; use `asyncify` feature if requested.
 check_c_source_compiles("
 #ifndef __EMSCRIPTEN__\n
 # error This is not Emscripten\n
@@ -666,9 +663,9 @@ check_c_source_compiles("
 int main(void) { return 0; }"
   EMSCRIPTEN)
 if (EMSCRIPTEN AND enable_emscripten_asyncify)
-  # Use this option if your program is targeting -sASYNCIFY.  The latter is
-  # required to scan the stack, ASYNCIFY_STACK_SIZE is probably needed for
-  # gctest only.
+  # Use this option if your program is targeting `-sASYNCIFY`.  The latter is
+  # required to scan the stack, `ASYNCIFY_STACK_SIZE` is probably needed for
+  # `gctest` only.
   add_definitions("-DEMSCRIPTEN_ASYNCIFY")
   set(CMAKE_EXE_LINKER_FLAGS
         "${CMAKE_EXE_LINKER_FLAGS} -sASYNCIFY -sASYNCIFY_STACK_SIZE=128000")
@@ -694,7 +691,7 @@ if (enable_cplusplus)
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include>")
   if (enable_throw_bad_alloc_library)
-    # The same as gccpp but contains only gc_badalc.
+    # The same as `gccpp` but contains only `gc_badalc`.
     if (BORLAND OR MSVC OR WATCOM)
       add_library(gctba gc_badalc.cpp)
     else()
@@ -825,13 +822,13 @@ if (install_headers)
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gc")
   endif()
 
-  # Provide pkg-config metadata.
+  # Provide `pkg-config` metadata.
   set(prefix "${CMAKE_INSTALL_PREFIX}")
   set(exec_prefix \${prefix})
   set(includedir "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
   set(libdir "${CMAKE_INSTALL_FULL_LIBDIR}")
   string(REPLACE ";" " " THREADDLLIBS "${THREADDLLIBS_LIST}")
-  # ATOMIC_OPS_LIBS, PACKAGE_VERSION are defined above.
+  # `ATOMIC_OPS_LIBS`, `PACKAGE_VERSION` are defined above.
   configure_file(bdw-gc.pc.in bdw-gc.pc @ONLY)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bdw-gc.pc"
           DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
@@ -855,11 +852,11 @@ if (build_tests)
     endif()
   endif(build_cord)
 
-  # Compile some tests as C++ to test extern "C" in header files.
+  # Compile some tests as C++ to test `extern "C"` in header files.
   if (enable_cplusplus)
     set_source_files_properties(tests/leak.c PROPERTIES LANGUAGE CXX)
     if (BORLAND OR MSVC OR WATCOM)
-      # WinMain-based test hangs at startup if compiled by VC as C++ code.
+      # `WinMain`-based test hangs at startup if compiled by VC as C++ code.
     else()
       set_source_files_properties(tests/gctest.c PROPERTIES LANGUAGE CXX)
       # To avoid "treating 'c' input as 'c++' when in C++ mode" Clang warning.
@@ -872,7 +869,8 @@ if (build_tests)
                 PRIVATE gc ${ATOMIC_OPS_LIBS_CMAKE} ${THREADDLLIBS_LIST})
   add_test(NAME gctest COMMAND gctest)
   if (WATCOM AND NOT enable_gc_assertions)
-    # Suppress "unreachable code" warning in GC_MALLOC_[ATOMIC_]WORDS().
+    # Suppress "unreachable code" warning in `GC_MALLOC_WORDS()` and
+    # `GC_MALLOC_ATOMIC_WORDS()`.
     target_compile_options(gctest PRIVATE /wcd=201)
   endif()
 

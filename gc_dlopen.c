@@ -15,31 +15,32 @@
 
 #include "private/gc_priv.h"
 
-/* This used to be in dyn_load.c.  It was extracted into a separate     */
-/* file to avoid having to link against libdl.{a,so} if the client      */
-/* doesn't call dlopen.  Of course this fails if the collector is in    */
-/* a dynamic library. -HB                                               */
+/* This is located in this file (rather than in `dyn_load.c` file) to   */
+/* avoid having to link against `libdl` library if the client does not  */
+/* call `dlopen()`.  Of course, this is meaningless if the collector is */
+/* in a dynamic library.                                                */
 #if defined(GC_PTHREADS) && !defined(GC_NO_DLOPEN)
 
 #  undef GC_MUST_RESTORE_REDEFINED_DLOPEN
 #  if defined(dlopen) && !defined(GC_USE_LD_WRAP)
-/* To support various threads pkgs, gc.h interposes on dlopen by      */
-/* defining "dlopen" to be "GC_dlopen", which is implemented below.   */
-/* However, both GC_FirstDLOpenedLinkMap() and GC_dlopen() use the    */
-/* real system dlopen() in their implementation. We first remove      */
-/* gc.h's dlopen definition and restore it later, after GC_dlopen().  */
+/* To support various threads packages, `gc.h` file interposes on   */
+/* `dlopen` by defining `dlopen` to be `GC_dlopen`, which is        */
+/* implemented below.  However, both `GC_FirstDLOpenedLinkMap()`    */
+/* and `GC_dlopen()` use the real system `dlopen()` in their        */
+/* implementation.  We first remove `dlopen` definition by `gc.h`   */
+/* file and restore it later, after `GC_dlopen()`.                  */
 #    undef dlopen
 #    define GC_MUST_RESTORE_REDEFINED_DLOPEN
 #  endif
 
-/* Make sure we're not in the middle of a collection, and make sure we  */
-/* don't start any.  This is invoked prior to a dlopen call to avoid    */
+/* Make sure we are not in the middle of a collection, and make sure we */
+/* do not start any.  This is invoked prior to a `dlopen` call to avoid */
 /* synchronization issues.  We cannot just acquire the allocator lock,  */
-/* since startup code in dlopen may try to allocate.  This solution     */
+/* since startup code in `dlopen` may try to allocate.  This solution   */
 /* risks heap growth (or, even, heap overflow) in the presence of many  */
-/* dlopen calls in either a multi-threaded environment, or if the       */
-/* library initialization code allocates substantial amounts of GC'ed   */
-/* memory.                                                              */
+/* `dlopen` calls in either a multi-threaded environment, or if the     */
+/* library initialization code allocates substantial amounts of garbage */
+/* collected memory.                                                    */
 #  ifndef USE_PROC_FOR_LIBRARIES
 static void
 disable_gc_for_dlopen(void)
@@ -53,11 +54,11 @@ disable_gc_for_dlopen(void)
 }
 #  endif
 
-/* Redefine dlopen to guarantee mutual exclusion with           */
-/* GC_register_dynamic_libraries.  Should probably happen for   */
-/* other operating systems, too.                                */
+/* Redefine `dlopen` to guarantee mutual exclusion with             */
+/* `GC_register_dynamic_libraries()`.  Should probably happen for   */
+/* other operating systems, too.                                    */
 
-/* This is similar to WRAP/REAL_FUNC() in pthread_support.c.    */
+/* This is similar to `WRAP_FUNC`/`REAL_FUNC` in `pthread_support.c` file. */
 #  ifdef GC_USE_LD_WRAP
 #    define WRAP_DLFUNC(f) __wrap_##f
 #    define REAL_DLFUNC(f) __real_##f
@@ -80,7 +81,7 @@ GC_wrap_dlopen(const char *path, int mode)
 #  endif
   result = REAL_DLFUNC(dlopen)(path, mode);
 #  ifndef USE_PROC_FOR_LIBRARIES
-  /* This undoes disable_gc_for_dlopen().     */
+  /* This undoes `disable_gc_for_dlopen()`. */
   GC_enable();
 #  endif
   return result;
@@ -88,9 +89,9 @@ GC_wrap_dlopen(const char *path, int mode)
 #  undef GC_wrap_dlopen
 
 #  ifdef GC_USE_LD_WRAP
-/* Define GC_ function as an alias for the plain one, which will be   */
-/* intercepted.  This allows files which include gc.h, and hence      */
-/* generate references to the GC_ symbol, to see the right symbol.    */
+/* Define `GC_` function as an alias for the plain one, which will be   */
+/* intercepted.  This allows files that include `gc.h` file, and hence  */
+/* generate references to the `GC_` symbol, to see the right symbol.    */
 GC_API void *
 GC_dlopen(const char *path, int mode)
 {

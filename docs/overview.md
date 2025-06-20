@@ -70,8 +70,9 @@ on Linux, Android, BSD variants, OS/2, Windows (Win32 and Win64), MacOS X,
 iOS, HP/UX, Solaris, Tru64, Irix, Symbian and other operating systems. Some
 platforms are more polished (better supported) than others.
 
-Irix pthreads, Linux threads, Windows threads, Solaris threads (pthreads
-only), HP/UX 11 pthreads, Tru64 pthreads, and MacOS X threads are supported.
+Irix `pthreads`, Linux threads, Windows threads, Solaris threads (`pthreads`
+only), HP/UX 11 `pthreads`, Tru64 `pthreads`, and MacOS X threads are
+supported.
 
 See also [here](porting.md) for the instructions on how to port the library to
 new platforms.
@@ -85,15 +86,15 @@ this includes SunOS[45], IRIX, OSF/1, Linux, and Windows, with varying
 restrictions.) It allows [finalization](finalization.md) code to be invoked
 when an object is collected. It can take advantage of type information
 to locate pointers if such information is provided, but it is usually used
-without such information. See the README and `gc.h` files in the distribution
-for more details.
+without such information. See the `README` and `gc.h` files in the
+distribution for more details.
 
 For an overview of the implementation, see [here](gcdescr.md).
 
-The garbage collector distribution includes a C string (`cord.h`) package that
-provides for fast concatenation and substring operations on long strings.
-A simple curses- and Windows-based editor that represents the entire file as
-a cord is included as a sample application.  See [cords.md](cords.md)
+The garbage collector distribution includes a C string (`cord.h` file) package
+that provides for fast concatenation and substring operations on long strings.
+A simple `curses`-based and Windows-based editor that represents the entire
+file as a cord is included as a sample application.  See [cords.md](cords.md)
 file for the details.
 
 Performance of the non-incremental collector is typically competitive with
@@ -241,7 +242,7 @@ The following documents are not platform-specific in general.
 
 [How to use the garbage collector as a leak detector](leak.md).
 
-[Some hints on debugging garbage collected applications](debugging.md).
+[Some hints on debugging garbage-collected applications](debugging.md).
 
 [An overview of the implementation of the garbage collector](gcdescr.md).
 
@@ -331,6 +332,6 @@ and
 archive files, respectively. The gc list archive may also be read
 at [Narkive](http://bdwgc.opendylan.narkive.com).
 
-Some prior discussion of the collector has taken place on the gcc java mailing
+Some prior discussion of the collector has taken place on the GCC Java mailing
 list, whose archives appear [here](http://gcc.gnu.org/ml/java/), and also
 on [gclist@iecc.com](http://lists.tunes.org/mailman/listinfo/gclist).

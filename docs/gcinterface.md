@@ -18,10 +18,10 @@ commonly used functionality, approximately in decreasing order of frequency
 of use. This somewhat duplicates the information in `gc.man` file. The full
 interface is described in `gc.h` file.
 
-Clients should include `gc.h` (i.e., not `gc_config_macros.h`,
-`gc_pthread_redirects.h`, `gc_version.h`). In the case of multi-threaded code,
-`gc.h` should be included after the threads header file, and after defining
-`GC_THREADS` macro. The header file `gc.h` must be included in files that use
+Clients should include `gc.h` file (i.e., not `gc_config_macros.h`,
+`gc_pthread_redirects.h`, `gc_version.h` files). In the case of multi-threaded
+code, `gc.h` file should be included after the threads header file, and after
+defining `GC_THREADS` macro. `gc.h` file must be included in files that use
 either GC or threads primitives, since threads primitives will be redefined
 to cooperate with the GC on many platforms.
 
@@ -38,7 +38,7 @@ objects allocated with the system malloc are usually not considered by the
 collector. (See `GC_MALLOC_UNCOLLECTABLE`, however. Building the collector
 with `-DREDIRECT_MALLOC=GC_malloc_uncollectable` is often a way around this.)
 `GC_MALLOC` is a macro which invokes `GC_malloc` by default or, if `GC_DEBUG`
-is defined before `gc.h` is included, a debugging version that checks
+is defined before `gc.h` file is included, a debugging variant that checks
 occasionally for overwrite errors, and the like.
 
 `void * GC_MALLOC_ATOMIC(size_t _bytes_)` - Allocates _bytes_
@@ -47,7 +47,7 @@ object will be automatically deallocated when unreferenced. The client
 promises that the resulting object will never contain any pointers. The memory
 is not cleared. This is the preferred way to allocate strings, floating point
 arrays, bitmaps, etc. More precise information about pointer locations can be
-communicated to the collector using the interface in `gc_typed.h`.
+communicated to the collector using the interface in `gc_typed.h` file.
 
 `void * GC_MALLOC_UNCOLLECTABLE(size_t _bytes_)` - Identical
 to `GC_MALLOC`, except that the resulting object is not automatically
@@ -70,7 +70,7 @@ Typically not useful for small collectible objects.
 `void * GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(size_t _bytes_)` - Analogous
 to `GC_MALLOC` and `GC_MALLOC_ATOMIC`, respectively, except that the client
 guarantees that as long as the resulting object is of use, a pointer
-is maintained to someplace inside the first heap block (hblk) of the object.
+is maintained to someplace inside the first heap block (`hblk`) of the object.
 This pointer should be declared volatile to avoid interference from compiler
 optimizations. (Other nonvolatile pointers to the object may exist as well.)
 This is the preferred way to allocate objects that are likely to be
@@ -92,21 +92,21 @@ as possible.
 to perform a small amount of work every few invocations of `GC_MALLOC` or the
 like, instead of performing an entire collection at once. This is likely
 to increase total running time. It will improve response on a platform that
-has suitable support in the garbage collector (Linux and most Unix versions,
+has suitable support in the garbage collector (Linux and most UNIX versions,
 Win32 if the collector was suitably built). On many platforms this interacts
-poorly with system calls that write to the garbage collected heap.
+poorly with system calls that write to the garbage-collected heap.
 
 `void GC_set_warn_proc(GC_warn_proc)` - Replaces the default procedure
 used by the collector to print warnings. The collector may otherwise
 write to `stderr`, most commonly because `GC_malloc` was used in a situation
 in which `GC_malloc_ignore_off_page` would have been more appropriate. See
-`gc.h` for details.
+`gc.h` file for details.
 
 `void GC_REGISTER_FINALIZER(...)` - Registers a function to be called when
 an object becomes inaccessible. This is often useful as a backup method for
 releasing system resources (e.g. closing files) when the object referencing
 them becomes inaccessible. It is not an acceptable method to perform actions
-that must be performed in a timely fashion. See `gc.h` for details of the
+that must be performed in a timely fashion. See `gc.h` file for details of the
 interface. See also [here](finalization.md) for a more detailed discussion
 of the design. Note that an object may become inaccessible before client code
 is done operating on objects referenced by its fields. Suitable
@@ -122,7 +122,7 @@ parallel marking support (`-DPARALLEL_MARK`); configure has it on by default.
 
 If the collector is used in an environment in which pointer location
 information for heap objects is easily available, this can be passed on to the
-collector using the interfaces in either `gc_typed.h` or `gc_gcj.h`.
+collector using the interfaces in either `gc_gcj.h` or `gc_typed.h` file.
 
 The collector distribution also includes a **string package** that takes
 advantage of the collector. For details see `cord.h` file.
@@ -134,15 +134,15 @@ Unfortunately, this thin layer appears to be very sensitive to variations
 in C++ implementations, particularly since it tries to replace the global
 `::new` operator, something that appears to not be well-standardized. Your
 platform may need minor adjustments in this layer (`gc_badalc.cc`,
-`gc_cpp.cc`, `gc_cpp.h`, and possibly `gc_allocator.h`). Such changes do not
-require understanding of collector internals, though they may require a good
-understanding of your platform. (Patches enhancing portability are welcome.
-But it is easy to break one platform by fixing another.)
+`gc_cpp.cc`, `gc_cpp.h`, and possibly `gc_allocator.h` files). Such changes
+do not require understanding of collector internals, though they may require
+a good understanding of your platform. (Patches enhancing portability are
+welcome. But it is easy to break one platform by fixing another.)
 
 Usage of the collector from C++ is also complicated by the fact that there are
 many _standard_ ways to allocate memory in C++. The default `::new` operator,
 default `malloc`, and default STL allocators allocate memory that is not
-garbage collected, and is not normally _traced_ by the collector. This means
+garbage-collected, and is not normally _traced_ by the collector. This means
 that any pointers in memory allocated by these default allocators will not be
 seen by the collector. Garbage-collectible memory referenced only by pointers
 stored in such default-allocated objects is likely to be reclaimed prematurely
@@ -174,43 +174,43 @@ containers be explicitly instantiated with `gc_allocator`.
 ### STL allocators
 
 Recent versions of the collector include a hopefully standard-conforming
-allocator implementation in `gc_allocator.h`. It defines `traceable_allocator`
-and `gc_allocator` which may be used either directly to allocate memory or to
-instantiate container templates. The former allocates uncollectible but traced
-memory. The latter allocates garbage-collected memory.
+allocator implementation in `gc_allocator.h` file. It defines `gc_allocator`
+and `traceable_allocator` which may be used either directly to allocate memory
+or to instantiate container templates. The former allocates garbage-collected
+memory. The latter allocates uncollectible but traced memory.
 
 These should work with any fully standard-conforming C++ compiler.
 
 ### Class inheritance based interface for new-based allocation
 
-Users may include `gc_cpp.h` and then cause members of classes to be allocated
-in garbage collectible memory by having those classes inherit from class `gc`.
-For details see `gc_cpp.h` file.
+Users may include `gc_cpp.h` file and then cause members of classes to be
+allocated in the garbage collectible memory by having those classes inherit
+from class `gc`. For details see `gc_cpp.h` file.
 
 Linking against `gccpp` in addition to the `gc` library overrides `::new`
 (and friends) to allocate traceable but uncollectible memory, making
 it safe to refer to collectible objects from the resulting memory.
 
-If the user includes `gc_cpp.h` but `::new` should not be overridden then
-`gctba` (in addition to the `gc`) library should be linked with to provide
-the definition of `GC_throw_bad_alloc` C++ function used by operator `new` of
-class `gc`. Alternatively, the client may define `GC_NEW_ABORTS_ON_OOM` macro
-before include of `gc_cpp.h` (this instructs `::new` to issue an abort instead
-of throwing an exception), or may define `GC_INCLUDE_NEW` one before include
-of `gc_cpp.h` (however, this might not compile or work as expected on some
-platforms).
+If the user includes `gc_cpp.h` file but `::new` should not be overridden,
+then `gctba` (in addition to the `gc`) library should be linked with to
+provide the definition of `GC_throw_bad_alloc` C++ function used by operator
+`new` of class `gc`. Alternatively, the client may define
+`GC_NEW_ABORTS_ON_OOM` macro before include `gc_cpp.h` file (this instructs
+`::new` to issue an abort instead of throwing an exception), or may define
+`GC_INCLUDE_NEW` one before include `gc_cpp.h` file (however, this might not
+compile or work as expected on some platforms).
 
 ## C interface
 
-It is also possible to use the C interface from `gc.h` directly. On platforms
-which use `malloc` to implement `::new`, it should usually be possible to use
-a version of the collector that has been compiled as a `malloc` replacement.
-It is also possible to replace `::new` and other allocation functions
-suitably, as is done by `gccpp`.
+It is also possible to use the C interface from `gc.h` file directly.
+On platforms which use `malloc` to implement `::new`, it should usually be
+possible to use a variant of the collector that has been compiled as
+a `malloc` replacement. It is also possible to replace `::new` and other
+allocation functions suitably, as is done by `gccpp`.
 
 Note that user-implemented small-block allocation often works poorly with
 an underlying garbage-collected large block allocator, since the collector has
 to view all objects accessible from the user's free list as reachable. This
 is likely to cause problems if `GC_MALLOC` is used with something like the
 original HP version of STL. This approach works well with the SGI versions
-of the STL only if the STL "malloc_alloc" allocator is used.
+of the STL only if the STL `malloc_alloc` allocator is used.

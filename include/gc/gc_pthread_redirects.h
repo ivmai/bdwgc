@@ -15,23 +15,24 @@
  * modified is included with the above copyright notice.
  */
 
-/* Our pthread support normally needs to intercept a number of thread   */
-/* calls.  We arrange to do that here, if appropriate.                  */
+/* Our `pthreads` support normally needs to intercept a number of       */
+/* thread calls.  We arrange to do that here, if appropriate.           */
 
 #ifndef GC_PTHREAD_REDIRECTS_H
 #define GC_PTHREAD_REDIRECTS_H
 
-/* Included from gc.h only.  Included only if GC_PTHREADS.              */
+/* Included from `gc.h` file only.  Included only if `GC_PTHREADS`      */
+/* macro is defined.                                                    */
 #if defined(GC_H) && defined(GC_PTHREADS)
 
-/* We need to intercept calls to many of the threads primitives, so     */
+/* We need to intercept calls to many of the threads' primitives, so    */
 /* that we can locate thread stacks and stop the world.                 */
-/* Note also that the collector cannot always see thread specific data. */
-/* Thread specific data should generally consist of pointers to         */
-/* uncollectible objects (allocated with GC_malloc_uncollectable,       */
-/* not the system malloc), which are deallocated using the destructor   */
-/* facility in thr_keycreate.  Alternatively, keep a redundant pointer  */
-/* to thread specific data on the thread stack.                         */
+/* Note also that the collector cannot always see thread-specific data. */
+/* Such data should generally consist of pointers to uncollectible      */
+/* objects (allocated with `GC_malloc_uncollectable`, not the system    */
+/* `malloc`), which are deallocated using the destructor facility in    */
+/* `pthread_key_create()`.  Alternatively, keep a redundant pointer     */
+/* to thread-specific data on the thread stack.                         */
 
 #  ifndef GC_PTHREAD_REDIRECTS_ONLY
 
@@ -40,7 +41,8 @@
 #      include <dlfcn.h>
 #    endif
 #    ifndef GC_NO_PTHREAD_SIGMASK
-#      include <signal.h> /* needed anyway for proper redirection */
+/* This is needed anyway for proper redirection. */
+#      include <signal.h>
 #    endif
 
 #    ifdef __cplusplus
@@ -52,8 +54,8 @@ extern "C" {
 #    endif
 
 #    ifndef GC_NO_DLOPEN
-GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
-#    endif /* !GC_NO_DLOPEN */
+GC_API void *GC_dlopen(const char * /* `path` */, int /* `mode` */);
+#    endif
 
 #    ifndef GC_NO_PTHREAD_SIGMASK
 #      if defined(GC_PTHREAD_SIGMASK_NEEDED) || defined(__COSMOPOLITAN__) \
@@ -62,22 +64,22 @@ GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
           || (_POSIX_C_SOURCE >= 199506L) || (_XOPEN_SOURCE >= 500)       \
           || (__POSIX_VISIBLE >= 199506) /* xBSD internal macro */
 
-GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
-                              sigset_t * /* oset */);
+GC_API int GC_pthread_sigmask(int /* `how` */, const sigset_t *,
+                              sigset_t * /* `oset` */);
 #      else
 #        define GC_NO_PTHREAD_SIGMASK
 #      endif
 #    endif /* !GC_NO_PTHREAD_SIGMASK */
 
 #    ifndef GC_PTHREAD_CREATE_CONST
-/* This is used for pthread_create() only.    */
+/* This is used for `pthread_create()` only. */
 #      define GC_PTHREAD_CREATE_CONST const
 #    endif
 
 GC_API int GC_pthread_create(pthread_t *,
                              GC_PTHREAD_CREATE_CONST pthread_attr_t *,
-                             void *(*)(void *), void * /* arg */);
-GC_API int GC_pthread_join(pthread_t, void ** /* retval */);
+                             void *(*)(void *), void * /* `arg` */);
+GC_API int GC_pthread_join(pthread_t, void ** /* `retval` */);
 GC_API int GC_pthread_detach(pthread_t);
 
 #    ifndef GC_NO_PTHREAD_CANCEL
@@ -96,9 +98,10 @@ GC_API void GC_pthread_exit(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
 #  endif /* !GC_PTHREAD_REDIRECTS_ONLY */
 
 #  if !defined(GC_NO_THREAD_REDIRECTS) && !defined(GC_USE_LD_WRAP)
-/* Unless the compiler supports #pragma extern_prefix, the Tru64      */
-/* UNIX pthread.h redefines some POSIX thread functions to use        */
-/* mangled names.  Anyway, it's safe to undef them before redefining. */
+/* Unless the compiler supports `#pragma extern_prefix`, the Tru64      */
+/* UNIX platform `pthread.h` file redefines some POSIX thread functions */
+/* to use mangled names.  Anyway, it is safe to `#undef` them before    */
+/* redefining.                                                          */
 #    undef pthread_create
 #    undef pthread_join
 #    undef pthread_detach

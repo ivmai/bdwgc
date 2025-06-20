@@ -150,9 +150,10 @@ Alpha OSF/1, Linux, and Win32 is included and used by default.
 (See [README.win32](docs/platforms/README.win32) and
 [README.win64](docs/platforms/README.win64) for Windows details.)  On other
 systems, pointers from dynamic library data areas may not be considered by the
-collector.  If you're writing a program that depends on the collector scanning
-dynamic library data areas, it may be a good idea to include at least one call
-to `GC_is_visible` to ensure that those areas are visible to the collector.
+collector.  If you are writing a program that depends on the collector
+scanning dynamic library data areas, it may be a good idea to include at least
+one call to `GC_is_visible` to ensure that those areas are visible to the
+collector.
 
 Note that the garbage collector does not need to be informed of shared
 read-only data.  However, if the shared library mechanism can introduce
@@ -174,7 +175,7 @@ _WARNING_: the collector does not guarantee to scan thread-local storage
 does scan thread stacks, though, so generally the best solution is to
 ensure that any pointers stored in thread-local storage are also
 stored on the thread's stack for the duration of their lifetime.
-(This is arguably a longstanding bug, but it hasn't been fixed yet.)
+(This is arguably a longstanding bug, but it has not been fixed yet.)
 
 
 ## Building and Installing
@@ -190,8 +191,8 @@ There are multiple ways to build the collector:
 
 ### CMake
 
-The simplest way to build libgc (as well as libcord) and run the tests using
-cmake:
+The simplest way to build `gc` library (as well as `cord` library) and run
+the tests using CMake:
 
 ```sh
 mkdir out
@@ -207,7 +208,7 @@ See [cmake.md](docs/cmake.md) for details.
 ### GNU Autoconf/Automake
 
 Please note that the collector source repository does not contain `configure`
-and similar auto-generated files, thus the full procedure of autoconf-based
+and similar auto-generated files, thus the full procedure of `autoconf`-based
 build of the collector from the source repository could look like:
 
 ```sh
@@ -217,9 +218,9 @@ make check
 ```
 
 The GNU style build process understands the usual targets and options.
-`make install` installs libgc and libcord.  Try `./configure --help` to see
-all the configuration options.  It is currently not possible to exercise all
-combinations of build options this way.
+`make install` installs `gc` and `cord` libraries.  Try `./configure --help`
+to see all the configuration options.  It is currently not possible to
+exercise all combinations of build options this way.
 
 See [autoconf.md](docs/autoconf.md) for details.
 
@@ -233,7 +234,7 @@ zig build test
 ```
 
 It is possible to configure the build through the use of variables, e.g.
-`zig build -Denable_redirect_malloc -Denable_threads=false`. Zig offers
+`zig build -Denable_redirect_malloc -Denable_threads=false`.  Zig offers
 excellent cross-compilation functionality, it is configurable like this:
 
 ```sh
@@ -255,14 +256,15 @@ See [README.win32](docs/platforms/README.win32) for details.
 ### Makefile.direct
 
 For the old-style (classic) makefile-based build process, typing
-`make -f Makefile.direct check` will automatically build libgc, libcord and
-then run a number of tests such as `gctest`.  The test is a somewhat
-superficial test of collector functionality.  Failure is indicated by a core
-dump or a message to the effect that the collector is broken.  `gctest` may
-take a dozen of seconds to run on reasonable 2023 vintage 64-bit desktops.
-It may use up to about 30 MB of memory.
+`make -f Makefile.direct check` will automatically build `gc`, `cord`
+libraries, then run a number of tests such as `gctest`.  The test is
+a somewhat superficial test of collector functionality.  Failure is indicated
+by a core dump or a message to the effect that the collector is broken.
+`gctest` may take a dozen of seconds to run on reasonable 2023 vintage 64-bit
+desktops.  It may use up to about 30 MB of memory.
 
-Makefile.direct will generate a library libgc.a which you should link against.
+`Makefile.direct` file generates a `libgc.a` file which you should link
+against.
 
 ### Manual C Compilation
 
@@ -292,7 +294,7 @@ In the event of issues, this can usually be changed by defining the
 `GC_PRINT_STATS` or `GC_PRINT_VERBOSE_STATS` environment variables.  This
 will result in a few lines of descriptive output for each collection.
 (The given statistics exhibit a few peculiarities.
-Things don't appear to add up for a variety of reasons, most notably
+Things do not appear to add up for a variety of reasons, most notably
 fragmentation losses.  These are probably much more significant for the
 contrived program `gctest` than for your application.)
 
@@ -324,18 +326,20 @@ of dyn_load.c.  On other machines we recommend that you do one of
 the following:
 
   1. Add dynamic library support (and send us the code).
+
   2. Use static versions of the libraries.
+
   3. Arrange for dynamic libraries to use the standard malloc. This is still
-  dangerous if the library stores a pointer to a garbage collected object.
-  But nearly all standard interfaces prohibit this, because they deal
-  correctly with pointers to stack allocated objects.  (`strtok` is an
-  exception.  Don't use it.)
+     dangerous if the library stores a pointer to a garbage-collected object.
+     But nearly all standard interfaces prohibit this, because they deal
+     correctly with pointers to stack allocated objects.  (`strtok` is an
+     exception.  Do not use it.)
 
 In all cases we assume that pointer alignment is consistent with that
 enforced by the standard C compilers.  If you use a nonstandard compiler
 you may have to adjust the alignment parameters defined in
-`include/private/gc_priv.h`.  Note that this may also be an issue with packed
-records/structs, if those enforce less alignment for pointers.
+`include/private/gc_priv.h` file.  Note that this may also be an issue with
+packed records/structs, if those enforce less alignment for pointers.
 
 A port to a machine that is not byte addressed, or does not use 32 bit
 or 64 bit addresses will require a major effort.  A port to plain MSDOS
@@ -351,73 +355,75 @@ The following routines are intended to be directly called by the user.
 Note that usually only `GC_malloc` is necessary.  `GC_clear_roots` and
 `GC_add_roots` calls may be required if the collector has to trace
 from nonstandard places (e.g. from dynamic library data areas on a
-machine on which the collector doesn't already understand them.)  On
+machine on which the collector does not already understand them.)  On
 some machines, it may be desirable to set `GC_stackbottom` to a good
 approximation of the stack base (bottom).
 
-Client code may include `gc.h`, which defines all of the following, plus many
-others.
+Client code may include `gc.h` file, which defines all of the following, plus
+many others.
 
-  1. `GC_malloc(bytes)` - Allocate an object of a given size.  Unlike malloc,
-  the object is cleared before being returned to the user.  `GC_malloc` will
-  invoke the garbage collector when it determines this to be appropriate.
-  GC_malloc may return 0 if it is unable to acquire sufficient space from the
-  operating system.  This is the most probable consequence of running out
-  of space.  Other possible consequences are that a function call will fail
-  due to lack of stack space, or that the collector will fail in other ways
-  because it cannot maintain its internal data structures, or that a crucial
-  system process will fail and take down the machine.  Most of these
-  possibilities are independent of the malloc implementation.
+  1. `GC_malloc(bytes)` - Allocate an object of a given size.
+     Unlike `malloc`, the object is cleared before being returned to the user.
+     `GC_malloc` will invoke the garbage collector when it determines this to
+     be appropriate.  `GC_malloc` may return 0 if it is unable to acquire
+     sufficient space from the operating system.  This is the most probable
+     consequence of running out of space.  Other possible consequences are
+     that a function call will fail due to lack of stack space, or that the
+     collector will fail in other ways because it cannot maintain its internal
+     data structures, or that a crucial system process will fail and take down
+     the machine.  Most of these possibilities are independent of the `malloc`
+     implementation.
 
   2. `GC_malloc_atomic(bytes)` - Allocate an object of a given size that
-  is guaranteed not to contain any pointers.  The returned object is not
-  guaranteed to be cleared. (Can always be replaced by `GC_malloc`, but
-  results in faster collection times.  The collector will probably run faster
-  if large character arrays, etc. are allocated with `GC_malloc_atomic` than
-  if they are statically allocated.)
+     is guaranteed not to contain any pointers.  The returned object is not
+     guaranteed to be cleared.  (Can always be replaced by `GC_malloc`, but
+     results in faster collection times.  The collector will probably run
+     faster if large character arrays, etc. are allocated with
+     `GC_malloc_atomic` than if they are statically allocated.)
 
   3. `GC_realloc(object, new_bytes)` - Change the size of object to be of
-  a given size.  Returns a pointer to the new object, which may, or may not,
-  be the same as the pointer to the old object.  The new object is taken to
-  be atomic if and only if the old one was.  If the new object is composite
-  and larger than the original object then the newly added bytes are cleared.
-  This is very likely to allocate a new object.
+     a given size.  Returns a pointer to the new object, which may, or may
+     not, be the same as the pointer to the old object.  The new object is
+     taken to be atomic if and only if the old one was.  If the new object
+     is composite and larger than the original object then the newly added
+     bytes are cleared. This is very likely to allocate a new object.
 
   4. `GC_free(object)` - Explicitly deallocate an object returned by
-  `GC_malloc` or `GC_malloc_atomic`, or friends.  Not necessary, but can be
-  used to minimize collections if performance is critical.  Probably
-  a performance loss for very small objects (<= 8 bytes).
+     `GC_malloc` or `GC_malloc_atomic`, or friends.  Not necessary, but can
+     be used to minimize collections if performance is critical.  Probably
+     a performance loss could occur for very small objects (not greater than
+     8 bytes).
 
   5. `GC_expand_hp(bytes)` - Explicitly increase the heap size.  (This is
-  normally done automatically if a garbage collection failed to reclaim
-  enough memory.  Explicit calls to `GC_expand_hp` may prevent unnecessarily
-  frequent collections at program startup.)
+     normally done automatically if a garbage collection failed to reclaim
+     enough memory.  Explicit calls to `GC_expand_hp` may prevent
+     unnecessarily frequent collections at program startup.)
 
   6. `GC_malloc_ignore_off_page(bytes)` - Identical to `GC_malloc`, but the
-  client promises to keep a pointer to the somewhere within the first GC
-  heap block (512 .. 4096 bytes or even more, depending on the configuration)
-  of the object while it is live.  (This pointer should normally be
-  declared volatile to prevent interference from compiler optimizations.)
-  This is the recommended way to allocate anything that is likely to be
-  larger than 100 KB or so.  (`GC_malloc` may result in a failure to reclaim
-  such objects.)
+     client promises to keep a pointer to the somewhere within the first GC
+     heap block (512 .. 4096 bytes or even more, depending on the
+     configuration) of the object while it is live.  (This pointer should
+     normally be declared `volatile` to prevent interference from compiler
+     optimizations.)  This is the recommended way to allocate anything that
+     is likely to be larger than 100 KB or so.  (`GC_malloc` may result in
+     a failure to reclaim such objects.)
 
   7. `GC_set_warn_proc(proc)` - Can be used to redirect warnings from the
-  collector.  Such warnings should be rare, and should not be ignored during
-  code development.
+     collector.  Such warnings should be rare, and should not be ignored
+     during code development.
 
   8. `GC_enable_incremental()` - Enables generational and incremental
-  collection.  Useful for large heaps on machines that provide access to page
-  dirty information.  Some dirty bit implementations may interfere with
-  debugging (by catching address faults) and place restrictions on heap
-  arguments to system calls (since write faults inside a system call may not
-  be handled well).
+     collection.  Useful for large heaps on machines that provide access to
+     page dirty information.  Some dirty bit implementations may interfere
+     with debugging (by catching address faults) and place restrictions on
+     heap arguments to system calls (since write faults inside a system call
+     may not be handled well).
 
-  9. `GC_register_finalizer(object, proc, data, 0, 0)` and friends - Allow for
-  registration of finalization code.  User supplied finalization code
-  (`(*proc)(object, data)`) is invoked after object becomes unreachable.
-  For more sophisticated uses, and for finalization ordering issues, see
-  `gc.h`.
+  9. `GC_register_finalizer(object, proc, data, 0, 0)` and friends - Allow
+     for registration of finalization code.  User-supplied finalization code
+     (`(*proc)(object, data)`) is invoked after object becomes unreachable.
+     For more sophisticated uses, and for finalization ordering issues, see
+     `gc.h` file.
 
 The global variable `GC_free_space_divisor` may be adjusted up from it
 default value of 3 to use less space and more collection time, or down for
@@ -430,7 +436,7 @@ considered as a candidate for collection.  Careless use may, of course, result
 in excessive memory consumption.
 
 Some additional tuning is possible through the parameters defined
-near the top of `include/private/gc_priv.h`.
+near the top of `include/private/gc_priv.h` file.
 
 If only `GC_malloc` is intended to be used, it might be appropriate to define
 like:
@@ -440,8 +446,8 @@ like:
 #define calloc(m, n) GC_malloc((m) * (n))
 ```
 
-For small pieces of VERY allocation intensive code, `gc_inline.h` includes
-some allocation macros that may be used in place of `GC_malloc` and
+For small pieces of *very* allocation-intensive code, `gc_inline.h` file
+includes some allocation macros that may be used in place of `GC_malloc` and
 friends.
 
 All externally visible names in the garbage collector start with `GC_`.
@@ -449,7 +455,7 @@ To avoid name conflicts, client code should avoid this prefix, except when
 accessing garbage collector routines.
 
 There are provisions for allocation with explicit type information.
-This is rarely necessary.  Details can be found in `gc_typed.h`.
+This is rarely necessary.  Details can be found in `gc_typed.h` file.
 
 
 ## The C++ Interface to the Allocator
@@ -459,14 +465,14 @@ distribution.  If you intend to use this, type
 `./configure --enable-cplusplus && make` (or
 `cmake -Denable_cplusplus=ON . && cmake --build .`, or
 `make -f Makefile.direct c++` depending on the build system you use).
-This creates libgccpp.a and libgctba.a files, or their shared library
-equivalents (libgccpp.so and libgctba.so).  You should link with either the
-first (gccpp) or the second one (gctba), but not both.  See `gc_cpp.h` and
-[here](docs/gcinterface.md) for the definition of the interface.
-This interface tries to approximate the Ellis-Detlefs C++ garbage collection
-proposal without compiler changes.
+This creates `libgccpp.a` and `libgctba.a` files, or their shared library
+equivalents (`libgccpp.so` and `libgctba.so` files).  You should link with
+either the first (`gccpp`) or the second one (`gctba`), but not both.
+See `gc_cpp.h` file and [here](docs/gcinterface.md) for the definition of the
+interface.  This interface tries to approximate the Ellis-Detlefs C++ garbage
+collection proposal without compiler changes.
 
-Very often it will also be necessary to use `gc_allocator.h` and the
+Very often it will also be necessary to use `gc_allocator.h` file and the
 allocator declared there to construct STL data structures.  Otherwise
 subobjects of STL data structures will be allocated using a system
 allocator, and objects they refer to may be prematurely collected.
@@ -475,10 +481,11 @@ allocator, and objects they refer to may be prematurely collected.
 ## Use as Leak Detector
 
 The collector may be used to track down leaks in C programs that are
-intended to run with malloc/free (e.g. code with extreme real-time or
-portability constraints).  To do so define `FIND_LEAK` in Makefile.
-This will cause the collector to print a human-readable object description
-whenever an inaccessible object is found that has not been explicitly freed.
+intended to run with `malloc`/`free` (e.g. code with extreme real-time or
+portability constraints).  To do so define `FIND_LEAK` macro (e.g. by passing
+it in `CFLAGS_EXTRA` variable of `Makefile.direct` file).  This will cause
+the collector to print a human-readable object description whenever
+an inaccessible object is found that has not been explicitly freed.
 Such objects will also be automatically reclaimed.
 
 If all objects are allocated with `GC_DEBUG_MALLOC` (see the next section)
@@ -505,7 +512,7 @@ and `GC_debug_free` provide an alternate interface to the collector, which
 provides some help with memory overwrite errors, and the like.
 Objects allocated in this way are annotated with additional
 information.  Some of this information is checked during garbage
-collections, and detected inconsistencies are reported to stderr.
+collections, and detected inconsistencies are reported to `stderr`.
 
 Simple cases of writing past the end of an allocated object should
 be caught if the object is explicitly deallocated, or if the
@@ -513,7 +520,7 @@ collector is invoked while the object is live.  The first deallocation
 of an object will clear the debugging info associated with an
 object, so accidentally repeated calls to `GC_debug_free` will report the
 deallocation of an object without debugging information.  Out of
-memory errors will be reported to stderr, in addition to returning `NULL`.
+memory errors will be reported to `stderr`, in addition to returning `NULL`.
 
 `GC_debug_malloc` checking during garbage collection is enabled
 with the first call to this function.  This will result in some
@@ -536,16 +543,17 @@ not copied).  If an error involving the object is detected, they are printed.
 
 The macros `GC_MALLOC`, `GC_MALLOC_ATOMIC`, `GC_REALLOC`, `GC_FREE`,
 `GC_REGISTER_FINALIZER` and friends are also provided.  These require the same
-arguments as the corresponding (nondebugging) routines.  If `gc.h` is included
-with `GC_DEBUG` defined, they call the debugging versions of these
+arguments as the corresponding (nondebugging) routines.  If `gc.h` file is
+included with `GC_DEBUG` defined, they call the debugging versions of these
 functions, passing the current file name and line number as the two
-extra arguments, where appropriate.  If `gc.h` is included without `GC_DEBUG`
-defined then all these macros will instead be defined to their nondebugging
-equivalents.  (`GC_REGISTER_FINALIZER` is necessary, since pointers to
-objects with debugging information are really pointers to a displacement
-of 16 bytes from the object beginning, and some translation is necessary
-when finalization routines are invoked.  For details, about what's stored
-in the header, see the definition of the type oh in dbg_mlc.c file.)
+extra arguments, where appropriate.  If `gc.h` file is included without
+`GC_DEBUG` macro defined then all these macros will instead be defined to
+their nondebugging equivalents.  (`GC_REGISTER_FINALIZER` is necessary, since
+pointers to objects with debugging information are really pointers to
+a displacement of 16 bytes from the object beginning, and some translation is
+necessary when finalization routines are invoked.  For details, about what is
+stored in the header, see the definition of the type `oh` in `dbg_mlc.h`
+file.)
 
 
 ## Incremental/Generational Collection
@@ -567,26 +575,25 @@ or pages have been recently modified.  The collector uses two sources
 of information:
 
   1. Information provided by the VM system.  This may be provided in one of
-  several forms.  Under Solaris 2.X (and potentially under other similar
-  systems) information on dirty pages can be read from the /proc file system.
-  Under other systems (e.g. SunOS4.X) it is possible to write-protect
-  the heap, and catch the resulting faults. On these systems we require that
-  system calls writing to the heap (other than read) be handled specially by
-  client code. See `os_dep.c` for details.
+     several forms.  Under Solaris 2.X (and potentially under other similar
+     systems) information on dirty pages can be read from the `/proc` file
+     system.  Under other systems (e.g. SunOS 4.x) it is possible to
+     write-protect the heap, and catch the resulting faults.  On these systems
+     we require that system calls writing to the heap (other than `read`) be
+     handled specially by client code.  See `os_dep.c` for details.
 
   2. Information supplied by the programmer.  The object is considered dirty
-  after a call to `GC_end_stubborn_change` provided the library has been
-  compiled suitably. It is typically not worth using for short-lived objects.
-  Note that bugs caused by a missing `GC_end_stubborn_change` or
-  `GC_reachable_here` call are likely to be observed very infrequently and
-  hard to trace.
+     after a call to `GC_end_stubborn_change` provided the library has been
+     compiled suitably.  It is typically not worth using for short-lived
+     objects.  Note that bugs caused by a missing `GC_end_stubborn_change` or
+     `GC_reachable_here` call are likely to be observed very infrequently and
+     hard to trace.
 
 
 ## Bugs
 
-Any memory that does not have a recognizable pointer to it will be
-reclaimed.  Exclusive-or'ing forward and backward links in a list
-doesn't cut it.
+Any memory that does not have a recognizable pointer to it will be reclaimed.
+Exclusive-or'ing forward and backward links in a list does not cut it.
 
 Some C optimizers may lose the last undisguised pointer to a memory
 object as a consequence of clever optimizations.  This has almost

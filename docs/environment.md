@@ -4,8 +4,8 @@ The garbage collector looks at a number of environment variables which are,
 then, used to affect its operation.
 
 `GC_INITIAL_HEAP_SIZE=<bytes>` - Sets initial heap size, in bytes.  May speed
-up process start-up.  Optionally, may be specified with a multiplier ('k', 'M'
-or 'G') suffix.
+up process start-up.  Optionally, may be specified with a multiplier ("k", "M"
+or "G") suffix.
 
 `GC_MAXIMUM_HEAP_SIZE=<bytes>` - Sets maximum heap size, in bytes.
 Optionally, may be specified with a multiplier suffix.
@@ -116,7 +116,7 @@ testing.
 
 `GC_ENABLE_INCREMENTAL` - Turns on incremental collection at startup.  Note
 that, depending on platform and collector configuration, this may involve
-write protecting pieces of the heap to track modifications.  These pieces may
+write-protecting pieces of the heap to track modifications.  These pieces may
 include pointer-free objects or not.  This is intended to be transparent, but
 in case of the mprotect-based implementation it may cause unintended system
 call failures (thus, use it with caution).

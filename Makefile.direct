@@ -2,100 +2,103 @@
 # to build the collector.
 #
 # Primary targets:
-# all - builds libgc.a, libgccpp.a, libgctba.a and libcord.a
-# base_lib - builds libgc.a only (basic library)
-# c++ - builds libgccpp.a and libgctba.a only (C++ interface to library)
-# cords - builds libcord.a only (heavyweight strings library)
-# check - same as "all" but also prints porting information, and runs some
-#         tests of collector and cords
-# check-deps - same as check but do not run the tests
-# check-cpp - builds libgc.a, libgccpp.a and libgctba.a, runs C++ only test
-# check-cpp-deps - same as check-cpp but do not run the test
-# cord/de - builds dumb editor based on cords.
+# - `all` to build `libgc.a`, `libgccpp.a`, `libgctba.a` `libcord.a` files;
+# - `base_lib` to build `libgc.a` file only (basic library);
+# - `c++` to build `libgccpp.a`, `libgctba.a` files only (the C++ interface
+#   to the library);
+# - `cords` to build `libcord.a` file only (a heavyweight strings library);
+# - `check` to build the same as `all` does but also print porting
+#   information and run some tests of the collector (and cords);
+# - `check-deps` to build the same as `check` does but do not run the tests;
+# - `check-cpp` to build `libgc.a`, `libgccpp.a`, `libgctba.a` files and
+#   run C++ only tests;
+# - `check-cpp-deps` to build the same as `check-cpp` does but do not run
+#   the tests;
+# - `cord/de` to build a dumb editor based on cords.
 
 ABI_FLAG?=
-# ABI_FLAG should be the cc flag that specifies the ABI.  On most
+# `ABI_FLAG` should be the compiler flag that specifies the ABI.  On most
 # platforms this will be the empty string.  Possible values:
-# +DD64 for 64-bit executable on HP/UX.
-# -n32, -n64, -o32 for SGI/MIPS ABIs.
+# - `+DD64` for 64-bit executable on HP/UX;
+# - `-n32`, `-n64`, `-o32` for SGI/MIPS ABIs.
 
 AS_ABI_FLAG?= $(ABI_FLAG)
-# ABI flag for assembler.  On HP/UX this is +A64 for 64 bit
-# executables.
+# ABI flag for assembler.  On HP/UX this is `+A64` for 64-bit executables.
 
 CC?= cc $(ABI_FLAG)
 # Compiler executable name.  For EMX, replace to "gcc".
 
 CXX?= c++ $(ABI_FLAG)
-# Needed only for "make c++", which builds the C++ interface.
+# Needed only for `make c++`, which builds the C++ interface.
 
 AS= as $(AS_ABI_FLAG)
-# The above doesn't work with gas, which doesn't run cpp.
-# Define AS as `gcc -c -x assembler-with-cpp` instead.
-# Under Irix 6, you have to specify the ABI (-o32, -n32, or -64)
+# The above does not work with `gas`, which does not run `cpp`.
+# Define `AS` as `gcc -c -x assembler-with-cpp` instead.
+# Under Irix 6, you have to specify the ABI (`-o32`, `-n32`, or `-64`)
 # if you use something other than the default ABI on your machine.
 
 LD= ld
 
-# Redefining srcdir allows object code of the collector
-# to be generated in different directories.
+# Redefining `srcdir` allows object code of the collector to be generated
+# in different directories.
 srcdir= .
 VPATH= $(srcdir)
 
-# Path to atomic_ops source.
+# Path to `libatomic_ops` package source.
 AO_SRC_DIR?=
 AO_SRC_DIR+= $(srcdir)/libatomic_ops
 
 CFLAGS_EXTRA?=
 
-# We need CFLAGS_FOR_PIC because we might be building a shared library.
+# We need `CFLAGS_FOR_PIC` because we might be building a shared library.
 CFLAGS_FOR_PIC?=
 
-# The default libgc configuration, OK to customize it by client.
+# The default collector configuration, OK to customize it by client.
 CFLAGS_DEFAULT_MACROS?= \
   -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE \
   -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION \
   -DUSE_MMAP -DUSE_MUNMAP
 
-# The client or host might provide the default optimizations flags (e.g. -O2).
+# The client or host might provide the default optimizations flags
+# (e.g. `-O2`).
 CFLAGS?= -O
 
-# Add the required options to CFLAGS like -I option.
+# Add the required options to `CFLAGS` like `-I` option.
 CFLAGS+= -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
   $(CFLAGS_DEFAULT_MACROS) $(CFLAGS_FOR_PIC) $(CFLAGS_EXTRA)
 
-# To build the collector with threads support, add to CFLAGS_EXTRA:
-# -DGC_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
+# To build the collector with threads support, add to `CFLAGS_EXTRA`:
+# `-DGC_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC`
 #
-# To build the preload library that intercepts malloc, add:
-# -DGC_USE_DLOPEN_WRAP -DREDIRECT_MALLOC=GC_malloc -fpic
+# To build the preload library that intercepts `malloc`, add:
+# `-DGC_USE_DLOPEN_WRAP -DREDIRECT_MALLOC=GC_malloc -fpic`
 
-# To build the collector with fork() support by default, add to the above:
-# -DHANDLE_FORK
+# To build the collector with `fork` support by default, add to the above:
+# `-DHANDLE_FORK`
 
-# To build the collector with GC_wcsdup support, provided libc has wcslen(),
-# add to the above:
-# -DGC_REQUIRE_WCSDUP
+# To build the collector with `GC_wcsdup` support, provided `libc`
+# has `wcslen`, add to the above:
+# `-DGC_REQUIRE_WCSDUP`
 
-# HOSTCC and HOSTCFLAGS are used to build executables that will be run as
+# `HOSTCC` and `HOSTCFLAGS` are used to build executables that will be run as
 # part of the build process, i.e. on the build machine.  These will usually
-# be the same as CC and CFLAGS, except in a cross-compilation environment.
-# Note that HOSTCFLAGS should include any -D flags that affect thread support.
+# be the same as `CC` and `CFLAGS`, except in a cross-compilation environment.
+# Note `HOSTCFLAGS` should include any `-D` flags that affect thread support.
 HOSTCC= $(CC)
 HOSTCFLAGS= $(CFLAGS)
 
 # For dynamic library builds, it may be necessary to add flags to generate
-# PIC code, e.g. -fPIC on Linux.
+# PIC code, e.g. `-fPIC` on Linux.
 
-# setjmp_test may yield overly optimistic results when compiled
+# `setjmp_test` may yield overly optimistic results when compiled
 # without optimization.
 
-# Look into docs/macros.md for the description of the "define arguments"
-# influencing the collector configuration.
+# Look into `docs/macros.md` file for the description of the
+# "define arguments" influencing the collector configuration.
 
 # Flags for the C++ files.
-# Note: non-GNU make might not recognize "?=" properly, so just duplicate
-# the flags of CFLAGS as a workaround.
+# Note: non-GNU `make` might not recognize `?=` properly, so just duplicate
+# the flags of `CFLAGS` as a workaround.
 CXXFLAGS?=
 CXXFLAGS+= -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
   $(CFLAGS_DEFAULT_MACROS) $(CFLAGS_FOR_PIC) $(CFLAGS_EXTRA)
@@ -105,7 +108,7 @@ AR?= ar
 # Note: for Cosmo and EMX, specify "$(AR) s" instead of "ranlib".
 RANLIB?= ranlib
 
-# All .o files of libgc.a except for dyn_load.o.
+# All `.o` files of `libgc.a` except for `dyn_load.o` file.
 OBJS= allchblk.o alloc.o backgraph.o blacklst.o checksums.o \
   darwin_stop_world.o dbg_mlc.o finalize.o fnlz_mlc.o gc_dlopen.o \
   gcj_mlc.o headers.o mach_dep.o malloc.o mallocx.o mark.o mark_rts.o misc.o \
@@ -113,7 +116,7 @@ OBJS= allchblk.o alloc.o backgraph.o blacklst.o checksums.o \
   pthread_support.o ptr_chck.o reclaim.o specific.o thread_local_alloc.o \
   typd_mlc.o win32_threads.o
 
-# Almost matches OBJS but also includes dyn_load.c.
+# Almost matches `OBJS` but also includes `dyn_load.c` file.
 CSRCS= allchblk.c alloc.c backgraph.c blacklst.c checksums.c \
   darwin_stop_world.c dbg_mlc.c dyn_load.c finalize.c fnlz_mlc.c gc_dlopen.c \
   gcj_mlc.c headers.c mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c \
@@ -126,7 +129,7 @@ CORD_SRCS= cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c cord/tests/de.c \
   include/gc/cord_pos.h cord/tests/de_win.c cord/tests/de_win.h \
   cord/tests/de_cmds.h cord/tests/de_win.rc
 
-# Not all compilers understand "-o" option.  Thus, no "cord/" prefix here.
+# Not all compilers understand `-o` option.  Thus, no "cord/" prefix here.
 CORD_OBJS= cordbscs.o cordprnt.o cordxtra.o
 
 SRCS= $(CSRCS) \
@@ -154,36 +157,34 @@ EXEEXT?=
 
 UTILS= if_mach$(EXEEXT) if_not_there$(EXEEXT) threadlibs$(EXEEXT)
 
-# Libraries needed for curses applications.  Only needed for de.
-# It might also require -ltermlib on some targets.
-# For Win32, it should be set to: -lgdi32
+# Libraries needed for `curses` applications.  Only needed for `de`.
+# It might also require `-ltermlib` on some targets.
+# For Win32, it should be set to `-lgdi32`.
 CURSES?= -lcurses
 
-# The following is irrelevant on most systems.  But a few
-# versions of make otherwise fork the shell specified in
-# the SHELL environment variable.
+# The following is irrelevant on most systems.  But a few versions of `make`
+# otherwise fork the shell specified in the `SHELL` environment variable.
 SHELL= /bin/sh
 
 SPECIALCFLAGS= -I$(srcdir)/include -I$(AO_SRC_DIR)/src $(CFLAGS_FOR_PIC)
-# Alternative flags to the C compiler for mach_dep.c.
-# mach_dep.c often doesn't like optimization, and it's
-# not time-critical anyway.
-# Set SPECIALCFLAGS to -q nodirect_code on Encore.
+# Alternative flags to the C compiler for `mach_dep.c` file.  (This file
+# often does not like optimization, and it is not time-critical anyway.)
+# Set `SPECIALCFLAGS` to `-q nodirect_code` on Encore.
 
 all: base_lib cords c++
 
 atomic_ops.o: $(AO_SRC_DIR)/src/atomic_ops.c
 	$(CC) $(CFLAGS) -c $(AO_SRC_DIR)/src/atomic_ops.c
-# For some reason, Solaris make does not handle "$<" properly.
+# For some reason, Solaris `make` does not handle `$<` properly.
 
-# Create libatomic_ops.a for tests.  The library contains atomic_ops.o and,
-# optionally, atomic_ops_sysdeps.o.  The latter exists only on Solaris/SPARC
-# platform (the .o file should contain no symbols on platforms other than
-# SPARC-based ones or if the GCC-compatible compiler is used).
-# Note: the conditional addition of atomic_ops_sysdeps.o is aimed at
-# preventing .S file to be passed to a compiler which might not support such
-# a file type (like Cosmos) and preventing the linker (like GNU ld) to imply
-# executable stack because of an empty .o file is encountered.
+# Create `libatomic_ops.a`file for tests.  The library contains `atomic_ops.o`
+# file and, optionally, `atomic_ops_sysdeps.o` file.  The latter exists only
+# on Solaris/SPARC platform (the `.o` file should contain no symbols on
+# platforms other than SPARC-based ones or if the GCC-compatible compiler
+# is used).  Note: the conditional addition of `atomic_ops_sysdeps.o` file
+# is aimed at preventing `.S` file to be passed to a compiler which might not
+# support such a file type (like Cosmos) and preventing the linker (like GNU
+# `ld`) to imply executable stack because of an empty `.o` file is encountered.
 atomicops libatomic_ops.a: $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S \
   atomic_ops.o $(UTILS)
 	rm -f dont_ar_2
@@ -221,8 +222,8 @@ base_lib libgc.a: $(OBJS) dyn_load.o $(UTILS)
 	./if_not_there dont_ar_1 || $(AR) ru libgc.a $(OBJS) dyn_load.o
 	./if_not_there dont_ar_1 || $(RANLIB) libgc.a || cat /dev/null
 	echo > base_lib
-#    Ignore ranlib failure; that usually means it doesn't exist, and
-#    isn't needed.
+# Ignore `ranlib` failure; that usually means it does not exist, and
+# is not needed.
 
 cords libcord.a: $(CORD_OBJS) $(UTILS)
 	rm -f dont_ar_3
@@ -277,27 +278,27 @@ c++ libgccpp.a libgctba.a: gc_badalc.o gc_cpp.o $(UTILS)
 dyn_load_sunos53.o: dyn_load.c
 	$(CC) $(CFLAGS) -DSUNOS53_SHARED_LIB -c -o $@ $(srcdir)/dyn_load.c
 
-# SunOS5 shared library version of the collector
+# SunOS 5.x shared library version of the collector.
 sunos5gc.so: $(OBJS) atomicops dyn_load_sunos53.o
 	$(CC) -G -o $@ $(OBJS) dyn_load_sunos53.o libatomic_ops.a -ldl
 	ln $@ libgc.so
 
-# Alpha/OSF shared library version of the collector
+# Alpha/OSF shared library version of the collector.
 libalphagc.so: $(OBJS) atomicops dyn_load.o
 	$(LD) -shared -o $@ $(OBJS) dyn_load.o libatomic_ops.a -lc
 	ln $@ libgc.so
 
-# IRIX shared library version of the collector
+# IRIX shared library version of the collector.
 libirixgc.so: $(OBJS) atomicops dyn_load.o
 	$(LD) -shared $(ABI_FLAG) -o $@ $(OBJS) dyn_load.o libatomic_ops.a -lc
 	ln $@ libgc.so
 
-# Linux shared library version of the collector
+# Linux shared library version of the collector.
 liblinuxgc.so: $(OBJS) atomicops dyn_load.o
 	gcc -shared -o $@ $(OBJS) dyn_load.o libatomic_ops.a
 	ln $@ libgc.so
 
-# Build gctest with dynamic library
+# Build `gctest` with dynamic library.
 dyn_test:
 	$(CC) $(CFLAGS) -o gctest$(EXEEXT) tests/gctest.c libgc.so `./threadlibs`
 	./gctest
@@ -325,7 +326,7 @@ mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
 	-./if_not_there $@ || $(CC) $(CFLAGS) -c $(srcdir)/mark_rts.c
 	-./if_not_there $@ || `cygpath -w /bin/sh` $(CC) $(CFLAGS) -c $(srcdir)/mark_rts.c
 	-./if_not_there $@ || /bin/sh $(CC) $(CFLAGS) -c $(srcdir)/mark_rts.c
-#   Work-around for DEC optimizer tail recursion elimination bug.
+#   Workaround for DEC optimizer tail recursion elimination bug.
 #   The ALPHA-specific line should be removed if gcc is used.
 
 alloc.o: include/gc/gc_version.h
@@ -381,9 +382,9 @@ gctest$(EXEEXT): gctest.o atomicops base_lib $(UTILS)
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o $@ gctest.o libgc.a libatomic_ops.a -ldld `./threadlibs`
 	./if_not_there $@ || $(CC) $(CFLAGS) -o $@ gctest.o libgc.a libatomic_ops.a `./threadlibs`
 
-# If an optimized setjmp_test generates a segmentation fault,
-# odds are your compiler is broken.  gctest may still work.
-# Try compiling setjmp_t.c unoptimized.
+# If an optimized `setjmp_test` generates a segmentation fault,
+# odds are your compiler is broken.  `gctest` may still work.
+# Try compiling `setjmp_t.c` file unoptimized.
 setjmp_test$(EXEEXT): $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc/gc.h \
   $(UTILS)
 	$(CC) $(CFLAGS) -o $@ $(srcdir)/tools/setjmp_t.c
@@ -398,12 +399,12 @@ check: check-deps
 	./cpptest
 	./treetest
 
-# A synonym to "check" (for compatibility with older GC versions).
+# A synonym to `check` (for compatibility with older GC versions).
 test: check
 
 # BTL: added to test shared library version of collector.
-# Currently works only under SunOS5.  Requires GC_INIT call from statically
-# loaded client code.
+# Currently works only under SunOS 5.x.  Requires `GC_INIT` call from
+# statically loaded client code.
 ABSDIR= `pwd`
 gctest_dyn_link: gctest.o libgc.so
 	$(CC) -L$(ABSDIR) -R$(ABSDIR) -o $@ gctest.o -lgc -ldl -lthread

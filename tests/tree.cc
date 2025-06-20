@@ -1,6 +1,7 @@
 
-// The program tests part of the C++ functionality provided by gc_cpp.h (and
-// gctba library) by creating balanced trees of various depth and arity.
+// The program tests part of the C++ functionality provided by `gc_cpp.h`
+// file (and `gctba` library) by creating balanced trees of various depth
+// and arity.
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"

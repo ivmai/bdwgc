@@ -16,7 +16,7 @@
 #ifdef ENABLE_DISCLAIM
 
 #  include "gc/gc_disclaim.h"
-#  include "private/dbg_mlc.h" /* for oh type */
+#  include "private/dbg_mlc.h" /* for `oh` type */
 
 #  if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
 /* The first bit is already used for a debug purpose. */
@@ -40,9 +40,9 @@ GC_finalized_disclaim(void *obj)
     /* To recognize this case, we use the fact that the value of    */
     /* the first pointer of such fragments is always, at least,     */
     /* multiple of a pointer size (a link to the next fragment, or  */
-    /* NULL).  If it is desirable to have a finalizer which does    */
+    /* `NULL`).  If it is desirable to have a finalizer which does  */
     /* not use the first pointer for storing the finalization       */
-    /* information, GC_disclaim_and_reclaim() must be extended to   */
+    /* information, `GC_disclaim_and_reclaim()` must be extended to */
     /* clear fragments so that the assumption holds for the         */
     /* selected pointer location.                                   */
     const struct GC_finalizer_closure *fc
@@ -79,11 +79,11 @@ GC_init_finalized_malloc(void)
     return;
   }
 
-  /* The finalizer closure is placed in the first pointer of the      */
-  /* object in order to use the lower bits to distinguish live        */
-  /* objects from objects on the free list.  The downside of this is  */
-  /* that we need one-pointer offset interior pointers, and that      */
-  /* GC_base() does not return the start of the user region.          */
+  /* The finalizer closure is placed in the first pointer of the        */
+  /* object in order to use the lower bits to distinguish live          */
+  /* objects from objects on the free list.  The downside of this is    */
+  /* that we need one-pointer offset interior pointers, and that        */
+  /* `GC_base()` does not return the start of the user region.          */
   GC_register_displacement_inner(sizeof(ptr_t));
 
   /* And, the pointer to the finalizer closure object itself is       */

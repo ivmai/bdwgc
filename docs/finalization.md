@@ -5,15 +5,15 @@ an object is collected. This can be used to reclaim any system resources
 or non-garbage-collected memory associated with the object. Experience has
 shown that this can be a useful facility. It is indispensable in cases
 in which system resources are embedded in complex data structures (e.g. file
-descriptors in the `cord.h`).
+descriptors in the `cord.h` file).
 
 Our collector provides the necessary functionality through
-`GC_register_finalizer` in `gc.h`, or by inheriting from `gc_cleanup` in
-`gc_cpp.h`.
+`GC_register_finalizer` in `gc.h` file, or by inheriting from `gc_cleanup` in
+`gc_cpp.h` file.
 
 However, finalization should not be used in the same way as C++ destructors.
 In well-written programs there will typically be very few uses
-of finalization. (Garbage collected programs that interact with explicitly
+of finalization. (Garbage-collected programs that interact with explicitly
 memory-managed libraries may be an exception.)
 
 In general the following guidelines should be followed:
@@ -54,8 +54,8 @@ and, then to have them explicitly executed by `GC_invoke_finalizers()`.
 
 Our _conservative garbage collector_ supports a form of finalization (with
 `GC_register_finalizer`) in which objects are finalized in topological order.
-If _A_ points to _B_ and both are registered for finalization, it is
-guaranteed the _A_ will be finalized first. This usually guarantees that
+If `A` points to `B` and both are registered for finalization, it is
+guaranteed the `A` will be finalized first. This usually guarantees that
 finalization procedures see only unfinalized objects.
 
 This decision is often questioned, particularly since it has an obvious
@@ -75,24 +75,24 @@ in designing a system. Many, especially smaller, applications will never
 notice the difference. Nonetheless, we believe that topologically ordered
 finalization is the right choice.
 
-To understand the justification, observe that if _A_'s finalization procedure
-does not refer to _B_, we could fairly easily have avoided the dependency.
-We could have split _A_ into _A'_ and _A''_ such that any references to _A_
-become references to _A'_, _A'_ points to _A''_ but not vice-versa, only
-fields needed for finalization are stored in _A''_, and _A''_ is enabled for
-finalization. (`GC_register_disappearing_link` provides an alternative
+To understand the justification, observe that if `A`'s finalization procedure
+does not refer to `B`, we could fairly easily have avoided the dependency.
+We could have split `A` into `A1` and `A2` such that any references to `A`
+become references to `A1`, the later points to `A2` but not vice-versa, only
+fields needed for finalization are stored in `A2`, and the later is enabled
+for finalization. (`GC_register_disappearing_link` provides an alternative
 mechanism that does not require breaking up objects.)
 
-Thus assume that _A_ actually does need access to _B_ during finalization.
-To make things concrete, assume that _B_ is finalizable because it holds
-a pointer to a C object, which must be explicitly deallocated. (This is likely
-to be one of the most common uses of finalization.) If _B_ happens to be
-finalized first, _A_ will see a dangling pointer during its finalization. But
-a principal goal of garbage collection was to avoid dangling pointers.
+Thus assume that `A` actually does need access to `B` during finalization.
+To make things concrete, assume that `B` is finalizable because it holds
+a pointer to a `C` object, which must be explicitly deallocated. (This is
+likely to be one of the most common uses of finalization.) If `B` happens to
+be finalized first, `A` will see a dangling pointer during its finalization.
+But a principal goal of garbage collection was to avoid dangling pointers.
 
 Note that the client program could enforce topological ordering even if the
-system did not. A pointer to _B_ could be stored in some globally visible
-place, where it is cleared only by _A_'s finalizer. But this puts the burden
+system did not. Some pointer to `B` could be stored in some globally visible
+place, where it is cleared only by `A`'s finalizer. But this puts the burden
 to ensure safety back on the programmer.
 
 With topologically ordered finalization, the programmer can fail to split
@@ -102,10 +102,10 @@ _much_ easier to diagnose, since the garbage collector would have to go out of
 its way not to notice finalization cycles. It can trivially report them.
 
 Furthermore unordered finalization does not really solve the problem
-of cycles. Consider the above case in which _A_'s finalization procedure
-depends on _B_, and thus a pointer to _B_ is stored in a global data
-structure, to be cleared by _A_'s finalizer. If there is an accidental pointer
-from _B_ back to _A_, and thus a cycle, neither _B_ nor _A_ will become
+of cycles. Consider the above case in which `A`'s finalization procedure
+depends on `B`, and thus a pointer to `B` is stored in a global data
+structure, to be cleared by `A`'s finalizer. If there is an accidental pointer
+from `B` back to `A`, and thus a cycle, neither `B` nor `A` will become
 unreachable. The leak is there, just as in the topologically ordered case, but
 it is hidden from easy diagnosis.
 

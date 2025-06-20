@@ -31,8 +31,8 @@ __declspec(thread) GC_ATTR_TLS_FAST
 
 static GC_bool keys_initialized;
 
-/* Return a single nonempty free list fl to the global one pointed to   */
-/* by gfl.                                                              */
+/* Return a single nonempty free list `fl` to the global one pointed to */
+/* by `gfl`.                                                            */
 static void
 return_single_freelist(void *fl, void **gfl)
 {
@@ -54,7 +54,8 @@ return_single_freelist(void *fl, void **gfl)
   }
 }
 
-/* Recover the contents of the free-list array fl into the global one gfl. */
+/* Recover the contents of the free-list array `fl` into the global one */
+/* `gfl`.                                                               */
 static void
 return_freelists(void **fl, void **gfl)
 {
@@ -64,7 +65,7 @@ return_freelists(void **fl, void **gfl)
     if (ADDR(fl[i]) >= HBLKSIZE) {
       return_single_freelist(fl[i], &gfl[i]);
     }
-    /* Clear fl[i], since the thread structure may hang around.     */
+    /* Clear `fl[i]`, since the thread structure may hang around.   */
     /* Do it in a way that is likely to trap if we access it.       */
     fl[i] = (ptr_t)NUMERIC_TO_VPTR(HBLKSIZE);
   }
@@ -79,11 +80,11 @@ return_freelists(void **fl, void **gfl)
 }
 
 #  ifdef USE_PTHREAD_SPECIFIC
-/* Re-set the TLS value on thread cleanup to allow thread-local       */
-/* allocations to happen in the TLS destructors.                      */
-/* GC_unregister_my_thread (and similar routines) will finally set    */
-/* the GC_thread_key to NULL preventing this destructor from being    */
-/* called repeatedly.                                                 */
+/* Re-set the TLS value on thread cleanup to allow thread-local         */
+/* allocations to happen in the TLS destructors.                        */
+/* `GC_unregister_my_thread()` (and similar routines) will finally set  */
+/* the `GC_thread_key` to `NULL` preventing this destructor from being  */
+/* called repeatedly.                                                   */
 static void
 reset_thread_key(void *v)
 {
@@ -124,7 +125,7 @@ GC_init_thread_local(GC_tlfs p)
   }
   /* The zero-sized free list is handled like the regular free list,  */
   /* to ensure that the explicit deallocation works.  However, an     */
-  /* allocation of a size 0 "gcj" object is always an error.          */
+  /* allocation of a size 0 `gcj` object is always an error.          */
 #  ifdef GC_GCJ_SUPPORT
   p->gcj_freelists[0] = MAKE_CPTR(ERROR_FL);
 #  endif
@@ -158,8 +159,8 @@ GC_get_tlfs(void)
   GC_key_t k = GC_thread_key;
 
   if (EXPECT(0 == k, FALSE)) {
-    /* We have not yet run GC_init_parallel.  That means we also  */
-    /* are not locking, so GC_malloc_kind_global is fairly cheap. */
+    /* We have not yet run `GC_init_parallel()`.  That means we also    */
+    /* are not locking, so `GC_malloc_kind_global()` is fairly cheap.   */
     return NULL;
   }
   return GC_getspecific(k);
@@ -210,20 +211,20 @@ GC_malloc_kind(size_t lb, int kind)
 
 #    include "gc/gc_gcj.h"
 
-/* Gcj-style allocation without locks is extremely tricky.  The         */
+/* `gcj`-style allocation without locks is extremely tricky.  The       */
 /* fundamental issue is that we may end up marking a free list, which   */
 /* has free-list links instead of "vtable" pointers.  That is usually   */
 /* OK, since the next object on the free list will be cleared, and      */
-/* will thus be interpreted as containing a zero descriptor.  That's    */
+/* will thus be interpreted as containing a zero descriptor.  That is   */
 /* fine if the object has not yet been initialized.  But there are      */
 /* interesting potential races.                                         */
 /* In the case of incremental collection, this seems hopeless, since    */
 /* the marker may run asynchronously, and may pick up the pointer to    */
-/* the next free-list entry (which it thinks is a vtable pointer), get  */
-/* suspended for a while, and then see an allocated object instead      */
-/* of the vtable.  This may be avoidable with either a handshake with   */
+/* the next free-list entry (which it thinks is a "vtable" pointer),    */
+/* get suspended for a while, and then see an allocated object instead  */
+/* of the "vtable".  This may be avoidable with either a handshake with */
 /* the collector or, probably more easily, by moving the free list      */
-/* links to the second word of each object.  The latter isn't a         */
+/* links to the second word of each object.  The latter is not a        */
 /* universal win, since on architecture like Itanium, nonzero offsets   */
 /* are not necessarily free.  And there may be cache fill order issues. */
 /* For now, we punt with incremental GC.  This probably means that      */
@@ -234,7 +235,7 @@ GC_API GC_ATTR_MALLOC void *GC_CALL
 GC_gcj_malloc(size_t lb, const void *vtable_ptr)
 {
   if (EXPECT(GC_incremental, FALSE)) {
-    return GC_core_gcj_malloc(lb, vtable_ptr, 0 /* flags */);
+    return GC_core_gcj_malloc(lb, vtable_ptr, 0 /* `flags` */);
   } else {
     size_t lg = ALLOC_REQUEST_GRANS(lb);
     void *result;
@@ -259,7 +260,7 @@ GC_gcj_malloc(size_t lb, const void *vtable_ptr)
     /* find a random "mark descriptor" in the next object.              */
     GC_FAST_MALLOC_GRANS(
         result, lg, tiny_fl, DIRECT_GRANULES, GC_gcj_kind,
-        GC_core_gcj_malloc(lb, vtable_ptr, 0 /* flags */), do {
+        GC_core_gcj_malloc(lb, vtable_ptr, 0 /* `flags` */), do {
           AO_compiler_barrier();
           *(const void **)result = vtable_ptr;
         } while (0));
@@ -281,8 +282,8 @@ GC_mark_thread_local_fls_for(GC_tlfs p)
 
   for (j = 0; j < GC_TINY_FREELISTS; ++j) {
     for (kind = 0; kind < THREAD_FREELISTS_KINDS; ++kind) {
-      /* Load the pointer atomically as it might be updated   */
-      /* concurrently by GC_FAST_MALLOC_GRANS.                */
+      /* Load the pointer atomically as it might be updated     */
+      /* concurrently by `GC_FAST_MALLOC_GRANS()`.              */
       q = GC_cptr_load((volatile ptr_t *)&p->_freelists[kind][j]);
       if (ADDR(q) > HBLKSIZE)
         GC_set_fl_marks(q);
@@ -298,7 +299,7 @@ GC_mark_thread_local_fls_for(GC_tlfs p)
 }
 
 #  if defined(GC_ASSERTIONS)
-/* Check that all thread-local free-lists in p are completely marked. */
+/* Check that all thread-local free-lists in `p` are completely marked. */
 void
 GC_check_tls_for(GC_tlfs p)
 {

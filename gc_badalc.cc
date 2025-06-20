@@ -12,8 +12,9 @@
  *
  */
 
-// This file provides the implementation of GC_throw_bad_alloc() which
-// is invoked by GC operator "new" in case of an out-of-memory event.
+// This file provides the implementation of `GC_throw_bad_alloc()` which
+// is invoked by the collector operator `new` in case of an out-of-memory
+// event.
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -26,7 +27,7 @@
 #define GC_DONT_INCL_WINDOWS_H
 #include "gc/gc.h"
 
-#include <new> // for bad_alloc, precedes include of gc_cpp.h
+#include <new> // for `bad_alloc`, precedes include of `gc_cpp.h` file
 
 #if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 #  define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()

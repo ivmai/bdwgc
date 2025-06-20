@@ -9,6 +9,7 @@ flag. This has primarily the following effects:
   to see a consistent memory state. It intercepts thread creation and
   termination events to maintain a list of client threads to be stopped when
   needed.
+
   2. It causes the collector to acquire the allocator lock around essentially
   all allocation and garbage collection activity.  Since this lock is used for
   all allocation-related activity, only one thread can be allocating
@@ -29,7 +30,7 @@ implementations in most cases, sometimes drastically so.
 
 The collector uses two facilities to enhance collector scalability on
 multiprocessors. They are intended to be used together. (The following refers
-to Makefile.direct again.)
+to `Makefile.direct` file again.)
 
   * Building the collector with `-DPARALLEL_MARK` allows the collector to run
   the mark phase in parallel in multiple threads, and thus on multiple
@@ -37,7 +38,7 @@ to Makefile.direct again.)
   majority of the collection time. Thus, this largely parallelizes the garbage
   collector itself, though not the allocation process. Currently the marking
   is performed by the thread that triggered the collection, together with
-  _N_ - 1 dedicated threads, where _N_ is the number of processors (cores)
+  `n - 1` dedicated threads, where `n` is the number of processors (cores)
   detected by the collector. The dedicated marker threads are created when the
   client calls `GC_start_mark_threads()` or when the client starts the first
   non-main thread after the GC initialization (or after fork operation in
@@ -66,7 +67,7 @@ allocator lock implementation base from a mutex (`CRITICAL_SECTION` in case
 of Win32) to `pthread_rwlock_t` (`SRWLOCK`, respectively), thus enabling
 acquisition of a slim lock in the reader (shared) mode where possible.  See
 the description of `GC_call_with_reader_lock` and `GC_REVEAL_POINTER` entities
-in `gc.h` for more details.
+in `gc.h` file for more details.
 
 ## The Parallel Marking Algorithm
 
@@ -108,15 +109,15 @@ processor cores (or to the value of either `GC_MARKERS` or `GC_NPROCS`
 environment variable, if provided). If only a single processor is detected,
 parallel marking is disabled.
 
-Note that setting `GC_NPROCS` to 1 also causes some lock acquisitions inside
-the collector to immediately yield the processor instead of busy waiting
-first. In the case of a multiprocessor and a client with multiple
-simultaneously runnable threads, this may have disastrous performance
-consequences (e.g. a factor of 10 slowdown).
+Note that setting `GC_NPROCS` environment variable to 1 also causes some
+lock acquisitions inside the collector to immediately yield the processor
+instead of busy waiting first. In the case of a multiprocessor and a client
+with multiple simultaneously runnable threads, this may have disastrous
+performance consequences (e.g. a factor of 10 slowdown).
 
 ## Performance
 
-We conducted some simple experiments with a version of
+We conducted some simple experiments with a variant of
 [our GC benchmark](http://www.hboehm.info/gc/gc_bench/) that was slightly
 modified to run multiple concurrent client threads in the same address space.
 Each client thread does the same work as the original benchmark, but they
@@ -127,10 +128,10 @@ processor Pentium III/500 machine under Linux 2.2.12.
 Running with a thread-unsafe collector, the benchmark ran in 9 seconds. With
 the simple thread-safe collector, built with `-DGC_THREADS`, the execution
 time increased to 10.3 seconds, or 23.5 elapsed seconds with two clients. (The
-times for the `malloc`/`free` version with glibc `malloc` are 10.51 (standard
-library, pthreads not linked), 20.90 (one thread, pthreads linked), and 24.55
-seconds, respectively. The benchmark favors a garbage collector, since most
-objects are small.)
+times for the `malloc`/`free` variant with `glibc` `malloc` are 10.51
+(standard library, `pthreads` is not linked), 20.90 (one thread, `pthreads`
+is linked), and 24.55 seconds, respectively. The benchmark favors a garbage
+collector, since most objects are small.)
 
 The following table gives execution times for the collector built with
 parallel marking and thread-local allocation support
@@ -149,7 +150,7 @@ lock with `pthread_mutex_try_lock`, busy-waiting between attempts. After
 a fixed number of attempts, we use `pthread_mutex_lock`.)
 
 These measurements do not use incremental collection, nor was prefetching
-enabled in the marker. We used the C version of the benchmark. All
+enabled in the marker. We used the C variant of the benchmark. All
 measurements are in elapsed seconds on an unloaded machine.
 
 Number of client threads| 1 marker thread (secs.)| 2 marker threads (secs.)
@@ -159,7 +160,7 @@ Number of client threads| 1 marker thread (secs.)| 2 marker threads (secs.)
 
 The execution time for the single threaded case is slightly worse than with
 simple locking. However, even the single-threaded benchmark runs faster than
-even the thread-unsafe version if a second processor is available. The
+even the thread-unsafe variant if a second processor is available. The
 execution time for two clients with thread-local allocation time is only 1.4
 times the sequential execution time for a single thread in a thread-unsafe
 environment, even though it involves twice the client work. That represents

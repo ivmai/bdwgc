@@ -39,17 +39,17 @@
 #  endif
 
 #  ifdef THREAD_SANITIZER
-#    include "dbg_mlc.h" /* for oh type */
+#    include "dbg_mlc.h" /* for `oh` type */
 #  endif
 
 EXTERN_C_BEGIN
 
 #  ifdef WOW64_THREAD_CONTEXT_WORKAROUND
 #    if defined(__WATCOMC__) && defined(GC_WIN32_THREADS)
-/* Open Watcom (as of v2 2024-11-02 Build) does not define NT_TIB   */
-/* in winnt.h file.                                                 */
+/* Open Watcom (as of v2 2024-11-02 Build) does not define `NT_TIB`     */
+/* in the platform `winnt.h` file.                                      */
 struct GC_NT_TIB_s {
-  /* struct _EXCEPTION_REGISTRATION_RECORD */ void *ExceptionList; /* unused */
+  /* `EXCEPTION_REGISTRATION_RECORD *` */ void *ExceptionList; /* unused */
   PVOID StackBase;
   PVOID StackLimit;
   /* The remaining fields are unused. */
@@ -62,15 +62,15 @@ typedef struct GC_NT_TIB_s GC_NT_TIB;
 
 struct GC_StackContext_Rep {
 #  if defined(THREAD_SANITIZER) && defined(SIGNAL_BASED_STOP_WORLD)
-  /* A dummy field to avoid TSan false positive about the race        */
-  /* between GC_has_other_debug_info and GC_suspend_handler_inner     */
-  /* (the latter sets stack_ptr).                                     */
+  /* A dummy field to avoid TSan false positive about the race          */
+  /* between `GC_has_other_debug_info` and `GC_suspend_handler_inner`   */
+  /* (the latter sets `stack_ptr`).                                     */
   char dummy[sizeof(oh)];
 #  endif
 
   /* Cold end of the stack (except for main thread on non-Windows).     */
-  /* On Windows: 0 means entry invalid; not in_use implies stack_end    */
-  /* is 0.                                                              */
+  /* On Windows: 0 means entry invalid; not `in_use` implies            */
+  /* `stack_end` is zero.                                               */
 #  if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
   volatile
 #  endif
@@ -81,18 +81,18 @@ struct GC_StackContext_Rep {
 
 #  ifdef GC_WIN32_THREADS
 #    define ADDR_LIMIT ((ptr_t)GC_WORD_MAX)
-  /* Last known minimum (hottest) address in stack or ADDR_LIMIT      */
-  /* if unset.                                                        */
+  /* Last known minimum (hottest) address in stack or `ADDR_LIMIT`      */
+  /* if unset.                                                          */
   ptr_t last_stack_min;
 #    ifdef I386
-  /* The cold end of the stack saved by GC_record_stack_base (never */
-  /* modified by GC_set_stackbottom); used for the old way of the   */
-  /* coroutines support.                                            */
+  /* The cold end of the stack saved by `GC_record_stack_base` (never   */
+  /* modified by `GC_set_stackbottom()`); used for the old way of the   */
+  /* coroutines support.                                                */
   ptr_t initial_stack_base;
 #    endif
 #  elif defined(DARWIN) && !defined(DARWIN_DONT_PARSE_STACK)
-  /* Result of GC_FindTopOfStack(0); valid only if the thread is      */
-  /* blocked; non-NULL value means already set.                       */
+  /* Result of `GC_FindTopOfStack(0)`; valid only if the thread is      */
+  /* blocked; non-`NULL` value means already set.                       */
   ptr_t topOfStack;
 #  endif
 
@@ -104,10 +104,10 @@ struct GC_StackContext_Rep {
 #  ifdef GC_WIN32_THREADS
   /* For now, alt-stack is not implemented for Win32. */
 #  else
-  /* The start of the alt-stack if there is one, NULL otherwise.      */
+  /* The start of the alt-stack if there is one, `NULL` otherwise. */
   ptr_t altstack;
 
-  /* Same for the "normal" stack (set by GC_register_altstack).       */
+  /* Same for the "normal" stack (set by `GC_register_altstack`). */
   ptr_t normstack;
 
   /* The size of the alt-stack if exists.     */
@@ -124,14 +124,14 @@ struct GC_StackContext_Rep {
 #  ifndef GC_NO_FINALIZATION
   unsigned char finalizer_nested;
 
-  /* Used by GC_check_finalizer_nested() to minimize the level of     */
-  /* recursion when a client finalizer allocates memory.  Initially   */
-  /* it is 0 and finalizer_nested is false.                           */
+  /* Used by `GC_check_finalizer_nested()` to minimize the level of     */
+  /* recursion when a client finalizer allocates memory.  Initially it  */
+  /* is 0 and `finalizer_nested` is 0.                                  */
   unsigned short finalizer_skipped;
 #  endif
 
   /* Points to the "frame" data held in stack by the innermost          */
-  /* GC_call_with_gc_active() of this stack (thread); may be NULL.      */
+  /* `GC_call_with_gc_active()` of this stack (thread); may be `NULL`.  */
   struct GC_traced_stack_sect_s *traced_stack_sect;
 };
 typedef struct GC_StackContext_Rep *GC_stack_context_t;
@@ -140,9 +140,9 @@ typedef struct GC_StackContext_Rep *GC_stack_context_t;
 typedef DWORD thread_id_t;
 #    define thread_id_self() GetCurrentThreadId()
 #    define THREAD_ID_EQUAL(id1, id2) ((id1) == (id2))
-/* Convert a platform-specific thread id (of thread_id_t type) to   */
-/* some pointer identifying the thread.  This is used mostly for    */
-/* a debugging purpose when printing thread id.                     */
+/* Convert a platform-specific thread `id` (of `thread_id_t` type) to   */
+/* some pointer identifying the thread.  This is used mostly for        */
+/* a debugging purpose when printing thread id.                         */
 #    define THREAD_ID_TO_VPTR(id) CAST_THRU_UINTPTR(void *, id)
 #  else
 typedef pthread_t thread_id_t;
@@ -154,21 +154,21 @@ typedef pthread_t thread_id_t;
 struct GC_Thread_Rep {
   union {
 #  if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
-    /* Updated without a lock.  We assert that each unused entry has  */
-    /* invalid id of zero and zero stack_end.  Used only with         */
-    /* GC_win32_dll_threads.                                          */
+    /* Updated without a lock.  We assert that each unused entry has    */
+    /* invalid `id` of zero and zero `stack_end`.  Used only if         */
+    /* `GC_win32_dll_threads`.                                          */
     volatile AO_t in_use;
 
-    /* The same but of the type that matches the first argument of    */
-    /* InterlockedExchange(); volatile is omitted because the ancient */
-    /* version of the prototype lacked the qualifier.                 */
+    /* The same but of the type that matches the first argument of      */
+    /* `InterlockedExchange()`; `volatile` is omitted because the       */
+    /* ancient version of the function prototype lacked the qualifier.  */
     LONG long_in_use;
 #  endif
 
-    /* Hash table link without GC_win32_dll_threads.  More recently    */
-    /* allocated threads with a given pthread id come first.  (All but */
-    /* the first are guaranteed to be dead, but we may not yet have    */
-    /* registered the join.)                                           */
+    /* Hash table link without `GC_win32_dll_threads`.  More recently   */
+    /* allocated threads with a given `pthreads` id come first.         */
+    /* (All but the first are guaranteed to be dead, but we may not yet */
+    /* have registered the join.)                                       */
     struct GC_Thread_Rep *next;
   } tm; /* table_management */
 
@@ -184,11 +184,11 @@ struct GC_Thread_Rep {
 #  endif
 
 #  ifdef MSWINCE
-  /* According to MSDN specs for WinCE targets:                       */
-  /* - DuplicateHandle() is not applicable to thread handles; and     */
-  /* - the value returned by GetCurrentThreadId() could be used as    */
-  /* a "real" thread handle (for SuspendThread(), ResumeThread()      */
-  /* and GetThreadContext()).                                         */
+  /* According to MSDN specs for WinCE targets:                         */
+  /* - `DuplicateHandle()` is not applicable to thread handles; and     */
+  /* - the value returned by `GetCurrentThreadId()` could be used as    */
+  /*   a "real" thread handle (for `SuspendThread()`, `ResumeThread()`  */
+  /*   and `GetThreadContext()`).                                       */
 #    define THREAD_HANDLE(p) ((HANDLE)(word)(p)->id)
 #  elif defined(GC_WIN32_THREADS)
   HANDLE handle;
@@ -198,16 +198,16 @@ struct GC_Thread_Rep {
   /* Note: this is protected by the allocator lock.     */
   unsigned char flags;
 
-  /* Thread has exited (pthreads only).   */
+  /* Thread has exited (`pthreads` only). */
 #  define FINISHED 0x1
 #  ifndef GC_PTHREADS
 #    define KNOWN_FINISHED(p) FALSE
 #  else
 #    define KNOWN_FINISHED(p) (((p)->flags & FINISHED) != 0)
-  /* Thread is treated as detached.  Thread may really be detached,   */
-  /* or it may have been explicitly registered, in which case we can  */
-  /* deallocate its GC_Thread_Rep once it unregisters itself, since   */
-  /* it may not return a pointer to the GC heap.                      */
+  /* Thread is treated as detached.  Thread may really be detached,     */
+  /* or it may have been explicitly registered, in which case we can    */
+  /* deallocate its `GC_Thread_Rep` entity once it unregisters itself,  */
+  /* since it may not return a pointer to the collector heap.           */
 #    define DETACHED 0x2
 #  endif
 #  if (defined(GC_HAVE_PTHREAD_EXIT) || !defined(GC_NO_PTHREAD_CANCEL)) \
@@ -217,23 +217,23 @@ struct GC_Thread_Rep {
 #  endif
   /* Thread is in the do-blocking state.  If set, the thread will       */
   /* acquire the allocator lock before any pointer manipulation, and    */
-  /* has set its SP value.  Thus, it does not need a signal sent to     */
-  /* stop it.                                                           */
+  /* has set its stack pointer value.  Thus, it does not need a signal  */
+  /* sent to stop it.                                                   */
 #  define DO_BLOCKING 0x20
 #  ifdef GC_WIN32_THREADS
-  /* Thread is suspended by SuspendThread.    */
+  /* Thread is suspended by `SuspendThread()`. */
 #    define IS_SUSPENDED 0x40
 #  endif
 
 #  ifdef SIGNAL_BASED_STOP_WORLD
-  /* The value of GC_stop_count when the thread last successfully     */
-  /* handled a suspend signal.                                        */
+  /* The value of `GC_stop_count` when the thread last successfully     */
+  /* handled a suspend signal.                                          */
   volatile AO_t last_stop_count;
 #    ifdef GC_ENABLE_SUSPEND_THREAD
-  /* Note: an odd value means thread was suspended externally;      */
-  /* incremented on every call of GC_suspend_thread() and           */
-  /* GC_resume_thread(); updated with the allocator lock held, but  */
-  /* could be read from a signal handler.                           */
+  /* Note: an odd value means thread was suspended externally;          */
+  /* incremented on every call of `GC_suspend_thread()` and             */
+  /* `GC_resume_thread()`; updated with the allocator lock held, but    */
+  /* could be read from a signal handler.                               */
   volatile AO_t ext_suspend_cnt;
 #    endif
 #  endif
@@ -251,14 +251,14 @@ struct GC_Thread_Rep {
 #  endif
 
 #  ifdef NACL
-  /* Grab NACL_GC_REG_STORAGE_SIZE pointers off the stack when        */
-  /* going into a syscall.  20 is more than we need, but it's an      */
-  /* overestimate in case the instrumented function uses any callee   */
-  /* saved registers, they may be pushed to the stack much earlier.   */
-  /* Also, on x86_64 'push' puts 8 bytes on the stack even though     */
-  /* our pointers are 4 bytes.                                        */
+  /* Grab `NACL_GC_REG_STORAGE_SIZE` pointers off the stack when going  */
+  /* into a `syscall()`.  20 is more than we need, but it is            */
+  /* an overestimate in case the instrumented function uses any         */
+  /* callee-saved registers, they may be pushed to the stack much       */
+  /* earlier.  Also, on x86_64 `push` puts 8 bytes on the stack even    */
+  /* though our pointers have 4 bytes length.                           */
 #    ifdef ARM32
-  /* Space for r4-r8, r10-r12, r14.       */
+  /* Space for `r4` ... `r8`, `r10`, ... `r12`, `r14`. */
 #      define NACL_GC_REG_STORAGE_SIZE 9
 #    else
 #      define NACL_GC_REG_STORAGE_SIZE 20
@@ -272,23 +272,23 @@ struct GC_Thread_Rep {
   GC_NT_TIB *tib;
 #  endif
 
-#  ifdef RETRY_GET_THREAD_CONTEXT /* && GC_WIN32_THREADS */
+#  ifdef RETRY_GET_THREAD_CONTEXT /* `&& GC_WIN32_THREADS` */
   ptr_t context_sp;
 
-  /* Populated as part of GC_suspend() as resume/suspend loop may be  */
-  /* needed for GetThreadContext() to succeed.                        */
+  /* Populated as part of `GC_suspend()` as resume/suspend loop may be  */
+  /* needed for `GetThreadContext()` to succeed.                        */
   word context_regs[PUSHED_REGS_COUNT];
 #  endif
 };
 typedef struct GC_Thread_Rep *GC_thread;
 
 #  if defined(GC_PTHREADS) || defined(GC_PTHREADS_PARAMARK)
-/* Convert an opaque pthread_t value to a pointer identifying the thread. */
+/* Convert an opaque `pthread_t` value to a pointer identifying the thread. */
 #    if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)                  \
         && (defined(GC_WIN32_PTHREADS) || defined(GC_PTHREADS_PARAMARK)) \
         && !defined(__WINPTHREADS_VERSION_MAJOR)
 /* Using documented internal details of pthreads-win32 library. */
-/* pthread_t is a struct.                                       */
+/* `pthread_t` is a `struct`.                                   */
 #      define PTHREAD_TO_VPTR(id) ((void *)(id).p)
 #    else
 #      define PTHREAD_TO_VPTR(id) CAST_THRU_UINTPTR(void *, id)
@@ -301,7 +301,7 @@ typedef struct GC_Thread_Rep *GC_thread;
 #  endif
 
 #  ifdef GC_WIN32_THREADS
-#    define THREAD_TABLE_INDEX(id) /* id is of DWORD type */ \
+#    define THREAD_TABLE_INDEX(id) /* `id` is of `DWORD` type */ \
       (int)((((id) >> 8) ^ (id)) % THREAD_TABLE_SZ)
 #  elif CPP_WORDSZ > 32
 #    define THREAD_TABLE_INDEX(id)                                          \
@@ -429,7 +429,7 @@ GC_INNER void GC_unblock_gc_signals(void);
 #  if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
 GC_INNER void GC_suspend_self_inner(GC_thread me, size_t suspend_cnt);
 
-/* A wrapper over GC_suspend_self_inner.      */
+/* A wrapper over `GC_suspend_self_inner()`. */
 GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context);
 #  endif
 

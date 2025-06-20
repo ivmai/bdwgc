@@ -1,4 +1,5 @@
-/* Conditionally execute a command based on machine and OS from gcconfig.h */
+/* A build-time utility used by `Makefile.direct` file.  Conditionally  */
+/* execute a command based on machine and OS from `gcconfig.h` file.    */
 
 #define NOT_GCBUILD
 #include "private/gc_priv.h"
@@ -9,8 +10,8 @@
 #ifdef __cplusplus
 #  define EXECV_ARGV_T char **
 #else
-/* The 2nd argument of execvp() prototype may be either char**, or    */
-/* char* const*, or const char* const*.                               */
+/* The 2nd argument of `execvp()` prototype may be either `char **`, or */
+/* `char *const *`, or `const char *const *`.                           */
 #  define EXECV_ARGV_T void *
 #endif
 

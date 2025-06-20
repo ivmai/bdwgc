@@ -53,8 +53,8 @@ typedef struct StackFrame {
   unsigned long savedSP;
   unsigned long savedCR;
   unsigned long savedLR;
-  /* unsigned long reserved[2]; */
-  /* unsigned long savedRTOC; */
+  /* `unsigned long reserved[2];` */
+  /* `unsigned long savedRTOC;` */
 } StackFrame;
 
 GC_INNER ptr_t
@@ -99,11 +99,13 @@ GC_FindTopOfStack(unsigned long stack_start)
     frame = (StackFrame *)MAKE_CPTR(frame->savedSP);
 
     /* We do these next two checks after going to the next frame        */
-    /* because the LR for the first stack frame in the loop is not set  */
-    /* up on purpose, so we should not check it.                        */
+    /* because the `savedLR` for the first stack frame in the loop is   */
+    /* not set up on purpose, so we should not check it.                */
     maskedLR = frame->savedLR & ~0x3UL;
-    if (0 == maskedLR || ~0x3UL == maskedLR)
-      break; /* if the next LR is bogus, stop */
+    if (0 == maskedLR || ~0x3UL == maskedLR) {
+      /* The next `savedLR` is bogus, stop. */
+      break;
+    }
   }
 #    ifdef DEBUG_THREADS_EXTRA
   GC_log_printf("FindTopOfStack finish at sp= %p\n", (void *)frame);
@@ -113,8 +115,8 @@ GC_FindTopOfStack(unsigned long stack_start)
 
 #  endif /* !DARWIN_DONT_PARSE_STACK */
 
-/* GC_query_task_threads controls whether to obtain the list of */
-/* the threads from the kernel or to use GC_threads table.      */
+/* `GC_query_task_threads` controls whether to obtain the list of   */
+/* the threads from the kernel or to use `GC_threads` table.        */
 #  ifdef GC_NO_THREADS_DISCOVERY
 #    define GC_query_task_threads FALSE
 #  elif defined(GC_DISCOVER_TASK_THREADS)
@@ -123,9 +125,9 @@ GC_FindTopOfStack(unsigned long stack_start)
 STATIC GC_bool GC_query_task_threads = FALSE;
 #  endif /* !GC_NO_THREADS_DISCOVERY */
 
-/* Use implicit threads registration (all task threads excluding the GC */
-/* special ones are stopped and scanned).  Should be called before      */
-/* GC_INIT() (or, at least, before going multi-threaded).  Deprecated.  */
+/* Use implicit threads registration (all task threads, excluding the   */
+/* collector special ones, are stopped and scanned).  Should be called  */
+/* before `GC_INIT()` (or, at least, before going multi-threaded).      */
 GC_API void GC_CALL
 GC_use_threads_discovery(void)
 {
@@ -150,8 +152,8 @@ GC_use_threads_discovery(void)
 #  define MACH_PORT_TO_VPTR(t) THREAD_ID_TO_VPTR(t)
 
 /* Evaluates the stack range for a given thread.  Returns the lower     */
-/* bound and sets *phi to the upper one.  Sets *pfound_me to TRUE if    */
-/* this is current thread, otherwise the value is not changed.          */
+/* bound and sets `*phi` to the upper one.  Sets `*pfound_me` to `TRUE` */
+/* if this is current thread, otherwise the value is not changed.       */
 STATIC ptr_t
 GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
                    mach_port_t my_thread, ptr_t *paltstack_lo,
@@ -177,15 +179,15 @@ GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #  endif
 
   } else {
-    /* MACHINE_THREAD_STATE_COUNT does not seem to be defined       */
-    /* everywhere.  Hence we use our own version.  Alternatively,   */
-    /* we could use THREAD_STATE_MAX (but seems to be not optimal). */
+    /* `MACHINE_THREAD_STATE_COUNT` does not seem to be defined         */
+    /* everywhere.  Hence we use our own variant.  Alternatively,       */
+    /* we could use `THREAD_STATE_MAX` (but seems to be not optimal).   */
     kern_return_t kern_result;
     GC_THREAD_STATE_T state;
 
 #  if defined(ARM32) && defined(ARM_THREAD_STATE32)
-    /* Use ARM_UNIFIED_THREAD_STATE on iOS8+ 32-bit targets and on    */
-    /* 64-bit H/W (iOS7+ 32-bit mode).                                */
+    /* Use `ARM_UNIFIED_THREAD_STATE` on iOS8+ 32-bit targets and on    */
+    /* 64-bit H/W (iOS7+ 32-bit mode).                                  */
     size_t size;
     static cpu_type_t cputype = 0;
 
@@ -255,7 +257,7 @@ GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     GC_push_one(state.THREAD_FLD(rdi));
     GC_push_one(state.THREAD_FLD(rsi));
     GC_push_one(state.THREAD_FLD(rbp));
-    /* rsp is skipped.        */
+    /* `rsp` is skipped. */
     GC_push_one(state.THREAD_FLD(r8));
     GC_push_one(state.THREAD_FLD(r9));
     GC_push_one(state.THREAD_FLD(r10));
@@ -271,7 +273,7 @@ GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     *phi = GC_FindTopOfStack(state.THREAD_FLD(r1));
 #    endif
     GC_push_one(state.THREAD_FLD(r0));
-    /* r1 is skipped. */
+    /* `r1` is skipped. */
     GC_push_one(state.THREAD_FLD(r2));
     GC_push_one(state.THREAD_FLD(r3));
     GC_push_one(state.THREAD_FLD(r4));
@@ -306,17 +308,18 @@ GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #  elif defined(ARM32)
     lo = (ptr_t)state.THREAD_FLD(sp);
 #    ifndef DARWIN_DONT_PARSE_STACK
-    *phi = GC_FindTopOfStack(state.THREAD_FLD(r[7])); /* fp */
+    *phi = GC_FindTopOfStack(state.THREAD_FLD(r[7])); /* `fp` */
 #    endif
     {
       int j;
       for (j = 0; j < 7; j++)
         GC_push_one(state.THREAD_FLD(r[j]));
-      j++; /* "r7" is skipped (iOS uses it as a frame pointer) */
+      /* Skip `r7` (because iOS uses it as a frame pointer). */
+      j++;
       for (; j <= 12; j++)
         GC_push_one(state.THREAD_FLD(r[j]));
     }
-    /* "cpsr", "pc" and "sp" are skipped */
+    /* `cpsr`, `pc` and `sp` are skipped. */
     GC_push_one(state.THREAD_FLD(lr));
 
 #  elif defined(AARCH64)
@@ -330,7 +333,7 @@ GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
         GC_push_one(state.THREAD_FLD(x[j]));
       }
     }
-    /* "cpsr", "fp", "pc" and "sp" are skipped */
+    /* `cpsr`, `fp`, `pc` and `sp` are skipped. */
     GC_push_one(state.THREAD_FLD(lr));
 
 #  elif defined(CPPCHECK)
@@ -338,13 +341,14 @@ GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #  else
 #    error FIXME for non-arm/ppc/x86 architectures
 #  endif
-  } /* thread != my_thread */
+  }
 
 #  ifndef DARWIN_DONT_PARSE_STACK
-  /* TODO: Determine p and handle altstack if !DARWIN_DONT_PARSE_STACK */
+  /* TODO: Determine `p` and handle `altstack` if `!DARWIN_DONT_PARSE_STACK` */
   UNUSED_ARG(paltstack_hi);
 #  else
-  /* p is guaranteed to be non-NULL regardless of GC_query_task_threads. */
+  /* `p` is guaranteed to be non-`NULL` regardless of               */
+  /* `GC_query_task_threads`.                                       */
 #    ifdef CPPCHECK
   if (NULL == p)
     ABORT("Bad GC_stack_range_for call");
@@ -408,10 +412,10 @@ GC_push_all_stacks(void)
         total_size += hi - lo;
         GC_push_all_stack(lo, hi);
       }
-      /* TODO: Handle altstack */
+      /* TODO: Handle `altstack` */
       nthreads++;
       mach_port_deallocate(my_task, thread);
-    } /* for (i=0; ...) */
+    }
 
     vm_deallocate(my_task, (vm_address_t)act_list,
                   sizeof(thread_t) * listcount);
@@ -442,7 +446,7 @@ GC_push_all_stacks(void)
           nthreads++;
         }
       }
-    } /* for (i=0; ...) */
+    }
   }
 
   mach_port_deallocate(my_task, my_thread);
@@ -477,9 +481,10 @@ struct GC_mach_thread {
 
 struct GC_mach_thread GC_mach_threads[GC_MAX_MACH_THREADS];
 STATIC int GC_mach_threads_count = 0;
-/* FIXME: it is better to implement GC_mach_threads as a hash set.  */
+/* FIXME: it is better to implement `GC_mach_threads` as a hash set. */
 
-/* Return true if there is a thread in act_list that was not in old_list. */
+/* Return `TRUE` if there is a thread in `act_list` that was not    */
+/* in `old_list`.                                                   */
 STATIC GC_bool
 GC_suspend_thread_list(thread_act_array_t act_list, int count,
                        thread_act_array_t old_list, int old_count,
@@ -509,10 +514,11 @@ GC_suspend_thread_list(thread_act_array_t act_list, int count,
       continue;
     }
 
-    /* find the current thread in the old list */
+    /* Find the current thread in the old list. */
     found = FALSE;
     {
-      int last_found = j; /* remember the previous found thread index */
+      /* The previous found thread index. */
+      int last_found = j;
 
       /* Search for the thread starting from the last found one first.  */
       while (++j < old_count)
@@ -531,16 +537,16 @@ GC_suspend_thread_list(thread_act_array_t act_list, int count,
     }
 
     if (found) {
-      /* It is already in the list, skip processing, release mach port. */
+      /* It is already in the list, skip processing, release `mach` port. */
       mach_port_deallocate(my_task, thread);
       continue;
     }
 
-    /* Add it to the GC_mach_threads list.      */
+    /* Add it to the `GC_mach_threads` list. */
     if (GC_mach_threads_count == GC_MAX_MACH_THREADS)
       ABORT("Too many threads");
     GC_mach_threads[GC_mach_threads_count].thread = thread;
-    /* default is not suspended */
+    /* The default is "not suspended". */
     GC_mach_threads[GC_mach_threads_count].suspended = FALSE;
     changed = TRUE;
 
@@ -555,8 +561,8 @@ GC_suspend_thread_list(thread_act_array_t act_list, int count,
     } while (kern_result == KERN_ABORTED);
     GC_release_dirty_lock();
     if (kern_result != KERN_SUCCESS) {
-      /* The thread may have quit since the thread_threads() call we  */
-      /* mark already suspended so it's not dealt with anymore later. */
+      /* The thread may have quit since the `thread_threads()` call we  */
+      /* mark already suspended so it is not dealt with anymore later.  */
       GC_mach_threads[GC_mach_threads_count].suspended = FALSE;
     } else {
       /* Mark the thread as suspended and require resume.     */
@@ -599,17 +605,17 @@ GC_stop_world(void)
     thread_act_array_t act_list, prev_list;
     mach_msg_type_number_t listcount, prevcount;
 
-    /* Clear out the mach threads list table.  We do not need to      */
-    /* really clear GC_mach_threads[] as it is used only in the range */
-    /* from 0 to GC_mach_threads_count-1, inclusive.                  */
+    /* Clear out the `mach` threads list table.  We do not need to      */
+    /* really clear `GC_mach_threads[]` as it is used only in the range */
+    /* from 0 to `GC_mach_threads_count - 1`, inclusive.                */
     GC_mach_threads_count = 0;
 
-    /* Loop stopping threads until you have gone over the whole list  */
-    /* twice without a new one appearing.  thread_create() won't      */
-    /* return (and thus the thread stop) until the new thread exists, */
-    /* so there is no window whereby you could stop a thread,         */
-    /* recognize it is stopped, but then have a new thread it created */
-    /* before stopping show up later.                                 */
+    /* Loop stopping threads until you have gone over the whole list    */
+    /* twice without a new one appearing.  `thread_create()` will not   */
+    /* return (and thus the thread stop) until the new thread exists,   */
+    /* so there is no window whereby you could stop a thread, recognize */
+    /* it is stopped, but then have a new thread it created before      */
+    /* stopping show up later.                                          */
     changed = TRUE;
     prev_list = NULL;
     prevcount = 0;
@@ -621,11 +627,12 @@ GC_stop_world(void)
                                          prevcount, my_task, my_thread);
 
         if (prev_list != NULL) {
-          /* Thread ports are not deallocated by list, unused ports   */
-          /* deallocated in GC_suspend_thread_list, used - kept in    */
-          /* GC_mach_threads till GC_start_world as otherwise thread  */
-          /* object change can occur and GC_start_world will not      */
-          /* find the thread to resume which will cause app to hang.  */
+          /* Thread ports are not deallocated by list, unused ports     */
+          /* deallocated in `GC_suspend_thread_list`, used ones - kept  */
+          /* in `GC_mach_threads` till `GC_start_world` as otherwise    */
+          /* thread object change can occur and `GC_start_world` will   */
+          /* not find the thread to resume which will cause application */
+          /* to hang.                                                   */
           vm_deallocate(my_task, (vm_address_t)prev_list,
                         sizeof(thread_t) * prevcount);
         }
@@ -745,8 +752,8 @@ GC_start_world(void)
       thread_act_t thread = GC_mach_threads[i].thread;
 
       if (GC_mach_threads[i].suspended) {
-        /* The thread index found during the previous iteration       */
-        /* (count value means no thread found yet).                   */
+        /* The thread index found during the previous iteration     */
+        /* (reaching `listcount` value means no thread found yet).  */
         int last_found = j;
 
         /* Search for the thread starting from the last found one first. */
@@ -766,8 +773,8 @@ GC_start_world(void)
           GC_thread_resume(thread);
         }
       } else {
-        /* This thread failed to be suspended by GC_stop_world, no    */
-        /* action is needed.                                          */
+        /* This thread failed to be suspended by `GC_stop_world`, no    */
+        /* action is needed.                                            */
 #    ifdef DEBUG_THREADS
         GC_log_printf("Not resuming thread %p as it is not suspended\n",
                       THREAD_ACT_TO_VPTR(thread));

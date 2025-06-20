@@ -23,25 +23,12 @@
 /* We keep a hash table, so that we can filter out duplicate additions. */
 /* Under Win32, we need to do a better job of filtering overlaps, so    */
 /* we resort to sequential search, and pay the price.                   */
-/* This is really declared in gc_priv.h:
-struct roots {
-        ptr_t r_start;
-        ptr_t r_end;
-#       ifndef ANY_MSWIN
-          struct roots * r_next;
-#       endif
-        GC_bool r_tmp;
-                -- Delete before registering new dynamic libraries
-};
-
-struct roots GC_static_roots[MAX_ROOT_SETS];
-*/
 
 /* Register dynamic library data segments.      */
 int GC_no_dls = 0;
 
 #if !defined(NO_DEBUGGING) || defined(GC_ASSERTIONS)
-/* Should return the same value as GC_root_size.      */
+/* Should return the same value as `GC_root_size`. */
 GC_INNER word
 GC_compute_root_size(void)
 {
@@ -92,8 +79,8 @@ rt_hash(ptr_t addr)
   return (size_t)((val >> LOG_RT_SIZE) ^ val) & (RT_SIZE - 1);
 }
 
-/* Is a range starting at b already in the table? If so, return a     */
-/* pointer to it, else NULL.                                          */
+/* Is a range starting at `b` already in the table?  If so, then return */
+/* a pointer to it, else `NULL`.                                        */
 GC_INNER void *
 GC_roots_present(ptr_t b)
 {
@@ -132,8 +119,8 @@ GC_add_roots(void *b, void *e)
   UNLOCK();
 }
 
-/* Add [b,e) to the root set.  Adding the same interval a second time   */
-/* is a moderately fast no-op, and hence benign.  We do not handle      */
+/* Add [`b`,`e`) to the root set.  Adding the same interval a second    */
+/* time is a moderately fast no-op, and hence benign.  We do not handle */
 /* different but overlapping intervals efficiently.  (We do handle      */
 /* them correctly.)                                                     */
 /* Tmp specifies that the interval may be deleted before                */
@@ -371,15 +358,15 @@ swap_static_roots(size_t i, size_t j)
   GC_static_roots[i].r_start = GC_static_roots[j].r_start;
   GC_static_roots[i].r_end = GC_static_roots[j].r_end;
   GC_static_roots[i].r_tmp = GC_static_roots[j].r_tmp;
-  /* No need to swap r_next values.   */
+  /* No need to swap `r_next` values. */
   GC_static_roots[j].r_start = r_start;
   GC_static_roots[j].r_end = r_end;
   GC_static_roots[j].r_tmp = r_tmp;
 }
 
-/* Remove given range from every static root which intersects with    */
-/* the range.  It is assumed GC_remove_tmp_roots is called before     */
-/* this function is called repeatedly by GC_register_map_entries.     */
+/* Remove given range from every static root which intersects with  */
+/* the range.  It is assumed `GC_remove_tmp_roots` is called before */
+/* this function is called repeatedly by `GC_register_map_entries`. */
 GC_INNER void
 GC_remove_roots_subregion(ptr_t b, ptr_t e)
 {
@@ -413,7 +400,7 @@ GC_remove_roots_subregion(ptr_t b, ptr_t e)
       if (ADDR_LT(r_start, b)) {
         GC_root_size -= (word)(r_end - b);
         GC_static_roots[i].r_end = b;
-        /* No need to rebuild as hash does not use r_end value. */
+        /* No need to rebuild as hash does not use `r_end` value. */
         if (ADDR_LT(e, r_end)) {
           size_t j;
 
@@ -421,7 +408,7 @@ GC_remove_roots_subregion(ptr_t b, ptr_t e)
             GC_rebuild_root_index();
             rebuild = FALSE;
           }
-          /* Note: updates n_root_sets as well.       */
+          /* Note: updates `n_root_sets` as well. */
           GC_add_roots_inner(e, r_end, FALSE);
           for (j = i + 1; j < n_root_sets; j++)
             if (GC_static_roots[j].r_tmp)
@@ -460,9 +447,9 @@ GC_remove_roots_subregion(ptr_t b, ptr_t e)
 #endif /* USE_PROC_FOR_LIBRARIES */
 
 #if !defined(NO_DEBUGGING)
-/* For the debugging purpose only.                                    */
-/* Workaround for the OS mapping and unmapping behind our back:       */
-/* Is the address p in one of the temporary static root sections?     */
+/* For the debugging purpose only.                                  */
+/* Workaround for the OS mapping and unmapping behind our back:     */
+/* Is the address `p` in one of the temporary static root sections? */
 GC_API int GC_CALL
 GC_is_tmp_root(void *p)
 {
@@ -471,7 +458,7 @@ GC_is_tmp_root(void *p)
 #  elif defined(AO_HAVE_load) || defined(AO_HAVE_store)
   static volatile AO_t last_root_set;
 #  else
-  /* Note: a race is acceptable, it's just a cached index.  */
+  /* Note: a race is acceptable, it is just a cached index. */
   static volatile size_t last_root_set;
 #  endif
   size_t i;
@@ -534,7 +521,7 @@ GC_clear_exclusion_table(void)
 }
 
 /* Return the first exclusion range that includes an address not    */
-/* lower than start_addr.                                           */
+/* lower than `start_addr`.                                         */
 STATIC struct exclusion *
 GC_next_exclusion(ptr_t start_addr)
 {
@@ -547,7 +534,7 @@ GC_next_exclusion(ptr_t start_addr)
   while (high > low) {
     size_t mid = (low + high) >> 1;
 
-    /* low <= mid < high    */
+    /* `low` <= `mid` < `high`. */
     if (ADDR_GE(start_addr, GC_excl_table[mid].e_end)) {
       low = mid + 1;
     } else {
@@ -616,7 +603,7 @@ GC_exclude_static_roots(void *b, void *e)
     return;
   }
 
-  /* Round boundaries in direction reverse to that of GC_add_roots. */
+  /* Round boundaries in direction reverse to that of `GC_add_roots`. */
 #if ALIGNMENT > 1
   b = PTR_ALIGN_DOWN((ptr_t)b, ALIGNMENT);
   e = EXPECT(ADDR(e) > ~(word)(ALIGNMENT - 1), FALSE)
@@ -637,7 +624,7 @@ GC_exclude_static_roots(void *b, void *e)
 #  define GC_PUSH_CONDITIONAL(b, t, all) GC_push_conditional_static(b, t, all)
 #endif
 
-/* Invoke push_conditional on ranges that are not excluded. */
+/* Invoke `GC_push_conditional` on ranges that are not excluded. */
 STATIC void
 GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top, GC_bool all)
 {
@@ -661,7 +648,7 @@ GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top, GC_bool all)
 }
 
 #ifdef IA64
-/* Similar to GC_push_all_stack_sections() but for IA-64 registers store. */
+/* Similar to `GC_push_all_stack_sections` but for IA-64 registers store. */
 GC_INNER void
 GC_push_all_register_sections(ptr_t bs_lo, ptr_t bs_hi, GC_bool eager,
                               struct GC_traced_stack_sect_s *traced_stack_sect)
@@ -717,17 +704,17 @@ GC_push_all_stack_sections(ptr_t lo /* top */, ptr_t hi /* bottom */,
 
 #else /* !THREADS */
 
-/* Similar to GC_push_all_eager, but only the part hotter than    */
-/* cold_gc_frame is scanned immediately.  Needed to ensure that   */
-/* callee-save registers are not missed.  Treats all interior     */
-/* pointers as valid and scans part of the area immediately, to   */
-/* make sure that saved register values are not lost.             */
-/* Cold_gc_frame delimits the stack section that must be scanned  */
-/* eagerly.  A zero value indicates that no eager scanning is     */
-/* needed.  We do not need to worry about the manual VDB case     */
-/* here, since this is only called in the single-threaded case.   */
-/* We assume that we cannot collect between an assignment and the */
-/* corresponding GC_dirty() call.                                 */
+/* Similar to `GC_push_all_eager`, but only the part hotter than    */
+/* `cold_gc_frame` is scanned immediately.  Needed to ensure that   */
+/* callee-save registers are not missed.  Treats all interior       */
+/* pointers as valid and scans part of the area immediately, to     */
+/* make sure that saved register values are not lost.               */
+/* `cold_gc_frame` delimits the stack section that must be scanned  */
+/* eagerly.  A zero value indicates that no eager scanning is       */
+/* needed.  We do not need to worry about the manual VDB case       */
+/* here, since this is only called in the single-threaded case.     */
+/* We assume that we cannot collect between an assignment and the   */
+/* corresponding `GC_dirty()` call.                                 */
 STATIC void
 GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top, ptr_t cold_gc_frame)
 {
@@ -759,7 +746,7 @@ GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top, ptr_t cold_gc_frame)
 #  endif
 }
 
-/* Similar to GC_push_all_stack_sections() but also uses cold_gc_frame. */
+/* Similar to `GC_push_all_stack_sections()` but also uses `cold_gc_frame`. */
 STATIC void
 GC_push_all_stack_part_eager_sections(
     ptr_t lo /* top */, ptr_t hi /* bottom */, ptr_t cold_gc_frame,
@@ -797,11 +784,11 @@ GC_push_all_stack_part_eager_sections(
 
 /* Push enough of the current stack eagerly to ensure that callee-save  */
 /* registers saved in GC frames are scanned.  In the non-threads case,  */
-/* schedule entire stack for scanning.  The 2nd argument is a pointer   */
-/* to the (possibly null) thread context, for (currently hypothetical)  */
-/* more precise stack scanning.  In the presence of threads, push       */
-/* enough of the current stack to ensure that callee-save registers     */
-/* saved in collector frames have been seen.                            */
+/* schedule entire stack for scanning.  The 2nd argument (`context`) is */
+/* a pointer to the (possibly `NULL`) thread context, for (currently    */
+/* hypothetical) more precise stack scanning.  In the presence of       */
+/* threads, push enough of the current stack to ensure that callee-save */
+/* registers saved in collector frames have been seen.                  */
 /* TODO: Merge it with per-thread stuff. */
 STATIC void
 GC_push_current_stack(ptr_t cold_gc_frame, void *context)
@@ -809,7 +796,7 @@ GC_push_current_stack(ptr_t cold_gc_frame, void *context)
   UNUSED_ARG(context);
   GC_ASSERT(I_HOLD_LOCK());
 #if defined(THREADS)
-  /* cold_gc_frame is non-NULL.   */
+  /* `cold_gc_frame` is non-`NULL`. */
 #  ifdef STACK_GROWS_UP
   GC_push_all_eager(cold_gc_frame, GC_approx_sp());
 #  else
@@ -821,18 +808,18 @@ GC_push_current_stack(ptr_t cold_gc_frame, void *context)
   GC_push_all_stack_part_eager_sections(GC_approx_sp(), GC_stackbottom,
                                         cold_gc_frame, GC_traced_stack_sect);
 #  ifdef IA64
-  /* We also need to push the register stack backing store.   */
-  /* This should really be done in the same way as the        */
-  /* regular stack.  For now we fudge it a bit.               */
-  /* Note that the backing store grows up, so we can't use    */
-  /* GC_push_all_stack_partially_eager.                       */
+  /* We also need to push the register stack backing store.     */
+  /* This should really be done in the same way as the          */
+  /* regular stack.  For now we fudge it a bit.                 */
+  /* Note that the backing store grows up, so we cannot use     */
+  /* `GC_push_all_stack_partially_eager`.                       */
   {
     ptr_t bsp = GC_save_regs_ret_val;
     ptr_t cold_gc_bs_pointer = bsp - 2048;
     if (GC_all_interior_pointers
         && ADDR_LT(GC_register_stackbottom, cold_gc_bs_pointer)) {
-      /* Adjust cold_gc_bs_pointer if below our innermost   */
-      /* "traced stack section" in backing store.           */
+      /* Adjust `cold_gc_bs_pointer` if below our innermost     */
+      /* "traced stack section" in backing store.               */
       if (GC_traced_stack_sect != NULL
           && ADDR_LT(cold_gc_bs_pointer,
                      GC_traced_stack_sect->backing_store_end)) {
@@ -844,10 +831,10 @@ GC_push_current_stack(ptr_t cold_gc_frame, void *context)
       GC_push_all_eager(cold_gc_bs_pointer, bsp);
     } else {
       GC_push_all_register_sections(GC_register_stackbottom, bsp,
-                                    TRUE /* eager */, GC_traced_stack_sect);
+                                    TRUE /* `eager` */, GC_traced_stack_sect);
     }
-    /* All values should be sufficiently aligned that we    */
-    /* don't have to worry about the boundary.              */
+    /* All values should be sufficiently aligned that we do not have to */
+    /* worry about the boundary.                                        */
   }
 #  elif defined(E2K)
   /* We also need to push procedure stack store.        */
@@ -856,7 +843,7 @@ GC_push_current_stack(ptr_t cold_gc_frame, void *context)
     ptr_t bs_lo;
     size_t stack_size;
 
-    /* TODO: support ps_ofs here and in GC_do_blocking_inner */
+    /* TODO: support `ps_ofs` here and in `GC_do_blocking_inner` */
     GET_PROCEDURE_STACK_LOCAL(0, &bs_lo, &stack_size);
     GC_push_all_eager(bs_lo, bs_lo + stack_size);
   }
@@ -885,19 +872,20 @@ GC_push_regs_and_stack(ptr_t cold_gc_frame)
   GC_ASSERT(I_HOLD_LOCK());
 #ifdef THREADS
   if (NULL == cold_gc_frame) {
-    /* GC_push_all_stacks should push registers and stack.          */
+    /* `GC_push_all_stacks` should push registers and stack. */
     return;
   }
 #endif
   GC_with_callee_saves_pushed(GC_push_current_stack, cold_gc_frame);
 }
 
-/* Call the mark routines (GC_push_one for a single pointer,            */
-/* GC_push_conditional on groups of pointers) on every top level        */
-/* accessible pointer.  If all is false, arrange to push only possibly  */
-/* altered values.  Cold_gc_frame is an address inside a GC frame that  */
-/* remains valid until all marking is complete; a NULL value indicates  */
-/* that it is OK to miss some register values.                          */
+/* Call the mark routines (`GC_push_one` for a single pointer,          */
+/* `GC_push_conditional` on groups of pointers) on every top level      */
+/* accessible pointer.  If not `all`, then arrange to push only         */
+/* possibly altered values.  `cold_gc_frame` is an address inside       */
+/* a collector frame that remains valid until all marking is complete;  */
+/* a `NULL` pointer indicates that it is OK to miss some register       */
+/* values.                                                              */
 GC_INNER void
 GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
 {
@@ -906,7 +894,7 @@ GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
 
   GC_ASSERT(I_HOLD_LOCK());
 
-  /* The initialization is needed for GC_push_all_stacks().           */
+  /* The initialization is needed for `GC_push_all_stacks`. */
   GC_ASSERT(GC_is_initialized);
 
   /* Next push static data.  This must happen early on, since it is   */
@@ -914,7 +902,7 @@ GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
   /* Re-register dynamic libraries, in case one got added.            */
   /* There is some argument for doing this as late as possible,       */
   /* especially on Win32, where it can change asynchronously.         */
-  /* In those cases, we do it here.  But on other platforms, it's     */
+  /* In those cases, we do it here.  But on other platforms, it is    */
   /* not safe with the world stopped, so we do it earlier.            */
 #if !defined(REGISTER_LIBRARIES_EARLY)
   GC_cond_register_dynamic_libraries();
@@ -927,7 +915,7 @@ GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
   }
 
   /* Mark all free-list header blocks, if those were allocated from   */
-  /* the garbage collected heap.  This makes sure they don't          */
+  /* the garbage-collected heap.  This makes sure they do not         */
   /* disappear if we are not marking from static data.  It also       */
   /* saves us the trouble of scanning them, and possibly that of      */
   /* marking the freelists.                                           */

@@ -15,6 +15,9 @@
  * modified is included with the above copyright notice.
  */
 
+/* A build-time utility used by `Makefile.direct` file.             */
+/* Determines proper linker flags.                                  */
+
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
@@ -58,7 +61,7 @@ main(void)
   printf("-lpthread -lrt\n");
 #  endif
 #  if defined(OSF1)
-  /* DOB: must be -pthread, not -lpthread. */
+  /* DOB: must be `-pthread`, not `-lpthread`. */
   printf("-pthread -lrt\n");
 #  endif
 #  ifdef SOLARIS
@@ -70,7 +73,7 @@ main(void)
 #  endif
 #  if defined(GC_WIN32_PTHREADS)
 #    ifdef PTW32_STATIC_LIB
-  /* Assume suffix "s" for static version of the pthreads-win32 library. */
+  /* Assume suffix "s" for static variant of the pthreads-win32 library. */
   printf("-lpthreadGC2s -lws2_32\n");
 #    else
   printf("-lpthreadGC2\n");
@@ -78,7 +81,7 @@ main(void)
 #  endif
 #  ifdef DGUX
   /* You need GCC 3.0.3 to build this one!              */
-  /* DG/UX native gcc doesn't know what "-pthread" is.  */
+  /* DG/UX native gcc does not know what `-pthread` is. */
   printf("-ldl -pthread\n");
 #  endif
 #endif

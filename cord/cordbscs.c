@@ -25,7 +25,7 @@
 
 #include "gc/cord.h"
 
-/* An implementation of the cord primitives.  These are the only        */
+/* An implementation of the `cord` primitives.  These are the only      */
 /* functions that understand the representation.  We perform only       */
 /* minimal checks on arguments to these functions.  Out of bounds       */
 /* arguments to the iteration functions may result in client functions  */
@@ -67,8 +67,8 @@ CORD__call_oom_fn(void)
   }
 
 struct Concatenation {
-  CORD left;  /* length(left) > 0     */
-  CORD right; /* length(right) > 0    */
+  CORD left;  /* `length(left) > 0` is assumed  */
+  CORD right; /* `length(right) > 0` is assumed */
 };
 
 struct Function {
@@ -81,8 +81,8 @@ struct Generic {
   char header;
   /* Concatenation nesting depth; 0 for function. */
   char depth;
-  /* Length of left concatenated child if it is   */
-  /* sufficiently short; 0 otherwise.             */
+  /* Length of left-concatenated child if it is sufficiently short; */
+  /* 0 otherwise.                                                   */
   unsigned char left_len;
   unsigned long len;
 };
@@ -102,9 +102,9 @@ typedef struct {
 #define FN_HDR 4
 
 /* Substring nodes are a special case of function nodes.        */
-/* The client_data field is known to point to a substr_args     */
-/* structure, and the function is either CORD_apply_access_fn   */
-/* or CORD_index_access_fn.                                     */
+/* The `client_data` field is known to point to a `substr_args` */
+/* structure, and the function is either `CORD_apply_access_fn` */
+/* or `CORD_index_access_fn`.                                   */
 #define SUBSTR_HDR 6
 
 /* The following may be applied only to function and concatenation nodes: */
@@ -132,8 +132,8 @@ typedef struct {
 /* Cords shorter than this are C strings.       */
 #define SHORT_LIMIT (sizeof(CordRep) - 1)
 
-/* Dump the internal representation of x to stdout, with initial        */
-/* indentation level n.                                                 */
+/* Dump the internal representation of `x` to `stdout`, with initial    */
+/* indentation level `n`.                                               */
 static void
 CORD_dump_inner(CORD x, unsigned n)
 {
@@ -176,7 +176,7 @@ CORD_dump_inner(CORD x, unsigned n)
   }
 }
 
-/* Dump the internal representation of x to stdout      */
+/* Dump the internal representation of `x` to `stdout`. */
 void
 CORD_dump(CORD x)
 {
@@ -206,8 +206,8 @@ CORD_cat_char_star(CORD x, const char *y, size_t leny)
 #ifdef LINT2
       memcpy(result, x, lenx + 1);
 #else
-      /* No need to copy the terminating zero */
-      /* as result[lenx] is written below.    */
+      /* No need to copy the terminating zero as `result[lenx]` is  */
+      /* written below.                                             */
       memcpy(result, x, lenx);
 #endif
       memcpy(result + lenx, y, leny);
@@ -227,7 +227,7 @@ CORD_cat_char_star(CORD x, const char *y, size_t leny)
         && CORD_IS_STRING(right = ((const CordRep *)x)->data.concat.right)) {
       size_t right_len;
 
-      /* Merge y into right part of x. */
+      /* Merge `y` into right part of `x`. */
       left = ((const CordRep *)x)->data.concat.left;
       if (!CORD_IS_STRING(left)) {
         right_len = lenx - LEN(left);
@@ -236,7 +236,7 @@ CORD_cat_char_star(CORD x, const char *y, size_t leny)
       } else {
         right_len = strlen(right);
       }
-      result_len = right_len + leny; /* length of new_right */
+      result_len = right_len + leny; /* length of `new_right` */
       if (result_len <= SHORT_LIMIT) {
         new_right = (char *)GC_MALLOC_ATOMIC(result_len + 1);
         if (new_right == 0)
@@ -261,7 +261,7 @@ CORD_cat_char_star(CORD x, const char *y, size_t leny)
     result_len = lenx + leny;
   }
   {
-    /* The general case; lenx, result_len is known: */
+    /* The general case; `lenx` and `result_len` are known. */
     CordRep *result = GC_NEW(CordRep);
 
     if (NULL == result)
@@ -362,7 +362,7 @@ gen_case:
     if (NULL == result)
       OUT_OF_MEMORY;
     result->generic.header = FN_HDR;
-    /* depth is already 0 */
+    /* The depth is already zero. */
     result->generic.len = (unsigned long)len;
     result->data.function.fn = fn;
     GC_PTR_STORE_AND_DIRTY(&result->data.function.client_data, client_data);
@@ -404,10 +404,10 @@ CORD_apply_access_fn(size_t i, void *client_data)
   return fn_cord->fn(i + descr->sa_index, fn_cord->client_data);
 }
 
-/* A version of CORD_substr that simply returns a function node, thus   */
-/* postponing its work. The fourth argument is a function that may      */
-/* be used for efficient access to the i-th character.                  */
-/* Assumes i >= 0 and i + n < length(x).                                */
+/* A variant of `CORD_substr` that simply returns a function node, thus */
+/* postponing its work.  The 4th argument is a function that may be     */
+/* used for efficient access to the `i`-th character.                   */
+/* Assumes `i >= 0` and `i + n < length(x)`.                            */
 static CORD
 CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
 {
@@ -424,12 +424,13 @@ CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
   return (CORD)result;
 }
 
-#define SUBSTR_LIMIT (10 * SHORT_LIMIT)
 /* Substrings of function nodes and flat strings shorter than   */
 /* this are flat strings.  Otherwise we use a functional        */
 /* representation, which is significantly slower to access.     */
+#define SUBSTR_LIMIT (10 * SHORT_LIMIT)
 
-/* A version of CORD_substr that assumes i >= 0, n > 0, i + n < length(x). */
+/* A variant of `CORD_substr` that assumes `i >= 0`, `n > 0`    */
+/* and `i + n < length(x)`.                                     */
 static CORD
 CORD_substr_checked(CORD x, size_t i, size_t n)
 {
@@ -526,7 +527,7 @@ CORD_substr(CORD x, size_t i, size_t n)
   return CORD_substr_checked(x, i, n);
 }
 
-/* See cord.h for definition.  We assume i is in range. */
+/* See `cord.h` file for definition.  We assume `i` is in range. */
 int
 CORD_iter5(CORD x, size_t i, CORD_iter_fn f1, CORD_batched_iter_fn f2,
            void *client_data)
@@ -648,24 +649,24 @@ CORD_riter(CORD x, CORD_iter_fn f1, void *client_data)
  * shorter ones to the new tree in the appropriate order, and then insert
  * the result into the forest.
  * Crucial invariants:
- * 1. The concatenation of the forest (in decreasing order) with the
- *     unscanned part of the rope is equal to the rope being balanced.
- * 2. All trees in the forest are balanced.
- * 3. forest[i] has depth at most i.
+ *   1. The concatenation of the forest (in decreasing order) with the
+ *      unscanned part of the rope is equal to the rope being balanced;
+ *   2. All trees in the forest are balanced;
+ *   3. `forest[i]` has depth at most `i`.
  */
 
 typedef struct {
   CORD c;
-  size_t len; /* Actual length of c   */
+  /* The actual length of `c`. */
+  size_t len;
 } ForestElement;
 
 static size_t min_len[CORD_MAX_DEPTH];
 
 static int min_len_init = 0;
 
-/* The string is the concatenation      */
-/* of the forest in order of DECREASING */
-/* indices.  forest[i].len >= fib(i+1)  */
+/* The string is the concatenation of `forest` in order of decreasing   */
+/* indices.  `forest[i].len >= fib(i + 1)` is assumed.                  */
 typedef ForestElement Forest[CORD_MAX_DEPTH];
 
 static void
@@ -700,11 +701,11 @@ CORD_init_forest(ForestElement *forest, size_t max_len)
   ABORT("Cord too long");
 }
 
-/* Add a leaf to the appropriate level in the forest, cleaning          */
-/* out lower levels as necessary.                                       */
-/* Also works if x is a balanced tree of concatenations; however        */
-/* in this case an extra concatenation node may be inserted above x;    */
-/* This node should not be counted in the statement of the invariants.  */
+/* Add a leaf to the appropriate level in `forest`, cleaning out lower  */
+/* levels as necessary.  Also works if `x` is a balanced tree of        */
+/* concatenations; however in this case an extra concatenation node     */
+/* may be inserted above `x`; this node should not be counted in the    */
+/* statement of the invariants.                                         */
 static void
 CORD_add_forest(ForestElement *forest, CORD x, size_t len)
 {
@@ -720,19 +721,19 @@ CORD_add_forest(ForestElement *forest, CORD x, size_t len)
     }
     i++;
   }
-  /* Sum has depth at most 1 greater than what would be required      */
-  /* for balance.                                                     */
+  /* `sum` has depth at most 1 greater than what would be required  */
+  /* for the balance.                                               */
   sum = CORD_cat(sum, x);
   sum_len += len;
-  /* If x was a leaf, then sum is now balanced.  To see this          */
-  /* consider the two cases in which forest[i-1] either is or is      */
-  /* not empty.                                                       */
+  /* If `x` was a leaf, then `sum` is now balanced.  To see this    */
+  /* consider the two cases in which `forest[i - 1]` either is or   */
+  /* is not empty.                                                  */
   while (sum_len >= min_len[i]) {
     if (forest[i].c != 0) {
       sum = CORD_cat(forest[i].c, sum);
       sum_len += forest[i].len;
-      /* This is again balanced, since sum was balanced, and has  */
-      /* allowable depth that differs from i by at most 1.        */
+      /* This is again balanced, since `sum` was balanced, and has  */
+      /* allowable depth that differs from `i` by at most 1.        */
       forest[i].c = 0;
     }
     i++;
@@ -759,9 +760,9 @@ CORD_concat_forest(ForestElement *forest, size_t expected_len)
   return sum;
 }
 
-/* Insert the frontier of x into forest.  Balanced subtrees are */
-/* treated as leaves.  This potentially adds one to the depth   */
-/* of the final tree.                                           */
+/* Insert the frontier of `x` into `forest`.  Balanced subtrees are */
+/* treated as leaves.  This potentially adds one to the depth of    */
+/* the final tree.                                                  */
 static void
 CORD_balance_insert(CORD x, size_t len, ForestElement *forest)
 {
@@ -800,11 +801,11 @@ CORD_balance(CORD x)
   return CORD_concat_forest(forest, len);
 }
 
-/* Position primitives  */
+/* The position primitives. */
 
 /* Private routines to deal with the hard cases only: */
 
-/* P contains a prefix of the  path to cur_pos. Extend it to a full     */
+/* `p` contains a prefix of the path to `cur_pos`. Extend it to a full  */
 /* path and set up leaf info.                                           */
 static void
 CORD_extend_path(CORD_pos p)
@@ -848,7 +849,7 @@ CORD_extend_path(CORD_pos p)
 char
 CORD__pos_fetch(CORD_pos p)
 {
-  /* Leaf is a function node */
+  /* Leaf is a function node. */
   const struct CORD_pe *pe;
   CORD leaf;
   const struct Function *f;
@@ -875,7 +876,7 @@ CORD__next(CORD_pos p)
   current_pe = &p[0].path[p[0].path_len];
   leaf = current_pe->pe_cord;
 
-  /* Leaf is not a string or we're at end of leaf */
+  /* Leaf is not a string or we are at end of leaf. */
   p[0].cur_pos = cur_pos;
   if (!CORD_IS_STRING(leaf)) {
     /* Function leaf.       */
@@ -902,9 +903,9 @@ CORD__next(CORD_pos p)
       return;
     }
   }
-  /* End of leaf      */
-  /* Pop the stack until we find two concatenation nodes with the     */
-  /* same start position: this implies we were in left part.          */
+  /* End of leaf.                                                   */
+  /* Pop the stack until we find two concatenation nodes with the   */
+  /* same start position: this implies we were in left part.        */
   {
     while (p[0].path_len > 0
            && current_pe[0].pe_start_pos != current_pe[-1].pe_start_pos) {
@@ -933,10 +934,10 @@ CORD__prev(CORD_pos p)
   if (p[0].cur_pos >= pe->pe_start_pos)
     return;
 
-  /* Beginning of leaf        */
+  /* Beginning of leaf. */
 
-  /* Pop the stack until we find two concatenation nodes with the     */
-  /* different start position: this implies we were in right part.    */
+  /* Pop the stack until we find two concatenation nodes with the   */
+  /* different start position: this implies we were in right part.  */
   {
     const struct CORD_pe *current_pe = &p[0].path[p[0].path_len];
 

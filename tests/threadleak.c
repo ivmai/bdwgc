@@ -11,7 +11,7 @@
 #include "gc/leak_detector.h"
 
 #ifdef GC_PTHREADS
-#  include <errno.h> /* for EAGAIN */
+#  include <errno.h> /* for `EAGAIN` */
 #  include <pthread.h>
 #  include <string.h>
 #else
@@ -77,11 +77,11 @@ main(void)
 #endif
 
 #ifndef NO_FIND_LEAK
-  /* Just in case the code is compiled without FIND_LEAK defined. */
+  /* Just in case the code is compiled without `FIND_LEAK` macro defined. */
   GC_set_find_leak(1);
 #endif
   GC_INIT();
-  /* This is optional if pthread_create() redirected. */
+  /* This is optional if `pthread_create()` is redirected. */
   GC_allow_register_threads();
 
 #if NTHREADS > 0

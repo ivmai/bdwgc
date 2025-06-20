@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-/* This is a very simple semaphore implementation based on pthreads.    */
+/* This is a very simple semaphore implementation based on `pthreads`.  */
 /* It is not async-signal safe.  But this is not a problem because      */
 /* signals are not used to suspend threads on the target.               */
 

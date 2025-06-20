@@ -13,16 +13,18 @@
  * modified is included with the above copyright notice.
  */
 
-/* Private declarations of GC marker data structures (like the mark     */
-/* stack) and macros.  Needed by the marker and the client-supplied     */
-/* mark routines.  Transitively include gc_priv.h.                      */
+/* Private declarations of the collector marker data structures (like   */
+/* the mark stack) and macros.  Needed by the marker and the            */
+/* client-supplied mark routines.  Transitively includes `gc_priv.h`    */
+/* file.                                                                */
 
 #ifndef GC_PMARK_H
 #define GC_PMARK_H
 
 #if defined(HAVE_CONFIG_H) && !defined(GC_PRIVATE_H)
-/* When gc_pmark.h is included from gc_priv.h, some of macros might   */
-/* be undefined in gcconfig.h, so skip config.h in this case.         */
+/* When `gc_pmark.h` file is included from `gc_priv.h` file, some of    */
+/* macros might be undefined in `gcconfig.h` file, so skip `config.h`   */
+/* file in this case.                                                   */
 #  include "config.h"
 #endif
 
@@ -45,11 +47,12 @@
 
 EXTERN_C_BEGIN
 
-/* The real declarations of the following is in gc_priv.h, so that      */
-/* we can avoid scanning GC_mark_procs table.                           */
+/* The real declarations of the following is in `gc_priv.h` file, so    */
+/* that we can avoid scanning `GC_mark_procs` table.                    */
 
 /* Mark descriptor stuff that should remain private for now, mostly     */
-/* because it's hard to export CPP_WORDSZ without including gcconfig.h. */
+/* because it is hard to export `CPP_WORDSZ` macro without include      */
+/* `gcconfig.h` file.                                                   */
 #define BITMAP_BITS (CPP_WORDSZ - GC_DS_TAG_BITS)
 #define PROC(descr) \
   (GC_mark_procs[((descr) >> GC_DS_TAG_BITS) & (GC_MAX_MARK_PROCS - 1)])
@@ -65,43 +68,40 @@ GC_EXTERN unsigned GC_n_mark_procs;
 /*
  * Allow multiple threads to participate in the marking process.
  * This works roughly as follows:
- *  The main mark stack never shrinks, but it can grow.
- *
- *  The initiating threads holds the allocator lock, sets GC_help_wanted.
- *
- *  Other threads:
- *     1) update helper_count (while holding the mark lock).
- *     2) allocate a local mark stack
- *     repeatedly:
- *          3) Steal a global mark stack entry by atomically replacing
- *             its descriptor with 0.
- *          4) Copy it to the local stack.
- *          5) Mark on the local stack until it is empty, or
- *             it may be profitable to copy it back.
- *          6) If necessary, copy local stack to global one,
- *             holding the mark lock.
- *    7) Stop when the global mark stack is empty.
- *    8) decrement helper_count (holding the mark lock).
+ *   - The main mark stack never shrinks, but it can grow.
+ *   - The initiating threads holds the allocator lock, sets
+ *     `GC_help_wanted`.
+ *   - Other threads:
+ *     1. Update `GC_helper_count` (while holding the mark lock).
+ *     2. Allocate a local mark stack repeatedly:
+ *        2.1. Steal a global mark stack entry by atomically replacing
+ *             its descriptor with 0;
+ *        2.2. Copy it to the local stack;
+ *        2.3. Mark on the local stack until it is empty, or it may be
+ *             profitable to copy it back;
+ *        2.4. If necessary, copy local stack to global one, holding the
+ *             mark lock;
+ *        2.5. Stop when the global mark stack is empty.
+ *     3. Decrement `GC_helper_count` (holding the mark lock).
  *
  * This is an experiment to see if we can do something along the lines
  * of the University of Tokyo SGC in a less intrusive, though probably
  * also less performant, way.
  */
 
-/* GC_mark_stack_top is protected by the mark lock. */
+/* `GC_mark_stack_top` is protected by the mark lock. */
 
 /*
- * GC_notify_all_marker() is used when GC_help_wanted is first set,
- * when the last helper becomes inactive,
- * when something is added to the global mark stack, and just after
- * GC_mark_no is incremented.
- * This could be split into multiple CVs (and probably should be to
- * scale to really large numbers of processors.)
+ * `GC_notify_all_marker()` is used when `GC_help_wanted` is first set,
+ * when the last helper becomes inactive, when something is added to the
+ * global mark stack, and just after `GC_mark_no` is incremented.
+ * This could be split into multiple conditional variables (and probably
+ * should be) to scale to really large numbers of processors.
  */
 #endif /* PARALLEL_MARK */
 
-/* Push the object obj with corresponding heap block header hhdr onto   */
-/* the mark stack.  Returns the updated mark_stack_top value.           */
+/* Push the object `obj` with corresponding heap block header `hhdr`    */
+/* onto the mark stack.  Returns the updated `mark_stack_top` value.    */
 GC_INLINE mse *
 GC_push_obj(ptr_t obj, const hdr *hhdr, mse *mark_stack_top,
             mse *mark_stack_limit)
@@ -114,17 +114,17 @@ GC_push_obj(ptr_t obj, const hdr *hhdr, mse *mark_stack_top,
   return mark_stack_top;
 }
 
-/* Push the contents of current onto the mark stack if it is a valid    */
-/* ptr to a currently unmarked object.  Mark it.                        */
+/* Push the contents of `current` onto the mark stack if it is a valid  */
+/* pointer to a currently unmarked object.  Mark it.                    */
 #define PUSH_CONTENTS(current, mark_stack_top, mark_stack_limit, source)   \
   do {                                                                     \
     hdr *my_hhdr;                                                          \
-    HC_GET_HDR(current, my_hhdr, source); /* contains "break" */           \
+    HC_GET_HDR(current, my_hhdr, source); /* contains `break` */           \
     mark_stack_top = GC_push_contents_hdr(                                 \
         current, mark_stack_top, mark_stack_limit, source, my_hhdr, TRUE); \
   } while (0)
 
-/* Set mark bit, exit (using "break" statement) if it is already set.   */
+/* Set mark bit, exit (using `break` statement) if it is already set.   */
 #ifdef USE_MARK_BYTES
 #  if defined(PARALLEL_MARK) && defined(AO_HAVE_char_store) \
       && !defined(BASE_ATOMIC_OPS_EMULATED)
@@ -132,7 +132,7 @@ GC_push_obj(ptr_t obj, const hdr *hhdr, mse *mark_stack_top,
 /* concurrent case.  This can result in the object being pushed     */
 /* twice.  But that is only a performance issue.                    */
 #    define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no)                 \
-      { /* cannot use do-while(0) here */                          \
+      { /* cannot use `do ... while (0)` here */                   \
         volatile unsigned char *mark_byte_addr                     \
             = (unsigned char *)(hhdr)->hb_marks + (bit_no);        \
         /* Unordered atomic load and store are sufficient here. */ \
@@ -142,7 +142,7 @@ GC_push_obj(ptr_t obj, const hdr *hhdr, mse *mark_stack_top,
       }
 #  else
 #    define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no)                 \
-      { /* cannot use do-while(0) here */                          \
+      { /* cannot use `do ... while (0)` here */                   \
         ptr_t mark_byte_addr = (ptr_t)(hhdr)->hb_marks + (bit_no); \
                                                                    \
         if (*mark_byte_addr != 0)                                  \
@@ -157,11 +157,11 @@ GC_push_obj(ptr_t obj, const hdr *hhdr, mse *mark_stack_top,
 #    else
 #      define MARK_WORD_READ(addr) (*(addr))
 #    endif
-/* This is used only if we explicitly set USE_MARK_BITS.            */
+/* This is used only if we explicitly set `USE_MARK_BITS`.          */
 /* The following may fail to exit even if the bit was already set.  */
-/* For our uses, that's benign:                                     */
+/* For our uses, that is benign.                                    */
 #    define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no)                            \
-      { /* cannot use do-while(0) here */                                     \
+      { /* cannot use `do ... while (0)` here */                              \
         volatile AO_t *mark_word_addr = (hhdr)->hb_marks + divWORDSZ(bit_no); \
         word my_bits = (word)1 << modWORDSZ(bit_no);                          \
                                                                               \
@@ -171,7 +171,7 @@ GC_push_obj(ptr_t obj, const hdr *hhdr, mse *mark_stack_top,
       }
 #  else /* !PARALLEL_MARK */
 #    define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no)                   \
-      { /* cannot use do-while(0) here */                            \
+      { /* cannot use `do ... while (0)` here */                     \
         word *mark_word_addr = (hhdr)->hb_marks + divWORDSZ(bit_no); \
         word old = *mark_word_addr;                                  \
         word my_bits = (word)1 << modWORDSZ(bit_no);                 \
@@ -196,27 +196,27 @@ GC_push_obj(ptr_t obj, const hdr *hhdr, mse *mark_stack_top,
 #  define TRACE_TARGET(source, cmd)
 #endif
 
-/* If the mark bit corresponding to current is not set, set it, and     */
-/* push the contents of the object on the mark stack.  Current points   */
+/* If the mark bit corresponding to `current` is not set, set it, and   */
+/* push the contents of the object on the mark stack.  `current` points */
 /* to the beginning of the object.  We rely on the fact that the        */
 /* preceding header calculation will succeed for a pointer past the     */
 /* first page of an object, only if it is in fact a valid pointer       */
-/* to the object.  Thus we can omit the otherwise necessary tests       */
-/* here.  Note in particular that the "displ" value is the displacement */
-/* from the beginning of the heap block, which may itself be in the     */
-/* interior of a large object.                                          */
+/* to the object.  Thus we can omit the otherwise necessary tests here. */
 GC_INLINE mse *
 GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
                      ptr_t source, hdr *hhdr, GC_bool do_offset_check)
 {
   do {
-    size_t displ = HBLKDISPL(current); /* Displacement in block; in bytes. */
-    /* displ is always within range.  If current doesn't point to the   */
-    /* first block, then we are in the all_interior_pointers case, and  */
-    /* it is safe to use any displacement value.                        */
+    /* Displacement in block; in bytes; always within range.  Note, in  */
+    /* particular, that this value is the displacement from the         */
+    /* beginning of the heap block, which may itself be in the interior */
+    /* of a large object.  If `current` does not point to the first     */
+    /* block, then we are in the all-interior-pointers mode, and it is  */
+    /* safe to use any displacement value.                              */
+    size_t displ = HBLKDISPL(current);
     ptr_t base = current;
 #ifdef MARK_BIT_PER_OBJ
-    unsigned32 gran_displ; /* high_prod */
+    unsigned32 gran_displ; /* `high_prod` */
     unsigned32 inv_sz = hhdr->hb_inv_sz;
 
 #else
@@ -234,14 +234,14 @@ GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
       if ((hhdr->hb_flags & LARGE_BLOCK) != 0)
 #endif
       {
-        /* gran_offset is bogus.        */
+        /* `gran_offset` is bogus. */
         size_t obj_displ;
 
         base = (ptr_t)hhdr->hb_block;
         obj_displ = (size_t)(current - base);
         if (obj_displ != displ) {
           GC_ASSERT(obj_displ < hhdr->hb_sz);
-          /* Must be in all_interior_pointer case, not first block      */
+          /* Must be in all-interior-pointers mode, non-first block     */
           /* already did validity check on cache miss.                  */
         } else if (do_offset_check && !GC_valid_offsets[obj_displ]) {
           GC_ADD_TO_BLACK_LIST_NORMAL(current, source);
@@ -262,7 +262,7 @@ GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
           size_t obj_displ;
 
 #ifdef MARK_BIT_PER_OBJ
-          /* Accurate enough if HBLKSIZE <= 2**15.    */
+          /* Accurate enough if `HBLKSIZE` is not greater than 2**15. */
           GC_STATIC_ASSERT(HBLKSIZE <= (1 << 15));
           obj_displ = (((low_prod >> 16) + 1) * hhdr->hb_sz) >> 16;
 #else
@@ -290,7 +290,7 @@ GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
 #endif
     TRACE(source, GC_log_printf("GC #%lu: passed validity tests\n",
                                 (unsigned long)GC_gc_no));
-    SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ); /* contains "break" */
+    SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ); /* contains `break` */
     TRACE(source, GC_log_printf("GC #%lu: previously unmarked\n",
                                 (unsigned long)GC_gc_no));
     TRACE_TARGET(base, GC_log_printf("GC #%lu: marking %p from %p instead\n",
@@ -310,14 +310,14 @@ GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
 #  define PUSH_ONE_CHECKED_STACK(p, source) GC_mark_and_push_stack(p)
 #endif
 
-/* Push a single value onto mark stack. Mark from the object        */
-/* pointed to by p.  The argument should be of ptr_t type.          */
-/* Invoke FIXUP_POINTER() before any further processing.  p is      */
+/* Push a single value onto mark stack.  Mark from the object       */
+/* pointed to by `p`.  The argument should be of `ptr_t` type.      */
+/* Invoke `FIXUP_POINTER()` before any further processing.  `p` is  */
 /* considered valid even if it is an interior pointer.  Previously  */
 /* marked objects are not pushed.  Hence we make progress even      */
 /* if the mark stack overflows.                                     */
 #ifdef NEED_FIXUP_POINTER
-/* Try both the raw version and the fixed up one.   */
+/* Try both the raw variant and the fixed up one.   */
 #  define GC_PUSH_ONE_STACK(p, source)                              \
     do {                                                            \
       ptr_t pp = (p);                                               \
@@ -342,7 +342,8 @@ GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
     } while (0)
 #endif
 
-/* As above, but interior pointer recognition as for normal heap pointers. */
+/* Same as `GC_PUSH_ONE_STACK`, but interior pointer recognition as */
+/* for normal heap pointers.                                        */
 #define GC_PUSH_ONE_HEAP(p, source, mark_stack_top)                   \
   do {                                                                \
     FIXUP_POINTER(p);                                                 \
@@ -352,10 +353,9 @@ GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
           p, mark_stack_top, GC_mark_stack_limit, (void **)(source)); \
   } while (0)
 
-/* Mark starting at mark stack entry top (incl.) down to        */
-/* mark stack entry bottom (incl.).  Stop after performing      */
-/* about one page worth of work.  Return the new mark stack     */
-/* top entry.                                                   */
+/* Mark starting at mark stack entry `top` (incl.) down to mark stack   */
+/* entry `bottom` (incl.).  Stop after performing about one page worth  */
+/* of work.  Return the new value of mark stack entry `top`.            */
 GC_INNER mse *GC_mark_from(mse *top, mse *bottom, mse *limit);
 
 #define MARK_FROM_MARK_STACK()                                       \
@@ -368,20 +368,20 @@ GC_INNER mse *GC_mark_from(mse *top, mse *bottom, mse *limit);
 /* Current state of marking, as follows.  We say something is dirty if  */
 /* it was written since the last time we retrieved dirty bits.  We say  */
 /* it is grungy if it was marked dirty in the last set of bits we       */
-/* retrieved.  Invariant "I": all roots and marked objects p are either */
-/* dirty, or point to objects q that are either marked or a pointer to  */
-/* q appears in a range on the mark stack.                              */
+/* retrieved.  Invariant "I": all roots and marked objects `p` are      */
+/* either dirty, or point to objects `q` that are either marked or      */
+/* a pointer to `q` appears in a range on the mark stack.               */
 
 /* No marking in progress.  "I" holds.  Mark stack is empty.            */
 #define MS_NONE 0
 
 /* Rescuing objects are currently being pushed.  "I" holds, except that */
 /* grungy roots may point to unmarked objects, as may marked grungy     */
-/* objects above GC_scan_ptr.                                           */
+/* objects above `GC_scan_ptr`.                                         */
 #define MS_PUSH_RESCUERS 1
 
 /* Uncollectible objects are currently being pushed.  "I" holds, except */
-/* that marked uncollectible objects above GC_scan_ptr may point to     */
+/* that marked uncollectible objects above `GC_scan_ptr` may point to   */
 /* unmarked objects.  Roots may point to unmarked objects too.          */
 #define MS_PUSH_UNCOLLECTABLE 2
 
@@ -389,7 +389,7 @@ GC_INNER mse *GC_mark_from(mse *top, mse *bottom, mse *limit);
 #define MS_ROOTS_PUSHED 3
 
 /* "I" may not hold, e.g. because of the mark stack overflow.  However, */
-/* marked heap objects below GC_scan_ptr point to marked or stacked     */
+/* marked heap objects below `GC_scan_ptr` point to marked or stacked   */
 /* objects.                                                             */
 #define MS_PARTIALLY_INVALID 4
 

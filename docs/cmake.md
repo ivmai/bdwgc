@@ -1,6 +1,6 @@
 # Building bdwgc with CMake
 
-Unix and Win32 binaries (both 32- and 64-bit) can be built using CMake.
+UNIX and Win32 binaries (both 32- and 64-bit) can be built using CMake.
 CMake is an open-source tool like [`automake`](autoconf.md) - it generates
 makefiles.
 

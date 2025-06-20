@@ -1,4 +1,4 @@
-# Makefile to build Hans Boehm garbage collector using the Digital Mars
+# Makefile to build the garbage collector library using the Digital Mars
 # compiler from www.digitalmars.com
 # Written by Walter Bright
 
@@ -41,7 +41,7 @@ gc.def: digimars.mak
 	echo GC_is_visible_print_proc >>gc.def
 	echo GC_is_valid_displacement_print_proc >>gc.def
 
-# FIXME: building cord as DLL results in cordtest fail.
+# FIXME: building `cord` as DLL results in `cordtest` fail.
 cord.lib: cord\cordbscs.obj cord\cordprnt.obj cord\cordxtra.obj
 	lib -c cord.lib cord\cordbscs.obj cord\cordprnt.obj cord\cordxtra.obj
 

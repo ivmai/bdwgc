@@ -11,16 +11,14 @@
  * modified is included with the above copyright notice.
  */
 
-/*
-This implementation module for gc_cpp.h provides an implementation of
-the global operators "new" and "delete" that calls the Boehm
-allocator.  All objects allocated by this implementation will be
-uncollectible but part of the root set of the collector.
-
-You should ensure (using implementation-dependent techniques) that the
-linker finds this module before the library that defines the default
-built-in "new" and "delete".
-*/
+// This implementation module for `gc_cpp.h` file provides an implementation
+// of the global operators `new`/`delete` that calls the memory allocator of
+// the collector.  All objects allocated by this implementation will be
+// uncollectible but part of the root set of the collector.
+//
+// You should ensure (using implementation-dependent techniques) that the
+// linker finds this module before the library that defines the default
+// built-in operators `new` and `delete`.
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -45,7 +43,7 @@ built-in "new" and "delete".
 #  if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 #    define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()
 #  else
-// Use bad_alloc() directly instead of GC_throw_bad_alloc() call.
+// Use `bad_alloc()` directly instead of `GC_throw_bad_alloc()` call.
 #    define GC_ALLOCATOR_THROW_OR_ABORT() throw std::bad_alloc()
 #  endif
 
@@ -59,9 +57,9 @@ operator new(GC_SIZE_T size) GC_DECL_NEW_THROW
 }
 
 #  ifdef _MSC_VER
-// This new operator is used by VC++ in case of Debug builds.
+// This operator `new` is used by VC++ in case of `Debug` builds.
 void *
-operator new(GC_SIZE_T size, int /* nBlockUse */, const char *szFileName,
+operator new(GC_SIZE_T size, int /* `nBlockUse` */, const char *szFileName,
              int nLine)
 {
 #    ifdef GC_DEBUG
@@ -108,7 +106,7 @@ operator new[](GC_SIZE_T size) GC_DECL_NEW_THROW
 }
 
 #    ifdef _MSC_VER
-// This new operator is used by VC++ 7+ in Debug builds.
+// This operator `new` is used by VC++ 7 (or later) in `Debug` builds.
 void *
 operator new[](GC_SIZE_T size, int nBlockUse, const char *szFileName,
                int nLine)

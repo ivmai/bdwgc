@@ -8,16 +8,16 @@
 // modified is included with the above copyright notice.
 
 // A script to build and test the collector using Zig build system.
-// The script matches CMakeLists.txt as much as possible.
+// This script matches `CMakeLists.txt` file as much as possible.
 
 const builtin = @import("builtin");
 const std = @import("std");
 
 const zig_min_required_version = "0.14.0";
 
-// TODO: specify PACKAGE_VERSION and LIB*_VER_INFO.
+// TODO: specify `PACKAGE_VERSION` and `LIB*_VER_INFO`.
 
-// Compared to the CMake script, some definitions and compiler options
+// Compared to the `cmake` script, some definitions and compiler options
 // are hard-coded here, which is natural because build.zig is only built with
 // the Zig build system and Zig ships with an embedded clang (as of zig 0.14).
 // As a consequence, we do not have to support lots of different compilers
@@ -25,7 +25,7 @@ const zig_min_required_version = "0.14.0";
 // native compiler).
 // And, on the contrary, we know exactly what we get and thus we can align on
 // clang's capabilities rather than having to discover compiler capabilities.
-// Similarly, since Zig ships libc headers for many platforms, we can, with
+// Similarly, since Zig ships `libc` headers for many platforms, we can, with
 // the knowledge of the platform, determine what capabilities should be
 // enabled or not.
 
@@ -56,7 +56,7 @@ pub fn build(b: *std.Build) void {
                                 "Build cord library") orelse true;
     const cflags_extra = b.option([]const u8, "CFLAGS_EXTRA",
                                   "Extra user-defined cflags") orelse "";
-    // TODO: support enable_docs
+    // TODO: support `enable_docs`
     const enable_threads = b.option(bool, "enable_threads",
                 "Support threads") orelse default_enable_threads;
     const enable_parallel_mark = b.option(bool, "enable_parallel_mark",
@@ -125,10 +125,10 @@ pub fn build(b: *std.Build) void {
         "Attempt to ensure a usable collector after fork()") orelse true;
     const disable_handle_fork = b.option(bool, "disable_handle_fork",
         "Prohibit installation of pthread_atfork() handlers") orelse false;
-    // TODO: support enable_emscripten_asyncify
+    // TODO: support `enable_emscripten_asyncify`
     const install_headers = b.option(bool, "install_headers",
         "Install header and pkg-config metadata files") orelse true;
-    // TODO: support with_libatomic_ops, without_libatomic_ops
+    // TODO: support `with_libatomic_ops`, `without_libatomic_ops`
 
     var source_files = std.ArrayList([]const u8).init(b.allocator);
     defer source_files.deinit();
@@ -146,7 +146,7 @@ pub fn build(b: *std.Build) void {
         "-Wpedantic",
     }) catch unreachable;
 
-    // Disable MS crt security warnings reported e.g. for getenv, strcpy.
+    // Disable MS `crt` security warnings reported e.g. for `getenv`, `strcpy`.
     if (t.abi == .msvc) {
         flags.append("-D _CRT_SECURE_NO_DEPRECATE") catch unreachable;
     }
@@ -178,11 +178,11 @@ pub fn build(b: *std.Build) void {
         if (enable_parallel_mark) {
             flags.append("-D PARALLEL_MARK") catch unreachable;
         }
-        if (t.os.tag != .windows) { // assume pthreads
+        if (t.os.tag != .windows) { // assume `pthreads`
             // TODO: support cygwin when supported by zig
             // Zig comes with clang which supports GCC atomic intrinsics.
             flags.append("-D GC_BUILTIN_ATOMIC") catch unreachable;
-            // TODO: define and use THREADDLLIBS_LIST
+            // TODO: define and use `THREADDLLIBS_LIST`
             source_files.appendSlice(&.{
                 "gc_dlopen.c",
                 "pthread_start.c",
@@ -195,7 +195,7 @@ pub fn build(b: *std.Build) void {
             }
             // Common defines for POSIX platforms.
             flags.append("-D _REENTRANT") catch unreachable;
-            // TODO: some targets might need _PTHREADS defined too.
+            // TODO: some targets might need `_PTHREADS` defined too.
             if (enable_thread_local_alloc) {
                 flags.append("-D THREAD_LOCAL_ALLOC") catch unreachable;
                 source_files.appendSlice(&.{
@@ -203,7 +203,7 @@ pub fn build(b: *std.Build) void {
                     "thread_local_alloc.c",
                 }) catch unreachable;
             }
-            // Message for clients: Explicit GC_INIT() calls may be required.
+            // Message for clients: Explicit `GC_INIT` call may be required.
             if (enable_handle_fork and !disable_handle_fork) {
                 flags.append("-D HANDLE_FORK") catch unreachable;
             }
@@ -215,20 +215,22 @@ pub fn build(b: *std.Build) void {
             flags.append("-D GC_BUILTIN_ATOMIC") catch unreachable;
             if (enable_thread_local_alloc
                     and (enable_parallel_mark or !build_shared_libs)) {
-                // Imply THREAD_LOCAL_ALLOC unless GC_DLL.
+                // Imply `THREAD_LOCAL_ALLOC` unless `GC_DLL`.
                 flags.append("-D THREAD_LOCAL_ALLOC") catch unreachable;
                 source_files.append("thread_local_alloc.c") catch unreachable;
             }
             flags.append("-D EMPTY_GETENV_RESULTS") catch unreachable;
             source_files.appendSlice(&.{
-                "pthread_start.c", // just if client defines GC_WIN32_PTHREADS
+                // Add `pthread_start.c` file just in case client defines
+                // `GC_WIN32_PTHREADS` macro.
+                "pthread_start.c",
                 "pthread_support.c",
                 "win32_threads.c",
             }) catch unreachable;
         }
     }
 
-    // TODO: define/use NEED_LIB_RT
+    // TODO: define/use `NEED_LIB_RT`
 
     if (disable_handle_fork) {
         flags.append("-D NO_HANDLE_FORK") catch unreachable;
@@ -236,8 +238,8 @@ pub fn build(b: *std.Build) void {
 
     if (enable_gcj_support) {
         flags.append("-D GC_GCJ_SUPPORT") catch unreachable;
-        // TODO: do not define GC_ENABLE_SUSPEND_THREAD on kFreeBSD
-        // if enable_thread_local_alloc (a workaround for some bug).
+        // TODO: do not define `GC_ENABLE_SUSPEND_THREAD` on kFreeBSD
+        // if `enable_thread_local_alloc` (a workaround for some bug).
         flags.append("-D GC_ENABLE_SUSPEND_THREAD") catch unreachable;
         source_files.append("gcj_mlc.c") catch unreachable;
     }
@@ -268,7 +270,7 @@ pub fn build(b: *std.Build) void {
         flags.append("-D KEEP_BACK_PTRS") catch unreachable;
         if (t.os.tag == .linux) {
             flags.append("-D MAKE_BACK_GRAPH") catch unreachable;
-            // TODO: do not define SAVE_CALL_COUNT for e2k
+            // TODO: do not define `SAVE_CALL_COUNT` for e2k
             flags.append("-D SAVE_CALL_COUNT=8") catch unreachable;
             source_files.append("backgraph.c") catch unreachable;
         }
@@ -352,17 +354,17 @@ pub fn build(b: *std.Build) void {
         }
     }
 
-    // Add implementation of backtrace() and backtrace_symbols().
+    // Add implementation of `backtrace` and `backtrace_symbols`.
     if (t.abi == .msvc) {
         source_files.append("extra/msvc_dbg.c") catch unreachable;
     }
 
     // TODO: declare that the libraries do not refer to external symbols
-    // of build_shared_libs.
+    // of `build_shared_libs`.
 
-    // zig cc supports this flag.
+    // `zig cc` supports this flag.
     flags.appendSlice(&.{
-        // TODO: -Wno-unused-command-line-argument
+        // TODO: `-Wno-unused-command-line-argument`
         // Prevent "__builtin_return_address with nonzero argument is unsafe".
         "-Wno-frame-address",
     }) catch unreachable;
@@ -370,17 +372,17 @@ pub fn build(b: *std.Build) void {
     if (build_shared_libs) {
         flags.append("-D GC_DLL") catch unreachable;
         if (t.abi == .msvc) {
-            // TODO: depend on user32.lib instead
+            // TODO: depend on `user32.lib` file instead
             flags.append("-D DONT_USE_USER32_DLL") catch unreachable;
         } else {
-            // zig cc supports these flags.
+            // `zig cc` supports these flags.
             flags.append("-D GC_VISIBILITY_HIDDEN_SET") catch unreachable;
             flags.append("-fvisibility=hidden") catch unreachable;
         }
     } else {
         flags.append("-D GC_NOT_DLL") catch unreachable;
         if (t.os.tag == .windows) {
-            // Do not require the clients to link with "user32" system library.
+            // Do not require the clients to link with `user32` system library.
             flags.append("-D DONT_USE_USER32_DLL") catch unreachable;
         }
     }
@@ -388,12 +390,13 @@ pub fn build(b: *std.Build) void {
     // Note: Zig uses clang which ships with these so, unless another
     // sysroot/libc, etc. headers location is pointed out, it is fine to
     // hard-code enable this.
-    // -U GC_MISSING_EXECINFO_H
-    // -U GC_NO_SIGSETJMP
+    // `-U GC_MISSING_EXECINFO_H`
+    // `-U GC_NO_SIGSETJMP`
     flags.append("-D HAVE_SYS_TYPES_H") catch unreachable;
 
     if (t.abi == .msvc) {
-        // To workaround "extension used" error reported for __try/finally.
+        // To workaround "extension used" error reported
+        // for `__try`/`__finally`.
         flags.append("-D NO_SEH_AVAILABLE") catch unreachable;
     } else {
         flags.append("-D HAVE_UNISTD_H") catch unreachable;
@@ -405,30 +408,30 @@ pub fn build(b: *std.Build) void {
     }
 
     if (!t.os.tag.isDarwin() and t.os.tag != .windows) {
-        // dl_iterate_phdr exists (as a strong symbol).
+        // `dl_iterate_phdr` exists (as a strong symbol).
         flags.append("-D HAVE_DL_ITERATE_PHDR") catch unreachable;
         if (enable_threads) {
-            // pthread_sigmask() and sigset_t are available and needed.
+            // `pthread_sigmask` and `sigset_t` are available and needed.
             flags.append("-D HAVE_PTHREAD_SIGMASK") catch unreachable;
         }
     }
 
-    // Build with GC_wcsdup() support (wcslen is available).
+    // Build with `GC_wcsdup` support (`wcslen` is available).
     flags.append("-D GC_REQUIRE_WCSDUP") catch unreachable;
 
-    // pthread_setname_np, if available, may have 1, 2 or 3 arguments.
+    // `pthread_setname_np`, if available, may have 1, 2 or 3 arguments.
     if (t.os.tag.isDarwin()) {
         flags.append("-D HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID")
                 catch unreachable;
     } else if (t.os.tag == .linux) {
         flags.append("-D HAVE_PTHREAD_SETNAME_NP_WITH_TID") catch unreachable;
     } else {
-        // TODO: support HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG
-        // and HAVE_PTHREAD_SET_NAME_NP targets.
+        // TODO: support `HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG`
+        // and `HAVE_PTHREAD_SET_NAME_NP` targets.
     }
 
     if (t.os.tag != .windows) {
-        // Define to use 'dladdr' function (used for debugging).
+        // Define to use `dladdr` function (used for debugging).
         flags.append("-D HAVE_DLADDR") catch unreachable;
     }
 
@@ -463,7 +466,7 @@ pub fn build(b: *std.Build) void {
         }
     }
 
-    // TODO: convert VER_INFO values to [SO]VERSION ones
+    // TODO: convert `VER_INFO` values to `VERSION`, `SOVERSION` ones
     const gc = b.addLibrary(.{
         .linkage = if (build_shared_libs) .dynamic else .static,
         .name = "gc",
@@ -501,7 +504,7 @@ pub fn build(b: *std.Build) void {
         gccpp.linkLibrary(gc);
         linkLibCpp(gccpp);
         if (enable_throw_bad_alloc_library) {
-            // The same as gccpp but contains only gc_badalc.
+            // The same as `gccpp` but contains only `gc_badalc`.
             gctba = b.addLibrary(.{
                 .linkage = if (build_shared_libs) .dynamic else .static,
                 .name = "gctba",
@@ -562,7 +565,7 @@ pub fn build(b: *std.Build) void {
             installHeader(b, gccpp, "gc/gc_allocator.h");
             installHeader(b, gccpp, "gc/gc_cpp.h");
             if (enable_throw_bad_alloc_library) {
-                // The same headers as gccpp library has.
+                // The same headers as `gccpp` library has.
                 installHeader(b, gctba, "gc_cpp.h");
                 installHeader(b, gctba, "gc/gc_allocator.h");
                 installHeader(b, gctba, "gc/gc_cpp.h");
@@ -582,7 +585,7 @@ pub fn build(b: *std.Build) void {
             installHeader(b, cord, "gc/cord_pos.h");
             installHeader(b, cord, "gc/ec.h");
         }
-        // TODO: compose and install bdw-gc.pc and pkgconfig.
+        // TODO: compose and install `bdw-gc.pc` and `pkgconfig`.
     }
 
     b.installArtifact(gc);
@@ -596,21 +599,21 @@ pub fn build(b: *std.Build) void {
         b.installArtifact(cord);
     }
 
-    // Note: there is no "build_tests" option, as the tests are built
-    // only if "test" step is requested.
+    // Note: there is no `build_tests` option, as the tests are built
+    // only if `test` step is requested.
     const test_step = b.step("test", "Run tests");
     addTest(b, gc, test_step, flags, "gctest", "tests/gctest.c");
     if (build_cord) {
         addTestExt(b, gc, cord, test_step, flags,
                    "cordtest", "cord/tests/cordtest.c");
-        // TODO: add de test (Windows only)
+        // TODO: add `de` test (Windows only)
     }
     addTest(b, gc, test_step, flags, "hugetest", "tests/huge.c");
     addTest(b, gc, test_step, flags, "leaktest", "tests/leak.c");
     addTest(b, gc, test_step, flags, "middletest", "tests/middle.c");
     addTest(b, gc, test_step, flags, "realloctest", "tests/realloc.c");
     addTest(b, gc, test_step, flags, "smashtest", "tests/smash.c");
-    // TODO: add staticroots test
+    // TODO: add `staticroots` test
     if (enable_gc_debug) {
         addTest(b, gc, test_step, flags, "tracetest", "tests/trace.c");
     }

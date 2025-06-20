@@ -37,8 +37,9 @@
 /* If available, use GCC built-in atomic load-acquire and store-release */
 /* primitives to access the cache lines safely.  Otherwise, fall back   */
 /* to using the allocator lock even during the cache lines reading.     */
-/* Note: for simplicity of libcord building, do not rely on GC_THREADS  */
-/* macro, libatomic_ops package presence and private/gc_atomic_ops.h.   */
+/* Note: for simplicity of `cord` library building, do not rely on      */
+/* `GC_THREADS` macro, `libatomic_ops` package presence and             */
+/* `private/gc_atomic_ops.h` file.                                      */
 #if !defined(AO_DISABLE_GCC_ATOMICS)                                  \
     && ((defined(__clang__) && __clang_major__ >= 8) /* clang 8.0+ */ \
         || (defined(__GNUC__)                        /* gcc 5.4+ */   \
@@ -46,7 +47,8 @@
 #  define CORD_USE_GCC_ATOMIC
 #endif
 
-/* The standard says these are in stdio.h, but they aren't always: */
+/* The standard says these are in the platform `stdio.h` file, but they */
+/* are not always.                                                      */
 #ifndef SEEK_SET
 #  define SEEK_SET 0
 #endif
@@ -54,7 +56,7 @@
 #  define SEEK_END 2
 #endif
 
-/* Size of stack allocated buffers when we want large buffers.  */
+/* Size of stack-allocated buffers when we want large buffers. */
 #define BUFSZ 2048
 
 #define OUT_OF_MEMORY       \
@@ -137,10 +139,9 @@ CORD_batched_fill_proc(const char *s, void *client_data)
   return 0;
 }
 
-/* Fill buf with len characters starting at i.  */
-/* Assumes len characters are available in buf. */
-/* Return 1 if buf is filled fully (and len is  */
-/* non-zero), 0 otherwise.                      */
+/* Fill `buf` with `len` characters starting at `i`.  Assumes `len` */
+/* characters are available in `buf`.  Return 1 if `buf` is filled  */
+/* up fully (and `len` is non-zero), 0 otherwise.                   */
 static int
 CORD_fill_buf(CORD x, size_t i, size_t len, char *buf)
 {
@@ -187,7 +188,7 @@ CORD_cmp(CORD x, CORD y)
       CORD_next(xpos);
       CORD_next(ypos);
     } else {
-      /* process as many characters as we can */
+      /* Process as many characters as we can. */
       int result;
 
       if (avail > yavail)
@@ -234,7 +235,7 @@ CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
       CORD_next(ypos);
       count++;
     } else {
-      /* Process as many characters as we can.    */
+      /* Process as many characters as we can.  */
       int result;
 
       if (avail > yavail)
@@ -331,8 +332,10 @@ CORD_put(CORD x, FILE *f)
 }
 
 typedef struct {
-  size_t pos;  /* Current position in the cord */
-  char target; /* Character we're looking for  */
+  /* The current position in the cord. */
+  size_t pos;
+  /* The character we are looking for. */
+  char target;
 } chr_data;
 
 static int
@@ -399,12 +402,13 @@ CORD_rchr(CORD x, size_t i, int c)
   }
 }
 
-/* Find the first occurrence of s in x at position start or later.      */
-/* This uses an asymptotically poor algorithm, which should typically   */
-/* perform acceptably.  We compare the first few characters directly,   */
-/* and call CORD_ncmp whenever there is a partial match.                */
-/* This has the advantage that we allocate very little, or not at all.  */
-/* It's very fast if there are few close misses.                        */
+/* Find the first occurrence of `s` in `x` at position `start` or   */
+/* later.  This uses an asymptotically poor algorithm, which should */
+/* typically perform acceptably.  We compare the first few          */
+/* characters directly, and call `CORD_ncmp` whenever there is      */
+/* a partial match.  This has the advantage that we allocate very   */
+/* little, or not at all.  It is very fast if there are few close   */
+/* misses.                                                          */
 size_t
 CORD_str(CORD x, size_t start, CORD s)
 {
@@ -413,8 +417,10 @@ CORD_str(CORD x, size_t start, CORD s)
   size_t slen;
   size_t start_len;
   const char *s_start;
-  unsigned long s_buf = 0; /* the first few characters of s */
-  unsigned long x_buf = 0; /* start of candidate substring */
+  /* The first few characters of `s`. */
+  unsigned long s_buf = 0;
+  /* Start of candidate substring. */
+  unsigned long x_buf = 0;
   unsigned long mask = 0;
   size_t i;
   size_t match_pos;
@@ -510,8 +516,8 @@ CORD_from_file_eager(FILE *f)
     int c = getc(f);
 
     if (c == 0) {
-      /* Append the right number of NULs                            */
-      /* Note that any string of NULs is represented in 4 words,    */
+      /* Append the right number of NUL characters.  Note that any  */
+      /* string of NUL characters is represented in 4 words,        */
       /* independent of its length.                                 */
       size_t count = 1;
 
@@ -530,13 +536,13 @@ CORD_from_file_eager(FILE *f)
 
 /* The state maintained for a lazily read file consists primarily       */
 /* of a large direct-mapped cache of previously read values.            */
-/* We could rely more on stdio buffering.  That would have 2            */
+/* We could rely more on `stdio` buffering.  That would have two        */
 /* disadvantages:                                                       */
-/*  1) Empirically, not all fseek implementations preserve the          */
-/*     buffer whenever they could.                                      */
-/*  2) It would fail if 2 different sections of a long cord             */
-/*     were being read alternately.                                     */
-/* We do use the stdio buffer for read ahead.                           */
+/*   1. Empirically, not all `fseek` implementations preserve the       */
+/*      buffer whenever they could;                                     */
+/*   2. It would fail if two different sections of a long cord were     */
+/*      being read alternately.                                         */
+/* We do use the `stdio` buffer for read ahead.                         */
 /* To guarantee thread safety in the presence of atomic pointer         */
 /* writes, cache lines are always replaced, and never modified in       */
 /* place.                                                               */
@@ -550,13 +556,15 @@ CORD_from_file_eager(FILE *f)
 
 typedef struct {
   size_t tag;
+  /* `data[i % LINE_SZ]` is `i`-th character in file if `tag`       */
+  /* is `i / LINE_SZ`.                                              */
   char data[LINE_SZ];
-  /* data[i%LINE_SZ] is i-th char in file if tag is i/LINE_SZ */
 } cache_line;
 
 typedef struct {
   FILE *lf_file;
-  size_t lf_current; /* Current file pointer value */
+  /* The current file pointer value. */
+  size_t lf_current;
   cache_line *volatile lf_cache[CACHE_SZ / LINE_SZ];
 } lf_state;
 
@@ -568,7 +576,8 @@ typedef struct {
 
 typedef struct {
   lf_state *state;
-  size_t file_pos; /* Position of needed character. */
+  /* The position of the needed character. */
+  size_t file_pos;
   cache_line *new_cache;
 } refill_data;
 
@@ -624,14 +633,14 @@ CORD_lf_func(size_t i, void *client_data)
 #ifdef CORD_USE_GCC_ATOMIC
   cl = (cache_line *)__atomic_load_n(cl_addr, __ATOMIC_ACQUIRE);
 #elif defined(CORD_DONT_USE_CALL_WITH_READER_LOCK)
-  /* Just for compatibility with older libgc API. */
+  /* Just for compatibility with older API of the collector. */
   cl = (cache_line *)GC_call_with_alloc_lock(get_cache_line, (void *)cl_addr);
 #else
   cl = (cache_line *)GC_call_with_reader_lock(
       get_cache_line, (/* no volatile */ void *)cl_addr, 0);
 #endif
   if (NULL == cl || cl->tag != DIV_LINE_SZ(i)) {
-    /* Cache miss */
+    /* A cache miss. */
     refill_data rd;
 
     rd.state = state;
@@ -663,11 +672,9 @@ CORD_from_file_lazy_inner(FILE *f, size_t len)
   if (NULL == state)
     OUT_OF_MEMORY;
   if (len != 0) {
-    /* Dummy read to force buffer allocation.       */
-    /* This greatly increases the probability       */
-    /* of avoiding deadlock if buffer allocation    */
-    /* is redirected to GC_malloc and the           */
-    /* world is multi-threaded.                     */
+    /* A dummy read to force buffer allocation.  This greatly increases */
+    /* the probability of avoiding a deadlock if buffer allocation is   */
+    /* redirected to `GC_malloc` and the world is multi-threaded.       */
     char buf[1];
 
     if (fread(buf, 1, 1, f) > 1 || fseek(f, 0l, SEEK_SET) != 0) {

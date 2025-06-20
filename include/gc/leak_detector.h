@@ -15,8 +15,8 @@
 #ifndef GC_LEAK_DETECTOR_H
 #define GC_LEAK_DETECTOR_H
 
-/* Include this header file (e.g., via gcc --include directive) */
-/* to turn libgc into a leak detector.                          */
+/* Include this header file (e.g., via gcc `--include` option) to turn  */
+/* the collector into a leak detector.                                  */
 
 #ifndef GC_DEBUG
 #  define GC_DEBUG
@@ -24,8 +24,8 @@
 #include "gc.h"
 
 #ifndef GC_DONT_INCLUDE_STDLIB
-/* We ensure stdlib.h and string.h are included before        */
-/* redirecting malloc() and the accompanying functions.       */
+/* We ensure the platform `stdlib.h` and `string.h` files are included  */
+/* before redirecting `malloc` and the accompanying functions.          */
 #  include <stdlib.h>
 #  include <string.h>
 #endif
@@ -47,20 +47,20 @@
 #define strndup(s, n) GC_STRNDUP(s, n)
 
 #ifdef GC_REQUIRE_WCSDUP
-/* The collector should be built with GC_REQUIRE_WCSDUP       */
-/* defined as well to redirect wcsdup().                      */
+/* The collector should be built with `GC_REQUIRE_WCSDUP` macro defined */
+/* as well to redirect `wcsdup`.                                        */
 #  include <wchar.h>
 #  undef wcsdup
 #  define wcsdup(s) GC_WCSDUP(s)
 #endif
 
-/* The following routines for the aligned objects allocation    */
-/* (aligned_alloc, valloc, etc.) do not have their debugging    */
-/* counterparts.  Note that free() called for such objects      */
-/* may output a warning that the pointer has no debugging info. */
+/* The following routines for the aligned objects allocation            */
+/* (`aligned_alloc`, `valloc`, etc.) do not have their debugging        */
+/* counterparts.  Note that `free()` called for such objects may output */
+/* a warning that the pointer has no debugging info.                    */
 
 #undef aligned_alloc
-#define aligned_alloc(a, n) GC_memalign(a, n) /* identical to memalign */
+#define aligned_alloc(a, n) GC_memalign(a, n) /* identical to `memalign` */
 #undef memalign
 #define memalign(a, n) GC_memalign(a, n)
 #undef posix_memalign
@@ -85,7 +85,7 @@
 #  define pvalloc(n) GC_pvalloc(n) /* obsolete */
 #endif
 
-#undef malloc_usable_size /* available in glibc */
+#undef malloc_usable_size /* available in `glibc` */
 #define malloc_usable_size(p) GC_size(p)
 #undef malloc_size /* available on Darwin */
 #define malloc_size(p) GC_size(p)
@@ -94,10 +94,10 @@
 
 #ifndef CHECK_LEAKS
 #  define CHECK_LEAKS() GC_gcollect()
-/* Note 1: CHECK_LEAKS does not have GC prefix (preserved for   */
-/* backward compatibility).                                     */
-/* Note 2: GC_gcollect() is also called automatically in the    */
-/* find-leak mode at program exit.                              */
+/* Note 1: `CHECK_LEAKS` does not have `GC_` prefix (preserved for  */
+/* backward compatibility).                                         */
+/* Note 2: `GC_gcollect()` is also called automatically in the      */
+/* find-leak mode at program exit.                                  */
 #endif
 
 #endif /* GC_LEAK_DETECTOR_H */

@@ -21,7 +21,7 @@
 
 /* This is a very incomplete test of the cord package.  It knows about  */
 /* a few internals of the package (e.g. when C strings are returned)    */
-/* that real clients shouldn't rely on.                                 */
+/* that real clients should not rely on.                                */
 
 #define ABORT(string)                        \
   {                                          \
@@ -340,8 +340,8 @@ test_extras(void)
   w = CORD_from_file(f2);
   test_cords_f2(w, x, y);
 
-  /* Note: f1a, f1b, f2 handles are closed lazily by CORD library.    */
-  /* TODO: Propose and use CORD_fclose. */
+  /* Note: `f1a`, `f1b`, `f2` handles are closed lazily by `cord` library. */
+  /* TODO: Propose and use `CORD_fclose`. */
   *(CORD volatile *)&w = CORD_EMPTY;
   *(CORD volatile *)&z = CORD_EMPTY;
   GC_gcollect();
@@ -350,8 +350,8 @@ test_extras(void)
   /* Of course, this does not guarantee the files are closed. */
 #endif
   if (remove(FNAME1) != 0) {
-    /* On some systems, e.g. OS2, this may fail if f1 is still open. */
-    /* But we cannot call fclose as it might lead to double close.   */
+    /* On some systems, e.g. OS/2, this may fail if `f1` is still open. */
+    /* But we cannot call `fclose` as it might lead to double close.    */
     fprintf(stderr, "WARNING: remove failed: " FNAME1 "\n");
   }
 }
@@ -381,11 +381,11 @@ wrap_vfprintf(FILE *f, CORD format, ...)
 }
 
 #if defined(__DJGPP__) || defined(__DMC__) || defined(__STRICT_ANSI__)
-/* snprintf is missing in DJGPP (v2.0.3) */
+/* `snprintf` is missing in DJGPP (v2.0.3). */
 #else
 #  if defined(_MSC_VER)
 #    if defined(_WIN32_WCE)
-/* _snprintf is deprecated in WinCE */
+/* `_snprintf` is deprecated in WinCE. */
 #      define GC_SNPRINTF StringCchPrintfA
 #    else
 #      define GC_SNPRINTF _snprintf
@@ -443,7 +443,8 @@ test_printf(void)
   res = sprintf(result2, zu_format, (size_t)0);
 #endif
   result2[sizeof(result2) - 1] = '\0';
-  if (res == 1) /* is "%z" supported by printf? */ {
+  /* Is "%z" supported by `printf`? */
+  if (res == 1) {
     if (CORD_sprintf(&result, "%zu %zd 0x%0zx", (size_t)123, (size_t)4567,
                      (size_t)0x4abc)
         != 15)
@@ -475,7 +476,7 @@ main(void)
   test_extras();
   test_printf();
 
-  GC_gcollect(); /* to close f2 before the file removal */
+  GC_gcollect(); /* to close `f2` before the file removal */
   if (remove(FNAME2) != 0) {
     fprintf(stderr, "WARNING: remove failed: " FNAME2 "\n");
   }

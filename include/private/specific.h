@@ -12,15 +12,15 @@
  */
 
 /* This is a reimplementation of a subset of the                        */
-/* pthread_getspecific/setspecific interface. This appears to           */
-/* outperform the standard LinuxThreads one by a significant margin.    */
+/* `pthread_getspecific`/`pthread_setspecific` interface. This appears  */
+/* to outperform the standard LinuxThreads one by a significant margin. */
 /* The major restriction is that each thread may only make a single     */
-/* pthread_setspecific call on a single key.  (The current data         */
+/* `pthread_setspecific()` call on a single key.  (The current data     */
 /* structure does not really require that.  This restriction should be  */
 /* easily removable.)  We do not currently support the destruction      */
 /* functions, though that could be done.  We also currently assume that */
-/* only one pthread_setspecific call can be executed at a time, though  */
-/* that assumption would be easy to remove by adding a lock.            */
+/* only one `pthread_setspecific()` call can be executed at a time,     */
+/* though that assumption would be easy to remove by adding a lock.     */
 
 #ifndef GC_SPECIFIC_H
 #define GC_SPECIFIC_H
@@ -33,10 +33,10 @@
 
 EXTERN_C_BEGIN
 
-/* Called during key creation or setspecific.  For the GC we already    */
-/* hold the allocator lock.  Currently allocated objects leak on thread */
-/* exit.  It is hard to avoid, but OK if we allocate garbage collected  */
-/* memory.                                                              */
+/* Called during key creation or by `GC_setspecific()`.  For the GC we  */
+/* already hold the allocator lock.  Currently allocated objects leak   */
+/* on thread exit.  It is hard to avoid, but OK if we allocate garbage  */
+/* collected memory.                                                    */
 #define MALLOC_CLEAR(n) GC_INTERNAL_MALLOC(n, NORMAL)
 
 #define TS_CACHE_SIZE 1024
@@ -46,8 +46,9 @@ EXTERN_C_BEGIN
 #define TS_HASH(p) ((unsigned)((ADDR(p) >> 8) ^ ADDR(p)) & (TS_HASH_SIZE - 1))
 
 #ifdef GC_ASSERTIONS
-/* Thread-local storage is not guaranteed to be scanned by GC.        */
-/* We hide values stored in "specific" entries for a test purpose.    */
+/* Thread-local storage is not guaranteed to be scanned by the          */
+/* collector.  We hide values stored in "specific" entries for a test   */
+/* purpose.                                                             */
 typedef GC_hidden_pointer ts_entry_value_t;
 #  define TS_HIDE_VALUE(p) GC_HIDE_NZ_POINTER(p)
 #  define TS_REVEAL_PTR(p) GC_REVEAL_NZ_POINTER(p)
@@ -59,29 +60,29 @@ typedef void *ts_entry_value_t;
 
 /* An entry describing a thread-specific value for a given thread.      */
 /* All such accessible structures preserve the invariant that if either */
-/* thread is a valid pthread id or qtid is a valid "quick thread id"    */
-/* for a thread, then value holds the corresponding thread specific     */
-/* value.  This invariant must be preserved at ALL times, since         */
-/* asynchronous reads are allowed.                                      */
+/* thread is a valid `pthreads` id or `qtid` is a valid                 */
+/* "quick thread identifier" for a thread, then value holds the         */
+/* corresponding thread specific value.  This invariant must be         */
+/* preserved at all times, since asynchronous reads are allowed.        */
 typedef struct thread_specific_entry {
-  volatile AO_t qtid; /* quick thread id, only for cache */
+  volatile AO_t qtid; /* a "quick thread identifier", only for cache */
   ts_entry_value_t value;
   struct thread_specific_entry *next;
   pthread_t thread;
 } tse;
 
 /* We represent each thread-specific datum as two tables.  The first is */
-/* a cache, indexed by a "quick thread identifier".  The "quick" thread */
-/* identifier is an easy to compute value, which is guaranteed to       */
-/* determine the thread, though a thread may correspond to more than    */
-/* one value.  We typically use the address of a page in the stack.     */
-/* The second is a hash table, indexed by pthread_self().  It is used   */
-/* only as a backup.                                                    */
+/* a cache, indexed by a "quick thread identifier".  The later is an    */
+/* easy-to-compute value, which is guaranteed to determine the thread,  */
+/* though a thread may correspond to more than one value.  We typically */
+/* use the address of a page in the stack.  The second is a hash table, */
+/* indexed by `pthread_self()`.  It is used only as a backup.           */
 
-/* Return the "quick thread id".  Default version.  Assumes page size,  */
-/* or at least thread stack separation, is at least 4 KB.               */
-/* Must be defined so that it never returns 0.  (Page 0 can't really be */
-/* part of any stack, since that would make 0 a valid stack pointer.)   */
+/* Return the "quick thread identifier".  The default variant.          */
+/* Assumes the page size, or at least thread stack separation, is at    */
+/* least 4 KB.  Must be defined so that it never returns 0.  (Page zero */
+/* cannot really be part of any stack, since that would make 0 a valid  */
+/* stack pointer.)                                                      */
 #define ts_quick_thread_id() ((size_t)(ADDR(GC_approx_sp()) >> 12))
 
 #define INVALID_QTID ((size_t)0)
@@ -109,7 +110,7 @@ GC_INNER void GC_remove_specific_after_fork(tsd *key, pthread_t t);
 GC_INNER void GC_update_specific_after_fork(tsd *key);
 #endif
 
-/* An internal version of getspecific that assumes a cache miss.        */
+/* An internal variant of `GC_getspecific` that assumes a cache miss. */
 GC_INNER void *GC_slow_getspecific(tsd *key, size_t qtid,
                                    tse *volatile *entry_ptr);
 

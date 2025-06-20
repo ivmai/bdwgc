@@ -1,6 +1,7 @@
-/* Conditionally execute the command argv[2] based if the file argv[1]  */
-/* does not exist.  If the command is omitted (and the file does not    */
-/* exist) then just exit with a non-zero code.                          */
+/* A build-time utility used by `Makefile.direct` file.  Conditionally  */
+/* execute the command `argv[2]` if the file `argv[1]` does not exist.  */
+/* If the command is omitted (and the file does not exist), then just   */
+/* exit with a non-zero code.                                           */
 
 #define NOT_GCBUILD
 #include "private/gc_priv.h"
@@ -14,7 +15,8 @@
 #ifdef __cplusplus
 #  define EXECV_ARGV_T char **
 #else
-#  define EXECV_ARGV_T void * /* see the comment in if_mach.c */
+/* See the comment in `if_mach.c` file. */
+#  define EXECV_ARGV_T void *
 #endif
 
 int

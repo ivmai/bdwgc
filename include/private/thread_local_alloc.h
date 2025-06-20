@@ -62,7 +62,7 @@ EXTERN_C_BEGIN
 #        define USE_PTHREAD_SPECIFIC
 #      endif
 
-#    elif defined(LINUX) && GC_GNUC_PREREQ(3, 3) /* && !HOST_ANDROID */
+#    elif defined(LINUX) && GC_GNUC_PREREQ(3, 3) /* `&& !HOST_ANDROID` */
 #      if defined(ARM32) || defined(AVR32)
 /* TODO: change to USE_COMPILER_TLS on Linux/arm */
 #        define USE_PTHREAD_SPECIFIC
@@ -80,7 +80,7 @@ EXTERN_C_BEGIN
 
 #    elif defined(HPUX)
 #      ifdef __GNUC__
-/* Empirically, as of gcc 3.3, USE_COMPILER_TLS doesn't work. */
+/* Empirically, as of gcc 3.3, USE_COMPILER_TLS does not work. */
 #        define USE_PTHREAD_SPECIFIC
 #      else
 #        define USE_COMPILER_TLS
@@ -88,7 +88,8 @@ EXTERN_C_BEGIN
 
 #    elif defined(IRIX5) || defined(OPENBSD) || defined(SOLARIS) \
         || defined(NN_PLATFORM_CTR) || defined(NN_BUILD_TARGET_PLATFORM_NX)
-#      define USE_CUSTOM_SPECIFIC /* Use our own. */
+/* Use our own. */
+#      define USE_CUSTOM_SPECIFIC
 
 #    else
 #      define USE_PTHREAD_SPECIFIC
@@ -103,31 +104,32 @@ EXTERN_C_BEGIN
 #    endif
 #  endif /* !THREAD_FREELISTS_KINDS */
 
-/* The first GC_TINY_FREELISTS free lists correspond to the first   */
-/* GC_TINY_FREELISTS multiples of GC_GRANULE_BYTES, i.e. we keep    */
-/* separate free lists for each multiple of GC_GRANULE_BYTES up to  */
-/* (GC_TINY_FREELISTS-1) * GC_GRANULE_BYTES.  After that they may   */
-/* be spread out further.                                           */
+/* The first `GC_TINY_FREELISTS` free lists correspond to the first     */
+/* `GC_TINY_FREELISTS` multiples of `GC_GRANULE_BYTES`, i.e. we keep    */
+/* separate free lists for each multiple of `GC_GRANULE_BYTES` up to    */
+/* `(GC_TINY_FREELISTS-1) * GC_GRANULE_BYTES`.  After that they may be  */
+/* spread out further.                                                  */
 
-/* This should be used for the tlfs field in the structure pointed  */
-/* to by a GC_thread.  Free lists contain either a pointer or       */
-/* a small count reflecting the number of granules allocated at     */
-/* that size:                                                       */
-/* - 0 means thread-local allocation in use, free list empty;       */
-/* - >0 but <=DIRECT_GRANULES means using global allocation, too    */
-/*   few objects of this size have been allocated by this thread;   */
-/* - >DIRECT_GRANULES but <HBLKSIZE means transition to local       */
-/* allocation, equivalent to 0;                                     */
-/* - >=HBLKSIZE means pointer to nonempty free list.                */
+/* This should be used for the `tlfs` field in the structure pointed to */
+/* by a `GC_thread` entity.  Free lists contain either a pointer or     */
+/* a small count reflecting the number of granules allocated at that    */
+/* size:                                                                */
+/* - zero means thread-local allocation in use, free list empty;        */
+/* - greater than zero but not greater than `DIRECT_GRANULES` means     */
+/*   using global allocation, too few objects of this size have been    */
+/*   allocated by this thread;                                          */
+/* - greater than `DIRECT_GRANULES` but less than `HBLKSIZE` means      */
+/*   transition to local allocation, equivalent to zero;                */
+/* - not less than `HBLKSIZE` means pointer to nonempty free list.      */
 
 struct thread_local_freelists {
-  /* Note: Preserve *_freelists names for some clients. */
+  /* Note: Preserve `*_freelists` names for some clients. */
   void *_freelists[THREAD_FREELISTS_KINDS][GC_TINY_FREELISTS];
 #  define ptrfree_freelists _freelists[PTRFREE]
 #  define normal_freelists _freelists[NORMAL]
 #  ifdef GC_GCJ_SUPPORT
   void *gcj_freelists[GC_TINY_FREELISTS];
-  /* A value used for gcj_freelists[-1]; allocation is erroneous. */
+  /* A value used for `gcj_freelists[-1]`; allocation is erroneous. */
 #    define ERROR_FL GC_WORD_MAX
 #  endif
 
@@ -140,8 +142,8 @@ typedef struct thread_local_freelists *GC_tlfs;
 #    define GC_getspecific pthread_getspecific
 #    define GC_setspecific pthread_setspecific
 #    define GC_key_create pthread_key_create
-/* Explicitly delete the value to stop the TLS destructor from    */
-/* being called repeatedly.                                       */
+/* Explicitly delete the value to stop the TLS (thread-local storage)   */
+/* destructor from being called repeatedly.                             */
 #    define GC_remove_specific(key) (void)pthread_setspecific(key, NULL)
 #    define GC_remove_specific_after_fork(key, t) \
       (void)0 /* no action needed */
@@ -150,13 +152,13 @@ typedef pthread_key_t GC_key_t;
 #    define GC_getspecific(x) (x)
 #    define GC_setspecific(key, v) ((key) = (v), 0)
 #    define GC_key_create(key, d) 0
-/* Just to clear the pointer to tlfs. */
+/* Just to clear the pointer to `tlfs`. */
 #    define GC_remove_specific(key) (void)GC_setspecific(key, NULL)
 #    define GC_remove_specific_after_fork(key, t) (void)0
 typedef void *GC_key_t;
 #  elif defined(USE_WIN32_SPECIFIC)
 #    define GC_getspecific TlsGetValue
-/* Note: we assume that zero means success, msft does the opposite.   */
+/* Note: we assume that zero means success, Win32 API does the opposite. */
 #    define GC_setspecific(key, v) !TlsSetValue(key, v)
 #    ifndef TLS_OUT_OF_INDEXES
 /* This is currently missing in WinCE.      */
@@ -164,7 +166,7 @@ typedef void *GC_key_t;
 #    endif
 #    define GC_key_create(key, d) \
       ((d) != 0 || (*(key) = TlsAlloc()) == TLS_OUT_OF_INDEXES ? -1 : 0)
-/* TODO: Is TlsFree needed on process exit/detach? */
+/* TODO: Is `TlsFree` needed on process exit/detach? */
 #    define GC_remove_specific(key) (void)GC_setspecific(key, NULL)
 #    define GC_remove_specific_after_fork(key, t) (void)0
 typedef DWORD GC_key_t;
@@ -203,9 +205,9 @@ void GC_check_tsd_marks(tsd *key);
 #    define GC_ATTR_TLS_FAST /* empty */
 #  endif
 
-/* This is set up by the thread_local_alloc implementation.         */
-/* No need for cleanup on thread exit.  But the thread support      */
-/* layer makes sure that GC_thread_key is traced, if necessary.     */
+/* This is set up by `GC_init_thread_local()`.  No need for cleanup on  */
+/* thread exit.  But the thread support layer makes sure that           */
+/* `GC_thread_key` is traced, if necessary.                             */
 extern
 #  if defined(USE_COMPILER_TLS)
     __thread GC_ATTR_TLS_FAST

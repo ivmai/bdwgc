@@ -5,13 +5,16 @@ data structure to aid in fast pointer identification. This data structure
 is described in a bit more detail here, since
 
   1. Variations of the data structure are more generally useful.
+
   2. It appears to be hard to understand by reading the code.
+
   3. Some other collectors appear to use inferior data structures to solve the
-  same problem.
+     same problem.
+
   4. It is central to fast collector operation.  A candidate pointer
-  is divided into three sections, the _high_, _middle_, and _low_ bits. The
-  exact division between these three groups of bits is dependent on the
-  detailed collector configuration.
+     is divided into three sections, the _high_, _middle_, and _low_ bits.
+     The exact division between these three groups of bits is dependent on
+     the detailed collector configuration.
 
 The high and middle bits are used to look up an entry in the table described
 here. The resulting table entry consists of either a block descriptor
@@ -44,13 +47,16 @@ Thus a pointer lookup consists primarily of a handful of memory references,
 and can be quite fast:
 
   1. The appropriate `bottom_index` pointer is looked up in `GC_top_index`,
-  based on the high bits of the candidate pointer.
+     based on the high bits of the candidate pointer.
+
   2. The appropriate `hdr` pointer is looked up in the `bottom_index`
-  structure, based on the middle bits.
+     structure, based on the middle bits.
+
   3. The block layout map pointer is retrieved from the `hdr` structure. (This
-  memory reference is necessary since we try to share block layout maps.)
+     memory reference is necessary since we try to share block layout maps.)
+
   4. The displacement to the beginning of the object is retrieved from the
-  above map.
+     above map.
 
 In order to conserve space, not all `GC_top_index` entries in fact point
 to distinct `bottom_index` structures. If no address with the corresponding

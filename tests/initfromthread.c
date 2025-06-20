@@ -11,8 +11,8 @@
  * modified is included with the above copyright notice.
  */
 
-/* Make sure GC_INIT() can be called from threads other than the        */
-/* initial thread.                                                      */
+/* Make sure `GC_INIT()` can be called from threads other than the  */
+/* initial thread.                                                  */
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -93,7 +93,7 @@ main(void)
       || (defined(SOLARIS) && !defined(_STRICT_STDC))                  \
       || ((!defined(SPECIFIC_MAIN_STACKBOTTOM) || defined(HEURISTIC1)) \
           && !defined(STACKBOTTOM)))
-  /* GC_INIT() must be called from main thread only. */
+  /* `GC_INIT()` must be called from main thread only. */
   GC_INIT();
 #endif
 

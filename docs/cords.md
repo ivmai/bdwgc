@@ -3,10 +3,10 @@
 Cords package (also known as "cord library") is a string package that uses
 a tree-based representation.
 
-See `cord.h` for a description of the basic functions provided.  And, `ec.h`
-describes "extensible cords", those are essentially output streams that write
-to a cord; these allow for efficient construction of cords without requiring
-a bound on the size of a cord.
+See `cord.h` file for a description of the basic functions provided.  And,
+`ec.h` file describes "extensible cords", those are essentially output streams
+that write to a cord; these allow for efficient construction of cords without
+requiring a bound on the size of a cord.
 
 The `cord` library is built along with `gc` library by default unless manually
 disabled (e.g., in case of cmake-based build, unless `-Dbuild_cord=OFF` option
@@ -24,7 +24,7 @@ description of that data structure in
 
 All of these are descendants of the "ropes" in Xerox Cedar.
 
-`cord/tests/de.c` is a very dumb text editor that illustrates the use of
+`cord/tests/de.c` file is a very dumb text editor that illustrates the use of
 cords.  It maintains a list of file versions.  Each version is simply a cord
 representing the file contents.  Nonetheless, standard editing operations are
 efficient, even on very large files.  (Its 3-line "user manual" can be
@@ -36,5 +36,5 @@ editor, type `make de` in the bdwgc root directory.
 Note that `CORD_printf` and friends use C functions with variable numbers
 of arguments in non-standard-conforming ways.  This code is known to break on
 some platforms, notably PowerPC.  It should be possible to build the remainder
-of the library (everything but `cordprnt.c`) on any platform that supports the
-collector.
+of the library (everything but `cordprnt.c` file) on any platform that
+supports the collector.

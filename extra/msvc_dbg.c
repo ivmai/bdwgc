@@ -24,7 +24,7 @@
     && defined(_MSC_VER)
 
 /* TODO: arm[64], x64 currently miss some machine-dependent code below.     */
-/* See also GC_HAVE_BUILTIN_BACKTRACE in gc_config_macros.h.                */
+/* See also `GC_HAVE_BUILTIN_BACKTRACE` in `gc_config_macros.h` file.       */
 
 #  include <stdio.h>
 #  include <stdlib.h>
@@ -46,7 +46,7 @@
 extern "C" {
 #  endif
 
-/* Compatibility with <execinfo.h> */
+/* Compatibility with the platform `execinfo.h` file. */
 int backtrace(void *addresses[], int count);
 char **backtrace_symbols(void *const addresses[], int count);
 
@@ -57,7 +57,7 @@ char **backtrace_symbols(void *const addresses[], int count);
 #  pragma comment(lib, "dbghelp.lib")
 #  pragma optimize("gy", off)
 
-/* Disable a warning that /GS cannot protect parameters and local       */
+/* Disable a warning that `/GS` cannot protect parameters and local     */
 /* variables from local buffer overrun because optimizations are off.   */
 #  pragma warning(disable : 4748)
 
@@ -110,13 +110,13 @@ GetModuleBase(HANDLE hProcess, ULONG_ADDR dwAddress)
     DWORD size = GetModuleFileNameA((HINSTANCE)memoryInfo.AllocationBase,
                                     filePath, sizeof(filePath));
 
-    /* Save and restore current directory around SymLoadModule, see KB  */
-    /* article Q189780.                                                 */
+    /* Save and restore current directory around `SymLoadModule` (see   */
+    /* the KB article Q189780).                                         */
     GetCurrentDirectoryA(sizeof(curDir), curDir);
     GetModuleFileNameA(NULL, exePath, sizeof(exePath));
 #  if _MSC_VER > 1200
     strcat_s(exePath, sizeof(exePath), "\\..");
-#  else /* VC6 or earlier */
+#  else /* VC 6 or earlier */
     strcat(exePath, "\\..");
 #  endif
     SetCurrentDirectoryA(exePath);
@@ -152,7 +152,7 @@ GetStackFrames(size_t skip, void *frames[], size_t maxFrames)
   if (!GetThreadContext(hThread, &context)) {
     return 0;
   }
-  /* GetThreadContext might return invalid context for the current thread. */
+  /* `GetThreadContext` might return invalid context for the current thread. */
 #  if defined(_M_IX86)
   __asm mov context.Ebp, ebp
 #  endif
@@ -381,7 +381,7 @@ GetDescriptionFromStack(void *const frames[], size_t count, const char *format,
   return buffer - begin;
 }
 
-/* Compatibility with execinfo.h:       */
+/* The below is for compatibility with the platform `execinfo.h` file. */
 
 int
 backtrace(void *addresses[], int count)
