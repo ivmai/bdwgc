@@ -558,25 +558,35 @@ GC_API GC_ATTR_MALLOC char *GC_CALL GC_strndup(const char *, size_t)
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_malloc_uncollectable(size_t /* `size_in_bytes` */);
 
-/* The functions that guarantee the requested alignment of the          */
-/* allocated memory object.  The `align` argument should be non-zero    */
-/* and a power of two; `GC_posix_memalign()` also requires it to be not */
-/* less than size of a pointer.  Note that `GC_posix_memalign()` does   */
-/* not change value of `*memptr` in case of failure (i.e. when the      */
-/* result is non-zero).  All these functions (`GC_memalign`,            */
-/* `GC_posix_memalign`, `GC_valloc`, `GC_pvalloc`) are guaranteed never */
-/* to return `NULL` unless `GC_oom_fn()` returns `NULL`.                */
+/* The allocation function which guarantees the requested alignment of  */
+/* the allocated memory object.  The `align` argument should be         */
+/* non-zero and a power of two.  It is guaranteed never to return       */
+/* `NULL` unless `GC_oom_fn()` returns `NULL`.                          */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(2) void *GC_CALL
     GC_memalign(size_t /* `align` */, size_t /* `lb` */);
+
+/* A function similar to `GC_memalign` but existing largely for         */
+/* redirection in the find-leak mode.  The `align` argument should be   */
+/* non-zero and a power of two, but additionally the argument is        */
+/* required to be not less than size of a pointer.  Note that the       */
+/* function does not change value of `*memptr` in case of failure (i.e. */
+/* when the result is non-zero).  It is guaranteed never to return      */
+/* `NULL` unless `GC_oom_fn()` returns `NULL`.                          */
 GC_API int GC_CALL GC_posix_memalign(void ** /* `memptr` */,
                                      size_t /* `align` */, size_t /* `lb` */)
     GC_ATTR_NONNULL(1);
+
 #ifndef GC_NO_VALLOC
+/* The allocation functions that guarantee the memory page alignment of */
+/* the returned object.  Exist largely for redirection in the find-leak */
+/* mode.  All these functions (`GC_pvalloc`, `GC_valloc`) are           */
+/* guaranteed never to return `NULL` unless `GC_oom_fn()` returns       */
+/* `NULL`.                                                              */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_valloc(size_t /* `lb` */);
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_pvalloc(size_t /* `lb` */);
-#endif /* !GC_NO_VALLOC */
+#endif
 
 /* Explicitly deallocate an object.  Dangerous if used incorrectly.     */
 /* Requires a pointer to the base of an object.  An object should not   */
@@ -724,7 +734,8 @@ GC_API void GC_CALL GC_exclude_static_roots(
     void * /* `low_address` */, void * /* `high_address_plus_1` */);
 
 /* Clear the number of entries in the exclusion table.  Wizards only.   */
-/* Should be called typically with the allocator lock held.             */
+/* Should be called typically with the allocator lock held, but no      */
+/* assertion about it by design.                                        */
 GC_API void GC_CALL GC_clear_exclusion_table(void);
 
 /* Clear the set of root segments.  Wizards only.                       */
@@ -743,19 +754,19 @@ GC_API void GC_CALL GC_remove_roots(void * /* `low_address` */,
                                     void * /* `high_address_plus_1` */);
 
 /* Add a displacement to the set of those considered valid by the       */
-/* collector.  `GC_register_displacement(n)` means that if `p` was      */
-/* returned by `GC_malloc()`, then `(char *)p + n` will be considered   */
-/* to be a valid pointer to `p`.  `n` must be small and less than the   */
-/* size of `p`.  (All pointers to the interior of objects from the      */
-/* stack are considered valid in any case.  This applies to heap        */
-/* objects and static data.)  Preferably, this should be called before  */
-/* any other GC procedures.  Calling it later adds to the probability   */
-/* of excess memory retention.  This is a no-op if the collector has    */
-/* recognition of arbitrary interior pointers enabled, which is the     */
-/* default.  The debugging variant should be used if any debugging      */
-/* allocation is being done.                                            */
-GC_API void GC_CALL GC_register_displacement(size_t /* `n` */);
-GC_API void GC_CALL GC_debug_register_displacement(size_t /* `n` */);
+/* collector.  `GC_register_displacement(offset)` means that if `p` was */
+/* returned by `GC_malloc()`, then `(char *)p + offset` will be         */
+/* considered to be a valid pointer to `p`.  `offset` must be less than */
+/* the size of a heap block.  (All pointers to the interior of objects  */
+/* from the stack are considered valid in any case.  This applies to    */
+/* heap objects and static data.)  Preferably, this should be called    */
+/* before any other GC procedures.  Calling it later adds to the        */
+/* probability of excess memory retention.  This is a no-op if the      */
+/* collector has recognition of arbitrary interior pointers enabled,    */
+/* which is the default.  The debugging variant should be used if any   */
+/* debugging allocation is being done.                                  */
+GC_API void GC_CALL GC_register_displacement(size_t /* `offset` */);
+GC_API void GC_CALL GC_debug_register_displacement(size_t /* `offset` */);
 
 /* Explicitly trigger a full, world-stop collection.    */
 GC_API void GC_CALL GC_gcollect(void);
@@ -917,9 +928,9 @@ struct GC_prof_stats_s {
 GC_API size_t GC_CALL GC_get_prof_stats(struct GC_prof_stats_s *,
                                         size_t /* `stats_sz` */);
 #ifdef GC_THREADS
-/* Same as above but unsynchronized (i.e., not holding the allocator    */
-/* lock).  Clients should call it using `GC_call_with_reader_lock()` to */
-/* avoid data race on multiprocessors.                                  */
+/* Same as `GC_get_prof_stats` but unsynchronized (i.e., not holding    */
+/* the allocator lock).  Clients should call it using                   */
+/* `GC_call_with_reader_lock()` to avoid data race on multiprocessors.  */
 GC_API size_t GC_CALL GC_get_prof_stats_unsafe(struct GC_prof_stats_s *,
                                                size_t /* `stats_sz` */);
 #endif
@@ -1492,8 +1503,10 @@ typedef void(GC_CALLBACK *GC_await_finalize_proc)(void * /* `obj` */);
 GC_API void GC_CALL GC_set_await_finalize_proc(GC_await_finalize_proc);
 GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void);
 
-/* Returns a non-zero value if `GC_invoke_finalizers()` has something   */
-/* to do.  Does not use any synchronization.                            */
+/* Returns a non-zero value (true) if `GC_invoke_finalizers()` has      */
+/* something to do.  (Useful if finalizers can only be called from some */
+/* kind of "safe state" and getting into that safe state is expensive.) */
+/* Does not use any synchronization.                                    */
 GC_API int GC_CALL GC_should_invoke_finalizers(void);
 
 /* Set maximum amount of finalizers to run during a single invocation   */
@@ -1562,7 +1575,8 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void);
 
 /* `GC_ignore_warn_proc` may be used as an argument for                 */
 /* `GC_set_warn_proc()` to suppress all warnings (unless statistics     */
-/* printing is turned on).                                              */
+/* printing is turned on).  This is recommended for production code     */
+/* (release).                                                           */
 GC_API void GC_CALLBACK GC_ignore_warn_proc(const char *, GC_uintptr_t);
 
 /* Change file descriptor of the collector log.  Unavailable on some    */
@@ -1717,11 +1731,11 @@ GC_API void GC_CALL GC_start_mark_threads(void);
 #if defined(GC_DARWIN_THREADS) || defined(GC_WIN32_THREADS)
 /* Use implicit thread registration and processing (via Win32 `DllMain` */
 /* or Darwin `task_threads`).  Deprecated.  Must be called before       */
-/* `GC_INIT()` and other GC routines.  Performs the collector           */
-/* initialization.  Should be avoided if `GC_pthread_create`,           */
-/* `GC_beginthreadex` (or `GC_CreateThread`), or                        */
-/* `GC_register_my_thread` could be used instead.                       */
-/* Disables parallelized garbage collection on Win32.                   */
+/* `GC_INIT()` and other GC routines (or, at least, before going        */
+/* multi-threaded).  Performs the collector initialization.  Should be  */
+/* avoided if `GC_pthread_create`, `GC_beginthreadex` (or               */
+/* `GC_CreateThread`), or `GC_register_my_thread` could be used         */
+/* instead.  Disables parallelized garbage collection on Win32.         */
 GC_API void GC_CALL GC_use_threads_discovery(void);
 #endif
 
@@ -1852,16 +1866,16 @@ GC_API void *GC_CALL GC_do_blocking(GC_fn_type /* `fn` */,
     GC_ATTR_NONNULL(1);
 
 /* Call a function switching to the "active" state of the collector for */
-/* the current thread (i.e. the user function is allowed to call any    */
-/* GC function and/or manipulate pointers to the garbage-collected      */
-/* heap).  `GC_call_with_gc_active()` has the functionality opposite to */
-/* `GC_do_blocking()` one.  It is assumed that the collector is already */
-/* initialized and the current thread is registered.  `fn` may toggle   */
-/* the collector thread's state temporarily to "inactive" one by using  */
-/* `GC_do_blocking()`.  `GC_call_with_gc_active()` often can be used to */
-/* provide a sufficiently accurate stack bottom.  Acquires the          */
-/* allocator lock in the reader mode (but `fn` is called not holding    */
-/* it).                                                                 */
+/* the current thread (i.e. the user function is temporarily back       */
+/* allowed to call any GC function and/or manipulate pointers to the    */
+/* garbage-collected heap).  `GC_call_with_gc_active()` has the         */
+/* functionality opposite to `GC_do_blocking()` one.  It is assumed     */
+/* that the collector is already initialized and the current thread is  */
+/* registered.  `fn` may toggle the collector thread's state            */
+/* temporarily to "inactive" one by using `GC_do_blocking()`.           */
+/* `GC_call_with_gc_active()` often can be used to provide              */
+/* a sufficiently accurate stack bottom.  Acquires the allocator lock   */
+/* in the reader mode (but `fn` is called not holding it).              */
 GC_API void *GC_CALL GC_call_with_gc_active(GC_fn_type /* `fn` */,
                                             void * /* `client_data` */)
     GC_ATTR_NONNULL(1);

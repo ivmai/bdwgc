@@ -176,7 +176,6 @@ CORD_dump_inner(CORD x, unsigned n)
   }
 }
 
-/* Dump the internal representation of `x` to `stdout`. */
 void
 CORD_dump(CORD x)
 {
@@ -527,7 +526,6 @@ CORD_substr(CORD x, size_t i, size_t n)
   return CORD_substr_checked(x, i, n);
 }
 
-/* See `cord.h` file for definition.  We assume `i` is in range. */
 int
 CORD_iter5(CORD x, size_t i, CORD_iter_fn f1, CORD_batched_iter_fn f2,
            void *client_data)

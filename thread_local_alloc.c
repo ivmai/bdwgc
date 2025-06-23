@@ -211,29 +211,30 @@ GC_malloc_kind(size_t lb, int kind)
 
 #    include "gc/gc_gcj.h"
 
-/* `gcj`-style allocation without locks is extremely tricky.  The       */
-/* fundamental issue is that we may end up marking a free list, which   */
-/* has free-list links instead of "vtable" pointers.  That is usually   */
-/* OK, since the next object on the free list will be cleared, and      */
-/* will thus be interpreted as containing a zero descriptor.  That is   */
-/* fine if the object has not yet been initialized.  But there are      */
-/* interesting potential races.                                         */
-/* In the case of incremental collection, this seems hopeless, since    */
-/* the marker may run asynchronously, and may pick up the pointer to    */
-/* the next free-list entry (which it thinks is a "vtable" pointer),    */
-/* get suspended for a while, and then see an allocated object instead  */
-/* of the "vtable".  This may be avoidable with either a handshake with */
-/* the collector or, probably more easily, by moving the free list      */
-/* links to the second word of each object.  The latter is not a        */
-/* universal win, since on architecture like Itanium, nonzero offsets   */
-/* are not necessarily free.  And there may be cache fill order issues. */
-/* For now, we punt with incremental GC.  This probably means that      */
-/* incremental GC should be enabled before we fork a second thread.     */
-/* Unlike the other thread-local allocation calls, we assume that the   */
-/* collector has been explicitly initialized.                           */
 GC_API GC_ATTR_MALLOC void *GC_CALL
 GC_gcj_malloc(size_t lb, const void *vtable_ptr)
 {
+  /* `gcj`-style allocation without locks is extremely tricky.  The     */
+  /* fundamental issue is that we may end up marking a free list, which */
+  /* has free-list links instead of "vtable" pointers.  That is usually */
+  /* OK, since the next object on the free list will be cleared, and    */
+  /* will thus be interpreted as containing a zero descriptor.  That is */
+  /* fine if the object has not yet been initialized.  But there are    */
+  /* interesting potential races.                                       */
+  /* In the case of incremental collection, this seems hopeless, since  */
+  /* the marker may run asynchronously, and may pick up the pointer to  */
+  /* the next free-list entry (which it thinks is a "vtable" pointer),  */
+  /* get suspended for a while, and then see an allocated object        */
+  /* instead of the "vtable".  This may be avoidable with either        */
+  /* a handshake with the collector or, probably more easily, by moving */
+  /* the free list links to the second word of each object.  The latter */
+  /* is not a universal win, since on architecture like Itanium,        */
+  /* nonzero offsets are not necessarily free.  And there may be cache  */
+  /* fill order issues.  For now, we punt with incremental GC.          */
+  /* This probably means that the incremental GC should be enabled      */
+  /* before we fork a second thread.  Unlike the other thread-local     */
+  /* allocation calls, we assume that the collector has been explicitly */
+  /* initialized.                                                       */
   if (EXPECT(GC_incremental, FALSE)) {
     return GC_core_gcj_malloc(lb, vtable_ptr, 0 /* `flags` */);
   } else {

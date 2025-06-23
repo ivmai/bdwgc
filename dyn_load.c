@@ -1575,7 +1575,6 @@ GC_register_main_static_data(void)
 }
 #endif /* HAVE_REGISTER_MAIN_STATIC_DATA */
 
-/* Register a routine to filter dynamic library registration.  */
 GC_API void GC_CALL
 GC_register_has_static_roots_callback(GC_has_static_roots_func callback)
 {

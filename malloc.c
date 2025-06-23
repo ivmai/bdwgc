@@ -385,17 +385,17 @@ GC_malloc_kind(size_t lb, int kind)
 }
 #endif
 
-/* Allocate `lb` bytes of atomic (pointer-free) data. */
 GC_API GC_ATTR_MALLOC void *GC_CALL
 GC_malloc_atomic(size_t lb)
 {
+  /* Allocate `lb` bytes of atomic (pointer-free) data. */
   return GC_malloc_kind(lb, PTRFREE);
 }
 
-/* Allocate `lb` bytes of composite (pointerful) data. */
 GC_API GC_ATTR_MALLOC void *GC_CALL
 GC_malloc(size_t lb)
 {
+  /* Allocate `lb` bytes of composite (pointerful) data. */
   return GC_malloc_kind(lb, NORMAL);
 }
 
@@ -468,10 +468,10 @@ GC_generic_malloc_uncollectable(size_t lb, int kind)
   return op;
 }
 
-/* Allocate `lb` bytes of pointerful, traced, but not collectible data. */
 GC_API GC_ATTR_MALLOC void *GC_CALL
 GC_malloc_uncollectable(size_t lb)
 {
+  /* Allocate `lb` bytes of pointerful, traced, but not collectible data. */
   return GC_generic_malloc_uncollectable(lb, UNCOLLECTABLE);
 }
 

@@ -1762,7 +1762,6 @@ GC_expand_hp_inner(word n)
   return TRUE;
 }
 
-/* Really returns a bool, but it is externally visible, so that is clumsy. */
 GC_API int GC_CALL
 GC_expand_hp(size_t bytes)
 {
@@ -1784,6 +1783,8 @@ GC_expand_hp(size_t bytes)
     }
   }
   UNLOCK();
+  /* Really returns a `GC_bool` value, but the function is externally   */
+  /* visible, so that is clumsy.                                        */
   return (int)result;
 }
 

@@ -125,9 +125,6 @@ GC_FindTopOfStack(unsigned long stack_start)
 STATIC GC_bool GC_query_task_threads = FALSE;
 #  endif /* !GC_NO_THREADS_DISCOVERY */
 
-/* Use implicit threads registration (all task threads, excluding the   */
-/* collector special ones, are stopped and scanned).  Should be called  */
-/* before `GC_INIT()` (or, at least, before going multi-threaded).      */
 GC_API void GC_CALL
 GC_use_threads_discovery(void)
 {

@@ -168,6 +168,7 @@ static GC_pthread_exit_t REAL_FUNC(pthread_exit);
 /* be intercepted.  This allows files that include `gc.h` file, and     */
 /* hence generate references to the `GC_` symbols, to see the right     */
 /* ones.                                                                */
+
 GC_API int
 GC_pthread_create(pthread_t *t, GC_PTHREAD_CREATE_CONST pthread_attr_t *a,
                   void *(*fn)(void *), void *arg)
@@ -2182,10 +2183,6 @@ GC_get_my_stackbottom(struct GC_stack_base *sb)
   return me; /*< `gc_thread_handle` */
 }
 
-/* `GC_call_with_gc_active()` has the opposite to `GC_do_blocking()`    */
-/* functionality.  It might be called from a user function invoked by   */
-/* `GC_do_blocking()` to temporarily back allow calling any GC function */
-/* and/or manipulating pointers to the garbage-collected heap.          */
 GC_ATTR_NOINLINE
 GC_API void *GC_CALL
 GC_call_with_gc_active(GC_fn_type fn, void *client_data)

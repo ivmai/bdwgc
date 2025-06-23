@@ -241,10 +241,15 @@ GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn,
 /* If there are likely to be false references to a block starting at    */
 /* `h` of the indicated length (`len`), then return the next plausible  */
 /* starting location for `h` that might avoid these false references.   */
+/* (In other words: Is the block starting at `h` of size `len` bytes    */
+/* black-listed?  If so, then return the address of the next plausible  */
+/* `r` such that (`r`,`len`) might not be black-listed.  Note that      */
+/* pointer `r` may not actually be in the heap, we guarantee only that  */
+/* every smaller value of `r` after `h` is also black-listed.)          */
 /* Otherwise `NULL` is returned.  Assumes the allocator lock is held at */
-/* least in the reader mode but no assertion about it by design.        */
-GC_API struct GC_hblk_s *GC_CALL GC_is_black_listed(struct GC_hblk_s *,
-                                                    size_t /* `len` */);
+/* least in the reader mode, but no assertion about it by design.       */
+GC_API struct GC_hblk_s *GC_CALL
+GC_is_black_listed(struct GC_hblk_s * /* `h` */, size_t /* `len` */);
 
 /* Return the number of set mark bits for the heap block where object   */
 /* `p` is located.  Defined only if the library has been compiled       */
@@ -299,7 +304,8 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_generic_malloc(size_t /* `lb` */, int /* `kind` */);
 
 /* Same as `GC_generic_malloc()`, but pointers to past the first heap   */
-/* block of the resulting object are ignored.                           */
+/* block of the resulting object are ignored.  We avoid holding the     */
+/* allocator lock while we clear the memory.                            */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_generic_malloc_ignore_off_page(size_t /* `lb` */, int /* `kind` */);
 
@@ -375,17 +381,24 @@ GC_API void GC_CALL GC_set_mark_bit(const void *) GC_ATTR_NONNULL(1);
 /* debug header if there is one).                                       */
 GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);
 
-/* Push everything in the given range onto the mark stack.              */
-/* `(GC_push_conditional()` pushes either all or only dirty pages       */
-/* depending on the third argument (`all`).  `GC_push_all_eager()` also */
-/* ensures that stack is scanned immediately, not just scheduled for    */
-/* scanning.)                                                           */
+/* Push everything in the given range onto the mark stack.  `bottom` is */
+/* the first location to be scanned; `top` is one past the last         */
+/* location to be scanned.  Should only be used if there is no          */
+/* possibility of mark stack overflow.                                  */
 GC_API void GC_CALL GC_push_all(void * /* `bottom` */, void * /* `top` */);
+
+/* Similar to `GC_push_all` but treats all interior pointers as valid   */
+/* and scans the entire region immediately (not just schedules it for   */
+/* scanning), in case the contents change.                              */
 GC_API void GC_CALL GC_push_all_eager(void * /* `bottom` */,
                                       void * /* `top` */);
+
+/* Similar to `GC_push_all` but processes either all or only dirty      */
+/* pages depending on `all` argument.                                   */
 GC_API void GC_CALL GC_push_conditional(void * /* `bottom` */,
                                         void * /* `top` */,
                                         int /* `bool` `all` */);
+
 GC_API void GC_CALL GC_push_finalizer_structures(void);
 
 /* Set and get the client push-other-roots procedure.  A client         */
@@ -407,7 +420,8 @@ GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
     GC_reachable_object_proc, void * /* `client_data` */) GC_ATTR_NONNULL(1);
 
 /* Is the given address in one of the temporary static root sections?   */
-/* Acquires the allocator lock in the reader mode.                      */
+/* Acquires the allocator lock in the reader mode.  For the debugging   */
+/* purpose only.                                                        */
 GC_API int GC_CALL GC_is_tmp_root(void *);
 
 GC_API void GC_CALL GC_print_trace(GC_word /* `gc_no` */);

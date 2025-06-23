@@ -86,14 +86,14 @@ GC_INNER GC_bool GC_win32_dll_threads = FALSE;
 /* if `DllMain()` is called.  The main thread will be added on the      */
 /* collector initialization.                                            */
 
-/* `GC_use_threads_discovery()` is currently incompatible with          */
-/* `pthreads` and WinCE.  It might be possible to get `DllMain`-based   */
-/* thread registration to work with Cygwin, but if you try it then you  */
-/* are on your own.                                                     */
 GC_API void GC_CALL
 GC_use_threads_discovery(void)
 {
 #  ifdef GC_NO_THREADS_DISCOVERY
+  /* `GC_use_threads_discovery()` is currently incompatible with        */
+  /* `pthreads` and WinCE.  It might be possible to get `DllMain`-based */
+  /* thread registration to work with Cygwin, but if you try it then    */
+  /* you are on your own.                                               */
   ABORT("GC DllMain-based thread registration unsupported");
 #  else
   /* Turn on `GC_win32_dll_threads`. */

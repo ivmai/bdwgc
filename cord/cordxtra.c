@@ -402,16 +402,15 @@ CORD_rchr(CORD x, size_t i, int c)
   }
 }
 
-/* Find the first occurrence of `s` in `x` at position `start` or   */
-/* later.  This uses an asymptotically poor algorithm, which should */
-/* typically perform acceptably.  We compare the first few          */
-/* characters directly, and call `CORD_ncmp` whenever there is      */
-/* a partial match.  This has the advantage that we allocate very   */
-/* little, or not at all.  It is very fast if there are few close   */
-/* misses.                                                          */
 size_t
 CORD_str(CORD x, size_t start, CORD s)
 {
+  /* This uses an asymptotically poor algorithm, which should       */
+  /* typically perform acceptably.  We compare the first few        */
+  /* characters directly, and call `CORD_ncmp` whenever there is    */
+  /* a partial match.  This has the advantage that we allocate very */
+  /* little, or not at all.  It is very fast if there are few close */
+  /* misses.                                                        */
   CORD_pos xpos;
   size_t xlen = CORD_len(x);
   size_t slen;

@@ -206,8 +206,6 @@ GC_atfork_child(void)
 }
 #endif /* !CAN_HANDLE_FORK && !HAVE_NO_FORK */
 
-/* Overrides the default automatic handle-fork mode.  Has effect only   */
-/* if called before `GC_INIT()`.                                        */
 GC_API void GC_CALL
 GC_set_handle_fork(int value)
 {
@@ -356,9 +354,6 @@ next_random_no(void)
 }
 #  endif /* THREADS */
 
-/* Clear some of the inaccessible part of the stack.  Returns its       */
-/* argument, so it can be used in a tail call position, hence clearing  */
-/* another frame.                                                       */
 GC_API void *GC_CALL
 GC_clear_stack(void *arg)
 {
@@ -436,8 +431,6 @@ GC_clear_stack(void *arg)
 
 #endif /* !ALWAYS_SMALL_CLEAR_STACK && !STACK_NOT_SCANNED */
 
-/* Return a pointer to the base address of `p`, given a pointer to      */
-/* an address within an object.  Return `NULL` otherwise.               */
 GC_API void *GC_CALL
 GC_base(void *p)
 {
@@ -478,8 +471,6 @@ GC_base(void *p)
   return r;
 }
 
-/* Return `TRUE` if and only if `p` points to somewhere in the      */
-/* collector heap.                                                  */
 GC_API int GC_CALL
 GC_is_heap_ptr(const void *p)
 {
@@ -556,9 +547,6 @@ GC_get_size_map_at(int i)
   return GRANULES_TO_BYTES(GC_size_map[i]);
 }
 
-/* Return the heap usage information.  This is a thread-safe (atomic)   */
-/* alternative for the five above getters.  `NULL` pointer is allowed   */
-/* for any argument.  Returned (filled in) values are of `word` type.   */
 GC_API void GC_CALL
 GC_get_heap_usage_safe(GC_word *pheap_size, GC_word *pfree_bytes,
                        GC_word *punmapped_bytes, GC_word *pbytes_since_gc,
@@ -629,8 +617,6 @@ GC_get_prof_stats(struct GC_prof_stats_s *pstats, size_t stats_sz)
 }
 
 #  ifdef THREADS
-/* The "unsafe" variant assumes the caller holds the allocator lock,    */
-/* at least in the reader mode.                                         */
 GC_API size_t GC_CALL
 GC_get_prof_stats_unsafe(struct GC_prof_stats_s *pstats, size_t stats_sz)
 {
@@ -655,6 +641,7 @@ GC_get_prof_stats_unsafe(struct GC_prof_stats_s *pstats, size_t stats_sz)
 
 #if defined(THREADS) && !defined(SIGNAL_BASED_STOP_WORLD)
 /* The collector does not use signals to suspend and restart threads. */
+
 GC_API void GC_CALL
 GC_set_suspend_signal(int sig)
 {
@@ -2132,7 +2119,6 @@ GC_default_warn_proc(const char *msg, GC_uintptr_t arg)
 
 GC_INNER GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
 
-/* This is recommended for production code (release). */
 GC_API void GC_CALLBACK
 GC_ignore_warn_proc(const char *msg, GC_uintptr_t arg)
 {
@@ -2335,7 +2321,8 @@ GC_is_disabled(void)
   return GC_dont_gc != 0;
 }
 
-/* Helper procedures for new kind creation.     */
+/* Helper procedures for new kind creation. */
+
 GC_API void **GC_CALL
 GC_new_free_list_inner(void)
 {

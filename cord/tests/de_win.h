@@ -53,7 +53,8 @@ extern char *arg_file_name;
 /* Get the contents (`CORD`) of `i`-th screen line.  Relies on `COLS`. */
 const void *retrieve_screen_line(int i);
 
-/* Set the column (`x`) and row (`y`).  Upper left of window is (0,0). */
+/* Change the current position to the given column (`x`) and row (`y`). */
+/* Upper left of window is (0,0).                                       */
 void set_position(int x, int y);
 
 /* The following calls are from `de.c` file to `de_win.c` one. */

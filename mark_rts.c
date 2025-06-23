@@ -447,9 +447,6 @@ GC_remove_roots_subregion(ptr_t b, ptr_t e)
 #endif /* USE_PROC_FOR_LIBRARIES */
 
 #if !defined(NO_DEBUGGING)
-/* For the debugging purpose only.                                  */
-/* Workaround for the OS mapping and unmapping behind our back:     */
-/* Is the address `p` in one of the temporary static root sections? */
 GC_API int GC_CALL
 GC_is_tmp_root(void *p)
 {
@@ -507,9 +504,6 @@ GC_approx_sp(void)
   return (/* no volatile */ ptr_t)sp;
 }
 
-/* Clear the number of entries in the exclusion table.  The caller  */
-/* should acquire the allocator lock (to avoid data race) but no    */
-/* assertion about it by design.                                    */
 GC_API void GC_CALL
 GC_clear_exclusion_table(void)
 {

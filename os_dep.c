@@ -737,12 +737,11 @@ GC_get_writable_length(ptr_t p, ptr_t *base)
   return buf.RegionSize;
 }
 
-/* Fill in the `GC_stack_base` structure with the stack bottom for  */
-/* this thread.  Should not acquire the allocator lock as the       */
-/* function is used by `GC_DllMain`.                                */
 GC_API int GC_CALL
 GC_get_stack_base(struct GC_stack_base *sb)
 {
+  /* Note: this function should not acquire the allocator lock as it is */
+  /* used by `GC_DllMain`.                                              */
   ptr_t trunc_sp;
   word size;
 
@@ -760,11 +759,11 @@ GC_get_stack_base(struct GC_stack_base *sb)
   return GC_SUCCESS;
 }
 #  else /* CYGWIN32 */
-/* An alternate variant for Cygwin (adapted from Dave Korn's        */
-/* gcc version of boehm-gc).                                        */
 GC_API int GC_CALL
 GC_get_stack_base(struct GC_stack_base *sb)
 {
+  /* An alternate variant for Cygwin (adapted from Dave Korn's gcc      */
+  /* version of boehm-gc).                                              */
 #    ifdef X86_64
   sb->mem_base = ((NT_TIB *)NtCurrentTeb())->StackBase;
 #    else
@@ -1523,11 +1522,12 @@ GC_get_stack_base(struct GC_stack_base *b)
 #  include <pthread_np.h>
 #  include <sys/signal.h>
 
-/* Find the stack using `pthread_stackseg_np()`. */
 GC_API int GC_CALL
 GC_get_stack_base(struct GC_stack_base *sb)
 {
   stack_t stack;
+
+  /* Find the stack using `pthread_stackseg_np()`. */
   if (pthread_stackseg_np(pthread_self(), &stack))
     ABORT("pthread_stackseg_np(self) failed");
   sb->mem_base = stack.ss_sp;
@@ -1612,17 +1612,17 @@ GC_get_stack_base(struct GC_stack_base *sb)
 #ifndef HAVE_GET_STACK_BASE
 
 #  ifdef NEED_FIND_LIMIT
-/* Retrieve the stack bottom.  Using the `GC_find_limit` variant is */
-/* risky.  In `IA64` case, for example, there is no guard page      */
-/* between the stack of one thread and the register backing store   */
-/* of the next.  Thus this is likely to identify way too large a    */
-/* "stack" and thus at least result in disastrous performance.      */
-/* TODO: Implement better strategies here. */
 GC_API int GC_CALL
 GC_get_stack_base(struct GC_stack_base *b)
 {
   IF_CANCEL(int cancel_state;)
 
+  /* Note: Using the `GC_find_limit` variant is risky.  In `IA64` case, */
+  /* for example, there is no guard page between the stack of one       */
+  /* thread and the register backing store of the next.  Thus this is   */
+  /* likely to identify way too large a "stack" and thus at least       */
+  /* result in disastrous performance.                                  */
+  /* TODO: Implement better strategies here. */
   LOCK();
   /* TODO: `DISABLE_CANCEL` may be unnecessary? */
   DISABLE_CANCEL(cancel_state);
@@ -5311,7 +5311,6 @@ GC_get_actual_vdb(void)
 #  undef sbrk
 #endif
 
-/* If value is non-zero, then allocate executable memory. */
 GC_API void GC_CALL
 GC_set_pages_executable(int value)
 {
@@ -5322,12 +5321,11 @@ GC_set_pages_executable(int value)
   GC_pages_executable = (GC_bool)(value != 0);
 }
 
-/* Returns non-zero if the GC-allocated memory is executable.       */
-/* `GC_get_pages_executable` is defined after all the places where  */
-/* `GC_get_pages_executable` is undefined.                          */
 GC_API int GC_CALL
 GC_get_pages_executable(void)
 {
+  /* `GC_get_pages_executable` is defined after all the places where    */
+  /* `GC_get_pages_executable` is undefined.                            */
 #ifdef IGNORE_PAGES_EXECUTABLE
   /* Always allocate executable memory. */
   return 1;

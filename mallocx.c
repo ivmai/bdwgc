@@ -69,10 +69,6 @@ GC_generic_or_special_malloc(size_t lb, int kind)
   }
 }
 
-/* Change the size of the block pointed to by `p` to contain at least   */
-/* `lb` bytes.  The object may be (and quite likely will be) moved.     */
-/* The kind (e.g. atomic) is the same as that of the old.               */
-/* Shrinking of large blocks is not implemented well.                   */
 GC_API void *GC_CALL
 GC_realloc(void *p, size_t lb)
 {
@@ -168,6 +164,7 @@ GC_realloc(void *p, size_t lb)
       return p;
     }
     /* Shrink it.   */
+    /* Note: shrinking of large blocks is not implemented efficiently. */
     sz = lb;
   }
   result = GC_generic_or_special_malloc((word)lb, obj_kind);
@@ -204,9 +201,6 @@ realloc(void *p, size_t lb)
 #  undef GC_debug_realloc_replacement
 #endif /* REDIRECT_REALLOC */
 
-/* Allocate memory such that only pointers to near the beginning of */
-/* the object are considered.  We avoid holding the allocator lock  */
-/* while we clear the memory.                                       */
 GC_API GC_ATTR_MALLOC void *GC_CALL
 GC_generic_malloc_ignore_off_page(size_t lb, int kind)
 {
@@ -482,7 +476,6 @@ GC_memalign(size_t align, size_t lb)
   return GC_malloc_kind_aligned_global(lb, NORMAL, align_m1);
 }
 
-/* This one exists largely to redirect `posix_memalign` for leaks finding. */
 GC_API int GC_CALL
 GC_posix_memalign(void **memptr, size_t align, size_t lb)
 {
@@ -532,11 +525,11 @@ GC_pvalloc(size_t lb)
 }
 #endif /* !GC_NO_VALLOC */
 
-/* Provide a variant of `strdup()` that uses the collector to allocate  */
-/* the copy of the string.                                              */
 GC_API GC_ATTR_MALLOC char *GC_CALL
 GC_strdup(const char *s)
 {
+  /* Implementation of a variant of `strdup()` that uses the collector  */
+  /* to allocate a copy of the string.                                  */
   char *copy;
   size_t lb;
   if (s == NULL)

@@ -36,9 +36,6 @@ GC_noop6(word arg1, word arg2, word arg3, word arg4, word arg5, word arg6)
 #endif
 }
 
-/* Make the argument appear live to compiler.  This is similar  */
-/* to `GC_noop6()`, but with a single argument.  Robust against */
-/* whole program analysis.                                      */
 GC_API void GC_CALL
 GC_noop1(GC_word x)
 {
@@ -1410,10 +1407,6 @@ GC_mark_init(void)
   alloc_mark_stack(INITIAL_MARK_STACK_SIZE);
 }
 
-/* Push all locations between bottom and top onto the mark stack.   */
-/* `bottom` is the first location to be checked; `top` is one past  */
-/* the last location to be checked.  Should only be used if there   */
-/* is no possibility of mark stack overflow.                        */
 GC_API void GC_CALL
 GC_push_all(void *bottom, void *top)
 {
@@ -1731,9 +1724,6 @@ GC_print_trace(GC_word gc_no)
 }
 #endif /* TRACE_BUF */
 
-/* A variant of `GC_push_all` that treats all interior pointers as      */
-/* valid and scans the entire region immediately, in case the contents  */
-/* change.                                                              */
 GC_ATTR_NO_SANITIZE_ADDR_MEM_THREAD
 GC_API void GC_CALL
 GC_push_all_eager(void *bottom, void *top)

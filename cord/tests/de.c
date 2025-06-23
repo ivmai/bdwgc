@@ -455,8 +455,6 @@ static CORD locate_string = CORD_EMPTY; /*< the current search string */
 char *arg_file_name;
 
 #ifdef WIN32
-/* Change the current position to whatever is currently displayed at    */
-/* the given screen coordinates.                                        */
 void
 set_position(int c, int l)
 {
@@ -467,11 +465,6 @@ set_position(int c, int l)
 }
 #endif /* WIN32 */
 
-/* Perform the command associated with character `c`.  `c` may be an    */
-/* integer greater 255 denoting a windows command, one of the above     */
-/* control characters, or another ASCII character to be used as either  */
-/* a character to be inserted, a repeat count, or a search string,      */
-/* depending on the current state.                                      */
 void
 do_command(int c)
 {
@@ -628,8 +621,6 @@ do_command(int c)
   fix_cursor();
   repeat_count = NO_PREFIX;
 }
-
-/* OS-independent initialization. */
 
 void
 generic_init(void)

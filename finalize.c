@@ -1263,18 +1263,6 @@ GC_enqueue_all_finalizers(void)
   GC_fo_entries = 0;
 }
 
-/* Invoke all remaining finalizers that have not yet been run.
- * This is needed for strict compliance with the Java standard,
- * which can make the runtime guarantee that all finalizers are run.
- * Unfortunately, the Java standard implies we have to keep running
- * finalizers until there are no more left, a potential infinite loop.
- * YUCK.
- * Note that this is even more dangerous than the usual Java
- * finalizers, in that objects reachable from static variables
- * may have been finalized when these finalizers are run.
- * Finalizers run at this point must be prepared to deal with a
- * mostly broken world.
- */
 GC_API void GC_CALL
 GC_finalize_all(void)
 {
@@ -1315,9 +1303,6 @@ GC_get_interrupt_finalizers(void)
   return value;
 }
 
-/* Return `TRUE` if it is worth calling `GC_invoke_finalizers`.     */
-/* (Useful if finalizers can only be called from some kind of       */
-/* "safe state" and getting into that safe state is expensive.)     */
 GC_API int GC_CALL
 GC_should_invoke_finalizers(void)
 {
@@ -1328,7 +1313,6 @@ GC_should_invoke_finalizers(void)
 #  endif /* !THREADS */
 }
 
-/* Invoke finalizers for all objects that are ready to be finalized.    */
 GC_API int GC_CALL
 GC_invoke_finalizers(void)
 {

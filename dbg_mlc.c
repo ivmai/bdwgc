@@ -115,8 +115,6 @@ GC_get_back_ptr_info(void *dest, void **base_p, size_t *offset_p)
   }
 }
 
-/* Generate a random heap address.  The resulting address is in the   */
-/* heap, but not necessarily inside a valid object.                   */
 GC_API void *GC_CALL
 GC_generate_random_heap_address(void)
 {
@@ -147,7 +145,6 @@ GC_generate_random_heap_address(void)
   return GC_heap_sects[i].hs_start + heap_offset;
 }
 
-/* Generate a random address inside a valid marked heap object. */
 GC_API void *GC_CALL
 GC_generate_random_valid_address(void)
 {

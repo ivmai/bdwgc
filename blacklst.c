@@ -235,14 +235,6 @@ GC_add_to_black_list_stack(ptr_t p)
 
 #endif /* !NO_BLACK_LISTING */
 
-/* Is the block starting at `h` of size `len` bytes black-listed?       */
-/* If so, return the address of the next plausible `r` such that        */
-/* (`r`,`len`) might not be black-listed.  (Pointer `r` may not         */
-/* actually be in the heap.  We guarantee only that every smaller value */
-/* of `r` after `h` is also black-listed.)  If (`h`,`len`) is not, then */
-/* return `NULL`.  Knows about the structure of the black-list hash     */
-/* tables.  Assumes the allocator lock is held but no assertion about   */
-/* it by design.                                                        */
 GC_API struct GC_hblk_s *GC_CALL
 GC_is_black_listed(struct GC_hblk_s *h, size_t len)
 {
